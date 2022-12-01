@@ -1,7 +1,7 @@
 {
-    "name": "geoperfil",
+    "name": "modojuego",
     "version": "0.0.1",
-    "description": "geoperfil: Geolocalización de lugares adquiridos",
+    "description": "modojuego: website de juegos",
     "engines": {
       "node": "5.9.1"
     },
