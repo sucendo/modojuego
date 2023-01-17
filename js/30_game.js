@@ -860,7 +860,7 @@ class Player extends Obj {
 }
 
 const levelData = `
-p~197~380§t~173~304~Use WASD to move~0~12§t~643~322~Collect these hourglasses~0~12§t~406~134~GANDALF ADVENTURE~0~66§t~404~166~Welcome to the first day of your apprenticeship in Galdalf's realm.~0~24§t~203~321~(or arrow keys)~0~12§h~621~422~0§t~581~537~By the way: Use the [M] key to toggle the music on and off... ~0~12§f~127~348~33~103§f~661~347~31~104§f~125~333~567~15§f~126~450~567~51§t~403~235~Your tasks are simple: collect the hourglasses for your master.~0~18§t~727~49~starts with your first move~0~12§t~626~23~Speedrun Clock:~0~18
+p~197~380§t~173~304~Use WASD to move~0~12§t~643~322~Collect these hourglasses~0~12§t~406~134~WIZARD ADVENTURE~0~66§t~404~166~Welcome to the first day of your apprenticeship in the Magical kingdom.~0~24§t~203~321~(or arrow keys)~0~12§h~621~422~0§t~581~537~By the way: Use the [M] key to toggle the music on and off... ~0~12§f~127~348~33~103§f~661~347~31~104§f~125~333~567~15§f~126~450~567~51§t~403~235~Your tasks are simple: collect the hourglasses for your master.~0~18§t~727~49~starts with your first move~0~12§t~626~23~Speedrun Clock:~0~18
 #
 p~236~194§f~717~219~84~281§f~505~389~212~111§f~182~494~80~6§f~196~487~80~7§f~209~481~78~6§f~222~475~77~6§f~235~469~78~6§f~246~463~78~6§f~318~429~187~81§t~231~374~Stairs can be walked~0~12§f~445~351~60~78§h~679~359~0§t~127~152~Press Up (or W) to jump~0~12§t~460~258~Hold Up (or W) to jump higher~0~12§h~475~330~0§h~350~404~0§h~98~468~0§f~-36~135~66~366§f~2~115~307~21§f~288~136~21~105§f~103~240~204~16§f~103~209~41~33§f~258~457~54~6§f~269~452~42~5§f~283~446~28~6§f~309~434~10~7§f~295~440~25~7§f~1~500~397~30
 #
