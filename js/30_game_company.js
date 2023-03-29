@@ -4,8 +4,8 @@ const color = {
     bone:'#eeffee',
     floorBg:'#110033',
     floorOl:'#9944ff66',
-    brickBg:'#332255',
-    brickOl:'#9944ff66',
+    brickBg:'#c16c45',
+    brickOl:'#c93c20',
     doorBg:'#772200',
     doorOl:'#aa5500',
     jumpBg:'#552233',
@@ -186,7 +186,7 @@ class Game {
         this.lastUpdate = now;
         this.objs.forEach(o => o.update(delta));
         this.objs = this.objs.filter(o=>o.ttl > 0);
-        this.ctx.fillStyle = '#c9e0e5';
+        this.ctx.fillStyle = '#0e71b4';
         this.ctx.fillRect(0, 0, this.width, this.height);
         this.objs.forEach(o => o.render(this.ctx));
         if(!this.speedRunTime) {
@@ -338,10 +338,10 @@ class Floor extends Obj {
         super(obj);
         this.type = "floor";
         this.collGroup = "level";
-        this.fillColor = "#979797";
+        this.fillColor = "#8d6b6b";
         this.strokeColor = "#848691";
-        this.brickFillColor = "#848691";
-        this.brickStrokeColor = "#c1c1c1";
+        this.brickFillColor = "#c16c45";
+        this.brickStrokeColor = "#682417";
         this.bricks = [];
         let x = 0;
         while(x < this.size.x) {
@@ -503,8 +503,8 @@ class Hourglass extends Obj {
         this.strokeColor = '#ffff00';
         this.startTime = obj.startTime || Infinity;
         this.time = this.startTime;
-        let defs = [
-            [color.cloakBg,color.cloakOl, -5,-10, 0,0, -5,10, 5,10, 0,0, 5,-10, 'c'],
+		let defs = [
+            [#000000,#000000, -5,-10, 0,0, -5,10, 5,10, 0,0, 5,-10, 'c'],
             [color.bone, null, -3,-5, 0,0, 3,-5, 'c'],
             [color.bone, null, -4,9, 0,7, 4,9, 'c'],
             [null, '#aa8822', -7,-10, 7,-10],
@@ -512,6 +512,15 @@ class Hourglass extends Obj {
             [null, '#aa8822', -5,-9, -5,9],
             [null, '#aa8822', 5,-9, 5,9],
         ];
+        /*let defs = [
+            [color.cloakBg,color.cloakOl, -5,-10, 0,0, -5,10, 5,10, 0,0, 5,-10, 'c'],
+            [color.bone, null, -3,-5, 0,0, 3,-5, 'c'],
+            [color.bone, null, -4,9, 0,7, 4,9, 'c'],
+            [null, '#aa8822', -7,-10, 7,-10],
+            [null, '#aa8822', -7,10, 7,10],
+            [null, '#aa8822', -5,-9, -5,9],
+            [null, '#aa8822', 5,-9, 5,9],
+        ];*/
         this.currentPath = createPath(defs);
     }
     update(delta) {
@@ -909,4 +918,3 @@ s~-11~566~822~37~1§f~286~469~215~23§j~472~464~28~5~1.7§j~286~464~29~5~1.7§f~
 const game = new Game(document.getElementById('canvas'), levelData.trim());
 game.run();
 game.loadNextLevel();
-
