@@ -504,13 +504,11 @@ class Hourglass extends Obj {
         this.startTime = obj.startTime || Infinity;
         this.time = this.startTime;
 		let defs = [
-            [#000000,#000000, -5,-10, 0,0, -5,10, 5,10, 0,0, 5,-10, 'c'],
-            [color.bone, null, -3,-5, 0,0, 3,-5, 'c'],
-            [color.bone, null, -4,9, 0,7, 4,9, 'c'],
-            [null, '#aa8822', -7,-10, 7,-10],
-            [null, '#aa8822', -7,10, 7,10],
-            [null, '#aa8822', -5,-9, -5,9],
-            [null, '#aa8822', 5,-9, 5,9],
+            [null, '#000000', -3,-8, 3,-8],
+            [null, '#000000', -3,-8, -4,-6, -7,0],
+			[null, '#000000', 3,-8, 4,-6, 7,0],
+			['#000000','#000000', -7,0, -5,0, -5,3, -7,0],
+			['#000000','#000000',  7,0, 5,0, 5,3, 7,0],
         ];
         /*let defs = [
             [color.cloakBg,color.cloakOl, -5,-10, 0,0, -5,10, 5,10, 0,0, 5,-10, 'c'],
@@ -645,7 +643,7 @@ class Player extends Obj {
 			["#7d3f28","#7d3f28", -3,0, -3,-1, 5,-1, 5,0, 'c'], //zapato            
             ['#ffffff', null, 3,-33, 5,-33, 5,-30, 3,-30], //ojo
 			['black', null, 4,-32, 5,-32, 5,-31, 4,-31], //pupila
-            ["#e3c38e", null, -1,-11, -1,-12, 1,-12, 1,-11] //mano
+            ["#e3c38e", null, -1,-11, -1,-12, 1,-12, 1,-11], //mano
         ];
 		/*
 		let defs = [
@@ -918,3 +916,4 @@ s~-11~566~822~37~1§f~286~469~215~23§j~472~464~28~5~1.7§j~286~464~29~5~1.7§f~
 const game = new Game(document.getElementById('canvas'), levelData.trim());
 game.run();
 game.loadNextLevel();
+
