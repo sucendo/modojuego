@@ -5,7 +5,7 @@
     // use it in a demo.
 
     // Song data
-    var song = {
+    let backgroundmusic  = {
       songData: [
         { // Instrument 0
           i: [
@@ -1885,3 +1885,15 @@
       endPattern: 21,  // End pattern
       numChannels: 42  // Number of channels
     };
+	
+let player = new CPlayer();
+player.init(backgroundmusic);
+while(player.generate() < 1) {
+
+}
+
+
+let wave = player.createWave();
+let audio = document.createElement("audio");
+audio.src = URL.createObjectURL(new Blob([wave], {type: "audio/wav"}));
+audio.loop = true;
