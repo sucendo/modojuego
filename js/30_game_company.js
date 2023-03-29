@@ -916,4 +916,3 @@ s~-11~566~822~37~1§f~286~469~215~23§j~472~464~28~5~1.7§j~286~464~29~5~1.7§f~
 const game = new Game(document.getElementById('canvas'), levelData.trim());
 game.run();
 game.loadNextLevel();
-
