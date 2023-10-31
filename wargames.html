@@ -2,7 +2,7 @@
 <html>
 <head>
     <title>Simulación de Guerra Nuclear</title>
-    <link rel="stylesheet" type="text/css" href="css/wargames.css">
+    <link rel="stylesheet" type="text/css" href="wargames.css">
 </head>
 <body>
     <h1>Simulación de Guerra Nuclear</h1>
@@ -40,17 +40,17 @@
                     // Simular la elección de la computadora después de un retraso
                     const computerChoice = options[Math.floor(Math.random() * 3)];
 
-                    // Reglas adicionales (ejemplo)
-                    if (userChoice === "rock" && computerChoice === "tijeras") {
-                        outcome = "¡Victoria! Has destruido una ciudad enemiga.";
-                    } else if (userChoice === "paper" && computerChoice === "piedra") {
-                        outcome = "¡Victoria! Tu estrategia ha funcionado.";
-                    } else if (userChoice === "scissors" && computerChoice === "papel") {
-                        outcome = "¡Victoria! Has tomado el control de una región.";
-                    } else if (userChoice === computerChoice) {
+                    let outcome;
+                    if (userChoice === computerChoice) {
                         outcome = "Empate. ¡La guerra continúa!";
+                    } else if (
+                        (userChoice === "rock" && computerChoice === "tijeras") ||
+                        (userChoice === "paper" && computerChoice === "piedra") ||
+                        (userChoice === "scissors" && computerChoice === "papel")
+                    ) {
+                        outcome = "¡Victoria! Has ganado la batalla.";
                     } else {
-                        outcome = "¡Derrota! El enemigo ha contraatacado.";
+                        outcome = "¡Derrota! El enemigo ha ganado.";
                     }
 
                     document.getElementById("result").innerText = `Elegiste ${userChoice}, la computadora eligió ${computerChoice}. ${outcome}`;
