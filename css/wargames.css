@@ -45,3 +45,8 @@ button:hover {
 #result.draw {
     color: yellow;
 }
+/* Estilo para centrar el botón "Volver a Jugar" */
+#restart {
+    text-align: center;
+    margin-top: 20px;
+}
