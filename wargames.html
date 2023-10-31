@@ -25,9 +25,9 @@
                     outcome = "Empate. ¡La guerra continúa!";
                     document.getElementById("result").className = "draw";
                 } else if (
-                    (userChoice === "rock" && computerChoice === "Tijeras") ||
-                    (userChoice === "paper" && computerChoice === "Piedra") ||
-                    (userChoice === "scissors" && computerChoice === "Papel")
+                    (userChoice === "rock" && computerChoice === "tijeras") ||
+                    (userChoice === "paper" && computerChoice === "piedra") ||
+                    (userChoice === "scissors" && computerChoice === "papel")
                 ) {
                     outcome = "¡Victoria! Has ganado la batalla.";
                     document.getElementById("result").className = "win";
@@ -36,7 +36,25 @@
                     document.getElementById("result").className = "lose";
                 }
 
-                document.getElementById("result").innerText = `Elegiste ${userChoice}, la computadora eligió ${computerChoice}. ${outcome}`;
+                setTimeout(() => {
+                    // Simular la elección de la computadora después de un retraso
+                    const computerChoice = options[Math.floor(Math.random() * 3)];
+
+                    // Reglas adicionales (ejemplo)
+                    if (userChoice === "rock" && computerChoice === "tijeras") {
+                        outcome = "¡Victoria! Has destruido una ciudad enemiga.";
+                    } else if (userChoice === "paper" && computerChoice === "piedra") {
+                        outcome = "¡Victoria! Tu estrategia ha funcionado.";
+                    } else if (userChoice === "scissors" && computerChoice === "papel") {
+                        outcome = "¡Victoria! Has tomado el control de una región.";
+                    } else if (userChoice === computerChoice) {
+                        outcome = "Empate. ¡La guerra continúa!";
+                    } else {
+                        outcome = "¡Derrota! El enemigo ha contraatacado.";
+                    }
+
+                    document.getElementById("result").innerText = `Elegiste ${userChoice}, la computadora eligió ${computerChoice}. ${outcome}`;
+                }, 1000); // Se simula la elección de la computadora después de un segundo
             });
         });
     </script>
