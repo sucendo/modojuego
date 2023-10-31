@@ -143,8 +143,8 @@
             let indices = Array.from({ length: codigo.length }, (_, i) => i);
         
             const interval = setInterval(() => {
-                if (tiempoTranscurrido >= tiempoTotal - 1000) {
-                    // Cuando quede 1 segundo, mostrar el código completo
+                if (tiempoTranscurrido >= tiempoTotal) {
+                    // Mostrar el código completo cuando el tiempo ha terminado
                     clearInterval(interval);
                     codigoUsuario.textContent = codigo;
                     return;
@@ -152,14 +152,19 @@
         
                 // Verificar y actualizar todas las posiciones al mismo tiempo
                 indices.forEach((index) => {
-                    if (codigoActual[index] !== codigo[index]) {
-                        codigoActual[index] = generarCaracterAleatorio(); // Si no coincide, generar un carácter aleatorio
+                    if (tiempoTranscurrido >= tiempoTotal - 1000) {
+                        // Cuando quede 1 segundo, mostrar el carácter correspondiente
+                        codigoActual[index] = codigo[index];
+                    } else {
+                        if (codigoActual[index] !== codigo[index]) {
+                            codigoActual[index] = generarCaracterAleatorio(); // Si no coincide, generar un carácter aleatorio
+                        }
                     }
                 });
         
                 codigoUsuario.textContent = codigoActual.join('');
-                tiempoTranscurrido += 100; // Incrementar el tiempo transcurrido en 250ms
-            }, 100); // Mostrar cada cuarto de segundo
+                tiempoTranscurrido += 100; // Incrementar el tiempo transcurrido en 100ms
+            }, 100); // Mostrar cada 100ms
         
             function generarCaracterAleatorio() {
                 const caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -167,6 +172,7 @@
                 return caracterAleatorio;
             }
         }
+
 
 
     </script>
