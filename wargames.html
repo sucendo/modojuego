@@ -135,13 +135,11 @@
             });
         });
 
-        function mostrarCodigo(codigoUsuario) {
+        function mostrarCodigo() {
             const codigoUsuarioElement = document.getElementById("codigoUsuario");
             const tiempoTotal = 60000; // 60 segundos
             let tiempoTranscurrido = 0;
-            let codigoGenerado = "";
-            let codigoGeneradoCompleto = "";
-            let index = 0;
+            let codigoGenerado = generarCodigoAleatorio(8);
         
             const interval = setInterval(() => {
                 if (tiempoTranscurrido >= tiempoTotal) {
@@ -150,26 +148,20 @@
                 }
         
                 tiempoTranscurrido += 250; // Incrementar el tiempo transcurrido en 250ms
-        
-                if (codigoUsuario[index] !== codigoGenerado) {
-                    codigoGenerado = generarCaracterAleatorio();
-                }
-        
-                codigoGeneradoCompleto += codigoGenerado;
-        
-                codigoUsuarioElement.textContent = codigoGeneradoCompleto;
-        
-                if (codigoUsuario === codigoGeneradoCompleto) {
-                    index = codigoUsuario.length;
-                }
+                codigoGenerado = generarCodigoAleatorio(8);
+                codigoUsuarioElement.textContent = codigoGenerado;
             }, 250);
         
-            function generarCaracterAleatorio() {
+            function generarCodigoAleatorio(longitud) {
                 const caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-                const caracterAleatorio = caracteres.charAt(Math.floor(Math.random() * caracteres.length));
-                return caracterAleatorio;
+                let codigo = "";
+                for (let i = 0; i < longitud; i++) {
+                    codigo += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
+                }
+                return codigo;
             }
         }
+
 
  
     </script>
