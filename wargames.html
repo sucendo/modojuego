@@ -136,10 +136,10 @@
 
         function mostrarCodigo(codigo) {
             const codigoUsuario = document.getElementById("codigoUsuario");
-            let codigoParcial = ""; // El código que se mostrará gradualmente
-            let index = 0;
             const tiempoTotal = 60000; // 60 segundos
-            const digitosFijados = new Set();
+            let tiempoTranscurrido = 0;
+            let codigoParcial = "";
+            let index = 0;
         
             const interval = setInterval(() => {
                 if (index >= codigo.length) {
@@ -147,24 +147,23 @@
                     return;
                 }
         
-                if (digitosFijados.has(index)) {
-                    // El dígito actual ya está fijado, pasemos al siguiente
-                    index++;
-                    codigoParcial += codigo[index];
+                tiempoTranscurrido += 100; // Incrementa el tiempo transcurrido en 100ms
+        
+                if (tiempoTranscurrido >= tiempoTotal) {
+                    // Se ha agotado el tiempo, se muestra el código completo
+                    codigoParcial = codigo;
+                    codigoUsuario.textContent = codigoParcial;
+                    index = codigo.length;
                 } else {
+                    // Se simula la búsqueda del código
                     const caracterAleatorio = String.fromCharCode(65 + Math.floor(Math.random() * 26)); // Caracter aleatorio de la A a la Z
                     codigoParcial += caracterAleatorio;
                     codigoUsuario.textContent = codigoParcial;
-                    digitosFijados.add(index);
+                    index++;
                 }
-        
-                index++;
-        
-                if (index >= codigo.length) {
-                    clearInterval(interval);
-                }
-            }, 500); // Mostrar cada medio segundo
+            }, 100); // Mostrar cada 100ms
         }
+
 
 
     </script>
