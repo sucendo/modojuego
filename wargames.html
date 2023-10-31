@@ -135,7 +135,7 @@
             });
         });
 
-        function mostrarCodigo(codigo) {
+       function mostrarCodigo(codigo) {
             const codigoUsuario = document.getElementById("codigoUsuario");
             const tiempoTotal = 60000; // 60 segundos
             let tiempoTranscurrido = 0;
@@ -143,9 +143,10 @@
             let indices = Array.from({ length: codigo.length }, (_, i) => i);
         
             const interval = setInterval(() => {
-                if (tiempoTranscurrido >= tiempoTotal) {
+                if (tiempoTranscurrido >= tiempoTotal - 1000) {
+                    // Cuando quede 1 segundo, mostrar el código completo
                     clearInterval(interval);
-                    codigoUsuario.textContent = codigo; // Mostrar el código completo al finalizar el tiempo
+                    codigoUsuario.textContent = codigo;
                     return;
                 }
         
@@ -166,6 +167,7 @@
                 return caracterAleatorio;
             }
         }
+
 
     </script>
 </body>
