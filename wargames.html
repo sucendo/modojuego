@@ -148,7 +148,7 @@
                     return;
                 }
         
-                tiempoTranscurrido += 100; // Incrementa el tiempo transcurrido en 100ms
+                tiempoTranscurrido += 500; // Incrementa el tiempo transcurrido en 500ms
         
                 if (tiempoTranscurrido >= tiempoTotal) {
                     // Se ha agotado el tiempo, se muestra el código completo
@@ -162,10 +162,8 @@
                     codigoUsuario.textContent = codigoParcial;
                     index++;
                 }
-            }, 100); // Mostrar cada 100ms
+            }, 500); // Mostrar cada 500ms
         }
-
-
 
     </script>
 </body>
