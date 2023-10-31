@@ -140,6 +140,7 @@
             const tiempoTotal = 60000; // 60 segundos
             let tiempoTranscurrido = 0;
             let codigoGenerado = "";
+            let codigoGeneradoCompleto = "";
             let index = 0;
         
             const interval = setInterval(() => {
@@ -148,17 +149,18 @@
                     return;
                 }
         
-                const codigoCorrecto = codigoUsuario.slice(0, index + 1);
                 tiempoTranscurrido += 250; // Incrementar el tiempo transcurrido en 250ms
         
                 if (codigoUsuario[index] !== codigoGenerado) {
                     codigoGenerado = generarCaracterAleatorio();
                 }
         
-                codigoUsuarioElement.textContent = codigoGenerado;
+                codigoGeneradoCompleto += codigoGenerado;
         
-                if (codigoCorrecto === codigoGenerado) {
-                    index++;
+                codigoUsuarioElement.textContent = codigoGeneradoCompleto;
+        
+                if (codigoUsuario === codigoGeneradoCompleto) {
+                    index = codigoUsuario.length;
                 }
             }, 250);
         
@@ -168,6 +170,7 @@
                 return caracterAleatorio;
             }
         }
+
  
     </script>
 </body>
