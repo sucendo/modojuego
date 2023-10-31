@@ -44,24 +44,24 @@
         let temporizador = 60;
         let juegoTerminado = false;
         let actualizarTemporizador;
-
+    
         function mostrarDialogoInicio() {
             const inicioDialog = document.getElementById("inicioDialog");
             inicioDialog.showModal();
         }
-
+    
         document.getElementById("iniciarJuegoButton").addEventListener("click", mostrarDialogoInicio);
-
+    
         document.getElementById("inicioDialog").addEventListener("close", function () {
             const nombreUsuario = document.getElementById("nombre").value;
             const codigo = document.getElementById("codigo").value;
             const jugar = document.getElementById("jugar").value;
-
+    
             if (jugar === "si") {
                 iniciarJuego();
             }
         });
-
+    
         function iniciarJuego() {
             temporizador = 60;
             victorias = 0;
@@ -69,39 +69,44 @@
             empates = 0;
             juegoTerminado = false;
             actualizarTemporizador = setInterval(actualizarCuentaAtras, 1000);
-
+    
             document.getElementById("temporizador").textContent = `Tiempo restante: ${temporizador} segundos`;
             document.getElementById("resultado").textContent = "";
             document.getElementById("puntuacion").textContent = "Victorias: 0 | Derrotas: 0 | Empates: 0";
-
+    
             document.querySelectorAll("button").forEach((button) => {
                 button.disabled = false;
             });
-
+    
             const reinicioButton = document.getElementById("reinicioButton");
             reinicioButton.style.display = "none";
         }
-
+    
         function actualizarCuentaAtras() {
             temporizador--;
             document.getElementById("temporizador").textContent = `Tiempo restante: ${temporizador} segundos`;
             if (temporizador === 0) {
                 clearInterval(actualizarTemporizador);
                 document.getElementById("temporizador").textContent = "¡Tiempo agotado!";
-
+    
                 // Habilitar el botón "Volver a Jugar"
                 const reinicioButton = document.getElementById("reinicioButton");
                 reinicioButton.style.display = "block";
+                juegoTerminado = true;
             }
         }
-
+    
+        document.getElementById("reinicioButton").addEventListener("click", () => {
+            iniciarJuego();
+        });
+    
         document.querySelectorAll("button").forEach((button) => {
             button.addEventListener("click", (event) => {
                 if (juegoTerminado) return;
-
+    
                 const eleccionUsuario = event.target.id;
                 const eleccionComputadora = opciones[Math.floor(Math.random() * 3)];
-
+    
                 let resultado;
                 if (eleccionUsuario === eleccionComputadora) {
                     resultado = "Empate. ¡La guerra continúa!";
@@ -110,7 +115,7 @@
                 } else if (
                     (eleccionUsuario === "piedra" && eleccionComputadora === "tijeras") ||
                     (eleccionUsuario === "papel" && eleccionComputadora === "piedra") ||
-                    (eleccionUsuario === "tijeras" && eleccionComputadora === "papel")
+                    (eleccionUsuario === "tijeras" y eleccionComputadora === "papel")
                 ) {
                     resultado = "¡Victoria! Has ganado la batalla.";
                     document.getElementById("resultado").className = "victoria";
@@ -120,15 +125,12 @@
                     document.getElementById("resultado").className = "derrota";
                     derrotas++;
                 }
-
+    
                 document.getElementById("resultado").textContent = `Elegiste ${eleccionUsuario}, la computadora eligió ${eleccionComputadora}. ${resultado}`;
                 document.getElementById("puntuacion").textContent = `Victorias: ${victorias} | Derrotas: ${derrotas} | Empates: ${empates}`;
-
-                if (temporizador === 0) {
-                    juegoTerminado = true;
-                }
             });
         });
     </script>
+
 </body>
 </html>
