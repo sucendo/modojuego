@@ -138,7 +138,6 @@
        function mostrarCodigo(codigo) {
             const codigoUsuario = document.getElementById("codigoUsuario");
             const tiempoTotal = 60000; // 60 segundos
-            const tiempoInicioBusqueda = 30000; // 30 segundos
             let tiempoTranscurrido = 0;
             let codigoActual = Array(codigo.length).fill('');
             let indices = Array.from({ length: codigo.length }, (_, i) => i);
@@ -153,11 +152,9 @@
         
                 // Verificar y actualizar todas las posiciones al mismo tiempo
                 indices.forEach((index) => {
-                    if (tiempoTranscurrido >= tiempoInicioBusqueda) {
-                        // Cuando queden 30 segundos, mostrar el carácter correspondiente
-                        if (codigoActual[index] !== codigo[index]) {
-                            codigoActual[index] = codigo[index];
-                        }
+                    if (tiempoTranscurrido >= tiempoTotal - 1000) {
+                        // Cuando quede 1 segundo, mostrar el carácter correspondiente
+                        codigoActual[index] = codigo[index];
                     } else {
                         if (codigoActual[index] !== codigo[index]) {
                             codigoActual[index] = generarCaracterAleatorio(); // Si no coincide, generar un carácter aleatorio
