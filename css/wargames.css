@@ -64,6 +64,9 @@ button:hover {
     height: auto;
     position: absolute;
     bottom: 0;
+    left: 0;
+    max-width: 100%;
+    z-index: -1;
 }
 
 /* Estilo para centrar el botón "Volver a Jugar" */
