@@ -6,7 +6,6 @@ body {
     text-align: center;
     margin: 0;
     padding: 0;
-    position: relative;
 }
 
 h1 {
@@ -29,6 +28,12 @@ button:hover {
     background-color: #ffaa33;
 }
 
+#timer {
+    font-size: 24px;
+    color: #ff8800;
+    margin: 20px 0;
+}
+
 #result {
     font-size: 18px;
     margin-top: 20px;
@@ -47,21 +52,9 @@ button:hover {
     color: yellow;
 }
 
-#timer {
-    font-size: 24px;
-    color: #ff8800;
-    margin: 20px 0;
-}
-
 #score {
     font-size: 16px;
     color: #fff;
-}
-
-/* Estilo para el botón "Volver a Jugar" */
-#restart {
-    text-align: center;
-    margin-top: 20px;
 }
 
 #restartButton {
@@ -72,20 +65,8 @@ button:hover {
     padding: 10px 20px;
     cursor: pointer;
     transition: background-color 0.3s;
-    display: none;
 }
 
 #restartButton:hover {
     background-color: #ffaa33;
-}
-
-/* Estilo para el SVG de la esfera y trayectorias de misiles */
-#nuclear-svg {
-    width: 100%;
-    height: auto;
-    position: relative;
-    bottom: 0;
-    left: 0;
-    max-width: 100%;
-    z-index: -1;
 }
