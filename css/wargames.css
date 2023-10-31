@@ -70,3 +70,11 @@ button:hover {
 #reinicioButton:hover {
     background-color: #ffaa33;
 }
+
+/* Estilos para los dígitos del código */
+#codigoUsuario {
+    font-size: 36px; /* Tamaño de fuente más grande para los dígitos */
+    color: #3498db; /* Color azul clarito para los dígitos */
+    font-weight: bold; /* Texto en negrita */
+    letter-spacing: 4px; /* Espaciado entre los dígitos */
+}
