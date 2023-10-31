@@ -18,37 +18,25 @@
         document.querySelectorAll("button").forEach((button) => {
             button.addEventListener("click", (event) => {
                 const userChoice = event.target.id;
-                const randomIndex = Math.floor(Math.random() * 3);
-                const computerChoice = options[randomIndex];
+                const computerChoice = options[Math.floor(Math.random() * 3)];
 
                 let outcome;
-                if (userChoice === computerChoice) {
-                    outcome = "Empate. ¡La guerra continúa!";
-                    document.getElementById("result").className = "draw";
-                } else if (
-                    (userChoice === "rock" && computerChoice === "tijeras") ||
-                    (userChoice === "paper" && computerChoice === "piedra") ||
-                    (userChoice === "scissors" && computerChoice === "papel")
-                ) {
-                    outcome = "¡Victoria! Has ganado la batalla.";
-                    document.getElementById("result").className = "win";
-                } else {
-                    outcome = "¡Derrota! El enemigo ha ganado.";
-                    document.getElementById("result").className = "lose";
-                }
 
-                const randomIndex = Math.floor(Math.random() * 3);
-                const computerChoice = options[randomIndex];
-
-                let outcome;
-                if (userChoice === computerChoice) {
+                // Reglas adicionales
+                if (userChoice === "rock" && computerChoice === "scissors") {
+                    outcome = "¡Victoria! Has destruido una ciudad enemiga.";
+                } else if (userChoice === "paper" && computerChoice === "rock") {
+                    outcome = "¡Victoria! Tu estrategia ha funcionado.";
+                } else if (userChoice === "scissors" && computerChoice === "paper") {
+                    outcome = "¡Victoria! Has tomado el control de una región.";
+                } else if (userChoice === "rock" && computerChoice === "paper") {
+                    outcome = "¡Derrota! El enemigo ha reforzado sus defensas.";
+                } else if (userChoice === "paper" && computerChoice === "scissors") {
+                    outcome = "¡Derrota! El enemigo ha usado una táctica avanzada.";
+                } else if (userChoice === "scissors" && computerChoice === "rock") {
+                    outcome = "¡Derrota! La superioridad enemiga ha prevalecido.";
+                } else if (userChoice === computerChoice) {
                     outcome = "Empate. ¡La guerra continúa!";
-                } else if (
-                    (userChoice === "rock" && computerChoice === "tijeras") ||
-                    (userChoice === "paper" && computerChoice === "piedra") ||
-                    (userChoice === "scissors" && computerChoice === "papel")
-                ) {
-                    outcome = "¡Victoria! Has ganado la batalla.";
                 } else {
                     outcome = "¡Derrota! El enemigo ha contraatacado.";
                 }
