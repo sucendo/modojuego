@@ -58,8 +58,28 @@ button:hover {
     color: #fff;
 }
 
-/* Estilo para el skyline de la ciudad */
-#city-skyline {
+/* Estilo para el botón "Volver a Jugar" */
+#restart {
+    text-align: center;
+    margin-top: 20px;
+}
+
+#restartButton {
+    background-color: #ff8800;
+    color: #fff;
+    font-size: 16px;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#restartButton:hover {
+    background-color: #ffaa33;
+}
+
+/* Estilo para el SVG de la esfera y trayectorias de misiles */
+#nuclear-svg {
     width: 100%;
     height: auto;
     position: absolute;
@@ -67,10 +87,4 @@ button:hover {
     left: 0;
     max-width: 100%;
     z-index: -1;
-}
-
-/* Estilo para centrar el botón "Volver a Jugar" */
-#restart {
-    text-align: center;
-    margin-top: 20px;
 }
