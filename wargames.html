@@ -135,11 +135,13 @@
             });
         });
 
-        function mostrarCodigo() {
+        function mostrarCodigo(codigoUsuario) {
             const codigoUsuarioElement = document.getElementById("codigoUsuario");
             const tiempoTotal = 60000; // 60 segundos
             let tiempoTranscurrido = 0;
-            let codigoGenerado = generarCodigoAleatorio(8);
+            let codigoGenerado = "";
+            let codigoUsuarioCompleto = codigoUsuario;
+            let index = 0;
         
             const interval = setInterval(() => {
                 if (tiempoTranscurrido >= tiempoTotal) {
@@ -148,22 +150,21 @@
                 }
         
                 tiempoTranscurrido += 250; // Incrementar el tiempo transcurrido en 250ms
-                codigoGenerado = generarCodigoAleatorio(8);
-                codigoUsuarioElement.textContent = codigoGenerado;
-            }, 250);
         
-            function generarCodigoAleatorio(longitud) {
-                const caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-                let codigo = "";
-                for (let i = 0; i < longitud; i++) {
-                    codigo += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
+                if (codigoUsuario[index] !== codigoGenerado) {
+                    codigoGenerado = codigoUsuario[index];
                 }
-                return codigo;
-            }
+        
+                codigoUsuarioCompleto = codigoUsuarioCompleto.substr(0, index) + codigoGenerado;
+                codigoUsuarioElement.textContent = codigoUsuarioCompleto;
+        
+                index++;
+        
+                if (index === codigoUsuario.length) {
+                    index = 0; // Reiniciar cuando se alcanza el final del código
+                }
+            }, 250);
         }
-
-
- 
     </script>
 </body>
 </html>
