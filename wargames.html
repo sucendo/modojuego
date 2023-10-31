@@ -27,11 +27,16 @@
     <svg id="nuclear-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" preserveAspectRatio="xMidYMid meet">
         <!-- Elemento para representar la esfera sin relleno -->
         <circle cx="400" cy="200" r="150" fill="none" stroke="red" stroke-width="2" />
+    
+        <!-- Elementos para crear el efecto de relleno en forma de puntos -->
+        <g id="dots"></g>
     </svg>
 
     <script>
         const svg = document.getElementById("nuclear-svg");
+        const dotsGroup = document.getElementById("dots");
         const radius = 150; // Radio de la esfera
+        const dotRadius = 5; // Radio de los puntos
         const numDots = 500; // Cantidad de puntos
     
         for (let i = 0; i < numDots; i++) {
@@ -42,10 +47,10 @@
             const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
             dot.setAttribute("cx", x);
             dot.setAttribute("cy", y);
-            dot.setAttribute("r", 2); // Tamaño del punto
+            dot.setAttribute("r", dotRadius);
             dot.setAttribute("fill", "red");
     
-            svg.appendChild(dot);
+            dotsGroup.appendChild(dot);
         }
     </script>
 
