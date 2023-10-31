@@ -7,9 +7,9 @@
 <body>
     <h1>Simulación de Guerra Nuclear</h1>
     <p>Elige tu estrategia:</p>
-    <button id="Piedra">Piedra</button>
-    <button id="Papel">Papel</button>
-    <button id="Tijeras">Tijeras</button>
+    <button id="rock">Piedra</button>
+    <button id="paper">Papel</button>
+    <button id="scissors">Tijeras</button>
     <div id="result"></div>
 
     <script>
@@ -23,17 +23,20 @@
                 let outcome;
                 if (userChoice === computerChoice) {
                     outcome = "Empate. ¡La guerra continúa!";
+                    document.getElementById("result").className = "draw";
                 } else if (
-                    (userChoice === "Piedra" && computerChoice === "Tijeras") ||
-                    (userChoice === "Papel" && computerChoice === "Piedra") ||
-                    (userChoice === "Tijeras" && computerChoice === "Papel")
+                    (userChoice === "rock" && computerChoice === "Tijeras") ||
+                    (userChoice === "paper" && computerChoice === "Piedra") ||
+                    (userChoice === "scissors" && computerChoice === "Papel")
                 ) {
                     outcome = "¡Victoria! Has ganado la batalla.";
+                    document.getElementById("result").className = "win";
                 } else {
                     outcome = "¡Derrota! El enemigo ha ganado.";
+                    document.getElementById("result").className = "lose";
                 }
 
-                document.getElementById("result").innerText = `Elegiste ${userChoice}, el ordenador eligió ${computerChoice}. ${outcome}`;
+                document.getElementById("result").innerText = `Elegiste ${userChoice}, la computadora eligió ${computerChoice}. ${outcome}`;
             });
         });
     </script>
