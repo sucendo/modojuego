@@ -21,7 +21,7 @@
     <svg id="nuclear-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" preserveAspectRatio="xMidYMid meet">
         <!-- Elemento para representar la esfera -->
         <circle cx="400" cy="200" r="150" fill="#3399ff" />
-    
+
         <!-- Elementos para representar trayectorias de misiles como curvas Bézier cuadráticas -->
         <path d="M100 200 Q 400 50, 700 200" stroke="red" stroke-width="2" fill="transparent" />
         <path d="M700 200 Q 400 350, 100 200" stroke="red" stroke-width="2" fill="transparent" />
@@ -34,9 +34,9 @@
         let defeats = 0;
         let timer = 60;
         let gameEnded = false;
-    
+
         document.getElementById("timer").textContent = `Tiempo restante: ${timer} segundos`;
-    
+
         const updateTimer = setInterval(() => {
             timer--;
             document.getElementById("timer").textContent = `Tiempo restante: ${timer} segundos`;
@@ -46,40 +46,40 @@
                 document.querySelectorAll("button").forEach((button) => {
                     button.disabled = true;
                 });
-    
+
                 // Mostrar el botón "Volver a Jugar"
                 const restartButton = document.getElementById("restartButton");
                 restartButton.style.display = "block";
             }
         }, 1000);
-    
+
         document.getElementById("restartButton").addEventListener("click", () => {
             // Reiniciar el juego al hacer clic en "Volver a Jugar"
             timer = 60;
             victories = 0;
             defeats = 0;
             gameEnded = false;
-    
+
             document.getElementById("timer").textContent = `Tiempo restante: ${timer} segundos`;
             document.getElementById("result").textContent = "";
             document.getElementById("score").textContent = "Victorias: 0 | Derrotas: 0";
-    
+
             // Habilitar los botones nuevamente
             document.querySelectorAll("button").forEach((button) => {
                 button.disabled = false;
             });
-    
+
             // Ocultar el botón "Volver a Jugar"
             restartButton.style.display = "none";
         });
-    
+
         document.querySelectorAll("button").forEach((button) => {
             button.addEventListener("click", (event) => {
                 if (gameEnded) return;
-    
+
                 const userChoice = event.target.id;
                 const computerChoice = options[Math.floor(Math.random() * 3)];
-    
+
                 let outcome;
                 if (userChoice === computerChoice) {
                     outcome = "Empate. ¡La guerra continúa!";
@@ -97,12 +97,11 @@
                     document.getElementById("result").className = "lose";
                     defeats++;
                 }
-    
+
                 document.getElementById("result").textContent = `Elegiste ${userChoice}, la computadora eligió ${computerChoice}. ${outcome}`;
                 document.getElementById("score").textContent = `Victorias: ${victories} | Derrotas: ${defeats}`;
             });
         });
     </script>
-
 </body>
 </html>
