@@ -25,20 +25,25 @@
                 // Reglas adicionales
                 if (userChoice === "rock" && computerChoice === "scissors") {
                     outcome = "¡Victoria! Has destruido una ciudad enemiga.";
+                    document.getElementById("result").classList.add("win");
                 } else if (userChoice === "paper" && computerChoice === "rock") {
                     outcome = "¡Victoria! Tu estrategia ha funcionado.";
+                    document.getElementById("result").classList.add("win");
                 } else if (userChoice === "scissors" && computerChoice === "paper") {
                     outcome = "¡Victoria! Has tomado el control de una región.";
+                    document.getElementById("result").classList.add("win");
                 } else if (userChoice === "rock" && computerChoice === "paper") {
                     outcome = "¡Derrota! El enemigo ha reforzado sus defensas.";
+                    document.getElementById("result").classList.add("lose");
                 } else if (userChoice === "paper" && computerChoice === "scissors") {
                     outcome = "¡Derrota! El enemigo ha usado una táctica avanzada.";
+                    document.getElementById("result").classList.add("lose");
                 } else if (userChoice === "scissors" && computerChoice === "rock") {
                     outcome = "¡Derrota! La superioridad enemiga ha prevalecido.";
+                    document.getElementById("result").classList.add("lose");
                 } else if (userChoice === computerChoice) {
                     outcome = "Empate. ¡La guerra continúa!";
-                } else {
-                    outcome = "¡Derrota! El enemigo ha contraatacado.";
+                    document.getElementById("result").classList.add("draw");
                 }
 
                 document.getElementById("result").innerText = `Elegiste ${userChoice}, la computadora eligió ${computerChoice}. ${outcome}`;
