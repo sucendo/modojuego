@@ -17,16 +17,15 @@
         <button id="restartButton">Volver a Jugar</button>
     </div>
 
-    <!-- SVG para simular una esfera y trayectoria de misiles -->
+    <!-- SVG para simular una esfera y trayectorias de misiles -->
     <svg id="nuclear-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" preserveAspectRatio="xMidYMid meet">
         <!-- Elemento para representar la esfera -->
         <circle cx="400" cy="200" r="150" fill="#3399ff" />
-
-        <!-- Elementos para representar trayectorias de misiles -->
-        <line x1="100" y1="200" x2="700" y2="200" stroke="red" stroke-width="2" />
-        <line x1="700" y1="200" x2="400" y2="350" stroke="red" stroke-width="2" />
-        <line x1="400" y1="350" x2="100" y2="200" stroke="red" stroke-width="2" />
-        <!-- Agrega más líneas para representar otras trayectorias de misiles si es necesario -->
+    
+        <!-- Elementos para representar trayectorias de misiles como curvas Bézier -->
+        <path d="M100 200 C200 100, 600 100, 700 200" stroke="red" stroke-width="2" fill="transparent" />
+        <path d="M700 200 C600 300, 200 300, 100 200" stroke="red" stroke-width="2" fill="transparent" />
+        <!-- Agrega más elementos <path> para representar otras trayectorias de misiles si es necesario -->
     </svg>
 
     <script>
