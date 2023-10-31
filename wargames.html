@@ -139,7 +139,7 @@
             const codigoUsuario = document.getElementById("codigoUsuario");
             const tiempoTotal = 60000; // 60 segundos
             let tiempoTranscurrido = 0;
-            let codigoActual = Array(codigo.length).fill('_');
+            let codigoActual = Array(codigo.length).fill('');
             let index = 0;
         
             const interval = setInterval(() => {
@@ -151,11 +151,9 @@
         
                 // Simular la búsqueda constante de caracteres
                 const caracterAleatorio = String.fromCharCode(65 + Math.floor(Math.random() * 26)); // Caracter aleatorio de la A a la Z
-                codigoActual[index] = caracterAleatorio;
+                codigoActual = codigoActual.map(() => caracterAleatorio);
                 codigoUsuario.textContent = codigoActual.join('');
                 tiempoTranscurrido += 1000; // Incrementar el tiempo transcurrido en 1 segundo
-        
-                index = (index + 1) % codigo.length; // Avanzar al siguiente carácter
             }, 1000); // Mostrar cada 1 segundo
         }
         
