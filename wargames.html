@@ -10,10 +10,29 @@
     <button id="rock">Piedra</button>
     <button id="paper">Papel</button>
     <button id="scissors">Tijeras</button>
+    <div id="timer">Tiempo restante: 60 segundos</div>
     <div id="result"></div>
+    <div id="score">Victorias: 0 | Derrotas: 0</div>
 
     <script>
         const options = ["Piedra", "Papel", "Tijeras"];
+        let victories = 0;
+        let defeats = 0;
+        let timer = 60;
+
+        document.getElementById("timer").textContent = `Tiempo restante: ${timer} segundos`;
+
+        const updateTimer = setInterval(() => {
+            timer--;
+            document.getElementById("timer").textContent = `Tiempo restante: ${timer} segundos`;
+            if (timer === 0) {
+                clearInterval(updateTimer);
+                document.getElementById("timer").textContent = "¡Tiempo agotado!";
+                document.querySelectorAll("button").forEach((button) => {
+                    button.disabled = true;
+                });
+            }
+        }, 1000);
 
         document.querySelectorAll("button").forEach((button) => {
             button.addEventListener("click", (event) => {
@@ -31,12 +50,15 @@
                 ) {
                     outcome = "¡Victoria! Has ganado la batalla.";
                     document.getElementById("result").className = "win";
+                    victories++;
                 } else {
                     outcome = "¡Derrota! El enemigo ha ganado.";
                     document.getElementById("result").className = "lose";
+                    defeats++;
                 }
 
                 document.getElementById("result").innerText = `Elegiste ${userChoice}, la computadora eligió ${computerChoice}. ${outcome}`;
+                document.getElementById("score").innerText = `Victorias: ${victories} | Derrotas: ${defeats}`;
             });
         });
     </script>
