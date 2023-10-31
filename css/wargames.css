@@ -82,7 +82,7 @@ button:hover {
 #nuclear-svg {
     width: 100%;
     height: auto;
-    position: absolute;
+    position: relative;
     bottom: 0;
     left: 0;
     max-width: 100%;
