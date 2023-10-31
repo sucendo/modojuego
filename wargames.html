@@ -3,6 +3,13 @@
 <head>
     <title>Simulación de Guerra Nuclear</title>
     <link rel="stylesheet" type="text/css" href="css/wargames.css">
+    <style>
+        /* Estilo para centrar el botón "Volver a Jugar" */
+        #restart {
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
     <h1>Simulación de Guerra Nuclear</h1>
@@ -50,28 +57,28 @@
                 // Mostrar el botón "Volver a Jugar"
                 const restartButton = document.getElementById("restartButton");
                 restartButton.style.display = "block";
+
+                restartButton.addEventListener("click", () => {
+                    // Reiniciar el juego al hacer clic en "Volver a Jugar"
+                    timer = 60;
+                    victories = 0;
+                    defeats = 0;
+                    gameEnded = false;
+
+                    document.getElementById("timer").textContent = `Tiempo restante: ${timer} segundos`;
+                    document.getElementById("result").textContent = "";
+                    document.getElementById("score").textContent = "Victorias: 0 | Derrotas: 0";
+
+                    // Habilitar los botones nuevamente
+                    document.querySelectorAll("button").forEach((button) => {
+                        button.disabled = false;
+                    });
+
+                    // Ocultar el botón "Volver a Jugar"
+                    restartButton.style.display = "none";
+                });
             }
         }, 1000);
-
-        document.getElementById("restartButton").addEventListener("click", () => {
-            // Reiniciar el juego al hacer clic en "Volver a Jugar"
-            timer = 60;
-            victories = 0;
-            defeats = 0;
-            gameEnded = false;
-
-            document.getElementById("timer").textContent = `Tiempo restante: ${timer} segundos`;
-            document.getElementById("result").textContent = "";
-            document.getElementById("score").textContent = "Victorias: 0 | Derrotas: 0";
-
-            // Habilitar los botones nuevamente
-            document.querySelectorAll("button").forEach((button) => {
-                button.disabled = false;
-            });
-
-            // Ocultar el botón "Volver a Jugar"
-            restartButton.style.display = "none";
-        });
 
         document.querySelectorAll("button").forEach((button) => {
             button.addEventListener("click", (event) => {
