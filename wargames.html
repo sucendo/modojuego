@@ -18,7 +18,8 @@
         document.querySelectorAll("button").forEach((button) => {
             button.addEventListener("click", (event) => {
                 const userChoice = event.target.id;
-                const computerChoice = options[Math.floor(Math.random() * 3)];
+                const randomIndex = Math.random() * 3;
+                const computerChoice = options[Math.floor(randomIndex)];
 
                 let outcome;
                 if (userChoice === computerChoice) {
@@ -38,7 +39,8 @@
 
                 setTimeout(() => {
                     // Simular la elección de la computadora después de un retraso
-                    const computerChoice = options[Math.floor(Math.random() * 3)];
+                    const randomIndex = Math.random() * 3;
+                    const computerChoice = options[Math.floor(randomIndex)];
 
                     let outcome;
                     if (userChoice === computerChoice) {
