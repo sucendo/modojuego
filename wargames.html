@@ -12,7 +12,7 @@
     <button id="scissors">Tijeras</button>
     <div id="timer">Tiempo restante: 60 segundos</div>
     <div id="result"></div>
-    <div id="score">Victorias: 0 | Derrotas: 0</div>
+    <div id="score">Victorias: 0 | Derrotas: 0 | Empates: 0</div>
     <div id="restart">
         <button id="restartButton" style="display: none;">Volver a Jugar</button>
     </div>
@@ -21,6 +21,7 @@
         const options = ["Piedra", "Papel", "Tijeras"];
         let victories = 0;
         let defeats = 0;
+        let draws = 0;
         let timer = 60;
         let gameEnded = false;
         let updateTimer;
@@ -29,12 +30,13 @@
             timer = 60;
             victories = 0;
             defeats = 0;
+            draws = 0;
             gameEnded = false;
             updateTimer = setInterval(updateCountdown, 1000);
 
             document.getElementById("timer").textContent = `Tiempo restante: ${timer} segundos`;
             document.getElementById("result").textContent = "";
-            document.getElementById("score").textContent = "Victorias: 0 | Derrotas: 0";
+            document.getElementById("score").textContent = "Victorias: 0 | Derrotas: 0 | Empates: 0";
 
             document.querySelectorAll("button").forEach((button) => {
                 button.disabled = false;
@@ -72,6 +74,7 @@
                 if (userChoice === computerChoice) {
                     outcome = "Empate. ¡La guerra continúa!";
                     document.getElementById("result").className = "draw";
+                    draws++;
                 } else if (
                     (userChoice === "rock" && computerChoice === "Tijeras") ||
                     (userChoice === "paper" && computerChoice === "Piedra") ||
@@ -87,7 +90,7 @@
                 }
 
                 document.getElementById("result").textContent = `Elegiste ${userChoice}, la computadora eligió ${computerChoice}. ${outcome}`;
-                document.getElementById("score").textContent = `Victorias: ${victories} | Derrotas: ${defeats}`;
+                document.getElementById("score").textContent = `Victorias: ${victories} | Derrotas: ${defeats} | Empates: ${draws}`;
 
                 if (timer === 0) {
                     gameEnded = true;
