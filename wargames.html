@@ -61,7 +61,12 @@
 
         iniciarJuego(); // Iniciar el juego al cargar la página
 
-        document.getElementById("reinicioButton").addEventListener("click", iniciarJuego);
+        document.getElementById("reinicioButton").addEventListener("click", () => {
+            if (!juegoTerminado) {
+                juegoTerminado = true;
+            }
+            iniciarJuego();
+        });
 
         document.querySelectorAll("button").forEach((button) => {
             button.addEventListener("click", (event) => {
