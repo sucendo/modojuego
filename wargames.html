@@ -23,10 +23,28 @@
         let defeats = 0;
         let timer = 60;
         let gameEnded = false;
+        let updateTimer;
 
-        document.getElementById("timer").textContent = `Tiempo restante: ${timer} segundos`;
+        function startGame() {
+            timer = 60;
+            victories = 0;
+            defeats = 0;
+            gameEnded = false;
+            updateTimer = setInterval(updateCountdown, 1000);
 
-        const updateTimer = setInterval(() => {
+            document.getElementById("timer").textContent = `Tiempo restante: ${timer} segundos`;
+            document.getElementById("result").textContent = "";
+            document.getElementById("score").textContent = "Victorias: 0 | Derrotas: 0";
+
+            document.querySelectorAll("button").forEach((button) => {
+                button.disabled = false;
+            });
+
+            const restartButton = document.getElementById("restartButton");
+            restartButton.style.display = "none";
+        }
+
+        function updateCountdown() {
             timer--;
             document.getElementById("timer").textContent = `Tiempo restante: ${timer} segundos`;
             if (timer === 0) {
@@ -36,31 +54,14 @@
                     button.disabled = true;
                 });
 
-                // Mostrar el botón "Volver a Jugar"
                 const restartButton = document.getElementById("restartButton");
                 restartButton.style.display = "block";
-
-                restartButton.addEventListener("click", () => {
-                    // Reiniciar el juego al hacer clic en "Volver a Jugar"
-                    timer = 60;
-                    victories = 0;
-                    defeats = 0;
-                    gameEnded = false;
-
-                    document.getElementById("timer").textContent = `Tiempo restante: ${timer} segundos`;
-                    document.getElementById("result").textContent = "";
-                    document.getElementById("score").textContent = "Victorias: 0 | Derrotas: 0";
-
-                    // Habilitar los botones nuevamente
-                    document.querySelectorAll("button").forEach((button) => {
-                        button.disabled = false;
-                    });
-
-                    // Ocultar el botón "Volver a Jugar"
-                    restartButton.style.display = "none";
-                });
             }
-        }, 1000);
+        }
+
+        startGame(); // Iniciar el juego al cargar la página
+
+        document.getElementById("restartButton").addEventListener("click", startGame);
 
         document.querySelectorAll("button").forEach((button) => {
             button.addEventListener("click", (event) => {
