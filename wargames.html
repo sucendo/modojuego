@@ -42,6 +42,23 @@
         let juegoTerminado = true; // Iniciar el juego como "terminado"
         let actualizarTemporizador;
 
+        // Array de mensajes de victoria y derrota
+        const mensajesVictoria = [
+            "¡Victoria! Has derrotado al enemigo.",
+            "¡Victoria! El enemigo se ha rendido.",
+            "¡Victoria! Tu estrategia fue impecable.",
+            "¡Victoria! El enemigo no tuvo oportunidad.",
+            "¡Victoria! Tu ejército es invencible."
+        ];
+
+        const mensajesDerrota = [
+            "¡Derrota! Tu capital ha sido atacado.",
+            "¡Derrota! El enemigo se alza victorioso.",
+            "¡Derrota! La guerra no ha terminado bien.",
+            "¡Derrota! Necesitas reevaluar tu estrategia.",
+            "¡Derrota! El enemigo era más poderoso."
+        ];
+
         function mostrarDialogoInicio() {
             const inicioDialog = document.getElementById("inicioDialog");
             inicioDialog.showModal();
@@ -93,7 +110,7 @@
 
                 let resultado;
                 if (eleccionUsuario === eleccionComputadora) {
-                    resultado = "Empate. ¡La guerra continúa!";
+                    resultado = "Empate. La batalla continúa.";
                     document.getElementById("resultado").className = "empate";
                     empates++;
                 } else if (
@@ -101,11 +118,11 @@
                     (eleccionUsuario === "papel" && eleccionComputadora === "piedra") ||
                     (eleccionUsuario === "tijeras" && eleccionComputadora === "papel")
                 ) {
-                    resultado = "¡Victoria! Has ganado la batalla.";
+                    resultado = mensajesVictoria[Math.floor(Math.random() * mensajesVictoria.length)];
                     document.getElementById("resultado").className = "victoria";
                     victorias++;
                 } else {
-                    resultado = "¡Derrota! El enemigo ha ganado.";
+                    resultado = mensajesDerrota[Math.floor(Math.random() * mensajesDerrota.length)];
                     document.getElementById("resultado").className = "derrota";
                     derrotas++;
                 }
