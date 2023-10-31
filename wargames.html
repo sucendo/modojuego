@@ -23,11 +23,8 @@
         </form>
     </dialog>
 
-    <dialog id="codigoDialog">
-        <div id="codigoUsuario"></div>
-    </dialog>
-
     <h1>Simulación de Guerra Nuclear</h1>
+    <div id="codigoUsuario"></div>
     <button id="iniciarJuegoButton" onclick="mostrarDialogoInicio()">Iniciar Juego</button>
     <p>Elige tu estrategia:</p>
     <button id="piedra">piedra</button>
@@ -138,19 +135,22 @@
         });
 
         function mostrarCodigo(codigo) {
-            const codigoDialog = document.getElementById("codigoDialog");
             const codigoUsuario = document.getElementById("codigoUsuario");
 
-            // Muestra el código del usuario letra por letra
-            for (let i = 0; i < codigo.length; i++) {
-                setTimeout(() => {
-                    codigoUsuario.textContent += codigo[i];
-                }, 1000 * i);
-            }
+            // Muestra inicialmente los primeros 8 caracteres del código
+            const codigoInicial = codigo.substring(0, 8);
+            codigoUsuario.textContent = codigoInicial;
 
-            setTimeout(() => {
-                codigoDialog.showModal();
-            }, 1000 * codigo.length);
+            // A medida que pasa el tiempo, se muestra el siguiente carácter
+            let index = 8;
+            const interval = setInterval(() => {
+                if (index < codigo.length) {
+                    codigoUsuario.textContent += codigo[index];
+                    index++;
+                } else {
+                    clearInterval(interval);
+                }
+            }, 1000);
         }
     </script>
 </body>
