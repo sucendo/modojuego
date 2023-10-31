@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simulación de Guerra Nuclear</title>
+</head>
+<body>
+    <h1>Simulación de Guerra Nuclear</h1>
+    <p>Elige tu estrategia:</p>
+    <button id="rock">Piedra</button>
+    <button id="paper">Papel</button>
+    <button id="scissors">Tijeras</button>
+    <div id="result"></div>
+
+    <script>
+        const options = ["Piedra", "Papel", "Tijeras"];
+
+        document.querySelectorAll("button").forEach((button) => {
+            button.addEventListener("click", (event) => {
+                const userChoice = event.target.id;
+                const computerChoice = options[Math.floor(Math.random() * 3)];
+
+                let outcome;
+                if (userChoice === computerChoice) {
+                    outcome = "Empate. ¡La guerra continúa!";
+                } else if (
+                    (userChoice === "Piedra" && computerChoice === "Tijeras") ||
+                    (userChoice === "Papel" && computerChoice === "Piedra") ||
+                    (userChoice === "Tijeras" && computerChoice === "Papel")
+                ) {
+                    outcome = "¡Victoria! Has ganado la batalla.";
+                } else {
+                    outcome = "¡Derrota! El enemigo ha ganado.";
+                }
+
+                document.getElementById("result").innerText = `Elegiste ${userChoice}, el ordenador eligió ${computerChoice}. ${outcome}`;
+            });
+        });
+    </script>
+</body>
+</html>
