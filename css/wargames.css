@@ -1,4 +1,4 @@
-/* wargames.css */
+/* Estilo para el juego de simulación de guerra nuclear */
 body {
     font-family: Arial, sans-serif;
     background-color: #222;
@@ -6,6 +6,7 @@ body {
     text-align: center;
     margin: 0;
     padding: 0;
+    position: relative;
 }
 
 h1 {
@@ -46,13 +47,18 @@ button:hover {
     color: yellow;
 }
 
-/* Estilo para centrar el botón "Volver a Jugar" */
-#restart {
-    text-align: center;
-    margin-top: 20px;
+#timer {
+    font-size: 24px;
+    color: #ff8800;
+    margin: 20px 0;
 }
 
-/* Estilo para el skyline SVG */
+#score {
+    font-size: 16px;
+    color: #fff;
+}
+
+/* Estilo para el skyline de la ciudad */
 #city-skyline {
     width: 100%;
     height: auto;
@@ -60,3 +66,8 @@ button:hover {
     bottom: 0;
 }
 
+/* Estilo para centrar el botón "Volver a Jugar" */
+#restart {
+    text-align: center;
+    margin-top: 20px;
+}
