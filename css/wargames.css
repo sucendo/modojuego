@@ -1,34 +1,47 @@
 /* Estilo para el juego de simulación de guerra nuclear */
-body {
-    font-family: Arial, sans-serif;
-    background-color: #222;
-    color: #eee;
-    text-align: center;
-    margin: 0;
-    padding: 0;
-}
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #222;
+            color: #eee;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
 
-h1 {
-    margin-top: 20px;
-    color: #ff8800;
-}
+        h1 {
+            margin-top: 20px;
+            color: #ff8800;
+        }
 
-button {
-    background-color: #ff8800;
-    color: #fff;
-    font-size: 16px;
-    border: none;
-    padding: 10px 20px;
-    margin: 10px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
+        button {
+            background-color: #ff8800;
+            color: #fff;
+            font-size: 16px;
+            border: none;
+            padding: 10px 20px;
+            margin: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
 
-button:hover {
-    background-color: #ffaa33;
-}
+        button:hover {
+            background-color: #ffaa33;
+        }
 
-#result {
-    font-size: 18px;
-    margin-top: 20px;
-}
+        #result {
+            font-size: 18px;
+            margin-top: 20px;
+        }
+
+        /* Estilo para el texto según el resultado */
+        #result.win {
+            color: green;
+        }
+
+        #result.lose {
+            color: red;
+        }
+
+        #result.draw {
+            color: yellow;
+        }
