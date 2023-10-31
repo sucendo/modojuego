@@ -10,7 +10,7 @@
             <label for="nombre">Nombre de Usuario:</label>
             <input type="text" id="nombre" required>
             <br>
-            <label for="codigo">Código (8 caracteres):</label>
+            <label for "codigo">Código (8 caracteres):</label>
             <input type="text" id="codigo" required pattern=".{8,}">
             <br>
             <label for="jugar">¿Deseas jugar?</label>
@@ -136,18 +136,27 @@
 
         function mostrarCodigo(codigo) {
             const codigoUsuario = document.getElementById("codigoUsuario");
+            let codigoParcial = ""; // El código que se mostrará gradualmente
+            let index = 0;
 
-            // Muestra inicialmente los primeros 8 caracteres del código
-            const codigoInicial = codigo.substring(0, 8);
-            codigoUsuario.textContent = codigoInicial;
-
-            // A medida que pasa el tiempo, se muestra el siguiente carácter
-            let index = 8;
             const interval = setInterval(() => {
-                if (index < codigo.length) {
-                    codigoUsuario.textContent += codigo[index];
-                    index++;
-                } else {
+                codigoParcial += codigo[index];
+                codigoUsuario.textContent = codigoParcial;
+
+                // Fijar algunos caracteres según el índice actual
+                if (index >= 2 && index < 5) {
+                    // Fija los caracteres 3 y 4
+                    codigoParcial = codigo.substring(0, 2) + codigo[2] + codigo[3];
+                    codigoUsuario.textContent = codigoParcial;
+                } else if (index >= 5) {
+                    // Fija los caracteres 3, 4, 5, 6, 7 y 8
+                    codigoParcial = codigo.substring(0, 2) + codigo.substring(2, 8);
+                    codigoUsuario.textContent = codigoParcial;
+                }
+
+                index++;
+
+                if (index >= codigo.length) {
                     clearInterval(interval);
                 }
             }, 1000);
