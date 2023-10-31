@@ -50,10 +50,8 @@
             if (timer === 0) {
                 clearInterval(updateTimer);
                 document.getElementById("timer").textContent = "¡Tiempo agotado!";
-                document.querySelectorAll("button").forEach((button) => {
-                    button.disabled = true;
-                });
 
+                // Habilitar el botón "Volver a Jugar"
                 const restartButton = document.getElementById("restartButton");
                 restartButton.style.display = "block";
             }
