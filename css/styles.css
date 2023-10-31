@@ -45,7 +45,14 @@ nav li {
     text-align: center;
 }
 
+/* Estilo para los enlaces */
 .grid-item a {
     text-decoration: none;
     color: #eee;
+    transition: color 0.3s; /* Transición de color al pasar el ratón */
+}
+
+/* Cambia el color al pasar el ratón por encima */
+.grid-item a:hover {
+    color: #ff8800; /* Color de enlace al pasar el ratón por encima */
 }
