@@ -138,23 +138,28 @@
             const codigoUsuario = document.getElementById("codigoUsuario");
             let codigoParcial = ""; // El código que se mostrará gradualmente
             let index = 0;
-            const interval = setInterval(() => {
-                codigoParcial += codigo[index];
-                codigoUsuario.textContent = codigoParcial;
+            let tiempoFijacion = 1000; // Tiempo inicial de fijación de cada dígito (1 segundo)
+            const tiempoTotal = 60000; // 60 segundos
+            const digitosFijados = new Set();
         
-                // Fijar algunos caracteres según el índice actual
-                if (index === 2) {
-                    codigoParcial = codigo.substring(0, 2) + codigo[2];
+            const interval = setInterval(() => {
+                if (index >= codigo.length) {
+                    clearInterval(interval);
+                    return;
+                }
+        
+                if (tiempoFijacion <= tiempoTotal) {
+                    codigoParcial += codigo[index];
                     codigoUsuario.textContent = codigoParcial;
-                } else if (index === 4) {
-                    codigoParcial = codigo.substring(0, 4) + codigo[4];
-                    codigoUsuario.textContent = codigoParcial;
-                } else if (index === 6) {
-                    codigoParcial = codigo.substring(0, 6) + codigo[6];
-                    codigoUsuario.textContent = codigoParcial;
-                } else if (index === 7) {
-                    codigoParcial = codigo.substring(0, 7) + codigo[7];
-                    codigoUsuario.textContent = codigoParcial;
+                    digitosFijados.add(index);
+        
+                    if (digitosFijados.size > 1) {
+                        // Ya se ha fijado al menos un dígito, pasemos al siguiente
+                        index++;
+                        tiempoFijacion = 1000;
+                    }
+                } else {
+                    tiempoFijacion += 500; // Aumentar el tiempo de fijación en 0.5 segundos
                 }
         
                 index++;
@@ -162,8 +167,9 @@
                 if (index >= codigo.length) {
                     clearInterval(interval);
                 }
-            }, 1000);
+            }, tiempoFijacion);
         }
+
 
     </script>
 </body>
