@@ -23,6 +23,10 @@
         </form>
     </dialog>
 
+    <dialog id="codigoDialog">
+        <div id="codigoUsuario"></div>
+    </dialog>
+
     <h1>Simulación de Guerra Nuclear</h1>
     <button id="iniciarJuegoButton" onclick="mostrarDialogoInicio()">Iniciar Juego</button>
     <p>Elige tu estrategia:</p>
@@ -70,6 +74,7 @@
             const jugar = document.getElementById("jugar").value;
 
             if (jugar === "si") {
+                mostrarCodigo(codigo);
                 iniciarJuego();
             }
         });
@@ -131,6 +136,22 @@
                 document.getElementById("puntuacion").textContent = `Victorias: ${victorias} | Derrotas: ${derrotas} | Empates: ${empates}`;
             });
         });
+
+        function mostrarCodigo(codigo) {
+            const codigoDialog = document.getElementById("codigoDialog");
+            const codigoUsuario = document.getElementById("codigoUsuario");
+
+            // Muestra el código del usuario letra por letra
+            for (let i = 0; i < codigo.length; i++) {
+                setTimeout(() => {
+                    codigoUsuario.textContent += codigo[i];
+                }, 1000 * i);
+            }
+
+            setTimeout(() => {
+                codigoDialog.showModal();
+            }, 1000 * codigo.length);
+        }
     </script>
 </body>
 </html>
