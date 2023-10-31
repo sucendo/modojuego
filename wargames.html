@@ -136,24 +136,35 @@
 
         function mostrarCodigo(codigo) {
             const codigoUsuario = document.getElementById("codigoUsuario");
-            const tiempoMostrarCodigo = 60 * 1000; // 60 segundos en milisegundos
-            const tiempoMedioSegundo = 500; // 0.5 segundos en milisegundos
-            let tiempoTranscurrido = 0;
+            let codigoParcial = ""; // El código que se mostrará gradualmente
             let index = 0;
-        
             const interval = setInterval(() => {
-                if (tiempoTranscurrido < tiempoMostrarCodigo) {
-                    // Muestra el siguiente carácter del código
-                    codigoUsuario.textContent += codigo[index];
-                    index++;
-                } else {
-                    // Se ha alcanzado el tiempo de fijación, detenemos el intervalo
-                    clearInterval(interval);
+                codigoParcial += codigo[index];
+                codigoUsuario.textContent = codigoParcial;
+        
+                // Fijar algunos caracteres según el índice actual
+                if (index === 2) {
+                    codigoParcial = codigo.substring(0, 2) + codigo[2];
+                    codigoUsuario.textContent = codigoParcial;
+                } else if (index === 4) {
+                    codigoParcial = codigo.substring(0, 4) + codigo[4];
+                    codigoUsuario.textContent = codigoParcial;
+                } else if (index === 6) {
+                    codigoParcial = codigo.substring(0, 6) + codigo[6];
+                    codigoUsuario.textContent = codigoParcial;
+                } else if (index === 7) {
+                    codigoParcial = codigo.substring(0, 7) + codigo[7];
+                    codigoUsuario.textContent = codigoParcial;
                 }
         
-                tiempoTranscurrido += tiempoMedioSegundo;
-            }, tiempoMedioSegundo);
+                index++;
+        
+                if (index >= codigo.length) {
+                    clearInterval(interval);
+                }
+            }, 1000);
         }
+
     </script>
 </body>
 </html>
