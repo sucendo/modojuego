@@ -139,32 +139,26 @@
             const codigoUsuario = document.getElementById("codigoUsuario");
             const tiempoTotal = 60000; // 60 segundos
             let tiempoTranscurrido = 0;
-            let codigoParcial = "";
+            let codigoActual = Array(codigo.length).fill('_');
             let index = 0;
         
             const interval = setInterval(() => {
-                if (index >= codigo.length) {
+                if (tiempoTranscurrido >= tiempoTotal) {
                     clearInterval(interval);
+                    codigoUsuario.textContent = codigo; // Mostrar el código completo al finalizar el tiempo
                     return;
                 }
         
-                tiempoTranscurrido += 500; // Incrementa el tiempo transcurrido en 500ms
+                // Simular la búsqueda constante de caracteres
+                const caracterAleatorio = String.fromCharCode(65 + Math.floor(Math.random() * 26)); // Caracter aleatorio de la A a la Z
+                codigoActual[index] = caracterAleatorio;
+                codigoUsuario.textContent = codigoActual.join('');
+                tiempoTranscurrido += 1000; // Incrementar el tiempo transcurrido en 1 segundo
         
-                if (tiempoTranscurrido >= tiempoTotal) {
-                    // Se ha agotado el tiempo, se muestra el código completo
-                    codigoParcial = codigo;
-                    codigoUsuario.textContent = codigoParcial;
-                    index = codigo.length;
-                } else {
-                    // Se simula la búsqueda del código
-                    const caracterAleatorio = String.fromCharCode(65 + Math.floor(Math.random() * 26)); // Caracter aleatorio de la A a la Z
-                    codigoParcial += caracterAleatorio;
-                    codigoUsuario.textContent = codigoParcial;
-                    index++;
-                }
-            }, 500); // Mostrar cada 500ms
+                index = (index + 1) % codigo.length; // Avanzar al siguiente carácter
+            }, 1000); // Mostrar cada 1 segundo
         }
-
+        
     </script>
 </body>
 </html>
