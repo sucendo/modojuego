@@ -11,50 +11,63 @@
     <button id="paper">Papel</button>
     <button id="scissors">Tijeras</button>
     <div id="result"></div>
+    <div id="timer">Tiempo restante: 60 segundos</div>
+    <div id="score">Puntuación: Victoria - 0 | Derrota - 0</div>
 
     <script>
         const options = ["Piedra", "Papel", "Tijeras"];
+        let victories = 0;
+        let defeats = 0;
+        let countdown = 60; // 60 segundos
+
+        const timerElement = document.getElementById("timer");
+        const scoreElement = document.getElementById("score");
+
+        // Función para actualizar el temporizador
+        function updateTimer() {
+            countdown--;
+            timerElement.textContent = `Tiempo restante: ${countdown} segundos`;
+            if (countdown === 0) {
+                endGame();
+            }
+        }
+
+        // Función para finalizar el juego
+        function endGame() {
+            document.querySelectorAll("button").forEach((button) => {
+                button.disabled = true;
+            });
+            timerElement.textContent = "¡Juego terminado!";
+        }
+
+        setInterval(updateTimer, 1000);
 
         document.querySelectorAll("button").forEach((button) => {
             button.addEventListener("click", (event) => {
-                const userChoice = event.target.id;
-                const computerChoice = options[Math.floor(Math.random() * 3)];
-
-                let outcome;
-                if (userChoice === computerChoice) {
-                    outcome = "Empate. ¡La guerra continúa!";
-                    document.getElementById("result").className = "draw";
-                } else if (
-                    (userChoice === "rock" && computerChoice === "tijeras") ||
-                    (userChoice === "paper" && computerChoice === "piedra") ||
-                    (userChoice === "scissors" && computerChoice === "papel")
-                ) {
-                    outcome = "¡Victoria! Has ganado la batalla.";
-                    document.getElementById("result").className = "win";
-                } else {
-                    outcome = "¡Derrota! El enemigo ha ganado.";
-                    document.getElementById("result").className = "lose";
-                }
-
-                setTimeout(() => {
-                    // Simular la elección de la computadora después de un retraso
+                if (countdown > 0) {
+                    const userChoice = event.target.id;
                     const computerChoice = options[Math.floor(Math.random() * 3)];
 
-                    // Reglas adicionales (ejemplo)
-                    if (userChoice === "rock" && computerChoice === "tijeras") {
-                        outcome = "¡Victoria! Has destruido una ciudad enemiga.";
-                    } else if (userChoice === "paper" && computerChoice === "piedra") {
-                        outcome = "¡Victoria! Tu estrategia ha funcionado.";
-                    } else if (userChoice === "scissors" && computerChoice === "papel") {
-                        outcome = "¡Victoria! Has tomado el control de una región.";
-                    } else if (userChoice === computerChoice) {
+                    let outcome;
+                    if (userChoice === computerChoice) {
                         outcome = "Empate. ¡La guerra continúa!";
+                    } else if (
+                        (userChoice === "rock" && computerChoice === "tijeras") ||
+                        (userChoice === "paper" && computerChoice === "piedra") ||
+                        (userChoice === "scissors" && computerChoice === "papel")
+                    ) {
+                        outcome = "¡Victoria! Has ganado la batalla.";
+                        victories++;
                     } else {
-                        outcome = "¡Derrota! El enemigo ha contraatacado.";
+                        outcome = "¡Derrota! El enemigo ha ganado.";
+                        defeats++;
                     }
 
+                    // Actualizar la puntuación
+                    scoreElement.textContent = `Puntuación: Victoria - ${victories} | Derrota - ${defeats}`;
+
                     document.getElementById("result").innerText = `Elegiste ${userChoice}, la computadora eligió ${computerChoice}. ${outcome}`;
-                }, 1000); // Se simula la elección de la computadora después de un segundo
+                }
             });
         });
     </script>
