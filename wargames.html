@@ -135,34 +135,30 @@
             });
         });
 
-        async function mostrarCodigo(codigo) {
+        function mostrarCodigo(codigo) {
             const codigoUsuario = document.getElementById("codigoUsuario");
             const tiempoTotal = 60000; // 60 segundos
             let tiempoTranscurrido = 0;
             let codigoActual = Array(codigo.length).fill('');
-            let promesas = codigo.split('').map(generarPromesa);
+            let indices = Array.from({ length: codigo.length }, (_, i) => i);
         
-            async function generarPromesa(caracterCorrecto) {
-                return new Promise((resolve) => {
-                    const interval = setInterval(() => {
-                        if (codigoActual[index] === caracterCorrecto) {
-                            clearInterval(interval);
-                            resolve();
-                        } else {
-                            codigoActual[index] = generarCaracterAleatorio(); // Generar un carácter aleatorio
-                            codigoUsuario.textContent = codigoActual.join('');
-                        }
-                    }, 250); // Mostrar cada cuarto de segundo
+            const interval = setInterval(() => {
+                if (tiempoTranscurrido >= tiempoTotal) {
+                    clearInterval(interval);
+                    codigoUsuario.textContent = codigo; // Mostrar el código completo al finalizar el tiempo
+                    return;
+                }
+        
+                // Verificar y actualizar todas las posiciones al mismo tiempo
+                indices.forEach((index) => {
+                    if (codigoActual[index] !== codigo[index]) {
+                        codigoActual[index] = generarCaracterAleatorio(); // Si no coincide, generar un carácter aleatorio
+                    }
                 });
-            }
         
-            while (tiempoTranscurrido < tiempoTotal) {
-                const index = tiempoTranscurrido / 250;
-                await promesas[index];
-                tiempoTranscurrido += 250;
-            }
-        
-            codigoUsuario.textContent = codigo; // Mostrar el código completo al finalizar el tiempo
+                codigoUsuario.textContent = codigoActual.join('');
+                tiempoTranscurrido += 250; // Incrementar el tiempo transcurrido en 250ms
+            }, 250); // Mostrar cada cuarto de segundo
         
             function generarCaracterAleatorio() {
                 const caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -170,7 +166,6 @@
                 return caracterAleatorio;
             }
         }
-
 
     </script>
 </body>
