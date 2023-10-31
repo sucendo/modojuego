@@ -136,30 +136,23 @@
 
         function mostrarCodigo(codigo) {
             const codigoUsuario = document.getElementById("codigoUsuario");
-            let codigoParcial = ""; // El código que se mostrará gradualmente
+            const tiempoMostrarCodigo = 60 * 1000; // 60 segundos en milisegundos
+            const tiempoMedioSegundo = 500; // 0.5 segundos en milisegundos
+            let tiempoTranscurrido = 0;
             let index = 0;
-
+        
             const interval = setInterval(() => {
-                codigoParcial += codigo[index];
-                codigoUsuario.textContent = codigoParcial;
-
-                // Fijar algunos caracteres según el índice actual
-                if (index >= 2 && index < 5) {
-                    // Fija los caracteres 3 y 4
-                    codigoParcial = codigo.substring(0, 2) + codigo[2] + codigo[3];
-                    codigoUsuario.textContent = codigoParcial;
-                } else if (index >= 5) {
-                    // Fija los caracteres 3, 4, 5, 6, 7 y 8
-                    codigoParcial = codigo.substring(0, 2) + codigo.substring(2, 8);
-                    codigoUsuario.textContent = codigoParcial;
-                }
-
-                index++;
-
-                if (index >= codigo.length) {
+                if (tiempoTranscurrido < tiempoMostrarCodigo) {
+                    // Muestra el siguiente carácter del código
+                    codigoUsuario.textContent += codigo[index];
+                    index++;
+                } else {
+                    // Se ha alcanzado el tiempo de fijación, detenemos el intervalo
                     clearInterval(interval);
                 }
-            }, 1000);
+        
+                tiempoTranscurrido += tiempoMedioSegundo;
+            }, tiempoMedioSegundo);
         }
     </script>
 </body>
