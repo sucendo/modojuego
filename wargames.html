@@ -138,6 +138,7 @@
        function mostrarCodigo(codigo) {
             const codigoUsuario = document.getElementById("codigoUsuario");
             const tiempoTotal = 60000; // 60 segundos
+            const tiempoInicioBusqueda = 30000; // 30 segundos
             let tiempoTranscurrido = 0;
             let codigoActual = Array(codigo.length).fill('');
             let indices = Array.from({ length: codigo.length }, (_, i) => i);
@@ -152,9 +153,11 @@
         
                 // Verificar y actualizar todas las posiciones al mismo tiempo
                 indices.forEach((index) => {
-                    if (tiempoTranscurrido >= tiempoTotal - 1000) {
-                        // Cuando quede 1 segundo, mostrar el carácter correspondiente
-                        codigoActual[index] = codigo[index];
+                    if (tiempoTranscurrido >= tiempoInicioBusqueda) {
+                        // Cuando queden 30 segundos, mostrar el carácter correspondiente
+                        if (codigoActual[index] !== codigo[index]) {
+                            codigoActual[index] = codigo[index];
+                        }
                     } else {
                         if (codigoActual[index] !== codigo[index]) {
                             codigoActual[index] = generarCaracterAleatorio(); // Si no coincide, generar un carácter aleatorio
@@ -167,13 +170,11 @@
             }, 100); // Mostrar cada 100ms
         
             function generarCaracterAleatorio() {
-                const caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~¡¢£¤¥¦¨©ª«¬®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ";
+                const caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
                 const caracterAleatorio = caracteres.charAt(Math.floor(Math.random() * caracteres.length));
                 return caracterAleatorio;
             }
         }
-
-
 
     </script>
 </body>
