@@ -149,12 +149,19 @@
                     return;
                 }
         
-                // Simular la búsqueda constante de caracteres
-                const caracterAleatorio = generarCaracterAleatorio();
-                codigoActual = codigoActual.map(() => caracterAleatorio);
+                // Simular la búsqueda constante de caracteres en cada posición
+                codigoActual = codigoActual.map((caracter, i) => {
+                    if (i === index) {
+                        return generarCaracterAleatorio();
+                    } else {
+                        return caracter;
+                    }
+                });
+        
                 codigoUsuario.textContent = codigoActual.join('');
-                tiempoTranscurrido += 1000; // Incrementar el tiempo transcurrido en 1 segundo
-            }, 1000); // Mostrar cada 1 segundo
+                tiempoTranscurrido += 500; // Incrementar el tiempo transcurrido en 500ms
+                index = (index + 1) % codigo.length; // Cambiar de posición
+            }, 500); // Mostrar cada medio segundo
         
             function generarCaracterAleatorio() {
                 const caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -162,6 +169,7 @@
                 return caracterAleatorio;
             }
         }
+
         
     </script>
 </body>
