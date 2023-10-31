@@ -149,14 +149,14 @@
                 }
         
                 if (tiempoFijacion <= tiempoTotal) {
-                    codigoParcial += codigo[index];
-                    codigoUsuario.textContent = codigoParcial;
-                    digitosFijados.add(index);
-        
-                    if (digitosFijados.size > 1) {
+                    if (digitosFijados.size > 0) {
                         // Ya se ha fijado al menos un dígito, pasemos al siguiente
                         index++;
                         tiempoFijacion = 1000;
+                    } else {
+                        const caracterAleatorio = String.fromCharCode(65 + Math.floor(Math.random() * 26)); // Caracter aleatorio de la A a la Z
+                        codigoParcial += caracterAleatorio;
+                        codigoUsuario.textContent = codigoParcial;
                     }
                 } else {
                     tiempoFijacion += 500; // Aumentar el tiempo de fijación en 0.5 segundos
@@ -169,7 +169,6 @@
                 }
             }, tiempoFijacion);
         }
-
 
     </script>
 </body>
