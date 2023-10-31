@@ -5,7 +5,26 @@
     <link rel="stylesheet" type="text/css" href="css/wargames.css">
 </head>
 <body>
+    <dialog id="inicioDialog">
+        <form method="dialog">
+            <label for="nombre">Nombre de Usuario:</label>
+            <input type="text" id="nombre" required>
+            <br>
+            <label for="codigo">Código (8 caracteres):</label>
+            <input type="text" id="codigo" required pattern=".{8,}">
+            <br>
+            <label for="jugar">¿Deseas jugar?</label>
+            <select id="jugar" required>
+                <option value="si">Sí</option>
+                <option value="no">No</option>
+            </select>
+            <br>
+            <button value="default" type="submit">Comenzar</button>
+        </form>
+    </dialog>
+
     <h1>Simulación de Guerra Nuclear</h1>
+    <button id="iniciarJuegoButton">Iniciar Juego</button>
     <p>Elige tu estrategia:</p>
     <button id="piedra">piedra</button>
     <button id="papel">papel</button>
@@ -25,6 +44,23 @@
         let temporizador = 60;
         let juegoTerminado = false;
         let actualizarTemporizador;
+
+        function mostrarDialogoInicio() {
+            const inicioDialog = document.getElementById("inicioDialog");
+            inicioDialog.showModal();
+        }
+
+        document.getElementById("iniciarJuegoButton").addEventListener("click", mostrarDialogoInicio);
+
+        document.getElementById("inicioDialog").addEventListener("close", function () {
+            const nombreUsuario = document.getElementById("nombre").value;
+            const codigo = document.getElementById("codigo").value;
+            const jugar = document.getElementById("jugar").value;
+
+            if (jugar === "si") {
+                iniciarJuego();
+            }
+        });
 
         function iniciarJuego() {
             temporizador = 60;
@@ -58,50 +94,6 @@
                 reinicioButton.style.display = "block";
             }
         }
-
-        iniciarJuego(); // Iniciar el juego al cargar la página
-
-        document.getElementById("reinicioButton").addEventListener("click", () => {
-            if (!juegoTerminado) {
-                juegoTerminado = true;
-            }
-            iniciarJuego();
-        });
-
-        document.querySelectorAll("button").forEach((button) => {
-            button.addEventListener("click", (event) => {
-                if (juegoTerminado) return;
-
-                const eleccionUsuario = event.target.id;
-                const eleccionComputadora = opciones[Math.floor(Math.random() * 3)];
-
-                let resultado;
-                if (eleccionUsuario === eleccionComputadora) {
-                    resultado = "Empate. ¡La guerra continúa!";
-                    document.getElementById("resultado").className = "empate";
-                    empates++;
-                } else if (
-                    (eleccionUsuario === "piedra" && eleccionComputadora === "tijeras") ||
-                    (eleccionUsuario === "papel" && eleccionComputadora === "piedra") ||
-                    (eleccionUsuario === "tijeras" && eleccionComputadora === "papel")
-                ) {
-                    resultado = "¡Victoria! Has ganado la batalla.";
-                    document.getElementById("resultado").className = "victoria";
-                    victorias++;
-                } else {
-                    resultado = "¡Derrota! El enemigo ha ganado.";
-                    document.getElementById("resultado").className = "derrota";
-                    derrotas++;
-                }
-
-                document.getElementById("resultado").textContent = `Elegiste ${eleccionUsuario}, la computadora eligió ${eleccionComputadora}. ${resultado}`;
-                document.getElementById("puntuacion").textContent = `Victorias: ${victorias} | Derrotas: ${derrotas} | Empates: ${empates}`;
-
-                if (temporizador === 0) {
-                    juegoTerminado = true;
-                }
-            });
-        });
     </script>
 </body>
 </html>
