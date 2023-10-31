@@ -50,7 +50,16 @@
                     ) {
                         outcome = "¡Victoria! Has ganado la batalla.";
                     } else {
-                        outcome = "¡Derrota! El enemigo ha ganado.";
+                        outcome = "¡Derrota! El enemigo ha contraatacado.";
+                    }
+
+                    // Reglas adicionales (ejemplo)
+                    if (userChoice === "rock" && computerChoice === "tijeras") {
+                        outcome = "¡Victoria! Has destruido una ciudad enemiga.";
+                    } else if (userChoice === "paper" && computerChoice === "piedra") {
+                        outcome = "¡Victoria! Tu estrategia ha funcionado.";
+                    } else if (userChoice === "scissors" && computerChoice === "papel") {
+                        outcome = "¡Victoria! Has tomado el control de una región.";
                     }
 
                     document.getElementById("result").innerText = `Elegiste ${userChoice}, la computadora eligió ${computerChoice}. ${outcome}`;
