@@ -27,6 +27,18 @@ nav li {
     margin: 0 20px;
 }
 
+/* Estilo para los enlaces del menú superior */
+nav li a {
+    text-decoration: none;
+    color: #eee;
+    transition: color 0.3s; /* Transición de color al pasar el ratón */
+}
+
+/* Cambia el color al pasar el ratón por encima de los enlaces del menú superior */
+nav li a:hover {
+    color: #ff8800; /* Color de enlace al pasar el ratón por encima */
+}
+
 .container {
     width: 80%;
     margin: 0 auto;
@@ -45,14 +57,14 @@ nav li {
     text-align: center;
 }
 
-/* Estilo para los enlaces */
+/* Estilo para los enlaces de la grilla */
 .grid-item a {
     text-decoration: none;
     color: #eee;
     transition: color 0.3s; /* Transición de color al pasar el ratón */
 }
 
-/* Cambia el color al pasar el ratón por encima */
+/* Cambia el color al pasar el ratón por encima de los enlaces de la grilla */
 .grid-item a:hover {
     color: #ff8800; /* Color de enlace al pasar el ratón por encima */
 }
