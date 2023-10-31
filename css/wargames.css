@@ -78,3 +78,35 @@ button:hover {
     font-weight: bold; /* Texto en negrita */
     letter-spacing: 4px; /* Espaciado entre los dígitos */
 }
+
+/* Estilos para dispositivos móviles */
+@media (max-width: 767px) {
+    h1 {
+        font-size: 24px; /* Reducir el tamaño del título en dispositivos móviles */
+    }
+
+    button {
+        font-size: 14px; /* Reducir el tamaño de los botones en dispositivos móviles */
+    }
+
+    #temporizador {
+        font-size: 20px; /* Reducir el tamaño del temporizador en dispositivos móviles */
+    }
+
+    #resultado {
+        font-size: 16px; /* Reducir el tamaño del resultado en dispositivos móviles */
+    }
+
+    #puntuacion {
+        font-size: 14px; /* Reducir el tamaño de la puntuación en dispositivos móviles */
+    }
+
+    #reinicioButton {
+        font-size: 14px; /* Reducir el tamaño del botón de reinicio en dispositivos móviles */
+    }
+
+    #codigoUsuario {
+        font-size: 28px; /* Reducir el tamaño de los dígitos en dispositivos móviles */
+        letter-spacing: 2px; /* Reducir el espaciado entre los dígitos en dispositivos móviles */
+    }
+}
