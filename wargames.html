@@ -150,18 +150,10 @@
                 }
         
                 // Simular la búsqueda constante de caracteres en cada posición
-                codigoActual = codigoActual.map((caracter, i) => {
-                    if (i === index) {
-                        return generarCaracterAleatorio();
-                    } else {
-                        return caracter;
-                    }
-                });
-        
+                codigoActual = codigoActual.map(() => generarCaracterAleatorio());
                 codigoUsuario.textContent = codigoActual.join('');
-                tiempoTranscurrido += 500; // Incrementar el tiempo transcurrido en 500ms
-                index = (index + 1) % codigo.length; // Cambiar de posición
-            }, 500); // Mostrar cada medio segundo
+                tiempoTranscurrido += 250; // Incrementar el tiempo transcurrido en 250ms
+            }, 250); // Mostrar cada cuarto de segundo
         
             function generarCaracterAleatorio() {
                 const caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -169,7 +161,6 @@
                 return caracterAleatorio;
             }
         }
-
         
     </script>
 </body>
