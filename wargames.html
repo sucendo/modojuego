@@ -135,36 +135,37 @@
             });
         });
 
-        function mostrarCodigo(codigoUsuario) {
-            const codigoUsuarioElement = document.getElementById("codigoUsuario");
+        function mostrarCodigo(codigo) {
+            const codigoUsuario = document.getElementById("codigoUsuario");
             const tiempoTotal = 60000; // 60 segundos
             let tiempoTranscurrido = 0;
-            let codigoGenerado = "";
-            let codigoUsuarioCompleto = codigoUsuario;
+            let codigoActual = Array(codigo.length).fill('');
             let index = 0;
         
             const interval = setInterval(() => {
                 if (tiempoTranscurrido >= tiempoTotal) {
                     clearInterval(interval);
+                    codigoUsuario.textContent = codigo; // Mostrar el código completo al finalizar el tiempo
                     return;
                 }
         
+                // Verificar si el carácter actual coincide con el del código
+                if (codigoActual[index] !== codigo[index]) {
+                    codigoActual[index] = generarCaracterAleatorio(); // Si no coincide, generar un carácter aleatorio
+                }
+        
+                codigoUsuario.textContent = codigoActual.join('');
                 tiempoTranscurrido += 250; // Incrementar el tiempo transcurrido en 250ms
+                index = (index + 1) % codigo.length; // Cambiar de posición
+            }, 250); // Mostrar cada cuarto de segundo
         
-                if (codigoUsuario[index] !== codigoGenerado) {
-                    codigoGenerado = codigoUsuario[index];
-                }
-        
-                codigoUsuarioCompleto = codigoUsuarioCompleto.substr(0, index) + codigoGenerado;
-                codigoUsuarioElement.textContent = codigoUsuarioCompleto;
-        
-                index++;
-        
-                if (index === codigoUsuario.length) {
-                    index = 0; // Reiniciar cuando se alcanza el final del código
-                }
-            }, 250);
+            function generarCaracterAleatorio() {
+                const caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+                const caracterAleatorio = caracteres.charAt(Math.floor(Math.random() * caracteres.length));
+                return caracterAleatorio;
+            }
         }
+
     </script>
 </body>
 </html>
