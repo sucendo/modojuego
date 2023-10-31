@@ -10,7 +10,7 @@
             <label for="nombre">Nombre de Usuario:</label>
             <input type="text" id="nombre" required>
             <br>
-            <label for="codigo">Código (8 caracteres):</label>
+            <label for "codigo">Código (8 caracteres):</label>
             <input type="text" id="codigo" required pattern=".{8,}">
             <br>
             <label for="jugar">¿Deseas jugar?</label>
@@ -94,6 +94,41 @@
                 reinicioButton.style.display = "block";
             }
         }
+
+        document.querySelectorAll("button").forEach((button) => {
+            button.addEventListener("click", (event) => {
+                if (juegoTerminado) return;
+
+                const eleccionUsuario = event.target.id;
+                const eleccionComputadora = opciones[Math.floor(Math.random() * 3)];
+
+                let resultado;
+                if (eleccionUsuario === eleccionComputadora) {
+                    resultado = "Empate. ¡La guerra continúa!";
+                    document.getElementById("resultado").className = "empate";
+                    empates++;
+                } else if (
+                    (eleccionUsuario === "piedra" && eleccionComputadora === "tijeras") ||
+                    (eleccionUsuario === "papel" && eleccionComputadora === "piedra") ||
+                    (eleccionUsuario === "tijeras" && eleccionComputadora === "papel")
+                ) {
+                    resultado = "¡Victoria! Has ganado la batalla.";
+                    document.getElementById("resultado").className = "victoria";
+                    victorias++;
+                } else {
+                    resultado = "¡Derrota! El enemigo ha ganado.";
+                    document.getElementById("resultado").className = "derrota";
+                    derrotas++;
+                }
+
+                document.getElementById("resultado").textContent = `Elegiste ${eleccionUsuario}, la computadora eligió ${eleccionComputadora}. ${resultado}`;
+                document.getElementById("puntuacion").textContent = `Victorias: ${victorias} | Derrotas: ${derrotas} | Empates: ${empates}`;
+
+                if (temporizador === 0) {
+                    juegoTerminado = true;
+                }
+            });
+        });
     </script>
 </body>
 </html>
