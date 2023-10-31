@@ -45,8 +45,18 @@ button:hover {
 #result.draw {
     color: yellow;
 }
+
 /* Estilo para centrar el botón "Volver a Jugar" */
 #restart {
     text-align: center;
     margin-top: 20px;
 }
+
+/* Estilo para el skyline SVG */
+#city-skyline {
+    width: 100%;
+    height: auto;
+    position: absolute;
+    bottom: 0;
+}
+
