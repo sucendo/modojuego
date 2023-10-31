@@ -7,93 +7,93 @@
 <body>
     <h1>Simulación de Guerra Nuclear</h1>
     <p>Elige tu estrategia:</p>
-    <button id="rock">Piedra</button>
-    <button id="paper">Papel</button>
-    <button id="scissors">Tijeras</button>
-    <div id="timer">Tiempo restante: 60 segundos</div>
-    <div id="result"></div>
-    <div id="score">Victorias: 0 | Derrotas: 0 | Empates: 0</div>
-    <div id="restart">
-        <button id="restartButton" style="display: none;">Volver a Jugar</button>
+    <button id="piedra">piedra</button>
+    <button id="papel">papel</button>
+    <button id="tijeras">tijeras</button>
+    <div id="temporizador">Tiempo restante: 60 segundos</div>
+    <div id="resultado"></div>
+    <div id="puntuacion">Victorias: 0 | Derrotas: 0 | Empates: 0</div>
+    <div id="reinicio">
+        <button id="reinicioButton" style="display: none;">Volver a Jugar</button>
     </div>
 
     <script>
-        const options = ["Piedra", "Papel", "Tijeras"];
-        let victories = 0;
-        let defeats = 0;
-        let draws = 0;
-        let timer = 60;
-        let gameEnded = false;
-        let updateTimer;
+        const opciones = ["piedra", "papel", "tijeras"];
+        let victorias = 0;
+        let derrotas = 0;
+        let empates = 0;
+        let temporizador = 60;
+        let juegoTerminado = false;
+        let actualizarTemporizador;
 
-        function startGame() {
-            timer = 60;
-            victories = 0;
-            defeats = 0;
-            draws = 0;
-            gameEnded = false;
-            updateTimer = setInterval(updateCountdown, 1000);
+        function iniciarJuego() {
+            temporizador = 60;
+            victorias = 0;
+            derrotas = 0;
+            empates = 0;
+            juegoTerminado = false;
+            actualizarTemporizador = setInterval(actualizarCuentaAtras, 1000);
 
-            document.getElementById("timer").textContent = `Tiempo restante: ${timer} segundos`;
-            document.getElementById("result").textContent = "";
-            document.getElementById("score").textContent = "Victorias: 0 | Derrotas: 0 | Empates: 0";
+            document.getElementById("temporizador").textContent = `Tiempo restante: ${temporizador} segundos`;
+            document.getElementById("resultado").textContent = "";
+            document.getElementById("puntuacion").textContent = "Victorias: 0 | Derrotas: 0 | Empates: 0";
 
             document.querySelectorAll("button").forEach((button) => {
                 button.disabled = false;
             });
 
-            const restartButton = document.getElementById("restartButton");
-            restartButton.style.display = "none";
+            const reinicioButton = document.getElementById("reinicioButton");
+            reinicioButton.style.display = "none";
         }
 
-        function updateCountdown() {
-            timer--;
-            document.getElementById("timer").textContent = `Tiempo restante: ${timer} segundos`;
-            if (timer === 0) {
-                clearInterval(updateTimer);
-                document.getElementById("timer").textContent = "¡Tiempo agotado!";
+        function actualizarCuentaAtras() {
+            temporizador--;
+            document.getElementById("temporizador").textContent = `Tiempo restante: ${temporizador} segundos`;
+            if (temporizador === 0) {
+                clearInterval(actualizarTemporizador);
+                document.getElementById("temporizador").textContent = "¡Tiempo agotado!";
 
                 // Habilitar el botón "Volver a Jugar"
-                const restartButton = document.getElementById("restartButton");
-                restartButton.style.display = "block";
+                const reinicioButton = document.getElementById("reinicioButton");
+                reinicioButton.style.display = "block";
             }
         }
 
-        startGame(); // Iniciar el juego al cargar la página
+        iniciarJuego(); // Iniciar el juego al cargar la página
 
-        document.getElementById("restartButton").addEventListener("click", startGame);
+        document.getElementById("reinicioButton").addEventListener("click", iniciarJuego);
 
         document.querySelectorAll("button").forEach((button) => {
             button.addEventListener("click", (event) => {
-                if (gameEnded) return;
+                if (juegoTerminado) return;
 
-                const userChoice = event.target.id;
-                const computerChoice = options[Math.floor(Math.random() * 3)];
+                const eleccionUsuario = event.target.id;
+                const eleccionComputadora = opciones[Math.floor(Math.random() * 3)];
 
-                let outcome;
-                if (userChoice === computerChoice) {
-                    outcome = "Empate. ¡La guerra continúa!";
-                    document.getElementById("result").className = "draw";
-                    draws++;
+                let resultado;
+                if (eleccionUsuario === eleccionComputadora) {
+                    resultado = "Empate. ¡La guerra continúa!";
+                    document.getElementById("resultado").className = "empate";
+                    empates++;
                 } else if (
-                    (userChoice === "rock" && computerChoice === "Tijeras") ||
-                    (userChoice === "paper" && computerChoice === "Piedra") ||
-                    (userChoice === "scissors" && computerChoice === "Papel")
+                    (eleccionUsuario === "piedra" && eleccionComputadora === "tijeras") ||
+                    (eleccionUsuario === "papel" && eleccionComputadora === "piedra") ||
+                    (eleccionUsuario === "tijeras" && eleccionComputadora === "papel")
                 ) {
-                    outcome = "¡Victoria! Has ganado la batalla.";
-                    document.getElementById("result").className = "win";
-                    victories++;
+                    resultado = "¡Victoria! Has ganado la batalla.";
+                    document.getElementById("resultado").className = "victoria";
+                    victorias++;
                 } else {
-                    outcome = "¡Derrota! El enemigo ha ganado.";
-                    document.getElementById("result").className = "lose";
-                    defeats++;
+                    resultado = "¡Derrota! El enemigo ha ganado.";
+                    document.getElementById("resultado").className = "derrota";
+                    derrotas++;
                 }
 
-                document.getElementById("result").textContent = `Elegiste ${userChoice}, la computadora eligió ${computerChoice}. ${outcome}`;
-                document.getElementById("score").textContent = `Victorias: ${victories} | Derrotas: ${defeats} | Empates: ${draws}`;
+                document.getElementById("resultado").textContent = `Elegiste ${eleccionUsuario}, la computadora eligió ${eleccionComputadora}. ${resultado}`;
+                document.getElementById("puntuacion").textContent = `Victorias: ${victorias} | Derrotas: ${derrotas} | Empates: ${empates}`;
 
-                if (timer === 0) {
-                    gameEnded = true;
+                if (temporizador === 0) {
+                    juegoTerminado = true;
                 }
             });
         });
