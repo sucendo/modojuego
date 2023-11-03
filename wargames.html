@@ -32,8 +32,13 @@
     <div id="temporizador">Tiempo restante: 60 segundos</div>
     <div id="resultado"></div>
     <div id="puntuacion">Victorias: 0 | Derrotas: 0 | Empates: 0</div>
-    <p>Código de activación de los misiles nucleares:</p>
     <div id="codigoUsuario"></div>
+    <div id="defcon" style="display: none;">
+        DEFCON: <span id="defcon-level">5</span>
+    </div>
+    <div id="defcon-timer" style="display: none;">
+        Tiempo restante: <span id="defcon-countdown">10</span> segundos
+    </div>
 
     <script>
         const opciones = ["piedra", "papel", "tijeras"];
@@ -89,6 +94,9 @@
             document.getElementById("temporizador").textContent = `Tiempo restante: ${temporizador} segundos`;
             document.getElementById("resultado").textContent = "";
             document.getElementById("puntuacion").textContent = "Victorias: 0 | Derrotas: 0 | Empates: 0";
+
+            // Iniciar el temporizador DEFCON
+            iniciarDefconTimer();
         }
 
         function actualizarCuentaAtras() {
@@ -102,46 +110,13 @@
             }
         }
 
-        document.getElementById("iniciarJuegoButton").addEventListener("click", mostrarDialogoInicio);
-
-        document.querySelectorAll("button").forEach((button) => {
-            button.addEventListener("click", (event) => {
-                if (juegoTerminado) return;
-
-                const eleccionUsuario = event.target.id;
-                const eleccionComputadora = opciones[Math.floor(Math.random() * 3)];
-
-                let resultado;
-                if (eleccionUsuario === eleccionComputadora) {
-                    resultado = "Empate. La batalla continúa.";
-                    document.getElementById("resultado").className = "empate";
-                    empates++;
-                } else if (
-                    (eleccionUsuario === "piedra" && eleccionComputadora === "tijeras") ||
-                    (eleccionUsuario === "papel" && eleccionComputadora === "piedra") ||
-                    (eleccionUsuario === "tijeras" && eleccionComputadora === "papel")
-                ) {
-                    resultado = mensajesVictoria[Math.floor(Math.random() * mensajesVictoria.length)];
-                    document.getElementById("resultado").className = "victoria";
-                    victorias++;
-                } else {
-                    resultado = mensajesDerrota[Math.floor(Math.random() * mensajesDerrota.length)];
-                    document.getElementById("resultado").className = "derrota";
-                    derrotas++;
-                }
-
-                document.getElementById("resultado").textContent = `Elegiste ${eleccionUsuario}, la computadora eligió ${eleccionComputadora}. ${resultado}`;
-                document.getElementById("puntuacion").textContent = `Victorias: ${victorias} | Derrotas: ${derrotas} | Empates: ${empates}`;
-            });
-        });
-
-       function mostrarCodigo(codigo) {
+        function mostrarCodigo(codigo) {
             const codigoUsuario = document.getElementById("codigoUsuario");
             const tiempoTotal = 60000; // 60 segundos
             let tiempoTranscurrido = 0;
             let codigoActual = Array(codigo.length).fill('');
             let indices = Array.from({ length: codigo.length }, (_, i) => i);
-        
+
             const interval = setInterval(() => {
                 if (tiempoTranscurrido >= tiempoTotal) {
                     // Mostrar el código completo cuando el tiempo ha terminado
@@ -149,7 +124,7 @@
                     codigoUsuario.textContent = codigo;
                     return;
                 }
-        
+
                 // Verificar y actualizar todas las posiciones al mismo tiempo
                 indices.forEach((index) => {
                     if (tiempoTranscurrido >= tiempoTotal - 1000) {
@@ -161,11 +136,11 @@
                         }
                     }
                 });
-        
+
                 codigoUsuario.textContent = codigoActual.join('');
                 tiempoTranscurrido += 100; // Incrementar el tiempo transcurrido en 100ms
             }, 100); // Mostrar cada 100ms
-        
+
             function generarCaracterAleatorio() {
                 const caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~¡¢£¤¥¦¨©ª«¬®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ";
                 const caracterAleatorio = caracteres.charAt(Math.floor(Math.random() * caracteres.length));
@@ -173,6 +148,43 @@
             }
         }
 
+        let defconTimer;
+        let defconLevel = 5;
+
+        function iniciarDefconTimer() {
+            document.getElementById("defcon-level").textContent = defconLevel;
+            document.getElementById("defcon").style.display = "block";
+            document.getElementById("defcon-timer").style.display = "block";
+
+            defconTimer = setInterval(() => {
+                const countdown = document.getElementById("defcon-countdown");
+                const currentCountdown = parseInt(countdown.textContent);
+
+                if (currentCountdown <= 0) {
+                    clearInterval(defconTimer);
+                    document.getElementById("defcon").style.display = "none";
+                    document.getElementById("defcon-timer").style.display = "none";
+                    // Aquí puedes manejar la lógica de pérdida por inoperancia.
+                    // Puedes mostrar un mensaje de derrota y reiniciar el temporizador del juego principal.
+                    // Por ejemplo:
+                    mostrarMensajeDerrotaPorInoperancia();
+                } else {
+                    countdown.textContent = currentCountdown - 1;
+                }
+            }, 1000);
+        }
+
+        function mostrarMensajeDerrotaPorInoperancia() {
+            // Puedes personalizar el mensaje de derrota por inoperancia aquí
+            document.getElementById("resultado").textContent = "Derrota por inoperancia. ¡Debes elegir una estrategia!";
+            document.getElementById("resultado").className = "derrota";
+            derrotas++; // Incrementa el contador de derrotas
+            document.getElementById("puntuacion").textContent = `Victorias: ${victorias} | Derrotas: ${derrotas} | Empates: ${empates}`;
+
+            // Restablece el temporizador del juego principal
+            temporizador = 60;
+            actualizarTemporizador = setInterval(actualizarCuentaAtras, 1000);
+        }
     </script>
 </body>
 </html>
