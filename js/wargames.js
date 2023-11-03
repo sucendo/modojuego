@@ -2,13 +2,21 @@ document.addEventListener("DOMContentLoaded", function () {
     const pantalla = document.getElementById("pantalla");
     const computadora = document.getElementById("computadora");
     const usuario = document.getElementById("usuario");
-    const titulo = document.getElementById("titulo");
+
     const mensajesComputadora = [
         "Conectado con WOPR ............................",
         "Nombre de usuario",
         "contraseña (mínimo 8 caracteres)",
         "Hola ",
         "¿Jugamos a algún juego?"
+    ];
+
+    const respuestasComputadora = [
+        "", // Respuesta vacía después del primer mensaje
+        "¡Hola! Por supuesto, primero necesito tu nombre.",
+        "Ahora, por favor, ingresa una contraseña segura (mínimo 8 caracteres).",
+        "¡Hola! ¿En qué puedo ayudarte hoy?",
+        "Perfecto, ¿qué tipo de juego te gustaría jugar?"
     ];
 
     let mensajeActual = 0;
@@ -19,51 +27,46 @@ document.addEventListener("DOMContentLoaded", function () {
         if (mensajeActual < mensajesComputadora.length) {
             const mensaje = mensajesComputadora[mensajeActual];
             if (caracterActual < mensaje.length) {
-                usuario.innerHTML = ""; // Borra el contenido del usuario
                 computadora.textContent = mensaje.slice(0, caracterActual + 1);
                 caracterActual++;
                 escribiendo = true;
+                setTimeout(escribirMensaje, 100);
             } else {
-                // Solo avanzar al siguiente mensaje si no es el último
-                if (mensajeActual < mensajesComputadora.length - 1) {
+                if (respuestasComputadora[mensajeActual]) {
+                    usuario.textContent = respuestasComputadora[mensajeActual];
                     mensajeActual++;
-                    caracterActual = 0;
-                    escribiendo = false;
-                    setTimeout(escribirMensaje, 100); // Espera un breve tiempo antes de avanzar
+                } else if (mensajeActual === 2) {
+                    usuario.innerHTML = '<input type="password" id="codigoUsuario">';
+                    document.getElementById("codigoUsuario").addEventListener("keydown", function (event) {
+                        if (event.key === "Enter" && event.target.value.length >= 8) {
+                            mensajeActual++;
+                            caracterActual = 0;
+                            usuario.innerHTML = "";
+                            escribirMensaje();
+                        }
+                    });
+                } else if (mensajeActual === 3) {
+                    usuario.textContent = `Hola ${document.getElementById("nombreUsuario").value}`;
+                } else if (mensajeActual === 4) {
+                    usuario.innerHTML = '<button id="si">Sí</button><button id="no">No</button>';
                 }
-            }
-        }
-    }
-
-    function responder() {
-        if (mensajeActual < mensajesComputadora.length - 1) {
-            if (escribiendo) {
-                // Si la computadora todavía está escribiendo, muestra el mensaje completo
-                usuario.textContent = mensajesComputadora[mensajeActual];
-                computadora.textContent = "";
-                mensajeActual++;
                 caracterActual = 0;
                 escribiendo = false;
-                setTimeout(escribirMensaje, 100); // Espera un breve tiempo antes de avanzar
             }
-        } else {
-            // Mostrar opciones al final del último mensaje
-            usuario.innerHTML = '<button id="si">Sí</button><button id="no">No</button>';
         }
     }
 
-    // Inicia la conversación
     escribirMensaje();
 
-    // Agregar lógica para manejar las respuestas de los botones "Sí" y "No"
-    document.getElementById("si").addEventListener("click", responder);
+    document.getElementById("si").addEventListener("click", function () {
+        if (!escribiendo) {
+            // Lógica para responder "Sí" y continuar la conversación
+        }
+    });
 
-    document.getElementById("no").addEventListener("click", responder);
-
-    // Capturar el evento "Enter" en campos de entrada de texto
-    document.addEventListener("keydown", function (event) {
-        if (event.key === "Enter") {
-            responder();
+    document.getElementById("no").addEventListener("click", function () {
+        if (!escribiendo) {
+            // Lógica para responder "No" y continuar la conversación
         }
     });
 });
