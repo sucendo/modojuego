@@ -1,24 +1,20 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="css/wargames.css">
-    <script src="js/wargames.js"></script>
     <title>Simulación de Guerra Termonuclear</title>
+    <link rel="stylesheet" type="text/css" href="css/wargames.css">
 </head>
 <body>
     <div id="pantalla-negra">
+        <h1 id="titulo-juego" class="escondido">Simulación de Guerra Termonuclear</h1>
         <div id="contenedor-mensajes">
-            <h1 id="titulo-juego" class="escondido"></h1>
-            <div id="mensaje" class="escondido">
-                <p id="mensaje-texto"></p>
-            </div>
-            <div id="opciones-usuario" class="escondido">
-                <button id="boton-si">Sí</button>
-                <button id="boton-no">No</button>
+            <p id="mensaje-texto" class="escondido"></p>
+            <div id="opciones-usuario">
+                <button id="boton-si" class="escondido">Sí</button>
+                <button id="boton-no" class="escondido">No</button>
             </div>
         </div>
     </div>
+    <script src="js/wargames.js"></script>
 </body>
 </html>
