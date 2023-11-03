@@ -18,29 +18,27 @@ function mostrarTextoCaracterPorCaracter(texto, elemento, velocidad, callback) {
 
 // Cuando la página se carga
 window.addEventListener("load", function() {
-    // Después de 3 segundos, muestra la segunda pregunta
-    setTimeout(function() {
-        const mensajeTexto = document.getElementById("mensaje-texto");
-        mensajeTexto.textContent = ""; // Limpia cualquier contenido previo
-        mostrarTextoCaracterPorCaracter("¿Quieres jugar a la Simulación de Guerra Termonuclear?", mensajeTexto, 100, function() {
-            // Cuando se completa la segunda pregunta, muestra las opciones del usuario
-            document.getElementById("opciones-usuario").classList.remove("escondido");
+    // Mostrar "conectado con WOPR" al principio
+    const mensajeTexto = document.getElementById("mensaje-texto");
+    mensajeTexto.textContent = "";
+    mostrarTextoCaracterPorCaracter("Conectado con WOPR ............................", mensajeTexto, 100, function() {
+        // Después de la conexión, preguntar por el nombre del usuario
+        mostrarTextoCaracterPorCaracter("Por favor, ingresa tu nombre de usuario: ", mensajeTexto, 100, function() {
+            const entradaUsuario = document.createElement("input");
+            entradaUsuario.type = "text";
+            entradaUsuario.id = "nombre-usuario";
+            mensajeTexto.appendChild(entradaUsuario);
+            entradaUsuario.addEventListener("input", function() {
+                if (entradaUsuario.value.length >= 8) {
+                    // El usuario ha ingresado al menos 8 caracteres
+                    mensajeTexto.textContent = `Hola, ${entradaUsuario.value}. ¿Jugamos a algún juego?`;
+                    const opcionesUsuario = document.getElementById("opciones-usuario");
+                    opcionesUsuario.classList.remove("escondido");
+                }
+            });
         });
-    }, 3000);
-
-    // Cuando el usuario hace clic en "Sí"
-    document.getElementById("boton-si").addEventListener("click", function() {
-        // Muestra el h1 y el mensaje de "Esperando orden de ataque"
-        const tituloJuego = document.getElementById("titulo-juego");
-        tituloJuego.classList.remove("escondido");
-        tituloJuego.textContent = "Simulación de Guerra Termonuclear";
-        const mensajeTexto = document.getElementById("mensaje-texto");
-        mensajeTexto.textContent = "Esperando orden de ataque";
-        // También puedes iniciar tu juego aquí
-    });
-
-    // Cuando el usuario hace clic en "No"
-    document.getElementById("boton-no").addEventListener("click", function() {
-        // Puedes realizar alguna acción si el usuario no quiere jugar
     });
 });
+
+// Resto del código para manejar las respuestas del usuario (Sí/No) y las acciones del juego
+
