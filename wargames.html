@@ -5,24 +5,11 @@
     <link rel="stylesheet" type="text/css" href="css/wargames.css">
 </head>
 <body>
-    <div id="pantalla">
-        <h1 id="titulo" class="escondido">Simulación de Guerra Termonuclear</h1>
-        <div id="computadora">Conectado con WOPR ..................................</div>
-        <div id="usuario" class="escondido">
-            <div id="nombre-usuario" class="escondido">
-                Nombre de usuario: <input type="text" id="nombre-entrada">
-            </div>
-            <div id="codigo-usuario" class="escondido">
-                Contraseña (mínimo 8 caracteres): <input type="text" id="codigo-entrada">
-            </div>
-            <div id="pregunta-juego" class="escondido">
-                Hola <span id="nombre-usuario-respuesta"></span>. ¿Jugamos a algún juego?
-                <button id="si-button">Sí</button>
-                <button id="no-button">No</button>
-            </div>
-        </div>
+    <div id="chatbox">
+        <div id="chat"></div>
+        <input type="text" id="userInput" class="escondido">
+        <button id="enviar" class="escondido">Enviar</button>
     </div>
-    <button id="enviar">Enviar</button>
 
     <script src="js/wargames.js"></script>
 </body>
