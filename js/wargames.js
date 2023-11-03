@@ -1,38 +1,48 @@
-// wargames.js
+// Función para simular la escritura progresiva de un mensaje
+function escribirMensaje(mensaje, elemento, velocidad, callback) {
+    let i = 0;
+    const intervalo = setInterval(function() {
+        if (i < mensaje.length) {
+            elemento.innerHTML += mensaje.charAt(i);
+            i++;
+        } else {
+            clearInterval(intervalo);
+            if (callback) {
+                callback();
+            }
+        }
+    }, velocidad);
+}
+
 document.addEventListener("DOMContentLoaded", function() {
-    setTimeout(mostrarMensajeInicial, 3000);
-});
+    const tituloJuego = document.getElementById("titulo-juego");
+    const mensajeTexto = document.getElementById("mensaje-texto");
+    const botonSi = document.getElementById("boton-si");
+    const botonNo = document.getElementById("boton-no");
 
-function mostrarMensajeInicial() {
-    const mensaje = document.getElementById("mensaje");
-    mensaje.classList.remove("escondido");
-    // Iniciar la animación de escritura en el mensaje
-    mensaje.style.animation = "escribir 6s steps(30) forwards";
-
-    // Agregar evento para avanzar al siguiente mensaje
-    mensaje.addEventListener("animationend", mostrarSegundaPregunta);
-}
-
-function mostrarSegundaPregunta() {
-    const mensaje = document.getElementById("mensaje");
-    mensaje.style.animation = "none"; // Detener la animación de escritura
-    mensaje.textContent = "¿Jugamos a la simulación de guerra termonuclear?";
-    mensaje.style.animation = "escribir 6s steps(30) forwards";
-    
-    // Esperar a que el usuario haga clic en el mensaje
-    mensaje.addEventListener("click", mostrarTerceraPregunta);
-}
-
-function mostrarTerceraPregunta() {
-    const mensaje = document.getElementById("mensaje");
-    mensaje.style.animation = "none"; // Detener la animación de escritura
-    mensaje.textContent = "Esperando orden de ataque";
-    
-    // Esperar a que el usuario haga clic en el mensaje
-    mensaje.addEventListener("click", function() {
-        // Implementa la lógica para ingresar objetivos aquí
+    // Mostrar título y mensaje inicial
+    escribirMensaje("Simulación de Guerra Termonuclear", tituloJuego, 100, function() {
+        mensajeTexto.classList.remove("escondido");
+        escribirMensaje("¿Jugamos a algún juego?", mensajeTexto, 100, function() {
+            botonSi.classList.remove("escondido");
+            botonNo.classList.remove("escondido");
+        });
     });
-}
+
+    // Agregar eventos a los botones
+    botonSi.addEventListener("click", function() {
+        tituloJuego.classList.add("subrayado");
+        mensajeTexto.innerHTML = "Esperando orden de ataque...";
+        // Continuar con el juego
+        // ...
+    });
+
+    botonNo.addEventListener("click", function() {
+        mensajeTexto.innerHTML = "Fin del juego. ¡Hasta la próxima!";
+        // Finalizar el juego
+        // ...
+    });
+});
 
 // ---------------------------------
 
