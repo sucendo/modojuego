@@ -3,76 +3,62 @@ document.addEventListener("DOMContentLoaded", function () {
     const titulo = document.getElementById("titulo");
     const computadora = document.getElementById("computadora");
     const usuario = document.getElementById("usuario");
-    const nombreEntrada = document.getElementById("nombre-entrada");
-    const codigoEntrada = document.getElementById("codigo-entrada");
-    const preguntaJuego = document.getElementById("pregunta-juego");
-    const nombreUsuarioRespuesta = document.getElementById("nombre-usuario-respuesta");
-    const siButton = document.getElementById("si-button");
-    const noButton = document.getElementById("no-button");
+    const conversacion = document.getElementById("conversacion");
+    const mensajeEntrada = document.getElementById("mensaje");
+    const enviarButton = document.getElementById("enviar");
 
-    const mensajes = [
-        "Conectado con WOPR ............................",
-        "Nombre de usuario",
-        "Contraseña (mínimo 8 caracteres)",
-        "Hola ",
-        ". ¿Jugamos a algún juego?"
+    const preguntas = [
+        "¿Cuál es tu nombre?",
+        "Ingresa un código (mínimo 8 caracteres):",
+        "¿Estás listo para comenzar el juego?",
+        "Elige tu estrategia: piedra, papel o tijeras."
     ];
-    let mensajeActual = 0;
 
-    function mostrarMensaje() {
-        switch (mensajeActual) {
-            case 0:
-                setTimeout(() => {
-                    titulo.classList.remove("escondido");
-                    mensajeActual++;
-                    mostrarMensaje();
-                }, 3000);
-                break;
-            case 1:
-                setTimeout(() => {
-                    nombreEntrada.classList.remove("escondido");
-                    nombreEntrada.focus();
-                    mensajeActual++;
-                }, 3000);
-                break;
-            case 2:
-                setTimeout(() => {
-                    codigoEntrada.classList.remove("escondido");
-                    codigoEntrada.focus();
-                    mensajeActual++;
-                }, 3000);
-                break;
-            case 3:
-                setTimeout(() => {
-                    usuario.classList.remove("escondido");
-                    nombreUsuarioRespuesta.textContent = nombreEntrada.value;
-                    mensajeActual++;
-                    mostrarMensaje();
-                }, 3000);
-                break;
-            case 4:
-                setTimeout(() => {
-                    preguntaJuego.classList.remove("escondido");
-                    siButton.addEventListener("click", iniciarJuego);
-                    noButton.addEventListener("click", rechazarJuego);
-                }, 3000);
-                break;
+    let preguntaActual = 0;
+
+    function mostrarMensaje(mensaje, destino) {
+        const nuevoMensaje = document.createElement("div");
+        nuevoMensaje.textContent = mensaje;
+        destino.appendChild(nuevoMensaje);
+    }
+
+    function escribirTexto(texto, destino, velocidad, callback) {
+        let i = 0;
+        const intervalo = setInterval(function () {
+            if (i < texto.length) {
+                destino.textContent += texto[i];
+                i++;
+            } else {
+                clearInterval(intervalo);
+                if (callback) {
+                    callback();
+                }
+            }
+        }, velocidad);
+    }
+
+    function siguientePregunta() {
+        if (preguntaActual < preguntas.length) {
+            mostrarMensaje(preguntas[preguntaActual], computadora);
+            preguntaActual++;
+            setTimeout(function () {
+                escribirTexto("Usuario: ", usuario, 50, function () {
+                    mensajeEntrada.classList.remove("escondido");
+                    enviarButton.classList.remove("escondido");
+                    mensajeEntrada.focus();
+                });
+            }, 2000);
         }
-        computadora.textContent = mensajes[mensajeActual];
     }
 
-    mostrarMensaje();
+    enviarButton.addEventListener("click", function () {
+        mostrarMensaje("Tú: " + mensajeEntrada.value, usuario);
+        mensajeEntrada.value = "";
 
-    function iniciarJuego() {
-        // Agregar tu lógica para iniciar el juego aquí
-        titulo.textContent = "Simulación de Guerra Termonuclear";
-        // Otras acciones necesarias para el juego
-    }
+        if (preguntaActual < preguntas.length) {
+            setTimeout(siguientePregunta, 1000);
+        }
+    });
 
-    function rechazarJuego() {
-        // Agregar tu lógica para rechazar el juego aquí
-        titulo.textContent = "Juego rechazado";
-        // Otras acciones necesarias para el rechazo del juego
-    }
+    setTimeout(siguientePregunta, 3000); // Empezar después de 3 segundos
 });
-
