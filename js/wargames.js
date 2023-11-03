@@ -1,10 +1,10 @@
 document.addEventListener("DOMContentLoaded", function () {
     const chat = document.getElementById("chat");
+    const mensajeInicial = document.getElementById("mensaje-inicial");
     const userInput = document.getElementById("userInput");
     const enviarButton = document.getElementById("enviar");
 
     const preguntas = [
-        "Conectado con WOPR ............................",
         "Nombre de usuario:",
         "Contraseña (mínimo 8 caracteres):",
         "Hola [nombre de usuario]. ¿Jugamos a algún juego?"
@@ -20,22 +20,22 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function siguientePregunta() {
         if (preguntaActual < preguntas.length) {
-            mostrarMensaje(preguntas[preguntaActual]);
-            preguntaActual++;
-
             if (preguntaActual === 2) {
                 userInput.classList.remove("escondido");
                 enviarButton.classList.remove("escondido");
                 userInput.focus();
             }
+
+            mostrarMensaje(preguntas[preguntaActual]);
+            preguntaActual++;
         }
     }
 
     enviarButton.addEventListener("click", function () {
-        if (preguntaActual === 2) {
+        if (preguntaActual === 0) {
             const nombreUsuario = userInput.value.trim();
             if (nombreUsuario.length >= 1) {
-                const pregunta = preguntas[3].replace("[nombre de usuario]", nombreUsuario);
+                const pregunta = preguntas[2].replace("[nombre de usuario]", nombreUsuario);
                 mostrarMensaje(`Tú: ${nombreUsuario}`);
                 userInput.value = "";
                 userInput.classList.add("escondido");
@@ -48,5 +48,9 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-    setTimeout(siguientePregunta, 3000); // Comenzar después de 3 segundos
+    setTimeout(function () {
+        mensajeInicial.classList.add("escondido");
+        mostrarMensaje("Tú: Usuario");
+        siguientePregunta();
+    }, 3000);
 });
