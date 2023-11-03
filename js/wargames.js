@@ -1,44 +1,40 @@
+// wargames.js
 document.addEventListener("DOMContentLoaded", function() {
-    // Espera 3 segundos antes de mostrar el mensaje
     setTimeout(mostrarMensajeInicial, 3000);
 });
 
 function mostrarMensajeInicial() {
     const mensaje = document.getElementById("mensaje");
-    mensaje.textContent = "¿Jugamos a algún juego?";
     mensaje.classList.remove("escondido");
+    // Iniciar la animación de escritura en el mensaje
+    mensaje.style.animation = "escribir 6s steps(30) forwards";
 
-    // Espera a que el usuario haga clic en "Sí" o "No"
-    mensaje.addEventListener("click", function() {
-        mostrarSegundaPregunta();
-    });
+    // Agregar evento para avanzar al siguiente mensaje
+    mensaje.addEventListener("animationend", mostrarSegundaPregunta);
 }
 
 function mostrarSegundaPregunta() {
     const mensaje = document.getElementById("mensaje");
+    mensaje.style.animation = "none"; // Detener la animación de escritura
     mensaje.textContent = "¿Jugamos a la simulación de guerra termonuclear?";
+    mensaje.style.animation = "escribir 6s steps(30) forwards";
     
-    // Estiliza el mensaje
-    mensaje.style.textTransform = "uppercase";
-    mensaje.style.textDecoration = "underline";
-    
-    // Espera a que el usuario haga clic en "Aceptar"
-    mensaje.addEventListener("click", function() {
-        mostrarTerceraPregunta();
-    });
+    // Esperar a que el usuario haga clic en el mensaje
+    mensaje.addEventListener("click", mostrarTerceraPregunta);
 }
 
 function mostrarTerceraPregunta() {
     const mensaje = document.getElementById("mensaje");
+    mensaje.style.animation = "none"; // Detener la animación de escritura
     mensaje.textContent = "Esperando orden de ataque";
-
-    // Espera a que el usuario haga clic para ingresar objetivos
+    
+    // Esperar a que el usuario haga clic en el mensaje
     mensaje.addEventListener("click", function() {
         // Implementa la lógica para ingresar objetivos aquí
     });
 }
 
-
+// ---------------------------------
 
 const opciones = ["piedra", "papel", "tijeras"];
         let victorias = 0;
