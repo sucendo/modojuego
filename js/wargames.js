@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", function () {
     ];
 
     const respuestasComputadora = [
-        "", // Respuesta vacía después del primer mensaje
+        "",
         "¡Hola! Por supuesto, primero necesito tu nombre.",
         "Ahora, por favor, ingresa una contraseña segura (mínimo 8 caracteres).",
         "¡Hola! ¿En qué puedo ayudarte hoy?",
@@ -32,9 +32,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 escribiendo = true;
                 setTimeout(escribirMensaje, 100);
             } else {
-                if (respuestasComputadora[mensajeActual]) {
+                if (mensajeActual > 0 && respuestasComputadora[mensajeActual]) {
                     usuario.textContent = respuestasComputadora[mensajeActual];
-                    mensajeActual++;
                 } else if (mensajeActual === 2) {
                     usuario.innerHTML = '<input type="password" id="codigoUsuario">';
                     document.getElementById("codigoUsuario").addEventListener("keydown", function (event) {
@@ -52,6 +51,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
                 caracterActual = 0;
                 escribiendo = false;
+                mensajeActual++;
             }
         }
     }
