@@ -1,4 +1,4 @@
-/* Estilo retro de los años 80 para el texto */
+/* Estilo retro de los años 80 para la pantalla */
 body {
     background-color: #000; /* Fondo negro */
     font-family: 'Press Start 2P', cursive; /* Fuente estilo píxel */
@@ -6,74 +6,4 @@ body {
     text-align: center;
     margin: 0;
     padding: 0;
-}
-
-h1 {
-    font-size: 36px; /* Tamaño de fuente grande */
-    color: #00a0ff; /* Texto azul clarito */
-    text-transform: uppercase; /* Texto en mayúsculas */
-    letter-spacing: 4px; /* Espaciado entre letras */
-    text-shadow: 2px 2px 4px #000; /* Sombreado con brillo */
-}
-
-button {
-    background-color: #ffaa00; /* Botones naranjas */
-    color: #000; /* Texto negro */
-    font-size: 18px; /* Tamaño de fuente grande */
-    border: none;
-    padding: 10px 20px;
-    margin: 10px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-    border-radius: 5px; /* Bordes redondeados */
-    text-transform: uppercase; /* Texto en mayúsculas */
-    letter-spacing: 1px; /* Espaciado entre letras */
-}
-
-button:hover {
-    background-color: #ffdd44; /* Cambio de color al pasar el ratón */
-}
-
-/* Estilo para el cuadro de mensajes de la computadora */
-#computadora {
-    background-color: #ff00ff; /* Fondo rosa brillante */
-    color: #000;
-    font-size: 20px;
-    border: 2px solid #ffaa00; /* Borde naranja */
-    padding: 20px;
-    border-radius: 10px;
-    text-shadow: 2px 2px 4px #000; /* Sombreado con brillo */
-}
-
-/* Estilo para el cuadro de mensajes del usuario */
-#usuario {
-    background-color: #00ffff; /* Fondo cian brillante */
-    color: #000;
-    font-size: 20px;
-    border: 2px solid #ffaa00; /* Borde naranja */
-    padding: 20px;
-    border-radius: 10px;
-    text-shadow: 2px 2px 4px #000; /* Sombreado con brillo */
-}
-
-/* Estilo para botones "Sí" y "No" */
-button.yes,
-button.no {
-    background-color: #ff00ff;
-    color: #000;
-    font-size: 18px;
-    border: none;
-    padding: 10px 20px;
-    margin: 10px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-    border-radius: 5px;
-    text-transform: uppercase; /* Texto en mayúsculas */
-    letter-spacing: 1px; /* Espaciado entre letras */
-    text-shadow: 2px 2px 4px #000; /* Sombreado con brillo */
-}
-
-button.yes:hover,
-button.no:hover {
-    background-color: #ffdd44;
 }
