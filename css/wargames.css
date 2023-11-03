@@ -1,4 +1,4 @@
-/* Estilo para el juego de simulación de guerra nuclear */
+/* wargames.css */
 body {
     font-family: Arial, sans-serif;
     background-color: #000;
@@ -26,18 +26,22 @@ body {
     left: 0;
     width: 100%;
     z-index: 3;
-    animation: aparecer 3s forwards;
+    animation: escribir 6s steps(30) forwards;
 }
 
-@keyframes aparecer {
-    from { left: -100%; }
-    to { left: 0; }
+@keyframes escribir {
+    0% {
+        content: "";
+    }
+    100% {
+        content: "¿Jugamos a algún juego?";
+    }
 }
 
 .escondido {
     display: none;
 }
-
+/* ------------------------------ */
 h1 {
     margin-top: 20px;
     color: #ff8800;
