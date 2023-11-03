@@ -16,32 +16,11 @@ function mostrarTextoCaracterPorCaracter(texto, elemento, velocidad, callback) {
     }, velocidad);
 }
 
-// Función para manejar la entrada de usuario
-function manejarEntradaUsuario(mensaje, siguienteMensaje, inputId, callback) {
-    const mensajeTexto = document.getElementById("mensaje-texto");
-    mensajeTexto.textContent = mensaje;
-    
-    const entradaUsuario = document.createElement("input");
-    entradaUsuario.type = "text";
-    entradaUsuario.id = inputId;
-    entradaUsuario.style.display = "block";
-    entradaUsuario.style.color = "black";
-    mensajeTexto.appendChild(entradaUsuario);
-
-    entradaUsuario.addEventListener("keyup", function(event) {
-        if (event.key === "Enter" && entradaUsuario.value.length >= 8) {
-            if (typeof callback === "function") {
-                callback(entradaUsuario.value);
-            }
-        }
-    });
-}
-
 // Función para mostrar opciones
 function mostrarOpciones(opciones, callback) {
     const mensajeTexto = document.getElementById("mensaje-texto");
     mensajeTexto.textContent = "";
-    
+
     for (let i = 0; i < opciones.length; i++) {
         const botonOpcion = document.createElement("button");
         botonOpcion.textContent = opciones[i];
@@ -56,27 +35,58 @@ function mostrarOpciones(opciones, callback) {
 
 // Cuando la página se carga
 window.addEventListener("load", function() {
+    const pantallaNegra = document.getElementById("pantalla-negra");
     const mensajeTexto = document.getElementById("mensaje-texto");
 
     // Pantalla 1: Conexión con WOPR
-    mensajeTexto.textContent = "";
-    mostrarTextoCaracterPorCaracter("Conectado con WOPR ............................", mensajeTexto, 100, function() {
+    pantallaNegra.style.backgroundColor = "black";
+    mensajeTexto.style.color = "blue";
+    mostrarTextoCaracterPorCaracter("Conectado con WOPR ............................", mensajeTexto, 1000, function() {
         mensajeTexto.textContent = ""; // Limpiar el mensaje
+
         // Pantalla 2: Nombre de Usuario
-        manejarEntradaUsuario("Nombre de usuario: ", "Contraseña (mínimo 8 caracteres):", "nombre-usuario", function(nombreUsuario) {
-            // Pantalla 3: Contraseña
-            manejarEntradaUsuario("Contraseña (mínimo 8 caracteres): ", "¡Hola " + nombreUsuario + "! ¿Jugamos a algún juego?", "contrasena-usuario", function() {
-                // Pantalla 4: Saludo y opciones del juego
-                mensajeTexto.textContent = `¡Hola, ${nombreUsuario}! ¿Jugamos a algún juego?`;
-                const opciones = ["Sí", "No"];
-                mostrarOpciones(opciones, function(opcion) {
-                    if (opcion === "Sí") {
-                        mensajeTexto.textContent = "Esperando orden de ataque";
-                        // Lógica para continuar con el juego
-                    } else {
-                        mensajeTexto.textContent = "Hasta la próxima. ¡Adiós!";
-                    }
-                });
+        mostrarTextoCaracterPorCaracter("Nombre de usuario:", mensajeTexto, 100, function() {
+            const entradaUsuario = document.createElement("input");
+            entradaUsuario.type = "text";
+            entradaUsuario.id = "nombre-usuario";
+            entradaUsuario.style.display = "block";
+            mensajeTexto.appendChild(entradaUsuario);
+            entradaUsuario.focus();
+
+            entradaUsuario.addEventListener("keyup", function(event) {
+                if (event.key === "Enter" && entradaUsuario.value.length >= 1) {
+                    entradaUsuario.style.display = "none";
+                    entradaUsuario.blur();
+
+                    // Pantalla 3: Contraseña
+                    mostrarTextoCaracterPorCaracter("Contraseña (mínimo 8 caracteres):", mensajeTexto, 100, function() {
+                        const entradaContrasena = document.createElement("input");
+                        entradaContrasena.type = "password";
+                        entradaContrasena.id = "contrasena-usuario";
+                        entradaContrasena.style.display = "block";
+                        mensajeTexto.appendChild(entradaContrasena);
+                        entradaContrasena.focus();
+
+                        entradaContrasena.addEventListener("keyup", function(event) {
+                            if (event.key === "Enter" && entradaContrasena.value.length >= 8) {
+                                entradaContrasena.style.display = "none";
+                                entradaContrasena.blur();
+
+                                // Pantalla 4: Saludo y opciones del juego
+                                mensajeTexto.textContent = "¡Hola, " + entradaUsuario.value + "! ¿Jugamos a algún juego?";
+                                const opciones = ["Sí", "No"];
+                                mostrarOpciones(opciones, function(opcion) {
+                                    if (opcion === "Sí") {
+                                        mensajeTexto.textContent = "Esperando orden de ataque";
+                                        // Lógica para continuar con el juego
+                                    } else {
+                                        mensajeTexto.textContent = "Hasta la próxima. ¡Adiós!";
+                                    }
+                                });
+                            }
+                        });
+                    });
+                }
             });
         });
     });
