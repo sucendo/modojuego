@@ -32,7 +32,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 escribiendo = true;
                 setTimeout(escribirMensaje, 100);
             } else {
-                if (mensajeActual > 0 && respuestasComputadora[mensajeActual]) {
+                if (mensajeActual === 0) {
+                    mensajeActual++; // Si es el primer mensaje, pasar al siguiente automáticamente
+                    caracterActual = 0;
+                    usuario.textContent = ""; // Borrar contenido del usuario
+                } else if (respuestasComputadora[mensajeActual]) {
                     usuario.textContent = respuestasComputadora[mensajeActual];
                 } else if (mensajeActual === 2) {
                     usuario.innerHTML = 'Nombre de usuario: <input type="text" id="nombreUsuario">';
