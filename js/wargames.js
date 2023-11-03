@@ -1,57 +1,76 @@
-// JavaScript para Simulación de Guerra Termonuclear
-
+// Espera a que se cargue el contenido HTML
 document.addEventListener("DOMContentLoaded", function () {
     const pantalla = document.getElementById("pantalla");
-    const titulo = document.getElementById("titulo");
     const computadora = document.getElementById("computadora");
     const usuario = document.getElementById("usuario");
 
-    const mensajes = [
+    // Mensajes de la computadora
+    const mensajesComputadora = [
         "Conectado con WOPR ............................",
         "Nombre de usuario",
-        "Contraseña (mínimo 8 caracteres)",
-        "Hola, [nombre de usuario]. ¿Jugamos a algún juego?"
+        "contraseña (mínimo 8 caracteres)",
+        "Hola ",
+        "¿Jugamos a algún juego?"
     ];
 
     let mensajeActual = 0;
+    let caracterActual = 0;
+    let escribiendo = false;
 
-    function mostrarMensaje() {
-        if (mensajeActual < mensajes.length) {
-            titulo.textContent = mensajes[mensajeActual];
-            mensajeActual++;
-
-            if (mensajeActual === 1 || mensajeActual === 2) {
-                const input = document.createElement("input");
-                input.type = "text";
-                input.addEventListener("keydown", function (event) {
-                    if (event.key === "Enter") {
-                        mostrarMensaje();
-                    }
-                });
-                usuario.appendChild(input);
-            } else if (mensajeActual === 3) {
-                const botonSi = document.createElement("button");
-                botonSi.textContent = "Sí";
-                botonSi.addEventListener("click", function () {
-                    mensajeActual++;
-                    mostrarMensaje();
-                });
-                usuario.appendChild(botonSi);
-
-                const botonNo = document.createElement("button");
-                botonNo.textContent = "No";
-                botonNo.addEventListener("click", function () {
-                    mensajeActual = 0; // Reiniciar el juego
-                    mostrarMensaje();
-                });
-                usuario.appendChild(botonNo);
+    function escribirMensaje() {
+        if (mensajeActual < mensajesComputadora.length) {
+            const mensaje = mensajesComputadora[mensajeActual];
+            if (caracterActual < mensaje.length) {
+                computadora.textContent = mensaje.slice(0, caracterActual + 1);
+                caracterActual++;
+                escribiendo = true;
+                setTimeout(escribirMensaje, 100); // Velocidad de escritura (100ms)
+            } else {
+                if (mensajeActual === 1) {
+                    usuario.innerHTML = '<input type="text" id="nombreUsuario">';
+                    document.getElementById("nombreUsuario").addEventListener("keydown", function (event) {
+                        if (event.key === "Enter") {
+                            mensajeActual++;
+                            caracterActual = 0;
+                            usuario.innerHTML = `<input type="text" id="codigoUsuario">`;
+                            escribirMensaje();
+                        }
+                    });
+                } else if (mensajeActual === 2) {
+                    usuario.innerHTML = '<input type="password" id="codigoUsuario">';
+                    document.getElementById("codigoUsuario").addEventListener("keydown", function (event) {
+                        if (event.key === "Enter" && event.target.value.length >= 8) {
+                            mensajeActual++;
+                            caracterActual = 0;
+                            usuario.innerHTML = "";
+                            escribirMensaje();
+                        }
+                    });
+                } else if (mensajeActual === 3) {
+                    usuario.textContent = `Hola ${document.getElementById("nombreUsuario").value}`;
+                } else if (mensajeActual === 4) {
+                    usuario.innerHTML = '<button id="si">Sí</button><button id="no">No</button>';
+                }
+                mensajeActual++;
+                caracterActual = 0;
+                escribiendo = false;
+                escribirMensaje();
             }
-        } else {
-            // Mensajes completos
-            titulo.textContent = "";
-            usuario.innerHTML = "";
         }
     }
 
-    mostrarMensaje();
+    escribirMensaje();
+
+    // Agregar lógica para manejar las respuestas de los botones "Sí" y "No"
+    document.getElementById("si").addEventListener("click", function () {
+        if (!escribiendo) {
+            // Lógica para responder "Sí"
+        }
+    });
+
+    document.getElementById("no").addEventListener("click", function () {
+        if (!escribiendo) {
+            // Lógica para responder "No"
+        }
+    });
 });
