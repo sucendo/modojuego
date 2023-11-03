@@ -16,30 +16,44 @@ function mostrarTextoCaracterPorCaracter(texto, elemento, velocidad, callback) {
     }, velocidad);
 }
 
+// Función para manejar la entrada de usuario
+function manejarEntradaUsuario(mensaje, siguienteMensaje, inputId, callback) {
+    const mensajeTexto = document.getElementById("mensaje-texto");
+    mensajeTexto.textContent = mensaje;
+    
+    const entradaUsuario = document.createElement("input");
+    entradaUsuario.type = "text";
+    entradaUsuario.id = inputId;
+    entradaUsuario.style.display = "block";
+    entradaUsuario.style.color = "black";
+    mensajeTexto.appendChild(entradaUsuario);
+
+    entradaUsuario.addEventListener("keyup", function(event) {
+        if (event.key === "Enter" && entradaUsuario.value.length >= 8) {
+            if (typeof callback === "function") {
+                callback(entradaUsuario.value);
+            }
+        }
+    });
+}
+
 // Cuando la página se carga
 window.addEventListener("load", function() {
-    // Mostrar "conectado con WOPR" al principio
     const mensajeTexto = document.getElementById("mensaje-texto");
+
+    // Pantalla 1: Conexión con WOPR
     mensajeTexto.textContent = "";
-    mostrarTextoCaracterPorCaracter("Conectado con WOPR", mensajeTexto, 100, function() {
-        mensajeTexto.textContent += " ";
-        // Después de la conexión, preguntar por el nombre del usuario
-        mostrarTextoCaracterPorCaracter("Por favor, ingresa tu nombre de usuario: ", mensajeTexto, 100, function() {
-            const entradaUsuario = document.createElement("input");
-            entradaUsuario.type = "text";
-            entradaUsuario.id = "nombre-usuario";
-            entradaUsuario.style.display = "none";
-            mensajeTexto.appendChild(entradaUsuario);
-            entradaUsuario.addEventListener("input", function() {
-                if (entradaUsuario.value.length >= 8) {
-                    // El usuario ha ingresado al menos 8 caracteres
-                    mensajeTexto.textContent = `Hola, ${entradaUsuario.value}. ¿Jugamos a algún juego?`;
-                    const opcionesUsuario = document.getElementById("opciones-usuario");
-                    opcionesUsuario.classList.remove("escondido");
-                }
+    mostrarTextoCaracterPorCaracter("Conectado con WOPR ............................", mensajeTexto, 100, function() {
+        mensajeTexto.textContent = ""; // Limpiar el mensaje
+        // Pantalla 2: Nombre de Usuario
+        manejarEntradaUsuario("Nombre de usuario: ", "Contraseña (mínimo 8 caracteres):", "nombre-usuario", function(nombreUsuario) {
+            // Pantalla 3: Contraseña
+            manejarEntradaUsuario("Contraseña (mínimo 8 caracteres): ", "¡Hola " + nombreUsuario + "! ¿Jugamos a algún juego?", "contrasena-usuario", function() {
+                // Pantalla 4: Saludo y opciones del juego
+                mensajeTexto.textContent = `¡Hola, ${nombreUsuario}! ¿Jugamos a algún juego?`;
+                const opcionesUsuario = document.getElementById("opciones-usuario");
+                opcionesUsuario.classList.remove("escondido");
             });
         });
     });
 });
-
-// Resto del código para manejar las respuestas del usuario (Sí/No) y las acciones del juego
