@@ -35,9 +35,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (mensajeActual > 0 && respuestasComputadora[mensajeActual]) {
                     usuario.textContent = respuestasComputadora[mensajeActual];
                 } else if (mensajeActual === 2) {
-                    usuario.innerHTML = '<input type="password" id="codigoUsuario">';
-                    document.getElementById("codigoUsuario").addEventListener("keydown", function (event) {
-                        if (event.key === "Enter" && event.target.value.length >= 8) {
+                    usuario.innerHTML = 'Nombre de usuario: <input type="text" id="nombreUsuario">';
+                    document.getElementById("nombreUsuario").addEventListener("keydown", function (event) {
+                        if (event.key === "Enter") {
                             mensajeActual++;
                             caracterActual = 0;
                             usuario.innerHTML = "";
