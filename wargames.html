@@ -10,7 +10,7 @@
             <label for="nombre">Nombre de Usuario:</label>
             <input type="text" id="nombre" required>
             <br>
-            <label for "codigo">Código (8 caracteres):</label>
+            <label for="codigo">Código (8 caracteres):</label>
             <input type="text" id="codigo" required pattern=".{8,}">
             <br>
             <label for="jugar">¿Deseas jugar?</label>
@@ -19,26 +19,21 @@
                 <option value="no">No</option>
             </select>
             <br>
-            <button value="default" type="submit">Comenzar</button>
+            <button type="submit">Comenzar</button>
         </form>
     </dialog>
 
     <h1>Simulación de Guerra Nuclear</h1>
     <button id="iniciarJuegoButton" onclick="mostrarDialogoInicio()">Iniciar Juego</button>
     <p>Elige tu estrategia:</p>
-    <button id="piedra" onclick="elegirEstrategia('piedra')">piedra</button>
-    <button id="papel" onclick="elegirEstrategia('papel')">papel</button>
-    <button id="tijeras" onclick="elegirEstrategia('tijeras')">tijeras</button>
+    <button id="piedra" onclick="elegirOpcion('piedra')">Piedra</button>
+    <button id="papel" onclick="elegirOpcion('papel')">Papel</button>
+    <button id="tijeras" onclick="elegirOpcion('tijeras')">Tijeras</button>
     <div id="temporizador">Tiempo restante: 60 segundos</div>
+    <div id="defcon">DEFCON 5</div>
     <div id="resultado"></div>
     <div id="puntuacion">Victorias: 0 | Derrotas: 0 | Empates: 0</div>
     <div id="codigoUsuario"></div>
-    <div id="defcon" style="display: none;">
-        DEFCON: <span id="defcon-level">5</span>
-    </div>
-    <div id="defcon-timer" style="display: none;">
-        Tiempo restante: <span id="defcon-countdown">10</span> segundos
-    </div>
 
     <script>
         const opciones = ["piedra", "papel", "tijeras"];
@@ -48,6 +43,8 @@
         let temporizador = 60;
         let juegoTerminado = true; // Iniciar el juego como "terminado"
         let actualizarTemporizador;
+        let defcon = 5;
+        let defconInterval;
 
         // Array de mensajes de victoria y derrota
         const mensajesVictoria = [
@@ -71,17 +68,6 @@
             inicioDialog.showModal();
         }
 
-        document.getElementById("inicioDialog").addEventListener("close", function () {
-            const nombreUsuario = document.getElementById("nombre").value;
-            const codigo = document.getElementById("codigo").value;
-            const jugar = document.getElementById("jugar").value;
-
-            if (jugar === "si") {
-                mostrarCodigo(codigo);
-                iniciarJuego();
-            }
-        });
-
         function iniciarJuego() {
             temporizador = 60;
             victorias = 0;
@@ -89,12 +75,30 @@
             empates = 0;
             juegoTerminado = false; // Iniciar el juego como "no terminado"
             actualizarTemporizador = setInterval(actualizarCuentaAtras, 1000);
+            mostrarDEFCON();
+            defconInterval = setInterval(decrementarDEFCON, 2000);
 
             document.getElementById("iniciarJuegoButton").style.display = "none"; // Ocultar el botón "Iniciar Juego"
             document.getElementById("temporizador").textContent = `Tiempo restante: ${temporizador} segundos`;
             document.getElementById("resultado").textContent = "";
             document.getElementById("puntuacion").textContent = "Victorias: 0 | Derrotas: 0 | Empates: 0";
-            iniciarDefconTimer(); // Iniciar temporizador DEFCON
+            mostrarCodigo("TuCodigo");
+        }
+
+        function decrementarDEFCON() {
+            defcon--;
+            if (defcon === 0) {
+                clearInterval(defconInterval);
+                document.getElementById("defcon").textContent = "DEFCON 1";
+            } else {
+                document.getElementById("defcon").textContent = `DEFCON ${defcon}`;
+            }
+        }
+
+        function mostrarDEFCON() {
+            defcon = 5;
+            defconInterval = setInterval(decrementarDEFCON, 2000);
+            document.getElementById("defcon").textContent = `DEFCON ${defcon}`;
         }
 
         function actualizarCuentaAtras() {
@@ -105,81 +109,76 @@
                 document.getElementById("temporizador").textContent = "¡Tiempo agotado!";
                 document.getElementById("iniciarJuegoButton").style.display = "block"; // Mostrar el botón "Iniciar Juego"
                 juegoTerminado = true;
-                detenerDefconTimer(); // Detener temporizador DEFCON
             }
         }
 
-        function elegirEstrategia(estrategia) {
-            if (!juegoTerminado) {
-                // Lógica para elegir estrategia y calcular resultado
-                const eleccionComputadora = opciones[Math.floor(Math.random() * 3)];
+        function elegirOpcion(opcion) {
+            if (juegoTerminado) return;
 
-                let resultado;
-                if (estrategia === eleccionComputadora) {
-                    resultado = "Empate. La batalla continúa.";
-                    document.getElementById("resultado").className = "empate";
-                    empates++;
-                } else if (
-                    (estrategia === "piedra" && eleccionComputadora === "tijeras") ||
-                    (estrategia === "papel" && eleccionComputadora === "piedra") ||
-                    (estrategia === "tijeras" && eleccionComputadora === "papel")
-                ) {
-                    resultado = mensajesVictoria[Math.floor(Math.random() * mensajesVictoria.length)];
-                    document.getElementById("resultado").className = "victoria";
-                    victorias++;
-                } else {
-                    resultado = mensajesDerrota[Math.floor(Math.random() * mensajesDerrota.length)];
-                    document.getElementById("resultado").className = "derrota";
-                    derrotas++;
-                }
+            clearInterval(defconInterval); // Reiniciar el contador DEFCON
+            mostrarDEFCON(); // Mostrar DEFCON nuevamente
 
-                document.getElementById("resultado").textContent = `Elegiste ${estrategia}, la computadora eligió ${eleccionComputadora}. ${resultado}`;
-                document.getElementById("puntuacion").textContent = `Victorias: ${victorias} | Derrotas: ${derrotas} | Empates: ${empates}`;
+            const eleccionComputadora = opciones[Math.floor(Math.random() * 3)];
+
+            let resultado;
+            if (opcion === eleccionComputadora) {
+                resultado = "Empate. La batalla continúa.";
+                document.getElementById("resultado").className = "empate";
+                empates++;
+            } else if (
+                (opcion === "piedra" && eleccionComputadora === "tijeras") ||
+                (opcion === "papel" && eleccionComputadora === "piedra") ||
+                (opcion === "tijeras" && eleccionComputadora === "papel")
+            ) {
+                resultado = mensajesVictoria[Math.floor(Math.random() * mensajesVictoria.length)];
+                document.getElementById("resultado").className = "victoria";
+                victorias++;
+            } else {
+                resultado = mensajesDerrota[Math.floor(Math.random() * mensajesDerrota.length)];
+                document.getElementById("resultado").className = "derrota";
+                derrotas++;
             }
-        }
 
-        let defconTimer;
-        let defconLevel = 5;
-
-        function iniciarDefconTimer() {
-            document.getElementById("defcon-level").textContent = defconLevel;
-            document.getElementById("defcon").style.display = "block";
-            document.getElementById("defcon-timer").style.display = "block";
-
-            defconTimer = setInterval(() => {
-                const countdown = document.getElementById("defcon-countdown");
-                const currentCountdown = parseInt(countdown.textContent);
-
-                if (currentCountdown <= 0) {
-                    clearInterval(defconTimer);
-                    document.getElementById("defcon").style display = "none";
-                    document.getElementById("defcon-timer").style.display = "none";
-                    // Aquí puedes manejar la lógica de pérdida por inoperancia.
-                    // Puedes mostrar un mensaje de derrota y reiniciar el temporizador del juego principal.
-                    // Por ejemplo:
-                    mostrarMensajeDerrotaPorInoperancia();
-                } else {
-                    countdown.textContent = currentCountdown - 1;
-                }
-            }, 1000);
-        }
-
-        function detenerDefconTimer() {
-            clearInterval(defconTimer);
-            document.getElementById("defcon").style.display = "none";
-            document.getElementById("defcon-timer").style.display = "none";
-        }
-
-        function mostrarMensajeDerrotaPorInoperancia() {
-            // Puedes personalizar el mensaje de derrota por inoperancia aquí
-            document.getElementById("resultado").textContent = "Derrota por inoperancia. ¡Debes elegir una estrategia!";
-            document.getElementById("resultado").className = "derrota";
-            derrotas++; // Incrementa el contador de derrotas
+            document.getElementById("resultado").textContent = `Elegiste ${opcion}, la computadora eligió ${eleccionComputadora}. ${resultado}`;
             document.getElementById("puntuacion").textContent = `Victorias: ${victorias} | Derrotas: ${derrotas} | Empates: ${empates}`;
+        }
 
-            // Restablece el temporizador del juego principal
-            temporizador = 60;
-            actualizarTemporizador = setInterval(actualizarCuentaAtras, 1000);
+        function mostrarCodigo(codigo) {
+            const codigoUsuario = document.getElementById("codigoUsuario");
+            const tiempoTotal = 60000; // 60 segundos
+            let tiempoTranscurrido = 0;
+            let codigoActual = Array(codigo.length).fill('');
+            let indices = Array.from({ length: codigo.length }, (_, i) => i);
+        
+            const interval = setInterval(() => {
+                if (tiempoTranscurrido >= tiempoTotal) {
+                    // Mostrar el código completo cuando el tiempo ha terminado
+                    clearInterval(interval);
+                    codigoUsuario.textContent = codigo;
+                    return;
+                }
+        
+                // Verificar y actualizar todas las posiciones al mismo tiempo
+                indices.forEach((index) => {
+                    if (tiempoTranscurrido >= tiempoTotal - 1000) {
+                        // Cuando quede 1 segundo, mostrar el carácter correspondiente
+                        codigoActual[index] = codigo[index];
+                    } else {
+                        if (codigoActual[index] !== codigo[index]) {
+                            codigoActual[index] = generarCaracterAleatorio(); // Si no coincide, generar un carácter aleatorio
+                        }
+                    }
+                });
+        
+                codigoUsuario.textContent = codigoActual.join('');
+                tiempoTranscurrido += 100; // Incrementar el tiempo transcurrido en 100ms
+            }, 100); // Mostrar cada 100ms
+        
+            function generarCaracterAleatorio() {
+                const caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~¡¢£¤¥¦¨©ª«¬®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ";
+                const caracterAleatorio = caracteres.charAt(Math.floor(Math.random() * caracteres.length));
+                return caracterAleatorio;
+            }
         }
     </script>
 </body>
