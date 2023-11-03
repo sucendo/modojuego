@@ -29,7 +29,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     mensajeActual++;
                     caracterActual = 0;
                     escribiendo = false;
-                    setTimeout(escribirMensaje, 1000); // Espera un segundo antes de avanzar
+                    setTimeout(escribirMensaje, 100); // Espera un breve tiempo antes de avanzar
                 }
             }
         }
@@ -44,7 +44,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 mensajeActual++;
                 caracterActual = 0;
                 escribiendo = false;
-                setTimeout(escribirMensaje, 1000); // Espera un segundo antes de avanzar
+                setTimeout(escribirMensaje, 100); // Espera un breve tiempo antes de avanzar
             }
         } else {
             // Mostrar opciones al final del último mensaje
