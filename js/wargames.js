@@ -1,3 +1,45 @@
+document.addEventListener("DOMContentLoaded", function() {
+    // Espera 3 segundos antes de mostrar el mensaje
+    setTimeout(mostrarMensajeInicial, 3000);
+});
+
+function mostrarMensajeInicial() {
+    const mensaje = document.getElementById("mensaje");
+    mensaje.textContent = "¿Jugamos a algún juego?";
+    mensaje.classList.remove("escondido");
+
+    // Espera a que el usuario haga clic en "Sí" o "No"
+    mensaje.addEventListener("click", function() {
+        mostrarSegundaPregunta();
+    });
+}
+
+function mostrarSegundaPregunta() {
+    const mensaje = document.getElementById("mensaje");
+    mensaje.textContent = "¿Jugamos a la simulación de guerra termonuclear?";
+    
+    // Estiliza el mensaje
+    mensaje.style.textTransform = "uppercase";
+    mensaje.style.textDecoration = "underline";
+    
+    // Espera a que el usuario haga clic en "Aceptar"
+    mensaje.addEventListener("click", function() {
+        mostrarTerceraPregunta();
+    });
+}
+
+function mostrarTerceraPregunta() {
+    const mensaje = document.getElementById("mensaje");
+    mensaje.textContent = "Esperando orden de ataque";
+
+    // Espera a que el usuario haga clic para ingresar objetivos
+    mensaje.addEventListener("click", function() {
+        // Implementa la lógica para ingresar objetivos aquí
+    });
+}
+
+
+
 const opciones = ["piedra", "papel", "tijeras"];
         let victorias = 0;
         let derrotas = 0;
