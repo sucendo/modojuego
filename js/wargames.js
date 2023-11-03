@@ -1,64 +1,52 @@
 document.addEventListener("DOMContentLoaded", function () {
-    const pantalla = document.getElementById("pantalla");
-    const titulo = document.getElementById("titulo");
-    const computadora = document.getElementById("computadora");
-    const usuario = document.getElementById("usuario");
-    const conversacion = document.getElementById("conversacion");
-    const mensajeEntrada = document.getElementById("mensaje");
+    const chat = document.getElementById("chat");
+    const userInput = document.getElementById("userInput");
     const enviarButton = document.getElementById("enviar");
 
     const preguntas = [
-        "¿Cuál es tu nombre?",
-        "Ingresa un código (mínimo 8 caracteres):",
-        "¿Estás listo para comenzar el juego?",
-        "Elige tu estrategia: piedra, papel o tijeras."
+        "Conectado con WOPR ............................",
+        "Nombre de usuario:",
+        "Contraseña (mínimo 8 caracteres):",
+        "Hola [nombre de usuario]. ¿Jugamos a algún juego?"
     ];
 
     let preguntaActual = 0;
 
-    function mostrarMensaje(mensaje, destino) {
+    function mostrarMensaje(mensaje) {
         const nuevoMensaje = document.createElement("div");
         nuevoMensaje.textContent = mensaje;
-        destino.appendChild(nuevoMensaje);
-    }
-
-    function escribirTexto(texto, destino, velocidad, callback) {
-        let i = 0;
-        const intervalo = setInterval(function () {
-            if (i < texto.length) {
-                destino.textContent += texto[i];
-                i++;
-            } else {
-                clearInterval(intervalo);
-                if (callback) {
-                    callback();
-                }
-            }
-        }, velocidad);
+        chat.appendChild(nuevoMensaje);
     }
 
     function siguientePregunta() {
         if (preguntaActual < preguntas.length) {
-            mostrarMensaje(preguntas[preguntaActual], computadora);
+            mostrarMensaje(preguntas[preguntaActual]);
             preguntaActual++;
-            setTimeout(function () {
-                escribirTexto("Usuario: ", usuario, 50, function () {
-                    mensajeEntrada.classList.remove("escondido");
-                    enviarButton.classList.remove("escondido");
-                    mensajeEntrada.focus();
-                });
-            }, 2000);
+
+            if (preguntaActual === 2) {
+                userInput.classList.remove("escondido");
+                enviarButton.classList.remove("escondido");
+                userInput.focus();
+            }
         }
     }
 
     enviarButton.addEventListener("click", function () {
-        mostrarMensaje("Tú: " + mensajeEntrada.value, usuario);
-        mensajeEntrada.value = "";
-
-        if (preguntaActual < preguntas.length) {
-            setTimeout(siguientePregunta, 1000);
+        if (preguntaActual === 2) {
+            const nombreUsuario = userInput.value.trim();
+            if (nombreUsuario.length >= 1) {
+                const pregunta = preguntas[3].replace("[nombre de usuario]", nombreUsuario);
+                mostrarMensaje(`Tú: ${nombreUsuario}`);
+                userInput.value = "";
+                userInput.classList.add("escondido");
+                enviarButton.classList.add("escondido");
+                setTimeout(function () {
+                    mostrarMensaje(pregunta);
+                    siguientePregunta();
+                }, 1000);
+            }
         }
     });
 
-    setTimeout(siguientePregunta, 3000); // Empezar después de 3 segundos
+    setTimeout(siguientePregunta, 3000); // Comenzar después de 3 segundos
 });
