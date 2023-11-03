@@ -1,195 +1,79 @@
-/* Estilo para el juego de simulación de guerra nuclear */
+/* Estilo retro de los años 80 para el texto */
 body {
-    font-family: Arial, sans-serif;
-    background-color: #000;
-    color: #3498db;
+    background-color: #000; /* Fondo negro */
+    font-family: 'Press Start 2P', cursive; /* Fuente estilo píxel */
+    color: #00a0ff; /* Texto azul clarito */
     text-align: center;
     margin: 0;
     padding: 0;
 }
 
-#titulo-juego {
-    font-size: 36px;
-    font-weight: bold;
-    margin-top: 20px;
-    color: #3498db;
+h1 {
+    font-size: 36px; /* Tamaño de fuente grande */
+    color: #00a0ff; /* Texto azul clarito */
+    text-transform: uppercase; /* Texto en mayúsculas */
+    letter-spacing: 4px; /* Espaciado entre letras */
+    text-shadow: 2px 2px 4px #000; /* Sombreado con brillo */
 }
 
-#pantalla-negra {
-    background-color: #000;
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
+button {
+    background-color: #ffaa00; /* Botones naranjas */
+    color: #000; /* Texto negro */
+    font-size: 18px; /* Tamaño de fuente grande */
+    border: none;
+    padding: 10px 20px;
+    margin: 10px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    border-radius: 5px; /* Bordes redondeados */
+    text-transform: uppercase; /* Texto en mayúsculas */
+    letter-spacing: 1px; /* Espaciado entre letras */
 }
 
-#contenedor-mensajes {
-    background-color: rgba(0, 0, 0, 0.8);
+button:hover {
+    background-color: #ffdd44; /* Cambio de color al pasar el ratón */
+}
+
+/* Estilo para el cuadro de mensajes de la computadora */
+#computadora {
+    background-color: #ff00ff; /* Fondo rosa brillante */
+    color: #000;
+    font-size: 20px;
+    border: 2px solid #ffaa00; /* Borde naranja */
     padding: 20px;
     border-radius: 10px;
-    max-width: 80%;
-    text-align: left;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    text-shadow: 2px 2px 4px #000; /* Sombreado con brillo */
 }
 
-#mensaje {
-    font-size: 24px;
-    margin: 20px 0;
-    overflow: hidden;
-    white-space: nowrap;
-    border-right: 4px solid transparent;
+/* Estilo para el cuadro de mensajes del usuario */
+#usuario {
+    background-color: #00ffff; /* Fondo cian brillante */
+    color: #000;
+    font-size: 20px;
+    border: 2px solid #ffaa00; /* Borde naranja */
+    padding: 20px;
+    border-radius: 10px;
+    text-shadow: 2px 2px 4px #000; /* Sombreado con brillo */
 }
 
-#mensaje-texto {
-    display: inline-block;
-    animation: mensaje 5s steps(60, end);
-}
-
-@keyframes mensaje {
-    from {
-        width: 0;
-    }
-    to {
-        width: 100%;
-    }
-}
-
-#opciones-usuario {
-    margin-top: 20px;
-}
-
-button {
-    background-color: #3498db;
-    color: #fff;
+/* Estilo para botones "Sí" y "No" */
+button.yes,
+button.no {
+    background-color: #ff00ff;
+    color: #000;
     font-size: 18px;
     border: none;
     padding: 10px 20px;
     margin: 10px;
     cursor: pointer;
     transition: background-color 0.3s;
+    border-radius: 5px;
+    text-transform: uppercase; /* Texto en mayúsculas */
+    letter-spacing: 1px; /* Espaciado entre letras */
+    text-shadow: 2px 2px 4px #000; /* Sombreado con brillo */
 }
 
-button:hover {
-    background-color: #2070a9;
-}
-
-#boton-si {
-    background-color: #2ecc71;
-}
-
-#boton-no {
-    background-color: #e74c3c;
-}
-
-#titulo-juego.subrayado {
-    text-decoration: underline;
-}
-
-/* ------------------------------ */
-h1 {
-    margin-top: 20px;
-    color: #ff8800;
-}
-
-button {
-    background-color: #ff8800;
-    color: #fff;
-    font-size: 16px;
-    border: none;
-    padding: 10px 20px;
-    margin: 10px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
-
-button:hover {
-    background-color: #ffaa33;
-}
-
-#temporizador {
-    font-size: 24px;
-    color: #ff8800;
-    margin: 20px 0;
-}
-
-#resultado {
-    font-size: 18px;
-    margin-top: 20px;
-}
-
-/* Estilo para el texto según el resultado */
-#resultado.victoria {
-    color: green;
-}
-
-#resultado.derrota {
-    color: red;
-}
-
-#resultado.empate {
-    color: yellow;
-}
-
-#puntuacion {
-    font-size: 16px;
-    color: #fff;
-}
-
-#reinicioButton {
-    background-color: #ff8800;
-    color: #fff;
-    font-size: 16px;
-    border: none;
-    padding: 10px 20px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
-
-#reinicioButton:hover {
-    background-color: #ffaa33;
-}
-
-/* Estilos para los dígitos del código */
-#codigoUsuario {
-    font-size: 36px; /* Tamaño de fuente más grande para los dígitos */
-    color: #3498db; /* Color azul clarito para los dígitos */
-    font-weight: bold; /* Texto en negrita */
-    letter-spacing: 4px; /* Espaciado entre los dígitos */
-}
-
-/* Estilos para dispositivos móviles */
-@media (max-width: 767px) {
-    h1 {
-        font-size: 24px; /* Reducir el tamaño del título en dispositivos móviles */
-    }
-
-    button {
-        font-size: 14px; /* Reducir el tamaño de los botones en dispositivos móviles */
-    }
-
-    #temporizador {
-        font-size: 20px; /* Reducir el tamaño del temporizador en dispositivos móviles */
-    }
-
-    #resultado {
-        font-size: 16px; /* Reducir el tamaño del resultado en dispositivos móviles */
-    }
-
-    #puntuacion {
-        font-size: 14px; /* Reducir el tamaño de la puntuación en dispositivos móviles */
-    }
-
-    #reinicioButton {
-        font-size: 14px; /* Reducir el tamaño del botón de reinicio en dispositivos móviles */
-    }
-
-    #codigoUsuario {
-        font-size: 28px; /* Reducir el tamaño de los dígitos en dispositivos móviles */
-        letter-spacing: 2px; /* Reducir el espaciado entre los dígitos en dispositivos móviles */
-    }
+button.yes:hover,
+button.no:hover {
+    background-color: #ffdd44;
 }
