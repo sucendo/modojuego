@@ -35,7 +35,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (mensajeActual === 0) {
                     mensajeActual++; // Si es el primer mensaje, pasar al siguiente automáticamente
                     caracterActual = 0;
-                    usuario.textContent = ""; // Borrar contenido del usuario
                 } else if (respuestasComputadora[mensajeActual]) {
                     usuario.textContent = respuestasComputadora[mensajeActual];
                 } else if (mensajeActual === 2) {
@@ -45,7 +44,6 @@ document.addEventListener("DOMContentLoaded", function () {
                             mensajeActual++;
                             caracterActual = 0;
                             usuario.innerHTML = "";
-                            escribirMensaje();
                         }
                     });
                 } else if (mensajeActual === 3) {
