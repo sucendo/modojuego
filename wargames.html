@@ -1,40 +1,14 @@
-<html>
+<!DOCTYPE html>
+<html lang="es">
 <head>
-    <title>Simulación de Guerra Nuclear</title>
-    <link rel="stylesheet" type="text/css" href="css/wargames.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/wargames.css">
+    <script src="js/wargames.js"></script>
+    <title>Simulación de Guerra Termonuclear</title>
 </head>
 <body>
-    <dialog id="inicioDialog">
-        <form method="dialog">
-            <label for="nombre">Nombre de Usuario:</label>
-            <input type="text" id="nombre" required>
-            <br>
-            <label for "codigo">Código (8 caracteres):</label>
-            <input type="text" id="codigo" required pattern=".{8,}">
-            <br>
-            <label for="jugar">¿Deseas jugar?</label>
-            <select id="jugar" required>
-                <option value="si">Sí</option>
-                <option value="no">No</option>
-            </select>
-            <br>
-            <button value="default" type="submit">Comenzar</button>
-        </form>
-    </dialog>
-
-    <h1>Simulación de Guerra Nuclear</h1>
-    <button id="iniciarJuegoButton" onclick="mostrarDialogoInicio()">Iniciar Juego</button>
-    <p>Elige tu estrategia:</p>
-    <button id="piedra">piedra</button>
-    <button id="papel">papel</button>
-    <button id="tijeras">tijeras</button>
-    <div id="temporizador">Tiempo restante: 60 segundos</div>
-    <div id="defcon">DEFCON 5</div>
-    <div id="resultado"></div>
-    <div id="puntuacion">Victorias: 0 | Derrotas: 0 | Empates: 0</div>
-    <p>Código de activación de los misiles nucleares:</p>
-    <div id="codigoUsuario"></div>
-
-    <script src="js/wargames.js"></script>
+    <div id="pantalla-negra"></div>
+    <div id="mensaje" class="escondido"></div>
 </body>
 </html>
