@@ -28,8 +28,12 @@ document.addEventListener("DOMContentLoaded", function () {
                     usuario.innerHTML = '<input type="password" id="codigoUsuario">';
                 }
             } else if (caracterActual === mensaje.length) {
-                // Aquí puedes implementar la lógica para esperar la interacción del usuario
-                // Por ejemplo, mostrando los botones de "Sí" y "No" o realizando acciones posteriores.
+                if (mensajeActual === 4) {
+                    usuario.innerHTML = `<button id="siButton" onclick="iniciarJuego()">Sí</button><button id="noButton" onclick="rechazarJuego()">No</button>`;
+                }
+                mensajeActual++;
+                caracterActual = 0;
+                setTimeout(escribirMensaje, 1000); // Retrasar el siguiente mensaje
             }
         }
     }
