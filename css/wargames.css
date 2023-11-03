@@ -9,20 +9,11 @@ body {
     padding: 0;
 }
 
-#pantalla {
+#chatbox {
     margin-top: 20px;
 }
 
-#titulo {
-    font-size: 24px;
-    font-weight: bold;
-}
-
-#computadora {
-    font-size: 24px;
-}
-
-#usuario {
+#chat {
     font-size: 24px;
 }
 
@@ -33,6 +24,7 @@ input[type="text"] {
     font-size: 24px;
     font-weight: bold;
     letter-spacing: 4px;
+    width: 100%;
 }
 
 button {
@@ -44,6 +36,8 @@ button {
     letter-spacing: 4px;
     cursor: pointer;
     transition: background-color 0.3s;
+    display: block;
+    margin-top: 10px;
 }
 
 button:hover {
