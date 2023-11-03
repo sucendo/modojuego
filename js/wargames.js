@@ -5,8 +5,6 @@ const opciones = ["piedra", "papel", "tijeras"];
         let temporizador = 60;
         let juegoTerminado = true; // Iniciar el juego como "terminado"
         let actualizarTemporizador;
-        let defcon = 5;
-        let defconInterval;
 
         // Array de mensajes de victoria y derrota
         const mensajesVictoria = [
@@ -30,6 +28,17 @@ const opciones = ["piedra", "papel", "tijeras"];
             inicioDialog.showModal();
         }
 
+        document.getElementById("inicioDialog").addEventListener("close", function () {
+            const nombreUsuario = document.getElementById("nombre").value;
+            const codigo = document.getElementById("codigo").value;
+            const jugar = document.getElementById("jugar").value;
+
+            if (jugar === "si") {
+                mostrarCodigo(codigo);
+                iniciarJuego();
+            }
+        });
+
         function iniciarJuego() {
             temporizador = 60;
             victorias = 0;
@@ -37,15 +46,58 @@ const opciones = ["piedra", "papel", "tijeras"];
             empates = 0;
             juegoTerminado = false; // Iniciar el juego como "no terminado"
             actualizarTemporizador = setInterval(actualizarCuentaAtras, 1000);
-            mostrarDEFCON();
-            defconInterval = setInterval(decrementarDEFCON, 2000);
 
             document.getElementById("iniciarJuegoButton").style.display = "none"; // Ocultar el botón "Iniciar Juego"
             document.getElementById("temporizador").textContent = `Tiempo restante: ${temporizador} segundos`;
+            document.getElementById("defcon").textContent = "DEFCON 5";
             document.getElementById("resultado").textContent = "";
             document.getElementById("puntuacion").textContent = "Victorias: 0 | Derrotas: 0 | Empates: 0";
-            mostrarCodigo("TuCodigo");
         }
+
+        function actualizarCuentaAtras() {
+            temporizador--;
+            document.getElementById("temporizador").textContent = `Tiempo restante: ${temporizador} segundos`;
+            if (temporizador === 0) {
+                clearInterval(actualizarTemporizador);
+                document.getElementById("temporizador").textContent = "¡Tiempo agotado!";
+                document.getElementById("iniciarJuegoButton").style.display = "block"; // Mostrar el botón "Iniciar Juego"
+                juegoTerminado = true;
+            }
+        }
+
+        document.getElementById("iniciarJuegoButton").addEventListener("click", mostrarDialogoInicio);
+
+        document.querySelectorAll("button").forEach((button) => {
+            button.addEventListener("click", (event) => {
+                if (juegoTerminado) return;
+
+                const eleccionUsuario = event.target.id;
+                const eleccionComputadora = opciones[Math.floor(Math.random() * 3)];
+                mostrarDEFCON(); // Mostrar DEFCON nuevamente
+
+                let resultado;
+                if (eleccionUsuario === eleccionComputadora) {
+                    resultado = "Empate. La batalla continúa.";
+                    document.getElementById("resultado").className = "empate";
+                    empates++;
+                } else if (
+                    (eleccionUsuario === "piedra" && eleccionComputadora === "tijeras") ||
+                    (eleccionUsuario === "papel" && eleccionComputadora === "piedra") ||
+                    (eleccionUsuario === "tijeras" && eleccionComputadora === "papel")
+                ) {
+                    resultado = mensajesVictoria[Math.floor(Math.random() * mensajesVictoria.length)];
+                    document.getElementById("resultado").className = "victoria";
+                    victorias++;
+                } else {
+                    resultado = mensajesDerrota[Math.floor(Math.random() * mensajesDerrota.length)];
+                    document.getElementById("resultado").className = "derrota";
+                    derrotas++;
+                }
+
+                document.getElementById("resultado").textContent = `Elegiste ${eleccionUsuario}, la computadora eligió ${eleccionComputadora}. ${resultado}`;
+                document.getElementById("puntuacion").textContent = `Victorias: ${victorias} | Derrotas: ${derrotas} | Empates: ${empates}`;
+            });
+        });
 
         function decrementarDEFCON() {
             defcon--;
@@ -63,49 +115,7 @@ const opciones = ["piedra", "papel", "tijeras"];
             document.getElementById("defcon").textContent = `DEFCON ${defcon}`;
         }
 
-        function actualizarCuentaAtras() {
-            temporizador--;
-            document.getElementById("temporizador").textContent = `Tiempo restante: ${temporizador} segundos`;
-            if (temporizador === 0) {
-                clearInterval(actualizarTemporizador);
-                document.getElementById("temporizador").textContent = "¡Tiempo agotado!";
-                document.getElementById("iniciarJuegoButton").style.display = "block"; // Mostrar el botón "Iniciar Juego"
-                juegoTerminado = true;
-            }
-        }
-
-        function elegirOpcion(opcion) {
-            if (juegoTerminado) return;
-
-            clearInterval(defconInterval); // Reiniciar el contador DEFCON
-            mostrarDEFCON(); // Mostrar DEFCON nuevamente
-
-            const eleccionComputadora = opciones[Math.floor(Math.random() * 3)];
-
-            let resultado;
-            if (opcion === eleccionComputadora) {
-                resultado = "Empate. La batalla continúa.";
-                document.getElementById("resultado").className = "empate";
-                empates++;
-            } else if (
-                (opcion === "piedra" && eleccionComputadora === "tijeras") ||
-                (opcion === "papel" && eleccionComputadora === "piedra") ||
-                (opcion === "tijeras" && eleccionComputadora === "papel")
-            ) {
-                resultado = mensajesVictoria[Math.floor(Math.random() * mensajesVictoria.length)];
-                document.getElementById("resultado").className = "victoria";
-                victorias++;
-            } else {
-                resultado = mensajesDerrota[Math.floor(Math.random() * mensajesDerrota.length)];
-                document.getElementById("resultado").className = "derrota";
-                derrotas++;
-            }
-
-            document.getElementById("resultado").textContent = `Elegiste ${opcion}, la computadora eligió ${eleccionComputadora}. ${resultado}`;
-            document.getElementById("puntuacion").textContent = `Victorias: ${victorias} | Derrotas: ${derrotas} | Empates: ${empates}`;
-        }
-
-        function mostrarCodigo(codigo) {
+       function mostrarCodigo(codigo) {
             const codigoUsuario = document.getElementById("codigoUsuario");
             const tiempoTotal = 60000; // 60 segundos
             let tiempoTranscurrido = 0;
