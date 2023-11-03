@@ -6,9 +6,21 @@
 </head>
 <body>
     <div id="pantalla">
-        <h1 id="titulo"></h1>
-        <div id="computadora"></div>
-        <div id="usuario"></div>
+        <h1 id="titulo" class="escondido">Simulación de Guerra Termonuclear</h1>
+        <div id="computadora">Conectado con WOPR ..................................</div>
+        <div id="usuario" class="escondido">
+            <div id="nombre-usuario" class="escondido">
+                Nombre de usuario: <input type="text" id="nombre-entrada">
+            </div>
+            <div id="codigo-usuario" class="escondido">
+                Contraseña (mínimo 8 caracteres): <input type="text" id="codigo-entrada">
+            </div>
+            <div id="pregunta-juego" class="escondido">
+                Hola <span id="nombre-usuario-respuesta"></span>. ¿Jugamos a algún juego?
+                <button id="si-button">Sí</button>
+                <button id="no-button">No</button>
+            </div>
+        </div>
     </div>
 
     <script src="js/wargames.js"></script>
