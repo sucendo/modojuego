@@ -21,12 +21,14 @@ window.addEventListener("load", function() {
     // Mostrar "conectado con WOPR" al principio
     const mensajeTexto = document.getElementById("mensaje-texto");
     mensajeTexto.textContent = "";
-    mostrarTextoCaracterPorCaracter("Conectado con WOPR ............................", mensajeTexto, 100, function() {
+    mostrarTextoCaracterPorCaracter("Conectado con WOPR", mensajeTexto, 100, function() {
+        mensajeTexto.textContent += " ";
         // Después de la conexión, preguntar por el nombre del usuario
         mostrarTextoCaracterPorCaracter("Por favor, ingresa tu nombre de usuario: ", mensajeTexto, 100, function() {
             const entradaUsuario = document.createElement("input");
             entradaUsuario.type = "text";
             entradaUsuario.id = "nombre-usuario";
+            entradaUsuario.style.display = "none";
             mensajeTexto.appendChild(entradaUsuario);
             entradaUsuario.addEventListener("input", function() {
                 if (entradaUsuario.value.length >= 8) {
@@ -41,4 +43,3 @@ window.addEventListener("load", function() {
 });
 
 // Resto del código para manejar las respuestas del usuario (Sí/No) y las acciones del juego
-
