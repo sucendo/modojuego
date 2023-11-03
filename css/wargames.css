@@ -1,46 +1,112 @@
-/* Estilo para la Simulación de Guerra Termonuclear */
+/* Estilo para el juego de simulación de guerra nuclear */
 body {
-    font-family: monospace, Arial, sans-serif;
-    background-color: black;
-    color: #3498db; /* Azul claro */
-    text-align: left;
+    font-family: Arial, sans-serif;
+    background-color: #222;
+    color: #eee;
+    text-align: center;
     margin: 0;
-    margin-left: 10px;
     padding: 0;
 }
 
-#chatbox {
+h1 {
     margin-top: 20px;
-}
-
-#chat {
-    font-size: 24px;
-}
-
-input[type="text"] {
-    background-color: black;
-    color: #3498db; /* Azul claro */
-    border: none;
-    font-size: 24px;
-    font-weight: bold;
-    letter-spacing: 4px;
-    width: 100%;
+    color: #ff8800;
 }
 
 button {
-    background-color: black;
-    color: #3498db; /* Azul claro */
+    background-color: #ff8800;
+    color: #fff;
+    font-size: 16px;
     border: none;
-    font-size: 24px;
-    font-weight: bold;
-    letter-spacing: 4px;
+    padding: 10px 20px;
+    margin: 10px;
     cursor: pointer;
     transition: background-color 0.3s;
-    display: block;
-    margin-top: 10px;
 }
 
 button:hover {
-    background-color: #3498db; /* Azul claro */
-    color: black;
+    background-color: #ffaa33;
+}
+
+#temporizador {
+    font-size: 24px;
+    color: #ff8800;
+    margin: 20px 0;
+}
+
+#resultado {
+    font-size: 18px;
+    margin-top: 20px;
+}
+
+/* Estilo para el texto según el resultado */
+#resultado.victoria {
+    color: green;
+}
+
+#resultado.derrota {
+    color: red;
+}
+
+#resultado.empate {
+    color: yellow;
+}
+
+#puntuacion {
+    font-size: 16px;
+    color: #fff;
+}
+
+#reinicioButton {
+    background-color: #ff8800;
+    color: #fff;
+    font-size: 16px;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#reinicioButton:hover {
+    background-color: #ffaa33;
+}
+
+/* Estilos para los dígitos del código */
+#codigoUsuario {
+    font-size: 36px; /* Tamaño de fuente más grande para los dígitos */
+    color: #3498db; /* Color azul clarito para los dígitos */
+    font-weight: bold; /* Texto en negrita */
+    letter-spacing: 4px; /* Espaciado entre los dígitos */
+}
+
+/* Estilos para dispositivos móviles */
+@media (max-width: 767px) {
+    h1 {
+        font-size: 24px; /* Reducir el tamaño del título en dispositivos móviles */
+    }
+
+    button {
+        font-size: 14px; /* Reducir el tamaño de los botones en dispositivos móviles */
+    }
+
+    #temporizador {
+        font-size: 20px; /* Reducir el tamaño del temporizador en dispositivos móviles */
+    }
+
+    #resultado {
+        font-size: 16px; /* Reducir el tamaño del resultado en dispositivos móviles */
+    }
+
+    #puntuacion {
+        font-size: 14px; /* Reducir el tamaño de la puntuación en dispositivos móviles */
+    }
+
+    #reinicioButton {
+        font-size: 14px; /* Reducir el tamaño del botón de reinicio en dispositivos móviles */
+    }
+
+    #codigoUsuario {
+        font-size: 28px; /* Reducir el tamaño de los dígitos en dispositivos móviles */
+        letter-spacing: 2px; /* Reducir el espaciado entre los dígitos en dispositivos móviles */
+    }
 }
