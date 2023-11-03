@@ -37,6 +37,23 @@ function manejarEntradaUsuario(mensaje, siguienteMensaje, inputId, callback) {
     });
 }
 
+// Función para mostrar opciones
+function mostrarOpciones(opciones, callback) {
+    const mensajeTexto = document.getElementById("mensaje-texto");
+    mensajeTexto.textContent = "";
+    
+    for (let i = 0; i < opciones.length; i++) {
+        const botonOpcion = document.createElement("button");
+        botonOpcion.textContent = opciones[i];
+        botonOpcion.addEventListener("click", function() {
+            if (typeof callback === "function") {
+                callback(opciones[i]);
+            }
+        });
+        mensajeTexto.appendChild(botonOpcion);
+    }
+}
+
 // Cuando la página se carga
 window.addEventListener("load", function() {
     const mensajeTexto = document.getElementById("mensaje-texto");
@@ -51,8 +68,15 @@ window.addEventListener("load", function() {
             manejarEntradaUsuario("Contraseña (mínimo 8 caracteres): ", "¡Hola " + nombreUsuario + "! ¿Jugamos a algún juego?", "contrasena-usuario", function() {
                 // Pantalla 4: Saludo y opciones del juego
                 mensajeTexto.textContent = `¡Hola, ${nombreUsuario}! ¿Jugamos a algún juego?`;
-                const opcionesUsuario = document.getElementById("opciones-usuario");
-                opcionesUsuario.classList.remove("escondido");
+                const opciones = ["Sí", "No"];
+                mostrarOpciones(opciones, function(opcion) {
+                    if (opcion === "Sí") {
+                        mensajeTexto.textContent = "Esperando orden de ataque";
+                        // Lógica para continuar con el juego
+                    } else {
+                        mensajeTexto.textContent = "Hasta la próxima. ¡Adiós!";
+                    }
+                });
             });
         });
     });
