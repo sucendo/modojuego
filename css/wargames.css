@@ -1,9 +1,51 @@
-/* Estilo retro de los años 80 para la pantalla */
+/* Estilo para la Simulación de Guerra Termonuclear */
 body {
-    background-color: #000; /* Fondo negro */
-    font-family: 'Press Start 2P', cursive; /* Fuente estilo píxel */
-    color: #00a0ff; /* Texto azul clarito */
+    font-family: Arial, sans-serif;
+    background-color: black;
+    color: #3498db; /* Azul claro */
     text-align: center;
     margin: 0;
     padding: 0;
+}
+
+#pantalla {
+    margin-top: 20px;
+}
+
+#titulo {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+#computadora {
+    font-size: 24px;
+}
+
+#usuario {
+    font-size: 24px;
+}
+
+input[type="text"] {
+    background-color: black;
+    color: #3498db; /* Azul claro */
+    border: none;
+    font-size: 24px;
+    font-weight: bold;
+    letter-spacing: 4px;
+}
+
+button {
+    background-color: black;
+    color: #3498db; /* Azul claro */
+    border: none;
+    font-size: 24px;
+    font-weight: bold;
+    letter-spacing: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #3498db; /* Azul claro */
+    color: black;
 }
