@@ -30,7 +30,7 @@ function buscarPalabrasClave(texto, respuestas) {
         } catch (error) {
           return "No pude resolver la operación matemática.";
         }
-      } else if (palabraClave === "chiste" || palabraClave === "gracias") {
+      } else if (palabraClave === "chiste" || palabraClave === "gracias" || palabraClave === "cuéntame una curiosidad") {
         const respuestasCategoria = respuestas[palabraClave];
       
         if (respuestasCategoria) {
