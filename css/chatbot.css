@@ -61,7 +61,7 @@
 }
 
 /* Estilo para dispositivos móviles */
-@media screen and (max-width: 768px)
+@media screen and (max-width:768px) { 
   #chat-container {
     font-size: 1.2rem; /* Aumenta el tamaño de fuente en el contenedor principal */
   }
