@@ -46,6 +46,9 @@ function mostrarMensaje(usuario, mensaje) {
   nuevoMensaje.className = usuario === "Usuario" ? "mensaje-usuario" : "mensaje-robot";
   nuevoMensaje.textContent = `${usuario}: ${mensaje}`;
   chat.appendChild(nuevoMensaje);
+
+  // Desplaza automáticamente el scroll hacia abajo
+  chat.scrollTop = chat.scrollHeight;
 }
 
 // Cargar las respuestas y utilizarlas
