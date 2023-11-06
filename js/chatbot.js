@@ -8,8 +8,6 @@ function cargarRespuestas() {
     });
 }
 
-const math = require('mathjs');
-
 function buscarPalabrasClave(texto, respuestas) {
   texto = texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
