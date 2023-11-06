@@ -1,59 +1,63 @@
-/* Estilo general */
-body {
-  font-family: Arial, sans-serif;
-  background-color: #f2f2f2; /* Color de fondo general */
-  margin: 0;
-  padding: 0;
-}
-
+/* Estilo para el contenedor principal del chat */
 #chat-container {
-  background-color: #fff; /* Fondo blanco para el contenedor del chat */
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  height: 100vh; /* 100% de la altura de la ventana */
 }
 
-/* Estilo de mensajes */
-.mensaje-robot {
-  background-color: #f2f2f2; /* Fondo gris claro para respuestas del chatbot */
-  padding: 10px;
-  margin: 10px 0;
-  border-radius: 8px;
+/* Estilo para el contenedor de chat */
+#chat {
+  flex: 1; /* El chat ocupará el espacio disponible */
+  overflow-y: auto; /* Barra de desplazamiento vertical si es necesario */
+  padding: 1rem; /* Usar unidades relativas */
+  font-size: 1rem; /* Tamaño de fuente relativo */
 }
 
+/* Estilo para los mensajes de usuario y robot */
+.mensaje-usuario, .mensaje-robot {
+  border: 1px solid #ddd;
+  margin: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 8px;
+  max-width: 70%; /* Ancho máximo del mensaje */
+  font-size: 1rem; /* Tamaño de fuente relativo */
+}
+
+/* Estilo para los mensajes del usuario */
 .mensaje-usuario {
-  background-color: #fff; /* Fondo blanco para mensajes del usuario */
-  padding: 10px;
-  margin: 10px 0;
-  border-radius: 8px;
+  align-self: flex-end; /* Alineación a la derecha */
+  background-color: #007bff;
+  color: #fff;
 }
 
-/* Estilo para el campo de entrada y botón */
+/* Estilo para los mensajes del robot */
+.mensaje-robot {
+  align-self: flex-start; /* Alineación a la izquierda */
+  background-color: #f7f7f7;
+}
+
+/* Estilo para el contenedor de entrada */
 #input-container {
   display: flex;
   align-items: center;
-  background-color: #fff;
-  padding: 10px;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  background: #f7f7f7;
+  padding: 1rem; /* Usar unidades relativas */
 }
 
+/* Estilo para el campo de entrada de texto */
 #userInput {
-  flex: 1;
-  border: none;
-  padding: 10px;
-  border-radius: 8px;
+  flex: 1; /* El campo de entrada ocupará el espacio disponible */
+  padding: 0.5rem; /* Usar unidades relativas */
+  font-size: 1rem; /* Tamaño de fuente relativo */
+  margin-right: 1rem; /* Usar unidades relativas */
 }
 
+/* Estilo para el botón de enviar */
 #enviar {
-  background-color: #007bff; /* Color de fondo del botón Enviar */
-  color: #fff; /* Color de texto del botón Enviar */
+  background: #007bff;
+  color: #fff;
   border: none;
-  border-radius: 8px;
-  padding: 10px 20px;
-  margin-left: 10px;
+  padding: 0.5rem 1rem; /* Usar unidades relativas */
   cursor: pointer;
 }
 
