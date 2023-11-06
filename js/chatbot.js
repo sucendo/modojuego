@@ -47,21 +47,26 @@ function mostrarMensaje(usuario, mensaje) {
 
   chat.appendChild(nuevoMensaje);
 
-  // Dividir el mensaje en caracteres
-  const caracteres = mensaje.split("");
-  let index = 0;
+  // Verifica si el usuario es el Robot (chatbot) para aplicar el efecto de escritura
+  if (usuario === "Robot") {
+    // Dividir el mensaje en caracteres
+    const caracteres = mensaje.split("");
+    let index = 0;
 
-  const mostrarCaracter = () => {
-    if (index < caracteres.length) {
-      nuevoMensaje.textContent += caracteres[index];
-      index++;
-      // Hacer una llamada recursiva para mostrar el próximo carácter después de un retraso
-      setTimeout(mostrarCaracter, 50); // Controla la velocidad de escritura (ajusta según lo necesario)
-    }
-  };
+    const mostrarCaracter = () => {
+      if (index < caracteres.length) {
+        nuevoMensaje.textContent += caracteres[index];
+        index++;
+        // Hacer una llamada recursiva para mostrar el próximo carácter después de un retraso
+        setTimeout(mostrarCaracter, 50); // Controla la velocidad de escritura (ajusta según lo necesario)
+      }
+    };
 
-  // Iniciar la animación de escritura
-  mostrarCaracter();
+    // Iniciar la animación de escritura
+    mostrarCaracter();
+  } else {
+    nuevoMensaje.textContent = mensaje;
+  }
 
   // Desplaza automáticamente el scroll hacia abajo
   chat.scrollTop = chat.scrollHeight;
