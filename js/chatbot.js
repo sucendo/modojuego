@@ -34,6 +34,12 @@ function buscarPalabrasClave(texto, respuestas) {
           const respuestaAleatoria = respuestasCategoria[Math.floor(Math.random() * respuestasCategoria.length)];
           return respuestaAleatoria;
         }
+      } else if (palabraClave === "nombre") {
+        // Si la pregunta es sobre el nombre del chatbot
+        return respuestas[palabraClave];
+      } else if (nombreUsuario && (texto.includes("me llamo") || texto.includes("soy "))) {
+        // Si el usuario responde con su nombre después de la pregunta sobre el nombre del chatbot
+        return `Encantado de conocerte, ${nombreUsuario}`;
       }
       return respuestas[palabraClave];
     }
