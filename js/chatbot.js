@@ -1,6 +1,6 @@
 // Función para cargar el archivo JSON
 function cargarRespuestas() {
-  return fetch('data/chatbotrespuestas.json')
+  return fetch('../data/chatbotrespuestas.json')
     .then(response => response.json())
     .then(data => data.respuestas)
     .catch(error => {
