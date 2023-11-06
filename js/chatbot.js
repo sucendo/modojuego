@@ -40,9 +40,13 @@ function buscarPalabrasClave(texto, respuestas) {
       } else if (palabraClave === "nombre") {
         // Si la pregunta es sobre el nombre del chatbot
         return respuestas[palabraClave];
-      } else if (nombreUsuario && (texto.includes("me llamo") || texto.includes("soy "))) {
-        // Si el usuario responde con su nombre después de la pregunta sobre el nombre del chatbot
-        return `Encantado de conocerte, ${nombreUsuario}`;
+     } else if (texto.includes("me llamo") || texto.includes("soy ")) {
+        // Extraer el nombre del usuario del texto
+        const nombre = texto.split("me llamo")[1] || texto.split("soy ")[1];
+        if (nombre) {
+          nombreUsuario = nombre.trim();
+          return `Encantado de conocerte, ${nombreUsuario}!`;
+        }
       }
       return respuestas[palabraClave];
     }
