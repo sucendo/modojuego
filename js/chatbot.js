@@ -27,6 +27,11 @@ function buscarPalabrasClave(texto, respuestas) {
         } catch (error) {
           return "No pude resolver la operación matemática.";
         }
+      } else if (palabraClave === "chiste") {
+        // Selecciona un chiste aleatorio de la lista
+        const chistes = respuestas[palabraClave];
+        const chisteAleatorio = chistes[Math.floor(Math.random() * chistes.length)];
+        return chisteAleatorio;
       }
       return respuestas[palabraClave];
     }
