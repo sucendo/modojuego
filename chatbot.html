@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Chatbot Simple</title>
+    <title>Chatbot con Palabras Clave</title>
     <style>
-        /* Estilos para el Chatbot Simple */
+        /* Estilos para el Chatbot con Palabras Clave */
         body {
             font-family: Arial, sans-serif;
             background-color: #f0f0f0;
@@ -55,7 +55,6 @@
         button:hover {
             background-color: #2577b5;
         }
-
     </style>
 </head>
 <body>
@@ -68,110 +67,54 @@
     </div>
 
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const chat = document.getElementById("chat");
-            const userInput = document.getElementById("userInput");
-            const enviarButton = document.getElementById("enviar");
+        const palabrasClave = {
+            "nombre": "Mi nombre es ChatGPT, ¿en qué puedo ayudarte?",
+            "tiempo": "No tengo acceso a información en tiempo real. Lo siento.",
+            "chiste": "¿Por qué los pájaros no usan Facebook? Porque ya tienen Twitter.",
+            "matemáticas": "¡Por supuesto! ¿En qué problema necesitas ayuda?",
+            "teorema de Pitágoras": "El teorema de Pitágoras establece que en un triángulo rectángulo, el cuadrado de la hipotenusa es igual a la suma de los cuadrados de los catetos. Es decir, a^2 + b^2 = c^2."
+            // Agrega más palabras clave y respuestas aquí...
+        };
         
-            const respuestas = {
-                "Hola": "¡Hola! ¿En qué puedo ayudarte?",
-                "¿Cómo estás?": "Estoy bien, gracias.",
-                "Adiós": "¡Hasta luego!",
-                "Otra pregunta": "Claro, adelante. Pregunta lo que quieras.",
-                "¿Qué tiempo hace hoy?": "No tengo acceso a información en tiempo real. Lo siento.",
-                "Cuéntame un chiste": "¿Puedes contarme un chiste?",
-                "¿Puedes ayudarme con matemáticas?": "¿Puedes ayudarme con un problema matemático?",
-                "Explícame el teorema de Pitágoras": "Explícame el teorema de Pitágoras.",
-                "¿Cuál es el sentido de la vida?": "¿Cuál es el sentido de la vida?",
-                "¿Qué es la inteligencia artificial?": "¿Qué es la inteligencia artificial?",
-                "¿Cuál es la capital de Francia?": "¿Cuál es la capital de Francia?",
-                "¿Qué es la teoría de la relatividad de Einstein?": "Explícame la teoría de la relatividad de Einstein.",
-                "¿Qué es la programación?": "Explícame la programación.",
-                "¿Cuál es la fórmula del área de un círculo?": "¿Cuál es la fórmula del área de un círculo?",
-                "¿Cómo se realiza la fotosíntesis en las plantas?": "¿Cómo se realiza la fotosíntesis en las plantas?",
-                "¿Quién fue Isaac Newton?": "¿Quién fue Isaac Newton?",
-                "¿Cuál es la fecha de independencia de Estados Unidos?": "¿Cuál es la fecha de independencia de Estados Unidos?",
-                "¿Qué es la Segunda Ley de Newton?": "Explícame la Segunda Ley de Newton.",
-                "¿Qué es la energía solar?": "¿Qué es la energía solar?",
-                "¿Quién pintó La Mona Lisa?": "¿Quién pintó La Mona Lisa?",
-                "¿Cuántos planetas hay en el sistema solar?": "¿Cuántos planetas hay en el sistema solar?",
-                "¿Qué es la ecología?": "¿Qué es la ecología?",
-                "¿Cuál es la velocidad de la luz en el vacío?": "¿Cuál es la velocidad de la luz en el vacío?",
-                "¿Cómo funciona un motor de combustión interna?": "¿Cómo funciona un motor de combustión interna?",
-                "¿Cuál es la ley de la oferta y la demanda?": "¿Cuál es la ley de la oferta y la demanda?",
-                "¿Cuál es la fórmula de la ley de la gravedad de Newton?": "¿Cuál es la fórmula de la ley de la gravedad de Newton?",
-                "¿Quién escribió 'Romeo y Julieta'?": "¿Quién escribió 'Romeo y Julieta'?",
-                "¿Cuál es la estructura del ADN?": "¿Cuál es la estructura del ADN?",
-                "¿Quién fue Albert Einstein?": "¿Quién fue Albert Einstein?",
-                "¿Cuál es la capital de Japón?": "¿Cuál es la capital de Japón?",
-                "¿Qué es la inteligencia emocional?": "¿Qué es la inteligencia emocional?",
-                "¿Quién inventó la bombilla eléctrica?": "¿Quién inventó la bombilla eléctrica?",
-                "¿Cuál es el proceso de la fotosíntesis?": "¿Cuál es el proceso de la fotosíntesis?",
-                "¿Cuál es la teoría del Big Bang?": "¿Cuál es la teoría del Big Bang?",
-                "¿Qué es la teoría de la evolución?": "¿Qué es la teoría de la evolución?",
-                "¿Quién pintó 'La noche estrellada'?": "¿Quién pintó 'La noche estrellada'?",
-                "¿Cuál es la fórmula de la energía cinética?": "¿Cuál es la fórmula de la energía cinética?",
-                "¿Qué es la Ley de Murphy?": "¿Qué es la Ley de Murphy?",
-                "¿Cuál es la capital de Australia?": "¿Cuál es la capital de Australia?",
-                "¿Qué es la criptomoneda?": "¿Qué es la criptomoneda?",
-                "¿Quién escribió 'Cien años de soledad'?": "¿Quién escribió 'Cien años de soledad'?",
-                "¿Cuál es la estructura de un átomo?": "¿Cuál es la estructura de un átomo?",
-                "¿Qué es la energía renovable?": "¿Qué es la energía renovable?",
-                "¿Quién fue Marie Curie?": "¿Quién fue Marie Curie?",
-                "¿Cuál es la capital de Argentina?": "¿Cuál es la capital de Argentina?",
-                "¿Qué es el cambio climático?": "¿Qué es el cambio climático?",
-                "¿Quién fue Pablo Picasso?": "¿Quién fue Pablo Picasso?",
-                "nombre": "Mi nombre es Chatbot.",
-                "llamas": "Me llaman Chatbot.",
-                "identificación": "Soy un chatbot que puede responder preguntas."
-            };
-
-            function mostrarMensaje(usuario, mensaje) {
-                const nuevoMensaje = document.createElement("div");
-                nuevoMensaje.className = usuario === "Usuario" ? "mensaje-usuario" : "mensaje-robot";
-                nuevoMensaje.textContent = `${usuario}: ${mensaje}`;
-                chat.appendChild(nuevoMensaje);
+        const chat = document.getElementById("chat");
+        const userInput = document.getElementById("userInput");
+        const enviarButton = document.getElementById("enviar");
+        
+        function mostrarMensaje(usuario, mensaje) {
+            const nuevoMensaje = document.createElement("div");
+            nuevoMensaje.className = usuario === "Usuario" ? "mensaje-usuario" : "mensaje-robot";
+            nuevoMensaje.textContent = `${usuario}: ${mensaje}`;
+            chat.appendChild(nuevoMensaje);
+        }
+        
+        function responderPregunta(pregunta) {
+            const respuesta = palabrasClave[pregunta];
+            if (respuesta) {
+                mostrarMensaje("Usuario", pregunta);
+                mostrarMensaje("Robot", respuesta);
+            } else {
+                mostrarMensaje("Robot", "Lo siento, no entiendo tu pregunta.");
             }
+        }
         
-            function responderPregunta(pregunta) {
-                let respuesta = respuestas[pregunta];
-        
-                if (!respuesta) {
-                    for (const palabraClave in respuestas) {
-                        if (pregunta.toLowerCase().includes(palabraClave.toLowerCase())) {
-                            respuesta = respuestas[palabraClave];
-                            break;
-                        }
-                    }
-                }
-        
-                if (respuesta) {
-                    mostrarMensaje("Usuario", pregunta);
-                    mostrarMensaje("Robot", respuesta);
-                } else {
-                    mostrarMensaje("Robot", "Lo siento, no entiendo tu pregunta.");
-                }
+        enviarButton.addEventListener("click", function () {
+            const pregunta = userInput.value;
+            if (pregunta.trim() !== "") {
+                mostrarMensaje("Usuario", pregunta);
+                userInput.value = "";
+                responderPregunta(pregunta);
             }
+        });
         
-            enviarButton.addEventListener("click", function () {
+        userInput.addEventListener("keyup", function (event) {
+            if (event.key === "Enter") {
                 const pregunta = userInput.value;
                 if (pregunta.trim() !== "") {
                     mostrarMensaje("Usuario", pregunta);
                     userInput.value = "";
                     responderPregunta(pregunta);
                 }
-            });
-        
-            userInput.addEventListener("keyup", function (event) {
-                if (event.key === "Enter") {
-                    const pregunta = userInput.value;
-                    if (pregunta.trim() !== "") {
-                        mostrarMensaje("Usuario", pregunta);
-                        userInput.value = "";
-                        responderPregunta(pregunta);
-                    }
-                }
-            });
+            }
         });
     </script>
 </body>
