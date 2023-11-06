@@ -43,13 +43,6 @@ input[type="text"] {
     outline: none;
 }
 
-#input-container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px;
-}
-
 button {
     background-color: #007BFF;
     color: white;
@@ -57,4 +50,55 @@ button {
     border-radius: 4px;
     padding: 8px 16px;
     cursor: pointer;
+}
+
+/* Estilo para el contenedor principal del chat */
+#chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh; /* 100% de la altura de la ventana */
+}
+
+/* Estilo para el contenedor de chat */
+#chat {
+  flex: 1; /* El chat ocupará el espacio disponible */
+  overflow-y: auto; /* Barra de desplazamiento vertical si es necesario */
+  padding: 10px;
+}
+
+/* Estilo para el contenedor de entrada */
+#input-container {
+  display: flex;
+  align-items: center;
+  background: #f7f7f7;
+  padding: 10px;
+}
+
+/* Estilo para el campo de entrada de texto */
+#userInput {
+  flex: 1; /* El campo de entrada ocupará el espacio disponible */
+  padding: 5px;
+  margin-right: 10px;
+}
+
+/* Estilo para el botón de enviar */
+#enviar {
+  background: #007bff;
+  color: #fff;
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+/* Estilo para dispositivos móviles */
+@media (max-width: 768px) {
+  #input-container {
+    padding: 5px;
+  }
+  #userInput {
+    margin-right: 5px;
+  }
+  #enviar {
+    padding: 5px 7px;
+  }
 }
