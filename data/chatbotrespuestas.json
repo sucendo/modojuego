@@ -20,7 +20,14 @@
   "cuál es el propósito de la vida": "El propósito de la vida es una cuestión filosófica que varía según las creencias y valores de cada persona. Algunos buscan el sentido de la vida a través de relaciones, logros personales, o contribuciones a la sociedad.",
   "qué te hace feliz": "No tengo emociones ni felicidad, pero estar aquí para ayudarte es mi principal objetivo.",
   "tiempo": "No tengo acceso a información en tiempo real. Lo siento.",
-  "chiste": "¿Por qué los pájaros no usan Facebook? Porque ya tienen Twitter.",
+  "chiste": [
+    "¿Por qué los pájaros no usan Facebook? Porque ya tienen Twitter.",
+    "¿Por qué el libro de matemáticas se tiró por la ventana? Porque tenía demasiados problemas.",
+    "¿Qué hace una abeja en el gimnasio? ¡Zum-ba!",
+    "¿Cómo se dice pañuelo en japonés? Saka-moko.",
+    "¿Qué le dice una iguana a su hermana gemela? Somos iguanitas.",
+    "¿Cuál es el café más peligroso del mundo? El ex-preso."
+  ],
   "matemáticas": "¡Por supuesto! ¿En qué problema necesitas ayuda?",
   "teorema de Pitágoras": "El teorema de Pitágoras establece que en un triángulo rectángulo, el cuadrado de la hipotenusa es igual a la suma de los cuadrados de los catetos. Es decir, a^2 + b^2 = c^2.",
   "capital de Francia": "La capital de Francia es París.",
