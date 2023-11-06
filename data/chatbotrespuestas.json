@@ -8,7 +8,6 @@
   "canción favorita": "No tengo preferencias musicales, pero puedo ayudarte a encontrar información sobre música.",
   "película favorita": "No tengo películas favoritas, pero puedo recomendarte algunas películas populares si lo deseas.",
   "significado de la vida": "El significado de la vida es una pregunta profunda y filosófica. Algunas personas creen que es encontrar la felicidad y el propósito, mientras que otros tienen sus propias interpretaciones.",
-  "agradecimiento": "De nada, ¡siempre estoy aquí para ayudarte!",
   "adiós": "¡Hasta luego! Si tienes más preguntas en el futuro, no dudes en volver.",
   "cómo estás": "Como soy una inteligencia artificial, no tengo emociones, pero estoy aquí y listo para ayudarte en lo que necesites.",
   "broma": "¿Quieres escuchar un chiste? Claro, aquí tienes uno: ¿Por qué los pájaros no usan Facebook? Porque ya tienen Twitter.",
@@ -29,6 +28,7 @@
     "¿Cuál es el café más peligroso del mundo? El ex-preso."
   ],
   "gracias": [
+    "De nada, ¡siempre estoy aquí para ayudarte!",
     "No hay de que.",
     "A tí.",
     "Sin problema."
