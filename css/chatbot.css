@@ -20,6 +20,7 @@
   padding: 0.5rem;
   border-radius: 8px;
   max-width: 70%; /* Ancho máximo del mensaje */
+  font-size: 1rem; /* Tamaño de fuente relativo */
 }
 
 /* Estilo para los mensajes del usuario */
@@ -67,6 +68,7 @@
   }
   #userInput {
     margin-right: 0.5rem; /* Usar unidades relativas */
+    font-size: 1.2rem; /* Tamaño de fuente más grande para móviles */
   }
   #enviar {
     padding: 0.5rem 0.7rem; /* Usar unidades relativas */
