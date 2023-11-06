@@ -63,14 +63,22 @@
 
 /* Estilo para dispositivos móviles */
 @media (max-width: 768px) {
+  #chat-container {
+    font-size: 1.2rem; /* Aumenta el tamaño de fuente en el contenedor principal */
+  }
   #input-container {
-    padding: 0.5rem; /* Usar unidades relativas */
+    padding: 1rem; /* Aumenta el relleno para el contenedor de entrada */
   }
   #userInput {
-    margin-right: 0.5rem; /* Usar unidades relativas */
-    font-size: 1.5rem; /* Tamaño de fuente más grande para móviles */
+    font-size: 1.5rem; /* Aumenta el tamaño de fuente del campo de entrada */
+    padding: 0.5rem; /* Aumenta el relleno del campo de entrada */
   }
   #enviar {
-    padding: 0.5rem 0.7rem; /* Usar unidades relativas */
+    font-size: 1.2rem; /* Aumenta el tamaño de fuente del botón */
+    padding: 0.5rem 1rem; /* Aumenta el relleno del botón */
+  }
+  .mensaje-robot,
+  .mensaje-usuario {
+    font-size: 1.2rem; /* Aumenta el tamaño de fuente de los mensajes del chat */
   }
 }
