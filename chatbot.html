@@ -72,7 +72,7 @@
             const chat = document.getElementById("chat");
             const userInput = document.getElementById("userInput");
             const enviarButton = document.getElementById("enviar");
-
+        
             const respuestas = {
                 "Hola": "¡Hola! ¿En qué puedo ayudarte?",
                 "¿Cómo estás?": "Estoy bien, gracias.",
@@ -132,21 +132,19 @@
                 nuevoMensaje.textContent = `${usuario}: ${mensaje}`;
                 chat.appendChild(nuevoMensaje);
             }
-
+        
             function responderPregunta(pregunta) {
-                pregunta = pregunta.toLowerCase(); // Convertir la pregunta a minúsculas para una coincidencia no sensible a mayúsculas
-
-                // Buscar palabras clave en la pregunta y responder en consecuencia
-                for (const palabraClave in respuestas) {
-                    if (pregunta.includes(palabraClave)) {
-                        mostrarMensaje("Usuario", pregunta);
-                        mostrarMensaje("Robot", respuestas[palabraClave]);
-                        return; // Detener la búsqueda después de la primera coincidencia
+                let respuesta = respuestas[pregunta];
+        
+                if (!respuesta) {
+                    for (const palabraClave in respuestas) {
+                        if (pregunta.toLowerCase().includes(palabraClave.toLowerCase())) {
+                            respuesta = respuestas[palabraClave];
+                            break;
+                        }
                     }
                 }
-
-                // Si no se encontró una coincidencia con palabras clave, buscar en las respuestas predefinidas
-                const respuesta = respuestas[pregunta];
+        
                 if (respuesta) {
                     mostrarMensaje("Usuario", pregunta);
                     mostrarMensaje("Robot", respuesta);
@@ -154,7 +152,7 @@
                     mostrarMensaje("Robot", "Lo siento, no entiendo tu pregunta.");
                 }
             }
-
+        
             enviarButton.addEventListener("click", function () {
                 const pregunta = userInput.value;
                 if (pregunta.trim() !== "") {
@@ -163,7 +161,7 @@
                     responderPregunta(pregunta);
                 }
             });
-
+        
             userInput.addEventListener("keyup", function (event) {
                 if (event.key === "Enter") {
                     const pregunta = userInput.value;
