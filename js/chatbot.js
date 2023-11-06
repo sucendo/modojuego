@@ -8,12 +8,12 @@ function cargarRespuestas() {
     });
 }
 
-// Función para buscar palabras clave en el texto (insensible a mayúsculas y minúsculas)
 function buscarPalabrasClave(texto, respuestas) {
-  texto = texto.toLowerCase();
+  // Convierte el texto de entrada a minúsculas y quita tildes
+  texto = texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
   for (const palabraClave in respuestas) {
-    if (texto.includes(palabraClave)) {
+    if (texto.includes(palabraClave.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase())) {
       return respuestas[palabraClave];
     }
   }
