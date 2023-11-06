@@ -63,7 +63,7 @@
 /* Estilo para dispositivos móviles */
 @media screen and (max-width:768px) { 
   #chat-container {
-    font-size: 1.2rem; /* Aumenta el tamaño de fuente en el contenedor principal */
+    font-size: 1.5rem; /* Aumenta el tamaño de fuente en el contenedor principal */
   }
   #input-container {
     padding: 1rem; /* Aumenta el relleno para el contenedor de entrada */
@@ -73,11 +73,11 @@
     padding: 0.5rem; /* Aumenta el relleno del campo de entrada */
   }
   #enviar {
-    font-size: 1.2rem; /* Aumenta el tamaño de fuente del botón */
+    font-size: 1.5rem; /* Aumenta el tamaño de fuente del botón */
     padding: 0.5rem 1rem; /* Aumenta el relleno del botón */
   }
   .mensaje-robot,
   .mensaje-usuario {
-    font-size: 1.2rem; /* Aumenta el tamaño de fuente de los mensajes del chat */
+    font-size: 1.5rem; /* Aumenta el tamaño de fuente de los mensajes del chat */
   }
 }
