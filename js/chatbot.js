@@ -44,8 +44,24 @@ function mostrarMensaje(usuario, mensaje) {
   const chat = document.getElementById("chat");
   const nuevoMensaje = document.createElement("div");
   nuevoMensaje.className = usuario === "Usuario" ? "mensaje-usuario" : "mensaje-robot";
-  nuevoMensaje.textContent = `${usuario}: ${mensaje}`;
+
   chat.appendChild(nuevoMensaje);
+
+  // Dividir el mensaje en caracteres
+  const caracteres = mensaje.split("");
+  let index = 0;
+
+  const mostrarCaracter = () => {
+    if (index < caracteres.length) {
+      nuevoMensaje.textContent += caracteres[index];
+      index++;
+      // Hacer una llamada recursiva para mostrar el próximo carácter después de un retraso
+      setTimeout(mostrarCaracter, 50); // Controla la velocidad de escritura (ajusta según lo necesario)
+    }
+  };
+
+  // Iniciar la animación de escritura
+  mostrarCaracter();
 
   // Desplaza automáticamente el scroll hacia abajo
   chat.scrollTop = chat.scrollHeight;
