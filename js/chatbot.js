@@ -32,6 +32,11 @@ function buscarPalabrasClave(texto, respuestas) {
         const chistes = respuestas[palabraClave];
         const chisteAleatorio = chistes[Math.floor(Math.random() * chistes.length)];
         return chisteAleatorio;
+      } else if (palabraClave === "gracias") {
+        // Selecciona un gracias aleatorio de la lista
+        const gracias = respuestas[palabraClave];
+        const graciasAleatorio = gracias[Math.floor(Math.random() * gracias.length)];
+        return graciasAleatorio;
       }
       return respuestas[palabraClave];
     }
