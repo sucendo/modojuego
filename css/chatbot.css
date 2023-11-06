@@ -1,0 +1,60 @@
+/* Estilos CSS (ajusta según tus preferencias) */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f6f6f6;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+#chat-container {
+    background-color: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+    max-width: 400px;
+}
+
+#chat {
+    padding: 16px;
+    margin: 0;
+    list-style: none;
+}
+
+.mensaje-usuario {
+    text-align: right;
+    margin: 8px 0;
+}
+
+.mensaje-robot {
+    text-align: left;
+    margin: 8px 0;
+}
+
+input[type="text"] {
+    width: 80%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-right: 8px;
+    outline: none;
+}
+
+#input-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+}
+
+button {
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 16px;
+    cursor: pointer;
+}
