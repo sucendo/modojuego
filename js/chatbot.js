@@ -17,6 +17,16 @@ function buscarPalabrasClave(texto, respuestas) {
         const ahora = new Date();
         const horaActual = `${ahora.getHours()}:${ahora.getMinutes()}`;
         return `${respuestas[palabraClave]} ${horaActual}`;
+      } else if (palabraClave === "cuanto es") {
+        // Extrae la expresión matemática del texto
+        const expresionMatematica = texto.replace(palabraClave, "").trim();
+        try {
+          // Evalúa la expresión matemática utilizando math.js
+          const resultado = math.evaluate(expresionMatematica);
+          return `${respuestas[palabraClave]} ${resultado}`;
+        } catch (error) {
+          return "No pude resolver la operación matemática.";
+        }
       }
       return respuestas[palabraClave];
     }
