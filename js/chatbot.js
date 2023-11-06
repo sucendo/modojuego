@@ -1,18 +1,16 @@
-// Función para cargar el archivo JSON
+// Función para cargar el archivo JSON de respuestas
 function cargarRespuestas() {
-  return fetch("../data/chatbotrespuestas.json")  // Usar '../' para retroceder un nivel al directorio 'data'
+  return fetch('data/chatbotrespuestas.json')
     .then(response => response.json())
-    .then(data => data.respuestas)
     .catch(error => {
       console.error('Error al cargar el archivo JSON:', error);
       return {};
     });
 }
 
-// Función para buscar palabras clave en el texto
+// Función para buscar palabras clave en el texto (insensible a mayúsculas y minúsculas)
 function buscarPalabrasClave(texto, respuestas) {
-  // Convierte el texto de entrada a minúsculas y quita tildes
-  texto = texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  texto = texto.toLowerCase();
 
   for (const palabraClave in respuestas) {
     if (texto.includes(palabraClave)) {
@@ -32,12 +30,26 @@ function mostrarMensaje(usuario, mensaje) {
 }
 
 // Cargar las respuestas y utilizarlas
-cargarRespuestas()
-  .then(respuestas => {
-    const enviarButton = document.getElementById("enviar");
+cargarRespuestas().then(respuestas => {
+  const enviarButton = document.getElementById("enviar");
+  const userInput = document.getElementById("userInput");
 
-    enviarButton.addEventListener("click", function () {
-      const userInput = document.getElementById("userInput");
+  enviarButton.addEventListener("click", function () {
+    const pregunta = userInput.value;
+    if (pregunta.trim() !== "") {
+      mostrarMensaje("Usuario", pregunta);
+      userInput.value = "";
+      const respuesta = buscarPalabrasClave(pregunta, respuestas);
+      if (respuesta) {
+        mostrarMensaje("Robot", respuesta);
+      } else {
+        mostrarMensaje("Robot", "Lo siento, no entiendo tu pregunta.");
+      }
+    }
+  });
+
+  userInput.addEventListener("keyup", function (event) {
+    if (event.key === "Enter") {
       const pregunta = userInput.value;
       if (pregunta.trim() !== "") {
         mostrarMensaje("Usuario", pregunta);
@@ -49,21 +61,6 @@ cargarRespuestas()
           mostrarMensaje("Robot", "Lo siento, no entiendo tu pregunta.");
         }
       }
-    });
-
-    userInput.addEventListener("keyup", function (event) {
-      if (event.key === "Enter") {
-        const pregunta = userInput.value;
-        if (pregunta.trim() !== "") {
-          mostrarMensaje("Usuario", pregunta);
-          userInput.value = "";
-          const respuesta = buscarPalabrasClave(pregunta, respuestas);
-          if (respuesta) {
-            mostrarMensaje("Robot", respuesta);
-          } else {
-            mostrarMensaje("Robot", "Lo siento, no entiendo tu pregunta.");
-          }
-        }
-      }
-    });
+    }
   });
+});
