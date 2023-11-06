@@ -1,57 +1,3 @@
-/* Estilos CSS (ajusta según tus preferencias) */
-body {
-    font-family: Arial, sans-serif;
-    background-color: #f6f6f6;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-}
-
-#chat-container {
-    background-color: white;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
-    overflow: hidden;
-    max-width: 400px;
-}
-
-#chat {
-    padding: 16px;
-    margin: 0;
-    list-style: none;
-}
-
-.mensaje-usuario {
-    text-align: right;
-    margin: 8px 0;
-}
-
-.mensaje-robot {
-    text-align: left;
-    margin: 8px 0;
-}
-
-input[type="text"] {
-    width: 80%;
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    margin-right: 8px;
-    outline: none;
-}
-
-button {
-    background-color: #007BFF;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    padding: 8px 16px;
-    cursor: pointer;
-}
-
 /* Estilo para el contenedor principal del chat */
 #chat-container {
   display: flex;
@@ -63,7 +9,30 @@ button {
 #chat {
   flex: 1; /* El chat ocupará el espacio disponible */
   overflow-y: auto; /* Barra de desplazamiento vertical si es necesario */
-  padding: 10px;
+  padding: 1rem; /* Usar unidades relativas */
+  font-size: 1rem; /* Tamaño de fuente relativo */
+}
+
+/* Estilo para los mensajes de usuario y robot */
+.mensaje-usuario, .mensaje-robot {
+  border: 1px solid #ddd;
+  margin: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 8px;
+  max-width: 70%; /* Ancho máximo del mensaje */
+}
+
+/* Estilo para los mensajes del usuario */
+.mensaje-usuario {
+  align-self: flex-end; /* Alineación a la derecha */
+  background-color: #007bff;
+  color: #fff;
+}
+
+/* Estilo para los mensajes del robot */
+.mensaje-robot {
+  align-self: flex-start; /* Alineación a la izquierda */
+  background-color: #f7f7f7;
 }
 
 /* Estilo para el contenedor de entrada */
@@ -71,14 +40,15 @@ button {
   display: flex;
   align-items: center;
   background: #f7f7f7;
-  padding: 10px;
+  padding: 1rem; /* Usar unidades relativas */
 }
 
 /* Estilo para el campo de entrada de texto */
 #userInput {
   flex: 1; /* El campo de entrada ocupará el espacio disponible */
-  padding: 5px;
-  margin-right: 10px;
+  padding: 0.5rem; /* Usar unidades relativas */
+  font-size: 1rem; /* Tamaño de fuente relativo */
+  margin-right: 1rem; /* Usar unidades relativas */
 }
 
 /* Estilo para el botón de enviar */
@@ -86,19 +56,19 @@ button {
   background: #007bff;
   color: #fff;
   border: none;
-  padding: 5px 10px;
+  padding: 0.5rem 1rem; /* Usar unidades relativas */
   cursor: pointer;
 }
 
 /* Estilo para dispositivos móviles */
 @media (max-width: 768px) {
   #input-container {
-    padding: 5px;
+    padding: 0.5rem; /* Usar unidades relativas */
   }
   #userInput {
-    margin-right: 5px;
+    margin-right: 0.5rem; /* Usar unidades relativas */
   }
   #enviar {
-    padding: 5px 7px;
+    padding: 0.5rem 0.7rem; /* Usar unidades relativas */
   }
 }
