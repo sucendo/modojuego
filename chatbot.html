@@ -80,7 +80,7 @@
         const respuestas = {}; // Aquí almacenaremos las respuestas cargadas desde el archivo JSON.
 
         // Cargar respuestas desde el archivo JSON
-        fetch("respuestas.json")
+        fetch("data/chatbotrespuestas.json")
             .then(response => response.json())
             .then(data => {
                 respuestas = data;
