@@ -9,9 +9,10 @@
             margin: 0;
             padding: 0;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
+            justify-content: flex-end; /* Alinea el contenido al final de la pantalla */
             align-items: center;
-            height: 100vh;
+            min-height: 100vh; /* Mínimo 100% del alto de la pantalla */
         }
         
         #chat-container {
@@ -20,6 +21,7 @@
             border-radius: 12px;
             overflow: hidden;
             width: 350px;
+            margin-bottom: 20px; /* Espacio entre el chat y la caja de texto */
         }
         
         #chat {
@@ -69,6 +71,13 @@
         
         #userInput {
             margin: 0;
+            position: fixed; /* Mantiene la caja de texto fija */
+            bottom: 20px; /* Espacio desde la parte inferior de la pantalla */
+        }
+        
+        #enviar {
+            position: fixed; /* Mantiene el botón "Enviar" fijo */
+            bottom: 20px; /* Espacio desde la parte inferior de la pantalla */
         }
     </style>
 </head>
