@@ -1,7 +1,5 @@
 {
-  "nombre": "Mi nombre es ChatBot, ¿en qué puedo ayudarte?",
-  "saludo": "¡Hola! ¿Cómo puedo ayudarte hoy?",
-  "hola": "Hola, ¿en qué puedo ayudarte?",
+  "hola": "¡Hola! ¿Cómo puedo ayudarte?",
   "edad": "No tengo una edad, ya que soy un programa de inteligencia artificial.",
   "hobbies": "No tengo hobbies, pero disfruto ayudando a las personas.",
   "comida favorita": "No puedo comer, así que no tengo comida favorita.",
