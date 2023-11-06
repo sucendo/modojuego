@@ -9,11 +9,15 @@ function cargarRespuestas() {
 }
 
 function buscarPalabrasClave(texto, respuestas) {
-  // Convierte el texto de entrada a minúsculas y quita tildes
   texto = texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
   for (const palabraClave in respuestas) {
     if (texto.includes(palabraClave.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase())) {
+      if (palabraClave === "hora") {
+        const ahora = new Date();
+        const horaActual = `${ahora.getHours()}:${ahora.getMinutes()}`;
+        return `${respuestas[palabraClave]} ${horaActual}`;
+      }
       return respuestas[palabraClave];
     }
   }
