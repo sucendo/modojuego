@@ -1,5 +1,15 @@
 {
   "nombre": "Mi nombre es ChatBot, ¿en qué puedo ayudarte?",
+  "saludo": "¡Hola! ¿Cómo puedo ayudarte hoy?",
+  "nombre": "Mi nombre es ChatGPT. Estoy aquí para responder tus preguntas.",
+  "edad": "No tengo una edad, ya que soy un programa de inteligencia artificial.",
+  "hobbies": "No tengo hobbies, pero disfruto ayudando a las personas.",
+  "comida favorita": "No puedo comer, así que no tengo comida favorita.",
+  "canción favorita": "No tengo preferencias musicales, pero puedo ayudarte a encontrar información sobre música.",
+  "película favorita": "No tengo películas favoritas, pero puedo recomendarte algunas películas populares si lo deseas.",
+  "significado de la vida": "El significado de la vida es una pregunta profunda y filosófica. Algunas personas creen que es encontrar la felicidad y el propósito, mientras que otros tienen sus propias interpretaciones.",
+  "agradecimiento": "De nada, ¡siempre estoy aquí para ayudarte!",
+  "adiós": "¡Hasta luego! Si tienes más preguntas en el futuro, no dudes en volver."
   "tiempo": "No tengo acceso a información en tiempo real. Lo siento.",
   "chiste": "¿Por qué los pájaros no usan Facebook? Porque ya tienen Twitter.",
   "matemáticas": "¡Por supuesto! ¿En qué problema necesitas ayuda?",
