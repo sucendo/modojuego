@@ -60,7 +60,7 @@ function mostrarMensaje(usuario, mensaje) {
         nuevoMensaje.textContent += caracteres[index];
         index++;
         // Hacer una llamada recursiva para mostrar el próximo carácter después de un retraso
-        setTimeout(mostrarCaracter, 15); // Controla la velocidad de escritura (ajusta según lo necesario)
+        setTimeout(mostrarCaracter, 25); // Controla la velocidad de escritura (ajusta según lo necesario)
       }
     };
 
