@@ -15,11 +15,15 @@
 
 /* Estilo para los mensajes de usuario y robot */
 .mensaje-usuario, .mensaje-robot {
-  border: 1px solid #ddd;
-  margin: 0.5rem;
   padding: 0.5rem;
-  border-radius: 8px;
-  font-size: 1rem; /* Tamaño de fuente relativo */
+  border-radius: 0;
+  margin-bottom: 1rem;
+  max-width: 80%; /* Ancho máximo del mensaje */
+
+  /* Establecer colores de fondo y texto */
+  background-color: #fff; /* Fondo blanco para mensajes de usuario */
+  color: #333; /* Texto oscuro para mensajes de usuario */
+  border: 1px solid #ddd; /* Borde del mensaje (puedes ajustar el color) */
 }
 
 /* Estilo para los mensajes del usuario */
@@ -31,8 +35,10 @@
 
 /* Estilo para los mensajes del robot */
 .mensaje-robot {
-  align-self: flex-start; /* Alineación a la izquierda */
-  background-color: #f7f7f7;
+  align-self: flex-start; /* Alineación a la izquierda para el chatbot */
+  background-color: #f7f7f7; /* Fondo gris claro para mensajes del chatbot */
+  color: #333; /* Texto oscuro para mensajes del chatbot */
+  border: 1px solid #ddd; /* Borde del mensaje (puedes ajustar el color) */
 }
 
 /* Estilo para el contenedor de entrada */
