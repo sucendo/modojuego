@@ -68,7 +68,7 @@
   }
   #userInput {
     margin-right: 0.5rem; /* Usar unidades relativas */
-    font-size: 1.2rem; /* Tamaño de fuente más grande para móviles */
+    font-size: 1.5rem; /* Tamaño de fuente más grande para móviles */
   }
   #enviar {
     padding: 0.5rem 0.7rem; /* Usar unidades relativas */
