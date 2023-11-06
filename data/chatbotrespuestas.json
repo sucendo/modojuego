@@ -68,5 +68,10 @@
   "fórmula de la densidad": "La densidad se calcula con la fórmula D = m/V, donde D es la densidad, m es la masa y V es el volumen.",
   "Neil Armstrong": "Neil Armstrong fue el primer ser humano en caminar sobre la Luna durante la misión Apollo 11 en 1969.",
   "capital de Canadá": "La capital de Canadá es Ottawa.",
-  "fórmula del trabajo": "El trabajo se calcula con la fórmula W = F * d * cos(θ), donde W es el trabajo, F es la fuerza, d es la distancia y θ es el ángulo entre la fuerza y la dirección del desplazamiento."
+  "fórmula del trabajo": "El trabajo se calcula con la fórmula W = F * d * cos(θ), donde W es el trabajo, F es la fuerza, d es la distancia y θ es el ángulo entre la fuerza y la dirección del desplazamiento.",
+  "tírate un pedo": "Lo siento, no puedo realizar esa acción. ¿En qué puedo ayudarte?",
+  "novia": "Soy una inteligencia artificial y no tengo relaciones personales. Estoy aquí para responder tus preguntas.",
+  "eres tonto": "Estoy diseñado para proporcionar información y ayudar en lo que necesites. Si tienes alguna pregunta, estaré encantado de ayudarte.",
+  "eres una máquina": "Sí, soy un programa de inteligencia artificial creado para ayudarte. ¿En qué puedo asistirte?",
+  "insulto": "No es apropiado usar lenguaje ofensivo. Estoy aquí para responder preguntas de manera respetuosa."
 }
