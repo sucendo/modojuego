@@ -106,73 +106,54 @@
         <div id="chat">
             <div class="mensaje-robot">Hola, ¿en qué puedo ayudarte?</div>
         </div>
-        <div id="userInputContainer">
-            <input type="text" id="userInput">
+        <div id="input-container">
+            <input type="text" id="userInput" placeholder="Escribe tu pregunta aquí">
             <button id="enviar">Enviar</button>
         </div>
     </div>
 
     <script>
-        const palabrasClave = {
-            "nombre": "Mi nombre es ChatGPT, ¿en qué puedo ayudarte?",
+        const respuestas = {
+            "nombre": "Mi nombre es ChatBot, ¿en qué puedo ayudarte?",
             "tiempo": "No tengo acceso a información en tiempo real. Lo siento.",
             "chiste": "¿Por qué los pájaros no usan Facebook? Porque ya tienen Twitter.",
-            "matemáticas": "¡Por supuesto! ¿En qué problema necesitas ayuda?",
-            "teorema de Pitágoras": "El teorema de Pitágoras establece que en un triángulo rectángulo, el cuadrado de la hipotenusa es igual a la suma de los cuadrados de los catetos. Es decir, a^2 + b^2 = c^2.",
-            "capital de Francia": "La capital de Francia es París.",
-            "inteligencia artificial": "La inteligencia artificial es un campo de la informática que se enfoca en crear sistemas y máquinas que pueden realizar tareas que normalmente requieren inteligencia humana, como el aprendizaje, el razonamiento y la resolución de problemas.",
-            "fecha de independencia de Estados Unidos": "Estados Unidos declaró su independencia el 4 de julio de 1776.",
-            "ley de la gravedad de Newton": "La ley de la gravedad de Newton se describe con la fórmula F = G * (m1 * m2) / r^2, donde F es la fuerza de gravedad, G es la constante de gravitación universal, m1 y m2 son las masas de dos objetos y r es la distancia entre ellos.",
-            "autor de 'Romeo y Julieta'": "La obra 'Romeo y Julieta' fue escrita por William Shakespeare.",
-            "estructura del ADN": "El ADN (ácido desoxirribonucleico) tiene una estructura de doble hélice, con cadenas complementarias de nucleótidos que contienen información genética.",
             // Agrega más palabras clave y respuestas aquí...
         };
 
-        function buscarPalabrasClave(texto) {
-            for (const palabraClave in palabrasClave) {
-                if (texto.toLowerCase().includes(palabraClave)) {
-                    return palabrasClave[palabraClave];
-                }
-            }
-            return null;
-        }
-        
         const chat = document.getElementById("chat");
         const userInput = document.getElementById("userInput");
         const enviarButton = document.getElementById("enviar");
-        
+
         function mostrarMensaje(usuario, mensaje) {
             const nuevoMensaje = document.createElement("div");
             nuevoMensaje.className = usuario === "Usuario" ? "mensaje-usuario" : "mensaje-robot";
             nuevoMensaje.textContent = `${usuario}: ${mensaje}`;
             chat.appendChild(nuevoMensaje);
         }
-        
+
         function responderPregunta(pregunta) {
-            const respuesta = palabrasClave[pregunta];
-            if (respuesta) {
-                mostrarMensaje("Usuario", pregunta);
-                mostrarMensaje("Robot", respuesta);
-            } else {
-                mostrarMensaje("Robot", "Lo siento, no entiendo tu pregunta.");
+            for (const palabraClave in respuestas) {
+                if (pregunta.includes(palabraClave)) {
+                    mostrarMensaje("Usuario", pregunta);
+                    mostrarMensaje("Robot", respuestas[palabraClave]);
+                    userInput.value = "";
+                    return;
+                }
             }
+            mostrarMensaje("Robot", "Lo siento, no entiendo tu pregunta.");
         }
-        
+
         enviarButton.addEventListener("click", function () {
-            const pregunta = userInput.value;
-            if (pregunta.trim() !== "") {
-                mostrarMensaje("Usuario", pregunta);
-                userInput.value = "";
+            const pregunta = userInput.value.trim().toLowerCase();
+            if (pregunta !== "") {
                 responderPregunta(pregunta);
             }
         });
-        
+
         userInput.addEventListener("keyup", function (event) {
             if (event.key === "Enter") {
-                const pregunta = userInput.value;
-                if (pregunta.trim() !== "") {
-                    mostrarMensaje("Usuario", pregunta);
-                    userInput.value = "";
+                const pregunta = userInput.value.trim().toLowerCase();
+                if (pregunta !== "") {
                     responderPregunta(pregunta);
                 }
             }
