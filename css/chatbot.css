@@ -19,7 +19,6 @@
   margin: 0.5rem;
   padding: 0.5rem;
   border-radius: 8px;
-  max-width: 70%; /* Ancho máximo del mensaje */
   font-size: 1rem; /* Tamaño de fuente relativo */
 }
 
