@@ -27,16 +27,13 @@ function buscarPalabrasClave(texto, respuestas) {
         } catch (error) {
           return "No pude resolver la operación matemática.";
         }
-      } else if (palabraClave === "chiste") {
-        // Selecciona un chiste aleatorio de la lista
-        const chistes = respuestas[palabraClave];
-        const chisteAleatorio = chistes[Math.floor(Math.random() * chistes.length)];
-        return chisteAleatorio;
-      } else if (palabraClave === "gracias") {
-        // Selecciona un gracias aleatorio de la lista
-        const gracias = respuestas[palabraClave];
-        const graciasAleatorio = gracias[Math.floor(Math.random() * gracias.length)];
-        return graciasAleatorio;
+      } else if (palabraClave === "chiste" || palabraClave === "gracias") {
+        const respuestasCategoria = respuestas[palabraClave];
+      
+        if (respuestasCategoria) {
+          const respuestaAleatoria = respuestasCategoria[Math.floor(Math.random() * respuestasCategoria.length)];
+          return respuestaAleatoria;
+        }
       }
       return respuestas[palabraClave];
     }
