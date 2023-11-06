@@ -69,15 +69,35 @@
             background-color: #0056b3;
         }
         
-        #userInput {
-            margin: 0;
-            position: fixed; /* Mantiene la caja de texto fija */
+        #userInputContainer {
+            position: fixed; /* Mantiene el contenedor fijo */
             bottom: 20px; /* Espacio desde la parte inferior de la pantalla */
+            display: flex; /* Para alinear la caja de texto y el botón en la misma línea */
+            align-items: center; /* Para centrar verticalmente */
+            width: 100%; /* Ancho completo */
+            background-color: white; /* Fondo del contenedor */
+            padding: 10px; /* Espacio interior */
+        }
+        
+        #userInput {
+            width: 80%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            outline: none;
         }
         
         #enviar {
-            position: fixed; /* Mantiene el botón "Enviar" fijo */
-            bottom: 20px; /* Espacio desde la parte inferior de la pantalla */
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 16px;
+            cursor: pointer;
+        }
+        
+        #enviar:hover {
+            background-color: #0056b3;
         }
     </style>
 </head>
@@ -86,8 +106,10 @@
         <div id="chat">
             <div class="mensaje-robot">Hola, ¿en qué puedo ayudarte?</div>
         </div>
-        <input type="text" id="userInput">
-        <button id="enviar">Enviar</button>
+        <div id="userInputContainer">
+            <input type="text" id="userInput">
+            <button id="enviar">Enviar</button>
+        </div>
     </div>
 
     <script>
