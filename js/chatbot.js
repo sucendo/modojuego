@@ -1,6 +1,6 @@
 // Función para cargar el archivo JSON
 function cargarRespuestas() {
-  return fetch('../data/chatbotrespuestas.json')  // Usar '../' para retroceder un nivel al directorio 'data'
+  return fetch("../data/chatbotrespuestas.json")  // Usar '../' para retroceder un nivel al directorio 'data'
     .then(response => response.json())
     .then(data => data.respuestas)
     .catch(error => {
