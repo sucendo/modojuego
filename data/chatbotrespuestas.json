@@ -6,9 +6,9 @@
     "Soy el ChatBot."
   ],
   "te llamas": [
-    "Encantado de conocerte.", 
-    "Mi nombre es ChatBot.", 
-    "Soy el ChatBot."
+    "Me llamo ChatmuBot, encantado de conocerte.",
+    "Mi nombre es ChatmuBot. ¿Cómo te llamas tú?.", 
+    "Soy ChatmuBot, ¿Y tú?."
   ],
   "no_entender": [
     "Lo siento, no entiendo tu pregunta.", 
@@ -17,6 +17,9 @@
     "No tengo información sobre eso. ¿Te puedo ayudar en otra cosa?."
   ],
   "igualmente": "¡Genial!",
+  "nada": "El que nada, no se ahoga.",
+  "gracioso": "Intento ser agradable para que te sientas cómodo.",
+  "genial": "Me alegro.",
   "no lo sé": "Pues tú dirás...",
   "edad": "No tengo una edad, ya que soy un programa de inteligencia artificial.",
   "hobbies": "No tengo hobbies, pero disfruto ayudando a las personas.",
