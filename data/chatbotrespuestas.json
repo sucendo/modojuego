@@ -5,6 +5,11 @@
     "Mi nombre es ChatBot.", 
     "Soy el ChatBot."
   ],
+  "te llamas": [
+    "Encantado de conocerte.", 
+    "Mi nombre es ChatBot.", 
+    "Soy el ChatBot."
+  ],
   "no_entender": [
     "Lo siento, no entiendo tu pregunta.", 
     "No estoy seguro de qué estás preguntando."
