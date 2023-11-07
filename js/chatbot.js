@@ -88,15 +88,25 @@ function actualizarContextoChatbot(mensaje) {
   return context.chatbotContext;
 }
 
+let respuestas;
+
 // Función para cargar el archivo JSON de respuestas
 function cargarRespuestas() {
   return fetch('data/chatbotrespuestas.json')
     .then(response => response.json())
+    .then(data => {
+      respuestas = data; // Asigna los datos a la variable respuestas
+    })
     .catch(error => {
       console.error('Error al cargar el archivo JSON:', error);
       return {};
     });
 }
+
+// Cargar las respuestas y utilizarlas
+cargarRespuestas().then(() => {
+  // Resto del código aquí
+});
 
 // Definir nombreUsuario al comienzo del código o donde sea apropiado
 let nombreUsuario = "";
