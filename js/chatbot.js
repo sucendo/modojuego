@@ -93,10 +93,13 @@ function actualizarContextoChatbot(mensaje) {
 let nombreUsuario = "";
 
 function buscarPalabrasClave(texto, respuestas) {
+  console.log("Texto recibido:", texto);
   texto = texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
   for (const palabraClave in respuestas) {
+    console.log("Comparando con palabra clave:", palabraClave);
     if (texto.includes(palabraClave.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase())) {
+      console.log("Coincidencia encontrada para:", palabraClave);
       if (palabraClave === "hora") {
         const ahora = new Date();
         const horaActual = `${ahora.getHours()}:${ahora.getMinutes()}`;
@@ -132,7 +135,7 @@ function buscarPalabrasClave(texto, respuestas) {
       return respuestas[palabraClave];
     }
   }
-  return null;
+  return "Lo siento, no entiendo tu pregunta."; // Respuesta predeterminada si no se encontró ninguna coincidencia
 }
 
 // Función para mostrar mensajes en el chat
