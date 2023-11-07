@@ -1,3 +1,89 @@
+// Variables para almacenar el contexto del chatbot y el usuario
+const context = {
+  userContext: {},
+  chatbotContext: {},
+};
+
+// Función para cargar el archivo JSON de respuestas
+function cargarRespuestas() {
+  return fetch('data/chatbotrespuestas.json')
+    .then(response => response.json())
+    .catch(error => {
+      console.error('Error al cargar el archivo JSON:', error);
+      return {};
+    });
+}
+
+// Función para procesar mensajes del usuario
+function procesarMensajeUsuario(mensaje) {
+  // Actualizar el contexto del usuario
+  context.userContext = actualizarContextoUsuario(mensaje);
+
+  // Procesar el mensaje y obtener una respuesta
+  const respuesta = procesarMensaje(mensaje, context);
+
+  // Devolver la respuesta al usuario
+  return respuesta;
+}
+
+// Función para procesar mensajes del chatbot
+function procesarMensajeChatbot(mensaje) {
+  // Actualizar el contexto del chatbot
+  context.chatbotContext = actualizarContextoChatbot(mensaje);
+
+  // Procesar el mensaje y obtener una respuesta
+  const respuesta = procesarMensaje(mensaje, context);
+
+  // Devolver la respuesta al usuario
+  return respuesta;
+}
+
+// Función para procesar mensajes y generar respuestas
+function procesarMensaje(mensaje, context) {
+  // Implementa lógica para generar respuestas en función del mensaje y el contexto
+  // Puedes utilizar el contexto del usuario y el chatbot para personalizar las respuestas.
+
+  // Ejemplo simplificado:
+  if (mensaje.includes("nombre")) {
+    if (context.userContext.nombre) {
+      return `Mi nombre es ChatBot. ¿En qué más puedo ayudarte, ${context.userContext.nombre}?`;
+    } else {
+      return "Mi nombre es ChatBot, ¿en qué más puedo ayudarte?";
+    }
+  } else {
+    return "Lo siento, no entiendo tu pregunta.";
+  }
+}
+
+// Función para actualizar el contexto del usuario
+function actualizarContextoUsuario(mensaje) {
+  // Implementa lógica para actualizar el contexto del usuario en función de su mensaje.
+  // Puedes extraer información relevante del mensaje, como el nombre del usuario.
+
+  // Ejemplo simplificado: Buscar el nombre en el mensaje
+  const nombreMatch = mensaje.match(/me llamo (\w+)/i);
+  if (nombreMatch) {
+    return { nombre: nombreMatch[1] };
+  }
+
+  return {};
+}
+
+// Función para actualizar el contexto del chatbot
+function actualizarContextoChatbot(mensaje) {
+  // Implementa lógica para actualizar el contexto del chatbot en función del mensaje.
+  // Esto podría incluir un seguimiento de la conversación actual o cualquier otro detalle relevante.
+
+  // Ejemplo simplificado: Actualizar un contador de preguntas del chatbot
+  if (context.chatbotContext.preguntas) {
+    context.chatbotContext.preguntas++;
+  } else {
+    context.chatbotContext.preguntas = 1;
+  }
+
+  return context.chatbotContext;
+}
+
 // Función para cargar el archivo JSON de respuestas
 function cargarRespuestas() {
   return fetch('data/chatbotrespuestas.json')
@@ -98,12 +184,8 @@ cargarRespuestas().then(respuestas => {
     if (pregunta.trim() !== "") {
       mostrarMensaje("Usuario", pregunta);
       userInput.value = "";
-      const respuesta = buscarPalabrasClave(pregunta, respuestas);
-      if (respuesta) {
-        mostrarMensaje("Robot", respuesta);
-      } else {
-        mostrarMensaje("Robot", "Lo siento, no entiendo tu pregunta.");
-      }
+      const respuesta = procesarMensajeUsuario(pregunta);
+      mostrarMensaje("Robot", respuesta);
     }
   });
 
@@ -113,12 +195,8 @@ cargarRespuestas().then(respuestas => {
       if (pregunta.trim() !== "") {
         mostrarMensaje("Usuario", pregunta);
         userInput.value = "";
-        const respuesta = buscarPalabrasClave(pregunta, respuestas);
-        if (respuesta) {
-          mostrarMensaje("Robot", respuesta);
-        } else {
-          mostrarMensaje("Robot", "Lo siento, no entiendo tu pregunta.");
-        }
+        const respuesta = procesarMensajeUsuario(pregunta);
+        mostrarMensaje("Robot", respuesta);
       }
     }
   });
