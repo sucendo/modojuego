@@ -102,6 +102,8 @@ function buscarPalabrasClave(texto, respuestas) {
   return "Lo siento, no entiendo tu pregunta.";
 }
 
+
+
 // Función para mostrar mensajes en el chat
 function mostrarMensaje(usuario, mensaje) {
   const chat = document.getElementById("chat");
