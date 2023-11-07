@@ -1,18 +1,18 @@
 // Variables para almacenar el contexto del chatbot y el usuario
 const context = {
-  userContext: {
-    nombre: "",
-    tema: ""
-  },
-  chatbotContext: {
-    preguntas: 0
-  }
+  userContext: {},
+  chatbotContext: {},
 };
+
+let respuestas; // Variable para almacenar las respuestas
 
 // Función para cargar el archivo JSON de respuestas
 function cargarRespuestas() {
   return fetch('data/chatbotrespuestas.json')
     .then(response => response.json())
+    .then(data => {
+      respuestas = data; // Asigna los datos a la variable respuestas
+    })
     .catch(error => {
       console.error('Error al cargar el archivo JSON:', error);
       return {};
@@ -51,9 +51,9 @@ function procesarMensaje(mensaje, context) {
   // Ejemplo simplificado:
   if (mensaje.includes("nombre")) {
     if (context.userContext.nombre) {
-      return `¡Hola, ${context.userContext.nombre}! Mi nombre es ChatBot. ¿En qué puedo ayudarte hoy?`;
+      return `Mi nombre es ChatBot. ¿En qué más puedo ayudarte, ${context.userContext.nombre}?`;
     } else {
-      return "Mi nombre es ChatBot. ¿En qué puedo ayudarte?";
+      return "Mi nombre es ChatBot, ¿en qué más puedo ayudarte?";
     }
   } else {
     return "Lo siento, no entiendo tu pregunta.";
@@ -71,7 +71,7 @@ function actualizarContextoUsuario(mensaje) {
     return { nombre: nombreMatch[1] };
   }
 
-  return context.userContext;
+  return {};
 }
 
 // Función para actualizar el contexto del chatbot
@@ -89,17 +89,12 @@ function actualizarContextoChatbot(mensaje) {
   return context.chatbotContext;
 }
 
-// Definir nombreUsuario al comienzo del código o donde sea apropiado
-let nombreUsuario = "";
-
-function buscarPalabrasClave(texto, respuestas) {
-  console.log("Texto recibido:", texto);
+// Función para buscar palabras clave en el mensaje
+function buscarPalabrasClave(texto) {
   texto = texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
   for (const palabraClave in respuestas) {
-    console.log("Comparando con palabra clave:", palabraClave);
     if (texto.includes(palabraClave.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase())) {
-      console.log("Coincidencia encontrada para:", palabraClave);
       if (palabraClave === "hora") {
         const ahora = new Date();
         const horaActual = `${ahora.getHours()}:${ahora.getMinutes()}`;
@@ -135,7 +130,7 @@ function buscarPalabrasClave(texto, respuestas) {
       return respuestas[palabraClave];
     }
   }
-  return "Lo siento, no entiendo tu pregunta."; // Respuesta predeterminada si no se encontró ninguna coincidencia
+  return null;
 }
 
 // Función para mostrar mensajes en el chat
@@ -172,7 +167,7 @@ function mostrarMensaje(usuario, mensaje) {
 }
 
 // Cargar las respuestas y utilizarlas
-cargarRespuestas().then(respuestas => {
+cargarRespuestas().then(() => {
   const enviarButton = document.getElementById("enviar");
   const userInput = document.getElementById("userInput");
 
