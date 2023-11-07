@@ -35,7 +35,9 @@ function buscarPalabrasClave(texto, respuestas) {
           // Obtener más del mismo tipo
           const respuestasCategoria = respuestas[contextoConversacion.palabraClave];
           if (respuestasCategoria) {
-            const respuestaAleatoria = respuestasCategoria[Math.floor(Math.random() * respuestasCategoria.length)];
+            let respuestaAleatoria = respuestasCategoria[Math.floor(Math.random() * respuestasCategoria.length)];
+            // Suprimir la palabra clave de la respuesta
+            respuestaAleatoria = respuestaAleatoria.replace(palabraClave, "").trim();
             return respuestaAleatoria;
           }
         } else {
