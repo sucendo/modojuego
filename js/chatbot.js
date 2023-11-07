@@ -23,7 +23,7 @@ let contextoConversacion = {
 let nombreUsuario = "";
 
 function buscarPalabrasClave(texto, respuestas) {
-  const palabras = texto.match(/[\w'-]+/g); // Dividir el texto en palabras considerando caracteres alfabéticos, apóstrofes y guiones
+  const palabras = texto.split(" "); // Dividir el texto en palabras
 
   // Comprobar si se está pidiendo más del mismo tipo
   if (contextoConversacion.palabraClave) {
@@ -58,7 +58,7 @@ function buscarPalabrasClave(texto, respuestas) {
         const fechaYDia = ahora.toLocaleDateString("es-ES", opcionesFecha);
         return `Hoy es ${fechaYDia}`;
       } else if (palabraClave === "cuanto es") {
-        const expresionMatematica = texto.replace(normalizarTexto(palabraClave), "").trim();
+        const expresionMatematica = palabras.slice(1).join(" "); // Obtener las palabras después de "cuanto es"
         try {
           const resultado = math.evaluate(expresionMatematica);
           return `${respuestas[palabraClave]} ${resultado}`;
@@ -81,11 +81,14 @@ function buscarPalabrasClave(texto, respuestas) {
           const respuestaAleatoria = respuestasCategoria[Math.floor(Math.random() * respuestasCategoria.length)];
           return respuestaAleatoria;
         }
-      } else if (palabras.includes("me llamo") || palabras.includes("soy")) {
-        const nombre = palabras.find(palabra => palabra === "me llamo" || palabra === "soy");
-        if (nombre) {
-          nombreUsuario = palabras[palabras.indexOf(nombre) + 1];
-          return `Encantado de conocerte, ${nombreUsuario}!`;
+      } else {
+        const nombreUsuarioEnTexto = palabras.find(palabra => normalizarTexto(palabra) === normalizarTexto("me llamo") || normalizarTexto(palabra) === normalizarTexto("soy"));
+        if (nombreUsuarioEnTexto) {
+          const nombre = palabras[palabras.indexOf(nombreUsuarioEnTexto) + 1];
+          if (nombre) {
+            nombreUsuario = nombre;
+            return `Encantado de conocerte, ${nombreUsuario}!`;
+          }
         }
       }
       return respuestas[palabraClave];
@@ -95,10 +98,12 @@ function buscarPalabrasClave(texto, respuestas) {
   // Si no se encontró una palabra clave, retorna una respuesta de "no_entender"
   const respuestasNoEntender = respuestas["no_entender"];
   if (respuestasNoEntender) {
-    return respuestasNoEntender[Math.floor(Math.random() * respuestasNoEntender.length)];
+    const respuestaAleatoriaNoEntender = respuestasNoEntender[Math.floor(Math.random() * respuestasNoEntender.length)];
+    return respuestaAleatoriaNoEntender;
   }
   return "Lo siento, no entiendo tu pregunta.";
 }
+
 
 
 
