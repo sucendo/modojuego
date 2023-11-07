@@ -13,8 +13,10 @@ let contextoConversacion = {
   palabraClave: null, // La palabra clave actual
   repeticiones: 0, // Número de veces que se ha pedido más de lo mismo
 };
+
 // Definir nombreUsuario al comienzo del código o donde sea apropiado
 let nombreUsuario = "";
+
 function buscarPalabrasClave(texto, respuestas) {
   // Normalizar el texto de entrada
   texto = texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -70,7 +72,6 @@ function buscarPalabrasClave(texto, respuestas) {
           const respuestaAleatoria = respuestasCategoria[Math.floor(Math.random() * respuestasCategoria.length)];
           return respuestaAleatoria;
         }
-      // Puedes hacer algo como esto para seleccionar aleatoriamente una respuesta:
       } else if (palabraClave === "tu nombre" || palabraClave === "te llamas") {
         const respuestasCategoria = respuestas[palabraClave];
         if (respuestasCategoria) {
