@@ -22,13 +22,17 @@ let contextoConversacion = {
 // Definir nombreUsuario al comienzo del código o donde sea apropiado
 let nombreUsuario = "";
 
+// Define un objeto para almacenar datos temporales
+const datosTemporales = {};
+
+// Función para buscar palabras clave
 function buscarPalabrasClave(texto, respuestas) {
   texto = normalizarTexto(texto);
 
-  const palabras = texto.split(" "); // Dividir el texto en palabras
+  const palabras = texto.split(" ");
 
-  // Comprobar si se está pidiendo más del mismo tipo
   if (contextoConversacion.palabraClave) {
+    // Comprobar si el usuario quiere otro
     if (palabras.includes("otro") || palabras.includes("más")) {
       contextoConversacion.repeticiones++;
       if (contextoConversacion.repeticiones > 2) {
@@ -49,8 +53,8 @@ function buscarPalabrasClave(texto, respuestas) {
   }
 
   for (const palabraClave in respuestas) {
-    const palabrasClave = palabraClave.split(" "); // Divide las palabras clave compuestas
-    if (palabrasClave.every(pc => palabras.includes(normalizarTexto(pc)))) {
+    const palabrasClave = palabraClave.split(" ");
+    if (palabrasClave.every(pc => palabras.includes(normalizarTexto(pc))) || palabrasClave.length === 1 && texto.includes(palabrasClave[0])) {
       if (palabraClave === "hora") {
         const ahora = new Date();
         const horaActual = `${ahora.getHours()}:${ahora.getMinutes()}`;
@@ -73,7 +77,7 @@ function buscarPalabrasClave(texto, respuestas) {
       
         if (respuestasCategoria) {
           contextoConversacion.palabraClave = palabraClave;
-          contextoConversacion.repeticiones = 0; // Reiniciamos el contador de repeticiones
+          contextoConversacion.repeticiones = 0;
           
           const respuestaAleatoria = respuestasCategoria[Math.floor(Math.random() * respuestasCategoria.length)];
           return respuestaAleatoria;
@@ -90,18 +94,32 @@ function buscarPalabrasClave(texto, respuestas) {
           nombreUsuario = nombre.trim();
           return `Encantado de conocerte, ${nombreUsuario}!`;
         }
+      } else if (palabraClave === "guardar") {
+        const dato = palabras[palabras.indexOf("guardar") + 1];
+        if (dato) {
+          // Almacena el dato en el objeto datosTemporales
+          datosTemporales[palabras[0]] = dato;
+          return `He guardado "${dato}" temporalmente.`;
+        }
+      } else if (palabraClave === "mostrar") {
+        const dato = datosTemporales[palabras[palabras.indexOf("mostrar") + 1]];
+        if (dato) {
+          return `El dato almacenado es: "${dato}".`;
+        } else {
+          return "No se ha encontrado ningún dato almacenado.";
+        }
       }
       return respuestas[palabraClave];
     }
   }
 
-  // Si no se encontró una palabra clave, retorna una respuesta de "no_entender"
   const respuestasNoEntender = respuestas["no_entender"];
   if (respuestasNoEntender) {
     return respuestasNoEntender[Math.floor(Math.random() * respuestasNoEntender.length)];
   }
   return "Lo siento, no entiendo tu pregunta.";
 }
+
 
 
 
