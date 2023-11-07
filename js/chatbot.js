@@ -51,6 +51,12 @@ function buscarPalabrasClave(texto, respuestas) {
         const ahora = new Date();
         const horaActual = `${ahora.getHours()}:${ahora.getMinutes()}`;
         return `${respuestas[palabraClave]} ${horaActual}`;
+      } else if (palabraClave === "es hoy") {
+        // Obtener la fecha y el día de la semana actual
+        const ahora = new Date();
+        const opcionesFecha = { weekday: "long", year: "numeric", month: "long", day: "numeric" };
+        const fechaYDia = ahora.toLocaleDateString("es-ES", opcionesFecha);
+        return `Hoy es ${fechaYDia}`;
       } else if (palabraClave === "cuanto es") {
         // Extrae la expresión matemática del texto
         const expresionMatematica = texto.replace(palabraClave, "").trim();
