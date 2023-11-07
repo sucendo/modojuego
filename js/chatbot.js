@@ -28,7 +28,7 @@ function procesarMensajeUsuario(mensaje) {
   const respuesta = procesarMensaje(mensaje, context);
 
   // Devolver la respuesta al usuario
-  return respuesta;
+  mostrarMensaje("Robot", respuesta);
 }
 
 // Función para procesar mensajes del chatbot
@@ -40,7 +40,8 @@ function procesarMensajeChatbot(mensaje) {
   const respuesta = procesarMensaje(mensaje, context);
 
   // Devolver la respuesta al usuario
-  return respuesta;
+  mostrarMensaje("Usuario", mensaje);
+  mostrarMensaje("Robot", respuesta);
 }
 
 // Función para procesar mensajes y generar respuestas
@@ -48,15 +49,15 @@ function procesarMensaje(mensaje, context) {
   // Implementa lógica para generar respuestas en función del mensaje y el contexto
   // Puedes utilizar el contexto del usuario y el chatbot para personalizar las respuestas.
 
+  // Aquí deberás utilizar el archivo JSON de respuestas para buscar respuestas adecuadas
+  // en función de las palabras clave en el mensaje del usuario.
+
   // Ejemplo simplificado:
-  if (mensaje.includes("nombre")) {
-    if (context.userContext.nombre) {
-      return `¡Hola, ${context.userContext.nombre}! Mi nombre es ChatBot. ¿En qué puedo ayudarte hoy?`;
-    } else {
-      return "Mi nombre es ChatBot. ¿En qué puedo ayudarte?";
-    }
+  if (mensaje.includes("tu nombre") || mensaje.includes("te llamas")) {
+    const respuestas = respuestasJSON;
+    return respuestas["tu nombre"];
   } else {
-    return "Lo siento, no entiendo tu pregunta.";
+    return respuestasJSON["no_entender"];
   }
 }
 
@@ -89,51 +90,17 @@ function actualizarContextoChatbot(mensaje) {
   return context.chatbotContext;
 }
 
+// Otras funciones de utilidad para mostrar mensajes y control de la interfaz de usuario
+
+// Cargar las respuestas JSON
+let respuestasJSON;
+
+cargarRespuestas().then(respuestas => {
+  respuestasJSON = respuestas;
+});
+
 // Definir nombreUsuario al comienzo del código o donde sea apropiado
 let nombreUsuario = "";
-
-function buscarPalabrasClave(texto, respuestas) {
-  texto = texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-
-  for (const palabraClave in respuestas) {
-    if (texto.includes(palabraClave.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase())) {
-      if (palabraClave === "hora") {
-        const ahora = new Date();
-        const horaActual = `${ahora.getHours()}:${ahora.getMinutes()}`;
-        return `${respuestas[palabraClave]} ${horaActual}`;
-      } else if (palabraClave === "cuanto es") {
-        // Extrae la expresión matemática del texto
-        const expresionMatematica = texto.replace(palabraClave, "").trim();
-        try {
-          // Evalúa la expresión matemática utilizando math.js
-          const resultado = math.evaluate(expresionMatematica);
-          return `${respuestas[palabraClave]} ${resultado}`;
-        } catch (error) {
-          return "No pude resolver la operación matemática.";
-        }
-      } else if (palabraClave === "chiste" || palabraClave === "gracias" || palabraClave === "cuéntame una curiosidad") {
-        const respuestasCategoria = respuestas[palabraClave];
-      
-        if (respuestasCategoria) {
-          const respuestaAleatoria = respuestasCategoria[Math.floor(Math.random() * respuestasCategoria.length)];
-          return respuestaAleatoria;
-        }
-      } else if (palabraClave === "tu nombre" || palabraClave === "te llamas") {
-        // Si la pregunta es sobre el nombre del chatbot
-        return respuestas[palabraClave];
-      } else if (texto.includes("me llamo") || texto.includes("soy ")) {
-        // Extraer el nombre del usuario del texto
-        const nombre = texto.split("me llamo")[1] || texto.split("soy ")[1];
-        if (nombre) {
-          nombreUsuario = nombre.trim();
-          return `Encantado de conocerte, ${nombreUsuario}!`;
-        }
-      }
-      return respuestas[palabraClave];
-    }
-  }
-  return "Lo siento, no entiendo tu pregunta.";
-}
 
 // Función para mostrar mensajes en el chat
 function mostrarMensaje(usuario, mensaje) {
@@ -154,44 +121,23 @@ function mostrarMensaje(usuario, mensaje) {
         nuevoMensaje.textContent += caracteres[index];
         index++;
         // Hacer una llamada recursiva para mostrar el próximo carácter después de un retraso
-        setTimeout(mostrarCaracter, 25); // Controla la velocidad de escritura (ajusta según lo necesario)
+        setTimeout(mostrarCaracter, 25); // Controla la velocidad de escritura
       }
     };
 
-    // Iniciar la animación de escritura
     mostrarCaracter();
   } else {
     nuevoMensaje.textContent = mensaje;
   }
-
-  // Desplaza automáticamente el scroll hacia abajo
-  chat.scrollTop = chat.scrollHeight;
 }
 
-// Cargar las respuestas y utilizarlas
-cargarRespuestas().then(respuestas => {
-  const enviarButton = document.getElementById("enviar");
-  const userInput = document.getElementById("userInput");
-
-  enviarButton.addEventListener("click", function () {
-    const pregunta = userInput.value;
-    if (pregunta.trim() !== "") {
-      mostrarMensaje("Usuario", pregunta);
-      userInput.value = "";
-      const respuesta = procesarMensajeUsuario(pregunta);
-      mostrarMensaje("Robot", respuesta);
-    }
-  });
-
-  userInput.addEventListener("keyup", function (event) {
-    if (event.key === "Enter") {
-      const pregunta = userInput.value;
-      if (pregunta.trim() !== "") {
-        mostrarMensaje("Usuario", pregunta);
-        userInput.value = "";
-        const respuesta = procesarMensajeUsuario(pregunta);
-        mostrarMensaje("Robot", respuesta);
-      }
-    }
-  });
+// Event listener para el envío de mensajes
+document.getElementById("formulario").addEventListener("submit", function (e) {
+  e.preventDefault();
+  const input = document.getElementById("mensaje-entrada");
+  const mensaje = input.value;
+  if (mensaje.trim() !== "") {
+    procesarMensajeUsuario(mensaje);
+    input.value = "";
+  }
 });
