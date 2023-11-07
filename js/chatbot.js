@@ -1,96 +1,17 @@
-// Variables para almacenar el contexto del chatbot y el usuario
-const context = {
-  userContext: {},
-  chatbotContext: {},
-};
-
-let respuestas; // Variable para almacenar las respuestas
-
 // Función para cargar el archivo JSON de respuestas
 function cargarRespuestas() {
   return fetch('data/chatbotrespuestas.json')
     .then(response => response.json())
-    .then(data => {
-      respuestas = data; // Asigna los datos a la variable respuestas
-    })
     .catch(error => {
       console.error('Error al cargar el archivo JSON:', error);
       return {};
     });
 }
 
-// Función para procesar mensajes del usuario
-function procesarMensajeUsuario(mensaje) {
-  // Actualizar el contexto del usuario
-  context.userContext = actualizarContextoUsuario(mensaje);
+// Definir nombreUsuario al comienzo del código o donde sea apropiado
+let nombreUsuario = "";
 
-  // Procesar el mensaje y obtener una respuesta
-  const respuesta = procesarMensaje(mensaje, context);
-
-  // Devolver la respuesta al usuario
-  return respuesta;
-}
-
-// Función para procesar mensajes del chatbot
-function procesarMensajeChatbot(mensaje) {
-  // Actualizar el contexto del chatbot
-  context.chatbotContext = actualizarContextoChatbot(mensaje);
-
-  // Procesar el mensaje y obtener una respuesta
-  const respuesta = procesarMensaje(mensaje, context);
-
-  // Devolver la respuesta al usuario
-  return respuesta;
-}
-
-// Función para procesar mensajes y generar respuestas
-function procesarMensaje(mensaje, context) {
-  // Implementa lógica para generar respuestas en función del mensaje y el contexto
-  // Puedes utilizar el contexto del usuario y el chatbot para personalizar las respuestas.
-
-  // Ejemplo simplificado:
-  if (mensaje.includes("nombre")) {
-    if (context.userContext.nombre) {
-      return `Mi nombre es ChatBot. ¿En qué más puedo ayudarte, ${context.userContext.nombre}?`;
-    } else {
-      return "Mi nombre es ChatBot, ¿en qué más puedo ayudarte?";
-    }
-  } else {
-    return "Lo siento, no entiendo tu pregunta.";
-  }
-}
-
-// Función para actualizar el contexto del usuario
-function actualizarContextoUsuario(mensaje) {
-  // Implementa lógica para actualizar el contexto del usuario en función de su mensaje.
-  // Puedes extraer información relevante del mensaje, como el nombre del usuario.
-
-  // Ejemplo simplificado: Buscar el nombre en el mensaje
-  const nombreMatch = mensaje.match(/me llamo (\w+)/i);
-  if (nombreMatch) {
-    return { nombre: nombreMatch[1] };
-  }
-
-  return {};
-}
-
-// Función para actualizar el contexto del chatbot
-function actualizarContextoChatbot(mensaje) {
-  // Implementa lógica para actualizar el contexto del chatbot en función del mensaje.
-  // Esto podría incluir un seguimiento de la conversación actual o cualquier otro detalle relevante.
-
-  // Ejemplo simplificado: Actualizar un contador de preguntas del chatbot
-  if (context.chatbotContext.preguntas) {
-    context.chatbotContext.preguntas++;
-  } else {
-    context.chatbotContext.preguntas = 1;
-  }
-
-  return context.chatbotContext;
-}
-
-// Función para buscar palabras clave en el mensaje
-function buscarPalabrasClave(texto) {
+function buscarPalabrasClave(texto, respuestas) {
   texto = texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
   for (const palabraClave in respuestas) {
@@ -119,11 +40,12 @@ function buscarPalabrasClave(texto) {
       } else if (palabraClave === "tu nombre" || palabraClave === "te llamas") {
         // Si la pregunta es sobre el nombre del chatbot
         return respuestas[palabraClave];
-      } else if (texto.includes("me llamo") || texto.includes("soy ")) {
+     } else if (texto.includes("me llamo") || texto.includes("soy ")) {
         // Extraer el nombre del usuario del texto
         const nombre = texto.split("me llamo")[1] || texto.split("soy ")[1];
         if (nombre) {
           nombreUsuario = nombre.trim();
+          nombreUsuario = nombre;
           return `Encantado de conocerte, ${nombreUsuario}!`;
         }
       }
@@ -167,7 +89,7 @@ function mostrarMensaje(usuario, mensaje) {
 }
 
 // Cargar las respuestas y utilizarlas
-cargarRespuestas().then(() => {
+cargarRespuestas().then(respuestas => {
   const enviarButton = document.getElementById("enviar");
   const userInput = document.getElementById("userInput");
 
@@ -176,8 +98,12 @@ cargarRespuestas().then(() => {
     if (pregunta.trim() !== "") {
       mostrarMensaje("Usuario", pregunta);
       userInput.value = "";
-      const respuesta = procesarMensajeUsuario(pregunta);
-      mostrarMensaje("Robot", respuesta);
+      const respuesta = buscarPalabrasClave(pregunta, respuestas);
+      if (respuesta) {
+        mostrarMensaje("Robot", respuesta);
+      } else {
+        mostrarMensaje("Robot", "Lo siento, no entiendo tu pregunta.");
+      }
     }
   });
 
@@ -187,8 +113,12 @@ cargarRespuestas().then(() => {
       if (pregunta.trim() !== "") {
         mostrarMensaje("Usuario", pregunta);
         userInput.value = "";
-        const respuesta = procesarMensajeUsuario(pregunta);
-        mostrarMensaje("Robot", respuesta);
+        const respuesta = buscarPalabrasClave(pregunta, respuestas);
+        if (respuesta) {
+          mostrarMensaje("Robot", respuesta);
+        } else {
+          mostrarMensaje("Robot", "Lo siento, no entiendo tu pregunta.");
+        }
       }
     }
   });
