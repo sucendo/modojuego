@@ -23,7 +23,7 @@ let contextoConversacion = {
 let nombreUsuario = "";
 
 function buscarPalabrasClave(texto, respuestas) {
-  const palabras = texto.split(" "); // Dividir el texto en palabras
+  const palabras = texto.match(/[\w'-]+/g); // Dividir el texto en palabras considerando caracteres alfabéticos, apóstrofes y guiones
 
   // Comprobar si se está pidiendo más del mismo tipo
   if (contextoConversacion.palabraClave) {
@@ -47,35 +47,23 @@ function buscarPalabrasClave(texto, respuestas) {
   }
 
   for (const palabraClave in respuestas) {
-    // Normalizar la palabra clave
-    const palabraClaveNormalizada = normalizarTexto(palabraClave);
-
-    // Crear un patrón de expresión regular para buscar la palabra clave como una frase completa
-    const patronPalabraClave = new RegExp(`\\b${palabraClaveNormalizada}\\b`);
-
-    if (patronPalabraClave.test(normalizarTexto(texto))) {
+    if (palabras.includes(normalizarTexto(palabraClave))) {
       if (palabraClave === "hora") {
         const ahora = new Date();
         const horaActual = `${ahora.getHours()}:${ahora.getMinutes()}`;
         return `${respuestas[palabraClave]} ${horaActual}`;
       } else if (palabraClave === "es hoy") {
-        const expresionEsHoy = normalizarTexto("es hoy");
-        if (patronPalabraClave.test(normalizarTexto(texto))) {
-          const ahora = new Date();
-          const opcionesFecha = { weekday: "long", year: "numeric", month: "long", day: "numeric" };
-          const fechaYDia = ahora.toLocaleDateString("es-ES", opcionesFecha);
-          return `Hoy es ${fechaYDia}`;
-        }
+        const ahora = new Date();
+        const opcionesFecha = { weekday: "long", year: "numeric", month: "long", day: "numeric" };
+        const fechaYDia = ahora.toLocaleDateString("es-ES", opcionesFecha);
+        return `Hoy es ${fechaYDia}`;
       } else if (palabraClave === "cuanto es") {
-        const expresionEsCuanto = normalizarTexto("cuanto es");
-        if (patronPalabraClave.test(normalizarTexto(texto))) {
-          const operacionMatematica = palabras.slice(palabras.indexOf("es") + 1).join(" ");
-          try {
-            const resultado = math.evaluate(operacionMatematica);
-            return `${respuestas[palabraClave]} ${resultado}`;
-          } catch (error) {
-            return "No pude resolver la operación matemática.";
-          }
+        const expresionMatematica = texto.replace(normalizarTexto(palabraClave), "").trim();
+        try {
+          const resultado = math.evaluate(expresionMatematica);
+          return `${respuestas[palabraClave]} ${resultado}`;
+        } catch (error) {
+          return "No pude resolver la operación matemática.";
         }
       } else if (palabraClave === "chiste" || palabraClave === "gracias" || palabraClave === "cuéntame una curiosidad") {
         const respuestasCategoria = respuestas[palabraClave];
@@ -93,14 +81,14 @@ function buscarPalabrasClave(texto, respuestas) {
           const respuestaAleatoria = respuestasCategoria[Math.floor(Math.random() * respuestasCategoria.length)];
           return respuestaAleatoria;
         }
-      } else if (patronPalabraClave.test(normalizarTexto(texto))) {
-        // Si se menciona el nombre del usuario, establecer el nombre del usuario
-        const nombre = palabras.slice(palabras.indexOf(palabraClaveNormalizada) + 1).join(" ");
+      } else if (palabras.includes("me llamo") || palabras.includes("soy")) {
+        const nombre = palabras.find(palabra => palabra === "me llamo" || palabra === "soy");
         if (nombre) {
-          nombreUsuario = nombre.trim();
+          nombreUsuario = palabras[palabras.indexOf(nombre) + 1];
           return `Encantado de conocerte, ${nombreUsuario}!`;
         }
       }
+      return respuestas[palabraClave];
     }
   }
 
@@ -111,6 +99,7 @@ function buscarPalabrasClave(texto, respuestas) {
   }
   return "Lo siento, no entiendo tu pregunta.";
 }
+
 
 
 
