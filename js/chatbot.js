@@ -1,7 +1,12 @@
 // Variables para almacenar el contexto del chatbot y el usuario
 const context = {
-  userContext: {},
-  chatbotContext: {},
+  userContext: {
+    nombre: "",
+    tema: ""
+  },
+  chatbotContext: {
+    preguntas: 0
+  }
 };
 
 // Función para cargar el archivo JSON de respuestas
@@ -20,14 +25,10 @@ function procesarMensajeUsuario(mensaje) {
   context.userContext = actualizarContextoUsuario(mensaje);
 
   // Procesar el mensaje y obtener una respuesta
-  const respuesta = buscarPalabrasClave(mensaje, respuestas);
+  const respuesta = procesarMensaje(mensaje, context);
 
-  // Si se encuentra una respuesta, devolverla; de lo contrario, procesar el mensaje como antes
-  if (respuesta) {
-    return respuesta;
-  } else {
-    return procesarMensaje(mensaje, context);
-  }
+  // Devolver la respuesta al usuario
+  return respuesta;
 }
 
 // Función para procesar mensajes del chatbot
@@ -50,9 +51,9 @@ function procesarMensaje(mensaje, context) {
   // Ejemplo simplificado:
   if (mensaje.includes("nombre")) {
     if (context.userContext.nombre) {
-      return `Mi nombre es ChatBot. ¿En qué más puedo ayudarte, ${context.userContext.nombre}?`;
+      return `¡Hola, ${context.userContext.nombre}! Mi nombre es ChatBot. ¿En qué puedo ayudarte hoy?`;
     } else {
-      return "Mi nombre es ChatBot, ¿en qué más puedo ayudarte?";
+      return "Mi nombre es ChatBot. ¿En qué puedo ayudarte?";
     }
   } else {
     return "Lo siento, no entiendo tu pregunta.";
@@ -70,7 +71,7 @@ function actualizarContextoUsuario(mensaje) {
     return { nombre: nombreMatch[1] };
   }
 
-  return {};
+  return context.userContext;
 }
 
 // Función para actualizar el contexto del chatbot
@@ -87,26 +88,6 @@ function actualizarContextoChatbot(mensaje) {
 
   return context.chatbotContext;
 }
-
-let respuestas;
-
-// Función para cargar el archivo JSON de respuestas
-function cargarRespuestas() {
-  return fetch('data/chatbotrespuestas.json')
-    .then(response => response.json())
-    .then(data => {
-      respuestas = data; // Asigna los datos a la variable respuestas
-    })
-    .catch(error => {
-      console.error('Error al cargar el archivo JSON:', error);
-      return {};
-    });
-}
-
-// Cargar las respuestas y utilizarlas
-cargarRespuestas().then(() => {
-  // Resto del código aquí
-});
 
 // Definir nombreUsuario al comienzo del código o donde sea apropiado
 let nombreUsuario = "";
@@ -140,7 +121,7 @@ function buscarPalabrasClave(texto, respuestas) {
       } else if (palabraClave === "tu nombre" || palabraClave === "te llamas") {
         // Si la pregunta es sobre el nombre del chatbot
         return respuestas[palabraClave];
-     } else if (texto.includes("me llamo") || texto.includes("soy ")) {
+      } else if (texto.includes("me llamo") || texto.includes("soy ")) {
         // Extraer el nombre del usuario del texto
         const nombre = texto.split("me llamo")[1] || texto.split("soy ")[1];
         if (nombre) {
