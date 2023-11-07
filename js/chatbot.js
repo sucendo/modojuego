@@ -9,9 +9,9 @@ function cargarRespuestas() {
 }
 
 // Definir un objeto para mantener el contexto de la conversación
-let contextoConversacion = {
-  palabraClave: null, // La palabra clave actual
-  repeticiones: 0, // Número de veces que se ha pedido más de lo mismo
+const contextoConversacion = {
+  palabraClave: null,
+  repeticiones: 0,
 };
 // Definir nombreUsuario al comienzo del código o donde sea apropiado
 let nombreUsuario = "";
@@ -151,7 +151,7 @@ cargarRespuestas().then(respuestas => {
     if (pregunta.trim() !== "") {
       mostrarMensaje("Usuario", pregunta);
       userInput.value = "";
-      const respuesta = buscarPalabrasClave(pregunta, respuestas);
+      const respuesta = buscarPalabrasClave(pregunta, respuestas, contextoConversacion); // Añadir contextoConversacion
       if (respuesta) {
         mostrarMensaje("Robot", respuesta);
       } else {
