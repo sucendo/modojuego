@@ -8,60 +8,60 @@ function cargarRespuestas() {
     });
 }
 
+// Función para normalizar el texto
+function normalizarTexto(texto) {
+  return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
 // Definir un objeto para mantener el contexto de la conversación
 let contextoConversacion = {
   palabraClave: null, // La palabra clave actual
   repeticiones: 0, // Número de veces que se ha pedido más de lo mismo
 };
+
 // Definir nombreUsuario al comienzo del código o donde sea apropiado
 let nombreUsuario = "";
+
 function buscarPalabrasClave(texto, respuestas) {
-  // Normalizar el texto de entrada
-  texto = texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  texto = normalizarTexto(texto);
+
+  const palabras = texto.split(" "); // Dividir el texto en palabras
+
+  // Comprobar si se está pidiendo más del mismo tipo
+  if (contextoConversacion.palabraClave) {
+    if (palabras.includes("otro") || palabras.includes("más")) {
+      contextoConversacion.repeticiones++;
+      if (contextoConversacion.repeticiones > 2) {
+        contextoConversacion.palabraClave = null;
+        contextoConversacion.repeticiones = 0;
+        return "¡Has tenido suficiente de eso! ¿En qué más puedo ayudarte?";
+      }
+      const respuestasCategoria = respuestas[contextoConversacion.palabraClave];
+      if (respuestasCategoria) {
+        let respuestaAleatoria = respuestasCategoria[Math.floor(Math.random() * respuestasCategoria.length)];
+        respuestaAleatoria = respuestaAleatoria.replace(contextoConversacion.palabraClave, "").trim();
+        return respuestaAleatoria;
+      }
+    } else {
+      contextoConversacion.palabraClave = null;
+      contextoConversacion.repeticiones = 0;
+    }
+  }
 
   for (const palabraClave in respuestas) {
-    if (texto.includes(palabraClave.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase())) {
-      // Aquí verificamos si se está pidiendo más del mismo tipo
-      if (contextoConversacion.palabraClave) {
-        // Comprobar si el usuario quiere otro
-        if (texto.includes("otro") || texto.includes("más")) {
-          contextoConversacion.repeticiones++;
-          if (contextoConversacion.repeticiones > 2) {
-            // Si se pidió más de 2 veces, reiniciamos el contexto
-            contextoConversacion.palabraClave = null;
-            contextoConversacion.repeticiones = 0;
-            return "¡Has tenido suficiente de eso! ¿En qué más puedo ayudarte?";
-          }
-          // Obtener más del mismo tipo
-          const respuestasCategoria = respuestas[contextoConversacion.palabraClave];
-          if (respuestasCategoria) {
-            let respuestaAleatoria = respuestasCategoria[Math.floor(Math.random() * respuestasCategoria.length)];
-            // Suprimir la palabra clave de la respuesta
-            respuestaAleatoria = respuestaAleatoria.replace(palabraClave, "").trim();
-            return respuestaAleatoria;
-          }
-        } else {
-          // Si no se solicita más del mismo tipo, reiniciamos el contexto
-          contextoConversacion.palabraClave = null;
-          contextoConversacion.repeticiones = 0;
-        }
-      }
-      
+    if (palabras.includes(normalizarTexto(palabraClave))) {
       if (palabraClave === "hora") {
         const ahora = new Date();
         const horaActual = `${ahora.getHours()}:${ahora.getMinutes()}`;
         return `${respuestas[palabraClave]} ${horaActual}`;
       } else if (palabraClave === "es hoy") {
-        // Obtener la fecha y el día de la semana actual
         const ahora = new Date();
         const opcionesFecha = { weekday: "long", year: "numeric", month: "long", day: "numeric" };
         const fechaYDia = ahora.toLocaleDateString("es-ES", opcionesFecha);
         return `Hoy es ${fechaYDia}`;
       } else if (palabraClave === "cuanto es") {
-        // Extrae la expresión matemática del texto
-        const expresionMatematica = texto.replace(palabraClave, "").trim();
+        const expresionMatematica = texto.replace(normalizarTexto(palabraClave), "").trim();
         try {
-          // Evalúa la expresión matemática utilizando math.js
           const resultado = math.evaluate(expresionMatematica);
           return `${respuestas[palabraClave]} ${resultado}`;
         } catch (error) {
@@ -71,7 +71,6 @@ function buscarPalabrasClave(texto, respuestas) {
         const respuestasCategoria = respuestas[palabraClave];
       
         if (respuestasCategoria) {
-          // Establecer el contexto de la conversación
           contextoConversacion.palabraClave = palabraClave;
           contextoConversacion.repeticiones = 0; // Reiniciamos el contador de repeticiones
           
@@ -84,20 +83,23 @@ function buscarPalabrasClave(texto, respuestas) {
           const respuestaAleatoria = respuestasCategoria[Math.floor(Math.random() * respuestasCategoria.length)];
           return respuestaAleatoria;
         }
-      } else if (texto.includes("me llamo") || texto.includes("soy ")) {
-        // Extraer el nombre del usuario del texto
-        const nombre = texto.split("me llamo")[1] || texto.split("soy ")[1];
+      } else if (palabras.includes("me llamo") || palabras.includes("soy")) {
+        const nombre = palabras.find(palabra => palabra === "me llamo" || palabra === "soy");
         if (nombre) {
-          // Establecer el nombre del usuario
-          nombreUsuario = nombre.trim();
-          nombreUsuario = nombre;
+          nombreUsuario = palabras[palabras.indexOf(nombre) + 1];
           return `Encantado de conocerte, ${nombreUsuario}!`;
         }
       }
       return respuestas[palabraClave];
     }
   }
-  return respuestas["no_entender"][Math.floor(Math.random() * respuestas["no_entender"].length)];
+
+  // Si no se encontró una palabra clave, retorna una respuesta de "no_entender"
+  const respuestasNoEntender = respuestas["no_entender"];
+  if (respuestasNoEntender) {
+    return respuestasNoEntender[Math.floor(Math.random() * respuestasNoEntender.length)];
+  }
+  return "Lo siento, no entiendo tu pregunta.";
 }
 
 // Función para mostrar mensajes en el chat
