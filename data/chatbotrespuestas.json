@@ -182,5 +182,15 @@
   "hora": "La hora actual es",
   "es hoy": "Hoy es",
   "cuanto es": "El resultado es",
-  "me llamo": "Mucho gusto"
+  "me llamo": "Mucho gusto",
+  "guardar": [
+    "Entendido, he guardado",
+    "He almacenado temporalmente el valor",
+    "El dato ha sido guardado."
+  ],
+  "mostrar": [
+    "Aquí tienes el dato guardado:",
+    "El dato almacenado es:",
+    "He encontrado el siguiente dato: {{dato}}."
+  ]
 }
