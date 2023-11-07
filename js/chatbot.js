@@ -20,10 +20,14 @@ function procesarMensajeUsuario(mensaje) {
   context.userContext = actualizarContextoUsuario(mensaje);
 
   // Procesar el mensaje y obtener una respuesta
-  const respuesta = procesarMensaje(mensaje, context);
+  const respuesta = buscarPalabrasClave(mensaje, respuestas);
 
-  // Devolver la respuesta al usuario
-  return respuesta;
+  // Si se encuentra una respuesta, devolverla; de lo contrario, procesar el mensaje como antes
+  if (respuesta) {
+    return respuesta;
+  } else {
+    return procesarMensaje(mensaje, context);
+  }
 }
 
 // Función para procesar mensajes del chatbot
