@@ -97,7 +97,7 @@ function buscarPalabrasClave(texto, respuestas) {
       return respuestas[palabraClave];
     }
   }
-  return "Lo siento, no entiendo tu pregunta.";
+  return respuestas["no_entender"][Math.floor(Math.random() * respuestas["no_entender"].length)];
 }
 
 // Función para mostrar mensajes en el chat
