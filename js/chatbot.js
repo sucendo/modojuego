@@ -15,86 +15,94 @@ let contextoConversacion = {
 };
 // Definir nombreUsuario al comienzo del código o donde sea apropiado
 let nombreUsuario = "";
-function buscarPalabrasClave(texto, respuestas) {
+
+function buscarPalabrasClave(texto, respuestas, contextoConversacion) {
   // Normalizar el texto de entrada
   texto = texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
+  // Función para manejar respuestas genéricas
+  function responderConRespuestaGenerica(palabraClave) {
+    const respuestasCategoria = respuestas[palabraClave];
+    if (respuestasCategoria) {
+      return respuestasCategoria[Math.floor(Math.random() * respuestasCategoria.length)];
+    }
+    return null;
+  }
+
+  // Verificar si se está pidiendo más del mismo tipo
+  if (contextoConversacion.palabraClave) {
+    // Comprobar si el usuario quiere otro
+    if (texto.includes("otro") || texto.includes("más")) {
+      contextoConversacion.repeticiones++;
+      if (contextoConversacion.repeticiones > 2) {
+        // Si se pidió más de 2 veces, reiniciamos el contexto
+        contextoConversacion.palabraClave = null;
+        contextoConversacion.repeticiones = 0;
+        return "¡Has tenido suficiente de eso! ¿En qué más puedo ayudarte?";
+      }
+      // Obtener más del mismo tipo
+      const respuesta = responderConRespuestaGenerica(contextoConversacion.palabraClave);
+      if (respuesta) {
+        // Suprimir la palabra clave de la respuesta
+        return respuesta.replace(contextoConversacion.palabraClave, "").trim();
+      }
+    } else {
+      // Si no se solicita más del mismo tipo, reiniciamos el contexto
+      contextoConversacion.palabraClave = null;
+      contextoConversacion.repeticiones = 0;
+    }
+  }
+
   for (const palabraClave in respuestas) {
     if (texto.includes(palabraClave.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase())) {
-      // Aquí verificamos si se está pidiendo más del mismo tipo
-      if (contextoConversacion.palabraClave) {
-        // Comprobar si el usuario quiere otro
-        if (texto.includes("otro") || texto.includes("más")) {
-          contextoConversacion.repeticiones++;
-          if (contextoConversacion.repeticiones > 2) {
-            // Si se pidió más de 2 veces, reiniciamos el contexto
-            contextoConversacion.palabraClave = null;
+      let respuesta = null;
+
+      switch (palabraClave) {
+        case "hora":
+          const ahora = new Date();
+          const horaActual = `${ahora.getHours()}:${ahora.getMinutes()}`;
+          respuesta = `${respuestas[palabraClave]} ${horaActual}`;
+          break;
+
+        case "es hoy":
+          const opcionesFecha = { weekday: "long", year: "numeric", month: "long", day: "numeric" };
+          const fechaYDia = new Date().toLocaleDateString("es-ES", opcionesFecha);
+          respuesta = `Hoy es ${fechaYDia}`;
+          break;
+
+        case "cuanto es":
+          const expresionMatematica = texto.replace(palabraClave, "").trim();
+          try {
+            const resultado = math.evaluate(expresionMatematica);
+            respuesta = `${respuestas[palabraClave]} ${resultado}`;
+          } catch (error) {
+            respuesta = "No pude resolver la operación matemática.";
+          }
+          break;
+
+        case "chiste":
+        case "gracias":
+        case "cuéntame una curiosidad":
+          respuesta = responderConRespuestaGenerica(palabraClave);
+          if (respuesta) {
+            contextoConversacion.palabraClave = palabraClave;
             contextoConversacion.repeticiones = 0;
-            return "¡Has tenido suficiente de eso! ¿En qué más puedo ayudarte?";
           }
-          // Obtener más del mismo tipo
-          const respuestasCategoria = respuestas[contextoConversacion.palabraClave];
-          if (respuestasCategoria) {
-            let respuestaAleatoria = respuestasCategoria[Math.floor(Math.random() * respuestasCategoria.length)];
-            // Suprimir la palabra clave de la respuesta
-            respuestaAleatoria = respuestaAleatoria.replace(palabraClave, "").trim();
-            return respuestaAleatoria;
-          }
-        } else {
-          // Si no se solicita más del mismo tipo, reiniciamos el contexto
-          contextoConversacion.palabraClave = null;
-          contextoConversacion.repeticiones = 0;
-        }
+          break;
+
+        case "tu nombre":
+        case "te llamas":
+          respuesta = responderConRespuestaGenerica(palabraClave);
+          break;
+
+        default:
+          respuesta = respuestas[palabraClave];
+          break;
       }
-      
-      if (palabraClave === "hora") {
-        const ahora = new Date();
-        const horaActual = `${ahora.getHours()}:${ahora.getMinutes()}`;
-        return `${respuestas[palabraClave]} ${horaActual}`;
-      } else if (palabraClave === "es hoy") {
-        // Obtener la fecha y el día de la semana actual
-        const ahora = new Date();
-        const opcionesFecha = { weekday: "long", year: "numeric", month: "long", day: "numeric" };
-        const fechaYDia = ahora.toLocaleDateString("es-ES", opcionesFecha);
-        return `Hoy es ${fechaYDia}`;
-      } else if (palabraClave === "cuanto es") {
-        // Extrae la expresión matemática del texto
-        const expresionMatematica = texto.replace(palabraClave, "").trim();
-        try {
-          // Evalúa la expresión matemática utilizando math.js
-          const resultado = math.evaluate(expresionMatematica);
-          return `${respuestas[palabraClave]} ${resultado}`;
-        } catch (error) {
-          return "No pude resolver la operación matemática.";
-        }
-      } else if (palabraClave === "chiste" || palabraClave === "gracias" || palabraClave === "cuéntame una curiosidad") {
-        const respuestasCategoria = respuestas[palabraClave];
-      
-        if (respuestasCategoria) {
-          // Establecer el contexto de la conversación
-          contextoConversacion.palabraClave = palabraClave;
-          contextoConversacion.repeticiones = 0; // Reiniciamos el contador de repeticiones
-          
-          const respuestaAleatoria = respuestasCategoria[Math.floor(Math.random() * respuestasCategoria.length)];
-          return respuestaAleatoria;
-        }
-      } else if (palabraClave === "tu nombre" || palabraClave === "te llamas") {
-        const respuestasCategoria = respuestas[palabraClave];
-        if (respuestasCategoria) {
-          const respuestaAleatoria = respuestasCategoria[Math.floor(Math.random() * respuestasCategoria.length)];
-          return respuestaAleatoria;
-        }
-      } else if (texto.includes("me llamo") || texto.includes("soy ")) {
-        // Extraer el nombre del usuario del texto
-        const nombre = texto.split("me llamo")[1] || texto.split("soy ")[1];
-        if (nombre) {
-          // Establecer el nombre del usuario
-          nombreUsuario = nombre.trim();
-          nombreUsuario = nombre;
-          return `Encantado de conocerte, ${nombreUsuario}!`;
-        }
+
+      if (respuesta) {
+        return respuesta;
       }
-      return respuestas[palabraClave];
     }
   }
   return respuestas["no_entender"][Math.floor(Math.random() * respuestas["no_entender"].length)];
