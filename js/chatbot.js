@@ -23,6 +23,8 @@ let contextoConversacion = {
 let nombreUsuario = "";
 
 function buscarPalabrasClave(texto, respuestas) {
+  texto = normalizarTexto(texto);
+
   const palabras = texto.split(" "); // Dividir el texto en palabras
 
   // Comprobar si se está pidiendo más del mismo tipo
@@ -47,7 +49,8 @@ function buscarPalabrasClave(texto, respuestas) {
   }
 
   for (const palabraClave in respuestas) {
-    if (palabras.includes(normalizarTexto(palabraClave))) {
+    const palabrasClave = palabraClave.split(" "); // Divide las palabras clave compuestas
+    if (palabrasClave.every(pc => palabras.includes(normalizarTexto(pc)))) {
       if (palabraClave === "hora") {
         const ahora = new Date();
         const horaActual = `${ahora.getHours()}:${ahora.getMinutes()}`;
@@ -58,14 +61,14 @@ function buscarPalabrasClave(texto, respuestas) {
         const fechaYDia = ahora.toLocaleDateString("es-ES", opcionesFecha);
         return `Hoy es ${fechaYDia}`;
       } else if (palabraClave === "cuanto es") {
-        const expresionMatematica = palabras.slice(1).join(" "); // Obtener las palabras después de "cuanto es"
+        const expresionMatematica = texto.replace(palabraClave, "").trim();
         try {
           const resultado = math.evaluate(expresionMatematica);
           return `${respuestas[palabraClave]} ${resultado}`;
         } catch (error) {
           return "No pude resolver la operación matemática.";
         }
-      } else if (palabraClave === "chiste" || palabraClave === "gracias" || palabraClave === "cuéntame una curiosidad") {
+      } else if (palabrasClave.includes("chiste") || palabrasClave.includes("gracias") || palabrasClave.includes("cuéntame una curiosidad")) {
         const respuestasCategoria = respuestas[palabraClave];
       
         if (respuestasCategoria) {
@@ -81,14 +84,11 @@ function buscarPalabrasClave(texto, respuestas) {
           const respuestaAleatoria = respuestasCategoria[Math.floor(Math.random() * respuestasCategoria.length)];
           return respuestaAleatoria;
         }
-      } else {
-        const nombreUsuarioEnTexto = palabras.find(palabra => normalizarTexto(palabra) === normalizarTexto("me llamo") || normalizarTexto(palabra) === normalizarTexto("soy"));
-        if (nombreUsuarioEnTexto) {
-          const nombre = palabras[palabras.indexOf(nombreUsuarioEnTexto) + 1];
-          if (nombre) {
-            nombreUsuario = nombre;
-            return `Encantado de conocerte, ${nombreUsuario}!`;
-          }
+      } else if (palabras.includes("me llamo") || palabras.includes("soy")) {
+        const nombre = palabras[palabras.indexOf("me llamo") + 1] || palabras[palabras.indexOf("soy") + 1];
+        if (nombre) {
+          nombreUsuario = nombre.trim();
+          return `Encantado de conocerte, ${nombreUsuario}!`;
         }
       }
       return respuestas[palabraClave];
@@ -98,11 +98,11 @@ function buscarPalabrasClave(texto, respuestas) {
   // Si no se encontró una palabra clave, retorna una respuesta de "no_entender"
   const respuestasNoEntender = respuestas["no_entender"];
   if (respuestasNoEntender) {
-    const respuestaAleatoriaNoEntender = respuestasNoEntender[Math.floor(Math.random() * respuestasNoEntender.length)];
-    return respuestaAleatoriaNoEntender;
+    return respuestasNoEntender[Math.floor(Math.random() * respuestasNoEntender.length)];
   }
   return "Lo siento, no entiendo tu pregunta.";
 }
+
 
 
 
