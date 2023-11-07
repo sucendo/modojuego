@@ -1,7 +1,14 @@
 {
   "hola": "¡Hola! ¿Cómo puedo ayudarte?",
-  "tu nombre": "Mi nombre es ChatBot. ¿Cómo te llamas tú?",
-  "te llamas": "Mi nombre es ChatBot. ¿Cómo te llamas tú?",
+  "tu nombre": [
+    "Encantado de conocerte.", 
+    "Mi nombre es ChatBot.", 
+    "Soy el ChatBot."
+  ],
+  "no_entender": [
+    "Lo siento, no entiendo tu pregunta.", 
+    "No estoy seguro de qué estás preguntando."
+  ],
   "igualmente": "¡Genial!",
   "no lo sé": "Pues tú dirás...",
   "edad": "No tengo una edad, ya que soy un programa de inteligencia artificial.",
