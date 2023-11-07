@@ -10,12 +10,36 @@ function cargarRespuestas() {
 
 // Definir nombreUsuario al comienzo del código o donde sea apropiado
 let nombreUsuario = "";
-
 function buscarPalabrasClave(texto, respuestas) {
+  // Normalizar el texto de entrada
   texto = texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
   for (const palabraClave in respuestas) {
     if (texto.includes(palabraClave.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase())) {
+      // Aquí verificamos si se está pidiendo más del mismo tipo
+      if (contextoConversacion.palabraClave) {
+        // Comprobar si el usuario quiere otro
+        if (texto.includes("otro") || texto.includes("más")) {
+          contextoConversacion.repeticiones++;
+          if (contextoConversacion.repeticiones > 2) {
+            // Si se pidió más de 2 veces, reiniciamos el contexto
+            contextoConversacion.palabraClave = null;
+            contextoConversacion.repeticiones = 0;
+            return "¡Has tenido suficiente de eso! ¿En qué más puedo ayudarte?";
+          }
+          // Obtener más del mismo tipo
+          const respuestasCategoria = respuestas[contextoConversacion.palabraClave];
+          if (respuestasCategoria) {
+            const respuestaAleatoria = respuestasCategoria[Math.floor(Math.random() * respuestasCategoria.length)];
+            return respuestaAleatoria;
+          }
+        } else {
+          // Si no se solicita más del mismo tipo, reiniciamos el contexto
+          contextoConversacion.palabraClave = null;
+          contextoConversacion.repeticiones = 0;
+        }
+      }
+      
       if (palabraClave === "hora") {
         const ahora = new Date();
         const horaActual = `${ahora.getHours()}:${ahora.getMinutes()}`;
@@ -34,16 +58,21 @@ function buscarPalabrasClave(texto, respuestas) {
         const respuestasCategoria = respuestas[palabraClave];
       
         if (respuestasCategoria) {
+          // Establecer el contexto de la conversación
+          contextoConversacion.palabraClave = palabraClave;
+          contextoConversacion.repeticiones = 0; // Reiniciamos el contador de repeticiones
+          
           const respuestaAleatoria = respuestasCategoria[Math.floor(Math.random() * respuestasCategoria.length)];
           return respuestaAleatoria;
         }
       } else if (palabraClave === "tu nombre" || palabraClave === "te llamas") {
         // Si la pregunta es sobre el nombre del chatbot
         return respuestas[palabraClave];
-     } else if (texto.includes("me llamo") || texto.includes("soy ")) {
+      } else if (texto.includes("me llamo") || texto.includes("soy ")) {
         // Extraer el nombre del usuario del texto
         const nombre = texto.split("me llamo")[1] || texto.split("soy ")[1];
         if (nombre) {
+          // Establecer el nombre del usuario
           nombreUsuario = nombre.trim();
           nombreUsuario = nombre;
           return `Encantado de conocerte, ${nombreUsuario}!`;
@@ -52,7 +81,7 @@ function buscarPalabrasClave(texto, respuestas) {
       return respuestas[palabraClave];
     }
   }
-  return null;
+  return "Lo siento, no entiendo tu pregunta.";
 }
 
 // Función para mostrar mensajes en el chat
