@@ -131,7 +131,6 @@ function buscarPalabrasClave(texto, respuestas) {
         const nombre = texto.split("me llamo")[1] || texto.split("soy ")[1];
         if (nombre) {
           nombreUsuario = nombre.trim();
-          nombreUsuario = nombre;
           return `Encantado de conocerte, ${nombreUsuario}!`;
         }
       }
