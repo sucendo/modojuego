@@ -13,20 +13,17 @@ let contextoConversacion = {
   palabraClave: null, // La palabra clave actual
   repeticiones: 0, // Número de veces que se ha pedido más de lo mismo
 };
-
 // Definir nombreUsuario al comienzo del código o donde sea apropiado
 let nombreUsuario = "";
-
 function buscarPalabrasClave(texto, respuestas) {
   // Normalizar el texto de entrada
   texto = texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
   for (const palabraClave in respuestas) {
     if (texto.includes(palabraClave.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase())) {
-      // Aquí verificamos si se está pidiendo más del mismo tipo
-      if (contextoConversacion.palabraClave) {
-        // Comprobar si el usuario quiere otro
-        if (texto.includes("otro") || texto.includes("más")) {
+      // Comprobar si el usuario quiere otro
+      if (texto.includes("otro") || texto.includes("más")) {
+        if (contextoConversacion.palabraClave) {
           contextoConversacion.repeticiones++;
           if (contextoConversacion.repeticiones > 2) {
             // Si se pidió más de 2 veces, reiniciamos el contexto
@@ -41,12 +38,9 @@ function buscarPalabrasClave(texto, respuestas) {
             return respuestaAleatoria;
           }
         } else {
-          // Si no se solicita más del mismo tipo, reiniciamos el contexto
-          contextoConversacion.palabraClave = null;
-          contextoConversacion.repeticiones = 0;
+          return "No entiendo a qué te refieres con 'más' o 'otro'.";
         }
-      }
-      
+      }   
       if (palabraClave === "hora") {
         const ahora = new Date();
         const horaActual = `${ahora.getHours()}:${ahora.getMinutes()}`;
@@ -72,6 +66,7 @@ function buscarPalabrasClave(texto, respuestas) {
           const respuestaAleatoria = respuestasCategoria[Math.floor(Math.random() * respuestasCategoria.length)];
           return respuestaAleatoria;
         }
+      // Puedes hacer algo como esto para seleccionar aleatoriamente una respuesta:
       } else if (palabraClave === "tu nombre" || palabraClave === "te llamas") {
         const respuestasCategoria = respuestas[palabraClave];
         if (respuestasCategoria) {
