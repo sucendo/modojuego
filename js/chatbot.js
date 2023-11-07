@@ -64,7 +64,7 @@ function mostrarMensaje(usuario, mensaje) {
   chat.appendChild(nuevoMensaje);
 
   // Verifica si el usuario es el Robot (chatbot) para aplicar el efecto de escritura
-  if (usuario === "Robot") {
+  if (usuario === "Robot" && typeof mensaje === "string") {
     // Dividir el mensaje en caracteres
     const caracteres = mensaje.split("");
     let index = 0;
