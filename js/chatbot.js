@@ -55,17 +55,23 @@ function buscarPalabrasClave(texto, respuestas) {
         const horaActual = `${ahora.getHours()}:${ahora.getMinutes()}`;
         return `${respuestas[palabraClave]} ${horaActual}`;
       } else if (palabraClave === "es hoy") {
-        const ahora = new Date();
-        const opcionesFecha = { weekday: "long", year: "numeric", month: "long", day: "numeric" };
-        const fechaYDia = ahora.toLocaleDateString("es-ES", opcionesFecha);
-        return `Hoy es ${fechaYDia}`;
+        const expresionEsHoy = normalizarTexto("es hoy");
+        if (palabras.includes(expresionEsHoy)) {
+          const ahora = new Date();
+          const opcionesFecha = { weekday: "long", year: "numeric", month: "long", day: "numeric" };
+          const fechaYDia = ahora.toLocaleDateString("es-ES", opcionesFecha);
+          return `Hoy es ${fechaYDia}`;
+        }
       } else if (palabraClave === "cuanto es") {
-        const expresionMatematica = texto.replace(normalizarTexto(palabraClave), "").trim();
-        try {
-          const resultado = math.evaluate(expresionMatematica);
-          return `${respuestas[palabraClave]} ${resultado}`;
-        } catch (error) {
-          return "No pude resolver la operación matemática.";
+        const expresionEsCuanto = normalizarTexto("cuanto es");
+        if (palabras.includes(expresionEsCuanto)) {
+          const operacionMatematica = palabras.slice(palabras.indexOf(expresionEsCuanto) + 1).join(" ");
+          try {
+            const resultado = math.evaluate(operacionMatematica);
+            return `${respuestas[palabraClave]} ${resultado}`;
+          } catch (error) {
+            return "No pude resolver la operación matemática.";
+          }
         }
       } else if (palabraClave === "chiste" || palabraClave === "gracias" || palabraClave === "cuéntame una curiosidad") {
         const respuestasCategoria = respuestas[palabraClave];
@@ -101,6 +107,7 @@ function buscarPalabrasClave(texto, respuestas) {
   }
   return "Lo siento, no entiendo tu pregunta.";
 }
+
 
 
 
