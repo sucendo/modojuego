@@ -37,7 +37,7 @@ function buscarPalabrasClave(texto, respuestas) {
           const respuestaAleatoria = respuestasCategoria[Math.floor(Math.random() * respuestasCategoria.length)];
           return respuestaAleatoria;
         }
-      } else if (palabraClave === "nombre") {
+      } else if (palabraClave === "tu nombre" || palabraClave === "te llamas") {
         // Si la pregunta es sobre el nombre del chatbot
         return respuestas[palabraClave];
      } else if (texto.includes("me llamo") || texto.includes("soy ")) {
@@ -45,6 +45,7 @@ function buscarPalabrasClave(texto, respuestas) {
         const nombre = texto.split("me llamo")[1] || texto.split("soy ")[1];
         if (nombre) {
           nombreUsuario = nombre.trim();
+          nombreUsuario = nombre;
           return `Encantado de conocerte, ${nombreUsuario}!`;
         }
       }
