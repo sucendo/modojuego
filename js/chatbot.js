@@ -98,12 +98,13 @@ function buscarPalabrasClave(texto, respuestas) {
         const palabras = texto.split(" ");
         const datoIndex = palabras.indexOf("guardar");
       
-        if (datoIndex !== -1 && datoIndex < palabras.length - 1) {
+        if (datoIndex !== -1 && datoIndex > 0 && datoIndex < palabras.length - 1) {
+          const clave = palabras[datoIndex - 1];
           const dato = palabras[datoIndex + 1];
-          if (dato) {
+          if (clave && dato) {
             // Almacena el dato en el objeto datosTemporales
-            datosTemporales[palabras[datoIndex - 1]] = dato;
-            return `He guardado "${dato}" temporalmente.`;
+            datosTemporales[clave] = dato;
+            return `He guardado "${dato}" temporalmente con la clave "${clave}".`;
           }
         }
       } else if (texto.includes("mostrar")) {
@@ -114,9 +115,9 @@ function buscarPalabrasClave(texto, respuestas) {
           const clave = palabras[datoIndex + 1];
           const dato = datosTemporales[clave];
           if (dato) {
-            return `El dato almacenado es: "${dato}".`;
+            return `El dato almacenado con la clave "${clave}" es: "${dato}".`;
           } else {
-            return "No se ha encontrado ningún dato almacenado.";
+            return "No se ha encontrado ningún dato almacenado con la clave especificada.";
           }
         }  
       }
