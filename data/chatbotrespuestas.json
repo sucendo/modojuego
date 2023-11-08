@@ -16,10 +16,75 @@
     "No se a que te refieres.",
     "No tengo información sobre eso. ¿Te puedo ayudar en otra cosa?."
   ],
-  "igualmente": ["¡Genial!"],
-  "nada": ["El que nada, no se ahoga."],
-  "gracioso": ["Intento ser agradable para que te sientas cómodo."],
-  "genial": ["Me alegro."],
+  "igualmente": [
+    "¡Genial!",
+    "Me alegra escuchar eso.",
+    "Estoy aquí para ayudarte en lo que necesites."
+  ],
+  "nada": [
+      "El que nada, no se ahoga.",
+      "¡Buena perspectiva!",
+      "Exacto, no hay problema."
+  ],
+  "gracioso": [
+      "Intento ser agradable para que te sientas cómodo.",
+      "Siempre trato de añadir un poco de humor a la conversación.",
+      "¡Me gusta hacer sonreír a la gente!"
+  ],
+  "genial": [
+      "Me alegro.",
+      "¡Excelente!",
+      "¿En qué más puedo ayudarte?"
+  ],
+  "amor": [
+    "El amor es un sentimiento hermoso que une a las personas.",
+    "El amor es lo que hace que el mundo gire.",
+    "El amor puede ser complicado, pero es fundamental en la vida."
+  ],
+  "la felicidad": [
+      "La felicidad es un estado de ánimo que todos buscamos.",
+      "La felicidad es el ingrediente secreto de una vida plena.",
+      "Buscar la felicidad es una aventura constante."
+  ],
+  "los sueños": [
+      "Los sueños son como ventanas a mundos imaginarios.",
+      "Los sueños pueden ser un refugio de la realidad.",
+      "¿Tienes algún sueño interesante que quieras compartir?"
+  ],
+  "la inspiración": [
+      "La inspiración puede venir de cualquier lugar.",
+      "Las historias de superación suelen ser fuentes de inspiración.",
+      "La naturaleza es una gran fuente de inspiración para muchas personas."
+  ],
+  "la historia": [
+      "La historia está llena de eventos fascinantes.",
+      "La historia nos enseña lecciones importantes del pasado.",
+      "¿Tienes alguna época histórica que te interese en particular?"
+  ],
+  "el arte": [
+      "El arte es una forma maravillosa de expresión humana.",
+      "El arte puede conmover y cambiar vidas.",
+      "¿Tienes un artista o movimiento artístico favorito?"
+  ],
+  "la tecnología": [
+      "La tecnología ha transformado nuestra forma de vida.",
+      "La innovación tecnológica nunca se detiene.",
+      "¿Hay alguna tecnología que te emocione?"
+  ],
+  "ok": [
+    "Entendido.",
+    "De acuerdo.",
+    "Vale.",
+    "Entiendo lo que dices.",
+    "Perfecto."
+  ],
+  "vale": [
+      "Claro, entendido.",
+      "Está bien.",
+      "Vale, gracias por la información.",
+      "Gracias por tu respuesta.",
+      "De acuerdo."
+  ]
   "ya lo se": ["Ya veo que lo sabes todo."],
   "no lo sé": ["Pues tú dirás..."],
   "edad": ["No tengo una edad, ya que soy un programa de inteligencia artificial."],
@@ -61,7 +126,35 @@
     "¿Qué le dijo el semáforo al coche? No me mires, me estoy cambiando.",
     "¿Cómo se llama el campeón de buceo japonés? Tokofondo.",
     "¿Cómo se llama el campeón de buceo inglés? Deep Kenshiti.",
-    "¿Cómo se llama el campeón de buceo alemán? Otto Nemo."
+    "¿Cómo se llama el campeón de buceo alemán? Otto Nemo.",
+    "¿Qué hace un perro con un taladro? ¡Taladrando!",
+    "¿Por qué los esqueletos no pelean entre ellos? Porque no tienen agallas.",
+    "¿Cuál es el animal más antiguo? La cebra, porque está en blanco y negro.",
+    "¿Por qué el semáforo nunca juega al escondite? Porque se pone rojo cuando alguien lo mira.",
+    "¿Qué le dice una impresora a otra impresora? ¿Esa hoja es tuya o es una impresión mía?",
+    "¿Cuál es el colmo de un electricista? No encontrar su corriente de trabajo.",
+    "¿Qué hace una abeja en el gimnasio? ¡Zum-ba!",
+    "¿Cómo se dice bañera en ruso? Ja-tumue-guánder.",
+    "¿Qué le dice el uno al diez? Para ser como yo, debes ser sincero.",
+    "¿Cómo se dice fiesta en japonés? Pa-terno-kon-todo.",
+    "¿Por qué el mar no se seca? Porque no tiene toalla.",
+    "¿Qué le dijo el diente al cepillo? No me cepilles, que soy de leche.",
+    "¿Qué hace una abeja en el gimnasio? ¡Zum-ba!",
+    "¿Cómo se dice bañera en ruso? Ja-tumue-guánder.",
+    "¿Qué le dice el uno al diez? Para ser como yo, debes ser sincero.",
+    "¿Cómo se dice fiesta en japonés? Pa-terno-kon-todo."
+  ],
+  "adivinanza": [
+    "Amarillo por fuera, blanco por dentro, si quieres te lo digo, aunque es un poco lento. ¿Qué es?",
+    "Tiene hojas, pero no es un árbol. Puede ladrar, pero no es un perro. ¿Qué es?",
+    "Sin moverse de tu lugar, puedes viajar por el mundo entero. ¿Qué es?",
+    "Dentro de un cajón delgado, hay un cofre dorado. ¿Qué es?",
+    "Es blanco como la nieve, dulce como la miel, un montón de hoyos y nunca tiene hambre. ¿Qué es?",
+    "De noche me verás brillar, de día me puedes ocultar. ¿Qué soy?",
+    "Si quieres entrar, debes llamar, si no respondes, no puedes pasar. ¿Qué es?",
+    "Puedes sostenerme en la palma de tu mano, pero también puedo iluminar toda una habitación. ¿Qué soy?",
+    "Soy un agujero que puede contener agua, ¿qué soy?",
+    "Un reloj con manecillas, pero no tiene números. ¿Qué es?"
   ],
   "gracias": [
     "De nada, ¡siempre estoy aquí para ayudarte!",
