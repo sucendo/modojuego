@@ -184,13 +184,11 @@
   "cuanto es": "El resultado es",
   "me llamo": "Mucho gusto",
   "guardar": [
-    "Entendido, he guardado",
-    "He almacenado temporalmente el valor",
-    "El dato ha sido guardado."
+    "He guardado el dato.", 
+    "¡Dato guardado con éxito!"
   ],
   "mostrar": [
-    "Aquí tienes el dato guardado:",
-    "El dato almacenado es:",
-    "He encontrado el siguiente dato: {{dato}}."
+    "El dato almacenado es: ", 
+    "El valor almacenado es: "
   ]
 }
