@@ -75,14 +75,14 @@ function buscarPalabrasClave(texto, respuestas) {
         } catch (error) {
           return "No pude resolver la operación matemática.";
         }
-      } else if (palabrasClave.includes("chiste") || palabrasClave.includes("gracias") || palabrasClave.includes("cuéntame una curiosidad")) {
+      /*} else if (palabrasClave.includes("chiste") || palabrasClave.includes("gracias") || palabrasClave.includes("cuéntame una curiosidad")) {
         const respuestasCategoria = respuestas[palabrasClave];
         if (respuestasCategoria) {
           contextoConversacion.palabraClave = palabrasClave;
           contextoConversacion.repeticiones = 0;
           const respuestaAleatoria = respuestasCategoria[Math.floor(Math.random() * respuestasCategoria.length)];
           return respuestaAleatoria;
-        }
+        }*/
       } else if (palabras.includes("me llamo") || palabras.includes("soy")) {
         const nombre = palabras[palabras.indexOf("me llamo") + 1] || palabras[palabras.indexOf("soy") + 1];
         if (nombre) {
