@@ -94,20 +94,29 @@ function buscarPalabrasClave(texto, respuestas) {
           nombreUsuario = nombre.trim();
           return `Encantado de conocerte, ${nombreUsuario}!`;
         }
-      } else if (palabraClave === "guardar") {
-        const dato = palabras[palabras.indexOf("guardar") + 1];
-        if (dato) {
-          // Almacena el dato en el objeto datosTemporales
-          datosTemporales[palabras[0]] = dato;
-          return `He guardado "${dato}" temporalmente.`;
+      } else if (texto.includes("guardar")) {
+        const palabras = texto.split(" ");
+        const datoIndex = palabras.indexOf("guardar");
+        
+        if (datoIndex !== -1 && datoIndex < palabras.length - 1) {
+          const dato = palabras[datoIndex + 1];
+          if (dato) {
+            // Almacena el dato en el objeto datosTemporales
+            datosTemporales[palabras[0]] = dato;
+            return `He guardado "${dato}" temporalmente.`;
+          }
         }
-      } else if (palabraClave === "mostrar") {
-        const dato = datosTemporales[palabras[palabras.indexOf("mostrar") + 1]];
-        if (dato) {
-          return `El dato almacenado es: "${dato}".`;
-        } else {
-          return "No se ha encontrado ningún dato almacenado.";
-        }
+      } else if (texto.includes("mostrar")) {
+        const palabras = texto.split(" ");
+        const datoIndex = palabras.indexOf("mostrar");
+        
+        if (datoIndex !== -1 && datoIndex < palabras.length - 1) {
+          const dato = datosTemporales[palabras[datoIndex + 1]];
+          if (dato) {
+            return `El dato almacenado es: "${dato}".`;
+          } else {
+            return "No se ha encontrado ningún dato almacenado.";
+          }
       }
       return respuestas[palabraClave];
     }
