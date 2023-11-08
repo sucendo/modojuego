@@ -116,12 +116,19 @@ function buscarPalabrasClave(texto, respuestas) {
           }
         }  
       } else if (palabraClave in respuestas) {
-        const respuestasCategoria = respuestas[palabrasClave];
-        if (respuestasCategoria) {
-          contextoConversacion.palabraClave = palabrasClave;
-          contextoConversacion.repeticiones = 0;
-          const respuestaAleatoria = respuestasCategoria[Math.floor(Math.random() * respuestasCategoria.length)];
-          return respuestaAleatoria;
+        // Aquí, aseguramos que siempre se elija la única respuesta si solo hay una
+        const respuestasCategoria = respuestas[palabraClave];
+        if (respuestasCategoria.length === 1) {
+          return respuestasCategoria[0];
+        } else {
+          //return respuestasCategoria[Math.floor(Math.random() * respuestasCategoria.length)];
+          const respuestasCategoria = respuestas[palabrasClave];
+          if (respuestasCategoria) {
+            contextoConversacion.palabraClave = palabrasClave;
+            contextoConversacion.repeticiones = 0;
+            const respuestaAleatoria = respuestasCategoria[Math.floor(Math.random() * respuestasCategoria.length)];
+            return respuestaAleatoria;
+          }          
         }
       }
     }
