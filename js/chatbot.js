@@ -2,6 +2,7 @@
 function cargarRespuestas() {
   // Colocar el foco en la caja de texto al cargar la página
   const userInput = document.getElementById("userInput");
+  userInput.focus();
   
   return fetch('data/chatbotrespuestas.json')
     .then(response => response.json())
