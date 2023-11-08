@@ -111,7 +111,8 @@ function buscarPalabrasClave(texto, respuestas) {
         const datoIndex = palabras.indexOf("mostrar");
       
         if (datoIndex !== -1 && datoIndex < palabras.length - 1) {
-          const dato = datosTemporales[palabras[datoIndex + 1]];
+          const clave = palabras[datoIndex + 1];
+          const dato = datosTemporales[clave];
           if (dato) {
             return `El dato almacenado es: "${dato}".`;
           } else {
