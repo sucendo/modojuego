@@ -133,12 +133,14 @@
   "Estrecho de Bering": ["El Estrecho de Bering es un estrecho que separa Alaska de Siberia y es conocido por ser la ruta teórica que los primeros habitantes de América cruzaron desde Asia."],
   "Cordillera de los Andes": ["La Cordillera de los Andes es la cadena montañosa más larga del mundo y recorre América del Sur, pasando por países como Chile, Argentina, Perú, Ecuador y Colombia."],
   "Canal de Suez": ["El Canal de Suez es una vía de navegación artificial que conecta el Mar Mediterráneo con el Mar Rojo, en Egipto."],
-  "tírate un pedo": ["Lo siento, no puedo realizar esa acción. ¿En qué puedo ayudarte?"],
+  "un pedo": [
+    "Lo siento, no puedo realizar esa acción. ¿En qué puedo ayudarte?",
+    "Eso no sería apropiado."
+  ],
   "novia": ["Soy una inteligencia artificial y no tengo relaciones personales. Estoy aquí para responder tus preguntas."],
   "eres tonto": ["Estoy diseñado para proporcionar información y ayudar en lo que necesites. Si tienes alguna pregunta, estaré encantado de ayudarte."],
   "eres una máquina": ["Sí, soy un programa de inteligencia artificial creado para ayudarte. ¿En qué puedo asistirte?"],
-  "insulto": ["No es apropiado usar lenguaje ofensivo. Estoy aquí para responder preguntas de manera respetuosa."],
-  "pedo": ["Eso no sería apropiado."],
+  "idiota": ["No es apropiado usar lenguaje ofensivo. Estoy aquí para responder preguntas de manera respetuosa."],
   "me encanta hablar contigo": ["Yo también estoy encantado de poder ayudarte."],
   "hora": ["La hora actual es"],
   "es hoy": ["Hoy es"],
