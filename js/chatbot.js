@@ -22,8 +22,8 @@ let contextoConversacion = {
 // Definir nombreUsuario al comienzo del código o donde sea apropiado
 let nombreUsuario = "";
 
-// Define un objeto para almacenar datos temporales
-const datosTemporales = {};
+// Definir un objeto para almacenar datos temporales
+let datosTemporales = {};
 
 // Función para buscar palabras clave
 function buscarPalabrasClave(texto, respuestas) {
@@ -97,19 +97,19 @@ function buscarPalabrasClave(texto, respuestas) {
       } else if (texto.includes("guardar")) {
         const palabras = texto.split(" ");
         const datoIndex = palabras.indexOf("guardar");
-        
+      
         if (datoIndex !== -1 && datoIndex < palabras.length - 1) {
           const dato = palabras[datoIndex + 1];
           if (dato) {
             // Almacena el dato en el objeto datosTemporales
-            datosTemporales[palabras[0]] = dato;
+            datosTemporales[palabras[datoIndex - 1]] = dato;
             return `He guardado "${dato}" temporalmente.`;
           }
         }
       } else if (texto.includes("mostrar")) {
         const palabras = texto.split(" ");
         const datoIndex = palabras.indexOf("mostrar");
-        
+      
         if (datoIndex !== -1 && datoIndex < palabras.length - 1) {
           const dato = datosTemporales[palabras[datoIndex + 1]];
           if (dato) {
@@ -117,7 +117,6 @@ function buscarPalabrasClave(texto, respuestas) {
           } else {
             return "No se ha encontrado ningún dato almacenado.";
           }
-        }
       }
       return respuestas[palabraClave];
     }
