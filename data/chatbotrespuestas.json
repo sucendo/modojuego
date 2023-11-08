@@ -1,5 +1,5 @@
 {
-  "hola": "¡Hola! ¿Cómo puedo ayudarte?",
+  "hola": ["¡Hola! ¿Cómo puedo ayudarte?"],
   "tu nombre": [
     "Encantado de conocerte.", 
     "Mi nombre es ChatBot.", 
