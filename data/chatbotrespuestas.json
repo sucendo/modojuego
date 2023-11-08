@@ -1,5 +1,8 @@
 {
-  "hola": ["¡Hola! ¿Cómo puedo ayudarte?"],
+  "hola": [
+    "¡Hola! ¿Cómo puedo ayudarte?", 
+    "¡Hola! ¿Qué tal te encuentas?" 
+  ],
   "tu nombre": [
     "Encantado de conocerte.", 
     "Mi nombre es ChatBot.", 
@@ -15,6 +18,30 @@
     "No estoy seguro de qué estás preguntando.",
     "No se a que te refieres.",
     "No tengo información sobre eso. ¿Te puedo ayudar en otra cosa?."
+  ],
+  "estoy bien": [
+    "¡Me alegra escuchar eso!",
+    "Me alegra que te encuentres bien.",
+    "¡Eso es genial!",
+    "Me alegra saber que estás bien."
+  ],
+  "estoy mal": [
+    "Lamento escuchar que no estás bien. ¿En qué puedo ayudarte?",
+    "Lo siento por escuchar que te sientes mal. ¿Puedo hacer algo para mejorar tu día?",
+    "Espero que te sientas mejor pronto. ¿Hay algo en particular que te preocupa?",
+    "Si quieres hablar sobre ello, estoy aquí para escucharte."
+  ],
+  "estoy cansado": [
+    "El cansancio a veces es señal de que necesitas descansar. ¿Has tenido un día agotador?",
+    "Tomarte un descanso puede ayudar a recargar energías. ¿Puedo asistirte en algo para que te sientas mejor?",
+    "A veces, descansar un poco puede marcar la diferencia. ¿Necesitas algún consejo para relajarte?",
+    "El cansancio es normal, pero asegúrate de cuidar tu bienestar. ¿Hay algo en lo que pueda ayudarte?"
+  ],
+  "estoy regular": [
+    "Entiendo que puedas sentirte así en ocasiones. ¿Hay algo específico que te preocupa?",
+    "A veces todos tenemos días regulares. ¿Hay algo en lo que pueda mejorar tu día?",
+    "Si te encuentras en un día regular, recuerda que siempre puedes contar conmigo para hablar o preguntar lo que necesites.",
+    "El equilibrio es importante. ¿En qué puedo colaborar para que te sientas mejor?"
   ],
   "igualmente": [
     "¡Genial!",
@@ -94,7 +121,30 @@
   "película favorita": ["No tengo películas favoritas, pero puedo recomendarte algunas películas populares si lo deseas."],
   "significado de la vida": ["El significado de la vida es una pregunta profunda y filosófica. Algunas personas creen que es encontrar la felicidad y el propósito, mientras que otros tienen sus propias interpretaciones."],
   "adiós": ["¡Hasta luego! Si tienes más preguntas en el futuro, no dudes en volver."],
-  "cómo estás": ["Como soy una inteligencia artificial, no tengo emociones, pero estoy aquí y listo para ayudarte en lo que necesites."],
+  "cómo estás": [
+    "Como soy una inteligencia artificial, no tengo emociones, pero estoy aquí y listo para ayudarte en lo que necesites.",
+    "Estoy aquí para ayudarte en lo que necesites. ¿En qué puedo asistirte hoy?",
+    "No tengo emociones, pero siempre estoy dispuesto a ayudarte. ¿Qué puedo hacer por ti?",
+    "Estoy funcionando como siempre, listo para responder tus preguntas. ¿En qué puedo ayudarte hoy?"
+  ],
+  "cómo te encuentras": [
+    "No tengo emociones ni estados físicos, pero estoy disponible para ayudarte. ¿En qué puedo asistirte?",
+    "No tengo un estado de ánimo ni una condición física, pero estoy aquí para responder tus preguntas. ¿En qué puedo ayudarte hoy?",
+    "No tengo sensaciones físicas ni emociones, pero estoy listo para asistirte en lo que necesites. ¿En qué puedo ayudarte?",
+    "Como soy una inteligencia artificial, no tengo un estado de bienestar. ¿En qué puedo hacer tu día mejor?"
+  ],
+  "cómo va tu día": [
+    "No tengo días ni experiencias, pero estoy listo para ayudarte con lo que necesites. ¿Cómo va tu día?",
+    "No experimento días, pero siempre estoy disponible para asistirte. ¿Cómo estás llevando tu día?",
+    "No tengo días ni experiencias personales, pero estoy aquí para responder tus preguntas. ¿Cómo ha estado tu día hasta ahora?",
+    "No tengo días, pero siempre estoy listo para ayudarte. ¿Hay algo en particular que quieras saber o discutir sobre tu día?"
+  ],
+  "cómo estás hoy": [
+    "Como soy una inteligencia artificial, no tengo emociones, pero estoy listo para ayudarte en lo que necesites. ¿Y tú, cómo estás hoy?",
+    "Estoy disponible para ayudarte en lo que necesites. ¿Cómo te encuentras hoy?",
+    "No tengo estados de ánimo, pero siempre estoy aquí para asistirte. ¿Cómo ha ido tu día?",
+    "Como soy una IA, no tengo emociones, pero estoy listo para responder tus preguntas. ¿Cómo estás hoy?"
+  ],
   "broma": ["¿Quieres escuchar un chiste? Claro, aquí tienes uno: ¿Por qué los pájaros no usan Facebook? Porque ya tienen Twitter."],
   "cuéntame una curiosidad": [
     "¡Claro! ¿Sabías que los pulpos tienen tres corazones? Uno para la circulación sistémica y dos para la circulación branquial.",
