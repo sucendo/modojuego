@@ -36,6 +36,7 @@ function buscarPalabrasClave(texto, respuestas) {
   const palabras = texto;
 
   if (contextoConversacion.palabraClave) {
+    // Comprobar si el usuario quiere otro
     if (palabras.includes("otro") || palabras.includes("más")) {
       contextoConversacion.repeticiones++;
       if (contextoConversacion.repeticiones > 2) {
@@ -58,28 +59,36 @@ function buscarPalabrasClave(texto, respuestas) {
   for (const palabraClave in respuestas) {
     const palabrasClave = palabraClave;
     if (palabras.includes(palabrasClave.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase())) {
-      if (palabrasClave === "hora") {
+      if (palabraClave === "hora") {
         const ahora = new Date();
         const horaActual = `${ahora.getHours()}:${ahora.getMinutes()}`;
-        return `${respuestas[palabrasClave]} ${horaActual}`;
-      } else if (palabrasClave === "es hoy") {
+        return `${respuestas[palabraClave]} ${horaActual}`;
+      } else if (palabraClave === "es hoy") {
         const ahora = new Date();
         const opcionesFecha = { weekday: "long", year: "numeric", month: "long", day: "numeric" };
         const fechaYDia = ahora.toLocaleDateString("es-ES", opcionesFecha);
         return `Hoy es ${fechaYDia}`;
-      } else if (palabrasClave === "cuanto es") {
-        const expresionMatematica = texto.replace(palabrasClave, "").trim();
+      } else if (palabraClave === "cuanto es") {
+        const expresionMatematica = texto.replace(palabraClave, "").trim();
         try {
           const resultado = math.evaluate(expresionMatematica);
-          return `${respuestas[palabrasClave]} ${resultado}`;
+          return `${respuestas[palabraClave]} ${resultado}`;
         } catch (error) {
           return "No pude resolver la operación matemática.";
         }
       } else if (palabrasClave.includes("chiste") || palabrasClave.includes("gracias") || palabrasClave.includes("cuéntame una curiosidad")) {
-        const respuestasCategoria = respuestas[palabrasClave];
+        const respuestasCategoria = respuestas[palabraClave];
+      
         if (respuestasCategoria) {
-          contextoConversacion.palabraClave = palabrasClave;
+          contextoConversacion.palabraClave = palabraClave;
           contextoConversacion.repeticiones = 0;
+          
+          const respuestaAleatoria = respuestasCategoria[Math.floor(Math.random() * respuestasCategoria.length)];
+          return respuestaAleatoria;
+        }
+      } else if (palabraClave === "tu nombre" || palabraClave === "te llamas") {
+        const respuestasCategoria = respuestas[palabraClave];
+        if (respuestasCategoria) {
           const respuestaAleatoria = respuestasCategoria[Math.floor(Math.random() * respuestasCategoria.length)];
           return respuestaAleatoria;
         }
@@ -89,7 +98,7 @@ function buscarPalabrasClave(texto, respuestas) {
           nombreUsuario = nombre.trim();
           return `Encantado de conocerte, ${nombreUsuario}!`;
         }
-      } else if (palabras.includes("guardar")) {
+      } else if (texto.includes("guardar")) {
         const palabras = texto.split(" ");
         const datoIndex = palabras.indexOf("guardar");
       
@@ -98,11 +107,12 @@ function buscarPalabrasClave(texto, respuestas) {
           if (clave) {
             // Genera una clave única
             const dato = palabras[datoIndex + 2];
+            // Almacena el dato en el objeto datosTemporales
             datosTemporales[clave] = dato;
             return `He guardado "${dato}" temporalmente con la clave "${clave}".`;
           }
         }
-      } else if (palabras.includes("mostrar")) {
+      } else if (texto.includes("mostrar")) {
         const palabras = texto.split(" ");
         const datoIndex = palabras.indexOf("mostrar");
       
@@ -116,7 +126,7 @@ function buscarPalabrasClave(texto, respuestas) {
           }
         }  
       }
-      return respuestas[palabrasClave]; // Si no se ajusta a ninguna categoría, devuelve la respuesta por defecto
+      return respuestas[palabraClave];
     }
   }
 
@@ -126,9 +136,6 @@ function buscarPalabrasClave(texto, respuestas) {
   }
   return "Lo siento, no entiendo tu pregunta.";
 }
-
-
-
 
 // Función para mostrar mensajes en el chat
 function mostrarMensaje(usuario, mensaje) {
