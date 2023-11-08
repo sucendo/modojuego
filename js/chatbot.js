@@ -127,18 +127,6 @@ function buscarPalabrasClave(texto, respuestas) {
   return "Lo siento, no entiendo tu pregunta.";
 }
 
-const respuestasNoEntender = respuestas["no_entender"];
-  if (respuestasNoEntender) {
-    return respuestasNoEntender[Math.floor(Math.random() * respuestasNoEntender.length)];
-  }
-  return "Lo siento, no entiendo tu pregunta.";
-}
-
-
-
-
-
-
 
 
 
