@@ -98,10 +98,11 @@ function buscarPalabrasClave(texto, respuestas) {
         const palabras = texto.split(" ");
         const datoIndex = palabras.indexOf("guardar");
       
-        if (datoIndex !== -1 && datoIndex > 0 && datoIndex < palabras.length - 1) {
-          const clave = palabras[datoIndex - 1];
+        if (datoIndex !== -1 && datoIndex < palabras.length - 1) {
           const dato = palabras[datoIndex + 1];
-          if (clave && dato) {
+          if (dato) {
+            // Genera una clave única
+            const clave = `dato_${new Date().getTime()}`;
             // Almacena el dato en el objeto datosTemporales
             datosTemporales[clave] = dato;
             return `He guardado "${dato}" temporalmente con la clave "${clave}".`;
