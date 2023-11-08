@@ -117,6 +117,7 @@ function buscarPalabrasClave(texto, respuestas) {
           } else {
             return "No se ha encontrado ningún dato almacenado.";
           }
+        }  
       }
       return respuestas[palabraClave];
     }
