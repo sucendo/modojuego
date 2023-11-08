@@ -29,7 +29,7 @@ const datosTemporales = {};
 function buscarPalabrasClave(texto, respuestas) {
   texto = normalizarTexto(texto);
 
-  const palabras = texto.split(" ");
+  const palabras = texto;
 
   if (contextoConversacion.palabraClave) {
     // Comprobar si el usuario quiere otro
@@ -53,8 +53,8 @@ function buscarPalabrasClave(texto, respuestas) {
   }
 
   for (const palabraClave in respuestas) {
-    const palabrasClave = palabraClave.split(" ");
-    if (palabrasClave.every(pc => palabras.includes(normalizarTexto(pc))) || palabrasClave.length === 1 && texto.includes(palabrasClave[0])) {
+    const palabrasClave = palabraClave;
+    if (palabras.includes(palabrasClave.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase())) {
       if (palabraClave === "hora") {
         const ahora = new Date();
         const horaActual = `${ahora.getHours()}:${ahora.getMinutes()}`;
