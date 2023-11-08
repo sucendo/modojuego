@@ -1,5 +1,8 @@
 // Función para cargar el archivo JSON de respuestas
 function cargarRespuestas() {
+  // Colocar el foco en la caja de texto al cargar la página
+  const userInput = document.getElementById("userInput");
+  
   return fetch('data/chatbotrespuestas.json')
     .then(response => response.json())
     .catch(error => {
