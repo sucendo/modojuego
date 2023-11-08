@@ -84,7 +84,9 @@ function buscarPalabrasClave(texto, respuestas) {
           return respuestaAleatoria;
         }*/
       } else if (palabras.includes("me llamo") || palabras.includes("soy")) {
-        const nombre = palabras[palabras.indexOf("me llamo") + 1] || palabras[palabras.indexOf("soy") + 1];
+        // Extraer el nombre del usuario del texto
+        // const nombre = palabras[palabras.indexOf("me llamo") + 1] || palabras[palabras.indexOf("soy") + 1];
+        const nombre = palabras.split("me llamo")[1] || palabras.split("soy ")[1];
         if (nombre) {
           nombreUsuario = nombre.trim();
           return `Encantado de conocerte, ${nombreUsuario}!`;
