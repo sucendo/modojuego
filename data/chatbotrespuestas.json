@@ -293,6 +293,7 @@
   "me llamo": ["Mucho gusto"],
   "como me llamo": ["No se"],
   "si": ["Vale"],
+  "quiero jugar": ["Lo siento. No soy un simulador de juegos"],
   "guardar": [
     "He guardado el dato.", 
     "¡Dato guardado con éxito!"
