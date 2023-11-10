@@ -133,6 +133,12 @@ function buscarPalabrasClave(texto, respuestas) {
                   return `Encantado de conocerte, ${nombreUsuario}!`;
               }
           }
+      } else if (palabras.includes("como me llamo")) {
+        if (nombreUsuario) {
+          return `Te llamas ${nombreUsuario}.`;
+        } else {
+          return "Lo siento, no tengo esa información. ¿Cómo te llamas?";
+        }
       } else if (palabras.includes("guardar")) {
         const palabras = texto.split(" ");
         const datoIndex = palabras.indexOf("guardar");
