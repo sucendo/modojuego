@@ -36,24 +36,23 @@ function buscarPalabrasClave(texto, respuestas) {
 
   const palabras = textoNormalizado;
 
-  // Verificar si la pregunta está relacionada con el contexto actual
-  if (contextoConversacion.temaActual) {
-    if (contextoConversacion.temaActual === "Peliculas") {
-      if (palabras.includes("sí") && palabras.includes("lista de películas")) {
-        // Mostrar la lista de películas
-        contextoConversacion.temaActual = null; // Reiniciar el contexto
-        return respuestas["peliculas_lista"].join(', ');
+  if (contextoConversacion.palabraClave) {
+    if (palabras.includes("otro") || palabras.includes("más")) {
+      contextoConversacion.repeticiones++;
+      if (contextoConversacion.repeticiones > 2) {
+        contextoConversacion.palabraClave = null;
+        contextoConversacion.repeticiones = 0;
+        return "¡Has tenido suficiente de eso! ¿En qué más puedo ayudarte?";
       }
-    } else if (contextoConversacion.temaActual === "Chistes") {
-      if (palabras.includes("otro") || palabras.includes("más")) {
-        // Devolver otro chiste aleatorio
-        return respuestas["chistes"][Math.floor(Math.random() * respuestas["chistes"].length)];
+      const respuestasCategoria = respuestas[contextoConversacion.palabraClave];
+      if (respuestasCategoria) {
+        let respuestaAleatoria = respuestasCategoria[Math.floor(Math.random() * respuestasCategoria.length)];
+        respuestaAleatoria = respuestaAleatoria.replace(contextoConversacion.palabraClave, "").trim();
+        return respuestaAleatoria;
       }
-    } else if (contextoConversacion.temaActual === "Adivinanzas") {
-      // Lógica para manejar la respuesta del usuario a la adivinanza
-      // ...
-
-      contextoConversacion.temaActual = null; // Reiniciar el contexto
+    } else {
+      contextoConversacion.palabraClave = null;
+      contextoConversacion.repeticiones = 0;
     }
   }
 
