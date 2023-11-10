@@ -122,7 +122,7 @@ function buscarPalabrasClave(texto, respuestas) {
         } catch (error) {
           return "No pude resolver la operación matemática.";
         }
-      } else if (palabras.includes("me llamo") || palabras.includes("soy")) {
+      } else if ((palabras.includes("me llamo") || palabras.includes("soy")) && !palabras.includes("como")) {
         const palabrasClaveEncontradas = Object.keys(respuestas).filter(pc => palabras.includes(pc));
         if (palabrasClaveEncontradas.length > 0) {
           // Extraer el nombre del usuario del texto original
