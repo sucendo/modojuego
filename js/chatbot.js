@@ -127,9 +127,12 @@ function buscarPalabrasClave(texto, respuestas) {
         if (palabrasClaveEncontradas.length > 0) {
           // Extraer el nombre del usuario del texto original
           const posicionPalabraClave = palabras.indexOf(palabrasClaveEncontradas[0]);
+          // Obtener la parte del texto después de la palabra clave
           const nombreUsuario = texto.substring(posicionPalabraClave + palabrasClaveEncontradas[0].length).trim();
           
           if (nombreUsuario) {
+            // Asignar el nombre a la variable global
+            nombreUsuario = nombreUsuario;
             return `Encantado de conocerte, ${nombreUsuario}!`;
           }
         }
