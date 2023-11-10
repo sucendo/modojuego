@@ -68,6 +68,7 @@ function buscarPalabrasClave(texto, respuestas) {
         const fechaYDia = ahora.toLocaleDateString("es-ES", opcionesFecha);
         return `Hoy es ${fechaYDia}`;
       } else if (palabrasClave === "queda") {
+        // Expresión regular mejorada para buscar patrones de fecha y hora
         const patronFechaHora = /(\d{1,2}\/\d{1,2}\/\d{4})\s*(\d{1,2}h:\d{1,2})?/i;
         const coincidenciasFechaHora = texto.match(patronFechaHora);
       
@@ -101,7 +102,13 @@ function buscarPalabrasClave(texto, respuestas) {
               const horas = Math.floor((tiempoRestante % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
               const minutos = Math.floor((tiempoRestante % (1000 * 60 * 60)) / (1000 * 60));
       
-              return `Quedan ${dias} días, ${horas} horas y ${minutos} minutos para la fecha especificada.`;
+              if (dias > 365) {
+                const anos = Math.floor(dias / 365);
+                const diasRestantes = dias % 365;
+                return `Quedan ${anos} años, ${diasRestantes} días, ${horas} horas y ${minutos} minutos para la fecha especificada.`;
+              } else {
+                return `Quedan ${dias} días, ${horas} horas y ${minutos} minutos para la fecha especificada.`;
+              }
             } else {
               return `La fecha y hora especificadas ya han pasado.`;
             }
