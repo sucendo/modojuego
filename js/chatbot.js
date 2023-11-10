@@ -150,10 +150,18 @@ function buscarPalabrasClave(texto, respuestas) {
         } else {
           return "Lo siento, no tengo esa información. ¿Cómo te llamas?";
         }
-      } else if (contextoConversacion.juegoIniciado && palabras.includes("si")) {
+      } else if (contextoConversacion.juegoIniciado && palabras.includes("sí")) {
         // Manejar la respuesta afirmativa después de iniciar el juego
         contextoConversacion.juegoIniciado = false; // Restablecer el estado del juego
         return "Empezamos. ¿Quieres jugar a la Guerra Termonuclear?";
+      } else if (contextoConversacion.juegoIniciado && palabras.includes("quiero jugar")) {
+        // Verificar si el nombre de usuario es "Sucendo"
+        if (nombreUsuario.toLowerCase() === "sucendo") {
+          return "¿Ahora quieres jugar a la Guerra Termonuclear?";
+        } else {
+          contextoConversacion.juegoIniciado = false; // Restablecer el estado del juego
+          return "Lo siento, no es un simulador de juegos.";
+        }
       } else if (palabras.includes("guardar")) {
         const palabras = texto.split(" ");
         const datoIndex = palabras.indexOf("guardar");
