@@ -67,7 +67,7 @@ function buscarPalabrasClave(texto, respuestas) {
         const opcionesFecha = { weekday: "long", year: "numeric", month: "long", day: "numeric" };
         const fechaYDia = ahora.toLocaleDateString("es-ES", opcionesFecha);
         return `Hoy es ${fechaYDia}`;
-      } else if (palabrasClave === "cuanto es") {
+      } else if (palabras.includes("cuanto es") || palabras.includes("calcula")) {
         const expresionMatematica = texto.replace(palabrasClave, "").trim();
         try {
           const resultado = math.evaluate(expresionMatematica);
@@ -75,14 +75,6 @@ function buscarPalabrasClave(texto, respuestas) {
         } catch (error) {
           return "No pude resolver la operación matemática.";
         }
-      /*} else if (palabrasClave.includes("chiste") || palabrasClave.includes("gracias") || palabrasClave.includes("cuéntame una curiosidad")) {
-        const respuestasCategoria = respuestas[palabrasClave];
-        if (respuestasCategoria) {
-          contextoConversacion.palabraClave = palabrasClave;
-          contextoConversacion.repeticiones = 0;
-          const respuestaAleatoria = respuestasCategoria[Math.floor(Math.random() * respuestasCategoria.length)];
-          return respuestaAleatoria;
-        }*/
       } else if (palabras.includes("me llamo") || palabras.includes("soy")) {
         // Extraer el nombre del usuario del texto
         // const nombre = palabras[palabras.indexOf("me llamo") + 1] || palabras[palabras.indexOf("soy") + 1];
@@ -123,7 +115,6 @@ function buscarPalabrasClave(texto, respuestas) {
         if (respuestasCategoria.length === 1) {
           return respuestasCategoria[0];
         } else {
-          //return respuestasCategoria[Math.floor(Math.random() * respuestasCategoria.length)];
           const respuestasCategoria = respuestas[palabrasClave];
           if (respuestasCategoria) {
             contextoConversacion.palabraClave = palabrasClave;
