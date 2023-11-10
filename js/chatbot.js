@@ -150,7 +150,7 @@ function buscarPalabrasClave(texto, respuestas) {
         } else {
           return "Lo siento, no tengo esa información. ¿Cómo te llamas?";
         }
-      } else if (contextoConversacion.juegoIniciado && palabras.includes("sí")) {
+      } else if (contextoConversacion.juegoIniciado && palabras.includes("si")) {
         // Manejar la respuesta afirmativa después de iniciar el juego
         contextoConversacion.juegoIniciado = false; // Restablecer el estado del juego
         return "Empezamos. ¿Quieres jugar a la Guerra Termonuclear?";
