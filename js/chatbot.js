@@ -76,13 +76,16 @@ function buscarPalabrasClave(texto, respuestas) {
           return "No pude resolver la operación matemática.";
         }
       } else if (palabras.includes("me llamo") || palabras.includes("soy")) {
-        // Extraer el nombre del usuario del texto
-        // const nombre = palabras[palabras.indexOf("me llamo") + 1] || palabras[palabras.indexOf("soy") + 1];
-        const nombre = palabras.split("me llamo")[1] || palabras.split("soy ")[1];
-        if (nombre) {
-          nombreUsuario = nombre.trim();
-          return `Encantado de conocerte, ${nombreUsuario}!`;
-        }
+          const palabrasClaveEncontradas = palabrasClave.filter(pc => palabras.includes(pc));
+          if (palabrasClaveEncontradas.length > 0) {
+              // Extraer el nombre del usuario del texto original
+              const posicionPalabraClave = palabras.indexOf(palabrasClaveEncontradas[0]);
+              const nombreUsuario = textoOriginal.substring(posicionPalabraClave + palabrasClaveEncontradas[0].length).trim();
+              
+              if (nombreUsuario) {
+                  return `Encantado de conocerte, ${nombreUsuario}!`;
+              }
+          }
       } else if (palabras.includes("guardar")) {
         const palabras = texto.split(" ");
         const datoIndex = palabras.indexOf("guardar");
