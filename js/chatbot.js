@@ -31,9 +31,9 @@ let datosTemporales = {};
 
 // Función para buscar palabras clave
 function buscarPalabrasClave(texto, respuestas) {
-  texto = normalizarTexto(texto);
+  textoNormalizado = normalizarTexto(texto);
 
-  const palabras = texto;
+  const palabras = textoNormalizado;
 
   if (contextoConversacion.palabraClave) {
     if (palabras.includes("otro") || palabras.includes("más")) {
