@@ -128,12 +128,18 @@ function buscarPalabrasClave(texto, respuestas) {
           // Extraer el nombre del usuario del texto original
           const posicionPalabraClave = palabras.indexOf(palabrasClaveEncontradas[0]);
           // Obtener la parte del texto después de la palabra clave
-          const nuevoValor = texto.substring(posicionPalabraClave + palabrasClaveEncontradas[0].length).trim();
+          const nuevoNombreUsuario = texto.substring(posicionPalabraClave + palabrasClaveEncontradas[0].length).trim();
           
-          if (nuevoValor) {
+          if (nuevoNombreUsuario) {
             // Asignar el nombre a la variable global
-            nombreUsuario = nuevoValor;
-            return `Encantado de conocerte, ${nombreUsuario}!`;
+            nombreUsuario = nuevoNombreUsuario;
+    
+            // Verificar si el nombre es "Sucendo"
+            if (nombreUsuario.toLowerCase() === "sucendo") {
+              return "Hola creador mío, ¿quieres jugar?";
+            } else {
+              return `Encantado de conocerte, ${nombreUsuario}!`;
+            }
           }
         }
       } else if (palabras.includes("como") && palabras.includes("me") && palabras.includes("llamo")) {
