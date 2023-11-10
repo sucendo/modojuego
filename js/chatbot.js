@@ -123,17 +123,17 @@ function buscarPalabrasClave(texto, respuestas) {
           return "No pude resolver la operación matemática.";
         }
       } else if (palabras.includes("me llamo") || palabras.includes("soy")) {
-          const palabrasClaveEncontradas = Object.keys(respuestas).filter(pc => palabras.includes(pc));
-          if (palabrasClaveEncontradas.length > 0) {
-              // Extraer el nombre del usuario del texto original
-              const posicionPalabraClave = palabras.indexOf(palabrasClaveEncontradas[0]);
-              const nombreUsuario = texto.substring(posicionPalabraClave + palabrasClaveEncontradas[0].length).trim();
-              
-              if (nombreUsuario) {
-                  return `Encantado de conocerte, ${nombreUsuario}!`;
-              }
+        const palabrasClaveEncontradas = Object.keys(respuestas).filter(pc => palabras.includes(pc));
+        if (palabrasClaveEncontradas.length > 0) {
+          // Extraer el nombre del usuario del texto original
+          const posicionPalabraClave = palabras.indexOf(palabrasClaveEncontradas[0]);
+          const nombreUsuario = texto.substring(posicionPalabraClave + palabrasClaveEncontradas[0].length).trim();
+          
+          if (nombreUsuario) {
+            return `Encantado de conocerte, ${nombreUsuario}!`;
           }
-      } else if (palabras.includes("como me llamo")) {
+        }
+      } else if (palabras.includes("como") && palabras.includes("me") && palabras.includes("llamo")) {
         if (nombreUsuario) {
           return `Te llamas ${nombreUsuario}.`;
         } else {
