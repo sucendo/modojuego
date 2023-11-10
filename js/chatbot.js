@@ -21,6 +21,7 @@ function normalizarTexto(texto) {
 let contextoConversacion = {
   palabraClave: null, // La palabra clave actual
   repeticiones: 0, // Número de veces que se ha pedido más de lo mismo
+  juegoIniciado: false, // Agregar variable para controlar el estado del juego
 };
 
 // Definir nombreUsuario al comienzo del código o donde sea apropiado
@@ -136,6 +137,7 @@ function buscarPalabrasClave(texto, respuestas) {
     
             // Verificar si el nombre es "Sucendo"
             if (nombreUsuario.toLowerCase() === "sucendo") {
+              contextoConversacion.juegoIniciado = true; // Iniciar el juego
               return "Hola creador mío, ¿quieres jugar?";
             } else {
               return `Encantado de conocerte, ${nombreUsuario}!`;
@@ -148,6 +150,10 @@ function buscarPalabrasClave(texto, respuestas) {
         } else {
           return "Lo siento, no tengo esa información. ¿Cómo te llamas?";
         }
+      } else if (contextoConversacion.juegoIniciado && palabras.includes("sí")) {
+        // Manejar la respuesta afirmativa después de iniciar el juego
+        contextoConversacion.juegoIniciado = false; // Restablecer el estado del juego
+        return "Empezamos. ¿Quieres jugar a la Guerra Termonuclear?";
       } else if (palabras.includes("guardar")) {
         const palabras = texto.split(" ");
         const datoIndex = palabras.indexOf("guardar");
