@@ -76,18 +76,10 @@ function buscarPalabrasClave(texto, respuestas) {
           return "No pude resolver la operación matemática.";
         }
       } else if (palabras.includes("me llamo") || palabras.includes("soy")) {
-          const indiceMeLlamo = palabras.indexOf("me llamo");
-          const indiceSoy = palabras.indexOf("soy");
+          const nombreIndex = palabras.includes("me llamo") ? palabras.indexOf("me llamo") : palabras.indexOf("soy");
       
-          // Verificar si "me llamo" está presente y viene antes que "soy"
-          if (indiceMeLlamo !== -1 && (indiceSoy === -1 || indiceMeLlamo < indiceSoy)) {
-              const nombre = palabras.slice(indiceMeLlamo + 3).join(" ");
-              if (nombre) {
-                  nombreUsuario = nombre.trim();
-                  return `Encantado de conocerte, ${nombreUsuario}!`;
-              }
-          } else if (indiceSoy !== -1) {
-              const nombre = palabras.slice(indiceSoy + 1).join(" ");
+          if (nombreIndex !== -1 && nombreIndex < palabras.length - 1) {
+              const nombre = palabras.slice(nombreIndex + 2).join(" ");
               if (nombre) {
                   nombreUsuario = nombre.trim();
                   return `Encantado de conocerte, ${nombreUsuario}!`;
