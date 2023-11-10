@@ -81,7 +81,7 @@ function buscarPalabrasClave(texto, respuestas) {
       
           // Verificar si "me llamo" está presente y viene antes que "soy"
           if (indiceMeLlamo !== -1 && (indiceSoy === -1 || indiceMeLlamo < indiceSoy)) {
-              const nombre = palabras.slice(indiceMeLlamo + 2).join(" ");
+              const nombre = palabras.slice(indiceMeLlamo + 3).join(" ");
               if (nombre) {
                   nombreUsuario = nombre.trim();
                   return `Encantado de conocerte, ${nombreUsuario}!`;
