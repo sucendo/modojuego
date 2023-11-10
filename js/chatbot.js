@@ -128,11 +128,11 @@ function buscarPalabrasClave(texto, respuestas) {
           // Extraer el nombre del usuario del texto original
           const posicionPalabraClave = palabras.indexOf(palabrasClaveEncontradas[0]);
           // Obtener la parte del texto después de la palabra clave
-          const nombreUsuario = texto.substring(posicionPalabraClave + palabrasClaveEncontradas[0].length).trim();
+          const nuevoValor = texto.substring(posicionPalabraClave + palabrasClaveEncontradas[0].length).trim();
           
-          if (nombreUsuario) {
+          if (nuevoValor) {
             // Asignar el nombre a la variable global
-            nombreUsuario = nombreUsuario;
+            nombreUsuario = nuevoValor;
             return `Encantado de conocerte, ${nombreUsuario}!`;
           }
         }
