@@ -68,8 +68,7 @@ function buscarPalabrasClave(texto, respuestas) {
         const fechaYDia = ahora.toLocaleDateString("es-ES", opcionesFecha);
         return `Hoy es ${fechaYDia}`;
       } else if (palabrasClave === "queda") {
-        // Expresión regular para buscar patrones de fecha y hora
-        const patronFechaHora = /(\d{1,2}\/\d{1,2}\/\d{4})?\s*(\d{1,2}h:\d{1,2})?/i;
+        const patronFechaHora = /(\d{1,2}\/\d{1,2}\/\d{4})\s*(\d{1,2}h:\d{1,2})?/i;
         const coincidenciasFechaHora = texto.match(patronFechaHora);
       
         if (coincidenciasFechaHora) {
