@@ -68,45 +68,46 @@ function buscarPalabrasClave(texto, respuestas) {
         const fechaYDia = ahora.toLocaleDateString("es-ES", opcionesFecha);
         return `Hoy es ${fechaYDia}`;
       } else if (palabrasClave === "queda") {
-      // Expresión regular para buscar patrones de fecha y hora
-      const patronFechaHora = /(\d{1,2}\/\d{1,2}\/\d{4})?\s*(\d{1,2}h:\d{1,2})?/i;
-      const coincidenciasFechaHora = texto.match(patronFechaHora);
-    
-      if (coincidenciasFechaHora) {
-        const fecha = coincidenciasFechaHora[1];
-        const hora = coincidenciasFechaHora[2];
-    
-        if (fecha || hora) {
-          // Calcular tiempo que queda para la fecha y hora especificadas
-          const ahora = new Date();
-          let fechaEspecifica = null;
-    
-          if (fecha) {
-            const [dia, mes, anio] = fecha.split('/').map(Number);
-            fechaEspecifica = new Date(anio, mes - 1, dia); // Meses en JavaScript van de 0 a 11
-          }
-    
-          if (hora) {
-            const [hora, minutos] = hora.split(':').map(Number);
-            if (!fechaEspecifica) {
-              // Si no se especificó la fecha, usar la fecha actual
-              fechaEspecifica = new Date();
+        // Expresión regular para buscar patrones de fecha y hora
+        const patronFechaHora = /(\d{1,2}\/\d{1,2}\/\d{4})?\s*(\d{1,2}h:\d{1,2})?/i;
+        const coincidenciasFechaHora = texto.match(patronFechaHora);
+      
+        if (coincidenciasFechaHora) {
+          const fecha = coincidenciasFechaHora[1];
+          const hora = coincidenciasFechaHora[2];
+      
+          if (fecha || hora) {
+            // Calcular tiempo que queda para la fecha y hora especificadas
+            const ahora = new Date();
+            let fechaEspecifica = null;
+      
+            if (fecha) {
+              const [dia, mes, anio] = fecha.split('/').map(Number);
+              fechaEspecifica = new Date(anio, mes - 1, dia); // Meses en JavaScript van de 0 a 11
             }
-            fechaEspecifica.setHours(hora, minutos);
+      
+            if (hora) {
+              const [hora, minutos] = hora.split(':').map(Number);
+              if (!fechaEspecifica) {
+                // Si no se especificó la fecha, usar la fecha actual
+                fechaEspecifica = new Date();
+              }
+              fechaEspecifica.setHours(hora, minutos);
+            }
+      
+            const tiempoRestante = fechaEspecifica - ahora;
+      
+            if (tiempoRestante > 0) {
+              const dias = Math.floor(tiempoRestante / (1000 * 60 * 60 * 24));
+              const horas = Math.floor((tiempoRestante % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+              const minutos = Math.floor((tiempoRestante % (1000 * 60 * 60)) / (1000 * 60));
+      
+              return `Quedan ${dias} días, ${horas} horas y ${minutos} minutos para la fecha especificada.`;
+            } else {
+              return `La fecha y hora especificadas ya han pasado.`;
+            }
           }
-    
-          const tiempoRestante = fechaEspecifica - ahora;
-    
-          if (tiempoRestante > 0) {
-            const dias = Math.floor(tiempoRestante / (1000 * 60 * 60 * 24));
-            const horas = Math.floor((tiempoRestante % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutos = Math.floor((tiempoRestante % (1000 * 60 * 60)) / (1000 * 60));
-    
-            return `Quedan ${dias} días, ${horas} horas y ${minutos} minutos para la fecha especificada.`;
-          } else {
-            return `La fecha y hora especificadas ya han pasado.`;
-          }
-        }      
+        }
       } else if (palabras.includes("cuanto es") || palabras.includes("calcula")) {
         const expresionMatematica = texto.replace(palabrasClave, "").trim();
         try {
