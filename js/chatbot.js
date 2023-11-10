@@ -76,7 +76,7 @@ function buscarPalabrasClave(texto, respuestas) {
           return "No pude resolver la operación matemática.";
         }
       } else if (palabras.includes("me llamo") || palabras.includes("soy")) {
-          const palabrasClaveEncontradas = palabrasClave.filter(pc => palabras.includes(pc));
+          const palabrasClaveEncontradas = Object.keys(respuestas).filter(pc => palabras.includes(pc));
           if (palabrasClaveEncontradas.length > 0) {
               // Extraer el nombre del usuario del texto original
               const posicionPalabraClave = palabras.indexOf(palabrasClaveEncontradas[0]);
