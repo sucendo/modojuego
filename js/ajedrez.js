@@ -123,4 +123,12 @@
   }
 
   function esMovimientoValido(origen, destino, piezaSeleccionada) {
-    // Implementa la lógica para verificar si
+    // Implementa la lógica para verificar si el movimiento es válido
+    // Por ahora, siempre devolveremos true
+    return true;
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    dibujarTablero();
+  });
+})();
