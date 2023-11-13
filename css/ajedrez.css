@@ -35,3 +35,19 @@
   content: attr(data-letra);
   color: white; /* Cambia el color de la letra según sea necesario */
 }
+
+.fila-label,
+.columnas-label {
+  display: flex;
+  align-items: center;
+}
+
+.fila-label {
+  justify-content: flex-end;
+  padding-right: 8px;
+}
+
+.columnas-label {
+  justify-content: center;
+ 
+
