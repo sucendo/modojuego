@@ -67,30 +67,34 @@
     // Configuración de las piezas iniciales en la posición inicial del tablero
     if (row === 1) return '♙'; // Peón blanco
     if (row === 6) return '♟'; // Peón negro
-
+  
     if (row === 0 || row === 7) {
       // Configuración de las piezas de la fila superior e inferior
       switch (col) {
         case 0:
-        case 7:
           return '♖'; // Torre
         case 1:
-        case 6:
           return '♘'; // Caballo
         case 2:
-        case 5:
           return '♗'; // Alfil
         case 3:
           return '♕'; // Reina
         case 4:
           return '♔'; // Rey
+        case 5:
+          return '♗'; // Alfil
+        case 6:
+          return '♘'; // Caballo
+        case 7:
+          return '♖'; // Torre
         default:
           return null;
       }
     }
-
+  
     return null;
   }
+
 
   function moverPieza(origen, destino, piezaSeleccionada, tablero) {
     if (
