@@ -38,8 +38,8 @@
         const celda = document.createElement("div");
         celda.textContent = tablero[i][j] ? piezas[tablero[i][j]] : "";
         celda.style.position = "absolute";
-        celda.style.top = (i * 64) + "px";
-        celda.style.left = (j * 64) + "px";
+        celda.style.top = (j * 64) + "px";
+        celda.style.left = (i * 64) + "px";
         tableroHTML.appendChild(celda);
       }
     }
