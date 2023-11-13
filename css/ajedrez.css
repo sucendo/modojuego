@@ -7,7 +7,8 @@
   text-align: center;
   font-size: 24px;
   border: 1px solid #777;
-  display: inline-block; /* Agrega esta línea para que las celdas se muestren en línea */
+  display: inline-block; /* Muestra las celdas en línea */
+  box-sizing: border-box; /* Ajusta el modelo de caja para incluir el borde en el ancho/altura total */
 }
 
 .celda-blanca {
