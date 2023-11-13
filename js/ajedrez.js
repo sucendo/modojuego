@@ -90,14 +90,21 @@
   }
 
   function moverPieza(origen, destino, piezaSeleccionada, tablero) {
-    const piezaOrigen = (tablero[origen.row] && tablero[origen.row][origen.col]) || null;
-  
-    if (piezaOrigen && tablero[origen.row] && tablero[destino.row] && destino.row >= 0 && destino.row < 8 && destino.col >= 0 && destino.col < 8) {
+    if (
+      tablero &&
+      tablero[origen.row] &&
+      tablero[origen.row][origen.col] !== undefined &&
+      tablero[destino.row] &&
+      destino.row >= 0 &&
+      destino.row < 8 &&
+      destino.col >= 0 &&
+      destino.col < 8
+    ) {
+      const piezaOrigen = tablero[origen.row][origen.col];
       tablero[destino.row][destino.col] = piezaOrigen;
       tablero[origen.row][origen.col] = null;
+      dibujarTablero(); // Redibujar el tablero después de un movimiento
     }
-  
-    dibujarTablero();  // Redibujar el tablero después de un movimiento
   }
   
   function handleDragStart(e) {
