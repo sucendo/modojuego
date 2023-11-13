@@ -53,6 +53,9 @@
   
         tableroHTML.appendChild(celda);
       }
+      // Agrega un salto de línea después de cada fila
+      const saltoDeLinea = document.createElement('br');
+      tableroHTML.appendChild(saltoDeLinea);
     }
   }
   
