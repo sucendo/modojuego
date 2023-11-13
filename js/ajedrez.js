@@ -8,12 +8,21 @@
     '♔': '♔', '♚': '♚'
   };
 
-  // Función para obtener la pieza inicial en una posición dada del tablero
+  const tablero = [];
+  for (let i = 0; i < 8; i++) {
+    tablero[i] = [];
+    for (let j = 0; j < 8; j++) {
+      tablero[i][j] = null;
+    }
+  }
+
   function obtenerPiezaInicial(row, col) {
+    // Configuración de las piezas iniciales en la posición inicial del tablero
     if (row === 1) return '♟'; // Peón negro
     if (row === 6) return '♙'; // Peón blanco
   
     if (row === 0 || row === 7) {
+      // Configuración de las piezas de la fila superior e inferior
       switch (col) {
         case 0:
           return row === 0 ? '♜' : '♖'; // Torre
@@ -39,11 +48,11 @@
     return null;
   }
 
-  // Función para dibujar el tablero
   function dibujarTablero() {
     const tableroHTML = document.getElementById('tablero');
     tableroHTML.innerHTML = '';
-
+  
+    // Agregar etiquetas para las columnas (A-H)
     const columnasLabel = document.createElement('div');
     columnasLabel.className = 'columnas-label';
     for (let i = 0; i < 8; i++) {
@@ -52,13 +61,14 @@
       columnasLabel.appendChild(columna);
     }
     tableroHTML.appendChild(columnasLabel);
-
+  
     for (let i = 0; i < 8; i++) {
+      // Agregar etiqueta para la fila (1-8)
       const filaLabel = document.createElement('div');
       filaLabel.className = 'fila-label';
       filaLabel.textContent = 8 - i;
       tableroHTML.appendChild(filaLabel);
-
+  
       for (let j = 0; j < 8; j++) {
         const celda = document.createElement('div');
         celda.className = 'celda';
@@ -66,35 +76,40 @@
         celda.dataset.col = j;
         celda.addEventListener('dragover', handleDragOver);
         celda.addEventListener('drop', handleDrop);
-
+  
+        // Aplicar colores a las casillas según la disposición de las piezas
         if ((i + j) % 2 === 0) {
+          // Si la pieza es negra y está en la parte superior o si la pieza es blanca y está en la parte inferior
           if ((i < 4 && obtenerPiezaInicial(i, j) === '♟') || (i >= 4 && obtenerPiezaInicial(i, j) === '♙')) {
             celda.classList.add('celda-negra');
           } else {
             celda.classList.add('celda-blanca');
           }
         } else {
+          // Si la pieza es negra y está en la parte superior o si la pieza es blanca y está en la parte inferior
           if ((i < 4 && obtenerPiezaInicial(i, j) === '♟') || (i >= 4 && obtenerPiezaInicial(i, j) === '♙')) {
             celda.classList.add('celda-blanca');
           } else {
             celda.classList.add('celda-negra');
           }
         }
-
+  
         const pieza = obtenerPiezaInicial(i, j);
         if (pieza) {
+          // Agrega pieza como elemento "drag and drop"
           const piezaElemento = document.createElement('div');
           piezaElemento.className = 'pieza';
           piezaElemento.textContent = piezas[pieza];
-          piezaElemento.draggable = true;
+          piezaElemento.draggable = true; // Hace la pieza arrastrable
           piezaElemento.addEventListener('dragstart', handleDragStart);
           celda.appendChild(piezaElemento);
         }
-
+  
         tableroHTML.appendChild(celda);
       }
     }
-
+  
+    // Agregar etiquetas vacías para las filas (1-8)
     const filasLabel = document.createElement('div');
     filasLabel.className = 'filas-label';
     for (let i = 0; i < 8; i++) {
@@ -104,19 +119,27 @@
     tableroHTML.appendChild(filasLabel);
   }
 
-  // Función para manejar el inicio del arrastre
+
+    // Agregar etiquetas vacías para las filas (1-8)
+    const filasLabel = document.createElement('div');
+    filasLabel.className = 'filas-label';
+    for (let i = 0; i < 8; i++) {
+      const fila = document.createElement('div');
+      filasLabel.appendChild(fila);
+    }
+    tableroHTML.appendChild(filasLabel);
+  }
+
   function handleDragStart(e) {
     e.dataTransfer.setData('text/plain', e.target.textContent);
     e.dataTransfer.setData('row', e.target.parentElement.dataset.row);
     e.dataTransfer.setData('col', e.target.parentElement.dataset.col);
   }
 
-  // Función para manejar el evento de arrastre sobre la celda
   function handleDragOver(e) {
     e.preventDefault();
   }
 
-  // Función para manejar el evento de soltar la pieza
   function handleDrop(e) {
     e.preventDefault();
     const piezaSeleccionada = e.dataTransfer.getData('text/plain');
@@ -129,27 +152,32 @@
       col: +e.target.dataset.col
     };
 
+    // Verificar si el movimiento es válido
     if (esMovimientoValido(origen, destino, piezaSeleccionada)) {
       moverPieza(origen, destino, piezaSeleccionada);
     }
   }
 
-  // Función para mover la pieza en el tablero
   function moverPieza(origen, destino, piezaSeleccionada) {
+    // Verificar si la fila de origen está definida y contiene una pieza
     if (tablero[origen.row] && tablero[origen.row][origen.col] !== null) {
       const piezaOrigen = tablero[origen.row][origen.col];
 
+      // Verificar si el movimiento es válido (casilla de destino vacía)
       if (tablero[destino.row] && tablero[destino.row][destino.col] === null) {
+        // Actualizar el estado del tablero
         tablero[destino.row][destino.col] = piezaOrigen;
         tablero[origen.row][origen.col] = null;
 
+        // Redibujar el tablero después de un movimiento
         dibujarTablero();
       }
     }
   }
 
-  // Función para verificar si el movimiento es válido
   function esMovimientoValido(origen, destino, piezaSeleccionada) {
+    // Implementa la lógica para verificar si el movimiento es válido
+    // Por ahora, siempre devolveremos true
     return true;
   }
 
