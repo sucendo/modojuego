@@ -1,67 +1,53 @@
 // Módulo de ajedrez
-(function() {
-  // Importar la función existeElemento()
-  import { existeElemento } from './js/util.js';
+export default class Ajedrez {
+  constructor() {
+    this.tablero = crearTablero();
+    this.dibujarTablero();
+  }
 
-  const TABLERO_ANCHO = 8;
-  const TABLERO_ALTO = 8;
+  moverPieza(origen, destino) {
+    const piezaOrigen = this.tablero[origen][origen];
+    const piezaDestino = this.tablero[destino][destino];
+    this.tablero[destino][destino] = piezaOrigen;
+    this.tablero[origen][origen] = null;
+    if (piezaDestino !== null) {
+      this.tablero[origen][origen] = piezaDestino;
+    }
+  }
 
-  const piezas = {
-    "♙": "peón",
-    "♖": "torre",
-    "♘": "caballo",
-    "♗": "alfil",
-    "♕": "reina",
-    "♔": "rey",
-  };
-
-  function crearTablero() {
+  private crearTablero() {
     const tablero = [];
-    for (let i = 0; i < TABLERO_ANCHO; i++) {
+    for (let i = 0; i < 8; i++) {
       tablero[i] = [];
-      for (let j = 0; j < TABLERO_ALTO; j++) {
+      for (let j = 0; j < 8; j++) {
         tablero[i][j] = null;
       }
+    }
+    for (let i = 0; i < 8; i++) {
+      tablero[1][i] = "♙";
+      tablero[6][i] = "♟";
+      tablero[0][i] = i % 2 === 0 ? "♖" : "♘";
+      tablero[7][i] = i % 2 === 0 ? "♜" : "♞";
+      tablero[2][i] = i % 2 === 0 ? "♗" : "♝";
+      tablero[5][i] = i % 2 === 0 ? "♗" : "♝";
+      tablero[3][i] = i % 2 === 0 ? "♕" : "♛";
+      tablero[4][i] = i % 2 === 0 ? "♔" : "♚";
     }
     return tablero;
   }
 
-  function dibujarTablero(tablero, elemento) {
-    // Verificar si el elemento existe antes de intentar establecer su propiedad innerHTML
-    if (existeElemento(elemento)) {
-      elemento.innerHTML = "";
-    }
-
-    for (let i = 0; i < TABLERO_ANCHO; i++) {
-      for (let j = 0; j < TABLERO_ALTO; j++) {
-        const pieza = tablero[i][j];
+  private dibujarTablero() {
+    const tableroHTML = document.getElementById("tablero");
+    tableroHTML.innerHTML = "";
+    for (let i = 0; i < 8; i++) {
+      for (let j = 0; j < 8; j++) {
         const celda = document.createElement("div");
-        celda.textContent = pieza ? piezas[pieza] : "";
+        celda.textContent = this.tablero[i][j] ? piezas[this.tablero[i][j]] : "";
         celda.style.position = "absolute";
         celda.style.top = (j * 64) + "px";
         celda.style.left = (i * 64) + "px";
-        elemento.appendChild(celda);
+        tableroHTML.appendChild(celda);
       }
     }
   }
-
-  function moverPieza(origen, destino) {
-    // Comprobar si el movimiento es válido
-    // ...
-
-    // Mover la pieza
-    const piezaOrigen = tablero[origen][origen];
-    const piezaDestino = tablero[destino][destino];
-    tablero[destino][destino] = piezaOrigen;
-    tablero[origen][origen] = null;
-    if (piezaDestino !== null) {
-      tablero[origen][origen] = piezaDestino;
-    }
- }
-
-  // Crear el tablero de ajedrez
-  const tablero = crearTablero();
-
-  // Dibujar el tablero de ajedrez
-  dibujarTablero(tablero, document.getElementById("tablero"));
-})();
+}
