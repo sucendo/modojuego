@@ -1,41 +1,3 @@
-.celda {
-  width: 64px;
-  height: 64px;
-  line-height: 64px;
-  text-align: center;
-  font-size: 48px;
-  border: 1px solid #777;
-  display: inline-block;
-  position: relative;
-}
-
-.celda-blanca {
-  background-color: #eee;
-}
-
-.celda-negra {
-  background-color: #ddd;
-}
-
-.redondel {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 1;
-}
-
-/* Estilo adicional para las letras dentro de los redondeles */
-.redondel::before {
-  content: attr(data-letra);
-  color: white; /* Cambia el color de la letra según sea necesario */
-}
-
 .fila-label,
 .columnas-label {
   display: flex;
@@ -49,5 +11,32 @@
 
 .columnas-label {
   justify-content: center;
- 
+  height: 64px;
+}
 
+.celda {
+  width: 64px;
+  height: 64px;
+  line-height: 64px;
+  text-align: center;
+  font-size: 24px;
+  border: 1px solid #777;
+  position: relative;
+}
+
+.redondel {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.celda-blanca {
+  background-color: #eee;
+}
+
+.celda-negra {
+  background-color: #ddd;
+}
