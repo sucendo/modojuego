@@ -1,13 +1,14 @@
 /* css/ajedrez.css */
 
 #tablero {
-  position: relative;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
   width: 512px;
   height: 512px;
   border: 2px solid #333;
 }
 
-div {
+.celda {
   width: 64px;
   height: 64px;
   line-height: 64px;
@@ -15,10 +16,10 @@ div {
   font-size: 24px;
 }
 
-div:nth-child(even) {
+.celda:nth-child(even) {
   background-color: #eee;
 }
 
-div:nth-child(odd) {
+.celda:nth-child(odd) {
   background-color: #ddd;
 }
