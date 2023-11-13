@@ -1,11 +1,4 @@
-/* ajedrez.css */
-#tablero {
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  width: 512px;
-  height: 512px;
-  border: 2px solid #333;
-}
+/* En ajedrez.css */
 
 .celda {
   width: 64px;
@@ -16,11 +9,10 @@
   border: 1px solid #777;
 }
 
-/* Aplicar colores a las casillas pares e impares */
-.celda:nth-child(even) {
+.celda-blanca {
   background-color: #eee;
 }
 
-.celda:nth-child(odd) {
+.celda-negra {
   background-color: #ddd;
 }
