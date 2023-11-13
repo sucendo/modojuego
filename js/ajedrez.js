@@ -70,7 +70,7 @@
   
     // Validar si el movimiento es válido (puedes personalizar esta lógica según las reglas del ajedrez)
     // Por ejemplo, aquí se asume que cualquier movimiento es válido para simplificar
-    if (piezaOrigen && this.tablero[destino.row] && destino.row >= 0 && destino.row < 8 && destino.col >= 0 && destino.col < 8) {
+    if (piezaOrigen && this.tablero[origen.row] && this.tablero[destino.row] && destino.row >= 0 && destino.row < 8 && destino.col >= 0 && destino.col < 8) {
       this.tablero[destino.row][destino.col] = piezaOrigen;
       this.tablero[origen.row][origen.col] = null;
     }
