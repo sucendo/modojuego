@@ -38,6 +38,7 @@
         const celda = document.createElement('div');
         celda.textContent = tablero[i][j] ? piezas[tablero[i][j]] : '';
         celda.className = 'celda';
+        celda.setAttribute('draggable', 'true');
         tableroHTML.appendChild(celda);
       }
     }
@@ -70,8 +71,6 @@
       let piezaSeleccionada = null;
 
       celdas.forEach(celda => {
-        celda.draggable = true;
-
         celda.addEventListener('dragstart', () => {
           piezaSeleccionada = celda.textContent;
         });
