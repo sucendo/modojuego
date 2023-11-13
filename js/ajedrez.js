@@ -56,9 +56,9 @@
     if (piezaOrigen && this.tablero[origen.row] && this.tablero[destino.row] && destino.row >= 0 && destino.row < 8 && destino.col >= 0 && destino.col < 8) {
       this.tablero[destino.row][destino.col] = piezaOrigen;
       this.tablero[origen.row][origen.col] = null;
+      // Redibujar el tablero después de un breve retraso
+      setTimeout(() => dibujarTablero(this.tablero), 100);
     }
-  
-    dibujarTablero(this.tablero);  // Llamamos a la función dibujar sin utilizar this
   }
 
   function handleDragStart(e) {
