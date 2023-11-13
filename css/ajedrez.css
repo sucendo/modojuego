@@ -6,6 +6,7 @@
   font-size: 24px;
   border: 1px solid #777;
   display: inline-block;
+  position: relative;
 }
 
 .celda-blanca {
@@ -23,6 +24,14 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
 }
 
-/* Agrega estilos adicionales según sea necesario */
+/* Estilo adicional para las letras dentro de los redondeles */
+.redondel::before {
+  content: attr(data-letra);
+  color: white; /* Cambia el color de la letra según sea necesario */
+}
