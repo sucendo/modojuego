@@ -1,5 +1,8 @@
 // Módulo de ajedrez
 (function() {
+  // Importar la función existeElemento()
+  import { existeElemento } from './js/util';
+
   const TABLERO_ANCHO = 8;
   const TABLERO_ALTO = 8;
 
@@ -54,7 +57,7 @@
     if (piezaDestino !== null) {
       tablero[origen][origen] = piezaDestino;
     }
-  }
+ }
 
   // Crear el tablero de ajedrez
   const tablero = crearTablero();
