@@ -1,7 +1,7 @@
 // Módulo de ajedrez
 (function() {
   // Importar la función existeElemento()
-  import { existeElemento } from './js/util';
+  import { existeElemento } from './js/util.js';
 
   const TABLERO_ANCHO = 8;
   const TABLERO_ALTO = 8;
