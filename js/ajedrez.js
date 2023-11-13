@@ -17,21 +17,21 @@
       // Configuración de las piezas de la fila superior e inferior
       switch (col) {
         case 0:
-          return '♖'; // Torre
+          return '♜'; // Torre negra
         case 1:
-          return '♘'; // Caballo
+          return '♞'; // Caballo negro
         case 2:
-          return '♗'; // Alfil
+          return '♝'; // Alfil negro
         case 3:
-          return '♕'; // Reina
+          return '♛'; // Reina negra
         case 4:
-          return '♔'; // Rey
+          return '♚'; // Rey negro
         case 5:
-          return '♗'; // Alfil
+          return '♝'; // Alfil negro
         case 6:
-          return '♘'; // Caballo
+          return '♞'; // Caballo negro
         case 7:
-          return '♖'; // Torre
+          return '♜'; // Torre negra
         default:
           return null;
       }
