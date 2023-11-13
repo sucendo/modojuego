@@ -36,7 +36,8 @@
     for (let i = 0; i < 8; i++) {
       for (let j = 0; j < 8; j++) {
         const celda = document.createElement('div');
-        celda.textContent = tablero[i][j] ? piezas[tablero[i][j]] : '';
+        const pieza = tablero[i] && tablero[i][j];
+        celda.textContent = pieza ? piezas[pieza] : '';
         celda.className = 'celda';
         celda.dataset.row = i;
         celda.dataset.col = j;
