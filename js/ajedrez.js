@@ -30,14 +30,12 @@
     return tablero;
   }
 
-  function dibujarTablero(tablero) {
+  function dibujarTablero() {
     const tableroHTML = document.getElementById('tablero');
     tableroHTML.innerHTML = '';
     for (let i = 0; i < 8; i++) {
       for (let j = 0; j < 8; j++) {
         const celda = document.createElement('div');
-        const pieza = tablero[i][j];
-        celda.textContent = pieza ? piezas[pieza] : '';
         celda.className = 'celda';
         celda.dataset.row = i;
         celda.dataset.col = j;
@@ -45,6 +43,14 @@
         celda.addEventListener('dragstart', handleDragStart);
         celda.addEventListener('dragover', handleDragOver);
         celda.addEventListener('drop', handleDrop);
+  
+        // Aplicar colores a las casillas pares e impares
+        if ((i + j) % 2 === 0) {
+          celda.classList.add('celda-blanca');
+        } else {
+          celda.classList.add('celda-negra');
+        }
+  
         tableroHTML.appendChild(celda);
       }
     }
