@@ -1,5 +1,26 @@
 // Módulo de ajedrez
 (function() {
+  function crearTablero() {
+    const tablero = [];
+    for (let i = 0; i < 8; i++) {
+      tablero[i] = [];
+      for (let j = 0; j < 8; j++) {
+        tablero[i][j] = null;
+      }
+    }
+    for (let i = 0; i < 8; i++) {
+      tablero[1][i] = "♙";
+      tablero[6][i] = "♟";
+      tablero[0][i] = i % 2 === 0 ? "♖" : "♘";
+      tablero[7][i] = i % 2 === 0 ? "♜" : "♞";
+      tablero[2][i] = i % 2 === 0 ? "♗" : "♝";
+      tablero[5][i] = i % 2 === 0 ? "♗" : "♝";
+      tablero[3][i] = i % 2 === 0 ? "♕" : "♛";
+      tablero[4][i] = i % 2 === 0 ? "♔" : "♚";
+    }
+    return tablero;
+  }
+
   class Ajedrez {
     constructor() {
       this.tablero = crearTablero();
@@ -14,27 +35,6 @@
       if (piezaDestino !== null) {
         this.tablero[origen][origen] = piezaDestino;
       }
-    }
-
-    private crearTablero() {
-      const tablero = [];
-      for (let i = 0; i < 8; i++) {
-        tablero[i] = [];
-        for (let j = 0; j < 8; j++) {
-          tablero[i][j] = null;
-        }
-      }
-      for (let i = 0; i < 8; i++) {
-        tablero[1][i] = "♙";
-        tablero[6][i] = "♟";
-        tablero[0][i] = i % 2 === 0 ? "♖" : "♘";
-        tablero[7][i] = i % 2 === 0 ? "♜" : "♞";
-        tablero[2][i] = i % 2 === 0 ? "♗" : "♝";
-        tablero[5][i] = i % 2 === 0 ? "♗" : "♝";
-        tablero[3][i] = i % 2 === 0 ? "♕" : "♛";
-        tablero[4][i] = i % 2 === 0 ? "♔" : "♚";
-      }
-      return tablero;
     }
 
     private dibujarTablero() {
