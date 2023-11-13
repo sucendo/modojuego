@@ -8,6 +8,14 @@
     '♔': '♔', '♚': '♚'
   };
 
+  const tablero = [];
+  for (let i = 0; i < 8; i++) {
+    tablero[i] = [];
+    for (let j = 0; j < 8; j++) {
+      tablero[i][j] = null;
+    }
+  }
+
   function obtenerPiezaInicial(row, col) {
     // Configuración de las piezas iniciales en la posición inicial del tablero
     if (row === 1) return '♟'; // Peón negro
@@ -43,7 +51,7 @@
   function dibujarTablero() {
     const tableroHTML = document.getElementById('tablero');
     tableroHTML.innerHTML = '';
-
+  
     // Agregar etiquetas para las columnas (A-H)
     const columnasLabel = document.createElement('div');
     columnasLabel.className = 'columnas-label';
@@ -53,14 +61,14 @@
       columnasLabel.appendChild(columna);
     }
     tableroHTML.appendChild(columnasLabel);
-
+  
     for (let i = 0; i < 8; i++) {
       // Agregar etiqueta para la fila (1-8)
       const filaLabel = document.createElement('div');
       filaLabel.className = 'fila-label';
       filaLabel.textContent = 8 - i;
       tableroHTML.appendChild(filaLabel);
-
+  
       for (let j = 0; j < 8; j++) {
         const celda = document.createElement('div');
         celda.className = 'celda';
@@ -68,7 +76,7 @@
         celda.dataset.col = j;
         celda.addEventListener('dragover', handleDragOver);
         celda.addEventListener('drop', handleDrop);
-
+  
         // Aplicar colores a las casillas según la disposición de las piezas
         if ((i + j) % 2 === 0) {
           // Si la pieza es negra y está en la parte superior o si la pieza es blanca y está en la parte inferior
@@ -85,21 +93,32 @@
             celda.classList.add('celda-negra');
           }
         }
-
+  
         const pieza = obtenerPiezaInicial(i, j);
         if (pieza) {
-          // Agrega redondel como elemento "drag and drop"
-          const redondel = document.createElement('div');
-          redondel.className = 'redondel';
-          redondel.textContent = piezas[pieza];
-          redondel.draggable = true; // Hace la pieza arrastrable
-          redondel.addEventListener('dragstart', handleDragStart);
-          celda.appendChild(redondel);
+          // Agrega pieza como elemento "drag and drop"
+          const piezaElemento = document.createElement('div');
+          piezaElemento.className = 'pieza';
+          piezaElemento.textContent = piezas[pieza];
+          piezaElemento.draggable = true; // Hace la pieza arrastrable
+          piezaElemento.addEventListener('dragstart', handleDragStart);
+          celda.appendChild(piezaElemento);
         }
-
+  
         tableroHTML.appendChild(celda);
       }
     }
+  
+    // Agregar etiquetas vacías para las filas (1-8)
+    const filasLabel = document.createElement('div');
+    filasLabel.className = 'filas-label';
+    for (let i = 0; i < 8; i++) {
+      const fila = document.createElement('div');
+      filasLabel.appendChild(fila);
+    }
+    tableroHTML.appendChild(filasLabel);
+  }
+
 
     // Agregar etiquetas vacías para las filas (1-8)
     const filasLabel = document.createElement('div');
@@ -141,15 +160,15 @@
 
   function moverPieza(origen, destino, piezaSeleccionada) {
     // Verificar si la fila de origen está definida y contiene una pieza
-    if (this.tablero[origen.row] && this.tablero[origen.row][origen.col] !== null) {
-      const piezaOrigen = this.tablero[origen.row][origen.col];
-  
+    if (tablero[origen.row] && tablero[origen.row][origen.col] !== null) {
+      const piezaOrigen = tablero[origen.row][origen.col];
+
       // Verificar si el movimiento es válido (casilla de destino vacía)
-      if (this.tablero[destino.row] && this.tablero[destino.row][destino.col] === null) {
-        // Actualizar el tablero
-        this.tablero[destino.row][destino.col] = piezaOrigen;
-        this.tablero[origen.row][origen.col] = null;
-  
+      if (tablero[destino.row] && tablero[destino.row][destino.col] === null) {
+        // Actualizar el estado del tablero
+        tablero[destino.row][destino.col] = piezaOrigen;
+        tablero[origen.row][origen.col] = null;
+
         // Redibujar el tablero después de un movimiento
         dibujarTablero();
       }
