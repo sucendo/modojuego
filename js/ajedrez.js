@@ -1,5 +1,14 @@
 // Módulo de ajedrez
 (function() {
+  const piezas = {
+    '♙': 'P', '♟': 'p',
+    '♖': 'R', '♜': 'r',
+    '♘': 'N', '♞': 'n',
+    '♗': 'B', '♝': 'b',
+    '♕': 'Q', '♛': 'q',
+    '♔': 'K', '♚': 'k'
+  };
+
   function crearTablero() {
     const tablero = [];
     for (let i = 0; i < 8; i++) {
@@ -22,19 +31,19 @@
   }
 
   function dibujarTablero(tablero, elemento) {
-      const tableroHTML = document.getElementById("tablero");
-      tableroHTML.innerHTML = "";
-      for (let i = 0; i < 8; i++) {
-        for (let j = 0; j < 8; j++) {
-          const celda = document.createElement("div");
-          celda.textContent = this.tablero[i][j] ? piezas[this.tablero[i][j]] : "";
-          celda.style.position = "absolute";
-          celda.style.top = (j * 64) + "px";
-          celda.style.left = (i * 64) + "px";
-          tableroHTML.appendChild(celda);
-        }
+    const tableroHTML = document.getElementById("tablero");
+    tableroHTML.innerHTML = "";
+    for (let i = 0; i < 8; i++) {
+      for (let j = 0; j < 8; j++) {
+        const celda = document.createElement("div");
+        celda.textContent = tablero[i][j] ? piezas[tablero[i][j]] : "";
+        celda.style.position = "absolute";
+        celda.style.top = (i * 64) + "px";
+        celda.style.left = (j * 64) + "px";
+        tableroHTML.appendChild(celda);
       }
     }
+  }
 
   class Ajedrez {
     constructor() {
@@ -43,15 +52,17 @@
     }
 
     moverPieza(origen, destino) {
-      const piezaOrigen = this.tablero[origen][origen];
-      const piezaDestino = this.tablero[destino][destino];
-      this.tablero[destino][destino] = piezaOrigen;
-      this.tablero[origen][origen] = null;
+      const piezaOrigen = this.tablero[origen.row][origen.col];
+      const piezaDestino = this.tablero[destino.row][destino.col];
+      this.tablero[destino.row][destino.col] = piezaOrigen;
+      this.tablero[origen.row][origen.col] = null;
       if (piezaDestino !== null) {
-        this.tablero[origen][origen] = piezaDestino;
+        this.tablero[origen.row][origen.col] = piezaDestino;
       }
+      dibujarTablero(this.tablero, document.getElementById("tablero"));
     }
   }
 
-  export default Ajedrez;
+  // Exportar la clase Ajedrez para que pueda ser utilizada desde otros archivos
+  window.Ajedrez = Ajedrez;
 })();
