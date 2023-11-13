@@ -49,6 +49,17 @@
       }
     }
   }
+  
+  function moverPieza(origen, destino, piezaSeleccionada) {
+    const piezaOrigen = this.tablero[origen.row] && this.tablero[origen.row][origen.col];
+  
+    if (piezaOrigen && this.tablero[origen.row] && this.tablero[destino.row] && destino.row >= 0 && destino.row < 8 && destino.col >= 0 && destino.col < 8) {
+      this.tablero[destino.row][destino.col] = piezaOrigen;
+      this.tablero[origen.row][origen.col] = null;
+    }
+  
+    this.dibujar();  // Llamamos a la función dibujar del contexto actual
+  }
 
   function handleDragStart(e) {
     e.dataTransfer.setData('text/plain', e.target.textContent);
@@ -72,17 +83,6 @@
       col: +e.target.dataset.col
     };
     moverPieza(origen, destino, piezaSeleccionada);
-  }
-
-  function moverPieza(origen, destino, piezaSeleccionada) {
-    const piezaOrigen = this.tablero[origen.row] && this.tablero[origen.row][origen.col];
-
-    if (piezaOrigen && this.tablero[origen.row] && this.tablero[destino.row] && destino.row >= 0 && destino.row < 8 && destino.col >= 0 && destino.col < 8) {
-      this.tablero[destino.row][destino.col] = piezaOrigen;
-      this.tablero[origen.row][origen.col] = null;
-    }
-
-    dibujarTablero(this.tablero);
   }
 
   class Ajedrez {
