@@ -124,4 +124,7 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', function ()
+  document.addEventListener('DOMContentLoaded', function () {
+    const juegoAjedrez = new Ajedrez();
+  });
+})();
