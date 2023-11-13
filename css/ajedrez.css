@@ -16,6 +16,7 @@
   font-size: 24px;
 }
 
+/* Aplicar colores a las casillas pares e impares */
 .celda:nth-child(even) {
   background-color: #eee;
 }
