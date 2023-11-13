@@ -51,7 +51,7 @@
         celda.dataset.col = j;
         celda.addEventListener('dragover', handleDragOver);
         celda.addEventListener('drop', handleDrop);
-  
+
         // Aplicar colores a las casillas según la disposición de las piezas
         if ((i + j) % 2 === 0) {
           // Si la pieza es negra y está en la parte superior o si la pieza es blanca y está en la parte inferior
@@ -68,7 +68,7 @@
             celda.classList.add('celda-negra');
           }
         }
-  
+
         const pieza = obtenerPiezaInicial(i, j);
         if (pieza) {
           // Agrega redondel como elemento "drag and drop"
@@ -79,7 +79,7 @@
           redondel.addEventListener('dragstart', handleDragStart);
           celda.appendChild(redondel);
         }
-  
+
         tableroHTML.appendChild(celda);
       }
       // Agrega un salto de línea después de cada fila
@@ -123,18 +123,4 @@
   }
 
   function esMovimientoValido(origen, destino, piezaSeleccionada) {
-    // Implementa la lógica para verificar si el movimiento es válido
-    // Por ahora, siempre devuelve true
-    return true;
-  }
-
-  class Ajedrez {
-    constructor() {
-      dibujarTablero();
-    }
-  }
-
-  document.addEventListener('DOMContentLoaded', function () {
-    const juegoAjedrez = new Ajedrez();
-  });
-})();
+    // Implementa la lógica para verificar si
