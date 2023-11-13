@@ -67,14 +67,16 @@
 
   function moverPieza(origen, destino, piezaSeleccionada) {
     const piezaOrigen = this.tablero[origen.row][origen.col];
-      const piezaDestino = this.tablero[destino.row][destino.col];
+  
+    // Validar si el movimiento es válido (puedes personalizar esta lógica según las reglas del ajedrez)
+    // Por ejemplo, aquí se asume que cualquier movimiento es válido para simplificar
+    if (piezaOrigen && destino.row >= 0 && destino.row < 8 && destino.col >= 0 && destino.col < 8) {
       this.tablero[destino.row][destino.col] = piezaOrigen;
       this.tablero[origen.row][origen.col] = null;
-      if (piezaDestino !== null) {
-        this.tablero[origen.row][origen.col] = piezaDestino;
-      }
-
-    dibujarTablero(tablero);
+    }
+  
+    // Llama a dibujarTablero al final del movimiento
+    dibujarTablero(this.tablero);
   }
 
   class Ajedrez {
