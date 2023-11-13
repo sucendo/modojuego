@@ -51,14 +51,24 @@
         celda.dataset.col = j;
         celda.addEventListener('dragover', handleDragOver);
         celda.addEventListener('drop', handleDrop);
-
-        // Aplicar colores a las casillas pares e impares
+  
+        // Aplicar colores a las casillas según la disposición de las piezas
         if ((i + j) % 2 === 0) {
-          celda.classList.add('celda-blanca');
+          // Si la pieza es negra y está en la parte superior o si la pieza es blanca y está en la parte inferior
+          if ((i < 4 && obtenerPiezaInicial(i, j) === '♟') || (i >= 4 && obtenerPiezaInicial(i, j) === '♙')) {
+            celda.classList.add('celda-negra');
+          } else {
+            celda.classList.add('celda-blanca');
+          }
         } else {
-          celda.classList.add('celda-negra');
+          // Si la pieza es negra y está en la parte superior o si la pieza es blanca y está en la parte inferior
+          if ((i < 4 && obtenerPiezaInicial(i, j) === '♟') || (i >= 4 && obtenerPiezaInicial(i, j) === '♙')) {
+            celda.classList.add('celda-blanca');
+          } else {
+            celda.classList.add('celda-negra');
+          }
         }
-
+  
         const pieza = obtenerPiezaInicial(i, j);
         if (pieza) {
           // Agrega redondel como elemento "drag and drop"
@@ -69,7 +79,7 @@
           redondel.addEventListener('dragstart', handleDragStart);
           celda.appendChild(redondel);
         }
-
+  
         tableroHTML.appendChild(celda);
       }
       // Agrega un salto de línea después de cada fila
