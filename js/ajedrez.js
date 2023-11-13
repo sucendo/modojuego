@@ -88,13 +88,13 @@
 
         const pieza = obtenerPiezaInicial(i, j);
         if (pieza) {
-          // Agrega redondel como elemento "drag and drop"
-          const redondel = document.createElement('div');
-          redondel.className = 'redondel';
-          redondel.textContent = piezas[pieza];
-          redondel.draggable = true; // Hace la pieza arrastrable
-          redondel.addEventListener('dragstart', handleDragStart);
-          celda.appendChild(redondel);
+          // Agrega pieza como elemento "drag and drop"
+          const piezaElemento = document.createElement('div');
+          piezaElemento.className = 'pieza';
+          piezaElemento.textContent = piezas[pieza];
+          piezaElemento.draggable = true; // Hace la pieza arrastrable
+          piezaElemento.addEventListener('dragstart', handleDragStart);
+          celda.appendChild(piezaElemento);
         }
 
         tableroHTML.appendChild(celda);
@@ -141,17 +141,14 @@
 
   function moverPieza(origen, destino, piezaSeleccionada) {
     // Verificar si la fila de origen está definida y contiene una pieza
-    if (this.tablero[origen.row] && this.tablero[origen.row][origen.col] !== null) {
-      const piezaOrigen = this.tablero[origen.row][origen.col];
-  
+    const piezaOrigen = obtenerPiezaInicial(origen.row, origen.col);
+    if (piezaOrigen) {
       // Verificar si el movimiento es válido (casilla de destino vacía)
-      if (this.tablero[destino.row] && this.tablero[destino.row][destino.col] === null) {
+      const piezaDestino = obtenerPiezaInicial(destino.row, destino.col);
+      if (!piezaDestino) {
         // Actualizar el tablero
-        this.tablero[destino.row][destino.col] = piezaOrigen;
-        this.tablero[origen.row][origen.col] = null;
-  
-        // Redibujar el tablero después de un movimiento
-        dibujarTablero();
+        dibujarPieza(destino.row, destino.col, piezaOrigen);
+        dibujarPieza(origen.row, origen.col, null);
       }
     }
   }
@@ -160,6 +157,29 @@
     // Implementa la lógica para verificar si el movimiento es válido
     // Por ahora, siempre devolveremos true
     return true;
+  }
+
+  function dibujarPieza(row, col, pieza) {
+    const celda = document.querySelector(`.celda[data-row="${row}"][data-col="${col}"]`);
+    if (celda) {
+      const piezaElemento = celda.querySelector('.pieza');
+      if (piezaElemento) {
+        if (pieza) {
+          piezaElemento.textContent = piezas[pieza];
+        } else {
+          // Si pieza es null, elimina la pieza de la celda
+          piezaElemento.remove();
+        }
+      } else if (pieza) {
+        // Si no hay piezaElemento y pieza no es null, crea la pieza
+        const nuevaPieza = document.createElement('div');
+        nuevaPieza.className = 'pieza';
+        nuevaPieza.textContent = piezas[pieza];
+        nuevaPieza.draggable = true;
+        nuevaPieza.addEventListener('dragstart', handleDragStart);
+        celda.appendChild(nuevaPieza);
+      }
+    }
   }
 
   document.addEventListener('DOMContentLoaded', function () {
