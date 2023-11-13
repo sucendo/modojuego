@@ -10,32 +10,14 @@
 
   function obtenerPiezaInicial(row, col) {
     // Configuración de las piezas iniciales en la posición inicial del tablero
-    if (row === 1) return '♙'; // Peón blanco
-    if (row === 6) return '♟'; // Peón negro
-
-    if (row === 0 || row === 7) {
-      // Configuración de las piezas de la fila superior e inferior
-      switch (col) {
-        case 0:
-          return '♖'; // Torre
-        case 1:
-          return '♘'; // Caballo
-        case 2:
-          return '♗'; // Alfil
-        case 3:
-          return '♕'; // Reina
-        case 4:
-          return '♔'; // Rey
-        case 5:
-          return '♗'; // Alfil
-        case 6:
-          return '♘'; // Caballo
-        case 7:
-          return '♖'; // Torre
-        default:
-          return null;
-      }
-    }
+    if (row === 0) return '♜'; // Torre negra
+    if (row === 1) return '♞'; // Caballo negro
+    if (row === 2) return '♝'; // Alfil negro
+    if (row === 3) return '♛'; // Reina negra
+    if (row === 4) return '♚'; // Rey negro
+    if (row === 5) return '♝'; // Alfil negro
+    if (row === 6) return '♞'; // Caballo negro
+    if (row === 7) return '♜'; // Torre negra
 
     return null;
   }
@@ -55,14 +37,14 @@
         // Aplicar colores a las casillas según la disposición de las piezas
         if ((i + j) % 2 === 0) {
           // Si la pieza es negra y está en la parte superior o si la pieza es blanca y está en la parte inferior
-          if ((i < 4 && obtenerPiezaInicial(i, j) === '♟') || (i >= 4 && obtenerPiezaInicial(i, j) === '♙')) {
+          if ((i < 2 && obtenerPiezaInicial(i, j) === '♜') || (i >= 2 && obtenerPiezaInicial(i, j) === '♖')) {
             celda.classList.add('celda-negra');
           } else {
             celda.classList.add('celda-blanca');
           }
         } else {
           // Si la pieza es negra y está en la parte superior o si la pieza es blanca y está en la parte inferior
-          if ((i < 4 && obtenerPiezaInicial(i, j) === '♟') || (i >= 4 && obtenerPiezaInicial(i, j) === '♙')) {
+          if ((i < 2 && obtenerPiezaInicial(i, j) === '♜') || (i >= 2 && obtenerPiezaInicial(i, j) === '♖')) {
             celda.classList.add('celda-blanca');
           } else {
             celda.classList.add('celda-negra');
