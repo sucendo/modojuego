@@ -35,23 +35,27 @@
         celda.className = 'celda';
         celda.dataset.row = i;
         celda.dataset.col = j;
-        celda.setAttribute('draggable', 'true');
         celda.addEventListener('dragstart', handleDragStart);
         celda.addEventListener('dragover', handleDragOver);
         celda.addEventListener('drop', handleDrop);
-
+  
+        // Agrega redondel como un elemento independiente
+        const redondel = document.createElement('div');
+        redondel.className = 'redondel';
+        celda.appendChild(redondel);
+  
         // Aplicar colores a las casillas pares e impares
         if ((i + j) % 2 === 0) {
           celda.classList.add('celda-blanca');
         } else {
           celda.classList.add('celda-negra');
         }
-
+  
         const pieza = obtenerPiezaInicial(i, j);
         if (pieza) {
-          celda.textContent = piezas[pieza];
+          redondel.textContent = piezas[pieza];
         }
-
+  
         tableroHTML.appendChild(celda);
       }
       // Agrega un salto de línea después de cada fila
