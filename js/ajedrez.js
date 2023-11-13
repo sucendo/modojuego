@@ -10,33 +10,33 @@
 
   function obtenerPiezaInicial(row, col) {
     // Configuración de las piezas iniciales en la posición inicial del tablero
-    if (row === 1) return '♟'; // Peón negro
-    if (row === 6) return '♙'; // Peón blanco
-  
+    if (row === 1) return '♙'; // Peón blanco
+    if (row === 6) return '♟'; // Peón negro
+
     if (row === 0 || row === 7) {
       // Configuración de las piezas de la fila superior e inferior
       switch (col) {
         case 0:
-          return '♖'; // Torre
+          return '♜'; // Torre negra
         case 1:
-          return '♘'; // Caballo
+          return '♞'; // Caballo negro
         case 2:
-          return '♗'; // Alfil
+          return '♝'; // Alfil negro
         case 3:
-          return '♕'; // Reina
+          return '♛'; // Reina negra
         case 4:
-          return '♔'; // Rey
+          return '♚'; // Rey negro
         case 5:
-          return '♗'; // Alfil
+          return '♝'; // Alfil negro
         case 6:
-          return '♘'; // Caballo
+          return '♞'; // Caballo negro
         case 7:
-          return '♖'; // Torre
+          return '♜'; // Torre negra
         default:
           return null;
       }
     }
-  
+
     return null;
   }
 
@@ -92,6 +92,7 @@
           const redondel = document.createElement('div');
           redondel.className = 'redondel';
           redondel.textContent = piezas[pieza];
+          redondel.dataset.letra = piezas[pieza];
           redondel.draggable = true; // Hace la pieza arrastrable
           redondel.addEventListener('dragstart', handleDragStart);
           celda.appendChild(redondel);
