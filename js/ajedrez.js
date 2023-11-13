@@ -48,7 +48,7 @@
   
         const pieza = obtenerPiezaInicial(i, j);
         if (pieza) {
-          // Agrega redondel solo para las piezas (no casillas vacías)
+          // Agrega redondel con la letra de la pieza
           const redondel = document.createElement('div');
           redondel.className = 'redondel';
           redondel.textContent = piezas[pieza];
