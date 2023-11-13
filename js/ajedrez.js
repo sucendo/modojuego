@@ -20,12 +20,8 @@
     for (let i = 0; i < 8; i++) {
       tablero[1][i] = '♙';
       tablero[6][i] = '♟';
-      tablero[0][i] = i % 2 === 0 ? '♖' : '♘';
-      tablero[7][i] = i % 2 === 0 ? '♜' : '♞';
-      tablero[2][i] = i % 2 === 0 ? '♗' : '♝';
-      tablero[5][i] = i % 2 === 0 ? '♗' : '♝';
-      tablero[3][i] = i % 2 === 0 ? '♕' : '♛';
-      tablero[4][i] = i % 2 === 0 ? '♔' : '♚';
+      tablero[0][i] = obtenerPiezaInicial(0, i);
+      tablero[7][i] = obtenerPiezaInicial(7, i);
     }
     return tablero;
   }
@@ -43,20 +39,19 @@
         celda.addEventListener('dragstart', handleDragStart);
         celda.addEventListener('dragover', handleDragOver);
         celda.addEventListener('drop', handleDrop);
-  
+
         // Aplicar colores a las casillas pares e impares
         if ((i + j) % 2 === 0) {
           celda.classList.add('celda-blanca');
         } else {
           celda.classList.add('celda-negra');
         }
-  
-        // Llenar el tablero con las piezas iniciales
+
         const pieza = obtenerPiezaInicial(i, j);
         if (pieza) {
           celda.textContent = piezas[pieza];
         }
-  
+
         tableroHTML.appendChild(celda);
       }
       // Agrega un salto de línea después de cada fila
@@ -64,12 +59,12 @@
       tableroHTML.appendChild(saltoDeLinea);
     }
   }
-  
+
   function obtenerPiezaInicial(row, col) {
     // Configuración de las piezas iniciales en la posición inicial del tablero
     if (row === 1) return '♙'; // Peón blanco
     if (row === 6) return '♟'; // Peón negro
-  
+
     if (row === 0 || row === 7) {
       // Configuración de las piezas de la fila superior e inferior
       switch (col) {
@@ -90,19 +85,19 @@
           return null;
       }
     }
-  
+
     return null;
   }
-  
+
   function moverPieza(origen, destino, piezaSeleccionada) {
     const piezaOrigen = this.tablero[origen.row] && this.tablero[origen.row][origen.col];
-  
+
     if (piezaOrigen && this.tablero[origen.row] && this.tablero[destino.row] && destino.row >= 0 && destino.row < 8 && destino.col >= 0 && destino.col < 8) {
       this.tablero[destino.row][destino.col] = piezaOrigen;
       this.tablero[origen.row][origen.col] = null;
-      // Redibujar el tablero después de un breve retraso
-      setTimeout(() => dibujarTablero(this.tablero), 100);
     }
+
+    dibujarTablero();  // Redibujar el tablero después de un movimiento
   }
 
   function handleDragStart(e) {
@@ -132,11 +127,7 @@
   class Ajedrez {
     constructor() {
       this.tablero = crearTablero();
-      this.dibujar();
-    }
-
-    dibujar() {
-      dibujarTablero(this.tablero);
+      dibujarTablero();
     }
   }
 
