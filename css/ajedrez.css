@@ -52,3 +52,7 @@
   justify-content: center;
   height: 64px;
 }
+
+.columnas-label div {
+    width: 64px;
+}
