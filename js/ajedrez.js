@@ -17,21 +17,21 @@
       // Configuración de las piezas de la fila superior e inferior
       switch (col) {
         case 0:
-          return '♖'; // Torre
+          return row === 0 ? '♖' : '♜'; // Torre
         case 1:
-          return '♘'; // Caballo
+          return row === 0 ? '♘' : '♞'; // Caballo
         case 2:
-          return '♗'; // Alfil
+          return row === 0 ? '♗' : '♝'; // Alfil
         case 3:
-          return '♕'; // Reina
+          return row === 0 ? '♕' : '♛'; // Reina
         case 4:
-          return '♔'; // Rey
+          return row === 0 ? '♔' : '♚'; // Rey
         case 5:
-          return '♗'; // Alfil
+          return row === 0 ? '♗' : '♝'; // Alfil
         case 6:
-          return '♘'; // Caballo
+          return row === 0 ? '♘' : '♞'; // Caballo
         case 7:
-          return '♖'; // Torre
+          return row === 0 ? '♖' : '♜'; // Torre
         default:
           return null;
       }
