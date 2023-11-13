@@ -37,14 +37,14 @@
         // Aplicar colores a las casillas según la disposición de las piezas
         if ((i + j) % 2 === 0) {
           // Si la pieza es negra y está en la parte superior o si la pieza es blanca y está en la parte inferior
-          if ((i < 2 && obtenerPiezaInicial(i, j) === '♜') || (i >= 2 && obtenerPiezaInicial(i, j) === '♖')) {
+          if ((i < 4 && obtenerPiezaInicial(i, j) !== null) || (i >= 4 && obtenerPiezaInicial(i, j) === null)) {
             celda.classList.add('celda-negra');
           } else {
             celda.classList.add('celda-blanca');
           }
         } else {
           // Si la pieza es negra y está en la parte superior o si la pieza es blanca y está en la parte inferior
-          if ((i < 2 && obtenerPiezaInicial(i, j) === '♜') || (i >= 2 && obtenerPiezaInicial(i, j) === '♖')) {
+          if ((i < 4 && obtenerPiezaInicial(i, j) !== null) || (i >= 4 && obtenerPiezaInicial(i, j) === null)) {
             celda.classList.add('celda-blanca');
           } else {
             celda.classList.add('celda-negra');
@@ -52,7 +52,7 @@
         }
 
         const pieza = obtenerPiezaInicial(i, j);
-        if (pieza) {
+        if (pieza !== null) {
           // Agrega redondel como elemento "drag and drop"
           const redondel = document.createElement('div');
           redondel.className = 'redondel';
