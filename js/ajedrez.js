@@ -58,7 +58,7 @@
       this.tablero[origen.row][origen.col] = null;
     }
   
-    this.dibujar();  // Llamamos a la función dibujar del contexto actual
+    dibujarTablero(this.tablero);  // Llamamos a la función dibujar sin utilizar this
   }
 
   function handleDragStart(e) {
