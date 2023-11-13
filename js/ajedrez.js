@@ -30,7 +30,7 @@
     return tablero;
   }
 
-  function dibujarTablero(tablero, elemento) {
+  function dibujarTablero(tablero) {
     const tableroHTML = document.getElementById("tablero");
     tableroHTML.innerHTML = "";
     for (let i = 0; i < 8; i++) {
@@ -38,8 +38,8 @@
         const celda = document.createElement("div");
         celda.textContent = tablero[i][j] ? piezas[tablero[i][j]] : "";
         celda.style.position = "absolute";
-        celda.style.top = (j * 64) + "px";
-        celda.style.left = (i * 64) + "px";
+        celda.style.top = (i * 64) + "px";
+        celda.style.left = (j * 64) + "px";
         tableroHTML.appendChild(celda);
       }
     }
@@ -48,7 +48,10 @@
   class Ajedrez {
     constructor() {
       this.tablero = crearTablero();
-      dibujarTablero(this.tablero, document.getElementById("tablero"));
+    }
+
+    dibujar() {
+      dibujarTablero(this.tablero);
     }
 
     moverPieza(origen, destino) {
@@ -59,10 +62,13 @@
       if (piezaDestino !== null) {
         this.tablero[origen.row][origen.col] = piezaDestino;
       }
-      dibujarTablero(this.tablero, document.getElementById("tablero"));
+      this.dibujar();
     }
   }
 
-  // Exportar la clase Ajedrez para que pueda ser utilizada desde otros archivos
-  window.Ajedrez = Ajedrez;
+  // Cuando el DOM esté completamente cargado, crea una instancia de Ajedrez y dibuja el tablero
+  document.addEventListener("DOMContentLoaded", function() {
+    const juegoAjedrez = new Ajedrez();
+    juegoAjedrez.dibujar();
+  });
 })();
