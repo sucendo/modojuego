@@ -17,11 +17,19 @@
   transform: translate(-50%, -50%);
   width: 40px;
   height: 40px;
-  background-color: #fff; /* Ajusta el color de fondo según tus preferencias */
   border-radius: 50%;
   display: flex;
   justify-content: center;
   align-items: center;
+  color: #fff; /* Color de las letras */
+}
+
+.celda-blanca .redondel {
+  background-color: #fff; /* Fondo blanco para las celdas blancas */
+}
+
+.celda-negra .redondel {
+  background-color: #000; /* Fondo negro para las celdas negras */
 }
 
 .celda-blanca {
