@@ -39,11 +39,6 @@
         celda.addEventListener('dragover', handleDragOver);
         celda.addEventListener('drop', handleDrop);
   
-        // Agrega redondel como un elemento independiente
-        const redondel = document.createElement('div');
-        redondel.className = 'redondel';
-        celda.appendChild(redondel);
-  
         // Aplicar colores a las casillas pares e impares
         if ((i + j) % 2 === 0) {
           celda.classList.add('celda-blanca');
@@ -53,7 +48,11 @@
   
         const pieza = obtenerPiezaInicial(i, j);
         if (pieza) {
+          // Agrega redondel solo para las piezas (no casillas vacías)
+          const redondel = document.createElement('div');
+          redondel.className = 'redondel';
           redondel.textContent = piezas[pieza];
+          celda.appendChild(redondel);
         }
   
         tableroHTML.appendChild(celda);
