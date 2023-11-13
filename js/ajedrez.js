@@ -90,16 +90,16 @@
   }
 
   function moverPieza(origen, destino, piezaSeleccionada, tablero) {
-    const piezaOrigen = tablero[origen.row] && tablero[origen.row][origen.col];
-
+    const piezaOrigen = (tablero[origen.row] && tablero[origen.row][origen.col]) || null;
+  
     if (piezaOrigen && tablero[origen.row] && tablero[destino.row] && destino.row >= 0 && destino.row < 8 && destino.col >= 0 && destino.col < 8) {
       tablero[destino.row][destino.col] = piezaOrigen;
       tablero[origen.row][origen.col] = null;
     }
-
+  
     dibujarTablero();  // Redibujar el tablero después de un movimiento
   }
-
+  
   function handleDragStart(e) {
     e.dataTransfer.setData('text/plain', e.target.textContent);
     e.dataTransfer.setData('row', e.target.dataset.row);
