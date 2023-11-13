@@ -1,11 +1,11 @@
 (function () {
   const piezas = {
-    '♙': 'P', '♟': 'p',
-    '♖': 'R', '♜': 'r',
-    '♘': 'N', '♞': 'n',
-    '♗': 'B', '♝': 'b',
-    '♕': 'Q', '♛': 'q',
-    '♔': 'K', '♚': 'k'
+    '♙': '♙', '♟': '♟',
+    '♖': '♖', '♜': '♜',
+    '♘': '♘', '♞': '♞',
+    '♗': '♗', '♝': '♝',
+    '♕': '♕', '♛': '♛',
+    '♔': '♔', '♚': '♚'
   };
 
   function obtenerPiezaInicial(row, col) {
@@ -17,21 +17,21 @@
       // Configuración de las piezas de la fila superior e inferior
       switch (col) {
         case 0:
-          return '♜'; // Torre negra
+          return '♖'; // Torre
         case 1:
-          return '♞'; // Caballo negro
+          return '♘'; // Caballo
         case 2:
-          return '♝'; // Alfil negro
+          return '♗'; // Alfil
         case 3:
-          return '♛'; // Reina negra
+          return '♕'; // Reina
         case 4:
-          return '♚'; // Rey negro
+          return '♔'; // Rey
         case 5:
-          return '♝'; // Alfil negro
+          return '♗'; // Alfil
         case 6:
-          return '♞'; // Caballo negro
+          return '♘'; // Caballo
         case 7:
-          return '♜'; // Torre negra
+          return '♖'; // Torre
         default:
           return null;
       }
