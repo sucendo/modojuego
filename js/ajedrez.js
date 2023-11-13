@@ -150,20 +150,6 @@
         this.tablero[destino.row][destino.col] = piezaOrigen;
         this.tablero[origen.row][origen.col] = null;
   
-        // Guardar el movimiento
-        const movimiento = {
-          origen: {
-            row: origen.row,
-            col: origen.col
-          },
-          destino: {
-            row: destino.row,
-            col: destino.col
-          },
-          pieza: piezaSeleccionada
-        };
-        this.tablero.movimientos.push(movimiento);
-  
         // Redibujar el tablero después de un movimiento
         dibujarTablero();
       }
