@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Ajedrez</title>
+</head>
+<body>
+  <script src="ajedrez.js"></script>
+
+  <div id="tablero"></div>
+
+  <script>
+    const tablero = document.getElementById("tablero");
+
+    function dibujarTablero() {
+      for (let i = 0; i < TABLERO_ANCHO; i++) {
+        for (let j = 0; j < TABLERO_ALTO; j++) {
+          const pieza = tablero[i][j];
+          const celda = document.createElement("div");
+          celda.textContent = pieza;
+          celda.style.position = "absolute";
+          celda.style.top = (j * 64) + "px";
+          celda.style.left = (i * 64) + "px";
+          tablero.appendChild(celda);
+        }
+      }
+    }
+
+    dibujarTablero();
+
+    // Escuchar eventos
+
+    document.addEventListener("keydown", (event) => {
+      if (event.keyCode === 13) {
+        const [origen, destino] = prompt("Introduce la pieza a mover (ejemplo: a1 a2)").split(" ");
+        moverPieza(origen, destino);
+        dibujarTablero();
+      }
+    });
+  </script>
+</body>
+</html>
