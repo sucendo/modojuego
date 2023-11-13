@@ -43,7 +43,24 @@
   function dibujarTablero() {
     const tableroHTML = document.getElementById('tablero');
     tableroHTML.innerHTML = '';
+
+    // Agregar etiquetas para las columnas (A-H)
+    const columnasLabel = document.createElement('div');
+    columnasLabel.className = 'columnas-label';
     for (let i = 0; i < 8; i++) {
+      const columna = document.createElement('div');
+      columna.textContent = String.fromCharCode(65 + i);
+      columnasLabel.appendChild(columna);
+    }
+    tableroHTML.appendChild(columnasLabel);
+
+    for (let i = 0; i < 8; i++) {
+      // Agregar etiqueta para la fila (1-8)
+      const filaLabel = document.createElement('div');
+      filaLabel.className = 'fila-label';
+      filaLabel.textContent = 8 - i;
+      tableroHTML.appendChild(filaLabel);
+
       for (let j = 0; j < 8; j++) {
         const celda = document.createElement('div');
         celda.className = 'celda';
@@ -82,10 +99,16 @@
 
         tableroHTML.appendChild(celda);
       }
-      // Agrega un salto de línea después de cada fila
-      const saltoDeLinea = document.createElement('br');
-      tableroHTML.appendChild(saltoDeLinea);
     }
+
+    // Agregar etiquetas vacías para las filas (1-8)
+    const filasLabel = document.createElement('div');
+    filasLabel.className = 'filas-label';
+    for (let i = 0; i < 8; i++) {
+      const fila = document.createElement('div');
+      filasLabel.appendChild(fila);
+    }
+    tableroHTML.appendChild(filasLabel);
   }
 
   function handleDragStart(e) {
