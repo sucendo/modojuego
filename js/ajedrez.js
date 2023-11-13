@@ -121,7 +121,17 @@
       row: +e.target.dataset.row,
       col: +e.target.dataset.col
     };
-    moverPieza(origen, destino, piezaSeleccionada);
+  
+    // Verificar si el movimiento es válido
+    if (esMovimientoValido(origen, destino, piezaSeleccionada)) {
+      moverPieza(origen, destino, piezaSeleccionada);
+    }
+  }
+  
+  function esMovimientoValido(origen, destino, piezaSeleccionada) {
+    // Aquí deberías implementar la lógica para validar si el movimiento es legal para la pieza seleccionada
+    // Por ahora, siempre devolveremos true
+    return true;
   }
 
   class Ajedrez {
