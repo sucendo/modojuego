@@ -11,9 +11,11 @@
 }
 
 .columnas-label {
+  display: flex;
+  flex-direction: column; /* Cambiamos la dirección a columna */
   justify-content: space-between;
   height: 64px;
-  width: 64px;  /* Agregamos un ancho para evitar que se expanda */
+  width: 64px;
 }
 
 .celda {
@@ -30,10 +32,10 @@
 }
 
 .redondel {
-  width: 80%;  /* Ajustamos el tamaño del redondel */
+  width: 80%;
   height: 80%;
   border-radius: 50%;
-  background-color: inherit;  /* Hacemos que el redondel tome el color de fondo de la celda */
+  background-color: inherit;
   display: flex;
   align-items: center;
   justify-content: center;
