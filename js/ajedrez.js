@@ -1,5 +1,5 @@
 // Módulo de ajedrez
-(function() {
+(function () {
   const piezas = {
     '♙': 'P', '♟': 'p',
     '♖': 'R', '♜': 'r',
@@ -18,28 +18,26 @@
       }
     }
     for (let i = 0; i < 8; i++) {
-      tablero[1][i] = "♙";
-      tablero[6][i] = "♟";
-      tablero[0][i] = i % 2 === 0 ? "♖" : "♘";
-      tablero[7][i] = i % 2 === 0 ? "♜" : "♞";
-      tablero[2][i] = i % 2 === 0 ? "♗" : "♝";
-      tablero[5][i] = i % 2 === 0 ? "♗" : "♝";
-      tablero[3][i] = i % 2 === 0 ? "♕" : "♛";
-      tablero[4][i] = i % 2 === 0 ? "♔" : "♚";
+      tablero[1][i] = '♙';
+      tablero[6][i] = '♟';
+      tablero[0][i] = i % 2 === 0 ? '♖' : '♘';
+      tablero[7][i] = i % 2 === 0 ? '♜' : '♞';
+      tablero[2][i] = i % 2 === 0 ? '♗' : '♝';
+      tablero[5][i] = i % 2 === 0 ? '♗' : '♝';
+      tablero[3][i] = i % 2 === 0 ? '♕' : '♛';
+      tablero[4][i] = i % 2 === 0 ? '♔' : '♚';
     }
     return tablero;
   }
 
   function dibujarTablero(tablero) {
-    const tableroHTML = document.getElementById("tablero");
-    tableroHTML.innerHTML = "";
+    const tableroHTML = document.getElementById('tablero');
+    tableroHTML.innerHTML = '';
     for (let i = 0; i < 8; i++) {
       for (let j = 0; j < 8; j++) {
-        const celda = document.createElement("div");
-        celda.textContent = tablero[i][j] ? piezas[tablero[i][j]] : "";
-        celda.style.position = "absolute";
-        celda.style.top = (i * 64) + "px";
-        celda.style.left = (j * 64) + "px";
+        const celda = document.createElement('div');
+        celda.textContent = tablero[i][j] ? piezas[tablero[i][j]] : '';
+        celda.className = 'celda';
         tableroHTML.appendChild(celda);
       }
     }
@@ -48,6 +46,8 @@
   class Ajedrez {
     constructor() {
       this.tablero = crearTablero();
+      this.dibujar();
+      this.inicializarArrastre();
     }
 
     dibujar() {
@@ -64,11 +64,48 @@
       }
       this.dibujar();
     }
+
+    inicializarArrastre() {
+      const celdas = document.querySelectorAll('.celda');
+      let piezaSeleccionada = null;
+
+      celdas.forEach(celda => {
+        celda.draggable = true;
+
+        celda.addEventListener('dragstart', () => {
+          piezaSeleccionada = celda.textContent;
+        });
+
+        celda.addEventListener('dragover', e => {
+          e.preventDefault();
+        });
+
+        celda.addEventListener('drop', () => {
+          if (piezaSeleccionada !== null) {
+            const origen = obtenerCoordenadas(celdas, piezaSeleccionada);
+            const destino = obtenerCoordenadas(celdas, celda.textContent);
+            if (origen && destino) {
+              this.moverPieza(origen, destino);
+            }
+          }
+          piezaSeleccionada = null;
+        });
+      });
+    }
   }
 
-  // Cuando el DOM esté completamente cargado, crea una instancia de Ajedrez y dibuja el tablero
-  document.addEventListener("DOMContentLoaded", function() {
+  function obtenerCoordenadas(celdas, pieza) {
+    for (let i = 0; i < celdas.length; i++) {
+      if (celdas[i].textContent === pieza) {
+        const fila = Math.floor(i / 8);
+        const columna = i % 8;
+        return { row: fila, col: columna };
+      }
+    }
+    return null;
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
     const juegoAjedrez = new Ajedrez();
-    juegoAjedrez.dibujar();
   });
 })();
