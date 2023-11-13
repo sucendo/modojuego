@@ -21,23 +21,7 @@
     return tablero;
   }
 
-  class Ajedrez {
-    constructor() {
-      this.tablero = crearTablero();
-      this.dibujarTablero();
-    }
-
-    moverPieza(origen, destino) {
-      const piezaOrigen = this.tablero[origen][origen];
-      const piezaDestino = this.tablero[destino][destino];
-      this.tablero[destino][destino] = piezaOrigen;
-      this.tablero[origen][origen] = null;
-      if (piezaDestino !== null) {
-        this.tablero[origen][origen] = piezaDestino;
-      }
-    }
-
-    private dibujarTablero() {
+  function dibujarTablero(tablero, elemento) {
       const tableroHTML = document.getElementById("tablero");
       tableroHTML.innerHTML = "";
       for (let i = 0; i < 8; i++) {
@@ -49,6 +33,22 @@
           celda.style.left = (i * 64) + "px";
           tableroHTML.appendChild(celda);
         }
+      }
+    }
+
+  class Ajedrez {
+    constructor() {
+      this.tablero = crearTablero();
+      dibujarTablero(this.tablero, document.getElementById("tablero"));
+    }
+
+    moverPieza(origen, destino) {
+      const piezaOrigen = this.tablero[origen][origen];
+      const piezaDestino = this.tablero[destino][destino];
+      this.tablero[destino][destino] = piezaOrigen;
+      this.tablero[origen][origen] = null;
+      if (piezaDestino !== null) {
+        this.tablero[origen][origen] = piezaDestino;
       }
     }
   }
