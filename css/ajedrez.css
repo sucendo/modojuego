@@ -46,6 +46,7 @@
 .fila-label {
   justify-content: flex-end;
   padding-right: 8px;
+  margin-top: -22px;
 }
 
 .columnas-label {
