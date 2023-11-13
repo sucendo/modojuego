@@ -140,9 +140,17 @@
   }
 
   function moverPieza(origen, destino, piezaSeleccionada) {
-    // Implementa la lógica de movimiento de piezas aquí
-    // ...
-    dibujarTablero(); // Redibujar el tablero después de un movimiento
+    const piezaOrigen = this.tablero[origen.row][origen.col];
+  
+    // Verificar si el movimiento es válido (en este caso, simplemente si la casilla de destino está vacía)
+    if (!this.tablero[destino.row][destino.col]) {
+      // Actualizar el tablero
+      this.tablero[destino.row][destino.col] = piezaOrigen;
+      this.tablero[origen.row][origen.col] = null;
+  
+      // Redibujar el tablero después de un movimiento
+      dibujarTablero();
+    }
   }
 
   function esMovimientoValido(origen, destino, piezaSeleccionada) {
