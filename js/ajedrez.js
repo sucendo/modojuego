@@ -89,12 +89,12 @@
     return null;
   }
 
-  function moverPieza(origen, destino, piezaSeleccionada) {
-    const piezaOrigen = this.tablero[origen.row] && this.tablero[origen.row][origen.col];
+  function moverPieza(origen, destino, piezaSeleccionada, tablero) {
+    const piezaOrigen = tablero[origen.row] && tablero[origen.row][origen.col];
 
-    if (piezaOrigen && this.tablero[origen.row] && this.tablero[destino.row] && destino.row >= 0 && destino.row < 8 && destino.col >= 0 && destino.col < 8) {
-      this.tablero[destino.row][destino.col] = piezaOrigen;
-      this.tablero[origen.row][origen.col] = null;
+    if (piezaOrigen && tablero[origen.row] && tablero[destino.row] && destino.row >= 0 && destino.row < 8 && destino.col >= 0 && destino.col < 8) {
+      tablero[destino.row][destino.col] = piezaOrigen;
+      tablero[origen.row][origen.col] = null;
     }
 
     dibujarTablero();  // Redibujar el tablero después de un movimiento
@@ -124,10 +124,10 @@
   
     // Verificar si el movimiento es válido
     if (esMovimientoValido(origen, destino, piezaSeleccionada)) {
-      moverPieza(origen, destino, piezaSeleccionada);
+      moverPieza(origen, destino, piezaSeleccionada, this.tablero);
     }
   }
-  
+
   function esMovimientoValido(origen, destino, piezaSeleccionada) {
     // Aquí deberías implementar la lógica para validar si el movimiento es legal para la pieza seleccionada
     // Por ahora, siempre devolveremos true
