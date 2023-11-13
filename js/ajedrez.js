@@ -38,70 +38,54 @@
         const celda = document.createElement('div');
         celda.textContent = tablero[i][j] ? piezas[tablero[i][j]] : '';
         celda.className = 'celda';
+        celda.dataset.row = i;
+        celda.dataset.col = j;
         celda.setAttribute('draggable', 'true');
+        celda.addEventListener('dragstart', handleDragStart);
+        celda.addEventListener('dragover', handleDragOver);
+        celda.addEventListener('drop', handleDrop);
         tableroHTML.appendChild(celda);
       }
     }
   }
 
-  class Ajedrez {
-    constructor() {
-      this.tablero = crearTablero();
-      this.dibujar();
-      this.inicializarArrastre();
-    }
+  function handleDragStart(e) {
+    e.dataTransfer.setData('text/plain', e.target.textContent);
+  }
 
-    dibujar() {
-      dibujarTablero(this.tablero);
-    }
+  function handleDragOver(e) {
+    e.preventDefault();
+  }
 
-    moverPieza(origen, destino) {
-      const piezaOrigen = this.tablero[origen.row][origen.col];
+  function handleDrop(e) {
+    e.preventDefault();
+    const piezaSeleccionada = e.dataTransfer.getData('text/plain');
+    const origen = { row: +e.dataTransfer.getData('row'), col: +e.dataTransfer.getData('col') };
+    const destino = { row: +e.target.dataset.row, col: +e.target.dataset.col };
+    moverPieza(origen, destino, piezaSeleccionada);
+  }
+
+  function moverPieza(origen, destino, piezaSeleccionada) {
+    const piezaOrigen = this.tablero[origen.row][origen.col];
       const piezaDestino = this.tablero[destino.row][destino.col];
       this.tablero[destino.row][destino.col] = piezaOrigen;
       this.tablero[origen.row][origen.col] = null;
       if (piezaDestino !== null) {
         this.tablero[origen.row][origen.col] = piezaDestino;
       }
+
+    dibujarTablero(tablero);
+  }
+
+  class Ajedrez {
+    constructor() {
+      this.tablero = crearTablero();
       this.dibujar();
     }
 
-    inicializarArrastre() {
-      const celdas = document.querySelectorAll('.celda');
-      let piezaSeleccionada = null;
-
-      celdas.forEach(celda => {
-        celda.addEventListener('dragstart', () => {
-          piezaSeleccionada = celda.textContent;
-        });
-
-        celda.addEventListener('dragover', e => {
-          e.preventDefault();
-        });
-
-        celda.addEventListener('drop', () => {
-          if (piezaSeleccionada !== null) {
-            const origen = obtenerCoordenadas(celdas, piezaSeleccionada);
-            const destino = obtenerCoordenadas(celdas, celda.textContent);
-            if (origen && destino) {
-              this.moverPieza(origen, destino);
-            }
-          }
-          piezaSeleccionada = null;
-        });
-      });
+    dibujar() {
+      dibujarTablero(this.tablero);
     }
-  }
-
-  function obtenerCoordenadas(celdas, pieza) {
-    for (let i = 0; i < celdas.length; i++) {
-      if (celdas[i].textContent === pieza) {
-        const fila = Math.floor(i / 8);
-        const columna = i % 8;
-        return { row: fila, col: columna };
-      }
-    }
-    return null;
   }
 
   document.addEventListener('DOMContentLoaded', function () {
