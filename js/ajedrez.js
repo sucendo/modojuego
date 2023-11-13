@@ -9,29 +9,27 @@
   };
 
   function obtenerPiezaInicial(row, col) {
-    // Configuración de las piezas iniciales en la posición inicial del tablero
     if (row === 1) return '♙'; // Peón blanco
     if (row === 6) return '♟'; // Peón negro
 
     if (row === 0 || row === 7) {
-      // Configuración de las piezas de la fila superior e inferior
       switch (col) {
         case 0:
-          return '♜'; // Torre negra
+          return '♖'; // Torre negra
         case 1:
-          return '♞'; // Caballo negro
+          return '♘'; // Caballo negro
         case 2:
-          return '♝'; // Alfil negro
+          return '♗'; // Alfil negro
         case 3:
-          return '♛'; // Reina negra
+          return '♕'; // Reina negra
         case 4:
-          return '♚'; // Rey negro
+          return '♔'; // Rey negro
         case 5:
-          return '♝'; // Alfil negro
+          return '♗'; // Alfil negro
         case 6:
-          return '♞'; // Caballo negro
+          return '♘'; // Caballo negro
         case 7:
-          return '♜'; // Torre negra
+          return '♖'; // Torre negra
         default:
           return null;
       }
