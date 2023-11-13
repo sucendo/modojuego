@@ -4,17 +4,17 @@
   line-height: 64px;
   text-align: center;
   font-size: 48px;
-  border: 1px solid #777;
+  border: 1px solid #000000;
   display: inline-block;
   position: relative;
 }
 
 .celda-blanca {
-  background-color: #eee;
+  background-color: #ffefb4;
 }
 
 .celda-negra {
-  background-color: #ddd;
+  background-color: #f1b06d;
 }
 
 .redondel {
