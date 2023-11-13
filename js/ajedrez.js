@@ -1,3 +1,6 @@
+// Importar la función existeElemento()
+import { existeElemento } from './js/util';
+
 const TABLERO_ANCHO = 8;
 const TABLERO_ALTO = 8;
 
@@ -10,19 +13,18 @@ const piezas = {
   "♔": "rey",
 };
 
-function crearTablero() {
-  const tablero = [];
-  for (let i = 0; i < TABLERO_ANCHO; i++) {
-    tablero[i] = [];
-    for (let j = 0; j < TABLERO_ALTO; j++) {
-      tablero[i][j] = null;
-    }
-  }
-  return tablero;
-}
+// Crear el tablero de ajedrez
+const tablero = crearTablero();
+
+// Dibujar el tablero de ajedrez
+dibujarTablero(tablero, document.getElementById("tablero"));
 
 function dibujarTablero(tablero, elemento) {
-  elemento.innerHTML = "";
+  // Verificar si el elemento existe antes de intentar establecer su propiedad innerHTML
+  if (existeElemento(elemento)) {
+    elemento.innerHTML = "";
+  }
+
   for (let i = 0; i < TABLERO_ANCHO; i++) {
     for (let j = 0; j < TABLERO_ALTO; j++) {
       const pieza = tablero[i][j];
@@ -44,9 +46,3 @@ function moverPieza(origen, destino) {
   tablero[origen][destino] = tablero[origen][origen];
   tablero[origen][origen] = null;
 }
-
-// Crear el tablero de ajedrez
-const tablero = crearTablero();
-
-// Dibujar el tablero de ajedrez
-dibujarTablero(tablero, document.getElementById("tablero"));
