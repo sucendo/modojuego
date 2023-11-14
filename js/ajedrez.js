@@ -144,7 +144,7 @@
     }
   }
   
-  function moverPieza(origen, destino, piezaSeleccionadaID) {
+ function moverPieza(origen, destino, piezaSeleccionadaID) {
     // Verificar si la fila de origen está definida y contiene una pieza
     const piezaOrigen = obtenerPiezaInicial(origen.row, origen.col);
     if (piezaOrigen) {
