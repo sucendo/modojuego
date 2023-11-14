@@ -48,19 +48,21 @@
     const filasYCeldasContainer = document.createElement('div');
     filasYCeldasContainer.className = 'filas-celdas-container';
   
-    // Agregar un div vacío antes de las columnas
-    const emptyDiv = document.createElement('div');
-    emptyDiv.className = 'empty-div';
-    filasYCeldasContainer.appendChild(emptyDiv);
-  
     // Agregar etiquetas para las columnas (A-H)
     const columnasLabel = document.createElement('div');
     columnasLabel.className = 'columnas-label';
+  
+    // Primer div vacío
+    const emptyColumn = document.createElement('div');
+    columnasLabel.appendChild(emptyColumn);
+  
+    // Letras de la A a la H
     for (let i = 0; i < 8; i++) {
       const columna = document.createElement('div');
       columna.textContent = String.fromCharCode(65 + i);
       columnasLabel.appendChild(columna);
     }
+  
     filasYCeldasContainer.appendChild(columnasLabel);
   
     for (let i = 0; i < 8; i++) {
@@ -109,9 +111,6 @@
   
     tableroHTML.appendChild(filasYCeldasContainer);
   }
-
-
-
 
   function handleDragStart(e) {
     e.dataTransfer.setData('text/plain', e.target.textContent);
