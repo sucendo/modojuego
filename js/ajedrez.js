@@ -45,6 +45,9 @@
     tableroHTML.innerHTML = '';
   
     // Agregar etiquetas para las columnas (A-H)
+    const contenedorTablero = document.createElement('div');
+    contenedorTablero.className = 'contenedor-tablero';
+  
     const columnasLabel = document.createElement('div');
     columnasLabel.className = 'columnas-label';
     for (let i = 0; i < 8; i++) {
@@ -52,14 +55,16 @@
       columna.textContent = String.fromCharCode(65 + i);
       columnasLabel.appendChild(columna);
     }
-    tableroHTML.appendChild(columnasLabel);
+  
+    contenedorTablero.appendChild(columnasLabel);
   
     for (let i = 0; i < 8; i++) {
-      // Agregar etiqueta para la fila (1-8)
       const filaLabel = document.createElement('div');
       filaLabel.className = 'fila-label';
       filaLabel.textContent = 8 - i;
-      tableroHTML.appendChild(filaLabel);
+  
+      const filaTablero = document.createElement('div');
+      filaTablero.className = 'fila-tablero';
   
       for (let j = 0; j < 8; j++) {
         const celda = document.createElement('div');
@@ -69,7 +74,6 @@
         celda.addEventListener('dragover', handleDragOver);
         celda.addEventListener('drop', handleDrop);
   
-        // Invertir el jarreteo para el tablero
         const isCeldaNegra = (i + j) % 2 !== 0;
         if (isCeldaNegra) {
           celda.classList.add('celda-negra');
@@ -79,27 +83,22 @@
   
         const pieza = obtenerPiezaInicial(i, j);
         if (pieza) {
-          // Agrega pieza como elemento "drag and drop"
           const piezaElemento = document.createElement('div');
           piezaElemento.className = 'pieza';
           piezaElemento.textContent = piezas[pieza];
-          piezaElemento.draggable = true; // Hace la pieza arrastrable
+          piezaElemento.draggable = true;
           piezaElemento.addEventListener('dragstart', handleDragStart);
           celda.appendChild(piezaElemento);
         }
   
-        tableroHTML.appendChild(celda);
+        filaTablero.appendChild(celda);
       }
+  
+      contenedorTablero.appendChild(filaLabel);
+      contenedorTablero.appendChild(filaTablero);
     }
   
-    // Agregar etiquetas vacías para las filas (1-8)
-    const filasLabel = document.createElement('div');
-    filasLabel.className = 'filas-label';
-    for (let i = 0; i < 8; i++) {
-      const fila = document.createElement('div');
-      filasLabel.appendChild(fila);
-    }
-    tableroHTML.appendChild(filasLabel);
+    tableroHTML.appendChild(contenedorTablero);
   }
 
   function handleDragStart(e) {
