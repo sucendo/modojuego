@@ -113,9 +113,13 @@
   }
 
   function handleDragStart(e) {
-    e.dataTransfer.setData('text/plain', e.target.textContent);
-    e.dataTransfer.setData('row', e.target.parentElement.dataset.row);
-    e.dataTransfer.setData('col', e.target.parentElement.dataset.col);
+    const piezaElemento = e.target;
+    const row = piezaElemento.parentElement.dataset.row;
+    const col = piezaElemento.parentElement.dataset.col;
+    const piezaID = `pieza-${row}-${col}`;
+    e.dataTransfer.setData('text/plain', piezaID);
+    e.dataTransfer.setData('row', row);
+    e.dataTransfer.setData('col', col);
   }
 
   function handleDragOver(e) {
@@ -124,7 +128,7 @@
 
   function handleDrop(e) {
     e.preventDefault();
-    const piezaSeleccionada = e.dataTransfer.getData('text/plain');
+    const piezaSeleccionadaID = e.dataTransfer.getData('text/plain');
     const origen = {
       row: +e.dataTransfer.getData('row'),
       col: +e.dataTransfer.getData('col')
@@ -133,14 +137,14 @@
       row: +e.target.dataset.row,
       col: +e.target.dataset.col
     };
-
+  
     // Verificar si el movimiento es válido
-    if (esMovimientoValido(origen, destino, piezaSeleccionada)) {
-      moverPieza(origen, destino, piezaSeleccionada);
+    if (esMovimientoValido(origen, destino, piezaSeleccionadaID)) {
+      moverPieza(origen, destino, piezaSeleccionadaID);
     }
   }
-
-  function moverPieza(origen, destino, piezaSeleccionada) {
+  
+  function moverPieza(origen, destino, piezaSeleccionadaID) {
     // Verificar si la fila de origen está definida y contiene una pieza
     const piezaOrigen = obtenerPiezaInicial(origen.row, origen.col);
     if (piezaOrigen) {
@@ -159,13 +163,12 @@
       }
     }
   }
-
-  function esMovimientoValido(origen, destino, piezaSeleccionada) {
+  
+  function esMovimientoValido(origen, destino, piezaSeleccionadaID) {
     // Implementa la lógica para verificar si el movimiento es válido
     // Por ahora, siempre devolveremos true
     return true;
   }
-
   function dibujarPieza(row, col, pieza) {
     const celda = document.querySelector(`.celda[data-row="${row}"][data-col="${col}"]`);
     if (celda) {
