@@ -145,16 +145,12 @@
   }
   
   function moverPieza(origen, destino, piezaSeleccionadaID) {
-    const piezaOrigen = this.piezaseleccionadaID[origen.row][origen.col];
-    if (piezaOrigen) {
-      // Actualizar el tablero
-        dibujarPieza(destino.row, destino.col, piezaOrigen);
-        dibujarPieza(origen.row, origen.col, null);
-  
-        // Actualizar la posición de la pieza
-        piezaOrigen.col = destino.col;
-        piezaOrigen.row = destino.row;
-    }
+    // Actualizar el tablero
+    dibujarPieza(destino.row, destino.col, piezaSeleccionadaID);
+    dibujarPieza(origen.row, origen.col, null);
+    // Actualizar la posición de la pieza
+    piezaSeleccionadaID.col = destino.col;
+    piezaSeleccionadaID.row = destino.row;
   }
 
   function esMovimientoValido(origen, destino, piezaSeleccionadaID) {
