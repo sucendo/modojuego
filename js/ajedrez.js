@@ -145,12 +145,12 @@
   }
   
  function moverPieza(origen, destino, piezaSeleccionadaID) {
-    // Verificar si la fila de origen está definida y contiene una pieza
-    const piezaOrigen = obtenerPiezaInicial(origen.row, origen.col);
-    if (piezaOrigen) {
-      // Verificar si el movimiento es válido (casilla de destino vacía)
-      const piezaDestino = obtenerPiezaInicial(destino.row, destino.col);
-      if (!piezaDestino) {
+    // Verificar si el movimiento es válido (casilla de destino vacía)
+    const piezaDestino = obtenerPiezaInicial(destino.row, destino.col);
+    if (!piezaDestino) {
+      // Obtener la posición de la pieza seleccionada
+      const piezaOrigen = obtenerPiezaInicial(origen.row, origen.col);
+      if (piezaOrigen) {
         // Actualizar el tablero
         dibujarPieza(destino.row, destino.col, piezaOrigen);
         dibujarPieza(origen.row, origen.col, null);
