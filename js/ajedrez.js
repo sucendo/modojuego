@@ -43,7 +43,7 @@
   function dibujarTablero() {
     const tableroHTML = document.getElementById('tablero');
     tableroHTML.innerHTML = '';
-
+  
     // Agregar etiquetas para las columnas (A-H)
     const columnasLabel = document.createElement('div');
     columnasLabel.className = 'columnas-label';
@@ -53,14 +53,14 @@
       columnasLabel.appendChild(columna);
     }
     tableroHTML.appendChild(columnasLabel);
-
+  
     for (let i = 0; i < 8; i++) {
       // Agregar etiqueta para la fila (1-8)
       const filaLabel = document.createElement('div');
       filaLabel.className = 'fila-label';
       filaLabel.textContent = 8 - i;
       tableroHTML.appendChild(filaLabel);
-
+  
       for (let j = 0; j < 8; j++) {
         const celda = document.createElement('div');
         celda.className = 'celda';
@@ -68,24 +68,15 @@
         celda.dataset.col = j;
         celda.addEventListener('dragover', handleDragOver);
         celda.addEventListener('drop', handleDrop);
-
-        // Aplicar colores a las casillas según la disposición de las piezas
-        if ((i + j) % 2 === 0) {
-          // Si la pieza es negra y está en la parte superior o si la pieza es blanca y está en la parte inferior
-          if ((i < 4 && obtenerPiezaInicial(i, j) === '♟') || (i >= 4 && obtenerPiezaInicial(i, j) === '♙')) {
-            celda.classList.add('celda-negra');
-          } else {
-            celda.classList.add('celda-blanca');
-          }
+  
+        // Invertir el jarreteo para el tablero
+        const isCeldaNegra = (i + j) % 2 !== 0;
+        if (isCeldaNegra) {
+          celda.classList.add('celda-negra');
         } else {
-          // Si la pieza es negra y está en la parte superior o si la pieza es blanca y está en la parte inferior
-          if ((i < 4 && obtenerPiezaInicial(i, j) === '♟') || (i >= 4 && obtenerPiezaInicial(i, j) === '♙')) {
-            celda.classList.add('celda-blanca');
-          } else {
-            celda.classList.add('celda-negra');
-          }
+          celda.classList.add('celda-blanca');
         }
-
+  
         const pieza = obtenerPiezaInicial(i, j);
         if (pieza) {
           // Agrega pieza como elemento "drag and drop"
@@ -96,11 +87,11 @@
           piezaElemento.addEventListener('dragstart', handleDragStart);
           celda.appendChild(piezaElemento);
         }
-
+  
         tableroHTML.appendChild(celda);
       }
     }
-
+  
     // Agregar etiquetas vacías para las filas (1-8)
     const filasLabel = document.createElement('div');
     filasLabel.className = 'filas-label';
