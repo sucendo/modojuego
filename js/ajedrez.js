@@ -145,33 +145,18 @@
   }
   
   function moverPieza(origen, destino, piezaSeleccionadaID) {
-    // Verificar si el movimiento es válido (casilla de destino vacía)
-    const piezaDestino = obtenerPiezaInicial(destino.row, destino.col);
-    if (!piezaDestino) {
-      // Obtener la posición de la pieza seleccionada
-      const piezaOrigen = obtenerPiezaPorID(piezaSeleccionadaID);
-      if (piezaOrigen) {
-        // Actualizar el tablero
+    const piezaOrigen = this.piezaseleccionadaID[origen.row][origen.col];
+    if (piezaOrigen) {
+      // Actualizar el tablero
         dibujarPieza(destino.row, destino.col, piezaOrigen);
         dibujarPieza(origen.row, origen.col, null);
   
         // Actualizar la posición de la pieza
         piezaOrigen.col = destino.col;
         piezaOrigen.row = destino.row;
-      }
     }
   }
 
-  function obtenerPiezaPorID(piezaID) {
-    // Implementa la lógica para obtener la pieza por su identificador único
-    // Devuelve la pieza si se encuentra, de lo contrario, devuelve null
-    // Esta función dependerá de cómo estés gestionando tus piezas por ID
-    // Puedes utilizar un array, un mapa, o cualquier otra estructura de datos
-    // que te permita buscar la pieza por su identificador único.
-    // Aquí hay un ejemplo simplificado asumiendo que las piezas están en un array:
-    return arrayDePiezas.find(pieza => pieza.id === piezaID) || null;
-  }
-  
   function esMovimientoValido(origen, destino, piezaSeleccionadaID) {
     // Implementa la lógica para verificar si el movimiento es válido
     // Por ahora, siempre devolveremos true
