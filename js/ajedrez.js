@@ -48,6 +48,11 @@
     const filasYCeldasContainer = document.createElement('div');
     filasYCeldasContainer.className = 'filas-celdas-container';
   
+    // Agregar un div vacío antes de las columnas
+    const emptyDiv = document.createElement('div');
+    emptyDiv.className = 'empty-div';
+    filasYCeldasContainer.appendChild(emptyDiv);
+  
     // Agregar etiquetas para las columnas (A-H)
     const columnasLabel = document.createElement('div');
     columnasLabel.className = 'columnas-label';
@@ -104,6 +109,7 @@
   
     tableroHTML.appendChild(filasYCeldasContainer);
   }
+
 
 
 
