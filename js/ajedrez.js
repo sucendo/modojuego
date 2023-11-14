@@ -41,69 +41,70 @@
   }
 
   function dibujarTablero() {
-  const tableroHTML = document.getElementById('tablero');
-  tableroHTML.innerHTML = '';
-
-  // Agregar etiquetas para las columnas (A-H)
-  const columnasLabel = document.createElement('div');
-  columnasLabel.className = 'columnas-label';
-  for (let i = 0; i < 8; i++) {
-    const columna = document.createElement('div');
-    columna.textContent = String.fromCharCode(65 + i);
-    columnasLabel.appendChild(columna);
-  }
-  tableroHTML.appendChild(columnasLabel);
-
-  // Contenedor para las filas y celdas
-  const filasYCeldasContainer = document.createElement('div');
-  filasYCeldasContainer.className = 'filas-celdas-container';
-
-  for (let i = 0; i < 8; i++) {
-    // Contenedor para la fila y celdas
-    const filaYCeldasContainer = document.createElement('div');
-    filaYCeldasContainer.className = 'fila-celdas-container';
-
-    // Agregar etiqueta para la fila (1-8)
-    const filaLabel = document.createElement('div');
-    filaLabel.className = 'fila-label';
-    filaLabel.textContent = 8 - i;
-    filaYCeldasContainer.appendChild(filaLabel);
-
-    for (let j = 0; j < 8; j++) {
-      const celda = document.createElement('div');
-      celda.className = 'celda';
-      celda.dataset.row = i;
-      celda.dataset.col = j;
-      celda.addEventListener('dragover', handleDragOver);
-      celda.addEventListener('drop', handleDrop);
-
-      // Invertir el jarreteo para el tablero
-      const isCeldaNegra = (i + j) % 2 !== 0;
-      if (isCeldaNegra) {
-        celda.classList.add('celda-negra');
-      } else {
-        celda.classList.add('celda-blanca');
-      }
-
-      const pieza = obtenerPiezaInicial(i, j);
-      if (pieza) {
-        // Agrega pieza como elemento "drag and drop"
-        const piezaElemento = document.createElement('div');
-        piezaElemento.className = 'pieza';
-        piezaElemento.textContent = piezas[pieza];
-        piezaElemento.draggable = true; // Hace la pieza arrastrable
-        piezaElemento.addEventListener('dragstart', handleDragStart);
-        celda.appendChild(piezaElemento);
-      }
-
-      filaYCeldasContainer.appendChild(celda);
+    const tableroHTML = document.getElementById('tablero');
+    tableroHTML.innerHTML = '';
+  
+    // Contenedor para las filas y celdas
+    const filasYCeldasContainer = document.createElement('div');
+    filasYCeldasContainer.className = 'filas-celdas-container';
+  
+    // Agregar etiquetas para las columnas (A-H)
+    const columnasLabel = document.createElement('div');
+    columnasLabel.className = 'columnas-label';
+    for (let i = 0; i < 8; i++) {
+      const columna = document.createElement('div');
+      columna.textContent = String.fromCharCode(65 + i);
+      columnasLabel.appendChild(columna);
     }
-
-    filasYCeldasContainer.appendChild(filaYCeldasContainer);
+    filasYCeldasContainer.appendChild(columnasLabel);
+  
+    for (let i = 0; i < 8; i++) {
+      // Contenedor para la fila y celdas
+      const filaYCeldasContainer = document.createElement('div');
+      filaYCeldasContainer.className = 'fila-celdas-container';
+  
+      // Agregar etiqueta para la fila (1-8)
+      const filaLabel = document.createElement('div');
+      filaLabel.className = 'fila-label';
+      filaLabel.textContent = 8 - i;
+      filaYCeldasContainer.appendChild(filaLabel);
+  
+      for (let j = 0; j < 8; j++) {
+        const celda = document.createElement('div');
+        celda.className = 'celda';
+        celda.dataset.row = i;
+        celda.dataset.col = j;
+        celda.addEventListener('dragover', handleDragOver);
+        celda.addEventListener('drop', handleDrop);
+  
+        // Invertir el jarreteo para el tablero
+        const isCeldaNegra = (i + j) % 2 !== 0;
+        if (isCeldaNegra) {
+          celda.classList.add('celda-negra');
+        } else {
+          celda.classList.add('celda-blanca');
+        }
+  
+        const pieza = obtenerPiezaInicial(i, j);
+        if (pieza) {
+          // Agrega pieza como elemento "drag and drop"
+          const piezaElemento = document.createElement('div');
+          piezaElemento.className = 'pieza';
+          piezaElemento.textContent = piezas[pieza];
+          piezaElemento.draggable = true; // Hace la pieza arrastrable
+          piezaElemento.addEventListener('dragstart', handleDragStart);
+          celda.appendChild(piezaElemento);
+        }
+  
+        filaYCeldasContainer.appendChild(celda);
+      }
+  
+      filasYCeldasContainer.appendChild(filaYCeldasContainer);
+    }
+  
+    tableroHTML.appendChild(filasYCeldasContainer);
   }
 
-  tableroHTML.appendChild(filasYCeldasContainer);
-}
 
 
   function handleDragStart(e) {
