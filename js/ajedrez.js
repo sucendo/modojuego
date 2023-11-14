@@ -148,11 +148,14 @@
       const piezaDestino = obtenerPiezaInicial(destino.row, destino.col);
       if (!piezaDestino) {
         // Actualizar el tablero
-        this.tablero[destino.row][destino.col] = piezaOrigen;
-        this.tablero[origen.row][origen.col] = null;
+        dibujarPieza(destino.row, destino.col, piezaOrigen);
+        dibujarPieza(origen.row, origen.col, null);
   
-        // Redibujar el tablero después de un movimiento
-        dibujarTablero();
+        // Actualizar la posición de la pieza
+        if (this.tablero[origen.row] && this.tablero[origen.row][origen.col]) {
+          this.tablero[origen.row][origen.col].col = destino.col;
+          this.tablero[origen.row][origen.col].row = destino.row;
+        }
       }
     }
   }
