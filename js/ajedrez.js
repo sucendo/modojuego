@@ -8,8 +8,11 @@
     '♔': '♔', '♚': '♚'
   };
 
+  // Estructura de datos para las piezas
+  const piezasEnJuego = {};
+
   function obtenerPiezaInicial(row, col) {
-    // Configuración de las piezas iniciales en la posición inicial del tablero
+    const id = `pieza-${row}-${col}`;
     if (row === 1) return '♟'; // Peón negro
     if (row === 6) return '♙'; // Peón blanco
   
@@ -97,10 +100,13 @@
           // Agrega pieza como elemento "drag and drop"
           const piezaElemento = document.createElement('div');
           piezaElemento.className = 'pieza';
+          piezaElemento.id = `pieza-${i}-${j}`;
           piezaElemento.textContent = piezas[pieza];
           piezaElemento.draggable = true; // Hace la pieza arrastrable
           piezaElemento.addEventListener('dragstart', handleDragStart);
           celda.appendChild(piezaElemento);
+          // Guardar la pieza en la estructura de datos
+          piezasEnJuego[piezaElemento.id] = { id: piezaElemento.id, tipo: pieza, col: j, row: i };
         }
   
         filaYCeldasContainer.appendChild(celda);
@@ -114,9 +120,9 @@
 
   function handleDragStart(e) {
     const piezaElemento = e.target;
-    const row = piezaElemento.parentElement.dataset.row;
-    const col = piezaElemento.parentElement.dataset.col;
-    const piezaID = `pieza-${row}-${col}`;
+    const piezaID = piezaElemento.id;
+    const row = piezasEnJuego[piezaID].row;
+    const col = piezasEnJuego[piezaID].col;
     e.dataTransfer.setData('text/plain', piezaID);
     e.dataTransfer.setData('row', row);
     e.dataTransfer.setData('col', col);
@@ -163,10 +169,14 @@
       } else if (piezaID) {
         const nuevaPieza = document.createElement('div');
         nuevaPieza.className = 'pieza';
+        nuevaPieza.id = piezaID;
         nuevaPieza.textContent = piezas[piezasEnJuego[piezaID].tipo];
         nuevaPieza.draggable = true;
         nuevaPieza.addEventListener('dragstart', handleDragStart);
         celda.appendChild(nuevaPieza);
+        // Actualizar la posición de la pieza en la estructura de datos
+        piezasEnJuego[piezaID].col = col;
+        piezasEnJuego[piezaID].row = row;
       }
     }
   }
@@ -175,13 +185,6 @@
     // Actualizar el tablero
     dibujarPieza(destino.row, destino.col, piezaSeleccionadaID);
     dibujarPieza(origen.row, origen.col, null);
-
-    // Actualizar la posición de la pieza
-    const pieza = piezasEnJuego[piezaSeleccionadaID];
-    if (pieza) {
-      pieza.col = destino.col;
-      pieza.row = destino.row;
-    }
   }
 
   document.addEventListener('DOMContentLoaded', function () {
