@@ -144,40 +144,43 @@
     }
   }
   
-  function moverPieza(origen, destino, piezaSeleccionadaID) {
-    // Actualizar el tablero
-    dibujarPieza(destino.row, destino.col, piezaSeleccionadaID);
-    dibujarPieza(origen.row, origen.col, null);
-    // Actualizar la posición de la pieza
-    piezaSeleccionadaID.col = destino.col;
-    piezaSeleccionadaID.row = destino.row;
-  }
-
   function esMovimientoValido(origen, destino, piezaSeleccionadaID) {
     // Implementa la lógica para verificar si el movimiento es válido
     // Por ahora, siempre devolveremos true
     return true;
   }
-  function dibujarPieza(row, col, pieza) {
+  
+  function dibujarPieza(row, col, piezaID) {
     const celda = document.querySelector(`.celda[data-row="${row}"][data-col="${col}"]`);
     if (celda) {
       const piezaElemento = celda.querySelector('.pieza');
       if (piezaElemento) {
-        if (pieza) {
-          piezaElemento.textContent = piezas[pieza];
+        if (piezaID) {
+          piezaElemento.textContent = piezas[piezasEnJuego[piezaID].tipo];
         } else {
-          // Si pieza es null, elimina la pieza de la celda
           piezaElemento.remove();
         }
-      } else if (pieza) {
-        // Si no hay piezaElemento y pieza no es null, crea la pieza
+      } else if (piezaID) {
         const nuevaPieza = document.createElement('div');
         nuevaPieza.className = 'pieza';
-        nuevaPieza.textContent = piezas[pieza];
+        nuevaPieza.textContent = piezas[piezasEnJuego[piezaID].tipo];
         nuevaPieza.draggable = true;
         nuevaPieza.addEventListener('dragstart', handleDragStart);
         celda.appendChild(nuevaPieza);
       }
+    }
+  }
+
+  function moverPieza(origen, destino, piezaSeleccionadaID) {
+    // Actualizar el tablero
+    dibujarPieza(destino.row, destino.col, piezaSeleccionadaID);
+    dibujarPieza(origen.row, origen.col, null);
+
+    // Actualizar la posición de la pieza
+    const pieza = piezasEnJuego[piezaSeleccionadaID];
+    if (pieza) {
+      pieza.col = destino.col;
+      pieza.row = destino.row;
     }
   }
 
