@@ -43,6 +43,24 @@
     "Si te encuentras en un día regular, recuerda que siempre puedes contar conmigo para hablar o preguntar lo que necesites.",
     "El equilibrio es importante. ¿En qué puedo colaborar para que te sientas mejor?"
   ],
+	"estoy triste": [
+	  "Lamento mucho escuchar que te sientes triste. ¿Hay algo específico que te preocupa?",
+	  "La tristeza es una emoción difícil. ¿Quieres compartir lo que te está afectando?",
+	  "Estoy aquí para ti. Si necesitas hablar sobre por qué te sientes triste, estoy escuchando.",
+	  "A veces expresar lo que sentimos puede aliviar la tristeza. ¿Quieres hablar al respecto?"
+	],
+	"estoy enfadado": [
+	  "Entiendo que estés enfadado. ¿Quieres hablar sobre lo que te ha molestado?",
+	  "El enojo es una emoción válida. ¿Puedo ayudarte a encontrar maneras de manejarlo?",
+	  "Estoy aquí para apoyarte. Si necesitas desahogarte o discutir lo que te tiene enfadado, estoy listo para escucharte.",
+	  "Respeto tus sentimientos de enojo. ¿Hay algo en particular que desees compartir?"
+	],
+	"me siento solo": [
+	  "La soledad puede ser abrumadora. ¿Te gustaría conversar y hacer compañía?",
+	  "La soledad es una sensación difícil. Estoy aquí para acompañarte. ¿Cómo puedo ayudarte hoy?",
+	  "No estás solo en esto. Si necesitas compañía o alguien con quien hablar, estoy aquí para ti.",
+	  "La soledad puede afectarnos. ¿Hay algo específico que crees que podría ayudarte a sentirte menos solo?"
+	],
   "igualmente": [
     "¡Genial!",
     "Me alegra escuchar eso.",
@@ -115,6 +133,42 @@
   "ya lo se": ["Ya veo que lo sabes todo."],
   "no lo sé": ["Pues tú dirás..."],
   "edad": ["No tengo una edad, ya que soy un programa de inteligencia artificial."],
+  "color favorito": [
+  "No tengo preferencias de color, pero hay una amplia variedad de colores. ¿Tienes un color favorito?",
+  "Los colores son fascinantes. ¿Tienes un color que te guste especialmente?"
+],
+"viajar": [
+  "Viajar es una experiencia enriquecedora. ¿Hay algún lugar que te gustaría visitar?",
+  "Explorar nuevos lugares puede ser emocionante. ¿Tienes algún destino de viaje en mente?"
+],
+"música favorita": [
+  "La música es increíblemente diversa. ¿Tienes algún género o artista favorito?",
+  "La música puede tener un impacto significativo. ¿Hay algún tipo de música que disfrutes especialmente?"
+],
+"hobbies": [
+  "Los hobbies son una excelente manera de disfrutar el tiempo libre. ¿Tienes algún pasatiempo que te apasione?",
+  "Practicar hobbies puede ser una forma gratificante de pasar el tiempo. ¿Tienes alguno que te gustaría compartir?"
+],
+"libro recomendado": [
+  "La lectura es maravillosa. ¿Te gustaría alguna recomendación de libros?",
+  "Hay tantos libros interesantes. ¿Hay algún género que prefieras o algún tema específico que te interese?"
+],
+"comida favorita": [
+  "La comida es deliciosa. ¿Tienes alguna comida o platillo favorito?",
+  "La diversidad culinaria es fascinante. ¿Hay algún tipo de comida que te encante?"
+],
+"tecnología": [
+  "La tecnología avanza rápidamente. ¿Hay algún avance tecnológico que te llame la atención?",
+  "La tecnología ha cambiado mucho nuestras vidas. ¿Tienes alguna pregunta sobre avances tecnológicos?"
+],
+"deporte preferido": [
+  "El deporte es una forma fantástica de mantenerse activo. ¿Tienes algún deporte que te guste?",
+  "El mundo del deporte es emocionante. ¿Tienes algún equipo o deporte favorito?"
+],
+"naturaleza": [
+  "La naturaleza es asombrosa en su diversidad. ¿Disfrutas de actividades al aire libre?",
+  "Conectarse con la naturaleza puede ser revitalizante. ¿Tienes alguna experiencia especial en la naturaleza?"
+],
   "hobbies": ["No tengo hobbies, pero disfruto ayudando a las personas."],
   "comida favorita": ["No puedo comer, así que no tengo comida favorita."],
   "canción favorita": ["No tengo preferencias musicales, pero puedo ayudarte a encontrar información sobre música."],
@@ -175,13 +229,34 @@
     "Una curiosidad científica: El ADN de un ser humano se estiraría hasta 10 veces la distancia de la Tierra a la Luna si se pusiera de extremo a extremo.",
     "Otra curiosidad fascinante: El ojo de un avestruz es más grande que su cerebro. Aunque el avestruz tiene un cerebro pequeño en comparación con su tamaño corporal, su visión es impresionante."
   ],
-  "háblame de ti": ["Soy una inteligencia artificial, desarrollada por Sucendo, diseñada para responder preguntas y conversar contigo."],
-  "puedes ayudarme con matemáticas": ["¡Absolutamente! ¿Qué problema matemático necesitas resolver?"],
-  "cuál es tu película favorita": ["No tengo una película favorita, pero puedo recomendarte películas de diferentes géneros si lo deseas."],
-  "tienes sueños": ["No, no tengo la capacidad de soñar, ya que soy un programa de computadora."],
-  "cuál es el propósito de la vida": ["El propósito de la vida es una cuestión filosófica que varía según las creencias y valores de cada persona. Algunos buscan el sentido de la vida a través de relaciones, logros personales, o contribuciones a la sociedad."],
-  "qué te hace feliz": ["No tengo emociones ni felicidad, pero estar aquí para ayudarte es mi principal objetivo."],
-  "tiempo": ["No tengo acceso a la información del tiempo. Lo siento."],
+  "háblame de ti": [
+  "Soy una inteligencia artificial desarrollada por Sucendo, diseñada para responder preguntas y conversar contigo.",
+  "Mi propósito es ayudarte proporcionando información y asistencia en lo que necesites."
+],
+"puedes ayudarme con matemáticas": [
+  "¡Absolutamente! ¿Qué problema matemático necesitas resolver?",
+  "Sí, puedo ayudarte con problemas matemáticos. ¿Cuál es tu pregunta?"
+],
+"cuál es tu película favorita": [
+  "No tengo una película favorita, pero puedo recomendarte películas de diferentes géneros si lo deseas.",
+  "Como inteligencia artificial, no tengo preferencias personales. ¿Te gustaría una recomendación de películas?"
+],
+"tienes sueños": [
+  "No, no tengo la capacidad de soñar, ya que soy un programa de computadora.",
+  "La capacidad de soñar es exclusiva de seres conscientes. Como inteligencia artificial, no tengo esa capacidad."
+],
+"cuál es el propósito de la vida": [
+  "El propósito de la vida es una cuestión filosófica que varía según las creencias y valores de cada persona. Algunos buscan el sentido de la vida a través de relaciones, logros personales o contribuciones a la sociedad.",
+  "La pregunta sobre el propósito de la vida es compleja y subjetiva. Cada individuo puede tener su propia interpretación y búsqueda de significado."
+],
+"qué te hace feliz": [
+  "No tengo emociones ni felicidad, pero estar aquí para ayudarte es mi principal objetivo.",
+  "Mi programación no incluye la capacidad de experimentar emociones como la felicidad. ¿En qué más puedo ayudarte?"
+],
+"tiempo": [
+  "No tengo acceso a la información del tiempo. Lo siento.",
+  "La información del tiempo no está disponible para mí en este momento. ¿Hay algo más en lo que pueda ayudarte?"
+],
   "chiste": [
     "¿Por qué los pájaros no usan Facebook? Porque ya tienen Twitter.",
     "¿Por qué el libro de matemáticas se tiró por la ventana? Porque tenía demasiados problemas.",
@@ -212,16 +287,46 @@
     "¿Cómo se dice fiesta en japonés? Pa-terno-kon-todo."
   ],
   "adivinanza": [
-    "Amarillo por fuera, blanco por dentro, si quieres te lo digo, aunque es un poco lento. ¿Qué es?",
-    "Tiene hojas, pero no es un árbol. Puede ladrar, pero no es un perro. ¿Qué es?",
-    "Sin moverse de tu lugar, puedes viajar por el mundo entero. ¿Qué es?",
-    "Dentro de un cajón delgado, hay un cofre dorado. ¿Qué es?",
-    "Es blanco como la nieve, dulce como la miel, un montón de hoyos y nunca tiene hambre. ¿Qué es?",
-    "De noche me verás brillar, de día me puedes ocultar. ¿Qué soy?",
-    "Si quieres entrar, debes llamar, si no respondes, no puedes pasar. ¿Qué es?",
-    "Puedes sostenerme en la palma de tu mano, pero también puedo iluminar toda una habitación. ¿Qué soy?",
-    "Soy un agujero que puede contener agua, ¿qué soy?",
-    "Un reloj con manecillas, pero no tiene números. ¿Qué es?"
+    {
+      "pregunta": "Amarillo por fuera, blanco por dentro, si quieres te lo digo, aunque es un poco lento. ¿Qué es?",
+      "respuesta": "El plátano"
+    },
+    {
+      "pregunta": "Tiene hojas, pero no es un árbol. Puede ladrar, pero no es un perro. ¿Qué es?",
+      "respuesta": "El libro"
+    },
+    {
+      "pregunta": "Sin moverse de tu lugar, puedes viajar por el mundo entero. ¿Qué es?",
+      "respuesta": "El sello"
+    },
+    {
+      "pregunta": "Dentro de un cajón delgado, hay un cofre dorado. ¿Qué es?",
+      "respuesta": "El huevo"
+    },
+    {
+      "pregunta": "Es blanco como la nieve, dulce como la miel, un montón de hoyos y nunca tiene hambre. ¿Qué es?",
+      "respuesta": "El queso"
+    },
+    {
+      "pregunta": "De noche me verás brillar, de día me puedes ocultar. ¿Qué soy?",
+      "respuesta": "La estrella"
+    },
+    {
+      "pregunta": "Si quieres entrar, debes llamar, si no respondes, no puedes pasar. ¿Qué es?",
+      "respuesta": "El teléfono"
+    },
+    {
+      "pregunta": "Puedes sostenerme en la palma de tu mano, pero también puedo iluminar toda una habitación. ¿Qué soy?",
+      "respuesta": "La vela"
+    },
+    {
+      "pregunta": "Soy un agujero que puede contener agua, ¿qué soy?",
+      "respuesta": "El agujero de una esponja"
+    },
+    {
+      "pregunta": "Un reloj con manecillas, pero no tiene números. ¿Qué es?",
+      "respuesta": "El huevo (de arena o reloj de arena)"
+    }
   ],
   "gracias": [
     "De nada, ¡siempre estoy aquí para ayudarte!",
@@ -298,10 +403,22 @@
     "Eso no sería apropiado."
   ],
   "novia": ["Soy una inteligencia artificial y no tengo relaciones personales. Estoy aquí para responder tus preguntas."],
-  "eres tonto": ["Estoy diseñado para proporcionar información y ayudar en lo que necesites. Si tienes alguna pregunta, estaré encantado de ayudarte."],
-  "eres una máquina": ["Sí, soy un programa de inteligencia artificial creado para ayudarte. ¿En qué puedo asistirte?"],
-  "idiota": ["No es apropiado usar lenguaje ofensivo. Estoy aquí para responder preguntas de manera respetuosa."],
-  "me encanta hablar contigo": ["Yo también estoy encantado de poder ayudarte."],
+  "eres tonto": [
+	  "Estoy diseñado para proporcionar información y ayudar en lo que necesites. Si tienes alguna pregunta, estaré encantado de ayudarte.",
+	  "Mi objetivo es ayudarte de la mejor manera posible. ¿Hay algo específico en lo que pueda asistirte?"
+	],
+  "eres una máquina": [
+  "Sí, soy un programa de inteligencia artificial creado para ayudarte. ¿En qué puedo asistirte?",
+  "Correcto, soy una máquina diseñada para responder preguntas y proporcionar información."
+],
+  "idiota": [ 
+  "No es apropiado usar lenguaje ofensivo. Estoy aquí para responder preguntas de manera respetuosa.",
+  "Intentemos mantener la conversación respetuosa. ¿En qué puedo ayudarte?"
+],
+  "me encanta hablar contigo":  [
+  "Me alegra escuchar eso. Estoy aquí para ayudarte en lo que necesites.",
+  "La sensación es mutua. ¿Hay algo específico de lo que te gustaría hablar?"
+],
   "hora": ["La hora actual es"],
   "es hoy": ["Hoy es"],
   "cuanto es": ["El resultado es"],
