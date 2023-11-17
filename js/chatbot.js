@@ -3,13 +3,32 @@ function cargarRespuestas() {
   // Colocar el foco en la caja de texto al cargar la página
   const userInput = document.getElementById("userInput");
   userInput.focus();
-  
+
   return fetch('data/chatbotrespuestas.json')
     .then(response => response.json())
     .catch(error => {
       console.error('Error al cargar el archivo JSON:', error);
       return {};
     });
+}
+
+// Función para buscar en Wikipedia
+async function buscarEnWikipedia(consulta) {
+  try {
+    const respuesta = await fetch('https://es.wikipedia.org/w/api.php' +
+      `?action=query&format=json&prop=extracts&exintro=true&explaintext=true&titles=${consulta}`);
+    const data = await respuesta.json();
+
+    // Extraer el extracto de la primera página (puede haber varias páginas en la respuesta)
+    const pages = data.query.pages;
+    const primeraPaginaId = Object.keys(pages)[0];
+    const extracto = pages[primeraPaginaId].extract;
+
+    return extracto || 'No se encontró información.';
+  } catch (error) {
+    console.error('Error al buscar en Wikipedia:', error);
+    return 'Hubo un error al buscar en Wikipedia.';
+  }
 }
 
 // Función para normalizar el texto
@@ -19,9 +38,10 @@ function normalizarTexto(texto) {
 
 // Definir un objeto para mantener el contexto de la conversación
 let contextoConversacion = {
-  palabraClave: null, // La palabra clave actual
-  repeticiones: 0, // Número de veces que se ha pedido más de lo mismo
-  juegoIniciado: false, // Agregar variable para controlar el estado del juego
+  palabraClave: null,
+  repeticiones: 0,
+  juegoIniciado: false,
+  listaPeliculasSolicitada: false, // Nuevo contexto para gestionar la solicitud de lista de películas
 };
 
 // Definir nombreUsuario al comienzo del código o donde sea apropiado
@@ -31,13 +51,14 @@ let nombreUsuario = "";
 let datosTemporales = {};
 
 // Función para buscar palabras clave
-function buscarPalabrasClave(texto, respuestas) {
+async function buscarPalabrasClave(texto, respuestas) {
   textoNormalizado = normalizarTexto(texto);
 
   const palabras = textoNormalizado;
 
   if (contextoConversacion.palabraClave) {
-    if (palabras.includes("otro") || palabras.includes("más")) {
+  if (contextoConversacion.palabraClave === "chiste") {
+    if (palabras.includes("otro") || palabras.includes(normalizarTexto("más"))) {
       contextoConversacion.repeticiones++;
       if (contextoConversacion.repeticiones > 2) {
         contextoConversacion.palabraClave = null;
@@ -46,15 +67,51 @@ function buscarPalabrasClave(texto, respuestas) {
       }
       const respuestasCategoria = respuestas[contextoConversacion.palabraClave];
       if (respuestasCategoria) {
-        let respuestaAleatoria = respuestasCategoria[Math.floor(Math.random() * respuestasCategoria.length)];
-        respuestaAleatoria = respuestaAleatoria.replace(contextoConversacion.palabraClave, "").trim();
-        return respuestaAleatoria;
+        const respuestaAleatoria = respuestasCategoria[Math.floor(Math.random() * respuestasCategoria.length)];
+        // Reemplazar todas las instancias de la palabra clave en la respuesta
+        const respuestaFormateada = respuestaAleatoria.replace(new RegExp(contextoConversacion.palabraClave, "gi"), "").trim();
+        return respuestaFormateada;
       }
-    } else {
-      contextoConversacion.palabraClave = null;
-      contextoConversacion.repeticiones = 0;
     }
+  } else if (normalizarTexto(contextoConversacion.palabraClave) === normalizarTexto("película favorita") ){
+    if (palabras.includes( normalizarTexto("sí")) ||  palabras.includes( normalizarTexto("vale")) ) {
+      // El usuario quiere ver la lista de películas
+      contextoConversacion.listaPeliculasSolicitada = false; // Restablecer el contexto
+      return respuestas["peliculas_lista"];
+    } else {
+      // El usuario no quiere ver la lista de películas
+      contextoConversacion.palabraClave = null;
+      return "Entendido. ¿En qué más puedo ayudarte?";
+    }
+  } else if (normalizarTexto(contextoConversacion.palabraClave) === normalizarTexto("jugar") ){
+    if (palabras.includes( normalizarTexto("sí")) ||  palabras.includes( normalizarTexto("vale")) ) {
+      // El usuario quiere ver la lista de películas
+      contextoConversacion.repeticiones++;
+      if (contextoConversacion.repeticiones ===1) {
+      return "Empezamos. ¿Quieres jugar a la Guerra Termonuclear?";
+	  }else{
+		  return "¿A quién te pides?"
+	  }
+    } else if (contextoConversacion.palabraClave === "adivinanza") {
+  const adivinanzaActual = respuestas[contextoConversacion.palabraClave][0]; // Obtener la adivinanza actual
+  const respuestaCorrecta = normalizarTexto(adivinanzaActual.respuesta);
+
+  // Verificar si la respuesta del usuario es correcta
+  if (palabras.includes(respuestaCorrecta)) {
+    contextoConversacion.palabraClave = null; // Reiniciar el contexto
+    return "¡Correcto! ¡Eres un experto en adivinanzas!";
+  } else {
+    return "Incorrecto. ¿Quieres intentarlo de nuevo o preguntarme algo más?";
   }
+}else {
+      // El usuario no quiere ver la lista de películas
+      contextoConversacion.palabraClave = null;
+      return "Entendido. ¿En qué más puedo ayudarte?";
+    }
+  } else {
+    contextoConversacion.palabraClave = null;
+  }
+}
 
   for (const palabraClave in respuestas) {
     const palabrasClave = palabraClave;
@@ -68,54 +125,9 @@ function buscarPalabrasClave(texto, respuestas) {
         const opcionesFecha = { weekday: "long", year: "numeric", month: "long", day: "numeric" };
         const fechaYDia = ahora.toLocaleDateString("es-ES", opcionesFecha);
         return `Hoy es ${fechaYDia}`;
-      } else if (palabrasClave === "queda") {
-        // Expresión regular mejorada para buscar patrones de fecha y hora
-        const patronFechaHora = /(\d{1,2}\/\d{1,2}\/\d{4})\s*(\d{1,2}h:\d{1,2})?/i;
-        const coincidenciasFechaHora = texto.match(patronFechaHora);
-      
-        if (coincidenciasFechaHora) {
-          const fecha = coincidenciasFechaHora[1];
-          const hora = coincidenciasFechaHora[2];
-      
-          if (fecha || hora) {
-            // Calcular tiempo que queda para la fecha y hora especificadas
-            const ahora = new Date();
-            let fechaEspecifica = null;
-      
-            if (fecha) {
-              const [dia, mes, anio] = fecha.split('/').map(Number);
-              fechaEspecifica = new Date(anio, mes - 1, dia); // Meses en JavaScript van de 0 a 11
-            }
-      
-            if (hora) {
-              const [hora, minutos] = hora.split(':').map(Number);
-              if (!fechaEspecifica) {
-                // Si no se especificó la fecha, usar la fecha actual
-                fechaEspecifica = new Date();
-              }
-              fechaEspecifica.setHours(hora, minutos);
-            }
-      
-            const tiempoRestante = fechaEspecifica - ahora;
-      
-            if (tiempoRestante > 0) {
-              const dias = Math.floor(tiempoRestante / (1000 * 60 * 60 * 24));
-              const horas = Math.floor((tiempoRestante % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-              const minutos = Math.floor((tiempoRestante % (1000 * 60 * 60)) / (1000 * 60));
-      
-              if (dias > 365) {
-                const anos = Math.floor(dias / 365);
-                const diasRestantes = dias % 365;
-                return `Quedan ${anos} años, ${diasRestantes} días, ${horas} horas y ${minutos} minutos para la fecha especificada.`;
-              } else {
-                return `Quedan ${dias} días, ${horas} horas y ${minutos} minutos para la fecha especificada.`;
-              }
-            } else {
-              return `La fecha y hora especificadas ya han pasado.`;
-            }
-          }
-        }
-      } else if (palabras.includes("cuanto es") || palabras.includes("calcula")) {
+      } else if (palabraClave === "queda") {
+		return calcularTiempoRestante(texto);
+      } else if (palabras.includes("cuanto es") || palabras.includes("calcula")) { 
         const expresionMatematica = texto.replace(palabrasClave, "").trim();
         try {
           const resultado = math.evaluate(expresionMatematica);
@@ -130,15 +142,17 @@ function buscarPalabrasClave(texto, respuestas) {
           const posicionPalabraClave = palabras.indexOf(palabrasClaveEncontradas[0]);
           // Obtener la parte del texto después de la palabra clave
           const nuevoNombreUsuario = texto.substring(posicionPalabraClave + palabrasClaveEncontradas[0].length).trim();
-          
+
           if (nuevoNombreUsuario) {
             // Asignar el nombre a la variable global
             nombreUsuario = nuevoNombreUsuario;
-    
+
             // Verificar si el nombre es "Sucendo"
             if (nombreUsuario.toLowerCase() === "sucendo") {
               contextoConversacion.juegoIniciado = true; // Iniciar el juego
+	   contextoConversacion.palabraClave = "jugar";		  
               return "Hola creador mío, ¿quieres jugar?";
+	  
             } else {
               return `Encantado de conocerte, ${nombreUsuario}!`;
             }
@@ -162,10 +176,14 @@ function buscarPalabrasClave(texto, respuestas) {
           contextoConversacion.juegoIniciado = false; // Restablecer el estado del juego
           return "Lo siento, no es un simulador de juegos.";
         }
+	} else if (palabras.includes(normalizarTexto("adivinanza"))) {
+	  contextoConversacion.palabraClave = "adivinanza";
+	  // Aquí puedes mostrar la adivinanza al usuario
+	  mostrarMensaje("Robot", respuestas["adivinanza"][0]);
       } else if (palabras.includes("guardar")) {
         const palabras = texto.split(" ");
         const datoIndex = palabras.indexOf("guardar");
-      
+
         if (datoIndex !== -1 && datoIndex < palabras.length - 1) {
           const clave = palabras[datoIndex + 1];
           if (clave) {
@@ -178,7 +196,7 @@ function buscarPalabrasClave(texto, respuestas) {
       } else if (palabras.includes("mostrar")) {
         const palabras = texto.split(" ");
         const datoIndex = palabras.indexOf("mostrar");
-      
+
         if (datoIndex !== -1 && datoIndex < palabras.length - 1) {
           const clave = palabras[datoIndex + 1];
           const dato = datosTemporales[clave];
@@ -187,12 +205,18 @@ function buscarPalabrasClave(texto, respuestas) {
           } else {
             return "No se ha encontrado ningún dato almacenado con la clave especificada.";
           }
-        }  
+        }
+      } else if (palabras.includes("película favorita")) {
+        // Establecer el contexto para gestionar la respuesta
+        contextoConversacion.palabraClave = "película favorita";
+        return respuestas["película_favorita"];
       } else if (palabraClave in respuestas) {
         // Aquí, aseguramos que siempre se elija la única respuesta si solo hay una
         const respuestasCategoria = respuestas[palabraClave];
         if (respuestasCategoria.length === 1) {
-          return respuestasCategoria[0];
+          contextoConversacion.palabraClave = palabrasClave;
+          contextoConversacion.repeticiones = 0;
+          return respuestasCategoria[0];          
         } else {
           const respuestasCategoria = respuestas[palabrasClave];
           if (respuestasCategoria) {
@@ -200,7 +224,7 @@ function buscarPalabrasClave(texto, respuestas) {
             contextoConversacion.repeticiones = 0;
             const respuestaAleatoria = respuestasCategoria[Math.floor(Math.random() * respuestasCategoria.length)];
             return respuestaAleatoria;
-          }          
+          }
         }
       }
     }
@@ -208,13 +232,74 @@ function buscarPalabrasClave(texto, respuestas) {
 
   const respuestasNoEntender = respuestas["no_entender"];
   if (respuestasNoEntender) {
-    return respuestasNoEntender[Math.floor(Math.random() * respuestasNoEntender.length)];
+    const respuestaNoEntender = respuestasNoEntender[Math.floor(Math.random() * respuestasNoEntender.length)];
+
+    // Buscar en Wikipedia si no se entiende la pregunta
+    /*	
+    if (respuestaNoEntender.includes("no entiendo") || respuestaNoEntender.includes("no sé")) {
+      const consulta = palabras.join(" "); // Usar la pregunta completa como consulta
+      const respuestaWikipedia = await buscarEnWikipedia(consulta);
+
+      return [respuestaNoEntender, respuestaWikipedia];
+    }
+  */
+    return respuestaNoEntender;
   }
+
   return "Lo siento, no entiendo tu pregunta.";
 }
 
 
+// Función para calcular el tiempo que queda para una fecha y hora específicas
+function calcularTiempoRestante(texto) {
+  // Expresión regular mejorada para buscar patrones de fecha y hora
+  const patronFechaHora = /(\d{1,2}\/\d{1,2}\/\d{4})\s*(\d{1,2}h:\d{1,2})?/i;
+  const coincidenciasFechaHora = texto.match(patronFechaHora);
 
+  if (coincidenciasFechaHora) {
+    const fecha = coincidenciasFechaHora[1];
+    const hora = coincidenciasFechaHora[2];
+
+    if (fecha || hora) {
+      // Calcular tiempo que queda para la fecha y hora especificadas
+      const ahora = new Date();
+      let fechaEspecifica = null;
+
+      if (fecha) {
+        const [dia, mes, anio] = fecha.split('/').map(Number);
+        fechaEspecifica = new Date(anio, mes - 1, dia); // Meses en JavaScript van de 0 a 11
+      }
+
+      if (hora) {
+        const [hora, minutos] = hora.split(':').map(Number);
+        if (!fechaEspecifica) {
+          // Si no se especificó la fecha, usar la fecha actual
+          fechaEspecifica = new Date();
+        }
+        fechaEspecifica.setHours(hora, minutos);
+      }
+
+      const tiempoRestante = fechaEspecifica - ahora;
+
+      if (tiempoRestante > 0) {
+        const dias = Math.floor(tiempoRestante / (1000 * 60 * 60 * 24));
+        const horas = Math.floor((tiempoRestante % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutos = Math.floor((tiempoRestante % (1000 * 60 * 60)) / (1000 * 60));
+
+        if (dias > 365) {
+          const anos = Math.floor(dias / 365);
+          const diasRestantes = dias % 365;
+          return `Quedan ${anos} años, ${diasRestantes} días, ${horas} horas y ${minutos} minutos para la fecha especificada.`;
+        } else {
+          return `Quedan ${dias} días, ${horas} horas y ${minutos} minutos para la fecha especificada.`;
+        }
+      } else {
+        return `La fecha y hora especificadas ya han pasado.`;
+      }
+    }
+  }
+  return "No se proporcionó una fecha y hora válidas.";
+}
 
 // Función para mostrar mensajes en el chat
 function mostrarMensaje(usuario, mensaje) {
@@ -249,7 +334,7 @@ function mostrarMensaje(usuario, mensaje) {
   chat.scrollTop = chat.scrollHeight;
 }
 
-// Cargar las respuestas y utilizarlas
+/// Cargar las respuestas y utilizarlas
 cargarRespuestas().then(respuestas => {
   const enviarButton = document.getElementById("enviar");
   const userInput = document.getElementById("userInput");
@@ -259,12 +344,15 @@ cargarRespuestas().then(respuestas => {
     if (pregunta.trim() !== "") {
       mostrarMensaje("Usuario", pregunta);
       userInput.value = "";
-      const respuesta = buscarPalabrasClave(pregunta, respuestas);
-      if (respuesta) {
-        mostrarMensaje("Robot", respuesta);
-      } else {
-        mostrarMensaje("Robot", "Lo siento, no entiendo tu pregunta.");
-      }
+      buscarPalabrasClave(pregunta, respuestas)
+        .then(respuesta => {
+          if (respuesta) {
+            mostrarMensaje("Robot", respuesta);
+          } else {
+            mostrarMensaje("Robot", "Lo siento, no entiendo tu pregunta.");
+          }
+        })
+        .catch(error => console.error('Error:', error));
     }
   });
 
@@ -274,12 +362,15 @@ cargarRespuestas().then(respuestas => {
       if (pregunta.trim() !== "") {
         mostrarMensaje("Usuario", pregunta);
         userInput.value = "";
-        const respuesta = buscarPalabrasClave(pregunta, respuestas);
-        if (respuesta) {
-          mostrarMensaje("Robot", respuesta);
-        } else {
-          mostrarMensaje("Robot", "Lo siento, no entiendo tu pregunta.");
-        }
+        buscarPalabrasClave(pregunta, respuestas)
+          .then(respuesta => {
+            if (respuesta) {
+              mostrarMensaje("Robot", respuesta);
+            } else {
+              mostrarMensaje("Robot", "Lo siento, no entiendo tu pregunta.");
+            }
+          })
+          .catch(error => console.error('Error:', error));
       }
     }
   });
