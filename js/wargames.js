@@ -142,4 +142,3 @@ const opciones = ["piedra", "papel", "tijeras"];
                 return caracterAleatorio;
             }
         }
-    </script>
