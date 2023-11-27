@@ -5,8 +5,6 @@ const opciones = ["piedra", "papel", "tijeras"];
         let temporizador = 60;
         let juegoTerminado = true; // Iniciar el juego como "terminado"
         let actualizarTemporizador;
-        let defcon = 5;
-        let defconInterval;
 
         // Array de mensajes de victoria y derrota
         const mensajesVictoria = [
@@ -30,6 +28,17 @@ const opciones = ["piedra", "papel", "tijeras"];
             inicioDialog.showModal();
         }
 
+        document.getElementById("inicioDialog").addEventListener("close", function () {
+            const nombreUsuario = document.getElementById("nombre").value;
+            const codigo = document.getElementById("codigo").value;
+            const jugar = document.getElementById("jugar").value;
+
+            if (jugar === "si") {
+                mostrarCodigo(codigo);
+                iniciarJuego();
+            }
+        });
+
         function iniciarJuego() {
             temporizador = 60;
             victorias = 0;
@@ -37,30 +46,11 @@ const opciones = ["piedra", "papel", "tijeras"];
             empates = 0;
             juegoTerminado = false; // Iniciar el juego como "no terminado"
             actualizarTemporizador = setInterval(actualizarCuentaAtras, 1000);
-            mostrarDEFCON();
-            defconInterval = setInterval(decrementarDEFCON, 2000);
 
             document.getElementById("iniciarJuegoButton").style.display = "none"; // Ocultar el botón "Iniciar Juego"
             document.getElementById("temporizador").textContent = `Tiempo restante: ${temporizador} segundos`;
             document.getElementById("resultado").textContent = "";
             document.getElementById("puntuacion").textContent = "Victorias: 0 | Derrotas: 0 | Empates: 0";
-            mostrarCodigo("TuCodigo");
-        }
-
-        function decrementarDEFCON() {
-            defcon--;
-            if (defcon === 0) {
-                clearInterval(defconInterval);
-                document.getElementById("defcon").textContent = "DEFCON 1";
-            } else {
-                document.getElementById("defcon").textContent = `DEFCON ${defcon}`;
-            }
-        }
-
-        function mostrarDEFCON() {
-            defcon = 5;
-            defconInterval = setInterval(decrementarDEFCON, 2000);
-            document.getElementById("defcon").textContent = `DEFCON ${defcon}`;
         }
 
         function actualizarCuentaAtras() {
@@ -74,36 +64,38 @@ const opciones = ["piedra", "papel", "tijeras"];
             }
         }
 
-        function elegirOpcion(opcion) {
-            if (juegoTerminado) return;
+        document.getElementById("iniciarJuegoButton").addEventListener("click", mostrarDialogoInicio);
 
-            clearInterval(defconInterval); // Reiniciar el contador DEFCON
-            mostrarDEFCON(); // Mostrar DEFCON nuevamente
+        document.querySelectorAll("button").forEach((button) => {
+            button.addEventListener("click", (event) => {
+                if (juegoTerminado) return;
 
-            const eleccionComputadora = opciones[Math.floor(Math.random() * 3)];
+                const eleccionUsuario = event.target.id;
+                const eleccionComputadora = opciones[Math.floor(Math.random() * 3)];
 
-            let resultado;
-            if (opcion === eleccionComputadora) {
-                resultado = "Empate. La batalla continúa.";
-                document.getElementById("resultado").className = "empate";
-                empates++;
-            } else if (
-                (opcion === "piedra" && eleccionComputadora === "tijeras") ||
-                (opcion === "papel" && eleccionComputadora === "piedra") ||
-                (opcion === "tijeras" && eleccionComputadora === "papel")
-            ) {
-                resultado = mensajesVictoria[Math.floor(Math.random() * mensajesVictoria.length)];
-                document.getElementById("resultado").className = "victoria";
-                victorias++;
-            } else {
-                resultado = mensajesDerrota[Math.floor(Math.random() * mensajesDerrota.length)];
-                document.getElementById("resultado").className = "derrota";
-                derrotas++;
-            }
+                let resultado;
+                if (eleccionUsuario === eleccionComputadora) {
+                    resultado = "Empate. La batalla continúa.";
+                    document.getElementById("resultado").className = "empate";
+                    empates++;
+                } else if (
+                    (eleccionUsuario === "piedra" && eleccionComputadora === "tijeras") ||
+                    (eleccionUsuario === "papel" && eleccionComputadora === "piedra") ||
+                    (eleccionUsuario === "tijeras" && eleccionComputadora === "papel")
+                ) {
+                    resultado = mensajesVictoria[Math.floor(Math.random() * mensajesVictoria.length)];
+                    document.getElementById("resultado").className = "victoria";
+                    victorias++;
+                } else {
+                    resultado = mensajesDerrota[Math.floor(Math.random() * mensajesDerrota.length)];
+                    document.getElementById("resultado").className = "derrota";
+                    derrotas++;
+                }
 
-            document.getElementById("resultado").textContent = `Elegiste ${opcion}, la computadora eligió ${eleccionComputadora}. ${resultado}`;
-            document.getElementById("puntuacion").textContent = `Victorias: ${victorias} | Derrotas: ${derrotas} | Empates: ${empates}`;
-        }
+                document.getElementById("resultado").textContent = `Elegiste ${eleccionUsuario}, la computadora eligió ${eleccionComputadora}. ${resultado}`;
+                document.getElementById("puntuacion").textContent = `Victorias: ${victorias} | Derrotas: ${derrotas} | Empates: ${empates}`;
+            });
+        });
 
         function mostrarCodigo(codigo) {
             const codigoUsuario = document.getElementById("codigoUsuario");
@@ -111,7 +103,7 @@ const opciones = ["piedra", "papel", "tijeras"];
             let tiempoTranscurrido = 0;
             let codigoActual = Array(codigo.length).fill('');
             let indices = Array.from({ length: codigo.length }, (_, i) => i);
-        
+
             const interval = setInterval(() => {
                 if (tiempoTranscurrido >= tiempoTotal) {
                     // Mostrar el código completo cuando el tiempo ha terminado
@@ -119,7 +111,7 @@ const opciones = ["piedra", "papel", "tijeras"];
                     codigoUsuario.textContent = codigo;
                     return;
                 }
-        
+
                 // Verificar y actualizar todas las posiciones al mismo tiempo
                 indices.forEach((index) => {
                     if (tiempoTranscurrido >= tiempoTotal - 1000) {
@@ -131,11 +123,11 @@ const opciones = ["piedra", "papel", "tijeras"];
                         }
                     }
                 });
-        
+
                 codigoUsuario.textContent = codigoActual.join('');
                 tiempoTranscurrido += 100; // Incrementar el tiempo transcurrido en 100ms
             }, 100); // Mostrar cada 100ms
-        
+
             function generarCaracterAleatorio() {
                 const caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~¡¢£¤¥¦¨©ª«¬®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ";
                 const caracterAleatorio = caracteres.charAt(Math.floor(Math.random() * caracteres.length));
