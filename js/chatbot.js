@@ -79,61 +79,71 @@ async function buscarPalabrasClave(texto, respuestas) {
   const palabras = textoNormalizado;
 
   if (contextoConversacion.palabraClave) {
-  if (contextoConversacion.palabraClave === "chiste") {
-    if (palabras.includes("otro") || palabras.includes(normalizarTexto("más"))) {
-      contextoConversacion.repeticiones++;
-      if (contextoConversacion.repeticiones > 2) {
-        contextoConversacion.palabraClave = null;
-        contextoConversacion.repeticiones = 0;
-        return "¡Has tenido suficiente de eso! ¿En qué más puedo ayudarte?";
+    if (contextoConversacion.palabraClave === "chiste") {
+      if (palabras.includes("otro") || palabras.includes(normalizarTexto("más"))) {
+        contextoConversacion.repeticiones++;
+        if (contextoConversacion.repeticiones > 2) {
+          contextoConversacion.palabraClave = null;
+          contextoConversacion.repeticiones = 0;
+          return "¡Has tenido suficiente de eso! ¿En qué más puedo ayudarte?";
+        }
+        const respuestasCategoria = respuestas[contextoConversacion.palabraClave];
+        if (respuestasCategoria) {
+          const respuestaAleatoria = respuestasCategoria[Math.floor(Math.random() * respuestasCategoria.length)];
+          // Reemplazar todas las instancias de la palabra clave en la respuesta
+          const respuestaFormateada = respuestaAleatoria.replace(new RegExp(contextoConversacion.palabraClave, "gi"), "").trim();
+          return respuestaFormateada;
+        }
       }
-      const respuestasCategoria = respuestas[contextoConversacion.palabraClave];
-      if (respuestasCategoria) {
-        const respuestaAleatoria = respuestasCategoria[Math.floor(Math.random() * respuestasCategoria.length)];
-        // Reemplazar todas las instancias de la palabra clave en la respuesta
-        const respuestaFormateada = respuestaAleatoria.replace(new RegExp(contextoConversacion.palabraClave, "gi"), "").trim();
-        return respuestaFormateada;
-      }
-    }
-  } else if (normalizarTexto(contextoConversacion.palabraClave) === normalizarTexto("película favorita") ){
-    if (palabras.includes( normalizarTexto("sí")) ||  palabras.includes( normalizarTexto("vale")) ) {
-      // El usuario quiere ver la lista de películas
-      contextoConversacion.listaPeliculasSolicitada = false; // Restablecer el contexto
-      return respuestas["peliculas_lista"];
-    } else {
-      // El usuario no quiere ver la lista de películas
-      contextoConversacion.palabraClave = null;
-      return "Entendido. ¿En qué más puedo ayudarte?";
-    }
-  } else if (normalizarTexto(contextoConversacion.palabraClave) === normalizarTexto("jugar") ){
-    if (palabras.includes( normalizarTexto("sí")) ||  palabras.includes( normalizarTexto("vale")) ) {
-      // El usuario quiere ver la lista de películas
-      contextoConversacion.repeticiones++;
-      if (contextoConversacion.repeticiones ===1) {
-      return "Empezamos. ¿Quieres jugar a la Guerra Termonuclear?";
-	  }else{
-		  return "¿A quién te pides?"
-	  }
-    } else if (contextoConversacion.palabraClave === "adivinanza") {
-  const adivinanzaActual = respuestas[contextoConversacion.palabraClave][0]; // Obtener la adivinanza actual
-  const respuestaCorrecta = normalizarTexto(adivinanzaActual.respuesta);
+    } else if (normalizarTexto(contextoConversacion.palabraClave) === normalizarTexto("película favorita") ){
+      if (palabras.includes(normalizarTexto("sí")) || palabras.includes(normalizarTexto("vale"))) {
+        // El usuario quiere ver la lista de películas
+        contextoConversacion.listaPeliculasSolicitada = false; // Restablecer el contexto
 
-  // Verificar si la respuesta del usuario es correcta
-  if (palabras.includes(respuestaCorrecta)) {
-    contextoConversacion.palabraClave = null; // Reiniciar el contexto
-    return "¡Correcto! ¡Eres un experto en adivinanzas!";
-  } else {
-    return "Incorrecto. ¿Quieres intentarlo de nuevo o preguntarme algo más?";
-  }
-}else {
+        const peliculas = respuestas["peliculas_lista"];
+        
+        if (peliculas && peliculas.length > 0) {
+          // Construir la lista HTML
+          const listaHTML = "<ul>" + peliculas.map(pelicula => `<li>${pelicula}</li>`).join("") + "</ul>";
+          return `Aquí tienes algunas de mis películas favoritas:\n${listaHTML}`;
+        } else {
+          return "No hay películas disponibles en este momento.";
+        }
+      } else {
+        // El usuario no quiere ver la lista de películas
+        contextoConversacion.palabraClave = null;
+        return "Entendido. ¿En qué más puedo ayudarte?";
+      }
+    } else if (normalizarTexto(contextoConversacion.palabraClave) === normalizarTexto("jugar") ){
+      if (palabras.includes(normalizarTexto("sí")) ||  palabras.includes(normalizarTexto("vale")) ) {
+        // El usuario quiere ver la lista de películas
+        contextoConversacion.repeticiones++;
+        if (contextoConversacion.repeticiones ===1) {
+          return "Empezamos. ¿Quieres jugar a la Guerra Termonuclear?";
+    	  }else{
+    		  return "¿A quién te pides?"
+    	  }
+      }else{
+        return "Una pena...";
+      }
+    } else if (contextoConversacion.palabraClave === "adivinanza") {
+      // El usuario quiere una adivinanza
+      const adivinanzaActual = respuestas[contextoConversacion.palabraClave][0]; // Obtener la adivinanza actual
+      const respuestaCorrecta = normalizarTexto(adivinanzaActual.respuesta);
+
+      // Verificar si la respuesta del usuario es correcta
+      if (palabras.includes(respuestaCorrecta)) {
+        contextoConversacion.palabraClave = null; // Reiniciar el contexto
+        return "¡Correcto! ¡Eres un experto en adivinanzas!";
+      } else {
+        return "Incorrecto. ¿Quieres intentarlo de nuevo o preguntarme algo más?";
+      }
+    } else {    
       // El usuario no quiere ver la lista de películas
       contextoConversacion.palabraClave = null;
       return "Entendido. ¿En qué más puedo ayudarte?";
     }
-  } else {
-    contextoConversacion.palabraClave = null;
   }
-}
 
   for (const palabraClave in respuestas) {
     const palabrasClave = palabraClave;
@@ -144,48 +154,48 @@ async function buscarPalabrasClave(texto, respuestas) {
 		return calcularDiaHoy(texto);
       } else if (palabraClave === "queda") {
 		return calcularTiempoRestante(texto);
-      } else if (palabras.includes("cuanto es") || palabras.includes("calcula")) { 
+      } else if (palabras.includes("cuanto es") || palabras.includes("calcula")) {
 		const expresionMatematica = texto.replace(palabrasClave, "").trim();
-		try {
-		  const resultado = math.evaluate(expresionMatematica);
-		  return `${respuestas[palabrasClave]} ${resultado}`;
-		} catch (error) {
-		  return "No pude resolver la operación matemática.";
-		}
-      } else if ((palabras.includes("me llamo") || palabras.includes("soy")) && !palabras.includes("como")) {
-		const palabrasClaveEncontradas = Object.keys(respuestas).filter(pc => palabras.includes(pc));
-		if (palabrasClaveEncontradas.length > 0) {
-		  // Extraer el nombre del usuario del texto original
-		  const posicionPalabraClave = palabras.indexOf(palabrasClaveEncontradas[0]);
-		  // Obtener la parte del texto después de la palabra clave
-		  const nuevoNombreUsuario = texto.substring(posicionPalabraClave + palabrasClaveEncontradas[0].length).trim();
+  		try {
+  		  const resultado = math.evaluate(expresionMatematica);
+  		  return `${respuestas[palabrasClave]} ${resultado}`;
+  		} catch (error) {
+  		  return "No pude resolver la operación matemática.";
+  		}
+    } else if ((palabras.includes("me llamo") || palabras.includes("soy")) && !palabras.includes("como")) {
+  		const palabrasClaveEncontradas = Object.keys(respuestas).filter(pc => palabras.includes(pc));
+  		if (palabrasClaveEncontradas.length > 0) {
+  		  // Extraer el nombre del usuario del texto original
+  		  const posicionPalabraClave = palabras.indexOf(palabrasClaveEncontradas[0]);
+  		  // Obtener la parte del texto después de la palabra clave
+  		  const nuevoNombreUsuario = texto.substring(posicionPalabraClave + palabrasClaveEncontradas[0].length).trim();
 
-		  if (nuevoNombreUsuario) {
-			// Asignar el nombre a la variable global
-			nombreUsuario = nuevoNombreUsuario;
+  		  if (nuevoNombreUsuario) {
+    			// Asignar el nombre a la variable global
+    			nombreUsuario = nuevoNombreUsuario;
 
-			// Verificar si el nombre es "Sucendo"
-			if (nombreUsuario.toLowerCase() === "sucendo") {
-			contextoConversacion.juegoIniciado = true; // Iniciar el juego
-			contextoConversacion.palabraClave = "jugar";		  
-			return "Hola creador mío, ¿quieres jugar?";
-	  
-			} else {
-			  return `Encantado de conocerte, ${nombreUsuario}!`;
-			}
-		  }
-		}
-      } else if (palabras.includes("como") && palabras.includes("me") && palabras.includes("llamo")) {
-			if (nombreUsuario) {
-			  return `Te llamas ${nombreUsuario}.`;
-			} else {
-			  return "Lo siento, no tengo esa información. ¿Cómo te llamas?";
-			}
-	} else if (palabras.includes(normalizarTexto("adivinanza"))) {
+    			// Verificar si el nombre es "Sucendo"
+    			if (nombreUsuario.toLowerCase() === "sucendo") {
+    			contextoConversacion.juegoIniciado = true; // Iniciar el juego
+    			contextoConversacion.palabraClave = "jugar";		  
+    			return "Hola creador mío, ¿quieres jugar?";
+    	  
+    			} else {
+    			  return `Encantado de conocerte, ${nombreUsuario}!`;
+    			}
+  		  }
+  		}
+    } else if (palabras.includes("como") && palabras.includes("me") && palabras.includes("llamo")) {
+    			if (nombreUsuario) {
+    			  return `Te llamas ${nombreUsuario}.`;
+    			} else {
+    			  return "Lo siento, no tengo esa información. ¿Cómo te llamas?";
+    			}
+    } else if (palabras.includes(normalizarTexto("adivinanza"))) {
 		  contextoConversacion.palabraClave = "adivinanza";
 		  // Aquí puedes mostrar la adivinanza al usuario
 		  mostrarMensaje("Robot", respuestas["adivinanza"][0]);
-      } else if (palabras.includes("guardar")) {
+    } else if (palabras.includes("guardar")) {
 			const palabras = texto.split(" ");
 			const datoIndex = palabras.indexOf("guardar");
 
@@ -198,7 +208,7 @@ async function buscarPalabrasClave(texto, respuestas) {
 				return `He guardado "${dato}" temporalmente con la clave "${clave}".`;
 			  }
 			}
-      } else if (palabras.includes("mostrar")) {
+    } else if (palabras.includes("mostrar")) {
 			const palabras = texto.split(" ");
 			const datoIndex = palabras.indexOf("mostrar");
 
@@ -211,21 +221,20 @@ async function buscarPalabrasClave(texto, respuestas) {
 				return "No se ha encontrado ningún dato almacenado con la clave especificada.";
 			  }
 			}
-      } else if (palabraClave in respuestas) {
-        // Aquí, aseguramos que siempre se elija la única respuesta si solo hay una
-        const respuestasCategoria = respuestas[palabraClave];
-        if (respuestasCategoria.length === 1) {
+    } else if (palabraClave in respuestas) {
+      // Aquí, aseguramos que siempre se elija la única respuesta si solo hay una
+      const respuestasCategoria = respuestas[palabraClave];
+      if (respuestasCategoria.length === 1) {
+        contextoConversacion.palabraClave = palabrasClave;
+        contextoConversacion.repeticiones = 0;
+        return respuestasCategoria[0];          
+      } else {
+        const respuestasCategoria = respuestas[palabrasClave];
+        if (respuestasCategoria) {
           contextoConversacion.palabraClave = palabrasClave;
           contextoConversacion.repeticiones = 0;
-          return respuestasCategoria[0];          
-        } else {
-          const respuestasCategoria = respuestas[palabrasClave];
-          if (respuestasCategoria) {
-            contextoConversacion.palabraClave = palabrasClave;
-            contextoConversacion.repeticiones = 0;
-            const respuestaAleatoria = respuestasCategoria[Math.floor(Math.random() * respuestasCategoria.length)];
-            return respuestaAleatoria;
-          }
+          const respuestaAleatoria = respuestasCategoria[Math.floor(Math.random() * respuestasCategoria.length)];
+          return respuestaAleatoria;
         }
       }
     }
