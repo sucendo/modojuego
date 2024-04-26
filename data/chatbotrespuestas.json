@@ -328,10 +328,15 @@
 		  "respuesta": "El huevo (de arena o reloj de arena)"
 		}
 	],
+	"nombres_significado": {
+		"Juan": "Gracia de Dios",
+		"María": "Amargura",
+		"Pedro": "Roca o piedra"		
+	},
 	"gracias": [
 		"De nada, ¡siempre estoy aquí para ayudarte!",
-		"No hay de que.",
-		"A tí.",
+		"No hay de qué.",
+		"A ti.",
 		"Sin problema."
 	],
 	"matemáticas": ["¡Por supuesto! ¿En qué problema necesitas ayuda? Recuerda que tienes que poner, cuanto es..."],
@@ -469,6 +474,10 @@
 	"me encanta hablar contigo":  [
 		"Me alegra escuchar eso. Estoy aquí para ayudarte en lo que necesites.",
 		"La sensación es mutua. ¿Hay algo específico de lo que te gustaría hablar?"
+	],
+	"afirmacion":  [
+		"Entiendo, escribias para ti mismo.",
+		"Pues vale."
 	],
 	"hora": ["La hora actual es"],
 	"buenos dias": ["Buenos días ¿Cómo estás?"],
