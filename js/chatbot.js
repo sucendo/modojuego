@@ -114,6 +114,29 @@ async function buscarPalabrasClave(texto, respuestas) {
 				contextoConversacion.palabraClave = null;
 				return "Que pena, era una buena lista. ¿En qué más puedo ayudarte?";
 			}
+		} else  if (contextoConversacion.palabraClave === "significado_nombre") {
+			if (textoNormalizado.includes("sí") || textoNormalizado.includes("vale")) {
+				// Obtener el nombre del usuario (asumiendo que el usuario proporciona su nombre en la misma oración)
+				const palabras = texto.split(" ");
+				const nombreIndex = palabras.findIndex(palabra => palabra === "me" || palabra === "llamo" || palabra === "soy");
+				if (nombreIndex !== -1 && nombreIndex < palabras.length - 1) {
+					const nombreUsuario = palabras[nombreIndex + 1];
+					if (nombreUsuario) {
+						// Buscar el significado del nombre del usuario en el JSON
+						const nombresSignificado = respuestas["nombres_significado"];
+						const significado = nombresSignificado[nombreUsuario];
+						if (significado) {
+							return `El significado de tu nombre, ${nombreUsuario}, es "${significado}".`;
+						} else {
+							return `Lo siento, no tengo información sobre el significado de "${nombreUsuario}".`;
+						}
+					}
+				}
+			} else {
+				// Restablecer el contexto de la conversación si el usuario responde negativamente
+				contextoConversacion.palabraClave = null;
+				return "Entendido. ¿En qué más puedo ayudarte?";
+			}
 		} else if (normalizarTexto(contextoConversacion.palabraClave) === normalizarTexto("jugar") ){
 			if (palabras.includes(normalizarTexto("sí")) ||  palabras.includes(normalizarTexto("vale")) ) {
 				// El usuario quiere ver la lista de películas
@@ -163,40 +186,41 @@ async function buscarPalabrasClave(texto, respuestas) {
 				} catch (error) {
 					return "No pude resolver la operación matemática.";
 				}
-			} else if ((palabras.includes("me llamo") || palabras.includes("soy")) && !palabras.includes("como")) {
-				  const palabrasClaveEncontradas = Object.keys(respuestas).filter(pc => palabras.includes(pc));
-				  if (palabrasClaveEncontradas.length > 0) {
-					  // Extraer el nombre del usuario del texto original
-					  const posicionPalabraClave = palabras.indexOf(palabrasClaveEncontradas[0]);
-					  // Obtener la parte del texto después de la palabra clave
-					  const nuevoNombreUsuario = texto.substring(posicionPalabraClave + palabrasClaveEncontradas[0].length).trim();
-
-					  if (nuevoNombreUsuario) {
+			} else if (textoNormalizado.includes("me llamo") || textoNormalizado.includes("soy")) {
+				// Extraer el nombre del usuario del texto
+				const palabras = texto.split(" ");
+				const nombreIndex = palabras.findIndex(palabra => palabra === "llamo" || palabra === "soy");
+				if (nombreIndex !== -1 && nombreIndex < palabras.length - 1) {
+					const nuevoNombreUsuario = palabras[nombreIndex + 1];
+					if (nuevoNombreUsuario) {
 						// Asignar el nombre a la variable global
 						nombreUsuario = nuevoNombreUsuario;
 
 						// Verificar si el nombre es "Sucendo"
 						if (nombreUsuario.toLowerCase() === "sucendo") {
 							contextoConversacion.juegoIniciado = true; // Iniciar el juego
-							contextoConversacion.palabraClave = "jugar";		  
+							contextoConversacion.palabraClave = "jugar";
 							return "Hola creador mío, ¿quieres jugar?";
-					  
 						} else {
 							return `Encantado de conocerte, ${nombreUsuario}!`;
 						}
-					  }
+					}
 				}
-			  } else if (palabras.includes("como") && palabras.includes("me") && palabras.includes("llamo")) {
+			} else if (textoNormalizado.includes("significado") && textoNormalizado.includes("nombre")) {
+				// Mostrar un mensaje preguntando al usuario si quiere conocer el significado de su nombre
+				contextoConversacion.palabraClave = "significado_nombre";
+				return "¿Quieres saber el significado de tu nombre?";
+			} else if (palabras.includes("como") && palabras.includes("me") && palabras.includes("llamo")) {
 				if (nombreUsuario) {
 					return `Te llamas ${nombreUsuario}.`;
 				} else {
 					return "Lo siento, no tengo esa información. ¿Cómo te llamas?";
 				}
-			  } else if (palabras.includes(normalizarTexto("adivinanza"))) {
+			} else if (palabras.includes(normalizarTexto("adivinanza"))) {
 				  contextoConversacion.palabraClave = "adivinanza";
 				  // Aquí puedes mostrar la adivinanza al usuario
 				  mostrarMensaje("Robot", respuestas["adivinanza"][0]);
-			  } else if (palabras.includes("guardar")) {
+			} else if (palabras.includes("guardar")) {
 				const palabras = texto.split(" ");
 				const datoIndex = palabras.indexOf("guardar");
 
@@ -209,7 +233,7 @@ async function buscarPalabrasClave(texto, respuestas) {
 						return `He guardado "${dato}" temporalmente con la clave "${clave}".`;
 					}
 				}
-			  } else if (palabras.includes("mostrar")) {
+			} else if (palabras.includes("mostrar")) {
 				const palabras = texto.split(" ");
 				const datoIndex = palabras.indexOf("mostrar");
 
@@ -222,7 +246,7 @@ async function buscarPalabrasClave(texto, respuestas) {
 						  return "No se ha encontrado ningún dato almacenado con la clave especificada.";
 					  }
 				}
-			  } else if (palabraClave in respuestas) {
+			} else if (palabraClave in respuestas) {
 				// Aquí, aseguramos que siempre se elija la única respuesta si solo hay una
 				const respuestasCategoria = respuestas[palabraClave];
 				if (respuestasCategoria.length === 1) {
