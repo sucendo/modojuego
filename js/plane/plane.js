@@ -212,7 +212,7 @@ function impactarJugador(avion, balaEnemiga) {
     setTimeout(() => {
         avion.clearTint(); // Restaurar el color original del avión después de medio segundo
     }, 150);
-    score -= puntosPorImpacto;
+    // score -= puntosPorImpacto;
     if (playerLife <= 0) {
         this.physics.pause();
         avion.setActive(false); // Desactivar el sprite del avión
