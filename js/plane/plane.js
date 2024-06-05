@@ -50,7 +50,7 @@ function create() {
     // Crear grupo de balas
     this.balas = this.physics.add.group({
         defaultKey: 'bala',
-        maxSize: 100
+        maxSize: 10000
     });
 
     // Crear grupo de balas enemigas
