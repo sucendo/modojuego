@@ -30,9 +30,9 @@ let playerLife = 3;
 
 function preload() {
     // Cargar imágenes y recursos
-    this.load.image('avion', 'img/plane/avion-blue.svg');
+    this.load.image('avion', 'img/plane/avion-f22.svg');
     this.load.image('bala', 'img/plane/cohete-blue.svg');
-    this.load.image('enemigo', 'img/plane/avion-red.svg');
+    this.load.image('enemigo', 'img/plane/avion-su57.svg');
     this.load.image('balaEnemiga', 'img/plane/cohete-red.svg');
     this.load.image('fondo', 'img/plane/fondo01.png');
 }
