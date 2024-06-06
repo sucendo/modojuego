@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg viewBox="0 0 6 11.5" xmlns="http://www.w3.org/2000/svg">
+  <g style="transform-origin: 2.9985px 5.76081px;" transform="matrix(1, 0.000001, -0.000001, 1, -0.000001000001, -0.000011000001)">
+    <path d="M 2.309 0.547 C 2.309 0.547 1.121 1.311 1.088 3.867 L 2.266 3.87 L 3.444 3.874 C 3.477 1.318 2.309 0.547 2.309 0.547 Z" style="transform-origin: -71.379px -105.041px; fill: rgb(214, 111, 111);" transform="matrix(0.999973, -0.007331, 0.007331, 0.999973, 0, 0)"/>
+    <rect x="6.912" y="5.479" width="2.356" height="0.431" style="fill: rgb(214, 111, 111);" transform="matrix(0.999991, -0.004216, -0.00576, 1.000033, -5.010524, -1.857374)"/>
+    <rect x="6.912" y="6.193" width="2.356" height="6.657" style="fill: rgb(214, 111, 111);" transform="matrix(0.999991, -0.004216, -0.00576, 1.000033, -5.010524, -1.857374)"/>
+    <polygon points="1.566 8.239 0.007 10.185 0 11.514 1.547 11.507" style="transform-origin: -47.736px -30.864px; fill: rgb(214, 111, 111);"/>
+    <polygon points="4.461 8.258 5.997 10.19 5.99 11.519 4.442 11.526" style="transform-origin: -34.207px -21.878px; fill: rgb(214, 111, 111);"/>
+  </g>
+</svg>
