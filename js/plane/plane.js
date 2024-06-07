@@ -1,4 +1,4 @@
-// Configuración del juego
+/ Configuración del juego
 const config = {
 	type: Phaser.AUTO,
 	width: 1845,
@@ -27,11 +27,13 @@ const game = new Phaser.Game(config);
 
 let enemyCount = 0;
 let playerLife = 3;
+let balasSeguidorasActivas = 0;
 
 function preload() {
 	// Cargar imágenes y recursos
 	this.load.image('avion', 'img/plane/avion-f22.svg');
-	this.load.image('bala', 'img/plane/cohete-blue.svg');
+	this.load.image('bala', 'img/plane/bala.svg');
+	this.load.image('misil', 'img/plane/cohete-blue.svg');
 	this.load.image('enemigo', 'img/plane/avion-su57.svg');
 	this.load.image('balaEnemiga', 'img/plane/cohete-red.svg');
 	this.load.image('fondo', 'img/plane/fondo01.png');
@@ -70,6 +72,12 @@ function create() {
 		maxSize: 10000
 	});
 	
+	// Crear grupo de misiles
+	this.misil= this.physics.add.group({   
+		defaultKey: 'misil',
+		maxSize: 10
+	});
+	
 	// Agregar el título "F-22 Raptor" en letras grandes con estilo
 	let titulo = this.add.text(this.sys.game.config.width / 2, this.sys.game.config.height / 2, 'F-22 Raptor', {
 		fontFamily: 'Impact',
@@ -106,7 +114,7 @@ function create() {
 	}, [], this);
 
 	// Crear grupo de balas enemigas
-	this.balasEnemigas = this.physics.add.group();
+	this.misilesEnemigos = this.physics.add.group();
 
 	// Crear grupo de enemigos
 	this.enemigos = this.physics.add.group();
@@ -124,7 +132,7 @@ function create() {
 
 	// Colisiones
 	this.physics.add.overlap(this.balas, this.enemigos, destruirEnemigo, null, this);
-	this.physics.add.overlap(this.balasEnemigas, this.avion, impactarJugador, null, this);
+	this.physics.add.overlap(this.misilesEnemigos, this.avion, impactarJugador, null, this);
 	this.physics.add.overlap(this.avion, this.enemigos, impactarJugador, null, this);
 	
 
@@ -192,44 +200,47 @@ function update() {
 			bala.setActive(true);
 			bala.setVisible(true);
 			bala.body.setSize(20, 20); // Establecer un radio más pequeño para el cuerpo de colisión de la bala
-			bala.body.velocity.y = -300;
-			bala.setScale(0.5); // Escalar la bala del jugador
+			bala.body.velocity.y = -600;
+			bala.setScale(0.15); // Escalar la bala del jugador
 		}
 		score -= puntosPorDisparo;
 	}
 	
 	// Disparar balas que siguen a un avión enemigo (Tecla A)
-	if (Phaser.Input.Keyboard.JustDown(this.aKey)) {
+	if (Phaser.Input.Keyboard.JustDown(this.aKey) && balasSeguidorasActivas < 10) {
 		// Obtener la referencia al avión enemigo más cercano
 		let avionEnemigoMasCercano = this.enemigos.getFirstAlive();
 
 		if (avionEnemigoMasCercano) {
 			// Crear una bala que siga al avión enemigo
-			let balaSeguidora = this.balas.get(this.avion.x, this.avion.y);
+			let misiles = this.misil.get(this.avion.x, this.avion.y);
 
-			if (balaSeguidora) {
-				balaSeguidora.setActive(true);
-				balaSeguidora.setVisible(true);
-				balaSeguidora.body.setSize(20, 20); // Establecer un tamaño de colisión para la bala
-				balaSeguidora.setScale(0.5); // Escalar la bala
+			if (misiles) {
+				misiles.setActive(true);
+				misiles.setVisible(true);
+				misiles.body.setSize(20, 20); // Establecer un tamaño de colisión para la bala
+				misiles.setScale(0.5); // Escalar la bala
 
 				// Calcular el ángulo de rotación hacia el avión enemigo más cercano
-				let angle = Phaser.Math.Angle.BetweenPoints(balaSeguidora, avionEnemigoMasCercano);
-				balaSeguidora.setRotation(angle);
+				let angle = Phaser.Math.Angle.BetweenPoints(misiles, avionEnemigoMasCercano);
+				misiles.angle = Phaser.Math.RadToDeg(angle) + 90; // Ajustar el ángulo en 90 grados
 
-				// Mover la bala hacia el avión enemigo
-				this.physics.moveToObject(balaSeguidora, avionEnemigoMasCercano, 300);
+				// Establecer la velocidad de la bala en la dirección del avión enemigo
+				this.physics.velocityFromRotation(angle, 300, misiles.body.velocity);
+
+				// Incrementar el contador de balas seguidoras activas
+				balasSeguidorasActivas++;
 			}
 		}
 	}
 	
 	// Control de descenso (tecla D)
 	if (Phaser.Input.Keyboard.JustDown(this.dKey)) {
-		// Reducir gradualmente la escala del avión a 0.7
+		// Reducir gradualmente la escala del avión a 0.6
 		this.tweens.add({
 			targets: this.avion,
-			scaleX: 0.7,
-			scaleY: 0.7,
+			scaleX: 0.6,
+			scaleY: 0.6,
 			duration: 500, // Duración de la animación en milisegundos
 			ease: 'Linear', // Tipo de interpolación
 			onComplete: function() {
@@ -252,7 +263,7 @@ function update() {
 			ease: 'Linear', // Tipo de interpolación
 			onComplete: function() {
 				// Reactivar las colisiones entre balas enemigas y aviones enemigos con el avión del jugador
-				this.avionBalaEnemigaCollider = this.physics.add.collider(this.avion, this.balasEnemigas, impactarJugador, null, this);
+				this.avionBalaEnemigaCollider = this.physics.add.collider(this.avion, this.misilesEnemigos, impactarJugador, null, this);
 				this.avionEnemigoCollider = this.physics.add.collider(this.avion, this.enemigos, impactarJugador, null, this);
 			},
 			callbackScope: this // Ámbito de la función onComplete
@@ -335,7 +346,7 @@ function crearEnemigo() {
 
 function dispararEnemigos() {
 	this.enemigos.children.iterate(function (enemigo) {
-		let balaEnemiga = this.balasEnemigas.create(enemigo.x, enemigo.y, 'balaEnemiga');
+		let balaEnemiga = this.misilesEnemigos.create(enemigo.x, enemigo.y, 'balaEnemiga');
 		this.physics.velocityFromRotation(enemigo.rotation - Math.PI / 2, 300, balaEnemiga.body.velocity); // Disparar en la dirección del enemigo
 		balaEnemiga.setAngle(enemigo.angle); // Rotar la bala para que apunte en la misma dirección que el enemigo
 		balaEnemiga.setScale(0.5); // Escalar la bala del enemigo
@@ -444,4 +455,9 @@ function maniobrarEnemigos() {
 		// Actualizar la rotación del avión enemigo para que mire hacia la dirección de movimiento
 		enemigo.setRotation(newDirection + Math.PI / 2);
 	}, this);
+}
+
+function destruirmisiles(misiles) {
+	misiles.destroy();
+	balasSeguidorasActivas--;
 }
