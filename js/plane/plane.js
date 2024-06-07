@@ -134,7 +134,8 @@ function create() {
 	this.physics.add.overlap(this.balas, this.enemigos, destruirEnemigo, null, this);
 	this.physics.add.overlap(this.misilesEnemigos, this.avion, impactarJugador, null, this);
 	this.physics.add.overlap(this.avion, this.enemigos, impactarJugador, null, this);
-	
+	this.physics.add.overlap(this.misil, this.enemigos, destruirEnemigo, null, this);
+
 
 	// Temporizador para generar enemigos
 	this.time.addEvent({
@@ -221,18 +222,33 @@ function update() {
 				misiles.body.setSize(20, 20); // Establecer un tamaño de colisión para la bala
 				misiles.setScale(0.5); // Escalar la bala
 
+				// Inicializar la velocidad del misil
+				misiles.speed = 100; // Velocidad inicial del misil
+
 				// Calcular el ángulo de rotación hacia el avión enemigo más cercano
 				let angle = Phaser.Math.Angle.BetweenPoints(misiles, avionEnemigoMasCercano);
 				misiles.angle = Phaser.Math.RadToDeg(angle) + 90; // Ajustar el ángulo en 90 grados
 
 				// Establecer la velocidad de la bala en la dirección del avión enemigo
-				this.physics.velocityFromRotation(angle, 300, misiles.body.velocity);
+				this.physics.velocityFromRotation(angle, misiles.speed, misiles.body.velocity);
+				misiles.target = avionEnemigoMasCercano;
 
 				// Incrementar el contador de balas seguidoras activas
 				balasSeguidorasActivas++;
 			}
 		}
 	}
+
+	this.misil.children.iterate(function (misiles) {
+		if (misiles.active && misiles.target) {
+			// Incrementar la velocidad del misil
+			misiles.speed += 5; // Incremento de la velocidad
+
+			let angle = Phaser.Math.Angle.BetweenPoints(misiles, misiles.target);
+			this.physics.velocityFromRotation(angle, misiles.speed, misiles.body.velocity);
+			misiles.angle = Phaser.Math.RadToDeg(angle) + 90;
+		}
+	}, this);
 	
 	// Control de descenso (tecla D)
 	if (Phaser.Input.Keyboard.JustDown(this.dKey)) {
