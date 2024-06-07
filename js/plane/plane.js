@@ -98,6 +98,14 @@ function create() {
         callbackScope: this,
         loop: true
     });
+	
+    // Temporizador para maniobras de enemigos
+    this.time.addEvent({
+        delay: 500, // 0.5 segundos
+        callback: maniobrarEnemigos,
+        callbackScope: this,
+        loop: true
+    });
 }
 
 function update() {
@@ -172,33 +180,33 @@ function update() {
 
 function crearEnemigo() {
     if (this.enemigos.getChildren().length < 6) {
-        let x, y, direccionX, direccionY;
+        let x, y, direccionX, direccionY, velocidad;
         const borde = Phaser.Math.Between(0, 3); // 0: arriba, 1: derecha, 2: abajo, 3: izquierda
 
         switch (borde) {
             case 0: // Aparecer desde arriba
                 x = Phaser.Math.Between(0, config.width);
                 y = 0;
-                direccionX = Phaser.Math.Between(-100, 100);
-                direccionY = Phaser.Math.Between(50, 200);
+                direccionX = Phaser.Math.Between(-50, 50);
+                direccionY = Phaser.Math.Between(150, 300); // Más rápido hacia abajo
                 break;
             case 1: // Aparecer desde la derecha
                 x = config.width;
                 y = Phaser.Math.Between(0, config.height);
-                direccionX = Phaser.Math.Between(-200, -50);
-                direccionY = Phaser.Math.Between(-100, 100);
+                direccionX = Phaser.Math.Between(-150, -100); // Rápido hacia la izquierda
+                direccionY = Phaser.Math.Between(-50, 50);
                 break;
             case 2: // Aparecer desde abajo
                 x = Phaser.Math.Between(0, config.width);
                 y = config.height;
-                direccionX = Phaser.Math.Between(-100, 100);
-                direccionY = Phaser.Math.Between(-200, -50);
+                direccionX = Phaser.Math.Between(-50, 50);
+                direccionY = Phaser.Math.Between(-100, -50); // Más lento hacia arriba
                 break;
             case 3: // Aparecer desde la izquierda
                 x = 0;
                 y = Phaser.Math.Between(0, config.height);
-                direccionX = Phaser.Math.Between(50, 200);
-                direccionY = Phaser.Math.Between(-100, 100);
+                direccionX = Phaser.Math.Between(100, 150); // Rápido hacia la derecha
+                direccionY = Phaser.Math.Between(-50, 50);
                 break;
         }
 
@@ -212,6 +220,9 @@ function crearEnemigo() {
         enemigo.setRotation(Phaser.Math.Angle.Between(0, 0, direccionX, direccionY) + Math.PI / 2);
 
         enemigo.body.setSize(40, 80);
+        enemigo.body.customSpeed = Math.sqrt(direccionX * direccionX + direccionY * direccionY); // Guardar la velocidad personalizada en el cuerpo del enemigo
+        enemigo.body.customDirection = new Phaser.Math.Vector2(direccionX, direccionY).normalize(); // Guardar la dirección inicial del enemigo
+
         enemyCount++;
     }
 }
@@ -237,7 +248,7 @@ function impactarJugador(avion, balaEnemiga) {
     playerLife--;
     avion.setTint(0xff0000); // Cambiar el color del avión a rojo
     setTimeout(() => {
-        avion.clearTint(); // Restaurar el color original del avión después de medio segundo
+        avion.clearTint(); // Restaurar el color original del avión después de un momento
     }, 150);
     score -= puntosPorImpacto;
     if (playerLife <= 0) {
@@ -245,7 +256,6 @@ function impactarJugador(avion, balaEnemiga) {
         avion.setActive(false); // Desactivar el sprite del avión
         avion.setVisible(false); // Ocultar el sprite del avión
         avion.body.stop(); // Detener cualquier movimiento del avión
-        avion.anims.play('explode');
 
         // Crear texto "GAME OVER" con contorno y sombreado
         this.add.text(config.width / 2, config.height / 2, 'GAME OVER', {
@@ -263,10 +273,69 @@ function impactarJugador(avion, balaEnemiga) {
                 fill: true
             }
         }).setOrigin(0.5);
+
         this.add.text(config.width / 2, config.height / 2 + 50, 'Puntuación: ' + score, {
             fontFamily: 'Arial',
             fontSize: 32,
             color: '#ffffff'
         }).setOrigin(0.5);
+
+        // Crear botón de reinicio
+        let botonReiniciar = this.add.text(config.width / 2, config.height / 2 + 100, 'Volver a jugar', {
+            fontFamily: 'Arial',
+            fontSize: 32,
+            color: '#ffffff',
+            backgroundColor: '#000000',
+            padding: {
+                x: 20,
+                y: 10
+            },
+            borderRadius: 5
+        }).setOrigin(0.5).setInteractive();
+
+        botonReiniciar.on('pointerdown', () => {
+            this.scene.restart(); // Reiniciar la escena
+            score = 0; // Restablecer la puntuación
+            playerLife = 3; // Restablecer la vida del jugador
+        });
     }
+}
+
+function maniobrarEnemigos() {
+    this.enemigos.children.iterate(function (enemigo) {
+        let maxSpeed = enemigo.body.customSpeed; // Usar la velocidad personalizada como máximo
+        let minSpeed = 50;
+        let acceleration = 10;
+        let angleChange = Phaser.Math.DegToRad(Phaser.Math.Between(-10, 10)); // Cambiar el ángulo ligeramente
+
+        // Obtener la velocidad actual
+        let currentSpeed = enemigo.body.velocity.length();
+
+        // Asegurar que la velocidad no supere el máximo ni sea menor al mínimo
+        let newSpeed = Phaser.Math.Clamp(currentSpeed + Phaser.Math.Between(-acceleration, acceleration), minSpeed, maxSpeed);
+
+        // Obtener la dirección actual
+        let currentDirection = enemigo.body.velocity.angle();
+
+        // Cambiar la dirección ligeramente
+        let newDirection = currentDirection + angleChange;
+
+        // Calcular la nueva velocidad en X e Y
+        let direccionX = Math.cos(newDirection) * newSpeed;
+        let direccionY = Math.sin(newDirection) * newSpeed;
+
+        // Aplicar la nueva velocidad
+        enemigo.setVelocity(direccionX, direccionY);
+
+        // Asegurar que el enemigo no se quede atascado en los bordes
+        if (enemigo.x < 50 && direccionX < 0 || enemigo.x > config.width - 50 && direccionX > 0) {
+            enemigo.setVelocityX(-direccionX);
+        }
+        if (enemigo.y < 50 && direccionY < 0 || enemigo.y > config.height - 50 && direccionY > 0) {
+            enemigo.setVelocityY(-direccionY);
+        }
+
+        // Actualizar la rotación del avión enemigo para que mire hacia la dirección de movimiento
+        enemigo.setRotation(newDirection + Math.PI / 2);
+    }, this);
 }
