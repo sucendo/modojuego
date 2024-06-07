@@ -1,4 +1,4 @@
-/ Configuración del juego
+// Configuración del juego
 const config = {
 	type: Phaser.AUTO,
 	width: 1845,
@@ -206,7 +206,7 @@ function update() {
 		score -= puntosPorDisparo;
 	}
 	
-	// Disparar balas que siguen a un avión enemigo (Tecla A)
+	// Disparar misiles que siguen a un avión enemigo (Tecla A)
 	if (Phaser.Input.Keyboard.JustDown(this.aKey) && balasSeguidorasActivas < 10) {
 		// Obtener la referencia al avión enemigo más cercano
 		let avionEnemigoMasCercano = this.enemigos.getFirstAlive();
