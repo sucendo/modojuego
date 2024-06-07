@@ -148,7 +148,7 @@ function update() {
             bala.setVisible(true);
             bala.body.setSize(20, 20); // Establecer un radio más pequeño para el cuerpo de colisión de la bala
             bala.body.velocity.y = -300;
-            bala.setScale(0.4); // Escalar la bala del jugador
+            bala.setScale(0.5); // Escalar la bala del jugador
         }
         score -= puntosPorDisparo;
     }
@@ -232,7 +232,7 @@ function dispararEnemigos() {
         let balaEnemiga = this.balasEnemigas.create(enemigo.x, enemigo.y, 'balaEnemiga');
         this.physics.velocityFromRotation(enemigo.rotation - Math.PI / 2, 300, balaEnemiga.body.velocity); // Disparar en la dirección del enemigo
         balaEnemiga.setAngle(enemigo.angle); // Rotar la bala para que apunte en la misma dirección que el enemigo
-        balaEnemiga.setScale(0.4); // Escalar la bala del enemigo
+        balaEnemiga.setScale(0.5); // Escalar la bala del enemigo
     }, this);
 }
 
