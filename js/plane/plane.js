@@ -27,15 +27,15 @@ const game = new Phaser.Game(config);
 
 let enemyCount = 0;
 let playerLife = 3;
-let balasSeguidorasActivas = 0;
+let misilesSeguidoresActivas = 0;
 
 function preload() {
 	// Cargar imágenes y recursos
 	this.load.image('avion', 'img/plane/avion-f22.svg');
-	this.load.image('bala', 'img/plane/bala.svg');
+	this.load.image('balas', 'img/plane/bala.svg');
 	this.load.image('misil', 'img/plane/cohete-blue.svg');
 	this.load.image('enemigo', 'img/plane/avion-su57.svg');
-	this.load.image('balaEnemiga', 'img/plane/cohete-red.svg');
+	this.load.image('balasEnemiga', 'img/plane/cohete-red.svg');
 	this.load.image('fondo', 'img/plane/fondo01.png');
 	this.load.image('nube1', 'img/plane/nube1.svg'); // Cargar imagen de nube1
 	this.load.image('nube2', 'img/plane/nube2.svg'); // Cargar imagen de nube2
@@ -66,9 +66,9 @@ function create() {
 	this.avion.body.setSize(40, 80); // Establecer un radio más pequeño para el cuerpo de colisión del avión del jugador
 	this.avion.setCollideWorldBounds(true);
 
-	// Crear grupo de balas
-	this.balas = this.physics.add.group({
-		defaultKey: 'bala',
+	// Crear grupo de bala
+	this.bala = this.physics.add.group({
+		defaultKey: 'balas',
 		maxSize: 10000
 	});
 	
@@ -113,7 +113,7 @@ function create() {
 		// Aquí puedes iniciar cualquier otra parte de tu juego
 	}, [], this);
 
-	// Crear grupo de balas enemigas
+	// Crear grupo de bala enemigas
 	this.misilesEnemigos = this.physics.add.group();
 
 	// Crear grupo de enemigos
@@ -123,7 +123,7 @@ function create() {
 	this.cursors = this.input.keyboard.createCursorKeys();
 	this.spaceBar = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 	
-	// Control de tecla para disparar una bala que siga a un avión enemigo (tecla A)
+	// Control de tecla para disparar una balas que siga a un avión enemigo (tecla A)
 	this.aKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
 	// Control de tecla para descender el avión (tecla D)
 	this.dKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
@@ -131,7 +131,7 @@ function create() {
 	this.fKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F);
 
 	// Colisiones
-	this.physics.add.overlap(this.balas, this.enemigos, destruirEnemigo, null, this);
+	this.physics.add.overlap(this.bala, this.enemigos, destruirEnemigo, null, this);
 	this.physics.add.overlap(this.misilesEnemigos, this.avion, impactarJugador, null, this);
 	this.physics.add.overlap(this.avion, this.enemigos, impactarJugador, null, this);
 	this.physics.add.overlap(this.misil, this.enemigos, destruirEnemigo, null, this);
@@ -194,47 +194,47 @@ function update() {
 		this.avion.setVelocityY(0);
 	}
 
-	// Disparar balas
+	// Disparar bala
 	if (Phaser.Input.Keyboard.JustDown(this.spaceBar)) {
-		let bala = this.balas.get(this.avion.x, this.avion.y);
-		if (bala) {
-			bala.setActive(true);
-			bala.setVisible(true);
-			bala.body.setSize(20, 20); // Establecer un radio más pequeño para el cuerpo de colisión de la bala
-			bala.body.velocity.y = -600;
-			bala.setScale(0.15); // Escalar la bala del jugador
+		let balas = this.bala.get(this.avion.x, this.avion.y);
+		if (balas) {
+			balas.setActive(true);
+			balas.setVisible(true);
+			balas.body.setSize(20, 20); // Establecer un radio más pequeño para el cuerpo de colisión de la balas
+			balas.body.velocity.y = -600;
+			balas.setScale(0.15); // Escalar la balas del jugador
 		}
 		score -= puntosPorDisparo;
 	}
 	
 	// Disparar misiles que siguen a un avión enemigo (Tecla A)
-	if (Phaser.Input.Keyboard.JustDown(this.aKey) && balasSeguidorasActivas < 10) {
+	if (Phaser.Input.Keyboard.JustDown(this.aKey) && misilesSeguidoresActivas < 10) {
 		// Obtener la referencia al avión enemigo más cercano
 		let avionEnemigoMasCercano = this.enemigos.getFirstAlive();
 
 		if (avionEnemigoMasCercano) {
-			// Crear una bala que siga al avión enemigo
+			// Crear una balas que siga al avión enemigo
 			let misiles = this.misil.get(this.avion.x, this.avion.y);
 
 			if (misiles) {
 				misiles.setActive(true);
 				misiles.setVisible(true);
-				misiles.body.setSize(20, 20); // Establecer un tamaño de colisión para la bala
-				misiles.setScale(0.5); // Escalar la bala
+				misiles.body.setSize(20, 20); // Establecer un tamaño de colisión para la balas
+				misiles.setScale(0.5); // Escalar la balas
 
 				// Inicializar la velocidad del misil
-				misiles.speed = 100; // Velocidad inicial del misil
+				misiles.speed = 50; // Velocidad inicial del misil
 
 				// Calcular el ángulo de rotación hacia el avión enemigo más cercano
 				let angle = Phaser.Math.Angle.BetweenPoints(misiles, avionEnemigoMasCercano);
 				misiles.angle = Phaser.Math.RadToDeg(angle) + 90; // Ajustar el ángulo en 90 grados
 
-				// Establecer la velocidad de la bala en la dirección del avión enemigo
+				// Establecer la velocidad de la balas en la dirección del avión enemigo
 				this.physics.velocityFromRotation(angle, misiles.speed, misiles.body.velocity);
 				misiles.target = avionEnemigoMasCercano;
 
-				// Incrementar el contador de balas seguidoras activas
-				balasSeguidorasActivas++;
+				// Incrementar el contador de bala seguidoras activas
+				misilesSeguidoresActivas++;
 			}
 		}
 	}
@@ -250,6 +250,27 @@ function update() {
 		}
 	}, this);
 	
+	/*
+	this.misil.children.iterate(function (misiles) {
+		if (misiles.active && misiles.target) {
+			// Incrementar la velocidad del misil
+			misiles.speed += 5; // Incremento de la velocidad
+			// Calcular el ángulo de rotación hacia el avión enemigo
+			let angleToTarget = Phaser.Math.Angle.BetweenPoints(misiles, misiles.target);
+
+			// Rotar gradualmente el misil hacia el avión enemigo
+			let deltaAngle = Phaser.Math.Angle.Wrap(angleToTarget - misiles.rotation);
+			let maxRotationSpeed = 0.1; // Velocidad máxima de rotación en radianes por fotograma
+			let rotationAmount = Phaser.Math.Clamp(deltaAngle, -maxRotationSpeed, maxRotationSpeed);
+			misiles.rotation += rotationAmount;
+
+			// Calcular la nueva velocidad en función de la rotación del misil
+			let speedX = Math.cos(misiles.rotation) * 300;
+			let speedY = Math.sin(misiles.rotation) * 300;
+			misiles.body.velocity.set(speedX, speedY);
+		}
+	}, this);*/
+	
 	// Control de descenso (tecla D)
 	if (Phaser.Input.Keyboard.JustDown(this.dKey)) {
 		// Reducir gradualmente la escala del avión a 0.6
@@ -260,8 +281,8 @@ function update() {
 			duration: 500, // Duración de la animación en milisegundos
 			ease: 'Linear', // Tipo de interpolación
 			onComplete: function() {
-				// Desactivar las colisiones entre balas enemigas y aviones enemigos con el avión del jugador
-				this.physics.world.removeCollider(this.avionBalaEnemigaCollider);
+				// Desactivar las colisiones entre bala enemigas y aviones enemigos con el avión del jugador
+				this.physics.world.removeCollider(this.avionbalasEnemigaCollider);
 				this.physics.world.removeCollider(this.avionEnemigoCollider);
 			},
 			callbackScope: this // Ámbito de la función onComplete
@@ -278,8 +299,8 @@ function update() {
 			duration: 500, // Duración de la animación en milisegundos
 			ease: 'Linear', // Tipo de interpolación
 			onComplete: function() {
-				// Reactivar las colisiones entre balas enemigas y aviones enemigos con el avión del jugador
-				this.avionBalaEnemigaCollider = this.physics.add.collider(this.avion, this.misilesEnemigos, impactarJugador, null, this);
+				// Reactivar las colisiones entre bala enemigas y aviones enemigos con el avión del jugador
+				this.avionbalasEnemigaCollider = this.physics.add.collider(this.avion, this.misilesEnemigos, impactarJugador, null, this);
 				this.avionEnemigoCollider = this.physics.add.collider(this.avion, this.enemigos, impactarJugador, null, this);
 			},
 			callbackScope: this // Ámbito de la función onComplete
@@ -316,6 +337,9 @@ function crearEnemigo() {
 		let x, y, direccionX, direccionY, velocidad;
 		const borde = Phaser.Math.Between(0, 3); // 0: arriba, 1: derecha, 2: abajo, 3: izquierda
 
+		// Definir colores para el tint
+		const tintColors = [0xffffff, 0xff0000, 0x00ff00, 0x0000ff]; // Colores blanco, rojo, verde y azul
+
 		switch (borde) {
 			case 0: // Aparecer desde arriba
 				x = Phaser.Math.Between(0, config.width);
@@ -342,6 +366,10 @@ function crearEnemigo() {
 				direccionY = Phaser.Math.Between(-50, 50);
 				break;
 		}
+		
+		// Seleccionar un color de tint aleatorio
+		//let randomColor = Phaser.Math.RND.pick(tintColors);
+		//enemigo.setTint(randomColor); // Aplicar el tint al avión enemigo
 
 		// Crear enemigo en la posición adecuada
 		let enemigo = this.enemigos.create(x, y, 'enemigo');
@@ -362,22 +390,22 @@ function crearEnemigo() {
 
 function dispararEnemigos() {
 	this.enemigos.children.iterate(function (enemigo) {
-		let balaEnemiga = this.misilesEnemigos.create(enemigo.x, enemigo.y, 'balaEnemiga');
-		this.physics.velocityFromRotation(enemigo.rotation - Math.PI / 2, 300, balaEnemiga.body.velocity); // Disparar en la dirección del enemigo
-		balaEnemiga.setAngle(enemigo.angle); // Rotar la bala para que apunte en la misma dirección que el enemigo
-		balaEnemiga.setScale(0.5); // Escalar la bala del enemigo
+		let balasEnemiga = this.misilesEnemigos.create(enemigo.x, enemigo.y, 'balasEnemiga');
+		this.physics.velocityFromRotation(enemigo.rotation - Math.PI / 2, 300, balasEnemiga.body.velocity); // Disparar en la dirección del enemigo
+		balasEnemiga.setAngle(enemigo.angle); // Rotar la balas para que apunte en la misma dirección que el enemigo
+		balasEnemiga.setScale(0.5); // Escalar la balas del enemigo
 	}, this);
 }
 
-function destruirEnemigo(bala, enemigo) {
-	bala.destroy();
+function destruirEnemigo(balas, enemigo) {
+	balas.destroy();
 	enemigo.destroy();
 	enemyCount--; // Disminuir el conteo de enemigos
 	score += puntosPorAvionDerribado;
 }
 
-function impactarJugador(avion, balaEnemiga) {
-	balaEnemiga.destroy();
+function impactarJugador(avion, balasEnemiga) {
+	balasEnemiga.destroy();
 	playerLife--;
 	avion.setTint(0xff0000); // Cambiar el color del avión a rojo
 	setTimeout(() => {
@@ -475,5 +503,5 @@ function maniobrarEnemigos() {
 
 function destruirmisiles(misiles) {
 	misiles.destroy();
-	balasSeguidorasActivas--;
+	misilesSeguidoresActivas--;
 }
