@@ -1,12 +1,11 @@
 // Configuración del juego
-const config = {
+var config = {
 	type: Phaser.AUTO,
-	width: 1845,
-	height: 900,
+	width: window.innerWidth,
+	height: window.innerHeight,
 	physics: {
 		default: 'arcade',
 		arcade: {
-			gravity: { y: 0 },
 			debug: false
 		}
 	},
@@ -17,17 +16,21 @@ const config = {
 	}
 };
 
+ var game = new Phaser.Game(config);
+
 // Declarar la puntuación inicial y otros parámetros relacionados
 let score = 0;
 let puntosPorAvionDerribado = 1000;
 let puntosPorDisparo = 50;
-let puntosPorImpacto = 200;
+let puntosPorMisil = 200;
+let puntosPorImpacto = 300;
 
-const game = new Phaser.Game(config);
+
 
 let enemyCount = 0;
 let playerLife = 3;
 let misilesSeguidoresActivas = 0;
+let enAlturaBaja = false;
 
 function preload() {
 	// Cargar imágenes y recursos
@@ -155,7 +158,7 @@ function create() {
 	
 	// Temporizador para maniobras de enemigos
 	this.time.addEvent({
-		delay: Phaser.Math.Between(500, 10000), // Retraso aleatorio entre 0.5 y 10 segundos
+		delay: Phaser.Math.Between(0, 10000), // Retraso aleatorio entre 0 y 10 segundos
 		callback: maniobrarEnemigos,
 		callbackScope: this,
 		loop: true
@@ -196,83 +199,94 @@ function update() {
 
 	// Disparar bala
 	if (Phaser.Input.Keyboard.JustDown(this.spaceBar)) {
-		let balas = this.bala.get(this.avion.x, this.avion.y);
-		if (balas) {
-			balas.setActive(true);
-			balas.setVisible(true);
-			balas.body.setSize(20, 20); // Establecer un radio más pequeño para el cuerpo de colisión de la balas
-			balas.body.velocity.y = -600;
-			balas.setScale(0.15); // Escalar la balas del jugador
+		if (!enAlturaBaja) {
+			let balas = this.bala.get(this.avion.x, this.avion.y);
+			if (balas) {
+				balas.setActive(true);
+				balas.setVisible(true);
+				balas.body.setSize(20, 20); // Establecer un radio más pequeño para el cuerpo de colisión de la balas
+				balas.body.velocity.y = -600;
+				balas.setScale(0.15); // Escalar la balas del jugador
+			}
+			score -= puntosPorDisparo;
 		}
-		score -= puntosPorDisparo;
 	}
 	
 	// Disparar misiles que siguen a un avión enemigo (Tecla A)
-	if (Phaser.Input.Keyboard.JustDown(this.aKey) && misilesSeguidoresActivas < 10) {
-		// Obtener la referencia al avión enemigo más cercano
-		let avionEnemigoMasCercano = this.enemigos.getFirstAlive();
+	if (Phaser.Input.Keyboard.JustDown(this.aKey) && misilesSeguidoresActivas < 10) {		
+		if (!enAlturaBaja){	
+			// Obtener la referencia al avión enemigo más cercano
+			let avionEnemigoMasCercano = this.enemigos.getFirstAlive();
 
-		if (avionEnemigoMasCercano) {
-			// Crear una balas que siga al avión enemigo
-			let misiles = this.misil.get(this.avion.x, this.avion.y);
+			if (avionEnemigoMasCercano) {
+				// Crear una balas que siga al avión enemigo
+				let misiles = this.misil.get(this.avion.x, this.avion.y);
 
-			if (misiles) {
-				misiles.setActive(true);
-				misiles.setVisible(true);
-				misiles.body.setSize(20, 20); // Establecer un tamaño de colisión para la balas
-				misiles.setScale(0.5); // Escalar la balas
+				if (misiles) {
+					misiles.setActive(true);
+					misiles.setVisible(true);
+					misiles.body.setSize(20, 20); // Establecer un tamaño de colisión para la balas
+					misiles.setScale(0.5); // Escalar la balas
 
-				// Inicializar la velocidad del misil
-				misiles.speed = 50; // Velocidad inicial del misil
+					// Inicializar la velocidad del misil
+					misiles.speed = 50; // Velocidad inicial del misil
 
-				// Calcular el ángulo de rotación hacia el avión enemigo más cercano
-				let angle = Phaser.Math.Angle.BetweenPoints(misiles, avionEnemigoMasCercano);
-				misiles.angle = Phaser.Math.RadToDeg(angle) + 90; // Ajustar el ángulo en 90 grados
+					// Calcular el ángulo de rotación hacia el avión enemigo más cercano
+					let angle = Phaser.Math.Angle.BetweenPoints(misiles, avionEnemigoMasCercano);
+					misiles.angle = Phaser.Math.RadToDeg(angle) + 90; // Ajustar el ángulo en 90 grados
 
-				// Establecer la velocidad de la balas en la dirección del avión enemigo
-				this.physics.velocityFromRotation(angle, misiles.speed, misiles.body.velocity);
-				misiles.target = avionEnemigoMasCercano;
+					// Establecer la velocidad de la balas en la dirección del avión enemigo
+					this.physics.velocityFromRotation(angle, misiles.speed, misiles.body.velocity);
+					misiles.target = avionEnemigoMasCercano;
 
-				// Incrementar el contador de bala seguidoras activas
-				misilesSeguidoresActivas++;
+					// Incrementar el contador de bala seguidoras activas
+					misilesSeguidoresActivas++;
+				}
 			}
+			score -= puntosPorMisil;
 		}
 	}
 
-	this.misil.children.iterate(function (misiles) {
-		if (misiles.active && misiles.target) {
-			// Incrementar la velocidad del misil
-			misiles.speed += 5; // Incremento de la velocidad
+	this.misil.children.iterate((misiles) => {
+		if (misiles.active) {
+			// Verificar si el objetivo aún es válido
+			if (!misiles.target || !misiles.target.active) {
+				// Asignar un nuevo objetivo
+				let nuevoObjetivo = this.enemigos.getChildren().find(enemigo => enemigo.active);
+				if (nuevoObjetivo) {
+					misiles.target = nuevoObjetivo;
+				} else {
+					// Si no hay nuevos objetivos, destruir el misil
+					destruirmisiles(misiles);
+					return; // Salir de la iteración
+				}
+			}
 
-			let angle = Phaser.Math.Angle.BetweenPoints(misiles, misiles.target);
-			this.physics.velocityFromRotation(angle, misiles.speed, misiles.body.velocity);
-			misiles.angle = Phaser.Math.RadToDeg(angle) + 90;
+			// Aumentar la velocidad del misil
+			misiles.speed += 5;
+
+			// Calcular el ángulo hacia el objetivo actual
+			let targetAngle = Phaser.Math.Angle.BetweenPoints(misiles, misiles.target);
+
+			// Interpolación lineal del ángulo del misil hacia el ángulo objetivo
+			let currentAngle = Phaser.Math.DegToRad(misiles.angle - 90);
+			let newAngle = Phaser.Math.Angle.RotateTo(currentAngle, targetAngle, 0.05); // 0.05 es el factor de suavizado
+
+			// Calcular la nueva velocidad y dirección basada en el ángulo interpolado
+			this.physics.velocityFromRotation(newAngle, misiles.speed, misiles.body.velocity);
+			misiles.angle = Phaser.Math.RadToDeg(newAngle) + 90;
+
+			// Verificar la colisión con el objetivo
+			if (Phaser.Math.Distance.Between(misiles.x, misiles.y, misiles.target.x, misiles.target.y) < 10) {
+				destruirEnemigo(null, misiles.target); // Destruir enemigo cuando el misil lo alcanza
+				destruirmisiles(misiles); // Destruir el misil
+			}
 		}
 	}, this);
 	
-	/*
-	this.misil.children.iterate(function (misiles) {
-		if (misiles.active && misiles.target) {
-			// Incrementar la velocidad del misil
-			misiles.speed += 5; // Incremento de la velocidad
-			// Calcular el ángulo de rotación hacia el avión enemigo
-			let angleToTarget = Phaser.Math.Angle.BetweenPoints(misiles, misiles.target);
-
-			// Rotar gradualmente el misil hacia el avión enemigo
-			let deltaAngle = Phaser.Math.Angle.Wrap(angleToTarget - misiles.rotation);
-			let maxRotationSpeed = 0.1; // Velocidad máxima de rotación en radianes por fotograma
-			let rotationAmount = Phaser.Math.Clamp(deltaAngle, -maxRotationSpeed, maxRotationSpeed);
-			misiles.rotation += rotationAmount;
-
-			// Calcular la nueva velocidad en función de la rotación del misil
-			let speedX = Math.cos(misiles.rotation) * 300;
-			let speedY = Math.sin(misiles.rotation) * 300;
-			misiles.body.velocity.set(speedX, speedY);
-		}
-	}, this);*/
-	
 	// Control de descenso (tecla D)
 	if (Phaser.Input.Keyboard.JustDown(this.dKey)) {
+		enAlturaBaja = true;
 		// Reducir gradualmente la escala del avión a 0.6
 		this.tweens.add({
 			targets: this.avion,
@@ -291,6 +305,7 @@ function update() {
 
 	// Control de ascenso (tecla F)
 	if (Phaser.Input.Keyboard.JustDown(this.fKey)) {
+		enAlturaBaja = false;
 		// Aumentar gradualmente la escala del avión a 1 (escala original)
 		this.tweens.add({
 			targets: this.avion,
@@ -330,6 +345,7 @@ function update() {
 		// Actualizar la rotación del avión enemigo para que mire hacia la dirección de movimiento
 		enemigo.setRotation(Phaser.Math.Angle.Between(0, 0, enemigo.body.velocity.x, enemigo.body.velocity.y) + Math.PI / 2);
 	}, this);
+	
 }
 
 function crearEnemigo() {
@@ -405,60 +421,62 @@ function destruirEnemigo(balas, enemigo) {
 }
 
 function impactarJugador(avion, balasEnemiga) {
-	balasEnemiga.destroy();
-	playerLife--;
-	avion.setTint(0xff0000); // Cambiar el color del avión a rojo
-	setTimeout(() => {
-		avion.clearTint(); // Restaurar el color original del avión después de un momento
-	}, 150);
-	score -= puntosPorImpacto;
-	if (playerLife <= 0) {
-		this.physics.pause();
-		avion.setActive(false); // Desactivar el sprite del avión
-		avion.setVisible(false); // Ocultar el sprite del avión
-		avion.body.stop(); // Detener cualquier movimiento del avión
+	if (!enAlturaBaja) {
+		balasEnemiga.destroy();
+		playerLife--;
+		avion.setTint(0xff0000); // Cambiar el color del avión a rojo
+		setTimeout(() => {
+			avion.clearTint(); // Restaurar el color original del avión después de un momento
+		}, 150);
+		score -= puntosPorImpacto;
+		if (playerLife <= 0) {
+			this.physics.pause();
+			avion.setActive(false); // Desactivar el sprite del avión
+			avion.setVisible(false); // Ocultar el sprite del avión
+			avion.body.stop(); // Detener cualquier movimiento del avión
 
-		// Crear texto "GAME OVER" con contorno y sombreado
-		this.add.text(config.width / 2, config.height / 2, 'GAME OVER', {
-			fontFamily: 'Impact',
-			fontSize: 64,
-			color: '#ff0000',
-			stroke: '#000000', // Contorno del texto
-			strokeThickness: 6, // Grosor del contorno
-			shadow: {
-				offsetX: 3,
-				offsetY: 3,
-				color: '#000000',
-				blur: 5,
-				stroke: true,
-				fill: true
-			}
-		}).setOrigin(0.5);
+			// Crear texto "GAME OVER" con contorno y sombreado
+			this.add.text(config.width / 2, config.height / 2, 'GAME OVER', {
+				fontFamily: 'Impact',
+				fontSize: 64,
+				color: '#ff0000',
+				stroke: '#000000', // Contorno del texto
+				strokeThickness: 6, // Grosor del contorno
+				shadow: {
+					offsetX: 3,
+					offsetY: 3,
+					color: '#000000',
+					blur: 5,
+					stroke: true,
+					fill: true
+				}
+			}).setOrigin(0.5);
 
-		this.add.text(config.width / 2, config.height / 2 + 50, 'Puntuación: ' + score, {
-			fontFamily: 'Impact',
-			fontSize: 32,
-			color: '#ffffff'
-		}).setOrigin(0.5);
+			this.add.text(config.width / 2, config.height / 2 + 50, 'Puntuación: ' + score, {
+				fontFamily: 'Impact',
+				fontSize: 32,
+				color: '#ffffff'
+			}).setOrigin(0.5);
 
-		// Crear botón de reinicio
-		let botonReiniciar = this.add.text(config.width / 2, config.height / 2 + 100, 'Volver a jugar', {
-			fontFamily: 'Impact',
-			fontSize: 32,
-			color: '#ffffff',
-			backgroundColor: '#000000',
-			padding: {
-				x: 20,
-				y: 10
-			},
-			borderRadius: 5
-		}).setOrigin(0.5).setInteractive();
+			// Crear botón de reinicio
+			let botonReiniciar = this.add.text(config.width / 2, config.height / 2 + 100, 'Volver a jugar', {
+				fontFamily: 'Impact',
+				fontSize: 32,
+				color: '#ffffff',
+				backgroundColor: '#000000',
+				padding: {
+					x: 20,
+					y: 10
+				},
+				borderRadius: 5
+			}).setOrigin(0.5).setInteractive();
 
-		botonReiniciar.on('pointerdown', () => {
-			this.scene.restart(); // Reiniciar la escena
-			score = 0; // Restablecer la puntuación
-			playerLife = 3; // Restablecer la vida del jugador
-		});
+			botonReiniciar.on('pointerdown', () => {
+				this.scene.restart(); // Reiniciar la escena
+				score = 0; // Restablecer la puntuación
+				playerLife = 3; // Restablecer la vida del jugador
+			});
+		}
 	}
 }
 
@@ -502,6 +520,19 @@ function maniobrarEnemigos() {
 }
 
 function destruirmisiles(misiles) {
-	misiles.destroy();
-	misilesSeguidoresActivas--;
+	if (misiles) {
+		misilesSeguidoresActivas--;
+		misiles.destroy();
+	}
+}
+
+ window.addEventListener('resize', resizeGame);
+
+function resizeGame() {
+	var canvas = game.canvas;
+	var width = window.innerWidth;
+	var height = window.innerHeight;
+	canvas.style.width = width + 'px';
+	canvas.style.height = height + 'px';
+	game.scale.resize(width, height);
 }
