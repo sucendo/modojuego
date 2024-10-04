@@ -1,12 +1,98 @@
+//----------------------------------------------------------------------------------------------------------------
+  // Initializar Mapbox
+  //----------------------------------------------------------------------------------------------------------------
+  
+  mapboxgl.accessToken = 'pk.eyJ1Ijoic3VjZW5kbyIsImEiOiJjbTF0YjQ0bW0wMGo3MmtzYmhxM3Z3cXRtIn0.8wBIoqAHKxikEB3ilStfdQ';
+  const map = new mapboxgl.Map({
+	container: 'map',
+	zoom: 14,
+	center: [-3.4604086485761267, 40.485002191480696],
+	pitch: 0,
+	bearing: 43.5,
+	style: 'mapbox://styles/mapbox/satellite-v9',
+	interactive: false
+  });
+
+  // Add layers once the style has loaded
+  map.on('style.load', () => {
+	/*map.addSource('mapbox-dem', {
+	  'type': 'raster-dem',
+	  'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
+	  'tileSize': 512,
+	  'maxzoom': 13
+	});
+	map.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': 1.0 });*/
+
+	/*map.addSource('trace', {
+	  type: 'geojson',
+	  data: {
+		'type': 'Feature',
+		'properties': {},
+		'geometry': {
+		  'type': 'LineString',
+		  'coordinates': routes.target // Use the target route
+		}
+	  }
+	});*/
+	
+	/*/map.addLayer({
+	  type: 'line',
+	  source: 'trace',
+	  id: 'line',
+	  paint: {
+		'line-color': 'black',
+		'line-width': 5
+	  }
+	});*/
+  });
+
+  // Set up camera animation on load
+  map.on('load', () => {
+	const animationDuration = 300000;
+	const cameraAltitude = 5000;
+	const routeDistance = turf.lineDistance(turf.lineString(routes.target));
+	const cameraRouteDistance = turf.lineDistance(turf.lineString(routes.camera));
+
+	let start;
+
+	function frame(time) {
+	  if (!start) start = time;
+	  const phase = (time - start) / animationDuration;
+	  if (phase > 1) {
+		setTimeout(() => { start = 0.0; }, 1500);
+	  }
+
+	  const alongRoute = turf.along(turf.lineString(routes.target), routeDistance * phase).geometry.coordinates;
+	  const alongCamera = turf.along(turf.lineString(routes.camera), cameraRouteDistance * phase).geometry.coordinates;
+
+	  const camera = map.getFreeCameraOptions();
+	  camera.position = mapboxgl.MercatorCoordinate.fromLngLat({ lng: alongCamera[0], lat: alongCamera[1] }, cameraAltitude);
+	  camera.lookAtPoint({ lng: alongRoute[0], lat: alongRoute[1] });
+	  map.setFreeCameraOptions(camera);
+
+	  window.requestAnimationFrame(frame);
+	}
+
+	window.requestAnimationFrame(frame);
+  });
+
+
+//----------------------------------------------------------------------------------------------------------------
+ // Initializar Phaser
+//----------------------------------------------------------------------------------------------------------------
+
+
 // Configuración del juego
 var config = {
 	type: Phaser.AUTO,
 	width: window.innerWidth,
 	height: window.innerHeight,
+	transparent: true,  // Permite que el canvas sea transparente
 	physics: {
 		default: 'arcade',
 		arcade: {
-			debug: false
+			debug: false,
+			wrap: true
 		}
 	},
 	scene: {
@@ -17,7 +103,7 @@ var config = {
 };
 
  var game = new Phaser.Game(config);
-
+ 
 // Declarar la puntuación inicial y otros parámetros relacionados
 let score = 0;
 let puntosPorAvionDerribado = 1000;
@@ -33,7 +119,7 @@ let enAlturaBaja = false;
 // Declarar una variable para contar el número de aviones enemigos destruidos
 let avionesDestruidos = 0;
 // Declarar una variable para controlar si se debe detener la generación de enemigos
-let detenerGeneracion = false;
+let detenerGeneracion = true;
 
 // Array con mensajes de ánimo
 const mensajesAnimo = [
@@ -59,16 +145,19 @@ function preload() {
 	this.load.image('misil', 'img/plane/cohete-blue.svg');
 	this.load.image('enemigo', 'img/plane/avion-su57.svg');
 	this.load.image('balasEnemiga', 'img/plane/cohete-red.svg');
-	this.load.image('fondo', 'img/plane/fondo01.png');
+	//this.load.image('fondo', 'img/plane/fondo01.png'); // fondo (img)
 	this.load.image('nube1', 'img/plane/nube1.svg'); // Cargar imagen de nube1
 	this.load.image('nube2', 'img/plane/nube2.svg'); // Cargar imagen de nube2
 	this.load.image('nube3', 'img/plane/nube3.svg'); // Cargar imagen de nube3
 }
 
 function create() {
-	// Crear el fondo y hacer que se mueva
-	this.fondo = this.add.tileSprite(0, 0, config.width, config.height, 'fondo');
-	this.fondo.setOrigin(0, 0);
+	// Crear el fondo (img) y hacer que se mueva
+	//this.fondo = this.add.tileSprite(0, 0, config.width, config.height, 'fondo');
+	//this.fondo.setOrigin(0, 0);
+	
+	// Cargar el fondo inicial de Mapbox
+	//cargarFondoMapaMapbox.call(this, lon, lat, zoom);
 
 	// Crear nubes para el efecto 3D
 	this.nubes = this.physics.add.group();
@@ -124,8 +213,8 @@ function create() {
 		align: 'center'
 	}).setOrigin(0.5);
 
-	// Desvanecer el título después de 2 segundos
-	this.time.delayedCall(2000, () => {
+	// Desvanecer el título después de 5 segundos
+	this.time.delayedCall(5000, () => {
 		titulo.destroy(); // Eliminar el texto del título
 		subtitulo.destroy(); // Eliminar el texto del subtitulo
 		// Aquí puedes iniciar cualquier otra parte de tu juego
@@ -133,10 +222,33 @@ function create() {
 
 	// Creación de Objetos del juego y sus automatizaciones ----------
 	
-	// Crear el avión
-	this.avion = this.physics.add.sprite(900, 800, 'avion');
+	// Crear el avión en el centro horizontal y parte inferior de la pantalla, a escala pequeña
+	const centroX = this.sys.game.config.width / 2;
+	const posicionInicialY = this.sys.game.config.height -50; // Debajo de la pantalla
+	const posicionFinalY = this.sys.game.config.height - 300;  // Donde queremos que termine
+
+	this.avion = this.physics.add.sprite(centroX, posicionInicialY, 'avion');
+	this.avion.setScale(0.1);  // Escala inicial pequeña
 	this.avion.body.setSize(40, 80); // Establecer un radio más pequeño para el cuerpo de colisión del avión del jugador
 	this.avion.setCollideWorldBounds(true);
+	
+	// Esperar 3 segundos antes de comenzar el ascenso
+	this.time.delayedCall(3000, () => {	
+		// Animar el ascenso y el aumento de tamaño durante 15 segundos
+		this.tweens.add({
+			targets: this.avion,
+			y: posicionFinalY,  // Posición final en Y
+			scaleX: 1,  // Escala final en X
+			scaleY: 1,  // Escala final en Y
+			duration: 7000,  // 7 segundos de duración
+			ease: 'Power1',  // Interpolación suave
+			onComplete: () => {
+				// Permitir la generación de enemigos una vez finalizado el ascenso
+				detenerGeneracion = false;
+				iniciarGeneracionEnemigos.call(this);  // Comenzar a generar enemigos
+			}
+		});
+	}, [], this);  // Este delay hace que la animación comience después de 2 segundos.
 
 	// Crear grupo de bala
 	this.bala = this.physics.add.group({
@@ -152,8 +264,7 @@ function create() {
 	
 	// Control de teclas
 	this.cursors = this.input.keyboard.createCursorKeys();
-	this.spaceBar = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
-	
+	this.spaceBar = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);	
 	// Control de tecla para disparar una balas que siga a un avión enemigo (tecla A)
 	this.aKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
 	// Control de tecla para descender el avión (tecla D)
@@ -200,8 +311,8 @@ function create() {
 }
 
 function update() {
-	// Mover el fondo para crear sensación de movimiento
-	this.fondo.tilePositionY -= 3;
+	// Mover el fondo (img) para crear sensación de movimiento
+	//this.fondo.tilePositionY -= 3;
 
 	// Mover nubes para crear efecto 3D
 	this.nubes.children.iterate(function (nube) {
@@ -213,20 +324,19 @@ function update() {
 		}
 	});
 
-	// Control de movimiento del avión
-	const velocidadJugador = 300; // Aumentar la velocidad del avión
+	// Actualización de movimiento del avión, pero solo después del ascenso
 	if (this.cursors.left.isDown) {
-		this.avion.setVelocityX(-velocidadJugador);
+		this.avion.setVelocityX(-300);
 	} else if (this.cursors.right.isDown) {
-		this.avion.setVelocityX(velocidadJugador);
+		this.avion.setVelocityX(300);
 	} else {
 		this.avion.setVelocityX(0);
 	}
 
 	if (this.cursors.up.isDown) {
-		this.avion.setVelocityY(-velocidadJugador);
+		this.avion.setVelocityY(-300);
 	} else if (this.cursors.down.isDown) {
-		this.avion.setVelocityY(velocidadJugador);
+		this.avion.setVelocityY(300);
 	} else {
 		this.avion.setVelocityY(0);
 	}
@@ -239,7 +349,7 @@ function update() {
 				balas.setActive(true);
 				balas.setVisible(true);
 				balas.body.setSize(20, 20); // Establecer un radio más pequeño para el cuerpo de colisión de la balas
-				balas.body.velocity.y = -600;
+				balas.body.velocity.y = -700;
 				balas.setScale(0.15); // Escalar la balas del jugador
 			}
 			score -= puntosPorDisparo;
@@ -389,6 +499,17 @@ function update() {
 	
 }
 
+// Función para iniciar la generación de enemigos después del ascenso
+function iniciarGeneracionEnemigos() {
+    // Temporizador para generar enemigos
+    this.time.addEvent({
+        delay: Phaser.Math.Between(1000, 5000),  // Retraso aleatorio entre 1 y 5 segundos
+        callback: crearEnemigo,
+        callbackScope: this,
+        loop: true
+    });
+}
+
 function crearEnemigo() {
 	if (!detenerGeneracion) {
 		if (this.enemigos.getChildren().length < 6) {
@@ -460,59 +581,98 @@ function dispararEnemigos() {
 	}, this);
 }
 
-function maniobrarEnemigos() {
-	this.enemigos.children.iterate(function (enemigo) {
-		if (!enemigo || !enemigo.active) return; // Verificar si el enemigo existe y está activo
+//maniobraEnemigo
+if (typeof Phaser !== 'undefined' && typeof Phaser.Math.lerp === 'function') {
+	function maniobrarEnemigos() {
+		this.enemigos.children.iterate(function (enemigo) {
+			if (!enemigo || !enemigo.active) return;
 
-		let maxSpeed = enemigo.body.customSpeed; // Usar la velocidad personalizada como máximo
-		let minSpeed = 50;
-		let acceleration = 10;
-		let angleChange = Phaser.Math.DegToRad(Phaser.Math.Between(-10, 10)); // Cambiar el ángulo ligeramente
+			// Definir el tipo de maniobra basado en un valor aleatorio
+			let tipoManiobra = Phaser.Math.Between(1, 4); // Tipo 1, 2 o 4
 
-		// Obtener la velocidad actual
-		let currentSpeed = enemigo.body.velocity ? enemigo.body.velocity.length() : 0; // Verificar si existe la propiedad velocity
+			// Ajustes diferentes según el tipo de maniobra
+			let maxSpeed, acceleration, angleChange, easing;
+			switch (tipoManiobra) {
+				case 1: // Maniobras suaves y lentas
+					maxSpeed = enemigo.body.customSpeed * 0.8; // Velocidad más baja
+					acceleration = 3; // Aceleración suave
+					angleChange = Phaser.Math.DegToRad(Phaser.Math.Between(-2, 2)); // Cambio de ángulo más suave
+					easing = 'Sine.easeInOut'; // Efecto de suavizado
+					break;
+				case 2: // Maniobras normales
+					maxSpeed = enemigo.body.customSpeed;
+					acceleration = 5; // Aceleración media
+					angleChange = Phaser.Math.DegToRad(Phaser.Math.Between(-5, 5)); // Cambio de ángulo estándar
+					easing = 'Power1'; // Efecto estándar
+					break;
+				case 3: // Maniobras rápidas y cerradas
+					maxSpeed = enemigo.body.customSpeed * 1.2; // Velocidad más alta
+					acceleration = 8; // Aceleración más alta
+					angleChange = Phaser.Math.DegToRad(Phaser.Math.Between(-10, 10)); // Cambio de ángulo más brusco
+					easing = 'Expo.easeOut'; // Movimiento más brusco
+					break;
+				case 4: // Persecución al jugador
+					maxSpeed = enemigo.body.customSpeed * 1.5; // Velocidad más alta
+					acceleration = 10; // Aceleración alta
+					angleChange = Phaser.Math.DegToRad(Phaser.Math.Between(-15, 15)); // Cambio de ángulo más brusco
+					easing = 'Expo.easeOut'; // Movimiento más brusco
 
-		// Asegurar que la velocidad no supere el máximo ni sea menor al mínimo
-		let newSpeed = Phaser.Math.Clamp(currentSpeed + Phaser.Math.Between(-acceleration, acceleration), minSpeed, maxSpeed);
-
-		// Obtener la dirección actual
-		let currentDirection = enemigo.body.velocity ? enemigo.body.velocity.angle() : 0; // Verificar si existe la propiedad velocity
-
-		// Cambiar la dirección ligeramente
-		let newDirection = currentDirection + angleChange;
-
-		// Calcular la nueva velocidad en X e Y
-		let newDireccionX = Math.cos(newDirection) * newSpeed;
-		let newDireccionY = Math.sin(newDirection) * newSpeed;
-
-		// Aplicar la nueva velocidad gradualmente usando Tween
-		this.tweens.add({
-			targets: enemigo.body.velocity,
-			x: newDireccionX,
-			y: newDireccionY,
-			ease: 'Power1',
-			duration: 1000, // Cambio gradual en un segundo
-			onUpdate: () => {
-				if (enemigo && enemigo.active) { // Verificar nuevamente si el enemigo sigue activo
-					// Actualizar la velocidad del enemigo
-					enemigo.setVelocity(enemigo.body.velocity.x, enemigo.body.velocity.y);
-				}
+					// Calcular la dirección hacia el jugador
+					let targetAngle = Phaser.Math.Angle.BetweenPoints(enemigo, this.avion);
+					// Interpolar el ángulo suavemente
+					let currentAngle = Phaser.Math.DegToRad(enemigo.angle - 90);
+					let newAngle = Phaser.Math.Angle.RotateTo(currentAngle, targetAngle, 0.05);
+					break;
 			}
-		});
 
-		// Asegurar que el enemigo no se quede atascado en los bordes
-		if (enemigo && enemigo.active && enemigo.x < 50 && newDireccionX < 0 || enemigo.x > config.width - 50 && newDireccionX > 0) {
-			enemigo.setVelocityX(-newDireccionX);
-		}
-		if (enemigo && enemigo.active && enemigo.y < 50 && newDireccionY < 0 || enemigo.y > config.height - 50 && newDireccionY > 0) {
-			enemigo.setVelocityY(-newDireccionY);
-		}
+			// Obtener la velocidad actual
+			let currentSpeed = enemigo.body.velocity.length();
+			let newSpeed = Phaser.Math.Clamp(currentSpeed + Phaser.Math.Between(-acceleration, acceleration), 50, maxSpeed);
 
-		// Actualizar la rotación del avión enemigo para que mire hacia la dirección de movimiento
-		enemigo.setRotation(newDirection + Math.PI / 2);
-	}, this);
+			// Obtener la dirección actual
+			let currentDirection = enemigo.body.velocity.angle();
+
+			// Cambiar la dirección suavemente
+			let newDirection = Phaser.Math.Angle.RotateTo(currentDirection, currentDirection + angleChange, 0.02);
+
+			// Calcular la nueva velocidad en X e Y
+			let newVelocityX = Math.cos(newDirection) * newSpeed;
+			let newVelocityY = Math.sin(newDirection) * newSpeed;
+
+			// Aplicar la nueva velocidad gradualmente con el easing adecuado
+			this.tweens.add({
+				targets: enemigo.body.velocity,
+				x: newVelocityX,
+				y: newVelocityY,
+				ease: easing,
+				duration: 1000, // Duración de la maniobra
+				onUpdate: () => {
+					if (enemigo && enemigo.active) {
+						enemigo.setVelocity(enemigo.body.velocity.x, enemigo.body.velocity.y);
+					}
+				}
+			});
+
+				
+			// Detectar si el enemigo está cerca de un borde y corregir la dirección suavemente
+			const margen = 50; // Ajusta este valor según tus necesidades
+			const suavizado = 0.2; // Factor de suavizado para la inversión de dirección
+
+			if (enemigo.x < margen) {
+				enemigo.body.velocity.x = Phaser.Math.lerp(enemigo.body.velocity.x, Math.abs(enemigo.body.velocity.x), suavizado);
+			} else if (enemigo.x > config.width - margen) {
+				enemigo.body.velocity.x = Phaser.Math.lerp(enemigo.body.velocity.x, -Math.abs(enemigo.body.velocity.x), suavizado);
+			}
+			if (enemigo.y < margen) {
+				enemigo.body.velocity.y = Phaser.Math.lerp(enemigo.body.velocity.y, Math.abs(enemigo.body.velocity.y), suavizado);
+			} else if (enemigo.y > config.height - margen) {
+				enemigo.body.velocity.y = Phaser.Math.lerp(enemigo.body.velocity.y, -Math.abs(enemigo.body.velocity.y), suavizado);
+			}
+		}, this);
+	}
+} else {
+    console.error("Phaser o la función lerp no están cargadas correctamente.");
 }
-
 
 function destruirMisiles(misiles) {
 	if (misiles) {
@@ -622,10 +782,26 @@ function impactarJugador(avion, balasEnemiga) {
 				borderRadius: 5
 			}).setOrigin(0.5).setInteractive();
 
+			// Al presionar el botón, reiniciar el fondo y la escena
 			botonReiniciar.on('pointerdown', () => {
-				this.scene.restart(); // Reiniciar la escena
-				score = 0; // Restablecer la puntuación
-				playerLife = 3; // Restablecer la vida del jugador
+				// Restablecer el fondo de Mapbox
+				map.jumpTo({
+					center: [-3.4604086485761267, 40.485002191480696],  // Coordenadas iniciales
+					zoom: 14,  // Nivel de zoom inicial
+					pitch: 0,
+					bearing: 43.5
+				});
+
+				// Reiniciar la animación de la cámara
+				start = null;  // Restablecer el tiempo de inicio de la animación
+				//window.requestAnimationFrame(frame); //PENDIENTE ARREGLAR
+
+				// Reiniciar la escena
+				this.scene.restart();
+				
+				// Restablecer otros parámetros del juego
+				score = 0;  // Restablecer la puntuación
+				playerLife = 3;  // Restablecer la vida del jugador
 			});
 		}
 	}
