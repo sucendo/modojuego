@@ -4,16 +4,21 @@
     <meta charset="UTF-8">
     <title>Juego de Avión</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
+	<link href="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.css" rel="stylesheet">
+	<script src="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.16/dist/phaser.js"></script>
 	<style>
-        body {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-        }
+        body { margin: 0; padding: 0; overflow: hidden; }
+		#map { position: absolute; top: 0; bottom: -27px; width: 100%; z-index: 1; }
+		canvas { position: absolute; top: 0; left: 0; z-index: 2; background-color: transparent; }
     </style>
 </head>
 <body>
+
+	<div id="map"></div>
+	
+	<script src="./data/plane/route01.js"></script>
+	<script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
 	<script src="js/plane/plane.js"></script>
 </body>
 </html>
