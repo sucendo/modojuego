@@ -1,0 +1,186 @@
+/* Estilo para el contenedor principal del chat */
+#chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 98vh; /*100vh;*/ /* 100% de la altura de la ventana */
+}
+
+/* Estilo para el contenedor de chat */
+#chat {
+  flex: 1; /* El chat ocupará el espacio disponible */
+  overflow-y: auto; /* Barra de desplazamiento vertical si es necesario */
+  padding: 1rem; /* Usar unidades relativas */
+  font-size: 1rem; /* Tamaño de fuente relativo */
+}
+
+/* Estilo para los mensajes de usuario y robot */
+.mensaje-usuario, .mensaje-robot {
+  padding: 1rem;
+  border-radius: 0;
+  /* margin-bottom: 1rem; */
+   /* Ancho máximo del mensaje */
+
+  /* Establecer colores de fondo y texto */
+  background-color: #fff; /* Fondo blanco para mensajes de usuario */
+  color: #333; /* Texto oscuro para mensajes de usuario */
+  border-bottom: 1px solid #ddd; /* Borde del mensaje (puedes ajustar el color) */
+  font-family: Söhne,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif,Helvetica Neue,Arial,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji;
+}
+
+/* Estilo para los mensajes del usuario */
+.mensaje-usuario {
+  align-self: flex-end; /* Alineación a la derecha */
+  background-color: #ffffff;
+  color: #000;
+}
+
+/* Estilo para los mensajes del robot */
+.mensaje-robot {
+  align-self: flex-start; /* Alineación a la izquierda para el chatbot */
+  background-color: #f7f7f7; /* Fondo gris claro para mensajes del chatbot */
+  color: #333; /* Texto oscuro para mensajes del chatbot */
+  /* border: 1px solid #ddd; */ /* Borde del mensaje (puedes ajustar el color) */
+}
+
+/* Estilo para el contenedor de entrada */
+#input-container {
+  display: flex;
+  align-items: center;
+  background: #f7f7f7;
+  padding: 1rem; /* Usar unidades relativas */
+  font-family: Söhne,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif,Helvetica Neue,Arial,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji;
+}
+
+/* Estilo para el campo de entrada de texto */
+#userInput {
+  flex: 1; /* El campo de entrada ocupará el espacio disponible */
+  padding: 0.5rem; /* Usar unidades relativas */
+  font-size: 1rem; /* Tamaño de fuente relativo */
+  margin-right: 1rem; /* Usar unidades relativas */
+}
+
+/* Estilo para el botón de enviar */
+#enviar {
+  background: #007bff;
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1rem; /* Usar unidades relativas */
+  cursor: pointer;
+}
+
+/* Estilo para dispositivos móviles */
+@media screen and (max-width:768px) { 
+  #chat-container {
+    font-size: 1.2rem; /* Aumenta el tamaño de fuente en el contenedor principal */
+  }
+  #input-container {
+    padding: 1rem; /* Aumenta el relleno para el contenedor de entrada */
+  }
+  #userInput {
+    font-size: 1.2rem; /* Aumenta el tamaño de fuente del campo de entrada */
+    padding: 0.5rem; /* Aumenta el relleno del campo de entrada */
+  }
+  #enviar {
+    font-size: 1.2rem; /* Aumenta el tamaño de fuente del botón */
+    padding: 0.5rem 1rem; /* Aumenta el relleno del botón */
+  }
+  .mensaje-robot,
+  .mensaje-usuario {
+    font-size: 1.2rem; /* Aumenta el tamaño de fuente de los mensajes del chat */
+  }
+}
+
+button {
+    margin-right: 15px;
+}
+button:last-child {
+	margin-right: 0px;
+}
+
+
+/* Estilo para el contenedor principal del chat en modo nocturno */
+body.modo-nocturno #chat-container {
+  background-color: #2c2c2c;
+}
+
+/* Estilo para el contenedor de chat en modo nocturno */
+body.modo-nocturno #chat {
+  background-color: #1e1e1e;
+  color: #f1f1f1;
+}
+
+/* Estilo para los mensajes de usuario y robot en modo nocturno */
+body.modo-nocturno .mensaje-usuario, 
+body.modo-nocturno .mensaje-robot {
+  background-color: #333;
+  color: #f1f1f1;
+  border-bottom: 1px solid #555;
+}
+
+/* Estilo para los mensajes del usuario en modo nocturno */
+body.modo-nocturno .mensaje-usuario {
+  background-color: #444;
+  color: #f1f1f1;
+}
+
+/* Estilo para los mensajes del robot en modo nocturno */
+body.modo-nocturno .mensaje-robot {
+  background-color: #383838;
+  color: #f1f1f1;
+}
+
+/* Estilo para el contenedor de entrada en modo nocturno */
+body.modo-nocturno #input-container {
+  background: #333;
+  color: #f1f1f1;
+}
+
+/* Estilo para el campo de entrada de texto en modo nocturno */
+body.modo-nocturno #userInput {
+  background: #444;
+  color: #f1f1f1;
+  border: 1px solid #555;
+}
+
+/* Estilo para el botón de enviar en modo nocturno */
+body.modo-nocturno #enviar {
+  background: #555;
+  color: #fff;
+  border: none;
+}
+
+/* Estilo para el botón de alternar modo */
+#btnModo {
+  background: #007bff;
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+}
+
+body.modo-nocturno #btnModo {
+  background: #555;
+  color: #fff;
+}
+
+/* Estilo para dispositivos móviles en modo nocturno */
+@media screen and (max-width:768px) { 
+  body.modo-nocturno #chat-container {
+    font-size: 1.2rem;
+  }
+  body.modo-nocturno #input-container {
+    padding: 1rem;
+  }
+  body.modo-nocturno #userInput {
+    font-size: 1.2rem;
+    padding: 0.5rem;
+  }
+  body.modo-nocturno #enviar {
+    font-size: 1.2rem;
+    padding: 0.5rem 1rem;
+  }
+  body.modo-nocturno .mensaje-robot,
+  body.modo-nocturno .mensaje-usuario {
+    font-size: 1.2rem;
+  }
+}
