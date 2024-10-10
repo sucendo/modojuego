@@ -2,7 +2,7 @@
 #chat-container {
   display: flex;
   flex-direction: column;
-  height: 100vh; /*100vh;*/ /* 100% de la altura de la ventana */
+  height: 98vh; /*100vh;*/ /* 100% de la altura de la ventana */
 }
 
 /* Estilo para el contenedor de chat */
