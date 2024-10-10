@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Chatmubot</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <link rel="stylesheet" type="text/css" href="css/chatbot/chatbot.css">
     <script src="https://unpkg.com/mathjs/lib/browser/math.js"></script>
 </head>
@@ -17,9 +17,25 @@
 			<div id="controles">
 				<button id="enviar">Enviar</button>
 				<button id="btnModo" onclick="cambiarModo()">🌙</button>
+				<button id="fullscreenBtn">↕️</button>
 			</div>
         </div>
     </div>
     <script type="text/javascript" src="js/chatbot/chatbot.js"></script>
+	<script>
+	  const fullscreenBtn = document.getElementById("fullscreenBtn");
+
+	  fullscreenBtn.addEventListener("click", function() {
+		if (document.documentElement.requestFullscreen) {
+		  document.documentElement.requestFullscreen();
+		} else if (document.documentElement.mozRequestFullScreen) { // Firefox
+		  document.documentElement.mozRequestFullScreen();
+		} else if (document.documentElement.webkitRequestFullscreen) { // Chrome, Safari, Opera
+		  document.documentElement.webkitRequestFullscreen();
+		} else if (document.documentElement.msRequestFullscreen) { // IE/Edge
+		  document.documentElement.msRequestFullscreen();
+		}
+	  });
+	</script>
 </body>
 </html>
