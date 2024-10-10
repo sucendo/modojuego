@@ -49,14 +49,18 @@
   background: #f7f7f7;
   padding: 1rem; /* Usar unidades relativas */
   font-family: Söhne,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif,Helvetica Neue,Arial,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji;
+  box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1); /* Añadir sombra para destacar la parte inferior */
 }
 
 /* Estilo para el campo de entrada de texto */
 #userInput {
-  flex: 1; /* El campo de entrada ocupará el espacio disponible */
-  padding: 0.5rem; /* Usar unidades relativas */
-  font-size: 1rem; /* Tamaño de fuente relativo */
-  margin-right: 1rem; /* Usar unidades relativas */
+  flex: 1;
+  padding: 0.5rem;
+  font-size: 1rem;
+  margin-right: 1rem;
+  border-radius: 5px; /* Mejora el diseño en pantallas pequeñas */
+  border: 1px solid #ccc;
+  box-sizing: border-box;
 }
 
 /* Estilo para el botón de enviar */
@@ -64,34 +68,18 @@
   background: #007bff;
   color: #fff;
   border: none;
-  padding: 0.5rem 1rem; /* Usar unidades relativas */
+  padding: 0.5rem 1rem;
   cursor: pointer;
+  transition: background-color 0.3s ease;
 }
 
-/* Estilo para dispositivos móviles */
-@media screen and (max-width:768px) { 
-  #chat-container {
-    font-size: 1.2rem; /* Aumenta el tamaño de fuente en el contenedor principal */
-  }
-  #input-container {
-    padding: 1rem; /* Aumenta el relleno para el contenedor de entrada */
-  }
-  #userInput {
-    font-size: 1.2rem; /* Aumenta el tamaño de fuente del campo de entrada */
-    padding: 0.5rem; /* Aumenta el relleno del campo de entrada */
-  }
-  #enviar {
-    font-size: 1.2rem; /* Aumenta el tamaño de fuente del botón */
-    padding: 0.5rem 1rem; /* Aumenta el relleno del botón */
-  }
-  .mensaje-robot,
-  .mensaje-usuario {
-    font-size: 1.2rem; /* Aumenta el tamaño de fuente de los mensajes del chat */
-  }
+#enviar:hover {
+  background: #0056b3;
 }
 
 button {
     margin-right: 15px;
+	border-radius: 5px;
 }
 button:last-child {
 	margin-right: 0px;
@@ -163,24 +151,40 @@ body.modo-nocturno #btnModo {
   color: #fff;
 }
 
-/* Estilo para dispositivos móviles en modo nocturno */
-@media screen and (max-width:768px) { 
-  body.modo-nocturno #chat-container {
-    font-size: 1.2rem;
+/* Estilo para dispositivos móviles */
+@media screen and (max-width: 768px) {
+  #chat-container {
+    height: calc(100vh - 50px); /* Deja espacio para barras de navegación en móviles */
   }
-  body.modo-nocturno #input-container {
-    padding: 1rem;
-  }
-  body.modo-nocturno #userInput {
-    font-size: 1.2rem;
+
+  #input-container {
+    flex-direction: column;
     padding: 0.5rem;
   }
-  body.modo-nocturno #enviar {
-    font-size: 1.2rem;
-    padding: 0.5rem 1rem;
+  
+  .mensaje-robot, .mensaje-usuario {
+    font-size: 1.2rem; /* Aumenta el tamaño de fuente de los mensajes del chat */
   }
-  body.modo-nocturno .mensaje-robot,
-  body.modo-nocturno .mensaje-usuario {
-    font-size: 1.2rem;
+
+  #userInput {
+    font-size: 1.1rem;
+    padding: 0.7rem;
+    margin-right: 0;
+    margin-bottom: 0.5rem; /* Añade espacio entre el input y el botón */
+    width: 100%; /* Asegura que el campo de entrada ocupe todo el ancho */
+  }
+  
+  #controles {
+	  display:inline-table;
+	  width: 100%;
+  }
+  #enviar {
+    font-size: 1.0rem;
+	width: 83.4%;
+  }
+  button {
+	margin-right: 5px;
+    margin-bottom: 0px;
+	width:15%;
   }
 }
