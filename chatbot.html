@@ -4,19 +4,21 @@
     <meta charset="UTF-8">
     <title>Chatmubot</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" type="text/css" href="css/chatbot.css">
+    <link rel="stylesheet" type="text/css" href="css/chatbot/chatbot.css">
     <script src="https://unpkg.com/mathjs/lib/browser/math.js"></script>
 </head>
 <body>
     <div id="chat-container">
         <div id="chat">
-            <div class="mensaje-robot">Hola, ¿en qué puedo ayudarte?</div>
+            <div class="mensaje-robot">Hola, ¿En qué puedo ayudarte?</div>
         </div>
         <div id="input-container">
             <input type="text" id="userInput" placeholder="Escribe tu pregunta aquí">
             <button id="enviar">Enviar</button>
+			<!-- Botón de alternar modo -->
+			<button id="btnModo" onclick="cambiarModo()">Modo nocturno</button>
         </div>
     </div>
-    <script type="text/javascript" src="js/chatbot.js"></script>
+    <script type="text/javascript" src="js/chatbot/chatbot.js"></script>
 </body>
 </html>
