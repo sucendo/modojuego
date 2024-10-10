@@ -2,7 +2,7 @@
 #chat-container {
   display: flex;
   flex-direction: column;
-  height: 98vh; /*100vh;*/ /* 100% de la altura de la ventana */
+  height: 100vh; /*100vh;*/ /* 100% de la altura de la ventana */
 }
 
 /* Estilo para el contenedor de chat */
@@ -45,11 +45,16 @@
 /* Estilo para el contenedor de entrada */
 #input-container {
   display: flex;
+  position: fixed;
   align-items: center;
   background: #f7f7f7;
   padding: 1rem; /* Usar unidades relativas */
   font-family: Söhne,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif,Helvetica Neue,Arial,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji;
   box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1); /* Añadir sombra para destacar la parte inferior */
+      border-top: 1px solid #ccc;
+      bottom: 0;
+      left: 0;
+      right: 0;
 }
 
 /* Estilo para el campo de entrada de texto */
@@ -154,7 +159,7 @@ body.modo-nocturno #btnModo, body.modo-nocturno #fullscreenBtn {
 /* Estilo para dispositivos móviles */
 @media screen and (max-width: 768px) {
   #chat-container {
-    height: calc(100vh - 50px); /* Deja espacio para barras de navegación en móviles */
+    height: calc(100vh - 95px); /* Deja espacio para barras de navegación en móviles */
   }
 
   #input-container {
