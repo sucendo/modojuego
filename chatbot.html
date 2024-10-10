@@ -23,19 +23,42 @@
     </div>
     <script type="text/javascript" src="js/chatbot/chatbot.js"></script>
 	<script>
-	  const fullscreenBtn = document.getElementById("fullscreenBtn");
+		  const fullscreenBtn = document.getElementById("fullscreenBtn");
 
-	  fullscreenBtn.addEventListener("click", function() {
-		if (document.documentElement.requestFullscreen) {
-		  document.documentElement.requestFullscreen();
-		} else if (document.documentElement.mozRequestFullScreen) { // Firefox
-		  document.documentElement.mozRequestFullScreen();
-		} else if (document.documentElement.webkitRequestFullscreen) { // Chrome, Safari, Opera
-		  document.documentElement.webkitRequestFullscreen();
-		} else if (document.documentElement.msRequestFullscreen) { // IE/Edge
-		  document.documentElement.msRequestFullscreen();
-		}
-	  });
+		fullscreenBtn.addEventListener("click", function () {
+		  // Verificamos si ya estamos en pantalla completa
+		  if (!document.fullscreenElement &&    // Para la mayoría de los navegadores
+			  !document.mozFullScreenElement && // Firefox
+			  !document.webkitFullscreenElement && // Chrome, Safari y Opera
+			  !document.msFullscreenElement) {    // IE/Edge
+
+			// Entramos en pantalla completa según el navegador
+			if (document.documentElement.requestFullscreen) {
+			  document.documentElement.requestFullscreen();
+			} else if (document.documentElement.mozRequestFullScreen) { // Firefox
+			  document.documentElement.mozRequestFullScreen();
+			} else if (document.documentElement.webkitRequestFullscreen) { // Chrome, Safari y Opera
+			  document.documentElement.webkitRequestFullscreen();
+			} else if (document.documentElement.msRequestFullscreen) { // IE/Edge
+			  document.documentElement.msRequestFullscreen();
+			}
+			
+			fullscreenBtn.textContent = "Salir de pantalla completa"; // Cambiamos el texto del botón
+		  } else {
+			// Salimos de pantalla completa
+			if (document.exitFullscreen) {
+			  document.exitFullscreen();
+			} else if (document.mozCancelFullScreen) { // Firefox
+			  document.mozCancelFullScreen();
+			} else if (document.webkitExitFullscreen) { // Chrome, Safari y Opera
+			  document.webkitExitFullscreen();
+			} else if (document.msExitFullscreen) { // IE/Edge
+			  document.msExitFullscreen();
+			}
+			
+			fullscreenBtn.textContent = "Ampliar pantalla"; // Cambiamos el texto del botón
+		  }
+		});
 	</script>
 </body>
 </html>
