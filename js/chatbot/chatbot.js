@@ -262,8 +262,8 @@ function cambiarModo() {
     // Cambiar el texto del botón según el modo actual
     const botonModo = document.getElementById("btnModo");
     if (document.body.classList.contains("modo-nocturno")) {
-        botonModo.textContent = "Modo diurno";
+        botonModo.textContent = "☀️";
     } else {
-        botonModo.textContent = "Modo nocturno";
+        botonModo.textContent = "🌙";
     }
 }
