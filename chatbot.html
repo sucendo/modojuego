@@ -14,16 +14,16 @@
         </div>
         <div id="input-container">
             <input type="text" id="userInput" placeholder="Escribe tu pregunta aquí">
-			<div id="controles">
-				<button id="enviar">Enviar</button>
-				<button id="btnModo" onclick="cambiarModo()">🌙</button>
-				<button id="fullscreenBtn">↕️</button>
-			</div>
+            <div id="controles">
+                <button id="enviar">Enviar</button>
+                <button id="btnModo" onclick="cambiarModo()">🌙</button>
+                <button id="fullscreenBtn">↕️</button>
+            </div>
         </div>
     </div>
     <script type="text/javascript" src="js/chatbot/chatbot.js"></script>
 	<script>
-		 const fullscreenBtn = document.getElementById("fullscreenBtn");
+		const fullscreenBtn = document.getElementById("fullscreenBtn");
 
 		fullscreenBtn.addEventListener("click", function () {
 		  // Verificamos si ya estamos en pantalla completa
@@ -61,22 +61,23 @@
 		});
 		
 		// Guardamos la altura original de la ventana
-		 const initialHeight = window.innerHeight;
+		const initialHeight = window.innerHeight;
 
-		 // Función para ajustar el contenedor de la entrada de texto cuando el teclado aparece
-		 window.addEventListener('resize', function() {
+		// Función para ajustar el contenedor de la entrada de texto cuando el teclado aparece
+		window.addEventListener('resize', function() {
 			const currentHeight = window.innerHeight;
+			const isFullscreen = document.fullscreenElement !== null;
 			
-			if (currentHeight < initialHeight) {
-			  // El teclado está visible (la altura de la ventana ha disminuido)
+			if (currentHeight < initialHeight && !isFullscreen) {
+			  // El teclado está visible y no estamos en modo fullscreen
 			  document.getElementById('input-container').style.position = 'absolute';
 			  document.getElementById('input-container').style.bottom = `${initialHeight - currentHeight}px`;
 			} else {
-			  // El teclado está oculto (la altura de la ventana ha vuelto a la normalidad)
+			  // El teclado está oculto o estamos en modo fullscreen
 			  document.getElementById('input-container').style.position = 'fixed';
 			  document.getElementById('input-container').style.bottom = '0';
 			}
-		  });
+		});
 	</script>
 </body>
 </html>
