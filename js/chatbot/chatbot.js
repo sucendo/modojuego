@@ -3,8 +3,6 @@
 * By Sucendo 2024
 */
 
-/* chatbot.js */
-
 // Función para cargar un script de forma dinámica
 function cargarScript(nombreArchivo, callback) {
 	  const script = document.createElement('script');
@@ -91,136 +89,94 @@ let datosTemporales = {};
 
 // Función para buscar palabras clave
 async function buscarPalabrasClave(texto, respuestas) {
-	textoNormalizado = normalizarTexto(texto);
+    textoNormalizado = normalizarTexto(texto);
+    const palabras = textoNormalizado.split(" ");
+    
+    const respuesta = manejarContextoConversacion(contextoConversacion, palabras, respuestas);
+    if (respuesta) {
+        return respuesta;
+    }
 
-	const palabras = textoNormalizado.split(" ");
-	
-	const respuesta = manejarContextoConversacion(contextoConversacion, palabras, respuestas); // Llama a la función para manejar el contexto de la conversación
-	if (respuesta) {
-		// Si hay una respuesta, la mostramos en el chat
-		return respuesta;
-	}
+    for (const palabraClave in respuestas) {
+        const palabrasClave = palabraClave;
 
-	for (const palabraClave in respuestas) {
-		const palabrasClave = palabraClave;
-		if (palabras.includes(palabrasClave.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase())) {
-			if (palabrasClave === "hora") {
-				return `${respuestas[palabrasClave]}` + ` `+ calcularHoraActual(texto);
-			} else if (palabrasClave === "es hoy") {
-				return calcularDiaHoy(texto);
-			} else if ((palabrasClave === "buenos dias")|| (palabrasClave === "buenas tardes")|| (palabrasClave === "buenas noches")) {
-				return saludoDia(texto);
-			} else if (palabrasClave === "queda") {
-				return calcularTiempoRestante(texto);
-			} else if (palabras.includes("cuanto es") || palabras.includes("calcula")) {
-				const expresionMatematica = texto.replace(palabrasClave, "").trim();
-				try {
-					  const resultado = math.evaluate(expresionMatematica);
-					  return `${respuestas[palabrasClave]} ${resultado}`;
-				} catch (error) {
-					return "No pude resolver la operación matemática.";
-				}
-			} else if (textoNormalizado.includes("me llamo") || textoNormalizado.includes("soy")) {
-				// Extraer el nombre del usuario del texto
-				const palabras = texto.split(" ");
-				const nombreIndex = palabras.findIndex(palabra => palabra === "llamo" || palabra === "soy");
-				if (nombreIndex !== -1 && nombreIndex < palabras.length - 1) {
-					const nuevoNombreUsuario = palabras[nombreIndex + 1];
-					if (nuevoNombreUsuario) {
-						// Asignar el nombre a la variable global
-						nombreUsuario = nuevoNombreUsuario;
+        // Usamos .includes() para verificar las frases compuestas
+        if (textoNormalizado.includes(palabrasClave.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase())) {
+            if (palabrasClave === "hora") {
+                return `${respuestas[palabrasClave]}` + ` ` + calcularHoraActual(texto);
+            } else if (palabrasClave === "es hoy") {
+                return calcularDiaHoy(texto);
+            } else if (palabrasClave === "buenos dias" || palabrasClave === "buenas tardes" || palabrasClave === "buenas noches") {
+                return saludoDia(texto);
+            } else if (palabrasClave === "queda") {
+                return calcularTiempoRestante(texto);
+            } else if (palabras.includes("cuanto es") || palabras.includes("calcula")) {
+                const expresionMatematica = texto.replace(palabrasClave, "").trim();
+                try {
+                    const resultado = math.evaluate(expresionMatematica);
+                    return `${respuestas[palabrasClave]} ${resultado}`;
+                } catch (error) {
+                    return "No pude resolver la operación matemática.";
+                }
+            } else if (textoNormalizado.includes("me llamo") || textoNormalizado.includes("soy")) {
+                const palabras = texto.split(" ");
+                const nombreIndex = palabras.findIndex(palabra => palabra === "llamo" || palabra === "soy");
+                if (nombreIndex !== -1 && nombreIndex < palabras.length - 1) {
+                    const nuevoNombreUsuario = palabras[nombreIndex + 1];
+                    if (nuevoNombreUsuario) {
+                        nombreUsuario = nuevoNombreUsuario;
+                        if (nombreUsuario.toLowerCase() === "sucendo") {
+                            contextoConversacion.juegoIniciado = true;
+                            contextoConversacion.palabraClave = "jugar";
+                            return "Hola creador mío, ¿quieres jugar?";
+                        } else {
+                            return `Encantado de conocerte, ${nombreUsuario}!`;
+                        }
+                    }
+                }
+            } else if (textoNormalizado.includes("significado") && textoNormalizado.includes("nombre")) {
+                contextoConversacion.palabraClave = "significado_nombre";
+                return "¿Quieres saber el significado de tu nombre?";
+            } else if (palabras.includes("como") && palabras.includes("me") && palabras.includes("llamo")) {
+                if (nombreUsuario) {
+                    return `Te llamas ${nombreUsuario}.`;
+                } else {
+                    return "Lo siento, no tengo esa información. ¿Cómo te llamas?";
+                }
+            } else if (palabraClave === "chiste") {
+                if (contextoConversacion.palabraClave === "chiste") {
+                    const respuestasChiste = respuestas[palabraClave];
+                    const chisteAleatorio = respuestasChiste[Math.floor(Math.random() * respuestasChiste.length)];
+                    return chisteAleatorio;
+                } else {
+                    contextoConversacion.palabraClave = "chiste";
+                    contextoConversacion.repeticiones = 0;
+                    const chisteInicial = respuestas[palabraClave][0];
+                    return chisteInicial;
+                }
+            } else if (palabraClave in respuestas) {
+                const respuestasCategoria = respuestas[palabraClave];
+                if (respuestasCategoria.length === 1) {
+                    contextoConversacion.palabraClave = palabrasClave;
+                    contextoConversacion.repeticiones = 0;
+                    return respuestasCategoria[0];
+                } else {
+                    const respuestaAleatoria = respuestasCategoria[Math.floor(Math.random() * respuestasCategoria.length)];
+                    contextoConversacion.palabraClave = palabrasClave;
+                    contextoConversacion.repeticiones = 0;
+                    return respuestaAleatoria;
+                }
+            }
+        }
+    }
 
-						// Verificar si el nombre es "Sucendo"
-						if (nombreUsuario.toLowerCase() === "sucendo") {
-							contextoConversacion.juegoIniciado = true; // Iniciar el juego
-							contextoConversacion.palabraClave = "jugar";
-							return "Hola creador mío, ¿quieres jugar?";
-						} else {
-							return `Encantado de conocerte, ${nombreUsuario}!`;
-						}
-					}
-				}
-			} else if (textoNormalizado.includes("significado") && textoNormalizado.includes("nombre")) {
-				// Mostrar un mensaje preguntando al usuario si quiere conocer el significado de su nombre
-				contextoConversacion.palabraClave = "significado_nombre";
-				return "¿Quieres saber el significado de tu nombre?";
-			} else if (palabras.includes("como") && palabras.includes("me") && palabras.includes("llamo")) {
-				if (nombreUsuario) {
-					return `Te llamas ${nombreUsuario}.`;
-				} else {
-					return "Lo siento, no tengo esa información. ¿Cómo te llamas?";
-				}
-			} else if (palabras.includes(normalizarTexto("adivinanza"))) {
-				  contextoConversacion.palabraClave = "adivinanza";
-				  // Aquí puedes mostrar la adivinanza al usuario
-				  mostrarMensaje("Robot", respuestas["adivinanza"][0]);
-			} else if (palabras.includes("guardar")) {
-				const palabras = texto.split(" ");
-				const datoIndex = palabras.indexOf("guardar");
+    const respuestasNoEntender = respuestas["no_entender"];
+    if (respuestasNoEntender) {
+        const respuestaNoEntender = respuestasNoEntender[Math.floor(Math.random() * respuestasNoEntender.length)];
+        return respuestaNoEntender;
+    }
 
-				if (datoIndex !== -1 && datoIndex < palabras.length - 1) {
-					  const clave = palabras[datoIndex + 1];
-					  if (clave) {
-						// Genera una clave única
-						const dato = palabras[datoIndex + 2];
-						datosTemporales[clave] = dato;
-						return `He guardado "${dato}" temporalmente con la clave "${clave}".`;
-					}
-				}
-			} else if (palabras.includes("mostrar")) {
-				const palabras = texto.split(" ");
-				const datoIndex = palabras.indexOf("mostrar");
-
-				if (datoIndex !== -1 && datoIndex < palabras.length - 1) {
-					const clave = palabras[datoIndex + 1];
-					const dato = datosTemporales[clave];
-					  if (dato) {
-						  return `El dato almacenado con la clave "${clave}" es: "${dato}".`;
-					  } else {
-						  return "No se ha encontrado ningún dato almacenado con la clave especificada.";
-					  }
-				}
-			} else if (palabraClave === "chiste") {
-				// El usuario solicita otro chiste
-				if (contextoConversacion.palabraClave === "chiste") {
-					// Si ya se contó un chiste antes, ofrecer otro
-					const respuestasChiste = respuestas[palabraClave];
-					const chisteAleatorio = respuestasChiste[Math.floor(Math.random() * respuestasChiste.length)];
-					return chisteAleatorio;
-				} else {
-					// Primer chiste
-					contextoConversacion.palabraClave = "chiste";
-					contextoConversacion.repeticiones = 0;
-					const chisteInicial = respuestas[palabraClave][0];
-					return chisteInicial;
-				}
-			} else if (palabraClave in respuestas) {
-				// Aquí, aseguramos que siempre se elija la única respuesta si solo hay una
-				const respuestasCategoria = respuestas[palabraClave];
-				if (respuestasCategoria.length === 1) {
-					  contextoConversacion.palabraClave = palabrasClave;
-					  contextoConversacion.repeticiones = 0;
-					  return respuestasCategoria[0];          
-				} else {
-					  const respuestasCategoria = respuestas[palabrasClave];
-					  if (respuestasCategoria) {
-						contextoConversacion.palabraClave = palabrasClave;
-						contextoConversacion.repeticiones = 0;
-						const respuestaAleatoria = respuestasCategoria[Math.floor(Math.random() * respuestasCategoria.length)];
-						return respuestaAleatoria;
-					}
-				}
-			}
-		}
-	}
-
-	const respuestasNoEntender = respuestas["no_entender"];
-	if (respuestasNoEntender) {
-		const respuestaNoEntender = respuestasNoEntender[Math.floor(Math.random() * respuestasNoEntender.length)];
-		return respuestaNoEntender;
-	}
-
-	return "Lo siento, no entiendo tu pregunta.";
+    return "Lo siento, no entiendo tu pregunta.";
 }
 
 
@@ -311,4 +267,3 @@ function cambiarModo() {
         botonModo.textContent = "Modo nocturno";
     }
 }
-
