@@ -23,7 +23,7 @@
     </div>
     <script type="text/javascript" src="js/chatbot/chatbot.js"></script>
 	<script>
-		  const fullscreenBtn = document.getElementById("fullscreenBtn");
+		 const fullscreenBtn = document.getElementById("fullscreenBtn");
 
 		fullscreenBtn.addEventListener("click", function () {
 		  // Verificamos si ya estamos en pantalla completa
@@ -59,6 +59,24 @@
 			fullscreenBtn.textContent = "↕️"; // Cambiamos el texto del botón
 		  }
 		});
+		
+		// Guardamos la altura original de la ventana
+		 const initialHeight = window.innerHeight;
+
+		 // Función para ajustar el contenedor de la entrada de texto cuando el teclado aparece
+		 window.addEventListener('resize', function() {
+			const currentHeight = window.innerHeight;
+			
+			if (currentHeight < initialHeight) {
+			  // El teclado está visible (la altura de la ventana ha disminuido)
+			  document.getElementById('input-container').style.position = 'absolute';
+			  document.getElementById('input-container').style.bottom = `${initialHeight - currentHeight}px`;
+			} else {
+			  // El teclado está oculto (la altura de la ventana ha vuelto a la normalidad)
+			  document.getElementById('input-container').style.position = 'fixed';
+			  document.getElementById('input-container').style.bottom = '0';
+			}
+		  });
 	</script>
 </body>
 </html>
