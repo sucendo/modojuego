@@ -1,8 +1,10 @@
 /* Estilo para el contenedor principal del chat */
+body {margin:0px;}
+
 #chat-container {
   display: flex;
   flex-direction: column;
-  height: 98vh; /*100vh;*/ /* 100% de la altura de la ventana */
+  height: 100vh; /*100vh;*/ /* 100% de la altura de la ventana */
 }
 
 /* Estilo para el contenedor de chat */
@@ -11,6 +13,7 @@
   overflow-y: auto; /* Barra de desplazamiento vertical si es necesario */
   padding: 1rem; /* Usar unidades relativas */
   font-size: 1rem; /* Tamaño de fuente relativo */
+  margin-bottom: 69px;
 }
 
 /* Estilo para los mensajes de usuario y robot */
@@ -119,13 +122,14 @@ body.modo-nocturno .mensaje-usuario {
 /* Estilo para los mensajes del robot en modo nocturno */
 body.modo-nocturno .mensaje-robot {
   background-color: #383838;
-  color: #f1f1f1;
+  color: #00d19e;
 }
 
 /* Estilo para el contenedor de entrada en modo nocturno */
 body.modo-nocturno #input-container {
   background: #333;
   color: #f1f1f1;
+  box-shadow: 0 -2px 5px rgba(204, 204, 204, 0.4);
 }
 
 /* Estilo para el campo de entrada de texto en modo nocturno */
