@@ -110,15 +110,15 @@ async function buscarPalabrasClave(texto, respuestas) {
                 return saludoDia(texto);
             } else if (palabrasClave === "queda") {
                 return calcularTiempoRestante(texto);
-            } else if (palabras.includes("cuanto es") || palabras.includes("calcula")) {
-                const expresionMatematica = texto.replace(palabrasClave, "").trim();
+            }  else if (textoNormalizado.includes("cuanto es") || textoNormalizado.includes("calcula")) {
+                const expresionMatematica = textoNormalizado.replace(/(cuanto es|calcula)/g, "").trim();
                 try {
                     const resultado = math.evaluate(expresionMatematica);
                     return `${respuestas[palabrasClave]} ${resultado}`;
                 } catch (error) {
                     return "No pude resolver la operación matemática.";
                 }
-            } else if (textoNormalizado.includes("me llamo") || textoNormalizado.includes("soy")) {
+            }  else if (textoNormalizado.includes("me llamo") || textoNormalizado.includes("soy")) {
                 const palabras = texto.split(" ");
                 const nombreIndex = palabras.findIndex(palabra => palabra === "llamo" || palabra === "soy");
                 if (nombreIndex !== -1 && nombreIndex < palabras.length - 1) {
@@ -143,6 +143,34 @@ async function buscarPalabrasClave(texto, respuestas) {
                 } else {
                     return "Lo siento, no tengo esa información. ¿Cómo te llamas?";
                 }
+	} else if (palabras.includes(normalizarTexto("adivinanza"))) {
+		  contextoConversacion.palabraClave = "adivinanza";
+		  // Aquí puedes mostrar la adivinanza al usuario
+		  mostrarMensaje("Robot", respuestas["adivinanza"][0]);
+	} else if (palabras.includes("guardar")) {
+		const palabras = texto.split(" ");
+		const datoIndex = palabras.indexOf("guardar");
+		if (datoIndex !== -1 && datoIndex < palabras.length - 1) {
+			  const clave = palabras[datoIndex + 1];
+			  if (clave) {
+				// Genera una clave única
+				const dato = palabras[datoIndex + 2];
+				datosTemporales[clave] = dato;
+				return `He guardado "${dato}" temporalmente con la clave "${clave}".`;
+			}
+		}
+	} else if (palabras.includes("mostrar")) {
+		const palabras = texto.split(" ");
+		const datoIndex = palabras.indexOf("mostrar");
+		if (datoIndex !== -1 && datoIndex < palabras.length - 1) {
+			const clave = palabras[datoIndex + 1];
+			const dato = datosTemporales[clave];
+			  if (dato) {
+				  return `El dato almacenado con la clave "${clave}" es: "${dato}".`;
+			  } else {
+				  return "No se ha encontrado ningún dato almacenado con la clave especificada.";
+			  }
+		}
             } else if (palabraClave === "chiste") {
                 if (contextoConversacion.palabraClave === "chiste") {
                     const respuestasChiste = respuestas[palabraClave];
