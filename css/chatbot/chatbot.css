@@ -93,6 +93,19 @@ button:last-child {
 	margin-right: 0px;
 }
 
+#chat::-webkit-scrollbar {
+  width: 12px;               /* width of the entire scrollbar */
+}
+
+#chat::-webkit-scrollbar-track {
+  background: #f0f0f0;        /* color of the tracking area */
+}
+
+#chat::-webkit-scrollbar-thumb {
+  background-color: #cdcdcd;    /* color of the scroll thumb */
+  border-radius: 20px;       /* roundness of the scroll thumb */
+  border: 2px solid #f0f0f0;  /* creates padding around scroll thumb */
+}
 
 /* Estilo para el contenedor principal del chat en modo nocturno */
 body.modo-nocturno #chat-container {
@@ -158,6 +171,16 @@ body.modo-nocturno #enviar {
 body.modo-nocturno #btnModo, body.modo-nocturno #fullscreenBtn {
   background: #555;
   color: #fff;
+}
+
+body.modo-nocturno #chat::-webkit-scrollbar-track {
+  background: #424242;        /* color of the tracking area */
+}
+
+body.modo-nocturno #chat::-webkit-scrollbar-thumb {
+  background-color: #686868;    /* color of the scroll thumb */
+  border-radius: 20px;       /* roundness of the scroll thumb */
+  border: 2px solid #424242;  /* creates padding around scroll thumb */
 }
 
 /* Estilo para dispositivos móviles */
