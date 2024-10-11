@@ -480,6 +480,14 @@
 		"Entiendo, escribias para ti mismo.",
 		"Pues vale."
 	],
+	"yo que se": [
+		"Entiendo que este confuso...",
+		"¡Ánimo! ¡Intentalo!"
+	],
+	"no se": [
+		"Si no lo sabes tú, no podré ayudarte.",
+		"¡Ánimo! ¡Intentalo!"
+	],
 	"hora": ["La hora actual es"],
 	"buenos dias": ["Buenos días ¿Cómo estás?"],
 	"buenas tardes": ["Buenas tardes ¿Cómo estás?"],
@@ -500,5 +508,8 @@
 	"mostrar": [
 		"El dato almacenado es: ", 
 		"El valor almacenado es: "
+	],
+	"busca": [
+		"Esto es lo que encontré sobre "
 	]
 }
