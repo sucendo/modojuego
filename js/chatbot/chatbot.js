@@ -405,7 +405,7 @@ async function buscarPalabrasClave(texto, respuestas) {
 				}
 			} else if (textoNormalizado.includes("como se escribe")) {		
 				// Extraer la consulta eliminando las palabras clave "como se escribe"
-				const consulta = texto.replace(/como se escribe/g, "").trim();
+				const consulta = texto.replace(/como se escribe|Como se escribe/g, "").trim();
 
 				if (consulta) {
 					const palabraCorregida = corregirOrtografia(consulta);
