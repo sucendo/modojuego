@@ -394,7 +394,7 @@ async function buscarPalabrasClave(texto, respuestas) {
 				}
 			} else if (textoNormalizado.includes("busca") || textoNormalizado.includes("que es")) {		
 				// Extraer la consulta eliminando las palabras clave "busca" o "que es"
-				const consulta = texto.replace(/busca|que es/g, "").trim();
+				const consulta = texto.replace(/busca|Busca|que es|Que es/g, "").trim();
 				
 				// Si hay una consulta válida, buscar en Wikipedia
 				if (consulta) {
