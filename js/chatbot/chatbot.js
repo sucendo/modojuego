@@ -64,6 +64,148 @@ async function verificarOrtografiaRAE(palabra) {
 	}
 }
 
+
+// Función de corrección ortográfica básica usando Levenshtein
+function levenshteinDistance(a, b) {
+	const matrix = [];
+
+	// Incrementamos las letras
+	for (let i = 0; i <= b.length; i++) {
+		matrix[i] = [i];
+	}
+	for (let j = 0; j <= a.length; j++) {
+		matrix[0][j] = j;
+	}
+
+	for (let i = 1; i <= b.length; i++) {
+		for (let j = 1; j <= a.length; j++) {
+			if (b.charAt(i - 1) === a.charAt(j - 1)) {
+				matrix[i][j] = matrix[i - 1][j - 1];
+			} else {
+				matrix[i][j] = Math.min(
+					matrix[i - 1][j - 1] + 1, // reemplazo
+					matrix[i][j - 1] + 1,     // inserción
+					matrix[i - 1][j] + 1      // eliminación
+				);
+			}
+		}
+	}
+
+	return matrix[b.length][a.length];
+}
+
+// Simulamos un diccionario local con palabras comunes en español
+const diccionario = [
+    // Palabras comunes
+    "revolución", "ortografía", "inteligencia", "palabra", "computadora", "escribir", "hola", "adiós",
+    "amor", "amistad", "felicidad", "tristeza", "esperanza", "familia", "trabajo", "salud", "dinero", 
+    "comida", "bebida", "agua", "fuego", "tierra", "aire", "sol", "luna", "estrella", "planeta", 
+    "universo", "cielo", "mar", "río", "montaña", "bosque", "ciudad", "pueblo", "casa", "edificio", 
+    "carro", "bicicleta", "avión", "barco", "tren", "camión", "animal", "perro", "gato", "pájaro", 
+    "pez", "caballo", "león", "tigre", "elefante", "zorro", "lobo", "ratón", "conejo", "serpiente", 
+    "insecto", "mariposa", "abeja", "araña", "mosca", "libro", "carta", "teléfono", "televisión", 
+    "radio", "música", "película", "teatro", "deporte", "fútbol", "baloncesto", "tenis", "golf", 
+    "natación", "esquí", "ciclismo", "carrera", "boxeo", "lucha", "arte", "pintura", "escultura", 
+    "dibujo", "fotografía", "museo", "historia", "ciencia", "matemáticas", "física", "química", 
+    "biología", "geografía", "lengua", "literatura", "poesía", "novela", "cuento", "ensayo", 
+    "palabra", "frase", "oración", "parrafo", "idioma", "español", "inglés", "francés", "alemán", 
+    "italiano", "portugués", "japonés", "chino", "ruso", "árabe", "hindi", "coreano", "árbol", 
+    "flor", "fruta", "manzana", "plátano", "naranja", "uva", "fresa", "limón", "piña", "mango", 
+    "melón", "sandía", "verdura", "zanahoria", "lechuga", "espinaca", "papa", "tomate", "pepino", 
+    "pimiento", "calabacín", "maíz", "trigo", "arroz", "pasta", "pan", "queso", "leche", "huevo", 
+    "carne", "pollo", "pescado", "cerdo", "res", "cordero", "salchicha", "hamburguesa", "pizza", 
+    "sopa", "ensalada", "bebida", "café", "té", "jugo", "refresco", "vino", "cerveza", "agua", 
+    "limonada", "chocolate", "leche", "familia", "padre", "madre", "hermano", "hermana", "abuelo", 
+    "abuela", "tío", "tía", "primo", "prima", "hijo", "hija", "esposo", "esposa", "amigo", "amiga", 
+    "vecino", "jefe", "compañero", "profesor", "maestro", "estudiante", "alumno", "doctor", 
+    "enfermero", "policía", "bombero", "abogado", "ingeniero", "arquitecto", "artista", "músico", 
+    "escritor", "periodista", "fotógrafo", "actor", "director", "cocinero", "panadero", "peluquero", 
+    "carpintero", "plomero", "electricista", "mecánico", "pintor", "jardinero", "deportista", 
+    "atleta", "boxeador", "tenista", "futbolista", "ciclista", "nadador", "esquiador", "corredor", 
+    "boxeador", "gimnasta", "entrenador", "árbitro", "medalla", "trofeo", "campeón", "partido", 
+    "juego", "competencia", "entrenamiento", "estrategia", "táctica", "equipo", "jugador", 
+    "aficionado", "espectador", "público", "marcador", "gol", "punto", "canasta", "pase", "tiro", 
+    "penalti", "falta", "tarjeta", "expulsión", "árbitro", "entrenador", "presidente", "dirigente", 
+    "jugador", "defensa", "delantero", "portero", "medio", "centrocampista", "arco", "red", 
+    "balón", "pelota", "camiseta", "short", "calcetines", "botas", "zapatos", "guantes", "cinturón",
+
+    // Palabras que comúnmente se escriben incorrectamente
+    "acento", "acción", "adaptación", "adición", "afortunado", "algunas", "análisis", "aplicación",
+    "artículo", "así", "atracción", "balón", "básico", "cálido", "cámara", "cien", "ciudad",
+    "cohete", "corrección", "dificultad", "dólar", "educación", "efectivo", "elección", "emoción",
+    "especial", "estudiante", "está", "fácil", "fácilmente", "favorito", "frustración", "futuro",
+    "gobierno", "héroe", "historia", "imaginación", "importante", "independencia", "interesante",
+    "inteligente", "invitación", "límite", "máquina", "matemáticas", "número", "opinión", "opción",
+    "organización", "país", "película", "práctico", "proporción", "razón", "recibo", "región",
+    "responsabilidad", "revolución", "sección", "sistema", "técnico", "televisión", "tradición",
+    "universidad", "utilizar", "vacaciones", "validez", "verdad", "zoológico",
+
+    // Palabras con errores comunes
+    "dificil", "dificultades", "excelente", "felicidades", "gracias", "imaginativo", "matematico",
+    "misterioso", "moralidad", "natural", "ocurrencia", "oportunidad", "percepcion", "plazo",
+    "precaucion", "recuperacion", "refleccion", "relacion", "solucion", "superficie", "utilidad",
+    "vigilancia", "año", "dólares", "cárcel", "ciencia", "cómodo", "adición", "emoción", "garantía",
+    "próximo", "murciélago", "carácter", "química", "índice", "cóndor", "cápsula", "cólera", "término",
+    "especificación", "declaración", "imposición", "incidencia", "influencia", "inmunización",
+    "juventud", "líquido", "medicina", "narración", "navegación", "situación", "tecnología",
+    "término", "universidad", "vegetación", "voluntad", "vaca",
+
+    // Palabras adicionales
+    "abandonar", "abrazar", "acelerar", "aceptar", "acompañar", "acostarse", "admirar", "afirmar", 
+    "agregar", "ajustar", "alegría", "alivio", "andar", "animar", "anotar", "aprender", "apoyar", 
+    "arreglar", "asegurar", "asumir", "atender", "aumentar", "avanzar", "bailar", "cambiar", 
+    "cancelar", "captar", "celebrar", "cerrar", "chocar", "citar", "cooperar", "crear", "crecer", 
+    "decidir", "defender", "desarrollar", "descubrir", "desejar", "detener", "dialogar", "diferir", 
+    "educar", "encontrar", "enviar", "entender", "equilibrar", "examinar", "explicar", "felicitar", 
+    "formar", "frustrar", "generar", "gritar", "guardar", "guiar", "hablar", "imitar", "iniciar", 
+    "investigar", "jugar", "justificar", "leer", "limpiar", "manejar", "mirar", "modificar", 
+    "motivar", "navegar", "necesitar", "observación", "ofrecer", "organizar", "perder", "persistir", 
+    "plantear", "planificar", "probar", "proponer", "realizar", "recoger", "reflejar", "regresar", 
+    "resolver", "resultar", "romper", "saber", "saludar", "salir", "seguir", "soñar", "sonreír", 
+    "sostener", "sugerir", "transformar", "usar", "valorar", "vender", "ver", "visitar", "volar", 
+
+    // Adjetivos
+    "abierto", "agradable", "alto", "amable", "ancho", "bajo", "bonito", "brillante", "cálido", 
+    "corto", "claro", "colorido", "difícil", "divertido", "dudoso", "elegante", "enorme", "fácil", 
+    "feliz", "grande", "interesante", "largo", "lejano", "malo", "nuevo", "rápido", "sabroso", 
+    "serio", "simpático", "sólido", "tierno", "tranquilo", "vivo", "voluminoso", 
+
+    // Sustantivos adicionales
+    "abstracción", "acuerdo", "adversidad", "afecto", "análisis", "aprecio", "artefacto", 
+    "asunto", "atención", "cambio", "comunicación", "confianza", "consejo", "creación", 
+    "desafío", "desarrollo", "deseo", "detalles", "diversión", "documento", "experiencia", 
+    "firmeza", "fluctuación", "futuro", "gracia", "guía", "influencia", "inquietud", 
+    "interacción", "inversión", "juego", "juventud", "lección", "manera", "misterio", 
+    "narrativa", "observación", "perspectiva", "planteamiento", "proceso", "proyecto", 
+    "quiebra", "reacción", "reflexión", "relación", "solución", "sugerencia", "tendencia", 
+    "vacío", "variación", 
+
+    // Adverbios
+    "además", "ahora", "aquí", "así", "bajo", "cerca", "claro", "constantemente", "después", 
+    "donde", "rápidamente", "siempre", "tal vez", "temprano", "tarde", "ya", 
+];
+
+// Función para encontrar la palabra más cercana en el diccionario
+function corregirOrtografia(palabra) {
+	let mejorCoincidencia = "";
+	let distanciaMinima = Infinity;
+
+	diccionario.forEach(function(palabraCorrecta) {
+		const distancia = levenshteinDistance(palabra, palabraCorrecta);
+		if (distancia < distanciaMinima) {
+			distanciaMinima = distancia;
+			mejorCoincidencia = palabraCorrecta;
+		}
+	});
+
+	// Si la distancia es considerablemente baja, devolvemos la mejor coincidencia
+	if (distanciaMinima <= 2) {
+		return mejorCoincidencia;
+	} else {
+		return palabra; // Si la diferencia es muy grande, devolvemos la palabra original
+	}
+}
+
 // Función para buscar en Wikipedia
 /*async function buscarEnWikipedia(consulta) {
 	try {
@@ -265,13 +407,9 @@ async function buscarPalabrasClave(texto, respuestas) {
 				// Extraer la consulta eliminando las palabras clave "como se escribe"
 				const consulta = texto.replace(/como se escribe/g, "").trim();
 
-				// Si hay una consulta válida, buscar la ortografía
 				if (consulta) {
-					// Llamamos a la función de verificar ortografía para la palabra dada
-					const resultado = await verificarOrtografiaRAE(consulta);
-					
-					// Devolvemos el resultado al usuario
-					return resultado;
+					const palabraCorregida = corregirOrtografia(consulta);
+					return `La forma correcta de escribirlo es: "${palabraCorregida}".`;
 				} else {
 					return "No entiendo nada de lo que has escrito.";
 				}
@@ -389,4 +527,3 @@ function cambiarModo() {
         botonModo.textContent = "🌙";
     }
 }
-
