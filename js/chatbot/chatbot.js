@@ -43,11 +43,36 @@ function cargarRespuestas() {
 		});
 }
 
-// Función para buscar en Wikipedia
-async function buscarEnWikipedia(consulta) {
+// Función para verificar la ortografía con la API de la RAE
+async function verificarOrtografiaRAE(palabra) {
+	const url = `https://dle.rae.es/data/search?w=${encodeURIComponent(palabra)}`;
+
 	try {
+		const respuesta = await fetch(url);
+		const data = await respuesta.json();
+
+		if (data.length > 0 && data[0].header) {
+			// La palabra está en el diccionario, la devolvemos tal cual
+			return `La palabra "${palabra}" está correctamente escrita.`;
+		} else {
+			// Si no está en el diccionario, devolver sugerencias
+			return `La palabra "${palabra}" no se encuentra en el DLE.`;
+		}
+	} catch (error) {
+		console.error("Error al consultar la RAE:", error);
+		return `Hubo un error al consultar la RAE para la palabra "${palabra}".`;
+	}
+}
+
+// Función para buscar en Wikipedia
+/*async function buscarEnWikipedia(consulta) {
+	try {
+        // Codificar correctamente la consulta
+        const consultaCodificada = encodeURIComponent(consulta);
+
+        // Llamada a la API de Wikipedia con la consulta codificada
 		const respuesta = await fetch('https://es.wikipedia.org/w/api.php' +
-		  `?action=query&format=json&prop=extracts|categories&exintro=true&explaintext=true&titles=${consulta}&origin=*`);
+		  `?action=query&format=json&prop=extracts|categories&exintro=true&explaintext=true&titles=${consultaCodificada}&origin=*`);
 		const data = await respuesta.json();
 
 		const pages = data.query.pages;
@@ -60,6 +85,49 @@ async function buscarEnWikipedia(consulta) {
 		console.error('Error al buscar en Wikipedia:', error);
 		return 'Hubo un error al buscar en Wikipedia.';
 	}
+}*/
+
+// Función para buscar en Wikipedia usando 'opensearch'
+async function buscarEnWikipedia(consulta) {
+    try {
+        // Codificar correctamente la consulta
+        const consultaCodificada = encodeURIComponent(consulta);
+
+        // Llamada a la API de Wikipedia con 'opensearch' para obtener sugerencias
+        const respuesta = await fetch(`https://es.wikipedia.org/w/api.php?action=opensearch&search=${consultaCodificada}&limit=1&format=json&origin=*`);
+        const data = await respuesta.json();
+
+        // Verificar si se encontró alguna coincidencia
+        const coincidencias = data[1]; // Array de títulos de artículos sugeridos
+        const urlCoincidencia = data[3]; // Array de URLs de artículos sugeridos
+
+        if (coincidencias.length > 0 && urlCoincidencia.length > 0) {
+            // Tomamos la primera coincidencia
+            const primerTitulo = coincidencias[0];
+            const primerUrl = urlCoincidencia[0];
+
+            // Hacemos otra llamada a la API para obtener el extracto del artículo encontrado
+            const extractoRespuesta = await fetch(`https://es.wikipedia.org/w/api.php?action=query&format=json&prop=extracts|categories&exintro=true&explaintext=true&titles=${encodeURIComponent(primerTitulo)}&origin=*`);
+            const extractoData = await extractoRespuesta.json();
+
+            const pages = extractoData.query.pages;
+            const primeraPaginaId = Object.keys(pages)[0];
+            let extracto = pages[primeraPaginaId].extract;
+            const categorias = pages[primeraPaginaId].categories.map(cat => cat.title).join(", ");
+
+            // Eliminar el texto entre corchetes usando una expresión regular
+            extracto = extracto.replace(/\[.*?\]/g, '');
+
+            return extracto 
+                ? `${extracto}\nCategorías: ${categorias}\nMás información: ${primerUrl}` 
+                : 'No se encontró información detallada.';
+        } else {
+            return 'No se encontró información relevante.';
+        }
+    } catch (error) {
+        console.error('Error al buscar en Wikipedia:', error);
+        return 'Hubo un error al buscar en Wikipedia.';
+    }
 }
 
 // Función para normalizar el texto
@@ -182,14 +250,30 @@ async function buscarPalabrasClave(texto, respuestas) {
 					const chisteInicial = respuestas[palabraClave][0];
 					return chisteInicial;
 				}
-			} else if (textoNormalizado.includes("busca")) {		
-				const consulta = textoNormalizado.replace(/busca|que es/g, "").trim();
+			} else if (textoNormalizado.includes("busca") || textoNormalizado.includes("que es")) {		
+				// Extraer la consulta eliminando las palabras clave "busca" o "que es"
+				const consulta = texto.replace(/busca|que es/g, "").trim();
 				
+				// Si hay una consulta válida, buscar en Wikipedia
 				if (consulta) {
-					const resultado = await buscarEnWikipedia(consulta);  // Llamar a la función de búsqueda en Wikipedia
+					const resultado = await buscarEnWikipedia(consulta);  // Esperar la respuesta de la búsqueda
 					return `Esto es lo que encontré sobre "${consulta}":\n${resultado}`;
 				} else {
 					return "Por favor, proporciona algo para buscar en Wikipedia.";
+				}
+			} else if (textoNormalizado.includes("como se escribe")) {		
+				// Extraer la consulta eliminando las palabras clave "como se escribe"
+				const consulta = texto.replace(/como se escribe/g, "").trim();
+
+				// Si hay una consulta válida, buscar la ortografía
+				if (consulta) {
+					// Llamamos a la función de verificar ortografía para la palabra dada
+					const resultado = await verificarOrtografiaRAE(consulta);
+					
+					// Devolvemos el resultado al usuario
+					return resultado;
+				} else {
+					return "No entiendo nada de lo que has escrito.";
 				}
 			} else if (palabraClave in respuestas) {
 				const respuestasCategoria = respuestas[palabraClave];
@@ -251,7 +335,7 @@ function mostrarMensaje(usuario, mensaje) {
 	  chat.scrollTop = chat.scrollHeight;
 }
 
-/// Cargar las respuestas y utilizarlas
+// Cargar las respuestas y utilizarlas
 cargarRespuestas().then(respuestas => {
 	  const enviarButton = document.getElementById("enviar");
 	  const userInput = document.getElementById("userInput");
@@ -305,3 +389,4 @@ function cambiarModo() {
         botonModo.textContent = "🌙";
     }
 }
+
