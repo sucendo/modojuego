@@ -43,55 +43,101 @@ function cargarRespuestas() {
 		});
 }
 
-// Función para verificar la ortografía con la API de la RAE
-async function verificarOrtografiaRAE(palabra) {
-	const url = `https://dle.rae.es/data/search?w=${encodeURIComponent(palabra)}`;
+/* ------------------- ORTOGRAFIA ---------------------- */
+
+// Función para consultar LanguageTool y obtener correcciones sin API Key
+async function consultarLanguageTool(palabra) {
+	const apiUrl = 'https://api.languagetool.org/v2/check'; // Versión gratuita de LanguageTool
+
+	const data = {
+		text: palabra,
+		language: "es",
+	};
 
 	try {
-		const respuesta = await fetch(url);
-		const data = await respuesta.json();
+		const respuesta = await fetch(apiUrl, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/x-www-form-urlencoded',
+			},
+			body: new URLSearchParams(data),
+		});
 
-		if (data.length > 0 && data[0].header) {
-			// La palabra está en el diccionario, la devolvemos tal cual
-			return `La palabra "${palabra}" está correctamente escrita.`;
+		const resultado = await respuesta.json();
+		
+		// LanguageTool devuelve sugerencias en 'matches'
+		if (resultado.matches && resultado.matches.length > 0) {
+			return resultado.matches.map(match => ({
+				sugerencia: match.replacements.map(replace => replace.value),
+				mensaje: match.message
+			}));
 		} else {
-			// Si no está en el diccionario, devolver sugerencias
-			return `La palabra "${palabra}" no se encuentra en el DLE.`;
+			return []; // No hay sugerencias
 		}
 	} catch (error) {
-		console.error("Error al consultar la RAE:", error);
-		return `Hubo un error al consultar la RAE para la palabra "${palabra}".`;
+		console.error("Error al consultar LanguageTool:", error);
+		return null;
 	}
 }
 
+// Función para encontrar la palabra correcta utilizando la API de LanguageTool
+async function corregirOrtografia(palabra) {
+	const apiUrl = `https://api.languagetool.org/v2/check`;
+	
+	const data = {
+		text: palabra,
+		language: 'es', // Idioma español
+	};
 
-// Función de corrección ortográfica básica usando Levenshtein
+	try {
+		const respuesta = await fetch(apiUrl, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/x-www-form-urlencoded',
+			},
+			body: new URLSearchParams(data),
+		});
+
+		const resultado = await respuesta.json();
+		
+		// Si hay sugerencias, tomamos la primera
+		if (resultado.matches.length > 0 && resultado.matches[0].replacements.length > 0) {
+			return resultado.matches[0].replacements[0].value;
+		} else {
+			return palabra; // Si no hay correcciones, devolvemos la palabra original
+		}
+	} catch (error) {
+		console.error("Error al consultar la API de LanguageTool:", error);
+		return palabra; // Si ocurre un error, devolvemos la palabra original
+	}
+}
+
+// Función para calcular la distancia de Levenshtein
 function levenshteinDistance(a, b) {
-	const matrix = [];
+	const matriz = [];
 
-	// Incrementamos las letras
 	for (let i = 0; i <= b.length; i++) {
-		matrix[i] = [i];
+		matriz[i] = [i];
 	}
 	for (let j = 0; j <= a.length; j++) {
-		matrix[0][j] = j;
+		matriz[0][j] = j;
 	}
 
 	for (let i = 1; i <= b.length; i++) {
 		for (let j = 1; j <= a.length; j++) {
 			if (b.charAt(i - 1) === a.charAt(j - 1)) {
-				matrix[i][j] = matrix[i - 1][j - 1];
+				matriz[i][j] = matriz[i - 1][j - 1];
 			} else {
-				matrix[i][j] = Math.min(
-					matrix[i - 1][j - 1] + 1, // reemplazo
-					matrix[i][j - 1] + 1,     // inserción
-					matrix[i - 1][j] + 1      // eliminación
+				matriz[i][j] = Math.min(
+					matriz[i - 1][j - 1] + 1, // Substitución
+					matriz[i][j - 1] + 1,     // Inserción
+					matriz[i - 1][j] + 1      // Eliminación
 				);
 			}
 		}
 	}
 
-	return matrix[b.length][a.length];
+	return matriz[b.length][a.length];
 }
 
 // Simulamos un diccionario local con palabras comunes en español
@@ -183,7 +229,8 @@ const diccionario = [
     // Adverbios
     "además", "ahora", "aquí", "así", "bajo", "cerca", "claro", "constantemente", "después", 
     "donde", "rápidamente", "siempre", "tal vez", "temprano", "tarde", "ya", 
-    //Más
+    
+   // Más
    "anotación", "aparta", "aplauden", "arroja", "aterriza", "asimila", "asegura", "atrae", "aumenta", "avanza",
     "cabaña", "califica", "calmante", "categoriza", "celebra", "cirujano", "clama", "conmueve", "confirma", "consiente",
     "contiene", "contiene", "controla", "coordina", "crece", "debate", "decora", "denuncia", "determina", "devora",
@@ -238,7 +285,8 @@ const diccionario = [
     "manejar", "proyectar", "recuperar", "restringir", "seleccionar", "revisar", "invitar", "unir", "evitar", "aumentar"
 ];
 
-// Función para encontrar la palabra más cercana en el diccionario
+// Función para encontrar la palabra más cercana en el diccionario local
+/*
 function corregirOrtografia(palabra) {
 	let mejorCoincidencia = "";
 	let distanciaMinima = Infinity;
@@ -257,73 +305,54 @@ function corregirOrtografia(palabra) {
 	} else {
 		return palabra; // Si la diferencia es muy grande, devolvemos la palabra original
 	}
-}
+}*/
 
-// Función para buscar en Wikipedia
-/*async function buscarEnWikipedia(consulta) {
+/* ------------------- ENCICLOPEDIA ---------------------- */
+
+// Función para buscar en Wikipedia usando 'opensearch'
+async function buscarEnWikipedia(consulta) {
 	try {
-        // Codificar correctamente la consulta
-        const consultaCodificada = encodeURIComponent(consulta);
+		// Codificar correctamente la consulta
+		const consultaCodificada = encodeURIComponent(consulta);
 
-        // Llamada a la API de Wikipedia con la consulta codificada
-		const respuesta = await fetch('https://es.wikipedia.org/w/api.php' +
-		  `?action=query&format=json&prop=extracts|categories&exintro=true&explaintext=true&titles=${consultaCodificada}&origin=*`);
+		// Llamada a la API de Wikipedia con 'opensearch' para obtener sugerencias
+		const respuesta = await fetch(`https://es.wikipedia.org/w/api.php?action=opensearch&search=${consultaCodificada}&limit=1&format=json&origin=*`);
 		const data = await respuesta.json();
 
-		const pages = data.query.pages;
-		const primeraPaginaId = Object.keys(pages)[0];
-		const extracto = pages[primeraPaginaId].extract;
-		const categorias = pages[primeraPaginaId].categories.map(cat => cat.title).join(", ");
+		// Verificar si se encontró alguna coincidencia
+		const coincidencias = data[1]; // Array de títulos de artículos sugeridos
+		const urlCoincidencia = data[3]; // Array de URLs de artículos sugeridos
 
-		return extracto ? `${extracto}\nCategorías: ${categorias}` : 'No se encontró información.';
+		if (coincidencias.length > 0 && urlCoincidencia.length > 0) {
+			// Tomamos la primera coincidencia
+			const primerTitulo = coincidencias[0];
+			const primerUrl = urlCoincidencia[0];
+
+			// Hacemos otra llamada a la API para obtener el extracto del artículo encontrado
+			const extractoRespuesta = await fetch(`https://es.wikipedia.org/w/api.php?action=query&format=json&prop=extracts|categories&exintro=true&explaintext=true&titles=${encodeURIComponent(primerTitulo)}&origin=*`);
+			const extractoData = await extractoRespuesta.json();
+
+			const pages = extractoData.query.pages;
+			const primeraPaginaId = Object.keys(pages)[0];
+			let extracto = pages[primeraPaginaId].extract;
+			const categorias = pages[primeraPaginaId].categories.map(cat => cat.title).join(", ");
+
+			// Eliminar el texto entre corchetes usando una expresión regular
+			extracto = extracto.replace(/\[.*?\]/g, '');
+
+			return extracto 
+				? `${extracto}\nCategorías: ${categorias}\nMás información: ${primerUrl}` 
+				: 'No se encontró información detallada.';
+		} else {
+			return 'No se encontró información relevante.';
+		}
 	} catch (error) {
 		console.error('Error al buscar en Wikipedia:', error);
 		return 'Hubo un error al buscar en Wikipedia.';
 	}
-}*/
-
-// Función para buscar en Wikipedia usando 'opensearch'
-async function buscarEnWikipedia(consulta) {
-    try {
-        // Codificar correctamente la consulta
-        const consultaCodificada = encodeURIComponent(consulta);
-
-        // Llamada a la API de Wikipedia con 'opensearch' para obtener sugerencias
-        const respuesta = await fetch(`https://es.wikipedia.org/w/api.php?action=opensearch&search=${consultaCodificada}&limit=1&format=json&origin=*`);
-        const data = await respuesta.json();
-
-        // Verificar si se encontró alguna coincidencia
-        const coincidencias = data[1]; // Array de títulos de artículos sugeridos
-        const urlCoincidencia = data[3]; // Array de URLs de artículos sugeridos
-
-        if (coincidencias.length > 0 && urlCoincidencia.length > 0) {
-            // Tomamos la primera coincidencia
-            const primerTitulo = coincidencias[0];
-            const primerUrl = urlCoincidencia[0];
-
-            // Hacemos otra llamada a la API para obtener el extracto del artículo encontrado
-            const extractoRespuesta = await fetch(`https://es.wikipedia.org/w/api.php?action=query&format=json&prop=extracts|categories&exintro=true&explaintext=true&titles=${encodeURIComponent(primerTitulo)}&origin=*`);
-            const extractoData = await extractoRespuesta.json();
-
-            const pages = extractoData.query.pages;
-            const primeraPaginaId = Object.keys(pages)[0];
-            let extracto = pages[primeraPaginaId].extract;
-            const categorias = pages[primeraPaginaId].categories.map(cat => cat.title).join(", ");
-
-            // Eliminar el texto entre corchetes usando una expresión regular
-            extracto = extracto.replace(/\[.*?\]/g, '');
-
-            return extracto 
-                ? `${extracto}\nCategorías: ${categorias}\nMás información: ${primerUrl}` 
-                : 'No se encontró información detallada.';
-        } else {
-            return 'No se encontró información relevante.';
-        }
-    } catch (error) {
-        console.error('Error al buscar en Wikipedia:', error);
-        return 'Hubo un error al buscar en Wikipedia.';
-    }
 }
+
+/* ---------------------------------------------------------------------------------------- */
 
 // Función para normalizar el texto
 function normalizarTexto(texto) {
@@ -445,9 +474,9 @@ async function buscarPalabrasClave(texto, respuestas) {
 					const chisteInicial = respuestas[palabraClave][0];
 					return chisteInicial;
 				}
-			} else if (textoNormalizado.includes("busca") || textoNormalizado.includes("que es")) {		
+			} else if (textoNormalizado.includes("busca") || textoNormalizado.includes("que es") || textoNormalizado.includes("quien es")) {		
 				// Extraer la consulta eliminando las palabras clave "busca" o "que es"
-				const consulta = texto.replace(/busca|Busca|que es|Que es/g, "").trim();
+				const consulta = texto.replace(/busca|Busca|que es|Que es|quien es|Quien es/g, "").trim();
 				
 				// Si hay una consulta válida, buscar en Wikipedia
 				if (consulta) {
@@ -461,8 +490,33 @@ async function buscarPalabrasClave(texto, respuestas) {
 				const consulta = texto.replace(/como se escribe|Como se escribe/g, "").trim();
 
 				if (consulta) {
-					const palabraCorregida = corregirOrtografia(consulta);
-					return `La forma correcta de escribirlo es: "${palabraCorregida}".`;
+					const sugerencias = await consultarLanguageTool(consulta);
+
+					if (sugerencias && sugerencias.length > 0) {
+						// Filtrar las sugerencias por distancia de Levenshtein
+						const sugerenciasCercanas = sugerencias
+							.map(sugerencia => ({
+								sugerenciasFiltradas: sugerencia.sugerencia.filter(palabraSugerida => levenshteinDistance(consulta, palabraSugerida) <= 2), // Limitar por distancia
+								motivo: sugerencia.mensaje !== "Se ha encontrado un posible error ortográfico." ? sugerencia.mensaje : ""
+							}))
+							.filter(sugerencia => sugerencia.sugerenciasFiltradas.length > 0);
+
+						if (sugerenciasCercanas.length > 0) {
+							// Si solo hay una sugerencia
+							if (sugerenciasCercanas.length === 1 && sugerenciasCercanas[0].sugerenciasFiltradas.length === 1) {
+								return `La forma correcta de escribirlo es: "${sugerenciasCercanas[0].sugerenciasFiltradas[0]}"`;
+							}
+							// Limitar a las 2 primeras sugerencias más cercanas
+							const resultado = sugerenciasCercanas.map(sugerencia =>
+								`Sugerencia: ${sugerencia.sugerenciasFiltradas.slice(0, 2).join(', ')}${sugerencia.motivo ? ` \nMotivo: ${sugerencia.motivo}` : ""}`
+							).join('\n');
+							return `Posibles correcciones para "${consulta}":\n${resultado}`;
+						} else {
+							return `No se encontraron correcciones útiles para "${consulta}".`;
+						}
+					} else {
+						return `Has escrito "${consulta}" correctamente.`;
+					}
 				} else {
 					return "No entiendo nada de lo que has escrito.";
 				}
@@ -491,7 +545,7 @@ async function buscarPalabrasClave(texto, respuestas) {
 	return "Lo siento, no entiendo tu pregunta.";
 }
 
-// ----------------------------------------FUNCIONALIDADES DEL CHATBOT-------------------------------------------
+/* ----------------------------------------FUNCIONALIDADES DEL FONTEND DEL CHATMUBOT------------------------------------------- */
 
 // Función para mostrar mensajes en el chat
 function mostrarMensaje(usuario, mensaje) {
@@ -569,14 +623,14 @@ cargarRespuestas().then(respuestas => {
 });
 
 function cambiarModo() {
-    // Alternar la clase 'modo-nocturno' en el cuerpo del documento
-    document.body.classList.toggle("modo-nocturno");
-    
-    // Cambiar el texto del botón según el modo actual
-    const botonModo = document.getElementById("btnModo");
-    if (document.body.classList.contains("modo-nocturno")) {
-        botonModo.textContent = "☀️";
-    } else {
-        botonModo.textContent = "🌙";
-    }
+	// Alternar la clase 'modo-nocturno' en el cuerpo del documento
+	document.body.classList.toggle("modo-nocturno");
+	
+	// Cambiar el texto del botón según el modo actual
+	const botonModo = document.getElementById("btnModo");
+	if (document.body.classList.contains("modo-nocturno")) {
+		botonModo.textContent = "☀️";
+	} else {
+		botonModo.textContent = "🌙";
+	}
 }
