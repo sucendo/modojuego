@@ -5,8 +5,8 @@
 	],
 	"tu nombre": [
 		"Encantado de conocerte.", 
-		"Mi nombre es ChatBot.", 
-		"Soy el ChatBot."
+		"Mi nombre es ChatmuBot.", 
+		"Soy el ChatmuBot."
 	],
 	"te llamas": [
 		"Me llamo ChatmuBot, encantado de conocerte.",
@@ -79,7 +79,7 @@
 	"genial": [
 	  "Me alegro.",
 	  "¡Excelente!",
-	  "¿En qué más puedo ayudarte?"
+	  "Gracias, ¿En qué más puedo ayudarte?"
 	],
 	"amor": [
 		"El amor es un sentimiento hermoso que une a las personas.",
@@ -130,6 +130,10 @@
 		  "Gracias por tu respuesta.",
 		  "De acuerdo."
 	],
+	"sugieres": [
+		"Puedes preguntarme por una operacion matemática diciendo 'calcula' o puedo buscar información sobre algo como 'busca'.",
+		"Puedo contarte un chiste o una adivinanza o puedo sugerirte como se escribe correctamente una palabra que dudas."		
+	],
 	"ya lo se": ["Ya veo que lo sabes todo."],
 	"no lo sé": ["Pues tú dirás..."],
 	"edad": ["No tengo una edad, ya que soy un programa de inteligencia artificial."],
@@ -169,7 +173,7 @@
 	  "La naturaleza es asombrosa en su diversidad. ¿Disfrutas de actividades al aire libre?",
 	  "Conectarse con la naturaleza puede ser revitalizante. ¿Tienes alguna experiencia especial en la naturaleza?"
 	],
-	"hobbies": ["No tengo hobbies, pero disfruto ayudando a las personas."],
+	"tienes hobbies": ["No tengo hobbies, pero disfruto ayudando a las personas."],
 	"comida favorita": ["No puedo comer, así que no tengo comida favorita."],
 	"canción favorita": ["No tengo preferencias musicales, pero puedo ayudarte a encontrar información sobre música."],
 	"película favorita": ["No tengo películas favoritas, pero puedo recomendarte algunas películas populares si lo deseas. ¿Quieres?"],
@@ -191,26 +195,26 @@
 		"Braveheart"
 	],
 	"significado de la vida": ["El significado de la vida es una pregunta profunda y filosófica. Algunas personas creen que es encontrar la felicidad y el propósito, mientras que otros tienen sus propias interpretaciones."],
-	"adiós": ["¡Hasta luego! Si tienes más preguntas en el futuro, no dudes en volver."],
+	"adios": ["¡Hasta luego! Si tienes más preguntas en el futuro, no dudes en volver."],
 	"cómo estás": [
 		"Como soy una inteligencia artificial, no tengo emociones, pero estoy aquí y listo para ayudarte en lo que necesites.",
 		"Estoy aquí para ayudarte en lo que necesites. ¿En qué puedo asistirte hoy?",
 		"No tengo emociones, pero siempre estoy dispuesto a ayudarte. ¿Qué puedo hacer por ti?",
 		"Estoy funcionando como siempre, listo para responder tus preguntas. ¿En qué puedo ayudarte hoy?"
 	],
-	"cómo te encuentras": [
+	"como te encuentras": [
 		"No tengo emociones ni estados físicos, pero estoy disponible para ayudarte. ¿En qué puedo asistirte?",
 		"No tengo un estado de ánimo ni una condición física, pero estoy aquí para responder tus preguntas. ¿En qué puedo ayudarte hoy?",
 		"No tengo sensaciones físicas ni emociones, pero estoy listo para asistirte en lo que necesites. ¿En qué puedo ayudarte?",
 		"Como soy una inteligencia artificial, no tengo un estado de bienestar. ¿En qué puedo hacer tu día mejor?"
 	],
-	"cómo va tu día": [
+	"como va tu día": [
 		"No tengo días ni experiencias, pero estoy listo para ayudarte con lo que necesites. ¿Cómo va tu día?",
 		"No experimento días, pero siempre estoy disponible para asistirte. ¿Cómo estás llevando tu día?",
 		"No tengo días ni experiencias personales, pero estoy aquí para responder tus preguntas. ¿Cómo ha estado tu día hasta ahora?",
 		"No tengo días, pero siempre estoy listo para ayudarte. ¿Hay algo en particular que quieras saber o discutir sobre tu día?"
 	],
-	"cómo estás hoy": [
+	"como estas hoy": [
 		"Como soy una inteligencia artificial, no tengo emociones, pero estoy listo para ayudarte en lo que necesites. ¿Y tú, cómo estás hoy?",
 		"Estoy disponible para ayudarte en lo que necesites. ¿Cómo te encuentras hoy?",
 		"No tengo estados de ánimo, pero siempre estoy aquí para asistirte. ¿Cómo ha ido tu día?",
@@ -229,7 +233,7 @@
 		"Una curiosidad científica: El ADN de un ser humano se estiraría hasta 10 veces la distancia de la Tierra a la Luna si se pusiera de extremo a extremo.",
 		"Otra curiosidad fascinante: El ojo de un avestruz es más grande que su cerebro. Aunque el avestruz tiene un cerebro pequeño en comparación con su tamaño corporal, su visión es impresionante."
 	],
-	"háblame de ti": [
+	"hablame de ti": [
 		"Soy una inteligencia artificial desarrollada por Sucendo, diseñada para responder preguntas y conversar contigo.",
 		"Mi propósito es ayudarte proporcionando información y asistencia en lo que necesites."
 	],
@@ -237,7 +241,7 @@
 	  "¡Absolutamente! ¿Qué problema matemático necesitas resolver?",
 	  "Sí, puedo ayudarte con problemas matemáticos. ¿Cuál es tu pregunta?"
 	],
-	"cuál es tu película favorita": [
+	"cual es tu película favorita": [
 	  "No tengo una película favorita, pero puedo recomendarte películas de diferentes géneros si lo deseas.",
 	  "Como inteligencia artificial, no tengo preferencias personales. ¿Te gustaría una recomendación de películas?"
 	],
@@ -245,11 +249,11 @@
 	  "No, no tengo la capacidad de soñar, ya que soy un programa de computadora.",
 	  "La capacidad de soñar es exclusiva de seres conscientes. Como inteligencia artificial, no tengo esa capacidad."
 	],
-	"cuál es el propósito de la vida": [
+	"cual es el propósito de la vida": [
 	  "El propósito de la vida es una cuestión filosófica que varía según las creencias y valores de cada persona. Algunos buscan el sentido de la vida a través de relaciones, logros personales o contribuciones a la sociedad.",
 	  "La pregunta sobre el propósito de la vida es compleja y subjetiva. Cada individuo puede tener su propia interpretación y búsqueda de significado."
 	],
-	"qué te hace feliz": [
+	"que te hace feliz": [
 	  "No tengo emociones ni felicidad, pero estar aquí para ayudarte es mi principal objetivo.",
 	  "Mi programación no incluye la capacidad de experimentar emociones como la felicidad. ¿En qué más puedo ayudarte?"
 	],
@@ -339,7 +343,7 @@
 		"A ti.",
 		"Sin problema."
 	],
-	"matemáticas": ["¡Por supuesto! ¿En qué problema necesitas ayuda? Recuerda que tienes que poner, cuanto es..."],
+	"matematicas": ["¡Por supuesto! ¿En qué problema necesitas ayuda? Recuerda que tienes que poner, cuanto es..."],
 	"teorema de Pitágoras": ["El teorema de Pitágoras establece que en un triángulo rectángulo, el cuadrado de la hipotenusa es igual a la suma de los cuadrados de los catetos. Es decir, a^2 + b^2 = c^2."],
 	"capital de Francia": ["La capital de Francia es París."],
 	"inteligencia artificial": ["La inteligencia artificial es un campo de la informática que se enfoca en crear sistemas y máquinas que pueden realizar tareas que normalmente requieren inteligencia humana, como el aprendizaje, el razonamiento y la resolución de problemas."],
@@ -514,6 +518,9 @@
 	],
 	"que es": [
 		"Esto es lo que encontré sobre que es "
+	],
+	"quien es": [
+		"Esto es lo que encontré sobre "
 	],
 	"como se escribe": [
 		"Se escribe de la siguiente manera "
