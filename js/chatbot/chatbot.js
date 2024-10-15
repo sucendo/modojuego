@@ -506,9 +506,9 @@ async function buscarPalabrasClave(texto, respuestas) {
 							if (sugerenciasCercanas.length === 1 && sugerenciasCercanas[0].sugerenciasFiltradas.length === 1) {
 								return `La forma correcta de escribirlo es: "${sugerenciasCercanas[0].sugerenciasFiltradas[0]}"`;
 							}
-							// Limitar a las 2 primeras sugerencias más cercanas
+							// Mostrar todas las sugerencias cercanas (sin limitar)
 							const resultado = sugerenciasCercanas.map(sugerencia =>
-								`Sugerencia: ${sugerencia.sugerenciasFiltradas.slice(0, 2).join(', ')}${sugerencia.motivo ? ` \nMotivo: ${sugerencia.motivo}` : ""}`
+								`Sugerencia: ${sugerencia.sugerenciasFiltradas.join(', ')}${sugerencia.motivo ? ` \nMotivo: ${sugerencia.motivo}` : ""}`
 							).join('\n');
 							return `Posibles correcciones para "${consulta}":\n${resultado}`;
 						} else {
