@@ -752,13 +752,16 @@ function mostrarMensaje(usuario, mensaje) {
 		const caracteres = mensaje.split("");
 		let index = 0;
 
+		// Determinar la velocidad de escritura
+		const velocidadEscritura = mensaje.length > 250 ? 1: 25; // Duplicar velocidad si tiene más de 250 caracteres
+
 		const mostrarCaracter = () => {
-			  if (index < caracteres.length) {
+			if (index < caracteres.length) {
 				nuevoMensaje.textContent += caracteres[index];
 				index++;
 				// Hacer una llamada recursiva para mostrar el próximo carácter después de un retraso
-				setTimeout(mostrarCaracter, 25); // Controla la velocidad de escritura (ajusta según lo necesario)
-			  }
+				setTimeout(mostrarCaracter, velocidadEscritura); // Usar la velocidad determinada
+			}
 		};
 
 		// Iniciar la animación de escritura
