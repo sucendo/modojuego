@@ -5,15 +5,15 @@
 
 // Función para cargar un script de forma dinámica
 function cargarScript(nombreArchivo, callback) {
-	  const script = document.createElement('script');
-	  script.src = nombreArchivo;
-	  script.defer = true;
+	const script = document.createElement('script');
+	script.src = nombreArchivo;
+	script.defer = true;
 
-	  // Manejar el evento de carga del script
-	  script.onload = callback;
+	// Manejar el evento de carga del script
+	script.onload = callback;
 
-	  // Agregar el script al final del cuerpo del documento
-	  document.body.appendChild(script);
+	// Agregar el script al final del cuerpo del documento
+	document.body.appendChild(script);
 }
 
 // Uso de la función para cargar el script principal y el script de utilidades
@@ -22,25 +22,25 @@ cargarScript('js/chatbot/chatbot.js', function () {
 	cargarScript('js/chatbot/logicaConversacional.js', function () {
 		// Código que depende del script de utilidades
 		// Aquí puedes iniciar tu aplicación después de cargar ambos scripts
-	  });
-	  cargarScript('js/chatbot/chatbotutil.js', function () {
+	});
+	cargarScript('js/chatbot/chatbotutil.js', function () {
 		// Código que depende del script de utilidades
 		// Aquí puedes iniciar tu aplicación después de cargar ambos scripts
-	  });
+	});
 });
 
 // Función para cargar el archivo JSON de respuestas
 function cargarRespuestas() {
-	  // Colocar el foco en la caja de texto al cargar la página
-	  const userInput = document.getElementById("userInput");
-	  userInput.focus();
+	// Colocar el foco en la caja de texto al cargar la página
+	const userInput = document.getElementById("userInput");
+	userInput.focus();
 
-	  return fetch('data/chatbot/chatbotrespuestas.json')
-		.then(response => response.json())
-		.catch(error => {
-		  console.error('Error al cargar el archivo JSON:', error);
-		  return {};
-		});
+	return fetch('data/chatbot/chatbotrespuestas.json')
+	.then(response => response.json())
+	.catch(error => {
+		console.error('Error al cargar el archivo JSON:', error);
+		return {};
+	});
 }
 
 /* ------------------- ORTOGRAFIA ---------------------- */
@@ -285,6 +285,67 @@ const diccionario = [
     "manejar", "proyectar", "recuperar", "restringir", "seleccionar", "revisar", "invitar", "unir", "evitar", "aumentar"
 ];
 
+// Función para consultar LanguageTool y obtener sugerencias ortográficas
+async function corregirTexto(texto) {
+	const apiUrl = 'https://api.languagetool.org/v2/check'; // Versión gratuita de LanguageTool
+
+	const data = {
+		text: texto,
+		language: "es", // Suponemos que el texto inicial está en español
+	};
+
+	try {
+		const respuesta = await fetch(apiUrl, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/x-www-form-urlencoded',
+			},
+			body: new URLSearchParams(data),
+		});
+
+		const resultado = await respuesta.json();
+
+		if (resultado.matches && resultado.matches.length > 0) {
+			let textoCorregido = texto;
+			resultado.matches.forEach(match => {
+				if (match.replacements && match.replacements.length > 0) {
+					// Reemplazamos el texto incorrecto con la primera sugerencia
+					const sugerencia = match.replacements[0].value;
+					textoCorregido = textoCorregido.replace(match.context.text, sugerencia);
+				}
+			});
+			return textoCorregido;
+		} else {
+			return texto; // Si no hay sugerencias, devolvemos el texto original
+		}
+	} catch (error) {
+		console.error("Error al corregir ortografía:", error);
+		return texto; // En caso de error, devolvemos el texto original
+	}
+}
+
+// Función para corregir el texto que no está entre comillas
+async function corregirTextoNoEntreComillas(texto) {
+	// Buscar todas las partes que no están entre comillas utilizando una expresión regular
+	const partesSeparadas = texto.split(/(".*?")/g);  // Dividimos por el texto entre comillas
+	const partesCorregidas = [];
+
+	// Recorremos cada parte: corregimos solo las que no estén entre comillas
+	for (let parte of partesSeparadas) {
+		if (parte.startsWith('"') && parte.endsWith('"')) {
+			// Si está entre comillas, la dejamos intacta
+			partesCorregidas.push(parte);
+		} else {
+			// Si no está entre comillas, corregimos ortografía
+			const parteCorregida = await corregirTexto(parte);
+			partesCorregidas.push(parteCorregida);
+		}
+	}
+
+	// Unimos las partes corregidas y las que estaban entre comillas
+	return partesCorregidas.join('');
+}
+
 // Función para encontrar la palabra más cercana en el diccionario local
 /*
 function corregirOrtografia(palabra) {
@@ -350,6 +411,102 @@ async function buscarEnWikipedia(consulta) {
 		console.error('Error al buscar en Wikipedia:', error);
 		return 'Hubo un error al buscar en Wikipedia.';
 	}
+}
+
+// Función para corregir ortografía de la consulta
+async function corregirConsulta(consulta) {
+    const palabras = consulta.split(' ');
+    const palabrasCorregidas = [];
+
+    for (const palabra of palabras) {
+        const sugerencias = await consultarLanguageTool(palabra);
+
+        if (sugerencias && sugerencias.length > 0) {
+            // Filtramos las sugerencias por distancia de Levenshtein y obtenemos la más cercana
+            const sugerenciasCercanas = sugerencias
+                .map(sugerencia => sugerencia.sugerencia.filter(palabraSugerida => levenshteinDistance(palabra, palabraSugerida) <= 2))
+                .filter(sugerenciasValidas => sugerenciasValidas.length > 0);
+
+            // Si hay sugerencias cercanas, tomamos la primera
+            if (sugerenciasCercanas.length > 0 && sugerenciasCercanas[0].length > 0) {
+                palabrasCorregidas.push(sugerenciasCercanas[0][0]); // Tomamos la primera sugerencia
+            } else {
+                palabrasCorregidas.push(palabra); // Si no hay correcciones cercanas, dejamos la palabra original
+            }
+        } else {
+            palabrasCorregidas.push(palabra); // Si no hay sugerencias, dejamos la palabra original
+        }
+    }
+
+    // Retornamos la consulta corregida
+    return palabrasCorregidas.join(' ');
+}
+
+/* -------------------------------------- TRADUCTOR -------------------------------------------------- */
+
+// Función para traducir usando LibreTranslate
+async function traducirTexto(frase, idiomaDestino = 'en') {
+    const apiUrl = 'https://libretranslate.com/translate';
+
+    const data = {
+        q: frase,            // Texto que se va a traducir
+        source: 'es',         // Idioma original (español en este caso)
+        target: idiomaDestino, // Idioma al que se va a traducir (por defecto inglés)
+        format: 'text',
+    };
+
+    try {
+        const respuesta = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        });
+
+        const resultado = await respuesta.json();
+        
+        // Devolver el texto traducido
+        return resultado.translatedText;
+    } catch (error) {
+        console.error('Error al traducir:', error);
+        return 'Hubo un error al traducir la frase.';
+    }
+}
+
+// Diccionario de idiomas y sus códigos
+const idiomasSoportados = {
+	"español": "es",
+	"inglés": "en",
+	"alemán": "de",
+	"francés": "fr",
+	"italiano": "it",
+	"portugués": "pt",
+	"chino": "zh",
+	"ruso": "ru",
+	"japonés": "ja",
+	"coreano": "ko",
+	"árabe": "ar",
+	"neerlandés": "nl",
+	"húngaro": "hu",
+	"polaco": "pl",
+    // Añade más idiomas aquí
+};
+
+// Función para traducir usando Google Translate (sin API Key)
+async function traducirGoogle(frase, idiomaDestino) {
+    const apiUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=es&tl=${idiomaDestino}&dt=t&q=${encodeURIComponent(frase)}`;
+
+    try {
+        const respuesta = await fetch(apiUrl);
+        const resultado = await respuesta.json();
+
+        // El resultado es un array, tomamos la primera traducción
+        return resultado[0][0][0];
+    } catch (error) {
+        console.error('Error al traducir:', error);
+        return 'Hubo un error al traducir la frase.';
+    }
 }
 
 /* ---------------------------------------------------------------------------------------- */
@@ -476,16 +633,20 @@ async function buscarPalabrasClave(texto, respuestas) {
 				}
 			} else if (textoNormalizado.includes("busca") || textoNormalizado.includes("que es") || textoNormalizado.includes("quien es")) {		
 				// Extraer la consulta eliminando las palabras clave "busca" o "que es"
-				const consulta = texto.replace(/busca|Busca|que es|Que es|quien es|Quien es/g, "").trim();
+				const consultaOriginal = texto.replace(/busca|Busca|que es|Que es|quien es|Quien es/g, "").trim();
 				
-				// Si hay una consulta válida, buscar en Wikipedia
-				if (consulta) {
-					const resultado = await buscarEnWikipedia(consulta);  // Esperar la respuesta de la búsqueda
-					return `Esto es lo que encontré sobre "${consulta}":\n${resultado}`;
+				// Si hay una consulta válida, proceder
+				if (consultaOriginal) {
+					// Corregir ortografía de la consulta antes de buscar
+					const consultaCorregida = await corregirConsulta(consultaOriginal);
+
+					// Luego, realizar la búsqueda en Wikipedia
+					const resultado = await buscarEnWikipedia(consultaCorregida);  // Esperar la respuesta de la búsqueda
+					return `Esto es lo que encontré sobre "${consultaCorregida}":\n${resultado}`;
 				} else {
 					return "Por favor, proporciona algo para buscar en Wikipedia.";
 				}
-			} else if (textoNormalizado.includes("como se escribe")) {		
+			} else if (textoNormalizado.includes("como se escribe")) {
 				// Extraer la consulta eliminando las palabras clave "como se escribe"
 				const consulta = texto.replace(/como se escribe|Como se escribe/g, "").trim();
 
@@ -504,8 +665,15 @@ async function buscarPalabrasClave(texto, respuestas) {
 						if (sugerenciasCercanas.length > 0) {
 							// Si solo hay una sugerencia
 							if (sugerenciasCercanas.length === 1 && sugerenciasCercanas[0].sugerenciasFiltradas.length === 1) {
-								return `La forma correcta de escribirlo es: "${sugerenciasCercanas[0].sugerenciasFiltradas[0]}"`;
+								// Si no hay motivo relevante, devolver solo la sugerencia
+								if (!sugerenciasCercanas[0].motivo) {
+									return `La forma correcta de escribirlo es: "${sugerenciasCercanas[0].sugerenciasFiltradas[0]}"`;
+								} else {
+									// Mostrar la sugerencia con el motivo (si aplica)
+									return `La forma correcta de escribirlo es: "${sugerenciasCercanas[0].sugerenciasFiltradas[0]}" \nMotivo: ${sugerenciasCercanas[0].motivo}`;
+								}
 							}
+							
 							// Mostrar todas las sugerencias cercanas (sin limitar)
 							const resultado = sugerenciasCercanas.map(sugerencia =>
 								`Sugerencia: ${sugerencia.sugerenciasFiltradas.join(', ')}${sugerencia.motivo ? ` \nMotivo: ${sugerencia.motivo}` : ""}`
@@ -515,10 +683,33 @@ async function buscarPalabrasClave(texto, respuestas) {
 							return `No se encontraron correcciones útiles para "${consulta}".`;
 						}
 					} else {
-						return `Has escrito "${consulta}" correctamente.`;
+						return `No se encontraron correcciones para "${consulta}".`;
 					}
 				} else {
 					return "No entiendo nada de lo que has escrito.";
+				}
+			}else if (textoNormalizado.startsWith("traduce al ")) {
+				// Extraer el idioma y la frase a traducir
+				let partes = texto.replace(/traduce al |Traduce al /g, "").trim().split(" ");
+				let idiomaTexto = partes.shift(); // El primer elemento es el idioma
+				let frase = partes.join(" "); // El resto es la frase a traducir
+
+				// Corregir el nombre del idioma
+				idiomaTexto = await corregirConsulta(idiomaTexto);
+
+				// Corregir el texto a traducir
+				frase = await corregirConsulta(frase);
+
+				// Verificar si el idioma es soportado
+				const idiomaDestino = idiomasSoportados[idiomaTexto];
+				
+				if (idiomaDestino && frase) {
+					const traduccion = await traducirGoogle(frase, idiomaDestino); // Traducir al idioma especificado
+					return `Traducción al ${idiomaTexto}: "${traduccion}"`;
+				} else if (!idiomaDestino) {
+					return `Lo siento, no soportamos traducciones al idioma "${idiomaTexto}".`;
+				} else {
+					return "Por favor, proporciona una frase para traducir.";
 				}
 			} else if (palabraClave in respuestas) {
 				const respuestasCategoria = respuestas[palabraClave];
@@ -549,77 +740,79 @@ async function buscarPalabrasClave(texto, respuestas) {
 
 // Función para mostrar mensajes en el chat
 function mostrarMensaje(usuario, mensaje) {
-	  const chat = document.getElementById("chat");
-	  const nuevoMensaje = document.createElement("div");
-	  nuevoMensaje.className = usuario === "Usuario" ? "mensaje-usuario" : "mensaje-robot";
+	const chat = document.getElementById("chat");
+	const nuevoMensaje = document.createElement("div");
+	nuevoMensaje.className = usuario === "Usuario" ? "mensaje-usuario" : "mensaje-robot";
 
-	  chat.appendChild(nuevoMensaje);
+	chat.appendChild(nuevoMensaje);
 
-	  // Verifica si el usuario es el Robot (chatbot) para aplicar el efecto de escritura
-	  if (usuario === "Robot" && typeof mensaje === "string") {
+	// Verifica si el usuario es el Robot (chatbot) para aplicar el efecto de escritura
+	if (usuario === "Robot" && typeof mensaje === "string") {
 		// Dividir el mensaje en caracteres
 		const caracteres = mensaje.split("");
 		let index = 0;
 
 		const mostrarCaracter = () => {
-		  if (index < caracteres.length) {
-			nuevoMensaje.textContent += caracteres[index];
-			index++;
-			// Hacer una llamada recursiva para mostrar el próximo carácter después de un retraso
-			setTimeout(mostrarCaracter, 25); // Controla la velocidad de escritura (ajusta según lo necesario)
-		  }
+			  if (index < caracteres.length) {
+				nuevoMensaje.textContent += caracteres[index];
+				index++;
+				// Hacer una llamada recursiva para mostrar el próximo carácter después de un retraso
+				setTimeout(mostrarCaracter, 25); // Controla la velocidad de escritura (ajusta según lo necesario)
+			  }
 		};
 
 		// Iniciar la animación de escritura
 		mostrarCaracter();
-	  } else {
+	} else {
 		nuevoMensaje.textContent = mensaje;
-	  }
+	}
 
-	  // Desplaza automáticamente el scroll hacia abajo
-	  chat.scrollTop = chat.scrollHeight;
+	// Desplaza automáticamente el scroll hacia abajo
+	chat.scrollTop = chat.scrollHeight;
 }
 
 // Cargar las respuestas y utilizarlas
 cargarRespuestas().then(respuestas => {
-	  const enviarButton = document.getElementById("enviar");
-	  const userInput = document.getElementById("userInput");
+	const enviarButton = document.getElementById("enviar");
+	const userInput = document.getElementById("userInput");
 
-	  enviarButton.addEventListener("click", function () {
+	enviarButton.addEventListener("click", function () {
+		//const pregunta = await corregirOrtografia(userInput.value); // Asegúrate de que corregirOrtografia sea una función asíncrona
 		const pregunta = userInput.value;
 		if (pregunta.trim() !== "") {
-		  mostrarMensaje("Usuario", pregunta);
-		  userInput.value = "";
-		  buscarPalabrasClave(pregunta, respuestas)
-			.then(respuesta => {
-			  if (respuesta) {
-				mostrarMensaje("Robot", respuesta);
-			  } else {
-				mostrarMensaje("Robot", "Lo siento, no entiendo tu pregunta.");
-			  }
-			})
-			.catch(error => console.error('Error:', error));
-		}
-	  });
-
-	  userInput.addEventListener("keyup", function (event) {
-		if (event.key === "Enter") {
-		  const pregunta = userInput.value;
-		  if (pregunta.trim() !== "") {
 			mostrarMensaje("Usuario", pregunta);
 			userInput.value = "";
 			buscarPalabrasClave(pregunta, respuestas)
-			  .then(respuesta => {
+			.then(respuesta => {
 				if (respuesta) {
-				  mostrarMensaje("Robot", respuesta);
+					mostrarMensaje("Robot", respuesta);
 				} else {
-				  mostrarMensaje("Robot", "Lo siento, no entiendo tu pregunta.");
+					mostrarMensaje("Robot", "Lo siento, no entiendo tu pregunta.");
 				}
-			  })
-			  .catch(error => console.error('Error:', error));
-		  }
+			})
+			.catch(error => console.error('Error:', error));
 		}
-	  });
+	});
+
+	userInput.addEventListener("keyup", async function (event) {
+		if (event.key === "Enter") {
+			//const pregunta = await corregirOrtografia(userInput.value); // Asegúrate de que corregirOrtografia sea una función asíncrona
+			const pregunta = userInput.value;
+			if (pregunta.trim() !== "") {
+				mostrarMensaje("Usuario", pregunta);
+				userInput.value = "";
+				buscarPalabrasClave(pregunta, respuestas)
+				.then(respuesta => {
+					if (respuesta) {
+						mostrarMensaje("Robot", respuesta);
+					} else {
+						mostrarMensaje("Robot", "Lo siento, no entiendo tu pregunta.");
+					}
+				})
+				.catch(error => console.error('Error:', error));
+			}
+		}
+	});
 });
 
 function cambiarModo() {
