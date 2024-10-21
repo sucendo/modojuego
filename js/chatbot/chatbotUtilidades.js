@@ -1,5 +1,5 @@
 /*
-* chatbotutil.js
+* chatbotUtilidades.js
 * By Sucendo 2024
 */
 
