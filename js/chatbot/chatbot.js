@@ -19,11 +19,23 @@ function cargarScript(nombreArchivo, callback) {
 // Uso de la función para cargar el script principal y el script de utilidades
 cargarScript('js/chatbot/chatbot.js', function () {
   // Código que depende del script principal
-	cargarScript('js/chatbot/logicaConversacional.js', function () {
+	cargarScript('js/chatbot/chatbotLogicaConversacional.js', function () {
 		// Código que depende del script de utilidades
 		// Aquí puedes iniciar tu aplicación después de cargar ambos scripts
 	});
-	cargarScript('js/chatbot/chatbotutil.js', function () {
+	cargarScript('js/chatbot/chatbotUtilidades.js', function () {
+		// Código que depende del script de utilidades
+		// Aquí puedes iniciar tu aplicación después de cargar ambos scripts
+	});
+	cargarScript('js/chatbot/chatbotPedia.js', function () {
+		// Código que depende del script de utilidades
+		// Aquí puedes iniciar tu aplicación después de cargar ambos scripts
+	});
+	cargarScript('js/chatbot/chatbotTranslate.js', function () {
+		// Código que depende del script de utilidades
+		// Aquí puedes iniciar tu aplicación después de cargar ambos scripts
+	});
+	cargarScript('js/chatbot/chatbotCorrector.js', function () {
 		// Código que depende del script de utilidades
 		// Aquí puedes iniciar tu aplicación después de cargar ambos scripts
 	});
@@ -204,51 +216,6 @@ async function procesarTextoConCorreccion(texto) {
 	return restaurarComillas(textoCorregido, partesExcluidas);
 }
 
-/* ------------------- ENCICLOPEDIA ---------------------- */
-
-// Función para buscar en Wikipedia usando 'opensearch'
-async function buscarEnWikipedia(consulta) {
-	try {
-		// Codificar correctamente la consulta
-		const consultaCodificada = encodeURIComponent(consulta);
-
-		// Llamada a la API de Wikipedia con 'opensearch' para obtener sugerencias
-		const respuesta = await fetch(`https://es.wikipedia.org/w/api.php?action=opensearch&search=${consultaCodificada}&limit=1&format=json&origin=*`);
-		const data = await respuesta.json();
-
-		// Verificar si se encontró alguna coincidencia
-		const coincidencias = data[1]; // Array de títulos de artículos sugeridos
-		const urlCoincidencia = data[3]; // Array de URLs de artículos sugeridos
-
-		if (coincidencias.length > 0 && urlCoincidencia.length > 0) {
-			// Tomamos la primera coincidencia
-			const primerTitulo = coincidencias[0];
-			const primerUrl = urlCoincidencia[0];
-
-			// Hacemos otra llamada a la API para obtener el extracto del artículo encontrado
-			const extractoRespuesta = await fetch(`https://es.wikipedia.org/w/api.php?action=query&format=json&prop=extracts|categories&exintro=true&explaintext=true&titles=${encodeURIComponent(primerTitulo)}&origin=*`);
-			const extractoData = await extractoRespuesta.json();
-
-			const pages = extractoData.query.pages;
-			const primeraPaginaId = Object.keys(pages)[0];
-			let extracto = pages[primeraPaginaId].extract;
-			const categorias = pages[primeraPaginaId].categories.map(cat => cat.title).join(", ");
-
-			// Eliminar el texto entre corchetes usando una expresión regular
-			extracto = extracto.replace(/\[.*?\]/g, '');
-
-			return extracto 
-				? `${extracto}\nCategorías: ${categorias}\nMás información: ${primerUrl}` 
-				: 'No se encontró información detallada.';
-		} else {
-			return 'No se encontró información relevante.';
-		}
-	} catch (error) {
-		console.error('Error al buscar en Wikipedia:', error);
-		return 'Hubo un error al buscar en Wikipedia.';
-	}
-}
-
 // Función para corregir ortografía de la consulta
 async function corregirConsulta(consulta) {
     const palabras = consulta.split(' ');
@@ -276,73 +243,6 @@ async function corregirConsulta(consulta) {
 
     // Retornamos la consulta corregida
     return palabrasCorregidas.join(' ');
-}
-
-/* -------------------------------------- TRADUCTOR -------------------------------------------------- */
-
-// Función para traducir usando LibreTranslate
-async function traducirTexto(frase, idiomaDestino = 'en') {
-    const apiUrl = 'https://libretranslate.com/translate';
-
-    const data = {
-        q: frase,            // Texto que se va a traducir
-        source: 'es',         // Idioma original (español en este caso)
-        target: idiomaDestino, // Idioma al que se va a traducir (por defecto inglés)
-        format: 'text',
-    };
-
-    try {
-        const respuesta = await fetch(apiUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data),
-        });
-
-        const resultado = await respuesta.json();
-        
-        // Devolver el texto traducido
-        return resultado.translatedText;
-    } catch (error) {
-        console.error('Error al traducir:', error);
-        return 'Hubo un error al traducir la frase.';
-    }
-}
-
-// Diccionario de idiomas y sus códigos
-const idiomasSoportados = {
-	"español": "es",
-	"inglés": "en",
-	"alemán": "de",
-	"francés": "fr",
-	"italiano": "it",
-	"portugués": "pt",
-	"chino": "zh",
-	"ruso": "ru",
-	"japonés": "ja",
-	"coreano": "ko",
-	"árabe": "ar",
-	"neerlandés": "nl",
-	"húngaro": "hu",
-	"polaco": "pl",
-    // Añade más idiomas aquí
-};
-
-// Función para traducir usando Google Translate (sin API Key)
-async function traducirGoogle(frase, idiomaDestino) {
-    const apiUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=es&tl=${idiomaDestino}&dt=t&q=${encodeURIComponent(frase)}`;
-
-    try {
-        const respuesta = await fetch(apiUrl);
-        const resultado = await respuesta.json();
-
-        // El resultado es un array, tomamos la primera traducción
-        return resultado[0][0][0];
-    } catch (error) {
-        console.error('Error al traducir:', error);
-        return 'Hubo un error al traducir la frase.';
-    }
 }
 
 /* ---------------------------------------------------------------------------------------- */
