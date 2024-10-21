@@ -80,38 +80,6 @@ async function consultarLanguageTool(palabra) {
 	}
 }
 
-// Función para encontrar la palabra correcta utilizando la API de LanguageTool
-async function corregirOrtografia(palabra) {
-	const apiUrl = `https://api.languagetool.org/v2/check`;
-	
-	const data = {
-		text: palabra,
-		language: 'es', // Idioma español
-	};
-
-	try {
-		const respuesta = await fetch(apiUrl, {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/x-www-form-urlencoded',
-			},
-			body: new URLSearchParams(data),
-		});
-
-		const resultado = await respuesta.json();
-		
-		// Si hay sugerencias, tomamos la primera
-		if (resultado.matches.length > 0 && resultado.matches[0].replacements.length > 0) {
-			return resultado.matches[0].replacements[0].value;
-		} else {
-			return palabra; // Si no hay correcciones, devolvemos la palabra original
-		}
-	} catch (error) {
-		console.error("Error al consultar la API de LanguageTool:", error);
-		return palabra; // Si ocurre un error, devolvemos la palabra original
-	}
-}
-
 // Función para calcular la distancia de Levenshtein
 function levenshteinDistance(a, b) {
 	const matriz = [];
@@ -140,158 +108,30 @@ function levenshteinDistance(a, b) {
 	return matriz[b.length][a.length];
 }
 
-// Simulamos un diccionario local con palabras comunes en español
-const diccionario = [
-    // Palabras comunes
-    "revolución", "ortografía", "inteligencia", "palabra", "computadora", "escribir", "hola", "adiós",
-    "amor", "amistad", "felicidad", "tristeza", "esperanza", "familia", "trabajo", "salud", "dinero", 
-    "comida", "bebida", "agua", "fuego", "tierra", "aire", "sol", "luna", "estrella", "planeta", 
-    "universo", "cielo", "mar", "río", "montaña", "bosque", "ciudad", "pueblo", "casa", "edificio", 
-    "carro", "bicicleta", "avión", "barco", "tren", "camión", "animal", "perro", "gato", "pájaro", 
-    "pez", "caballo", "león", "tigre", "elefante", "zorro", "lobo", "ratón", "conejo", "serpiente", 
-    "insecto", "mariposa", "abeja", "araña", "mosca", "libro", "carta", "teléfono", "televisión", 
-    "radio", "música", "película", "teatro", "deporte", "fútbol", "baloncesto", "tenis", "golf", 
-    "natación", "esquí", "ciclismo", "carrera", "boxeo", "lucha", "arte", "pintura", "escultura", 
-    "dibujo", "fotografía", "museo", "historia", "ciencia", "matemáticas", "física", "química", 
-    "biología", "geografía", "lengua", "literatura", "poesía", "novela", "cuento", "ensayo", 
-    "palabra", "frase", "oración", "parrafo", "idioma", "español", "inglés", "francés", "alemán", 
-    "italiano", "portugués", "japonés", "chino", "ruso", "árabe", "hindi", "coreano", "árbol", 
-    "flor", "fruta", "manzana", "plátano", "naranja", "uva", "fresa", "limón", "piña", "mango", 
-    "melón", "sandía", "verdura", "zanahoria", "lechuga", "espinaca", "papa", "tomate", "pepino", 
-    "pimiento", "calabacín", "maíz", "trigo", "arroz", "pasta", "pan", "queso", "leche", "huevo", 
-    "carne", "pollo", "pescado", "cerdo", "res", "cordero", "salchicha", "hamburguesa", "pizza", 
-    "sopa", "ensalada", "bebida", "café", "té", "jugo", "refresco", "vino", "cerveza", "agua", 
-    "limonada", "chocolate", "leche", "familia", "padre", "madre", "hermano", "hermana", "abuelo", 
-    "abuela", "tío", "tía", "primo", "prima", "hijo", "hija", "esposo", "esposa", "amigo", "amiga", 
-    "vecino", "jefe", "compañero", "profesor", "maestro", "estudiante", "alumno", "doctor", 
-    "enfermero", "policía", "bombero", "abogado", "ingeniero", "arquitecto", "artista", "músico", 
-    "escritor", "periodista", "fotógrafo", "actor", "director", "cocinero", "panadero", "peluquero", 
-    "carpintero", "plomero", "electricista", "mecánico", "pintor", "jardinero", "deportista", 
-    "atleta", "boxeador", "tenista", "futbolista", "ciclista", "nadador", "esquiador", "corredor", 
-    "boxeador", "gimnasta", "entrenador", "árbitro", "medalla", "trofeo", "campeón", "partido", 
-    "juego", "competencia", "entrenamiento", "estrategia", "táctica", "equipo", "jugador", 
-    "aficionado", "espectador", "público", "marcador", "gol", "punto", "canasta", "pase", "tiro", 
-    "penalti", "falta", "tarjeta", "expulsión", "árbitro", "entrenador", "presidente", "dirigente", 
-    "jugador", "defensa", "delantero", "portero", "medio", "centrocampista", "arco", "red", 
-    "balón", "pelota", "camiseta", "short", "calcetines", "botas", "zapatos", "guantes", "cinturón",
-
-    // Palabras que comúnmente se escriben incorrectamente
-    "acento", "acción", "adaptación", "adición", "afortunado", "algunas", "análisis", "aplicación",
-    "artículo", "así", "atracción", "balón", "básico", "cálido", "cámara", "cien", "ciudad",
-    "cohete", "corrección", "dificultad", "dólar", "educación", "efectivo", "elección", "emoción",
-    "especial", "estudiante", "está", "fácil", "fácilmente", "favorito", "frustración", "futuro",
-    "gobierno", "héroe", "historia", "imaginación", "importante", "independencia", "interesante",
-    "inteligente", "invitación", "límite", "máquina", "matemáticas", "número", "opinión", "opción",
-    "organización", "país", "película", "práctico", "proporción", "razón", "recibo", "región",
-    "responsabilidad", "revolución", "sección", "sistema", "técnico", "televisión", "tradición",
-    "universidad", "utilizar", "vacaciones", "validez", "verdad", "zoológico",
-
-    // Palabras con errores comunes
-    "dificil", "dificultades", "excelente", "felicidades", "gracias", "imaginativo", "matematico",
-    "misterioso", "moralidad", "natural", "ocurrencia", "oportunidad", "percepcion", "plazo",
-    "precaucion", "recuperacion", "refleccion", "relacion", "solucion", "superficie", "utilidad",
-    "vigilancia", "año", "dólares", "cárcel", "ciencia", "cómodo", "adición", "emoción", "garantía",
-    "próximo", "murciélago", "carácter", "química", "índice", "cóndor", "cápsula", "cólera", "término",
-    "especificación", "declaración", "imposición", "incidencia", "influencia", "inmunización",
-    "juventud", "líquido", "medicina", "narración", "navegación", "situación", "tecnología",
-    "término", "universidad", "vegetación", "voluntad", "vaca",
-
-    // Palabras adicionales
-    "abandonar", "abrazar", "acelerar", "aceptar", "acompañar", "acostarse", "admirar", "afirmar", 
-    "agregar", "ajustar", "alegría", "alivio", "andar", "animar", "anotar", "aprender", "apoyar", 
-    "arreglar", "asegurar", "asumir", "atender", "aumentar", "avanzar", "bailar", "cambiar", 
-    "cancelar", "captar", "celebrar", "cerrar", "chocar", "citar", "cooperar", "crear", "crecer", 
-    "decidir", "defender", "desarrollar", "descubrir", "desejar", "detener", "dialogar", "diferir", 
-    "educar", "encontrar", "enviar", "entender", "equilibrar", "examinar", "explicar", "felicitar", 
-    "formar", "frustrar", "generar", "gritar", "guardar", "guiar", "hablar", "imitar", "iniciar", 
-    "investigar", "jugar", "justificar", "leer", "limpiar", "manejar", "mirar", "modificar", 
-    "motivar", "navegar", "necesitar", "observación", "ofrecer", "organizar", "perder", "persistir", 
-    "plantear", "planificar", "probar", "proponer", "realizar", "recoger", "reflejar", "regresar", 
-    "resolver", "resultar", "romper", "saber", "saludar", "salir", "seguir", "soñar", "sonreír", 
-    "sostener", "sugerir", "transformar", "usar", "valorar", "vender", "ver", "visitar", "volar", 
-
-    // Adjetivos
-    "abierto", "agradable", "alto", "amable", "ancho", "bajo", "bonito", "brillante", "cálido", 
-    "corto", "claro", "colorido", "difícil", "divertido", "dudoso", "elegante", "enorme", "fácil", 
-    "feliz", "grande", "interesante", "largo", "lejano", "malo", "nuevo", "rápido", "sabroso", 
-    "serio", "simpático", "sólido", "tierno", "tranquilo", "vivo", "voluminoso", 
-
-    // Sustantivos adicionales
-    "abstracción", "acuerdo", "adversidad", "afecto", "análisis", "aprecio", "artefacto", 
-    "asunto", "atención", "cambio", "comunicación", "confianza", "consejo", "creación", 
-    "desafío", "desarrollo", "deseo", "detalles", "diversión", "documento", "experiencia", 
-    "firmeza", "fluctuación", "futuro", "gracia", "guía", "influencia", "inquietud", 
-    "interacción", "inversión", "juego", "juventud", "lección", "manera", "misterio", 
-    "narrativa", "observación", "perspectiva", "planteamiento", "proceso", "proyecto", 
-    "quiebra", "reacción", "reflexión", "relación", "solución", "sugerencia", "tendencia", 
-    "vacío", "variación", 
-
-    // Adverbios
-    "además", "ahora", "aquí", "así", "bajo", "cerca", "claro", "constantemente", "después", 
-    "donde", "rápidamente", "siempre", "tal vez", "temprano", "tarde", "ya", 
-    
-   // Más
-   "anotación", "aparta", "aplauden", "arroja", "aterriza", "asimila", "asegura", "atrae", "aumenta", "avanza",
-    "cabaña", "califica", "calmante", "categoriza", "celebra", "cirujano", "clama", "conmueve", "confirma", "consiente",
-    "contiene", "contiene", "controla", "coordina", "crece", "debate", "decora", "denuncia", "determina", "devora",
-    "edifica", "elige", "enreda", "entrena", "estimula", "evalúa", "explica", "extiende", "enfrenta", "falda",
-    "firma", "fija", "flota", "frena", "gira", "glorifica", "guarda", "impulsa", "incrementa", "indica",
-    "inscribe", "integra", "interactúa", "intensifica", "introduce", "invoca", "lanza", "libera", "mejora", "modifica",
-    "mueve", "navega", "oscila", "ordena", "organiza", "persigue", "planta", "previene", "produce", "protege",
-    "quema", "realiza", "responde", "rota", "sale", "señala", "somete", "superan", "surgen", "trata",
-    "transporta", "traspasa", "transforma", "unifica", "utiliza", "valida", "visita", "abunda", "aburre",
-    "ahorra", "ama", "aplica", "arruina", "asoma", "ataca", "acompaña", "desarrolla", "destaca", "disminuye",
-    "embellece", "engaña", "emplea", "enfatiza", "enfatiza", "entusiasta", "excusa", "fragancia", "frecuenta", "imita",
-    "impacta", "incrementa", "intensifica", "invita", "juega", "madurar", "modifica", "molesta", "motiva",
-    "muestra", "narra", "opina", "permite", "presenta", "prohíbe", "recomienda", "registra", "renueva", "representa",
-    "respeta", "responde", "saca", "señala", "supera", "sustenta", "transforma", "utiliza", "vigila", "aclamación",
-    "acoplamiento", "adoración", "administración", "advertencia", "aflicción", "agencia", "agitación", "alarmante",
-    "albergue", "alquimia", "ambición", "antagonismo", "apariencia", "aprecio", "asombro", "asignación", "asociación",
-    "asunción", "atisbo", "auge", "balance", "barrera", "belleza", "capacidad", "carácter", "clarificación",
-    "colaboración", "compilación", "comprensión", "compresión", "conexión", "contemplación", "conversación", "copiosa",
-    "corrección", "creación", "creatividad", "criticar", "curación", "democracia", "denuncia", "diseño", "determinación",
-    "difusión", "educación", "emoción", "empoderar", "enfoque", "entusiasmo", "escalera", "eslabón", "esperanza",
-    "exploración", "fabricación", "fastidiar", "fealdad", "felizmente", "fórmula", "fragor", "frecuencia", "gratitud",
-    "guía", "hartazgo", "herencia", "humanidad", "hipótesis", "ideal", "independencia", "inspiración", "invitación",
-    "liderazgo", "logros", "lógica", "lucidez", "madurez", "maldad", "magnitud", "malestar", "manifestación", "mapa",
-    "medida", "melodía", "mesura", "metáfora", "movimiento", "motivación", "multitasking", "naturaleza", "necesidad",
-    "nostalgia", "observación", "ocasión", "organización", "palabra", "paciencia", "perdón", "percepción", "rendimiento",
-    "revisión", "romanticismo", "ruina", "sabiduría", "salvación", "similitud", "sintomatología", "solidaridad",
-    "sofisticación", "sostenibilidad", "superación", "ternura", "tradición", "transformación", "validez", "victoria",
-    "virtualidad", "bienestar", "búsqueda", "ágil", "además", "aunque", "alguien", "aquí", "alrededor",
-    "alguna", "antorcha", "así", "atención", "bonito", "caso", "claro", "comienzo", "conseguir", "construir",
-    "contenido", "creer", "curar", "detrás", "dicha", "disponible", "encontrar", "fuerte", "interesante", "mantener",
-    "mejorar", "mundo", "noticia", "pensar", "posible", "preparar", "resolver", "saber", "serio", "sencillo",
-    "siempre", "tratar", "una", "único", "utilizar", "vejez", "viento", "visual", "abordar", "alcanzar", "ajustado",
-    "aprender", "cambiar", "cargar", "compartir", "construir", "conector", "conseguir", "contar", "correr", "crecer",
-    "descubrir", "desarrollar", "disfrutar", "escuchar", "explicar", "generar", "ayudar", "iluminar", "incluir",
-    "invitar", "liderar", "manifestar", "navegar", "oír", "olvidar", "parar", "proteger", "recibir", "revisar",
-    "seleccionar", "sumar", "utilizar", "ver", "compartir", "sobrepasar", "participar", "destacar", "argumentar",
-    "superar", "sugerir", "terminar", "transformar", "alentar", "buscar", "contemplar", "dar", "dirigir", "exhibir",
-    "facilitar", "fomentar", "inscribir", "instigar", "justificar", "olvidar", "proponer", "tratar", "utilizar",
-    "valorar", "acompañar", "abordar", "aportar", "armonizar", "argumentar", "alinear", "aplaudir", "callar",
-    "celebrar", "cambiar", "considerar", "contestar", "culminar", "discernir", "disfrutar", "empoderar", "fomentar",
-    "frustrar", "generar", "hilar", "ir", "investigar", "jugar", "vivir", "reflexionar", "remediar", "seguir",
-    "servir", "sumergir", "sustituir", "tratar", "utilizar", "valorar", "apartarse", "advertir", "apegar", "atraer",
-    "clarificar", "codificar", "compadecer", "concentrar", "construir", "transformar", "desplegar", "enfatizar",
-    "iluminar", "inscribir", "justificar", "liderar", "manifestar", "organizar", "reforzar", "reflexionar",
-    "reemplazar", "relajar", "revisar", "proseguir", "salir", "sustentar", "valerse", "validar", "convocar", "dar",
-    "ejecutar", "iniciar", "utilizar", "permanecer", "responder", "saber", "reforzar", "servir", "acoger", "atraer",
-    "ayudar", "comunicar", "decidir", "esforzarse", "expandir", "facilitar", "inspirar", "observar", "prever",
-    "propiciar", "reconstruir", "realizar", "reproducir", "resolver", "trascender", "actualizar", "aunar",
-    "consumir", "cultivar", "dispersar", "fomentar", "mejorar", "optimizar", "preparar", "reubicar", "salvar",
-    "seducir", "sostener", "respaldar", "conseguir", "afinar", "avivar", "enhebrar", "iluminar", "involucrar",
-    "resaltar", "ser", "transmitir", "cumplir", "diversificar", "armonizar", "coordinar", "repensar", "implicar",
-    "manejar", "proyectar", "recuperar", "restringir", "seleccionar", "revisar", "invitar", "unir", "evitar", "aumentar"
-];
-
-// Función para consultar LanguageTool y obtener sugerencias ortográficas
+// Función para consultar LanguageTool y corregir ortografía
 async function corregirTexto(texto) {
-	const apiUrl = 'https://api.languagetool.org/v2/check'; // Versión gratuita de LanguageTool
+	// Si el texto está entre comillas dobles, no corregir
+	const regexComillas = /"([^"]*)"/g;
+	if (regexComillas.test(texto)) {
+		return {
+			corregidoHTML: texto, // Devolver tal como está, incluyendo las comillas
+			corregidoSimple: texto // Igual para el texto sin formato
+		};
+	}
+
+	// Si el texto comienza con "como se escribe", no corregir
+	if (texto.toLowerCase().startsWith("como se escribe")) {
+		return {
+			corregidoHTML: texto, // Devolver tal como está
+			corregidoSimple: texto // Igual para el texto sin formato
+		};
+	}
+
+	const apiUrl = 'https://api.languagetool.org/v2/check'; // API de LanguageTool
 
 	const data = {
 		text: texto,
-		language: "es", // Suponemos que el texto inicial está en español
+		language: "es", // Suponemos que el texto está en español
 	};
 
 	try {
@@ -306,67 +146,63 @@ async function corregirTexto(texto) {
 		const resultado = await respuesta.json();
 
 		if (resultado.matches && resultado.matches.length > 0) {
-			let textoCorregido = texto;
-			resultado.matches.forEach(match => {
+			let textoCorregidoHTML = texto.split('');
+			let textoCorregidoSimple = texto.split('');
+
+			// Aplicar cada corrección en orden inverso para evitar desajustes de índice
+			resultado.matches.reverse().forEach(match => {
 				if (match.replacements && match.replacements.length > 0) {
-					// Reemplazamos el texto incorrecto con la primera sugerencia
 					const sugerencia = match.replacements[0].value;
-					textoCorregido = textoCorregido.replace(match.context.text, sugerencia);
+					const start = match.offset;
+					const end = start + match.length;
+
+					// Reemplazamos la palabra en ambas versiones (HTML y texto simple)
+					textoCorregidoSimple.splice(start, end - start, ...sugerencia);
+					const palabraCorregidaHTML = `<em>${sugerencia}</em>`;
+					textoCorregidoHTML.splice(start, end - start, ...palabraCorregidaHTML);
 				}
 			});
-			return textoCorregido;
+
+			// Devolvemos ambas versiones: la corregida con HTML y sin HTML
+			return {
+				corregidoHTML: textoCorregidoHTML.join(''),
+				corregidoSimple: textoCorregidoSimple.join('')
+			};
 		} else {
-			return texto; // Si no hay sugerencias, devolvemos el texto original
+			return {
+				corregidoHTML: texto,
+				corregidoSimple: texto
+			}; // Si no hay correcciones, devolvemos el texto original en ambos casos
 		}
 	} catch (error) {
 		console.error("Error al corregir ortografía:", error);
-		return texto; // En caso de error, devolvemos el texto original
+		return {
+			corregidoHTML: texto,
+			corregidoSimple: texto
+		}; // En caso de error, devolvemos el texto original
 	}
 }
 
-// Función para corregir el texto que no está entre comillas
-async function corregirTextoNoEntreComillas(texto) {
-	// Buscar todas las partes que no están entre comillas utilizando una expresión regular
-	const partesSeparadas = texto.split(/(".*?")/g);  // Dividimos por el texto entre comillas
-	const partesCorregidas = [];
+// Función para excluir correcciones dentro de comillas
+function excluirComillas(texto) {
+	const partesExcluidas = texto.match(/"[^"]*"/g) || [];
+	const textoSinComillas = texto.replace(/"[^"]*"/g, "__RESERVADO__"); // Placeholder temporal
 
-	// Recorremos cada parte: corregimos solo las que no estén entre comillas
-	for (let parte of partesSeparadas) {
-		if (parte.startsWith('"') && parte.endsWith('"')) {
-			// Si está entre comillas, la dejamos intacta
-			partesCorregidas.push(parte);
-		} else {
-			// Si no está entre comillas, corregimos ortografía
-			const parteCorregida = await corregirTexto(parte);
-			partesCorregidas.push(parteCorregida);
-		}
-	}
-
-	// Unimos las partes corregidas y las que estaban entre comillas
-	return partesCorregidas.join('');
+	return { textoSinComillas, partesExcluidas };
 }
 
-// Función para encontrar la palabra más cercana en el diccionario local
-/*
-function corregirOrtografia(palabra) {
-	let mejorCoincidencia = "";
-	let distanciaMinima = Infinity;
+// Función para restaurar las partes con comillas
+function restaurarComillas(textoCorregido, partesExcluidas) {
+	let i = 0;
+	return textoCorregido.replace(/__RESERVADO__/g, () => partesExcluidas[i++] || '');
+}
 
-	diccionario.forEach(function(palabraCorrecta) {
-		const distancia = levenshteinDistance(palabra, palabraCorrecta);
-		if (distancia < distanciaMinima) {
-			distanciaMinima = distancia;
-			mejorCoincidencia = palabraCorrecta;
-		}
-	});
-
-	// Si la distancia es considerablemente baja, devolvemos la mejor coincidencia
-	if (distanciaMinima <= 2) {
-		return mejorCoincidencia;
-	} else {
-		return palabra; // Si la diferencia es muy grande, devolvemos la palabra original
-	}
-}*/
+// Función principal para corregir ortografía respetando comillas
+async function procesarTextoConCorreccion(texto) {
+	const { textoSinComillas, partesExcluidas } = excluirComillas(texto);
+	const textoCorregido = await corregirTexto(textoSinComillas);
+	return restaurarComillas(textoCorregido, partesExcluidas);
+}
 
 /* ------------------- ENCICLOPEDIA ---------------------- */
 
@@ -688,9 +524,9 @@ async function buscarPalabrasClave(texto, respuestas) {
 				} else {
 					return "No entiendo nada de lo que has escrito.";
 				}
-			}else if (textoNormalizado.startsWith("traduce al ")) {
+			}else if (textoNormalizado.startsWith("traduce al") || textoNormalizado.includes("traduccion al")) {
 				// Extraer el idioma y la frase a traducir
-				let partes = texto.replace(/traduce al |Traduce al /g, "").trim().split(" ");
+				let partes = texto.replace(/traduce al|Traduce al|Traduccion al|Traduccion al/g, "").trim().split(" ");
 				let idiomaTexto = partes.shift(); // El primer elemento es el idioma
 				let frase = partes.join(" "); // El resto es la frase a traducir
 
@@ -744,34 +580,29 @@ function mostrarMensaje(usuario, mensaje) {
 	const nuevoMensaje = document.createElement("div");
 	nuevoMensaje.className = usuario === "Usuario" ? "mensaje-usuario" : "mensaje-robot";
 
-	chat.appendChild(nuevoMensaje);
-
 	// Verifica si el usuario es el Robot (chatbot) para aplicar el efecto de escritura
 	if (usuario === "Robot" && typeof mensaje === "string") {
-		// Dividir el mensaje en caracteres
+		// Dividir el mensaje en caracteres para el efecto de escritura
 		const caracteres = mensaje.split("");
 		let index = 0;
 
-		// Determinar la velocidad de escritura
-		const velocidadEscritura = mensaje.length > 250 ? 1: 25; // Duplicar velocidad si tiene más de 250 caracteres
+		const velocidadEscritura = mensaje.length > 250 ? 1 : 25;
 
 		const mostrarCaracter = () => {
 			if (index < caracteres.length) {
-				nuevoMensaje.textContent += caracteres[index];
+				nuevoMensaje.innerHTML += caracteres[index]; // Usamos innerHTML en vez de textContent para permitir HTML
 				index++;
-				// Hacer una llamada recursiva para mostrar el próximo carácter después de un retraso
-				setTimeout(mostrarCaracter, velocidadEscritura); // Usar la velocidad determinada
+				setTimeout(mostrarCaracter, velocidadEscritura);
 			}
 		};
 
-		// Iniciar la animación de escritura
 		mostrarCaracter();
 	} else {
-		nuevoMensaje.textContent = mensaje;
+		nuevoMensaje.innerHTML = mensaje; // Usamos innerHTML para permitir HTML
 	}
 
-	// Desplaza automáticamente el scroll hacia abajo
-	chat.scrollTop = chat.scrollHeight;
+	chat.appendChild(nuevoMensaje);
+	chat.scrollTop = chat.scrollHeight; // Desplazar automáticamente hacia abajo
 }
 
 // Cargar las respuestas y utilizarlas
@@ -779,32 +610,20 @@ cargarRespuestas().then(respuestas => {
 	const enviarButton = document.getElementById("enviar");
 	const userInput = document.getElementById("userInput");
 
-	enviarButton.addEventListener("click", function () {
-		//const pregunta = await corregirOrtografia(userInput.value); // Asegúrate de que corregirOrtografia sea una función asíncrona
-		const pregunta = userInput.value;
-		if (pregunta.trim() !== "") {
-			mostrarMensaje("Usuario", pregunta);
-			userInput.value = "";
-			buscarPalabrasClave(pregunta, respuestas)
-			.then(respuesta => {
-				if (respuesta) {
-					mostrarMensaje("Robot", respuesta);
-				} else {
-					mostrarMensaje("Robot", "Lo siento, no entiendo tu pregunta.");
-				}
-			})
-			.catch(error => console.error('Error:', error));
-		}
-	});
+	// Evento para el botón de enviar
+	enviarButton.addEventListener("click", async function () {
+		const textoUsuario = userInput.value;
 
-	userInput.addEventListener("keyup", async function (event) {
-		if (event.key === "Enter") {
-			//const pregunta = await corregirOrtografia(userInput.value); // Asegúrate de que corregirOrtografia sea una función asíncrona
-			const pregunta = userInput.value;
-			if (pregunta.trim() !== "") {
-				mostrarMensaje("Usuario", pregunta);
-				userInput.value = "";
-				buscarPalabrasClave(pregunta, respuestas)
+		// Corregir el texto antes de continuar
+		const { corregidoHTML, corregidoSimple } = await corregirTexto(textoUsuario);
+
+		if (corregidoSimple.trim() !== "") {
+			// Mostrar la versión corregida con HTML en el chat
+			mostrarMensaje("Usuario", corregidoHTML);
+			userInput.value = ""; // Limpiar el input después de enviar
+
+			// Hacer la búsqueda en Wikipedia o cualquier otra acción con la versión simple
+			buscarPalabrasClave(corregidoSimple, respuestas)
 				.then(respuesta => {
 					if (respuesta) {
 						mostrarMensaje("Robot", respuesta);
@@ -813,6 +632,32 @@ cargarRespuestas().then(respuestas => {
 					}
 				})
 				.catch(error => console.error('Error:', error));
+		}
+	});
+
+	// Evento para presionar Enter
+	userInput.addEventListener("keyup", async function (event) {
+		if (event.key === "Enter") {
+			const textoUsuario = userInput.value;
+
+			// Corregir el texto antes de continuar
+			const { corregidoHTML, corregidoSimple } = await corregirTexto(textoUsuario);
+
+			if (corregidoSimple.trim() !== "") {
+				// Mostrar la versión corregida con HTML en el chat
+				mostrarMensaje("Usuario", corregidoHTML);
+				userInput.value = ""; // Limpiar el input después de enviar
+
+				// Hacer la búsqueda en Wikipedia o cualquier otra acción con la versión simple
+				buscarPalabrasClave(corregidoSimple, respuestas)
+					.then(respuesta => {
+						if (respuesta) {
+							mostrarMensaje("Robot", respuesta);
+						} else {
+							mostrarMensaje("Robot", "Lo siento, no entiendo tu pregunta.");
+						}
+					})
+					.catch(error => console.error('Error:', error));
 			}
 		}
 	});
