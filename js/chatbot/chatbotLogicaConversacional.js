@@ -1,5 +1,5 @@
 /*
-* logicaConversacional.js
+* chatbotLogicaConversacional.js
 * By Sucendo 2024
 */
 
