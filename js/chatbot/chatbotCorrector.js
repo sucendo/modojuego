@@ -79,16 +79,22 @@ async function corregirTexto(texto) {
 		};
 	}
 
-	// Si el texto comienza con "como se escribe", no corregir
+	// Si el texto comienza o contiene estas excepciones, no corregir
 	if (texto.toLowerCase().startsWith("como se escribe")) {
 		return {
 			corregidoHTML: texto, // Devolver tal como está
 			corregidoSimple: texto // Igual para el texto sin formato
 		};
+	} else if (texto.toLowerCase().includes("al ingles")) {
+		const textoCorregido = texto.replace(/\bingles\b/gi, 'inglés');
+		return {
+			corregidoHTML: textoCorregido, 
+			corregidoSimple: textoCorregido
+		};
 	}
 
-	const apiUrl = 'https://api.languagetool.org/v2/check'; // API de LanguageTool
-
+	// API URL para LanguageTool
+	const apiUrl = 'https://api.languagetool.org/v2/check';
 	const data = {
 		text: texto,
 		language: "es", // Suponemos que el texto está en español
@@ -116,30 +122,32 @@ async function corregirTexto(texto) {
 					const start = match.offset;
 					const end = start + match.length;
 
-					// Reemplazamos la palabra en ambas versiones (HTML y texto simple)
+					// Reemplazar la palabra en ambas versiones (HTML y texto simple)
 					textoCorregidoSimple.splice(start, end - start, ...sugerencia);
 					const palabraCorregidaHTML = `<em>${sugerencia}</em>`;
 					textoCorregidoHTML.splice(start, end - start, ...palabraCorregidaHTML);
 				}
 			});
 
-			// Devolvemos ambas versiones: la corregida con HTML y sin HTML
+			// Devolver ambas versiones: la corregida con HTML y sin HTML
 			return {
 				corregidoHTML: textoCorregidoHTML.join(''),
 				corregidoSimple: textoCorregidoSimple.join('')
 			};
 		} else {
+			// Si no hay correcciones, devolver el texto original en ambos casos
 			return {
 				corregidoHTML: texto,
 				corregidoSimple: texto
-			}; // Si no hay correcciones, devolvemos el texto original en ambos casos
+			};
 		}
 	} catch (error) {
 		console.error("Error al corregir ortografía:", error);
+		// En caso de error, devolver el texto original
 		return {
 			corregidoHTML: texto,
 			corregidoSimple: texto
-		}; // En caso de error, devolvemos el texto original
+		};
 	}
 }
 
