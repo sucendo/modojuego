@@ -54,10 +54,11 @@ function calcularTiempoRestante(texto) {
 	return "No se proporcionó una fecha y hora válidas.";
 }
 
-function calcularHoraActual(texto) {
-        const ahora = new Date();
-        const horaActual = `${ahora.getHours()}:${ahora.getMinutes()}`;
-        return `${horaActual}`;
+function calcularHoraActual() {
+	const ahora = new Date();
+	const horas = String(ahora.getHours()).padStart(2, '0'); // Asegura 2 dígitos
+	const minutos = String(ahora.getMinutes()).padStart(2, '0'); // Asegura 2 dígitos
+	return `${horas}:${minutos}`;
 }
 
 function calcularDiaHoy(texto) {
@@ -68,8 +69,8 @@ function calcularDiaHoy(texto) {
 }
 
 function saludoDia(texto) {
-	const horaActual = calcularHoraActual(texto);
-	const hora = parseInt(horaActual.split(":")[0]);
+	const horaActual = calcularHoraActual();
+	const hora = parseInt(horaActual.split(":")[0]); // Obtener solo la hora
 
 	let saludo;
 	if (hora >= 5 && hora < 12) {
@@ -80,8 +81,9 @@ function saludoDia(texto) {
 		saludo = "buenas noches";
 	}
 
+	// Si el saludo no coincide con el texto proporcionado
 	if (!texto.toLowerCase().includes(saludo)) {
-		// Si el saludo no coincide con el momento del día actual, corregirlo
+		// Corregir el saludo según la hora del día
 		if (saludo === "buenos días") {
 			return "¡Buenos días! ¿Cómo estás?";
 		} else if (saludo === "buenas tardes") {
@@ -90,7 +92,7 @@ function saludoDia(texto) {
 			return "¡Buenas noches! ¿Cómo estás?";
 		}
 	} else {
-		// Si el saludo coincide, devolver la hora actual normalmente
+		// Si el saludo es correcto, devolver la hora actual
 		return `Son las ${horaActual}.`;
 	}
 }
