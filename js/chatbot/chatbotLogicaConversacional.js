@@ -89,9 +89,13 @@ function manejarContextoConversacion(contextoConversacion, palabras, respuestas)
 
 				// Inicia una nueva adivinanza si el usuario pide otra
 				return iniciarAdivinanza(respuestas);
+			} else if (palabras.includes(normalizarTexto("rindo"))) {
+				// Si el usuario se rinde, proporciona la respuesta correcta
+				const respuestaCorrecta = contextoConversacion.respuestaCorrecta; // Asumimos que guardaste la respuesta correcta en el contexto
+				return `La respuesta correcta era: ${respuestaCorrecta}. ¿Quieres probar con otra adivinanza?`;
 			} else {
 				// Si el usuario está respondiendo a la adivinanza, maneja la respuesta
-				const respuestaUsuario = palabras.join(" ");
+				const respuestaUsuario = palabras.join(" "); // Une las palabras en una cadena
 				return manejarAdivinanza(contextoConversacion, respuestaUsuario);
 			}
 		}
