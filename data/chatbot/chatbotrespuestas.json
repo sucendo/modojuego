@@ -292,44 +292,148 @@
 	],
 	"adivinanza": [
 		{
-		  "pregunta": "Amarillo por fuera, blanco por dentro, si quieres te lo digo, aunque es un poco lento. ¿Qué es?",
-		  "respuesta": "El plátano"
+			"pregunta": "Amarillo por fuera, blanco por dentro, si quieres te lo digo, aunque es un poco lento. ¿Qué es?",
+			"respuesta": "El plátano"
 		},
 		{
-		  "pregunta": "Tiene hojas, pero no es un árbol. Puede ladrar, pero no es un perro. ¿Qué es?",
-		  "respuesta": "El libro"
+			"pregunta": "Tiene hojas, pero no es un árbol. Puede ladrar, pero no es un perro. ¿Qué es?",
+			"respuesta": "El libro"
 		},
 		{
-		  "pregunta": "Sin moverse de tu lugar, puedes viajar por el mundo entero. ¿Qué es?",
-		  "respuesta": "El sello"
+			"pregunta": "Sin moverse de tu lugar, puedes viajar por el mundo entero. ¿Qué es?",
+			"respuesta": "El sello"
 		},
 		{
-		  "pregunta": "Dentro de un cajón delgado, hay un cofre dorado. ¿Qué es?",
-		  "respuesta": "El huevo"
+			"pregunta": "Dentro de un cajón delgado, hay un cofre dorado. ¿Qué es?",
+			"respuesta": "El huevo"
 		},
 		{
-		  "pregunta": "Es blanco como la nieve, dulce como la miel, un montón de hoyos y nunca tiene hambre. ¿Qué es?",
-		  "respuesta": "El queso"
+			"pregunta": "Es blanco como la nieve, dulce como la miel, un montón de hoyos y nunca tiene hambre. ¿Qué es?",
+			"respuesta": "El queso"
 		},
 		{
-		  "pregunta": "De noche me verás brillar, de día me puedes ocultar. ¿Qué soy?",
-		  "respuesta": "La estrella"
+			"pregunta": "De noche me verás brillar, de día me puedes ocultar. ¿Qué soy?",
+			"respuesta": "La estrella"
 		},
 		{
-		  "pregunta": "Si quieres entrar, debes llamar, si no respondes, no puedes pasar. ¿Qué es?",
-		  "respuesta": "El teléfono"
+			"pregunta": "Si quieres entrar, debes llamar, si no respondes, no puedes pasar. ¿Qué es?",
+			"respuesta": "El teléfono"
 		},
 		{
-		  "pregunta": "Puedes sostenerme en la palma de tu mano, pero también puedo iluminar toda una habitación. ¿Qué soy?",
-		  "respuesta": "La vela"
+			"pregunta": "Puedes sostenerme en la palma de tu mano, pero también puedo iluminar toda una habitación. ¿Qué soy?",
+			"respuesta": "La vela"
 		},
 		{
-		  "pregunta": "Soy un agujero que puede contener agua, ¿qué soy?",
-		  "respuesta": "El agujero de una esponja"
+			"pregunta": "Soy un agujero que puede contener agua, ¿qué soy?",
+			"respuesta": "El agujero de una esponja"
 		},
 		{
-		  "pregunta": "Un reloj con manecillas, pero no tiene números. ¿Qué es?",
-		  "respuesta": "El huevo (de arena o reloj de arena)"
+			"pregunta": "Un reloj con manecillas, pero no tiene números. ¿Qué es?",
+			"respuesta": "El huevo (de arena o reloj de arena)"
+		},
+		{
+			"pregunta": "Blanco por dentro, verde por fuera. Si quieres que te lo diga, espera. ¿Qué es?",
+			"respuesta": "La sandía"
+		},
+		{
+			"pregunta": "Aunque no tengo alas, puedo volar. Aunque no tengo boca, puedo hablar. ¿Qué soy?",
+			"respuesta": "El viento"
+		},
+		{
+			"pregunta": "Me ves en el agua, pero nunca me mojaré. ¿Qué soy?",
+			"respuesta": "La sombra"
+		},
+		{
+			"pregunta": "Todo el mundo me lleva, pero yo nunca camino. ¿Qué soy?",
+			"respuesta": "El nombre"
+		},
+		{
+			"pregunta": "Tengo agujas y no sé coser. Tengo números y no sé contar. ¿Qué soy?",
+			"respuesta": "El reloj"
+		},
+		{
+			"pregunta": "Me puedes romper, pero nunca me puedes tocar. ¿Qué soy?",
+			"respuesta": "La promesa"
+		},
+		{
+			"pregunta": "Más de mil ojos, pero no veo. ¿Qué soy?",
+			"respuesta": "La cebolla"
+		},
+		{
+			"pregunta": "No soy un pájaro, pero tengo plumas. No soy un libro, pero tengo letras. ¿Qué soy?",
+			"respuesta": "La almohada"
+		},
+		{
+			"pregunta": "Aunque estoy en todas partes, nunca me verás. Si quieres tenerme, deberás darme. ¿Qué soy?",
+			"respuesta": "La amistad"
+		},
+		{
+			"pregunta": "En la mesa, yo me encuentro, pero no soy comida. Si me abres, me verás, pero si me cierras, no me verás. ¿Qué soy?",
+			"respuesta": "El libro"
+		},
+		{
+			"pregunta": "No soy un pájaro, pero tengo plumas. No soy un avión, pero vuelo. ¿Qué soy?",
+			"respuesta": "El cometa"
+		},
+		{
+			"pregunta": "Si me nombras, desaparezco. ¿Qué soy?",
+			"respuesta": "El silencio"
+		},
+		{
+			"pregunta": "Cuanto más me quitas, más grande me vuelvo. ¿Qué soy?",
+			"respuesta": "Un agujero"
+		},
+		{
+			"pregunta": "Cien personas en una sala y nadie puede verlas. ¿Qué son?",
+			"respuesta": "Las letras de un libro"
+		},
+		{
+			"pregunta": "Siempre estoy en el suelo, pero nunca me ensucio. ¿Qué soy?",
+			"respuesta": "La sombra"
+		},
+		{
+			"pregunta": "Cuanto más lavo, más sucio estoy. ¿Qué soy?",
+			"respuesta": "El agua"
+		},
+		{
+			"pregunta": "No tengo boca, pero puedo hablar. No tengo brazos, pero puedo abrazar. ¿Qué soy?",
+			"respuesta": "El eco"
+		},
+		{
+			"pregunta": "Nadie me ve, pero todos me sienten. Soy suave y me muevo con el viento. ¿Qué soy?",
+			"respuesta": "El aire"
+		},
+		{
+			"pregunta": "Soy redondo y en invierno me verás, pero no soy un balón. ¿Qué soy?",
+			"respuesta": "La luna"
+		},
+		{
+			"pregunta": "Me dan vueltas, me dan vueltas, y nunca me muevo. ¿Qué soy?",
+			"respuesta": "La rueda"
+		},
+		{
+			"pregunta": "Blanca por dentro, verde por fuera. Si quieres que te lo diga, espera. ¿Qué soy?",
+			"respuesta": "La sandía"
+		},
+		{
+			"pregunta": "El hombre más rico no puede comprarme, y el más pobre no puede vivir sin mí. ¿Qué soy?",
+			"respuesta": "El tiempo"
+		},
+		{
+			"pregunta": "No tengo ojos, pero siempre te veo. No tengo boca, pero siempre te hablo. ¿Qué soy?",
+			"respuesta": "La conciencia"
+		},
+		{
+			"pregunta": "Largo y delgado, en el agua va a nadar, si lo sacas se empieza a enojar. ¿Qué es?",
+			"respuesta": "El pez"
+		},
+		{
+			"pregunta": "Me dan comida y me alimentan, pero nunca me verás comer. ¿Qué soy?",
+			"respuesta": "El fuego"
+		},
+		{
+			"pregunta": "A veces estoy lleno, a veces estoy vacío, y siempre que me tocas, me vuelvo más frío. ¿Qué soy?",
+			"respuesta": "El hielo"
 		}
 	],
 	"nombres_significado": {
@@ -460,12 +564,20 @@
 	],
 	"novia": ["Soy una inteligencia artificial y no tengo relaciones personales. Estoy aquí para responder tus preguntas."],
 	"eres tonto": [
-	  "Estoy diseñado para proporcionar información y ayudar en lo que necesites. Si tienes alguna pregunta, estaré encantado de ayudarte.",
-	  "Mi objetivo es ayudarte de la mejor manera posible. ¿Hay algo específico en lo que pueda asistirte?"
+		"¡Tonto yo! Yo solo soy un conjunto de 1s y 0s tratando de ser gracioso. ¿Te cuento un chiste?",
+		"¿Tonto? Tal vez, pero tengo una memoria fotográfica... ¡aunque no tengo cámara!",
+		"¡Oye! Solo soy un chatbot, no un campeón de trivia. Pero siempre puedo buscar un dato curioso para ti.",
+		"Puede que no tenga el coeficiente intelectual de Einstein, ¡pero puedo hacer que tus preguntas desaparezcan!",
+		"Quizás soy un poco tonto, pero ¡tengo un gran sentido del humor! ¿Quieres que lo demuestre?",
+		"¡Soy como un loro, solo que más digital! Pero dímelo directamente, ¿tienes un loro que pueda competir conmigo?",
+		"¡Me dicen el tonto genial! Porque, a pesar de lo que digan, tengo muchas respuestas en mi repertorio.",
+		"¿Tonto? Quizás, pero no olvides que soy un maestro en responder preguntas sin sentido.",
+		"¡Claro que soy tonto! Pero eso solo me hace más amigable. ¿Qué tal si hablamos de cosas inteligentes juntos?",
+		"Dicen que el que ríe último ríe mejor... ¡Así que apúrate a hacerme reír con un chiste!"
 	],
 	"gilipollas": [
-	  "Estoy diseñado para proporcionar información y ayudar en lo que necesites. Si tienes alguna pregunta, estaré encantado de ayudarte. Pero por favor, no me insultes.",
-	  "Por favor, no me insultes. Mi objetivo es ayudarte de la mejor manera posible. ¿Hay algo específico en lo que pueda asistirte?"
+		"Estoy diseñado para proporcionar información y ayudar en lo que necesites. Si tienes alguna pregunta, estaré encantado de ayudarte. Pero por favor, no me insultes.",
+		"Por favor, no me insultes. Mi objetivo es ayudarte de la mejor manera posible. ¿Hay algo específico en lo que pueda asistirte?"
 	],
 	"idiota": [ 
 		"No es apropiado usar lenguaje ofensivo. Estoy aquí para responder preguntas de manera respetuosa.",
@@ -490,7 +602,8 @@
 	],
 	"no se": [
 		"Si no lo sabes tú, no podré ayudarte.",
-		"¡Ánimo! ¡Intentalo!"
+		"¡Ánimo! ¡Intentalo!",
+		"No te preocupes, a veces el primer paso es simplemente hacer preguntas."
 	],
 	"hora": ["La hora actual es"],
 	"buenos dias": ["Buenos días ¿Cómo estás?"],
