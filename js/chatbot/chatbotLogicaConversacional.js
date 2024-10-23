@@ -79,20 +79,21 @@ function manejarContextoConversacion(contextoConversacion, palabras, respuestas)
 				return "Una pena...";
 			}
 		} else if (contextoConversacion.palabraClave === "adivinanza") {
-			// El usuario quiere una adivinanza
-			const adivinanzaActual = respuestas[contextoConversacion.palabraClave][0]; // Obtener la adivinanza actual
-			const respuestaCorrecta = normalizarTexto(adivinanzaActual.respuesta);
+			if (palabras.includes("otra") || palabras.includes(normalizarTexto("más"))|| palabras.includes(normalizarTexto("sí"))) {
+				contextoConversacion.repeticiones++;
+				if (contextoConversacion.repeticiones > 2) {
+					contextoConversacion.palabraClave = null;
+					contextoConversacion.repeticiones = 0;
+					return "¡Has tenido suficiente de eso! ¿En qué más puedo ayudarte?";
+				}
 
-			// Verificar si la respuesta del usuario es correcta
-			if (palabras.includes(respuestaCorrecta)) {
-				contextoConversacion.palabraClave = null; // Reiniciar el contexto
-				return "¡Correcto! ¡Eres un experto en adivinanzas!";
+				// Inicia una nueva adivinanza si el usuario pide otra
+				return iniciarAdivinanza(respuestas);
 			} else {
-				return "Incorrecto. ¿Quieres intentarlo de nuevo o preguntarme algo más?";
+				// Si el usuario está respondiendo a la adivinanza, maneja la respuesta
+				const respuestaUsuario = palabras.join(" ");
+				return manejarAdivinanza(contextoConversacion, respuestaUsuario);
 			}
-		} else {    
-			// El usuario cambia de contexto
-			contextoConversacion.palabraClave = null;
 		}
 	}
 }
