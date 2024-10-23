@@ -16,28 +16,25 @@ function cargarScript(nombreArchivo, callback) {
 	document.body.appendChild(script);
 }
 
-// Uso de la función para cargar el script principal y el script de utilidades
+// Cargar scripts relacionados con el chatbot
 cargarScript('js/chatbot/chatbot.js', function () {
-  // Código que depende del script principal
 	cargarScript('js/chatbot/chatbotLogicaConversacional.js', function () {
-		// Código que depende del script de utilidades
-		// Aquí puedes iniciar tu aplicación después de cargar ambos scripts
+		// Código para la lógica principal del chatbot
 	});
 	cargarScript('js/chatbot/chatbotUtilidades.js', function () {
-		// Código que depende del script de utilidades
-		// Aquí puedes iniciar tu aplicación después de cargar ambos scripts
+		// Código para las utilidades del chatbot
 	});
 	cargarScript('js/chatbot/chatbotPedia.js', function () {
-		// Código que depende del script de utilidades
-		// Aquí puedes iniciar tu aplicación después de cargar ambos scripts
+		// Código para funcionalidades como Wikipedia o definiciones
 	});
 	cargarScript('js/chatbot/chatbotTranslate.js', function () {
-		// Código que depende del script de utilidades
-		// Aquí puedes iniciar tu aplicación después de cargar ambos scripts
+		// Código para las traducciones
 	});
 	cargarScript('js/chatbot/chatbotCorrector.js', function () {
-		// Código que depende del script de utilidades
-		// Aquí puedes iniciar tu aplicación después de cargar ambos scripts
+		// Código para el corrector ortográfico
+	});
+	cargarScript('js/chatbot/chatbotJuegos.js', function () {
+		// Cargar la lógica de juegos y adivinanzas
 	});
 });
 
@@ -138,10 +135,6 @@ async function buscarPalabrasClave(texto, respuestas) {
 				} else {
 					return "Lo siento, no tengo esa información. ¿Cómo te llamas?";
 				}
-			} else if (palabras.includes(normalizarTexto("adivinanza"))) {
-				  contextoConversacion.palabraClave = "adivinanza";
-				  // Aquí puedes mostrar la adivinanza al usuario
-				  mostrarMensaje("Robot", respuestas["adivinanza"][0]);
 			} else if (palabras.includes("guardar")) {
 				const palabras = texto.split(" ");
 				const datoIndex = palabras.indexOf("guardar");
@@ -176,6 +169,17 @@ async function buscarPalabrasClave(texto, respuestas) {
 					contextoConversacion.repeticiones = 0;
 					const chisteInicial = respuestas[palabraClave][0];
 					return chisteInicial;
+				}
+			} else if (palabraClave === "adivinanza") {
+				if (contextoConversacion.repeticiones === 0) {
+					// Si es la primera vez, inicia una nueva adivinanza
+					contextoConversacion.palabraClave = "adivinanza";
+					contextoConversacion.repeticiones = 1;
+					const adivinanzaPregunta = iniciarAdivinanza(respuestas);
+					return adivinanzaPregunta; // Devuelve solo la pregunta de la adivinanza
+				} else {
+					// Si ya está en medio de una adivinanza, maneja la respuesta
+					return manejarAdivinanza(contextoConversacion, respuestaUsuario); // Asegúrate de pasar la respuesta del usuario
 				}
 			} else if (textoNormalizado.includes("busca") || textoNormalizado.includes("que es") || textoNormalizado.includes("quien es")) {		
 				// Extraer la consulta eliminando las palabras clave "busca" o "que es"
