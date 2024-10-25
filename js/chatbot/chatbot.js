@@ -181,6 +181,10 @@ async function buscarPalabrasClave(texto, respuestas) {
 					// Si ya está en medio de una adivinanza, maneja la respuesta
 					return manejarAdivinanza(contextoConversacion, respuestaUsuario); // Asegúrate de pasar la respuesta del usuario
 				}
+			} else if (palabraClave === "duelo") {
+				contextoConversacion.palabraClave = "duelo";
+				contextoConversacion.repeticiones = 0;
+				return iniciarDueloDeInsultos(respuestas);  // Inicia el duelo de insultos	
 			} else if (textoNormalizado.includes("busca") || textoNormalizado.includes("que es") || textoNormalizado.includes("quien es")) {		
 				// Extraer la consulta eliminando las palabras clave "busca" o "que es"
 				const consultaOriginal = texto.replace(/busca|Busca|que es|Que es|quien es|Quien es/g, "").trim();
