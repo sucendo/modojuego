@@ -98,6 +98,20 @@ function manejarContextoConversacion(contextoConversacion, palabras, respuestas)
 				const respuestaUsuario = palabras.join(" "); // Une las palabras en una cadena
 				return manejarAdivinanza(contextoConversacion, respuestaUsuario);
 			}
+		} else if (contextoConversacion.palabraClave === "duelo") {
+			if (palabras.includes("otra") || palabras.includes(normalizarTexto("más"))|| palabras.includes(normalizarTexto("sí"))) {
+				contextoConversacion.repeticiones++;
+				return iniciarDueloDeInsultos(respuestas); // Lanza otro insulto
+			} else if (palabras.includes(normalizarTexto("me rindo"))) {
+				// Si el usuario se rinde, da la respuesta correcta
+				const respuestaCorrecta = contextoConversacion.respuestaCorrecta;
+				contextoConversacion.palabraClave = null;
+				return `La réplica correcta era: "${respuestaCorrecta}". ¿Quieres otro duelo?`;
+			} else {
+				// Si el usuario responde al insulto
+				const respuestaUsuario = palabras.join(" "); // Convertimos las palabras en una sola cadena
+				return manejarRespuestaInsulto(contextoConversacion, respuestaUsuario);
+			}
 		}
 	}
 }
