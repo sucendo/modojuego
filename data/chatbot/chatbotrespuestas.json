@@ -436,6 +436,104 @@
 			"respuesta": "El hielo"
 		}
 	],
+	"duelo": [
+		{
+			"insulto": "¡Peleas como un granjero!",
+			"respuesta": "¡Qué apropiado, tú peleas como una vaca!"
+		},
+		{
+			"insulto": "¡He hablado con simios más educados que tú!",
+			"respuesta": "Me alegra que asistieras a tu reunión familiar."
+		},
+		{
+			"insulto": "¡Mi pañuelo limpiará tu sangre!",
+			"respuesta": "¡Así que ya has tenido ese trabajo antes!"
+		},
+		{
+			"insulto": "¡Nunca encontrarás un tesoro como el mío!",
+			"respuesta": "Nunca encontrarás una excusa para no perder."
+		},
+		{
+			"insulto": "¡Tu cara haría llorar a un niño!",
+			"respuesta": "Al menos, sería un llanto honesto."
+		},
+		{
+			"insulto": "¡Eres tan torpe que te ahogarías en un vaso de agua!",
+			"respuesta": "Entonces llevaré el vaso para cuando te vea."
+		},
+		{
+			"insulto": "¡Tu cerebro debe ser el único en el mundo que usa un andador!",
+			"respuesta": "Así tiene tiempo para esquivar tus tonterías."
+		},
+		{
+			"insulto": "¡Ni un ciego tropezaría contigo!",
+			"respuesta": "Por eso, suelo tener amigos invisibles."
+		},
+		{
+			"insulto": "¡Tu estilo es tan sutil como una patada de mula!",
+			"respuesta": "¿Será por eso que no te noto cuando peleas?"
+		},
+		{
+			"insulto": "¡Tu ingenio es tan escaso como el agua en el desierto!",
+			"respuesta": "Justo lo necesario para hacerte caer en una trampa."
+		},
+		{
+			"insulto": "¡Tu sombra pelea mejor que tú!",
+			"respuesta": "Entonces deberías preocuparte cuando se ponga de pie."
+		},
+		{
+			"insulto": "¡Eres más lento que un caracol con muletas!",
+			"respuesta": "Prefiero eso a caer a tu ritmo."
+		},
+		{
+			"insulto": "¡Tu madre es tan fea que el mar la devolvió!",
+			"respuesta": "Solo porque estaba cansada de mirar a piratas como tú."
+		},
+		{
+			"insulto": "¡Tu aspecto podría ahuyentar a un tiburón hambriento!",
+			"respuesta": "Y aún así tú no paras de mirarme."
+		},
+		{
+			"insulto": "¡Tu espada es tan útil como una cuchara de plástico!",
+			"respuesta": "Entonces sería perfecto para servirte tu derrota."
+		},
+		{
+			"insulto": "¡Tu risa suena como el llanto de una gaviota!",
+			"respuesta": "Perfecto para ahuyentar a piratas sin gracia como tú."
+		},
+		{
+			"insulto": "¡Tienes la agilidad de una piedra en el fondo del mar!",
+			"respuesta": "Entonces al menos me sostengo, a diferencia de tu ingenio."
+		},
+		{
+			"insulto": "¡Tu inteligencia es tan densa que podría hundirse sola!",
+			"respuesta": "Entonces iría al fondo para no oírte más."
+		},
+		{
+			"insulto": "¡Tu estilo al hablar ofende hasta a las ostras!",
+			"respuesta": "Y aun así, tengo más clase que tú."
+		},
+		{
+			"insulto": "¡Con tu cara podrías ser la mascota de un barco fantasma!",
+			"respuesta": "¡Y tú el perfecto grumete de ese mismo barco!"
+		},
+		{
+			"insulto": "¡Te ganarías la vida haciendo de espantapájaros!",
+			"respuesta": "Sería el único lugar en el que podrías verme trabajar contigo."
+		},
+		{
+			"insulto": "¡Tus insultos son tan flojos que me están haciendo dormir!",
+			"respuesta": "Perfecto, así podré ganar mientras sueñas con vencerme."
+		},
+		{
+			"insulto": "¡Eres tan patético que las ratas te aplauden!",
+			"respuesta": "Solo porque quieren que aprendas a comportarte."
+		},
+		{
+			"insulto": "¡Tu espada tiene menos filo que tu ingenio!",
+			"respuesta": "¡Y aún así cortará tu arrogancia!"
+		}
+	],
 	"nombres_significado": {
 		"Juan": "Gracia de Dios",
 		"María": "Amargura",
