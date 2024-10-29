@@ -51,6 +51,8 @@ const idiomasSoportados = {
 	"neerlandés": "nl",
 	"húngaro": "hu",
 	"polaco": "pl",
+	"húngaro": "hu",
+	"latín": "la",
 	// Añade más idiomas aquí
 };
 
