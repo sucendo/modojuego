@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Gráfico de Distancia entre la Tierra y los Planetas</title>
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+	<style>
+		/* Hacer que el contenedor y el canvas ocupen todo el ancho de la pantalla */
+		body {
+			background-color: white;
+			font-family: Arial, sans-serif;
+			text-align: center;
+			margin: 0;
+			padding: 0;
+		}
+		#chartContainer {
+			width: 100vw;
+			height: 100vh;
+			margin: auto;
+		}
+		#distanceChart {
+			background-color: white;
+			display: block;
+			margin: auto;
+			width: 100vw;
+			height: 50vh;
+		}
+		#solarSystemCanvas {
+            background-color: black;
+            display: block;
+            margin: auto;
+            width: 100vw;
+            height: 50vh;
+        }
+	</style>
+</head>
+<body>
+
+	<div id="chartContainer">
+		<canvas id="distanceChart"></canvas>
+		<canvas id="solarSystemCanvas"></canvas>
+	</div>
+	
+	<script>
+		// Función para generar una lista de fechas a partir de una fecha inicial y un número de días
+		function generateDates(startDate, numDays) {
+			const dates = [];
+			const currentDate = new Date(startDate);
+			for (let i = 0; i < numDays; i++) {
+				dates.push(new Date(currentDate).toLocaleDateString("en-GB"));
+				currentDate.setDate(currentDate.getDate() + 1);
+			}
+			return dates;
+		}
+
+		// Obtener la fecha actual y calcular el rango de fechas de 50 días antes y después
+		const today = new Date();
+		const startDate = new Date(today);
+		startDate.setDate(startDate.getDate() - 183); // 50 días antes
+		const endDate = new Date(today);
+		endDate.setDate(endDate.getDate() + 183); // 50 días después
+
+		// Generar las etiquetas de fechas desde 50 días antes hasta 50 días después
+		const labels = generateDates(startDate, 366);
+
+		// Sol (basado en el perihelio de la Tierra)
+		const earthSunOffset = (today - new Date("2024-01-03")) / (1000 * 60 * 60 * 24);
+		const earthSunDistances = labels.map((_, day) => {
+			return 149.6 + 2.5 * Math.cos((2 * Math.PI * (day + earthSunOffset) / 365));
+		});
+
+		// Mercurio (basado en la última conjunción inferior)
+		const mercuryAmplitude = (218 - 77) / 2;
+		const mercuryAverageDistance = (218 + 77) / 2;
+		const mercuryOffset = (today - new Date("2024-10-06")) / (1000 * 60 * 60 * 24);
+		const mercuryDistances = labels.map((_, day) => {
+			return mercuryAverageDistance + mercuryAmplitude * Math.cos((2 * Math.PI * (day + mercuryOffset) / 115.88));
+		});
+
+		// Venus (basado en la última conjunción inferior)
+		const venusAmplitude = (261 - 38) / 2;
+		const venusAverageDistance = (261 + 38) / 2;
+		const venusOffset = (today - new Date("2023-08-13")) / (1000 * 60 * 60 * 24);
+		const venusDistances = labels.map((_, day) => {
+			return venusAverageDistance + venusAmplitude * Math.cos((2 * Math.PI * (day + venusOffset) / 583.92));
+		});
+
+		// Marte (basado en la última oposición)
+		const marsAmplitude = (401 - 54.6) / 2;
+		const marsAverageDistance = (401 + 54.6) / 2;
+		const marsOffset = (today - new Date("2022-12-08")) / (1000 * 60 * 60 * 24);
+		const marsDistances = labels.map((_, day) => {
+			return marsAverageDistance + marsAmplitude * Math.cos((2 * Math.PI * (day + marsOffset) / 779.94));
+		});
+
+		// Júpiter (basado en la última oposición)
+		const jupiterAmplitude = (968 - 588) / 2;
+		const jupiterAverageDistance = (968 + 588) / 2;
+		const jupiterOffset = (today - new Date("2023-11-03")) / (1000 * 60 * 60 * 24);
+		const jupiterDistances = labels.map((_, day) => {
+			return jupiterAverageDistance + jupiterAmplitude * Math.cos((2 * Math.PI * (day + jupiterOffset) / 398.88));
+		});
+
+		// Saturno (basado en la última oposición)
+		const saturnAmplitude = (1660 - 1200) / 2;
+		const saturnAverageDistance = (1660 + 1200) / 2;
+		const saturnOffset = (today - new Date("2023-08-27")) / (1000 * 60 * 60 * 24);
+		const saturnDistances = labels.map((_, day) => {
+			return saturnAverageDistance + saturnAmplitude * Math.cos((2 * Math.PI * (day + saturnOffset) / 378.09));
+		});
+
+		// Obtener la fecha actual en el formato "DD/MM/YYYY"
+		const todayFormatted = today.toLocaleDateString("en-GB");
+
+		// Buscar la posición de la fecha actual en las etiquetas
+		const todayIndex = labels.indexOf(todayFormatted);
+
+		// Configuración para la línea vertical en la fecha actual
+		const verticalLinePlugin = {
+			id: 'verticalLine',
+			afterDraw: (chart) => {
+				if (todayIndex !== -1) {  // Solo dibujar si la fecha actual está en el rango del gráfico
+					const ctx = chart.ctx;
+					const x = chart.scales.x.getPixelForValue(todayIndex);
+					ctx.save();
+					ctx.beginPath();
+					ctx.moveTo(x, chart.chartArea.top);
+					ctx.lineTo(x, chart.chartArea.bottom);
+					ctx.lineWidth = 2;
+					ctx.strokeStyle = 'red';
+					ctx.stroke();
+					ctx.restore();
+				}
+			}
+		};
+
+		// Crear el gráfico usando Chart.js
+		
+		// Configuración de la Representación 2D del Sistema Solar
+		const canvasGr = document.getElementById("distanceChart");
+		const ctx = canvasGr.getContext("2d");
+
+		// Configurar el canvas2d para ocupar toda la pantalla
+		canvasGr.width = window.innerWidth;
+		canvasGr.height = window.innerHeight * 0.5;		
+		
+		new Chart(ctx, {
+			type: 'line',
+			data: {
+				labels: labels,
+				datasets: [
+					{
+						label: 'Distancia Tierra-Sol (millones de km)',
+						data: earthSunDistances,
+						borderColor: 'yellow',
+						borderWidth: 1,
+						fill: false
+					},
+					{
+						label: 'Distancia Tierra-Mercurio (millones de km)',
+						data: mercuryDistances,
+						borderColor: 'grey',
+						borderWidth: 1,
+						fill: false
+					},
+					{
+						label: 'Distancia Tierra-Venus (millones de km)',
+						data: venusDistances,
+						borderColor: 'purple',
+						borderWidth: 1,
+						fill: false
+					},
+					{
+						label: 'Distancia Tierra-Marte (millones de km)',
+						data: marsDistances,
+						borderColor: 'red',
+						borderWidth: 1,
+						fill: false
+					},
+					{
+						label: 'Distancia Tierra-Jupiter (millones de km)',
+						data: jupiterDistances,
+						borderColor: 'brown',
+						borderWidth: 1,
+						fill: false
+					},
+					{
+						label: 'Distancia Tierra-Saturno (millones de km)',
+						data: saturnDistances,
+						borderColor: 'orange',
+						borderWidth: 1,
+						fill: false
+					}					
+				]
+			},
+			options: {
+				maintainAspectRatio: true,
+				responsive: true,
+				scales: {
+					x: {
+						type: 'category',
+						title: {
+							display: true,
+							text: 'Fecha (± 50 días desde hoy)'
+						},
+						ticks: {
+							maxTicksLimit: 10  // Limitar la cantidad de etiquetas de fecha en el eje X para evitar saturación
+						}
+					},
+					y: {
+						title: {
+							display: true,
+							text: 'Distancia (millones de km)'
+						}
+					}
+				},
+				plugins: {
+					legend: {
+						position: 'top',
+					},
+					tooltip: {
+						callbacks: {
+							label: function(context) {
+								return context.dataset.label + ': ' + context.raw.toFixed(2) + ' Mkm';
+							}
+						}
+					}
+				}
+			},
+			plugins: [verticalLinePlugin]
+		});
+		
+		// Configuración de la Representación 2D del Sistema Solar
+		const canvas2d = document.getElementById("solarSystemCanvas");
+		const ctx2d = canvas2d.getContext("2d");
+
+		// Configurar el canvas2d para ocupar toda la pantalla
+		canvas2d.width = window.innerWidth;
+		canvas2d.height = window.innerHeight * 0.5;
+
+		// Colores de los planetas
+		const colors = {
+			sun: "yellow",
+			mercury: "grey",
+			venus: "purple",
+			earth: "blue",
+			mars: "red",
+			jupiter: "brown",
+			saturn: "orange"
+		};
+
+		// Radio máximo del sistema solar (en relación con el tamaño del canvas2d)
+		const maxRadius = Math.min(canvas2d.width, canvas2d.height) /  0.5; // Máximo radio para Saturno con margen
+
+		// Distancias promedio al Sol (en millones de km, ajustados para la escala)
+		const distances = {
+			mercury: 77,
+			venus: 108,
+			earth: 150,
+			mars: 228,
+			jupiter: 778,
+			saturn: 1434
+		};
+
+		// Excentricidades aproximadas de las órbitas (para simular las elipses)
+		const eccentricities = {
+			mercury: 0.205,
+			venus: 0.006,
+			earth: 0.017,
+			mars: 0.093,
+			jupiter: 0.049,
+			saturn: 0.056
+		};
+
+		// Calculamos la escala para que Saturno esté en el borde del canvas2d
+		const scale = maxRadius / distances.saturn;
+
+		// Ángulo de inclinación en radianes (60 grados)
+		const inclinationAngle = Math.PI / 2.3;
+
+		// Periodos orbitales aproximados en días
+		const orbitalPeriods = {
+			mercury: 88,
+			venus: 225,
+			earth: 365,
+			mars: 687,
+			jupiter: 4333,
+			saturn: 10759
+		};
+
+		// Cálculo de la posición inicial de cada planeta en función de la fecha actual
+		let angles = {};
+		const referenceDate = new Date(today.getFullYear(), 0, 1); // 1 de enero del año actual
+		const daysSinceStartOfYear = Math.floor((today - referenceDate) / (1000 * 60 * 60 * 24));
+
+		for (const planet in orbitalPeriods) {
+			const period = orbitalPeriods[planet];
+			const fractionOfOrbit = (daysSinceStartOfYear % period) / period;
+			angles[planet] = 2 * Math.PI * fractionOfOrbit; // Calcula el ángulo inicial en radianes
+		}
+
+		// Función para dibujar un planeta en una posición polar con inclinación
+		function drawPlanet(angle, distance, color, name) {
+			const x = canvas2d.width / 2 + Math.cos(angle) * distance * scale;
+			const y = canvas2d.height / 2 + Math.sin(angle) * distance * scale * Math.cos(inclinationAngle); // Aplica inclinación en Y
+			
+			// Dibuja el planeta con tamaño reducido
+			ctx2d.beginPath();
+			ctx2d.arc(x, y, 5, 0, 2 * Math.PI); // Tamaño reducido para mejor proporción
+			ctx2d.fillStyle = color;
+			ctx2d.fill();
+			
+			// Etiqueta del planeta
+			ctx2d.fillStyle = "white";
+			ctx2d.font = "12px Arial";
+			ctx2d.fillText(name, x + 10, y + 3);
+		}
+
+		// Función para dibujar una órbita elíptica con inclinación
+		function drawOrbit(distance, eccentricity) {
+			const semiMajorAxis = distance * scale;
+			const semiMinorAxis = semiMajorAxis * Math.sqrt(1 - eccentricity ** 2) * Math.cos(inclinationAngle);
+
+			ctx2d.beginPath();
+			ctx2d.ellipse(canvas2d.width / 2, canvas2d.height / 2, semiMajorAxis, semiMinorAxis, 0, 0, 2 * Math.PI);
+			ctx2d.strokeStyle = "white";
+			ctx2d.lineWidth = 0.5;
+			ctx2d.stroke();
+		}
+
+		// Función para animar el movimiento de los planetas
+		function animate() {
+			ctx2d.clearRect(0, 0, canvas2d.width, canvas2d.height); // Limpia el canvas en cada cuadro
+
+			// Dibuja el Sol en el centro
+			ctx2d.beginPath();
+			ctx2d.arc(canvas2d.width / 2, canvas2d.height / 2, 10, 0, 2 * Math.PI);
+			ctx2d.fillStyle = colors.sun;
+			ctx2d.fill();
+			ctx2d.fillStyle = "white";
+			ctx2d.fillText("Sol", canvas2d.width / 2 + 15, canvas2d.height / 2);
+
+			// Dibuja las órbitas elípticas de cada planeta con inclinación
+			drawOrbit(distances.mercury, eccentricities.mercury);
+			drawOrbit(distances.venus, eccentricities.venus);
+			drawOrbit(distances.earth, eccentricities.earth);
+			drawOrbit(distances.mars, eccentricities.mars);
+			drawOrbit(distances.jupiter, eccentricities.jupiter);
+			drawOrbit(distances.saturn, eccentricities.saturn);
+
+			// Actualiza el ángulo de cada planeta según su período orbital y cambia el sentido para que gire en sentido contrario a las agujas del reloj
+			for (const planet in angles) {
+				const angularSpeed = -(2 * Math.PI) / orbitalPeriods[planet]; // Velocidad angular (rad/día)
+				angles[planet] += angularSpeed * (1 / 365); // Escala a días en la simulación
+			}
+
+			// Dibuja cada planeta en su órbita con inclinación
+			drawPlanet(angles.mercury, distances.mercury, colors.mercury, "Mercurio");
+			drawPlanet(angles.venus, distances.venus, colors.venus, "Venus");
+			drawPlanet(angles.earth, distances.earth, colors.earth, "Tierra");
+			drawPlanet(angles.mars, distances.mars, colors.mars, "Marte");
+			drawPlanet(angles.jupiter, distances.jupiter, colors.jupiter, "Júpiter");
+			drawPlanet(angles.saturn, distances.saturn, colors.saturn, "Saturno");
+
+			// Llama a la animación de nuevo
+			requestAnimationFrame(animate);
+		}
+
+		// Inicia la animación
+		animate();
+	</script>
+</body>
+</html>
