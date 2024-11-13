@@ -352,7 +352,7 @@
 			// Actualiza el ángulo de cada planeta según su período orbital y cambia el sentido para que gire en sentido contrario a las agujas del reloj
 			for (const planet in angles) {
 				const angularSpeed = -(2 * Math.PI) / orbitalPeriods[planet]; // Velocidad angular (rad/día)
-				angles[planet] += angularSpeed * (1 / 365); // Escala a días en la simulación
+				angles[planet] += angularSpeed * (1 / 30); // Escala a días en la simulación
 			}
 
 			// Dibuja cada planeta en su órbita con inclinación
