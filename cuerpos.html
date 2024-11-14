@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -251,7 +251,7 @@
 		};
 
 		// Radio máximo del sistema solar (en relación con el tamaño del canvas2d)
-		const maxRadius = Math.min(canvas2d.width, canvas2d.height) /  0.5; // Máximo radio para Saturno con margen
+		const maxRadius = Math.min(canvas2d.width, canvas2d.height) /  0.53; // Máximo radio para Saturno con margen
 
 		// Distancias promedio al Sol (en millones de km, ajustados para la escala)
 		const distances = {
@@ -291,23 +291,53 @@
 
 		// Cálculo de la posición inicial de cada planeta en función de la fecha actual
 		let angles = {};
+		//const today = new Date();
 		const referenceDate = new Date(today.getFullYear(), 0, 1); // 1 de enero del año actual
 		const daysSinceStartOfYear = Math.floor((today - referenceDate) / (1000 * 60 * 60 * 24));
 
+		// Establecer la fecha simulada en el día actual
+		let simulatedDate = new Date(referenceDate);
+		simulatedDate.setDate(simulatedDate.getDate() + daysSinceStartOfYear);
+
+		// Factor de tiempo: cuántos días pasan por cada segundo de animación
+		let speedFactor = 1;
+
+		// Configurar los ángulos iniciales en función de la posición del día actual
 		for (const planet in orbitalPeriods) {
 			const period = orbitalPeriods[planet];
 			const fractionOfOrbit = (daysSinceStartOfYear % period) / period;
 			angles[planet] = 2 * Math.PI * fractionOfOrbit; // Calcula el ángulo inicial en radianes
 		}
 
-		// Función para dibujar un planeta en una posición polar con inclinación
-		function drawPlanet(angle, distance, color, name) {
-			const x = canvas2d.width / 2 + Math.cos(angle) * distance * scale;
-			const y = canvas2d.height / 2 + Math.sin(angle) * distance * scale * Math.cos(inclinationAngle); // Aplica inclinación en Y
-			
-			// Dibuja el planeta con tamaño reducido
+		// Tamaños relativos de los planetas, con la Tierra como tamaño base
+		const planetSizes = {
+			mercury: 0.38,
+			venus: 0.95,
+			earth: 1,
+			mars: 0.53,
+			jupiter: 2,
+			saturn: 1.7
+		};
+
+		// Tamaño base del planeta en píxeles (puedes ajustar este valor para mejorar la visualización)
+		const basePlanetSize = 5;
+
+		// Función para dibujar un planeta en una posición polar con inclinación y desplazamiento de la elipse
+		function drawPlanet(angle, distance, eccentricity, color, name, sizeScale) {
+			const semiMajorAxis = distance * scale;
+			const semiMinorAxis = semiMajorAxis * Math.sqrt(1 - eccentricity ** 2);
+			const focusOffset = semiMajorAxis * eccentricity;
+
+			// Calcular la posición del planeta en la órbita elíptica
+			const x = canvas2d.width / 2 + focusOffset + Math.cos(angle) * semiMajorAxis;
+			const y = canvas2d.height / 2 + Math.sin(angle) * semiMinorAxis * Math.cos(inclinationAngle);
+
+			// Calcular el tamaño del planeta en función de su tamaño relativo
+			const planetSize = basePlanetSize * sizeScale;
+
+			// Dibuja el planeta
 			ctx2d.beginPath();
-			ctx2d.arc(x, y, 5, 0, 2 * Math.PI); // Tamaño reducido para mejor proporción
+			ctx2d.arc(x, y, planetSize, 0, 2 * Math.PI);
 			ctx2d.fillStyle = color;
 			ctx2d.fill();
 			
@@ -316,32 +346,52 @@
 			ctx2d.font = "12px Arial";
 			ctx2d.fillText(name, x + 10, y + 3);
 		}
-
-		// Función para dibujar una órbita elíptica con inclinación
+		
+		// Función para dibujar una órbita elíptica con el Sol en el foco
 		function drawOrbit(distance, eccentricity) {
-			const semiMajorAxis = distance * scale;
-			const semiMinorAxis = semiMajorAxis * Math.sqrt(1 - eccentricity ** 2) * Math.cos(inclinationAngle);
+			const semiMajorAxis = distance * scale; // Eje semi-mayor
+			const semiMinorAxis = semiMajorAxis * Math.sqrt(1 - eccentricity ** 2); // Eje semi-menor
+			const focusOffset = semiMajorAxis * eccentricity; // Desplazamiento del foco
 
 			ctx2d.beginPath();
-			ctx2d.ellipse(canvas2d.width / 2, canvas2d.height / 2, semiMajorAxis, semiMinorAxis, 0, 0, 2 * Math.PI);
+			ctx2d.ellipse(
+				canvas2d.width / 2 + focusOffset, // Desplaza el centro de la elipse hacia la derecha para que el Sol esté en el foco
+				canvas2d.height / 2,
+				semiMajorAxis,
+				semiMinorAxis * Math.cos(inclinationAngle), // Inclina el semieje menor para el efecto 3D
+				0,
+				0,
+				2 * Math.PI
+			);
 			ctx2d.strokeStyle = "white";
 			ctx2d.lineWidth = 0.5;
 			ctx2d.stroke();
 		}
 
+		// Variable para registrar el tiempo de la última actualización
+		let lastUpdateTime = Date.now();
+
 		// Función para animar el movimiento de los planetas
 		function animate() {
+			const currentTime = Date.now();
+			const elapsed = (currentTime - lastUpdateTime) / 1000; // Tiempo en segundos desde el último cuadro
+			lastUpdateTime = currentTime;
+
+			// Avanza la fecha simulada en función del tiempo transcurrido y el factor de velocidad
+			const daysToAdvance = elapsed * speedFactor;
+			simulatedDate = new Date(simulatedDate.getTime() + daysToAdvance * 24 * 60 * 60 * 1000); // Avanza la fecha en milisegundos
+
 			ctx2d.clearRect(0, 0, canvas2d.width, canvas2d.height); // Limpia el canvas en cada cuadro
 
 			// Dibuja el Sol en el centro
 			ctx2d.beginPath();
-			ctx2d.arc(canvas2d.width / 2, canvas2d.height / 2, 10, 0, 2 * Math.PI);
+			ctx2d.arc(canvas2d.width / 2, canvas2d.height / 2, 15, 0, 2 * Math.PI); // Aumenta el radio a 15
 			ctx2d.fillStyle = colors.sun;
 			ctx2d.fill();
 			ctx2d.fillStyle = "white";
-			ctx2d.fillText("Sol", canvas2d.width / 2 + 15, canvas2d.height / 2);
+			ctx2d.fillText("Sol", canvas2d.width / 2 + 20, canvas2d.height / 2);
 
-			// Dibuja las órbitas elípticas de cada planeta con inclinación
+			// Dibuja las órbitas elípticas de cada planeta con el Sol en el foco
 			drawOrbit(distances.mercury, eccentricities.mercury);
 			drawOrbit(distances.venus, eccentricities.venus);
 			drawOrbit(distances.earth, eccentricities.earth);
@@ -349,23 +399,56 @@
 			drawOrbit(distances.jupiter, eccentricities.jupiter);
 			drawOrbit(distances.saturn, eccentricities.saturn);
 
-			// Actualiza el ángulo de cada planeta según su período orbital y cambia el sentido para que gire en sentido contrario a las agujas del reloj
+			// Actualiza el ángulo de cada planeta según su período orbital y el tiempo transcurrido
 			for (const planet in angles) {
 				const angularSpeed = -(2 * Math.PI) / orbitalPeriods[planet]; // Velocidad angular (rad/día)
-				angles[planet] += angularSpeed * (1 / 3); // Escala a días en la simulación
+				angles[planet] += angularSpeed * daysToAdvance; // Escala con los días avanzados
 			}
 
-			// Dibuja cada planeta en su órbita con inclinación
-			drawPlanet(angles.mercury, distances.mercury, colors.mercury, "Mercurio");
-			drawPlanet(angles.venus, distances.venus, colors.venus, "Venus");
-			drawPlanet(angles.earth, distances.earth, colors.earth, "Tierra");
-			drawPlanet(angles.mars, distances.mars, colors.mars, "Marte");
-			drawPlanet(angles.jupiter, distances.jupiter, colors.jupiter, "Júpiter");
-			drawPlanet(angles.saturn, distances.saturn, colors.saturn, "Saturno");
+			// Dibuja cada planeta en su órbita elíptica con su tamaño relativo
+			drawPlanet(angles.mercury, distances.mercury, eccentricities.mercury, colors.mercury, "Mercurio", planetSizes.mercury);
+			drawPlanet(angles.venus, distances.venus, eccentricities.venus, colors.venus, "Venus", planetSizes.venus);
+			drawPlanet(angles.earth, distances.earth, eccentricities.earth, colors.earth, "Tierra", planetSizes.earth);
+			drawPlanet(angles.mars, distances.mars, eccentricities.mars, colors.mars, "Marte", planetSizes.mars);
+			drawPlanet(angles.jupiter, distances.jupiter, eccentricities.jupiter, colors.jupiter, "Júpiter", planetSizes.jupiter);
+			drawPlanet(angles.saturn, distances.saturn, eccentricities.saturn, colors.saturn, "Saturno", planetSizes.saturn);
 
-			// Llama a la animación de nuevo
+			// Mostrar la fecha simulada y la velocidad en el canvas
+			ctx2d.fillStyle = "white";
+			ctx2d.font = "20px Arial";
+			ctx2d.fillText(`Fecha Simulada: ${simulatedDate.toLocaleDateString("en-GB")}`, 20, 30);
+			ctx2d.fillText(`Velocidad: ${speedFactor}x`, 20, 60);
+
+			// Llama a la animación de nuevo usando requestAnimationFrame para un movimiento suave
 			requestAnimationFrame(animate);
 		}
+
+		// Evento de clic para cambiar la velocidad
+		canvas2d.addEventListener("click", (event) => {
+			// Calcula la posición del clic dentro del canvas
+			const rect = canvas2d.getBoundingClientRect();
+			const x = event.clientX - rect.left;
+			const y = event.clientY - rect.top;
+
+			// Define la posición del "botón" de velocidad (en la esquina superior izquierda)
+			if (x >= 20 && x <= 100 && y >= 40 && y <= 80) { // Área del "botón" de velocidad
+				// Cambia la velocidad: 1x -> 2x -> 4x -> 8x -> 16x -> 1x ...
+				if (speedFactor === 1) {
+					speedFactor = 2;
+				} else if (speedFactor === 2) {
+					speedFactor = 4;
+				} else if (speedFactor === 4) {
+					speedFactor = 8;
+				} else if (speedFactor === 8) {
+					speedFactor = 16;
+				} else {
+					speedFactor = 1;
+				}
+			}
+		});
+
+		// Inicializa el tiempo de la última actualización
+		lastUpdateTime = Date.now();
 
 		// Inicia la animación
 		animate();
