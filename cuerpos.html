@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Gráfico de Distancia entre la Tierra y los Planetas</title>
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+	<style>
+		/* Hacer que el contenedor y el canvas ocupen todo el ancho de la pantalla */
+		body {
+			background-color: white;
+			font-family: Arial, sans-serif;
+			text-align: center;
+			margin: 0;
+			padding: 0;
+		}
+		#chartContainer {
+			width: 100vw;
+			height: 100vh;
+			margin: auto;
+		}
+		#distanceChart {
+			background-color: white;
+			display: block;
+			margin: auto;
+			width: 100vw;
+			height: 50vh;
+		}
+		#solarSystemCanvas {
+            background-color: black;
+            display: block;
+            margin: auto;
+            width: 100vw;
+            height: 50vh;
+        }
+	</style>
+</head>
+<body>
+
+	<div id="chartContainer">
+		<canvas id="distanceChart"></canvas>
+		<canvas id="solarSystemCanvas"></canvas>
+	</div>
+	
+	<script>
+		// Función para generar una lista de fechas a partir de una fecha inicial y un número de días
+		function generateDates(startDate, numDays) {
+			const dates = [];
+			const currentDate = new Date(startDate);
+			for (let i = 0; i < numDays; i++) {
+				dates.push(new Date(currentDate).toLocaleDateString("en-GB"));
+				currentDate.setDate(currentDate.getDate() + 1);
+			}
+			return dates;
+		}
+
+		// Obtener la fecha actual y calcular el rango de fechas de 50 días antes y después
+		const today = new Date();
+		const startDate = new Date(today);
+		startDate.setDate(startDate.getDate() - 183); // 50 días antes
+		const endDate = new Date(today);
+		endDate.setDate(endDate.getDate() + 183); // 50 días después
+
+		// Generar las etiquetas de fechas desde 50 días antes hasta 50 días después
+		const labels = generateDates(startDate, 366);
+
+		// Sol (basado en el perihelio de la Tierra)
+		const earthSunOffset = (today - new Date("2024-01-03")) / (1000 * 60 * 60 * 24);
+		const earthSunDistances = labels.map((_, day) => {
+			return 149.6 + 2.5 * Math.cos((2 * Math.PI * (day + earthSunOffset) / 365));
+		});
+
+		// Mercurio (basado en la última conjunción inferior)
+		const mercuryAmplitude = (218 - 77) / 2;
+		const mercuryAverageDistance = (218 + 77) / 2;
+		const mercuryOffset = (today - new Date("2024-10-06")) / (1000 * 60 * 60 * 24);
+		const mercuryDistances = labels.map((_, day) => {
+			return mercuryAverageDistance + mercuryAmplitude * Math.cos((2 * Math.PI * (day + mercuryOffset) / 115.88));
+		});
+
+		// Venus (basado en la última conjunción inferior)
+		const venusAmplitude = (261 - 38) / 2;
+		const venusAverageDistance = (261 + 38) / 2;
+		const venusOffset = (today - new Date("2023-08-13")) / (1000 * 60 * 60 * 24);
+		const venusDistances = labels.map((_, day) => {
+			return venusAverageDistance + venusAmplitude * Math.cos((2 * Math.PI * (day + venusOffset) / 583.92));
+		});
+
+		// Marte (basado en la última oposición)
+		const marsAmplitude = (401 - 54.6) / 2;
+		const marsAverageDistance = (401 + 54.6) / 2;
+		const marsOffset = (today - new Date("2022-12-08")) / (1000 * 60 * 60 * 24);
+		const marsDistances = labels.map((_, day) => {
+			return marsAverageDistance + marsAmplitude * Math.cos((2 * Math.PI * (day + marsOffset) / 779.94));
+		});
+
+		// Júpiter (basado en la última oposición)
+		const jupiterAmplitude = (968 - 588) / 2;
+		const jupiterAverageDistance = (968 + 588) / 2;
+		const jupiterOffset = (today - new Date("2023-11-03")) / (1000 * 60 * 60 * 24);
+		const jupiterDistances = labels.map((_, day) => {
+			return jupiterAverageDistance + jupiterAmplitude * Math.cos((2 * Math.PI * (day + jupiterOffset) / 398.88));
+		});
+
+		// Saturno (basado en la última oposición)
+		const saturnAmplitude = (1660 - 1200) / 2;
+		const saturnAverageDistance = (1660 + 1200) / 2;
+		const saturnOffset = (today - new Date("2023-08-27")) / (1000 * 60 * 60 * 24);
+		const saturnDistances = labels.map((_, day) => {
+			return saturnAverageDistance + saturnAmplitude * Math.cos((2 * Math.PI * (day + saturnOffset) / 378.09));
+		});
+
+		// Obtener la fecha actual en el formato "DD/MM/YYYY"
+		const todayFormatted = today.toLocaleDateString("en-GB");
+
+		// Buscar la posición de la fecha actual en las etiquetas
+		const todayIndex = labels.indexOf(todayFormatted);
+
+		// Configuración para la línea vertical en la fecha actual
+		const verticalLinePlugin = {
+			id: 'verticalLine',
+			afterDraw: (chart) => {
+				if (todayIndex !== -1) {  // Solo dibujar si la fecha actual está en el rango del gráfico
+					const ctx = chart.ctx;
+					const x = chart.scales.x.getPixelForValue(todayIndex);
+					ctx.save();
+					ctx.beginPath();
+					ctx.moveTo(x, chart.chartArea.top);
+					ctx.lineTo(x, chart.chartArea.bottom);
+					ctx.lineWidth = 2;
+					ctx.strokeStyle = 'red';
+					ctx.stroke();
+					ctx.restore();
+				}
+			}
+		};
+
+		// Crear el gráfico usando Chart.js
+		
+		// Configuración de la Representación 2D del Sistema Solar
+		const canvasGr = document.getElementById("distanceChart");
+		const ctx = canvasGr.getContext("2d");
+
+		// Configurar el canvas2d para ocupar toda la pantalla
+		canvasGr.width = window.innerWidth;
+		canvasGr.height = window.innerHeight * 0.5;		
+		
+		new Chart(ctx, {
+			type: 'line',
+			data: {
+				labels: labels,
+				datasets: [
+					{
+						label: 'Distancia Tierra-Sol (millones de km)',
+						data: earthSunDistances,
+						borderColor: 'yellow',
+						borderWidth: 1,
+						fill: false
+					},
+					{
+						label: 'Distancia Tierra-Mercurio (millones de km)',
+						data: mercuryDistances,
+						borderColor: 'grey',
+						borderWidth: 1,
+						fill: false
+					},
+					{
+						label: 'Distancia Tierra-Venus (millones de km)',
+						data: venusDistances,
+						borderColor: 'purple',
+						borderWidth: 1,
+						fill: false
+					},
+					{
+						label: 'Distancia Tierra-Marte (millones de km)',
+						data: marsDistances,
+						borderColor: 'red',
+						borderWidth: 1,
+						fill: false
+					},
+					{
+						label: 'Distancia Tierra-Jupiter (millones de km)',
+						data: jupiterDistances,
+						borderColor: 'brown',
+						borderWidth: 1,
+						fill: false
+					},
+					{
+						label: 'Distancia Tierra-Saturno (millones de km)',
+						data: saturnDistances,
+						borderColor: 'orange',
+						borderWidth: 1,
+						fill: false
+					}					
+				]
+			},
+			options: {
+				maintainAspectRatio: true,
+				responsive: true,
+				scales: {
+					x: {
+						type: 'category',
+						title: {
+							display: true,
+							text: 'Fecha (± 50 días desde hoy)'
+						},
+						ticks: {
+							maxTicksLimit: 10  // Limitar la cantidad de etiquetas de fecha en el eje X para evitar saturación
+						}
+					},
+					y: {
+						title: {
+							display: true,
+							text: 'Distancia (millones de km)'
+						}
+					}
+				},
+				plugins: {
+					legend: {
+						position: 'top',
+					},
+					tooltip: {
+						callbacks: {
+							label: function(context) {
+								return context.dataset.label + ': ' + context.raw.toFixed(2) + ' Mkm';
+							}
+						}
+					}
+				}
+			},
+			plugins: [verticalLinePlugin]
+		});
+		
+		// Configuración de la Representación 2D del Sistema Solar
+		// Configuración inicial del canvas
+		const canvas2d = document.getElementById("solarSystemCanvas");
+		const ctx2d = canvas2d.getContext("2d");
+
+		// Configurar el canvas para ocupar la pantalla
+		canvas2d.width = window.innerWidth;
+		canvas2d.height = window.innerHeight * 0.5;
+
+		// Configuración de los cuerpos celestes
+		const CELESTIAL_BODIES = {
+			star: {
+				sun: {
+					distance: 0, // El Sol está en el centro
+					eccentricity: 0,
+					orbitalPeriod: Infinity, // No orbita
+					color: "yellow",
+					size: 15,
+					lastPerihelion: null, // No aplica
+					orbits: null, // No orbita alrededor de nada
+				},
+			},
+			planets: {
+				mercury: {
+					distance: 77,
+					eccentricity: 0.205,
+					orbitalPeriod: 88,
+					color: "grey",
+					size: 3,
+					lastPerihelion: "2024-01-05",
+					orbits: "sun", // Orbita el Sol
+				},
+				venus: {
+					distance: 108,
+					eccentricity: 0.006,
+					orbitalPeriod: 225,
+					color: "purple",
+					size: 8,
+					lastPerihelion: "2023-08-13",
+					orbits: "sun",
+				},
+				earth: {
+					distance: 150,
+					eccentricity: 0.017,
+					orbitalPeriod: 365,
+					color: "blue",
+					size: 10,
+					lastPerihelion: "2024-01-03",
+					orbits: "sun",
+				},
+				mars: {
+					distance: 228,
+					eccentricity: 0.093,
+					orbitalPeriod: 687,
+					color: "red",
+					size: 7,
+					lastPerihelion: "2022-12-08",
+					orbits: "sun",
+				},
+				jupiter: {
+					distance: 778,
+					eccentricity: 0.049,
+					orbitalPeriod: 4333,
+					color: "brown",
+					size: 20,
+					lastPerihelion: "2023-11-03",
+					orbits: "sun",
+				},
+				saturn: {
+					distance: 1434,
+					eccentricity: 0.056,
+					orbitalPeriod: 10759,
+					color: "orange",
+					size: 17,
+					lastPerihelion: "2023-08-27",
+					orbits: "sun",
+				},
+			},
+			satellites: {
+				moon: {
+					distance: 0.384,
+					eccentricity: 0.0549,
+					orbitalPeriod: 27.3,
+					color: "lightgray",
+					size: 2,
+					lastPerihelion: "2024-01-03",
+					orbits: "earth", // Orbita la Tierra
+				},
+				io: {
+					distance: 0.422,
+					eccentricity: 0.0041,
+					orbitalPeriod: 1.769,
+					color: "orange",
+					size: 2,
+					lastPerihelion: "2024-01-01",
+					orbits: "jupiter", // Orbita Júpiter
+				},
+				europa: {
+					distance: 0.671,
+					eccentricity: 0.009,
+					orbitalPeriod: 3.551,
+					color: "white",
+					size: 2,
+					lastPerihelion: "2024-01-01",
+					orbits: "jupiter",
+				},
+				ganimedes: {
+					distance: 1.070,
+					eccentricity: 0.0013,
+					orbitalPeriod: 7.155,
+					color: "yellow",
+					size: 2.5,
+					lastPerihelion: "2024-01-01",
+					orbits: "jupiter",
+				},
+				calisto: {
+					distance: 1.882,
+					eccentricity: 0.007,
+					orbitalPeriod: 16.689,
+					color: "gray",
+					size: 2.5,
+					lastPerihelion: "2024-01-01",
+					orbits: "jupiter",
+				},
+			},
+			comets: {
+				halley: {
+					distance: 17.8 * 149597870.7 / 1e6, // 17.8 UA
+					eccentricity: 0.967,
+					orbitalPeriod: 75.3 * 365.25, // en días
+					color: "white",
+					size: 3,
+					lastPerihelion: "1986-02-09",
+					orbits: "sun",
+				},
+				swift_tuttle: {
+					distance: 25.4 * 149597870.7 / 1e6, // 25.4 UA
+					eccentricity: 0.963,
+					orbitalPeriod: 133.28 * 365.25, // en días
+					color: "lightblue",
+					size: 3,
+					lastPerihelion: "1992-12-11",
+					orbits: "sun",
+				},
+			},
+		};
+
+
+		// Escala para el dibujo
+		const scale = Math.min(canvas2d.width, canvas2d.height) / CELESTIAL_BODIES.planets.saturn.distance / 0.53;
+
+		// Variables globales
+		let angles = {};
+		let lastUpdateTime = Date.now();
+		let speedFactor = 1;
+		let simulatedDate = new Date(); // Fecha simulada
+
+		// Inicialización de ángulos dinámicamente según la configuración
+		Object.keys(CELESTIAL_BODIES).forEach((type) => {
+			Object.keys(CELESTIAL_BODIES[type]).forEach((name) => {
+				const body = CELESTIAL_BODIES[type][name];
+				if (body.orbitalPeriod !== Infinity) {
+					const perihelionDate = new Date(body.lastPerihelion);
+					const daysSincePerihelion = (new Date() - perihelionDate) / (1000 * 60 * 60 * 24);
+					const fractionOfOrbit = daysSincePerihelion / body.orbitalPeriod;
+					angles[name] = 2 * Math.PI * fractionOfOrbit; // Calcula el ángulo inicial en radianes
+				}
+			});
+		});
+		
+		function findBodyByName(name) {
+			for (const category in CELESTIAL_BODIES) {
+				if (CELESTIAL_BODIES[category][name]) {
+					return CELESTIAL_BODIES[category][name];
+				}
+			}
+			return null;
+		}
+		
+		function calculateRelativePosition(angle, distance, eccentricity) {
+			const semiMajorAxis = distance * scale;
+			const semiMinorAxis = semiMajorAxis * Math.sqrt(1 - eccentricity ** 2);
+			const focusOffset = semiMajorAxis * eccentricity;
+
+			const x = canvas2d.width / 2 + focusOffset + Math.cos(angle) * semiMajorAxis;
+			const y = canvas2d.height / 2 + Math.sin(angle) * semiMinorAxis * Math.cos(Math.PI / 2.3);
+
+			return { x, y };
+		}
+
+		function drawOrbit(distance, eccentricity, color, centralX = canvas2d.width / 2, centralY = canvas2d.height / 2) {
+			const semiMajorAxis = distance * scale;
+			const semiMinorAxis = semiMajorAxis * Math.sqrt(1 - eccentricity ** 2);
+
+			ctx2d.beginPath();
+			ctx2d.ellipse(
+				centralX, // Centro de la órbita
+				centralY,
+				semiMajorAxis,
+				semiMinorAxis * Math.cos(Math.PI / 2.3),
+				0,
+				0,
+				2 * Math.PI
+			);
+			ctx2d.strokeStyle = color || "white";
+			ctx2d.lineWidth = 0.5;
+			ctx2d.stroke();
+		}
+
+		function drawBody(name, angle, distance, eccentricity, color, sizeScale, centralX = canvas2d.width / 2, centralY = canvas2d.height / 2) {
+			const semiMajorAxis = distance * scale;
+			const semiMinorAxis = semiMajorAxis * Math.sqrt(1 - eccentricity ** 2);
+
+			const x = centralX + Math.cos(angle) * semiMajorAxis;
+			const y = centralY + Math.sin(angle) * semiMinorAxis * Math.cos(Math.PI / 2.3);
+
+			ctx2d.beginPath();
+			ctx2d.arc(x, y, sizeScale, 0, 2 * Math.PI);
+			ctx2d.fillStyle = color;
+			ctx2d.fill();
+
+			ctx2d.fillStyle = "white";
+			ctx2d.font = "12px Arial";
+			ctx2d.fillText(name, x + 10, y + 3);
+
+			return { x, y };
+		}
+
+		// Función de animación
+		function animate() {
+			const currentTime = Date.now();
+			const elapsed = (currentTime - lastUpdateTime) / 1000; // Tiempo transcurrido en segundos
+			lastUpdateTime = currentTime;
+
+			// Avanza la fecha simulada según la velocidad
+			const daysToAdvance = elapsed * speedFactor;
+			simulatedDate = new Date(simulatedDate.getTime() + daysToAdvance * 24 * 60 * 60 * 1000);
+
+			ctx2d.clearRect(0, 0, canvas2d.width, canvas2d.height); // Limpia el canvas
+
+			// Dibuja el Sol
+			const sun = CELESTIAL_BODIES.star.sun;
+			drawBody("Sol", 0, sun.distance, sun.eccentricity, sun.color, sun.size);
+
+			// Dibuja planetas y satélites
+			Object.keys(CELESTIAL_BODIES).forEach((category) => {
+				Object.keys(CELESTIAL_BODIES[category]).forEach((bodyName) => {
+					const body = CELESTIAL_BODIES[category][bodyName];
+
+					// Si el cuerpo orbita otro objeto, calcula su posición relativa
+					let centralX = canvas2d.width / 2;
+					let centralY = canvas2d.height / 2;
+
+					if (body.orbits && body.orbits !== "sun") {
+						const centralBody = findBodyByName(body.orbits);
+						if (centralBody) {
+							const centralPosition = calculateRelativePosition(
+								angles[body.orbits],
+								centralBody.distance,
+								centralBody.eccentricity
+							);
+							centralX = centralPosition.x;
+							centralY = centralPosition.y;
+						}
+					}
+
+					// Dibuja la órbita y el cuerpo celeste
+					drawOrbit(body.distance, body.eccentricity, body.color, centralX, centralY);
+					drawBody(
+						bodyName.charAt(0).toUpperCase() + bodyName.slice(1),
+						angles[bodyName],
+						body.distance,
+						body.eccentricity,
+						body.color,
+						body.size,
+						centralX,
+						centralY
+					);
+
+					// Calcula el ángulo del cuerpo
+					const angularSpeed = -(2 * Math.PI) / body.orbitalPeriod;
+					angles[bodyName] += angularSpeed * daysToAdvance;
+				});
+			});
+
+			// Muestra la fecha simulada
+			ctx2d.fillStyle = "white";
+			ctx2d.font = "20px Arial";
+			ctx2d.fillText(`Fecha Simulada: ${simulatedDate.toLocaleDateString("en-GB")}`, 20, 30);
+			ctx2d.fillText(`Velocidad: ${speedFactor}x`, 20, 60);
+
+			// Llama a la animación nuevamente
+			requestAnimationFrame(animate);
+		}
+
+		
+		// Evento de clic para cambiar la velocidad
+		canvas2d.addEventListener("click", (event) => {
+			// Calcula la posición del clic dentro del canvas
+			const rect = canvas2d.getBoundingClientRect();
+			const x = event.clientX - rect.left;
+			const y = event.clientY - rect.top;
+
+			// Define la posición del "botón" de velocidad (en la esquina superior izquierda)
+			if (x >= 20 && x <= 100 && y >= 40 && y <= 80) { // Área del "botón" de velocidad
+				// Cambia la velocidad: 1x -> 2x -> 4x -> 8x -> 16x -> 1x ...
+				if (speedFactor === 1) {
+					speedFactor = 2;
+				} else if (speedFactor === 2) {
+					speedFactor = 4;
+				} else if (speedFactor === 4) {
+					speedFactor = 8;
+				} else if (speedFactor === 8) {
+					speedFactor = 16;
+				} else {
+					speedFactor = 1;
+				}
+			}
+		});
+
+		// Inicia la animación
+		animate();
+	</script>
+</body>
+</html>
