@@ -243,144 +243,35 @@
 		// Configuración de los cuerpos celestes
 		const CELESTIAL_BODIES = {
 			star: {
-				sun: {
-					distance: 0, // El Sol está en el centro
-					eccentricity: 0,
-					orbitalPeriod: Infinity, // No orbita
-					color: "yellow",
-					size: 15,
-					lastPerihelion: null, // No aplica
-					orbits: null, // No orbita alrededor de nada
-				},
+				sun: { eccentricity: 0, periapsis: 0, apoapsis: 0, orbitalPeriod: Infinity, color: "yellow", size: 40, lastPerihelion: null, orbits: null },
 			},
 			planets: {
-				mercury: {
-					distance: 77,
-					eccentricity: 0.205,
-					orbitalPeriod: 88,
-					color: "grey",
-					size: 3,
-					lastPerihelion: "2024-01-05",
-					orbits: "sun", // Orbita el Sol
-				},
-				venus: {
-					distance: 108,
-					eccentricity: 0.006,
-					orbitalPeriod: 225,
-					color: "purple",
-					size: 8,
-					lastPerihelion: "2023-08-13",
-					orbits: "sun",
-				},
-				earth: {
-					distance: 150,
-					eccentricity: 0.017,
-					orbitalPeriod: 365,
-					color: "blue",
-					size: 10,
-					lastPerihelion: "2024-01-03",
-					orbits: "sun",
-				},
-				mars: {
-					distance: 228,
-					eccentricity: 0.093,
-					orbitalPeriod: 687,
-					color: "red",
-					size: 7,
-					lastPerihelion: "2022-12-08",
-					orbits: "sun",
-				},
-				jupiter: {
-					distance: 778,
-					eccentricity: 0.049,
-					orbitalPeriod: 4333,
-					color: "brown",
-					size: 20,
-					lastPerihelion: "2023-11-03",
-					orbits: "sun",
-				},
-				saturn: {
-					distance: 1434,
-					eccentricity: 0.056,
-					orbitalPeriod: 10759,
-					color: "orange",
-					size: 17,
-					lastPerihelion: "2023-08-27",
-					orbits: "sun",
-				},
+				mercury: { eccentricity: 0.205, periapsis: 135.15, apoapsis: 204.85, orbitalPeriod: 88, color: "grey", size: 1.28, lastPerihelion: "2024-01-05", orbits: "sun" },
+				venus: { eccentricity: 0.006, periapsis: 198.8, apoapsis: 201.2, orbitalPeriod: 225, color: "purple", size: 1.7, lastPerihelion: "2023-08-13", orbits: "sun" },
+				earth: { eccentricity: 0.017, periapsis: 235.92, apoapsis: 244.08, orbitalPeriod: 365, color: "blue", size: 1.74, lastPerihelion: "2024-01-03", orbits: "sun" },
+				mars: { eccentricity: 0.093, periapsis: 254.04, apoapsis: 305.96, orbitalPeriod: 687, color: "red", size: 1.38, lastPerihelion: "2022-12-08", orbits: "sun" },
+				jupiter: { eccentricity: 0.049, periapsis: 570.6, apoapsis: 629.4, orbitalPeriod: 4333, color: "brown", size: 5.61, lastPerihelion: "2023-11-03", orbits: "sun" },
+				saturn: { eccentricity: 0.056, periapsis: 944.0, apoapsis: 1056.0, orbitalPeriod: 10759, color: "orange", size: 4.84, lastPerihelion: "2023-08-27", orbits: "sun" },
 			},
 			satellites: {
-				moon: {
-					distance: 0.384,
-					eccentricity: 0.0549,
-					orbitalPeriod: 27.3,
-					color: "lightgray",
-					size: 2,
-					lastPerihelion: "2024-01-03",
-					orbits: "earth", // Orbita la Tierra
-				},
-				io: {
-					distance: 0.422,
-					eccentricity: 0.0041,
-					orbitalPeriod: 1.769,
-					color: "orange",
-					size: 2,
-					lastPerihelion: "2024-01-01",
-					orbits: "jupiter", // Orbita Júpiter
-				},
-				europa: {
-					distance: 0.671,
-					eccentricity: 0.009,
-					orbitalPeriod: 3.551,
-					color: "white",
-					size: 2,
-					lastPerihelion: "2024-01-01",
-					orbits: "jupiter",
-				},
-				ganimedes: {
-					distance: 1.070,
-					eccentricity: 0.0013,
-					orbitalPeriod: 7.155,
-					color: "yellow",
-					size: 2.5,
-					lastPerihelion: "2024-01-01",
-					orbits: "jupiter",
-				},
-				calisto: {
-					distance: 1.882,
-					eccentricity: 0.007,
-					orbitalPeriod: 16.689,
-					color: "gray",
-					size: 2.5,
-					lastPerihelion: "2024-01-01",
-					orbits: "jupiter",
-				},
+				moon: { eccentricity: 0.0549, periapsis: 11.34, apoapsis: 12.66, orbitalPeriod: 27.3, color: "lightgray", size: 1.2, lastPerihelion: "2024-01-03", orbits: "earth" },
+				io: { eccentricity: 0.0041, periapsis: 29.877, apoapsis: 30.123, orbitalPeriod: 1.769, color: "orange", size: 1.22, lastPerihelion: "2024-01-01", orbits: "jupiter" },
+				europa: { eccentricity: 0.009, periapsis: 39.64, apoapsis: 40.36, orbitalPeriod: 3.551, color: "white", size: 1.18, lastPerihelion: "2024-01-01", orbits: "jupiter" },
+				ganimedes: { eccentricity: 0.0013, periapsis: 59.922, apoapsis: 60.078, orbitalPeriod: 7.155, color: "yellow", size: 1.3, lastPerihelion: "2024-01-01", orbits: "jupiter" },
+				calisto: { eccentricity: 0.007, periapsis: 99.3, apoapsis: 100.7, orbitalPeriod: 16.689, color: "gray", size: 1.28, lastPerihelion: "2024-01-01", orbits: "jupiter" },
+			},
+			artificialSatellites: {
+				jwst: { eccentricity: 0.7, periapsis: 11.34, apoapsis: 80.66, orbitalPeriod: 365, color: "cyan", size: 0.5, lastPerihelion: "2024-01-03", orbits: "earth" },
 			},
 			comets: {
-				halley: {
-					distance: 17.8 * 149597870.7 / 1e6, // 17.8 UA
-					eccentricity: 0.967,
-					orbitalPeriod: 75.3 * 365.25, // en días
-					color: "white",
-					size: 3,
-					lastPerihelion: "1986-02-09",
-					orbits: "sun",
-				},
-				swift_tuttle: {
-					distance: 25.4 * 149597870.7 / 1e6, // 25.4 UA
-					eccentricity: 0.963,
-					orbitalPeriod: 133.28 * 365.25, // en días
-					color: "lightblue",
-					size: 3,
-					lastPerihelion: "1992-12-11",
-					orbits: "sun",
-				},
+				halley: { eccentricity: 0.967, periapsis: 105.6, apoapsis: 6294.4, orbitalPeriod: 75.3 * 365.25, color: "white", size: 1.01, lastPerihelion: "1986-02-09", orbits: "sun" },
+				swift_tuttle: { eccentricity: 0.963, periapsis: 169.09, apoapsis: 8970.91, orbitalPeriod: 133.28 * 365.25, color: "lightblue", size: 1.01, lastPerihelion: "1992-12-11", orbits: "sun" },
 			},
 		};
 
 
 		// Escala para el dibujo
-		const scale = Math.min(canvas2d.width, canvas2d.height) / CELESTIAL_BODIES.planets.saturn.distance / 0.53;
+		const scale = Math.min(canvas2d.width, canvas2d.height) / CELESTIAL_BODIES.planets.saturn.apoapsis / 0.53;
 
 		// Variables globales
 		let angles = {};
@@ -388,7 +279,7 @@
 		let speedFactor = 1;
 		let simulatedDate = new Date(); // Fecha simulada
 
-		// Inicialización de ángulos dinámicamente según la configuración
+		// Inicialización de ángulos basados en el perihelio
 		Object.keys(CELESTIAL_BODIES).forEach((type) => {
 			Object.keys(CELESTIAL_BODIES[type]).forEach((name) => {
 				const body = CELESTIAL_BODIES[type][name];
@@ -401,6 +292,29 @@
 			});
 		});
 		
+		const bodyNamesVisibility = {};
+		Object.keys(CELESTIAL_BODIES).forEach((category) => {
+			Object.keys(CELESTIAL_BODIES[category]).forEach((bodyName) => {
+				bodyNamesVisibility[bodyName] = false; // Inicialmente ocultos
+			});
+		});
+		
+		function findBodyPosition(bodyName) {
+			const body = findBodyByName(bodyName);
+			if (!body) return { x: canvas2d.width / 2, y: canvas2d.height / 2 }; // Posición por defecto
+
+			const centralBody = body.orbits ? findBodyByName(body.orbits) : null;
+			const centralPosition = centralBody
+				? calculateRelativePosition(
+					  angles[body.orbits],
+					  centralBody.distance,
+					  centralBody.eccentricity
+				  )
+				: { x: canvas2d.width / 2, y: canvas2d.height / 2 };
+
+			return calculateRelativePosition(angles[bodyName], body.distance, body.eccentricity, centralPosition);
+		}
+		
 		function findBodyByName(name) {
 			for (const category in CELESTIAL_BODIES) {
 				if (CELESTIAL_BODIES[category][name]) {
@@ -410,51 +324,68 @@
 			return null;
 		}
 		
-		function calculateRelativePosition(angle, distance, eccentricity) {
-			const semiMajorAxis = distance * scale;
+		// Función para calcular la excentricidad a partir de periapsis y apoapsis
+		function calculateEccentricity(periapsis, apoapsis) {
+			return (apoapsis - periapsis) / (apoapsis + periapsis);
+		}
+		
+		function calculateRelativePosition(angle, periapsis, apoapsis, eccentricity, centralPosition = { x: canvas2d.width / 2, y: canvas2d.height / 2 }) {
+			// Semi-ejes mayor y menor
+			const semiMajorAxis = (apoapsis + periapsis) / 2 * scale; // Escalamos las distancias
 			const semiMinorAxis = semiMajorAxis * Math.sqrt(1 - eccentricity ** 2);
-			const focusOffset = semiMajorAxis * eccentricity;
 
-			const x = canvas2d.width / 2 + focusOffset + Math.cos(angle) * semiMajorAxis;
-			const y = canvas2d.height / 2 + Math.sin(angle) * semiMinorAxis * Math.cos(Math.PI / 2.3);
+			// Foco desplazado desde el centro
+			const focusOffset = semiMajorAxis - (periapsis * scale); // Desplazamiento por la excentricidad
+
+			// Calculamos la posición del cuerpo celeste
+			const x = centralPosition.x + focusOffset + Math.cos(angle) * semiMajorAxis;
+			const y = centralPosition.y + Math.sin(angle) * semiMinorAxis * Math.cos(Math.PI / 2.3);
 
 			return { x, y };
 		}
 
-		function drawOrbit(distance, eccentricity, color, centralX = canvas2d.width / 2, centralY = canvas2d.height / 2) {
-			const semiMajorAxis = distance * scale;
-			const semiMinorAxis = semiMajorAxis * Math.sqrt(1 - eccentricity ** 2);
+		// Cambiamos esta función para usar `periapsis` y `apoapsis`
+		function drawOrbit(periapsis, apoapsis, eccentricity, color, centralX = canvas2d.width / 2, centralY = canvas2d.height / 2) {
+			// Calculamos los semiejes mayor y menor
+			const semiMajorAxis = (apoapsis + periapsis) / 2 * scale; // Semieje mayor (promedio de periapsis y apoapsis)
+			const semiMinorAxis = semiMajorAxis * Math.sqrt(1 - eccentricity ** 2); // Semieje menor
 
+			// Calculamos el desplazamiento del foco (donde se encuentra el Sol)
+			const focusOffset = semiMajorAxis * eccentricity;
+
+			// Dibujamos la elipse desplazando el centro hacia el foco (donde está el Sol)
 			ctx2d.beginPath();
 			ctx2d.ellipse(
-				centralX, // Centro de la órbita
+				centralX + focusOffset, // Desplazamos el centro de la elipse hacia el foco
 				centralY,
 				semiMajorAxis,
-				semiMinorAxis * Math.cos(Math.PI / 2.3),
+				semiMinorAxis * Math.cos(Math.PI / 2.3), // Aplicamos inclinación
 				0,
 				0,
 				2 * Math.PI
 			);
 			ctx2d.strokeStyle = color || "white";
-			ctx2d.lineWidth = 0.5;
+			ctx2d.lineWidth = 0.2;
 			ctx2d.stroke();
 		}
 
-		function drawBody(name, angle, distance, eccentricity, color, sizeScale, centralX = canvas2d.width / 2, centralY = canvas2d.height / 2) {
-			const semiMajorAxis = distance * scale;
-			const semiMinorAxis = semiMajorAxis * Math.sqrt(1 - eccentricity ** 2);
+		// Dibujar un cuerpo celeste ajustado para usar periapsis y apoapsis
+		function drawBody(name, angle, periapsis, apoapsis, eccentricity, color, sizeScale, centralX = canvas2d.width / 2, centralY = canvas2d.height / 2) {
+			// Calculamos la posición del cuerpo en la órbita
+			const { x, y } = calculateRelativePosition(angle, periapsis, apoapsis, eccentricity, { x: centralX, y: centralY });
 
-			const x = centralX + Math.cos(angle) * semiMajorAxis;
-			const y = centralY + Math.sin(angle) * semiMinorAxis * Math.cos(Math.PI / 2.3);
-
+			// Dibujamos el cuerpo celeste
 			ctx2d.beginPath();
 			ctx2d.arc(x, y, sizeScale, 0, 2 * Math.PI);
 			ctx2d.fillStyle = color;
 			ctx2d.fill();
 
-			ctx2d.fillStyle = "white";
-			ctx2d.font = "12px Arial";
-			ctx2d.fillText(name, x + 10, y + 3);
+			// Mostrar el nombre solo si está visible
+			if (bodyNamesVisibility[name.toLowerCase()]) {
+				ctx2d.fillStyle = "white";
+				ctx2d.font = "12px Arial";
+				ctx2d.fillText(name, x + 10, y + 3);
+			}
 
 			return { x, y };
 		}
@@ -462,20 +393,29 @@
 		// Función de animación
 		function animate() {
 			const currentTime = Date.now();
-			const elapsed = (currentTime - lastUpdateTime) / 1000; // Tiempo transcurrido en segundos
+			const elapsed = (currentTime - lastUpdateTime) / 1000; // Tiempo en segundos desde el último cuadro
 			lastUpdateTime = currentTime;
 
-			// Avanza la fecha simulada según la velocidad
-			const daysToAdvance = elapsed * speedFactor;
-			simulatedDate = new Date(simulatedDate.getTime() + daysToAdvance * 24 * 60 * 60 * 1000);
+			const daysToAdvance = elapsed * speedFactor; // Calcula los días a avanzar basados en la velocidad
+
+			// Actualiza los ángulos de los cuerpos celestes
+			Object.keys(CELESTIAL_BODIES).forEach((category) => {
+				Object.keys(CELESTIAL_BODIES[category]).forEach((bodyName) => {
+					const body = CELESTIAL_BODIES[category][bodyName];
+					if (body.orbitalPeriod !== Infinity) {
+						const angularSpeed = -(2 * Math.PI) / body.orbitalPeriod; // Velocidad angular (rad/día)
+						angles[bodyName] += angularSpeed * daysToAdvance; // Avanza el ángulo según el tiempo transcurrido
+					}
+				});
+			});
 
 			ctx2d.clearRect(0, 0, canvas2d.width, canvas2d.height); // Limpia el canvas
 
 			// Dibuja el Sol
 			const sun = CELESTIAL_BODIES.star.sun;
-			drawBody("Sol", 0, sun.distance, sun.eccentricity, sun.color, sun.size);
+			drawBody("Sol", 0, sun.periapsis, sun.apoapsis, sun.eccentricity, sun.color, sun.size);
 
-			// Dibuja planetas y satélites
+			// Dibuja planetas, satélites naturales y artificiales
 			Object.keys(CELESTIAL_BODIES).forEach((category) => {
 				Object.keys(CELESTIAL_BODIES[category]).forEach((bodyName) => {
 					const body = CELESTIAL_BODIES[category][bodyName];
@@ -489,7 +429,8 @@
 						if (centralBody) {
 							const centralPosition = calculateRelativePosition(
 								angles[body.orbits],
-								centralBody.distance,
+								centralBody.periapsis,
+								centralBody.apoapsis,
 								centralBody.eccentricity
 							);
 							centralX = centralPosition.x;
@@ -498,11 +439,12 @@
 					}
 
 					// Dibuja la órbita y el cuerpo celeste
-					drawOrbit(body.distance, body.eccentricity, body.color, centralX, centralY);
+					drawOrbit(body.periapsis, body.apoapsis, body.eccentricity, body.color, centralX, centralY);
 					drawBody(
 						bodyName.charAt(0).toUpperCase() + bodyName.slice(1),
 						angles[bodyName],
-						body.distance,
+						body.periapsis,
+						body.apoapsis,
 						body.eccentricity,
 						body.color,
 						body.size,
@@ -549,6 +491,34 @@
 					speedFactor = 1;
 				}
 			}
+		});
+		
+		canvas2d.addEventListener("click", (event) => {
+			const rect = canvas2d.getBoundingClientRect();
+			const mouseX = event.clientX - rect.left;
+			const mouseY = event.clientY - rect.top;
+
+			// Verificar si se hace clic en algún cuerpo celeste
+			Object.keys(CELESTIAL_BODIES).forEach((category) => {
+				Object.keys(CELESTIAL_BODIES[category]).forEach((bodyName) => {
+					const body = CELESTIAL_BODIES[category][bodyName];
+					const position = calculateRelativePosition(
+						angles[bodyName],
+						body.distance,
+						body.eccentricity,
+						body.orbits ? findBodyPosition(body.orbits) : { x: canvas2d.width / 2, y: canvas2d.height / 2 }
+					);
+
+					// Verificar si el clic está dentro del radio del cuerpo
+					const distance = Math.sqrt(
+						Math.pow(mouseX - position.x, 2) + Math.pow(mouseY - position.y, 2)
+					);
+					if (distance <= body.size) {
+						// Alternar visibilidad del nombre
+						bodyNamesVisibility[bodyName] = !bodyNamesVisibility[bodyName];
+					}
+				});
+			});
 		});
 
 		// Inicia la animación
