@@ -348,30 +348,30 @@
 			  renderer.render(scene, camera);
 			}
 
-// Configurar eventos para ajustar la velocidad
-document.getElementById("speedControl").addEventListener("click", () => {
-  if (speedFactor === 1) speedFactor = 2;
-  else if (speedFactor === 2) speedFactor = 4;
-  else if (speedFactor === 4) speedFactor = 8;
-  else if (speedFactor === 8) speedFactor = 16;
-  else speedFactor = 1;
-
-  document.getElementById("speedDisplay").innerText = `Velocidad: x${speedFactor}`;
-});
-
-// Ajustar tamaño de la ventana
-window.addEventListener("resize", () => {
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-});
-
-// Configurar la posición inicial de la cámara
-camera.position.set(0, 200, 1000);
-camera.lookAt(0, 0, 0);
-
-// Iniciar la animación
-animate();
+			// Configurar eventos para ajustar la velocidad
+			document.getElementById("speedControl").addEventListener("click", () => {
+			  if (speedFactor === 1) speedFactor = 2;
+			  else if (speedFactor === 2) speedFactor = 4;
+			  else if (speedFactor === 4) speedFactor = 8;
+			  else if (speedFactor === 8) speedFactor = 16;
+			  else speedFactor = 1;
+			
+			  document.getElementById("speedDisplay").innerText = `Velocidad: x${speedFactor}`;
+			});
+			
+			// Ajustar tamaño de la ventana
+			window.addEventListener("resize", () => {
+			  renderer.setSize(window.innerWidth, window.innerHeight);
+			  camera.aspect = window.innerWidth / window.innerHeight;
+			  camera.updateProjectionMatrix();
+			});
+			
+			// Configurar la posición inicial de la cámara
+			camera.position.set(0, 200, 1000);
+			camera.lookAt(0, 0, 0);
+			
+			// Iniciar la animación
+			animate();
 		</script>
 	</body>
 </html>
