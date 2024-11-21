@@ -64,10 +64,10 @@
 			scene.add(ambientLight);
 
 			// Escala para las distancias y tamaños
-			const SCALE_DISTANCE = 0.000001; // Escala ajustada para las distancias (en km)
-			const SCALE_SIZE = 0.0005; // Escala ajustada para los tamaños de los cuerpos
-			//const SCALE_DISTANCE = 0.00001; // Escala ajustada para las distancias (en km)
-			//const SCALE_SIZE = 0.0001; // Escala ajustada para los tamaños de los cuerpos
+			//const SCALE_DISTANCE = 0.000001; // Escala ajustada para las distancias (en km)
+			//const SCALE_SIZE = 0.0005; // Escala ajustada para los tamaños de los cuerpos
+			const SCALE_DISTANCE = 0.00001; // Escala ajustada para las distancias (en km)
+			const SCALE_SIZE = 0.0001; // Escala ajustada para los tamaños de los cuerpos
 
 			// Velocidad de simulación
 			let speedFactor = 1; // Velocidad inicial (1 segundo = 1 día)
@@ -84,8 +84,8 @@
 			// Cuerpos celestes
 			const CELESTIAL_BODIES = {
 				star: {
-					//sun: { periapsis: 0, apoapsis: 0, size: 1392000 * SCALE_SIZE, color: 0xffff00, orbits: null, orbitalPeriod: Infinity, orientation: 0, lastPerihelion: null },
-					sun: { periapsis: 0, apoapsis: 0, size: 139200 * SCALE_SIZE, color: 0xffff00, orbits: null, orbitalPeriod: Infinity, orientation: 0, lastPerihelion: null },
+					sun: { periapsis: 0, apoapsis: 0, size: 1392000 * SCALE_SIZE, color: 0xffff00, orbits: null, orbitalPeriod: Infinity, orientation: 0, lastPerihelion: null },
+					//sun: { periapsis: 0, apoapsis: 0, size: 139200 * SCALE_SIZE, color: 0xffff00, orbits: null, orbitalPeriod: Infinity, orientation: 0, lastPerihelion: null },
 				},
 				planets: {
 					mercury: { periapsis: 46000000, apoapsis: 69800000, size: 4879 * SCALE_SIZE, color: 0xaaaaaa, orbits: "sun", orbitalPeriod: 88, orientation: 7, lastPerihelion: "2024-01-05" },
@@ -98,12 +98,12 @@
 					neptune: { periapsis: 4444400000, apoapsis: 4545700000, size: 49244 * SCALE_SIZE, color: 0x0000ff, orbits: "sun", orbitalPeriod: 60190, orientation: 1.77, lastPerihelion: "2040-12-01" },
 				},
 				satellites: {
-					moon: { periapsis: 363300*50, apoapsis: 405500*50, size: 3474 * SCALE_SIZE, color: 0xcccccc, orbits: "earth", orbitalPeriod: 27.321, orientation: 5.1, lastPerihelion: "2024-01-03" },
-					io: { periapsis: 421700*270, apoapsis: 422000*270, size: 3643 * SCALE_SIZE, color: 0xffa500, orbits: "jupiter", orbitalPeriod: 1.769, orientation: 0, lastPerihelion: "2024-01-01" },
-					europa: { periapsis: 670900*270, apoapsis: 676900*270, size: 3122 * SCALE_SIZE, color: 0xffffff, orbits: "jupiter", orbitalPeriod: 3.551, orientation: 0.1, lastPerihelion: "2024-01-01" },
-					ganymede: { periapsis: 1070400*270, apoapsis: 1071600*270, size: 5268 * SCALE_SIZE, color: 0xffff00, orbits: "jupiter", orbitalPeriod: 7.155, orientation: 0.2, lastPerihelion: "2024-01-01" },
-					callisto: { periapsis: 1882700*270, apoapsis: 1883300*270, size: 4821 * SCALE_SIZE, color: 0x808080, orbits: "jupiter", orbitalPeriod: 16.689, orientation: 0.3, lastPerihelion: "2024-01-01" },
-					titan: { periapsis: 1186600*200, apoapsis: 1221860*200, size: 5150 * SCALE_SIZE, color: 0xffcc99, orbits: "saturn", orbitalPeriod: 15.945, orientation: 0.33, lastPerihelion: "2024-01-01" },
+					moon: { periapsis: 363300, apoapsis: 405500, size: 3474 * SCALE_SIZE, color: 0xcccccc, orbits: "earth", orbitalPeriod: 27.321, orientation: 5.1, lastPerihelion: "2024-01-03" },
+					io: { periapsis: 421700, apoapsis: 422000, size: 3643 * SCALE_SIZE, color: 0xffa500, orbits: "jupiter", orbitalPeriod: 1.769, orientation: 0, lastPerihelion: "2024-01-01" },
+					europa: { periapsis: 670900, apoapsis: 676900, size: 3122 * SCALE_SIZE, color: 0xffffff, orbits: "jupiter", orbitalPeriod: 3.551, orientation: 0.1, lastPerihelion: "2024-01-01" },
+					ganymede: { periapsis: 1070400, apoapsis: 1071600, size: 5268 * SCALE_SIZE, color: 0xffff00, orbits: "jupiter", orbitalPeriod: 7.155, orientation: 0.2, lastPerihelion: "2024-01-01" },
+					callisto: { periapsis: 1882700, apoapsis: 1883300, size: 4821 * SCALE_SIZE, color: 0x808080, orbits: "jupiter", orbitalPeriod: 16.689, orientation: 0.3, lastPerihelion: "2024-01-01" },
+					titan: { periapsis: 1186600, apoapsis: 1221860, size: 5150 * SCALE_SIZE, color: 0xffcc99, orbits: "saturn", orbitalPeriod: 15.945, orientation: 0.33, lastPerihelion: "2024-01-01" },
 				},
 				comets: {
 					halley: { periapsis: 88000000, apoapsis: 5240000000, size: 11 * SCALE_SIZE, color: 0xffffff, orbits: "sun", orbitalPeriod: 27400, orientation: 162, lastPerihelion: "1986-02-09" },
@@ -264,7 +264,7 @@
 			  orbit.position.set(centralPosition.x, centralPosition.y, centralPosition.z);
 
 			  scene.add(orbit);
-			  return orbit;
+			  /*return orbit;*/
 			}
 
 			// Inicializar cuerpos celestes
