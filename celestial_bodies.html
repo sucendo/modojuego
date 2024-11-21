@@ -241,7 +241,7 @@
 
 			// Dibujar órbita
 			function drawOrbit(periapsis, apoapsis, orientation, color, centralPosition = new THREE.Vector3(0, 0, 0)) {
-			  /*const semiMajorAxis = (apoapsis + periapsis) / 2 * SCALE_DISTANCE;
+			  const semiMajorAxis = (apoapsis + periapsis) / 2 * SCALE_DISTANCE;
 			  const semiMinorAxis = semiMajorAxis * Math.sqrt(1 - Math.pow((apoapsis - periapsis) / (apoapsis + periapsis), 2));
 
 			  const points = [];
@@ -264,7 +264,7 @@
 			  orbit.position.set(centralPosition.x, centralPosition.y, centralPosition.z);
 
 			  scene.add(orbit);
-			  return orbit;*/
+			  return orbit;
 			}
 
 			// Inicializar cuerpos celestes
