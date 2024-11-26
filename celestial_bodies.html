@@ -242,46 +242,125 @@
 			Object.keys(CELESTIAL_BODIES).forEach((category) => {
 				Object.keys(CELESTIAL_BODIES[category]).forEach((name) => {
 					const body = CELESTIAL_BODIES[category][name];
-					const geometry = new THREE.SphereGeometry(body.size * SCALE_SIZE, 32, 32);
-					const material = new THREE.MeshStandardMaterial({ color: body.color });
-					const mesh = new THREE.Mesh(geometry, material);
 
-					const position = calculateRelativePosition(
-						angles[name],
-						body.periapsis,
-						body.apoapsis,
-						body.longitudeOfAscendingNode,
-						body.inclination,
-						body.argumentOfPeriapsis,
-						body.orientation
-					);
+					// Si es la Tierra, cargamos texturas detalladas y agregamos nubes
+					if (name === "earth") {
+						const textureLoader = new THREE.TextureLoader();
 
-					if (body.orbits && celestialObjects[body.orbits]) {
-						const centralPosition = celestialObjects[body.orbits].position;
-						position.add(centralPosition);
-					}
+						// Cargar texturas de la Tierra
+						const earthTexture = textureLoader.load('https://threejs.org/examples/textures/land_ocean_ice_cloud_2048.jpg');
+						const earthBumpMap = textureLoader.load('https://threejs.org/examples/textures/elev_bump_4k.jpg');
+						const earthSpecularMap = textureLoader.load('https://threejs.org/examples/textures/water_4k.png');
+						const cloudsTexture = textureLoader.load('https://threejs.org/examples/textures/fair_clouds_4k.png');
 
-					mesh.position.set(position.x, position.y, position.z);
-					scene.add(mesh);
-					celestialObjects[name] = mesh;
+						// Crear geometría y material de la Tierra
+						const geometry = new THREE.SphereGeometry(body.size * SCALE_SIZE, 64, 64);
+						const material = new THREE.MeshPhongMaterial({
+							map: earthTexture,
+							bumpMap: earthBumpMap,
+							bumpScale: 0.05,
+							specularMap: earthSpecularMap,
+							specular: new THREE.Color('grey'),
+						});
 
-					const orbit = drawOrbit(
-						angles[name],
-						body.periapsis,
-						body.apoapsis,
-						body.longitudeOfAscendingNode,
-						body.inclination,
-						body.argumentOfPeriapsis,
-						body.orientation,
-						body.color,
-						body.orbits && celestialObjects[body.orbits]
-							? celestialObjects[body.orbits].position
-							: new THREE.Vector3(0, 0, 0)
-					);
+						const mesh = new THREE.Mesh(geometry, material);
 
-					if (orbit) {
-						scene.add(orbit);
-						celestialObjects[name].orbit = orbit;
+						// Crear las nubes
+						const cloudGeometry = new THREE.SphereGeometry(body.size * SCALE_SIZE * 1.01, 64, 64); // Ligeramente más grande que la Tierra
+						const cloudMaterial = new THREE.MeshPhongMaterial({
+							map: cloudsTexture,
+							transparent: true,
+							opacity: 0.8,
+						});
+						const cloudMesh = new THREE.Mesh(cloudGeometry, cloudMaterial);
+
+						// Añadir las nubes como hijo de la Tierra
+						mesh.add(cloudMesh);
+
+						// Calcular posición inicial
+						const position = calculateRelativePosition(
+							angles[name],
+							body.periapsis,
+							body.apoapsis,
+							body.longitudeOfAscendingNode,
+							body.inclination,
+							body.argumentOfPeriapsis,
+							body.orientation
+						);
+
+						if (body.orbits && celestialObjects[body.orbits]) {
+							const centralPosition = celestialObjects[body.orbits].position;
+							position.add(centralPosition);
+						}
+
+						mesh.position.set(position.x, position.y, position.z);
+						scene.add(mesh);
+						celestialObjects[name] = mesh;
+
+						// Guardar las nubes para animación posterior
+						celestialObjects[name].clouds = cloudMesh;
+
+						const orbit = drawOrbit(
+							angles[name],
+							body.periapsis,
+							body.apoapsis,
+							body.longitudeOfAscendingNode,
+							body.inclination,
+							body.argumentOfPeriapsis,
+							body.orientation,
+							body.color,
+							body.orbits && celestialObjects[body.orbits]
+								? celestialObjects[body.orbits].position
+								: new THREE.Vector3(0, 0, 0)
+						);
+
+						if (orbit) {
+							scene.add(orbit);
+							celestialObjects[name].orbit = orbit;
+						}
+					} else {
+						// Para otros cuerpos celestes
+						const geometry = new THREE.SphereGeometry(body.size * SCALE_SIZE, 32, 32);
+						const material = new THREE.MeshStandardMaterial({ color: body.color });
+						const mesh = new THREE.Mesh(geometry, material);
+
+						const position = calculateRelativePosition(
+							angles[name],
+							body.periapsis,
+							body.apoapsis,
+							body.longitudeOfAscendingNode,
+							body.inclination,
+							body.argumentOfPeriapsis,
+							body.orientation
+						);
+
+						if (body.orbits && celestialObjects[body.orbits]) {
+							const centralPosition = celestialObjects[body.orbits].position;
+							position.add(centralPosition);
+						}
+
+						mesh.position.set(position.x, position.y, position.z);
+						scene.add(mesh);
+						celestialObjects[name] = mesh;
+
+						const orbit = drawOrbit(
+							angles[name],
+							body.periapsis,
+							body.apoapsis,
+							body.longitudeOfAscendingNode,
+							body.inclination,
+							body.argumentOfPeriapsis,
+							body.orientation,
+							body.color,
+							body.orbits && celestialObjects[body.orbits]
+								? celestialObjects[body.orbits].position
+								: new THREE.Vector3(0, 0, 0)
+						);
+
+						if (orbit) {
+							scene.add(orbit);
+							celestialObjects[name].orbit = orbit;
+						}
 					}
 				});
 			});
