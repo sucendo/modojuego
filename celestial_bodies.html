@@ -402,27 +402,30 @@
 							const cloudMesh = new THREE.Mesh(cloudGeometry, cloudMaterial);
 							mesh.add(cloudMesh);
 						} else if (name === "saturn") {
-							// Crear los anillos de Saturno
+														// Crear los anillos de Saturno
 							const ringGeometry = new THREE.RingGeometry(
 								body.size * SCALE_SIZE * 1.2, // Radio interno del anillo
 								body.size * SCALE_SIZE * 2.5, // Radio externo del anillo
-								64 // Resolución
+								128 // Resolución angular (mayor valor para suavidad)
 							);
 
-							// Ajustar las coordenadas UV de la geometría
+							// Modificar las coordenadas UV para un mapeo radial
 							const uv = ringGeometry.attributes.uv;
 							for (let i = 0; i < uv.count; i++) {
 								const u = uv.getX(i);
 								const v = uv.getY(i);
-								const radius = Math.sqrt(u * u + v * v); // Calcular el radio en el espacio UV
-								uv.setXY(i, u / radius, v / radius); // Escalar para que se ajuste correctamente
+								const angle = Math.atan2(v - 0.5, u - 0.5); // Ángulo respecto al centro (0.5, 0.5 en espacio UV)
+								const radius = Math.sqrt((u - 0.5) ** 2 + (v - 0.5) ** 2); // Radio normalizado
+
+								// Asignar nuevas coordenadas UV: el ángulo determina "u" y el radio determina "v"
+								uv.setXY(i, (angle / (2 * Math.PI) + 0.5), radius);
 							}
 
 							// Crear el material para los anillos
 							const ringMaterial = new THREE.MeshBasicMaterial({
-								map: planetTextures.saturn.mapRing, // Textura de los anillos
+								map: planetTextures.saturn.mapRing, // Textura del anillo
 								side: THREE.DoubleSide, // Renderizar ambos lados
-								transparent: true, // Permitir transparencia
+								transparent: true, // Habilitar transparencia
 							});
 
 							// Crear el mesh de los anillos
