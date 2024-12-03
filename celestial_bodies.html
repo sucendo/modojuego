@@ -76,7 +76,7 @@
 		<div id="timePanel">
 		<div id="dateDisplay"></div>
 			<div id="timeControls">			
-				<button id="speedControl">Cambiar Velocidad</button>
+				<button id="speedControl">V</button>
 				<button id="decreaseSpeedBtn">-</button>
 				<button id="pauseBtn">||</button>
 				<button id="increaseSpeedBtn">+</button>	
@@ -901,6 +901,13 @@
 			const rotationAcceleration = Math.PI / 4; // Incremento de rotación por segundo^2
 			const rotationDamping = 0.9; // Factor de amortiguación para las rotaciones
 
+			// Variables para el giroscopio
+			let gyroEnabled = true; // Controla si el giroscopio está habilitado o no
+			let baseAlpha = 0; // Rotación inicial en yaw
+			let baseBeta = 0; // Rotación inicial en pitch
+			let baseGamma = 0; // Rotación inicial en roll
+			let gyroInitialized = false;
+
 			// Manejo de las teclas
 			const keyState = {};
 
@@ -945,27 +952,33 @@
 				};
 
 				const buttonResetGyro = document.createElement("button");
-				buttonResetGyro.innerText = "Reset Gyro";
+				buttonResetGyro.innerText = "R";
 				buttonResetGyro.style.padding = "10px";
 				buttonResetGyro.style.fontSize = "20px";
 				buttonResetGyro.onclick = () => {
 					resetGyroscope();
 				};
 
+				const buttonToggleGyro = document.createElement("button");
+				buttonToggleGyro.innerText = "B";
+				buttonToggleGyro.style.padding = "10px";
+				buttonToggleGyro.style.fontSize = "20px";
+				buttonToggleGyro.onclick = () => {
+					gyroEnabled = !gyroEnabled; // Alternar entre habilitado y deshabilitado
+					console.log(`Giroscopio ${gyroEnabled ? "habilitado" : "deshabilitado"}`);
+				};
+
 				controlsContainer.appendChild(buttonMinus);
 				controlsContainer.appendChild(buttonPlus);
 				controlsContainer.appendChild(buttonResetGyro);
+				controlsContainer.appendChild(buttonToggleGyro);
 				document.body.appendChild(controlsContainer);
 			}
 
-			// Variables para el giroscopio
-			let baseAlpha = 0; // Rotación inicial en yaw
-			let baseBeta = 0; // Rotación inicial en pitch
-			let baseGamma = 0; // Rotación inicial en roll
-			let gyroInitialized = false;
-
 			// Evento de orientación del dispositivo
 			window.addEventListener("deviceorientation", (event) => {
+				if (!gyroInitialized || !gyroEnabled) return; // Ignorar si el giroscopio está deshabilitado
+
 				if (!gyroInitialized) {
 					// Establecer la orientación base cuando se inicializa el giroscopio
 					baseAlpha = event.alpha || 0;
