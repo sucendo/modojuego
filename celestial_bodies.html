@@ -87,7 +87,7 @@
 		<div id="controls">
 			<button id="toggleOrbits">O</button>
 			<button id="fullscreenBtn">P</button>
-			<button id="resetGyroBtn">R</button>
+			<!-- <button id="resetGyroBtn">R</button> -->
 		</div>
 
 		<script>
@@ -898,14 +898,22 @@
 			// Variables para suavizar la rotación
 			let pitchVelocity = 0; // Velocidad de rotación en el eje X (pitch)
 			let rollVelocity = 0; // Velocidad de rotación en el eje Z (roll)
-			const rotationAcceleration = Math.PI / 4; // Incremento de rotación por segundo^2 (más suave)
-			const rotationDamping = 0.9; // Factor de amortiguación para las rotaciones (1 = sin amortiguación, <1 = fricción)
+			const rotationAcceleration = Math.PI / 4; // Incremento de rotación por segundo^2
+			const rotationDamping = 0.9; // Factor de amortiguación para las rotaciones
 
 			// Manejo de las teclas
 			const keyState = {};
 
 			// Detección de dispositivos móviles o tabletas
 			const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+			// Detectar orientación del dispositivo (vertical u horizontal)
+			let deviceOrientation = window.orientation || 0; // Inicializar con la orientación actual
+
+			window.addEventListener("orientationchange", () => {
+				deviceOrientation = window.orientation || 0;
+				console.log(`Nueva orientación del dispositivo: ${deviceOrientation}°`);
+			});
 
 			// Crear botones "+" y "-" solo si el dispositivo es móvil
 			if (isMobile) {
@@ -968,8 +976,21 @@
 
 				// Calcular las diferencias respecto a la base
 				const deltaAlpha = ((event.alpha || 0) - baseAlpha) * (Math.PI / 180); // Yaw
-				const deltaBeta = ((event.beta || 0) - baseBeta) * (Math.PI / 180); // Pitch
-				const deltaGamma = ((event.gamma || 0) - baseGamma) * (Math.PI / 180); // Roll
+				let deltaBeta = ((event.beta || 0) - baseBeta) * (Math.PI / 180); // Pitch
+				let deltaGamma = ((event.gamma || 0) - baseGamma) * (Math.PI / 180); // Roll
+
+				// Ajustar según la orientación del dispositivo
+				if (deviceOrientation === 90) {
+					// Apaisado con la parte superior a la derecha
+					[deltaBeta, deltaGamma] = [-deltaGamma, deltaBeta];
+				} else if (deviceOrientation === -90) {
+					// Apaisado con la parte superior a la izquierda
+					[deltaBeta, deltaGamma] = [deltaGamma, -deltaBeta];
+				} else if (deviceOrientation === 180) {
+					// Vertical invertido
+					deltaBeta = -deltaBeta;
+					deltaGamma = -deltaGamma;
+				}
 
 				// Aplicar los valores del giroscopio a las velocidades de rotación
 				pitchVelocity = -deltaBeta * 2; // Pitch (hacia arriba/abajo)
@@ -1040,7 +1061,6 @@
 				// Actualizar la posición de la cámara en función de la velocidad
 				camera.position.addScaledVector(velocity, deltaTime);
 			}
-
 			
 ///////////////////////////////////////////////////////////////////////////////////////////////////////			
 
@@ -1052,7 +1072,7 @@
 				console.log("Valores del giroscopio reseteados.");
 			}
 	
-			document.getElementById("resetGyroBtn").addEventListener("click", resetGyro);
+			// document.getElementById("resetGyroBtn").addEventListener("click", resetGyro);
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
