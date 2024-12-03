@@ -6,50 +6,41 @@
 		<title>Simulación del Sistema Solar con Three.js</title>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 		<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+		<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
 		<style>
 			body {
 				margin: 0;
 				overflow: hidden;
 			}
-			#dateDisplay {
+			#timePanel{
 				position: absolute;
 				top: 10px;
 				left: 10px;
-				color: white;
-				font-size: 20px;
-				font-family: Arial, sans-serif;
+				font-family: 'Orbitron', sans-serif; /* Fuente temática espacial */
+				font-size: 12px; /* Tamaño de la fuente */
+				color: #00ffcc; /* Color futurista */
+				text-shadow: 0 0 5px #00ffcc, 0 0 10px #00ffcc, 0 0 15px #008080, 0 0 20px #008080;
+				background: linear-gradient(90deg, #000428, #004e92); /* Fondo con gradiente espacial */
+				padding: 10px 20px; /* Espaciado interno */
+				border: 2px solid #00ffcc; /* Borde llamativo */
+				border-radius: 10px; /* Esquinas redondeadas */
+				box-shadow: 0 0 20px #00ffcc, inset 0 0 10px #004e92; /* Sombra para efecto de brillo */
+				text-align: center; /* Centrar texto */
+				display: inline-block; /* Ajustar tamaño al contenido */
 			}
 			#timeControls {
-				position: absolute;
-				top: 35px;
-				left: 10px;
+				/*position: absolute;
+				top: 5px;
+				left: 10px;*/
 				color: white;
-				background: rgba(255, 255, 255, 0.5);
-				border: none;
-				padding: 10px;
-				cursor: pointer;
-			}
-			#speedDisplay {
-				position: absolute;
-				top: 90px;
-				left: 10px;
-				color: white;
-				font-size: 20px;
-				font-family: Arial, sans-serif;
-			}
-			#toggleOrbits{
-				position: absolute;
-				top: 10px;
-				right: 10px;
-				color: white;
-				background: rgba(255, 255, 255, 0.5);
+				/* background: rgba(255, 255, 255, 0.5); */
 				border: none;
 				padding: 10px;
 				cursor: pointer;
 			}
 			#controls {
 				position: fixed;
-				top: 50px;
+				top: 10px;
 				right: 10px;
 				z-index: 1000;
 				display: flex;
@@ -57,28 +48,44 @@
 			}
 			button {
 				padding: 10px 15px;
-				background-color: #333;
-				color: white;
-				border: none;
+				font-family: 'Orbitron', sans-serif; /* Fuente temática espacial */
+				font-size: 12px; /* Tamaño de la fuente */
+				color: #00ffcc; /* Color futurista */
+				text-shadow: 0 0 5px #00ffcc, 0 0 10px #00ffcc, 0 0 15px #008080, 0 0 20px #008080; /* Efecto de brillo */
+				background: linear-gradient(90deg, #000428, #004e92); /* Fondo con gradiente espacial */
+				border: 2px solid #00ffcc; /* Borde brillante */
+				border-radius: 10px; /* Esquinas redondeadas */
+				box-shadow: 0 0 20px #00ffcc, inset 0 0 10px #004e92; /* Sombra para efecto de profundidad */
 				cursor: pointer;
-				border-radius: 5px;
+				transition: transform 0.2s, box-shadow 0.2s; /* Transición suave al hacer hover */
 			}
+
 			button:hover {
-				background-color: #555;
+				background: linear-gradient(90deg, #004e92, #00ffcc); /* Gradiente inverso al hacer hover */
+				box-shadow: 0 0 30px #00ffcc, inset 0 0 15px #00ffcc; /* Efecto más intenso al pasar el mouse */
+				transform: scale(1.05); /* Aumenta ligeramente el tamaño */
+			}
+
+			button:active {
+				transform: scale(0.95); /* Efecto al presionar */
+				box-shadow: 0 0 15px #00ffcc, inset 0 0 5px #004e92; /* Reduce el brillo al hacer clic */
 			}
 		</style>
 	</head>
 	<body>
+		<div id="timePanel">
 		<div id="dateDisplay"></div>
-		<div id="timeControls">
-			<button id="speedControl">Cambiar Velocidad</button>
-			<button id="decreaseSpeedBtn">-</button>
-			<button id="pauseBtn">||</button>
-			<button id="increaseSpeedBtn">+</button>
+			<div id="timeControls">			
+				<button id="speedControl">Cambiar Velocidad</button>
+				<button id="decreaseSpeedBtn">-</button>
+				<button id="pauseBtn">||</button>
+				<button id="increaseSpeedBtn">+</button>	
+			</div>
+		<div id="speedDisplay">Velocidad: x1</div>				
 		</div>
-		<div id="speedDisplay">Velocidad: x1</div>
-		<button id="toggleOrbits">O</button>
+			
 		<div id="controls">
+			<button id="toggleOrbits">O</button>
 			<button id="fullscreenBtn">P</button>
 			<button id="resetGyroBtn">R</button>
 		</div>
@@ -110,17 +117,17 @@
 			//const SCALE_SIZE = 0.0001; // Escala ajustada para los tamaños de los cuerpos
 
 			// Velocidad de simulación
-			let speedFactor = 1; // Velocidad inicial (1 segundo = 1 día)
+			let speedFactor = 0.00000864; // Velocidad inicial (1 segundo = 1 segundo)
 			const speedRanges = [
-				0.0104167, // 1 seg = 15 minutos
-				0.0208333, // 1 seg = 30 minutos
-				0.0416667, // 1 seg = 1 hora
-				0.5,       // 1 seg = 12 horas
-				1,         // 1 seg = 24 horas (1 día)
-				2,         // 1 seg = 48 horas (2 días)
-				7,         // 1 seg = 7 días
-				15,         // 1 seg = 15 días
-				30,        // 1 seg = 30 días
+				0.00000864,	// 1 seg = 1 seg
+				0.00069444,	// 1 seg = 1 min
+				0.04166667,	// 1 seg = 1 hora
+				0.5,		// 1 seg = 12 horas
+				1,			// 1 seg = 24 horas (1 día)
+				2,			// 1 seg = 48 horas (2 días)
+				7,			// 1 seg = 7 días
+				15,			// 1 seg = 15 días
+				30,			// 1 seg = 30 días
 			];
 			let isPaused = false; // Variable para controlar el estado de pausa			
 			
@@ -881,159 +888,161 @@
 			
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////		
 			
-			// Variables para velocidad
-			let movementSpeed = 10; // Velocidad inicial
-			let rotationSpeed = 0.05; // Velocidad de rotación inicial
+			// Variables para el movimiento y rotación
+			let velocity = new THREE.Vector3(); // Velocidad actual de la nave
+			let acceleration = 0; // Aceleración controlada por los botones "+" y "-"
+			const maxSpeed = 50; // Velocidad máxima
+			const minSpeed = -50; // Velocidad mínima
+			const damping = 0.98; // Factor de amortiguación para la inercia (1 = sin amortiguación, <1 = fricción)
 
-			// Escuchar eventos de teclado para ajustar la velocidad
+			// Variables para suavizar la rotación
+			let pitchVelocity = 0; // Velocidad de rotación en el eje X (pitch)
+			let rollVelocity = 0; // Velocidad de rotación en el eje Z (roll)
+			const rotationAcceleration = Math.PI / 4; // Incremento de rotación por segundo^2 (más suave)
+			const rotationDamping = 0.9; // Factor de amortiguación para las rotaciones (1 = sin amortiguación, <1 = fricción)
+
+			// Manejo de las teclas
+			const keyState = {};
+
+			// Detección de dispositivos móviles o tabletas
+			const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+			// Crear botones "+" y "-" solo si el dispositivo es móvil
+			if (isMobile) {
+				const controlsContainer = document.createElement("div");
+				controlsContainer.style.position = "absolute";
+				controlsContainer.style.bottom = "10px";
+				controlsContainer.style.right = "10px";
+				controlsContainer.style.display = "flex";
+				controlsContainer.style.gap = "10px";
+
+				const buttonPlus = document.createElement("button");
+				buttonPlus.innerText = "+";
+				buttonPlus.style.padding = "10px";
+				buttonPlus.style.fontSize = "20px";
+				buttonPlus.onclick = () => {
+					acceleration += 5; // Incrementar aceleración
+					acceleration = Math.min(acceleration, maxSpeed); // Limitar la aceleración máxima
+					console.log(`Aceleración aumentada: ${acceleration}`);
+				};
+
+				const buttonMinus = document.createElement("button");
+				buttonMinus.innerText = "-";
+				buttonMinus.style.padding = "10px";
+				buttonMinus.style.fontSize = "20px";
+				buttonMinus.onclick = () => {
+					acceleration -= 5; // Reducir aceleración
+					acceleration = Math.max(acceleration, minSpeed); // Limitar la aceleración mínima
+					console.log(`Aceleración reducida: ${acceleration}`);
+				};
+
+				const buttonResetGyro = document.createElement("button");
+				buttonResetGyro.innerText = "Reset Gyro";
+				buttonResetGyro.style.padding = "10px";
+				buttonResetGyro.style.fontSize = "20px";
+				buttonResetGyro.onclick = () => {
+					resetGyroscope();
+				};
+
+				controlsContainer.appendChild(buttonMinus);
+				controlsContainer.appendChild(buttonPlus);
+				controlsContainer.appendChild(buttonResetGyro);
+				document.body.appendChild(controlsContainer);
+			}
+
+			// Variables para el giroscopio
+			let baseAlpha = 0; // Rotación inicial en yaw
+			let baseBeta = 0; // Rotación inicial en pitch
+			let baseGamma = 0; // Rotación inicial en roll
+			let gyroInitialized = false;
+
+			// Evento de orientación del dispositivo
+			window.addEventListener("deviceorientation", (event) => {
+				if (!gyroInitialized) {
+					// Establecer la orientación base cuando se inicializa el giroscopio
+					baseAlpha = event.alpha || 0;
+					baseBeta = event.beta || 0;
+					baseGamma = event.gamma || 0;
+					gyroInitialized = true;
+				}
+
+				// Calcular las diferencias respecto a la base
+				const deltaAlpha = ((event.alpha || 0) - baseAlpha) * (Math.PI / 180); // Yaw
+				const deltaBeta = ((event.beta || 0) - baseBeta) * (Math.PI / 180); // Pitch
+				const deltaGamma = ((event.gamma || 0) - baseGamma) * (Math.PI / 180); // Roll
+
+				// Aplicar los valores del giroscopio a las velocidades de rotación
+				pitchVelocity = -deltaBeta * 2; // Pitch (hacia arriba/abajo)
+				rollVelocity = deltaGamma * 2; // Roll (rotación lateral)
+			});
+
+			// Función para resetear el giroscopio
+			function resetGyroscope() {
+				gyroInitialized = false; // Se reiniciará en el próximo evento "deviceorientation"
+				console.log("Giroscopio reiniciado");
+			}
+
+			// Evento para detectar cuándo se presiona una tecla
 			window.addEventListener("keydown", (event) => {
-				if (event.key === "+" || (event.key === "=" && event.shiftKey)) { 
-					// Aumentar velocidad con "+" o "=" (si se presiona Shift)
-					movementSpeed += 5;
-					rotationSpeed  += 0.05
-					console.log(`Velocidad aumentada: ${movementSpeed}`);
-				} else if (event.key === "-") { 
-					// Reducir velocidad con "-"
-					movementSpeed = Math.max(1, movementSpeed - 5);
-					rotationSpeed = Math.max(1, rotationSpeed - 0.05);
-					console.log(`Velocidad reducida: ${movementSpeed}`);
+				keyState[event.code] = true;
+
+				if (event.key === "+" || (event.key === "=" && event.shiftKey)) { // Tecla "+"
+					acceleration += 5; // Incrementar aceleración
+					acceleration = Math.min(acceleration, maxSpeed); // Limitar la aceleración máxima
+					console.log(`Aceleración aumentada: ${acceleration}`);
+				} else if (event.key === "-") { // Tecla "-"
+					acceleration -= 5; // Reducir aceleración
+					acceleration = Math.max(acceleration, minSpeed); // Limitar la aceleración mínima
+					console.log(`Aceleración reducida: ${acceleration}`);
 				}
 			});
 
-			// Estado de las teclas presionadas
-			const keyState = {};
-
-			// Escuchar eventos de teclado
-			window.addEventListener("keydown", (event) => {
-				keyState[event.code] = true;
-			});
-
+			// Evento para detectar cuándo se suelta una tecla
 			window.addEventListener("keyup", (event) => {
 				keyState[event.code] = false;
 			});
 
-			// Función para manejar el movimiento de la cámara
+			// Función para actualizar los controles de la cámara
 			function updateCameraControls(deltaTime) {
-				const direction = new THREE.Vector3();
-				const up = new THREE.Vector3(0, 1, 0);
-				const forward = new THREE.Vector3();
-				const right = new THREE.Vector3();
-
-				// Obtener dirección hacia adelante (local a la cámara)
-				camera.getWorldDirection(forward);
-
-				// Calcular el vector lateral derecho de la cámara (local)
-				right.crossVectors(forward, up).normalize();
-
-				// Movimiento hacia adelante y atrás (relativo a la cámara)
-				if (keyState["KeyW"]) {
-					camera.position.addScaledVector(forward, movementSpeed * deltaTime); // Mover hacia adelante
-				}
-				if (keyState["KeyS"]) {
-					camera.position.addScaledVector(forward, -movementSpeed * deltaTime); // Mover hacia atrás
-				}
-
-				// Movimiento lateral (relativo al eje lateral de la cámara)
-				if (keyState["KeyA"]) {
-					camera.position.addScaledVector(right, -movementSpeed * deltaTime); // Mover a la izquierda
-				}
-				if (keyState["KeyD"]) {
-					camera.position.addScaledVector(right, movementSpeed * deltaTime); // Mover a la derecha
-				}
-
-				// Movimiento vertical (relativo a la orientación de la cámara)
-				if (keyState["Space"]) {
-					camera.position.addScaledVector(up, movementSpeed * deltaTime); // Mover hacia arriba
-				}
-				if (keyState["ShiftLeft"] || keyState["ShiftRight"]) {
-					camera.position.addScaledVector(up, -movementSpeed * deltaTime); // Mover hacia abajo
-				}
-
-				// Rotación de pitch (rotar alrededor del eje lateral "right")
+				// Rotaciones relativas a la cámara
 				if (keyState["ArrowUp"]) {
-					camera.rotateOnAxis(right, -rotationSpeed * deltaTime); // Pitch hacia arriba
-				}
-				if (keyState["ArrowDown"]) {
-					camera.rotateOnAxis(right, rotationSpeed * deltaTime); // Pitch hacia abajo
+					pitchVelocity -= rotationAcceleration * deltaTime; // Incrementar velocidad hacia abajo
+				} else if (keyState["ArrowDown"]) {
+					pitchVelocity += rotationAcceleration * deltaTime; // Incrementar velocidad hacia arriba
+				} else {
+					// Aplicar amortiguación cuando no se presionan teclas
+					pitchVelocity *= rotationDamping;
 				}
 
-				// Rotación de yaw (rotar alrededor del eje "up")
-				if (keyState["ArrowRight"]) {
-					camera.rotateOnAxis(up, -rotationSpeed * deltaTime); // Yaw hacia la derecha
-				}
 				if (keyState["ArrowLeft"]) {
-					camera.rotateOnAxis(up, rotationSpeed * deltaTime); // Yaw hacia la izquierda
-				}
-
-				// Rotación de roll (rotar alrededor del eje "forward")
-				if (keyState["KeyQ"]) {
-					camera.rotateOnAxis(forward, rotationSpeed * deltaTime); // Roll hacia la izquierda
-				}
-				if (keyState["KeyE"]) {
-					camera.rotateOnAxis(forward, -rotationSpeed * deltaTime); // Roll hacia la derecha
-				}
-			}
-
-
-
-//-----------------------------------------------
-
-			let initialAlpha = null;
-			let initialBeta = null;
-			let initialGamma = null;
-
-			// Función para manejar los datos del giroscopio
-			function handleDeviceOrientation(event) {
-				// Asignar valores iniciales al primer uso
-				if (initialAlpha === null) {
-					initialAlpha = event.alpha;
-					initialBeta = event.beta;
-					initialGamma = event.gamma;
-				}
-
-				// Calcular los cambios relativos en los valores de orientación
-				const deltaAlpha = event.alpha - initialAlpha;
-				const deltaBeta = event.beta - initialBeta;
-				const deltaGamma = event.gamma - initialGamma;
-
-				// Ajustar la rotación de la cámara basándose en los datos del giroscopio
-				camera.rotation.y = THREE.MathUtils.degToRad(deltaAlpha); // Girar sobre el eje Y (Yaw)
-				camera.rotation.x = THREE.MathUtils.degToRad(deltaBeta);  // Girar sobre el eje X (Pitch)
-				camera.rotation.z = THREE.MathUtils.degToRad(deltaGamma); // Girar sobre el eje Z (Roll)
-			}
-
-			// Solicitar permiso para la API del giroscopio (necesario en iOS)
-			function requestDeviceOrientationPermission() {
-				if (typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function") {
-					DeviceOrientationEvent.requestPermission()
-						.then((response) => {
-							if (response === "granted") {
-								// Escuchar eventos de orientación del dispositivo
-								window.addEventListener("deviceorientation", handleDeviceOrientation);
-							} else {
-								console.warn("Permiso denegado para la orientación del dispositivo.");
-							}
-						})
-						.catch(console.error);
+					rollVelocity += rotationAcceleration * deltaTime; // Incrementar velocidad hacia la izquierda
+				} else if (keyState["ArrowRight"]) {
+					rollVelocity -= rotationAcceleration * deltaTime; // Incrementar velocidad hacia la derecha
 				} else {
-					// Escuchar eventos directamente en otros navegadores
-					window.addEventListener("deviceorientation", handleDeviceOrientation);
+					// Aplicar amortiguación cuando no se presionan teclas
+					rollVelocity *= rotationDamping;
 				}
+
+				// Aplicar las rotaciones a la cámara
+				camera.rotateX(pitchVelocity * deltaTime); // Aplicar pitch (arriba/abajo)
+				camera.rotateZ(rollVelocity * deltaTime); // Aplicar roll (lateral)
+
+				// Calcular la dirección hacia adelante de la cámara
+				const direction = new THREE.Vector3();
+				camera.getWorldDirection(direction);
+
+				// Actualizar la velocidad basada en la aceleración y la dirección
+				velocity.addScaledVector(direction, acceleration * deltaTime);
+
+				// Aplicar amortiguación para simular inercia
+				velocity.multiplyScalar(damping);
+
+				// Actualizar la posición de la cámara en función de la velocidad
+				camera.position.addScaledVector(velocity, deltaTime);
 			}
 
-			// Llamar a la función para solicitar permisos al cargar la página
-			requestDeviceOrientationPermission();
-
-			// Función para activar la pantalla completa
-			function toggleFullscreen() {
-				if (!document.fullscreenElement) {
-					document.documentElement.requestFullscreen().catch((err) => {
-						alert(`Error al intentar activar pantalla completa: ${err.message}`);
-					});
-				} else {
-					document.exitFullscreen();
-				}
-			}
+			
+///////////////////////////////////////////////////////////////////////////////////////////////////////			
 
 			// Función para resetear el giroscopio
 			function resetGyro() {
@@ -1042,9 +1051,7 @@
 				initialGamma = null;
 				console.log("Valores del giroscopio reseteados.");
 			}
-
-			// Añadir funcionalidad a los botones
-			document.getElementById("fullscreenBtn").addEventListener("click", toggleFullscreen);
+	
 			document.getElementById("resetGyroBtn").addEventListener("click", resetGyro);
 
 
@@ -1063,8 +1070,20 @@
 					}
 				});
 			}
+			
+			// Función para activar la pantalla completa
+			function toggleFullscreen() {
+				if (!document.fullscreenElement) {
+					document.documentElement.requestFullscreen().catch((err) => {
+						alert(`Error al intentar activar pantalla completa: ${err.message}`);
+					});
+				} else {
+					document.exitFullscreen();
+				}
+			}
 
-			// Agregar el evento al botón
+			// Añadir funcionalidad a los botones
+			document.getElementById("fullscreenBtn").addEventListener("click", toggleFullscreen);
 			document.getElementById("toggleOrbits").addEventListener("click", toggleOrbitsVisibility);
 
 
