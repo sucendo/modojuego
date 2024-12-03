@@ -3,7 +3,7 @@
 	<head>
 		<meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<title>Simulación del Sistema Solar</title>
+		<title>Simulación del Sistema Solar con Three.js</title>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 		<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 		<style>
@@ -19,9 +19,9 @@
 				font-size: 20px;
 				font-family: Arial, sans-serif;
 			}
-			#speedControl {
+			#timeControls {
 				position: absolute;
-				top: 50px;
+				top: 35px;
 				left: 10px;
 				color: white;
 				background: rgba(255, 255, 255, 0.5);
@@ -47,13 +47,41 @@
 				padding: 10px;
 				cursor: pointer;
 			}
+			#controls {
+				position: fixed;
+				top: 50px;
+				right: 10px;
+				z-index: 1000;
+				display: flex;
+				gap: 10px;
+			}
+			button {
+				padding: 10px 15px;
+				background-color: #333;
+				color: white;
+				border: none;
+				cursor: pointer;
+				border-radius: 5px;
+			}
+			button:hover {
+				background-color: #555;
+			}
 		</style>
 	</head>
 	<body>
 		<div id="dateDisplay"></div>
-		<button id="speedControl">Cambiar Velocidad</button>
+		<div id="timeControls">
+			<button id="speedControl">Cambiar Velocidad</button>
+			<button id="decreaseSpeedBtn">-</button>
+			<button id="pauseBtn">||</button>
+			<button id="increaseSpeedBtn">+</button>
+		</div>
 		<div id="speedDisplay">Velocidad: x1</div>
-		<button id="toggleOrbits">Órbitas</button>
+		<button id="toggleOrbits">O</button>
+		<div id="controls">
+			<button id="fullscreenBtn">P</button>
+			<button id="resetGyroBtn">R</button>
+		</div>
 
 		<script>
 			// Configuración inicial
@@ -72,7 +100,7 @@
 			controls.enableZoom = true;
 
 			// Añadir un entorno de luz general (opcional)
-			const ambientLight = new THREE.AmbientLight(0x333333, 0.5); // Luz ambiental tenue
+			const ambientLight = new THREE.AmbientLight(0x333333, 0.2); // Luz ambiental tenue
 			scene.add(ambientLight);
 
 			// Escala para las distancias y tamaños
@@ -83,14 +111,31 @@
 
 			// Velocidad de simulación
 			let speedFactor = 1; // Velocidad inicial (1 segundo = 1 día)
+			const speedRanges = [
+				0.0104167, // 1 seg = 15 minutos
+				0.0208333, // 1 seg = 30 minutos
+				0.0416667, // 1 seg = 1 hora
+				0.5,       // 1 seg = 12 horas
+				1,         // 1 seg = 24 horas (1 día)
+				2,         // 1 seg = 48 horas (2 días)
+				7,         // 1 seg = 7 días
+				15,         // 1 seg = 15 días
+				30,        // 1 seg = 30 días
+			];
+			let isPaused = false; // Variable para controlar el estado de pausa			
+			
 			let simulatedDate = new Date(); // Fecha inicial (actual)
 			let lastTime = Date.now(); // Tiempo de referencia para animación
 
-			// Mostrar la fecha simulada en formato dd/mm/aaaa
+			// Mostrar la fecha y hora simulada en formato dd/mm/aaaa HH:mm:ss
 			document.getElementById("dateDisplay").innerText = `Fecha: ${simulatedDate.toLocaleDateString("es-ES", {
 				day: "2-digit",
 				month: "2-digit",
 				year: "numeric",
+			})} ${simulatedDate.toLocaleTimeString("es-ES", {
+				hour: "2-digit",
+				minute: "2-digit",
+				second: "2-digit",
 			})}`;
 
 			// Cuerpos celestes
@@ -547,7 +592,6 @@
 				mesh.rotateOnAxis(tiltAxis, rotationSpeed * deltaTime);
 			}
 
-
 			// Calcular posición relativa
 			function calculateRelativePosition(angle, periapsis, apoapsis, longitudeOfAscendingNode = 0, inclination = 0, argumentOfPeriapsis = 0, orientation = 0, centralPosition = new THREE.Vector3(0, 0, 0)) {
 				if (!periapsis || !apoapsis || periapsis <= 0 || apoapsis <= 0) {
@@ -626,7 +670,6 @@
 				return new THREE.LineLoop(orbitGeometry, orbitMaterial);
 			}
 
-
 			// Animación
 			function animate() {
 				requestAnimationFrame(animate);
@@ -635,77 +678,95 @@
 				const elapsed = (currentTime - lastTime) / 1000; // Tiempo transcurrido en segundos
 				lastTime = currentTime;
 				
-				// Actualizar controles de la cámara
-				updateCameraControls(elapsed);
+				//if (!isPaused) {
+					//const daysToAdvance = elapsed * speedRanges[speedFactor]; // Avanzar en función de la velocidad actual
+					// Aquí debes actualizar tu lógica para avanzar la simulación
+					//console.log(`Días avanzados: ${daysToAdvance.toFixed(2)}`);				
 
-				const daysToAdvance = elapsed * speedFactor;
-				simulatedDate = new Date(simulatedDate.getTime() + daysToAdvance * 24 * 60 * 60 * 1000);
+					//const daysToAdvance = elapsed * speedFactor;
+					//simulatedDate = new Date(simulatedDate.getTime() + daysToAdvance * 24 * 60 * 60 * 1000);
+					
+					// Actualizar controles de la cámara
+					//updateCameraControls(elapsed);
+					
+					// Actualizar controles de la cámara
+					updateCameraControls(elapsed);
 
-				Object.keys(CELESTIAL_BODIES).forEach((category) => {
-					Object.keys(CELESTIAL_BODIES[category]).forEach((name) => {
-						const body = CELESTIAL_BODIES[category][name];
-						if (body.orbitalPeriod !== Infinity) {
-							const angularSpeed = (2 * Math.PI) / body.orbitalPeriod; // Velocidad angular en rad/día
-							angles[name] += angularSpeed * daysToAdvance; // Avanzar el ángulo
+					const daysToAdvance = elapsed * speedFactor;
+					simulatedDate = new Date(simulatedDate.getTime() + daysToAdvance * 24 * 60 * 60 * 1000);
 
-							let position = calculateRelativePosition(
-								angles[name],
-								body.periapsis,
-								body.apoapsis,
-								body.longitudeOfAscendingNode,								
-								body.inclination,
-								body.argumentOfPeriapsis,
-								body.orientation
-							);
+					Object.keys(CELESTIAL_BODIES).forEach((category) => {
+						Object.keys(CELESTIAL_BODIES[category]).forEach((name) => {
+							const body = CELESTIAL_BODIES[category][name];
+							if (body.orbitalPeriod !== Infinity) {
+								const angularSpeed = (2 * Math.PI) / body.orbitalPeriod; // Velocidad angular en rad/día
+								angles[name] += angularSpeed * daysToAdvance; // Avanzar el ángulo
 
-							if (body.orbits && celestialObjects[body.orbits]) {
-								const centralPosition = celestialObjects[body.orbits].position;
-								position.add(centralPosition); // Añadir posición del cuerpo central
-							}
-
-							celestialObjects[name].position.set(position.x, position.y, position.z);
-
-							// Actualizar órbita si está definida
-							if (celestialObjects[name].orbit) {
-								const centralPosition = body.orbits && celestialObjects[body.orbits]
-									? celestialObjects[body.orbits].position
-									: new THREE.Vector3(0, 0, 0);
-
-								const updatedOrbit = drawOrbit(
+								let position = calculateRelativePosition(
 									angles[name],
 									body.periapsis,
 									body.apoapsis,
-									body.longitudeOfAscendingNode,									
+									body.longitudeOfAscendingNode,								
 									body.inclination,
 									body.argumentOfPeriapsis,
-									body.orientation,									
-									body.color,
-									centralPosition
+									body.orientation
 								);
 
-								// Reemplazar la geometría de la órbita
-								celestialObjects[name].orbit.geometry.copy(updatedOrbit.geometry);
+								if (body.orbits && celestialObjects[body.orbits]) {
+									const centralPosition = celestialObjects[body.orbits].position;
+									position.add(centralPosition); // Añadir posición del cuerpo central
+								}
+
+								celestialObjects[name].position.set(position.x, position.y, position.z);
+
+								// Actualizar órbita si está definida
+								if (celestialObjects[name].orbit) {
+									const centralPosition = body.orbits && celestialObjects[body.orbits]
+										? celestialObjects[body.orbits].position
+										: new THREE.Vector3(0, 0, 0);
+
+									const updatedOrbit = drawOrbit(
+										angles[name],
+										body.periapsis,
+										body.apoapsis,
+										body.longitudeOfAscendingNode,									
+										body.inclination,
+										body.argumentOfPeriapsis,
+										body.orientation,									
+										body.color,
+										centralPosition
+									);
+
+									// Reemplazar la geometría de la órbita
+									celestialObjects[name].orbit.geometry.copy(updatedOrbit.geometry);
+								}
+								
+								const rotationSpeed = (2 * Math.PI / (body.rotationPeriod || 1)) * speedFactor; // Velocidad de rotación (en radianes/seg)
+								const deltaTime = elapsed; // Tiempo transcurrido entre cuadros
+
+								rotateCelestialBody(
+									celestialObjects[name],
+									body.rotationAxis || { x: 0, y: 1, z: 0 },
+									body.axialTilt || 0,
+									rotationSpeed,
+									deltaTime
+								);
+
 							}
-							
-							const rotationSpeed = (2 * Math.PI / (body.rotationPeriod || 1)) * speedFactor; // Velocidad de rotación (en radianes/seg)
-							const deltaTime = elapsed; // Tiempo transcurrido entre cuadros
-
-							rotateCelestialBody(
-								celestialObjects[name],
-								body.rotationAxis || { x: 0, y: 1, z: 0 },
-								body.axialTilt || 0,
-								rotationSpeed,
-								deltaTime
-							);
-
-						}
+						});
 					});
-				});
+					
+				//}
 
+				// Mostrar la fecha y hora simulada
 				document.getElementById("dateDisplay").innerText = `Fecha: ${simulatedDate.toLocaleDateString("es-ES", {
 					day: "2-digit",
 					month: "2-digit",
 					year: "numeric",
+				})} ${simulatedDate.toLocaleTimeString("es-ES", {
+					hour: "2-digit",
+					minute: "2-digit",
+					second: "2-digit",
 				})}`;
 
 				renderer.render(scene, camera);
@@ -778,7 +839,6 @@
 					.start();
 			}
 
-
 			// Función para renderizar información del cuerpo celeste
 			function renderCelestialBodyInfo(bodyName) {
 				const body =
@@ -827,13 +887,15 @@
 
 			// Escuchar eventos de teclado para ajustar la velocidad
 			window.addEventListener("keydown", (event) => {
-				if (event.code === "Equal") {
-					// Tecla "+" (aumentar velocidad)
-					movementSpeed += 5; // Incrementar velocidad
+				if (event.key === "+" || (event.key === "=" && event.shiftKey)) { 
+					// Aumentar velocidad con "+" o "=" (si se presiona Shift)
+					movementSpeed += 5;
+					rotationSpeed  += 0.05
 					console.log(`Velocidad aumentada: ${movementSpeed}`);
-				} else if (event.code === "Minus") {
-					// Tecla "-" (disminuir velocidad)
-					movementSpeed = Math.max(1, movementSpeed - 5); // Reducir velocidad sin permitir valores negativos
+				} else if (event.key === "-") { 
+					// Reducir velocidad con "-"
+					movementSpeed = Math.max(1, movementSpeed - 5);
+					rotationSpeed = Math.max(1, rotationSpeed - 0.05);
 					console.log(`Velocidad reducida: ${movementSpeed}`);
 				}
 			});
@@ -853,49 +915,137 @@
 			// Función para manejar el movimiento de la cámara
 			function updateCameraControls(deltaTime) {
 				const direction = new THREE.Vector3();
-				camera.getWorldDirection(direction);
+				const up = new THREE.Vector3(0, 1, 0);
+				const forward = new THREE.Vector3();
+				const right = new THREE.Vector3();
 
-				// Movimiento hacia adelante y atrás
+				// Obtener dirección hacia adelante (local a la cámara)
+				camera.getWorldDirection(forward);
+
+				// Calcular el vector lateral derecho de la cámara (local)
+				right.crossVectors(forward, up).normalize();
+
+				// Movimiento hacia adelante y atrás (relativo a la cámara)
 				if (keyState["KeyW"]) {
-					camera.position.addScaledVector(direction, movementSpeed * deltaTime);
+					camera.position.addScaledVector(forward, movementSpeed * deltaTime); // Mover hacia adelante
 				}
 				if (keyState["KeyS"]) {
-					camera.position.addScaledVector(direction, -movementSpeed * deltaTime);
+					camera.position.addScaledVector(forward, -movementSpeed * deltaTime); // Mover hacia atrás
 				}
 
-				// Movimiento lateral
-				const right = new THREE.Vector3();
-				right.crossVectors(camera.up, direction).normalize();
-
+				// Movimiento lateral (relativo al eje lateral de la cámara)
 				if (keyState["KeyA"]) {
-					camera.position.addScaledVector(right, -movementSpeed * deltaTime);
+					camera.position.addScaledVector(right, -movementSpeed * deltaTime); // Mover a la izquierda
 				}
 				if (keyState["KeyD"]) {
-					camera.position.addScaledVector(right, movementSpeed * deltaTime);
+					camera.position.addScaledVector(right, movementSpeed * deltaTime); // Mover a la derecha
 				}
 
-				// Movimiento vertical
+				// Movimiento vertical (relativo a la orientación de la cámara)
 				if (keyState["Space"]) {
-					camera.position.y += movementSpeed * deltaTime;
+					camera.position.addScaledVector(up, movementSpeed * deltaTime); // Mover hacia arriba
 				}
 				if (keyState["ShiftLeft"] || keyState["ShiftRight"]) {
-					camera.position.y -= movementSpeed * deltaTime;
+					camera.position.addScaledVector(up, -movementSpeed * deltaTime); // Mover hacia abajo
 				}
 
-				// Rotación de la cámara
+				// Rotación de pitch (rotar alrededor del eje lateral "right")
 				if (keyState["ArrowUp"]) {
-					camera.rotation.x -= rotationSpeed * deltaTime;
+					camera.rotateOnAxis(right, -rotationSpeed * deltaTime); // Pitch hacia arriba
 				}
 				if (keyState["ArrowDown"]) {
-					camera.rotation.x += rotationSpeed * deltaTime;
+					camera.rotateOnAxis(right, rotationSpeed * deltaTime); // Pitch hacia abajo
+				}
+
+				// Rotación de yaw (rotar alrededor del eje "up")
+				if (keyState["ArrowRight"]) {
+					camera.rotateOnAxis(up, -rotationSpeed * deltaTime); // Yaw hacia la derecha
 				}
 				if (keyState["ArrowLeft"]) {
-					camera.rotation.y -= rotationSpeed * deltaTime;
+					camera.rotateOnAxis(up, rotationSpeed * deltaTime); // Yaw hacia la izquierda
 				}
-				if (keyState["ArrowRight"]) {
-					camera.rotation.y += rotationSpeed * deltaTime;
+
+				// Rotación de roll (rotar alrededor del eje "forward")
+				if (keyState["KeyQ"]) {
+					camera.rotateOnAxis(forward, rotationSpeed * deltaTime); // Roll hacia la izquierda
+				}
+				if (keyState["KeyE"]) {
+					camera.rotateOnAxis(forward, -rotationSpeed * deltaTime); // Roll hacia la derecha
 				}
 			}
+
+
+
+//-----------------------------------------------
+
+			let initialAlpha = null;
+			let initialBeta = null;
+			let initialGamma = null;
+
+			// Función para manejar los datos del giroscopio
+			function handleDeviceOrientation(event) {
+				// Asignar valores iniciales al primer uso
+				if (initialAlpha === null) {
+					initialAlpha = event.alpha;
+					initialBeta = event.beta;
+					initialGamma = event.gamma;
+				}
+
+				// Calcular los cambios relativos en los valores de orientación
+				const deltaAlpha = event.alpha - initialAlpha;
+				const deltaBeta = event.beta - initialBeta;
+				const deltaGamma = event.gamma - initialGamma;
+
+				// Ajustar la rotación de la cámara basándose en los datos del giroscopio
+				camera.rotation.y = THREE.MathUtils.degToRad(deltaAlpha); // Girar sobre el eje Y (Yaw)
+				camera.rotation.x = THREE.MathUtils.degToRad(deltaBeta);  // Girar sobre el eje X (Pitch)
+				camera.rotation.z = THREE.MathUtils.degToRad(deltaGamma); // Girar sobre el eje Z (Roll)
+			}
+
+			// Solicitar permiso para la API del giroscopio (necesario en iOS)
+			function requestDeviceOrientationPermission() {
+				if (typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function") {
+					DeviceOrientationEvent.requestPermission()
+						.then((response) => {
+							if (response === "granted") {
+								// Escuchar eventos de orientación del dispositivo
+								window.addEventListener("deviceorientation", handleDeviceOrientation);
+							} else {
+								console.warn("Permiso denegado para la orientación del dispositivo.");
+							}
+						})
+						.catch(console.error);
+				} else {
+					// Escuchar eventos directamente en otros navegadores
+					window.addEventListener("deviceorientation", handleDeviceOrientation);
+				}
+			}
+
+			// Llamar a la función para solicitar permisos al cargar la página
+			requestDeviceOrientationPermission();
+
+			// Función para activar la pantalla completa
+			function toggleFullscreen() {
+				if (!document.fullscreenElement) {
+					document.documentElement.requestFullscreen().catch((err) => {
+						alert(`Error al intentar activar pantalla completa: ${err.message}`);
+					});
+				} else {
+					document.exitFullscreen();
+				}
+			}
+
+			// Función para resetear el giroscopio
+			function resetGyro() {
+				initialAlpha = null;
+				initialBeta = null;
+				initialGamma = null;
+				console.log("Valores del giroscopio reseteados.");
+			}
+
+			// Añadir funcionalidad a los botones
+			document.getElementById("fullscreenBtn").addEventListener("click", toggleFullscreen);
+			document.getElementById("resetGyroBtn").addEventListener("click", resetGyro);
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -917,18 +1067,61 @@
 			// Agregar el evento al botón
 			document.getElementById("toggleOrbits").addEventListener("click", toggleOrbitsVisibility);
 
+
+ ////////////////////////////////////////////////////////////////////////////////////     
+
+			// Función para actualizar la velocidad
+			function updateSpeed(newSpeedIndex) {
+				if (newSpeedIndex >= 0 && newSpeedIndex < speedRanges.length) {
+					speedFactor = newSpeedIndex;
+					console.log(`Velocidad actual: 1 seg = ${speedRanges[speedFactor]}`);
+				}
+			}
+
+			// Botón de disminuir velocidad
+			document.getElementById("decreaseSpeedBtn").addEventListener("click", () => {
+				if (!isPaused && speedFactor > 0) {
+					updateSpeed(speedFactor - 1); // Disminuir velocidad
+					document.getElementById("speedDisplay").innerText = `Velocidad: ${speedRanges[speedFactor] === 1 ? "Tiempo real" : `1 seg = ${speedRanges[speedFactor] / 60} min`}`;
+				}
+			});
+
+			// Botón de pausa
+			document.getElementById("pauseBtn").addEventListener("click", () => {
+				isPaused = !isPaused; // Alternar entre pausado y reanudado
+				if (isPaused) {
+					document.getElementById("speedDisplay").innerText = "Velocidad: Pausado";
+				} else {
+					document.getElementById("speedDisplay").innerText = `Velocidad: ${speedRanges[speedFactor] === 1 ? "Tiempo real" : `1 seg = ${speedRanges[speedFactor] / 60} min`}`;
+				}
+			});
+
+			// Botón de aumentar velocidad
+			document.getElementById("increaseSpeedBtn").addEventListener("click", () => {
+				if (!isPaused && speedFactor < speedRanges.length - 1) {
+					updateSpeed(speedFactor + 1); // Aumentar velocidad
+					document.getElementById("speedDisplay").innerText = `Velocidad: ${speedRanges[speedFactor] === 1 ? "Tiempo real" : `1 seg = ${speedRanges[speedFactor] / 60} min`}`;
+				}
+			});
+			
 			// Configurar eventos para ajustar la velocidad
 			document.getElementById("speedControl").addEventListener("click", () => {
 				if (speedFactor === 1) speedFactor = 2;
 				else if (speedFactor === 2) speedFactor = 4;
 				else if (speedFactor === 4) speedFactor = 8;
 				else if (speedFactor === 8) speedFactor = 16;
-				else if (speedFactor === 0) speedFactor = 0.24;
-				else if (speedFactor === 0.24) speedFactor = 1;
+				else if (speedFactor === 16) speedFactor = 0.5;
+				else if (speedFactor === 0.5) speedFactor = 0.04166667;
+				else if (speedFactor === 0.04166667) speedFactor = 0.00069444;
+				else if (speedFactor === 0.00069444) speedFactor = 0.00000864;
+				else if (speedFactor === 0.00000864) speedFactor = 0;
+				else if (speedFactor === 0) speedFactor = 1;
 				else speedFactor = 0;
 
 				document.getElementById("speedDisplay").innerText = `Velocidad: x${speedFactor}`;
 			});
+
+///////////////////////////////////////////////////////////////////////////////
 
 			// Ajustar tamaño de la ventana
 			window.addEventListener("resize", () => {
