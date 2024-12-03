@@ -21,7 +21,7 @@
 				color: #00ffcc; /* Color futurista */
 				text-shadow: 0 0 5px #00ffcc, 0 0 10px #00ffcc, 0 0 15px #008080, 0 0 20px #008080;
 				background: linear-gradient(90deg, #000428, #004e92); /* Fondo con gradiente espacial */
-				padding: 10px 20px; /* Espaciado interno */
+				padding: 3px 10px; /* Espaciado interno */
 				border: 2px solid #00ffcc; /* Borde llamativo */
 				border-radius: 10px; /* Esquinas redondeadas */
 				box-shadow: 0 0 20px #00ffcc, inset 0 0 10px #004e92; /* Sombra para efecto de brillo */
@@ -35,7 +35,7 @@
 				color: white;
 				/* background: rgba(255, 255, 255, 0.5); */
 				border: none;
-				padding: 10px;
+				padding: 3px;
 				cursor: pointer;
 			}
 			#controls {
@@ -135,7 +135,7 @@
 			let lastTime = Date.now(); // Tiempo de referencia para animación
 
 			// Mostrar la fecha y hora simulada en formato dd/mm/aaaa HH:mm:ss
-			document.getElementById("dateDisplay").innerText = `Fecha: ${simulatedDate.toLocaleDateString("es-ES", {
+			document.getElementById("dateDisplay").innerText = `${simulatedDate.toLocaleDateString("es-ES", {
 				day: "2-digit",
 				month: "2-digit",
 				year: "numeric",
@@ -766,7 +766,7 @@
 				//}
 
 				// Mostrar la fecha y hora simulada
-				document.getElementById("dateDisplay").innerText = `Fecha: ${simulatedDate.toLocaleDateString("es-ES", {
+				document.getElementById("dateDisplay").innerText = `${simulatedDate.toLocaleDateString("es-ES", {
 					day: "2-digit",
 					month: "2-digit",
 					year: "numeric",
@@ -922,7 +922,7 @@
 				console.log(`Nueva orientación del dispositivo: ${deviceOrientation}°`);
 			});
 
-			// Crear botones "+" y "-" solo si el dispositivo es móvil
+			// Crear botones "+" y "-" y botón para alternar giroscopio solo si el dispositivo es móvil
 			if (isMobile) {
 				const controlsContainer = document.createElement("div");
 				controlsContainer.style.position = "absolute";
@@ -934,7 +934,7 @@
 				const buttonPlus = document.createElement("button");
 				buttonPlus.innerText = "+";
 				buttonPlus.style.padding = "10px";
-				buttonPlus.style.fontSize = "12px";
+				buttonPlus.style.fontSize = "20px";
 				buttonPlus.onclick = () => {
 					acceleration += 5; // Incrementar aceleración
 					acceleration = Math.min(acceleration, maxSpeed); // Limitar la aceleración máxima
@@ -944,7 +944,7 @@
 				const buttonMinus = document.createElement("button");
 				buttonMinus.innerText = "-";
 				buttonMinus.style.padding = "10px";
-				buttonMinus.style.fontSize = "12px";
+				buttonMinus.style.fontSize = "20px";
 				buttonMinus.onclick = () => {
 					acceleration -= 5; // Reducir aceleración
 					acceleration = Math.max(acceleration, minSpeed); // Limitar la aceleración mínima
@@ -952,17 +952,17 @@
 				};
 
 				const buttonResetGyro = document.createElement("button");
-				buttonResetGyro.innerText = "R";
+				buttonResetGyro.innerText = "Reset Gyro";
 				buttonResetGyro.style.padding = "10px";
-				buttonResetGyro.style.fontSize = "12px";
+				buttonResetGyro.style.fontSize = "20px";
 				buttonResetGyro.onclick = () => {
 					resetGyroscope();
 				};
 
 				const buttonToggleGyro = document.createElement("button");
-				buttonToggleGyro.innerText = "B";
+				buttonToggleGyro.innerText = "Toggle Gyro";
 				buttonToggleGyro.style.padding = "10px";
-				buttonToggleGyro.style.fontSize = "12px";
+				buttonToggleGyro.style.fontSize = "20px";
 				buttonToggleGyro.onclick = () => {
 					gyroEnabled = !gyroEnabled; // Alternar entre habilitado y deshabilitado
 					console.log(`Giroscopio ${gyroEnabled ? "habilitado" : "deshabilitado"}`);
