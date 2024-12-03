@@ -901,13 +901,6 @@
 			const rotationAcceleration = Math.PI / 4; // Incremento de rotación por segundo^2
 			const rotationDamping = 0.9; // Factor de amortiguación para las rotaciones
 
-			// Variables para el giroscopio
-			let gyroEnabled = true; // Controla si el giroscopio está habilitado o no
-			let baseAlpha = 0; // Rotación inicial en yaw
-			let baseBeta = 0; // Rotación inicial en pitch
-			let baseGamma = 0; // Rotación inicial en roll
-			let gyroInitialized = false;
-
 			// Manejo de las teclas
 			const keyState = {};
 
@@ -922,7 +915,7 @@
 				console.log(`Nueva orientación del dispositivo: ${deviceOrientation}°`);
 			});
 
-			// Crear botones "+" y "-" y botón para alternar giroscopio solo si el dispositivo es móvil
+			// Crear botones "+" y "-" solo si el dispositivo es móvil
 			if (isMobile) {
 				const controlsContainer = document.createElement("div");
 				controlsContainer.style.position = "absolute";
@@ -934,7 +927,7 @@
 				const buttonPlus = document.createElement("button");
 				buttonPlus.innerText = "+";
 				buttonPlus.style.padding = "10px";
-				buttonPlus.style.fontSize = "20px";
+				buttonPlus.style.fontSize = "12px";
 				buttonPlus.onclick = () => {
 					acceleration += 5; // Incrementar aceleración
 					acceleration = Math.min(acceleration, maxSpeed); // Limitar la aceleración máxima
@@ -944,7 +937,7 @@
 				const buttonMinus = document.createElement("button");
 				buttonMinus.innerText = "-";
 				buttonMinus.style.padding = "10px";
-				buttonMinus.style.fontSize = "20px";
+				buttonMinus.style.fontSize = "12px";
 				buttonMinus.onclick = () => {
 					acceleration -= 5; // Reducir aceleración
 					acceleration = Math.max(acceleration, minSpeed); // Limitar la aceleración mínima
@@ -952,33 +945,27 @@
 				};
 
 				const buttonResetGyro = document.createElement("button");
-				buttonResetGyro.innerText = "Reset Gyro";
+				buttonResetGyro.innerText = "R";
 				buttonResetGyro.style.padding = "10px";
-				buttonResetGyro.style.fontSize = "20px";
+				buttonResetGyro.style.fontSize = "12px";
 				buttonResetGyro.onclick = () => {
 					resetGyroscope();
-				};
-
-				const buttonToggleGyro = document.createElement("button");
-				buttonToggleGyro.innerText = "Toggle Gyro";
-				buttonToggleGyro.style.padding = "10px";
-				buttonToggleGyro.style.fontSize = "20px";
-				buttonToggleGyro.onclick = () => {
-					gyroEnabled = !gyroEnabled; // Alternar entre habilitado y deshabilitado
-					console.log(`Giroscopio ${gyroEnabled ? "habilitado" : "deshabilitado"}`);
 				};
 
 				controlsContainer.appendChild(buttonMinus);
 				controlsContainer.appendChild(buttonPlus);
 				controlsContainer.appendChild(buttonResetGyro);
-				controlsContainer.appendChild(buttonToggleGyro);
 				document.body.appendChild(controlsContainer);
 			}
 
+			// Variables para el giroscopio
+			let baseAlpha = 0; // Rotación inicial en yaw
+			let baseBeta = 0; // Rotación inicial en pitch
+			let baseGamma = 0; // Rotación inicial en roll
+			let gyroInitialized = false;
+
 			// Evento de orientación del dispositivo
 			window.addEventListener("deviceorientation", (event) => {
-				if (!gyroInitialized || !gyroEnabled) return; // Ignorar si el giroscopio está deshabilitado
-
 				if (!gyroInitialized) {
 					// Establecer la orientación base cuando se inicializa el giroscopio
 					baseAlpha = event.alpha || 0;
