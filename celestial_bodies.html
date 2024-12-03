@@ -934,7 +934,7 @@
 				const buttonPlus = document.createElement("button");
 				buttonPlus.innerText = "+";
 				buttonPlus.style.padding = "10px";
-				buttonPlus.style.fontSize = "20px";
+				buttonPlus.style.fontSize = "12px";
 				buttonPlus.onclick = () => {
 					acceleration += 5; // Incrementar aceleración
 					acceleration = Math.min(acceleration, maxSpeed); // Limitar la aceleración máxima
@@ -944,7 +944,7 @@
 				const buttonMinus = document.createElement("button");
 				buttonMinus.innerText = "-";
 				buttonMinus.style.padding = "10px";
-				buttonMinus.style.fontSize = "20px";
+				buttonMinus.style.fontSize = "12px";
 				buttonMinus.onclick = () => {
 					acceleration -= 5; // Reducir aceleración
 					acceleration = Math.max(acceleration, minSpeed); // Limitar la aceleración mínima
@@ -954,7 +954,7 @@
 				const buttonResetGyro = document.createElement("button");
 				buttonResetGyro.innerText = "R";
 				buttonResetGyro.style.padding = "10px";
-				buttonResetGyro.style.fontSize = "20px";
+				buttonResetGyro.style.fontSize = "12px";
 				buttonResetGyro.onclick = () => {
 					resetGyroscope();
 				};
@@ -962,7 +962,7 @@
 				const buttonToggleGyro = document.createElement("button");
 				buttonToggleGyro.innerText = "B";
 				buttonToggleGyro.style.padding = "10px";
-				buttonToggleGyro.style.fontSize = "20px";
+				buttonToggleGyro.style.fontSize = "12px";
 				buttonToggleGyro.onclick = () => {
 					gyroEnabled = !gyroEnabled; // Alternar entre habilitado y deshabilitado
 					console.log(`Giroscopio ${gyroEnabled ? "habilitado" : "deshabilitado"}`);
