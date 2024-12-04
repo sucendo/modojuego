@@ -902,6 +902,12 @@
 			const rotationAcceleration = Math.PI / 4; // Incremento de rotación por segundo^2
 			const rotationDamping = 0.9; // Factor de amortiguación para las rotaciones
 
+			// Sensibilidad del giroscopio
+			const gyroSensitivity = 0.3; // Factor para reducir la sensibilidad del giroscopio
+
+			// Escala gradual del giroscopio (lineal)
+			const gyroScaleFactor = 0.005; // Factor para amplificar movimientos según el ángulo
+
 			// HUD para información de la nave
 			const hud = document.createElement("div");
 			hud.style.position = "fixed";
@@ -982,7 +988,6 @@
 			let baseBeta = 0; // Rotación inicial en pitch
 			let baseGamma = 0; // Rotación inicial en roll
 			let gyroInitialized = false;
-			const gyroSensitivity = 0.4; // Factor para reducir la sensibilidad del giroscopio
 
 			// Evento de orientación del dispositivo
 			window.addEventListener("deviceorientation", (event) => {
@@ -994,9 +999,9 @@
 				}
 
 				// Calcular las diferencias respecto a la base
-				const deltaAlpha = ((event.alpha || 0) - baseAlpha) * (Math.PI / 180) * gyroSensitivity; // Yaw
-				let deltaBeta = ((event.beta || 0) - baseBeta) * (Math.PI / 180) * gyroSensitivity; // Pitch
-				let deltaGamma = ((event.gamma || 0) - baseGamma) * (Math.PI / 180) * gyroSensitivity; // Roll
+				const deltaAlpha = ((event.alpha || 0) - baseAlpha) * (Math.PI / 180); // Yaw
+				let deltaBeta = ((event.beta || 0) - baseBeta) * (Math.PI / 180); // Pitch
+				let deltaGamma = ((event.gamma || 0) - baseGamma) * (Math.PI / 180); // Roll
 
 				// Ajustar según la orientación del dispositivo
 				if (deviceOrientation === 90) {
@@ -1008,9 +1013,9 @@
 					deltaGamma = -deltaGamma;
 				}
 
-				// Invertir el pitch y el roll para corregir la dirección
-				pitchVelocity = deltaBeta; // Pitch (hacia arriba/abajo)
-				rollVelocity = deltaGamma; // Roll (rotación lateral)
+				// Aplicar el escalado gradual para el pitch y el roll
+				pitchVelocity = deltaBeta * Math.abs(deltaBeta) * gyroScaleFactor; // Pitch gradual
+				rollVelocity = deltaGamma * Math.abs(deltaGamma) * gyroScaleFactor; // Roll gradual
 			});
 
 			// Función para resetear el giroscopio
@@ -1042,24 +1047,24 @@
 			function updateCameraControls(deltaTime) {
 				// Rotaciones relativas a la cámara
 				if (keyState["ArrowUp"]) {
-					pitchVelocity -= rotationAcceleration * deltaTime; // Incrementar velocidad hacia abajo
+					pitchVelocity -= rotationAcceleration * deltaTime;
 				} else if (keyState["ArrowDown"]) {
-					pitchVelocity += rotationAcceleration * deltaTime; // Incrementar velocidad hacia arriba
+					pitchVelocity += rotationAcceleration * deltaTime;
 				} else {
 					pitchVelocity *= rotationDamping;
 				}
 
 				if (keyState["ArrowLeft"]) {
-					rollVelocity += rotationAcceleration * deltaTime; // Incrementar velocidad hacia la izquierda
+					rollVelocity += rotationAcceleration * deltaTime;
 				} else if (keyState["ArrowRight"]) {
-					rollVelocity -= rotationAcceleration * deltaTime; // Incrementar velocidad hacia la derecha
+					rollVelocity -= rotationAcceleration * deltaTime;
 				} else {
 					rollVelocity *= rotationDamping;
 				}
 
 				// Aplicar las rotaciones a la cámara
-				camera.rotateX(pitchVelocity * deltaTime); // Aplicar pitch (arriba/abajo)
-				camera.rotateZ(rollVelocity * deltaTime); // Aplicar roll (lateral)
+				camera.rotateX(pitchVelocity * deltaTime);
+				camera.rotateZ(rollVelocity * deltaTime);
 
 				// Calcular la dirección hacia adelante de la cámara
 				const direction = new THREE.Vector3();
@@ -1088,7 +1093,7 @@
 				pitchHUD.textContent = (pitchVelocity * 180 / Math.PI).toFixed(2);
 				rollHUD.textContent = (rollVelocity * 180 / Math.PI).toFixed(2);
 			}
-			
+		
 ///////////////////////////////////////////////////////////////////////////////////////////////////////			
 
 			// Función para resetear el giroscopio
