@@ -922,13 +922,16 @@
 			// Escala gradual del giroscopio (lineal)
 			const gyroScaleFactor = 2; // Factor para amplificar movimientos según el ángulo
 
+			// Estado para controlar si el giroscopio está habilitado o deshabilitado
+			let isGyroscopeEnabled = true;
+
 			// HUD para información de la nave
 			const hud = document.createElement("div");
 			hud.id = "navigationPanel";
 			hud.className = "controlPanel";
 			hud.style.position = "fixed";
 			hud.style.bottom = "10px";
-			hud.style.left = "10px";			
+			hud.style.left = "10px";
 
 			hud.innerHTML = `
 				<p><strong>Velocidad:</strong> <span id="velocityHUD">0</span> nudos</p>
@@ -937,7 +940,6 @@
 				<p>X: <span id="coordX">0</span></p>
 				<p>Y: <span id="coordY">0</span></p>
 				<p>Z: <span id="coordZ">0</span></p>
-				
 			`;
 			document.body.appendChild(hud);
 
@@ -984,17 +986,19 @@
 					console.log(`Aceleración reducida: ${acceleration}`);
 				};
 
-				const buttonResetGyro = document.createElement("button");
-				buttonResetGyro.innerText = "R";
-				buttonResetGyro.style.padding = "10px";
-				buttonResetGyro.style.fontSize = "12px";
-				buttonResetGyro.onclick = () => {
-					resetGyroscope();
+				const buttonToggleGyro = document.createElement("button");
+				buttonToggleGyro.innerText = "Gyro: ON";
+				buttonToggleGyro.style.padding = "10px";
+				buttonToggleGyro.style.fontSize = "12px";
+				buttonToggleGyro.onclick = () => {
+					isGyroscopeEnabled = !isGyroscopeEnabled;
+					buttonToggleGyro.innerText = isGyroscopeEnabled ? "Gyro: ON" : "Gyro: OFF";
+					console.log(`Control del giroscopio: ${isGyroscopeEnabled ? "Habilitado" : "Deshabilitado"}`);
 				};
 
 				controlsContainer.appendChild(buttonMinus);
 				controlsContainer.appendChild(buttonPlus);
-				controlsContainer.appendChild(buttonResetGyro);
+				controlsContainer.appendChild(buttonToggleGyro);
 				document.body.appendChild(controlsContainer);
 			}
 
@@ -1012,6 +1016,8 @@
 					baseGamma = event.gamma || 0;
 					gyroInitialized = true;
 				}
+
+				if (!isGyroscopeEnabled) return; // Si el giroscopio está deshabilitado, no aplicar cambios
 
 				// Calcular las diferencias respecto a la base
 				const deltaAlpha = ((event.alpha || 0) - baseAlpha) * (Math.PI / 180); // Yaw
@@ -1046,21 +1052,11 @@
 
 				// Aceleración: Incrementar y disminuir multiplicativamente en un 10%
 				if (event.key === "+" || (event.key === "=" && event.shiftKey)) {
-					// Si la aceleración es 0, establecer un valor inicial base
-					if (acceleration === 0) {
-						acceleration = 1; // Valor base para empezar
-					} else {
-						acceleration *= 1.2; // Incrementa en un 10%
-					}
+					acceleration = acceleration === 0 ? 1 : acceleration * 1.2; // Si es 0, inicia con 1
 					acceleration = Math.min(acceleration, maxSpeed); // Limita la aceleración máxima
 					console.log(`Aceleración aumentada: ${acceleration}`);
 				} else if (event.key === "-") {
-					// Si la aceleración es 0, mantenerla en 0 (no permitir decremento negativo)
-					if (acceleration === 0) {
-						acceleration = 0;
-					} else {
-						acceleration *= 0.8; // Disminuye en un 10%
-					}
+					acceleration = acceleration === 0 ? 0 : acceleration * 0.8; // Si es 0, mantener en 0
 					acceleration = Math.max(acceleration, minSpeed); // Limita la aceleración mínima
 					console.log(`Aceleración reducida: ${acceleration}`);
 				}
@@ -1082,7 +1078,6 @@
 					pitchVelocity *= rotationDamping;
 				}
 
-				// Roll (giro lateral) - Controlado por ArrowLeft, ArrowRight, A y D
 				if (keyState["ArrowLeft"] || keyState["KeyA"]) {
 					rollVelocity += rotationAcceleration * deltaTime;
 				} else if (keyState["ArrowRight"] || keyState["KeyD"]) {
@@ -1109,7 +1104,7 @@
 				camera.getWorldDirection(direction);
 
 				// Actualizar la velocidad basada en la aceleración y la dirección
-				velocity.addScaledVector(direction, acceleration * deltaTime *(SCALE_DISTANCE * 100000));
+				velocity.addScaledVector(direction, acceleration * deltaTime);
 
 				// Aplicar amortiguación para simular inercia
 				velocity.multiplyScalar(damping);
@@ -1131,21 +1126,22 @@
 				const rollHUD = document.getElementById("rollHUD");
 				const yawHUD = document.getElementById("yawHUD");
 
-				// Convertir la velocidad a nudos y escalar según SCALE_DISTANCE
-				const velocityInKnots = velocity.length() * 1.94384 *(SCALE_DISTANCE * 100000);
-				velocityHUD.textContent = velocityInKnots.toFixed(4); // Mostrar velocidad en nudos
+				// Convertir la velocidad a nudos
+				const velocityInKnots = velocity.length() * 1.94384; // m/s a nudos
+				velocityHUD.textContent = velocityInKnots.toFixed(2);
 
-				// Coordenadas escaladas
+				// Convertir las coordenadas a escala galáctica
 				const galacticCoords = getGalacticCoordinates(camera.position);
 				coordX.textContent = galacticCoords.x;
 				coordY.textContent = galacticCoords.y;
 				coordZ.textContent = galacticCoords.z;
 
+				// Convertir las rotaciones a grados
 				pitchHUD.textContent = (pitchVelocity * 180 / Math.PI).toFixed(2);
 				rollHUD.textContent = (rollVelocity * 180 / Math.PI).toFixed(2);
 				yawHUD.textContent = (yawVelocity * 180 / Math.PI).toFixed(2);
 			}
-			
+
 			// Obtener coordenadas galácticas
 			function getGalacticCoordinates(position) {
 				return {
@@ -1161,6 +1157,15 @@
 				const minutes = Math.floor((value - degrees) * 60);
 				const seconds = (((value - degrees) * 60) - minutes) * 60;
 				return `${degrees}° ${minutes}' ${seconds.toFixed(2)}"`;
+			}
+
+			// Función para inicializar el giroscopio al estado predeterminado
+			function initializeGyroscope() {
+				gyroInitialized = false;
+				pitchVelocity = 0;
+				rollVelocity = 0;
+				yawVelocity = 0;
+				console.log("Giroscopio inicializado a los valores predeterminados.");
 			}
 		
 ///////////////////////////////////////////////////////////////////////////////////////////////////////			
