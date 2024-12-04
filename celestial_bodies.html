@@ -893,20 +893,19 @@
 			let acceleration = 0; // Aceleración controlada por los botones "+" y "-"
 			const maxSpeed = 50; // Velocidad máxima
 			const minSpeed = -50; // Velocidad mínima
-			const damping = 0.98; // Factor de amortiguación para la inercia
+			const damping = 0.98; // Factor de amortiguación para la inercia (1 = sin amortiguación, <1 = fricción)
 			const angularDamping = 0.95; // Amortiguación para rotaciones angulares
 
 			// Variables para suavizar la rotación
 			let pitchVelocity = 0; // Velocidad de rotación en el eje X (pitch)
 			let rollVelocity = 0; // Velocidad de rotación en el eje Z (roll)
+
 			const rotationAcceleration = Math.PI / 4; // Incremento de rotación por segundo^2
 			const rotationDamping = 0.9; // Factor de amortiguación para las rotaciones
 
-			// Sensibilidad del giroscopio
-			const gyroSensitivity = 0; // Factor para reducir la sensibilidad del giroscopio
-
-			// Escala gradual del giroscopio (lineal)
-			const gyroScaleFactor = 0.005; // Factor para amplificar movimientos según el ángulo
+			// Sensibilidad y escala del giroscopio
+			const gyroSensitivity = 0.5; // Sensibilidad del giroscopio
+			const gyroScaleFactor = 2; // Escala para movimientos más bruscos
 
 			// HUD para información de la nave
 			const hud = document.createElement("div");
@@ -916,13 +915,17 @@
 			hud.style.padding = "10px";
 			hud.style.backgroundColor = "rgba(0, 0, 0, 0.8)";
 			hud.style.color = "white";
-			hud.style.fontFamily = "Arial, sans-serif";
-			hud.style.fontSize = "12px";
+			hud.style.fontFamily = "monospace";
+			hud.style.fontSize = "14px";
 			hud.style.borderRadius = "5px";
 			hud.innerHTML = `
-				<p>Velocidad: <span id="velocityHUD">0</span></p>
-				<p>Pitch: <span id="pitchHUD">0</span></p>
-				<p>Roll: <span id="rollHUD">0</span></p>
+				<p><strong>VELOCIDAD:</strong> <span id="velocityHUD">0</span> NUDOS</p>
+				<p><strong>COORDENADAS:</strong></p>
+				<p>X: <span id="coordX">0</span></p>
+				<p>Y: <span id="coordY">0</span></p>
+				<p>Z: <span id="coordZ">0</span></p>
+				<p><strong>PITCH:</strong> <span id="pitchHUD">0</span></p>
+				<p><strong>ROLL:</strong> <span id="rollHUD">0</span></p>
 			`;
 			document.body.appendChild(hud);
 
@@ -933,7 +936,7 @@
 			const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
 			// Detectar orientación del dispositivo (vertical u horizontal)
-			let deviceOrientation = window.orientation || 0;
+			let deviceOrientation = window.orientation || 0; // Inicializar con la orientación actual
 
 			window.addEventListener("orientationchange", () => {
 				deviceOrientation = window.orientation || 0;
@@ -954,8 +957,8 @@
 				buttonPlus.style.padding = "10px";
 				buttonPlus.style.fontSize = "12px";
 				buttonPlus.onclick = () => {
-					acceleration += 5;
-					acceleration = Math.min(acceleration, maxSpeed);
+					acceleration += 5; // Incrementar aceleración
+					acceleration = Math.min(acceleration, maxSpeed); // Limitar la aceleración máxima
 					console.log(`Aceleración aumentada: ${acceleration}`);
 				};
 
@@ -964,8 +967,8 @@
 				buttonMinus.style.padding = "10px";
 				buttonMinus.style.fontSize = "12px";
 				buttonMinus.onclick = () => {
-					acceleration -= 5;
-					acceleration = Math.max(acceleration, minSpeed);
+					acceleration -= 5; // Reducir aceleración
+					acceleration = Math.max(acceleration, minSpeed); // Limitar la aceleración mínima
 					console.log(`Aceleración reducida: ${acceleration}`);
 				};
 
@@ -998,50 +1001,18 @@
 					gyroInitialized = true;
 				}
 
-				// Calcular las diferencias respecto a la base
-				const deltaAlpha = ((event.alpha || 0) - baseAlpha) * (Math.PI / 180); // Yaw
-				let deltaBeta = ((event.beta || 0) - baseBeta) * (Math.PI / 180); // Pitch
-				let deltaGamma = ((event.gamma || 0) - baseGamma) * (Math.PI / 180); // Roll
+				const deltaBeta = ((event.beta || 0) - baseBeta) * (Math.PI / 180) * gyroSensitivity * gyroScaleFactor;
+				const deltaGamma = ((event.gamma || 0) - baseGamma) * (Math.PI / 180) * gyroSensitivity * gyroScaleFactor;
 
-				// Ajustar según la orientación del dispositivo
-				if (deviceOrientation === 90) {
-					[deltaBeta, deltaGamma] = [-deltaGamma, deltaBeta];
-				} else if (deviceOrientation === -90) {
-					[deltaBeta, deltaGamma] = [deltaGamma, -deltaBeta];
-				} else if (deviceOrientation === 180) {
-					deltaBeta = -deltaBeta;
-					deltaGamma = -deltaGamma;
-				}
-
-				// Aplicar el escalado gradual para el pitch y el roll
-				pitchVelocity = deltaBeta * Math.abs(deltaBeta) * gyroScaleFactor; // Pitch gradual
-				rollVelocity = deltaGamma * Math.abs(deltaGamma) * gyroScaleFactor; // Roll gradual
+				pitchVelocity = -deltaBeta; // Ajuste para invertir dirección
+				rollVelocity = deltaGamma;
 			});
 
 			// Función para resetear el giroscopio
 			function resetGyroscope() {
-				gyroInitialized = false; // Se reiniciará en el próximo evento "deviceorientation"
+				gyroInitialized = false;
 				console.log("Giroscopio reiniciado");
 			}
-
-			// Evento para detectar cuándo se presiona una tecla
-			window.addEventListener("keydown", (event) => {
-				keyState[event.code] = true;
-				if (event.key === "+" || (event.key === "=" && event.shiftKey)) {
-					acceleration += 5;
-					acceleration = Math.min(acceleration, maxSpeed);
-					console.log(`Aceleración aumentada: ${acceleration}`);
-				} else if (event.key === "-") {
-					acceleration -= 5;
-					acceleration = Math.max(acceleration, minSpeed);
-					console.log(`Aceleración reducida: ${acceleration}`);
-				}
-			});
-
-			// Evento para detectar cuándo se suelta una tecla
-			window.addEventListener("keyup", (event) => {
-				keyState[event.code] = false;
-			});
 
 			// Función para actualizar los controles de la cámara
 			function updateCameraControls(deltaTime) {
@@ -1062,34 +1033,32 @@
 					rollVelocity *= rotationDamping;
 				}
 
-				// Aplicar las rotaciones a la cámara
 				camera.rotateX(pitchVelocity * deltaTime);
 				camera.rotateZ(rollVelocity * deltaTime);
 
-				// Calcular la dirección hacia adelante de la cámara
 				const direction = new THREE.Vector3();
 				camera.getWorldDirection(direction);
 
-				// Actualizar la velocidad basada en la aceleración y la dirección
 				velocity.addScaledVector(direction, acceleration * deltaTime);
-
-				// Aplicar amortiguación para simular inercia
 				velocity.multiplyScalar(damping);
-
-				// Actualizar la posición de la cámara en función de la velocidad
 				camera.position.addScaledVector(velocity, deltaTime);
 
-				// Actualizar el HUD
 				updateHUD();
 			}
 
 			// Función para actualizar el HUD
 			function updateHUD() {
 				const velocityHUD = document.getElementById("velocityHUD");
+				const coordX = document.getElementById("coordX");
+				const coordY = document.getElementById("coordY");
+				const coordZ = document.getElementById("coordZ");
 				const pitchHUD = document.getElementById("pitchHUD");
 				const rollHUD = document.getElementById("rollHUD");
 
-				velocityHUD.textContent = velocity.length().toFixed(2);
+				velocityHUD.textContent = (velocity.length() * 1.94384).toFixed(2); // Convertir m/s a nudos
+				coordX.textContent = camera.position.x.toFixed(2);
+				coordY.textContent = camera.position.y.toFixed(2);
+				coordZ.textContent = camera.position.z.toFixed(2);
 				pitchHUD.textContent = (pitchVelocity * 180 / Math.PI).toFixed(2);
 				rollHUD.textContent = (rollVelocity * 180 / Math.PI).toFixed(2);
 			}
