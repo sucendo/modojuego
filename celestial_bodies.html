@@ -16,17 +16,6 @@
 				position: absolute;
 				top: 10px;
 				left: 10px;
-				font-family: 'Orbitron', sans-serif; /* Fuente temática espacial */
-				font-size: 12px; /* Tamaño de la fuente */
-				color: #00ffcc; /* Color futurista */
-				text-shadow: 0 0 5px #00ffcc, 0 0 10px #00ffcc, 0 0 15px #008080, 0 0 20px #008080;
-				background: linear-gradient(90deg, #000428, #004e92); /* Fondo con gradiente espacial */
-				padding: 3px 10px; /* Espaciado interno */
-				border: 2px solid #00ffcc; /* Borde llamativo */
-				border-radius: 10px; /* Esquinas redondeadas */
-				box-shadow: 0 0 20px #00ffcc, inset 0 0 10px #004e92; /* Sombra para efecto de brillo */
-				text-align: center; /* Centrar texto */
-				display: inline-block; /* Ajustar tamaño al contenido */
 			}
 			#timeControls {
 				/*position: absolute;
@@ -38,6 +27,11 @@
 				padding: 3px;
 				cursor: pointer;
 			}
+			#dateDisplay {
+				position:left;
+				text-align: left;
+				width: 165px;
+			}
 			#controls {
 				position: fixed;
 				top: 10px;
@@ -46,18 +40,33 @@
 				display: flex;
 				gap: 10px;
 			}
+			body > div {
+				font-family: 'Orbitron', sans-serif; /* Fuente temática espacial */
+				font-size: 12px; /* Tamaño de la fuente */
+				color: #00ffcc; /* Color futurista */
+				text-shadow: 0 0 5px #00ffcc, 0 0 10px #00ffcc, 0 0 15px #008080, 0 0 20px #008080;
+				background: linear-gradient(90deg, hsl(234deg 100% 8% / 50%), hsl(208deg 100% 29% / 50%)); /* Fondo con gradiente espacial */
+				padding: 3px 10px; /* Espaciado interno */
+				border: 2px solid #00ffcc; /* Borde llamativo */
+				border-radius: 10px; /* Esquinas redondeadas */
+				box-shadow: 0 0 20px #00ffcc, inset 0 0 10px #004e92; /* Sombra para efecto de brillo */
+				text-align: center; /* Centrar texto */
+				/*display: inline-block; /* Ajustar tamaño al contenido */
+			}
+			
 			button {
 				padding: 10px 15px;
 				font-family: 'Orbitron', sans-serif; /* Fuente temática espacial */
 				font-size: 12px; /* Tamaño de la fuente */
 				color: #00ffcc; /* Color futurista */
-				text-shadow: 0 0 5px #00ffcc, 0 0 10px #00ffcc, 0 0 15px #008080, 0 0 20px #008080; /* Efecto de brillo */
+				text-shadow: 0 0 5px #00ffcc, 0 0 10px #00ffcc, 0 0 15px #008080, 0 0 20px #008080;
 				background: linear-gradient(90deg, #000428, #004e92); /* Fondo con gradiente espacial */
-				border: 2px solid #00ffcc; /* Borde brillante */
+				padding: 3px 10px; /* Espaciado interno */
+				border: 2px solid #00ffcc; /* Borde llamativo */
 				border-radius: 10px; /* Esquinas redondeadas */
-				box-shadow: 0 0 20px #00ffcc, inset 0 0 10px #004e92; /* Sombra para efecto de profundidad */
-				cursor: pointer;
-				transition: transform 0.2s, box-shadow 0.2s; /* Transición suave al hacer hover */
+				box-shadow: 0 0 20px #00ffcc, inset 0 0 10px #004e92; /* Sombra para efecto de brillo */
+				text-align: center; /* Centrar texto */
+				display: inline-block; /* Ajustar tamaño al contenido */
 			}
 
 			button:hover {
@@ -893,34 +902,30 @@
 			let acceleration = 0; // Aceleración controlada por los botones "+" y "-"
 			const maxSpeed = 50; // Velocidad máxima
 			const minSpeed = -50; // Velocidad mínima
-			const damping = 0.98; // Factor de amortiguación para la inercia (1 = sin amortiguación, <1 = fricción)
+			const damping = 0.98; // Factor de amortiguación para la inercia
 			const angularDamping = 0.95; // Amortiguación para rotaciones angulares
 
 			// Variables para suavizar la rotación
 			let pitchVelocity = 0; // Velocidad de rotación en el eje X (pitch)
 			let rollVelocity = 0; // Velocidad de rotación en el eje Z (roll)
-
 			const rotationAcceleration = Math.PI / 4; // Incremento de rotación por segundo^2
 			const rotationDamping = 0.9; // Factor de amortiguación para las rotaciones
 
-			// Sensibilidad y escala del giroscopio
-			const gyroSensitivity = 0.5; // Sensibilidad del giroscopio
-			const gyroScaleFactor = 2; // Escala para movimientos más bruscos
+			// Sensibilidad del giroscopio
+			const gyroSensitivity = 0.5; // Factor para reducir la sensibilidad del giroscopio
+
+			// Escala gradual del giroscopio (lineal)
+			const gyroScaleFactor = 2; // Factor para amplificar movimientos según el ángulo
 
 			// HUD para información de la nave
 			const hud = document.createElement("div");
 			hud.style.position = "fixed";
 			hud.style.bottom = "10px";
 			hud.style.left = "10px";
-			hud.style.padding = "10px";
-			hud.style.backgroundColor = "rgba(0, 0, 0, 0.8)";
-			hud.style.color = "white";
-			hud.style.fontFamily = "monospace";
-			hud.style.fontSize = "14px";
-			hud.style.borderRadius = "5px";
+			
 			hud.innerHTML = `
-				<p><strong>VELOCIDAD:</strong> <span id="velocityHUD">0</span> NUDOS</p>
-				<p><strong>COORDENADAS:</strong></p>
+				<p><strong>V:</strong> <span id="velocityHUD">0</span> NUDOS</p>
+				<p><strong>C:</strong></p>
 				<p>X: <span id="coordX">0</span></p>
 				<p>Y: <span id="coordY">0</span></p>
 				<p>Z: <span id="coordZ">0</span></p>
@@ -936,7 +941,7 @@
 			const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
 			// Detectar orientación del dispositivo (vertical u horizontal)
-			let deviceOrientation = window.orientation || 0; // Inicializar con la orientación actual
+			let deviceOrientation = window.orientation || 0;
 
 			window.addEventListener("orientationchange", () => {
 				deviceOrientation = window.orientation || 0;
@@ -957,8 +962,8 @@
 				buttonPlus.style.padding = "10px";
 				buttonPlus.style.fontSize = "12px";
 				buttonPlus.onclick = () => {
-					acceleration += 5; // Incrementar aceleración
-					acceleration = Math.min(acceleration, maxSpeed); // Limitar la aceleración máxima
+					acceleration += 5;
+					acceleration = Math.min(acceleration, maxSpeed);
 					console.log(`Aceleración aumentada: ${acceleration}`);
 				};
 
@@ -967,8 +972,8 @@
 				buttonMinus.style.padding = "10px";
 				buttonMinus.style.fontSize = "12px";
 				buttonMinus.onclick = () => {
-					acceleration -= 5; // Reducir aceleración
-					acceleration = Math.max(acceleration, minSpeed); // Limitar la aceleración mínima
+					acceleration -= 5;
+					acceleration = Math.max(acceleration, minSpeed);
 					console.log(`Aceleración reducida: ${acceleration}`);
 				};
 
@@ -1001,18 +1006,50 @@
 					gyroInitialized = true;
 				}
 
-				const deltaBeta = ((event.beta || 0) - baseBeta) * (Math.PI / 180) * gyroSensitivity * gyroScaleFactor;
-				const deltaGamma = ((event.gamma || 0) - baseGamma) * (Math.PI / 180) * gyroSensitivity * gyroScaleFactor;
+				// Calcular las diferencias respecto a la base
+				const deltaAlpha = ((event.alpha || 0) - baseAlpha) * (Math.PI / 180); // Yaw
+				let deltaBeta = ((event.beta || 0) - baseBeta) * (Math.PI / 180); // Pitch
+				let deltaGamma = ((event.gamma || 0) - baseGamma) * (Math.PI / 180); // Roll
 
-				pitchVelocity = -deltaBeta; // Ajuste para invertir dirección
-				rollVelocity = deltaGamma;
+				// Ajustar según la orientación del dispositivo
+				if (deviceOrientation === 90) {
+					[deltaBeta, deltaGamma] = [-deltaGamma, deltaBeta];
+				} else if (deviceOrientation === -90) {
+					[deltaBeta, deltaGamma] = [deltaGamma, -deltaBeta];
+				} else if (deviceOrientation === 180) {
+					deltaBeta = -deltaBeta;
+					deltaGamma = -deltaGamma;
+				}
+
+				// Aplicar el escalado gradual para el pitch y el roll
+				pitchVelocity = deltaBeta * Math.abs(deltaBeta) * gyroScaleFactor; // Pitch gradual
+				rollVelocity = deltaGamma * Math.abs(deltaGamma) * gyroScaleFactor; // Roll gradual
 			});
 
 			// Función para resetear el giroscopio
 			function resetGyroscope() {
-				gyroInitialized = false;
+				gyroInitialized = false; // Se reiniciará en el próximo evento "deviceorientation"
 				console.log("Giroscopio reiniciado");
 			}
+
+			// Evento para detectar cuándo se presiona una tecla
+			window.addEventListener("keydown", (event) => {
+				keyState[event.code] = true;
+				if (event.key === "+" || (event.key === "=" && event.shiftKey)) {
+					acceleration += 5;
+					acceleration = Math.min(acceleration, maxSpeed);
+					console.log(`Aceleración aumentada: ${acceleration}`);
+				} else if (event.key === "-") {
+					acceleration -= 5;
+					acceleration = Math.max(acceleration, minSpeed);
+					console.log(`Aceleración reducida: ${acceleration}`);
+				}
+			});
+
+			// Evento para detectar cuándo se suelta una tecla
+			window.addEventListener("keyup", (event) => {
+				keyState[event.code] = false;
+			});
 
 			// Función para actualizar los controles de la cámara
 			function updateCameraControls(deltaTime) {
@@ -1033,16 +1070,24 @@
 					rollVelocity *= rotationDamping;
 				}
 
+				// Aplicar las rotaciones a la cámara
 				camera.rotateX(pitchVelocity * deltaTime);
 				camera.rotateZ(rollVelocity * deltaTime);
 
+				// Calcular la dirección hacia adelante de la cámara
 				const direction = new THREE.Vector3();
 				camera.getWorldDirection(direction);
 
+				// Actualizar la velocidad basada en la aceleración y la dirección
 				velocity.addScaledVector(direction, acceleration * deltaTime);
+
+				// Aplicar amortiguación para simular inercia
 				velocity.multiplyScalar(damping);
+
+				// Actualizar la posición de la cámara en función de la velocidad
 				camera.position.addScaledVector(velocity, deltaTime);
 
+				// Actualizar el HUD
 				updateHUD();
 			}
 
