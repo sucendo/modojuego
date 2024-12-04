@@ -1071,34 +1071,38 @@
 			});
 
 			// Función para actualizar los controles de la cámara
-			function updateCameraControls(deltaTime) {
-				// Rotaciones relativas a la cámara
+						function updateCameraControls(deltaTime) {
+				const stabilizationDamping = 0.95; // Amortiguación ligera para estabilizar cuando no hay contrafuerza
+				const rotationalInertia = 1; // Factor para mantener inercia en rotaciones
 
-				// Pitch - Controlado por ArrowUp, W y ArrowDown, S
+				// Pitch (rotación sobre el eje X) - Controlado por ArrowUp, W y ArrowDown, S
 				if (keyState["ArrowUp"] || keyState["KeyW"]) {
-					pitchVelocity -= rotationAcceleration * deltaTime;
+					pitchVelocity -= rotationAcceleration * deltaTime; // Incrementa la velocidad en dirección negativa
 				} else if (keyState["ArrowDown"] || keyState["KeyS"]) {
-					pitchVelocity += rotationAcceleration * deltaTime;
+					pitchVelocity += rotationAcceleration * deltaTime; // Incrementa la velocidad en dirección positiva
 				} else {
-					pitchVelocity *= angularDamping; // Inercia en gravedad 0
+					// Mantener la inercia del pitch
+					pitchVelocity *= rotationalInertia; // Reducir gradualmente la velocidad por inercia
 				}
 
-				// Roll (giro lateral) - Controlado por ArrowLeft, A y ArrowRight, D
+				// Roll (rotación sobre el eje Z) - Controlado por ArrowLeft, A y ArrowRight, D
 				if (keyState["ArrowLeft"] || keyState["KeyA"]) {
-					rollVelocity += rotationAcceleration * deltaTime;
+					rollVelocity += rotationAcceleration * deltaTime; // Incrementa la velocidad en dirección positiva
 				} else if (keyState["ArrowRight"] || keyState["KeyD"]) {
-					rollVelocity -= rotationAcceleration * deltaTime;
+					rollVelocity -= rotationAcceleration * deltaTime; // Incrementa la velocidad en dirección negativa
 				} else {
-					rollVelocity *= angularDamping; // Inercia en gravedad 0
+					// Mantener la inercia del roll
+					rollVelocity *= rotationalInertia; // Reducir gradualmente la velocidad por inercia
 				}
 
-				// Yaw (rotación alrededor del eje Y) - Controlado por Q y E
+				// Yaw (rotación sobre el eje Y) - Controlado por Q y E
 				if (keyState["KeyQ"]) {
-					yawVelocity += rotationAcceleration * deltaTime;
+					yawVelocity += rotationAcceleration * deltaTime; // Incrementa la velocidad en dirección positiva
 				} else if (keyState["KeyE"]) {
-					yawVelocity -= rotationAcceleration * deltaTime;
+					yawVelocity -= rotationAcceleration * deltaTime; // Incrementa la velocidad en dirección negativa
 				} else {
-					yawVelocity *= angularDamping; // Inercia en gravedad 0
+					// Mantener la inercia del yaw
+					yawVelocity *= rotationalInertia; // Reducir gradualmente la velocidad por inercia
 				}
 
 				// Aplicar las rotaciones a la cámara
@@ -1113,7 +1117,7 @@
 				// Actualizar la velocidad basada en la aceleración y la dirección
 				velocity.addScaledVector(direction, acceleration * deltaTime * (SCALE_DISTANCE * 100000) / 2);
 
-				// Aplicar amortiguación para simular inercia
+				// Aplicar amortiguación para simular inercia en el movimiento traslacional
 				velocity.multiplyScalar(damping);
 
 				// Actualizar la posición de la cámara en función de la velocidad
