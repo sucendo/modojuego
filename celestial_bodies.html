@@ -40,7 +40,7 @@
 				display: flex;
 				gap: 10px;
 			}
-			body > div {
+			body > .controlPanel {
 				font-family: 'Orbitron', sans-serif; /* Fuente temática espacial */
 				font-size: 12px; /* Tamaño de la fuente */
 				color: #00ffcc; /* Color futurista */
@@ -49,9 +49,8 @@
 				padding: 3px 10px; /* Espaciado interno */
 				border: 2px solid #00ffcc; /* Borde llamativo */
 				border-radius: 10px; /* Esquinas redondeadas */
-				box-shadow: 0 0 20px #00ffcc, inset 0 0 10px #004e92; /* Sombra para efecto de brillo */
+				box-shadow: 0 0 5px #00ffcc, inset 0 0 3px #004e92; /* Sombra para efecto de brillo */
 				text-align: center; /* Centrar texto */
-				/*display: inline-block; /* Ajustar tamaño al contenido */
 			}
 			
 			button {
@@ -79,18 +78,23 @@
 				transform: scale(0.95); /* Efecto al presionar */
 				box-shadow: 0 0 15px #00ffcc, inset 0 0 5px #004e92; /* Reduce el brillo al hacer clic */
 			}
+			
+			div#navigationPanel {
+				min-width: 180px;
+				text-align: left;
+			}
 		</style>
 	</head>
 	<body>
-		<div id="timePanel">
-		<div id="dateDisplay"></div>
-			<div id="timeControls">			
-				<button id="speedControl">V</button>
-				<button id="decreaseSpeedBtn">-</button>
-				<button id="pauseBtn">||</button>
-				<button id="increaseSpeedBtn">+</button>	
-			</div>
-		<div id="speedDisplay">Velocidad: x1</div>				
+		<div id="timePanel" class="controlPanel">
+			<div id="dateDisplay"></div>
+				<div id="timeControls">			
+					<button id="speedControl">V</button>
+					<button id="decreaseSpeedBtn">-</button>
+					<button id="pauseBtn">||</button>
+					<button id="increaseSpeedBtn">+</button>	
+				</div>
+			<div id="speedDisplay">Velocidad: x1</div>				
 		</div>
 			
 		<div id="controls">
@@ -908,6 +912,7 @@
 			// Variables para suavizar la rotación
 			let pitchVelocity = 0; // Velocidad de rotación en el eje X (pitch)
 			let rollVelocity = 0; // Velocidad de rotación en el eje Z (roll)
+			let yawVelocity = 0; // Velocidad de rotación en el eje Y (yaw)
 			const rotationAcceleration = Math.PI / 4; // Incremento de rotación por segundo^2
 			const rotationDamping = 0.9; // Factor de amortiguación para las rotaciones
 
@@ -919,18 +924,20 @@
 
 			// HUD para información de la nave
 			const hud = document.createElement("div");
+			hud.id = "navigationPanel";
+			hud.className = "controlPanel";
 			hud.style.position = "fixed";
 			hud.style.bottom = "10px";
-			hud.style.left = "10px";
-			
+			hud.style.left = "10px";			
+
 			hud.innerHTML = `
-				<p><strong>V:</strong> <span id="velocityHUD">0</span> NUDOS</p>
-				<p><strong>C:</strong></p>
+				<p><strong>Velocidad:</strong> <span id="velocityHUD">0</span> nudos</p>
+				<p><strong>nav:</strong> <span id="pitchHUD">0</span>|<span id="rollHUD">0</span>|<span id="yawHUD">0</span></p>
+				<p><strong>Coordenadas (Galácticas):</strong></p>
 				<p>X: <span id="coordX">0</span></p>
 				<p>Y: <span id="coordY">0</span></p>
 				<p>Z: <span id="coordZ">0</span></p>
-				<p><strong>PITCH:</strong> <span id="pitchHUD">0</span></p>
-				<p><strong>ROLL:</strong> <span id="rollHUD">0</span></p>
+				
 			`;
 			document.body.appendChild(hud);
 
@@ -1021,27 +1028,40 @@
 					deltaGamma = -deltaGamma;
 				}
 
-				// Aplicar el escalado gradual para el pitch y el roll
-				pitchVelocity = deltaBeta * Math.abs(deltaBeta) * gyroScaleFactor; // Pitch gradual
-				rollVelocity = deltaGamma * Math.abs(deltaGamma) * gyroScaleFactor; // Roll gradual
+				// Aplicar el escalado gradual para el pitch, roll y yaw
+				pitchVelocity = deltaBeta * Math.abs(deltaBeta) * gyroScaleFactor;
+				rollVelocity = deltaGamma * Math.abs(deltaGamma) * gyroScaleFactor;
+				yawVelocity = deltaAlpha * Math.abs(deltaAlpha) * gyroScaleFactor;
 			});
 
 			// Función para resetear el giroscopio
 			function resetGyroscope() {
-				gyroInitialized = false; // Se reiniciará en el próximo evento "deviceorientation"
+				gyroInitialized = false;
 				console.log("Giroscopio reiniciado");
 			}
 
 			// Evento para detectar cuándo se presiona una tecla
 			window.addEventListener("keydown", (event) => {
 				keyState[event.code] = true;
+
+				// Aceleración: Incrementar y disminuir multiplicativamente en un 10%
 				if (event.key === "+" || (event.key === "=" && event.shiftKey)) {
-					acceleration += 5;
-					acceleration = Math.min(acceleration, maxSpeed);
+					// Si la aceleración es 0, establecer un valor inicial base
+					if (acceleration === 0) {
+						acceleration = 1; // Valor base para empezar
+					} else {
+						acceleration *= 1.2; // Incrementa en un 10%
+					}
+					acceleration = Math.min(acceleration, maxSpeed); // Limita la aceleración máxima
 					console.log(`Aceleración aumentada: ${acceleration}`);
 				} else if (event.key === "-") {
-					acceleration -= 5;
-					acceleration = Math.max(acceleration, minSpeed);
+					// Si la aceleración es 0, mantenerla en 0 (no permitir decremento negativo)
+					if (acceleration === 0) {
+						acceleration = 0;
+					} else {
+						acceleration *= 0.8; // Disminuye en un 10%
+					}
+					acceleration = Math.max(acceleration, minSpeed); // Limita la aceleración mínima
 					console.log(`Aceleración reducida: ${acceleration}`);
 				}
 			});
@@ -1054,32 +1074,42 @@
 			// Función para actualizar los controles de la cámara
 			function updateCameraControls(deltaTime) {
 				// Rotaciones relativas a la cámara
-				if (keyState["ArrowUp"]) {
+				if (keyState["ArrowUp"] || keyState["KeyW"]) {
 					pitchVelocity -= rotationAcceleration * deltaTime;
-				} else if (keyState["ArrowDown"]) {
+				} else if (keyState["ArrowDown"] || keyState["KeyS"]) {
 					pitchVelocity += rotationAcceleration * deltaTime;
 				} else {
 					pitchVelocity *= rotationDamping;
 				}
 
-				if (keyState["ArrowLeft"]) {
+				// Roll (giro lateral) - Controlado por ArrowLeft, ArrowRight, A y D
+				if (keyState["ArrowLeft"] || keyState["KeyA"]) {
 					rollVelocity += rotationAcceleration * deltaTime;
-				} else if (keyState["ArrowRight"]) {
+				} else if (keyState["ArrowRight"] || keyState["KeyD"]) {
 					rollVelocity -= rotationAcceleration * deltaTime;
 				} else {
 					rollVelocity *= rotationDamping;
 				}
 
+				if (keyState["KeyQ"]) {
+					yawVelocity += rotationAcceleration * deltaTime;
+				} else if (keyState["KeyE"]) {
+					yawVelocity -= rotationAcceleration * deltaTime;
+				} else {
+					yawVelocity *= rotationDamping;
+				}
+
 				// Aplicar las rotaciones a la cámara
 				camera.rotateX(pitchVelocity * deltaTime);
 				camera.rotateZ(rollVelocity * deltaTime);
+				camera.rotateY(yawVelocity * deltaTime);
 
 				// Calcular la dirección hacia adelante de la cámara
 				const direction = new THREE.Vector3();
 				camera.getWorldDirection(direction);
 
 				// Actualizar la velocidad basada en la aceleración y la dirección
-				velocity.addScaledVector(direction, acceleration * deltaTime);
+				velocity.addScaledVector(direction, acceleration * deltaTime *(SCALE_DISTANCE * 100000));
 
 				// Aplicar amortiguación para simular inercia
 				velocity.multiplyScalar(damping);
@@ -1099,13 +1129,38 @@
 				const coordZ = document.getElementById("coordZ");
 				const pitchHUD = document.getElementById("pitchHUD");
 				const rollHUD = document.getElementById("rollHUD");
+				const yawHUD = document.getElementById("yawHUD");
 
-				velocityHUD.textContent = (velocity.length() * 1.94384).toFixed(2); // Convertir m/s a nudos
-				coordX.textContent = camera.position.x.toFixed(2);
-				coordY.textContent = camera.position.y.toFixed(2);
-				coordZ.textContent = camera.position.z.toFixed(2);
+				// Convertir la velocidad a nudos y escalar según SCALE_DISTANCE
+				const velocityInKnots = velocity.length() * 1.94384 *(SCALE_DISTANCE * 100000);
+				velocityHUD.textContent = velocityInKnots.toFixed(4); // Mostrar velocidad en nudos
+
+				// Coordenadas escaladas
+				const galacticCoords = getGalacticCoordinates(camera.position);
+				coordX.textContent = galacticCoords.x;
+				coordY.textContent = galacticCoords.y;
+				coordZ.textContent = galacticCoords.z;
+
 				pitchHUD.textContent = (pitchVelocity * 180 / Math.PI).toFixed(2);
 				rollHUD.textContent = (rollVelocity * 180 / Math.PI).toFixed(2);
+				yawHUD.textContent = (yawVelocity * 180 / Math.PI).toFixed(2);
+			}
+			
+			// Obtener coordenadas galácticas
+			function getGalacticCoordinates(position) {
+				return {
+					x: formatAsDegrees(position.x / SCALE_DISTANCE),
+					y: formatAsDegrees(position.y / SCALE_DISTANCE),
+					z: formatAsDegrees(position.z / SCALE_DISTANCE),
+				};
+			}
+
+			// Formatear coordenadas en grados, minutos y segundos
+			function formatAsDegrees(value) {
+				const degrees = Math.floor(value);
+				const minutes = Math.floor((value - degrees) * 60);
+				const seconds = (((value - degrees) * 60) - minutes) * 60;
+				return `${degrees}° ${minutes}' ${seconds.toFixed(2)}"`;
 			}
 		
 ///////////////////////////////////////////////////////////////////////////////////////////////////////			
