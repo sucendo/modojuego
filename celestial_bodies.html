@@ -969,7 +969,6 @@
 				const buttonPlus = document.createElement("button");
 				buttonPlus.innerText = "+";
 				buttonPlus.style.padding = "10px";
-				buttonPlus.style.fontSize = "12px";
 				buttonPlus.onclick = () => {
 					acceleration += 5;
 					acceleration = Math.min(acceleration, maxSpeed);
@@ -979,13 +978,12 @@
 				const buttonMinus = document.createElement("button");
 				buttonMinus.innerText = "-";
 				buttonMinus.style.padding = "10px";
-				buttonMinus.style.fontSize = "12px";
 				buttonMinus.onclick = () => {
 					acceleration -= 5;
 					acceleration = Math.max(acceleration, minSpeed);
 					console.log(`Aceleración reducida: ${acceleration}`);
 				};
-
+				
 				const buttonResetGyro = document.createElement("button");
 				buttonResetGyro.innerText = "R";
 				buttonResetGyro.style.padding = "10px";
@@ -996,7 +994,6 @@
 				const buttonToggleGyro = document.createElement("button");
 				buttonToggleGyro.innerText = "Gyro: ON";
 				buttonToggleGyro.style.padding = "10px";
-				buttonToggleGyro.style.fontSize = "12px";
 				buttonToggleGyro.onclick = () => {
 					isGyroscopeEnabled = !isGyroscopeEnabled;
 					buttonToggleGyro.innerText = isGyroscopeEnabled ? "Gyro: ON" : "Gyro: OFF";
@@ -1005,6 +1002,7 @@
 
 				controlsContainer.appendChild(buttonMinus);
 				controlsContainer.appendChild(buttonPlus);
+				controlsContainer.appendChild(buttonResetGyro);
 				controlsContainer.appendChild(buttonToggleGyro);
 				document.body.appendChild(controlsContainer);
 			}
