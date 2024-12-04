@@ -904,8 +904,8 @@
 			// Variables para el movimiento y rotación
 			let velocity = new THREE.Vector3(); // Velocidad actual de la nave
 			let acceleration = 0; // Aceleración controlada por los botones "+" y "-"
-			const maxSpeed = 50; // Velocidad máxima
-			const minSpeed = -50; // Velocidad mínima
+			const maxSpeed = 150; // Velocidad máxima
+			const minSpeed = -150; // Velocidad mínima
 			const damping = 0.98; // Factor de amortiguación para la inercia
 			const angularDamping = 0.95; // Amortiguación para rotaciones angulares
 
@@ -934,7 +934,7 @@
 			hud.style.left = "10px";
 
 			hud.innerHTML = `
-				<p><strong>Velocidad:</strong> <span id="velocityHUD">0</span> nudos</p>
+				<p><strong>Velocidad:</strong> <span id="velocityHUD">0</span> Km/s</p>
 				<p><strong>nav:</strong> <span id="pitchHUD">0</span>|<span id="rollHUD">0</span>|<span id="yawHUD">0</span></p>
 				<p><strong>Coordenadas (Galácticas):</strong></p>
 				<p>X: <span id="coordX">0</span></p>
@@ -1054,15 +1054,13 @@
 			// Evento para detectar cuándo se presiona una tecla
 			window.addEventListener("keydown", (event) => {
 				keyState[event.code] = true;
-
-				// Aceleración: Incrementar y disminuir multiplicativamente en un 10%
 				if (event.key === "+" || (event.key === "=" && event.shiftKey)) {
-					acceleration = acceleration === 0 ? 1 : acceleration * 1.2; // Si es 0, inicia con 1
-					acceleration = Math.min(acceleration, maxSpeed); // Limita la aceleración máxima
+					acceleration += 5;
+					acceleration = Math.min(acceleration, maxSpeed);
 					console.log(`Aceleración aumentada: ${acceleration}`);
 				} else if (event.key === "-") {
-					acceleration = acceleration === 0 ? 0 : acceleration * 0.8; // Si es 0, mantener en 0
-					acceleration = Math.max(acceleration, minSpeed); // Limita la aceleración mínima
+					acceleration -= 5;
+					acceleration = Math.max(acceleration, minSpeed);
 					console.log(`Aceleración reducida: ${acceleration}`);
 				}
 			});
@@ -1075,41 +1073,45 @@
 			// Función para actualizar los controles de la cámara
 			function updateCameraControls(deltaTime) {
 				// Rotaciones relativas a la cámara
+
+				// Pitch - Controlado por ArrowUp, W y ArrowDown, S
 				if (keyState["ArrowUp"] || keyState["KeyW"]) {
 					pitchVelocity -= rotationAcceleration * deltaTime;
 				} else if (keyState["ArrowDown"] || keyState["KeyS"]) {
 					pitchVelocity += rotationAcceleration * deltaTime;
 				} else {
-					pitchVelocity *= rotationDamping;
+					pitchVelocity *= angularDamping; // Inercia en gravedad 0
 				}
 
+				// Roll (giro lateral) - Controlado por ArrowLeft, A y ArrowRight, D
 				if (keyState["ArrowLeft"] || keyState["KeyA"]) {
 					rollVelocity += rotationAcceleration * deltaTime;
 				} else if (keyState["ArrowRight"] || keyState["KeyD"]) {
 					rollVelocity -= rotationAcceleration * deltaTime;
 				} else {
-					rollVelocity *= rotationDamping;
+					rollVelocity *= angularDamping; // Inercia en gravedad 0
 				}
 
+				// Yaw (rotación alrededor del eje Y) - Controlado por Q y E
 				if (keyState["KeyQ"]) {
 					yawVelocity += rotationAcceleration * deltaTime;
 				} else if (keyState["KeyE"]) {
 					yawVelocity -= rotationAcceleration * deltaTime;
 				} else {
-					yawVelocity *= rotationDamping;
+					yawVelocity *= angularDamping; // Inercia en gravedad 0
 				}
 
 				// Aplicar las rotaciones a la cámara
-				camera.rotateX(pitchVelocity * deltaTime);
-				camera.rotateZ(rollVelocity * deltaTime);
-				camera.rotateY(yawVelocity * deltaTime);
+				camera.rotateX(pitchVelocity * deltaTime); // Pitch
+				camera.rotateZ(rollVelocity * deltaTime); // Roll
+				camera.rotateY(yawVelocity * deltaTime); // Yaw
 
 				// Calcular la dirección hacia adelante de la cámara
 				const direction = new THREE.Vector3();
 				camera.getWorldDirection(direction);
 
 				// Actualizar la velocidad basada en la aceleración y la dirección
-				velocity.addScaledVector(direction, acceleration * deltaTime);
+				velocity.addScaledVector(direction, acceleration * deltaTime * (SCALE_DISTANCE * 100000) / 2);
 
 				// Aplicar amortiguación para simular inercia
 				velocity.multiplyScalar(damping);
@@ -1131,9 +1133,9 @@
 				const rollHUD = document.getElementById("rollHUD");
 				const yawHUD = document.getElementById("yawHUD");
 
-				// Convertir la velocidad a nudos
-				const velocityInKnots = velocity.length() * 1.94384; // m/s a nudos
-				velocityHUD.textContent = velocityInKnots.toFixed(2);
+				// Convertir la velocidad a km/s
+				const velocityInKmPerSec = velocity.length()* (SCALE_DISTANCE  * 10000000); // Escalamos a kilómetros por segundo
+				velocityHUD.textContent = velocityInKmPerSec.toFixed(2); // Mostrar velocidad en km/s
 
 				// Convertir las coordenadas a escala galáctica
 				const galacticCoords = getGalacticCoordinates(camera.position);
