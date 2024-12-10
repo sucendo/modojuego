@@ -120,11 +120,11 @@
 			controls.enableZoom = true;
 
 			// Añadir un entorno de luz general (opcional)
-			const ambientLight = new THREE.AmbientLight(0x333333, 0.4); // Luz ambiental tenue
+			const ambientLight = new THREE.AmbientLight(0x333333, 0.2); // Luz ambiental tenue
 			scene.add(ambientLight);
 
 			// Escala para las distancias y tamaños
-			const SCALE_DISTANCE = 0.000005; // Escala ajustada para las distancias (en km)
+			const SCALE_DISTANCE = 0.00001; // Escala ajustada para las distancias (en km)
 			const SCALE_SIZE = 0.0005; // Escala ajustada para los tamaños de los cuerpos
 			//const SCALE_DISTANCE = 0.00001; // Escala ajustada para las distancias (en km)
 			//const SCALE_SIZE = 0.00001; // Escala ajustada para los tamaños de los cuerpos
@@ -137,13 +137,13 @@
 				-2,         // -2 días
 				-1,         // -1 día
 				-0.5,       // -12 horas
-				-0.04166667,// -1 hora
-				-0.00069444,// -1 min
-				-0.00000864,// -1 seg
+				-0.041666666666666664,// -1 hora
+				-0.0006944444444444445,// -1 min
+				-0.000011574074074074073,// -1 seg
 				0,          // Pausado
-				0.00000864, // 1 seg
-				0.00069444, // 1 min
-				0.04166667, // 1 hora
+				0.000011574074074074073, // 1 seg
+				0.0006944444444444445, // 1 min
+				0.041666666666666664, // 1 hora
 				0.5,        // 12 horas
 				1,          // 1 día
 				2,          // 2 días
@@ -161,7 +161,7 @@
 				"1 seg = 1 día", "1 seg = 2 días", "1 seg = 7 días", "1 seg = 15 días", "1 seg = 30 días",
 			];
 
-			let speedFactor = 0.00000864; // Inicia en "1 seg" (Avance Real)
+			let speedFactor = 0.000011574074074074073; // Inicia en "1 seg" (Avance Real)
 			let isPaused = false; // Variable para pausa	
 			
 			let simulatedDate = new Date(); // Fecha inicial (actual)
@@ -391,105 +391,105 @@
 				},
 				satellites: {
 					moon: { 
-						periapsis: 363300*15, apoapsis: 405500*15, size: 3474, color: 0xcccccc, orbits: "earth", orbitalPeriod: 27.321, 
+						periapsis: 363300, apoapsis: 405500, size: 3474, color: 0xcccccc, orbits: "earth", orbitalPeriod: 27.321, rotationPeriod: 27.321,
 						orientation: 180, inclination: 5.14, argumentOfPeriapsis: 41.5, longitudeOfAscendingNode: 125.08, lastPerihelion: "2024-01-03" 
 					},
 					io: { 
-						periapsis: 421700*60, apoapsis: 422000*60, size: 3643, color: 0xffa500, orbits: "jupiter", orbitalPeriod: 1.769, 
+						periapsis: 421700*30, apoapsis: 422000*30, size: 3643, color: 0xffa500, orbits: "jupiter", orbitalPeriod: 1.769, 
 						orientation: 0, inclination: 0.05, argumentOfPeriapsis: 84.03, longitudeOfAscendingNode: 43.97, lastPerihelion: "2024-01-01" 
 					},
 					europa: { 
-						periapsis: 670900*60, apoapsis: 676900*60, size: 3122, color: 0xffffff, orbits: "jupiter", orbitalPeriod: 3.551, 
+						periapsis: 670900*30, apoapsis: 676900*30, size: 3122, color: 0xffffff, orbits: "jupiter", orbitalPeriod: 3.551, 
 						orientation: 0, inclination: 0.47, argumentOfPeriapsis: 88.97, longitudeOfAscendingNode: 219.11, lastPerihelion: "2024-01-01" 
 					},
 					ganymede: { 
-						periapsis: 1070400*60, apoapsis: 1071600*60, size: 5268, color: 0xffff00, orbits: "jupiter", orbitalPeriod: 7.155, 
+						periapsis: 1070400*30, apoapsis: 1071600*30, size: 5268, color: 0xffff00, orbits: "jupiter", orbitalPeriod: 7.155, 
 						orientation: 0, inclination: 0.2, argumentOfPeriapsis: 192.42, longitudeOfAscendingNode: 63.55, lastPerihelion: "2024-01-01" 
 					},
 					callisto: { 
-						periapsis: 1882700*60, apoapsis: 1883300*60, size: 4821, color: 0x808080, orbits: "jupiter", orbitalPeriod: 16.689, 
+						periapsis: 1882700*30, apoapsis: 1883300*30, size: 4821, color: 0x808080, orbits: "jupiter", orbitalPeriod: 16.689, 
 						orientation: 0, inclination: 0.19, argumentOfPeriapsis: 52.64, longitudeOfAscendingNode: 298.84, lastPerihelion: "2024-01-01" 
 					},
 					titan: { 
-						periapsis: 1186600*40, apoapsis: 1221860*40, size: 5150, color: 0xffcc99, orbits: "saturn", orbitalPeriod: 15.945, 
+						periapsis: 1186600*20, apoapsis: 1221860*20, size: 5150, color: 0xffcc99, orbits: "saturn", orbitalPeriod: 15.945, 
 						orientation: 0, inclination: 0.3, argumentOfPeriapsis: 174.17, longitudeOfAscendingNode: 109.49, lastPerihelion: "2024-01-01" 
 					},
 				},
 				artificialSatellites: {
 					iss: {
-						periapsis: 6779*250, apoapsis: 6789*250, size: 108.5, color: "white", orbits: "earth", orbitalPeriod: 1.5,
+						periapsis: 6779*125, apoapsis: 6789*125, size: 108.5, color: "white", orbits: "earth", orbitalPeriod: 1.5,
 						orientation: 45, inclination: 51.64, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 258.76, lastPerihelion: "2023-12-01"
 					},
 					jwst: {
-						periapsis: 1501371*250, apoapsis: 1501371*250, size: 15, color: "cyan", orbits: "earth", orbitalPeriod: 365.25,
+						periapsis: 1501371*125, apoapsis: 1501371*125, size: 15, color: "cyan", orbits: "earth", orbitalPeriod: 365.25,
 						orientation: 120, inclination: 0.5, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 0, lastPerihelion: "2023-12-01"
 					},
 					hubble: {
-						periapsis: 6911*250, apoapsis: 6921*250, size: 13.2, color: "silver", orbits: "earth", orbitalPeriod: 1.5,
+						periapsis: 6911*125, apoapsis: 6921*125, size: 13.2, color: "silver", orbits: "earth", orbitalPeriod: 1.5,
 						orientation: 90, inclination: 28.47, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 96.49, lastPerihelion: "2023-11-28"
 					},
 					tiangong: {
-						periapsis: 6761*250, apoapsis: 6771*250, size: 55, color: "red", orbits: "earth", orbitalPeriod: 1.5,
+						periapsis: 6761*125, apoapsis: 6771*125, size: 55, color: "red", orbits: "earth", orbitalPeriod: 1.5,
 						orientation: 45, inclination: 42.5, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 283.34, lastPerihelion: "2023-12-03"
 					},
 					landsat9: {
-						periapsis: 7076*250, apoapsis: 7076*250, size: 4, color: "green", orbits: "earth", orbitalPeriod: 1.67,
+						periapsis: 7076*125, apoapsis: 7076*125, size: 4, color: "green", orbits: "earth", orbitalPeriod: 1.67,
 						orientation: 90, inclination: 98.2, argumentOfPeriapsis: 120, longitudeOfAscendingNode: 14.8, lastPerihelion: "2023-12-02"
 					},
 					sentinel2a: {
-						periapsis: 7157*250, apoapsis: 7157*250, size: 4.2, color: "blue", orbits: "earth", orbitalPeriod: 1.67,
+						periapsis: 7157*125, apoapsis: 7157*125, size: 4.2, color: "blue", orbits: "earth", orbitalPeriod: 1.67,
 						orientation: 90, inclination: 98.56, argumentOfPeriapsis: 90, longitudeOfAscendingNode: 128.7, lastPerihelion: "2023-12-01"
 					},
 					galileo: {
-						periapsis: 29593*250, apoapsis: 29593*250, size: 2.4, color: "orange", orbits: "earth", orbitalPeriod: 14,
+						periapsis: 29593*125, apoapsis: 29593*125, size: 2.4, color: "orange", orbits: "earth", orbitalPeriod: 14,
 						orientation: 0, inclination: 56, argumentOfPeriapsis: 270, longitudeOfAscendingNode: 220.5, lastPerihelion: "2023-12-01"
 					},
 					glonass: {
-						periapsis: 25471*250, apoapsis: 25471*250, size: 2.4, color: "red", orbits: "earth", orbitalPeriod: 11.26,
+						periapsis: 25471*125, apoapsis: 25471*125, size: 2.4, color: "red", orbits: "earth", orbitalPeriod: 11.26,
 						orientation: 0, inclination: 64.8, argumentOfPeriapsis: 50, longitudeOfAscendingNode: 255.75, lastPerihelion: "2023-11-30"
 					},
 					starlink: {
-						periapsis: 6921*250, apoapsis: 6921*250, size: 0.2, color: "gray", orbits: "earth", orbitalPeriod: 1.5,
+						periapsis: 6921*125, apoapsis: 6921*125, size: 0.2, color: "gray", orbits: "earth", orbitalPeriod: 1.5,
 						orientation: 0, inclination: 53, argumentOfPeriapsis: 30, longitudeOfAscendingNode: 72.05, lastPerihelion: "2023-12-01"
 					},
 					gps3: {
-						periapsis: 26571*250, apoapsis: 26571*250, size: 2.2, color: "gold", orbits: "earth", orbitalPeriod: 12,
+						periapsis: 26571*125, apoapsis: 26571*125, size: 2.2, color: "gold", orbits: "earth", orbitalPeriod: 12,
 						orientation: 0, inclination: 55, argumentOfPeriapsis: 270, longitudeOfAscendingNode: 115.7, lastPerihelion: "2023-11-29"
 					},
 					cosmos2542: {
-						periapsis: 6771*250, apoapsis: 6771*250, size: 1.5, color: "darkgray", orbits: "earth", orbitalPeriod: 1.5,
+						periapsis: 6771*125, apoapsis: 6771*125, size: 1.5, color: "darkgray", orbits: "earth", orbitalPeriod: 1.5,
 						orientation: 0, inclination: 51.6, argumentOfPeriapsis: 45, longitudeOfAscendingNode: 75.4, lastPerihelion: "2023-12-02"
 					},
 					aeolus: {
-						periapsis: 6691*250, apoapsis: 6691*250, size: 4.4, color: "purple", orbits: "earth", orbitalPeriod: 1.5,
+						periapsis: 6691*125, apoapsis: 6691*125, size: 4.4, color: "purple", orbits: "earth", orbitalPeriod: 1.5,
 						orientation: 0, inclination: 96.7, argumentOfPeriapsis: 20, longitudeOfAscendingNode: 102.3, lastPerihelion: "2023-12-01"
 					},
 					radarsat2: {
-						periapsis: 7169*250, apoapsis: 7169*250, size: 4.3, color: "darkblue", orbits: "earth", orbitalPeriod: 1.67,
+						periapsis: 7169*125, apoapsis: 7169*125, size: 4.3, color: "darkblue", orbits: "earth", orbitalPeriod: 1.67,
 						orientation: 0, inclination: 98.6, argumentOfPeriapsis: 90, longitudeOfAscendingNode: 192.1, lastPerihelion: "2023-12-02"
 					},
 					terra: {
-						periapsis: 7076*250, apoapsis: 7076*250, size: 4.8, color: "green", orbits: "earth", orbitalPeriod: 1.67,
+						periapsis: 7076*125, apoapsis: 7076*125, size: 4.8, color: "green", orbits: "earth", orbitalPeriod: 1.67,
 						orientation: 0, inclination: 98.2, argumentOfPeriapsis: 75, longitudeOfAscendingNode: 104.7, lastPerihelion: "2023-12-01"
 					},
 					goes16: {
-						periapsis: 42157*250, apoapsis: 42157*250, size: 3.1, color: "orange", orbits: "earth", orbitalPeriod: 24,
+						periapsis: 42157*125, apoapsis: 42157*125, size: 3.1, color: "orange", orbits: "earth", orbitalPeriod: 24,
 						orientation: 0, inclination: 0, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 75.2, lastPerihelion: "2023-12-01"
 					},
 					sentinel1a: {
-						periapsis: 7064*250, apoapsis: 7064*250, size: 4, color: "blue", orbits: "earth", orbitalPeriod: 1.66,
+						periapsis: 7064*125, apoapsis: 7064*125, size: 4, color: "blue", orbits: "earth", orbitalPeriod: 1.66,
 						orientation: 0, inclination: 98.18, argumentOfPeriapsis: 60, longitudeOfAscendingNode: 210.4, lastPerihelion: "2023-12-01"
 					},
 					inmarSat: {
-						periapsis: 42157*250, apoapsis: 42157*250, size: 3.2, color: "white", orbits: "earth", orbitalPeriod: 24,
+						periapsis: 42157*125, apoapsis: 42157*125, size: 3.2, color: "white", orbits: "earth", orbitalPeriod: 24,
 						orientation: 0, inclination: 0, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 25, lastPerihelion: "2023-12-01"
 					},
 					iridiumNEXT: {
-						periapsis: 7151*250, apoapsis: 7151*250, size: 3, color: "silver", orbits: "earth", orbitalPeriod: 1.6,
+						periapsis: 7151*125, apoapsis: 7151*125, size: 3, color: "silver", orbits: "earth", orbitalPeriod: 1.6,
 						orientation: 0, inclination: 86.4, argumentOfPeriapsis: 30, longitudeOfAscendingNode: 95.3, lastPerihelion: "2023-12-01"
 					},
 					cosmos2543: {
-						periapsis: 6771*250, apoapsis: 6771*250, size: 1.5, color: "gray", orbits: "earth", orbitalPeriod: 1.5,
+						periapsis: 6771*125, apoapsis: 6771*125, size: 1.5, color: "gray", orbits: "earth", orbitalPeriod: 1.5,
 						orientation: 0, inclination: 51.6, argumentOfPeriapsis: 45, longitudeOfAscendingNode: 76.1, lastPerihelion: "2023-12-02"
 					},
 				},
@@ -666,12 +666,12 @@
 						
 						// Adjuntar la esfera luminosa al punto de luz
 						mesh.add(new THREE.Mesh(geometry , material));
-						//mesh.position.set(0, 0, 0); // Posicionar el Sol en el centro
-						//mesh.castShadow = true; // Habilitar sombras desde el Sol
-						//mesh.shadow.mapSize.width = 2048; // Tamaño del mapa de sombras
-						//mesh.shadow.mapSize.height = 2048;
+						mesh.position.set(0, 0, 0); // Posicionar el Sol en el centro
+						mesh.castShadow = true; // Habilitar sombras desde el Sol
+						mesh.shadow.mapSize.width = 2048; // Tamaño del mapa de sombras
+						mesh.shadow.mapSize.height = 2048;
 						mesh.shadow.camera.near = 0.1;
-						//mesh.shadow.camera.far = 50000;
+						mesh.shadow.camera.far = 50000;
 						
 						// Aplicar inclinación axial (si existe)
 						if (body.axialTilt) {
@@ -700,9 +700,9 @@
 						
 						
 						// Asegurarse de que los objetos tengan geometría y posiciones actualizadas
-            //mesh.geometry.computeBoundingSphere();
-            mesh.updateMatrixWorld();
-            interactableObjects.push(mesh);
+						//mesh.geometry.computeBoundingSphere();
+						mesh.updateMatrixWorld();
+						interactableObjects.push(mesh);
 						// Agregar el mesh a la escena
 						scene.add(mesh);
 						// Agregar el mesh al objeto `celestialObjects`
@@ -770,9 +770,8 @@
 						mesh.position.set(position.x, position.y, position.z);
 						
 						// Asegurarse de que los objetos tengan geometría y posiciones actualizadas
-            mesh.geometry.computeBoundingSphere();
-            mesh.updateMatrixWorld();
-            interactableObjects.push(mesh);
+						mesh.geometry.computeBoundingSphere();
+						mesh.updateMatrixWorld();
 						
 						// Asocia el nombre del cuerpo celeste con el objeto
 						mesh.userData = {
@@ -813,6 +812,61 @@
 							});
 							const cloudMesh = new THREE.Mesh(cloudGeometry, cloudMaterial);
 							mesh.add(cloudMesh);
+							/*const atmosphereMaterial = new THREE.ShaderMaterial({
+								uniforms: {
+									uLightPosition: { value: new THREE.Vector3(1, 1, 1) }, // Posición de la luz (por ejemplo, el sol)
+									uPlanetPosition: { value: new THREE.Vector3(0, 0, 0) }, // Posición del planeta
+									uAtmosphereRadius: { value: 1.5 }, // Radio de la atmósfera (mayor que el planeta)
+									uPlanetRadius: { value: 1.0 }, // Radio del planeta
+									uLightIntensity: { value: 1.0 }, // Intensidad de la luz
+									uColor: { value: new THREE.Color(0x87CEEB) } // Color de la atmósfera (por ejemplo, azul cielo)
+								},
+								vertexShader: `
+									varying vec3 vWorldPosition;
+
+									void main() {
+										vWorldPosition = (modelMatrix * vec4(position, 1.0)).xyz;
+										gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+									}
+								`,
+								fragmentShader: `
+									uniform vec3 uLightPosition;
+									uniform vec3 uPlanetPosition;
+									uniform float uAtmosphereRadius;
+									uniform float uPlanetRadius;
+									uniform float uLightIntensity;
+									uniform vec3 uColor;
+
+									varying vec3 vWorldPosition;
+
+									void main() {
+										// Distancia desde la posición actual al centro del planeta
+										float distanceFromCenter = length(vWorldPosition - uPlanetPosition);
+
+										// Normalizar el vector hacia la luz
+										vec3 lightDirection = normalize(uLightPosition - vWorldPosition);
+
+										// Factor de dispersión de luz (simula la dispersión atmosférica)
+										float lightScatter = max(dot(lightDirection, normalize(vWorldPosition - uPlanetPosition)), 0.0);
+										lightScatter = pow(lightScatter, 2.0); // Ajusta el efecto de dispersión
+
+										// Atenuar la atmósfera hacia los bordes
+										float atmosphereFactor = smoothstep(uPlanetRadius, uAtmosphereRadius, distanceFromCenter);
+
+										// Color final de la atmósfera
+										vec3 atmosphereColor = uColor * lightScatter * atmosphereFactor * uLightIntensity;
+
+										gl_FragColor = vec4(atmosphereColor, atmosphereFactor * 0.8); // Alpha ajustado para transparencia
+									}
+								`,
+								transparent: true, // Hacer que la atmósfera sea transparente
+								side: THREE.BackSide // Renderizar solo la parte interior de la esfera de la atmósfera
+							});
+							const atmosphere = new THREE.Mesh(
+								new THREE.SphereGeometry(body.size * SCALE_SIZE * 1.1, 32, 32),
+								atmosphereMaterial
+							);
+							mesh.add(atmosphere);*/
 						} else if (name === "saturn") {
 							 // Crear los anillos de Saturno
 							const ringGeometry = new THREE.RingGeometry(
@@ -1298,6 +1352,9 @@
 			let baseBeta = 0; // Rotación inicial en pitch
 			let baseGamma = 0; // Rotación inicial en roll
 			let gyroInitialized = false;
+			// Ajustar la sensibilidad del pitch y el roll
+			const gyroPitchLimit = Math.PI / 3; // Límite de inclinación en radianes (60 grados)
+			const gyroRollLimit = Math.PI / 2; // Límite del roll en radianes (90 grados)
 
 			// Evento de orientación del dispositivo
 			window.addEventListener("deviceorientation", (event) => {
@@ -1325,10 +1382,19 @@
 					deltaGamma = -deltaGamma;
 				}
 
+				// Limitar el pitch y roll
+				deltaBeta = Math.max(-gyroPitchLimit, Math.min(gyroPitchLimit, deltaBeta));
+				deltaGamma = Math.max(-gyroRollLimit, Math.min(gyroRollLimit, deltaGamma));
+
 				// Aplicar el escalado gradual para el pitch, roll y yaw
-				pitchVelocity = deltaBeta * Math.abs(deltaBeta) * gyroScaleFactor;
-				rollVelocity = deltaGamma * Math.abs(deltaGamma) * gyroScaleFactor;
-				yawVelocity = deltaAlpha * Math.abs(deltaAlpha) * gyroScaleFactor;
+				pitchVelocity = deltaBeta * gyroScaleFactor * (1 - Math.abs(deltaBeta) / gyroPitchLimit);
+				rollVelocity = deltaGamma * gyroScaleFactor * (1 - Math.abs(deltaGamma) / gyroRollLimit);
+				yawVelocity = deltaAlpha * gyroScaleFactor;
+
+				// Aplicar amortiguación adicional al pitch
+				pitchVelocity *= rotationDamping;
+				rollVelocity *= rotationDamping;
+				yawVelocity *= rotationDamping;
 			});
 
 			// Función para resetear el giroscopio
@@ -1564,27 +1630,10 @@
 				console.log(isPaused ? "Simulación pausada" : "Simulación reanudada");
 			});
 			
-			// Configurar eventos para ajustar la velocidad
-			/*document.getElementById("speedControl").addEventListener("click", () => {
-				if (speedFactor === 1) speedFactor = 2;
-				else if (speedFactor === 2) speedFactor = 4;
-				else if (speedFactor === 4) speedFactor = 8;
-				else if (speedFactor === 8) speedFactor = 16;
-				else if (speedFactor === 16) speedFactor = 0.5;
-				else if (speedFactor === 0.5) speedFactor = 0.04166667;
-				else if (speedFactor === 0.04166667) speedFactor = 0.00069444;
-				else if (speedFactor === 0.00069444) speedFactor = 0.00000864;
-				else if (speedFactor === 0.00000864) speedFactor = 0;
-				else if (speedFactor === 0) speedFactor = 1;
-				else speedFactor = 0;
-
-				document.getElementById("timeSpeedDisplay").innerText = `Tiempo: x${speedFactor}`;
-			});*/
-			
 			// Función para ajustar la simulación a la velocidad real y tiempo actual
 			document.getElementById("realTimeSpeedBtn").addEventListener("click", () => {
 				// Configurar la velocidad a tiempo real
-				speedFactor = speedRanges[speedRanges.indexOf(0.00000864)]; // 1 seg = 1 seg
+				speedFactor = speedRanges[speedRanges.indexOf(0.000011574074074074073)]; // 1 seg = 1 seg
 
 				// Actualizar el marcador de velocidad
 				document.getElementById("timeSpeedDisplay").innerText = `Tiempo: +1 seg = T. Real`;
@@ -1630,7 +1679,6 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-			// Configurar la posición inicial de la cámara detrás de la Tierra mirando al Sol
 			// Configurar la posición inicial de la cámara detrás de la Tierra mirando al Sol, ajustada 15 grados a la derecha
 			function adjustCameraToEarthSunView() {
 				const earth = celestialObjects.earth; // Suponiendo que "earth" está en celestialObjects
