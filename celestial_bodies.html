@@ -106,7 +106,7 @@
 		<script>
 			// Configuración inicial
 			const scene = new THREE.Scene();
-			const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 500000);
+			const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 5000000);
 			const renderer = new THREE.WebGLRenderer({ antialias: true });
 			renderer.setSize(window.innerWidth, window.innerHeight);
 			renderer.shadowMap.enabled = true; // Habilitar sombras
@@ -124,8 +124,8 @@
 			scene.add(ambientLight);
 
 			// Escala para las distancias y tamaños
-			const SCALE_DISTANCE = 0.00001; // Escala ajustada para las distancias (en km)
-			const SCALE_SIZE = 0.0005; // Escala ajustada para los tamaños de los cuerpos
+			const SCALE_DISTANCE = 0.001; // Escala ajustada para las distancias (en km)
+			const SCALE_SIZE = 0.001; // Escala ajustada para los tamaños de los cuerpos
 			//const SCALE_DISTANCE = 0.00001; // Escala ajustada para las distancias (en km)
 			//const SCALE_SIZE = 0.00001; // Escala ajustada para los tamaños de los cuerpos
 
@@ -179,251 +179,291 @@
 			})}`;
 
 			// Cuerpos celestes
-			// Cuerpos celestes
 			const CELESTIAL_BODIES = {
 				star: {
-					/*sun: { 
-						periapsis: 0, apoapsis: 0, size: 1392000, color: 0xffff00, orbits: "galaxy", orbitalPeriod: 0, 
-						orientation: 0, inclination: 0, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 0, lastPerihelion:  "2024-01-01", 
+					sun: { 
+						periapsis: 6000000, apoapsis: 6000000, size: 1392000, color: 0xffff00, orbits: "galaxy", orbitalPeriod: 70000, 
+						inclination: 0, argumentOfPeriapsis: 600000, longitudeOfAscendingNode: 0, lastPerihelion:  "2024-01-01", 
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 7.25, rotationPeriod: 27 
-					},*/
-					sun: { //sol de prueba
-						periapsis: 0, apoapsis: 0, size: 135000, color: 0xffffff, orbits: "galaxy", orbitalPeriod: 0, 
-						orientation: 0, inclination: 0, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 0, lastPerihelion: "2024-01-01", 
-						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 7.25 , rotationPeriod: 27
 					},
+					/*
+					sun: { //sol de prueba
+						periapsis: 600000000, apoapsis: 600000000, size: 135000, color: 0xffffff, orbits: "galaxy", orbitalPeriod: 700000000000, 
+						inclination: 7.25, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 0, lastPerihelion: "2024-01-01", 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 7.25 , rotationPeriod: 27
+					},*/
 					/*suny: { //estrella artificial
 						periapsis: 960000000, apoapsis: 998000000, size: 35000, color: 0xffff00, orbits: "sun", orbitalPeriod: 100, 
-						orientation: 48.33, inclination: 10, argumentOfPeriapsis: 181, longitudeOfAscendingNode: 0.33, lastPerihelion: "2024-01-07", 
+						inclination: 10, argumentOfPeriapsis: 181, longitudeOfAscendingNode: 0.33, lastPerihelion: "2024-01-07", 
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0.034 
 					},*/
 					/*proximaCentauri: { 
 						periapsis: 38370000000, apoapsis: 38370000000, size: 4220, color: 0xffffff, orbits: "galaxy", orbitalPeriod: 100000, 
-						orientation: 0, inclination: 0, argumentOfPeriapsis: 182, longitudeOfAscendingNode: 0, lastPerihelion: "2024-01-01", 
+						inclination: 0, argumentOfPeriapsis: 182, longitudeOfAscendingNode: 0, lastPerihelion: "2024-01-01", 
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0 , rotationPeriod: 27
 					},
 					alphaCentauriA: { 
 						periapsis: 15000000000, apoapsis: 15050000000, size: 1103000, color: 0xffd700, orbits: "galaxy", orbitalPeriod: 80000, 
-						orientation: 45, inclination: 0, argumentOfPeriapsis: 90, longitudeOfAscendingNode: 0, lastPerihelion: "2024-01-01", 
+						inclination: 0, argumentOfPeriapsis: 90, longitudeOfAscendingNode: 0, lastPerihelion: "2024-01-01", 
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 30 , rotationPeriod: 27
-					},*/
-					/*alphaCentauriB: { 
+					},
+					alphaCentauriB: { 
 						periapsis: 15010000000, apoapsis: 15060000000, size: 908000, color: 0xffc0cb, orbits: "galaxy", orbitalPeriod: 81000, 
-						orientation: 45, inclination: 1, argumentOfPeriapsis: 70, longitudeOfAscendingNode: 10, lastPerihelion: "2024-01-01", 
-						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 25 
+						inclination: 1, argumentOfPeriapsis: 70, longitudeOfAscendingNode: 10, lastPerihelion: "2024-01-01", 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 25 , rotationPeriod: 58.6
 					},
 					barnardsStar: { 
-						periapsis: 12000000000, apoapsis: 12500000000, size: 196000, color: 0xff4500, orbits: "galaxy", orbitalPeriod: 120000, 
-						orientation: 15, inclination: 3, argumentOfPeriapsis: 50, longitudeOfAscendingNode: 0, lastPerihelion: "2024-01-01", 
-						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 5 
-					},
-					wolf359: { 
+						periapsis: 1200000000, apoapsis: 1250000000, size: 196000, color: 0xff4500, orbits: "galaxy", orbitalPeriod: 120000, 
+						inclination: 3, argumentOfPeriapsis: 50, longitudeOfAscendingNode: 0, lastPerihelion: "2024-01-01", 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 5 , rotationPeriod: 58.6
+					},*/
+					/*wolf359: { 
 						periapsis: 7400000000, apoapsis: 7600000000, size: 120000, color: 0xff6347, orbits: "galaxy", orbitalPeriod: 140000, 
-						orientation: 90, inclination: 4, argumentOfPeriapsis: 45, longitudeOfAscendingNode: 25, lastPerihelion: "2024-01-01", 
-						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 10 
+						inclination: 4, argumentOfPeriapsis: 45, longitudeOfAscendingNode: 25, lastPerihelion: "2024-01-01", 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 10 , rotationPeriod: 58.6
 					},
 					luyten726: { 
 						periapsis: 9600000000, apoapsis: 9800000000, size: 170000, color: 0xff6347, orbits: "galaxy", orbitalPeriod: 150000, 
 						orientation: 120, inclination: 5, argumentOfPeriapsis: 30, longitudeOfAscendingNode: 50, lastPerihelion: "2024-01-01", 
-						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 15 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 15 , rotationPeriod: 58.6
 					},
 					siriusA: { 
 						periapsis: 8500000000, apoapsis: 8700000000, size: 1189640, color: 0xb0c4de, orbits: "galaxy", orbitalPeriod: 82000, 
 						orientation: 25, inclination: 2, argumentOfPeriapsis: 40, longitudeOfAscendingNode: 20, lastPerihelion: "2024-01-01", 
-						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 7 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 7 , rotationPeriod: 58.6
 					},
 					siriusB: { 
 						periapsis: 8600000000, apoapsis: 8800000000, size: 58430, color: 0xffffff, orbits: "galaxy", orbitalPeriod: 83000, 
 						orientation: 25, inclination: 3, argumentOfPeriapsis: 35, longitudeOfAscendingNode: 30, lastPerihelion: "2024-01-01", 
-						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 10 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 10 , rotationPeriod: 58.6
 					},
 					epsilonEridani: { 
 						periapsis: 10350000000, apoapsis: 10700000000, size: 869000, color: 0xffd700, orbits: "galaxy", orbitalPeriod: 95000, 
 						orientation: 5, inclination: 6, argumentOfPeriapsis: 60, longitudeOfAscendingNode: 45, lastPerihelion: "2024-01-01", 
-						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 18 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 18 , rotationPeriod: 58.6
 					},
 					ross154: { 
 						periapsis: 9400000000, apoapsis: 9600000000, size: 220000, color: 0xff4500, orbits: "galaxy", orbitalPeriod: 130000, 
 						orientation: 45, inclination: 7, argumentOfPeriapsis: 15, longitudeOfAscendingNode: 35, lastPerihelion: "2024-01-01", 
-						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 8 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 8 , rotationPeriod: 58.6
 					},
 					aldebaran: { 
 						periapsis: 15000000000, apoapsis: 15200000000, size: 44940000, color: 0xffa500, orbits: "galaxy", orbitalPeriod: 70000, 
 						orientation: 90, inclination: 9, argumentOfPeriapsis: 80, longitudeOfAscendingNode: 10, lastPerihelion: "2024-01-01", 
-						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 40 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 40 , rotationPeriod: 58.6
 					},
 					altair: { 
 						periapsis: 17000000000, apoapsis: 17500000000, size: 2000000, color: 0xffff00, orbits: "galaxy", orbitalPeriod: 85000, 
 						orientation: 45, inclination: 10, argumentOfPeriapsis: 50, longitudeOfAscendingNode: 25, lastPerihelion: "2024-01-01", 
-						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 35 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 35 , rotationPeriod: 58.6
 					},
 					vega: { 
 						periapsis: 17000000000, apoapsis: 17500000000, size: 2100000, color: 0xffe4b5, orbits: "galaxy", orbitalPeriod: 86000, 
 						orientation: 55, inclination: 11, argumentOfPeriapsis: 65, longitudeOfAscendingNode: 35, lastPerihelion: "2024-01-01", 
-						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 30 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 30 , rotationPeriod: 58.6
 					},
 					deneb: { 
 						periapsis: 20000000000, apoapsis: 20500000000, size: 20300000, color: 0xffffe0, orbits: "galaxy", orbitalPeriod: 95000, 
 						orientation: 70, inclination: 12, argumentOfPeriapsis: 70, longitudeOfAscendingNode: 40, lastPerihelion: "2024-01-01", 
-						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 45 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 45 , rotationPeriod: 58.6
 					},
 					rigel: { 
 						periapsis: 25000000000, apoapsis: 26000000000, size: 78000000, color: 0xadd8e6, orbits: "galaxy", orbitalPeriod: 120000, 
 						orientation: 30, inclination: 13, argumentOfPeriapsis: 80, longitudeOfAscendingNode: 50, lastPerihelion: "2024-01-01", 
-						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 50 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 50 , rotationPeriod: 58.6
 					},
 					betelgeuse: { 
 						periapsis: 30000000000, apoapsis: 31000000000, size: 887000000, color: 0xff4500, orbits: "galaxy", orbitalPeriod: 150000, 
 						orientation: 15, inclination: 14, argumentOfPeriapsis: 90, longitudeOfAscendingNode: 55, lastPerihelion: "2024-01-01", 
-						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 60 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 60 , rotationPeriod: 58.6
 					},
 					polaris: { 
 						periapsis: 18000000000, apoapsis: 18500000000, size: 3200000, color: 0xfffff0, orbits: "galaxy", orbitalPeriod: 87000, 
 						orientation: 45, inclination: 15, argumentOfPeriapsis: 45, longitudeOfAscendingNode: 20, lastPerihelion: "2024-01-01", 
-						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 20 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 20 , rotationPeriod: 58.6
 					},
 					arcturus: { 
 						periapsis: 15500000000, apoapsis: 15800000000, size: 26100000, color: 0xffd700, orbits: "galaxy", orbitalPeriod: 78000, 
 						orientation: 25, inclination: 16, argumentOfPeriapsis: 75, longitudeOfAscendingNode: 60, lastPerihelion: "2024-01-01", 
-						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 15 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 15 , rotationPeriod: 58.6
 					},
 					antares: { 
 						periapsis: 31000000000, apoapsis: 32000000000, size: 1183000000, color: 0xff6347, orbits: "galaxy", orbitalPeriod: 160000, 
 						orientation: 40, inclination: 17, argumentOfPeriapsis: 85, longitudeOfAscendingNode: 65, lastPerihelion: "2024-01-01", 
-						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 65 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 65 , rotationPeriod: 58.6
 					},
 					canisMajoris: { 
 						periapsis: 50000000000, apoapsis: 51000000000, size: 2450000000, color: 0xff6347, orbits: "galaxy", orbitalPeriod: 300000, 
 						orientation: 75, inclination: 18, argumentOfPeriapsis: 100, longitudeOfAscendingNode: 70, lastPerihelion: "2024-01-01", 
-						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 75 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 75 , rotationPeriod: 58.6
 					},
 					alpheratz: { 
 						periapsis: 19000000000, apoapsis: 19500000000, size: 2800000, color: 0xffffe0, orbits: "galaxy", orbitalPeriod: 91000, 
 						orientation: 65, inclination: 19, argumentOfPeriapsis: 95, longitudeOfAscendingNode: 25, lastPerihelion: "2024-01-01", 
-						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 25 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 25 , rotationPeriod: 58.6
 					},
 					aldebaranB: { 
 						periapsis: 16000000000, apoapsis: 16200000000, size: 1230000, color: 0xffc0cb, orbits: "galaxy", orbitalPeriod: 85000, 
 						orientation: 45, inclination: 20, argumentOfPeriapsis: 35, longitudeOfAscendingNode: 30, lastPerihelion: "2024-01-01", 
-						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 10 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 10 , rotationPeriod: 58.6
 					},
 					capella: { 
 						periapsis: 17500000000, apoapsis: 18000000000, size: 12200000, color: 0xffff00, orbits: "galaxy", orbitalPeriod: 89000, 
 						orientation: 15, inclination: 21, argumentOfPeriapsis: 50, longitudeOfAscendingNode: 35, lastPerihelion: "2024-01-01", 
-						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 22 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 22 , rotationPeriod: 58.6
 					},
 					mizar: { 
 						periapsis: 20000000000, apoapsis: 20500000000, size: 8000000, color: 0xb0e0e6, orbits: "galaxy", orbitalPeriod: 95000, 
 						orientation: 35, inclination: 22, argumentOfPeriapsis: 75, longitudeOfAscendingNode: 40, lastPerihelion: "2024-01-01", 
-						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 30 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 30 , rotationPeriod: 58.6
 					},
 					alnilam: { 
 						periapsis: 40000000000, apoapsis: 41000000000, size: 400000000, color: 0xadd8e6, orbits: "galaxy", orbitalPeriod: 200000, 
 						orientation: 25, inclination: 23, argumentOfPeriapsis: 85, longitudeOfAscendingNode: 45, lastPerihelion: "2024-01-01", 
-						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 70 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 70 , rotationPeriod: 58.6
 					},
 					alnitak: { 
 						periapsis: 39000000000, apoapsis: 39500000000, size: 370000000, color: 0x4682b4, orbits: "galaxy", orbitalPeriod: 190000, 
 						orientation: 65, inclination: 24, argumentOfPeriapsis: 40, longitudeOfAscendingNode: 50, lastPerihelion: "2024-01-01", 
-						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 55 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 55 , rotationPeriod: 58.6
 					},
 					maia: { 
 						periapsis: 21500000000, apoapsis: 22000000000, size: 11000000, color: 0xffd700, orbits: "galaxy", orbitalPeriod: 96000, 
 						orientation: 75, inclination: 25, argumentOfPeriapsis: 60, longitudeOfAscendingNode: 55, lastPerihelion: "2024-01-01", 
-						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 35 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 35 , rotationPeriod: 58.6
 					},
 					pleione: { 
 						periapsis: 21000000000, apoapsis: 21200000000, size: 9700000, color: 0xffe4b5, orbits: "galaxy", orbitalPeriod: 94000, 
 						orientation: 45, inclination: 26, argumentOfPeriapsis: 55, longitudeOfAscendingNode: 60, lastPerihelion: "2024-01-01", 
-						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 28 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 28 , rotationPeriod: 58.6
 					},
 					electra: { 
 						periapsis: 22000000000, apoapsis: 22500000000, size: 14000000, color: 0xffd700, orbits: "galaxy", orbitalPeriod: 98000, 
 						orientation: 55, inclination: 27, argumentOfPeriapsis: 70, longitudeOfAscendingNode: 65, lastPerihelion: "2024-01-01", 
-						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 40 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 40 , rotationPeriod: 58.6
 					},
 					atlas: { 
 						periapsis: 18500000000, apoapsis: 19000000000, size: 18000000, color: 0xffffe0, orbits: "galaxy", orbitalPeriod: 89000, 
 						orientation: 65, inclination: 28, argumentOfPeriapsis: 75, longitudeOfAscendingNode: 20, lastPerihelion: "2024-01-01", 
-						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 18 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 18 , rotationPeriod: 58.6
 					},*/
 				},
 				planets: {
 					mercury: { 
 						periapsis: 46000000, apoapsis: 69800000, size: 4879, color: 0xaaaaaa, orbits: "sun", orbitalPeriod: 88, 
-						orientation: 48.33, inclination: 7, argumentOfPeriapsis: 180.45, longitudeOfAscendingNode: 0.33, lastPerihelion: "2024-01-05", 
+						inclination: 7, argumentOfPeriapsis: 180.45, longitudeOfAscendingNode: 0.33, lastPerihelion: "2024-01-05", 
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0.034, rotationPeriod: 58.6
 					},
 					venus: { 
 						periapsis: 107480000, apoapsis: 108940000, size: 12104, color: 0xff9900, orbits: "sun", orbitalPeriod: 224.7, 
-						orientation: 76.68, inclination: 3.4, argumentOfPeriapsis: 180.53, longitudeOfAscendingNode: 0.68, lastPerihelion: "2023-08-13", 
+						inclination: 3.4, argumentOfPeriapsis: 180.53, longitudeOfAscendingNode: 0.68, lastPerihelion: "2023-08-13", 
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 177.36, rotationPeriod: -243 // Rotación retrógrada
 					},
 					earth: { 
 						periapsis: 147090000, apoapsis: 152100000, size: 12742, color: 0x0000ff, orbits: "sun", orbitalPeriod: 365.25, 
-						orientation: 0, inclination: 0, argumentOfPeriapsis: 180.93, longitudeOfAscendingNode: 0, lastPerihelion: "2024-01-03", 
+						inclination: 0, argumentOfPeriapsis: 180.93, longitudeOfAscendingNode: 0, lastPerihelion: "2024-01-03", 
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 23.44, rotationPeriod: 1 
 					},
 					mars: { 
 						periapsis: 206620000, apoapsis: 249230000, size: 6779, color: 0xff3300, orbits: "sun", orbitalPeriod: 687, 
-						orientation: 49.58, inclination: 1.85, argumentOfPeriapsis: 180.04, longitudeOfAscendingNode: 0.58, lastPerihelion: "2022-12-08", 
+						inclination: 1.85, argumentOfPeriapsis: 180.04, longitudeOfAscendingNode: 0.58, lastPerihelion: "2022-12-08", 
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 25.19, rotationPeriod: 1.03
 					},
 					jupiter: { 
 						periapsis: 740520000, apoapsis: 816620000, size: 139820, color: 0xb5651d, orbits: "sun", orbitalPeriod: 4332.59, 
-						orientation: 100.49, inclination: 1.3, argumentOfPeriapsis: 180.75, longitudeOfAscendingNode: 0.49, lastPerihelion: "2023-11-03", 
+						inclination: 1.3, argumentOfPeriapsis: 180.75, longitudeOfAscendingNode: 0.49, lastPerihelion: "2023-11-03", 
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 3.13, rotationPeriod: 0.41
 					},
 					saturn: { 
 						periapsis: 1352550000, apoapsis: 1514500000, size: 116460, color: 0xf4a460, orbits: "sun", orbitalPeriod: 10759.22, 
-						orientation: 113.66, inclination: 2.5, argumentOfPeriapsis: 180.43, longitudeOfAscendingNode: 0.66, lastPerihelion: "2023-08-27", 
+						inclination: 2.5, argumentOfPeriapsis: 180.43, longitudeOfAscendingNode: 0.66, lastPerihelion: "2023-08-27", 
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 26.73, rotationPeriod: 0.45
 					},
 					uranus: { 
 						periapsis: 2741300000, apoapsis: 3006300000, size: 50724, color: 0x00ffff, orbits: "sun", orbitalPeriod: 30685, 
-						orientation: 74.01, inclination: 0.77, argumentOfPeriapsis: 170.96, longitudeOfAscendingNode: 0.01, lastPerihelion: "2030-09-23", 
+						inclination: 0.77, argumentOfPeriapsis: 170.96, longitudeOfAscendingNode: 0.01, lastPerihelion: "2030-09-23", 
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 97.77, rotationPeriod: -0.72 // Rotación retrógrada
 					},
 					neptune: { 
 						periapsis: 4444400000, apoapsis: 4545700000, size: 49244, color: 0x0000ff, orbits: "sun", orbitalPeriod: 60190, 
-						orientation: 131.79, inclination: 1.77, argumentOfPeriapsis: 184.97, longitudeOfAscendingNode: 0.79, lastPerihelion: "2040-12-01", 
+						inclination: 1.77, argumentOfPeriapsis: 184.97, longitudeOfAscendingNode: 0.79, lastPerihelion: "2040-12-01", 
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 28.32, rotationPeriod: 0.67
 					},
+					/*mercury: { 
+						periapsis: 46000000, apoapsis: 69800000, size: 4879, color: 0xaaaaaa, orbits: "sun", orbitalPeriod: 88, 
+						inclination: 7.005, argumentOfPeriapsis: 29.124, longitudeOfAscendingNode: 48.331, lastPerihelion: "2024-01-05", 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0.034, rotationPeriod: 58.6
+					},
+					venus: { 
+						periapsis: 107480000, apoapsis: 108940000, size: 12104, color: 0xff9900, orbits: "sun", orbitalPeriod: 224.7, 
+						inclination: 3.394, argumentOfPeriapsis: 54.884, longitudeOfAscendingNode: 76.680, lastPerihelion: "2023-08-13", 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 177.36, rotationPeriod: -243 // Rotación retrógrada
+					},
+					earth: { 
+						periapsis: 147090000, apoapsis: 152100000, size: 12742, color: 0x0000ff, orbits: "sun", orbitalPeriod: 365.25, 
+						inclination: 0.00005, argumentOfPeriapsis: 114.20783, longitudeOfAscendingNode: -11.26064, lastPerihelion: "2024-01-03", 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 23.44, rotationPeriod: 1 
+					},
+					mars: { 
+						periapsis: 206620000, apoapsis: 249230000, size: 6779, color: 0xff3300, orbits: "sun", orbitalPeriod: 687, 
+						inclination: 1.850, argumentOfPeriapsis: 286.502, longitudeOfAscendingNode: 49.558, lastPerihelion: "2022-12-08", 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 25.19, rotationPeriod: 1.03
+					},
+					jupiter: { 
+						periapsis: 740520000, apoapsis: 816620000, size: 139820, color: 0xb5651d, orbits: "sun", orbitalPeriod: 4332.59, 
+						inclination: 1.303, argumentOfPeriapsis: 273.867, longitudeOfAscendingNode: 100.464, lastPerihelion: "2023-11-03", 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 3.13, rotationPeriod: 0.41
+					},
+					saturn: { 
+						periapsis: 1352550000, apoapsis: 1514500000, size: 116460, color: 0xf4a460, orbits: "sun", orbitalPeriod: 10759.22, 
+						inclination: 2.485, argumentOfPeriapsis: 339.392, longitudeOfAscendingNode: 113.665, lastPerihelion: "2023-08-27", 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 26.73, rotationPeriod: 0.45
+					},
+					uranus: { 
+						periapsis: 2741300000, apoapsis: 3006300000, size: 50724, color: 0x00ffff, orbits: "sun", orbitalPeriod: 30685, 
+						inclination: 0.772, argumentOfPeriapsis: 96.998857, longitudeOfAscendingNode: 74.006, lastPerihelion: "2030-09-23", 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 97.77, rotationPeriod: -0.72 // Rotación retrógrada
+					},
+					neptune: { 
+						periapsis: 4444400000, apoapsis: 4545700000, size: 49244, color: 0x0000ff, orbits: "sun", orbitalPeriod: 60190, 
+						inclination: 1.767, argumentOfPeriapsis: 276.336, longitudeOfAscendingNode: 131.784, lastPerihelion: "2040-12-01", 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 28.32, rotationPeriod: 0.67
+					},*/
 				},
 				satellites: {
 					moon: { 
-						periapsis: 363300*8, apoapsis: 405500*8, size: 3474, color: 0xcccccc, orbits: "earth", orbitalPeriod: 27.321,
+						periapsis: 363300 * 1, apoapsis: 405500 * 1, size: 3474, color: 0xcccccc, orbits: "earth", orbitalPeriod: 27.321,
 						orientation: 180, inclination: 5.14, argumentOfPeriapsis: 41.5, longitudeOfAscendingNode: 125.08, lastPerihelion: "2024-01-03",
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 1.54 ,  rotationPeriod: 27.321
 					},
 					io: { 
-						periapsis: 421700 * 8, apoapsis: 422000 * 8, size: 3643, color: 0xffa500, orbits: "jupiter", orbitalPeriod: 1.769, 
+						periapsis: 421700 * 1, apoapsis: 422000 * 1, size: 3643, color: 0xffa500, orbits: "jupiter", orbitalPeriod: 1.769, 
 						orientation: 0, inclination: 0.05, argumentOfPeriapsis: 84.03, longitudeOfAscendingNode: 43.97, lastPerihelion: "2024-01-01",
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0.04, rotationPeriod: 1.769
 					},
 					europa: { 
-						periapsis: 670900 * 8, apoapsis: 676900 * 8, size: 3122, color: 0xffffff, orbits: "jupiter", orbitalPeriod: 3.551, 
+						periapsis: 670900 * 1, apoapsis: 676900 * 1, size: 3122, color: 0xffffff, orbits: "jupiter", orbitalPeriod: 3.551, 
 						orientation: 0, inclination: 0.47, argumentOfPeriapsis: 88.97, longitudeOfAscendingNode: 219.11, lastPerihelion: "2024-01-01",
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0.1, rotationPeriod: 3.551
 					},
 					ganymede: { 
-						periapsis: 1070400 * 8, apoapsis: 1071600 * 8, size: 5268, color: 0xffff00, orbits: "jupiter", orbitalPeriod: 7.155, 
+						periapsis: 1070400 * 1, apoapsis: 1071600 * 1, size: 5268, color: 0xffff00, orbits: "jupiter", orbitalPeriod: 7.155, 
 						orientation: 0, inclination: 0.2, argumentOfPeriapsis: 192.42, longitudeOfAscendingNode: 63.55, lastPerihelion: "2024-01-01",
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0.03, rotationPeriod: 7.155
 					},
 					callisto: { 
-						periapsis: 1882700 * 8, apoapsis: 1883300 * 8, size: 4821, color: 0x808080, orbits: "jupiter", orbitalPeriod: 16.689, 
+						periapsis: 1882700 * 1, apoapsis: 1883300 * 1, size: 4821, color: 0x808080, orbits: "jupiter", orbitalPeriod: 16.689, 
 						orientation: 0, inclination: 0.19, argumentOfPeriapsis: 52.64, longitudeOfAscendingNode: 298.84, lastPerihelion: "2024-01-01",
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0.4, rotationPeriod: 16.689
 					},
 					titan: { 
-						periapsis: 1186600 * 8, apoapsis: 1221860 * 8, size: 5150, color: 0xffcc99, orbits: "saturn", orbitalPeriod: 15.945, 
+						periapsis: 1186600 * 1, apoapsis: 1221860 * 1, size: 5150, color: 0xffcc99, orbits: "saturn", orbitalPeriod: 15.945, 
 						orientation: 0, inclination: 0.3, argumentOfPeriapsis: 174.17, longitudeOfAscendingNode: 109.49, lastPerihelion: "2024-01-01",
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0.3, rotationPeriod: 15.945
 					},
 				},
 				artificialSatellites: {
-					iss: {
+					/*iss: {
 						periapsis: 6779*125, apoapsis: 6789*125, size: 108.5, color: "white", orbits: "earth", orbitalPeriod: 1.5,
 						orientation: 45, inclination: 51.64, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 258.76, lastPerihelion: "2023-12-01"
 					},
@@ -498,10 +538,10 @@
 					cosmos2543: {
 						periapsis: 6771*125, apoapsis: 6771*125, size: 1.5, color: "gray", orbits: "earth", orbitalPeriod: 1.5,
 						orientation: 0, inclination: 51.6, argumentOfPeriapsis: 45, longitudeOfAscendingNode: 76.1, lastPerihelion: "2023-12-02"
-					},
+					},*/
 				},
 				comets: {
-					halley: { 
+					/*halley: { 
 						periapsis: 87870000, apoapsis: 5247100000, size: 11*500, color: 0xffffff, orbits: "sun", orbitalPeriod: 27740, 
 						orientation: 58.42, inclination: 162.26, argumentOfPeriapsis: 111.33, longitudeOfAscendingNode: 58.42, lastPerihelion: "1986-02-09" 
 					},
@@ -512,7 +552,7 @@
 					hale_bopp: {
 						periapsis: 136680000, apoapsis: 55350000000, size: 60*500, color: 0xadd8e6, orbits: "sun", orbitalPeriod: 919200, 
 						orientation: 282.47, inclination: 89.4, argumentOfPeriapsis: 130.59, longitudeOfAscendingNode: 282.47, lastPerihelion: "1997-04-01" 
-					},
+					},*/
 				},
 			};
 			
@@ -535,9 +575,11 @@
 					bumpMap: textureLoader.load('./img/celestial_bodies/2k_earth_normal_map.jpg'),
 					bumpScale: 0.05,
 					cloudsMap: textureLoader.load('./img/celestial_bodies/2k_earth_clouds.jpg'),
+					textureMeridianOffset: 180 // La textura comienza en el meridiano 180°
 				},
 				mars: {
 					map: textureLoader.load('./img/celestial_bodies/2k_mars.jpg'),
+					textureMeridianOffset: 0 // La textura comienza en el meridiano 0°
 				},
 				jupiter: {
 					map: textureLoader.load('./img/celestial_bodies/2k_jupiter.jpg'),
@@ -614,6 +656,60 @@
 					}
 				});
 			});	
+			
+			//dev
+/*			
+			const eclipticPlaneGeometry = new THREE.PlaneGeometry(50000, 50000); // Ajustar tamaño del plano
+const eclipticPlaneMaterial = new THREE.MeshBasicMaterial({
+    color: 0x00ff00, // Verde para referencia
+    side: THREE.DoubleSide,
+    opacity: 0.2,
+    transparent: true,
+});
+const eclipticPlane = new THREE.Mesh(eclipticPlaneGeometry, eclipticPlaneMaterial);
+eclipticPlane.rotation.x = Math.PI / 2; // Alinear con el plano XY
+scene.add(eclipticPlane);
+*/
+/*
+function drawAdjustedAxes(scene, length = 1000) {
+    const axesGroup = new THREE.Group();
+
+    // Eje X (Rojo) - sin cambios
+    const xAxisMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 }); // Rojo
+    const xAxisGeometry = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(0, 0, 0),
+        new THREE.Vector3(length, 0, 0),
+    ]);
+    const xAxis = new THREE.Line(xAxisGeometry, xAxisMaterial);
+
+    // Eje Z (Azul) - lo usaremos como "arriba"
+    const zAxisMaterial = new THREE.LineBasicMaterial({ color: 0x0000ff }); // Azul
+    const zAxisGeometry = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(0, 0, 0),
+        new THREE.Vector3(0, 0, length),
+    ]);
+    const zAxis = new THREE.Line(zAxisGeometry, zAxisMaterial);
+
+    // Eje Y (Verde) - lo ajustamos a "profundidad"
+    const yAxisMaterial = new THREE.LineBasicMaterial({ color: 0x00ff00 }); // Verde
+    const yAxisGeometry = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(0, 0, 0),
+        new THREE.Vector3(0, length, 0),
+    ]);
+    const yAxis = new THREE.Line(yAxisGeometry, yAxisMaterial);
+
+    // Añadir los ejes al grupo
+    axesGroup.add(xAxis);
+    axesGroup.add(yAxis);
+    axesGroup.add(zAxis);
+
+    // Añadir el grupo a la escena
+    scene.add(axesGroup);
+}
+
+// Llamar a la función para dibujar los ejes ajustados
+drawAdjustedAxes(scene, 50000); // Ajusta el tamaño (5000) según sea necesario
+*/
 
 			// Crear una luz puntual y una esfera luminosa para el centro de la galaxia
 			const galaxyGeometry = new THREE.SphereGeometry(0, 32, 32); // Tamaño y resolución de la esfera
@@ -694,6 +790,17 @@
 						if (body.axialTilt) {
 							mesh.rotation.z = THREE.MathUtils.degToRad(body.axialTilt); // Inclinar el eje según `axialTilt`
 						}	
+						
+						// **Cálculo de rotación inicial sincronizada**
+						if (body.rotationPeriod && textures.textureMeridianOffset !== undefined) {
+							const initialRotation = calculateInitialRotation(
+								textures.textureMeridianOffset,
+								body.rotationPeriod,
+								new Date()
+							);
+
+							mesh.rotation.y += initialRotation; // Aplicar la rotación inicial
+						}
 
 						// Calcular la posición inicial del cuerpo celeste
 						const position = calculateRelativePosition(
@@ -702,8 +809,7 @@
 							body.apoapsis,
 							body.longitudeOfAscendingNode,
 							body.inclination,
-							body.argumentOfPeriapsis,
-							body.orientation
+							body.argumentOfPeriapsis
 						);
 
 						// Si el cuerpo orbita otro cuerpo, ajusta su posición
@@ -726,6 +832,7 @@
 						celestialObjects[name] = mesh;
 						
 						// Dibujar la órbita del cuerpo celeste
+						/*
 						const orbit = drawOrbit(
 							angles[name],
 							body.periapsis,
@@ -733,7 +840,6 @@
 							body.longitudeOfAscendingNode,
 							body.inclination,
 							body.argumentOfPeriapsis,
-							body.orientation,
 							body.color,
 							body.orbits && celestialObjects[body.orbits]
 								? celestialObjects[body.orbits].position
@@ -743,7 +849,7 @@
 						if (orbit) {
 							scene.add(orbit);
 							celestialObjects[name].orbit = orbit;
-						}
+						}*/
 					} else {
 						// Para otros cuerpos celestes
 						const textures = celestialBodiesTextures [name] || {};
@@ -768,6 +874,17 @@
 						if (body.axialTilt) {
 							mesh.rotation.z = THREE.MathUtils.degToRad(body.axialTilt); // Inclinar el eje según `axialTilt`
 						}
+						
+						// **Cálculo de rotación inicial sincronizada**
+						if (body.rotationPeriod && textures.textureMeridianOffset !== undefined) {
+							const initialRotation = calculateInitialRotation(
+								textures.textureMeridianOffset,
+								body.rotationPeriod,
+								new Date()
+							);
+
+							mesh.rotation.y += initialRotation; // Aplicar la rotación inicial
+						}
 
 						const position = calculateRelativePosition(
 							angles[name],
@@ -775,8 +892,7 @@
 							body.apoapsis,
 							body.longitudeOfAscendingNode,
 							body.inclination,
-							body.argumentOfPeriapsis,
-							body.orientation
+							body.argumentOfPeriapsis
 						);
 
 						if (body.orbits && celestialObjects[body.orbits]) {
@@ -935,7 +1051,6 @@
 							body.longitudeOfAscendingNode,
 							body.inclination,
 							body.argumentOfPeriapsis,
-							body.orientation,
 							body.color,
 							body.orbits && celestialObjects[body.orbits]
 								? celestialObjects[body.orbits].position
@@ -949,6 +1064,23 @@
 					}
 				});
 			});		
+			
+			function calculateInitialRotation(textureMeridianOffset, rotationPeriod, date = new Date()) {
+				// Hora UTC en fracciones de día
+				const nowUTC = date.getUTCHours() / 24 + date.getUTCMinutes() / (24 * 60) + date.getUTCSeconds() / (24 * 3600);
+
+				// Desplazamiento del meridiano inicial (convertir a fracciones de rotación)
+				const textureOffset = textureMeridianOffset / 360;
+
+				// Rotación inicial en fracciones del periodo de rotación
+				const rotationFraction = nowUTC / rotationPeriod;
+
+				// Combinar el desplazamiento inicial y la rotación actual
+				const totalRotationFraction = (rotationFraction + textureOffset) % 1;
+
+				// Convertir a ángulo en radianes
+				return totalRotationFraction * 2 * Math.PI;
+			}
 			
 			// Rotación para los planetas
 			function rotateCelestialBody(mesh, rotationAxis, axialTilt, rotationSpeed, deltaTime, simulatedDate, precessionRate = 0) {
@@ -971,10 +1103,15 @@
 			}
 
 			// Calcular posición relativa
-			function calculateRelativePosition(angle, periapsis, apoapsis, longitudeOfAscendingNode = 0, inclination = 0, argumentOfPeriapsis = 0, orientation = 0, centralPosition = new THREE.Vector3(0, 0, 0)) {
+			function calculateRelativePosition(angle, periapsis, apoapsis, longitudeOfAscendingNode = 0, inclination = 0, argumentOfPeriapsis = 0, centralPosition = new THREE.Vector3(0, 0, 0)) {
 				if (!periapsis || !apoapsis || periapsis <= 0 || apoapsis <= 0) {
 					return new THREE.Vector3(0, 0, 0); // Valores inválidos
 				}
+
+				// Convertir ángulos de grados a radianes
+				const inclinationRad = THREE.MathUtils.degToRad(inclination);
+				const longitudeOfAscendingNodeRad = THREE.MathUtils.degToRad(longitudeOfAscendingNode);
+				const argumentOfPeriapsisRad = THREE.MathUtils.degToRad(argumentOfPeriapsis);
 
 				// Semiejes mayor y menor
 				const semiMajorAxis = (apoapsis + periapsis) / 2 * SCALE_DISTANCE;
@@ -983,32 +1120,30 @@
 				// Desplazamiento al foco
 				const focusOffset = semiMajorAxis - (periapsis * SCALE_DISTANCE);
 
-				// Posición en coordenadas polares (en el plano orbital sin transformaciones)
+				// Posición en coordenadas polares (en el plano orbital)
 				const x = focusOffset + semiMajorAxis * Math.cos(angle);
 				const z = semiMinorAxis * Math.sin(angle);
 				const position = new THREE.Vector3(x, 0, z);
 
 				// Aplicar transformaciones orbitales en el orden correcto
-				// 1. Rotación por el argumento del periapsis (en el plano orbital)
-				position.applyAxisAngle(new THREE.Vector3(0, 0, 1), THREE.MathUtils.degToRad(argumentOfPeriapsis));
+				// 1. Rotación por nodo ascendente (alrededor del eje Z)
+				position.applyAxisAngle(new THREE.Vector3(0, 0, 1), longitudeOfAscendingNodeRad);
 
-				// 2. Rotación por la inclinación (alrededor del eje X)
-				position.applyAxisAngle(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(inclination));
+				// 2. Rotación por inclinación (alrededor del eje X)
+				position.applyAxisAngle(new THREE.Vector3(1, 0, 0), inclinationRad);
 
-				// 3. Rotación por la longitud del nodo ascendente (alrededor del eje Z)
-				position.applyAxisAngle(new THREE.Vector3(0, 0, 1), THREE.MathUtils.degToRad(longitudeOfAscendingNode));
+				// 3. Rotación por argumento del periapsis (en el plano orbital)
+				position.applyAxisAngle(new THREE.Vector3(0, 0, 1), argumentOfPeriapsisRad);
 
-				// 4. Rotación adicional por orientación (si es necesario)
-				position.applyAxisAngle(new THREE.Vector3(0, 1, 0), THREE.MathUtils.degToRad(orientation));
-
-				// Ajustar la posición relativa al cuerpo central
+				// Ajustar posición relativa al cuerpo central
 				position.add(centralPosition);
 
 				return position;
 			}
 
+
 			// Dibujar órbita
-			function drawOrbit(name, periapsis, apoapsis, longitudeOfAscendingNode = 0, inclination = 0, argumentOfPeriapsis = 0, orientation = 0, color, centralPosition = new THREE.Vector3(0, 0, 0)) {
+			function drawOrbit(name, periapsis, apoapsis, longitudeOfAscendingNode = 0, inclination = 0, argumentOfPeriapsis = 0, color, centralPosition = new THREE.Vector3(0, 0, 0)) {
 				if (!periapsis || !apoapsis || periapsis <= 0 || apoapsis <= 0) {
 					console.warn(`${name} Los valores de periapsis o apoapsis no son válidos para dibujar una órbita.`);
 					return null; // Valores inválidos
@@ -1026,17 +1161,14 @@
 					const position = new THREE.Vector3(x, 0, z);
 
 					// Aplicar transformaciones orbitales en el orden correcto
-					// 1. Rotación por el argumento del periapsis (en el plano orbital)
-					position.applyAxisAngle(new THREE.Vector3(0, 0, 1), THREE.MathUtils.degToRad(argumentOfPeriapsis));
-
-					// 2. Rotación por la inclinación (alrededor del eje X)
-					position.applyAxisAngle(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(inclination));
-
-					// 3. Rotación por la longitud del nodo ascendente (alrededor del eje Z)
+					// 1. Rotación por nodo ascendente
 					position.applyAxisAngle(new THREE.Vector3(0, 0, 1), THREE.MathUtils.degToRad(longitudeOfAscendingNode));
 
-					// 4. Rotación adicional por orientación (si es necesario)
-					position.applyAxisAngle(new THREE.Vector3(0, 1, 0), THREE.MathUtils.degToRad(orientation));
+					// 2. Rotación por inclinación
+					position.applyAxisAngle(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(inclination));
+
+					// 3. Rotación por argumento del periapsis
+					position.applyAxisAngle(new THREE.Vector3(0, 0, 1), THREE.MathUtils.degToRad(argumentOfPeriapsis));
 
 					// Ajustar posición respecto al cuerpo central
 					position.add(centralPosition);
@@ -1048,6 +1180,7 @@
 				return new THREE.LineLoop(orbitGeometry, orbitMaterial);
 			}
 
+			
 			// Animación
 			function animate() {
 				requestAnimationFrame(animate);
@@ -1076,8 +1209,7 @@
 									body.apoapsis,
 									body.longitudeOfAscendingNode,								
 									body.inclination,
-									body.argumentOfPeriapsis,
-									body.orientation
+									body.argumentOfPeriapsis
 								);
 
 								if (body.orbits && celestialObjects[body.orbits]) {
@@ -1099,8 +1231,7 @@
 										body.apoapsis,
 										body.longitudeOfAscendingNode,									
 										body.inclination,
-										body.argumentOfPeriapsis,
-										body.orientation,									
+										body.argumentOfPeriapsis,									
 										body.color,
 										centralPosition
 									);
@@ -1138,7 +1269,7 @@
 					minute: "2-digit",
 					second: "2-digit",
 				})}`;
-
+				
 				renderer.render(scene, camera);
 			}
 
@@ -1241,8 +1372,8 @@
 			// Variables para el movimiento y rotación
 			let velocity = new THREE.Vector3(); // Velocidad actual de la nave
 			let acceleration = 0; // Aceleración controlada por los botones "+" y "-"
-			const maxSpeed = 100; // Velocidad máxima
-			const minSpeed = -50; // Velocidad mínima
+			const maxSpeed = 1000; // Velocidad máxima
+			const minSpeed = -500; // Velocidad mínima
 			const damping = 0.98; // Factor de amortiguación para la inercia
 			const angularDamping = 0.95; // Amortiguación para rotaciones angulares
 
@@ -1341,16 +1472,30 @@
 				buttonPlus.onclick = () => {
 					acceleration += 5;
 					acceleration = Math.min(acceleration, maxSpeed);
+
+					if (acceleration > 25) {
+						acceleration += 15;
+					} else if (acceleration > 100) {
+						acceleration += 25;
+					}
+
 					console.log(`Aceleración aumentada: ${acceleration}`);
 				};
 
 				const buttonMinus = document.createElement("button");
 				buttonMinus.innerText = "-";
 				buttonMinus.style.padding = "10px";
-				buttonMinus.onclick = () => {
+				buttonPlus.onclick = () => {
 					acceleration -= 5;
-					acceleration = Math.max(acceleration, minSpeed);
-					console.log(`Aceleración reducida: ${acceleration}`);
+					acceleration = Math.min(acceleration, minSpeed);
+
+					if (acceleration > 25) {
+						acceleration -= 15;
+					} else if (acceleration > 100) {
+						acceleration -= 25;
+					}
+
+					console.log(`Aceleración aumentada: ${acceleration}`);
 				};
 				
 				const buttonResetGyro = document.createElement("button");
@@ -1438,10 +1583,24 @@
 				if (event.key === "+" || (event.key === "=" && event.shiftKey)) {
 					acceleration += 5;
 					acceleration = Math.min(acceleration, maxSpeed);
+
+					if (acceleration > 25) {
+						acceleration += 15;
+					} else if (acceleration > 100) {
+						acceleration += 25;
+					}
+
 					console.log(`Aceleración aumentada: ${acceleration}`);
 				} else if (event.key === "-") {
 					acceleration -= 5;
 					acceleration = Math.max(acceleration, minSpeed);
+					
+					if (acceleration > 25) {
+						acceleration -= 15;
+					} else if (acceleration > 100) {
+						acceleration -= 25;
+					}
+					
 					console.log(`Aceleración reducida: ${acceleration}`);
 				} else if (event.key === "O" || event.key === "o") {
 					toggleOrbitsVisibility();
@@ -1519,7 +1678,7 @@
 				camera.getWorldDirection(direction);
 
 				// Actualizar la velocidad basada en la aceleración y la dirección
-				velocity.addScaledVector(direction, acceleration * deltaTime * (SCALE_DISTANCE * 100000) / 2);
+				velocity.addScaledVector(direction, acceleration * deltaTime * (SCALE_DISTANCE * 100) / 2);
 
 				// Aplicar amortiguación para simular inercia en el movimiento traslacional
 				velocity.multiplyScalar(damping);
@@ -1542,8 +1701,8 @@
 				const yawHUD = document.getElementById("yawHUD");
 
 				// Convertir la velocidad a km/s
-				const velocityInKmPerSec = velocity.length()* (SCALE_DISTANCE  * 10000000); // Escalamos a kilómetros por segundo
-				velocityHUD.textContent = velocityInKmPerSec.toFixed(2); // Mostrar velocidad en km/s
+				const velocityInKmPerSec = velocity.length()* (SCALE_DISTANCE  * 1000000); // Escalamos a kilómetros por segundo
+				velocityHUD.textContent = velocityInKmPerSec.toFixed(0); // Mostrar velocidad en km/s
 
 				// Convertir las coordenadas a escala galáctica
 				const galacticCoords = getGalacticCoordinates(camera.position);
@@ -1688,8 +1847,7 @@
 								body.apoapsis,
 								body.longitudeOfAscendingNode,
 								body.inclination,
-								body.argumentOfPeriapsis,
-								body.orientation
+								body.argumentOfPeriapsis
 							);
 
 							if (body.orbits && celestialObjects[body.orbits]) {
@@ -1699,6 +1857,17 @@
 
 							// Actualizar la posición en la simulación
 							celestialObjects[name].position.set(position.x, position.y, position.z);
+						}
+						
+						// Actualizar la rotación para sincronizar con el tiempo real
+						const textures = celestialBodiesTextures[name] || {};
+						if (body.rotationPeriod && textures.textureMeridianOffset !== undefined) {
+							const initialRotation = calculateInitialRotation(
+								textures.textureMeridianOffset,
+								body.rotationPeriod,
+								now
+							);
+							celestialObjects[name].rotation.y = initialRotation;
 						}
 					});
 				});
@@ -1727,7 +1896,7 @@
 						.normalize();
 
 					// Establecer la distancia detrás de la Tierra
-					const distanceBehindEarth = 35; // Ajusta esta distancia según lo necesites
+					const distanceBehindEarth = 70; // Ajusta esta distancia según lo necesites
 
 					// Calcular la posición detrás de la Tierra
 					const cameraPosition = new THREE.Vector3()
@@ -1735,7 +1904,7 @@
 						.sub(directionToSun.multiplyScalar(distanceBehindEarth));
 
 					// Rotar la cámara 15 grados hacia la derecha alrededor de la Tierra
-					const angleInRadians = THREE.MathUtils.degToRad(20);
+					const angleInRadians = THREE.MathUtils.degToRad(15);
 					const axis = new THREE.Vector3(0, 1, 0); // Eje Y para rotación
 					cameraPosition.sub(earthPosition).applyAxisAngle(axis, angleInRadians).add(earthPosition);
 
