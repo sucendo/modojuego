@@ -1473,11 +1473,8 @@ drawAdjustedAxes(scene, 50000); // Ajusta el tamaño (5000) según sea necesario
 					acceleration += 5;
 					acceleration = Math.min(acceleration, maxSpeed);
 
-					if (acceleration > 25) {
-						acceleration += 15;
-					} else if (acceleration > 100) {
-						acceleration += 25;
-					}
+					
+					
 
 					console.log(`Aceleración aumentada: ${acceleration}`);
 				};
@@ -1488,14 +1485,7 @@ drawAdjustedAxes(scene, 50000); // Ajusta el tamaño (5000) según sea necesario
 				buttonPlus.onclick = () => {
 					acceleration -= 5;
 					acceleration = Math.min(acceleration, minSpeed);
-
-					if (acceleration > 25) {
-						acceleration -= 15;
-					} else if (acceleration > 100) {
-						acceleration -= 25;
-					}
-
-					console.log(`Aceleración aumentada: ${acceleration}`);
+		console.log(`Aceleración aumentada: ${acceleration}`);
 				};
 				
 				const buttonResetGyro = document.createElement("button");
