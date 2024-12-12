@@ -1470,30 +1470,29 @@ drawAdjustedAxes(scene, 50000); // Ajusta el tamaño (5000) según sea necesario
 				buttonPlus.innerText = "+";
 				buttonPlus.style.padding = "10px";
 				buttonPlus.onclick = () => {
-					acceleration += 5;
-					acceleration = Math.min(acceleration, maxSpeed);
-
-					if (acceleration > 25) {
-						acceleration += 15;
-					} else if (acceleration > 100) {
+					if (acceleration < 20) {
+						acceleration += 5;
+					} else if (acceleration >= 20 && acceleration < 100) {
+						acceleration += 10;
+					} else if (acceleration >= 100) {
 						acceleration += 25;
 					}
+					acceleration = Math.min(acceleration, maxSpeed);
 					console.log(`Aceleración aumentada: ${acceleration}`);
 				};
 
 				const buttonMinus = document.createElement("button");
 				buttonMinus.innerText = "-";
 				buttonMinus.style.padding = "10px";
-				buttonPlus.onclick = () => {
-					acceleration -= 5;
-					acceleration = Math.max(acceleration, minSpeed);
-					
-					if (acceleration > 25) {
-						acceleration -= 15;
-					} else if (acceleration > 100) {
+				buttonMinus.onclick = () => {
+					if (acceleration < 20) {
+						acceleration -= 5;
+					} else if (acceleration >= 20 && acceleration < 100) {
+						acceleration -= 10;
+					} else if (acceleration >= 100) {
 						acceleration -= 25;
 					}
-					
+					acceleration = Math.max(acceleration, minSpeed);
 					console.log(`Aceleración reducida: ${acceleration}`);
 				};
 				
@@ -1580,26 +1579,24 @@ drawAdjustedAxes(scene, 50000); // Ajusta el tamaño (5000) según sea necesario
 			window.addEventListener("keydown", (event) => {
 				keyState[event.code] = true;
 				if (event.key === "+" || (event.key === "=" && event.shiftKey)) {
-					acceleration += 5;
-					acceleration = Math.min(acceleration, maxSpeed);
-
-					if (acceleration > 25) {
-						acceleration += 15;
-					} else if (acceleration > 100) {
+					if (acceleration < 20) {
+						acceleration += 5;
+					} else if (acceleration >= 20 && acceleration < 100) {
+						acceleration += 10;
+					} else if (acceleration >= 100) {
 						acceleration += 25;
 					}
-
+					acceleration = Math.min(acceleration, maxSpeed);
 					console.log(`Aceleración aumentada: ${acceleration}`);
 				} else if (event.key === "-") {
-					acceleration -= 5;
-					acceleration = Math.max(acceleration, minSpeed);
-					
-					if (acceleration > 25) {
-						acceleration -= 15;
-					} else if (acceleration > 100) {
+					if (acceleration < 20) {
+						acceleration -= 5;
+					} else if (acceleration >= 20 && acceleration < 100) {
+						acceleration -= 10;
+					} else if (acceleration >= 100) {
 						acceleration -= 25;
 					}
-					
+					acceleration = Math.max(acceleration, minSpeed);
 					console.log(`Aceleración reducida: ${acceleration}`);
 				} else if (event.key === "O" || event.key === "o") {
 					toggleOrbitsVisibility();
