@@ -6,6 +6,7 @@
 		<title>Simulación del Sistema Solar con Three.js</title>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 		<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.min.js"></script>
 		<script src="./js/celestial_bodies/GLTFLoader.js"></script>
 		<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">		
 		<style>
@@ -99,6 +100,7 @@
 		</div>
 			
 		<div id="controls">
+			<button id="toggleTextBtn">T</button>
 			<button id="toggleOrbits">O</button>
 			<button id="fullscreenBtn">P</button>
 		</div>
@@ -106,7 +108,7 @@
 		<script>
 			// Configuración inicial
 			const scene = new THREE.Scene();
-			const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 5000000);
+			const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.001, 5000000);
 			const renderer = new THREE.WebGLRenderer({ antialias: true });
 			renderer.setSize(window.innerWidth, window.innerHeight);
 			renderer.shadowMap.enabled = true; // Habilitar sombras
@@ -124,8 +126,10 @@
 			scene.add(ambientLight);
 
 			// Escala para las distancias y tamaños
-			const SCALE_DISTANCE = 0.001; // Escala ajustada para las distancias (en km)
-			const SCALE_SIZE = 0.001; // Escala ajustada para los tamaños de los cuerpos
+			// Escala proporcional (referencia para mantener proporción tamaño-distancia)
+			const SCALE_REFERENCE = 0.001; // Ajustar esta escala para percepción deseada
+			const SCALE_DISTANCE = SCALE_REFERENCE; // Distancias en km
+			const SCALE_SIZE = SCALE_REFERENCE; // Tamaños en km
 			//const SCALE_DISTANCE = 0.00001; // Escala ajustada para las distancias (en km)
 			//const SCALE_SIZE = 0.00001; // Escala ajustada para los tamaños de los cuerpos
 
@@ -468,7 +472,7 @@
 					},
 				},
 				artificialSatellites: {
-					iss: {
+					/*iss: {
 						periapsis: 6779, apoapsis: 6789, size: 54.25, color: "green", orbits: "earth", orbitalPeriod: 1.5,
 						inclination: 51.64, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 258.76, lastPerihelion: "2023-12-01"
 					},
@@ -543,19 +547,19 @@
 					cosmos2543: {
 						periapsis: 6771, apoapsis: 6771, size: 0.75, color: "gray", orbits: "earth", orbitalPeriod: 1.5,
 						inclination: 51.6, argumentOfPeriapsis: 45, longitudeOfAscendingNode: 76.1, lastPerihelion: "2023-12-02"
-					},
+					},*/
 				},
 				comets: {
 					halley: { 
-						periapsis: 87870000, apoapsis: 5247100000, size: 11*500, color: 0xffffff, orbits: "sun", orbitalPeriod: 27740, 
+						periapsis: 87870000, apoapsis: 5247100000, size: 11, color: 0xffffff, orbits: "sun", orbitalPeriod: 27740, 
 						orientation: 58.42, inclination: 162.26, argumentOfPeriapsis: 111.33, longitudeOfAscendingNode: 58.42, lastPerihelion: "1986-02-09" 
 					},
 					encke: { 
-						periapsis: 50917500, apoapsis: 611150000, size: 4.8*1000, color: 0x87ceeb, orbits: "sun", orbitalPeriod: 1205.325, 
+						periapsis: 50917500, apoapsis: 611150000, size: 4.8, color: 0x87ceeb, orbits: "sun", orbitalPeriod: 1205.325, 
 						orientation: 334.57, inclination: 11.78, argumentOfPeriapsis: 186.45, longitudeOfAscendingNode: 334.57, lastPerihelion: "2023-11-22" 
 					},
 					hale_bopp: {
-						periapsis: 136680000, apoapsis: 55350000000, size: 60*500, color: 0xadd8e6, orbits: "sun", orbitalPeriod: 919200, 
+						periapsis: 136680000, apoapsis: 55350000000, size: 60, color: 0xadd8e6, orbits: "sun", orbitalPeriod: 919200, 
 						orientation: 282.47, inclination: 89.4, argumentOfPeriapsis: 130.59, longitudeOfAscendingNode: 282.47, lastPerihelion: "1997-04-01" 
 					},
 				},
@@ -720,7 +724,7 @@ drawAdjustedAxes(scene, 50000); // Ajusta el tamaño (5000) según sea necesario
 			const galaxyGeometry = new THREE.SphereGeometry(0, 32, 32); // Tamaño y resolución de la esfera
 			const galaxyMat = new THREE.MeshStandardMaterial({
 				emissive: 0xffff00, // Luz cálida
-				emissiveIntensity: 1,
+				emissiveIntensity: 0,
 				color: 0x000000, // Color base negro para resaltar el brillo
 			});
 
@@ -741,6 +745,10 @@ drawAdjustedAxes(scene, 50000); // Ajusta el tamaño (5000) según sea necesario
 			
 			// Crear un array para los objetos interactuables
 			const interactableObjects = [];
+			
+			let textsVisible = true; // Estado inicial: los textos están visibles
+			const labels = []; // Array para almacenar las referencias de los textos
+			const textLabels = {}; // Array para almacenar referencias de etiquetas asociadas a cada cuerpo celeste
 
 			// Crear cuerpos celestes y sus órbitas
 			Object.keys(CELESTIAL_BODIES).forEach((category) => {
@@ -756,7 +764,7 @@ drawAdjustedAxes(scene, 50000); // Ajusta el tamaño (5000) según sea necesario
 						
 						var alcance = 0;
 						if (name === "sun"){
-							alcance = 10000000; // Ajustar el alcance para el Sol
+							alcance = 100000000; // Ajustar el alcance para el Sol
 						} else {
 							alcance = 100000; ; // Ajustar el alcance para estrellas
 						}
@@ -834,6 +842,9 @@ drawAdjustedAxes(scene, 50000); // Ajusta el tamaño (5000) según sea necesario
 						scene.add(mesh);
 						// Agregar el mesh al objeto `celestialObjects`
 						celestialObjects[name] = mesh;
+						
+						// Añadir texto con el nombre del cuerpo celeste
+						addText(name, mesh, body.size);
 						
 						// Dibujar la órbita del cuerpo celeste
 						/*
@@ -936,6 +947,9 @@ drawAdjustedAxes(scene, 50000); // Ajusta el tamaño (5000) según sea necesario
 						interactableObjects.push(mesh);
 						
 						celestialObjects[name] = mesh;
+						
+						// Añadir texto con el nombre del cuerpo celeste
+						addText(name , mesh, body.size);
 						
 						/*
 						// Crear una esfera auxiliar más grande para detección de clics
@@ -1208,12 +1222,12 @@ drawAdjustedAxes(scene, 50000); // Ajusta el tamaño (5000) según sea necesario
 				const elapsed = (currentTime - lastTime) / 1000; // Tiempo transcurrido en segundos
 				lastTime = currentTime;
 				
+				// Actualizar controles de la cámara
+				updateCameraControls(elapsed);
+				
 				if (!isPaused) {
 					const daysToAdvance = elapsed * speedFactor; // Avanzar en función de la velocidad actual
 					simulatedDate = new Date(simulatedDate.getTime() + daysToAdvance * 24 * 60 * 60 * 1000);
-					
-					// Actualizar controles de la cámara
-					updateCameraControls(elapsed);
 					
 					Object.keys(CELESTIAL_BODIES).forEach((category) => {
 						Object.keys(CELESTIAL_BODIES[category]).forEach((name) => {
@@ -1289,6 +1303,7 @@ drawAdjustedAxes(scene, 50000); // Ajusta el tamaño (5000) según sea necesario
 					second: "2-digit",
 				})}`;
 				
+				TWEEN.update(); // Actualizar las animaciones de TWEEN
 				renderer.render(scene, camera);
 			}
 
@@ -1385,6 +1400,89 @@ drawAdjustedAxes(scene, 50000); // Ajusta el tamaño (5000) según sea necesario
 			}
 
 			console.log("Interactable Objects:", interactableObjects);
+			
+			//-------------------------------------------------------------------
+						
+			// Función para agregar texto con evento de enfoque en el cuerpo celeste
+			function addText(name, mesh, size) {
+				// Crear un elemento HTML para el texto
+				const label = document.createElement('div');
+				label.style.position = 'absolute';
+				label.style.color = '#00ffcc'; // Cambiar el color del texto
+				label.style.fontSize = '12px'; // Ajustar tamaño del texto
+				label.style.fontFamily = 'Orbitron, Arial, sans-serif'; // Usar la fuente 'Orbitron' con alternativas
+				label.style.textShadow = '0 0 5px #00ffcc, 0 0 10px #00ffcc, 0 0 15px #008080, 0 0 20px #008080'; // Efecto de brillo
+				//label.style.backgroundColor = 'rgba(0, 0, 0, 0.5)'; // Fondo semitransparente
+				label.style.padding = '2px 4px'; // Espaciado interno
+				label.style.borderRadius = '3px'; // Bordes redondeados
+				label.style.cursor = 'pointer'; // Mostrar que el texto es clicable
+				label.innerText = name; // Establecer el texto
+
+				document.body.appendChild(label);
+				labels.push(label); // Guardar referencia para controlar visibilidad
+
+				// Evento de clic para enfocar la cámara en el cuerpo celeste
+				label.addEventListener('click', () => {
+					const targetPosition = new THREE.Vector3();
+					mesh.getWorldPosition(targetPosition); // Obtener posición mundial del cuerpo
+					
+					// Tamaño del objeto (diámetro aproximado)
+					console.log("Interactable Objects:", size);
+					const objectSize = size * SCALE_SIZE * 2; // Ajustar escala si es necesario
+					const fovRadians = THREE.MathUtils.degToRad(camera.fov); // Convertir FOV a radianes
+					const distance = objectSize / (2 * Math.tan(fovRadians / 2)); // Distancia necesaria para ocupar toda la pantalla					
+
+					// Animar el movimiento de la cámara hacia el cuerpo seleccionado
+					new TWEEN.Tween(camera.position)
+						.to(
+							{
+								x: targetPosition.x + distance, // Ajustar la distancia desde el cuerpo
+								y: targetPosition.y + distance, // Ajustar altura de la cámara
+								z: targetPosition.z + distance, // Ajustar profundidad de la cámara
+							},
+							3000 // Duración de la animación en milisegundos
+						)
+						.easing(TWEEN.Easing.Quadratic.Out) // Efecto de suavizado
+						.start();
+
+					// Apuntar la cámara hacia el cuerpo seleccionado
+					new TWEEN.Tween(controls.target)
+						.to(
+							{
+								x: targetPosition.x,
+								y: targetPosition.y,
+								z: targetPosition.z,
+							},
+							3000 // Duración de la animación
+						)
+						.easing(TWEEN.Easing.Quadratic.Out) // Suavizado
+						.onUpdate(() => controls.update()) // Actualizar los controles durante la animación
+						.start();
+				});
+
+				// Actualizar la posición del texto según las coordenadas 3D proyectadas a 2D
+				function updateLabelPosition() {
+					const vector = new THREE.Vector3();
+					mesh.getWorldPosition(vector); // Obtener la posición mundial actual del cuerpo celeste
+					vector.project(camera); // Convertir a coordenadas 2D
+					const x = (vector.x + 1) / 2 * window.innerWidth; // Mapear a [0, window.innerWidth]
+					const y = -(vector.y - 1) / 2 * window.innerHeight; // Mapear a [0, window.innerHeight]
+
+					label.style.left = `${x}px`;
+					label.style.top = `${y}px`;
+				}
+
+				// Llamar una vez para actualizar la posición inicial
+				updateLabelPosition();
+
+				// Actualizar posición en cada cuadro de la animación
+				function animateTextPosition() {
+					if (textsVisible) updateLabelPosition();
+					requestAnimationFrame(animateTextPosition);
+				}
+
+				animateTextPosition();
+			}
 			
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////		
 			
@@ -1583,7 +1681,7 @@ drawAdjustedAxes(scene, 50000); // Ajusta el tamaño (5000) según sea necesario
 
 				// Aplicar el escalado gradual para el pitch, roll y yaw
 				pitchVelocity = deltaBeta * gyroScaleFactor * (1 - Math.abs(deltaBeta) / gyroPitchLimit);
-				rollVelocity = deltaGamma * gyroScaleFactor * (1 - Math.abs(deltaGamma) / gyroRollLimit);
+				rollVelocity = deltaGamma * gyroScaleFactor * (1 - Math.abs(deltaGamma) / gyroRollLimit) * -1;
 				yawVelocity = deltaAlpha * gyroScaleFactor;
 
 				// Aplicar amortiguación adicional al pitch
@@ -1625,11 +1723,13 @@ drawAdjustedAxes(scene, 50000); // Ajusta el tamaño (5000) según sea necesario
 					}
 					acceleration = Math.max(acceleration, minSpeed);
 					console.log(`Aceleración reducida: ${acceleration}`);
+				} else if (event.key === "T" || event.key === "t") {
+					toggleTexts();
+					console.log(`Textos ${showOrbits ? "visibles" : "ocultas"}`); 
 				} else if (event.key === "O" || event.key === "o") {
 					toggleOrbitsVisibility();
 					console.log(`Órbitas ${showOrbits ? "visibles" : "ocultas"}`);
-				} 
-				else if (event.key === "P" || event.key === "p") {
+				} else if (event.key === "P" || event.key === "p") {
 					toggleFullscreen();
 					console.log("Modo de pantalla completa alternado.");
 				}
@@ -1767,6 +1867,20 @@ drawAdjustedAxes(scene, 50000); // Ajusta el tamaño (5000) según sea necesario
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
+			// Función para mostrar u ocultar los textos
+			function toggleTexts() {
+				textsVisible = !textsVisible;
+				labels.forEach(label => {
+					label.style.display = textsVisible ? 'block' : 'none';
+				});
+			}
+
+			// Asociar el botón existente a la función `toggleTexts`
+			const toggleTextBtn = document.getElementById('toggleTextBtn');
+			toggleTextBtn.addEventListener('click', toggleTexts);
+			
+			//--------------------------------
+
 			let showOrbits = true; // Bandera para rastrear si las órbitas están visibles
 
 			// Función para alternar la visibilidad de las órbitas
@@ -1780,6 +1894,8 @@ drawAdjustedAxes(scene, 50000); // Ajusta el tamaño (5000) según sea necesario
 					}
 				});
 			}
+			
+			//----------------------------------
 			
 			// Función para activar la pantalla completa
 			function toggleFullscreen() {
