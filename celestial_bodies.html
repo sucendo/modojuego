@@ -35,7 +35,7 @@
 				width: 165px;
 			}
 			#controls {
-				position: fixed;
+				position: absolute;
 				top: 10px;
 				right: 10px;
 				z-index: 1000;
@@ -1402,6 +1402,16 @@ drawAdjustedAxes(scene, 50000); // Ajusta el tamaño (5000) según sea necesario
 			console.log("Interactable Objects:", interactableObjects);
 			
 			//-------------------------------------------------------------------
+			
+			// Crear un contenedor para las etiquetas de texto
+			const textOverlay = document.createElement('div');
+			textOverlay.style.position = 'absolute';
+			textOverlay.style.top = '0';
+			textOverlay.style.left = '0';
+			textOverlay.style.width = '100%';
+			textOverlay.style.height = '100%';
+			textOverlay.style.pointerEvents = 'none'; // Permitir interacción con el canvas
+			document.body.appendChild(textOverlay);
 						
 			// Función para agregar texto con evento de enfoque en el cuerpo celeste
 			function addText(name, mesh, size) {
@@ -1514,7 +1524,7 @@ drawAdjustedAxes(scene, 50000); // Ajusta el tamaño (5000) según sea necesario
 			const hud = document.createElement("div");
 			hud.id = "navigationPanel";
 			hud.className = "controlPanel";
-			hud.style.position = "fixed";
+			hud.style.position = "absolute";
 			hud.style.bottom = "10px";
 			hud.style.left = "10px";
 
