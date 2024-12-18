@@ -1,26 +1,24 @@
+<!DOCTYPE html>
 <html lang="en">
 	<head>
-		<title>three.js webgl - GLTFloader + EXT_texture_avif</title>
+		<title>Three.js WebGL - Forest House</title>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0"/>
-		<link type="text/css" rel="stylesheet" href="main.css" />
 		<style>
 			body {
-				background-color: #bfe3dd;
-				color: #000;
+				margin: 0;
+				overflow: hidden;
+				background-color: #d7e5ef; /* Fondo más claro */
 			}
-
-			a {
-				color: #986b60;
+			canvas {
+				display: block;
 			}
 		</style>
 	</head>
 
 	<body>
 		<div id="info">
-			<a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> - GLTFLoader +
-			<a href="https://github.com/KhronosGroup/glTF/tree/main/extensions/2.0/Vendor/EXT_texture_avif" target="_blank" rel="noopener" >EXT_texture_avif</a><br />
-			Forest House by <a href="https://sketchfab.com/peachyroyalty" target="_blank" rel="noopener">peachyroyalty</a><br />
+			<a href="https://threejs.org" target="_blank" rel="noopener">Three.js</a> - Forest House GLB Model
 		</div>
 
 		<script type="importmap">
@@ -34,73 +32,78 @@
 
 		<script type="module">
 			import * as THREE from 'three';
-
 			import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 			import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-			import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
-			let camera, scene, renderer;
+			let camera, scene, renderer, controls, forestHouseModel;
 
 			init();
-			render();
+			animate();
 
 			function init() {
 
-				camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 100 );
-				camera.position.set( 1.5, 4, 9 );
+				// Configuración de la cámara
+				camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+				camera.position.set(5, 5, 10);
 
+				// Crear la escena
 				scene = new THREE.Scene();
-				scene.background = new THREE.Color( 0xf6eedc );
 
-				//
+				// Fondo más claro para el modelo
+				scene.background = new THREE.Color(0xd7e5ef);
 
-				const dracoLoader = new DRACOLoader();
-				dracoLoader.setDecoderPath( 'jsm/libs/draco/gltf/' );
+				// Añadir luz ambiental
+				const ambientLight = new THREE.AmbientLight(0xffffff, 0.7); // Luz general suave
+				scene.add(ambientLight);
 
+				// Añadir luz direccional
+				const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+				directionalLight.position.set(5, 10, 7.5);
+				scene.add(directionalLight);
+
+				// Cargar el modelo GLB del Forest House
 				const loader = new GLTFLoader();
-				loader.setDRACOLoader( dracoLoader );
-				loader.setPath( './models/celestial_bodies/' );
-				loader.load( 'forest_house.glb', function ( gltf ) {
+				loader.setPath('./models/celestial_bodies/'); // Ruta al modelo
+				loader.load('forest_house.glb', (gltf) => {
+					forestHouseModel = gltf.scene;
 
-					scene.add( gltf.scene );
+					// Ajustar escala y posición
+					forestHouseModel.scale.set(1, 1, 1);
+					forestHouseModel.position.set(0, 0, 0);
+					scene.add(forestHouseModel);
+				});
 
-					render();
+				// Crear el renderizador
+				renderer = new THREE.WebGLRenderer({ antialias: true });
+				renderer.setPixelRatio(window.devicePixelRatio);
+				renderer.setSize(window.innerWidth, window.innerHeight);
+				document.body.appendChild(renderer.domElement);
 
-				} );
-
-				//
-
-				renderer = new THREE.WebGLRenderer( { antialias: true } );
-				renderer.setPixelRatio( window.devicePixelRatio );
-				renderer.setSize( window.innerWidth, window.innerHeight );
-				document.body.appendChild( renderer.domElement );
-
-				const controls = new OrbitControls( camera, renderer.domElement );
-				controls.addEventListener( 'change', render );
-				controls.target.set( 0, 2, 0 );
+				// Configuración de los controles orbitales
+				controls = new OrbitControls(camera, renderer.domElement);
+				controls.target.set(0, 0, 0);
 				controls.update();
 
-				window.addEventListener( 'resize', onWindowResize );
-
+				// Ajustar el tamaño en el redimensionamiento de la ventana
+				window.addEventListener('resize', onWindowResize);
 			}
 
 			function onWindowResize() {
-
 				camera.aspect = window.innerWidth / window.innerHeight;
 				camera.updateProjectionMatrix();
-
-				renderer.setSize( window.innerWidth, window.innerHeight );
-
-				render();
-
+				renderer.setSize(window.innerWidth, window.innerHeight);
 			}
 
-			//
+			function animate() {
+				requestAnimationFrame(animate);
 
-			function render() {
+				// Animación adicional opcional (si fuera necesario)
+				if (forestHouseModel) {
+					forestHouseModel.rotation.y += 0.01; // Rotación lenta
+				}
 
-				renderer.render( scene, camera );
-
+				// Renderizar la escena
+				renderer.render(scene, camera);
 			}
 		</script>
 	</body>
