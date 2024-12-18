@@ -1,18 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
-		<title>Three.js Earth with GLB Model</title>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<title>Three.js WebGL - Earth with GLTFLoader</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0"/>
 		<style>
-			body { margin: 0; overflow: hidden; }
-			canvas { display: block; }
+			body {
+				margin: 0;
+				overflow: hidden;
+				background-color: #000; /* Fondo negro para simular el espacio */
+			}
+			canvas {
+				display: block;
+			}
 		</style>
 	</head>
-	<body>
 
+	<body>
 		<div id="info">
-			<a href="https://threejs.org" target="_blank" rel="noopener">Three.js</a> - Earth with GLB Model
+			<a href="https://threejs.org" target="_blank" rel="noopener">Three.js</a> - Earth Model with GLTFLoader
 		</div>
 
 		<script type="importmap">
@@ -30,61 +36,56 @@
 			import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 			let camera, scene, renderer, controls, earthModel;
-			const clock = new THREE.Clock(); // Inicializar el reloj global
 
 			init();
+			animate();
 
 			function init() {
-				// Crear cámara
-				camera = new THREE.PerspectiveCamera(25, window.innerWidth / window.innerHeight, 0.1, 100);
-				camera.position.set(4.5, 2, 3);
 
-				// Crear escena
+				// Configuración de la cámara
+				camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+				camera.position.set(0, 2, 6);
+
+				// Crear la escena
 				scene = new THREE.Scene();
 
-				// Añadir luz direccional (Sol)
-				const sun = new THREE.DirectionalLight('#ffffff', 2);
-				sun.position.set(0, 0, 3);
-				scene.add(sun);
+				// Fondo negro para simular el espacio
+				scene.background = new THREE.Color(0x000000);
 
-				// Crear renderizador
+				// Añadir una luz ambiental
+				const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); // Luz general suave
+				scene.add(ambientLight);
+
+				// Añadir un punto de luz (sol)
+				const pointLight = new THREE.PointLight(0xffffff, 1, 50);
+				pointLight.position.set(10, 10, 10);
+				scene.add(pointLight);
+
+				// Cargar el modelo GLB de la Tierra
+				const loader = new GLTFLoader();
+				loader.setPath('./models/celestial_bodies/'); // Ruta a tu modelo
+				loader.load('Earth_1_12756.glb', (gltf) => {
+					earthModel = gltf.scene;
+
+					// Ajustar escala y posición
+					earthModel.scale.set(1, 1, 1);
+					earthModel.rotation.y = Math.PI; // Rotación inicial
+					scene.add(earthModel);
+				});
+
+				// Crear el renderizador
 				renderer = new THREE.WebGLRenderer({ antialias: true });
 				renderer.setPixelRatio(window.devicePixelRatio);
 				renderer.setSize(window.innerWidth, window.innerHeight);
-				renderer.setAnimationLoop(animate);
 				document.body.appendChild(renderer.domElement);
 
-				// Añadir controles orbitales
+				// Configuración de los controles orbitales
 				controls = new OrbitControls(camera, renderer.domElement);
-				controls.enableDamping = true;
-				controls.minDistance = 0.1;
-				controls.maxDistance = 50;
+				controls.target.set(0, 0, 0);
+				controls.update();
 
-				// Cargar el modelo GLB
-				loadEarthModel();
-
-				// Manejar redimensionamiento
+				// Ajustar el tamaño en el redimensionamiento de la ventana
 				window.addEventListener('resize', onWindowResize);
-			}
-
-			function loadEarthModel() {
-				const loader = new GLTFLoader();
-
-				loader.load(
-					'./models/celestial_bodies/Earth_1_12756.glb', // Ruta al modelo GLB
-					(gltf) => {
-						earthModel = gltf.scene;
-
-						// Ajustar escala, rotación y posición
-						earthModel.scale.set(1, 1, 1);
-						earthModel.rotation.y = Math.PI; // Rotación inicial para alinearlo
-						scene.add(earthModel);
-					},
-					undefined,
-					(error) => {
-						console.error('Error al cargar el modelo GLB:', error);
-					}
-				);
 			}
 
 			function onWindowResize() {
@@ -94,18 +95,14 @@
 			}
 
 			function animate() {
-				// Obtener el delta del reloj
-				const delta = clock.getDelta();
+				requestAnimationFrame(animate);
 
-				// Rotar la Tierra
+				// Rotar la Tierra (si está cargada)
 				if (earthModel) {
-					earthModel.rotation.y += delta * 0.1; // Rotación lenta
+					earthModel.rotation.y += 0.01; // Rotación suave
 				}
 
-				// Actualizar controles
-				controls.update();
-
-				// Renderizar escena
+				// Renderizar la escena
 				renderer.render(scene, camera);
 			}
 		</script>
