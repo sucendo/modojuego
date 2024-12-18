@@ -12,8 +12,8 @@
 <body>
     <script type="module">
         // Importar Three.js y GLTFLoader desde rutas locales
-        import * as THREE from 'http://localhost:8080/sucendo/modojuego.es/js/celestial_bodies/three.module.js';
-        import { GLTFLoader } from 'http://localhost:8080/sucendo/modojuego.es/js/celestial_bodies/GLTFLoader.js';
+        import * as THREE from './js/celestial_bodies/three.module.js';
+        import { GLTFLoader } from './js/celestial_bodies/GLTFLoader.js';
 
         // Configuración inicial de la escena
         const scene = new THREE.Scene();
@@ -33,7 +33,7 @@
         // Cargar modelo GLB
         const loader = new GLTFLoader();
         loader.load(
-            'http://localhost:8080/sucendo/modojuego.es/models/earth.glb', // Ruta relativa al modelo
+            './models/Earth_1_12756.glb', // Ruta relativa al modelo
             (gltf) => {
                 const model = gltf.scene;
                 model.scale.set(1, 1, 1); // Escalar el modelo si es necesario
