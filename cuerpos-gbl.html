@@ -1,24 +1,26 @@
-<!DOCTYPE html>
 <html lang="en">
 	<head>
-		<title>Three.js WebGL - Earth with GLTFLoader</title>
+		<title>three.js webgl - GLTFloader + EXT_texture_avif</title>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0"/>
+		<link type="text/css" rel="stylesheet" href="main.css" />
 		<style>
 			body {
-				margin: 0;
-				overflow: hidden;
-				background-color: #000; /* Fondo negro para simular el espacio */
+				background-color: #bfe3dd;
+				color: #000;
 			}
-			canvas {
-				display: block;
+
+			a {
+				color: #986b60;
 			}
 		</style>
 	</head>
 
 	<body>
 		<div id="info">
-			<a href="https://threejs.org" target="_blank" rel="noopener">Three.js</a> - Earth Model with GLTFLoader
+			<a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> - GLTFLoader +
+			<a href="https://github.com/KhronosGroup/glTF/tree/main/extensions/2.0/Vendor/EXT_texture_avif" target="_blank" rel="noopener" >EXT_texture_avif</a><br />
+			Forest House by <a href="https://sketchfab.com/peachyroyalty" target="_blank" rel="noopener">peachyroyalty</a><br />
 		</div>
 
 		<script type="importmap">
@@ -32,78 +34,73 @@
 
 		<script type="module">
 			import * as THREE from 'three';
+
 			import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 			import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+			import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
-			let camera, scene, renderer, controls, earthModel;
+			let camera, scene, renderer;
 
 			init();
-			animate();
+			render();
 
 			function init() {
 
-				// Configuración de la cámara
-				camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
-				camera.position.set(0, 2, 6);
+				camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 100 );
+				camera.position.set( 1.5, 4, 9 );
 
-				// Crear la escena
 				scene = new THREE.Scene();
+				scene.background = new THREE.Color( 0xf6eedc );
 
-				// Fondo negro para simular el espacio
-				scene.background = new THREE.Color(0x000000);
+				//
 
-				// Añadir una luz ambiental
-				const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); // Luz general suave
-				scene.add(ambientLight);
+				const dracoLoader = new DRACOLoader();
+				dracoLoader.setDecoderPath( 'jsm/libs/draco/gltf/' );
 
-				// Añadir un punto de luz (sol)
-				const pointLight = new THREE.PointLight(0xffffff, 1, 50);
-				pointLight.position.set(10, 10, 10);
-				scene.add(pointLight);
-
-				// Cargar el modelo GLB de la Tierra
 				const loader = new GLTFLoader();
-				loader.setPath('./models/celestial_bodies/'); // Ruta a tu modelo
-				loader.load('Earth_1_12756.glb', (gltf) => {
-					earthModel = gltf.scene;
+				loader.setDRACOLoader( dracoLoader );
+				loader.setPath( './models/celestial_bodies/' );
+				loader.load( 'Earth_1_12756.glb', function ( gltf ) {
 
-					// Ajustar escala y posición
-					earthModel.scale.set(1, 1, 1);
-					earthModel.rotation.y = Math.PI; // Rotación inicial
-					scene.add(earthModel);
-				});
+					scene.add( gltf.scene );
 
-				// Crear el renderizador
-				renderer = new THREE.WebGLRenderer({ antialias: true });
-				renderer.setPixelRatio(window.devicePixelRatio);
-				renderer.setSize(window.innerWidth, window.innerHeight);
-				document.body.appendChild(renderer.domElement);
+					render();
 
-				// Configuración de los controles orbitales
-				controls = new OrbitControls(camera, renderer.domElement);
-				controls.target.set(0, 0, 0);
+				} );
+
+				//
+
+				renderer = new THREE.WebGLRenderer( { antialias: true } );
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				document.body.appendChild( renderer.domElement );
+
+				const controls = new OrbitControls( camera, renderer.domElement );
+				controls.addEventListener( 'change', render );
+				controls.target.set( 0, 2, 0 );
 				controls.update();
 
-				// Ajustar el tamaño en el redimensionamiento de la ventana
-				window.addEventListener('resize', onWindowResize);
+				window.addEventListener( 'resize', onWindowResize );
+
 			}
 
 			function onWindowResize() {
+
 				camera.aspect = window.innerWidth / window.innerHeight;
 				camera.updateProjectionMatrix();
-				renderer.setSize(window.innerWidth, window.innerHeight);
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+				render();
+
 			}
 
-			function animate() {
-				requestAnimationFrame(animate);
+			//
 
-				// Rotar la Tierra (si está cargada)
-				if (earthModel) {
-					earthModel.rotation.y += 0.01; // Rotación suave
-				}
+			function render() {
 
-				// Renderizar la escena
-				renderer.render(scene, camera);
+				renderer.render( scene, camera );
+
 			}
 		</script>
 	</body>
