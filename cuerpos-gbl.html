@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Three.js Earth Project</title>
+  <title>Earth Project</title>
   <style>
     body { margin: 0; overflow: hidden; }
     canvas { display: block; }
@@ -11,83 +11,67 @@
 </head>
 <body>
   <script type="module">
+    // Importar desde un CDN confiable
     import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js';
     import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/controls/OrbitControls.js';
     import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/loaders/GLTFLoader.js';
 
     let renderer, scene, camera, controls;
-    let earthGroup, earthModel;
+    let earthModel;
 
     init();
 
     function init() {
-      // Crear renderizador
+      // Configuración del renderizador
       renderer = new THREE.WebGLRenderer({ antialias: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
       document.body.appendChild(renderer.domElement);
 
-      // Crear escena
+      // Crear la escena
       scene = new THREE.Scene();
 
-      // Configurar cámara
+      // Configuración de la cámara
       camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
       camera.position.set(0, 10, 20);
 
-      // Controles orbitales
+      // Añadir controles orbitales
       controls = new OrbitControls(camera, renderer.domElement);
 
-      // Luz general
+      // Luz ambiental
       const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
       scene.add(ambientLight);
 
+      // Luz direccional
       const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
       directionalLight.position.set(10, 10, 10);
       scene.add(directionalLight);
 
-      // Añadir objetos de ejemplo (cuerpos celestes)
-      addCelestialBodies();
+      // Cargar modelo de la Tierra
+      loadEarthModel();
 
-      // Configuración de la Tierra
-      configureEarth();
-
-      // Redimensionar ventana
+      // Manejar redimensionamiento
       window.addEventListener('resize', onWindowResize);
 
-      // Animación
+      // Animar la escena
       animate();
     }
 
-    function addCelestialBodies() {
-      const sunGeometry = new THREE.SphereGeometry(5, 64, 64);
-      const sunMaterial = new THREE.MeshStandardMaterial({ color: 0xffff00 });
-      const sun = new THREE.Mesh(sunGeometry, sunMaterial);
-      sun.position.set(-10, 0, 0);
-      scene.add(sun);
-
-      const moonGeometry = new THREE.SphereGeometry(1, 32, 32);
-      const moonMaterial = new THREE.MeshStandardMaterial({ color: 0xaaaaaa });
-      const moon = new THREE.Mesh(moonGeometry, moonMaterial);
-      moon.position.set(5, 0, 5);
-      scene.add(moon);
-    }
-
-    function configureEarth() {
-      earthGroup = new THREE.Group();
-      scene.add(earthGroup);
-
+    function loadEarthModel() {
       const loader = new GLTFLoader();
       loader.load(
-        'https://solarsystem.nasa.gov/rails/active_storage/disk/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdDVG9JYTJWNVNTSXBaakUwWlRNd1lqSXRPR0l6TnkwME1qQmhMVGcyWWpBdE0yUXlOMk14Wm1ObVpUTTBCam9HUlZRNkVHUnBjM0J2YzJsMGFXOXVTU0pSWVhSMFlXTm9iV1Z1ZERzZ1ptbHNaVzVoYldVOUlrVmhjblJvWHpGZk1USTNOVFl1WjJ4aUlqc2dabWxzWlc1aGJXVXFQVlZVUmkwNEp5ZEZZWEowYUY4eFh6RXlOelUyTG1kc1lnWTdCbFE2RVdOdmJuUmxiblJmZEhsd1pVa2lIV0Z3Y0d4cFkyRjBhVzl1TDI5amRHVjBMWE4wY21WaGJRWTdCbFE2RVhObGNuWnBZMlZmYm1GdFpUb0tiRzlqWVd3PSIsImV4cCI6bnVsbCwicHVyIjoiYmxvYl9rZXkifX0=--e415e23b3e8f898327171109758a66a254794524/Earth_1_12756.glb', // Ruta de tu modelo
+        'https://solarsystem.nasa.gov/rails/active_storage/disk/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdDVG9JYTJWNVNTSXBaakUwWlRNd1lqSXRPR0l6TnkwME1qQmhMVGcyWWpBdE0yUXlOMk14Wm1ObVpUTTBCam9HUlZRNkVHUnBjM0J2YzJsMGFXOXVTU0pSWVhSMFlXTm9iV1Z1ZERzZ1ptbHNaVzVoYldVOUlrVmhjblJvWHpGZk1USTNOVFl1WjJ4aUlqc2dabWxzWlc1aGJXVXFQVlZVUmkwNEp5ZEZZWEowYUY4eFh6RXlOelUyTG1kc1lnWTdCbFE2RVdOdmJuUmxiblJmZEhsd1pVa2lIV0Z3Y0d4cFkyRjBhVzl1TDI5amRHVjBMWE4wY21WaGJRWTdCbFE2RVhObGNuWnBZMlZmYm1GdFpUb0tiRzlqWVd3PSIsImV4cCI6bnVsbCwicHVyIjoiYmxvYl9rZXkifX0=--e415e23b3e8f898327171109758a66a254794524/Earth_1_12756.glb', // URL del modelo
         (gltf) => {
           earthModel = gltf.scene;
 
-          // Ajustar escala, rotación y posición
+          // Ajustar escala y posición de la Tierra
           earthModel.scale.set(1, 1, 1);
-          earthModel.rotation.y = Math.PI; // Rotación inicial
-          earthGroup.add(earthModel);
+          earthModel.position.set(0, 0, 0);
+
+          // Añadir el modelo a la escena
+          scene.add(earthModel);
         },
         undefined,
-        (error) => console.error('Error al cargar la Tierra:', error)
+        (error) => console.error('Error al cargar el modelo de la Tierra:', error)
       );
     }
 
@@ -100,7 +84,7 @@
     function animate() {
       requestAnimationFrame(animate);
 
-      // Rotar la Tierra (si está cargada)
+      // Rotar la Tierra si está cargada
       if (earthModel) {
         earthModel.rotation.y += 0.01;
       }
