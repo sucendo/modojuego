@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Celestial Bodies Viewer</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <script type="module">
+        // Importar Three.js y GLTFLoader desde rutas locales
+        import * as THREE from 'http://localhost:8080/sucendo/modojuego.es/js/celestial_bodies/three.module.js';
+        import { GLTFLoader } from 'http://localhost:8080/sucendo/modojuego.es/js/celestial_bodies/GLTFLoader.js';
+
+        // Configuración inicial de la escena
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Añadir luz
+        const light = new THREE.AmbientLight(0xffffff, 0.5); // Luz ambiental
+        scene.add(light);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1); // Luz direccional
+        directionalLight.position.set(10, 10, 10);
+        scene.add(directionalLight);
+
+        // Cargar modelo GLB
+        const loader = new GLTFLoader();
+        loader.load(
+            'http://localhost:8080/sucendo/modojuego.es/models/earth.glb', // Ruta relativa al modelo
+            (gltf) => {
+                const model = gltf.scene;
+                model.scale.set(1, 1, 1); // Escalar el modelo si es necesario
+                model.position.set(0, 0, 0); // Posición inicial
+                scene.add(model);
+            },
+            undefined,
+            (error) => {
+                console.error('Error al cargar el modelo:', error);
+            }
+        );
+
+        // Configuración inicial de la cámara
+        camera.position.z = 5;
+
+        // Animación
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
