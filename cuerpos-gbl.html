@@ -1,61 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Celestial Bodies Viewer</title>
-    <style>
-        body { margin: 0; overflow: hidden; }
-        canvas { display: block; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GLTF Viewer</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
+  </style>
 </head>
 <body>
-    <script type="module">
-        // Importar Three.js y GLTFLoader desde rutas locales
-        import * as THREE from './js/celestial_bodies/three.module.js';
-        import { GLTFLoader } from './js/celestial_bodies/GLTFLoader.js';
+  <script type="module">
+    // Importar Three.js y GLTFLoader desde rutas locales
+    import * as THREE from './js/celestial_bodies/three.module.js';
+    import { GLTFLoader } from './js/celestial_bodies/GLTFLoader.js';
 
-        // Configuración inicial de la escena
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.body.appendChild(renderer.domElement);
+    // Configuración inicial de la escena
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
 
-        // Añadir luz
-        const light = new THREE.AmbientLight(0xffffff, 0.5); // Luz ambiental
-        scene.add(light);
+    // Añadir luz ambiental
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); // Luz ambiental tenue
+    scene.add(ambientLight);
 
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1); // Luz direccional
-        directionalLight.position.set(10, 10, 10);
-        scene.add(directionalLight);
+    // Añadir luz direccional
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(10, 10, 10);
+    scene.add(directionalLight);
 
-        // Cargar modelo GLB
-        const loader = new GLTFLoader();
-        loader.load(
-            './models/celestial_bodies/Earth_1_12756.glb', // Ruta relativa al modelo
-            (gltf) => {
-                const model = gltf.scene;
-                model.scale.set(1, 1, 1); // Escalar el modelo si es necesario
-                model.position.set(0, 0, 0); // Posición inicial
-                scene.add(model);
-            },
-            undefined,
-            (error) => {
-                console.error('Error al cargar el modelo:', error);
-            }
-        );
+    // Cargar el modelo GLB
+    const loader = new GLTFLoader();
+    loader.load(
+      './models/celestial_bodies/Earth_1_12756.glb', // Ruta del modelo GLB
+      (gltf) => {
+        const model = gltf.scene;
 
-        // Configuración inicial de la cámara
-        camera.position.z = 5;
+        // Ajustar escala, rotación y posición del modelo
+        model.scale.set(1, 1, 1);
+        model.position.set(0, 0, 0);
+        model.rotation.y = Math.PI; // Rotación inicial (opcional)
 
-        // Animación
-        function animate() {
-            requestAnimationFrame(animate);
-            renderer.render(scene, camera);
-        }
+        // Añadir el modelo a la escena
+        scene.add(model);
+      },
+      undefined,
+      (error) => {
+        console.error('Error al cargar el modelo:', error);
+      }
+    );
 
-        animate();
-    </script>
+    // Configuración inicial de la cámara
+    camera.position.z = 10;
+
+    // Animación
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+
+    animate();
+  </script>
 </body>
 </html>
