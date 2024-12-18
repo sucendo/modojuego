@@ -12,8 +12,8 @@
 <body>
   <script type="module">
     // Importar Three.js y GLTFLoader desde rutas locales
-    import * as THREE from './js/celestial_bodies/three.module.js';
-    import { GLTFLoader } from './js/celestial_bodies/GLTFLoader.js';
+    import * as THREE from '/modojuego/js/celestial_bodies/three.module.js';
+    import { GLTFLoader } from '/modojuego/js/celestial_bodies/GLTFLoader.js';
 
     // Configuración inicial de la escena
     const scene = new THREE.Scene();
@@ -34,7 +34,7 @@
     // Cargar el modelo GLB
     const loader = new GLTFLoader();
     loader.load(
-      './models/celestial_bodies/Earth_1_12756.glb', // Ruta del modelo GLB
+      '/modojuego/models/celestial_bodies/Earth_1_12756.glb', // Ruta del modelo GLB
       (gltf) => {
         const model = gltf.scene;
 
