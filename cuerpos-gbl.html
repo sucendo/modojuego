@@ -18,7 +18,7 @@
 
 	<body>
 		<div id="info">
-			<a href="https://threejs.org" target="_blank" rel="noopener">Three.js</a> - Forest House GLB Model
+			<a href="https://threejs.org" target="_blank" rel="noopener">Three.js</a> - Forest House GLB Model with Draco Compression
 		</div>
 
 		<script type="importmap">
@@ -34,6 +34,7 @@
 			import * as THREE from 'three';
 			import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 			import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+			import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
 			let camera, scene, renderer, controls, forestHouseModel;
 
@@ -61,8 +62,13 @@
 				directionalLight.position.set(5, 10, 7.5);
 				scene.add(directionalLight);
 
+				// Configurar DRACOLoader
+				const dracoLoader = new DRACOLoader();
+				dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/gh/mrdoob/three.js@r158/examples/js/libs/draco/gltf/'); // Ruta al decodificador Draco
+
 				// Cargar el modelo GLB del Forest House
 				const loader = new GLTFLoader();
+				loader.setDRACOLoader(dracoLoader); // Asignar DRACOLoader al GLTFLoader
 				loader.setPath('./models/celestial_bodies/'); // Ruta al modelo
 				loader.load('forest_house.glb', (gltf) => {
 					forestHouseModel = gltf.scene;
