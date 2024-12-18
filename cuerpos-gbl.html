@@ -33,7 +33,7 @@
         // Cargar modelo GLB
         const loader = new GLTFLoader();
         loader.load(
-            './models/Earth_1_12756.glb', // Ruta relativa al modelo
+            './models/celestial_bodies/Earth_1_12756.glb', // Ruta relativa al modelo
             (gltf) => {
                 const model = gltf.scene;
                 model.scale.set(1, 1, 1); // Escalar el modelo si es necesario
