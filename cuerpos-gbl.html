@@ -24,8 +24,8 @@
 		<script type="importmap">
 			{
 				"imports": {
-					"three": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r158/build/three.module.js",
-					"three/addons/": "https://cdn.jsdelivr.net/gh/mrdoob/three.js@r158/examples/jsm/"
+					"three": "https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js",
+					"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/"
 				}
 			}
 		</script>
@@ -64,13 +64,14 @@
 
 				// Configurar DRACOLoader
 				const dracoLoader = new DRACOLoader();
-				dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/gh/mrdoob/three.js@r158/examples/js/libs/draco/gltf/'); // Ruta al decodificador Draco
+				dracoLoader.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/'); // Fuente válida de decodificadores Draco
+				dracoLoader.setDecoderConfig({ type: 'wasm' }); // Configuración para usar WASM
 
 				// Cargar el modelo GLB del Forest House
 				const loader = new GLTFLoader();
 				loader.setDRACOLoader(dracoLoader); // Asignar DRACOLoader al GLTFLoader
 				loader.setPath('./models/celestial_bodies/'); // Ruta al modelo
-				loader.load('forest_house.glb', (gltf) => {
+				loader.load('Earth_1_12756.glb', (gltf) => {
 					forestHouseModel = gltf.scene;
 
 					// Ajustar escala y posición
