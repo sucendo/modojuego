@@ -75,7 +75,7 @@
 					earthModel = gltf.scene;
 
 					// Ajustar escala y posición
-					earthModel.scale.set(1, 1, 1); // Escala estándar
+					earthModel.scale.set(0.01, 0.01, 0.01); // Escala estándar
 					earthModel.position.set(0, 0, 0); // Centrar el modelo
 					scene.add(earthModel);
 				});
@@ -90,7 +90,7 @@
 				controls = new OrbitControls(camera, renderer.domElement);
 				controls.target.set(0, 0, 0); // Fijar el objetivo al centro del modelo
 				controls.minDistance = 3; // Distancia mínima para acercar la cámara
-				controls.maxDistance = 30; // Distancia máxima para alejar la cámara
+				controls.maxDistance = 30000; // Distancia máxima para alejar la cámara
 				controls.update();
 
 				// Ajustar el tamaño en el redimensionamiento de la ventana
@@ -108,7 +108,7 @@
 
 				// Rotación de la Tierra
 				if (earthModel) {
-					earthModel.rotation.y += 0.005; // Rotación suave
+					earthModel.rotation.y += 0.05; // Rotación suave
 				}
 
 				// Renderizar la escena
