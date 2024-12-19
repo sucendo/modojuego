@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
-		<title>Three.js WebGL - Forest House</title>
+		<title>Three.js WebGL - Earth Model</title>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0"/>
 		<style>
 			body {
 				margin: 0;
 				overflow: hidden;
-				background-color: #d7e5ef; /* Fondo más claro */
+				background-color: #000; /* Fondo negro para simular el espacio */
 			}
 			canvas {
 				display: block;
@@ -18,7 +18,7 @@
 
 	<body>
 		<div id="info">
-			<a href="https://threejs.org" target="_blank" rel="noopener">Three.js</a> - Forest House GLB Model with Draco Compression
+			<a href="https://threejs.org" target="_blank" rel="noopener">Three.js</a> - Earth GLB Model with Draco Compression
 		</div>
 
 		<script type="importmap">
@@ -36,7 +36,7 @@
 			import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 			import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
-			let camera, scene, renderer, controls, forestHouseModel;
+			let camera, scene, renderer, controls, earthModel;
 
 			init();
 			animate();
@@ -45,16 +45,16 @@
 
 				// Configuración de la cámara
 				camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
-				camera.position.set(0, 3, 15); // Ajustar posición para observar la Tierra
+				camera.position.set(0, 5, 15); // Ajustar la posición de la cámara
 
 				// Crear la escena
 				scene = new THREE.Scene();
 
-				// Fondo más claro para el modelo
-				scene.background = new THREE.Color(0xd7e5ef);
+				// Fondo negro para simular el espacio
+				scene.background = new THREE.Color(0x000000);
 
 				// Añadir luz ambiental
-				const ambientLight = new THREE.AmbientLight(0xffffff, 0.7); // Luz general suave
+				const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); // Luz general suave
 				scene.add(ambientLight);
 
 				// Añadir luz direccional
@@ -67,17 +67,17 @@
 				dracoLoader.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/'); // Fuente válida de decodificadores Draco
 				dracoLoader.setDecoderConfig({ type: 'wasm' }); // Configuración para usar WASM
 
-				// Cargar el modelo GLB del Forest House
+				// Cargar el modelo GLB de la Tierra
 				const loader = new GLTFLoader();
 				loader.setDRACOLoader(dracoLoader); // Asignar DRACOLoader al GLTFLoader
 				loader.setPath('./models/celestial_bodies/'); // Ruta al modelo
-				loader.load('forest_house.glb', (gltf) => {
-					forestHouseModel = gltf.scene;
+				loader.load('Earth_1_12756.glb', (gltf) => {
+					earthModel = gltf.scene;
 
 					// Ajustar escala y posición
-					forestHouseModel.scale.set(1, 1, 1);
-					forestHouseModel.position.set(0, 0, 0);
-					scene.add(forestHouseModel);
+					earthModel.scale.set(1, 1, 1); // Escala estándar
+					earthModel.position.set(0, 0, 0); // Centrar el modelo
+					scene.add(earthModel);
 				});
 
 				// Crear el renderizador
@@ -89,8 +89,8 @@
 				// Configuración de los controles orbitales
 				controls = new OrbitControls(camera, renderer.domElement);
 				controls.target.set(0, 0, 0); // Fijar el objetivo al centro del modelo
-				controls.minDistance = 5; // Distancia mínima para acercar la cámara
-				controls.maxDistance = 20; // Distancia máxima para alejar la cámara
+				controls.minDistance = 3; // Distancia mínima para acercar la cámara
+				controls.maxDistance = 30; // Distancia máxima para alejar la cámara
 				controls.update();
 
 				// Ajustar el tamaño en el redimensionamiento de la ventana
@@ -106,9 +106,9 @@
 			function animate() {
 				requestAnimationFrame(animate);
 
-				// Animación adicional opcional (si fuera necesario)
-				if (forestHouseModel) {
-					forestHouseModel.rotation.y += 0.01; // Rotación lenta
+				// Rotación de la Tierra
+				if (earthModel) {
+					earthModel.rotation.y += 0.005; // Rotación suave
 				}
 
 				// Renderizar la escena
