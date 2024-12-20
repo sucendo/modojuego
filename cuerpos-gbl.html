@@ -489,15 +489,15 @@
 					iss: {
 						periapsis: 6779, apoapsis: 6789, size: 54.25, color: "green", orbits: "earth", orbitalPeriod: 1.5,
 						inclination: 51.64, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 258.76, lastPerihelion: "2023-12-01"
-					},/*
-					jwst: {
-						periapsis: 1501371, apoapsis: 1501371, size: 7.5, color: "cyan", orbits: "earth", orbitalPeriod: 365.25,
-						inclination: 0.5, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 0, lastPerihelion: "2023-12-01"
 					},
 					hubble: {
 						periapsis: 6911, apoapsis: 6921, size: 6.6, color: "silver", orbits: "earth", orbitalPeriod: 1.5,
 						inclination: 28.47, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 96.49, lastPerihelion: "2023-11-28"
-					},
+					},/*
+					jwst: {
+						periapsis: 1501371, apoapsis: 1501371, size: 7.5, color: "cyan", orbits: "earth", orbitalPeriod: 365.25,
+						inclination: 0.5, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 0, lastPerihelion: "2023-12-01"
+					},					
 					tiangong: {
 						periapsis: 6761, apoapsis: 6771, size: 27.5, color: "red", orbits: "earth", orbitalPeriod: 1.5,
 						inclination: 42.5, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 283.34, lastPerihelion: "2023-12-03"
@@ -622,6 +622,14 @@
 					bumpMap: textureLoader.load('./img/celestial_bodies/2k_moon_bump.jpg'),
 					bumpScale: 0.002,
 				},
+			};
+			
+			// Modelos específicos para cada cuerpo celeste
+			const celestialModels = {
+				iss: { model: './models/celestial_bodies/iss.glb' },
+				hubble: { model: './models/celestial_bodies/Hubble.glb' },
+				halley: { model: './models/celestial_bodies/Bennu_1_1.glb' },
+				europa: { model: './models/celestial_bodies/Europa_1_3138.glb' }
 			};
 			
 			/*	
@@ -751,48 +759,6 @@ loadModeloConLuz(
         colorSwitchInterval: 1000 // Intervalo de cambio de color (1 segundo)
     }
 );	*/	
-
-
-			function loadModelHubble(path, scale, position, rotation) {
-				const gltfLoader = new GLTFLoader();
-				const dracoLoader = new DRACOLoader();
-				dracoLoader.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/');
-				gltfLoader.setDRACOLoader(dracoLoader);
-			
-				gltfLoader.load(
-					path,
-					(gltf) => {
-						const model = gltf.scene;
-
-						// Escalar, posicionar y rotar el modelo
-						model.scale.set(scale.x, scale.y, scale.z);
-						model.position.set(position.x, position.y, position.z);
-						model.rotation.set(rotation.x, rotation.y, rotation.z);
-						model.castShadow = true;
-						model.receiveShadow = true;
-						
-						
-						scene.add(model);
-					
-
-						console.log('Modelo cargado:', model);
-					},
-					(xhr) => {
-						console.log((xhr.loaded / xhr.total * 100) + '% cargado');
-					},
-					(error) => {
-						console.error('Error al cargar el modelo:', error);
-					}
-				);
-			}
-
-			// Cargar modelo de ejemplo
-			loadModelHubble(
-				'./models/celestial_bodies/Hubble.glb', // Ruta al modelo
-				{ x: 1, y: 1, z: 1 }, // Escala
-				{ x: 100, y: 100, z: 100 }, // Posición
-				{ x: 0.1, y: 0.1, z: 0.1 } // Rotación
-			);	
 
 			// Refactorizar la función loadModel
 			function loadModel(modelPath, scale, callback) {
@@ -974,33 +940,24 @@ loadModeloConLuz(
 						if (name === "sun"){
 							alcance = 1000000000; // Aumentar alcance del Sol
 							geometry = new THREE.SphereGeometry(body.size * SCALE_SIZE, 64, 64);
-							mesh = new THREE.PointLight(0xffffff, 200000, alcance, 1); // Ajustar el alcance para el Sol
-							
-							const materialOptions = {
-								map: textures.map || null, // Usa la textura del mapa si está disponible
-								bumpMap: textures.bumpMap || null, // Usa el bumpMap si está disponible
-								bumpScale: textures.bumpScale || 0, // Ajusta el bumpScale si está disponible
-								color: !textures.map ? body.color : null, // Si no hay textura, usa el color del cuerpo
-								emissive: 0xffff00, // Luz cálida
-								emissiveIntensity: 1,
-							};
+							mesh = new THREE.PointLight(0xffffff, 500000, alcance, 1); // Ajustar el alcance para el Sol
 						} else {
 							alcance = 10000; ; // Ajustar el alcance para estrellas
 							geometry = new THREE.SphereGeometry(body.size * SCALE_SIZE, 64, 64);
-							mesh = new THREE.PointLight(0xffffff, 100, alcance, 2); // Ajustar el alcance para las estrellas
-							
-							const materialOptions = {
-									map: textures.map || null, // Usa la textura del mapa si está disponible
-									bumpMap: textures.bumpMap || null, // Usa el bumpMap si está disponible
-									bumpScale: textures.bumpScale || 0, // Ajusta el bumpScale si está disponible
-									color: !textures.map ? body.color : null, // Si no hay textura, usa el color del cuerpo
-									emissive: 0xffff00, // Luz cálida
-									emissiveIntensity: 1,
-								};				
+							mesh = new THREE.PointLight(0xffffff, 100, alcance, 2); // Ajustar el alcance para las estrellas			
 						}
 						
+						const materialOptions = {
+							map: textures.map || null, // Usa la textura del mapa si está disponible
+							bumpMap: textures.bumpMap || null, // Usa el bumpMap si está disponible
+							bumpScale: textures.bumpScale || 0, // Ajusta el bumpScale si está disponible
+							color: !textures.map ? body.color : null, // Si no hay textura, usa el color del cuerpo
+							emissive: 0xffff00, // Luz cálida
+							emissiveIntensity: 1,
+						};
+						
 						const material = new THREE.MeshStandardMaterial(materialOptions);
-							mesh.add(new THREE.Mesh(geometry , material));
+						mesh.add(new THREE.Mesh(geometry , material));
 						
 						mesh.castShadow = body.size * SCALE_SIZE >= 1; // Habilitar sombras solo para objetos suficientemente grandes
 
@@ -1069,36 +1026,40 @@ loadModeloConLuz(
 						
 						let geometry;
 
-						if (category === "artificialSatellites") {
-							// Cargar modelo GLTF para satélites artificiales
+
+						// Verificar si el modelo está definido en celestialModels
+						const celestialModel = celestialModels[name];
+						if (celestialModel) {
 							geometry = loadModel(
-								'./models/celestial_bodies/iss.glb',
-								{ x: body.size * SCALE_SIZE, y: body.size * SCALE_SIZE, z: body.size * SCALE_SIZE },
+								celestialModel.model, // Ruta del modelo desde el objeto celestialModels
+								{ x: 1 * SCALE_SIZE, y: 1 * SCALE_SIZE, z: 1 * SCALE_SIZE }, // Escala
 								(model) => {
 									model.userData = { name };
 									celestialObjects[name] = model;
-/*
-									// Crear y añadir un punto de luz al modelo
+
+									// Opcional: Añadir luz puntual alternante al modelo
+									/*
 									const pointLight = new THREE.PointLight(0xff0000, 0.01, 1, 2); // Inicialmente rojo
 									pointLight.position.set(0, 5, 0); // Posición relativa al modelo
 									pointLight.castShadow = true;
 
 									model.add(pointLight); // Añadir la luz como un hijo del modelo
 
-									// Alternar entre rojo y verde cada segundo
 									let isRed = true; // Estado inicial
 									setInterval(() => {
 										pointLight.color.set(isRed ? 0x00ff00 : 0xff0000); // Cambiar color
 										isRed = !isRed; // Alternar estado
 									}, 1000); // Cada 1000 ms (1 segundo)
-*/
+									*/
+
 									addText(name, model, body.size); // Añadir texto con el nombre del satélite
 								}
 							);
-						}else{
-							// Crear una geometría completa de esfera para otros cuerpos celestes
-							geometry = new THREE.SphereGeometry(body.size * SCALE_SIZE, 64, 64);	
-						}					
+						} else {
+							console.warn(`Modelo para '${name}' no encontrado en celestialModels.`);
+							geometry = new THREE.SphereGeometry(body.size * SCALE_SIZE, 64, 64);
+						}
+								
 
 						const materialOptions = {
 							map: textures.map || null, // Usa la textura del mapa si está disponible
