@@ -136,7 +136,7 @@
 			controls.enableZoom = true;
 
 			// Añadir un entorno de luz general (opcional)
-			const ambientLight = new THREE.AmbientLight(0x333333, 0.2); // Luz ambiental tenue
+			const ambientLight = new THREE.AmbientLight(0x333333, 0.3); // Luz ambiental tenue
 			scene.add(ambientLight);
 
 			// Escala para las distancias y tamaños
@@ -789,7 +789,7 @@ loadModeloConLuz(
 			// Cargar modelo de ejemplo
 			loadModelHubble(
 				'./models/celestial_bodies/Hubble.glb', // Ruta al modelo
-				{ x: 50, y: 50, z: 50 }, // Escala
+				{ x: 1, y: 1, z: 1 }, // Escala
 				{ x: 100, y: 100, z: 100 }, // Posición
 				{ x: 0.1, y: 0.1, z: 0.1 } // Rotación
 			);	
@@ -907,50 +907,50 @@ loadModeloConLuz(
 */
 
 			// Crear la geometría y material para el centro galáctico
-const galaxyGeometry = new THREE.SphereGeometry(10, 64, 64); // Ajustar tamaño y resolución
-const galaxyMat = new THREE.MeshStandardMaterial({
-    emissive: 0xffffff, // Luz cálida emitida por el material
-    emissiveIntensity: 1.5, // Intensidad de la emisión
-    color: 0x333333, // Color base para mezclar con la emisión
-});
+			const galaxyGeometry = new THREE.SphereGeometry(10, 64, 64); // Ajustar tamaño y resolución
+			const galaxyMat = new THREE.MeshStandardMaterial({
+				emissive: 0xffffff, // Luz cálida emitida por el material
+				emissiveIntensity: 1.5, // Intensidad de la emisión
+				color: 0x333333, // Color base para mezclar con la emisión
+			});
 
-// Crear la malla para el centro galáctico
-const galaxyMesh = new THREE.Mesh(galaxyGeometry, galaxyMat);
+			// Crear la malla para el centro galáctico
+			const galaxyMesh = new THREE.Mesh(galaxyGeometry, galaxyMat);
 
-// Posicionar la malla en el centro de la galaxia
-galaxyMesh.position.set(0, 0, 0);
+			// Posicionar la malla en el centro de la galaxia
+			galaxyMesh.position.set(0, 0, 0);
 
-// Habilitar sombras si necesario (proyectar/recibir sombras)
-galaxyMesh.castShadow = true;
-galaxyMesh.receiveShadow = true;
+			// Habilitar sombras si necesario (proyectar/recibir sombras)
+			galaxyMesh.castShadow = true;
+			galaxyMesh.receiveShadow = true;
 
-// Agregar el centro galáctico a la escena
-scene.add(galaxyMesh);
+			// Agregar el centro galáctico a la escena
+			scene.add(galaxyMesh);
 
-// Guardar el centro galáctico en el objeto celestialObjects para futuras referencias
-celestialObjects["galaxy"] = galaxyMesh;
+			// Guardar el centro galáctico en el objeto celestialObjects para futuras referencias
+			celestialObjects["galaxy"] = galaxyMesh;
 
-console.log('Centro galáctico creado:', galaxyMesh);
+			console.log('Centro galáctico creado:', galaxyMesh);
+/*
+			// Crear un punto de luz para iluminar toda la galaxia
+			const galaxyPointLight = new THREE.PointLight(0xffffff, 1000, 10000, 1); // Luz blanca, intensidad 1.5, gran alcance
+			galaxyPointLight.position.set(50, 50, 50); // Posicionar la luz en el centro de la galaxia
+			galaxyPointLight.castShadow = true; // Habilitar sombras proyectadas
 
-// Crear un punto de luz para iluminar toda la galaxia
-const galaxyPointLight = new THREE.PointLight(0xffffff, 1000, 10000, 1); // Luz blanca, intensidad 1.5, gran alcance
-galaxyPointLight.position.set(50, 50, 50); // Posicionar la luz en el centro de la galaxia
-galaxyPointLight.castShadow = true; // Habilitar sombras proyectadas
+			// Configurar sombras para el punto de luz
+			galaxyPointLight.shadow.mapSize.width = 4096; // Aumentar la resolución del mapa de sombras
+			galaxyPointLight.shadow.mapSize.height = 4096;
+			galaxyPointLight.shadow.camera.near = 1; // Distancia mínima desde la luz al objeto
+			galaxyPointLight.shadow.camera.far = 1000000; // Distancia máxima que puede alcanzar la luz
 
-// Configurar sombras para el punto de luz
-galaxyPointLight.shadow.mapSize.width = 4096; // Aumentar la resolución del mapa de sombras
-galaxyPointLight.shadow.mapSize.height = 4096;
-galaxyPointLight.shadow.camera.near = 1; // Distancia mínima desde la luz al objeto
-galaxyPointLight.shadow.camera.far = 1000000; // Distancia máxima que puede alcanzar la luz
+			// Añadir la luz a la escena
+			scene.add(galaxyPointLight);
 
-// Añadir la luz a la escena
-scene.add(galaxyPointLight);
+			// Guardar la luz en el objeto celestialObjects para futuras referencias
+			celestialObjects["galaxyLight"] = galaxyPointLight;
 
-// Guardar la luz en el objeto celestialObjects para futuras referencias
-celestialObjects["galaxyLight"] = galaxyPointLight;
-
-console.log('Punto de luz galáctico creado:', galaxyPointLight);
-			
+			console.log('Punto de luz galáctico creado:', galaxyPointLight);
+*/			
 			// Crear un array para los objetos interactuables
 			const interactableObjects = [];
 			
@@ -974,7 +974,6 @@ console.log('Punto de luz galáctico creado:', galaxyPointLight);
 						if (name === "sun"){
 							alcance = 1000000000; // Aumentar alcance del Sol
 							geometry = new THREE.SphereGeometry(body.size * SCALE_SIZE, 64, 64);
-							//mesh = new THREE.DirectionalLight(0xffffff, 1); // Ajustar el alcance para el Sol
 							mesh = new THREE.PointLight(0xffffff, 200000, alcance, 1); // Ajustar el alcance para el Sol
 							
 							const materialOptions = {
@@ -985,15 +984,11 @@ console.log('Punto de luz galáctico creado:', galaxyPointLight);
 								emissive: 0xffff00, // Luz cálida
 								emissiveIntensity: 1,
 							};
-							
-							const material = new THREE.MeshStandardMaterial(materialOptions);
-							mesh.add(new THREE.Mesh(geometry , material));
-							 
 						} else {
-							// Crear la geometría y el material del cuerpo celeste
-							/*alcance = 1000000; ; // Ajustar el alcance para estrellas
+							alcance = 10000; ; // Ajustar el alcance para estrellas
 							geometry = new THREE.SphereGeometry(body.size * SCALE_SIZE, 64, 64);
-							mesh = new THREE.PointLight(0xffffff, 1, alcance, 2); // Ajustar el alcance para el Sol
+							mesh = new THREE.PointLight(0xffffff, 100, alcance, 2); // Ajustar el alcance para las estrellas
+							
 							const materialOptions = {
 									map: textures.map || null, // Usa la textura del mapa si está disponible
 									bumpMap: textures.bumpMap || null, // Usa el bumpMap si está disponible
@@ -1002,9 +997,10 @@ console.log('Punto de luz galáctico creado:', galaxyPointLight);
 									emissive: 0xffff00, // Luz cálida
 									emissiveIntensity: 1,
 								};				
-							const material = new THREE.MeshStandardMaterial(materialOptions);						
-							mesh.add(new THREE.Mesh(geometry , material));*/
 						}
+						
+						const material = new THREE.MeshStandardMaterial(materialOptions);
+							mesh.add(new THREE.Mesh(geometry , material));
 						
 						mesh.castShadow = body.size * SCALE_SIZE >= 1; // Habilitar sombras solo para objetos suficientemente grandes
 
