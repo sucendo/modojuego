@@ -117,12 +117,17 @@
 			import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 			import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 			import { USDZLoader } from 'three/addons/loaders/USDZLoader.js';
-
+			/*
+			import { pass, mrt, output, emissive, uniform } from 'three/tsl';
+			import { bloom } from 'three/addons/tsl/display/BloomNode.js';
+			import { lensflare } from 'three/addons/tsl/display/LensflareNode.js';
+			import { gaussianBlur } from 'three/addons/tsl/display/GaussianBlurNode.js';*/
+			
 			
 		//function init() {
 			// Configuración inicial
 			const scene = new THREE.Scene();
-			const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.001, 5000000);
+			const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.0001, 5000000);
 			const renderer = new THREE.WebGLRenderer({ antialias: true });
 			renderer.setSize(window.innerWidth, window.innerHeight);
 			renderer.shadowMap.enabled = true; // Habilitar sombras
@@ -200,7 +205,7 @@
 			const CELESTIAL_BODIES = {
 				star: {
 					sun: { 
-						periapsis: 6000000, apoapsis: 6000000, size: 696340, color: 0xffff00, orbits: "galaxy", orbitalPeriod: 70000, 
+						periapsis: 6000000, apoapsis: 6000000, size: 696340, color: 0xf6f6f6, orbits: "galaxy", orbitalPeriod: 70000, 
 						inclination: 0, argumentOfPeriapsis: 600000, longitudeOfAscendingNode: 0, lastPerihelion:  "2024-01-01", 
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 7.25, rotationPeriod: 27 
 					},
@@ -450,7 +455,7 @@
 				},
 				satellites: {
 					moon: { 
-						periapsis: 363300, apoapsis: 405500, size: 1737, color: 0xcccccc, orbits: "earth", orbitalPeriod: 27.321,
+						periapsis: 363300, apoapsis: 405500, size: 1737.1, color: 0xcccccc, orbits: "earth", orbitalPeriod: 27.321,
 						inclination: 5.14, argumentOfPeriapsis: 41.5, longitudeOfAscendingNode: 125.08, lastPerihelion: "2024-12-03",
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 1.54, rotationPeriod: 27.321
 					},
@@ -487,12 +492,14 @@
 				},
 				artificialSatellites: {
 					iss: {
-						periapsis: 6779, apoapsis: 6789, size: 54.25, color: "green", orbits: "earth", orbitalPeriod: 1.5,
-						inclination: 51.64, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 258.76, lastPerihelion: "2023-12-01"
+						periapsis: 6779, apoapsis: 6781, size: 5.45, color: "green", orbits: "earth", orbitalPeriod: 1.5,
+						inclination: 51.64, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 258.76, lastPerihelion: "2023-12-01",
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 23.0, rotationPeriod: 365.37
 					},
 					hubble: {
 						periapsis: 6911, apoapsis: 6921, size: 6.6, color: "silver", orbits: "earth", orbitalPeriod: 1.5,
-						inclination: 28.47, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 96.49, lastPerihelion: "2023-11-28"
+						inclination: 28.47, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 96.49, lastPerihelion: "2023-11-28",
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 23.0, rotationPeriod: 365.37
 					},/*
 					jwst: {
 						periapsis: 1501371, apoapsis: 1501371, size: 7.5, color: "cyan", orbits: "earth", orbitalPeriod: 365.25,
@@ -509,11 +516,12 @@
 					sentinel2a: {
 						periapsis: 7157, apoapsis: 7157, size: 2.1, color: "blue", orbits: "earth", orbitalPeriod: 1.67,
 						inclination: 98.56, argumentOfPeriapsis: 90, longitudeOfAscendingNode: 128.7, lastPerihelion: "2023-12-01"
-					},
+					},*/
 					galileo: {
 						periapsis: 29593, apoapsis: 29593, size: 1.2, color: "orange", orbits: "earth", orbitalPeriod: 14,
-						inclination: 56, argumentOfPeriapsis: 270, longitudeOfAscendingNode: 220.5, lastPerihelion: "2023-12-01"
-					},
+						inclination: 56, argumentOfPeriapsis: 270, longitudeOfAscendingNode: 220.5, lastPerihelion: "2023-12-01",
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 23.0, rotationPeriod: 365.37
+					},/*
 					glonass: {
 						periapsis: 25471, apoapsis: 25471, size: 1.2, color: "red", orbits: "earth", orbitalPeriod: 11.26,
 						inclination: 64.8, argumentOfPeriapsis: 50, longitudeOfAscendingNode: 255.75, lastPerihelion: "2023-11-30"
@@ -626,10 +634,38 @@
 			
 			// Modelos específicos para cada cuerpo celeste
 			const celestialModels = {
-				iss: { model: './models/celestial_bodies/iss.glb' },
-				hubble: { model: './models/celestial_bodies/Hubble.glb' },
-				halley: { model: './models/celestial_bodies/Bennu_1_1.glb' },
-				europa: { model: './models/celestial_bodies/Europa_1_3138.glb' }
+				iss: { 
+					model: './models/celestial_bodies/iss.glb',
+					MeridianOffset: 0 // Sin desfase para ISS
+				},
+				hubble: { 
+					model: './models/celestial_bodies/Hubble.glb',
+					MeridianOffset: 270 // Sin desfase para Hubble
+				},
+				galileo: { 
+					model: './models/celestial_bodies/Galileo.glb',
+					MeridianOffset: 180 // Sin desfase para Hubble
+				},
+				halley: { 
+					model: './models/celestial_bodies/Bennu_1_1.glb',
+					MeridianOffset: 0 // Sin desfase para Halley
+				},
+				europa: { 
+					model: './models/celestial_bodies/Europa_1_3138.glb',
+					MeridianOffset: 90 // Suponiendo un desfase de 90 grados
+				},
+				earth: { 
+					model: './models/celestial_bodies/Earth_1_12756.glb',
+					MeridianOffset: 90 // Meridiano inicial a 180 grados
+				},
+				moon: { 
+					model: './models/celestial_bodies/Moon_1_3474.glb',
+					MeridianOffset: 90 // Sin desfase para la Luna
+				},
+				saturn: { 
+					model: './models/celestial_bodies/Saturn_1_120536.glb',
+					MeridianOffset: 0 // Sin desfase para Saturno
+				}
 			};
 			
 			/*	
@@ -761,7 +797,7 @@ loadModeloConLuz(
 );	*/	
 
 			// Refactorizar la función loadModel
-			function loadModel(modelPath, scale, callback) {
+			function loadModel(modelPath, desiredRadius, callback) {
 				const gltfLoader = new GLTFLoader();
 				const dracoLoader = new DRACOLoader();
 				dracoLoader.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/');
@@ -772,8 +808,16 @@ loadModeloConLuz(
 					(gltf) => {
 						const model = gltf.scene;
 
-						// Configurar escala
-						model.scale.set(scale.x, scale.y, scale.z);
+						// Calcular escala dinámica basada en el tamaño actual y el diámetro deseado
+						const desiredDiameter = desiredRadius * 2; // Convertir radio a diámetro
+						const boundingBox = new THREE.Box3().setFromObject(model);
+						const size = new THREE.Vector3();
+						boundingBox.getSize(size);
+						const currentDiameter = Math.max(size.x, size.y, size.z); // Diámetro actual del modelo
+						const scalingFactor = desiredDiameter / currentDiameter;
+
+						// Aplicar la escala
+						model.scale.set(scalingFactor, scalingFactor, scalingFactor);
 
 						// Habilitar sombras
 						model.castShadow = true;
@@ -784,6 +828,7 @@ loadModeloConLuz(
 							callback(model);
 						}
 
+						// Añadir el modelo a la escena
 						scene.add(model);
 						interactableObjects.push(model);
 					},
@@ -917,439 +962,131 @@ loadModeloConLuz(
 
 			console.log('Punto de luz galáctico creado:', galaxyPointLight);
 */			
+
+
+			// Configuración global para estrellas
+			const STAR_CONFIG = {
+				sun: { lightIntensity: 500000, lightRange: 1000000000, color: 0xfffabb },
+				default: { lightIntensity: 100, lightRange: 10000, color: 0xfffabb },
+			};
+
 			// Crear un array para los objetos interactuables
 			const interactableObjects = [];
-			
 			let textsVisible = true; // Estado inicial: los textos están visibles
-			const labels = []; // Array para almacenar las referencias de los textos
-			const textLabels = {}; // Array para almacenar referencias de etiquetas asociadas a cada cuerpo celeste
+			const labels = [];
+			const textLabels = {};
+			const modelLoadPromises = [];
 
 			// Crear cuerpos celestes y sus órbitas
 			Object.keys(CELESTIAL_BODIES).forEach((category) => {
 				Object.keys(CELESTIAL_BODIES[category]).forEach((name) => {
 					const body = CELESTIAL_BODIES[category][name];
-					
-					if (category === "star") {
-						// Para otros cuerpos celestes
-						const textures = celestialBodiesTextures [name] || {};
-						
-						let geometry;
-						let mesh;						
-						var alcance = 0;
-						
-						if (name === "sun"){
-							alcance = 1000000000; // Aumentar alcance del Sol
-							geometry = new THREE.SphereGeometry(body.size * SCALE_SIZE, 64, 64);
-							mesh = new THREE.PointLight(0xffffff, 500000, alcance, 1); // Ajustar el alcance para el Sol
-						} else {
-							alcance = 10000; ; // Ajustar el alcance para estrellas
-							geometry = new THREE.SphereGeometry(body.size * SCALE_SIZE, 64, 64);
-							mesh = new THREE.PointLight(0xffffff, 100, alcance, 2); // Ajustar el alcance para las estrellas			
-						}
-						
-						const materialOptions = {
-							map: textures.map || null, // Usa la textura del mapa si está disponible
-							bumpMap: textures.bumpMap || null, // Usa el bumpMap si está disponible
-							bumpScale: textures.bumpScale || 0, // Ajusta el bumpScale si está disponible
-							color: !textures.map ? body.color : null, // Si no hay textura, usa el color del cuerpo
-							emissive: 0xffff00, // Luz cálida
-							emissiveIntensity: 1,
-						};
-						
-						const material = new THREE.MeshStandardMaterial(materialOptions);
-						mesh.add(new THREE.Mesh(geometry , material));
-						
-						mesh.castShadow = body.size * SCALE_SIZE >= 1; // Habilitar sombras solo para objetos suficientemente grandes
+					const textures = celestialBodiesTextures[name] || {};
+					const celestialModel = celestialModels[name];
+					let celestialObject;
 
-						if (mesh.castShadow) {
-							const shadowMapSize = Math.min(4096, Math.max(512, body.size * 2)); // Ajustar resolución de sombras
-							mesh.shadow.mapSize.width = shadowMapSize;
-							mesh.shadow.mapSize.height = shadowMapSize;
+					// Calcular posición inicial
+					const position = calculateRelativePosition(
+						angles[name],
+						body.periapsis,
+						body.apoapsis,
+						body.longitudeOfAscendingNode,
+						body.inclination,
+						body.argumentOfPeriapsis
+					);
 
-							mesh.shadow.camera.near = Math.max(0.1, body.size * SCALE_SIZE * 0.5); // Ajustar rango cercano
-							mesh.shadow.camera.far = Math.min(50000, body.size * SCALE_SIZE * 10); // Ajustar rango lejano
+					if (body.orbits && celestialObjects[body.orbits]) {
+						const centralPosition = celestialObjects[body.orbits]?.position || new THREE.Vector3(0, 0, 0);
+						position.add(centralPosition);
+					}
 
-							// Ajustar intensidad de sombras para objetos grandes/pequeños
-							const shadowIntensityFactor = body.size * SCALE_SIZE > 10 ? 1 : 0.5; 
-							mesh.shadow.intensity = shadowIntensityFactor;
-						}						
-						
-						// Aplicar inclinación axial (si existe)
-						if (body.axialTilt) {
-							mesh.rotation.z = THREE.MathUtils.degToRad(body.axialTilt); // Inclinar el eje según `axialTilt`
-						}	
-						
-						// **Cálculo de rotación inicial sincronizada**
-						if (body.rotationPeriod && textures.textureMeridianOffset !== undefined) {
-							const initialRotation = calculateInitialRotation(
-								textures.textureMeridianOffset,
-								body.rotationPeriod,
-								new Date()
-							);
-
-							mesh.rotation.y += initialRotation; // Aplicar la rotación inicial
-						}
-
-						// Calcular la posición inicial del cuerpo celeste
-						const position = calculateRelativePosition(
-							angles[name],
-							body.periapsis,
-							body.apoapsis,
-							body.longitudeOfAscendingNode,
-							body.inclination,
-							body.argumentOfPeriapsis
-						);
-
-						// Si el cuerpo orbita otro cuerpo, ajusta su posición
-						if (body.orbits && celestialObjects[body.orbits]) {
-							const centralPosition = celestialObjects[body.orbits].position;
-							position.add(centralPosition);
-						}
-						
-						// Establecer la posición del mesh
-						mesh.position.set(position.x, position.y, position.z);
-						
-						// Asegurarse de que los objetos tengan geometría y posiciones actualizadas
-						//mesh.geometry.computeBoundingSphere();
-						mesh.updateMatrixWorld();
-						interactableObjects.push(mesh);
-						// Agregar el mesh a la escena
-						scene.add(mesh);
-						// Agregar el mesh al objeto `celestialObjects`
-						celestialObjects[name] = mesh;
-						
-						// Añadir texto con el nombre del cuerpo celeste
-						addText(name, mesh, body.size);
-					} else {
-						// Para otros cuerpos celestes
-						const textures = celestialBodiesTextures [name] || {};
-						
-						let geometry;
-
-
-						// Verificar si el modelo está definido en celestialModels
-						const celestialModel = celestialModels[name];
-						if (celestialModel) {
-							geometry = loadModel(
-								celestialModel.model, // Ruta del modelo desde el objeto celestialModels
-								{ x: 1 * SCALE_SIZE, y: 1 * SCALE_SIZE, z: 1 * SCALE_SIZE }, // Escala
+					if (celestialModel) {
+						 // Cargar modelo GLTF con diámetro deseado
+						const loadPromise = new Promise((resolve, reject) => {
+							loadModel(
+								celestialModel.model,
+								body.size * SCALE_SIZE, // Usar el tamaño deseado para el cuerpo celeste
 								(model) => {
 									model.userData = { name };
-									celestialObjects[name] = model;
-									addText(name, model, body.size); // Añadir texto con el nombre del satélite
-								}
-							);
-						} else {
-							console.warn(`Modelo para '${name}' no encontrado en celestialModels.`);
-							geometry = new THREE.SphereGeometry(body.size * SCALE_SIZE, 64, 64);
-						}
-								
+									model.position.set(position.x, position.y, position.z);
 
-						const materialOptions = {
-							map: textures.map || null, // Usa la textura del mapa si está disponible
-							bumpMap: textures.bumpMap || null, // Usa el bumpMap si está disponible
-							bumpScale: textures.bumpScale || 0, // Ajusta el bumpScale si está disponible
-							color: !textures.map ? body.color : null, // Si no hay textura, usa el color del cuerpo
-						};
-						const material = new THREE.MeshStandardMaterial(materialOptions);
-						const mesh = new THREE.Mesh(geometry, material);
-						
-						// Habilitar sombras en los cuerpos celestes
-						mesh.castShadow = true; // El cuerpo celeste proyecta sombras
-						mesh.receiveShadow = true; // El cuerpo celeste recibe sombras		
-						
-						// Aplicar inclinación axial (si existe)
-						if (body.axialTilt) {
-							mesh.rotation.z = THREE.MathUtils.degToRad(body.axialTilt); // Inclinar el eje según `axialTilt`
+									// Aplicar inclinación axial
+									if (body.axialTilt) {
+										model.rotation.z = THREE.MathUtils.degToRad(body.axialTilt);
+									}
+									
+
+									// Cálculo de rotación inicial sincronizada
+									if (body.rotationPeriod && celestialModel.MeridianOffset !== undefined) {
+										const initialRotation = calculateInitialRotation(
+											celestialModel.MeridianOffset,
+											body.rotationPeriod,
+											new Date()
+										);
+										model.rotation.y += initialRotation;
+									}
+									
+									scene.add(model);
+									celestialObjects[name] = model;
+									featureCelestialBody(name, category, model, textures);
+									linkOrbit(name, model);
+									addText(name, model, body.size);
+									celestialObject = model;
+
+									resolve(); // Marca la promesa como resuelta
+								},
+								reject // Manejar errores
+							);
+						});
+						modelLoadPromises.push(loadPromise);
+					} else {
+						// Crear cuerpo celeste
+						let celestialObject;
+
+						if (category === "star") {
+							celestialObject = createStar(body, textures, position, name);
+						} else {
+							celestialObject = createGenericCelestialBody(body, textures, position);
 						}
-						
-						// **Cálculo de rotación inicial sincronizada**
+
+						// Aplicar inclinación axial
+						if (body.axialTilt) {
+							celestialObject.rotation.z = THREE.MathUtils.degToRad(body.axialTilt);
+						}
+
+						// Cálculo de rotación inicial sincronizada
 						if (body.rotationPeriod && textures.textureMeridianOffset !== undefined) {
 							const initialRotation = calculateInitialRotation(
 								textures.textureMeridianOffset,
 								body.rotationPeriod,
 								new Date()
 							);
-
-							mesh.rotation.y += initialRotation; // Aplicar la rotación inicial
+							celestialObject.rotation.y += initialRotation;
 						}
 
-						const position = calculateRelativePosition(
-							angles[name],
-							body.periapsis,
-							body.apoapsis,
-							body.longitudeOfAscendingNode,
-							body.inclination,
-							body.argumentOfPeriapsis
-						);
+						// Añadir el cuerpo celeste a la escena
+						scene.add(celestialObject);
+						celestialObjects[name] = celestialObject;
 
-						if (body.orbits && celestialObjects[body.orbits]) {
-							const centralPosition = celestialObjects[body.orbits].position;
-							position.add(centralPosition);
+						// Funcionalidades adicionales
+						featureCelestialBody(name, category, celestialObject, textures);
+						if (category !== "star") {
+							linkOrbit(name, celestialObject);
 						}
-
-						mesh.position.set(position.x, position.y, position.z);
-						
-						// Asegurarse de que los objetos tengan geometría y posiciones actualizadas
-						mesh.geometry.computeBoundingSphere();
-						mesh.updateMatrixWorld();
-						
-						// Asocia el nombre del cuerpo celeste con el objeto
-						mesh.userData = {
-							name: name,
-						};
-						
-						scene.add(mesh);
-						
-						// Hacer interactuable
-						interactableObjects.push(mesh);
-						
-
-						celestialObjects[name] = mesh;
-
-						if (!celestialModel) { //temporal
-							// Añadir texto con el nombre del cuerpo celeste
-							addText(name , mesh, body.size);
-						}
-						
-						// Si es la Tierra, agregar las nubes
-						if (name === "earth" && textures.cloudsMap) {
-							const cloudGeometry = new THREE.SphereGeometry(body.size * SCALE_SIZE * 1.01, 64, 64);
-							const cloudMaterial = new THREE.MeshPhongMaterial({
-								map: textures.cloudsMap,
-								transparent: true,
-								opacity: 0.8,
-							});
-							const cloudMesh = new THREE.Mesh(cloudGeometry, cloudMaterial);
-							mesh.add(cloudMesh);
-						} else if (name === "saturn") {
-							// Crear los anillos de Saturno
-							const ringGeometry = new THREE.RingGeometry(
-								body.size * SCALE_SIZE * 1.2, // Radio interno del anillo
-								body.size * SCALE_SIZE * 2.5, // Radio externo del anillo
-								128 // Resolución angular (mayor valor para suavidad)
-							);
-
-							// Modificar las coordenadas UV para que mapeen correctamente desde el centro hacia afuera
-							const uv = ringGeometry.attributes.uv;
-							for (let i = 0; i < uv.count; i++) {
-								const u = uv.getX(i);
-								const v = uv.getY(i);
-								const radius = Math.sqrt((u - 0.5) ** 2 + (v - 0.5) ** 2); // Radio normalizado
-
-								// Mapeo de la textura desde el centro del anillo (izquierda de la imagen) hacia afuera (derecha de la imagen)
-								uv.setXY(i, radius, radius);
-							}
-
-							// Actualizar el atributo UV en la geometría
-							ringGeometry.attributes.uv.needsUpdate = true;
-
-							// Crear el material para los anillos
-							const ringMaterial = new THREE.MeshStandardMaterial({
-								map: celestialBodiesTextures .saturn.mapRing, // Textura del anillo
-								side: THREE.DoubleSide, // Renderizar ambos lados
-								transparent: true, // Habilitar transparencia
-							});
-
-							// Crear el mesh de los anillos
-							const ringMesh = new THREE.Mesh(ringGeometry, ringMaterial);
-							
-							// Habilitar sombras en los anillos
-							ringMesh.castShadow = false; // Proyecta sombras
-							ringMesh.receiveShadow = true; // Recibe sombras
-
-							// Rotar los anillos para colocarlos en el plano ecuatorial de Saturno
-							ringMesh.rotation.x = THREE.MathUtils.degToRad(90); // Plano horizontal
-							ringMesh.rotation.z = THREE.MathUtils.degToRad(body.axialTilt); // Ajustar inclinación de los anillos
-							
-							// Añadir los anillos como hijo del planeta
-							mesh.add(ringMesh);
-						}						
-						
-						if (!celestialModel) { //temporal
-							const orbit = drawOrbit(
-								angles[name],
-								body.periapsis,
-								body.apoapsis,
-								body.longitudeOfAscendingNode,
-								body.inclination,
-								body.argumentOfPeriapsis,
-								body.color,
-								body.orbits && celestialObjects[body.orbits]
-									? celestialObjects[body.orbits].position
-									: new THREE.Vector3(0, 0, 0)
-							);
-
-							if (orbit) {
-								scene.add(orbit);
-								celestialObjects[name].orbit = orbit;
-							}
-						}
+						addText(name, celestialObject, body.size);
 					}
+
+					interactableObjects.push(celestialObject);
 				});
-			});	
+			});
 
-		//}			
-/*			
-			// Función principal para crear cuerpos celestes
-			function createCelestialBody(name, body, category, textures) {
-				const geometry = getBodyGeometry(body, category);
-				const material = getBodyMaterial(body, textures);
-				const mesh = new THREE.Mesh(geometry, material);
+			// Función para vincular órbitas a cuerpos celestes
+			function linkOrbit(name, celestialObject) {
+				const body = CELESTIAL_BODIES[Object.keys(CELESTIAL_BODIES).find((cat) =>
+					CELESTIAL_BODIES[cat][name]
+				)][name];
 
-				// Configuración general de los cuerpos celestes
-				configureShadows(mesh, body);
-				configureRotation(mesh, body, textures);
-				configurePosition(mesh, body, name);
-
-				// Añadir funcionalidades según tipo o nombre
-				if (category === "star" || name === "sun") {
-					configureLight(mesh, name);
-				} else if (name === "earth") {
-					addClouds(mesh, body.size, textures);
-				} else if (name === "saturn") {
-					addSaturnRings(mesh, body.size, textures, body.axialTilt);
-				}
-
-				// Añadir órbitas
-				const orbit = drawOrbitForBody(name, body);
-				if (orbit) scene.add(orbit);
-
-				// Añadir a escena e interactuables
-				scene.add(mesh);
-				interactableObjects.push(mesh);
-				celestialObjects[name] = mesh;
-
-				// Añadir texto de etiquetas
-				addText(name, mesh, body.size);
-			}
-
-			// Función auxiliar para obtener geometría
-			function getBodyGeometry(body, category) {
-				if (category === "artificialSatellites") {
-					return new THREE.SphereGeometry(body.size * SCALE_SIZE, 32, 32, 0, Math.PI * 2, 0, Math.PI / 2);
-				}
-				return new THREE.SphereGeometry(body.size * SCALE_SIZE, 64, 64);
-			}
-
-			// Función auxiliar para obtener el material
-			function getBodyMaterial(body, textures) {
-				return new THREE.MeshStandardMaterial({
-					map: textures.map || null,
-					bumpMap: textures.bumpMap || null,
-					bumpScale: textures.bumpScale || 0,
-					color: !textures.map ? body.color : null,
-				});
-			}
-
-			// Configuración de sombras
-			function configureShadows(mesh, body) {
-				mesh.castShadow = body.size * SCALE_SIZE >= 1;
-				mesh.receiveShadow = true;
-			}
-
-			// Configuración de rotación
-			function configureRotation(mesh, body, textures) {
-				if (body.axialTilt) {
-					mesh.rotation.z = THREE.MathUtils.degToRad(body.axialTilt);
-				}
-				if (body.rotationPeriod && textures.textureMeridianOffset !== undefined) {
-					const initialRotation = calculateInitialRotation(
-						textures.textureMeridianOffset,
-						body.rotationPeriod,
-						new Date()
-					);
-					mesh.rotation.y += initialRotation;
-				}
-			}
-
-			// Configuración de posición
-			function configurePosition(mesh, body, name) {
-				const position = calculateRelativePosition(
-					angles[name],
-					body.periapsis,
-					body.apoapsis,
-					body.longitudeOfAscendingNode,
-					body.inclination,
-					body.argumentOfPeriapsis
-				);
-
-				if (body.orbits && celestialObjects[body.orbits]) {
-					const centralPosition = celestialObjects[body.orbits].position;
-					position.add(centralPosition);
-				}
-				mesh.position.set(position.x, position.y, position.z);
-			}
-
-			// Configuración especial para estrellas y el sol
-			function configureLight(mesh, name) {
-				const light = new THREE.PointLight(0xffffff, name === "sun" ? 1 : 0.5, name === "sun" ? 100000000 : 1000000, 2);
-				light.add(mesh);
-				scene.add(light);
-			}
-
-			// Añadir nubes a la Tierra
-			function addClouds(mesh, size, textures) {
-				if (textures.cloudsMap) {
-					const cloudGeometry = new THREE.SphereGeometry(size * SCALE_SIZE * 1.01, 64, 64);
-					const cloudMaterial = new THREE.MeshPhongMaterial({
-						map: textures.cloudsMap,
-						transparent: true,
-						opacity: 0.8,
-					});
-					const cloudMesh = new THREE.Mesh(cloudGeometry, cloudMaterial);
-					mesh.add(cloudMesh);
-				}
-			}
-
-			// Añadir anillos a Saturno
-			function addSaturnRings(mesh, size, textures, axialTilt) {
-				// Crear los anillos de Saturno
-				const ringGeometry = new THREE.RingGeometry(
-					size * SCALE_SIZE * 1.2, // Radio interno del anillo
-					size * SCALE_SIZE * 2.5, // Radio externo del anillo
-					128 // Resolución angular (mayor valor para suavidad)
-				);
-
-				// Modificar las coordenadas UV para que mapeen correctamente desde el centro hacia afuera
-				const uv = ringGeometry.attributes.uv;
-				for (let i = 0; i < uv.count; i++) {
-					const u = uv.getX(i);
-					const v = uv.getY(i);
-					const radius = Math.sqrt((u - 0.5) ** 2 + (v - 0.5) ** 2); // Radio normalizado
-
-					// Mapeo de la textura desde el centro del anillo (izquierda de la imagen) hacia afuera (derecha de la imagen)
-					uv.setXY(i, radius, radius);
-				}
-
-				// Actualizar el atributo UV en la geometría
-				ringGeometry.attributes.uv.needsUpdate = true;
-
-				// Crear el material para los anillos
-				const ringMaterial = new THREE.MeshStandardMaterial({
-					map: celestialBodiesTextures .saturn.mapRing, // Textura del anillo
-					side: THREE.DoubleSide, // Renderizar ambos lados
-					transparent: true, // Habilitar transparencia
-				});
-
-				// Crear el mesh de los anillos
-				const ringMesh = new THREE.Mesh(ringGeometry, ringMaterial);
-				
-				// Habilitar sombras en los anillos
-				ringMesh.castShadow = false; // Proyecta sombras
-				ringMesh.receiveShadow = true; // Recibe sombras
-
-				// Rotar los anillos para colocarlos en el plano ecuatorial de Saturno
-				ringMesh.rotation.x = THREE.MathUtils.degToRad(90); // Plano horizontal
-				ringMesh.rotation.z = THREE.MathUtils.degToRad(axialTilt); // Ajustar inclinación de los anillos
-				
-				// Añadir los anillos como hijo del planeta
-				mesh.add(ringMesh);
-			}
-
-			// Función para crear órbitas ???
-			function drawOrbitForBody(name, body) {
-				return drawOrbit(
+				const orbit = drawOrbit(
 					angles[name],
 					body.periapsis,
 					body.apoapsis,
@@ -1357,21 +1094,214 @@ loadModeloConLuz(
 					body.inclination,
 					body.argumentOfPeriapsis,
 					body.color,
-					body.orbits && celestialObjects[body.orbits]
+					body.orbits && celestialObjects[body.orbits]?.position
 						? celestialObjects[body.orbits].position
 						: new THREE.Vector3(0, 0, 0)
 				);
+
+				if (orbit) {
+					scene.add(orbit);
+					celestialObjects[name].orbit = orbit;
+				}
+			}
+			
+			function featureCelestialBody(name, category, celestialObject, textures) {
+				const body = CELESTIAL_BODIES[category][name];
+				// Si es la Tierra, agregar las nubes
+				if (name === "earth" && textures.cloudsMap) {
+					// Obtener el bounding box del modelo escalado
+        const boundingBox = new THREE.Box3().setFromObject(celestialObject);
+        const size = new THREE.Vector3();
+        boundingBox.getSize(size);
+
+        // Calcular el radio del modelo
+        const currentDiameter = Math.max(size.x, size.y, size.z); // Diámetro actual
+        const currentRadius = (currentDiameter / 2) * SCALE_SIZE; // Radio basado en escala
+
+        // Calcular el radio de las nubes
+        const cloudRadius = currentRadius * 1.01; // Incrementar tamaño en un 1%
+
+        // Crear geometría para las nubes
+        const cloudGeometry = new THREE.SphereGeometry(cloudRadius, 64, 64);
+
+        // Crear material para las nubes
+        const cloudMaterial = new THREE.MeshPhongMaterial({
+            map: textures.cloudsMap, // Textura de las nubes
+            transparent: true, // Habilitar transparencia
+            opacity: 0.8, // Opacidad ajustable
+            depthWrite: false, // No escribir en el buffer de profundidad
+        });
+
+        // Crear la malla de las nubes
+        const cloudMesh = new THREE.Mesh(cloudGeometry, cloudMaterial);
+
+        // Añadir las nubes como un hijo del objeto Tierra
+        celestialObject.add(cloudMesh);
+
+        // Añadir rotación continua para las nubes
+        function animateClouds() {
+            cloudMesh.rotation.y += 0.001; // Rotación lenta
+            requestAnimationFrame(animateClouds);
+        }
+        animateClouds();
+				} else if (name === "saturn") {
+				/*
+					// Crear los anillos de Saturno
+					const ringGeometry = new THREE.RingGeometry(
+						body.size * SCALE_SIZE * 1.2, // Radio interno del anillo
+						body.size * SCALE_SIZE * 2.5, // Radio externo del anillo
+						128 // Resolución angular (mayor valor para suavidad)
+					);
+
+					// Modificar las coordenadas UV para que mapeen correctamente desde el centro hacia afuera
+					const uv = ringGeometry.attributes.uv;
+					for (let i = 0; i < uv.count; i++) {
+						const u = uv.getX(i);
+						const v = uv.getY(i);
+						const radius = Math.sqrt((u - 0.5) ** 2 + (v - 0.5) ** 2); // Radio normalizado
+
+						// Mapeo de la textura desde el centro del anillo (izquierda de la imagen) hacia afuera (derecha de la imagen)
+						uv.setXY(i, radius, radius);
+					}
+
+					// Actualizar el atributo UV en la geometría
+					ringGeometry.attributes.uv.needsUpdate = true;
+
+					// Crear el material para los anillos
+					const ringMaterial = new THREE.MeshStandardMaterial({
+						map: textures.mapRing || null, // Textura del anillo
+						side: THREE.DoubleSide, // Renderizar ambos lados
+						transparent: true, // Habilitar transparencia
+					});
+
+					// Crear el mesh de los anillos
+					const ringMesh = new THREE.Mesh(ringGeometry, ringMaterial);
+
+					// Habilitar sombras en los anillos
+					ringMesh.castShadow = true; // Proyecta sombras
+					ringMesh.receiveShadow = true; // Recibe sombras
+
+					// Rotar los anillos para colocarlos en el plano ecuatorial de Saturno
+					ringMesh.rotation.x = THREE.MathUtils.degToRad(90); // Plano horizontal
+					ringMesh.rotation.z = THREE.MathUtils.degToRad(body.axialTilt); // Ajustar inclinación de los anillos
+
+					// Añadir los anillos como hijo del planeta
+					celestialObject.add(ringMesh);
+				*/
+				}				
+			}
+			
+			// Función para crear materiales
+			function createMaterial(options) {
+				return new THREE.MeshStandardMaterial({
+					map: options.map || null,
+					bumpMap: options.bumpMap || null,
+					bumpScale: options.bumpScale || 0,
+					color: options.color || null,
+					emissive: options.emissive || null,
+					emissiveIntensity: options.emissiveIntensity || 0,
+				});
 			}
 
-			// Crear todos los cuerpos celestes
-			Object.keys(CELESTIAL_BODIES).forEach((category) => {
-				Object.keys(CELESTIAL_BODIES[category]).forEach((name) => {
-					const body = CELESTIAL_BODIES[category][name];
-					const textures = celestialBodiesTextures[name] || {};
-					createCelestialBody(name, body, category, textures);
+			// Función para crear estrellas
+			function createStar(body, textures, position, name) {
+				const config = name === "sun" ? STAR_CONFIG.sun : STAR_CONFIG.default;
+
+				// Crear punto de luz
+				const pointLight = new THREE.PointLight(0xffffff, config.lightIntensity, config.lightRange, 1.03);
+				pointLight.castShadow = true;
+
+				// Configurar sombras
+				if (body.size * SCALE_SIZE >= 1) {
+					const shadowMapSize = Math.min(4096, Math.max(512, body.size * 2));
+					pointLight.shadow.mapSize.width = shadowMapSize;
+					pointLight.shadow.mapSize.height = shadowMapSize;
+					pointLight.shadow.camera.near = Math.max(0.1, body.size * SCALE_SIZE * 0.5);
+					pointLight.shadow.camera.far = Math.min(50000, body.size * SCALE_SIZE * 10);
+				}
+
+				// Crear geometría y material visual
+				const lightGeometry = new THREE.SphereGeometry(body.size * SCALE_SIZE, 64, 64);
+				const lightMaterial = createMaterial({
+					color: config.color,
+					emissive: config.color,
+					emissiveIntensity: 1,
+					map: textures.map,
 				});
-			});
-*/			
+				const visualMesh = new THREE.Mesh(lightGeometry, lightMaterial);
+
+				// Añadir geometría visual al punto de luz
+				pointLight.add(visualMesh);
+
+				// Posicionar el punto de luz
+				pointLight.position.set(position.x, position.y, position.z);
+
+				// Si es el Sol, agregar lens flare
+				if (name === "sun") {
+					//setupLensFlare(renderer, scene, camera, pointLight, body);
+				}
+
+				return pointLight;
+			}
+/*
+			function setupLensFlare(renderer, scene, camera, light, body) {
+				// Configurar el nodo de postprocesado de la escena
+				const scenePass = pass(scene, camera);
+				scenePass.setMRT(
+					mrt({
+						output,
+						emissive,
+					})
+				);
+
+				const outputPass = scenePass.getTextureNode();
+				const emissivePass = scenePass.getTextureNode('emissive');
+
+				// Nodo de bloom
+				const bloomPass = bloom(emissivePass, 1.5, 1.0);
+
+				// Configurar Lens Flare
+				const threshold = uniform(0.5);
+				const ghostAttenuationFactor = uniform(25);
+				const ghostSpacing = uniform(0.25);
+
+				const flarePass = lensflare(bloomPass, {
+					threshold,
+					ghostAttenuationFactor,
+					ghostSpacing,
+				});
+
+				// Aplicar un desenfoque opcional al Lens Flare
+				const blurPass = gaussianBlur(flarePass, 8);
+
+				// Pipeline de postprocesado
+				postProcessing = new THREE.PostProcessing(renderer);
+				postProcessing.outputNode = outputPass.add(bloomPass).add(blurPass);
+
+				// Añadir la luz al Sol
+				light.add(new THREE.Mesh(new THREE.SphereGeometry(body.size * SCALE_SIZE, 32, 32), new THREE.MeshBasicMaterial({ color: 0xffcc88 })));
+
+				return postProcessing;
+			}*/
+
+			// Función para crear cuerpos celestes genéricos
+			function createGenericCelestialBody(body, textures, position) {
+				const geometry = new THREE.SphereGeometry(body.size * SCALE_SIZE, 64, 64);
+				const material = createMaterial({
+					map: textures.map,
+					bumpMap: textures.bumpMap,
+					bumpScale: textures.bumpScale,
+					color: !textures.map ? body.color : null,
+				});
+				const mesh = new THREE.Mesh(geometry, material);
+
+				mesh.position.set(position.x, position.y, position.z);
+				mesh.castShadow = true;
+				mesh.receiveShadow = true;
+
+				return mesh;
+			}
+		
 			function calculateInitialRotation(textureMeridianOffset, rotationPeriod, date = new Date()) {
 				// Hora UTC en fracciones de día
 				const nowUTC = date.getUTCHours() / 24 + date.getUTCMinutes() / (24 * 60) + date.getUTCSeconds() / (24 * 3600);
@@ -1486,7 +1416,6 @@ loadModeloConLuz(
 				const orbitMaterial = new THREE.LineBasicMaterial({ color });
 				return new THREE.LineLoop(orbitGeometry, orbitMaterial);
 			}
-
 			
 			// Animación
 			function animate() {
@@ -1522,29 +1451,35 @@ loadModeloConLuz(
 								if (body.orbits && celestialObjects[body.orbits]) {
 									const centralPosition = celestialObjects[body.orbits].position;
 									position.add(centralPosition); // Añadir posición del cuerpo central
+								} else if (body.orbits) {
+									console.warn(`Cuerpo central no encontrado: ${body.orbits} para ${name}`);
 								}
+								
+								if (celestialObjects[name]) {
+									celestialObjects[name].position.set(position.x, position.y, position.z);
 
-								celestialObjects[name].position.set(position.x, position.y, position.z);
+									// Actualizar órbita si está definida
+									if (celestialObjects[name].orbit) {
+										const centralPosition = body.orbits && celestialObjects[body.orbits]
+											? celestialObjects[body.orbits].position
+											: new THREE.Vector3(0, 0, 0);
 
-								// Actualizar órbita si está definida
-								if (celestialObjects[name].orbit) {
-									const centralPosition = body.orbits && celestialObjects[body.orbits]
-										? celestialObjects[body.orbits].position
-										: new THREE.Vector3(0, 0, 0);
+										const updatedOrbit = drawOrbit(
+											angles[name],
+											body.periapsis,
+											body.apoapsis,
+											body.longitudeOfAscendingNode,									
+											body.inclination,
+											body.argumentOfPeriapsis,									
+											body.color,
+											centralPosition
+										);
 
-									const updatedOrbit = drawOrbit(
-										angles[name],
-										body.periapsis,
-										body.apoapsis,
-										body.longitudeOfAscendingNode,									
-										body.inclination,
-										body.argumentOfPeriapsis,									
-										body.color,
-										centralPosition
-									);
-
-									// Reemplazar la geometría de la órbita
-									celestialObjects[name].orbit.geometry.copy(updatedOrbit.geometry);
+										// Reemplazar la geometría de la órbita
+										celestialObjects[name].orbit.geometry.copy(updatedOrbit.geometry);
+									}
+								} else {
+									console.warn(`Objeto no encontrado en celestialObjects: ${name}`);
 								}
 								
 								const rotationSpeed = (2 * Math.PI / (body.rotationPeriod || 1)) * speedFactor; // Velocidad de rotación (en radianes/seg)
@@ -1577,7 +1512,29 @@ loadModeloConLuz(
 					second: "2-digit",
 				})}`;
 				
+				// Actualizar la cámara si está siguiendo un objeto y no está pausado
+				if (!isPaused && isFollowing && followingObject) {
+					const targetPosition = new THREE.Vector3();
+					followingObject.getWorldPosition(targetPosition); // Obtener posición mundial del cuerpo celeste
+
+					// Mantener la posición de la cámara relativa al cuerpo celeste
+					const direction = camera.userData.followDirection || new THREE.Vector3(0, 0, 1); // Dirección predeterminada
+					const distance = camera.userData.followDistance || 100; // Distancia predeterminada
+					const newCameraPosition = new THREE.Vector3().addVectors(
+						targetPosition,
+						direction.multiplyScalar(distance)
+					);
+
+					// Actualizar posición de la cámara y objetivo de los controles
+					camera.position.copy(newCameraPosition);
+					controls.target.copy(targetPosition);
+
+					// Actualizar los controles
+					controls.update();
+				}
+				
 				TWEEN.update(); // Actualizar las animaciones de TWEEN
+				
 				renderer.render(scene, camera);
 			}
 
@@ -1677,6 +1634,11 @@ loadModeloConLuz(
 			
 			//-------------------------------------------------------------------
 			
+			// Estado de seguimiento
+			let isFollowing = false;
+			let followingObject = null;
+			let initialDistance = null; // Variable para almacenar la distancia inicial al objeto
+			
 			// Crear un contenedor para las etiquetas de texto
 			const textOverlay = document.createElement('div');
 			textOverlay.style.position = 'absolute';
@@ -1688,7 +1650,7 @@ loadModeloConLuz(
 			document.body.appendChild(textOverlay);
 						
 			// Función para agregar texto con evento de enfoque en el cuerpo celeste
-			function addText(name, mesh, size) {
+			function addText(name, celestialBody, size) {
 				// Crear un elemento HTML para el texto
 				const label = document.createElement('div');
 				label.style.position = 'absolute';
@@ -1711,45 +1673,75 @@ loadModeloConLuz(
 				// Evento de clic para enfocar la cámara en el cuerpo celeste
 				label.addEventListener('click', () => {
 					const targetPosition = new THREE.Vector3();
-					mesh.getWorldPosition(targetPosition); // Obtener posición mundial del cuerpo
-					
-					// Tamaño del objeto (diámetro aproximado)
-					const objectSize = size * SCALE_SIZE * 2; // Ajustar escala si es necesario
-					const fovRadians = THREE.MathUtils.degToRad(camera.fov); // Convertir FOV a radianes
-					const distance = objectSize / (2 * Math.tan(fovRadians / 2)); // Distancia necesaria para ocupar toda la pantalla					
+					celestialBody.getWorldPosition(targetPosition); // Obtener posición mundial del cuerpo
 
-					// Animar el movimiento de la cámara hacia el cuerpo seleccionado
+					// Calcular el vector de posición relativa inicial
+					const relativePosition = new THREE.Vector3();
+					relativePosition.subVectors(camera.position, targetPosition);
+
+					// Calcular la distancia inicial
+					const initialDistance = camera.position.distanceTo(targetPosition);
+
+					// Calcular duración dinámica (factor de 2 segundos por cada 1000 unidades de distancia)
+					const baseDuration = 2000; // Duración base en milisegundos
+					const duration = Math.min(6000, Math.max(1000, (initialDistance / 1000) * baseDuration)); // Mínimo 1 segundo, máximo 6 segundos
+
+					// Activar el seguimiento
+					isFollowing = true;
+					followingObject = celestialBody;
+
+					// Configurar OrbitControls
+					controls.target.copy(targetPosition);
+					controls.enableDamping = true; // Suavizado en los controles
+					controls.enablePan = true; // Permitir movimiento horizontal y vertical
+					controls.enableZoom = true;
+					controls.minDistance = size * SCALE_SIZE * 0.00002; // Permitir acercarse más
+					controls.maxDistance = relativePosition.length() * 5; // Configurar una distancia máxima
+
+					// Calcular la posición deseada para el acercamiento inicial
+					const desiredDistance = size * SCALE_SIZE * 2.7; // Distancia deseada
+					const desiredPosition = new THREE.Vector3().addVectors(
+						targetPosition,
+						relativePosition.normalize().multiplyScalar(desiredDistance)
+					);
+
+					// Animar la cámara hacia el objeto seleccionado
 					new TWEEN.Tween(camera.position)
 						.to(
 							{
-								x: targetPosition.x + distance, // Ajustar la distancia desde el cuerpo
-								y: targetPosition.y + distance, // Ajustar altura de la cámara
-								z: targetPosition.z + distance, // Ajustar profundidad de la cámara
+								x: desiredPosition.x,
+								y: desiredPosition.y,
+								z: desiredPosition.z,
 							},
-							3000 // Duración de la animación en milisegundos
-						)
-						.easing(TWEEN.Easing.Quadratic.Out) // Efecto de suavizado
-						.start();
-
-					// Apuntar la cámara hacia el cuerpo seleccionado
-					new TWEEN.Tween(controls.target)
-						.to(
-							{
-								x: targetPosition.x,
-								y: targetPosition.y,
-								z: targetPosition.z,
-							},
-							3000 // Duración de la animación
+							duration // Duración dinámica
 						)
 						.easing(TWEEN.Easing.Quadratic.Out) // Suavizado
-						.onUpdate(() => controls.update()) // Actualizar los controles durante la animación
+						.onUpdate(() => {
+							// Actualizar el vector relativo durante la animación
+							camera.userData.relativePosition = new THREE.Vector3().subVectors(camera.position, targetPosition);
+							controls.update();
+						})
+						.onComplete(() => {
+							// Guardar la dirección y distancia finales tras la animación
+							const finalDirection = new THREE.Vector3().subVectors(camera.position, targetPosition).normalize();
+							const finalDistance = camera.position.distanceTo(targetPosition);
+
+							camera.userData.followDirection = finalDirection;
+							camera.userData.followDistance = finalDistance;
+						})
 						.start();
+
+					// Guardar posición relativa inicial
+					camera.userData.relativePosition = relativePosition;
+
+					// Crear botón para desengancharse
+					createUnfollowButton();
 				});
 
 				// Actualizar la posición del texto según las coordenadas 3D proyectadas a 2D
 				function updateLabelPosition() {
 					const vector = new THREE.Vector3();
-					mesh.getWorldPosition(vector); // Obtener la posición mundial actual del cuerpo celeste
+					celestialBody.getWorldPosition(vector); // Obtener la posición mundial actual del cuerpo celeste
 					vector.project(camera); // Convertir a coordenadas 2D
 					const x = (vector.x + 1) / 2 * window.innerWidth; // Mapear a [0, window.innerWidth]
 					const y = -(vector.y - 1) / 2 * window.innerHeight; // Mapear a [0, window.innerHeight]
@@ -1768,7 +1760,61 @@ loadModeloConLuz(
 				}
 
 				animateTextPosition();
+				
+				// Crear un botón para detener el seguimiento
+				function createUnfollowButton() {
+					// Si ya existe un botón, no crear otro
+					if (document.getElementById('unfollow-button')) return;
+
+					const button = document.createElement('button');
+					button.id = 'unfollow-button';
+					button.innerText = 'X';
+					button.style.position = 'absolute';
+					button.style.top= '10px';
+					button.style.left = '50%';
+					/*button.style.padding = '10px 20px';
+					button.style.fontSize = '12px';
+					button.style.backgroundColor = '#ff6666';
+					button.style.color = '#ffffff';
+					button.style.border = 'none';
+					button.style.borderRadius = '5px';
+					button.style.cursor = 'pointer';*/
+
+					document.body.appendChild(button);
+
+					button.addEventListener('click', () => {
+						// Desactivar seguimiento
+						isFollowing = false;
+						followingObject = null;
+
+						// Mantener la posición y orientación actuales
+						// No modificamos camera.position ni controls.target
+
+						// Actualizar controles para permitir movimiento libre
+						controls.enablePan = true; // Permitir movimiento libre
+						controls.enableZoom = true; // Permitir zoom libre
+						controls.update();
+
+						// Eliminar el botón
+						button.remove();
+					});
+				}
 			}
+			
+			controls.addEventListener('change', () => {
+				if (isFollowing && followingObject) {
+					const targetPosition = new THREE.Vector3();
+					followingObject.getWorldPosition(targetPosition);
+
+					// Calcular nueva dirección y distancia
+					const newDirection = new THREE.Vector3().subVectors(camera.position, targetPosition).normalize();
+					const newDistance = camera.position.distanceTo(targetPosition);
+
+					// Actualizar los valores relativos
+					camera.userData.followDirection = newDirection;
+					camera.userData.followDistance = newDistance;
+				}
+			});
 			
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////		
 			
@@ -2343,9 +2389,6 @@ loadModeloConLuz(
 				}
 			}
 
-			// Llama a la función para ajustar la cámara
-			adjustCameraToEarthSunView();
-
 			// Escuchar cambios de tamaño de ventana
 			window.addEventListener("resize", () => {
 				renderer.setSize(window.innerWidth, window.innerHeight);
@@ -2357,10 +2400,18 @@ loadModeloConLuz(
 				//console.log(obj.userData);
 			});
 
-			// Inicialización al cargar
-			updateSpeedDisplay();
 			// Iniciar la animación
-			animate();
+			Promise.all(modelLoadPromises).then(() => {
+				console.log('Todos los modelos cargados. Iniciando animación.');
+				// Llama a la función para ajustar la cámara
+				adjustCameraToEarthSunView();
+				// Inicialización al cargar
+				updateSpeedDisplay();
+				animate(); // Iniciar animación después de que todos los modelos estén cargados
+			}).catch((error) => {
+				console.error('Error al cargar los modelos:', error);
+			});
+
 		</script>
 	</body>
 </html>
