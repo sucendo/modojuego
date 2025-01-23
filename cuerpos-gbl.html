@@ -133,7 +133,7 @@
 		//function init() {
 			// Configuración inicial
 			const scene = new THREE.Scene();
-			const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.0001, 5000000);
+			const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.001, 50000000);
 			const renderer = new THREE.WebGLRenderer({ antialias: true });
 			renderer.setSize(window.innerWidth, window.innerHeight);
 			renderer.shadowMap.enabled = true; // Habilitar sombras
@@ -152,7 +152,7 @@
 
 			// Escala para las distancias y tamaños
 			// Escala proporcional (referencia para mantener proporción tamaño-distancia)
-			const SCALE_REFERENCE = 0.0001; // Ajustar esta escala para percepción deseada
+			const SCALE_REFERENCE = 0.001; // Ajustar esta escala para percepción deseada
 			const SCALE_DISTANCE = SCALE_REFERENCE; // Distancias en km
 			const SCALE_SIZE = SCALE_REFERENCE; // Tamaños en km
 			//const SCALE_DISTANCE = 0.00001; // Escala ajustada para las distancias (en km)
@@ -398,7 +398,7 @@
 						inclination: 1.85, argumentOfPeriapsis: 180.04, longitudeOfAscendingNode: 0.58, lastPerihelion: "2022-12-08", 
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 25.19, rotationPeriod: 1.03
 					},
-					/*jupiter: { 
+					jupiter: { 
 						periapsis: 740520000, apoapsis: 816620000, size: 69910, color: 0xb5651d, orbits: "sun", orbitalPeriod: 4332.59, 
 						inclination: 1.3, argumentOfPeriapsis: 180.75, longitudeOfAscendingNode: 0.49, lastPerihelion: "2023-11-03", 
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 3.13, rotationPeriod: 0.41
@@ -417,7 +417,7 @@
 						periapsis: 4444400000, apoapsis: 4545700000, size: 24622, color: 0x0000ff, orbits: "sun", orbitalPeriod: 60190, 
 						inclination: 1.77, argumentOfPeriapsis: 184.97, longitudeOfAscendingNode: 0.79, lastPerihelion: "2040-12-01", 
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 28.32, rotationPeriod: 0.67
-					},*/
+					},
 					/*mercury: { 
 						periapsis: 46000000, apoapsis: 69800000, size: 4879, color: 0xaaaaaa, orbits: "sun", orbitalPeriod: 88, 
 						inclination: 7.005, argumentOfPeriapsis: 29.124, longitudeOfAscendingNode: 48.331, lastPerihelion: "2024-01-05", 
@@ -465,7 +465,7 @@
 						inclination: 5.14, argumentOfPeriapsis: 41.5, longitudeOfAscendingNode: 125.08, lastPerihelion: "2024-12-03",
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 1.54, rotationPeriod: 27.321
 					},
-					/*io: { 
+					io: { 
 						periapsis: 421700, apoapsis: 422000, size: 1821.5, color: 0xffa500, orbits: "jupiter", orbitalPeriod: 1.769, 
 						inclination: 0.05, argumentOfPeriapsis: 84.03, longitudeOfAscendingNode: 43.97, lastPerihelion: "2024-01-01",
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0.04, rotationPeriod: 1.769
@@ -494,7 +494,7 @@
 						periapsis: 237950, apoapsis: 238040, size: 252.1, color: 0xb0e0e6, orbits: "saturn", orbitalPeriod: 1.37, 
 						inclination: 0.019, argumentOfPeriapsis: 161.23, longitudeOfAscendingNode: 40.66, lastPerihelion: "2024-01-01",
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0.02, rotationPeriod: 1.37
-					},*/
+					},
 				},
 				artificialSatellites: {
 					iss: {
@@ -536,12 +536,12 @@
 					glonass: {
 						periapsis: 25471, apoapsis: 25471, size: 1.2, color: "red", orbits: "earth", orbitalPeriod: 11.26,
 						inclination: 64.8, argumentOfPeriapsis: 50, longitudeOfAscendingNode: 255.75, lastPerihelion: "2023-11-30"
-					},
+					},*/
 					starlink: {
 						periapsis: 6921, apoapsis: 6921, size: 0.1, color: "gray", orbits: "earth", orbitalPeriod: 1.5,
 						inclination: 53, argumentOfPeriapsis: 30, longitudeOfAscendingNode: 72.05, lastPerihelion: "2023-12-01",
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 23.0, rotationPeriod: 365.37
-					},
+					},/*
 					gps3: {
 						periapsis: 26571, apoapsis: 26571, size: 1.1, color: "gold", orbits: "earth", orbitalPeriod: 12,
 						inclination: 55, argumentOfPeriapsis: 270, longitudeOfAscendingNode: 115.7, lastPerihelion: "2023-11-29"
