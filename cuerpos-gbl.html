@@ -133,7 +133,7 @@
 		//function init() {
 			// Configuración inicial
 			const scene = new THREE.Scene();
-			const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.0001, 5000000);
+			const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.0001, 50000000);
 			const renderer = new THREE.WebGLRenderer({ antialias: true });
 			renderer.setSize(window.innerWidth, window.innerHeight);
 			renderer.shadowMap.enabled = true; // Habilitar sombras
@@ -211,8 +211,8 @@
 			const CELESTIAL_BODIES = {
 				star: {
 					sun: { 
-						periapsis: 6000000, apoapsis: 6000000, size: 696340, color: 0xf6f6f6, orbits: "galaxy", orbitalPeriod: 70000, 
-						inclination: 0, argumentOfPeriapsis: 600000, longitudeOfAscendingNode: 0, lastPerihelion:  "2024-01-01", 
+						periapsis: 5000000, apoapsis: 5000000, size: 696340, color: 0xf6f6f6, orbits: "galaxy", orbitalPeriod: 91250000000, 
+						inclination: 7.25, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 0, lastPerihelion:  "2024-01-01", 
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 7.25, rotationPeriod: 27 
 					},
 					/*
@@ -221,23 +221,23 @@
 						inclination: 7.25, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 0, lastPerihelion: "2024-01-01", 
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 7.25 , rotationPeriod: 27
 					},*/
-					/*suny: { //estrella artificial
+					/*suny: { //estrella artificial para efecto de dos luces
 						periapsis: 960000000, apoapsis: 998000000, size: 396340, color: 0xffff00, orbits: "sun", orbitalPeriod: 100, 
 						inclination: 10, argumentOfPeriapsis: 181, longitudeOfAscendingNode: 0.33, lastPerihelion: "2014-01-07", 
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0.034, rotationPeriod: 27
 					},*/
-					/*proximaCentauri: { 
-						periapsis: 38370000000, apoapsis: 38370000000, size: 4220, color: 0xffffff, orbits: "galaxy", orbitalPeriod: 100000, 
+					proximaCentauri: { 
+						periapsis: 383700000, apoapsis: 383700000, size: 101400, color: 0xffffff, orbits: "galaxy", orbitalPeriod: 100000, 
 						inclination: 0, argumentOfPeriapsis: 182, longitudeOfAscendingNode: 0, lastPerihelion: "2024-01-01", 
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0 , rotationPeriod: 27
 					},
 					alphaCentauriA: { 
-						periapsis: 15000000000, apoapsis: 15050000000, size: 1103000, color: 0xffd700, orbits: "galaxy", orbitalPeriod: 80000, 
+						periapsis: 15000000000, apoapsis: 15050000000, size: 864900, color: 0xffd700, orbits: "galaxy", orbitalPeriod: 80000, 
 						inclination: 0, argumentOfPeriapsis: 90, longitudeOfAscendingNode: 0, lastPerihelion: "2024-01-01", 
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 30 , rotationPeriod: 27
 					},
 					alphaCentauriB: { 
-						periapsis: 15010000000, apoapsis: 15060000000, size: 908000, color: 0xffc0cb, orbits: "galaxy", orbitalPeriod: 81000, 
+						periapsis: 15010000000, apoapsis: 15060000000, size: 602000, color: 0xffc0cb, orbits: "galaxy", orbitalPeriod: 81000, 
 						inclination: 1, argumentOfPeriapsis: 70, longitudeOfAscendingNode: 10, lastPerihelion: "2024-01-01", 
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 25 , rotationPeriod: 58.6
 					},
@@ -245,8 +245,8 @@
 						periapsis: 1200000000, apoapsis: 1250000000, size: 196000, color: 0xff4500, orbits: "galaxy", orbitalPeriod: 120000, 
 						inclination: 3, argumentOfPeriapsis: 50, longitudeOfAscendingNode: 0, lastPerihelion: "2024-01-01", 
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 5 , rotationPeriod: 58.6
-					},*/
-					/*wolf359: { 
+					},
+					wolf359: { 
 						periapsis: 7400000000, apoapsis: 7600000000, size: 120000, color: 0xff6347, orbits: "galaxy", orbitalPeriod: 140000, 
 						inclination: 4, argumentOfPeriapsis: 45, longitudeOfAscendingNode: 25, lastPerihelion: "2024-01-01", 
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 10 , rotationPeriod: 58.6
@@ -322,7 +322,7 @@
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 65 , rotationPeriod: 58.6
 					},
 					canisMajoris: { 
-						periapsis: 50000000000, apoapsis: 51000000000, size: 2450000000, color: 0xff6347, orbits: "galaxy", orbitalPeriod: 300000, 
+						periapsis: 500000000000, apoapsis: 510000000000, size: 2450000000, color: 0xff6347, orbits: "galaxy", orbitalPeriod: 300000, 
 						orientation: 75, inclination: 18, argumentOfPeriapsis: 100, longitudeOfAscendingNode: 70, lastPerihelion: "2024-01-01", 
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 75 , rotationPeriod: 58.6
 					},
@@ -375,7 +375,7 @@
 						periapsis: 18500000000, apoapsis: 19000000000, size: 18000000, color: 0xffffe0, orbits: "galaxy", orbitalPeriod: 89000, 
 						orientation: 65, inclination: 28, argumentOfPeriapsis: 75, longitudeOfAscendingNode: 20, lastPerihelion: "2024-01-01", 
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 18 , rotationPeriod: 58.6
-					},*/
+					},
 				},
 				planets: {
 					mercury: { 
@@ -505,7 +505,7 @@
 					hubble: {
 						periapsis: 6911, apoapsis: 6921, size: 6.6, color: "silver", orbits: "earth", orbitalPeriod: 1.5,
 						inclination: 28.47, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 96.49, lastPerihelion: "2023-11-28",
-						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 23.0, rotationPeriod: 365.37
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 3.0, rotationPeriod: 1.37
 					},/*
 					jwst: {
 						periapsis: 1501371, apoapsis: 1501371, size: 7.5, color: "cyan", orbits: "earth", orbitalPeriod: 365.25,
@@ -531,11 +531,12 @@
 					glonass: {
 						periapsis: 25471, apoapsis: 25471, size: 1.2, color: "red", orbits: "earth", orbitalPeriod: 11.26,
 						inclination: 64.8, argumentOfPeriapsis: 50, longitudeOfAscendingNode: 255.75, lastPerihelion: "2023-11-30"
-					},
+					},*/
 					starlink: {
 						periapsis: 6921, apoapsis: 6921, size: 0.1, color: "gray", orbits: "earth", orbitalPeriod: 1.5,
-						inclination: 53, argumentOfPeriapsis: 30, longitudeOfAscendingNode: 72.05, lastPerihelion: "2023-12-01"
-					},
+						inclination: 53, argumentOfPeriapsis: 30, longitudeOfAscendingNode: 72.05, lastPerihelion: "2023-12-01",
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 23.0, rotationPeriod: 365.37
+					},/*
 					gps3: {
 						periapsis: 26571, apoapsis: 26571, size: 1.1, color: "gold", orbits: "earth", orbitalPeriod: 12,
 						inclination: 55, argumentOfPeriapsis: 270, longitudeOfAscendingNode: 115.7, lastPerihelion: "2023-11-29"
@@ -576,6 +577,21 @@
 						periapsis: 6771, apoapsis: 6771, size: 0.75, color: "gray", orbits: "earth", orbitalPeriod: 1.5,
 						inclination: 51.6, argumentOfPeriapsis: 45, longitudeOfAscendingNode: 76.1, lastPerihelion: "2023-12-02"
 					},*/
+					juno: {
+						periapsis: 7157, apoapsis: 7157, size: 2.1, color: "red", orbits: "earth", orbitalPeriod: 1.67,
+						inclination: 98.56, argumentOfPeriapsis: 70, longitudeOfAscendingNode: 128.7, lastPerihelion: "2025-01-07",
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 90, rotationPeriod: 0
+					},
+					voyager1: {
+						periapsis: 136680000, apoapsis: 55350000000, size: 0.5, color: "silver", orbits: "galaxy", orbitalPeriod: 91920,
+						inclination: 35, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 0, lastPerihelion: "1977-09-05",
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 90, rotationPeriod: 0
+					},
+					voyager2: {
+						periapsis: 136680000, apoapsis: 55350000000, size: 0.5, color: "silver", orbits: "galaxy", orbitalPeriod: 91920,
+						inclination: 48, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 0, lastPerihelion: "1977-08-20",
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 90, rotationPeriod: 0
+					},
 				},
 				comets: {
 					halley: { 
@@ -641,6 +657,10 @@
 			
 			// Modelos específicos para cada cuerpo celeste
 			const celestialModels = {
+				europa: { 
+					model: './models/celestial_bodies/Europa_1_3138.glb',
+					MeridianOffset: 90 // Suponiendo un desfase de 90 grados
+				},
 				iss: { 
 					model: './models/celestial_bodies/iss.glb',
 					MeridianOffset: 0 // Sin desfase para ISS
@@ -657,9 +677,21 @@
 					model: './models/celestial_bodies/Bennu_1_1.glb',
 					MeridianOffset: 0 // Sin desfase para Halley
 				},
-				europa: { 
-					model: './models/celestial_bodies/Europa_1_3138.glb',
-					MeridianOffset: 90 // Suponiendo un desfase de 90 grados
+				starlink: { 
+					model: './models/celestial_bodies/starlink.glb',
+					MeridianOffset: 0 
+				},
+				juno: { 
+					model: './models/celestial_bodies/Juno.glb',
+					MeridianOffset: 0 
+				},					
+				voyager1: { 
+					model: './models/celestial_bodies/Voyager.glb',
+					MeridianOffset: 90 
+				},
+				voyager2: { 
+					model: './models/celestial_bodies/Voyager.glb',
+					MeridianOffset: 90 
 				},
 				/*earth: { 
 					model: './models/celestial_bodies/Earth_1_12756.glb',
@@ -923,32 +955,144 @@ loadModeloConLuz(
 			// Llamar a la función para dibujar los ejes ajustados
 			drawAdjustedAxes(scene, 50000); // Ajusta el tamaño (5000) según sea necesario
 */
-
+		
 			// Crear la geometría y material para el centro galáctico
-			const galaxyGeometry = new THREE.SphereGeometry(10, 64, 64); // Ajustar tamaño y resolución
-			const galaxyMat = new THREE.MeshStandardMaterial({
-				emissive: 0xffffff, // Luz cálida emitida por el material
-				emissiveIntensity: 1.5, // Intensidad de la emisión
-				color: 0x333333, // Color base para mezclar con la emisión
-			});
+			function createGalacticCenter() {
+			/*
+				// ----- Crear el agujero negro -----
+				const blackHoleGeometry = new THREE.SphereGeometry(5, 64, 64); // Ajustar el tamaño
+				const blackHoleMaterial = new THREE.MeshStandardMaterial({
+					color: 0x000000, // Negro total
+					roughness: 0.5, // Suavidad
+					metalness: 1.0, // Material metálico para reflejos mínimos
+				});
 
-			// Crear la malla para el centro galáctico
-			const galaxyMesh = new THREE.Mesh(galaxyGeometry, galaxyMat);
+				const blackHoleMesh = new THREE.Mesh(blackHoleGeometry, blackHoleMaterial);
 
-			// Posicionar la malla en el centro de la galaxia
-			galaxyMesh.position.set(0, 0, 0);
+				// Posicionar el agujero negro en el centro galáctico
+				blackHoleMesh.position.set(0, 0, 0);
+				blackHoleMesh.castShadow = true;
+				blackHoleMesh.receiveShadow = true;
 
-			// Habilitar sombras si necesario (proyectar/recibir sombras)
-			galaxyMesh.castShadow = true;
-			galaxyMesh.receiveShadow = true;
+				// ----- Crear el halo luminoso (efecto de acreción) -----
+				const haloGeometry = new THREE.SphereGeometry(6, 64, 64); // Un poco más grande que el agujero negro
+				const haloMaterial = new THREE.ShaderMaterial({
+					uniforms: {
+						glowColor: { value: new THREE.Color(0xffcc66) }, // Color cálido del halo
+						viewVector: { value: new THREE.Vector3(0, 0, 1) },
+					},
+					vertexShader: `
+						varying vec3 vNormal;
+						varying vec3 vPosition;
+						void main() {
+							vNormal = normalize(normalMatrix * normal);
+							vPosition = (modelViewMatrix * vec4(position, 1.0)).xyz;
+							gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+						}
+					`,
+					fragmentShader: `
+						uniform vec3 glowColor;
+						varying vec3 vNormal;
+						varying vec3 vPosition;
+						void main() {
+							float intensity = pow(0.5 - dot(vNormal, normalize(vPosition)), 3.0);
+							gl_FragColor = vec4(glowColor, intensity);
+						}
+					`,
+					side: THREE.BackSide, // Renderizar el interior de la esfera
+					blending: THREE.AdditiveBlending, // Efecto de brillo
+					transparent: true,
+				});
 
-			// Agregar el centro galáctico a la escena
-			scene.add(galaxyMesh);
+				const haloMesh = new THREE.Mesh(haloGeometry, haloMaterial);
+				haloMesh.scale.set(1.5, 1.5, 1.5); // Ajustar el tamaño del halo
 
-			// Guardar el centro galáctico en el objeto celestialObjects para futuras referencias
-			celestialObjects["galaxy"] = galaxyMesh;
+				// ----- Crear el disco de acreción -----
+				const accretionDiskGeometry = new THREE.RingGeometry(8, 12, 128);
+				const accretionDiskMaterial = new THREE.MeshBasicMaterial({
+					color: 0xffaa33,
+					side: THREE.DoubleSide,
+					transparent: true,
+					opacity: 0.8,
+				});
 
-			console.log('Centro galáctico creado:', galaxyMesh);
+				const accretionDisk = new THREE.Mesh(accretionDiskGeometry, accretionDiskMaterial);
+				accretionDisk.rotation.x = Math.PI / 2; // Colocar el disco en el plano XY
+
+				// Rotación animada del disco de acreción
+				function animateAccretionDisk() {
+					accretionDisk.rotation.z += 0.01; // Rotación continua
+					requestAnimationFrame(animateAccretionDisk);
+				}
+				animateAccretionDisk();
+
+				// ----- Agregar el agujero negro, el halo y el disco a un grupo -----
+				const galacticCenterGroup = new THREE.Group();
+				galacticCenterGroup.add(blackHoleMesh);
+				galacticCenterGroup.add(haloMesh);
+				galacticCenterGroup.add(accretionDisk);
+
+				// Agregar el centro galáctico a la escena
+				galacticCenterGroup.position.set(0, 0, 0);
+				scene.add(galacticCenterGroup);
+
+				// Guardar el centro galáctico en el objeto celestialObjects para futuras referencias
+				celestialObjects["galacticCenter"] = galacticCenterGroup;
+
+				console.log('Centro galáctico creado:', galacticCenterGroup);
+				
+				*/
+				const galaxyGeometry = new THREE.SphereGeometry(5, 32, 32); // Ajustar tamaño y resolución
+				const galaxyMat = new THREE.MeshStandardMaterial({
+					color: 0x000000, // Negro total
+					roughness: 0.5, // Suavidad
+					metalness: 1.0, // Material metálico para reflejos mínimos
+					opacity: 0.3,
+				});
+
+				// Crear la malla para el centro galáctico
+				const galaxyMesh = new THREE.Mesh(galaxyGeometry, galaxyMat);
+
+				// Posicionar la malla en el centro de la galaxia
+				galaxyMesh.position.set(0, 0, 0);
+				
+				// ----- Crear el disco de acreción -----
+				const accretionDiskGeometry = new THREE.RingGeometry(8, 12, 128);
+				const accretionDiskMaterial = new THREE.MeshBasicMaterial({
+					color: 0xffaa33,
+					side: THREE.DoubleSide,
+					transparent: true,
+					opacity: 0.3,
+				});
+
+				const accretionDisk = new THREE.Mesh(accretionDiskGeometry, accretionDiskMaterial);
+				accretionDisk.rotation.x = Math.PI / 2; // Colocar el disco en el plano XY
+
+				// Rotación animada del disco de acreción
+				function animateAccretionDisk() {
+					accretionDisk.rotation.z += 0.01; // Rotación continua
+					requestAnimationFrame(animateAccretionDisk);
+				}
+				animateAccretionDisk();
+				
+				galaxyMesh.add(accretionDisk);
+
+				// Habilitar sombras si necesario (proyectar/recibir sombras)
+				//galaxyMesh.castShadow = true;
+				//galaxyMesh.receiveShadow = true;
+
+				// Agregar el centro galáctico a la escena
+				scene.add(galaxyMesh);
+
+				// Guardar el centro galáctico en el objeto celestialObjects para futuras referencias
+				celestialObjects["galaxy"] = galaxyMesh;
+
+				console.log('Centro galáctico creado:', galaxyMesh);
+			}
+			
+			// Llamar a la función para crear el centro galáctico
+			createGalacticCenter();
+
 /*
 			// Crear un punto de luz para iluminar toda la galaxia
 			const galaxyPointLight = new THREE.PointLight(0xffffff, 1000, 10000, 1); // Luz blanca, intensidad 1.5, gran alcance
@@ -1051,8 +1195,8 @@ loadModeloConLuz(
 
 						if (category === "star") {
 							celestialObject = createStar(body, textures, position, name);
-						} else if (name ==="earth") {
-							celestialObject = createEarth(body,textures,position, name);
+						/*} else if (name ==="earth") {
+							celestialObject = createEarth(body,textures,position, name);*/
 						} else {
 							celestialObject = createGenericCelestialBody(body, textures, position);
 						}
@@ -1140,7 +1284,7 @@ loadModeloConLuz(
 				if (textures.elevationData) {
 					applyElevationData(earthGeometry, textures.elevationData);
 				}
-
+/*
 				// Añadir nubes
 				if (textures.cloudsMap) {
 					const cloudGeometry = new THREE.SphereGeometry(body.size * SCALE_SIZE * 1.01, 128, 128);
@@ -1154,13 +1298,14 @@ loadModeloConLuz(
 					earthMesh.add(cloudMesh);
 
 					// Rotación de las nubes
+					
 					function animateClouds() {
-						cloudMesh.rotation.y += 0.0001;
+						cloudMesh.rotation.y += 0.000001;
 						requestAnimationFrame(animateClouds);
 					}
 					animateClouds();
 				}
-
+*/
 				return earthMesh;
 			}
 
@@ -1248,7 +1393,7 @@ loadModeloConLuz(
 			function featureCelestialBody(name, category, celestialObject, textures) {
 				const body = CELESTIAL_BODIES[category][name];
 				// Si es la Tierra, agregar las nubes
-				if (name === "earthe") {
+				if (name === "earth") {
 					// Detectar si el modelo es generado o cargado (GLTF)
 					let isGLTF = false;
 					if (celestialObject.children && celestialObject.children.length > 0) {
@@ -1471,45 +1616,64 @@ loadModeloConLuz(
 			}
 
 			// Función para crear estrellas
+			// Función para crear estrellas
 			function createStar(body, textures, position, name) {
 				const config = name === "sun" ? STAR_CONFIG.sun : STAR_CONFIG.default;
 
-				// Crear punto de luz
-				const pointLight = new THREE.PointLight(0xffffff, config.lightIntensity, config.lightRange, 1.03);
-				pointLight.castShadow = true;
+				let starObject;
 
-				// Configurar sombras
-				if (body.size * SCALE_SIZE >= 1) {
-					const shadowMapSize = Math.min(4096, Math.max(512, body.size * 2));
-					pointLight.shadow.mapSize.width = shadowMapSize;
-					pointLight.shadow.mapSize.height = shadowMapSize;
-					pointLight.shadow.camera.near = Math.max(0.1, body.size * SCALE_SIZE * 0.5);
-					pointLight.shadow.camera.far = Math.min(50000, body.size * SCALE_SIZE * 10);
-				}
-
-				// Crear geometría y material visual
-				const lightGeometry = new THREE.SphereGeometry(body.size * SCALE_SIZE, 64, 64);
-				const lightMaterial = createMaterial({
-					color: config.color,
-					emissive: config.color,
-					emissiveIntensity: 1,
-					map: textures.map,
-				});
-				const visualMesh = new THREE.Mesh(lightGeometry, lightMaterial);
-
-				// Añadir geometría visual al punto de luz
-				pointLight.add(visualMesh);
-
-				// Posicionar el punto de luz
-				pointLight.position.set(position.x, position.y, position.z);
-
-				// Si es el Sol, agregar lens flare
+				// Si es el Sol, crear un punto de luz que emita hacia otros cuerpos celestes
 				if (name === "sun") {
-					//setupLensFlare(renderer, scene, camera, pointLight, body);
+					const pointLight = new THREE.PointLight(0xffffff, config.lightIntensity, config.lightRange, 1.03);
+					pointLight.castShadow = true;
+
+					// Configurar sombras para el Sol
+					if (body.size * SCALE_SIZE >= 1) {
+						const shadowMapSize = Math.min(4096, Math.max(512, body.size * 2));
+						pointLight.shadow.mapSize.width = shadowMapSize;
+						pointLight.shadow.mapSize.height = shadowMapSize;
+						pointLight.shadow.camera.near = Math.max(0.1, body.size * SCALE_SIZE * 0.5);
+						pointLight.shadow.camera.far = Math.min(50000, body.size * SCALE_SIZE * 10);
+					}
+
+					// Posicionar el Sol como punto de luz
+					pointLight.position.set(position.x, position.y, position.z);
+
+					// Crear geometría y material visual para el Sol
+					const sunGeometry = new THREE.SphereGeometry(body.size * SCALE_SIZE, 64, 64);
+					const sunMaterial = createMaterial({
+						color: config.color,
+						emissive: config.color,
+						emissiveIntensity: 1,
+						map: textures.map,
+					});
+					const sunMesh = new THREE.Mesh(sunGeometry, sunMaterial);
+
+					// Añadir geometría visual al punto de luz
+					pointLight.add(sunMesh);
+
+					starObject = pointLight; // El Sol es el único que emite luz
+				} else {
+					// Para otras estrellas, crear una esfera luminosa que no emita luz hacia otros objetos
+					const starGeometry = new THREE.SphereGeometry(body.size * SCALE_SIZE, 32, 32);
+					const starMaterial = createMaterial({
+						color: config.color,
+						emissive: config.color, // Dar apariencia de brillo propio
+						emissiveIntensity: 1, // Intensidad del brillo propio
+						map: textures.map,
+					});
+
+					const starMesh = new THREE.Mesh(starGeometry, starMaterial);
+
+					// Posicionar la estrella
+					starMesh.position.set(position.x, position.y, position.z);
+
+					starObject = starMesh; // Las estrellas son solo esferas con luz propia
 				}
 
-				return pointLight;
+				return starObject;
 			}
+
 /*
 			function setupLensFlare(renderer, scene, camera, light, body) {
 				// Configurar el nodo de postprocesado de la escena
@@ -1725,8 +1889,8 @@ loadModeloConLuz(
 								if (celestialObjects[name]) {
 									celestialObjects[name].position.set(position.x, position.y, position.z);
 
-									// Actualizar órbita si está definida
-									if (celestialObjects[name].orbit) {
+									// Actualizar órbita si está definida y si las órbitas están habilitadas
+									if (showOrbits &&celestialObjects[name].orbit) {
 										const centralPosition = body.orbits && celestialObjects[body.orbits]
 											? celestialObjects[body.orbits].position
 											: new THREE.Vector3(0, 0, 0);
