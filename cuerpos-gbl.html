@@ -503,7 +503,7 @@
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 23.0, rotationPeriod: 365.37
 					},
 					astronauta: {
-						periapsis: 0.5, apoapsis: 0.6, size: 0.0190, color: "white", orbits: "iss", orbitalPeriod: 0.05,
+						periapsis: 0.9, apoapsis: 1.6, size: 0.190, color: "white", orbits: "iss", orbitalPeriod: 0.05,
 						inclination: 51.64, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 258.76, lastPerihelion: "2023-12-01",
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 23.0, rotationPeriod: 365.37
 					},
@@ -597,6 +597,10 @@
 						inclination: 48, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 0, lastPerihelion: "1977-08-20",
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 90, rotationPeriod: 0
 					},
+					deathStar: {
+						periapsis: 8000, apoapsis: 12000, size: 160, color: "gray", orbits: "earth", orbitalPeriod: 2,
+					    inclination: 30, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 180, lastPerihelion: "2023-12-01",
+					    rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0, rotationPeriod: 24,
 				},
 				comets: {
 					halley: { 
@@ -700,6 +704,10 @@
 				},
 				voyager2: { 
 					model: './models/celestial_bodies/Voyager.glb',
+					MeridianOffset: 0 
+				},
+				deathStar: { 
+					model: './models/celestial_bodies/deathstar.glb',
 					MeridianOffset: 0 
 				},
 				/*earth: { 
