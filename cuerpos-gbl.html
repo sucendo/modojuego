@@ -133,7 +133,7 @@
 		//function init() {
 			// Configuración inicial
 			const scene = new THREE.Scene();
-			const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.0001, 50000000);
+			const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.0001, 5000000);
 			const renderer = new THREE.WebGLRenderer({ antialias: true });
 			renderer.setSize(window.innerWidth, window.innerHeight);
 			renderer.shadowMap.enabled = true; // Habilitar sombras
@@ -152,7 +152,7 @@
 
 			// Escala para las distancias y tamaños
 			// Escala proporcional (referencia para mantener proporción tamaño-distancia)
-			const SCALE_REFERENCE = 0.001; // Ajustar esta escala para percepción deseada
+			const SCALE_REFERENCE = 0.0001; // Ajustar esta escala para percepción deseada
 			const SCALE_DISTANCE = SCALE_REFERENCE; // Distancias en km
 			const SCALE_SIZE = SCALE_REFERENCE; // Tamaños en km
 			//const SCALE_DISTANCE = 0.00001; // Escala ajustada para las distancias (en km)
@@ -1636,7 +1636,6 @@ loadModeloConLuz(
 				});
 			}
 
-			// Función para crear estrellas
 			// Función para crear estrellas
 			function createStar(body, textures, position, name) {
 				const config = name === "sun" ? STAR_CONFIG.sun : STAR_CONFIG.default;
