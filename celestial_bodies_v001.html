@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="es">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Simulación del Sistema Solar con Three.js</title>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+		<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+		<style>
+			body {
+				margin: 0;
+				overflow: hidden;
+			}
+			#timePanel{
+				position: absolute;
+				top: 10px;
+				left: 10px;
+				font-family: 'Orbitron', sans-serif; /* Fuente temática espacial */
+				font-size: 12px; /* Tamaño de la fuente */
+				color: #00ffcc; /* Color futurista */
+				text-shadow: 0 0 5px #00ffcc, 0 0 10px #00ffcc, 0 0 15px #008080, 0 0 20px #008080;
+				background: linear-gradient(90deg, #000428, #004e92); /* Fondo con gradiente espacial */
+				padding: 3px 10px; /* Espaciado interno */
+				border: 2px solid #00ffcc; /* Borde llamativo */
+				border-radius: 10px; /* Esquinas redondeadas */
+				box-shadow: 0 0 20px #00ffcc, inset 0 0 10px #004e92; /* Sombra para efecto de brillo */
+				text-align: center; /* Centrar texto */
+				display: inline-block; /* Ajustar tamaño al contenido */
+			}
+			#timeControls {
+				/*position: absolute;
+				top: 5px;
+				left: 10px;*/
+				color: white;
+				/* background: rgba(255, 255, 255, 0.5); */
+				border: none;
+				padding: 3px;
+				cursor: pointer;
+			}
+			#controls {
+				position: fixed;
+				top: 10px;
+				right: 10px;
+				z-index: 1000;
+				display: flex;
+				gap: 10px;
+			}
+			button {
+				padding: 10px 15px;
+				font-family: 'Orbitron', sans-serif; /* Fuente temática espacial */
+				font-size: 12px; /* Tamaño de la fuente */
+				color: #00ffcc; /* Color futurista */
+				text-shadow: 0 0 5px #00ffcc, 0 0 10px #00ffcc, 0 0 15px #008080, 0 0 20px #008080; /* Efecto de brillo */
+				background: linear-gradient(90deg, #000428, #004e92); /* Fondo con gradiente espacial */
+				border: 2px solid #00ffcc; /* Borde brillante */
+				border-radius: 10px; /* Esquinas redondeadas */
+				box-shadow: 0 0 20px #00ffcc, inset 0 0 10px #004e92; /* Sombra para efecto de profundidad */
+				cursor: pointer;
+				transition: transform 0.2s, box-shadow 0.2s; /* Transición suave al hacer hover */
+			}
+
+			button:hover {
+				background: linear-gradient(90deg, #004e92, #00ffcc); /* Gradiente inverso al hacer hover */
+				box-shadow: 0 0 30px #00ffcc, inset 0 0 15px #00ffcc; /* Efecto más intenso al pasar el mouse */
+				transform: scale(1.05); /* Aumenta ligeramente el tamaño */
+			}
+
+			button:active {
+				transform: scale(0.95); /* Efecto al presionar */
+				box-shadow: 0 0 15px #00ffcc, inset 0 0 5px #004e92; /* Reduce el brillo al hacer clic */
+			}
+		</style>
+	</head>
+	<body>
+		<div id="timePanel">
+		<div id="dateDisplay"></div>
+			<div id="timeControls">			
+				<button id="speedControl">V</button>
+				<button id="decreaseSpeedBtn">-</button>
+				<button id="pauseBtn">||</button>
+				<button id="increaseSpeedBtn">+</button>	
+			</div>
+		<div id="speedDisplay">Velocidad: x1</div>				
+		</div>
+			
+		<div id="controls">
+			<button id="toggleOrbits">O</button>
+			<button id="fullscreenBtn">P</button>
+			<!-- <button id="resetGyroBtn">R</button> -->
+		</div>
+
+		<script>
+			// Configuración inicial
+			const scene = new THREE.Scene();
+			const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 500000);
+			const renderer = new THREE.WebGLRenderer({ antialias: true });
+			renderer.setSize(window.innerWidth, window.innerHeight);
+			renderer.shadowMap.enabled = true; // Habilitar sombras
+			renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Tipo de sombras suaves
+			document.body.appendChild(renderer.domElement);
+
+			// Controles de cámara
+			const controls = new THREE.OrbitControls(camera, renderer.domElement);
+			controls.enableDamping = true;
+			controls.dampingFactor = 0.05;
+			controls.enableZoom = true;
+
+			// Añadir un entorno de luz general (opcional)
+			const ambientLight = new THREE.AmbientLight(0x333333, 0.2); // Luz ambiental tenue
+			scene.add(ambientLight);
+
+			// Escala para las distancias y tamaños
+			const SCALE_DISTANCE = 0.000005; // Escala ajustada para las distancias (en km)
+			const SCALE_SIZE = 0.0005; // Escala ajustada para los tamaños de los cuerpos
+			//const SCALE_DISTANCE = 0.00001; // Escala ajustada para las distancias (en km)
+			//const SCALE_SIZE = 0.0001; // Escala ajustada para los tamaños de los cuerpos
+
+			// Velocidad de simulación
+			let speedFactor = 0.00000864; // Velocidad inicial (1 segundo = 1 segundo)
+			const speedRanges = [
+				0.00000864,	// 1 seg = 1 seg
+				0.00069444,	// 1 seg = 1 min
+				0.04166667,	// 1 seg = 1 hora
+				0.5,		// 1 seg = 12 horas
+				1,			// 1 seg = 24 horas (1 día)
+				2,			// 1 seg = 48 horas (2 días)
+				7,			// 1 seg = 7 días
+				15,			// 1 seg = 15 días
+				30,			// 1 seg = 30 días
+			];
+			let isPaused = false; // Variable para controlar el estado de pausa			
+			
+			let simulatedDate = new Date(); // Fecha inicial (actual)
+			let lastTime = Date.now(); // Tiempo de referencia para animación
+
+			// Mostrar la fecha y hora simulada en formato dd/mm/aaaa HH:mm:ss
+			document.getElementById("dateDisplay").innerText = `${simulatedDate.toLocaleDateString("es-ES", {
+				day: "2-digit",
+				month: "2-digit",
+				year: "numeric",
+			})} ${simulatedDate.toLocaleTimeString("es-ES", {
+				hour: "2-digit",
+				minute: "2-digit",
+				second: "2-digit",
+			})}`;
+
+			// Cuerpos celestes
+			const CELESTIAL_BODIES = {
+				star: {
+					/*sun: { 
+						periapsis: 0, apoapsis: 0, size: 1392000, color: 0xffff00, orbits: null, orbitalPeriod: Infinity, 
+						orientation: 0, inclination: 0, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 0, lastPerihelion: null, 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 7.25 
+					},*/
+					sun: { 
+						periapsis: 0, apoapsis: 0, size: 135000, color: 0xffffff, orbits: "galaxy", orbitalPeriod: 0, 
+						orientation: 0, inclination: 0, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 0, lastPerihelion: "2024-01-01", 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 7.25 
+					},
+					/*suny: { 
+						periapsis: 960000000, apoapsis: 998000000, size: 35000, color: 0xffff00, orbits: "sun", orbitalPeriod: 100, 
+						orientation: 48.33, inclination: 10, argumentOfPeriapsis: 181, longitudeOfAscendingNode: 0.33, lastPerihelion: "2024-01-07", 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0.034 
+					},*/
+					proximaCentauri: { 
+						periapsis: 16145000000, apoapsis: 15145000000, size: 239820, color: 0xffffff, orbits: "galaxy", orbitalPeriod: 100000, 
+						orientation: 0, inclination: 0, argumentOfPeriapsis: 182, longitudeOfAscendingNode: 0, lastPerihelion: "2024-01-01", 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0, 
+					},
+					proximeCentauri: { 
+						periapsis: 16145000000, apoapsis: 15145000000, size: 239820, color: 0xffffff, orbits: "galaxy", orbitalPeriod: 100000, 
+						orientation: 0, inclination: 7, argumentOfPeriapsis: 160, longitudeOfAscendingNode: 0, lastPerihelion: "2024-01-01", 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0, 
+					},
+					proximiCentauri: { 
+						periapsis: 16145000000, apoapsis: 15145000000, size: 339820, color: 0xffffff, orbits: "galaxy", orbitalPeriod: 100000, 
+						orientation: 0, inclination: 2, argumentOfPeriapsis: 160, longitudeOfAscendingNode: 0, lastPerihelion: "2020-01-01", 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0, 
+					},
+				},
+				planets: {
+					mercury: { 
+						periapsis: 46000000, apoapsis: 69800000, size: 4879, color: 0xaaaaaa, orbits: "sun", orbitalPeriod: 88, 
+						orientation: 48.33, inclination: 7, argumentOfPeriapsis: 180.45, longitudeOfAscendingNode: 0.33, lastPerihelion: "2024-01-05", 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0.034 
+					},
+					venus: { 
+						periapsis: 107480000, apoapsis: 108940000, size: 12104, color: 0xff9900, orbits: "sun", orbitalPeriod: 224.7, 
+						orientation: 76.68, inclination: 3.4, argumentOfPeriapsis: 180.53, longitudeOfAscendingNode: 0.68, lastPerihelion: "2023-08-13", 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 177.36  // Rotación retrógrada
+					},
+					earth: { 
+						periapsis: 147090000, apoapsis: 152100000, size: 12742, color: 0x0000ff, orbits: "sun", orbitalPeriod: 365.25, 
+						orientation: 0, inclination: 0, argumentOfPeriapsis: 180.93, longitudeOfAscendingNode: 0, lastPerihelion: "2024-01-03", 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 1.44 
+					},
+					mars: { 
+						periapsis: 206620000, apoapsis: 249230000, size: 6779, color: 0xff3300, orbits: "sun", orbitalPeriod: 687, 
+						orientation: 49.58, inclination: 1.85, argumentOfPeriapsis: 180.04, longitudeOfAscendingNode: 0.58, lastPerihelion: "2022-12-08", 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 25.19 
+					},
+					jupiter: { 
+						periapsis: 740520000, apoapsis: 816620000, size: 139820, color: 0xb5651d, orbits: "sun", orbitalPeriod: 4332.59, 
+						orientation: 100.49, inclination: 1.3, argumentOfPeriapsis: 180.75, longitudeOfAscendingNode: 0.49, lastPerihelion: "2023-11-03", 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 3.13 
+					},
+					saturn: { 
+						periapsis: 1352550000, apoapsis: 1514500000, size: 116460, color: 0xf4a460, orbits: "sun", orbitalPeriod: 10759.22, 
+						orientation: 113.66, inclination: 2.5, argumentOfPeriapsis: 180.43, longitudeOfAscendingNode: 0.66, lastPerihelion: "2023-08-27", 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 26.73
+					},
+					uranus: { 
+						periapsis: 2741300000, apoapsis: 3006300000, size: 50724, color: 0x00ffff, orbits: "sun", orbitalPeriod: 30685, 
+						orientation: 74.01, inclination: 0.77, argumentOfPeriapsis: 170.96, longitudeOfAscendingNode: 0.01, lastPerihelion: "2030-09-23", 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 97.77 // Rotación casi tumbada
+					},
+					neptune: { 
+						periapsis: 4444400000, apoapsis: 4545700000, size: 49244, color: 0x0000ff, orbits: "sun", orbitalPeriod: 60190, 
+						orientation: 131.79, inclination: 1.77, argumentOfPeriapsis: 184.97, longitudeOfAscendingNode: 0.79, lastPerihelion: "2040-12-01", 
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 28.32 
+					},
+				},
+				satellites: {
+					moon: { 
+						periapsis: 363300*10, apoapsis: 405500*10, size: 3474, color: 0xcccccc, orbits: "earth", orbitalPeriod: 27.321, 
+						orientation: 180, inclination: 5.14, argumentOfPeriapsis: 41.5, longitudeOfAscendingNode: 125.08, lastPerihelion: "2024-01-03" 
+					},
+					io: { 
+						periapsis: 421700*50, apoapsis: 422000*50, size: 3643, color: 0xffa500, orbits: "jupiter", orbitalPeriod: 1.769, 
+						orientation: 0, inclination: 0.05, argumentOfPeriapsis: 84.03, longitudeOfAscendingNode: 43.97, lastPerihelion: "2024-01-01" 
+					},
+					europa: { 
+						periapsis: 670900*50, apoapsis: 676900*50, size: 3122, color: 0xffffff, orbits: "jupiter", orbitalPeriod: 3.551, 
+						orientation: 0, inclination: 0.47, argumentOfPeriapsis: 88.97, longitudeOfAscendingNode: 219.11, lastPerihelion: "2024-01-01" 
+					},
+					ganymede: { 
+						periapsis: 1070400*50, apoapsis: 1071600*50, size: 5268, color: 0xffff00, orbits: "jupiter", orbitalPeriod: 7.155, 
+						orientation: 0, inclination: 0.2, argumentOfPeriapsis: 192.42, longitudeOfAscendingNode: 63.55, lastPerihelion: "2024-01-01" 
+					},
+					callisto: { 
+						periapsis: 1882700*50, apoapsis: 1883300*50, size: 4821, color: 0x808080, orbits: "jupiter", orbitalPeriod: 16.689, 
+						orientation: 0, inclination: 0.19, argumentOfPeriapsis: 52.64, longitudeOfAscendingNode: 298.84, lastPerihelion: "2024-01-01" 
+					},
+					titan: { 
+						periapsis: 1186600*40, apoapsis: 1221860*40, size: 5150, color: 0xffcc99, orbits: "saturn", orbitalPeriod: 15.945, 
+						orientation: 0, inclination: 0.3, argumentOfPeriapsis: 174.17, longitudeOfAscendingNode: 109.49, lastPerihelion: "2024-01-01" 
+					},
+				},
+				comets: {
+					halley: { 
+						periapsis: 87870000, apoapsis: 5247100000, size: 11*1000, color: 0xffffff, orbits: "sun", orbitalPeriod: 27740, 
+						orientation: 58.42, inclination: 162.26, argumentOfPeriapsis: 111.33, longitudeOfAscendingNode: 58.42, lastPerihelion: "1986-02-09" 
+					},
+					encke: { 
+						periapsis: 50917500, apoapsis: 611150000, size: 4.8*1000, color: 0x87ceeb, orbits: "sun", orbitalPeriod: 1205.325, 
+						orientation: 334.57, inclination: 11.78, argumentOfPeriapsis: 186.45, longitudeOfAscendingNode: 334.57, lastPerihelion: "2023-11-22" 
+					},
+					hale_bopp: {
+						periapsis: 136680000, apoapsis: 55350000000, size: 60*10000, color: 0xadd8e6, orbits: "sun", orbitalPeriod: 919200, 
+						orientation: 282.47, inclination: 89.4, argumentOfPeriapsis: 130.59, longitudeOfAscendingNode: 282.47, lastPerihelion: "1997-04-01" 
+					},
+				},
+			};
+			
+			// Cargador de texturas
+			const textureLoader = new THREE.TextureLoader();
+
+			// Texturas específicas para cada cuerpo celeste
+			const celestialBodiesTextures = {	
+				sun: {
+					map: textureLoader.load('./img/celestial_bodies/2k_sun.jpg'),
+				},
+				mercury: {
+					map: textureLoader.load('./img/celestial_bodies/2k_mercury.jpg'),
+				},
+				venus: {
+					map: textureLoader.load('./img/celestial_bodies/2k_venus_surface.jpg'),
+				},
+				earth: {
+					map: textureLoader.load('./img/celestial_bodies/2k_earth_daymap.jpg'),
+					bumpMap: textureLoader.load('./img/celestial_bodies/2k_earth_normal_map.jpg'),
+					bumpScale: 0.05,
+					cloudsMap: textureLoader.load('./img/celestial_bodies/2k_earth_clouds.jpg'),
+				},
+				mars: {
+					map: textureLoader.load('./img/celestial_bodies/2k_mars.jpg'),
+				},
+				jupiter: {
+					map: textureLoader.load('./img/celestial_bodies/2k_jupiter.jpg'),
+				},
+				saturn: {
+					map: textureLoader.load('./img/celestial_bodies/2k_saturn.jpg'),
+					mapRing: textureLoader.load('./img/celestial_bodies/2k_saturn_ring_alpha.png'),
+				},
+				uranus: {
+					map: textureLoader.load('./img/celestial_bodies/2k_uranus.jpg'),
+				},
+				neptune: {
+					map: textureLoader.load('./img/celestial_bodies/2k_neptune.jpg'),
+				},
+				moon: {
+					map: textureLoader.load('./img/celestial_bodies/2k_moon.jpg'),
+					bumpMap: textureLoader.load('./img/celestial_bodies/2k_moon_bump.jpg'),
+					bumpScale: 0.002,
+				},
+			};
+			
+			// Inicializar ángulos y objetos
+			const angles = {};
+			const celestialObjects = {};
+			
+			// Calcular ángulos iniciales
+			Object.keys(CELESTIAL_BODIES).forEach((category) => {
+				Object.keys(CELESTIAL_BODIES[category]).forEach((name) => {
+					const body = CELESTIAL_BODIES[category][name];
+					if (body.orbitalPeriod !== Infinity) {
+						const perihelionDate = new Date(body.lastPerihelion);
+						const daysSincePerihelion = (new Date() - perihelionDate) / (1000 * 60 * 60 * 24); // Días desde el perihelio
+						const fractionOfOrbit = daysSincePerihelion / body.orbitalPeriod;
+						angles[name] = 2 * Math.PI * fractionOfOrbit; // Ángulo inicial en radianes
+
+						// Registrar la inclinación para referencia
+						if (typeof body.inclination === "undefined") {
+							console.warn(`${name} no tiene inclinación definida. Se usará 0 por defecto.`);
+							body.inclination = 0; // Asegurar que todos los cuerpos tienen inclinación
+						}
+					}
+				});
+			});	
+
+			// Crear una luz puntual y una esfera luminosa para el centro de la galaxia
+			const galaxyGeometry = new THREE.SphereGeometry(0, 32, 32); // Tamaño y resolución de la esfera
+			const galaxyMat = new THREE.MeshStandardMaterial({
+				emissive: 0xffff00, // Luz cálida
+				emissiveIntensity: 1,
+				color: 0x000000, // Color base negro para resaltar el brillo
+			});
+
+			// Crear la luz para el centro galáctico
+			const galaxyLight = new THREE.PointLight(0xffff00, 2, 5000, 2); // Luz puntual con intensidad y alcance
+			const galaxyMesh = new THREE.Mesh(galaxyGeometry, galaxyMat); // Malla para representar la luz
+
+			// Adjuntar la esfera luminosa al punto de luz
+			galaxyLight.add(galaxyMesh); // La luz incluye la malla visual
+			galaxyLight.position.set(0, 0, 0); // Posicionar el centro de la galaxia en el origen
+			galaxyLight.castShadow = true; // Habilitar sombras proyectadas desde el centro galáctico
+
+			// Agregar el centro de la galaxia a la escena
+			scene.add(galaxyLight);
+
+			// Guardar el centro galáctico en el objeto celestialObjects para futuras referencias
+			celestialObjects["galaxy"] = galaxyLight;
+			
+			// Crear un array para los objetos interactuables
+			const interactableObjects = [];
+
+			// Crear cuerpos celestes y sus órbitas
+			Object.keys(CELESTIAL_BODIES).forEach((category) => {
+				Object.keys(CELESTIAL_BODIES[category]).forEach((name) => {
+					const body = CELESTIAL_BODIES[category][name];
+					
+					if (category === "star") {
+						// Para otros cuerpos celestes
+						const textures = celestialBodiesTextures [name] || {};
+						
+						// Crear la geometría y el material del cuerpo celeste
+						const geometry = new THREE.SphereGeometry(body.size * SCALE_SIZE, 64, 64);
+						
+						var alcance = 0;
+						if (name === "sun"){
+							alcance = 1000000; // Ajustar el alcance para el Sol
+						} else {
+							alcance = 100000; ; // Ajustar el alcance para estrellas
+						}
+						
+						const mesh = new THREE.PointLight(0xffffff, 1, alcance, 2); // Ajustar el alcance para el Sol
+						const materialOptions = {
+								map: textures.map || null, // Usa la textura del mapa si está disponible
+								bumpMap: textures.bumpMap || null, // Usa el bumpMap si está disponible
+								bumpScale: textures.bumpScale || 0, // Ajusta el bumpScale si está disponible
+								color: !textures.map ? body.color : null, // Si no hay textura, usa el color del cuerpo
+								emissive: 0xffff00, // Luz cálida
+								emissiveIntensity: 1,
+							};				
+						const material = new THREE.MeshStandardMaterial(materialOptions);						
+						
+						// Adjuntar la esfera luminosa al punto de luz
+						mesh.add(new THREE.Mesh(geometry , material));
+						//mesh.position.set(0, 0, 0); // Posicionar el Sol en el centro
+						//mesh.castShadow = true; // Habilitar sombras desde el Sol
+						//mesh.shadow.mapSize.width = 2048; // Tamaño del mapa de sombras
+						//mesh.shadow.mapSize.height = 2048;
+						mesh.shadow.camera.near = 0.1;
+						//mesh.shadow.camera.far = 50000;
+						
+						// Aplicar inclinación axial (si existe)
+						if (body.axialTilt) {
+							mesh.rotation.z = THREE.MathUtils.degToRad(body.axialTilt); // Inclinar el eje según `axialTilt`
+						}						
+
+						// Calcular la posición inicial del cuerpo celeste
+						const position = calculateRelativePosition(
+							angles[name],
+							body.periapsis,
+							body.apoapsis,
+							body.longitudeOfAscendingNode,
+							body.inclination,
+							body.argumentOfPeriapsis,
+							body.orientation
+						);
+
+						// Si el cuerpo orbita otro cuerpo, ajusta su posición
+						if (body.orbits && celestialObjects[body.orbits]) {
+							const centralPosition = celestialObjects[body.orbits].position;
+							position.add(centralPosition);
+						}
+						
+						// Establecer la posición del mesh
+						mesh.position.set(position.x, position.y, position.z);
+						// Agregar el mesh a la escena
+						scene.add(mesh);
+						// Agregar el mesh al objeto `celestialObjects`
+						celestialObjects[name] = mesh;
+						
+						// Dibujar la órbita del cuerpo celeste
+						const orbit = drawOrbit(
+							angles[name],
+							body.periapsis,
+							body.apoapsis,
+							body.longitudeOfAscendingNode,
+							body.inclination,
+							body.argumentOfPeriapsis,
+							body.orientation,
+							body.color,
+							body.orbits && celestialObjects[body.orbits]
+								? celestialObjects[body.orbits].position
+								: new THREE.Vector3(0, 0, 0)
+						);
+
+						if (orbit) {
+							scene.add(orbit);
+							celestialObjects[name].orbit = orbit;
+						}
+					} else {
+						// Para otros cuerpos celestes
+						const textures = celestialBodiesTextures [name] || {};
+						
+						const geometry = new THREE.SphereGeometry(body.size * SCALE_SIZE, 64, 64);						
+						// Si es una estrella, agregar una luz puntual
+
+						const materialOptions = {
+							map: textures.map || null, // Usa la textura del mapa si está disponible
+							bumpMap: textures.bumpMap || null, // Usa el bumpMap si está disponible
+							bumpScale: textures.bumpScale || 0, // Ajusta el bumpScale si está disponible
+							color: !textures.map ? body.color : null, // Si no hay textura, usa el color del cuerpo
+						};
+						const material = new THREE.MeshStandardMaterial(materialOptions);
+						const mesh = new THREE.Mesh(geometry, material);
+						
+						// Habilitar sombras en los cuerpos celestes
+						mesh.castShadow = true; // El cuerpo celeste proyecta sombras
+						mesh.receiveShadow = true; // El cuerpo celeste recibe sombras		
+						
+						// Aplicar inclinación axial (si existe)
+						if (body.axialTilt) {
+							mesh.rotation.z = THREE.MathUtils.degToRad(body.axialTilt); // Inclinar el eje según `axialTilt`
+						}
+
+						const position = calculateRelativePosition(
+							angles[name],
+							body.periapsis,
+							body.apoapsis,
+							body.longitudeOfAscendingNode,
+							body.inclination,
+							body.argumentOfPeriapsis,
+							body.orientation
+						);
+
+						if (body.orbits && celestialObjects[body.orbits]) {
+							const centralPosition = celestialObjects[body.orbits].position;
+							position.add(centralPosition);
+						}
+
+						mesh.position.set(position.x, position.y, position.z);
+						
+						// Asocia el nombre del cuerpo celeste con el objeto
+						mesh.userData = {
+							name: name,
+						};
+						
+						scene.add(mesh);
+						
+						// Hacer interactuable
+						interactableObjects.push(mesh);
+						
+						celestialObjects[name] = mesh;
+						
+						/*
+						// Crear una esfera auxiliar más grande para detección de clics
+						const boundingGeometry = new THREE.SphereGeometry(body.size * SCALE_SIZE * 5.5, 8, 8); // Aumenta el tamaño para clics más fáciles
+						const boundingMaterial = new THREE.MeshBasicMaterial({
+							visible: true, // Invisible en la escena
+							transparent:true,
+							opacity: 0.1,
+						});
+						const boundingMesh = new THREE.Mesh(boundingGeometry, boundingMaterial);						
+
+						// Sincronizar la posición con el cuerpo principal
+						boundingMesh.userData = { name: name }; // También asignar el nombre
+						scene.add(boundingMesh);
+						interactableObjects.push(boundingMesh);	
+						mesh.add(boundingMesh);
+						*/
+						
+						// Si es la Tierra, agregar las nubes
+						if (name === "earth" && textures.cloudsMap) {
+							const cloudGeometry = new THREE.SphereGeometry(body.size * SCALE_SIZE * 1.01, 64, 64);
+							const cloudMaterial = new THREE.MeshPhongMaterial({
+								map: textures.cloudsMap,
+								transparent: true,
+								opacity: 0.8,
+							});
+							const cloudMesh = new THREE.Mesh(cloudGeometry, cloudMaterial);
+							mesh.add(cloudMesh);
+						} else if (name === "saturn") {
+							 // Crear los anillos de Saturno
+							const ringGeometry = new THREE.RingGeometry(
+								body.size * SCALE_SIZE * 1.2, // Radio interno del anillo
+								body.size * SCALE_SIZE * 2.5, // Radio externo del anillo
+								128 // Resolución angular (mayor valor para suavidad)
+							);
+
+							// Modificar las coordenadas UV para que mapeen correctamente desde el centro hacia afuera
+							const uv = ringGeometry.attributes.uv;
+							for (let i = 0; i < uv.count; i++) {
+								const u = uv.getX(i);
+								const v = uv.getY(i);
+								const radius = Math.sqrt((u - 0.5) ** 2 + (v - 0.5) ** 2); // Radio normalizado
+
+								// Mapeo de la textura desde el centro del anillo (izquierda de la imagen) hacia afuera (derecha de la imagen)
+								uv.setXY(i, radius, radius);
+							}
+
+							// Actualizar el atributo UV en la geometría
+							ringGeometry.attributes.uv.needsUpdate = true;
+
+							// Crear el material para los anillos
+							const ringMaterial = new THREE.MeshStandardMaterial({
+								map: celestialBodiesTextures .saturn.mapRing, // Textura del anillo
+								side: THREE.DoubleSide, // Renderizar ambos lados
+								transparent: true, // Habilitar transparencia
+							});
+
+							// Crear el mesh de los anillos
+							const ringMesh = new THREE.Mesh(ringGeometry, ringMaterial);
+							
+							// Habilitar sombras en los anillos
+							ringMesh.castShadow = false; // Proyecta sombras
+							ringMesh.receiveShadow = true; // Recibe sombras
+
+							// Rotar los anillos para colocarlos en el plano ecuatorial de Saturno
+							ringMesh.rotation.x = THREE.MathUtils.degToRad(90); // Plano horizontal
+							ringMesh.rotation.z = THREE.MathUtils.degToRad(body.axialTilt); // Ajustar inclinación de los anillos
+							
+							// Añadir los anillos como hijo del planeta
+							mesh.add(ringMesh);
+						}						
+						
+						const orbit = drawOrbit(
+							angles[name],
+							body.periapsis,
+							body.apoapsis,
+							body.longitudeOfAscendingNode,
+							body.inclination,
+							body.argumentOfPeriapsis,
+							body.orientation,
+							body.color,
+							body.orbits && celestialObjects[body.orbits]
+								? celestialObjects[body.orbits].position
+								: new THREE.Vector3(0, 0, 0)
+						);
+
+						if (orbit) {
+							scene.add(orbit);
+							celestialObjects[name].orbit = orbit;
+						}
+					}
+				});
+			});		
+			
+			// Rotación para los planetas
+			function rotateCelestialBody(mesh, rotationAxis, axialTilt, rotationSpeed, deltaTime) {
+				// Inclinar el eje de rotación según el axial tilt
+				const tiltAxis = new THREE.Vector3(rotationAxis.x, rotationAxis.y, rotationAxis.z);
+				tiltAxis.applyAxisAngle(new THREE.Vector3(0, 0, 1), THREE.MathUtils.degToRad(0));
+
+				// Rotar el planeta alrededor de su eje inclinado
+				mesh.rotateOnAxis(tiltAxis, rotationSpeed * deltaTime);
+			}
+
+			// Calcular posición relativa
+			function calculateRelativePosition(angle, periapsis, apoapsis, longitudeOfAscendingNode = 0, inclination = 0, argumentOfPeriapsis = 0, orientation = 0, centralPosition = new THREE.Vector3(0, 0, 0)) {
+				if (!periapsis || !apoapsis || periapsis <= 0 || apoapsis <= 0) {
+					return new THREE.Vector3(0, 0, 0); // Valores inválidos
+				}
+
+				// Semiejes mayor y menor
+				const semiMajorAxis = (apoapsis + periapsis) / 2 * SCALE_DISTANCE;
+				const semiMinorAxis = semiMajorAxis * Math.sqrt(1 - Math.pow((apoapsis - periapsis) / (apoapsis + periapsis), 2));
+
+				// Desplazamiento al foco
+				const focusOffset = semiMajorAxis - (periapsis * SCALE_DISTANCE);
+
+				// Posición en coordenadas polares (en el plano orbital sin transformaciones)
+				const x = focusOffset + semiMajorAxis * Math.cos(angle);
+				const z = semiMinorAxis * Math.sin(angle);
+				const position = new THREE.Vector3(x, 0, z);
+
+				// Aplicar transformaciones orbitales en el orden correcto
+				// 1. Rotación por el argumento del periapsis (en el plano orbital)
+				position.applyAxisAngle(new THREE.Vector3(0, 0, 1), THREE.MathUtils.degToRad(argumentOfPeriapsis));
+
+				// 2. Rotación por la inclinación (alrededor del eje X)
+				position.applyAxisAngle(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(inclination));
+
+				// 3. Rotación por la longitud del nodo ascendente (alrededor del eje Z)
+				position.applyAxisAngle(new THREE.Vector3(0, 0, 1), THREE.MathUtils.degToRad(longitudeOfAscendingNode));
+
+				// 4. Rotación adicional por orientación (si es necesario)
+				position.applyAxisAngle(new THREE.Vector3(0, 1, 0), THREE.MathUtils.degToRad(orientation));
+
+				// Ajustar la posición relativa al cuerpo central
+				position.add(centralPosition);
+
+				return position;
+			}
+
+			// Dibujar órbita
+			function drawOrbit(name, periapsis, apoapsis, longitudeOfAscendingNode = 0, inclination = 0, argumentOfPeriapsis = 0, orientation = 0, color, centralPosition = new THREE.Vector3(0, 0, 0)) {
+				if (!periapsis || !apoapsis || periapsis <= 0 || apoapsis <= 0) {
+					console.warn(`${name} Los valores de periapsis o apoapsis no son válidos para dibujar una órbita.`);
+					return null; // Valores inválidos
+				}
+
+				const semiMajorAxis = (apoapsis + periapsis) / 2 * SCALE_DISTANCE;
+				const semiMinorAxis = semiMajorAxis * Math.sqrt(1 - Math.pow((apoapsis - periapsis) / (apoapsis + periapsis), 2));
+				const focusOffset = semiMajorAxis - (periapsis * SCALE_DISTANCE);
+
+				const points = [];
+				for (let angle = 0; angle <= Math.PI * 2; angle += 0.01) {
+					// Coordenadas iniciales (en el plano orbital sin transformaciones)
+					const x = focusOffset + semiMajorAxis * Math.cos(angle);
+					const z = semiMinorAxis * Math.sin(angle);
+					const position = new THREE.Vector3(x, 0, z);
+
+					// Aplicar transformaciones orbitales en el orden correcto
+					// 1. Rotación por el argumento del periapsis (en el plano orbital)
+					position.applyAxisAngle(new THREE.Vector3(0, 0, 1), THREE.MathUtils.degToRad(argumentOfPeriapsis));
+
+					// 2. Rotación por la inclinación (alrededor del eje X)
+					position.applyAxisAngle(new THREE.Vector3(1, 0, 0), THREE.MathUtils.degToRad(inclination));
+
+					// 3. Rotación por la longitud del nodo ascendente (alrededor del eje Z)
+					position.applyAxisAngle(new THREE.Vector3(0, 0, 1), THREE.MathUtils.degToRad(longitudeOfAscendingNode));
+
+					// 4. Rotación adicional por orientación (si es necesario)
+					position.applyAxisAngle(new THREE.Vector3(0, 1, 0), THREE.MathUtils.degToRad(orientation));
+
+					// Ajustar posición respecto al cuerpo central
+					position.add(centralPosition);
+					points.push(position);
+				}
+
+				const orbitGeometry = new THREE.BufferGeometry().setFromPoints(points);
+				const orbitMaterial = new THREE.LineBasicMaterial({ color });
+				return new THREE.LineLoop(orbitGeometry, orbitMaterial);
+			}
+
+			// Animación
+			function animate() {
+				requestAnimationFrame(animate);
+
+				const currentTime = Date.now();
+				const elapsed = (currentTime - lastTime) / 1000; // Tiempo transcurrido en segundos
+				lastTime = currentTime;
+				
+				//if (!isPaused) {
+					//const daysToAdvance = elapsed * speedRanges[speedFactor]; // Avanzar en función de la velocidad actual
+					// Aquí debes actualizar tu lógica para avanzar la simulación
+					//console.log(`Días avanzados: ${daysToAdvance.toFixed(2)}`);				
+
+					//const daysToAdvance = elapsed * speedFactor;
+					//simulatedDate = new Date(simulatedDate.getTime() + daysToAdvance * 24 * 60 * 60 * 1000);
+					
+					// Actualizar controles de la cámara
+					//updateCameraControls(elapsed);
+					
+					// Actualizar controles de la cámara
+					updateCameraControls(elapsed);
+
+					const daysToAdvance = elapsed * speedFactor;
+					simulatedDate = new Date(simulatedDate.getTime() + daysToAdvance * 24 * 60 * 60 * 1000);
+
+					Object.keys(CELESTIAL_BODIES).forEach((category) => {
+						Object.keys(CELESTIAL_BODIES[category]).forEach((name) => {
+							const body = CELESTIAL_BODIES[category][name];
+							if (body.orbitalPeriod !== Infinity) {
+								const angularSpeed = (2 * Math.PI) / body.orbitalPeriod; // Velocidad angular en rad/día
+								angles[name] += angularSpeed * daysToAdvance; // Avanzar el ángulo
+
+								let position = calculateRelativePosition(
+									angles[name],
+									body.periapsis,
+									body.apoapsis,
+									body.longitudeOfAscendingNode,								
+									body.inclination,
+									body.argumentOfPeriapsis,
+									body.orientation
+								);
+
+								if (body.orbits && celestialObjects[body.orbits]) {
+									const centralPosition = celestialObjects[body.orbits].position;
+									position.add(centralPosition); // Añadir posición del cuerpo central
+								}
+
+								celestialObjects[name].position.set(position.x, position.y, position.z);
+
+								// Actualizar órbita si está definida
+								if (celestialObjects[name].orbit) {
+									const centralPosition = body.orbits && celestialObjects[body.orbits]
+										? celestialObjects[body.orbits].position
+										: new THREE.Vector3(0, 0, 0);
+
+									const updatedOrbit = drawOrbit(
+										angles[name],
+										body.periapsis,
+										body.apoapsis,
+										body.longitudeOfAscendingNode,									
+										body.inclination,
+										body.argumentOfPeriapsis,
+										body.orientation,									
+										body.color,
+										centralPosition
+									);
+
+									// Reemplazar la geometría de la órbita
+									celestialObjects[name].orbit.geometry.copy(updatedOrbit.geometry);
+								}
+								
+								const rotationSpeed = (2 * Math.PI / (body.rotationPeriod || 1)) * speedFactor; // Velocidad de rotación (en radianes/seg)
+								const deltaTime = elapsed; // Tiempo transcurrido entre cuadros
+
+								rotateCelestialBody(
+									celestialObjects[name],
+									body.rotationAxis || { x: 0, y: 1, z: 0 },
+									body.axialTilt || 0,
+									rotationSpeed,
+									deltaTime
+								);
+
+							}
+						});
+					});
+					
+				//}
+
+				// Mostrar la fecha y hora simulada
+				document.getElementById("dateDisplay").innerText = `${simulatedDate.toLocaleDateString("es-ES", {
+					day: "2-digit",
+					month: "2-digit",
+					year: "numeric",
+				})} ${simulatedDate.toLocaleTimeString("es-ES", {
+					hour: "2-digit",
+					minute: "2-digit",
+					second: "2-digit",
+				})}`;
+
+				renderer.render(scene, camera);
+			}
+
+//////////////////////////////////////////////////////////////////////////////////////////////
+			
+			// Crear el Raycaster y el vector para las coordenadas del ratón
+			const raycaster = new THREE.Raycaster();
+			const mouse = new THREE.Vector2();
+
+			// Evento de clic en el canvas
+			renderer.domElement.addEventListener("mousedown", (event) => {
+				// Obtener el bounding box del canvas
+				const rect = renderer.domElement.getBoundingClientRect();
+
+				// Calcular las coordenadas normalizadas del ratón en el canvas
+				mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+				mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+				console.log("Mouse coordinates normalized:", mouse);
+
+				// Actualizar el Raycaster con la cámara y las coordenadas del ratón
+				raycaster.setFromCamera(mouse, camera);
+
+				// Determinar los objetos intersectados
+				const intersects = raycaster.intersectObjects(interactableObjects, true); // Usa `true` para buscar en la jerarquía
+
+				if (intersects.length > 0) {
+					// Obtener el primer objeto intersectado
+					const clickedObject = intersects[0].object;
+
+					console.log("Objeto clicado:", clickedObject);
+
+					// Buscar el nombre del cuerpo celeste
+					const bodyName = clickedObject.userData.name;
+
+					if (bodyName) {
+						console.log(`Hiciste clic en: ${bodyName}`);
+						focusOnCelestialBody(bodyName);
+					}
+				}
+			});
+
+			function focusOnCelestialBody(bodyName) {
+				const body = celestialObjects[bodyName];
+				if (!body) {
+					console.warn(`No se encontró el cuerpo celeste: ${bodyName}`);
+					return;
+				}
+
+				// Obtener la posición del cuerpo celeste
+				const targetPosition = new THREE.Vector3();
+				body.getWorldPosition(targetPosition);
+
+				// Usar Tween.js para mover la cámara suavemente
+				new TWEEN.Tween(camera.position)
+					.to(
+						{
+							x: targetPosition.x * 1.5, // Ajustar distancia
+							y: targetPosition.y * 1.5,
+							z: targetPosition.z * 1.5,
+						},
+						1000 // Duración de la animación
+					)
+					.easing(TWEEN.Easing.Quadratic.InOut) // Suavidad de la animación
+					.onUpdate(() => {
+						camera.lookAt(targetPosition); // Asegurarse de que la cámara mira el objeto
+					})
+					.start();
+			}
+
+			// Función para renderizar información del cuerpo celeste
+			function renderCelestialBodyInfo(bodyName) {
+				const body =
+					CELESTIAL_BODIES.planets[bodyName] ||
+					CELESTIAL_BODIES.satellites[bodyName] ||
+					CELESTIAL_BODIES.comets[bodyName] ||
+					CELESTIAL_BODIES.star[bodyName];
+
+				if (body) {
+					// Crear un contenedor HTML (puedes personalizar esto como prefieras)
+					const infoDiv = document.createElement("div");
+					infoDiv.style.position = "absolute";
+					infoDiv.style.top = "10px";
+					infoDiv.style.left = "10px";
+					infoDiv.style.padding = "10px";
+					infoDiv.style.backgroundColor = "rgba(0, 0, 0, 0.8)";
+					infoDiv.style.color = "white";
+					infoDiv.style.border = "1px solid white";
+					infoDiv.innerHTML = `
+						<h2>${bodyName}</h2>
+						<p><strong>Periapsis:</strong> ${body.periapsis} km</p>
+						<p><strong>Apoapsis:</strong> ${body.apoapsis} km</p>
+						<p><strong>Tamaño:</strong> ${body.size} km</p>
+						<p><strong>Inclinación:</strong> ${body.inclination}°</p>
+					`;
+
+					// Agregarlo al documento
+					document.body.appendChild(infoDiv);
+
+					// Removerlo después de 5 segundos (opcional)
+					setTimeout(() => {
+						infoDiv.remove();
+					}, 5000);
+				} else {
+					console.log("No se encontró información para este cuerpo celeste.");
+				}
+			}
+
+			console.log("Interactable Objects:", interactableObjects);
+			
+///////////////////////////////////////////////////////////////////////////////////////////////////////////		
+			
+			// Variables para el movimiento y rotación
+			let velocity = new THREE.Vector3(); // Velocidad actual de la nave
+			let acceleration = 0; // Aceleración controlada por los botones "+" y "-"
+			const maxSpeed = 50; // Velocidad máxima
+			const minSpeed = -50; // Velocidad mínima
+			const damping = 0.98; // Factor de amortiguación para la inercia (1 = sin amortiguación, <1 = fricción)
+
+			// Variables para suavizar la rotación
+			let pitchVelocity = 0; // Velocidad de rotación en el eje X (pitch)
+			let rollVelocity = 0; // Velocidad de rotación en el eje Z (roll)
+			const rotationAcceleration = Math.PI / 4; // Incremento de rotación por segundo^2
+			const rotationDamping = 0.9; // Factor de amortiguación para las rotaciones
+
+			// Manejo de las teclas
+			const keyState = {};
+
+			// Detección de dispositivos móviles o tabletas
+			const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+			// Detectar orientación del dispositivo (vertical u horizontal)
+			let deviceOrientation = window.orientation || 0; // Inicializar con la orientación actual
+
+			window.addEventListener("orientationchange", () => {
+				deviceOrientation = window.orientation || 0;
+				console.log(`Nueva orientación del dispositivo: ${deviceOrientation}°`);
+			});
+
+			// Crear botones "+" y "-" solo si el dispositivo es móvil
+			if (isMobile) {
+				const controlsContainer = document.createElement("div");
+				controlsContainer.style.position = "absolute";
+				controlsContainer.style.bottom = "10px";
+				controlsContainer.style.right = "10px";
+				controlsContainer.style.display = "flex";
+				controlsContainer.style.gap = "10px";
+
+				const buttonPlus = document.createElement("button");
+				buttonPlus.innerText = "+";
+				buttonPlus.style.padding = "10px";
+				buttonPlus.style.fontSize = "12px";
+				buttonPlus.onclick = () => {
+					acceleration += 5; // Incrementar aceleración
+					acceleration = Math.min(acceleration, maxSpeed); // Limitar la aceleración máxima
+					console.log(`Aceleración aumentada: ${acceleration}`);
+				};
+
+				const buttonMinus = document.createElement("button");
+				buttonMinus.innerText = "-";
+				buttonMinus.style.padding = "10px";
+				buttonMinus.style.fontSize = "12px";
+				buttonMinus.onclick = () => {
+					acceleration -= 5; // Reducir aceleración
+					acceleration = Math.max(acceleration, minSpeed); // Limitar la aceleración mínima
+					console.log(`Aceleración reducida: ${acceleration}`);
+				};
+
+				const buttonResetGyro = document.createElement("button");
+				buttonResetGyro.innerText = "R";
+				buttonResetGyro.style.padding = "10px";
+				buttonResetGyro.style.fontSize = "12px";
+				buttonResetGyro.onclick = () => {
+					resetGyroscope();
+				};
+
+				controlsContainer.appendChild(buttonMinus);
+				controlsContainer.appendChild(buttonPlus);
+				controlsContainer.appendChild(buttonResetGyro);
+				document.body.appendChild(controlsContainer);
+			}
+
+			// Variables para el giroscopio
+			let baseAlpha = 0; // Rotación inicial en yaw
+			let baseBeta = 0; // Rotación inicial en pitch
+			let baseGamma = 0; // Rotación inicial en roll
+			let gyroInitialized = false;
+
+			// Evento de orientación del dispositivo
+			window.addEventListener("deviceorientation", (event) => {
+				if (!gyroInitialized) {
+					// Establecer la orientación base cuando se inicializa el giroscopio
+					baseAlpha = event.alpha || 0;
+					baseBeta = event.beta || 0;
+					baseGamma = event.gamma || 0;
+					gyroInitialized = true;
+				}
+
+				// Calcular las diferencias respecto a la base
+				const deltaAlpha = ((event.alpha || 0) - baseAlpha) * (Math.PI / 180); // Yaw
+				let deltaBeta = ((event.beta || 0) - baseBeta) * (Math.PI / 180); // Pitch
+				let deltaGamma = ((event.gamma || 0) - baseGamma) * (Math.PI / 180); // Roll
+
+				// Ajustar según la orientación del dispositivo
+				if (deviceOrientation === 90) {
+					// Apaisado con la parte superior a la derecha
+					[deltaBeta, deltaGamma] = [-deltaGamma, deltaBeta];
+				} else if (deviceOrientation === -90) {
+					// Apaisado con la parte superior a la izquierda
+					[deltaBeta, deltaGamma] = [deltaGamma, -deltaBeta];
+				} else if (deviceOrientation === 180) {
+					// Vertical invertido
+					deltaBeta = -deltaBeta;
+					deltaGamma = -deltaGamma;
+				}
+
+				// Aplicar los valores del giroscopio a las velocidades de rotación
+				pitchVelocity = -deltaBeta * 2; // Pitch (hacia arriba/abajo)
+				rollVelocity = deltaGamma * 2; // Roll (rotación lateral)
+			});
+
+			// Función para resetear el giroscopio
+			function resetGyroscope() {
+				gyroInitialized = false; // Se reiniciará en el próximo evento "deviceorientation"
+				console.log("Giroscopio reiniciado");
+			}
+
+			// Evento para detectar cuándo se presiona una tecla
+			window.addEventListener("keydown", (event) => {
+				keyState[event.code] = true;
+
+				if (event.key === "+" || (event.key === "=" && event.shiftKey)) { // Tecla "+"
+					acceleration += 5; // Incrementar aceleración
+					acceleration = Math.min(acceleration, maxSpeed); // Limitar la aceleración máxima
+					console.log(`Aceleración aumentada: ${acceleration}`);
+				} else if (event.key === "-") { // Tecla "-"
+					acceleration -= 5; // Reducir aceleración
+					acceleration = Math.max(acceleration, minSpeed); // Limitar la aceleración mínima
+					console.log(`Aceleración reducida: ${acceleration}`);
+				}
+			});
+
+			// Evento para detectar cuándo se suelta una tecla
+			window.addEventListener("keyup", (event) => {
+				keyState[event.code] = false;
+			});
+
+			// Función para actualizar los controles de la cámara
+			function updateCameraControls(deltaTime) {
+				// Rotaciones relativas a la cámara
+				if (keyState["ArrowUp"]) {
+					pitchVelocity -= rotationAcceleration * deltaTime; // Incrementar velocidad hacia abajo
+				} else if (keyState["ArrowDown"]) {
+					pitchVelocity += rotationAcceleration * deltaTime; // Incrementar velocidad hacia arriba
+				} else {
+					// Aplicar amortiguación cuando no se presionan teclas
+					pitchVelocity *= rotationDamping;
+				}
+
+				if (keyState["ArrowLeft"]) {
+					rollVelocity += rotationAcceleration * deltaTime; // Incrementar velocidad hacia la izquierda
+				} else if (keyState["ArrowRight"]) {
+					rollVelocity -= rotationAcceleration * deltaTime; // Incrementar velocidad hacia la derecha
+				} else {
+					// Aplicar amortiguación cuando no se presionan teclas
+					rollVelocity *= rotationDamping;
+				}
+
+				// Aplicar las rotaciones a la cámara
+				camera.rotateX(pitchVelocity * deltaTime); // Aplicar pitch (arriba/abajo)
+				camera.rotateZ(rollVelocity * deltaTime); // Aplicar roll (lateral)
+
+				// Calcular la dirección hacia adelante de la cámara
+				const direction = new THREE.Vector3();
+				camera.getWorldDirection(direction);
+
+				// Actualizar la velocidad basada en la aceleración y la dirección
+				velocity.addScaledVector(direction, acceleration * deltaTime);
+
+				// Aplicar amortiguación para simular inercia
+				velocity.multiplyScalar(damping);
+
+				// Actualizar la posición de la cámara en función de la velocidad
+				camera.position.addScaledVector(velocity, deltaTime);
+			}
+			
+///////////////////////////////////////////////////////////////////////////////////////////////////////			
+
+			// Función para resetear el giroscopio
+			function resetGyro() {
+				initialAlpha = null;
+				initialBeta = null;
+				initialGamma = null;
+				console.log("Valores del giroscopio reseteados.");
+			}
+	
+			// document.getElementById("resetGyroBtn").addEventListener("click", resetGyro);
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+
+			let showOrbits = true; // Bandera para rastrear si las órbitas están visibles
+
+			// Función para alternar la visibilidad de las órbitas
+			function toggleOrbitsVisibility() {
+				showOrbits = !showOrbits; // Alternar el estado
+
+				// Recorrer los objetos celestes y actualizar la visibilidad de las órbitas
+				Object.keys(celestialObjects).forEach((key) => {
+					if (celestialObjects[key].orbit) {
+						celestialObjects[key].orbit.visible = showOrbits;
+					}
+				});
+			}
+			
+			// Función para activar la pantalla completa
+			function toggleFullscreen() {
+				if (!document.fullscreenElement) {
+					document.documentElement.requestFullscreen().catch((err) => {
+						alert(`Error al intentar activar pantalla completa: ${err.message}`);
+					});
+				} else {
+					document.exitFullscreen();
+				}
+			}
+
+			// Añadir funcionalidad a los botones
+			document.getElementById("fullscreenBtn").addEventListener("click", toggleFullscreen);
+			document.getElementById("toggleOrbits").addEventListener("click", toggleOrbitsVisibility);
+
+
+ ////////////////////////////////////////////////////////////////////////////////////     
+
+			// Función para actualizar la velocidad
+			function updateSpeed(newSpeedIndex) {
+				if (newSpeedIndex >= 0 && newSpeedIndex < speedRanges.length) {
+					speedFactor = newSpeedIndex;
+					console.log(`Velocidad actual: 1 seg = ${speedRanges[speedFactor]}`);
+				}
+			}
+
+			// Botón de disminuir velocidad
+			document.getElementById("decreaseSpeedBtn").addEventListener("click", () => {
+				if (!isPaused && speedFactor > 0) {
+					updateSpeed(speedFactor - 1); // Disminuir velocidad
+					document.getElementById("speedDisplay").innerText = `Velocidad: ${speedRanges[speedFactor] === 1 ? "Tiempo real" : `1 seg = ${speedRanges[speedFactor] / 60} min`}`;
+				}
+			});
+
+			// Botón de pausa
+			document.getElementById("pauseBtn").addEventListener("click", () => {
+				isPaused = !isPaused; // Alternar entre pausado y reanudado
+				if (isPaused) {
+					document.getElementById("speedDisplay").innerText = "Velocidad: Pausado";
+				} else {
+					document.getElementById("speedDisplay").innerText = `Velocidad: ${speedRanges[speedFactor] === 1 ? "Tiempo real" : `1 seg = ${speedRanges[speedFactor] / 60} min`}`;
+				}
+			});
+
+			// Botón de aumentar velocidad
+			document.getElementById("increaseSpeedBtn").addEventListener("click", () => {
+				if (!isPaused && speedFactor < speedRanges.length - 1) {
+					updateSpeed(speedFactor + 1); // Aumentar velocidad
+					document.getElementById("speedDisplay").innerText = `Velocidad: ${speedRanges[speedFactor] === 1 ? "Tiempo real" : `1 seg = ${speedRanges[speedFactor] / 60} min`}`;
+				}
+			});
+			
+			// Configurar eventos para ajustar la velocidad
+			document.getElementById("speedControl").addEventListener("click", () => {
+				if (speedFactor === 1) speedFactor = 2;
+				else if (speedFactor === 2) speedFactor = 4;
+				else if (speedFactor === 4) speedFactor = 8;
+				else if (speedFactor === 8) speedFactor = 16;
+				else if (speedFactor === 16) speedFactor = 0.5;
+				else if (speedFactor === 0.5) speedFactor = 0.04166667;
+				else if (speedFactor === 0.04166667) speedFactor = 0.00069444;
+				else if (speedFactor === 0.00069444) speedFactor = 0.00000864;
+				else if (speedFactor === 0.00000864) speedFactor = 0;
+				else if (speedFactor === 0) speedFactor = 1;
+				else speedFactor = 0;
+
+				document.getElementById("speedDisplay").innerText = `Velocidad: x${speedFactor}`;
+			});
+
+///////////////////////////////////////////////////////////////////////////////
+
+			// Ajustar tamaño de la ventana
+			window.addEventListener("resize", () => {
+				renderer.setSize(window.innerWidth, window.innerHeight);
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+			});
+
+			// Configurar la posición inicial de la cámara
+			camera.position.set(0, 200, 1000);
+			camera.lookAt(0, 0, 0);
+
+			interactableObjects.forEach((obj) => {
+				console.log(obj.userData);
+			});
+
+			// Iniciar la animación
+			animate();
+		</script>
+	</body>
+</html>
