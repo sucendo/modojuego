@@ -2890,7 +2890,7 @@ loadModeloConLuz(
 
 ///////////////////////////////////////////////////////////////////////////////
 
-			// Configurar la posición inicial de la cámara entre dos objetos con constantes
+						// Configurar la posición inicial de la cámara entre dos objetos con constantes
 			function adjustCameraBetweenObjects(objectAName, objectBName, distanceBehindObjectA, rotationAngleDegrees) {
 				const objectA = celestialObjects[objectAName]; // Objeto de referencia (ej.: Tierra)
 				const objectB = celestialObjects[objectBName]; // Objeto objetivo (ej.: Sol)
@@ -2918,12 +2918,17 @@ loadModeloConLuz(
 					const axis = new THREE.Vector3(0, 1, 0); // Eje Y para la rotación
 					cameraPosition.sub(positionA).applyAxisAngle(axis, angleInRadians).add(positionA);
 
-					// Establecer la posición y dirección de la cámara
+					// Establecer la posición de la cámara
 					camera.position.copy(cameraPosition);
-					camera.lookAt(positionB);
+
+					// Establecer el objetivo de los controles en el segundo objeto
+					controls.target.copy(positionB);
+
+					// Actualizar los controles para reflejar los cambios
+					controls.update();
 
 					console.log(
-						`Camera adjusted between ${objectAName} and ${objectBName}, distance: ${distanceBehindObjectA}, rotation: ${rotationAngleDegrees}°`
+						`Camera adjusted between ${objectAName} and ${objectBName}, distance: ${distanceBehindObjectA}, rotation: ${rotationAngleDegrees}°, focusing on ${objectBName}.`
 					);
 				} else {
 					console.warn(`${objectAName} or ${objectBName} not found in celestialObjects.`);
