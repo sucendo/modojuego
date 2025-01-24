@@ -241,7 +241,7 @@
 						inclination: 1, argumentOfPeriapsis: 70, longitudeOfAscendingNode: 10, lastPerihelion: "2024-01-01", 
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 25 , rotationPeriod: 58.6
 					},
-					/*barnardsStar: { 
+					barnardsStar: { 
 						periapsis: 1200000000, apoapsis: 1250000000, size: 196000, color: 0xff4500, orbits: "galaxy", orbitalPeriod: 120000, 
 						inclination: 3, argumentOfPeriapsis: 50, longitudeOfAscendingNode: 0, lastPerihelion: "2024-01-01", 
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 5 , rotationPeriod: 58.6
@@ -375,7 +375,7 @@
 						periapsis: 18500000000, apoapsis: 19000000000, size: 18000000, color: 0xffffe0, orbits: "galaxy", orbitalPeriod: 89000, 
 						orientation: 65, inclination: 28, argumentOfPeriapsis: 75, longitudeOfAscendingNode: 20, lastPerihelion: "2024-01-01", 
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 18 , rotationPeriod: 58.6
-					},*/
+					},
 				},
 				planets: {
 					mercury: { 
@@ -417,6 +417,31 @@
 						periapsis: 4444400000, apoapsis: 4545700000, size: 24622, color: 0x0000ff, orbits: "sun", orbitalPeriod: 60190, 
 						inclination: 1.77, argumentOfPeriapsis: 184.97, longitudeOfAscendingNode: 0.79, lastPerihelion: "2040-12-01", 
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 28.32, rotationPeriod: 0.67
+					},
+					ceres: {
+						periapsis: 413700000, apoapsis: 445600000, size: 473, color: 0xb0c4de, orbits: "sun", orbitalPeriod: 1680,
+						inclination: 10.59, argumentOfPeriapsis: 73.41, longitudeOfAscendingNode: 80.33, lastPerihelion: "2022-01-01",
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 4, rotationPeriod: 0.38
+					},
+					pluto: {
+						periapsis: 4437000000, apoapsis: 7376000000, size: 1188.3, color: 0xa9a9a9, orbits: "sun", orbitalPeriod: 90560,
+						inclination: 17.16, argumentOfPeriapsis: 113.76, longitudeOfAscendingNode: 110.3, lastPerihelion: "1989-09-05",
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 122.5, rotationPeriod: 6.39
+					},
+					haumea: {
+						periapsis: 5155000000, apoapsis: 7748000000, size: 780, color: 0xffffff, orbits: "sun", orbitalPeriod: 103250,
+						inclination: 28.22, argumentOfPeriapsis: 240.2, longitudeOfAscendingNode: 122.1, lastPerihelion: "1992-01-01",
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0, rotationPeriod: 0.16
+					},
+					makemake: {
+						periapsis: 5103000000, apoapsis: 7935000000, size: 715, color: 0xffd700, orbits: "sun", orbitalPeriod: 112897,
+						inclination: 28.98, argumentOfPeriapsis: 296.1, longitudeOfAscendingNode: 79.62, lastPerihelion: "2023-01-01",
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0, rotationPeriod: 0.32
+					},
+					eris: {
+						periapsis: 5766000000, apoapsis: 14544000000, size: 1163, color: 0xffffff, orbits: "sun", orbitalPeriod: 204670,
+						inclination: 44.04, argumentOfPeriapsis: 151.8, longitudeOfAscendingNode: 35.95, lastPerihelion: "1699-08-01",
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 78, rotationPeriod: 1.08
 					},
 					/*mercury: { 
 						periapsis: 46000000, apoapsis: 69800000, size: 4879, color: 0xaaaaaa, orbits: "sun", orbitalPeriod: 88, 
@@ -495,6 +520,11 @@
 						inclination: 0.019, argumentOfPeriapsis: 161.23, longitudeOfAscendingNode: 40.66, lastPerihelion: "2024-01-01",
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0.02, rotationPeriod: 1.37
 					},
+					miranda: { 
+						periapsis: 129390, apoapsis: 129850, size: 235.8, color: 0xadd8e6, orbits: "uranus", orbitalPeriod: 1.41, 
+						inclination: 4.338, argumentOfPeriapsis: 145.2, longitudeOfAscendingNode: 80.3, lastPerihelion: "2024-01-01",
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 4.22, rotationPeriod: 1.41
+					},
 				},
 				artificialSatellites: {
 					iss: {
@@ -502,10 +532,15 @@
 						inclination: 51.64, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 258.76, lastPerihelion: "2023-12-01",
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 23.0, rotationPeriod: 365.37
 					},
-					astronauta: {
-						periapsis: 0.9, apoapsis: 1.6, size: 0.190, color: "white", orbits: "iss", orbitalPeriod: 0.05,
+					astronaut: {
+						periapsis: 2.9, apoapsis: 1.8, size: 0.095, color: "white", orbits: "iss", orbitalPeriod: 0.05,
 						inclination: 51.64, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 258.76, lastPerihelion: "2023-12-01",
-						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 23.0, rotationPeriod: 365.37
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 23.0, rotationPeriod: 0.3
+					},
+					shuttle: {
+						periapsis: 6671, apoapsis: 6871, size: 4.5, color: "white", orbits: "earth", orbitalPeriod: 1.5,
+						inclination: 28.5, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 180.0, lastPerihelion: "2023-12-01",
+						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0, rotationPeriod: 0
 					},
 					hubble: {
 						periapsis: 6911, apoapsis: 6921, size: 6.6, color: "silver", orbits: "earth", orbitalPeriod: 1.5,
@@ -585,17 +620,17 @@
 					juno: {
 					    periapsis: 75600, apoapsis: 8100000, size: 3.5, color: "white", orbits: "jupiter", orbitalPeriod: 53.5,
 					    inclination: 90, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 0, lastPerihelion: "2016-07-05",
-					    rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0, rotationPeriod: 0.41
+					    rotationAxis: { x: 1, y: 0, z: 0 }, axialTilt: 270, rotationPeriod: 0
 					},
 					voyager1: {
-						periapsis: 136680000, apoapsis: 55350000000, size: 0.5, color: "silver", orbits: "galaxy", orbitalPeriod: 91920000000,
+						periapsis: 136680000, apoapsis: 553500000000, size: 0.5, color: "silver", orbits: "galaxy", orbitalPeriod: 9192000000,
 						inclination: 35, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 0, lastPerihelion: "1977-09-05",
 						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 90, rotationPeriod: 0
 					},
 					voyager2: {
-						periapsis: 136680000, apoapsis: 55350000000, size: 0.5, color: "silver", orbits: "galaxy", orbitalPeriod: 91920000000,
+						periapsis: 136680000, apoapsis: 553500000000, size: 0.5, color: "silver", orbits: "galaxy", orbitalPeriod: 9192000000,
 						inclination: 48, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 0, lastPerihelion: "1977-08-20",
-						rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 90, rotationPeriod: 0
+						rotationAxis: { x: 0, y: 1, z: 0}, axialTilt: 90, rotationPeriod: 0
 					},
 					deathStar: {
 						periapsis: 8000, apoapsis: 12000, size: 160, color: "gray", orbits: "earth", orbitalPeriod: 2,
@@ -667,16 +702,76 @@
 			
 			// Modelos específicos para cada cuerpo celeste
 			const celestialModels = {
+				io: { 
+					model: './models/celestial_bodies/Io_1_3643.glb',
+					MeridianOffset: 90 // Suponiendo un desfase de 90 grados
+				}, 
 				europa: { 
 					model: './models/celestial_bodies/Europa_1_3138.glb',
 					MeridianOffset: 90 // Suponiendo un desfase de 90 grados
+				},
+				ganymede: { 
+					model: './models/celestial_bodies/Ganymede_1_5268.glb',
+					MeridianOffset: 90 // Suponiendo un desfase de 90 grados
+				},
+				callisto: { 
+					model: './models/celestial_bodies/Callisto_1_4821.glb',
+					MeridianOffset: 90 // Suponiendo un desfase de 90 grados
+				}, 
+				titan: { 
+					model: './models/celestial_bodies/TitanSurface_1_5150.glb',
+					MeridianOffset: 90 // Suponiendo un desfase de 90 grados
+				}, 
+				enceladus: { 
+					model: './models/celestial_bodies/Enceladus_1_504.glb',
+					MeridianOffset: 90 // Suponiendo un desfase de 90 grados
+				},  
+				miranda: { 
+					model: './models/celestial_bodies/Miranda_1_472.glb',
+					MeridianOffset: 90 // Suponiendo un desfase de 90 grados
+				}, 
+				ceres: { 
+					model: './models/celestial_bodies/Ceres_1_1000.glb',
+					MeridianOffset: 90 // Suponiendo un desfase de 90 grados
+				},
+				pluto: { 
+					model: './models/celestial_bodies/Pluto_1_2374.glb',
+					MeridianOffset: 90 // Suponiendo un desfase de 90 grados
+				},
+				haumea: { 
+					model: './models/celestial_bodies/Haumea_1_1000.glb',
+					MeridianOffset: 90 // Suponiendo un desfase de 90 grados
+				},
+				makemake: { 
+					model: './models/celestial_bodies/Makemake_1_1430.glb',
+					MeridianOffset: 90 // Suponiendo un desfase de 90 grados
+				},
+				eris: { 
+					model: './models/celestial_bodies/Eris_1_2326.glb',
+					MeridianOffset: 90 // Suponiendo un desfase de 90 grados
+				},
+				halley: { 
+					model: './models/celestial_bodies/Bennu_1_1.glb',
+					MeridianOffset: 0 // Sin desfase para Halley
+				},
+				encke: { 
+					model: './models/celestial_bodies/24879_Deimos_1_1000.glb',
+					MeridianOffset: 0 // Sin desfase para Halley
+				},
+				hale_bopp: {
+					model: './models/celestial_bodies/24878_Phobos_1_1000.glb',
+					MeridianOffset: 0 // Sin desfase para Halley
 				},
 				iss: { 
 					model: './models/celestial_bodies/iss.glb',
 					MeridianOffset: 0 // Sin desfase para ISS
 				},
-				astronauta: { 
+				astronaut: { 
 					model: './models/celestial_bodies/Astronaut.glb',
+					MeridianOffset: 0 
+				},
+				shuttle: { 
+					model: './models/celestial_bodies/shuttle.glb',
 					MeridianOffset: 0 
 				},
 				hubble: { 
@@ -686,10 +781,6 @@
 				galileo: { 
 					model: './models/celestial_bodies/Galileo.glb',
 					MeridianOffset: 180 // Sin desfase para Hubble
-				},
-				halley: { 
-					model: './models/celestial_bodies/Bennu_1_1.glb',
-					MeridianOffset: 0 // Sin desfase para Halley
 				},
 				starlink: { 
 					model: './models/celestial_bodies/starlink.glb',
@@ -2799,47 +2890,46 @@ loadModeloConLuz(
 
 ///////////////////////////////////////////////////////////////////////////////
 
-			// Configurar la posición inicial de la cámara detrás de la Tierra mirando al Sol, ajustada 15 grados a la derecha
-			function adjustCameraToEarthSunView() {
-				const earth = celestialObjects.earth; // Suponiendo que "earth" está en celestialObjects
-				const sun = celestialObjects.sun; // Suponiendo que "sun" está en celestialObjects
+			// Configurar la posición inicial de la cámara entre dos objetos con constantes
+			function adjustCameraBetweenObjects(objectAName, objectBName, distanceBehindObjectA, rotationAngleDegrees) {
+				const objectA = celestialObjects[objectAName]; // Objeto de referencia (ej.: Tierra)
+				const objectB = celestialObjects[objectBName]; // Objeto objetivo (ej.: Sol)
 
-				if (earth && sun) {
-					const earthPosition = new THREE.Vector3();
-					const sunPosition = new THREE.Vector3();
+				if (objectA && objectB) {
+					const positionA = new THREE.Vector3();
+					const positionB = new THREE.Vector3();
 
-					// Obtener las posiciones actuales de la Tierra y el Sol
-					earth.getWorldPosition(earthPosition);
-					sun.getWorldPosition(sunPosition);
+					// Obtener las posiciones actuales de los objetos
+					objectA.getWorldPosition(positionA);
+					objectB.getWorldPosition(positionB);
 
-					// Calcular la dirección desde la Tierra hacia el Sol
-					const directionToSun = new THREE.Vector3()
-						.subVectors(sunPosition, earthPosition)
+					// Calcular la dirección desde el objeto A hacia el objeto B
+					const directionToB = new THREE.Vector3()
+						.subVectors(positionB, positionA)
 						.normalize();
 
-					// Establecer la distancia detrás de la Tierra
-					const distanceBehindEarth = 70; // Ajusta esta distancia según lo necesites
-
-					// Calcular la posición detrás de la Tierra
+					// Calcular la posición detrás del objeto A
 					const cameraPosition = new THREE.Vector3()
-						.copy(earthPosition)
-						.sub(directionToSun.multiplyScalar(distanceBehindEarth));
+						.copy(positionA)
+						.sub(directionToB.multiplyScalar(distanceBehindObjectA));
 
-					// Rotar la cámara 15 grados hacia la derecha alrededor de la Tierra
-					const angleInRadians = THREE.MathUtils.degToRad(15);
-					const axis = new THREE.Vector3(0, 1, 0); // Eje Y para rotación
-					cameraPosition.sub(earthPosition).applyAxisAngle(axis, angleInRadians).add(earthPosition);
+					// Rotar la cámara alrededor del objeto A según el ángulo especificado
+					const angleInRadians = THREE.MathUtils.degToRad(rotationAngleDegrees);
+					const axis = new THREE.Vector3(0, 1, 0); // Eje Y para la rotación
+					cameraPosition.sub(positionA).applyAxisAngle(axis, angleInRadians).add(positionA);
 
 					// Establecer la posición y dirección de la cámara
 					camera.position.copy(cameraPosition);
-					camera.lookAt(sunPosition);
+					camera.lookAt(positionB);
 
-					console.log("Camera adjusted to view from Earth towards Sun with 15° right rotation.");
+					console.log(
+						`Camera adjusted between ${objectAName} and ${objectBName}, distance: ${distanceBehindObjectA}, rotation: ${rotationAngleDegrees}°`
+					);
 				} else {
-					console.warn("Earth or Sun object not found in celestialObjects.");
+					console.warn(`${objectAName} or ${objectBName} not found in celestialObjects.`);
 				}
 			}
-
+			
 			// Escuchar cambios de tamaño de ventana
 			window.addEventListener("resize", () => {
 				renderer.setSize(window.innerWidth, window.innerHeight);
@@ -2855,7 +2945,7 @@ loadModeloConLuz(
 			Promise.all(modelLoadPromises).then(() => {
 				console.log('Todos los modelos cargados. Iniciando animación.');
 				// Llama a la función para ajustar la cámara
-				adjustCameraToEarthSunView();
+				adjustCameraBetweenObjects("iss", "earth", 5, 0.1);
 				// Inicialización al cargar
 				updateSpeedDisplay();
 				animate(); // Iniciar animación después de que todos los modelos estén cargados
