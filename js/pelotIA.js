@@ -301,28 +301,41 @@ let model;
 
 // 📌 Función para inicializar la red neuronal
 async function initNeuralNetwork() {
-try {
-	model = await tf.loadLayersModel('localstorage://my-trained-model');
-	console.log("📡 Modelo cargado desde localStorage.");
-	
-	// 📌 COMPILAR EL MODELO EN SEGUNDO PLANO PARA NO BLOQUEAR
-	setTimeout(() => {
-		model.compile({ optimizer: tf.train.adam(0.001), loss: 'meanSquaredError' });
-		console.log("✅ Modelo compilado.");
-	}, 100); // 🔹 Retrasamos la compilación para no frenar el juego
+    try {
+        console.log("🔍 Verificando si el modelo está guardado en localStorage...");
+        
+        // 🔹 Comprobar si el modelo realmente existe en IndexedDB
+        const databases = await indexedDB.databases();
+        const dbExists = databases.some(db => db.name === "tensorflowjs");
+        
+        if (!dbExists) {
+            console.warn("⚠️ IndexedDB no tiene el modelo guardado. Creando uno nuevo...");
+            throw new Error("No model found in IndexedDB");
+        }
+        
+        console.log("📡 Intentando cargar el modelo desde localStorage...");
+        model = await tf.loadLayersModel('localstorage://my-trained-model');
+        console.log("✅ Modelo cargado correctamente.");
 
-} catch (error) {
-	console.warn("⚠️ No se encontró un modelo entrenado. Creando uno nuevo...");
+        model.compile({ optimizer: tf.train.adam(0.001), loss: 'meanSquaredError' });
 
-	model = tf.sequential();
-	model.add(tf.layers.dense({ inputShape: [3], units: 64, activation: 'relu' }));
-	model.add(tf.layers.dense({ units: 32, activation: 'tanh' }));
-	model.add(tf.layers.dense({ units: 2, activation: 'sigmoid' }));
+    } catch (error) {
+        console.warn("⚠️ No se encontró un modelo entrenado. Creando uno nuevo...");
 
-	model.compile({ optimizer: tf.train.adam(0.005), loss: 'meanSquaredError' });
+        model = tf.sequential();
+        model.add(tf.layers.dense({ inputShape: [3], units: 64, activation: 'relu' }));
+        model.add(tf.layers.dense({ units: 32, activation: 'tanh' }));
+        model.add(tf.layers.dense({ units: 2, activation: 'sigmoid' }));
 
-	console.log("📡 Red Neuronal Inicializada...");
-}
+        model.compile({ optimizer: tf.train.adam(0.005), loss: 'meanSquaredError' });
+
+        console.log("📡 Red Neuronal Inicializada...");
+
+        // 🔥 🔥 🔥 🚨 FORZAR GUARDADO INMEDIATO 🚨 🔥 🔥 🔥
+        console.log("💾 Guardando modelo nuevo...");
+        await model.save('localstorage://my-trained-model');
+        console.log("✅ Modelo guardado correctamente en localStorage.");
+    }
 }
 
 // 📌 Guardar el modelo en localStorage
