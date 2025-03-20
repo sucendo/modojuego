@@ -177,3 +177,6 @@ export function closeModal() {
 }
 
 window.closeModal = closeModal;
+
+export { initGame };
+window.initGame = initGame; // Permitir acceso desde el HTML
