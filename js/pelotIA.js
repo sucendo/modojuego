@@ -450,22 +450,38 @@ async function trainModel() {
 
 // 📌 Función para predecir el próximo disparo óptimo
 async function predictShot(angle, force, errorX) {
-	if (!model) return { bestAngle: angle, bestForce: force };
+    if (!model) return { bestAngle: angle, bestForce: force };
 
-	const input = tf.tensor2d([[normalize(angle, 10, 80), normalize(force, 5, 40), normalize(errorX, 0, 2000)]]);
-	let prediction;
+    const input = tf.tensor2d([
+        [
+            normalize(angle, 10, 80), 
+            normalize(force, 5, 40), 
+            normalize(errorX, 0, 2000)
+        ]
+    ]);
 
-	try {
-		prediction = model.predict(input);
-		const data = await prediction.data(); // Obtiene los valores de la predicción
-		return {
-			bestAngle: denormalize(data[0], 10, 80),
-			bestForce: denormalize(data[1], 5, 40),
-		};
-	} finally {
-		input.dispose(); // 🔥 LIBERA MEMORIA
-		if (prediction) prediction.dispose(); // 🔥 LIBERA MEMORIA
-	}
+    let prediction;
+    try {
+        prediction = model.predict(input);
+        const data = await prediction.data();
+        
+        let adjustedAngle = denormalize(data[0], 10, 80);
+        let adjustedForce = denormalize(data[1], 5, 40);
+
+        // 📌 Agregar pequeña corrección basada en error reciente
+        let errorFactor = Math.max(0.5, Math.min(1.5, errorX / 500));
+        adjustedAngle *= errorFactor;
+        adjustedForce *= errorFactor;
+
+        return {
+            bestAngle: Math.round(Math.max(10, Math.min(80, adjustedAngle))),
+            bestForce: Math.round(Math.max(5, Math.min(40, adjustedForce)))
+        };
+
+    } finally {
+        input.dispose();
+        if (prediction) prediction.dispose();
+    }
 }
 
 // 📌 Mejor penalización por intentos repetitivos
@@ -493,107 +509,107 @@ function calculateReward(errorX, previousBest) {
 
 // 📌 Ajustar la IA con exploración inteligente
 async function adjustLearning(errorX, totalError, angle, force) {
-	let prediction = await predictShot(angle, force, errorX);
-	let reward = calculateReward(errorX, bestDistance);
+    let prediction = await predictShot(angle, force, errorX);
+    let reward = calculateReward(errorX, bestDistance);
 
-	let newAngle = prediction.bestAngle;
-	let newForce = prediction.bestForce;
+    let newAngle = prediction.bestAngle;
+    let newForce = prediction.bestForce;
 
-	let explorationRate = Math.min(0.6, 0.2 + errorX / 500);  // 📌 Más exploración si el error es grande
+    let explorationRate = Math.min(0.5, 0.1 + errorX / 800);  // 📌 Menos exploración cuando mejora
 
-	// 🚨 Si la IA no mejora en 4 intentos consecutivos, forzar exploración más agresiva
-	if (noProgressCounter >= 4) {
-		updateComment("⚠️ No mejora, forzando exploración DRÁSTICA...");
-		newAngle += (Math.random() * 20 - 10);  // 🔥 Cambios más amplios en el ángulo
-		newForce += (Math.random() * 16 - 8);   // 🔥 Cambios más amplios en la fuerza
-		noProgressCounter = 0;  // 📌 Reiniciar contador
-	} 
-	else if (Math.random() < explorationRate) {
-		updateComment("🔄 Explorando nuevas estrategias de ajuste...");
-		newAngle += (Math.random() * 8 - 4);  // 📌 Ajustes menos agresivos si error es pequeño
-		newForce += (Math.random() * 8 - 4);
-	} 
-	else {
-		updateComment("🎯 Refinando los mejores intentos...");
-		newAngle = (newAngle * 0.7) + (bestAngleEver * 0.3);  // 📌 Mezclar con el mejor ángulo conocido
-		newForce = (newForce * 0.7) + (bestForceEver * 0.3);  // 📌 Mezclar con la mejor fuerza conocida
-	}
+    if (noProgressCounter >= 6) {
+        updateComment("⚠️ No mejora, EXPLORACIÓN MÁS AMPLIA...");
+        newAngle += (Math.random() * 25 - 12);
+        newForce += (Math.random() * 16 - 8);
+        noProgressCounter = 0;
+    } 
+    else if (Math.random() < explorationRate) {
+        updateComment("🔄 Explorando nuevas estrategias...");
+        newAngle += (Math.random() * 6 - 3);
+        newForce += (Math.random() * 6 - 3);
+    } 
+    else {
+        updateComment("🎯 Refinando intentos...");
+        newAngle = (newAngle * 0.8) + (bestAngleEver * 0.2);
+        newForce = (newForce * 0.8) + (bestForceEver * 0.2);
+    }
 
-	// 📌 Evitar valores extremos
-	newAngle = Math.round(Math.max(10, Math.min(80, newAngle)));
-	newForce = Math.round(Math.max(5, Math.min(40, newForce)));
+    // 📌 Evitar valores fuera de rango
+    newAngle = Math.round(Math.max(10, Math.min(80, newAngle)));
+    newForce = Math.round(Math.max(5, Math.min(40, newForce)));
 
-	bestAngle = newAngle;
-	bestForce = newForce;
+    bestAngle = newAngle;
+    bestForce = newForce;
 
-	updateComment(`📢 🤖 IA ajustó → Ángulo: ${bestAngle}°, Fuerza: ${bestForce}, Intento: ${attempts}`);
+    updateComment(`📢 🤖 IA ajustó → Ángulo: ${bestAngle}°, Fuerza: ${bestForce}, Intento: ${attempts}`);
 
-	setTimeout(() => {
-		throwBall(bestAngle, bestForce);
-	}, 500);
+    setTimeout(() => {
+        throwBall(bestAngle, bestForce);
+    }, 500);
 }
 
 // 📌 Evaluar el lanzamiento con mejoras de historial y UI
 function evaluateThrow(distance, angle, force) {
-	let errorX = Math.abs(targetPosition - distance);
-	let totalError = errorX;
+    let errorX = Math.abs(targetPosition - distance);
+    let totalError = errorX;
 
-	// 📌 Actualizar UI
-	angleDisplay.textContent = Math.round(angle);
-	forceDisplay.textContent = Math.round(force);
-	distanceDisplay.textContent = Math.round(distance);
-	errorDisplay.textContent = `${Math.round(errorX)}`;
+    angleDisplay.textContent = Math.round(angle);
+    forceDisplay.textContent = Math.round(force);
+    distanceDisplay.textContent = Math.round(distance);
+    errorDisplay.textContent = `${Math.round(errorX)}`;
 
-	commentBox.textContent = ""; 
+    commentBox.textContent = ""; 
 
-	// 📌 Guardar el intento en el historial (solo si es válido)
-	if (errorX < 2000) {
-		attemptLog.push({ angle, force, distance, errorX });
+    if (errorX < 2000) {
+        attemptLog.push({ angle, force, distance, errorX });
+        attemptLog = attemptLog.slice(-50);
+    }
 
-		// 📌 Mantener el historial limitado a los últimos 50 intentos
-		attemptLog = attemptLog.slice(-50);
-	}
+    // 📌 Penalizar repeticiones exactas
+    if (bestAttempts.length >= 3) {
+        let lastAngles = bestAttempts.slice(-3).map(a => a.angle);
+        let lastForces = bestAttempts.slice(-3).map(a => a.force);
 
-	// 📌 Si mejora el mejor intento registrado
-	if (totalError < bestDistance || bestDistance === 0) {
-		bestDistance = totalError;
-		bestForceEver = force;
-		bestAngleEver = angle;
-		bestAttempts.push({ angle, force, errorX });
+        if (new Set(lastAngles).size === 1 && new Set(lastForces).size === 1) {
+            updateComment("⚠️ Ajustes repetitivos, cambiando estrategia...");
+            forceDirection *= -1; // 📌 Invertir dirección de ajuste
+            angleDirection *= -1;
+        }
+    }
 
-		// 📌 Mantener los mejores 10 intentos recientes
-		if (bestAttempts.length > 10) {
-			bestAttempts.shift();
-		}
+    if (totalError < bestDistance || bestDistance === 0) {
+        bestDistance = totalError;
+        bestForceEver = force;
+        bestAngleEver = angle;
+        bestAttempts.push({ angle, force, errorX });
 
-		bestDistanceDisplay.textContent = `${Math.floor(bestDistance)}`;
-		noProgressCounter = 0;
-		updateComment(`🎯 ¡Nuevo mejor intento! Error: ${Math.floor(bestDistance)} px`);
-	} else {
-		noProgressCounter++;
-		updateComment("🤔 No mejoré... probando otra variante.");
-	}
+        if (bestAttempts.length > 10) bestAttempts.shift();
 
-	// 📌 Si el error es menor a 20px, éxito
-	if (totalError < 20) {
-		updateComment("🏆 ¡Lo logré! Alcancé el objetivo.");
-		showSuccessModal();
-		return;
-	}
+        bestDistanceDisplay.textContent = `${Math.floor(bestDistance)}`;
+        noProgressCounter = 0;
+        updateComment(`🎯 ¡Nuevo mejor intento! Error: ${Math.floor(bestDistance)} px`);
+    } else {
+        noProgressCounter++;
+        updateComment("🤔 No mejoré... probando otra variante.");
+    }
 
-	attempts++;
-	attemptsDisplay.textContent = attempts;
+    if (totalError < 20) {
+        updateComment("🏆 ¡Lo logré! Alcancé el objetivo.");
+        showSuccessModal();
+        return;
+    }
 
-	// 📌 Entrenar la red neuronal si hay suficientes datos y cada 5 intentos
-	if (attempts % 5 === 0 && attemptLog.length > 20) {
-		trainModel();
-	}
+    attempts++;
+    attemptsDisplay.textContent = attempts;
 
-	// 📌 Ajustar aprendizaje basado en los mejores intentos recientes
-	let avgAngle = bestAttempts.reduce((sum, a) => sum + a.angle, 0) / bestAttempts.length;
-	let avgForce = bestAttempts.reduce((sum, a) => sum + a.force, 0) / bestAttempts.length;
+    if (attempts % 5 === 0 && attemptLog.length > 20) {
+        trainModel();
+    }
 
-	adjustLearning(errorX, totalError, avgAngle, avgForce);
+    let avgAngle = bestAttempts.reduce((sum, a) => sum + a.angle, 0) / bestAttempts.length;
+    let avgForce = bestAttempts.reduce((sum, a) => sum + a.force, 0) / bestAttempts.length;
+
+    adjustLearning(errorX, totalError, avgAngle, avgForce);
 }
 
 // 📌 Iniciar la simulación cuando se presiona el botón
