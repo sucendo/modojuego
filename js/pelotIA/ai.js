@@ -1,7 +1,7 @@
 // 📌 ai.js //
 
 import { drawTerrain, relocateTarget, generateWind } from "./terrain.js";
-import { throwBall } from "./game.js";
+import { throwBall, attemptLog } from "./game.js";
 
 // 📌 Normaliza valores entre 0 y 1
 function normalize(value, min, max) {
