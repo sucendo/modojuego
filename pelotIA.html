@@ -20,20 +20,32 @@
 				overflow: hidden; /* 📌 Evita que los elementos salgan del contenedor */
 			}
 
-			.ball { 
-				width: 20px; 
-				height: 20px; 
-				background: red; 
-				border-radius: 50%; 
-				position: absolute; 
+			canvas {
+			    position: absolute;
+			    bottom: 0;
+			    left: 0;
+			    width: 100%;
+			    height: 100%; /* 🔥 Ahora ocupa toda la pantalla */
 			}
 
-			.target { 
-				width: 30px; 
-				height: 30px; 
-				background: blue; 
-				border-radius: 50%; 
-				position: absolute; 
+			/* 📌 Sombra para la pelota */
+			.ball {
+				width: 20px;
+				height: 20px;
+				background: radial-gradient(circle, red 60%, darkred 100%);
+				box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+				border-radius: 50%;
+				position: absolute;
+			}
+
+			/* 📌 Sombra para el objetivo */
+			.target {
+				width: 30px;
+				height: 30px;
+				background: radial-gradient(circle, blue 60%, darkblue 100%);
+				box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+				border-radius: 50%;
+				position: absolute;
 			}
 			
 			.ball, .target {
@@ -47,14 +59,7 @@
 				position: absolute; 
 				border-radius: 50%; 
 			}
-			
-			canvas {
-				position: absolute;
-				bottom: 0;
-				left: 0;
-				width: 100%;
-			}
-			
+						
 			/* 📌 Estilo del título */
 			.game-title {
 				position: absolute;
