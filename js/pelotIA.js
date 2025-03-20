@@ -302,39 +302,18 @@ let model;
 // 📌 Función para inicializar la red neuronal
 async function initNeuralNetwork() {
     try {
-        console.log("🔍 Verificando si el modelo está guardado en localStorage...");
-        
-        // 🔹 Comprobar si el modelo realmente existe en IndexedDB
-        const databases = await indexedDB.databases();
-        const dbExists = databases.some(db => db.name === "tensorflowjs");
-        
-        if (!dbExists) {
-            console.warn("⚠️ IndexedDB no tiene el modelo guardado. Creando uno nuevo...");
-            throw new Error("No model found in IndexedDB");
-        }
-        
-        console.log("📡 Intentando cargar el modelo desde localStorage...");
-        model = await tf.loadLayersModel('localstorage://my-trained-model');
-        console.log("✅ Modelo cargado correctamente.");
+        console.log("📡 Intentando cargar modelo desde IndexedDB...");
 
-        model.compile({ optimizer: tf.train.adam(0.001), loss: 'meanSquaredError' });
+        // 🔹 Intentar cargar el modelo desde IndexedDB
+        model = await tf.loadLayersModel('indexeddb://my-trained-model');
+        console.log("✅ Modelo cargado correctamente desde IndexedDB.");
 
-    } catch (error) {
-        console.warn("⚠️ No se encontró un modelo entrenado. Creando uno nuevo...");
-
-        model = tf.sequential();
-        model.add(tf.layers.dense({ inputShape: [3], units: 64, activation: 'relu' }));
-        model.add(tf.layers.dense({ units: 32, activation: 'tanh' }));
-        model.add(tf.layers.dense({ units: 2, activation: 'sigmoid' }));
-
+        // 🔹 Compilar después de cargar
         model.compile({ optimizer: tf.train.adam(0.005), loss: 'meanSquaredError' });
-
-        console.log("📡 Red Neuronal Inicializada...");
-
-        // 🔥 🔥 🔥 🚨 FORZAR GUARDADO INMEDIATO 🚨 🔥 🔥 🔥
-        console.log("💾 Guardando modelo nuevo...");
-        await model.save('localstorage://my-trained-model');
-        console.log("✅ Modelo guardado correctamente en localStorage.");
+        console.log("✅ Modelo compilado.");
+    } catch (error) {
+        console.warn("⚠️ No se encontró un modelo entrenado en IndexedDB. Creando uno nuevo...");
+        await initAndSaveModel();
     }
 }
 
