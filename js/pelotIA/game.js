@@ -7,6 +7,8 @@ import { trainModel, adjustLearning } from "./ai.js";
 const gameContainer = document.querySelector(".game-container");
 const ball = document.getElementById("ball");
 const target = document.getElementById("target");
+const terrainCanvas = document.getElementById("terrainCanvas");
+const ctx = terrainCanvas.getContext("2d");
 const attemptsDisplay = document.getElementById("attempts");
 const bestDistanceDisplay = document.getElementById("bestDistance");
 const angleDisplay = document.getElementById("angleValue");
@@ -14,6 +16,7 @@ const forceDisplay = document.getElementById("forceValue");
 const distanceDisplay = document.getElementById("distanceThrown");
 const errorDisplay = document.getElementById("errorValue");
 const commentBox = document.getElementById("commentBox");
+const windDisplay = document.getElementById("windSpeed");
 
 let attempts = 0;
 let bestDistance = 0;
@@ -28,8 +31,9 @@ let bestAttempts = [];
 let noProgressCounter = 0;
 let forceDirection = 1;
 let angleDirection = 1;
+let terrain = [];
 
-// 📌 Función para mostrar comentarios en la UI
+// 📌 Función para mostrar comentarios en UI
 function updateComment(newComment) {
     console.log(`📢 ${newComment}`);
     let newMessage = document.createElement("p");
@@ -46,7 +50,7 @@ export function throwBall(angle, force) {
     ballMoving = true;
 
     let x = 10;
-    let y = getTerrainHeight(x);
+    let y = getTerrainHeight(x, terrain);
     let vx = force * Math.cos(angle * Math.PI / 180) + wind;
     let vy = force * Math.sin(angle * Math.PI / 180);
     let gravity = -9.81;
@@ -62,7 +66,7 @@ export function throwBall(angle, force) {
         y += vy;
         vy += gravity * 0.05;
 
-        let terrainHeight = getTerrainHeight(x);
+        let terrainHeight = getTerrainHeight(x, terrain);
         if (y <= terrainHeight) {
             y = terrainHeight;
             vx *= 0.8;
@@ -160,8 +164,9 @@ export function startSimulation() {
     lastError = null;
     attemptsDisplay.textContent = attempts;
     bestDistanceDisplay.textContent = bestDistance;
-    drawTerrain();
-    relocateTarget(target, window.innerWidth, document.getElementById("windSpeed"), [], ball);
+
+    drawTerrain(terrainCanvas, ctx, terrain);
+    relocateTarget(target, terrainCanvas, windDisplay, terrain, ball);
 }
 
 // 📌 Modal de éxito
@@ -173,10 +178,26 @@ function showSuccessModal() {
 // 📌 Cerrar modal y reubicar el objetivo
 export function closeModal() {
     document.getElementById("successModal").style.display = "none";
-    relocateTarget(target, window.innerWidth, document.getElementById("windSpeed"), [], ball);
+    relocateTarget(target, terrainCanvas, windDisplay, terrain, ball);
 }
 
-window.closeModal = closeModal;
+// 📌 Inicializar el juego
+export function initGame() {
+    ball.style.display = "block";
+    target.style.display = "block";
+    
+    attempts = 0;
+    bestDistance = 0;
+    lastError = null;
+    attemptsDisplay.textContent = attempts;
+    bestDistanceDisplay.textContent = bestDistance;
 
-export { initGame };
-window.initGame = initGame; // Permitir acceso desde el HTML
+    drawTerrain(terrainCanvas, ctx, terrain);
+    relocateTarget(target, terrainCanvas, windDisplay, terrain, ball);
+
+    trainModel(); // 📌 Iniciar entrenamiento de la IA
+}
+
+// 📌 Hacer accesibles globalmente las funciones
+window.initGame = initGame;
+window.startSimulation = startSimulation;

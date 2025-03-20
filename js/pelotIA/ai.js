@@ -1,6 +1,6 @@
 // 📌 ai.js //
 
-import { drawTerrain, relocateTarget, generateWind, randomTargetPosition } from "./terrain.js";
+import { drawTerrain, relocateTarget, generateWind } from "./terrain.js";
 import { throwBall } from "./game.js";
 
 // 📌 Normaliza valores entre 0 y 1
@@ -13,8 +13,10 @@ function denormalize(value, min, max) {
     return (value * (max - min)) + min;
 }
 
-// 📌 Manejo de comentarios en UI
+// 📌 Elementos del DOM
 const commentBox = document.getElementById("commentBox");
+
+// 📌 Manejo de comentarios en UI
 function updateComment(newComment) {
     console.log(`📢 ${newComment}`);
     let newMessage = document.createElement("p");
@@ -121,15 +123,19 @@ async function predictShot(angle, force, errorX) {
     if (!model) return { bestAngle: angle, bestForce: force };
 
     const input = tf.tensor2d([[normalize(angle, 10, 80), normalize(force, 5, 40), normalize(errorX, 0, 2000)]]);
-    let prediction = model.predict(input);
-    let data = await prediction.data();
-    input.dispose();
-    prediction.dispose();
 
-    return {
-        bestAngle: Math.round(denormalize(data[0], 10, 80)),
-        bestForce: Math.round(denormalize(data[1], 5, 40))
-    };
+    let prediction;
+    try {
+        prediction = model.predict(input);
+        const data = await prediction.data();
+        return {
+            bestAngle: Math.round(denormalize(data[0], 10, 80)),
+            bestForce: Math.round(denormalize(data[1], 5, 40))
+        };
+    } finally {
+        input.dispose();
+        if (prediction) prediction.dispose();
+    }
 }
 
 // 📌 Ajustar la IA con exploración inteligente
@@ -155,24 +161,6 @@ export async function adjustLearning(errorX, angle, force) {
     throwBall(bestAngle, bestForce);
 }
 
-// 📌 Inicializar el juego
-async function initGame() {
-    await initNeuralNetwork();
-    loadPreviousData();
-    startSimulation();
-}
-
-window.startSimulation = () => {
-    ball.style.display = "block";
-    target.style.display = "block";
-    attempts = 0;
-    bestDistance = 0;
-    lastError = null;
-    drawTerrain(terrainCanvas, terrainCanvas.getContext("2d"), []);
-    relocateTarget(target, terrainCanvas, document.getElementById("windSpeed"), [], ball);
-};
-
+// 📌 Hacer accesibles globalmente las funciones
 window.trainModel = trainModel;
 window.adjustLearning = adjustLearning;
-
-window.initGame = initGame;
