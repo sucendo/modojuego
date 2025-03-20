@@ -66,12 +66,7 @@ async function clearModel() {
 window.clearModel = clearModel;
 
 // 📌 Variables de control
-let bestAttempts = [];
-let attemptLog = [];
 let isTraining = false;
-let bestAngle = 45;
-let bestForce = 20;
-let noProgressCounter = 0;
 
 // 📌 Cargar historial desde localStorage
 function loadPreviousData() {
@@ -91,19 +86,17 @@ window.addEventListener("beforeunload", () => {
 });
 
 // 📌 Entrenar la IA
-export async function trainModel() {
-    console.log("trainModel() ha sido llamado"); // ← Agregar esto
-    
-    if (isTraining || attemptLog.length < 10) return;
+export async function trainModel(attemptsData) {
+    if (isTraining || attemptsData.length < 10) return;
     isTraining = true;
 
-    const inputs = attemptLog.map(d => [
+    const inputs = attemptsData.map(d => [
         normalize(d.angle, 10, 80),
         normalize(d.force, 5, 40),
         normalize(d.errorX, 0, 2000)
     ]);
 
-    const outputs = attemptLog.map(d => [
+    const outputs = attemptsData.map(d => [
         normalize(d.angle, 10, 80),
         normalize(d.force, 5, 40)
     ]);
