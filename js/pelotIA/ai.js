@@ -173,3 +173,6 @@ window.startSimulation = () => {
     drawTerrain(terrainCanvas, terrainCanvas.getContext("2d"), []);
     relocateTarget(target, terrainCanvas, document.getElementById("windSpeed"), [], ball);
 };
+
+window.trainModel = trainModel;
+window.adjustLearning = adjustLearning;
