@@ -162,8 +162,6 @@ async function initGame() {
     startSimulation();
 }
 
-window.initGame = initGame;
-
 window.startSimulation = () => {
     ball.style.display = "block";
     target.style.display = "block";
@@ -176,3 +174,5 @@ window.startSimulation = () => {
 
 window.trainModel = trainModel;
 window.adjustLearning = adjustLearning;
+
+window.initGame = initGame;
