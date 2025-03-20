@@ -92,6 +92,8 @@ window.addEventListener("beforeunload", () => {
 
 // 📌 Entrenar la IA
 export async function trainModel() {
+    console.log("trainModel() ha sido llamado"); // ← Agregar esto
+    
     if (isTraining || attemptLog.length < 10) return;
     isTraining = true;
 
