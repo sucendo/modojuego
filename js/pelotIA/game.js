@@ -27,7 +27,7 @@ let bestDistance = 0;
 let bestAngle = 45;
 let bestForce = 20;
 let wind = Math.random() * 4 - 2;
-let targetPosition = 0; // ✅ Antes: let targetPosition;
+export let targetPosition = 0; // ✅ Antes: let targetPosition;
 let lastError = null;
 let ballMoving = false;
 export let attemptLog = []; // 👈 Exportamos attemptLog para que otros módulos puedan acceder
@@ -38,6 +38,10 @@ let angleDirection = 1;
 let terrain = [];
 // ✅ Referencia global al gráfico
 let errorChartInstance = null;
+
+export function setTargetPosition(newPos) {
+	targetPosition = newPos;
+}
 
 // 📌 Función para mostrar comentarios en UI
 function updateComment(newComment) {
@@ -258,6 +262,6 @@ export async function initGame() {
 }
 
 // 📌 Hacer accesibles globalmente las funciones
-window.initGame = initGame;
 window.startSimulation = startSimulation;
 window.closeModal = closeModal;
+window.initGame = initGame;
