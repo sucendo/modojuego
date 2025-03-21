@@ -1,4 +1,4 @@
-// 馃搶 terrain.js //
+// 📌 terrain.js //
 
 import { setTargetPosition } from "./game.js";
 
@@ -96,25 +96,25 @@ export function drawTerrain(terrainCanvas, ctx, terrain) {
 	}
 }
 
-// 馃搶 Obtener la altura del terreno en una posici贸n espec铆fica
+// 📌 Obtener la altura del terreno en una posición específica
 export function getTerrainHeight(x, terrain) {
 	let index = Math.floor(x / 10);
 	return index < 0 || index >= terrain.length ? 50 : terrain[index];
 }
 
-// 馃搶 Generador de viento
+// 📌 Generador de viento
 export function generateWind() {
 	return Math.random() * 4 - 2;
 }
 
-// 馃搶 Generar una posici贸n aleatoria para el objetivo
+// 📌 Generar una posición aleatoria para el objetivo
 export function randomTargetPosition(terrainCanvas) {
 	let minDist = 200;
 	let maxDist = terrainCanvas.width - minDist;
 	return Math.random() * (maxDist - minDist) + minDist;
 }
 
-// 馃搶 Ajustar la posici贸n del objetivo correctamente sobre la superficie
+// 📌 Ajustar la posición del objetivo correctamente sobre la superficie
 export function relocateTarget(target, terrainCanvas, windDisplay, terrain, ball) {
 	document.querySelectorAll(".trail").forEach(el => el.remove());
 
@@ -153,7 +153,7 @@ export function relocateTarget(target, terrainCanvas, windDisplay, terrain, ball
 	adjustLaunchPosition(ball, terrain);
 }
 
-// 馃搶 Ajustar la posici贸n de lanzamiento en funci贸n del terreno
+// 📌 Ajustar la posici贸n de lanzamiento en función del terreno
 export function adjustLaunchPosition(ball, terrain) {
 	let launchX = 10;
 	let launchHeight = getTerrainHeight(launchX, terrain);
@@ -162,7 +162,7 @@ export function adjustLaunchPosition(ball, terrain) {
 	ball.style.bottom = `${launchHeight}px`;
 }
 
-// 馃搶 Inicializar el terreno y la posici贸n de lanzamiento al cargar la p谩gina
+// 📌 Inicializar el terreno y la posición de lanzamiento al cargar la página
 export function initTerrain(terrainCanvas, ball, target, windDisplay) {
 	let terrain = [];
 	let ctx = terrainCanvas.getContext("2d");
