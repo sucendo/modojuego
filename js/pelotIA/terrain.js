@@ -1,5 +1,7 @@
 // 馃搶 terrain.js //
 
+import { setTargetPosition } from "./game.js";
+
 export let currentTargetPosition = null;
 
 export function smoothNoise(x) {
@@ -113,14 +115,14 @@ export function randomTargetPosition(terrainCanvas) {
 }
 
 // 馃搶 Ajustar la posici贸n del objetivo correctamente sobre la superficie
-export function relocateTarget(target, terrainCanvas, windDisplay, terrain, ball, setTargetPos) {
+export function relocateTarget(target, terrainCanvas, windDisplay, terrain, ball) {
 	document.querySelectorAll(".trail").forEach(el => el.remove());
 
 	let attempts = 0;
 	let maxAttempts = 50;
 	let validPositionFound = false;
 	let terrainHeight = 0;
-	let newTargetPos = 0; // ✅ variable local, no uses targetPosition
+	let newTargetPos = 0;
 
 	while (attempts < maxAttempts) {
 		newTargetPos = randomTargetPosition(terrainCanvas);
@@ -138,9 +140,7 @@ export function relocateTarget(target, terrainCanvas, windDisplay, terrain, ball
 		return;
 	}
 
-	setTargetPos(newTargetPos); // ✅ actualiza variable externa
-	currentTargetPosition = newTargetPos; 
-
+	setTargetPosition(newTargetPos); // ✅ Ahora es global y accesible para AI
 	let wind = generateWind();
 	windDisplay.textContent = wind.toFixed(2);
 
@@ -152,7 +152,6 @@ export function relocateTarget(target, terrainCanvas, windDisplay, terrain, ball
 
 	adjustLaunchPosition(ball, terrain);
 }
-
 
 // 馃搶 Ajustar la posici贸n de lanzamiento en funci贸n del terreno
 export function adjustLaunchPosition(ball, terrain) {
