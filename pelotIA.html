@@ -5,9 +5,14 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<title>Simulador de Lanzamiento IA</title>
 		<style>
-			body { 
+			html, body {
 				font-family: Arial, sans-serif; 
 				text-align: center; 
+				margin: 0;
+				padding: 0;
+				width: 100%;
+				height: 100%;
+				overflow: hidden;
 			}
 
 			.game-container { 
@@ -46,6 +51,7 @@
 				box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
 				border-radius: 50%;
 				position: absolute;
+				transform: translate(-50%, -50%);
 			}
 			
 			.ball, .target {
@@ -208,6 +214,45 @@
 				background: #e63900;
 				transform: scale(1.05);
 			}
+			
+			#chartContainer {
+			  position: absolute;
+			  top: 85px;
+			  left: 20px;
+			  width: 50vw;
+			  height: 30vh;
+			  background: rgba(0,0,0,0.75);
+			  padding: 20px;
+			  border-radius: 12px;
+			  box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+			  overflow: hidden;
+			}
+
+			/* hace que el canvas ocupe 100% ancho y alto del div */
+			#chartContainer canvas {
+			  width: 100% !important;
+			  height: 100% !important;
+			  display: block;
+			}
+			
+			.game-container,
+			#terrainContainer {
+			  margin: 0;
+			  padding: 0;
+			  border: none !important;
+			  width: 100vw;
+			  height: 100vh;
+			  position: absolute;
+			  top: 0;
+			  left: 0;
+			  overflow: hidden;
+			}
+			#terrainContainer svg {
+			  width: 100%;
+			  height: 100%;
+			  /* Y asegúrate de que preserve el viewBox sin estirar: */
+			  preserveAspectRatio: none;
+			}
 		</style>
 		
 		<!-- ✅ Chart.js-->
@@ -226,7 +271,8 @@
 	<body>
 
 		<div class="game-container">
-			<canvas id="terrainCanvas"></canvas>
+			<div id="terrainContainer" class="game-container"></div>
+			<canvas id="trailCanvas"></canvas>
 			<div class="ball" id="ball"></div>
 			<div class="target" id="target"></div>
 		</div>
@@ -242,7 +288,12 @@
 			<p>⚡ Fuerza: <span id="forceValue">0</span></p>
 			<p>📏 Distancia Lanzada: <span id="distanceThrown">0</span> px</p>
 			<p>❌ Error: <span id="errorValue">0</span> px</p>
-			<button class="start-button" onclick="initGame()">Iniciar Entrenamiento</button>
+			<button id="start-training-btn" class="start-button" onclick="initGame()">
+			  Iniciar Entrenamiento
+			</button>
+			<button id="clear-training" class="start-button" style="background: linear-gradient(45deg, #555, #333);">
+			  🗑️ Eliminar entrenamientos previos
+			</button>
 		</div>
 		
 		<!-- 🔘 Toggle mostrar/ocultar gráfico -->
@@ -274,18 +325,7 @@
 		</div>
 		
 		<!-- 📊 Contenedor del gráfico -->
-		<div id="chartContainer" style="
-			position: absolute; 
-			top: 85px; 
-			left: 20px; 
-			width: 50vw; 
-			height: 30vh; 
-			background: rgba(0,0,0,0.75); 
-			padding: 20px; 
-			border-radius: 12px; 
-			box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-			overflow: hidden;
-		">
+		<div id="chartContainer" >
 			<h3 style="color: #ffcc00; margin-bottom: 10px; font-family: Arial, sans-serif;">
 				📉 Evolución del Error
 			</h3>
