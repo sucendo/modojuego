@@ -5,7 +5,8 @@ import { addBuildings, addTrees, addRiver, addBridge } from './terrain_extras.js
 export let currentTargetPosition = null;
 export const RESOLUTION = 10; // separación horizontal en px
 const LAUNCH_ZONE_PX = 50; // ancho de la zona de lanzamiento en píxeles
-const MAX_SLOPE = 0.1;     // pendiente máxima: 0.1 = 1px vertical / 10px horizontal
+const MAX_SLOPE = 0.3;     // pendiente máxima: 0.1 = 1px vertical / 10px horizontal
+const PLATFORM_TOLERANCE    = 5;    // tolerancia ±5px alrededor de la plataforma
 
 // Devuelve altura interpolada en cualquier x (px), a partir del array `terrain`.
 export function getTerrainHeight(x, terrain, resolution = RESOLUTION) {
@@ -55,14 +56,13 @@ function generateHeightMap(segments) {
  * no supere MAX_SLOPE. Solo actúa si hay subida excesiva.
  */
 function flattenLaunchZone(terrain, resolution = RESOLUTION) {
-	  const launchCols = Math.ceil(LAUNCH_ZONE_PX / resolution);
-	  for (let i = 1; i <= launchCols && i < terrain.length; i++) {
-		const maxDelta = resolution * MAX_SLOPE;
-		const delta = terrain[i] - terrain[i-1];
-		if (delta > maxDelta) {
-		  terrain[i] = terrain[i-1] + maxDelta;
-		}
-	  }
+  const launchCols = Math.ceil(LAUNCH_ZONE_PX / resolution);
+  const maxDelta   = resolution * MAX_SLOPE;      // aquí sí usamos MAX_SLOPE
+  for (let i = 1; i <= launchCols && i < terrain.length; i++) {
+    const delta = terrain[i] - terrain[i - 1];
+    if      (delta >  maxDelta) terrain[i] = terrain[i - 1] + maxDelta;
+    else if (delta < -maxDelta) terrain[i] = terrain[i - 1] - maxDelta;
+  }
 }
 
 function midpointDisplacement(heights, start, end, roughness) {
@@ -127,72 +127,96 @@ function generateWidthMap(cols, totalWidth, jitterPct = 0.5) {
 
 // Dibuja via SVG usando curvas cuadráticas y llena todo el ancho
 export function drawTerrainSVG(containerId, terrain, resolution = 10) {
-	  const div = document.getElementById(containerId);
-	  const W   = div.clientWidth;
-	  const H   = div.clientHeight;
-	  const NS  = "http://www.w3.org/2000/svg";
+  const div = document.getElementById(containerId);
+  const W   = div.clientWidth;
+  const H   = window.innerHeight;
+  const N   = terrain.length;
+  const NS  = "http://www.w3.org/2000/svg";
 
-	  // calcula Xs uniformes (o con jitter si quieres)
-	  const xs = terrain.map((_, i) => i * resolution);
+  // Calcula anchos de cada columna para cubrir exactamente W
+  const widths = generateWidthMap(N, W);
+  const xs     = [0];
+  for (let i = 1; i < N; i++) {
+    xs[i] = xs[i - 1] + widths[i - 1];
+  }
 
-	  // construye el path usando H para “invertir” Y
-	  let d = `M0,${H} L0,${H - terrain[0]}`;
-	  for (let i = 1; i < terrain.length; i++) {
-		d += ` L${xs[i]},${H - terrain[i]}`;
-	  }
-	  d += ` L${W},${H} Z`;
+  // Empieza el path desde la esquina inferior izquierda
+  let d = `M0,${H} L0,${H - terrain[0]}`;
 
-	  // renderiza
-	  div.innerHTML = "";
-	  const svg  = document.createElementNS(NS, "svg");
-	  svg.setAttribute("width",  "100%");
-	  svg.setAttribute("height", "100%");
-	  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  // Dibuja línea a cada vértice del terreno
+  for (let i = 1; i < N; i++) {
+    d += ` L${xs[i]},${H - terrain[i]}`;
+  }
 
-	  const path = document.createElementNS(NS, "path");
-	  path.setAttribute("d", d);
-	  path.setAttribute("fill", "green");
-	  path.setAttribute("stroke", "#3e2723");
-	  path.setAttribute("stroke-width", "3");
-	  svg.appendChild(path);
-	  div.appendChild(svg);
+  // Extiende horizontalmente hasta el borde derecho, manteniendo altura
+  const lastY = H - terrain[N - 1];
+  d += ` L${W},${lastY}`;
+
+  // Baja al fondo y cierra
+  d += ` L${W},${H} Z`;
+
+  // Renderiza el SVG
+  div.innerHTML = "";
+  const svg  = document.createElementNS(NS, "svg");
+  svg.setAttribute("width",  "100%");
+  svg.setAttribute("height", "100%");
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+
+  const path = document.createElementNS(NS, "path");
+  path.setAttribute("d", d);
+  path.setAttribute("fill", "green");
+  path.setAttribute("stroke", "#3e2723");
+  path.setAttribute("stroke-width", "3");
+
+  svg.appendChild(path);
+  div.appendChild(svg);
 }
 
 
 //Inicializa el terreno: genera datos, dibuja SVG, ubica bola y target.
 export function initTerrain(containerId, ball, target, windDisplay) {
-	  const div    = document.getElementById(containerId);
-	  const W      = div.clientWidth;
-	  const H      = div.clientHeight;
-	  const terrain = generateTerrainData(W, RESOLUTION, H);
+  const div = document.getElementById(containerId);
+  const W   = div.clientWidth;
+  const H   = div.clientHeight;
 
-	  // solo una vez
-	  drawTerrainSVG(containerId, terrain, RESOLUTION);
-	  
-	  // ahora sí el SVG ya existe, lo recogemos:
-	  const svg = document.querySelector(`#${containerId} svg`);
-	  /*addBuildings(svg, 7, 120);
-	  addTrees   (svg, 10);
-	  addRiver   (svg);
-	  addBridge  (svg, 150, 300);*/
+  // 1) Generar array de alturas
+  const terrain = generateTerrainData(W, RESOLUTION, H);
 
-	  // coloca la bola en x=10px
-	  const launchX = 10;
-	  const launchY = getTerrainHeight(launchX, terrain, RESOLUTION);
-	  ball.style.left   = `${launchX}px`;
-	  ball.style.bottom = `${launchY}px`;
+  // 2) Plataforma de lanzamiento aleatoria
+  const launchCols   = Math.ceil(LAUNCH_ZONE_PX / RESOLUTION);
+  const minY         = 20;
+  const maxY         = H / 2;
+  const launchY      = Math.random() * (maxY - minY) + minY;
+  terrain[0] = launchY;
 
-	  // y ubica el objetivo
-	  relocateTarget(target, containerId, windDisplay, terrain, ball);
+  // 3) Clamp de tolerancia (±5px)
+  for (let i = 1; i <= launchCols && i < terrain.length; i++) {
+    const d = terrain[i] - launchY;
+    terrain[i] = launchY + Math.max(-PLATFORM_TOLERANCE,
+                    Math.min(PLATFORM_TOLERANCE, d));
+  }
 
-	  // ya no regenerar al resize (solo ajustas SVG)
-	  window.addEventListener("resize", () => {
-		const svg = div.querySelector("svg");
-		svg.setAttribute("width",  "100%");
-		svg.setAttribute("height", "100%");
-	  });
+  // 4) **Aquí** aplicamos el tope de pendiente con MAX_SLOPE
+  flattenLaunchZone(terrain, RESOLUTION);
 
-	  return terrain;
+  // 5) Dibujar SVG
+  drawTerrainSVG(containerId, terrain, RESOLUTION);
+
+  // 6) Colocar bola justo en launchY
+  ball.style.left   = `10px`;
+  ball.style.bottom = `${launchY}px`;
+
+  // 7) Ubicar objetivo
+  relocateTarget(target, containerId, windDisplay, terrain, ball);
+
+  // 8) Ajustar sólo el viewBox al redimensionar
+  window.addEventListener("resize", () => {
+    const svg = div.querySelector("svg");
+    svg.setAttribute("width",  "100%");
+    svg.setAttribute("height", "100%");
+  });
+
+  return terrain;
 }
 
 //Mueve el objetivo a una nueva posición válida.
