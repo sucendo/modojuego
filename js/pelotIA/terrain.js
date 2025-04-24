@@ -1,181 +1,223 @@
 // 📌 terrain.js //
 
-import { setTargetPosition } from "./game.js";
+import { addBuildings, addTrees, addRiver, addBridge } from './terrain_extras.js';
 
 export let currentTargetPosition = null;
+export const RESOLUTION = 10; // separación horizontal en px
+const LAUNCH_ZONE_PX = 50; // ancho de la zona de lanzamiento en píxeles
+const MAX_SLOPE = 0.1;     // pendiente máxima: 0.1 = 1px vertical / 10px horizontal
 
-export function smoothNoise(x) {
-    // mezcla de seno/coseno y ruido para dar variedad
-    return (
-        Math.sin(x * 0.0015) * 60 + 
-        Math.cos(x * 0.0025) * 40 +
-        Math.sin(x * 0.0045 + Math.random() * 2) * 30
-    ) / 3;
+// Devuelve altura interpolada en cualquier x (px), a partir del array `terrain`.
+export function getTerrainHeight(x, terrain, resolution = RESOLUTION) {
+	  const idx = x / resolution;
+	  const i0  = Math.floor(idx);
+	  const i1  = Math.min(i0 + 1, terrain.length - 1);
+	  const t   = idx - i0;
+	  return terrain[i0] * (1 - t) + terrain[i1] * t;
 }
 
-let terrainLocked = false;
+// Ruido fractal multioctava
+function generateHeightMap(segments) {
+	  const octaves = [
+		{ freq: 0.0025, amp: 300 },
+		{ freq: 0.007,  amp: 180 },
+		{ freq: 0.018,  amp:  90 },
+		{ freq: 0.045,  amp:  45 }
+	  ];
+	  const phases = octaves.map(() => Math.random() * Math.PI * 2);
+	  const heights = new Array(segments);
 
-export function drawTerrain(terrainCanvas, ctx, terrain) {
-	// Ajustar tamaño del canvas a la ventana
-	terrainCanvas.width = window.innerWidth;
-	terrainCanvas.height = window.innerHeight;
+	  // Suma de varias ondas
+	  for (let i = 0; i < segments; i++) {
+		let h = 0;
+		octaves.forEach((o, idx) => {
+		  h += o.amp * Math.sin(i * o.freq + phases[idx]);
+		});
+		heights[i] = h;
+	  }
 
-	ctx.clearRect(0, 0, terrainCanvas.width, terrainCanvas.height);
-
-	// ✅ Si el terreno ya está generado, no lo regeneramos
-	if (terrain.length === 0) {
-		let baseHeight = Math.random() * 50 + 60;
-		let maxHeight = terrainCanvas.height * 0.4;
-		let launchOffset = (Math.random() - 0.5) * 40; // entre -20 y +20
-		let smoothedHeights = [];
-
-		// 🟩 Zona plana de lanzamiento con variación leve
-		for (let i = 0; i < 8; i++) {
-			let slightVariation = Math.sin(i * 0.3) * 5;
-			smoothedHeights.push(baseHeight + launchOffset + slightVariation);
+	  // Media móvil para suavizar aun más
+	  for (let pass = 0; pass < 5; pass++) {
+		const tmp = heights.slice();
+		for (let j = 1; j < segments - 1; j++) {
+		  tmp[j] = (heights[j-1] + heights[j] + heights[j+1]) / 3;
 		}
-
-		for (let i = 8; i < terrainCanvas.width / 10; i++) {
-			let variation = Math.random() < 0.3
-				? Math.tan(i * 0.002) * 10
-				: smoothNoise(i * 10);
-
-			let height = baseHeight + variation + Math.random() * maxHeight * 0.5;
-			smoothedHeights.push(height);
+		for (let j = 1; j < segments - 1; j++) {
+		  heights[j] = tmp[j];
 		}
+	  }
 
-		// Suavizado
-		for (let i = 1; i < smoothedHeights.length - 1; i++) {
-			let smooth = (smoothedHeights[i - 1] + smoothedHeights[i] + smoothedHeights[i + 1]) / 3;
-			terrain[i] = (terrain[i] || 0) * 0.3 + smooth * 0.7;
+	  return heights;
+}
+
+/**
+ * Asegura que en la zona de lanzamiento la pendiente ascendente
+ * no supere MAX_SLOPE. Solo actúa si hay subida excesiva.
+ */
+function flattenLaunchZone(terrain, resolution = RESOLUTION) {
+	  const launchCols = Math.ceil(LAUNCH_ZONE_PX / resolution);
+	  for (let i = 1; i <= launchCols && i < terrain.length; i++) {
+		const maxDelta = resolution * MAX_SLOPE;
+		const delta = terrain[i] - terrain[i-1];
+		if (delta > maxDelta) {
+		  terrain[i] = terrain[i-1] + maxDelta;
 		}
-	}
-
-	// 🟩 Dibujar relleno
-	ctx.fillStyle = "green";
-	ctx.beginPath();
-	ctx.moveTo(0, terrainCanvas.height - terrain[0]);
-
-	for (let i = 1; i < terrain.length - 1; i++) {
-		let midX = i * 10;
-		let midY = terrain[i];
-		let cpX = (i - 1) * 10 + 5;
-		let cpY = (terrain[i - 1] + terrain[i]) / 2;
-
-		ctx.quadraticCurveTo(cpX, terrainCanvas.height - cpY, midX, terrainCanvas.height - midY);
-	}
-
-	ctx.lineTo(terrainCanvas.width, terrainCanvas.height);
-	ctx.lineTo(0, terrainCanvas.height);
-	ctx.closePath();
-	ctx.fill();
-
-	// 🟫 Dibujar borde
-	ctx.strokeStyle = "#3e2723";
-	ctx.lineWidth = 3;
-	ctx.beginPath();
-	ctx.moveTo(0, terrainCanvas.height - terrain[0]);
-
-	for (let i = 1; i < terrain.length - 1; i++) {
-		let midX = i * 10;
-		let midY = terrain[i];
-		let cpX = (i - 1) * 10 + 5;
-		let cpY = (terrain[i - 1] + terrain[i]) / 2;
-
-		ctx.quadraticCurveTo(cpX, terrainCanvas.height - cpY, midX, terrainCanvas.height - midY);
-	}
-
-	ctx.stroke();
-	
-	if (currentTargetPosition !== null) {
-		const target = document.getElementById("target");
-		const terrainHeight = getTerrainHeight(currentTargetPosition, terrain) || 50;
-
-		target.style.left = `${currentTargetPosition}px`;
-		target.style.bottom = `${terrainHeight}px`;
-	}
+	  }
 }
 
-// 📌 Obtener la altura del terreno en una posición específica
-export function getTerrainHeight(x, terrain) {
-	let index = Math.floor(x / 10);
-	return index < 0 || index >= terrain.length ? 50 : terrain[index];
+function midpointDisplacement(heights, start, end, roughness) {
+	  if (end - start < 2) return;
+	  const mid = Math.floor((start + end) / 2);
+	  const displacement = (Math.random() * 2 - 1) * roughness;
+	  heights[mid] = (heights[start] + heights[end]) / 2 + displacement;
+	  midpointDisplacement(heights, start, mid, roughness * 0.6);
+	  midpointDisplacement(heights, mid, end, roughness * 0.6);
 }
 
-// 📌 Generador de viento
-export function generateWind() {
-	return Math.random() * 4 - 2;
-}
+// Genera el array de alturas normalizado para ocupar toda la pantalla
+export function generateTerrainData(width, resolution = 10, height) {
+	  const cols = Math.ceil(width / resolution);
+	  const H    = height;
+	  const heights = new Array(cols).fill(0);
 
-// 📌 Generar una posición aleatoria para el objetivo
-export function randomTargetPosition(terrainCanvas) {
-	let minDist = 200;
-	let maxDist = terrainCanvas.width - minDist;
-	return Math.random() * (maxDist - minDist) + minDist;
-}
+	  // ─── extremos base ────────────────────────────
+	  heights[0]      = H * 0.2;
+	  heights[cols-1] = H * 0.2;
 
-// 📌 Ajustar la posición del objetivo correctamente sobre la superficie
-export function relocateTarget(target, terrainCanvas, windDisplay, terrain, ball) {
-	document.querySelectorAll(".trail").forEach(el => el.remove());
+	  // ─── fractal (midpoint displacement) ─────────
+	  midpointDisplacement(heights, 0, cols-1, H * 0.5);
 
-	let attempts = 0;
-	let maxAttempts = 50;
-	let validPositionFound = false;
-	let terrainHeight = 0;
-	let newTargetPos = 0;
-
-	while (attempts < maxAttempts) {
-		newTargetPos = randomTargetPosition(terrainCanvas);
-		terrainHeight = getTerrainHeight(newTargetPos, terrain) || 50;
-
-		if (terrainHeight < terrainCanvas.height * 0.6 && terrainHeight > 40) {
-			validPositionFound = true;
-			break;
+	  // ─── picos suaves y valles ligeros + suavizado ─
+	  for (let i = 1; i < cols - 1; i++) {
+		// reducimos tanto probabilidad como amplitud:
+		if (Math.random() < 0.005) {
+		  // pico suave
+		  heights[i] += Math.random() * H * 0.2 + 20;
+		} else if (Math.random() < 0.005) {
+		  // valle suave
+		  heights[i] -= Math.random() * H * 0.15 + 15;
 		}
-		attempts++;
-	}
+		// un pase extra de suavizado
+		heights[i] = (heights[i-1] + heights[i] + heights[i+1]) / 3;
+	  }
 
-	if (!validPositionFound) {
-		console.error("🚫 No se encontró una posición válida para el objetivo después de 50 intentos.");
-		return;
-	}
+	  // ─── tramo inicial: plataforma / pendiente muy suave ─
+	  const launchZoneCols = Math.ceil(50 / resolution);
+	  const h0    = heights[0];
+	  const hEnd  = heights[launchZoneCols] || h0;
+	  for (let i = 0; i <= launchZoneCols; i++) {
+		const t = i / launchZoneCols;
+		// lineal entre h0 y hEnd, sin ruidos fuertes
+		heights[i] = h0 + (hEnd - h0) * t;
+	  }
 
-	setTargetPosition(newTargetPos); // ✅ Ahora es global y accesible para AI
-	let wind = generateWind();
-	windDisplay.textContent = wind.toFixed(2);
-
-	const ctx = terrainCanvas.getContext("2d");
-	drawTerrain(terrainCanvas, ctx, terrain, true);
-
-	target.style.left = `${newTargetPos}px`;
-	target.style.bottom = `${terrainHeight}px`;
-
-	adjustLaunchPosition(ball, terrain);
+	  // ─── clamp [20, 0.6·H] para no salirse de la ventana ─
+	  return heights.map(h => Math.max(20, Math.min(h, H * 0.6)));
 }
 
-// 📌 Ajustar la posici贸n de lanzamiento en función del terreno
-export function adjustLaunchPosition(ball, terrain) {
-	let launchX = 10;
-	let launchHeight = getTerrainHeight(launchX, terrain);
-
-	ball.style.left = `${launchX}px`;
-	ball.style.bottom = `${launchHeight}px`;
+// Genera un array de anchos variables que suman exactamente totalWidth
+function generateWidthMap(cols, totalWidth, jitterPct = 0.5) {
+	  const base = totalWidth / cols;
+	  let w = Array.from({length: cols}, () =>
+		base * (1 + (Math.random()*2*jitterPct - jitterPct))
+	  );
+	  const sum = w.reduce((a,b)=>a+b,0), scale = totalWidth/sum;
+	  return w.map(v=>v*scale);
 }
 
-// 📌 Inicializar el terreno y la posición de lanzamiento al cargar la página
-export function initTerrain(terrainCanvas, ball, target, windDisplay) {
-	let terrain = [];
-	let ctx = terrainCanvas.getContext("2d");
+// Dibuja via SVG usando curvas cuadráticas y llena todo el ancho
+export function drawTerrainSVG(containerId, terrain, resolution = 10) {
+	  const div = document.getElementById(containerId);
+	  const W   = div.clientWidth;
+	  const H   = div.clientHeight;
+	  const NS  = "http://www.w3.org/2000/svg";
 
-	drawTerrain(terrainCanvas, ctx, terrain);
-	adjustLaunchPosition(ball, terrain);
+	  // calcula Xs uniformes (o con jitter si quieres)
+	  const xs = terrain.map((_, i) => i * resolution);
 
-	window.addEventListener("resize", () => {
-		terrainCanvas.width = window.innerWidth;
-		terrainCanvas.height = window.innerHeight;
-		drawTerrain(terrainCanvas, ctx, terrain); // reutiliza terreno existente
-		adjustLaunchPosition(ball, terrain);
-	});
+	  // construye el path usando H para “invertir” Y
+	  let d = `M0,${H} L0,${H - terrain[0]}`;
+	  for (let i = 1; i < terrain.length; i++) {
+		d += ` L${xs[i]},${H - terrain[i]}`;
+	  }
+	  d += ` L${W},${H} Z`;
 
-	return terrain;
+	  // renderiza
+	  div.innerHTML = "";
+	  const svg  = document.createElementNS(NS, "svg");
+	  svg.setAttribute("width",  "100%");
+	  svg.setAttribute("height", "100%");
+	  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+
+	  const path = document.createElementNS(NS, "path");
+	  path.setAttribute("d", d);
+	  path.setAttribute("fill", "green");
+	  path.setAttribute("stroke", "#3e2723");
+	  path.setAttribute("stroke-width", "3");
+	  svg.appendChild(path);
+	  div.appendChild(svg);
+}
+
+
+//Inicializa el terreno: genera datos, dibuja SVG, ubica bola y target.
+export function initTerrain(containerId, ball, target, windDisplay) {
+	  const div    = document.getElementById(containerId);
+	  const W      = div.clientWidth;
+	  const H      = div.clientHeight;
+	  const terrain = generateTerrainData(W, RESOLUTION, H);
+
+	  // solo una vez
+	  drawTerrainSVG(containerId, terrain, RESOLUTION);
+	  
+	  // ahora sí el SVG ya existe, lo recogemos:
+	  const svg = document.querySelector(`#${containerId} svg`);
+	  /*addBuildings(svg, 7, 120);
+	  addTrees   (svg, 10);
+	  addRiver   (svg);
+	  addBridge  (svg, 150, 300);*/
+
+	  // coloca la bola en x=10px
+	  const launchX = 10;
+	  const launchY = getTerrainHeight(launchX, terrain, RESOLUTION);
+	  ball.style.left   = `${launchX}px`;
+	  ball.style.bottom = `${launchY}px`;
+
+	  // y ubica el objetivo
+	  relocateTarget(target, containerId, windDisplay, terrain, ball);
+
+	  // ya no regenerar al resize (solo ajustas SVG)
+	  window.addEventListener("resize", () => {
+		const svg = div.querySelector("svg");
+		svg.setAttribute("width",  "100%");
+		svg.setAttribute("height", "100%");
+	  });
+
+	  return terrain;
+}
+
+//Mueve el objetivo a una nueva posición válida.
+export function relocateTarget(target, containerId, windDisplay, terrain, ball) {
+	  const div = document.getElementById(containerId);
+
+	  // limpia trazas
+	  div.querySelectorAll(".trail").forEach(el => el.remove());
+
+	  // elige una posición válida en píxeles
+	  let posPx, h;
+	  for (let i = 0; i < 50; i++) {
+		posPx = Math.random() * (div.clientWidth - 200) + 200;
+		// aquí obtenemos la altura real en píxeles con getTerrainHeight
+		h = getTerrainHeight(posPx, terrain, RESOLUTION);
+		if (h > 40 && h < div.clientHeight * 0.6) break;
+	  }
+
+	  // guardamos la posición para la IA
+	  currentTargetPosition = posPx;
+
+	  // mostramos la velocidad del viento
+	  windDisplay.textContent = (Math.random() * 4 - 2).toFixed(2);
+
+	  // posicionamos el <div id="target"> justo sobre la curva
+	  target.style.left   = `${posPx}px`;
+	  target.style.bottom = `${h}px`;
 }
