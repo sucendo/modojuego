@@ -1,254 +1,173 @@
-// 📌 ai.js //
-
-import { throwBall } from "./game.js";
-import * as Game from "./game.js";
-import { currentTargetPosition } from "./terrain.js";
+// 📌 ai.js — Módulo puro de IA
 
 let model;
 let isTraining = false;
 
-function normalize(v,min,max){return Math.max(0,Math.min(1,(v-min)/(max-min)));}  
-function clamp(v,min,max){return Math.max(min,Math.min(max,Math.round(v)));}  
-function bestOf(arr,target){return arr.reduce((a,b)=>Math.abs(a.distance-target)<Math.abs(b.distance-target)?a:b);}
+// —— Helpers ——
 
-// Denormaliza de [0,1] a [min,max]
-function denormalize(value, min, max) {
-  return value * (max - min) + min;
+// Normaliza [min,max] → [0,1]
+function normalize(v, min, max) {
+  return Math.max(0, Math.min(1, (v - min) / (max - min)));
+}
+// Redondea y clampa
+function clamp(v, min, max) {
+  return Math.max(min, Math.min(max, Math.round(v)));
 }
 
-// Muestra un comentario en pantalla
-function updateComment(newComment) {
-  console.log(`📢 ${newComment}`);
-  const commentBox = document.getElementById("commentBox");
-  const p = document.createElement("p");
-  p.textContent = newComment;
-  commentBox.appendChild(p);
-  while (commentBox.childNodes.length > 5) {
-    commentBox.removeChild(commentBox.firstChild);
-  }
-}
-
-// ==============================
-// initNeuralNetwork()
-// Carga/sintetiza el modelo y lo compila.
-// ==============================
+/**
+ * Inicializa o carga el modelo desde IndexedDB.
+ */
 export async function initNeuralNetwork() {
   try {
-    console.log("📡 Cargando modelo desde IndexedDB...");
     model = await tf.loadLayersModel("indexeddb://my-trained-model");
-    console.log("✅ Modelo cargado.");
   } catch {
-    console.warn("⚠️ No hay modelo previo, creando uno nuevo...");
-    await initAndSaveModel();
-  }
-  model.compile({
-    optimizer: tf.train.adam(0.0005),   // tasa de aprendizaje reducida
-    loss: "meanSquaredError"
-  });
-}
-
-async function initAndSaveModel() {
-  model = tf.sequential();
-  model.add(tf.layers.dense({ inputShape: [3], units: 16, activation: "relu" }));
-  model.add(tf.layers.dense({ units: 16, activation: "relu" }));
-  model.add(tf.layers.dense({ units: 2, activation: "tanh" }));
-  model.compile({
-    optimizer: tf.train.adam(0.001),
-    loss: "meanSquaredError"
-  });
-  await model.save("indexeddb://my-trained-model");
-  console.log("✅ Modelo nuevo creado y guardado.");
-}
-
-async function saveModel() {
-  try {
-    console.log("💾 Guardando modelo...");
+    model = tf.sequential();
+    model.add(tf.layers.dense({ inputShape: [3], units: 32, activation: "relu" }));
+    model.add(tf.layers.dense({ units: 32, activation: "relu" }));
+    model.add(tf.layers.dense({ units: 2, activation: "tanh" }));
     await model.save("indexeddb://my-trained-model");
-    console.log("✅ Modelo guardado.");
-  } catch (e) {
-    console.error("❌ Error guardando modelo:", e);
   }
+  model.compile({ optimizer: tf.train.adam(0.001), loss: "meanSquaredError" });
 }
 
-export async function clearModel() {
-  try {
-    const del = indexedDB.deleteDatabase("tensorflowjs");
-    del.onsuccess = () => {
-      console.log("🗑️ IndexedDB eliminada.");
-      location.reload();
-    };
-    del.onerror = () => console.warn("❌ Error eliminando IndexedDB.");
-  } catch (e) {
-    console.error("❌ clearModel:", e);
-  }
+/** Borra el modelo de IndexedDB y devuelve una promesa */
+export function clearModel() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.deleteDatabase("my-trained-model");
+    req.onsuccess = () => resolve();
+    req.onerror   = () => reject(new Error('Error al eliminar modelo'));
+  });
 }
 
-// ==============================
-// trainModel(attemptsData)
-// Entrena con early-stopping y guarda en IndexedDB.
-// ==============================
-export async function trainModel(attemptsData = Game.attemptLog) {
-  if (isTraining) return;
+/**
+ * Entrena el modelo con un array de intentos:
+ * cada intento = { angle, force, distance, errorX }.
+ */
+export async function trainModel(attemptsData) {
+  if (isTraining || !model) return;
   isTraining = true;
-  document.getElementById("trainingStatus").style.display = "block";
 
-  // Filtrado y persistencia
-  const valid = attemptsData.filter(a => 
-    [a.angle,a.force,a.distance,a.errorX].every(v => isFinite(v))
-  );
-  localStorage.setItem("attemptLog", JSON.stringify(valid));
-
-  if (valid.length < 20) {
-    console.warn("⚠️ No hay suficientes datos para entrenar.");
+  const recent = attemptsData.slice(-200);
+  const unique = Array.from(new Map(recent.map(a => [`${a.angle}|${a.force}`, a])).values());
+  if (unique.length < 10) {
     isTraining = false;
-    document.getElementById("trainingStatus").style.display = "none";
     return;
   }
 
-  const xs = tf.tensor2d(valid.map(a => [
-    normalize(a.angle,10,80),
-    normalize(a.force,5,40),
-    normalize(a.distance - currentTargetPosition,-2000,2000)
+  const xs = tf.tensor2d(unique.map(a => [
+    normalize(a.angle, 10, 80),
+    normalize(a.force, 5, 40),
+    normalize(a.distance - a.targetPosition, -2000, 2000)
   ]));
-  const ys = tf.tensor2d(valid.map(a => [
-    (a.angle - Game.bestAngle)/70,
-    (a.force - Game.bestForce)/35
+  const ys = tf.tensor2d(unique.map(a => [
+    (a.angle - a.bestAngle) / 70,
+    (a.force - a.bestForce) / 35
   ]));
 
-  // Early stopping: si la pérdida no mejora en 5 épocas, para
-  const earlyStop = tf.callbacks.earlyStopping({
-    monitor: "loss",
-    patience: 5
-  });
+  const earlyStop = tf.callbacks.earlyStopping({ monitor: 'loss', patience: 5 });
+  const reduceLR  = tf.callbacks.reduceLROnPlateau({ monitor: 'loss', factor: 0.5, patience: 3 });
 
   await model.fit(xs, ys, {
     epochs: 50,
     shuffle: true,
-    callbacks: [ earlyStop ],
+    callbacks: [earlyStop, reduceLR],
     verbose: 0
   });
-
   await model.save("indexeddb://my-trained-model");
   xs.dispose(); ys.dispose();
 
-  document.getElementById("trainingStatus").style.display = "none";
   isTraining = false;
 }
 
-// ==============================
-// predictShot(angle, force, distance, targetPosition)
-// Calcula la siguiente acción sin bloquear.
-// ==============================
+/**
+ * Dada una posición media (angle, force, distance),
+ * pide al modelo un pequeño ajuste.
+ */
 async function predictShot(angle, force, distance, targetPosition) {
+  if (!model) return { bestAngle: angle, bestForce: force };
+
   const input = tf.tensor2d([[
     normalize(angle,10,80),
     normalize(force,5,40),
     normalize(distance - targetPosition,-2000,2000)
   ]]);
-  let data = await model.predict(input).data();
+  const data = await model.predict(input).data();
   input.dispose();
 
-  // Fallback si NaN
-  if (data.some(v=>isNaN(v))) {
-    console.warn("🚫 Predicción inválida, reiniciando modelo.");
-    await initAndSaveModel();
+  if (data.some(v => isNaN(v))) {
+    // Si algo falla, devolvemos el tiro tal cual
     return { bestAngle: angle, bestForce: force };
   }
-
   return {
-    bestAngle: Math.round(angle + data[0]*35),
-    bestForce: Math.round(force + data[1]*20)
+    bestAngle: clamp(angle + data[0]*35, 10, 80),
+    bestForce: clamp(force + data[1]*20, 5, 40)
   };
 }
 
-// ==============================
-// adjustLearning(errorX, angle, force, counter)
-// Exploración adaptativa según historial.
-// ==============================
 /**
- * Ajusta el siguiente tiro basándose en los lanzamientos previos
- * y su relación con el objetivo.
+ * Ajusta el siguiente lanzamiento combinando:
+ * - heurística “midpoint” (entre el mejor por debajo y por encima del target)
+ * - predicción fina de la red
+ * - exploración ε-greedy si hay estancamiento
  *
- * @param {number} errorX           Error absoluto del último tiro
- * @param {number} angle            Ángulo usado en el último tiro
- * @param {number} force            Fuerza usada en el último tiro
- * @param {number} currentCounter   Contador de intentos sin mejora
- * @returns {Promise<{newCounter:number,newAngle:number,newForce:number}>}
+ * @param {number} errorX         Error absoluto del último tiro
+ * @param {number} currentCounter Contador de fallos consecutivos
+ * @param {Array}  attemptLog     Historial de intentos { angle, force, distance }
+ * @param {number} targetPosition Posición del target
+ * @param {number} bestAngle      Mejor ángulo actual
+ * @param {number} bestForce      Mejor fuerza actual
+ * @returns {Promise<{newCounter, newAngle, newForce}>}
  */
-export async function adjustLearning(errorX, angle, force, currentCounter) {
-  const attemptLog     = Game.attemptLog;
-  const targetPosition = currentTargetPosition;
-  const distance       = attemptLog.at(-1)?.distance ?? 0;
-
-  // Empezamos con el contador que llega como parámetro
+export async function adjustLearning(
+  errorX,
+  currentCounter,
+  attemptLog,
+  targetPosition,
+  bestAngle,
+  bestForce
+) {
   let newCounter = currentCounter;
 
-  // Elegimos un tiro de referencia combinando mejores aciertos "bajo" y "sobre"
-  let refAngle = angle;
-  let refForce = force;
+  // separar bajo/sobre
   const under = attemptLog.filter(a => a.distance < targetPosition);
   const over  = attemptLog.filter(a => a.distance > targetPosition);
 
-  if (under.length && over.length) {
-    const bestUnder = under.reduce((a, b) =>
-      Math.abs(a.distance - targetPosition) < Math.abs(b.distance - targetPosition) ? a : b
-    );
-    const bestOver = over.reduce((a, b) =>
-      Math.abs(a.distance - targetPosition) < Math.abs(b.distance - targetPosition) ? a : b
-    );
-    refAngle = (bestUnder.angle + bestOver.angle) / 2;
-    refForce = (bestUnder.force + bestOver.force) / 2;
-  } else if (under.length) {
-    const closest = under.reduce((a, b) =>
-      Math.abs(a.distance - targetPosition) < Math.abs(b.distance - targetPosition) ? a : b
-    );
-    refAngle = closest.angle;
-    refForce = closest.force;
-  } else if (over.length) {
-    const closest = over.reduce((a, b) =>
-      Math.abs(a.distance - targetPosition) < Math.abs(b.distance - targetPosition) ? a : b
-    );
-    refAngle = closest.angle;
-    refForce = closest.force;
-  }
+  const lastUnder = under.length
+    ? under.reduce((a,b) => Math.abs(a.distance - targetPosition) < Math.abs(b.distance - targetPosition) ? a : b)
+    : { angle: bestAngle, force: bestForce, distance: targetPosition };
+  const lastOver  = over.length
+    ? over.reduce((a,b) => Math.abs(a.distance - targetPosition) < Math.abs(b.distance - targetPosition) ? a : b)
+    : { angle: bestAngle, force: bestForce, distance: targetPosition };
 
-  // Fallback por si sale NaN
-  if (isNaN(refAngle) || isNaN(refForce)) {
-    updateComment("⚠️ Sin datos válidos. Usando valores por defecto.");
-    refAngle = angle;
-    refForce = force;
-  }
+  // punto medio heurístico
+  const midAngle = (lastUnder.angle + lastOver.angle) / 2;
+  const midForce = (lastUnder.force + lastOver.force) / 2;
+  const midDist  = (lastUnder.distance + lastOver.distance) / 2;
 
-  // Pedimos al modelo una predicción basada en esa referencia
-  const { bestAngle, bestForce } = await predictShot(refAngle, refForce, distance, targetPosition);
-  let nextAngle = bestAngle;
-  let nextForce = bestForce;
+  // predecir con la red
+  const { bestAngle: netA, bestForce: netF } =
+    await predictShot(midAngle, midForce, midDist, targetPosition);
 
-  // Tasa de exploración: permite probar variaciones si no mejora
-  const explorationRate = Math.min(0.5, 0.1 + errorX / 800);
+  // mezcla heurística vs. red
+  const α = 0.5;
+  let nextAngle = α * netA + (1-α) * midAngle;
+  let nextForce = α * netF + (1-α) * midForce;
 
+  // exploración ε-greedy
+  const eps = Math.min(0.5, 0.1 + errorX/800);
   if (newCounter >= 6) {
-    updateComment("⚠️ Exploración forzada tras muchos intentos...");
-    nextAngle += Math.random() * 25 - 12;
-    nextForce += Math.random() * 16 - 8;
+    nextAngle += Math.random()*25 - 12;
+    nextForce += Math.random()*16 - 8;
     newCounter = 0;
-  } else if (Math.random() < explorationRate) {
-    updateComment("🔄 Explorando nuevas estrategias...");
-    nextAngle += Math.random() * 6 - 3;
-    nextForce += Math.random() * 6 - 3;
+  } else if (Math.random() < eps) {
+    nextAngle += Math.random()*6 - 3;
+    nextForce += Math.random()*6 - 3;
     newCounter++;
   }
 
-  // Clampeamos a los rangos válidos
-  nextAngle = Math.max(10, Math.min(80, Math.round(nextAngle)));
-  nextForce = Math.max(5,  Math.min(40, Math.round(nextForce)));
-
-  updateComment(`📢 🤖 IA ajustó → Ángulo: ${nextAngle}°, Fuerza: ${nextForce}`);
-  setTimeout(() => throwBall(nextAngle, nextForce), 500);
+  // clamp final
+  nextAngle = clamp(nextAngle, 10, 80);
+  nextForce = clamp(nextForce, 5, 40);
 
   return { newCounter, newAngle: nextAngle, newForce: nextForce };
 }
-
-window.clearModel       = clearModel;
-window.trainModel       = trainModel;
-window.adjustLearning   = adjustLearning;
