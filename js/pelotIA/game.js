@@ -1,7 +1,7 @@
 // 📌 game.js //
 
 import { initTerrain, relocateTarget, currentTargetPosition, getTerrainHeight,  RESOLUTION } from "./terrain.js";
-import { initNeuralNetwork, trainModel, adjustLearning } from "./ai.js";
+import { initNeuralNetwork, trainModel, adjustLearning, clearModel } from "./ai.js";
 import { initErrorChart, updateErrorChart } from "./errorChart.js";
 
 // 📌 Elementos del DOM
@@ -22,6 +22,8 @@ const commentBox = document.getElementById("commentBox");
 //const trainingStatus = document.getElementById("trainingStatus");
 const windDisplay = document.getElementById("windSpeed");
 
+let attemptLog = []; 
+
 let attempts = 0;
 let bestDistance = 0;
 let bestAngle = 45;
@@ -29,14 +31,11 @@ let bestForce = 20;
 let wind = Math.random() * 4 - 2;
 //let lastError = null;
 let ballMoving = false;
-export let attemptLog = []; // 👈 Exportamos attemptLog para que otros módulos puedan acceder
+
 let bestAttempts = [];
 let noProgressCounter = 0;
-//let forceDirection = 1;
-//let angleDirection = 1;
-
-// ✅ Referencia global al gráfico
-let errorChartInstance = null;
+let forceDirection = 1;
+let angleDirection = 1;
 
 // ✅ Referencia global de inactividad tras alcanzar objetivo
 let inactivityTimeout = null;
@@ -180,7 +179,7 @@ if (attemptLog.length % 10 === 0) {
     updateComment(`🎯 ¡Nuevo mejor intento! Error: ${Math.floor(bestDistance)} px`);
   } else {
     noProgressCounter++;
-    updateComment("🤔 No mejoré... probando otra variante.");
+    updateComment("🤖 No mejoré...🤔 probando otra variante.");
   }
 
   // 6) Éxito y modal
@@ -192,17 +191,45 @@ if (errorX <= targetRadius) {
     return;
   }
 
-  // 7) Incrementar contador y siguiente tiro
+// 7) Incrementar contador y siguiente tiro
   attempts++;
   attemptsDisplay.textContent = attempts;
 
-  const avgAngle = bestAttempts.reduce((s, a) => s + a.angle, 0) / bestAttempts.length;
-  const avgForce = bestAttempts.reduce((s, a) => s + a.force, 0) / bestAttempts.length;
-  const result   = await adjustLearning(errorX, avgAngle, avgForce, noProgressCounter);
+  // —— Calcular siguiente tiro con la IA
+  const { newCounter, newAngle, newForce } = await adjustLearning(
+    errorX,
+    noProgressCounter,
+    attemptLog,
+    currentTargetPosition,
+    bestAngle,
+    bestForce
+  );
+  noProgressCounter = newCounter;
+  bestAngle         = newAngle;
+  bestForce         = newForce;
 
-  noProgressCounter = result.newCounter;
-  bestAngle        = result.newAngle;
-  bestForce        = result.newForce;
+  // —— Comentarios enriquecidos —— 
+
+  // 1) Mostrar el nuevo ángulo y fuerza
+  updateComment(`🔄 Nuevo tiro: ángulo ${bestAngle.toFixed(1)}°, fuerza ${bestForce.toFixed(1)}`);
+
+  // 2) Mostrar el error actual
+  updateComment(`❌ Error tras tiro: ${errorX.toFixed(1)} px`);
+
+  // 3) Comentario gracioso aleatorio
+  const chistes = [
+    "🤖 ¡Ey, no se me escape esa parábola!",
+    "🤖 Creí que sabía matemáticas… pero no tanto 🤓",
+    "🤖 La IA: 0 – Suerte: 1",
+    "🤖 Necesito un café para corregir esto ☕",
+    "🤖 ¿Alguien llamó a Pythagoras?"
+  ];
+  const idx = Math.floor(Math.random() * chistes.length);
+  updateComment(chistes[idx]);
+
+  // —— Lanzar el siguiente tiro con los nuevos parámetros
+  console.log(`▶️ Siguiente lanzamiento — ángulo: ${bestAngle}°, fuerza: ${bestForce}`);
+  throwBall(bestAngle, bestForce);
 }
 
 // ────────────────────────────────────────────────────
@@ -328,20 +355,8 @@ function restartAITraining() {
   // 2) Limpiar canvas de trails
   trailCtx.clearRect(0, 0, trailCanvas.width, trailCanvas.height);
 
-  // 3) Limpiar gráfico de error
-  if (errorChartInstance) {
-    errorChartInstance.destroy();
-    errorChartInstance = null;
-  }
-
-  // 4) Eliminar modelo en IndexedDB y relanzar initGame
-  if (window.indexedDB) {
-    const delReq = indexedDB.deleteDatabase("tensorflowjs");
-    delReq.onsuccess = () => initGame();
-    delReq.onerror   = () => initGame();
-  } else {
-    initGame();
-  }
+  // 3) El chart se reiniciará dentro de initGame()
+  initGame();
 }
 
 // 📌 Iniciar la simulación
@@ -388,7 +403,7 @@ export async function initGame() {
   noProgressCounter = 0;
   attemptsDisplay.textContent     = attempts;
   bestDistanceDisplay.textContent = bestDistance;
-  commentBox.textContent          = "";
+  //commentBox.textContent          = "";
 
   // ── 3) Borrar todas las trazas dibujadas ─────────
   document.querySelectorAll('.trail').forEach(el => el.remove());
@@ -400,10 +415,6 @@ export async function initGame() {
   trailCtx.clearRect(0, 0, trailCanvas.width, trailCanvas.height);
 
   // ── 5) Resetear gráfico de error ──────────────────
-  if (errorChartInstance) {
-    errorChartInstance.destroy();
-    errorChartInstance = null;
-  }
   initErrorChart();
 
   // ── 6) Cambiar texto del botón ────────────────────
@@ -412,65 +423,66 @@ export async function initGame() {
 
   // ── 7) Cargar o crear el modelo ──────────────────
   await initNeuralNetwork();
-
-  // ── 8) Generar terreno y posicionar bola/objetivo ─
-  terrain = initTerrain(
-    'terrainContainer',  // id del <div> que contiene el SVG
-    ball,
-    target,
-    windDisplay
-  );
-  relocateTarget(
-    target,
-    'terrainContainer',
-    windDisplay,
-    terrain,
-    ball
-  );
+  
+   // ── 8) Generar terreno y posicionar bola/objetivo _antes_ del primer tiro
+  terrain = initTerrain( 'terrainContainer', ball, target, windDisplay );
 
   // ── 9) Inicializar Worker de entrenamiento BG ─────
-  //worker = new Worker("js/pelotIA/trainWorker.js"); // clásico
-	worker = new Worker('js/pelotIA/trainWorker.js', { type: 'module' });
+	worker = new Worker("js/pelotIA/trainWorker.js"); // clásico
+	//worker = new Worker('js/pelotIA/trainWorker.js', { type: 'module' });
 	worker.postMessage({ cmd: 'init' });
 	worker.onmessage = ({ data }) => {
 	  if (data.cmd === 'inited')  updateComment('🧠 Worker listo para entrenar');
-	  if (data.cmd === 'trained') updateComment('✅ Entrenamiento BG completado');
+	  worker.onmessage = async ({ data }) => {
+		  if (data.cmd === 'trained') {
+			updateComment('✅ Entrenamiento BG completado');
+			await initNeuralNetwork();  // <— recarga el modelo actualizado
+		  }
+		};
 	};
 
   // ── 10) Disparar primer lanzamiento ─────────────────
   trainAI();
+  
+  const resetInactivity = () => clearTimeout(inactivityTimeout);
+document.querySelectorAll('button').forEach(btn => btn.addEventListener('click', resetInactivity));
+document.addEventListener('mousemove', resetInactivity);
+document.addEventListener('keydown', resetInactivity);
+  
 }
 
+function doNextShot() {
+  throwBall(bestAngle, bestForce);
+}
 
-document.addEventListener("DOMContentLoaded", () => {
-	  const btn = document.getElementById("clear-training");
-	  if (!btn) return;
+// Botón para borrar IA:
+document.getElementById("clear-training")
+  .addEventListener("click", clearModel);
 
-	  btn.addEventListener("click", async () => {
-		// 2.1) Borra IndexedDB y recarga un modelo limpio
-		await clearModel();
 
-		// 2.2) Resetea históricos en memoria y UI
-		attemptLog   = [];
-		bestAttempts = [];
-		attempts     = 0;
-		bestDistance = 0;
-		attemptsDisplay.textContent     = attempts;
-		bestDistanceDisplay.textContent = bestDistance;
+document.getElementById("clear-training")
+  .addEventListener("click", async () => {
+    // 1) Limpiar estado en memoria y UI
+    attemptLog   = [];
+    bestAttempts = [];
+    attempts     = 0;
+    bestDistance = 0;
+    attemptsDisplay.textContent     = attempts;
+    bestDistanceDisplay.textContent = bestDistance;
+    document.querySelectorAll(".trail").forEach(el => el.remove());
+    // Resetea el gráfico de error
+    initErrorChart();
+    updateComment("🗑️ Entrenamientos previos eliminados. IA reiniciada.");
 
-		// 2.3) Limpia trazas en pantalla
-		document.querySelectorAll(".trail").forEach(el => el.remove());
-
-		// 2.4) Reinicia el gráfico de error
-		initErrorChart();
-
-		// 2.5) Feedback al usuario
-		updateComment("🗑️ Entrenamientos previos eliminados. IA reiniciada.");
-
-		// 2.6) Dispara un nuevo lanzamiento
-		trainAI();
-	  });
-});
+    // 2) Borra el modelo de IndexedDB y, al terminar, lanza un nuevo tiro
+    try {
+      await clearModel();
+      trainAI();
+    } catch (e) {
+      console.error(e);
+      updateComment("⚠️ No se pudo eliminar el modelo en IndexedDB.");
+    }
+  });
 
 // 📌 Hacer accesibles globalmente las funciones
 window.startSimulation = startSimulation;
