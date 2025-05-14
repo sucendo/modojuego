@@ -216,208 +216,209 @@
   </div>
 
   <script>
-    let player, isMuted=false, isPlaying=false;
-    let progressBar, timeDisplay, hideControlsTimeout;
-    let saveInterval, playerReady=false;
+		let player, isMuted=false, isPlaying=false;
+		let progressBar, timeDisplay, hideControlsTimeout;
+		let saveInterval, playerReady=false;
 
-    const historyKey = 'ytHistory';
-    const raw = JSON.parse(localStorage.getItem(historyKey) || '{}');
-    const historyData = {};
-    // Migrar datos antiguos si hay (número ➔ {time,title,lastPlayed})
-    for (const [id,val] of Object.entries(raw)) {
-      if (typeof val === 'object') {
-        historyData[id] = {
-          time: val.time||0,
-          title: val.title||id,
-          lastPlayed: val.lastPlayed||new Date().toISOString()
-        };
-      } else {
-        historyData[id] = {
-          time: val,
-          title: id,
-          lastPlayed: new Date().toISOString()
-        };
-      }
-    }
+		const historyKey = 'ytHistory';
+		const raw = JSON.parse(localStorage.getItem(historyKey) || '{}');
+		const historyData = {};
+		// Migrar datos antiguos si hay (número ➔ {time,title,lastPlayed})
+		for (const [id,val] of Object.entries(raw)) {
+		  if (typeof val === 'object') {
+			historyData[id] = {
+			  time: val.time||0,
+			  title: val.title||id,
+			  lastPlayed: val.lastPlayed||new Date().toISOString()
+			};
+		  } else {
+			historyData[id] = {
+			  time: val,
+			  title: id,
+			  lastPlayed: new Date().toISOString()
+			};
+		  }
+		}
 
-    function saveHistory(){
-      localStorage.setItem(historyKey, JSON.stringify(historyData));
-    }
+		function saveHistory(){
+		  localStorage.setItem(historyKey, JSON.stringify(historyData));
+		}
 
-    function renderHistory(){
-      const ul = document.getElementById('history-list');
-      ul.innerHTML = '';
-      // Ordenar por lastPlayed descendente
-      const items = Object.entries(historyData)
-        .sort((a,b) => new Date(b[1].lastPlayed) - new Date(a[1].lastPlayed));
-      for (const [id,data] of items) {
-        const m = Math.floor(data.time/60), s = Math.floor(data.time%60);
-        const ts = `${m}:${s<10?'0':''}${s}`;
-        // Fecha legible
-        const fecha = new Date(data.lastPlayed)
-                        .toLocaleString('es-ES', { dateStyle:'short', timeStyle:'short' });
-        const li = document.createElement('li');
-        li.className = 'history-item';
-        li.innerHTML = `
-          <div>
-            <span><strong>${data.title}</strong> — ${ts}</span>
-            <span class="history-meta">${fecha}</span>
-          </div>
-          <div>
-            <button class="play-button" data-id="${id}" data-time="${data.time}">
-              Reproducir
-            </button>
-            <button class="delete-button" data-id="${id}">✖</button>
-          </div>
-        `;
-        li.querySelector('.play-button').onclick = e => {
-          loadAndPlay(e.target.dataset.id, parseFloat(e.target.dataset.time));
-        };
-        li.querySelector('.delete-button').onclick = e => {
-          delete historyData[e.target.dataset.id];
-          saveHistory();
-          renderHistory();
-        };
-        ul.appendChild(li);
-      }
-    }
+		function renderHistory(){
+		  const ul = document.getElementById('history-list');
+		  ul.innerHTML = '';
+		  // Ordenar por lastPlayed descendente
+		  const items = Object.entries(historyData)
+			.sort((a,b) => new Date(b[1].lastPlayed) - new Date(a[1].lastPlayed));
+		  for (const [id,data] of items) {
+			const m = Math.floor(data.time/60), s = Math.floor(data.time%60);
+			const ts = `${m}:${s<10?'0':''}${s}`;
+			// Fecha legible
+			const fecha = new Date(data.lastPlayed)
+							.toLocaleString('es-ES', { dateStyle:'short', timeStyle:'short' });
+			const li = document.createElement('li');
+			li.className = 'history-item';
+			li.innerHTML = `
+			  <div>
+				<span><strong>${data.title}</strong> — ${ts}</span>
+				<span class="history-meta">${fecha}</span>
+			  </div>
+			  <div>
+				<button class="play-button" data-id="${id}" data-time="${data.time}">
+				  Reproducir
+				</button>
+				<button class="delete-button" data-id="${id}">✖</button>
+			  </div>
+			`;
+			li.querySelector('.play-button').onclick = e => {
+			  loadAndPlay(e.target.dataset.id, parseFloat(e.target.dataset.time));
+			};
+			li.querySelector('.delete-button').onclick = e => {
+			  delete historyData[e.target.dataset.id];
+			  saveHistory();
+			  renderHistory();
+			};
+			ul.appendChild(li);
+		  }
+		}
 
-    function updateProgressStorage(){
-      if (player && player.getCurrentTime) {
-        const id  = player.getVideoData().video_id;
-        const cur = player.getCurrentTime();
-        if (id) {
-          historyData[id].time = cur;
-          historyData[id].lastPlayed = new Date().toISOString();
-          saveHistory();
-          renderHistory();
-        }
-      }
-    }
+		function updateProgressStorage(){
+		  if (player && player.getCurrentTime) {
+			const id  = player.getVideoData().video_id;
+			const cur = player.getCurrentTime();
+			if (id) {
+			  historyData[id].time = cur;
+			  historyData[id].lastPlayed = new Date().toISOString();
+			  saveHistory();
+			  renderHistory();
+			}
+		  }
+		}
 
-    function parseVideoID(url){
-      const v = url.match(/[?&]v=([^&]+)/),
-            s = url.match(/youtu\.be\/([^?&]+)/);
-      return v ? v[1] : s ? s[1] : null;
-    }
+		function parseVideoID(url){
+		  const v = url.match(/[?&]v=([^&]+)/),
+				s = url.match(/youtu\.be\/([^?&]+)/);
+		  return v ? v[1] : s ? s[1] : null;
+		}
 
-    function onYouTubeIframeAPIReady(){
-      player = new YT.Player('video-placeholder', {
-        videoId: '',
-        playerVars: {
-          autoplay:0, controls:0, rel:0,
-          modestbranding:1, playsinline:1
-        },
-        events: {
-          onReady: () => {
-            playerReady = true;
-            const iframe = player.getIframe();
-            iframe.setAttribute(
-              'allow',
-              'autoplay; encrypted-media; accelerometer; gyroscope; picture-in-picture; clipboard-write; web-share'
-            );
-            progressBar = document.getElementById('progress-bar');
-            timeDisplay = document.getElementById('time-display');
-            updateProgressBar();
-            renderHistory();
-          },
-          onStateChange: e => {
-            clearInterval(saveInterval);
-            if (e.data === YT.PlayerState.PLAYING) {
-              isPlaying = true;
-              saveInterval = setInterval(updateProgressStorage, 2000);
-              hideControls();
-            } else {
-              isPlaying = false;
-              showControls();
-            }
-            document.getElementById('playPauseButton')
-                    .innerText = isPlaying?'⏸️':'▶️';
-          },
-          onError: () => alert('Error al reproducir el vídeo.')
-        }
-      });
-    }
+		function onYouTubeIframeAPIReady(){
+		  player = new YT.Player('video-placeholder', {
+			videoId: '',
+			playerVars: {
+			  autoplay:0, controls:0, rel:0,
+			  modestbranding:1, playsinline:1, showinfo: 0,
+			cc_load_policy: 1, hl: 'es', playsinline:   1
+			},
+			events: {
+			  onReady: () => {
+				playerReady = true;
+				const iframe = player.getIframe();
+				iframe.setAttribute(
+				  'allow',
+				  'autoplay; encrypted-media; accelerometer; gyroscope; picture-in-picture; clipboard-write; web-share'
+				);
+				progressBar = document.getElementById('progress-bar');
+				timeDisplay = document.getElementById('time-display');
+				updateProgressBar();
+				renderHistory();
+			  },
+			  onStateChange: e => {
+				clearInterval(saveInterval);
+				if (e.data === YT.PlayerState.PLAYING) {
+				  isPlaying = true;
+				  saveInterval = setInterval(updateProgressStorage, 2000);
+				  hideControls();
+				} else {
+				  isPlaying = false;
+				  showControls();
+				}
+				document.getElementById('playPauseButton')
+						.innerText = isPlaying?'⏸️':'▶️';
+			  },
+			  onError: () => alert('Error al reproducir el vídeo.')
+			}
+		  });
+		}
 
-	function loadAndPlay(id, start = 0) {
-	  if (!playerReady) return setTimeout(() => loadAndPlay(id, start), 100);
-	  player.loadVideoById({ videoId: id, startSeconds: start });
-	  player.playVideo();
+		function loadAndPlay(id, start = 0) {
+		  if (!playerReady) return setTimeout(() => loadAndPlay(id, start), 100);
+		  player.loadVideoById({ videoId: id, startSeconds: start });
+		  player.playVideo();
 
-	  // Creo la entrada si no existe y actualizo lastPlayed
-	  historyData[id] = historyData[id] || { time: start, title: id };
-	  historyData[id].lastPlayed = new Date().toISOString();
-	  saveHistory();
-	  renderHistory();
-
-	  // 🚀 Aquí pedimos el título real y volvemos a renderizar
-	  fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${id}&format=json`)
-		.then(res => res.json())
-		.then(o => {
-		  historyData[id].title = o.title;
+		  // Creo la entrada si no existe y actualizo lastPlayed
+		  historyData[id] = historyData[id] || { time: start, title: id };
+		  historyData[id].lastPlayed = new Date().toISOString();
 		  saveHistory();
 		  renderHistory();
-		})
-		.catch(_ => {/* si falla, dejamos el ID como título */});
-	}
 
-    document.getElementById('load-btn').onclick = () => {
-      const url = document.getElementById('url-input').value.trim();
-      const id  = parseVideoID(url);
-      if (!id) return alert('URL no válida');
-      loadAndPlay(id, 0);
-    };
+		  // 🚀 Aquí pedimos el título real y volvemos a renderizar
+		  fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${id}&format=json`)
+			.then(res => res.json())
+			.then(o => {
+			  historyData[id].title = o.title;
+			  saveHistory();
+			  renderHistory();
+			})
+			.catch(_ => {/* si falla, dejamos el ID como título */});
+		}
 
-    // Controles de reproducción
-    function togglePlayPause(){
-      if (!player) return;
-      isPlaying ? player.pauseVideo() : player.playVideo();
-    }
-    function skipForward(){ player.seekTo(player.getCurrentTime()+30, true); }
-    function skipBackward(){ player.seekTo(Math.max(player.getCurrentTime()-10,0), true); }
-    function changeVolume(v){ player.setVolume(v); }
-    function seekVideo(v){ player.seekTo((v/100)*player.getDuration(), true); }
-    function toggleFullScreen(){
-      const c = document.getElementById('video-container');
-      document.fullscreenElement ? document.exitFullscreen() : c.requestFullscreen();
-    }
-    function showControls(){
-      clearTimeout(hideControlsTimeout);
-      document.getElementById('video-container').classList.remove('hide-controls');
-      if (isPlaying) {
-        hideControlsTimeout = setTimeout(() => {
-          document.getElementById('video-container').classList.add('hide-controls');
-        }, 2000);
-      }
-    }
-    function hideControls(){
-      if (isPlaying) {
-        hideControlsTimeout = setTimeout(() => {
-          document.getElementById('video-container').classList.add('hide-controls');
-        }, 2000);
-      }
-    }
+		document.getElementById('load-btn').onclick = () => {
+		  const url = document.getElementById('url-input').value.trim();
+		  const id  = parseVideoID(url);
+		  if (!id) return alert('URL no válida');
+		  loadAndPlay(id, 0);
+		};
 
-    function updateProgressBar(){
-      setInterval(() => {
-        if (player && typeof player.getDuration==='function') {
-          const c = player.getCurrentTime(), d = player.getDuration();
-          progressBar.value = (c/d)*100;
-          timeDisplay.innerText = `${formatTime(c)} / ${formatTime(d)}`;
-        }
-      }, 500);
-    }
-    function formatTime(s){
-      const m = Math.floor(s/60), sec = Math.floor(s%60);
-      return `${m}:${sec<10?'0':''}${sec}`;
-    }
+		// Controles de reproducción
+		function togglePlayPause(){
+		  if (!player) return;
+		  isPlaying ? player.pauseVideo() : player.playVideo();
+		}
+		function skipForward(){ player.seekTo(player.getCurrentTime()+30, true); }
+		function skipBackward(){ player.seekTo(Math.max(player.getCurrentTime()-10,0), true); }
+		function changeVolume(v){ player.setVolume(v); }
+		function seekVideo(v){ player.seekTo((v/100)*player.getDuration(), true); }
+		function toggleFullScreen(){
+		  const c = document.getElementById('video-container');
+		  document.fullscreenElement ? document.exitFullscreen() : c.requestFullscreen();
+		}
+		function showControls(){
+		  clearTimeout(hideControlsTimeout);
+		  document.getElementById('video-container').classList.remove('hide-controls');
+		  if (isPlaying) {
+			hideControlsTimeout = setTimeout(() => {
+			  document.getElementById('video-container').classList.add('hide-controls');
+			}, 2000);
+		  }
+		}
+		function hideControls(){
+		  if (isPlaying) {
+			hideControlsTimeout = setTimeout(() => {
+			  document.getElementById('video-container').classList.add('hide-controls');
+			}, 2000);
+		  }
+		}
 
-    // Carga inicial de la API YouTube
-    (function(){
-      const tag = document.createElement('script');
-      tag.src = 'https://www.youtube.com/iframe_api';
-      document.head.appendChild(tag);
-    })();
+		function updateProgressBar(){
+		  setInterval(() => {
+			if (player && typeof player.getDuration==='function') {
+			  const c = player.getCurrentTime(), d = player.getDuration();
+			  progressBar.value = (c/d)*100;
+			  timeDisplay.innerText = `${formatTime(c)} / ${formatTime(d)}`;
+			}
+		  }, 500);
+		}
+		function formatTime(s){
+		  const m = Math.floor(s/60), sec = Math.floor(s%60);
+		  return `${m}:${sec<10?'0':''}${sec}`;
+		}
+
+		// Carga inicial de la API YouTube
+		(function(){
+		  const tag = document.createElement('script');
+		  tag.src = 'https://www.youtube.com/iframe_api';
+		  document.head.appendChild(tag);
+		})();
   </script>
 </body>
 </html>
