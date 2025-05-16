@@ -38,7 +38,7 @@
       height: 100% !important;
     }
     #controls-container {
-      position: absolute; bottom: 0; width: 100%; height: 45px;
+      position: absolute; bottom: 0; width: 100%; height: 35px;
       background: rgba(0,0,0,0.5);
       display: flex; flex-direction: column;
       z-index: 3;
@@ -54,8 +54,87 @@
     button { background: none; border: none; color: #fff; font-size: 24px; cursor: pointer; }
     #progress-bar { width: calc(100% - 5px); margin-top: -4px; }
     #mute-container { position: relative; display: inline-flex; align-items: center; }
-    #volume-control { display: none; width: 80px; margin-left: 5px; }
+    #volume-control { display: none; width: 60px; margin-left: 5px; }
     #mute-container:hover #volume-control { display: inline-block; }
+	
+	/*especial progress bar */
+	
+	/* Estilos comunes para sliders */
+input[type="range"] {
+  -webkit-appearance: none;
+  background: transparent;
+}
+
+/* Track (fondo) semitransparente y más fino */
+#progress-bar,
+#volume-control {
+  height: 4px;                          /* grosor reducido */
+}
+
+/* Chrome, Safari, Edge */
+#progress-bar::-webkit-slider-runnable-track,
+#volume-control::-webkit-slider-runnable-track {
+  height: 4px;
+  /*background: rgba(255, 255, 255, 0.5); *//* blanco al 50% */
+  border-radius: 2px;
+}
+
+#volume-control::-webkit-slider-runnable-track {
+	background: rgba(255, 255, 255, 0.5); /* blanco al 50% */
+}
+
+/* Thumb (control deslizante) */
+#progress-bar::-webkit-slider-thumb,
+#volume-control::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px; height: 12px;
+  background: #fff;
+  border-radius: 50%;
+  margin-top: -4px; /* centra el thumb en el track */
+  cursor: pointer;
+}
+
+/* Firefox */
+#progress-bar::-moz-range-track,
+#volume-control::-moz-range-track {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 2px;
+}
+#progress-bar::-moz-range-thumb,
+#volume-control::-moz-range-thumb {
+  width: 12px; height: 12px;
+  background: #fff;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+/* IE */
+#progress-bar::-ms-track,
+#volume-control::-ms-track {
+  height: 4px;
+  background: transparent;
+  border-color: transparent;
+  color: transparent;
+}
+#progress-bar::-ms-fill-lower,
+#volume-control::-ms-fill-lower {
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 2px;
+}
+#progress-bar::-ms-fill-upper,
+#volume-control::-ms-fill-upper {
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 2px;
+}
+#progress-bar::-ms-thumb,
+#volume-control::-ms-thumb {
+  width: 12px; height: 12px;
+  background: #fff;
+  border-radius: 50%;
+  margin-top: 0; /* ya está centrado */
+  cursor: pointer;
+}
 	
 	#repeatButton {
 	  background: none;
@@ -66,6 +145,17 @@
 	}
 	/* cuando esté activo, le damos un color destacado */
 	#repeatButton.active {
+	  color: #0e71b4;
+	}
+	
+	#openButton {
+	  background: none;
+	  border: none;
+	  font-size: 20px;
+	  color: #fff;
+	  cursor: pointer;
+	}
+	#openButton:hover {
 	  color: #0e71b4;
 	}
 
@@ -151,7 +241,7 @@
 #gesture-overlay {
   position: absolute;
   top: 0; left: 0; right: 0;
-  bottom: 45px;        
+  bottom: 40px;        
   display: none;
   align-items: center;
   justify-content: center;
@@ -166,7 +256,7 @@
   position: absolute;
   bottom: 0; left: 0;
   width: 100%;
-  height: 45px;       /* igual altura que controls-container */
+  height: 40px;       /* igual altura que controls-container */
   z-index: 5;         /* por encima del gesture-overlay */
   display: none;      /* sólo se activa vía la siguiente regla */
 }
@@ -221,6 +311,9 @@
     font-size: 0.8rem;
     padding: 4px 6px;
   }
+  .left-controls, .right-controls {
+    gap: 2px;
+	}
 }
 
 @media (max-width: 600px) {
@@ -288,6 +381,7 @@
         <div class="right-controls">
           <div id="time-display">0:00 / 0:00</div>
 		  <button id="repeatButton">🔁</button>
+		  <button id="openButton">🔗</button>
           <button onclick="toggleFullScreen()">⛶</button>
         </div>
       </div>
@@ -384,6 +478,15 @@
 		  document.getElementById('repeatButton')
 				  .classList.toggle('active', isRepeat);
 		};	
+		
+		document.getElementById('openButton').onclick = () => {
+		  if (!player || !player.getVideoData) return;
+		  const id   = player.getVideoData().video_id;
+		  const sec  = Math.floor(player.getCurrentTime());
+		  // Construimos la URL con el parámetro de tiempo
+		  const url  = `https://www.youtube.com/watch?v=${id}&t=${sec}s`;
+		  window.open(url, '_blank');
+		};
 
 		function parseVideoID(url){
 		  const v = url.match(/[?&]v=([^&]+)/),
@@ -503,13 +606,31 @@
 
 		function updateProgressBar(){
 		  setInterval(() => {
-			if (player && typeof player.getDuration==='function') {
-			  const c = player.getCurrentTime(), d = player.getDuration();
-			  progressBar.value = (c/d)*100;
+			if (player && typeof player.getDuration === 'function') {
+			  const c = player.getCurrentTime();
+			  const d = player.getDuration();
+			  const percent = (c / d) * 100;
+
+			  // 1) Valor normal
+			  progressBar.value = percent;
+
+			  // 2) Background dinámico: azul hasta 'percent%', blanco50% resto
+			  progressBar.style.background = 
+				`linear-gradient(to right, 
+				  #0e71b4 0%, 
+				  #0e71b4 ${percent}%, 
+				  rgba(255,255,255,0.5) ${percent}%, 
+				  rgba(255,255,255,0.5) 100%)`;
+
+			  // Igual para volume-control si quieres el mismo efecto:
+			  // const v = player.isMuted() ? 0 : player.getVolume();
+			  // volumeControl.style.background = `linear-gradient(to right, #0e71b4 0%, #0e71b4 ${v}%, rgba(255,255,255,0.5) ${v}%, rgba(255,255,255,0.5) 100%)`;
+			  
 			  timeDisplay.innerText = `${formatTime(c)} / ${formatTime(d)}`;
 			}
 		  }, 500);
 		}
+		
 		function formatTime(s){
 		  const m = Math.floor(s/60), sec = Math.floor(s%60);
 		  return `${m}:${sec<10?'0':''}${sec}`;
@@ -523,53 +644,53 @@
 		})();
 		
 		const controlCapture = document.getElementById('control-capture');
-controlCapture.addEventListener('touchend', e => {
-  // mostramos los controles y evitamos que el evento baje más
-  showControls();
-  e.stopPropagation();
-  e.preventDefault();
-}, { passive: false });
-		
+		controlCapture.addEventListener('touchend', e => {
+		  // mostramos los controles y evitamos que el evento baje más
+		  showControls();
+		  e.stopPropagation();
+		  e.preventDefault();
+		}, { passive: false });
+				
 		// Detector de taps del video-container
 		(function setupMobileGestures(){
-  const vc       = document.getElementById('video-container');
-  const overlay  = document.getElementById('gesture-overlay');
-  const controls = document.getElementById('controls-container');
+		  const vc       = document.getElementById('video-container');
+		  const overlay  = document.getElementById('gesture-overlay');
+		  const controls = document.getElementById('controls-container');
 
-  vc.addEventListener('touchend', e => {
-    const vcRect = vc.getBoundingClientRect();
-    const touch  = e.changedTouches[0];
-    const x      = touch.clientX - vcRect.left;
-    const y      = touch.clientY - vcRect.top;
-    const ch     = controls.getBoundingClientRect().height;
+		  vc.addEventListener('touchend', e => {
+			const vcRect = vc.getBoundingClientRect();
+			const touch  = e.changedTouches[0];
+			const x      = touch.clientX - vcRect.left;
+			const y      = touch.clientY - vcRect.top;
+			const ch     = controls.getBoundingClientRect().height;
 
-    // 1) Si estás tocando en la franja inferior (donde van los controles),
-    //    sólo mostramos controles, no ejecutamos skip/play:
-    if (y > vcRect.height - ch) {
-      showControls();
-      return;
-    }
+			// 1) Si estás tocando en la franja inferior (donde van los controles),
+			//    sólo mostramos controles, no ejecutamos skip/play:
+			if (y > vcRect.height - ch) {
+			  showControls();
+			  return;
+			}
 
-    // 2) Si los controles están ocultos, primer toque los muestra:
-    if (vc.classList.contains('hide-controls')) {
-      showControls();
-      return;
-    }
+			// 2) Si los controles están ocultos, primer toque los muestra:
+			if (vc.classList.contains('hide-controls')) {
+			  showControls();
+			  return;
+			}
 
-    // 3) Controles visibles y fuera de la zona de controles → acción:
-    if (x < vcRect.width * 0.33) {
-      skipBackward(); overlay.textContent = '⏪ 10s';
-    } else if (x > vcRect.width * 0.66) {
-      skipForward();  overlay.textContent = '30s ⏩';
-    } else {
-      togglePlayPause();
-      overlay.textContent = isPlaying ? '⏸️' : '▶️';
-    }
+			// 3) Controles visibles y fuera de la zona de controles → acción:
+			if (x < vcRect.width * 0.33) {
+			  skipBackward(); overlay.textContent = '⏪ 10s';
+			} else if (x > vcRect.width * 0.66) {
+			  skipForward();  overlay.textContent = '30s ⏩';
+			} else {
+			  togglePlayPause();
+			  overlay.textContent = isPlaying ? '⏸️' : '▶️';
+			}
 
-    overlay.style.display = 'flex';
-    setTimeout(() => overlay.style.display = 'none', 600);
-  }, { passive: true });
-})();
+			overlay.style.display = 'flex';
+			setTimeout(() => overlay.style.display = 'none', 600);
+		  }, { passive: true });
+		})();
 
   </script>
 </body>
