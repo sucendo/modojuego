@@ -4,6 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Reproductor YouTube con Historial Detallado</title>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <style>
     body {
       margin: 0; padding: 20px;
@@ -46,7 +47,7 @@
     }
     #video-container.hide-controls #controls-container { opacity: 0; pointer-events: none; }
     .buttons-container {
-      display: flex; justify-content: space-between; align-items: center; width: calc(100% - 5px);
+      display: flex; justify-content: space-between; align-items: center; width: calc(100% - 0px); margin-top: 4px;
     }
     .left-controls, .right-controls {
       display: flex; align-items: center; gap: 10px;
@@ -369,20 +370,20 @@ input[type="range"] {
              oninput="seekVideo(this.value)" />
       <div class="buttons-container">
         <div class="left-controls">
-          <button onclick="skipBackward()">⏪</button>
-          <button id="playPauseButton" onclick="togglePlayPause()">▶️</button>
-          <button onclick="skipForward()">⏩</button>
+          <button onclick="skipBackward()"><span class="material-icons">skip_previous</span></button>
+          <button id="playPauseButton" onclick="togglePlayPause()"><span class="material-icons">play_arrow</span></button>
+          <button onclick="skipForward()"><span class="material-icons">skip_next</span></button>
           <div id="mute-container">
-            <button id="muteButton" onclick="toggleMute()">🔊</button>
+            <button id="muteButton" onclick="toggleMute()"><span class="material-icons">volume_up</span></button>
             <input id="volume-control" type="range" min="0" max="100" value="50"
                    oninput="changeVolume(this.value)" />
           </div>		  
         </div>
         <div class="right-controls">
           <div id="time-display">0:00 / 0:00</div>
-		  <button id="repeatButton">🔁</button>
-		  <button id="openButton">🔗</button>
-          <button onclick="toggleFullScreen()">⛶</button>
+		  <button id="repeatButton"><span class="material-icons">repeat</span></button>
+		  <button id="openButton"><span class="material-icons">open_in_new</span></button>
+          <button onclick="toggleFullScreen()"><span class="material-icons">fullscreen</span></button>
         </div>
       </div>
     </div>
@@ -493,6 +494,15 @@ input[type="range"] {
 				s = url.match(/youtu\.be\/([^?&]+)/);
 		  return v ? v[1] : s ? s[1] : null;
 		}
+		
+		function updatePlayButton() {
+		  let btn = document.getElementById("playPauseButton");
+		  if (isPlaying) {
+			btn.innerHTML = '<span class="material-icons">pause</span>';
+		  } else {
+			btn.innerHTML = '<span class="material-icons">play_arrow</span>';
+		  }
+		}
 
 		function onYouTubeIframeAPIReady(){
 		  player = new YT.Player('video-placeholder', {
@@ -536,8 +546,9 @@ input[type="range"] {
 				  isPlaying = false;
 				  showControls();
 				}
-				document.getElementById('playPauseButton')
-						.innerText = isPlaying?'⏸️':'▶️';
+				
+				// Actualiza el icono del botón play/pause
+				updatePlayButton();
 			  },
 			  onError: () => alert('Error al reproducir el vídeo.')
 			}
@@ -653,44 +664,48 @@ input[type="range"] {
 				
 		// Detector de taps del video-container
 		(function setupMobileGestures(){
-		  const vc       = document.getElementById('video-container');
-		  const overlay  = document.getElementById('gesture-overlay');
-		  const controls = document.getElementById('controls-container');
+			  const vc       = document.getElementById('video-container');
+			  const overlay  = document.getElementById('gesture-overlay');
+			  const controls = document.getElementById('controls-container');
 
-		  vc.addEventListener('touchend', e => {
-			const vcRect = vc.getBoundingClientRect();
-			const touch  = e.changedTouches[0];
-			const x      = touch.clientX - vcRect.left;
-			const y      = touch.clientY - vcRect.top;
-			const ch     = controls.getBoundingClientRect().height;
+			  vc.addEventListener('touchend', e => {
+				const vcRect = vc.getBoundingClientRect();
+				const touch  = e.changedTouches[0];
+				const x      = touch.clientX - vcRect.left;
+				const y      = touch.clientY - vcRect.top;
+				const ch     = controls.getBoundingClientRect().height;
 
-			// 1) Si estás tocando en la franja inferior (donde van los controles),
-			//    sólo mostramos controles, no ejecutamos skip/play:
-			if (y > vcRect.height - ch) {
-			  showControls();
-			  return;
-			}
+				// 1) Si estás tocando en la franja inferior, solo mostramos controles
+				if (y > vcRect.height - ch) {
+				  showControls();
+				  return;
+				}
 
-			// 2) Si los controles están ocultos, primer toque los muestra:
-			if (vc.classList.contains('hide-controls')) {
-			  showControls();
-			  return;
-			}
+				// 2) Si los controles están ocultos, primer toque los muestra
+				if (vc.classList.contains('hide-controls')) {
+				  showControls();
+				  return;
+				}
 
-			// 3) Controles visibles y fuera de la zona de controles → acción:
-			if (x < vcRect.width * 0.33) {
-			  skipBackward(); overlay.textContent = '⏪ 10s';
-			} else if (x > vcRect.width * 0.66) {
-			  skipForward();  overlay.textContent = '30s ⏩';
-			} else {
-			  togglePlayPause();
-			  overlay.textContent = isPlaying ? '⏸️' : '▶️';
-			}
+				// 3) Controles visibles y fuera de la zona de controles → acción
+				if (x < vcRect.width * 0.33) {
+				  skipBackward();
+				  overlay.innerHTML = '<span class="material-icons">replay_10</span>';
+				} else if (x > vcRect.width * 0.66) {
+				  skipForward();
+				  overlay.innerHTML = '<span class="material-icons">forward_30</span>';
+				} else {
+				  togglePlayPause();
+				  overlay.innerHTML = isPlaying
+					? '<span class="material-icons">pause</span>'
+					: '<span class="material-icons">play_arrow</span>';
+				}
 
-			overlay.style.display = 'flex';
-			setTimeout(() => overlay.style.display = 'none', 600);
-		  }, { passive: true });
-		})();
+				// Mostramos el overlay centrado con el icono
+				overlay.style.display = 'flex';
+				setTimeout(() => overlay.style.display = 'none', 600);
+			  }, { passive: true });
+			})();
 
   </script>
 </body>
