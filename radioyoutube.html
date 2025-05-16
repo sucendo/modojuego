@@ -15,6 +15,8 @@
 	<link rel="icon" type="image/png" sizes="16x16" href="img/radioyoutube/favicon-16.png">
 	<link rel="icon" type="image/png" sizes="32x32" href="img/radioyoutube/favicon-32.png">
 	<link rel="apple-touch-icon" href="img/radioyoutube/apple-touch-icon.png">
+	
+	<meta name="theme-color" content="#0e71b4">
 
   
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -569,6 +571,10 @@ input[type="range"] {
 			}
 		  });
 		}
+		
+		function randomHexColor() {
+		  return '#' + Math.floor(Math.random() * 0xFFFFFF).toString(16).padStart(6, '0');
+		}
 
 		function loadAndPlay(id, start = 0) {
 		  if (!playerReady) return setTimeout(() => loadAndPlay(id, start), 100);
@@ -590,6 +596,13 @@ input[type="range"] {
 			  renderHistory();
 			})
 			.catch(_ => {/* si falla, dejamos el ID como título */});
+			
+			// → CAMBIO DE COLOR DE LA BARRA:
+			  const newColor = randomHexColor();
+			  setThemeColor(newColor);
+
+			  player.loadVideoById({ videoId: id, startSeconds: start });
+			  player.playVideo();
 		}
 
 		document.getElementById('load-btn').onclick = () => {
@@ -721,6 +734,17 @@ input[type="range"] {
 				setTimeout(() => overlay.style.display = 'none', 600);
 			  }, { passive: true });
 			})();
+			
+			function setThemeColor(color) {
+			  let meta = document.querySelector("meta[name='theme-color']");
+			  if (!meta) {
+				// si no existe, la creamos
+				meta = document.createElement('meta');
+				meta.setAttribute('name', 'theme-color');
+				document.head.appendChild(meta);
+			  }
+			  meta.setAttribute('content', color);
+			}
 
   </script>
 </body>
