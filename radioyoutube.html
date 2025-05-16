@@ -4,6 +4,19 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Reproductor YouTube con Historial Detallado</title>
+  
+  <!-- Favicon -->
+  <link
+    rel="icon"
+    type="image/png"
+    href="img/radioyoutube/favicon.png"
+    sizes="32x32"
+  />
+	<link rel="icon" type="image/png" sizes="16x16" href="img/radioyoutube/favicon-16.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="img/radioyoutube/favicon-32.png">
+	<link rel="apple-touch-icon" href="img/radioyoutube/apple-touch-icon.png">
+
+  
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <style>
     body {
@@ -33,7 +46,9 @@
       position: absolute; top: 0; left: 0;
       width: 100%; height: 100%;
 	  pointer-events: none;
+	  background: url('img/radioyoutube/favicon.png') center/contain no-repeat;
     }
+	
     #video-placeholder iframe {
       width: 100% !important;
       height: 100% !important;
