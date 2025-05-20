@@ -284,6 +284,24 @@ input[type="range"] {
   /* detecta toques pero deja pasar clicks a los botones sólo cuando controles visibles */
 }
 
+/* El overlay por defecto no capta eventos */
+#gesture-overlay {
+  pointer-events: none;
+}
+
+/* Cuando el vídeo termine y no estemos en repeat, activamos este estado */
+#video-container.video-ended #gesture-overlay {
+  pointer-events: auto;    /* ahora sí captará el tap */
+  display: flex !important;/* lo mantenemos visible */
+}
+
+#gesture-overlay > .material-icons {
+	font-size:50px;
+	margin-top:36px;
+	background: rgba(0, 0, 0, 0.5);
+    border-radius: 100%;
+}
+
 /* ===== MÓVIL ===== */
 
 @media (max-width: 600px) {
@@ -415,6 +433,11 @@ input[type="range"] {
 		let player, isMuted=false, isPlaying=false, isRepeat = false;
 		let progressBar, timeDisplay, hideControlsTimeout;
 		let saveInterval, playerReady=false;
+		let firstLoad = true;
+		
+		const volumeKey = 'ytVolume';
+		let savedVolume = parseInt(localStorage.getItem(volumeKey));
+		if (isNaN(savedVolume)) savedVolume = 100;  // default 100%
 
 		const historyKey = 'ytHistory';
 		const raw = JSON.parse(localStorage.getItem(historyKey) || '{}');
@@ -537,36 +560,52 @@ input[type="range"] {
 				  'allow',
 				  'autoplay; encrypted-media; accelerometer; gyroscope; picture-in-picture; clipboard-write; web-share'
 				);
+				
+				// ↪ aplica el volumen guardado
+				  player.setVolume(savedVolume);
+				  const volControl = document.getElementById('volume-control');
+				  volControl.value = savedVolume;
+				
 				progressBar = document.getElementById('progress-bar');
 				timeDisplay = document.getElementById('time-display');
 				updateProgressBar();
 				renderHistory();
 			  },
 			  onStateChange: e => {
-				clearInterval(saveInterval);
-				if (e.data === YT.PlayerState.PLAYING) {
-				  isPlaying = true;
-				  saveInterval = setInterval(updateProgressStorage, 2000);
-				  hideControls();
+			  clearInterval(saveInterval);
+
+			  if (e.data === YT.PlayerState.PLAYING) {
+				isPlaying    = true;
+				saveInterval = setInterval(updateProgressStorage, 2000);
+				hideControls();
+				// Nos aseguramos de quitar video-ended si volvemos a jugar
+				document.getElementById('video-container')
+						.classList.remove('video-ended');
+
+			  } else if (e.data === YT.PlayerState.ENDED) {
+				if (isRepeat) {
+				  player.seekTo(0);
+				  player.playVideo();
+				  return;
 				}
-				else if (e.data === YT.PlayerState.ENDED) {
-				  // aquí procesamos el fin de vídeo
-				  if (isRepeat) {
-					// modo repeat activo → reiniciamos
-					player.seekTo(0);
-					player.playVideo();
-					return;  // salimos sin mostrar controles
-				  }
-				  // si no repetimos, caemos al showControls más abajo
-				  isPlaying = false;
-				} else {
-				  isPlaying = false;
-				  showControls();
-				}
-				
-				// Actualiza el icono del botón play/pause
-				updatePlayButton();
-			  },
+				isPlaying = false;
+				showControls();
+
+				// 🚩 Estado “acabado” y repeat OFF: mostramos el overlay con replay
+				const vc = document.getElementById('video-container');
+				vc.classList.add('video-ended');
+
+				const overlay = document.getElementById('gesture-overlay');
+				overlay.innerHTML = '<span class="material-icons">replay</span>';
+				// display flex lo gestiona la clase .video-ended
+			  }
+			  else {
+				isPlaying = false;
+				showControls();
+			  }
+
+			  updatePlayButton();
+			},
 			  onError: () => alert('Error al reproducir el vídeo.')
 			}
 		  });
@@ -620,7 +659,11 @@ input[type="range"] {
 		}
 		function skipForward(){ player.seekTo(player.getCurrentTime()+30, true); }
 		function skipBackward(){ player.seekTo(Math.max(player.getCurrentTime()-10,0), true); }
-		function changeVolume(v){ player.setVolume(v); }
+		function changeVolume(v) {
+		  const vol = parseInt(v);
+		  player.setVolume(vol);
+		  localStorage.setItem(volumeKey, vol);  // guarda la preferencia
+		}
 		function seekVideo(v){ player.seekTo((v/100)*player.getDuration(), true); }
 		function toggleFullScreen(){
 		  const c = document.getElementById('video-container');
@@ -735,6 +778,19 @@ input[type="range"] {
 			  }, { passive: true });
 			})();
 			
+			// Listener para el botón de “replay” fijo
+			const overlay = document.getElementById('gesture-overlay');
+			overlay.addEventListener('touchend', e => {
+			  const vc = document.getElementById('video-container');
+			  if (!vc.classList.contains('video-ended')) return;
+			  // Reiniciamos el vídeo
+			  player.seekTo(0);
+			  player.playVideo();
+			  vc.classList.remove('video-ended');
+			  // Ocultamos el overlay
+			  overlay.style.display = 'none';
+			}, { passive: true });
+			
 			function setThemeColor(color) {
 			  let meta = document.querySelector("meta[name='theme-color']");
 			  if (!meta) {
@@ -745,6 +801,23 @@ input[type="range"] {
 			  }
 			  meta.setAttribute('content', color);
 			}
+			
+			window.addEventListener('load', () => {
+			  const tryLoadLast = () => {
+				if (!playerReady) {
+				  return setTimeout(tryLoadLast, 100);
+				}
+				if (firstLoad && Object.keys(historyData).length > 0) {
+				  // Ordena por lastPlayed y coge el más reciente
+				  const [lastId, lastData] = Object.entries(historyData)
+					.sort((a, b) => new Date(b[1].lastPlayed) - new Date(a[1].lastPlayed))[0];
+				  // Carga y reproduce donde lo dejaste
+				  loadAndPlay(lastId, lastData.time);
+				  firstLoad = false;
+				}
+			  };
+			  tryLoadLast();
+			});
 
   </script>
 </body>
