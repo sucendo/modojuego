@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Simulador de Vuelo con CesiumJS</title>
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.118/Build/Cesium/Cesium.js"></script>
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.118/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+  <style>
+    html, body, #cesiumContainer {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: sans-serif;
+    }
+  </style>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<div id="hud" style="
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  font-family: monospace;
+  padding: 10px;
+  font-size: 14px;
+  z-index: 999;
+  border-radius: 5px;
+">
+  <div><strong>Coordenadas:</strong> <span id="coords">---</span></div>
+  <div><strong>Altitud:</strong> <span id="alt">---</span> m</div>
+  <div><strong>Velocidad:</strong> <span id="spd">---</span> km/h</div>
+  <div><strong>Potencia:</strong>  <span id="throttle">---</span>%</div>
+  <div><strong>Pitch:</strong> <span id="pitch">---</span>°</div>
+  <div><strong>Yaw:</strong> <span id="yaw">---</span>°</div>
+  <div><strong>Roll:</strong> <span id="roll">---</span>°</div>
+</div>
+
+<script>
+(async function main() {
+      // 0. Variables globales de física y cámara:
+      let verticalSpeed = 0;
+      const gravity = -9.8;
+      const liftFactor = 20;
+      const dragFactor = 0.1;
+      const activeSmokeSystems = [];
+
+      // Ángulos y radio de órbita:
+      let orbitAngles = { yaw: -Math.PI / 2, pitch: 0.2 }; // vista inicial detrás del avión
+      const orbitRadius = 25;
+      let isDragging = false;
+      let dragStart = { x: 0, y: 0 };
+
+	// 1. Crear Cesium Viewer:
+	Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiYTQ0YWUyYi0wYjcwLTQ3NDEtYmEzMS1kZDJlYzhkNTkyMzgiLCJpZCI6MzA5MDg4LCJpYXQiOjE3NDkwMjU5NDh9.vtAd5T0-iIYfa8YbSDhK1HEUeOgqR3Whk4OAehbKZ3w'; // Reemplaza con tu token real
+	const viewer = new Cesium.Viewer('cesiumContainer', {
+		  terrainProvider: await Cesium.CesiumTerrainProvider.fromIonAssetId(1),
+		  animation: false,
+		  timeline: false,
+		  baseLayerPicker: false,
+		  geocoder: false,
+		  homeButton: false,
+		  infoBox: false,
+		  sceneModePicker: false,
+		  selectionIndicator: false,
+		  navigationHelpButton: false,
+		  navigationInstructionsInitiallyVisible: false,
+		  fullscreenButton: false,
+		  shadows: true,
+		  shouldAnimate: true,
+		});
+
+	// Añadir edificios OSM:
+	const osmBuildings = await Cesium.createOsmBuildingsAsync();
+	viewer.scene.primitives.add(osmBuildings);
+
+	// 2. Desactivar controles por defecto de Cesium:
+	viewer.scene.screenSpaceCameraController.enableRotate = false;
+	viewer.scene.screenSpaceCameraController.enableTranslate = false;
+	viewer.scene.screenSpaceCameraController.enableZoom = false;
+	viewer.scene.screenSpaceCameraController.enableTilt = false;
+	viewer.scene.screenSpaceCameraController.enableLook = false;
+	
+	// 3. Usar ScreenSpaceEventHandler para capturar arrastre de ratón:
+    const handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
+
+    handler.setInputAction((evt) => {
+      isDragging = true;
+      dragStart.x = evt.position.x;
+      dragStart.y = evt.position.y;
+    }, Cesium.ScreenSpaceEventType.LEFT_DOWN);
+
+    handler.setInputAction(() => {
+      isDragging = false;
+    }, Cesium.ScreenSpaceEventType.LEFT_UP);
+
+    handler.setInputAction((evt) => {
+      if (!isDragging) return;
+      const dx = evt.startPosition.x - evt.endPosition.x;
+      const dy = evt.startPosition.y - evt.endPosition.y;
+      orbitAngles.yaw -= dx * 0.005;
+      orbitAngles.pitch += dy * 0.005;
+      orbitAngles.pitch = Cesium.Math.clamp(orbitAngles.pitch, -Math.PI / 2 + 0.1, Math.PI / 2 - 0.1);
+      // Actualizar dragStart para la siguiente llamada:
+      dragStart.x = evt.endPosition.x;
+      dragStart.y = evt.endPosition.y;
+    }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+
+// 4. Variables de estado del avión y controles:
+ let aircraft, position, orientationQuat;
+ let forwardSpeed = 0;      // velocidad actual de avance (m/s)
+ let throttle = 0;          // potencia del motor [0 .. 1]
+ const maxThrust = 500000;    // Empuje máximo (puedes ajustar sobre la marcha)
+ const dragCoefficient = 0.02; // Coeficiente de resistencia aerodinámica
+ // ─── Parámetros para el cálculo de lift realista ────────────────────────────
+const rho0 = 1.225;        // Densidad del aire al nivel del mar (kg/m³)
+const wingArea = 50;       // Área de las alas (m²) — ajústalo a tu modelo
+const CL0 = 0.2;           // Coeficiente de lift a ángulo de ataque 0
+const CL_ALPHA = 5.7;      // Pendiente del coeficiente de lift (por radiano)
+const mass = 8000;         // Masa del avión (kg) — aprox. para un F-22
+ const keys = {};
+ 
+     window.addEventListener('keydown', (e) => (keys[e.code] = true));
+      window.addEventListener('keyup', (e) => (keys[e.code] = false));
+
+
+// 5. Función para crear el modelo principal (F-22):
+      async function createModel() {
+        viewer.entities.removeAll();
+        // 1. Definir posición inicial (tal cual ya lo tienes)
+	position = Cesium.Cartesian3.fromDegrees(-3.7038, 40.4168, 5000);
+
+	// 2. Crear un HeadingPitchRoll con pitch = 0, roll = 0, y el heading que tú elijas.
+	//    Aquí usamos heading = 0 (hacia Norte). Si quisieras que mire Este, usa 90°.
+	const initialHeading = 0; // en grados
+	const hpr = new Cesium.HeadingPitchRoll(
+	  Cesium.Math.toRadians(initialHeading),
+	  0,    // pitch = 0 → plano al terreno
+	  0     // roll = 0 → sin rotación lateral
+	);
+
+	// 3. Calcular el cuaternión “horizontal” sobre la superficie local
+	orientationQuat = Cesium.Transforms.headingPitchRollQuaternion(position, hpr);
+
+	// 4. ¡Crear el modelo!
+	aircraft = viewer.entities.add({
+	  name: 'F-22 Raptor',
+	  position: new Cesium.CallbackProperty(() => position, false),
+	  orientation: new Cesium.CallbackProperty(() => orientationQuat, false),
+	  model: {
+		uri: 'models/simulador/f22_model.glb',
+		minimumPixelSize: 64,
+		maximumScale: 10000,
+		scale: 1,
+	  },
+	});
+      }
+      await createModel();
+
+
+	const projectiles = [];
+
+	function shootProjectile() {
+	  if (!position || !orientationQuat) return;
+
+	  // 1.1. Obtenemos el eje “forward” del avión (eje X local)
+	  const rotMat = Cesium.Matrix3.fromQuaternion(orientationQuat);
+	const forward = Cesium.Matrix3.multiplyByVector(
+	  rotMat,
+	  Cesium.Cartesian3.UNIT_X,
+	  new Cesium.Cartesian3()
+	);
+
+	  // 1.2. Offset para que el proyectil salga justo del morro (p. ej. 15 m delante del centro)
+	  const muzzleOffset = Cesium.Cartesian3.multiplyByScalar(
+		forward,
+		15,
+		new Cesium.Cartesian3()
+	  );
+	  const initialPosition = Cesium.Cartesian3.add(
+		position,
+		muzzleOffset,
+		new Cesium.Cartesian3()
+	  );
+
+	 // 1.3. Velocidad inicial de la bala: hereda forwardSpeed del avión
+	 const planeVelocity = Cesium.Cartesian3.multiplyByScalar(
+	   forward,
+	   forwardSpeed,
+	   new Cesium.Cartesian3()
+	 );
+	 const pushExtra = Cesium.Cartesian3.multiplyByScalar(
+	  forward,
+	  forwardSpeed,
+	  new Cesium.Cartesian3()
+	);
+	 const initialVelocity = Cesium.Cartesian3.add(
+	   planeVelocity,
+	   pushExtra,
+	   new Cesium.Cartesian3()
+	 );
+
+	  // 1.4. Creamos la entidad del proyectil
+	  let currentPosition = Cesium.Cartesian3.clone(initialPosition);
+	  const entity = viewer.entities.add({
+		position: new Cesium.CallbackProperty(() => currentPosition, false),
+		orientation: new Cesium.CallbackProperty(() => {
+		  // Orientar el modelo de la bala para que "mire" hacia adelante
+		  return Cesium.Transforms.headingPitchRollQuaternion(
+			currentPosition,
+			new Cesium.HeadingPitchRoll(0, 0, 0)
+		  );
+		}, false),
+		model: {
+		  uri: 'models/simulador/silver_projectile.glb',
+		  scale: 0.25,
+		  minimumPixelSize: 1
+		}
+	  });
+
+	  // 1.5. Añadimos al array para actualizar cada frame
+	  projectiles.push({
+		entity,
+		velocity: Cesium.Cartesian3.clone(initialVelocity),
+		update: function(deltaTime) {
+		  // 1.6. Aplicar gravedad en Z (global)
+		  this.velocity.z += gravity * deltaTime;
+
+		  // 1.7. Mover el proyectil según la velocidad actualizada
+		  const step = Cesium.Cartesian3.multiplyByScalar(
+			this.velocity,
+			deltaTime,
+			new Cesium.Cartesian3()
+		  );
+		  currentPosition = Cesium.Cartesian3.add(
+			currentPosition,
+			step,
+			new Cesium.Cartesian3()
+		  );
+
+		  // 1.8. Si choca con el terreno, eliminar y crear humo
+		  const carto = Cesium.Cartographic.fromCartesian(currentPosition);
+		  const terrainHeight = viewer.scene.globe.getHeight(carto);
+		  if (terrainHeight !== undefined && carto.height <= terrainHeight + 1) {
+			viewer.entities.remove(entity);
+			createSmokeAt(currentPosition);
+			return false;
+		  }
+
+		  // 1.9. Si vuela demasiado lejos, eliminar
+		  if (
+			Cesium.Cartesian3.distance(currentPosition, initialPosition) > 20000
+		  ) {
+			viewer.entities.remove(entity);
+			return false;
+		  }
+
+		  return true;
+		}
+	  });
+	}
+
+	
+	function createSmokeAt(position) {
+	  const smokeParticles = [];
+	  const maxParticles = 20;
+
+	  for (let i = 0; i < maxParticles; i++) {
+		const offset = Cesium.Cartesian3.fromElements(
+		  (Math.random() - 0.5) * 10,
+		  (Math.random() - 0.5) * 10,
+		  Math.random() * 5
+		);
+
+		const particlePosition = Cesium.Cartesian3.add(position, offset, new Cesium.Cartesian3());
+		const startZ = particlePosition.z;
+
+		const entity = {
+		  position: particlePosition,
+		  velocity: new Cesium.Cartesian3(
+			(Math.random() - 0.5) * 1.5,
+			(Math.random() - 0.5) * 1.5,
+			2 + Math.random() * 2
+		  ),
+		  age: 0,
+		  lifespan: 3 + Math.random() * 2,
+		  scale: 0.4 + Math.random() * 0.3,
+		  modelEntity: null
+		};
+
+		// Crear entidad de modelo 3D
+		entity.modelEntity = viewer.entities.add({
+		  position: new Cesium.CallbackProperty(() => entity.position, false),
+		  model: {
+			uri: 'models/simulador/smoke_particle.glb',
+			scale: new Cesium.CallbackProperty(() => {
+			  const growth = 1 + entity.age * 0.5;
+			  return entity.scale * growth;
+			}, false),
+			minimumPixelSize: 8,
+		  }
+		});
+
+		entity.update = (deltaTime) => {
+		  entity.age += deltaTime;
+		  if (entity.age >= entity.lifespan) {
+			viewer.entities.remove(entity.modelEntity);
+			return false;
+		  }
+
+		  const deltaMove = Cesium.Cartesian3.multiplyByScalar(entity.velocity, deltaTime, new Cesium.Cartesian3());
+		  entity.position = Cesium.Cartesian3.add(entity.position, deltaMove, new Cesium.Cartesian3());
+		  return true;
+		};
+
+		smokeParticles.push(entity);
+	  }
+
+	  activeSmokeSystems.push(smokeParticles);
+	}
+
+
+	window.addEventListener("keydown", (e) => {
+		keys[e.code] = true;
+		if (e.code === "Space") shootProjectile();
+	});
+
+  let lastTime = performance.now();
+  viewer.scene.postRender.addEventListener(() => {
+    const now = performance.now();
+    const deltaTime = (now - lastTime) / 1000;
+    lastTime = now;
+    if (!position || !orientationQuat) return;
+
+    // ─── 7.1 Rotaciones por teclado (pitch / roll / yaw) ─────────────────────────
+    const dPitch = keys['ArrowUp'] ? 0.5 * deltaTime : keys['ArrowDown'] ? -0.5 * deltaTime : 0;
+    const dRoll = keys['ArrowLeft'] ? -0.5 * deltaTime : keys['ArrowRight'] ? 0.5 * deltaTime : 0;
+    const dYaw = keys['KeyQ'] ? -0.5 * deltaTime : keys['KeyE'] ? 0.5 * deltaTime : 0;
+    const deltaQuat = Cesium.Quaternion.multiply(
+      Cesium.Quaternion.fromAxisAngle(Cesium.Cartesian3.UNIT_Z, dYaw),
+      Cesium.Quaternion.multiply(
+        Cesium.Quaternion.fromAxisAngle(Cesium.Cartesian3.UNIT_Y, dPitch),
+        Cesium.Quaternion.fromAxisAngle(Cesium.Cartesian3.UNIT_X, dRoll),
+        new Cesium.Quaternion()
+      ),
+      new Cesium.Quaternion()
+    );
+    orientationQuat = Cesium.Quaternion.normalize(
+      Cesium.Quaternion.multiply(orientationQuat, deltaQuat, new Cesium.Quaternion()),
+      new Cesium.Quaternion()
+    );
+
+    // ─── 7.2 Recalcular forward / up / surfaceNormal / carto / hpr ────────────────
+    const rotMatrix = Cesium.Matrix3.fromQuaternion(orientationQuat);
+    const forward = Cesium.Matrix3.multiplyByVector(
+      rotMatrix,
+      Cesium.Cartesian3.UNIT_X,
+      new Cesium.Cartesian3()
+    );
+    const up = Cesium.Matrix3.multiplyByVector(
+      rotMatrix,
+      Cesium.Cartesian3.UNIT_Y,
+      new Cesium.Cartesian3()
+    );
+    const carto = Cesium.Ellipsoid.WGS84.cartesianToCartographic(position);
+    const hpr = Cesium.HeadingPitchRoll.fromQuaternion(orientationQuat);
+    const surfaceNormal = Cesium.Ellipsoid.WGS84.geodeticSurfaceNormal(position, new Cesium.Cartesian3());
+
+    // ─── Cálculo de planeVelocity (antes de usarlo en lift) ───────────────────────
+    const forwardVelocity = Cesium.Cartesian3.multiplyByScalar(
+      forward,
+      forwardSpeed,
+      new Cesium.Cartesian3()
+    );
+    const verticalVelocity = Cesium.Cartesian3.multiplyByScalar(
+      surfaceNormal,
+      verticalSpeed,
+      new Cesium.Cartesian3()
+    );
+    const planeVelocity = Cesium.Cartesian3.add(
+      forwardVelocity,
+      verticalVelocity,
+      new Cesium.Cartesian3()
+    );
+
+    // ─── 7.3 Sustentación (lift) y gravedad basado en AoA ────────────────────────
+    // 1) Velocidad total (m/s)
+    const V = Cesium.Cartesian3.magnitude(planeVelocity);
+    let liftAcc = 0;
+    if (V > 0.1) {
+      // 2) Dirección de vuelo (unidad)
+      const flightDir = Cesium.Cartesian3.normalize(
+        Cesium.Cartesian3.clone(planeVelocity),
+        new Cesium.Cartesian3()
+      );
+      // 3) Calcular AoA = ángulo entre flightDir y forward
+      const dotFor = Cesium.Cartesian3.dot(flightDir, forward);
+      const cosAoA = Cesium.Math.clamp(dotFor, -1.0, 1.0);
+      const aoa = Math.acos(cosAoA); // en radianes
+
+      // 4) Coeficiente de lift (limitado en stall)
+      let CL = CL0 + CL_ALPHA * aoa;
+      const aoaLimit = Cesium.Math.toRadians(15);
+      if (aoa > aoaLimit) {
+        CL = CL0 + CL_ALPHA * aoaLimit;
+      }
+
+      // 5) Densidad del aire (constante por ahora)
+      const rho = rho0;
+
+      // 6) Fuerza de lift: L = 0.5 * rho * V² * S * CL
+      const liftForce = 0.5 * rho * V * V * wingArea * CL; // en N
+
+      // 7) Aceleración vertical por lift: a = L / m
+      liftAcc = liftForce / mass; // en m/s²
+    }
+    // 8) Actualizar verticalSpeed con lift y gravedad
+    verticalSpeed += (liftAcc + gravity) * deltaTime;
+    verticalSpeed *= 1 - dragFactor * deltaTime;
+    verticalSpeed = Math.max(-300, Math.min(verticalSpeed, 300));
+
+    // ─── 7.4 Dinámica de avance con throttle y drag ───────────────────────────────
+    const thrust = throttle * maxThrust;
+    const drag = dragCoefficient * forwardSpeed * forwardSpeed;
+    let forwardAcceleration = thrust - drag;
+    forwardSpeed += forwardAcceleration * deltaTime;
+    forwardSpeed = Math.max(forwardSpeed, 0);
+
+    // 7.4.5 Desplazamiento horizontal en forward
+    const step = Cesium.Cartesian3.multiplyByScalar(
+      forward,
+      forwardSpeed * deltaTime,
+      new Cesium.Cartesian3()
+    );
+    // 7.4.6 Desplazamiento vertical por lift+gravedad
+    const gravityStep = Cesium.Cartesian3.multiplyByScalar(
+      surfaceNormal,
+      verticalSpeed * deltaTime,
+      new Cesium.Cartesian3()
+    );
+    // 7.4.7 Actualizar posición
+    const combinedStep = Cesium.Cartesian3.add(step, gravityStep, new Cesium.Cartesian3());
+    position = Cesium.Cartesian3.add(position, combinedStep, new Cesium.Cartesian3());
+
+    // ─── 7.5 Órbita de la cámara alrededor del avión ──────────────────────────────
+    const center = Cesium.Cartesian3.clone(position);
+    const localOffset = new Cesium.Cartesian3(
+      orbitRadius * Math.cos(orbitAngles.pitch) * Math.sin(orbitAngles.yaw),
+      orbitRadius * Math.cos(orbitAngles.pitch) * Math.cos(orbitAngles.yaw),
+      orbitRadius * Math.sin(orbitAngles.pitch)
+    );
+    const offset = Cesium.Matrix3.multiplyByVector(rotMatrix, localOffset, new Cesium.Cartesian3());
+    const cameraPos = Cesium.Cartesian3.add(center, offset, new Cesium.Cartesian3());
+    const dir = Cesium.Cartesian3.subtract(center, cameraPos, new Cesium.Cartesian3());
+    Cesium.Cartesian3.normalize(dir, dir);
+    const upVec = Cesium.Matrix3.multiplyByVector(rotMatrix, Cesium.Cartesian3.UNIT_Z, new Cesium.Cartesian3());
+    viewer.scene.camera.setView({
+      destination: cameraPos,
+      orientation: {
+        direction: dir,
+        up: upVec,
+      },
+    });
+
+    // ─── 7.6 Límite de altitud ───────────────────────────────────────────────────
+    if (carto.height > 15000 && verticalSpeed > 0) {
+      verticalSpeed = 0;
+    }
+
+    // ─── 7.7 Ajuste de throttle con +/- ──────────────────────────────────────────
+    const throttleStep = 0.5 * deltaTime;
+    if (keys['Equal'] || keys['NumpadAdd']) {
+      throttle = Math.min(throttle + throttleStep, 1.0);
+    }
+    if (keys['Minus'] || keys['NumpadSubtract']) {
+      throttle = Math.max(throttle - throttleStep, 0.0);
+    }
+
+    // ─── 7.8 Actualizar proyectiles ──────────────────────────────────────────────
+    for (let i = projectiles.length - 1; i >= 0; i--) {
+      const proj = projectiles[i];
+      const alive = proj.update(deltaTime);
+      if (!alive) {
+        projectiles.splice(i, 1);
+      }
+    }
+
+    // ─── Cálculo del vector de velocidad completo (para el HUD) ─────────────────
+    // (Ya tenemos planeVelocity calculado arriba)
+    const totalSpeed = Cesium.Cartesian3.magnitude(planeVelocity);
+
+    // ─── 📊 HUD ─────────────────────────────────────────────────────────────────
+    const lat = Cesium.Math.toDegrees(carto.latitude).toFixed(5);
+    const lon = Cesium.Math.toDegrees(carto.longitude).toFixed(5);
+    const alt = carto.height.toFixed(1);
+    const pitchDeg = Cesium.Math.toDegrees(hpr.pitch).toFixed(1);
+    const yawDeg = Cesium.Math.toDegrees(hpr.heading).toFixed(1);
+    const rollDeg = Cesium.Math.toDegrees(hpr.roll).toFixed(1);
+
+    const velocidadKmh = totalSpeed * 3.6;
+    document.getElementById("coords").textContent = `${lat}, ${lon}`;
+    document.getElementById("alt").textContent = alt;
+    document.getElementById("spd").textContent = velocidadKmh.toFixed(0);
+
+    const potenciaPct = (throttle * 100).toFixed(0);
+    document.getElementById("throttle").textContent = potenciaPct;
+
+    document.getElementById("pitch").textContent = pitchDeg;
+    document.getElementById("yaw").textContent = yawDeg;
+    document.getElementById("roll").textContent = rollDeg;
+
+    // ─── ☁️ Efectos de humo ─────────────────────────────────────────────────────
+    for (let s = activeSmokeSystems.length - 1; s >= 0; s--) {
+      const system = activeSmokeSystems[s];
+      for (let i = system.length - 1; i >= 0; i--) {
+        const alive = system[i].update(deltaTime);
+        if (!alive) system.splice(i, 1);
+      }
+      if (system.length === 0) activeSmokeSystems.splice(s, 1);
+    }
+  });
+
+})();
+</script>
+</body>
+</html>
+
