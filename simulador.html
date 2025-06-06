@@ -43,7 +43,7 @@
 (async function main() {
       // 0. Variables globales de física y cámara:
       let verticalSpeed = 0;
-      const gravity = -9.8;
+      const gravity = 9.8;
       const liftFactor = 20;
       const dragFactor = 0.1;
       const activeSmokeSystems = [];
@@ -74,8 +74,8 @@
 		});
 
 	// Añadir edificios OSM:
-	const osmBuildings = await Cesium.createOsmBuildingsAsync();
-	viewer.scene.primitives.add(osmBuildings);
+	//const osmBuildings = await Cesium.createOsmBuildingsAsync();
+	//viewer.scene.primitives.add(osmBuildings);
 
 	// 2. Desactivar controles por defecto de Cesium:
 	viewer.scene.screenSpaceCameraController.enableRotate = false;
@@ -113,7 +113,7 @@
  let aircraft, position, orientationQuat;
  let forwardSpeed = 0;      // velocidad actual de avance (m/s)
  let throttle = 0;          // potencia del motor [0 .. 1]
- const maxThrust = 500000;    // Empuje máximo (puedes ajustar sobre la marcha)
+ const maxThrust = 7500;    // Empuje máximo (puedes ajustar sobre la marcha)
  const dragCoefficient = 0.02; // Coeficiente de resistencia aerodinámica
  // ─── Parámetros para el cálculo de lift realista ────────────────────────────
 const rho0 = 1.225;        // Densidad del aire al nivel del mar (kg/m³)
@@ -227,7 +227,7 @@ const mass = 8000;         // Masa del avión (kg) — aprox. para un F-22
 		velocity: Cesium.Cartesian3.clone(initialVelocity),
 		update: function(deltaTime) {
 		  // 1.6. Aplicar gravedad en Z (global)
-		  this.velocity.z += gravity * deltaTime;
+		  this.velocity.z -= gravity * deltaTime;
 
 		  // 1.7. Mover el proyectil según la velocidad actualizada
 		  const step = Cesium.Cartesian3.multiplyByScalar(
@@ -368,6 +368,7 @@ const mass = 8000;         // Masa del avión (kg) — aprox. para un F-22
     const carto = Cesium.Ellipsoid.WGS84.cartesianToCartographic(position);
     const hpr = Cesium.HeadingPitchRoll.fromQuaternion(orientationQuat);
     const surfaceNormal = Cesium.Ellipsoid.WGS84.geodeticSurfaceNormal(position, new Cesium.Cartesian3());
+	//console.log('surfaceNormal:', surfaceNormal);
 
     // ─── Cálculo de planeVelocity (antes de usarlo en lift) ───────────────────────
     const forwardVelocity = Cesium.Cartesian3.multiplyByScalar(
@@ -402,7 +403,8 @@ const mass = 8000;         // Masa del avión (kg) — aprox. para un F-22
       const aoa = Math.acos(cosAoA); // en radianes
 
       // 4) Coeficiente de lift (limitado en stall)
-      let CL = CL0 + CL_ALPHA * aoa;
+      //let CL = CL0 + CL_ALPHA * aoa;
+	  let CL = CL_ALPHA * aoa;
       const aoaLimit = Cesium.Math.toRadians(15);
       if (aoa > aoaLimit) {
         CL = CL0 + CL_ALPHA * aoaLimit;
@@ -418,8 +420,12 @@ const mass = 8000;         // Masa del avión (kg) — aprox. para un F-22
       liftAcc = liftForce / mass; // en m/s²
     }
     // 8) Actualizar verticalSpeed con lift y gravedad
-    verticalSpeed += (liftAcc + gravity) * deltaTime;
-    verticalSpeed *= 1 - dragFactor * deltaTime;
+    // Primero gravedad
+verticalSpeed -= gravity * deltaTime;
+// Luego si hubiera lift, lo sumas
+verticalSpeed += liftAcc * deltaTime;
+// Y finalmente aplicas damping
+verticalSpeed *= 1 - dragFactor * deltaTime;
     verticalSpeed = Math.max(-300, Math.min(verticalSpeed, 300));
 
     // ─── 7.4 Dinámica de avance con throttle y drag ───────────────────────────────
@@ -436,6 +442,10 @@ const mass = 8000;         // Masa del avión (kg) — aprox. para un F-22
       new Cesium.Cartesian3()
     );
     // 7.4.6 Desplazamiento vertical por lift+gravedad
+	
+	//console.log('surfaceNormal:', surfaceNormal);
+	//console.log('verticalSpeed:', verticalSpeed);
+	
     const gravityStep = Cesium.Cartesian3.multiplyByScalar(
       surfaceNormal,
       verticalSpeed * deltaTime,
@@ -527,4 +537,3 @@ const mass = 8000;         // Masa del avión (kg) — aprox. para un F-22
 </script>
 </body>
 </html>
-
