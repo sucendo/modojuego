@@ -115,12 +115,16 @@
  let throttle = 0;          // potencia del motor [0 .. 1]
  const maxThrust = 7500;    // Empuje máximo (puedes ajustar sobre la marcha)
  const dragCoefficient = 0.02; // Coeficiente de resistencia aerodinámica
- // ─── Parámetros para el cálculo de lift realista ────────────────────────────
-const rho0 = 1.225;        // Densidad del aire al nivel del mar (kg/m³)
-const wingArea = 50;       // Área de las alas (m²) — ajústalo a tu modelo
-const CL0 = 0.2;           // Coeficiente de lift a ángulo de ataque 0
-const CL_ALPHA = 5.7;      // Pendiente del coeficiente de lift (por radiano)
-const mass = 8000;         // Masa del avión (kg) — aprox. para un F-22
+// ─── Parámetros aerodinámicos ────────────────────────────
+const rho0 = 1.225;       // kg/m³ al nivel del mar
+const wingArea = 50;      // m²
+const wingSpan = 15;      // m (ancho de ala, ajústalo a tu modelo)
+const CL0 = 0.2;          // coef. de lift a AoA = 0
+const CL_ALPHA = 5.7;     // pendiente de coef. lift (por radian)
+const mass = 18300;        // kg
+const fuselageArea   = 10;    // m² (área frontal del fuselaje, ajústalo a tu modelo)
+const CD0Fuselaje    = 0.025; // coeficiente de drag parásito del fuselaje
+
  const keys = {};
  
      window.addEventListener('keydown', (e) => (keys[e.code] = true));
@@ -328,210 +332,272 @@ const mass = 8000;         // Masa del avión (kg) — aprox. para un F-22
 		if (e.code === "Space") shootProjectile();
 	});
 
-  let lastTime = performance.now();
-  viewer.scene.postRender.addEventListener(() => {
-    const now = performance.now();
-    const deltaTime = (now - lastTime) / 1000;
-    lastTime = now;
-    if (!position || !orientationQuat) return;
+let lastTime = performance.now();
+viewer.scene.postRender.addEventListener(() => {
+  const now = performance.now();
+  const deltaTime = (now - lastTime) / 1000;
+  lastTime = now;
+  if (!position || !orientationQuat) return;
 
-    // ─── 7.1 Rotaciones por teclado (pitch / roll / yaw) ─────────────────────────
-    const dPitch = keys['ArrowUp'] ? 0.5 * deltaTime : keys['ArrowDown'] ? -0.5 * deltaTime : 0;
-    const dRoll = keys['ArrowLeft'] ? -0.5 * deltaTime : keys['ArrowRight'] ? 0.5 * deltaTime : 0;
-    const dYaw = keys['KeyQ'] ? -0.5 * deltaTime : keys['KeyE'] ? 0.5 * deltaTime : 0;
-    const deltaQuat = Cesium.Quaternion.multiply(
-      Cesium.Quaternion.fromAxisAngle(Cesium.Cartesian3.UNIT_Z, dYaw),
-      Cesium.Quaternion.multiply(
-        Cesium.Quaternion.fromAxisAngle(Cesium.Cartesian3.UNIT_Y, dPitch),
-        Cesium.Quaternion.fromAxisAngle(Cesium.Cartesian3.UNIT_X, dRoll),
-        new Cesium.Quaternion()
-      ),
+  // ─── 7.1 Rotaciones por teclado (pitch / roll / yaw) con damping aerodinámico ─────────────────────────
+  let inputPitch = keys['ArrowUp'] ? 0.5 * deltaTime : keys['ArrowDown'] ? -0.5 * deltaTime : 0;
+  let inputRoll  = keys['ArrowLeft'] ? -0.5 * deltaTime : keys['ArrowRight'] ? 0.5 * deltaTime : 0;
+  let inputYaw   = keys['KeyQ'] ? -0.5 * deltaTime : keys['KeyE'] ? 0.5 * deltaTime : 0;
+
+  // Aplicamos damping rotacional simple para simular resistencia aerodinámica de giro:
+  const rotDamping = 1 - dragCoefficient * deltaTime; // dragCoefficient anterior (≈0.02)
+  inputPitch *= rotDamping;
+  inputRoll  *= rotDamping;
+  inputYaw   *= rotDamping;
+
+  // Construimos el quaternion de las entradas
+  const deltaQuat = Cesium.Quaternion.multiply(
+    Cesium.Quaternion.fromAxisAngle(Cesium.Cartesian3.UNIT_Z, inputYaw),
+    Cesium.Quaternion.multiply(
+      Cesium.Quaternion.fromAxisAngle(Cesium.Cartesian3.UNIT_Y, inputPitch),
+      Cesium.Quaternion.fromAxisAngle(Cesium.Cartesian3.UNIT_X, inputRoll),
       new Cesium.Quaternion()
-    );
-    orientationQuat = Cesium.Quaternion.normalize(
-      Cesium.Quaternion.multiply(orientationQuat, deltaQuat, new Cesium.Quaternion()),
-      new Cesium.Quaternion()
-    );
+    ),
+    new Cesium.Quaternion()
+  );
+  orientationQuat = Cesium.Quaternion.normalize(
+    Cesium.Quaternion.multiply(orientationQuat, deltaQuat, new Cesium.Quaternion()),
+    new Cesium.Quaternion()
+  );
 
-    // ─── 7.2 Recalcular forward / up / surfaceNormal / carto / hpr ────────────────
-    const rotMatrix = Cesium.Matrix3.fromQuaternion(orientationQuat);
-    const forward = Cesium.Matrix3.multiplyByVector(
-      rotMatrix,
-      Cesium.Cartesian3.UNIT_X,
+  // ─── 7.2 Recalcular forward / up / surfaceNormal / carto / hpr ────────────────
+  const rotMatrix = Cesium.Matrix3.fromQuaternion(orientationQuat);
+  const forward = Cesium.Matrix3.multiplyByVector(
+    rotMatrix,
+    Cesium.Cartesian3.UNIT_X,
+    new Cesium.Cartesian3()
+  );
+  const up = Cesium.Matrix3.multiplyByVector(
+    rotMatrix,
+    Cesium.Cartesian3.UNIT_Y,
+    new Cesium.Cartesian3()
+  );
+  
+  // Calculamos también el eje “right” local (ala derecha).
+const right = Cesium.Matrix3.multiplyByVector(
+  rotMatrix,
+  Cesium.Cartesian3.UNIT_Y, // en tu convención, UNIT_Y apunta al ala derecha
+  new Cesium.Cartesian3()
+);
+  
+  const carto = Cesium.Ellipsoid.WGS84.cartesianToCartographic(position);
+  const hpr = Cesium.HeadingPitchRoll.fromQuaternion(orientationQuat);
+  const surfaceNormal = Cesium.Ellipsoid.WGS84.geodeticSurfaceNormal(position, new Cesium.Cartesian3());
+
+  // ─── 7.3 Cálculo de planeVelocity (antes de lift) ───────────────────────
+  const forwardVelocity = Cesium.Cartesian3.multiplyByScalar(
+    forward,
+    forwardSpeed,
+    new Cesium.Cartesian3()
+  );
+  const verticalVelocity = Cesium.Cartesian3.multiplyByScalar(
+    surfaceNormal,
+    verticalSpeed,
+    new Cesium.Cartesian3()
+  );
+  const planeVelocity = Cesium.Cartesian3.add(
+    forwardVelocity,
+    verticalVelocity,
+    new Cesium.Cartesian3()
+  );
+
+  // ─── 7.4 Sustentación (lift) y drag aerodinámico realista ────────────────────────
+  const V = Cesium.Cartesian3.magnitude(planeVelocity);
+  let liftForce = 0;
+  let dragForceScalar = 0;
+
+  if (V > 0.1) {
+    // a) calculamos AoA
+    const flightDir = Cesium.Cartesian3.normalize(
+      Cesium.Cartesian3.clone(planeVelocity),
       new Cesium.Cartesian3()
     );
-    const up = Cesium.Matrix3.multiplyByVector(
-      rotMatrix,
-      Cesium.Cartesian3.UNIT_Y,
-      new Cesium.Cartesian3()
-    );
-    const carto = Cesium.Ellipsoid.WGS84.cartesianToCartographic(position);
-    const hpr = Cesium.HeadingPitchRoll.fromQuaternion(orientationQuat);
-    const surfaceNormal = Cesium.Ellipsoid.WGS84.geodeticSurfaceNormal(position, new Cesium.Cartesian3());
-	//console.log('surfaceNormal:', surfaceNormal);
+    let cosAoA = Cesium.Math.clamp(Cesium.Cartesian3.dot(flightDir, forward), -1.0, 1.0);
+    let aoa = Math.acos(cosAoA);
+    const stallLimit = Cesium.Math.toRadians(15);
+    if (aoa > stallLimit) aoa = stallLimit;
 
-    // ─── Cálculo de planeVelocity (antes de usarlo en lift) ───────────────────────
-    const forwardVelocity = Cesium.Cartesian3.multiplyByScalar(
-      forward,
-      forwardSpeed,
-      new Cesium.Cartesian3()
-    );
-    const verticalVelocity = Cesium.Cartesian3.multiplyByScalar(
-      surfaceNormal,
-      verticalSpeed,
-      new Cesium.Cartesian3()
-    );
-    const planeVelocity = Cesium.Cartesian3.add(
-      forwardVelocity,
-      verticalVelocity,
-      new Cesium.Cartesian3()
-    );
+    // b) coeficiente de lift lineal
+    let CL = CL_ALPHA * aoa;                 // pendiente por radian
+    // c) coeficiente inducido aproximado: CDi = CL² / (π·AR)
+    //    asumimos AR ≈ wingArea / wingSpan (si no tienes wingSpan, mete sqrt(wingArea) como aproximación)
+    const AR = (wingSpan || Math.sqrt(wingArea)) ? wingSpan : wingArea;  
+    const CDi = (CL * CL) / (Math.PI * (AR || wingArea));
 
-    // ─── 7.3 Sustentación (lift) y gravedad basado en AoA ────────────────────────
-    // 1) Velocidad total (m/s)
-    const V = Cesium.Cartesian3.magnitude(planeVelocity);
-    let liftAcc = 0;
-    if (V > 0.1) {
-      // 2) Dirección de vuelo (unidad)
-      const flightDir = Cesium.Cartesian3.normalize(
-        Cesium.Cartesian3.clone(planeVelocity),
-        new Cesium.Cartesian3()
-      );
-      // 3) Calcular AoA = ángulo entre flightDir y forward
-      const dotFor = Cesium.Cartesian3.dot(flightDir, forward);
-      const cosAoA = Cesium.Math.clamp(dotFor, -1.0, 1.0);
-      const aoa = Math.acos(cosAoA); // en radianes
+    // d) densidad del aire en altitud actual (modelo isa simplificado)
+    const rho = rho0 * Math.exp(-carto.height / 8500);
 
-      // 4) Coeficiente de lift (limitado en stall)
-      //let CL = CL0 + CL_ALPHA * aoa;
-	  let CL = CL_ALPHA * aoa;
-      const aoaLimit = Cesium.Math.toRadians(15);
-      if (aoa > aoaLimit) {
-        CL = CL0 + CL_ALPHA * aoaLimit;
-      }
+    // e) presión dinámica
+    const qd = 0.5 * rho * V * V;
 
-      // 5) Densidad del aire (constante por ahora)
-      const rho = rho0;
+    // f) fuerzas de lift y drag
+    liftForce       = qd * wingArea * CL;
+    dragForceScalar = qd * wingArea * CDi +   // drag inducido
+                      qd * fuselageArea * CD0Fuselaje; // drag parásito fuselaje
 
-      // 6) Fuerza de lift: L = 0.5 * rho * V² * S * CL
-      const liftForce = 0.5 * rho * V * V * wingArea * CL; // en N
-
-      // 7) Aceleración vertical por lift: a = L / m
-      liftAcc = liftForce / mass; // en m/s²
+    // g) dirección de lift: (planeVelocity × right) × planeVelocity
+    const tmp = new Cesium.Cartesian3();
+    Cesium.Cartesian3.cross(planeVelocity, right, tmp);
+    Cesium.Cartesian3.cross(tmp, planeVelocity, tmp);
+    if (Cesium.Cartesian3.magnitude(tmp) > 1e-3) {
+      Cesium.Cartesian3.normalize(tmp, tmp);
+    } else {
+      Cesium.Cartesian3.clone(new Cesium.Cartesian3(0, 0, 0), tmp);
     }
-    // 8) Actualizar verticalSpeed con lift y gravedad
-    // Primero gravedad
-verticalSpeed -= gravity * deltaTime;
-// Luego si hubiera lift, lo sumas
-verticalSpeed += liftAcc * deltaTime;
-// Y finalmente aplicas damping
-verticalSpeed *= 1 - dragFactor * deltaTime;
-    verticalSpeed = Math.max(-300, Math.min(verticalSpeed, 300));
+    // tmp ahora es liftDir
+    // (verticalSpeed usa tmp más abajo)
+    var liftDir = tmp;
+  }
 
-    // ─── 7.4 Dinámica de avance con throttle y drag ───────────────────────────────
-    const thrust = throttle * maxThrust;
-    const drag = dragCoefficient * forwardSpeed * forwardSpeed;
-    let forwardAcceleration = thrust - drag;
-    forwardSpeed += forwardAcceleration * deltaTime;
-    forwardSpeed = Math.max(forwardSpeed, 0);
+  // ─── 7.5 Actualizar verticalSpeed con lift, gravedad y damping ───────────────────
+  // gravedad siempre actúa hacia abajo (−Z global)
+  verticalSpeed -= gravity * deltaTime;
+  // sumamos lift (en dirección liftDir)
+  if (liftForce !== 0) {
+    const liftAcc = liftForce / mass;
+    verticalSpeed += liftAcc * deltaTime;
+  }
+  // damping vertical leve
+  verticalSpeed *= (1 - dragFactor * deltaTime);
+  verticalSpeed = Math.max(-300, Math.min(verticalSpeed, 300));
 
-    // 7.4.5 Desplazamiento horizontal en forward
-    const step = Cesium.Cartesian3.multiplyByScalar(
-      forward,
-      forwardSpeed * deltaTime,
-      new Cesium.Cartesian3()
-    );
-    // 7.4.6 Desplazamiento vertical por lift+gravedad
-	
-	//console.log('surfaceNormal:', surfaceNormal);
-	//console.log('verticalSpeed:', verticalSpeed);
-	
-    const gravityStep = Cesium.Cartesian3.multiplyByScalar(
-      surfaceNormal,
-      verticalSpeed * deltaTime,
-      new Cesium.Cartesian3()
-    );
-    // 7.4.7 Actualizar posición
-    const combinedStep = Cesium.Cartesian3.add(step, gravityStep, new Cesium.Cartesian3());
-    position = Cesium.Cartesian3.add(position, combinedStep, new Cesium.Cartesian3());
+  // ─── 7.6 Drag aerodinámico horizontal ───────────────────────────────────────────
+  // dirección opuesta a planeVelocity
+  let dragDir = new Cesium.Cartesian3(0, 0, 0);
+  if (V > 0.1) {
+    dragDir = Cesium.Cartesian3.clone(planeVelocity);
+    Cesium.Cartesian3.normalize(dragDir, dragDir);
+    Cesium.Cartesian3.negate(dragDir, dragDir);
+  }
+  const dragAcc = dragForceScalar / mass;
+  // desplazamiento por drag horizontal
+  const dragStep = Cesium.Cartesian3.multiplyByScalar(
+    dragDir,
+    dragAcc * deltaTime,
+    new Cesium.Cartesian3()
+  );
 
-    // ─── 7.5 Órbita de la cámara alrededor del avión ──────────────────────────────
-    const center = Cesium.Cartesian3.clone(position);
-    const localOffset = new Cesium.Cartesian3(
-      orbitRadius * Math.cos(orbitAngles.pitch) * Math.sin(orbitAngles.yaw),
-      orbitRadius * Math.cos(orbitAngles.pitch) * Math.cos(orbitAngles.yaw),
-      orbitRadius * Math.sin(orbitAngles.pitch)
-    );
-    const offset = Cesium.Matrix3.multiplyByVector(rotMatrix, localOffset, new Cesium.Cartesian3());
-    const cameraPos = Cesium.Cartesian3.add(center, offset, new Cesium.Cartesian3());
-    const dir = Cesium.Cartesian3.subtract(center, cameraPos, new Cesium.Cartesian3());
-    Cesium.Cartesian3.normalize(dir, dir);
-    const upVec = Cesium.Matrix3.multiplyByVector(rotMatrix, Cesium.Cartesian3.UNIT_Z, new Cesium.Cartesian3());
-    viewer.scene.camera.setView({
-      destination: cameraPos,
-      orientation: {
-        direction: dir,
-        up: upVec,
-      },
-    });
+  // Tenemos planeVelocity = forwardVelocity + verticalVelocity
+  // Añadimos el efecto de drag only en horizontal:
+  // recomponemos forwardSpeed usando el componente en “forward” tras drag:
+  const newVel = Cesium.Cartesian3.add(planeVelocity, dragStep, new Cesium.Cartesian3());
+  forwardSpeed = Math.max(0, Cesium.Cartesian3.dot(newVel, forward));
 
-    // ─── 7.6 Límite de altitud ───────────────────────────────────────────────────
-    if (carto.height > 15000 && verticalSpeed > 0) {
-      verticalSpeed = 0;
-    }
+  // ─── 7.7 Dinámica de avance con throttle y dragCoefficient simple (remains) ─────
+  const thrust = throttle * maxThrust;
+  // dragCoefficient aquí se usaba como término cuadrático simplificado
+  const simpleDrag = dragCoefficient * forwardSpeed * forwardSpeed;
+  let forwardAcceleration = thrust - simpleDrag;
+  forwardSpeed += forwardAcceleration * deltaTime;
+  forwardSpeed = Math.max(0, forwardSpeed);
 
-    // ─── 7.7 Ajuste de throttle con +/- ──────────────────────────────────────────
-    const throttleStep = 0.5 * deltaTime;
-    if (keys['Equal'] || keys['NumpadAdd']) {
-      throttle = Math.min(throttle + throttleStep, 1.0);
-    }
-    if (keys['Minus'] || keys['NumpadSubtract']) {
-      throttle = Math.max(throttle - throttleStep, 0.0);
-    }
+  // ─── 7.8 Desplazar posición del avión ───────────────────────────────────────────
+  // Calculamos el desplazamiento forward
+  const stepForward = Cesium.Cartesian3.multiplyByScalar(
+    forward,
+    forwardSpeed * deltaTime,
+    new Cesium.Cartesian3()
+  );
+  // Desplazamiento por vertical (lift+gravedad) en dirección surfaceNormal
+  const gravityStepVec = Cesium.Cartesian3.multiplyByScalar(
+    surfaceNormal,
+    verticalSpeed * deltaTime,
+    new Cesium.Cartesian3()
+  );
+  // Actualizamos la posición
+  const combinedStep = Cesium.Cartesian3.add(stepForward, gravityStepVec, new Cesium.Cartesian3());
+  position = Cesium.Cartesian3.add(position, combinedStep, new Cesium.Cartesian3());
 
-    // ─── 7.8 Actualizar proyectiles ──────────────────────────────────────────────
-    for (let i = projectiles.length - 1; i >= 0; i--) {
-      const proj = projectiles[i];
-      const alive = proj.update(deltaTime);
-      if (!alive) {
-        projectiles.splice(i, 1);
-      }
-    }
-
-    // ─── Cálculo del vector de velocidad completo (para el HUD) ─────────────────
-    // (Ya tenemos planeVelocity calculado arriba)
-    const totalSpeed = Cesium.Cartesian3.magnitude(planeVelocity);
-
-    // ─── 📊 HUD ─────────────────────────────────────────────────────────────────
-    const lat = Cesium.Math.toDegrees(carto.latitude).toFixed(5);
-    const lon = Cesium.Math.toDegrees(carto.longitude).toFixed(5);
-    const alt = carto.height.toFixed(1);
-    const pitchDeg = Cesium.Math.toDegrees(hpr.pitch).toFixed(1);
-    const yawDeg = Cesium.Math.toDegrees(hpr.heading).toFixed(1);
-    const rollDeg = Cesium.Math.toDegrees(hpr.roll).toFixed(1);
-
-    const velocidadKmh = totalSpeed * 3.6;
-    document.getElementById("coords").textContent = `${lat}, ${lon}`;
-    document.getElementById("alt").textContent = alt;
-    document.getElementById("spd").textContent = velocidadKmh.toFixed(0);
-
-    const potenciaPct = (throttle * 100).toFixed(0);
-    document.getElementById("throttle").textContent = potenciaPct;
-
-    document.getElementById("pitch").textContent = pitchDeg;
-    document.getElementById("yaw").textContent = yawDeg;
-    document.getElementById("roll").textContent = rollDeg;
-
-    // ─── ☁️ Efectos de humo ─────────────────────────────────────────────────────
-    for (let s = activeSmokeSystems.length - 1; s >= 0; s--) {
-      const system = activeSmokeSystems[s];
-      for (let i = system.length - 1; i >= 0; i--) {
-        const alive = system[i].update(deltaTime);
-        if (!alive) system.splice(i, 1);
-      }
-      if (system.length === 0) activeSmokeSystems.splice(s, 1);
-    }
+  // ─── 7.9 Órbita de la cámara alrededor del avión ──────────────────────────────
+  const center = Cesium.Cartesian3.clone(position);
+  const localOffset = new Cesium.Cartesian3(
+    orbitRadius * Math.cos(orbitAngles.pitch) * Math.sin(orbitAngles.yaw),
+    orbitRadius * Math.cos(orbitAngles.pitch) * Math.cos(orbitAngles.yaw),
+    orbitRadius * Math.sin(orbitAngles.pitch)
+  );
+  const offset = Cesium.Matrix3.multiplyByVector(rotMatrix, localOffset, new Cesium.Cartesian3());
+  const cameraPos = Cesium.Cartesian3.add(center, offset, new Cesium.Cartesian3());
+  const dir = Cesium.Cartesian3.subtract(center, cameraPos, new Cesium.Cartesian3());
+  Cesium.Cartesian3.normalize(dir, dir);
+  const upVec = Cesium.Matrix3.multiplyByVector(rotMatrix, Cesium.Cartesian3.UNIT_Z, new Cesium.Cartesian3());
+  viewer.scene.camera.setView({
+    destination: cameraPos,
+    orientation: {
+      direction: dir,
+      up: upVec,
+    },
   });
+
+  // ─── 7.10 Límite de altitud ───────────────────────────────────────────────────
+  if (carto.height > 15000 && verticalSpeed > 0) {
+    verticalSpeed = 0;
+  }
+
+  // ─── 7.11 Ajuste de throttle con +/- ──────────────────────────────────────────
+  const throttleStep = 0.5 * deltaTime;
+  if (keys['Equal'] || keys['NumpadAdd']) {
+    throttle = Math.min(throttle + throttleStep, 1.0);
+  }
+  if (keys['Minus'] || keys['NumpadSubtract']) {
+    throttle = Math.max(throttle - throttleStep, 0.0);
+  }
+
+  // ─── 7.12 Actualizar proyectiles ──────────────────────────────────────────────
+  for (let i = projectiles.length - 1; i >= 0; i--) {
+    const proj = projectiles[i];
+    const alive = proj.update(deltaTime);
+    if (!alive) {
+      projectiles.splice(i, 1);
+    }
+  }
+
+  // ─── 7.13 HUD ─────────────────────────────────────────────────────────────────
+  // Recalculamos planeVelocity con la nueva forwardSpeed y verticalSpeed
+  const newForwardVel = Cesium.Cartesian3.multiplyByScalar(
+    forward,
+    forwardSpeed,
+    new Cesium.Cartesian3()
+  );
+  const newVerticalVel = Cesium.Cartesian3.multiplyByScalar(
+    surfaceNormal,
+    verticalSpeed,
+    new Cesium.Cartesian3()
+  );
+  const newPlaneVel = Cesium.Cartesian3.add(newForwardVel, newVerticalVel, new Cesium.Cartesian3());
+  const totalSpeed = Cesium.Cartesian3.magnitude(newPlaneVel);
+
+  const lat = Cesium.Math.toDegrees(carto.latitude).toFixed(5);
+  const lon = Cesium.Math.toDegrees(carto.longitude).toFixed(5);
+  const altVal = carto.height.toFixed(1);
+  const pitchDeg = Cesium.Math.toDegrees(hpr.pitch).toFixed(1);
+  const yawDeg   = Cesium.Math.toDegrees(hpr.heading).toFixed(1);
+  const rollDeg  = Cesium.Math.toDegrees(hpr.roll).toFixed(1);
+
+  document.getElementById("coords").textContent   = `${lat}, ${lon}`;
+  document.getElementById("alt").textContent      = altVal;
+  document.getElementById("spd").textContent      = (totalSpeed * 3.6).toFixed(0);
+  document.getElementById("throttle").textContent = (throttle * 100).toFixed(0);
+  document.getElementById("pitch").textContent    = pitchDeg;
+  document.getElementById("yaw").textContent      = yawDeg;
+  document.getElementById("roll").textContent     = rollDeg;
+
+  // ─── 7.14 Efectos de humo ─────────────────────────────────────────────────────
+  for (let s = activeSmokeSystems.length - 1; s >= 0; s--) {
+    const system = activeSmokeSystems[s];
+    for (let i = system.length - 1; i >= 0; i--) {
+      if (!system[i].update(deltaTime)) {
+        system.splice(i, 1);
+      }
+    }
+    if (system.length === 0) activeSmokeSystems.splice(s, 1);
+  }
+});
+
 
 })();
 </script>
