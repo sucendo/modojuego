@@ -74,8 +74,8 @@
 		});
 
 	// Añadir edificios OSM:
-	//const osmBuildings = await Cesium.createOsmBuildingsAsync();
-	//viewer.scene.primitives.add(osmBuildings);
+	const osmBuildings = await Cesium.createOsmBuildingsAsync();
+	viewer.scene.primitives.add(osmBuildings);
 
 	// 2. Desactivar controles por defecto de Cesium:
 	viewer.scene.screenSpaceCameraController.enableRotate = false;
