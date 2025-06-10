@@ -194,164 +194,227 @@
 		const projectiles = [];
 
 		function shootProjectile() {
-		  if (!position || !orientationQuat) return;
+			if (!position || !orientationQuat) return;
 
-		  // 6.1. Obtenemos el eje “forward” del avión (eje X local)
-		  const rotMat = Cesium.Matrix3.fromQuaternion(orientationQuat);
-			const forward = Cesium.Matrix3.multiplyByVector(
-			  rotMat,
-			  Cesium.Cartesian3.UNIT_X,
-			  new Cesium.Cartesian3()
-			);
+			  // 6.1. Obtenemos el eje “forward” del avión (eje X local)
+			  const rotMat = Cesium.Matrix3.fromQuaternion(orientationQuat);
+				const forward = Cesium.Matrix3.multiplyByVector(
+				  rotMat,
+				  Cesium.Cartesian3.UNIT_X,
+				  new Cesium.Cartesian3()
+				);
 
-		  // 6.2. Offset para que el proyectil salga justo del morro (p. ej. 15 m delante del centro)
-		  const muzzleOffset = Cesium.Cartesian3.multiplyByScalar(
-			forward,
-			15,
-			new Cesium.Cartesian3()
-		  );
-		  const initialPosition = Cesium.Cartesian3.add(
-			position,
-			muzzleOffset,
-			new Cesium.Cartesian3()
-		  );
+			  // 6.2. Offset para que el proyectil salga justo del morro (p. ej. 15 m delante del centro)
+			  const muzzleOffset = Cesium.Cartesian3.multiplyByScalar(
+				forward,
+				15,
+				new Cesium.Cartesian3()
+			  );
+			  const initialPosition = Cesium.Cartesian3.add(
+				position,
+				muzzleOffset,
+				new Cesium.Cartesian3()
+			  );
 
-		  // 6.3. Velocidad inicial de la bala: hereda forwardSpeed del avión
-		  const planeVelocity = Cesium.Cartesian3.multiplyByScalar(
-		    forward,
-		    forwardSpeed,
-		    new Cesium.Cartesian3()
-		  );
-			const pushExtra = Cesium.Cartesian3.multiplyByScalar(
+			// 6.3. Velocidad inicial de la bala: hereda forwardSpeed del avión
+			// 1) Velocidad heredada del avión
+			const planeVelocity = Cesium.Cartesian3.multiplyByScalar(
 			  forward,
 			  forwardSpeed,
 			  new Cesium.Cartesian3()
 			);
-		  const initialVelocity = Cesium.Cartesian3.add(
-		    planeVelocity,
-		    pushExtra,
-		    new Cesium.Cartesian3()
-		  );
 
-		  // 6.4. Creamos la entidad del proyectil
-		  let currentPosition = Cesium.Cartesian3.clone(initialPosition);
-		  const entity = viewer.entities.add({
-				position: new Cesium.CallbackProperty(() => currentPosition, false),
-				orientation: new Cesium.CallbackProperty(() => {
-				  // Orientar el modelo de la bala para que "mire" hacia adelante
-				  return Cesium.Transforms.headingPitchRollQuaternion(
-					currentPosition,
-					new Cesium.HeadingPitchRoll(0, 0, 0)
-				  );
-				}, false),
-				model: {
-				  uri: 'models/simulador/silver_projectile.glb',
-				  scale: 0.25,
-				  minimumPixelSize: 1
-				}
-		  });
+			// 2) Velocidad de boca de la M61 Vulcan (~1030 m/s) = (~3708 km/h)
+			const muzzleVelocity = 1030; // km/h real
+			const pushExtra = Cesium.Cartesian3.multiplyByScalar(
+			  forward,
+			  muzzleVelocity,
+			  new Cesium.Cartesian3()
+			);
 
-		  // 6.5. Añadimos al array para actualizar cada frame
-		  projectiles.push({
+			// 3) Velocidad inicial = avión + salida del cañón
+			const initialVelocity = Cesium.Cartesian3.add(
+			  planeVelocity,
+			  pushExtra,
+			  new Cesium.Cartesian3()
+			);
+
+			  // 6.4. Creamos la entidad del proyectil
+			  let currentPosition = Cesium.Cartesian3.clone(initialPosition);
+			  const entity = viewer.entities.add({
+					position: new Cesium.CallbackProperty(() => currentPosition, false),
+					orientation: new Cesium.CallbackProperty(() => {
+					  // Orientar el modelo de la bala para que "mire" hacia adelante
+					  return Cesium.Transforms.headingPitchRollQuaternion(
+						currentPosition,
+						new Cesium.HeadingPitchRoll(0, 0, 0)
+					  );
+					}, false),
+					model: {
+					  uri: 'models/simulador/silver_projectile.glb',
+					  scale: 5.25,
+					  minimumPixelSize: 1
+					}
+			  });
+
+			// 6.5. Añadimos al array para actualizar cada frame
+			projectiles.push({
 				entity,
 				velocity: Cesium.Cartesian3.clone(initialVelocity),
 				update: function(deltaTime) {
-				  // 1.6. Aplicar gravedad en Z (global)
-				  this.velocity.z -= gravity * deltaTime;
+					  this.velocity.z -= gravity * deltaTime;
 
-				  // 1.7. Mover el proyectil según la velocidad actualizada
-				  const step = Cesium.Cartesian3.multiplyByScalar(
-					this.velocity,
-					deltaTime,
-					new Cesium.Cartesian3()
-				  );
-				  currentPosition = Cesium.Cartesian3.add(
-					currentPosition,
-					step,
-					new Cesium.Cartesian3()
-				  );
+					  const step = Cesium.Cartesian3.multiplyByScalar(
+						this.velocity,
+						deltaTime,
+						new Cesium.Cartesian3()
+					  );
+					  currentPosition = Cesium.Cartesian3.add(
+						currentPosition,
+						step,
+						new Cesium.Cartesian3()
+					  );
 
-				  // 1.8. Si choca con el terreno, eliminar y crear humo
-				  const carto = Cesium.Cartographic.fromCartesian(currentPosition);
-				  const terrainHeight = viewer.scene.globe.getHeight(carto);
-				  if (terrainHeight !== undefined && carto.height <= terrainHeight + 1) {
-					viewer.entities.remove(entity);
-					createSmokeAt(currentPosition);
-					return false;
-				  }
+					  const carto = Cesium.Cartographic.fromCartesian(currentPosition);
+					  const terrainHeight = viewer.scene.globe.getHeight(carto);
 
-				  // 1.9. Si vuela demasiado lejos, eliminar
-				  if (
-					Cesium.Cartesian3.distance(currentPosition, initialPosition) > 20000
-				  ) {
-					viewer.entities.remove(entity);
-					return false;
-				  }
+					  if (terrainHeight !== undefined && carto.height <= terrainHeight + 1) {
+						viewer.entities.remove(entity);
+						createSmokeAt(currentPosition, false); // Humo normal (blanco)
+						return false;
+					  }
 
-				  return true;
-				}
-		  });
+					  // 1. Intento con raycast
+					  const rayDirection = Cesium.Cartesian3.normalize(this.velocity, new Cesium.Cartesian3());
+					  const ray = new Cesium.Ray(currentPosition, rayDirection);
+					  const hit = viewer.scene.pickFromRay(ray);
+
+					  // 2. Intento con screen pick si ray falla
+					  let hitOSM = false;
+
+					  if (hit && hit.primitive === osmBuildings) {
+						hitOSM = true;
+					  } else {
+						const screenPos = viewer.scene.cartesianToCanvasCoordinates(currentPosition);
+						if (Cesium.defined(screenPos)) {
+						  const picked = viewer.scene.pick(screenPos);
+						  if (Cesium.defined(picked) && picked.primitive === osmBuildings) {
+							hitOSM = true;
+						  }
+						}
+					  }
+
+					  if (hitOSM) {
+						viewer.entities.remove(entity);
+						createSmokeAt(currentPosition, true);
+						console.log("¡Impacto en edificio OSM detectado!");
+						return false;
+					  }
+
+					  if (Cesium.Cartesian3.distance(currentPosition, initialPosition) > 20000) {
+						viewer.entities.remove(entity);
+						return false;
+					  }
+
+					  return true;
+					}
+			});
 		}
 
 		// 7. Función para crear los efectos de los proyectiles
 		
-		function createSmokeAt(position) {
-		  const smokeParticles = [];
-		  const maxParticles = 20;
+		function createSmokeAt(position, isBlackSmoke = false) {
+			  const carto = Cesium.Cartographic.fromCartesian(position);
+			  const terrainHeight = viewer.scene.globe.getHeight(carto);
+			  const adjustedPosition = Cesium.Cartesian3.fromRadians(
+				carto.longitude,
+				carto.latitude,
+				terrainHeight + 1.0 // justo sobre el suelo
+			  );
 
-		  for (let i = 0; i < maxParticles; i++) {
-			const offset = Cesium.Cartesian3.fromElements(
-			  (Math.random() - 0.5) * 10,
-			  (Math.random() - 0.5) * 10,
-			  Math.random() * 5
-			);
+			  const smokeParticles = [];
+			  const maxParticles = isBlackSmoke ? 1: 20;
+			  const particleUri = isBlackSmoke ? 'models/simulador/incendio.glb' : 'models/simulador/smoke_particle.glb';
+			  const lifespan = isBlackSmoke ? 60: 3;
 
-			const particlePosition = Cesium.Cartesian3.add(position, offset, new Cesium.Cartesian3());
-			const startZ = particlePosition.z;
+			  for (let i = 0; i < maxParticles; i++) {
+				// Offset horizontal amplio, pero Z muy pequeño si es humo negro
+				const zOffset = isBlackSmoke ? 0 : Math.random() * 10;
+				const offset = Cesium.Cartesian3.fromElements(
+				  (Math.random() - 0.5) * 10,
+				  (Math.random() - 0.5) * 10,
+				  zOffset
+				);
 
-			const entity = {
-			  position: particlePosition,
-			  velocity: new Cesium.Cartesian3(
-				(Math.random() - 0.5) * 1.5,
-				(Math.random() - 0.5) * 1.5,
-				2 + Math.random() * 2
-			  ),
-			  age: 0,
-			  lifespan: 3 + Math.random() * 2,
-			  scale: 0.4 + Math.random() * 0.3,
-			  modelEntity: null
-			};
+				const particlePosition = Cesium.Cartesian3.add(adjustedPosition, offset, new Cesium.Cartesian3());
+   
+				const entity = {
+				  position: particlePosition,
+				  velocity: new Cesium.Cartesian3(
+					(Math.random() - 0.5) * 1.5,
+					(Math.random() - 0.5) * 1.5,
+					1 + Math.random() * 3
+				  ),
+				  age: 0,
+				  lifespan: lifespan + Math.random() * 5,
+				  scale: 1 + Math.random() * 0.5,
+				  modelEntity: null,
+				  isBlackSmoke
+				};
 
-			// Crear entidad de modelo 3D
-			entity.modelEntity = viewer.entities.add({
-			  position: new Cesium.CallbackProperty(() => entity.position, false),
-			  model: {
-				uri: 'models/simulador/smoke_particle.glb',
-				scale: new Cesium.CallbackProperty(() => {
-				  const growth = 1 + entity.age * 0.5;
-				  return entity.scale * growth;
-				}, false),
-				minimumPixelSize: 8,
+				entity.modelEntity = viewer.entities.add({
+				  position: new Cesium.CallbackProperty(() => entity.position, false),
+				 orientation: new Cesium.CallbackProperty(() => {
+				   // Ajusta 'entity.position' como punto de referencia
+				   return Cesium.Transforms.headingPitchRollQuaternion(
+					 entity.position,
+					 new Cesium.HeadingPitchRoll(
+					   Cesium.Math.toRadians(90), // heading = 90°
+					   Cesium.Math.toRadians(90),   // pitch = 90º
+					   0                          // roll  = 0
+					 )
+				   );
+				 }, false),
+				  model: {
+					uri: particleUri,
+					scale: new Cesium.CallbackProperty(() => {
+					  const growth = 1 + entity.age * 0.2;
+					  return entity.scale * growth;
+					}, false),
+					minimumPixelSize: 10,					
+					color: isBlackSmoke
+						 ? Cesium.Color.BLACK.withAlpha(0.8)
+						 : Cesium.Color.WHITE.withAlpha(0.5),
+					colorBlendMode: Cesium.ColorBlendMode.MIX,
+					colorBlendAmount: 0.8
+				  }
+				});
+
+				entity.update = (deltaTime) => {
+				  entity.age += deltaTime;
+				  if (entity.age >= entity.lifespan) {
+					viewer.entities.remove(entity.modelEntity);
+					return false;
+				  }
+
+				  const deltaMove = Cesium.Cartesian3.multiplyByScalar(entity.velocity, deltaTime, new Cesium.Cartesian3());
+				  entity.position = Cesium.Cartesian3.add(entity.position, deltaMove, new Cesium.Cartesian3());
+
+				  // Reinicia partículas de humo negro para que dure como incendio
+				  if (entity.isBlackSmoke && entity.age >= entity.lifespan - 1) {
+					entity.age = 0; // Reiniciar edad
+					entity.position = Cesium.Cartesian3.add(position, offset, new Cesium.Cartesian3());
+				  }
+
+				  return true;
+				};
+
+				smokeParticles.push(entity);
 			  }
-			});
 
-			entity.update = (deltaTime) => {
-			  entity.age += deltaTime;
-			  if (entity.age >= entity.lifespan) {
-				viewer.entities.remove(entity.modelEntity);
-				return false;
-			  }
-
-			  const deltaMove = Cesium.Cartesian3.multiplyByScalar(entity.velocity, deltaTime, new Cesium.Cartesian3());
-			  entity.position = Cesium.Cartesian3.add(entity.position, deltaMove, new Cesium.Cartesian3());
-			  return true;
-			};
-
-			smokeParticles.push(entity);
-		  }
-
-		  activeSmokeSystems.push(smokeParticles);
+			  activeSmokeSystems.push(smokeParticles);
 		}
+
 
 		// 8. Contoles 
 		
@@ -642,6 +705,29 @@
 		    }
 		    if (system.length === 0) activeSmokeSystems.splice(s, 1);
 		  }
+		  
+		// ─── Detección de terreno y colisión ──────────────────────────────────────
+		const terrainHeight = viewer.scene.globe.getHeight(carto);
+		const margin = 1.0;
+		
+		if (terrainHeight !== undefined && carto.height <= terrainHeight + margin) {
+			if (verticalSpeed < -10) {
+			// Colisión brusca
+			forwardSpeed = 0;
+			verticalSpeed = 0;
+		
+			position = Cesium.Cartesian3.fromRadians(carto.longitude, carto.latitude, terrainHeight + margin);
+			alert("¡Colisión grave! Simulación detenida.");
+		
+			viewer.scene.postRender.removeEventListener(arguments.callee);
+			} else {
+			// Aterrizaje suave o rebote leve
+			forwardSpeed *= 0.5;
+			verticalSpeed *= -0.3;
+		
+			position = Cesium.Cartesian3.fromRadians(carto.longitude, carto.latitude, terrainHeight + margin);
+			}
+		}
 
 		  // ─── 10.13 HUD ─────────────────────────────────────────────────────────────────
 		  // Recalculamos planeVelocity con la nueva forwardSpeed y verticalSpeed
@@ -699,6 +785,228 @@
 		  prevPlaneVelocity = Cesium.Cartesian3.clone(planeVelocity);
 
 		});
+		
+		/**
+		 * Recalcula todos los vectores básicos y retorna el estado del frame.
+		 */
+		function computeFrameState() {
+		  const rotMatrix     = Cesium.Matrix3.fromQuaternion(orientationQuat);
+		  const forward       = Cesium.Matrix3.multiplyByVector(rotMatrix, Cesium.Cartesian3.UNIT_X, new Cesium.Cartesian3());
+		  const right         = Cesium.Matrix3.multiplyByVector(rotMatrix, Cesium.Cartesian3.UNIT_Y, new Cesium.Cartesian3());
+		  const up            = Cesium.Matrix3.multiplyByVector(rotMatrix, Cesium.Cartesian3.UNIT_Z, new Cesium.Cartesian3());
+		  const surfaceNormal = Cesium.Ellipsoid.WGS84.geodeticSurfaceNormal(position, new Cesium.Cartesian3());
+		  const carto         = Cesium.Ellipsoid.WGS84.cartesianToCartographic(position);
+		  const hpr           = Cesium.HeadingPitchRoll.fromQuaternion(orientationQuat);
+		  const planeVelocity = Cesium.Cartesian3.add(
+			Cesium.Cartesian3.multiplyByScalar(forward, forwardSpeed, new Cesium.Cartesian3()),
+			Cesium.Cartesian3.multiplyByScalar(surfaceNormal, verticalSpeed, new Cesium.Cartesian3()),
+			new Cesium.Cartesian3()
+		  );
+		  const speed      = Cesium.Cartesian3.magnitude(planeVelocity);
+		  const angularVel = Cesium.Cartesian3.clone(ω);
+		  // IMPORTANTE: incluimos position y angularVel para updateCamera/updateHUD
+		  return { rotMatrix, forward, right, up, surfaceNormal, carto, hpr, planeVelocity, speed, angularVel, position };
+		}
+
+		/**
+		 * Calcula lift y drag según AoA y stall.
+		 */
+		function computeAerodynamics({ planeVelocity, forward, carto }) {
+		  const V = Cesium.Cartesian3.magnitude(planeVelocity);
+		  let aoa = 0, qd = 0, liftForce = 0, dragForce = 0;
+		  const stallLimit = Cesium.Math.toRadians(15);
+		  const maxAoA     = Cesium.Math.toRadians(45);
+		  if (V > 0.1) {
+			const flightDir = Cesium.Cartesian3.normalize(Cesium.Cartesian3.clone(planeVelocity), new Cesium.Cartesian3());
+			aoa = Math.min(Math.acos(Cesium.Math.clamp(Cesium.Cartesian3.dot(flightDir, forward), -1, 1)), maxAoA);
+			const rho = rho0 * Math.exp(-carto.height / 8500);
+			qd = 0.5 * rho * V * V;
+			let CL = aoa <= stallLimit
+			  ? CL_ALPHA * aoa
+			  : (CL_ALPHA * stallLimit) * Math.max(0, 1 - (aoa - stallLimit) / (maxAoA - stallLimit));
+			const AR      = wingSpan || Math.sqrt(wingArea);
+			const CDi     = (CL * CL) / (Math.PI * AR);
+			const baseCD  = CDi + CD0Fuselaje * (fuselageArea / wingArea);
+			const stallD  = aoa > stallLimit ? 2 * ((aoa - stallLimit) / (maxAoA - stallLimit)) : 0;
+			liftForce = qd * wingArea * CL + qd * fuselageArea * Cm_ALPHA * aoa;
+			dragForce = qd * wingArea * (baseCD + stallD);
+		  }
+		  return { aoa, qd, liftForce, dragForce };
+		}
+
+		/**
+		 * @param {number} dt
+		 * @param {Object} state
+		 * @param {number} state.forward
+		 * @param {number} state.surfaceNormal
+		 * @param {Object} aero — { liftForce, dragForce, qd, aoa }
+		 */
+		function updatePhysics(dt, state, { liftForce, dragForce, qd, aoa }) {
+		  const { forward, surfaceNormal } = state;
+		  // 1) rotación
+		  updateRotation(dt, qd, aoa);
+
+		  // 2) vertical
+		  verticalSpeed = Cesium.Math.clamp(
+			verticalSpeed - gravity * dt + (liftForce / mass) * dt,
+			-300, 300
+		  );
+
+		  // 3) longitudinal
+		  const thrustForce   = throttle * maxThrust;
+		  const parasiticDrag = dragCoefficient * forwardSpeed * forwardSpeed;
+		  const totalDrag     = dragForce + parasiticDrag;
+		  // convertir fuerza neta en aceleración
+		  const accelForward  = (thrustForce - totalDrag) / mass;
+		  forwardSpeed = Math.max(0, forwardSpeed + accelForward * dt);
+
+		  // 4) posición
+		  position = Cesium.Cartesian3.add(
+			position,
+			Cesium.Cartesian3.add(
+			  Cesium.Cartesian3.multiplyByScalar(forward, forwardSpeed * dt,  new Cesium.Cartesian3()),
+			  Cesium.Cartesian3.multiplyByScalar(surfaceNormal, verticalSpeed * dt, new Cesium.Cartesian3()),
+			  new Cesium.Cartesian3()
+			),
+			new Cesium.Cartesian3()
+		  );
+		}
+		
+		/**
+		 * Actualiza la cámara para orbitar alrededor del avión.
+		 * @param {{ rotMatrix: Cesium.Matrix3, position: Cesium.Cartesian3 }} state
+		 */
+		function updateCamera(state) {
+		  const { rotMatrix, position } = state;
+
+		  // Punto alrededor del que orbita la cámara
+		  const center = Cesium.Cartesian3.clone(position);
+
+		  // Offset local en coordenadas del avión
+		  const localOffset = new Cesium.Cartesian3(
+			orbitRadius * Math.cos(orbitAngles.pitch) * Math.sin(orbitAngles.yaw),
+			orbitRadius * Math.cos(orbitAngles.pitch) * Math.cos(orbitAngles.yaw),
+			orbitRadius * Math.sin(orbitAngles.pitch)
+		  );
+
+		  // Transformar offset al espacio mundial
+		  const offset = Cesium.Matrix3.multiplyByVector(
+			rotMatrix,
+			localOffset,
+			new Cesium.Cartesian3()
+		  );
+
+		  // Posición final de la cámara
+		  const cameraPos = Cesium.Cartesian3.add(center, offset, new Cesium.Cartesian3());
+
+		  // Dirección de la cámara (apunta al avión)
+		  const direction = Cesium.Cartesian3.normalize(
+			Cesium.Cartesian3.subtract(center, cameraPos, new Cesium.Cartesian3()),
+			new Cesium.Cartesian3()
+		  );
+
+		  // Vector "up" de la cámara, alineado con el eje Z del avión
+		  const up = Cesium.Matrix3.multiplyByVector(
+			rotMatrix,
+			Cesium.Cartesian3.UNIT_Z,
+			new Cesium.Cartesian3()
+		  );
+
+		  // Aplicar la vista
+		  viewer.scene.camera.setView({
+			destination: cameraPos,
+			orientation: { direction, up }
+		  });
+		}
+
+		/**
+		 * Actualiza el HUD con los datos de vuelo.
+		 *
+		 * @param {Object} state
+		 * @param {Cesium.Cartographic} state.carto         — Posición geográfica (lat, lon, alt).
+		 * @param {Cesium.HeadingPitchRoll} state.hpr       — Orientación (heading, pitch, roll).
+		 * @param {number} state.speed                      — Velocidad total (m/s).
+		 * @param {Cesium.Cartesian3} state.angularVel      — Velocidad angular en rad/s (x=roll, y=pitch, z=yaw).
+		 * @param {Object} aero
+		 * @param {number} aero.aoa                         — Ángulo de ataque (rad).
+		 * @param {number} gLoad                             — Carga G instantánea.
+		 */
+		function updateHUD(state, aero, gLoad) {
+		  const { carto, hpr, speed, angularVel } = state;
+
+		  // Coordenadas
+		  document.getElementById("coords").textContent =
+			`${Cesium.Math.toDegrees(carto.latitude).toFixed(5)}, ` +
+			`${Cesium.Math.toDegrees(carto.longitude).toFixed(5)}`;
+
+		  // Altitud
+		  document.getElementById("alt").textContent = carto.height.toFixed(1);
+
+		  // Velocidad en km/h
+		  document.getElementById("spd").textContent = (speed * 3.6).toFixed(0);
+
+		  // Throttle (%)
+		  document.getElementById("throttle").textContent = Math.round(throttle * 100);
+
+		  // Ángulos de orientación
+		  document.getElementById("pitch").textContent = Cesium.Math.toDegrees(hpr.pitch).toFixed(1);
+		  document.getElementById("yaw").textContent   = Cesium.Math.toDegrees(hpr.heading).toFixed(1);
+		  document.getElementById("roll").textContent  = Cesium.Math.toDegrees(hpr.roll).toFixed(1);
+
+		  // Ángulo de ataque (AoA)
+		  document.getElementById("aoa").textContent = Cesium.Math.toDegrees(aero.aoa).toFixed(1);
+
+		  // Velocidades angulares en °/s
+		  document.getElementById("rollRate").textContent  =
+			Cesium.Math.toDegrees(angularVel.x).toFixed(1);
+		  document.getElementById("pitchRate").textContent =
+			Cesium.Math.toDegrees(angularVel.y).toFixed(1);
+		  document.getElementById("yawRate").textContent   =
+			Cesium.Math.toDegrees(angularVel.z).toFixed(1);
+
+		  // Carga G
+		  document.getElementById("gLoad").textContent = gLoad.toFixed(2) + " g";
+		}
+
+		/**
+		 * Actualiza todos los proyectiles disparados.
+		 * @param {number} dt — Tiempo transcurrido en segundos desde el último frame.
+		 */
+		function updateProjectiles(dt) {
+		  // Recorremos de atrás hacia adelante para poder eliminar sin afectar índices
+		  for (let i = projectiles.length - 1; i >= 0; i--) {
+			const proj = projectiles[i];
+			const alive = proj.update(dt);
+			if (!alive) {
+			  // Si retornó false, ya no debe existir: lo quitamos del array
+			  projectiles.splice(i, 1);
+			}
+		  }
+		}
+
+		/**
+		 * Actualiza todos los sistemas de humo activos.
+		 * @param {number} dt — Tiempo transcurrido en segundos desde el último frame.
+		 */
+		function updateSmoke(dt) {
+		  // Recorremos cada sistema de partículas
+		  for (let s = activeSmokeSystems.length - 1; s >= 0; s--) {
+			const system = activeSmokeSystems[s];
+			// Actualizamos cada partícula en el sistema
+			for (let i = system.length - 1; i >= 0; i--) {
+			  const particle = system[i];
+			  const alive = particle.update(dt);
+			  if (!alive) {
+				// Si la partícula ha expirado, la eliminamos
+				system.splice(i, 1);
+			  }
+			}
+			// Si el sistema quedó vacío, lo eliminamos por completo
+			if (system.length === 0) {
+			  activeSmokeSystems.splice(s, 1);
+			}
+		  }
+		}
 		
 		/**
 	    * Integra la dinámica rotacional de cuerpo rígido vía Newton–Euler
