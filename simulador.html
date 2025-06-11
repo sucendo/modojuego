@@ -480,93 +480,68 @@
 		
 		// ─── Variables para giroscopio móvil ──────────────────────────────────────────
 		let useGyro = false;
-		let isGyroscopeEnabled = true;
-		// Reintroducimos gyroAngles para updateRotation()
+		let gyroOffset = { alpha: 0, beta: 0, gamma: 0 };
 		let gyroAngles = { roll: 0, pitch: 0, yaw: 0 };
-		// Variables base para el giroscopio
-		let baseAlpha = 0, baseBeta = 0, baseGamma = 0;
-		let gyroInitialized = false;
-		// Límites de inclinación
-		const gyroPitchLimit = Math.PI / 3;  // ±60°
-		const gyroRollLimit  = Math.PI / 2;  // ±90°
-		// Factor de escala y amortiguación (define estos valores en tu código principal)
-		const gyroScaleFactor = 1.0;
-		const rotationDamping  = 0.8;
-		const deviceOrientation = window.orientation || 0;
+		// Almacenamos el último evento para el reset
+		let lastEvent = { alpha: 0, beta: 0, gamma: 0 };
 
 		// Detectar soporte y activar giroscopio
 		if (window.DeviceOrientationEvent) {
-		    window.addEventListener('deviceorientation', (e) => {
-			// Primera lectura: fijar la posición base
-			if (e.alpha !== null && !gyroInitialized) {
-			  baseAlpha = e.alpha;
-			  baseBeta  = e.beta;
-			  baseGamma = e.gamma;
-			  gyroInitialized = true;
-			}
-			if (!isGyroscopeEnabled) return;
-			if (e.alpha !== null) {
-			  useGyro = true;
-			  // Mostrar controles móviles
-			  document.getElementById('mobileControls').style.display = 'flex';
-			  document.getElementById('throttleSlider').style.display = 'block';
+			window.addEventListener('deviceorientation', (e) => {
+				if (e.alpha === null) {
+				return;
+				}
+				// Guardamos el evento para poder resetear offset más tarde
+				lastEvent.alpha = e.alpha;
+				lastEvent.beta  = e.beta;
+				lastEvent.gamma = e.gamma;
+		
+				useGyro = true;
+				document.getElementById('mobileControls').style.display = 'flex';
+				document.getElementById('throttleSlider').style.display = 'block';
+		
+				// Calcular diferencia respecto al offset
+				const a = e.alpha - gyroOffset.alpha;
+				const b = e.beta  - gyroOffset.beta;
+				const g = e.gamma - gyroOffset.gamma;
+		
+				// Mapear a radianes y ajustar signos para Cesium
+				gyroAngles.yaw   = Cesium.Math.toRadians( a       ); // giro horizontal
+				gyroAngles.pitch = Cesium.Math.toRadians(-b       ); // tilt adelante/atrás invertido
+				gyroAngles.roll  = Cesium.Math.toRadians( g       ); // tilt izquierda/derecha
+			});
 
-			  // Calcular deltas en radianes
-			  let deltaAlpha = (e.alpha - baseAlpha) * (Math.PI / 180);
-			  let deltaBeta  = (e.beta  - baseBeta ) * (Math.PI / 180);
-			  let deltaGamma = (e.gamma - baseGamma) * (Math.PI / 180);
-
-			  // Ajustar según orientación de pantalla
-			  if (deviceOrientation === 90) {
-				[deltaBeta, deltaGamma] = [-deltaGamma, deltaBeta];
-			  } else if (deviceOrientation === -90) {
-				[deltaBeta, deltaGamma] = [deltaGamma, -deltaBeta];
-			  } else if (deviceOrientation === 180) {
-				deltaBeta  = -deltaBeta;
-				deltaGamma = -deltaGamma;
-			  }
-
-			  // Limitar ángulos
-			  deltaBeta  = Math.max(-gyroPitchLimit, Math.min(gyroPitchLimit, deltaBeta));
-			  deltaGamma = Math.max(-gyroRollLimit,  Math.min(gyroRollLimit, deltaGamma));
-			  
-			 // Actualizar gyroAngles para updateRotation()
-			 gyroAngles = {
-			   roll:  deltaGamma,
-			   pitch: deltaBeta,
-			   yaw:   deltaAlpha
-			 };
-
-			  // Asignar velocidades de giro con escala y amortiguación
-			  pitchVelocity = deltaBeta  * gyroScaleFactor * (1 - Math.abs(deltaBeta)  / gyroPitchLimit) * rotationDamping;
-			  rollVelocity  = deltaGamma * gyroScaleFactor * (1 - Math.abs(deltaGamma) / gyroRollLimit)  * -1 * rotationDamping;
-			  yawVelocity   = deltaAlpha * gyroScaleFactor * rotationDamping;
-			}
-		  });
-
-		  // Botón reset gyro
-		  document.getElementById('btnResetGyro').addEventListener('click', () => {
-			useGyro = false;
-			gyroInitialized = false;
-			console.log('Giroscopio reiniciado, base de orientación restablecida');
-		  });
+			// Botón reset gyro
+			document.getElementById('btnResetGyro').addEventListener('click', () => {
+				// Desactivamos momentáneamente el gyro para no aplicar ápex en este mismo frame
+				useGyro = false;
+				// Reajustamos el offset a la última lectura válida
+				gyroOffset.alpha = lastEvent.alpha;
+				gyroOffset.beta  = lastEvent.beta;
+				gyroOffset.gamma = lastEvent.gamma;
+				// Volvemos a activar el gyro
+				useGyro = true;
+				console.log('Giroscopio reiniciado y offset actualizado');
+			});
 		}
 
 		// Botón fullscreen
 		document.getElementById('btnFullscreen').addEventListener('click', () => {
-		  const el = document.documentElement;
-		  if (!document.fullscreenElement) {
-			el.requestFullscreen();
-		  } else {
-			document.exitFullscreen();
-		  }
+			const el = document.documentElement;
+			if (!document.fullscreenElement) {
+				el.requestFullscreen();
+			} else {
+				document.exitFullscreen();
+			}
 		});
 
 		// Slider de throttle
 		const slider = document.getElementById('throttleSlider');
 		slider.addEventListener('input', () => {
-		  throttle = slider.value / 100;
+			throttle = slider.value / 100;
 		});
+		
+		//--------------------------------------------------------------------------------------
 
 		//10. Control de escenas
 		
