@@ -481,6 +481,8 @@
 		// ─── Variables para giroscopio móvil ──────────────────────────────────────────
 		let useGyro = false;
 		let isGyroscopeEnabled = true;
+		// Reintroducimos gyroAngles para updateRotation()
+		let gyroAngles = { roll: 0, pitch: 0, yaw: 0 };
 		// Variables base para el giroscopio
 		let baseAlpha = 0, baseBeta = 0, baseGamma = 0;
 		let gyroInitialized = false;
@@ -527,6 +529,13 @@
 			  // Limitar ángulos
 			  deltaBeta  = Math.max(-gyroPitchLimit, Math.min(gyroPitchLimit, deltaBeta));
 			  deltaGamma = Math.max(-gyroRollLimit,  Math.min(gyroRollLimit, deltaGamma));
+			  
+			 // Actualizar gyroAngles para updateRotation()
+			 gyroAngles = {
+			   roll:  deltaGamma,
+			   pitch: deltaBeta,
+			   yaw:   deltaAlpha
+			 };
 
 			  // Asignar velocidades de giro con escala y amortiguación
 			  pitchVelocity = deltaBeta  * gyroScaleFactor * (1 - Math.abs(deltaBeta)  / gyroPitchLimit) * rotationDamping;
