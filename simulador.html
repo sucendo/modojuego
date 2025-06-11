@@ -110,6 +110,14 @@
 		viewer.scene.screenSpaceCameraController.enableTilt = false;
 		viewer.scene.screenSpaceCameraController.enableLook = false;
 		
+		// ─── Detectar si es móvil o tablet ─────────────────────────────────────────
+		const isMobileDevice = /Mobi|Android|iPhone|iPad|Tablet/.test(navigator.userAgent);
+		// ─── Mostrar controles en móviles/tablets ────────────────────────────────
+		if (isMobileDevice) {
+			document.getElementById('mobileControls').style.display = 'flex';
+			document.getElementById('throttleSlider').style.display = 'block';
+		}
+		
 		// 3. Usar ScreenSpaceEventHandler para capturar arrastre de ratón:
 		  const handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
 
@@ -261,69 +269,88 @@
 			projectiles.push({
 				entity,
 				velocity: Cesium.Cartesian3.clone(initialVelocity),
+				// Variables para gestionar el impacto
+				impacted: false,
+				impactTimer: 0,
 				update: function(deltaTime) {
-					  this.velocity.z -= gravity * deltaTime;
-
-					  const step = Cesium.Cartesian3.multiplyByScalar(
+					// 1) Actualizamos velocidad y calculamos nueva posición
+					this.velocity.z -= gravity * deltaTime;
+					const prevPos = Cesium.Cartesian3.clone(currentPosition);
+					const step    = Cesium.Cartesian3.multiplyByScalar(
 						this.velocity,
 						deltaTime,
 						new Cesium.Cartesian3()
-					  );
-					  currentPosition = Cesium.Cartesian3.add(
-						currentPosition,
-						step,
-						new Cesium.Cartesian3()
-					  );
+					);
+					currentPosition = Cesium.Cartesian3.add(prevPos, step, new Cesium.Cartesian3());
+					
+					// distancia recorrida desde el disparo
+					const traveled = Cesium.Cartesian3.distance(currentPosition, initialPosition);
 
 					  const carto = Cesium.Cartographic.fromCartesian(currentPosition);
 					  const terrainHeight = viewer.scene.globe.getHeight(carto);
 
-					  if (terrainHeight !== undefined && carto.height <= terrainHeight + 1) {
-						viewer.entities.remove(entity);
-						createSmokeAt(currentPosition, false); // Humo normal (blanco)
-						return false;
-					  }
-
-					  // 1. Intento con raycast
-					  const rayDirection = Cesium.Cartesian3.normalize(this.velocity, new Cesium.Cartesian3());
-					  const ray = new Cesium.Ray(currentPosition, rayDirection);
-					  const hit = viewer.scene.pickFromRay(ray);
-
-					  // 2. Intento con screen pick si ray falla
-					  let hitOSM = false;
-
-					  if (hit && hit.primitive === osmBuildings) {
-						hitOSM = true;
-					  } else {
-						const screenPos = viewer.scene.cartesianToCanvasCoordinates(currentPosition);
-						if (Cesium.defined(screenPos)) {
-						  const picked = viewer.scene.pick(screenPos);
-						  if (Cesium.defined(picked) && picked.primitive === osmBuildings) {
+					// 2) Detección OSM en pantalla sin umbral de distancia
+					let hitOSM = false;
+					const screenPos = viewer.scene.cartesianToCanvasCoordinates(currentPosition);
+					if (Cesium.defined(screenPos)) {
+						const picks = viewer.scene.drillPick(screenPos);
+						for (const pick of picks) {
+							if (pick.primitive === osmBuildings) {
 							hitOSM = true;
-						  }
+							break;
+							}
 						}
-					  }
-
-					  if (hitOSM) {
-						viewer.entities.remove(entity);
-						createSmokeAt(currentPosition, true);
+					}
+					
+					// 3) Detectar choque con terreno
+					const hitTerrain = terrainHeight !== undefined && carto.height <= terrainHeight + 1;
+				
+					// 4) Si colisiona, creamos humo en la posición exacta y luego borramos
+					if ((hitTerrain || hitOSM) && !this.impacted) {
+					this.impacted = true;
+					// Si es edificio, calculamos la posición exacta en la fachada
+					let smokePos = currentPosition;
+					if (hitOSM && Cesium.defined(screenPos)) {
+						const pickWorld = viewer.scene.pickPosition(screenPos);
+						if (Cesium.defined(pickWorld)) {
+						smokePos = pickWorld;
+						}
 						console.log("¡Impacto en edificio OSM detectado!");
-						return false;
-					  }
+					}
+					// Creamos el humo o incendio en smokePos
+					createSmokeAt(smokePos, hitOSM);
+					// Eliminamos la bala tras un pequeño retraso para ver su última posición
+					setTimeout(() => viewer.entities.remove(entity), 50);
+					return false;
+					}
 
+					// Si ya impactó, contabiliza el tiempo y elimina al siguiente update
+					if (this.impacted) {
+					this.impactTimer += deltaTime;
+						if (this.impactTimer > 0) {
+							viewer.entities.remove(entity);
+							return false;
+						}
+					// Deja que se dibuje este frame (para mostrar la posición final)
+					}
+
+					// 5) fuera de rango máximo
 					  if (Cesium.Cartesian3.distance(currentPosition, initialPosition) > 20000) {
 						viewer.entities.remove(entity);
 						return false;
 					  }
 
-					  return true;
-					}
+					return true;
+				}
 			});
 		}
 
-		// 7. Función para crear los efectos de los proyectiles
-		
-		function createSmokeAt(position, isBlackSmoke = false) {
+		// 7. Función para crear los efectos de los proyectiles	
+		/**
+		 * @param {Cesium.Cartesian3} position — punto de impacto
+		 * @param {boolean} isBurn — true si es incendio (OSM), false si es humo normal (terreno)
+		 */
+		function createSmokeAt(position, isBurn = false) {
 			  const carto = Cesium.Cartographic.fromCartesian(position);
 			  const terrainHeight = viewer.scene.globe.getHeight(carto);
 			  const adjustedPosition = Cesium.Cartesian3.fromRadians(
@@ -333,21 +360,31 @@
 			  );
 
 			  const smokeParticles = [];
-			  const maxParticles = isBlackSmoke ? 1: 20;
-			  const particleUri = isBlackSmoke ? 'models/simulador/incendio.glb' : 'models/simulador/smoke_particle.glb';
-			  const lifespan = isBlackSmoke ? 60: 3;
+			// Parámetros distintos según tipo de humo
+			let maxParticles, particleUri, lifespan;
+			if (isBurn) {
+				maxParticles = 1;
+				particleUri  = 'models/simulador/incendio.glb';
+				lifespan     = 120;    // 6 segundos de incendio
+			} else {
+				maxParticles = 20;
+				particleUri  = 'models/simulador/smoke_particle.glb';
+				lifespan     = 3;    // 3 segundos de humo normal
+			}
 
 			  for (let i = 0; i < maxParticles; i++) {
-				// Offset horizontal amplio, pero Z muy pequeño si es humo negro
-				const zOffset = isBlackSmoke ? 0 : Math.random() * 10;
 				const offset = Cesium.Cartesian3.fromElements(
 				  (Math.random() - 0.5) * 10,
 				  (Math.random() - 0.5) * 10,
-				  zOffset
+				  Math.random() * 10
 				);
 
-				const particlePosition = Cesium.Cartesian3.add(adjustedPosition, offset, new Cesium.Cartesian3());
-   
+				const particlePosition = Cesium.Cartesian3.add(
+				  adjustedPosition,
+				  offset,
+				  new Cesium.Cartesian3()
+				);
+
 				const entity = {
 				  position: particlePosition,
 				  velocity: new Cesium.Cartesian3(
@@ -358,36 +395,32 @@
 				  age: 0,
 				  lifespan: lifespan + Math.random() * 5,
 				  scale: 1 + Math.random() * 0.5,
-				  modelEntity: null,
-				  isBlackSmoke
+				  modelEntity: null
 				};
 
 				entity.modelEntity = viewer.entities.add({
-				  position: new Cesium.CallbackProperty(() => entity.position, false),
-				 orientation: new Cesium.CallbackProperty(() => {
-				   // Ajusta 'entity.position' como punto de referencia
-				   return Cesium.Transforms.headingPitchRollQuaternion(
-					 entity.position,
-					 new Cesium.HeadingPitchRoll(
-					   Cesium.Math.toRadians(90), // heading = 90°
-					   Cesium.Math.toRadians(90),   // pitch = 90º
-					   0                          // roll  = 0
-					 )
-				   );
-				 }, false),
-				  model: {
+				position: new Cesium.CallbackProperty(() => entity.position, false),
+				// Para incendio: girar 90° en pitch; para humo normal, sin rotar
+				orientation: new Cesium.CallbackProperty(() => {
+					const hpr = isBurn
+					? new Cesium.HeadingPitchRoll(0, Math.PI / 2, 0)
+					: new Cesium.HeadingPitchRoll(0, 0, 0);
+					return Cesium.Transforms.headingPitchRollQuaternion(entity.position, hpr);
+				}, false),
+				model: {
 					uri: particleUri,
 					scale: new Cesium.CallbackProperty(() => {
-					  const growth = 1 + entity.age * 0.2;
-					  return entity.scale * growth;
+					const growth = 1 + entity.age * 0.2;
+					return entity.scale * growth;
 					}, false),
-					minimumPixelSize: 10,					
-					color: isBlackSmoke
-						 ? Cesium.Color.BLACK.withAlpha(0.8)
-						 : Cesium.Color.WHITE.withAlpha(0.5),
+					minimumPixelSize: 10,
+					// Si es incendio, color negro semitransparente; si no, blanco translúcido
+					color: isBurn
+					? Cesium.Color.BLACK.withAlpha(0.8)
+					: Cesium.Color.WHITE.withAlpha(0.5),
 					colorBlendMode: Cesium.ColorBlendMode.MIX,
 					colorBlendAmount: 0.8
-				  }
+				}
 				});
 
 				entity.update = (deltaTime) => {
@@ -397,14 +430,16 @@
 					return false;
 				  }
 
-				  const deltaMove = Cesium.Cartesian3.multiplyByScalar(entity.velocity, deltaTime, new Cesium.Cartesian3());
-				  entity.position = Cesium.Cartesian3.add(entity.position, deltaMove, new Cesium.Cartesian3());
-
-				  // Reinicia partículas de humo negro para que dure como incendio
-				  if (entity.isBlackSmoke && entity.age >= entity.lifespan - 1) {
-					entity.age = 0; // Reiniciar edad
-					entity.position = Cesium.Cartesian3.add(position, offset, new Cesium.Cartesian3());
-				  }
+				  const deltaMove = Cesium.Cartesian3.multiplyByScalar(
+					entity.velocity,
+					deltaTime,
+					new Cesium.Cartesian3()
+				  );
+				  entity.position = Cesium.Cartesian3.add(
+					entity.position,
+					deltaMove,
+					new Cesium.Cartesian3()
+				  );
 
 				  return true;
 				};
@@ -413,7 +448,7 @@
 			  }
 
 			  activeSmokeSystems.push(smokeParticles);
-		}
+			}
 
 
 		// 8. Contoles 
