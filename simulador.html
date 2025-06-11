@@ -198,7 +198,48 @@
 		}
 		await createModel();
 		
+		//-------- Logica de disparo -------------
 		// 6. Función para los proyectiles:
+		
+		/**
+		* Comprueba si una posición está sobre un edificio OSM.
+		* Hace un raycast descendente desde 1 m sobre la posición.
+		*/
+		function detectOSMAt(position) {
+		// Convertir a coordenadas de pantalla
+		const screenPos = viewer.scene.cartesianToCanvasCoordinates(position);
+		if (!Cesium.defined(screenPos)) {
+			return false;
+		}
+		// Drill pick para obtener features bajo ese píxel
+		const picks = viewer.scene.drillPick(screenPos);
+		for (const pick of picks) {
+			// Si es un feature de 3D Tiles (OSM Buildings), devolvemos true
+			if (pick instanceof Cesium.Cesium3DTileFeature) {
+			return true;
+			}
+		}
+		return false;
+		}
+		
+		/**
+		* Maneja el impacto de un proyectil en 'position'.
+		* Decide terreno vs edificio, genera humo/incendio y elimina la entidad.
+		*/
+		function handleImpact(entity, position) {
+		// Detectamos si cayó sobre un edificio OSM
+		const isOSM = detectOSMAt(position);
+		if (isOSM) {
+			console.log("¡Impacto en edificio OSM detectado!");
+		}
+		// Creamos humo o incendio en la posición exacta
+		createSmokeAt(position, isOSM);
+		// Eliminamos la bala tras breve retardo para ver su última posición
+		setTimeout(() => viewer.entities.remove(entity), 50);
+		}
+		
+		
+		
 		const projectiles = [];
 
 		function shootProjectile() {
@@ -289,39 +330,13 @@
 					  const carto = Cesium.Cartographic.fromCartesian(currentPosition);
 					  const terrainHeight = viewer.scene.globe.getHeight(carto);
 
-					// 2) Detección OSM en pantalla sin umbral de distancia
-					let hitOSM = false;
-					const screenPos = viewer.scene.cartesianToCanvasCoordinates(currentPosition);
-					if (Cesium.defined(screenPos)) {
-						const picks = viewer.scene.drillPick(screenPos);
-						for (const pick of picks) {
-							if (pick.primitive === osmBuildings) {
-							hitOSM = true;
-							break;
-							}
-						}
-					}
-					
-					// 3) Detectar choque con terreno
+					// Detección de choque contra terreno
 					const hitTerrain = terrainHeight !== undefined && carto.height <= terrainHeight + 1;
-				
-					// 4) Si colisiona, creamos humo en la posición exacta y luego borramos
-					if ((hitTerrain || hitOSM) && !this.impacted) {
-					this.impacted = true;
-					// Si es edificio, calculamos la posición exacta en la fachada
-					let smokePos = currentPosition;
-					if (hitOSM && Cesium.defined(screenPos)) {
-						const pickWorld = viewer.scene.pickPosition(screenPos);
-						if (Cesium.defined(pickWorld)) {
-						smokePos = pickWorld;
-						}
-						console.log("¡Impacto en edificio OSM detectado!");
-					}
-					// Creamos el humo o incendio en smokePos
-					createSmokeAt(smokePos, hitOSM);
-					// Eliminamos la bala tras un pequeño retraso para ver su última posición
-					setTimeout(() => viewer.entities.remove(entity), 50);
-					return false;
+					// Si cayó contra el suelo (edificio o terreno), manejamos impacto
+					if (hitTerrain && !this.impacted) {
+					  this.impacted = true;
+					  handleImpact(entity, currentPosition);
+					  return false;
 					}
 
 					// Si ya impactó, contabiliza el tiempo y elimina al siguiente update
