@@ -253,17 +253,35 @@
 				  new Cesium.Cartesian3()
 				);
 
-			  // 6.2. Offset para que el proyectil salga justo del morro (p. ej. 15 m delante del centro)
-			  const muzzleOffset = Cesium.Cartesian3.multiplyByScalar(
-				forward,
-				15,
-				new Cesium.Cartesian3()
-			  );
-			  const initialPosition = Cesium.Cartesian3.add(
-				position,
-				muzzleOffset,
-				new Cesium.Cartesian3()
-			  );
+			 // 6.2. Offset para que el proyectil salga justo del morro (5 m delante del centro)
+const muzzleOffset = Cesium.Cartesian3.multiplyByScalar(
+  forward,
+  2.5, // distancia reducida para acercarlo al morro
+  new Cesium.Cartesian3()
+);
+// Posición base tras el offset frontal
+const muzzlePosition = Cesium.Cartesian3.add(
+  position,
+  muzzleOffset,
+  new Cesium.Cartesian3()
+);
+// Desplazamiento vertical: bajar 2 m en eje local 'up'
+const up = Cesium.Matrix3.multiplyByVector(
+  rotMat,
+  Cesium.Cartesian3.UNIT_Z,
+  new Cesium.Cartesian3()
+);
+const downOffset = Cesium.Cartesian3.multiplyByScalar(
+  up,
+  -1, // metros a bajar
+  new Cesium.Cartesian3()
+);
+// Posición inicial final del proyectil
+const initialPosition = Cesium.Cartesian3.add(
+  muzzlePosition,
+  downOffset,
+  new Cesium.Cartesian3()
+);
 
 			// 6.3. Velocidad inicial de la bala: hereda forwardSpeed del avión
 			// 1) Velocidad heredada del avión
@@ -274,7 +292,7 @@
 			);
 
 			// 2) Velocidad de boca de la M61 Vulcan (~1030 m/s) = (~3708 km/h)
-			const muzzleVelocity = 1030; // km/h real
+			const muzzleVelocity = 3708/2; // km/h real
 			const pushExtra = Cesium.Cartesian3.multiplyByScalar(
 			  forward,
 			  muzzleVelocity,
@@ -301,7 +319,7 @@
 					}, false),
 					model: {
 					  uri: 'models/simulador/silver_projectile.glb',
-					  scale: 5.25,
+					  scale: 0.25,
 					  minimumPixelSize: 1
 					}
 			  });
@@ -366,105 +384,155 @@
 		 * @param {boolean} isBurn — true si es incendio (OSM), false si es humo normal (terreno)
 		 */
 		function createSmokeAt(position, isBurn = false) {
-			  const carto = Cesium.Cartographic.fromCartesian(position);
-			  const terrainHeight = viewer.scene.globe.getHeight(carto);
-			  const adjustedPosition = Cesium.Cartesian3.fromRadians(
+			const carto = Cesium.Cartographic.fromCartesian(position);
+			const terrainHeight = viewer.scene.globe.getHeight(carto);
+			const adjustedPosition = Cesium.Cartesian3.fromRadians(
 				carto.longitude,
 				carto.latitude,
 				terrainHeight + 1.0 // justo sobre el suelo
-			  );
-
-			  const smokeParticles = [];
-			// Parámetros distintos según tipo de humo
-			let maxParticles, particleUri, lifespan;
+			);
+			
+			const smokeParticles = [];
+			
 			if (isBurn) {
-				maxParticles = 1;
-				particleUri  = 'models/simulador/incendio.glb';
-				lifespan     = 120;    // 6 segundos de incendio
+				// Incendio estático con fade-in y fade-out
+				const entityLifetime = 120;
+				const fadeInTime = 5;
+				const fadeOutTime = 20;
+			
+				// Creamos entidad única
+				const burnEntity = {
+				position: adjustedPosition,
+				age: 0,
+				lifespan: entityLifetime,
+				modelEntity: null
+				};
+			
+				burnEntity.modelEntity = viewer.entities.add({
+				position: adjustedPosition,
+				// Girar 90° alrededor del eje Z (roll) para que el modelo quede vertical
+				orientation: Cesium.Transforms.headingPitchRollQuaternion(
+					adjustedPosition,
+					new Cesium.HeadingPitchRoll(
+						0,                           // heading
+						Cesium.Math.toRadians(90),                           // pitch
+						0    // roll = 90°
+					)
+				),
+				model: {
+					uri: 'models/simulador/incendio.glb',
+					scale: new Cesium.CallbackProperty(() => {
+						const age = burnEntity.age;
+						const t = Math.min(Math.max(age / entityLifetime, 0), 1);
+						return Cesium.Math.lerp(0.5, 5.0, t);
+					}, false),
+					minimumPixelSize: 10,
+					// Color dinámico para fade
+					color: new Cesium.CallbackProperty(() => {
+						const age = burnEntity.age;
+						let alpha = 1.0;
+						if (age < fadeInTime) {
+							alpha = age / fadeInTime;
+						} else if (age > entityLifetime - fadeOutTime) {
+							alpha = (entityLifetime - age) / fadeOutTime;
+						}
+						return Cesium.Color.BLACK.withAlpha(alpha);
+					}, false),
+					colorBlendMode: Cesium.ColorBlendMode.MIX,
+					colorBlendAmount: 1.0
+				}
+				});
+			
+				// Actualización del incendio
+				burnEntity.update = (deltaTime) => {
+				burnEntity.age += deltaTime;
+				if (burnEntity.age >= burnEntity.lifespan) {
+					viewer.entities.remove(burnEntity.modelEntity);
+					return false;
+				}
+				return true;
+				};
+			
+				activeSmokeSystems.push([burnEntity]);
+			
 			} else {
-				maxParticles = 20;
-				particleUri  = 'models/simulador/smoke_particle.glb';
-				lifespan     = 3;    // 3 segundos de humo normal
-			}
-
-			  for (let i = 0; i < maxParticles; i++) {
+				// Humo normal como antes
+				const maxParticles = 20;
+				const particleUri = 'models/simulador/smoke_particle.glb';
+				const baseLifespan = 3;
+			
+				for (let i = 0; i < maxParticles; i++) {
 				const offset = Cesium.Cartesian3.fromElements(
-				  (Math.random() - 0.5) * 10,
-				  (Math.random() - 0.5) * 10,
-				  Math.random() * 10
+					(Math.random() - 0.5) * 10,
+					(Math.random() - 0.5) * 10,
+					Math.random() * 10
 				);
-
+			
 				const particlePosition = Cesium.Cartesian3.add(
-				  adjustedPosition,
-				  offset,
-				  new Cesium.Cartesian3()
+					adjustedPosition,
+					offset,
+					new Cesium.Cartesian3()
 				);
-
-				const entity = {
-				  position: particlePosition,
-				  velocity: new Cesium.Cartesian3(
+			
+				const particle = {
+					position: particlePosition,
+					velocity: new Cesium.Cartesian3(
 					(Math.random() - 0.5) * 1.5,
 					(Math.random() - 0.5) * 1.5,
 					1 + Math.random() * 3
-				  ),
-				  age: 0,
-				  lifespan: lifespan + Math.random() * 5,
-				  scale: 1 + Math.random() * 0.5,
-				  modelEntity: null
+					),
+					age: 0,
+					lifespan: baseLifespan + Math.random() * 2,
+					scale: 1 + Math.random() * 0.5,
+					modelEntity: null
 				};
-
-				entity.modelEntity = viewer.entities.add({
-				position: new Cesium.CallbackProperty(() => entity.position, false),
-				// Para incendio: girar 90° en pitch; para humo normal, sin rotar
-				orientation: new Cesium.CallbackProperty(() => {
-					const hpr = isBurn
-					? new Cesium.HeadingPitchRoll(0, Math.PI / 2, 0)
-					: new Cesium.HeadingPitchRoll(0, 0, 0);
-					return Cesium.Transforms.headingPitchRollQuaternion(entity.position, hpr);
-				}, false),
-				model: {
+			
+				particle.modelEntity = viewer.entities.add({
+					position: new Cesium.CallbackProperty(() => particle.position, false),
+					orientation: new Cesium.CallbackProperty(() => {
+					return Cesium.Transforms.headingPitchRollQuaternion(
+						particle.position,
+						new Cesium.HeadingPitchRoll(0, 0, 0)
+					);
+					}, false),
+					model: {
 					uri: particleUri,
 					scale: new Cesium.CallbackProperty(() => {
-					const growth = 1 + entity.age * 0.2;
-					return entity.scale * growth;
+						const growth = 1 + particle.age * 0.2;
+						return particle.scale * growth;
 					}, false),
 					minimumPixelSize: 10,
-					// Si es incendio, color negro semitransparente; si no, blanco translúcido
-					color: isBurn
-					? Cesium.Color.BLACK.withAlpha(0.8)
-					: Cesium.Color.WHITE.withAlpha(0.5),
+					color: Cesium.Color.WHITE.withAlpha(0.5),
 					colorBlendMode: Cesium.ColorBlendMode.MIX,
 					colorBlendAmount: 0.8
-				}
+					}
 				});
-
-				entity.update = (deltaTime) => {
-				  entity.age += deltaTime;
-				  if (entity.age >= entity.lifespan) {
-					viewer.entities.remove(entity.modelEntity);
+			
+				particle.update = (deltaTime) => {
+					particle.age += deltaTime;
+					if (particle.age >= particle.lifespan) {
+					viewer.entities.remove(particle.modelEntity);
 					return false;
-				  }
-
-				  const deltaMove = Cesium.Cartesian3.multiplyByScalar(
-					entity.velocity,
+					}
+					const deltaMove = Cesium.Cartesian3.multiplyByScalar(
+					particle.velocity,
 					deltaTime,
 					new Cesium.Cartesian3()
-				  );
-				  entity.position = Cesium.Cartesian3.add(
-					entity.position,
+					);
+					particle.position = Cesium.Cartesian3.add(
+					particle.position,
 					deltaMove,
 					new Cesium.Cartesian3()
-				  );
-
-				  return true;
+					);
+					return true;
 				};
-
-				smokeParticles.push(entity);
-			  }
-
-			  activeSmokeSystems.push(smokeParticles);
+			
+				smokeParticles.push(particle);
+				}
+			
+				activeSmokeSystems.push(smokeParticles);
 			}
-
+		}
 
 		// 8. Contoles 
 		
