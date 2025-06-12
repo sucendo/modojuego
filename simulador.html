@@ -48,20 +48,21 @@
   <!-- ─── Controles móviles ───────────────────────────────────────────────────── -->
   <div id="mobileControls" style="position:fixed; bottom:10px; right:10px; display:none; flex-direction:column; align-items:center; gap:10px; z-index:1000;">
     <button id="btnResetGyro" title="Reset Gyro">
-      <i class="material-icons">refresh</i>
+		<i class="material-icons">refresh</i>
     </button>
+	<button id="btnShoot" title="Disparar">
+		<i class="material-icons">bolt</i>
+	</button>
     <button id="btnFullscreen" title="Toggle Fullscreen">
-      <i class="material-icons">fullscreen</i>
+		<i class="material-icons">fullscreen</i>
     </button>
 	<input type="range" id="throttleSlider" min="0" max="100" value="0" style="
-    position:fixed;
-    top:10%;
-    right:10px;
-    height:80vh;
-    writing-mode:bt-lr;
-    transform:rotate(270deg);
-    display:none;
-    z-index:1000;
+    position: fixed;
+    top: 90px;
+    width: 50vh;
+    transform: rotate(270deg);
+    display: block;
+    z-index: 1000;
 	"/>
   </div>  
 
@@ -629,17 +630,24 @@ const initialPosition = Cesium.Cartesian3.add(
 				gyroAngles.roll  = Cesium.Math.toRadians( g       ); // tilt izquierda/derecha
 			});
 
-			// Botón reset gyro
+			// Botón reset gyro		
 			document.getElementById('btnResetGyro').addEventListener('click', () => {
-				// Desactivamos momentáneamente el gyro para no aplicar ápex en este mismo frame
-				useGyro = false;
-				// Reajustamos el offset a la última lectura válida
+				// Resetear offset de giroscopio
 				gyroOffset.alpha = lastEvent.alpha;
 				gyroOffset.beta  = lastEvent.beta;
 				gyroOffset.gamma = lastEvent.gamma;
-				// Volvemos a activar el gyro
+
+				// Reiniciar velocidades angulares
+				ω = new Cesium.Cartesian3(0, 0, 0);
+
+				// Resetear deflexiones de superficies
+				δa_current = 0;
+				δe_current = 0;
+				δr_current = 0;
+
+				// Activar de nuevo
 				useGyro = true;
-				console.log('Giroscopio reiniciado y offset actualizado');
+				console.log('🔄 Giroscopio y orientación reiniciados');
 			});
 		}
 
@@ -657,6 +665,11 @@ const initialPosition = Cesium.Cartesian3.add(
 		const slider = document.getElementById('throttleSlider');
 		slider.addEventListener('input', () => {
 			throttle = slider.value / 100;
+		});
+		
+		// Botón de disparo en móviles
+		document.getElementById('btnShoot').addEventListener('click', () => {
+			shootProjectile();
 		});
 		
 		//--------------------------------------------------------------------------------------
