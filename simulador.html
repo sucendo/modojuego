@@ -630,8 +630,8 @@ const initialPosition = Cesium.Cartesian3.add(
 				const sensitivityRoll  = 0.3;
 		
 				// Mapear a radianes y ajustar signos para Cesium
-				gyroAngles.yaw   = Cesium.Math.toRadians(a * sensitivityYaw);
-				gyroAngles.pitch = Cesium.Math.toRadians(-b * sensitivityPitch);
+				gyroAngles.yaw   = Cesium.Math.toRadians(-b * sensitivityYaw);
+				gyroAngles.pitch = Cesium.Math.toRadians(a * sensitivityPitch);
 				gyroAngles.roll  = Cesium.Math.toRadians(g * sensitivityRoll);
 			});
 
