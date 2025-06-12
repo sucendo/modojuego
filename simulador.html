@@ -624,10 +624,15 @@ const initialPosition = Cesium.Cartesian3.add(
 				const b = e.beta  - gyroOffset.beta;
 				const g = e.gamma - gyroOffset.gamma;
 		
+				// Factores de sensibilidad
+				const sensitivityYaw   = 0.6;
+				const sensitivityPitch = 0.4;
+				const sensitivityRoll  = 0.3;
+		
 				// Mapear a radianes y ajustar signos para Cesium
-				gyroAngles.yaw   = Cesium.Math.toRadians(-b       ); // giro horizontal
-				gyroAngles.pitch = Cesium.Math.toRadians( a       ); // tilt adelante/atrás invertido
-				gyroAngles.roll  = Cesium.Math.toRadians( g       ); // tilt izquierda/derecha
+				gyroAngles.yaw   = Cesium.Math.toRadians(a * sensitivityYaw);
+				gyroAngles.pitch = Cesium.Math.toRadians(-b * sensitivityPitch);
+				gyroAngles.roll  = Cesium.Math.toRadians(g * sensitivityRoll);
 			});
 
 			// Botón reset gyro		
