@@ -50,7 +50,7 @@
     <button id="btnResetGyro" title="Reset Gyro">
 		<i class="material-icons">refresh</i>
     </button>
-	<button id="btnShoot" title="Disparar" style="background-color: yellow;">
+	<button id="btnShoot" title="Disparar">
 		<i class="material-icons">bolt</i
 	</button>
     <button id="btnFullscreen" title="Toggle Fullscreen">
@@ -704,115 +704,17 @@
 			const verticalVelocity = Cesium.Cartesian3.multiplyByScalar(surfaceNormal, verticalSpeed, new Cesium.Cartesian3());
 			const planeVelocity    = Cesium.Cartesian3.add(forwardVelocity, verticalVelocity, new Cesium.Cartesian3());
 
-			// ─── 10.3 Sustentación (lift) y drag aerodinámico realista ────────────────────────
-			const V = Cesium.Cartesian3.magnitude(planeVelocity);
-			let liftForce = 0;
-			let dragForceScalar = 0;
-			// Ángulo de ataque (radianes)
-			let aoa = 0;		  
-
-			let liftDir = new Cesium.Cartesian3(0, 0, 0);
-
-			if (V > 0.1) {
-				// a) calculamos AoA
-				const flightDir = Cesium.Cartesian3.normalize(Cesium.Cartesian3.clone(planeVelocity), new Cesium.Cartesian3());
-				let cosAoA = Cesium.Math.clamp(Cesium.Cartesian3.dot(flightDir, forward), -1.0, 1.0);
-				aoa = Math.acos(cosAoA);
-				
-				// ─── Modelo de stall real ───────────────────────────────
-				const stallLimit = Cesium.Math.toRadians(15);
-				const maxAoA     = Cesium.Math.toRadians(45); // ángulo donde CL cae a cero
-				
-				// b) coeficiente de lift: lineal hasta stall, luego cae lineal hasta cero
-				let CL;
-				if (aoa <= stallLimit) {
-				CL = CL_ALPHA * aoa;
-				} else {
-				const CLmax  = CL_ALPHA * stallLimit;
-				const excess = aoa - stallLimit;
-				CL = CLmax * Math.max(0, 1 - excess / (maxAoA - stallLimit));
-				}
-				
-				// c) coeficiente inducido aproximado: CDi = CL² / (π·AR)
-				const AR = (wingSpan || Math.sqrt(wingArea)) ? wingSpan : wingArea;
-				const CDi = (CL * CL) / (Math.PI * (AR || wingArea));
-
-				// d) densidad ISA simplificado
-				const rho = rho0 * Math.exp(-carto.height / 8500);
-				
-				// e) presión dinámica
-				const qd = 0.5 * rho * V * V;
-				
-				 // f) fuerzas de lift y drag con drag extra en stall
-				 liftForce = qd * wingArea * CL;
-				 // g) lift adicional generado por el fuselaje (traslacional, no rotacional)
-				 //   usamos Cm_ALPHA como coeficiente de lift por radian para el fuselaje
-				 const CL_fuselaje = Cm_ALPHA * aoa;
-				 liftForce += qd * fuselageArea * CL_fuselaje;
-				 
-				// drag base: inducido + parásito de fuselaje
-				const baseCD = CDi + CD0Fuselaje * (fuselageArea / wingArea);
-				// drag adicional post-stall
-				let stallDrag = 0;
-				if (aoa > stallLimit) {
-					const excess = aoa - stallLimit;
-					stallDrag = 2.0 * (excess / (maxAoA - stallLimit)); // ajusta magnitud a gusto
-				}
-				dragForceScalar = qd * wingArea * (baseCD + stallDrag);
-
-				// g) dirección de lift
-				const tmp = new Cesium.Cartesian3();
-				Cesium.Cartesian3.cross(planeVelocity, right, tmp);
-				Cesium.Cartesian3.cross(tmp, planeVelocity, tmp);
-				if (Cesium.Cartesian3.magnitude(tmp) > 1e-3) {
-				  Cesium.Cartesian3.normalize(tmp, tmp);
-				}
-				liftDir = tmp;
-
-				// Dinámica rotacional física (¡aquí aplicamos los torques!) ─────────────────
-				updateRotation(deltaTime, qd);
-			}
-
-			// ─── 10.4 Actualizar verticalSpeed con lift, gravedad y damping ───────────────────
-			verticalSpeed -= gravity * deltaTime;
-			if (liftForce !== 0) {
-				verticalSpeed += (liftForce / mass) * deltaTime;
-			}
-			verticalSpeed *= (1 - dragFactor * deltaTime);
-			verticalSpeed = Math.max(-300, Math.min(verticalSpeed, 300));
-
-			  // ─── 10.5 Drag aerodinámico horizontal ───────────────────────────────────────────
-			  let dragDir = new Cesium.Cartesian3(0, 0, 0);
-			  if (V > 0.1) {
-				dragDir = Cesium.Cartesian3.clone(planeVelocity);
-				Cesium.Cartesian3.normalize(dragDir, dragDir);
-				Cesium.Cartesian3.negate(dragDir, dragDir);
-			  }
-			  const dragAcc = dragForceScalar / mass;
-			  const dragStep = Cesium.Cartesian3.multiplyByScalar(dragDir, dragAcc * deltaTime, new Cesium.Cartesian3());
-
-			  const newVel = Cesium.Cartesian3.add(planeVelocity, dragStep, new Cesium.Cartesian3());
-			  forwardSpeed = Math.max(0, Cesium.Cartesian3.dot(newVel, forward));
+			// 10.3–10.5 Aerodinámica y movimiento
+			const aero = calculateAerodynamics(planeVelocity, forward, right, carto);
+			applyLiftAndGravity(deltaTime, aero.qd, aero.aoa, aero.liftForce);
+			applyInducedDrag(deltaTime, planeVelocity, forward, aero.dragForce);			  
 
 			  // ─── 10.6 Dinámica de avance con throttle y dragCoefficient simple ─────────────────
-			  const thrust = throttle * maxThrust;
-			  const simpleDrag = dragCoefficient * forwardSpeed * forwardSpeed;
-			  forwardSpeed += (thrust - simpleDrag) * deltaTime;
-			  forwardSpeed = Math.max(0, forwardSpeed);
-
-			  // ─── 10.7 Desplazar posición del avión ───────────────────────────────────────────
-			  const stepForward  = Cesium.Cartesian3.multiplyByScalar(forward, forwardSpeed * deltaTime, new Cesium.Cartesian3());
-			  const gravityStep  = Cesium.Cartesian3.multiplyByScalar(surfaceNormal, verticalSpeed * deltaTime, new Cesium.Cartesian3());
-			  position = Cesium.Cartesian3.add(position, Cesium.Cartesian3.add(stepForward, gravityStep, new Cesium.Cartesian3()), new Cesium.Cartesian3());
-			 
-			 
-			const state = computeFrameState();
-			/*  
 			applyThrottleAndDrag(deltaTime);
-			position = updatePosition(deltaTime, state.forward, state.surfaceNormal, position);
-			*/			
+			updatePosition(deltaTime, forward, surfaceNormal);
 
 			  // ─── 10.8 Órbita de la cámara alrededor del avión ──────────────────────────────
+			  const state = computeFrameState();
 			updateCamera(state);
 
 			  // ─── 10.9 Límite de altitud ───────────────────────────────────────────────────
@@ -832,14 +734,161 @@
 			if (detectTerrainCollision(state.carto, verticalSpeed)) return;
 
 			// 10. HUD
-			const aero = computeAerodynamics(state);
+			//const aero = computeAerodynamics(state);
 			updateHUD(state, aero, deltaTime, gravity);
 
 		});
 		
 		/**
-		 * Recalcula todos los vectores básicos y retorna el estado del frame.
-		 */
+		* Calcula sustentación, drag inducido y AoA.
+		* @param {Cesium.Cartesian3} planeVelocity — Velocidad actual del avión.
+		* @param {Cesium.Cartesian3} forward — Eje X local del avión.
+		* @param {Cesium.Cartesian3} right — Eje Y local del avión.
+		* @param {Cesium.Cartographic} carto — Posición (lat, lon, alt).
+		* @returns {{ liftForce: number, dragForce: number, aoa: number, qd: number, liftDir: Cesium.Cartesian3 }}
+		*/
+		function calculateAerodynamics(planeVelocity, forward, right, carto) {
+			const V = Cesium.Cartesian3.magnitude(planeVelocity);
+			let liftForce = 0;
+			let dragForce = 0;
+			let aoa = 0;
+			let qd = 0;
+			const liftDir = new Cesium.Cartesian3(0, 0, 0);
+			
+			if (V > 0.1) {
+				// AoA
+				const flightDir = Cesium.Cartesian3.normalize(planeVelocity, new Cesium.Cartesian3());
+				const cosAoA = Cesium.Math.clamp(Cesium.Cartesian3.dot(flightDir, forward), -1.0, 1.0);
+				aoa = Math.acos(cosAoA);
+			
+				// Stall model
+				const stallLimit = Cesium.Math.toRadians(15);
+				const maxAoA     = Cesium.Math.toRadians(45);
+				let CL;
+				if (aoa <= stallLimit) {
+				CL = CL_ALPHA * aoa;
+				} else {
+				const CLmax = CL_ALPHA * stallLimit;
+				CL = CLmax * Math.max(0, 1 - (aoa - stallLimit) / (maxAoA - stallLimit));
+				}
+			
+				// Induced drag
+				const AR = wingSpan || Math.sqrt(wingArea);
+				const CDi = (CL * CL) / (Math.PI * AR);
+			
+				// Density (ISA simplified)
+				const rho = rho0 * Math.exp(-carto.height / 8500);
+			
+				// Dynamic pressure
+				qd = 0.5 * rho * V * V;
+			
+				// Lift forces
+				liftForce = qd * wingArea * CL
+						+ qd * fuselageArea * (Cm_ALPHA * aoa);
+			
+				// Parasite + stall drag
+				const baseCD = CDi + CD0Fuselaje * (fuselageArea / wingArea);
+				const stallDrag = aoa > stallLimit 
+				? 2.0 * ((aoa - stallLimit) / (maxAoA - stallLimit)) 
+				: 0;
+				dragForce = qd * wingArea * (baseCD + stallDrag);
+			
+				// Lift direction
+				const tmp = new Cesium.Cartesian3();
+				Cesium.Cartesian3.cross(planeVelocity, right, tmp);
+				Cesium.Cartesian3.cross(tmp, planeVelocity, tmp);
+				if (Cesium.Cartesian3.magnitude(tmp) > 1e-3) {
+				Cesium.Cartesian3.normalize(tmp, tmp);
+				}
+				liftDir.x = tmp.x; liftDir.y = tmp.y; liftDir.z = tmp.z;
+			}
+			
+			return { liftForce, dragForce, aoa, qd, liftDir };
+		}
+		
+		/**
+		* Integra lift, gravedad y damping rotacional.
+		* También llama a updateRotation().
+		* @param {number} dt — DeltaTime en segundos.
+		* @param {number} qd — Dynamic pressure de aerodinámica.
+		* @param {number} aoa — Ángulo de ataque (rad).
+		* @param {number} liftForce — Fuerza de sustentación (N).
+		*/
+		function applyLiftAndGravity(dt, qd, aoa, liftForce) {
+			// Rotación física
+			updateRotation(dt, qd, aoa);
+			
+			// Vertical
+			verticalSpeed -= gravity * dt;
+			if (liftForce !== 0) {
+				verticalSpeed += (liftForce / mass) * dt;
+			}
+			verticalSpeed *= (1 - dragFactor * dt);
+			verticalSpeed = Math.max(-300, Math.min(verticalSpeed, 300));
+		}
+		
+		/**
+		* Aplica drag inducido a la velocidad horizontal.
+		* @param {number} dt
+		* @param {Cesium.Cartesian3} planeVelocity
+		* @param {Cesium.Cartesian3} forward
+		* @param {number} dragForceScalar
+		*/
+		function applyInducedDrag(dt, planeVelocity, forward, dragForceScalar) {
+			// Direccion del drag
+			let dragDir = new Cesium.Cartesian3(0, 0, 0);
+			if (Cesium.Cartesian3.magnitude(planeVelocity) > 0.1) {
+				dragDir = Cesium.Cartesian3.clone(planeVelocity);
+				Cesium.Cartesian3.normalize(dragDir, dragDir);
+				Cesium.Cartesian3.negate(dragDir, dragDir);
+			}
+			const dragAcc = dragForceScalar / mass;
+			const dragStep = Cesium.Cartesian3.multiplyByScalar(dragDir, dragAcc * dt, new Cesium.Cartesian3());
+			const newVel = Cesium.Cartesian3.add(planeVelocity, dragStep, new Cesium.Cartesian3());
+			forwardSpeed = Math.max(0, Cesium.Cartesian3.dot(newVel, forward));
+		}
+				
+				
+		/**
+		* Aplica la dinámica de avance simple: empuje del motor y arrastre aerodinámico.
+		* Modifica forwardSpeed.
+		* @param {number} dt — Intervalo de tiempo en segundos.
+		*/
+		function applyThrottleAndDrag(dt) {
+			const thrust     = throttle * maxThrust;
+			const simpleDrag = dragCoefficient * forwardSpeed * forwardSpeed;
+			forwardSpeed    += (thrust - simpleDrag) * dt;
+			forwardSpeed     = Math.max(0, forwardSpeed);
+		}
+		
+		/**
+		* Calcula y aplica el desplazamiento del avión en el espacio global.
+		* Modifica la variable global `position`.
+		* @param {number} dt — Intervalo de tiempo en segundos.
+		* @param {Cesium.Cartesian3} forward — Eje X local del avión.
+		* @param {Cesium.Cartesian3} surfaceNormal — Normal al terreno.
+		*/
+		function updatePosition(dt, forward, surfaceNormal) {
+			const stepForward = Cesium.Cartesian3.multiplyByScalar(
+				forward,
+				forwardSpeed * dt,
+				new Cesium.Cartesian3()
+			);
+			const gravityStep = Cesium.Cartesian3.multiplyByScalar(
+				surfaceNormal,
+				verticalSpeed * dt,
+				new Cesium.Cartesian3()
+			);
+			position = Cesium.Cartesian3.add(
+				position,
+				Cesium.Cartesian3.add(stepForward, gravityStep, new Cesium.Cartesian3()),
+				new Cesium.Cartesian3()
+			);
+		}
+		
+		/**
+		* Recalcula todos los vectores básicos y retorna el estado del frame.
+		*/
 		function computeFrameState() {
 			  const rotMatrix     = Cesium.Matrix3.fromQuaternion(orientationQuat);
 			  const forward       = Cesium.Matrix3.multiplyByVector(rotMatrix, Cesium.Cartesian3.UNIT_X, new Cesium.Cartesian3());
@@ -857,96 +906,6 @@
 			  const angularVel = Cesium.Cartesian3.clone(ω);
 			  // IMPORTANTE: incluimos position y angularVel para updateCamera/updateHUD
 			  return { rotMatrix, forward, right, up, surfaceNormal, carto, hpr, planeVelocity, speed, angularVel, position };
-		}
-
-		/**
-		 * Calcula lift y drag según AoA y stall.
-		 */
-		function computeAerodynamics({ planeVelocity, forward, carto }) {
-			  const V = Cesium.Cartesian3.magnitude(planeVelocity);
-			  let aoa = 0, qd = 0, liftForce = 0, dragForce = 0;
-			  const stallLimit = Cesium.Math.toRadians(15);
-			  const maxAoA     = Cesium.Math.toRadians(45);
-			  if (V > 0.1) {
-				const flightDir = Cesium.Cartesian3.normalize(Cesium.Cartesian3.clone(planeVelocity), new Cesium.Cartesian3());
-				aoa = Math.min(Math.acos(Cesium.Math.clamp(Cesium.Cartesian3.dot(flightDir, forward), -1, 1)), maxAoA);
-				const rho = rho0 * Math.exp(-carto.height / 8500);
-				qd = 0.5 * rho * V * V;
-				let CL = aoa <= stallLimit
-				  ? CL_ALPHA * aoa
-				  : (CL_ALPHA * stallLimit) * Math.max(0, 1 - (aoa - stallLimit) / (maxAoA - stallLimit));
-				const AR      = wingSpan || Math.sqrt(wingArea);
-				const CDi     = (CL * CL) / (Math.PI * AR);
-				const baseCD  = CDi + CD0Fuselaje * (fuselageArea / wingArea);
-				const stallD  = aoa > stallLimit ? 2 * ((aoa - stallLimit) / (maxAoA - stallLimit)) : 0;
-				liftForce = qd * wingArea * CL + qd * fuselageArea * Cm_ALPHA * aoa;
-				dragForce = qd * wingArea * (baseCD + stallD);
-			  }
-			  return { aoa, qd, liftForce, dragForce };
-		}
-
-		/**
-		 * @param {number} dt
-		 * @param {Object} state
-		 * @param {number} state.forward
-		 * @param {number} state.surfaceNormal
-		 * @param {Object} aero — { liftForce, dragForce, qd, aoa }
-		 */
-		function updatePhysics(dt, state, { liftForce, dragForce, qd, aoa }) {
-			  const { forward, surfaceNormal } = state;
-			  // 1) rotación
-			  updateRotation(dt, qd, aoa);
-
-			  // 2) vertical
-			  verticalSpeed = Cesium.Math.clamp(
-				verticalSpeed - gravity * dt + (liftForce / mass) * dt,
-				-300, 300
-			  );
-
-			  // 3) longitudinal
-			  const thrustForce   = throttle * maxThrust;
-			  const parasiticDrag = dragCoefficient * forwardSpeed * forwardSpeed;
-			  const totalDrag     = dragForce + parasiticDrag;
-			  // convertir fuerza neta en aceleración
-			  const accelForward  = (thrustForce - totalDrag) / mass;
-			  forwardSpeed = Math.max(0, forwardSpeed + accelForward * dt);
-
-			  // 4) posición
-			  position = Cesium.Cartesian3.add(
-				position,
-				Cesium.Cartesian3.add(
-				  Cesium.Cartesian3.multiplyByScalar(forward, forwardSpeed * dt,  new Cesium.Cartesian3()),
-				  Cesium.Cartesian3.multiplyByScalar(surfaceNormal, verticalSpeed * dt, new Cesium.Cartesian3()),
-				  new Cesium.Cartesian3()
-				),
-				new Cesium.Cartesian3()
-			  );
-		}
-		
-		
-		/**
-		 * Aplica la dinámica de avance simple: empuje del motor y arrastre aerodinámico.
-		 * Modifica forwardSpeed.
-		 * @param {number} dt - Intervalo de tiempo en segundos.
-		 */
-		function applyThrottleAndDrag(dt) {
-			const thrust = throttle * maxThrust;
-			const simpleDrag = dragCoefficient * forwardSpeed * forwardSpeed;
-			forwardSpeed += (thrust - simpleDrag) * deltaTime;
-			forwardSpeed = Math.max(0, forwardSpeed);
-		}
-
-		/**
-		 * Calcula y aplica el desplazamiento del avión en el espacio global.
-		 * Modifica la posición global.
-		 * @param {number} dt - Intervalo de tiempo en segundos.
-		 * @param {Cesium.Cartesian3} forward - Dirección de avance.
-		 * @param {Cesium.Cartesian3} surfaceNormal - Dirección perpendicular al suelo.
-		 */
-		function updatePosition(dt, forward, surfaceNormal, currentPosition) {
-			const stepForward = Cesium.Cartesian3.multiplyByScalar(forward, forwardSpeed * dt, new Cesium.Cartesian3());
-			const gravityStep = Cesium.Cartesian3.multiplyByScalar(surfaceNormal, verticalSpeed * dt, new Cesium.Cartesian3());
-			return Cesium.Cartesian3.add(currentPosition, Cesium.Cartesian3.add(stepForward, gravityStep, new Cesium.Cartesian3()), new Cesium.Cartesian3());
 		}
 		
 		/**
