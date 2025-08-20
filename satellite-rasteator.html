@@ -1,0 +1,760 @@
+<!doctype html>
+<html lang="es">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Sentinel-2 Live Tracker (estable)</title>
+		<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+		<style>
+			:root{ --bg:#0b1020; --panel:#121832; --text:#e6eef8; }
+			html,body{height:100%; margin:0; background:var(--bg); color:var(--text); font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif}
+			#app{display:grid; grid-template-rows:auto 1fr; height:100%}
+			header{display:flex; gap:1rem; align-items:center; padding:.6rem 1rem; background:#0b1020; border-bottom:1px solid #1f284a}
+			header h1{font-size:1.05rem; margin:0}
+			header .actions{margin-left:auto; display:flex; gap:.5rem; align-items:center}
+			header button, header select{background:#11173a; color:var(--text); border:1px solid #26315c; padding:.45rem .7rem; border-radius:.5rem; cursor:pointer}
+			#map{height:100%;}
+			.panel{position:absolute; top:70px; right:12px; width:330px; background:var(--panel); border:1px solid #26315c; border-radius:12px; padding:.75rem; box-shadow:0 10px 30px rgba(0,0,0,.35); z-index:1000}
+			.panel h2{margin:.2rem 0 .6rem; font-size:1rem}
+			.sat-item{display:grid; grid-template-columns:auto 1fr auto; gap:.5rem; align-items:center; padding:.45rem .5rem; border-radius:.6rem; border:1px solid #223059; margin-bottom:.45rem}
+			.kv{font-size:.85rem; opacity:.9}
+			details{border:1px dashed #2a3a6b; border-radius:.6rem; padding:.4rem .6rem; margin-top:.5rem}
+			textarea{width:100%; min-height:110px; background:#0c1330; color:var(--text); border:1px solid #2a3a6b; border-radius:.5rem; padding:.5rem; font-family:ui-monospace,Menlo,Consolas,monospace}
+			.hint{font-size:.8rem; opacity:.7}
+			/* Si quieres forzar SIN relleno para pruebas, descomenta:
+			#map .terminator-line { fill: none !important; }
+			*/
+			/* Solo nubes (WMTS IR): el fondo oscuro desaparece, quedan píxeles claros (nubes) */
+			.clouds-only img{
+				mix-blend-mode: lighten;
+				image-rendering:auto;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="app">
+			<header>
+				<h1>Sentinel-2 Live Tracker (estable)</h1>
+				<div class="actions">
+					<button id="locateMe">Ubicarme</button>
+					<button id="fitAll">Enfocar</button>
+					<label style="display:flex;align-items:center;gap:.35rem">
+						<input type="checkbox" id="toggleTerminator" checked /> Día/Noche
+					</label>
+					<label style="display:flex;align-items:center;gap:.35rem">
+						<input type="checkbox" id="toggleRadar" checked /> Radar (RainViewer)
+					</label>
+					<label style="display:flex;align-items:center;gap:.35rem">
+						<input type="checkbox" id="toggleClouds" checked /> Nubes (Satélite)
+					</label>
+					<select id="baseSel">
+						<option value="osm">OSM</option>
+						<option value="light">Claro</option>
+						<option value="dark">Oscuro</option>
+					</select>
+					<select id="trackHorizon">
+						<option value="0">Sin traza</option>
+						<option value="30">+30 min</option>
+						<option value="60" selected>+60 min</option>
+						<option value="90">+90 min</option>
+					</select>
+					<input type="datetime-local" id="refTime" step="1" style="background:#11173a;color:#e6eef8;border:1px solid #26315c;border-radius:.5rem;padding:.45rem .5rem" />
+					<button id="useNow">Ahora</button>
+				</div>
+			</header>
+			<div id="map"></div>
+		</div>
+		
+		<div class="panel">
+			<h2>Estado</h2>
+			<div class="kv" id="status">TLE: esperando…</div>
+			<div class="kv" id="terminatorStatus">Día/Noche: inicializando…</div>
+			<div class="kv" id="timeStatus">Tiempo ref: auto (reloj del sistema)</div>
+			
+			<div class="sat-item">
+				<input type="checkbox" id="toggle-S2A" checked />
+				<div><div><b>SENTINEL-2A</b></div><div class="kv" id="kv-S2A"></div></div>
+				<button data-id="S2A" class="zoomSat">Zoom</button>
+			</div>
+			<div class="sat-item">
+				<input type="checkbox" id="toggle-S2B" checked />
+				<div><div><b>SENTINEL-2B</b></div><div class="kv" id="kv-S2B"></div></div>
+				<button data-id="S2B" class="zoomSat">Zoom</button>
+			</div>
+			
+			<details>
+				<summary>⚙️ TLE manual (si CORS bloquea)</summary>
+				<p class="hint">Pega las líneas 1 y 2 de cada TLE y pulsa «Aplicar».</p>
+				<label>2A TLE</label>
+				<textarea id="tleA"></textarea>
+				<label>2B TLE</label>
+				<textarea id="tleB"></textarea>
+				<button id="applyTLE">Aplicar</button>
+			</details>
+		</div>
+		
+		<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+		<script src="https://unpkg.com/satellite.js/dist/satellite.min.js"></script>
+		<script>
+			(function(){
+				const MERC_MAX = 85.05112878;
+				
+				function ready(fn){ if(document.readyState!=='loading') fn(); else document.addEventListener('DOMContentLoaded', fn); }
+				
+				ready(function(){
+					// --- MAPA ---
+					const map = L.map('map', { worldCopyJump:true }).setView([0,0], 2);
+					// Pane para satélites por encima del terminador (650)
+					let satPane = map.getPane('satPane');
+					if (!satPane) { map.createPane('satPane'); satPane = map.getPane('satPane'); }
+					satPane.style.zIndex = '700';       // por encima del terminatorPane (650)
+					satPane.style.pointerEvents = 'auto';
+					const baseOSM   = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 7, attribution: 'OpenStreetMap contributors' }).addTo(map);
+					const baseLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 7, attribution: 'OpenStreetMap & CARTO' });
+					const baseDark  = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',  { maxZoom: 7, attribution: 'OpenStreetMap & CARTO' });
+					
+ // ----- Estado de tiempo de referencia (auto vs manual) -----
+const timeState = { manual:false, value:new Date() };
+function refNow(){ return timeState.manual ? new Date(timeState.value) : new Date(); }
+// Formatea para <input type="datetime-local"> (zona local, sin 'Z')
+function toLocalDTValue(d){
+  const pad = n => String(n).padStart(2,'0');
+  const y=d.getFullYear(), m=pad(d.getMonth()+1), day=pad(d.getDate());
+  const hh=pad(d.getHours()), mm=pad(d.getMinutes()), ss=pad(d.getSeconds());
+  return `${y}-${m}-${day}T${hh}:${mm}:${ss}`;
+}
+// Actualiza el label de estado
+function updateTimeStatus(){
+  const el = document.getElementById('timeStatus'); if(!el) return;
+  if(timeState.manual){
+    const d = refNow();
+    el.textContent = `Tiempo ref: manual → ${d.toLocaleString()} (local) | ${d.toISOString().replace('T',' ').replace('Z',' UTC')}`;
+  } else {
+    el.textContent = 'Tiempo ref: auto (reloj del sistema)';
+  }
+}
+// Recalcula todo cuando cambia el tiempo de referencia
+function applyRefTime(){
+  if(window.dayNightLayer) window.dayNightLayer.setTime(refNow());
+  if(typeof buildTerminatorLine === 'function') buildTerminatorLine();
+  if(typeof tick === 'function') tick();
+  if(typeof computeAllTracks === 'function') computeAllTracks();
+  updateTimeStatus();
+}
+				
+// Pane para nubes, por debajo del terminador y por encima del base map
+let cloudsPane = map.getPane('cloudsPane');
+if(!cloudsPane){ map.createPane('cloudsPane'); cloudsPane = map.getPane('cloudsPane'); }
+cloudsPane.style.zIndex = '390';
+cloudsPane.style.pointerEvents = 'none';									
+                                        
+                                        
+// ========================= RainViewer (sin TimeDimension) =========================
+ // Usamos la API pública para obtener la lista de frames y elegimos:
+ //  - si "Ahora": el frame MÁS RECIENTE disponible
+ //  - si manual:  el frame más cercano ≤ refTime()
+ const RAINV_META_URL = 'https://api.rainviewer.com/public/weather-maps.json';
+
+// Radar
+let rainv = {
+   host: 'https://tilecache.rainviewer.com',
+   frames: [],           // [{time, path}, ...] (segundos desde epoch)
+   layer: null,
+   lastUrl: '',
+   _lastMeta: 0
+ };
+// Satélite (infrared)
+let satv = {
+  host: 'https://tilecache.rainviewer.com',
+  frames: [],           // [{time, path}, ...]
+  layer: null,
+  lastUrl: '',
+  _lastMeta: 0
+};
+
+function fetchRainMeta(){
+  return fetch(RAINV_META_URL, { cache: 'no-store' })
+    .then(r => r.json())
+    .then(j => {
+      const host = j?.host || rainv.host;
+      rainv.host = host; satv.host = host;
+      // Radar
+      const past = Array.isArray(j?.radar?.past) ? j.radar.past : [];
+      const nowc = Array.isArray(j?.radar?.nowcast) ? j.radar.nowcast : [];
+      rainv.frames = past.concat(nowc).sort((a,b)=>a.time-b.time);
+      rainv._lastMeta = Date.now();
+      // Satélite (infrared)
+      const infrared = Array.isArray(j?.satellite?.infrared) ? j.satellite.infrared : [];
+      satv.frames = infrared.sort((a,b)=>a.time-b.time);
+      satv._lastMeta = Date.now();
+    })
+    .catch(()=>{ /* silencio: sin conexión o CORS */ });
+}
+
+function pickBestFrame(frames, date){
+  if (!frames.length) return null;
+  const ts = Math.floor(date.getTime()/1000);
+  if (!timeState.manual){
+    // "Ahora": el último frame disponible
+    return frames[frames.length-1];
+  }
+  // Manual: el frame más cercano que no supere refTime
+  let best = frames[0];
+  for (const f of frames){
+    if (f.time <= ts) best = f; else break;
+  }
+  return best;
+}
+
+// Construye URL de teselas a partir de "path" de RainViewer
+// Formato: {host}{path}/256/{z}/{x}/{y}/{color}/{smooth}_{snow}.png
+// Elegimos color 3 (The Weather Channel), smooth=1, snow=1
+function pathToTileUrl(path){
+  return `${rainv.host}${path}/256/{z}/{x}/{y}/3/1_1.png`;
+}
+
+function ensureRadar(){
+  // Capa vacía al inicio; se rellena con setUrl cuando tengamos meta+frame
+  if (!rainv.layer){
+    rainv.layer = L.tileLayer('', {
+      pane: 'cloudsPane',
+      opacity: 0.85,
+      maxNativeZoom: 9,   // límite actual de RainViewer
+      maxZoom: 18,
+      noWrap: true,
+      crossOrigin: true,
+      attribution: 'Radar © RainViewer'
+    }).addTo(map);
+  }
+  // Carga metadatos (si hace >2 min que no actualizamos) y ajusta frame
+  const needMeta = (Date.now() - rainv._lastMeta) > 120000 || !rainv.frames.length;
+  const p = needMeta ? fetchRainMeta() : Promise.resolve();
+  p.then(()=>{
+    const f = pickBestFrame(rainv.frames, refNow());
+    if (!f) return;
+    const url = pathToTileUrl(f.path);
+    if (url !== rainv.lastUrl){
+      rainv.layer.setUrl(url);
+      rainv.lastUrl = url;
+    }
+    if (map.hasLayer(rainv.layer)) rainv.layer.bringToFront();
+  });
+}
+
+function updateRadar(){
+  // Si estamos en "Ahora", refresca metadatos de vez en cuando
+  const needMeta = !timeState.manual && ((Date.now() - rainv._lastMeta) > 120000);
+  const p = needMeta ? fetchRainMeta() : Promise.resolve();
+  p.then(()=>{
+    const f = pickBestFrame(rainv.frames, refNow());
+    if (!f) return;
+    const url = pathToTileUrl(f.path);
+    if (url !== rainv.lastUrl){
+      rainv.layer.setUrl(url);
+      rainv.lastUrl = url;
+    }
+  });
+}
+
+// Inicializa radar
+ensureRadar();
+
+// ------------------------- Nubes (Satélite IR) -------------------------
+// color=0 (grayscale IR), usamos clase 'clouds-only' para blend "solo nubes"
+function pathToSatUrl(path){
+  return `${satv.host}${path}/256/{z}/{x}/{y}/0/1_1.png`;
+}
+
+function ensureSatRV(){
+  if (!satv.layer){
+    satv.layer = L.tileLayer('', {
+      pane: 'cloudsPane',
+      className: 'clouds-only',   // mix-blend-mode: lighten
+      opacity: 0.95,
+      maxNativeZoom: 9,
+      maxZoom: 18,
+      noWrap: true,
+      crossOrigin: true,
+      attribution: 'Satélite © RainViewer'
+    }).addTo(map);
+  }
+  const needMeta = (Date.now() - satv._lastMeta) > 120000 || !satv.frames.length;
+  const p = needMeta ? fetchRainMeta() : Promise.resolve();
+  p.then(()=>{
+    const f = pickBestFrame(satv.frames, refNow());
+    if (!f) return;
+    const url = pathToSatUrl(f.path);
+    if (url !== satv.lastUrl){
+      satv.layer.setUrl(url);
+      satv.lastUrl = url;
+    }
+    if (map.hasLayer(satv.layer)) satv.layer.bringToFront();
+  });
+}
+
+function updateSatRV(){
+  const needMeta = !timeState.manual && ((Date.now() - satv._lastMeta) > 120000);
+  const p = needMeta ? fetchRainMeta() : Promise.resolve();
+  p.then(()=>{
+    const f = pickBestFrame(satv.frames, refNow());
+    if (!f) return;
+    const url = pathToSatUrl(f.path);
+    if (url !== satv.lastUrl){
+      satv.layer.setUrl(url);
+      satv.lastUrl = url;
+    }
+  });
+}
+
+// Inicializa nubes satélite
+ensureSatRV();
+
+// Toggle mostrar/ocultar
+const radarChk = document.getElementById('toggleRadar');
+if (radarChk){
+  radarChk.addEventListener('change', function(){
+    if (this.checked){
+      if (rainv.layer){ rainv.layer.addTo(map); rainv.layer.bringToFront(); }
+    } else {
+      if (rainv.layer) map.removeLayer(rainv.layer);
+    }
+  });
+}
+const cloudsChk = document.getElementById('toggleClouds');
+if (cloudsChk){
+  cloudsChk.addEventListener('change', function(){
+    if (this.checked){
+      if (satv.layer) { satv.layer.addTo(map); satv.layer.bringToFront(); }
+    } else {
+      if (satv.layer) map.removeLayer(satv.layer);
+    }
+  });
+}
+
+// Inicializa el input con la hora actual (local) — AHORA sí, tras definir toLocalDTValue/applyRefTime
+const refInput = document.getElementById('refTime');
+if(refInput){
+  refInput.value = toLocalDTValue(new Date());
+  refInput.addEventListener('change', () => {
+    const v = refInput.value;        // "YYYY-MM-DDTHH:mm[:ss]"
+    if(!v) return;
+    const d = new Date(v);           // interpretado en LOCAL
+    if(isNaN(d.getTime())) return;
+    timeState.manual = true;
+    timeState.value  = d;
+    applyRefTime();
+    updateRadar();                   // sincroniza radar al nuevo frame
+    updateSatRV();                   // sincroniza nubes al nuevo frame
+  });
+}
+
+					
+					// Botón "Ahora" → vuelve a automático
+					const useNowBtn = document.getElementById('useNow');
+					if(useNowBtn){
+					useNowBtn.addEventListener('click', () => {
+						timeState.manual = false;
+						timeState.value  = new Date();
+						if(refInput) refInput.value = toLocalDTValue(new Date());
+						applyRefTime();
+						updateRadar();
+						updateSatRV();
+					});
+					}
+				
+					document.getElementById('baseSel').addEventListener('change', (e)=>{
+					  const v = e.target.value;
+					  map.eachLayer(ly=>{ if(ly instanceof L.TileLayer) map.removeLayer(ly); });
+					  (v==='light' ? baseLight : v==='dark' ? baseDark : baseOSM).addTo(map);
+
+    // Reponer overlays si están activos
+    if (document.getElementById('toggleRadar')?.checked && rainv?.layer){
+      rainv.layer.addTo(map);
+    }
+    if (document.getElementById('toggleClouds')?.checked){
+      if (satv?.layer) satv.layer.addTo(map);
+    }
+
+					  if(window.dayNightLayer && map.hasLayer(window.dayNightLayer)) window.dayNightLayer.bringToFront();
+					 
+					
+					});
+					
+					
+				
+					// Pane superior para terminador (no bloquear interacciones del mapa)
+					let paneEl = map.getPane('terminatorPane');
+					if(!paneEl){ map.createPane('terminatorPane'); paneEl = map.getPane('terminatorPane'); }
+					paneEl.style.zIndex = '650';
+					paneEl.style.pointerEvents = 'none'; // <- importante: no bloquear el mapa
+				
+					// --- DÍA/NOCHE por tiles (GridLayer Canvas) ---
+					let dayNightLayer = null; window.dayNightLayer = null;
+					let ringLine = null;      window.ringLine     = null;
+				
+					const rad = x => x*Math.PI/180;
+					const deg = x => x*180/Math.PI;
+					const normLon = d => { while(d<-180) d+=360; while(d>180) d-=360; return d; };
+					const jdFromDate = date => date.getTime()/86400000 + 2440587.5;
+				
+					function subsolar(date){
+						const JD = jdFromDate(date);
+						const T = (JD - 2451545.0)/36525.0;
+						let L0 = 280.46646 + 36000.76983*T + 0.0003032*T*T; L0 = ((L0%360)+360)%360;
+						const M  = 357.52911 + 35999.05029*T - 0.0001537*T*T; const Mr = rad(M);
+						const C  = (1.914602 - 0.004817*T - 0.000014*T*T)*Math.sin(Mr)
+								+ (0.019993 - 0.000101*T)*Math.sin(2*Mr)
+								+ 0.000289*Math.sin(3*Mr);
+						const lambda = L0 + C; const Omega = 125.04 - 1934.136*T;
+						const lambdaApp = lambda - 0.00569 - 0.00478*Math.sin(rad(Omega));
+						const eps0 = 23 + 26/60 + 21.448/3600 - (46.8150/3600)*T - (0.00059/3600)*T*T + (0.001813/3600)*T*T*T;
+						const eps  = eps0 + 0.00256*Math.cos(rad(Omega));
+						const epsr = rad(eps), lamr = rad(lambdaApp);
+						const alpha = Math.atan2(Math.cos(epsr)*Math.sin(lamr), Math.cos(lamr));
+						const delta = Math.asin(Math.sin(epsr)*Math.sin(lamr));
+						let Theta = 280.46061837 + 360.98564736629*(JD - 2451545.0) + 0.000387933*T*T - T*T*T/38710000.0;
+						Theta = ((Theta%360)+360)%360;
+						const alphaDeg = ((deg(alpha)%360)+360)%360;
+						const lon = normLon(alphaDeg - Theta);
+						const lat = deg(delta);
+						return { lat, lon };
+					}
+				
+					// GridLayer: usa paso dinámico según zoom para rendimiento
+					const DayNight = L.GridLayer.extend({
+					initialize: function(opts){ L.setOptions(this, opts||{}); this._sun = subsolar(new Date()); },
+					setTime: function(date){ this._sun = subsolar(date); this.redraw(); },
+					createTile: function(coords, done){
+						const tile = L.DomUtil.create('canvas','leaflet-tile');
+						const size = this.getTileSize(); tile.width = size.x; tile.height = size.y;
+						const ctx = tile.getContext('2d');
+						const z = this._map ? this._map.getZoom() : 2;
+						// Más grueso a zoom bajos para ahorrar CPU, más fino con zoom altos
+						const step = Math.max(2, 10 - Math.min(8, Math.floor(z))); // 8→2 px aprox.
+						const origin = coords.scaleBy(size);
+						ctx.fillStyle = '#000000';
+						const opacity = (typeof this.options.opacity === 'number') ? this.options.opacity : 0.8;
+						const s = this._sun; const sphi = rad(s.lat), slam = rad(s.lon);
+						const sx = Math.cos(sphi)*Math.cos(slam), sy = Math.cos(sphi)*Math.sin(slam), sz = Math.sin(sphi);
+						for (let y=0; y<size.y; y+=step){
+						for (let x=0; x<size.x; x+=step){
+							const ll = this._map.unproject(L.point(origin.x + x + step/2, origin.y + y + step/2));
+							const phi = rad(ll.lat), lam = rad(ll.lng);
+							const nx = Math.cos(phi)*Math.cos(lam), ny = Math.cos(phi)*Math.sin(lam), nz = Math.sin(phi);
+							const cosz = nx*sx + ny*sy + nz*sz; // >0 día, <0 noche
+							if (cosz < 0){ ctx.globalAlpha = opacity; ctx.fillRect(x, y, step, step); }
+						}
+						}
+						ctx.globalAlpha = 1;
+						if(done) done(null, tile);
+						return tile;
+					}
+					});
+				
+					dayNightLayer = new DayNight({ tileSize: 256, opacity: 0.8, pane:'terminatorPane' }).addTo(map);
+					window.dayNightLayer = dayNightLayer;
+					dayNightLayer.setTime(refNow()); // ← sincroniza con la hora de referencia al inicio
+				
+					// Re-mapea una longitud para que quede "cerca" de una de referencia (evita saltos de 360°)
+					function unwrapLon(lon, ref){
+						let x = lon;
+						while (x - ref > 180)  x -= 360;
+						while (x - ref < -180) x += 360;
+						return x;
+						}
+						// Envuelve de vuelta a [-180, 180]
+						function wrapLon(lon){
+						return ((lon + 180) % 360 + 360) % 360 - 180;
+						}
+						
+						// Cierra cada segmento hacia el sur (edgeLat=-MERC_MAX) o norte (edgeLat=+MERC_MAX)
+						// Asegura SIEMPRE los dos vértices inferiores: derecha (lonA) e izquierda (lonB)
+						function segmentsToClosedRings(segments, closeToSouth = true){
+						const rings = [];
+						const edgeLat = closeToSouth ? -MERC_MAX : MERC_MAX;
+						
+						for (const seg of segments){
+							if (!seg || seg.length < 2) continue;
+						
+							const first = seg[0];
+							const last  = seg[seg.length - 1];
+						
+							// Referencia de "desenvoltura": la longitud del último punto
+							const lonRef = last[1];
+						
+							// Copiamos el segmento "desenvuelto" para que no haya saltos en ±180°
+							const unwrapped = seg.map(([la, lo]) => [la, unwrapLon(lo, lonRef)]);
+						
+							// Calculamos las dos longitudes inferiores "desenvueltas"
+							const lonA = unwrapLon(last[1],  lonRef);   // derecha (desde el último)
+							const lonB = unwrapLon(first[1], lonA);     // izquierda (con continuidad respecto a lonA)
+						
+							// Construimos el anillo: línea del terminador → bajar a fondo derecha → fondo izquierda → subir a inicio
+							const ring = [
+							...unwrapped,
+							[edgeLat, lonA],
+							[edgeLat, lonB],
+							[first[0], lonB],
+							].map(([la, lo]) => [la, wrapLon(lo)]);     // volvemos a ±180°
+						
+							rings.push(ring);
+						}
+						return rings;
+					}
+				
+					// Línea/máscara del terminador (segmentada en ±180°)
+					function buildTerminatorLine(){
+						const s = subsolar(refNow());
+					
+						// Base ortonormal:
+						const phi = rad(s.lat), lam = rad(s.lon);
+						const cx = Math.cos(phi)*Math.cos(lam), cy = Math.cos(phi)*Math.sin(lam), cz = Math.sin(phi);
+						let ax=0, ay=0, az=1; if (Math.abs(cz) > 0.99) { ax=1; ay=0; az=0; }
+						let ux = ay*cz - az*cy, uy = az*cx - ax*cz, uz = ax*cy - ay*cx; const un = Math.hypot(ux,uy,uz); ux/=un; uy/=un; uz/=un;
+						const vx = cy*uz - cz*uy, vy = cz*ux - cx*uz, vz = cx*uy - cy*ux;
+					
+						// 1) Línea del terminador (evitar salto ±180°)
+						const segments = []; let seg = []; let prevLon = null; const TH = 170;
+						for (let t=0; t<=360; t+=0.5){
+							const tr = rad(t);
+							const x = ux*Math.cos(tr) + vx*Math.sin(tr);
+							const y = uy*Math.cos(tr) + vy*Math.sin(tr);
+							const z = uz*Math.cos(tr) + vz*Math.sin(tr);
+							let lat = deg(Math.asin(z));
+							if (lat >  MERC_MAX) lat =  MERC_MAX;
+							if (lat < -MERC_MAX) lat = -MERC_MAX;
+							let lon = deg(Math.atan2(y, x)); lon = normLon(lon);
+					
+							if (prevLon !== null){
+							if ((prevLon > TH && lon < -TH) || (prevLon < -TH && lon > TH)){
+								if (seg.length) segments.push(seg);
+								seg = [];
+							}
+							}
+							seg.push([lat, lon]);
+							prevLon = lon;
+						}
+						if (seg.length) segments.push(seg);
+					
+						// 2) ¿Cerrar al sur o al norte? (noche incluye el polo opuesto al subsolar)
+						const closeToSouth = (s.lat >= 0); // sol en norte => noche al sur; sol en sur => noche al norte
+						const rings = segmentsToClosedRings(segments, closeToSouth);
+					
+						// 3) Crear/actualizar la máscara
+						const opts = {
+							pane: 'terminatorPane',
+							weight: 0,                      // sin borde visible (mejor máscara pura)
+							color:  'rgba(0,0,0,0)',
+							lineCap: 'round',
+							lineJoin: 'round',
+							fill: true,
+							fillColor: '#001133',              // negro para noche (se integra con tiles)
+							fillOpacity: 0.60,
+							noClip: true,
+							smoothFactor: 0,
+							className: 'terminator-line',
+							interactive: false,             // no bloquea eventos (además el pane tiene pointer-events:none)
+							renderer: L.svg({ padding: 0 })
+						};
+					
+						if (!window.ringLine){
+							window.ringLine = L.polygon(rings, opts).addTo(map);
+							ringLine = window.ringLine; // sincroniza ref. local para el toggle
+						} else {
+							window.ringLine.setLatLngs(rings);
+							window.ringLine.setStyle(opts);
+						}
+						window.ringLine.bringToFront();
+					
+						const ts = document.getElementById('terminatorStatus');
+						if (ts) ts.textContent = 'Día/Noche: activo (tiles + máscara)';
+						}
+					
+						// Pintar ya y actualizar cada minuto (el borde solar apenas se mueve)
+						buildTerminatorLine();
+						setInterval(function(){
+							if(window.dayNightLayer) window.dayNightLayer.setTime(refNow());
+							if(typeof buildTerminatorLine === 'function') buildTerminatorLine();
+							if(typeof computeAllTracks === 'function') computeAllTracks();
+							updateClouds();
+						}, 60000);
+					
+						// Toggle de ambas capas
+						document.getElementById('toggleTerminator').addEventListener('change', function(){
+						if(this.checked){
+							if(dayNightLayer) dayNightLayer.addTo(map);
+							if(ringLine)      ringLine.addTo(map);
+							
+      // Reponer overlays si están activos
+      if (document.getElementById('toggleRadar')?.checked && rainv?.layer){
+        rainv.layer.addTo(map).bringToFront();
+      }
+      if (document.getElementById('toggleClouds')?.checked){
+        if (satv?.layer) satv.layer.addTo(map).bringToFront();
+      }
+      if (rainv?.layer && map.hasLayer(rainv.layer)) rainv.layer.bringToFront();
+      if (satv?.layer && map.hasLayer(satv.layer)) satv.layer.bringToFront();
+    if (window.ringLine && map.hasLayer(window.ringLine))   window.ringLine.bringToFront();
+						} else {
+							if(dayNightLayer) map.removeLayer(dayNightLayer);
+							if(ringLine)      map.removeLayer(ringLine);
+						}
+					});
+				
+					// --- SENTINEL 2 ---
+					const state = {
+						horizonMins:60,
+						sats:{
+							S2A:{ name:'SENTINEL-2A', satrec:null, marker:null, circle:null, track:null, visible:true },
+							S2B:{ name:'SENTINEL-2B', satrec:null, marker:null, circle:null, track:null, visible:true }
+						}
+					};
+				
+					function toggleSat(id, on){
+						const s=state.sats[id]; s.visible=on;
+						if(s.marker){ on?map.addLayer(s.marker):map.removeLayer(s.marker); }
+						if(s.circle){ on?map.addLayer(s.circle):map.removeLayer(s.circle); }
+						if(s.track){  on?map.addLayer(s.track):map.removeLayer(s.track); }
+						}
+						document.getElementById('toggle-S2A').addEventListener('change', e=>toggleSat('S2A', e.target.checked));
+						document.getElementById('toggle-S2B').addEventListener('change', e=>toggleSat('S2B', e.target.checked));
+					
+						document.querySelectorAll('.zoomSat').forEach(btn=>{
+						btn.addEventListener('click', function(){
+							const id=this.getAttribute('data-id'); const s=state.sats[id];
+							if(s && s.marker){ map.flyTo(s.marker.getLatLng(), 4, {duration:0.8}); }
+						});
+					});
+				
+					document.getElementById('fitAll').addEventListener('click', function(){
+						const ll=[]; for(const k in state.sats){ const s=state.sats[k]; if(s.marker && s.visible) ll.push(s.marker.getLatLng()); }
+						if(ll.length){ map.fitBounds(L.latLngBounds(ll).pad(0.5)); }
+					});
+				
+					document.getElementById('locateMe').addEventListener('click', function(){
+						if(!navigator.geolocation){ alert('Geolocalizacion no soportada'); return; }
+						navigator.geolocation.getCurrentPosition(function(pos){
+							const lat=pos.coords.latitude; const lon=pos.coords.longitude;
+							const m=L.marker([lat,lon],{title:'Mi ubicacion'}).addTo(map); m.bindPopup('Tu estas aqui').openPopup();
+							map.flyTo([lat,lon],5,{duration:0.8});
+						}, function(){ alert('No se pudo obtener ubicacion'); });
+					});
+				
+					document.getElementById('trackHorizon').addEventListener('change', function(e){
+						state.horizonMins=parseInt(e.target.value,10)||0; computeAllTracks();
+					});
+				
+					const now = () => refNow();
+					function toLLA(satrec, date){
+						const pv = satellite.propagate(satrec, date);
+						if(!pv.position||!pv.velocity) return null;
+						const gmst = satellite.gstime(date);
+						const gd = satellite.eciToGeodetic(pv.position, gmst);
+						const lat = satellite.degreesLat(gd.latitude);
+						const lon = satellite.degreesLong(gd.longitude);
+						const altKm = gd.height;
+						const v = pv.velocity; const speedKms = Math.hypot(v.x,v.y,v.z);
+						return { lat, lon, altKm, speedKmh:speedKms*3600 };
+					}
+					
+					// Precarga del icono para evitar parpadeos
+					(new Image()).src = 'https://www.satflare.com/satellite_32.png';
+
+					// Icono del satélite
+					const satIcon = L.icon({
+					  iconUrl: 'https://www.satflare.com/satellite_32.png',
+					  iconSize: [32, 32],
+					  iconAnchor: [16, 16],   // centro del icono
+					  popupAnchor: [0, -16],  // emergente encima
+					  className: 'satellite-icon'
+					});
+					
+					// DEBUG: icono de prueba en (0,0). Quitar luego.
+					//L.marker([0,0], { icon: satIcon, pane: 'satPane', title: 'TEST' }).addTo(map);
+				
+					function updateSat(id){
+						const s = state.sats[id]; if(!s.satrec) return;
+						const p=toLLA(s.satrec, now()); if(!p) return;
+						if(!s.marker){
+						  s.marker = L.marker([p.lat, p.lon], {
+							title: s.name,
+							icon: satIcon,
+							pane: 'satPane'   // usa 'satPane' si hiciste el paso 1; si no, puedes omitirlo
+						  }).addTo(map).bindPopup('<b>'+s.name+'</b>');
+						} else {
+						  s.marker.setLatLng([p.lat, p.lon]);
+						}
+						const radius=145000; // m
+						if(!s.circle){
+							s.circle=L.circle([p.lat,p.lon],{radius, weight:1, opacity:0.7, fillOpacity:0.08}).addTo(map);
+						} else { s.circle.setLatLng([p.lat,p.lon]); }
+						const el=document.getElementById('kv-'+id);
+						if(el){
+							let txt='Lat: '+p.lat.toFixed(3)+' deg, Lon: '+p.lon.toFixed(3)+' deg';
+							txt+='\nAlt: '+p.altKm.toFixed(1)+' km | Vel: '+p.speedKmh.toFixed(0)+' km/h';
+							txt+='\nUTC: '+now().toISOString().replace('T',' ').replace('Z',' UTC');
+							el.textContent=txt;
+						}
+					}
+				
+					function computeTrack(id){
+						const s=state.sats[id];
+						if(!s.satrec || state.horizonMins<=0){ if(s.track){ map.removeLayer(s.track); s.track=null; } return; }
+						const step=30; // 30s
+						const total=state.horizonMins*60;
+						const pts=[]; const start = refNow();
+						for(let t=0; t<=total; t+=step){
+							const d=new Date(start.getTime()+t*1000);
+							const p=toLLA(s.satrec, d);
+							if(p) pts.push([p.lat,p.lon]);
+						}
+						if(!s.track){ s.track=L.polyline(pts,{weight:1.2,opacity:.9}).addTo(map); }
+						else { s.track.setLatLngs(pts); }
+					}
+				
+					function computeAllTracks(){ computeTrack('S2A'); computeTrack('S2B'); }
+					function tick(){ updateSat('S2A'); updateSat('S2B'); }
+				
+					document.getElementById('status').textContent='TLE: esperando (usa el panel para pegarlas)';
+					tick(); computeAllTracks();
+					setInterval(tick,1000);
+					setInterval(computeAllTracks,60000);
+					
+  // Mantener todo sincronizado con el tiempo de referencia
+  setInterval(()=>{
+    if(window.dayNightLayer) window.dayNightLayer.setTime(refNow());
+    if(typeof buildTerminatorLine === 'function') buildTerminatorLine();
+    updateRadar();
+    updateSatRV();
+  }, 60000); // frames típicamente cada 5–10 min; 60 s es suficiente
+
+  // Si estamos en "Ahora", refresca el input visible cada segundo para que "corra" el reloj
+  setInterval(()=>{
+    if (!timeState.manual && refInput){
+      refInput.value = toLocalDTValue(new Date());
+    }
+  }, 1000);
+				
+					// TLE manual
+					function parseTLE(text){
+						const lines=text.split(/\r?\n/); let l1=null,l2=null;
+						for(let i=0;i<lines.length;i++){
+							const t=lines[i].trim(); if(!t) continue;
+							if(t.indexOf('1 ')==0) l1=t; if(t.indexOf('2 ')==0) l2=t;
+						}
+						if(!l1||!l2) return null;
+						try{ return satellite.twoline2satrec(l1,l2); }catch(e){ return null; }
+						}
+						document.getElementById('applyTLE').addEventListener('click', function(){
+						const a=parseTLE(document.getElementById('tleA').value);
+						const b=parseTLE(document.getElementById('tleB').value);
+						if(a) state.sats.S2A.satrec=a; if(b) state.sats.S2B.satrec=b;
+						document.getElementById('status').textContent='TLE: cargado manualmente';
+						computeAllTracks(true);
+					});
+				
+				});
+			})();
+		</script>
+	</body>
+</html>
