@@ -779,33 +779,8 @@
 						}
 					});
 				
+					// --- SENTINEL 2 ---
 					const state = { horizonMins:60, sats:{} }; // ahora dinámico (id -> objeto sat)
-
-					// ===== Persistencia en navegador =====
-					const STORAGE = {
-						key: 'satRasteator.sats.v1',
-						save(){
-							try{
-								const arr = Object.entries(state.sats).map(([id, s])=>({
-									id,
-									name: s.name,
-									l1: s.l1,
-									l2: s.l2,
-									color: s.color || '#ff3333',
-									visible: !!s.visible
-								}));
-								localStorage.setItem(this.key, JSON.stringify(arr));
-							}catch(_){}
-						},
-						load(){
-							try{
-								const raw = localStorage.getItem(this.key);
-								if(!raw) return [];
-								const arr = JSON.parse(raw);
-								return Array.isArray(arr) ? arr : [];
-							}catch(_){ return []; }
-						}
-					};
 				
 					function toggleSat(id, on){
 						const s=state.sats[id]; if (!s) return;
@@ -813,7 +788,6 @@
 						if(s.marker){ on?map.addLayer(s.marker):map.removeLayer(s.marker); }
 						if(s.circle){ on?map.addLayer(s.circle):map.removeLayer(s.circle); }
 						if(s.track){  on?map.addLayer(s.track):map.removeLayer(s.track); }
-						STORAGE.save();
 					}
 				
 					document.getElementById('fitAll').addEventListener('click', function(){
@@ -950,22 +924,7 @@
 					}
 				
 					document.getElementById('status').textContent='TLE: esperando (usa el panel para pegarlas)';
-					// Restaurar satélites guardados
-					(function restoreSaved(){
-						const saved = STORAGE.load();
-						if (saved.length){
-							for (const it of saved){
-								const {id, name, l1, l2, color, visible} = it || {};
-								if (name && l1 && l2){
-									addSatellite({ id, name, l1, l2, color, visible });
-								}
-							}
-							const st = document.getElementById('status');
-							if (st) st.textContent = `TLE: cargado (\${Object.keys(state.sats).length} satélites)`;
-						}
-					})();
 					tick(); computeAllTracks();
-					
 					setInterval(tick,1000);
 					
 					// ====== Gestión dinámica de satélites ======
@@ -1042,7 +1001,6 @@
 							if (sat.circle) sat.circle.setStyle({ color:c, fillColor:c });
 							// actualizar chip visual del botón
 							colorBtn.style.setProperty('--col', c);
-							STORAGE.save();
 						});
 						// eliminar satélite
 						row.querySelector('.delSat').addEventListener('click', ()=>{
@@ -1050,28 +1008,23 @@
 						});
 					}
 
-					function addSatellite({id, name, l1, l2, color, visible}){
+					function addSatellite({name, l1, l2, color}){
 						const satrec = parseTwoline(l1, l2);
 						if(!satrec){ alert('TLE inválido'); return; }
-						const _id = id || uidFromName(name);
-						if (state.sats[_id]) { /* evita duplicados si ya existiera */ return; }
-						state.sats[_id] = {
-							name, l1, l2, satrec,
+						const id = uidFromName(name);
+						state.sats[id] = {
+							name, satrec,
 							color: color || '#ff3333',
 							marker:null, circle:null, track:null,
-							visible: (visible === false ? false : true)
+							visible:true
 						};
-						createSatRow(_id, state.sats[_id]);
+						createSatRow(id, state.sats[id]);
 						// fuerza primer tick/track
-						updateSat(_id);
-						computeTrack(_id);
-						// respetar visibilidad restaurada
-						if (visible === false) toggleSat(_id, false);
+						updateSat(id);
+						computeTrack(id);
 						// UI feedback
 						const st = document.getElementById('status');
-						if (st) st.textContent = `TLE: cargado (\${Object.keys(state.sats).length} satélites)`;
-						// guardar
-						STORAGE.save();
+						if (st) st.textContent = `TLE: cargado (${Object.keys(state.sats).length} satélites)`;
 					}
 					
 					function removeSatellite(id){
@@ -1090,8 +1043,6 @@
 						const st = document.getElementById('status');
 						const n  = Object.keys(state.sats).length;
 						if (st) st.textContent = n ? `TLE: cargado (\${n} satélites)` : 'TLE: esperando…';
-						// guardar
-						STORAGE.save();
 					}
 
 					if(addBtn){
