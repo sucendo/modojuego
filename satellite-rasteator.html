@@ -50,6 +50,26 @@
 			.panel-toggle .dot{
 				width:.6rem; height:.6rem; border-radius:999px; background:#5aa9ff; display:inline-block;
 			}
+			/* --- Botones icono en filas de satélites --- */
+			.sat-item .btn-icon{
+				display:inline-flex; align-items:center; justify-content:center;
+				width:28px; height:28px; border-radius:.4rem; border:1px solid #2a3a6b;
+				background:#0e1540; color:var(--text); cursor:pointer; padding:0;
+			}
+			.sat-item .btn-icon svg{ width:16px; height:16px; pointer-events:none }
+			.sat-item .btn-danger{ border-color:#5a2a2a; background:#3a0e0e }
+			/* Botón de color: el fondo muestra el color actual */
+			/* Columna de acciones (iconos apilados) */
+			.sat-item .actions-col{
+				display:flex; flex-direction:column; gap:.35rem; align-items:center;
+			}
+			/* Botón de color: muestra el color actual; con fallback por si no hay conic-gradient */
+			.sat-item .btn-color{
+				width:28px; height:28px; border-radius:.4rem; border:1px solid #2a3a6b;
+				cursor:pointer; padding:0;
+				background: var(--col, #ff3333);
+				background: conic-gradient(from 0deg, var(--col, #ff3333), var(--col, #ff3333));
+			}
 		</style>
 	</head>
 	<body>
@@ -734,14 +754,8 @@
 						if (ts) ts.textContent = 'Día/Noche: activo (tiles + máscara)';
 						}
 						
-						 // Pintar ya y actualizar cada minuto (el borde solar apenas se mueve)
+						// Pintar ya
 						buildTerminatorLine();
-						setInterval(function(){
-							if(window.dayNightLayer) window.dayNightLayer.setTime(refNow());
-							if(typeof buildTerminatorLine === 'function') buildTerminatorLine();
-							if(typeof computeAllTracks === 'function') computeAllTracks();
-							//updateClouds();
-						}, 60000);
 					
 						// Toggle de ambas capas
 						document.getElementById('toggleTerminator').addEventListener('change', function(){
@@ -765,8 +779,33 @@
 						}
 					});
 				
-					// --- SENTINEL 2 ---
 					const state = { horizonMins:60, sats:{} }; // ahora dinámico (id -> objeto sat)
+
+					// ===== Persistencia en navegador =====
+					const STORAGE = {
+						key: 'satRasteator.sats.v1',
+						save(){
+							try{
+								const arr = Object.entries(state.sats).map(([id, s])=>({
+									id,
+									name: s.name,
+									l1: s.l1,
+									l2: s.l2,
+									color: s.color || '#ff3333',
+									visible: !!s.visible
+								}));
+								localStorage.setItem(this.key, JSON.stringify(arr));
+							}catch(_){}
+						},
+						load(){
+							try{
+								const raw = localStorage.getItem(this.key);
+								if(!raw) return [];
+								const arr = JSON.parse(raw);
+								return Array.isArray(arr) ? arr : [];
+							}catch(_){ return []; }
+						}
+					};
 				
 					function toggleSat(id, on){
 						const s=state.sats[id]; if (!s) return;
@@ -774,6 +813,7 @@
 						if(s.marker){ on?map.addLayer(s.marker):map.removeLayer(s.marker); }
 						if(s.circle){ on?map.addLayer(s.circle):map.removeLayer(s.circle); }
 						if(s.track){  on?map.addLayer(s.track):map.removeLayer(s.track); }
+						STORAGE.save();
 					}
 				
 					document.getElementById('fitAll').addEventListener('click', function(){
@@ -781,11 +821,18 @@
 						if(ll.length){ map.fitBounds(L.latLngBounds(ll).pad(0.5)); }
 					});
 				
+					let meMarker = null;
 					document.getElementById('locateMe').addEventListener('click', function(){
 						if(!navigator.geolocation){ alert('Geolocalizacion no soportada'); return; }
 						navigator.geolocation.getCurrentPosition(function(pos){
 							const lat=pos.coords.latitude; const lon=pos.coords.longitude;
-							const m=L.marker([lat,lon],{title:'Mi ubicacion'}).addTo(map); m.bindPopup('Tu estas aqui').openPopup();
+							if (!meMarker){
+								meMarker = L.marker([lat,lon],{title:'Mi ubicación'}).addTo(map);
+								meMarker.bindPopup('Estás aquí');
+							} else {
+								meMarker.setLatLng([lat,lon]);
+							}
+							meMarker.openPopup();
 							map.flyTo([lat,lon],5,{duration:1.2, easeLinearity:0.25, animate:true});
 						}, function(){ alert('No se pudo obtener ubicacion'); });
 					});
@@ -805,6 +852,13 @@
 						const altKm = gd.height;
 						const v = pv.velocity; const speedKms = Math.hypot(v.x,v.y,v.z);
 						return { lat, lon, altKm, speedKmh:speedKms*3600 };
+					}
+					
+					// Radio de huella (arco sobre la superficie) ~ Re * acos(Re/(Re+h))
+					function footprintRadiusMeters(altKm){
+						const Re = 6371;                       // km
+						const psi = Math.acos(Re / (Re + Math.max(altKm, 0.001)));
+						return Re * psi * 1000;                // → metros
 					}
 					
 					// Precarga del icono para evitar parpadeos
@@ -834,13 +888,26 @@
 						} else {
 						  s.marker.setLatLng([p.lat, p.lon]);
 						}
-						const radius=145000; // m
+						
+						const radius = typeof footprintRadiusMeters === 'function'
+							? footprintRadiusMeters(p.altKm)
+							: 145000; // fallback si no integraste la función de radio dinámico
 						if(!s.circle){
-							// 2) footprint/área en pane de ÓRBITAS
-							s.circle=L.circle([p.lat,p.lon],{
-								pane:'orbitPane', radius, weight:1, opacity:0.7, fillOpacity:0.08
-							}).addTo(map);
-						} else { s.circle.setLatLng([p.lat,p.lon]); }
+							// 2) footprint/área en pane de ÓRBITAS (color y relleno desde el inicio)
+							s.circle = L.circle([p.lat, p.lon], {
+								pane: 'orbitPane',
+								radius,
+								color: s.color || '#ff3333',
+								fillColor: s.color || '#ff3333',
+								weight: 1,
+								opacity: 0.9,
+								fillOpacity: 0.12
+								}).addTo(map);
+							} else {
+								s.circle.setLatLng([p.lat,p.lon]);
+								// por si cambia la altitud o integras radio dinámico
+								if (typeof s.circle.setRadius === 'function') s.circle.setRadius(radius);
+							}
 						
 						const el=document.getElementById('kv-'+id);
 						if(el){
@@ -883,9 +950,23 @@
 					}
 				
 					document.getElementById('status').textContent='TLE: esperando (usa el panel para pegarlas)';
+					// Restaurar satélites guardados
+					(function restoreSaved(){
+						const saved = STORAGE.load();
+						if (saved.length){
+							for (const it of saved){
+								const {id, name, l1, l2, color, visible} = it || {};
+								if (name && l1 && l2){
+									addSatellite({ id, name, l1, l2, color, visible });
+								}
+							}
+							const st = document.getElementById('status');
+							if (st) st.textContent = `TLE: cargado (\${Object.keys(state.sats).length} satélites)`;
+						}
+					})();
 					tick(); computeAllTracks();
+					
 					setInterval(tick,1000);
-					setInterval(computeAllTracks,60000);
 					
 					// ====== Gestión dinámica de satélites ======
 					const satListEl   = document.getElementById('satList');
@@ -927,9 +1008,14 @@
 								<div><b>${s.name}</b></div>
 								<div class="kv" id="kv-${id}"></div>
 							</div>
-							<div style="display:flex;gap:.4rem;align-items:center">
-								<button class="zoomSat" data-id="${id}">Zoom</button>
-								<button class="colorBtn" data-id="${id}" title="Cambiar color de órbita">Color</button>
+							<div class="actions-col">
+								<button class="zoomSat btn-icon" data-id="\${id}" title="Zoom">
+									<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5Zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14Z"/></svg>
+								</button>
+								<button class="colorBtn btn-color" data-id="${id}" title="Cambiar color de órbita"></button>
+								<button class="delSat btn-icon btn-danger" data-id="\${id}" title="Eliminar satélite">
+									<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6 7h12v2H6V7Zm2 3h8l-1 9H9L8 10Zm3-6h2v2h-2V4Z"/></svg>
+								</button>
 								<input type="color" class="colorPicker" id="col-${id}" value="${s.color || '#ff3333'}" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0" />
 							</div>
 						`;
@@ -945,32 +1031,67 @@
 						});
 						const colorBtn = row.querySelector('.colorBtn');
 						const colorInp = row.querySelector('#col-'+id);
+						// color inicial del chip (asegurado por JS)
+						colorBtn.style.setProperty('--col', s.color || '#ff3333');
 						colorBtn.addEventListener('click', ()=> colorInp.click());
 						colorInp.addEventListener('input', (e)=>{
 							const c = e.target.value;
 							const sat = state.sats[id];
 							sat.color = c;
-							if (sat.track) sat.track.setStyle({ color:c });
+							if (sat.track)  sat.track.setStyle({ color:c });
+							if (sat.circle) sat.circle.setStyle({ color:c, fillColor:c });
+							// actualizar chip visual del botón
+							colorBtn.style.setProperty('--col', c);
+							STORAGE.save();
+						});
+						// eliminar satélite
+						row.querySelector('.delSat').addEventListener('click', ()=>{
+							removeSatellite(id);
 						});
 					}
 
-					function addSatellite({name, l1, l2, color}){
+					function addSatellite({id, name, l1, l2, color, visible}){
 						const satrec = parseTwoline(l1, l2);
 						if(!satrec){ alert('TLE inválido'); return; }
-						const id = uidFromName(name);
-						state.sats[id] = {
-							name, satrec,
+						const _id = id || uidFromName(name);
+						if (state.sats[_id]) { /* evita duplicados si ya existiera */ return; }
+						state.sats[_id] = {
+							name, l1, l2, satrec,
 							color: color || '#ff3333',
 							marker:null, circle:null, track:null,
-							visible:true
+							visible: (visible === false ? false : true)
 						};
-						createSatRow(id, state.sats[id]);
+						createSatRow(_id, state.sats[_id]);
 						// fuerza primer tick/track
-						updateSat(id);
-						computeTrack(id);
+						updateSat(_id);
+						computeTrack(_id);
+						// respetar visibilidad restaurada
+						if (visible === false) toggleSat(_id, false);
 						// UI feedback
 						const st = document.getElementById('status');
-						if (st) st.textContent = `TLE: cargado (${Object.keys(state.sats).length} satélites)`;
+						if (st) st.textContent = `TLE: cargado (\${Object.keys(state.sats).length} satélites)`;
+						// guardar
+						STORAGE.save();
+					}
+					
+					function removeSatellite(id){
+						const s = state.sats[id];
+						if(!s) return;
+						// elimina capas del mapa
+						if (s.marker) { try{ map.removeLayer(s.marker); }catch(_){} }
+						if (s.circle) { try{ map.removeLayer(s.circle); }catch(_){} }
+						if (s.track)  { try{ map.removeLayer(s.track);  }catch(_){} }
+						// borra del estado
+						delete state.sats[id];
+						// borra la fila
+						const row = document.getElementById('row-'+id);
+						if (row && row.parentNode) row.parentNode.removeChild(row);
+						// feedback de estado
+						const st = document.getElementById('status');
+						const n  = Object.keys(state.sats).length;
+						if (st) st.textContent = n ? `TLE: cargado (\${n} satélites)` : 'TLE: esperando…';
+						// guardar
+						STORAGE.save();
 					}
 
 					if(addBtn){
@@ -989,13 +1110,16 @@
 						});
 					}
 					
-					// Mantener todo sincronizado con el tiempo de referencia
-					setInterval(()=>{
-						if(window.dayNightLayer) window.dayNightLayer.setTime(refNow());
-						if(typeof buildTerminatorLine === 'function') buildTerminatorLine();
+					// === HEARTBEAT global (1/min) ===
+					const HEARTBEAT_MS = 60000;
+					function heartbeat(){
+						if (window.dayNightLayer) window.dayNightLayer.setTime(refNow());
+						if (typeof buildTerminatorLine === 'function') buildTerminatorLine();
+						if (typeof computeAllTracks === 'function') computeAllTracks();
 						updateRadar();
 						updateSatRV();
-					}, 60000); // frames típicamente cada 5–10 min; 60 s es suficiente
+					}
+					setInterval(heartbeat, HEARTBEAT_MS);
 
 					// Si estamos en "Ahora", refresca el input visible cada segundo para que "corra" el reloj
 					setInterval(()=>{
