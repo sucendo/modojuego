@@ -1,0 +1,36 @@
+{
+  "icons": {
+    "sat1": {
+      "32": "/mnt/data/icons/32/sat1.png",
+      "64": "/mnt/data/icons/64/sat1.png"
+    },
+    "sat2": {
+      "32": "/mnt/data/icons/32/sat2.png",
+      "64": "/mnt/data/icons/64/sat2.png"
+    },
+    "sat3": {
+      "32": "/mnt/data/icons/32/sat3.png",
+      "64": "/mnt/data/icons/64/sat3.png"
+    },
+    "sat4": {
+      "32": "/mnt/data/icons/32/sat4.png",
+      "64": "/mnt/data/icons/64/sat4.png"
+    },
+    "sat5": {
+      "32": "/mnt/data/icons/32/sat5.png",
+      "64": "/mnt/data/icons/64/sat5.png"
+    },
+    "sat6": {
+      "32": "/mnt/data/icons/32/sat6.png",
+      "64": "/mnt/data/icons/64/sat6.png"
+    },
+    "sat7": {
+      "32": "/mnt/data/icons/32/sat7.png",
+      "64": "/mnt/data/icons/64/sat7.png"
+    },
+    "iss": {
+      "32": "/mnt/data/icons/32/iss.png",
+      "64": "/mnt/data/icons/64/iss.png"
+    }
+  }
+}
