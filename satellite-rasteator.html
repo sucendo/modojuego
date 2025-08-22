@@ -1055,6 +1055,7 @@
 									l2: s.l2,
 									color: s.color || '#ff3333',
 									visible: !!s.visible,
+									iconKey: s.iconKey || null,
 									iconUrl: s.iconUrl || null
 								}));
 								localStorage.setItem(this.key, JSON.stringify(arr));
@@ -1120,34 +1121,36 @@
 						return Re * psi * 1000;                // → metros
 					}
 					
-					// Precarga del icono para evitar parpadeos
-					(new Image()).src = 'https://www.satflare.com/satellite_32.png';
+					// Precarga de un icono local para evitar parpadeos
+					(new Image()).src = 'img/satellite-rasteator/icons/32/sat1.png';
 
-					// Icono del satélite
-					const satIcon = L.icon({
-						iconUrl: 'https://www.satflare.com/satellite_32.png',
-						iconSize: [32, 32],
-						iconAnchor: [16, 16],   // centro del icono
-						popupAnchor: [0, -16],  // emergente encima
-						className: 'satellite-icon'
-					});
-					
-					// === Iconos disponibles y fábrica de iconos ===
-					const ICONS = {
-						sat: 'https://www.satflare.com/satellite_32.png',
-						dot: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><circle cx="16" cy="16" r="6" fill="%23ffffff"/></svg>',
-						tri: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><polygon points="16,4 28,28 4,28" fill="%23ffffff"/></svg>'
+					// === Iconos locales (32/64 px) y fábrica de iconos ===
+					const ICON_BASE = 'img/satellite-rasteator/icons';
+					const ICON_FILES = {
+						sat1: 'sat1.png',
+						sat2: 'sat2.png',
+						sat3: 'sat3.png',
+						sat4: 'sat4.png',
+						sat5: 'sat5.png',
+						sat6: 'sat6.png',
+						sat7: 'sat7.png',
+						iss : 'iss.png'
 					};
-					function makeIcon(url){
+					// Acepta una clave (sat1…iss) o una URL absoluta/data:
+					function makeIcon(keyOrUrl = 'sat1'){
+						const isUrl = /^(https?:|data:|\/)/i.test(keyOrUrl);
+						const file  = ICON_FILES[keyOrUrl] || ICON_FILES.sat1;
+						const x1 = isUrl ? keyOrUrl : `${ICON_BASE}/32/${file}`;
+						const x2 = isUrl ? keyOrUrl : `${ICON_BASE}/64/${file}`;
 						return L.icon({
-							iconUrl: url || ICONS.sat,
+							iconUrl: x1,
+							iconRetinaUrl: x2,
 							iconSize: [32,32],
 							iconAnchor: [16,16],
 							popupAnchor: [0,-16],
 							className: 'satellite-icon'
 						});
 					}
-
 					
 					// DEBUG: icono de prueba en (0,0). Quitar luego.
 					//L.marker([0,0], { icon: satIcon, pane: 'satPane', title: 'TEST' }).addTo(map);
@@ -1156,21 +1159,15 @@
 						const s = state.sats[id]; if(!s || !s.satrec) return;
 						const p=toLLA(s.satrec, now()); if(!p) return;
 						if(!s.marker){
+							const keyOrUrl = s.iconUrl || s.iconKey || 'sat1';
 							s.marker = L.marker([p.lat, p.lon], {
 								title: s.name,
-								icon: makeIcon(s.iconUrl || ICONS.sat),
-								pane: 'satPane'   // usa 'satPane' si hiciste el paso 1; si no, puedes omitirlo
+								icon: makeIcon(keyOrUrl),
+								pane: 'satPane'
 							}).addTo(map).bindPopup('<b>'+s.name+'</b>');
-							// Guardamos el último icono aplicado para evitar trabajo extra
-							s._iconUrl = s.iconUrl || ICONS.sat;
 						} else {
-							// Solo actualizamos posición y, si hiciera falta, el icono
+							// ¡No recrear! solo mover el marker existente
 							s.marker.setLatLng([p.lat, p.lon]);
-							const desired = s.iconUrl || ICONS.sat;
-							if (s._iconUrl !== desired){
-								s.marker.setIcon(makeIcon(desired));
-								s._iconUrl = desired;
-							}
 						}
 						
 						const radius = typeof footprintRadiusMeters === 'function'
@@ -1292,10 +1289,10 @@
 						const saved = STORAGE.load();
 						if (saved.length){
 							for (const it of saved){
-								const {id, name, l1, l2, color, visible, iconUrl} = it || {};
-								if (name && l1 && l2){
-									addSatellite({ id, name, l1, l2, color, visible, iconUrl });
-								}
+								const {id, name, l1, l2, color, visible, iconKey, iconUrl} = it || {};
+ 								if (name && l1 && l2){
+									addSatellite({ id, name, l1, l2, color, visible, iconKey, iconUrl });
+ 								}
 							}
 							const st = document.getElementById('status');
 							if (st) st.textContent = `TLE: cargado (${Object.keys(state.sats).length} satélites)`;
@@ -1342,12 +1339,12 @@
 								<button class="zoomSat btn-icon" data-id="${id}" title="Zoom">
 									<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5Zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14Z"/></svg>
 								</button>
+								<button class="iconBtn btn-icon" data-id="${id}" title="Elegir icono">
+									<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M21 19V5a2 2 0 0 0-2-2H5C3.9 3 3 3.9 3 5v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2ZM8.5 12.5l2.5 3.01 3.5-4.51L19 18H5l3.5-5.5ZM8 8a2 2 0 1 1 0 4 2 2 0 0 1 0-4Z"/></svg>
+								</button>
 								<button class="colorBtn btn-color" data-id="${id}" title="Cambiar color de órbita"></button>
 								<button class="editTLE btn-icon" data-id="${id}" title="Modificar TLE">
 									<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25ZM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83Z"/></svg>
-								</button>
-								<button class="iconBtn btn-icon" data-id="${id}" title="Elegir icono">
-									<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M21 19V5a2 2 0 0 0-2-2H5C3.9 3 3 3.9 3 5v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2ZM8.5 12.5l2.5 3.01 3.5-4.51L19 18H5l3.5-5.5ZM8 8a2 2 0 1 1 0 4 2 2 0 0 1 0-4Z"/></svg>
 								</button>
 								<button class="delSat btn-icon btn-danger" data-id="${id}" title="Eliminar satélite">
 									<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6 7h12v2H6V7Zm2 3h8l-1 9H9L8 10Zm3-6h2v2h-2V4Z"/></svg>
@@ -1399,14 +1396,23 @@
 						// elegir icono (presets: sat/dot/tri o URL)
 						row.querySelector('.iconBtn').addEventListener('click', ()=>{
 							const s = state.sats[id];
-							let val = prompt('Icono:\n- Escribe "sat", "dot" o "tri"\n- o pega una URL (PNG/SVG)\nActual:', s.iconUrl || ICONS.sat);
+							const keys = Object.keys(ICON_FILES).join(', ');
+							let val = prompt(
+								`Icono:\n- Escribe una clave: ${keys}\n- o pega una URL (PNG/SVG)\nActual:`,
+								s.iconUrl || s.iconKey || 'sat1'
+							);
 							if (!val) return;
 							val = val.trim();
-							if (val.toLowerCase() === 'sat') val = ICONS.sat;
-							if (val.toLowerCase() === 'dot') val = ICONS.dot;
-							if (val.toLowerCase() === 'tri') val = ICONS.tri;
-							s.iconUrl = val;
-							if (s.marker) s.marker.setIcon(makeIcon(val));
+							// compatibilidad por si escriben "sat"
+							if (val.toLowerCase() === 'sat') val = 'sat1';
+							const isUrl = /^(https?:|data:|\/)/i.test(val);
+							if (isUrl) {
+								s.iconUrl = val; s.iconKey = null;
+							} else {
+								s.iconKey = ICON_FILES[val] ? val : 'sat1';
+								s.iconUrl = null;
+							}
+							if (s.marker) s.marker.setIcon(makeIcon(s.iconUrl || s.iconKey));
 							STORAGE.save();
 						});
 						
@@ -1434,15 +1440,16 @@
 						});
 					}
 
-					function addSatellite({id, name, l1, l2, color, visible, iconUrl}){
-						const satrec = parseTwoline(l1, l2);
+					function addSatellite({id, name, l1, l2, color, visible, iconKey, iconUrl}){
+ 						const satrec = parseTwoline(l1, l2);
 						if(!satrec){ alert('TLE inválido'); return; }
 						const _id = id || uidFromName(name);
 						if (state.sats[_id]) { /* evita duplicados si ya existiera */ return; }
 						state.sats[_id] = {
 							name, l1, l2, satrec,
 							color: color || '#ff3333',
-							iconUrl: iconUrl || ICONS.sat,
+							iconKey: iconKey || 'sat1',
+							iconUrl: iconUrl || null,
 							marker:null, circle:null, track:null,
 							visible: (visible === false ? false : true)
 						};
