@@ -7,16 +7,185 @@
 		<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 		<style>
 			:root{ --bg:#0b1020; --panel:#121832; --text:#e6eef8; }
+			/* Colores del scroll (puedes personalizarlos) */
+			:root{
+				--scroll-track: #0e1540;
+				--scroll-thumb: #2a3a6b;
+				--scroll-thumb-hover: #4a68c9;
+				--scroll-corner: #0b1020;
+			}
 			html,body{height:100%; margin:0; background:var(--bg); color:var(--text); font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif; overflow-x:hidden} 
 			#app{display:grid; grid-template-rows:auto 1fr; height:100%}
 			header{display:flex; gap:1rem; align-items:center; padding:.6rem 1rem; background:#0b1020; border-bottom:1px solid #1f284a}
 			header h1{font-size:1.05rem; margin:0}
-			header .actions{margin-left:auto; display:flex; gap:.5rem; align-items:center}
+			header .actions{margin-left:auto; display:flex; gap:.5rem; align-items:center; flex-wrap:wrap} /* wrap en tablet */
 			header button, header select{background:#11173a; color:var(--text); border:1px solid #26315c; padding:.45rem .7rem; border-radius:.5rem; cursor:pointer}
-			#map{height:100%;}
-			.panel{position:absolute; top:70px; right:12px; width:330px; background:var(--panel); border:1px solid #26315c; border-radius:12px; padding:.75rem; box-shadow:0 10px 30px rgba(0,0,0,.35); z-index:1000; transition:transform .25s ease, opacity .2s ease; will-change:transform, opacity}.panel h2{margin:.2rem 0 .6rem; font-size:1rem}
-			.sat-item{display:grid; grid-template-columns:auto 1fr auto; gap:.5rem; align-items:center; padding:.45rem .5rem; border-radius:.6rem; border:1px solid #223059; margin-bottom:.45rem}
+			#map{height:100%;}			
+			.panel{
+				position:absolute; top:60px; right:5px; bottom:25px; /* ← anclado arriba y abajo */
+				width:300px; box-sizing: border-box;
+				display:flex; flex-direction:column; /* ← layout en columna */
+				background:var(--panel); border:1px solid #26315c; border-radius:12px;
+				padding:.75rem; box-shadow:0 10px 30px rgba(0,0,0,.35); z-index:1000;
+				transition:transform .25s ease, opacity .2s ease; will-change:transform, opacity;
+				overflow:hidden; /* ← nada se desborda fuera del panel */
+			}
+			.panel h2{margin:.2rem 0 .6rem; font-size:1rem}
+			
+			.sat-item{
+				display:grid;
+				grid-template-columns:auto 1fr;   /* checkbox | info */
+				grid-template-rows:auto auto;     /* info arriba, acciones debajo */
+				gap:.5rem;
+				align-items:center;
+				padding:.45rem .5rem;
+				border-radius:.6rem; border:1px solid #223059; margin-bottom:.45rem;
+			}
+			/* bloque de acciones debajo, a lo ancho (horizontal) */
+			.sat-actions{
+				grid-column: 1 / -1;
+				display: flex;
+				flex-direction: row;      /* ← horizontal */
+				align-items: center;
+				gap: .4rem;
+				flex-wrap: wrap;          /* si no caben, saltan de línea */
+				width: 100%;
+				margin-top: .25rem;
+			}
+			
+			/* alias por compatibilidad: forzamos horizontal, por si otra regla pisa */
+			.sat-item .actions-col{ display:flex; flex-direction:row !important; align-items:center; gap:.4rem; flex-wrap:wrap }
+
+			/* === Scroll interno solo en la lista === */
+			#satList{
+				flex:1 1 auto;             /* ocupa todo el espacio disponible */
+				overflow:auto;              /* ← scroll aquí */
+				overscroll-behavior:contain;
+				margin-top:.4rem;
+				/* Reserva siempre el canal del scrollbar para que no “salte” el layout */
+				scrollbar-gutter: stable both-edges;
+			}
+			/* El bloque de “Añadir satélite” queda fijo al pie y nunca empuja el panel fuera */
+			#addSatPanel{
+				flex:0 0 auto;              /* altura natural; no crece */
+				margin-top:.5rem;
+				max-height:42vh;            /* por si lo abres, que no coma toda la columna */
+				overflow:auto;              /* si hiciera falta, scrollea solo su contenido */
+				scrollbar-gutter: stable;
+			}
+			#addSatPanel textarea{
+				max-height:28vh;            /* evita que el textarea se haga enorme */
+			}
+			/* ===== Firefox: estilo de scroll ===== */
+			#satList,
+			#addSatPanel{
+				scrollbar-width: thin; /* auto | thin | none */
+				scrollbar-color: var(--scroll-thumb) transparent; /* pulgar | pista */
+			}
+			
+			/* ===== Chromium / WebKit: estilo de scroll ===== */
+			#satList::-webkit-scrollbar,
+			#addSatPanel::-webkit-scrollbar{
+				width: 10px;
+				height: 10px;
+			}
+			#satList::-webkit-scrollbar-track,
+			#addSatPanel::-webkit-scrollbar-track{
+				background:
+					linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.12) 100%),
+					var(--panel);
+				border-radius: 8px;
+				margin: 4px; /* deja respirar el canal al principio/fin */
+			}
+			#satList::-webkit-scrollbar-thumb,
+			#addSatPanel::-webkit-scrollbar-thumb{
+				background-color: var(--scroll-thumb);
+				border-radius: 8px;
+				border: 2px solid transparent;     /* crea un “acolchado” interno */
+				background-clip: content-box;       /* mantiene el acolchado */
+			}
+			#satList::-webkit-scrollbar-thumb:hover,
+			#addSatPanel::-webkit-scrollbar-thumb:hover{
+				background-color: var(--scroll-thumb-hover);
+			}
+			#satList::-webkit-scrollbar-corner,
+			#addSatPanel::-webkit-scrollbar-corner{
+				background: var(--scroll-corner);
+			}
+			
+			/* nombre editable (al clic) */
+			.sat-item .sat-name{
+				cursor:text;
+				border-bottom:1px dashed rgba(230,238,248,.25);
+			}
+			.sat-item .sat-name:focus{ outline: none; background:#0c1330; }
+			
+			/* ===== Estilo “primario” para el botón Añadir del panel ===== */
+			#addSatPanel #addSatBtn{
+			  appearance: none;
+			  border: 1px solid #2a3a6b;
+			  background: linear-gradient(180deg, #1b2a6a, #101a46);
+			  color: var(--text);
+			  border-radius: .6rem;
+			  padding: .55rem .9rem .55rem 2.1rem; /* hueco para el icono */
+			  font-weight: 600;
+			  letter-spacing: .2px;
+			  position: relative;
+			  cursor: pointer;
+			  box-shadow:
+				0 6px 18px rgba(0,0,0,.35),
+				inset 0 0 0 1px rgba(255,255,255,.04);
+			  transition: transform .08s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease, filter .2s ease;
+			}
+
+			/* Icono + “chip” luminoso a la izquierda (sin cambiar el HTML) */
+			#addSatPanel #addSatBtn::before{
+			  content: "+";
+			  position: absolute;
+			  left: .65rem; top: 50%;
+			  transform: translateY(-50%);
+			  width: 1.25rem; height: 1.25rem; line-height: 1.2rem;
+			  border-radius: .4rem;
+			  text-align: center;
+			  font-weight: 700; font-size: 1rem;
+			  color: #fff;
+			  background: radial-gradient(100% 100% at 50% 50%, #3d8bfd 0%, #2a5be8 100%);
+			  box-shadow: 0 2px 8px rgba(3,121,255,.45), inset 0 0 0 1px rgba(255,255,255,.15);
+			}
+
+			/* Estados */
+			#addSatPanel #addSatBtn:hover{
+			  filter: saturate(1.1) brightness(1.05);
+			  box-shadow:
+				0 10px 24px rgba(0,0,0,.45),
+				inset 0 0 0 1px rgba(255,255,255,.06);
+			}
+			#addSatPanel #addSatBtn:active{
+			  transform: translateY(1px) scale(.985);
+			}
+			#addSatPanel #addSatBtn:focus-visible{
+			  outline: 2px solid #6aa8ff;
+			  outline-offset: 2px;
+			}
+			#addSatPanel #addSatBtn:disabled{
+			  opacity: .6;
+			  cursor: not-allowed;
+			  filter: grayscale(25%);
+			}
+
+			/* (Opcional) compacta el contenedor del botón + color para que se vea fino en pantallas pequeñas */
+			#addSatPanel > div[style*="display:flex"]{
+			  flex-wrap: wrap;
+			  gap: .5rem .6rem !important;
+			}
+			
 			.kv{font-size:.85rem; opacity:.9}
+			/* En la ficha del satélite, respeta los saltos de línea (\n) */
+			.sat-item .kv{
+			  white-space: pre-line;   /* convierte \n en saltos de línea */
+			  line-height: 1.25;
+			}
+						
 			details{border:1px dashed #2a3a6b; border-radius:.6rem; padding:.4rem .6rem; margin-top:.5rem}
 			textarea{width:100%; min-height:110px; background:#0c1330; color:var(--text); border:1px solid #2a3a6b; border-radius:.5rem; padding:.5rem; font-family:ui-monospace,Menlo,Consolas,monospace}
 			.hint{font-size:.8rem; opacity:.7}
@@ -42,7 +211,7 @@
 			/* Ocultación dura tras la animación (ya sin efecto) */
 			.panel.collapsed-hidden{ display:none; }
 			.panel-toggle{
-				position:absolute; top:70px; right:12px; z-index:1001;
+				position:absolute; top:60px; right:5px; z-index:1001;
 				border:1px solid #26315c; background:#11173a; color:var(--text);
 				border-radius:999px; padding:.5rem .7rem; cursor:pointer; display:none; align-items:center; gap:.4rem;
 				box-shadow:0 8px 24px rgba(0,0,0,.35);
@@ -58,11 +227,6 @@
 			}
 			.sat-item .btn-icon svg{ width:16px; height:16px; pointer-events:none }
 			.sat-item .btn-danger{ border-color:#5a2a2a; background:#3a0e0e }
-			/* Botón de color: el fondo muestra el color actual */
-			/* Columna de acciones (iconos apilados) */
-			.sat-item .actions-col{
-				display:flex; flex-direction:column; gap:.35rem; align-items:center;
-			}
 			/* Botón de color: muestra el color actual; con fallback por si no hay conic-gradient */
 			.sat-item .btn-color{
 				width:28px; height:28px; border-radius:.4rem; border:1px solid #2a3a6b;
@@ -70,15 +234,96 @@
 				background: var(--col, #ff3333);
 				background: conic-gradient(from 0deg, var(--col, #ff3333), var(--col, #ff3333));
 			}
+			
+			/* Toggle (oculto por defecto en desktop) */
+			.actions-toggle{
+				display:none;
+				margin-left:auto;
+				background:#11173a;
+				color:var(--text);
+				border:1px solid #26315c;
+				border-radius:.5rem;
+				padding:.45rem .6rem;
+				cursor:pointer;
+				line-height:1;
+			}
+			
+			/* ======= Responsivo: tablet y móvil ======= */
+			@media (max-width: 1200px){
+				header h1{ font-size:1rem }
+				header .actions{ gap:.45rem }
+				.panel{ width:300px; right:8px; bottom:20px; top:60px }
+			}
+			@media (max-width: 900px){
+				header{ padding:.5rem .7rem }
+				header h1{ font-size:.95rem }
+				header button, header select, #refTime, #useNow{ font-size:.9rem; padding:.4rem .55rem }
+				/* Mostrar el toggle y mandar acciones a la 2ª línea */
+				.actions-toggle{ display:inline-flex; align-items:center; justify-content:center }
+					header .actions{
+					order:3;
+					width:100%;
+					display:flex;
+					flex-wrap:wrap;
+					gap:.45rem;
+				}
+				.panel{ width:300px; right:8px; bottom:18px; top:56px }
+				/* botones más “tocables” en pantallas táctiles */
+				.sat-item .btn-icon, .sat-item .btn-color{ width:32px; height:32px }
+			}
+			@media (max-width: 700px){
+				/* En móvil: overlay fijo bajo el header (no empuja el layout) */
+				header{ align-items:flex-start; gap:.5rem; position:relative }
+				header .actions{ display:none }
+				header .actions.open{
+					display:flex;
+					position: fixed;
+					left: 0; right: 0;
+					top: var(--actionsTop, 56px);   /* la fijamos desde JS al abrir */
+					z-index: 1100;
+					background: rgba(11,16,32,.98);
+					border-bottom: 1px solid #1f284a;
+					padding: .5rem .65rem;
+					gap: .5rem;
+					box-sizing: border-box;
+					max-width: 100vw;               /* nunca más ancho que la pantalla */
+					overflow-x: auto;               /* scroll horizontal si no cabe */
+					overflow-y: hidden;
+					-webkit-overflow-scrolling: touch;
+					scrollbar-gutter: stable;
+				}
+				header .actions.open > *{ flex: 0 0 auto } /* que no intenten crecer/romper */
+				header .actions.open::-webkit-scrollbar{ height:6px }
+				/* Panel como “hoja” inferior, a ancho casi completo */
+				.panel{
+					right:5px; width:auto; max-width: 300px;
+					top:auto; bottom:40px;            /* deja hueco para el botón flotante */
+					max-height:62vh;
+				}
+				.panel-toggle{
+					top:auto; right:6px; bottom:40px; /* botón para mostrar panel en móvil */
+				}
+				/* Botones más grandes para dedo */
+				.sat-item .btn-icon, .sat-item .btn-color{ width:36px; height:36px }
+				/* Ajustes del listado para pantallas estrechas */
+				.sat-item{ gap:.45rem }
+				#addSatPanel{ max-height:45vh }
+				#addSatPanel textarea{ max-height:30vh }
+			}
+			@media (max-height: 540px){ /* paisaje de móvil: menos alto */
+				.panel{ bottom:60px; max-height:55vh }
+				#addSatPanel{ max-height:38vh }
+			}
+			
 		</style>
 	</head>
 	<body>
 		<div id="app">
 			<header>
 				<h1>Satellite Rasteator</h1>
+				<button id="actionsToggle" class="actions-toggle" aria-label="Mostrar opciones">☰</button>
 				<div class="actions">
 					<button id="locateMe">Ubicarme</button>
-					<button id="fitAll">Enfocar</button>
 					<label style="display:flex;align-items:center;gap:.35rem">
 						<input type="checkbox" id="toggleTerminator" checked /> Día/Noche
 					</label>
@@ -111,8 +356,8 @@
 			<button class="min-btn" id="minimizePanel" title="Ocultar panel">⮞</button>
 			<h2>Estado</h2>
 			<div class="kv" id="status">TLE: esperando…</div>
-			<div class="kv" id="terminatorStatus">Día/Noche: inicializando…</div>
 			<div class="kv" id="timeStatus">Tiempo ref: auto (reloj del sistema)</div>
+			<div class="kv" id="utcStatus">UTC: —</div>
 			
 			<!-- Lista dinámica de satélites -->
 			<div id="satList"></div>
@@ -145,8 +390,35 @@
 				function ready(fn){ if(document.readyState!=='loading') fn(); else document.addEventListener('DOMContentLoaded', fn); }
 				
 				ready(function(){
+				
+					// Toggle de acciones en móvil
+					const actionsToggle = document.getElementById('actionsToggle');
+					const actionsBar = document.querySelector('header .actions');
+					const headerEl = document.querySelector('header');
+					if (actionsToggle && actionsBar){
+						actionsToggle.addEventListener('click', ()=>{
+							// Calcula el borde inferior del header para anclar el overlay
+							const rect = headerEl.getBoundingClientRect();
+							document.documentElement.style.setProperty('--actionsTop', `${Math.round(rect.bottom)}px`);
+							actionsBar.classList.toggle('open');
+						});
+
+						// Cerrar al clicar fuera (solo en móvil)
+						document.addEventListener('click', (e)=>{
+							if (window.innerWidth > 700) return;
+							if (!actionsBar.classList.contains('open')) return;
+							const inside = actionsBar.contains(e.target) || actionsToggle.contains(e.target);
+							if (!inside) actionsBar.classList.remove('open');
+						});
+						// Cerrar con Escape / al redimensionar / cambiar orientación
+						window.addEventListener('keydown', (e)=>{ if(e.key==='Escape') actionsBar.classList.remove('open'); });
+						window.addEventListener('resize', ()=> actionsBar.classList.remove('open'));
+						window.addEventListener('orientationchange', ()=> actionsBar.classList.remove('open'));
+					}
+				
 					// --- MAPA (zoom/pan suaves) ---
 					const map = L.map('map', {
+						zoomControl: false,        // ← sin botones +/−
 						worldCopyJump: false,
 						// Zoom de rueda más fluido y con pasos fraccionados
 						scrollWheelZoom: true,
@@ -166,31 +438,6 @@
 						easeLinearity: 0.2,
 						 maxZoom: 22, minZoom: 2
 					}).setView([0,0], 2);
-					
-					// Reemplazar control de zoom por uno con paso 0.5
-					if (map.zoomControl) map.removeControl(map.zoomControl);
-					const HalfStepZoom = L.Control.extend({
-						options: { position: 'topleft' },
-						onAdd: function(map) {
-						const c = L.DomUtil.create('div', 'leaflet-bar');
-						const zin = L.DomUtil.create('a', 'leaflet-control-zoom-in', c);
-						zin.innerHTML = '+';
-						zin.href = '#';
-						const zout = L.DomUtil.create('a', 'leaflet-control-zoom-out', c);
-						zout.innerHTML = '−';
-						zout.href = '#';
-						L.DomEvent.on(zin, 'click', L.DomEvent.stop)
-									.on(zin, 'click', () => {
-									map.setZoom(Math.min(map.getMaxZoom(), map.getZoom() + 0.5), { animate: true });
-									});
-						L.DomEvent.on(zout, 'click', L.DomEvent.stop)
-									.on(zout, 'click', () => {
-									map.setZoom(Math.max(map.getMinZoom(), map.getZoom() - 0.5), { animate: true });
-									});
-						return c;
-						}
-					});
-					map.addControl(new HalfStepZoom());
 					
 					// Doble clic personalizado: +0.5 alrededor del punto clicado
 					map.on('dblclick', (e) => {
@@ -288,7 +535,16 @@
 						} else {
 							el.textContent = 'Tiempo ref: auto (reloj del sistema)';
 						}
+						updateUTCStatus(); // sincroniza la línea de UTC global
 					}
+					
+					// Línea global de UTC bajo "Estado"
+					function updateUTCStatus(){
+						const u = document.getElementById('utcStatus'); if(!u) return;
+						const d = refNow();
+						u.textContent = 'UTC: ' + d.toISOString().replace('T',' ').replace('Z',' UTC');
+					}
+					
 					// Recalcula todo cuando cambia el tiempo de referencia
 					function applyRefTime(){
 						if(window.dayNightLayer) window.dayNightLayer.setTime(refNow());
@@ -296,6 +552,7 @@
 						if(typeof tick === 'function') tick();
 						if(typeof computeAllTracks === 'function') computeAllTracks();
 						updateTimeStatus();
+						updateUTCStatus();
 					}
 									
 					// === Panes por orden: satélites > órbitas > día/noche > radar > nubes > mapa ===
@@ -518,6 +775,7 @@
 							} else {
 								if (rainv.layer) map.removeLayer(rainv.layer);
 							}
+							try{ localStorage.setItem('sr.t.radar', this.checked?'1':'0'); }catch(_){}
 						});
 					}
 					const cloudsChk = document.getElementById('toggleClouds');
@@ -528,6 +786,7 @@
 							} else {
 								if (satv.layer) map.removeLayer(satv.layer);
 							}
+							try{ localStorage.setItem('sr.t.clouds', this.checked?'1':'0'); }catch(_){}
 						});
 					}
 					
@@ -569,6 +828,7 @@
 						nextBase.addTo(map);
 						currentBase = nextBase;
 
+						try{ localStorage.setItem('sr.base', v); }catch(_){}
 						restoreOrder();
 					});
 				
@@ -749,38 +1009,66 @@
 							window.ringLine.setStyle(opts);
 						}
 						window.ringLine.bringToFront();
-					
-						const ts = document.getElementById('terminatorStatus');
-						if (ts) ts.textContent = 'Día/Noche: activo (tiles + máscara)';
-						}
+					}
 						
-						// Pintar ya
-						buildTerminatorLine();
+					// Pintar ya
+					buildTerminatorLine();
 					
-						// Toggle de ambas capas
-						document.getElementById('toggleTerminator').addEventListener('change', function(){
-						if(this.checked){
-							if(dayNightLayer) dayNightLayer.addTo(map);
-							if(ringLine)      ringLine.addTo(map);
- 	
+					// Toggle de ambas capas
+					const termChk = document.getElementById('toggleTerminator');
+					if (termChk) {
+						termChk.addEventListener('change', function () {
+							if (this.checked) {
+							if (dayNightLayer) dayNightLayer.addTo(map);
+							if (ringLine)      ringLine.addTo(map);
+						
 							// Reponer overlays si están activos y dejarlos AL FRENTE
-							if (document.getElementById('toggleRadar')?.checked && rainv?.layer){
+							if (document.getElementById('toggleRadar')?.checked && rainv?.layer) {
 								rainv.layer.addTo(map);
 							}
-							if (document.getElementById('toggleClouds')?.checked){
-								if (satv?.layer) satv.layer.addTo(map);
+							if (document.getElementById('toggleClouds')?.checked && satv?.layer) {
+								satv.layer.addTo(map);
 							}
-							
+						
 							restoreOrder();
-
-						} else {
-							if(dayNightLayer) map.removeLayer(dayNightLayer);
-							if(ringLine)      map.removeLayer(ringLine);
-						}
-					});
+							} else {
+							if (dayNightLayer) map.removeLayer(dayNightLayer);
+							if (ringLine)      map.removeLayer(ringLine);
+							}
+						
+							// ⇩⇩ Persistencia del toggle Día/Noche
+							try { localStorage.setItem('sr.t.term', this.checked ? '1' : '0'); } catch (_) {}
+						});
+					}
 				
-					// --- SENTINEL 2 ---
 					const state = { horizonMins:60, sats:{} }; // ahora dinámico (id -> objeto sat)
+
+					// ===== Persistencia en navegador =====
+					const STORAGE = {
+						key: 'satRasteator.sats.v1',
+						save(){
+							try{
+								const arr = Object.entries(state.sats).map(([id, s])=>({
+									id,
+									name: s.name,
+									l1: s.l1,
+									l2: s.l2,
+									color: s.color || '#ff3333',
+									visible: !!s.visible,
+									iconUrl: s.iconUrl || null
+								}));
+								localStorage.setItem(this.key, JSON.stringify(arr));
+							}catch(_){}
+						},
+						load(){
+							try{
+								const raw = localStorage.getItem(this.key);
+								if(!raw) return [];
+								const arr = JSON.parse(raw);
+								return Array.isArray(arr) ? arr : [];
+							}catch(_){ return []; }
+						}
+					};
 				
 					function toggleSat(id, on){
 						const s=state.sats[id]; if (!s) return;
@@ -788,12 +1076,8 @@
 						if(s.marker){ on?map.addLayer(s.marker):map.removeLayer(s.marker); }
 						if(s.circle){ on?map.addLayer(s.circle):map.removeLayer(s.circle); }
 						if(s.track){  on?map.addLayer(s.track):map.removeLayer(s.track); }
+						STORAGE.save();
 					}
-				
-					document.getElementById('fitAll').addEventListener('click', function(){
-						const ll=[]; for(const k in state.sats){ const s=state.sats[k]; if(s.marker && s.visible) ll.push(s.marker.getLatLng()); }
-						if(ll.length){ map.fitBounds(L.latLngBounds(ll).pad(0.5)); }
-					});
 				
 					let meMarker = null;
 					document.getElementById('locateMe').addEventListener('click', function(){
@@ -813,6 +1097,7 @@
 				
 					document.getElementById('trackHorizon').addEventListener('change', function(e){
 						state.horizonMins=parseInt(e.target.value,10)||0; computeAllTracks();
+						try{ localStorage.setItem('sr.horizon', String(state.horizonMins)); }catch(_){}
 					});
 				
 					const now = () => refNow();
@@ -847,6 +1132,23 @@
 						className: 'satellite-icon'
 					});
 					
+					// === Iconos disponibles y fábrica de iconos ===
+					const ICONS = {
+						sat: 'https://www.satflare.com/satellite_32.png',
+						dot: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><circle cx="16" cy="16" r="6" fill="%23ffffff"/></svg>',
+						tri: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><polygon points="16,4 28,28 4,28" fill="%23ffffff"/></svg>'
+					};
+					function makeIcon(url){
+						return L.icon({
+							iconUrl: url || ICONS.sat,
+							iconSize: [32,32],
+							iconAnchor: [16,16],
+							popupAnchor: [0,-16],
+							className: 'satellite-icon'
+						});
+					}
+
+					
 					// DEBUG: icono de prueba en (0,0). Quitar luego.
 					//L.marker([0,0], { icon: satIcon, pane: 'satPane', title: 'TEST' }).addTo(map);
 				
@@ -854,13 +1156,21 @@
 						const s = state.sats[id]; if(!s || !s.satrec) return;
 						const p=toLLA(s.satrec, now()); if(!p) return;
 						if(!s.marker){
-						  s.marker = L.marker([p.lat, p.lon], {
-							title: s.name,
-							icon: satIcon,
-							pane: 'satPane'   // usa 'satPane' si hiciste el paso 1; si no, puedes omitirlo
-						  }).addTo(map).bindPopup('<b>'+s.name+'</b>');
+							s.marker = L.marker([p.lat, p.lon], {
+								title: s.name,
+								icon: makeIcon(s.iconUrl || ICONS.sat),
+								pane: 'satPane'   // usa 'satPane' si hiciste el paso 1; si no, puedes omitirlo
+							}).addTo(map).bindPopup('<b>'+s.name+'</b>');
+							// Guardamos el último icono aplicado para evitar trabajo extra
+							s._iconUrl = s.iconUrl || ICONS.sat;
 						} else {
-						  s.marker.setLatLng([p.lat, p.lon]);
+							// Solo actualizamos posición y, si hiciera falta, el icono
+							s.marker.setLatLng([p.lat, p.lon]);
+							const desired = s.iconUrl || ICONS.sat;
+							if (s._iconUrl !== desired){
+								s.marker.setIcon(makeIcon(desired));
+								s._iconUrl = desired;
+							}
 						}
 						
 						const radius = typeof footprintRadiusMeters === 'function'
@@ -887,7 +1197,6 @@
 						if(el){
 							let txt='Lat: '+p.lat.toFixed(3)+' deg, Lon: '+p.lon.toFixed(3)+' deg';
 							txt+='\nAlt: '+p.altKm.toFixed(1)+' km | Vel: '+p.speedKmh.toFixed(0)+' km/h';
-							txt+='\nUTC: '+now().toISOString().replace('T',' ').replace('Z',' UTC');
 							el.textContent=txt;
 						}
 					}
@@ -924,15 +1233,77 @@
 					}
 				
 					document.getElementById('status').textContent='TLE: esperando (usa el panel para pegarlas)';
-					tick(); computeAllTracks();
-					setInterval(tick,1000);
-					
-					// ====== Gestión dinámica de satélites ======
+
+					// ====== Gestión dinámica de satélites (refs DOM) — mover arriba para evitar TDZ ======
 					const satListEl   = document.getElementById('satList');
 					const addBtn      = document.getElementById('addSatBtn');
 					const nameInp     = document.getElementById('satName');
 					const tleBlockInp = document.getElementById('tleBlock');
 					const defColInp   = document.getElementById('defaultOrbitColor');
+
+					// === Guardar vista del mapa (centro/zoom)
+					map.on('moveend zoomend', ()=>{
+						try{
+							const c = map.getCenter();
+							localStorage.setItem('sr.mapView', JSON.stringify({ center:[c.lat, c.lng], zoom: map.getZoom() }));
+						}catch(_){}
+					});
+
+					// === Restaurar estado de UI
+					function restoreUI(){
+						try{
+							// Base
+							const savedBase = localStorage.getItem('sr.base');
+							if (savedBase){
+								const sel = document.getElementById('baseSel');
+								if (sel) sel.value = savedBase;
+								const nextBase = (savedBase==='light'?baseLight : savedBase==='dark'?baseDark : savedBase==='sat'?baseSat : baseOSM);
+								if (currentBase && map.hasLayer(currentBase)) map.removeLayer(currentBase);
+								nextBase.addTo(map); currentBase = nextBase;
+							}
+							// Vista
+							const mv = JSON.parse(localStorage.getItem('sr.mapView')||'null');
+							if (mv && Array.isArray(mv.center) && typeof mv.zoom==='number'){
+								map.setView(mv.center, mv.zoom, {animate:false});
+							}
+							// Horizonte traza
+							const h = localStorage.getItem('sr.horizon');
+							if (h){
+								state.horizonMins = parseInt(h,10)||0;
+								const selH = document.getElementById('trackHorizon');
+								if (selH) selH.value = String(state.horizonMins);
+								computeAllTracks();
+							}
+							// Toggles
+							const t1 = localStorage.getItem('sr.t.term');
+							if (t1!==null){ const chk = document.getElementById('toggleTerminator'); if(chk){ chk.checked = (t1==='1'); chk.dispatchEvent(new Event('change')); } }
+							const t2 = localStorage.getItem('sr.t.radar');
+							if (t2!==null){ const chk = document.getElementById('toggleRadar'); if(chk){ chk.checked = (t2==='1'); chk.dispatchEvent(new Event('change')); } }
+							const t3 = localStorage.getItem('sr.t.clouds');
+							if (t3!==null){ const chk = document.getElementById('toggleClouds'); if(chk){ chk.checked = (t3==='1'); chk.dispatchEvent(new Event('change')); } }
+						}catch(_){}
+					}
+
+					// Restaurar UI y luego satélites guardados
+					restoreUI();					
+					
+					// Restaurar satélites guardados
+					(function restoreSaved(){
+						const saved = STORAGE.load();
+						if (saved.length){
+							for (const it of saved){
+								const {id, name, l1, l2, color, visible, iconUrl} = it || {};
+								if (name && l1 && l2){
+									addSatellite({ id, name, l1, l2, color, visible, iconUrl });
+								}
+							}
+							const st = document.getElementById('status');
+							if (st) st.textContent = `TLE: cargado (${Object.keys(state.sats).length} satélites)`;
+						}
+					})();
+					tick(); computeAllTracks();
+					
+					setInterval(tick,1000);
 
 					function parseTwoline(l1, l2){
 						try{ return satellite.twoline2satrec(l1.trim(), l2.trim()); }catch(_){ return null; }
@@ -964,15 +1335,21 @@
 						row.innerHTML = `
 							<input type="checkbox" id="chk-${id}" ${s.visible?'checked':''} />
 							<div style="min-width:0">
-								<div><b>${s.name}</b></div>
+								<div><b class="sat-name" data-id="${id}" title="Editar nombre (clic)">${s.name}</b></div>
 								<div class="kv" id="kv-${id}"></div>
 							</div>
-							<div class="actions-col">
-								<button class="zoomSat btn-icon" data-id="\${id}" title="Zoom">
+							<div class="sat-actions actions-col">
+								<button class="zoomSat btn-icon" data-id="${id}" title="Zoom">
 									<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5Zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14Z"/></svg>
 								</button>
 								<button class="colorBtn btn-color" data-id="${id}" title="Cambiar color de órbita"></button>
-								<button class="delSat btn-icon btn-danger" data-id="\${id}" title="Eliminar satélite">
+								<button class="editTLE btn-icon" data-id="${id}" title="Modificar TLE">
+									<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25ZM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83Z"/></svg>
+								</button>
+								<button class="iconBtn btn-icon" data-id="${id}" title="Elegir icono">
+									<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M21 19V5a2 2 0 0 0-2-2H5C3.9 3 3 3.9 3 5v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2ZM8.5 12.5l2.5 3.01 3.5-4.51L19 18H5l3.5-5.5ZM8 8a2 2 0 1 1 0 4 2 2 0 0 1 0-4Z"/></svg>
+								</button>
+								<button class="delSat btn-icon btn-danger" data-id="${id}" title="Eliminar satélite">
 									<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6 7h12v2H6V7Zm2 3h8l-1 9H9L8 10Zm3-6h2v2h-2V4Z"/></svg>
 								</button>
 								<input type="color" class="colorPicker" id="col-${id}" value="${s.color || '#ff3333'}" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0" />
@@ -1001,30 +1378,85 @@
 							if (sat.circle) sat.circle.setStyle({ color:c, fillColor:c });
 							// actualizar chip visual del botón
 							colorBtn.style.setProperty('--col', c);
+							STORAGE.save();
 						});
+							
+						// editar TLE (prompt de 2 líneas)
+						row.querySelector('.editTLE').addEventListener('click', ()=>{
+							const s = state.sats[id];
+							const curr = (s.l1||'')+'\n'+(s.l2||'');
+							const text = prompt('Pega el TLE (2 líneas, empiezan por 1 y 2):', curr);
+							if (!text) return;
+							const parsed = parseTLEBlock(text);
+							if (!parsed){ alert('TLE inválido'); return; }
+							const sr = parseTwoline(parsed.l1, parsed.l2);
+							if (!sr){ alert('TLE inválido'); return; }
+							s.l1 = parsed.l1; s.l2 = parsed.l2; s.satrec = sr;
+							computeTrack(id); updateSat(id);
+							STORAGE.save();
+						});
+						
+						// elegir icono (presets: sat/dot/tri o URL)
+						row.querySelector('.iconBtn').addEventListener('click', ()=>{
+							const s = state.sats[id];
+							let val = prompt('Icono:\n- Escribe "sat", "dot" o "tri"\n- o pega una URL (PNG/SVG)\nActual:', s.iconUrl || ICONS.sat);
+							if (!val) return;
+							val = val.trim();
+							if (val.toLowerCase() === 'sat') val = ICONS.sat;
+							if (val.toLowerCase() === 'dot') val = ICONS.dot;
+							if (val.toLowerCase() === 'tri') val = ICONS.tri;
+							s.iconUrl = val;
+							if (s.marker) s.marker.setIcon(makeIcon(val));
+							STORAGE.save();
+						});
+						
 						// eliminar satélite
 						row.querySelector('.delSat').addEventListener('click', ()=>{
 							removeSatellite(id);
 						});
+						
+						// nombre editable al clic
+						const nameEl = row.querySelector('.sat-name');
+						nameEl.addEventListener('click', ()=>{
+							nameEl.setAttribute('contenteditable','true');
+							const sel = window.getSelection(); const r = document.createRange();
+							r.selectNodeContents(nameEl); sel.removeAllRanges(); sel.addRange(r);
+							nameEl.focus();
+						});
+						nameEl.addEventListener('keydown', (ev)=>{ if(ev.key==='Enter'){ ev.preventDefault(); nameEl.blur(); }});
+						nameEl.addEventListener('blur', ()=>{
+							nameEl.removeAttribute('contenteditable');
+							const newName = nameEl.textContent.trim() || s.name;
+							s.name = newName;
+							if (s.marker && s.marker.getPopup()) s.marker.getPopup().setContent('<b>'+s.name+'</b>');
+							else if (s.marker) s.marker.bindPopup('<b>'+s.name+'</b>');
+							STORAGE.save();
+						});
 					}
 
-					function addSatellite({name, l1, l2, color}){
+					function addSatellite({id, name, l1, l2, color, visible, iconUrl}){
 						const satrec = parseTwoline(l1, l2);
 						if(!satrec){ alert('TLE inválido'); return; }
-						const id = uidFromName(name);
-						state.sats[id] = {
-							name, satrec,
+						const _id = id || uidFromName(name);
+						if (state.sats[_id]) { /* evita duplicados si ya existiera */ return; }
+						state.sats[_id] = {
+							name, l1, l2, satrec,
 							color: color || '#ff3333',
+							iconUrl: iconUrl || ICONS.sat,
 							marker:null, circle:null, track:null,
-							visible:true
+							visible: (visible === false ? false : true)
 						};
-						createSatRow(id, state.sats[id]);
+						createSatRow(_id, state.sats[_id]);
 						// fuerza primer tick/track
-						updateSat(id);
-						computeTrack(id);
+						updateSat(_id);
+						computeTrack(_id);
+						// respetar visibilidad restaurada
+						if (visible === false) toggleSat(_id, false);
 						// UI feedback
 						const st = document.getElementById('status');
 						if (st) st.textContent = `TLE: cargado (${Object.keys(state.sats).length} satélites)`;
+						// guardar
+						STORAGE.save();
 					}
 					
 					function removeSatellite(id){
@@ -1042,7 +1474,9 @@
 						// feedback de estado
 						const st = document.getElementById('status');
 						const n  = Object.keys(state.sats).length;
-						if (st) st.textContent = n ? `TLE: cargado (\${n} satélites)` : 'TLE: esperando…';
+						if (st) st.textContent = n ? `TLE: cargado (${n} satélites)` : 'TLE: esperando…';
+						// guardar
+						STORAGE.save();
 					}
 
 					if(addBtn){
@@ -1077,6 +1511,8 @@
 						if (!timeState.manual && refInput){
 							refInput.value = toLocalDTValue(new Date());
 						}
+					// Actualiza el reloj UTC global cada segundo
+					updateUTCStatus();
 					}, 1000);
 					
 				});
