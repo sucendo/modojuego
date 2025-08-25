@@ -1,7 +1,30 @@
 <!doctype html>
 <html lang="es">
 	<head>
-		<meta charset="utf-8" />
+		<meta charset="utf-8">
+		<!-- Favicon (sat1) -->
+		<link rel="icon" type="image/png" sizes="32x32" href="img/satellite-rasteator/icons/32/sat1.png">
+		<link rel="icon" type="image/png" sizes="64x64" href="img/satellite-rasteator/icons/64/sat1.png">
+		<link rel="apple-touch-icon" sizes="180x180" href="img/satellite-rasteator/icons/64/sat1.png">
+		<!-- Color de la barra del navegador (se sincroniza por JS con el header) -->
+		<meta name="theme-color" content="#0e1540">
+		<!-- PWA en Android/Chrome -->
+		<meta name="mobile-web-app-capable" content="yes">
+		<!-- Solo añadimos el meta de Apple en iOS para evitar el warning en Chrome -->
+		<script>
+		(function(){
+			const isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+			if (isiOS){
+			var m = document.querySelector('meta[name="apple-mobile-web-app-capable"]');
+			if(!m){ m = document.createElement('meta'); m.setAttribute('name','apple-mobile-web-app-capable'); document.head.appendChild(m); }
+			m.setAttribute('content','yes');
+			} else {
+			const m = document.querySelector('meta[name="apple-mobile-web-app-capable"]');
+			if (m) m.remove();
+			}
+		})();
+		</script>
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<title>Satellite Rasteator</title>
 		<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -17,8 +40,19 @@
 			html,body{height:100%; margin:0; background:var(--bg); color:var(--text); font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif; overflow-x:hidden} 
 			#app{display:grid; grid-template-rows:auto 1fr; height:100%}
 			header{display:flex; gap:1rem; align-items:center; padding:.6rem 1rem; background:#0b1020; border-bottom:1px solid #1f284a}
+			/* Icono de marca (sat1) antes del título */
+			#brandIcon{
+				width:32px; height:32px; flex:0 0 22px;
+				image-rendering:auto; display:inline-block;
+			}
 			header h1{font-size:1.05rem; margin:0}
 			header .actions{margin-left:auto; display:flex; gap:.5rem; align-items:center; flex-wrap:wrap} /* wrap en tablet */
+			/* Botón Fullscreen (móvil): junto al ☰ */
+			#fullScreenBtn{
+				display:none; /* solo móvil */
+				align-items:center; justify-content:center;
+				width:36px; height:36px; padding:0;
+			}
 			header button, header select{background:#11173a; color:var(--text); border:1px solid #26315c; padding:.45rem .7rem; border-radius:.5rem; cursor:pointer}
 			#map{height:100%;}			
 			.panel{
@@ -31,6 +65,8 @@
 				overflow:hidden; /* ← nada se desborda fuera del panel */
 			}
 			.panel h2{margin:.2rem 0 .6rem; font-size:1rem}
+			/* resalta botón activo (seguir) */
+			.sat-item .btn-icon.active{ box-shadow: inset 0 0 0 2px #6aa8ff; }
 			
 			.sat-item{
 				display:grid;
@@ -69,7 +105,7 @@
 			#addSatPanel{
 				flex:0 0 auto;              /* altura natural; no crece */
 				margin-top:.5rem;
-				max-height:42vh;            /* por si lo abres, que no coma toda la columna */
+				max-height:43vh;            /* por si lo abres, que no coma toda la columna */
 				overflow:auto;              /* si hiciera falta, scrollea solo su contenido */
 				scrollbar-gutter: stable;
 			}
@@ -172,6 +208,20 @@
 			  cursor: not-allowed;
 			  filter: grayscale(25%);
 			}
+			
+			#addSatPanel #newIconBtn {
+				display: inline-flex;
+				align-items: center;
+				justify-content: center;
+				width: 32px;
+				height: 32px;
+				border-radius: .4rem;
+				border: 1px solid #2a3a6b;
+				background: #0e1540;
+				color: var(--text);
+				cursor: pointer;
+				padding: 0;
+			}
 
 			/* (Opcional) compacta el contenedor del botón + color para que se vea fino en pantallas pequeñas */
 			#addSatPanel > div[style*="display:flex"]{
@@ -187,7 +237,7 @@
 			}
 						
 			details{border:1px dashed #2a3a6b; border-radius:.6rem; padding:.4rem .6rem; margin-top:.5rem}
-			textarea{width:100%; min-height:110px; background:#0c1330; color:var(--text); border:1px solid #2a3a6b; border-radius:.5rem; padding:.5rem; font-family:ui-monospace,Menlo,Consolas,monospace}
+			textarea{width:100%; min-height:90px; background:#0c1330; color:var(--text); border:1px solid #2a3a6b; border-radius:.5rem; padding:.5rem; font-family:ui-monospace,Menlo,Consolas,monospace}
 			.hint{font-size:.8rem; opacity:.7}
 			/* Si quieres forzar SIN relleno para pruebas, descomenta:
 			#map .terminator-line { fill: none !important; }
@@ -203,6 +253,49 @@
 				transform: translateX(calc(100% + 16px));
 				opacity:0;
 				pointer-events:none;
+			}
+
+			/* === Color picker en Añadir: igual aspecto que .btn-color === */
+			#addSatPanel #defaultOrbitColor{
+				appearance: none;
+				-webkit-appearance: none;
+				width: 32px;
+				height: 32px;
+				border-radius: .4rem;
+				border: 1px solid #2a3a6b;
+				background: #0e1540;     /* mismo fondo que los botones de la lista */
+				padding: 0;
+				cursor: pointer;
+			}
+			/* Chrome/Safari/Edge: elimina relleno y borde blanco del swatch */
+			#addSatPanel #defaultOrbitColor::-webkit-color-swatch-wrapper{
+				padding: 0;
+				border-radius: .35rem;
+			}
+			#addSatPanel #defaultOrbitColor::-webkit-color-swatch{
+				border: none;
+				border-radius: .35rem;
+			}
+			/* Firefox */
+			#addSatPanel #defaultOrbitColor::-moz-color-swatch{
+				border: none;
+				border-radius: .35rem;
+			}
+			/* Accesibilidad y hover, a juego con tus botones */
+				#addSatPanel #defaultOrbitColor:hover{
+				filter: saturate(1.05) brightness(1.05);
+			}
+			#addSatPanel #defaultOrbitColor:focus-visible{
+				outline: 2px solid #6aa8ff;
+				outline-offset: 2px;
+			}
+			
+			/* Tamaños responsivos para que case con .btn-color en móvil/tablet */
+			@media (max-width: 900px){
+			#addSatPanel #defaultOrbitColor{ width: 32px; height: 32px; }
+			}
+			@media (max-width: 700px){
+			#addSatPanel #defaultOrbitColor{ width: 36px; height: 36px; }
 			}
 			.panel .min-btn{
 				position:absolute; top:8px; right:8px; border:1px solid #26315c; background:#0e1540;
@@ -222,18 +315,70 @@
 			/* --- Botones icono en filas de satélites --- */
 			.sat-item .btn-icon{
 				display:inline-flex; align-items:center; justify-content:center;
-				width:28px; height:28px; border-radius:.4rem; border:1px solid #2a3a6b;
+				width:32px; height:32px; border-radius:.4rem; border:1px solid #2a3a6b;
 				background:#0e1540; color:var(--text); cursor:pointer; padding:0;
 			}
 			.sat-item .btn-icon svg{ width:16px; height:16px; pointer-events:none }
 			.sat-item .btn-danger{ border-color:#5a2a2a; background:#3a0e0e }
 			/* Botón de color: muestra el color actual; con fallback por si no hay conic-gradient */
 			.sat-item .btn-color{
-				width:28px; height:28px; border-radius:.4rem; border:1px solid #2a3a6b;
+				width:32px; height:32px; border-radius:.4rem; border:1px solid #2a3a6b;
 				cursor:pointer; padding:0;
 				background: var(--col, #ff3333);
 				background: conic-gradient(from 0deg, var(--col, #ff3333), var(--col, #ff3333));
 			}
+			
+			/* === Selector de iconos (popover) === */
+			.icon-picker{
+				position:fixed; z-index:2000; background:#0e1540; color:var(--text);
+				border:1px solid #2a3a6b; border-radius:.6rem; box-shadow:0 12px 30px rgba(0,0,0,.45);
+				padding:.5rem; width:220px; max-height:260px; overflow:auto;
+			}
+			.icon-picker h4{ margin:.1rem .1rem .4rem; font-size:.9rem; opacity:.85 }
+			.icon-grid{
+				display:grid; grid-template-columns:repeat(5, 1fr); gap:.35rem;
+			}
+			.icon-item{
+				background:#0c1330; border:1px solid #2a3a6b; border-radius:.45rem;
+				width:36px; height:36px; display:flex; align-items:center; justify-content:center;
+				cursor:pointer;
+			}
+			.icon-item img{ width:24px; height:24px; image-rendering:auto }
+			.icon-item[aria-selected="true"]{
+				outline:2px solid #6aa8ff; outline-offset:1px;
+				border-color:#6aa8ff;
+			}
+			.icon-picker .close-row{ display:flex; justify-content:flex-end; margin-top:.4rem }
+			.icon-picker .close-btn{
+				background:#11173a; border:1px solid #2a3a6b; color:var(--text);
+				border-radius:.4rem; padding:.25rem .5rem; cursor:pointer;
+			}
+			
+			/* === Picker de TLE (popover similar al de iconos) === */
+			.tle-picker{
+				position:fixed; z-index:2000; background:#0e1540; color:var(--text);
+				border:1px solid #2a3a6b; border-radius:.6rem; box-shadow:0 12px 30px rgba(0,0,0,.45);
+				padding:.6rem; width:460px; max-width:calc(100vw - 16px);
+			}
+			.tle-picker h4{ margin:.1rem .1rem .4rem; font-size:.95rem; opacity:.9 }
+			.tle-picker .tle-area{
+				width:96%; min-height:96px; resize:vertical;
+				background:#0c1330; color:var(--text);
+				border:1px solid #2a3a6b; border-radius:.45rem; padding:.5rem;
+				font: 13px/1.35 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+			}
+			.tle-picker .meta{ display:flex; gap:.5rem; align-items:center; margin-top:.35rem; font-size:.85rem; opacity:.85 }
+			.tle-picker .meta .pill{
+				border:1px solid #2a3a6b; border-radius:.45rem; padding:.15rem .4rem; background:#0c1330;
+			}
+			.tle-picker .meta .ok{ color:#9fe29f; border-color:#2f5a2f }
+			.tle-picker .meta .bad{ color:#ffb0b0; border-color:#5a2f2f }
+			.tle-picker .actions{ display:flex; gap:.5rem; justify-content:flex-end; margin-top:.5rem }
+			.tle-picker .btn{
+				background:#11173a; border:1px solid #2a3a6b; color:var(--text);
+				border-radius:.4rem; padding:.35rem .7rem; cursor:pointer;
+			}
+			.tle-picker .btn[disabled]{ opacity:.5; cursor:not-allowed }			
 			
 			/* Toggle (oculto por defecto en desktop) */
 			.actions-toggle{
@@ -260,7 +405,8 @@
 				header button, header select, #refTime, #useNow{ font-size:.9rem; padding:.4rem .55rem }
 				/* Mostrar el toggle y mandar acciones a la 2ª línea */
 				.actions-toggle{ display:inline-flex; align-items:center; justify-content:center }
-					header .actions{
+				#fullScreenBtn{ display:inline-flex; } /* aparece en móvil */
+				header .actions{
 					order:3;
 					width:100%;
 					display:flex;
@@ -320,8 +466,14 @@
 	<body>
 		<div id="app">
 			<header>
-				<h1>Satellite Rasteator</h1>
+				<img id="brandIcon" src="img/satellite-rasteator/icons/32/sat1.png" alt="" aria-hidden="true">
+ 				<h1>Satellite Rasteator</h1>
 				<button id="actionsToggle" class="actions-toggle" aria-label="Mostrar opciones">☰</button>
+				<button id="fullScreenBtn" aria-label="Pantalla completa" title="Pantalla completa">
+					<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+						<path fill="currentColor" d="M4 9V4h5V2H2v7h2Zm0 6v5h5v2H2v-7h2Zm16-6h2V2h-7v2h5v5Zm0 8h-5v2h7v-7h-2Z"/>
+					</svg>
+				</button>
 				<div class="actions">
 					<button id="locateMe">Ubicarme</button>
 					<label style="display:flex;align-items:center;gap:.35rem">
@@ -345,6 +497,9 @@
 						<option value="60" selected>+60 min</option>
 						<option value="90">+90 min</option>
 					</select>
+					<label style="display:flex;align-items:center;gap:.35rem">
+						<input type="checkbox" id="toggleHorizon" checked /> Horizonte
+					</label>
 					<input type="datetime-local" id="refTime" step="1" style="background:#11173a;color:#e6eef8;border:1px solid #26315c;border-radius:.5rem;padding:.45rem .5rem" />
 					<button id="useNow">Ahora</button>
 				</div>
@@ -359,6 +514,12 @@
 			<div class="kv" id="timeStatus">Tiempo ref: auto (reloj del sistema)</div>
 			<div class="kv" id="utcStatus">UTC: —</div>
 			
+			<!-- Filtro rápido por nombre -->
+			<div style="margin-top:.35rem">
+				<input id="satFilter" placeholder="Filtrar satélites…" 
+					style="width:93%;background:#0c1330;color:var(--text);border:1px solid #2a3a6b;border-radius:.5rem;padding:.45rem .55rem" />
+			</div>
+			
 			<!-- Lista dinámica de satélites -->
 			<div id="satList"></div>
 			
@@ -369,10 +530,14 @@
 				<input id="satName" placeholder="Ej: SENTINEL-2A" style="width:100%;background:#0c1330;color:var(--text);border:1px solid #2a3a6b;border-radius:.5rem;padding:.5rem" />
 				<label style="display:block;margin-top:.5rem">TLE (2 líneas)</label>
 				<textarea id="tleBlock" placeholder="1 42063U 17013A ...&#10;2 42063 98.5661 ..."></textarea>
+				<!-- Estado de validación del TLE pegado -->
+				<div id="addTleInfo" class="hint" style="margin:.25rem 0 .35rem">
+					<span id="addLen">—</span> · <span id="addL1">L1: —</span> · <span id="addL2">L2: —</span> · <span id="addState">Estado: esperando…</span>
+				</div>
 				<div style="display:flex;align-items:center;gap:.5rem">
 					<button id="addSatBtn">Añadir</button>
-					<input type="color" id="defaultOrbitColor" value="#ff3333" title="Color de órbita por defecto" />
-					<span class="hint">Color de órbita por defecto</span>
+					<button id="newIconBtn" class="btn-icon" title="Elegir icono"></button>
+					<input type="color" id="defaultOrbitColor" value="#ff3333" title="Color de órbita por defecto" />					
 				</div>
 			</details>
 
@@ -415,6 +580,66 @@
 						window.addEventListener('resize', ()=> actionsBar.classList.remove('open'));
 						window.addEventListener('orientationchange', ()=> actionsBar.classList.remove('open'));
 					}
+					
+					// === Sincroniza <meta name="theme-color"> con el color real del header ===
+					(function syncThemeColorWithHeader(){
+						const meta = document.querySelector('meta[name="theme-color"]') || (()=>{ const m=document.createElement('meta'); m.setAttribute('name','theme-color'); document.head.appendChild(m); return m; })();
+						const header = document.querySelector('header');
+						if(!header) return;
+						function rgbToHex(rgb){
+							// rgb(14, 21, 64)  |  rgba(14, 21, 64, 0.9)
+							const m = rgb.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*[\d.]+)?\s*\)/i);
+							if(!m) return '#0e1540';
+							return '#' + [m[1],m[2],m[3]].map(n => Number(n).toString(16).padStart(2,'0')).join('');
+						}
+						function apply(){
+							const bg = getComputedStyle(header).backgroundColor;
+							meta.setAttribute('content', rgbToHex(bg));
+						}
+						apply();
+						// Reaplica si el sistema cambia de tema o si algo toca el estilo
+						window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', apply);
+					})();
+					
+					// === Botón Pantalla Completa (móvil) ===
+					(function initFullscreen(){
+						const btn = document.getElementById('fullScreenBtn');
+						if(!btn) return;
+						const appEl = document.getElementById('app') || document.documentElement;
+						const ENTER_ICON = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M4 9V4h5V2H2v7h2Zm0 6v5h5v2H2v-7h2Zm16-6h2V2h-7v2h5v5Zm0 8h-5v2h7v-7h-2Z"/></svg>';
+						const EXIT_ICON  = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M9 3H7v4H3v2h6V3Zm8 4V3h-2v6h6V7h-4Zm-8 14h2v-6H3v2h6v4Zm12-6h-6v6h2v-4h4v-2Z"/></svg>';
+						function isFs(){
+							return document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
+						}
+						function refresh(){
+							btn.title = isFs() ? 'Salir de pantalla completa' : 'Pantalla completa';
+							btn.setAttribute('aria-label', btn.title);
+							btn.innerHTML = isFs() ? EXIT_ICON : ENTER_ICON;
+						}
+						async function enterFs(){
+							const el = appEl;
+							try{
+								if (el.requestFullscreen) await el.requestFullscreen();
+								else if (el.webkitRequestFullscreen) await el.webkitRequestFullscreen(); // iOS Safari
+								else if (el.msRequestFullscreen) await el.msRequestFullscreen();
+							}catch(_){}
+							refresh();
+						}
+						async function exitFs(){
+							try{
+								if (document.exitFullscreen) await document.exitFullscreen();
+								else if (document.webkitExitFullscreen) await document.webkitExitFullscreen();
+								else if (document.msExitFullscreen) await document.msExitFullscreen();
+							}catch(_){}
+							refresh();
+						}
+						btn.addEventListener('click', ()=>{
+							isFs() ? exitFs() : enterFs();
+						});
+						document.addEventListener('fullscreenchange', refresh);
+						document.addEventListener('webkitfullscreenchange', refresh);
+						refresh();
+					})();
 				
 					// --- MAPA (zoom/pan suaves) ---
 					const map = L.map('map', {
@@ -790,6 +1015,21 @@
 						});
 					}
 					
+					// Toggle global del HORIZONTE (radios)
+					const horizonChk = document.getElementById('toggleHorizon');
+					if (horizonChk){
+						horizonChk.addEventListener('change', function(){
+							const on = this.checked;
+							try{ localStorage.setItem('sr.t.horiz', on?'1':'0'); }catch(_){}
+							for (const id in state.sats){
+								const s = state.sats[id];
+								if (!s.circle) continue;
+								if (on && s.visible !== false){ if(!map.hasLayer(s.circle)) s.circle.addTo(map); }
+								else { if(map.hasLayer(s.circle)) map.removeLayer(s.circle); }
+							}
+						});
+					}
+					
 					// Inicializa el input con la hora actual (local) — AHORA sí, tras definir toLocalDTValue/applyRefTime
 					const refInput = document.getElementById('refTime');
 					if(refInput){
@@ -1075,7 +1315,12 @@
 						const s=state.sats[id]; if (!s) return;
 						s.visible=on;
 						if(s.marker){ on?map.addLayer(s.marker):map.removeLayer(s.marker); }
-						if(s.circle){ on?map.addLayer(s.circle):map.removeLayer(s.circle); }
+						// círculo solo si el toggle global de horizonte está activo
+						if(s.circle){
+							const showHoriz = document.getElementById('toggleHorizon')?.checked;
+							if(on && showHoriz){ if(!map.hasLayer(s.circle)) map.addLayer(s.circle); }
+							else { if(map.hasLayer(s.circle)) map.removeLayer(s.circle); }
+						}
 						if(s.track){  on?map.addLayer(s.track):map.removeLayer(s.track); }
 						STORAGE.save();
 					}
@@ -1134,8 +1379,14 @@
 						sat5: 'sat5.png',
 						sat6: 'sat6.png',
 						sat7: 'sat7.png',
+						/*sat8: 'sat8.png',
+						sat9: 'sat9.png',*/
 						iss : 'iss.png'
 					};
+					function iconPath(key, size=32){
+						const file = ICON_FILES[key] || ICON_FILES.sat1;
+						return `${ICON_BASE}/${size}/${file}`;
+					}
 					// Acepta una clave (sat1…iss) o una URL absoluta/data:
 					function makeIcon(keyOrUrl = 'sat1'){
 						const isUrl = /^(https?:|data:|\/)/i.test(keyOrUrl);
@@ -1150,6 +1401,132 @@
 							popupAnchor: [0,-16],
 							className: 'satellite-icon'
 						});
+					}
+					
+					// === Picker de TLE ===
+					function tleChecksumOk(line){
+						// Checksum TLE: suma dígitos + ( - cuenta como 1 ) mod 10 debe igualar último char
+						if(!line || line.length < 69) return false;
+						const csChar = line.trim().slice(-1);
+						if(!/^[0-9]$/.test(csChar)) return false;
+						const head = line.slice(0, 68);
+						let s = 0;
+						for (let i=0;i<head.length;i++){
+							const ch = head[i];
+							if (ch >= '0' && ch <= '9') s += ch.charCodeAt(0) - 48;
+							else if (ch === '-') s += 1;
+						}
+						return (s % 10) === parseInt(csChar,10);
+					}
+					function openTlePicker(anchorBtn, l1Current='', l2Current='', onSave){
+						// Cierra cualquier otro popover
+						document.querySelectorAll('.tle-picker,.icon-picker').forEach(el=>el.remove());
+						const pop = document.createElement('div');
+						pop.className = 'tle-picker';
+						pop.innerHTML = `
+							<h4>Modificar TLE</h4>
+							<textarea class="tle-area" placeholder="Pega aquí las 2 líneas (empiezan por 1 y 2)"></textarea>
+							<div class="meta">
+								<span class="pill len">—</span>
+								<span class="pill chk1">L1: —</span>
+								<span class="pill chk2">L2: —</span>
+								<span class="pill status">Estado: esperando…</span>
+							</div>
+							<div class="actions">
+								<button class="btn close-btn">Cancelar</button>
+								<button class="btn save-btn" disabled>Guardar</button>
+							</div>
+						`;
+						const area  = pop.querySelector('.tle-area');
+						const lenEl = pop.querySelector('.len');
+						const c1El  = pop.querySelector('.chk1');
+						const c2El  = pop.querySelector('.chk2');
+						const stEl  = pop.querySelector('.status');
+						const btnSave = pop.querySelector('.save-btn');
+						const btnClose= pop.querySelector('.close-btn');
+						area.value = (l1Current ? (l1Current+'\n') : '') + (l2Current||'');
+						function validate(){
+							const raw = area.value.trim();
+							const parsed = parseTLEBlock(raw) || {};
+							const l1 = parsed.l1 || ''; const l2 = parsed.l2 || '';
+							const l1ok = /^1\s/.test(l1) && l1.length>=60 && tleChecksumOk(l1);
+							const l2ok = /^2\s/.test(l2) && l2.length>=60 && tleChecksumOk(l2);
+							lenEl.textContent = `${raw.length} chars`;
+							c1El.textContent  = `L1: ${l1ok?'OK':'X'}`; c1El.className = `pill ${l1ok?'ok':'bad'}`;
+							c2El.textContent  = `L2: ${l2ok?'OK':'X'}`; c2El.className = `pill ${l2ok?'ok':'bad'}`;
+							const ok = !!(l1 && l2 && l1ok && l2ok);
+							btnSave.disabled = !ok;
+							stEl.textContent = ok ? 'Estado: válido' : 'Estado: incompleto o inválido';
+							return ok ? {l1,l2} : null;
+						}
+						area.addEventListener('input', validate);
+						setTimeout(()=>{ area.focus(); area.setSelectionRange(area.value.length, area.value.length); validate(); }, 0);
+						document.body.appendChild(pop);
+						// Posicionar junto al botón
+						const r = anchorBtn.getBoundingClientRect(), m=6;
+						let left = Math.min(window.innerWidth - pop.offsetWidth - 8, Math.max(8, r.left));
+						let top  = r.bottom + m; if (top + pop.offsetHeight + 8 > window.innerHeight) top = r.top - pop.offsetHeight - m;
+						pop.style.left = `${left}px`; pop.style.top = `${top}px`;
+						// Cerrar fuera / ESC
+						const onDoc = (e)=>{ if(!pop.contains(e.target) && e.target!==anchorBtn){ pop.remove(); document.removeEventListener('mousedown',onDoc); } };
+						document.addEventListener('mousedown', onDoc);
+						window.addEventListener('keydown', function onEsc(ev){ if(ev.key==='Escape'){ pop.remove(); document.removeEventListener('mousedown',onDoc); window.removeEventListener('keydown', onEsc); }});
+						btnClose.addEventListener('click', ()=>{ pop.remove(); document.removeEventListener('mousedown',onDoc); });
+						btnSave.addEventListener('click', ()=>{
+							const ok = validate();
+							if(!ok) return;
+							onSave(ok.l1, ok.l2);
+							pop.remove(); document.removeEventListener('mousedown',onDoc);
+						});
+					}
+					
+					// === Popover genérico de selección de icono ===
+					function openIconPicker(anchorBtn, currentKey, onChoose){
+						// Cerrar si ya hay uno
+						let existing = document.querySelector('.icon-picker');
+						if (existing) existing.remove();
+						const pop = document.createElement('div');
+						pop.className = 'icon-picker';
+						pop.innerHTML = `
+							<h4>Elige un icono</h4>
+							<div class="icon-grid"></div>
+							<div class="close-row"><button class="close-btn">Cerrar</button></div>
+						`;
+						const grid = pop.querySelector('.icon-grid');
+						const keys = Object.keys(ICON_FILES);
+						keys.forEach(k=>{
+							const it = document.createElement('button');
+							it.type = 'button';
+							it.className = 'icon-item';
+							it.setAttribute('aria-selected', String(k===currentKey));
+							it.innerHTML = `<img alt="${k}" src="${iconPath(k,32)}">`;
+							it.addEventListener('click', ()=>{
+								onChoose(k);
+								pop.remove();
+							});
+							grid.appendChild(it);
+						});
+						document.body.appendChild(pop);
+						// Posicionar junto al botón
+						const r = anchorBtn.getBoundingClientRect();
+						const margin = 6;
+						let left = Math.min(window.innerWidth - pop.offsetWidth - 8, Math.max(8, r.left));
+						let top  = r.bottom + margin;
+						// si se sale por abajo, colócalo arriba
+						if (top + 280 > window.innerHeight) top = r.top - pop.offsetHeight - margin;
+						pop.style.left = `${left}px`;
+						pop.style.top  = `${top}px`;
+						// Cerrar fuera / ESC
+						const onDoc = (e)=>{ if(!pop.contains(e.target) && e.target!==anchorBtn){ pop.remove(); document.removeEventListener('mousedown',onDoc); } };
+						document.addEventListener('mousedown', onDoc);
+						pop.querySelector('.close-btn').addEventListener('click', ()=>{ pop.remove(); document.removeEventListener('mousedown',onDoc); });
+						window.addEventListener('keydown', function onEsc(ev){ if(ev.key==='Escape'){ pop.remove(); document.removeEventListener('mousedown',onDoc); window.removeEventListener('keydown', onEsc); }});
+					}
+					function setIconButtonVisual(btn, keyOrUrl){
+						// Si es URL externa/data, úsala tal cual; si es clave, usa 32px local
+						const isUrl = /^(https?:|data:|\/)/i.test(keyOrUrl);
+						const src = isUrl ? keyOrUrl : iconPath(keyOrUrl||'sat1', 32);
+						btn.innerHTML = `<img alt="icon" src="${src}" style="width:20px;height:20px;pointer-events:none">`;
 					}
 					
 					// DEBUG: icono de prueba en (0,0). Quitar luego.
@@ -1174,7 +1551,7 @@
 							? footprintRadiusMeters(p.altKm)
 							: 145000; // fallback si no integraste la función de radio dinámico
 						if(!s.circle){
-							// 2) footprint/área en pane de ÓRBITAS (color y relleno desde el inicio)
+							// 2) footprint/área en pane de ÓRBITAS (no añadir aún al mapa)
 							s.circle = L.circle([p.lat, p.lon], {
 								pane: 'orbitPane',
 								radius,
@@ -1183,12 +1560,21 @@
 								weight: 1,
 								opacity: 0.9,
 								fillOpacity: 0.12
-								}).addTo(map);
+							});
+						} else {
+							s.circle.setLatLng([p.lat,p.lon]);
+							// por si cambia la altitud o integras radio dinámico
+							if (typeof s.circle.setRadius === 'function') s.circle.setRadius(radius);
+						}
+						// mostrar/ocultar según toggle global + visibilidad del satélite
+						const showHoriz = document.getElementById('toggleHorizon')?.checked;
+						if (s.circle){
+							if (showHoriz && s.visible !== false){
+								if (!map.hasLayer(s.circle)) s.circle.addTo(map);
 							} else {
-								s.circle.setLatLng([p.lat,p.lon]);
-								// por si cambia la altitud o integras radio dinámico
-								if (typeof s.circle.setRadius === 'function') s.circle.setRadius(radius);
+								if (map.hasLayer(s.circle)) map.removeLayer(s.circle);
 							}
+						}
 						
 						const el=document.getElementById('kv-'+id);
 						if(el){
@@ -1227,6 +1613,11 @@
 					}
 					function tick(){
 						for (const id in state.sats){ updateSat(id); }
+						// centra el mapa si estamos siguiendo uno
+						if (followId && state.sats[followId] && state.sats[followId].marker){
+							const ll = state.sats[followId].marker.getLatLng();
+							map.setView(ll, map.getZoom(), { animate:false });
+						}
 					}
 				
 					document.getElementById('status').textContent='TLE: esperando (usa el panel para pegarlas)';
@@ -1237,6 +1628,15 @@
 					const nameInp     = document.getElementById('satName');
 					const tleBlockInp = document.getElementById('tleBlock');
 					const defColInp   = document.getElementById('defaultOrbitColor');
+					const newIconBtn  = document.getElementById('newIconBtn');
+					const satFilterInp= document.getElementById('satFilter');
+					// UI estado validación al añadir
+					const addLenEl    = document.getElementById('addLen');
+					const addL1El     = document.getElementById('addL1');
+					const addL2El     = document.getElementById('addL2');
+					const addStateEl  = document.getElementById('addState');
+					let newSatIconKey = (localStorage.getItem('sr.newIcon') || 'sat1');
+					let followId = null; // id del satélite en modo “seguir”
 
 					// === Guardar vista del mapa (centro/zoom)
 					map.on('moveend zoomend', ()=>{
@@ -1278,11 +1678,25 @@
 							if (t2!==null){ const chk = document.getElementById('toggleRadar'); if(chk){ chk.checked = (t2==='1'); chk.dispatchEvent(new Event('change')); } }
 							const t3 = localStorage.getItem('sr.t.clouds');
 							if (t3!==null){ const chk = document.getElementById('toggleClouds'); if(chk){ chk.checked = (t3==='1'); chk.dispatchEvent(new Event('change')); } }
+						const t4 = localStorage.getItem('sr.t.horiz');
+						if (t4!==null){ const chk = document.getElementById('toggleHorizon'); if(chk){ chk.checked = (t4==='1'); chk.dispatchEvent(new Event('change')); } }
 						}catch(_){}
 					}
 
 					// Restaurar UI y luego satélites guardados
-					restoreUI();					
+					restoreUI();	
+
+					// Icono por defecto para nuevos satélites (UI)
+					if (newIconBtn){
+						setIconButtonVisual(newIconBtn, newSatIconKey);
+						newIconBtn.addEventListener('click', ()=>{
+							openIconPicker(newIconBtn, newSatIconKey, (k)=>{
+								newSatIconKey = k;
+								setIconButtonVisual(newIconBtn, newSatIconKey);
+								try{ localStorage.setItem('sr.newIcon', newSatIconKey); }catch(_){}
+							});
+						});
+					}					
 					
 					// Restaurar satélites guardados
 					(function restoreSaved(){
@@ -1336,12 +1750,10 @@
 								<div class="kv" id="kv-${id}"></div>
 							</div>
 							<div class="sat-actions actions-col">
-								<button class="zoomSat btn-icon" data-id="${id}" title="Zoom">
+								<button class="zoomSat btn-icon" data-id="${id}" title="Zoom/Seguir">
 									<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5Zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14Z"/></svg>
 								</button>
-								<button class="iconBtn btn-icon" data-id="${id}" title="Elegir icono">
-									<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M21 19V5a2 2 0 0 0-2-2H5C3.9 3 3 3.9 3 5v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2ZM8.5 12.5l2.5 3.01 3.5-4.51L19 18H5l3.5-5.5ZM8 8a2 2 0 1 1 0 4 2 2 0 0 1 0-4Z"/></svg>
-								</button>
+								<button class="iconBtn btn-icon" data-id="${id}" title="Elegir icono"></button>
 								<button class="colorBtn btn-color" data-id="${id}" title="Cambiar color de órbita"></button>
 								<button class="editTLE btn-icon" data-id="${id}" title="Modificar TLE">
 									<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25ZM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83Z"/></svg>
@@ -1358,10 +1770,25 @@
 						row.querySelector('#chk-'+id).addEventListener('change', e=>{
 							toggleSat(id, e.target.checked);
 						});
-						row.querySelector('.zoomSat').addEventListener('click', ()=>{
+						
+						// Zoom + seguir / dejar de seguir en el mismo botón
+						const zoomBtn = row.querySelector('.zoomSat');
+						function refreshZoomFollow(){
+							if (followId === id){ zoomBtn.classList.add('active'); zoomBtn.title = 'Dejar de seguir'; }
+							else { zoomBtn.classList.remove('active'); zoomBtn.title = 'Zoom/Seguir'; }
+						}
+						refreshZoomFollow();
+						zoomBtn.addEventListener('click', ()=>{
 							const sat = state.sats[id];
-							if(sat && sat.marker){ map.flyTo(sat.marker.getLatLng(), 4, {duration:1.2, easeLinearity:0.25, animate:true}); }
+							if(sat && sat.marker){
+								map.flyTo(sat.marker.getLatLng(), 4, {duration:1.2, easeLinearity:0.25, animate:true});
+								followId = (followId === id) ? null : id;
+								// actualizar estilos en todos los botones zoom
+								document.querySelectorAll('.zoomSat').forEach(b=>b.classList.remove('active'));
+								refreshZoomFollow();
+							}
 						});
+						
 						const colorBtn = row.querySelector('.colorBtn');
 						const colorInp = row.querySelector('#col-'+id);
 						// color inicial del chip (asegurado por JS)
@@ -1377,43 +1804,30 @@
 							colorBtn.style.setProperty('--col', c);
 							STORAGE.save();
 						});
-							
-						// editar TLE (prompt de 2 líneas)
-						row.querySelector('.editTLE').addEventListener('click', ()=>{
-							const s = state.sats[id];
-							const curr = (s.l1||'')+'\n'+(s.l2||'');
-							const text = prompt('Pega el TLE (2 líneas, empiezan por 1 y 2):', curr);
-							if (!text) return;
-							const parsed = parseTLEBlock(text);
-							if (!parsed){ alert('TLE inválido'); return; }
-							const sr = parseTwoline(parsed.l1, parsed.l2);
-							if (!sr){ alert('TLE inválido'); return; }
-							s.l1 = parsed.l1; s.l2 = parsed.l2; s.satrec = sr;
-							computeTrack(id); updateSat(id);
-							STORAGE.save();
-						});
 						
 						// elegir icono (presets: sat/dot/tri o URL)
-						row.querySelector('.iconBtn').addEventListener('click', ()=>{
-							const s = state.sats[id];
-							const keys = Object.keys(ICON_FILES).join(', ');
-							let val = prompt(
-								`Icono:\n- Escribe una clave: ${keys}\n- o pega una URL (PNG/SVG)\nActual:`,
-								s.iconUrl || s.iconKey || 'sat1'
-							);
-							if (!val) return;
-							val = val.trim();
-							// compatibilidad por si escriben "sat"
-							if (val.toLowerCase() === 'sat') val = 'sat1';
-							const isUrl = /^(https?:|data:|\/)/i.test(val);
-							if (isUrl) {
-								s.iconUrl = val; s.iconKey = null;
-							} else {
-								s.iconKey = ICON_FILES[val] ? val : 'sat1';
-								s.iconUrl = null;
-							}
-							if (s.marker) s.marker.setIcon(makeIcon(s.iconUrl || s.iconKey));
-							STORAGE.save();
+						// Botón de icono: muestra miniatura actual y abre picker
+						const iconBtn = row.querySelector('.iconBtn');
+						setIconButtonVisual(iconBtn, s.iconUrl || s.iconKey || 'sat1');
+						iconBtn.addEventListener('click', ()=>{
+							const sat = state.sats[id];
+							openIconPicker(iconBtn, sat.iconKey || 'sat1', (k)=>{
+								sat.iconKey = k; sat.iconUrl = null;
+								setIconButtonVisual(iconBtn, k);
+								if (sat.marker) sat.marker.setIcon(makeIcon(k));
+								STORAGE.save();
+							});
+						});
+						
+						// botón editar TLE → abre picker popover
+						const editBtn = row.querySelector('.editTLE');
+						editBtn.addEventListener('click', ()=>{
+							const sat = state.sats[id];
+							openTlePicker(editBtn, sat.l1, sat.l2, (newL1, newL2)=>{
+								sat.l1 = newL1; sat.l2 = newL2;
+								try{ sat.satrec = parseTwoline(newL1, newL2); }catch(e){ console.warn('parseTwoline error', e); }
+								STORAGE.save();
+							});
 						});
 						
 						// eliminar satélite
@@ -1448,7 +1862,7 @@
 						state.sats[_id] = {
 							name, l1, l2, satrec,
 							color: color || '#ff3333',
-							iconKey: iconKey || 'sat1',
+							iconKey: iconKey || newSatIconKey || 'sat1',
 							iconUrl: iconUrl || null,
 							marker:null, circle:null, track:null,
 							visible: (visible === false ? false : true)
@@ -1475,6 +1889,8 @@
 						if (s.track)  { try{ map.removeLayer(s.track);  }catch(_){} }
 						// borra del estado
 						delete state.sats[id];
+						// si se estaba siguiendo, cancelar seguimiento
+						if (followId === id) followId = null;
 						// borra la fila
 						const row = document.getElementById('row-'+id);
 						if (row && row.parentNode) row.parentNode.removeChild(row);
@@ -1495,10 +1911,41 @@
 								alert('Indica un nombre y pega un TLE válido (2 líneas que empiecen por 1 y 2).');
 								return;
 							}
-							addSatellite({ name, l1: parsed.l1, l2: parsed.l2, color });
+							addSatellite({ name, l1: parsed.l1, l2: parsed.l2, color, iconKey: newSatIconKey });
 							// limpia y cierra
 							nameInp.value = ''; tleBlockInp.value = '';
 							try{ document.getElementById('addSatPanel').open = false; }catch(_){}
+						});
+						// validación en vivo del TLE para el botón Añadir
+						function validateAddTLE(){
+							const raw = (tleBlockInp.value||'').trim();
+							const parsed = parseTLEBlock(raw) || {};
+							const l1 = parsed.l1||''; const l2 = parsed.l2||'';
+							const l1ok = /^1\s/.test(l1) && l1.length>=60 && tleChecksumOk(l1);
+							const l2ok = /^2\s/.test(l2) && l2.length>=60 && tleChecksumOk(l2);
+							if (addLenEl) addLenEl.textContent = `${raw.length} chars`;
+							if (addL1El)  addL1El.textContent  = `L1: ${l1ok?'OK':'X'}`;
+							if (addL2El)  addL2El.textContent  = `L2: ${l2ok?'OK':'X'}`;
+							if (addStateEl) addStateEl.textContent = (l1ok&&l2ok) ? 'Estado: válido' : 'Estado: incompleto o inválido';
+							addBtn.disabled = !(l1ok && l2ok && (nameInp.value||'').trim());
+						}
+						tleBlockInp.addEventListener('input', validateAddTLE);
+						nameInp.addEventListener('input', validateAddTLE);
+						// primera pasada
+						validateAddTLE();
+					}
+					
+					// Filtro por nombre
+					if (satFilterInp){
+						satFilterInp.addEventListener('input', ()=>{
+							const q = satFilterInp.value.trim().toLowerCase();
+							for (const id in state.sats){
+								const s = state.sats[id];
+								const row = document.getElementById('row-'+id);
+								if (!row) continue;
+								const show = !q || (s.name||'').toLowerCase().includes(q);
+								row.style.display = show ? '' : 'none';
+							}
 						});
 					}
 					
