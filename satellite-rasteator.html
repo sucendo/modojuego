@@ -38,7 +38,7 @@
 				--scroll-corner: #0b1020;
 			}
 			html,body{height:100%; margin:0; background:var(--bg); color:var(--text); font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif; overflow-x:hidden} 
-			#app{display:grid; grid-template-rows:auto 1fr; height:100%}
+			#app{display:grid; grid-template-rows:auto 1fr; height:100%; position:relative}
 			header{display:flex; gap:1rem; align-items:center; padding:.6rem 1rem; background:#0b1020; border-bottom:1px solid #1f284a}
 			/* Icono de marca (sat1) antes del título */
 			#brandIcon{
@@ -47,11 +47,20 @@
 			}
 			header h1{font-size:1.05rem; margin:0}
 			header .actions{margin-left:auto; display:flex; gap:.5rem; align-items:center; flex-wrap:wrap} /* wrap en tablet */
+			/* Botón de acción solo icono (Ubicarme) */
+			#locateMe.icon-only{ display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; padding:0 }
+			/* Punto azul "mi ubicación" */
+			.me-dot{
+				width:14px; height:14px; border-radius:50%;
+				background:#2a7bff; border:2px solid #fff;
+				box-shadow:0 0 0 4px rgba(42,123,255,.25);
+			}
+			
 			/* Botón Fullscreen (móvil): junto al ☰ */
 			#fullScreenBtn{
 				display:none; /* solo móvil */
 				align-items:center; justify-content:center;
-				width:36px; height:36px; padding:0;
+				padding: .45rem .6rem;
 			}
 			header button, header select{background:#11173a; color:var(--text); border:1px solid #26315c; padding:.45rem .7rem; border-radius:.5rem; cursor:pointer}
 			#map{height:100%;}			
@@ -306,7 +315,7 @@
 			.panel-toggle{
 				position:absolute; top:60px; right:5px; z-index:1001;
 				border:1px solid #26315c; background:#11173a; color:var(--text);
-				border-radius:999px; padding:.5rem .7rem; cursor:pointer; display:none; align-items:center; gap:.4rem;
+				border-radius:.5rem; padding:.5rem .7rem; cursor:pointer; display:none; align-items:center; gap:.4rem;
 				box-shadow:0 8px 24px rgba(0,0,0,.35);
 			}
 			.panel-toggle .dot{
@@ -401,7 +410,7 @@
 			}
 			@media (max-width: 900px){
 				header{ padding:.5rem .7rem }
-				header h1{ font-size:.95rem }
+				header h1{ font-size:.95rem; line-height: 2rem; }
 				header button, header select, #refTime, #useNow{ font-size:.9rem; padding:.4rem .55rem }
 				/* Mostrar el toggle y mandar acciones a la 2ª línea */
 				.actions-toggle{ display:inline-flex; align-items:center; justify-content:center }
@@ -443,11 +452,11 @@
 				/* Panel como “hoja” inferior, a ancho casi completo */
 				.panel{
 					right:5px; width:auto; max-width: 300px;
-					top:auto; bottom:40px;            /* deja hueco para el botón flotante */
-					max-height:62vh;
+					top:auto; bottom:55px;            /* deja hueco para el botón flotante */
+					max-height:83vh;
 				}
 				.panel-toggle{
-					top:auto; right:6px; bottom:40px; /* botón para mostrar panel en móvil */
+					top:auto; right:6px; bottom:55px; /* botón para mostrar panel en móvil */
 				}
 				/* Botones más grandes para dedo */
 				.sat-item .btn-icon, .sat-item .btn-color{ width:36px; height:36px }
@@ -470,12 +479,17 @@
  				<h1>Satellite Rasteator</h1>
 				<button id="actionsToggle" class="actions-toggle" aria-label="Mostrar opciones">☰</button>
 				<button id="fullScreenBtn" aria-label="Pantalla completa" title="Pantalla completa">
-					<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-						<path fill="currentColor" d="M4 9V4h5V2H2v7h2Zm0 6v5h5v2H2v-7h2Zm16-6h2V2h-7v2h5v5Zm0 8h-5v2h7v-7h-2Z"/>
+					<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+						<path fill="currentColor" d="M 4 9 L 4 4 L 9 4 L 9 2 L 2 2 L 2 9 L 4 9 Z M 4 15 L 4 20 L 9 20 L 9 22 L 2 22 L 2 15 L 4 15 Z M 20 9 L 22 9 L 22 2 L 15 2 L 15 4 L 20 4 L 20 9 Z M 20 20 L 14.945 20 L 14.952 22 L 22.001 21.959 L 22.003 14.68 L 20 14.68 L 20 20 Z"/>
 					</svg>
 				</button>
 				<div class="actions">
-					<button id="locateMe">Ubicarme</button>
+					<button id="locateMe" class="icon-only" aria-label="Ubicarme" title="Ubicarme">
+						<!-- Icono diana / "my location" -->
+						<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+							<path fill="currentColor" d="M 11.007 1.99 L 13.002 1.998 L 12.998 3.953 C 16.266 4.036 19.975 7.678 20.001 10.999 L 22 11 L 22 12.998 L 20.001 12.996 C 19.932 16.036 16.553 19.9 13.001 20.001 L 12.998 21.999 L 10.996 21.993 L 10.997 20.002 C 7.66 19.944 4.008 16.162 3.999 12.997 L 2 13 L 2 10.999 L 3.999 10.995 C 4.039 7.891 7.56 4.024 10.995 3.958 L 11.007 1.99 Z M 12 7 C 8.151 7 5.745 11.167 7.67 14.5 C 9.594 17.833 14.406 17.833 16.33 14.5 C 16.769 13.74 17 12.878 17 12 C 16.997 9.24 14.76 7.003 12 7 Z M 12 9 C 14.309 9 15.753 11.5 14.598 13.5 C 13.443 15.5 10.557 15.5 9.402 13.5 C 9.139 13.044 9 12.527 9 12 C 9.002 10.344 10.344 9.002 12 9 Z"/>
+						</svg>
+					</button>
 					<label style="display:flex;align-items:center;gap:.35rem">
 						<input type="checkbox" id="toggleTerminator" checked /> Día/Noche
 					</label>
@@ -504,47 +518,47 @@
 					<button id="useNow">Ahora</button>
 				</div>
 			</header>
-			<div id="map"></div>
-		</div>
-		
-		<div class="panel">
-			<button class="min-btn" id="minimizePanel" title="Ocultar panel">⮞</button>
-			<h2>Estado</h2>
-			<div class="kv" id="status">TLE: esperando…</div>
-			<div class="kv" id="timeStatus">Tiempo ref: auto (reloj del sistema)</div>
-			<div class="kv" id="utcStatus">UTC: —</div>
 			
-			<!-- Filtro rápido por nombre -->
-			<div style="margin-top:.35rem">
-				<input id="satFilter" placeholder="Filtrar satélites…" 
-					style="width:93%;background:#0c1330;color:var(--text);border:1px solid #2a3a6b;border-radius:.5rem;padding:.45rem .55rem" />
+			<div id="map"></div>
+
+			<div class="panel">
+				<button class="min-btn" id="minimizePanel" title="Ocultar panel">⮞</button>
+				<h2>Estado</h2>
+				<div class="kv" id="status">TLE: esperando…</div>
+				<div class="kv" id="timeStatus">Tiempo ref: auto (reloj del sistema)</div>
+				<div class="kv" id="utcStatus">UTC: —</div>
+				
+				<!-- Filtro rápido por nombre -->
+				<div style="margin-top:.35rem">
+					<input id="satFilter" placeholder="Filtrar satélites…" 
+						style="width:93%;background:#0c1330;color:var(--text);border:1px solid #2a3a6b;border-radius:.5rem;padding:.45rem .55rem" />
+				</div>
+				
+				<!-- Lista dinámica de satélites -->
+				<div id="satList"></div>
+				
+				<details id="addSatPanel">
+					<summary>➕ Añadir satélite (TLE)</summary>
+					<p class="hint">Introduce el <b>nombre</b> y pega el TLE completo en un único campo (2 líneas empezando por <code>1</code> y <code>2</code>).</p>
+					<label>Nombre del satélite</label>
+					<input id="satName" placeholder="Ej: SENTINEL-2A" style="width:100%;background:#0c1330;color:var(--text);border:1px solid #2a3a6b;border-radius:.5rem;padding:.5rem" />
+					<label style="display:block;margin-top:.5rem">TLE (2 líneas)</label>
+					<textarea id="tleBlock" placeholder="1 42063U 17013A ...&#10;2 42063 98.5661 ..."></textarea>
+					<!-- Estado de validación del TLE pegado -->
+					<div id="addTleInfo" class="hint" style="margin:.25rem 0 .35rem">
+						<span id="addLen">—</span> · <span id="addL1">L1: —</span> · <span id="addL2">L2: —</span> · <span id="addState">Estado: esperando…</span>
+					</div>
+					<div style="display:flex;align-items:center;gap:.5rem">
+						<button id="addSatBtn">Añadir</button>
+						<button id="newIconBtn" class="btn-icon" title="Elegir icono"></button>
+						<input type="color" id="defaultOrbitColor" value="#ff3333" title="Color de órbita por defecto" />					
+					</div>
+				</details>
 			</div>
 			
-			<!-- Lista dinámica de satélites -->
-			<div id="satList"></div>
-			
-			<details id="addSatPanel">
-				<summary>➕ Añadir satélite (TLE)</summary>
-				<p class="hint">Introduce el <b>nombre</b> y pega el TLE completo en un único campo (2 líneas empezando por <code>1</code> y <code>2</code>).</p>
-				<label>Nombre del satélite</label>
-				<input id="satName" placeholder="Ej: SENTINEL-2A" style="width:100%;background:#0c1330;color:var(--text);border:1px solid #2a3a6b;border-radius:.5rem;padding:.5rem" />
-				<label style="display:block;margin-top:.5rem">TLE (2 líneas)</label>
-				<textarea id="tleBlock" placeholder="1 42063U 17013A ...&#10;2 42063 98.5661 ..."></textarea>
-				<!-- Estado de validación del TLE pegado -->
-				<div id="addTleInfo" class="hint" style="margin:.25rem 0 .35rem">
-					<span id="addLen">—</span> · <span id="addL1">L1: —</span> · <span id="addL2">L2: —</span> · <span id="addState">Estado: esperando…</span>
-				</div>
-				<div style="display:flex;align-items:center;gap:.5rem">
-					<button id="addSatBtn">Añadir</button>
-					<button id="newIconBtn" class="btn-icon" title="Elegir icono"></button>
-					<input type="color" id="defaultOrbitColor" value="#ff3333" title="Color de órbita por defecto" />					
-				</div>
-			</details>
-
+			<!-- Botón flotante para reabrir el panel -->
+			<button id="panelToggle" class="panel-toggle" aria-label="Mostrar panel"><span class="dot"></span> Panel</button>
 		</div>
-		
-		<!-- Botón flotante para reabrir el panel -->
-		<button id="panelToggle" class="panel-toggle" aria-label="Mostrar panel"><span class="dot"></span> Panel</button>
 		
 		<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 		<script src="https://unpkg.com/satellite.js/dist/satellite.min.js"></script>
@@ -606,8 +620,8 @@
 						const btn = document.getElementById('fullScreenBtn');
 						if(!btn) return;
 						const appEl = document.getElementById('app') || document.documentElement;
-						const ENTER_ICON = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M4 9V4h5V2H2v7h2Zm0 6v5h5v2H2v-7h2Zm16-6h2V2h-7v2h5v5Zm0 8h-5v2h7v-7h-2Z"/></svg>';
-						const EXIT_ICON  = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M9 3H7v4H3v2h6V3Zm8 4V3h-2v6h6V7h-4Zm-8 14h2v-6H3v2h6v4Zm12-6h-6v6h2v-4h4v-2Z"/></svg>';
+						const ENTER_ICON = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M 4 9 L 4 4 L 9 4 L 9 2 L 2 2 L 2 9 L 4 9 Z M 4 15 L 4 20 L 9 20 L 9 22 L 2 22 L 2 15 L 4 15 Z M 20 9 L 22 9 L 22 2 L 15 2 L 15 4 L 20 4 L 20 9 Z M 20 20 L 14.945 20 L 14.952 22 L 22.001 21.959 L 22.003 14.68 L 20 14.68 L 20 20 Z"/></svg>';
+						const EXIT_ICON  = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M 9 3 L 7 3 L 7 7 L 3 7 L 3 9 L 9 9 L 9 3 Z M 17 7 L 17 3 L 15 3 L 15 9 L 21 9 L 21 7 L 17 7 Z M 7 21 L 9.003 21 L 9 15 L 3 15 L 3 17 L 7 17 L 7 21 Z M 21 15 L 15 15 L 15 21 L 17 21 L 17 17 L 21 17 L 21 15 Z"/></svg>';
 						function isFs(){
 							return document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
 						}
@@ -1325,20 +1339,26 @@
 						STORAGE.save();
 					}
 				
-					let meMarker = null;
+					// === Ubicarme: punto azul + círculo de precisión ===
+					let meLayer=null, meMarker=null, meAcc=null;
 					document.getElementById('locateMe').addEventListener('click', function(){
-						if(!navigator.geolocation){ alert('Geolocalizacion no soportada'); return; }
+						if(!navigator.geolocation){ alert('Geolocalización no soportada'); return; }
 						navigator.geolocation.getCurrentPosition(function(pos){
-							const lat=pos.coords.latitude; const lon=pos.coords.longitude;
-							if (!meMarker){
-								meMarker = L.marker([lat,lon],{title:'Mi ubicación'}).addTo(map);
-								meMarker.bindPopup('Estás aquí');
+							const lat = pos.coords.latitude;
+							const lon = pos.coords.longitude;
+							const acc = pos.coords.accuracy || 0; // en metros
+							const dotIcon = L.divIcon({ className:'me-dot', iconSize:[14,14], iconAnchor:[7,7] });
+							if (!meLayer){
+								meMarker = L.marker([lat,lon], { icon: dotIcon, interactive:false, pane:'satPane' });
+								meAcc    = L.circle([lat,lon], { radius: acc, color:'#2a7bff', fillColor:'#2a7bff', weight:1, opacity:.4, fillOpacity:.15, pane:'orbitPane' });
+								meLayer  = L.layerGroup([meAcc, meMarker]).addTo(map);
 							} else {
+								meMarker.setIcon(dotIcon);
 								meMarker.setLatLng([lat,lon]);
+								meAcc.setLatLng([lat,lon]).setRadius(acc);
 							}
-							meMarker.openPopup();
-							map.flyTo([lat,lon],5,{duration:1.2, easeLinearity:0.25, animate:true});
-						}, function(){ alert('No se pudo obtener ubicacion'); });
+							map.flyTo([lat,lon], 9, {duration:1.2, easeLinearity:0.25, animate:true});
+						}, function(){ alert('No se pudo obtener ubicación'); });
 					});
 				
 					document.getElementById('trackHorizon').addEventListener('change', function(e){
