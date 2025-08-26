@@ -490,6 +490,52 @@
 				#addSatPanel{ max-height:38vh }
 			}
 			
+			/* ======= Time Controls (play + slider-velocidad + editor datetime) ======= */
+			.time-controls{
+				position:absolute; left:8px; right:8px; bottom:8px; z-index:1100;
+				display:none; grid-template-columns:auto auto 1fr auto; gap:.45rem; align-items:center;
+				background:rgba(14,21,64,.92); border:1px solid #26315c; border-radius:.6rem; padding:.4rem .55rem;
+				backdrop-filter: saturate(120%) blur(2px);
+				box-shadow:0 10px 20px rgba(0,0,0,.34);
+			}
+			.time-controls.active{ display:grid; }
+ 			.time-controls .btn{
+				display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px;
+				border:1px solid #2a3a6b; border-radius:.45rem; background:#11173a; color:var(--text); cursor:pointer; padding:0;
+			}
+			/* Indicador de velocidad */
+			.time-controls .rate-indicator{ font-size:.85rem; opacity:.9; min-width:6ch; text-align:right; font-variant-numeric:tabular-nums }
+			/* Slider curvo + marca central */
+			.slider-container{ position:relative; display:flex; align-items:center; gap:.5rem; min-width:160px }
+			.slider-container .slider-input{ width:100%; }
+			.slider-container .svg-parent{ position:absolute; pointer-events:none; left:0; right:0; margin:auto }
+			.slider-container .center-mark{
+				position:absolute; left:50%; top:50%; transform:translate(-1px,-50%);
+				width:2px; height:18px; background:rgba(230,238,248,.35); border-radius:1px; pointer-events:none;
+			}
+			/* Range: pista + "bolita" grande y arrastrable */
+			.slider-input{ appearance:none; height:8px; border-radius:999px; background:linear-gradient(90deg, rgba(106,168,255,.28), rgba(230,238,248,.28)); outline:none }
+			.slider-input::-webkit-slider-thumb{ -webkit-appearance:none; width:22px; height:22px; border-radius:50%;
+				background:#e6eef8; border:2px solid #6aa8ff; box-shadow:0 0 0 4px rgba(106,168,255,.20); cursor:grab }
+			.slider-input::-webkit-slider-thumb:active{ cursor:grabbing }
+			.slider-input::-moz-range-thumb{ width:22px; height:22px; border-radius:50%;
+				background:#e6eef8; border:2px solid #6aa8ff; box-shadow:0 0 0 4px rgba(106,168,255,.20); cursor:grab }
+			.slider-input::-moz-range-track{ height:8px; background:transparent; border:none; border-radius:999px }
+			/* Editor de fecha dentro del control */
+			.time-controls .datetime-edit{
+				display:flex; gap:.35rem; align-items:center; flex-wrap:wrap;
+			}
+			.time-controls input[type="datetime-local"]{
+				background:#11173a;color:#e6eef8;border:1px solid #26315c;border-radius:.45rem;padding:.35rem .45rem; font-size:.9rem
+			}
+			@media (max-width: 700px){
+				.time-controls{ left:6px; right:6px; bottom:6px; grid-template-columns:auto auto 1fr; gap:.35rem; padding:.35rem .45rem }
+				.time-controls .btn{ width:30px; height:30px }
+				.slider-container .svg-parent{ width:100% }
+			}
+			/* Botón del menú para mostrar/ocultar */
+			#btnTimeControls.btn-icon.active{ box-shadow: inset 0 0 0 2px #6aa8ff; }
+			
 		</style>
 	</head>
 	<body>
@@ -542,8 +588,11 @@
 					<button id="btnLowPower" class="btn-icon" aria-pressed="false" title="Modo bajo consumo">
 						<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16 4h-1V2H9v2H8a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h8a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3Zm1 13a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1Zm-5.5-1 3-6h-2.5V8l-3 6H11.5v2Z"/></svg>
 					</button>
-					<input type="datetime-local" id="refTime" step="1" style="background:#11173a;color:#e6eef8;border:1px solid #26315c;border-radius:.5rem;padding:.45rem .5rem" />
-					<button id="useNow">Ahora</button>
+					<!-- Mostrar/ocultar barra temporal -->
+					<button id="btnTimeControls" class="btn-icon" aria-pressed="false" title="Controles de tiempo">
+						<!-- cronómetro -->
+						<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M9 2h6v2H9V2Zm3 3a8 8 0 1 1-8 8 8.01 8.01 0 0 1 8-8Zm0 2a6 6 0 1 0 6 6 6.006 6.006 0 0 0-6-6Zm1 1h-2v4.586l3.707 3.707 1.414-1.414L13 12.586V8Z"/></svg>
+					</button>
 				</div>
 			</header>
 			
@@ -586,6 +635,20 @@
 			
 			<!-- Botón flotante para reabrir el panel -->
 			<button id="panelToggle" class="panel-toggle" aria-label="Mostrar panel"><span class="dot"></span> Panel</button>
+						
+			<!-- ===== Barra temporal (tipo NASA Eyes) ===== -->
+			<nav class="time-controls active" id="timeControls">
+				<button class="btn" id="scrubPlay" title="Reproducir / Pausar">▶</button>
+				<div class="rate-indicator" id="scrubRate">1×</div>
+ 				<div class="slider-container">
+					<div class="center-mark"></div>
+ 					<input id="scrubRange" class="slider-input" type="range" min="0" max="1000" step="1" />
+ 				</div>
+ 				<div class="datetime-edit">
+ 					<input type="datetime-local" id="refTime" step="1" />
+ 					<button class="btn" id="useNow">Ahora</button>
+ 				</div>
+ 			</nav>
 		</div>
 		
 		<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -820,6 +883,8 @@
 						if(typeof computeAllTracks === 'function') computeAllTracks();
 						updateTimeStatus();
 						updateUTCStatus();
+						// sincroniza scrubber si existe
+						try{ if (typeof updateScrubberUI === 'function') updateScrubberUI(); }catch(_){}
 					}
 									
 					// === Panes por orden: satélites > órbitas > día/noche > radar > nubes > mapa ===
@@ -1096,6 +1161,7 @@
 							applyRefTime();
 							updateRadar();                   // sincroniza radar al nuevo frame
 							updateSatRV();                   // sincroniza nubes al nuevo frame
+							updateScrubberUI();
 						});
 					}
 
@@ -1110,8 +1176,127 @@
 							applyRefTime();
 							updateRadar();
 							updateSatRV();
+							// recuperar “ahora”: pausa reproducción y centra el slider (1×)
+							try{
+								if (scrub){
+									scrub.playing=false; refreshPlayBtn();
+									scrub.range.value = '500'; setSpeed(1); updateScrubberUI();
+								}
+							}catch(_){}
 						});
 					}
+					
+					// ====== SCRUBBER (barra temporal tipo NASA Eyes) ======
+					const scrub = {
+						range: document.getElementById('scrubRange'),
+						btnPlay: document.getElementById('scrubPlay'),
+						playing:false,
+						speed: parseFloat(localStorage.getItem('sr.scrub.speed') || '1'), // 1× por defecto
+						lastReal: null,
+						_lastOverlay: 0
+					};
+					function refreshPlayBtn(){
+						if (!scrub.btnPlay) return;
+						scrub.btnPlay.textContent = scrub.playing ? '❚❚' : '▶';
+						scrub.btnPlay.title = scrub.playing ? 'Pausar' : 'Reproducir';
+						window.__scrubPlaying = scrub.playing;
+					}
+					function setSpeed(val){
+						// Persistimos la velocidad actual (puede ser negativa para rebobinar)
+						scrub.speed = Number(val)||1;
+						try{ localStorage.setItem('sr.scrub.speed', String(scrub.speed)); }catch(_){}
+						// Actualiza indicador visual
+						const rateEl = document.getElementById('scrubRate');
+						if (rateEl){
+							const s = scrub.speed;
+							const sign = s<0 ? '−' : '';
+							const abs = Math.abs(s);
+							// muestra con precisión razonable
+							const text = abs===1 ? '1×' : (abs<10 ? abs.toFixed(2)+'×' : (abs<100 ? abs.toFixed(1)+'×' : Math.round(abs)+'×'));
+							rateEl.textContent = sign + text;
+							rateEl.title = (s===1 ? 'Tiempo real' : (s>1 ? 'Acelerando' : 'Rebobinando'));
+						}
+					}
+					// Mapeo del slider → velocidad (centro=1×, derecha>>+rápido, izquierda<<−rápido)
+					function sliderToSpeed(){
+						const raw = Number(scrub.range?.value||500);
+						const pos = raw/1000; // 0..1
+						const offset = pos - 0.5;
+						const DEAD = 0.02; // zona muerta ±2% en el centro
+						if (Math.abs(offset) < DEAD) return 1; // 1 seg × 1 seg
+						const m = (Math.abs(offset) - DEAD) / (0.5 - DEAD); // 0..1
+						const sign = offset > 0 ? 1 : -1;
+						const MAX = 86400; // 1 día por segundo en los extremos
+						const speed = Math.pow(MAX, m); // 1→MAX de forma exponencial
+						return sign * speed;
+					}
+					function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+
+					function updateScrubberUI(){
+						// reflejar el tiempo actual en el input datetime (si no está en edición)
+						if (refInput && document.activeElement !== refInput){
+							refInput.value = toLocalDTValue(refNow());
+						}
+					}
+					// Eventos UI (play + slider activa reproducción)
+					if (scrub.btnPlay){
+						scrub.btnPlay.addEventListener('click', ()=>{
+							scrub.playing = !scrub.playing;
+							if (scrub.playing && !timeState.manual){ timeState.manual = true; timeState.value = new Date(); }
+							refreshPlayBtn();
+							if (scrub.playing){ scrub.lastReal=null; requestAnimationFrame(playLoop); }
+						});
+					}
+
+					// Slider: al mover → activa reproducción y ajusta velocidad según distancia al centro
+					if (scrub.range){
+						scrub.range.addEventListener('input', ()=>{
+							setSpeed(sliderToSpeed());
+							if (!scrub.playing){
+								scrub.playing = true;
+								refreshPlayBtn();
+								scrub.lastReal=null; requestAnimationFrame(playLoop);
+							}
+							updateScrubberUI(); // solo mueve el knob
+						});
+						// valor inicial (centro = 1×)
+						if (!scrub.range.value) scrub.range.value = String(500);
+						setSpeed(sliderToSpeed());
+					}
+					function playLoop(ts){
+						if (!scrub.playing) return;
+						if (scrub.lastReal===null) scrub.lastReal = ts;
+						const dt = (ts - scrub.lastReal)/1000; // seg reales
+						scrub.lastReal = ts;
+						// avanza tiempo simulado
+						const cur = refNow().getTime();
+						timeState.manual = true;
+						timeState.value  = new Date(cur + dt * 1000 * scrub.speed);
+						applyRefTime();
+						// overlays (radar/nubes) cada 3 s como máx. durante reproducción
+						if (ts - scrub._lastOverlay > 3000){ updateRadar(); updateSatRV(); scrub._lastOverlay = ts; }
+						if (scrub.playing) requestAnimationFrame(playLoop);
+					}
+					// Inicializa UI
+					refreshPlayBtn(); updateScrubberUI();
+
+					// Mostrar/ocultar controles de tiempo desde el botón de menú
+					(function initTimeToggle(){
+						const btn = document.getElementById('btnTimeControls');
+						const box = document.getElementById('timeControls');
+						if(!btn || !box) return;
+						const saved = localStorage.getItem('sr.ui.scrubVisible') === '1';
+						box.classList.toggle('active', saved);
+						btn.classList.toggle('active', saved);
+						btn.setAttribute('aria-pressed', saved?'true':'false');
+						btn.addEventListener('click', ()=>{
+							const on = !box.classList.contains('active');
+							box.classList.toggle('active', on);
+							btn.classList.toggle('active', on);
+							btn.setAttribute('aria-pressed', on?'true':'false');
+							try{ localStorage.setItem('sr.ui.scrubVisible', on?'1':'0'); }catch(_){}
+						});
+					})();
 				
 					document.getElementById('baseSel').addEventListener('change', (e)=>{
 						const v = e.target.value;
@@ -1704,19 +1889,33 @@
 						for (const id in state.sats){ computeTrack(id); }
 					}
 
-					// === Modo bajo consumo: throttle del tick dinámico ===
-					const NORMAL_MS = 1000, LOW_MS = 4000, HIDDEN_MS = 8000;
-					let lastTickTs = 0;
+					// === Bucle de renderizado: suave al reproducir, eficiente en reposo ===
+					// Cadencias base (ms entre renders)
+					const NORMAL_MS = 250, LOW_MS = 1000, HIDDEN_MS = 4000;
+					const OVERLAY_MS_FAST = 600, OVERLAY_MS_SLOW = 3000; // actualización de overlays (día/noche, radar, nubes)
+					let lastTickTs = 0, lastOverlayTs = 0;
+					// Flag opcional para control externo (p.ej. scrubber): window.__scrubPlaying = true/false
 					function tick(){
-						const wantMs = document.hidden ? HIDDEN_MS : (isOn(document.getElementById('btnLowPower')) ? LOW_MS : NORMAL_MS);
+						const playing = (window.__scrubPlaying === true);
+						const wantMs = playing ? 0 : (document.hidden ? HIDDEN_MS : (isOn(document.getElementById('btnLowPower')) ? LOW_MS : NORMAL_MS));
 						const nowTs = performance.now();
-						if (nowTs - lastTickTs < wantMs) return; // saltar frames
+						if (nowTs - lastTickTs < wantMs) return; // throttling
 						lastTickTs = nowTs;
+						// 1) Propaga y pinta TODOS los sats con el mismo tiempo de referencia
 						for (const id in state.sats){ updateSat(id); }
-						// Seguir (sin cambiar nivel de zoom)
+						// 2) Sigue el satélite activo sin alterar el nivel de zoom
 						if (followId && state.sats[followId] && state.sats[followId].marker){
 							const ll = state.sats[followId].marker.getLatLng();
 							map.setView(ll, map.getZoom(), { animate:false });
+						}
+						// 3) Sincroniza overlays al ritmo adecuado
+						const overlayGap = playing ? OVERLAY_MS_FAST : OVERLAY_MS_SLOW;
+						if (nowTs - lastOverlayTs >= overlayGap){
+							if (window.dayNightLayer) window.dayNightLayer.setTime(refNow());
+							// radar/nubes sólo si sus toggles están activos
+							if (document.getElementById('btnRadar')?.classList.contains('active'))  updateRadar();
+							if (document.getElementById('btnClouds')?.classList.contains('active')) updateSatRV();
+							lastOverlayTs = nowTs;
 						}
 					}
 				
@@ -1809,9 +2008,10 @@
 							if (st) st.textContent = `TLE: cargado (${Object.keys(state.sats).length} satélites)`;
 						}
 					})();
-					tick(); computeAllTracks();
 					
-					setInterval(tick,1000);
+					tick(); computeAllTracks();
+					// Bucle continuo (requestAnimationFrame): tick decide si renderizar o saltar frame
+					(function animate(){ tick(); requestAnimationFrame(animate); })();
 
 					function parseTwoline(l1, l2){
 						try{ return satellite.twoline2satrec(l1.trim(), l2.trim()); }catch(_){ return null; }
@@ -2076,6 +2276,13 @@
 					
 				});
 			})();
+		</script>
+		<script>
+		  // API opcional para scrubbers externos:
+		  window.simTime = {
+			set: (date)=>{ timeState.manual = true; timeState.value = new Date(date); /* no tocamos aquí; animate() llamará tick() */ },
+			play: (on)=>{ window.__scrubPlaying = !!on; }
+		  };
 		</script>
 	</body>
 </html>
