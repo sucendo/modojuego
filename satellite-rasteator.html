@@ -47,6 +47,7 @@
 			}
 			header h1{font-size:1.05rem; margin:0}
 			header .actions{margin-left:auto; display:flex; gap:.5rem; align-items:center; flex-wrap:wrap} /* wrap en tablet */
+
 			/* Botones toggle estilo “follow” */
 			.btn-icon{
 				display:inline-flex; align-items:center; justify-content:center;
@@ -55,6 +56,17 @@
 			}
 			.btn-icon svg{ width:18px; height:18px; pointer-events:none }
 			.btn-icon.active{ box-shadow: inset 0 0 0 2px #6aa8ff; }
+			
+			/* Línea de datos orbitales compacta */
+			.okv{
+				font-size:.82rem; opacity:.9; margin-top:.15rem;
+				display:flex; flex-wrap:wrap; gap:.35rem;
+			}
+			.okv .chip{
+				background:#0c1330; border:1px solid #2a3a6b; border-radius:.35rem;
+				padding:.1rem .35rem;
+			}
+			
 			/* Botón de acción solo icono (Ubicarme) */
 			#locateMe.icon-only{ display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; padding:0 }
 			/* Punto azul "mi ubicación" */
@@ -492,7 +504,6 @@
 					</svg>
 				</button>
 				<div class="actions">
-
 					<!-- Botón Ubicarme (toggle) -->
 					<button id="locateMe" class="btn-icon" aria-pressed="false" title="Ubicarme">
 						<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
@@ -525,7 +536,11 @@
 					</select>
 					<!-- Horizonte (huella) -->
 					<button id="btnHorizon" class="btn-icon" aria-pressed="true" title="Horizonte">
-						<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M 16.845 5.989 C 17.084 5.525 18.023 5.066 18.906 5.642 C 19.728 6.178 19.482 7.281 19.161 7.525 C 19.156 7.546 18.489 7.009 18.335 6.861 C 18.197 6.732 17.837 6.528 17.713 6.448 C 17.59 6.367 16.91 6.018 16.854 6.001 M 11.733 4.961 C 19.531 4.961 24.319 12.513 20.504 18.472 C 16.693 24.428 20.103 8.377 11.399 6.131 C 10.83 5.983 10.299 5.933 8.938 6.033 C 8.632 6.056 6.522 6.558 5.025 7.907 C 3.298 9.463 2.277 11.763 2.091 12.224 C 1.869 12.775 1.618 13.864 1.675 13.884 C 4.977 15.07 18.856 19.56 18.864 19.683 C 18.872 19.772 1.592 14.051 1.602 13.97 C 2.202 9.028 6.143 4.969 11.733 4.961"/></svg>
+						<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M 17.186 5.933 C 18.262 4.745 20.059 4.62 21.101 5.62 C 22.079 6.559 22.108 8.34 20.98 9.67 C 20.883 9.55 20.569 8.729 20.037 8.244 C 19.975 8.187 18.726 6.936 18.559 6.806 C 17.981 6.357 17.213 5.947 17.189 5.935 M 11.733 4.961 C 19.531 4.961 24.313 12.509 20.504 18.472 C 16.7 24.426 15.415 16.502 12.853 10.649 C 12.474 9.784 11.113 6.597 7.942 7.558 C 5.263 8.37 1.592 14.051 1.602 13.97 C 2.202 9.028 6.143 4.969 11.733 4.961"/></svg>
+					</button>
+					<!-- Bajo consumo -->
+					<button id="btnLowPower" class="btn-icon" aria-pressed="false" title="Modo bajo consumo">
+						<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16 4h-1V2H9v2H8a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h8a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3Zm1 13a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1Zm-5.5-1 3-6h-2.5V8l-3 6H11.5v2Z"/></svg>
 					</button>
 					<input type="datetime-local" id="refTime" step="1" style="background:#11173a;color:#e6eef8;border:1px solid #26315c;border-radius:.5rem;padding:.45rem .5rem" />
 					<button id="useNow">Ahora</button>
@@ -1387,6 +1402,16 @@
 						}, function(){ alert('No se pudo obtener ubicación'); setBtn(locBtn,false); });
 					}
 					locBtn?.addEventListener('click', ()=> applyLocate(!isOn(locBtn)));
+										
+					// === Bajo consumo (botón + auto cuando la pestaña está oculta) ===
+					const lowBtn = document.getElementById('btnLowPower');
+					function applyLow(on){
+						setBtn(lowBtn, on);
+						try{ localStorage.setItem('sr.t.low', on?'1':'0'); }catch(_){}
+						// no reiniciamos timers: el propio tick hace throttle
+					}
+					lowBtn?.addEventListener('click', ()=> applyLow(!isOn(lowBtn)));
+					document.addEventListener('visibilitychange', ()=>{ /* el tick lee document.hidden */ });
 				
 					document.getElementById('trackHorizon').addEventListener('change', function(e){
 						state.horizonMins=parseInt(e.target.value,10)||0; computeAllTracks();
@@ -1624,12 +1649,31 @@
 							}
 						}
 						
-						const el=document.getElementById('kv-'+id);
-						if(el){
-							let txt='Lat: '+p.lat.toFixed(3)+' deg, Lon: '+p.lon.toFixed(3)+' deg';
-							txt+='\nAlt: '+p.altKm.toFixed(1)+' km | Vel: '+p.speedKmh.toFixed(0)+' km/h';
-							el.textContent=txt;
+						// === Datos orbitales visibles en la fila ===
+						const okv = document.getElementById('okv-'+id);
+						if (okv){
+							// i (deg), e, periodo (min), alt (km), v (km/s aprox.)
+							const inclDeg = (s.satrec && typeof s.satrec.inclo==='number') ? (s.satrec.inclo*180/Math.PI) : NaN;
+							const ecc     = (s.satrec && typeof s.satrec.ecco==='number') ? s.satrec.ecco : NaN;
+							const revPerDay = (s.satrec && typeof s.satrec.no==='number') ? (s.satrec.no * 1440/(2*Math.PI)) : NaN;
+							const periodMin = isFinite(revPerDay) && revPerDay>0 ? (1440/revPerDay) : NaN;
+							const altKm  = isFinite(p.altKm) ? p.altKm : NaN;
+							const Re     = 6371; const mu = 398600.4418; // Tierra
+							const rKm    = isFinite(altKm) ? (Re + altKm) : NaN;
+							const vKms   = isFinite(rKm) ? Math.sqrt(mu / rKm) : NaN; // circular aprox.
+							const f = (x,n=2)=> (isFinite(x)? x.toFixed(n) : '—');
+							const f3 = (x)=> (isFinite(x)? x.toFixed(3) : '—');
+							okv.innerHTML = `
+								<span class="chip">Lat: ${f3(p.lat)}°</span>
+								<span class="chip">Lon: ${f3(p.lon)}°</span>
+								<span class="chip">Incl: ${f(inclDeg,2)}°</span>
+								<span class="chip">Exc: ${f(ecc,4)}</span>
+								<span class="chip">Per: ${f(periodMin,1)} min</span>
+								<span class="chip">Alt: ${f(altKm,0)} km</span>
+								<span class="chip">Vel: ${f(vKms,2)} km/s</span>
+							`;
 						}
+						
 					}
 				
 					function computeTrack(id){
@@ -1659,9 +1703,17 @@
 					function computeAllTracks(){
 						for (const id in state.sats){ computeTrack(id); }
 					}
+
+					// === Modo bajo consumo: throttle del tick dinámico ===
+					const NORMAL_MS = 1000, LOW_MS = 4000, HIDDEN_MS = 8000;
+					let lastTickTs = 0;
 					function tick(){
+						const wantMs = document.hidden ? HIDDEN_MS : (isOn(document.getElementById('btnLowPower')) ? LOW_MS : NORMAL_MS);
+						const nowTs = performance.now();
+						if (nowTs - lastTickTs < wantMs) return; // saltar frames
+						lastTickTs = nowTs;
 						for (const id in state.sats){ updateSat(id); }
-						// Si estamos siguiendo uno, céntralo manteniendo el zoom actual (sin “salto” de zoom)
+						// Seguir (sin cambiar nivel de zoom)
 						if (followId && state.sats[followId] && state.sats[followId].marker){
 							const ll = state.sats[followId].marker.getLatLng();
 							map.setView(ll, map.getZoom(), { animate:false });
@@ -1724,6 +1776,7 @@
 							applyRadar(  (localStorage.getItem('sr.t.radar')  ?? '1') === '1' );
 							applyClouds( (localStorage.getItem('sr.t.clouds') ?? '1') === '1' );
 							applyHorizon((localStorage.getItem('sr.t.horiz')  ?? '1') === '1' );
+							applyLow((localStorage.getItem('sr.t.low')   ?? '0') === '1' );
 						}catch(_){}
 					}
 
@@ -1791,7 +1844,8 @@
 							<input type="checkbox" id="chk-${id}" ${s.visible?'checked':''} />
 							<div style="min-width:0">
 								<div><b class="sat-name" data-id="${id}" title="Editar nombre (clic)">${s.name}</b></div>
-								<div class="kv" id="kv-${id}"></div>
+								<!-- Línea única con datos dinámicos (incluye lat/lon) -->
+								<div class="okv" id="okv-${id}"></div>
 							</div>
 							<div class="sat-actions actions-col">
 								<button class="zoomSat btn-icon" data-id="${id}" title="Zoom/Seguir">
