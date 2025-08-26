@@ -47,6 +47,14 @@
 			}
 			header h1{font-size:1.05rem; margin:0}
 			header .actions{margin-left:auto; display:flex; gap:.5rem; align-items:center; flex-wrap:wrap} /* wrap en tablet */
+			/* Botones toggle estilo “follow” */
+			.btn-icon{
+				display:inline-flex; align-items:center; justify-content:center;
+				width:36px; height:36px; border-radius:.4rem; border:1px solid #2a3a6b;
+				background:#0e1540; color:var(--text); cursor:pointer; padding:0;
+			}
+			.btn-icon svg{ width:18px; height:18px; pointer-events:none }
+			.btn-icon.active{ box-shadow: inset 0 0 0 2px #6aa8ff; }
 			/* Botón de acción solo icono (Ubicarme) */
 			#locateMe.icon-only{ display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; padding:0 }
 			/* Punto azul "mi ubicación" */
@@ -484,21 +492,25 @@
 					</svg>
 				</button>
 				<div class="actions">
-					<button id="locateMe" class="icon-only" aria-label="Ubicarme" title="Ubicarme">
-						<!-- Icono diana / "my location" -->
+
+					<!-- Botón Ubicarme (toggle) -->
+					<button id="locateMe" class="btn-icon" aria-pressed="false" title="Ubicarme">
 						<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
 							<path fill="currentColor" d="M 11.007 1.99 L 13.002 1.998 L 12.998 3.953 C 16.266 4.036 19.975 7.678 20.001 10.999 L 22 11 L 22 12.998 L 20.001 12.996 C 19.932 16.036 16.553 19.9 13.001 20.001 L 12.998 21.999 L 10.996 21.993 L 10.997 20.002 C 7.66 19.944 4.008 16.162 3.999 12.997 L 2 13 L 2 10.999 L 3.999 10.995 C 4.039 7.891 7.56 4.024 10.995 3.958 L 11.007 1.99 Z M 12 7 C 8.151 7 5.745 11.167 7.67 14.5 C 9.594 17.833 14.406 17.833 16.33 14.5 C 16.769 13.74 17 12.878 17 12 C 16.997 9.24 14.76 7.003 12 7 Z M 12 9 C 14.309 9 15.753 11.5 14.598 13.5 C 13.443 15.5 10.557 15.5 9.402 13.5 C 9.139 13.044 9 12.527 9 12 C 9.002 10.344 10.344 9.002 12 9 Z"/>
-						</svg>
+						</svg>					
 					</button>
-					<label style="display:flex;align-items:center;gap:.35rem">
-						<input type="checkbox" id="toggleTerminator" checked /> Día/Noche
-					</label>
-					<label style="display:flex;align-items:center;gap:.35rem">
-						<input type="checkbox" id="toggleRadar" checked /> Radar
-					</label>
-					<label style="display:flex;align-items:center;gap:.35rem">
-						<input type="checkbox" id="toggleClouds" checked /> Nubes
-					</label>
+					<!-- Día/Noche -->
+					<button id="btnTerminator" class="btn-icon" aria-pressed="true" title="Día/Noche">
+						<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A8 8 0 0 1 12 2Z"/></svg>
+					</button>
+					<!-- Radar -->
+					<button id="btnRadar" class="btn-icon" aria-pressed="true" title="Radar">
+						<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3a9 9 0 1 0 9 9h-2a7 7 0 1 1-7-7V3Zm0 4a5 5 0 1 0 5 5h-2a3 3 0 1 1-3-3V7Z"/></svg>
+					</button>
+					<!-- Nubes -->
+					<button id="btnClouds" class="btn-icon" aria-pressed="true" title="Nubes">
+						<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6 18h11a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10.4-2A4.5 4.5 0 0 0 6 18Z"/></svg>
+					</button>
 					<select id="baseSel">
 						<option value="osm">OSM</option>
 						<option value="light">Claro</option>
@@ -511,9 +523,10 @@
 						<option value="60" selected>+60 min</option>
 						<option value="90">+90 min</option>
 					</select>
-					<label style="display:flex;align-items:center;gap:.35rem">
-						<input type="checkbox" id="toggleHorizon" checked /> Horizonte
-					</label>
+					<!-- Horizonte (huella) -->
+					<button id="btnHorizon" class="btn-icon" aria-pressed="true" title="Horizonte">
+						<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M 16.845 5.989 C 17.084 5.525 18.023 5.066 18.906 5.642 C 19.728 6.178 19.482 7.281 19.161 7.525 C 19.156 7.546 18.489 7.009 18.335 6.861 C 18.197 6.732 17.837 6.528 17.713 6.448 C 17.59 6.367 16.91 6.018 16.854 6.001 M 11.733 4.961 C 19.531 4.961 24.319 12.513 20.504 18.472 C 16.693 24.428 20.103 8.377 11.399 6.131 C 10.83 5.983 10.299 5.933 8.938 6.033 C 8.632 6.056 6.522 6.558 5.025 7.907 C 3.298 9.463 2.277 11.763 2.091 12.224 C 1.869 12.775 1.618 13.864 1.675 13.884 C 4.977 15.07 18.856 19.56 18.864 19.683 C 18.872 19.772 1.592 14.051 1.602 13.97 C 2.202 9.028 6.143 4.969 11.733 4.961"/></svg>
+					</button>
 					<input type="datetime-local" id="refTime" step="1" style="background:#11173a;color:#e6eef8;border:1px solid #26315c;border-radius:.5rem;padding:.45rem .5rem" />
 					<button id="useNow">Ahora</button>
 				</div>
@@ -1006,43 +1019,53 @@
 						if (window.dayNightLayer) window.dayNightLayer.bringToFront();              // Terminador (tiles)
 					}					
 					
-					const radarChk = document.getElementById('toggleRadar');
-					if (radarChk){
-						radarChk.addEventListener('change', function(){
-							if (this.checked){
-								if (rainv.layer){ rainv.layer.addTo(map); rainv.layer.bringToFront(); }
-							} else {
-								if (rainv.layer) map.removeLayer(rainv.layer);
-							}
-							try{ localStorage.setItem('sr.t.radar', this.checked?'1':'0'); }catch(_){}
-						});
+					// === Toggles como botones con icono ===
+					const termBtn   = document.getElementById('btnTerminator');
+					const radarBtn  = document.getElementById('btnRadar');
+					const cloudsBtn = document.getElementById('btnClouds');
+					const horizBtn  = document.getElementById('btnHorizon');
+					function setBtn(btn, on){ if(!btn) return; btn.classList.toggle('active', !!on); btn.setAttribute('aria-pressed', on?'true':'false'); }
+					function isOn(btn){ return !!(btn && btn.classList.contains('active')); }
+					function applyTerm(on){
+						setBtn(termBtn, on);
+						if (on){ if (dayNightLayer) dayNightLayer.addTo(map); if (ringLine) ringLine.addTo(map); }
+						else { if (dayNightLayer) map.removeLayer(dayNightLayer); if (ringLine) map.removeLayer(ringLine); }
+						// reponer overlays activos al frente
+						if (on){
+							if (isOn(radarBtn)  && rainv?.layer){ rainv.layer.addTo(map); }
+							if (isOn(cloudsBtn) && satv?.layer){ satv.layer.addTo(map); }
+							restoreOrder?.();
+						}
+						try{ localStorage.setItem('sr.t.term', on?'1':'0'); }catch(_){}
 					}
-					const cloudsChk = document.getElementById('toggleClouds');
-					if (cloudsChk){
-						cloudsChk.addEventListener('change', function(){
-							if (this.checked){
-								if (satv.layer) { satv.layer.addTo(map); satv.layer.bringToFront(); }
-							} else {
-								if (satv.layer) map.removeLayer(satv.layer);
-							}
-							try{ localStorage.setItem('sr.t.clouds', this.checked?'1':'0'); }catch(_){}
-						});
+					function applyRadar(on){
+						setBtn(radarBtn, on);
+						if (on){ if (rainv.layer){ rainv.layer.addTo(map); rainv.layer.bringToFront(); } }
+						else { if (rainv.layer) map.removeLayer(rainv.layer); }
+						try{ localStorage.setItem('sr.t.radar', on?'1':'0'); }catch(_){}
 					}
-					
-					// Toggle global del HORIZONTE (radios)
-					const horizonChk = document.getElementById('toggleHorizon');
-					if (horizonChk){
-						horizonChk.addEventListener('change', function(){
-							const on = this.checked;
-							try{ localStorage.setItem('sr.t.horiz', on?'1':'0'); }catch(_){}
-							for (const id in state.sats){
-								const s = state.sats[id];
-								if (!s.circle) continue;
-								if (on && s.visible !== false){ if(!map.hasLayer(s.circle)) s.circle.addTo(map); }
-								else { if(map.hasLayer(s.circle)) map.removeLayer(s.circle); }
-							}
-						});
+					function applyClouds(on){
+						setBtn(cloudsBtn, on);
+						if (on){ if (satv.layer){ satv.layer.addTo(map); satv.layer.bringToFront(); } }
+						else { if (satv.layer) map.removeLayer(satv.layer); }
+						try{ localStorage.setItem('sr.t.clouds', on?'1':'0'); }catch(_){}
 					}
+					function applyHorizon(on){
+						setBtn(horizBtn, on);
+						try{ localStorage.setItem('sr.t.horiz', on?'1':'0'); }catch(_){}
+						for (const id in state.sats){
+							const s = state.sats[id];
+							// asegúrate de tener círculo calculado si está ON
+							if (on){ updateSat(id); }
+							if (!s.circle) continue;
+							if (on && s.visible !== false){ if(!map.hasLayer(s.circle)) s.circle.addTo(map); }
+							else { if(map.hasLayer(s.circle)) map.removeLayer(s.circle); }
+						}
+					}
+					termBtn?.addEventListener('click',  ()=> applyTerm(!isOn(termBtn)));
+					radarBtn?.addEventListener('click', ()=> applyRadar(!isOn(radarBtn)));
+					cloudsBtn?.addEventListener('click',()=> applyClouds(!isOn(cloudsBtn)));
+					horizBtn?.addEventListener('click', ()=> applyHorizon(!isOn(horizBtn)));
 					
 					// Inicializa el input con la hora actual (local) — AHORA sí, tras definir toLocalDTValue/applyRefTime
 					const refInput = document.getElementById('refTime');
@@ -1331,7 +1354,7 @@
 						if(s.marker){ on?map.addLayer(s.marker):map.removeLayer(s.marker); }
 						// círculo solo si el toggle global de horizonte está activo
 						if(s.circle){
-							const showHoriz = document.getElementById('toggleHorizon')?.checked;
+							const showHoriz = isOn(document.getElementById('btnHorizon'));
 							if(on && showHoriz){ if(!map.hasLayer(s.circle)) map.addLayer(s.circle); }
 							else { if(map.hasLayer(s.circle)) map.removeLayer(s.circle); }
 						}
@@ -1339,27 +1362,31 @@
 						STORAGE.save();
 					}
 				
-					// === Ubicarme: punto azul + círculo de precisión ===
+					// === Ubicarme como toggle (punto azul + precisión) ===
 					let meLayer=null, meMarker=null, meAcc=null;
-					document.getElementById('locateMe').addEventListener('click', function(){
-						if(!navigator.geolocation){ alert('Geolocalización no soportada'); return; }
+					const locBtn = document.getElementById('locateMe');
+					function applyLocate(on){
+						setBtn(locBtn, on);
+						if (!on){
+							if (meLayer) { try{ map.removeLayer(meLayer); }catch(_){ } meLayer=null; meMarker=null; meAcc=null; }
+							return;
+						}
+						if(!navigator.geolocation){ alert('Geolocalización no soportada'); setBtn(locBtn,false); return; }
 						navigator.geolocation.getCurrentPosition(function(pos){
-							const lat = pos.coords.latitude;
-							const lon = pos.coords.longitude;
-							const acc = pos.coords.accuracy || 0; // en metros
+							const lat=pos.coords.latitude, lon=pos.coords.longitude, acc=pos.coords.accuracy||0;
 							const dotIcon = L.divIcon({ className:'me-dot', iconSize:[14,14], iconAnchor:[7,7] });
 							if (!meLayer){
 								meMarker = L.marker([lat,lon], { icon: dotIcon, interactive:false, pane:'satPane' });
 								meAcc    = L.circle([lat,lon], { radius: acc, color:'#2a7bff', fillColor:'#2a7bff', weight:1, opacity:.4, fillOpacity:.15, pane:'orbitPane' });
 								meLayer  = L.layerGroup([meAcc, meMarker]).addTo(map);
 							} else {
-								meMarker.setIcon(dotIcon);
-								meMarker.setLatLng([lat,lon]);
+								meMarker.setIcon(dotIcon).setLatLng([lat,lon]);
 								meAcc.setLatLng([lat,lon]).setRadius(acc);
+								if (!map.hasLayer(meLayer)) meLayer.addTo(map);
 							}
-							map.flyTo([lat,lon], 9, {duration:1.2, easeLinearity:0.25, animate:true});
-						}, function(){ alert('No se pudo obtener ubicación'); });
-					});
+						}, function(){ alert('No se pudo obtener ubicación'); setBtn(locBtn,false); });
+					}
+					locBtn?.addEventListener('click', ()=> applyLocate(!isOn(locBtn)));
 				
 					document.getElementById('trackHorizon').addEventListener('change', function(e){
 						state.horizonMins=parseInt(e.target.value,10)||0; computeAllTracks();
@@ -1586,8 +1613,9 @@
 							// por si cambia la altitud o integras radio dinámico
 							if (typeof s.circle.setRadius === 'function') s.circle.setRadius(radius);
 						}
+						
 						// mostrar/ocultar según toggle global + visibilidad del satélite
-						const showHoriz = document.getElementById('toggleHorizon')?.checked;
+						const showHoriz = isOn(document.getElementById('btnHorizon'));
 						if (s.circle){
 							if (showHoriz && s.visible !== false){
 								if (!map.hasLayer(s.circle)) s.circle.addTo(map);
@@ -1633,7 +1661,7 @@
 					}
 					function tick(){
 						for (const id in state.sats){ updateSat(id); }
-						// centra el mapa si estamos siguiendo uno
+						// Si estamos siguiendo uno, céntralo manteniendo el zoom actual (sin “salto” de zoom)
 						if (followId && state.sats[followId] && state.sats[followId].marker){
 							const ll = state.sats[followId].marker.getLatLng();
 							map.setView(ll, map.getZoom(), { animate:false });
@@ -1691,15 +1719,11 @@
 								if (selH) selH.value = String(state.horizonMins);
 								computeAllTracks();
 							}
-							// Toggles
-							const t1 = localStorage.getItem('sr.t.term');
-							if (t1!==null){ const chk = document.getElementById('toggleTerminator'); if(chk){ chk.checked = (t1==='1'); chk.dispatchEvent(new Event('change')); } }
-							const t2 = localStorage.getItem('sr.t.radar');
-							if (t2!==null){ const chk = document.getElementById('toggleRadar'); if(chk){ chk.checked = (t2==='1'); chk.dispatchEvent(new Event('change')); } }
-							const t3 = localStorage.getItem('sr.t.clouds');
-							if (t3!==null){ const chk = document.getElementById('toggleClouds'); if(chk){ chk.checked = (t3==='1'); chk.dispatchEvent(new Event('change')); } }
-						const t4 = localStorage.getItem('sr.t.horiz');
-						if (t4!==null){ const chk = document.getElementById('toggleHorizon'); if(chk){ chk.checked = (t4==='1'); chk.dispatchEvent(new Event('change')); } }
+							// Restaurar estado de botones desde localStorage
+							applyTerm(   (localStorage.getItem('sr.t.term')   ?? '1') === '1' );
+							applyRadar(  (localStorage.getItem('sr.t.radar')  ?? '1') === '1' );
+							applyClouds( (localStorage.getItem('sr.t.clouds') ?? '1') === '1' );
+							applyHorizon((localStorage.getItem('sr.t.horiz')  ?? '1') === '1' );
 						}catch(_){}
 					}
 
@@ -1791,7 +1815,7 @@
 							toggleSat(id, e.target.checked);
 						});
 						
-						// Zoom + seguir / dejar de seguir en el mismo botón
+						// Zoom (manteniendo nivel) + seguir / desenganchar sin mover
 						const zoomBtn = row.querySelector('.zoomSat');
 						function refreshZoomFollow(){
 							if (followId === id){ zoomBtn.classList.add('active'); zoomBtn.title = 'Dejar de seguir'; }
@@ -1800,13 +1824,20 @@
 						refreshZoomFollow();
 						zoomBtn.addEventListener('click', ()=>{
 							const sat = state.sats[id];
-							if(sat && sat.marker){
-								map.flyTo(sat.marker.getLatLng(), 4, {duration:1.2, easeLinearity:0.25, animate:true});
-								followId = (followId === id) ? null : id;
-								// actualizar estilos en todos los botones zoom
-								document.querySelectorAll('.zoomSat').forEach(b=>b.classList.remove('active'));
+							if(!sat || !sat.marker) return;
+							// Si ya seguimos este satélite → desenganchar y no mover el mapa
+							if (followId === id){
+								followId = null;
 								refreshZoomFollow();
+								return;
 							}
+							// Si seguimos a otro o a ninguno → viajar al satélite conservando el zoom actual y empezar a seguir
+							const currentZoom = map.getZoom();
+							map.flyTo(sat.marker.getLatLng(), currentZoom, { duration:1.2, easeLinearity:0.25, animate:true });
+							followId = id;
+							// actualizar estilos en todos los botones
+							document.querySelectorAll('.zoomSat').forEach(b=>b.classList.remove('active'));
+							refreshZoomFollow();
 						});
 						
 						const colorBtn = row.querySelector('.colorBtn');
