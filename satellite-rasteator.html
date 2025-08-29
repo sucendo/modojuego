@@ -29,171 +29,190 @@
 		<title>Satellite Rasteator</title>
 		<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 		<style>
-			/* ===== Variables de tema y responsivas ===== */
+			/* =========================
+			Variables de tema y breakpoints
+			========================= */
 			:root{
-				--bg:#0b1020; --panel:#121832; --text:#e6eef8;
-
-				/* Scroll */
-				--scroll-track:#0e1540;
-				--scroll-thumb:#2a3a6b;
-				--scroll-thumb-hover:#4a68c9;
-				--scroll-corner:#0b1020;
-
-				/* UI */
-				--ui-gap:.6rem;
-				--btn-size:36px;                    /* base de botones/iconos */
-				--font-base:clamp(13px,1.2vw,15px); /* tipografía responsiva */
-				--safe-bottom:env(safe-area-inset-bottom,0px);
+			--bg:#0b1020;
+			--panel:#121832;
+			--text:#e6eef8;
+			
+			/* Scroll */
+			--scroll-track:#0e1540;
+			--scroll-thumb:#2a3a6b;
+			--scroll-thumb-hover:#4a68c9;
+			--scroll-corner:#0b1020;
+			
+			/* UI */
+			--ui-gap:.6rem;
+			--btn-size:36px;                    /* base botones/iconos */
+			--font-base:clamp(13px,1.2vw,15px); /* tipografía responsiva */
+			--safe-bottom:env(safe-area-inset-bottom,0px);
+			
+			/* Controles de tiempo */
+			--rate-gap:.35rem;                  /* separación entre rate y Play/Pause */
 			}
 			@media (max-width:900px){ :root{ --btn-size:34px } }
 			@media (max-width:700px){ :root{ --btn-size:30px } }
 			@media (orientation:landscape) and (max-height:520px){ :root{ --btn-size:30px } }
-
-			/* ===== Base ===== */
-			html,body{height:100%; margin:0; background:var(--bg); color:var(--text); overflow-x:hidden}
-			body{
-				font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;
-				font-size:var(--font-base);
-			}
-			#app{display:grid; grid-template-rows:auto 1fr; height:100%; min-height:100vh; position:relative}
-			#map{height:100%}
-
-			/* ===== Header ===== */
+			
+			/* =========================
+			Base
+			========================= */
+			html,body{ height:100%; margin:0; background:var(--bg); color:var(--text); overflow-x:hidden }
+			body{ font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif; font-size:var(--font-base) }
+			#app{ display:grid; grid-template-rows:auto 1fr; height:100%; min-height:100vh; position:relative }
+			#map{ height:100% }
+			
+			/* =========================
+			Header
+			========================= */
 			header{
-				display:flex; align-items:center; gap:var(--ui-gap); flex-wrap:wrap;
-				padding:.6rem .9rem; background:#0b1020; border-bottom:1px solid #1f284a;
+			display:flex; align-items:center; gap:var(--ui-gap); flex-wrap:wrap;
+			padding:.6rem .9rem; background:#0b1020; border-bottom:1px solid #1f284a;
 			}
 			#brandIcon{ width:32px; height:32px; image-rendering:auto; display:inline-block; flex:0 0 auto }
 			header h1{
-				font-size:clamp(.95rem,2.2vw,1.05rem); margin:0;
-				max-width:40vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+			font-size:clamp(.95rem,2.2vw,1.05rem); margin:0;
+			max-width:40vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 			}
 			header .actions{ margin-left:auto; display:flex; gap:.5rem; align-items:center; flex-wrap:wrap }
-			header button, header select{ background:#11173a; color:var(--text); border:1px solid #26315c; padding:.45rem .7rem; border-radius:.5rem; cursor:pointer }
-
-			/* ===== Botones de icono y color ===== */
+			header button, header select{
+			background:#11173a; color:var(--text); border:1px solid #26315c;
+			padding:.45rem .7rem; border-radius:.5rem; cursor:pointer;
+			}
+			
+			/* Botones de icono / color */
 			.btn-icon{
-				display:inline-flex; align-items:center; justify-content:center;
-				width:var(--btn-size); height:var(--btn-size);
-				border-radius:.4rem; border:1px solid #2a3a6b; background:#0e1540; color:var(--text);
-				cursor:pointer; padding:0;
+			display:inline-flex; align-items:center; justify-content:center;
+			width:var(--btn-size); height:var(--btn-size);
+			border-radius:.4rem; border:1px solid #2a3a6b; background:#0e1540; color:var(--text);
+			cursor:pointer; padding:0;
 			}
 			.btn-icon svg{ width:clamp(16px,2.3vw,18px); height:clamp(16px,2.3vw,18px); pointer-events:none }
-			.btn-icon.active{ box-shadow: inset 0 0 0 2px #6aa8ff }
+			.btn-icon.active, #btnTimeControls.btn-icon.active{ box-shadow: inset 0 0 0 2px #6aa8ff }
 			.btn-color{ width:var(--btn-size); height:var(--btn-size) }
-
+			
 			/* Ubicarme punto azul */
 			#locateMe.icon-only{ display:inline-flex; align-items:center; justify-content:center; width:var(--btn-size); height:var(--btn-size); padding:0 }
 			.me-dot{ width:14px; height:14px; border-radius:50%; background:#2a7bff; border:2px solid #fff; box-shadow:0 0 0 4px rgba(42,123,255,.25) }
-
+			
 			/* Fullscreen (móvil, junto al ☰) */
 			#fullScreenBtn{ display:none; align-items:center; justify-content:center; padding:.45rem .6rem }
-
-			/* ===== Panel lateral / bottom sheet ===== */
+			
+			/* =========================
+			Panel lateral / bottom sheet
+			========================= */
 			.panel{
-				position:absolute; top:60px; right:8px; bottom:calc(24px + var(--safe-bottom));
-				width:clamp(260px,28vw,360px); box-sizing:border-box;
-				display:flex; flex-direction:column; gap:.6rem;
-				padding:.75rem; border-radius:.6rem; background:var(--panel); border:1px solid #26315c;
-				box-shadow:0 10px 30px rgba(0,0,0,.35); z-index:1000;
-				transition:transform .25s ease, opacity .2s ease; will-change:transform,opacity;
-				overflow:hidden; /* nada se desborda fuera del panel */
+			position:absolute; top:60px; right:8px; bottom:calc(24px + var(--safe-bottom));
+			width:clamp(260px,28vw,360px); box-sizing:border-box;
+			display:flex; flex-direction:column; gap:.6rem;
+			padding:.75rem; border-radius:.6rem; background:var(--panel); border:1px solid #26315c;
+			box-shadow:0 10px 30px rgba(0,0,0,.35); z-index:1000;
+			transition:transform .25s ease, opacity .2s ease; will-change:transform,opacity;
+			overflow:hidden;
 			}
 			.panel h2{ margin:.2rem 0 .6rem; font-size:1rem }
 			.panel .min-btn{
-				position:absolute; top:8px; right:8px; border:1px solid #26315c; background:#0e1540; color:var(--text);
-				border-radius:.5rem; padding:.25rem .5rem; cursor:pointer; font-size:.9rem;
+			position:absolute; top:8px; right:8px; border:1px solid #26315c; background:#0e1540; color:var(--text);
+			border-radius:.5rem; padding:.25rem .5rem; cursor:pointer; font-size:.9rem;
 			}
 			.panel.collapsed{ transform:translateX(calc(100% + 16px)); opacity:0; pointer-events:none }
 			.panel.collapsed-hidden{ display:none }
-
+			
 			.panel-toggle{
-				position:absolute; top:60px; right:8px; z-index:1001;
-				border:1px solid #26315c; background:#11173a; color:var(--text);
-				border-radius:.5rem; padding:.5rem .7rem; cursor:pointer; display:none; align-items:center; gap:.4rem;
-				box-shadow:0 8px 24px rgba(0,0,0,.35);
+			position:absolute; top:60px; right:8px; z-index:1001;
+			border:1px solid #26315c; background:#11173a; color:var(--text);
+			border-radius:.5rem; padding:.5rem .7rem; cursor:pointer; display:none; align-items:center; gap:.4rem;
+			box-shadow:0 8px 24px rgba(0,0,0,.35);
 			}
 			.panel-toggle .dot{ width:.6rem; height:.6rem; border-radius:999px; background:#5aa9ff; display:inline-block }
-
-			/* ===== Lista de satélites ===== */
+			
+			/* =========================
+			Lista de satélites
+			========================= */
 			.sat-item{
-				display:grid; grid-template-columns:auto 1fr; grid-template-rows:auto auto;
-				gap:.5rem; align-items:center; padding:.45rem .5rem; border-radius:.6rem; border:1px solid #223059; margin-bottom:.45rem;
+			display:grid; grid-template-columns:auto 1fr; grid-template-rows:auto auto;
+			gap:.5rem; align-items:center; padding:.45rem .5rem; border-radius:.6rem; border:1px solid #223059; margin-bottom:.45rem;
 			}
 			.sat-item .actions-col{ display:flex; flex-direction:row !important; align-items:center; gap:.4rem; flex-wrap:wrap; width:100%; margin-top:.25rem; grid-column:1 / -1 }
 			.sat-item .btn-icon{ width:32px; height:32px; background:#0e1540 }
 			.sat-item .btn-icon svg{ width:16px; height:16px }
 			.sat-item .btn-danger{ border-color:#5a2a2a; background:#3a0e0e }
 			.sat-item .btn-color{
-				width:32px; height:32px; border-radius:.4rem; border:1px solid #2a3a6b; cursor:pointer; padding:0;
-				background:var(--col,#ff3333); background:conic-gradient(from 0deg, var(--col,#ff3333), var(--col,#ff3333));
+			width:32px; height:32px; border-radius:.4rem; border:1px solid #2a3a6b; cursor:pointer; padding:0;
+			background:var(--col,#ff3333); background:conic-gradient(from 0deg, var(--col,#ff3333), var(--col,#ff3333));
 			}
-
-			/* Ficha: datos dinámicos */
+			
+			/* Fichas / texto clave-valor */
 			.kv{ font-size:.85rem; opacity:.9; white-space:pre-line; line-height:1.25 }
 			.okv{ font-size:.82rem; opacity:.9; margin-top:.15rem; display:flex; flex-wrap:wrap; gap:.35rem }
 			.okv .chip{ background:#0c1330; border:1px solid #2a3a6b; border-radius:.35rem; padding:.1rem .35rem }
 			.sat-item .sat-name{ cursor:text; border-bottom:1px dashed rgba(230,238,248,.25) }
 			.sat-item .sat-name:focus{ outline:none; background:#0c1330 }
 			.sat-item .btn-icon.active{ box-shadow: inset 0 0 0 2px #6aa8ff }
-
+			
 			/* Scroll interno: lista y “añadir” */
 			#satList{ flex:1 1 auto; overflow:auto; overscroll-behavior:contain; margin-top:.4rem; scrollbar-gutter:stable both-edges }
 			#addSatPanel{ flex:0 0 auto; margin-top:.5rem; max-height:43vh; overflow:auto; scrollbar-gutter:stable }
 			#addSatPanel textarea{ max-height:28vh }
-
+			
 			/* Firefox scroll */
 			#satList, #addSatPanel{ scrollbar-width:thin; scrollbar-color:var(--scroll-thumb) transparent }
 			/* WebKit scroll */
 			#satList::-webkit-scrollbar, #addSatPanel::-webkit-scrollbar{ width:10px; height:10px }
 			#satList::-webkit-scrollbar-track, #addSatPanel::-webkit-scrollbar-track{
-				background:linear-gradient(180deg,rgba(0,0,0,0) 0%, rgba(0,0,0,.12) 100%), var(--panel);
-				border-radius:8px; margin:4px;
+			background:linear-gradient(180deg,rgba(0,0,0,0) 0%, rgba(0,0,0,.12) 100%), var(--panel);
+			border-radius:8px; margin:4px;
 			}
 			#satList::-webkit-scrollbar-thumb, #addSatPanel::-webkit-scrollbar-thumb{
-				background-color:var(--scroll-thumb); border-radius:8px; border:2px solid transparent; background-clip:content-box;
+			background-color:var(--scroll-thumb); border-radius:8px; border:2px solid transparent; background-clip:content-box;
 			}
 			#satList::-webkit-scrollbar-thumb:hover, #addSatPanel::-webkit-scrollbar-thumb:hover{ background-color:var(--scroll-thumb-hover) }
 			#satList::-webkit-scrollbar-corner, #addSatPanel::-webkit-scrollbar-corner{ background:var(--scroll-corner) }
-
-			/* Añadir satélite: botón “primario” */
+			
+			/* Añadir satélite: primario + color */
 			#addSatPanel #addSatBtn{
-				appearance:none; border:1px solid #2a3a6b; background:linear-gradient(180deg,#1b2a6a,#101a46);
-				color:var(--text); border-radius:.6rem; padding:.55rem .9rem .55rem 2.1rem;
-				font-weight:600; letter-spacing:.2px; position:relative; cursor:pointer;
-				box-shadow:0 6px 18px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.04);
-				transition:transform .08s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease, filter .2s ease;
+			appearance:none; border:1px solid #2a3a6b; background:linear-gradient(180deg,#1b2a6a,#101a46);
+			color:var(--text); border-radius:.6rem; padding:.55rem .9rem .55rem 2.1rem;
+			font-weight:600; letter-spacing:.2px; position:relative; cursor:pointer;
+			box-shadow:0 6px 18px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.04);
+			transition:transform .08s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease, filter .2s ease;
 			}
 			#addSatPanel #addSatBtn::before{
-				content:"+"; position:absolute; left:.65rem; top:50%; transform:translateY(-50%);
-				width:1.25rem; height:1.25rem; line-height:1.2rem; border-radius:.4rem; text-align:center; font-weight:700; font-size:1rem; color:#fff;
-				background:radial-gradient(100% 100% at 50% 50%, #3d8bfd 0%, #2a5be8 100%);
-				box-shadow:0 2px 8px rgba(3,121,255,.45), inset 0 0 0 1px rgba(255,255,255,.15);
+			content:"+"; position:absolute; left:.65rem; top:50%; transform:translateY(-50%);
+			width:1.25rem; height:1.25rem; line-height:1.2rem; border-radius:.4rem; text-align:center; font-weight:700; font-size:1rem; color:#fff;
+			background:radial-gradient(100% 100% at 50% 50%, #3d8bfd 0%, #2a5be8 100%);
+			box-shadow:0 2px 8px rgba(3,121,255,.45), inset 0 0 0 1px rgba(255,255,255,.15);
 			}
 			#addSatPanel #addSatBtn:hover{ filter:saturate(1.1) brightness(1.05); box-shadow:0 10px 24px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.06) }
 			#addSatPanel #addSatBtn:active{ transform:translateY(1px) scale(.985) }
 			#addSatPanel #addSatBtn:focus-visible{ outline:2px solid #6aa8ff; outline-offset:2px }
 			#addSatPanel #addSatBtn:disabled{ opacity:.6; cursor:not-allowed; filter:grayscale(25%) }
-
+			
 			#addSatPanel #newIconBtn{
-				display:inline-flex; align-items:center; justify-content:center;
-				width:32px; height:32px; border-radius:.4rem; border:1px solid #2a3a6b; background:#0e1540; color:var(--text); cursor:pointer; padding:0;
+			display:inline-flex; align-items:center; justify-content:center;
+			width:32px; height:32px; border-radius:.4rem; border:1px solid #2a3a6b; background:#0e1540; color:var(--text); cursor:pointer; padding:0;
 			}
 			/* Compactar fila de botones/color en “Añadir” */
 			#addSatPanel > div[style*="display:flex"]{ flex-wrap:wrap; gap:.5rem .6rem !important }
-
+			
 			/* Campos de texto */
 			details{ border:1px dashed #2a3a6b; border-radius:.6rem; padding:.4rem .6rem; margin-top:.5rem }
-			textarea{ width:100%; min-height:90px; background:#0c1330; color:var(--text); border:1px solid #2a3a6b; border-radius:.5rem; padding:.5rem; font-family:ui-monospace,Menlo,Consolas,monospace }
+			textarea{
+			width:100%; min-height:90px; background:#0c1330; color:var(--text);
+			border:1px solid #2a3a6b; border-radius:.5rem; padding:.5rem;
+			font-family:ui-monospace,Menlo,Consolas,monospace;
+			}
 			.hint{ font-size:.8rem; opacity:.7 }
-
+			
 			/* Cloud-only WMTS */
 			.clouds-only img{ mix-blend-mode:lighten; image-rendering:auto }
-
-			/* Color input => igual aspecto que .btn-color */
+			
+			/* Color input => aspecto .btn-color */
 			#addSatPanel #defaultOrbitColor{
-				appearance:none; -webkit-appearance:none; width:32px; height:32px; border-radius:.4rem;
-				border:1px solid #2a3a6b; background:#0e1540; padding:0; cursor:pointer;
+			appearance:none; -webkit-appearance:none; width:32px; height:32px; border-radius:.4rem;
+			border:1px solid #2a3a6b; background:#0e1540; padding:0; cursor:pointer;
 			}
 			#addSatPanel #defaultOrbitColor::-webkit-color-swatch-wrapper{ padding:0; border-radius:.35rem }
 			#addSatPanel #defaultOrbitColor::-webkit-color-swatch{ border:none; border-radius:.35rem }
@@ -202,40 +221,42 @@
 			#addSatPanel #defaultOrbitColor:focus-visible{ outline:2px solid #6aa8ff; outline-offset:2px }
 			@media (max-width:900px){ #addSatPanel #defaultOrbitColor{ width:32px; height:32px } }
 			@media (max-width:700px){ #addSatPanel #defaultOrbitColor{ width:36px; height:36px } }
-
-			/* Toggle (botón que abre/cierra la tira de acciones en móvil/tablet) */
+			
+			/* Toggle acciones (móvil/tablet) */
 			.actions-toggle{
-				display:none; margin-left:auto; background:#11173a; color:var(--text);
-				border:1px solid #26315c; border-radius:.5rem; padding:.45rem .6rem; cursor:pointer; line-height:1;
+			display:none; margin-left:auto; background:#11173a; color:var(--text);
+			border:1px solid #26315c; border-radius:.5rem; padding:.45rem .6rem; cursor:pointer; line-height:1;
 			}
-
-			/* ===== Icon picker / TLE picker ===== */
+			
+			/* =========================
+			Icon picker / TLE picker
+			========================= */
 			.icon-picker{
-				position:fixed; z-index:2000; background:#0e1540; color:var(--text);
-				border:1px solid #2a3a6b; border-radius:.6rem; box-shadow:0 12px 30px rgba(0,0,0,.45);
-				padding:.5rem; width:220px; max-height:260px; overflow:auto;
+			position:fixed; z-index:2000; background:#0e1540; color:var(--text);
+			border:1px solid #2a3a6b; border-radius:.6rem; box-shadow:0 12px 30px rgba(0,0,0,.45);
+			padding:.5rem; width:220px; max-height:260px; overflow:auto;
 			}
 			.icon-picker h4{ margin:.1rem .1rem .4rem; font-size:.9rem; opacity:.85 }
 			.icon-grid{ display:grid; grid-template-columns:repeat(5,1fr); gap:.35rem }
 			.icon-item{
-				background:#0c1330; border:1px solid #2a3a6b; border-radius:.45rem; width:36px; height:36px;
-				display:flex; align-items:center; justify-content:center; cursor:pointer;
+			background:#0c1330; border:1px solid #2a3a6b; border-radius:.45rem; width:36px; height:36px;
+			display:flex; align-items:center; justify-content:center; cursor:pointer;
 			}
 			.icon-item img{ width:24px; height:24px; image-rendering:auto }
 			.icon-item[aria-selected="true"]{ outline:2px solid #6aa8ff; outline-offset:1px; border-color:#6aa8ff }
 			.icon-picker .close-row{ display:flex; justify-content:flex-end; margin-top:.4rem }
 			.icon-picker .close-btn{ background:#11173a; border:1px solid #2a3a6b; color:var(--text); border-radius:.4rem; padding:.25rem .5rem; cursor:pointer }
-
+			
 			.tle-picker{
-				position:fixed; z-index:2000; background:#0e1540; color:var(--text);
-				border:1px solid #2a3a6b; border-radius:.6rem; box-shadow:0 12px 30px rgba(0,0,0,.45);
-				padding:.6rem; width:460px; max-width:calc(100vw - 16px);
+			position:fixed; z-index:2000; background:#0e1540; color:var(--text);
+			border:1px solid #2a3a6b; border-radius:.6rem; box-shadow:0 12px 30px rgba(0,0,0,.45);
+			padding:.6rem; width:460px; max-width:calc(100vw - 16px);
 			}
 			.tle-picker h4{ margin:.1rem .1rem .4rem; font-size:.95rem; opacity:.9 }
 			.tle-picker .tle-area{
-				width:96%; min-height:96px; resize:vertical; background:#0c1330; color:var(--text);
-				border:1px solid #2a3a6b; border-radius:.45rem; padding:.5rem;
-				font:13px/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+			width:96%; min-height:96px; resize:vertical; background:#0c1330; color:var(--text);
+			border:1px solid #2a3a6b; border-radius:.45rem; padding:.5rem;
+			font:13px/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
 			}
 			.tle-picker .meta{ display:flex; gap:.5rem; align-items:center; margin-top:.35rem; font-size:.85rem; opacity:.85 }
 			.tle-picker .meta .pill{ border:1px solid #2a3a6b; border-radius:.45rem; padding:.15rem .4rem; background:#0c1330 }
@@ -244,221 +265,191 @@
 			.tle-picker .actions{ display:flex; gap:.5rem; justify-content:flex-end; margin-top:.5rem }
 			.tle-picker .btn{ background:#11173a; border:1px solid #2a3a6b; color:var(--text); border-radius:.4rem; padding:.35rem .7rem; cursor:pointer }
 			.tle-picker .btn[disabled]{ opacity:.5; cursor:not-allowed }
-
-			/* ======= Time Controls (layout centrado con slider abajo, look tipo “chip”) ======= */
+			
+			/* =========================
+			Time Controls (centrado, slider abajo)
+			========================= */
 			.time-controls{
-				position:absolute; left:50%; right:auto; transform:translateX(-50%);
-				bottom:calc(25px + var(--safe-bottom)); z-index:1100; display:none;
-				/* top row: [Ahora] [Rate] [Play centrado] [Fecha]  | bottom row: slider centrado */
-				grid-template-columns:auto auto 1fr auto;
-				grid-template-rows:auto auto;
-				gap:.35rem .5rem; align-items:center; justify-items:start;
-				background:rgba(14,21,64,.92); border:1px solid #26315c; border-radius:.6rem; padding:.4rem .55rem;
-				backdrop-filter:saturate(120%) blur(2px); box-shadow:0 10px 20px rgba(0,0,0,.34);
-				max-width:min(96vw, 500px);
+			position:absolute; left:50%; right:auto; transform:translateX(-50%);
+			bottom:calc(25px + var(--safe-bottom)); z-index:1100; display:none;
+			
+			/* top row: [Ahora] [Rate abs] [Play centrado] [Fecha]  | second row: slider */
+			grid-template-columns:auto auto 1fr auto;
+			grid-template-rows:auto auto;
+			gap:.35rem .5rem; align-items:center; justify-items:start;
+			
+			background:rgba(14,21,64,.92); border:1px solid #26315c; border-radius:.6rem; padding:.4rem .55rem;
+			backdrop-filter:saturate(120%) blur(2px); box-shadow:0 10px 20px rgba(0,0,0,.34);
+			max-width:min(96vw, 500px);
 			}
 			.time-controls.active{ display:grid }
 			.time-controls .btn{
-				display:inline-flex; align-items:center; justify-content:center;
-				width:var(--btn-size); height:var(--btn-size);
-				border:1px solid #2a3a6b; border-radius:.45rem; background:#11173a; color:var(--text); cursor:pointer; padding:0;
+			display:inline-flex; align-items:center; justify-content:center;
+			width:var(--btn-size); height:var(--btn-size);
+			border:1px solid #2a3a6b; border-radius:.45rem; background:#11173a; color:var(--text); cursor:pointer; padding:0;
 			}
 			.time-controls .rate-indicator{ font-size:.85rem; opacity:.9; min-width:8ch; text-align:right; font-variant-numeric:tabular-nums }
-            /* Colocación base */
-            #useNow{   grid-column:1; grid-row:1; white-space:nowrap }
-
-            /* El contenedor de controles sirve como referencia para posicionar #scrubRate */
-            .time-controls{ position:relative }
-
-            /* Gap configurable entre el rate y el botón (desktop/móvil abajo) */
-            :root{ --rate-gap: .35rem }
-
-            /* #scrubRate: pegado a la izquierda del Play/Pause, alineado verticalmente */
-            #scrubRate{
-                position:absolute;
-                top:50%;                                 /* centra verticalmente */
-                left:calc(50% - 0.5 * var(--btn-size) - var(--rate-gap));
-                transform:translate(-100%, -100%);       /* alinea el borde derecho del texto */
-                padding:0; background:none; border:none; box-shadow:none;
-                color:var(--text);
-            }
-            #scrubRate.is-now{ color:#aef3c0 }          /* verde en “Ahora” */
 			
+			/* Colocación base */
+			#useNow{ grid-column:1; grid-row:1; white-space:nowrap }
 			
-			/* ===== Estados visuales: "Ahora" (verde) vs Manual (blanco) ===== */
-            /* Base (NO es ahora) → blanco */
-            #useNow{ border-color:rgba(255,255,255,.85); color:var(--text); width: auto; }
-            #scrubRate{ color:var(--text); }
-            #useNow::before{ background:#8aa2c6 } /* puntito neutral */
-            /* Es ahora → verde */
-            #useNow.is-now, #scrubRate.is-now{ color:#aef3c0; }
-            #useNow.is-now{ box-shadow:0 0 0 2px rgba(46,204,113,.25) inset }
-            #useNow.is-now::before{ background:#26d07c }		
-
-            @media (max-width:700px){
-              :root{ --rate-gap:.2rem }
-            }
-			@media (max-width:700px){
-				#scrubRate{ transform:translateX(calc(-.5 * var(--btn-size) - .2rem)); }
+			/* #scrubRate pegado a la izquierda del Play/Pause (robusto) */
+			#scrubRate{
+			position:absolute;
+			top:50%;
+			left:calc(50% - 0.5 * var(--btn-size) - var(--rate-gap));
+			transform:translate(-100%, -100%);    /* alinea borde derecho del texto */
+			padding:0; background:none; border:none; box-shadow:none;
+			color:var(--text); font-size:.99rem;
 			}
-			/* Play centrado respecto a TODO el contenedor (encima de la marca central) */
-			#scrubPlay{ grid-column:1 / -1; grid-row:1; justify-self:center; z-index:1 }
-			#refTime{  grid-column:4; grid-row:1; justify-self:end; min-width:0; max-width:min(52vw, 260px) }
+			#scrubRate.is-now{ color:#aef3c0 }
+			
+			/* Play centrado respecto a TODO el contenedor */
+			#scrubPlay{ grid-column:1 / -1; grid-row:1; justify-self:center; z-index:1; background:#102058; border-color:#2a3a6b; box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 0 0 1px rgba(255,255,255,.04) }
+			
+			/* Fecha/Hora (texto que se “abre” como chip al enfocar) */
+			#refTime{ grid-column:4; grid-row:1; justify-self:end; min-width:0; max-width:min(52vw, 260px) }
+			.time-controls input[type="datetime-local"]{
+			background:transparent; border:none; box-shadow:none; padding:0; margin:0;
+			color:var(--text); font-size:clamp(.85rem,1.8vw,.95rem); font-variant-numeric:tabular-nums;
+			min-width:0; max-width:min(52vw, 260px);
+			transition:background .12s ease, box-shadow .12s ease, padding .12s ease, border-color .12s ease;
+			cursor:text; outline:none; -webkit-appearance:none; appearance:none; caret-color:currentColor;
+			}
+			.time-controls input[type="datetime-local"]:focus,
+			.time-controls input[type="datetime-local"].chip-open{
+			background:#0f1848; border:1px solid #2a3a6b; border-radius:.6rem; padding:.35rem .55rem;
+			box-shadow:inset 0 0 0 1px rgba(255,255,255,.03);
+			}
+			/* Ocultar controles nativos que dejaban hueco */
+			.time-controls input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+			.time-controls input[type="datetime-local"]::-webkit-clear-button,
+			.time-controls input[type="datetime-local"]::-webkit-inner-spin-button{ display:none }
+			
+			/* Botón “Ahora” (chip) + estados */
+			#useNow{
+			border-radius:.6rem; padding:.35rem .7rem; background:#0f1848; border:1px solid #2a3a6b; color:var(--text);
+			box-shadow:inset 0 0 0 1px rgba(255,255,255,.03); display:inline-flex; align-items:center; gap:.45rem; width: auto;
+			}
+			#useNow::before{
+			content:""; width:.55rem; height:.55rem; border-radius:999px; background:#8aa2c6; box-shadow:0 0 0 2px rgba(255,255,255,.08) inset;
+			}
+			/* Manual (NO ahora) => blanco; Ahora => verde */
+			#useNow{ border-color:rgba(255,255,255,.85); color:var(--text) }
+			#useNow.is-now{ border-color:#2e9f5f; color:#aef3c0; box-shadow:0 0 0 2px rgba(46,204,113,.25) inset }
+			#useNow.is-now::before{ background:#26d07c }
+			
+			/* Contenedor del slider */
 			.slider-container{
-				grid-column:1 / -1; grid-row:2; justify-self:center;
-				width:100%; min-width:300px; /* ocupa todo el ancho disponible con mínimo 300px */
-				position:relative; display:flex; align-items:center; gap:.5rem; margin-top: 15px;
+			grid-column:1 / -1; grid-row:2; justify-self:center;
+			width:100%; min-width:300px;
+			position:relative; display:flex; align-items:center; gap:.5rem; margin-top:15px;
 			}
-
+			
 			/* Slider curvo + marca central */
-			/* Slider curvo + marca central + “well” decorativo */
 			.slider-container .slider-input{ width:100% }
 			.slider-container .svg-parent{ position:absolute; pointer-events:none; left:0; right:0; margin:auto; width:100% }
- 			.slider-container .center-mark{
-				/* La posición exacta la fija JS según el ancho real del <input> */
-				position:absolute; left:0; top:50%; transform:translate(-1px,-50%);
-				/* la X exacta se fija desde JS con positionCenterMark() */
-				position:absolute; left:0; top:50%; transform:translate(-1px,-50%);
-				width:2px; height:18px; background:rgba(230,238,248,.35); border-radius:1px; pointer-events:none;
+			.slider-container .center-mark{
+			position:absolute; left:0; top:50%; transform:translate(-1px,-50%); /* X exacta via JS */
+			width:2px; height:18px; background:rgba(230,238,248,.35); border-radius:1px; pointer-events:none;
 			}
-			/* Range: pista + “pulgar” grande y arrastrable */
+			
+			/* Range visual */
 			.slider-input{
-				appearance:none; height:3px; border-radius:999px;
-				background:linear-gradient(90deg, rgba(106,168,255,.28), rgba(230,238,248,.28));
-				outline:none;
+			appearance:none; height:3px; border-radius:999px;
+			background:linear-gradient(90deg, rgba(106,168,255,.28), rgba(230,238,248,.28));
+			outline:none;
 			}
 			.slider-input::-webkit-slider-thumb{
-				-webkit-appearance:none; width:24px; height:24px; border-radius:50%;
-				background:#e6eef8; border:2px solid #6aa8ff; box-shadow:0 0 12px rgba(106,168,255,.35), 0 0 0 5px rgba(106,168,255,.18); cursor:grab;
+			-webkit-appearance:none; width:24px; height:24px; border-radius:50%;
+			background:#e6eef8; border:2px solid #6aa8ff; box-shadow:0 0 12px rgba(106,168,255,.35), 0 0 0 5px rgba(106,168,255,.18); cursor:grab;
 			}
 			.slider-input::-webkit-slider-thumb:active{ cursor:grabbing }
 			.slider-input::-moz-range-thumb{
-				width:24px; height:24px; border-radius:50%;
-				background:#e6eef8; border:2px solid #6aa8ff; box-shadow:0 0 12px rgba(106,168,255,.35), 0 0 0 5px rgba(106,168,255,.18); cursor:grab;
+			width:24px; height:24px; border-radius:50%;
+			background:#e6eef8; border:2px solid #6aa8ff; box-shadow:0 0 12px rgba(106,168,255,.35), 0 0 0 5px rgba(106,168,255,.18); cursor:grab;
 			}
 			.slider-input::-moz-range-track{ height:8px; background:transparent; border:none; border-radius:999px }
-
-			/* Fecha/Hora: apariencia de texto (sin chip) y se "abre" al enfocar */
-			.time-controls input[type="datetime-local"]{
-				background:transparent; border:none; box-shadow:none; padding:0; margin:0;
-				color:var(--text); font-size:clamp(.85rem,1.8vw,.95rem); font-variant-numeric:tabular-nums;
-				min-width:0; max-width:min(52vw, 260px);
-				transition:background .12s ease, box-shadow .12s ease, padding .12s ease, border-color .12s ease;
-				cursor:text; outline:none;
-				-webkit-appearance:none;                  /* evita reservas raras en WebKit */
-				caret-color: currentColor;                 /* cursor visible */
-			}
-			/* Al enfocar → mostrar chip editable (abre visualmente el campo) */
-			.time-controls input[type="datetime-local"]:focus{
-				background:#0f1848; border:1px solid #2a3a6b; border-radius:.6rem; padding:.35rem .55rem;
-				box-shadow:inset 0 0 0 1px rgba(255,255,255,.03);
-			}
-			/* Ocultar iconos nativos y su espacio (el “hueco” de la derecha) */
-			.time-controls input[type="datetime-local"]::-webkit-calendar-picker-indicator{ display:none }
-			.time-controls input[type="datetime-local"]::-webkit-inner-spin-button{ display:none }
-			.time-controls input[type="datetime-local"]::-webkit-clear-button{ display:none }
-
-			/* En la fila de edición: el botón “Ahora” NO debe ser cuadrado */
-			.time-controls .datetime-edit .btn{ width:auto; height:var(--btn-size); padding:.3rem .6rem }
-			#useNow{ white-space:nowrap }			
-
-			/* Botón del menú que muestra/oculta los controles de tiempo */
-			#btnTimeControls.btn-icon.active{ box-shadow: inset 0 0 0 2px #6aa8ff }
-			/* Estado “ahora” (tiempo real) → verde */
-			#useNow{
-				border-radius:.6rem; padding:.35rem .7rem; background:#0f1848; border:1px solid #2a3a6b; color:var(--text);
-				box-shadow:inset 0 0 0 1px rgba(255,255,255,.03); display:inline-flex; align-items:center; gap:.45rem;
-			}
-			#useNow::before{
-				content:""; width:.55rem; height:.55rem; border-radius:999px; background:#8aa2c6; box-shadow:0 0 0 2px rgba(255,255,255,.08) inset;
-			}
-			#useNow.is-now{ border-color:#2e9f5f; color:#aef3c0; box-shadow:0 0 0 2px rgba(46,204,113,.25) inset }
-			#useNow.is-now::before{ background:#26d07c }
-			/* Indicador de velocidad → solo texto */
-			#scrubRate{
-				background:none; padding:0; 
-				color:var(--text); /* blanco en modo manual */
-				font-size: .99rem;
-			}
-			#scrubRate.is-now{ color:#aef3c0 } /* verde cuando es “Ahora” */
-			/* Botón play: cuadrado sutil */
-			#scrubPlay{ background:#102058; border-color:#2a3a6b; box-shadow:0 2px 10px rgba(0,0,0,.25), inset 0 0 0 1px rgba(255,255,255,.04) }
-
-			/* ===== Responsivo ===== */
+			
+			/* =========================
+			Responsivo
+			========================= */
 			@media (max-width:1200px){
-				header h1{ font-size:1rem }
-				header .actions{ gap:.45rem }
-				.panel{ width:300px; right:8px; bottom:20px; top:60px }
+			header h1{ font-size:1rem }
+			header .actions{ gap:.45rem }
+			.panel{ width:300px; right:8px; bottom:20px; top:60px }
 			}
 			@media (max-width:900px){
-				header{ padding:.5rem .7rem }
-				header h1{ line-height:2rem }
-				header button, header select, #refTime, #useNow{ font-size:.9rem; padding:.4rem .55rem }
-				.actions-toggle{ display:inline-flex; align-items:center; justify-content:center }
-				#fullScreenBtn{ display:inline-flex }
-				header .actions{
-					order:3; width:100%; display:flex; flex-wrap:wrap; gap:.45rem;
-				}
-				.panel{ width:300px; right:8px; bottom:18px; top:56px }
-				.sat-item .btn-icon, .sat-item .btn-color{ width:32px; height:32px }
+			header{ padding:.5rem .7rem }
+			header h1{ line-height:2rem }
+			header button, header select, #refTime, #useNow{ font-size:.9rem; padding:.4rem .55rem }
+			.actions-toggle{ display:inline-flex; align-items:center; justify-content:center }
+			#fullScreenBtn{ display:inline-flex }
+			header .actions{ order:3; width:100%; display:flex; flex-wrap:wrap; gap:.45rem }
+			.panel{ width:300px; right:8px; bottom:18px; top:56px }
+			.sat-item .btn-icon, .sat-item .btn-color{ width:32px; height:32px }
 			}
 			@media (max-width:700px){
-				/* Header más compacto en móvil */
-				header{ align-items:flex-start; gap:.35rem; position:relative; padding:.35rem .6rem }
-				#brandIcon{ width:24px; height:24px }
-				header h1{ max-width:55vw; font-size:.92rem }
-				/* Tira de acciones como overlay bajo el header */
-				header .actions{ display:none }
-				header .actions.open{
-					display:flex; position:fixed; left:0; right:0; top:var(--actionsTop,56px);
-					z-index:1100; background:rgba(11,16,32,.98); border-bottom:1px solid #1f284a;
-					padding:.4rem .5rem; gap:.4rem; box-sizing:border-box; max-width:100vw;
-					overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch; scrollbar-gutter:stable;
-				}
-				header .actions.open>*{ flex:0 0 auto }
-				header .actions.open::-webkit-scrollbar{ height:6px }
-
-				/* Panel como “bottom sheet” */
-				/* Panel ocupa más alto para que se vea mejor la lista */
-				.panel{ left:6px; right:6px; top:auto; bottom:calc(64px + var(--safe-bottom)); width:auto; max-height:69vh }
-				.panel-toggle{ top:auto; right:6px; bottom:calc(8px + var(--safe-bottom)) }
-				.sat-item .btn-icon, .sat-item .btn-color{ width:36px; height:36px }
-				.sat-item{ gap:.45rem }
-				#addSatPanel{ max-height:38vh }
-				#addSatPanel textarea{ max-height:26vh }
-
-				/* Controles de tiempo compactos */
-				.time-controls{
-					left:50%; right:auto; transform:translateX(-50%); bottom:calc(6px + var(--safe-bottom));
-					gap:.3rem .4rem; padding:.35rem .45rem; width:calc(100vw - 12px);
-				}
-				#scrubPlay{ width:30px; height:30px }
-				#useNow{ height:30px; padding:.25rem .55rem }
-				.slider-container{ width:100%; min-width:300px }
+			/* Header compacto */
+			header{ align-items:flex-start; gap:.35rem; position:relative; padding:.35rem .6rem }
+			#brandIcon{ width:24px; height:24px }
+			header h1{ max-width:55vw; font-size:.92rem }
+			/* Acciones como overlay */
+			header .actions{ display:none }
+			header .actions.open{
+				display:flex; position:fixed; left:0; right:0; top:var(--actionsTop,56px);
+				z-index:1100; background:rgba(11,16,32,.98); border-bottom:1px solid #1f284a;
+				padding:.4rem .5rem; gap:.4rem; box-sizing:border-box; max-width:100vw;
+				overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch; scrollbar-gutter:stable;
+			}
+			header .actions.open>*{ flex:0 0 auto }
+			header .actions.open::-webkit-scrollbar{ height:6px }
+			
+			/* Panel como bottom sheet */
+			.panel{ left:6px; right:6px; top:auto; bottom:calc(64px + var(--safe-bottom)); width:auto; max-height:69vh }
+			.panel-toggle{ top:auto; right:6px; bottom:calc(60px + var(--safe-bottom)) }
+			.sat-item .btn-icon, .sat-item .btn-color{ width:36px; height:36px }
+			.sat-item{ gap:.45rem }
+			#addSatPanel{ max-height:38vh }
+			#addSatPanel textarea{ max-height:26vh }
+			
+			/* Time controls compactos */
+			.time-controls{
+				left:50%; right:auto; transform:translateX(-50%); bottom:calc(6px + var(--safe-bottom));
+				gap:.3rem .4rem; padding:.35rem .45rem; width:calc(100vw - 12px);
+			}
+			#scrubPlay{ width:30px; height:30px }
+			#useNow{ height:30px; padding:.25rem .55rem }
+			.slider-container{ width:100%; min-width:300px }
 			}
 			@media (max-height:540px){
-				/* paisaje móvil */
-				.panel{ bottom:calc(8px + var(--safe-bottom)); top:58px; max-height:calc(100vh - 80px) }
-				#addSatPanel{ max-height:38vh }
-				.time-controls{ grid-template-columns:auto 1fr auto }
+			/* paisaje móvil */
+			.panel{ bottom:calc(8px + var(--safe-bottom)); top:58px; max-height:calc(100vh - 80px) }
+			#addSatPanel{ max-height:38vh }
+			.time-controls{ grid-template-columns:auto 1fr auto }
+			/* RefTime en la tercera columna y bien ajustado a la derecha */
+			#refTime{
+				grid-column:3; grid-row:1;
+				justify-self:end;
+			}
 			}
 			
-			/* ======= Móvil vertical muy estrecho (~360px) ======= */
+			/* Móvil vertical muy estrecho (~360px) */
 			@media (max-width:380px){
-				:root{ --rate-gap:.2rem }
-				.time-controls{
-					/* 2 columnas, 3 filas: [Ahora | Fecha] / [Play centrado] / [Slider] */
-					grid-template-columns: 1fr 1fr;
-					grid-template-rows: auto auto auto;
-					gap:.25rem .35rem;
-					padding:.35rem .45rem;
-					max-width: calc(100vw - 8px);
-					bottom: calc(8px + var(--safe-bottom));
-				}
-				#useNow{  grid-column:1; grid-row:1; justify-self:start }
-				#refTime{ grid-column:2; grid-row:1; justify-self:end; max-width:62vw; font-size:.85rem }
-				#scrubPlay{ grid-column:1 / -1; grid-row:2; justify-self:center }
-				.slider-container{ grid-column:1 / -1; grid-row:3; width:100%; min-width:300px }
+			:root{ --rate-gap:.2rem }
+			.time-controls{
+				/* 2 columnas, 3 filas: [Ahora | Fecha] / [Play centrado] / [Slider] */
+				grid-template-columns: 1fr 1fr;
+				grid-template-rows: auto auto auto;
+				gap:.25rem .35rem;
+				padding:.35rem .45rem;
+				max-width: calc(100vw - 30px);
+				bottom: calc(8px + var(--safe-bottom));
+			}
+			#useNow{  grid-column:1; grid-row:1; justify-self:start }
+			#refTime{ grid-column:2; grid-row:1; justify-self:end; max-width:62vw; font-size:.85rem }
+			#scrubPlay{ grid-column:1 / -1; grid-row:2; justify-self:center }
+			.slider-container{ grid-column:1 / -1; grid-row:3; width:100%; min-width:300px }
 			}
 		</style>
 
