@@ -406,12 +406,18 @@
 			header .actions.open::-webkit-scrollbar{ height:6px }
 			
 			/* Panel como bottom sheet */
-			.panel{ left:6px; right:6px; top:auto; bottom:calc(64px + var(--safe-bottom)); width:auto; max-height:69vh }
-			.panel-toggle{ top:auto; right:6px; bottom:calc(60px + var(--safe-bottom)) }
+			.panel{ left:6px; right:6px; top:auto; bottom:calc(30px + var(--safe-bottom)); width:auto; max-height:74vh }
+			.panel-toggle{ top:auto; right:6px; bottom:calc(30px + var(--safe-bottom)) }
 			.sat-item .btn-icon, .sat-item .btn-color{ width:36px; height:36px }
 			.sat-item{ gap:.45rem }
 			#addSatPanel{ max-height:38vh }
 			#addSatPanel textarea{ max-height:26vh }
+			
+			/* ===== Leaflet attribution: letra más pequeña desde 700px ===== */
+			.leaflet-control-attribution.leaflet-control{
+			font-size:10px; line-height:1.2;
+			}
+			.leaflet-control-attribution.leaflet-control a{ font-size:inherit; }
 			
 			/* Time controls compactos */
 			.time-controls{
