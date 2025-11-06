@@ -1,0 +1,1902 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Simulador de Vuelo con CesiumJS</title>
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.118/Build/Cesium/Cesium.js"></script>
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.118/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+  <style>
+  
+		:root{
+			--hud-bg: rgba(10,14,18,.50);
+			--hud-stroke: rgba(255,255,255,.08);
+			--hud-glow: rgba(0,0,0,.35);
+			--hud-text: #fff;
+			--ok: #9fffa0;
+			--warn: #ffd666;
+			--alert: #ff7a7a;
+			--accent: #22d1ff;
+			--bug: #ffd35a;
+		}
+
+		html, body, #cesiumContainer {
+			width: 100%;
+			height: 100%;
+			margin: 0;
+			padding: 0;
+			overflow: hidden;
+			font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif;
+			color: var(--hud-text);
+		}
+	
+		.hud{
+			position:fixed;            /* que ocupe toda la ventana */
+			inset:0;                   /* top:0; right:0; bottom:0; left:0 */
+			color:var(--hud-text);
+			font-size: clamp(11px, 1.1vw, 14px);
+			line-height: 1.25;
+			pointer-events:none;       /* el HUD no bloquea el ratón salvo paneles */
+			z-index: 1000;
+		}
+		
+		.hud-shadow{
+			box-shadow:
+				0 10px 30px var(--hud-glow),
+				0 0 0 1px var(--hud-stroke) inset;
+			backdrop-filter: blur(6px);
+			-webkit-backdrop-filter: blur(6px);
+		}
+
+		/* Panel de datos abajo */
+		.hud-top{
+			position:absolute;
+			left:10px; right:10px; bottom:10px;
+			display:flex; gap:10px; flex-wrap:wrap; align-items:stretch;
+			background: var(--hud-bg);
+			padding:10px 12px; border-radius:12px;
+			pointer-events:auto;       /* permite clics en botones/controles */
+			z-index: 1010;
+		}
+		.hud-box{
+			display:flex;flex-direction:column;align-items:center;justify-content:center;
+			min-width:82px;padding:8px 10px;border-radius:10px;
+			background: rgba(255,255,255,.05);
+		}
+		.hud-box span{font-size:.85em;opacity:.8;letter-spacing:.02em}
+		.hud-box strong{
+			font-size: clamp(16px, 2.2vw, 22px);
+			line-height:1.1;
+			font-variant-numeric: tabular-nums slashed-zero;
+			letter-spacing: .02em;
+		}
+		.hud-box small{font-size:.75em;opacity:.7}
+		.hud-box.ok strong{color:var(--ok)}
+		.hud-box.warn strong{color:var(--warn)}
+		.hud-box.alert strong{color:var(--alert)}
+		.hud-mid{display:flex;justify-content:space-between;gap:8px;margin-top:6px}
+		.hud-angles,.hud-pos{
+			background: var(--hud-bg);
+			padding:8px 10px;border-radius:10px;font-size: .95em;
+		}
+		.hud-compass{
+			position:absolute;
+			left:10px; right:10px; top:10px;
+			height:50px;
+			background: linear-gradient(transparent,rgba(255,255,255,.06),transparent);
+			overflow:hidden; border-radius:12px;
+			z-index: 1020;
+			pointer-events:none;
+		}
+		.compass-track{position:absolute;position:absolute;inset:0;background:
+			linear-gradient(90deg, rgba(255,255,255,.15) 0 1px, transparent 1px 20px);
+			background-size:20px 100%;transform:translateX(0)}
+		.compass-track{position:absolute;inset:0;transform:translateX(0)}
+		
+		/* ticks generados por JS */
+		.tick{position:absolute;top:8px;bottom:8px;width:1px;background:rgba(255,255,255,.55)}
+		.tick.t10{opacity:.75;height: 22px; top: 14px; bottom: auto;}
+		.tick.t30{opacity:1;background:#fff;height: 28px; top: 11px;}
+		.tick-label{position:absolute;top:26px;font-size:.85em;opacity:.95;transform:translateX(-50%)}
+		.compass-center{
+			position:absolute;left:50%;top:0;bottom:0;transform:translateX(-50%);
+		}
+		.compass-center::after{
+			content:"";
+			position:absolute;top:8px;left:50%;transform:translateX(-50%) rotate(45deg);
+			width:10px;height:10px;border-left:2px solid #fff;border-top:2px solid #fff;opacity:.9;
+		}
+		.compass-bug{
+			position:absolute;top:12px;bottom:12px;width:0;height:0;
+			border-left:8px solid transparent;border-right:8px solid transparent;
+			border-top:10px solid var(--bug); filter: drop-shadow(0 0 6px rgba(255,201,71,.7));
+		}
+		.hud-flags{
+			position:absolute; left:10px; bottom: calc(10px + 64px);
+			font-size:.95em;background: var(--hud-bg); padding:6px 8px;border-radius:10px
+		}
+	
+		@media (max-width: 680px){
+			.hud-top{left:8px;right:8px;bottom:8px}
+			.hud-compass{left:8px;right:8px;top:8px}
+			.hud-flags{left:8px;bottom: calc(8px + 64px)}
+		}
+		@media (prefers-reduced-motion: reduce){
+			.hud-shadow{backdrop-filter:none;-webkit-backdrop-filter:none}
+			*{transition:none!important}
+		}
+
+  </style>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<div class="hud">
+  <div class="hud-mid hud-shadow">
+    <div class="hud-angles">
+      <div>Pitch: <strong id="pitch">--</strong>°</div>
+      <div>Roll:  <strong id="roll">--</strong>°</div>
+      <div>Yaw:   <strong id="yaw">--</strong>°</div>
+      <div>p/q/r: <strong id="rollRate">0</strong>/<strong id="pitchRate">0</strong>/<strong id="yawRate">0</strong> °/s</div>
+    </div>
+    <div class="hud-pos">
+      <div>Lat/Lon: <strong id="coords">--</strong></div>
+    </div>
+  </div>
+  <div class="hud-compass">
+    <div class="compass-track" id="compassTrack"></div>
+    <div class="compass-bug"   id="compassBug" aria-label="heading-bug"></div>
+    <div class="compass-center" aria-hidden="true"></div>
+  </div>
+    <div class="hud-top hud-shadow">
+    <div class="hud-box"><span>IAS</span><strong id="spd">---</strong><small>km/h</small></div>
+    <div class="hud-box"><span>ALT</span><strong id="alt">---</strong><small>m</small></div>
+    <div class="hud-box"><span>VS</span><strong id="vs">0.0</strong><small>m/s</small></div>
+    <div class="hud-box"><span>THR</span><strong id="throttle">---</strong><small>%</small></div>
+    <div class="hud-box"><span>AB</span><strong id="ab">OFF</strong></div>
+    <div class="hud-box"><span>AoA</span><strong id="aoa">0.0</strong><small>°</small></div>
+    <div class="hud-box"><span>G</span><strong id="gLoad">0.00</strong><small>g</small></div>
+  </div>
+  <div class="hud-flags hud-shadow">
+    <span>HDG HOLD: <strong id="hdgFlag">OFF</strong> — Bug: <strong id="hdgBug">000</strong>°</span>
+  </div>
+</div>
+
+  <!-- ─── Controles móviles ───────────────────────────────────────────────────── -->
+  <div id="mobileControls" style="position:fixed; bottom:10px; right:10px; display:none; flex-direction:column; align-items:center; gap:10px; z-index:1000;">
+    <button id="btnResetGyro" title="Reset Gyro">
+		<i class="material-icons">refresh</i>
+    </button>
+    <button id="btnShoot" title="Disparar"><i class="material-icons">bolt</i></button>
+  
+    <!-- Overlay de crash -->
+    <div id="crashOverlay" style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.65);color:#fff;z-index:99999;font:600 22px/1.2 system-ui">
+      <div style="text-align:center">
+        <div style="font-size:28px;margin-bottom:8px">¡Colisión detectada!</div>
+        <div>Simulación detenida. Pulsa <kbd>R</kbd> para reintentar.</div>
+      </div>
+    </div>
+	
+    <button id="btnFullscreen" title="Toggle Fullscreen">
+		<i class="material-icons">fullscreen</i>
+    </button>
+	<input type="range" id="throttleSlider" min="0" max="100" value="0" style="
+    position: fixed;
+    top: 100px;
+    width: 50vh;
+    transform: rotate(270deg);
+    display: block;
+    z-index: 1000;
+	"/>
+  </div>  
+
+<script>
+
+	// ========= Helpers numéricos / rumbo =========
+	const rad = (d)=>d*Math.PI/180, deg = (r)=>r*180/Math.PI;
+	const wrap360 = d => ((d%360)+360)%360;
+	const wrap180 = d => ((d+180)%360)-180;
+	
+	// γ desde la VELOCIDAD (no desde el forward). Signo: γ>0 si subes.
+	function sinGammaFromVelocity(position, planeVelocity){
+		const V = Cesium.Cartesian3.magnitude(planeVelocity);
+		if (V < 0.1) return 0;
+		// ENU local (N = Up x East)
+		const enu4 = Cesium.Transforms.eastNorthUpToFixedFrame(position);
+		const enu  = Cesium.Matrix4.getMatrix3(enu4, new Cesium.Matrix3());
+		const UP   = Cesium.Matrix3.getColumn(enu, 2, new Cesium.Cartesian3());
+		const flightDir = Cesium.Cartesian3.normalize(planeVelocity, new Cesium.Cartesian3());
+		// proyección de flightDir sobre Up: positivo si asciende
+		return Cesium.Cartesian3.dot(flightDir, UP);
+	}
+	
+	function computeCompassFromForward(position, forward){
+		const enu4 = Cesium.Transforms.eastNorthUpToFixedFrame(position);
+		const enu  = Cesium.Matrix4.getMatrix3(enu4, new Cesium.Matrix3());
+		const EAST  = Cesium.Matrix3.getColumn(enu, 0, new Cesium.Cartesian3());
+		const NORTH = Cesium.Matrix3.getColumn(enu, 1, new Cesium.Cartesian3());
+		const x = Cesium.Cartesian3.dot(forward, EAST);
+		const y = Cesium.Cartesian3.dot(forward, NORTH);
+		// 0=N,90=E, ajustado por offset si el modelo estuviera invertido
+		return wrap360(deg(Math.atan2(x, y)) + COMPASS_OFFSET_DEG);
+	}
+	
+	// Flight-path angle: sin(gamma) usando el morro y la normal local
+	function sinGammaFromForward(forward, surfaceNormal){
+		// ambos están normalizados; clamp para evitar acumulación de errores
+		return Cesium.Math.clamp(
+			Cesium.Cartesian3.dot(forward, surfaceNormal),
+			-0.999, 0.999
+		);
+	}
+	
+	// ========= Catálogo de aeronaves =========
+	const AIRCRAFTS = {
+	F22: {
+		mass: 19500,                // kg
+		wingArea: 78,               // m²
+		wingSpan: 13.6,             // m
+		CL0: 0.24,
+		CL_ALPHA: 4.8,              // por rad
+		CD0: 0.024,                 // parásito
+		fuselageArea: 8.0,          // m²
+		e_oswald: 0.85,
+		k_form: 0.015,
+		machDrag: { M0: 0.82, k: 18 },
+		maxThrustMIL: 232000,       // N (2x116k)
+		maxThrustAB: 312000,        // N (2x156k)
+		maxMach: 2.25
+	},
+	// Ejemplo futuro (no se usa todavía)
+	F16: {
+		mass: 12000,
+		wingArea: 27.87,
+		wingSpan: 9.96,
+		CL0: 0.22,
+		CL_ALPHA: 5.1,
+		CD0: 0.027,
+		e_oswald: 0.82,
+		k_form: 0.013,
+		machDrag: { M0: 0.82, k: 20 },
+		fuselageArea: 5.2,
+		maxThrustMIL: 76000,        // N
+		maxThrustAB: 129000,        // N
+		maxMach: 2.05
+	}
+	};
+	
+	// Activo (por ahora F22); cambiar aquí en el futuro para otro modelo
+	let ACTIVE = AIRCRAFTS.F22;	
+	
+	const rho0 = 1.225; // densidad a nivel del mar (kg/m^3)
+	// ===== TIMING (para deltaTime) =====
+	// Inicializamos lastNow antes de enganchar el bucle para evitar ReferenceError y picos de dt.
+	let lastNow = performance.now();
+	// Vars auxiliares usadas en varios módulos (evita NaN en primer frame)
+	let _simLastRho = 1.225; // se igualará a rho0 más abajo cuando esté declarado
+	let lastSpeed   = 0;
+	
+	// ─── Parámetros aerodinámicos ────────────────────────────
+	// Offset de brújula para corregir modelos cuyo "forward" esté invertido
+	let COMPASS_OFFSET_DEG = 0;
+	
+	let SIM = {
+		paused: false,
+		crashed: false,
+		lastTime: performance.now(),
+		lastRho: rho0,
+		afterburner: false,
+		
+		// Se inicializan desde ACTIVE
+		mass: ACTIVE.mass,
+		wingArea: ACTIVE.wingArea,
+		wingSpan: ACTIVE.wingSpan,
+		CL0: ACTIVE.CL0,
+		CL_ALPHA: ACTIVE.CL_ALPHA,
+		CD0: ACTIVE.CD0,
+		e_oswald: ACTIVE.e_oswald,
+		k_form: ACTIVE.k_form,
+		machDrag: ACTIVE.machDrag,
+		maxThrustMIL: ACTIVE.maxThrustMIL,
+		maxThrustAB: ACTIVE.maxThrustAB,
+		maxMach: ACTIVE.maxMach
+	};	
+
+	(async function main() {
+		// 0. Variables globales de física y cámara:
+		let verticalSpeed = 0;
+		const gravity = 9.8;
+		const liftFactor = 20;
+		const dragFactor = 0.1;
+		const activeSmokeSystems = [];
+
+		// Ángulos y radio de órbita:
+		let orbitAngles = { yaw: -Math.PI / 2, pitch: 0.2 }; // vista inicial detrás del avión
+		let orbitRadius = 25;
+		let isDragging = false;
+		let dragStart = { x: 0, y: 0 };
+		
+		// Autopilot
+		let autopilot = false;
+		let autopilotHeading = 0;   // rumbo congelado al activar (rad)
+		let autopilotAltitude = 0;  // altitud MSL congelada al activar (m)
+		let autopilotThrottle = 0;  // potencia congelada al activar [0..1]
+		// WAYPOINTS desactivados por petición del usuario
+		// let waypoints = [];
+		// let currentWP = 0;
+		// const wpTolerance = 100;
+		const targetSpeed = 200;
+		// Fases del AP: primero nivelado, luego mantener rumbo/altitud
+		let apPhase = "LEVEL";      // "LEVEL" | "HDG_HOLD"
+		// Integrador muy pequeño de rumbo (anti-sesgo)
+		let apHdgInt = 0;
+		// HDG HOLD independiente del AP
+		let hdgBugDeg = 0; // 0–360, brújula (0=N, 90=E)
+		let apAltInt = 0; // 🛠️ faltaba: integrador de altitud/VS para el AP
+		// Parámetros de control
+		const LEVEL_TOL = Cesium.Math.toRadians(2); // ±2°
+		const RATE_TOL  = Cesium.Math.toRadians(2); // ±2°/s
+		const BANK_LIMIT = Cesium.Math.toRadians(25);  // ±25°
+		const YAW_RATE_CMD_MAX = Cesium.Math.toRadians(6); // ±6°/s
+		const HDG_DEADBAND = Cesium.Math.toRadians(1.0);   // 1° sin mando
+		// Integrador muy pequeño para rumbo (opcional, anti-sesgo)
+
+		const HDG_INT_CLAMP = Cesium.Math.toRadians(10);  // anti-windup
+	
+		// Utilidad: error de rumbo envuelto a [-π, π]
+		function hdgErr(desired, current) {
+			return Cesium.Math.negativePiToPi(desired - current);
+		}
+
+		// 1. Crear Cesium Viewer:
+		Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiYTQ0YWUyYi0wYjcwLTQ3NDEtYmEzMS1kZDJlYzhkNTkyMzgiLCJpZCI6MzA5MDg4LCJpYXQiOjE3NDkwMjU5NDh9.vtAd5T0-iIYfa8YbSDhK1HEUeOgqR3Whk4OAehbKZ3w'; // Reemplaza con tu token real
+		const viewer = new Cesium.Viewer('cesiumContainer', {
+			terrainProvider: await Cesium.CesiumTerrainProvider.fromIonAssetId(1),
+			animation: false,
+			timeline: false,
+			baseLayerPicker: false,
+			geocoder: false,
+			homeButton: false,
+			infoBox: false,
+			sceneModePicker: false,
+			selectionIndicator: false,
+			navigationHelpButton: false,
+			navigationInstructionsInitiallyVisible: false,
+			fullscreenButton: false,
+			shadows: true,
+			shouldAnimate: true,
+		});
+
+		// Añadir edificios OSM:
+		const osmBuildings = await Cesium.createOsmBuildingsAsync();
+		viewer.scene.primitives.add(osmBuildings);
+
+		// 2. Desactivar controles por defecto de Cesium:
+		viewer.scene.screenSpaceCameraController.enableRotate = false;
+		viewer.scene.screenSpaceCameraController.enableTranslate = false;
+		viewer.scene.screenSpaceCameraController.enableZoom = false;
+		viewer.scene.screenSpaceCameraController.enableTilt = false;
+		viewer.scene.screenSpaceCameraController.enableLook = false;
+		
+		// ─── Detectar si es móvil o tablet ─────────────────────────────────────────
+		const isMobileDevice = /Mobi|Android|iPhone|iPad|Tablet/.test(navigator.userAgent);
+		// ─── Mostrar controles en móviles/tablets ────────────────────────────────
+		if (isMobileDevice) {
+			document.getElementById('mobileControls').style.display = 'flex';
+			document.getElementById('throttleSlider').style.display = 'block';
+		}
+		
+		// 3. Usar ScreenSpaceEventHandler para capturar arrastre de ratón:
+		const minOrbitRadius = 5;
+		const maxOrbitRadius = 100;
+		const zoomSpeed      = 0.1;
+		viewer.scene.canvas.addEventListener('wheel', (e) => {
+			// deltaY > 0: alejar, deltaY < 0: acercar
+			orbitRadius += e.deltaY * zoomSpeed;
+			orbitRadius = Cesium.Math.clamp(orbitRadius, minOrbitRadius, maxOrbitRadius);
+			e.preventDefault();
+		}, { passive: false });
+		
+		// Toggle Autopilot con A
+		window.addEventListener("keydown", (e) => {
+			if (e.code === "KeyA") {
+				autopilot = !autopilot;
+				if (autopilot) {
+					// AP ON: congela referencia y arranca en fase de nivelado
+					const state = computeFrameState();
+					autopilotHeading   = state.hpr.heading;
+					autopilotAltitude  = state.carto.height;
+					autopilotThrottle  = throttle;
+					apPhase = "LEVEL";
+					apHdgInt = 0;
+					console.log(
+						"Autopilot: ON — Heading:",
+						Cesium.Math.toDegrees(autopilotHeading).toFixed(1),
+						"Alt:", autopilotAltitude.toFixed(1),
+						"Throttle:", Math.round(autopilotThrottle * 100) + "%"
+					);
+				} else {
+					// Reset integradores/fase al salir
+					apHdgInt = 0;
+					apPhase = "LEVEL";
+					console.log("Autopilot: OFF");
+				}
+			}
+			// HDG HOLD toggle
+			if (e.code === "KeyH") {
+				hdgHold = !hdgHold;
+				console.log("HDG HOLD:", hdgHold ? "ON" : "OFF", "→", Math.round(hdgBugDeg), "°");
+			}
+			// Ajuste fino del bug: [ / ] = ±1° ; Shift+[ / ] = ±10°
+			if (e.code === "BracketLeft")  { hdgBugDeg = (hdgBugDeg - (e.shiftKey?10:1) + 360) % 360; }
+			if (e.code === "BracketRight") { hdgBugDeg = (hdgBugDeg + (e.shiftKey?10:1)) % 360; }
+		});
+		
+		// Heading Hold: teclas H (toggle), [ y ] para ajustar 1°, Shift+[ / ] para 10°
+		let hdgHold = false;
+		let targetHeadingDeg = 0; // Brújula 0..360 (0=N)
+		window.addEventListener("keydown", (e) => {
+			if (e.code === "KeyH") {
+				const st = computeFrameState();
+				// Capturar objetivo en grados de brújula:
+				targetHeadingDeg = computeCompassFromForward(st.position, st.forward);
+				hdgHold = !hdgHold;
+				console.log("HDG Hold:", hdgHold ? "ON" : "OFF",
+							"| Compass:", targetHeadingDeg.toFixed(1));
+			}
+			if (e.code === "BracketLeft") { targetHeadingDeg = wrap360(targetHeadingDeg - (e.shiftKey?10:1)); }
+			if (e.code === "BracketRight"){ targetHeadingDeg = wrap360(targetHeadingDeg + (e.shiftKey?10:1)); }
+			// Afterburner toggle con F
+			if (e.code === "KeyF") {
+				SIM.afterburner = !SIM.afterburner;
+			}
+		});
+
+		 // Waypoints desactivados (doble clic)
+		// Añadir waypoint con doble-clic
+		/*viewer.scene.canvas.addEventListener("dblclick", (e) => {
+		  const pos2D = new Cesium.Cartesian2(e.clientX, e.clientY);
+		  const cartesian = viewer.camera.pickEllipsoid(pos2D, viewer.scene.globe.ellipsoid);
+		  if (!cartesian) return;
+		  waypoints.push(cartesian);
+		  // marcar visualmente
+		  viewer.entities.add({
+			position: cartesian,
+			point: { pixelSize: 8, color: Cesium.Color.YELLOW }
+		  });
+		  console.log("Waypoint añadido:", cartesian);
+		});*/
+		
+		// ── Control simple de HDG HOLD (mantener rumbo como brújula) ────────────
+		function computeHeadingHoldCommands(state, dt) {
+			const MAX_DEF = Math.PI/18; // ±10°
+			const KpBank  = 2.0, KdRoll = 0.6, KdYaw = 0.4;
+			const deadbandH = 1.0; // 1°
+			// Rumbo actual (brújula) desde el morro:
+			const hdgNow = computeCompassFromForward(state.position, state.forward); // 0–360
+			let err = ((hdgBugDeg - hdgNow + 540) % 360) - 180; // [-180,180]
+			if (Math.abs(err) < deadbandH) err = 0;
+			// Objetivo de bank proporcional al error de rumbo
+			const bankMax = Cesium.Math.toRadians(18);
+			const bankTarget = Cesium.Math.clamp(Cesium.Math.toRadians(0.5*err), -bankMax, bankMax);
+			// Comandos
+			const rollErr = bankTarget - state.hpr.roll;
+			const rollCmd = Cesium.Math.clamp(KpBank*rollErr - KdRoll*state.angularVel.x, -MAX_DEF, MAX_DEF);
+			const yawCmd  = Cesium.Math.clamp(-KdYaw * state.angularVel.z, -MAX_DEF, MAX_DEF);
+			return { roll: rollCmd, yaw: yawCmd };
+		}
+		
+		// Flight-path angle: sin(γ) usando morro y normal local
+		function sinGammaFromForward(forward, surfaceNormal){
+			return Cesium.Math.clamp(Cesium.Cartesian3.dot(forward, surfaceNormal), -0.999, 0.999);
+		}
+		
+		  const handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
+
+		  handler.setInputAction((evt) => {
+			isDragging = true;
+			dragStart.x = evt.position.x;
+			dragStart.y = evt.position.y;
+		  }, Cesium.ScreenSpaceEventType.LEFT_DOWN);
+
+		  handler.setInputAction(() => {
+			isDragging = false;
+		  }, Cesium.ScreenSpaceEventType.LEFT_UP);
+
+		  handler.setInputAction((evt) => {
+			if (!isDragging) return;
+			const dx = evt.startPosition.x - evt.endPosition.x;
+			const dy = evt.startPosition.y - evt.endPosition.y;
+			orbitAngles.yaw -= dx * 0.005;
+			orbitAngles.pitch += dy * 0.005;
+			orbitAngles.pitch = Cesium.Math.clamp(orbitAngles.pitch, -Math.PI / 2 + 0.1, Math.PI / 2 - 0.1);
+			// Actualizar dragStart para la siguiente llamada:
+			dragStart.x = evt.endPosition.x;
+			dragStart.y = evt.endPosition.y;
+		  }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+
+		// 4. Variables de estado del avión y controles:
+		// Flags de estado globales
+		let paused  = false;  // pausa cuando la pestaña no está visible
+		let crashed = false;  // se pone a true al detectar colisión
+
+		// Reloj del frame y velocidad previa (para G-load)
+		let lastTime = performance.now();
+		let prevPlaneVelocity = new Cesium.Cartesian3(0, 0, 0);
+		let lastSpeed = 0; // m/s (para lapse de empuje con Mach)
+		let aircraft, position, orientationQuat;
+		let forwardSpeed = 0;      // velocidad actual de avance (m/s)
+		let throttle = 0.25;          // potencia del motor [0 .. 1]
+
+		
+	 	const keys = {};
+		// ── Blindaje de globals con prefijo para evitar colisiones ───────────────
+		let _simPaused  = false;
+		let _simCrashed = false;
+		let _simLastTime = performance.now();
+		let _simLastRho  = 1.225; // rho0 por defecto si aún no hay cálculo aero
+		let afterburner = false;   // AB ON/OFF
+	 
+		//window.addEventListener('keydown', (e) => (keys[e.code] = true));
+		//window.addEventListener('keyup', (e) => (keys[e.code] = false));
+
+
+		// 5. Función para crear el modelo principal (F-22):
+		async function createModel() {
+		  viewer.entities.removeAll();
+		  // 1. Definir posición inicial (tal cual ya lo tienes)
+			position = Cesium.Cartesian3.fromDegrees(-3.7038, 40.4168, 5000);
+
+			// 2. Crear un HeadingPitchRoll con pitch = 0, roll = 0, y el heading que tú elijas.
+			//    Aquí usamos heading = 0 (hacia Norte). Si quisieras que mire Este, usa 90°.
+			const initialHeading = 0; // en grados
+			const hpr = new Cesium.HeadingPitchRoll(
+			  Cesium.Math.toRadians(initialHeading),
+			  0,    // pitch = 0 → plano al terreno
+			  0     // roll = 0 → sin rotación lateral
+			);
+
+			// 3. Calcular el cuaternión “horizontal” sobre la superficie local
+			orientationQuat = Cesium.Transforms.headingPitchRollQuaternion(position, hpr);
+
+			// 4. ¡Crear el modelo!
+			aircraft = viewer.entities.add({
+			  name: 'F-22 Raptor',
+			  position: new Cesium.CallbackProperty(() => position, false),
+			  orientation: new Cesium.CallbackProperty(() => orientationQuat, false),
+			  model: {
+				uri: 'models/simulador/f22_model.glb',
+				minimumPixelSize: 64,
+				maximumScale: 10000,
+				scale: 1,
+			  },
+			});
+		}
+		await createModel();
+		
+		// === AUTOCALIBRACIÓN DE BRÚJULA (una sola vez) =========================
+		// Si el heading del HPR (0..360) y el heading calculado desde 'forward'
+		// difieren ~180°, aplicamos un offset fijo de 180° a la brújula.
+		{
+			const st = (function compute() {
+				const rotMatrix = Cesium.Matrix3.fromQuaternion(orientationQuat);
+				const forward   = Cesium.Matrix3.multiplyByVector(rotMatrix, Cesium.Cartesian3.UNIT_X, new Cesium.Cartesian3());
+				return { forward };
+			})();
+			const hpr = Cesium.HeadingPitchRoll.fromQuaternion(orientationQuat);
+			const hprHdgDeg = ((Cesium.Math.toDegrees(hpr.heading) % 360) + 360) % 360;
+			const fwdHdgDeg = (function(){ const enu4=Cesium.Transforms.eastNorthUpToFixedFrame(position); const enu=Cesium.Matrix4.getMatrix3(enu4,new Cesium.Matrix3()); const E=Cesium.Matrix3.getColumn(enu,0,new Cesium.Cartesian3()); const N=Cesium.Matrix3.getColumn(enu,1,new Cesium.Cartesian3()); const x=Cesium.Cartesian3.dot(st.forward,E); const y=Cesium.Cartesian3.dot(st.forward,N); return ((Math.atan2(x,y)*180/Math.PI)%360+360)%360; })();
+			if (Math.abs(((hprHdgDeg - fwdHdgDeg + 540) % 360) - 180) < 30) COMPASS_OFFSET_DEG = 180;
+		}
+		
+		//-------- Logica de disparo -------------
+		// 6. Función para los proyectiles:
+		
+		/**
+		* Comprueba si una posición está sobre un edificio OSM.
+		* Hace un raycast descendente desde 1 m sobre la posición.
+		*/
+		function detectOSMAt(position) {
+			// Convertir a coordenadas de pantalla
+			const screenPos = viewer.scene.cartesianToCanvasCoordinates(position);
+			if (!Cesium.defined(screenPos)) {
+				return false;
+			}
+			// Drill pick para obtener features bajo ese píxel
+			const picks = viewer.scene.drillPick(screenPos);
+			for (const pick of picks) {
+				// Si es un feature de 3D Tiles (OSM Buildings), devolvemos true
+				if (pick instanceof Cesium.Cesium3DTileFeature) {
+				return true;
+				}
+			}
+			return false;
+		}
+		
+		/**
+		* Maneja el impacto de un proyectil en 'position'.
+		* Decide terreno vs edificio, genera humo/incendio y elimina la entidad.
+		*/
+		function handleImpact(entity, position) {
+			// Detectamos si cayó sobre un edificio OSM
+			const isOSM = detectOSMAt(position);
+			if (isOSM) {
+				console.log("¡Impacto en edificio OSM detectado!");
+			}
+			// Creamos humo o incendio en la posición exacta
+			createSmokeAt(position, isOSM);
+			// Eliminamos la bala tras breve retardo para ver su última posición
+			setTimeout(() => viewer.entities.remove(entity), 50);
+		}
+		
+			
+		const projectiles = [];
+
+		function shootProjectile() {
+			if (!position || !orientationQuat) return;
+
+			  // 6.1. Obtenemos el eje “forward” del avión (eje X local)
+			  const rotMat = Cesium.Matrix3.fromQuaternion(orientationQuat);
+				const forward = Cesium.Matrix3.multiplyByVector(
+				  rotMat,
+				  Cesium.Cartesian3.UNIT_X,
+				  new Cesium.Cartesian3()
+				);
+
+			 // 6.2. Offset para que el proyectil salga justo del morro (5 m delante del centro)
+			const muzzleOffset = Cesium.Cartesian3.multiplyByScalar(
+			  forward,
+			  2.5, // distancia reducida para acercarlo al morro
+			  new Cesium.Cartesian3()
+			);
+			// Posición base tras el offset frontal
+			const muzzlePosition = Cesium.Cartesian3.add(
+			  position,
+			  muzzleOffset,
+			  new Cesium.Cartesian3()
+			);
+			// Desplazamiento vertical: bajar 2 m en eje local 'up'
+			const up = Cesium.Matrix3.multiplyByVector(
+			  rotMat,
+			  Cesium.Cartesian3.UNIT_Z,
+			  new Cesium.Cartesian3()
+			);
+			const downOffset = Cesium.Cartesian3.multiplyByScalar(
+			  up,
+			  -1, // metros a bajar
+			  new Cesium.Cartesian3()
+			);
+			// Posición inicial final del proyectil
+			const initialPosition = Cesium.Cartesian3.add(
+			  muzzlePosition,
+			  downOffset,
+			  new Cesium.Cartesian3()
+			);
+
+			// 6.3. Velocidad inicial de la bala: hereda forwardSpeed del avión
+			// 1) Velocidad heredada del avión
+			const planeVelocity = Cesium.Cartesian3.multiplyByScalar(
+			  forward,
+			  forwardSpeed,
+			  new Cesium.Cartesian3()
+			);
+
+			// 2) Velocidad de boca de la M61 Vulcan (~1030 m/s) = (~3708 km/h)
+			//const muzzleVelocity = 3708/2; // km/h real
+			const muzzleVelocity = 1030; // m/s correcto
+			const pushExtra = Cesium.Cartesian3.multiplyByScalar(
+			  forward,
+			  muzzleVelocity,
+			  new Cesium.Cartesian3()
+			);
+
+			// 3) Velocidad inicial = avión + salida del cañón
+			const initialVelocity = Cesium.Cartesian3.add(
+			  planeVelocity,
+			  pushExtra,
+			  new Cesium.Cartesian3()
+			);
+
+			  // 6.4. Creamos la entidad del proyectil
+			  let currentPosition = Cesium.Cartesian3.clone(initialPosition);
+			  const entity = viewer.entities.add({
+					position: new Cesium.CallbackProperty(() => currentPosition, false),
+					orientation: new Cesium.CallbackProperty(() => {
+					  // Orientar el modelo de la bala para que "mire" hacia adelante
+					  return Cesium.Transforms.headingPitchRollQuaternion(
+						currentPosition,
+						new Cesium.HeadingPitchRoll(0, 0, 0)
+					  );
+					}, false),
+					model: {
+					  uri: 'models/simulador/silver_projectile.glb',
+					  scale: 1, //0.25
+					  minimumPixelSize: 1
+					}
+			  });
+
+			// 6.5. Añadimos al array para actualizar cada frame
+			projectiles.push({
+				entity,
+				velocity: Cesium.Cartesian3.clone(initialVelocity),
+				// Variables para gestionar el impacto
+				impacted: false,
+				impactTimer: 0,
+				update: function(deltaTime) {
+					// 1) Actualizamos velocidad y calculamos nueva posición
+					this.velocity.z -= gravity * deltaTime;
+					const prevPos = Cesium.Cartesian3.clone(currentPosition);
+					const step    = Cesium.Cartesian3.multiplyByScalar(
+						this.velocity,
+						deltaTime,
+						new Cesium.Cartesian3()
+					);
+					currentPosition = Cesium.Cartesian3.add(prevPos, step, new Cesium.Cartesian3());
+					
+					// distancia recorrida desde el disparo
+					const traveled = Cesium.Cartesian3.distance(currentPosition, initialPosition);
+
+					  const carto = Cesium.Cartographic.fromCartesian(currentPosition);
+					  const terrainHeight = viewer.scene.globe.getHeight(carto);
+
+					// Detección de choque contra terreno
+					const hitTerrain = terrainHeight !== undefined && carto.height <= terrainHeight + 1;
+					// Si cayó contra el suelo (edificio o terreno), manejamos impacto
+					if (hitTerrain && !this.impacted) {
+					  this.impacted = true;
+					  handleImpact(entity, currentPosition);
+					  return false;
+					}
+
+					// Si ya impactó, contabiliza el tiempo y elimina al siguiente update
+					if (this.impacted) {
+					this.impactTimer += deltaTime;
+						if (this.impactTimer > 0) {
+							viewer.entities.remove(entity);
+							return false;
+						}
+					// Deja que se dibuje este frame (para mostrar la posición final)
+					}
+
+					// 5) fuera de rango máximo
+					  if (Cesium.Cartesian3.distance(currentPosition, initialPosition) > 20000) {
+						viewer.entities.remove(entity);
+						return false;
+					  }
+
+					return true;
+				}
+			});
+		}
+
+		// 7. Función para crear los efectos de los proyectiles	
+		/**
+		 * @param {Cesium.Cartesian3} position — punto de impacto
+		 * @param {boolean} isBurn — true si es incendio (OSM), false si es humo normal (terreno)
+		 */
+		function createSmokeAt(position, isBurn = false) {
+			const carto = Cesium.Cartographic.fromCartesian(position);
+			const terrainHeight = viewer.scene.globe.getHeight(carto);
+			const adjustedPosition = Cesium.Cartesian3.fromRadians(
+				carto.longitude,
+				carto.latitude,
+				terrainHeight + 1.0 // justo sobre el suelo
+			);
+			
+			const smokeParticles = [];
+			
+			if (isBurn) {
+				// Incendio estático con fade-in y fade-out
+				const entityLifetime = 300;
+				const fadeInTime = 5;
+				const fadeOutTime = 60;
+			
+				// Creamos entidad única
+				const burnEntity = {
+				position: adjustedPosition,
+				age: 0,
+				lifespan: entityLifetime,
+				modelEntity: null
+				};
+			
+				burnEntity.modelEntity = viewer.entities.add({
+				position: adjustedPosition,
+				// Girar 90° alrededor del eje Z (roll) para que el modelo quede vertical
+				orientation: Cesium.Transforms.headingPitchRollQuaternion(
+					adjustedPosition,
+					new Cesium.HeadingPitchRoll(
+						0,                           // heading
+						Cesium.Math.toRadians(90),                           // pitch
+						0    // roll = 90°
+					)
+				),
+				model: {
+					uri: 'models/simulador/incendio.glb',
+					scale: new Cesium.CallbackProperty(() => {
+						const age = burnEntity.age;
+						const t = Math.min(Math.max(age / entityLifetime, 0), 1);
+						return Cesium.Math.lerp(0.5, 10.0, t);
+					}, false),
+					minimumPixelSize: 10,
+					// Color dinámico para fade
+					color: new Cesium.CallbackProperty(() => {
+						const age = burnEntity.age;
+						let alpha = 1.0;
+						if (age < fadeInTime) {
+							alpha = age / fadeInTime;
+						} else if (age > entityLifetime - fadeOutTime) {
+							alpha = (entityLifetime - age) / fadeOutTime;
+						}
+						return Cesium.Color.BLACK.withAlpha(alpha);
+					}, false),
+					colorBlendMode: Cesium.ColorBlendMode.MIX,
+					colorBlendAmount: 1.0
+				}
+				});
+			
+				// Actualización del incendio
+				burnEntity.update = (deltaTime) => {
+				burnEntity.age += deltaTime;
+				if (burnEntity.age >= burnEntity.lifespan) {
+					viewer.entities.remove(burnEntity.modelEntity);
+					return false;
+				}
+				return true;
+				};
+			
+				activeSmokeSystems.push([burnEntity]);
+			
+			} else {
+				// Humo normal como antes
+				const maxParticles = 15;
+				const particleUri = 'models/simulador/smoke_particle.glb';
+				const baseLifespan = 3;
+			
+				for (let i = 0; i < maxParticles; i++) {
+				const offset = Cesium.Cartesian3.fromElements(
+					(Math.random() - 0.5) * 10,
+					(Math.random() - 0.5) * 10,
+					Math.random() * 10
+				);
+			
+				const particlePosition = Cesium.Cartesian3.add(
+					adjustedPosition,
+					offset,
+					new Cesium.Cartesian3()
+				);
+			
+				const particle = {
+					position: particlePosition,
+					velocity: new Cesium.Cartesian3(
+					(Math.random() - 0.5) * 1.5,
+					(Math.random() - 0.5) * 1.5,
+					1 + Math.random() * 3
+					),
+					age: 0,
+					lifespan: baseLifespan + Math.random() * 2,
+					scale: 1 + Math.random() * 0.5,
+					modelEntity: null
+				};
+			
+				particle.modelEntity = viewer.entities.add({
+					position: new Cesium.CallbackProperty(() => particle.position, false),
+					orientation: new Cesium.CallbackProperty(() => {
+					return Cesium.Transforms.headingPitchRollQuaternion(
+						particle.position,
+						new Cesium.HeadingPitchRoll(0, 0, 0)
+					);
+					}, false),
+					model: {
+					uri: particleUri,
+					scale: new Cesium.CallbackProperty(() => {
+						const growth = 1 + particle.age * 0.2;
+						return particle.scale * growth;
+					}, false),
+					minimumPixelSize: 10,
+					color: Cesium.Color.WHITE.withAlpha(0.5),
+					colorBlendMode: Cesium.ColorBlendMode.MIX,
+					colorBlendAmount: 0.8
+					}
+				});
+			
+				particle.update = (deltaTime) => {
+					particle.age += deltaTime;
+					if (particle.age >= particle.lifespan) {
+					viewer.entities.remove(particle.modelEntity);
+					return false;
+					}
+					const deltaMove = Cesium.Cartesian3.multiplyByScalar(
+					particle.velocity,
+					deltaTime,
+					new Cesium.Cartesian3()
+					);
+					particle.position = Cesium.Cartesian3.add(
+					particle.position,
+					deltaMove,
+					new Cesium.Cartesian3()
+					);
+					return true;
+				};
+			
+				smokeParticles.push(particle);
+				}
+			
+				activeSmokeSystems.push(smokeParticles);
+			}
+		}
+
+		// 8. Contoles 
+		
+		window.addEventListener("keydown", (e) => {
+		  keys[e.code] = true;
+		  if (e.code === "Space") shootProjectile();
+		if (e.code === "Enter") {
+			// RESET de timones (deflexiones) a 0 y cancelar auto-nivelado
+			autoLevel = false;
+			δa_current = 0;
+			δe_current = 0;
+			δr_current = 0;
+			// opcional: amortiguar tasas actuales para que no siga girando
+			ω = new Cesium.Cartesian3(0, 0, 0);
+			console.log("[CTRL] Timones a 0 (δa, δe, δr) y tasas amortiguadas. AutoLevel OFF.");
+		}
+		  // Si el piloto vuelve a dar una orden manual, cancelamos el auto-nivelado
+		  if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","KeyQ","KeyE"].includes(e.code)) {
+			autoLevel = false;
+		  }
+		});
+		
+		  // Listener para liberación de teclas: limpiar el flag
+		  window.addEventListener("keyup", (e) => {
+			if (keys[e.code]) {
+			  keys[e.code] = false;
+			}
+		  });
+		
+		// ─── Tensor de inercia (valores de ejemplo, en kg·m²) ─────────────────────────
+		const I = Cesium.Matrix3.fromArray([
+		  1.2e5,   0,      0,
+			0,   9.0e4,   0,
+			0,     0,   1.5e5
+		]);
+		const Iinv = Cesium.Matrix3.inverse(I, new Cesium.Matrix3());
+
+		// Superficies de control y brazos de palanca (m² y m)
+		const S_aileron   = 4.0,  l_aileron   = 5.0;
+		const S_elevator  = 3.5,  l_elevator  = 7.0;
+		const S_rudder    = 2.0,  l_rudder    = 6.0;
+		
+		// ─── Parámetros para pitching moment de fuselaje ──────────────────────────────
+		const Cm_ALPHA      = 0.05;      // coef. moment pitching por rad
+		const l_fuselage    = 8.0;       // brazo de palanca fuselaje (m)
+
+		// Coeficiente de damping rotacional
+		const C_d_rot = 1.05; // damping un poco mayor para calmar pitch/yaw
+
+		// Estado de la velocidad angular en el cuerpo
+		let ω = new Cesium.Cartesian3(0, 0, 0);
+		// ─── Límites de velocidad angular (rad/s) ───────────────────────────────────
+		const maxRollRate  = Cesium.Math.toRadians(90);   // ±90°/s
+		const maxPitchRate = Cesium.Math.toRadians(60);   // ±60°/s
+		const maxYawRate   = Cesium.Math.toRadians(45);   // ±45°/s
+		
+		// ─── Estado de deflexión actual de superficies (rad) ─────────────────────────
+		let δa_current = 0.0, δe_current = 0.0, δr_current = 0.0;
+		// Máxima velocidad de deflexión: 30° por segundo
+		const maxDeflectionRate = Cesium.Math.toRadians(30);
+				
+		// Flag para auto-nivelado
+		let autoLevel = false;
+		
+		// ──────────────────────────────────────────────────────────────────────────────
+		
+		// ¿Hay entrada de piloto? (teclas/gyro/AP/autoLevel)
+		function hasPilotInput() {
+			if (autopilot || autoLevel) return true;
+			// teclas de control directo
+			if (keys['ArrowLeft'] || keys['ArrowRight'] ||
+				keys['ArrowUp']   || keys['ArrowDown']  ||
+				keys['KeyQ']      || keys['KeyE']) return true;
+			// giroscopio (por si algún navegador de escritorio emula eventos)
+			if (useGyro && (Math.abs(gyroAngles.roll)  > 1e-4 ||
+							Math.abs(gyroAngles.pitch) > 1e-4 ||
+							Math.abs(gyroAngles.yaw)   > 1e-4)) return true;
+			return false;
+		}
+		
+		// ─── Variables para giroscopio móvil ──────────────────────────────────────────
+		let useGyro = false;
+		let gyroOffset = { alpha: 0, beta: 0, gamma: 0 };
+		let gyroAngles = { roll: 0, pitch: 0, yaw: 0 };
+		// Almacenamos el último evento para el reset
+		let lastEvent = { alpha: 0, beta: 0, gamma: 0 };
+
+		// Detectar soporte y activar giroscopio
+		if (window.DeviceOrientationEvent) {
+			window.addEventListener('deviceorientation', (e) => {
+				if (e.alpha === null) {
+				return;
+				}
+				// Guardamos el evento para poder resetear offset más tarde
+				lastEvent.alpha = e.alpha;
+				lastEvent.beta  = e.beta;
+				lastEvent.gamma = e.gamma;
+		
+				useGyro = true;
+				document.getElementById('mobileControls').style.display = 'flex';
+				document.getElementById('throttleSlider').style.display = 'block';
+		
+				// Calcular diferencia respecto al offset
+				const a = e.alpha - gyroOffset.alpha;
+				const b = e.beta  - gyroOffset.beta;
+				const g = e.gamma - gyroOffset.gamma;
+				
+				// Factores de sensibilidad
+				const sensitivityYaw   = 0.4;
+				const sensitivityPitch = 0.6;
+				const sensitivityRoll  = 0.6;
+		
+				// Mapear a radianes y ajustar signos para Cesium
+				gyroAngles.yaw   = Cesium.Math.toRadians(a * sensitivityYaw);   // YAW ← alpha
+				gyroAngles.pitch = Cesium.Math.toRadians(g * sensitivityPitch); // PITCH ← -beta
+				gyroAngles.roll  = Cesium.Math.toRadians(b * sensitivityRoll);  // ROLL ← gamma
+			});
+
+			// Botón reset gyro		
+			document.getElementById('btnResetGyro').addEventListener('click', () => {
+				// Resetear offset de giroscopio
+				gyroOffset.alpha = lastEvent.alpha;
+				gyroOffset.beta  = lastEvent.beta;
+				gyroOffset.gamma = lastEvent.gamma;
+
+				// Reiniciar velocidades angulares
+				ω = new Cesium.Cartesian3(0, 0, 0);
+
+				// Resetear deflexiones de superficies
+				δa_current = 0;
+				δe_current = 0;
+				δr_current = 0;
+
+				// Activar de nuevo
+				useGyro = true;
+				console.log('🔄 Giroscopio y orientación reiniciados');
+			});
+		}
+
+		// Botón fullscreen
+		document.getElementById('btnFullscreen').addEventListener('click', () => {
+			const el = document.documentElement;
+			if (!document.fullscreenElement) {
+				el.requestFullscreen();
+			} else {
+				document.exitFullscreen();
+			}
+		});
+
+		// Slider de throttle
+		const slider = document.getElementById('throttleSlider');
+		slider.addEventListener('input', () => {
+			throttle = slider.value / 100;
+		});
+		
+		// Botón de disparo en móviles
+		document.getElementById('btnShoot').addEventListener('click', () => {
+			shootProjectile();
+		});
+		
+		// Utilidad: error de rumbo a [-π, π]
+		function wrapHdgErr(desired, current) {
+			return Cesium.Math.negativePiToPi(desired - current);
+		}
+	
+		function computeAutopilotCommands(state, dt) {
+			// Parámetros AP
+			const MAX_DEF = Math.PI / 18;          // ±10°
+			let   bankMax   = Cesium.Math.toRadians(22);
+			const deadbandHdeg = 1.0;
+			const KpH = 0.015, KiH = 0.003, Imax = 200;
+			const KpBank = 2.0, KdRoll = 0.6, KdYaw = 0.4;
+			const KpPitch=1.2, KdPitch=1.0;
+			const KpVS=0.03, KiVS=0.01;              // sesgo de VS≈0 (muy suave)
+		
+			// Velocidad mínima para no forzar (evita trompos)
+			const V = Cesium.Cartesian3.magnitude(state.planeVelocity);
+			const hT = viewer.scene.globe.getHeight(state.carto);
+			const terrain = (typeof hT === 'number') ? hT : 0;
+			const agl = state.carto.height - terrain; // m AGL
+		
+			// Protección de baja velocidad / baja altura
+			if (V < 35) {
+			// Muy lento: morro-ABAJO suave y sin bank para recuperar energía
+			return { roll: 0, pitch: -0.12, yaw: 0 };
+			}
+			if (V < 55) {
+			bankMax = Cesium.Math.toRadians(10); // giros suaves cuando falta energía
+			}
+			if (agl < 150 && verticalSpeed < -3) {
+			// cerca del suelo descendiendo: reducir bank agresivamente
+			bankMax = Math.min(bankMax, Cesium.Math.toRadians(8));
+			}
+		
+			// Error de rumbo envuelto a [-180,180] usando el rumbo objetivo real (radianes)
+			const hdgErrRad = wrapHdgErr(autopilotHeading, state.hpr.heading);
+			const hdgErrDeg = Cesium.Math.toDegrees(hdgErrRad);
+		
+			// Integrador con anti-windup + deadband
+			let bankTarget = 0;
+			if (Math.abs(hdgErrDeg) > deadbandHdeg) {
+			apHdgInt = Cesium.Math.clamp(apHdgInt + hdgErrDeg*dt, -Imax, Imax);
+			bankTarget = Cesium.Math.clamp(Cesium.Math.toRadians(KpH*hdgErrDeg + KiH*apHdgInt), -bankMax, bankMax);
+			} else {
+			apHdgInt *= 0.98; // drenar integral en banda
+			}
+		
+			// Roll command (bank hold) con damping de tasa
+			const rollErr = bankTarget - state.hpr.roll;
+			const rollCmd = Cesium.Math.clamp(KpBank*rollErr - KdRoll*state.angularVel.x, -MAX_DEF, MAX_DEF);
+		
+			// Coordinación simple (evitar guiñada libre)
+			const yawCmd  = Cesium.Math.clamp(-KdYaw * state.angularVel.z, -MAX_DEF, MAX_DEF);
+		
+			// Mantener actitud 0° con un ligerísimo sesgo a VS≈0 (si la potencia lo permite)
+			// (No es ALT HOLD: solo “trim” para no hundirse si puede sostenerse)
+			const vsTarget = 0; // m/s
+			apAltInt = Cesium.Math.clamp(apAltInt + (vsTarget - verticalSpeed)*dt, -200, 200);
+			const vsBias = Cesium.Math.clamp(KpVS*(vsTarget - verticalSpeed) + KiVS*apAltInt, -0.25, 0.25);
+			const pitchErr = - state.hpr.pitch; // objetivo 0 rad
+			const pitchCmd = Cesium.Math.clamp(KpPitch*pitchErr - KdPitch*state.angularVel.y + vsBias, -MAX_DEF, MAX_DEF);
+
+			// Desenganche de emergencia si estamos muy bajos y aún bajando fuerte
+			if (agl < 50 && verticalSpeed < -1) {
+				autopilot = false;
+				return { roll: 0, pitch: 0, yaw: 0 };
+			}
+			return { roll: rollCmd, pitch: pitchCmd, yaw: yawCmd };
+		}
+		
+		// Controlador HDG HOLD puro (solo roll/yaw para converger al rumbo objetivo)
+		function computeHeadingHoldCommands(state, dt) {
+			const MAX_DEF = Math.PI / 18;           // ±10° mando
+			let   bankMax = Cesium.Math.toRadians(22);
+			const KpAz = 0.035;                     // ganancia de rumbo (deg → rad de bank)
+			const KdRoll = 0.6, KdYaw = 0.4;        // amortiguados
+			const V = Cesium.Cartesian3.magnitude(state.planeVelocity);
+			if (V < 35) return { roll:0, pitch:0, yaw:0 };
+			if (V < 55) bankMax = Cesium.Math.toRadians(10);
+			// Rumbo actual (brújula)
+			const hdgNow = computeCompassFromForward(state.position, state.forward); // 0..360
+			const errDeg = wrap180(targetHeadingDeg - hdgNow);                        // -180..+180
+			// Bank objetivo proporcional al error de azimut (CW+ ⇒ bank a la derecha)
+			const bankTarget = Cesium.Math.clamp(Cesium.Math.toRadians(KpAz * errDeg), -bankMax, bankMax);
+			// Control de roll con damping por tasa
+			const rollErr = bankTarget - state.hpr.roll;
+			const rollCmd = Cesium.Math.clamp(2.2*rollErr - KdRoll*state.angularVel.x, -MAX_DEF, MAX_DEF);
+			const yawCmd  = Cesium.Math.clamp(-KdYaw * state.angularVel.z, -MAX_DEF, MAX_DEF);
+			return { roll: rollCmd, pitch: 0, yaw: yawCmd };
+		}
+				
+		//--------------------------------------------------------------------------------------
+		
+		// Pre-reservar vectores para evitar allocs cada frame
+		const tmpForwardVel   = new Cesium.Cartesian3();
+		const tmpVerticalVel  = new Cesium.Cartesian3();
+		const planeVelocity   = new Cesium.Cartesian3();
+		const tmpCross1       = new Cesium.Cartesian3();
+		const tmpCross2       = new Cesium.Cartesian3();
+		
+		// Debug de colisiones
+		let collisionMarker = null;
+		let showCollisionMarker = true;
+		let lastCollisionAt = null;
+		
+		// --- Overlay de crash (versión única y encapsulada) ---
+		let simCrashOverlayEl = null;
+		function ensureSimCrashOverlay() {
+			if (!simCrashOverlayEl) {
+				simCrashOverlayEl = document.getElementById('crashOverlay');
+				if (!simCrashOverlayEl) {
+				simCrashOverlayEl = document.createElement('div');
+				simCrashOverlayEl.id = 'crashOverlay';
+				simCrashOverlayEl.style.cssText = 'position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.65);color:#fff;z-index:999999;font:600 22px/1.2 system-ui';
+				simCrashOverlayEl.innerHTML = '<div style="text-align:center"><div style="font-size:28px;margin-bottom:8px">¡Colisión detectada!</div><div>Simulación detenida. Pulsa <kbd>R</kbd> para reintentar.</div></div>';
+				document.body.appendChild(simCrashOverlayEl);
+				}
+			}
+			// Traer siempre al frente por si el viewer añadió nodos después
+			document.body.appendChild(simCrashOverlayEl);
+			return simCrashOverlayEl;
+		}
+	
+		function placeCollisionMarker(carto, terrainHeight) {
+		const pos = Cesium.Cartesian3.fromRadians(carto.longitude, carto.latitude, terrainHeight + 0.5);
+		if (!collisionMarker) {
+			collisionMarker = viewer.entities.add({
+			id: "collisionMarker",
+			position: pos,
+			point: { pixelSize: 14, color: Cesium.Color.RED, outlineColor: Cesium.Color.WHITE, outlineWidth: 2, show: true },
+			label: {
+				text: "COLISIÓN",
+				font: "bold 18px sans-serif",
+				pixelOffset: new Cesium.Cartesian2(0, -24),
+				fillColor: Cesium.Color.RED,
+				outlineColor: Cesium.Color.WHITE,
+				outlineWidth: 2,
+				style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+				showBackground: true,
+				backgroundColor: Cesium.Color.fromAlpha(Cesium.Color.BLACK, 0.6),
+				verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+				show: true
+			},
+			show: true
+			});
+		} else {
+			collisionMarker.position = pos;
+			collisionMarker.show = !!showCollisionMarker;
+		}
+		}
+	
+		// Teclas globales (sin usar 'ev' en ningún sitio)
+		window.addEventListener('keydown', (e) => {
+			if (e.key.toLowerCase() === 'r' && SIM.crashed) {
+				SIM.crashed = false;
+				const ov = ensureSimCrashOverlay(); ov.style.display = 'none';
+				SIM.lastTime = performance.now();
+				const carto = Cesium.Ellipsoid.WGS84.cartesianToCartographic(position);
+				const hT = viewer.scene.globe.getHeight(carto) || 0;
+				// Reaparece con energía: +1000 m AGL, VS=0 y velocidad hacia delante razonable
+				position = Cesium.Cartesian3.fromRadians(carto.longitude, carto.latitude, hT + 1000);
+				verticalSpeed = 0;
+				forwardSpeed  = Math.max(forwardSpeed, 220); // ≈ 792 km/h
+				throttle      = Math.max(throttle, 0.75);
+				SIM.afterburner = false; // reentrada estable sin AB
+			}
+			if (e.key.toLowerCase() === 'm') {
+				showCollisionMarker = !showCollisionMarker;
+				if (collisionMarker) collisionMarker.show = showCollisionMarker;
+				console.log('[SIM] Marcador de colisión:', showCollisionMarker ? 'ON' : 'OFF');
+			}
+		});
+
+		// Pausar física cuando la pestaña no está visible
+		document.addEventListener('visibilitychange', ()=>{
+			SIM.paused = document.hidden;
+			SIM.lastTime = performance.now();
+		});
+				
+		// ── Bucle principal protegido ────────────────────────────────────────────
+		viewer.scene.postRender.addEventListener(() => {
+			try {
+				const now = performance.now();
+				// dt en segundos
+				let deltaTime = (now - lastNow) * 0.001;
+				// saneo por si el tab se pausó o hay valores raros
+				if (!Number.isFinite(deltaTime) || deltaTime <= 0) deltaTime = 0.016; // ~60 FPS
+				// cap máx para integración estable
+				if (deltaTime > 0.05) deltaTime = 0.05; // 50 ms
+				lastNow = now;
+				// Cap por si la pestaña se pausa: evita integraciones explosivas
+				if (deltaTime > 0.05) deltaTime = 0.05;
+				if (SIM.paused || SIM.crashed) return;
+				if (!position || !orientationQuat) return;
+				if (_simPaused || _simCrashed) return;
+				if (!Number.isFinite(deltaTime) || deltaTime <= 0) return;
+				if (deltaTime > 0.05) deltaTime = 0.05; // clamp dt
+			
+				// 0) Lectura de inputs (throttle +/-)
+				const throttleStep = 0.5 * deltaTime;
+				if (keys['Equal'] || keys['NumpadAdd'])      throttle = Math.min(throttle + throttleStep, 1.0);
+				if (keys['Minus'] || keys['NumpadSubtract']) throttle = Math.max(throttle - throttleStep, 0.0);
+			
+				// 1) Recalcular rotMatrix, ejes y carto
+				const state = computeFrameState();
+				const { rotMatrix, forward, right, surfaceNormal, hpr, carto } = state;
+			
+				// Guardas por si el terreno devuelve undefined
+				if (!carto || !Number.isFinite(carto.height)) return;
+			
+				const aero = computeAerodynamics(state.planeVelocity, state.forward, state.right, state.carto, state.hpr);
+				lastSpeed  = state.speed;
+				_simLastRho = Number.isFinite(aero.rho) ? aero.rho : _simLastRho;
+			
+				// 2) Piloto automático vs. HDG Hold vs. manual
+				let rollCmd = 0, pitchCmd = 0, yawCmd = 0;
+				if (autopilot) {
+				// AP: mantener potencia congelada (por petición del usuario)
+				throttle = autopilotThrottle;
+				({ roll: rollCmd, pitch: pitchCmd, yaw: yawCmd } = computeAutopilotCommands(state, deltaTime));
+				} else {
+				// AP OFF: limpiar estado para la próxima activación
+				if (apHdgInt !== 0 || apPhase !== "LEVEL") { apHdgInt = 0; apPhase = "LEVEL"; }
+				// HDG HOLD independiente (solo roll/yaw)
+				if (hdgHold) {
+					const c = computeHeadingHoldCommands(state, deltaTime);
+					rollCmd = c.roll; yawCmd = c.yaw; /* pitchCmd = 0 */
+				}
+				}
+			
+				// 3) Rotación (incluye momento de fuselaje con aoa)
+				updateRotation(deltaTime, aero.qd, rollCmd, pitchCmd, yawCmd, aero.aoa, state.hpr);
+			
+				// 4) Fuerzas longitudinales/verticales
+				applyLiftAndGravity(deltaTime, aero.liftForce);
+				applyParasiteDrag(deltaTime, state.planeVelocity, aero.D_parasite);
+				applyInducedDrag(deltaTime, state.planeVelocity, state.forward, aero.D_induced);
+				applyThrottleAndFlightPath(deltaTime, state.forward, state.surfaceNormal);
+			
+				// 5) Integración de posición y cámara
+				updatePosition(deltaTime, state.forward, state.surfaceNormal);
+				updateCamera(computeFrameState());
+				updateHUD(state, aero, deltaTime, gravity);
+			
+				// 6) Efectos y colisiones
+				updateProjectiles(deltaTime);
+				updateSmoke(deltaTime);
+			
+				if (detectTerrainCollision(state.carto)) {
+				autopilot = false;       // cortar AP si hay impacto
+				return;                  // NO seguir integrando este frame
+				}
+			
+			} catch (err) {
+				console.error('[SIM ERROR]', err && err.stack ? err.stack : err);
+				_simPaused = true;
+			
+				// Overlay de error (si no existe, crearlo)
+				let ov = document.getElementById('crashOverlay');
+				if (!ov) {
+				ov = document.createElement('div');
+				ov.id = 'crashOverlay';
+				ov.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.7);color:#fff;z-index:999999;font:600 18px system-ui;text-align:center;padding:20px';
+				ov.innerHTML = '<div>⚠️ Error en simulación<br><small>Revisa consola (F12) para el stacktrace.<br>Pulsa <kbd>R</kbd> para reintentar.</small></div>';
+				document.body.appendChild(ov);
+				}
+				ov.style.display = 'flex';
+			}
+		});
+
+		
+		// Desacopla el stall
+		function computeLiftCoefficient(aoa) {
+			const stall  = Cesium.Math.toRadians(14);
+			const maxAoA = Cesium.Math.toRadians(40);
+			const sign = Math.sign(aoa)||1;
+			const abs  = Math.abs(aoa);
+			if (abs <= stall) return SIM.CL0 + SIM.CL_ALPHA * aoa;
+			const CLmax = SIM.CL0 + SIM.CL_ALPHA * sign * stall;
+			const t = Cesium.Math.clamp((abs - stall)/(maxAoA - stall), 0, 1);
+			return (1 - t) * CLmax;
+		}
+		
+		function computeAerodynamics(planeVelocity, forward, right, carto, hprForBank = null) {
+			const V = Cesium.Cartesian3.magnitude(planeVelocity);
+			let liftForce = 0, aoa = 0, qd = 0, Dp = 0, Di = 0;
+			// Protección baja velocidad: sin aire ≈ sin fuerzas aerodinámicas útiles
+			if (V > 5) {
+				const flightDir = Cesium.Cartesian3.normalize(planeVelocity, new Cesium.Cartesian3());
+				const cosAoA = Cesium.Math.clamp(Cesium.Cartesian3.dot(flightDir, forward), -1, 1);
+				const unsignedAoA = Math.acos(cosAoA);
+				const crossFF = Cesium.Cartesian3.cross(forward, flightDir, new Cesium.Cartesian3());
+				const sign = Math.sign(Cesium.Cartesian3.dot(crossFF, right)) || 1;
+				// Limita AoA para que el modelo no entregue CL imposibles
+				aoa = Cesium.Math.clamp(unsignedAoA * sign, Cesium.Math.toRadians(-22), Cesium.Math.toRadians(22));
+				const CL = computeLiftCoefficient(aoa);
+				const AR = (SIM.wingSpan * SIM.wingSpan) / SIM.wingArea;
+				const rho = rho0 * Math.exp(-carto.height / 8500);
+				qd = 0.5 * rho * V * V;
+				liftForce = qd * SIM.wingArea * CL;
+				const CDi = (CL*CL) / (Math.PI * AR * SIM.e_oswald);
+				const mach = V / 340;
+				const wave = Math.max(0, mach - SIM.machDrag.M0);
+				const CDw  = wave > 0 ? (wave*wave) / SIM.machDrag.k : 0;
+				const CDp  = SIM.CD0 + SIM.k_form + CDw;
+				Di = qd * SIM.wingArea * CDi;
+				Dp = qd * SIM.wingArea * CDp;
+				const rollAbs = hprForBank ? Math.abs(hprForBank.roll) : 0;
+				const liftBankFactor = (hprForBank ? (0.25 + 0.75*Math.cos(rollAbs)) : 1.0);
+				liftForce *= liftBankFactor;
+			}
+			const rhoOut = (V > 5) ? (qd * 2) / (V * V) : rho0;
+			return { liftForce, aoa, qd, rho: rhoOut, D_parasite: Dp, D_induced: Di };
+		}
+		
+		function applyLiftAndGravity(dt, liftForce) {
+			// Gravedad pura
+			verticalSpeed -= gravity * dt;
+			// Aporte de sustentación vertical (ya viene modulado por bank)
+			if (liftForce) verticalSpeed += (liftForce / SIM.mass) * dt;
+			// Un pelín de amortiguación para evitar oscilaciones
+			verticalSpeed *= (1 - 0.06 * dt);
+			 // Más realista para jet: recorta a ±120 m/s (~432 km/h de vario extremo)
+			verticalSpeed = Cesium.Math.clamp(verticalSpeed, -120, 120);
+		}
+		
+		function applyParasiteDrag(dt, planeVelocity, Dp) {
+			const V = Cesium.Cartesian3.magnitude(planeVelocity);
+			if (V < 0.1 || Dp <= 0) return;
+			const dragDir = Cesium.Cartesian3.normalize(planeVelocity, new Cesium.Cartesian3());
+			Cesium.Cartesian3.negate(dragDir, dragDir);
+			const dragAcc = (Dp / SIM.mass);
+			const dv = Cesium.Cartesian3.multiplyByScalar(dragDir, dragAcc * dt, new Cesium.Cartesian3());
+			const newVel = Cesium.Cartesian3.add(planeVelocity, dv, new Cesium.Cartesian3());
+			forwardSpeed = Math.max(0, Cesium.Cartesian3.dot(newVel, Cesium.Matrix3.multiplyByVector(
+				Cesium.Matrix3.fromQuaternion(orientationQuat), Cesium.Cartesian3.UNIT_X, new Cesium.Cartesian3()
+			)));
+		}
+		
+		function applyInducedDrag(dt, planeVelocity, forward, dragForce) {
+			const V = Cesium.Cartesian3.magnitude(planeVelocity);
+			if (V < 0.1) return;
+			// Drag vector opuesto a velocidad
+			const dragDir = Cesium.Cartesian3.normalize(planeVelocity, new Cesium.Cartesian3());
+			Cesium.Cartesian3.negate(dragDir, dragDir);
+			// Suaviza drag a muy baja V para no “clavar” al despegar/trepar
+			const lowVFactor = V < 80 ? (0.5 + 0.5*V/80) : 1.0; // 0.5..1.0
+			const dragAcc = (dragForce / SIM.mass) * lowVFactor;
+			const dv = Cesium.Cartesian3.multiplyByScalar(dragDir, dragAcc * dt, new Cesium.Cartesian3());
+			const newVel = Cesium.Cartesian3.add(planeVelocity, dv, new Cesium.Cartesian3());
+			// Proyecta de nuevo sobre forward
+			forwardSpeed = Math.max(0, Cesium.Cartesian3.dot(newVel, forward));
+		}
+				
+		/**
+		* Aplica la dinámica de avance simple: empuje del motor y arrastre aerodinámico.
+		* Modifica forwardSpeed.
+		* @param {number} dt — Intervalo de tiempo en segundos.
+		*/
+		function thrustAvailable(throttle, mach, rhoRatio){
+			// Base MIL: lineal con throttle, cae con Mach a partir de ~0.6
+			const fM_mil = Math.max(0.55, 1 - 0.22 * Math.max(0, mach - 0.6));
+			let thrust = throttle * SIM.maxThrustMIL * fM_mil;
+			if (SIM.afterburner) {
+				// AB añade “extra” que también cae, pero menos a alto Mach (≈ 1.2+)
+				const fM_ab  = Math.max(0.65, 1 - 0.10 * Math.max(0, mach - 1.2));
+				const extra  = throttle * (SIM.maxThrustAB - SIM.maxThrustMIL) * fM_ab;
+				thrust += Math.max(0, extra);
+			}
+			// Lapse por densidad (suave)
+			return thrust * Math.pow(rhoRatio, 0.80);
+		}
+		
+		function applyThrottleAndFlightPath(dt, forward, surfaceNormal) {
+			// Empuje SOLO aporta aceleración a lo largo de la trayectoria; el drag ya se aplicó aparte.
+			const rhoRatio = Math.max(_simLastRho || rho0, 0.2) / rho0;
+			const mach     = Math.max(0, lastSpeed / 340);
+			const T        = thrustAvailable(throttle, mach, rhoRatio);
+	
+			// Reconstruir velocidad real (vector) sin depender de 'state'
+			const vForward = Cesium.Cartesian3.multiplyByScalar(
+			forward, forwardSpeed, new Cesium.Cartesian3()
+			);
+			const vVert = Cesium.Cartesian3.multiplyByScalar(
+			surfaceNormal, verticalSpeed, new Cesium.Cartesian3()
+			);
+			const planeVelNow = Cesium.Cartesian3.add(
+			vForward, vVert, new Cesium.Cartesian3()
+			);
+	
+			// γ a partir de la VELOCIDAD real (no del 'forward')
+			const sinG = sinGammaFromVelocity(position, planeVelNow);
+			// g*sinγ RESTA en ascenso (sinγ>0) y SUMA en descenso (sinγ<0)
+			const dV = (T / SIM.mass) - (gravity * sinG);
+			forwardSpeed = Math.max(0, forwardSpeed + dV * dt);
+		}
+		
+		/**
+		* Calcula y aplica el desplazamiento del avión en el espacio global.
+		* Modifica la variable global `position`.
+		* @param {number} dt — Intervalo de tiempo en segundos.
+		* @param {Cesium.Cartesian3} forward — Eje X local del avión.
+		* @param {Cesium.Cartesian3} surfaceNormal — Normal al terreno.
+		*/
+		function updatePosition(dt, forward, surfaceNormal) {
+			const stepForward = Cesium.Cartesian3.multiplyByScalar(
+				forward,
+				forwardSpeed * dt,
+				new Cesium.Cartesian3()
+			);
+			const gravityStep = Cesium.Cartesian3.multiplyByScalar(
+				surfaceNormal,
+				verticalSpeed * dt,
+				new Cesium.Cartesian3()
+			);
+			position = Cesium.Cartesian3.add(
+				position,
+				Cesium.Cartesian3.add(stepForward, gravityStep, new Cesium.Cartesian3()),
+				new Cesium.Cartesian3()
+			);
+		}
+		
+		/**
+		* Recalcula todos los vectores básicos y retorna el estado del frame.
+		*/
+		function computeFrameState() {
+			  const rotMatrix     = Cesium.Matrix3.fromQuaternion(orientationQuat);
+			  const forward       = Cesium.Matrix3.multiplyByVector(rotMatrix, Cesium.Cartesian3.UNIT_X, new Cesium.Cartesian3());
+			  const right         = Cesium.Matrix3.multiplyByVector(rotMatrix, Cesium.Cartesian3.UNIT_Y, new Cesium.Cartesian3());
+			  const up            = Cesium.Matrix3.multiplyByVector(rotMatrix, Cesium.Cartesian3.UNIT_Z, new Cesium.Cartesian3());
+			  const surfaceNormal = Cesium.Ellipsoid.WGS84.geodeticSurfaceNormal(position, new Cesium.Cartesian3());
+			  const carto         = Cesium.Ellipsoid.WGS84.cartesianToCartographic(position);
+			  const hpr           = Cesium.HeadingPitchRoll.fromQuaternion(orientationQuat);
+			  const planeVelocity = Cesium.Cartesian3.add(
+				Cesium.Cartesian3.multiplyByScalar(forward, forwardSpeed, new Cesium.Cartesian3()),
+				Cesium.Cartesian3.multiplyByScalar(surfaceNormal, verticalSpeed, new Cesium.Cartesian3()),
+				new Cesium.Cartesian3()
+			  );
+			  const speed      = Cesium.Cartesian3.magnitude(planeVelocity);
+			  const angularVel = Cesium.Cartesian3.clone(ω);
+			  // IMPORTANTE: incluimos position y angularVel para updateCamera/updateHUD
+			  return { rotMatrix, forward, right, up, surfaceNormal, carto, hpr, planeVelocity, speed, angularVel, position };
+		}
+		
+		/**
+		 * Actualiza la posición de la cámara para que orbite detrás del avión.
+		 * @param {{ rotMatrix: Cesium.Matrix3, position: Cesium.Cartesian3 }} state
+		 */
+		function updateCamera(state) {
+			const { rotMatrix, position } = state;
+			const center = Cesium.Cartesian3.clone(position);
+						
+			const localOffset = new Cesium.Cartesian3(
+				orbitRadius * Math.cos(orbitAngles.pitch) * Math.sin(orbitAngles.yaw),
+				orbitRadius * Math.cos(orbitAngles.pitch) * Math.cos(orbitAngles.yaw),
+				orbitRadius * Math.sin(orbitAngles.pitch)
+			);
+						
+			const offset    = Cesium.Matrix3.multiplyByVector(rotMatrix, localOffset, new Cesium.Cartesian3());
+			const cameraPos = Cesium.Cartesian3.add(center, offset, new Cesium.Cartesian3());
+			const dir       = Cesium.Cartesian3.normalize(
+			Cesium.Cartesian3.subtract(center, cameraPos, new Cesium.Cartesian3()),
+				new Cesium.Cartesian3()
+			);
+			const upVec     = Cesium.Matrix3.multiplyByVector(rotMatrix, Cesium.Cartesian3.UNIT_Z, new Cesium.Cartesian3());
+						
+			viewer.scene.camera.setView({
+				destination : cameraPos,
+				orientation : { direction: dir, up: upVec }
+			});
+		}
+		
+		/**
+		 * Detecta colisiones con el terreno y gestiona la respuesta.
+		 * @param {Cesium.Cartographic} carto - Posición geográfica actual del avión.
+		 * @param {number} verticalSpeed - Velocidad vertical actual.
+		 * @returns {boolean} - True si hubo colisión grave y se detuvo la simulación.
+		 */
+		function detectTerrainCollision(carto) {
+			const hT = viewer.scene.globe.getHeight(carto);
+			const terrain = (typeof hT === 'number' && Number.isFinite(hT)) ? hT : 0;
+			const agl = carto.height - terrain;
+			if (agl <= 0.5) {
+				// clamp y detener
+				position = Cesium.Cartesian3.fromRadians(carto.longitude, carto.latitude, terrain + 0.5);
+				forwardSpeed = 0;
+				verticalSpeed = 0;
+				// Marker + log
+				placeCollisionMarker(carto, terrain);
+				lastCollisionAt = new Date();
+				console.warn('[SIM] Colisión detectada @', lastCollisionAt.toISOString(),
+							'lon/lat:', Cesium.Math.toDegrees(carto.longitude).toFixed(6)+','+
+										Cesium.Math.toDegrees(carto.latitude).toFixed(6),
+							'terreno(m):', terrain.toFixed(1));
+				// Overlay y estado (forzado al frente)
+				SIM.crashed = true;
+				const ov = ensureSimCrashOverlay();
+				ov.style.display = 'flex';
+				console.warn('[SIM] Overlay de colisión mostrado');
+				return true;
+			}
+			return false;
+		}
+		
+		/**
+		* Actualiza el HUD con los datos de vuelo.
+		* @param {Object} state - Estado del frame actual.
+		* @param {Cesium.Cartographic} state.carto
+		* @param {number} rollCmd   — mando roll normalizado
+		* @param {number} pitchCmd  — mando pitch normalizado
+		* @param {number} yawCmd    — mando yaw normalizado
+		* @param {Cesium.HeadingPitchRoll} hpr — orientación actual del avión
+		* @param {Cesium.Matrix3} state.rotMatrix
+		* @param {Cesium.Cartesian3} state.forward
+		* @param {Cesium.Cartesian3} state.surfaceNormal
+		* @param {number} state.speed
+		* @param {Cesium.Cartesian3} state.angularVel
+		* @param {Cesium.Cartesian3} state.planeVelocity
+		* @param {Object} aero - Aerodinámica actual.
+		* @param {number} aero.aoa - Ángulo de ataque.
+		* @param {number} deltaTime - Tiempo entre frames.
+		* @param {number} gravity - Constante de gravedad.
+		*/
+		function updateHUD(state, aero, deltaTime, gravity) {
+			const { carto, hpr, rotMatrix, forward, surfaceNormal, planeVelocity, angularVel } = state;
+			
+			// Velocidades
+			const newForwardVel = Cesium.Cartesian3.multiplyByScalar(forward, forwardSpeed, new Cesium.Cartesian3());
+			const newVerticalVel = Cesium.Cartesian3.multiplyByScalar(surfaceNormal, verticalSpeed, new Cesium.Cartesian3());
+			const newPlaneVel = Cesium.Cartesian3.add(newForwardVel, newVerticalVel, new Cesium.Cartesian3());
+			const totalSpeed = Cesium.Cartesian3.magnitude(newPlaneVel);
+			
+			// Coordenadas y ángulos
+			const lat = Cesium.Math.toDegrees(carto.latitude).toFixed(5);
+			const lon = Cesium.Math.toDegrees(carto.longitude).toFixed(5);
+			const altVal = carto.height.toFixed(1);
+			const pitchDeg = Cesium.Math.toDegrees(hpr.pitch).toFixed(1);
+			const yawDeg   = Cesium.Math.toDegrees(hpr.heading).toFixed(1);
+			const rollDeg  = Cesium.Math.toDegrees(hpr.roll).toFixed(1);
+			
+			// Velocidades angulares
+			const rollRateDeg  = Cesium.Math.toDegrees(angularVel.x).toFixed(1);
+			const pitchRateDeg = Cesium.Math.toDegrees(angularVel.y).toFixed(1);
+			const yawRateDeg   = Cesium.Math.toDegrees(angularVel.z).toFixed(1);
+			
+			// AoA y carga G
+			const aoaDeg = Cesium.Math.toDegrees(aero.aoa).toFixed(1);
+			const accel = Cesium.Cartesian3.subtract(planeVelocity, prevPlaneVelocity, new Cesium.Cartesian3());
+			Cesium.Cartesian3.divideByScalar(accel, deltaTime, accel);
+			const gravVec = new Cesium.Cartesian3(0, 0, -gravity);
+			const totalAccel = Cesium.Cartesian3.add(accel, gravVec, new Cesium.Cartesian3());
+			const gLoad = (Cesium.Cartesian3.magnitude(totalAccel) / gravity).toFixed(2);
+			prevPlaneVelocity = Cesium.Cartesian3.clone(planeVelocity);
+			
+			// Actualizar DOM
+			document.getElementById("coords").textContent   = `${lat}, ${lon}`;
+			document.getElementById("alt").textContent      = altVal;
+			document.getElementById("spd").textContent      = (totalSpeed * 3.6).toFixed(0);
+			document.getElementById("throttle").textContent = (throttle * 100).toFixed(0);
+			const abEl = document.getElementById("ab"); if (abEl) abEl.textContent = SIM.afterburner ? "ON" : "OFF";
+			const vsEl = document.getElementById("vs"); if (vsEl) vsEl.textContent = verticalSpeed.toFixed(1);
+			document.getElementById("pitch").textContent    = pitchDeg;
+			document.getElementById("yaw").textContent      = yawDeg;
+			document.getElementById("roll").textContent     = rollDeg;
+			document.getElementById("rollRate").textContent  = rollRateDeg;
+			document.getElementById("pitchRate").textContent = pitchRateDeg;
+			document.getElementById("yawRate").textContent   = yawRateDeg;
+			document.getElementById("aoa").textContent       = aoaDeg;
+			document.getElementById("gLoad").textContent     = gLoad + " g";
+			
+			// Brújula: pista+bug
+			const hdgNow = computeCompassFromForward(state.position, forward); // 0–360
+			const track = document.getElementById('compassTrack'); // contenedor
+			if (!track.dataset.built) {
+				track.innerHTML = ""; // limpiar
+				const pxPerDeg = 4;
+				for (let d = -180; d <= 180; d += 10) {
+				const x = d*pxPerDeg;
+				const t = document.createElement('div');
+				t.className = 'tick ' + (d % 30 === 0 ? 't30' : 't10');
+				t.style.left = `calc(50% + ${x}px)`;
+				track.appendChild(t);
+				if (d % 30 === 0) {
+					const lab = document.createElement('div');
+					lab.className = 'tick-label';
+					lab.style.left = `calc(50% + ${x}px)`;
+					const h = (d + 360) % 360;
+					lab.textContent = (h===0?'N':h===90?'E':h===180?'S':h===270?'W':String(h).padStart(3,'0'));
+					track.appendChild(lab);
+				}
+				}
+				track.dataset.built = '1';
+			}
+			const bugEl = document.getElementById('compassBug');
+			const flag  = document.getElementById('hdgFlag');
+			const bugTxt= document.getElementById('hdgBug');
+			if (track && bugEl && flag && bugTxt) {
+			// desplazamos la retícula para que el valor actual quede centrado
+			const pxPerDeg = 4; // 5 px por grado (ajusta a tu gusto)
+			const dx = - (hdgNow % 360) * pxPerDeg + (track.clientWidth/2);
+			track.style.transform = `translateX(${dx}px)`;
+			// bug (diamante) a su posición relativa
+			const bugDx = (( (hdgBugDeg - hdgNow + 540) % 360) - 180) * pxPerDeg + (track.clientWidth/2);
+			bugEl.style.left = `${bugDx - 8}px`; // centrar triángulo
+			flag.textContent = hdgHold ? 'ON' : 'OFF';
+			bugTxt.textContent = ('000' + Math.round(hdgBugDeg)).slice(-3);
+			}
+			
+			 // Brújula
+			const hdgNowCompass = computeCompassFromForward(state.position, state.forward);
+			const hdgNowStr = Math.round(hdgNowCompass).toString().padStart(3,'0');
+			const hdgSetStr = Math.round(targetHeadingDeg).toString().padStart(3,'0');
+			const hdgNowEl = document.getElementById("hdgNow"); if (hdgNowEl) hdgNowEl.textContent = hdgNowStr;
+			const hdgSetEl = document.getElementById("hdgSet"); if (hdgSetEl) hdgSetEl.textContent = hdgSetStr;
+			// Debug ocasional para validar conversiones
+			if (Math.random() < 0.01) {
+				console.debug(`[HDG] Compass=${hdgNowCompass.toFixed(1)}°, Target=${targetHeadingDeg.toFixed(1)}°`);
+			}
+			// Mostrar deflexiones reales (mandos) para no confundir con las tasas
+			const daDeg = (δa_current * 180/Math.PI).toFixed(1);
+			const deDeg = (δe_current * 180/Math.PI).toFixed(1);
+			const drDeg = (δr_current * 180/Math.PI).toFixed(1);
+			const ctrlDeflEl = document.getElementById("ctrlDefl");
+			if (ctrlDeflEl) ctrlDeflEl.textContent = `${daDeg} / ${deDeg} / ${drDeg}`;
+			
+			// ======= Estados visuales de métricas (OK/WARN/ALERT) =======
+			// Umbrales: ajusta a tu gusto/ensayo
+			const aoaVal = Math.abs(parseFloat(aoaDeg));
+			const gVal   = Math.abs(parseFloat(gLoad));
+			const vsVal  = parseFloat(vsEl ? vsEl.textContent : "0");
+			const spdVal = parseFloat(document.getElementById("spd").textContent||"0");
+		
+			function setState(el, state){
+				if (!el) return;
+				el.classList.remove('ok','warn','alert');
+				if (state) el.classList.add(state);
+			}
+			const boxAoA = document.getElementById("aoa").closest('.hud-box');
+			const boxG   = document.getElementById("gLoad").closest('.hud-box');
+			const boxVS  = document.getElementById("vs").closest('.hud-box');
+			const boxSPD = document.getElementById("spd").closest('.hud-box');
+		
+			// AoA
+			setState(boxAoA, aoaVal < 10 ? 'ok' : aoaVal < 14 ? 'warn' : 'alert');
+			// G-load
+			setState(boxG,   gVal < 3.5 ? 'ok' : gVal < 5.0 ? 'warn' : 'alert');
+			// Vertical Speed (m/s)
+			setState(boxVS,  Math.abs(vsVal) < 5 ? 'ok' : Math.abs(vsVal) < 12 ? 'warn' : 'alert');
+			// Speed (IAS aprox): warning bajo (<220 km/h) y overspeed (>1700 km/h) opcional
+			setState(boxSPD, spdVal > 220 ? (spdVal < 1700 ? 'ok' : 'warn') : 'warn');
+		}
+
+		/**
+		 * Actualiza todos los proyectiles disparados.
+		 * @param {number} dt — Tiempo transcurrido en segundos desde el último frame.
+		 */
+		function updateProjectiles(dt) {
+		  for (let i = projectiles.length - 1; i >= 0; i--) {
+			const proj = projectiles[i];
+			const alive = proj.update(dt);
+			if (!alive) {
+			  projectiles.splice(i, 1);
+			}
+		  }
+		}
+
+		/**
+		 * Actualiza todos los sistemas de humo activos.
+		 * @param {number} dt — Tiempo transcurrido en segundos desde el último frame.
+		 */
+		function updateSmoke(dt) {
+		  for (let s = activeSmokeSystems.length - 1; s >= 0; s--) {
+			const system = activeSmokeSystems[s];
+			for (let i = system.length - 1; i >= 0; i--) {
+			  if (!system[i].update(dt)) {
+				system.splice(i, 1);
+			  }
+			}
+			if (system.length === 0) {
+			  activeSmokeSystems.splice(s, 1);
+			}
+		  }
+		}
+		
+		/**
+		* Integra la dinámica rotacional de cuerpo rígido vía Newton–Euler
+		* @param {number} dt        — Intervalo de tiempo en segundos
+		* @param {number} qd        — Presión dinámica (para fuerzas de control)
+		* @param {Cesium.HeadingPitchRoll} hpr — Orientación actual del avión
+		* @param {Object} state     — Estado completo del frame (incluye state.carto.height)
+		*/
+		function updateRotation(dt, qd, rollCmd = 0, pitchCmd = 0, yawCmd = 0, aoa = 0, hpr) {
+			// 1) Deflexión de superficies: calcular objetivo y limitar velocidad de cambio
+			const maxDef = Math.PI / 18; // ±10°
+
+			// === MAPEADO DIRECTO DE MANDO A DEFLEXIÓN (simétrico en los 3 ejes) ===
+			// NINGUNA lógica de hold/trim/auto para el elevador: no se mueve si tú no mandas.
+			let δa_target = 0, δe_target = 0, δr_target = 0;
+			if (useGyro) {
+				// Solo móvil/tablet: giroscopio mapea a deflexión
+				δa_target = Cesium.Math.clamp(gyroAngles.roll,  -maxDef, maxDef);
+				δe_target = Cesium.Math.clamp(gyroAngles.pitch, -maxDef, maxDef);
+				δr_target = Cesium.Math.clamp(gyroAngles.yaw,   -maxDef, maxDef);
+				} else {
+				// Teclado/PC
+				δa_target = (keys['ArrowLeft']  ? -maxDef : 0) + (keys['ArrowRight'] ? +maxDef : 0);
+				δe_target = (keys['ArrowDown']  ? -maxDef : 0) + (keys['ArrowUp']   ? +maxDef : 0);
+				δr_target = (keys['KeyQ']       ? +maxDef : 0) + (keys['KeyE']      ? -maxDef : 0);
+			}
+
+			// 3) Auto-level anula cualquier deflexión hasta nivelar
+			if (autoLevel) {
+				  const k_trim = 2.0;
+				  δa_target = Cesium.Math.clamp(-k_trim * ω.x, -maxDef, maxDef);
+				  δe_target = Cesium.Math.clamp(-k_trim * ω.y, -maxDef, maxDef);
+				  δr_target = Cesium.Math.clamp(-k_trim * ω.z, -maxDef, maxDef);
+				  if (Cesium.Cartesian3.magnitude(ω) < 0.1) {
+					autoLevel = false;
+				  }
+			}
+
+			// Suavizar hacia el objetivo con velocidad limitada
+			const step = maxDeflectionRate * dt;
+			δa_current += Cesium.Math.clamp(δa_target - δa_current, -step, step);
+			δe_current += Cesium.Math.clamp(δe_target - δe_current, -step, step);
+			δr_current += Cesium.Math.clamp(δr_target - δr_current, -step, step);
+
+			// Usar las deflexiones suavizadas
+			const δa = δa_current;
+			const δe = δe_current;
+			const δr = δr_current;
+
+			// 2) Torques aerodinámicos por deflexión directa: τ = qd · S · δ · l
+			const τx =  qd * S_aileron  * δa * l_aileron;   // roll
+			let   τy =  qd * S_elevator * δe * l_elevator;  // pitch: SOLO por deflexión (nada de hold oculto)
+			// Autoridad adaptativa con qd (más ayuda cuando qd bajo)
+			const qdRef = 0.5 * rho0 * 140 * 140;
+			const elevEff = 0.7 + 0.6*(1 - Cesium.Math.clamp(qd / qdRef, 0, 1));
+			τy *= elevEff;
+			const τz =  qd * S_rudder   * δr * l_rudder;    // yaw
+		 
+			// 2.5) Momento de fuselaje (pitching moment): τ_fus = qd·S·Cmα·AoA·l
+			const τ_fuselage = qd * SIM.wingArea * (Cm_ALPHA * aoa) * l_fuselage;
+			const totalτy = τy + τ_fuselage;
+
+			// 3) Damping rotacional (SAS): τ_d = -C_d_rot · ω  (aplica como torque aparte)
+			const C_d_rot_roll  = C_d_rot;
+			const C_d_rot_pitch = C_d_rot * 1.25;
+			const C_d_rot_yaw   = C_d_rot * 1.10;
+			const τd = new Cesium.Cartesian3(
+				-C_d_rot_roll  * ω.x,
+				-C_d_rot_pitch * ω.y,
+				-C_d_rot_yaw   * ω.z
+			);
+
+			// 4) Torque neto en cuerpo (superficies + fuselaje + damping)
+			const τ = Cesium.Cartesian3.add(
+			  new Cesium.Cartesian3(τx, totalτy, τz),
+			  τd,
+			  new Cesium.Cartesian3()
+			);
+	
+			  // 5) Compute ω×(I·ω)
+			  const Iω = Cesium.Matrix3.multiplyByVector(I, ω, new Cesium.Cartesian3());
+			  const ωIω = Cesium.Cartesian3.cross(ω, Iω, new Cesium.Cartesian3());
+
+			  // 6) α = I⁻¹·(τ - ω×(I·ω))
+			  const net = Cesium.Cartesian3.subtract(τ, ωIω, new Cesium.Cartesian3());
+			  const α = Cesium.Matrix3.multiplyByVector(Iinv, net, new Cesium.Cartesian3());
+
+			   // 7) Integrar velocidad angular
+			ω = Cesium.Cartesian3.add(ω, Cesium.Cartesian3.multiplyByScalar(α, dt, new Cesium.Cartesian3()), new Cesium.Cartesian3());
+
+			// 7.1) Limitar velocidades angulares a rangos realistas
+			ω.x = Cesium.Math.clamp(ω.x, -maxRollRate,  maxRollRate);
+			ω.y = Cesium.Math.clamp(ω.y, -maxPitchRate, maxPitchRate);
+			ω.z = Cesium.Math.clamp(ω.z, -maxYawRate,   maxYawRate);
+
+			 // 8) Integración incremental de quaternion usando ejes del cuerpo
+			const bodyToWorld = Cesium.Matrix3.fromQuaternion(orientationQuat);
+			const axisRoll  = Cesium.Matrix3.multiplyByVector(bodyToWorld, new Cesium.Cartesian3(1, 0, 0), new Cesium.Cartesian3());
+			const axisPitch = Cesium.Matrix3.multiplyByVector(bodyToWorld, new Cesium.Cartesian3(0, 1, 0), new Cesium.Cartesian3());
+			const axisYaw   = Cesium.Matrix3.multiplyByVector(bodyToWorld, new Cesium.Cartesian3(0, 0, 1), new Cesium.Cartesian3());
+
+			// Quaterniones incrementales alrededor de ejes locales
+			const qIncRoll  = Cesium.Quaternion.fromAxisAngle(axisRoll,  ω.x * dt);
+			const qIncPitch = Cesium.Quaternion.fromAxisAngle(axisPitch, ω.y * dt);
+			const qIncYaw   = Cesium.Quaternion.fromAxisAngle(axisYaw,   ω.z * dt);
+
+			// Aplicar en orden: roll → pitch → yaw
+			orientationQuat = Cesium.Quaternion.normalize(
+			  Cesium.Quaternion.multiply(
+				qIncYaw,
+				Cesium.Quaternion.multiply(
+				  qIncPitch,
+				  Cesium.Quaternion.multiply(qIncRoll, orientationQuat, new Cesium.Quaternion()),
+				  new Cesium.Quaternion()
+				),
+				new Cesium.Quaternion()
+			  ),
+			  new Cesium.Quaternion()
+			);
+		}
+
+
+		/*
+		Recursos: 	https://convert3d.org/app
+					https://www.figuro.io/Designer
+					https://app.sketchup.com/app?_gl=1*8i50n1*_gcl_au*NzcxNzI0MDc4LjE3NDk1NDE5NjA.
+					https://www.turbosquid.com/3d-models/f16-fighter-plane-815125
+					https://poly.pizza/
+					https://gltf-viewer.donmccurdy.com/
+		*/
+	})();
+</script>
+</body>
+</html>

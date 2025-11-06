@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Simulador de Vuelo • CesiumJS</title>
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.118/Build/Cesium/Cesium.js"></script>
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.118/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <style>
+    :root{
+      --hud-bg: rgba(10,14,18,.50);
+      --hud-stroke: rgba(255,255,255,.08);
+      --hud-glow: rgba(0,0,0,.35);
+      --hud-text: #fff;
+      --ok: #9fffa0; --warn: #ffd666; --alert: #ff7a7a; --accent:#22d1ff; --bug:#ffd35a;
+    }
+    html, body, #cesiumContainer{width:100%;height:100%;margin:0;overflow:hidden;color:var(--hud-text);font-family:system-ui,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif}
+    /* === HUD LAYOUT === */
+    .hud{position:fixed;inset:0;pointer-events:none;z-index:1000}
+	/* Canvas a pantalla completa para dibujar ladder/FPM/horizonte/roll-arc */
+	.hud-canvas{
+	position:absolute;
+	inset:0;
+	width:100%;
+	height:100%;
+	}
+    .hud-shadow{box-shadow:0 10px 30px var(--hud-glow),0 0 0 1px var(--hud-stroke) inset;backdrop-filter:blur(6px)}
+    .hud-top{position:absolute;left:12px;right:12px;bottom:12px;display:flex;gap:8px;justify-content:center;padding:8px;border-radius:14px;background:var(--hud-bg)}
+	/* Banda superior con “instrumentos” tipo GeoFS */
+	.hud-top{
+	position:absolute; left:10px; right:10px; bottom:10px;
+	display:flex; flex-wrap:wrap; gap:8px; align-items:stretch;
+	background: var(--hud-bg); padding:8px 10px; border-radius:12px;
+	}
+	.hud-box{
+	display:flex; align-items:baseline; gap:6px;
+	background: rgba(255,255,255,.02);
+	border-radius:10px; padding:6px 10px;
+	pointer-events:auto;
+	}
+	.hud-box > span{ opacity:.8; font-size:.9em }
+	.hud-box > strong{ font-variant-numeric: tabular-nums; font-size:1.05em }
+	.hud-box > small{ opacity:.75 }
+	.hud-box-sm{ padding:6px 8px; min-width:70px; justify-content:space-between }
+	.hud-box-wide{ min-width:140px; justify-content:space-between }
+	
+    .hud-compass{position:absolute;left:12px;right:12px;top:12px;height:64px;border-radius:14px;background:var(--hud-bg);overflow:hidden}
+	
+	/* Coordenadas abajo-derecha */
+.hud-coords{
+  position:absolute; right:10px; bottom: calc(10px + 64px);
+  background: var(--hud-bg); padding:6px 10px; border-radius:10px;
+  pointer-events:auto;
+}
+
+	
+    .hud-mid{position:absolute;left:12px;right:12px;top:92px;display:flex;justify-content:space-between;padding:8px;border-radius:12px;background:var(--hud-bg)}
+    .hud-flags{position:absolute;left:12px;bottom: calc(12px + 64px + 12px);font-size:.95em;background:var(--hud-bg);padding:6px 8px;border-radius:10px}
+    .hud-box{display:flex;align-items:baseline;gap:8px;padding:8px 10px;border-radius:8px}
+    .hud-box.ok{outline:1px solid rgba(144,238,144,.25)}
+    .hud-box.warn{outline:1px solid rgba(255,214,102,.25)}
+    .hud-box.alert{outline:1px solid rgba(255,122,122,.25)}
+    .hud-box > span{opacity:.8;font-size:.85em}
+    .hud-box > strong{font-size:1.2em}
+    /* Compass */
+    .compass-track{position:absolute;inset:0 0 0 0;white-space:nowrap}
+    .compass-track .tick{position:absolute;bottom:0;width:2px;background:#fff1;height:14px}
+    .compass-track .t30{height:22px;background:#fff8}
+    .compass-track .tick-label{position:absolute;top:6px;transform:translateX(-50%);font-weight:600;font-size:12px}
+    .compass-bug{position:absolute;top:36px;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:12px solid var(--bug)}
+    .compass-center{position:absolute;left:50%;top:0;bottom:0;width:2px;background:#fff9;transform:translateX(-1px)}
+    /* Overlay y controles móviles */
+    #mobileControls{position:fixed;bottom:10px;right:10px;display:none;flex-direction:column;align-items:center;gap:10px;z-index:1001;pointer-events:auto}
+    #crashOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.65);color:#fff;z-index:99999;font:600 22px/1.2 system-ui}
+    #throttleSlider{position:fixed;top:100px;width:50vh;transform:rotate(270deg);display:none;z-index:1001}
+    @media (max-width:680px){.hud-top{left:8px;right:8px;bottom:8px}.hud-compass{left:8px;right:8px;top:8px}.hud-flags{left:8px;bottom: calc(8px + 64px)}
+  .hud-coords{right:8px; bottom: calc(8px + 64px)}}
+    @media (prefers-reduced-motion:reduce){.hud-shadow{backdrop-filter:none}*{transition:none!important}}
+  </style>
+</head>
+<body>
+  <div id="cesiumContainer"></div>
+  <div class="hud">
+  
+    <!-- Capa canvas para elementos primarios del HUD (horizonte, ladder, FPM, roll arc) -->
+    <canvas id="hudCanvas" class="hud-canvas" aria-hidden="true"></canvas>
+
+    <div class="hud-compass hud-shadow">
+      <div class="compass-track" id="compassTrack"></div>
+      <div class="compass-bug" id="compassBug" aria-label="heading-bug"></div>
+      <div class="compass-center" aria-hidden="true"></div>
+    </div>
+
+    <div class="hud-top hud-shadow">
+      <div class="hud-box" id="boxSPD"><span>IAS</span><strong id="spd">---</strong><small>km/h</small></div>
+      <div class="hud-box" id="boxALT"><span>ALT</span><strong id="alt">---</strong><small>m</small></div>
+      <div class="hud-box" id="boxVS"><span>VS</span><strong id="vs">0.0</strong><small>m/s</small></div>
+      <div class="hud-box"><span>THR</span><strong id="throttle">---</strong><small>%</small></div>
+      <div class="hud-box"><span>AB</span><strong id="ab">OFF</strong></div>
+      <div class="hud-box" id="boxAoA"><span>AoA</span><strong id="aoa">0.0</strong><small>°</small></div>
+      <div class="hud-box" id="boxG"><span>G</span><strong id="gLoad">0.00</strong><small>g</small></div>
+    <!-- NUEVOS instrumentos de actitud y tasas -->
+	<div class="hud-box hud-box-sm"><span><b>BANK</b></span><strong id="roll">--</strong><small>°</small></div>
+	<div class="hud-box hud-box-sm"><span><b>FPA</b></span><strong id="pitch">--</strong><small>°</small></div>
+	<div class="hud-box hud-box-sm"><span><b>HDG</b></span><strong id="yaw">--</strong><small>°</small></div>
+    <div class="hud-box hud-box-wide">
+      <span>p/q/r</span>
+      <strong><span id="rollRate">0</span>/<span id="pitchRate">0</span>/<span id="yawRate">0</span></strong>
+      <small>°/s</small>
+    </div>
+    </div>
+
+    <div class="hud-flags hud-shadow">
+      <span>HDG HOLD: <strong id="hdgFlag">OFF</strong> — Bug: <strong id="hdgBug">000</strong>°</span>
+    </div>
+  <!-- NUEVO: coordenadas abajo-derecha -->
+  <div class="hud-coords hud-shadow">
+    <span>Lat/Lon:</span> <strong id="coords">--</strong>
+  </div>
+  </div>
+
+  <div id="mobileControls">
+    <button id="btnResetGyro" title="Reset Gyro"><i class="material-icons">refresh</i></button>
+    <button id="btnShoot" title="Disparar"><i class="material-icons">bolt</i></button>
+    <button id="btnFullscreen" title="Pantalla completa"><i class="material-icons">fullscreen</i></button>
+    <input type="range" id="throttleSlider" min="0" max="100" value="25" />
+  </div>
+  
+  <!-- Slip/Skid simple (cola de coordinación): una “bola” que se desplaza -->
+  <div id="slipBall"
+       style="position:fixed; left:50%; transform:translateX(-50%);
+              bottom: 88px; width:120px; height:16px; border-radius:10px;
+              background:rgba(0,0,0,.35); box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);
+              display:flex; align-items:center; justify-content:center; pointer-events:none; z-index:1100">
+     <div id="slipBallDot" style="width:14px;height:14px;border-radius:50%;
+       background:#fff; box-shadow:0 2px 6px rgba(0,0,0,.4)"></div>
+  </div>
+
+  <div id="crashOverlay"><div><div style="font-size:28px;margin-bottom:8px">¡Colisión detectada!</div><div>Simulación detenida. Pulsa <kbd>R</kbd> para reintentar.</div></div></div>
+
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
