@@ -1,19 +1,134 @@
 // physics.js
 import {
-	rho0, gravity,
-	DRAG_SCALE, MIN_THRUST_PROJ,
-	K_AOA_FORMDRAG, K_INDUCED_ENERGY, VERTICAL_DAMP_EXTRA,
-	I, Iinv,
-	S_aileron, l_aileron,
-	S_elevator, l_elevator,
-	S_rudder, l_rudder,
-	Cm_ALPHA, l_fuselage,
-	C_d_rot,
-	maxRollRate, maxPitchRate, maxYawRate,
-	maxDeflectionRate
+  rho0, gravity,
+  // drag/energía
+  DRAG_SCALE, MIN_THRUST_PROJ,
+  K_AOA_FORMDRAG, K_INDUCED_ENERGY, VERTICAL_DAMP_EXTRA,
+  // inercia / superficies / límites
+  I, Iinv,
+  S_aileron, l_aileron,
+  S_elevator, l_elevator,
+  S_rudder,  l_rudder,
+  Cm_ALPHA,  l_fuselage,
+  C_d_rot,
+  maxRollRate, maxPitchRate, maxYawRate,
+  maxDeflectionRate,
+  // control
+  DISABLE_PITCH_INTERFERENCE
 } from './config.js';
-	
-import { sinGammaFromVelocity } from './utils.js';
+
+// Mantengo tus imports rotacionales (alerón/elevador/timón, Cm, etc.) en el resto del archivo
+// … (no muestro diffs de tu parte rotacional para no mezclar)
+
+// ===============================
+//  INTEGRACIÓN 3D DE TRASLACIÓN
+// ===============================
+// Fuerzas: empuje (forward), drag (−V̂), lift (⊥ a V̂ en plano vertical del avión), gravedad (mundo).
+// Aerodinámica: CL de AoA, CD = CD0 + CDi + CDwave, qd = ½ ρ V², ρ ISA simple.
+export function updateVelocity3D(dt, aircraft) {
+  const { sim } = aircraft;
+  const mass = sim.mass;
+
+  // --- Bases ENU en la posición actual:
+  const enu4 = Cesium.Transforms.eastNorthUpToFixedFrame(aircraft.position);
+  const enu  = Cesium.Matrix4.getMatrix3(enu4, new Cesium.Matrix3());
+  const EAST  = Cesium.Matrix3.getColumn(enu, 0, new Cesium.Cartesian3());
+  const NORTH = Cesium.Matrix3.getColumn(enu, 1, new Cesium.Cartesian3());
+  const UP    = Cesium.Matrix3.getColumn(enu, 2, new Cesium.Cartesian3());
+
+  // --- Orientación del avión → ejes cuerpo en mundo:
+  const R = Cesium.Matrix3.fromQuaternion(aircraft.orientationQuat);
+  const FWD  = Cesium.Matrix3.getColumn(R, 0, new Cesium.Cartesian3()); // X cuerpo
+  const UP_B = Cesium.Matrix3.getColumn(R, 2, new Cesium.Cartesian3()); // Z cuerpo (vertical avión)
+
+  // --- Velocidad y dirección de vuelo:
+  const V   = Cesium.Cartesian3.magnitude(aircraft.planeVelocity);
+  const Vhat = (V > 0.1) ? Cesium.Cartesian3.normalize(aircraft.planeVelocity, new Cesium.Cartesian3())
+                         : FWD.clone(); // en reposo, usa el morro
+
+  // --- Densidad ISA (escala exponencial simple):
+  const carto = Cesium.Ellipsoid.WGS84.cartesianToCartographic(aircraft.position);
+  const altitude = carto.height;
+  const rho = rho0 * Math.exp(-altitude / 8500.0);
+  const qd  = 0.5 * rho * V * V;
+  sim.lastRho = rho;
+
+  // --- Ángulo de ataque aprox: entre forward y trayectoria (signo con eje lateral)
+  const RIGHT = Cesium.Matrix3.getColumn(R, 1, new Cesium.Cartesian3());
+  const cosAoA = Cesium.Cartesian3.dot(FWD, Vhat);
+  let   aoa = Math.acos(Cesium.Math.clamp(cosAoA, -1, 1));          // 0..π
+  const signAoA = Math.sign(Cesium.Cartesian3.dot(RIGHT, Cesium.Cartesian3.cross(Vhat, FWD, new Cesium.Cartesian3())));
+  aoa *= (signAoA===0 ? 1 : signAoA); // −π..π (pequeño en operación normal)
+
+  // --- Coeficientes aerodinámicos (modelo efectivo que ya tenías)
+  // CL linear con stall suave (si tenías tablas, puedes reusar tu computeLiftCoefficient)
+  const CL = sim.CL0 + sim.CL_ALPHA * aoa;
+  const AR = (sim.wingSpan * sim.wingSpan) / sim.wingArea;
+  const CDi = (CL*CL) / (Math.PI * AR * sim.e_oswald);
+  const mach = V / 340.0;
+  const wave = Math.max(0, mach - sim.machDrag.M0);
+  const CDw  = wave>0 ? (wave*wave) / sim.machDrag.k : 0;
+  const CD   = sim.CD0 + CDi + CDw;
+
+  // --- Fuerzas aerodinámicas
+  const LiftMag = qd * sim.wingArea * CL;
+  const DragMag = qd * sim.wingArea * CD;
+
+  // Dirección de lift: perpendicular a V̂, en el plano (UP_B, V̂). Proyecta UP_B ortogonal a V̂.
+  const UP_B_par = Cesium.Cartesian3.multiplyByScalar(Vhat, Cesium.Cartesian3.dot(UP_B, Vhat), new Cesium.Cartesian3());
+  let   LiftDir  = Cesium.Cartesian3.subtract(UP_B, UP_B_par, new Cesium.Cartesian3());
+  const liftLen  = Cesium.Cartesian3.magnitude(LiftDir);
+  if (liftLen < 1e-6) {
+    // si vector degenerado (V casi vertical), usa componente ortogonal a V en plano vertical mundial
+    const Vh = Cesium.Cartesian3.subtract(Vhat, Cesium.Cartesian3.multiplyByScalar(UP, Cesium.Cartesian3.dot(Vhat, UP), new Cesium.Cartesian3()), new Cesium.Cartesian3());
+    if (Cesium.Cartesian3.magnitude(Vh) > 1e-6) {
+      LiftDir = Cesium.Cartesian3.normalize(Cesium.Cartesian3.cross(Vh, Vhat, new Cesium.Cartesian3()), new Cesium.Cartesian3());
+    } else {
+      LiftDir = UP.clone();
+    }
+  } else {
+    LiftDir = Cesium.Cartesian3.normalize(LiftDir, LiftDir);
+  }
+
+  const DragDir  = Cesium.Cartesian3.multiplyByScalar(Vhat, -1, new Cesium.Cartesian3());
+
+  // --- Empuje (MIL/AB) con degradación ρ^0.8 y por Mach
+  const thrustBase = sim.afterburner ? sim.maxThrustAB : sim.maxThrustMIL;
+  const thrustRho  = thrustBase * Math.pow(rho / rho0, 0.8);
+  const thrustMach = thrustRho * Math.max(0, 1 - (mach / sim.maxMach)); // simple caída con Mach
+  const ThrustMag  = sim.throttle * thrustMach;
+  const ThrustDir  = FWD; // empuje en eje del fuselaje
+
+  // --- Gravedad (mundo)
+  const Weight = Cesium.Cartesian3.multiplyByScalar(UP, -mass * gravity, new Cesium.Cartesian3());
+
+  // --- Fuerza total
+  const F_lift   = Cesium.Cartesian3.multiplyByScalar(LiftDir, LiftMag, new Cesium.Cartesian3());
+  const F_drag   = Cesium.Cartesian3.multiplyByScalar(DragDir,  DragMag, new Cesium.Cartesian3());
+  const F_thrust = Cesium.Cartesian3.multiplyByScalar(ThrustDir, ThrustMag, new Cesium.Cartesian3());
+  const F_total  = new Cesium.Cartesian3();
+  Cesium.Cartesian3.add(F_lift, F_drag, F_total);
+  Cesium.Cartesian3.add(F_total, F_thrust, F_total);
+  Cesium.Cartesian3.add(F_total, Weight, F_total);
+
+  // --- Integración explícita de velocidad
+  const acc = Cesium.Cartesian3.multiplyByScalar(F_total, 1/mass, new Cesium.Cartesian3());
+  aircraft.planeVelocity = Cesium.Cartesian3.add(aircraft.planeVelocity,
+                        Cesium.Cartesian3.multiplyByScalar(acc, dt, new Cesium.Cartesian3()),
+                        new Cesium.Cartesian3());
+
+  // Protección: evita NaN y magnitudes negativas
+  if (!isFinite(Cesium.Cartesian3.magnitude(aircraft.planeVelocity))) {
+    aircraft.planeVelocity = Cesium.Cartesian3.multiplyByScalar(FWD, 0.1, new Cesium.Cartesian3());
+  }
+
+  // Devuelvo valores útiles por si quieres log/HUD:
+  return {
+    aoa, qd, rho, mach,
+    liftN: LiftMag, dragN: DragMag, thrustN: ThrustMag,
+    V: Cesium.Cartesian3.magnitude(aircraft.planeVelocity)
+  };
+}
 	
 // ===== Lift =====
 export function computeLiftCoefficient(aoa, SIM) {
@@ -202,8 +317,11 @@ export function updateRotation(dt, qd, aoa, state, inputs) {
 	
 	if (autoLevel) {
 		const k = 2.0;
+		// Solo nivelamos roll y yaw; EN PITCH NO AUTOCORREGIMOS
 		δa_target = Cesium.Math.clamp(-k * ω.x, -maxDef, maxDef);
+		if (!DISABLE_PITCH_INTERFERENCE) {
 		δe_target = Cesium.Math.clamp(-k * ω.y, -maxDef, maxDef);
+		}
 		δr_target = Cesium.Math.clamp(-k * ω.z, -maxDef, maxDef);
 		if (Cesium.Cartesian3.magnitude(ω) < 0.05) {
 		inputs.autoLevel = false;
@@ -213,6 +331,7 @@ export function updateRotation(dt, qd, aoa, state, inputs) {
 	// Slew rate superficies
 	const step = maxDeflectionRate * dt;
 	δa_current += Cesium.Math.clamp(δa_target - δa_current, -step, step);
+	// Mantener la respuesta del elevador (tu entrada), sin añadidos automáticos
 	δe_current += Cesium.Math.clamp(δe_target - δe_current, -step, step);
 	δr_current += Cesium.Math.clamp(δr_target - δr_current, -step, step);
 	
@@ -226,9 +345,11 @@ export function updateRotation(dt, qd, aoa, state, inputs) {
 	τy *= elevEff;
 	const τz = qd * S_rudder   * δr * l_rudder;
 	
-	// Pitching por fuselaje/perfil
-	const τ_fuselaje = qd * state.wingArea * (Cm_ALPHA * aoa) * l_fuselage;
-	const totalτy = τy + τ_fuselaje;
+  // Pitching por fuselaje/perfil (Cm·AoA) — INTERFERENCIA: lo anulamos si está activo el modo
+  const τ_fuselaje = DISABLE_PITCH_INTERFERENCE
+    ? 0
+    : (qd * state.wingArea * (Cm_ALPHA * aoa) * l_fuselage);
+  const totalτy = τy + τ_fuselaje;
 	
 	// Damping rotacional
 	const τd = new Cesium.Cartesian3(

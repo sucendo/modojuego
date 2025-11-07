@@ -96,7 +96,7 @@ export class Controls {
             if (r==='granted') enableGyro();
           }catch{}
         } else { enableGyro(); }
-        this.gyroOffset={...this.lastEvent};
+        this.gyroOffset = { ...this.lastEvent };
         this.aircraft.resetControls();
         console.log('🔄 Giroscopio reiniciado');
       });

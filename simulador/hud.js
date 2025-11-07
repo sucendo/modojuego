@@ -1,4 +1,5 @@
 import { computeCompassFromForward, wrap180 } from './utils.js';
+import { rho0 } from './config.js';
 
 export class HUD {
   constructor() {
@@ -100,7 +101,12 @@ export class HUD {
     // DOM
     this.els.coords.textContent = `${lat}, ${lon}`;
     this.els.alt.textContent = altVal;
-    this.els.spd.textContent = (speed * 3.6).toFixed(0);
+    // IAS: sqrt(2*qd/rho0). Si qd no está listo, fallback a TAS
+    const ias_mps  = aero && aero.qd > 0 ? Math.sqrt((2 * aero.qd) / rho0) : 0;
+    const ias_kmh  = ias_mps * 3.6;
+    const spdShown = Number.isFinite(ias_kmh) && ias_kmh > 0 ? ias_kmh : (speed * 3.6);
+    this.els.spd.textContent = spdShown.toFixed(0);
+    // Etiqueta “IAS” en el HUD si activas esto.
     this.els.throttle.textContent = (throttle * 100).toFixed(0);
     this.els.ab.textContent = afterburner ? "ON" : "OFF";
     this.els.vs.textContent = verticalSpeed.toFixed(1);
@@ -127,7 +133,7 @@ export class HUD {
     const aoaVal = Math.abs(parseFloat(aoaDeg));
     const gVal = Math.abs(parseFloat(gLoad));
     const vsVal = parseFloat(verticalSpeed);
-    const spdVal = parseFloat(speed * 3.6);
+    const spdVal = parseFloat(spdShown);
     this.setState(this.els.boxAoA, aoaVal < 10 ? 'ok' : aoaVal < 14 ? 'warn' : 'alert');
     this.setState(this.els.boxG, gVal < 3.5 ? 'ok' : gVal < 5.0 ? 'warn' : 'alert');
     this.setState(this.els.boxVS, Math.abs(vsVal) < 5 ? 'ok' : Math.abs(vsVal) < 12 ? 'warn' : 'alert');

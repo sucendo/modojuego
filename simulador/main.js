@@ -2,24 +2,22 @@
 // -----------------------------------------------------------------------------
 // Bucle principal del simulador (Cesium + Física + HUD + Controles + FX)
 //
-// Cambios clave de esta versión:
-// 1) Integración de la VELOCIDAD a lo largo de la trayectoria real (advanceSpeedAlongVelocity),
-//    en lugar de empujar siempre en el eje del morro. Esto evita acelerar “hacia el espacio”
-//    cuando el morro está arriba pero la trayectoria no acompaña.
-// 2) Eliminada la doble contabilidad de velocidad: ya NO aplicamos
-//    ParasiteDrag + InducedDrag + applyThrottleAndFlightPath y, además, la energética;
-//    ahora solo usamos:  lift/gravedad para verticalSpeed  +  energética para forwardSpeed.
-// 3) Comentarios y estructura más clara.
+// Cambios clave:
+// 1) La VELOCIDAD se integra a lo largo de la trayectoria real (advanceSpeedAlongVelocity),
+//    evitando acelerar “hacia el espacio” cuando el morro está arriba pero la trayectoria no.
+// 2) Nada duplica el cálculo de velocidad: verticalSpeed = lift/gravedad ; forwardSpeed = modelo
+//    energético (empuje proyectado sobre V – drag – g·sinγ). Sin doble drag ni “empujes” al morro.
+// 3) AP/HDG usan el rumbo de brújula real; el pitch manual queda libre si no hay AP.
 //
-// Nota: Este archivo asume que en physics.js existen:
-//  - computeAerodynamics(...)
-//  - applyLiftAndGravity(...)
-//  - advanceSpeedAlongVelocity(...)
-//  - updateRotation(...)
-// y en autopilot.js:
-//  - computeAutothrottleCommand(...)
-//  - computeAutopilotCommands(...)
-//  - computeHeadingHoldCommands(...)
+// Requisitos en physics.js:
+//  - computeAerodynamics(.)
+//  - applyLiftAndGravity(.)
+//  - advanceSpeedAlongVelocity(.)
+//  - updateRotation(.)
+// Requisitos en autopilot.js:
+//  - computeAutothrottleCommand(.)
+//  - computeAutopilotCommands(.)
+//  - computeHeadingHoldCommands(.)
 // -----------------------------------------------------------------------------
 
 import * as Config from './config.js';
@@ -46,7 +44,7 @@ import { Effects } from './effects.js';
   const osmBuildings = await Cesium.createOsmBuildingsAsync();
   viewer.scene.primitives.add(osmBuildings);
 
-  // Bloquea los controles por defecto de la cámara: la controlamos nosotros
+  // Bloquear cámara por defecto: la manejamos nosotros
   const ssc = viewer.scene.screenSpaceCameraController;
   ssc.enableRotate = false;
   ssc.enableTranslate = false;
@@ -54,22 +52,22 @@ import { Effects } from './effects.js';
   ssc.enableTilt = false;
   ssc.enableLook = false;
 
-  // 2) MÓDULOS: HUD, FX, Avión, Controles
+  // 2) Módulos: HUD, FX, Avión, Controles
   const hud = new HUD();
-  const effects = new Effects(viewer);
-  const aircraft = new Aircraft(viewer, effects);
+  const effects = new Effects(viewer, { maxConcurrent: 128 });
+  const aircraft = new Aircraft(viewer, effects, { osmBuildings });
+  aircraft.onImpact = (pos, opts) => effects.explosionAt(pos, opts);
   const controls = new Controls(viewer, aircraft);
   await aircraft.createModel();
 
   // 3) Estado de simulación
   let lastNow = performance.now();
-  let lastSpeed = 0; // para Mach/diagnósticos si hiciera falta
+  let lastSpeed = 0;
   const simState = { paused: false, crashed: false };
   const crashOverlayEl = document.getElementById('crashOverlay');
 
-  // 4) BUCLE PRINCIPAL (postRender)
+  // 4) Bucle principal (postRender)
   viewer.scene.postRender.addEventListener(() => {
-    // ---- Tiempo delta (clamp para estabilidad numérica) ----
     const now = performance.now();
     let dt = (now - lastNow) * 0.001;
     lastNow = now;
@@ -89,11 +87,11 @@ import { Effects } from './effects.js';
         aircraft.sim.throttle = Math.max(aircraft.sim.throttle - throttleStep, 0.0);
       }
 
-      // ---- Estado instantáneo del avión (marcos, V, etc.) ----
+      // ---- Estado instantáneo del avión ----
       const state = aircraft.computeFrameState();
       if (!state.carto || !Number.isFinite(state.carto.height)) return;
 
-      // ---- Aerodinámica (Lift + Drag + AoA + qd, etc.) ----
+      // ---- Aerodinámica (Lift/Drag/AoA/qdinámica) ----
       const aero = Physics.computeAerodynamics(
         state.planeVelocity, state.forward, state.right, state.carto, state.hpr, aircraft.sim
       );
@@ -104,32 +102,31 @@ import { Effects } from './effects.js';
       let rollCmd = 0, pitchCmd = 0, yawCmd = 0;
 
       if (controls.autopilot) {
-        // AUTOTHROTTLE (opcional): mantiene IAS objetivo ajustando throttle
-        // (si no usas A/T, comenta este bloque)
+        // Autothrottle opcional: mantener IAS objetivo
         const at = Autopilot.computeAutothrottleCommand(
-          state.speed,          // IAS actual (m/s)
-          controls.autopilotSpeed, // IAS objetivo (m/s) — asegúrate de setearlo en Controls
+          state.speed,              // IAS actual (m/s)
+          controls.autopilotSpeed,  // IAS objetivo (m/s)
           controls,
           dt
         );
         aircraft.sim.throttle = at.throttle;
         controls.apSpdInt = at.apSpdInt;
 
-        // AP HEADING/ALT: Calcula deflexiones virtuales deseadas
-        const compassHdg = aircraft.getCompassHeading(); // 0–360 (brújula real)
+        // AP HDG/ALT -> deflexiones virtuales
+        const compassHdg = aircraft.getCompassHeading(); // 0–360
         const ap = Autopilot.computeAutopilotCommands(state, dt, controls, compassHdg);
         rollCmd = ap.roll; pitchCmd = ap.pitch; yawCmd = ap.yaw;
         controls.apHdgInt = ap.apHdgInt; controls.apAltInt = ap.apAltInt;
 
       } else if (controls.hdgHold) {
-        // Solo mantener rumbo con bank/yaw, pitch manual
+        // Mantener rumbo con bank/yaw; pitch manual
         const compassHdg = aircraft.getCompassHeading();
         const hdg = Autopilot.computeHeadingHoldCommands(state, dt, controls.hdgBugDeg, compassHdg);
         rollCmd = hdg.roll; yawCmd = hdg.yaw;
       }
-      // Si no hay AP ni HDG HOLD: el mando viene de teclado/gyro (Controls.getInputs)
+      // Si no hay AP ni HDG HOLD: los mandos vienen de teclado/gyro (Controls.getInputs).
 
-      // ---- Integrar ROTACIÓN (torques de superficies + damping + inercia) ----
+      // ---- Integrar ROTACIÓN (torques + damping + inercia) ----
       const inputs = { ...controls.getInputs(), rollCmd, pitchCmd, yawCmd };
       const rotationState = {
         ω: aircraft.ω,
@@ -137,53 +134,48 @@ import { Effects } from './effects.js';
         δa_current: aircraft.δa_current,
         δe_current: aircraft.δe_current,
         δr_current: aircraft.δr_current,
-        wingArea: aircraft.sim.wingArea // para el término de pitching de fuselaje
+        wingArea: aircraft.sim.wingArea
       };
       const newRot = Physics.updateRotation(dt, aero.qd, aero.aoa, rotationState, inputs);
 
-      // Volcar cambios de rotación al avión
+      // Volcar cambios de rotación
       aircraft.ω = newRot.ω;
       aircraft.orientationQuat = newRot.orientationQuat;
       aircraft.δa_current = newRot.δa_current;
       aircraft.δe_current = newRot.δe_current;
       aircraft.δr_current = newRot.δr_current;
-      controls.autoLevel = inputs.autoLevel; // si se desactiva automáticamente
+      controls.autoLevel = inputs.autoLevel; // por si se desactiva automáticamente
 
-      // ---- Integrar TRASLACIÓN (modelo energético coherente) ----
-      // 1) VerticalSpeed solo con lift y gravedad (y damping vertical dependiente de AoA)
+      // ---- Integrar TRASLACIÓN (energético coherente) ----
+      // (1) Vertical solo con lift/gravedad (y damping vertical dependiente de AoA)
       aircraft.verticalSpeed = Physics.applyLiftAndGravity(
         dt, aero.liftForce, state.verticalSpeed, aircraft.sim, aero.aoa
       );
 
-      // 2) ForwardSpeed desde energía a lo largo de la velocidad real:
-      //    Vnew = V + [(T_alongV - (D_parasite + D_induced))/m - g*sinγ] * dt
-      //    forwardSpeed = Vnew * cos(slip)
+      // (2) Forward desde energía a lo largo de la velocidad real
+      //     Vnew = V + [(T_alongV - (D_parasite + D_induced))/m - g*sinγ] * dt
+      //     forwardSpeed sale de proyectar Vnew sobre el eje de morro con el slip actual
       const adv = Physics.advanceSpeedAlongVelocity(dt, state, aero, aircraft.sim);
       aircraft.forwardSpeed = adv.forwardSpeed;
 
-      // Importante: ya NO llamamos a applyParasiteDrag / applyInducedDrag / applyThrottleAndFlightPath,
-      // porque la integración energética ya incorpora empuje, drag y gravedad de forma consistente.
-
-      // ---- Integrar POSICIÓN y actualizar CÁMARA ----
+      // ---- POSICIÓN + CÁMARA ----
       aircraft.updatePosition(dt, state.forward, state.surfaceNormal);
-      const newState = aircraft.computeFrameState(); // estado tras el paso
+      const newState = aircraft.computeFrameState();
       aircraft.updateCamera(newState, controls.orbitAngles, controls.orbitRadius);
 
-      // ---- HUD ----
+      // ---- HUD + Proyectiles + FX ----
       aircraft.sim.defl = {
         daDeg: Cesium.Math.toDegrees(aircraft.δa_current),
         deDeg: Cesium.Math.toDegrees(aircraft.δe_current),
         drDeg: Cesium.Math.toDegrees(aircraft.δr_current)
       };
       hud.update(newState, aero, aircraft.sim, controls, dt, Config.gravity);
-
-      // ---- Proyectiles / FX ----
-      aircraft.updateProjectiles(dt);
-      effects.update(dt);
+      aircraft.updateProjectiles?.(dt);
+      effects.update(dt, aircraft.position);
 
       // ---- Colisión con terreno ----
       if (detectTerrainCollision(newState.carto)) {
-        effects.explosionAt(aircraft.position);     // efecto visual
+        effects.explosionAt(aircraft.position);
         simState.crashed = true;
         crashOverlayEl.style.display = 'flex';
         controls.autopilot = false;
@@ -234,11 +226,5 @@ import { Effects } from './effects.js';
       aircraft.orientationQuat = aircraft.initOrientation();
       aircraft.resetControls();
     }
-  });
-
-  // 7) Pausa si se oculta la pestaña
-  document.addEventListener('visibilitychange', () => {
-    simState.paused = document.hidden;
-    if (!simState.paused) lastNow = performance.now();
   });
 })();

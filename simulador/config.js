@@ -54,7 +54,7 @@ export const gravity = 9.8; // m/s²
 // Escala global de drag (parasitario + inducido) aplicada en physics.js
 export const DRAG_SCALE = 0.80;         // 0.8 = 20% menos drag total
 // Proyección mínima del empuje “útil” a lo largo de V para que se note en resbales
-export const MIN_THRUST_PROJ = 0.06;    // [0–1], 0.12 ≈ 12%
+export const MIN_THRUST_PROJ = 0.04;    // [0–1], 0.12 ≈ 12%
 
 // Refuerzo de drag por actitud (morros fuera) con AoA^2 (AoA en rad)
 export const K_AOA_FORMDRAG = 0.16;     // pequeño; subir si quieres castigar AoA alto
@@ -93,3 +93,12 @@ export const maxYawRate   = Cesium.Math.toRadians(45);  // ±45°/s
 
 // Velocidad de movimiento de superficies (rad/s)
 export const maxDeflectionRate = Cesium.Math.toRadians(30); // 30°/s
+
+// =====================
+//   DEPURACIÓN / CONTROL
+// =====================
+// Cuando está a true, el control de pitch queda "limpio":
+//   - Sin momento de fuselaje (Cm·AoA)
+//   - Sin auto-nivelado en pitch
+//   - Sin mezclas automáticas que toquen el elevador
+export const DISABLE_PITCH_INTERFERENCE = true;
