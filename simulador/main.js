@@ -1,4 +1,4 @@
-/0/ main.js
+// main.js
 // -----------------------------------------------------------------------------
 // Bucle principal del simulador (Cesium + Física + HUD + Controles + FX)
 //
