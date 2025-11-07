@@ -139,7 +139,11 @@ import { Effects } from './effects.js';
         δr_current: aircraft.δr_current,
         wingArea: aircraft.sim.wingArea
       };
-      const newRot = Physics.updateRotation(dt, aero.qd, aero.aoa, rotationState, inputs);
+      /*const newRot = Physics.updateRotation(dt, aero.qd, aero.aoa, rotationState, inputs);*/
+      // En modo simple 'aero' es null: pasa 0/0 al canal rotacional
+      const qd_for_rot  = aero ? aero.qd  : 0;
+      const aoa_for_rot = aero ? aero.aoa : 0;
+      const newRot = Physics.updateRotation(dt, qd_for_rot, aoa_for_rot, rotationState, inputs);
 
       // Volcar cambios de rotación
       aircraft.ω = newRot.ω;
@@ -153,16 +157,16 @@ import { Effects } from './effects.js';
       // (1) Vertical solo con lift/gravedad (y damping vertical dependiente de AoA)
       /*aircraft.verticalSpeed = Physics.applyLiftAndGravity(
         dt, aero.liftForce, state.verticalSpeed, aircraft.sim, aero.aoa
-      );*/
-      // ---- Integrar TRASLACIÓN (MODO SIMPLE) ----
-      const lin = Physics.updateVelocitySimple(dt, aircraft);
-
+      );
 
       // (2) Forward desde energía a lo largo de la velocidad real
       //     Vnew = V + [(T_alongV - (D_parasite + D_induced))/m - g*sinγ] * dt
       //     forwardSpeed sale de proyectar Vnew sobre el eje de morro con el slip actual
       const adv = Physics.advanceSpeedAlongVelocity(dt, state, aero, aircraft.sim);
-      aircraft.forwardSpeed = adv.forwardSpeed;
+      aircraft.forwardSpeed = adv.forwardSpeed;*/
+
+      // ---- Integrar TRASLACIÓN (MODO SIMPLE) ----
+      const lin = Physics.updateVelocitySimple(dt, aircraft);
 
       // ---- POSICIÓN + CÁMARA ----
       aircraft.updatePosition(dt, state.forward, state.surfaceNormal);
