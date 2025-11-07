@@ -96,13 +96,20 @@ export class HUD {
     this.prevPlaneVelocity = Cesium.Cartesian3.clone(planeVelocity);
 
     // AoA
-    const aoaDeg = Cesium.Math.toDegrees(aero.aoa).toFixed(1);
+    /*const aoaDeg = Cesium.Math.toDegrees(aero.aoa).toFixed(1);*/
+    // AoA: en modo simple 'aero' es null → usa 0.0
+    const aoaDeg = (aero && Number.isFinite(aero.aoa))
+      ? Cesium.Math.toDegrees(aero.aoa).toFixed(1)
+      : '0.0';
 
     // DOM
     this.els.coords.textContent = `${lat}, ${lon}`;
     this.els.alt.textContent = altVal;
     // IAS: sqrt(2*qd/rho0). Si qd no está listo, fallback a TAS
-    const ias_mps  = aero && aero.qd > 0 ? Math.sqrt((2 * aero.qd) / rho0) : 0;
+    /*const ias_mps  = aero && aero.qd > 0 ? Math.sqrt((2 * aero.qd) / rho0) : 0;*/
+    // IAS: sqrt(2*qd/rho0). En modo simple aero=null → fallback a TAS
+    const ias_mps  = (aero && aero.qd > 0) ? Math.sqrt((2 * aero.qd) / rho0) : 0;
+
     const ias_kmh  = ias_mps * 3.6;
     const spdShown = Number.isFinite(ias_kmh) && ias_kmh > 0 ? ias_kmh : (speed * 3.6);
     this.els.spd.textContent = spdShown.toFixed(0);
