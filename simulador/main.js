@@ -1,4 +1,4 @@
-// main.js
+/0/ main.js
 // -----------------------------------------------------------------------------
 // Bucle principal del simulador (Cesium + Física + HUD + Controles + FX)
 //
@@ -92,11 +92,14 @@ import { Effects } from './effects.js';
       if (!state.carto || !Number.isFinite(state.carto.height)) return;
 
       // ---- Aerodinámica (Lift/Drag/AoA/qdinámica) ----
-      const aero = Physics.computeAerodynamics(
+      /*const aero = Physics.computeAerodynamics(
         state.planeVelocity, state.forward, state.right, state.carto, state.hpr, aircraft.sim
       );
       lastSpeed = state.speed;
-      aircraft.sim.lastRho = Number.isFinite(aero.rho) ? aero.rho : aircraft.sim.lastRho;
+      aircraft.sim.lastRho = Number.isFinite(aero.rho) ? aero.rho : aircraft.sim.lastRho;*/
+      // En modo simple NO calculamos aerodinámica
+      const aero = null;
+      lastSpeed = state.speed;
 
       // ---- Piloto automático / Heading Hold / Manual ----
       let rollCmd = 0, pitchCmd = 0, yawCmd = 0;
@@ -148,9 +151,12 @@ import { Effects } from './effects.js';
 
       // ---- Integrar TRASLACIÓN (energético coherente) ----
       // (1) Vertical solo con lift/gravedad (y damping vertical dependiente de AoA)
-      aircraft.verticalSpeed = Physics.applyLiftAndGravity(
+      /*aircraft.verticalSpeed = Physics.applyLiftAndGravity(
         dt, aero.liftForce, state.verticalSpeed, aircraft.sim, aero.aoa
-      );
+      );*/
+      // ---- Integrar TRASLACIÓN (MODO SIMPLE) ----
+      const lin = Physics.updateVelocitySimple(dt, aircraft);
+
 
       // (2) Forward desde energía a lo largo de la velocidad real
       //     Vnew = V + [(T_alongV - (D_parasite + D_induced))/m - g*sinγ] * dt
@@ -169,6 +175,7 @@ import { Effects } from './effects.js';
         deDeg: Cesium.Math.toDegrees(aircraft.δe_current),
         drDeg: Cesium.Math.toDegrees(aircraft.δr_current)
       };
+      // En modo simple el HUD hará fallback a TAS si aero=null
       hud.update(newState, aero, aircraft.sim, controls, dt, Config.gravity);
       aircraft.updateProjectiles?.(dt);
       effects.update(dt, aircraft.position);

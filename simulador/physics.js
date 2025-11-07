@@ -15,6 +15,8 @@ import {
   maxDeflectionRate,
   // control
   DISABLE_PITCH_INTERFERENCE
+  // modo simple
+  SIMPLE_SPEED_MODE, SIMPLE_THRUST_ACCEL, SIMPLE_SPEED_DAMP
 } from './config.js';
 
 // Mantengo tus imports rotacionales (alerón/elevador/timón, Cm, etc.) en el resto del archivo
@@ -395,5 +397,44 @@ export function updateRotation(dt, qd, aoa, state, inputs) {
 	);
 	
 	return { ω, orientationQuat, δa_current, δe_current, δr_current };
+}
+
+// =========================================================
+//  MODO SIMPLE: solo acelerar/frenar en forward + gravedad
+// =========================================================
+export function updateVelocitySimple(dt, aircraft) {
+  const { sim } = aircraft;
+  // ENU en la posición actual
+  const enu4 = Cesium.Transforms.eastNorthUpToFixedFrame(aircraft.position);
+  const enu  = Cesium.Matrix4.getMatrix3(enu4, new Cesium.Matrix3());
+  const UP   = Cesium.Matrix3.getColumn(enu, 2, new Cesium.Cartesian3());
+
+  // Ejes cuerpo (mundo)
+  const R   = Cesium.Matrix3.fromQuaternion(aircraft.orientationQuat);
+  const FWD = Cesium.Matrix3.getColumn(R, 0, new Cesium.Cartesian3());
+
+  // Tomamos los escalares “compatibles”
+  let fwdSpd  = Number.isFinite(aircraft.forwardSpeed)  ? aircraft.forwardSpeed  : 0;
+  let vertSpd = Number.isFinite(aircraft.verticalSpeed) ? aircraft.verticalSpeed : 0;
+
+  // Aceleración hacia adelante por throttle (muy simple)
+  const a_forward = sim.throttle * SIMPLE_THRUST_ACCEL - SIMPLE_SPEED_DAMP * fwdSpd;
+  fwdSpd = Math.max(0, fwdSpd + a_forward * dt);
+
+  // Gravedad vertical (sin lift)
+  vertSpd += -gravity * dt;
+
+  // Reconstruir la velocidad 3D
+  const vF = Cesium.Cartesian3.multiplyByScalar(FWD, fwdSpd, new Cesium.Cartesian3());
+  const vU = Cesium.Cartesian3.multiplyByScalar(UP,  vertSpd, new Cesium.Cartesian3());
+  const V  = Cesium.Cartesian3.add(vF, vU, new Cesium.Cartesian3());
+
+  // Propagar a la aeronave
+  aircraft.forwardSpeed  = fwdSpd;
+  aircraft.verticalSpeed = vertSpd;
+  aircraft.planeVelocity = Cesium.Cartesian3.clone(V, aircraft.planeVelocity);
+
+  // Devuelve “telemetría” mínima (sin qd/aoa porque no hay aero)
+  return { V: Cesium.Cartesian3.magnitude(V) };
 }
 	

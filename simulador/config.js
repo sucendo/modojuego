@@ -102,3 +102,18 @@ export const maxDeflectionRate = Cesium.Math.toRadians(30); // 30°/s
 //   - Sin auto-nivelado en pitch
 //   - Sin mezclas automáticas que toquen el elevador
 export const DISABLE_PITCH_INTERFERENCE = true;
+
+
+// =====================
+//   MODO SIMPLE DE VELOCIDAD
+// =====================
+// Si está a true, se ignoran fuerzas aerodinámicas para la TRASLACIÓN:
+//  - Aceleración solo por throttle en el eje forward del avión.
+//  - Caída por gravedad en el eje vertical (Up del mundo).
+//  - Sin lift/drag (¡para depurar!).
+export const SIMPLE_SPEED_MODE = true;
+
+// Aceleración máxima hacia adelante con throttle=1 (m/s^2)
+export const SIMPLE_THRUST_ACCEL = 50;   // ajústalo a tu gusto (30–70)
+// “Fricción” lineal muy suave para que no crezca sin límite (1/s)
+export const SIMPLE_SPEED_DAMP   = 0.02; // 0.02 → ~2%/s
