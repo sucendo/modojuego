@@ -14,7 +14,7 @@ import {
   maxRollRate, maxPitchRate, maxYawRate,
   maxDeflectionRate,
   // control
-  DISABLE_PITCH_INTERFERENCE
+  DISABLE_PITCH_INTERFERENCE,
   // modo simple
   SIMPLE_SPEED_MODE, SIMPLE_THRUST_ACCEL, SIMPLE_SPEED_DAMP
 } from './config.js';
