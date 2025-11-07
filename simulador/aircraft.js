@@ -2,9 +2,10 @@ import { AIRCRAFTS, gravity } from './config.js';
 import * as Utils from './utils.js';
 
 export class Aircraft {
-  constructor(viewer, effects) {
+  constructor(viewer, effects, opts = {}) {
     this.viewer = viewer;
-    this.effects = effects; // <<<<< NUEVO
+    this.effects = effects || null;
+    this.osmBuildings = opts.osmBuildings || null;
     this.entity=null; this.projectiles=[];
     const ACTIVE = AIRCRAFTS.F22;
 
@@ -18,11 +19,21 @@ export class Aircraft {
 
     this.position = Cesium.Cartesian3.fromDegrees(-3.7038, 40.4168, 5000);
     this.orientationQuat = this.initOrientation();
-    this.forwardSpeed = 150.0; this.verticalSpeed = 0.0; this.ω = new Cesium.Cartesian3(0,0,0);
+    // Velocidad 3D única (m/s) — alineada con el morro al comienzo
+    this.planeVelocity = new Cesium.Cartesian3(150, 0, 0);
+    // Compat: módulos que aún lean estos campos
+    this.forwardSpeed  = 150;
+    this.verticalSpeed = 0;
+    this.ω = new Cesium.Cartesian3(0,0,0);
 
     this.δa_current=0; this.δe_current=0; this.δr_current=0;
 
-    this.tmp = { planeVelocity:new Cesium.Cartesian3(), vForward:new Cesium.Cartesian3(), vVert:new Cesium.Cartesian3() };
+    // Buffers temporales reutilizables (¡incluye sum!)
+    this.tmp = {
+      vForward: new Cesium.Cartesian3(),
+      vVert   : new Cesium.Cartesian3(),
+      vSum    : new Cesium.Cartesian3()
+    };
   }
 
   initOrientation(){
@@ -72,7 +83,10 @@ export class Aircraft {
 
     const vForward = Cesium.Cartesian3.multiplyByScalar(forward, this.forwardSpeed, this.tmp.vForward);
     const vVert = Cesium.Cartesian3.multiplyByScalar(surfaceNormal, this.verticalSpeed, this.tmp.vVert);
-    const planeVelocity = Cesium.Cartesian3.add(vForward, vVert, this.tmp.planeVelocity);
+    // Sumar en un 'result' válido y sincronizar el campo público:
+    const planeVelocity = Cesium.Cartesian3.add(vForward, vVert, this.tmp.vSum);
+    // Mantén sincronizada la copia principal 3D:
+    this.planeVelocity = Cesium.Cartesian3.clone(planeVelocity, this.planeVelocity);
 
     const speed = Cesium.Cartesian3.magnitude(planeVelocity);
     const angularVel = Cesium.Cartesian3.clone(this.ω);
@@ -98,7 +112,14 @@ export class Aircraft {
     );
     const offset = Cesium.Matrix3.multiplyByVector(rotMatrix, localOffset, new Cesium.Cartesian3());
     const cameraPos = Cesium.Cartesian3.add(center, offset, new Cesium.Cartesian3());
-    const dir = Cesium.Cartesian3.normalize(Cesium.Cartesian3.subtract(center, cameraPos, new Cesium.Cartesian3()), new Cesium.Cartesian3());
+    let dir = Cesium.Cartesian3.normalize(
+      Cesium.Cartesian3.subtract(center, cameraPos, new Cesium.Cartesian3()),
+      new Cesium.Cartesian3()
+    );
+    // Fallback si la normalización fallase: mira hacia delante del avión
+    if (!dir) {
+      dir = Cesium.Matrix3.multiplyByVector(rotMatrix, Cesium.Cartesian3.UNIT_X, new Cesium.Cartesian3());
+    }
     const upVec = Cesium.Matrix3.multiplyByVector(rotMatrix, Cesium.Cartesian3.UNIT_Z, new Cesium.Cartesian3());
 
     this.viewer.scene.camera.setView({ destination: cameraPos, orientation:{ direction: dir, up: upVec } });
@@ -126,6 +147,7 @@ export class Aircraft {
 
     const viewerRef=this.viewer;
     const effectsRef=this.effects;
+    const osmTileset = this.osmBuildings || null;
     this.projectiles.push({
       entity,
       velocity: Cesium.Cartesian3.clone(initialVelocity),
@@ -137,12 +159,38 @@ export class Aircraft {
 
         const carto=Cesium.Cartographic.fromCartesian(currentPosition);
         const th=viewerRef.scene.globe.getHeight(carto);
-        const hit=(typeof th==='number') && (carto.height <= th + 1);
+        const hitTerrain=(typeof th==='number') && (carto.height <= th + 1);
 
-        if (hit && !this.impacted){
+        // Heurística barata para detectar edificio:
+        // proyectamos la posición al viewport y hacemos drillPick;
+        // si entre los picks aparece el tileset de OSM Buildings => buildingHit=true
+        let buildingHit = false;
+        const wpos = Cesium.SceneTransforms.wgs84ToWindowCoordinates(
+          viewerRef.scene, currentPosition
+        );
+        if (wpos) {
+          const picks = viewerRef.scene.drillPick(wpos, 8);
+          if (picks && picks.length) {
+            buildingHit = picks.some(p =>
+              (p.tileset && osmTileset && p.tileset === osmTileset) ||
+              (p.primitive && osmTileset && p.primitive === osmTileset)
+            );
+          }
+        }
+
+        if ((hitTerrain || buildingHit) && !this.impacted){
           this.impacted=true;
-          // Explosión + marca + humo
-          try { effectsRef.explosionAt(currentPosition); } catch {}
+          // Explosión + marca + humo con brillo atenuado por DISTANCIA A CÁMARA
+          // (cumple tu punto 3: distancia desde la cámara al punto de impacto)
+          try {
+             if (effectsRef) {
+		effectsRef.explosionAt(Cesium.Cartesian3.clone(currentPosition), {
+			sourcePos: viewerRef.scene.camera.positionWC,
+			building: buildingHit,
+			persistentSmoke: true
+		});
+           }
+          } catch {}
           viewerRef.entities.remove(entity);
           return false;
         }
