@@ -92,14 +92,14 @@ import { Effects } from './effects.js';
       if (!state.carto || !Number.isFinite(state.carto.height)) return;
 
       // ---- Aerodinámica (Lift/Drag/AoA/qdinámica) ----
-      /*const aero = Physics.computeAerodynamics(
+      const aero = Physics.computeAerodynamics(
         state.planeVelocity, state.forward, state.right, state.carto, state.hpr, aircraft.sim
       );
       lastSpeed = state.speed;
-      aircraft.sim.lastRho = Number.isFinite(aero.rho) ? aero.rho : aircraft.sim.lastRho;*/
+      aircraft.sim.lastRho = Number.isFinite(aero.rho) ? aero.rho : aircraft.sim.lastRho;
       // En modo simple NO calculamos aerodinámica
-      const aero = null;
-      lastSpeed = state.speed;
+      /*const aero = null;
+      lastSpeed = state.speed;*/
 
       // ---- Piloto automático / Heading Hold / Manual ----
       let rollCmd = 0, pitchCmd = 0, yawCmd = 0;
@@ -139,11 +139,11 @@ import { Effects } from './effects.js';
         δr_current: aircraft.δr_current,
         wingArea: aircraft.sim.wingArea
       };
-      /*const newRot = Physics.updateRotation(dt, aero.qd, aero.aoa, rotationState, inputs);*/
+      const newRot = Physics.updateRotation(dt, aero.qd, aero.aoa, rotationState, inputs);
       // En modo simple 'aero' es null: pasa 0/0 al canal rotacional
-      const qd_for_rot  = aero ? aero.qd  : 0;
+      /*const qd_for_rot  = aero ? aero.qd  : 0;
       const aoa_for_rot = aero ? aero.aoa : 0;
-      const newRot = Physics.updateRotation(dt, qd_for_rot, aoa_for_rot, rotationState, inputs);
+      const newRot = Physics.updateRotation(dt, qd_for_rot, aoa_for_rot, rotationState, inputs);*/
 
       // Volcar cambios de rotación
       aircraft.ω = newRot.ω;
@@ -155,7 +155,7 @@ import { Effects } from './effects.js';
 
       // ---- Integrar TRASLACIÓN (energético coherente) ----
       // (1) Vertical solo con lift/gravedad (y damping vertical dependiente de AoA)
-      /*aircraft.verticalSpeed = Physics.applyLiftAndGravity(
+      aircraft.verticalSpeed = Physics.applyLiftAndGravity(
         dt, aero.liftForce, state.verticalSpeed, aircraft.sim, aero.aoa
       );
 
@@ -163,10 +163,10 @@ import { Effects } from './effects.js';
       //     Vnew = V + [(T_alongV - (D_parasite + D_induced))/m - g*sinγ] * dt
       //     forwardSpeed sale de proyectar Vnew sobre el eje de morro con el slip actual
       const adv = Physics.advanceSpeedAlongVelocity(dt, state, aero, aircraft.sim);
-      aircraft.forwardSpeed = adv.forwardSpeed;*/
+      aircraft.forwardSpeed = adv.forwardSpeed;
 
       // ---- Integrar TRASLACIÓN (MODO SIMPLE) ----
-      const lin = Physics.updateVelocitySimple(dt, aircraft);
+      /*const lin = Physics.updateVelocitySimple(dt, aircraft);*/
 
       // ---- POSICIÓN + CÁMARA ----
       aircraft.updatePosition(dt, state.forward, state.surfaceNormal);
