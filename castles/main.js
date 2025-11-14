@@ -1243,6 +1243,29 @@ function drawBuilding(kind, sx, sy, options) {
   ctx.stroke();
 }
 
+function computeDefenseScoreHUD(state) {
+  const tiles = state.tiles || [];
+  let walls = 0;
+  let towers = 0;
+  let gates = 0;
+
+  for (let y = 0; y < tiles.length; y++) {
+    const row = tiles[y];
+    for (let x = 0; x < row.length; x++) {
+      const b = row[x].building;
+      if (b === "wall") walls++;
+      else if (b === "tower") towers++;
+      else if (b === "gate") gates++;
+    }
+  }
+
+  const soldiers = state.labor?.soldiers || 0;
+
+  // Misma fórmula que los eventos: murallas + 2*puertas + 3*torres + 2*soldados
+  const raw = walls + gates * 2 + towers * 3 + soldiers * 2;
+  return raw;
+}
+
 function updateHUD() {
   const dayEl = document.getElementById("day-display");
   const goldEl = document.getElementById("gold-display");
@@ -1251,6 +1274,7 @@ function updateHUD() {
   const foodEl = document.getElementById("food-display");
   const popEl = document.getElementById("pop-display");
   const popSideEl = document.getElementById("pop-display-side");
+  const defEl = document.getElementById("defense-display");
 
   const relChurchEl = document.getElementById("rel-church");
   const relCrownEl = document.getElementById("rel-crown");
@@ -1276,6 +1300,12 @@ function updateHUD() {
   const popText = Math.floor(state.resources.population).toString();
   if (popEl) popEl.textContent = popText;
   if (popSideEl) popSideEl.textContent = popText;
+
+  // Defensa: indicador simple basado en murallas, torres, puertas y soldados
+  if (defEl) {
+    const defScore = computeDefenseScoreHUD(state);
+    defEl.textContent = String(defScore);
+  }
 
   if (relChurchEl)
     relChurchEl.textContent = Math.round(state.relations.church).toString();
