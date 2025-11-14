@@ -1,0 +1,479 @@
+:root {
+  --bg: #101018;
+  --panel: #181826;
+  --accent: #d4a95f;
+  --accent-soft: #7c5b2b;
+  --text: #f4f4f4;
+  --muted: #a0a0b0;
+  --danger: #c94848;
+  --border: #2a2a3a;
+  --radius: 10px;
+  --shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: radial-gradient(circle at top, #26263a 0, #05050a 55%);
+  color: var(--text);
+}
+
+#ui-root {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+#top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px;
+  background: linear-gradient(to right, #111119, #171722);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  font-size: 14px;
+}
+
+#top-bar .group {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+#top-bar .resources span {
+  margin-right: 12px;
+}
+
+.speed-btn {
+  margin-left: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: #1f1f2a;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.speed-btn.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+#main-layout {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 0;
+  overflow: hidden;
+}
+
+#left-panel {
+  background: linear-gradient(to bottom, #171724, #12121b);
+  border-right: 1px solid var(--border);
+  padding: 12px;
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+#left-panel h2 {
+  font-size: 15px;
+  margin: 8px 0;
+  color: var(--accent);
+}
+
+.build-btn {
+  display: block;
+  width: 100%;
+  margin-bottom: 6px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: #202030;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.build-btn.active {
+  border-color: var(--accent);
+  background: rgba(212, 169, 95, 0.1);
+}
+
+#canvas-wrapper {
+  position: relative;
+  background: radial-gradient(circle at top, #2d2d3c 0, #050509 65%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#gameCanvas {
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  background: #0b0b13;
+}
+
+/* Modal de evento */
+
+#event-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 20;
+}
+
+#event-modal.hidden {
+  display: none;
+}
+
+#event-window {
+  width: min(420px, 90vw);
+  max-height: 80vh;
+  background: #171722;
+  border-radius: 12px;
+  border: 1px solid var(--accent-soft);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+#event-title {
+  margin: 0;
+  font-size: 18px;
+  color: var(--accent);
+}
+
+#event-text {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text);
+}
+
+#event-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.event-choice-btn {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: #222234;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 14px;
+  text-align: left;
+}
+
+.event-choice-btn:hover {
+  border-color: var(--accent);
+  background: rgba(212, 169, 95, 0.15);
+}
+
+.guild-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.guild-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.mini-btn {
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: #1f1f2a;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.mini-btn:hover {
+  border-color: var(--accent);
+}
+
+.note {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.guild-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.guild-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.mini-btn {
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: #1f1f2a;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.mini-btn:hover {
+  border-color: var(--accent);
+}
+
+.note {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* Impuestos */
+
+.tax-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.tax-controls {
+  display: inline-flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.tax-btn {
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: #1f1f2a;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.tax-btn.active {
+  border-color: var(--accent);
+  background: rgba(212, 169, 95, 0.2);
+}
+
+/* Relaciones */
+
+.relations-list {
+  list-style: none;
+  padding-left: 0;
+  margin: 4px 0 8px;
+  font-size: 13px;
+}
+
+.relations-list li {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.labor-list {
+  list-style: none;
+  padding-left: 0;
+  margin: 4px 0 8px;
+  font-size: 13px;
+}
+
+.labor-list li {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.wage-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 2px 0;
+  font-size: 12px;
+}
+
+.wage-buttons {
+  display: flex;
+  gap: 2px;
+}
+
+.wage-btn {
+  border: 1px solid #3a3f5a;
+  background: #161a2b;
+  padding: 2px 4px;
+  font-size: 11px;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.wage-btn.active {
+  background: #d4a95f;
+  color: #111320;
+  border-color: #e5c27a;
+}
+
+.law-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 2px 0;
+  font-size: 12px;
+}
+
+.law-buttons {
+  display: flex;
+  gap: 2px;
+}
+
+.law-btn {
+  border: 1px solid #3a3f5a;
+  background: #161a2b;
+  padding: 2px 4px;
+  font-size: 11px;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.law-btn.active {
+  background: #6fa8dc;
+  color: #111320;
+  border-color: #9fc5f8;
+}
+
+/* Layout del panel izquierdo */
+#left-panel {
+  max-width: 320px;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  overflow-y: auto;
+}
+
+/* Bloques plegables */
+.panel-group {
+  background: #111526;
+  border: 1px solid #2a2f45;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.panel-header {
+  padding: 6px 8px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  background: #171b2c;
+  border-bottom: 1px solid #2a2f45;
+  user-select: none;
+}
+
+.panel-header:hover {
+  background: #1e2336;
+}
+
+.panel-body {
+  padding: 6px 8px 8px;
+}
+
+.panel-group.collapsed .panel-body {
+  display: none;
+}
+
+/* Listas */
+.resources-list,
+.relations-list,
+.labor-list {
+  list-style: none;
+  padding-left: 0;
+  margin: 4px 0 8px;
+  font-size: 13px;
+}
+
+.resources-list li,
+.relations-list li,
+.labor-list li {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+/* Controles de velocidad / impuestos / construcción */
+.speed-controls,
+.tax-controls,
+.build-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 4px 0 6px;
+}
+
+.speed-btn,
+.tax-btn,
+.build-btn {
+  padding: 4px 6px;
+  font-size: 11px;
+}
+
+/* Sueldos (ya tenías parte, lo completo por si acaso) */
+.wage-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 2px 0;
+  font-size: 12px;
+}
+
+.wage-buttons {
+  display: flex;
+  gap: 2px;
+}
+
+.wage-btn {
+  border: 1px solid #3a3f5a;
+  background: #161a2b;
+  padding: 2px 4px;
+  font-size: 11px;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.wage-btn.active {
+  background: #d4a95f;
+  color: #111320;
+  border-color: #e5c27a;
+}
+
+/* Un poco de aire a los h2 del panel */
+#left-panel h2 {
+  font-size: 13px;
+  margin: 6px 0 4px;
+}
+

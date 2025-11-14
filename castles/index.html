@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Proto Castles JS</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="ui-root">
+    <header id="top-bar">
+      <div class="group">
+        <span>Día: <span id="day-display">1</span></span>
+        <span>Velocidad:
+          <button data-speed="0" class="speed-btn">⏸</button>
+          <button data-speed="1" class="speed-btn active">x1</button>
+          <button data-speed="3" class="speed-btn">x3</button>
+        </span>
+      </div>
+      <div class="group resources">
+        <span>💰 Oro: <span id="gold-display">0</span></span>
+        <span>🧱 Piedra: <span id="stone-display">0</span></span>
+        <span>🌳 Madera: <span id="wood-display">0</span></span>
+        <span>🍞 Comida: <span id="food-display">0</span></span>
+        <span>👥 Población: <span id="pop-display">0</span></span>
+      </div>
+    </header>
+
+    <main id="main-layout">
+		<aside id="left-panel">
+			<!-- BLOQUE 1: Consejo y leyes -->
+			<div class="panel-group" data-group="council">
+				<div class="panel-header">Consejo y leyes</div>
+				<div class="panel-body">
+				<h2>Impuestos</h2>
+				<div class="tax-controls">
+					<button class="tax-btn" data-tax="0">Bajos</button>
+					<button class="tax-btn active" data-tax="1">Normales</button>
+					<button class="tax-btn" data-tax="2">Altos</button>
+				</div>
+		
+				<h2>Leyes</h2>
+				<div class="law-row">
+					<span>Trabajo obligatorio en las obras</span>
+					<div class="law-buttons">
+					<button class="law-btn active" data-law="corveeLabor" data-value="0">No</button>
+					<button class="law-btn" data-law="corveeLabor" data-value="1">Sí</button>
+					</div>
+				</div>
+				<div class="law-row">
+					<span>Protección de bosques comunales</span>
+					<div class="law-buttons">
+					<button class="law-btn active" data-law="forestProtection" data-value="0">No</button>
+					<button class="law-btn" data-law="forestProtection" data-value="1">Sí</button>
+					</div>
+				</div>
+				<p class="note">
+					Las leyes afectan a cómo se reparte la gente, a la producción y a las relaciones.
+				</p>
+				</div>
+			</div>
+
+			<!-- BLOQUE 2: Construcción -->
+			<div class="panel-group" data-group="build">
+				<div class="panel-header">Construcción</div>
+				<div class="panel-body">
+				<h2>Edificios</h2>
+				<div class="build-buttons">
+					<button class="build-btn active" data-building="wall">Muralla</button>
+					<button class="build-btn" data-building="tower">Torre</button>
+					<button class="build-btn" data-building="gate">Puerta</button>
+					<button class="build-btn" data-building="bridge">Puente</button>
+					<button class="build-btn" data-building="farm">Granja</button>
+					<button class="build-btn" data-building="quarry">Cantera</button>
+					<button class="build-btn" data-building="lumberyard">Aserradero</button>
+				</div>
+				<p class="note">Recuerda: granjas solo en llano, canteras en roca y aserraderos en bosque.</p>
+				</div>
+			</div>
+
+			<!-- BLOQUE 3: Relaciones -->
+			<div class="panel-group" data-group="relations">
+				<div class="panel-header">Relaciones</div>
+				<div class="panel-body">
+				<ul class="relations-list">
+					<li>Iglesia: <span id="rel-church">50</span></li>
+					<li>Corona: <span id="rel-crown">50</span></li>
+					<li>Pueblo: <span id="rel-people">50</span></li>
+					<li>Gremios: <span id="rel-guilds">50</span></li>
+				</ul>
+				</div>
+			</div>
+	
+			<!-- BLOQUE 4: Población y gremios -->
+			<div class="panel-group" data-group="population">
+				<div class="panel-header">Población y gremios</div>
+				<div class="panel-body">
+				<h2>Población</h2>
+				<!-- En el lateral usamos otro id para no duplicar el de la barra superior -->
+				<p>Total: <span id="pop-display-side">0</span></p>
+				<ul class="labor-list">
+				<li>Obras: <span id="labor-builders">0</span></li>
+				<li>Granjeros: <span id="labor-farmers">0</span></li>
+				<li>Canteros: <span id="labor-miners">0</span></li>
+				<li>Leñadores: <span id="labor-lumberjacks">0</span></li>
+				<li>Soldados: <span id="labor-soldiers">0</span></li>
+				<li>Administración / Servicio: <span id="labor-servants">0</span></li>
+				<li>Clero: <span id="labor-clergy">0</span></li>
+				<li>Reservas (niños/ancianos): <span id="labor-unassigned">0</span></li>
+				</ul>
+				<p class="note">
+					La gente se reparte sola según edificios, vacantes y sueldos.
+				</p>
+		
+				<h2>Sueldos (gremios clave)</h2>
+					<div class="wage-row">
+					<span>Constructores</span>
+					<div class="wage-buttons">
+					<button class="wage-btn" data-role="builders" data-wage="0">Bajo</button>
+					<button class="wage-btn active" data-role="builders" data-wage="1">Normal</button>
+					<button class="wage-btn" data-role="builders" data-wage="2">Alto</button>
+					</div>
+				</div>
+				<div class="wage-row">
+					<span>Granjeros</span>
+					<div class="wage-buttons">
+					<button class="wage-btn" data-role="farmers" data-wage="0">Bajo</button>
+					<button class="wage-btn active" data-role="farmers" data-wage="1">Normal</button>
+					<button class="wage-btn" data-role="farmers" data-wage="2">Alto</button>
+					</div>
+				</div>
+				<div class="wage-row">
+					<span>Canteros</span>
+					<div class="wage-buttons">
+					<button class="wage-btn" data-role="miners" data-wage="0">Bajo</button>
+					<button class="wage-btn active" data-role="miners" data-wage="1">Normal</button>
+					<button class="wage-btn" data-role="miners" data-wage="2">Alto</button>
+					</div>
+				</div>
+				<div class="wage-row">
+					<span>Leñadores</span>
+					<div class="wage-buttons">
+					<button class="wage-btn" data-role="lumberjacks" data-wage="0">Bajo</button>
+					<button class="wage-btn active" data-role="lumberjacks" data-wage="1">Normal</button>
+					<button class="wage-btn" data-role="lumberjacks" data-wage="2">Alto</button>
+					</div>
+				</div>
+				<div class="wage-row">
+					<span>Soldadesca</span>
+					<div class="wage-buttons">
+					<button class="wage-btn" data-role="soldiers" data-wage="0">Bajo</button>
+					<button class="wage-btn active" data-role="soldiers" data-wage="1">Normal</button>
+					<button class="wage-btn" data-role="soldiers" data-wage="2">Alto</button>
+					</div>
+				</div>
+				<div class="wage-row">
+					<span>Administración / Servicio</span>
+					<div class="wage-buttons">
+					<button class="wage-btn" data-role="servants" data-wage="0">Bajo</button>
+					<button class="wage-btn active" data-role="servants" data-wage="1">Normal</button>
+					<button class="wage-btn" data-role="servants" data-wage="2">Alto</button>
+					</div>
+				</div>
+				<div class="wage-row">
+					<span>Clero</span>
+					<div class="wage-buttons">
+					<button class="wage-btn" data-role="clergy" data-wage="0">Bajo</button>
+					<button class="wage-btn active" data-role="clergy" data-wage="1">Normal</button>
+					<button class="wage-btn" data-role="clergy" data-wage="2">Alto</button>
+					</div>
+				</div>
+				</div>
+			</div>
+		</aside>
+
+      <section id="canvas-wrapper">
+        <canvas id="gameCanvas" width="1024" height="768"></canvas>
+      </section>
+    </main>
+  </div>
+
+  <!-- Modal de eventos -->
+  <div id="event-modal" class="hidden">
+    <div id="event-window">
+      <h2 id="event-title">Evento</h2>
+      <p id="event-text"></p>
+      <div id="event-choices"></div>
+    </div>
+  </div>
+
+  <!-- JS principal como módulo ES6 -->
+  <script type="module" src="main.js"></script>
+</body>
+</html>
