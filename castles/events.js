@@ -47,6 +47,55 @@ function hasPopulationAtLeast(state, n) {
   return state.resources.population >= n;
 }
 
+function computeDefenseScore(state) {
+  let walls = 0;
+  let towers = 0;
+  let gates = 0;
+
+  const tiles = state.tiles || [];
+  for (let y = 0; y < tiles.length; y++) {
+    const row = tiles[y];
+    for (let x = 0; x < row.length; x++) {
+      const b = row[x].building;
+      if (b === "wall") walls++;
+      else if (b === "tower") towers++;
+      else if (b === "gate") gates++;
+    }
+  }
+
+  const soldiers = state.labor?.soldiers || 0;
+
+  // Murallas cuentan poco, torres y puertas algo más, soldados dan fuerza móvil
+  return walls + gates * 2 + towers * 3 + soldiers * 2;
+}
+
+function destroyRandomWallSegment(state) {
+  const tiles = state.tiles || [];
+  const candidates = [];
+
+  for (let y = 0; y < tiles.length; y++) {
+    const row = tiles[y];
+    for (let x = 0; x < row.length; x++) {
+      const tile = row[x];
+      if (tile.building === "wall") {
+        candidates.push({ x, y });
+      }
+    }
+  }
+
+  if (candidates.length === 0) return false;
+
+  const idx = Math.floor(Math.random() * candidates.length);
+  const { x, y } = candidates[idx];
+  const tile = state.tiles[y][x];
+
+  tile.building = null;
+  tile.underConstruction = null;
+  tile.buildRemainingDays = 0;
+
+  return true;
+}
+
 export const SAMPLE_EVENTS = [
   // ======================
   // IGLESIA
@@ -940,6 +989,94 @@ export const SAMPLE_EVENTS = [
       }
     ]
   },
+  
+   // ======================
+  // Comerciantes
+  // ======================
+  
+  {
+    id: "merchant_trade_offer",
+    title: "Caravana de mercaderes",
+    text:
+      "Una caravana de mercaderes llega al camino principal. Ofrecen pagar buen oro por parte de tus excedentes de recursos.",
+    // Solo tiene sentido si tienes algo de sobra para vender
+    condition: (state) => {
+      const r = state.resources || {};
+      const total =
+        (r.wood || 0) + (r.stone || 0) + (r.food || 0);
+      return total >= 40; // al menos algo acumulado
+    },
+    choices: [
+      {
+        id: "merchants_sell_wood_stone",
+        text: "Vender madera y piedra sobrantes.",
+        effects: (state) => {
+          const r = state.resources;
+          if (!r) return;
+
+          // Vendes hasta 30 de madera y 20 de piedra
+          const sellWood = Math.min(r.wood || 0, 30);
+          const sellStone = Math.min(r.stone || 0, 20);
+
+          // Precios aproximados: la piedra se paga mejor que la madera
+          const income =
+            Math.floor(sellWood * 0.5 + sellStone * 1.0);
+
+          r.wood = (r.wood || 0) - sellWood;
+          r.stone = (r.stone || 0) - sellStone;
+          r.gold = (r.gold || 0) + income;
+
+          if (state.relations) {
+            // A los gremios les gusta que haya trato comercial
+            state.relations.guilds = Math.min(
+              100,
+              state.relations.guilds + 4
+            );
+          }
+        }
+      },
+      {
+        id: "merchants_sell_food",
+        text: "Vender parte de la cosecha almacenada.",
+        effects: (state) => {
+          const r = state.resources;
+          if (!r) return;
+
+          // Solo tiene sentido vender si hay bastante comida
+          const sellFood = Math.min(r.food || 0, 40);
+          const income = Math.floor(sellFood * 0.4);
+
+          r.food = (r.food || 0) - sellFood;
+          r.gold = (r.gold || 0) + income;
+
+          if (state.relations) {
+            // El pueblo no está muy contento si vendes comida
+            state.relations.people = Math.max(
+              0,
+              state.relations.people - 3
+            );
+          }
+        }
+      },
+      {
+        id: "merchants_refuse",
+        text: "Rechazar la oferta, los recursos se quedan en el castillo.",
+        effects: (state) => {
+          if (state.relations) {
+            // El pueblo aprecia la prudencia, los gremios se aburren un poco
+            state.relations.people = Math.min(
+              100,
+              state.relations.people + 2
+            );
+            state.relations.guilds = Math.max(
+              0,
+              state.relations.guilds - 1
+            );
+          }
+        }
+      }
+    ]
+  },
  
   // ======================
   // SOLDADESCA
@@ -1022,6 +1159,174 @@ export const SAMPLE_EVENTS = [
             state.relations.guilds = Math.max(
               0,
               state.relations.guilds - 4
+            );
+          }
+        }
+      }
+    ]
+  },
+  
+   // ======================
+  // CONFLICTOS BELICOS
+  // ======================
+  {
+    id: "bandit_raid",
+    title: "Incursión de bandidos",
+    text:
+      "Una partida de bandidos ha sido vista cerca de las granjas. Algunos consejeros proponen enviar soldados, otros pagar para que se marchen.",
+    condition: (state) =>
+      state.day >= 5 &&
+      (state.resources.food > 0 || state.resources.gold > 0),
+    choices: [
+      {
+        id: "bandits_send_soldiers",
+        text: "Enviar soldados a dispersarlos.",
+        effects: (state) => {
+          const defense = computeDefenseScore(state);
+
+          if (defense >= 12) {
+            // Buena defensa: daño menor
+            state.resources.gold = Math.max(0, state.resources.gold - 10);
+            if (state.relations) {
+              state.relations.crown = Math.min(
+                100,
+                state.relations.crown + 3
+              );
+              state.relations.people = Math.min(
+                100,
+                state.relations.people + 2
+              );
+            }
+          } else {
+            // Defensa floja: algo de saqueo pese al intento
+            const stolenGold = Math.min(state.resources.gold, 20);
+            const stolenFood = Math.min(state.resources.food, 20);
+            state.resources.gold -= stolenGold;
+            state.resources.food -= stolenFood;
+            if (state.relations) {
+              state.relations.people = Math.max(
+                0,
+                state.relations.people - 4
+              );
+            }
+          }
+        }
+      },
+      {
+        id: "bandits_pay_off",
+        text: "Pagarles algo de oro para que se marchen.",
+        effects: (state) => {
+          const cost = Math.min(state.resources.gold, 25);
+          state.resources.gold -= cost;
+          if (state.relations) {
+            state.relations.people = Math.max(
+              0,
+              state.relations.people - 2
+            );
+            state.relations.guilds = Math.max(
+              0,
+              state.relations.guilds - 2
+            );
+          }
+        }
+      }
+    ]
+  },
+  {
+    id: "neighbor_lord_attack",
+    title: "Ataque del señor vecino",
+    text:
+      "Un señor vecino envidioso del castillo moviliza una pequeña fuerza para poner a prueba tus defensas.",
+    condition: (state) => {
+      if (state.day < 15) return false;
+      // Solo tiene sentido si hay alguna muralla o torre
+      const tiles = state.tiles || [];
+      let hasDefense = false;
+      for (let y = 0; y < tiles.length; y++) {
+        const row = tiles[y];
+        for (let x = 0; x < row.length; x++) {
+          const b = row[x].building;
+          if (b === "wall" || b === "tower" || b === "gate") {
+            hasDefense = true;
+            break;
+          }
+        }
+        if (hasDefense) break;
+      }
+      return hasDefense;
+    },
+    choices: [
+      {
+        id: "neighbor_hold_walls",
+        text: "Confiar en las murallas y la tropa.",
+        effects: (state) => {
+          const defense = computeDefenseScore(state);
+
+          if (defense >= 24) {
+            // Buena defensa: resistes el ataque
+            if (state.relations) {
+              state.relations.crown = Math.min(
+                100,
+                state.relations.crown + 8
+              );
+              state.relations.people = Math.min(
+                100,
+                state.relations.people + 5
+              );
+            }
+          } else if (defense >= 12) {
+            // Defensa media: resistís, pero a costa de recursos
+            const lostFood = Math.min(state.resources.food, 25);
+            const lostGold = Math.min(state.resources.gold, 20);
+            state.resources.food -= lostFood;
+            state.resources.gold -= lostGold;
+            if (state.relations) {
+              state.relations.people = Math.max(
+                0,
+                state.relations.people - 3
+              );
+            }
+          } else {
+            // Defensa floja: se abre una brecha en la muralla
+            const destroyed = destroyRandomWallSegment(state);
+            const lostFood = Math.min(state.resources.food, 30);
+            const lostGold = Math.min(state.resources.gold, 30);
+            state.resources.food -= lostFood;
+            state.resources.gold -= lostGold;
+            if (state.relations) {
+              state.relations.people = Math.max(
+                0,
+                state.relations.people - 6
+              );
+              state.relations.guilds = Math.max(
+                0,
+                state.relations.guilds - 4
+              );
+            }
+            // Si no había murallas, al menos el saqueo duele
+            if (!destroyed && state.relations) {
+              state.relations.crown = Math.max(
+                0,
+                state.relations.crown - 4
+              );
+            }
+          }
+        }
+      },
+      {
+        id: "neighbor_pay_tribute",
+        text: "Pagar un tributo para evitar el choque.",
+        effects: (state) => {
+          const tribute = Math.min(state.resources.gold, 40);
+          state.resources.gold -= tribute;
+          if (state.relations) {
+            state.relations.crown = Math.max(
+              0,
+              state.relations.crown - 3
+            );
+            state.relations.people = Math.max(
+              0,
+              state.relations.people - 2
             );
           }
         }
