@@ -362,6 +362,15 @@ function createInitialState() {
       chapel: false,
       monastery: false,
       cathedral: false
+    },
+
+    // Crónica y nivel de malestar del pueblo
+    logs: [],
+    unrest: 0,
+
+    // Banderas varias para eventos “solo una vez”
+    flags: {
+      garrisonProposalSeen: false
     }
   };
 }
@@ -544,7 +553,7 @@ function setupUIBindings() {
   setupBuildingTooltips();
   setupWageTooltips();
   setupTaxTooltips();
-  
+
   // Velocidad
   document.querySelectorAll(".speed-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -1107,7 +1116,48 @@ function onNewDay(daysPassed) {
     }
   }
 
-  // 9) Resumen del día para la crónica
+  // 9) Crecimiento natural de la población si hay abundancia y satisfacción
+  // Cada 30 días: si el pueblo está contento y hay comida de sobra,
+  // entran nuevas familias al castillo.
+  if (state.day % 30 === 0 && state.resources.population > 0) {
+    const pop = state.resources.population;
+    // Consideramos que "abunda" si tras comer tenemos reservas
+    // para ~10 días más.
+    const minReserve = pop * foodPerPerson * 10;
+    if (
+      state.resources.food > minReserve &&
+      state.relations.people >= 60
+    ) {
+      const gained = Math.max(1, Math.floor(pop / 20));
+      state.resources.population += gained;
+      addLogEntry(
+        `La prosperidad del castillo atrae a nuevas familias: +${gained} habitantes.`
+      );
+    }
+  }
+
+  // 10) Guarnición mínima: a partir de 30 habitantes,
+  // se espera al menos 1 soldado por cada 15 habitantes.
+  if (state.resources.population >= 30) {
+    const pop = state.resources.population;
+    const soldiers = state.labor.soldiers || 0;
+    const required = Math.ceil(pop / 15);
+    if (required > 0 && soldiers < required) {
+      const ratio = soldiers / required; // 0..1
+      // Cuanto más por debajo del mínimo, más empeoran las relaciones
+      const penaltyFactor = 1 - ratio;
+      adjustRelation("crown", -0.5 * penaltyFactor * daysPassed);
+      adjustRelation("people", -0.2 * penaltyFactor * daysPassed);
+
+      addLogEntry(
+        `La guarnición es insuficiente: ${soldiers}/${required} soldados para ${Math.round(
+          pop
+        )} habitantes. El castillo parece vulnerable.`
+      );
+    }
+  }
+
+  // 11) Resumen del día para la crónica
   const dGold = state.resources.gold - prevGold;
   const dFood = state.resources.food - prevFood;
   const dStone = state.resources.stone - prevStone;
@@ -1123,10 +1173,10 @@ function onNewDay(daysPassed) {
     )}, Población ${formatDelta(dPop)}, Pueblo ${formatDelta(dPeople)}`
   );
 
-  // 10) Avance de obras (usa constructores)
+  // 12) Avance de obras (usa constructores)
   advanceConstruction(daysPassed);
 
-  // 11) Eventos
+  // 13) Eventos
   tryTriggerRandomEvent();
 }
 

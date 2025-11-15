@@ -251,6 +251,67 @@ export const SAMPLE_EVENTS = [
       }
     ]
   },
+    {
+    id: "cleric_garrison_proposal",
+    title: "El clérigo pide reforzar la guarnición",
+    text:
+      "Con el crecimiento de la villa, un clérigo influyente insiste en que el castillo mantenga una guarnición mínima para proteger a los fieles.",
+    condition: (state) => {
+      const pop = state.resources?.population || 0;
+      const churchRel = state.relations?.church ?? 50;
+      const flags = state.flags || {};
+      // Solo una vez, cuando ya hay al menos 30 habitantes
+      return pop >= 30 && !flags.garrisonProposalSeen && churchRel >= 40;
+    },
+    choices: [
+      {
+        id: "accept_garrison_proposal",
+        text: "Asegurar que habrá siempre una guarnición adecuada.",
+        effects: (state) => {
+          if (!state.flags) state.flags = {};
+          state.flags.garrisonProposalSeen = true;
+          if (state.relations) {
+            state.relations.church = Math.min(
+              100,
+              state.relations.church + 6
+            );
+            state.relations.crown = Math.min(
+              100,
+              state.relations.crown + 4
+            );
+            state.relations.people = Math.max(
+              0,
+              state.relations.people - 2
+            );
+          }
+          // La norma de 1 soldado por cada 15 habitantes ya se aplica
+          // en onNewDay() a partir de 30 hab.
+        }
+      },
+      {
+        id: "refuse_garrison_proposal",
+        text: "Responder que la guarnición la decide solo el señor del castillo.",
+        effects: (state) => {
+          if (!state.flags) state.flags = {};
+          state.flags.garrisonProposalSeen = true;
+          if (state.relations) {
+            state.relations.church = Math.max(
+              0,
+              state.relations.church - 6
+            );
+            state.relations.crown = Math.max(
+              0,
+              state.relations.crown - 3
+            );
+            state.relations.people = Math.min(
+              100,
+              state.relations.people + 2
+            );
+          }
+        }
+      }
+    ]
+  },
 
   // ======================
   // CORONA
