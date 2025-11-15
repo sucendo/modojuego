@@ -502,8 +502,6 @@ function setupUIBindings() {
     });
   }
 
-}
-
   // Sueldos por gremio
   document.querySelectorAll(".wage-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -524,7 +522,6 @@ function setupUIBindings() {
       btn.classList.add("active");
     });
   });
-  
 
   // Leyes
   document.querySelectorAll(".law-btn").forEach((btn) => {
@@ -546,6 +543,7 @@ function setupUIBindings() {
       btn.classList.add("active");
     });
   });
+}
   
  // ================
 // Activar el acordeón Menú
@@ -1524,7 +1522,8 @@ function updateHUD() {
   if (laborClergyEl)
     laborClergyEl.textContent = String(Math.round(L.clergy || 0));
   if (laborUnassignedEl)
-    
+    laborUnassignedEl.textContent = String(Math.round(L.unassigned || 0));
+
   // Crónica: mostrar las últimas entradas
   if (logListEl && state.logs) {
     logListEl.innerHTML = "";
