@@ -28,7 +28,7 @@
         <span>🌳 Madera: <span id="wood-display">0</span></span>
         <span>🍞 Comida: <span id="food-display">0</span></span>
         <span>👥 Población: <span id="pop-display">0</span></span>
-		<span>🛡️ Defensa: <span id="defense-display">0</span></span>
+				<span>🛡️ Defensa: <span id="defense-display">0</span></span>
       </div>
     </header>
 
@@ -192,6 +192,19 @@
       <h2 id="event-title">Evento</h2>
       <p id="event-text"></p>
       <div id="event-choices"></div>
+    </div>
+  </div>
+
+  <!-- Overlay flotante para la crónica -->
+  <div id="log-overlay" class="log-overlay">
+    <div class="log-header">
+      <span>Crónica</span>
+      <button id="log-toggle" class="log-toggle-btn">–</button>
+    </div>
+    <div class="log-body" id="log-body">
+      <ul id="log-list" class="log-list">
+        <!-- Se rellena desde JS -->
+      </ul>
     </div>
   </div>
 

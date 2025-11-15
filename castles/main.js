@@ -347,7 +347,7 @@ function createInitialState() {
       servants: 1,
       clergy: 1
     },
-	
+    
     // Leyes activas
     laws: {
       corveeLabor: false,
@@ -359,7 +359,11 @@ function createInitialState() {
       chapel: false,
       monastery: false,
       cathedral: false
-    }
+    },
+
+    // Crónica y nivel de malestar del pueblo
+    logs: [],
+    unrest: 0
   };
 }
 
@@ -477,6 +481,24 @@ function setupUIBindings() {
   if (loadBtn) {
     loadBtn.addEventListener("click", () => {
       loadGame();
+    });
+  }
+
+  // Overlay de crónica: minimizar / maximizar
+  const logToggleBtn = document.getElementById("log-toggle");
+  const logBodyEl = document.getElementById("log-body");
+  let logCollapsed = false;
+
+  if (logToggleBtn && logBodyEl) {
+    logToggleBtn.addEventListener("click", () => {
+      logCollapsed = !logCollapsed;
+      if (logCollapsed) {
+        logBodyEl.style.display = "none";
+        logToggleBtn.textContent = "+";
+      } else {
+        logBodyEl.style.display = "";
+        logToggleBtn.textContent = "–";
+      }
     });
   }
 
@@ -803,11 +825,36 @@ function update(dtSeconds) {
   }
 }
 
+function addLogEntry(text) {
+  if (!state) return;
+  if (!state.logs) state.logs = [];
+  state.logs.unshift({ day: state.day, text });
+  // Nos quedamos solo con las últimas 40 entradas
+  if (state.logs.length > 40) {
+    state.logs.length = 40;
+  }
+}
+
+function formatDelta(value) {
+  const v = Math.round(value);
+  if (v > 0) return `+${v}`;
+  if (v < 0) return `${v}`;
+  return "±0";
+}
+
 function onNewDay(daysPassed) {
-  // 0) Rebalanceo de población activa según “vacantes”
+  // 0) Snapshot para el resumen del día
+  const prevGold = state.resources.gold;
+  const prevFood = state.resources.food;
+  const prevStone = state.resources.stone;
+  const prevWood = state.resources.wood;
+  const prevPop = state.resources.population;
+  const prevPeopleRel = state.relations.people;
+
+  // 1) Rebalanceo de población activa según “vacantes”
   rebalanceLabor(state);
 
-  // 1) Impuestos
+  // 2) Impuestos
   const baseTaxPerPerson = BASE_TAX_PER_PERSON;
   let taxMultiplier;
   if (state.taxRate === 0) taxMultiplier = 0.5;
@@ -829,13 +876,13 @@ function onNewDay(daysPassed) {
     adjustRelation("crown", +0.5 * daysPassed);
   }
 
-  // 2) Sueldos: pagar salarios de los gremios clave
+  // 3) Sueldos: pagar salarios de los gremios clave
   applyWages(daysPassed);
 
-  // 3) Producción de edificios según gremios
+  // 4) Producción de edificios según gremios
   applyBuildingProduction(daysPassed);
 
-  // 3b) Efectos continuos de las leyes
+  // 5) Efectos continuos de las leyes
   if (state.laws?.corveeLabor) {
     adjustRelation("people", -0.2 * daysPassed);
     adjustRelation("guilds", -0.15 * daysPassed);
@@ -845,7 +892,7 @@ function onNewDay(daysPassed) {
     adjustRelation("church", 0.1 * daysPassed);
   }
 
-  // 4) Consumo de comida
+  // 6) Consumo de comida
   const foodPerPerson = FOOD_PER_PERSON_PER_DAY;
   state.resources.food -=
     state.resources.population * foodPerPerson * daysPassed;
@@ -859,10 +906,55 @@ function onNewDay(daysPassed) {
     adjustRelation("people", -1 * daysPassed);
   }
 
-  // 5) Avance de obras (usa constructores)
+  // 7) Malestar y emigración si el pueblo está muy descontento
+  if (state.relations.people < 20 && state.resources.population > 0) {
+    const anger = 20 - state.relations.people; // 1..20
+    const baseLeave =
+      state.resources.population * 0.02 * daysPassed; // ~2% base por día
+    const leave = Math.max(
+      1,
+      Math.floor(baseLeave * (1 + anger / 20))
+    );
+
+    state.resources.population = Math.max(
+      0,
+      state.resources.population - leave
+    );
+
+    if (typeof state.unrest !== "number") state.unrest = 0;
+    state.unrest = Math.min(100, state.unrest + 2 * daysPassed);
+
+    addLogEntry(
+      `El malestar del pueblo provoca la marcha de ${leave} habitantes.`
+    );
+  } else {
+    if (typeof state.unrest !== "number") state.unrest = 0;
+    // Si el pueblo está al menos templado, el malestar se enfría poco a poco
+    if (state.relations.people >= 40) {
+      state.unrest = Math.max(0, state.unrest - 1 * daysPassed);
+    }
+  }
+
+  // 8) Resumen del día para la crónica
+  const dGold = state.resources.gold - prevGold;
+  const dFood = state.resources.food - prevFood;
+  const dStone = state.resources.stone - prevStone;
+  const dWood = state.resources.wood - prevWood;
+  const dPop = state.resources.population - prevPop;
+  const dPeople = state.relations.people - prevPeopleRel;
+
+  addLogEntry(
+    `Día ${state.day}: Oro ${formatDelta(dGold)}, Comida ${formatDelta(
+      dFood
+    )}, Piedra ${formatDelta(dStone)}, Madera ${formatDelta(
+      dWood
+    )}, Población ${formatDelta(dPop)}, Pueblo ${formatDelta(dPeople)}`
+  );
+
+  // 9) Avance de obras (usa constructores)
   advanceConstruction(daysPassed);
 
-  // 6) Eventos
+  // 10) Eventos
   tryTriggerRandomEvent();
 }
 
@@ -1373,6 +1465,7 @@ function updateHUD() {
   const foodEl = document.getElementById("food-display");
   const popEl = document.getElementById("pop-display");
   const popSideEl = document.getElementById("pop-display-side");
+  const logListEl = document.getElementById("log-list");
   const defEl = document.getElementById("defense-display");
 
   const relChurchEl = document.getElementById("rel-church");
@@ -1431,7 +1524,18 @@ function updateHUD() {
   if (laborClergyEl)
     laborClergyEl.textContent = String(Math.round(L.clergy || 0));
   if (laborUnassignedEl)
-    laborUnassignedEl.textContent = String(Math.round(L.unassigned || 0));
+    
+  // Crónica: mostrar las últimas entradas
+  if (logListEl && state.logs) {
+    logListEl.innerHTML = "";
+    const maxLines = 8;
+    for (let i = 0; i < state.logs.length && i < maxLines; i++) {
+      const entry = state.logs[i];
+      const li = document.createElement("li");
+      li.textContent = entry.text;
+      logListEl.appendChild(li);
+    }
+  }
 
   // Sincronizar botones de sueldo con el estado (por si los cambia un evento)
   const wages = state.wages || {};
