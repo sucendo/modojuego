@@ -575,7 +575,8 @@ function setupUIBindings() {
      if (typeof addLogEntry === "function") {
        const lawLabels = {
          corveeLabor: "Trabajo obligatorio en las obras",
-         forestProtection: "Protección de bosques comunales"
+         forestProtection: "Protección de bosques comunales",
+         millTax: "Tasa obligatoria del molino"
        };
        const name = lawLabels[lawKey] || lawKey;
        const status = value ? "activada" : "desactivada";
@@ -863,16 +864,6 @@ function update(dtSeconds) {
   }
 }
 
-function addLogEntry(text) {
-  if (!state) return;
-  if (!state.logs) state.logs = [];
-  state.logs.unshift({ day: state.day, text });
-  // Nos quedamos solo con las últimas 40 entradas
-  if (state.logs.length > 40) {
-    state.logs.length = 40;
-  }
-}
-
 function formatDelta(value) {
   const v = Math.round(value);
   if (v > 0) return `+${v}`;
@@ -930,7 +921,40 @@ function onNewDay(daysPassed) {
     adjustRelation("church", 0.1 * daysPassed);
   }
 
-  // 6) Consumo de comida
+  // 6) Tasa del molino: si es obligatoria y hay molinos,
+  // cada ciudadano paga una pequeña tasa → más oro pero más descontento.
+  if (state.laws?.millTax) {
+    let mills = 0;
+    for (let y = 0; y < GAME_CONFIG.mapHeight; y++) {
+      for (let x = 0; x < GAME_CONFIG.mapWidth; x++) {
+        const tile = state.tiles[y][x];
+        if (tile.building === "mill") mills++;
+      }
+    }
+
+    if (mills > 0 && state.resources.population > 0) {
+      const tollPerPerson = 0.12; // oro por persona y día
+      const tollIncome =
+        state.resources.population * tollPerPerson * daysPassed;
+
+      state.resources.gold += tollIncome;
+
+      // Cuantos más molinos y más días, más enfado
+      const anger = 0.12 * mills * daysPassed;
+      adjustRelation("people", -anger);
+
+      // Lo dejamos opcional en la crónica
+      if (typeof addLogEntry === "function") {
+        addLogEntry(
+          `Tasa del molino: +${tollIncome.toFixed(
+            1
+          )} oro; el pueblo se muestra más descontento.`
+        );
+      }
+    }
+  }
+
+  // 7) Consumo de comida
   const foodPerPerson = FOOD_PER_PERSON_PER_DAY;
   state.resources.food -=
     state.resources.population * foodPerPerson * daysPassed;
@@ -944,7 +968,7 @@ function onNewDay(daysPassed) {
     adjustRelation("people", -1 * daysPassed);
   }
 
-  // 7) Malestar y emigración si el pueblo está muy descontento
+  // 8) Malestar y emigración si el pueblo está muy descontento
   if (state.relations.people < 20 && state.resources.population > 0) {
     const anger = 20 - state.relations.people; // 1..20
     const baseLeave =
@@ -973,7 +997,7 @@ function onNewDay(daysPassed) {
     }
   }
 
-  // 8) Resumen del día para la crónica
+  // 9) Resumen del día para la crónica
   const dGold = state.resources.gold - prevGold;
   const dFood = state.resources.food - prevFood;
   const dStone = state.resources.stone - prevStone;
@@ -989,10 +1013,10 @@ function onNewDay(daysPassed) {
     )}, Población ${formatDelta(dPop)}, Pueblo ${formatDelta(dPeople)}`
   );
 
-  // 9) Avance de obras (usa constructores)
+  // 10) Avance de obras (usa constructores)
   advanceConstruction(daysPassed);
 
-  // 10) Eventos
+  // 11) Eventos
   tryTriggerRandomEvent();
 }
 
@@ -1051,6 +1075,7 @@ function applyBuildingProduction(daysPassed) {
   let farms = 0;
   let quarries = 0;
   let lumberyards = 0;
+  let mills = 0;
 
   for (let y = 0; y < GAME_CONFIG.mapHeight; y++) {
     for (let x = 0; x < GAME_CONFIG.mapWidth; x++) {
@@ -1058,6 +1083,7 @@ function applyBuildingProduction(daysPassed) {
       if (tile.building === "farm") farms++;
       else if (tile.building === "quarry") quarries++;
       else if (tile.building === "lumberyard") lumberyards++;
+      else if (tile.building === "mill") mills++;
     }
   }
 
@@ -1087,8 +1113,18 @@ function applyBuildingProduction(daysPassed) {
   }
 
   if (farms > 0) {
+    // Bonus de productividad de granjas gracias a molinos:
+    // +25% por molino hasta +100% máx.
+    let millBonus = 1;
+    if (mills > 0) {
+      millBonus = 1 + Math.min(mills * 0.25, 1.0);
+    }
     state.resources.food +=
-      farms * FOOD_PER_FARM_PER_DAY * foodFactor * daysPassed;
+      farms *
+      FOOD_PER_FARM_PER_DAY *
+      foodFactor *
+      millBonus *
+      daysPassed;
   }
   if (quarries > 0) {
     state.resources.stone +=
@@ -1313,7 +1349,9 @@ function drawBuilding(kind, sx, sy, options) {
   else if (kind === "farm") heightPx = 10;
   else if (kind === "quarry") heightPx = 16;
   else if (kind === "lumberyard") heightPx = 14;
-  else if (kind === "bridge") heightPx = 5;  // puente bajito
+  else if (kind === "bridge") heightPx = 5;
+  else if (kind === "mill") heightPx = 18;
+  else if (kind === "road") heightPx = 2;
   else heightPx = 18;
 
   // Base
@@ -1375,6 +1413,18 @@ function drawBuilding(kind, sx, sy, options) {
     topColor = "#7a5c3a";
     rightColor = "#9b7a4c";
     leftColor = "#443426";
+  } else if (kind === "mill") {
+    // Molino: base de piedra y parte superior más clara
+    baseColor = "#7c6a4a";
+    topColor = "#9a8357";
+    rightColor = "#c0a56a";
+    leftColor = "#5e4a36";
+  } else if (kind === "road") {
+    // Camino: bloque muy bajito, gris terroso
+    baseColor = "#5a5145";
+    topColor = "#6c6356";
+    rightColor = "#857a68";
+    leftColor = "#453d34";
   } else {
     baseColor = "#888888";
     topColor = "#888888";

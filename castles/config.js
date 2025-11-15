@@ -61,6 +61,18 @@ export const BUILDING_TYPES = {
     name: "Aserradero",
     cost: { gold: 8, food: 4 },
     buildTimeDays: 2.5
+  },
+  mill: {
+    id: "mill",
+    name: "Molino",
+    cost: { wood: 15, stone: 10, gold: 20 },
+    buildTimeDays: 4
+  },
+  road: {
+    id: "road",
+    name: "Camino",
+    cost: { stone: 1 },
+    buildTimeDays: 1
   }
 };
 
