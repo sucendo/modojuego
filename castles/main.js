@@ -363,6 +363,61 @@ function createInitialState() {
   };
 }
 
+// ===================
+// Salvar y Cargar Partida
+// ===================
+
+function saveGame() {
+  try {
+    const payload = {
+      version: 1,
+      state,
+      originX,
+      originY,
+      lastEventDay,
+      eventCooldownDays
+    };
+    localStorage.setItem("castles_save", JSON.stringify(payload));
+    console.log("Partida guardada");
+  } catch (err) {
+    console.error("Error al guardar la partida:", err);
+  }
+}
+
+function loadGame() {
+  try {
+    const raw = localStorage.getItem("castles_save");
+    if (!raw) {
+      console.warn("No hay partida guardada.");
+      return;
+    }
+    const payload = JSON.parse(raw);
+    if (!payload.state) {
+      console.warn("Guardado inválido.");
+      return;
+    }
+
+    // Restaurar estado y cámara
+    state = payload.state;
+    if (typeof payload.originX === "number") originX = payload.originX;
+    if (typeof payload.originY === "number") originY = payload.originY;
+    if (typeof payload.lastEventDay === "number")
+      lastEventDay = payload.lastEventDay;
+    if (typeof payload.eventCooldownDays === "number")
+      eventCooldownDays = payload.eventCooldownDays;
+
+    // Cerrar cualquier evento que estuviera abierto
+    pendingEvent = null;
+    closeEventModal();
+
+    // Refrescar HUD con el nuevo estado
+    updateHUD();
+    console.log("Partida cargada");
+  } catch (err) {
+    console.error("Error al cargar la partida:", err);
+  }
+}
+
 // ===========================
 // UI bindings
 // ===========================
@@ -409,6 +464,22 @@ function setupUIBindings() {
       state.taxRate = tax;
     });
   });
+
+  // Guardar / cargar partida
+  const saveBtn = document.getElementById("save-btn");
+  if (saveBtn) {
+    saveBtn.addEventListener("click", () => {
+      saveGame();
+    });
+  }
+
+  const loadBtn = document.getElementById("load-btn");
+  if (loadBtn) {
+    loadBtn.addEventListener("click", () => {
+      loadGame();
+    });
+  }
+
 }
 
   // Sueldos por gremio
