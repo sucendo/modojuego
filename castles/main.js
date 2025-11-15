@@ -359,12 +359,20 @@ function createInitialState() {
       chapel: false,
       monastery: false,
       cathedral: false
-    },
-
-    // Crónica y nivel de malestar del pueblo
-    logs: [],
-    unrest: 0
+    }
   };
+}
+
+// ===========================
+// Crónica: helper genérico
+// ===========================
+function addLogEntry(text) {
+  if (!state) return;
+  if (!state.logs) state.logs = [];
+  state.logs.unshift({ day: state.day, text });
+  if (state.logs.length > 40) {
+    state.logs.length = 40;
+  }
 }
 
 // ===================
@@ -466,6 +474,12 @@ function setupUIBindings() {
       const taxStr = btn.dataset.tax || "1";
       const tax = Number(taxStr);
       state.taxRate = tax;
+
+      if (typeof addLogEntry === "function") {
+        const labels = { 0: "bajos", 1: "normales", 2: "altos" };
+        const label = labels[tax] ?? String(tax);
+        addLogEntry(`Impuestos ajustados a nivel ${label}.`);
+      }
     });
   });
 
@@ -520,6 +534,22 @@ function setupUIBindings() {
         );
       }
       btn.classList.add("active");
+
+     if (typeof addLogEntry === "function") {
+       const roleLabels = {
+         builders: "Constructores",
+         farmers: "Granjeros",
+         miners: "Canteros",
+         lumberjacks: "Leñadores",
+         soldiers: "Soldados",
+         servants: "Administración / Servicio",
+         clergy: "Clero"
+       };
+       const tierLabels = { 0: "bajo", 1: "normal", 2: "alto" };
+       const rName = roleLabels[role] || role;
+       const tName = tierLabels[wageTier] ?? String(wageTier);
+       addLogEntry(`Sueldo de ${rName} ajustado a nivel ${tName}.`);
+     }
     });
   });
 
@@ -541,6 +571,16 @@ function setupUIBindings() {
         );
       }
       btn.classList.add("active");
+
+     if (typeof addLogEntry === "function") {
+       const lawLabels = {
+         corveeLabor: "Trabajo obligatorio en las obras",
+         forestProtection: "Protección de bosques comunales"
+       };
+       const name = lawLabels[lawKey] || lawKey;
+       const status = value ? "activada" : "desactivada";
+       addLogEntry(`Ley "${name}" ${status}.`);
+     }
     });
   });
 }
@@ -1164,6 +1204,12 @@ function showEvent(evt) {
 }
 
 function applyChoice(choice) {
+  // Registrar en la crónica la decisión del evento
+  if (typeof addLogEntry === "function" && pendingEvent) {
+    const eventTitle = pendingEvent.title || "Evento";
+    const choiceText = choice.text || "";
+    addLogEntry(`Evento: ${eventTitle} → ${choiceText}`);
+  }
   choice.effects(state);
 }
 
