@@ -34,6 +34,9 @@ let originY = 80;
 const CAMERA_STEP_X = 48; // ≈ 1 loseta en X
 const CAMERA_STEP_Y = 24; // ≈ 1 loseta en Y
 
+// Solo para mostrar información en los tooltips de impuestos
+const TAX_MULTIPLIER_UI = [0.6, 1.0, 1.4];
+
 // ===========================
 // Estado global
 // ===========================
@@ -375,6 +378,108 @@ function addLogEntry(text) {
   }
 }
 
+
+// ===========================
+// Tooltips de UI
+// ===========================
+
+function setupBuildingTooltips() {
+  const resLabels = {
+    gold: "oro",
+    stone: "piedra",
+    wood: "madera",
+    food: "comida"
+  };
+
+  document.querySelectorAll(".build-btn").forEach((btn) => {
+    const id = btn.dataset.building;
+    const def = BUILDING_TYPES[id];
+    if (!def) return;
+
+    const cost = def.cost || {};
+    const parts = [];
+    for (const key in cost) {
+      if (!Object.prototype.hasOwnProperty.call(cost, key)) continue;
+      const amount = cost[key];
+      if (!amount) continue;
+      const name = resLabels[key] || key;
+      parts.push(`${amount} ${name}`);
+    }
+
+    let title = "";
+    if (parts.length) {
+      title = `Coste: ${parts.join(", ")}`;
+    } else {
+      title = "Coste: sin recursos directos.";
+    }
+
+    if (def.buildTimeDays) {
+      title += ` · ${def.buildTimeDays} día${
+        def.buildTimeDays > 1 ? "s" : ""
+      } de obra.`;
+    }
+
+    btn.title = title;
+  });
+}
+
+function setupWageTooltips() {
+  const roleLabels = {
+    builders: "Constructores",
+    farmers: "Granjeros",
+    miners: "Canteros",
+    lumberjacks: "Leñadores",
+    soldiers: "Soldados",
+    servants: "Administración / Servicio",
+    clergy: "Clero"
+  };
+
+  document.querySelectorAll(".wage-btn").forEach((btn) => {
+    const role = btn.dataset.role;
+    const wageStr = btn.dataset.wage || "1";
+    const tier = Number(wageStr);
+    if (!role || Number.isNaN(tier)) return;
+
+    const base = WAGE_BASE[role];
+    if (typeof base !== "number") return;
+
+    const mult = WAGE_MULTIPLIER[tier] ?? 1;
+    const goldPerDay = base * mult;
+
+    const roleName = roleLabels[role] || role;
+    const tierLabels = { 0: "bajo", 1: "normal", 2: "alto" };
+    const tierName = tierLabels[tier] ?? tier;
+
+    btn.title = `${roleName} · sueldo ${tierName}: ${goldPerDay.toFixed(
+      2
+    )} oro/día por trabajador.`;
+  });
+}
+
+function setupTaxTooltips() {
+  const levelLabels = {
+    0: "Impuestos bajos",
+    1: "Impuestos normales",
+    2: "Impuestos altos"
+  };
+
+  document.querySelectorAll(".tax-btn").forEach((btn) => {
+    const taxStr = btn.dataset.tax || "1";
+    const level = Number(taxStr);
+    if (Number.isNaN(level)) return;
+
+    const label = levelLabels[level] || "Impuestos";
+    const mult = TAX_MULTIPLIER_UI[level] ?? 1.0;
+    const perHabitant = BASE_TAX_PER_PERSON * mult;
+
+    btn.title = `${label}: ~${(mult * 100).toFixed(
+      0
+    )}% de la tasa base. Recaudación media: ${perHabitant.toFixed(
+      2
+    )} oro/día por habitante.`;
+  });
+}
+
 // ===================
 // Salvar y Cargar Partida
 // ===================
@@ -435,6 +540,11 @@ function loadGame() {
 // ===========================
 
 function setupUIBindings() {
+  // Tooltips informativos de la UI
+  setupBuildingTooltips();
+  setupWageTooltips();
+  setupTaxTooltips();
+  
   // Velocidad
   document.querySelectorAll(".speed-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -1414,11 +1524,11 @@ function drawBuilding(kind, sx, sy, options) {
     rightColor = "#9b7a4c";
     leftColor = "#443426";
   } else if (kind === "mill") {
-    // Molino: base de piedra y parte superior más clara
-    baseColor = "#7c6a4a";
-    topColor = "#9a8357";
-    rightColor = "#c0a56a";
-    leftColor = "#5e4a36";
+    // Molino: tonos más rojizos / estilo teja
+    baseColor = "#8b4c3f";   // muro rojizo
+    topColor = "#a75a47";    // parte superior más clara
+    rightColor = "#c96d54";  // cara iluminada
+    leftColor = "#6b3a32";   // sombra
   } else if (kind === "road") {
     // Camino: bloque muy bajito, gris terroso
     baseColor = "#5a5145";
@@ -1577,7 +1687,10 @@ function updateHUD() {
   const laborClergyEl = document.getElementById("labor-clergy");
 
   if (dayEl) dayEl.textContent = String(state.day);
-  if (goldEl) goldEl.textContent = Math.floor(state.resources.gold).toString();
+  if (goldEl) {
+    const goldVal = Number(state.resources.gold || 0);
+    goldEl.textContent = goldVal.toFixed(2);
+  }
   if (stoneEl)
     stoneEl.textContent = Math.floor(state.resources.stone).toString();
   if (woodEl)
