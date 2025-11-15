@@ -513,11 +513,39 @@ function handleCanvasClick(ev) {
 
   const tile = state.tiles[tileY][tileX];
 
+  const b = state.selectedBuilding;
+
+  // Modo demolición: eliminar edificios u obras en la loseta
+  if (b === "demolish") {
+    if (tile.building || tile.underConstruction) {
+      // Reembolso parcial de recursos si el edificio estaba terminado
+      if (tile.building) {
+        const existingId = tile.building;
+        const defExisting = BUILDING_TYPES[existingId];
+        if (defExisting && defExisting.cost) {
+          const cost = defExisting.cost;
+          for (const key in cost) {
+            if (!Object.prototype.hasOwnProperty.call(cost, key)) continue;
+            const refund = Math.floor(cost[key] * 0.5);
+            if (refund > 0) {
+              state.resources[key] = (state.resources[key] || 0) + refund;
+            }
+          }
+        }
+      }
+      // En cualquier caso, borramos el edificio/obra
+      tile.building = null;
+      tile.underConstruction = null;
+      tile.buildRemainingDays = 0;
+    }
+    // En modo demolición no intentamos construir nada
+    return;
+  }
+
   if (tile.building || tile.underConstruction) {
     return;
   }
 
-  const b = state.selectedBuilding;
   const def = BUILDING_TYPES[b];
   if (!def) return;
 
