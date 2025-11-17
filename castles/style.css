@@ -533,3 +533,40 @@ body {
   margin: 6px 0 4px;
 }
 
+/* Tooltip flotante de UI */
+.ui-tooltip {
+  position: fixed;
+  pointer-events: none;
+  z-index: 2000;
+  max-width: 260px;
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  background: rgba(10, 10, 20, 0.9);
+  color: #e6eef8;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  transform: translate(-50%, -120%);
+  transition: opacity 0.1s ease-out;
+  white-space: normal;
+}
+
+/* Tooltip flotante de la UI */
+.ui-tooltip {
+  position: fixed;
+  top: 0;
+  left: 0;
+  max-width: 220px;
+  padding: 4px 6px;
+  font-size: 11px;
+  background: rgba(10, 12, 24, 0.95);
+  color: #e6eef8;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  pointer-events: none;
+  z-index: 1100;
+  opacity: 0;
+  transform: translate3d(0,0,0);
+  transition: opacity 80ms ease-out;
+}

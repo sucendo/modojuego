@@ -100,6 +100,30 @@ function createInitialLabor(population) {
   };
 }
 
+// Calcula el mínimo de soldados recomendado según población
+// y defensas construidas (torres y tramos de muralla).
+function computeMinSoldiers(state) {
+  const pop = state.resources.population;
+  if (pop < 30) return 0; // por debajo de 30 habitantes no exigimos guarnición mínima
+
+  let towers = 0;
+  let walls = 0;
+
+  for (let y = 0; y < state.tiles.length; y++) {
+    for (let x = 0; x < state.tiles[y].length; x++) {
+      const b = state.tiles[y][x].building;
+      if (b === "tower") towers++;
+      else if (b === "wall") walls++;
+    }
+  }
+
+  const baseRequired = Math.ceil(pop / 15);
+  const towerBonus = Math.floor(towers / 5);   // +1 soldado mínimo por cada 5 torres
+  const wallBonus = Math.floor(walls / 10);    // +1 soldado mínimo por cada 10 murallas
+
+  return baseRequired + towerBonus + wallBonus;
+}
+
 // Calcula la “demanda” de trabajadores según edificios y obras
 function computeLaborDemand(state) {
   let farms = 0;
@@ -142,10 +166,21 @@ function computeLaborDemand(state) {
     buildersDemand *= 1.25; // más demanda de obreros en obras
   }
 
-  // Soldados / servicio / clero: ahora también dependen del sueldo
+  // Soldados / servicio / clero: ahora también dependen del sueldo,
+  // pero en el caso de los soldados intentamos cubrir al menos
+  // la guarnición mínima recomendada según población, torres y murallas.
   const pop = state.resources.population;
-  const soldiersDemand =
-    Math.floor(pop * 0.05) * wm("soldiers"); // 5%
+  const minSoldiers = computeMinSoldiers(state);
+  let soldiersDemand = 0;
+  if (minSoldiers > 0) {
+    // Castillo ya “serio”: apuntamos como mínimo a cubrir la guarnición
+    soldiersDemand = minSoldiers;
+  } else if (pop > 0) {
+    // Castillo muy pequeño: pequeña guardia simbólica
+    soldiersDemand = Math.max(1, Math.floor(pop * 0.03));
+  }
+  soldiersDemand *= wm("soldiers");
+
   const servantsDemand =
     Math.floor(pop * 0.03) * wm("servants"); // 3%
 
@@ -429,6 +464,7 @@ function setupBuildingTooltips() {
     }
 
     btn.title = title;
+    btn.dataset.tooltip = title;
   });
 }
 
@@ -459,7 +495,7 @@ function setupWageTooltips() {
     const tierLabels = { 0: "bajo", 1: "normal", 2: "alto" };
     const tierName = tierLabels[tier] ?? tier;
 
-    btn.title = `${roleName} · sueldo ${tierName}: ${goldPerDay.toFixed(
+    btn.dataset.tooltip = `${roleName} · sueldo ${tierName}: ${goldPerDay.toFixed(
       2
     )} oro/día por trabajador.`;
   });
@@ -481,12 +517,71 @@ function setupTaxTooltips() {
     const mult = TAX_MULTIPLIER_UI[level] ?? 1.0;
     const perHabitant = BASE_TAX_PER_PERSON * mult;
 
-    btn.title = `${label}: ~${(mult * 100).toFixed(
+    btn.dataset.tooltip = `${label}: ~${(mult * 100).toFixed(
       0
     )}% de la tasa base. Recaudación media: ${perHabitant.toFixed(
       2
     )} oro/día por habitante.`;
   });
+}
+
+let tooltipEl = null;
+let currentTooltipTarget = null;
+
+function setupGlobalTooltip() {
+  tooltipEl = document.getElementById("ui-tooltip");
+  if (!tooltipEl) return;
+
+  // Mostrar tooltip cuando el ratón entra en algo con data-tooltip
+  document.addEventListener("mouseover", (ev) => {
+    const target = ev.target.closest("[data-tooltip]");
+    if (!target) {
+      hideTooltip();
+      return;
+    }
+    currentTooltipTarget = target;
+    showTooltipAt(target.dataset.tooltip || "", ev.clientX, ev.clientY);
+  });
+
+  // Mover tooltip cuando se mueve el ratón
+  document.addEventListener("mousemove", (ev) => {
+    if (!currentTooltipTarget || !tooltipEl) return;
+    if (!currentTooltipTarget.dataset.tooltip) return;
+    positionTooltip(ev.clientX, ev.clientY);
+  });
+
+  // Ocultar cuando el ratón sale de un elemento con tooltip
+  document.addEventListener("mouseout", (ev) => {
+    const related = ev.relatedTarget;
+    // Si salimos de un elemento con tooltip y no entramos en otro con tooltip
+    if (
+      currentTooltipTarget &&
+      !related?.closest?.("[data-tooltip]")
+    ) {
+      hideTooltip();
+      currentTooltipTarget = null;
+    }
+  });
+}
+
+function showTooltipAt(text, x, y) {
+  if (!tooltipEl) return;
+  tooltipEl.textContent = text;
+  positionTooltip(x, y);
+  tooltipEl.style.opacity = "1";
+}
+
+function positionTooltip(x, y) {
+  if (!tooltipEl) return;
+  const offsetX = 16;
+  const offsetY = -16;
+  tooltipEl.style.left = `${x + offsetX}px`;
+  tooltipEl.style.top = `${y + offsetY}px`;
+}
+
+function hideTooltip() {
+  if (!tooltipEl) return;
+  tooltipEl.style.opacity = "0";
 }
 
 // ===================
@@ -553,6 +648,7 @@ function setupUIBindings() {
   setupBuildingTooltips();
   setupWageTooltips();
   setupTaxTooltips();
+  setupGlobalTooltip();
 
   // Velocidad
   document.querySelectorAll(".speed-btn").forEach((btn) => {
@@ -1136,12 +1232,13 @@ function onNewDay(daysPassed) {
     }
   }
 
-  // 10) Guarnición mínima: a partir de 30 habitantes,
-  // se espera al menos 1 soldado por cada 15 habitantes.
-  if (state.resources.population >= 30) {
+  // 10) Guarnición mínima: a partir de 30 habitantes
+  // y según defensas construidas (torres y murallas) se espera
+  // un mínimo de soldados en guarnición.
+  {
     const pop = state.resources.population;
     const soldiers = state.labor.soldiers || 0;
-    const required = Math.ceil(pop / 15);
+    const required = computeMinSoldiers(state);
     if (required > 0 && soldiers < required) {
       const ratio = soldiers / required; // 0..1
       // Cuanto más por debajo del mínimo, más empeoran las relaciones
