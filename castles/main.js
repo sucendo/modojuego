@@ -15,7 +15,10 @@ import {
   WAGE_BASE,
   BASE_TAX_PER_PERSON,
   FOOD_PER_PERSON_PER_DAY,
-  EVENT_COOLDOWN_DAYS
+  EVENT_COOLDOWN_DAYS,
+  MILITARY_RULES,
+  RENDER_CONFIG,
+  TAX_MULTIPLIER_UI
 } from "./config.js";
 import { SAMPLE_EVENTS } from "./events.js";
 
@@ -23,19 +26,17 @@ import { SAMPLE_EVENTS } from "./events.js";
 // Constantes de render isométrico
 // ===========================
 
-const TILE_WIDTH = 48;
-const TILE_HEIGHT = 24;
+// Constantes de render isométrico
+const TILE_WIDTH = RENDER_CONFIG.tileWidth;
+const TILE_HEIGHT = RENDER_CONFIG.tileHeight;
 
-// Cámara: origen isométrico
+// Cámara: origen isométrico (la posición inicial la seguimos fijando aquí)
 let originX = 512;
 let originY = 80;
 
 // Movimiento de cámara con teclado
-const CAMERA_STEP_X = 48; // ≈ 1 loseta en X
-const CAMERA_STEP_Y = 24; // ≈ 1 loseta en Y
-
-// Solo para mostrar información en los tooltips de impuestos
-const TAX_MULTIPLIER_UI = [0.6, 1.0, 1.4];
+const CAMERA_STEP_X = RENDER_CONFIG.cameraStepX;
+const CAMERA_STEP_Y = RENDER_CONFIG.cameraStepY;
 
 // ===========================
 // Estado global
@@ -117,9 +118,9 @@ function computeMinSoldiers(state) {
     }
   }
 
-  const baseRequired = Math.ceil(pop / 15);
-  const towerBonus = Math.floor(towers / 5);   // +1 soldado mínimo por cada 5 torres
-  const wallBonus = Math.floor(walls / 10);    // +1 soldado mínimo por cada 10 murallas
+  const baseRequired = Math.ceil(pop / MILITARY_RULES.soldiersPerPopulation);
+  const towerBonus = Math.floor(towers / MILITARY_RULES.towersPerExtraSoldier);
+  const wallBonus  = Math.floor(walls  / MILITARY_RULES.wallsPerExtraSoldier);
 
   return baseRequired + towerBonus + wallBonus;
 }
@@ -186,9 +187,16 @@ function computeLaborDemand(state) {
 
   // El clero depende del sueldo y de la relación con la Iglesia
   const churchRel = state.relations?.church ?? 50;
-  const clergyBase = Math.floor(pop * 0.02); // 2%
+  const clergyBase = Math.floor(pop * 0.02); // ~2% de la población
   const churchFactor = 0.5 + churchRel / 100; // entre ~0.5 y ~1.5
-  const clergyDemand = clergyBase * wm("clergy") * churchFactor;
+
+  let clergyDemand = clergyBase * wm("clergy") * churchFactor;
+
+  // Si hemos aceptado tener un clérigo residente, garantizamos al menos 1 plaza,
+  // aunque el castillo sea pequeño.
+  if (state.flags?.hasCleric && clergyDemand < 1 && pop > 0) {
+    clergyDemand = 1;
+  }
 
   return {
     builders: buildersDemand,
@@ -405,7 +413,9 @@ function createInitialState() {
 
     // Banderas varias para eventos “solo una vez”
     flags: {
-      garrisonProposalSeen: false
+      garrisonProposalSeen: false,
+      hasCleric: false,      // ¿Hemos aceptado al clérigo oficial del obispo?
+      altCultSeen: false     // Para evitar que el evento de “otras religiones/hechiceros” se repita
     }
   };
 }
@@ -1121,6 +1131,9 @@ function onNewDay(daysPassed) {
   }
 
   // 3) Sueldos: pagar salarios de los gremios clave
+  if (!state.flags) state.flags = {};
+  // Por defecto asumimos que se han podido pagar; si no, lo marcará applyWages
+  state.flags.buildersUnpaidToday = false;
   applyWages(daysPassed);
 
   // 4) Producción de edificios según gremios
@@ -1254,7 +1267,57 @@ function onNewDay(daysPassed) {
     }
   }
 
-  // 11) Resumen del día para la crónica
+  // 11) Influencia diaria del clérigo según sueldo
+  {
+    const wages = state.wages || {};
+    const clergyWage = wages.clergy ?? 1;
+    const clergyCount = state.labor.clergy || 0;
+    const hasCleric = state.flags?.hasCleric;
+
+    // Consideramos “clérigo oficial” solo si lo hemos aceptado por evento
+    // y hay al menos 1 persona en el gremio del clero.
+    if (hasCleric && clergyCount > 0) {
+      if (clergyWage === 0) {
+        // Sueldo bajo: sermones contra el señor
+        adjustRelation("people", -0.3 * daysPassed);
+        adjustRelation("church", -0.2 * daysPassed);
+
+        if (typeof state.unrest !== "number") state.unrest = 0;
+        state.unrest = Math.min(100, state.unrest + 0.5 * daysPassed);
+
+        if (Math.random() < 0.1 * daysPassed) {
+          addLogEntry(
+            "El clérigo se queja en sus sermones de la mezquindad del señor; el pueblo murmura."
+          );
+        }
+      } else if (clergyWage === 1) {
+        // Sueldo normal: estabilidad suave
+        adjustRelation("church", 0.05 * daysPassed);
+
+        if (typeof state.unrest !== "number") state.unrest = 0;
+        if (state.unrest > 0) {
+          state.unrest = Math.max(0, state.unrest - 0.2 * daysPassed);
+        }
+      } else if (clergyWage === 2) {
+        // Sueldo alto: predica lealtad y caridad
+        adjustRelation("church", 0.15 * daysPassed);
+        adjustRelation("people", 0.1 * daysPassed);
+
+        if (typeof state.unrest !== "number") state.unrest = 0;
+        if (state.unrest > 0) {
+          state.unrest = Math.max(0, state.unrest - 0.5 * daysPassed);
+        }
+
+        if (Math.random() < 0.08 * daysPassed) {
+          addLogEntry(
+            "El clérigo elogia la generosidad del señor y apacigua los ánimos en la villa."
+          );
+        }
+      }
+    }
+  }
+
+  // 12) Resumen del día para la crónica
   const dGold = state.resources.gold - prevGold;
   const dFood = state.resources.food - prevFood;
   const dStone = state.resources.stone - prevStone;
@@ -1315,16 +1378,38 @@ function applyWages(daysPassed) {
   totalPerDay += costRole("clergy", L.clergy || 0);
 
   const totalCost = totalPerDay * daysPassed;
-  state.resources.gold -= totalCost;
 
-  if (state.resources.gold < 0) {
-    // No podemos pagar todos los sueldos: cabreo general
-    const deuda = -state.resources.gold;
+  const availableGold = state.resources.gold;
+  if (availableGold >= totalCost) {
+    // Hay oro suficiente: se pagan todos los sueldos sin problema
+    state.resources.gold -= totalCost;
+  } else {
+    // No hay oro suficiente: se paga hasta donde llega y el resto queda impagado
+    const deuda = totalCost - availableGold;
     state.resources.gold = 0;
+
     const stress = Math.min(1, deuda / 100); // escala suave
     adjustRelation("guilds", -0.5 * stress * daysPassed);
     adjustRelation("people", -0.3 * stress * daysPassed);
     adjustRelation("church", -0.2 * stress * daysPassed);
+
+    // Marcamos que hoy no se han podido pagar completamente los sueldos:
+    // las obras se pararán.
+    if (!state.flags) state.flags = {};
+    state.flags.buildersUnpaidToday = true;
+
+    // Si hay obras activas, lo reflejamos en la crónica
+    outer: for (let y = 0; y < GAME_CONFIG.mapHeight; y++) {
+      for (let x = 0; x < GAME_CONFIG.mapWidth; x++) {
+        const tile = state.tiles[y][x];
+        if (tile.underConstruction && tile.buildRemainingDays > 0) {
+          addLogEntry(
+            "Las obras se detienen: no hay oro suficiente para pagar a los obreros."
+          );
+          break outer;
+        }
+      }
+    }
   }
 }
 
@@ -1428,6 +1513,12 @@ function advanceConstruction(daysPassed) {
   }
 
   if (activeTiles.length === 0) return;
+  
+  // Si hoy no se han podido pagar completamente los sueldos,
+  // los obreros se niegan a trabajar y las obras no avanzan.
+  if (state.flags?.buildersUnpaidToday) {
+    return;
+  }
 
   const totalBuilders = state.labor.builders || 0;
   if (totalBuilders <= 0) return;

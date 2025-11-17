@@ -161,6 +161,62 @@ export const SAMPLE_EVENTS = [
     ]
   },
   {
+    id: "church_assign_cleric",
+    title: "El obispo exige un clérigo residente",
+    text:
+      "El obispo escribe desde la diócesis: considera inapropiado que un castillo en crecimiento no tenga un clérigo residente. " +
+      "Se ofrece a enviarte a un sacerdote para atender a los fieles y velar por la ortodoxia.",
+    condition: (state) => {
+      const pop = state.resources?.population || 0;
+      const churchRel = state.relations?.church ?? 50;
+      const flags = state.flags || {};
+      // Solo una vez, con algo de población y sin clérigo oficial
+      return pop >= 20 && churchRel >= 40 && !flags.hasCleric;
+    },
+    choices: [
+      {
+        id: "accept_cleric",
+        text: "Aceptar al clérigo y darle aposento en el castillo.",
+        effects: (state) => {
+          state.resources.population += 1; // Llega el nuevo clérigo
+
+          if (!state.flags) state.flags = {};
+          state.flags.hasCleric = true;
+
+          if (state.relations) {
+            state.relations.church = Math.min(
+              100,
+              state.relations.church + 8
+            );
+            state.relations.people = Math.min(
+              100,
+              state.relations.people + 2
+            );
+          }
+        }
+      },
+      {
+        id: "refuse_cleric",
+        text: "Rechazarlo, la villa no necesita injerencias constantes.",
+        effects: (state) => {
+          if (!state.flags) state.flags = {};
+          state.flags.hasCleric = false; // se mantiene sin clérigo oficial
+
+          if (state.relations) {
+            state.relations.church = Math.max(
+              0,
+              state.relations.church - 10
+            );
+            state.relations.people = Math.max(
+              0,
+              state.relations.people - 1
+            );
+          }
+        }
+      }
+    ]
+  },
+  {
     id: "church_relic",
     title: "Reliquia en tránsito",
     text:
@@ -206,10 +262,13 @@ export const SAMPLE_EVENTS = [
     text:
       "Los clérigos locales proponen fundar un pequeño monasterio cerca del castillo. " +
       "Aseguran que atraerá peregrinos y estudiosos, pero requerirá invertir en piedra, madera y oro.",
-    // Solo si tienes buena relación con la Iglesia y aún no hay monasterio
+    // Solo si tienes buena relación con la Iglesia, pagas bien al clero
+    // y aún no hay monasterio
     condition: (state) =>
       (state.relations.church ?? 0) >= 60 &&
       state.labor.clergy > 0 &&
+      (state.wages?.clergy ?? 1) >= 2 &&
+      (state.flags?.hasCleric ?? false) &&
       !state.structures?.monastery,
     choices: [
       {
@@ -251,7 +310,7 @@ export const SAMPLE_EVENTS = [
       }
     ]
   },
-    {
+  {
     id: "cleric_garrison_proposal",
     title: "El clérigo pide reforzar la guarnición",
     text:
@@ -308,6 +367,122 @@ export const SAMPLE_EVENTS = [
               state.relations.people + 2
             );
           }
+        }
+      }
+    ]
+  },
+  {
+    id: "cleric_charity",
+    title: "Obras de caridad para los pobres",
+    text:
+      "Tu clérigo propone destinar parte del tesoro a alimentar a los más necesitados y vestir a los desamparados. " +
+      "Afirma que la limosna apaciguará los ánimos y dará buen nombre al castillo.",
+    condition: (state) => {
+      const flags = state.flags || {};
+      const wages = state.wages || {};
+      const clergyWage = wages.clergy ?? 1;
+      const pop = state.resources?.population || 0;
+
+      // Solo si hay clérigo oficial, algo de población y un sueldo al menos normal
+      return flags.hasCleric && pop >= 20 && clergyWage >= 1;
+    },
+    choices: [
+      {
+        id: "fund_charity",
+        text: "Autorizar limosnas y reparto de comida.",
+        effects: (state) => {
+          state.resources.gold = Math.max(0, state.resources.gold - 20);
+
+          if (state.relations) {
+            state.relations.people = Math.min(
+              100,
+              state.relations.people + 5
+            );
+            state.relations.church = Math.min(
+              100,
+              state.relations.church + 3
+            );
+          }
+          if (typeof state.unrest !== "number") state.unrest = 0;
+          state.unrest = Math.max(0, state.unrest - 5);
+        }
+      },
+      {
+        id: "refuse_charity",
+        text: "Negarse, las arcas del castillo son prioridad.",
+        effects: (state) => {
+          if (state.relations) {
+            state.relations.people = Math.max(
+              0,
+              state.relations.people - 2
+            );
+            state.relations.church = Math.max(
+              0,
+              state.relations.church - 3
+            );
+          }
+        }
+      }
+    ]
+  },
+
+  // ======================
+  // HEREJES
+  // ======================
+  {
+    id: "alt_cult_preachers",
+    title: "Predicadores extraños en la plaza",
+    text:
+      "Al no haber clérigo residente, unos predicadores forasteros empiezan a reunir gente en la plaza. " +
+      "Sus palabras mezclan supersticiones, promesas de milagros y críticas veladas a la Iglesia.",
+    condition: (state) => {
+      const flags = state.flags || {};
+      const churchRel = state.relations?.church ?? 50;
+      // Solo si no hay clérigo oficial, la Iglesia no es muy fuerte
+      // y el evento no ha aparecido ya.
+      return !flags.hasCleric && !flags.altCultSeen && churchRel <= 55;
+    },
+    choices: [
+      {
+        id: "tolerate_alt_cult",
+        text: "Permitir que hablen mientras no causen problemas.",
+        effects: (state) => {
+          if (!state.flags) state.flags = {};
+          state.flags.altCultSeen = true;
+
+          if (state.relations) {
+            state.relations.people = Math.min(
+              100,
+              state.relations.people + 3
+            );
+            state.relations.church = Math.max(
+              0,
+              state.relations.church - 6
+            );
+          }
+          if (typeof state.unrest !== "number") state.unrest = 0;
+          state.unrest = Math.min(100, state.unrest + 3);
+        }
+      },
+      {
+        id: "expel_alt_cult",
+        text: "Expulsar a los predicadores y reafirmar la fe oficial.",
+        effects: (state) => {
+          if (!state.flags) state.flags = {};
+          state.flags.altCultSeen = true;
+
+          if (state.relations) {
+            state.relations.church = Math.min(
+              100,
+              state.relations.church + 5
+            );
+            state.relations.people = Math.max(
+              0,
+              state.relations.people - 2
+            );
+          }
+          if (typeof state.unrest !== "number") state.unrest = 0;
+          state.unrest = Math.min(100, state.unrest + 1);
         }
       }
     ]

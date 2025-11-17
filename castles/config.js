@@ -108,3 +108,21 @@ export const WAGE_BASE = {
 export const BASE_TAX_PER_PERSON = 0.4;
 export const FOOD_PER_PERSON_PER_DAY = 0.5;
 export const EVENT_COOLDOWN_DAYS = 7;
+
+// Reglas militares / guarnición
+export const MILITARY_RULES = {
+  soldiersPerPopulation: 15,   // 1 soldado por cada 15 hab.
+  towersPerExtraSoldier: 5,    // +1 mínimo por cada 5 torres
+  wallsPerExtraSoldier: 10     // +1 mínimo por cada 10 murallas
+};
+
+// Render isométrico / cámara
+export const RENDER_CONFIG = {
+  tileWidth: 48,
+  tileHeight: 24,
+  cameraStepX: 48,
+  cameraStepY: 24
+};
+
+// UI de impuestos (solo para tooltips)
+export const TAX_MULTIPLIER_UI = [0.6, 1.0, 1.4];
