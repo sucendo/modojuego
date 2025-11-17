@@ -1,6 +1,18 @@
 // events.js
 
+import { BUILDING_TYPES } from "./config.js";
+
 // ========= Helpers internos ===========
+
+// Pequeño helper para escribir en la crónica desde los eventos
+function pushLog(state, text) {
+  if (!state) return;
+  if (!state.logs) state.logs = [];
+  state.logs.unshift({ day: state.day, text });
+  if (state.logs.length > 40) {
+    state.logs.length = 40;
+  }
+}
 
 // Un edificio al azar de ciertos tipos
 function pickRandomBuildingTile(state, typesArray) {
@@ -94,6 +106,48 @@ function destroyRandomWallSegment(state) {
   tile.buildRemainingDays = 0;
 
   return true;
+}
+
+// Inicia la reconstrucción de una sección derrumbada a mitad de precio
+function startHalfPriceRebuild(state, tile, kind) {
+  const def = BUILDING_TYPES[kind];
+  if (!def) return;
+
+  const cost = def.cost || {};
+  for (const key in cost) {
+    if (!Object.prototype.hasOwnProperty.call(cost, key)) continue;
+    const half = Math.floor(cost[key] / 2);
+    if (half > 0) {
+      state.resources[key] = Math.max(
+        0,
+        (state.resources[key] || 0) - half
+      );
+    }
+  }
+
+  tile.building = null;
+  tile.underConstruction = kind;
+  tile.buildRemainingDays = def.buildTimeDays || 1;
+}
+
+// Derriba hasta N secciones de muralla/torre/puerta y devuelve cuántas cayeron
+function collapseRandomDefenseSegments(state, maxSegments) {
+  let destroyed = 0;
+  for (let i = 0; i < maxSegments; i++) {
+    if (destroyRandomWallSegment(state)) {
+      destroyed++;
+    } else {
+      break;
+    }
+  }
+  if (destroyed > 0) {
+    const msg =
+      destroyed === 1
+        ? "Durante el ataque, una sección de la muralla ha cedido y ha quedado en ruinas."
+        : `Durante el ataque, ${destroyed} tramos de la muralla han cedido y han quedado en ruinas.`;
+    pushLog(state, msg);
+  }
+  return destroyed;
 }
 
 export const SAMPLE_EVENTS = [
@@ -1109,118 +1163,159 @@ export const SAMPLE_EVENTS = [
     id: "wall_collapse",
     title: "Derrumbe en la muralla",
     text:
-      "Una sección de la muralla muestra grietas. Durante la noche, parte de la estructura se derrumba.",
+      "Una sección de la muralla muestra grietas desde hace días. Durante la noche, parte de la estructura se viene abajo con estruendo.",
     // Solo si existe al menos una pieza defensiva
     condition: (state) => hasBuilding(state, ["wall", "tower", "gate"]),
     choices: [
       {
         id: "repair_immediately",
-        text: "Reparar de inmediato, cueste lo que cueste.",
+        text: "Reparar de inmediato, cueste lo que cueste (reconstrucción a mitad de coste).",
         effects: (state) => {
           const tile = pickRandomBuildingTile(state, ["wall", "tower", "gate"]);
-          if (tile) {
-            tile.building = null;
-            tile.underConstruction = null;
-            tile.buildRemainingDays = 0;
-          }
-          state.resources.stone = Math.max(0, state.resources.stone - 30);
-          state.resources.wood = Math.max(0, state.resources.wood - 10);
-          if (state.relations) {
-            state.relations.crown = Math.min(
-              100,
-              state.relations.crown + 5
-            );
-            state.relations.guilds = Math.min(
-              100,
-              state.relations.guilds + 3
-            );
-          }
+          if (!tile) return;
+
+          const kind = tile.building || "wall";
+          startHalfPriceRebuild(state, tile, kind);
+
+          pushLog(
+            state,
+            "Los albañiles se ponen manos a la obra y comienzan a reconstruir de inmediato el tramo derrumbado, aprovechando parte de la piedra caída."
+          );
         }
       },
       {
         id: "leave_for_later",
-        text: "Aplazar la reparación, hay prioridades más urgentes.",
+        text: "Aplazar la reparación: ya se arreglará más adelante.",
         effects: (state) => {
           const tile = pickRandomBuildingTile(state, ["wall", "tower", "gate"]);
-          if (tile) {
-            tile.building = null;
-            tile.underConstruction = null;
-            tile.buildRemainingDays = 0;
-          }
+          if (!tile) return;
+
+          // El tramo queda simplemente derrumbado
+          tile.building = null;
+          tile.underConstruction = null;
+          tile.buildRemainingDays = 0;
+
           if (state.relations) {
             state.relations.crown = Math.max(
               0,
-              state.relations.crown - 8
+              (state.relations.crown || 0) - 4
             );
             state.relations.people = Math.max(
               0,
-              state.relations.people - 4
+              (state.relations.people || 0) - 2
             );
           }
+
+          pushLog(
+            state,
+            "El derrumbe se deja sin reparar; los rumores sobre la debilidad de tus defensas empiezan a circular entre los vecinos."
+          );
         }
       }
     ]
   },
   {
-    id: "bandits_raid",
+    id: "bandit_raid",
     title: "Incursión de bandidos",
     text:
-      "Un grupo de bandidos ha sido avistado cerca de las rutas de comercio. " +
-      "Pueden atacar a los mercaderes o saquear graneros mal defendidos.",
-    // Más probable si Pueblo y Corona andan algo tocados
+      "Una partida de bandidos ha sido vista cerca de las granjas y los caminos. Algunos consejeros proponen enviar soldados, otros pagar para que se marchen.",
     condition: (state) =>
-      state.relations.people < 80 || state.relations.crown < 80,
+      state.day >= 5 &&
+      (state.resources.food > 0 || state.resources.gold > 0),
     choices: [
       {
-        id: "pay_bandits_off",
-        text: "Pagar un soborno para que se marchen.",
+        id: "bandits_send_soldiers",
+        text: "Enviar soldados a dispersarlos.",
         effects: (state) => {
-          state.resources.gold = Math.max(0, state.resources.gold - 35);
-          if (state.relations) {
-            state.relations.people = Math.min(
-              100,
-              state.relations.people + 2
+          const defense = computeDefenseScore(state);
+
+          if (defense >= 12) {
+            // Buena defensa: daño menor
+            const lostGold = Math.min(state.resources.gold, 10);
+            const lostFood = Math.min(state.resources.food, 10);
+            state.resources.gold -= lostGold;
+            state.resources.food -= lostFood;
+
+            if (state.relations) {
+              state.relations.crown = Math.min(
+                100,
+                (state.relations.crown || 0) + 3
+              );
+              state.relations.people = Math.min(
+                100,
+                (state.relations.people || 0) + 2
+              );
+            }
+
+            pushLog(
+              state,
+              `Tus soldados sorprenden a los bandidos y los ponen en fuga. Solo se pierden ${lostGold} de oro y ${lostFood} de comida en el forcejeo.`
+            );
+          } else {
+            // Defensa floja: algo de saqueo pese al intento
+            const stolenGold = Math.min(state.resources.gold, 20);
+            const stolenFood = Math.min(state.resources.food, 20);
+            state.resources.gold -= stolenGold;
+            state.resources.food -= stolenFood;
+
+            if (state.relations) {
+              state.relations.people = Math.max(
+                0,
+                (state.relations.people || 0) - 4
+              );
+            }
+
+            pushLog(
+              state,
+              `Los soldados no logran contener del todo a los bandidos: se llevan ${stolenGold} de oro y ${stolenFood} de comida antes de retirarse al bosque.`
             );
           }
         }
       },
       {
-        id: "send_guard",
-        text: "Enviar a la guardia a limpiar el bosque de bandidos.",
+        id: "bandits_pay",
+        text: "Pagarles para que se marchen.",
         effects: (state) => {
-          state.resources.population = Math.max(
-            0,
-            state.resources.population - 2
-          );
-          state.resources.gold += 20;
-          if (state.relations) {
-            state.relations.crown = Math.min(
-              100,
-              state.relations.crown + 6
-            );
-            state.relations.people = Math.min(
-              100,
-              state.relations.people + 4
-            );
-          }
-        }
-      },
-      {
-        id: "ignore_bandits",
-        text: "No intervenir: que cada mercader se proteja como pueda.",
-        effects: (state) => {
-          state.resources.food = Math.max(0, state.resources.food - 20);
-          state.resources.gold = Math.max(0, state.resources.gold - 10);
+          const cost = Math.min(state.resources.gold, 30);
+          state.resources.gold -= cost;
+
           if (state.relations) {
             state.relations.people = Math.max(
               0,
-              state.relations.people - 8
+              (state.relations.people || 0) - 2
+            );
+          }
+
+          pushLog(
+            state,
+            `Se paga a los bandidos ${cost} de oro para que desaparezcan. El pueblo murmura al ver cómo el tesoro del castillo compra paz a malhechores.`
+          );
+        }
+      },
+      {
+        id: "bandits_ignore",
+        text: "Ignorar el problema: que los aldeanos se organicen.",
+        effects: (state) => {
+          const stolenGold = Math.min(state.resources.gold, 15);
+          const stolenFood = Math.min(state.resources.food, 25);
+          state.resources.gold -= stolenGold;
+          state.resources.food -= stolenFood;
+
+          if (state.relations) {
+            state.relations.people = Math.max(
+              0,
+              (state.relations.people || 0) - 6
             );
             state.relations.guilds = Math.max(
               0,
-              state.relations.guilds - 4
+              (state.relations.guilds || 0) - 3
             );
           }
+
+          pushLog(
+            state,
+            `Sin ayuda desde el castillo, los bandidos saquean graneros y carromatos: se pierden ${stolenGold} de oro y ${stolenFood} de comida. Los aldeanos hablan de tu falta de protección.`
+          );
         }
       }
     ]
@@ -1493,78 +1588,109 @@ export const SAMPLE_EVENTS = [
     },
     choices: [
       {
-        id: "neighbor_hold_walls",
-        text: "Confiar en las murallas y la tropa.",
+        id: "defend_behind_walls",
+        text: "Cerrar las puertas y defenderse tras las murallas.",
         effects: (state) => {
           const defense = computeDefenseScore(state);
 
-          if (defense >= 24) {
-            // Buena defensa: resistes el ataque
+          if (defense >= 20) {
+            // Defensa fuerte: repeles el ataque
+            const lostFood = Math.min(state.resources.food, 10);
+            state.resources.food -= lostFood;
+
             if (state.relations) {
               state.relations.crown = Math.min(
                 100,
-                state.relations.crown + 8
+                (state.relations.crown || 0) + 5
               );
               state.relations.people = Math.min(
                 100,
-                state.relations.people + 5
+                (state.relations.people || 0) + 3
               );
             }
-          } else if (defense >= 12) {
-            // Defensa media: resistís, pero a costa de recursos
-            const lostFood = Math.min(state.resources.food, 25);
-            const lostGold = Math.min(state.resources.gold, 20);
-            state.resources.food -= lostFood;
+
+            pushLog(
+              state,
+              "Los ballesteros desde las murallas y un par de salidas bien calculadas hacen retroceder al señor vecino. El asedio se rompe con pocas pérdidas en tus filas."
+            );
+          } else if (defense >= 10) {
+            // Defensa justa: se sufre, pero aguantas
+            const lostGold = Math.min(state.resources.gold, 25);
+            const lostFood = Math.min(state.resources.food, 20);
             state.resources.gold -= lostGold;
+            state.resources.food -= lostFood;
+
             if (state.relations) {
+              state.relations.crown = Math.min(
+                100,
+                (state.relations.crown || 0) + 2
+              );
               state.relations.people = Math.max(
                 0,
-                state.relations.people - 3
+                (state.relations.people || 0) - 2
               );
             }
+
+            pushLog(
+              state,
+              `El asedio se levanta tras varios días de tensión. Se gastan ${lostGold} de oro y ${lostFood} de comida en sobornos, reparaciones rápidas y mantener a la guarnición en pie.`
+            );
           } else {
-            // Defensa floja: se abre una brecha en la muralla
-            const destroyed = destroyRandomWallSegment(state);
-            const lostFood = Math.min(state.resources.food, 30);
-            const lostGold = Math.min(state.resources.gold, 30);
-            state.resources.food -= lostFood;
+            // Defensa floja: brecha en la muralla + saqueo
+            const destroyed = collapseRandomDefenseSegments(state, 2);
+            const lostGold = Math.min(state.resources.gold, 40);
+            const lostFood = Math.min(state.resources.food, 35);
             state.resources.gold -= lostGold;
+            state.resources.food -= lostFood;
+
             if (state.relations) {
+              state.relations.crown = Math.max(
+                0,
+                (state.relations.crown || 0) - 6
+              );
               state.relations.people = Math.max(
                 0,
-                state.relations.people - 6
+                (state.relations.people || 0) - 6
               );
               state.relations.guilds = Math.max(
                 0,
-                state.relations.guilds - 4
+                (state.relations.guilds || 0) - 4
               );
             }
-            // Si no había murallas, al menos el saqueo duele
-            if (!destroyed && state.relations) {
-              state.relations.crown = Math.max(
-                0,
-                state.relations.crown - 4
-              );
-            }
+
+            const segMsg =
+              destroyed > 0
+                ? ` Durante el asalto se abren ${destroyed} brechas en la muralla.`
+                : "";
+            pushLog(
+              state,
+              `El ataque del señor vecino desborda a tu guarnición: se pierden ${lostGold} de oro y ${lostFood} de comida en el saqueo.${segMsg}`
+            );
           }
         }
       },
       {
-        id: "neighbor_pay_tribute",
-        text: "Pagar un tributo para evitar el choque.",
+        id: "bribe_neighbor",
+        text: "Enviar regalos y oro para apaciguar al vecino.",
         effects: (state) => {
-          const tribute = Math.min(state.resources.gold, 40);
-          state.resources.gold -= tribute;
+          const cost = Math.min(state.resources.gold, 50);
+          state.resources.gold -= cost;
+
           if (state.relations) {
-            state.relations.crown = Math.max(
-              0,
-              state.relations.crown - 3
+            state.relations.crown = Math.min(
+              100,
+              (state.relations.crown || 0) + 2
             );
             state.relations.people = Math.max(
               0,
-              state.relations.people - 2
+              (state.relations.people || 0) - 3
             );
           }
+
+          pushLog(
+            state,
+            `Carromatos cargados de vino, telas y ${cost} de oro cruzan la frontera. El señor vecino se calma por ahora, pero tus vasallos se preguntan cuánto durará esa paz comprada.`
+          );
         }
       }
     ]
