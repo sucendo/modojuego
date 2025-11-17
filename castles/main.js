@@ -1160,26 +1160,17 @@ function onNewDay(daysPassed) {
       }
     }
 
-    if (mills > 0 && state.resources.population > 0) {
-      const tollPerPerson = 0.12; // oro por persona y día
-      const tollIncome =
-        state.resources.population * tollPerPerson * daysPassed;
+	if (mills > 0 && state.resources.population > 0) {
+	  const tollPerPerson = 0.12; // oro por persona y día
+	  const tollIncome =
+		state.resources.population * tollPerPerson * daysPassed;
 
-      state.resources.gold += tollIncome;
+	  state.resources.gold += tollIncome;
 
-      // Cuantos más molinos y más días, más enfado
-      const anger = 0.12 * mills * daysPassed;
-      adjustRelation("people", -anger);
-
-      // Lo dejamos opcional en la crónica
-      if (typeof addLogEntry === "function") {
-        addLogEntry(
-          `Tasa del molino: +${tollIncome.toFixed(
-            1
-          )} oro; el pueblo se muestra más descontento.`
-        );
-      }
-    }
+	  // Cuantos más molinos y más días, más enfado
+	  const anger = 0.12 * mills * daysPassed;
+	  adjustRelation("people", -anger);
+	}
   }
 
   // 7) Consumo de comida
