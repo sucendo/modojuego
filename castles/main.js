@@ -635,6 +635,37 @@ function loadGame() {
 
     // Restaurar estado y cámara
     state = payload.state;
+
+    // ───────────────────────────────────────────────
+    // Migración de partidas antiguas (sin prestigio/título)
+    // ───────────────────────────────────────────────
+
+    // Si no hay prestigio numérico, lo estimamos a partir de los edificios construidos
+    if (typeof state.prestige !== "number") {
+      let estimated = 0;
+      if (state.tiles && PRESTIGE_PER_BUILDING) {
+        for (let y = 0; y < state.tiles.length; y++) {
+          const row = state.tiles[y];
+          for (let x = 0; x < row.length; x++) {
+            const b = row[x].building;
+            if (b && PRESTIGE_PER_BUILDING[b]) {
+              estimated += PRESTIGE_PER_BUILDING[b];
+            }
+          }
+        }
+      }
+      state.prestige = estimated;
+    }
+
+    // Si no hay título, ponemos uno por defecto y lo ajustamos según prestigio
+    if (!state.title) {
+      state.title = "Señor de la fortaleza";
+    }
+
+    // Aseguramos que el título coincide con el prestigio actual
+    updateTitleFromPrestige();
+    // ───────────────────────────────────────────────
+
     if (typeof payload.originX === "number") originX = payload.originX;
     if (typeof payload.originY === "number") originY = payload.originY;
     if (typeof payload.lastEventDay === "number")
