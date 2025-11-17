@@ -16,6 +16,8 @@ import {
   BASE_TAX_PER_PERSON,
   FOOD_PER_PERSON_PER_DAY,
   EVENT_COOLDOWN_DAYS,
+  TITLE_TIERS,
+  PRESTIGE_PER_BUILDING,
   MILITARY_RULES,
   RENDER_CONFIG,
   TAX_MULTIPLIER_UI
@@ -381,8 +383,11 @@ function createInitialState() {
       people: 50,
       guilds: 50
     },
-    labor, // usamos la constante que hemos creado arriba
+    // Sistema de prestigio y títulos
+    prestige: 0,
+    title: "Señor de la fortaleza",
 
+    labor, // usamos la constante que hemos creado arriba
     // Sueldos por gremio (0=bajo,1=normal,2=alto)
     wages: {
       builders: 1,
@@ -1342,6 +1347,41 @@ function adjustRelation(key, delta) {
 }
 
 // ===========================
+// Prestigio y títulos
+// ===========================
+
+function updateTitleFromPrestige() {
+  if (!state) return;
+  const tiers = TITLE_TIERS || [];
+  if (!Array.isArray(tiers) || tiers.length === 0) return;
+
+  const p =
+    typeof state.prestige === "number" ? state.prestige : 0;
+  let newTitle =
+    state.title || (tiers[0] && tiers[0].title) || "";
+
+  for (const tier of tiers) {
+    if (p >= tier.minPrestige) {
+      newTitle = tier.title;
+    }
+  }
+
+  if (state.title !== newTitle) {
+    state.title = newTitle;
+    addLogEntry(`Tu prestigio crece: ahora eres ${newTitle}.`);
+  }
+}
+
+function addPrestige(amount) {
+  if (!state || !amount) return;
+  if (typeof state.prestige !== "number") {
+    state.prestige = 0;
+  }
+  state.prestige = Math.max(0, state.prestige + amount);
+  updateTitleFromPrestige();
+}
+
+// ===========================
 // Sueldos y producción de edificios
 // ===========================
 
@@ -1521,9 +1561,19 @@ function advanceConstruction(daysPassed) {
   activeTiles.forEach((tile) => {
     tile.buildRemainingDays -= daysPassed * factor;
     if (tile.buildRemainingDays <= 0) {
-      tile.building = tile.underConstruction;
+      const finishedKind = tile.underConstruction;
+      tile.building = finishedKind;
       tile.underConstruction = null;
       tile.buildRemainingDays = 0;
+
+      // Prestigio por completar ciertos edificios clave
+      if (
+        finishedKind &&
+        PRESTIGE_PER_BUILDING &&
+        PRESTIGE_PER_BUILDING[finishedKind]
+      ) {
+        addPrestige(PRESTIGE_PER_BUILDING[finishedKind]);
+      }
     }
   });
 }
@@ -1900,6 +1950,8 @@ function updateHUD() {
   const popSideEl = document.getElementById("pop-display-side");
   const logListEl = document.getElementById("log-list");
   const defEl = document.getElementById("defense-display");
+  const titleEl = document.getElementById("title-display");
+  const prestigeEl = document.getElementById("prestige-display");
 
   const relChurchEl = document.getElementById("rel-church");
   const relCrownEl = document.getElementById("rel-crown");
@@ -1928,6 +1980,12 @@ function updateHUD() {
   const popText = Math.floor(state.resources.population).toString();
   if (popEl) popEl.textContent = popText;
   if (popSideEl) popSideEl.textContent = popText;
+  
+  if (titleEl) titleEl.textContent = state.title || "";
+  if (prestigeEl)
+    prestigeEl.textContent = Math.round(
+      state.prestige || 0
+    ).toString();
 
   // Defensa: indicador simple basado en murallas, torres, puertas y soldados
   if (defEl) {
@@ -2022,6 +2080,8 @@ function init() {
   ctx = context;
 
   state = createInitialState();
+  // Aseguramos que el título inicial coincide con la tabla de prestigio
+  updateTitleFromPrestige();
 
   setupUIBindings();
   setupPanelGroups();

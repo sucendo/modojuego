@@ -109,6 +109,26 @@ export const BASE_TAX_PER_PERSON = 0.4;
 export const FOOD_PER_PERSON_PER_DAY = 0.5;
 export const EVENT_COOLDOWN_DAYS = 7;
 
+// Prestigio y títulos del señor
+export const TITLE_TIERS = [
+  { title: "Señor de la fortaleza", minPrestige: 0 },
+  { title: "Barón", minPrestige: 50 },
+  { title: "Vizconde", minPrestige: 120 },
+  { title: "Conde", minPrestige: 250 },
+  { title: "Duque", minPrestige: 500 }
+];
+
+// Prestigio ganado al completar ciertos edificios clave
+export const PRESTIGE_PER_BUILDING = {
+  wall: 1,
+  tower: 2,
+  gate: 2,
+  church: 3,
+  monastery: 5,
+  cathedral: 7,
+  keep: 4
+};
+
 // Reglas militares / guarnición
 export const MILITARY_RULES = {
   soldiersPerPopulation: 15,   // 1 soldado por cada 15 hab.
