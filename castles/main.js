@@ -381,7 +381,8 @@ function createInitialState() {
       church: 50,
       crown: 50,
       people: 50,
-      guilds: 50
+      guilds: 50,
+      overlord: 60 
     },
     // Sistema de prestigio y títulos
     prestige: 0,
@@ -837,7 +838,9 @@ function setupUIBindings() {
        const lawLabels = {
          corveeLabor: "Trabajo obligatorio en las obras",
          forestProtection: "Protección de bosques comunales",
-         millTax: "Tasa obligatoria del molino"
+         millTax: "Tasa obligatoria del molino",
+         censusLaw: "Censo y registros oficiales",
+         grainPriceControl: "Control de precios del grano"
        };
        const name = lawLabels[lawKey] || lawKey;
        const status = value ? "activada" : "desactivada";
@@ -1151,10 +1154,24 @@ function onNewDay(daysPassed) {
   else if (state.taxRate === 2) taxMultiplier = 1.7;
   else taxMultiplier = 1.0;
 
+  // Ajustes por leyes económicas
+  let lawTaxMultiplier = 1.0;
+
+  // Censo: mejor control fiscal → algo más de ingresos
+  if (state.laws?.censusLaw) {
+    lawTaxMultiplier *= 1.15; // +15% impuestos
+  }
+
+  // Control de precios del grano: menos margen → algo menos de impuestos
+  if (state.laws?.grainPriceControl) {
+    lawTaxMultiplier *= 0.9; // −10% impuestos
+  }
+
   const taxIncome =
     state.resources.population *
     baseTaxPerPerson *
     taxMultiplier *
+    lawTaxMultiplier *
     daysPassed;
   state.resources.gold += taxIncome;
 
@@ -1183,6 +1200,16 @@ function onNewDay(daysPassed) {
   if (state.laws?.forestProtection) {
     adjustRelation("people", 0.1 * daysPassed);
     adjustRelation("church", 0.1 * daysPassed);
+  }
+  // Censo: la Corona contenta, el pueblo recela
+  if (state.laws?.censusLaw) {
+    adjustRelation("crown", 0.05 * daysPassed);
+    adjustRelation("people", -0.05 * daysPassed);
+  }
+  // Control de precios del grano: el pueblo agradece, los gremios gruñen
+  if (state.laws?.grainPriceControl) {
+    adjustRelation("people", 0.08 * daysPassed);
+    adjustRelation("guilds", -0.06 * daysPassed);
   }
 
   // 6) Tasa del molino: si es obligatoria y hay molinos,
@@ -1220,7 +1247,12 @@ function onNewDay(daysPassed) {
       0,
       state.resources.population - daysPassed
     );
-    adjustRelation("people", -1 * daysPassed);
+
+    // Con control de precios del grano, el pueblo percibe cierto esfuerzo
+    // y el enfado es algo menor.
+    const hungerPenalty =
+      state.laws?.grainPriceControl ? 0.6 : 1.0;
+    adjustRelation("people", -hungerPenalty * daysPassed);
   }
 
   // 8) Malestar y emigración si el pueblo está muy descontento

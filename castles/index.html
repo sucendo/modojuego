@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <title>Proto Castles JS</title>
+  <title>Castles & Lords</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -23,8 +23,9 @@
       </span>
       </div>
       <div class="group">
-        <span>Título: <span id="title-display">Señor de la fortaleza</span></span>
-        <span>Prestigio: <span id="prestige-display">0</span></span>
+        <span>👑 Título: <span id="title-display">Señor de la fortaleza</span></span>
+        <span>⭐ Prestigio: <span id="prestige-display">0</span></span>
+		<span>🛡️ Defensa: <span id="defense-display">0</span></span>
       </div>
       <div class="group resources">
         <span>💰 Oro: <span id="gold-display">0</span></span>
@@ -32,7 +33,7 @@
         <span>🌳 Madera: <span id="wood-display">0</span></span>
         <span>🍞 Comida: <span id="food-display">0</span></span>
         <span>👥 Población: <span id="pop-display">0</span></span>
-				<span>🛡️ Defensa: <span id="defense-display">0</span></span>
+		
       </div>
     </header>
 
@@ -65,12 +66,26 @@
 					</div>
 				</div>
 			  <div class="law-row">
-			    <span>Tasa obligatoria del molino</span>
-			    <div class="law-buttons">
-			      <button class="law-btn active" data-law="millTax" data-value="0">No</button>
-			      <button class="law-btn" data-law="millTax" data-value="1">Sí</button>
-			    </div>
+				<span>Tasa obligatoria del molino</span>
+				<div class="law-buttons">
+				  <button class="law-btn active" data-law="millTax" data-value="0">No</button>
+				  <button class="law-btn" data-law="millTax" data-value="1">Sí</button>
+				</div>
 			  </div>
+			  <div class="law-row">
+				  <span>Censo y registros oficiales</span>
+				  <div class="law-buttons">
+					<button class="law-btn active" data-law="censusLaw" data-value="0">No</button>
+					<button class="law-btn" data-law="censusLaw" data-value="1">Sí</button>
+				  </div>
+				</div>
+				<div class="law-row">
+				  <span>Control de precios del grano</span>
+				  <div class="law-buttons">
+					<button class="law-btn active" data-law="grainPriceControl" data-value="0">No</button>
+					<button class="law-btn" data-law="grainPriceControl" data-value="1">Sí</button>
+				  </div>
+				</div>			  
 				<p class="note">
 					Las leyes afectan a cómo se reparte la gente, a la producción y a las relaciones.
 				</p>
@@ -119,7 +134,7 @@
 				<!-- En el lateral usamos otro id para no duplicar el de la barra superior -->
 				<p>Total: <span id="pop-display-side">0</span></p>
 				<ul class="labor-list">
-				<li>Obras: <span id="labor-builders">0</span></li>
+				<li>Albañiles: <span id="labor-builders">0</span></li>
 				<li>Granjeros: <span id="labor-farmers">0</span></li>
 				<li>Canteros: <span id="labor-miners">0</span></li>
 				<li>Leñadores: <span id="labor-lumberjacks">0</span></li>

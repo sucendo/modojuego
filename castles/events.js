@@ -601,6 +601,152 @@ export const SAMPLE_EVENTS = [
       }
     ]
   },
+  {
+  id: "overlord_tribute",
+  title: "Tributo de tu señor",
+  text:
+    "Tu señor envía a un emisario para recordar el tributo debido. " +
+    "A cambio de protección y reconocimiento de tus tierras, debes aportar parte del oro recaudado en el castillo.",
+  condition: (state) => {
+    // Ejemplo: cada 120 días, después del día 60
+    if (!state || typeof state.day !== "number") return false;
+    const day = state.day;
+    const relOverlord =
+      state.relations && typeof state.relations.overlord === "number"
+        ? state.relations.overlord
+        : 50;
+
+    // Solo tiene sentido si la relación no está completamente rota
+    return day > 60 && day % 120 === 0 && relOverlord > 0;
+  },
+  choices: [
+    {
+      id: "pay_full",
+      text: "Pagar el tributo completo.",
+      effects: (state) => {
+        const pop = state.resources?.population || 0;
+        // Tributo escala con la población, con un mínimo
+        const tribute = Math.max(30, Math.floor(pop * 0.5));
+
+        const goldBefore = state.resources.gold || 0;
+        const paid = Math.min(goldBefore, tribute);
+        state.resources.gold = goldBefore - paid;
+
+        if (!state.relations) state.relations = {};
+        if (typeof state.prestige !== "number") state.prestige = 0;
+
+        if (paid >= tribute) {
+          // Pagas todo sin problema
+          state.relations.overlord = Math.min(
+            100,
+            (state.relations.overlord || 0) + 8
+          );
+          // El pueblo ve salir el oro del castillo
+          state.relations.people = Math.max(
+            0,
+            (state.relations.people || 0) - 2
+          );
+          state.prestige += 5;
+
+          if (typeof pushLog === "function") {
+            pushLog(
+              state,
+              `Pagas el tributo completo (${paid} de oro). El señor superior queda satisfecho, aunque el pueblo murmura al ver las arcas vaciarse.`
+            );
+          }
+        } else {
+          // No tenías suficiente oro: pagas lo que puedes
+          state.relations.overlord = Math.min(
+            100,
+            (state.relations.overlord || 0) + 3
+          );
+          state.relations.people = Math.max(
+            0,
+            (state.relations.people || 0) - 1
+          );
+          state.prestige += 2;
+
+          if (typeof pushLog === "function") {
+            pushLog(
+              state,
+              `Vacías casi por completo el tesoro (${paid} de oro), pero aun así no alcanzas el tributo exigido. El señor superior acepta a regañadientes tu aportación.`
+            );
+          }
+        }
+      }
+    },
+    {
+      id: "pay_partial",
+      text: "Pagar solo una parte del tributo.",
+      effects: (state) => {
+        const pop = state.resources?.population || 0;
+        const tribute = Math.max(30, Math.floor(pop * 0.5));
+        const desired = Math.floor(tribute / 2);
+
+        const goldBefore = state.resources.gold || 0;
+        const paid = Math.min(goldBefore, desired);
+        state.resources.gold = goldBefore - paid;
+
+        if (!state.relations) state.relations = {};
+        if (typeof state.prestige !== "number") state.prestige = 0;
+
+        // Tensión con el señor, pequeño gesto ante el pueblo
+        state.relations.overlord = Math.max(
+          0,
+          (state.relations.overlord || 0) - 5
+        );
+        state.relations.people = Math.min(
+          100,
+          (state.relations.people || 0) + 1
+        );
+        state.prestige += 1;
+
+        if (typeof pushLog === "function") {
+          pushLog(
+            state,
+            `Envías solo parte del tributo (${paid} de oro). El señor superior considera escasa tu aportación y su emisario se marcha con gesto agrio, pero algunos vasallos valoran que no entregues todas las riquezas.`
+          );
+        }
+      }
+    },
+    {
+      id: "refuse",
+      text: "Negarse a pagar.",
+      effects: (state) => {
+        if (!state.relations) state.relations = {};
+        if (typeof state.prestige !== "number") state.prestige = 0;
+
+        state.relations.overlord = Math.max(
+          0,
+          (state.relations.overlord || 0) - 12
+        );
+        // Opción: también afecta un poco a la Corona si la tienes como actor global
+        if (typeof state.relations.crown === "number") {
+          state.relations.crown = Math.max(
+            0,
+            state.relations.crown - 3
+          );
+        }
+        state.relations.people = Math.min(
+          100,
+          (state.relations.people || 0) + 4
+        );
+        state.prestige += 3;
+
+        // Podemos marcar una bandera para futuros eventos de conflicto con el señor
+        if (!state.flags) state.flags = {};
+        state.flags.overlordAngered = true;
+
+        if (typeof pushLog === "function") {
+          pushLog(
+            state,
+            "Rechazas pagar el tributo. El emisario se marcha indignado, prometiendo que tu desobediencia no será olvidada. El pueblo comenta en voz baja tu osadía."
+          );
+        }
+      }
+    }
+  ]
+},
 
   // ======================
   // PUEBLO (COSECHAS / REFUGIADOS / EPIDEMIA)
@@ -1104,7 +1250,7 @@ export const SAMPLE_EVENTS = [
   },
  
   // ======================
-  // PUENTE
+  // LEYES Y TRIBUTOS
   // ====================== 
   {
     id: "bridge_toll",
@@ -1155,9 +1301,135 @@ export const SAMPLE_EVENTS = [
       }
     ]
   },
+  {
+  id: "advisor_census_law",
+  title: "Propuesta de censo oficial",
+  text:
+    "Tu consejero propone realizar un censo de siervos, tierras y graneros. " +
+    "Con buenos registros, dice, podrías ajustar mejor los impuestos y el reclutamiento.",
+  condition: (state) => {
+    const flags = state.flags || {};
+    const laws = state.laws || {};
+    // Solo si hay consejero y la ley aún no existe
+    return flags.hasAdvisor && !laws.censusLaw;
+  },
+  choices: [
+    {
+      id: "census_law_approve",
+      text: "Aprobar la ley de censo y registros.",
+      effects: (state) => {
+        if (!state.laws) state.laws = {};
+        state.laws.censusLaw = true;
+
+        state.resources.gold = Math.max(0, state.resources.gold - 20);
+
+        if (state.relations) {
+          // Mejor control fiscal: la Corona lo ve con buenos ojos
+          state.relations.crown = Math.min(
+            100,
+            (state.relations.crown || 0) + 4
+          );
+          // El pueblo desconfía de tanto papel
+          state.relations.people = Math.max(
+            0,
+            (state.relations.people || 0) - 3
+          );
+        }
+
+        pushLog(
+          state,
+          "Decretas una ley de censo y registros. Escribanos y mensajeros recorren el señorío anotando nombres y campos."
+        );
+      }
+    },
+    {
+      id: "census_law_reject",
+      text: "Rechazar la propuesta, demasiado papeleo.",
+      effects: (state) => {
+        if (state.relations) {
+          state.relations.crown = Math.max(
+            0,
+            (state.relations.crown || 0) - 2
+          );
+        }
+
+        pushLog(
+          state,
+          "Descartas la idea de un censo formal. La administración seguirá siendo más flexible... y menos precisa."
+        );
+      }
+    }
+  ]
+},
+{
+  id: "grain_price_law",
+  title: "Control de precios del grano",
+  text:
+    "Tras varias malas cosechas, tu consejero plantea fijar un precio máximo para el grano. " +
+    "Ayudaría a los pobres, pero los comerciantes se quejarán.",
+  condition: (state) => {
+    const laws = state.laws || {};
+    const flags = state.flags || {};
+    // Tiene sentido si hay consejero y granjeros / mercados activos
+    const pop = state.resources?.population || 0;
+    return (
+      flags.hasAdvisor &&
+      pop >= 25 &&
+      !laws.grainPriceControl &&
+      hasBuilding(state, ["farm"])
+    );
+  },
+  choices: [
+    {
+      id: "grain_law_approve",
+      text: "Aprobar el control de precios del grano.",
+      effects: (state) => {
+        if (!state.laws) state.laws = {};
+        state.laws.grainPriceControl = true;
+
+        if (state.relations) {
+          state.relations.people = Math.min(
+            100,
+            (state.relations.people || 0) + 6
+          );
+          state.relations.guilds = Math.max(
+            0,
+            (state.relations.guilds || 0) - 5
+          );
+        }
+
+        pushLog(
+          state,
+          "Decretas un precio máximo para el grano. Los campesinos pobres respiran aliviados, los mercaderes cuentan monedas con gesto oscuro."
+        );
+      }
+    },
+    {
+      id: "grain_law_reject",
+      text: "Rechazarlo, el mercado se regula solo.",
+      effects: (state) => {
+        if (state.relations) {
+          state.relations.people = Math.max(
+            0,
+            (state.relations.people || 0) - 3
+          );
+          state.relations.guilds = Math.min(
+            100,
+            (state.relations.guilds || 0) + 2
+          );
+        }
+
+        pushLog(
+          state,
+          "Decides no intervenir en el precio del grano. Los más pobres siguen temiendo no poder llenar el granero."
+        );
+      }
+    }
+  ]
+},
 
   // ======================
-  // DESASTRES ESTRUCTURALES / BÁNDIDOS
+  // DESASTRES ESTRUCTURALES
   // ======================
   {
     id: "wall_collapse",
@@ -1214,115 +1486,9 @@ export const SAMPLE_EVENTS = [
       }
     ]
   },
-  {
-    id: "bandit_raid",
-    title: "Incursión de bandidos",
-    text:
-      "Una partida de bandidos ha sido vista cerca de las granjas y los caminos. Algunos consejeros proponen enviar soldados, otros pagar para que se marchen.",
-    condition: (state) =>
-      state.day >= 5 &&
-      (state.resources.food > 0 || state.resources.gold > 0),
-    choices: [
-      {
-        id: "bandits_send_soldiers",
-        text: "Enviar soldados a dispersarlos.",
-        effects: (state) => {
-          const defense = computeDefenseScore(state);
-
-          if (defense >= 12) {
-            // Buena defensa: daño menor
-            const lostGold = Math.min(state.resources.gold, 10);
-            const lostFood = Math.min(state.resources.food, 10);
-            state.resources.gold -= lostGold;
-            state.resources.food -= lostFood;
-
-            if (state.relations) {
-              state.relations.crown = Math.min(
-                100,
-                (state.relations.crown || 0) + 3
-              );
-              state.relations.people = Math.min(
-                100,
-                (state.relations.people || 0) + 2
-              );
-            }
-
-            pushLog(
-              state,
-              `Tus soldados sorprenden a los bandidos y los ponen en fuga. Solo se pierden ${lostGold} de oro y ${lostFood} de comida en el forcejeo.`
-            );
-          } else {
-            // Defensa floja: algo de saqueo pese al intento
-            const stolenGold = Math.min(state.resources.gold, 20);
-            const stolenFood = Math.min(state.resources.food, 20);
-            state.resources.gold -= stolenGold;
-            state.resources.food -= stolenFood;
-
-            if (state.relations) {
-              state.relations.people = Math.max(
-                0,
-                (state.relations.people || 0) - 4
-              );
-            }
-
-            pushLog(
-              state,
-              `Los soldados no logran contener del todo a los bandidos: se llevan ${stolenGold} de oro y ${stolenFood} de comida antes de retirarse al bosque.`
-            );
-          }
-        }
-      },
-      {
-        id: "bandits_pay",
-        text: "Pagarles para que se marchen.",
-        effects: (state) => {
-          const cost = Math.min(state.resources.gold, 30);
-          state.resources.gold -= cost;
-
-          if (state.relations) {
-            state.relations.people = Math.max(
-              0,
-              (state.relations.people || 0) - 2
-            );
-          }
-
-          pushLog(
-            state,
-            `Se paga a los bandidos ${cost} de oro para que desaparezcan. El pueblo murmura al ver cómo el tesoro del castillo compra paz a malhechores.`
-          );
-        }
-      },
-      {
-        id: "bandits_ignore",
-        text: "Ignorar el problema: que los aldeanos se organicen.",
-        effects: (state) => {
-          const stolenGold = Math.min(state.resources.gold, 15);
-          const stolenFood = Math.min(state.resources.food, 25);
-          state.resources.gold -= stolenGold;
-          state.resources.food -= stolenFood;
-
-          if (state.relations) {
-            state.relations.people = Math.max(
-              0,
-              (state.relations.people || 0) - 6
-            );
-            state.relations.guilds = Math.max(
-              0,
-              (state.relations.guilds || 0) - 3
-            );
-          }
-
-          pushLog(
-            state,
-            `Sin ayuda desde el castillo, los bandidos saquean graneros y carromatos: se pierden ${stolenGold} de oro y ${stolenFood} de comida. Los aldeanos hablan de tu falta de protección.`
-          );
-        }
-      }
-    ]
-  },
-  
+   
    // ======================
-  // Comerciantes
+  // COMERCIO
   // ======================
   
   {
@@ -1498,11 +1664,80 @@ export const SAMPLE_EVENTS = [
   },
   
    // ======================
+  // CONSEJERO
+  // ======================
+  
+  {
+  id: "advisor_arrival",
+  title: "Un consejero se ofrece al servicio del castillo",
+  text:
+    "Un escribano con experiencia en cuentas y leyes se presenta en el castillo. " +
+    "Afirma que podría encargarse de la administración y aconsejarte en asuntos de gobierno.",
+  condition: (state) => {
+    const servants = state.labor?.servants || 0;
+    const flags = state.flags || {};
+    // Solo una vez, y cuando ya hay cierto aparato de servicio
+    return servants >= 2 && !flags.hasAdvisor;
+  },
+  choices: [
+    {
+      id: "advisor_accept",
+      text: "Aceptar al consejero y darle un pequeño salario.",
+      effects: (state) => {
+        if (!state.flags) state.flags = {};
+        state.flags.hasAdvisor = true;
+
+        state.resources.gold = Math.max(0, state.resources.gold - 15);
+        if (state.relations) {
+          state.relations.crown = Math.min(
+            100,
+            (state.relations.crown || 0) + 3
+          );
+          state.relations.guilds = Math.min(
+            100,
+            (state.relations.guilds || 0) + 2
+          );
+        }
+
+        pushLog(
+          state,
+          "Aceptas al consejero como parte de tu séquito. A partir de ahora tendrás una voz experta en leyes y cuentas."
+        );
+      }
+    },
+    {
+      id: "advisor_refuse",
+      text: "Rechazarlo, no necesitas burócratas.",
+      effects: (state) => {
+        if (!state.flags) state.flags = {};
+        state.flags.hasAdvisor = false;
+
+        if (state.relations) {
+          state.relations.people = Math.min(
+            100,
+            (state.relations.people || 0) + 1
+          );
+          state.relations.crown = Math.max(
+            0,
+            (state.relations.crown || 0) - 2
+          );
+        }
+
+        pushLog(
+          state,
+          "Rechazas al consejero. Algunos nobles murmuran que gobiernas más con instinto que con administración."
+        );
+      }
+    }
+  ]
+},
+  
+   // ======================
   // CONFLICTOS BELICOS
   // ======================
   {
-    id: "bandit_raid",
-    title: "Incursión de bandidos",
+    id: "bandit_raid_minor",
+    title: "Saqueadores en los caminos",
     text:
       "Una partida de bandidos ha sido vista cerca de las granjas. Algunos consejeros proponen enviar soldados, otros pagar para que se marchen.",
     condition: (state) =>
