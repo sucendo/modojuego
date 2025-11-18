@@ -162,7 +162,7 @@ export const SAMPLE_EVENTS = [
   // IGLESIA
   // ======================
   {
-    id: "church_donation_1",
+    id: "church_donation",
     title: "El obispo solicita donaciones",
     text:
       "El obispo de la diócesis visita la obra del castillo. " +
