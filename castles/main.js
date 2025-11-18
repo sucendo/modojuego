@@ -636,6 +636,11 @@ function loadGame() {
 
     // Restaurar estado y cámara
     state = payload.state;
+	
+	// Asegurar que existe un nivel de impuestos válido
+	if (typeof state.taxRate !== "number") {
+	state.taxRate = 1; // normales por defecto
+	}
 
     // ───────────────────────────────────────────────
     // Migración de partidas antiguas (sin prestigio/título)
@@ -1147,41 +1152,46 @@ function onNewDay(daysPassed) {
   // 1) Rebalanceo de población activa según “vacantes”
   rebalanceLabor(state);
 
-  // 2) Impuestos
-  const baseTaxPerPerson = BASE_TAX_PER_PERSON;
-  let taxMultiplier;
-  if (state.taxRate === 0) taxMultiplier = 0.5;
-  else if (state.taxRate === 2) taxMultiplier = 1.7;
-  else taxMultiplier = 1.0;
+	// 2) Impuestos
+	const baseTaxPerPerson = BASE_TAX_PER_PERSON;
+	let taxMultiplier;
+	if (state.taxRate === 0) taxMultiplier = 0.5;
+	else if (state.taxRate === 2) taxMultiplier = 1.7;
+	else taxMultiplier = 1.0;
 
-  // Ajustes por leyes económicas
-  let lawTaxMultiplier = 1.0;
+	// Ajustes por leyes económicas / comerciales
+	let lawTaxMultiplier = 1.0;
 
-  // Censo: mejor control fiscal → algo más de ingresos
-  if (state.laws?.censusLaw) {
-    lawTaxMultiplier *= 1.15; // +15% impuestos
-  }
+	// Censo: mejor control fiscal → algo más de ingresos
+	if (state.laws?.censusLaw) {
+	  lawTaxMultiplier *= 1.15; // +15% impuestos
+	}
 
-  // Control de precios del grano: menos margen → algo menos de impuestos
-  if (state.laws?.grainPriceControl) {
-    lawTaxMultiplier *= 0.9; // −10% impuestos
-  }
+	// Control de precios del grano: menos margen → algo menos de ingresos
+	if (state.laws?.grainPriceControl) {
+	  lawTaxMultiplier *= 0.9; // −10% impuestos
+	}
 
-  const taxIncome =
-    state.resources.population *
-    baseTaxPerPerson *
-    taxMultiplier *
-    lawTaxMultiplier *
-    daysPassed;
-  state.resources.gold += taxIncome;
+	// Mercado semanal: más actividad → algo más de ingresos
+	if (state.laws?.weeklyMarketLaw) {
+	  lawTaxMultiplier *= 1.1; // +10% impuestos
+	}
 
-  if (state.taxRate === 0) {
-    adjustRelation("people", +0.5 * daysPassed);
-    adjustRelation("crown", -0.3 * daysPassed);
-  } else if (state.taxRate === 2) {
-    adjustRelation("people", -0.7 * daysPassed);
-    adjustRelation("crown", +0.5 * daysPassed);
-  }
+	const taxIncome =
+	  state.resources.population *
+	  baseTaxPerPerson *
+	  taxMultiplier *
+	  lawTaxMultiplier *
+	  daysPassed;
+	state.resources.gold += taxIncome;
+
+	  if (state.taxRate === 0) {
+		adjustRelation("people", +0.5 * daysPassed);
+		adjustRelation("crown", -0.3 * daysPassed);
+	  } else if (state.taxRate === 2) {
+		adjustRelation("people", -0.7 * daysPassed);
+		adjustRelation("crown", +0.5 * daysPassed);
+	  }
 
   // 3) Sueldos: pagar salarios de los gremios clave
   if (!state.flags) state.flags = {};
@@ -1192,25 +1202,56 @@ function onNewDay(daysPassed) {
   // 4) Producción de edificios según gremios
   applyBuildingProduction(daysPassed);
 
-  // 5) Efectos continuos de las leyes
-  if (state.laws?.corveeLabor) {
-    adjustRelation("people", -0.2 * daysPassed);
-    adjustRelation("guilds", -0.15 * daysPassed);
-  }
-  if (state.laws?.forestProtection) {
-    adjustRelation("people", 0.1 * daysPassed);
-    adjustRelation("church", 0.1 * daysPassed);
-  }
-  // Censo: la Corona contenta, el pueblo recela
-  if (state.laws?.censusLaw) {
-    adjustRelation("crown", 0.05 * daysPassed);
-    adjustRelation("people", -0.05 * daysPassed);
-  }
-  // Control de precios del grano: el pueblo agradece, los gremios gruñen
-  if (state.laws?.grainPriceControl) {
-    adjustRelation("people", 0.08 * daysPassed);
-    adjustRelation("guilds", -0.06 * daysPassed);
-  }
+	// 5) Efectos continuos de las leyes
+	if (state.laws?.corveeLabor) {
+	  adjustRelation("people", -0.2 * daysPassed);
+	  adjustRelation("guilds", -0.15 * daysPassed);
+	}
+	if (state.laws?.forestProtection) {
+	  adjustRelation("people", 0.1 * daysPassed);
+	  adjustRelation("church", 0.1 * daysPassed);
+	}
+	// Censo y registros: la Corona contenta, el pueblo recela
+	if (state.laws?.censusLaw) {
+	  adjustRelation("crown", 0.05 * daysPassed);
+	  adjustRelation("people", -0.05 * daysPassed);
+	}
+	// Control de precios del grano: el pueblo agradece, los gremios gruñen
+	if (state.laws?.grainPriceControl) {
+	  adjustRelation("people", 0.08 * daysPassed);
+	  adjustRelation("guilds", -0.06 * daysPassed);
+	}
+	// Patrullas nocturnas: algo menos de malestar acumulado
+	if (state.laws?.nightWatchLaw) {
+	  if (typeof state.unrest === "number" && state.unrest > 0) {
+		state.unrest = Math.max(0, state.unrest - 0.5 * daysPassed);
+	  }
+	}
+	// Mercado semanal: más vida comercial, pero algo de tensión si ya hay malestar
+	if (state.laws?.weeklyMarketLaw) {
+	  adjustRelation("guilds", 0.05 * daysPassed);
+	  if (typeof state.unrest === "number" && state.unrest > 20) {
+		state.unrest = Math.min(100, state.unrest + 0.2 * daysPassed);
+	  }
+	}
+	
+	  // Efectos continuos de estructuras especiales (p.ej. monasterio)
+	  if (state.structures?.monastery) {
+		// Los monjes refuerzan la influencia de la Iglesia y algo el ánimo del pueblo
+		adjustRelation("church", 0.08 * daysPassed);
+		adjustRelation("people", 0.02 * daysPassed);
+
+		// Ayuda a reducir un poco el malestar si lo hay
+		if (typeof state.unrest === "number" && state.unrest > 0) {
+		  state.unrest = Math.max(0, state.unrest - 0.3 * daysPassed);
+		}
+
+		// Pequeño coste de mantenimiento en comida
+		state.resources.food = Math.max(
+		  0,
+		  state.resources.food - 1 * daysPassed
+		);
+	  }
 
   // 6) Tasa del molino: si es obligatoria y hay molinos,
   // cada ciudadano paga una pequeña tasa → más oro pero más descontento.
@@ -1325,8 +1366,27 @@ function onNewDay(daysPassed) {
       );
     }
   }
+  
+  // 11) Fin de rebajas temporales de impuestos (si las hay)
+  if (state.flags?.tempTaxReliefActive) {
+    const flags = state.flags;
+    flags.tempTaxReliefDays = (flags.tempTaxReliefDays || 0) - daysPassed;
+    if (flags.tempTaxReliefDays <= 0) {
+      const prevRate = flags.tempTaxPrevRate;
+      if (typeof prevRate === "number") {
+        state.taxRate = prevRate;
+      }
+      flags.tempTaxReliefActive = false;
+      flags.tempTaxReliefDays = 0;
+      if (typeof addLogEntry === "function") {
+        addLogEntry(
+          "La reducción excepcional de impuestos llega a su fin. Los gravámenes vuelven a su nivel anterior."
+        );
+      }
+    }
+  }
 
-  // 11) Influencia diaria del clérigo según sueldo
+  // 12) Influencia diaria del clérigo según sueldo
   {
     const wages = state.wages || {};
     const clergyWage = wages.clergy ?? 1;
@@ -1376,7 +1436,7 @@ function onNewDay(daysPassed) {
     }
   }
 
-  // 12) Resumen del día para la crónica
+  // 13) Resumen del día para la crónica
   const dGold = state.resources.gold - prevGold;
   const dFood = state.resources.food - prevFood;
   const dStone = state.resources.stone - prevStone;
@@ -1392,10 +1452,10 @@ function onNewDay(daysPassed) {
     )}, Población ${formatDelta(dPop)}, Pueblo ${formatDelta(dPeople)}`
   );
 
-  // 12) Avance de obras (usa constructores)
+  // 14) Avance de obras (usa constructores)
   advanceConstruction(daysPassed);
 
-  // 13) Eventos
+  // 15) Eventos
   tryTriggerRandomEvent();
 }
 
@@ -1981,26 +2041,32 @@ function drawBuilding(kind, sx, sy, options) {
 }
 
 function computeDefenseScoreHUD(state) {
-  const tiles = state.tiles || [];
-  let walls = 0;
-  let towers = 0;
-  let gates = 0;
+	  const tiles = state.tiles || [];
+	  let walls = 0;
+	  let towers = 0;
+	  let gates = 0;
 
-  for (let y = 0; y < tiles.length; y++) {
-    const row = tiles[y];
-    for (let x = 0; x < row.length; x++) {
-      const b = row[x].building;
-      if (b === "wall") walls++;
-      else if (b === "tower") towers++;
-      else if (b === "gate") gates++;
-    }
-  }
+	  for (let y = 0; y < tiles.length; y++) {
+		const row = tiles[y];
+		for (let x = 0; x < row.length; x++) {
+		  const b = row[x].building;
+		  if (b === "wall") walls++;
+		  else if (b === "tower") towers++;
+		  else if (b === "gate") gates++;
+		}
+	  }
 
-  const soldiers = state.labor?.soldiers || 0;
+	  const soldiers = state.labor?.soldiers || 0;
 
-  // Misma fórmula que los eventos: murallas + 2*puertas + 3*torres + 2*soldados
-  const raw = walls + gates * 2 + towers * 3 + soldiers * 2;
-  return raw;
+	  // Misma fórmula que los eventos: murallas + 2*puertas + 3*torres + 2*soldados
+	  let raw = walls + gates * 2 + towers * 3 + soldiers * 2;
+
+	  // Patrullas nocturnas y mejor organización dan un pequeño bonus
+	  if (state.laws?.nightWatchLaw) {
+		raw += 4;
+	  }
+
+	  return raw;
 }
 
 function updateHUD() {
@@ -2095,7 +2161,7 @@ function updateHUD() {
     }
   }
 
-  // Sincronizar botones de sueldo con el estado (por si los cambia un evento)
+// Sincronizar botones de sueldo con el estado (por si los cambia un evento)
   const wages = state.wages || {};
   document.querySelectorAll(".wage-btn").forEach((btn) => {
     const role = btn.dataset.role;
@@ -2109,9 +2175,20 @@ function updateHUD() {
   const laws = state.laws || {};
   document.querySelectorAll(".law-btn").forEach((btn) => {
     const lawKey = btn.dataset.law;
-    const val = Number(btn.dataset.value || "0") === 1;
+    const val =
+      Number(btn.dataset.value || "0") === 1;
     if (!lawKey) return;
     if ((laws[lawKey] ?? false) === val) btn.classList.add("active");
+    else btn.classList.remove("active");
+  });
+
+  // Sincronizar botones de impuestos con el estado (por si los cambia un evento)
+  const currentTax = typeof state.taxRate === "number" ? state.taxRate : 1;
+  document.querySelectorAll(".tax-btn").forEach((btn) => {
+    const taxStr = btn.dataset.tax || "1";
+    const level = Number(taxStr);
+    if (Number.isNaN(level)) return;
+    if (level === currentTax) btn.classList.add("active");
     else btn.classList.remove("active");
   });
 }

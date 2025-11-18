@@ -60,25 +60,32 @@ function hasPopulationAtLeast(state, n) {
 }
 
 function computeDefenseScore(state) {
-  let walls = 0;
-  let towers = 0;
-  let gates = 0;
+	  let walls = 0;
+	  let towers = 0;
+	  let gates = 0;
 
-  const tiles = state.tiles || [];
-  for (let y = 0; y < tiles.length; y++) {
-    const row = tiles[y];
-    for (let x = 0; x < row.length; x++) {
-      const b = row[x].building;
-      if (b === "wall") walls++;
-      else if (b === "tower") towers++;
-      else if (b === "gate") gates++;
-    }
-  }
+	  const tiles = state.tiles || [];
+	  for (let y = 0; y < tiles.length; y++) {
+		const row = tiles[y];
+		for (let x = 0; x < row.length; x++) {
+		  const b = row[x].building;
+		  if (b === "wall") walls++;
+		  else if (b === "tower") towers++;
+		  else if (b === "gate") gates++;
+		}
+	  }
 
-  const soldiers = state.labor?.soldiers || 0;
+	  const soldiers = state.labor?.soldiers || 0;
 
-  // Murallas cuentan poco, torres y puertas algo más, soldados dan fuerza móvil
-  return walls + gates * 2 + towers * 3 + soldiers * 2;
+	  // Murallas cuentan poco, torres y puertas algo más, soldados dan fuerza móvil
+	  let score = walls + gates * 2 + towers * 3 + soldiers * 2;
+
+	  // Patrullas nocturnas y mejor organización de la guardia dan un pequeño bonus
+	  if (state.laws?.nightWatchLaw) {
+		score += 4;
+	  }
+
+	  return score;
 }
 
 function destroyRandomWallSegment(state) {
@@ -772,7 +779,7 @@ export const SAMPLE_EVENTS = [
           }
         }
       },
-      {
+	{
         id: "lower_taxes",
         text: "Reducir impuestos temporalmente en señal de gratitud.",
         effects: (state) => {
@@ -787,6 +794,22 @@ export const SAMPLE_EVENTS = [
               state.relations.crown - 2
             );
           }
+
+          if (!state.flags) state.flags = {};
+
+          // Si no hay ya una rebaja temporal activa, guardamos el nivel anterior
+          if (!state.flags.tempTaxReliefActive) {
+            state.flags.tempTaxReliefActive = true;
+            state.flags.tempTaxPrevRate =
+              typeof state.taxRate === "number" ? state.taxRate : 1;
+            state.flags.tempTaxReliefDays = 30; // dura 30 días
+          } else {
+            // Si ya hay rebaja, simplemente la alargamos un poco
+            state.flags.tempTaxReliefDays =
+              (state.flags.tempTaxReliefDays || 0) + 15;
+          }
+
+          // Aplicar la rebaja efectiva ahora mismo
           if (state.taxRate > 0) state.taxRate -= 1;
         }
       }
@@ -907,6 +930,139 @@ export const SAMPLE_EVENTS = [
               state.relations.people - 10
             );
           }
+        }
+      }
+    ]
+  },
+    {
+    id: "crown_destroyed_neighbor_castle",
+    title: "Refugiados del castillo arrasado",
+    text:
+      "La Corona ha castigado duramente a un señor vecino rebelde: su castillo ha sido arrasado y muchos de sus vasallos vagan sin hogar. " +
+      "Un emisario real llega a tus salas y te propone acoger a parte de esa gente en tus tierras.",
+    condition: (state) => {
+      const crownRel =
+        state.relations && typeof state.relations.crown === "number"
+          ? state.relations.crown
+          : 50;
+      const day = state.day || 0;
+      const flags = state.flags || {};
+
+      // Solo una vez, relación aceptable con la Corona, partida ya algo avanzada
+      return (
+        !flags.crownDestroyedNeighborRefugees &&
+        crownRel >= 30 &&
+        day >= 120
+      );
+    },
+    choices: [
+      {
+        id: "crown_refugees_accept_all",
+        text: "Acoger al mayor número posible de refugiados.",
+        effects: (state) => {
+          if (!state.flags) state.flags = {};
+          state.flags.crownDestroyedNeighborRefugees = true;
+
+          // Llega un grupo grande de gente
+          const incoming = 20 + Math.floor(Math.random() * 21); // 20-40
+          state.resources.population =
+            (state.resources.population || 0) + incoming;
+
+          // Consumo inicial de reservas para alojarlos y alimentarlos
+          const foodCost = Math.min(
+            state.resources.food || 0,
+            incoming * 2
+          );
+          state.resources.food -= foodCost;
+
+          if (state.relations) {
+            // La Corona lo ve como un gesto leal
+            state.relations.crown = Math.min(
+              100,
+              (state.relations.crown || 0) + 8
+            );
+            // Tu pueblo valora la hospitalidad, pero teme la escasez
+            state.relations.people = Math.min(
+              100,
+              (state.relations.people || 0) + 3
+            );
+          }
+
+          if (typeof state.prestige !== "number") state.prestige = 0;
+          state.prestige += 5;
+
+          pushLog(
+            state,
+            `Aceptas acoger a los refugiados del castillo arrasado: llegan unas ${incoming} almas buscando techo y pan. Tus graneros sienten el peso del gesto generoso.`
+          );
+        }
+      },
+      {
+        id: "crown_refugees_accept_some",
+        text: "Aceptar solo a una parte, alegando falta de recursos.",
+        effects: (state) => {
+          if (!state.flags) state.flags = {};
+          state.flags.crownDestroyedNeighborRefugees = true;
+
+          const incoming = 8 + Math.floor(Math.random() * 11); // 8-18
+          state.resources.population =
+            (state.resources.population || 0) + incoming;
+
+          const foodCost = Math.min(
+            state.resources.food || 0,
+            incoming * 2
+          );
+          state.resources.food -= foodCost;
+
+          if (state.relations) {
+            // La Corona aprecia el gesto, pero esperaba más
+            state.relations.crown = Math.min(
+              100,
+              (state.relations.crown || 0) + 3
+            );
+            // El pueblo ve cierto equilibrio entre compasión y prudencia
+            state.relations.people = Math.min(
+              100,
+              (state.relations.people || 0) + 1
+            );
+          }
+
+          if (typeof state.prestige !== "number") state.prestige = 0;
+          state.prestige += 2;
+
+          pushLog(
+            state,
+            `Aceptas a parte de los refugiados del castillo vecino: unas ${incoming} personas encuentran cobijo tras tus muros. Otros continúan su camino buscando señor que los reciba.`
+          );
+        }
+      },
+      {
+        id: "crown_refugees_refuse",
+        text: "Rechazar acogerlos: tus tierras ya tienen bastante carga.",
+        effects: (state) => {
+          if (!state.flags) state.flags = {};
+          state.flags.crownDestroyedNeighborRefugees = true;
+
+          if (state.relations) {
+            // La Corona ve egoísmo o deslealtad
+            state.relations.crown = Math.max(
+              0,
+              (state.relations.crown || 0) - 8
+            );
+            // Parte del pueblo se escandaliza, otros entienden la decisión
+            state.relations.people = Math.max(
+              0,
+              (state.relations.people || 0) - 3
+            );
+          }
+
+          if (typeof state.prestige !== "number") state.prestige = 0;
+          state.prestige = Math.max(0, state.prestige - 3);
+
+          pushLog(
+            state,
+            "Rechazas acoger a los vasallos del castillo arrasado, alegando falta de recursos. El emisario real se marcha con el ceño fruncido, y muchos comentan en voz baja tu dureza."
+          );
         }
       }
     ]
@@ -1731,28 +1887,560 @@ export const SAMPLE_EVENTS = [
     }
   ]
 },
+  {
+    id: "night_watch_law",
+    title: "Patrullas nocturnas en la villa",
+    text:
+      "Tu consejero sugiere organizar patrullas nocturnas por las calles y alrededores del castillo. " +
+      "Dice que ahuyentará a bandidos y rateros, pero exigirá más disciplina y gasto en la guarnición.",
+    condition: (state) => {
+      const flags = state.flags || {};
+      const laws = state.laws || {};
+      const pop = state.resources?.population || 0;
+      // Solo tiene sentido si hay consejero, algo de población y aún no existe la ley
+      return (
+        flags.hasAdvisor &&
+        pop >= 25 &&
+        !laws.nightWatchLaw &&
+        (state.labor?.soldiers || 0) > 0
+      );
+    },
+    choices: [
+      {
+        id: "night_watch_approve",
+        text: "Aprobar las patrullas nocturnas.",
+        effects: (state) => {
+          if (!state.laws) state.laws = {};
+          state.laws.nightWatchLaw = true;
+
+          // Coste inicial en oro (equipar y organizar)
+          state.resources.gold = Math.max(
+            0,
+            (state.resources.gold || 0) - 15
+          );
+
+          if (state.relations) {
+            // Orden y seguridad agradan a la Corona y al pueblo
+            state.relations.crown = Math.min(
+              100,
+              (state.relations.crown || 0) + 3
+            );
+            state.relations.people = Math.min(
+              100,
+              (state.relations.people || 0) + 2
+            );
+            // Los gremios no siempre aprecian más control
+            state.relations.guilds = Math.max(
+              0,
+              (state.relations.guilds || 0) - 2
+            );
+          }
+
+          if (typeof state.unrest !== "number") state.unrest = 0;
+          state.unrest = Math.max(0, state.unrest - 2);
+
+          pushLog(
+            state,
+            "Ordenas organizar patrullas nocturnas. Las antorchas de la guardia recorren las calles hasta la madrugada."
+          );
+        }
+      },
+      {
+        id: "night_watch_reject",
+        text: "Rechazar la idea, no hace falta tanto control.",
+        effects: (state) => {
+          if (state.relations) {
+            state.relations.crown = Math.max(
+              0,
+              (state.relations.crown || 0) - 2
+            );
+            state.relations.people = Math.max(
+              0,
+              (state.relations.people || 0) - 1
+            );
+            state.relations.guilds = Math.min(
+              100,
+              (state.relations.guilds || 0) + 1
+            );
+          }
+
+          pushLog(
+            state,
+            "Decides no organizar patrullas nocturnas. La vida en la villa sigue como siempre, con sus sombras y sus secretos."
+          );
+        }
+      }
+    ]
+  },
+  {
+    id: "weekly_market_charter",
+    title: "Carta de mercado semanal",
+    text:
+      "Tu consejero propone solicitar a la Corona una carta que reconozca un mercado semanal en tus tierras. " +
+      "Atraería mercaderes y movimiento, pero también más ruido y disputas.",
+    condition: (state) => {
+      const flags = state.flags || {};
+      const pop = state.resources?.population || 0;
+      // Solo una vez, con algo de población y cierta actividad agrícola
+      return (
+        pop >= 20 &&
+        !flags.weeklyMarketCharterGranted &&
+        hasBuilding(state, ["farm", "mill"])
+      );
+    },
+    choices: [
+      {
+        id: "weekly_market_approve",
+        text: "Solicitar y proclamar el mercado semanal.",
+        effects: (state) => {
+          if (!state.flags) state.flags = {};
+          state.flags.weeklyMarketCharterGranted = true;
+
+          if (!state.laws) state.laws = {};
+          state.laws.weeklyMarketLaw = true;
+
+          // Llegan comerciantes, algo de oro inmediato
+          state.resources.gold =
+            (state.resources.gold || 0) + 25;
+
+          if (state.relations) {
+            state.relations.guilds = Math.min(
+              100,
+              (state.relations.guilds || 0) + 5
+            );
+            state.relations.people = Math.min(
+              100,
+              (state.relations.people || 0) + 3
+            );
+            state.relations.crown = Math.min(
+              100,
+              (state.relations.crown || 0) + 1
+            );
+          }
+
+          if (typeof state.prestige !== "number")
+            state.prestige = 0;
+          state.prestige += 3;
+
+          pushLog(
+            state,
+            "Se proclama un mercado semanal en tus tierras. Los puestos de telas, especias y ganado llenan la plaza cada siete días."
+          );
+        }
+      },
+      {
+        id: "weekly_market_reject",
+        text: "Rechazar la idea, demasiado alboroto.",
+        effects: (state) => {
+          if (!state.flags) state.flags = {};
+          state.flags.weeklyMarketCharterGranted = true;
+
+          if (state.relations) {
+            state.relations.guilds = Math.max(
+              0,
+              (state.relations.guilds || 0) - 3
+            );
+            state.relations.people = Math.max(
+              0,
+              (state.relations.people || 0) - 1
+            );
+          }
+
+          pushLog(
+            state,
+            "Decides no establecer un mercado semanal. Los comerciantes buscarán otras plazas donde montar sus puestos."
+          );
+        }
+      }
+    ]
+  },
+  {
+    id: "pilgrim_hospitality_law",
+    title: "Hospitalidad para peregrinos",
+    text:
+      "Tu clérigo propone dedicar parte de las dependencias cercanas a la iglesia para acoger peregrinos y pobres viajeros. " +
+      "Dice que traerá bendiciones, pero consumirá recursos.",
+    condition: (state) => {
+      const laws = state.laws || {};
+      const flags = state.flags || {};
+      // Tiene sentido si hay clérigo oficial o edificios religiosos importantes
+      return (
+        !laws.pilgrimHospitium &&
+        (flags.hasCleric ||
+          hasBuilding(state, ["church", "monastery"]))
+      );
+    },
+    choices: [
+      {
+        id: "pilgrim_hospitium_approve",
+        text: "Establecer un hospicio para peregrinos.",
+        effects: (state) => {
+          if (!state.laws) state.laws = {};
+          state.laws.pilgrimHospitium = true;
+
+          // Inversión inicial en alimento y mantenimiento
+          state.resources.food = Math.max(
+            0,
+            (state.resources.food || 0) - 15
+          );
+          state.resources.gold = Math.max(
+            0,
+            (state.resources.gold || 0) - 10
+          );
+
+          if (state.relations) {
+            state.relations.church = Math.min(
+              100,
+              (state.relations.church || 0) + 6
+            );
+            state.relations.people = Math.min(
+              100,
+              (state.relations.people || 0) + 3
+            );
+          }
+
+          if (typeof state.prestige !== "number")
+            state.prestige = 0;
+          state.prestige += 4;
+
+          pushLog(
+            state,
+            "Abres un hospicio para peregrinos y pobres en las cercanías de la iglesia. Cuentan que el nombre de tu castillo empieza a sonar en tierras lejanas."
+          );
+        }
+      },
+      {
+        id: "pilgrim_hospitium_reject",
+        text: "Rechazarlo, las reservas son para tu pueblo.",
+        effects: (state) => {
+          if (state.relations) {
+            state.relations.church = Math.max(
+              0,
+              (state.relations.church || 0) - 4
+            );
+            state.relations.people = Math.max(
+              0,
+              (state.relations.people || 0) - 1
+            );
+          }
+
+          pushLog(
+            state,
+            "Rechazas dedicar recursos a un hospicio de peregrinos. El clérigo suspira y algunos viajeros siguen de largo sin detenerse."
+          );
+        }
+      }
+    ]
+  },
+  {
+    id: "prestige_festival",
+    title: "Fiesta en honor a tu prestigio",
+    text:
+      "Tus consejeros señalan que tu nombre es cada vez más conocido. " +
+      "Proponen organizar una gran fiesta para celebrar tu prestigio y reforzar la lealtad de tus vasallos.",
+    condition: (state) => {
+      const p =
+        typeof state.prestige === "number" ? state.prestige : 0;
+      const flags = state.flags || {};
+      const gold = state.resources?.gold || 0;
+      const food = state.resources?.food || 0;
+      return (
+        p >= 80 &&
+        gold >= 30 &&
+        food >= 30 &&
+        !flags.prestigeFestivalHeld
+      );
+    },
+    choices: [
+      {
+        id: "festival_celebrate",
+        text: "Organizar una gran fiesta para todo el señorío.",
+        effects: (state) => {
+          if (!state.flags) state.flags = {};
+          state.flags.prestigeFestivalHeld = true;
+
+          state.resources.gold = Math.max(
+            0,
+            (state.resources.gold || 0) - 40
+          );
+          state.resources.food = Math.max(
+            0,
+            (state.resources.food || 0) - 35
+          );
+
+          if (state.relations) {
+            state.relations.people = Math.min(
+              100,
+              (state.relations.people || 0) + 8
+            );
+            state.relations.guilds = Math.min(
+              100,
+              (state.relations.guilds || 0) + 4
+            );
+            state.relations.crown = Math.min(
+              100,
+              (state.relations.crown || 0) + 2
+            );
+          }
+
+          if (typeof state.unrest !== "number") state.unrest = 0;
+          state.unrest = Math.max(0, state.unrest - 6);
+
+          if (typeof state.prestige !== "number")
+            state.prestige = 0;
+          state.prestige += 5;
+
+          pushLog(
+            state,
+            "Organizas una gran fiesta en patios y plazas. Durante días se habla de banquetes, justas menores y canciones en honor a tu nombre."
+          );
+        }
+      },
+      {
+        id: "festival_refuse",
+        text: "No es momento para festejos; hay que ahorrar.",
+        effects: (state) => {
+          if (!state.flags) state.flags = {};
+          state.flags.prestigeFestivalHeld = true;
+
+          if (state.relations) {
+            state.relations.people = Math.max(
+              0,
+              (state.relations.people || 0) - 3
+            );
+            state.relations.guilds = Math.max(
+              0,
+              (state.relations.guilds || 0) - 1
+            );
+          }
+
+          if (typeof state.prestige !== "number")
+            state.prestige = 0;
+          state.prestige += 1;
+
+          pushLog(
+            state,
+            "Rechazas organizar una gran fiesta, alegando prudencia. Algunos vasallos hablan de tu sensatez; otros te tachan de tacaño."
+          );
+        }
+      }
+    ]
+  },
+  {
+    id: "overlord_inspection",
+    title: "Inspección del señor superior",
+    text:
+      "Tras tus recientes desavenencias, tu señor superior envía un pequeño séquito para inspeccionar el castillo y tus fuerzas.",
+    condition: (state) => {
+      const flags = state.flags || {};
+      const relOverlord =
+        state.relations?.overlord ?? 50;
+      return (
+        flags.overlordAngered &&
+        !flags.overlordInspectionDone &&
+        state.day >= 150 &&
+        relOverlord <= 60
+      );
+    },
+    choices: [
+      {
+        id: "inspection_show_strength",
+        text: "Mostrar fuerza y opulencia ante el séquito.",
+        effects: (state) => {
+          if (!state.flags) state.flags = {};
+          state.flags.overlordInspectionDone = true;
+
+          state.resources.gold = Math.max(
+            0,
+            (state.resources.gold || 0) - 30
+          );
+          state.resources.food = Math.max(
+            0,
+            (state.resources.food || 0) - 15
+          );
+
+          if (state.relations) {
+            // Tu señor recela de tu poder creciente
+            state.relations.overlord = Math.max(
+              0,
+              (state.relations.overlord || 0) - 5
+            );
+            state.relations.crown = Math.max(
+              0,
+              (state.relations.crown || 0) - 3
+            );
+            state.relations.people = Math.min(
+              100,
+              (state.relations.people || 0) + 3
+            );
+          }
+
+          if (typeof state.prestige !== "number")
+            state.prestige = 0;
+          state.prestige += 6;
+
+          pushLog(
+            state,
+            "Recibes al séquito de tu señor con todo el boato posible. Tus soldados lucen impecables y los almacenes parecen rebosar. Algunos se preguntan cuánto tiempo aceptarás seguir siendo vasallo."
+          );
+        }
+      },
+      {
+        id: "inspection_show_humility",
+        text: "Mostrar humildad y obediencia.",
+        effects: (state) => {
+          if (!state.flags) state.flags = {};
+          state.flags.overlordInspectionDone = true;
+
+          state.resources.gold = Math.max(
+            0,
+            (state.resources.gold || 0) - 10
+          );
+
+          if (state.relations) {
+            state.relations.overlord = Math.min(
+              100,
+              (state.relations.overlord || 0) + 10
+            );
+            state.relations.crown = Math.min(
+              100,
+              (state.relations.crown || 0) + 4
+            );
+            state.relations.people = Math.max(
+              0,
+              (state.relations.people || 0) - 2
+            );
+          }
+
+          if (typeof state.prestige !== "number")
+            state.prestige = 0;
+          state.prestige += 2;
+
+          pushLog(
+            state,
+            "Recibes al séquito con deferencia, subrayando tu obediencia. Tu señor parece satisfecho, aunque algunos de tus hombres habrían preferido una muestra de mayor orgullo."
+          );
+        }
+      }
+    ]
+  },
   
-   // ======================
+  // ======================
   // CONFLICTOS BELICOS
   // ======================
   {
-    id: "bandit_raid_minor",
-    title: "Saqueadores en los caminos",
+    id: "bandits_raid",
+    title: "Bandidos en las rutas de comercio",
     text:
-      "Una partida de bandidos ha sido vista cerca de las granjas. Algunos consejeros proponen enviar soldados, otros pagar para que se marchen.",
+      "Un grupo de bandidos ha sido avistado cerca de las rutas de comercio. " +
+      "Podrían atacar a los mercaderes y saquear caravanas cargadas de mercancías.",
     condition: (state) =>
       state.day >= 5 &&
       (state.resources.food > 0 || state.resources.gold > 0),
     choices: [
       {
         id: "bandits_send_soldiers",
-        text: "Enviar soldados a dispersarlos.",
+        text: "Enviar soldados a proteger las caravanas.",
         effects: (state) => {
           const defense = computeDefenseScore(state);
 
           if (defense >= 12) {
-            // Buena defensa: daño menor
-            state.resources.gold = Math.max(0, state.resources.gold - 10);
+            // Buena defensa: daño menor, los mercaderes quedan contentos
+            const lostGold = Math.min(state.resources.gold, 10);
+            state.resources.gold -= lostGold;
+
+            if (state.relations) {
+              state.relations.crown = Math.min(
+                100,
+                state.relations.crown + 2
+              );
+              state.relations.guilds = Math.min(
+                100,
+                state.relations.guilds + 4
+              );
+              state.relations.people = Math.min(
+                100,
+                state.relations.people + 1
+              );
+            }
+
+            pushLog(
+              state,
+              `Tus soldados escoltan las caravanas y dispersan a los bandidos. Solo se pierden ${lostGold} de oro en los altercados menores.`
+            );
+          } else {
+            // Defensa floja: los bandidos alcanzan parte del convoy
+            const stolenGold = Math.min(state.resources.gold, 25);
+            const stolenFood = Math.min(state.resources.food, 15);
+            state.resources.gold -= stolenGold;
+            state.resources.food -= stolenFood;
+
+            if (state.relations) {
+              state.relations.guilds = Math.max(
+                0,
+                state.relations.guilds - 5
+              );
+              state.relations.people = Math.max(
+                0,
+                state.relations.people - 2
+              );
+            }
+
+            pushLog(
+              state,
+              `Tus hombres no bastan para proteger todas las rutas: los bandidos saquean caravanas por valor de ${stolenGold} de oro y ${stolenFood} de comida.`
+            );
+          }
+        }
+      },
+      {
+        id: "bandits_pay_off",
+        text: "Pagarles algo de oro para que dejen en paz a los mercaderes.",
+        effects: (state) => {
+          const cost = Math.min(state.resources.gold, 25);
+          state.resources.gold -= cost;
+
+          if (state.relations) {
+            // Los gremios desconfían, el pueblo ve debilidad
+            state.relations.guilds = Math.max(
+              0,
+              state.relations.guilds - 3
+            );
+            state.relations.people = Math.max(
+              0,
+              state.relations.people - 1
+            );
+          }
+
+          pushLog(
+            state,
+            `Entregas ${cost} de oro a los cabecillas de los bandidos para que dejen pasar a las caravanas. Los mercaderes suspiran aliviados, pero murmuran sobre tu falta de mano dura.`
+          );
+        }
+      }
+    ]
+  },
+  {
+    id: "bandit_raid",
+    title: "Incursión de bandidos en el castillo",
+    text:
+      "Una partida de bandidos ha sido vista merodeando cerca de tus granjas y almacenes. " +
+      "Algunos consejeros proponen salir a su encuentro, otros sugieren pagar para evitar un saqueo.",
+    condition: (state) =>
+      state.day >= 8 &&
+      (state.resources.food > 0 || state.resources.gold > 0),
+    choices: [
+      {
+        id: "castle_bandits_send_soldiers",
+        text: "Enviar tropas a interceptarlos antes de que se acerquen al castillo.",
+        effects: (state) => {
+          const defense = computeDefenseScore(state);
+
+          if (defense >= 15) {
+            // Buena defensa: los ahuyentas casi sin pérdidas
+            const lostFood = Math.min(state.resources.food, 8);
+            state.resources.food -= lostFood;
+
             if (state.relations) {
               state.relations.crown = Math.min(
                 100,
@@ -1760,40 +2448,62 @@ export const SAMPLE_EVENTS = [
               );
               state.relations.people = Math.min(
                 100,
-                state.relations.people + 2
+                state.relations.people + 3
               );
             }
+
+            pushLog(
+              state,
+              `Tus hombres sorprenden a los bandidos en campo abierto y los dispersan. Solo se consumen ${lostFood} de comida en las marchas y guardias extras.`
+            );
           } else {
-            // Defensa floja: algo de saqueo pese al intento
+            // Defensa floja: llegan a los alrededores del castillo
             const stolenGold = Math.min(state.resources.gold, 20);
-            const stolenFood = Math.min(state.resources.food, 20);
+            const stolenFood = Math.min(state.resources.food, 25);
             state.resources.gold -= stolenGold;
             state.resources.food -= stolenFood;
+
             if (state.relations) {
               state.relations.people = Math.max(
                 0,
-                state.relations.people - 4
+                state.relations.people - 5
+              );
+              state.relations.crown = Math.max(
+                0,
+                state.relations.crown - 2
               );
             }
+
+            pushLog(
+              state,
+              `Pese a tus esfuerzos, los bandidos alcanzan los alrededores del castillo y saquean graneros y dependencias menores: pierdes ${stolenGold} de oro y ${stolenFood} de comida.`
+            );
           }
         }
       },
       {
-        id: "bandits_pay_off",
-        text: "Pagarles algo de oro para que se marchen.",
+        id: "castle_bandits_bribe",
+        text: "Pagarles para que se retiren sin acercarse a los muros.",
         effects: (state) => {
-          const cost = Math.min(state.resources.gold, 25);
+          const cost = Math.min(state.resources.gold, 30);
           state.resources.gold -= cost;
+
           if (state.relations) {
-            state.relations.people = Math.max(
-              0,
-              state.relations.people - 2
+            // El pueblo agradece evitar el combate, pero la Corona no tanto
+            state.relations.people = Math.min(
+              100,
+              state.relations.people + 1
             );
-            state.relations.guilds = Math.max(
+            state.relations.crown = Math.max(
               0,
-              state.relations.guilds - 2
+              state.relations.crown - 4
             );
           }
+
+          pushLog(
+            state,
+            `Ordenas pagar ${cost} de oro a los bandidos para que se alejen del castillo. No hay saqueo, pero algunos se preguntan cuánto tiempo podrás seguir comprando la paz.`
+          );
         }
       }
     ]
@@ -1802,7 +2512,7 @@ export const SAMPLE_EVENTS = [
     id: "neighbor_lord_attack",
     title: "Ataque del señor vecino",
     text:
-      "Un señor vecino envidioso del castillo moviliza una pequeña fuerza para poner a prueba tus defensas.",
+      "Un señor vecino envidioso del castillo moviliza una fuerza para poner a prueba tus defensas.",
     condition: (state) => {
       if (state.day < 15) return false;
       // Solo tiene sentido si hay alguna muralla o torre
@@ -1822,16 +2532,114 @@ export const SAMPLE_EVENTS = [
       return hasDefense;
     },
     choices: [
-      {
+{
         id: "defend_behind_walls",
         text: "Cerrar las puertas y defenderse tras las murallas.",
         effects: (state) => {
           const defense = computeDefenseScore(state);
 
-          if (defense >= 20) {
-            // Defensa fuerte: repeles el ataque
+          // Escalado por días jugados: a más tiempo, más exigente
+          const day = state.day || 0;
+          const years = day / 365; // aprox. años de juego
+
+          // Umbrales dinámicos
+          const strongThreshold = 20 + Math.floor(years * 15);
+          const mediumThreshold = 10 + Math.floor(years * 8);
+
+          // Calidad de la guarnición respecto a lo esperado
+          const pop = state.resources.population || 0;
+          const soldiers = state.labor?.soldiers || 0;
+          let required = 0;
+          if (pop >= 30) {
+            // mismo criterio que en onNewDay: 1 soldado por cada 15 hab.
+            required = Math.ceil(pop / 15);
+          }
+
+          let riskFactor = 0; // 0 = guarnición suficiente, 1 = muy insuficiente
+          if (required > 0 && soldiers < required) {
+            riskFactor = Math.min(1, 1 - soldiers / required);
+          }
+
+          // Probabilidades base según defensa
+          let pGood, pMed, pBad;
+          if (defense >= strongThreshold) {
+            // Castillo muy fuerte para este momento de la partida
+            pGood = 0.8;
+            pMed = 0.18;
+            pBad = 0.02;
+          } else if (defense >= mediumThreshold) {
+            // Defensa aceptable
+            pGood = 0.3;
+            pMed = 0.5;
+            pBad = 0.2;
+          } else {
+            // Defensa floja para el momento actual
+            pGood = 0.05;
+            pMed = 0.35;
+            pBad = 0.6;
+          }
+
+          // Ajuste por guarnición insuficiente: si faltan soldados, sube el riesgo
+          const extraBad = 0.3 * riskFactor;
+          const extraMed = 0.1 * riskFactor;
+          pBad += extraBad;
+          pMed += extraMed;
+          pGood -= extraBad + extraMed;
+
+          // Normalizar / limitar por seguridad
+          const clamp01 = (v) => Math.max(0, Math.min(1, v));
+          pGood = clamp01(pGood);
+          pMed = clamp01(pMed);
+          pBad = clamp01(pBad);
+          const sum = pGood + pMed + pBad || 1;
+          pGood /= sum;
+          pMed /= sum;
+          pBad /= sum;
+
+          const roll = Math.random();
+          let outcome;
+          if (roll < pGood) outcome = "good";
+          else if (roll < pGood + pMed) outcome = "medium";
+          else outcome = "bad";
+
+          // Helper interno para bajas de población
+          const applyCasualties = (baseMin, baseMax) => {
+            const popBefore = state.resources.population || 0;
+            if (popBefore <= 0) return 0;
+
+            // Aumenta el máximo con el riesgo por falta de guarnición
+            const extra = Math.round(baseMax * riskFactor);
+            const maxCas = Math.min(popBefore, baseMax + extra);
+            const minCas = Math.min(baseMin, maxCas);
+
+            if (maxCas <= 0) return 0;
+
+            const casualties =
+              minCas +
+              Math.floor(Math.random() * (maxCas - minCas + 1));
+
+            state.resources.population = Math.max(
+              0,
+              popBefore - casualties
+            );
+
+            if (state.relations && casualties > 0) {
+              state.relations.people = Math.max(
+                0,
+                (state.relations.people || 0) -
+                  Math.min(8, casualties)
+              );
+            }
+
+            return casualties;
+          };
+
+          if (outcome === "good") {
+            // Defensa fuerte para el momento actual: repeles el ataque
             const lostFood = Math.min(state.resources.food, 10);
             state.resources.food -= lostFood;
+
+            const casualties = applyCasualties(0, 2);
 
             if (state.relations) {
               state.relations.crown = Math.min(
@@ -1844,16 +2652,23 @@ export const SAMPLE_EVENTS = [
               );
             }
 
+            const extraMsg =
+              casualties > 0
+                ? ` Se lamentan ${casualties} bajas entre tus gentes en las escaramuzas.`
+                : "";
             pushLog(
               state,
-              "Los ballesteros desde las murallas y un par de salidas bien calculadas hacen retroceder al señor vecino. El asedio se rompe con pocas pérdidas en tus filas."
+              "Los ballesteros desde las murallas y un par de salidas bien calculadas hacen retroceder al señor vecino. El asedio se rompe con pocas pérdidas en tus filas." +
+                extraMsg
             );
-          } else if (defense >= 10) {
+          } else if (outcome === "medium") {
             // Defensa justa: se sufre, pero aguantas
             const lostGold = Math.min(state.resources.gold, 25);
             const lostFood = Math.min(state.resources.food, 20);
             state.resources.gold -= lostGold;
             state.resources.food -= lostFood;
+
+            const casualties = applyCasualties(1, 4);
 
             if (state.relations) {
               state.relations.crown = Math.min(
@@ -1866,17 +2681,24 @@ export const SAMPLE_EVENTS = [
               );
             }
 
+            const extraMsg =
+              casualties > 0
+                ? ` Se cuentan ${casualties} muertos o heridos graves entre campesinos y sirvientes.`
+                : "";
             pushLog(
               state,
-              `El asedio se levanta tras varios días de tensión. Se gastan ${lostGold} de oro y ${lostFood} de comida en sobornos, reparaciones rápidas y mantener a la guarnición en pie.`
+              `El asedio se levanta tras varios días de tensión. Se gastan ${lostGold} de oro y ${lostFood} de comida en sobornos, reparaciones rápidas y mantener a la guarnición en pie.` +
+                extraMsg
             );
           } else {
-            // Defensa floja: brecha en la muralla + saqueo
+            // Defensa floja: brecha en la muralla + saqueo y más bajas
             const destroyed = collapseRandomDefenseSegments(state, 2);
             const lostGold = Math.min(state.resources.gold, 40);
             const lostFood = Math.min(state.resources.food, 35);
             state.resources.gold -= lostGold;
             state.resources.food -= lostFood;
+
+            const casualties = applyCasualties(2, 8);
 
             if (state.relations) {
               state.relations.crown = Math.max(
@@ -1897,9 +2719,13 @@ export const SAMPLE_EVENTS = [
               destroyed > 0
                 ? ` Durante el asalto se abren ${destroyed} brechas en la muralla.`
                 : "";
+            const extraMsg =
+              casualties > 0
+                ? ` Entre el caos del saqueo se pierden ${casualties} habitantes.`
+                : "";
             pushLog(
               state,
-              `El ataque del señor vecino desborda a tu guarnición: se pierden ${lostGold} de oro y ${lostFood} de comida en el saqueo.${segMsg}`
+              `El ataque del señor vecino desborda a tu guarnición: se pierden ${lostGold} de oro y ${lostFood} de comida en el saqueo.${segMsg}${extraMsg}`
             );
           }
         }
@@ -1925,6 +2751,293 @@ export const SAMPLE_EVENTS = [
           pushLog(
             state,
             `Carromatos cargados de vino, telas y ${cost} de oro cruzan la frontera. El señor vecino se calma por ahora, pero tus vasallos se preguntan cuánto durará esa paz comprada.`
+          );
+        }
+      }
+    ]
+  },
+  {
+    id: "overlord_punitive_attack",
+    title: "Castigo de tu señor",
+    text:
+      "Tu señor, harto de tus desobediencias y de la débil lealtad mostrada hacia la Corona, " +
+      "envía un poderoso ejército para someter el castillo y dar ejemplo al resto del reino.",
+    condition: (state) => {
+      const crownRel =
+        state.relations && typeof state.relations.crown === "number"
+          ? state.relations.crown
+          : 50;
+      const day = state.day || 0;
+      const flags = state.flags || {};
+
+      // Solo una vez, relación con Corona muy baja, partida ya avanzada
+      return (
+        !flags.overlordPunitiveAttackDone &&
+        crownRel < 5 &&
+        day >= 365 // al menos "un año" de juego
+      );
+    },
+    choices: [
+      {
+        id: "overlord_stand_and_fight",
+        text: "Cerrar filas y resistir hasta el final.",
+        effects: (state) => {
+          if (!state.flags) state.flags = {};
+          state.flags.overlordPunitiveAttackDone = true;
+
+          const defense = computeDefenseScore(state);
+
+          const day = state.day || 0;
+          const years = day / 365; // escalar con la duración de la partida
+
+          // Umbrales exigentes: es un ejército serio, no un vecino envidioso
+          const strongThreshold = 40 + Math.floor(years * 20);
+          const mediumThreshold = 20 + Math.floor(years * 12);
+
+          // Riesgo según guarnición insuficiente (mismo criterio que en onNewDay)
+          const pop = state.resources.population || 0;
+          const soldiers = state.labor?.soldiers || 0;
+          let required = 0;
+          if (pop >= 30) {
+            required = Math.ceil(pop / 15);
+          }
+
+          let riskFactor = 0;
+          if (required > 0 && soldiers < required) {
+            riskFactor = Math.min(1, 1 - soldiers / required);
+          }
+
+          // Probabilidades base según defensa
+          let pGood, pMed, pBad;
+          if (defense >= strongThreshold) {
+            // Castillo muy fuerte incluso para este ataque
+            pGood = 0.6;
+            pMed = 0.3;
+            pBad = 0.1;
+          } else if (defense >= mediumThreshold) {
+            // Defensa razonable, pero el enemigo es serio
+            pGood = 0.2;
+            pMed = 0.5;
+            pBad = 0.3;
+          } else {
+            // Defensa floja para un castigo real
+            pGood = 0.05;
+            pMed = 0.25;
+            pBad = 0.7;
+          }
+
+          // Ajuste por guarnición insuficiente: más riesgo si faltan soldados
+          const extraBad = 0.35 * riskFactor;
+          const extraMed = 0.15 * riskFactor;
+          pBad += extraBad;
+          pMed += extraMed;
+          pGood -= extraBad + extraMed;
+
+          const clamp01 = (v) => Math.max(0, Math.min(1, v));
+          pGood = clamp01(pGood);
+          pMed = clamp01(pMed);
+          pBad = clamp01(pBad);
+          const sum = pGood + pMed + pBad || 1;
+          pGood /= sum;
+          pMed /= sum;
+          pBad /= sum;
+
+          const roll = Math.random();
+          let outcome;
+          if (roll < pGood) outcome = "good";
+          else if (roll < pGood + pMed) outcome = "medium";
+          else outcome = "bad";
+
+          // Helper para bajas de población
+          const applyCasualties = (baseMin, baseMax) => {
+            const popBefore = state.resources.population || 0;
+            if (popBefore <= 0) return 0;
+
+            const extra = Math.round(baseMax * riskFactor);
+            const maxCas = Math.min(popBefore, baseMax + extra);
+            const minCas = Math.min(baseMin, maxCas);
+
+            if (maxCas <= 0) return 0;
+
+            const casualties =
+              minCas +
+              Math.floor(Math.random() * (maxCas - minCas + 1));
+
+            state.resources.population = Math.max(
+              0,
+              popBefore - casualties
+            );
+
+            if (state.relations && casualties > 0) {
+              state.relations.people = Math.max(
+                0,
+                (state.relations.people || 0) -
+                  Math.min(12, casualties)
+              );
+            }
+
+            return casualties;
+          };
+
+          if (outcome === "good") {
+            // Resistes heroicamente el castigo del señor
+            const lostGold = Math.min(state.resources.gold, 40);
+            const lostFood = Math.min(state.resources.food, 40);
+            state.resources.gold -= lostGold;
+            state.resources.food -= lostFood;
+
+            const casualties = applyCasualties(5, 15);
+
+            if (state.relations) {
+              // La Corona te odia aún más, pero el pueblo y gremios te admiran
+              state.relations.crown = Math.max(
+                0,
+                (state.relations.crown || 0) - 5
+              );
+              state.relations.people = Math.min(
+                100,
+                (state.relations.people || 0) + 8
+              );
+              state.relations.guilds = Math.min(
+                100,
+                (state.relations.guilds || 0) + 5
+              );
+            }
+
+            if (typeof state.prestige !== "number") state.prestige = 0;
+            state.prestige += 10;
+
+            const extraMsg =
+              casualties > 0
+                ? ` El precio es alto: se cuentan ${casualties} muertos entre campesinos y defensores.`
+                : "";
+            pushLog(
+              state,
+              `Contra todo pronóstico, tus muros y tu gente resisten el castigo del señor superior. Se pierden ${lostGold} de oro y ${lostFood} de comida, pero el castillo no cae.` +
+                extraMsg
+            );
+          } else if (outcome === "medium") {
+            // Aguantas por los pelos: el castillo no cae, pero queda destrozado
+            const lostGold = Math.min(state.resources.gold, 70);
+            const lostFood = Math.min(state.resources.food, 60);
+            state.resources.gold -= lostGold;
+            state.resources.food -= lostFood;
+
+            const casualties = applyCasualties(10, 25);
+            const destroyed = collapseRandomDefenseSegments(state, 3);
+
+            if (state.relations) {
+              state.relations.crown = Math.max(
+                0,
+                (state.relations.crown || 0) - 2
+              );
+              state.relations.people = Math.max(
+                0,
+                (state.relations.people || 0) - 5
+              );
+              state.relations.guilds = Math.max(
+                0,
+                (state.relations.guilds || 0) - 3
+              );
+            }
+
+            if (typeof state.prestige !== "number") state.prestige = 0;
+            state.prestige += 5;
+
+            const segMsg =
+              destroyed > 0
+                ? ` Varias secciones de muralla y torres quedan en ruinas (${destroyed} tramos destruidos).`
+                : "";
+            const extraMsg =
+              casualties > 0
+                ? ` Se lloran ${casualties} muertos entre tus habitantes.`
+                : "";
+            pushLog(
+              state,
+              `El castillo sobrevive al castigo del señor superior, pero a un coste terrible: se pierden ${lostGold} de oro y ${lostFood} de comida.` +
+                segMsg +
+                extraMsg
+            );
+          } else {
+            // El castillo es prácticamente arrasado
+            const lostGold = Math.min(state.resources.gold, 100);
+            const lostFood = Math.min(state.resources.food, 80);
+            state.resources.gold -= lostGold;
+            state.resources.food -= lostFood;
+
+            const casualties = applyCasualties(20, 40);
+            const destroyed = collapseRandomDefenseSegments(state, 5);
+
+            if (state.relations) {
+              // La Corona "restablece el orden", pero tu nombre queda manchado y tu pueblo destrozado
+              state.relations.crown = Math.min(
+                100,
+                (state.relations.crown || 0) + 5
+              );
+              state.relations.people = Math.max(
+                0,
+                (state.relations.people || 0) - 10
+              );
+              state.relations.guilds = Math.max(
+                0,
+                (state.relations.guilds || 0) - 6
+              );
+            }
+
+            if (typeof state.prestige !== "number") state.prestige = 0;
+            state.prestige = Math.max(0, state.prestige - 10);
+
+            const segMsg =
+              destroyed > 0
+                ? ` Amplios tramos de muralla, puertas y torres quedan arrasados (${destroyed} secciones destruidas).`
+                : "";
+            const extraMsg =
+              casualties > 0
+                ? ` Se pierden ${casualties} vidas en la destrucción.`
+                : "";
+            pushLog(
+              state,
+              `El ejército del señor superior arrasa tus defensas y saquea a fondo el castillo: se pierden ${lostGold} de oro y ${lostFood} de comida.` +
+                segMsg +
+                extraMsg
+            );
+          }
+        }
+      },
+      {
+        id: "overlord_submit",
+        text: "Rendirse y jurar obediencia absoluta al señor.",
+        effects: (state) => {
+          if (!state.flags) state.flags = {};
+          state.flags.overlordPunitiveAttackDone = true;
+
+          const costGold = Math.min(state.resources.gold, 80);
+          state.resources.gold -= costGold;
+
+          const costFood = Math.min(state.resources.food, 40);
+          state.resources.food -= costFood;
+
+          if (state.relations) {
+            state.relations.crown = Math.min(
+              100,
+              (state.relations.crown || 0) + 20
+            );
+            state.relations.people = Math.max(
+              0,
+              (state.relations.people || 0) - 8
+            );
+            state.relations.guilds = Math.max(
+              0,
+              (state.relations.guilds || 0) - 4
+            );
+          }
+
+          if (typeof state.prestige !== "number") state.prestige = 0;
+          state.prestige = Math.max(0, state.prestige - 15);
+
+          pushLog(
+            state,
+            `Abres las puertas del castillo, entregas ${costGold} de oro y ${costFood} de comida y te postras ante tu señor. La Corona te concede el perdón, pero tu reputación queda profundamente dañada a ojos de tus vasallos.`
           );
         }
       }
