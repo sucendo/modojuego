@@ -26,16 +26,59 @@
     <header id="top-bar">
       <div class="group">
         <span>Día: <span id="day-display">1</span></span>
-        <span>Velocidad:
-          <button data-speed="0" class="speed-btn">⏸</button>
-          <button data-speed="1" class="speed-btn active">x1</button>
-          <button data-speed="3" class="speed-btn">x3</button>
+        <span>
+			Velocidad:
+			<button class="speed-btn" data-speed="0">⏸</button>
+			<button class="speed-btn active" data-speed="1">x1</button>
+			<button class="speed-btn" data-speed="3">x3</button>
         </span>
-      <span>
-        Partida:
-        <button id="save-btn">💾 Guardar</button>
-        <button id="load-btn">📂 Cargar</button>
-      </span>
+
+        <!-- Logo centrado del juego -->
+        <div id="top-branding">
+          <img
+            id="game-logo"
+            src="img/title/Castles_&_Lords_line-removebg.webp"
+            alt="Castles &amp; Lords"
+          />
+        </div>
+
+        <!-- Menú de gestión de partida (escudo redondo) -->
+        <div id="player-menu" class="player-menu">
+          <button
+            id="player-menu-button"
+            class="player-menu-button"
+            data-tooltip="Gestión de partida: guardar, cargar, importar/exportar y nombre del jugador."
+          >
+            <img
+              src="img/title/coat_of_arms.webp"
+              alt="Escudo del señor"
+            />
+          </button>
+          <div id="player-menu-dropdown" class="player-menu-dropdown">
+            <div class="player-menu-row player-name-row">
+			  <span class="player-menu-label">Jugador</span>
+			  <input
+				id="player-name-input"
+				class="player-name-input"
+				type="text"
+				maxlength="32"
+				placeholder="Nombre del jugador"
+			  />
+			</div>
+            <button id="save-btn" class="player-menu-item">💾 Guardar</button>
+            <button id="load-btn" class="player-menu-item">📂 Cargar</button>
+            <button id="export-btn" class="player-menu-item">⬇️ Exportar</button>
+            <label class="player-menu-item file-import-label">
+              ⬆️ Importar
+              <input
+                id="import-input"
+                type="file"
+                accept=".json,application/json"
+                hidden
+              />
+            </label>
+          </div>
+        </div>
       </div>
       <div class="group">
         <span>👑 Título: <span id="title-display">Señor de la fortaleza</span></span>

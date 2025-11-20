@@ -41,8 +41,125 @@ body {
 
 #top-bar .group {
   display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
   align-items: center;
-  gap: 16px;
+}
+
+/* Branding y menú de jugador / partida */
+#top-branding {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#game-logo {
+  height: 40px;           /* adapta el alto del título al top-bar */
+  object-fit: contain;
+  display: block;
+}
+
+.player-menu {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.player-menu-button {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1px solid var(--accent);
+  background: radial-gradient(circle at 30% 20%, #f8e3b5 0, #b07c3b 40%, #3a2813 100%);
+  padding: 2px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.player-menu-button img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 50%;
+}
+
+.player-menu-dropdown {
+  position: absolute;
+  right: 0;
+  top: 110%;
+  min-width: 190px;
+  background: #151522;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  padding: 6px 8px;
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 1500;
+}
+
+.player-menu-dropdown.open {
+  display: flex;
+}
+
+.player-menu-item {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 13px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.player-menu-item:hover {
+  background: rgba(212, 169, 95, 0.18);
+}
+
+.player-menu-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.player-menu-label {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.player-name-input {
+  flex: 1;
+  font-size: 13px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: #11131e;
+  color: var(--text);
+}
+
+.player-name-input::placeholder {
+  color: var(--muted);
+}
+
+.player-name-input:focus {
+  outline: 1px solid var(--accent-soft);
+  border-color: var(--accent-soft);
+}
+
+.file-import-label {
+  cursor: pointer;
+}
+
+.file-import-label input[type="file"] {
+  display: none;
 }
 
 #top-bar .resources span {

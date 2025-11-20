@@ -612,13 +612,130 @@ function saveGame() {
       originX,
       originY,
       lastEventDay,
-      eventCooldownDays
+      eventCooldownDays,
+      // guardamos también el nombre del jugador si existe
+      playerName: state.playerName || localStorage.getItem("castles_player_name") || ""
     };
     localStorage.setItem("castles_save", JSON.stringify(payload));
     console.log("Partida guardada");
   } catch (err) {
     console.error("Error al guardar la partida:", err);
   }
+}
+
+// Exportar la partida a un archivo JSON
+function exportGameToFile() {
+  try {
+    const payload = {
+      version: 1,
+      state,
+      originX,
+      originY,
+      lastEventDay,
+      eventCooldownDays,
+      playerName: state.playerName || localStorage.getItem("castles_player_name") || ""
+    };
+
+    const json = JSON.stringify(payload, null, 2);
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    const dd = String(now.getDate()).padStart(2, "0");
+    const baseName =
+      (state.playerName || localStorage.getItem("castles_player_name") || "partida")
+        .trim()
+        .replace(/\s+/g, "_");
+
+    a.href = url;
+    a.download = `castles_lords_${baseName}_${yyyy}${mm}${dd}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error("Error al exportar la partida:", err);
+    alert("No se ha podido exportar la partida.");
+  }
+}
+
+// Aplica un payload cargado (tanto desde localStorage como desde archivo)
+function applyLoadedPayload(payload) {
+  if (!payload || !payload.state) {
+    console.warn("Guardado inválido.");
+    return;
+  }
+
+  // Restaurar estado
+  state = payload.state;
+
+  // Asegurar que existe un nivel de impuestos válido
+  if (typeof state.taxRate !== "number") {
+    state.taxRate = 1; // normales por defecto
+  }
+
+  // ───────────────────────────────────────────────
+  // Migración de partidas antiguas (sin prestigio/título)
+  // ───────────────────────────────────────────────
+
+  // Si no hay prestigio numérico, lo estimamos a partir de los edificios construidos
+  if (typeof state.prestige !== "number") {
+    let estimated = 0;
+    if (state.tiles && PRESTIGE_PER_BUILDING) {
+      for (let y = 0; y < state.tiles.length; y++) {
+        const row = state.tiles[y];
+        for (let x = 0; x < row.length; x++) {
+          const b = row[x].building;
+          if (b && PRESTIGE_PER_BUILDING[b]) {
+            estimated += PRESTIGE_PER_BUILDING[b];
+          }
+        }
+      }
+    }
+    state.prestige = estimated;
+  }
+
+  // Si no hay título, ponemos uno por defecto y lo ajustamos según prestigio
+  if (!state.title) {
+    state.title = "Señor de la fortaleza";
+  }
+
+  // Aseguramos que el título coincide con el prestigio actual
+  updateTitleFromPrestige();
+
+  if (typeof payload.originX === "number") originX = payload.originX;
+  if (typeof payload.originY === "number") originY = payload.originY;
+  if (typeof payload.lastEventDay === "number") lastEventDay = payload.lastEventDay;
+  if (typeof payload.eventCooldownDays === "number")
+    eventCooldownDays = payload.eventCooldownDays;
+
+ // Nombre de jugador (opcional)
+  if (typeof payload.playerName === "string") {
+    state.playerName = payload.playerName;
+    try {
+      localStorage.setItem("castles_player_name", payload.playerName);
+    } catch (_err) {
+      // ignoramos errores de quota
+    }
+  }
+
+  // Cerrar cualquier evento que estuviera abierto
+  pendingEvent = null;
+  closeEventModal();
+
+  // Refrescar HUD con el nuevo estado
+  updateHUD();
+
+  // Refrescar nombre de jugador en la UI (input del menú)
+  const nameInput = document.getElementById("player-name-input");
+  if (nameInput) {
+    nameInput.value = state.playerName || "";
+  }
+
+  console.log("Partida cargada");
 }
 
 function loadGame() {
@@ -629,63 +746,7 @@ function loadGame() {
       return;
     }
     const payload = JSON.parse(raw);
-    if (!payload.state) {
-      console.warn("Guardado inválido.");
-      return;
-    }
-
-    // Restaurar estado y cámara
-    state = payload.state;
-	
-	// Asegurar que existe un nivel de impuestos válido
-	if (typeof state.taxRate !== "number") {
-	state.taxRate = 1; // normales por defecto
-	}
-
-    // ───────────────────────────────────────────────
-    // Migración de partidas antiguas (sin prestigio/título)
-    // ───────────────────────────────────────────────
-
-    // Si no hay prestigio numérico, lo estimamos a partir de los edificios construidos
-    if (typeof state.prestige !== "number") {
-      let estimated = 0;
-      if (state.tiles && PRESTIGE_PER_BUILDING) {
-        for (let y = 0; y < state.tiles.length; y++) {
-          const row = state.tiles[y];
-          for (let x = 0; x < row.length; x++) {
-            const b = row[x].building;
-            if (b && PRESTIGE_PER_BUILDING[b]) {
-              estimated += PRESTIGE_PER_BUILDING[b];
-            }
-          }
-        }
-      }
-      state.prestige = estimated;
-    }
-
-    // Si no hay título, ponemos uno por defecto y lo ajustamos según prestigio
-    if (!state.title) {
-      state.title = "Señor de la fortaleza";
-    }
-
-    // Aseguramos que el título coincide con el prestigio actual
-    updateTitleFromPrestige();
-    // ───────────────────────────────────────────────
-
-    if (typeof payload.originX === "number") originX = payload.originX;
-    if (typeof payload.originY === "number") originY = payload.originY;
-    if (typeof payload.lastEventDay === "number")
-      lastEventDay = payload.lastEventDay;
-    if (typeof payload.eventCooldownDays === "number")
-      eventCooldownDays = payload.eventCooldownDays;
-
-    // Cerrar cualquier evento que estuviera abierto
-    pendingEvent = null;
-    closeEventModal();
-
-    // Refrescar HUD con el nuevo estado
-    updateHUD();
-    console.log("Partida cargada");
+    applyLoadedPayload(payload);
   } catch (err) {
     console.error("Error al cargar la partida:", err);
   }
@@ -750,7 +811,128 @@ function setupUIBindings() {
     });
   });
 
-  // Guardar / cargar partida
+// Menú de jugador / partida (escudo redondo)
+  const playerMenuButton = document.getElementById("player-menu-button");
+  const playerMenuDropdown = document.getElementById("player-menu-dropdown");
+  const playerNameInput = document.getElementById("player-name-input");
+  const exportBtn = document.getElementById("export-btn");
+  const importInput = document.getElementById("import-input");
+
+  // Inicializar nombre del jugador directamente en el input
+  if (playerNameInput) {
+    let initialName =
+      state.playerName || localStorage.getItem("castles_player_name") || "";
+    state.playerName = initialName;
+    playerNameInput.value = initialName;
+
+    const commitName = () => {
+      const value = playerNameInput.value.trim();
+      const finalName = value || "";
+      state.playerName = finalName;
+      try {
+        localStorage.setItem("castles_player_name", finalName);
+      } catch (_err) {
+        // ignoramos errores de quota
+      }
+    };
+
+    playerNameInput.addEventListener("change", commitName);
+    playerNameInput.addEventListener("blur", commitName);
+    playerNameInput.addEventListener("keydown", (ev) => {
+      if (ev.key === "Enter") {
+        commitName();
+        playerNameInput.blur();
+      }
+    });
+  }
+
+  if (playerMenuButton && playerMenuDropdown) {
+    playerMenuButton.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      playerMenuDropdown.classList.toggle("open");
+    });
+
+    // Cerrar el menú al hacer click fuera
+    document.addEventListener("click", (ev) => {
+      if (!playerMenuDropdown.classList.contains("open")) return;
+      const target = ev.target;
+      if (!(target && target.closest && target.closest("#player-menu"))) {
+        playerMenuDropdown.classList.remove("open");
+      }
+    });
+  }
+
+  if (exportBtn) {
+    exportBtn.addEventListener("click", () => {
+      exportGameToFile();
+    });
+  }
+
+  if (importInput) {
+    importInput.addEventListener("change", () => {
+      const file = importInput.files && importInput.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const text = String(reader.result || "");
+          const payload = JSON.parse(text);
+          applyLoadedPayload(payload);
+
+          // Actualizamos también el guardado local para que funcione "Cargar"
+          try {
+            localStorage.setItem("castles_save", text);
+          } catch (_err) {
+            // ignoramos errores de quota
+          }
+        } catch (err) {
+          console.error("Error al importar la partida:", err);
+          alert("No se ha podido importar la partida (archivo no válido).");
+        } finally {
+          importInput.value = "";
+        }
+      };
+      reader.readAsText(file);
+    });
+  }
+
+  if (exportBtn) {
+    exportBtn.addEventListener("click", () => {
+      exportGameToFile();
+    });
+  }
+
+  if (importInput) {
+    importInput.addEventListener("change", () => {
+      const file = importInput.files && importInput.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const text = String(reader.result || "");
+          const payload = JSON.parse(text);
+          applyLoadedPayload(payload);
+
+          // Actualizamos también el guardado local para que funcione "Cargar"
+          try {
+            localStorage.setItem("castles_save", text);
+          } catch (_err) {
+            // ignoramos errores de quota
+          }
+        } catch (err) {
+          console.error("Error al importar la partida:", err);
+          alert("No se ha podido importar la partida (archivo no válido).");
+        } finally {
+          importInput.value = "";
+        }
+      };
+      reader.readAsText(file);
+    });
+  }
+
+  // Guardar / cargar partida (botones dentro del menú)
   const saveBtn = document.getElementById("save-btn");
   if (saveBtn) {
     saveBtn.addEventListener("click", () => {
@@ -1031,6 +1213,20 @@ function setupCameraControls() {
 }
 
 function handleCameraKeyDown(ev) {
+  // Si estamos escribiendo en un input/textarea/select o en algo editable, no mover cámara
+  const target = ev.target;
+  if (target) {
+    const tag = target.tagName;
+    if (
+      tag === "INPUT" ||
+      tag === "TEXTAREA" ||
+      tag === "SELECT" ||
+      target.isContentEditable
+    ) {
+      return;
+    }
+  }
+
   let moved = false;
 
   switch (ev.key) {
