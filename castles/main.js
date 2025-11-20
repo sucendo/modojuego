@@ -1740,34 +1740,28 @@ function showEvent(evt) {
   textEl.textContent = evt.text;
   choicesEl.innerHTML = "";
 
-  // Imagen del evento (miniatura medieval)
+  // Imagen del evento: debajo del título, a la izquierda del texto
   if (imgEl) {
-    // Si el evento indica explícitamente que no quiere imagen
+    // Si el evento quiere forzar que no haya imagen
     if (evt.image === null) {
       imgEl.style.display = "none";
       imgEl.src = "";
     } else {
-      // Carpeta donde guardas las imágenes (ahora mismo: img/)
       const basePath = "img";
-
-      // Si el evento define image: "archivo.png" la usamos;
-      // si no, asumimos convención <id>.png
+      // Si el evento tiene image: "archivo.ext", lo usamos;
+      // si no, construimos <id>.png por convención
       const fileName =
         typeof evt.image === "string" && evt.image.length > 0
           ? evt.image
           : `${evt.id}.png`;
-
       const src = `${basePath}/${fileName}`;
 
-      // Mostramos mientras intenta cargar
       imgEl.style.display = "block";
       imgEl.alt = evt.title || "Evento";
-
-      // Si el archivo no existe, ocultamos la imagen para que no quede rota
       imgEl.onerror = () => {
+        // Si el archivo no existe, ocultamos la imagen para que no se vea rota
         imgEl.style.display = "none";
       };
-
       imgEl.src = src;
     }
   }

@@ -212,28 +212,57 @@ body {
   color: var(--accent);
 }
 
+/* Contenedor principal del contenido del evento:
+   imagen a la izquierda, texto a la derecha */
+#event-content {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-top: 4px;
+}
+
+/* Columna izquierda: miniatura medieval */
+#event-image-wrapper {
+  flex: 0 0 auto;
+}
+
+/* La imagen mantiene formato 1:1 y aspecto de icono */
+#event-image {
+  width: 120px;
+  height: 120px;
+  border-radius: 10px;
+  border: 1px solid var(--accent-soft);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  object-fit: cover;
+  background: radial-gradient(circle at top, #3a2b1a, #120f0a);
+}
+
+/* Columna derecha: texto */
+#event-text-wrapper {
+  flex: 1;
+}
+
+/* El párrafo de texto en sí */
 #event-text {
   margin: 0;
   font-size: 14px;
   color: var(--text);
 }
 
-/* Imagen de evento (miniatura medieval) */
-#event-image-wrapper {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: 8px 0 4px;
-}
+/* En pantallas muy estrechas, apilamos imagen y texto */
+@media (max-width: 380px) {
+  #event-content {
+    flex-direction: column;
+    align-items: center;
+  }
 
-#event-image {
-  width: 128px;
-  height: 128px;
-  border-radius: 10px;
-  border: 1px solid var(--accent-soft);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-  object-fit: cover;
-  background: radial-gradient(circle at top, #3a2b1a, #120f0a);
+  #event-image {
+    margin-bottom: 6px;
+  }
+
+  #event-text-wrapper {
+    width: 100%;
+  }
 }
 
 #event-choices {
