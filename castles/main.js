@@ -1742,28 +1742,30 @@ function showEvent(evt) {
 
   // Imagen del evento: debajo del título, a la izquierda del texto
   if (imgEl) {
-    // Si el evento quiere forzar que no haya imagen
-    if (evt.image === null) {
-      imgEl.style.display = "none";
-      imgEl.src = "";
-    } else {
-      const basePath = "img";
-      // Si el evento tiene image: "archivo.ext", lo usamos;
-      // si no, construimos <id>.png por convención
-      const fileName =
-        typeof evt.image === "string" && evt.image.length > 0
-          ? evt.image
-          : `${evt.id}.png`;
-      const src = `${basePath}/${fileName}`;
+    const basePath = "img/events";
+    const defaultFile = "event_lord_decision.png";
 
-      imgEl.style.display = "block";
-      imgEl.alt = evt.title || "Evento";
-      imgEl.onerror = () => {
-        // Si el archivo no existe, ocultamos la imagen
-        imgEl.style.display = "none";
-      };
-      imgEl.src = src;
-    }
+    // Nombre de archivo “principal”
+    const fileName =
+      typeof evt.image === "string" && evt.image.length > 0
+        ? evt.image
+        : `${evt.id}.png`;
+
+    // Si el evento no define image, usamos <id>.png;
+    // si define image: "otro.png", usamos ese nombre.
+    // En cualquier caso, si falla la carga, se usa la imagen por defecto.
+    let src = `${basePath}/${fileName}`;
+
+    imgEl.style.display = "block";
+    imgEl.alt = evt.title || "Evento";
+
+    imgEl.onerror = () => {
+      // Si falla la imagen concreta, usamos la de por defecto
+      imgEl.onerror = null; // evitar bucles si la de fallo también fallara
+      imgEl.src = `${basePath}/${defaultFile}`;
+    };
+
+    imgEl.src = src;
   }
 
   evt.choices.forEach((choice) => {

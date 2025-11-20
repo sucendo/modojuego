@@ -228,8 +228,8 @@ body {
 
 /* La imagen mantiene formato 1:1 y aspecto de icono */
 #event-image {
-  width: 120px;
-  height: 120px;
+  width: 175px;
+  height: 175px;
   border-radius: 10px;
   border: 1px solid var(--accent-soft);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
