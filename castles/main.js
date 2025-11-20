@@ -1759,7 +1759,7 @@ function showEvent(evt) {
       imgEl.style.display = "block";
       imgEl.alt = evt.title || "Evento";
       imgEl.onerror = () => {
-        // Si el archivo no existe, ocultamos la imagen para que no se vea rota
+        // Si el archivo no existe, ocultamos la imagen
         imgEl.style.display = "none";
       };
       imgEl.src = src;
