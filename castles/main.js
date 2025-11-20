@@ -1743,13 +1743,13 @@ function showEvent(evt) {
   // Imagen del evento: debajo del título, a la izquierda del texto
   if (imgEl) {
     const basePath = "img/events";
-    const defaultFile = "event_lord_decision.png";
+    const defaultFile = "event_lord_decision.webp";
 
     // Nombre de archivo “principal”
     const fileName =
       typeof evt.image === "string" && evt.image.length > 0
         ? evt.image
-        : `${evt.id}.png`;
+        : `${evt.id}.webp`;
 
     // Si el evento no define image, usamos <id>.png;
     // si define image: "otro.png", usamos ese nombre.
