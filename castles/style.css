@@ -218,6 +218,24 @@ body {
   color: var(--text);
 }
 
+/* Imagen de evento (miniatura medieval) */
+#event-image-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 8px 0 4px;
+}
+
+#event-image {
+  width: 128px;
+  height: 128px;
+  border-radius: 10px;
+  border: 1px solid var(--accent-soft);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  object-fit: cover;
+  background: radial-gradient(circle at top, #3a2b1a, #120f0a);
+}
+
 #event-choices {
   display: flex;
   flex-direction: column;

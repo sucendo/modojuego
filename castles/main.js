@@ -1731,6 +1731,7 @@ function showEvent(evt) {
   const titleEl = document.getElementById("event-title");
   const textEl = document.getElementById("event-text");
   const choicesEl = document.getElementById("event-choices");
+  const imgEl = document.getElementById("event-image");
 
   if (!modal || !titleEl || !textEl || !choicesEl) return;
 
@@ -1738,6 +1739,38 @@ function showEvent(evt) {
   titleEl.textContent = evt.title;
   textEl.textContent = evt.text;
   choicesEl.innerHTML = "";
+
+  // Imagen del evento (miniatura medieval)
+  if (imgEl) {
+    // Si el evento indica explícitamente que no quiere imagen
+    if (evt.image === null) {
+      imgEl.style.display = "none";
+      imgEl.src = "";
+    } else {
+      // Carpeta donde guardas las imágenes (ahora mismo: img/)
+      const basePath = "img";
+
+      // Si el evento define image: "archivo.png" la usamos;
+      // si no, asumimos convención <id>.png
+      const fileName =
+        typeof evt.image === "string" && evt.image.length > 0
+          ? evt.image
+          : `${evt.id}.png`;
+
+      const src = `${basePath}/${fileName}`;
+
+      // Mostramos mientras intenta cargar
+      imgEl.style.display = "block";
+      imgEl.alt = evt.title || "Evento";
+
+      // Si el archivo no existe, ocultamos la imagen para que no quede rota
+      imgEl.onerror = () => {
+        imgEl.style.display = "none";
+      };
+
+      imgEl.src = src;
+    }
+  }
 
   evt.choices.forEach((choice) => {
     const btn = document.createElement("button");
