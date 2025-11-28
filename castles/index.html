@@ -156,16 +156,83 @@
 				<div class="panel-body">
 				<h2>Edificios</h2>
 				<div class="build-buttons">
-					<button class="build-btn active" data-building="wall">Muralla</button>
-					<button class="build-btn" data-building="tower">Torre</button>
-					<button class="build-btn" data-building="gate">Puerta</button>
-					<button class="build-btn" data-building="bridge">Puente</button>
-					<button class="build-btn" data-building="farm">Granja</button>
-					<button class="build-btn" data-building="quarry">Cantera</button>
-					<button class="build-btn" data-building="lumberyard">Aserradero</button>
-    		  <button class="build-btn" data-building="mill">Molino</button>
-		      <button class="build-btn" data-building="road">Camino</button>
-					<button class="build-btn" data-building="demolish">🗑 Demoler</button>
+					<!-- Fila 1: Torres (cuadrada y redonda) -->
+					<div class="build-row">
+						<button class="build-btn active" data-building="tower_square">
+							<img class="build-icon" src="img/buildings/tower_square.webp" alt="Torre cuadrada" />
+						</button>
+						<button class="build-btn" data-building="tower_round">
+							<img class="build-icon" src="img/buildings/tower_round.webp" alt="Torre redonda" />
+						</button>
+						<button class="build-btn" data-building="tower_square_tall">
+							<img class="build-icon" src="img/buildings/tower_square_tall.webp" alt="Torre cuadrada alta" />
+						</button>
+						<button class="build-btn" data-building="tower_round_tall">
+							<img class="build-icon" src="img/buildings/tower_round_tall.webp" alt="Torre redonda alta" />
+						</button>
+					</div>
+					
+					<!-- Fila 2: Murallas (muralla 1 y muralla 2) -->
+					<div class="build-row">
+						<button class="build-btn" data-building="wall_1">
+							<img class="build-icon" src="img/buildings/wall_1.webp" alt="Muralla 1" />
+						</button>
+						<button class="build-btn" data-building="wall_2">
+							<img class="build-icon" src="img/buildings/wall_2.webp" alt="Muralla 2" />
+						</button>
+					</div>
+
+					<!-- Fila 3: Puertas (puerta 1 y puerta 2) -->
+					<div class="build-row">
+						<button class="build-btn" data-building="gate_1">
+							<img class="build-icon" src="img/buildings/gate_1.webp" alt="Puerta 1" />
+						</button>
+						<button class="build-btn" data-building="gate_2">
+							<img class="build-icon" src="img/buildings/gate_2.webp" alt="Puerta 2" />
+						</button>
+					</div>
+
+					<!-- Fila 4: Infraestructura económica -->
+					<div class="build-row">
+						<button class="build-btn" data-building="farm">
+							<img class="build-icon" src="img/buildings/farm.webp" alt="Granja" />
+						</button>
+						<button class="build-btn" data-building="quarry">
+							<img class="build-icon" src="img/buildings/quarry.webp" alt="Cantera" />
+						</button>
+						<button class="build-btn" data-building="lumberyard">
+							<img class="build-icon" src="img/buildings/lumberyard.webp" alt="Aserradero" />
+						</button>
+					</div>
+					
+					<!-- Fila 5: Recursos -->
+					<div class="build-row">
+						<button class="build-btn" data-building="mill">
+							<img class="build-icon" src="img/buildings/mill.webp" alt="Molino" />
+						</button>
+					</div>
+
+					<!-- Fila 6: caminos e infraestructuras -->
+					<div class="build-row">
+						<button class="build-btn" data-building="bridge">
+							<img class="build-icon" src="img/buildings/bridge.webp" alt="Puente" />
+						</button>
+						
+						<button class="build-btn" data-building="road">
+							<img class="build-icon" src="img/buildings/road.webp" alt="Camino" />
+						</button>
+						
+						<button class="build-btn" data-building="tile">
+							<img class="build-icon" src="img/buildings/tile.webp" alt="Loseta" />
+						</button>
+					</div>
+					
+					<!-- Fila 7: Borrado -->
+					<div class="build-row">
+						<button class="build-btn" data-building="demolish">
+							🗑
+						</button>
+					</div>
 				</div>
 				<p class="note">Recuerda: granjas solo en llano, canteras en roca y aserraderos en bosque.</p>
 				</div>

@@ -60,53 +60,66 @@ function hasPopulationAtLeast(state, n) {
 }
 
 function computeDefenseScore(state) {
-	  let walls = 0;
-	  let towers = 0;
-	  let gates = 0;
+  let score = 0;
 
-	  const tiles = state.tiles || [];
-	  for (let y = 0; y < tiles.length; y++) {
-		const row = tiles[y];
-		for (let x = 0; x < row.length; x++) {
-		  const b = row[x].building;
-		  if (b === "wall") walls++;
-		  else if (b === "tower") towers++;
-		  else if (b === "gate") gates++;
-		}
-	  }
+  const tiles = state.tiles || [];
+  for (let y = 0; y < tiles.length; y++) {
+    const row = tiles[y];
+    for (let x = 0; x < row.length; x++) {
+      const b = row[x].building;
+      if (!b) continue;
 
-	  const soldiers = state.labor?.soldiers || 0;
+      const def = BUILDING_TYPES[b];
+      if (!def) continue;
 
-	  // Murallas cuentan poco, torres y puertas algo más, soldados dan fuerza móvil
-	  let score = walls + gates * 2 + towers * 3 + soldiers * 2;
+      if (typeof def.defenseScore === "number") {
+        score += def.defenseScore;
+      }
+    }
+  }
 
-	  // Patrullas nocturnas y mejor organización de la guardia dan un pequeño bonus
-	  if (state.laws?.nightWatchLaw) {
-		score += 4;
-	  }
+  const soldiers = state.labor?.soldiers || 0;
 
-	  return score;
+  // Soldados: fuerza móvil
+  score += soldiers * 2;
+
+  // Patrullas nocturnas y organización de la guardia: pequeño bonus
+  if (state.laws?.nightWatchLaw) {
+    score += 4;
+  }
+
+  return score;
 }
 
 function destroyRandomWallSegment(state) {
   const tiles = state.tiles || [];
   const candidates = [];
 
+  // Buscar todos los tramos cuyo "role" sea muralla
   for (let y = 0; y < tiles.length; y++) {
     const row = tiles[y];
     for (let x = 0; x < row.length; x++) {
       const tile = row[x];
-      if (tile.building === "wall") {
+      const b = tile.building;
+      if (!b) continue;
+
+      const def = BUILDING_TYPES[b];
+      // Sólo contamos las construcciones cuyo "role" sea muralla
+      if (def && def.role === "wall") {
         candidates.push({ x, y });
       }
     }
   }
 
-  if (candidates.length === 0) return false;
+  // Si no hay murallas, no derrumbamos nada
+  if (candidates.length === 0) {
+    return false;
+  }
 
+  // Elegimos un tramo al azar y lo "derrumbamos"
   const idx = Math.floor(Math.random() * candidates.length);
   const { x, y } = candidates[idx];
-  const tile = state.tiles[y][x];
+  const tile = tiles[y][x];
 
   tile.building = null;
   tile.underConstruction = null;
@@ -2515,21 +2528,22 @@ export const SAMPLE_EVENTS = [
       "Un señor vecino envidioso del castillo moviliza una fuerza para poner a prueba tus defensas.",
     condition: (state) => {
       if (state.day < 15) return false;
-      // Solo tiene sentido si hay alguna muralla o torre
+
+      // Solo tiene sentido si hay alguna construcción defensiva
       const tiles = state.tiles || [];
-      let hasDefense = false;
       for (let y = 0; y < tiles.length; y++) {
         const row = tiles[y];
         for (let x = 0; x < row.length; x++) {
           const b = row[x].building;
-          if (b === "wall" || b === "tower" || b === "gate") {
-            hasDefense = true;
-            break;
+          if (!b) continue;
+
+          const def = BUILDING_TYPES[b];
+          if (def && def.category === "defense") {
+            return true;
           }
         }
-        if (hasDefense) break;
       }
-      return hasDefense;
+      return false;
     },
     choices: [
 {

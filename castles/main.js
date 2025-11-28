@@ -20,7 +20,10 @@ import {
   PRESTIGE_PER_BUILDING,
   MILITARY_RULES,
   RENDER_CONFIG,
-  TAX_MULTIPLIER_UI
+  TAX_MULTIPLIER_UI,
+  TERRAIN_SPRITE_META,
+  BUILDING_SPRITE_META,
+  BUILDING_HEIGHT_PX
 } from "./config.js";
 import { SAMPLE_EVENTS } from "./events.js";
 
@@ -31,6 +34,41 @@ import { SAMPLE_EVENTS } from "./events.js";
 // Constantes de render isométrico
 const TILE_WIDTH = RENDER_CONFIG.tileWidth;
 const TILE_HEIGHT = RENDER_CONFIG.tileHeight;
+
+// ===========================
+// Edificios Sprites
+// ===========================
+
+// Sprites de terreno (arrays de variaciones por tipo: plain, forest, rock, water)
+const TERRAIN_SPRITES = {};
+
+// Sprites de edificios (cargados a partir de BUILDING_SPRITE_META)
+const BUILDING_SPRITES = {};
+
+function loadTerrainSprites() {
+  for (const terrain in TERRAIN_SPRITE_META) {
+    const meta = TERRAIN_SPRITE_META[terrain];
+    if (!meta || !Array.isArray(meta.variants) || meta.variants.length === 0) {
+      continue;
+    }
+    TERRAIN_SPRITES[terrain] = meta.variants.map((src) => {
+      const img = new Image();
+      img.src = src;
+      return img;
+    });
+  }
+}
+
+function loadBuildingSprites() {
+  for (const kind in BUILDING_SPRITE_META) {
+    const meta = BUILDING_SPRITE_META[kind];
+    if (!meta || !meta.src) continue;
+
+    const img = new Image();
+    img.src = meta.src;
+    BUILDING_SPRITES[kind] = img;
+  }
+}
 
 // Cámara: origen isométrico (la posición inicial la seguimos fijando aquí)
 let originX = 512;
@@ -69,6 +107,19 @@ function randomTerrain() {
   if (r < 0.15) return "rock";    // roca
   if (r < 0.45) return "forest";  // bosque
   return "plain";                 // llano
+}
+
+// Devuelve un índice de variante estable por (x,y) en función de las variantes disponibles
+function chooseTerrainVariant(terrain, x, y) {
+  const meta = TERRAIN_SPRITE_META[terrain];
+  const count =
+    meta && Array.isArray(meta.variants) ? meta.variants.length : 0;
+  if (!count) return 0;
+
+  // Hash simple determinista para que una misma casilla siempre use la misma variación
+  const seed = (x * 47 + y * 101) & 0xffffffff;
+  const idx = Math.abs(seed) % count;
+  return idx;
 }
 
 // ===========================
@@ -115,8 +166,17 @@ function computeMinSoldiers(state) {
   for (let y = 0; y < state.tiles.length; y++) {
     for (let x = 0; x < state.tiles[y].length; x++) {
       const b = state.tiles[y][x].building;
-      if (b === "tower") towers++;
-      else if (b === "wall") walls++;
+      if (!b) continue;
+
+      const def = BUILDING_TYPES[b];
+      if (!def) continue;
+
+      const role = def.role;
+      if (role === "tower") {
+        towers++;
+      } else if (role === "wall") {
+        walls++;
+      }
     }
   }
 
@@ -352,6 +412,8 @@ function createInitialTiles() {
         x,
         y,
         terrain, // "plain" | "forest" | "rock" | "water"
+        // Índice de variación de sprite para este terreno (0..N-1 según config)
+        terrainVariant: chooseTerrainVariant(terrain, x, y),
         forestAmount: terrain === "forest" ? 1 : 0,
         building: null,
         underConstruction: null,
@@ -375,7 +437,7 @@ function createInitialState() {
     speedMultiplier: 1,
     resources: { ...STARTING_RESOURCES },
     tiles: createInitialTiles(),
-    selectedBuilding: "wall",
+    selectedBuilding: "wall_1",
     taxRate: 1, // 0 = bajos, 1 = normales, 2 = altos
     relations: {
       church: 50,
@@ -669,12 +731,201 @@ function applyLoadedPayload(payload) {
     return;
   }
 
-  // Restaurar estado
+  // Restaurar estado tal cual se guardó
   state = payload.state;
 
-  // Asegurar que existe un nivel de impuestos válido
-  if (typeof state.taxRate !== "number") {
-    state.taxRate = 1; // normales por defecto
+  // ───────────────────────────────────────────────
+  // Migración de recursos / población (compatibilidad partidas antiguas)
+  // ───────────────────────────────────────────────
+
+  // Copiamos recursos del guardado encima de los recursos por defecto
+  const originalResources =
+    state.resources && typeof state.resources === "object"
+      ? state.resources
+      : {};
+
+  state.resources = {
+    ...STARTING_RESOURCES,
+    ...originalResources
+  };
+
+  // Población: intentamos usar la del guardado si es válida (>0)
+  let pop = Number(originalResources.population);
+  if (!Number.isFinite(pop) || pop <= 0) {
+    let candidate = 0;
+
+    // 1) Formato antiguo: población suelta en state.population
+    if (typeof state.population === "number" && state.population > 0) {
+      candidate = state.population;
+    }
+
+    // 2) Deducirla sumando la distribución de oficios
+    if (state.labor && typeof state.labor === "object") {
+      const roles = [
+        "builders",
+        "farmers",
+        "miners",
+        "lumberjacks",
+        "soldiers",
+        "servants",
+        "clergy",
+        "unassigned"
+      ];
+      let sumLabor = 0;
+      for (const r of roles) {
+        const v = Number(state.labor[r] || 0);
+        if (Number.isFinite(v) && v > 0) sumLabor += v;
+      }
+      if (sumLabor > candidate) candidate = sumLabor;
+    }
+
+    // 3) Último recurso: valor por defecto
+    if (!Number.isFinite(candidate) || candidate <= 0) {
+      candidate = STARTING_RESOURCES.population;
+    }
+
+    pop = candidate;
+  }
+
+  state.resources.population = Math.round(pop);
+
+  // Reparto lógico de gremios según la población actual
+  rebalanceLabor(state);
+
+  // ───────────────────────────────────────────────
+  // Migración de IDs de edificios de partidas antiguas
+  // ───────────────────────────────────────────────
+  const buildingIdMigration = {
+    // clave = ID viejo en las partidas antiguas
+    // valor = ID nuevo que usa el juego actual
+    tower: "tower_square",
+    wall: "wall_1",
+    gate: "gate_1",
+  };
+
+  if (state && Array.isArray(state.tiles)) {
+    for (let y = 0; y < state.tiles.length; y++) {
+      const row = state.tiles[y];
+      if (!row) continue;
+      for (let x = 0; x < row.length; x++) {
+        const tile = row[x];
+        if (!tile) continue;
+
+        const oldB = tile.building;
+        const oldUC = tile.underConstruction;
+
+        // 1) Migración de IDs de edificios antiguos
+        if (oldB && buildingIdMigration[oldB]) {
+          tile.building = buildingIdMigration[oldB];
+        }
+        if (oldUC && buildingIdMigration[oldUC]) {
+          tile.underConstruction = buildingIdMigration[oldUC];
+        }
+
+        // 2) Migración de terreno bajo edificios/caminos:
+        //    construcciones sobre bosque/roca/agua => llano
+        const hasBuilding = !!tile.building || !!tile.underConstruction;
+        if (hasBuilding && tile.terrain && tile.terrain !== "plain") {
+          const bId = tile.building || tile.underConstruction;
+          const def = BUILDING_TYPES[bId];
+          let keepTerrain = false;
+
+          if (def && typeof def.id === "string") {
+            if (
+              def.id === "quarry" ||
+              def.id === "lumberyard" ||
+              def.id === "bridge"
+            ) {
+              keepTerrain = true;
+            }
+          }
+
+          if (!keepTerrain) {
+            tile.terrain = "plain";
+            tile.forestAmount = 0;
+            // Recalcular variante de llano para esta casilla (si existe la función)
+            if (typeof chooseTerrainVariant === "function") {
+              const tx = typeof tile.x === "number" ? tile.x : x;
+              const ty = typeof tile.y === "number" ? tile.y : y;
+              tile.terrainVariant = chooseTerrainVariant("plain", tx, ty);
+            }
+          }
+        }
+      }
+    }
+  }
+  
+
+  // ───────────────────────────────────────────────
+  // Añadir un tramo de camino junto a las puertas de partidas antiguas
+  // ───────────────────────────────────────────────
+  if (state && Array.isArray(state.tiles)) {
+    for (let y = 0; y < state.tiles.length; y++) {
+      const row = state.tiles[y];
+      if (!row) continue;
+      for (let x = 0; x < row.length; x++) {
+        const tile = row[x];
+        if (!tile) continue;
+
+        if (tile.building === "gate_1" || tile.building === "gate_2") {
+          // ¿Ya hay algún camino adyacente?
+          const dirs = [
+            [1, 0],
+            [-1, 0],
+            [0, 1],
+            [0, -1]
+          ];
+          let hasRoadNeighbor = false;
+          for (const [dx, dy] of dirs) {
+            const nx = x + dx;
+            const ny = y + dy;
+            if (
+              ny >= 0 &&
+              ny < GAME_CONFIG.mapHeight &&
+              nx >= 0 &&
+              nx < GAME_CONFIG.mapWidth
+            ) {
+              const nTile = state.tiles[ny][nx];
+              if (nTile && nTile.building === "road") {
+                hasRoadNeighbor = true;
+                break;
+              }
+            }
+          }
+
+          // Si no hay todavía camino, intentamos crear uno en una casilla libre
+          if (!hasRoadNeighbor) {
+            for (const [dx, dy] of dirs) {
+              const nx = x + dx;
+              const ny = y + dy;
+              if (
+                ny >= 0 &&
+                ny < GAME_CONFIG.mapHeight &&
+                nx >= 0 &&
+                nx < GAME_CONFIG.mapWidth
+              ) {
+                const nTile = state.tiles[ny][nx];
+                if (
+                  nTile &&
+                  !nTile.building &&
+                  !nTile.underConstruction &&
+                  (nTile.terrain === "plain" || !nTile.terrain)
+                ) {
+                  // Aseguramos llano y dibujamos el camino
+                  nTile.terrain = "plain";
+                  if (typeof chooseTerrainVariant === "function") {
+                    nTile.terrainVariant = chooseTerrainVariant("plain", nx, ny);
+                  }
+                  nTile.forestAmount = 0;
+                  nTile.building = "road";
+                  break;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   }
 
   // ───────────────────────────────────────────────
@@ -687,6 +938,7 @@ function applyLoadedPayload(payload) {
     if (state.tiles && PRESTIGE_PER_BUILDING) {
       for (let y = 0; y < state.tiles.length; y++) {
         const row = state.tiles[y];
+        if (!row) continue;
         for (let x = 0; x < row.length; x++) {
           const b = row[x].building;
           if (b && PRESTIGE_PER_BUILDING[b]) {
@@ -706,13 +958,20 @@ function applyLoadedPayload(payload) {
   // Aseguramos que el título coincide con el prestigio actual
   updateTitleFromPrestige();
 
+  // Impuestos: aseguramos que es un número válido
+  if (typeof state.taxRate !== "number") {
+    state.taxRate = 1;
+  }
+
+  // Restaurar datos auxiliares fuera de state
   if (typeof payload.originX === "number") originX = payload.originX;
   if (typeof payload.originY === "number") originY = payload.originY;
   if (typeof payload.lastEventDay === "number") lastEventDay = payload.lastEventDay;
-  if (typeof payload.eventCooldownDays === "number")
+  if (typeof payload.eventCooldownDays === "number") {
     eventCooldownDays = payload.eventCooldownDays;
+  }
 
- // Nombre de jugador (opcional)
+  // Nombre de jugador (opcional)
   if (typeof payload.playerName === "string") {
     state.playerName = payload.playerName;
     try {
@@ -735,7 +994,12 @@ function applyLoadedPayload(payload) {
     nameInput.value = state.playerName || "";
   }
 
-  console.log("Partida cargada");
+  console.log(
+    "Partida cargada. Población:",
+    state.resources.population,
+    "labor:",
+    state.labor
+  );
 }
 
 function loadGame() {
@@ -859,41 +1123,6 @@ function setupUIBindings() {
       if (!(target && target.closest && target.closest("#player-menu"))) {
         playerMenuDropdown.classList.remove("open");
       }
-    });
-  }
-
-  if (exportBtn) {
-    exportBtn.addEventListener("click", () => {
-      exportGameToFile();
-    });
-  }
-
-  if (importInput) {
-    importInput.addEventListener("change", () => {
-      const file = importInput.files && importInput.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = () => {
-        try {
-          const text = String(reader.result || "");
-          const payload = JSON.parse(text);
-          applyLoadedPayload(payload);
-
-          // Actualizamos también el guardado local para que funcione "Cargar"
-          try {
-            localStorage.setItem("castles_save", text);
-          } catch (_err) {
-            // ignoramos errores de quota
-          }
-        } catch (err) {
-          console.error("Error al importar la partida:", err);
-          alert("No se ha podido importar la partida (archivo no válido).");
-        } finally {
-          importInput.value = "";
-        }
-      };
-      reader.readAsText(file);
     });
   }
 
@@ -1097,6 +1326,8 @@ function handleCanvasClick(ev) {
   const tile = state.tiles[tileY][tileX];
 
   const b = state.selectedBuilding;
+  const isGateBuilding = b === "gate_1" || b === "gate_2";
+  const isMill = b === "mill";
 
   // Modo demolición: eliminar edificios u obras en la loseta
   if (b === "demolish") {
@@ -1126,11 +1357,24 @@ function handleCanvasClick(ev) {
   }
 
   if (tile.building || tile.underConstruction) {
-    return;
+    const hasRoadOnly = tile.building === "road" && !tile.underConstruction;
+    // Solo permitimos construir puertas sobre un camino ya construido
+    if (!(isGateBuilding && hasRoadOnly)) {
+      return;
+    }
   }
 
   const def = BUILDING_TYPES[b];
   if (!def) return;
+
+  // Reglas especiales por tipo de edificio
+  // Puertas: solo se pueden construir sobre un camino ya construido
+  if (isGateBuilding) {
+    if (tile.building !== "road" || tile.underConstruction) {
+      console.log("Las puertas solo se pueden construir sobre un camino ya construido.");
+      return;
+    }
+  }
 
   // Restricciones de terreno
   // Agua: solo se puede construir puente
@@ -1156,15 +1400,79 @@ function handleCanvasClick(ev) {
     console.log("Los aserraderos solo se pueden colocar en bosque.");
     return;
   }
+  
+  // Molinos: deben ir en tierra llana junto a al menos una loseta de agua adyacente
+  if (isMill) {
+    if (tile.terrain !== "plain") {
+      console.log(
+        "Los molinos solo se pueden construir en tierra llana junto a un río."
+      );
+      return;
+    }
+    let adjacentWater = false;
+    const dirs = [
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1]
+    ];
+    for (const [dx, dy] of dirs) {
+      const nx = tileX + dx;
+      const ny = tileY + dy;
+      if (
+        ny >= 0 &&
+        ny < GAME_CONFIG.mapHeight &&
+        nx >= 0 &&
+        nx < GAME_CONFIG.mapWidth
+      ) {
+        const neighbor = state.tiles[ny][nx];
+        if (neighbor && neighbor.terrain === "water") {
+          adjacentWater = true;
+          break;
+        }
+      }
+    }
+    if (!adjacentWater) {
+      console.log(
+        "Los molinos deben construirse junto al río (al menos una loseta adyacente de agua)."
+      );
+      return;
+    }
+  }
 
   if (!hasResourcesFor(def.cost)) {
     console.log("Recursos insuficientes para construir", def.name);
     return;
   }
 
-  // Si construimos muralla/torre/puerta en bosque, despejamos el bosque
-  if ((b === "wall" || b === "tower" || b === "gate") && tile.terrain === "forest") {
+  const isDefenseBuilding =
+    BUILDING_TYPES[b] && BUILDING_TYPES[b].category === "defense";
+
+  // No se puede construir muralla/torre/puerta en el río (agua)
+  if (isDefenseBuilding && tile.terrain === "water") {
+    console.log("No se pueden construir defensas en el río (solo puentes).");
+    return;
+  }
+
+  // Ley de protección de bosques: si está activa, no se puede talar bosque para construir defensas
+  if (
+    state.laws &&
+    state.laws.forestProtection &&
+    isDefenseBuilding &&
+    tile.terrain === "forest"
+  ) {
+    addLogEntry("La ley de protección de bosques impide construir ahí.");
+    return;
+  }
+
+  // Si todo es válido, iniciamos la obra
+  // Al construir (incluidos los caminos), cualquier terreno especial pasa a llano
+  if (tile.terrain !== "plain") {
     tile.terrain = "plain";
+    // Recalcular variante de llano para esta casilla
+    if (typeof chooseTerrainVariant === "function") {
+      tile.terrainVariant = chooseTerrainVariant("plain", tileX, tileY);
+    }
     tile.forestAmount = 0;
   }
 
@@ -1174,7 +1482,6 @@ function handleCanvasClick(ev) {
 }
 
 // Drag de cámara con ratón
-
 function handleCanvasMouseDown(ev) {
   isDragging = true;
   dragMoved = false;
@@ -1999,33 +2306,27 @@ function closeEventModal() {
 function render() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Terreno
   ctx.save();
   for (let y = 0; y < GAME_CONFIG.mapHeight; y++) {
     for (let x = 0; x < GAME_CONFIG.mapWidth; x++) {
       const tile = state.tiles[y][x];
       const [sx, sy] = isoToScreen(x, y);
-      drawTerrainTile(sx, sy, tile.terrain);
-    }
-  }
-  ctx.restore();
 
-  // Edificios / obras
-  for (let y = 0; y < GAME_CONFIG.mapHeight; y++) {
-    for (let x = 0; x < GAME_CONFIG.mapWidth; x++) {
-      const tile = state.tiles[y][x];
-      const [sx, sy] = isoToScreen(x, y);
+      // 1) Terreno (color base + overlays de árboles/rocas)
+      drawTerrainTile(sx, sy, tile);
 
+      // 2) Edificios / obras en ESTA casilla
       if (tile.underConstruction) {
         const def = BUILDING_TYPES[tile.underConstruction];
-        if (!def) continue;
-        const totalDays = def.buildTimeDays || 1;
-        const remaining = tile.buildRemainingDays;
-        const progress = Math.max(0, Math.min(1, 1 - remaining / totalDays));
-        drawBuilding(tile.underConstruction, sx, sy, {
-          finished: false,
-          progress
-        });
+        if (def) {
+          const totalDays = def.buildTimeDays || 1;
+          const remaining = tile.buildRemainingDays;
+          const progress = Math.max(0, Math.min(1, 1 - remaining / totalDays));
+          drawBuilding(tile.underConstruction, sx, sy, {
+            finished: false,
+            progress
+          });
+        }
       }
 
       if (tile.building) {
@@ -2036,23 +2337,26 @@ function render() {
       }
     }
   }
+  ctx.restore();
 
   updateHUD();
 }
 
-function drawTerrainTile(sx, sy, terrain) {
+function drawTerrainTile(sx, sy, tile) {
+  const terrain = tile.terrain;
   const hw = TILE_WIDTH / 2;
   const hh = TILE_HEIGHT / 2;
 
+  // 1) SIEMPRE dibujamos la loseta geométrica base (sin sprites)
   let color;
   if (terrain === "forest") {
-    color = "#1f3a22";
+    color = "#49750c";
   } else if (terrain === "rock") {
-    color = "#3a3a46";
+    color = "#49750c";
   } else if (terrain === "water") {
-    color = "#1f4b82"; 
+    color = "#1f4b82";
   } else {
-    color = "#2e3a1f"; //"#808b2a";
+    color = "#49750c"; // llano
   }
 
   ctx.beginPath();
@@ -2065,6 +2369,43 @@ function drawTerrainTile(sx, sy, terrain) {
   ctx.fill();
   ctx.strokeStyle = "#22263a";
   ctx.stroke();
+
+  // 2) Overlay decorativo (árboles, rocas...) si hay sprite definido
+  const sprites = TERRAIN_SPRITES[terrain];
+  const variantIndex = tile.terrainVariant ?? 0;
+  const img =
+    sprites && sprites.length > 0
+      ? sprites[variantIndex % sprites.length]
+      : null;
+
+  if (
+    img &&
+    img.complete &&
+    img.naturalWidth > 0 &&
+    img.naturalHeight > 0
+  ) {
+    const meta = TERRAIN_SPRITE_META[terrain] || {};
+
+    // Igual que en drawSpriteBuilding: altura en "losetas" → escala vertical
+    const tilesHigh = meta.tilesHigh ?? 2.4;
+    const baseOffsetTiles = meta.baseOffsetTiles ?? 0.6;
+
+    const targetHeightPx = tilesHigh * TILE_HEIGHT;
+    const baseScale = targetHeightPx / img.naturalHeight;
+    const scale = baseScale;
+
+    const w = img.naturalWidth * scale;
+    const h = img.naturalHeight * scale;
+
+    // Base de la loseta (parte inferior del rombo)
+    const tileBottomY = sy + hh;
+    const baseOffsetPx = baseOffsetTiles * TILE_HEIGHT;
+
+    const drawX = sx - w / 2;
+    const drawY = tileBottomY - h + baseOffsetPx;
+
+    ctx.drawImage(img, drawX, drawY, w, h);
+  }
 }
 
 /**
@@ -2072,24 +2413,106 @@ function drawTerrainTile(sx, sy, terrain) {
  * - En construcción: base rellena, paredes/tapa solo contorno.
  * - Terminado: bloque isométrico sólido.
  */
+// Dibuja un edificio desde sprite, usando los metadatos de BUILDING_SPRITE_META
+// Dibuja un edificio desde sprite, usando BUILDING_SPRITE_META
+// Semántica:
+// - tilesHigh: altura objetivo en múltiplos de TILE_HEIGHT.
+// - baseOffsetTiles: desplazamiento desde el borde inferior de la loseta
+//   (0 = apoya justo en el borde; >0 se hunde; <0 flota).
+function drawSpriteBuilding(kind, sx, sy, options) {
+  const meta = BUILDING_SPRITE_META[kind];
+  const img = BUILDING_SPRITES[kind];
+
+  if (
+    !meta ||
+    !img ||
+    !img.complete ||
+    img.naturalWidth === 0 ||
+    img.naturalHeight === 0
+  ) {
+    // Imagen no disponible: el llamador hará fallback al dibujo geométrico.
+    return;
+  }
+
+  const finished = options.finished;
+  const progress = options.progress ?? 1;
+
+  const tilesHigh = meta.tilesHigh ?? 3;
+  const constructionMin = meta.constructionScaleMin ?? 0.4; // ya no lo usamos para el tamaño
+
+  // Altura objetivo en píxeles para el sprite “adulto” (tamaño fijo)
+  const targetHeightPx = tilesHigh * TILE_HEIGHT;
+  const baseScale = targetHeightPx / img.naturalHeight;
+
+  // Escala fija: eliminamos el "crecimiento" de tamaño durante la obra.
+  const scale = baseScale;
+
+  const w = img.naturalWidth * scale;
+  const h = img.naturalHeight * scale;
+
+  // Centro de la loseta
+  const tileBottomY = sy + TILE_HEIGHT / 2;
+
+  // Offset adicional desde el borde inferior de la loseta
+  const baseOffsetPx = (meta.baseOffsetTiles ?? 0) * TILE_HEIGHT;
+
+  // Centro horizontal en la loseta
+  const drawX = sx - w / 2;
+  // Base del sprite apoyada en tileBottomY + baseOffsetPx
+  const drawY = tileBottomY - h + baseOffsetPx;
+
+  // Mientras está en obra, que "aparezca" poco a poco vía alpha.
+  if (!finished) {
+    // Alpha de 0.25 (muy tenue) hasta 1.0 según progreso
+    const alpha = 0.25 + 0.75 * progress;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.drawImage(img, drawX, drawY, w, h);
+    ctx.restore();
+  } else {
+    ctx.drawImage(img, drawX, drawY, w, h);
+  }
+
+  // Barra de progreso si no está terminado
+  if (!finished) {
+    const barWidth = TILE_WIDTH;
+    const barHeight = 4;
+    const px = sx - barWidth / 2;
+    const py = drawY - 8;
+
+    ctx.fillStyle = "rgba(0,0,0,0.6)";
+    ctx.fillRect(px, py, barWidth, barHeight);
+
+    ctx.fillStyle = "#d4a95f";
+    ctx.fillRect(px, py, barWidth * progress, barHeight);
+  }
+}
+ 
 function drawBuilding(kind, sx, sy, options) {
   const hw = TILE_WIDTH / 2;
   const hh = TILE_HEIGHT / 2;
   const finished = options.finished;
   const progress = options.progress ?? 1;
+  
+ // Si hay sprite válido definido para este tipo, lo usamos y salimos
+  const spriteMeta = BUILDING_SPRITE_META[kind];
+  const spriteImg = spriteMeta ? BUILDING_SPRITES[kind] : null;
+  if (
+    spriteMeta &&
+    spriteImg &&
+    spriteImg.complete &&
+    spriteImg.naturalWidth > 0 &&
+    spriteImg.naturalHeight > 0
+  ) {
+    drawSpriteBuilding(kind, sx, sy, { finished, progress });
+    return;
+  }
 
-  // Altura según tipo
-  let heightPx;
-  if (kind === "wall") heightPx = 18;
-  else if (kind === "tower") heightPx = 34;
-  else if (kind === "gate") heightPx = 20;
-  else if (kind === "farm") heightPx = 10;
-  else if (kind === "quarry") heightPx = 16;
-  else if (kind === "lumberyard") heightPx = 14;
-  else if (kind === "bridge") heightPx = 5;
-  else if (kind === "mill") heightPx = 18;
-  else if (kind === "road") heightPx = 2;
-  else heightPx = 18;
+  // Altura según tipo, tomada de config.js
+  let heightPx = BUILDING_HEIGHT_PX[kind];
+  if (typeof heightPx !== "number") {
+    heightPx = 18; // valor por defecto
+  }
 
   // Base
   const topBaseX = sx;
@@ -2114,17 +2537,17 @@ function drawBuilding(kind, sx, sy, options) {
   // Colores
   let baseColor, topColor, rightColor, leftColor;
 
-  if (kind === "wall") {
+  if (kind === "wall" || kind === "wall_1" || kind === "wall_2") {
     baseColor = "#7b7b8c";
     topColor = "#8a8aa0";
     rightColor = "#b3b3c8";
     leftColor = "#5b5b70";
-  } else if (kind === "tower") {
+  } else if (kind === "tower_square" || kind === "tower_round") {
     baseColor = "#8e7b4a";
     topColor = "#a7894f";
     rightColor = "#caa25f";
     leftColor = "#6c4e2a";
-  } else if (kind === "gate") {
+  } else if ( kind === "gate" ||  kind === "gate_1" ||  kind === "gate_2") {
     baseColor = "#74634a";
     topColor = "#8c7653";
     rightColor = "#b0925d";
@@ -2265,34 +2688,37 @@ function drawBuilding(kind, sx, sy, options) {
   ctx.stroke();
 }
 
-function computeDefenseScoreHUD(state) {
-	  const tiles = state.tiles || [];
-	  let walls = 0;
-	  let towers = 0;
-	  let gates = 0;
+ function computeDefenseScoreHUD(state) {
+   const tiles = state.tiles || [];
+   let score = 0;
 
-	  for (let y = 0; y < tiles.length; y++) {
-		const row = tiles[y];
-		for (let x = 0; x < row.length; x++) {
-		  const b = row[x].building;
-		  if (b === "wall") walls++;
-		  else if (b === "tower") towers++;
-		  else if (b === "gate") gates++;
-		}
-	  }
+   // Sumar defensa de todos los edificios defensivos usando BUILDING_TYPES
+   for (let y = 0; y < tiles.length; y++) {
+     const row = tiles[y];
+     for (let x = 0; x < row.length; x++) {
+       const b = row[x].building;
+       if (!b) continue;
 
-	  const soldiers = state.labor?.soldiers || 0;
+       const def = BUILDING_TYPES[b];
+       if (!def) continue;
 
-	  // Misma fórmula que los eventos: murallas + 2*puertas + 3*torres + 2*soldados
-	  let raw = walls + gates * 2 + towers * 3 + soldiers * 2;
+       if (typeof def.defenseScore === "number") {
+         score += def.defenseScore;
+       }
+     }
+   }
 
-	  // Patrullas nocturnas y mejor organización dan un pequeño bonus
-	  if (state.laws?.nightWatchLaw) {
-		raw += 4;
-	  }
+   // Soldados: fuerza móvil
+   const soldiers = state.labor?.soldiers || 0;
+   score += soldiers * 2;
 
-	  return raw;
-}
+   // Patrullas nocturnas: pequeño bonus fijo
+   if (state.laws?.nightWatchLaw) {
+     score += 4;
+   }
+
+   return score;
+ }
 
 function updateHUD() {
   const dayEl = document.getElementById("day-display");
@@ -2443,6 +2869,12 @@ function init() {
   const context = canvas.getContext("2d");
   if (!context) throw new Error("No se pudo obtener 2D context");
   ctx = context;
+
+  // Cargar sprites de terreno (variaciones de llano/bosque/roca/agua)
+  loadTerrainSprites();  
+  
+  // Cargar sprites de edificios (si hay definidos en config)
+  loadBuildingSprites();
 
   state = createInitialState();
   // Aseguramos que el título inicial coincide con la tabla de prestigio

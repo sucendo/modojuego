@@ -206,22 +206,43 @@ body {
   color: var(--accent);
 }
 
+/* Grid de construcción: filas por tipo (murallas, torres, puertas, etc.) */
+.build-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 4px 0 6px;
+}
+
+.build-row {
+  display: flex;
+  gap: 4px;
+}
+
 .build-btn {
-  display: block;
-  width: 100%;
-  margin-bottom: 6px;
-  padding: 6px 10px;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  padding: 2px;
   border-radius: 6px;
   border: 1px solid var(--border);
   background: #202030;
   color: var(--text);
-  text-align: left;
   cursor: pointer;
+}
+
+.build-btn img.build-icon {
+  max-width: 100%;
+  max-height: 100%;
+  display: block;
 }
 
 .build-btn.active {
   border-color: var(--accent);
-  background: rgba(212, 169, 95, 0.1);
+  background: rgba(212, 169, 95, 0.12);
 }
 
 #canvas-wrapper {
