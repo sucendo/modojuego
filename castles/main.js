@@ -854,79 +854,6 @@ function applyLoadedPayload(payload) {
       }
     }
   }
-  
-
-  // ───────────────────────────────────────────────
-  // Añadir un tramo de camino junto a las puertas de partidas antiguas
-  // ───────────────────────────────────────────────
-  if (state && Array.isArray(state.tiles)) {
-    for (let y = 0; y < state.tiles.length; y++) {
-      const row = state.tiles[y];
-      if (!row) continue;
-      for (let x = 0; x < row.length; x++) {
-        const tile = row[x];
-        if (!tile) continue;
-
-        if (tile.building === "gate_1" || tile.building === "gate_2") {
-          // ¿Ya hay algún camino adyacente?
-          const dirs = [
-            [1, 0],
-            [-1, 0],
-            [0, 1],
-            [0, -1]
-          ];
-          let hasRoadNeighbor = false;
-          for (const [dx, dy] of dirs) {
-            const nx = x + dx;
-            const ny = y + dy;
-            if (
-              ny >= 0 &&
-              ny < GAME_CONFIG.mapHeight &&
-              nx >= 0 &&
-              nx < GAME_CONFIG.mapWidth
-            ) {
-              const nTile = state.tiles[ny][nx];
-              if (nTile && nTile.building === "road") {
-                hasRoadNeighbor = true;
-                break;
-              }
-            }
-          }
-
-          // Si no hay todavía camino, intentamos crear uno en una casilla libre
-          if (!hasRoadNeighbor) {
-            for (const [dx, dy] of dirs) {
-              const nx = x + dx;
-              const ny = y + dy;
-              if (
-                ny >= 0 &&
-                ny < GAME_CONFIG.mapHeight &&
-                nx >= 0 &&
-                nx < GAME_CONFIG.mapWidth
-              ) {
-                const nTile = state.tiles[ny][nx];
-                if (
-                  nTile &&
-                  !nTile.building &&
-                  !nTile.underConstruction &&
-                  (nTile.terrain === "plain" || !nTile.terrain)
-                ) {
-                  // Aseguramos llano y dibujamos el camino
-                  nTile.terrain = "plain";
-                  if (typeof chooseTerrainVariant === "function") {
-                    nTile.terrainVariant = chooseTerrainVariant("plain", nx, ny);
-                  }
-                  nTile.forestAmount = 0;
-                  nTile.building = "road";
-                  break;
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
 
   // ───────────────────────────────────────────────
   // Migración de partidas antiguas (sin prestigio/título)
@@ -2314,6 +2241,19 @@ function render() {
 
       // 1) Terreno (color base + overlays de árboles/rocas)
       drawTerrainTile(sx, sy, tile);
+	  
+      // 1.5) Camino base justo debajo de las puertas
+      const gateKinds = ["gate_1", "gate_2"];
+      const hasGateBuilding =
+        (tile.building && gateKinds.includes(tile.building)) ||
+        (tile.underConstruction && gateKinds.includes(tile.underConstruction));
+      if (hasGateBuilding) {
+        // Dibujamos un camino como base, en la misma loseta
+        drawBuilding("road", sx, sy, {
+          finished: true,
+          progress: 1
+        });
+      }
 
       // 2) Edificios / obras en ESTA casilla
       if (tile.underConstruction) {
