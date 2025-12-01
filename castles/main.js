@@ -731,76 +731,82 @@ function applyLoadedPayload(payload) {
     return;
   }
 
-  // Restaurar estado tal cual se guardó
+  // Restaurar estado base desde el guardado
   state = payload.state;
 
-  // ───────────────────────────────────────────────
-  // Migración de recursos / población (compatibilidad partidas antiguas)
-  // ───────────────────────────────────────────────
-
-  // Copiamos recursos del guardado encima de los recursos por defecto
-  const originalResources =
-    state.resources && typeof state.resources === "object"
-      ? state.resources
-      : {};
-
-  state.resources = {
-    ...STARTING_RESOURCES,
-    ...originalResources
-  };
-
-  // Población: intentamos usar la del guardado si es válida (>0)
-  let pop = Number(originalResources.population);
-  if (!Number.isFinite(pop) || pop <= 0) {
-    let candidate = 0;
-
-    // 1) Formato antiguo: población suelta en state.population
-    if (typeof state.population === "number" && state.population > 0) {
-      candidate = state.population;
-    }
-
-    // 2) Deducirla sumando la distribución de oficios
-    if (state.labor && typeof state.labor === "object") {
-      const roles = [
-        "builders",
-        "farmers",
-        "miners",
-        "lumberjacks",
-        "soldiers",
-        "servants",
-        "clergy",
-        "unassigned"
-      ];
-      let sumLabor = 0;
-      for (const r of roles) {
-        const v = Number(state.labor[r] || 0);
-        if (Number.isFinite(v) && v > 0) sumLabor += v;
-      }
-      if (sumLabor > candidate) candidate = sumLabor;
-    }
-
-    // 3) Último recurso: valor por defecto
-    if (!Number.isFinite(candidate) || candidate <= 0) {
-      candidate = STARTING_RESOURCES.population;
-    }
-
-    pop = candidate;
+  // Normalizar tiempo interno:
+  // Los guardados antiguos usan otro secondsPerDay, así que su timeSeconds
+  // ya no es coherente con el día actual y provocaba saltos enormes de días
+  // al cargar (onNewDay(daysPassed) con cientos de días).
+  if (typeof state.day === "number" && state.day > 0) {
+    state.timeSeconds = (state.day - 1) * GAME_CONFIG.secondsPerDay;
+  } else {
+    state.day = 1;
+    state.timeSeconds = 0;
   }
 
-  state.resources.population = Math.round(pop);
+  // ───────────────────────────────────────────────
+  // Recursos + población (manteniendo lo guardado si es válido)
+  // ───────────────────────────────────────────────
 
-  // Reparto lógico de gremios según la población actual
-  rebalanceLabor(state);
+  const hasResources =
+    state.resources && typeof state.resources === "object";
+  const savedResources = hasResources ? state.resources : {};
+
+  // Partimos de los recursos iniciales y machacamos con lo guardado
+  state.resources = {
+    ...STARTING_RESOURCES,
+    ...savedResources
+  };
+
+  // Aseguramos que los recursos básicos sean numéricos
+  for (const [key, defVal] of Object.entries(STARTING_RESOURCES)) {
+    const cur = Number(state.resources[key]);
+    if (!Number.isFinite(cur)) {
+      state.resources[key] = defVal;
+    }
+  }
+
+  // Calculamos la suma de gremios para poder usarla como fallback
+  const rolesLabor = [
+    "builders",
+    "farmers",
+    "miners",
+    "lumberjacks",
+    "soldiers",
+    "servants",
+    "clergy",
+    "unassigned"
+  ];
+  let laborSum = 0;
+  if (state.labor && typeof state.labor === "object") {
+    for (const r of rolesLabor) {
+      const v = Number(state.labor[r] || 0);
+      if (Number.isFinite(v) && v > 0) laborSum += v;
+    }
+  }
+
+  // Población: preferimos SIEMPRE la del guardado si es válida
+  let resPop = Number(savedResources.population);
+  if ((!Number.isFinite(resPop) || resPop <= 0) && laborSum > 0) {
+    // Si no hay población válida pero sí hay gremios, usamos la suma
+    resPop = laborSum;
+  } else if (!Number.isFinite(resPop) || resPop <= 0) {
+    // Último recurso: valor por defecto
+    resPop = STARTING_RESOURCES.population;
+  }
+
+  state.resources.population = Math.round(resPop);
 
   // ───────────────────────────────────────────────
-  // Migración de IDs de edificios de partidas antiguas
+  // Migración de IDs de edificios y terreno (partidas antiguas)
   // ───────────────────────────────────────────────
+
   const buildingIdMigration = {
-    // clave = ID viejo en las partidas antiguas
-    // valor = ID nuevo que usa el juego actual
+    // IDs antiguos → IDs actuales
     tower: "tower_square",
     wall: "wall_1",
-    gate: "gate_1",
+    gate: "gate_1"
   };
 
   if (state && Array.isArray(state.tiles)) {
@@ -814,7 +820,7 @@ function applyLoadedPayload(payload) {
         const oldB = tile.building;
         const oldUC = tile.underConstruction;
 
-        // 1) Migración de IDs de edificios antiguos
+        // 2.a) Migración de IDs de edificios antiguos
         if (oldB && buildingIdMigration[oldB]) {
           tile.building = buildingIdMigration[oldB];
         }
@@ -822,8 +828,7 @@ function applyLoadedPayload(payload) {
           tile.underConstruction = buildingIdMigration[oldUC];
         }
 
-        // 2) Migración de terreno bajo edificios/caminos:
-        //    construcciones sobre bosque/roca/agua => llano
+        // 2.b) Terreno bajo edificios/caminos => plain salvo casos especiales
         const hasBuilding = !!tile.building || !!tile.underConstruction;
         if (hasBuilding && tile.terrain && tile.terrain !== "plain") {
           const bId = tile.building || tile.underConstruction;
@@ -843,7 +848,6 @@ function applyLoadedPayload(payload) {
           if (!keepTerrain) {
             tile.terrain = "plain";
             tile.forestAmount = 0;
-            // Recalcular variante de llano para esta casilla (si existe la función)
             if (typeof chooseTerrainVariant === "function") {
               const tx = typeof tile.x === "number" ? tile.x : x;
               const ty = typeof tile.y === "number" ? tile.y : y;
@@ -851,15 +855,37 @@ function applyLoadedPayload(payload) {
             }
           }
         }
+
+      // Si la loseta final es una puerta, aseguramos que el terreno base es camino
+      const finalB = tile.building || tile.underConstruction;
+      if (finalB === "gate_1") {
+        tile.terrain = "road";
+        tile.forestAmount = 0;
+        if (typeof chooseTerrainVariant === "function") {
+          const tx = typeof tile.x === "number" ? tile.x : x;
+          const ty = typeof tile.y === "number" ? tile.y : y;
+          tile.terrainVariant = chooseTerrainVariant("road", tx, ty);
+        }
+      }
+
+        // 2.c) En las puertas actuales queremos **camino debajo**
+        const bIdFinal = tile.building || tile.underConstruction;
+        if (bIdFinal === "gate_1") {
+          tile.terrain = "road";
+          if (typeof chooseTerrainVariant === "function") {
+            const tx = typeof tile.x === "number" ? tile.x : x;
+            const ty = typeof tile.y === "number" ? tile.y : y;
+            tile.terrainVariant = chooseTerrainVariant("road", tx, ty);
+          }
+        }
       }
     }
   }
 
   // ───────────────────────────────────────────────
-  // Migración de partidas antiguas (sin prestigio/título)
+  // Migración de prestigio / título si faltan
   // ───────────────────────────────────────────────
 
-  // Si no hay prestigio numérico, lo estimamos a partir de los edificios construidos
   if (typeof state.prestige !== "number") {
     let estimated = 0;
     if (state.tiles && PRESTIGE_PER_BUILDING) {
@@ -877,20 +903,15 @@ function applyLoadedPayload(payload) {
     state.prestige = estimated;
   }
 
-  // Si no hay título, ponemos uno por defecto y lo ajustamos según prestigio
   if (!state.title) {
     state.title = "Señor de la fortaleza";
   }
-
-  // Aseguramos que el título coincide con el prestigio actual
   updateTitleFromPrestige();
 
-  // Impuestos: aseguramos que es un número válido
-  if (typeof state.taxRate !== "number") {
-    state.taxRate = 1;
-  }
+  // ───────────────────────────────────────────────
+  // Campos auxiliares del payload (cámara, eventos, nombre jugador…)
+  // ───────────────────────────────────────────────
 
-  // Restaurar datos auxiliares fuera de state
   if (typeof payload.originX === "number") originX = payload.originX;
   if (typeof payload.originY === "number") originY = payload.originY;
   if (typeof payload.lastEventDay === "number") lastEventDay = payload.lastEventDay;
@@ -898,7 +919,6 @@ function applyLoadedPayload(payload) {
     eventCooldownDays = payload.eventCooldownDays;
   }
 
-  // Nombre de jugador (opcional)
   if (typeof payload.playerName === "string") {
     state.playerName = payload.playerName;
     try {
@@ -924,7 +944,7 @@ function applyLoadedPayload(payload) {
   console.log(
     "Partida cargada. Población:",
     state.resources.population,
-    "labor:",
+    "Labor:",
     state.labor
   );
 }
@@ -1392,15 +1412,24 @@ function handleCanvasClick(ev) {
     return;
   }
 
+  const isBridge = b === "bridge";
+
   // Si todo es válido, iniciamos la obra
-  // Al construir (incluidos los caminos), cualquier terreno especial pasa a llano
-  if (tile.terrain !== "plain") {
+  // Al construir (incluidos los caminos), cualquier terreno especial pasa a llano,
+  // EXCEPTO en el caso del puente sobre agua, donde queremos conservar el río.
+  if (tile.terrain !== "plain" && !(isBridge && tile.terrain === "water")) {
     tile.terrain = "plain";
     // Recalcular variante de llano para esta casilla
     if (typeof chooseTerrainVariant === "function") {
       tile.terrainVariant = chooseTerrainVariant("plain", tileX, tileY);
     }
     tile.forestAmount = 0;
+  }
+  
+  // Si estamos construyendo una puerta encima de un camino existente,
+  // dejamos de marcar el camino como edificio: el camino pasa a ser solo “base” visual.
+  if (isGateBuilding && tile.building === "road") {
+    tile.building = null;
   }
 
   payCost(def.cost);
