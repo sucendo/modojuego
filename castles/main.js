@@ -1,6 +1,7 @@
 // main.js
 import {
   GAME_CONFIG,
+  TITLE_TIERS,
   STARTING_RESOURCES,
   BUILDING_TYPES,
   BASE_BUILDERS_PER_SITE,
@@ -16,59 +17,31 @@ import {
   BASE_TAX_PER_PERSON,
   FOOD_PER_PERSON_PER_DAY,
   EVENT_COOLDOWN_DAYS,
-  TITLE_TIERS,
-  PRESTIGE_PER_BUILDING,
-  MILITARY_RULES,
   RENDER_CONFIG,
   TAX_MULTIPLIER_UI,
+  PRESTIGE_PER_BUILDING,
+  MILITARY_RULES,
   TERRAIN_SPRITE_META,
   BUILDING_SPRITE_META,
   BUILDING_HEIGHT_PX
 } from "./config.js";
 import { SAMPLE_EVENTS } from "./events.js";
-
-// ===========================
-// Constantes de render isométrico
-// ===========================
+import { createInitialState, chooseTerrainVariant } from "./state.js";
+import {
+  createSavePayload,
+  saveGameToLocalStorage,
+  loadGamePayloadFromLocalStorage,
+  createExportBlob,
+  normalizeLoadedState
+} from "./saveLoad.js";
+import { updateSimulation } from "./simulation.js";
+import { render, loadTerrainSprites, loadBuildingSprites } from "./render.js";
+import { tryPlaceOrDemolishBuilding } from "./build.js";
+import { setupUIBindings, setupPanelGroups } from "./ui.js";
 
 // Constantes de render isométrico
 const TILE_WIDTH = RENDER_CONFIG.tileWidth;
 const TILE_HEIGHT = RENDER_CONFIG.tileHeight;
-
-// ===========================
-// Edificios Sprites
-// ===========================
-
-// Sprites de terreno (arrays de variaciones por tipo: plain, forest, rock, water)
-const TERRAIN_SPRITES = {};
-
-// Sprites de edificios (cargados a partir de BUILDING_SPRITE_META)
-const BUILDING_SPRITES = {};
-
-function loadTerrainSprites() {
-  for (const terrain in TERRAIN_SPRITE_META) {
-    const meta = TERRAIN_SPRITE_META[terrain];
-    if (!meta || !Array.isArray(meta.variants) || meta.variants.length === 0) {
-      continue;
-    }
-    TERRAIN_SPRITES[terrain] = meta.variants.map((src) => {
-      const img = new Image();
-      img.src = src;
-      return img;
-    });
-  }
-}
-
-function loadBuildingSprites() {
-  for (const kind in BUILDING_SPRITE_META) {
-    const meta = BUILDING_SPRITE_META[kind];
-    if (!meta || !meta.src) continue;
-
-    const img = new Image();
-    img.src = meta.src;
-    BUILDING_SPRITES[kind] = img;
-  }
-}
 
 // Cámara: origen isométrico (la posición inicial la seguimos fijando aquí)
 let originX = 512;
@@ -84,6 +57,7 @@ const CAMERA_STEP_Y = RENDER_CONFIG.cameraStepY;
 
 let canvas;
 let ctx;
+let canvasWrapper;
 let state;
 let lastTimestamp = 0;
 let pendingEvent = null;
@@ -98,65 +72,9 @@ let originStartX = 0;
 let originStartY = 0;
 let dragMoved = false;
 
-// ===========================
-// Terreno inicial
-// ===========================
-
-function randomTerrain() {
-  const r = Math.random();
-  if (r < 0.15) return "rock";    // roca
-  if (r < 0.45) return "forest";  // bosque
-  return "plain";                 // llano
-}
-
-// Devuelve un índice de variante estable por (x,y) en función de las variantes disponibles
-function chooseTerrainVariant(terrain, x, y) {
-  const meta = TERRAIN_SPRITE_META[terrain];
-  const count =
-    meta && Array.isArray(meta.variants) ? meta.variants.length : 0;
-  if (!count) return 0;
-
-  // Hash simple determinista para que una misma casilla siempre use la misma variación
-  const seed = (x * 47 + y * 101) & 0xffffffff;
-  const idx = Math.abs(seed) % count;
-  return idx;
-}
-
-// ===========================
-// Población / labor
-// ===========================
-
-function createInitialLabor(population) {
-  // Reparto inicial simple: algo de todo
-  const builders = 8;
-  const farmers = 8;
-  const miners = 6;
-  const lumberjacks = 4;
-  const soldiers = 2;
-  const servants = 0;
-  const clergy = 0;
-
-  let used =
-    builders + farmers + miners + lumberjacks + soldiers + servants + clergy;
-  if (used > population) used = population;
-
-  const unassigned = Math.max(0, population - used);
-
-  return {
-    builders,
-    farmers,
-    miners,
-    lumberjacks,
-    soldiers,
-    servants,
-    clergy,
-    unassigned
-  };
-}
-
 // Calcula el mínimo de soldados recomendado según población
 // y defensas construidas (torres y tramos de muralla).
-function computeMinSoldiers(state) {
+export function computeMinSoldiers(state) {
   const pop = state.resources.population;
   if (pop < 30) return 0; // por debajo de 30 habitantes no exigimos guarnición mínima
 
@@ -272,7 +190,7 @@ function computeLaborDemand(state) {
 }
 
 // Reparte la población disponible según la demanda (sistema de “vacantes”)
-function rebalanceLabor(state) {
+export function rebalanceLabor(state) {
   const population = state.resources.population;
   if (population <= 0) {
     state.labor = {
@@ -372,126 +290,12 @@ function rebalanceLabor(state) {
 // Creación de estado inicial
 // ===========================
 
-// Talla un río de norte a sur haciendo meandros suaves
-function carveRiver(tiles) {
-  const height = tiles.length;
-  if (height === 0) return;
-  const width = tiles[0].length;
-  if (width === 0) return;
-
-  // Empezamos más o menos en el centro del mapa
-  let x = Math.floor(width / 2);
-
-  for (let y = 0; y < height; y++) {
-    // Ancho de río: 3 losetas (x-1, x, x+1)
-    for (let dx = -1; dx <= 1; dx++) {
-      const xx = x + dx;
-      if (xx >= 0 && xx < width) {
-        const t = tiles[y][xx];
-        t.terrain = "water";
-        t.forestAmount = 0;
-        t.building = null;
-        t.underConstruction = null;
-      }
-    }
-
-    // Ligero meandro izquierda / derecha
-    const r = Math.random();
-    if (r < 0.33 && x > 2) x--;
-    else if (r > 0.66 && x < width - 3) x++;
-  }
-}
-
-function createInitialTiles() {
-  const tiles = [];
-  for (let y = 0; y < GAME_CONFIG.mapHeight; y++) {
-    const row = [];
-    for (let x = 0; x < GAME_CONFIG.mapWidth; x++) {
-      const terrain = randomTerrain();
-      row.push({
-        x,
-        y,
-        terrain, // "plain" | "forest" | "rock" | "water"
-        // Índice de variación de sprite para este terreno (0..N-1 según config)
-        terrainVariant: chooseTerrainVariant(terrain, x, y),
-        forestAmount: terrain === "forest" ? 1 : 0,
-        building: null,
-        underConstruction: null,
-        buildRemainingDays: 0
-      });
-    }
-    tiles.push(row);
-  }
-  // Talla el río sobre el terreno ya generado
-  carveRiver(tiles);
-  return tiles;
-}
-
-function createInitialState() {
-  const population = STARTING_RESOURCES.population;
-  const labor = createInitialLabor(population);
-
-  return {
-    timeSeconds: 0,
-    day: 1,
-    speedMultiplier: 1,
-    resources: { ...STARTING_RESOURCES },
-    tiles: createInitialTiles(),
-    selectedBuilding: "wall_1",
-    taxRate: 1, // 0 = bajos, 1 = normales, 2 = altos
-    relations: {
-      church: 50,
-      crown: 50,
-      people: 50,
-      guilds: 50,
-      overlord: 60 
-    },
-    // Sistema de prestigio y títulos
-    prestige: 0,
-    title: "Señor de la fortaleza",
-
-    labor, // usamos la constante que hemos creado arriba
-    // Sueldos por gremio (0=bajo,1=normal,2=alto)
-    wages: {
-      builders: 1,
-     farmers: 1,
-      miners: 1,
-      lumberjacks: 1,
-      soldiers: 1,
-      servants: 1,
-      clergy: 1
-    },
-    
-    // Leyes activas
-    laws: {
-      corveeLabor: false,
-      forestProtection: false
-    },
-
-    // Estructuras especiales ligadas al clero / eventos
-    structures: {
-      chapel: false,
-      monastery: false,
-      cathedral: false
-    },
-
-    // Crónica y nivel de malestar del pueblo
-    logs: [],
-    unrest: 0,
-
-    // Banderas varias para eventos “solo una vez”
-    flags: {
-      garrisonProposalSeen: false,
-      hasCleric: false,      // ¿Hemos aceptado al clérigo oficial del obispo?
-      altCultSeen: false     // Para evitar que el evento de “otras religiones/hechiceros” se repita
-    }
-  };
-}
+// Trasladado a state.js
 
 // ===========================
 // Crónica: helper genérico
 // ===========================
-function addLogEntry(text) {
+export function addLogEntry(text) {
   if (!state) return;
   if (!state.logs) state.logs = [];
   state.logs.unshift({ day: state.day, text });
@@ -500,185 +304,20 @@ function addLogEntry(text) {
   }
 }
 
-
-// ===========================
-// Tooltips de UI
-// ===========================
-
-function setupBuildingTooltips() {
-  const resLabels = {
-    gold: "oro",
-    stone: "piedra",
-    wood: "madera",
-    food: "comida"
-  };
-
-  document.querySelectorAll(".build-btn").forEach((btn) => {
-    const id = btn.dataset.building;
-    const def = BUILDING_TYPES[id];
-    if (!def) return;
-
-    const cost = def.cost || {};
-    const parts = [];
-    for (const key in cost) {
-      if (!Object.prototype.hasOwnProperty.call(cost, key)) continue;
-      const amount = cost[key];
-      if (!amount) continue;
-      const name = resLabels[key] || key;
-      parts.push(`${amount} ${name}`);
-    }
-
-    let title = "";
-    if (parts.length) {
-      title = `Coste: ${parts.join(", ")}`;
-    } else {
-      title = "Coste: sin recursos directos.";
-    }
-
-    if (def.buildTimeDays) {
-      title += ` · ${def.buildTimeDays} día${
-        def.buildTimeDays > 1 ? "s" : ""
-      } de obra.`;
-    }
-
-    btn.title = title;
-    btn.dataset.tooltip = title;
-  });
-}
-
-function setupWageTooltips() {
-  const roleLabels = {
-    builders: "Constructores",
-    farmers: "Granjeros",
-    miners: "Canteros",
-    lumberjacks: "Leñadores",
-    soldiers: "Soldados",
-    servants: "Administración / Servicio",
-    clergy: "Clero"
-  };
-
-  document.querySelectorAll(".wage-btn").forEach((btn) => {
-    const role = btn.dataset.role;
-    const wageStr = btn.dataset.wage || "1";
-    const tier = Number(wageStr);
-    if (!role || Number.isNaN(tier)) return;
-
-    const base = WAGE_BASE[role];
-    if (typeof base !== "number") return;
-
-    const mult = WAGE_MULTIPLIER[tier] ?? 1;
-    const goldPerDay = base * mult;
-
-    const roleName = roleLabels[role] || role;
-    const tierLabels = { 0: "bajo", 1: "normal", 2: "alto" };
-    const tierName = tierLabels[tier] ?? tier;
-
-    btn.dataset.tooltip = `${roleName} · sueldo ${tierName}: ${goldPerDay.toFixed(
-      2
-    )} oro/día por trabajador.`;
-  });
-}
-
-function setupTaxTooltips() {
-  const levelLabels = {
-    0: "Impuestos bajos",
-    1: "Impuestos normales",
-    2: "Impuestos altos"
-  };
-
-  document.querySelectorAll(".tax-btn").forEach((btn) => {
-    const taxStr = btn.dataset.tax || "1";
-    const level = Number(taxStr);
-    if (Number.isNaN(level)) return;
-
-    const label = levelLabels[level] || "Impuestos";
-    const mult = TAX_MULTIPLIER_UI[level] ?? 1.0;
-    const perHabitant = BASE_TAX_PER_PERSON * mult;
-
-    btn.dataset.tooltip = `${label}: ~${(mult * 100).toFixed(
-      0
-    )}% de la tasa base. Recaudación media: ${perHabitant.toFixed(
-      2
-    )} oro/día por habitante.`;
-  });
-}
-
-let tooltipEl = null;
-let currentTooltipTarget = null;
-
-function setupGlobalTooltip() {
-  tooltipEl = document.getElementById("ui-tooltip");
-  if (!tooltipEl) return;
-
-  // Mostrar tooltip cuando el ratón entra en algo con data-tooltip
-  document.addEventListener("mouseover", (ev) => {
-    const target = ev.target.closest("[data-tooltip]");
-    if (!target) {
-      hideTooltip();
-      return;
-    }
-    currentTooltipTarget = target;
-    showTooltipAt(target.dataset.tooltip || "", ev.clientX, ev.clientY);
-  });
-
-  // Mover tooltip cuando se mueve el ratón
-  document.addEventListener("mousemove", (ev) => {
-    if (!currentTooltipTarget || !tooltipEl) return;
-    if (!currentTooltipTarget.dataset.tooltip) return;
-    positionTooltip(ev.clientX, ev.clientY);
-  });
-
-  // Ocultar cuando el ratón sale de un elemento con tooltip
-  document.addEventListener("mouseout", (ev) => {
-    const related = ev.relatedTarget;
-    // Si salimos de un elemento con tooltip y no entramos en otro con tooltip
-    if (
-      currentTooltipTarget &&
-      !related?.closest?.("[data-tooltip]")
-    ) {
-      hideTooltip();
-      currentTooltipTarget = null;
-    }
-  });
-}
-
-function showTooltipAt(text, x, y) {
-  if (!tooltipEl) return;
-  tooltipEl.textContent = text;
-  positionTooltip(x, y);
-  tooltipEl.style.opacity = "1";
-}
-
-function positionTooltip(x, y) {
-  if (!tooltipEl) return;
-  const offsetX = 16;
-  const offsetY = -16;
-  tooltipEl.style.left = `${x + offsetX}px`;
-  tooltipEl.style.top = `${y + offsetY}px`;
-}
-
-function hideTooltip() {
-  if (!tooltipEl) return;
-  tooltipEl.style.opacity = "0";
-}
-
 // ===================
 // Salvar y Cargar Partida
 // ===================
 
 function saveGame() {
   try {
-    const payload = {
-      version: 1,
+    const payload = createSavePayload(
       state,
       originX,
       originY,
       lastEventDay,
-      eventCooldownDays,
-      // guardamos también el nombre del jugador si existe
-      playerName: state.playerName || localStorage.getItem("castles_player_name") || ""
-    };
-    localStorage.setItem("castles_save", JSON.stringify(payload));
+      eventCooldownDays
+    );
+    saveGameToLocalStorage(payload);
     console.log("Partida guardada");
   } catch (err) {
     console.error("Error al guardar la partida:", err);
@@ -688,18 +327,14 @@ function saveGame() {
 // Exportar la partida a un archivo JSON
 function exportGameToFile() {
   try {
-    const payload = {
-      version: 1,
+    const payload = createSavePayload(
       state,
       originX,
       originY,
       lastEventDay,
-      eventCooldownDays,
-      playerName: state.playerName || localStorage.getItem("castles_player_name") || ""
-    };
-
-    const json = JSON.stringify(payload, null, 2);
-    const blob = new Blob([json], { type: "application/json" });
+      eventCooldownDays
+    );
+    const blob = createExportBlob(payload);
     const url = URL.createObjectURL(blob);
 
     const a = document.createElement("a");
@@ -707,9 +342,12 @@ function exportGameToFile() {
     const yyyy = now.getFullYear();
     const mm = String(now.getMonth() + 1).padStart(2, "0");
     const dd = String(now.getDate()).padStart(2, "0");
+
     const baseName =
-      (state.playerName || localStorage.getItem("castles_player_name") || "partida")
-        .trim()
+      (state.playerName || "partida")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^\w\-]+/g, "_")
         .replace(/\s+/g, "_");
 
     a.href = url;
@@ -724,205 +362,33 @@ function exportGameToFile() {
   }
 }
 
-// Aplica un payload cargado (tanto desde localStorage como desde archivo)
 function applyLoadedPayload(payload) {
   if (!payload || !payload.state) {
     console.warn("Guardado inválido.");
     return;
   }
 
-  // Restaurar estado base desde el guardado
-  state = payload.state;
-
-  // Normalizar tiempo interno:
-  // Los guardados antiguos usan otro secondsPerDay, así que su timeSeconds
-  // ya no es coherente con el día actual y provocaba saltos enormes de días
-  // al cargar (onNewDay(daysPassed) con cientos de días).
-  if (typeof state.day === "number" && state.day > 0) {
-    state.timeSeconds = (state.day - 1) * GAME_CONFIG.secondsPerDay;
-  } else {
-    state.day = 1;
-    state.timeSeconds = 0;
+  let normalized;
+  try {
+    normalized = normalizeLoadedState(payload);
+  } catch (err) {
+    console.error("Error al normalizar la partida cargada:", err);
+    alert("No se ha podido cargar la partida (formato inválido).");
+    return;
   }
 
-  // ───────────────────────────────────────────────
-  // Recursos + población (manteniendo lo guardado si es válido)
-  // ───────────────────────────────────────────────
+  // Asignamos el estado normalizado
+  state = normalized.state;
+  originX = normalized.originX;
+  originY = normalized.originY;
+  lastEventDay = normalized.lastEventDay;
+  eventCooldownDays = normalized.eventCooldownDays;
 
-  const hasResources =
-    state.resources && typeof state.resources === "object";
-  const savedResources = hasResources ? state.resources : {};
-
-  // Partimos de los recursos iniciales y machacamos con lo guardado
-  state.resources = {
-    ...STARTING_RESOURCES,
-    ...savedResources
-  };
-
-  // Aseguramos que los recursos básicos sean numéricos
-  for (const [key, defVal] of Object.entries(STARTING_RESOURCES)) {
-    const cur = Number(state.resources[key]);
-    if (!Number.isFinite(cur)) {
-      state.resources[key] = defVal;
-    }
-  }
-
-  // Calculamos la suma de gremios para poder usarla como fallback
-  const rolesLabor = [
-    "builders",
-    "farmers",
-    "miners",
-    "lumberjacks",
-    "soldiers",
-    "servants",
-    "clergy",
-    "unassigned"
-  ];
-  let laborSum = 0;
-  if (state.labor && typeof state.labor === "object") {
-    for (const r of rolesLabor) {
-      const v = Number(state.labor[r] || 0);
-      if (Number.isFinite(v) && v > 0) laborSum += v;
-    }
-  }
-
-  // Población: preferimos SIEMPRE la del guardado si es válida
-  let resPop = Number(savedResources.population);
-  if ((!Number.isFinite(resPop) || resPop <= 0) && laborSum > 0) {
-    // Si no hay población válida pero sí hay gremios, usamos la suma
-    resPop = laborSum;
-  } else if (!Number.isFinite(resPop) || resPop <= 0) {
-    // Último recurso: valor por defecto
-    resPop = STARTING_RESOURCES.population;
-  }
-
-  state.resources.population = Math.round(resPop);
-
-  // ───────────────────────────────────────────────
-  // Migración de IDs de edificios y terreno (partidas antiguas)
-  // ───────────────────────────────────────────────
-
-  const buildingIdMigration = {
-    // IDs antiguos → IDs actuales
-    tower: "tower_square",
-    wall: "wall_1",
-    gate: "gate_1"
-  };
-
-  if (state && Array.isArray(state.tiles)) {
-    for (let y = 0; y < state.tiles.length; y++) {
-      const row = state.tiles[y];
-      if (!row) continue;
-      for (let x = 0; x < row.length; x++) {
-        const tile = row[x];
-        if (!tile) continue;
-
-        const oldB = tile.building;
-        const oldUC = tile.underConstruction;
-
-        // 2.a) Migración de IDs de edificios antiguos
-        if (oldB && buildingIdMigration[oldB]) {
-          tile.building = buildingIdMigration[oldB];
-        }
-        if (oldUC && buildingIdMigration[oldUC]) {
-          tile.underConstruction = buildingIdMigration[oldUC];
-        }
-
-        // 2.b) Terreno bajo edificios/caminos => plain salvo casos especiales
-        const hasBuilding = !!tile.building || !!tile.underConstruction;
-        if (hasBuilding && tile.terrain && tile.terrain !== "plain") {
-          const bId = tile.building || tile.underConstruction;
-          const def = BUILDING_TYPES[bId];
-          let keepTerrain = false;
-
-          if (def && typeof def.id === "string") {
-            if (
-              def.id === "quarry" ||
-              def.id === "lumberyard" ||
-              def.id === "bridge"
-            ) {
-              keepTerrain = true;
-            }
-          }
-
-          if (!keepTerrain) {
-            tile.terrain = "plain";
-            tile.forestAmount = 0;
-            if (typeof chooseTerrainVariant === "function") {
-              const tx = typeof tile.x === "number" ? tile.x : x;
-              const ty = typeof tile.y === "number" ? tile.y : y;
-              tile.terrainVariant = chooseTerrainVariant("plain", tx, ty);
-            }
-          }
-        }
-
-      // Si la loseta final es una puerta, aseguramos que el terreno base es camino
-      const finalB = tile.building || tile.underConstruction;
-      if (finalB === "gate_1") {
-        tile.terrain = "road";
-        tile.forestAmount = 0;
-        if (typeof chooseTerrainVariant === "function") {
-          const tx = typeof tile.x === "number" ? tile.x : x;
-          const ty = typeof tile.y === "number" ? tile.y : y;
-          tile.terrainVariant = chooseTerrainVariant("road", tx, ty);
-        }
-      }
-
-        // 2.c) En las puertas actuales queremos **camino debajo**
-        const bIdFinal = tile.building || tile.underConstruction;
-        if (bIdFinal === "gate_1") {
-          tile.terrain = "road";
-          if (typeof chooseTerrainVariant === "function") {
-            const tx = typeof tile.x === "number" ? tile.x : x;
-            const ty = typeof tile.y === "number" ? tile.y : y;
-            tile.terrainVariant = chooseTerrainVariant("road", tx, ty);
-          }
-        }
-      }
-    }
-  }
-
-  // ───────────────────────────────────────────────
-  // Migración de prestigio / título si faltan
-  // ───────────────────────────────────────────────
-
-  if (typeof state.prestige !== "number") {
-    let estimated = 0;
-    if (state.tiles && PRESTIGE_PER_BUILDING) {
-      for (let y = 0; y < state.tiles.length; y++) {
-        const row = state.tiles[y];
-        if (!row) continue;
-        for (let x = 0; x < row.length; x++) {
-          const b = row[x].building;
-          if (b && PRESTIGE_PER_BUILDING[b]) {
-            estimated += PRESTIGE_PER_BUILDING[b];
-          }
-        }
-      }
-    }
-    state.prestige = estimated;
-  }
-
-  if (!state.title) {
-    state.title = "Señor de la fortaleza";
-  }
-  updateTitleFromPrestige();
-
-  // ───────────────────────────────────────────────
-  // Campos auxiliares del payload (cámara, eventos, nombre jugador…)
-  // ───────────────────────────────────────────────
-
-  if (typeof payload.originX === "number") originX = payload.originX;
-  if (typeof payload.originY === "number") originY = payload.originY;
-  if (typeof payload.lastEventDay === "number") lastEventDay = payload.lastEventDay;
-  if (typeof payload.eventCooldownDays === "number") {
-    eventCooldownDays = payload.eventCooldownDays;
-  }
-
-  if (typeof payload.playerName === "string") {
-    state.playerName = payload.playerName;
+  // Nombre de jugador
+  if (normalized.playerName) {
+    state.playerName = normalized.playerName;
     try {
-      localStorage.setItem("castles_player_name", payload.playerName);
+      localStorage.setItem("castles_player_name", normalized.playerName);
     } catch (_err) {
       // ignoramos errores de quota
     }
@@ -942,298 +408,27 @@ function applyLoadedPayload(payload) {
   }
 
   console.log(
-    "Partida cargada. Población:",
-    state.resources.population,
-    "Labor:",
-    state.labor
+    "Partida cargada (día",
+    state.day,
+    "población",
+    state.resources && state.resources.population,
+    ")"
   );
 }
 
 function loadGame() {
   try {
-    const raw = localStorage.getItem("castles_save");
-    if (!raw) {
+    const payload = loadGamePayloadFromLocalStorage();
+    if (!payload) {
       console.warn("No hay partida guardada.");
       return;
     }
-    const payload = JSON.parse(raw);
     applyLoadedPayload(payload);
   } catch (err) {
     console.error("Error al cargar la partida:", err);
   }
 }
-
-// ===========================
-// UI bindings
-// ===========================
-
-function setupUIBindings() {
-  // Tooltips informativos de la UI
-  setupBuildingTooltips();
-  setupWageTooltips();
-  setupTaxTooltips();
-  setupGlobalTooltip();
-
-  // Velocidad
-  document.querySelectorAll(".speed-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      document
-        .querySelectorAll(".speed-btn")
-        .forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
-
-      const speedStr = btn.dataset.speed || "1";
-      const speed = Number(speedStr);
-      state.speedMultiplier = speed;
-    });
-  });
-
-  // Construcción
-  document.querySelectorAll(".build-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      document
-        .querySelectorAll(".build-btn")
-        .forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
-      const buildingId = btn.dataset.building;
-      if (buildingId) {
-        state.selectedBuilding = buildingId;
-      }
-    });
-  });
-
-  // Impuestos
-  document.querySelectorAll(".tax-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      document
-        .querySelectorAll(".tax-btn")
-        .forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
-
-      const taxStr = btn.dataset.tax || "1";
-      const tax = Number(taxStr);
-      state.taxRate = tax;
-
-      if (typeof addLogEntry === "function") {
-        const labels = { 0: "bajos", 1: "normales", 2: "altos" };
-        const label = labels[tax] ?? String(tax);
-        addLogEntry(`Impuestos ajustados a nivel ${label}.`);
-      }
-    });
-  });
-
-// Menú de jugador / partida (escudo redondo)
-  const playerMenuButton = document.getElementById("player-menu-button");
-  const playerMenuDropdown = document.getElementById("player-menu-dropdown");
-  const playerNameInput = document.getElementById("player-name-input");
-  const exportBtn = document.getElementById("export-btn");
-  const importInput = document.getElementById("import-input");
-
-  // Inicializar nombre del jugador directamente en el input
-  if (playerNameInput) {
-    let initialName =
-      state.playerName || localStorage.getItem("castles_player_name") || "";
-    state.playerName = initialName;
-    playerNameInput.value = initialName;
-
-    const commitName = () => {
-      const value = playerNameInput.value.trim();
-      const finalName = value || "";
-      state.playerName = finalName;
-      try {
-        localStorage.setItem("castles_player_name", finalName);
-      } catch (_err) {
-        // ignoramos errores de quota
-      }
-    };
-
-    playerNameInput.addEventListener("change", commitName);
-    playerNameInput.addEventListener("blur", commitName);
-    playerNameInput.addEventListener("keydown", (ev) => {
-      if (ev.key === "Enter") {
-        commitName();
-        playerNameInput.blur();
-      }
-    });
-  }
-
-  if (playerMenuButton && playerMenuDropdown) {
-    playerMenuButton.addEventListener("click", (ev) => {
-      ev.stopPropagation();
-      playerMenuDropdown.classList.toggle("open");
-    });
-
-    // Cerrar el menú al hacer click fuera
-    document.addEventListener("click", (ev) => {
-      if (!playerMenuDropdown.classList.contains("open")) return;
-      const target = ev.target;
-      if (!(target && target.closest && target.closest("#player-menu"))) {
-        playerMenuDropdown.classList.remove("open");
-      }
-    });
-  }
-
-  if (exportBtn) {
-    exportBtn.addEventListener("click", () => {
-      exportGameToFile();
-    });
-  }
-
-  if (importInput) {
-    importInput.addEventListener("change", () => {
-      const file = importInput.files && importInput.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = () => {
-        try {
-          const text = String(reader.result || "");
-          const payload = JSON.parse(text);
-          applyLoadedPayload(payload);
-
-          // Actualizamos también el guardado local para que funcione "Cargar"
-          try {
-            localStorage.setItem("castles_save", text);
-          } catch (_err) {
-            // ignoramos errores de quota
-          }
-        } catch (err) {
-          console.error("Error al importar la partida:", err);
-          alert("No se ha podido importar la partida (archivo no válido).");
-        } finally {
-          importInput.value = "";
-        }
-      };
-      reader.readAsText(file);
-    });
-  }
-
-  // Guardar / cargar partida (botones dentro del menú)
-  const saveBtn = document.getElementById("save-btn");
-  if (saveBtn) {
-    saveBtn.addEventListener("click", () => {
-      saveGame();
-    });
-  }
-
-  const loadBtn = document.getElementById("load-btn");
-  if (loadBtn) {
-    loadBtn.addEventListener("click", () => {
-      loadGame();
-    });
-  }
-
-  // Overlay de crónica: minimizar / maximizar
-  const logToggleBtn = document.getElementById("log-toggle");
-  const logBodyEl = document.getElementById("log-body");
-  let logCollapsed = false;
-
-  if (logToggleBtn && logBodyEl) {
-    logToggleBtn.addEventListener("click", () => {
-      logCollapsed = !logCollapsed;
-      if (logCollapsed) {
-        logBodyEl.style.display = "none";
-        logToggleBtn.textContent = "+";
-      } else {
-        logBodyEl.style.display = "";
-        logToggleBtn.textContent = "–";
-      }
-    });
-  }
-
-  // Sueldos por gremio
-  document.querySelectorAll(".wage-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const role = btn.dataset.role;
-      const wageStr = btn.dataset.wage || "1";
-      const wageTier = Number(wageStr);
-      if (!role || Number.isNaN(wageTier)) return;
-
-      if (!state.wages) state.wages = {};
-      state.wages[role] = wageTier;
-
-      const row = btn.closest(".wage-row");
-      if (row) {
-        row.querySelectorAll(".wage-btn").forEach((b) =>
-          b.classList.remove("active")
-        );
-      }
-      btn.classList.add("active");
-
-     if (typeof addLogEntry === "function") {
-       const roleLabels = {
-         builders: "Constructores",
-         farmers: "Granjeros",
-         miners: "Canteros",
-         lumberjacks: "Leñadores",
-         soldiers: "Soldados",
-         servants: "Administración / Servicio",
-         clergy: "Clero"
-       };
-       const tierLabels = { 0: "bajo", 1: "normal", 2: "alto" };
-       const rName = roleLabels[role] || role;
-       const tName = tierLabels[wageTier] ?? String(wageTier);
-       addLogEntry(`Sueldo de ${rName} ajustado a nivel ${tName}.`);
-     }
-    });
-  });
-
-  // Leyes
-  document.querySelectorAll(".law-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const lawKey = btn.dataset.law;
-      const valueStr = btn.dataset.value || "0";
-      const value = Number(valueStr) === 1;
-      if (!lawKey) return;
-
-      if (!state.laws) state.laws = {};
-      state.laws[lawKey] = value;
-
-      const row = btn.closest(".law-row");
-      if (row) {
-        row.querySelectorAll(".law-btn").forEach((b) =>
-          b.classList.remove("active")
-        );
-      }
-      btn.classList.add("active");
-
-     if (typeof addLogEntry === "function") {
-       const lawLabels = {
-         corveeLabor: "Trabajo obligatorio en las obras",
-         forestProtection: "Protección de bosques comunales",
-         millTax: "Tasa obligatoria del molino",
-         censusLaw: "Censo y registros oficiales",
-         grainPriceControl: "Control de precios del grano"
-       };
-       const name = lawLabels[lawKey] || lawKey;
-       const status = value ? "activada" : "desactivada";
-       addLogEntry(`Ley "${name}" ${status}.`);
-     }
-    });
-  });
-}
   
- // ================
-// Activar el acordeón Menú
-// ================
-  
-function setupPanelGroups() {
-  const groups = document.querySelectorAll("#left-panel .panel-group");
-  groups.forEach((group, index) => {
-    const header = group.querySelector(".panel-header");
-    if (!header) return;
-
-    // Por defecto: solo el primero abierto
-    if (index > 0) {
-      group.classList.add("collapsed");
-    }
-
-    header.addEventListener("click", () => {
-      group.classList.toggle("collapsed");
-    });
-  });
-}
-
 // ===========================
 // Interacción con el canvas
 // ===========================
@@ -1270,171 +465,11 @@ function handleCanvasClick(ev) {
     return;
   }
 
-  const tile = state.tiles[tileY][tileX];
-
-  const b = state.selectedBuilding;
-  const isGateBuilding = b === "gate_1" || b === "gate_2";
-  const isMill = b === "mill";
-
-  // Modo demolición: eliminar edificios u obras en la loseta
-  if (b === "demolish") {
-    if (tile.building || tile.underConstruction) {
-      // Reembolso parcial de recursos si el edificio estaba terminado
-      if (tile.building) {
-        const existingId = tile.building;
-        const defExisting = BUILDING_TYPES[existingId];
-        if (defExisting && defExisting.cost) {
-          const cost = defExisting.cost;
-          for (const key in cost) {
-            if (!Object.prototype.hasOwnProperty.call(cost, key)) continue;
-            const refund = Math.floor(cost[key] * 0.5);
-            if (refund > 0) {
-              state.resources[key] = (state.resources[key] || 0) + refund;
-            }
-          }
-        }
-      }
-      // En cualquier caso, borramos el edificio/obra
-      tile.building = null;
-      tile.underConstruction = null;
-      tile.buildRemainingDays = 0;
-    }
-    // En modo demolición no intentamos construir nada
-    return;
-  }
-
-  if (tile.building || tile.underConstruction) {
-    const hasRoadOnly = tile.building === "road" && !tile.underConstruction;
-    // Solo permitimos construir puertas sobre un camino ya construido
-    if (!(isGateBuilding && hasRoadOnly)) {
-      return;
-    }
-  }
-
-  const def = BUILDING_TYPES[b];
-  if (!def) return;
-
-  // Reglas especiales por tipo de edificio
-  // Puertas: solo se pueden construir sobre un camino ya construido
-  if (isGateBuilding) {
-    if (tile.building !== "road" || tile.underConstruction) {
-      console.log("Las puertas solo se pueden construir sobre un camino ya construido.");
-      return;
-    }
-  }
-
-  // Restricciones de terreno
-  // Agua: solo se puede construir puente
-  if (tile.terrain === "water" && b !== "bridge") {
-    console.log("Solo se puede construir un puente sobre el río.");
-    return;
-  }
-  // El puente solo tiene sentido sobre agua
-  if (b === "bridge" && tile.terrain !== "water") {
-    console.log("Los puentes solo pueden colocarse sobre agua.");
-    return;
-  }
-
-  if (b === "farm" && tile.terrain !== "plain") {
-    console.log("Las granjas solo se pueden colocar en llanuras.");
-    return;
-  }
-  if (b === "quarry" && tile.terrain !== "rock") {
-    console.log("Las canteras solo se pueden colocar en roca.");
-    return;
-  }
-  if (b === "lumberyard" && tile.terrain !== "forest") {
-    console.log("Los aserraderos solo se pueden colocar en bosque.");
-    return;
-  }
-  
-  // Molinos: deben ir en tierra llana junto a al menos una loseta de agua adyacente
-  if (isMill) {
-    if (tile.terrain !== "plain") {
-      console.log(
-        "Los molinos solo se pueden construir en tierra llana junto a un río."
-      );
-      return;
-    }
-    let adjacentWater = false;
-    const dirs = [
-      [1, 0],
-      [-1, 0],
-      [0, 1],
-      [0, -1]
-    ];
-    for (const [dx, dy] of dirs) {
-      const nx = tileX + dx;
-      const ny = tileY + dy;
-      if (
-        ny >= 0 &&
-        ny < GAME_CONFIG.mapHeight &&
-        nx >= 0 &&
-        nx < GAME_CONFIG.mapWidth
-      ) {
-        const neighbor = state.tiles[ny][nx];
-        if (neighbor && neighbor.terrain === "water") {
-          adjacentWater = true;
-          break;
-        }
-      }
-    }
-    if (!adjacentWater) {
-      console.log(
-        "Los molinos deben construirse junto al río (al menos una loseta adyacente de agua)."
-      );
-      return;
-    }
-  }
-
-  if (!hasResourcesFor(def.cost)) {
-    console.log("Recursos insuficientes para construir", def.name);
-    return;
-  }
-
-  const isDefenseBuilding =
-    BUILDING_TYPES[b] && BUILDING_TYPES[b].category === "defense";
-
-  // No se puede construir muralla/torre/puerta en el río (agua)
-  if (isDefenseBuilding && tile.terrain === "water") {
-    console.log("No se pueden construir defensas en el río (solo puentes).");
-    return;
-  }
-
-  // Ley de protección de bosques: si está activa, no se puede talar bosque para construir defensas
-  if (
-    state.laws &&
-    state.laws.forestProtection &&
-    isDefenseBuilding &&
-    tile.terrain === "forest"
-  ) {
-    addLogEntry("La ley de protección de bosques impide construir ahí.");
-    return;
-  }
-
-  const isBridge = b === "bridge";
-
-  // Si todo es válido, iniciamos la obra
-  // Al construir (incluidos los caminos), cualquier terreno especial pasa a llano,
-  // EXCEPTO en el caso del puente sobre agua, donde queremos conservar el río.
-  if (tile.terrain !== "plain" && !(isBridge && tile.terrain === "water")) {
-    tile.terrain = "plain";
-    // Recalcular variante de llano para esta casilla
-    if (typeof chooseTerrainVariant === "function") {
-      tile.terrainVariant = chooseTerrainVariant("plain", tileX, tileY);
-    }
-    tile.forestAmount = 0;
-  }
-  
-  // Si estamos construyendo una puerta encima de un camino existente,
-  // dejamos de marcar el camino como edificio: el camino pasa a ser solo “base” visual.
-  if (isGateBuilding && tile.building === "road") {
-    tile.building = null;
-  }
-
-  payCost(def.cost);
-  tile.underConstruction = b;
-  tile.buildRemainingDays = def.buildTimeDays;
+  // Delegamos toda la lógica de construcción/demolición en build.js
+  tryPlaceOrDemolishBuilding(state, tileX, tileY, {
+    addLogEntry,
+    chooseTerrainVariant
+  });
 }
 
 // Drag de cámara con ratón
@@ -1527,39 +562,8 @@ function handleCameraKeyDown(ev) {
   }
 }
 
-// ===========================
-// Recursos helpers
-// ===========================
-
-function hasResourcesFor(cost) {
-  for (const key in cost) {
-    const value = cost[key];
-    if (typeof value !== "number") continue;
-    if (state.resources[key] < value) {
-      return false;
-    }
-  }
-  return true;
-}
-
-function payCost(cost) {
-  for (const key in cost) {
-    const value = cost[key];
-    if (typeof value !== "number") continue;
-    state.resources[key] -= value;
-  }
-}
-
-// ===========================
-// Conversión isométrica
-// ===========================
-
-function isoToScreen(tileX, tileY) {
-  const sx = originX + (tileX - tileY) * (TILE_WIDTH / 2);
-  const sy = originY + (tileX + tileY) * (TILE_HEIGHT / 2);
-  return [sx, sy];
-}
-
+// Conversión de pantalla a coordenadas de loseta (para input).
+// El camino inverso (loseta → pantalla) ahora vive en render.js.
 function screenToIsoTile(screenX, screenY) {
   const dx = screenX - originX;
   const dy = screenY - originY;
@@ -1567,8 +571,11 @@ function screenToIsoTile(screenX, screenY) {
   const tileXFloat = dx / TILE_WIDTH + dy / TILE_HEIGHT;
   const tileYFloat = dy / TILE_HEIGHT - dx / TILE_WIDTH;
 
-  const tileX = Math.floor(tileXFloat);
-  const tileY = Math.floor(tileYFloat);
+  // Usamos redondeo al entero más cercano para que
+  // el centro del rombo cuente como su propia loseta,
+  // y no tienda a “irse” a la de arriba.
+  const tileX = Math.round(tileXFloat);
+  const tileY = Math.round(tileYFloat);
   return [tileX, tileY];
 }
 
@@ -1576,353 +583,24 @@ function screenToIsoTile(screenX, screenY) {
 // Tiempo / días
 // ===========================
 
-function update(dtSeconds) {
-  const speed = state.speedMultiplier;
-  if (speed <= 0) return;
-
-  const scaledDt = dtSeconds * speed;
-  state.timeSeconds += scaledDt;
-
-  const newDay =
-    Math.floor(state.timeSeconds / GAME_CONFIG.secondsPerDay) + 1;
-  if (newDay !== state.day) {
-    const daysPassed = newDay - state.day;
-    state.day = newDay;
-    onNewDay(daysPassed);
-  }
-}
-
-function formatDelta(value) {
+export function formatDelta(value) {
   const v = Math.round(value);
   if (v > 0) return `+${v}`;
   if (v < 0) return `${v}`;
   return "±0";
 }
 
-function onNewDay(daysPassed) {
-  // 0) Snapshot para el resumen del día
-  const prevGold = state.resources.gold;
-  const prevFood = state.resources.food;
-  const prevStone = state.resources.stone;
-  const prevWood = state.resources.wood;
-  const prevPop = state.resources.population;
-  const prevPeopleRel = state.relations.people;
+// ===========================
+// Ciclo diario (helpers)
+// ===========================
 
-  // 1) Rebalanceo de población activa según “vacantes”
-  rebalanceLabor(state);
-
-	// 2) Impuestos
-	const baseTaxPerPerson = BASE_TAX_PER_PERSON;
-	let taxMultiplier;
-	if (state.taxRate === 0) taxMultiplier = 0.5;
-	else if (state.taxRate === 2) taxMultiplier = 1.7;
-	else taxMultiplier = 1.0;
-
-	// Ajustes por leyes económicas / comerciales
-	let lawTaxMultiplier = 1.0;
-
-	// Censo: mejor control fiscal → algo más de ingresos
-	if (state.laws?.censusLaw) {
-	  lawTaxMultiplier *= 1.15; // +15% impuestos
-	}
-
-	// Control de precios del grano: menos margen → algo menos de ingresos
-	if (state.laws?.grainPriceControl) {
-	  lawTaxMultiplier *= 0.9; // −10% impuestos
-	}
-
-	// Mercado semanal: más actividad → algo más de ingresos
-	if (state.laws?.weeklyMarketLaw) {
-	  lawTaxMultiplier *= 1.1; // +10% impuestos
-	}
-
-	const taxIncome =
-	  state.resources.population *
-	  baseTaxPerPerson *
-	  taxMultiplier *
-	  lawTaxMultiplier *
-	  daysPassed;
-	state.resources.gold += taxIncome;
-
-	  if (state.taxRate === 0) {
-		adjustRelation("people", +0.5 * daysPassed);
-		adjustRelation("crown", -0.3 * daysPassed);
-	  } else if (state.taxRate === 2) {
-		adjustRelation("people", -0.7 * daysPassed);
-		adjustRelation("crown", +0.5 * daysPassed);
-	  }
-
-  // 3) Sueldos: pagar salarios de los gremios clave
-  if (!state.flags) state.flags = {};
-  // Por defecto asumimos que se han podido pagar; si no, lo marcará applyWages
-  state.flags.buildersUnpaidToday = false;
-  applyWages(daysPassed);
-
-  // 4) Producción de edificios según gremios
-  applyBuildingProduction(daysPassed);
-
-	// 5) Efectos continuos de las leyes
-	if (state.laws?.corveeLabor) {
-	  adjustRelation("people", -0.2 * daysPassed);
-	  adjustRelation("guilds", -0.15 * daysPassed);
-	}
-	if (state.laws?.forestProtection) {
-	  adjustRelation("people", 0.1 * daysPassed);
-	  adjustRelation("church", 0.1 * daysPassed);
-	}
-	// Censo y registros: la Corona contenta, el pueblo recela
-	if (state.laws?.censusLaw) {
-	  adjustRelation("crown", 0.05 * daysPassed);
-	  adjustRelation("people", -0.05 * daysPassed);
-	}
-	// Control de precios del grano: el pueblo agradece, los gremios gruñen
-	if (state.laws?.grainPriceControl) {
-	  adjustRelation("people", 0.08 * daysPassed);
-	  adjustRelation("guilds", -0.06 * daysPassed);
-	}
-	// Patrullas nocturnas: algo menos de malestar acumulado
-	if (state.laws?.nightWatchLaw) {
-	  if (typeof state.unrest === "number" && state.unrest > 0) {
-		state.unrest = Math.max(0, state.unrest - 0.5 * daysPassed);
-	  }
-	}
-	// Mercado semanal: más vida comercial, pero algo de tensión si ya hay malestar
-	if (state.laws?.weeklyMarketLaw) {
-	  adjustRelation("guilds", 0.05 * daysPassed);
-	  if (typeof state.unrest === "number" && state.unrest > 20) {
-		state.unrest = Math.min(100, state.unrest + 0.2 * daysPassed);
-	  }
-	}
-	
-	  // Efectos continuos de estructuras especiales (p.ej. monasterio)
-	  if (state.structures?.monastery) {
-		// Los monjes refuerzan la influencia de la Iglesia y algo el ánimo del pueblo
-		adjustRelation("church", 0.08 * daysPassed);
-		adjustRelation("people", 0.02 * daysPassed);
-
-		// Ayuda a reducir un poco el malestar si lo hay
-		if (typeof state.unrest === "number" && state.unrest > 0) {
-		  state.unrest = Math.max(0, state.unrest - 0.3 * daysPassed);
-		}
-
-		// Pequeño coste de mantenimiento en comida
-		state.resources.food = Math.max(
-		  0,
-		  state.resources.food - 1 * daysPassed
-		);
-	  }
-
-  // 6) Tasa del molino: si es obligatoria y hay molinos,
-  // cada ciudadano paga una pequeña tasa → más oro pero más descontento.
-  if (state.laws?.millTax) {
-    let mills = 0;
-    for (let y = 0; y < GAME_CONFIG.mapHeight; y++) {
-      for (let x = 0; x < GAME_CONFIG.mapWidth; x++) {
-        const tile = state.tiles[y][x];
-        if (tile.building === "mill") mills++;
-      }
-    }
-
-	if (mills > 0 && state.resources.population > 0) {
-	  const tollPerPerson = 0.12; // oro por persona y día
-	  const tollIncome =
-		state.resources.population * tollPerPerson * daysPassed;
-
-	  state.resources.gold += tollIncome;
-
-	  // Cuantos más molinos y más días, más enfado
-	  const anger = 0.12 * mills * daysPassed;
-	  adjustRelation("people", -anger);
-	}
-  }
-
-  // 7) Consumo de comida
-  const foodPerPerson = FOOD_PER_PERSON_PER_DAY;
-  state.resources.food -=
-    state.resources.population * foodPerPerson * daysPassed;
-
-  if (state.resources.food < 0) {
-    state.resources.food = 0;
-    state.resources.population = Math.max(
-      0,
-      state.resources.population - daysPassed
-    );
-
-    // Con control de precios del grano, el pueblo percibe cierto esfuerzo
-    // y el enfado es algo menor.
-    const hungerPenalty =
-      state.laws?.grainPriceControl ? 0.6 : 1.0;
-    adjustRelation("people", -hungerPenalty * daysPassed);
-  }
-
-  // 8) Malestar y emigración si el pueblo está muy descontento
-  if (state.relations.people < 20 && state.resources.population > 0) {
-    const anger = 20 - state.relations.people; // 1..20
-    const baseLeave =
-      state.resources.population * 0.02 * daysPassed; // ~2% base por día
-    const leave = Math.max(
-      1,
-      Math.floor(baseLeave * (1 + anger / 20))
-    );
-
-    state.resources.population = Math.max(
-      0,
-      state.resources.population - leave
-    );
-
-    if (typeof state.unrest !== "number") state.unrest = 0;
-    state.unrest = Math.min(100, state.unrest + 2 * daysPassed);
-
-    addLogEntry(
-      `El malestar del pueblo provoca la marcha de ${leave} habitantes.`
-    );
-  } else {
-    if (typeof state.unrest !== "number") state.unrest = 0;
-    // Si el pueblo está al menos templado, el malestar se enfría poco a poco
-    if (state.relations.people >= 40) {
-      state.unrest = Math.max(0, state.unrest - 1 * daysPassed);
-    }
-  }
-
-  // 9) Crecimiento natural de la población si hay abundancia y satisfacción
-  // Cada 30 días: si el pueblo está contento y hay comida de sobra,
-  // entran nuevas familias al castillo.
-  if (state.day % 30 === 0 && state.resources.population > 0) {
-    const pop = state.resources.population;
-    // Consideramos que "abunda" si tras comer tenemos reservas
-    // para ~10 días más.
-    const minReserve = pop * foodPerPerson * 10;
-    if (
-      state.resources.food > minReserve &&
-      state.relations.people >= 60
-    ) {
-      const gained = Math.max(1, Math.floor(pop / 20));
-      state.resources.population += gained;
-      addLogEntry(
-        `La prosperidad del castillo atrae a nuevas familias: +${gained} habitantes.`
-      );
-    }
-  }
-
-  // 10) Guarnición mínima: a partir de 30 habitantes
-  // y según defensas construidas (torres y murallas) se espera
-  // un mínimo de soldados en guarnición.
-  {
-    const pop = state.resources.population;
-    const soldiers = state.labor.soldiers || 0;
-    const required = computeMinSoldiers(state);
-    if (required > 0 && soldiers < required) {
-      const ratio = soldiers / required; // 0..1
-      // Cuanto más por debajo del mínimo, más empeoran las relaciones
-      const penaltyFactor = 1 - ratio;
-      adjustRelation("crown", -0.5 * penaltyFactor * daysPassed);
-      adjustRelation("people", -0.2 * penaltyFactor * daysPassed);
-
-      addLogEntry(
-        `La guarnición es insuficiente: ${soldiers}/${required} soldados para ${Math.round(
-          pop
-        )} habitantes. El castillo parece vulnerable.`
-      );
-    }
-  }
-  
-  // 11) Fin de rebajas temporales de impuestos (si las hay)
-  if (state.flags?.tempTaxReliefActive) {
-    const flags = state.flags;
-    flags.tempTaxReliefDays = (flags.tempTaxReliefDays || 0) - daysPassed;
-    if (flags.tempTaxReliefDays <= 0) {
-      const prevRate = flags.tempTaxPrevRate;
-      if (typeof prevRate === "number") {
-        state.taxRate = prevRate;
-      }
-      flags.tempTaxReliefActive = false;
-      flags.tempTaxReliefDays = 0;
-      if (typeof addLogEntry === "function") {
-        addLogEntry(
-          "La reducción excepcional de impuestos llega a su fin. Los gravámenes vuelven a su nivel anterior."
-        );
-      }
-    }
-  }
-
-  // 12) Influencia diaria del clérigo según sueldo
-  {
-    const wages = state.wages || {};
-    const clergyWage = wages.clergy ?? 1;
-    const clergyCount = state.labor.clergy || 0;
-    const hasCleric = state.flags?.hasCleric;
-
-    // Consideramos “clérigo oficial” solo si lo hemos aceptado por evento
-    // y hay al menos 1 persona en el gremio del clero.
-    if (hasCleric && clergyCount > 0) {
-      if (clergyWage === 0) {
-        // Sueldo bajo: sermones contra el señor
-        adjustRelation("people", -0.3 * daysPassed);
-        adjustRelation("church", -0.2 * daysPassed);
-
-        if (typeof state.unrest !== "number") state.unrest = 0;
-        state.unrest = Math.min(100, state.unrest + 0.5 * daysPassed);
-
-        if (Math.random() < 0.1 * daysPassed) {
-          addLogEntry(
-            "El clérigo se queja en sus sermones de la mezquindad del señor; el pueblo murmura."
-          );
-        }
-      } else if (clergyWage === 1) {
-        // Sueldo normal: estabilidad suave
-        adjustRelation("church", 0.05 * daysPassed);
-
-        if (typeof state.unrest !== "number") state.unrest = 0;
-        if (state.unrest > 0) {
-          state.unrest = Math.max(0, state.unrest - 0.2 * daysPassed);
-        }
-      } else if (clergyWage === 2) {
-        // Sueldo alto: predica lealtad y caridad
-        adjustRelation("church", 0.15 * daysPassed);
-        adjustRelation("people", 0.1 * daysPassed);
-
-        if (typeof state.unrest !== "number") state.unrest = 0;
-        if (state.unrest > 0) {
-          state.unrest = Math.max(0, state.unrest - 0.5 * daysPassed);
-        }
-
-        if (Math.random() < 0.08 * daysPassed) {
-          addLogEntry(
-            "El clérigo elogia la generosidad del señor y apacigua los ánimos en la villa."
-          );
-        }
-      }
-    }
-  }
-
-  // 13) Resumen del día para la crónica
-  const dGold = state.resources.gold - prevGold;
-  const dFood = state.resources.food - prevFood;
-  const dStone = state.resources.stone - prevStone;
-  const dWood = state.resources.wood - prevWood;
-  const dPop = state.resources.population - prevPop;
-  const dPeople = state.relations.people - prevPeopleRel;
-
-  addLogEntry(
-    `Día ${state.day}: Oro ${formatDelta(dGold)}, Comida ${formatDelta(
-      dFood
-    )}, Piedra ${formatDelta(dStone)}, Madera ${formatDelta(
-      dWood
-    )}, Población ${formatDelta(dPop)}, Pueblo ${formatDelta(dPeople)}`
-  );
-
-  // 14) Avance de obras (usa constructores)
-  advanceConstruction(daysPassed);
-
-  // 15) Eventos
-  tryTriggerRandomEvent();
-}
+// Lógica diaria (onNewDay) movida a simulation.js
 
 // ===========================
 // Relaciones
 // ===========================
 
-function adjustRelation(key, delta) {
+export function adjustRelation(key, delta) {
   if (!state.relations || !(key in state.relations)) return;
   const value = state.relations[key] + delta;
   state.relations[key] = Math.max(0, Math.min(100, value));
@@ -1967,7 +645,7 @@ function addPrestige(amount) {
 // Sueldos y producción de edificios
 // ===========================
 
-function applyWages(daysPassed) {
+export function applyWages(daysPassed) {
   const L = state.labor;
   const wages = state.wages || {};
 
@@ -2026,7 +704,7 @@ function applyWages(daysPassed) {
   }
 }
 
-function applyBuildingProduction(daysPassed) {
+export function applyBuildingProduction(daysPassed) {
   let farms = 0;
   let quarries = 0;
   let lumberyards = 0;
@@ -2113,7 +791,7 @@ function applyBuildingProduction(daysPassed) {
 // Construcción por días
 // ===========================
 
-function advanceConstruction(daysPassed) {
+export function advanceConstruction(daysPassed) {
   const activeTiles = [];
 
   for (let y = 0; y < GAME_CONFIG.mapHeight; y++) {
@@ -2164,7 +842,7 @@ function advanceConstruction(daysPassed) {
 // Eventos
 // ===========================
 
-function tryTriggerRandomEvent() {
+export function tryTriggerRandomEvent() {
   if (pendingEvent) return;
   if (state.day - lastEventDay < eventCooldownDays) return;
 
@@ -2255,407 +933,7 @@ function closeEventModal() {
   pendingEvent = null;
 }
 
-// ===========================
-// Render
-// ===========================
-
-function render() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  ctx.save();
-  for (let y = 0; y < GAME_CONFIG.mapHeight; y++) {
-    for (let x = 0; x < GAME_CONFIG.mapWidth; x++) {
-      const tile = state.tiles[y][x];
-      const [sx, sy] = isoToScreen(x, y);
-
-      // 1) Terreno (color base + overlays de árboles/rocas)
-      drawTerrainTile(sx, sy, tile);
-	  
-      // 1.5) Camino base justo debajo de las puertas
-      const gateKinds = ["gate_1", "gate_2"];
-      const hasGateBuilding =
-        (tile.building && gateKinds.includes(tile.building)) ||
-        (tile.underConstruction && gateKinds.includes(tile.underConstruction));
-      if (hasGateBuilding) {
-        // Dibujamos un camino como base, en la misma loseta
-        drawBuilding("road", sx, sy, {
-          finished: true,
-          progress: 1
-        });
-      }
-
-      // 2) Edificios / obras en ESTA casilla
-      if (tile.underConstruction) {
-        const def = BUILDING_TYPES[tile.underConstruction];
-        if (def) {
-          const totalDays = def.buildTimeDays || 1;
-          const remaining = tile.buildRemainingDays;
-          const progress = Math.max(0, Math.min(1, 1 - remaining / totalDays));
-          drawBuilding(tile.underConstruction, sx, sy, {
-            finished: false,
-            progress
-          });
-        }
-      }
-
-      if (tile.building) {
-        drawBuilding(tile.building, sx, sy, {
-          finished: true,
-          progress: 1
-        });
-      }
-    }
-  }
-  ctx.restore();
-
-  updateHUD();
-}
-
-function drawTerrainTile(sx, sy, tile) {
-  const terrain = tile.terrain;
-  const hw = TILE_WIDTH / 2;
-  const hh = TILE_HEIGHT / 2;
-
-  // 1) SIEMPRE dibujamos la loseta geométrica base (sin sprites)
-  let color;
-  if (terrain === "forest") {
-    color = "#49750c";
-  } else if (terrain === "rock") {
-    color = "#49750c";
-  } else if (terrain === "water") {
-    color = "#1f4b82";
-  } else {
-    color = "#49750c"; // llano
-  }
-
-  ctx.beginPath();
-  ctx.moveTo(sx, sy - hh);
-  ctx.lineTo(sx + hw, sy);
-  ctx.lineTo(sx, sy + hh);
-  ctx.lineTo(sx - hw, sy);
-  ctx.closePath();
-  ctx.fillStyle = color;
-  ctx.fill();
-  ctx.strokeStyle = "#22263a";
-  ctx.stroke();
-
-  // 2) Overlay decorativo (árboles, rocas...) si hay sprite definido
-  const sprites = TERRAIN_SPRITES[terrain];
-  const variantIndex = tile.terrainVariant ?? 0;
-  const img =
-    sprites && sprites.length > 0
-      ? sprites[variantIndex % sprites.length]
-      : null;
-
-  if (
-    img &&
-    img.complete &&
-    img.naturalWidth > 0 &&
-    img.naturalHeight > 0
-  ) {
-    const meta = TERRAIN_SPRITE_META[terrain] || {};
-
-    // Igual que en drawSpriteBuilding: altura en "losetas" → escala vertical
-    const tilesHigh = meta.tilesHigh ?? 2.4;
-    const baseOffsetTiles = meta.baseOffsetTiles ?? 0.6;
-
-    const targetHeightPx = tilesHigh * TILE_HEIGHT;
-    const baseScale = targetHeightPx / img.naturalHeight;
-    const scale = baseScale;
-
-    const w = img.naturalWidth * scale;
-    const h = img.naturalHeight * scale;
-
-    // Base de la loseta (parte inferior del rombo)
-    const tileBottomY = sy + hh;
-    const baseOffsetPx = baseOffsetTiles * TILE_HEIGHT;
-
-    const drawX = sx - w / 2;
-    const drawY = tileBottomY - h + baseOffsetPx;
-
-    ctx.drawImage(img, drawX, drawY, w, h);
-  }
-}
-
-/**
- * Dibuja un edificio:
- * - En construcción: base rellena, paredes/tapa solo contorno.
- * - Terminado: bloque isométrico sólido.
- */
-// Dibuja un edificio desde sprite, usando los metadatos de BUILDING_SPRITE_META
-// Dibuja un edificio desde sprite, usando BUILDING_SPRITE_META
-// Semántica:
-// - tilesHigh: altura objetivo en múltiplos de TILE_HEIGHT.
-// - baseOffsetTiles: desplazamiento desde el borde inferior de la loseta
-//   (0 = apoya justo en el borde; >0 se hunde; <0 flota).
-function drawSpriteBuilding(kind, sx, sy, options) {
-  const meta = BUILDING_SPRITE_META[kind];
-  const img = BUILDING_SPRITES[kind];
-
-  if (
-    !meta ||
-    !img ||
-    !img.complete ||
-    img.naturalWidth === 0 ||
-    img.naturalHeight === 0
-  ) {
-    // Imagen no disponible: el llamador hará fallback al dibujo geométrico.
-    return;
-  }
-
-  const finished = options.finished;
-  const progress = options.progress ?? 1;
-
-  const tilesHigh = meta.tilesHigh ?? 3;
-  const constructionMin = meta.constructionScaleMin ?? 0.4; // ya no lo usamos para el tamaño
-
-  // Altura objetivo en píxeles para el sprite “adulto” (tamaño fijo)
-  const targetHeightPx = tilesHigh * TILE_HEIGHT;
-  const baseScale = targetHeightPx / img.naturalHeight;
-
-  // Escala fija: eliminamos el "crecimiento" de tamaño durante la obra.
-  const scale = baseScale;
-
-  const w = img.naturalWidth * scale;
-  const h = img.naturalHeight * scale;
-
-  // Centro de la loseta
-  const tileBottomY = sy + TILE_HEIGHT / 2;
-
-  // Offset adicional desde el borde inferior de la loseta
-  const baseOffsetPx = (meta.baseOffsetTiles ?? 0) * TILE_HEIGHT;
-
-  // Centro horizontal en la loseta
-  const drawX = sx - w / 2;
-  // Base del sprite apoyada en tileBottomY + baseOffsetPx
-  const drawY = tileBottomY - h + baseOffsetPx;
-
-  // Mientras está en obra, que "aparezca" poco a poco vía alpha.
-  if (!finished) {
-    // Alpha de 0.25 (muy tenue) hasta 1.0 según progreso
-    const alpha = 0.25 + 0.75 * progress;
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    ctx.drawImage(img, drawX, drawY, w, h);
-    ctx.restore();
-  } else {
-    ctx.drawImage(img, drawX, drawY, w, h);
-  }
-
-  // Barra de progreso si no está terminado
-  if (!finished) {
-    const barWidth = TILE_WIDTH;
-    const barHeight = 4;
-    const px = sx - barWidth / 2;
-    const py = drawY - 8;
-
-    ctx.fillStyle = "rgba(0,0,0,0.6)";
-    ctx.fillRect(px, py, barWidth, barHeight);
-
-    ctx.fillStyle = "#d4a95f";
-    ctx.fillRect(px, py, barWidth * progress, barHeight);
-  }
-}
- 
-function drawBuilding(kind, sx, sy, options) {
-  const hw = TILE_WIDTH / 2;
-  const hh = TILE_HEIGHT / 2;
-  const finished = options.finished;
-  const progress = options.progress ?? 1;
-  
- // Si hay sprite válido definido para este tipo, lo usamos y salimos
-  const spriteMeta = BUILDING_SPRITE_META[kind];
-  const spriteImg = spriteMeta ? BUILDING_SPRITES[kind] : null;
-  if (
-    spriteMeta &&
-    spriteImg &&
-    spriteImg.complete &&
-    spriteImg.naturalWidth > 0 &&
-    spriteImg.naturalHeight > 0
-  ) {
-    drawSpriteBuilding(kind, sx, sy, { finished, progress });
-    return;
-  }
-
-  // Altura según tipo, tomada de config.js
-  let heightPx = BUILDING_HEIGHT_PX[kind];
-  if (typeof heightPx !== "number") {
-    heightPx = 18; // valor por defecto
-  }
-
-  // Base
-  const topBaseX = sx;
-  const topBaseY = sy - hh;
-  const rightBaseX = sx + hw;
-  const rightBaseY = sy;
-  const bottomBaseX = sx;
-  const bottomBaseY = sy + hh;
-  const leftBaseX = sx - hw;
-  const leftBaseY = sy;
-
-  // Tapa
-  const topTopX = sx;
-  const topTopY = sy - hh - heightPx;
-  const rightTopX = sx + hw;
-  const rightTopY = sy - heightPx;
-  const bottomTopX = sx;
-  const bottomTopY = sy + hh - heightPx;
-  const leftTopX = sx - hw;
-  const leftTopY = sy - heightPx;
-
-  // Colores
-  let baseColor, topColor, rightColor, leftColor;
-
-  if (kind === "wall" || kind === "wall_1" || kind === "wall_2") {
-    baseColor = "#7b7b8c";
-    topColor = "#8a8aa0";
-    rightColor = "#b3b3c8";
-    leftColor = "#5b5b70";
-  } else if (kind === "tower_square" || kind === "tower_round") {
-    baseColor = "#8e7b4a";
-    topColor = "#a7894f";
-    rightColor = "#caa25f";
-    leftColor = "#6c4e2a";
-  } else if ( kind === "gate" ||  kind === "gate_1" ||  kind === "gate_2") {
-    baseColor = "#74634a";
-    topColor = "#8c7653";
-    rightColor = "#b0925d";
-    leftColor = "#58442c";
-  } else if (kind === "farm") {
-    baseColor = "#3f7b3a";
-    topColor = "#4c8f46";
-    rightColor = "#65b45e";
-    leftColor = "#2f5c2c";
-  } else if (kind === "quarry") {
-    baseColor = "#9e9ea8";
-    topColor = "#aeb0ba";
-    rightColor = "#d0d2de";
-    leftColor = "#737583";
-  } else if (kind === "lumberyard") {
-    baseColor = "#5f4a34";
-    topColor = "#765b3f";
-    rightColor = "#9b774c";
-    leftColor = "#3e2f22";
-  } else if (kind === "bridge") {
-    // Puente de madera sobre el agua
-    baseColor = "#5b4932";
-    topColor = "#7a5c3a";
-    rightColor = "#9b7a4c";
-    leftColor = "#443426";
-  } else if (kind === "mill") {
-    // Molino: tonos más rojizos / estilo teja
-    baseColor = "#8b4c3f";   // muro rojizo
-    topColor = "#a75a47";    // parte superior más clara
-    rightColor = "#c96d54";  // cara iluminada
-    leftColor = "#6b3a32";   // sombra
-  } else if (kind === "road") {
-    // Camino: bloque muy bajito, gris terroso
-    baseColor = "#5a5145";
-    topColor = "#6c6356";
-    rightColor = "#857a68";
-    leftColor = "#453d34";
-  } else {
-    baseColor = "#888888";
-    topColor = "#888888";
-    rightColor = "#aaaaaa";
-    leftColor = "#555555";
-  }
-
-  // 1) Base
-  ctx.beginPath();
-  ctx.moveTo(topBaseX, topBaseY);
-  ctx.lineTo(rightBaseX, rightBaseY);
-  ctx.lineTo(bottomBaseX, bottomBaseY);
-  ctx.lineTo(leftBaseX, leftBaseY);
-  ctx.closePath();
-
-  if (finished) {
-    ctx.fillStyle = baseColor;
-  } else {
-    ctx.fillStyle = "rgba(123, 123, 140, 0.4)";
-  }
-  ctx.fill();
-  ctx.strokeStyle = "#1b1b24";
-  ctx.stroke();
-
-  // 2) En construcción → solo contornos de paredes y tapa
-  if (!finished) {
-    ctx.strokeStyle = "#d4a95f";
-
-    ctx.beginPath();
-    ctx.moveTo(rightTopX, rightTopY);
-    ctx.lineTo(bottomTopX, bottomTopY);
-    ctx.lineTo(bottomBaseX, bottomBaseY);
-    ctx.lineTo(rightBaseX, rightBaseY);
-    ctx.closePath();
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.moveTo(leftTopX, leftTopY);
-    ctx.lineTo(bottomTopX, bottomTopY);
-    ctx.lineTo(bottomBaseX, bottomBaseY);
-    ctx.lineTo(leftBaseX, leftBaseY);
-    ctx.closePath();
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.moveTo(topTopX, topTopY);
-    ctx.lineTo(rightTopX, rightTopY);
-    ctx.lineTo(bottomTopX, bottomTopY);
-    ctx.lineTo(leftTopX, leftTopY);
-    ctx.closePath();
-    ctx.stroke();
-
-    const barWidth = TILE_WIDTH;
-    const barHeight = 4;
-    const px = sx - barWidth / 2;
-    const py = topTopY - 10;
-
-    ctx.fillStyle = "rgba(0,0,0,0.6)";
-    ctx.fillRect(px, py, barWidth, barHeight);
-
-    ctx.fillStyle = "#d4a95f";
-    ctx.fillRect(px, py, barWidth * progress, barHeight);
-
-    return;
-  }
-
-  // 3) Terminado → bloque sólido
-
-  // Cara derecha
-  ctx.beginPath();
-  ctx.moveTo(rightTopX, rightTopY);
-  ctx.lineTo(bottomTopX, bottomTopY);
-  ctx.lineTo(bottomBaseX, bottomBaseY);
-  ctx.lineTo(rightBaseX, rightBaseY);
-  ctx.closePath();
-  ctx.fillStyle = rightColor;
-  ctx.fill();
-  ctx.strokeStyle = "#1b1b24";
-  ctx.stroke();
-
-  // Cara izquierda
-  ctx.beginPath();
-  ctx.moveTo(leftTopX, leftTopY);
-  ctx.lineTo(bottomTopX, bottomTopY);
-  ctx.lineTo(bottomBaseX, bottomBaseY);
-  ctx.lineTo(leftBaseX, leftBaseY);
-  ctx.closePath();
-  ctx.fillStyle = leftColor;
-  ctx.fill();
-  ctx.stroke();
-
-  // Tapa
-  ctx.beginPath();
-  ctx.moveTo(topTopX, topTopY);
-  ctx.lineTo(rightTopX, rightTopY);
-  ctx.lineTo(bottomTopX, bottomTopY);
-  ctx.lineTo(leftTopX, leftTopY);
-  ctx.closePath();
-  ctx.fillStyle = topColor;
-  ctx.fill();
-  ctx.stroke();
-}
+// Render isométrico (canvas) movido a render.js
 
  function computeDefenseScoreHUD(state) {
    const tiles = state.tiles || [];
@@ -2822,10 +1100,32 @@ function gameLoop(timestamp) {
   lastTimestamp = timestamp;
 
   const dtSeconds = dtMs / 1000;
-  update(dtSeconds);
-  render();
+  updateSimulation(state, dtSeconds);
+  render(state, ctx, canvas, originX, originY);
+  updateHUD();
 
   requestAnimationFrame(gameLoop);
+}
+
+// ===========================
+// Canvas
+// ===========================
+
+function resizeCanvas() {
+  if (!canvas) return;
+
+  // Usamos el contenedor padre para calcular el espacio disponible
+  const wrapper = canvasWrapper || document.getElementById("canvas-wrapper");
+  const rect = (wrapper || canvas).getBoundingClientRect();
+
+  // Ajustamos tamaño REAL del canvas (no solo el CSS)
+  canvas.width = rect.width;
+  canvas.height = rect.height;
+
+  // Recentramos la cámara con el nuevo tamaño
+  originX = canvas.width / 2;
+  // Offset vertical razonable para ver bien el mapa
+  originY = 80;
 }
 
 // ===========================
@@ -2835,6 +1135,8 @@ function gameLoop(timestamp) {
 function init() {
   canvas = document.getElementById("gameCanvas");
   if (!canvas) throw new Error("No se encontró el canvas #gameCanvas");
+  canvasWrapper = document.getElementById("canvas-wrapper");
+  
   const context = canvas.getContext("2d");
   if (!context) throw new Error("No se pudo obtener 2D context");
   ctx = context;
@@ -2848,14 +1150,25 @@ function init() {
   state = createInitialState();
   // Aseguramos que el título inicial coincide con la tabla de prestigio
   updateTitleFromPrestige();
+  
+  // Ajustar el canvas al espacio disponible y reaccionar a cambios de ventana
+  resizeCanvas();
+  window.addEventListener("resize", resizeCanvas);
 
-  setupUIBindings();
+  setupUIBindings(
+    () => state,
+    {
+    addLogEntry,
+    exportGameToFile,
+    applyLoadedPayload,
+    saveGame,
+    loadGame
+    }
+  );
+  
   setupPanelGroups();
   setupCanvasInteractions();
   setupCameraControls();
-
-  originX = canvas.width / 2;
-  originY = 80;
 
   requestAnimationFrame(gameLoop);
 }

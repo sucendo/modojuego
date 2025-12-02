@@ -3,7 +3,7 @@
 export const GAME_CONFIG = {
   mapWidth: 64,
   mapHeight: 64,
-  secondsPerDay: 8 // 1 día = 24 segundos
+  secondsPerDay: 24 // 1 día = 24 segundos
 };
 
 export const STARTING_RESOURCES = {
