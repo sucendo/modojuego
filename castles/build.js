@@ -53,7 +53,15 @@ export function payCost(state, cost) {
  * @param {string} [opts.buildingId]  Útil para tests; por defecto usa state.selectedBuilding
  */
 export function tryPlaceOrDemolishBuilding(state, tileX, tileY, opts = {}) {
-  const { addLogEntry, chooseTerrainVariant, buildingId } = opts;
+  const { addLogEntry, chooseTerrainVariant, buildingId, showMessage } = opts;
+  
+  const warn = (msg) => {
+    if (typeof showMessage === "function") {
+      showMessage(msg);
+    } else {
+      console.log(msg);
+    }
+  };
 
   if (
     tileX < 0 ||
@@ -120,9 +128,7 @@ export function tryPlaceOrDemolishBuilding(state, tileX, tileY, opts = {}) {
   // Puertas: solo se pueden construir sobre un camino ya construido
   if (isGateBuilding) {
     if (tile.building !== "road" || tile.underConstruction) {
-      console.log(
-        "Las puertas solo se pueden construir sobre un camino ya construido."
-      );
+      warn("Las puertas solo se pueden construir sobre un camino ya construido.");
       return;
     }
   }
@@ -133,34 +139,32 @@ export function tryPlaceOrDemolishBuilding(state, tileX, tileY, opts = {}) {
 
   // Agua: solo se puede construir puente
   if (tile.terrain === "water" && b !== "bridge") {
-    console.log("Solo se puede construir un puente sobre el río.");
+    warn("Solo se puede construir un puente sobre el río.");
     return;
   }
   // El puente solo tiene sentido sobre agua
   if (b === "bridge" && tile.terrain !== "water") {
-    console.log("Los puentes solo pueden colocarse sobre agua.");
+    warn("Los puentes solo pueden colocarse sobre agua.");
     return;
   }
 
   if (b === "farm" && tile.terrain !== "plain") {
-    console.log("Las granjas solo se pueden colocar en llanuras.");
+    warn("Las granjas solo se pueden colocar en llanuras.");
     return;
   }
   if (b === "quarry" && tile.terrain !== "rock") {
-    console.log("Las canteras solo se pueden colocar en roca.");
+    warn("Las canteras solo se pueden colocar en roca.");
     return;
   }
   if (b === "lumberyard" && tile.terrain !== "forest") {
-    console.log("Los aserraderos solo se pueden colocar en bosque.");
+    warn("Los aserraderos solo se pueden colocar en bosque.");
     return;
   }
 
   // Molinos: deben ir en tierra llana junto a al menos una loseta de agua adyacente
   if (isMill) {
     if (tile.terrain !== "plain") {
-      console.log(
-        "Los molinos solo se pueden construir en tierra llana junto a un río."
-      );
+      warn("Los molinos solo se pueden construir en tierra llana junto a un río.");
       return;
     }
     let adjacentWater = false;
@@ -187,7 +191,7 @@ export function tryPlaceOrDemolishBuilding(state, tileX, tileY, opts = {}) {
       }
     }
     if (!adjacentWater) {
-      console.log(
+      warn(
         "Los molinos deben construirse junto al río (al menos una loseta adyacente de agua)."
       );
       return;
@@ -198,7 +202,7 @@ export function tryPlaceOrDemolishBuilding(state, tileX, tileY, opts = {}) {
   // RECURSOS
   // ------------------------------
   if (!hasResourcesFor(state, def.cost)) {
-    console.log("Recursos insuficientes para construir", def.name);
+    warn(`Recursos insuficientes para construir ${def.name}.`);
     return;
   }
 
@@ -207,7 +211,7 @@ export function tryPlaceOrDemolishBuilding(state, tileX, tileY, opts = {}) {
 
   // No se puede construir muralla/torre/puerta en el río (agua)
   if (isDefenseBuilding && tile.terrain === "water") {
-    console.log("No se pueden construir defensas en el río (solo puentes).");
+    warn("No se pueden construir defensas en el río (solo puentes).");
     return;
   }
 
@@ -221,6 +225,7 @@ export function tryPlaceOrDemolishBuilding(state, tileX, tileY, opts = {}) {
     if (typeof addLogEntry === "function") {
       addLogEntry("La ley de protección de bosques impide construir ahí.");
     }
+    warn("La ley de protección de bosques impide construir ahí.");
     return;
   }
 

@@ -393,6 +393,52 @@ body {
   color: var(--text);
 }
 
+
+/* Ventana emergente para mensajes informativos del juego */
+#game-message-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 30;
+}
+
+#game-message-modal.hidden {
+  display: none;
+}
+
+#game-message-window {
+  width: min(360px, 90vw);
+  max-height: 60vh;
+  background: #171722;
+  border-radius: 10px;
+  border: 1px solid #d4a95f;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.75);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  color: #f4f4fb;
+}
+
+#game-message-text {
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+#game-message-close {
+  align-self: flex-end;
+  padding: 4px 12px;
+  font-size: 0.85rem;
+  border-radius: 999px;
+  border: 1px solid #d4a95f;
+  background: linear-gradient(135deg, #2a2430, #423040);
+  color: #f8f4dd;
+  cursor: pointer;
+}
+
 /* En pantallas muy estrechas, apilamos imagen y texto */
 @media (max-width: 380px) {
   #event-content {
@@ -734,7 +780,7 @@ body {
   font-size: 0.8rem;
   background: rgba(10, 10, 20, 0.9);
   /* texto azul */
-  color: #76b3ff;
+  color: #ffffff;
   border-radius: 4px;
   /* borde dorado */
   border: 1px solid #d4a95f;
@@ -755,7 +801,7 @@ body {
   font-size: 11px;
   background: rgba(10, 12, 24, 0.95);
   /* texto azul */
-  color: #76b3ff;
+  color: #ffffff;
   border-radius: 4px;
   /* borde dorado */
   border: 1px solid #d4a95f;

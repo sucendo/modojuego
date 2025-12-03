@@ -304,6 +304,50 @@ export function addLogEntry(text) {
   }
 }
 
+
+// Ventana emergente de mensajes simples (errores de construcción, avisos, etc.)
+let gameMessageModalEl = null;
+let gameMessageTextEl = null;
+let gameMessageCloseBtn = null;
+
+function ensureGameMessageElements() {
+  if (gameMessageModalEl) return;
+
+  gameMessageModalEl = document.getElementById("game-message-modal");
+  gameMessageTextEl = document.getElementById("game-message-text");
+  gameMessageCloseBtn = document.getElementById("game-message-close");
+
+  if (!gameMessageModalEl || !gameMessageTextEl || !gameMessageCloseBtn) {
+    // Si falta algo del DOM, usamos alert() como reserva.
+    return;
+  }
+
+  gameMessageCloseBtn.addEventListener("click", hideGameMessage);
+
+  // Cerrar al hacer click fuera de la ventana
+  gameMessageModalEl.addEventListener("click", (ev) => {
+    if (ev.target === gameMessageModalEl) {
+      hideGameMessage();
+    }
+  });
+}
+
+function showGameMessage(text) {
+  ensureGameMessageElements();
+  if (!gameMessageModalEl || !gameMessageTextEl) {
+    // Respaldo por si falta el DOM
+    alert(text);
+    return;
+  }
+  gameMessageTextEl.textContent = text;
+  gameMessageModalEl.classList.remove("hidden");
+}
+
+function hideGameMessage() {
+  if (!gameMessageModalEl) return;
+  gameMessageModalEl.classList.add("hidden");
+}
+
 // ===================
 // Salvar y Cargar Partida
 // ===================
@@ -318,7 +362,7 @@ function saveGame() {
       eventCooldownDays
     );
     saveGameToLocalStorage(payload);
-    console.log("Partida guardada");
+    showGameMessage("Partida guardada.");
   } catch (err) {
     console.error("Error al guardar la partida:", err);
   }
@@ -365,6 +409,7 @@ function exportGameToFile() {
 function applyLoadedPayload(payload) {
   if (!payload || !payload.state) {
     console.warn("Guardado inválido.");
+    showGameMessage("Guardado inválido.");
     return;
   }
 
@@ -407,12 +452,8 @@ function applyLoadedPayload(payload) {
     nameInput.value = state.playerName || "";
   }
 
-  console.log(
-    "Partida cargada (día",
-    state.day,
-    "población",
-    state.resources && state.resources.population,
-    ")"
+  showGameMessage(
+    `Partida cargada el día ${state.day}.`
   );
 }
 
@@ -421,6 +462,7 @@ function loadGame() {
     const payload = loadGamePayloadFromLocalStorage();
     if (!payload) {
       console.warn("No hay partida guardada.");
+      showGameMessage("No hay partida guardada.");
       return;
     }
     applyLoadedPayload(payload);
@@ -468,7 +510,10 @@ function handleCanvasClick(ev) {
   // Delegamos toda la lógica de construcción/demolición en build.js
   tryPlaceOrDemolishBuilding(state, tileX, tileY, {
     addLogEntry,
-    chooseTerrainVariant
+    chooseTerrainVariant,
+    addLogEntry,
+    chooseTerrainVariant,
+    showMessage: showGameMessage
   });
 }
 

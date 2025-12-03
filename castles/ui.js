@@ -382,21 +382,21 @@ function setupBuildingTooltips() {
 
     const nameLabel = def.name || id;
 
-    let title = nameLabel;
+    let text = nameLabel;
     if (parts.length) {
-      title += ` · Coste: ${parts.join(", ")}`;
+      text += ` · Coste: ${parts.join(", ")}`;
     } else {
-      title += " · Coste: sin recursos directos.";
+      text += " · Coste: sin recursos directos.";
     }
 
     if (def.buildTimeDays) {
-      title += ` · ${def.buildTimeDays} día${
+      text += ` · ${def.buildTimeDays} día${
         def.buildTimeDays > 1 ? "s" : ""
       } de obra.`;
     }
 
-    btn.title = title;
-    btn.dataset.tooltip = title;
+    btn.removeAttribute("title");
+    btn.dataset.tooltip = text;
   });
 }
 
@@ -501,7 +501,14 @@ function showTooltipAt(text, x, y) {
   if (!tooltipEl) return;
   tooltipEl.textContent = text;
   tooltipEl.style.display = "block";
+  tooltipEl.style.opacity = "1";   // <- ahora sí se ve
   positionTooltip(x, y);
+}
+
+function hideTooltip() {
+  if (!tooltipEl) return;
+  tooltipEl.style.opacity = "0";
+  tooltipEl.style.display = "none";
 }
 
 function positionTooltip(x, y) {
@@ -509,9 +516,4 @@ function positionTooltip(x, y) {
   const offset = 16;
   tooltipEl.style.left = `${x + offset}px`;
   tooltipEl.style.top = `${y + offset}px`;
-}
-
-function hideTooltip() {
-  if (!tooltipEl) return;
-  tooltipEl.style.display = "none";
 }
