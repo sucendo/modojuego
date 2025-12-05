@@ -340,6 +340,24 @@ export const WAGE_BASE = {
   clergy: 0.9
 };
 
+// Etiquetas de niveles de sueldo (para tooltips y crónica)
+export const WAGE_TIER_LABELS = {
+  0: "bajo",
+  1: "normal",
+  2: "alto"
+};
+
+// Etiquetas de gremios (para tooltips y crónica)
+export const WAGE_ROLE_LABELS = {
+  builders: "Constructores",
+  farmers: "Granjeros",
+  miners: "Canteros",
+  lumberjacks: "Leñadores",
+  soldiers: "Soldados",
+  servants: "Administración / Servicio",
+  clergy: "Clero"
+};
+
 // Impuestos / comida / eventos
 export const BASE_TAX_PER_PERSON = 0.4;
 export const FOOD_PER_PERSON_PER_DAY = 0.5;
@@ -371,6 +389,22 @@ export const RENDER_CONFIG = {
 
 // UI de impuestos (solo para tooltips)
 export const TAX_MULTIPLIER_UI = [0.6, 1.0, 1.4];
+
+// Etiquetas de los niveles de impuestos (para tooltips)
+export const TAX_LEVEL_LABELS = {
+  0: "Impuestos bajos",
+  1: "Impuestos normales",
+  2: "Impuestos altos"
+};
+
+// Etiquetas de las leyes (para UI y crónica)
+export const LAW_LABELS = {
+  corveeLabor: "Corveas obligatorias",
+  forestProtection: "Protección de bosques comunales",
+  millTax: "Tasa obligatoria del molino",
+  censusLaw: "Censo y registros oficiales",
+  grainPriceControl: "Control de precios del grano"
+};
 
 // Sprites de overlay de terreno (árboles, rocas, detalles sobre la loseta base).
 // IMPORTANTE:

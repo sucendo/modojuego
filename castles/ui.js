@@ -8,12 +8,21 @@ import {
   WAGE_BASE,
   WAGE_MULTIPLIER,
   BASE_TAX_PER_PERSON,
-  TAX_MULTIPLIER_UI
+  TAX_MULTIPLIER_UI,
+  WAGE_ROLE_LABELS,
+  WAGE_TIER_LABELS,
+  TAX_LEVEL_LABELS,
+  LAW_LABELS
 } from "./config.js";
 
 // Tooltip global reutilizable
 let tooltipEl = null;
 let currentTooltipTarget = null;
+
+// Ventana emergente de mensajes simples (errores de construcción, avisos, etc.)
+let gameMessageModalEl = null;
+let gameMessageTextEl = null;
+let gameMessageCloseBtn = null;
 
 // ------------------------------------------------------------
 //  API principal
@@ -278,18 +287,8 @@ export function setupUIBindings(getState, deps = {}) {
       state.wages[role] = wageTier;
 
       if (typeof addLogEntry === "function") {
-        const roleLabels = {
-          builders: "Constructores",
-          farmers: "Granjeros",
-          miners: "Canteros",
-          lumberjacks: "Leñadores",
-          soldiers: "Soldados",
-          servants: "Administración / Servicio",
-          clergy: "Clero"
-        };
-        const tierLabels = { 0: "bajo", 1: "normal", 2: "alto" };
-        const rName = roleLabels[role] || role;
-        const tName = tierLabels[wageTier] ?? String(wageTier);
+        const rName = WAGE_ROLE_LABELS[role] || role;
+        const tName = WAGE_TIER_LABELS[wageTier] ?? String(wageTier);
         addLogEntry(`Sueldo de ${rName} ajustado a nivel ${tName}.`);
       }
     });
@@ -318,14 +317,7 @@ export function setupUIBindings(getState, deps = {}) {
         });
 
       if (typeof addLogEntry === "function") {
-        const lawLabels = {
-          corveeLabor: "Corveas obligatorias",
-          forestProtection: "Protección de bosques comunales",
-          millTax: "Tasa obligatoria del molino",
-          censusLaw: "Censo y registros oficiales",
-          grainPriceControl: "Control de precios del grano"
-        };
-        const name = lawLabels[lawKey] || lawKey;
+        const name = LAW_LABELS[lawKey] || lawKey;
         const status = value ? "activada" : "desactivada";
         addLogEntry(`Ley "${name}" ${status}.`);
       }
@@ -401,16 +393,6 @@ function setupBuildingTooltips() {
 }
 
 function setupWageTooltips() {
-  const roleLabels = {
-    builders: "Constructores",
-    farmers: "Granjeros",
-    miners: "Canteros",
-    lumberjacks: "Leñadores",
-    soldiers: "Soldados",
-    servants: "Administración / Servicio",
-    clergy: "Clero"
-  };
-
   document.querySelectorAll(".wage-btn").forEach((btn) => {
     const role = btn.dataset.role;
     const wageStr = btn.dataset.wage || "1";
@@ -423,29 +405,22 @@ function setupWageTooltips() {
     const mult = WAGE_MULTIPLIER[tier] ?? 1;
     const goldPerDay = base * mult;
 
-    const roleName = roleLabels[role] || role;
-    const tierLabels = { 0: "bajo", 1: "normal", 2: "alto" };
-    const tierName = tierLabels[tier] ?? tier;
+    const roleLabel = WAGE_ROLE_LABELS[role] || role;
+    const tierLabel = WAGE_TIER_LABELS[tier] ?? String(tier);
 
-    btn.dataset.tooltip = `${roleName} · sueldo ${tierName}: ${goldPerDay.toFixed(
+    btn.dataset.tooltip = `${roleLabel} · sueldo ${tierLabel}: ${goldPerDay.toFixed(
       2
     )} oro/día por trabajador.`;
   });
 }
 
 function setupTaxTooltips() {
-  const levelLabels = {
-    0: "Impuestos bajos",
-    1: "Impuestos normales",
-    2: "Impuestos altos"
-  };
-
   document.querySelectorAll(".tax-btn").forEach((btn) => {
     const taxStr = btn.dataset.tax || "1";
     const level = Number(taxStr);
     if (Number.isNaN(level)) return;
 
-    const label = levelLabels[level] || "Impuestos";
+    const label = TAX_LEVEL_LABELS[level] || "Impuestos";
     const mult = TAX_MULTIPLIER_UI[level] ?? 1.0;
     const perHabitant = BASE_TAX_PER_PERSON * mult;
 
@@ -511,9 +486,260 @@ function hideTooltip() {
   tooltipEl.style.display = "none";
 }
 
+// ------------------------------------------------------------
+//  Modal de eventos
+// ------------------------------------------------------------
+export function showEventModal(evt, onChoice) {
+  const modal = document.getElementById("event-modal");
+  const titleEl = document.getElementById("event-title");
+  const textEl = document.getElementById("event-text");
+  const choicesEl = document.getElementById("event-choices");
+  const imgEl = document.getElementById("event-image");
+
+  if (!modal || !titleEl || !textEl || !choicesEl) return;
+
+  modal.classList.remove("hidden");
+  titleEl.textContent = evt.title;
+  textEl.textContent = evt.text;
+  choicesEl.innerHTML = "";
+
+  // Imagen del evento: debajo del título, a la izquierda del texto
+  if (imgEl) {
+    const basePath = "img/events";
+    const defaultFile = "event_lord_decision.webp";
+
+    // Nombre de archivo “principal”
+    const fileName =
+      typeof evt.image === "string" && evt.image.length > 0
+        ? evt.image
+        : `${evt.id}.webp`;
+
+    // Si el evento no define image, usamos <id>.webp;
+    // si define image: "otro.webp", usamos ese nombre.
+    // En cualquier caso, si falla la carga, se usa la imagen por defecto.
+    let src = `${basePath}/${fileName}`;
+
+    imgEl.style.display = "block";
+    imgEl.alt = evt.title || "Evento";
+
+    imgEl.onerror = () => {
+      // Si falla la imagen concreta, usamos la de por defecto
+      imgEl.onerror = null; // evitar bucles si la de fallo también fallara
+      imgEl.src = `${basePath}/${defaultFile}`;
+    };
+
+    imgEl.src = src;
+  }
+
+  (evt.choices || []).forEach((choice) => {
+    const btn = document.createElement("button");
+    btn.className = "event-choice-btn";
+    btn.textContent = choice.text;
+    btn.addEventListener("click", () => {
+      if (typeof onChoice === "function") {
+        onChoice(choice);
+      }
+      closeEventModal();
+    });
+    choicesEl.appendChild(btn);
+  });
+}
+
+export function closeEventModal() {
+  const modal = document.getElementById("event-modal");
+  if (modal) {
+    modal.classList.add("hidden");
+  }
+}
+
 function positionTooltip(x, y) {
   if (!tooltipEl) return;
   const offset = 16;
   tooltipEl.style.left = `${x + offset}px`;
   tooltipEl.style.top = `${y + offset}px`;
+}
+
+function computeDefenseScoreHUD(state) {
+  const tiles = state.tiles || [];
+  let score = 0;
+
+  // Sumar defensa de todos los edificios defensivos usando BUILDING_TYPES
+  for (let y = 0; y < tiles.length; y++) {
+    const row = tiles[y];
+    for (let x = 0; x < row.length; x++) {
+      const b = row[x].building;
+      if (!b) continue;
+
+      const def = BUILDING_TYPES[b];
+      if (!def) continue;
+
+      if (typeof def.defenseScore === "number") {
+        score += def.defenseScore;
+      }
+    }
+  }
+
+  // Soldados: fuerza móvil
+  const soldiers = state.labor?.soldiers || 0;
+  score += soldiers * 2;
+
+  // Patrullas nocturnas: pequeño bonus fijo
+  if (state.laws?.nightWatchLaw) {
+    score += 4;
+  }
+
+  return score;
+}
+
+export function updateHUD(state) {
+  const dayEl = document.getElementById("day-display");
+  const goldEl = document.getElementById("gold-display");
+  const stoneEl = document.getElementById("stone-display");
+  const woodEl = document.getElementById("wood-display");
+  const foodEl = document.getElementById("food-display");
+  const popEl = document.getElementById("pop-display");
+  const popSideEl = document.getElementById("pop-display-side");
+  const logListEl = document.getElementById("log-list");
+  const defEl = document.getElementById("defense-display");
+  const titleEl = document.getElementById("title-display");
+  const prestigeEl = document.getElementById("prestige-display");
+
+  const relChurchEl = document.getElementById("rel-church");
+  const relCrownEl = document.getElementById("rel-crown");
+  const relPeopleEl = document.getElementById("rel-people");
+  const relGuildsEl = document.getElementById("rel-guilds");
+
+  const laborBuildersEl = document.getElementById("labor-builders");
+  const laborFarmersEl = document.getElementById("labor-farmers");
+  const laborMinersEl = document.getElementById("labor-miners");
+  const laborLumberEl = document.getElementById("labor-lumberjacks");
+  const laborUnassignedEl = document.getElementById("labor-unassigned");
+  const laborSoldiersEl = document.getElementById("labor-soldiers");
+  const laborServantsEl = document.getElementById("labor-servants");
+  const laborClergyEl = document.getElementById("labor-clergy");
+
+  if (!state || !state.resources) return;
+
+  if (dayEl) dayEl.textContent = String(state.day);
+  if (goldEl) {
+    const goldVal = Number(state.resources.gold || 0);
+    goldEl.textContent = goldVal.toFixed(2);
+  }
+  if (stoneEl)
+    stoneEl.textContent = Math.floor(state.resources.stone).toString();
+  if (woodEl)
+    woodEl.textContent = Math.floor(state.resources.wood).toString();
+  if (foodEl)
+    foodEl.textContent = Math.floor(state.resources.food).toString();
+  const popText = Math.floor(state.resources.population).toString();
+  if (popEl) popEl.textContent = popText;
+  if (popSideEl) popSideEl.textContent = popText;
+
+  if (titleEl) {
+    // El título “oficial” viene de state.title,
+    // que se rellena al cargar partidas y al ganar prestigio.
+    const title = state.title || "Señor de la aldea";
+    const name = state.playerName || "Sin nombre";
+    titleEl.textContent = `${title} ${name}`;
+  }
+
+  if (prestigeEl)
+    prestigeEl.textContent = Math.round(state.prestige || 0).toString();
+
+  // Defensa: indicador simple basado en murallas, torres, puertas y soldados
+  if (defEl) {
+    const defScore = computeDefenseScoreHUD(state);
+    defEl.textContent = String(defScore);
+  }
+
+  if (relChurchEl)
+    relChurchEl.textContent = Math.round(state.relations.church).toString();
+  if (relCrownEl)
+    relCrownEl.textContent = Math.round(state.relations.crown).toString();
+  if (relPeopleEl)
+    relPeopleEl.textContent = Math.round(state.relations.people).toString();
+  if (relGuildsEl)
+    relGuildsEl.textContent = Math.round(state.relations.guilds).toString();
+
+  const L = state.labor || {};
+  if (laborBuildersEl)
+    laborBuildersEl.textContent = String(Math.round(L.builders || 0));
+  if (laborFarmersEl)
+    laborFarmersEl.textContent = String(Math.round(L.farmers || 0));
+  if (laborMinersEl)
+    laborMinersEl.textContent = String(Math.round(L.miners || 0));
+  if (laborLumberEl)
+    laborLumberEl.textContent = String(Math.round(L.lumberjacks || 0));
+  if (laborSoldiersEl)
+    laborSoldiersEl.textContent = String(Math.round(L.soldiers || 0));
+  if (laborServantsEl)
+    laborServantsEl.textContent = String(Math.round(L.servants || 0));
+  if (laborClergyEl)
+    laborClergyEl.textContent = String(Math.round(L.clergy || 0));
+  if (laborUnassignedEl)
+    laborUnassignedEl.textContent = String(Math.round(L.unassigned || 0));
+
+  // Crónica: mostrar las últimas entradas
+  if (logListEl && state.logs) {
+    logListEl.innerHTML = "";
+    const maxLines = 8;
+    for (let i = 0; i < state.logs.length && i < maxLines; i++) {
+      const entry = state.logs[i];
+      const li = document.createElement("li");
+      li.textContent = `Día ${entry.day}: ${entry.text}`;
+      logListEl.appendChild(li);
+    }
+  }
+
+  // Sincronizar botones de impuestos con el estado (por si los cambia un evento)
+  const currentTax = typeof state.taxRate === "number" ? state.taxRate : 1;
+  document.querySelectorAll(".tax-btn").forEach((btn) => {
+    const taxStr = btn.dataset.tax || "1";
+    const level = Number(taxStr);
+    if (Number.isNaN(level)) return;
+    if (level === currentTax) btn.classList.add("active");
+    else btn.classList.remove("active");
+  });
+}
+
+// ------------------------------------------------------------
+//  Ventana emergente de mensajes del juego
+// ------------------------------------------------------------
+
+function ensureGameMessageElements() {
+  if (gameMessageModalEl) return;
+
+  gameMessageModalEl = document.getElementById("game-message-modal");
+  gameMessageTextEl = document.getElementById("game-message-text");
+  gameMessageCloseBtn = document.getElementById("game-message-close");
+
+  if (!gameMessageModalEl || !gameMessageTextEl || !gameMessageCloseBtn) {
+    // Si falta algo del DOM, usamos alert() como reserva.
+    return;
+  }
+
+  gameMessageCloseBtn.addEventListener("click", hideGameMessage);
+
+  // Cerrar al hacer click fuera de la ventana
+  gameMessageModalEl.addEventListener("click", (ev) => {
+    if (ev.target === gameMessageModalEl) {
+      hideGameMessage();
+    }
+  });
+}
+
+export function showGameMessage(text) {
+  ensureGameMessageElements();
+  if (!gameMessageModalEl || !gameMessageTextEl) {
+    // Respaldo por si falta el DOM
+    alert(text);
+    return;
+  }
+  gameMessageTextEl.textContent = text;
+  gameMessageModalEl.classList.remove("hidden");
+}
+
+export function hideGameMessage() {
+  if (!gameMessageModalEl) return;
+  gameMessageModalEl.classList.add("hidden");
 }

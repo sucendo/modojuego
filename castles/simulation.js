@@ -5,17 +5,35 @@
 
 import { GAME_CONFIG, BASE_TAX_PER_PERSON, FOOD_PER_PERSON_PER_DAY } from "./config.js";
 
-import {
-  rebalanceLabor,
-  adjustRelation,
-  addLogEntry,
-  computeMinSoldiers,
-  applyWages,
-  applyBuildingProduction,
-  advanceConstruction,
-  tryTriggerRandomEvent,
-  formatDelta
-} from "./main.js";
+// Helpers inyectados desde main.js para evitar dependencia circular
+let rebalanceLabor = () => {};
+let adjustRelation = () => {};
+let addLogEntry = () => {};
+let computeMinSoldiers = () => 0;
+let applyWages = () => {};
+let applyBuildingProduction = () => {};
+let advanceConstruction = () => {};
+let tryTriggerRandomEvent = () => {};
+let formatDelta = (value) =>
+  value === 0 ? "±0" : value > 0 ? `+${value}` : `${value}`;
+
+/**
+ * Configura las funciones auxiliares que la simulación necesita.
+ * Debe llamarse una vez al iniciar el juego, antes del primer updateSimulation.
+ */
+export function configureSimulationHelpers(deps = {}) {
+  if (deps.rebalanceLabor) rebalanceLabor = deps.rebalanceLabor;
+  if (deps.adjustRelation) adjustRelation = deps.adjustRelation;
+  if (deps.addLogEntry) addLogEntry = deps.addLogEntry;
+  if (deps.computeMinSoldiers) computeMinSoldiers = deps.computeMinSoldiers;
+  if (deps.applyWages) applyWages = deps.applyWages;
+  if (deps.applyBuildingProduction)
+    applyBuildingProduction = deps.applyBuildingProduction;
+  if (deps.advanceConstruction) advanceConstruction = deps.advanceConstruction;
+  if (deps.tryTriggerRandomEvent)
+    tryTriggerRandomEvent = deps.tryTriggerRandomEvent;
+  if (deps.formatDelta) formatDelta = deps.formatDelta;
+}
 
 /**
  * Avanza la simulación en función del tiempo real transcurrido.
