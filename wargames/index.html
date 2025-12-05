@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>W.O.P.R – Simulación de Guerra Nuclear</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="css/wargames.css">
+</head>
+<body>
+    <!-- Diálogo inicial: como en la peli, eliges si quieres jugar o no -->
+    <dialog id="inicioDialog">
+        <form method="dialog" class="inicio-form">
+            <h2>CONEXIÓN AL W.O.P.R</h2>
+
+            <label for="nombre">Nombre de usuario (OPERADOR):</label>
+            <input type="text" id="nombre" autocomplete="off" required>
+
+            <label for="codigo">Código de lanzamiento (mínimo 16 caracteres):</label>
+            <input type="text" id="codigo" required minlength="16" maxlength="16" autocomplete="off">
+
+            <label for="jugar">¿Quieres una conexión directa al W.O.P.R.?</label>
+            <select id="jugar" required>
+                <option value="si">Sí</option>
+                <option value="no">No</option>
+            </select>
+
+            <button value="default" type="submit">Conectar</button>
+        </form>
+    </dialog>
+
+    <div class="crt-frame">
+        <div class="game">
+            <h1>W.O.P.R // GLOBAL THERMONUCLEAR WAR</h1>
+
+            <div id="statusBar">
+                <span>OPERADOR: <span id="nombreUsuario">---</span></span>
+                <span>ESTADO: <span id="estadoSimulacion">EN ESPERA</span></span>
+				<span>RIESGO: <span id="nivelRiesgo">BAJO</span></span>
+                <span>DEFCON: <span id="defconNivel">5</span></span>
+                <span>TIEMPO: <span id="statusTiempo">--</span></span>
+            </div>
+
+            <div class="panels">
+                <!-- Panel de consola tipo película -->
+                <section class="panel panel-log">
+                    <h2>TRÁFICO DE CONSOLA</h2>
+                    <div id="log"></div>
+                </section>
+
+                <!-- Panel principal de juego -->
+                <section class="panel panel-main">
+                    <h2>SECUENCIA FINAL</h2>
+
+                    <button id="iniciarJuegoButton" class="primary">
+                        INICIAR SIMULACIÓN
+                    </button>
+
+                    <div id="temporizador">TIEMPO RESTANTE: 60s</div>
+                    <div id="puntuacion">Victorias: 0 | Derrotas: 0 | Empates: 0</div>
+					<div id="ronda">Ronda: 0</div>
+
+                    <div class="rps-buttons">
+                        <button id="piedra" class="choice">PIEDRA</button>
+                        <button id="papel" class="choice">PAPEL</button>
+                        <button id="tijeras" class="choice">TIJERAS</button>
+                    </div>
+
+                    <div id="resultado"></div>
+
+                    <div class="codigo-wrapper">
+                        <p>CÓDIGO DE LANZAMIENTO:</p>
+                        <div id="codigoUsuario"></div>
+                    </div>
+					
+					<!-- MINI MAPA ASCII -->
+                    <div id="miniMapContainer">
+                        <h3>MAPA DE CONFLICTO GLOBAL</h3>
+                        <pre id="miniMap"></pre>
+                        <p class="miniMap-legend">
+                            OESTE = ALIADOS (AZUL)   |   ESTE = ENEMIGO (ROJO)
+                        </p>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/wargames.js"></script>
+</body>
+</html>
