@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>PcFútbol Manager (prototipo)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>PcFútbol Manager (prototipo)</h1>
+  </header>
+
+  <main id="app">
+    <!-- Pantalla inicial -->
+    <section id="screen-start" class="screen">
+      <div class="card">
+        <h2>Bienvenido</h2>
+        <p>Elige cómo empezar:</p>
+
+        <!-- Selector de liga + club inicial -->
+        <div class="start-picker">
+          <!-- Selector de liga inicial -->
+          <div class="start-league-picker">
+            <label for="start-league-select">
+              Liga inicial:
+            </label>
+            <select id="start-league-select">
+              <!-- Se rellena desde JS con las ligas disponibles -->
+              <option value="">
+                (Cargando ligas...)
+              </option>
+            </select>
+            <p class="start-picker-hint">
+              Elige la liga donde quieres empezar tu carrera.
+            </p>
+          </div>
+
+          <!-- Selector de club inicial -->
+          <div class="start-club-picker">
+            <label for="start-club-select">
+              Club que quieres gestionar:
+            </label>
+            <select id="start-club-select">
+              <!-- Se rellena desde JS según la liga seleccionada -->
+              <option value="">
+                (Cargando clubs...)
+              </option>
+            </select>
+            <p class="start-club-hint">
+              Si no eliges nada, empezarás con el primer club de la liga.
+            </p>
+          </div>
+        </div>
+
+        <div class="start-actions">
+          <button id="btn-new-game" class="btn btn-primary">
+            Nueva partida rápida
+          </button>
+
+          <label class="btn btn-secondary file-button">
+            Cargar partida desde archivo
+            <input
+              type="file"
+              id="file-input-start"
+              accept=".json,application/json"
+            />
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pantalla principal (dashboard) -->
+    <section id="screen-dashboard" class="screen hidden">
+		<nav class="top-bar">
+			<div class="top-bar-left">
+				<span id="club-name" class="club-name">Club</span>
+				<span class="divider">•</span>
+				<span id="league-name" class="league-name">Liga</span>
+				<span class="divider">•</span>
+				<span id="season-label">Temporada 1</span>
+				<span class="divider">•</span>
+				<span id="matchday-label">Jornada 1</span>
+			</div>
+			<div class="top-bar-right">
+				<button id="btn-nav-dashboard" class="btn btn-link active">
+				Dashboard
+				</button>
+				<button id="btn-nav-squad" class="btn btn-link">
+				Plantilla
+				</button>
+				<button id="btn-nav-tactics" class="btn btn-link">
+				Táctica
+				</button>
+				<button id="btn-nav-competition" class="btn btn-link">
+				Competición
+				</button>
+				<button id="btn-nav-medical" class="btn btn-link">
+				Médicos
+				</button>
+				<button id="btn-nav-finances" class="btn btn-link" disabled>
+				Economía
+				</button>
+			
+				<span class="divider">|</span>
+			
+				<button id="btn-save" class="btn btn-secondary">
+				Guardar
+				</button>
+				<label class="btn btn-secondary file-button">
+				Cargar
+				<input
+					type="file"
+					id="file-input-ingame"
+					accept=".json,application/json"
+				/>
+				</label>
+			</div>
+		</nav>
+
+
+
+      <!-- SUBVISTA: DASHBOARD -->
+      <section id="view-dashboard" class="dashboard-layout">
+        <div class="dashboard-main">
+          <article class="card">
+            <h2>Resumen del club</h2>
+            <div class="grid grid-2">
+              <div>
+                <h3>Identidad</h3>
+                <p><strong>Club:</strong> <span id="club-name-main"></span></p>
+                <p><strong>Estadio:</strong> <span id="stadium-name"></span></p>
+                <p>
+                  <strong>Capacidad:</strong>
+                  <span id="stadium-capacity"></span>
+                </p>
+              </div>
+              <div>
+                <h3>Economía</h3>
+                <p><strong>Caja:</strong> <span id="cash-label"></span></p>
+                <p>
+                  <strong>Presupuesto salarial:</strong>
+                  <span id="wage-label"></span>
+                </p>
+              </div>
+            </div>
+          </article>
+
+          <article class="card">
+            <h2>Próximo partido</h2>
+            <p id="next-match-label">
+              Próximo partido: aún no hay calendario configurado.
+            </p>
+          </article>
+        </div>
+
+        <aside class="dashboard-side">
+          <article class="card">
+            <h3>Notas rápidas</h3>
+            <ul id="quick-notes">
+              <li>Versión prototipo del juego.</li>
+              <li>
+                Aquí mostraremos avisos de directiva, lesiones, fichajes, etc.
+              </li>
+            </ul>
+          </article>
+        </aside>
+      </section>
+
+       <!-- SUBVISTA: PLANTILLA -->
+      <section id="view-squad" class="hidden">
+        <article class="card">
+          <header class="squad-header">
+            <div>
+              <h2>Plantilla</h2>
+              <p class="squad-subtitle">
+                Lista de jugadores del primer equipo. Más adelante añadiremos
+                banquillo, filial, cantera, etc.
+              </p>
+            </div>
+            <div class="squad-header-right">
+              <span id="squad-count-label" class="pill"></span>
+            </div>
+          </header>
+
+          <!-- Barra de filtros / ordenación -->
+          <div class="squad-toolbar">
+            <div class="squad-filter-group">
+              <label for="squad-filter-pos">Posición:</label>
+              <select id="squad-filter-pos">
+                <option value="ALL">Todas</option>
+                <option value="POR">Portero</option>
+                <option value="DEF">Defensa</option>
+                <option value="MED">Mediocentro</option>
+                <option value="DEL">Delantero</option>
+              </select>
+            </div>
+
+            <div class="squad-filter-group">
+              <label for="squad-sort">Ordenar por:</label>
+              <select id="squad-sort">
+                <option value="POSITION">Posición</option>
+                <option value="NAME">Nombre</option>
+                <option value="AGE">Edad</option>
+                <option value="OVERALL">Media</option>
+                <option value="WAGE">Sueldo</option>
+                <option value="MORALE">Moral</option>
+                <option value="FITNESS">Forma</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="squad-table-wrapper">
+            <table class="table table-squad">
+              <thead>
+                <tr>
+                  <th>Pos</th>
+                  <th>Jugador</th>
+                  <th>Edad</th>
+                  <th>Media</th>
+                  <th>Sueldo</th>
+                  <th>Contrato</th>
+                  <th>Moral</th>
+                  <th>Forma</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="squad-table-body">
+                <!-- Se rellena por JS -->
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+	  
+	        <!-- SUBVISTA: TÁCTICA -->
+      <section id="view-tactics" class="hidden">
+        <article class="card">
+          <header class="tactics-header">
+            <div>
+              <h2>Táctica y alineación</h2>
+              <p class="tactics-subtitle">
+                Define el sistema de juego y los titulares que saltan al campo.
+              </p>
+            </div>
+            <div class="tactics-header-right">
+              <span id="tactics-xi-count" class="pill"></span>
+            </div>
+          </header>
+
+          <div class="tactics-toolbar">
+            <div class="tactics-group">
+              <label for="tactics-formation">Sistema:</label>
+              <select id="tactics-formation">
+                <option value="4-4-2">4-4-2</option>
+                <option value="4-3-3">4-3-3</option>
+                <option value="4-2-3-1">4-2-3-1</option>
+                <option value="3-5-2">3-5-2</option>
+                <option value="5-3-2">5-3-2</option>
+              </select>
+            </div>
+
+            <div class="tactics-group">
+              <label for="tactics-mentality">Mentalidad:</label>
+              <select id="tactics-mentality">
+                <option value="DEFENSIVE">Defensiva</option>
+                <option value="BALANCED" selected>Equilibrada</option>
+                <option value="OFFENSIVE">Ofensiva</option>
+              </select>
+            </div>
+
+            <div class="tactics-group">
+              <label for="tactics-tempo">Ritmo:</label>
+              <select id="tactics-tempo">
+                <option value="SLOW">Lento</option>
+                <option value="NORMAL" selected>Normal</option>
+                <option value="FAST">Rápido</option>
+              </select>
+            </div>
+
+            <div class="tactics-group">
+              <label for="tactics-pressure">Presión:</label>
+              <select id="tactics-pressure">
+                <option value="LOW">Baja</option>
+                <option value="NORMAL" selected>Media</option>
+                <option value="HIGH">Alta</option>
+              </select>
+            </div>
+
+            <button
+              id="btn-tactics-auto"
+              class="btn btn-secondary"
+              type="button"
+            >
+              Alineación automática
+            </button>
+          </div>
+
+          <div class="tactics-table-wrapper">
+            <table class="table table-tactics">
+			  <thead>
+				<tr>
+				  <th>Pos</th>
+				  <th>Jugador</th>
+				  <th>Media</th>
+				  <th>Fit</th>
+				  <th>Estado</th>
+				  <th>Titular</th>
+				</tr>
+			  </thead>
+			  <tbody id="tactics-lineup-body">
+				<!-- JS -->
+			  </tbody>
+			</table>
+          </div>
+        </article>
+      </section>
+	  
+	  <!-- SUBVISTA: COMPETICIÓN -->
+      <section id="view-competition" class="hidden">
+        <article class="card">
+          <header class="competition-header">
+            <div>
+              <h2>Competición</h2>
+              <p class="competition-subtitle">
+                Calendario de liga y clasificación en tiempo real.
+              </p>
+            </div>
+            <div class="competition-header-right">
+              <label class="competition-matchday-select">
+                Jornada:
+                <select id="competition-matchday-select"></select>
+              </label>
+              <button
+                id="btn-simulate-matchday"
+                class="btn btn-primary"
+                type="button"
+              >
+                Simular jornada actual
+              </button>
+            </div>
+          </header>
+          <p class="competition-meta">
+            Temporada <span id="competition-season-label">1</span> • Jornada
+            actual: <span id="competition-current-matchday-label">1</span>
+          </p>
+        </article>
+
+        <section class="competition-layout">
+          <div class="competition-main">
+            <article class="card">
+              <h3>Partidos de la jornada</h3>
+              <div class="competition-fixtures-wrapper">
+                <table class="table table-competition">
+                  <thead>
+                    <tr>
+                      <th>Hora</th>
+                      <th>Local</th>
+                      <th>Marcador</th>
+                      <th>Visitante</th>
+                    </tr>
+                  </thead>
+                  <tbody id="competition-fixtures-body">
+                    <!-- JS -->
+                  </tbody>
+                </table>
+              </div>
+            </article>
+          </div>
+
+          <aside class="competition-side">
+            <article class="card">
+              <h3>Clasificación</h3>
+              <div class="competition-table-wrapper">
+                <table class="table table-standings">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Equipo</th>
+                      <th>PJ</th>
+                      <th>G</th>
+                      <th>E</th>
+                      <th>P</th>
+                      <th>GF</th>
+                      <th>GC</th>
+                      <th>DG</th>
+                      <th>Pts</th>
+                    </tr>
+                  </thead>
+                  <tbody id="competition-table-body">
+                    <!-- JS -->
+                  </tbody>
+                </table>
+              </div>
+            </article>
+          </aside>
+        </section>
+      </section>
+	  
+		<section id="view-medical" class="view hidden">
+		  <div class="view-header">
+			<div>
+			  <h2>Área médica y recuperación</h2>
+			  <p class="view-subtitle">
+				Gestiona las lesiones, sanciones y la infraestructura médica del club.
+			  </p>
+			</div>
+		  </div>
+
+		  <div class="medical-layout">
+			<!-- Columna izquierda: infra médica -->
+			<div>
+			  <div class="card">
+				<div class="card-header">
+				  <h3>Infraestructura médica</h3>
+				</div>
+				<div class="card-body medical-levels">
+				  <!-- Centro médico -->
+				  <div class="medical-level">
+					<div class="medical-level-header">
+					  <span class="medical-level-title">Centro médico</span>
+					  <span id="medical-center-level" class="medical-level-pill">Nivel 1</span>
+					</div>
+					<p id="medical-center-desc" class="medical-level-desc"></p>
+					<div class="medical-level-footer">
+					  <span id="medical-center-next-cost"></span>
+					  <button id="btn-medical-upgrade-center" class="btn btn-xs btn-primary">
+						Mejorar
+					  </button>
+					</div>
+				  </div>
+
+				  <!-- Fisioterapeutas -->
+				  <div class="medical-level">
+					<div class="medical-level-header">
+					  <span class="medical-level-title">Fisioterapeutas</span>
+					  <span id="medical-physio-level" class="medical-level-pill">Nivel 1</span>
+					</div>
+					<p id="medical-physio-desc" class="medical-level-desc"></p>
+					<div class="medical-level-footer">
+					  <span id="medical-physio-next-cost"></span>
+					  <button id="btn-medical-upgrade-physio" class="btn btn-xs btn-primary">
+						Mejorar
+					  </button>
+					</div>
+				  </div>
+				</div>
+			  </div>
+			</div>
+
+			<!-- Columna derecha: tablas de bajas -->
+			<div>
+			  <div class="card">
+				<div class="card-header">
+				  <h3>Bajas por lesión</h3>
+				</div>
+				<div class="card-body">
+				  <div class="table-wrapper">
+					<table class="table">
+					  <thead>
+						<tr>
+						  <th>Jugador</th>
+						  <th>Pos</th>
+						  <th>Lesión</th>
+						  <th>Partidos</th>
+						</tr>
+					  </thead>
+					  <tbody id="medical-injuries-body">
+						<!-- JS -->
+					  </tbody>
+					</table>
+				  </div>
+				</div>
+			  </div>
+
+			  <div class="card" style="margin-top: 0.75rem;">
+				<div class="card-header">
+				  <h3>Sanciones y tarjetas</h3>
+				</div>
+				<div class="card-body">
+				  <div class="table-wrapper">
+					<table class="table">
+					  <thead>
+						<tr>
+						  <th>Jugador</th>
+						  <th>Pos</th>
+						  <th>Motivo</th>
+						  <th>Partidos</th>
+						  <th>Amarillas</th>
+						</tr>
+					  </thead>
+					  <tbody id="medical-sanctions-body">
+						<!-- JS -->
+					  </tbody>
+					</table>
+				  </div>
+				</div>
+			  </div>
+			</div>
+		  </div>
+		</section>
+
+
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <small>Prototipo PcFútbol Manager — solo local, sin servidor.</small>
+  </footer>
+
+  <!-- Modal: ficha detallada de jugador -->
+  <div id="player-modal" class="modal hidden" aria-hidden="true">
+    <div id="player-modal-backdrop" class="modal-backdrop"></div>
+
+    <div
+      class="modal-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="player-modal-name"
+    >
+      <header class="modal-header">
+        <div>
+          <h2 id="player-modal-name">Nombre del jugador</h2>
+          <p id="player-modal-position" class="modal-subtitle">
+            Posición • Edad
+          </p>
+        </div>
+        <button
+          id="player-modal-close"
+          class="btn btn-secondary btn-icon"
+          type="button"
+          aria-label="Cerrar ficha de jugador"
+        >
+          ✕
+        </button>
+      </header>
+
+      <div class="modal-body">
+        <div class="grid grid-2 modal-section">
+          <section>
+            <h3>Perfil</h3>
+            <p><strong>Edad:</strong> <span id="player-modal-age"></span></p>
+            <p>
+              <strong>Fecha de nacimiento:</strong>
+              <span id="player-modal-birthdate"></span>
+            </p>
+            <p>
+              <strong>Nacionalidad:</strong>
+              <span id="player-modal-nationality"></span>
+            </p>
+            <p>
+              <strong>Lugar de nacimiento:</strong>
+              <span id="player-modal-birthplace"></span>
+            </p>
+            <p>
+              <strong>Cantera:</strong>
+              <span id="player-modal-youthclub"></span>
+            </p>
+            <p>
+              <strong>Media general:</strong>
+              <span id="player-modal-overall"></span>
+            </p>
+            <p><strong>Moral:</strong> <span id="player-modal-morale"></span></p>
+            <p>
+              <strong>Forma física:</strong>
+              <span id="player-modal-fitness"></span>
+            </p>
+          </section>
+
+          <section>
+            <h3>Contrato y estado</h3>
+            <p>
+              <strong>Sueldo anual:</strong>
+              <span id="player-modal-wage"></span>
+            </p>
+            <p>
+              <strong>Duración restante:</strong>
+              <span id="player-modal-contract"></span>
+            </p>
+            <p>
+              <strong>Valor estimado:</strong>
+              <span id="player-modal-value"></span>
+            </p>
+            <p>
+              <strong>Situación en el mercado:</strong>
+              <span id="player-modal-transfer"></span>
+            </p>
+          </section>
+        </div>
+
+        <section class="modal-section">
+          <h3>Atributos</h3>
+          <div class="grid attr-grid">
+            <div class="attr-block">
+              <h4>Técnicos</h4>
+              <div class="attr-list">
+                <p>Pase: <span id="player-attr-passing"></span></p>
+                <p>Disparo: <span id="player-attr-shooting"></span></p>
+                <p>Regate: <span id="player-attr-dribbling"></span></p>
+                <p>Entrada: <span id="player-attr-tackling"></span></p>
+              </div>
+            </div>
+            <div class="attr-block">
+              <h4>Mentales</h4>
+              <div class="attr-list">
+                <p>Visión: <span id="player-attr-vision"></span></p>
+                <p>Calma: <span id="player-attr-composure"></span></p>
+                <p>Trabajo: <span id="player-attr-workrate"></span></p>
+                <p>Liderazgo: <span id="player-attr-leadership"></span></p>
+              </div>
+            </div>
+            <div class="attr-block">
+              <h4>Físicos</h4>
+              <div class="attr-list">
+                <p>Velocidad: <span id="player-attr-pace"></span></p>
+                <p>Resistencia: <span id="player-attr-stamina"></span></p>
+                <p>Fuerza: <span id="player-attr-strength"></span></p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section
+          class="modal-section modal-neg"
+          id="player-modal-neg-section"
+        >
+          <h3>Negociación de renovación</h3>
+          <p id="player-modal-neg-hint">
+            Ajusta los años de contrato y el sueldo anual para hacer una oferta
+            al jugador.
+          </p>
+          <div class="modal-neg-form">
+            <div class="form-group">
+              <label for="player-neg-years">Años de contrato</label>
+              <input
+                type="number"
+                id="player-neg-years"
+                min="1"
+                max="5"
+              />
+            </div>
+            <div class="form-group">
+              <label for="player-neg-wage">Sueldo anual ofrecido (€)</label>
+              <input
+                type="number"
+                id="player-neg-wage"
+                min="0"
+                step="1000"
+              />
+            </div>
+          </div>
+          <button class="btn btn-primary" id="player-neg-send" type="button">
+            Enviar oferta
+          </button>
+          <p id="player-modal-neg-result" class="modal-neg-result"></p>
+        </section>
+      </div>
+	  
+		<div class="card">
+		  <div class="card-header">
+			<h3>Disciplina</h3>
+		  </div>
+		  <div class="card-body">
+			<div class="player-discipline-summary">
+			  <div>
+				<span>Amarillas acumuladas:</span>
+				<strong id="player-modal-yellowcards">0</strong>
+			  </div>
+			  <div>
+				<span>Estado sanción:</span>
+				<strong id="player-modal-suspension">Disponible</strong>
+			  </div>
+			</div>
+
+			<div class="table-wrapper" style="margin-top: 0.5rem;">
+			  <table class="table table-compact">
+				<thead>
+				  <tr>
+					<th>Temp.</th>
+					<th>Jor.</th>
+					<th>Tarjeta</th>
+				  </tr>
+				</thead>
+				<tbody id="player-modal-discipline-body">
+				  <!-- JS -->
+				</tbody>
+			  </table>
+			</div>
+		  </div>
+		</div>
+
+
+      <footer class="modal-footer">
+        <button
+          class="btn btn-secondary"
+          id="player-modal-close-footer"
+          type="button"
+        >
+          Cerrar
+        </button>
+        <button
+          class="btn btn-primary"
+          id="player-modal-go-renew"
+          type="button"
+        >
+          Centrar en renovación
+        </button>
+      </footer>
+    </div>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
+

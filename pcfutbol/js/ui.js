@@ -1,0 +1,2287 @@
+// js/ui.js
+
+import {
+  GameState,
+  newGame,
+  applyLoadedState,
+  recomputeLeagueTable,
+} from './state.js';
+import { initialLeague, allLeagues } from './data.js';
+import { exportGameToFile, importGameFromFile } from './saveLoad.js';
+
+// ================================
+// Estado UI
+// ================================
+
+// Plantilla: filtros/orden
+let squadFilterPos = 'ALL';
+let squadSortKey = 'POSITION';
+
+// Ficha jugador / negociación
+let currentModalPlayer = null;
+let negYearsInput = null;
+let negWageInput = null;
+let negResultEl = null;
+let negHintEl = null;
+let negSectionEl = null;
+
+// Competición
+let competitionSelectedMatchday = 1;
+
+// ================================
+// Init
+// ================================
+
+export function initUI() {
+  const startScreen = document.getElementById('screen-start');
+  const dashboardScreen = document.getElementById('screen-dashboard');
+
+  const btnNewGame = document.getElementById('btn-new-game');
+  const fileInputStart = document.getElementById('file-input-start');
+  const fileInputIngame = document.getElementById('file-input-ingame');
+  const btnSave = document.getElementById('btn-save');
+  // Selectores de liga y club en pantalla de inicio
+  const startLeagueSelect = document.getElementById('start-league-select');
+  const startClubSelect = document.getElementById('start-club-select');
+
+  // Rellenar selector de ligas en la pantalla de inicio
+  if (startLeagueSelect) {
+    const leagues =
+      Array.isArray(allLeagues) && allLeagues.length > 0
+        ? allLeagues
+        : [initialLeague];
+
+    startLeagueSelect.innerHTML = '';
+    leagues.forEach((league) => {
+      const opt = document.createElement('option');
+      opt.value = league.id;
+      opt.textContent = league.name || league.id;
+      startLeagueSelect.appendChild(opt);
+    });
+  }
+
+  function refreshStartClubSelect() {
+    if (!startClubSelect) return;
+
+    const leagues =
+      Array.isArray(allLeagues) && allLeagues.length > 0
+        ? allLeagues
+        : [initialLeague];
+
+    let selectedLeagueId =
+      (startLeagueSelect && startLeagueSelect.value) || initialLeague.id;
+
+    const league =
+      leagues.find((l) => l.id === selectedLeagueId) || leagues[0];
+
+    startClubSelect.innerHTML = '';
+
+    if (league && Array.isArray(league.clubs)) {
+      league.clubs.forEach((club) => {
+        const opt = document.createElement('option');
+        opt.value = club.id;
+        opt.textContent = club.name || club.id;
+        startClubSelect.appendChild(opt);
+      });
+    }
+  }
+
+  if (startLeagueSelect) {
+    startLeagueSelect.addEventListener('change', () => {
+      refreshStartClubSelect();
+    });
+  }
+
+  // Inicializamos clubs según la liga por defecto
+  refreshStartClubSelect();
+
+  // Navegación
+  const btnNavDashboard = document.getElementById('btn-nav-dashboard');
+  const btnNavSquad = document.getElementById('btn-nav-squad');
+  const btnNavTactics = document.getElementById('btn-nav-tactics');
+  const btnNavCompetition = document.getElementById('btn-nav-competition');
+  const btnNavMedical = document.getElementById('btn-nav-medical');
+
+  const viewDashboard = document.getElementById('view-dashboard');
+  const viewSquad = document.getElementById('view-squad');
+  const viewTactics = document.getElementById('view-tactics');
+  const viewCompetition = document.getElementById('view-competition');
+  const viewMedical = document.getElementById('view-medical');
+
+  // Plantilla
+  const filterPosSelect = document.getElementById('squad-filter-pos');
+  const sortSelect = document.getElementById('squad-sort');
+  const squadTableBody = document.getElementById('squad-table-body');
+
+  // Modal jugador
+  const playerModal = document.getElementById('player-modal');
+  const playerModalBackdrop = document.getElementById('player-modal-backdrop');
+  const playerModalClose = document.getElementById('player-modal-close');
+  const playerModalCloseFooter = document.getElementById(
+    'player-modal-close-footer'
+  );
+  const playerModalGoRenew = document.getElementById('player-modal-go-renew');
+
+  negYearsInput = document.getElementById('player-neg-years');
+  negWageInput = document.getElementById('player-neg-wage');
+  negResultEl = document.getElementById('player-modal-neg-result');
+  negHintEl = document.getElementById('player-modal-neg-hint');
+  negSectionEl = document.getElementById('player-modal-neg-section');
+  const negSendBtn = document.getElementById('player-neg-send');
+
+  // Competición
+  const matchdaySelect = document.getElementById('competition-matchday-select');
+  const simulateBtn = document.getElementById('btn-simulate-matchday');
+
+  // Táctica
+  const tacticsFormationSelect = document.getElementById('tactics-formation');
+  const tacticsMentalitySelect = document.getElementById('tactics-mentality');
+  const tacticsTempoSelect = document.getElementById('tactics-tempo');
+  const tacticsPressureSelect = document.getElementById('tactics-pressure');
+  const tacticsTableBody = document.getElementById('tactics-lineup-body');
+  const tacticsAutoBtn = document.getElementById('btn-tactics-auto');
+
+  // Médicos
+  const btnMedicalUpgradeCenter = document.getElementById(
+    'btn-medical-upgrade-center'
+  );
+  const btnMedicalUpgradePhysio = document.getElementById(
+    'btn-medical-upgrade-physio'
+  );
+
+  // -----------------
+  // Nueva partida
+  // -----------------
+
+  btnNewGame.addEventListener('click', () => {
+    // Leemos liga y club elegidos
+    let selectedLeagueId = initialLeague.id;
+    if (startLeagueSelect && startLeagueSelect.value) {
+      selectedLeagueId = startLeagueSelect.value;
+    }
+
+    let selectedClubId = null;
+    if (startClubSelect && startClubSelect.value) {
+      selectedClubId = startClubSelect.value;
+    }
+
+    // Llamamos a newGame con los datos elegidos
+    newGame({
+      roleMode: 'TOTAL',
+      leagueId: selectedLeagueId,
+      clubId: selectedClubId,
+    });
+
+    // Resto del código igual que antes
+    showDashboard(startScreen, dashboardScreen);
+
+    const ctxNav = {
+      viewDashboard,
+      viewSquad,
+      viewTactics,
+      viewCompetition,
+      viewMedical,
+      btnNavDashboard,
+      btnNavSquad,
+      btnNavTactics,
+      btnNavCompetition,
+      btnNavMedical,
+    };
+
+    competitionSelectedMatchday = GameState.currentDate.matchday || 1;
+
+    setActiveSubview('dashboard', ctxNav);
+    updateDashboard();
+    updateSquadView();
+    updateTacticsView();
+    updateCompetitionView();
+    updateMedicalView();
+  });
+
+  // -----------------
+  // Cargar partida
+  // -----------------
+
+  const ctxForLoad = {
+    viewDashboard,
+    viewSquad,
+    viewTactics,
+    viewCompetition,
+    viewMedical,
+    btnNavDashboard,
+    btnNavSquad,
+    btnNavTactics,
+    btnNavCompetition,
+    btnNavMedical,
+  };
+
+  fileInputStart.addEventListener('change', (event) => {
+    handleFileInput(event, startScreen, dashboardScreen, ctxForLoad);
+  });
+
+  fileInputIngame.addEventListener('change', (event) => {
+    handleFileInput(event, startScreen, dashboardScreen, ctxForLoad);
+  });
+
+  // -----------------
+  // Guardar
+  // -----------------
+
+  btnSave.addEventListener('click', () => {
+    try {
+      exportGameToFile();
+    } catch (err) {
+      console.error(err);
+      alert('No se pudo guardar la partida: ' + err.message);
+    }
+  });
+
+  // -----------------
+  // Navegación
+  // -----------------
+
+  btnNavDashboard.addEventListener('click', () => {
+    setActiveSubview('dashboard', ctxForLoad);
+  });
+
+  btnNavSquad.addEventListener('click', () => {
+    setActiveSubview('squad', ctxForLoad);
+    updateSquadView();
+  });
+
+  btnNavTactics.addEventListener('click', () => {
+    setActiveSubview('tactics', ctxForLoad);
+    updateTacticsView();
+  });
+
+  btnNavCompetition.addEventListener('click', () => {
+    setActiveSubview('competition', ctxForLoad);
+    updateCompetitionView();
+  });
+
+  if (btnNavMedical) {
+    btnNavMedical.addEventListener('click', () => {
+      setActiveSubview('medical', ctxForLoad);
+      updateMedicalView();
+    });
+  }
+
+  // -----------------
+  // Plantilla
+  // -----------------
+
+  if (filterPosSelect) {
+    filterPosSelect.addEventListener('change', () => {
+      squadFilterPos = filterPosSelect.value || 'ALL';
+      updateSquadView();
+    });
+  }
+
+  if (sortSelect) {
+    sortSelect.addEventListener('change', () => {
+      squadSortKey = sortSelect.value || 'POSITION';
+      updateSquadView();
+    });
+  }
+
+  if (squadTableBody) {
+    squadTableBody.addEventListener('click', (event) => {
+      const btn = event.target.closest('button[data-action]');
+      if (!btn) return;
+
+      const action = btn.dataset.action;
+      const tr = btn.closest('tr');
+      const playerId = tr?.dataset.playerId;
+      if (!playerId) return;
+
+      const player = getPlayerById(playerId);
+      if (!player) return;
+
+      handlePlayerAction(action, player);
+    });
+  }
+
+  // -----------------
+  // Modal jugador
+  // -----------------
+
+  if (playerModalBackdrop) {
+    playerModalBackdrop.addEventListener('click', () => {
+      closePlayerModal();
+    });
+  }
+
+  if (playerModalClose) {
+    playerModalClose.addEventListener('click', () => {
+      closePlayerModal();
+    });
+  }
+
+  if (playerModalCloseFooter) {
+    playerModalCloseFooter.addEventListener('click', () => {
+      closePlayerModal();
+    });
+  }
+
+  if (playerModalGoRenew) {
+    playerModalGoRenew.addEventListener('click', () => {
+      if (!currentModalPlayer) return;
+      prepareNegotiationUI(currentModalPlayer);
+      scrollToNegotiationSection();
+    });
+  }
+
+  if (negSendBtn) {
+    negSendBtn.addEventListener('click', () => {
+      if (!currentModalPlayer) {
+        alert('No se ha podido identificar al jugador.');
+        return;
+      }
+      attemptRenewal(currentModalPlayer);
+      updateSquadView();
+      openPlayerModal(currentModalPlayer);
+      scrollToNegotiationSection();
+    });
+  }
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      if (!playerModal.classList.contains('hidden')) {
+        closePlayerModal();
+      }
+    }
+  });
+
+  // -----------------
+  // Táctica y alineación
+  // -----------------
+
+  if (tacticsAutoBtn) {
+    tacticsAutoBtn.addEventListener('click', () => {
+      const club = getUserClub();
+      if (!club) return;
+      ensureClubTactics(club);
+      club.lineup = getBestLineupForClub(club);
+      updateTacticsView();
+    });
+  }
+
+  if (tacticsTableBody) {
+    tacticsTableBody.addEventListener('change', (event) => {
+      const input = event.target.closest('input[data-player-id]');
+      if (!input) return;
+
+      const playerId = input.dataset.playerId;
+      const checked = input.checked;
+      const club = getUserClub();
+      if (!club) return;
+
+      ensureClubTactics(club);
+      let lineup = Array.isArray(club.lineup) ? club.lineup.slice() : [];
+
+      const player = club.players.find((p) => p.id === playerId);
+      if (!player || isPlayerUnavailable(player)) {
+        input.checked = false;
+        return;
+      }
+
+      if (checked) {
+        if (!lineup.includes(playerId)) {
+          if (lineup.length >= 11) {
+            alert('Solo puede haber 11 titulares.');
+            input.checked = false;
+            return;
+          }
+          lineup.push(playerId);
+        }
+      } else {
+        lineup = lineup.filter((id) => id !== playerId);
+      }
+
+      club.lineup = lineup;
+      updateTacticsXIcount(club);
+    });
+  }
+
+  function bindTacticsSelect(selectEl, key) {
+    if (!selectEl) return;
+    selectEl.addEventListener('change', () => {
+      const club = getUserClub();
+      if (!club) return;
+      ensureClubTactics(club);
+      club.tactics[key] = selectEl.value;
+    });
+  }
+
+  bindTacticsSelect(tacticsFormationSelect, 'formation');
+  bindTacticsSelect(tacticsMentalitySelect, 'mentality');
+  bindTacticsSelect(tacticsTempoSelect, 'tempo');
+  bindTacticsSelect(tacticsPressureSelect, 'pressure');
+
+  // -----------------
+  // Médicos: upgrades
+  // -----------------
+
+  if (btnMedicalUpgradeCenter) {
+    btnMedicalUpgradeCenter.addEventListener('click', () => {
+      upgradeMedical('center');
+    });
+  }
+  if (btnMedicalUpgradePhysio) {
+    btnMedicalUpgradePhysio.addEventListener('click', () => {
+      upgradeMedical('physio');
+    });
+  }
+
+  // -----------------
+  // Competición
+  // -----------------
+
+  if (matchdaySelect) {
+    matchdaySelect.addEventListener('change', () => {
+      const md = Number.parseInt(matchdaySelect.value, 10);
+      if (Number.isFinite(md) && md >= 1) {
+        competitionSelectedMatchday = md;
+        updateCompetitionView();
+      }
+    });
+  }
+
+  if (simulateBtn) {
+    simulateBtn.addEventListener('click', () => {
+      simulateCurrentMatchday();
+      updateCompetitionView();
+      updateMedicalView();
+    });
+  }
+}
+
+// ================================
+// Navegación / carga
+// ================================
+
+function showDashboard(startScreen, dashboardScreen) {
+  startScreen.classList.add('hidden');
+  dashboardScreen.classList.remove('hidden');
+}
+
+/**
+ * view: 'dashboard' | 'squad' | 'tactics' | 'competition' | 'medical'
+ */
+function setActiveSubview(view, ctx) {
+  const {
+    viewDashboard,
+    viewSquad,
+    viewTactics,
+    viewCompetition,
+    viewMedical,
+    btnNavDashboard,
+    btnNavSquad,
+    btnNavTactics,
+    btnNavCompetition,
+    btnNavMedical,
+  } = ctx;
+
+  viewDashboard?.classList.add('hidden');
+  viewSquad?.classList.add('hidden');
+  viewTactics?.classList.add('hidden');
+  viewCompetition?.classList.add('hidden');
+  viewMedical?.classList.add('hidden');
+
+  btnNavDashboard?.classList.remove('active');
+  btnNavSquad?.classList.remove('active');
+  btnNavTactics?.classList.remove('active');
+  btnNavCompetition?.classList.remove('active');
+  btnNavMedical?.classList.remove('active');
+
+  if (view === 'dashboard') {
+    viewDashboard?.classList.remove('hidden');
+    btnNavDashboard?.classList.add('active');
+  } else if (view === 'squad') {
+    viewSquad?.classList.remove('hidden');
+    btnNavSquad?.classList.add('active');
+  } else if (view === 'tactics') {
+    viewTactics?.classList.remove('hidden');
+    btnNavTactics?.classList.add('active');
+  } else if (view === 'competition') {
+    viewCompetition?.classList.remove('hidden');
+    btnNavCompetition?.classList.add('active');
+  } else if (view === 'medical') {
+    viewMedical?.classList.remove('hidden');
+    btnNavMedical?.classList.add('active');
+  }
+}
+
+function handleFileInput(event, startScreen, dashboardScreen, ctx) {
+  const input = event.target;
+  const file = input.files && input.files[0];
+  if (!file) return;
+
+  importGameFromFile(
+    file,
+    (rawState) => {
+      try {
+        applyLoadedState(rawState);
+        showDashboard(startScreen, dashboardScreen);
+        competitionSelectedMatchday = GameState.currentDate.matchday || 1;
+        setActiveSubview('dashboard', ctx);
+        updateDashboard();
+        updateSquadView();
+        updateTacticsView();
+        updateCompetitionView();
+        updateMedicalView();
+      } catch (err) {
+        console.error(err);
+        alert('El archivo no parece ser una partida válida.');
+      } finally {
+        input.value = '';
+      }
+    },
+    (error) => {
+      console.error(error);
+      alert('Error al cargar la partida: ' + error.message);
+      input.value = '';
+    }
+  );
+}
+
+// ================================
+// Dashboard
+// ================================
+
+export function updateDashboard() {
+  const club = getUserClub();
+  if (!club) return;
+
+  const clubNameTop = document.getElementById('club-name');
+  const leagueName = document.getElementById('league-name');
+  const seasonLabel = document.getElementById('season-label');
+  const matchdayLabel = document.getElementById('matchday-label');
+
+  const clubNameMain = document.getElementById('club-name-main');
+  const stadiumName = document.getElementById('stadium-name');
+  const stadiumCapacity = document.getElementById('stadium-capacity');
+  const cashLabel = document.getElementById('cash-label');
+  const wageLabel = document.getElementById('wage-label');
+
+  clubNameTop.textContent = club.name;
+  leagueName.textContent = GameState.league.name || 'Liga desconocida';
+
+  seasonLabel.textContent = `Temporada ${GameState.currentDate.season}`;
+  matchdayLabel.textContent = `Jornada ${GameState.currentDate.matchday}`;
+
+  clubNameMain.textContent = club.name;
+  stadiumName.textContent = club.stadium?.name || 'Estadio sin nombre';
+  stadiumCapacity.textContent =
+    club.stadium?.capacity?.toLocaleString('es-ES') || '-';
+
+  cashLabel.textContent = formatCurrency(club.cash ?? 0);
+  wageLabel.textContent = formatCurrency(club.wageBudget ?? 0);
+  
+  updateQuickNotes();
+}
+
+// ================================
+// Plantilla
+// ================================
+
+function updateSquadView() {
+  const club = getUserClub();
+  const tbody = document.getElementById('squad-table-body');
+  const squadCountLabel = document.getElementById('squad-count-label');
+
+  if (!tbody || !squadCountLabel) return;
+
+  tbody.innerHTML = '';
+
+  const players = Array.isArray(club?.players) ? club.players : [];
+  const filtered = players.filter((p) =>
+    matchesPositionFilter(p.position, squadFilterPos)
+  );
+  const sorted = [...filtered].sort((a, b) => comparePlayers(a, b, squadSortKey));
+
+  squadCountLabel.textContent = `${sorted.length} jugador${
+    sorted.length === 1 ? '' : 'es'
+  } en plantilla`;
+
+  if (sorted.length === 0) {
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.colSpan = 9;
+    td.textContent = 'Este club aún no tiene jugadores registrados.';
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+    return;
+  }
+
+  sorted.forEach((p) => {
+    const tr = document.createElement('tr');
+    tr.dataset.playerId = p.id;
+
+    const tdPos = document.createElement('td');
+    tdPos.textContent = p.position || '-';
+
+    const tdName = document.createElement('td');
+    tdName.textContent = p.name || 'Jugador sin nombre';
+
+    const tdAge = document.createElement('td');
+    const age = getPlayerGameAge(p);
+    tdAge.textContent = age != null ? String(age) : '-';
+
+    const tdOverall = document.createElement('td');
+    tdOverall.textContent =
+      p.overall != null ? String(p.overall) : '-';
+
+    const tdWage = document.createElement('td');
+    tdWage.textContent = formatCurrency(p.wage ?? 0);
+
+    const tdContract = document.createElement('td');
+    tdContract.textContent =
+      p.contractYears != null
+        ? `${p.contractYears} año${p.contractYears === 1 ? '' : 's'}`
+        : '-';
+
+    const tdMorale = document.createElement('td');
+    tdMorale.classList.add('squad-metric');
+    tdMorale.textContent = formatPercent(p.morale);
+
+    const tdFitness = document.createElement('td');
+    tdFitness.classList.add('squad-metric');
+    tdFitness.textContent = formatPercent(p.fitness);
+
+    const tdActions = document.createElement('td');
+    tdActions.classList.add('squad-actions');
+    const transferLabel = p.transferListed ? 'Quitar mercado' : 'Transferible';
+    tdActions.innerHTML = `
+      <button class="btn btn-xs btn-secondary" data-action="details">Ficha</button>
+      <button class="btn btn-xs btn-secondary" data-action="renew">Renovar</button>
+      <button class="btn btn-xs btn-secondary" data-action="transfer">${transferLabel}</button>
+    `;
+
+    const injured = isPlayerInjuredNow(p);
+    const suspended = isPlayerSuspendedNow(p);
+    const unavailable = injured || suspended;
+
+    if (unavailable) {
+      tr.classList.add('row-disabled');
+      const statusParts = [];
+      if (injured) {
+        statusParts.push(
+          `Lesionado: ${p.injury.type} (${p.injury.matchesRemaining} jornadas restantes)`
+        );
+      }
+      if (suspended) {
+        statusParts.push(
+          `Sancionado (${p.suspension.matchesRemaining} partido/s)`
+        );
+      }
+      tdName.title = statusParts.join(' · ');
+    }
+
+    tr.appendChild(tdPos);
+    tr.appendChild(tdName);
+    tr.appendChild(tdAge);
+    tr.appendChild(tdOverall);
+    tr.appendChild(tdWage);
+    tr.appendChild(tdContract);
+    tr.appendChild(tdMorale);
+    tr.appendChild(tdFitness);
+    tr.appendChild(tdActions);
+
+    tbody.appendChild(tr);
+  });
+}
+
+function matchesPositionFilter(position, filter) {
+  if (!filter || filter === 'ALL') return true;
+  const pos = (position || '').toUpperCase();
+
+  switch (filter) {
+    case 'POR':
+      return pos === 'POR' || pos === 'GK';
+    case 'DEF':
+      return (
+        pos.startsWith('D') ||
+        pos === 'DF' ||
+        pos === 'LD' ||
+        pos === 'LI' ||
+        pos === 'CB' ||
+        pos === 'RB' ||
+        pos === 'LB'
+      );
+    case 'MED':
+      return pos.startsWith('M') || pos === 'CM' || pos === 'DM' || pos === 'AM';
+    case 'DEL':
+      return (
+        pos === 'DC' ||
+        pos === 'DL' ||
+        pos === 'ED' ||
+        pos === 'EI' ||
+        pos === 'ST' ||
+        pos === 'FW' ||
+        pos === 'CF'
+      );
+    default:
+      return true;
+  }
+}
+
+function comparePlayers(a, b, key) {
+  switch (key) {
+    case 'NAME':
+      return (a.name || '').localeCompare(b.name || '');
+    case 'AGE': {
+      const ageA = getPlayerGameAge(a, 0) ?? 0;
+      const ageB = getPlayerGameAge(b, 0) ?? 0;
+      return ageA - ageB;
+    }
+    case 'OVERALL':
+      return (b.overall ?? 0) - (a.overall ?? 0);
+    case 'WAGE':
+      return (b.wage ?? 0) - (a.wage ?? 0);
+    case 'MORALE':
+      return (b.morale ?? 0) - (a.morale ?? 0);
+    case 'FITNESS':
+      return (b.fitness ?? 0) - (a.fitness ?? 0);
+    case 'POSITION':
+    default:
+      const gA = getPositionGroup(a.position);
+      const gB = getPositionGroup(b.position);
+      if (gA !== gB) return gA - gB;
+      return (a.name || '').localeCompare(b.name || '');
+  }
+}
+
+function getPositionGroup(position) {
+  const pos = (position || '').toUpperCase();
+  if (pos === 'POR' || pos === 'GK') return 0;
+  if (
+    pos.startsWith('D') ||
+    pos === 'DF' ||
+    pos === 'LD' ||
+    pos === 'LI' ||
+    pos === 'CB' ||
+    pos === 'RB' ||
+    pos === 'LB'
+  )
+    return 1;
+  if (pos.startsWith('M') || pos === 'CM' || pos === 'DM' || pos === 'AM')
+    return 2;
+  if (
+    pos === 'DC' ||
+    pos === 'DL' ||
+    pos === 'ED' ||
+    pos === 'EI' ||
+    pos === 'ST' ||
+    pos === 'FW' ||
+    pos === 'CF'
+  )
+    return 3;
+  return 4;
+}
+
+// ================================
+// Táctica y alineación
+// ================================
+
+function updateTacticsView() {
+  const club = getUserClub();
+  if (!club) return;
+
+  ensureClubTactics(club);
+
+  const tactics = club.tactics;
+  let lineup = Array.isArray(club.lineup) ? club.lineup.slice() : [];
+
+  const formationSelect = document.getElementById('tactics-formation');
+  const mentalitySelect = document.getElementById('tactics-mentality');
+  const tempoSelect = document.getElementById('tactics-tempo');
+  const pressureSelect = document.getElementById('tactics-pressure');
+  const tbody = document.getElementById('tactics-lineup-body');
+
+  if (formationSelect) formationSelect.value = tactics.formation || '4-4-2';
+  if (mentalitySelect) mentalitySelect.value = tactics.mentality || 'BALANCED';
+  if (tempoSelect) tempoSelect.value = tactics.tempo || 'NORMAL';
+  if (pressureSelect) pressureSelect.value = tactics.pressure || 'NORMAL';
+
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  const players = Array.isArray(club.players) ? club.players.slice() : [];
+  players.sort((a, b) => (b.overall ?? 0) - (a.overall ?? 0));
+
+  const lineupSet = new Set(lineup);
+  const cleanedLineup = [];
+
+  players.forEach((p) => {
+    const tr = document.createElement('tr');
+
+    const tdPos = document.createElement('td');
+    tdPos.textContent = p.position || '-';
+
+    const tdName = document.createElement('td');
+    tdName.textContent = p.name || 'Jugador sin nombre';
+
+    const tdOv = document.createElement('td');
+    tdOv.textContent = p.overall != null ? String(p.overall) : '-';
+
+    const tdFit = document.createElement('td');
+    tdFit.textContent = formatPercent(p.fitness);
+
+    const tdStatus = document.createElement('td');
+    const injured = isPlayerInjuredNow(p);
+    const suspended = isPlayerSuspendedNow(p);
+
+    if (injured || suspended) {
+      tr.classList.add('row-disabled');
+      if (injured && suspended) {
+        tdStatus.textContent = 'Lesionado / sancionado';
+      } else if (injured) {
+        tdStatus.textContent = `Lesionado (${p.injury.matchesRemaining})`;
+      } else {
+        tdStatus.textContent = `Sancionado (${p.suspension.matchesRemaining})`;
+      }
+    } else {
+      tdStatus.textContent = '-';
+    }
+
+    const tdRole = document.createElement('td');
+    tdRole.classList.add('tactics-role-checkbox');
+    const isInLineup = lineupSet.has(p.id) && !isPlayerUnavailable(p);
+    tdRole.innerHTML = `
+      <input
+        type="checkbox"
+        data-player-id="${p.id}"
+        ${isInLineup ? 'checked' : ''}
+        ${isPlayerUnavailable(p) ? 'disabled' : ''}
+      />
+    `;
+
+    if (isInLineup) {
+      cleanedLineup.push(p.id);
+    }
+
+    tr.appendChild(tdPos);
+    tr.appendChild(tdName);
+    tr.appendChild(tdOv);
+    tr.appendChild(tdFit);
+    tr.appendChild(tdStatus);
+    tr.appendChild(tdRole);
+
+    tbody.appendChild(tr);
+  });
+
+  club.lineup = cleanedLineup.slice(0, 11);
+  updateTacticsXIcount(club);
+}
+
+function updateTacticsXIcount(club) {
+  const xiLabel = document.getElementById('tactics-xi-count');
+  if (!xiLabel) return;
+  const count = Array.isArray(club.lineup) ? club.lineup.length : 0;
+  xiLabel.textContent = `${count}/11 titulares`;
+}
+
+/**
+ * Asegura que el club tiene campos tactics y lineup.
+ */
+function ensureClubTactics(club) {
+  if (!club.tactics) {
+    club.tactics = {
+      formation: '4-4-2',
+      mentality: 'BALANCED',
+      tempo: 'NORMAL',
+      pressure: 'NORMAL',
+    };
+  }
+  if (!Array.isArray(club.lineup) || club.lineup.length === 0) {
+    club.lineup = getBestLineupForClub(club);
+  }
+}
+
+/**
+ * Asegura que el club tiene configuración médica.
+ */
+function ensureClubMedical(club) {
+  if (!club.medical) {
+    club.medical = {
+      centerLevel: 1,
+      physioLevel: 1,
+    };
+  } else {
+    if (club.medical.centerLevel == null) club.medical.centerLevel = 1;
+    if (club.medical.physioLevel == null) club.medical.physioLevel = 1;
+  }
+}
+
+/**
+ * Devuelve el mejor once (hasta 11) excluyendo lesionados/sancionados.
+ */
+function getBestLineupForClub(club) {
+  if (!club || !Array.isArray(club.players)) return [];
+  const available = club.players.filter((p) => !isPlayerUnavailable(p));
+  const unavailable = club.players.filter((p) => isPlayerUnavailable(p));
+
+  const sortedAvail = available
+    .slice()
+    .sort((a, b) => (b.overall ?? 0) - (a.overall ?? 0));
+  const lineupIds = sortedAvail.slice(0, 11).map((p) => p.id);
+
+  if (lineupIds.length < 11 && unavailable.length > 0) {
+    const missing = 11 - lineupIds.length;
+    const sortedUnavail = unavailable
+      .slice()
+      .sort((a, b) => (b.overall ?? 0) - (a.overall ?? 0));
+    lineupIds.push(...sortedUnavail.slice(0, missing).map((p) => p.id));
+  }
+
+  return lineupIds;
+}
+
+// ================================
+// Ficha jugador / negociación
+// ================================
+
+function getUserClub() {
+  const clubId = GameState.user.clubId;
+  if (!Array.isArray(GameState.clubs) || GameState.clubs.length === 0)
+    return null;
+  if (!clubId) return GameState.clubs[0];
+  return GameState.clubs.find((c) => c.id === clubId) || GameState.clubs[0];
+}
+
+function getClubById(id) {
+  return (GameState.clubs || []).find((c) => c.id === id) || null;
+}
+
+function getPlayerById(playerId) {
+  const club = getUserClub();
+  if (!club || !Array.isArray(club.players)) return null;
+  return club.players.find((p) => p.id === playerId) || null;
+}
+
+function handlePlayerAction(action, player) {
+  switch (action) {
+    case 'details':
+      openPlayerModal(player);
+      break;
+    case 'renew':
+      openPlayerModal(player);
+      prepareNegotiationUI(player);
+      scrollToNegotiationSection();
+      break;
+    case 'transfer':
+      toggleTransferListed(player);
+      updateSquadView();
+      if (currentModalPlayer && currentModalPlayer.id === player.id) {
+        openPlayerModal(player);
+      }
+      break;
+    default:
+      console.log('Acción no soportada:', action, player);
+  }
+}
+
+function openPlayerModal(player) {
+  currentModalPlayer = player;
+
+  const modal = document.getElementById('player-modal');
+  if (!modal) return;
+
+  const nameEl = document.getElementById('player-modal-name');
+  const posEl = document.getElementById('player-modal-position');
+  const ageEl = document.getElementById('player-modal-age');
+  const birthdateEl = document.getElementById('player-modal-birthdate');
+  const nationalityEl = document.getElementById('player-modal-nationality');
+  const birthplaceEl = document.getElementById('player-modal-birthplace');
+  const youthclubEl = document.getElementById('player-modal-youthclub');
+  const overallEl = document.getElementById('player-modal-overall');
+  const moraleEl = document.getElementById('player-modal-morale');
+  const fitnessEl = document.getElementById('player-modal-fitness');
+  const wageEl = document.getElementById('player-modal-wage');
+  const contractEl = document.getElementById('player-modal-contract');
+  const valueEl = document.getElementById('player-modal-value');
+  const transferEl = document.getElementById('player-modal-transfer');
+
+  const yellowEl = document.getElementById('player-modal-yellowcards');
+  const suspEl = document.getElementById('player-modal-suspension');
+  const histBody = document.getElementById('player-modal-discipline-body');
+
+  const attrTech = (player.attributes && player.attributes.technical) || {};
+  const attrMent = (player.attributes && player.attributes.mental) || {};
+  const attrPhys = (player.attributes && player.attributes.physical) || {};
+
+  const passEl = document.getElementById('player-attr-passing');
+  const shotEl = document.getElementById('player-attr-shooting');
+  const dribEl = document.getElementById('player-attr-dribbling');
+  const tackEl = document.getElementById('player-attr-tackling');
+
+  const visEl = document.getElementById('player-attr-vision');
+  const compEl = document.getElementById('player-attr-composure');
+  const workEl = document.getElementById('player-attr-workrate');
+  const leadEl = document.getElementById('player-attr-leadership');
+
+  const paceEl = document.getElementById('player-attr-pace');
+  const stamEl = document.getElementById('player-attr-stamina');
+  const strEl = document.getElementById('player-attr-strength');
+
+  nameEl.textContent = player.name || 'Jugador sin nombre';
+
+  const pos = player.position || '-';
+  const ageVal = getPlayerGameAge(player);
+  const ageText = ageVal != null ? `${ageVal} años` : 'Edad desconocida';
+
+  posEl.textContent = `${pos} • ${ageText}`;
+  ageEl.textContent = ageText;
+
+  // Campos biográficos
+  birthdateEl.textContent = player.birthDate || 'Desconocida';
+  nationalityEl.textContent = player.nationality || 'Desconocida';
+  birthplaceEl.textContent = player.birthPlace || 'Desconocido';
+  youthclubEl.textContent = player.youthClub || 'Desconocido';
+  overallEl.textContent =
+    player.overall != null ? `${player.overall}` : '-';
+  moraleEl.textContent = formatPercent(player.morale);
+  fitnessEl.textContent = formatPercent(player.fitness);
+
+  wageEl.textContent = formatCurrency(player.wage ?? 0);
+  if (player.contractYears != null) {
+    contractEl.textContent = `${player.contractYears} año${
+      player.contractYears === 1 ? '' : 's'
+    } restantes`;
+  } else {
+    contractEl.textContent = '-';
+  }
+
+  const value =
+    player.value != null ? player.value : estimateMarketValue(player);
+  player.value = value;
+  valueEl.textContent = formatCurrency(value);
+
+  transferEl.textContent = player.transferListed
+    ? 'En lista de transferibles'
+    : 'No transferible';
+
+  passEl.textContent = formatAttr(attrTech.passing);
+  shotEl.textContent = formatAttr(attrTech.shooting);
+  dribEl.textContent = formatAttr(attrTech.dribbling);
+  tackEl.textContent = formatAttr(attrTech.tackling);
+
+  visEl.textContent = formatAttr(attrMent.vision);
+  compEl.textContent = formatAttr(attrMent.composure);
+  workEl.textContent = formatAttr(attrMent.workRate);
+  leadEl.textContent = formatAttr(attrMent.leadership);
+
+  paceEl.textContent = formatAttr(attrPhys.pace);
+  stamEl.textContent = formatAttr(attrPhys.stamina);
+  strEl.textContent = formatAttr(attrPhys.strength);
+
+  // Disciplina: amarillas / sanción
+  if (yellowEl) {
+    yellowEl.textContent = String(player.yellowCards ?? 0);
+  }
+
+  if (suspEl) {
+    if (isPlayerSuspendedNow(player)) {
+      suspEl.textContent = `${player.suspension.type} (${player.suspension.matchesRemaining} partido/s)`;
+    } else {
+      suspEl.textContent = 'Disponible';
+    }
+  }
+
+  // Historial de tarjetas (últimos 5 eventos)
+  if (histBody) {
+    histBody.innerHTML = '';
+    const history = Array.isArray(player.disciplineHistory)
+      ? player.disciplineHistory
+      : [];
+    const recent = history.slice(-5).reverse();
+
+    if (recent.length === 0) {
+      const tr = document.createElement('tr');
+      const td = document.createElement('td');
+      td.colSpan = 3;
+      td.textContent = 'Sin historial de tarjetas registrado.';
+      tr.appendChild(td);
+      histBody.appendChild(tr);
+    } else {
+      recent.forEach((ev) => {
+        const tr = document.createElement('tr');
+
+        const tdSeason = document.createElement('td');
+        tdSeason.textContent = String(ev.season ?? '-');
+
+        const tdMd = document.createElement('td');
+        tdMd.textContent = ev.matchday != null ? String(ev.matchday) : '-';
+
+        const tdType = document.createElement('td');
+        tdType.textContent = ev.type === 'R' ? 'Roja' : 'Amarilla';
+
+        tr.appendChild(tdSeason);
+        tr.appendChild(tdMd);
+        tr.appendChild(tdType);
+
+        histBody.appendChild(tr);
+      });
+    }
+  }
+
+  prepareNegotiationUI(player);
+
+  modal.classList.remove('hidden');
+  modal.setAttribute('aria-hidden', 'false');
+}
+
+function closePlayerModal() {
+  const modal = document.getElementById('player-modal');
+  if (!modal) return;
+  modal.classList.add('hidden');
+  modal.setAttribute('aria-hidden', 'true');
+  currentModalPlayer = null;
+}
+
+function prepareNegotiationUI(player) {
+  if (!negYearsInput || !negWageInput || !negResultEl || !negHintEl) return;
+
+  const currentYears = player.contractYears ?? 2;
+  const currentWage = player.wage ?? 200_000;
+
+  const defaultYears = Math.min(5, Math.max(1, currentYears + 1));
+  negYearsInput.value = String(defaultYears);
+
+  const defaultWage = Math.round((currentWage * 1.15) / 1000) * 1000;
+  negWageInput.value = String(defaultWage);
+
+  negResultEl.textContent = '';
+  negResultEl.classList.remove(
+    'modal-neg-result--accept',
+    'modal-neg-result--reject'
+  );
+
+  negHintEl.textContent =
+    'El jugador espera una oferta acorde a su nivel y situación. ' +
+    'Una mejora demasiado baja puede ser rechazada.';
+}
+
+function attemptRenewal(player) {
+  if (!negYearsInput || !negWageInput || !negResultEl) return;
+
+  const years = Number.parseInt(negYearsInput.value, 10);
+  const wage = Number.parseInt(negWageInput.value, 10);
+
+  if (!Number.isFinite(years) || years <= 0) {
+    negResultEl.textContent = 'Introduce un número de años válido.';
+    negResultEl.classList.remove(
+      'modal-neg-result--accept',
+      'modal-neg-result--reject'
+    );
+    return;
+  }
+
+  if (!Number.isFinite(wage) || wage <= 0) {
+    negResultEl.textContent = 'Introduce un sueldo válido.';
+    negResultEl.classList.remove(
+      'modal-neg-result--accept',
+      'modal-neg-result--reject'
+    );
+    return;
+  }
+
+  const result = evaluateOffer(player, years, wage);
+
+  if (result.accepted) {
+    player.contractYears = years;
+    player.wage = wage;
+    player.morale = Math.min(1, (player.morale ?? 0.7) + 0.12);
+
+    negResultEl.textContent =
+      'El jugador acepta la oferta y firma la renovación.';
+    negResultEl.classList.remove('modal-neg-result--reject');
+    negResultEl.classList.add('modal-neg-result--accept');
+  } else {
+    player.morale = Math.max(0, (player.morale ?? 0.7) - 0.08);
+
+    negResultEl.textContent =
+      result.reason ||
+      'El jugador rechaza la oferta. Quizá necesite una mejora más atractiva.';
+    negResultEl.classList.remove('modal-neg-result--accept');
+    negResultEl.classList.add('modal-neg-result--reject');
+  }
+}
+
+function evaluateOffer(player, years, wage) {
+  const currentWage = player.wage ?? 200_000;
+  const overall = player.overall ?? 60;
+  const age = getPlayerGameAge(player, 26);
+  const morale = player.morale ?? 0.7;
+
+  const levelFactor = 1 + (overall - 60) / 200;
+  const minRaiseFactor = Math.max(1.05, levelFactor);
+  const requiredWage = currentWage * minRaiseFactor;
+
+  let yearsAcceptable = true;
+  if (age < 25) yearsAcceptable = years >= 3;
+  else if (age > 32) yearsAcceptable = years <= 2;
+  else yearsAcceptable = years >= 2 && years <= 4;
+
+  if (!yearsAcceptable) {
+    return {
+      accepted: false,
+      reason:
+        'La duración del contrato no encaja con los planes del jugador.',
+    };
+  }
+
+  if (wage < requiredWage) {
+    return {
+      accepted: false,
+      reason:
+        'El jugador considera que la mejora salarial es insuficiente para renovar.',
+    };
+  }
+
+  const baseChance = 0.7 + (morale - 0.5);
+  const random = Math.random();
+
+  if (random < baseChance) {
+    return { accepted: true };
+  }
+
+  return {
+    accepted: false,
+    reason:
+      'El jugador duda sobre su futuro y decide no aceptar esta propuesta por ahora.',
+  };
+}
+
+function toggleTransferListed(player) {
+  player.transferListed = !player.transferListed;
+  if (player.transferListed) {
+    player.morale = Math.max(0, (player.morale ?? 0.7) - 0.05);
+  } else {
+    player.morale = Math.min(1, (player.morale ?? 0.7) + 0.03);
+  }
+}
+
+function scrollToNegotiationSection() {
+  if (!negSectionEl) return;
+  negSectionEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ================================
+// Competición + simulador
+// ================================
+
+function updateCompetitionView() {
+  const fixtures = GameState.fixtures || [];
+  const maxMatchday =
+    GameState.competition?.maxMatchday ||
+    (fixtures.length
+      ? Math.max(...fixtures.map((f) => f.matchday || 1))
+      : 1);
+
+  if (competitionSelectedMatchday < 1) competitionSelectedMatchday = 1;
+  if (competitionSelectedMatchday > maxMatchday)
+    competitionSelectedMatchday = maxMatchday;
+
+  const seasonLabel = document.getElementById('competition-season-label');
+  const currentMdLabel = document.getElementById(
+    'competition-current-matchday-label'
+  );
+  const matchdaySelect = document.getElementById('competition-matchday-select');
+  const simulateBtn = document.getElementById('btn-simulate-matchday');
+
+  if (seasonLabel) {
+    seasonLabel.textContent = String(GameState.currentDate.season || 1);
+  }
+  if (currentMdLabel) {
+    currentMdLabel.textContent = String(GameState.currentDate.matchday || 1);
+  }
+
+  if (matchdaySelect) {
+    matchdaySelect.innerHTML = '';
+    for (let md = 1; md <= maxMatchday; md++) {
+      const opt = document.createElement('option');
+      opt.value = String(md);
+      opt.textContent = `Jornada ${md}`;
+      if (md === competitionSelectedMatchday) opt.selected = true;
+      matchdaySelect.appendChild(opt);
+    }
+  }
+
+  renderFixturesForMatchday(competitionSelectedMatchday);
+  renderLeagueTable();
+
+  if (simulateBtn) {
+    const currentMd = GameState.currentDate.matchday || 1;
+    const currentFixtures = fixtures.filter(
+      (f) => f.matchday === currentMd && !f.played
+    );
+    const anyUnplayed = currentFixtures.length > 0;
+    const anyFixturesAtAll = fixtures.length > 0;
+
+    simulateBtn.disabled = !anyUnplayed || !anyFixturesAtAll;
+    if (!anyFixturesAtAll) {
+      simulateBtn.textContent = 'No hay calendario';
+    } else if (!anyUnplayed) {
+      simulateBtn.textContent = 'Jornada ya simulada';
+    } else {
+      simulateBtn.textContent = 'Simular jornada actual';
+    }
+  }
+}
+
+function renderFixturesForMatchday(matchday) {
+  const tbody = document.getElementById('competition-fixtures-body');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  const fixtures = (GameState.fixtures || []).filter(
+    (f) => f.matchday === matchday
+  );
+  const clubsMap = new Map(
+    (GameState.clubs || []).map((c) => [c.id, c.name || 'Club'])
+  );
+
+  if (fixtures.length === 0) {
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.colSpan = 4;
+    td.textContent = 'No hay partidos en esta jornada.';
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+    return;
+  }
+
+  fixtures.forEach((fx) => {
+    const tr = document.createElement('tr');
+
+    const tdTime = document.createElement('td');
+    tdTime.textContent = '18:00';
+
+    const tdHome = document.createElement('td');
+    tdHome.textContent = clubsMap.get(fx.homeClubId) || 'Local';
+
+    const tdScore = document.createElement('td');
+    if (fx.played && fx.homeGoals != null && fx.awayGoals != null) {
+      tdScore.textContent = `${fx.homeGoals} - ${fx.awayGoals}`;
+    } else {
+      tdScore.textContent = '-';
+    }
+
+    const tdAway = document.createElement('td');
+    tdAway.textContent = clubsMap.get(fx.awayClubId) || 'Visitante';
+
+    tr.appendChild(tdTime);
+    tr.appendChild(tdHome);
+    tr.appendChild(tdScore);
+    tr.appendChild(tdAway);
+
+    tbody.appendChild(tr);
+  });
+}
+
+function renderLeagueTable() {
+  const tbody = document.getElementById('competition-table-body');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  const table = (GameState.leagueTable || []).slice();
+
+  if (table.length === 0) {
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.colSpan = 10;
+    td.textContent = 'La clasificación aún no está disponible.';
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+    return;
+  }
+
+  table.forEach((row, index) => {
+    const tr = document.createElement('tr');
+
+    const posTd = document.createElement('td');
+    posTd.textContent = String(index + 1);
+
+    const nameTd = document.createElement('td');
+    nameTd.textContent = row.name || 'Club';
+
+    const pjTd = document.createElement('td');
+    pjTd.textContent = String(row.played);
+
+    const gTd = document.createElement('td');
+    gTd.textContent = String(row.won);
+
+    const eTd = document.createElement('td');
+    eTd.textContent = String(row.draw);
+
+    const pTd = document.createElement('td');
+    pTd.textContent = String(row.lost);
+
+    const gfTd = document.createElement('td');
+    gfTd.textContent = String(row.goalsFor);
+
+    const gcTd = document.createElement('td');
+    gcTd.textContent = String(row.goalsAgainst);
+
+    const dgTd = document.createElement('td');
+    const gd = row.goalsFor - row.goalsAgainst;
+    dgTd.textContent = gd >= 0 ? `+${gd}` : String(gd);
+
+    const ptsTd = document.createElement('td');
+    ptsTd.textContent = String(row.points);
+
+    tr.appendChild(posTd);
+    tr.appendChild(nameTd);
+    tr.appendChild(pjTd);
+    tr.appendChild(gTd);
+    tr.appendChild(eTd);
+    tr.appendChild(pTd);
+    tr.appendChild(gfTd);
+    tr.appendChild(gcTd);
+    tr.appendChild(dgTd);
+    tr.appendChild(ptsTd);
+
+    tbody.appendChild(tr);
+  });
+}
+
+function simulateCurrentMatchday() {
+  const fixtures = GameState.fixtures || [];
+  if (fixtures.length === 0) {
+    alert('No hay calendario de liga configurado.');
+    return;
+  }
+
+  const currentMd = GameState.currentDate.matchday || 1;
+  const currentFixtures = fixtures.filter(
+    (f) => f.matchday === currentMd && !f.played
+  );
+
+  if (currentFixtures.length === 0) {
+    alert('Esta jornada ya está simulada.');
+    return;
+  }
+
+  currentFixtures.forEach((fx) => {
+    simulateFixture(fx);
+  });
+
+  // Aplicar efectos de fatiga, forma, lesiones y sanciones
+  applyPostMatchdayEffects(currentFixtures);
+
+  recomputeLeagueTable();
+
+  const maxMd =
+    GameState.competition?.maxMatchday ||
+    Math.max(...fixtures.map((f) => f.matchday || 1));
+
+  if (GameState.currentDate.matchday < maxMd) {
+    GameState.currentDate.matchday += 1;
+  }
+
+  competitionSelectedMatchday = GameState.currentDate.matchday;
+  updateDashboard();
+}
+
+/**
+ * Usa fuerza de once titular + táctica + forma/fatiga para estimar goles.
+ */
+function simulateFixture(fx) {
+  const homeClub = getClubById(fx.homeClubId);
+  const awayClub = getClubById(fx.awayClubId);
+  if (!homeClub || !awayClub) return;
+
+  const homeProfile = getClubStrengthProfile(homeClub, true);
+  const awayProfile = getClubStrengthProfile(awayClub, false);
+
+  const homeAdv = 0.2;
+
+  const diffForHome =
+    (homeProfile.attack - awayProfile.defense) / 18 + homeAdv;
+  const diffForAway = (awayProfile.attack - homeProfile.defense) / 18;
+
+  let homeExp = 1.1 + diffForHome + Math.random() * 1.3;
+  let awayExp = 1.0 + diffForAway + Math.random() * 1.3;
+
+  homeExp = Math.max(0, homeExp);
+  awayExp = Math.max(0, awayExp);
+
+  const homeGoals = Math.max(0, Math.round(homeExp));
+  const awayGoals = Math.max(0, Math.round(awayExp));
+
+  fx.homeGoals = homeGoals;
+  fx.awayGoals = awayGoals;
+  fx.played = true;
+}
+
+/**
+ * Aplica fatiga, forma, posibles lesiones y tarjetas por jornada.
+ */
+function applyPostMatchdayEffects(fixtures) {
+  const clubs = GameState.clubs || [];
+
+  fixtures.forEach((fx) => {
+    const homeClub = getClubById(fx.homeClubId);
+    const awayClub = getClubById(fx.awayClubId);
+    if (homeClub) {
+      applyMatchEffectsToClub(homeClub, true, fx);
+    }
+    if (awayClub) {
+      applyMatchEffectsToClub(awayClub, false, fx);
+    }
+  });
+
+  clubs.forEach((club) => {
+    const playedThisMd = fixtures.some(
+      (fx) => fx.homeClubId === club.id || fx.awayClubId === club.id
+    );
+    if (!playedThisMd) {
+      applyRestEffectsToClub(club);
+    }
+    progressInjuriesForClub(club);
+    progressSanctionsForClub(club);
+  });
+}
+
+function applyMatchEffectsToClub(club, isHome, fx) {
+  ensureClubTactics(club);
+  ensureClubMedical(club);
+
+  const lineupIds = Array.isArray(club.lineup) ? club.lineup : [];
+  const lineupSet = new Set(lineupIds);
+
+  const players = Array.isArray(club.players) ? club.players : [];
+  const goalsFor = isHome ? fx.homeGoals : fx.awayGoals;
+  const goalsAgainst = isHome ? fx.awayGoals : fx.homeGoals;
+
+  const leagueStrictness = GameState.league.cardStrictness ?? 1.0;
+  const refereeStrictness = fx.refereeStrictness ?? 1.0;
+  const tacticsAggression = getTacticalAggression(club);
+
+  players.forEach((p) => {
+    const played = lineupSet.has(p.id) && !isPlayerUnavailable(p);
+
+    if (played) {
+      const currentFitness = p.fitness ?? 0.9;
+      p.fitness = Math.max(0, currentFitness - 0.15);
+
+      if (!Number.isFinite(p.form)) p.form = 0;
+      if (goalsFor > goalsAgainst) {
+        p.form += 0.35;
+      } else if (goalsFor < goalsAgainst) {
+        p.form -= 0.35;
+      } else {
+        p.form += 0.05;
+      }
+      p.form = Math.max(-3, Math.min(3, p.form));
+
+      // Lesiones (modificadas por infra médica)
+      if (!isPlayerInjuredNow(p)) {
+        const fit = p.fitness ?? 0.9;
+        const baseProb = 0.03;
+        const fatigueFactor = 0.12 * (1 - fit);
+        const medicalFactor = getMedicalInjuryModifier(club);
+        const injuryProb = (baseProb + fatigueFactor) * medicalFactor;
+
+        if (Math.random() < injuryProb) {
+          p.injury = generateRandomInjury();
+          p.fitness = Math.min(p.fitness ?? 1, 0.6);
+        }
+      }
+
+      // Tarjetas (amarillas y posibles rojas), con árbitros + dureza liga + táctica
+      applyCardsForPlayer(p, {
+        season: GameState.currentDate.season || 1,
+        matchday: fx.matchday,
+        leagueStrictness,
+        refereeStrictness,
+        tacticsAggression,
+      });
+    } else {
+      if (!isPlayerInjuredNow(p)) {
+        p.fitness = Math.min(1, (p.fitness ?? 0.8) + 0.08);
+      } else {
+        p.fitness = Math.min(1, (p.fitness ?? 0.8) + 0.05);
+      }
+
+      if (!Number.isFinite(p.form)) p.form = 0;
+      p.form *= 0.9;
+    }
+  });
+}
+
+function applyRestEffectsToClub(club) {
+  ensureClubMedical(club);
+  const players = Array.isArray(club.players) ? club.players : [];
+  players.forEach((p) => {
+    if (!isPlayerInjuredNow(p)) {
+      p.fitness = Math.min(1, (p.fitness ?? 0.8) + 0.1);
+    } else {
+      p.fitness = Math.min(1, (p.fitness ?? 0.8) + 0.06);
+    }
+
+    if (!Number.isFinite(p.form)) p.form = 0;
+    p.form *= 0.9;
+  });
+}
+
+function progressInjuriesForClub(club) {
+  ensureClubMedical(club);
+  const players = Array.isArray(club.players) ? club.players : [];
+  const extraChance = getPhysioRecoveryExtraChance(club);
+
+  players.forEach((p) => {
+    if (p.injury && p.injury.matchesRemaining != null) {
+      p.injury.matchesRemaining -= 1;
+      if (p.injury.matchesRemaining > 0 && extraChance > 0) {
+        if (Math.random() < extraChance) {
+          p.injury.matchesRemaining -= 1;
+        }
+      }
+      if (p.injury.matchesRemaining <= 0) {
+        p.injury = null;
+      }
+    }
+  });
+}
+
+function progressSanctionsForClub(club) {
+  const players = Array.isArray(club.players) ? club.players : [];
+  players.forEach((p) => {
+    if (p.suspension && p.suspension.matchesRemaining != null) {
+      p.suspension.matchesRemaining -= 1;
+      if (p.suspension.matchesRemaining <= 0) {
+        p.suspension = null;
+      }
+    }
+  });
+}
+
+/**
+ * Genera una lesión aleatoria con duración en jornadas futuras.
+ */
+function generateRandomInjury() {
+  const roll = Math.random();
+  let type = 'Molestias musculares';
+  let matches = 1 + Math.floor(Math.random() * 2); // 1-2
+
+  if (roll > 0.7 && roll <= 0.9) {
+    type = 'Rotura muscular';
+    matches = 2 + Math.floor(Math.random() * 4); // 2-5
+  } else if (roll > 0.9) {
+    type = 'Lesión grave de rodilla';
+    matches = 4 + Math.floor(Math.random() * 6); // 4-9
+  }
+
+  return {
+    type,
+    matchesRemaining: matches,
+  };
+}
+
+/**
+ * Niveles médicos → modificadores de probabilidad de lesión
+ */
+function getMedicalInjuryModifier(club) {
+  const lvl = club.medical?.centerLevel ?? 1;
+  switch (lvl) {
+    case 2:
+      return 0.8;
+    case 3:
+      return 0.65;
+    case 4:
+      return 0.5;
+    default:
+      return 1.0;
+  }
+}
+
+/**
+ * Niveles de fisios → probabilidad extra de recuperar 1 partido más
+ */
+function getPhysioRecoveryExtraChance(club) {
+  const lvl = club.medical?.physioLevel ?? 1;
+  switch (lvl) {
+    case 2:
+      return 0.3;
+    case 3:
+      return 0.55;
+    case 4:
+      return 0.8;
+    default:
+      return 0;
+  }
+}
+
+/**
+ * Añade tarjetas y sanciones a un jugador que ha disputado el partido.
+ * Tiene en cuenta: dureza liga + árbitro + táctica + perfil del jugador.
+ */
+function applyCardsForPlayer(player, ctx) {
+  if (!Number.isFinite(player.yellowCards)) player.yellowCards = 0;
+  if (!Array.isArray(player.disciplineHistory)) {
+    player.disciplineHistory = [];
+  }
+
+  const leagueStrictness = ctx.leagueStrictness ?? 1.0;
+  const refereeStrictness = ctx.refereeStrictness ?? 1.0;
+  const tacticsAggression = ctx.tacticsAggression ?? 1.0;
+
+  const overall = player.overall ?? 60;
+  const tackling =
+    player.attributes?.technical?.tackling != null
+      ? player.attributes.technical.tackling
+      : overall;
+
+  let playerAggFactor = 1.0 + (tackling - 60) / 80; // aprox 0.5 – 1.5
+  playerAggFactor = Math.max(0.7, Math.min(1.4, playerAggFactor));
+
+  const envFactor =
+    leagueStrictness * refereeStrictness * tacticsAggression * playerAggFactor;
+
+  const baseYellowProb = 0.18;
+  const baseRedProb = 0.02;
+
+  const yellowProb = Math.min(0.6, baseYellowProb * envFactor);
+  const redProb = Math.min(0.12, baseRedProb * envFactor);
+
+  let gotYellow = false;
+  if (Math.random() < yellowProb) {
+    player.yellowCards += 1;
+    gotYellow = true;
+    recordCardEvent(player, 'Y', ctx);
+  }
+
+  let gotRed = false;
+  if (Math.random() < redProb) {
+    gotRed = true;
+    recordCardEvent(player, 'R', ctx);
+  }
+
+  // Sanción por acumulación de amarillas (cada 5 amarillas → 1 partido)
+  if (player.yellowCards >= 5) {
+    const bans = Math.floor(player.yellowCards / 5);
+    const banMatches = bans;
+
+    if (!player.suspension || player.suspension.matchesRemaining <= 0) {
+      player.suspension = {
+        type: 'Acumulación de amarillas',
+        matchesRemaining: banMatches,
+      };
+    } else {
+      player.suspension.matchesRemaining += banMatches;
+      player.suspension.type = 'Acumulación de amarillas';
+    }
+
+    player.yellowCards = player.yellowCards % 5;
+  }
+
+  // Sanción por roja directa (1–2 partidos)
+  if (gotRed) {
+    const extraMatches = 1 + Math.floor(Math.random() * 2); // 1 ó 2
+    if (!player.suspension || player.suspension.matchesRemaining <= 0) {
+      player.suspension = {
+        type: 'Roja directa',
+        matchesRemaining: extraMatches,
+      };
+    } else {
+      player.suspension.matchesRemaining += extraMatches;
+      player.suspension.type = 'Roja directa';
+    }
+  }
+}
+
+/**
+ * Registra un evento de tarjeta en el historial del jugador.
+ */
+function recordCardEvent(player, type, ctx) {
+  if (!Array.isArray(player.disciplineHistory)) {
+    player.disciplineHistory = [];
+  }
+  player.disciplineHistory.push({
+    season: ctx.season ?? 1,
+    matchday: ctx.matchday ?? null,
+    type, // 'Y' o 'R'
+  });
+}
+
+/**
+ * Devuelve { attack, defense } según once, táctica, forma y fitness.
+ */
+function getClubStrengthProfile(club, isHome) {
+  ensureClubTactics(club);
+
+  const players =
+    Array.isArray(club.players) && club.players.length > 0
+      ? club.players
+      : null;
+
+  let lineupPlayers = [];
+  if (players && Array.isArray(club.lineup) && club.lineup.length > 0) {
+    const lineupSet = new Set(club.lineup);
+    lineupPlayers = players.filter(
+      (p) => lineupSet.has(p.id) && !isPlayerUnavailable(p)
+    );
+  }
+
+  const basePlayers =
+    lineupPlayers.length > 0
+      ? lineupPlayers
+      : players
+      ? players.filter((p) => !isPlayerUnavailable(p))
+      : [];
+
+  let baseOverall = 60;
+  if (basePlayers.length > 0) {
+    const sum = basePlayers.reduce((acc, p) => {
+      const ov = p.overall ?? 60;
+      const fit = p.fitness ?? 0.9;
+      const form = p.form ?? 0;
+
+      const fitnessFactor = 0.6 + 0.4 * fit;
+      const formBoost = form * 1.5;
+      const effective = ov * fitnessFactor + formBoost;
+
+      return acc + effective;
+    }, 0);
+    baseOverall = sum / basePlayers.length;
+  }
+
+  let attack = baseOverall;
+  let defense = baseOverall;
+
+  const t = club.tactics || {};
+  const mentality = t.mentality || 'BALANCED';
+  const tempo = t.tempo || 'NORMAL';
+  const pressure = t.pressure || 'NORMAL';
+
+  if (mentality === 'OFFENSIVE') {
+    attack += 4;
+    defense -= 2;
+  } else if (mentality === 'DEFENSIVE') {
+    attack -= 2;
+    defense += 4;
+  }
+
+  if (tempo === 'FAST') {
+    attack += 2;
+  } else if (tempo === 'SLOW') {
+    attack -= 1;
+  }
+
+  if (pressure === 'HIGH') {
+    attack += 1;
+    defense -= 1;
+  } else if (pressure === 'LOW') {
+    defense += 1;
+  }
+
+  if (isHome) {
+    attack += 1;
+  }
+
+  return { attack, defense };
+}
+
+/**
+ * Nivel de agresividad táctica del club (influye en tarjetas).
+ */
+function getTacticalAggression(club) {
+  ensureClubTactics(club);
+  const t = club.tactics || {};
+  let factor = 1.0;
+
+  if (t.mentality === 'OFFENSIVE') factor += 0.15;
+  else if (t.mentality === 'DEFENSIVE') factor -= 0.1;
+
+  if (t.pressure === 'HIGH') factor += 0.2;
+  else if (t.pressure === 'LOW') factor -= 0.1;
+
+  return Math.max(0.7, Math.min(1.4, factor));
+}
+
+// ================================
+// Pantalla MÉDICOS
+// ================================
+
+function updateMedicalView() {
+  const club = getUserClub();
+  if (!club) return;
+  ensureClubMedical(club);
+
+  const centerLevelEl = document.getElementById('medical-center-level');
+  const physioLevelEl = document.getElementById('medical-physio-level');
+  const centerDescEl = document.getElementById('medical-center-desc');
+  const physioDescEl = document.getElementById('medical-physio-desc');
+  const centerCostEl = document.getElementById('medical-center-next-cost');
+  const physioCostEl = document.getElementById('medical-physio-next-cost');
+  const injBody = document.getElementById('medical-injuries-body');
+  const sancBody = document.getElementById('medical-sanctions-body');
+
+  const centerLevel = club.medical.centerLevel ?? 1;
+  const physioLevel = club.medical.physioLevel ?? 1;
+
+  if (centerLevelEl) centerLevelEl.textContent = `Nivel ${centerLevel}`;
+  if (physioLevelEl) physioLevelEl.textContent = `Nivel ${physioLevel}`;
+
+  if (centerDescEl) {
+    centerDescEl.textContent = describeCenterLevel(centerLevel);
+  }
+  if (physioDescEl) {
+    physioDescEl.textContent = describePhysioLevel(physioLevel);
+  }
+
+  if (centerCostEl) {
+    const nextCost = centerLevel >= 4 ? null : getMedicalUpgradeCost('center', centerLevel);
+    centerCostEl.textContent = nextCost
+      ? `Próx. mejora: ${formatCurrency(nextCost)}`
+      : 'Nivel máximo alcanzado';
+  }
+
+  if (physioCostEl) {
+    const nextCost = physioLevel >= 4 ? null : getMedicalUpgradeCost('physio', physioLevel);
+    physioCostEl.textContent = nextCost
+      ? `Próx. mejora: ${formatCurrency(nextCost)}`
+      : 'Nivel máximo alcanzado';
+  }
+
+  // Tabla de lesiones
+  if (injBody) {
+    injBody.innerHTML = '';
+    const injured = (club.players || []).filter((p) => isPlayerInjuredNow(p));
+    if (injured.length === 0) {
+      const tr = document.createElement('tr');
+      const td = document.createElement('td');
+      td.colSpan = 4;
+      td.textContent = 'No hay jugadores lesionados.';
+      tr.appendChild(td);
+      injBody.appendChild(tr);
+    } else {
+      injured.forEach((p) => {
+        const tr = document.createElement('tr');
+
+        const tdName = document.createElement('td');
+        tdName.textContent = p.name || 'Jugador';
+
+        const tdPos = document.createElement('td');
+        tdPos.textContent = p.position || '-';
+
+        const tdType = document.createElement('td');
+        tdType.textContent = p.injury?.type || '-';
+
+        const tdMatches = document.createElement('td');
+        tdMatches.textContent =
+          p.injury?.matchesRemaining != null
+            ? String(p.injury.matchesRemaining)
+            : '-';
+
+        tr.appendChild(tdName);
+        tr.appendChild(tdPos);
+        tr.appendChild(tdType);
+        tr.appendChild(tdMatches);
+
+        injBody.appendChild(tr);
+      });
+    }
+  }
+
+  // Tabla de sanciones
+  if (sancBody) {
+    sancBody.innerHTML = '';
+    const sanctioned = (club.players || []).filter((p) => isPlayerSuspendedNow(p));
+    if (sanctioned.length === 0) {
+      const tr = document.createElement('tr');
+      const td = document.createElement('td');
+      td.colSpan = 5;
+      td.textContent = 'No hay jugadores sancionados.';
+      tr.appendChild(td);
+      sancBody.appendChild(tr);
+    } else {
+      sanctioned.forEach((p) => {
+        const tr = document.createElement('tr');
+
+        const tdName = document.createElement('td');
+        tdName.textContent = p.name || 'Jugador';
+
+        const tdPos = document.createElement('td');
+        tdPos.textContent = p.position || '-';
+
+        const tdReason = document.createElement('td');
+        tdReason.textContent = p.suspension?.type || '-';
+
+        const tdMatches = document.createElement('td');
+        tdMatches.textContent =
+          p.suspension?.matchesRemaining != null
+            ? String(p.suspension.matchesRemaining)
+            : '-';
+
+        const tdYc = document.createElement('td');
+        tdYc.textContent = String(p.yellowCards ?? 0);
+
+        tr.appendChild(tdName);
+        tr.appendChild(tdPos);
+        tr.appendChild(tdReason);
+        tr.appendChild(tdMatches);
+        tr.appendChild(tdYc);
+
+        sancBody.appendChild(tr);
+      });
+    }
+  }
+  updateQuickNotes();
+}
+
+function updateQuickNotes() {
+  const list = document.getElementById('quick-notes');
+  if (!list) return;
+
+  const club = getUserClub();
+  if (!club) {
+    list.innerHTML = `
+      <li>Versión prototipo del juego.</li>
+      <li>Sin información de club disponible todavía.</li>
+    `;
+    return;
+  }
+
+  ensureClubMedical(club);
+
+  const players = Array.isArray(club.players) ? club.players : [];
+  const injured = players.filter((p) => isPlayerInjuredNow(p));
+  const sanctioned = players.filter((p) => isPlayerSuspendedNow(p));
+
+  const centerLevel = club.medical?.centerLevel ?? 1;
+  const physioLevel = club.medical?.physioLevel ?? 1;
+
+  // Limpiamos contenido actual
+  list.innerHTML = '';
+
+  // 1) Mensaje de versión
+  const liVersion = document.createElement('li');
+  liVersion.textContent = 'Versión prototipo del juego.';
+  list.appendChild(liVersion);
+
+  // 2) Aviso de lesionados / sancionados + enlace a Médicos
+  const liHealth = document.createElement('li');
+  const aHealth = document.createElement('a');
+  aHealth.href = '#';
+
+  const textLesionados =
+    injured.length === 0
+      ? 'sin lesionados'
+      : injured.length === 1
+      ? '1 lesionado'
+      : `${injured.length} lesionados`;
+
+  const textSancionados =
+    sanctioned.length === 0
+      ? 'sin sancionados'
+      : sanctioned.length === 1
+      ? '1 sancionado'
+      : `${sanctioned.length} sancionados`;
+
+  aHealth.textContent = `Plantilla: ${textLesionados}, ${textSancionados} (ver área médica)`;
+
+  aHealth.addEventListener('click', (ev) => {
+    ev.preventDefault();
+    const btn = document.getElementById('btn-nav-medical');
+    if (btn && !btn.disabled) {
+      btn.click(); // reutiliza toda la lógica de navegación
+    }
+  });
+
+  liHealth.appendChild(aHealth);
+  list.appendChild(liHealth);
+
+  // 3) Estado de infra médica
+  const liInfra = document.createElement('li');
+  liInfra.textContent = `Centro médico nivel ${centerLevel}, fisioterapeutas nivel ${physioLevel}.`;
+  list.appendChild(liInfra);
+}
+
+function describeCenterLevel(level) {
+  switch (level) {
+    case 1:
+      return 'Instalaciones básicas. Probabilidad estándar de lesión en partido.';
+    case 2:
+      return 'Centro médico moderno. Menos lesiones en los partidos más exigentes.';
+    case 3:
+      return 'Centro de alto rendimiento. Reducción notable del riesgo de lesión.';
+    case 4:
+      return 'Instalaciones de élite. Protección máxima frente a lesiones.';
+    default:
+      return '';
+  }
+}
+
+function describePhysioLevel(level) {
+  switch (level) {
+    case 1:
+      return 'Equipo reducido. Recuperaciones dentro de los plazos normales.';
+    case 2:
+      return 'Fisioterapeutas a tiempo completo. Algunas lesiones se acortan.';
+    case 3:
+      return 'Departamento avanzado. Muchas lesiones se recortan 1 partido extra.';
+    case 4:
+      return 'Equipo de referencia mundial. Recuperaciones muy aceleradas.';
+    default:
+      return '';
+  }
+}
+
+function upgradeMedical(kind) {
+  const club = getUserClub();
+  if (!club) return;
+  ensureClubMedical(club);
+
+  const key = kind === 'center' ? 'centerLevel' : 'physioLevel';
+  const currentLevel = club.medical[key] ?? 1;
+  if (currentLevel >= 4) {
+    alert('Ya has alcanzado el nivel máximo.');
+    return;
+  }
+
+  const cost = getMedicalUpgradeCost(kind, currentLevel);
+  if (club.cash == null) club.cash = 0;
+
+  if (club.cash < cost) {
+    alert('No tienes suficiente dinero en caja para esta mejora.');
+    return;
+  }
+
+  const label =
+    kind === 'center' ? 'Centro médico' : 'Departamento de fisioterapia';
+
+  const ok = confirm(
+    `Mejorar ${label} a nivel ${currentLevel + 1} por ${formatCurrency(
+      cost
+    )}?`
+  );
+  if (!ok) return;
+
+  club.cash -= cost;
+  club.medical[key] = currentLevel + 1;
+
+  updateDashboard();
+  updateMedicalView();
+}
+
+function getMedicalUpgradeCost(kind, currentLevel) {
+  const base = kind === 'center' ? 2_000_000 : 1_200_000;
+  const multiplier = 1 + (currentLevel - 1) * 0.6;
+  return Math.round(base * multiplier);
+}
+
+// ================================
+// Ayudas de jugador (lesión / sanción / disponibilidad)
+// ================================
+
+function isPlayerInjuredNow(player) {
+  return !!(
+    player &&
+    player.injury &&
+    player.injury.matchesRemaining != null &&
+    player.injury.matchesRemaining > 0
+  );
+}
+
+function isPlayerSuspendedNow(player) {
+  return !!(
+    player &&
+    player.suspension &&
+    player.suspension.matchesRemaining != null &&
+    player.suspension.matchesRemaining > 0
+  );
+}
+
+function isPlayerUnavailable(player) {
+  return isPlayerInjuredNow(player) || isPlayerSuspendedNow(player);
+}
+
+// ================================
+// Utilidades
+// ================================
+
+// Fecha "del juego" para calcular edad: temporada 1 = año base,
+// cada jornada suma 7 días. Lo puedes ajustar si quieres otro calendario.
+function computeGameDateForAge() {
+  const season = GameState.currentDate?.season || 1;
+  const matchday = GameState.currentDate?.matchday || 1;
+
+  const BASE_SEASON_YEAR = 2025;
+  const SEASON_START_MONTH = 8; // agosto
+  const SEASON_START_DAY = 1;
+  const DAYS_PER_MATCHDAY = 7;
+
+  const year = BASE_SEASON_YEAR + (season - 1);
+  const d = new Date(Date.UTC(year, SEASON_START_MONTH - 1, SEASON_START_DAY));
+  const daysToAdd = (matchday - 1) * DAYS_PER_MATCHDAY;
+  d.setUTCDate(d.getUTCDate() + daysToAdd);
+  return d;
+}
+
+// Edad del jugador en función de su fecha de nacimiento y la jornada actual.
+// Si no tiene birthDate, cae a player.age (partidas viejas / jugadores ficticios).
+function getPlayerGameAge(player, fallback = null) {
+  const dobStr = player.birthDate;
+
+  if (dobStr) {
+    const dob = new Date(dobStr);
+    if (!Number.isNaN(dob.getTime())) {
+      const now = computeGameDateForAge();
+      let age = now.getUTCFullYear() - dob.getUTCFullYear();
+      const m = now.getUTCMonth() - dob.getUTCMonth();
+      if (m < 0 || (m === 0 && now.getUTCDate() < dob.getUTCDate())) {
+        age--;
+      }
+      if (!Number.isNaN(age) && age >= 0 && age < 60) {
+        return age;
+      }
+    }
+  }
+
+  if (typeof player.age === 'number' && !Number.isNaN(player.age)) {
+    return player.age;
+  }
+
+  return fallback;
+}
+
+function formatCurrency(value) {
+  const number = Number(value) || 0;
+  return number.toLocaleString('es-ES', {
+    style: 'currency',
+    currency: 'EUR',
+    maximumFractionDigits: 0,
+  });
+}
+
+function formatPercent(v) {
+  if (v == null || Number.isNaN(v)) return '-';
+  const clamped = Math.max(0, Math.min(1, Number(v)));
+  const percent = Math.round(clamped * 100);
+  return `${percent} %`;
+}
+
+function formatAttr(v) {
+  if (v == null || Number.isNaN(v)) return '-';
+  return String(Math.round(Number(v)));
+}
+
+function estimateMarketValue(player) {
+  const overall = player.overall ?? 60;
+  const age = getPlayerGameAge(player, 26);
+
+  let base = 500_000 + (overall - 60) * 150_000;
+  let ageFactor = 1.0;
+
+  if (age < 24) ageFactor = 1.4;
+  else if (age < 28) ageFactor = 1.2;
+  else if (age <= 31) ageFactor = 1.0;
+  else ageFactor = 0.7;
+
+  const value = Math.max(100_000, Math.round(base * ageFactor));
+  return value;
+}

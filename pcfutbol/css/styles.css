@@ -1,0 +1,873 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, sans-serif;
+  background: #0b1020;
+  color: #f5f5f5;
+}
+
+.app-header,
+.app-footer {
+  padding: 0.75rem 1.5rem;
+  background: #111827;
+  border-bottom: 1px solid #1f2937;
+}
+
+.app-footer {
+  border-top: 1px solid #1f2937;
+  border-bottom: none;
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+#app {
+  padding: 1rem;
+}
+
+.screen {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.hidden {
+  display: none;
+}
+
+/* Tarjetas y layout */
+
+.card {
+  background: #111827;
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+  border: 1px solid #1f2937;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+}
+
+.card h2,
+.card h3 {
+  margin-top: 0;
+}
+
+/* Pantalla de inicio: selector liga/club */
+.start-picker {
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.start-picker-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.start-league-picker,
+.start-club-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.start-league-picker label,
+.start-club-picker label {
+  font-size: 0.85rem;
+  color: #9ca3af;
+}
+
+.start-league-picker select,
+.start-club-picker select {
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid #4b5563;
+  background: #020617;
+  color: #e5e7eb;
+  font-size: 0.9rem;
+  min-width: 180px;
+}
+
+.start-picker-hint {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  max-width: 360px;
+}
+
+.start-club-picker {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.start-club-picker label {
+  font-size: 0.9rem;
+  color: #e5e7eb;
+}
+
+.start-club-picker select {
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid #4b5563;
+  background: #020617;
+  color: #e5e7eb;
+  font-size: 0.9rem;
+  max-width: 260px;
+}
+
+.start-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.start-club-picker {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.start-club-picker label {
+  font-size: 0.9rem;
+  color: #e5e7eb;
+}
+
+.start-club-picker select {
+  padding: 0.4rem 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid #4b5563;
+  background: #020617;
+  color: #e5e7eb;
+  font-size: 0.9rem;
+  max-width: 260px;
+}
+
+.start-club-hint {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  max-width: 320px;
+}
+
+/* Botones */
+
+.btn {
+  border-radius: 999px;
+  border: none;
+  padding: 0.5rem 1rem;
+  font-size: 0.95rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.btn-primary {
+  background: #2563eb;
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: #1d4ed8;
+}
+
+.btn-secondary {
+  background: #374151;
+  color: #e5e7eb;
+}
+
+.btn-secondary:hover {
+  background: #4b5563;
+}
+
+.btn-link {
+  background: transparent;
+  border-radius: 0;
+  border: none;
+  color: #d1d5db;
+  padding: 0.25rem 0.5rem;
+}
+
+.btn-link:hover {
+  color: #ffffff;
+}
+
+.btn-link.active {
+  border-bottom: 2px solid #2563eb;
+}
+
+/* Label que actúa como botón de archivo */
+
+.file-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.file-button input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* Top bar */
+
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: #020617;
+  border-radius: 8px;
+  border: 1px solid #1f2937;
+}
+
+.top-bar-left,
+.top-bar-right {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+}
+
+.club-name {
+  font-weight: 700;
+}
+
+.league-name {
+  color: #9ca3af;
+}
+
+.divider {
+  opacity: 0.6;
+}
+
+/* Dashboard layout */
+
+.dashboard-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr);
+  gap: 1rem;
+}
+
+.dashboard-main {
+  min-width: 0;
+}
+
+.dashboard-side {
+  min-width: 0;
+}
+
+/* Utilidades */
+
+.grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.grid-2 {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+/* ===========================
+   PLANTILLA / SQUAD
+   =========================== */
+
+.squad-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.squad-subtitle {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  color: #9ca3af;
+}
+
+.squad-header-right {
+  display: flex;
+  align-items: center;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  background: #111827;
+  border: 1px solid #1f2937;
+  color: #e5e7eb;
+}
+
+/* Tablas genéricas */
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.table thead {
+  background: #020617;
+}
+
+.table th,
+.table td {
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+  border-bottom: 1px solid #1f2937;
+}
+
+.table th {
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #9ca3af;
+}
+
+.table tbody tr:nth-child(even) {
+  background: rgba(15, 23, 42, 0.7);
+}
+
+.table tbody tr:hover {
+  background: rgba(30, 64, 175, 0.35);
+}
+
+/* Colores específicos de la plantilla */
+
+.table-squad td:nth-child(1) {
+  font-weight: 600;
+}
+
+.table-squad td:nth-child(4) {
+  text-align: center;
+  font-weight: 600;
+}
+
+.table-squad td:nth-child(3),
+.table-squad td:nth-child(6),
+.table-squad td:nth-child(7),
+.table-squad td:nth-child(8) {
+  text-align: center;
+}
+
+.squad-table-wrapper {
+  overflow-x: auto;
+}
+
+/* Indicadores de moral/forma como texto simple por ahora */
+.squad-metric {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Barra de filtros / ordenación */
+
+.squad-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
+  margin-bottom: 0.75rem;
+}
+
+.squad-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.85rem;
+}
+
+.squad-filter-group label {
+  color: #9ca3af;
+}
+
+.squad-filter-group select {
+  background: #020617;
+  color: #e5e7eb;
+  border-radius: 6px;
+  border: 1px solid #1f2937;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.9rem;
+}
+
+/* Acciones */
+
+.squad-actions {
+  white-space: nowrap;
+}
+
+.btn-xs {
+  padding: 0.15rem 0.45rem;
+  font-size: 0.75rem;
+  border-radius: 999px;
+}
+
+.squad-actions .btn-xs + .btn-xs {
+  margin-left: 0.25rem;
+}
+
+/* ===========================
+   MODAL / FICHA DE JUGADOR
+   =========================== */
+
+.modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.75);
+}
+
+.modal-dialog {
+  position: relative;
+  z-index: 1001;
+  max-width: 640px;
+  width: calc(100% - 2rem);
+  max-height: calc(100% - 3rem);
+  background: #020617;
+  border-radius: 12px;
+  border: 1px solid #1f2937;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modal-header,
+.modal-footer {
+  padding: 0.75rem 1rem;
+  background: #020617;
+  border-bottom: 1px solid #1f2937;
+}
+
+.modal-footer {
+  border-top: 1px solid #1f2937;
+  border-bottom: none;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.modal-body {
+  padding: 0.75rem 1rem 1rem;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.modal-subtitle {
+  margin: 0.15rem 0 0;
+  font-size: 0.85rem;
+  color: #9ca3af;
+}
+
+.btn-icon {
+  padding-inline: 0.6rem;
+  aspect-ratio: 1 / 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ===========================
+   MODAL / FICHA DE JUGADOR (extra)
+   =========================== */
+
+.modal-section {
+  margin-bottom: 0.75rem;
+}
+
+.attr-grid {
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+}
+
+.attr-block h4 {
+  margin: 0 0 0.25rem;
+  font-size: 0.9rem;
+}
+
+.attr-list {
+  font-size: 0.85rem;
+}
+
+.attr-list p {
+  margin: 0.15rem 0;
+}
+
+/* Negociación */
+
+.modal-neg {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #1f2937;
+}
+
+.modal-neg-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.15rem;
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+
+.form-group input[type="number"] {
+  width: 100%;
+  background: #020617;
+  color: #e5e7eb;
+  border-radius: 6px;
+  border: 1px solid #1f2937;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.9rem;
+}
+
+.modal-neg-result {
+  margin-top: 0.4rem;
+  font-size: 0.85rem;
+}
+
+.modal-neg-result--accept {
+  color: #4ade80;
+}
+
+.modal-neg-result--reject {
+  color: #f97316;
+}
+
+/* ===========================
+   TÁCTICA Y ALINEACIÓN
+   =========================== */
+
+.tactics-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.tactics-subtitle {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  color: #9ca3af;
+}
+
+.tactics-header-right {
+  display: flex;
+  align-items: center;
+}
+
+.tactics-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
+  margin: 0.75rem 0;
+}
+
+.tactics-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.85rem;
+}
+
+.tactics-group label {
+  color: #9ca3af;
+}
+
+.tactics-group select {
+  background: #020617;
+  color: #e5e7eb;
+  border-radius: 6px;
+  border: 1px solid #1f2937;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.9rem;
+}
+
+.tactics-table-wrapper {
+  overflow-x: auto;
+}
+
+.table-tactics td:nth-child(3),
+.table-tactics td:nth-child(4),
+.table-tactics td:nth-child(5),
+.table-tactics td:nth-child(6) {
+  text-align: center;
+}
+
+.tactics-role-checkbox {
+  display: flex;
+  justify-content: center;
+}
+
+.tactics-role-checkbox input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Filas de jugadores no disponibles (lesionados, etc.) */
+.row-disabled {
+  opacity: 0.5;
+}
+
+.row-disabled td {
+  color: #9ca3af;
+}
+
+/* ===========================
+   ÁREA MÉDICA
+   =========================== */
+
+.medical-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  gap: 1rem;
+}
+
+@media (max-width: 900px) {
+  .medical-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.medical-levels {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.medical-level {
+  border-radius: 0.75rem;
+  border: 1px dashed #374151;
+  padding: 0.75rem;
+  background: rgba(15, 23, 42, 0.85);
+}
+
+.medical-level-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.25rem;
+}
+
+.medical-level-title {
+  font-weight: 600;
+}
+
+.medical-level-pill {
+  font-size: 0.75rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid #4b5563;
+}
+
+.medical-level-desc {
+  font-size: 0.85rem;
+  color: #9ca3af;
+  margin-bottom: 0.4rem;
+}
+
+.medical-level-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+
+/* Disciplina en ficha de jugador */
+
+.player-discipline-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.85rem;
+}
+
+.player-discipline-summary span {
+  color: #9ca3af;
+  margin-right: 0.25rem;
+}
+
+/* ===========================
+   COMPETICIÓN
+   =========================== */
+
+.competition-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.competition-subtitle {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  color: #9ca3af;
+}
+
+.competition-header-right {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.competition-matchday-select select {
+  margin-left: 0.25rem;
+  background: #020617;
+  color: #e5e7eb;
+  border-radius: 6px;
+  border: 1px solid #1f2937;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.9rem;
+}
+
+.competition-meta {
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+  color: #9ca3af;
+}
+
+.competition-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(260px, 2fr);
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+
+.competition-main,
+.competition-side {
+  min-width: 0;
+}
+
+.competition-fixtures-wrapper,
+.competition-table-wrapper {
+  overflow-x: auto;
+}
+
+.table-competition td:nth-child(1),
+.table-competition td:nth-child(3) {
+  text-align: center;
+}
+
+.table-standings th:nth-child(1),
+.table-standings td:nth-child(1),
+.table-standings td:nth-child(3),
+.table-standings td:nth-child(4),
+.table-standings td:nth-child(5),
+.table-standings td:nth-child(6),
+.table-standings td:nth-child(7),
+.table-standings td:nth-child(8),
+.table-standings td:nth-child(9),
+.table-standings td:nth-child(10) {
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .competition-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .competition-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .competition-header-right {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .tactics-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .tactics-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal-dialog {
+    width: 100%;
+    max-width: none;
+    max-height: 100%;
+    border-radius: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .squad-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .squad-actions {
+    white-space: normal;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .top-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}
