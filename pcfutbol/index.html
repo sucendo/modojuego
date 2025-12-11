@@ -343,6 +343,7 @@
           <p class="competition-meta">
             Temporada <span id="competition-season-label">1</span> • Jornada
             actual: <span id="competition-current-matchday-label">1</span>
+            • Fecha: <span id="competition-date-label">01/08/2025</span>
           </p>
         </article>
 
@@ -358,6 +359,7 @@
                       <th>Local</th>
                       <th>Marcador</th>
                       <th>Visitante</th>
+                      <th>Detalle</th>
                     </tr>
                   </thead>
                   <tbody id="competition-fixtures-body">
@@ -391,9 +393,30 @@
                     <!-- JS -->
                   </tbody>
                 </table>
+              </div>		  
+            </article>
+
+            <article class="card">
+              <h3>Pichichi</h3>
+              <div class="competition-table-wrapper">
+                <table class="table table-standings table-topscorers">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Jugador</th>
+                      <th>Club</th>
+                      <th>Goles</th>
+                    </tr>
+                  </thead>
+                  <tbody id="competition-topscorers-body">
+                    <!-- JS -->
+                  </tbody>
+                </table>
               </div>
             </article>
-          </aside>
+			
+          </aside>		  
+		  
         </section>
       </section>
 	  
@@ -507,6 +530,56 @@
   <footer class="app-footer">
     <small>Prototipo PcFútbol Manager — solo local, sin servidor.</small>
   </footer>
+  
+  <!-- Modal: detalle de partido -->
+  <div id="match-detail-modal" class="modal hidden" aria-hidden="true">
+    <div id="match-detail-modal-backdrop" class="modal-backdrop"></div>
+
+    <div
+      class="modal-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="match-detail-modal-title"
+    >
+      <header class="modal-header">
+        <div>
+          <h2 id="match-detail-modal-title">Detalle del partido</h2>
+          <p id="match-detail-modal-subtitle" class="modal-subtitle">
+            Jornada • Fecha
+          </p>
+        </div>
+        <button
+          id="match-detail-modal-close"
+          class="btn btn-secondary btn-icon"
+          type="button"
+          aria-label="Cerrar detalle de partido"
+        >
+          ✕
+        </button>
+      </header>
+
+      <div class="modal-body">
+        <div class="match-detail-layout">
+          <section>
+            <h3>Cronología</h3>
+            <ul id="match-detail-events" class="match-events-list">
+              <!-- JS -->
+            </ul>
+          </section>
+        </div>
+      </div>
+
+      <footer class="modal-footer">
+        <button
+          id="match-detail-modal-close-footer"
+          class="btn btn-secondary"
+          type="button"
+        >
+          Cerrar
+        </button>
+      </footer>
+    </div>
+  </div>
 
   <!-- Modal: ficha detallada de jugador -->
   <div id="player-modal" class="modal hidden" aria-hidden="true">
@@ -685,6 +758,32 @@
 				  <!-- JS -->
 				</tbody>
 			  </table>
+			</div>
+		  </div>
+		</div>
+		
+		<div class="card">
+		  <div class="card-header">
+			<h3>Estadísticas temporada</h3>
+		  </div>
+		  <div class="card-body">
+			<div class="player-stats-summary">
+			  <div>
+				<span>Temporada:</span>
+				<strong id="player-modal-stats-season">-</strong>
+			  </div>
+			  <div>
+				<span>Goles:</span>
+				<strong id="player-modal-stats-goals">0</strong>
+			  </div>
+			  <div>
+				<span>Amarillas totales:</span>
+				<strong id="player-modal-stats-yellows">0</strong>
+			  </div>
+			  <div>
+				<span>Rojas totales:</span>
+				<strong id="player-modal-stats-reds">0</strong>
+			  </div>
 			</div>
 		  </div>
 		</div>

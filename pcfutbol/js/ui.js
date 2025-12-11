@@ -28,6 +28,9 @@ let negSectionEl = null;
 // Competición
 let competitionSelectedMatchday = 1;
 
+// Modal detalle de partido
+let currentMatchDetailFixtureId = null;
+
 // ================================
 // Init
 // ================================
@@ -112,6 +115,12 @@ export function initUI() {
   const filterPosSelect = document.getElementById('squad-filter-pos');
   const sortSelect = document.getElementById('squad-sort');
   const squadTableBody = document.getElementById('squad-table-body');
+  
+  // Modal detalle de partido
+  const matchDetailModal = document.getElementById('match-detail-modal');
+  const matchDetailModalBackdrop = document.getElementById('match-detail-modal-backdrop');
+  const matchDetailModalClose = document.getElementById('match-detail-modal-close');
+  const matchDetailModalCloseFooter = document.getElementById('match-detail-modal-close-footer');
 
   // Modal jugador
   const playerModal = document.getElementById('player-modal');
@@ -121,7 +130,7 @@ export function initUI() {
     'player-modal-close-footer'
   );
   const playerModalGoRenew = document.getElementById('player-modal-go-renew');
-
+  
   negYearsInput = document.getElementById('player-neg-years');
   negWageInput = document.getElementById('player-neg-wage');
   negResultEl = document.getElementById('player-modal-neg-result');
@@ -322,6 +331,24 @@ export function initUI() {
       closePlayerModal();
     });
   }
+  
+  if (matchDetailModalBackdrop) {
+    matchDetailModalBackdrop.addEventListener('click', () => {
+      closeMatchDetailModal();
+    });
+  }
+
+  if (matchDetailModalClose) {
+    matchDetailModalClose.addEventListener('click', () => {
+      closeMatchDetailModal();
+    });
+  }
+
+  if (matchDetailModalCloseFooter) {
+    matchDetailModalCloseFooter.addEventListener('click', () => {
+      closeMatchDetailModal();
+    });
+  }
 
   if (playerModalGoRenew) {
     playerModalGoRenew.addEventListener('click', () => {
@@ -344,13 +371,16 @@ export function initUI() {
     });
   }
 
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') {
-      if (!playerModal.classList.contains('hidden')) {
-        closePlayerModal();
-      }
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') {
+    if (playerModal && !playerModal.classList.contains('hidden')) {
+      closePlayerModal();
     }
-  });
+    if (matchDetailModal && !matchDetailModal.classList.contains('hidden')) {
+      closeMatchDetailModal();
+    }
+  }
+});
 
   // -----------------
   // Táctica y alineación
@@ -622,7 +652,14 @@ function updateSquadView() {
     tdPos.textContent = p.position || '-';
 
     const tdName = document.createElement('td');
-    tdName.textContent = p.name || 'Jugador sin nombre';
+    tdName.classList.add('squad-player-name-cell');
+    const nameFlag = createFlagImgElement(p.nationality);
+    if (nameFlag) {
+      tdName.appendChild(nameFlag);
+    }
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = p.name || 'Jugador sin nombre';
+    tdName.appendChild(nameSpan);
 
     const tdAge = document.createElement('td');
     const age = getPlayerGameAge(p);
@@ -1036,7 +1073,16 @@ function openPlayerModal(player) {
 
   // Campos biográficos
   birthdateEl.textContent = player.birthDate || 'Desconocida';
-  nationalityEl.textContent = player.nationality || 'Desconocida';
+  if (nationalityEl) {
+    nationalityEl.textContent = '';
+    const flagImg = createFlagImgElement(player.nationality);
+    if (flagImg) {
+      nationalityEl.appendChild(flagImg);
+    }
+    const natSpan = document.createElement('span');
+    natSpan.textContent = player.nationality || 'Desconocida';
+    nationalityEl.appendChild(natSpan);
+  }
   birthplaceEl.textContent = player.birthPlace || 'Desconocido';
   youthclubEl.textContent = player.youthClub || 'Desconocido';
   overallEl.textContent =
@@ -1126,10 +1172,71 @@ function openPlayerModal(player) {
     }
   }
 
+  // Estadísticas de la temporada (goles y tarjetas)
+  const statsSeasonEl = document.getElementById('player-modal-stats-season');
+  const statsGoalsEl = document.getElementById('player-modal-stats-goals');
+  const statsYellowsEl = document.getElementById('player-modal-stats-yellows');
+  const statsRedsEl = document.getElementById('player-modal-stats-reds');
+
+  const stats = computePlayerSeasonStats(player);
+
+  if (statsSeasonEl) {
+    statsSeasonEl.textContent = `Temporada ${stats.season}`;
+  }
+  if (statsGoalsEl) {
+    statsGoalsEl.textContent = String(stats.goals);
+  }
+  if (statsYellowsEl) {
+    statsYellowsEl.textContent = String(stats.yellows);
+  }
+  if (statsRedsEl) {
+    statsRedsEl.textContent = String(stats.reds);
+  }
+  
   prepareNegotiationUI(player);
 
   modal.classList.remove('hidden');
   modal.setAttribute('aria-hidden', 'false');
+}
+
+function computePlayerSeasonStats(player) {
+  const season = GameState.currentDate?.season || 1;
+  const fixtures = GameState.fixtures || [];
+
+  let goals = 0;
+  let yellows = 0;
+  let reds = 0;
+
+  // Goles a partir de los eventos de partido
+  fixtures.forEach((fx) => {
+    if (!fx || !fx.played || !Array.isArray(fx.events)) return;
+
+    // En el futuro se podría filtrar por fx.season; de momento asumimos una temporada
+    fx.events.forEach((ev) => {
+      if (!ev || ev.type !== 'GOAL') return;
+      if (ev.playerId === player.id) {
+        goals += 1;
+      }
+    });
+  });
+
+  // Tarjetas desde el historial de disciplina del jugador
+  const history = Array.isArray(player.disciplineHistory)
+    ? player.disciplineHistory
+    : [];
+  history.forEach((ev) => {
+    if (!ev) return;
+    if (ev.season != null && ev.season !== season) return;
+    if (ev.type === 'Y') yellows += 1;
+    if (ev.type === 'R') reds += 1;
+  });
+
+  return {
+    season,
+    goals,
+    yellows,
+    reds,
+  };
 }
 
 function closePlayerModal() {
@@ -1138,6 +1245,157 @@ function closePlayerModal() {
   modal.classList.add('hidden');
   modal.setAttribute('aria-hidden', 'true');
   currentModalPlayer = null;
+}
+
+function openMatchDetailModal(fixtureId) {
+  currentMatchDetailFixtureId = fixtureId;
+
+  const modal = document.getElementById('match-detail-modal');
+  if (!modal) return;
+
+  const titleEl = document.getElementById('match-detail-modal-title');
+  const subtitleEl = document.getElementById('match-detail-modal-subtitle');
+  const eventsListEl = document.getElementById('match-detail-events');
+
+  if (eventsListEl) {
+    eventsListEl.innerHTML = '';
+  }
+
+  const fixtures = GameState.fixtures || [];
+  const fx = fixtures.find((f) => f && f.id === fixtureId);
+
+  const clubs = GameState.clubs || [];
+  const clubIndex = new Map();
+  clubs.forEach((club) => {
+    if (club && club.id) {
+      clubIndex.set(club.id, club);
+    }
+  });
+
+  if (!fx) {
+    if (subtitleEl) {
+      subtitleEl.textContent = 'No se ha encontrado el partido.';
+    }
+    modal.classList.remove('hidden');
+    modal.setAttribute('aria-hidden', 'false');
+    return;
+  }
+
+  const homeClub = clubIndex.get(fx.homeClubId) || null;
+  const awayClub = clubIndex.get(fx.awayClubId) || null;
+
+  const homeName =
+    (homeClub && (homeClub.shortName || homeClub.name)) ||
+    fx.homeClubId ||
+    'Local';
+  const awayName =
+    (awayClub && (awayClub.shortName || awayClub.name)) ||
+    fx.awayClubId ||
+    'Visitante';
+
+  if (titleEl) {
+    if (fx.played && fx.homeGoals != null && fx.awayGoals != null) {
+      titleEl.textContent = `${homeName} ${fx.homeGoals} - ${fx.awayGoals} ${awayName}`;
+    } else {
+      titleEl.textContent = `${homeName} vs ${awayName}`;
+    }
+  }
+
+  if (subtitleEl) {
+    const season = GameState.currentDate?.season || 1;
+    const matchday = fx.matchday || 1;
+    const gameDate = getGameDateFor(season, matchday);
+    const dateLabel = formatGameDateLabel(gameDate);
+    subtitleEl.textContent = `Jornada ${matchday} • ${dateLabel}`;
+  }
+
+  if (eventsListEl) {
+    const playerIndex = new Map();
+    clubs.forEach((club) => {
+      const players = Array.isArray(club.players) ? club.players : [];
+      players.forEach((p) => {
+        if (p && p.id) {
+          playerIndex.set(p.id, { player: p, club });
+        }
+      });
+    });
+
+    const events = Array.isArray(fx.events) ? fx.events.slice() : [];
+    events.sort((a, b) => {
+      const ma = typeof a.minute === 'number' ? a.minute : 0;
+      const mb = typeof b.minute === 'number' ? b.minute : 0;
+      return ma - mb;
+    });
+
+    if (events.length === 0) {
+      const li = document.createElement('li');
+      li.className = 'match-event-item';
+      const minuteSpan = document.createElement('span');
+      minuteSpan.className = 'match-event-minute';
+      minuteSpan.textContent = '-';
+      const descSpan = document.createElement('span');
+      descSpan.className = 'match-event-desc';
+      descSpan.textContent =
+        'No se han registrado eventos para este partido.';
+      li.appendChild(minuteSpan);
+      li.appendChild(descSpan);
+      eventsListEl.appendChild(li);
+    } else {
+      events.forEach((ev) => {
+        if (!ev || ev.type !== 'GOAL') return;
+
+        const li = document.createElement('li');
+        li.className = 'match-event-item';
+
+        const minuteSpan = document.createElement('span');
+        minuteSpan.className = 'match-event-minute';
+        const minute =
+          typeof ev.minute === 'number' && ev.minute > 0 ? ev.minute : null;
+        minuteSpan.textContent = minute != null ? `${minute}'` : '-';
+
+        const descSpan = document.createElement('span');
+        descSpan.className = 'match-event-desc';
+
+        const info = ev.playerId ? playerIndex.get(ev.playerId) : null;
+        const playerName = (info && info.player && info.player.name) || 'Jugador';
+
+        const clubInfo = ev.clubId ? clubIndex.get(ev.clubId) : null;
+        const teamName =
+          (clubInfo && (clubInfo.shortName || clubInfo.name)) ||
+          ev.clubId ||
+          '';
+
+        if (ev.clubId === fx.homeClubId) {
+          descSpan.classList.add('match-event-team-home');
+        } else if (ev.clubId === fx.awayClubId) {
+          descSpan.classList.add('match-event-team-away');
+        }
+
+        descSpan.textContent = `Gol de ${playerName} (${teamName})`;
+
+        li.appendChild(minuteSpan);
+        li.appendChild(descSpan);
+        eventsListEl.appendChild(li);
+      });
+    }
+  }
+
+  modal.classList.remove('hidden');
+  modal.setAttribute('aria-hidden', 'false');
+}
+
+function closeMatchDetailModal() {
+  const modal = document.getElementById('match-detail-modal');
+  if (!modal) return;
+  modal.classList.add('hidden');
+  modal.setAttribute('aria-hidden', 'true');
+
+  const eventsListEl = document.getElementById('match-detail-events');
+  if (eventsListEl) {
+    eventsListEl.innerHTML = '';
+  }
+
+  currentMatchDetailFixtureId = null;
 }
 
 function prepareNegotiationUI(player) {
@@ -1288,6 +1546,7 @@ function updateCompetitionView() {
   const currentMdLabel = document.getElementById(
     'competition-current-matchday-label'
   );
+  const dateLabel = document.getElementById('competition-date-label');
   const matchdaySelect = document.getElementById('competition-matchday-select');
   const simulateBtn = document.getElementById('btn-simulate-matchday');
 
@@ -1296,6 +1555,13 @@ function updateCompetitionView() {
   }
   if (currentMdLabel) {
     currentMdLabel.textContent = String(GameState.currentDate.matchday || 1);
+  }
+  if (dateLabel) {
+    const gameDate = getGameDateFor(
+      GameState.currentDate.season || 1,
+      GameState.currentDate.matchday || 1
+    );
+    dateLabel.textContent = formatGameDateLabel(gameDate);
   }
 
   if (matchdaySelect) {
@@ -1311,6 +1577,7 @@ function updateCompetitionView() {
 
   renderFixturesForMatchday(competitionSelectedMatchday);
   renderLeagueTable();
+  renderTopScorers();
 
   if (simulateBtn) {
     const currentMd = GameState.currentDate.matchday || 1;
@@ -1346,7 +1613,7 @@ function renderFixturesForMatchday(matchday) {
   if (fixtures.length === 0) {
     const tr = document.createElement('tr');
     const td = document.createElement('td');
-    td.colSpan = 4;
+    td.colSpan = 5;
     td.textContent = 'No hay partidos en esta jornada.';
     tr.appendChild(td);
     tbody.appendChild(tr);
@@ -1360,7 +1627,17 @@ function renderFixturesForMatchday(matchday) {
     tdTime.textContent = '18:00';
 
     const tdHome = document.createElement('td');
-    tdHome.textContent = clubsMap.get(fx.homeClubId) || 'Local';
+    tdHome.classList.add('club-with-coat');
+    const homeName = clubsMap.get(fx.homeClubId) || 'Local';
+    const homeCoat = createCoatImgElement(fx.homeClubId, homeName);
+    if (homeCoat) {
+      tdHome.appendChild(homeCoat);
+    }
+    {
+      const span = document.createElement('span');
+      span.textContent = homeName;
+      tdHome.appendChild(span);
+    }
 
     const tdScore = document.createElement('td');
     if (fx.played && fx.homeGoals != null && fx.awayGoals != null) {
@@ -1370,12 +1647,34 @@ function renderFixturesForMatchday(matchday) {
     }
 
     const tdAway = document.createElement('td');
-    tdAway.textContent = clubsMap.get(fx.awayClubId) || 'Visitante';
+    tdAway.classList.add('club-with-coat');
+    const awayName = clubsMap.get(fx.awayClubId) || 'Visitante';
+    const awayCoat = createCoatImgElement(fx.awayClubId, awayName);
+    if (awayCoat) {
+      tdAway.appendChild(awayCoat);
+    }
+    {
+      const span = document.createElement('span');
+      span.textContent = awayName;
+      tdAway.appendChild(span);
+    }
+
+    const tdDetail = document.createElement('td');
+    const btnDetail = document.createElement('button');
+    btnDetail.type = 'button';
+    btnDetail.className = 'btn btn-link btn-small';
+    btnDetail.textContent = 'Ver';
+    btnDetail.disabled = !fx.played;
+    btnDetail.addEventListener('click', () => {
+      openMatchDetailModal(fx.id);
+    });
+    tdDetail.appendChild(btnDetail);
 
     tr.appendChild(tdTime);
     tr.appendChild(tdHome);
     tr.appendChild(tdScore);
     tr.appendChild(tdAway);
+    tr.appendChild(tdDetail);
 
     tbody.appendChild(tr);
   });
@@ -1405,7 +1704,17 @@ function renderLeagueTable() {
     posTd.textContent = String(index + 1);
 
     const nameTd = document.createElement('td');
-    nameTd.textContent = row.name || 'Club';
+    nameTd.classList.add('club-with-coat');
+    const clubName = row.name || 'Club';
+    const coat = createCoatImgElement(row.clubId, clubName);
+    if (coat) {
+      nameTd.appendChild(coat);
+    }
+    {
+      const span = document.createElement('span');
+      span.textContent = clubName;
+      nameTd.appendChild(span);
+    }
 
     const pjTd = document.createElement('td');
     pjTd.textContent = String(row.played);
@@ -1442,6 +1751,85 @@ function renderLeagueTable() {
     tr.appendChild(gcTd);
     tr.appendChild(dgTd);
     tr.appendChild(ptsTd);
+
+    tbody.appendChild(tr);
+  });
+}
+
+function renderTopScorers() {
+  const tbody = document.getElementById('competition-topscorers-body');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  const fixtures = GameState.fixtures || [];
+  const clubs = GameState.clubs || [];
+
+  const playerIndex = new Map();
+  clubs.forEach((club) => {
+    (club.players || []).forEach((p) => {
+      playerIndex.set(p.id, { player: p, club });
+    });
+  });
+
+  const goalsMap = new Map();
+
+  fixtures.forEach((fx) => {
+    if (!fx.played || !Array.isArray(fx.events)) return;
+    fx.events.forEach((ev) => {
+      if (ev.type !== 'GOAL' || !ev.playerId) return;
+      const info = playerIndex.get(ev.playerId);
+      if (!info) return;
+
+      let rec = goalsMap.get(ev.playerId);
+      if (!rec) {
+        rec = {
+          playerId: ev.playerId,
+          name: info.player.name || 'Jugador',
+          clubName: info.club.shortName || info.club.name || info.club.id,
+          goals: 0,
+        };
+        goalsMap.set(ev.playerId, rec);
+      }
+      rec.goals += 1;
+    });
+  });
+
+  const list = Array.from(goalsMap.values());
+  if (list.length === 0) {
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.colSpan = 4;
+    td.textContent = 'Todavía no hay goleadores registrados.';
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+    return;
+  }
+
+  list.sort((a, b) => {
+    if (b.goals !== a.goals) return b.goals - a.goals;
+    return a.name.localeCompare(b.name);
+  });
+
+  const top = list.slice(0, 10);
+  top.forEach((rec, index) => {
+    const tr = document.createElement('tr');
+
+    const posTd = document.createElement('td');
+    posTd.textContent = String(index + 1);
+
+    const nameTd = document.createElement('td');
+    nameTd.textContent = rec.name;
+
+    const clubTd = document.createElement('td');
+    clubTd.textContent = rec.clubName;
+
+    const goalsTd = document.createElement('td');
+    goalsTd.textContent = String(rec.goals);
+
+    tr.appendChild(posTd);
+    tr.appendChild(nameTd);
+    tr.appendChild(clubTd);
+    tr.appendChild(goalsTd);
 
     tbody.appendChild(tr);
   });
@@ -1514,6 +1902,141 @@ function simulateFixture(fx) {
   fx.homeGoals = homeGoals;
   fx.awayGoals = awayGoals;
   fx.played = true;
+  fx.events = generateEventsForFixture(fx, homeGoals, awayGoals);
+}
+
+function generateEventsForFixture(fx, homeGoals, awayGoals) {
+  const events = [];
+
+  const homeClub = getClubById(fx.homeClubId);
+  const awayClub = getClubById(fx.awayClubId);
+  if (!homeClub || !awayClub) {
+    return events;
+  }
+
+  const homePool = getPotentialScorersForClub(homeClub);
+  const awayPool = getPotentialScorersForClub(awayClub);
+
+  const usedMinutes = new Set();
+  function pickUniqueMinute() {
+    const maxAttempts = 12;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const minute = 1 + Math.floor(Math.random() * 90);
+      if (!usedMinutes.has(minute)) {
+        usedMinutes.add(minute);
+        return minute;
+      }
+    }
+    return 1 + Math.floor(Math.random() * 90);
+  }
+
+  for (let i = 0; i < homeGoals; i++) {
+    const scorer = pickRandomScorer(homePool);
+    if (!scorer) continue;
+    const minute = pickUniqueMinute();
+    events.push({
+      minute,
+      type: 'GOAL',
+      clubId: fx.homeClubId,
+      playerId: scorer.id,
+    });
+  }
+
+  for (let i = 0; i < awayGoals; i++) {
+    const scorer = pickRandomScorer(awayPool);
+    if (!scorer) continue;
+    const minute = pickUniqueMinute();
+    events.push({
+      minute,
+      type: 'GOAL',
+      clubId: fx.awayClubId,
+      playerId: scorer.id,
+    });
+  }
+
+  events.sort((a, b) => {
+    const ma = typeof a.minute === 'number' ? a.minute : 0;
+    const mb = typeof b.minute === 'number' ? b.minute : 0;
+    return ma - mb;
+  });
+
+  return events;
+}
+
+function getPotentialScorersForClub(club) {
+  if (!club || !Array.isArray(club.players) || club.players.length === 0) {
+    return [];
+  }
+
+  const players = club.players.filter((p) => p && !isPlayerUnavailable(p));
+  const lineupSet = new Set(
+    Array.isArray(club.lineup) ? club.lineup.filter((id) => !!id) : []
+  );
+
+  const pool = [];
+
+  players.forEach((p) => {
+    const pos = p.position || '';
+    const overall = Number.isFinite(p.overall) ? p.overall : 60;
+    const inLineup = lineupSet.has(p.id);
+
+    let posWeight = 1;
+    const posUpper = String(pos).toUpperCase();
+    if (['DC', 'SD', 'MP', 'EI', 'ED'].includes(posUpper)) {
+      posWeight = 3.2;
+    } else if (['MCO', 'MC', 'MCD', 'CAD'].includes(posUpper)) {
+      posWeight = 2.3;
+    } else if (['DFC', 'LD', 'LI'].includes(posUpper)) {
+      posWeight = 1.2;
+    } else if (posUpper === 'POR') {
+      posWeight = 0.4;
+    }
+
+    let weight = overall * posWeight;
+    if (inLineup) {
+      weight *= 1.3;
+    }
+
+    if (!Number.isFinite(weight) || weight <= 0) return;
+
+    pool.push({
+      player: p,
+      weight,
+    });
+  });
+
+  return pool;
+}
+
+function pickRandomScorer(pool) {
+  if (!Array.isArray(pool) || pool.length === 0) {
+    return null;
+  }
+
+  let total = 0;
+  pool.forEach((entry) => {
+    const w = Number.isFinite(entry.weight) ? entry.weight : 0;
+    if (w > 0) total += w;
+  });
+
+  if (total <= 0) {
+    const idx = Math.floor(Math.random() * pool.length);
+    return pool[idx].player || null;
+  }
+
+  let r = Math.random() * total;
+  for (let i = 0; i < pool.length; i++) {
+    const entry = pool[i];
+    const w = Number.isFinite(entry.weight) ? entry.weight : 0;
+    if (w <= 0) continue;
+    if (r < w) {
+      return entry.player || null;
+    }
+    r -= w;
+  }
+
+  const last = pool[pool.length - 1];
+  return last ? last.player || null : null;
 }
 
 /**
@@ -1586,8 +2109,23 @@ function applyMatchEffectsToClub(club, isHome, fx) {
         const injuryProb = (baseProb + fatigueFactor) * medicalFactor;
 
         if (Math.random() < injuryProb) {
-          p.injury = generateRandomInjury();
+          const injury = generateRandomInjury();
+          p.injury = injury;
           p.fitness = Math.min(p.fitness ?? 1, 0.6);
+
+          // Registrar evento de lesión en el partido
+          if (fx) {
+            if (!Array.isArray(fx.events)) {
+              fx.events = Array.isArray(fx.events) ? fx.events.slice() : [];
+            }
+            fx.events.push({
+              minute: null,
+              type: 'INJURY',
+              clubId: club.id,
+              playerId: p.id,
+              injuryType: injury.type,
+            });
+          }
         }
       }
 
@@ -1598,6 +2136,8 @@ function applyMatchEffectsToClub(club, isHome, fx) {
         leagueStrictness,
         refereeStrictness,
         tacticsAggression,
+        fixture: fx,
+        clubId: club.id,
       });
     } else {
       if (!isPlayerInjuredNow(p)) {
@@ -1805,6 +2345,20 @@ function recordCardEvent(player, type, ctx) {
     matchday: ctx.matchday ?? null,
     type, // 'Y' o 'R'
   });
+
+  // Evento de partido asociado (si hay fixture en contexto)
+  if (ctx && ctx.fixture) {
+    const fx = ctx.fixture;
+    if (!Array.isArray(fx.events)) {
+      fx.events = Array.isArray(fx.events) ? fx.events.slice() : [];
+    }
+    fx.events.push({
+      minute: null,
+      type: type === 'R' ? 'RED_CARD' : 'YELLOW_CARD',
+      clubId: ctx.clubId ?? null,
+      playerId: player.id,
+    });
+  }
 }
 
 /**
@@ -2204,33 +2758,59 @@ function isPlayerUnavailable(player) {
 // Utilidades
 // ================================
 
-// Fecha "del juego" para calcular edad: temporada 1 = año base,
-// cada jornada suma 7 días. Lo puedes ajustar si quieres otro calendario.
-function computeGameDateForAge() {
-  const season = GameState.currentDate?.season || 1;
-  const matchday = GameState.currentDate?.matchday || 1;
+// Calendario interno del juego:
+//  - Temporada 1 comienza el 1 de agosto de 2025
+//  - Cada jornada suma 7 días
+//  - Cada temporada suma 1 año
+const GAME_CALENDAR = {
+  BASE_SEASON_YEAR: 2025,
+  SEASON_START_MONTH: 8, // agosto
+  SEASON_START_DAY: 1,
+  DAYS_PER_MATCHDAY: 7,
+};
 
-  const BASE_SEASON_YEAR = 2025;
-  const SEASON_START_MONTH = 8; // agosto
-  const SEASON_START_DAY = 1;
-  const DAYS_PER_MATCHDAY = 7;
+// Devuelve la fecha "real" del juego para una temporada y jornada dadas
+function getGameDateFor(season, matchday) {
+  const year = GAME_CALENDAR.BASE_SEASON_YEAR + (season - 1);
+  const d = new Date(
+    Date.UTC(
+      year,
+      GAME_CALENDAR.SEASON_START_MONTH - 1,
+      GAME_CALENDAR.SEASON_START_DAY
+    )
+  );
 
-  const year = BASE_SEASON_YEAR + (season - 1);
-  const d = new Date(Date.UTC(year, SEASON_START_MONTH - 1, SEASON_START_DAY));
-  const daysToAdd = (matchday - 1) * DAYS_PER_MATCHDAY;
+  const md = Math.max(1, matchday || 1);
+  const daysToAdd = (md - 1) * GAME_CALENDAR.DAYS_PER_MATCHDAY;
   d.setUTCDate(d.getUTCDate() + daysToAdd);
   return d;
 }
 
-// Edad del jugador en función de su fecha de nacimiento y la jornada actual.
-// Si no tiene birthDate, cae a player.age (partidas viejas / jugadores ficticios).
-function getPlayerGameAge(player, fallback = null) {
-  const dobStr = player.birthDate;
+// Fecha actual de juego según GameState.currentDate
+function getCurrentGameDate() {
+  const season = GameState.currentDate?.season || 1;
+  const matchday = GameState.currentDate?.matchday || 1;
+  return getGameDateFor(season, matchday);
+}
 
+// Formato "15/09/2025"
+function formatGameDateLabel(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '';
+  return date.toLocaleDateString('es-ES', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+}
+
+// Edad del jugador en función de su fecha de nacimiento y la fecha actual del juego.
+// Si no hay birthDate, cae al campo age (para datos antiguos / jugadores ficticios).
+function getPlayerGameAge(player, fallbackAge = null) {
+  const dobStr = player.birthDate;
   if (dobStr) {
     const dob = new Date(dobStr);
     if (!Number.isNaN(dob.getTime())) {
-      const now = computeGameDateForAge();
+      const now = getCurrentGameDate();
       let age = now.getUTCFullYear() - dob.getUTCFullYear();
       const m = now.getUTCMonth() - dob.getUTCMonth();
       if (m < 0 || (m === 0 && now.getUTCDate() < dob.getUTCDate())) {
@@ -2246,7 +2826,7 @@ function getPlayerGameAge(player, fallback = null) {
     return player.age;
   }
 
-  return fallback;
+  return fallbackAge;
 }
 
 function formatCurrency(value) {
@@ -2268,6 +2848,191 @@ function formatPercent(v) {
 function formatAttr(v) {
   if (v == null || Number.isNaN(v)) return '-';
   return String(Math.round(Number(v)));
+}
+
+function getCoatUrlForClubId(clubId) {
+  if (!clubId) return null;
+  const id = String(clubId).toLowerCase();
+
+// Mapa id de club → fichero de escudo en img/coats
+const map = {
+  // LaLiga
+  alaves: 'Alavés.png',
+  athletic: 'Athletic Bilbao.png',
+  atletico: 'Atlético Madrid.png',
+  barcelona: 'FC Barcelona.png',
+  celta: 'Celta de Vigo.png',
+  elche: 'Elche.png',
+  espanyol: 'RCD Espanyol.png',
+  getafe: 'Getafe.png',
+  girona: 'Girona.png',
+  mallorca: 'RCD Mallorca.png',
+  osasuna: 'Osasuna.png',
+  rayo: 'rayo Vallecano.png',
+  betis: 'Real Betis.png',
+  realmadrid: 'Real Madrid.png',
+  realsociedad: 'Real Sociedad.png',
+  sevilla: 'Sevilla.png',
+  valencia: 'Valencia.png',
+  villarreal: 'Villarreal.png',
+  realoviedo: 'Real Oviedo.png',
+  levante: 'Levante.png',
+
+  // Premier League (los que tienes escudo)
+  arsenal: 'Arsenal.png',
+  mancity: 'Manchester City.png',
+  liverpool: 'Liverpool.png',
+  manutd: 'Manchester United.png',
+  chelsea: 'Chelsea.png',
+  tottenham: 'Tottenham.png',
+  newcastle: 'Newcastle.png',
+  astonvilla: 'Aston Villa.png',
+  brighton: 'Brighton.png',
+  westham: 'west Ham.png',
+
+  // Serie A (los que tienes escudo)
+  acmilan: 'Milan.png',
+  inter: 'inter.png',
+  juventus: 'Juventus.png',
+  napoli: 'napoli.png',
+  roma: 'Roma.png',
+  lazio: 'Lazio.png',
+  atalanta: 'Atalanta.png',
+  fiorentina: 'Fiorentina.png',
+  torino: 'Torino.png',
+
+  // Bundesliga / Ligue 1 (solo los que vienen en coats.zip)
+  bayern: 'Bayern Munich.png',
+  
+  // Ligue 1
+  psg: 'PSG.png',
+  
+    // Eredivisie (Países Bajos)
+    ajax: 'Ajax.png',
+    psv: 'PSV Eindhoven.png',
+    feyenoord: 'Feyenoord.png',
+    az: 'AZ Alkmaar.png',
+    twente: 'FC Twente.png',
+    utrecht: 'FC Utrecht.png',
+    vitesse: 'Vitesse.png',
+    heerenveen: 'SC Heerenveen.png',
+    groningen: 'FC Groningen.png',
+    sparta: 'Sparta Rotterdam.png',
+};
+
+  const filename = map[id];
+  if (!filename) return null;
+  return `img/coats/${filename}`;
+}
+
+function createCoatImgElement(clubId, clubName, size = 20) {
+  const url = getCoatUrlForClubId(clubId);
+  if (!url) return null;
+
+  const img = document.createElement('img');
+  img.src = url;
+  img.alt = clubName ? `Escudo de ${clubName}` : 'Escudo del club';
+  img.classList.add('coat-icon');
+  img.loading = 'lazy';
+  if (size != null) {
+    img.width = size;
+    img.height = size;
+  }
+  return img;
+}
+
+function getFlagUrlForNationality(nationality) {
+  if (!nationality) return null;
+  const n = nationality.trim();
+  if (!n) return null;
+
+  // Mapa nacionalidad (ES) → fichero de bandera
+  const map = {
+    // Europa
+    Albania: 'Flag_of_Albania.svg',
+    Andorra: 'Flag_of_Andorra.svg',
+    Austria: 'Flag_of_Austria.svg',
+    Bélgica: 'Flag_of_Belgium.svg',
+    Belgica: 'Flag_of_Belgium.svg',
+    Croacia: 'Flag_of_Croatia.svg',
+    Dinamarca: 'Flag_of_Denmark.svg',
+    Inglaterra: 'Flag_of_England.svg',
+    Francia: 'Flag_of_France.svg',
+    Georgia: 'Flag_of_Georgia.svg',
+    Alemania: 'Flag_of_Germany.svg',
+    Italia: 'Flag_of_Italy.svg',
+    Kazajistán: 'Flag_of_Kazakhstan.svg',
+    Kazajistan: 'Flag_of_Kazakhstan.svg',
+    Macedonia: 'Flag_of_North_Macedonia.svg',
+    'Macedonia del Norte': 'Flag_of_North_Macedonia.svg',
+    Noruega: 'Flag_of_Norway.svg',
+    Polonia: 'Flag_of_Poland.svg',
+    Portugal: 'Flag_of_Portugal.svg',
+    Rumanía: 'Flag_of_Romania.svg',
+    Rumania: 'Flag_of_Romania.svg',
+    Eslovaquia: 'Flag_of_Slovakia.svg',
+    Eslovenia:	'Flag_of_Slovenia.svg',
+    España: 'Flag_of_Spain.svg',
+    Suecia: 'Flag_of_Sweden.svg',
+    Suiza: 'Flag_of_Switzerland.svg',
+    'República Checa': 'Flag_of_the_Czech_Republic.svg',
+    'Republica Checa': 'Flag_of_the_Czech_Republic.svg',
+    'República Dominicana': 'Flag_of_the_Dominican_Republic.svg',
+    'Republica Dominicana': 'Flag_of_the_Dominican_Republic.svg',
+    'Países Bajos': 'Flag_of_the_Netherlands.svg',
+    'Paises Bajos': 'Flag_of_the_Netherlands.svg',
+
+    // América
+    Argentina: 'Flag_of_Argentina.svg',
+    Canadá: 'Flag_of_Canada.svg',
+    Ecuador: 'Flag_of_Ecuador.svg',
+    México: 'Flag_of_Mexico.svg',
+    Mexico: 'Flag_of_Mexico.svg',
+    Uruguay: 'Flag_of_Uruguay.svg',
+    Brasil: 'Flag_of_Brazil.svg',
+    'Estados Unidos': 'Flag_of_the_United_States.svg',
+
+    // África
+    Angola: 'Flag_of_Angola.svg',
+   'Cabo Verde': 'Flag_of_Cape_Verde.svg',
+    Camerún: 'Flag_of_Cameroon.svg',
+    Camerun: 'Flag_of_Cameroon.svg',
+   'Costa de Marfil': 'Flag_of_Côte_d_Ivoire.svg',
+    Ghana:	'Flag_of_Ghana.svg',
+    Guinea: 'Flag_of_Guinea.svg',
+    Marruecos: 'Flag_of_Morocco.svg',
+    Mozambique: 'Flag_of_Mozambique.svg',
+    Nigeria: 'Flag_of_Nigeria.svg',
+    Senegal: 'Flag_of_Senegal.svg',
+    Togo: 'Flag_of_Togo_(3-2).svg',
+
+    // Asia / otros
+    Israel: 'Flag_of_Israel.svg',
+    Turquía: 'Flag_of_Turkey.svg',
+    Turquia: 'Flag_of_Turkey.svg',
+    Ucrania: 'Flag_of_Ukraine.svg',
+  };
+
+  const filename = map[n];
+  if (!filename) return null;
+  return `img/flags/${filename}`;
+}
+
+
+function createFlagImgElement(nationality, size = 16) {
+  const url = getFlagUrlForNationality(nationality);
+  if (!url) return null;
+
+  const img = document.createElement('img');
+  img.src = url;
+  img.alt = nationality ? `Bandera de ${nationality}` : 'Bandera';
+  img.classList.add('flag-icon');
+  img.loading = 'lazy';
+  if (size != null) {
+    img.width = size;
+    img.height = size;
+  }
+  return img;
 }
 
 function estimateMarketValue(player) {

@@ -280,16 +280,16 @@ const ES_PRIMERA_CLUBS = [
     wageBudget: 8500000,
     baseOverall: 68
   },
-  {
-    id: "cd_tenerife",
-    name: "CD Tenerife",
-    shortName: "TEN",
-    stadiumName: "Heliodoro Rodríguez López",
-    capacity: 22667,
-    cash: 18000000,
-    wageBudget: 7500000,
-    baseOverall: 66
-  }
+	{
+	id: "elche",
+	name: "Elche CF",
+	shortName: "ELC",
+	stadiumName: "Estadio Martínez Valero",
+	capacity: 33732,
+	cash: 18000000,
+	wageBudget: 7500000,
+	baseOverall: 66
+	}
 ];
 
 const leagueES = createLeagueFromBase(
@@ -865,6 +865,119 @@ const leaguePT = createLeagueFromBase(
 );
 
 // =======================
+// EREDIVISIE (Países Bajos)
+// =======================
+const NL_EREDIVISIE_CLUBS = [
+  {
+    id: "ajax",
+    name: "AFC Ajax",
+    shortName: "AJA",
+    stadiumName: "Johan Cruijff ArenA",
+    capacity: 55865,      // ~55.865 asientos :contentReference[oaicite:0]{index=0}
+    cash: 38000000,
+    wageBudget: 18000000,
+    baseOverall: 80
+  },
+  {
+    id: "psv",
+    name: "PSV Eindhoven",
+    shortName: "PSV",
+    stadiumName: "Philips Stadion",
+    capacity: 35000,      // 35.000 asientos :contentReference[oaicite:1]{index=1}
+    cash: 36000000,
+    wageBudget: 17000000,
+    baseOverall: 79
+  },
+  {
+    id: "feyenoord",
+    name: "Feyenoord",
+    shortName: "FEY",
+    stadiumName: "De Kuip",
+    capacity: 47500,      // ~47.500 espectadores :contentReference[oaicite:2]{index=2}
+    cash: 34000000,
+    wageBudget: 16000000,
+    baseOverall: 79
+  },
+  {
+    id: "az",
+    name: "AZ Alkmaar",
+    shortName: "AZ",
+    stadiumName: "AFAS Stadion",
+    capacity: 19478,      // ~19.478 asientos :contentReference[oaicite:3]{index=3}
+    cash: 30000000,
+    wageBudget: 14000000,
+    baseOverall: 77
+  },
+  {
+    id: "twente",
+    name: "FC Twente",
+    shortName: "TWE",
+    stadiumName: "De Grolsch Veste",
+    capacity: 30205,      // 30.205 asientos :contentReference[oaicite:4]{index=4}
+    cash: 26000000,
+    wageBudget: 12000000,
+    baseOverall: 76
+  },
+  {
+    id: "utrecht",
+    name: "FC Utrecht",
+    shortName: "UTR",
+    stadiumName: "Stadion Galgenwaard",
+    capacity: 23750,      // ~23.750 espectadores :contentReference[oaicite:5]{index=5}
+    cash: 24000000,
+    wageBudget: 11000000,
+    baseOverall: 75
+  },
+  {
+    id: "vitesse",
+    name: "Vitesse",
+    shortName: "VIT",
+    stadiumName: "GelreDome",
+    capacity: 21248,      // 21.248 asientos (liga) :contentReference[oaicite:6]{index=6}
+    cash: 22000000,
+    wageBudget: 10000000,
+    baseOverall: 74
+  },
+  {
+    id: "heerenveen",
+    name: "SC Heerenveen",
+    shortName: "HEE",
+    stadiumName: "Abe Lenstra Stadion",
+    capacity: 26100,      // ~26.100 asientos :contentReference[oaicite:7]{index=7}
+    cash: 21000000,
+    wageBudget: 9500000,
+    baseOverall: 73
+  },
+  {
+    id: "groningen",
+    name: "FC Groningen",
+    shortName: "GRO",
+    stadiumName: "Euroborg",
+    capacity: 22525,      // ~22.525 asientos :contentReference[oaicite:8]{index=8}
+    cash: 20000000,
+    wageBudget: 9000000,
+    baseOverall: 72
+  },
+  {
+    id: "sparta",
+    name: "Sparta Rotterdam",
+    shortName: "SPA",
+    stadiumName: "Sparta Stadion Het Kasteel",
+    capacity: 11026,      // ~11.026 espectadores :contentReference[oaicite:9]{index=9}
+    cash: 19000000,
+    wageBudget: 8500000,
+    baseOverall: 71
+  }
+];
+
+const leagueNL = createLeagueFromBase(
+  NL_EREDIVISIE_CLUBS,
+  "league_nl_eredivisie",
+  "Eredivisie",
+  "Países Bajos"
+);
+ 
+// =======================
 // EXPORTS
 // =======================
 export const initialLeague = leagueES;
@@ -875,5 +988,6 @@ export const allLeagues = [
   leagueIT,
   leagueDE,
   leagueFR,
-  leaguePT
+  leaguePT,
+  leagueNL
 ];

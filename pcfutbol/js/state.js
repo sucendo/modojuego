@@ -77,7 +77,7 @@ export function newGame(options = {}) {
   };
 
   GameState.user.roleMode = roleMode;
-  GameState.user.clubId = clubId;
+  GameState.user.clubId = selectedClubId;
 
   normalizeGameState();
   setupCompetition();
@@ -419,6 +419,7 @@ function generateRoundRobinFixtures(clubIds) {
         homeGoals: null,
         awayGoals: null,
         played: false,
+        events: [],
         refereeName: referee.name,
         refereeStrictness: referee.strictness,
       });

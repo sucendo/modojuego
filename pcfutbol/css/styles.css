@@ -98,6 +98,7 @@ body {
   color: #e5e7eb;
   font-size: 0.9rem;
   min-width: 180px;
+  max-width: 260px;
 }
 
 .start-picker-hint {
@@ -376,6 +377,28 @@ body {
   overflow-x: auto;
 }
 
+
+.squad-player-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.flag-icon {
+  display: inline-block;
+  width: 16px;
+  height: 12px;
+  object-fit: cover;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.4);
+}
+
+#player-modal-nationality {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
 /* Indicadores de moral/forma como texto simple por ahora */
 .squad-metric {
   font-variant-numeric: tabular-nums;
@@ -425,6 +448,60 @@ body {
 
 .squad-actions .btn-xs + .btn-xs {
   margin-left: 0.25rem;
+}
+
+/* ===========================
+   MODAL / DETALLE PARTIDO
+   =========================== */
+
+.table-topscorers th:nth-child(1),
+.table-topscorers td:nth-child(1),
+.table-topscorers th:nth-child(4),
+.table-topscorers td:nth-child(4) {
+  text-align: center;
+}
+
+.match-detail-layout {
+  display: block;
+}
+
+.match-events-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 320px;
+  overflow-y: auto;
+  font-size: 0.9rem;
+}
+
+.match-event-item {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.match-event-item:last-child {
+  border-bottom: none;
+}
+
+.match-event-minute {
+  width: 3rem;
+  flex-shrink: 0;
+  font-weight: 600;
+  color: #e5e7eb;
+}
+
+.match-event-desc {
+  flex: 1;
+}
+
+.match-event-team-home {
+  color: #22c55e;
+}
+
+.match-event-team-away {
+  color: #60a5fa;
 }
 
 /* ===========================
@@ -736,6 +813,18 @@ body {
   margin-right: 0.25rem;
 }
 
+.player-stats-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.85rem;
+}
+
+.player-stats-summary span {
+  color: #9ca3af;
+  margin-right: 0.25rem;
+}
+
 /* ===========================
    COMPETICIÓN
    =========================== */
@@ -809,6 +898,19 @@ body {
 .table-standings td:nth-child(9),
 .table-standings td:nth-child(10) {
   text-align: center;
+}
+
+.club-with-coat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.coat-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
 @media (max-width: 900px) {
