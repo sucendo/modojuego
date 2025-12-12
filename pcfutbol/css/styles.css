@@ -872,6 +872,38 @@ body {
   margin-top: 0.75rem;
 }
 
+/* ================================
+   Estadísticas
+================================ */
+
+.stats-subtitle {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  color: #9ca3af;
+}
+
+.stats-meta {
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+  color: #9ca3af;
+}
+
+.stats-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(260px, 2fr);
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+
+.stats-main,
+.stats-side {
+  min-width: 0;
+}
+
+.stats-table-wrapper {
+  overflow-x: auto;
+}
+
 .competition-main,
 .competition-side {
   min-width: 0;
@@ -913,8 +945,17 @@ body {
   flex-shrink: 0;
 }
 
+span#club-name-main img {
+    width: 48px;
+    height: 48px;
+}
+
 @media (max-width: 900px) {
   .competition-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-layout {
     grid-template-columns: 1fr;
   }
 }

@@ -95,6 +95,9 @@
 				<button id="btn-nav-competition" class="btn btn-link">
 				Competición
 				</button>
+				<button id="btn-nav-stats" class="btn btn-link">
+				Estadísticas
+				</button>
 				<button id="btn-nav-medical" class="btn btn-link">
 				Médicos
 				</button>
@@ -128,7 +131,10 @@
             <div class="grid grid-2">
               <div>
                 <h3>Identidad</h3>
-                <p><strong>Club:</strong> <span id="club-name-main"></span></p>
+                <p>
+                  <strong>Club:</strong>
+                  <span id="club-name-main" class="club-with-coat"></span>
+                </p>
                 <p><strong>Estadio:</strong> <span id="stadium-name"></span></p>
                 <p>
                   <strong>Capacidad:</strong>
@@ -420,6 +426,69 @@
         </section>
       </section>
 	  
+	  
+	  <!-- SUBVISTA: ESTADÍSTICAS -->
+	  <section id="view-stats" class="hidden">
+		<article class="card">
+		  <header class="stats-header">
+			<div>
+			  <h2>Estadísticas</h2>
+			  <p class="stats-subtitle">
+				Resumen de temporada: pichichi y estadísticas de tu plantilla.
+			  </p>
+			</div>
+		  </header>
+		  <p class="stats-meta">
+			Temporada <span id="stats-season-label">1</span>
+		  </p>
+		</article>
+
+		<section class="stats-layout">
+		  <div class="stats-main">
+			<article class="card">
+			  <h3>Top goleadores</h3>
+			  <div class="stats-table-wrapper">
+				<table class="table table-standings">
+				  <thead>
+					<tr>
+					  <th>#</th>
+					  <th>Jugador</th>
+					  <th>Club</th>
+					  <th>Goles</th>
+					</tr>
+				  </thead>
+				  <tbody id="stats-topscorers-body"></tbody>
+				</table>
+			  </div>
+			</article>
+		  </div>
+
+		  <aside class="stats-side">
+			<article class="card">
+			  <h3>Mi equipo</h3>
+			  <div class="stats-table-wrapper">
+				<table class="table table-standings">
+				  <thead>
+					<tr>
+					  <th>Pos</th>
+					  <th>Jugador</th>
+					  <th>PJ</th>
+					  <th>Min</th>
+					  <th>G</th>
+					  <th>TA</th>
+					  <th>TR</th>
+					  <th></th>
+					</tr>
+				  </thead>
+				  <tbody id="stats-team-body"></tbody>
+				</table>
+			  </div>
+			</article>
+		  </aside>
+		</section>
+	  </section>
+
+	  <!-- SUBVISTA: MÉDICOS -->	  
 		<section id="view-medical" class="view hidden">
 		  <div class="view-header">
 			<div>
