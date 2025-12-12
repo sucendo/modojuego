@@ -1,8 +1,17 @@
 // js/data.js
 // Datos de ligas y clubs. Los jugadores se generan automáticamente al cargar,
-// salvo que exista una plantilla "real" en squads_real.js.
+// salvo que exista una plantilla "real" definida en alguno de los archivos
+// de plantillas (squads_es.js, squads_en.js, etc.).
 
-import { realSquads } from './squads_real.js';
+import { realSquads as realSquadsEs } from './squads_es.js';
+import { realSquads as realSquadsEn } from './squads_en.js';
+
+// Mapa global con TODAS las plantillas reales conocidas (España, Premier, etc.)
+// La clave es el id del club (real_madrid, barcelona, arsenal, astonvilla, ...).
+const realSquads = {
+  ...(realSquadsEs || {}),
+  ...(realSquadsEn || {})
+};
 
 // Distribución simple de 18 jugadores por club
 const SQUAD_POSITIONS = [
@@ -140,6 +149,16 @@ const ES_PRIMERA_CLUBS = [
     wageBudget: 10000000,
     baseOverall: 71
   },
+ 	{
+	id: "elche",
+	name: "Elche CF",
+	shortName: "ELC",
+	stadiumName: "Estadio Martínez Valero",
+	capacity: 33732,
+	cash: 18000000,
+	wageBudget: 7500000,
+	baseOverall: 66
+	},
   {
     id: "espanyol",
     name: "RCD Espanyol",
@@ -171,6 +190,16 @@ const ES_PRIMERA_CLUBS = [
     baseOverall: 73
   },
   {
+    id: "levante",
+    name: "Levante UD",
+    shortName: "LEV",
+    stadiumName: "Ciutat de València",
+    capacity: 26354,
+    cash: 20000000,
+    wageBudget: 8500000,
+    baseOverall: 68
+  },
+  {
     id: "mallorca",
     name: "RCD Mallorca",
     shortName: "MAL",
@@ -180,6 +209,7 @@ const ES_PRIMERA_CLUBS = [
     wageBudget: 9000000,
     baseOverall: 71
   },
+
   {
     id: "osasuna",
     name: "CA Osasuna",
@@ -221,6 +251,16 @@ const ES_PRIMERA_CLUBS = [
     baseOverall: 84
   },
   {
+    id: "realoviedo",
+    name: "Real Oviedo",
+    shortName: "OVI",
+    stadiumName: "Carlos Tartiere",
+    capacity: 30500,
+    cash: 19000000,
+    wageBudget: 8000000,
+    baseOverall: 67
+  },
+  {
     id: "realsociedad",
     name: "Real Sociedad",
     shortName: "RSO",
@@ -259,37 +299,7 @@ const ES_PRIMERA_CLUBS = [
     cash: 30000000,
     wageBudget: 13000000,
     baseOverall: 75
-  },
-  {
-    id: "realoviedo",
-    name: "Real Oviedo",
-    shortName: "OVI",
-    stadiumName: "Carlos Tartiere",
-    capacity: 30500,
-    cash: 19000000,
-    wageBudget: 8000000,
-    baseOverall: 67
-  },
-  {
-    id: "levante",
-    name: "Levante UD",
-    shortName: "LEV",
-    stadiumName: "Ciutat de València",
-    capacity: 26354,
-    cash: 20000000,
-    wageBudget: 8500000,
-    baseOverall: 68
-  },
-	{
-	id: "elche",
-	name: "Elche CF",
-	shortName: "ELC",
-	stadiumName: "Estadio Martínez Valero",
-	capacity: 33732,
-	cash: 18000000,
-	wageBudget: 7500000,
-	baseOverall: 66
-	}
+  }
 ];
 
 const leagueES = createLeagueFromBase(
@@ -312,6 +322,16 @@ const EN_PREMIER_CLUBS = [
     cash: 52000000,
     wageBudget: 26000000,
     baseOverall: 82
+  },
+  {
+    id: "astonvilla",
+    name: "Aston Villa",
+    shortName: "AVL",
+    stadiumName: "Villa Park",
+    capacity: 42657,
+    cash: 36000000,
+    wageBudget: 17000000,
+    baseOverall: 78
   },
   {
     id: "mancity",
@@ -372,16 +392,6 @@ const EN_PREMIER_CLUBS = [
     cash: 47000000,
     wageBudget: 22000000,
     baseOverall: 79
-  },
-  {
-    id: "astonvilla",
-    name: "Aston Villa",
-    shortName: "AVL",
-    stadiumName: "Villa Park",
-    capacity: 42657,
-    cash: 36000000,
-    wageBudget: 17000000,
-    baseOverall: 78
   },
   {
     id: "brighton",
@@ -928,16 +938,16 @@ const NL_EREDIVISIE_CLUBS = [
     wageBudget: 11000000,
     baseOverall: 75
   },
-  {
-    id: "vitesse",
-    name: "Vitesse",
-    shortName: "VIT",
-    stadiumName: "GelreDome",
-    capacity: 21248,      // 21.248 asientos (liga) :contentReference[oaicite:6]{index=6}
-    cash: 22000000,
-    wageBudget: 10000000,
-    baseOverall: 74
-  },
+{
+  id: "nec",
+  name: "N.E.C. Nijmegen",
+  shortName: "NEC",
+  stadiumName: "Goffertstadion",
+  capacity: 12500,      // ~12.500 asientos
+  cash: 19000000,
+  wageBudget: 8500000,
+  baseOverall: 71
+},
   {
     id: "heerenveen",
     name: "SC Heerenveen",

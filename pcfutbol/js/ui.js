@@ -594,13 +594,35 @@ export function updateDashboard() {
   const cashLabel = document.getElementById('cash-label');
   const wageLabel = document.getElementById('wage-label');
 
-  clubNameTop.textContent = club.name;
+  if (clubNameMain) {
+    clubNameMain.textContent = '';
+    const coat = createCoatImgElement(club.id, club.name, 24);
+    if (coat) {
+      clubNameMain.appendChild(coat);
+    }
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = club.name;
+    clubNameMain.appendChild(nameSpan);
+  }
   leagueName.textContent = GameState.league.name || 'Liga desconocida';
 
   seasonLabel.textContent = `Temporada ${GameState.currentDate.season}`;
   matchdayLabel.textContent = `Jornada ${GameState.currentDate.matchday}`;
 
-  clubNameMain.textContent = club.name;
+  if (clubNameMain) {
+    // Contenedor: escudo + nombre
+    clubNameMain.classList.add('club-with-coat');
+    clubNameMain.textContent = '';
+
+    const coatImg = createCoatImgElement(club.id, club.name, 24);
+    if (coatImg) {
+      clubNameMain.appendChild(coatImg);
+    }
+
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = club.name;
+    clubNameMain.appendChild(nameSpan);
+  }
   stadiumName.textContent = club.stadium?.name || 'Estadio sin nombre';
   stadiumCapacity.textContent =
     club.stadium?.capacity?.toLocaleString('es-ES') || '-';
@@ -1322,8 +1344,8 @@ function openMatchDetailModal(fixtureId) {
 
     const events = Array.isArray(fx.events) ? fx.events.slice() : [];
     events.sort((a, b) => {
-      const ma = typeof a.minute === 'number' ? a.minute : 0;
-      const mb = typeof b.minute === 'number' ? b.minute : 0;
+      const ma = typeof a.minute === 'number' ? a.minute : 999;
+      const mb = typeof b.minute === 'number' ? b.minute : 999;
       return ma - mb;
     });
 
@@ -1342,7 +1364,7 @@ function openMatchDetailModal(fixtureId) {
       eventsListEl.appendChild(li);
     } else {
       events.forEach((ev) => {
-        if (!ev || ev.type !== 'GOAL') return;
+        if (!ev) return;
 
         const li = document.createElement('li');
         li.className = 'match-event-item';
@@ -1371,7 +1393,27 @@ function openMatchDetailModal(fixtureId) {
           descSpan.classList.add('match-event-team-away');
         }
 
-        descSpan.textContent = `Gol de ${playerName} (${teamName})`;
+        let text = '';
+        switch (ev.type) {
+          case 'GOAL':
+            text = `Gol de ${playerName} (${teamName})`;
+            break;
+          case 'YELLOW_CARD':
+            text = `Amarilla a ${playerName} (${teamName})`;
+            break;
+          case 'RED_CARD':
+            text = `Roja a ${playerName} (${teamName})`;
+            break;
+          case 'INJURY': {
+            const injuryType = ev.injuryType || 'Lesión';
+            text = `Lesión: ${playerName} (${teamName}) – ${injuryType}`;
+            break;
+          }
+          default:
+            text = `${ev.type || 'Evento'}: ${playerName} (${teamName})`;
+            break;
+        }
+        descSpan.textContent = text;
 
         li.appendChild(minuteSpan);
         li.appendChild(descSpan);
@@ -1557,11 +1599,11 @@ function updateCompetitionView() {
     currentMdLabel.textContent = String(GameState.currentDate.matchday || 1);
   }
   if (dateLabel) {
-    const gameDate = getGameDateFor(
-      GameState.currentDate.season || 1,
-      GameState.currentDate.matchday || 1
-    );
-    dateLabel.textContent = formatGameDateLabel(gameDate);
+    const season = GameState.currentDate.season || 1;
+    const mdForLabel =
+      competitionSelectedMatchday || GameState.currentDate.matchday || 1;
+    const gameDate = getGameDateFor(season, mdForLabel);
+    dateLabel.textContent = `Jornada ${mdForLabel} – ${formatGameDateLabel(gameDate)}`;
   }
 
   if (matchdaySelect) {
@@ -1859,6 +1901,16 @@ function simulateCurrentMatchday() {
   // Aplicar efectos de fatiga, forma, lesiones y sanciones
   applyPostMatchdayEffects(currentFixtures);
 
+  // Estadísticas persistentes (goles, tarjetas, lesiones, apariciones...)
+  // Importante: se aplica DESPUÉS de los efectos post-partido, porque ahí
+  // se añaden eventos de lesión y tarjetas al fixture.
+  try {
+    applyStatsForFixtures(currentFixtures, GameState.currentDate.season || 1);
+  } catch (e) {
+    // No bloqueamos la simulación por un fallo de stats
+    console.warn('No se pudieron aplicar estadísticas:', e);
+  }
+
   recomputeLeagueTable();
 
   const maxMd =
@@ -1873,6 +1925,46 @@ function simulateCurrentMatchday() {
   updateDashboard();
 }
 
+
+// ================================
+// Lineup por partido (para stats)
+// ================================
+
+function getStartingXIForFixture(club) {
+  if (!club || !Array.isArray(club.players)) return [];
+
+  ensureClubTactics(club);
+
+  const available = club.players
+    .filter((p) => p && p.id && !isPlayerUnavailable(p))
+    .slice()
+    .sort((a, b) => (b.overall ?? 0) - (a.overall ?? 0));
+
+  const availableSet = new Set(available.map((p) => p.id));
+  const picked = [];
+  const seen = new Set();
+
+  // 1) Respeta la selección del usuario/club (siempre que estén disponibles)
+  const preferred = Array.isArray(club.lineup) ? club.lineup : [];
+  preferred.forEach((pid) => {
+    if (!pid || seen.has(pid)) return;
+    if (!availableSet.has(pid)) return;
+    picked.push(pid);
+    seen.add(pid);
+  });
+
+  // 2) Rellena con los mejores disponibles
+  for (let i = 0; i < available.length && picked.length < 11; i++) {
+    const pid = available[i].id;
+    if (pid && !seen.has(pid)) {
+      picked.push(pid);
+      seen.add(pid);
+    }
+  }
+
+  return picked.slice(0, 11);
+}
+
 /**
  * Usa fuerza de once titular + táctica + forma/fatiga para estimar goles.
  */
@@ -1880,6 +1972,11 @@ function simulateFixture(fx) {
   const homeClub = getClubById(fx.homeClubId);
   const awayClub = getClubById(fx.awayClubId);
   if (!homeClub || !awayClub) return;
+
+  // Guardamos XI usado en el partido para stats (apps/minutos)
+  fx.season = fx.season ?? (GameState.currentDate.season || 1);
+  fx.homeLineupIds = getStartingXIForFixture(homeClub);
+  fx.awayLineupIds = getStartingXIForFixture(awayClub);
 
   const homeProfile = getClubStrengthProfile(homeClub, true);
   const awayProfile = getClubStrengthProfile(awayClub, false);
@@ -1905,21 +2002,21 @@ function simulateFixture(fx) {
   fx.events = generateEventsForFixture(fx, homeGoals, awayGoals);
 }
 
-function generateEventsForFixture(fx, homeGoals, awayGoals) {
-  const events = [];
-
-  const homeClub = getClubById(fx.homeClubId);
-  const awayClub = getClubById(fx.awayClubId);
-  if (!homeClub || !awayClub) {
-    return events;
-  }
-
-  const homePool = getPotentialScorersForClub(homeClub);
-  const awayPool = getPotentialScorersForClub(awayClub);
-
+/**
+ * Genera minutos únicos (1-90) para eventos de un partido.
+ * - Evita colisiones con los eventos ya existentes.
+ * - Si se agotan intentos, devuelve un minuto aleatorio.
+ */
+function createFixtureMinutePicker(existingEvents) {
   const usedMinutes = new Set();
-  function pickUniqueMinute() {
-    const maxAttempts = 12;
+  const events = Array.isArray(existingEvents) ? existingEvents : [];
+  events.forEach((ev) => {
+    const m = ev && typeof ev.minute === 'number' ? ev.minute : null;
+    if (m != null && m > 0) usedMinutes.add(m);
+  });
+
+  return function pickUniqueMinute() {
+    const maxAttempts = 18;
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       const minute = 1 + Math.floor(Math.random() * 90);
       if (!usedMinutes.has(minute)) {
@@ -1928,12 +2025,23 @@ function generateEventsForFixture(fx, homeGoals, awayGoals) {
       }
     }
     return 1 + Math.floor(Math.random() * 90);
-  }
+  };
+}
+
+function generateEventsForFixture(fx, homeGoals, awayGoals) {
+  const events = [];
+
+  const pickMinute = createFixtureMinutePicker(events);
+  const homeClub = getClubById(fx.homeClubId);
+  const awayClub = getClubById(fx.awayClubId);
+  if (!homeClub || !awayClub) return events;
+  const homePool = getPotentialScorersForClub(homeClub);
+  const awayPool = getPotentialScorersForClub(awayClub);
 
   for (let i = 0; i < homeGoals; i++) {
     const scorer = pickRandomScorer(homePool);
     if (!scorer) continue;
-    const minute = pickUniqueMinute();
+    const minute = pickMinute();
     events.push({
       minute,
       type: 'GOAL',
@@ -1945,7 +2053,7 @@ function generateEventsForFixture(fx, homeGoals, awayGoals) {
   for (let i = 0; i < awayGoals; i++) {
     const scorer = pickRandomScorer(awayPool);
     if (!scorer) continue;
-    const minute = pickUniqueMinute();
+    const minute = pickMinute();
     events.push({
       minute,
       type: 'GOAL',
@@ -1955,8 +2063,8 @@ function generateEventsForFixture(fx, homeGoals, awayGoals) {
   }
 
   events.sort((a, b) => {
-    const ma = typeof a.minute === 'number' ? a.minute : 0;
-    const mb = typeof b.minute === 'number' ? b.minute : 0;
+    const ma = typeof a.minute === 'number' ? a.minute : 999;
+    const mb = typeof b.minute === 'number' ? b.minute : 999;
     return ma - mb;
   });
 
@@ -2046,13 +2154,16 @@ function applyPostMatchdayEffects(fixtures) {
   const clubs = GameState.clubs || [];
 
   fixtures.forEach((fx) => {
+    const pickMinute = createFixtureMinutePicker(
+      Array.isArray(fx?.events) ? fx.events : []
+    );	 
     const homeClub = getClubById(fx.homeClubId);
     const awayClub = getClubById(fx.awayClubId);
     if (homeClub) {
-      applyMatchEffectsToClub(homeClub, true, fx);
+      applyMatchEffectsToClub(homeClub, true, fx, pickMinute);
     }
     if (awayClub) {
-      applyMatchEffectsToClub(awayClub, false, fx);
+      applyMatchEffectsToClub(awayClub, false, fx, pickMinute);
     }
   });
 
@@ -2068,7 +2179,7 @@ function applyPostMatchdayEffects(fixtures) {
   });
 }
 
-function applyMatchEffectsToClub(club, isHome, fx) {
+function applyMatchEffectsToClub(club, isHome, fx, pickMinute) {
   ensureClubTactics(club);
   ensureClubMedical(club);
 
@@ -2110,7 +2221,11 @@ function applyMatchEffectsToClub(club, isHome, fx) {
 
         if (Math.random() < injuryProb) {
           const injury = generateRandomInjury();
-          p.injury = injury;
+          p.injury = {
+            ...injury,
+            startedSeason: GameState.currentDate.season || 1,
+            startedMatchday: fx?.matchday ?? GameState.currentDate.matchday ?? null,
+          };
           p.fitness = Math.min(p.fitness ?? 1, 0.6);
 
           // Registrar evento de lesión en el partido
@@ -2119,7 +2234,7 @@ function applyMatchEffectsToClub(club, isHome, fx) {
               fx.events = Array.isArray(fx.events) ? fx.events.slice() : [];
             }
             fx.events.push({
-              minute: null,
+              minute: typeof pickMinute === 'function' ? pickMinute() : null,
               type: 'INJURY',
               clubId: club.id,
               playerId: p.id,
@@ -2133,6 +2248,7 @@ function applyMatchEffectsToClub(club, isHome, fx) {
       applyCardsForPlayer(p, {
         season: GameState.currentDate.season || 1,
         matchday: fx.matchday,
+        pickMinute,
         leagueStrictness,
         refereeStrictness,
         tacticsAggression,
@@ -2171,9 +2287,12 @@ function progressInjuriesForClub(club) {
   ensureClubMedical(club);
   const players = Array.isArray(club.players) ? club.players : [];
   const extraChance = getPhysioRecoveryExtraChance(club);
-
+  const currentSeason = GameState.currentDate?.season || 1;
+  const currentMatchday = GameState.currentDate?.matchday || 1;
+  
   players.forEach((p) => {
     if (p.injury && p.injury.matchesRemaining != null) {
+       if (p.injury.startedSeason === currentSeason && p.injury.startedMatchday === currentMatchday) return;
       p.injury.matchesRemaining -= 1;
       if (p.injury.matchesRemaining > 0 && extraChance > 0) {
         if (Math.random() < extraChance) {
@@ -2189,8 +2308,11 @@ function progressInjuriesForClub(club) {
 
 function progressSanctionsForClub(club) {
   const players = Array.isArray(club.players) ? club.players : [];
+  const currentSeason = GameState.currentDate?.season || 1;
+  const currentMatchday = GameState.currentDate?.matchday || 1;
   players.forEach((p) => {
     if (p.suspension && p.suspension.matchesRemaining != null) {
+      if (p.suspension.startedSeason === currentSeason && p.suspension.startedMatchday === currentMatchday) return;
       p.suspension.matchesRemaining -= 1;
       if (p.suspension.matchesRemaining <= 0) {
         p.suspension = null;
@@ -2291,13 +2413,19 @@ function applyCardsForPlayer(player, ctx) {
   if (Math.random() < yellowProb) {
     player.yellowCards += 1;
     gotYellow = true;
-    recordCardEvent(player, 'Y', ctx);
+    recordCardEvent(player, 'Y', {
+      ...ctx,
+      minute: typeof ctx.pickMinute === 'function' ? ctx.pickMinute() : null,
+    });
   }
 
   let gotRed = false;
   if (Math.random() < redProb) {
     gotRed = true;
-    recordCardEvent(player, 'R', ctx);
+    recordCardEvent(player, 'R', {
+      ...ctx,
+      minute: typeof ctx.pickMinute === 'function' ? ctx.pickMinute() : null,
+    });
   }
 
   // Sanción por acumulación de amarillas (cada 5 amarillas → 1 partido)
@@ -2309,10 +2437,14 @@ function applyCardsForPlayer(player, ctx) {
       player.suspension = {
         type: 'Acumulación de amarillas',
         matchesRemaining: banMatches,
+        startedSeason: ctx.season ?? 1,
+        startedMatchday: ctx.matchday ?? null,
       };
     } else {
       player.suspension.matchesRemaining += banMatches;
       player.suspension.type = 'Acumulación de amarillas';
+      player.suspension.startedSeason = ctx.season ?? 1;
+      player.suspension.startedMatchday = ctx.matchday ?? null;
     }
 
     player.yellowCards = player.yellowCards % 5;
@@ -2325,10 +2457,14 @@ function applyCardsForPlayer(player, ctx) {
       player.suspension = {
         type: 'Roja directa',
         matchesRemaining: extraMatches,
+        startedSeason: ctx.season ?? 1,
+        startedMatchday: ctx.matchday ?? null,
       };
     } else {
       player.suspension.matchesRemaining += extraMatches;
       player.suspension.type = 'Roja directa';
+      player.suspension.startedSeason = ctx.season ?? 1;
+      player.suspension.startedMatchday = ctx.matchday ?? null;
     }
   }
 }
@@ -2344,6 +2480,7 @@ function recordCardEvent(player, type, ctx) {
     season: ctx.season ?? 1,
     matchday: ctx.matchday ?? null,
     type, // 'Y' o 'R'
+    minute: ctx.minute ?? null,
   });
 
   // Evento de partido asociado (si hay fixture en contexto)
@@ -2353,7 +2490,7 @@ function recordCardEvent(player, type, ctx) {
       fx.events = Array.isArray(fx.events) ? fx.events.slice() : [];
     }
     fx.events.push({
-      minute: null,
+      minute: ctx.minute ?? null,
       type: type === 'R' ? 'RED_CARD' : 'YELLOW_CARD',
       clubId: ctx.clubId ?? null,
       playerId: player.id,
@@ -2854,71 +2991,152 @@ function getCoatUrlForClubId(clubId) {
   if (!clubId) return null;
   const id = String(clubId).toLowerCase();
 
-// Mapa id de club → fichero de escudo en img/coats
-const map = {
-  // LaLiga
-  alaves: 'Alavés.png',
-  athletic: 'Athletic Bilbao.png',
-  atletico: 'Atlético Madrid.png',
-  barcelona: 'FC Barcelona.png',
-  celta: 'Celta de Vigo.png',
-  elche: 'Elche.png',
-  espanyol: 'RCD Espanyol.png',
-  getafe: 'Getafe.png',
-  girona: 'Girona.png',
-  mallorca: 'RCD Mallorca.png',
-  osasuna: 'Osasuna.png',
-  rayo: 'rayo Vallecano.png',
-  betis: 'Real Betis.png',
-  realmadrid: 'Real Madrid.png',
-  realsociedad: 'Real Sociedad.png',
-  sevilla: 'Sevilla.png',
-  valencia: 'Valencia.png',
-  villarreal: 'Villarreal.png',
-  realoviedo: 'Real Oviedo.png',
-  levante: 'Levante.png',
+  // Mapa id de club → fichero de escudo en img/coats
+  const map = {
+    // =====================
+    // LaLiga (España)
+    // =====================
+    alaves: 'es/Alavés.png',
+    athletic: 'es/Athletic Bilbao.png',
+    atletico: 'es/Atlético Madrid.png',
+    barcelona: 'es/FC Barcelona.png',
+    celta: 'es/Celta de Vigo.png',
+    elche: 'es/Elche.png',
+    espanyol: 'es/RCD Espanyol.png',
+    getafe: 'es/Getafe.png',
+    girona: 'es/Girona.png',
+    mallorca: 'es/RCD Mallorca.png',
+    osasuna: 'es/Osasuna.png',
+    rayo: 'es/rayo Vallecano.png',
+    betis: 'es/Real Betis.png',
+    realmadrid: 'es/Real Madrid.png',
+    realsociedad: 'es/Real Sociedad.png',
+    sevilla: 'es/Sevilla.png',
+    valencia: 'es/Valencia.png',
+    villarreal: 'es/Villarreal.png',
+    realoviedo: 'es/Real Oviedo.png',
+    levante: 'es/Levante.png',
 
-  // Premier League (los que tienes escudo)
-  arsenal: 'Arsenal.png',
-  mancity: 'Manchester City.png',
-  liverpool: 'Liverpool.png',
-  manutd: 'Manchester United.png',
-  chelsea: 'Chelsea.png',
-  tottenham: 'Tottenham.png',
-  newcastle: 'Newcastle.png',
-  astonvilla: 'Aston Villa.png',
-  brighton: 'Brighton.png',
-  westham: 'west Ham.png',
+    // =====================
+    // Premier League (Inglaterra) – clubs de tu liga
+    // =====================
+    arsenal: 'en/Arsenal.png',
+    mancity: 'en/Manchester City.png',
+    liverpool: 'en/Liverpool.png',
+    manutd: 'en/Manchester United.png',
+    chelsea: 'en/Chelsea.png',
+    tottenham: 'en/Tottenham.png',
+    newcastle: 'en/Newcastle.png',
+    astonvilla: 'en/Aston Villa.png',
+    brighton: 'en/Brighton.png',
+    westham: 'en/west Ham.png',
 
-  // Serie A (los que tienes escudo)
-  acmilan: 'Milan.png',
-  inter: 'inter.png',
-  juventus: 'Juventus.png',
-  napoli: 'napoli.png',
-  roma: 'Roma.png',
-  lazio: 'Lazio.png',
-  atalanta: 'Atalanta.png',
-  fiorentina: 'Fiorentina.png',
-  torino: 'Torino.png',
+    // Premier extra (equipos para los que también tienes escudo)
+    everton: 'en/Everton.png',
+    leeds: 'en/Leeds.png',
+    bournemouth: 'en/Bournemouth.png',
+    burnley: 'en/Burnley.png',
+    nottingham: 'en/Nottingham.png',
+    wolves: 'en/Wolves.png',
+    brentford: 'en/brentford.png',
+    sunderland: 'en/Sunderland AFC.png',
 
-  // Bundesliga / Ligue 1 (solo los que vienen en coats.zip)
-  bayern: 'Bayern Munich.png',
-  
-  // Ligue 1
-  psg: 'PSG.png',
-  
-    // Eredivisie (Países Bajos)
-    ajax: 'Ajax.png',
-    psv: 'PSV Eindhoven.png',
-    feyenoord: 'Feyenoord.png',
-    az: 'AZ Alkmaar.png',
-    twente: 'FC Twente.png',
-    utrecht: 'FC Utrecht.png',
-    vitesse: 'Vitesse.png',
-    heerenveen: 'SC Heerenveen.png',
-    groningen: 'FC Groningen.png',
-    sparta: 'Sparta Rotterdam.png',
-};
+    // =====================
+    // Serie A (Italia) – clubs de tu liga
+    // =====================
+    acmilan: 'it/Milan.png',
+    inter: 'it/inter.png',
+    juventus: 'it/Juventus.png',
+    napoli: 'it/napoli.png',
+    roma: 'it/Roma.png',
+    lazio: 'it/Lazio.png',
+    atalanta: 'it/Atalanta.png',
+    fiorentina: 'it/Fiorentina.png',
+    bologna: 'it/Bolonia.png',   // faltaba en tu map original
+    torino: 'it/Torino.png',
+
+    // Serie A / Italia extra (escudos que también tienes en coats)
+    cagliari: 'it/Cagliari.png',
+    udinese: 'it/Udinese.png',
+    hellasverona: 'it/Hellas Verona.png',
+    sassuolo: 'it/Sassuolo.png',
+    lecce: 'it/Lecce.png',
+    como: 'it/Como.png',
+
+    // =====================
+    // Bundesliga (Alemania)
+    // =====================
+    bayern: 'de/Bayern Munich.png',
+    dortmund: 'de/Dortmund.png',
+    leverkusen: 'de/Leverkusen.png',
+    augsburg: 'de/Augsburgo.png',
+    colonia: 'de/Colonia.png',
+    unionberlin: 'de/FC Union Berlin.png',
+    frankfurt: 'de/Frankfurt.png',
+    freiburg: 'de/Friburgo.png',
+    hamburg: 'de/Hamburg.png',
+    heidenheim: 'de/Heidenheim.png',
+    hoffenheim: 'de/Hoffenheim.png',
+    leipzig: 'de/Leipzig.png',
+    mainz: 'de/Mainz 05.png',
+monchengladbach: 'de/Monchengladbach.png',
+stpauli: 'de/St Pauli.png',
+stuttgart: 'de/Stuttgart.png',
+werderbremen: 'de/Werder Bremen.png',
+wolfsburg: 'de/Wolfsburg.png',   
+
+    // =====================
+    // Ligue 1 (Francia)
+    // =====================
+    psg: 'fr/PSG.png',
+    metz: 'fr/Metz.png',
+    monaco: 'fr/Monaco.png',
+    nantes: 'fr/Nantes.png',
+    angers: 'fr/Angers.png',
+    auxerre: 'fr/Auxerre.png',
+    lehavre: 'fr/Le Havre.png',
+    lens: 'fr/Lens.png',
+    lorient: 'fr/Lorient.png',
+    lille: 'fr/LOSC.png',   // Lille OSC
+    lyon: 'fr/Lyon.png',
+    marseille: 'fr/Marsella.png',   
+nice: 'fr/Niza.png',
+parisfc: 'fr/Paris FC.png',
+strasbourg: 'fr/Racing Estrasburgo.png',
+rennes: 'fr/Rennes.png',
+brest: 'fr/Stade Brestois.png',
+toulouse: 'fr/Toulouse.png',
+
+    // =====================
+    // Eredivisie (Países Bajos) – los de tu liga
+    // =====================
+    ajax: 'nl/Ajax.png',                  // en tu proyecto
+    psv: 'nl/PSV Eindhoven.png',          // en tu proyecto
+    feyenoord: 'nl/Feyenoord.png',        // en tu proyecto
+    az: 'nl/AZ Alkmaar.png',              // en tu proyecto
+    nec: 'nl/NEC.png',                    // en tu proyecto
+    utrecht: 'nl/Utrecht.png',
+    twente: 'nl/Twente.png',
+    heerenveen: 'nl/Heerenveen.png',
+    groningen: 'nl/FC Groningen.png',
+    sparta: 'nl/Sparta Rotterdam.png',
+
+    // Eredivisie extra (otros escudos que ya tienes)
+    heracles: 'nl/Heracles.png',
+    nac: 'nl/NAC.png',
+    telstar: 'nl/SC Telstar.png',
+    volendam: 'nl/Volendam.png',
+    zwolle: 'nl/Zwolle.png',
+
+    // =====================
+    // (reservado) Primeira Liga (Portugal)
+    // =====================
+    // En el coats.zip que has subido ahora no aparecen PNG de Benfica, Porto, etc.
+    // Cuando los añadas en img/coats/pt/..., aquí se pueden mapear:
+    // benfica: 'pt/Benfica.png',
+    // porto: 'pt/Porto.png',
+    // ...
+  };
 
   const filename = map[id];
   if (!filename) return null;
@@ -2955,14 +3173,16 @@ function getFlagUrlForNationality(nationality) {
     Bélgica: 'Flag_of_Belgium.svg',
     Belgica: 'Flag_of_Belgium.svg',
     Croacia: 'Flag_of_Croatia.svg',
+    Kósovo: 'Flag_of_Kosovo.svg',
     Dinamarca: 'Flag_of_Denmark.svg',
+    Finlandia: 'Flag_of_Finland.svg',
+    Grecia: 'Flag_of_Greece.svg',
     Inglaterra: 'Flag_of_England.svg',
+    Islandia: 'Flag_of_Iceland.svg',
     Francia: 'Flag_of_France.svg',
     Georgia: 'Flag_of_Georgia.svg',
     Alemania: 'Flag_of_Germany.svg',
     Italia: 'Flag_of_Italy.svg',
-    Kazajistán: 'Flag_of_Kazakhstan.svg',
-    Kazajistan: 'Flag_of_Kazakhstan.svg',
     Macedonia: 'Flag_of_North_Macedonia.svg',
     'Macedonia del Norte': 'Flag_of_North_Macedonia.svg',
     Noruega: 'Flag_of_Norway.svg',
@@ -2970,9 +3190,11 @@ function getFlagUrlForNationality(nationality) {
     Portugal: 'Flag_of_Portugal.svg',
     Rumanía: 'Flag_of_Romania.svg',
     Rumania: 'Flag_of_Romania.svg',
+    Rusia: 'Flag_of_Russia.svg',
     Eslovaquia: 'Flag_of_Slovakia.svg',
     Eslovenia:	'Flag_of_Slovenia.svg',
     España: 'Flag_of_Spain.svg',
+    Serbia: 'Flag_of_Serbia.svg',
     Suecia: 'Flag_of_Sweden.svg',
     Suiza: 'Flag_of_Switzerland.svg',
     'República Checa': 'Flag_of_the_Czech_Republic.svg',
@@ -2981,36 +3203,53 @@ function getFlagUrlForNationality(nationality) {
     'Republica Dominicana': 'Flag_of_the_Dominican_Republic.svg',
     'Países Bajos': 'Flag_of_the_Netherlands.svg',
     'Paises Bajos': 'Flag_of_the_Netherlands.svg',
+    Ucrania: 'Flag_of_Ukraine.svg',
 
     // América
     Argentina: 'Flag_of_Argentina.svg',
+    Brasil: 'Flag_of_Brazil.svg',	
     Canadá: 'Flag_of_Canada.svg',
+    Chile: 'Flag_of_Chile.svg',
+    Colombia: 'Flag_of_Colombia.svg',
     Ecuador: 'Flag_of_Ecuador.svg',
+   'Estados Unidos': 'Flag_of_the_United_States.svg',
+   Honduras: 'Flag_of_Honduras_(2022–present).svg',
+   'Guadalupe (Francia)':  'Flag_of_France.svg',
     México: 'Flag_of_Mexico.svg',
     Mexico: 'Flag_of_Mexico.svg',
+    Surinam: 'Flag_of_Suriname.svg',
     Uruguay: 'Flag_of_Uruguay.svg',
-    Brasil: 'Flag_of_Brazil.svg',
-    'Estados Unidos': 'Flag_of_the_United_States.svg',
+    Venezuela: 'Flag_of_Venezuela.svg',
 
     // África
     Angola: 'Flag_of_Angola.svg',
    'Cabo Verde': 'Flag_of_Cape_Verde.svg',
     Camerún: 'Flag_of_Cameroon.svg',
     Camerun: 'Flag_of_Cameroon.svg',
+   'República Centroafricana': 'Flag_of_the_Central_African_Republic.svg',
+   'República Democrática del Congo': 'Flag_of_the_Democratic_Republic_of_the_Congo.svg',
    'Costa de Marfil': 'Flag_of_Côte_d_Ivoire.svg',
     Ghana:	'Flag_of_Ghana.svg',
     Guinea: 'Flag_of_Guinea.svg',
+   'Guinea Ecuatorial': 'Flag_of_Equatorial_Guinea.svg',
     Marruecos: 'Flag_of_Morocco.svg',
     Mozambique: 'Flag_of_Mozambique.svg',
+    Niger: 'Flag_of_Niger.svg',
     Nigeria: 'Flag_of_Nigeria.svg',
     Senegal: 'Flag_of_Senegal.svg',
     Togo: 'Flag_of_Togo_(3-2).svg',
 
     // Asia / otros
     Israel: 'Flag_of_Israel.svg',
+    Japón: 'Flag_of_Japan.svg',
+    Kazajistán: 'Flag_of_Kazakhstan.svg',
+    Kazajistan: 'Flag_of_Kazakhstan.svg',
     Turquía: 'Flag_of_Turkey.svg',
     Turquia: 'Flag_of_Turkey.svg',
-    Ucrania: 'Flag_of_Ukraine.svg',
+	
+    // Oceania
+    Australia: 'Flag_of_Australia_(converted).svg',
+	
   };
 
   const filename = map[n];
