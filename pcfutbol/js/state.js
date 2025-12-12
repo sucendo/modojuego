@@ -114,6 +114,9 @@ export function applyLoadedState(raw) {
   } else {
     recomputeCompetitionMetadata();
   }
+  
+  // Compatibilidad saves viejos: (re)construir estadísticas desde fixtures
+  rebuildStatsFromFixtures(GameState.currentDate?.season || 1);
 }
 
 /**
@@ -121,14 +124,22 @@ export function applyLoadedState(raw) {
  */
 function normalizeGameState() {
   if (!Array.isArray(GameState.clubs)) return;
-
+  
+  const season = GameState.currentDate?.season || 1;
   GameState.clubs.forEach((club) => {
+     ensureClubDefaults(club, season);
     if (!Array.isArray(club.players)) club.players = [];
-    club.players.forEach((p) => ensurePlayerDefaults(p));
+    club.players.forEach((p) => ensurePlayerDefaults(p, season));
   });
 }
 
-function ensurePlayerDefaults(player) {
+function ensureClubDefaults(club, season) {
+  if (!club) return;
+  if (!club.stats || typeof club.stats !== 'object') club.stats = {};
+  ensureClubSeasonStats(club, season);
+}
+
+function ensurePlayerDefaults(player, season) {
   if (player.morale == null) player.morale = 0.7;
   if (player.fitness == null) player.fitness = 0.9;
   if (player.transferListed == null) player.transferListed = false;
@@ -158,6 +169,10 @@ function ensurePlayerDefaults(player) {
     player.disciplineHistory = [];
   }
 
+  // Stats persistentes por temporada (compatibles con saves viejos)
+  if (!player.stats || typeof player.stats !== 'object') player.stats = {};
+  ensurePlayerSeasonStats(player, season);
+
   if (!player.attributes) {
     const ov = player.overall ?? 60;
     const pos = (player.position || '').toUpperCase();
@@ -168,6 +183,252 @@ function ensurePlayerDefaults(player) {
     player.attributes.physical = player.attributes.physical || {};
   }
 }
+
+function createEmptyPlayerSeasonStats() {
+  return {
+    apps: 0,
+    starts: 0,
+    minutes: 0,
+    goals: 0,
+    assists: 0,
+    yellows: 0,
+    reds: 0,
+    injuries: 0,
+    subsIn: 0,
+    subsOut: 0,
+    cleanSheets: 0,
+  };
+}
+
+function createEmptyClubSeasonStats() {
+  return {
+    played: 0,
+    won: 0,
+    draw: 0,
+    lost: 0,
+    gf: 0,
+    ga: 0,
+    yellows: 0,
+    reds: 0,
+    injuries: 0,
+    subsUsed: 0,
+  };
+}
+
+function ensurePlayerSeasonStats(player, season) {
+  if (!player || !player.stats) return;
+  const key = String(season || 1);
+  if (!player.stats[key]) player.stats[key] = createEmptyPlayerSeasonStats();
+}
+
+function ensureClubSeasonStats(club, season) {
+  if (!club || !club.stats) return;
+  const key = String(season || 1);
+  if (!club.stats[key]) club.stats[key] = createEmptyClubSeasonStats();
+}
+
+function resetStatsForSeason(season) {
+  const key = String(season || 1);
+  (GameState.clubs || []).forEach((club) => {
+    if (!club.stats || typeof club.stats !== 'object') club.stats = {};
+    club.stats[key] = createEmptyClubSeasonStats();
+    (club.players || []).forEach((p) => {
+      if (!p.stats || typeof p.stats !== 'object') p.stats = {};
+      p.stats[key] = createEmptyPlayerSeasonStats();
+    });
+  });
+  (GameState.fixtures || []).forEach((fx) => {
+    if (fx) fx.statsApplied = false;
+  });
+}
+
+function buildPlayerIndex() {
+  const index = new Map();
+  (GameState.clubs || []).forEach((club) => {
+    (club.players || []).forEach((p) => {
+      if (p && p.id) index.set(p.id, { player: p, club });
+    });
+  });
+  return index;
+}
+
+function computeMinutesFromFixture(fx) {
+  const minutes = new Map();
+  const apps = new Set();
+  const starts = new Set();
+
+  const homeXI = Array.isArray(fx.homeLineupIds) ? fx.homeLineupIds : [];
+  const awayXI = Array.isArray(fx.awayLineupIds) ? fx.awayLineupIds : [];
+  const starters = homeXI.concat(awayXI).filter(Boolean);
+  starters.forEach((pid) => {
+    minutes.set(pid, 90);
+    apps.add(pid);
+    starts.add(pid);
+  });
+
+  const subs = Array.isArray(fx.substitutions) ? fx.substitutions : [];
+  subs.forEach((s) => {
+    if (!s) return;
+    const m = typeof s.minute === 'number' ? s.minute : null;
+    if (!m || m < 1 || m > 90) return;
+    const outId = s.outPlayerId;
+    const inId = s.inPlayerId;
+    if (outId && minutes.has(outId)) {
+      minutes.set(outId, Math.max(0, Math.min(minutes.get(outId), m - 1)));
+    }
+    if (inId) {
+      const add = Math.max(0, 91 - m);
+      minutes.set(inId, (minutes.get(inId) || 0) + add);
+      apps.add(inId);
+    }
+  });
+
+  return { minutes, apps, starts };
+}
+
+function applyStatsToFixture(fx, season, playerIndex) {
+  if (!fx || !fx.played) return;
+
+  const key = String(season || 1);
+  const homeClub = (GameState.clubs || []).find((c) => c.id === fx.homeClubId) || null;
+  const awayClub = (GameState.clubs || []).find((c) => c.id === fx.awayClubId) || null;
+  if (!homeClub || !awayClub) return;
+
+  ensureClubSeasonStats(homeClub, season);
+  ensureClubSeasonStats(awayClub, season);
+
+  const hs = homeClub.stats[key];
+  const as = awayClub.stats[key];
+
+  const hg = Number.isFinite(fx.homeGoals) ? fx.homeGoals : 0;
+  const ag = Number.isFinite(fx.awayGoals) ? fx.awayGoals : 0;
+
+  hs.played += 1;
+  as.played += 1;
+  hs.gf += hg; hs.ga += ag;
+  as.gf += ag; as.ga += hg;
+
+  if (hg > ag) { hs.won += 1; as.lost += 1; }
+  else if (hg < ag) { as.won += 1; hs.lost += 1; }
+  else { hs.draw += 1; as.draw += 1; }
+
+  const { minutes, apps, starts } = computeMinutesFromFixture(fx);
+
+  // Substituciones usadas (club)
+  const subs = Array.isArray(fx.substitutions) ? fx.substitutions : [];
+  subs.forEach((s) => {
+    if (!s || !s.clubId) return;
+    if (s.clubId === homeClub.id) hs.subsUsed += 1;
+    if (s.clubId === awayClub.id) as.subsUsed += 1;
+  });
+
+  const events = Array.isArray(fx.events) ? fx.events : [];
+  events.forEach((ev) => {
+    if (!ev) return;
+    if (ev.type === 'GOAL' && ev.playerId) {
+      const info = playerIndex.get(ev.playerId);
+      if (info && info.player) {
+        ensurePlayerSeasonStats(info.player, season);
+        info.player.stats[key].goals += 1;
+      }
+    } else if (ev.type === 'YELLOW_CARD' && ev.playerId) {
+      const info = playerIndex.get(ev.playerId);
+      if (info && info.player) {
+        ensurePlayerSeasonStats(info.player, season);
+        info.player.stats[key].yellows += 1;
+      }
+      if (ev.clubId === homeClub.id) hs.yellows += 1;
+      if (ev.clubId === awayClub.id) as.yellows += 1;
+    } else if (ev.type === 'RED_CARD' && ev.playerId) {
+      const info = playerIndex.get(ev.playerId);
+      if (info && info.player) {
+        ensurePlayerSeasonStats(info.player, season);
+        info.player.stats[key].reds += 1;
+      }
+      if (ev.clubId === homeClub.id) hs.reds += 1;
+      if (ev.clubId === awayClub.id) as.reds += 1;
+    } else if (ev.type === 'INJURY' && ev.playerId) {
+      const info = playerIndex.get(ev.playerId);
+      if (info && info.player) {
+        ensurePlayerSeasonStats(info.player, season);
+        info.player.stats[key].injuries += 1;
+      }
+      if (ev.clubId === homeClub.id) hs.injuries += 1;
+      if (ev.clubId === awayClub.id) as.injuries += 1;
+    }
+  });
+
+  // Apps / starts / minutes + subs in/out
+  apps.forEach((pid) => {
+    const info = playerIndex.get(pid);
+    if (!info || !info.player) return;
+    ensurePlayerSeasonStats(info.player, season);
+    info.player.stats[key].apps += 1;
+    if (starts.has(pid)) info.player.stats[key].starts += 1;
+    info.player.stats[key].minutes += minutes.get(pid) || 0;
+  });
+
+  subs.forEach((s) => {
+    if (!s) return;
+    if (s.inPlayerId) {
+      const info = playerIndex.get(s.inPlayerId);
+      if (info && info.player) {
+        ensurePlayerSeasonStats(info.player, season);
+        info.player.stats[key].subsIn += 1;
+      }
+    }
+    if (s.outPlayerId) {
+      const info = playerIndex.get(s.outPlayerId);
+      if (info && info.player) {
+        ensurePlayerSeasonStats(info.player, season);
+        info.player.stats[key].subsOut += 1;
+      }
+    }
+  });
+
+  // Porterías a cero (solo titulares POR)
+  const homeGA = ag;
+  const awayGA = hg;
+  (Array.isArray(fx.homeLineupIds) ? fx.homeLineupIds : []).forEach((pid) => {
+    const info = playerIndex.get(pid);
+    if (!info || !info.player) return;
+    if (String(info.player.position || '').toUpperCase() !== 'POR') return;
+    if (homeGA !== 0) return;
+    ensurePlayerSeasonStats(info.player, season);
+    info.player.stats[key].cleanSheets += 1;
+  });
+  (Array.isArray(fx.awayLineupIds) ? fx.awayLineupIds : []).forEach((pid) => {
+    const info = playerIndex.get(pid);
+    if (!info || !info.player) return;
+    if (String(info.player.position || '').toUpperCase() !== 'POR') return;
+    if (awayGA !== 0) return;
+    ensurePlayerSeasonStats(info.player, season);
+    info.player.stats[key].cleanSheets += 1;
+  });
+}
+
+export function applyStatsForFixtures(fixtures, season) {
+  const s = season || 1;
+  const playerIndex = buildPlayerIndex();
+  (fixtures || []).forEach((fx) => {
+    if (!fx || !fx.played) return;
+    if (fx.statsApplied) return;
+    applyStatsToFixture(fx, s, playerIndex);
+    fx.statsApplied = true;
+  });
+}
+
+export function rebuildStatsFromFixtures(season) {
+  const s = season || 1;
+  resetStatsForSeason(s);
+  const playerIndex = buildPlayerIndex();
+  (GameState.fixtures || []).forEach((fx) => {
+    if (!fx || !fx.played) return;
+    applyStatsToFixture(fx, s, playerIndex);
+    fx.statsApplied = true;
+  });
+}
+
 
 function generateAttributesForPosition(position, overall) {
   const ov = Number.isFinite(overall) ? overall : 60;
@@ -345,6 +606,12 @@ function setupCompetition() {
   const { fixtures, maxMatchday } = generateRoundRobinFixtures(clubIds);
 
   GameState.fixtures = fixtures;
+  // Asegura season en fixtures (por compatibilidad futura multi-temporada)
+  const season = GameState.currentDate?.season || 1;
+  GameState.fixtures.forEach((fx) => {
+    if (fx && fx.season == null) fx.season = season;
+    if (fx && fx.statsApplied == null) fx.statsApplied = false;
+  });
   GameState.competition.maxMatchday = maxMatchday || 1;
   GameState.currentDate.matchday = 1;
 

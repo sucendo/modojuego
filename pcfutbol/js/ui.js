@@ -5,6 +5,7 @@ import {
   newGame,
   applyLoadedState,
   recomputeLeagueTable,
+  applyStatsForFixtures,
 } from './state.js';
 import { initialLeague, allLeagues } from './data.js';
 import { exportGameToFile, importGameFromFile } from './saveLoad.js';
@@ -27,6 +28,9 @@ let negSectionEl = null;
 
 // Competición
 let competitionSelectedMatchday = 1;
+
+// Stats
+
 
 // Modal detalle de partido
 let currentMatchDetailFixtureId = null;
@@ -103,12 +107,14 @@ export function initUI() {
   const btnNavSquad = document.getElementById('btn-nav-squad');
   const btnNavTactics = document.getElementById('btn-nav-tactics');
   const btnNavCompetition = document.getElementById('btn-nav-competition');
+  const btnNavStats = document.getElementById('btn-nav-stats');
   const btnNavMedical = document.getElementById('btn-nav-medical');
 
   const viewDashboard = document.getElementById('view-dashboard');
   const viewSquad = document.getElementById('view-squad');
   const viewTactics = document.getElementById('view-tactics');
   const viewCompetition = document.getElementById('view-competition');
+  const viewStats = document.getElementById('view-stats');
   const viewMedical = document.getElementById('view-medical');
 
   // Plantilla
@@ -189,11 +195,13 @@ export function initUI() {
       viewSquad,
       viewTactics,
       viewCompetition,
+      viewStats,
       viewMedical,
       btnNavDashboard,
       btnNavSquad,
       btnNavTactics,
       btnNavCompetition,
+      btnNavStats,	  
       btnNavMedical,
     };
 
@@ -216,6 +224,7 @@ export function initUI() {
     viewSquad,
     viewTactics,
     viewCompetition,
+    viewStats,	
     viewMedical,
     btnNavDashboard,
     btnNavSquad,
@@ -267,6 +276,13 @@ export function initUI() {
     setActiveSubview('competition', ctxForLoad);
     updateCompetitionView();
   });
+  
+  if (btnNavStats) {
+    btnNavStats.addEventListener('click', () => {
+      setActiveSubview('stats', ctxForLoad);
+      updateStatsView();
+    });
+  }
 
   if (btnNavMedical) {
     btnNavMedical.addEventListener('click', () => {
@@ -504,11 +520,13 @@ function setActiveSubview(view, ctx) {
     viewSquad,
     viewTactics,
     viewCompetition,
+    viewStats,
     viewMedical,
     btnNavDashboard,
     btnNavSquad,
     btnNavTactics,
     btnNavCompetition,
+    btnNavStats,	
     btnNavMedical,
   } = ctx;
 
@@ -516,12 +534,14 @@ function setActiveSubview(view, ctx) {
   viewSquad?.classList.add('hidden');
   viewTactics?.classList.add('hidden');
   viewCompetition?.classList.add('hidden');
+  viewStats?.classList.add('hidden');
   viewMedical?.classList.add('hidden');
 
   btnNavDashboard?.classList.remove('active');
   btnNavSquad?.classList.remove('active');
   btnNavTactics?.classList.remove('active');
   btnNavCompetition?.classList.remove('active');
+  btnNavStats?.classList.remove('active');
   btnNavMedical?.classList.remove('active');
 
   if (view === 'dashboard') {
@@ -536,6 +556,9 @@ function setActiveSubview(view, ctx) {
   } else if (view === 'competition') {
     viewCompetition?.classList.remove('hidden');
     btnNavCompetition?.classList.add('active');
+  } else if (view === 'stats') {
+    viewStats?.classList.remove('hidden');
+    btnNavStats?.classList.add('active');
   } else if (view === 'medical') {
     viewMedical?.classList.remove('hidden');
     btnNavMedical?.classList.add('active');
@@ -559,6 +582,7 @@ function handleFileInput(event, startScreen, dashboardScreen, ctx) {
         updateSquadView();
         updateTacticsView();
         updateCompetitionView();
+        updateStatsView();
         updateMedicalView();
       } catch (err) {
         console.error(err);
@@ -1130,19 +1154,19 @@ function openPlayerModal(player) {
     ? 'En lista de transferibles'
     : 'No transferible';
 
-  passEl.textContent = formatAttr(attrTech.passing);
-  shotEl.textContent = formatAttr(attrTech.shooting);
-  dribEl.textContent = formatAttr(attrTech.dribbling);
-  tackEl.textContent = formatAttr(attrTech.tackling);
+  if (passEl) passEl.textContent = formatAttr(attrTech.passing);
+  if (shotEl) shotEl.textContent = formatAttr(attrTech.shooting);
+  if (dribEl) dribEl.textContent = formatAttr(attrTech.dribbling);
+  if (tackEl) tackEl.textContent = formatAttr(attrTech.tackling);
 
-  visEl.textContent = formatAttr(attrMent.vision);
-  compEl.textContent = formatAttr(attrMent.composure);
-  workEl.textContent = formatAttr(attrMent.workRate);
-  leadEl.textContent = formatAttr(attrMent.leadership);
+  if (visEl) visEl.textContent = formatAttr(attrMent.vision);
+  if (compEl) compEl.textContent = formatAttr(attrMent.composure);
+  if (workEl) workEl.textContent = formatAttr(attrMent.workRate);
+  if (leadEl) leadEl.textContent = formatAttr(attrMent.leadership);
 
-  paceEl.textContent = formatAttr(attrPhys.pace);
-  stamEl.textContent = formatAttr(attrPhys.stamina);
-  strEl.textContent = formatAttr(attrPhys.strength);
+  if (paceEl) paceEl.textContent = formatAttr(attrPhys.pace);
+  if (stamEl) stamEl.textContent = formatAttr(attrPhys.stamina);
+  if (strEl) strEl.textContent = formatAttr(attrPhys.strength);
 
   // Disciplina: amarillas / sanción
   if (yellowEl) {
@@ -1900,6 +1924,9 @@ function simulateCurrentMatchday() {
 
   // Aplicar efectos de fatiga, forma, lesiones y sanciones
   applyPostMatchdayEffects(currentFixtures);
+  
+  // Stats persistentes (apps/min/goles/tarjetas/lesiones/subs...)
+
 
   // Estadísticas persistentes (goles, tarjetas, lesiones, apariciones...)
   // Importante: se aplica DESPUÉS de los efectos post-partido, porque ahí
@@ -1925,44 +1952,56 @@ function simulateCurrentMatchday() {
   updateDashboard();
 }
 
-
-// ================================
-// Lineup por partido (para stats)
-// ================================
+// ----------------------------
+// Helpers minuto único fixture
+// ----------------------------
+function createFixtureMinutePicker(existingEvents) {
+  const used = new Set();
+  (Array.isArray(existingEvents) ? existingEvents : []).forEach((ev) => {
+    const m = ev && typeof ev.minute === 'number' ? ev.minute : null;
+    if (m && m > 0) used.add(m);
+  });
+  return function pick() {
+    for (let i = 0; i < 18; i++) {
+      const m = 1 + Math.floor(Math.random() * 90);
+      if (!used.has(m)) {
+        used.add(m);
+        return m;
+      }
+    }
+    return 1 + Math.floor(Math.random() * 90);
+  };
+}
 
 function getStartingXIForFixture(club) {
-  if (!club || !Array.isArray(club.players)) return [];
-
+  if (!club) return [];
   ensureClubTactics(club);
+  const preferred = Array.isArray(club.lineup) ? club.lineup.slice() : [];
+  const available = (club.players || []).filter((p) => p && p.id && !isPlayerUnavailable(p));
+  const availableSet = new Set(available.map((p) => p.id));
+  const xi = [];
+  const seen = new Set();
+  preferred.forEach((id) => {
+    if (id && !seen.has(id) && availableSet.has(id) && xi.length < 11) {
+      xi.push(id); seen.add(id);
+    }
+  });
+  available.sort((a, b) => (b.overall ?? 0) - (a.overall ?? 0));
+  for (let i = 0; i < available.length && xi.length < 11; i++) {
+    const id = available[i].id;
+    if (id && !seen.has(id)) { xi.push(id); seen.add(id); }
+  }
+  return xi.slice(0, 11);
+}
 
-  const available = club.players
-    .filter((p) => p && p.id && !isPlayerUnavailable(p))
+function getBenchForFixture(club, xiIds, max = 7) {
+  if (!club) return [];
+  const xiSet = new Set((xiIds || []).filter(Boolean));
+  const available = (club.players || [])
+    .filter((p) => p && p.id && !isPlayerUnavailable(p) && !xiSet.has(p.id))
     .slice()
     .sort((a, b) => (b.overall ?? 0) - (a.overall ?? 0));
-
-  const availableSet = new Set(available.map((p) => p.id));
-  const picked = [];
-  const seen = new Set();
-
-  // 1) Respeta la selección del usuario/club (siempre que estén disponibles)
-  const preferred = Array.isArray(club.lineup) ? club.lineup : [];
-  preferred.forEach((pid) => {
-    if (!pid || seen.has(pid)) return;
-    if (!availableSet.has(pid)) return;
-    picked.push(pid);
-    seen.add(pid);
-  });
-
-  // 2) Rellena con los mejores disponibles
-  for (let i = 0; i < available.length && picked.length < 11; i++) {
-    const pid = available[i].id;
-    if (pid && !seen.has(pid)) {
-      picked.push(pid);
-      seen.add(pid);
-    }
-  }
-
-  return picked.slice(0, 11);
+  return available.slice(0, max).map((p) => p.id);
 }
 
 /**
@@ -1972,11 +2011,14 @@ function simulateFixture(fx) {
   const homeClub = getClubById(fx.homeClubId);
   const awayClub = getClubById(fx.awayClubId);
   if (!homeClub || !awayClub) return;
-
-  // Guardamos XI usado en el partido para stats (apps/minutos)
-  fx.season = fx.season ?? (GameState.currentDate.season || 1);
+  
+  // Guardar XI y banquillo usado en el partido (clave para minutos reales)
+  fx.season = fx.season ?? (GameState.currentDate?.season || 1);
   fx.homeLineupIds = getStartingXIForFixture(homeClub);
   fx.awayLineupIds = getStartingXIForFixture(awayClub);
+  fx.homeBenchIds = getBenchForFixture(homeClub, fx.homeLineupIds, 7);
+  fx.awayBenchIds = getBenchForFixture(awayClub, fx.awayLineupIds, 7);
+  if (!Array.isArray(fx.substitutions)) fx.substitutions = [];
 
   const homeProfile = getClubStrengthProfile(homeClub, true);
   const awayProfile = getClubStrengthProfile(awayClub, false);
@@ -2000,32 +2042,18 @@ function simulateFixture(fx) {
   fx.awayGoals = awayGoals;
   fx.played = true;
   fx.events = generateEventsForFixture(fx, homeGoals, awayGoals);
-}
 
-/**
- * Genera minutos únicos (1-90) para eventos de un partido.
- * - Evita colisiones con los eventos ya existentes.
- * - Si se agotan intentos, devuelve un minuto aleatorio.
- */
-function createFixtureMinutePicker(existingEvents) {
-  const usedMinutes = new Set();
-  const events = Array.isArray(existingEvents) ? existingEvents : [];
-  events.forEach((ev) => {
-    const m = ev && typeof ev.minute === 'number' ? ev.minute : null;
-    if (m != null && m > 0) usedMinutes.add(m);
+  // Sustituciones tácticas (luego las lesiones pueden forzar más)
+  const pickMinute = createFixtureMinutePicker(fx.events);
+  generateTacticalSubsForFixture(fx, homeClub, fx.homeLineupIds, fx.homeBenchIds, pickMinute);
+  generateTacticalSubsForFixture(fx, awayClub, fx.awayLineupIds, fx.awayBenchIds, pickMinute);
+
+  // Ordenar eventos por minuto
+  fx.events.sort((a, b) => {
+    const ma = typeof a.minute === 'number' ? a.minute : 999;
+    const mb = typeof b.minute === 'number' ? b.minute : 999;
+    return ma - mb;
   });
-
-  return function pickUniqueMinute() {
-    const maxAttempts = 18;
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      const minute = 1 + Math.floor(Math.random() * 90);
-      if (!usedMinutes.has(minute)) {
-        usedMinutes.add(minute);
-        return minute;
-      }
-    }
-    return 1 + Math.floor(Math.random() * 90);
-  };
 }
 
 function generateEventsForFixture(fx, homeGoals, awayGoals) {
@@ -2069,6 +2097,63 @@ function generateEventsForFixture(fx, homeGoals, awayGoals) {
   });
 
   return events;
+}
+
+function generateTacticalSubsForFixture(fx, club, xiIds, benchIds, pickMinute) {
+  if (!fx || !club) return;
+  if (!Array.isArray(xiIds) || xiIds.length === 0) return;
+  if (!Array.isArray(benchIds) || benchIds.length === 0) return;
+
+  const maxSubs = 3;
+  const already = (fx.substitutions || []).filter((s) => s && s.clubId === club.id).length;
+  if (already >= maxSubs) return;
+
+  // 0-3 con sesgo a 1-2
+  const roll = Math.random();
+  let planned = roll < 0.15 ? 0 : roll < 0.6 ? 1 : roll < 0.9 ? 2 : 3;
+  planned = Math.min(planned, maxSubs - already);
+  if (planned <= 0) return;
+
+  const xiSet = new Set(xiIds);
+  const usedIn = new Set((fx.substitutions || []).map((s) => s?.inPlayerId).filter(Boolean));
+  const usedOut = new Set((fx.substitutions || []).map((s) => s?.outPlayerId).filter(Boolean));
+
+  const bench = benchIds.filter((id) => id && !usedIn.has(id));
+  if (bench.length === 0) return;
+
+  const xiPlayers = (club.players || []).filter((p) => p && xiSet.has(p.id));
+
+  for (let i = 0; i < planned; i++) {
+    const minute = pickMinute();
+
+    // Evitar cambiar al portero salvo emergencia
+    const outCandidates = xiPlayers
+      .filter((p) => p && !usedOut.has(p.id))
+      .filter((p) => String(p.position || '').toUpperCase() !== 'POR')
+      .sort((a, b) => (a.fitness ?? 1) - (b.fitness ?? 1)); // más cansado primero
+
+    const out = outCandidates[0] || null;
+    const inId = bench.shift() || null;
+    if (!out || !inId) break;
+
+    usedOut.add(out.id);
+    usedIn.add(inId);
+
+    fx.substitutions.push({
+      minute,
+      type: 'TACTICAL',
+      clubId: club.id,
+      outPlayerId: out.id,
+      inPlayerId: inId,
+    });
+    fx.events.push({
+      minute,
+      type: 'SUB',
+      clubId: club.id,
+      outPlayerId: out.id,
+      inPlayerId: inId,
+    });
+  }
 }
 
 function getPotentialScorersForClub(club) {
@@ -2265,6 +2350,49 @@ function applyMatchEffectsToClub(club, isHome, fx, pickMinute) {
       if (!Number.isFinite(p.form)) p.form = 0;
       p.form *= 0.9;
     }
+  });
+}
+
+function maybeAddForcedSubstitution(fx, club, injuredPlayerId, minute) {
+  if (!fx || !club || !injuredPlayerId) return;
+  const maxSubs = 3;
+  if (!Array.isArray(fx.substitutions)) fx.substitutions = [];
+  const usedByClub = fx.substitutions.filter((s) => s && s.clubId === club.id).length;
+  if (usedByClub >= maxSubs) return;
+
+  const xiIds =
+    fx.homeClubId === club.id ? fx.homeLineupIds :
+    fx.awayClubId === club.id ? fx.awayLineupIds : [];
+  const benchIds =
+    fx.homeClubId === club.id ? fx.homeBenchIds :
+    fx.awayClubId === club.id ? fx.awayBenchIds : [];
+
+  const xiSet = new Set(Array.isArray(xiIds) ? xiIds : []);
+  if (!xiSet.has(injuredPlayerId)) return;
+
+  // si ya salió por otro cambio, no duplicar
+  const alreadyOut = fx.substitutions.some((s) => s && s.clubId === club.id && s.outPlayerId === injuredPlayerId);
+  if (alreadyOut) return;
+
+  const usedIn = new Set(fx.substitutions.map((s) => s?.inPlayerId).filter(Boolean));
+  const candidate = (Array.isArray(benchIds) ? benchIds : []).find((id) => id && !usedIn.has(id));
+  if (!candidate) return;
+
+  const m = typeof minute === 'number' ? minute : null;
+  fx.substitutions.push({
+    minute: m,
+    type: 'INJURY',
+    clubId: club.id,
+    outPlayerId: injuredPlayerId,
+    inPlayerId: candidate,
+  });
+  if (!Array.isArray(fx.events)) fx.events = [];
+  fx.events.push({
+    minute: m,
+    type: 'SUB',
+    clubId: club.id,
+    outPlayerId: injuredPlayerId,
+    inPlayerId: candidate,
   });
 }
 
@@ -2496,6 +2624,98 @@ function recordCardEvent(player, type, ctx) {
       playerId: player.id,
     });
   }
+}
+
+
+// ================================
+// Vista Estadísticas
+// ================================
+function updateStatsView() {
+  const season = GameState.currentDate?.season || 1;
+  const label = document.getElementById('stats-season-label');
+  if (label) label.textContent = String(season);
+
+  const topBody = document.getElementById('stats-topscorers-body');
+  const teamBody = document.getElementById('stats-team-body');
+  if (!topBody || !teamBody) return;
+
+  const key = String(season);
+  const clubs = GameState.clubs || [];
+
+  const all = [];
+  clubs.forEach((club) => {
+    (club.players || []).forEach((p) => {
+      const st = p?.stats?.[key];
+      const goals = st?.goals ?? 0;
+      const minutes = st?.minutes ?? 0;
+      if (goals > 0 || minutes > 0) {
+        all.push({
+          player: p,
+          club,
+          goals,
+          minutes,
+        });
+      }
+    });
+  });
+
+  all.sort((a, b) => {
+    if (b.goals !== a.goals) return b.goals - a.goals;
+    return (b.minutes || 0) - (a.minutes || 0);
+  });
+
+  topBody.innerHTML = '';
+  const top = all.slice(0, 20);
+  top.forEach((row, idx) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${idx + 1}</td>
+      <td>${row.player?.name || 'Jugador'}</td>
+      <td>${row.club?.shortName || row.club?.name || ''}</td>
+      <td><strong>${row.goals}</strong></td>
+      <td>${row.minutes || 0}</td>
+    `;
+    topBody.appendChild(tr);
+  });
+  if (top.length === 0) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td colspan="5">Aún no hay estadísticas (simula alguna jornada).</td>`;
+    topBody.appendChild(tr);
+  }
+
+  const myClub = getUserClub();
+  teamBody.innerHTML = '';
+  if (!myClub) return;
+
+  const rows = (myClub.players || []).map((p) => {
+    const st = p?.stats?.[key] || {};
+    return {
+      p,
+      apps: st.apps || 0,
+      minutes: st.minutes || 0,
+      goals: st.goals || 0,
+      yellows: st.yellows || 0,
+      reds: st.reds || 0,
+    };
+  });
+  rows.sort((a, b) => {
+    if (b.goals !== a.goals) return b.goals - a.goals;
+    return (b.minutes || 0) - (a.minutes || 0);
+  });
+
+  rows.forEach((r) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${r.p?.position || ''}</td>
+      <td>${r.p?.name || 'Jugador'}</td>
+      <td>${r.apps}</td>
+      <td>${r.minutes}</td>
+      <td><strong>${r.goals}</strong></td>
+      <td>${r.yellows}</td>
+      <td>${r.reds}</td>
+    `;
+    teamBody.appendChild(tr);
+  });
 }
 
 /**
