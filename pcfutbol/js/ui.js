@@ -159,6 +159,42 @@ export function initUI() {
   const tacticsOutBody = document.getElementById('tactics-out-body');
   const tacticsPitch = document.getElementById('tactics-pitch');  
 
+  // Opciones de selects (la UI tiene "..." como placeholder en HTML)
+  function fillSelectOptions(selectEl, items) {
+    if (!selectEl) return;
+    selectEl.innerHTML = '';
+    items.forEach((it) => {
+      const opt = document.createElement('option');
+      if (typeof it === 'string') {
+        opt.value = it;
+        opt.textContent = it;
+      } else {
+        opt.value = it.value;
+        opt.textContent = it.label;
+      }
+      selectEl.appendChild(opt);
+    });
+  }
+
+  fillSelectOptions(tacticsFormationSelect, [
+    '4-4-2','4-3-3','4-2-3-1','4-1-4-1','4-5-1','3-5-2','3-4-3','5-3-2','5-4-1'
+  ]);
+  fillSelectOptions(tacticsMentalitySelect, [
+    { value: 'DEFENSIVE', label: 'Defensiva' },
+    { value: 'BALANCED', label: 'Equilibrada' },
+    { value: 'ATTACKING', label: 'Ofensiva' },
+  ]);
+  fillSelectOptions(tacticsTempoSelect, [
+    { value: 'SLOW', label: 'Lento' },
+    { value: 'NORMAL', label: 'Normal' },
+    { value: 'FAST', label: 'Rápido' },
+  ]);
+  fillSelectOptions(tacticsPressureSelect, [
+    { value: 'LOW', label: 'Baja' },
+    { value: 'NORMAL', label: 'Normal' },
+    { value: 'HIGH', label: 'Alta' },
+  ]);
+
   // Médicos
   const btnMedicalUpgradeCenter = document.getElementById(
     'btn-medical-upgrade-center'
@@ -450,8 +486,10 @@ document.addEventListener('keydown', (event) => {
       const club = getUserClub();
       if (!club) return;
       ensureClubTactics(club);
+      // Guardar el valor real (antes solo refrescaba sin persistir)
       club.tactics[key] = selectEl.value;
-      if (key === 'formation') updateTacticsView();
+      // refrescar vista (campo + listas)
+      updateTacticsView();
     });
   }
 
@@ -860,6 +898,71 @@ function getPositionGroup(position) {
 }
 
 // ================================
+// Helpers PCF: parámetros / banderas
+// ================================
+function clamp01(n) {
+  const x = Number(n);
+  if (!Number.isFinite(x)) return 0;
+  return Math.max(0, Math.min(1, x));
+}
+function avgNums(...vals) {
+  const nums = vals
+    .filter((v) => v != null && Number.isFinite(Number(v)))
+    .map((v) => Number(v));
+  if (!nums.length) return null;
+  return nums.reduce((a, b) => a + b, 0) / nums.length;
+}
+function ratingFrom01(v) {
+  return Math.round(50 + clamp01(v) * 50);
+}
+function getRoleCodeFromPosition(position) {
+  const g = getPositionGroup(position);
+  if (g === 0) return 'POR';
+  if (g === 1) return 'DEF';
+  if (g === 2) return 'MED';
+  if (g === 3) return 'DEL';
+  return '-';
+}
+function getPcfParamsForPlayer(player) {
+  const p = player || {};
+  const tech = p.attributes?.technical || {};
+  const ment = p.attributes?.mental || {};
+  const phys = p.attributes?.physical || {};
+  const CF = avgNums(phys.pace, phys.stamina, phys.strength);
+  const CM = avgNums(ment.vision, ment.composure, ment.workRate, ment.leadership);
+  const CD = avgNums(tech.tackling, phys.strength, ment.workRate, ment.composure);
+  const CO = avgNums(tech.shooting, tech.dribbling, tech.passing, ment.vision);
+  const cf = CF == null ? null : Math.round(CF);
+  const cm = CM == null ? null : Math.round(CM);
+  const cd = CD == null ? null : Math.round(CD);
+  const co = CO == null ? null : Math.round(CO);
+  const ME = avgNums(cf, cm, cd, co);
+  const me = ME == null ? null : Math.round(ME);
+  const role = getRoleCodeFromPosition(p.position);
+  const dem = (p.position || '-').toUpperCase();
+  const EN = p.overall != null ? Math.round(Number(p.overall)) : (me ?? 60);
+  const MO = ratingFrom01(p.morale);
+  const EF = ratingFrom01(p.fitness);
+  return { EN, CF: cf, CM: cm, CD: cd, CO: co, MO, EF, ME: me, role, dem };
+}
+function normalizeKey(str) {
+  return String(str || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+function isoToFlagEmoji(iso2) {
+  const code = String(iso2 || '').trim().toUpperCase();
+  if (!/^[A-Z]{2}$/.test(code)) return '';
+  const A = 0x1f1e6;
+  return String.fromCodePoint(
+    A + (code.charCodeAt(0) - 65),
+    A + (code.charCodeAt(1) - 65)
+  );
+}
+
+// ================================
 // Táctica y alineación
 // ================================
 
@@ -908,7 +1011,7 @@ function updateTacticsView() {
     .slice()
     .sort((a, b) => (b.overall ?? 0) - (a.overall ?? 0));
 
-  // Render helpers
+  // Render helpers (DOM real: bandera con tu mapa de banderas)
   const renderRow = (p, group) => {
     const injured = isPlayerInjuredNow(p);
     const suspended = isPlayerSuspendedNow(p);
@@ -920,42 +1023,88 @@ function updateTacticsView() {
     if (unavailable) tr.classList.add('row-disabled');
 
     const statusText =
-      injured && suspended
-        ? 'Les./Sanc.'
-        : injured
-          ? `Les. (${p.injury?.matchesRemaining ?? '?'})`
-          : suspended
-            ? `Sanc. (${p.suspension?.matchesRemaining ?? '?'})`
-            : '-';
+      injured && suspended ? 'Les./Sanc.' :
+      injured ? `Les. (${p.injury?.matchesRemaining ?? '?'})` :
+      suspended ? `Sanc. (${p.suspension?.matchesRemaining ?? '?'})` : '-';
 
-    // Botones según grupo
-    let actions = '';
-    if (group === 'XI') {
-      actions = `
-        <button class="btn btn-secondary btn-mini" data-action="TO_BENCH" data-player-id="${p.id}" type="button">▸</button>
-        <button class="btn btn-secondary btn-mini" data-action="TO_OUT" data-player-id="${p.id}" type="button">✕</button>
-      `;
-    } else if (group === 'BENCH') {
-      actions = `
-        <button class="btn btn-secondary btn-mini" data-action="TO_XI" data-player-id="${p.id}" type="button">◂</button>
-        <button class="btn btn-secondary btn-mini" data-action="TO_OUT" data-player-id="${p.id}" type="button">✕</button>
-      `;
+    const params = getPcfParamsForPlayer(p);
+    const dorsal = p.shirtNumber ?? p.number ?? '-';
+
+    const td = (text, className) => {
+      const cell = document.createElement('td');
+      if (className) cell.className = className;
+      cell.textContent = text;
+      return cell;
+    };
+    const makeActionBtn = (label, action) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'btn btn-secondary btn-mini';
+      b.dataset.action = action;
+      b.dataset.playerId = p.id;
+      b.textContent = label;
+      return b;
+    };
+
+    tr.appendChild(td(String(dorsal)));
+
+    const nameTd = document.createElement('td');
+    const wrap = document.createElement('span');
+    wrap.className = 'pcf-player-cell';
+    const flagImg = createFlagImgElement(p.nationality);
+    if (flagImg) {
+      flagImg.title = p.nationality ? `Nacionalidad: ${p.nationality}` : '';
+      wrap.appendChild(flagImg);
     } else {
-      actions = `
-        <button class="btn btn-secondary btn-mini" data-action="ADD_BENCH" data-player-id="${p.id}" type="button">＋</button>
-        <button class="btn btn-secondary btn-mini" data-action="ADD_XI" data-player-id="${p.id}" type="button">⇧</button>
-      `;
+      const ph = document.createElement('span');
+      ph.className = 'pcf-flag-placeholder';
+      ph.setAttribute('aria-hidden', 'true');
+      wrap.appendChild(ph);
     }
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = p.name || 'Jugador';
+    wrap.appendChild(nameSpan);
+    nameTd.appendChild(wrap);
+    tr.appendChild(nameTd);
 
-    tr.innerHTML = `
-      <td>${p.number ?? '-'}</td>
-      <td>${escapeHtml(p.name || 'Jugador')}</td>
-      <td>${escapeHtml(p.position || '-')}</td>
-      <td>${p.overall != null ? String(p.overall) : '-'}</td>
-      <td>${formatPercent(p.fitness)}</td>
-      <td>${escapeHtml(statusText)}</td>
-      <td class="pcf-actions">${actions}</td>
-    `;
+    tr.appendChild(td(String(params.EN ?? '-'), 'pcf-num'));
+    tr.appendChild(td(String(params.CF ?? '-'), 'pcf-num'));
+    tr.appendChild(td(String(params.CM ?? '-'), 'pcf-num'));
+    tr.appendChild(td(String(params.CD ?? '-'), 'pcf-num'));
+    tr.appendChild(td(String(params.CO ?? '-'), 'pcf-num'));
+    tr.appendChild(td(String(params.MO ?? '-'), 'pcf-num'));
+    tr.appendChild(td(String(params.EF ?? '-'), 'pcf-num'));
+    tr.appendChild(td(String(params.ME ?? '-'), 'pcf-num'));
+
+    const roleTd = document.createElement('td');
+    const roleTag = document.createElement('span');
+    roleTag.className = `pcf-tag pcf-tag--${params.role || 'X'}`;
+    roleTag.textContent = params.role || '-';
+    roleTd.appendChild(roleTag);
+    tr.appendChild(roleTd);
+
+    const demTd = document.createElement('td');
+    const demTag = document.createElement('span');
+    demTag.className = 'pcf-tag';
+    demTag.textContent = params.dem || '-';
+    demTd.appendChild(demTag);
+    tr.appendChild(demTd);
+
+    tr.appendChild(td(statusText, 'pcf-status'));
+
+    const actionsTd = document.createElement('td');
+    actionsTd.className = 'pcf-actions';
+    if (group === 'XI') {
+      actionsTd.appendChild(makeActionBtn('▸', 'TO_BENCH'));
+      actionsTd.appendChild(makeActionBtn('✕', 'TO_OUT'));
+    } else if (group === 'BENCH') {
+      actionsTd.appendChild(makeActionBtn('◂', 'TO_XI'));
+      actionsTd.appendChild(makeActionBtn('✕', 'TO_OUT'));
+    } else {
+      actionsTd.appendChild(makeActionBtn('＋', 'ADD_BENCH'));
+      actionsTd.appendChild(makeActionBtn('⇧', 'ADD_XI'));
+    }
+    tr.appendChild(actionsTd);
     return tr;
   };
 
@@ -1133,12 +1282,27 @@ function renderTacticsPitch(club) {
 
   assigned.forEach((slot) => {
     const dot = document.createElement('div');
-    dot.className = 'pcf-dot' + (slot.player?.id === tacticsSelectedPlayerId ? ' is-selected' : '');
-    dot.style.left = `${slot.x}%`;
-    dot.style.top = `${slot.y}%`;
+    const unavailable = slot.player ? isPlayerUnavailable(slot.player) : false;
+    dot.className =
+      'pcf-dot' +
+      (slot.player?.id === tacticsSelectedPlayerId ? ' is-selected' : '') +
+      (unavailable ? ' is-unavailable' : '');
+    // El SVG del campo está en horizontal (porterías izquierda/derecha),
+    // pero las posiciones vienen en vertical (portería abajo/arriba).
+    // Convertimos coordenadas: rotación 90° para que el ataque sea izquierda→derecha.
+    // old: x = ancho, y = profundidad (arriba/abajo)
+    // new: left = 100 - y, top = x
+    const left = 100 - (slot.y ?? 50);
+    const top = (slot.x ?? 50);
+    dot.style.left = `${left}%`;
+    dot.style.top = `${top}%`;
+
     dot.dataset.playerId = slot.player?.id || '';
     dot.title = slot.player ? `${slot.player.name} (${slot.player.position})` : '';
-    dot.textContent = slot.player?.number != null ? String(slot.player.number) : (slot.player?.position || '?');
+    dot.textContent =
+      slot.player?.shirtNumber != null ? String(slot.player.shirtNumber)
+      : slot.player?.number != null ? String(slot.player.number)
+      : (slot.player?.position || '?');
     pitch.appendChild(dot);
   });
 }
