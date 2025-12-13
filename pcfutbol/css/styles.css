@@ -849,6 +849,18 @@ body {
   gap: 0.5rem;
 }
 
+/* Utilidades */
+.small-muted {
+  font-size: 0.85rem;
+  color: #9ca3af;
+  margin: 0.25rem 0 0;
+}
+
+.table-stats th,
+.table-stats td {
+  white-space: nowrap;
+}
+
 .competition-matchday-select select {
   margin-left: 0.25rem;
   background: #020617;
@@ -948,6 +960,43 @@ body {
 span#club-name-main img {
     width: 48px;
     height: 48px;
+}
+
+/* ===========================
+   PCF-STYLE (Alineación y táctica)
+   =========================== */
+
+.pcf-tactics-card {
+  background: linear-gradient(180deg, rgba(14, 40, 78, 0.75), rgba(9, 18, 42, 0.85));
+  border: 1px solid rgba(96, 165, 250, 0.22);
+}
+
+.pcf-tactics-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(320px, 2fr);
+  gap: 1rem;
+}
+
+.pcf-panel {
+  border-radius: 0.85rem;
+  border: 1px solid rgba(59, 130, 246, 0.18);
+  background: rgba(2, 6, 23, 0.55);
+  padding: 0.75rem;
+}
+
+.pcf-panel-title {
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  margin-bottom: 0.5rem;
+}
+
+.pcf-pitch {
+  position: relative;
+  height: 280px;
+  border-radius: 0.9rem;
+  background: linear-gradient(180deg, rgba(34, 197, 94, 0.22), rgba(34, 197, 94, 0.08));
+  border: 1px solid rgba(34, 197, 94, 0.25);
 }
 
 @media (max-width: 900px) {

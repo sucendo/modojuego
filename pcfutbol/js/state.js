@@ -126,17 +126,77 @@ function normalizeGameState() {
   if (!Array.isArray(GameState.clubs)) return;
   
   const season = GameState.currentDate?.season || 1;
+
   GameState.clubs.forEach((club) => {
-     ensureClubDefaults(club, season);
+     ensureClubDefaults(club);
     if (!Array.isArray(club.players)) club.players = [];
     club.players.forEach((p) => ensurePlayerDefaults(p, season));
   });
 }
 
-function ensureClubDefaults(club, season) {
+function isPlayerUnavailable(player) {
+  if (!player) return false;
+  const inj = player.injury;
+  if (inj && inj.matchesRemaining != null && inj.matchesRemaining > 0) return true;
+  const sus = player.suspension;
+  if (sus && sus.matchesRemaining != null && sus.matchesRemaining > 0) return true;
+  return false;
+}
+
+function ensureClubDefaults(club) {
   if (!club) return;
-  if (!club.stats || typeof club.stats !== 'object') club.stats = {};
-  ensureClubSeasonStats(club, season);
+
+  // Táctica base
+  if (!club.tactics) {
+    club.tactics = {
+      formation: '4-4-2',
+      mentality: 'BALANCED',
+      tempo: 'NORMAL',
+      pressure: 'NORMAL',
+    };
+  } else {
+    if (!club.tactics.formation) club.tactics.formation = '4-4-2';
+    if (!club.tactics.mentality) club.tactics.mentality = 'BALANCED';
+    if (!club.tactics.tempo) club.tactics.tempo = 'NORMAL';
+    if (!club.tactics.pressure) club.tactics.pressure = 'NORMAL';
+  }
+
+  // XI (11) + Convocados (banquillo 9)
+  if (!Array.isArray(club.lineup)) club.lineup = [];
+  if (!Array.isArray(club.bench)) club.bench = [];
+
+  // Si vienes de save viejo o está vacío: autogenerar una convocatoria razonable
+  if ((club.lineup.length === 0 && Array.isArray(club.players) && club.players.length) || club.bench.length === 0) {
+    const available = (club.players || [])
+      .filter((p) => p && p.id && !p.injury && !p.suspension)
+      .slice()
+      .sort((a, b) => (b.overall ?? 0) - (a.overall ?? 0));
+
+    const pickedXI = [];
+    // asegurar un portero si existe
+    const gk = available.find((p) => String(p.position || '').toUpperCase() === 'POR');
+    if (gk) pickedXI.push(gk.id);
+
+    for (let i = 0; i < available.length && pickedXI.length < 11; i++) {
+      const id = available[i].id;
+      if (id && !pickedXI.includes(id)) pickedXI.push(id);
+    }
+
+    const xiSet = new Set(pickedXI);
+    const pickedBench = [];
+    for (let i = 0; i < available.length && pickedBench.length < 9; i++) {
+      const id = available[i].id;
+      if (id && !xiSet.has(id) && !pickedBench.includes(id)) pickedBench.push(id);
+    }
+
+    club.lineup = pickedXI.slice(0, 11);
+    club.bench = pickedBench.slice(0, 9);
+  } else {
+    // limpieza: únicos y limitar tamaños
+    club.lineup = Array.from(new Set(club.lineup)).slice(0, 11);
+    const xiSet = new Set(club.lineup);
+    club.bench = Array.from(new Set(club.bench)).filter((id) => id && !xiSet.has(id)).slice(0, 9);
+  }
 }
 
 function ensurePlayerDefaults(player, season) {

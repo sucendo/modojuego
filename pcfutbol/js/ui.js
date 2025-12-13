@@ -29,8 +29,8 @@ let negSectionEl = null;
 // Competición
 let competitionSelectedMatchday = 1;
 
-// Stats
-
+// Táctica UI
+let tacticsSelectedPlayerId = null;
 
 // Modal detalle de partido
 let currentMatchDetailFixtureId = null;
@@ -153,8 +153,11 @@ export function initUI() {
   const tacticsMentalitySelect = document.getElementById('tactics-mentality');
   const tacticsTempoSelect = document.getElementById('tactics-tempo');
   const tacticsPressureSelect = document.getElementById('tactics-pressure');
-  const tacticsTableBody = document.getElementById('tactics-lineup-body');
   const tacticsAutoBtn = document.getElementById('btn-tactics-auto');
+  const tacticsXiBody = document.getElementById('tactics-xi-body');
+  const tacticsBenchBody = document.getElementById('tactics-bench-body');
+  const tacticsOutBody = document.getElementById('tactics-out-body');
+  const tacticsPitch = document.getElementById('tactics-pitch');  
 
   // Médicos
   const btnMedicalUpgradeCenter = document.getElementById(
@@ -277,19 +280,16 @@ export function initUI() {
     updateCompetitionView();
   });
   
-  if (btnNavStats) {
-    btnNavStats.addEventListener('click', () => {
-      setActiveSubview('stats', ctxForLoad);
-      updateStatsView();
-    });
-  }
 
-  if (btnNavMedical) {
-    btnNavMedical.addEventListener('click', () => {
-      setActiveSubview('medical', ctxForLoad);
-      updateMedicalView();
-    });
-  }
+  btnNavStats.addEventListener('click', () => {
+    setActiveSubview('stats', ctxForLoad);
+    updateStatsView();
+  });
+
+  btnNavMedical.addEventListener('click', () => {
+    setActiveSubview('medical', ctxForLoad);
+    updateMedicalView();
+  });
 
   // -----------------
   // Plantilla
@@ -407,45 +407,40 @@ document.addEventListener('keydown', (event) => {
       const club = getUserClub();
       if (!club) return;
       ensureClubTactics(club);
-      club.lineup = getBestLineupForClub(club);
+      autoPickMatchdaySquad(club);
       updateTacticsView();
     });
   }
 
-  if (tacticsTableBody) {
-    tacticsTableBody.addEventListener('change', (event) => {
-      const input = event.target.closest('input[data-player-id]');
-      if (!input) return;
+  // Delegación de clicks en listas (seleccionar jugador + mover)
+  function bindTacticsTableHandlers(tbody) {
+    if (!tbody) return;
+    tbody.addEventListener('click', (e) => {
+      const btn = e.target && e.target.closest ? e.target.closest('button[data-action]') : null;
+      const row = e.target && e.target.closest ? e.target.closest('tr[data-player-id]') : null;
+      const pid = (btn && btn.dataset && btn.dataset.playerId) || (row && row.dataset && row.dataset.playerId) || null;
+      if (!pid) return;
 
-      const playerId = input.dataset.playerId;
-      const checked = input.checked;
-      const club = getUserClub();
-      if (!club) return;
-
-      ensureClubTactics(club);
-      let lineup = Array.isArray(club.lineup) ? club.lineup.slice() : [];
-
-      const player = club.players.find((p) => p.id === playerId);
-      if (!player || isPlayerUnavailable(player)) {
-        input.checked = false;
-        return;
-      }
-
-      if (checked) {
-        if (!lineup.includes(playerId)) {
-          if (lineup.length >= 11) {
-            alert('Solo puede haber 11 titulares.');
-            input.checked = false;
-            return;
-          }
-          lineup.push(playerId);
-        }
+      if (btn) {
+        handleTacticsAction(pid, btn.dataset.action);
       } else {
-        lineup = lineup.filter((id) => id !== playerId);
+        tacticsSelectedPlayerId = pid;
+        updateTacticsView();
       }
+    });
+  }
+  bindTacticsTableHandlers(tacticsXiBody);
+  bindTacticsTableHandlers(tacticsBenchBody);
+  bindTacticsTableHandlers(tacticsOutBody);
 
-      club.lineup = lineup;
-      updateTacticsXIcount(club);
+  // Click en bolitas del campo
+  if (tacticsPitch) {
+    tacticsPitch.addEventListener('click', (e) => {
+      const dot = e.target && e.target.closest ? e.target.closest('.pcf-dot[data-player-id]') : null;
+      const pid = dot?.dataset?.playerId;
+      if (!pid) return;
+      tacticsSelectedPlayerId = pid;
+      updateTacticsView();
     });
   }
 
@@ -456,6 +451,7 @@ document.addEventListener('keydown', (event) => {
       if (!club) return;
       ensureClubTactics(club);
       club.tactics[key] = selectEl.value;
+      if (key === 'formation') updateTacticsView();
     });
   }
 
@@ -874,95 +870,341 @@ function updateTacticsView() {
   ensureClubTactics(club);
 
   const tactics = club.tactics;
-  let lineup = Array.isArray(club.lineup) ? club.lineup.slice() : [];
+  const players = Array.isArray(club.players) ? club.players.slice() : [];
+
+  // Asegura arrays y límites (11 + 9)
+  if (!Array.isArray(club.lineup)) club.lineup = [];
+  if (!Array.isArray(club.bench)) club.bench = [];
+  club.lineup = Array.from(new Set(club.lineup)).slice(0, 11);
+  const xiSet0 = new Set(club.lineup);
+  club.bench = Array.from(new Set(club.bench)).filter((id) => id && !xiSet0.has(id)).slice(0, 9);
 
   const formationSelect = document.getElementById('tactics-formation');
   const mentalitySelect = document.getElementById('tactics-mentality');
   const tempoSelect = document.getElementById('tactics-tempo');
   const pressureSelect = document.getElementById('tactics-pressure');
-  const tbody = document.getElementById('tactics-lineup-body');
+  const xiBody = document.getElementById('tactics-xi-body');
+  const benchBody = document.getElementById('tactics-bench-body');
+  const outBody = document.getElementById('tactics-out-body');
 
   if (formationSelect) formationSelect.value = tactics.formation || '4-4-2';
   if (mentalitySelect) mentalitySelect.value = tactics.mentality || 'BALANCED';
   if (tempoSelect) tempoSelect.value = tactics.tempo || 'NORMAL';
   if (pressureSelect) pressureSelect.value = tactics.pressure || 'NORMAL';
 
-  if (!tbody) return;
-  tbody.innerHTML = '';
+  if (!xiBody || !benchBody || !outBody) return;
+  xiBody.innerHTML = '';
+  benchBody.innerHTML = '';
+  outBody.innerHTML = '';
 
-  const players = Array.isArray(club.players) ? club.players.slice() : [];
-  players.sort((a, b) => (b.overall ?? 0) - (a.overall ?? 0));
+  const byId = new Map(players.map((p) => [p.id, p]));
+  const xiIds = club.lineup.filter((id) => byId.has(id));
+  const benchIds = club.bench.filter((id) => byId.has(id));
+  const squadSet = new Set([...xiIds, ...benchIds]);
 
-  const lineupSet = new Set(lineup);
-  const cleanedLineup = [];
+  // No convocados = resto
+  const outPlayers = players
+    .filter((p) => p && p.id && !squadSet.has(p.id))
+    .slice()
+    .sort((a, b) => (b.overall ?? 0) - (a.overall ?? 0));
 
-  players.forEach((p) => {
-    const tr = document.createElement('tr');
-
-    const tdPos = document.createElement('td');
-    tdPos.textContent = p.position || '-';
-
-    const tdName = document.createElement('td');
-    tdName.textContent = p.name || 'Jugador sin nombre';
-
-    const tdOv = document.createElement('td');
-    tdOv.textContent = p.overall != null ? String(p.overall) : '-';
-
-    const tdFit = document.createElement('td');
-    tdFit.textContent = formatPercent(p.fitness);
-
-    const tdStatus = document.createElement('td');
+  // Render helpers
+  const renderRow = (p, group) => {
     const injured = isPlayerInjuredNow(p);
     const suspended = isPlayerSuspendedNow(p);
+    const unavailable = injured || suspended;
 
-    if (injured || suspended) {
-      tr.classList.add('row-disabled');
-      if (injured && suspended) {
-        tdStatus.textContent = 'Lesionado / sancionado';
-      } else if (injured) {
-        tdStatus.textContent = `Lesionado (${p.injury.matchesRemaining})`;
-      } else {
-        tdStatus.textContent = `Sancionado (${p.suspension.matchesRemaining})`;
-      }
+    const tr = document.createElement('tr');
+    tr.dataset.playerId = p.id;
+    if (tacticsSelectedPlayerId === p.id) tr.classList.add('is-selected');
+    if (unavailable) tr.classList.add('row-disabled');
+
+    const statusText =
+      injured && suspended
+        ? 'Les./Sanc.'
+        : injured
+          ? `Les. (${p.injury?.matchesRemaining ?? '?'})`
+          : suspended
+            ? `Sanc. (${p.suspension?.matchesRemaining ?? '?'})`
+            : '-';
+
+    // Botones según grupo
+    let actions = '';
+    if (group === 'XI') {
+      actions = `
+        <button class="btn btn-secondary btn-mini" data-action="TO_BENCH" data-player-id="${p.id}" type="button">▸</button>
+        <button class="btn btn-secondary btn-mini" data-action="TO_OUT" data-player-id="${p.id}" type="button">✕</button>
+      `;
+    } else if (group === 'BENCH') {
+      actions = `
+        <button class="btn btn-secondary btn-mini" data-action="TO_XI" data-player-id="${p.id}" type="button">◂</button>
+        <button class="btn btn-secondary btn-mini" data-action="TO_OUT" data-player-id="${p.id}" type="button">✕</button>
+      `;
     } else {
-      tdStatus.textContent = '-';
+      actions = `
+        <button class="btn btn-secondary btn-mini" data-action="ADD_BENCH" data-player-id="${p.id}" type="button">＋</button>
+        <button class="btn btn-secondary btn-mini" data-action="ADD_XI" data-player-id="${p.id}" type="button">⇧</button>
+      `;
     }
 
-    const tdRole = document.createElement('td');
-    tdRole.classList.add('tactics-role-checkbox');
-    const isInLineup = lineupSet.has(p.id) && !isPlayerUnavailable(p);
-    tdRole.innerHTML = `
-      <input
-        type="checkbox"
-        data-player-id="${p.id}"
-        ${isInLineup ? 'checked' : ''}
-        ${isPlayerUnavailable(p) ? 'disabled' : ''}
-      />
+    tr.innerHTML = `
+      <td>${p.number ?? '-'}</td>
+      <td>${escapeHtml(p.name || 'Jugador')}</td>
+      <td>${escapeHtml(p.position || '-')}</td>
+      <td>${p.overall != null ? String(p.overall) : '-'}</td>
+      <td>${formatPercent(p.fitness)}</td>
+      <td>${escapeHtml(statusText)}</td>
+      <td class="pcf-actions">${actions}</td>
     `;
+    return tr;
+  };
 
-    if (isInLineup) {
-      cleanedLineup.push(p.id);
-    }
+  // Titulares
+  xiIds
+    .map((id) => byId.get(id))
+    .filter(Boolean)
+    .forEach((p) => xiBody.appendChild(renderRow(p, 'XI')));
 
-    tr.appendChild(tdPos);
-    tr.appendChild(tdName);
-    tr.appendChild(tdOv);
-    tr.appendChild(tdFit);
-    tr.appendChild(tdStatus);
-    tr.appendChild(tdRole);
+  // Banquillo (convocados)
+  benchIds
+    .map((id) => byId.get(id))
+    .filter(Boolean)
+    .forEach((p) => benchBody.appendChild(renderRow(p, 'BENCH')));
 
-    tbody.appendChild(tr);
-  });
+  // No convocados
+  outPlayers.forEach((p) => outBody.appendChild(renderRow(p, 'OUT')));
 
-  club.lineup = cleanedLineup.slice(0, 11);
+  // Contador
   updateTacticsXIcount(club);
+
+  // Ficha derecha + campo
+  const selected =
+    (tacticsSelectedPlayerId && byId.get(tacticsSelectedPlayerId)) ||
+    (xiIds[0] && byId.get(xiIds[0])) ||
+    null;
+  if (!tacticsSelectedPlayerId && selected) tacticsSelectedPlayerId = selected.id;
+  renderTacticsPlayerCard(selected, club);
+  renderTacticsPitch(club);
+}
+
+function handleTacticsAction(playerId, action) {
+  const club = getUserClub();
+  if (!club) return;
+  ensureClubTactics(club);
+
+  const xi = Array.isArray(club.lineup) ? club.lineup.slice() : [];
+  const bench = Array.isArray(club.bench) ? club.bench.slice() : [];
+
+  const xiSet = new Set(xi);
+  const benchSet = new Set(bench);
+
+  const removeFrom = (arr, id) => arr.filter((x) => x !== id);
+
+  // límites
+  const XI_MAX = 11;
+  const BENCH_MAX = 9;
+
+  if (action === 'TO_BENCH') {
+    club.lineup = removeFrom(xi, playerId);
+    if (bench.length < BENCH_MAX && !benchSet.has(playerId)) {
+      club.bench = bench.concat([playerId]).slice(0, BENCH_MAX);
+    } else {
+      club.bench = bench;
+    }
+  } else if (action === 'TO_OUT') {
+    club.lineup = removeFrom(xi, playerId);
+    club.bench = removeFrom(bench, playerId);
+  } else if (action === 'TO_XI') {
+    club.bench = removeFrom(bench, playerId);
+    if (xi.length < XI_MAX && !xiSet.has(playerId)) {
+      club.lineup = xi.concat([playerId]).slice(0, XI_MAX);
+    } else {
+      club.lineup = xi;
+    }
+  } else if (action === 'ADD_BENCH') {
+    if (bench.length < BENCH_MAX && !benchSet.has(playerId) && !xiSet.has(playerId)) {
+      club.bench = bench.concat([playerId]).slice(0, BENCH_MAX);
+    }
+  } else if (action === 'ADD_XI') {
+    if (!xiSet.has(playerId)) {
+      // si XI lleno, mandamos el último al banquillo si hay hueco
+      let nextXI = xi.slice();
+      let nextBench = bench.slice();
+      if (nextXI.length >= XI_MAX) {
+        const kicked = nextXI.pop();
+        if (kicked && nextBench.length < BENCH_MAX && !nextBench.includes(kicked)) {
+          nextBench.push(kicked);
+        }
+      }
+      nextXI.push(playerId);
+      club.lineup = nextXI.slice(0, XI_MAX);
+      // limpiar duplicados y excluir XI
+      const setXI = new Set(club.lineup);
+      club.bench = Array.from(new Set(nextBench)).filter((id) => id && !setXI.has(id)).slice(0, BENCH_MAX);
+    }
+  }
+
+  // limpieza final
+  club.lineup = Array.from(new Set(club.lineup)).slice(0, 11);
+  const setXI2 = new Set(club.lineup);
+  club.bench = Array.from(new Set(club.bench)).filter((id) => id && !setXI2.has(id)).slice(0, 9);
+
+  tacticsSelectedPlayerId = playerId;
+  updateTacticsView();
+}
+
+function autoPickMatchdaySquad(club) {
+  if (!club || !Array.isArray(club.players)) return;
+  const available = club.players
+    .filter((p) => p && p.id && !isPlayerUnavailable(p))
+    .slice()
+    .sort((a, b) => (b.overall ?? 0) - (a.overall ?? 0));
+
+  const xi = [];
+  const gk = available.find((p) => String(p.position || '').toUpperCase() === 'POR');
+  if (gk) xi.push(gk.id);
+  for (let i = 0; i < available.length && xi.length < 11; i++) {
+    const id = available[i].id;
+    if (id && !xi.includes(id)) xi.push(id);
+  }
+  const xiSet = new Set(xi);
+  const bench = [];
+  for (let i = 0; i < available.length && bench.length < 9; i++) {
+    const id = available[i].id;
+    if (id && !xiSet.has(id) && !bench.includes(id)) bench.push(id);
+  }
+  club.lineup = xi.slice(0, 11);
+  club.bench = bench.slice(0, 9);
+}
+
+function renderTacticsPlayerCard(player, club) {
+  const nameEl = document.getElementById('tactics-player-name');
+  const metaEl = document.getElementById('tactics-player-meta');
+  const ovEl = document.getElementById('tactics-player-overall');
+  const aPace = document.getElementById('tactics-attr-pace');
+  const aSta = document.getElementById('tactics-attr-stamina');
+  const aPas = document.getElementById('tactics-attr-passing');
+  const aDri = document.getElementById('tactics-attr-dribbling');
+  const aSho = document.getElementById('tactics-attr-shooting');
+  const aTac = document.getElementById('tactics-attr-tackling');
+  const aVis = document.getElementById('tactics-attr-vision');
+  const aCom = document.getElementById('tactics-attr-composure');
+
+  if (!player) {
+    if (nameEl) nameEl.textContent = '-';
+    if (metaEl) metaEl.textContent = '-';
+    if (ovEl) ovEl.textContent = '--';
+    return;
+  }
+
+  if (nameEl) nameEl.textContent = player.name || 'Jugador';
+  const status =
+    isPlayerInjuredNow(player) ? 'Lesionado' :
+    isPlayerSuspendedNow(player) ? 'Sancionado' : 'Disponible';
+  if (metaEl) {
+    metaEl.textContent = `${player.position || '-'} • Fit ${formatPercent(player.fitness)} • ${status}`;
+  }
+  if (ovEl) ovEl.textContent = player.overall != null ? String(player.overall) : '--';
+
+  const tech = player.attributes?.technical || {};
+  const ment = player.attributes?.mental || {};
+  const phys = player.attributes?.physical || {};
+  if (aPace) aPace.textContent = formatAttr(phys.pace);
+  if (aSta) aSta.textContent = formatAttr(phys.stamina);
+  if (aPas) aPas.textContent = formatAttr(tech.passing);
+  if (aDri) aDri.textContent = formatAttr(tech.dribbling);
+  if (aSho) aSho.textContent = formatAttr(tech.shooting);
+  if (aTac) aTac.textContent = formatAttr(tech.tackling);
+  if (aVis) aVis.textContent = formatAttr(ment.vision);
+  if (aCom) aCom.textContent = formatAttr(ment.composure);
+}
+
+function renderTacticsPitch(club) {
+  const pitch = document.getElementById('tactics-pitch');
+  if (!pitch) return;
+  pitch.innerHTML = '';
+
+  const byId = new Map((club.players || []).map((p) => [p.id, p]));
+  const xiPlayers = (club.lineup || []).map((id) => byId.get(id)).filter(Boolean);
+
+  const formation = club.tactics?.formation || '4-4-2';
+  const slots = getFormationSlots(formation);
+  const assigned = assignPlayersToSlots(xiPlayers, slots);
+
+  assigned.forEach((slot) => {
+    const dot = document.createElement('div');
+    dot.className = 'pcf-dot' + (slot.player?.id === tacticsSelectedPlayerId ? ' is-selected' : '');
+    dot.style.left = `${slot.x}%`;
+    dot.style.top = `${slot.y}%`;
+    dot.dataset.playerId = slot.player?.id || '';
+    dot.title = slot.player ? `${slot.player.name} (${slot.player.position})` : '';
+    dot.textContent = slot.player?.number != null ? String(slot.player.number) : (slot.player?.position || '?');
+    pitch.appendChild(dot);
+  });
+}
+
+function getFormationSlots(formation) {
+  // coordenadas (%): arriba = rival, abajo = portero
+  // siempre: 1 GK + líneas según formación
+  const parts = String(formation || '4-4-2').split('-').map((n) => parseInt(n, 10)).filter((n) => Number.isFinite(n) && n > 0);
+  const lines = parts.length ? parts : [4,4,2];
+  const slots = [];
+  // GK
+  slots.push({ role: 'GK', x: 50, y: 86 });
+
+  // líneas desde defensa (cerca de portero) hacia ataque (cerca de arriba)
+  const yLines = [];
+  const baseY = 70;          // defensa
+  const step = lines.length > 1 ? (52 / (lines.length - 1)) : 0; // hasta ~18
+  for (let i = 0; i < lines.length; i++) {
+    yLines.push(baseY - i * step);
+  }
+
+  for (let li = 0; li < lines.length; li++) {
+    const count = lines[li];
+    const y = yLines[li];
+    const xs = spreadX(count);
+    for (let i = 0; i < count; i++) {
+      slots.push({ role: li === 0 ? 'DEF' : (li === lines.length - 1 ? 'FWD' : 'MID'), x: xs[i], y });
+    }
+  }
+  return slots.slice(0, 11);
+}
+
+function spreadX(count) {
+  if (count <= 1) return [50];
+  const min = 18, max = 82;
+  const step = (max - min) / (count - 1);
+  return Array.from({ length: count }, (_, i) => min + step * i);
+}
+
+function assignPlayersToSlots(players, slots) {
+  const list = players.slice();
+  const gks = list.filter((p) => String(p.position || '').toUpperCase() === 'POR');
+  const defs = list.filter((p) => getPositionGroup(p.position) === 1 && String(p.position || '').toUpperCase() !== 'POR');
+  const mids = list.filter((p) => getPositionGroup(p.position) === 2);
+  const fwds = list.filter((p) => getPositionGroup(p.position) >= 3);
+
+  const pick = (arr) => arr.shift() || null;
+  const out = [];
+
+  slots.forEach((s) => {
+    let p = null;
+    if (s.role === 'GK') p = pick(gks) || pick(defs) || pick(mids) || pick(fwds);
+    else if (s.role === 'DEF') p = pick(defs) || pick(mids) || pick(fwds) || pick(gks);
+    else if (s.role === 'MID') p = pick(mids) || pick(defs) || pick(fwds) || pick(gks);
+    else p = pick(fwds) || pick(mids) || pick(defs) || pick(gks);
+    out.push({ ...s, player: p });
+  });
+  return out;
 }
 
 function updateTacticsXIcount(club) {
   const xiLabel = document.getElementById('tactics-xi-count');
   if (!xiLabel) return;
   const count = Array.isArray(club.lineup) ? club.lineup.length : 0;
-  xiLabel.textContent = `${count}/11 titulares`;
+  const benchCount = Array.isArray(club.bench) ? club.bench.length : 0;
+  xiLabel.textContent = `${count}/11 titulares • ${benchCount}/9 convocados`;
 }
 
 /**
@@ -977,8 +1219,10 @@ function ensureClubTactics(club) {
       pressure: 'NORMAL',
     };
   }
-  if (!Array.isArray(club.lineup) || club.lineup.length === 0) {
-    club.lineup = getBestLineupForClub(club);
+  if (!Array.isArray(club.lineup)) club.lineup = [];
+  if (!Array.isArray(club.bench)) club.bench = [];
+  if (club.lineup.length === 0 || club.bench.length === 0) {
+    autoPickMatchdaySquad(club);
   }
 }
 
@@ -2004,6 +2248,11 @@ function getBenchForFixture(club, xiIds, max = 7) {
   return available.slice(0, max).map((p) => p.id);
 }
 
+// Ajuste fútbol actual: banquillo 9
+function getBenchForFixturePro(club, xiIds) {
+  return getBenchForFixture(club, xiIds, 9);
+}
+
 /**
  * Usa fuerza de once titular + táctica + forma/fatiga para estimar goles.
  */
@@ -2016,8 +2265,8 @@ function simulateFixture(fx) {
   fx.season = fx.season ?? (GameState.currentDate?.season || 1);
   fx.homeLineupIds = getStartingXIForFixture(homeClub);
   fx.awayLineupIds = getStartingXIForFixture(awayClub);
-  fx.homeBenchIds = getBenchForFixture(homeClub, fx.homeLineupIds, 7);
-  fx.awayBenchIds = getBenchForFixture(awayClub, fx.awayLineupIds, 7);
+  fx.homeBenchIds = getBenchForFixture(homeClub, fx.homeLineupIds, 9);
+  fx.awayBenchIds = getBenchForFixture(awayClub, fx.awayLineupIds, 9);
   if (!Array.isArray(fx.substitutions)) fx.substitutions = [];
 
   const homeProfile = getClubStrengthProfile(homeClub, true);
@@ -2104,7 +2353,7 @@ function generateTacticalSubsForFixture(fx, club, xiIds, benchIds, pickMinute) {
   if (!Array.isArray(xiIds) || xiIds.length === 0) return;
   if (!Array.isArray(benchIds) || benchIds.length === 0) return;
 
-  const maxSubs = 3;
+  const maxSubs = 5;
   const already = (fx.substitutions || []).filter((s) => s && s.clubId === club.id).length;
   if (already >= maxSubs) return;
 
@@ -3193,6 +3442,17 @@ function formatCurrency(value) {
     currency: 'EUR',
     maximumFractionDigits: 0,
   });
+}
+
+// Escape básico para texto en HTML (evita inyección al usar innerHTML)
+function escapeHtml(value) {
+  const str = value == null ? '' : String(value);
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
 function formatPercent(v) {
