@@ -276,13 +276,15 @@ function createEmptyClubSeasonStats() {
 }
 
 function ensurePlayerSeasonStats(player, season) {
-  if (!player || !player.stats) return;
+  if (!player) return;
+  if (!player.stats || typeof player.stats !== 'object') player.stats = {};
   const key = String(season || 1);
   if (!player.stats[key]) player.stats[key] = createEmptyPlayerSeasonStats();
 }
 
 function ensureClubSeasonStats(club, season) {
-  if (!club || !club.stats) return;
+  if (!club) return;
+  if (!club.stats || typeof club.stats !== 'object') club.stats = {};
   const key = String(season || 1);
   if (!club.stats[key]) club.stats[key] = createEmptyClubSeasonStats();
 }
@@ -306,7 +308,10 @@ function buildPlayerIndex() {
   const index = new Map();
   (GameState.clubs || []).forEach((club) => {
     (club.players || []).forEach((p) => {
-      if (p && p.id) index.set(p.id, { player: p, club });
+      if (!p || p.id == null) return;
+      // Guardar por id “tal cual” y por string, para que encaje con fixtures (dataset/string)
+      index.set(p.id, { player: p, club });
+      index.set(String(p.id), { player: p, club });
     });
   });
   return index;
@@ -357,8 +362,9 @@ function applyStatsToFixture(fx, season, playerIndex) {
   ensureClubSeasonStats(homeClub, season);
   ensureClubSeasonStats(awayClub, season);
 
-  const hs = homeClub.stats[key];
-  const as = awayClub.stats[key];
+  // Ultra-defensivo por si viene un save viejo raro
+  const hs = homeClub.stats[key] || (homeClub.stats[key] = createEmptyClubSeasonStats());
+  const as = awayClub.stats[key] || (awayClub.stats[key] = createEmptyClubSeasonStats());
 
   const hg = Number.isFinite(fx.homeGoals) ? fx.homeGoals : 0;
   const ag = Number.isFinite(fx.awayGoals) ? fx.awayGoals : 0;
