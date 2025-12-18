@@ -12,11 +12,34 @@ body {
   color: #f5f5f5;
 }
 
-.app-header,
-.app-footer {
+.app-header {
   padding: 0.75rem 1.5rem;
   background: #111827;
   border-bottom: 1px solid #1f2937;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;  
+}
+ 
+.app-header h1 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.app-header-actions{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+/* Menú en la top bar */
+.top-bar-nav{
+  display:flex;
+  align-items:center;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
 .app-footer {
@@ -24,12 +47,9 @@ body {
   border-bottom: none;
   text-align: center;
   margin-top: 1rem;
-}
-
-.app-header h1 {
-  margin: 0;
-  font-size: 1.1rem;
-  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  background: #111827;
+  border-bottom: 1px solid #1f2937;
 }
 
 #app {
@@ -259,6 +279,68 @@ body {
   opacity: 0.6;
 }
 
+/* ===========================
+   CLASIFICACIÓN: controles + últimos 5
+   =========================== */
+.standings-card-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:10px;
+}
+.standings-controls{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.standings-select{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-size:12px;
+  opacity:0.9;
+}
+.standings-md-label{
+  font-weight:800;
+  letter-spacing:0.2px;
+  opacity:0.95;
+}
+.standings-select select{
+  padding:4px 8px;
+  border-radius:10px;
+  background:#020617;
+  color:#e5e7eb;
+  border:1px solid #1f2937;
+}
+/* Controles en el header de Clasificación */
+#view-standings .competition-header{
+  align-items:center;
+}
+.form-dots{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  justify-content:flex-end;
+}
+.form-dot{
+  width:18px;
+  height:18px;
+  border-radius:999px;
+  display:grid;
+  place-items:center;
+  font-size:12px;
+  font-weight:900;
+  line-height:1;
+  border:1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  user-select:none;
+}
+.form-dot.win{ background: rgba(34,197,94,0.30); border-color: rgba(34,197,94,0.55); }
+.form-dot.draw{ background: rgba(148,163,184,0.22); border-color: rgba(148,163,184,0.45); }
+.form-dot.loss{ background: rgba(239,68,68,0.28); border-color: rgba(239,68,68,0.55); }
+.form-dot.empty{ opacity:0.25; }
+
 /* Dashboard layout */
 
 .dashboard-layout {
@@ -284,6 +366,162 @@ body {
 
 .grid-2 {
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+/* ===========================================================
+   HUB estilo “Club Simulator”
+   ======================================================= */
+
+#screen-dashboard {
+  background: radial-gradient(1200px 600px at 50% 0%, rgba(50,120,255,0.35), rgba(0,0,0,0.9));
+}
+
+.pcf-hud {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(8px);
+}
+
+.pcf-hud__left { display:flex; align-items:center; gap:12px; min-width: 260px; }
+.pcf-hud__coat img { width:44px; height:44px; object-fit:contain; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.6)); }
+.pcf-hud__manager { font-size: 12px; opacity: 0.85; }
+.pcf-hud__club { font-size: 18px; font-weight: 800; letter-spacing: 0.2px; }
+
+.pcf-hud__center { text-align:center; flex: 1; }
+.pcf-hud__meta { font-size: 12px; opacity: 0.85; }
+.pcf-hud__money { margin-top: 4px; font-size: 14px; }
+.pcf-k { opacity: 0.8; }
+.pcf-dot { margin: 0 8px; opacity: 0.6; }
+
+.pcf-hud__right { text-align:right; min-width: 320px; }
+.pcf-hud__next-title { font-size: 12px; opacity: 0.85; }
+.pcf-hud__next-main { font-size: 16px; font-weight: 800; margin-top: 2px; }
+.pcf-hud__next-sub { font-size: 12px; opacity: 0.85; }
+
+.pcf-hub { padding: 16px; }
+.pcf-hub__grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr 1fr 1fr;
+  align-items: start;
+}
+
+.pcf-panel {
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.35);
+  backdrop-filter: blur(6px);
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+}
+.pcf-panel h2 {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  letter-spacing: 0.6px;
+  opacity: 0.95;
+}
+.pcf-panel__list { display:flex; flex-direction:column; gap: 10px; }
+
+.pcf-linkbtn {
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.06);
+  color: inherit;
+  cursor: pointer;
+}
+.pcf-linkbtn:hover { background: rgba(255,255,255,0.10); }
+.pcf-linkbtn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.pcf-center {
+  grid-column: 2 / 3;
+  grid-row: 2 / span 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 320px;
+  gap: 12px;
+}
+.pcf-center__ball {
+  width: 180px;
+  height: 180px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.85), rgba(255,255,255,0.08));
+  border: 1px solid rgba(255,255,255,0.18);
+  box-shadow: 0 18px 40px rgba(0,0,0,0.45);
+}
+.pcf-big-action {
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  padding: 12px 22px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.22);
+  background: rgba(50,120,255,0.35);
+  color: #fff;
+  cursor: pointer;
+}
+.pcf-big-action:hover { background: rgba(50,120,255,0.45); }
+.pcf-center__hint { font-size: 12px; opacity: 0.85; text-align:center; max-width: 320px; }
+
+.pcf-notes { grid-column: 1 / -1; }
+.pcf-notes ul { margin: 0; padding-left: 18px; }
+
+@media (max-width: 980px) {
+  .pcf-hub__grid { grid-template-columns: 1fr; }
+  .pcf-center { grid-column: auto; grid-row: auto; }
+  .pcf-notes { grid-column: auto; }
+  .pcf-hud { flex-direction: column; align-items: stretch; }
+  .pcf-hud__right { text-align: left; }
+}
+
+.pcf-inline-match{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.pcf-inline-match__team{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 10px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,0.10);
+  background:rgba(255,255,255,0.06);
+}
+.pcf-inline-match__team.is-user{
+  border-color: rgba(50,120,255,0.45);
+  background: rgba(50,120,255,0.14);
+  box-shadow: 0 0 0 3px rgba(50,120,255,0.10);
+}
+.pcf-inline-match__team img.coat-icon{
+  width:18px;
+  height:18px;
+  object-fit:contain;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.45));
+}
+/* En el HUB usamos size mayor, pero el img ya viene con width/height; esto solo asegura alineación */
+.pcf-inline-match__name{
+  font-weight:800;
+  letter-spacing:0.2px;
+}
+.pcf-inline-match__vs{
+  opacity:0.8;
+  font-weight:900;
+  letter-spacing:0.6px;
+}
+.pcf-inline-match__meta{
+  margin-top:6px;
+  font-size:12px;
+  opacity:0.85;
 }
 
 /* ===========================
@@ -448,6 +686,35 @@ body {
 
 .squad-actions .btn-xs + .btn-xs {
   margin-left: 0.25rem;
+}
+
+
+.table-compact th.num,
+.table-compact td.num {
+  text-align: center;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.2rem;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(2, 6, 23, 0.55);
+}
+.badge-ok { border-color: rgba(34, 197, 94, 0.35); }
+.badge-warn { border-color: rgba(234, 179, 8, 0.35); }
+.badge-bad { border-color: rgba(239, 68, 68, 0.35); }
+
+.row-actions {
+  display: inline-flex;
+  gap: 0.25rem;
+  flex-wrap: nowrap;
 }
 
 /* ===========================
@@ -663,25 +930,25 @@ body {
    TÁCTICA Y ALINEACIÓN
    =========================== */
 
-.tactics-header {
+.alignment-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 0.75rem;
 }
 
-.tactics-subtitle {
+.alignment-subtitle {
   margin: 0.25rem 0 0;
   font-size: 0.85rem;
   color: #9ca3af;
 }
 
-.tactics-header-right {
+.alignment-header-right {
   display: flex;
   align-items: center;
 }
 
-.tactics-toolbar {
+.alignment-toolbar {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
@@ -689,18 +956,18 @@ body {
   margin: 0.75rem 0;
 }
 
-.tactics-group {
+.alignment-group {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
   font-size: 0.85rem;
 }
 
-.tactics-group label {
+.alignment-group label {
   color: #9ca3af;
 }
 
-.tactics-group select {
+.alignment-group select {
   background: #020617;
   color: #e5e7eb;
   border-radius: 6px;
@@ -709,23 +976,23 @@ body {
   font-size: 0.9rem;
 }
 
-.tactics-table-wrapper {
+.alignment-table-wrapper {
   overflow-x: auto;
 }
 
-.table-tactics td:nth-child(3),
-.table-tactics td:nth-child(4),
-.table-tactics td:nth-child(5),
-.table-tactics td:nth-child(6) {
+.table-alignment td:nth-child(3),
+.table-alignment td:nth-child(4),
+.table-alignment td:nth-child(5),
+.table-alignment td:nth-child(6) {
   text-align: center;
 }
 
-.tactics-role-checkbox {
+.alignment-role-checkbox {
   display: flex;
   justify-content: center;
 }
 
-.tactics-role-checkbox input[type="checkbox"] {
+.alignment-role-checkbox input[type="checkbox"] {
   width: 1rem;
   height: 1rem;
 }
@@ -962,16 +1229,75 @@ span#club-name-main img {
     height: 48px;
 }
 
+/* ===========================================================
+   TABLAS PCF (táctica / plantilla)
+   ======================================================== */
+
+.pcf-table th,
+.pcf-table td {
+  white-space: nowrap;
+  font-size: 0.85rem;
+}
+
+.pcf-table th.num,
+.pcf-table td.num {
+  text-align: center;
+}
+
+.squad-player-name-cell .player-name-btn {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.squad-player-name-cell .player-name-btn:hover {
+  text-decoration: underline;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.25rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(2, 6, 23, 0.6);
+}
+
+.badge-ok {
+  border-color: rgba(34, 197, 94, 0.35);
+}
+
+.badge-warn {
+  border-color: rgba(234, 179, 8, 0.35);
+}
+
+.badge-bad {
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+.table-squad td.actions {
+  min-width: 180px;
+}
+
 /* ===========================
    PCF-STYLE (Alineación y táctica)
    =========================== */
 
-.pcf-tactics-card {
+.pcf-alignment-card {
   background: linear-gradient(180deg, rgba(14, 40, 78, 0.75), rgba(9, 18, 42, 0.85));
   border: 1px solid rgba(96, 165, 250, 0.22);
 }
 
-.pcf-tactics-layout {
+.pcf-alignment-layout {
   display: grid;
   grid-template-columns: minmax(0, 4fr) minmax(320px, 1fr);
   gap: 1rem;
@@ -1036,37 +1362,308 @@ span#club-name-main img {
   overflow: hidden;
   background-color: rgba(2, 6, 23, 0.25);
   background-image: url("../img/resources/campo.svg"),
-    linear-gradient(180deg, rgba(34, 197, 94, 0.22), rgba(34, 197, 94, 0.08));
+  linear-gradient(180deg, rgba(34, 197, 94, 0.22), rgba(34, 197, 94, 0.08));
   background-repeat: no-repeat, no-repeat;
   background-position: center, center;
   background-size: contain, cover;
 }
 
 /* Marcadores de jugadores sobre el campo */
-.pcf-dot {
+.pcf-pitch .pcf-dot {
   position: absolute;
-  transform: translate(-50%, -50%);
-  width: 30px;
-  height: 30px;
+  width: 26px;
+  height: 26px;
   border-radius: 999px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.72rem;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+  font-size: 11px;
   font-weight: 800;
-  background: rgba(2, 6, 23, 0.78);
-  border: 2px solid rgba(255, 255, 255, 0.85);
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.28);
   cursor: pointer;
   user-select: none;
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  background: rgba(2, 6, 23, 0.75);
+  color: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
 }
-.pcf-dot.is-selected {
-  outline: 3px solid rgba(59, 130, 246, 0.95);
-  outline-offset: 2px;
+
+.pcf-pitch .pcf-dot.is-selected {
+  border-color: rgba(59, 130, 246, 0.95);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25), 0 10px 22px rgba(0,0,0,0.35);
 }
-.pcf-dot.is-unavailable {
+
+.pcf-pitch .pcf-dot.is-unavailable {
   opacity: 0.45;
-  filter: grayscale(0.9);
+  filter: grayscale(0.6);
+}
+
+/* ===========================
+   PCF MEDIA EQUIPO TITULAR
+   =========================== */
+
+.pcf-team-card-body{
+  border-radius: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  background: linear-gradient(180deg, rgba(14, 40, 78, 0.55), rgba(9, 18, 42, 0.65));
+  border: 1px solid rgba(96, 165, 250, 0.18);
+}
+
+.pcf-team-grid{
+  display:grid;
+  grid-template-columns: 1fr 1fr 86px;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.pcf-team-col{
+  display:grid;
+  grid-template-rows: 1fr 1fr;
+  gap: 0.45rem;
+}
+
+.pcf-team-item{
+  border: 1px solid rgba(148,163,184,0.18);
+  background: rgba(2,6,23,0.45);
+  border-radius: 0.55rem;
+  padding: 0.35rem 0.45rem;
+  display:flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+  font-size: 0.78rem;
+}
+.pcf-team-item span{ opacity: 0.92; }
+.pcf-team-item strong{
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.pcf-team-media{
+  border: 1px solid rgba(148,163,184,0.22);
+  background: rgba(2,6,23,0.55);
+  border-radius: 0.65rem;
+  display:flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 0.15rem;
+  font-variant-numeric: tabular-nums;
+}
+.pcf-team-media .t{
+  font-size: 0.70rem;
+  opacity: 0.9;
+  letter-spacing: 0.2px;
+}
+.pcf-team-media .v{
+  font-size: 1.55rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+/* ===========================
+   PCF PLAYER CARD (Jugador)
+   =========================== */
+.pcf-player-card-body{
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  background: linear-gradient(180deg, rgba(14, 40, 78, 0.55), rgba(9, 18, 42, 0.65));
+  border: 1px solid rgba(96, 165, 250, 0.18);
+}
+
+.pcf-pcard-top{
+  display:flex;
+  justify-content: space-between;
+  align-items:flex-start;
+  gap: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(148,163,184,0.18);
+  margin-bottom: 0.6rem;
+}
+.pcf-pcard-name{
+  font-weight: 800;
+  font-size: 0.98rem;
+  line-height: 1.1;
+}
+.pcf-pcard-sub{
+  opacity: 0.9;
+  font-size: 0.78rem;
+  margin-top: 0.2rem;
+}
+.pcf-pcard-ov{
+  min-width: 54px;
+  text-align:center;
+  padding: 0.35rem 0.45rem;
+  border-radius: 0.6rem;
+  border: 1px solid rgba(148,163,184,0.22);
+  background: rgba(2,6,23,0.55);
+  font-variant-numeric: tabular-nums;
+}
+.pcf-pcard-ov .v{ font-size: 1.35rem; font-weight: 900; line-height: 1; }
+.pcf-pcard-ov .t{ font-size: 0.68rem; opacity: 0.85; margin-top: 0.15rem; }
+
+.pcf-pcard-info{
+  display:grid;
+  grid-template-columns: 1fr 92px;
+  gap: 0.6rem;
+  margin-bottom: 0.6rem;
+}
+.pcf-pcard-kv{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+}
+.pcf-box{
+  border: 1px solid rgba(148,163,184,0.18);
+  background: rgba(2,6,23,0.45);
+  border-radius: 0.55rem;
+  padding: 0.35rem 0.45rem;
+}
+.pcf-kv-item{
+  display:flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+}
+.pcf-kv-item span{ opacity: 0.9; }
+.pcf-kv-item strong{ font-variant-numeric: tabular-nums; }
+
+.pcf-pcard-portrait{
+  border-radius: 0.65rem;
+  border: 1px solid rgba(148,163,184,0.18);
+  background: rgba(2,6,23,0.55);
+  display:grid;
+  place-items:center;
+  height: 92px;
+  width: 92px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+}
+.pcf-pcard-portrait .flag{
+  position: absolute;
+  transform: translateY(-34px);
+  opacity: 0.95;
+}
+
+.pcf-pcard-stats{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+.pcf-stat{
+  display:flex;
+  justify-content: space-between;
+  align-items:center;
+  font-size: 0.78rem;
+}
+.pcf-stat .l{ opacity: 0.92; }
+.pcf-stat .r{
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.pcf-pcard-summary{
+  display:grid;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+}
+.pcf-pill{
+  display:flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.73rem;
+  padding: 0.28rem 0.42rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148,163,184,0.18);
+  background: rgba(2,6,23,0.45);
+}
+.pcf-pill strong{ font-variant-numeric: tabular-nums; }
+
+.pcf-pcard-footer{
+  margin-top: 0.25rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(148,163,184,0.18);
+  font-size: 0.78rem;
+  display:flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  opacity: 0.95;
+}
+.pcf-status-badge{
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148,163,184,0.22);
+  background: rgba(2,6,23,0.45);
+  font-weight: 800;
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+.pcf-status-ok{ border-color: rgba(34,197,94,0.35); }
+.pcf-status-bad{ border-color: rgba(239,68,68,0.35); }
+.pcf-status-warn{ border-color: rgba(234,179,8,0.35); }
+
+.pcf-table-wrapper{
+  overflow:auto;
+}
+
+/* ===========================
+   PCF-STYLE (Tácticas)
+   =========================== */
+
+.pcf-tactics-summary{
+  margin-top: 0.35rem;
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+.pcf-tactics-quick{
+  display: grid;
+  gap: 0.6rem;
+}
+
+.pcf-quick-row{
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.pcf-quick-label{
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  opacity: 0.9;
+}
+
+.pcf-quick-buttons{
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.pcf-quick-btn{
+  padding: 0.35rem 0.55rem;
+  border-radius: 0.6rem;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(15, 23, 42, 0.45);
+  color: rgba(255,255,255,0.92);
+  font-weight: 800;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.pcf-quick-btn:hover{
+  border-color: rgba(96,165,250,0.55);
+}
+
+.pcf-quick-btn.is-active{
+  border-color: rgba(96,165,250,0.95);
+  box-shadow: 0 0 0 3px rgba(96,165,250,0.18);
+}
+
+.pcf-dot--slot{
+  cursor: default;
+  opacity: 0.9;
 }
 
 @media (max-width: 900px) {
@@ -1091,12 +1688,12 @@ span#club-name-main img {
 }
 
 @media (max-width: 640px) {
-  .tactics-header {
+  .alignment-header {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .tactics-toolbar {
+  .alignment-toolbar {
     flex-direction: column;
     align-items: stretch;
   }
