@@ -86,6 +86,74 @@ function getNextFixtureForClub(clubId) {
 export function updateDashboard() {
   const club = getUserClub();
   if (!club) return;
+  
+  function renderMatchLine(containerEl, fx, clubIndex, size = 18, userClubId = null) {
+    if (!containerEl) return;
+    containerEl.innerHTML = '';
+
+    const home = clubIndex.get(fx.homeClubId);
+    const away = clubIndex.get(fx.awayClubId);
+    const homeName = home?.shortName || home?.name || fx.homeClubId || 'Local';
+    const awayName = away?.shortName || away?.name || fx.awayClubId || 'Visitante';
+
+    const line = document.createElement('div');
+    line.className = 'pcf-inline-match';
+
+    const homeTeam = document.createElement('span');
+    homeTeam.className = 'pcf-inline-match__team' + (userClubId && fx.homeClubId === userClubId ? ' is-user' : '');
+    const homeCoat = createCoatImgElement(fx.homeClubId, homeName, size);
+    if (homeCoat) homeTeam.appendChild(homeCoat);
+    const homeTxt = document.createElement('span');
+    homeTxt.className = 'pcf-inline-match__name';
+    homeTxt.textContent = homeName;
+    homeTeam.appendChild(homeTxt);
+
+    const vs = document.createElement('span');
+    vs.className = 'pcf-inline-match__vs';
+    vs.textContent = 'vs';
+
+    const awayTeam = document.createElement('span');
+    awayTeam.className = 'pcf-inline-match__team' + (userClubId && fx.awayClubId === userClubId ? ' is-user' : '');
+    const awayCoat = createCoatImgElement(fx.awayClubId, awayName, size);
+    if (awayCoat) awayTeam.appendChild(awayCoat);
+    const awayTxt = document.createElement('span');
+    awayTxt.className = 'pcf-inline-match__name';
+    awayTxt.textContent = awayName;
+    awayTeam.appendChild(awayTxt);
+
+    line.appendChild(homeTeam);
+    line.appendChild(vs);
+    line.appendChild(awayTeam);
+    containerEl.appendChild(line);
+  } 
+
+  // HUD (nuevo)
+  const hudManager = document.getElementById('hud-manager');
+  const hudClub = document.getElementById('hud-club');
+  const hudLeague = document.getElementById('hud-league');
+  const hudSeason = document.getElementById('hud-season');
+  const hudMatchday = document.getElementById('hud-matchday');
+  const hudCash = document.getElementById('hud-cash');
+  const hudWage = document.getElementById('hud-wage');
+  const hudNextMain = document.getElementById('hud-next-main');
+  const hudNextSub = document.getElementById('hud-next-sub');
+  const hubNextHint = document.getElementById('hub-next-hint');
+  const hudCoat = document.getElementById('hud-coat');
+
+  if (hudManager) hudManager.textContent = GameState.user?.name || 'Mánager';
+  if (hudClub) hudClub.textContent = club.name || club.id || 'Club';
+  if (hudLeague) hudLeague.textContent = GameState.league?.name || 'Liga';
+  if (hudSeason) hudSeason.textContent = `Temporada ${GameState.currentDate?.season || 1}`;
+  if (hudMatchday) hudMatchday.textContent = `Jornada ${GameState.currentDate?.matchday || 1}`;
+  if (hudCash) hudCash.textContent = formatCurrency(club.cash ?? 0);
+  if (hudWage) hudWage.textContent = formatCurrency(club.wageBudget ?? 0);
+
+  // Escudo (HUD izquierda)
+  if (hudCoat) {
+    hudCoat.innerHTML = '';
+    const coat = createCoatImgElement(club.id, club.name, 44);
+    if (coat) hudCoat.appendChild(coat);
+  }
 
   // Top bar
   const clubNameTop = document.getElementById('club-name');
@@ -127,11 +195,26 @@ export function updateDashboard() {
 
   // Próximo partido
   const nextMatchLabel = document.getElementById('next-match-label');
-  if (nextMatchLabel) {
+  const shouldRenderNext = Boolean(
+    nextMatchLabel || hudNextMain || hudNextSub || hubNextHint
+  );
+  if (shouldRenderNext) {
     const clubIndex = buildClubIndex();
     const next = getNextFixtureForClub(club.id);
     if (!next) {
-      nextMatchLabel.textContent = 'Próximo partido: no hay partidos pendientes.';
+      const hasCalendar = Array.isArray(GameState.fixtures) && GameState.fixtures.length > 0;
+      if (nextMatchLabel) {
+        nextMatchLabel.textContent = hasCalendar
+          ? 'Próximo partido: no hay partidos pendientes.'
+          : 'Próximo partido: (sin calendario)';
+      }
+      if (hudNextMain) hudNextMain.textContent = '—';
+      if (hudNextSub) {
+        hudNextSub.textContent = hasCalendar
+          ? 'No hay partidos pendientes.'
+          : 'Aún no hay calendario (fixtures).';
+      }
+      if (hubNextHint) hubNextHint.textContent = hudNextSub?.textContent || '';
     } else {
       const { fx, season, idxInMatchday } = next;
       const home = clubIndex.get(fx.homeClubId);
@@ -142,7 +225,23 @@ export function updateDashboard() {
       const date = getGameDateFor(season, md);
       const dateLabel = formatGameDateLabel(date);
       const timeLabel = deriveKickoffTime(fx, idxInMatchday);
-      nextMatchLabel.textContent = `Próximo partido: ${homeName} vs ${awayName} (J${md} • ${dateLabel} • ${timeLabel})`;
+      const sub = `${GameState.league?.name || 'Liga'} • J${md} • ${dateLabel} • ${timeLabel}`;
+
+      if (nextMatchLabel) {
+        nextMatchLabel.textContent = `Próximo partido: ${homeName} vs ${awayName} (J${md} • ${dateLabel} • ${timeLabel})`;
+      }
+      // HUD: línea con ambos equipos en orden real (local vs visitante) + escudos
+      if (hudNextMain) renderMatchLine(hudNextMain, fx, clubIndex, 18, club.id);
+      if (hudNextSub) hudNextSub.textContent = sub;
+      // HUB: bajo el botón PARTIDO, lo mismo pero un poco más grande
+      if (hubNextHint) {
+        hubNextHint.innerHTML = '';
+        renderMatchLine(hubNextHint, fx, clubIndex, 22, club.id);
+        const meta = document.createElement('div');
+        meta.className = 'pcf-inline-match__meta';
+        meta.textContent = sub;
+        hubNextHint.appendChild(meta);
+      }
     }
   }
 

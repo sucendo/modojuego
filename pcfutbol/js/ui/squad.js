@@ -31,8 +31,8 @@ function getUserClub() {
 function getPositionGroup(pos) {
   const p = String(pos || '').toUpperCase();
   if (p === 'POR' || p === 'GK') return 0;
-  if (p.startsWith('D') || ['LD','LI','DFC','RB','LB','CB','CAD','CAI'].includes(p)) return 1;
-  if (p.startsWith('M') || ['MC','MCD','MCO','DM','CM','AM','MD','MI','MP'].includes(p)) return 2;
+  if (p.startsWith('D') || ['RB','LB','CB','RWB','LWB'].includes(p)) return 1;
+  if (p.startsWith('M') || ['CDM','CM','CAM','RM','LM'].includes(p)) return 2;
   return 3;
 }
 
@@ -107,13 +107,25 @@ export function initSquadUI() {
 
   if (tbody) {
     tbody.addEventListener('click', (ev) => {
-      const btn = ev.target?.closest?.('button[data-action]');
-      if (!btn) return;
-      const tr = btn.closest('tr[data-player-id]');
+      const target = ev.target;
+      if (!(target instanceof Element)) return;
+
+      // 1) Botón de acción
+      const btn = target.closest('button[data-action]');
+      if (btn) {
+        const tr = btn.closest('tr[data-player-id]');
+        const playerId = tr?.dataset?.playerId;
+        const action = btn.dataset.action;
+        if (!playerId || !action) return;
+        onActionCb && onActionCb({ playerId, action });
+        return;
+      }
+
+      // 2) Click en fila -> abrir ficha
+      const tr = target.closest('tr[data-player-id]');
       const playerId = tr?.dataset?.playerId;
-      const action = btn.dataset.action;
-      if (!playerId || !action) return;
-      onActionCb && onActionCb({ playerId, action });
+      if (!playerId) return;
+      onActionCb && onActionCb({ playerId, action: 'details' });
     });
   }
 }

@@ -106,9 +106,34 @@ export function updateQuickNotes() {
 
   list.innerHTML = '';
 
-  const liVersion = document.createElement('li');
-  liVersion.textContent = 'Versión prototipo del juego.';
-  list.appendChild(liVersion);
+  // 1) Últimos resultados (del club)
+  const fixtures = Array.isArray(GameState.fixtures) ? GameState.fixtures : [];
+  const played = fixtures
+    .filter((fx) => fx && fx.played && (fx.homeClubId === club.id || fx.awayClubId === club.id))
+    .slice()
+    .sort((a, b) => Number(b.matchday || 0) - Number(a.matchday || 0));
+
+  const liResultsTitle = document.createElement('li');
+  liResultsTitle.innerHTML = `<strong>Resultados recientes:</strong>`;
+  list.appendChild(liResultsTitle);
+
+  if (played.length === 0) {
+    const li = document.createElement('li');
+    li.textContent = 'Aún no se han jugado partidos.';
+    list.appendChild(li);
+  } else {
+    played.slice(0, 3).forEach((fx) => {
+      const hg = fx.homeGoals ?? 0;
+      const ag = fx.awayGoals ?? 0;
+      const isHome = fx.homeClubId === club.id;
+      const gf = isHome ? hg : ag;
+      const gc = isHome ? ag : hg;
+      const res = gf > gc ? 'V' : gf < gc ? 'D' : 'E';
+      const li = document.createElement('li');
+      li.textContent = `J${fx.matchday}: ${fx.homeClubId} ${hg}-${ag} ${fx.awayClubId} (${res})`;
+      list.appendChild(li);
+    });
+  }
 
   const liHealth = document.createElement('li');
   const aHealth = document.createElement('a');
@@ -142,6 +167,12 @@ export function updateQuickNotes() {
   const liInfra = document.createElement('li');
   liInfra.textContent = `Centro médico nivel ${centerLevel}, fisioterapeutas nivel ${physioLevel}.`;
   list.appendChild(liInfra);
+  
+  // 3) Novedades (placeholder futuro)
+  const liNews = document.createElement('li');
+  const news = Array.isArray(GameState.news) ? GameState.news : [];
+  liNews.innerHTML = `<strong>Novedades:</strong> ${news[0]?.text || 'Sin novedades destacadas.'}`;
+  list.appendChild(liNews);
 }
 
 export function updateMedicalView() {

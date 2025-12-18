@@ -30,7 +30,7 @@ export function autoPickMatchdaySquad(club, benchMax = 9) {
 
   const xi = [];
   const gk = available.find(
-    (p) => String(p.position || '').toUpperCase() === 'POR'
+    (p) => String(p.position || '').toUpperCase() === 'GK'
   );
   if (gk) xi.push(gk.id);
 
@@ -53,8 +53,8 @@ export function autoPickMatchdaySquad(club, benchMax = 9) {
 export function ensureClubTactics(club) {
   if (!club) return;
 
-  if (!club.tactics) {
-    club.tactics = {
+  if (!club.alignment) {
+    club.alignment = {
       formation: '4-4-2',
       mentality: 'BALANCED',
       tempo: 'NORMAL',
@@ -111,8 +111,8 @@ export function getFormationSlots(formation) {
 export function assignPlayersToSlots(players, slots) {
   const list = (players || []).slice();
 
-  const gks = list.filter((p) => String(p.position || '').toUpperCase() === 'POR');
-  const defs = list.filter((p) => getPositionGroup(p.position) === 1 && String(p.position || '').toUpperCase() !== 'POR');
+  const gks = list.filter((p) => String(p.position || '').toUpperCase() === 'GK');
+  const defs = list.filter((p) => getPositionGroup(p.position) === 1 && String(p.position || '').toUpperCase() !== 'GK');
   const mids = list.filter((p) => getPositionGroup(p.position) === 2);
   const fwds = list.filter((p) => getPositionGroup(p.position) >= 3);
 

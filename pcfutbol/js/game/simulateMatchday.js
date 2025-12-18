@@ -952,7 +952,7 @@ function getClubStrengthProfile(club, isHome) {
   let attack = avgOverall * 0.9;
   let defense = avgOverall * 0.9;
 
-  const t = club.tactics || {};
+  const t = club.alignment || {};
   const mentality = t.mentality || 'BALANCED';
   const pressure = t.pressure || 'NORMAL';
 
@@ -975,7 +975,7 @@ function getClubStrengthProfile(club, isHome) {
 
 function getTacticalAggression(club) {
   ensureClubTactics(club);
-  const t = club.tactics || {};
+  const t = club.alignment || {};
   let factor = 1.0;
 
   if (t.mentality === 'OFFENSIVE') factor += 0.15;
