@@ -27,6 +27,7 @@ export const GameState = {
   user: {
     roleMode: 'TOTAL',
     clubId: null,
+    name: 'Mánager',
   },
 };
 
@@ -38,6 +39,7 @@ export function newGame(options = {}) {
     roleMode = 'TOTAL',
     leagueId = initialLeague.id,
     clubId,
+    managerName,
   } = options;
 
   // Elegimos liga (si no encaja, usamos la inicial por defecto)
@@ -78,6 +80,12 @@ export function newGame(options = {}) {
 
   GameState.user.roleMode = roleMode;
   GameState.user.clubId = selectedClubId;
+  
+  if (typeof managerName === 'string' && managerName.trim()) {
+    GameState.user.name = managerName.trim().slice(0, 24);
+  } else if (!GameState.user.name) {
+    GameState.user.name = 'Mánager';
+  }
 
   normalizeGameState();
   setupCompetition();
@@ -147,18 +155,18 @@ function ensureClubDefaults(club) {
   if (!club) return;
 
   // Táctica base
-  if (!club.tactics) {
-    club.tactics = {
+  if (!club.alignment) {
+    club.alignment = {
       formation: '4-4-2',
       mentality: 'BALANCED',
       tempo: 'NORMAL',
       pressure: 'NORMAL',
     };
   } else {
-    if (!club.tactics.formation) club.tactics.formation = '4-4-2';
-    if (!club.tactics.mentality) club.tactics.mentality = 'BALANCED';
-    if (!club.tactics.tempo) club.tactics.tempo = 'NORMAL';
-    if (!club.tactics.pressure) club.tactics.pressure = 'NORMAL';
+    if (!club.alignment.formation) club.alignment.formation = '4-4-2';
+    if (!club.alignment.mentality) club.alignment.mentality = 'BALANCED';
+    if (!club.alignment.tempo) club.alignment.tempo = 'NORMAL';
+    if (!club.alignment.pressure) club.alignment.pressure = 'NORMAL';
   }
 
   // XI (11) + Convocados (banquillo 9)

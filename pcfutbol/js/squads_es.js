@@ -14,7 +14,7 @@ export const realSquads = {
       id: "alaves_sivera",
       name: "Antonio Sivera",
       shirtNumber: 1,
-      position: "POR",
+      position: "GK",
       overall: 78,
       wage: 1800000,
       contractYears: 2, // hasta 2027
@@ -47,7 +47,7 @@ export const realSquads = {
       id: "alaves_raul_fernandez",
       name: "Raúl Fernández",
       shirtNumber: 13,
-      position: "POR",
+      position: "GK",
       overall: 75,
       wage: 1200000,
       contractYears: 1, // hasta 2026
@@ -80,7 +80,7 @@ export const realSquads = {
       id: "alaves_swiderski",
       name: "Grégo Swiderski",
       shirtNumber: 31,
-      position: "POR",
+      position: "GK",
       overall: 73,
       wage: 800000,
       contractYears: 2, // hasta 2027
@@ -381,7 +381,7 @@ export const realSquads = {
       id: "alaves_denis_suarez",
       name: "Denis Suárez",
       shirtNumber: 4,
-      position: "AM",
+      position: "CM",
       overall: 80,
       wage: 2800000,
       contractYears: 2, // 2027
@@ -414,7 +414,7 @@ export const realSquads = {
       id: "alaves_guevara",
       name: "Ander Guevara",
       shirtNumber: 6,
-      position: "DM",
+      position: "CDM",
       overall: 79,
       wage: 2200000,
       contractYears: 2, // 2027
@@ -447,7 +447,7 @@ export const realSquads = {
       id: "alaves_carlos_vicente",
       name: "Carlos Vicente",
       shirtNumber: 7,
-      position: "AM",
+      position: "RW",
       overall: 77,
       wage: 1800000,
       contractYears: 2, // 2027
@@ -513,7 +513,7 @@ export const realSquads = {
       id: "alaves_carles_alena",
       name: "Carles Aleñá",
       shirtNumber: 10,
-      position: "AM",
+      position: "CM",
       overall: 79,
       wage: 2600000,
       contractYears: 4, // 2029
@@ -612,7 +612,7 @@ export const realSquads = {
       id: "alaves_calebe",
       name: "Calebe Gonçalves",
       shirtNumber: 20,
-      position: "AM",
+      position: "CM",
       overall: 77,
       wage: 1800000,
       contractYears: 1, // 2026
@@ -812,7 +812,7 @@ export const realSquads = {
       id: "alaves_abde_rebbach",
       name: "Abde Rebbach",
       shirtNumber: 21,
-      position: "EI",
+      position: "LW",
       overall: 77,
       wage: 2000000,
       contractYears: 3, // 2028
@@ -852,7 +852,7 @@ export const realSquads = {
       id: "athletic_unai_simon",
       name: "Unai Simón",
       shirtNumber: 1,
-      position: "POR",
+      position: "GK",
       overall: 85,
       wage: 5000000,
       contractYears: 4, // hasta 2029
@@ -885,7 +885,7 @@ export const realSquads = {
       id: "athletic_alex_padilla",
       name: "Álex Padilla",
       shirtNumber: 27,
-      position: "POR",
+      position: "GK",
       overall: 77,
       wage: 1200000,
       contractYears: 4, // hasta 2029
@@ -1252,7 +1252,7 @@ export const realSquads = {
       id: "athletic_vesga",
       name: "Mikel Vesga",
       shirtNumber: 6,
-      position: "DM",
+      position: "CDM",
       overall: 80,
       wage: 2800000,
       contractYears: 2, // 2027
@@ -1285,7 +1285,7 @@ export const realSquads = {
       id: "athletic_sancet",
       name: "Oihan Sancet",
       shirtNumber: 8,
-      position: "AM",
+      position: "CAM",
       overall: 84,
       wage: 4500000,
       contractYears: 7, // 2032
@@ -1384,7 +1384,7 @@ export const realSquads = {
       id: "athletic_unai_gomez",
       name: "Unai Gómez",
       shirtNumber: 20,
-      position: "AM",
+      position: "CM",
       overall: 77,
       wage: 1500000,
       contractYears: 3, // 2028
@@ -1417,7 +1417,7 @@ export const realSquads = {
       id: "athletic_prados",
       name: "Beñat Prados",
       shirtNumber: 24,
-      position: "DM",
+      position: "CDM",
       overall: 78,
       wage: 1800000,
       contractYears: 6, // 2031
@@ -1516,7 +1516,7 @@ export const realSquads = {
       id: "athletic_selton_sanchez",
       name: "Selton Sánchez",
       shirtNumber: 44,
-      position: "AM",
+      position: "RW",
       overall: 72,
       wage: 700000,
       contractYears: 4, // 2029
@@ -1551,7 +1551,7 @@ export const realSquads = {
       id: "athletic_berenguer",
       name: "Álex Berenguer",
       shirtNumber: 7,
-      position: "EI",
+      position: "LW",
       overall: 81,
       wage: 3500000,
       contractYears: 2, // 2027
@@ -1617,7 +1617,7 @@ export const realSquads = {
       id: "athletic_nico_williams",
       name: "Nico Williams Jr.",
       shirtNumber: 10,
-      position: "ED",
+      position: "RW",
       overall: 86,
       wage: 7000000,
       contractYears: 10, // 2035
@@ -1716,7 +1716,7 @@ export const realSquads = {
       id: "athletic_nico_serrano",
       name: "Nico Serrano",
       shirtNumber: 22,
-      position: "EI",
+      position: "LW",
       overall: 77,
       wage: 1800000,
       contractYears: 3, // 2028
@@ -1749,7 +1749,7 @@ export const realSquads = {
       id: "athletic_robert_navarro",
       name: "Robert Navarro",
       shirtNumber: 23,
-      position: "EI",
+      position: "LW",
       overall: 80,
       wage: 2500000,
       contractYears: 5, // 2030
@@ -1855,7 +1855,7 @@ export const realSquads = {
 	id: "atletico_musso",
 	name: "Juan Musso",
 	shirtNumber: 1,
-	position: "POR",
+	position: "GK",
 	overall: 82,
 	wage: 3000000,
 	contractYears: 3,
@@ -1888,7 +1888,7 @@ export const realSquads = {
 	id: "atletico_oblak",
 	name: "Jan Oblak",
 	shirtNumber: 13,
-	position: "POR",
+	position: "GK",
 	overall: 89,
 	wage: 10000000,
 	contractYears: 3,
@@ -2255,7 +2255,7 @@ export const realSquads = {
 	id: "atletico_johnny_cardoso",
 	name: "Johnny Cardoso",
 	shirtNumber: 5,
-	position: "DM",
+	position: "CDM",
 	overall: 82,
 	wage: 3000000,
 	contractYears: 5,
@@ -2288,7 +2288,7 @@ export const realSquads = {
 	id: "atletico_koke",
 	name: "Koke Resurrección",
 	shirtNumber: 6,
-	position: "MC",
+	position: "CM",
 	overall: 85,
 	wage: 7000000,
 	contractYears: 1,
@@ -2321,7 +2321,7 @@ export const realSquads = {
 	id: "atletico_barrios",
 	name: "Pablo Barrios",
 	shirtNumber: 8,
-	position: "MC",
+	position: "CM",
 	overall: 82,
 	wage: 2500000,
 	contractYears: 3,
@@ -2354,7 +2354,7 @@ export const realSquads = {
 	id: "atletico_baena",
 	name: "Álex Baena",
 	shirtNumber: 10,
-	position: "AM",
+	position: "LM",
 	overall: 84,
 	wage: 5000000,
 	contractYears: 5,
@@ -2387,7 +2387,7 @@ export const realSquads = {
 	id: "atletico_almada",
 	name: "Thiago Almada",
 	shirtNumber: 11,
-	position: "AM",
+	position: "CAM",
 	overall: 85,
 	wage: 4000000,
 	contractYears: 5,
@@ -2488,7 +2488,7 @@ export const realSquads = {
 	id: "atletico_carlos_martin",
 	name: "Carlos Martín",
 	shirtNumber: 12,
-	position: "DC",
+	position: "ST",
 	overall: 78,
 	wage: 1200000,
 	contractYears: 4,
@@ -2554,7 +2554,7 @@ export const realSquads = {
 	id: "atletico_giuliano_simeone",
 	name: "Giuliano Simeone",
 	shirtNumber: 20,
-	position: "DC",
+	position: "ST",
 	overall: 80,
 	wage: 2000000,
 	contractYears: 3,
@@ -2620,7 +2620,7 @@ export const realSquads = {
 	id: "atletico_nico_gonzalez",
 	name: "Nico González",
 	shirtNumber: 23,
-	position: "EI",
+	position: "LW",
 	overall: 84,
 	wage: 4000000,
 	contractYears: 1,
@@ -2660,7 +2660,7 @@ export const realSquads = {
 	id: "barca_ter_stegen",
 	name: "Marc-André ter Stegen",
 	shirtNumber: 1,
-	position: "POR",
+	position: "GK",
 	overall: 89,
 	wage: 12000000,
 	contractYears: 3, // hasta 2028
@@ -2693,7 +2693,7 @@ export const realSquads = {
 	id: "barca_joan_garcia",
 	name: "Joan García",
 	shirtNumber: 13,
-	position: "POR",
+	position: "GK",
 	overall: 84,
 	wage: 4000000,
 	contractYears: 6, // hasta 2031
@@ -2726,7 +2726,7 @@ export const realSquads = {
 	id: "barca_szczesny",
 	name: "Wojciech Szczęsny",
 	shirtNumber: 25,
-	position: "POR",
+	position: "GK",
 	overall: 85,
 	wage: 6000000,
 	contractYears: 2, // hasta 2027
@@ -2994,7 +2994,7 @@ export const realSquads = {
 	id: "barca_gavi",
 	name: "Gavi",
 	shirtNumber: 6,
-	position: "MC",
+	position: "CM",
 	overall: 86,
 	wage: 7000000,
 	contractYears: 5, // 2030
@@ -3060,7 +3060,7 @@ export const realSquads = {
 	id: "barca_fermin",
 	name: "Fermín López",
 	shirtNumber: 16,
-	position: "AM",
+	position: "CM",
 	overall: 83,
 	wage: 4000000,
 	contractYears: 4, // 2029
@@ -3093,7 +3093,7 @@ export const realSquads = {
 	id: "barca_casado",
 	name: "Marc Casadó",
 	shirtNumber: 17,
-	position: "DM",
+	position: "CDM",
 	overall: 81,
 	wage: 2500000,
 	contractYears: 3, // 2028
@@ -3126,7 +3126,7 @@ export const realSquads = {
 	id: "barca_dani_olmo",
 	name: "Dani Olmo",
 	shirtNumber: 20,
-	position: "AM",
+	position: "CAM",
 	overall: 85,
 	wage: 7000000,
 	contractYears: 5, // 2030
@@ -3192,7 +3192,7 @@ export const realSquads = {
 	id: "barca_marc_bernal",
 	name: "Marc Bernal",
 	shirtNumber: 22,
-	position: "DM",
+	position: "CDM",
 	overall: 82,
 	wage: 3000000,
 	contractYears: 4, // 2029
@@ -3227,7 +3227,7 @@ export const realSquads = {
 	id: "barca_ferran_torres",
 	name: "Ferran Torres",
 	shirtNumber: 7,
-	position: "EI",
+	position: "LW",
 	overall: 84,
 	wage: 6000000,
 	contractYears: 2, // 2027
@@ -3293,7 +3293,7 @@ export const realSquads = {
 	id: "barca_lamine_yamal",
 	name: "Lamine Yamal",
 	shirtNumber: 10,
-	position: "ED",
+	position: "RW",
 	overall: 90,
 	wage: 8000000,
 	contractYears: 6, // 2031
@@ -3326,7 +3326,7 @@ export const realSquads = {
 	id: "barca_raphinha",
 	name: "Raphinha",
 	shirtNumber: 11,
-	position: "ED",
+	position: "RW",
 	overall: 85,
 	wage: 7000000,
 	contractYears: 3, // 2028
@@ -3359,7 +3359,7 @@ export const realSquads = {
 	id: "barca_rashford",
 	name: "Marcus Rashford",
 	shirtNumber: 14,
-	position: "EI",
+	position: "LW",
 	overall: 86,
 	wage: 9000000,
 	contractYears: 3, // aprox, sin año definido en tu plantilla
@@ -3392,7 +3392,7 @@ export const realSquads = {
 	id: "barca_roony_bardghji",
 	name: "Roony Bardghji",
 	shirtNumber: 28,
-	position: "ED",
+	position: "RW",
 	overall: 82,
 	wage: 3000000,
 	contractYears: 4, // 2029
@@ -3432,7 +3432,7 @@ export const realSquads = {
       id: "celta_ivan_villar",
       name: "Iván Villar",
       shirtNumber: 1,
-      position: "POR",
+      position: "GK",
       overall: 77,
       wage: 1800000,
       contractYears: 2, // hasta 2027
@@ -3465,7 +3465,7 @@ export const realSquads = {
       id: "celta_ionut_radu",
       name: "Ionuț Radu",
       shirtNumber: 13,
-      position: "POR",
+      position: "GK",
       overall: 78,
       wage: 2200000,
       contractYears: 4, // hasta 2029
@@ -3498,7 +3498,7 @@ export const realSquads = {
       id: "celta_marc_vidal",
       name: "Marc Vidal",
       shirtNumber: 25,
-      position: "POR",
+      position: "GK",
       overall: 75,
       wage: 1200000,
       contractYears: 3, // hasta 2028
@@ -3898,7 +3898,7 @@ export const realSquads = {
       id: "celta_fran_beltran",
       name: "Fran Beltrán",
       shirtNumber: 8,
-      position: "DM",
+      position: "CDM",
       overall: 81,
       wage: 2800000,
       contractYears: 1, // hasta 2026
@@ -3931,7 +3931,7 @@ export const realSquads = {
       id: "celta_cervi",
       name: "Franco Cervi",
       shirtNumber: 11,
-      position: "AM",
+      position: "LW",
       overall: 79,
       wage: 2600000,
       contractYears: 1, // hasta 2026
@@ -3997,7 +3997,7 @@ export const realSquads = {
       id: "celta_bryan_zaragoza",
       name: "Bryan Zaragoza",
       shirtNumber: 15,
-      position: "EI",
+      position: "LW",
       overall: 80,
       wage: 3000000,
       contractYears: 1, // hasta 2026
@@ -4063,7 +4063,7 @@ export const realSquads = {
       id: "celta_swedberg",
       name: "Williot Swedberg",
       shirtNumber: 19,
-      position: "AM",
+      position: "CAM",
       overall: 77,
       wage: 1800000,
       contractYears: 4, // hasta 2029
@@ -4162,7 +4162,7 @@ export const realSquads = {
       id: "celta_jones_elabdellaoui",
       name: "Jones El-Abdellaoui",
       shirtNumber: 39,
-      position: "AM",
+      position: "CAM",
       overall: 73,
       wage: 800000,
       contractYears: 4, // hasta 2029
@@ -4336,7 +4336,7 @@ export const realSquads = {
       id: "elche_dituro",
       name: "Matías Dituro",
       shirtNumber: 1,
-      position: "POR",
+      position: "GK",
       overall: 77,
       wage: 1500000,
       contractYears: 1, // hasta 2026
@@ -4369,7 +4369,7 @@ export const realSquads = {
       id: "elche_inaki_pena",
       name: "Iñaki Peña",
       shirtNumber: 13,
-      position: "POR",
+      position: "GK",
       overall: 78,
       wage: 2000000,
       contractYears: 1, // hasta 2026
@@ -4402,7 +4402,7 @@ export const realSquads = {
       id: "elche_iturbe",
       name: "Alejandro Iturbe",
       shirtNumber: 45,
-      position: "POR",
+      position: "GK",
       overall: 75,
       wage: 1200000,
       contractYears: 4, // hasta 2029
@@ -4736,7 +4736,7 @@ export const realSquads = {
       id: "elche_federico_redondo",
       name: "Federico Redondo",
       shirtNumber: 5,
-      position: "DM",
+      position: "CDM",
       overall: 80,
       wage: 3000000,
       contractYears: 5, // hasta 2030
@@ -4769,7 +4769,7 @@ export const realSquads = {
       id: "elche_yago_santiago",
       name: "Yago Santiago",
       shirtNumber: 7,
-      position: "AM",
+      position: "RW",
       overall: 75,
       wage: 1400000,
       contractYears: 1, // hasta 2026
@@ -4835,7 +4835,7 @@ export const realSquads = {
       id: "elche_german_valera",
       name: "Germán Valera",
       shirtNumber: 11,
-      position: "AM",
+      position: "RW",
       overall: 78,
       wage: 2000000,
       contractYears: 2, // hasta 2027
@@ -4934,7 +4934,7 @@ export const realSquads = {
       id: "elche_josan",
       name: "Josan Ferrández",
       shirtNumber: 17,
-      position: "AM",
+      position: "RW",
       overall: 76,
       wage: 1500000,
       contractYears: 1, // hasta 2026
@@ -4967,7 +4967,7 @@ export const realSquads = {
       id: "elche_chetauya",
       name: "John Chetauya",
       shirtNumber: 18,
-      position: "DM",
+      position: "CDM",
       overall: 75,
       wage: 1400000,
       contractYears: 3, // hasta 2028
@@ -5000,7 +5000,7 @@ export const realSquads = {
       id: "elche_diangana",
       name: "Grady Diangana",
       shirtNumber: 19,
-      position: "AM",
+      position: "RW",
       overall: 79,
       wage: 2500000,
       contractYears: 2, // hasta 2027
@@ -5066,7 +5066,7 @@ export const realSquads = {
       id: "elche_ali_houary",
       name: "Ali Houary",
       shirtNumber: 35,
-      position: "AM",
+      position: "RW",
       overall: 72,
       wage: 700000,
       contractYears: 3, // hasta 2028
@@ -5200,7 +5200,7 @@ export const realSquads = {
       id: "elche_adam_boayar",
       name: "Adam Boayar",
       shirtNumber: 32,
-      position: "EI",
+      position: "LW",
       overall: 73,
       wage: 900000,
       contractYears: 2, // hasta 2027
@@ -5240,7 +5240,7 @@ export const realSquads = {
       id: "espanyol_angel_fortuno",
       name: "Ángel Fortuño",
       shirtNumber: 1,
-      position: "POR",
+      position: "GK",
       overall: 74,
       wage: 800000,
       contractYears: 1, // hasta 2026
@@ -5273,7 +5273,7 @@ export const realSquads = {
       id: "espanyol_dmitrovic",
       name: "Marko Dmitrović",
       shirtNumber: 13,
-      position: "POR",
+      position: "GK",
       overall: 79,
       wage: 2200000,
       contractYears: 3, // hasta 2028
@@ -5306,7 +5306,7 @@ export const realSquads = {
       id: "espanyol_pol_tristan",
       name: "Pol Tristán",
       shirtNumber: 30,
-      position: "POR",
+      position: "GK",
       overall: 73,
       wage: 700000,
       contractYears: 1, // hasta 2026
@@ -5607,7 +5607,7 @@ export const realSquads = {
       id: "espanyol_urko_gonzalez",
       name: "Urko González",
       shirtNumber: 4,
-      position: "DM",
+      position: "CDM",
       overall: 77,
       wage: 1500000,
       contractYears: 5, // hasta 2030
@@ -5739,7 +5739,7 @@ export const realSquads = {
       id: "espanyol_koleosho",
       name: "Luca Koleosho",
       shirtNumber: 16,
-      position: "EI",
+      position: "LW",
       overall: 76,
       wage: 1500000,
       contractYears: 1, // hasta 2026
@@ -5772,7 +5772,7 @@ export const realSquads = {
       id: "espanyol_jofre",
       name: "Jofre Carreras",
       shirtNumber: 17,
-      position: "ED",
+      position: "RW",
       overall: 75,
       wage: 1300000,
       contractYears: 1, // hasta 2026
@@ -5805,7 +5805,7 @@ export const realSquads = {
       id: "espanyol_pickel",
       name: "Charles Pickel",
       shirtNumber: 18,
-      position: "DM",
+      position: "CDM",
       overall: 78,
       wage: 2000000,
       contractYears: 2, // hasta 2027
@@ -5838,7 +5838,7 @@ export const realSquads = {
       id: "espanyol_antoniu_roca",
       name: "Antoniu Roca",
       shirtNumber: 20,
-      position: "ED",
+      position: "RW",
       overall: 74,
       wage: 1000000,
       contractYears: 2, // hasta 2027
@@ -5871,7 +5871,7 @@ export const realSquads = {
       id: "espanyol_dolan",
       name: "Tyrhys Dolan",
       shirtNumber: 24,
-      position: "EI",
+      position: "LW",
       overall: 76,
       wage: 1500000,
       contractYears: 3, // hasta 2028
@@ -6078,7 +6078,7 @@ export const realSquads = {
       id: "getafe_letacek",
       name: "Jiří Letáček",
       shirtNumber: 1,
-      position: "POR",
+      position: "GK",
       overall: 76,
       wage: 1400000,
       contractYears: 3, // hasta 2028
@@ -6111,7 +6111,7 @@ export const realSquads = {
       id: "getafe_david_soria",
       name: "David Soria",
       shirtNumber: 13,
-      position: "POR",
+      position: "GK",
       overall: 79,
       wage: 2200000,
       contractYears: 1, // hasta 2026
@@ -6144,7 +6144,7 @@ export const realSquads = {
       id: "getafe_jorge_benito",
       name: "Jorge Benito",
       shirtNumber: 35,
-      position: "POR",
+      position: "GK",
       overall: 72,
       wage: 600000,
       contractYears: 2, // hasta 2027
@@ -6177,7 +6177,7 @@ export const realSquads = {
       id: "getafe_diego_ferrer",
       name: "Diego Ferrer",
       shirtNumber: 42,
-      position: "POR",
+      position: "GK",
       overall: 71,
       wage: 500000,
       contractYears: 2, // hasta 2027
@@ -6676,7 +6676,7 @@ export const realSquads = {
       id: "getafe_neyou",
       name: "Yvan Neyou",
       shirtNumber: 4,
-      position: "DM",
+      position: "CDM",
       overall: 77,
       wage: 1700000,
       contractYears: 3, // hasta 2028
@@ -6775,7 +6775,7 @@ export const realSquads = {
       id: "getafe_arambarri",
       name: "Mauro Arambarri",
       shirtNumber: 8,
-      position: "DM",
+      position: "CDM",
       overall: 81,
       wage: 2600000,
       contractYears: 3, // hasta 2028
@@ -7008,7 +7008,7 @@ export const realSquads = {
       id: "getafe_sancris",
       name: "Álex Sancris",
       shirtNumber: 18,
-      position: "ED",
+      position: "RW",
       overall: 74,
       wage: 1200000,
       contractYears: 3, // hasta 2028
@@ -7180,7 +7180,7 @@ export const realSquads = {
       id: "girona_livakovic",
       name: "Dominik Livaković",
       shirtNumber: 1,
-      position: "POR",
+      position: "GK",
       overall: 82,
       wage: 3500000,
       contractYears: 1, // hasta 2026
@@ -7213,7 +7213,7 @@ export const realSquads = {
       id: "girona_gazzaniga",
       name: "Paulo Gazzaniga",
       shirtNumber: 13,
-      position: "POR",
+      position: "GK",
       overall: 79,
       wage: 2200000,
       contractYears: 2, // hasta 2027
@@ -7246,7 +7246,7 @@ export const realSquads = {
       id: "girona_krapyvtsov",
       name: "Vladyslav Krapyvtsov",
       shirtNumber: 25,
-      position: "POR",
+      position: "GK",
       overall: 73,
       wage: 800000,
       contractYears: 4, // hasta 2029
@@ -7279,7 +7279,7 @@ export const realSquads = {
       id: "girona_juan_carlos",
       name: "Juan Carlos Martín",
       shirtNumber: 26,
-      position: "POR",
+      position: "GK",
       overall: 75,
       wage: 1400000,
       contractYears: 1, // hasta 2026
@@ -7580,7 +7580,7 @@ export const realSquads = {
       id: "girona_lemar",
       name: "Thomas Lemar",
       shirtNumber: 11,
-      position: "AM",
+      position: "LM",
       overall: 82,
       wage: 3800000,
       contractYears: 1, // hasta 2026
@@ -7646,7 +7646,7 @@ export const realSquads = {
       id: "girona_witsel",
       name: "Axel Witsel",
       shirtNumber: 20,
-      position: "DM",
+      position: "CDM",
       overall: 82,
       wage: 3600000,
       contractYears: 2, // hasta 2027
@@ -7712,7 +7712,7 @@ export const realSquads = {
       id: "girona_ivan_martin",
       name: "Iván Martín",
       shirtNumber: 23,
-      position: "AM",
+      position: "CM",
       overall: 79,
       wage: 2000000,
       contractYears: 3, // hasta 2028
@@ -7747,7 +7747,7 @@ export const realSquads = {
       id: "girona_joel_roca",
       name: "Joel Roca",
       shirtNumber: 3,
-      position: "EI",
+      position: "LW",
       overall: 74,
       wage: 900000,
       contractYears: 4, // hasta 2029
@@ -7813,7 +7813,7 @@ export const realSquads = {
       id: "girona_portu",
       name: "Cristian Portugués \"Portu\"",
       shirtNumber: 8,
-      position: "ED",
+      position: "RW",
       overall: 79,
       wage: 2400000,
       contractYears: 2, // hasta 2027
@@ -7879,7 +7879,7 @@ export const realSquads = {
       id: "girona_yaser_asprilla",
       name: "Yáser Asprilla",
       shirtNumber: 10,
-      position: "EI",
+      position: "LW",
       overall: 78,
       wage: 2000000,
       contractYears: 5, // hasta 2030
@@ -7912,7 +7912,7 @@ export const realSquads = {
       id: "girona_tsygankov",
       name: "Viktor Tsygankov",
       shirtNumber: 15,
-      position: "ED",
+      position: "RW",
       overall: 83,
       wage: 3500000,
       contractYears: 2, // hasta 2027
@@ -7978,7 +7978,7 @@ export const realSquads = {
       id: "girona_bryan_gil",
       name: "Bryan Gil",
       shirtNumber: 21,
-      position: "EI",
+      position: "LW",
       overall: 80,
       wage: 2800000,
       contractYears: 5, // hasta 2030
@@ -8018,7 +8018,7 @@ export const realSquads = {
       id: "levante_pablo_cunat",
       name: "Pablo Cuñat",
       shirtNumber: 1,
-      position: "POR",
+      position: "GK",
       overall: 72,
       wage: 700000,
       contractYears: 1, // hasta 2026
@@ -8051,7 +8051,7 @@ export const realSquads = {
       id: "levante_mathew_ryan",
       name: "Mathew Ryan",
       shirtNumber: 13,
-      position: "POR",
+      position: "GK",
       overall: 78,
       wage: 2000000,
       contractYears: 1, // hasta 2026
@@ -8084,7 +8084,7 @@ export const realSquads = {
       id: "levante_alex_primo",
       name: "Álex Primo",
       shirtNumber: 32,
-      position: "POR",
+      position: "GK",
       overall: 70,
       wage: 500000,
       contractYears: 3, // hasta 2028
@@ -8451,7 +8451,7 @@ export const realSquads = {
       id: "levante_pablo_martinez",
       name: "Pablo Martínez",
       shirtNumber: 10,
-      position: "AM",
+      position: "CAM",
       overall: 75,
       wage: 1400000,
       contractYears: 1, // hasta 2026
@@ -8484,7 +8484,7 @@ export const realSquads = {
       id: "levante_vencedor",
       name: "Unai Vencedor",
       shirtNumber: 12,
-      position: "DM",
+      position: "CDM",
       overall: 75,
       wage: 1500000,
       contractYears: 1, // hasta 2026
@@ -8517,7 +8517,7 @@ export const realSquads = {
       id: "levante_arriaga",
       name: "Kervin Arriaga",
       shirtNumber: 16,
-      position: "DM",
+      position: "CDM",
       overall: 76,
       wage: 1800000,
       contractYears: 3, // hasta 2028
@@ -8550,7 +8550,7 @@ export const realSquads = {
       id: "levante_iker_losada",
       name: "Iker Losada",
       shirtNumber: 18,
-      position: "AM",
+      position: "CAM",
       overall: 73,
       wage: 1200000,
       contractYears: 1, // hasta 2026
@@ -8616,7 +8616,7 @@ export const realSquads = {
       id: "levante_carlos_alvarez",
       name: "Carlos Álvarez",
       shirtNumber: 24,
-      position: "AM",
+      position: "RW",
       overall: 73,
       wage: 1100000,
       contractYears: 2, // hasta 2027
@@ -8651,7 +8651,7 @@ export const realSquads = {
       id: "levante_roger_brugue",
       name: "Roger Brugué",
       shirtNumber: 7,
-      position: "ED",
+      position: "RW",
       overall: 75,
       wage: 1500000,
       contractYears: 3, // hasta 2028
@@ -8750,7 +8750,7 @@ export const realSquads = {
       id: "levante_koyalipou",
       name: "Goduine Koyalipou",
       shirtNumber: 15,
-      position: "EI",
+      position: "LW",
       overall: 74,
       wage: 1500000,
       contractYears: 1, // hasta 2026
@@ -8856,7 +8856,7 @@ export const realSquads = {
       id: "mallorca_leo_roman",
       name: "Leo Román",
       shirtNumber: 1,
-      position: "POR",
+      position: "GK",
       overall: 76,
       wage: 900000,
       contractYears: 5, // hasta 2030
@@ -8889,7 +8889,7 @@ export const realSquads = {
       id: "mallorca_bergstrom",
       name: "Lucas Bergström",
       shirtNumber: 13,
-      position: "POR",
+      position: "GK",
       overall: 75,
       wage: 1000000,
       contractYears: 2, // hasta 2027
@@ -8922,7 +8922,7 @@ export const realSquads = {
       id: "mallorca_ivan_cuellar",
       name: "Iván Cuéllar",
       shirtNumber: 25,
-      position: "POR",
+      position: "GK",
       overall: 72,
       wage: 800000,
       contractYears: 1, // hasta 2026
@@ -9223,7 +9223,7 @@ export const realSquads = {
       id: "mallorca_mascarell",
       name: "Omar Mascarell",
       shirtNumber: 5,
-      position: "DM",
+      position: "CDM",
       overall: 78,
       wage: 2000000,
       contractYears: 1, // hasta 2026
@@ -9355,7 +9355,7 @@ export const realSquads = {
       id: "mallorca_samu_costa",
       name: "Samu Costa",
       shirtNumber: 12,
-      position: "DM",
+      position: "CDM",
       overall: 79,
       wage: 2200000,
       contractYears: 3, // hasta 2028
@@ -9388,7 +9388,7 @@ export const realSquads = {
       id: "mallorca_dani_rodriguez",
       name: "Dani Rodríguez",
       shirtNumber: 14,
-      position: "AM",
+      position: "CM",
       overall: 77,
       wage: 1800000,
       contractYears: 1, // hasta 2026
@@ -9421,7 +9421,7 @@ export const realSquads = {
       id: "mallorca_pablo_torre",
       name: "Pablo Torre",
       shirtNumber: 20,
-      position: "AM",
+      position: "CAM",
       overall: 77,
       wage: 1600000,
       contractYears: 4, // hasta 2029
@@ -9555,7 +9555,7 @@ export const realSquads = {
       id: "mallorca_jan_virgili",
       name: "Jan Virgili",
       shirtNumber: 17,
-      position: "EI",
+      position: "LW",
       overall: 72,
       wage: 800000,
       contractYears: 5, // hasta 2030
@@ -9621,7 +9621,7 @@ export const realSquads = {
       id: "mallorca_llabres",
       name: "Javier Llabrés",
       shirtNumber: 19,
-      position: "ED",
+      position: "RW",
       overall: 73,
       wage: 900000,
       contractYears: 1, // hasta 2026
@@ -9694,7 +9694,7 @@ export const realSquads = {
       id: "osasuna_sergio_herrera",
       name: "Sergio Herrera",
       shirtNumber: 1,
-      position: "POR",
+      position: "GK",
       overall: 78,
       wage: 2200000,
       contractYears: 3, // hasta 2028
@@ -9727,7 +9727,7 @@ export const realSquads = {
       id: "osasuna_aitor_fernandez",
       name: "Aitor Fernández",
       shirtNumber: 13,
-      position: "POR",
+      position: "GK",
       overall: 77,
       wage: 1800000,
       contractYears: 2, // hasta 2027
@@ -9760,7 +9760,7 @@ export const realSquads = {
       id: "osasuna_stamatakis",
       name: "Dimitrios Stamatakis",
       shirtNumber: 31,
-      position: "POR",
+      position: "GK",
       overall: 71,
       wage: 700000,
       contractYears: 2, // hasta 2027
@@ -10094,7 +10094,7 @@ export const realSquads = {
       id: "osasuna_iker_benito",
       name: "Iker Benito",
       shirtNumber: 2,
-      position: "AM",
+      position: "LWB",
       overall: 73,
       wage: 900000,
       contractYears: 2, // hasta 2027
@@ -10127,7 +10127,7 @@ export const realSquads = {
       id: "osasuna_lucas_torro",
       name: "Lucas Torró",
       shirtNumber: 6,
-      position: "DM",
+      position: "CDM",
       overall: 79,
       wage: 2200000,
       contractYears: 2, // hasta 2027
@@ -10226,7 +10226,7 @@ export const realSquads = {
       id: "osasuna_aimar_oroz",
       name: "Aimar Oroz",
       shirtNumber: 10,
-      position: "AM",
+      position: "CAM",
       overall: 79,
       wage: 1900000,
       contractYears: 4, // hasta 2029
@@ -10259,7 +10259,7 @@ export const realSquads = {
       id: "osasuna_kike_barja",
       name: "Kike Barja",
       shirtNumber: 11,
-      position: "AM",
+      position: "RW",
       overall: 76,
       wage: 1600000,
       contractYears: 1, // hasta 2026
@@ -10292,7 +10292,7 @@ export const realSquads = {
       id: "osasuna_ruben_garcia",
       name: "Rubén García",
       shirtNumber: 14,
-      position: "AM",
+      position: "RW",
       overall: 77,
       wage: 1800000,
       contractYears: 1, // hasta 2026
@@ -10325,7 +10325,7 @@ export const realSquads = {
       id: "osasuna_moi_gomez",
       name: "Moi Gómez",
       shirtNumber: 16,
-      position: "AM",
+      position: "LM",
       overall: 78,
       wage: 2000000,
       contractYears: 2, // hasta 2027
@@ -10525,7 +10525,7 @@ export const realSquads = {
       id: "osasuna_becker",
       name: "Sheraldo Becker",
       shirtNumber: 18,
-      position: "ED",
+      position: "RW",
       overall: 79,
       wage: 2600000,
       contractYears: 2, // hasta 2027
@@ -10697,7 +10697,7 @@ export const realSquads = {
       id: "rayo_dani_cardenas",
       name: "Dani Cárdenas",
       shirtNumber: 1,
-      position: "POR",
+      position: "GK",
       overall: 76,
       wage: 1000000,
       contractYears: 2, // hasta 2027
@@ -10730,7 +10730,7 @@ export const realSquads = {
       id: "rayo_augusto_batalla",
       name: "Augusto Batalla",
       shirtNumber: 13,
-      position: "POR",
+      position: "GK",
       overall: 77,
       wage: 1200000,
       contractYears: 5, // hasta 2030
@@ -11130,7 +11130,7 @@ export const realSquads = {
       id: "rayo_pathe_ciss",
       name: "Pathé Ciss",
       shirtNumber: 6,
-      position: "DM",
+      position: "CDM",
       overall: 77,
       wage: 1700000,
       contractYears: 2, // hasta 2027
@@ -11163,7 +11163,7 @@ export const realSquads = {
       id: "rayo_isi_palazon",
       name: "\"Isi\" Palazón",
       shirtNumber: 7,
-      position: "AM",
+      position: "RW",
       overall: 80,
       wage: 2200000,
       contractYears: 3, // hasta 2028
@@ -11196,7 +11196,7 @@ export const realSquads = {
       id: "rayo_oscar_trejo",
       name: "Óscar Trejo",
       shirtNumber: 8,
-      position: "AM",
+      position: "CAM",
       overall: 79,
       wage: 2300000,
       contractYears: 1, // hasta 2026
@@ -11295,7 +11295,7 @@ export const realSquads = {
       id: "rayo_alvaro_garcia",
       name: "Álvaro García",
       shirtNumber: 18,
-      position: "AM",
+      position: "LW",
       overall: 79,
       wage: 2000000,
       contractYears: 3, // hasta 2028
@@ -11328,7 +11328,7 @@ export const realSquads = {
       id: "rayo_oscar_valentin",
       name: "Óscar Valentín",
       shirtNumber: 23,
-      position: "DM",
+      position: "CDM",
       overall: 78,
       wage: 1900000,
       contractYears: 2, // hasta 2027
@@ -11495,7 +11495,7 @@ export const realSquads = {
       id: "rayo_de_frutos",
       name: "Jorge de Frutos",
       shirtNumber: 19,
-      position: "ED",
+      position: "RW",
       overall: 79,
       wage: 2000000,
       contractYears: 3, // hasta 2028
@@ -11528,7 +11528,7 @@ export const realSquads = {
       id: "rayo_fran_perez",
       name: "\"Fran\" Pérez",
       shirtNumber: 21,
-      position: "EI",
+      position: "LW",
       overall: 76,
       wage: 1500000,
       contractYears: 4, // hasta 2029
@@ -11568,7 +11568,7 @@ export const realSquads = {
       id: "betis_alvaro_valles",
       name: "Álvaro Valles",
       shirtNumber: 1,
-      position: "POR",
+      position: "GK",
       overall: 78,
       wage: 1800000,
       contractYears: 5, // hasta 2030
@@ -11601,7 +11601,7 @@ export const realSquads = {
       id: "betis_adrian",
       name: "Adrián San Miguel",
       shirtNumber: 13,
-      position: "POR",
+      position: "GK",
       overall: 74,
       wage: 1200000,
       contractYears: 1, // hasta 2026
@@ -11634,7 +11634,7 @@ export const realSquads = {
       id: "betis_pau_lopez",
       name: "Pau López",
       shirtNumber: 25,
-      position: "POR",
+      position: "GK",
       overall: 79,
       wage: 2000000,
       contractYears: 3, // hasta 2028
@@ -11968,7 +11968,7 @@ export const realSquads = {
       id: "betis_sergi_altimira",
       name: "Sergi Altimira",
       shirtNumber: 6,
-      position: "DM",
+      position: "CDM",
       overall: 75,
       wage: 1300000,
       contractYears: 4, // hasta 2029
@@ -12034,7 +12034,7 @@ export const realSquads = {
       id: "betis_amrabat",
       name: "Sofyan Amrabat",
       shirtNumber: 14,
-      position: "DM",
+      position: "CDM",
       overall: 82,
       wage: 3200000,
       contractYears: 1, // hasta 2026
@@ -12067,7 +12067,7 @@ export const realSquads = {
       id: "betis_riquelme",
       name: "Rodrigo Riquelme",
       shirtNumber: 17,
-      position: "AM",
+      position: "LW",
       overall: 80,
       wage: 2600000,
       contractYears: 5, // hasta 2030
@@ -12133,7 +12133,7 @@ export const realSquads = {
       id: "betis_lo_celso",
       name: "Giovani Lo Celso",
       shirtNumber: 20,
-      position: "AM",
+      position: "CAM",
       overall: 83,
       wage: 3600000,
       contractYears: 3, // hasta 2028
@@ -12166,7 +12166,7 @@ export const realSquads = {
       id: "betis_marc_roca",
       name: "Marc Roca",
       shirtNumber: 21,
-      position: "DM",
+      position: "CDM",
       overall: 79,
       wage: 2400000,
       contractYears: 4, // hasta 2029
@@ -12199,7 +12199,7 @@ export const realSquads = {
       id: "betis_isco",
       name: "Isco Alarcón",
       shirtNumber: 22,
-      position: "AM",
+      position: "CAM",
       overall: 83,
       wage: 3400000,
       contractYears: 3, // hasta 2028
@@ -12234,7 +12234,7 @@ export const realSquads = {
       id: "betis_antony",
       name: "Antony dos Santos",
       shirtNumber: 7,
-      position: "ED",
+      position: "RW",
       overall: 82,
       wage: 3200000,
       contractYears: 5, // hasta 2030
@@ -12300,7 +12300,7 @@ export const realSquads = {
       id: "betis_ez_abde",
       name: "Ez Abde",
       shirtNumber: 10,
-      position: "EI",
+      position: "LW",
       overall: 79,
       wage: 2300000,
       contractYears: 4, // hasta 2029
@@ -12438,7 +12438,7 @@ export const realSquads = {
       id: "rm_courtois",
       name: "Thibaut Courtois",
       shirtNumber: 1,
-      position: "POR",
+      position: "GK",
       overall: 90,
       wage: 12000000,
       contractYears: 2,
@@ -12471,7 +12471,7 @@ export const realSquads = {
       id: "rm_lunin",
       name: "Andriy Lunin",
       shirtNumber: 13,
-      position: "POR",
+      position: "GK",
       overall: 84,
       wage: 4000000,
       contractYears: 5,
@@ -12504,7 +12504,7 @@ export const realSquads = {
       id: "rm_fran_gonzalez",
       name: "Fran González",
       shirtNumber: 26,
-      position: "POR",
+      position: "GK",
       overall: 76,
       wage: 800000,
       contractYears: 1,
@@ -12871,7 +12871,7 @@ export const realSquads = {
       id: "rm_bellingham",
       name: "Jude Bellingham",
       shirtNumber: 5,
-      position: "AM",
+      position: "CAM",
       overall: 92,
       wage: 14000000,
       contractYears: 4,
@@ -12970,7 +12970,7 @@ export const realSquads = {
       id: "rm_tchouameni",
       name: "Aurélien Tchouaméni",
       shirtNumber: 14,
-      position: "DM",
+      position: "CDM",
       overall: 86,
       wage: 10000000,
       contractYears: 3,
@@ -13003,7 +13003,7 @@ export const realSquads = {
       id: "rm_arda_guler",
       name: "Arda Güler",
       shirtNumber: 15,
-      position: "AM",
+      position: "RW",
       overall: 82,
       wage: 5000000,
       contractYears: 4,
@@ -13069,7 +13069,7 @@ export const realSquads = {
       id: "rm_mastantuono",
       name: "Franco Mastantuono",
       shirtNumber: 30,
-      position: "AM",
+      position: "RW",
       overall: 78,
       wage: 3000000,
       contractYears: 6,
@@ -13104,7 +13104,7 @@ export const realSquads = {
       id: "rm_vini_junior",
       name: "Vini Júnior",
       shirtNumber: 7,
-      position: "EI",
+      position: "LW",
       overall: 91,
       wage: 15000000,
       contractYears: 2,
@@ -13203,7 +13203,7 @@ export const realSquads = {
       id: "rm_rodrygo",
       name: "Rodrygo Goes",
       shirtNumber: 11,
-      position: "ED",
+      position: "RW",
       overall: 88,
       wage: 11000000,
       contractYears: 3,
@@ -13236,7 +13236,7 @@ export const realSquads = {
       id: "rm_gonzalo_garcia",
       name: "Gonzalo García",
       shirtNumber: 16,
-      position: "DC",
+      position: "ST",
       overall: 80,
       wage: 3500000,
       contractYears: 5,
@@ -13269,7 +13269,7 @@ export const realSquads = {
       id: "rm_brahim_diaz",
       name: "Brahim Díaz",
       shirtNumber: 21,
-      position: "ED",
+      position: "RW",
       overall: 83,
       wage: 7000000,
       contractYears: 2,
@@ -13309,7 +13309,7 @@ export const realSquads = {
       id: "oviedo_horatiu_moldovan",
       name: "Horatiu Moldovan",
       shirtNumber: 1,
-      position: "POR",
+      position: "GK",
       overall: 78,
       wage: 1800000,
       contractYears: 1, // hasta 2026
@@ -13342,7 +13342,7 @@ export const realSquads = {
       id: "oviedo_aaron_escandell",
       name: "Aarón Escandell",
       shirtNumber: 13,
-      position: "POR",
+      position: "GK",
       overall: 74,
       wage: 1200000,
       contractYears: 1, // hasta 2026
@@ -13375,7 +13375,7 @@ export const realSquads = {
       id: "oviedo_miguel_narvaez",
       name: "Miguel Narváez",
       shirtNumber: 31,
-      position: "POR",
+      position: "GK",
       overall: 68,
       wage: 600000,
       contractYears: 2, // hasta 2027
@@ -13841,7 +13841,7 @@ export const realSquads = {
       id: "oviedo_kwasi_sibo",
       name: "Kwasi Sibo",
       shirtNumber: 6,
-      position: "DM",
+      position: "CDM",
       overall: 73,
       wage: 1100000,
       contractYears: 1, // hasta 2026
@@ -13874,7 +13874,7 @@ export const realSquads = {
       id: "oviedo_santi_cazorla",
       name: "Santi Cazorla",
       shirtNumber: 8,
-      position: "AM",
+      position: "CAM",
       overall: 81,
       wage: 2500000,
       contractYears: 1, // hasta 2026
@@ -13907,7 +13907,7 @@ export const realSquads = {
       id: "oviedo_haissem_hassan",
       name: "Haissem Hassan",
       shirtNumber: 10,
-      position: "AM",
+      position: "LW",
       overall: 72,
       wage: 900000,
       contractYears: 2, // hasta 2027
@@ -14039,7 +14039,7 @@ export const realSquads = {
       id: "oviedo_brekalo",
       name: "Josip Brekalo",
       shirtNumber: 18,
-      position: "AM",
+      position: "LW",
       overall: 78,
       wage: 2200000,
       contractYears: 2, // hasta 2027
@@ -14072,7 +14072,7 @@ export const realSquads = {
       id: "oviedo_dendoncker",
       name: "Leander Dendoncker",
       shirtNumber: 20,
-      position: "DM",
+      position: "CDM",
       overall: 80,
       wage: 2600000,
       contractYears: 2, // hasta 2027
@@ -14138,7 +14138,7 @@ export const realSquads = {
       id: "oviedo_lamine_gueye",
       name: "Lamine Gueye",
       shirtNumber: 28,
-      position: "AM",
+      position: "ST",
       overall: 70,
       wage: 700000,
       contractYears: 2, // hasta 2027
@@ -14173,7 +14173,7 @@ export const realSquads = {
       id: "oviedo_ilyas_chaira",
       name: "Ilyas Chaira",
       shirtNumber: 7,
-      position: "EI",
+      position: "LW",
       overall: 72,
       wage: 900000,
       contractYears: 3, // hasta 2028
@@ -14313,7 +14313,7 @@ realsociedad: [
     id: "real_sociedad_remiro",
     name: "Álex Remiro",
     shirtNumber: 1,
-    position: "POR",
+    position: "GK",
     overall: 84,
     wage: 4500000,
     contractYears: 2, // hasta 2027
@@ -14346,7 +14346,7 @@ realsociedad: [
     id: "real_sociedad_marrero",
     name: "Unai Marrero",
     shirtNumber: 13,
-    position: "POR",
+    position: "GK",
     overall: 74,
     wage: 600000,
     contractYears: 2,
@@ -14381,7 +14381,7 @@ realsociedad: [
     id: "real_sociedad_aramburu",
     name: "Jon Aramburu",
     shirtNumber: 2,
-    position: "LD",
+    position: "RB",
     overall: 79,
     wage: 2000000,
     contractYears: 5,
@@ -14414,7 +14414,7 @@ realsociedad: [
     id: "real_sociedad_aihen_munoz",
     name: "Aihen Muñoz",
     shirtNumber: 3,
-    position: "LI",
+    position: "LB",
     overall: 78,
     wage: 1600000,
     contractYears: 2,
@@ -14546,7 +14546,7 @@ realsociedad: [
     id: "real_sociedad_sergio_gomez",
     name: "Sergio Gómez",
     shirtNumber: 17,
-    position: "LI",
+    position: "LB",
     overall: 80,
     wage: 4000000,
     contractYears: 5,
@@ -14579,7 +14579,7 @@ realsociedad: [
     id: "real_sociedad_odriozola",
     name: "Álvaro Odriozola",
     shirtNumber: 20,
-    position: "LD",
+    position: "RB",
     overall: 78,
     wage: 3500000,
     contractYears: 4,
@@ -14746,7 +14746,7 @@ realsociedad: [
     id: "real_sociedad_yangel_herrera",
     name: "Yangel Herrera",
     shirtNumber: 12,
-    position: "DM",
+    position: "CDM",
     overall: 82,
     wage: 3800000,
     contractYears: 5,
@@ -14812,7 +14812,7 @@ realsociedad: [
     id: "real_sociedad_zakharyan",
     name: "Arsen Zakharyan",
     shirtNumber: 21,
-    position: "AM",
+    position: "CAM",
     overall: 84,
     wage: 5000000,
     contractYears: 4,
@@ -14878,7 +14878,7 @@ realsociedad: [
     id: "real_sociedad_brais_mendez",
     name: "Brais Méndez",
     shirtNumber: 23,
-    position: "AM",
+    position: "CM",
     overall: 84,
     wage: 5000000,
     contractYears: 3,
@@ -14944,7 +14944,7 @@ realsociedad: [
     id: "real_sociedad_pablo_marin",
     name: "Pablo Marín",
     shirtNumber: 28,
-    position: "AM",
+    position: "CM",
     overall: 76,
     wage: 1200000,
     contractYears: 3,
@@ -14979,7 +14979,7 @@ realsociedad: [
     id: "real_sociedad_barrenetxea",
     name: "Ander Barrenetxea",
     shirtNumber: 7,
-    position: "EI",
+    position: "LW",
     overall: 83,
     wage: 4500000,
     contractYears: 5,
@@ -15012,7 +15012,7 @@ realsociedad: [
     id: "real_sociedad_orri_oskarsson",
     name: "Orri Óskarsson",
     shirtNumber: 9,
-    position: "DC",
+    position: "ST",
     overall: 77,
     wage: 1500000,
     contractYears: 5,
@@ -15045,7 +15045,7 @@ realsociedad: [
     id: "real_sociedad_oyarzabal",
     name: "Mikel Oyarzabal",
     shirtNumber: 10,
-    position: "EI",
+    position: "LW",
     overall: 86,
     wage: 7000000,
     contractYears: 3,
@@ -15078,7 +15078,7 @@ realsociedad: [
     id: "real_sociedad_guedes",
     name: "Gonçalo Guedes",
     shirtNumber: 11,
-    position: "EI",
+    position: "LW",
     overall: 84,
     wage: 6500000,
     contractYears: 3,
@@ -15111,7 +15111,7 @@ realsociedad: [
     id: "real_sociedad_kubo",
     name: "Take Kubo",
     shirtNumber: 14,
-    position: "ED",
+    position: "RW",
     overall: 86,
     wage: 6000000,
     contractYears: 4,
@@ -15144,7 +15144,7 @@ realsociedad: [
     id: "real_sociedad_umar_sadiq",
     name: "Umar Sadiq",
     shirtNumber: 15,
-    position: "DC",
+    position: "ST",
     overall: 82,
     wage: 4000000,
     contractYears: 3,
@@ -15177,7 +15177,7 @@ realsociedad: [
     id: "real_sociedad_karrikaburu",
     name: "Jon Karrikaburu",
     shirtNumber: 19,
-    position: "DC",
+    position: "ST",
     overall: 78,
     wage: 2000000,
     contractYears: 2,
@@ -15217,7 +15217,7 @@ sevilla: [
     id: "sevilla_vlachodimos",
     name: "Odisseas Vlachodimos",
     shirtNumber: 1,
-    position: "POR",
+    position: "GK",
     overall: 82,
     wage: 3500000,
     contractYears: 1, // hasta 2026
@@ -15250,7 +15250,7 @@ sevilla: [
     id: "sevilla_nyland",
     name: "Ørjan Nyland",
     shirtNumber: 13,
-    position: "POR",
+    position: "GK",
     overall: 78,
     wage: 2000000,
     contractYears: 1, // hasta 2026
@@ -15283,7 +15283,7 @@ sevilla: [
     id: "sevilla_alvaro_fernandez",
     name: "Álvaro Fernández",
     shirtNumber: 25,
-    position: "POR",
+    position: "GK",
     overall: 76,
     wage: 1200000,
     contractYears: 2, // hasta 2027
@@ -15316,7 +15316,7 @@ sevilla: [
     id: "sevilla_alberto_flores",
     name: "Alberto Flores",
     shirtNumber: 31,
-    position: "POR",
+    position: "GK",
     overall: 72,
     wage: 400000,
     contractYears: 2, // hasta 2027
@@ -15351,7 +15351,7 @@ sevilla: [
     id: "sevilla_carmona",
     name: "José Ángel Carmona",
     shirtNumber: 2,
-    position: "LD",
+    position: "RB",
     overall: 76,
     wage: 1300000,
     contractYears: 3, // hasta 2028
@@ -15483,7 +15483,7 @@ sevilla: [
     id: "sevilla_suazo",
     name: "Gabriel Suazo",
     shirtNumber: 12,
-    position: "LI",
+    position: "LB",
     overall: 78,
     wage: 2000000,
     contractYears: 3, // hasta 2028
@@ -15617,7 +15617,7 @@ sevilla: [
     id: "sevilla_gudelj",
     name: "Nemanja Gudelj",
     shirtNumber: 6,
-    position: "MCD",
+    position: "CDM",
     overall: 81,
     wage: 4000000,
     contractYears: 1, // hasta 2026
@@ -15650,7 +15650,7 @@ sevilla: [
     id: "sevilla_jordan",
     name: "Joan Jordán",
     shirtNumber: 8,
-    position: "MC",
+    position: "CM",
     overall: 80,
     wage: 3500000,
     contractYears: 2, // hasta 2027
@@ -15683,7 +15683,7 @@ sevilla: [
     id: "sevilla_juanlu",
     name: "\"Juanlu\" Sánchez",
     shirtNumber: 16,
-    position: "MD",
+    position: "RB",
     overall: 76,
     wage: 900000,
     contractYears: 1, // hasta 2026
@@ -15716,7 +15716,7 @@ sevilla: [
     id: "sevilla_agoume",
     name: "Lucien Agoumé",
     shirtNumber: 18,
-    position: "MC",
+    position: "CM",
     overall: 77,
     wage: 1500000,
     contractYears: 3, // hasta 2028
@@ -15749,7 +15749,7 @@ sevilla: [
     id: "sevilla_mendy",
     name: "Batista Mendy",
     shirtNumber: 19,
-    position: "MCD",
+    position: "CDM",
     overall: 75,
     wage: 1200000,
     contractYears: 1, // hasta 2026
@@ -15782,7 +15782,7 @@ sevilla: [
     id: "sevilla_sow",
     name: "Djibril Sow",
     shirtNumber: 20,
-    position: "MC",
+    position: "CM",
     overall: 80,
     wage: 3500000,
     contractYears: 4, // hasta 2029
@@ -15815,7 +15815,7 @@ sevilla: [
     id: "sevilla_januzaj",
     name: "Adnan Januzaj",
     shirtNumber: 24,
-    position: "AM",
+    position: "RW",
     overall: 79,
     wage: 4500000,
     contractYears: 1, // hasta 2026
@@ -15848,7 +15848,7 @@ sevilla: [
     id: "sevilla_manu_bueno",
     name: "\"Manu\" Bueno",
     shirtNumber: 28,
-    position: "MC",
+    position: "CM",
     overall: 74,
     wage: 600000,
     contractYears: 1, // hasta 2026
@@ -15883,7 +15883,7 @@ sevilla: [
     id: "sevilla_isaac_romero",
     name: "Isaac Romero",
     shirtNumber: 7,
-    position: "DC",
+    position: "ST",
     overall: 78,
     wage: 1500000,
     contractYears: 3, // hasta 2028
@@ -15916,7 +15916,7 @@ sevilla: [
     id: "sevilla_akor_adams",
     name: "Akor Adams",
     shirtNumber: 9,
-    position: "DC",
+    position: "ST",
     overall: 79,
     wage: 2500000,
     contractYears: 4, // hasta 2029
@@ -15949,7 +15949,7 @@ sevilla: [
     id: "sevilla_alexis",
     name: "Alexis Sánchez",
     shirtNumber: 10,
-    position: "EI",
+    position: "LW",
     overall: 82,
     wage: 5500000,
     contractYears: 1, // hasta 2026
@@ -15982,7 +15982,7 @@ sevilla: [
     id: "sevilla_vargas",
     name: "Rubén Vargas",
     shirtNumber: 11,
-    position: "EI",
+    position: "LW",
     overall: 80,
     wage: 2800000,
     contractYears: 4, // hasta 2029
@@ -16048,7 +16048,7 @@ sevilla: [
     id: "sevilla_alfon",
     name: "\"Alfon\" González",
     shirtNumber: 17,
-    position: "EI",
+    position: "LW",
     overall: 73,
     wage: 500000,
     contractYears: 3, // hasta 2028
@@ -16081,7 +16081,7 @@ sevilla: [
     id: "sevilla_ejuke",
     name: "Chidera Ejuke",
     shirtNumber: 21,
-    position: "EI",
+    position: "LW",
     overall: 78,
     wage: 2300000,
     contractYears: 2, // hasta 2027
@@ -16121,7 +16121,7 @@ sevilla: [
       id: "valencia_dimitrievski",
       name: "Stole Dimitrievski",
       shirtNumber: 1,
-      position: "POR",
+      position: "GK",
       overall: 82,
       wage: 3000000,
       contractYears: 1, // hasta 2026
@@ -16154,7 +16154,7 @@ sevilla: [
       id: "valencia_rivero",
       name: "Cristian Rivero",
       shirtNumber: 13,
-      position: "POR",
+      position: "GK",
       overall: 74,
       wage: 1200000,
       contractYears: 1, // 2026
@@ -16187,7 +16187,7 @@ sevilla: [
       id: "valencia_agirrezabala",
       name: "Julen Agirrezabala",
       shirtNumber: 25,
-      position: "POR",
+      position: "GK",
       overall: 79,
       wage: 1800000,
       contractYears: 1, // 2026
@@ -16521,7 +16521,7 @@ sevilla: [
       id: "valencia_andre_almeida",
       name: "André Almeida",
       shirtNumber: 10,
-      position: "AM",
+      position: "CM",
       overall: 80,
       wage: 2200000,
       contractYears: 3, // 2028
@@ -16554,7 +16554,7 @@ sevilla: [
       id: "valencia_luis_rioja",
       name: "Luis Rioja",
       shirtNumber: 11,
-      position: "EI",
+      position: "LW",
       overall: 80,
       wage: 2200000,
       contractYears: 1, // 2026
@@ -16587,7 +16587,7 @@ sevilla: [
       id: "valencia_diego_lopez",
       name: "Diego López",
       shirtNumber: 16,
-      position: "AM",
+      position: "LW",
       overall: 78,
       wage: 1800000,
       contractYears: 2, // 2027
@@ -16620,7 +16620,7 @@ sevilla: [
       id: "valencia_pepelu",
       name: "Pepelu",
       shirtNumber: 18,
-      position: "DM",
+      position: "CDM",
       overall: 82,
       wage: 3000000,
       contractYears: 3, // 2028
@@ -16653,7 +16653,7 @@ sevilla: [
       id: "valencia_dani_raba",
       name: "Dani Raba",
       shirtNumber: 19,
-      position: "AM",
+      position: "RW",
       overall: 77,
       wage: 2000000,
       contractYears: 2, // 2027
@@ -16686,7 +16686,7 @@ sevilla: [
       id: "valencia_santamaria",
       name: "Baptiste Santamaria",
       shirtNumber: 22,
-      position: "DM",
+      position: "CDM",
       overall: 80,
       wage: 2500000,
       contractYears: 2, // 2027
@@ -16754,7 +16754,7 @@ sevilla: [
       id: "valencia_danjuma",
       name: "Arnaut Danjuma",
       shirtNumber: 7,
-      position: "EI",
+      position: "LW",
       overall: 82,
       wage: 3500000,
       contractYears: 3, // 2028
@@ -16853,7 +16853,7 @@ sevilla: [
       id: "valencia_ramazani",
       name: "Largie Ramazani",
       shirtNumber: 17,
-      position: "ED",
+      position: "RW",
       overall: 79,
       wage: 2500000,
       contractYears: 1, // 2026
@@ -16893,7 +16893,7 @@ sevilla: [
       id: "villarreal_luiz_junior",
       name: "Luiz Júnior",
       shirtNumber: 1,
-      position: "POR",
+      position: "GK",
       overall: 80,
       wage: 2500000,
       contractYears: 5, // hasta 2030
@@ -16926,7 +16926,7 @@ sevilla: [
       id: "villarreal_diego_conde",
       name: "Diego Conde",
       shirtNumber: 13,
-      position: "POR",
+      position: "GK",
       overall: 77,
       wage: 1500000,
       contractYears: 4, // hasta 2029
@@ -16959,7 +16959,7 @@ sevilla: [
       id: "villarreal_arnau_tenas",
       name: "Arnau Tenas",
       shirtNumber: 25,
-      position: "POR",
+      position: "GK",
       overall: 78,
       wage: 1800000,
       contractYears: 4, // hasta 2029
@@ -17326,7 +17326,7 @@ sevilla: [
       id: "villarreal_manor_solomon",
       name: "Manor Solomon",
       shirtNumber: 6,
-      position: "AM",
+      position: "LW",
       overall: 81,
       wage: 3500000,
       contractYears: 1, // 2026
@@ -17392,7 +17392,7 @@ sevilla: [
       id: "villarreal_ilias",
       name: "Ilias Akhomach",
       shirtNumber: 11,
-      position: "AM",
+      position: "RW",
       overall: 78,
       wage: 2000000,
       contractYears: 2, // 2027
@@ -17458,7 +17458,7 @@ sevilla: [
       id: "villarreal_thomas_partey",
       name: "Thomas Partey",
       shirtNumber: 16,
-      position: "DM",
+      position: "CDM",
       overall: 83,
       wage: 5500000,
       contractYears: 2, // 2027
@@ -17491,7 +17491,7 @@ sevilla: [
       id: "villarreal_tajon_buchanan",
       name: "Tajon Buchanan",
       shirtNumber: 17,
-      position: "AM",
+      position: "RWB",
       overall: 80,
       wage: 3000000,
       contractYears: 5, // 2030
@@ -17524,7 +17524,7 @@ sevilla: [
       id: "villarreal_pape_gueye",
       name: "Pape Gueye",
       shirtNumber: 18,
-      position: "DM",
+      position: "CDM",
       overall: 80,
       wage: 3000000,
       contractYears: 3, // 2028
@@ -17557,7 +17557,7 @@ sevilla: [
       id: "villarreal_nicolas_pepe",
       name: "Nicolas Pépé",
       shirtNumber: 19,
-      position: "AM",
+      position: "RW",
       overall: 81,
       wage: 3500000,
       contractYears: 3, // 2028
@@ -17590,7 +17590,7 @@ sevilla: [
       id: "villarreal_moleiro",
       name: "Alberto Moleiro",
       shirtNumber: 20,
-      position: "AM",
+      position: "CAM",
       overall: 82,
       wage: 3000000,
       contractYears: 5, // 2030
@@ -17724,7 +17724,7 @@ sevilla: [
       id: "villarreal_ayoze",
       name: "Ayoze Pérez",
       shirtNumber: 22,
-      position: "EI",
+      position: "LW",
       overall: 80,
       wage: 3500000,
       contractYears: 2, // 2027

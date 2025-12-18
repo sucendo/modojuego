@@ -15,12 +15,12 @@ const realSquads = {
 
 // Distribución simple de 18 jugadores por club
 const SQUAD_POSITIONS = [
-  "POR","POR",          // 2 porteros
-  "LD","DFC","DFC","LI", // 4 defensas
-  "CAD","CAD",          // 2 carrileros/extremos
-  "MCD","MC","MC","MCO",// 4 centrocampistas
-  "EI","ED",            // 2 extremos ofensivos
-  "DC","DC","SD","MP"   // 4 atacantes
+  "GK","GK",          // 2 porteros
+  "RB","LB","CB","CB", // 4 defensas
+  "RWB","LWB",          // 2 carrileros/extremos
+  "CDM","CM","CAM","RM","LM",// 5 centrocampistas
+  "RW","LW",            // 2 extremos ofensivos
+  "CF","ST","ST"   // 3 atacantes
 ];
 
 // Genera una plantilla de 18 jugadores ficticios para un club

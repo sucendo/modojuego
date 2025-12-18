@@ -14,7 +14,7 @@ export const realSquads = {
       id: "ars_raya",
       name: "David Raya",
       shirtNumber: 1,
-      position: "POR",
+      position: "GK",
       overall: 87,
       wage: 7000000,
       contractYears: 3, // hasta 2028
@@ -47,7 +47,7 @@ export const realSquads = {
       id: "ars_kepa",
       name: "Kepa Arrizabalaga",
       shirtNumber: 13,
-      position: "POR",
+      position: "GK",
       overall: 84,
       wage: 5000000,
       contractYears: 3, // hasta 2028
@@ -348,7 +348,7 @@ export const realSquads = {
       id: "ars_odegaard",
       name: "Martin Ødegaard",
       shirtNumber: 8,
-      position: "AM",
+      position: "CAM",
       overall: 90,
       wage: 11000000,
       contractYears: 3, // hasta 2028
@@ -381,7 +381,7 @@ export const realSquads = {
       id: "ars_eze",
       name: "Eberechi Eze",
       shirtNumber: 10,
-      position: "AM",
+      position: "CAM",
       overall: 87,
       wage: 9000000,
       contractYears: 4, // hasta 2029
@@ -414,7 +414,7 @@ export const realSquads = {
       id: "ars_norgaard",
       name: "Christian Nørgaard",
       shirtNumber: 16,
-      position: "DM",
+      position: "CDM",
       overall: 84,
       wage: 6000000,
       contractYears: 2, // hasta 2027
@@ -447,7 +447,7 @@ export const realSquads = {
       id: "ars_nwaneri",
       name: "Ethan Nwaneri",
       shirtNumber: 22,
-      position: "AM",
+      position: "CAM",
       overall: 80,
       wage: 2000000,
       contractYears: 5, // hasta 2030
@@ -513,7 +513,7 @@ export const realSquads = {
       id: "ars_zubimendi",
       name: "Martín Zubimendi",
       shirtNumber: 36,
-      position: "DM",
+      position: "CDM",
       overall: 86,
       wage: 9000000,
       contractYears: 5, // hasta 2030
@@ -546,7 +546,7 @@ export const realSquads = {
       id: "ars_rice",
       name: "Declan Rice",
       shirtNumber: 41,
-      position: "DM",
+      position: "CDM",
       overall: 88,
       wage: 12000000,
       contractYears: 3, // hasta 2028
@@ -581,7 +581,7 @@ export const realSquads = {
       id: "ars_saka",
       name: "Bukayo Saka",
       shirtNumber: 7,
-      position: "ED",
+      position: "RW",
       overall: 90,
       wage: 11000000,
       contractYears: 2, // hasta 2027
@@ -647,7 +647,7 @@ export const realSquads = {
       id: "ars_martinelli",
       name: "Gabriel Martinelli",
       shirtNumber: 11,
-      position: "EI",
+      position: "LW",
       overall: 87,
       wage: 8000000,
       contractYears: 2, // hasta 2027
@@ -713,7 +713,7 @@ export const realSquads = {
       id: "ars_trossard",
       name: "Leandro Trossard",
       shirtNumber: 19,
-      position: "EI",
+      position: "LW",
       overall: 84,
       wage: 6000000,
       contractYears: 2, // hasta 2027
@@ -746,7 +746,7 @@ export const realSquads = {
       id: "ars_madueke",
       name: "Noni Madueke",
       shirtNumber: 20,
-      position: "ED",
+      position: "RW",
       overall: 84,
       wage: 6000000,
       contractYears: 5, // hasta 2030
@@ -852,7 +852,7 @@ export const realSquads = {
       id: "av_emi_martinez",
       name: "Emiliano Martínez",
       shirtNumber: 23,
-      position: "POR",
+      position: "GK",
       overall: 89,
       wage: 8000000,
       contractYears: 4, // hasta 2029
@@ -885,7 +885,7 @@ export const realSquads = {
       id: "av_bizot",
       name: "Marco Bizot",
       shirtNumber: 40,
-      position: "POR",
+      position: "GK",
       overall: 82,
       wage: 4000000,
       contractYears: 2, // hasta 2027
@@ -1318,7 +1318,7 @@ export const realSquads = {
       id: "av_buendia",
       name: "Emiliano Buendía",
       shirtNumber: 10,
-      position: "AM",
+      position: "CAM",
       overall: 83,
       wage: 6000000,
       contractYears: 2, // hasta 2027
@@ -1351,7 +1351,7 @@ export const realSquads = {
       id: "av_onana",
       name: "Amadou Onana",
       shirtNumber: 24,
-      position: "DM",
+      position: "CDM",
       overall: 84,
       wage: 7000000,
       contractYears: 4, // hasta 2029
@@ -1384,7 +1384,7 @@ export const realSquads = {
       id: "av_kamara",
       name: "Boubacar Kamara",
       shirtNumber: 44,
-      position: "DM",
+      position: "CDM",
       overall: 85,
       wage: 7500000,
       contractYears: 5, // hasta 2030
@@ -1419,7 +1419,7 @@ export const realSquads = {
       id: "av_elliott",
       name: "Harvey Elliott",
       shirtNumber: 9,
-      position: "ED",
+      position: "RW",
       overall: 82,
       wage: 4500000,
       contractYears: 1, // cesión hasta 2026
@@ -1518,7 +1518,7 @@ export const realSquads = {
       id: "av_sancho",
       name: "Jadon Sancho",
       shirtNumber: 19,
-      position: "ED",
+      position: "RW",
       overall: 84,
       wage: 10000000,
       contractYears: 1, // cesión hasta 2026
@@ -1551,7 +1551,7 @@ export const realSquads = {
       id: "av_rogers",
       name: "Morgan Rogers",
       shirtNumber: 27,
-      position: "EI",
+      position: "LW",
       overall: 80,
       wage: 3000000,
       contractYears: 5, // hasta 2030
@@ -1624,7 +1624,7 @@ export const realSquads = {
       id: "bou_petrovic",
       name: "Đorđe Petrović",
       shirtNumber: 1,
-      position: "POR",
+      position: "GK",
       overall: 81,
       wage: 4000000,
       contractYears: 5, // hasta 2030
@@ -1657,7 +1657,7 @@ export const realSquads = {
       id: "bou_dennis",
       name: "Will Dennis",
       shirtNumber: 40,
-      position: "POR",
+      position: "GK",
       overall: 72,
       wage: 800000,
       contractYears: 3, // hasta 2028
@@ -1690,7 +1690,7 @@ export const realSquads = {
       id: "bou_mckenna",
       name: "Callan McKenna",
       shirtNumber: 46,
-      position: "POR",
+      position: "GK",
       overall: 70,
       wage: 600000,
       contractYears: 5,
@@ -2156,7 +2156,7 @@ export const realSquads = {
       id: "bou_christie",
       name: "Ryan Christie",
       shirtNumber: 10,
-      position: "AM",
+      position: "CAM",
       overall: 78,
       wage: 3000000,
       contractYears: 2, // hasta 2027
@@ -2189,7 +2189,7 @@ export const realSquads = {
       id: "bou_tyler_adams",
       name: "Tyler Adams",
       shirtNumber: 12,
-      position: "DM",
+      position: "CDM",
       overall: 81,
       wage: 4000000,
       contractYears: 3, // hasta 2028
@@ -2255,7 +2255,7 @@ export const realSquads = {
       id: "bou_kluivert",
       name: "Justin Kluivert",
       shirtNumber: 19,
-      position: "AM",
+      position: "CAM",
       overall: 80,
       wage: 3500000,
       contractYears: 3, // hasta 2028
@@ -2290,7 +2290,7 @@ export const realSquads = {
       id: "bou_brooks",
       name: "David Brooks",
       shirtNumber: 7,
-      position: "ED",
+      position: "RW",
       overall: 77,
       wage: 3000000,
       contractYears: 1, // hasta 2026
@@ -2356,7 +2356,7 @@ export const realSquads = {
       id: "bou_ben_doak",
       name: "Ben Doak",
       shirtNumber: 11,
-      position: "ED",
+      position: "RW",
       overall: 76,
       wage: 2000000,
       contractYears: 5, // hasta 2030
@@ -2389,7 +2389,7 @@ export const realSquads = {
       id: "bou_adli",
       name: "Amine Adli",
       shirtNumber: 21,
-      position: "EI",
+      position: "LW",
       overall: 81,
       wage: 4000000,
       contractYears: 5, // hasta 2030
