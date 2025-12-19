@@ -103,30 +103,48 @@
 			<div class="pcf-hud__left">
 			<div id="hud-coat" class="pcf-hud__coat"></div>
 			<div class="pcf-hud__id">
-				<div id="hud-manager" class="pcf-hud__manager">Mánager</div>
+				<div class="pcf-hud__manager">
+					<span id="hud-manager">Mánager</span>
+					<span id="hud-season" class="pcf-hud__season">(Temporada 1)</span>
+				</div>
 				<div id="hud-club" class="pcf-hud__club">Club</div>
+				<div class="pcf-hud__money">
+					<span class="pcf-k">Caja</span> <strong id="hud-cash">-</strong>
+					<span class="pcf-dot">•</span>
+					<span class="pcf-k">Presupuesto</span> <strong id="hud-wage">-</strong>
+				</div>
 			</div>
 			</div>
 	
 			<div class="pcf-hud__center">
-			<div class="pcf-hud__meta">
-				<span id="hud-league">Liga</span>
-				<span class="pcf-dot">•</span>
-				<span id="hud-season">Temporada 1</span>
-				<span class="pcf-dot">•</span>
-				<span id="hud-matchday">Jornada 1</span>
-			</div>
-			<div class="pcf-hud__money">
-				<span class="pcf-k">Caja</span> <strong id="hud-cash">-</strong>
-				<span class="pcf-dot">•</span>
-				<span class="pcf-k">Presupuesto</span> <strong id="hud-wage">-</strong>
-			</div>
+
 			</div>
 	
 			<div class="pcf-hud__right">
-			<div class="pcf-hud__next-title">Próximo partido</div>
-			<div id="hud-next-main" class="pcf-hud__next-main">—</div>
-			<div id="hud-next-sub" class="pcf-hud__next-sub">—</div>
+				<div class="pcf-hud__next">
+					<div class="pcf-hud__next-details">
+						<div class="pcf-hud__next-title">Próximo partido</div>
+						<div id="hud-next-main" class="pcf-hud__next-main">—</div>
+						<div class="pcf-hud__next-row pcf-hud__next-row--comp">
+							<span class="pcf-ico" aria-hidden="true">🏆</span>
+							<span id="hud-next-sub" class="pcf-hud__next-sub">—</span>
+						</div>
+						<div class="pcf-hud__next-row pcf-hud__next-row--venue">
+							<span class="pcf-ico" aria-hidden="true">📍</span>
+							<span id="hud-next-venue" class="pcf-hud__next-venue">—</span>
+						</div>
+						<div class="pcf-hud__next-row pcf-hud__next-row--datetime">
+							<span class="pcf-ico" aria-hidden="true">🗓️</span>
+							<span id="hud-next-date" class="pcf-hud__next-date">—</span>
+							<span class="pcf-sep" aria-hidden="true">·</span>
+							<span class="pcf-ico" aria-hidden="true">🕗</span>
+							<span id="hud-next-time" class="pcf-hud__next-time">—</span>
+						</div>
+					</div>
+					<div class="pcf-hud__next-logo">
+						<img id="hud-next-logo" src="" alt="" loading="lazy" />
+					</div>
+				</div>
 			</div>
 		</header>
 		
@@ -188,7 +206,9 @@
 			</article>
 	
 			<article class="pcf-center">
-				<div class="pcf-center__ball" aria-hidden="true"></div>
+				<div class="pcf-center__ball" aria-hidden="true">
+					<img src="img/resources/balonfutbol.svg" alt="" loading="lazy" />
+				</div>
 				<button id="btn-go-next-match" class="pcf-big-action" data-nav-target="competition" data-set-current-md="1">
 				PARTIDO
 				</button>
@@ -377,6 +397,12 @@
             </div>
 
             <div class="pcf-alignment-right">
+			
+              <div class="pcf-panel pcf-pitch-panel">
+                <div class="pcf-panel-title">Campo</div>
+                <div id="alignment-pitch" class="pcf-pitch"></div>
+              </div>
+			  
               <div class="pcf-panel pcf-team-card">
                 <div class="pcf-panel-title">Media Equipo</div>
                 <div id="alignment-team-card" class="pcf-team-card-body"></div>
@@ -386,11 +412,7 @@
                 <div class="pcf-panel-title">Jugador</div>
                 <div id="alignment-player-card" class="pcf-player-card-body"></div>
               </div>
-
-              <div class="pcf-panel pcf-pitch-panel">
-                <div class="pcf-panel-title">Campo</div>
-                <div id="alignment-pitch" class="pcf-pitch"></div>
-              </div>			  
+			  
             </div>
           </div>
         </article>
@@ -402,77 +424,127 @@
           <header class="pcf-header">
             <div>
               <h2>Tácticas</h2>
-              <p class="pcf-subtitle">
-                Ajusta el sistema y el estilo de juego. (La alineación se gestiona en su pestaña).
-              </p>
+              <p class="pcf-subtitle">Titulares arriba, campo abajo, balón parado y ficha del jugador a la derecha.</p>
               <div id="tactics-summary" class="pcf-tactics-summary">—</div>
             </div>
           </header>
 
-          <div class="pcf-tactics-layout">
-            <div class="pcf-tactics-left">
-              <div class="pcf-panel pcf-tactics-params">
-                <div class="pcf-panel-title">Parámetros</div>
-                <div class="pcf-form-grid">
-                  <div class="pcf-form-group">
-                    <label for="tactics-formation">Sistema</label>
-                    <select id="tactics-formation"></select>
-                  </div>
-                  <div class="pcf-form-group">
-                    <label for="tactics-mentality">Mentalidad</label>
-                    <select id="tactics-mentality"></select>
-                  </div>
-                  <div class="pcf-form-group">
-                    <label for="tactics-tempo">Ritmo</label>
-                    <select id="tactics-tempo"></select>
-                  </div>
-                  <div class="pcf-form-group">
-                    <label for="tactics-pressure">Presión</label>
-                    <select id="tactics-pressure"></select>
-                  </div>
-                </div>
-                <div class="pcf-toolbar">
-                  <button class="btn btn-secondary" id="btn-tactics-auto" type="button">
-                    Auto (mejor XI + banca)
-                  </button>
+          <div class="pcf-tactics-layout pcf-tactics-layout--pcf">
+            <!-- IZQ -->
+            <div class="pcf-tactics-main">
+
+              <!-- Titulares (idéntico encabezado que Alineación) -->
+              <div class="pcf-panel">
+                <div class="pcf-panel-title">Titulares</div>
+                <div class="pcf-table-wrapper">
+                  <table class="table pcf-table pcf-table--alignment">
+                    <thead>
+                      <tr>
+                        <th>#</th><th>Jugador</th>
+                        <th>EN</th><th>CF</th><th>CM</th><th>CD</th><th>CO</th><th>MO</th><th>EF</th><th>ME</th>
+                        <th>ROL</th><th>DEM</th><th>Estado</th><th></th>
+                      </tr>
+                    </thead>
+                    <tbody id="tactics-xi-body"></tbody>
+                  </table>
                 </div>
               </div>
-			  
-              <div class="pcf-panel pcf-tactics-quick" id="tactics-quick">
-                <div class="pcf-panel-title">Estilo de juego</div>
 
-                <div class="pcf-quick-row" data-tactics-key="playStyle">
-                  <span class="pcf-quick-label">Construcción</span>
-                  <div class="pcf-quick-buttons">
-                    <button type="button" class="pcf-quick-btn" data-tactics-value="POSSESSION">Posesión</button>
-                    <button type="button" class="pcf-quick-btn" data-tactics-value="DIRECT">Directo</button>
-                  </div>
+              <div class="pcf-tactics-bottom">
+                <div class="pcf-panel pcf-pitch-panel">
+                  <div class="pcf-panel-title">Campo</div>
+                  <div id="tactics-pitch" class="pcf-pitch"></div>
                 </div>
 
-                <div class="pcf-quick-row" data-tactics-key="transition">
-                  <span class="pcf-quick-label">Transición</span>
-                  <div class="pcf-quick-buttons">
-                    <button type="button" class="pcf-quick-btn" data-tactics-value="COUNTER">Contra</button>
-                    <button type="button" class="pcf-quick-btn" data-tactics-value="MIXED">Mixto</button>
+                <div class="pcf-tactics-config">
+                  <div class="pcf-panel pcf-setpieces">
+                    <div class="pcf-panel-title">Balón parado</div>
+                    <div class="pcf-form-grid">
+                      <div class="pcf-form-group">
+                        <label for="tactics-sp-pen">Penaltis</label>
+                        <select id="tactics-sp-pen"></select>
+                      </div>
+                      <div class="pcf-form-group">
+                        <label for="tactics-sp-fk">Faltas</label>
+                        <select id="tactics-sp-fk"></select>
+                      </div>
+                      <div class="pcf-form-group">
+                        <label for="tactics-sp-cor">Córners</label>
+                        <select id="tactics-sp-cor"></select>
+                      </div>
+                    </div>
                   </div>
-                </div>
 
-                <div class="pcf-quick-row" data-tactics-key="focus">
-                  <span class="pcf-quick-label">Órdenes</span>
-                  <div class="pcf-quick-buttons">
-                    <button type="button" class="pcf-quick-btn" data-tactics-value="GENERAL">General</button>
-                    <button type="button" class="pcf-quick-btn" data-tactics-value="ATTACK">Ataque</button>
-                    <button type="button" class="pcf-quick-btn" data-tactics-value="DEFENSE">Defensa</button>
+                  <div class="pcf-panel pcf-tactics-params">
+                    <div class="pcf-panel-title">Parámetros</div>
+                    <div class="pcf-form-grid">
+                      <div class="pcf-form-group">
+                        <label for="tactics-formation">Sistema</label>
+                        <select id="tactics-formation"></select>
+                      </div>
+                      <div class="pcf-form-group">
+                        <label for="tactics-mentality">Mentalidad</label>
+                        <select id="tactics-mentality"></select>
+                      </div>
+                      <div class="pcf-form-group">
+                        <label for="tactics-tempo">Ritmo</label>
+                        <select id="tactics-tempo"></select>
+                      </div>
+                      <div class="pcf-form-group">
+                        <label for="tactics-pressure">Presión</label>
+                        <select id="tactics-pressure"></select>
+                      </div>
+                    </div>
+                    <div class="pcf-toolbar pcf-tactics-toolbar">
+                      <button class="btn btn-secondary" id="btn-tactics-auto" type="button">Auto</button>
+                      <button class="btn btn-secondary" id="btn-tactics-save" type="button">Guardar</button>
+                      <button class="btn btn-secondary" id="btn-tactics-load" type="button">Cargar</button>
+                      <button class="btn btn-secondary" id="btn-tactics-resetpos" type="button">Reset pos.</button>
+                    </div>
+                  </div>
+
+                  <div class="pcf-panel pcf-tactics-quick" id="tactics-quick">
+                    <div class="pcf-panel-title">Estilo de juego</div>
+                    <div class="pcf-quick-row" data-tactics-key="playStyle">
+                      <span class="pcf-quick-label">Construcción</span>
+                      <div class="pcf-quick-buttons">
+                        <button type="button" class="pcf-quick-btn" data-tactics-value="POSSESSION">Posesión</button>
+                        <button type="button" class="pcf-quick-btn" data-tactics-value="DIRECT">Directo</button>
+                      </div>
+                    </div>
+                    <div class="pcf-quick-row" data-tactics-key="transition">
+                      <span class="pcf-quick-label">Transición</span>
+                      <div class="pcf-quick-buttons">
+                        <button type="button" class="pcf-quick-btn" data-tactics-value="COUNTER">Contra</button>
+                        <button type="button" class="pcf-quick-btn" data-tactics-value="MIXED">Mixto</button>
+                      </div>
+                    </div>
+                    <div class="pcf-quick-row" data-tactics-key="focus">
+                      <span class="pcf-quick-label">Órdenes</span>
+                      <div class="pcf-quick-buttons">
+                        <button type="button" class="pcf-quick-btn" data-tactics-value="GENERAL">General</button>
+                        <button type="button" class="pcf-quick-btn" data-tactics-value="ATTACK">Ataque</button>
+                        <button type="button" class="pcf-quick-btn" data-tactics-value="DEFENSE">Defensa</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="pcf-panel pcf-presets">
+                    <div class="pcf-panel-title">Tácticas guardadas</div>
+                    <ul id="tactics-presets-list" class="pcf-presets-list"></ul>
+                    <div class="pcf-presets-hint">Click: cargar · Click sobre la seleccionada: renombrar</div>
                   </div>
                 </div>
               </div>
+
             </div>
 
-            <div class="pcf-tactics-right">
-              <div class="pcf-panel pcf-pitch-panel">
-                <div class="pcf-panel-title">Esquema</div>
-                <div id="tactics-pitch" class="pcf-pitch"></div>
-              </div>			  		  
+            <!-- DER -->
+            <div class="pcf-tactics-side">
+              <div class="pcf-panel pcf-player-card">
+                <div class="pcf-panel-title">Jugador</div>
+                <div id="tactics-player-card" class="pcf-player-card-body"></div>
+              </div>
             </div>
           </div>
         </article>
@@ -480,58 +552,59 @@
 
 	  <!-- SUBVISTA: ESTADÍSTICAS -->
       <section id="view-stats" class="hidden">
-        <div class="competition-header">
+		<article class="card pcf-tactics-card">
+        <div class="competition-header stats-header">
           <div>
             <h2>Estadísticas</h2>
             <p class="competition-meta">
               <span id="stats-season-label">Temporada 1</span>
             </p>
           </div>
-        </div>
+        		
+          <div class="stats-toolbar">
+            <div class="stats-filter-group">
+              <label for="stats-filter-league">Liga</label>
+              <select id="stats-filter-league"></select>
+            </div>
+            <div class="stats-filter-group">
+              <label for="stats-filter-club">Equipo</label>
+              <select id="stats-filter-club"></select>
+            </div>
+          </div>
+		</div>
 
-        <section class="competition-layout">
+        <section class="competition-layout stats-layout--single">
           <div class="competition-main">
             <article class="card">
-              <h3>Top goleadores</h3>
+              <h3 id="stats-list-title">Jugadores</h3>
+
               <div class="competition-table-wrapper">
-                <table class="table table-topscorers">
+                <table id="stats-players-table" class="table table-standings table-player-stats">
                   <thead>
                     <tr>
-                      <th>#</th>
-                      <th>Jugador</th>
-                      <th>Club</th>
-                      <th>Goles</th>
+                      <th data-sort-key="club">Club</th>
+                      <th data-sort-key="pos">Pos</th>
+                      <th data-sort-key="name">Jugador</th>
+                      <th class="num" data-sort-key="apps">PJ</th>
+                      <th class="num" data-sort-key="minutes">Min</th>
+                      <th class="num" data-sort-key="goals">G</th>
+                      <th class="num" data-sort-key="assists">A</th>
+                      <th class="num" data-sort-key="yellows">TA</th>
+                      <th class="num" data-sort-key="reds">TR</th>
                     </tr>
                   </thead>
-                  <tbody id="stats-topscorers-body"></tbody>
+                  <tbody id="stats-players-body">
+                    <tr><td colspan="9">Sin datos.</td></tr>
+                  </tbody>
                 </table>
               </div>
+
+              <p class="muted stats-hint">Click en un jugador para ver el detalle por jornada.</p>
             </article>
           </div>
-          <aside class="competition-side">
-		  
-            <article class="card">
-              <h3 id="stats-team-name-label">Tu equipo</h3>
-              <div class="competition-table-wrapper">
-                <table class="table table-standings">
-                  <thead>
-                    <tr>
-                      <th>Jugador</th>
-                      <th>Pos</th>
-                      <th>PJ</th>
-                      <th>Min</th>
-                      <th>G</th>
-                      <th>TA</th>
-                      <th>TR</th>
-                    </tr>
-                  </thead>
-                  <tbody id="stats-team-body"></tbody>
-                </table>
-              </div>
-            </article>
-          </aside>
         </section>
-      </section>
+		</article>
+	</section>	
 	  
 	  <!-- SUBVISTA: COMPETICIÓN -->
       <section id="view-competition" class="hidden">
@@ -678,7 +751,8 @@
       </section>
 	  
 	  <!-- SUBVISTA: MÉDICOS -->	  
-		<section id="view-medical" class="view hidden">
+	  <section id="view-medical" class="view hidden">
+		<article class="card">
 		  <div class="view-header">
 			<div>
 			  <h2>Área médica y recuperación</h2>
@@ -779,6 +853,7 @@
 			  </div>
 			</div>
 		  </div>
+		  </article>
 		</section>
 
 
@@ -990,18 +1065,18 @@
 		
 		<div class="card">
 		  <div class="card-header">
-			<h3>Disciplina</h3>
+			<h3>Estadísticas temporada</h3>
 		  </div>
 		  <div class="card-body">
-			<div class="player-discipline-summary">
-			  <div>
-				<span>Amarillas acumuladas:</span>
-				<strong id="player-modal-yellowcards">0</strong>
-			  </div>
-			  <div>
-				<span>Estado sanción:</span>
-				<strong id="player-modal-suspension">Disponible</strong>
-			  </div>
+			<div class="player-modal-summary player-stats-summary">
+			  <div><span>Temporada:</span><strong id="player-modal-stats-season">-</strong></div>
+			  <div><span>Partidos:</span><strong id="player-modal-stats-apps">0</strong></div>
+			  <div><span>Titular:</span><strong id="player-modal-stats-starts">0</strong></div>
+			  <div><span>Minutos:</span><strong id="player-modal-stats-minutes">0</strong></div>
+			  <div><span>Goles:</span><strong id="player-modal-stats-goals">0</strong></div>
+			  <div><span>Asistencias:</span><strong id="player-modal-stats-assists">0</strong></div>
+			  <div><span>Amarillas:</span><strong id="player-modal-stats-yellows">0</strong></div>
+			  <div><span>Rojas:</span><strong id="player-modal-stats-reds">0</strong></div>
 			</div>
 
 			<div class="table-wrapper" style="margin-top: 0.5rem;">
@@ -1010,55 +1085,19 @@
 				  <tr>
 					<th>Temp.</th>
 					<th>Jor.</th>
-					<th>Tarjeta</th>
+					<th>Rival</th>
+					<th>Cond.</th>
+					<th>Min</th>
+					<th>G</th>
+					<th>A</th>
+					<th>TA</th>
+					<th>TR</th>
 				  </tr>
 				</thead>
-				<tbody id="player-modal-discipline-body">
-				  <!-- JS -->
+				<tbody id="player-modal-stats-body">
+				  <tr><td colspan="9">Sin estadísticas registradas</td></tr>
 				</tbody>
 			  </table>
-			</div>
-		  </div>
-		</div>
-		
-		<div class="card">
-		  <div class="card-header">
-			<h3>Estadísticas temporada</h3>
-		  </div>
-		  <div class="card-body">
-			<div class="player-stats-summary">
-			  <div>
-				<span>Temporada:</span>
-				<strong id="player-modal-stats-season">-</strong>
-			  </div>
-              <div>
-                <span>Partidos:</span>
-                <strong id="player-modal-stats-apps">0</strong>
-              </div>
-              <div>
-                <span>Titular:</span>
-                <strong id="player-modal-stats-starts">0</strong>
-              </div>
-              <div>
-                <span>Minutos:</span>
-                <strong id="player-modal-stats-minutes">0</strong>
-              </div>
-			  <div>
-				<span>Goles:</span>
-				<strong id="player-modal-stats-goals">0</strong>
-			  </div>
-              <div>
-                <span>Asistencias:</span>
-                <strong id="player-modal-stats-assists">0</strong>
-              </div>
-			  <div>
-				<span>Amarillas totales:</span>
-				<strong id="player-modal-stats-yellows">0</strong>
-			  </div>
-			  <div>
-				<span>Rojas totales:</span>
-				<strong id="player-modal-stats-reds">0</strong>
-			  </div>
 			</div>
 		  </div>
 		</div>
