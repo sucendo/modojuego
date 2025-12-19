@@ -126,7 +126,7 @@ body {
 }
 
 .start-league-picker select,
-.start-club-picker select {
+.start-club-picker select, select {
   padding: 0.35rem 0.5rem;
   border-radius: 0.5rem;
   border: 1px solid #4b5563;
@@ -338,6 +338,7 @@ body {
   background:#020617;
   color:#e5e7eb;
   border:1px solid #1f2937;
+  min-width: 50px;
 }
 /* Controles en el header de Clasificación */
 #view-standings .competition-header{
