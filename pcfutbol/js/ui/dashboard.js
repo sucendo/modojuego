@@ -83,18 +83,38 @@ function getNextFixtureForClub(clubId) {
   return { fx: candidates[0], season, idxInMatchday: idx };
 }
 
+function getCompetitionLogoPath(league) {
+  const id = String(league?.id || '').toLowerCase();
+  const name = String(league?.name || '').toLowerCase();
+  // LaLiga (según tu ruta indicada)
+  if (id.includes('league_es_primera') || name.includes('la liga')) {
+    return 'img/competitions/LaLiga_EA_Sports_2023_Vertical_Logo.svg';
+  }
+  return null;
+}
+
+function capFirst(s){
+  const str = String(s || '');
+  return str ? (str.charAt(0).toUpperCase() + str.slice(1)) : '';
+}
+
 export function updateDashboard() {
   const club = getUserClub();
   if (!club) return;
   
-  function renderMatchLine(containerEl, fx, clubIndex, size = 18, userClubId = null) {
+  function renderMatchLine(containerEl, fx, clubIndex, size = 18, userClubId = null, opts = {}) {
     if (!containerEl) return;
     containerEl.innerHTML = '';
 
     const home = clubIndex.get(fx.homeClubId);
     const away = clubIndex.get(fx.awayClubId);
-    const homeName = home?.shortName || home?.name || fx.homeClubId || 'Local';
-    const awayName = away?.shortName || away?.name || fx.awayClubId || 'Visitante';
+    const useShort = opts.useShortName ?? true;
+    const homeName = useShort
+      ? (home?.shortName || home?.name || fx.homeClubId || 'Local')
+      : (home?.name || home?.shortName || fx.homeClubId || 'Local');
+    const awayName = useShort
+      ? (away?.shortName || away?.name || fx.awayClubId || 'Visitante')
+      : (away?.name || away?.shortName || fx.awayClubId || 'Visitante');
 
     const line = document.createElement('div');
     line.className = 'pcf-inline-match';
@@ -136,14 +156,18 @@ export function updateDashboard() {
   const hudCash = document.getElementById('hud-cash');
   const hudWage = document.getElementById('hud-wage');
   const hudNextMain = document.getElementById('hud-next-main');
+  const hudNextVenue = document.getElementById('hud-next-venue');
   const hudNextSub = document.getElementById('hud-next-sub');
+  const hudNextDate = document.getElementById('hud-next-date');
+  const hudNextTime = document.getElementById('hud-next-time'); 
+  const hudNextLogo = document.getElementById('hud-next-logo');
   const hubNextHint = document.getElementById('hub-next-hint');
   const hudCoat = document.getElementById('hud-coat');
 
   if (hudManager) hudManager.textContent = GameState.user?.name || 'Mánager';
   if (hudClub) hudClub.textContent = club.name || club.id || 'Club';
   if (hudLeague) hudLeague.textContent = GameState.league?.name || 'Liga';
-  if (hudSeason) hudSeason.textContent = `Temporada ${GameState.currentDate?.season || 1}`;
+  if (hudSeason) hudSeason.textContent = `(Temporada ${GameState.currentDate?.season || 1})`;
   if (hudMatchday) hudMatchday.textContent = `Jornada ${GameState.currentDate?.matchday || 1}`;
   if (hudCash) hudCash.textContent = formatCurrency(club.cash ?? 0);
   if (hudWage) hudWage.textContent = formatCurrency(club.wageBudget ?? 0);
@@ -208,38 +232,70 @@ export function updateDashboard() {
           ? 'Próximo partido: no hay partidos pendientes.'
           : 'Próximo partido: (sin calendario)';
       }
-      if (hudNextMain) hudNextMain.textContent = '—';
+      if (hudNextVenue) hudNextVenue.textContent = '—';
       if (hudNextSub) {
         hudNextSub.textContent = hasCalendar
           ? 'No hay partidos pendientes.'
           : 'Aún no hay calendario (fixtures).';
+      }
+      if (hudNextDate) hudNextDate.textContent = '—';
+      if (hudNextTime) hudNextTime.textContent = '—';
+      if (hudNextLogo) {
+        hudNextLogo.style.display = 'none';
+        hudNextLogo.removeAttribute('src');
+        hudNextLogo.removeAttribute('alt');
       }
       if (hubNextHint) hubNextHint.textContent = hudNextSub?.textContent || '';
     } else {
       const { fx, season, idxInMatchday } = next;
       const home = clubIndex.get(fx.homeClubId);
       const away = clubIndex.get(fx.awayClubId);
-      const homeName = home?.shortName || home?.name || fx.homeClubId || 'Local';
-      const awayName = away?.shortName || away?.name || fx.awayClubId || 'Visitante';
+      const homeNameFull = home?.name || home?.shortName || fx.homeClubId || 'Local';
+      const awayNameFull = away?.name || away?.shortName || fx.awayClubId || 'Visitante'; 
       const md = Number(fx.matchday || GameState.currentDate?.matchday || 1);
       const date = getGameDateFor(season, md);
       const dateLabel = formatGameDateLabel(date);
       const timeLabel = deriveKickoffTime(fx, idxInMatchday);
-      const sub = `${GameState.league?.name || 'Liga'} • J${md} • ${dateLabel} • ${timeLabel}`;
 
+      const stadium =
+        home?.stadium?.name || home?.stadiumName || home?.stadium?.stadiumName ||
+        home?.stadiumName || 'Estadio';
+
+      const compLine = `${GameState.league?.name || 'Liga'} • Jornada ${md}`;
+ 
       if (nextMatchLabel) {
-        nextMatchLabel.textContent = `Próximo partido: ${homeName} vs ${awayName} (J${md} • ${dateLabel} • ${timeLabel})`;
+        nextMatchLabel.textContent = `Próximo partido: ${homeNameFull} vs ${awayNameFull} (${compLine} • ${dateLabel} • ${timeLabel})`;
       }
-      // HUD: línea con ambos equipos en orden real (local vs visitante) + escudos
-      if (hudNextMain) renderMatchLine(hudNextMain, fx, clubIndex, 18, club.id);
-      if (hudNextSub) hudNextSub.textContent = sub;
+      // HUD: nombres completos + logo competición
+      if (hudNextMain) renderMatchLine(hudNextMain, fx, clubIndex, 18, club.id, { useShortName: false });
+      if (hudNextSub) hudNextSub.textContent = compLine;
+      if (hudNextVenue) hudNextVenue.textContent = stadium;
+      if (hudNextDate) {
+        const weekday = (date instanceof Date && !Number.isNaN(date.getTime()))
+          ? capFirst(date.toLocaleDateString('es-ES', { weekday: 'long' }))
+          : '';
+        hudNextDate.textContent = `${weekday ? weekday + ' ' : ''}${dateLabel}`;
+      }
+      if (hudNextTime) hudNextTime.textContent = timeLabel;
+      if (hudNextLogo) {
+        const logoPath = getCompetitionLogoPath(GameState.league);
+        if (logoPath) {
+          hudNextLogo.src = logoPath;
+          hudNextLogo.alt = GameState.league?.name || 'Competición';
+          hudNextLogo.style.display = 'block';
+        } else {
+          hudNextLogo.style.display = 'none';
+          hudNextLogo.removeAttribute('src');
+          hudNextLogo.removeAttribute('alt');
+        }
+      }
       // HUB: bajo el botón PARTIDO, lo mismo pero un poco más grande
       if (hubNextHint) {
         hubNextHint.innerHTML = '';
-        renderMatchLine(hubNextHint, fx, clubIndex, 22, club.id);
+        renderMatchLine(hubNextHint, fx, clubIndex, 22, club.id, { useShortName: true });
         const meta = document.createElement('div');
         meta.className = 'pcf-inline-match__meta';
-        meta.textContent = sub;
+        meta.textContent = `${compLine} • ${dateLabel} • ${timeLabel}`;
         hubNextHint.appendChild(meta);
       }
     }

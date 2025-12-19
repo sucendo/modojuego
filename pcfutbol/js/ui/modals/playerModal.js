@@ -74,6 +74,90 @@ function getPlayerSeasonStats(player) {
   };
 }
 
+/**
+ * Estadísticas por jornada (histórico).
+ * Estructuras aceptadas (prioridad):
+ * - player.statsByMatchday[seasonKey] -> Array
+ * - player.matchdayStats[seasonKey]   -> Array
+ * - player.matchStats[seasonKey]      -> Array
+ * - player.statsMatchdays[seasonKey]  -> Array
+ * - player.statsByMatchday            -> Array (sin seasonKey)
+ * - player.matchdayStats              -> Array (sin seasonKey)
+ */
+function getPlayerMatchdayStats(player) {
+  const season = GameState.currentDate?.season || 1;
+  const key = String(season);
+
+  const candidates = [
+    player?.statsByMatchday?.[key],
+    player?.matchdayStats?.[key],
+    player?.matchStats?.[key],
+    player?.statsMatchdays?.[key],
+    player?.statsByMatchday,
+    player?.matchdayStats,
+  ];
+
+  const arr = candidates.find((x) => Array.isArray(x));
+  return Array.isArray(arr) ? arr : [];
+}
+
+function renderStatsByMatchdayTable(player) {
+  const body = document.getElementById('player-modal-stats-body');
+  if (!body) return; // si aún no has metido la tabla en el HTML, no hacemos nada
+
+  body.innerHTML = '';
+  const rows = getPlayerMatchdayStats(player);
+
+  if (!rows.length) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td colspan="9">Sin estadísticas registradas</td>`;
+    body.appendChild(tr);
+    return;
+  }
+
+  // Ordenar por temporada/jornada si existe
+  const sorted = rows
+    .slice()
+    .sort((a, b) => {
+      const sa = Number(a?.season ?? a?.temp ?? 0);
+      const sb = Number(b?.season ?? b?.temp ?? 0);
+      if (sa !== sb) return sa - sb;
+      const ma = Number(a?.matchday ?? a?.jor ?? 0);
+      const mb = Number(b?.matchday ?? b?.jor ?? 0);
+      return ma - mb;
+    });
+
+  sorted.forEach((row) => {
+    const season = row?.season ?? row?.temp ?? '-';
+    const md = row?.matchday ?? row?.jor ?? '-';
+    const opp = row?.opponentName ?? row?.opponent ?? row?.rival ?? '-';
+    const cond =
+      row?.homeAway ??
+      row?.cond ??
+      (row?.isHome === true ? 'C' : row?.isHome === false ? 'F' : '-');
+
+    const minutes = Number(row?.minutes ?? row?.min ?? 0) || 0;
+    const goals = Number(row?.goals ?? row?.g ?? 0) || 0;
+    const assists = Number(row?.assists ?? row?.a ?? 0) || 0;
+    const yellows = Number(row?.yellows ?? row?.ta ?? 0) || 0;
+    const reds = Number(row?.reds ?? row?.tr ?? 0) || 0;
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${escapeHtml(season)}</td>
+      <td>${escapeHtml(md)}</td>
+      <td>${escapeHtml(opp)}</td>
+      <td>${escapeHtml(cond)}</td>
+      <td>${escapeHtml(minutes)}</td>
+      <td>${escapeHtml(goals)}</td>
+      <td>${escapeHtml(assists)}</td>
+      <td>${escapeHtml(yellows)}</td>
+      <td>${escapeHtml(reds)}</td>
+    `;
+    body.appendChild(tr);
+  });
+}
+
 export function initPlayerModal({ onRequestClose } = {}) {
   const modal = document.getElementById('player-modal');
   if (!modal) return;
@@ -241,6 +325,9 @@ export function openPlayerModal(player) {
   if (statsAssistsEl) statsAssistsEl.textContent = String(st.assists);
   if (statsYellowsEl) statsYellowsEl.textContent = String(st.yellows);
   if (statsRedsEl) statsRedsEl.textContent = String(st.reds);
+  
+  // Tabla completa por jornada (si existe histórico)
+  renderStatsByMatchdayTable(player);  
 
   // (Opcional) Si tienes un label de fecha actual del juego en el modal
   const dateEl = document.getElementById('player-modal-gamedate');

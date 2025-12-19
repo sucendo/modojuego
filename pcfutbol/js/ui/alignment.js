@@ -1,10 +1,6 @@
 /**
- * Alineación y táctica (placeholder).
- * Aquí moveremos:
- * - updateTacticsView
- * - renderTacticsPitch
- * - autopick
- * - selects (formación/mentalidad/ritmo/presión)
+ * Alineación (XI/banquillo/no convocados).
+ * La vista de Tácticas vive en /ui/tactics.js.
  */
 
 import { GameState } from '../state.js';
@@ -92,6 +88,10 @@ const ROLE_DESCRIPTIONS = {
   Delantero: 'Delantero: desmarque, definición y remate.',
 };
 
+function dispatchLineupChanged() {
+  document.dispatchEvent(new CustomEvent('pcf:lineupChanged'));
+}
+
 function getRoleLabelFromPosition(pos) {
   const p = String(pos || '').toUpperCase();
   if (p === 'POR' || p === 'GK') return 'Portero';
@@ -160,6 +160,11 @@ function normalizePlayerId(id, club) {
     Array.isArray(club?.players) && typeof club.players[0]?.id === 'number';
   if (clubUsesNumberIds && /^\d+$/.test(s)) return Number(s);
   return s;
+}
+
+function normalizeIdArray(arr, club) {
+  const src = Array.isArray(arr) ? arr : [];
+  return src.map((id) => normalizePlayerId(id, club)).filter((id) => id != null);
 }
 
 function ensureSelectionCss() {
@@ -322,6 +327,9 @@ function fillSelect(select, options, currentValue) {
 export function initAlignmentUI() {
   if (bound) return;
   bound = true;
+  
+  // Si Tácticas mueve posiciones o cambia formación -> repintar campo aquí
+  document.addEventListener('pcf:tacticsChanged', () => updateTacticsView());
 
   // Mantener Alineación sincronizada con cambios desde la pestaña Tácticas
   document.addEventListener('pcf:tacticsChanged', updateAlignmentView);
@@ -377,6 +385,10 @@ function normalizeLineupBench(club) {
   if (!Array.isArray(club.lineup)) club.lineup = [];
   if (!Array.isArray(club.bench)) club.bench = [];
 
+  // IMPORTANT: normaliza tipos de ID (p.ej. "12" -> 12 si los players usan ids numéricos)
+  club.lineup = normalizeIdArray(club.lineup, club);
+  club.bench  = normalizeIdArray(club.bench, club);
+
   club.lineup = Array.from(new Set(club.lineup)).slice(0, 11);
   const setXI = new Set(club.lineup);
   club.bench = Array.from(new Set(club.bench)).filter((id) => id && !setXI.has(id)).slice(0, 9);
@@ -385,6 +397,8 @@ function normalizeLineupBench(club) {
 function swapPlayersBetweenGroups(club, aId, bId) {
   if (!club || !aId || !bId || aId === bId) return;
   ensureClubTactics(club);
+  // Asegura consistencia de ids antes de operar (evita que includes/indexOf fallen)
+  normalizeLineupBench(club);
 
   const aGroup = getPlayerGroup(club, aId);
   const bGroup = getPlayerGroup(club, bId);
@@ -465,25 +479,27 @@ function handlePlayerClick(playerId) {
   const pid = normalizePlayerId(playerId, club);
   if (pid == null) return;
   ensureClubTactics(club);
+  normalizeLineupBench(club);
 
   // 1) No hay selección previa: seleccionar y marcar
   if (selectedPlayerId == null) {
     selectedPlayerId = pid;
-    updateTacticsView();
+    updateAlignmentView();
     return;
   }
 
   // 2) Click en el mismo: deseleccionar
   if (selectedPlayerId === pid) {
     selectedPlayerId = null;
-    updateTacticsView();
+    updateAlignmentView();
     return;
   }
 
   // 3) Segundo click: swap y limpiar selección (reinicia el proceso)
   swapPlayersBetweenGroups(club, selectedPlayerId, pid);
   selectedPlayerId = null;
-  updateTacticsView();
+  // Notifica a otras vistas (y esta misma está suscrita a lineupChanged)
+  dispatchLineupChanged();
 }
 
 export function updateAlignmentView() {
@@ -494,12 +510,8 @@ export function updateAlignmentView() {
 
   ensureClubTactics(club);
 
-  // Normalizar XI/banquillo
-  if (!Array.isArray(club.lineup)) club.lineup = [];
-  if (!Array.isArray(club.bench)) club.bench = [];
-  club.lineup = Array.from(new Set(club.lineup)).slice(0, 11);
-  const xiSet0 = new Set(club.lineup);
-  club.bench = Array.from(new Set(club.bench)).filter((id) => id && !xiSet0.has(id)).slice(0, 9);
+  // Normalizar XI/banquillo (incluye normalización de tipos de ID)
+  normalizeLineupBench(club);
 
   const players = Array.isArray(club.players) ? club.players.slice() : [];
   const byId = new Map(players.map((p) => [p.id, p]));
@@ -867,7 +879,7 @@ function renderPitch(club) {
   const byId = new Map((club.players || []).map((p) => [p.id, p]));
   const xiPlayers = (club.lineup || []).map((id) => byId.get(id)).filter(Boolean);
 
-  const formation = club.tactics?.formation || '4-4-2';
+  const formation = club.tactics?.formation || club.alignment?.formation || '4-4-2';
   const slots = getFormationSlots(formation);
   const assigned = assignPlayersToSlots(xiPlayers, slots);
 
@@ -878,8 +890,11 @@ function renderPitch(club) {
     dot.className = 'pcf-dot' + (unavailable ? ' is-unavailable' : '');
 
     // Campo horizontal: left = 100 - y, top = x
-    const left = 100 - (slot.y ?? 50);
-    const top  = (slot.x ?? 50);
+    // Si existe posición manual desde Tácticas, usarla
+    const pid = p?.id != null ? String(p.id) : '';
+    const manual = pid && club.tactics?.manualPositions ? club.tactics.manualPositions[pid] : null;
+    const left = manual?.left != null ? manual.left : (100 - (slot.y ?? 50));
+    const top  = manual?.top  != null ? manual.top  : (slot.x ?? 50);
     dot.style.left = `${left}%`;
     dot.style.top  = `${top}%`;
     dot.dataset.playerId = p?.id != null ? String(p.id) : '';
