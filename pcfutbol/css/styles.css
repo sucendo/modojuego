@@ -530,66 +530,102 @@ body {
 .pcf-notes { grid-column: 1 / -1; }
 .pcf-notes ul { margin: 0; padding-left: 18px; }
 
-/* ================================
-   ESTADÍSTICAS – filtros + ordenación
-================================ */
+/* ===========================================================
+   ESTADÍSTICAS (vista unificada)
+   ======================================================== */
 
-.competition-layout.stats-layout--single {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-.stats-header {
-  align-items: flex-end;
-}
-
-.stats-toolbar {
+.pcf-stats-header {
   display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
   flex-wrap: wrap;
-  gap: 0.75rem;
-  justify-content: flex-end;
+}
+
+.pcf-stats-filters {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
   align-items: flex-end;
 }
 
-.stats-filter-group {
+.pcf-stats-filter {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  min-width: 200px;
-}
-
-.stats-filter-group label {
-  font-size: 0.75rem;
-  color: #9ca3af;
-}
-
-.table-player-stats thead th[data-sort-key] {
-  cursor: pointer;
-  user-select: none;
-  white-space: nowrap;
-}
-
-.table-player-stats thead th.is-sorted::after {
-  content: " ▲";
-  font-size: 0.8em;
-  color: #9ca3af;
-}
-
-.table-player-stats thead th.is-sorted[data-sort-dir="DESC"]::after {
-  content: " ▼";
-}
-
-.table-player-stats td.num,
-.table-player-stats th.num {
-  text-align: right;
-}
-
-.muted {
-  color: #9ca3af;
   font-size: 0.85rem;
 }
 
-.stats-hint {
-  margin: 0.5rem 0 0;
+.pcf-stats-filter select {
+  min-width: 220px;
+}
+
+.table-stats td {
+  vertical-align: middle;
+}
+
+.pcf-inline-team {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.pcf-inline-team__name {
+  line-height: 1.1;
+}
+
+.th-sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.th-sortable.is-sorted[data-sort-dir="ASC"]::after {
+  content: " ▲";
+  opacity: 0.9;
+}
+
+.th-sortable.is-sorted[data-sort-dir="DESC"]::after {
+  content: " ▼";
+  opacity: 0.9;
+}
+
+.pcf-expand-card {
+  padding: 0.75rem;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.pcf-expand-title {
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.pcf-expand-empty {
+  padding: 0.75rem;
+  opacity: 0.85;
+}
+
+.pcf-expand-row td {
+  padding: 0.25rem 0.5rem;
+}
+
+@media (max-width: 700px) {
+  .pcf-stats-filter select {
+    min-width: 160px;
+    width: 100%;
+  }
+  .pcf-stats-filters {
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .stats-filter select {
+    min-width: 160px;
+    max-width: 100%;
+  }
+  .pcf-inline-team__name { max-width: 140px; }
 }
 
 @media (max-width: 720px) {
@@ -728,6 +764,7 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.03em;
   color: var(--muted);
+  text-align: center;
 }
 
 .table tbody tr:nth-child(even) {

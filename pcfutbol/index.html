@@ -168,10 +168,11 @@
 			<div class="pcf-hub__grid">
 			<article class="pcf-panel">
 				<h2>COMPETICIONES</h2>
-				<div class="pcf-panel__list">
-				<button class="pcf-linkbtn" data-nav-target="competition">Calendario / Resultados</button>
+				<div class="pcf-panel__list">				
 				<button class="pcf-linkbtn" data-nav-target="stats">Estadísticas</button>
 				<button class="pcf-linkbtn" data-nav-target="standings">Clasificación</button>
+				<button class="pcf-linkbtn" data-nav-target="competition">Calendario</button>
+				<button class="pcf-linkbtn" data-nav-target="competition">Resultados</button>
 				</div>
 			</article>
 	
@@ -550,61 +551,53 @@
         </article>
       </section>
 
-	  <!-- SUBVISTA: ESTADÍSTICAS -->
+      <!-- SUBVISTA: ESTADÍSTICAS -->
       <section id="view-stats" class="hidden">
-		<article class="card pcf-tactics-card">
-        <div class="competition-header stats-header">
+        <div class="competition-header">
           <div>
             <h2>Estadísticas</h2>
             <p class="competition-meta">
               <span id="stats-season-label">Temporada 1</span>
             </p>
           </div>
-        		
+        </div>
+
+        <article class="card">
           <div class="stats-toolbar">
-            <div class="stats-filter-group">
-              <label for="stats-filter-league">Liga</label>
-              <select id="stats-filter-league"></select>
+            <div class="stats-filters">
+              <label class="stats-filter">
+                Liga:
+                <select id="stats-filter-league"></select>
+              </label>
+              <label class="stats-filter">
+                Equipo:
+                <select id="stats-filter-club"></select>
+              </label>
             </div>
-            <div class="stats-filter-group">
-              <label for="stats-filter-club">Equipo</label>
-              <select id="stats-filter-club"></select>
-            </div>
+            <div class="muted stats-hint">Ordena haciendo clic en las columnas.</div>
           </div>
-		</div>
 
-        <section class="competition-layout stats-layout--single">
-          <div class="competition-main">
-            <article class="card">
-              <h3 id="stats-list-title">Jugadores</h3>
-
-              <div class="competition-table-wrapper">
-                <table id="stats-players-table" class="table table-standings table-player-stats">
-                  <thead>
-                    <tr>
-                      <th data-sort-key="club">Club</th>
-                      <th data-sort-key="pos">Pos</th>
-                      <th data-sort-key="name">Jugador</th>
-                      <th class="num" data-sort-key="apps">PJ</th>
-                      <th class="num" data-sort-key="minutes">Min</th>
-                      <th class="num" data-sort-key="goals">G</th>
-                      <th class="num" data-sort-key="assists">A</th>
-                      <th class="num" data-sort-key="yellows">TA</th>
-                      <th class="num" data-sort-key="reds">TR</th>
-                    </tr>
-                  </thead>
-                  <tbody id="stats-players-body">
-                    <tr><td colspan="9">Sin datos.</td></tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <p class="muted stats-hint">Click en un jugador para ver el detalle por jornada.</p>
-            </article>
+          <div class="competition-table-wrapper">
+            <table id="stats-table" class="table table-standings table-stats">
+              <thead>
+                <tr>
+                  <th class="th-sortable" data-sort="league">Liga</th>
+                  <th class="th-sortable" data-sort="club">Equipo</th>
+                  <th class="th-sortable" data-sort="pos">Pos</th>
+                  <th class="th-sortable" data-sort="player">Jugador</th>
+                  <th class="th-sortable th-num" data-sort="apps">PJ</th>
+                  <th class="th-sortable th-num" data-sort="minutes">Min</th>
+                  <th class="th-sortable th-num" data-sort="goals">G</th>
+                  <th class="th-sortable th-num" data-sort="assists">A</th>
+                  <th class="th-sortable th-num" data-sort="yellows">TA</th>
+                  <th class="th-sortable th-num" data-sort="reds">TR</th>
+                </tr>
+              </thead>
+              <tbody id="stats-all-body"></tbody>
+            </table>
           </div>
-        </section>
-		</article>
-	</section>	
+        </article>
+      </section>
 	  
 	  <!-- SUBVISTA: COMPETICIÓN -->
       <section id="view-competition" class="hidden">
