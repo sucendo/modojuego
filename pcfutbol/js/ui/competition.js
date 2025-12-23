@@ -122,7 +122,9 @@ export function initCompetitionUI({
       if (!target) return;
       const btn = target.closest('button[data-fixture-id]');
       const tr = target.closest('tr[data-fixture-id]');
-      const id = btn?.dataset?.fixtureId || tr?.dataset?.fixtureId;
+      const rawId = btn?.dataset?.fixtureId || tr?.dataset?.fixtureId;
+      const idNum = Number(rawId);
+      const id = Number.isFinite(idNum) ? idNum : rawId;
       if (!id) return;
       if (onOpenMatchDetail) onOpenMatchDetail(id);
     });

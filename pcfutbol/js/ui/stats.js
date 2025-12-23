@@ -1,10 +1,18 @@
 /**
- * Estadísticas (placeholder).
+ * UI: Estadísticas de jugadores (todas las ligas + filtro por liga/equipo)
+ * - Tabla única, ordenable por columnas
+ * - Al pulsar un jugador: desplegable con estadísticas por jornada
  */
 
 import { GameState } from '../state.js';
 import { allLeagues } from '../data.js';
 import { getCoatUrlForClubId } from './utils/coats.js';
+
+let __bound = false;
+let __statsFilterLeagueId = null; // null => por defecto liga actual
+let __statsFilterClubId = 'ALL';
+let __sortKey = 'goals';
+let __sortDir = 'DESC';
 
 function escapeHtml(value) {
   const s = String(value ?? '');
@@ -19,6 +27,83 @@ function escapeHtml(value) {
 function getSeasonKey() {
   const season = GameState.currentDate?.season || 1;
   return String(season);
+}
+
+function getLeagueIdCurrent() {
+  return GameState.league?.id || null;
+}
+
+function getWorldLeagues() {
+  const arr = GameState.world?.leagues;
+  return Array.isArray(arr) ? arr : [];
+}
+
+function getLeagueSources() {
+  const currentId = getLeagueIdCurrent();
+  const current = {
+    id: currentId,
+    name: GameState.league?.name || currentId || 'Liga',
+    clubs: Array.isArray(GameState.clubs) ? GameState.clubs : [],
+    isCurrent: true,
+  };
+
+  const world = getWorldLeagues();
+  if (world.length) {
+    return [
+      current,
+      ...world
+        .filter((l) => l && l.id && l.id !== currentId)
+        .map((l) => ({
+          id: l.id,
+          name: l.name || l.id,
+          clubs: Array.isArray(l.clubs) ? l.clubs : [],
+          isCurrent: false,
+        })),
+    ];
+  }
+
+  // Fallback si aún no hay world en el save
+  return [
+    current,
+    ...((allLeagues || [])
+      .filter((l) => l && l.id && l.id !== currentId)
+      .map((l) => ({
+        id: l.id,
+        name: l.name || l.id,
+        clubs: Array.isArray(l.clubs) ? l.clubs : [],
+        isCurrent: false,
+      })) || []),
+  ];
+}
+
+function getClubsForLeagueId(leagueId) {
+  const currentId = getLeagueIdCurrent();
+  if (leagueId && currentId && leagueId === currentId) {
+    return Array.isArray(GameState.clubs) ? GameState.clubs : [];
+  }
+  const world = getWorldLeagues().find((l) => l?.id === leagueId);
+  if (world) return Array.isArray(world.clubs) ? world.clubs : [];
+
+  const l = (allLeagues || []).find((x) => x?.id === leagueId);
+  return Array.isArray(l?.clubs) ? l.clubs : [];
+}
+
+function getCoatSrcFromClubId(clubId) {
+  const rel = getCoatUrlForClubId(clubId);
+  return rel ? String(rel) : '';
+}
+
+function renderCoatWithText(clubId, shortText, fullText) {
+  const src = getCoatSrcFromClubId(clubId);
+  const label = escapeHtml(shortText || fullText || clubId || '');
+  if (!src) return `<span class="pcf-inline-team__name">${label}</span>`;
+  const alt = escapeHtml(fullText || shortText || clubId || 'Escudo');
+  return `
+    <span class="pcf-inline-team">
+      <img src="${escapeHtml(src)}" alt="${alt}" class="coat-icon" loading="lazy" width="18" height="18">
+      <span class="pcf-inline-team__name">${label}</span>
+    </span>
+  `;
 }
 
 function getPlayerSeasonStats(player, seasonKey) {
@@ -48,7 +133,6 @@ function renderExpandedMatchdayRow(afterTr, player, seasonKey, colSpan) {
   const tbody = afterTr?.parentElement;
   if (!tbody) return;
 
-  // toggle
   const next = afterTr.nextElementSibling;
   if (next && next.classList.contains('pcf-expand-row')) {
     next.remove();
@@ -77,330 +161,283 @@ function renderExpandedMatchdayRow(afterTr, player, seasonKey, colSpan) {
     return;
   }
 
-  const header = `
-    <div class="pcf-expand-title">Estadísticas por jornada</div>
-  `;
-
-  const table = `
-    <div class="table-wrapper pcf-expand-table">
-      <table class="table table-compact">
-        <thead>
-          <tr>
-            <th>Temp.</th>
-            <th>Jor.</th>
-            <th>Rival</th>
-            <th>Cond.</th>
-            <th>Min</th>
-            <th>G</th>
-            <th>A</th>
-            <th>TA</th>
-            <th>TR</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rows
-            .map((r) => {
-              const season = escapeHtml(r?.season ?? '-');
-              const md = escapeHtml(r?.matchday ?? '-');
-              const oppName = r?.opponentName ?? r?.opponent ?? r?.rival ?? 'Rival';
-              const oppId = r?.opponentId || null;
-              const oppHtml = oppId
-                ? renderCoatWithText(oppId, String(oppName), String(oppName))
-                : escapeHtml(oppName);
-              const cond = escapeHtml(r?.homeAway ?? (r?.isHome === true ? 'C' : r?.isHome === false ? 'F' : '-'));
-              const min = escapeHtml(Number(r?.minutes || 0));
-              const g = escapeHtml(Number(r?.goals || 0));
-              const a = escapeHtml(Number(r?.assists || 0));
-              const ta = escapeHtml(Number(r?.yellows || 0));
-              const tr = escapeHtml(Number(r?.reds || 0));
-              return `
-                <tr>
-                  <td>${season}</td>
-                  <td>${md}</td>
-                  <td>${oppHtml}</td>
-                  <td>${cond}</td>
-                  <td>${min}</td>
-                  <td>${g}</td>
-                  <td>${a}</td>
-                  <td>${ta}</td>
-                  <td>${tr}</td>
-                </tr>
-              `;
-            })
-            .join('')}
-        </tbody>
-      </table>
+  td.innerHTML = `
+    <div class="pcf-expand-card">
+      <div class="pcf-expand-title">Estadísticas por jornada</div>
+      <div class="table-wrapper pcf-expand-table">
+        <table class="table table-compact">
+          <thead>
+            <tr>
+              <th>Temp.</th>
+              <th>Jor.</th>
+              <th>Rival</th>
+              <th>Cond.</th>
+              <th>Min</th>
+              <th>G</th>
+              <th>A</th>
+              <th>TA</th>
+              <th>TR</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows
+              .map((r) => {
+                const season = escapeHtml(r?.season ?? '-');
+                const md = escapeHtml(r?.matchday ?? '-');
+                const oppId = r?.opponentId || r?.opponentClubId || null;
+                const oppName = r?.opponentName ?? r?.opponent ?? r?.rival ?? 'Rival';
+                const oppHtml = oppId ? renderCoatWithText(oppId, null, oppName) : escapeHtml(oppName);
+                const cond = escapeHtml(
+                  r?.homeAway ?? (r?.isHome === true ? 'C' : r?.isHome === false ? 'F' : '-')
+                );
+                const min = escapeHtml(Number(r?.minutes || 0));
+                const g = escapeHtml(Number(r?.goals || 0));
+                const a = escapeHtml(Number(r?.assists || 0));
+                const ta = escapeHtml(Number(r?.yellows || 0));
+                const tr = escapeHtml(Number(r?.reds || 0));
+                return `
+                  <tr>
+                    <td>${season}</td>
+                    <td>${md}</td>
+                    <td>${oppHtml}</td>
+                    <td>${cond}</td>
+                    <td>${min}</td>
+                    <td>${g}</td>
+                    <td>${a}</td>
+                    <td>${ta}</td>
+                    <td>${tr}</td>
+                  </tr>
+                `;
+              })
+              .join('')}
+          </tbody>
+        </table>
+      </div>
     </div>
   `;
-
-  td.innerHTML = `<div class="pcf-expand-card">${header}${table}</div>`;
   detailTr.appendChild(td);
   afterTr.insertAdjacentElement('afterend', detailTr);
 }
 
-let __statsUIBound = false;
-let __statsFilterLeagueId = null; // null => inicial (liga actual)
-let __statsFilterClubId = 'ALL';
-let __statsSortKey = 'goals';
-let __statsSortDir = 'DESC';
-
-function getLeagueIdCurrent() {
-  return GameState.league?.id || null;
-}
-
-function getLeagueNameById(leagueId) {
-  const currentId = getLeagueIdCurrent();
-  if (leagueId && currentId && leagueId === currentId) return GameState.league?.name || leagueId;
-  const l = (allLeagues || []).find((x) => x.id === leagueId);
-  return l?.name || leagueId || '';
-}
-
-function getLeagueSources() {
-  const currentId = getLeagueIdCurrent();
-  const current = currentId
-    ? [
-        {
-          id: currentId,
-          name: GameState.league?.name || currentId,
-          clubs: GameState.clubs || [],
-          isCurrent: true,
-        },
-      ]
-    : [];
-  const others = (allLeagues || [])
-    .filter((l) => !currentId || l.id !== currentId)
-    .map((l) => ({
-      id: l.id,
-      name: l.name || l.id,
-      clubs: l.clubs || [],
-      isCurrent: false,
-    }));
-  return current.concat(others);
-}
-
-function getClubsForLeagueId(leagueId) {
-  const currentId = getLeagueIdCurrent();
-  if (leagueId && currentId && leagueId === currentId) return GameState.clubs || [];
-  const l = (allLeagues || []).find((x) => x.id === leagueId);
-  return l?.clubs || [];
-}
-
-function getCoatSrcFromClubId(clubId) {
-  const rel = getCoatUrlForClubId(clubId);
-  return rel ? `${rel}` : '';
-}
-
-function renderCoatWithText(clubId, text, fullTitle) {
-  const src = getCoatSrcFromClubId(clubId);
-  if (!src) return escapeHtml(text);
-  return `
-    <span class="club-with-coat" title="${escapeHtml(fullTitle || text || '')}">
-      <img src="${escapeHtml(src)}" alt="Escudo" class="coat-icon" loading="lazy" width="18" height="18">
-      <span>${escapeHtml(text)}</span>
-    </span>
-  `;
+function normalizeLeagueFilterValue(val) {
+  const v = String(val || '').trim();
+  if (!v || v === 'ALL') return 'ALL';
+  return v;
 }
 
 function renderLeagueSelect(selectEl) {
-  if (!selectEl) return;
-
-  const currentId = getLeagueIdCurrent();
-  if (!__statsFilterLeagueId) __statsFilterLeagueId = currentId || 'ALL';
-
   const sources = getLeagueSources();
+  const currentId = getLeagueIdCurrent();
 
-  selectEl.innerHTML = '';
-  const optAll = document.createElement('option');
-  optAll.value = 'ALL';
-  optAll.textContent = 'Todas';
-  selectEl.appendChild(optAll);
+  const desired = normalizeLeagueFilterValue(__statsFilterLeagueId || currentId || 'ALL');
+  __statsFilterLeagueId = desired === 'ALL' ? 'ALL' : desired;
 
-  sources.forEach((l) => {
-    const opt = document.createElement('option');
-    opt.value = l.id;
-    opt.textContent = l.name || l.id;
-    selectEl.appendChild(opt);
-  });
+  const options = [
+    { value: 'ALL', label: 'Todas las ligas' },
+    ...sources.map((l) => ({ value: l.id, label: l.name || l.id })),
+  ];
 
-  const wanted = __statsFilterLeagueId || currentId || 'ALL';
-  const exists = Array.from(selectEl.options).some((o) => o.value === wanted);
-  selectEl.value = exists ? wanted : 'ALL';
-  __statsFilterLeagueId = selectEl.value;
+  selectEl.innerHTML = options
+    .filter((o, idx, arr) => idx === arr.findIndex((x) => x.value === o.value))
+    .map((o) => `<option value="${escapeHtml(o.value)}">${escapeHtml(o.label)}</option>`)
+    .join('');
+
+  selectEl.value = options.some((o) => o.value === __statsFilterLeagueId) ? __statsFilterLeagueId : 'ALL';
 }
 
 function renderClubSelect(selectEl, leagueId) {
-  if (!selectEl) return;
-  selectEl.innerHTML = '';
-
-  const optAll = document.createElement('option');
-  optAll.value = 'ALL';
-  optAll.textContent = 'Todos';
-  selectEl.appendChild(optAll);
+  const lid = normalizeLeagueFilterValue(leagueId);
 
   let clubs = [];
-  if (leagueId === 'ALL') {
-    const sources = getLeagueSources();
-    sources.forEach((l) => {
-      (l.clubs || []).forEach((c) => clubs.push({ ...c, __leagueId: l.id, __leagueName: l.name }));
+  if (lid === 'ALL') {
+    const src = getLeagueSources();
+    src.forEach((s) => {
+      (s.clubs || []).forEach((c) => {
+        if (!c || !c.id) return;
+        clubs.push({ ...c, __leagueId: s.id, __leagueName: s.name });
+      });
     });
   } else {
-    const list = getClubsForLeagueId(leagueId);
-    clubs = (list || []).map((c) => ({
+    clubs = (getClubsForLeagueId(lid) || []).map((c) => ({
       ...c,
-      __leagueId: leagueId,
-      __leagueName: getLeagueNameById(leagueId),
+      __leagueId: lid,
+      __leagueName: getLeagueSources().find((x) => x.id === lid)?.name || lid,
     }));
   }
 
-  clubs
+  clubs = clubs
+    .filter((c) => c && c.id)
     .slice()
-    .sort((a, b) => String(a?.name || '').localeCompare(String(b?.name || ''), 'es', { sensitivity: 'base' }))
-    .forEach((club) => {
-      const opt = document.createElement('option');
-      opt.value = club.id;
-      opt.textContent =
-        leagueId === 'ALL'
-          ? `${club.__leagueName || club.__leagueId} · ${club.name || club.id}`
-          : club.name || club.id;
-      selectEl.appendChild(opt);
-    });
+    .sort((a, b) => (a.name || a.shortName || '').localeCompare(b.name || b.shortName || ''));
 
-  const wanted = __statsFilterClubId || 'ALL';
-  const exists = Array.from(selectEl.options).some((o) => o.value === wanted);
-  selectEl.value = exists ? wanted : 'ALL';
-  __statsFilterClubId = selectEl.value;
+  const options = [
+    { value: 'ALL', label: 'Todos los equipos' },
+    ...clubs.map((c) => ({
+      value: c.id,
+      label:
+        lid === 'ALL'
+          ? `${c.__leagueName || c.__leagueId} · ${c.name || c.shortName || c.id}`
+          : (c.name || c.shortName || c.id),
+    })),
+  ];
+
+  selectEl.innerHTML = options
+    .filter((o, idx, arr) => idx === arr.findIndex((x) => x.value === o.value))
+    .map((o) => `<option value="${escapeHtml(o.value)}">${escapeHtml(o.label)}</option>`)
+    .join('');
+
+  if (!options.some((o) => o.value === __statsFilterClubId)) __statsFilterClubId = 'ALL';
+  selectEl.value = __statsFilterClubId;
+}
+
+function getActiveSources() {
+  const lid = normalizeLeagueFilterValue(__statsFilterLeagueId || getLeagueIdCurrent() || 'ALL');
+  if (lid === 'ALL') return getLeagueSources();
+  const src = getLeagueSources().find((s) => s.id === lid);
+  return src ? [src] : [];
+}
+
+function buildPlayerRows(seasonKey) {
+  const sources = getActiveSources();
+  const clubFilter = String(__statsFilterClubId || 'ALL');
+
+  const rows = [];
+  sources.forEach((src) => {
+    (src.clubs || []).forEach((club) => {
+      if (!club || !club.id) return;
+      if (clubFilter !== 'ALL' && club.id !== clubFilter) return;
+      (club.players || []).forEach((p) => {
+        if (!p || !p.id) return;
+        const st = getPlayerSeasonStats(p, seasonKey);
+        rows.push({ player: p, club, leagueId: src.id, leagueName: src.name, ...st });
+      });
+    });
+  });
+  return rows;
+}
+
+function compareValues(a, b, dir) {
+  if (a == null && b == null) return 0;
+  if (a == null) return dir === 'ASC' ? -1 : 1;
+  if (b == null) return dir === 'ASC' ? 1 : -1;
+  if (typeof a === 'number' && typeof b === 'number') return dir === 'ASC' ? a - b : b - a;
+  return dir === 'ASC' ? String(a).localeCompare(String(b)) : String(b).localeCompare(String(a));
+}
+
+function sortRows(rows) {
+  const key = __sortKey;
+  const dir = __sortDir;
+
+  return rows.slice().sort((ra, rb) => {
+    let a;
+    let b;
+    switch (key) {
+      case 'league':
+        a = ra.leagueName || ra.leagueId || '';
+        b = rb.leagueName || rb.leagueId || '';
+        break;
+      case 'club':
+        a = ra.club?.shortName || ra.club?.name || ra.club?.id;
+        b = rb.club?.shortName || rb.club?.name || rb.club?.id;
+        break;
+      case 'pos':
+        a = ra.player?.position || '';
+        b = rb.player?.position || '';
+        break;
+      case 'name':
+        a = ra.player?.name || '';
+        b = rb.player?.name || '';
+        break;
+      case 'apps':
+        a = ra.apps;
+        b = rb.apps;
+        break;
+      case 'minutes':
+        a = ra.minutes;
+        b = rb.minutes;
+        break;
+      case 'goals':
+        a = ra.goals;
+        b = rb.goals;
+        break;
+      case 'assists':
+        a = ra.assists;
+        b = rb.assists;
+        break;
+      case 'yellows':
+        a = ra.yellows;
+        b = rb.yellows;
+        break;
+      case 'reds':
+        a = ra.reds;
+        b = rb.reds;
+        break;
+      default:
+        a = ra.goals;
+        b = rb.goals;
+        break;
+    }
+
+    const primary = compareValues(a, b, dir);
+    if (primary !== 0) return primary;
+    if (key !== 'goals') {
+      const g = compareValues(ra.goals, rb.goals, 'DESC');
+      if (g !== 0) return g;
+    }
+    const nm = compareValues(ra.player?.name || '', rb.player?.name || '', 'ASC');
+    if (nm !== 0) return nm;
+    return compareValues(ra.club?.name || '', rb.club?.name || '', 'ASC');
+  });
 }
 
 function setSortHeaderState(tableEl) {
   if (!tableEl) return;
-  const ths = tableEl.querySelectorAll('thead th[data-sort-key]');
-  ths.forEach((th) => {
-    const k = th.getAttribute('data-sort-key');
-    th.classList.toggle('is-sorted', k === __statsSortKey);
-    if (k === __statsSortKey) th.dataset.sortDir = __statsSortDir;
-    else delete th.dataset.sortDir;
+  const headers = tableEl.querySelectorAll('thead th[data-sort], thead th[data-sort-key]');
+  headers.forEach((th) => {
+    const key = th.getAttribute('data-sort') || th.getAttribute('data-sort-key');
+    if (!key) return;
+    const isSorted = key === __sortKey;
+    th.classList.toggle('is-sorted', isSorted);
+    if (isSorted) th.setAttribute('data-sort-dir', __sortDir);
+    else th.removeAttribute('data-sort-dir');
   });
 }
 
-function ensureStatsBindings() {
-  if (__statsUIBound) return;
+function ensureBindings() {
+  if (__bound) return;
 
   const leagueSel = document.getElementById('stats-filter-league');
   const clubSel = document.getElementById('stats-filter-club');
-  const table = document.getElementById('stats-players-table');
+  const table = document.getElementById('stats-table');
 
-  if (leagueSel) {
-    leagueSel.addEventListener('change', () => {
-      __statsFilterLeagueId = leagueSel.value || 'ALL';
-      __statsFilterClubId = 'ALL';
-      updateStatsView();
-    });
-  }
+  if (!leagueSel || !clubSel || !table) return;
 
-  if (clubSel) {
-    clubSel.addEventListener('change', () => {
-      __statsFilterClubId = clubSel.value || 'ALL';
-      updateStatsView();
-    });
-  }
-
-  if (table) {
-    table.querySelectorAll('thead th[data-sort-key]').forEach((th) => {
-      th.addEventListener('click', () => {
-        const key = th.getAttribute('data-sort-key');
-        if (!key) return;
-
-        if (__statsSortKey === key) {
-          __statsSortDir = __statsSortDir === 'ASC' ? 'DESC' : 'ASC';
-        } else {
-          __statsSortKey = key;
-          __statsSortDir = ['apps', 'minutes', 'goals', 'assists', 'yellows', 'reds'].includes(key) ? 'DESC' : 'ASC';
-        }
-        updateStatsView();
-      });
-    });
-  }
-
-  __statsUIBound = true;
-}
-
-function buildPlayerRows(seasonKey, leagueId, clubId) {
-  const rows = [];
-  const addClubPlayers = (lid, clubs) => {
-    (clubs || []).forEach((club) => {
-      if (clubId !== 'ALL' && club?.id !== clubId) return;
-      (club.players || []).forEach((p) => {
-        const st = getPlayerSeasonStats(p, seasonKey);
-        rows.push({
-          leagueId: lid,
-          club,
-          player: p,
-          ...st,
-        });
-      });
-    });
-  };
-
-  if (leagueId === 'ALL') {
-    const sources = getLeagueSources();
-    sources.forEach((l) => addClubPlayers(l.id, l.clubs));
-  } else {
-    addClubPlayers(leagueId, getClubsForLeagueId(leagueId));
-  }
-
-  return rows;
-}
-
-function sortPlayerRows(rows) {
-  const dir = __statsSortDir === 'ASC' ? 1 : -1;
-  const str = (v) => String(v ?? '');
-
-  const get = (r) => {
-    switch (__statsSortKey) {
-      case 'club':
-        return str(r.club?.shortName || r.club?.name || r.club?.id || '');
-      case 'pos':
-        return str(r.player?.position || '');
-      case 'name':
-        return str(r.player?.name || '');
-      case 'apps':
-        return Number(r.apps || 0);
-      case 'minutes':
-        return Number(r.minutes || 0);
-      case 'goals':
-        return Number(r.goals || 0);
-      case 'assists':
-        return Number(r.assists || 0);
-      case 'yellows':
-        return Number(r.yellows || 0);
-      case 'reds':
-        return Number(r.reds || 0);
-      default:
-        return Number(r.goals || 0);
-    }
-  };
-
-  const isNumeric = ['apps', 'minutes', 'goals', 'assists', 'yellows', 'reds'].includes(__statsSortKey);
-
-  rows.sort((a, b) => {
-    const av = get(a);
-    const bv = get(b);
-
-    if (isNumeric) {
-      if (bv !== av) return (bv - av) * dir;
-    } else {
-      const c = str(av).localeCompare(str(bv), 'es', { sensitivity: 'base' });
-      if (c) return c * dir;
-    }
-
-    // desempates: goles, asist, min, nombre
-    if (b.goals !== a.goals) return b.goals - a.goals;
-    if (b.assists !== a.assists) return b.assists - a.assists;
-    if (b.minutes !== a.minutes) return b.minutes - a.minutes;
-    return str(a.player?.name || '').localeCompare(str(b.player?.name || ''), 'es', { sensitivity: 'base' });
+  leagueSel.addEventListener('change', () => {
+    __statsFilterLeagueId = normalizeLeagueFilterValue(leagueSel.value);
+    __statsFilterClubId = 'ALL';
+    renderClubSelect(clubSel, __statsFilterLeagueId);
+    updateStatsView();
   });
 
-  return rows;
+  clubSel.addEventListener('change', () => {
+    __statsFilterClubId = String(clubSel.value || 'ALL');
+    updateStatsView();
+  });
+
+  table.querySelectorAll('thead th[data-sort], thead th[data-sort-key]').forEach((th) => {
+    th.addEventListener('click', () => {
+      const key = th.getAttribute('data-sort') || th.getAttribute('data-sort-key');
+      if (!key) return;
+      if (__sortKey === key) __sortDir = __sortDir === 'ASC' ? 'DESC' : 'ASC';
+      else {
+        __sortKey = key;
+        __sortDir = ['name', 'club', 'pos', 'league'].includes(key) ? 'ASC' : 'DESC';
+      }
+      updateStatsView();
+    });
+  });
+
+  __bound = true;
 }
 
 export function updateStatsView() {
@@ -408,76 +445,62 @@ export function updateStatsView() {
   const label = document.getElementById('stats-season-label');
   if (label) label.textContent = `Temporada ${season}`;
 
+  ensureBindings();
+
   const leagueSel = document.getElementById('stats-filter-league');
   const clubSel = document.getElementById('stats-filter-club');
-  const tbody = document.getElementById('stats-players-body');
-  const table = document.getElementById('stats-players-table');
+  const table = document.getElementById('stats-table');
+  const tbody = document.getElementById('stats-all-body');
   const title = document.getElementById('stats-list-title');
-  if (!tbody || !table) return;
+  if (!leagueSel || !clubSel || !table || !tbody) return;
 
-  ensureStatsBindings();
+  const seasonKey = getSeasonKey();
 
   renderLeagueSelect(leagueSel);
-  renderClubSelect(clubSel, __statsFilterLeagueId || 'ALL');
-  setSortHeaderState(table);
+  renderClubSelect(clubSel, __statsFilterLeagueId || getLeagueIdCurrent() || 'ALL');
 
-  const key = getSeasonKey();
-  const rows = sortPlayerRows(buildPlayerRows(key, __statsFilterLeagueId || 'ALL', __statsFilterClubId || 'ALL'));
-
-  // Título contextual
+  const lid = normalizeLeagueFilterValue(__statsFilterLeagueId || getLeagueIdCurrent() || 'ALL');
   if (title) {
-    const leagueTxt = __statsFilterLeagueId === 'ALL' ? 'Todas las ligas' : getLeagueNameById(__statsFilterLeagueId);
-
-    let clubTxt = '';
-    if (__statsFilterClubId !== 'ALL') {
-      if (__statsFilterLeagueId === 'ALL') {
-        const sources = getLeagueSources();
-        for (const l of sources) {
-          const found = (l.clubs || []).find((c) => c.id === __statsFilterClubId);
-          if (found) {
-            clubTxt = found.name || found.shortName || found.id;
-            break;
-          }
-        }
-      } else {
-        const found = (getClubsForLeagueId(__statsFilterLeagueId) || []).find((c) => c.id === __statsFilterClubId);
-        clubTxt = found?.name || found?.shortName || __statsFilterClubId;
-      }
-    }
-
-    title.textContent = clubTxt ? `Jugadores · ${leagueTxt} · ${clubTxt}` : `Jugadores · ${leagueTxt}`;
+    const leagueText = lid === 'ALL' ? 'Todas las ligas' : (getLeagueSources().find((l) => l.id === lid)?.name || lid);
+    title.textContent = `Jugadores · ${leagueText}`;
   }
 
+  const rows = sortRows(buildPlayerRows(seasonKey));
+  setSortHeaderState(table);
+
   tbody.innerHTML = '';
+  clearExpandedRows(tbody);
+
   if (!rows.length) {
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td colspan="9">Sin jugadores para ese filtro.</td>`;
+    tr.innerHTML = `<td colspan="10">No hay jugadores para este filtro.</td>`;
     tbody.appendChild(tr);
     return;
   }
 
   rows.forEach((r) => {
+    const leagueHtml = `<span class="pcf-inline-league">${escapeHtml(r.leagueName || r.leagueId || '')}</span>`; 
+    const clubShort = r.club?.shortName || r.club?.abbr || r.club?.name || r.club?.id || '';
+    const clubFull = r.club?.name || r.club?.shortName || r.club?.id || '';
+    const clubHtml = renderCoatWithText(r.club?.id, clubShort, clubFull);
+
     const tr = document.createElement('tr');
     tr.className = 'is-clickable';
-
-    const clubName = r.club?.name || r.club?.id || '';
-    const clubShort = r.club?.shortName || clubName;
-    const clubCell = renderCoatWithText(r.club?.id, clubShort, clubName); 
-
     tr.__pcfPlayer = r.player;
+    tr.__pcfClub = r.club;
     tr.innerHTML = `
-      <td>${clubCell}</td>
+      <td>${leagueHtml}</td>	
+      <td>${clubHtml}</td>
       <td>${escapeHtml(r.player?.position || '')}</td>
       <td>${escapeHtml(r.player?.name || 'Jugador')}</td>
-      <td class="num">${r.apps}</td>
-      <td class="num">${r.minutes}</td>
-      <td class="num"><strong>${r.goals}</strong></td>
-      <td class="num">${r.assists}</td>
-      <td class="num">${r.yellows}</td>
-      <td class="num">${r.reds}</td>
+      <td>${Number(r.apps || 0)}</td>
+      <td>${Number(r.minutes || 0)}</td>
+      <td><strong>${Number(r.goals || 0)}</strong></td>
+      <td>${Number(r.assists || 0)}</td>
+      <td>${Number(r.yellows || 0)}</td>
+      <td>${Number(r.reds || 0)}</td>
     `;
-
-    tr.onclick = () => renderExpandedMatchdayRow(tr, r.player, key, 9);
+    tr.onclick = () => renderExpandedMatchdayRow(tr, r.player, seasonKey, 10);
     tbody.appendChild(tr);
   });
 }

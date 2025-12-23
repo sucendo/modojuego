@@ -49,7 +49,10 @@ export function openMatchDetailModal(fixtureId) {
   if (eventsListEl) eventsListEl.innerHTML = '';
 
   const fixtures = GameState.fixtures || [];
-  const fx = fixtures.find((f) => f && f.id === fixtureId);
+  // fixtureId puede venir como string desde dataset (data-fixture-id)
+  // y los ids en GameState.fixtures pueden ser number.
+  const fid = fixtureId != null ? String(fixtureId) : '';
+  const fx = fixtures.find((f) => f && String(f.id) === fid);
 
   const clubs = GameState.clubs || [];
   const clubIndex = new Map();
