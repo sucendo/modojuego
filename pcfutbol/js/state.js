@@ -29,6 +29,10 @@ export const GameState = {
     clubId: null,
     name: 'Mánager',
   },
+  // Ligas paralelas (para estadísticas / mercado / etc.)
+  world: {
+    leagues: [],
+  },
 };
 
 /**
@@ -77,6 +81,7 @@ export function newGame(options = {}) {
   GameState.competition = {
     maxMatchday: 0,
   };
+  GameState.world = { leagues: [] };
 
   GameState.user.roleMode = roleMode;
   GameState.user.clubId = selectedClubId;
@@ -89,6 +94,7 @@ export function newGame(options = {}) {
 
   normalizeGameState();
   setupCompetition();
+  setupWorldLeagues();
 }
 
 /**
@@ -115,6 +121,9 @@ export function applyLoadedState(raw) {
   GameState.leagueTable = raw.leagueTable || [];
   GameState.competition = raw.competition || { maxMatchday: 0 };
   GameState.user = raw.user || GameState.user;
+  
+  // Mundo (otras ligas)
+  GameState.world = raw.world || GameState.world || { leagues: [] };
 
   normalizeGameState();
   if (!GameState.fixtures || GameState.fixtures.length === 0) {
@@ -122,9 +131,16 @@ export function applyLoadedState(raw) {
   } else {
     recomputeCompetitionMetadata();
   }
-  
+    
   // Compatibilidad saves viejos: (re)construir estadísticas desde fixtures
   rebuildStatsFromFixtures(GameState.currentDate?.season || 1);
+
+  // Compatibilidad: si no existían ligas del mundo, las creamos
+  if (!GameState.world || !Array.isArray(GameState.world.leagues) || GameState.world.leagues.length === 0) {
+    setupWorldLeagues();
+  } else {
+    normalizeWorldLeagues();
+  }  
 }
 
 /**
@@ -140,6 +156,8 @@ function normalizeGameState() {
     if (!Array.isArray(club.players)) club.players = [];
     club.players.forEach((p) => ensurePlayerDefaults(p, season));
   });
+  
+  normalizeWorldLeagues();
 }
 
 function isPlayerUnavailable(player) {
@@ -773,6 +791,57 @@ function setupCompetition() {
   GameState.currentDate.matchday = 1;
 
   recomputeLeagueTable();
+}
+
+function normalizeWorldLeagues() {
+  const season = GameState.currentDate?.season || 1;
+  if (!GameState.world) GameState.world = { leagues: [] };
+  if (!Array.isArray(GameState.world.leagues)) GameState.world.leagues = [];
+
+  GameState.world.leagues.forEach((lg) => {
+    if (!lg || !Array.isArray(lg.clubs)) return;
+    lg.clubs.forEach((club) => {
+      ensureClubDefaults(club);
+      if (!Array.isArray(club.players)) club.players = [];
+      club.players.forEach((p) => ensurePlayerDefaults(p, season));
+    });
+  });
+}
+
+function setupWorldLeagues() {
+  if (!GameState.world) GameState.world = { leagues: [] };
+  if (!Array.isArray(GameState.world.leagues)) GameState.world.leagues = [];
+
+  const currentId = GameState.league?.id;
+  const season = GameState.currentDate?.season || 1;
+  const matchday = GameState.currentDate?.matchday || 1;
+
+  const sourceLeagues = (allLeagues || []).filter((l) => l && l.id && l.id !== currentId);
+  GameState.world.leagues = sourceLeagues.map((l) => {
+    const clubs = JSON.parse(JSON.stringify(l.clubs || []));
+    clubs.forEach((c) => {
+      ensureClubDefaults(c);
+      (c.players || []).forEach((p) => ensurePlayerDefaults(p, season));
+    });
+
+    const clubIds = clubs.map((c) => c.id).filter(Boolean);
+    const { fixtures, maxMatchday } = generateRoundRobinFixtures(clubIds);
+    fixtures.forEach((fx) => {
+      fx.season = season;
+      fx.statsApplied = false;
+    });
+
+    return {
+      id: l.id,
+      name: l.name || l.id,
+      country: l.country || '',
+      clubs,
+      fixtures,
+      leagueTable: [],
+      competition: { maxMatchday },
+      currentDate: { season, matchday },
+    };
+  });
 }
 
 /**

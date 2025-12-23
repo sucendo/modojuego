@@ -392,6 +392,9 @@ export function initUI() {
 
   if (simulateBtn) {
     simulateBtn.addEventListener('click', () => {
+      // Guardamos la jornada que vamos a simular, porque simulateCurrentMatchday()
+      // incrementa GameState.currentDate.matchday al terminar.
+      const mdSimulated = Number(GameState.currentDate?.matchday || 1);
       try {
         simulateCurrentMatchday();
       } catch (err) {
@@ -399,8 +402,12 @@ export function initUI() {
         alert(err?.message || 'No se pudo simular la jornada.');
         return;
       }
-      const md = GameState.currentDate?.matchday || 1;
-      setCompetitionSelectedMatchday(md);
+      // En Competición, tras simular queremos VER los resultados de la jornada simulada,
+      // no saltar automáticamente a la siguiente (que aún no tiene resultados).
+      setCompetitionSelectedMatchday(mdSimulated);
+
+      // En Clasificación, por defecto también tiene más sentido enseñar la jornada recién jugada.
+      try { setStandingsSelectedMatchday(mdSimulated); } catch (_) {}
       updateDashboard();	  
       updateCompetitionView();
      initStandingsUI();	  

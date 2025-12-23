@@ -17,7 +17,7 @@ function clamp01(x) {
   return Math.max(0, Math.min(1, n));
 }
 
-function clamp(x, a, b) {
+function clampN(x, a, b) {
   const n = Number(x);
   if (!Number.isFinite(n)) return a;
   return Math.max(a, Math.min(b, n));
@@ -111,7 +111,7 @@ function applyMoraleForClubFixture(club, fx, isHome) {
     const called = calledSet.has(p.id) || played;
     const available = !isPlayerUnavailable(p);
 
-    const mfrac = clamp(mins / 90, 0, 1);
+    const mfrac = clampN(mins / 90, 0, 1);
     const goals = goalsByPlayer.get(String(p.id)) || 0;
     const reds = redsByPlayer.get(String(p.id)) || 0;
 
@@ -286,24 +286,24 @@ function computePlayerInjuryRiskMultiplier(player, minutesPlayed, restDays, card
   // Fitness = energía (0..1)
   const fit = player?.fitness == null ? 0.9 : clamp01(player.fitness);
   // Form = forma (-3..+3)
-  const form = (player?.form != null && Number.isFinite(Number(player.form))) ? clamp(Number(player.form), -3, 3) : 0;
+  const form = (player?.form != null && Number.isFinite(Number(player.form))) ? clampN(Number(player.form), -3, 3) : 0;
   // Fatiga (0..100)
-  const fat = clamp(Number(player?.fatigue || 0), 0, 100);
+  const fat = clampN(Number(player?.fatigue || 0), 0, 100);
   // Minutos de exposición
-  const m = clamp(Number(minutesPlayed || 90) / 90, 0, 1);
+  const m = clampN(Number(minutesPlayed || 90) / 90, 0, 1);
   // Días desde el partido anterior (si hay)
-  const rd = clamp(Number(restDays || 7), 1, 14);
+  const rd = clampN(Number(restDays || 7), 1, 14);
   // Edad
   const age = getPlayerAgeAtUTCDate(player, nowDateUTC);
 
   // Energía baja => sube mucho el riesgo
   // Por debajo de 0.85 empieza a penalizar fuerte.
   const energyPenalty = fit < 0.85 ? (0.85 - fit) / 0.85 : 0; // 0..1 aprox
-  const energyMult = 1 + 1.8 * clamp(energyPenalty, 0, 1);     // hasta ~2.8
+  const energyMult = 1 + 1.8 * clampN(energyPenalty, 0, 1);     // hasta ~2.8
 
   // Fatiga acumulada alta => sube riesgo
   const fatiguePenalty = fat > 45 ? (fat - 45) / 55 : 0;       // 0..1
-  const fatigueMult = 1 + 0.55 * clamp(fatiguePenalty, 0, 1);  // hasta ~1.55
+  const fatigueMult = 1 + 0.55 * clampN(fatiguePenalty, 0, 1);  // hasta ~1.55
 
   // Forma mala => sube (forma buena reduce ligeramente)
   const formMult =
@@ -324,16 +324,16 @@ function computePlayerInjuryRiskMultiplier(player, minutesPlayed, restDays, card
   const minutesMult = 0.45 + 0.55 * m; // 0.45..1.0
 
   // Intensidad táctica / agresividad (ya lo usas para tarjetas)
-  const intensityMult = clamp(0.90 + 0.25 * (cardAgg - 1.0), 0.75, 1.25);
+  const intensityMult = clampN(0.90 + 0.25 * (cardAgg - 1.0), 0.75, 1.25);
 
   const mult = energyMult * fatigueMult * formMult * restMult * ageMult * minutesMult * intensityMult;
-  return clamp(mult, 0.6, 3.0);
+  return clampN(mult, 0.6, 3.0);
 }
 
 function getRecoveryTarget(daysRest, age) {
   // Usuario: con 7 días -> ~95%
   // Fórmula base: 0.65 + 0.05*días, cap a 0.95
-  let t = 0.65 + 0.05 * clamp(daysRest, 0, 14);
+  let t = 0.65 + 0.05 * clampN(daysRest, 0, 14);
   t = Math.min(0.95, t);
 
   // Edad: a partir de 27 recupera un poco peor; por debajo, un poco mejor.
@@ -354,7 +354,7 @@ function applyFitnessAndFormForClubBetweenMatches(club, fx, isHome, daysUntilNex
     : (Math.max(1, GameState.currentDate?.matchday || 1) - 1) * GAME_CALENDAR.DAYS_PER_MATCHDAY;
   const nowDate = new Date(seasonStart.getTime() + nowDay * 86400000);
 
-  const restDays = clamp(daysUntilNext ?? GAME_CALENDAR.DAYS_PER_MATCHDAY, 1, 14);
+  const restDays = clampN(daysUntilNext ?? GAME_CALENDAR.DAYS_PER_MATCHDAY, 1, 14);
 
   players.forEach((p) => {
     if (!p?.id) return;
@@ -368,9 +368,9 @@ function applyFitnessAndFormForClubBetweenMatches(club, fx, isHome, daysUntilNex
 
     if (played) {
       // 1) Coste de partido: reduce Energía según minutos + ligera penalización por edad.
-      const m = clamp(mins / 90, 0, 1);
+      const m = clampN(mins / 90, 0, 1);
       const agePenalty = Number.isFinite(age) && age > 30 ? (age - 30) * 0.002 : 0;
-      const loss = clamp(0.32 * m + agePenalty, 0, 0.55);
+      const loss = clampN(0.32 * m + agePenalty, 0, 0.55);
       p.fitness = clamp01(clamp01(p.fitness) - loss);
 
       // 2) Recuperación hasta un objetivo según días de descanso.
@@ -379,7 +379,7 @@ function applyFitnessAndFormForClubBetweenMatches(club, fx, isHome, daysUntilNex
 
       // 3) Forma: +15% aprox -> +1.0 si juega 90' (rango -3..+3), escalado por minutos.
       const deltaForm = 1.0 * m;
-      p.form = clamp(p.form + deltaForm, -3, 3);
+      p.form = clampN(p.form + deltaForm, -3, 3);
     } else {
       // No jugó: recupera más y la forma tiende suavemente a 0.
       const ageAdj = Number.isFinite(age) && age > 30 ? (age - 30) * 0.003 : 0;
@@ -388,7 +388,7 @@ function applyFitnessAndFormForClubBetweenMatches(club, fx, isHome, daysUntilNex
 
       // Reversión a 0 si no participa
       p.form = p.form + (0 - p.form) * 0.10;
-      p.form = clamp(p.form, -3, 3);
+      p.form = clampN(p.form, -3, 3);
     }
   });
 }
@@ -426,6 +426,9 @@ export function simulateCurrentMatchday() {
     // No bloqueamos la simulación por un fallo de stats
     console.warn('No se pudieron aplicar estadísticas:', e);
   }
+  
+  // Simular otras ligas (calendario sincronizado)
+  simulateWorldLeaguesMatchday(GameState.currentDate.matchday);
 
   recomputeLeagueTable();
 
@@ -436,6 +439,273 @@ export function simulateCurrentMatchday() {
   if (GameState.currentDate.matchday < maxMd) {
     GameState.currentDate.matchday += 1;
   }
+}
+
+// ----------------------------------------
+// Mundo: simular otras ligas en paralelo
+// (No usa el motor completo: resultados rápidos, suficientes para mantener el calendario coherente)
+// ----------------------------------------
+
+function simulateWorldLeaguesMatchday(matchday) {
+  const worldLeagues = GameState.world?.leagues;
+  if (!Array.isArray(worldLeagues) || worldLeagues.length === 0) return;
+
+  const md = Number(matchday || 1);
+  const season = GameState.currentDate?.season || 1;
+
+  worldLeagues.forEach((ls) => {
+    if (!ls || !Array.isArray(ls.fixtures) || !Array.isArray(ls.clubs)) return;
+
+    if (!ls.currentDate || typeof ls.currentDate !== 'object') {
+      ls.currentDate = { season, matchday: 1 };
+    }
+    if (ls.currentDate.season == null) ls.currentDate.season = season;
+
+    const maxMd = Number(ls.competition?.maxMatchday || 0) || computeMaxMatchday(ls.fixtures);
+    if (maxMd <= 0) return;
+    if (md > maxMd) return; // liga terminada
+
+    const toPlay = ls.fixtures.filter((f) => (f?.matchday || 1) === md && !f.played);
+    if (toPlay.length === 0) {
+      ls.currentDate.matchday = Math.min(Math.max(ls.currentDate.matchday || 1, md + 1), maxMd);
+      return;
+    }
+
+    toPlay.forEach((fx) => {
+      simulateQuickWorldFixture(fx, ls);
+      fx.played = true;
+    });
+
+    ls.currentDate.matchday = Math.min(md + 1, maxMd);
+  });
+}
+
+function computeMaxMatchday(fixtures) {
+  const arr = Array.isArray(fixtures) ? fixtures : [];
+  let mx = 0;
+  for (const f of arr) {
+    const md = Number(f?.matchday || 0);
+    if (md > mx) mx = md;
+  }
+  return mx || 1;
+}
+
+function simulateQuickWorldFixture(fx, ls) {
+  if (!fx) return;
+
+  const clubs = ls.clubs || [];
+  const home = clubs.find((c) => c?.id === fx.homeClubId);
+  const away = clubs.find((c) => c?.id === fx.awayClubId);
+  if (!home || !away) {
+    fx.homeGoals = fx.homeGoals ?? 0;
+    fx.awayGoals = fx.awayGoals ?? 0;
+    fx.events = Array.isArray(fx.events) ? fx.events : [];
+    return;
+  }
+
+  const homeXI = wPickBestXI(home);
+  const awayXI = wPickBestXI(away);
+  fx.homeLineupIds = homeXI.map((p) => p.id);
+  fx.awayLineupIds = awayXI.map((p) => p.id);
+  fx.substitutions = [];
+
+  const homeStr = wAvgOverall(homeXI);
+  const awayStr = wAvgOverall(awayXI);
+
+  const homeLambda = wClamp(1.15 + (homeStr - awayStr) / 22 + 0.15, 0.2, 3.2);
+  const awayLambda = wClamp(1.00 + (awayStr - homeStr) / 24, 0.1, 2.8);
+
+  const hg = wPoisson(homeLambda);
+  const ag = wPoisson(awayLambda);
+
+  fx.homeGoals = hg;
+  fx.awayGoals = ag;
+  fx.events = [];
+
+  const pickMinute = wCreateFixtureMinutePicker();
+
+  for (let i = 0; i < hg; i++) {
+    const scorer = wPickGoalScorer(homeXI);
+    if (!scorer) break;
+    fx.events.push({ type: 'GOAL', minute: pickMinute(), clubId: home.id, playerId: scorer.id });
+  }
+  for (let i = 0; i < ag; i++) {
+    const scorer = wPickGoalScorer(awayXI);
+    if (!scorer) break;
+    fx.events.push({ type: 'GOAL', minute: pickMinute(), clubId: away.id, playerId: scorer.id });
+  }
+
+  fx.events.sort((a, b) => (a.minute || 0) - (b.minute || 0));
+  
+  wApplyWorldPlayerStats(ls, fx);
+}
+
+function wPickBestXI(club) {
+  const players = Array.isArray(club?.players) ? club.players : [];
+  const sorted = players.filter(Boolean).slice().sort((a, b) => Number(b?.overall || 0) - Number(a?.overall || 0));
+  return sorted.slice(0, 11);
+}
+
+function wAvgOverall(list) {
+  const arr = Array.isArray(list) ? list : [];
+  if (!arr.length) return 60;
+  const sum = arr.reduce((acc, p) => acc + Number(p?.overall || 0), 0);
+  return sum / arr.length;
+}
+
+function wClamp(v, min, max) {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return min;
+  return Math.max(min, Math.min(max, n));
+}
+
+function wPoisson(lambda) {
+  const L = Math.exp(-lambda);
+  let k = 0;
+  let p = 1;
+  do {
+    k += 1;
+    p *= Math.random();
+  } while (p > L && k < 12);
+  return Math.max(0, k - 1);
+}
+
+function wPickGoalScorer(xi) {
+  const players = Array.isArray(xi) ? xi : [];
+  if (!players.length) return null;
+
+  const preferred = players.filter((p) => {
+    const pos = String(p?.position || '').toUpperCase();
+    return ['ST','CF','LW','RW','LM','RM','CAM','AM','SS','DC','EI','ED','MP','MCO','MCA'].includes(pos);
+  });
+  const pool = preferred.length ? preferred : players;
+
+  const weights = pool.map((p) => Math.max(20, Number(p?.overall || 60)));
+  const total = weights.reduce((a, b) => a + b, 0);
+  let r = Math.random() * total;
+  for (let i = 0; i < pool.length; i++) {
+    r -= weights[i];
+    if (r <= 0) return pool[i];
+  }
+  return pool[pool.length - 1];
+}
+
+function wCreateFixtureMinutePicker() {
+  // minutos 1..90 con ligera preferencia por 2ª parte (más “realista”)
+  return () => {
+    const r = Math.random();
+    if (r < 0.55) return 1 + Math.floor(Math.random() * 45);
+    return 46 + Math.floor(Math.random() * 45);
+  };
+}
+
+// -------------------------------------------------
+// Stats rápidas para el "mundo" (otras ligas)
+// -------------------------------------------------
+
+function wEnsurePlayerSeasonContainers(player, seasonKey) {
+  if (!player) return;
+  if (!player.stats || typeof player.stats !== 'object') player.stats = {};
+  if (!player.stats[seasonKey] || typeof player.stats[seasonKey] !== 'object') {
+    player.stats[seasonKey] = {
+      apps: 0,
+      starts: 0,
+      minutes: 0,
+      goals: 0,
+      assists: 0,
+      yellows: 0,
+      reds: 0,
+    };
+  }
+  if (!player.statsByMatchday || typeof player.statsByMatchday !== 'object') player.statsByMatchday = {};
+  if (!Array.isArray(player.statsByMatchday[seasonKey])) player.statsByMatchday[seasonKey] = [];
+}
+
+function wApplyWorldPlayerStats(ls, fx) {
+  if (!ls || !fx) return;
+
+  const season = Number(ls.currentDate?.season || fx.season || 1);
+  const seasonKey = String(season);
+  const matchday = Number(fx.matchday || ls.currentDate?.matchday || 1);
+
+  const clubs = ls.clubs || [];
+  const home = clubs.find((c) => c?.id === fx.homeClubId);
+  const away = clubs.find((c) => c?.id === fx.awayClubId);
+  if (!home || !away) return;
+
+  const homePlayers = (home.players || []);
+  const awayPlayers = (away.players || []);
+  const homeById = new Map(homePlayers.map((p) => [p?.id, p]));
+  const awayById = new Map(awayPlayers.map((p) => [p?.id, p]));
+
+  const homeXIIds = Array.isArray(fx.homeLineupIds) ? fx.homeLineupIds : [];
+  const awayXIIds = Array.isArray(fx.awayLineupIds) ? fx.awayLineupIds : [];
+
+  // Contadores de goles por jugador
+  const goalCount = new Map();
+  (fx.events || []).forEach((ev) => {
+    if (ev?.type !== 'GOAL') return;
+    const pid = ev?.playerId;
+    if (!pid) return;
+    goalCount.set(pid, (goalCount.get(pid) || 0) + 1);
+  });
+
+  // HOME XI
+  homeXIIds.forEach((pid) => {
+    const p = homeById.get(pid);
+    if (!p) return;
+    wEnsurePlayerSeasonContainers(p, seasonKey);
+
+    const st = p.stats[seasonKey];
+    st.apps += 1;
+    st.starts += 1;
+    st.minutes += 90;
+
+    const g = goalCount.get(pid) || 0;
+    st.goals += g;
+
+    // fila por jornada
+    p.statsByMatchday[seasonKey].push({
+      season,
+      matchday,
+      opponentId: away.id,
+      opponentName: away.name || away.shortName || away.id,
+      isHome: true,
+      minutes: 90,
+      goals: g,
+      assists: 0,
+      yellows: 0,
+      reds: 0,
+    });
+  });
+
+  // AWAY XI
+  awayXIIds.forEach((pid) => {
+    const p = awayById.get(pid);
+    if (!p) return;
+    wEnsurePlayerSeasonContainers(p, seasonKey);
+
+    const st = p.stats[seasonKey];
+    st.apps += 1;
+    st.starts += 1;
+    st.minutes += 90;
+
+    const g = goalCount.get(pid) || 0;
+    st.goals += g;
+
+    p.statsByMatchday[seasonKey].push({
+      season,
+      matchday,
+      opponentId: home.id,
+      opponentName: home.name || home.shortName || home.id,
+      isHome: false,
+      minutes: 90,
+      goals: g,
+      assists: 0,
+      yellows: 0,
+      reds: 0,
+    });
+  });
 }
 
 // ----------------------------
@@ -766,7 +1036,7 @@ function applyMatchEffectsToClub(fx, club, isHome, events, pickMinute) {
     // - nivel médico (injuryMod)
     // - riesgo medio (energía/forma/fatiga/descanso)
     const baseClubChance = 0.05; // antes 0.06 fijo
-    const injuryChance = clamp(baseClubChance * injuryMod * avgRisk, 0.01, 0.22);
+    const injuryChance = clampN(baseClubChance * injuryMod * avgRisk, 0.01, 0.22);
 
     if (Math.random() < injuryChance) {
       const p = pickWeighted(lineupPlayers, risks);
@@ -864,7 +1134,7 @@ function generateRandomInjury(riskMult = 1.0, age = null, fitness = 0.9) {
   if (Number.isFinite(age) && age >= 33) bias += 0.05;
 
   let roll = Math.random();
-  roll = clamp(roll + bias, 0, 1);
+  roll = clampN(roll + bias, 0, 1);
 
   if (roll < 0.55) return { type: 'Molestias', matchesRemaining: 1 };
   if (roll < 0.85) return { type: 'Distensión', matchesRemaining: 2 };
