@@ -1,5 +1,6 @@
 import { GameState } from '../../state.js';
 import { getGameDateFor, formatGameDateLabel } from '../utils/calendar.js';
+import { findFixtureInCompetition } from '../utils/competitions.js';
 
 let currentFixtureId = null;
 
@@ -36,7 +37,14 @@ export function initMatchDetailModal({ onRequestClose } = {}) {
   closeFooter?.addEventListener('click', requestClose);
 }
 
-export function openMatchDetailModal(fixtureId) {
+// openMatchDetailModal puede recibir:
+// - un id (number/string) de la liga actual
+// - o un objeto { competitionId, fixtureId } para soportar ligas del mundo
+export function openMatchDetailModal(arg) {
+  const competitionId =
+    arg && typeof arg === 'object' ? String(arg.competitionId || '') : null;
+  const fixtureId = arg && typeof arg === 'object' ? arg.fixtureId : arg;
+
   currentFixtureId = fixtureId;
 
   const modal = document.getElementById('match-detail-modal');
@@ -48,13 +56,20 @@ export function openMatchDetailModal(fixtureId) {
 
   if (eventsListEl) eventsListEl.innerHTML = '';
 
-  const fixtures = GameState.fixtures || [];
   // fixtureId puede venir como string desde dataset (data-fixture-id)
   // y los ids en GameState.fixtures pueden ser number.
   const fid = fixtureId != null ? String(fixtureId) : '';
-  const fx = fixtures.find((f) => f && String(f.id) === fid);
+  const found = competitionId
+    ? findFixtureInCompetition(competitionId, fid)
+    : { comp: null, fx: (GameState.fixtures || []).find((f) => f && String(f.id) === fid) || null };
+  const fx = found?.fx || null;
 
-  const clubs = GameState.clubs || [];
+  // Para ligas del mundo, el índice de clubs puede estar fuera de GameState.clubs.
+  // Aun así, en PCFutbol tu club/plantilla vive en GameState.clubs, así que intentamos con eso,
+  // y si el partido es de otra liga, caemos al array de clubs de esa competición.
+  const clubs = Array.isArray(found?.comp?.clubs) && found?.comp?.clubs.length
+    ? found.comp.clubs
+    : (GameState.clubs || []);
   const clubIndex = new Map();
   clubs.forEach((club) => {
     if (club && club.id) clubIndex.set(club.id, club);
@@ -87,11 +102,12 @@ export function openMatchDetailModal(fixtureId) {
   }
 
   if (subtitleEl) {
-    const season = GameState.currentDate?.season || 1;
+    const season = (found?.comp?.currentDate?.season ?? GameState.currentDate?.season) || 1;
     const matchday = fx.matchday || 1;
     const gameDate = getGameDateFor(season, matchday);
     const dateLabel = formatGameDateLabel(gameDate);
-    subtitleEl.textContent = `Jornada ${matchday} • ${dateLabel}`;
+    const compName = found?.comp?.name ? ` • ${found.comp.name}` : '';
+    subtitleEl.textContent = `Jornada ${matchday} • ${dateLabel}${compName}`;
   }
 
   if (eventsListEl) {
@@ -104,6 +120,18 @@ export function openMatchDetailModal(fixtureId) {
     });
 
     const events = Array.isArray(fx.events) ? fx.events.slice() : [];
+    // Sustituciones como eventos
+    const subs = Array.isArray(fx.substitutions) ? fx.substitutions : [];
+    subs.forEach((s) => {
+      if (!s) return;
+      events.push({
+        type: 'SUB',
+        minute: Number(s.minute || 0) || 0,
+        clubId: s.clubId,
+        inPlayerId: s.inPlayerId,
+        outPlayerId: s.outPlayerId,
+      });
+    });
     events.sort((a, b) => {
       const ma = typeof a?.minute === 'number' ? a.minute : 999;
       const mb = typeof b?.minute === 'number' ? b.minute : 999;
@@ -150,7 +178,15 @@ export function openMatchDetailModal(fixtureId) {
         let text = '';
         switch (ev.type) {
           case 'GOAL':
-            text = `Gol de ${playerName} (${teamName})`;
+            if (ev.assistPlayerId) {
+              const ainfo = playerIndex.get(ev.assistPlayerId);
+              const an = (ainfo && ainfo.player && ainfo.player.name) || '';
+              text = an
+                ? `Gol de ${playerName} (${teamName}) · Asistencia: ${an}`
+                : `Gol de ${playerName} (${teamName})`;
+            } else {
+              text = `Gol de ${playerName} (${teamName})`;
+            }
             break;
           case 'YELLOW_CARD':
             text = `Amarilla a ${playerName} (${teamName})`;
@@ -163,6 +199,14 @@ export function openMatchDetailModal(fixtureId) {
             text = `Lesión: ${playerName} (${teamName}) – ${injuryType}`;
             break;
           }
+          case 'SUB': {
+            const inInfo = ev.inPlayerId ? playerIndex.get(ev.inPlayerId) : null;
+            const outInfo = ev.outPlayerId ? playerIndex.get(ev.outPlayerId) : null;
+            const inName = (inInfo && inInfo.player && inInfo.player.name) || 'Jugador';
+            const outName = (outInfo && outInfo.player && outInfo.player.name) || 'Jugador';
+            text = `${inName} entra por ${outName} (${teamName})`;
+            break;
+          }		  
           default:
             text = `${ev.type || 'Evento'}: ${playerName} (${teamName})`;
             break;

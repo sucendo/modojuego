@@ -15,10 +15,10 @@ let _bound = false;
  * Inicializa handlers de navegación.
  *
  * @param {object} ctx
- *   Debe incluir: viewDashboard/viewSquad/viewTactics/viewCompetition/viewStats/viewMedical
- *   y btnNavDashboard/btnNavSquad/btnNavTactics/btnNavCompetition/btnNavStats/btnNavMedical
- * @param {object} hooks
- *   Callbacks de refresco: updateDashboard/updateSquadView/updateTacticsView/updateCompetitionView/updateStatsView/updateMedicalView
+ *   Subvistas: dashboard/squad/alignment/tactics/calendar/results/nextmatch/standings/stats/medical
+ * @param {object} updaters
+ *   Callbacks: updateDashboard/updateSquadView/updateAlignmentView/updateTacticsView/
+ *              updateCalendarView/updateResultsView/updateNextMatchView/updateStandingsView/updateStatsView/updateMedicalView
  */
 export function initNavigation(ctx, updaters = {}) {
   const {
@@ -26,7 +26,9 @@ export function initNavigation(ctx, updaters = {}) {
     btnNavSquad,
     btnNavAlignment,	
     btnNavTactics,
-    btnNavCompetition,
+    btnNavCalendar,
+    btnNavResults,
+    btnNavNextMatch,
     btnNavStandings,
     btnNavStats,
     btnNavMedical,
@@ -48,9 +50,17 @@ export function initNavigation(ctx, updaters = {}) {
     setActiveSubview('tactics', ctx);
     updaters.updateTacticsView?.();
   });
-  btnNavCompetition?.addEventListener('click', () => {
-    setActiveSubview('competition', ctx);
-    updaters.updateCompetitionView?.();
+  btnNavCalendar?.addEventListener('click', () => {
+    setActiveSubview('calendar', ctx);
+    updaters.updateCalendarView?.();
+  });
+  btnNavResults?.addEventListener('click', () => {
+    setActiveSubview('results', ctx);
+    updaters.updateResultsView?.();
+  });
+  btnNavNextMatch?.addEventListener('click', () => {
+    setActiveSubview('nextmatch', ctx);
+    updaters.updateNextMatchView?.();
   });
   btnNavStandings?.addEventListener('click', () => {
     setActiveSubview('standings', ctx);

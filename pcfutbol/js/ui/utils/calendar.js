@@ -70,3 +70,25 @@ export function getPlayerGameAge(player, fallbackAge = null) {
 
   return fallbackAge;
 }
+
+// Devuelve Date del kickoff de un fixture (si tiene fecha/hora), o cae al calendario interno.
+export function getFixtureKickoffDate(fx, seasonFallback = null, matchdayFallback = null) {
+  if (fx) {
+    const iso = fx.kickoffDate || fx.kickoffUtc || fx.kickoffLocal || fx.date || fx.dateISO || null;
+    if (typeof iso === 'string' && iso.length >= 10) {
+      const d = new Date(iso);
+      if (!Number.isNaN(d.getTime())) return d;
+    }
+  }
+  const season = seasonFallback ?? GameState.currentDate?.season ?? 1;
+  const matchday = matchdayFallback ?? fx?.matchday ?? GameState.currentDate?.matchday ?? 1;
+  return getGameDateFor(season, matchday);
+}
+
+// Formato "15/09/2025 • 18:00"
+export function formatFixtureKickoffLabel(fx, seasonFallback = null, matchdayFallback = null) {
+  const d = getFixtureKickoffDate(fx, seasonFallback, matchdayFallback);
+  const dateLabel = formatGameDateLabel(d);
+  const t = fx?.kickoffTime || (typeof fx?.time === 'string' ? fx.time : null);
+  return t ? `${dateLabel} • ${t}` : dateLabel;
+}
