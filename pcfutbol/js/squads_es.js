@@ -4263,7 +4263,7 @@ export const realSquads = {
       id: "celta_iago_aspas",
       name: "Iago Aspas",
       shirtNumber: 10,
-      position: "ST",
+      position: "CF",
       overall: 84,
       wage: 4000000,
       contractYears: 1, // hasta 2026
@@ -8717,7 +8717,7 @@ export const realSquads = {
       id: "levante_morales",
       name: "José Luis Morales",
       shirtNumber: 11,
-      position: "ST",
+      position: "CF",
       overall: 76,
       wage: 1800000,
       contractYears: 1, // hasta 2026
@@ -14779,7 +14779,7 @@ realsociedad: [
     id: "real_sociedad_carlos_soler",
     name: "Carlos Soler",
     shirtNumber: 18,
-    position: "CM",
+    position: "RM",
     overall: 83,
     wage: 6000000,
     contractYears: 5,
@@ -17625,7 +17625,7 @@ sevilla: [
       id: "villarreal_gerard_moreno",
       name: "Gerard Moreno",
       shirtNumber: 7,
-      position: "ST",
+      position: "CF",
       overall: 84,
       wage: 5000000,
       contractYears: 2, // 2027

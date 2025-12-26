@@ -22,14 +22,24 @@ import {
 } from './ui/modals/matchDetailModal.js';
 
 import {
-  initCompetitionUI,
-  updateCompetitionView,
-  setCompetitionSelectedMatchday,
-} from './ui/competition.js';
+  initCalendarUI,
+  updateCalendarView,
+} from './ui/calendarView.js';
+
+import {
+  initResultsUI,
+  updateResultsView,
+} from './ui/resultsView.js';
+
+import {
+  initNextMatchUI,
+  updateNextMatchView,
+  setLastSimulatedMatchday as setNextMatchLastSimulatedMatchday,
+} from './ui/nextMatchView.js';
 
 import { initStandingsUI, updateStandingsView, setStandingsSelectedMatchday } from './ui/standings.js';
 
-import { updateStatsView } from './ui/stats.js';
+import { initStatsUI, updateStatsView } from './ui/stats.js';
 import { initMedicalUI, updateMedicalView } from './ui/medical.js';
 
 import { initSquadUI, bindSquadActions, updateSquadView } from './ui/squad.js';
@@ -71,8 +81,9 @@ function closePlayerModal() {
   currentModalPlayer = null;
 }
 
-function openMatchDetailModal(fixtureId) {
-  openMatchDetailModalImpl(fixtureId);
+function openMatchDetailModal(arg) {
+  // arg puede ser id o { competitionId, fixtureId }
+  openMatchDetailModalImpl(arg);
 }
 
 function closeMatchDetailModal() {
@@ -102,7 +113,9 @@ export function initUI() {
   const btnNavSquad = document.getElementById('btn-nav-squad');
   const btnNavAlignment = document.getElementById('btn-nav-alignment');
   const btnNavTactics = document.getElementById('btn-nav-tactics');
-  const btnNavCompetition = document.getElementById('btn-nav-competition');
+  const btnNavCalendar = document.getElementById('btn-nav-calendar');
+  const btnNavResults = document.getElementById('btn-nav-results');
+  const btnNavNextMatch = document.getElementById('btn-nav-nextmatch');
   const btnNavStandings = document.getElementById('btn-nav-standings');
   const btnNavStats = document.getElementById('btn-nav-stats');
   const btnNavMedical = document.getElementById('btn-nav-medical');
@@ -111,7 +124,9 @@ export function initUI() {
   const viewSquad = document.getElementById('view-squad');
   const viewAlignment = document.getElementById('view-alignment');
   const viewTactics = document.getElementById('view-tactics');
-  const viewCompetition = document.getElementById('view-competition');
+  const viewCalendar = document.getElementById('view-calendar');
+  const viewResults = document.getElementById('view-results');
+  const viewNextMatch = document.getElementById('view-nextmatch');
   const viewStandings = document.getElementById('view-standings');
   const viewStats = document.getElementById('view-stats');
   const viewMedical = document.getElementById('view-medical');
@@ -136,8 +151,8 @@ export function initUI() {
   const negSendBtn = document.getElementById('player-neg-send');
 
   // Competición
-  const matchdaySelect = document.getElementById('competition-matchday-select');
-  const simulateBtn = document.getElementById('btn-simulate-matchday');
+  const simulateBtn = document.getElementById('btn-simulate-current-matchday');
+
 
   // ----------
   // Contexto común de navegación
@@ -147,7 +162,9 @@ export function initUI() {
     viewSquad,
     viewAlignment,
     viewTactics,
-    viewCompetition,
+    viewCalendar,
+    viewResults,
+    viewNextMatch,
     viewStandings,	
     viewStats,
     viewMedical,
@@ -155,7 +172,9 @@ export function initUI() {
     btnNavSquad,
     btnNavAlignment,
     btnNavTactics,
-    btnNavCompetition,
+    btnNavCalendar,
+    btnNavResults,
+    btnNavNextMatch,
     btnNavStandings,	
     btnNavStats,
     btnNavMedical,
@@ -166,7 +185,9 @@ export function initUI() {
     updateSquadView();
     updateAlignmentView();
     updateTacticsView();
-    updateCompetitionView();
+    updateCalendarView();
+    updateResultsView();
+    updateNextMatchView();
    initStandingsUI();	
     updateStandingsView();	
     updateStatsView();
@@ -212,13 +233,23 @@ export function initUI() {
   // ----------
   initPlayerModalImpl({ onRequestClose: closePlayerModal });
   initMatchDetailModalImpl({ onRequestClose: closeMatchDetailModal });
+  
+  // Subvistas de competición (3 vistas)
+  initCalendarUI({ onOpenMatchDetail: openMatchDetailModal });
+  initResultsUI({ onOpenMatchDetail: openMatchDetailModal });
+  initNextMatchUI({ onOpenMatchDetail: openMatchDetailModal });
+
+  // Estadísticas (vista nueva)
+  initStatsUI?.();
 
   initNavigation(ctx, {
     updateDashboard,
     updateSquadView,
-   updateAlignmentView,
+    updateAlignmentView,
     updateTacticsView,
-    updateCompetitionView,
+    updateCalendarView,
+    updateResultsView,
+    updateNextMatchView,
     updateStandingsView,	
     updateStatsView,
     updateMedicalView,
@@ -229,7 +260,7 @@ export function initUI() {
     setStandingsSelectedMatchday(GameState.currentDate?.matchday || 1);
     initStandingsUI();
   });
-  
+    
   // HUB: botones internos (tarjetas/menú) usando data-nav-target
   if (dashboardScreen) {
     dashboardScreen.addEventListener('click', (event) => {
@@ -242,17 +273,14 @@ export function initUI() {
       const key = btn.getAttribute('data-nav-target');
       if (!key) return;
 
-      // Si el botón es "PARTIDO", alineamos la jornada seleccionada con la actual
-      if (btn.getAttribute('data-set-current-md') === '1') {
-        try { setCompetitionSelectedMatchday(GameState.currentDate?.matchday || 1); } catch (_) {}
-      }
-
       const map = {
         dashboard: btnNavDashboard,
         squad: btnNavSquad,
         alignment: btnNavAlignment,
         tactics: btnNavTactics,
-        competition: btnNavCompetition,
+        calendar: btnNavCalendar,
+        results: btnNavResults,
+        nextmatch: btnNavNextMatch,
         standings: btnNavStandings,	
         clasificacion: btnNavStandings,
         clasificación: btnNavStandings,
@@ -280,10 +308,7 @@ export function initUI() {
 
   initAlignmentUI();
   initTacticsUI();
-  initCompetitionUI({
-    initialMatchday: 1,
-    onOpenMatchDetail: (fixtureId) => openMatchDetailModal(fixtureId),
-  });
+
   initStandingsUI();
   initMedicalUI({
     onAfterUpgrade: () => {
@@ -309,7 +334,7 @@ export function initUI() {
       showDashboard(startScreen, dashboardScreen);
 
       const md = GameState.currentDate?.matchday || 1;
-      setCompetitionSelectedMatchday(md);
+      try { setStandingsSelectedMatchday(md); } catch (_) {}
 
       setActiveSubview('dashboard', ctx);
       refreshAllViews();
@@ -324,7 +349,7 @@ export function initUI() {
       handleFileInput(event, startScreen, dashboardScreen, ctx, () => {
         showDashboard(startScreen, dashboardScreen);
         const md = GameState.currentDate?.matchday || 1;
-        setCompetitionSelectedMatchday(md);
+        try { setStandingsSelectedMatchday(md); } catch (_) {}
         setActiveSubview('dashboard', ctx);
         refreshAllViews();
       });
@@ -336,7 +361,7 @@ export function initUI() {
       handleFileInput(event, startScreen, dashboardScreen, ctx, () => {
         showDashboard(startScreen, dashboardScreen);
         const md = GameState.currentDate?.matchday || 1;
-        setCompetitionSelectedMatchday(md);
+        try { setStandingsSelectedMatchday(md); } catch (_) {}
         setActiveSubview('dashboard', ctx);
         refreshAllViews();
       });
@@ -378,18 +403,8 @@ export function initUI() {
   }
 
   // ----------
-  // Competición: selector jornada + simular
+  // Partido: simular jornada actual
   // ----------
-  if (matchdaySelect) {
-    matchdaySelect.addEventListener('change', () => {
-      const md = Number.parseInt(matchdaySelect.value, 10);
-      if (Number.isFinite(md) && md >= 1) {
-        setCompetitionSelectedMatchday(md);
-        updateCompetitionView();
-      }
-    });
-  }
-
   if (simulateBtn) {
     simulateBtn.addEventListener('click', () => {
       // Guardamos la jornada que vamos a simular, porque simulateCurrentMatchday()
@@ -402,16 +417,17 @@ export function initUI() {
         alert(err?.message || 'No se pudo simular la jornada.');
         return;
       }
-      // En Competición, tras simular queremos VER los resultados de la jornada simulada,
-      // no saltar automáticamente a la siguiente (que aún no tiene resultados).
-      setCompetitionSelectedMatchday(mdSimulated);
+      // Para la vista PARTIDO, recordamos la jornada recién simulada (para mostrar postpartido)
+      try { setNextMatchLastSimulatedMatchday(mdSimulated); } catch (_) {}
 
-      // En Clasificación, por defecto también tiene más sentido enseñar la jornada recién jugada.
+      // En Clasificación, por defecto enseñamos la jornada recién jugada.
       try { setStandingsSelectedMatchday(mdSimulated); } catch (_) {}
-      updateDashboard();	  
-      updateCompetitionView();
-     initStandingsUI();	  
-      updateStandingsView();	  
+      updateDashboard();
+      updateCalendarView();
+      updateResultsView();
+      updateNextMatchView();
+      initStandingsUI();
+      updateStandingsView();  
       updateStatsView();
       updateMedicalView();
     });
