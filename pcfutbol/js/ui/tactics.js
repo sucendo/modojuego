@@ -9,6 +9,7 @@
 */
 
 import { GameState } from '../state.js';
+import { getUserClub } from '../game/selectors.js';
 import { createFlagImgElement } from './utils/flags.js';
 import { isPlayerInjuredNow, isPlayerSuspendedNow } from '../game/utils/index.js';
  
@@ -57,14 +58,6 @@ const QUICK_GROUPS = {
     { v: 'DEFENSE', t: 'Defensa' },
   ],
 };
-
-function getUserClub() {
-  const clubId = GameState.user?.clubId;
-  const clubs = Array.isArray(GameState.clubs) ? GameState.clubs : [];
-  if (!clubs.length) return null;
-  if (!clubId) return clubs[0];
-  return clubs.find((c) => c.id === clubId) || clubs[0];
-}
 
 function ensureExtendedTactics(club) {
   if (!club) return;
@@ -579,7 +572,7 @@ export function initTacticsUI() {
 
   const onSelectChange = (key, el, refresh = false) => {
     el?.addEventListener('change', () => {
-      const club = getUserClub();
+      const club = getUserClub(GameState);
       if (!club) return;
       ensureExtendedTactics(club);
       club.tactics[key] = el.value;
@@ -594,7 +587,7 @@ export function initTacticsUI() {
   onSelectChange('pressure', pressureSelect);
 
   autoBtn?.addEventListener('click', () => {
-    const club = getUserClub();
+    const club = getUserClub(GameState);
     if (!club) return;
     ensureExtendedTactics(club);
     autoPickMatchdaySquad(club, 9);
@@ -611,7 +604,7 @@ export function initTacticsUI() {
     const value = btn.getAttribute('data-tactics-value');
     if (!key || !value) return;
 
-    const club = getUserClub();
+    const club = getUserClub(GameState);
     if (!club) return;
     ensureExtendedTactics(club);
     club.tactics[key] = value;
@@ -623,7 +616,7 @@ export function initTacticsUI() {
   // Set pieces
   const onSPChange = (key, el) => {
     el?.addEventListener('change', () => {
-      const club = getUserClub();
+      const club = getUserClub(GameState);
       if (!club) return;
       ensureExtendedTactics(club);
       const v = el.value ? String(el.value) : '';
@@ -649,7 +642,7 @@ export function initTacticsUI() {
   pitchEl?.addEventListener('pointerdown', (e) => {
     const dot = e.target instanceof Element ? e.target.closest('.pcf-dot--draggable[data-player-id]') : null;
     if (!dot || !(e instanceof PointerEvent)) return;
-    const club = getUserClub();
+    const club = getUserClub(GameState);
     if (!club) return;
     ensureExtendedTactics(club);
 
@@ -673,7 +666,7 @@ export function initTacticsUI() {
 
   pitchEl?.addEventListener('pointermove', (e) => {
     if (!dragging || !(e instanceof PointerEvent)) return;
-    const club = getUserClub();
+    const club = getUserClub(GameState);
     if (!club) return;
     ensureExtendedTactics(club);
     const rect = pitchEl.getBoundingClientRect();
@@ -693,7 +686,7 @@ export function initTacticsUI() {
 
   const endDrag = (e) => {
     if (!dragging) return;
-    const club = getUserClub();
+    const club = getUserClub(GameState);
     if (!club) { dragging = null; return; }
     ensureExtendedTactics(club);
     const dot = pitchEl?.querySelector(`.pcf-dot--draggable[data-player-id="${dragging.pid}"]`);
@@ -712,14 +705,14 @@ export function initTacticsUI() {
 
   // Guardar / Cargar / Reset posiciones
   btnSave?.addEventListener('click', () => {
-    const club = getUserClub();
+    const club = getUserClub(GameState);
     if (!club) return;
     ensureExtendedTactics(club);
     savePreset(club);
     renderPresets(club);
   });
   btnLoad?.addEventListener('click', () => {
-    const club = getUserClub();
+    const club = getUserClub(GameState);
     if (!club) return;
     const ok = loadPreset(club, selectedPresetId);
     if (ok) updateTacticsView();
@@ -728,7 +721,7 @@ export function initTacticsUI() {
     const li = e.target instanceof Element ? e.target.closest('li[data-preset-id]') : null;
     if(!li) return;
     const id = li.dataset.presetId;
-    const club = getUserClub();
+    const club = getUserClub(GameState);
     if(!club) return;
     ensureExtendedTactics(club);
     if (selectedPresetId === id){
@@ -740,7 +733,7 @@ export function initTacticsUI() {
     if (ok) updateTacticsView();
   });
   btnResetPos?.addEventListener('click', () => {
-    const club = getUserClub();
+    const club = getUserClub(GameState);
     if (!club) return;
     ensureExtendedTactics(club);
     club.tactics.manualPositions = {};
@@ -753,7 +746,7 @@ export function initTacticsUI() {
 }
 
 export function updateTacticsView() {
-  const club = getUserClub();
+  const club = getUserClub(GameState);
   if (!club) return;
   ensureExtendedTactics(club);
   const t = club.tactics;

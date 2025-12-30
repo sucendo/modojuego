@@ -3,6 +3,8 @@
 // Inspiración UI: PC Fútbol (capturas proporcionadas)
 
 import { GameState } from '../state.js';
+import { getUserClub } from '../game/selectors.js';
+import { advanceToNextUserMatchPrep } from '../game/simulateMatchday.js';
 import {
   getGameDateFor,
   formatGameDateLabel,
@@ -58,12 +60,6 @@ function int(n, d = 0) {
   return Number.isFinite(x) ? Math.trunc(x) : d;
 }
 
-function getUserClub() {
-  const id = GameState.user?.clubId || null;
-  const clubs = Array.isArray(GameState.clubs) ? GameState.clubs : [];
-  return (id ? clubs.find((c) => String(c?.id) === String(id)) : null) || clubs[0] || null;
-}
-
 function buildClubIndex() {
   const map = new Map();
   (GameState.clubs || []).forEach((c) => {
@@ -86,6 +82,90 @@ function buildPlayerIndex(clubs) {
 function getClubName(club, fallbackId) {
   return (club && (club.name || club.shortName)) || fallbackId || '';
 }
+
+let __matchScreen = 'pre'; // 'pre' | 'post'
+let __bindingsDone = false;
+
+function setMatchScreen(screen) {
+  __matchScreen = (screen === 'post') ? 'post' : 'pre';
+  applyMatchScreen();
+}
+
+function applyMatchScreen() {
+  const preCard = document.getElementById('nextmatch-card-pre');
+  const postCard = document.getElementById('nextmatch-card-post');
+  if (!preCard || !postCard) return;
+
+  const showPost = (__matchScreen === 'post');
+  preCard.classList.toggle('hidden', showPost);
+  postCard.classList.toggle('hidden', !showPost);
+}
+
+function trySimulateFromMatchScreen() {
+  // Preferimos disparar el mismo flujo que el botón oficial de "Simular jornada actual",
+  // porque ahí se hace toda la contabilidad: matchday simulado, vistas, etc.
+  const btn =
+    document.getElementById('btn-simulate-current-matchday') ||
+    document.getElementById('btn-simulate-matchday') ||
+    document.querySelector('[data-action="simulate-matchday"]');
+
+  if (btn) {
+    btn.click();
+    return true;
+  }
+
+  // Fallbacks (por si en algún refactor el botón desaparece)
+  if (typeof window.simulateCurrentMatchday === 'function') {
+    window.simulateCurrentMatchday();
+    return true;
+  }
+  if (typeof window.simulateMatchday === 'function') {
+    window.simulateMatchday();
+    return true;
+  }
+  return false;
+}
+
+function ensureMatchScreenBindings() {
+  if (__bindingsDone) return;
+  __bindingsDone = true;
+
+  const btnSim = document.getElementById('nextmatch-simulate');
+  const btnCont = document.getElementById('nextmatch-continue');
+
+  if (btnSim) {
+    btnSim.addEventListener('click', () => {
+      const ok = trySimulateFromMatchScreen();
+      if (!ok) {
+        console.warn('[nextMatchView] No se encontró función/botón de simular jornada.');
+        return;
+      }
+      // El flujo oficial ya refresca las vistas. Forzamos ver el POST de la jornada recién simulada.
+      updateNextMatchView();
+      setMatchScreen('post');
+    });
+  }
+
+  if (btnCont) {
+    btnCont.addEventListener('click', () => {
+      // Tras ver el post, dejar la pantalla lista para la siguiente previa...
+      // para que al entrar de nuevo muestre el siguiente partido.
+      __lastSimulatedMatchday = null;
+      setMatchScreen('pre');
+	  
+      // Avanzar el mundo hasta 1 día antes del próximo partido (y simular lo ocurrido entre medias)
+      try { advanceToNextUserMatchPrep(); } catch (e) { console.warn(e); }
+
+       const btnDash = document.getElementById('btn-nav-dashboard');
+       if (btnDash) {
+         btnDash.click();
+       } else {
+         if (typeof window.refreshAllViews === 'function') window.refreshAllViews();
+       }	  
+   });
+  }
+}
+
 
 function getKickoffTime(fx, idx = 0) {
   const t = fx?.kickoffTime;
@@ -369,9 +449,13 @@ function buildTimelineItems(fx, clubIndex, playerIndex) {
         break;
       }
       case 'YELLOW':
+      case 'YELLOW_CARD':
+      case 'CARD_YELLOW':
         text = `Amarilla a ${getPlayerName(ev.playerId)} (${teamName})`;
         break;
       case 'RED':
+      case 'RED_CARD':
+      case 'CARD_RED':
         text = `Roja a ${getPlayerName(ev.playerId)} (${teamName})`;
         break;
       case 'INJURY': {
@@ -624,11 +708,12 @@ export function setLastSimulatedMatchday(md) {
 }
 
 export function updateNextMatchView() {
+  ensureMatchScreenBindings();
   ensureBindings();
 
   const fixtures = Array.isArray(GameState.fixtures) ? GameState.fixtures : [];
   const clubIndex = buildClubIndex();
-  const userClub = getUserClub();
+  const userClub = getUserClub(GameState);
   const userId = userClub?.id || null;
 
   if (!userClub || !userId) {
@@ -950,9 +1035,18 @@ export function updateNextMatchView() {
     const strict = clamp(Number(GameState.league?.cardStrictness || 1), 0.7, 1.3);
     const base = 6.5 + (stableRand01(seed) - 0.5) * 1.2;
     const note = clamp(base * strict, 5.0, 8.5).toFixed(1);
+    const style = strict < 0.95 ? 'Permisivo' : 'Normal';
     refEl.innerHTML = `
       <div class="pcf-referee__name"><strong>${escapeHtml(ref)}</strong></div>
-      <div class="pcf-referee__meta">Estilo: ${escapeHtml(strict > 1.05 ? 'Estricto' : strict < 0.95 ? 'Permisivo' : 'Normal')} · Nota: ${escapeHtml(note)}</div>
-    `;
+      <div class="pcf-referee__meta">Estilo: ${escapeHtml(style)} · Nota: ${escapeHtml(note)}</div>
+     `;
   }
+  
+  // Si venimos de simular una jornada, saltamos automáticamente al POST del último partido jugado.
+  if (__lastSimulatedMatchday != null) {
+    const mdTarget = Number(__lastSimulatedMatchday);
+    const lastFx = getFixtureForUser(mdTarget, userId, fixtures);
+    if (lastFx && lastFx.played) __matchScreen = 'post';
+  }
+  setMatchScreen(__matchScreen);
 }

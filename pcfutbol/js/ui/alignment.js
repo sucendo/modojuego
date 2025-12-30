@@ -4,6 +4,7 @@
  */
 
 import { GameState } from '../state.js';
+import { getUserClub } from '../game/selectors.js';
 import { createFlagImgElement } from './utils/flags.js';
 import { getPlayerGameAge } from './utils/calendar.js';
 import {
@@ -233,14 +234,6 @@ const PRESSURES = [
   { v:'HIGH',   t:'Alta' },
 ];
 
-function getUserClub() {
-  const clubId = GameState.user?.clubId;
-  const clubs = Array.isArray(GameState.clubs) ? GameState.clubs : [];
-  if (clubs.length === 0) return null;
-  if (!clubId) return clubs[0];
-  return clubs.find((c) => c.id === clubId) || clubs[0];
-}
-
 function formatPercent01(v) {
   if (v == null || Number.isNaN(v)) return '-';
   const clamped = Math.max(0, Math.min(1, Number(v)));
@@ -328,9 +321,6 @@ export function initAlignmentUI() {
   if (bound) return;
   bound = true;
   
-  // Si Tácticas mueve posiciones o cambia formación -> repintar campo aquí
-  document.addEventListener('pcf:tacticsChanged', () => updateTacticsView());
-
   // Mantener Alineación sincronizada con cambios desde la pestaña Tácticas
   document.addEventListener('pcf:tacticsChanged', updateAlignmentView);
   document.addEventListener('pcf:lineupChanged', updateAlignmentView);
@@ -474,7 +464,7 @@ function swapPlayersBetweenGroups(club, aId, bId) {
 }
 
 function handlePlayerClick(playerId) {
-  const club = getUserClub();
+  const club = getUserClub(GameState);
   if (!club) return;
   const pid = normalizePlayerId(playerId, club);
   if (pid == null) return;
@@ -505,7 +495,7 @@ function handlePlayerClick(playerId) {
 export function updateAlignmentView() {
    ensureSelectionCss();
    applyHeaderTooltips();
-  const club = getUserClub();
+  const club = getUserClub(GameState);
   if (!club) return;
 
   ensureClubTactics(club);

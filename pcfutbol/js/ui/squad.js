@@ -3,6 +3,7 @@
  */
 
 import { GameState } from '../state.js';
+import { getUserClub } from '../game/selectors.js';
 import { getPlayerGameAge } from './utils/calendar.js';
 import { createFlagImgElement } from './utils/flags.js';
 import { isPlayerUnavailable, isPlayerInjuredNow, isPlayerSuspendedNow } from '../game/utils/index.js';
@@ -20,12 +21,6 @@ function formatCurrency(v) {
   } catch {
     return String(Math.round(n));
   }
-}
-
-function getUserClub() {
-  const clubId = GameState.user?.clubId;
-  const clubs = Array.isArray(GameState.clubs) ? GameState.clubs : [];
-  return clubs.find((c) => c.id === clubId) || (clubs[0] || null);
 }
 
 function getPositionGroup(pos) {
@@ -135,7 +130,7 @@ export function bindSquadActions(handler) {
 }
 
 export function updateSquadView() {
-  const club = getUserClub();
+  const club = getUserClub(GameState);
   const tbody = document.getElementById('squad-table-body');
   const label = document.getElementById('squad-count-label');
   if (!tbody || !label || !club) return;

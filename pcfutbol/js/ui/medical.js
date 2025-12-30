@@ -3,24 +3,9 @@
  */
 
 import { GameState } from '../state.js';
-
-function getUserClub() {
-  const clubId = GameState.user?.clubId;
-  const clubs = Array.isArray(GameState.clubs) ? GameState.clubs : [];
-  if (!clubs.length) return null;
-  if (!clubId) return clubs[0];
-  return clubs.find((c) => c?.id === clubId) || clubs[0];
-}
-
-function ensureClubMedical(club) {
-  if (!club) return;
-  if (!club.medical) {
-    club.medical = { centerLevel: 1, physioLevel: 1 };
-  } else {
-    if (club.medical.centerLevel == null) club.medical.centerLevel = 1;
-    if (club.medical.physioLevel == null) club.medical.physioLevel = 1;
-  }
-}
+import { getUserClub } from '../game/selectors.js';
+import { ensureClubMedical } from '../game/utils/medical.js';
+import { isPlayerInjuredNow, isPlayerSuspendedNow } from '../game/utils/index.js';
 
 function formatCurrency(value) {
   const v = Number(value);
@@ -34,16 +19,6 @@ function formatCurrency(value) {
   } catch {
     return String(Math.round(v));
   }
-}
-
-function isPlayerInjuredNow(p) {
-  const m = p?.injury?.matchesRemaining;
-  return Number.isFinite(m) && m > 0;
-}
-
-function isPlayerSuspendedNow(p) {
-  const m = p?.suspension?.matchesRemaining;
-  return Number.isFinite(m) && m > 0;
 }
 
 function describeCenterLevel(level) {
@@ -86,7 +61,7 @@ export function updateQuickNotes() {
   const list = document.getElementById('quick-notes');
   if (!list) return;
 
-  const club = getUserClub();
+  const club = getUserClub(GameState);
   if (!club) {
     list.innerHTML = `
       <li>Versión prototipo del juego.</li>
@@ -176,7 +151,7 @@ export function updateQuickNotes() {
 }
 
 export function updateMedicalView() {
-  const club = getUserClub();
+  const club = getUserClub(GameState);
   if (!club) return;
   ensureClubMedical(club);
 
@@ -256,7 +231,7 @@ export function updateMedicalView() {
 }
 
 export function upgradeMedical(kind, { onAfterUpgrade } = {}) {
-  const club = getUserClub();
+  const club = getUserClub(GameState);
   if (!club) return false;
   ensureClubMedical(club);
 

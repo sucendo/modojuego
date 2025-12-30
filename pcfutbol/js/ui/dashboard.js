@@ -1,15 +1,8 @@
 import { GameState } from '../state.js';
+import { getUserClub } from '../game/selectors.js';
 import { updateQuickNotes } from './medical.js';
-import { getGameDateFor, formatGameDateLabel } from './utils/calendar.js';
+import { getFixtureKickoffDate, formatGameDateLabel } from './utils/calendar.js';
 import { createCoatImgElement } from './utils/coats.js';
-
-function getUserClub() {
-  const clubId = GameState.user?.clubId;
-  const clubs = Array.isArray(GameState.clubs) ? GameState.clubs : [];
-  if (!clubs.length) return null;
-  if (!clubId) return clubs[0];
-  return clubs.find((c) => c?.id === clubId) || clubs[0];
-}
 
 function formatCurrency(value) {
   const v = Number(value);
@@ -99,7 +92,7 @@ function capFirst(s){
 }
 
 export function updateDashboard() {
-  const club = getUserClub();
+  const club = getUserClub(GameState);
   if (!club) return;
   
   function renderMatchLine(containerEl, fx, clubIndex, size = 18, userClubId = null, opts = {}) {
@@ -253,10 +246,10 @@ export function updateDashboard() {
       const homeNameFull = home?.name || home?.shortName || fx.homeClubId || 'Local';
       const awayNameFull = away?.name || away?.shortName || fx.awayClubId || 'Visitante'; 
       const md = Number(fx.matchday || GameState.currentDate?.matchday || 1);
-      const date = getGameDateFor(season, md);
+      const date = getFixtureKickoffDate(fx, season, md);
       const dateLabel = formatGameDateLabel(date);
-      const timeLabel = deriveKickoffTime(fx, idxInMatchday);
-
+      const timeLabel = (fx?.kickoffTime && String(fx.kickoffTime).includes(':')) ? fx.kickoffTime : deriveKickoffTime(fx, idxInMatchday);
+ 
       const stadium =
         home?.stadium?.name || home?.stadiumName || home?.stadium?.stadiumName ||
         home?.stadiumName || 'Estadio';
@@ -274,7 +267,9 @@ export function updateDashboard() {
         const weekday = (date instanceof Date && !Number.isNaN(date.getTime()))
           ? capFirst(date.toLocaleDateString('es-ES', { weekday: 'long' }))
           : '';
-        hudNextDate.textContent = `${weekday ? weekday + ' ' : ''}${dateLabel}`;
+        const base = `${weekday ? weekday + ' ' : ''}${dateLabel}`;
+        // Mostrar siempre FECHA • HORA en el label (aunque exista hudNextTime)
+        hudNextDate.textContent = timeLabel ? `${base} • ${timeLabel}` : base;
       }
       if (hudNextTime) hudNextTime.textContent = timeLabel;
       if (hudNextLogo) {

@@ -3,13 +3,10 @@
 // Mantiene ui.js fino: ui.js orquesta y pasa callbacks.
 
 import { GameState } from '../state.js';
-
+import { getUserClub as getUserClubSelector } from '../game/selectors.js';
+ 
 export function getUserClub() {
-  const clubId = GameState.user?.clubId;
-  const clubs = Array.isArray(GameState.clubs) ? GameState.clubs : [];
-  if (clubs.length === 0) return null;
-  if (!clubId) return clubs[0] || null;
-  return clubs.find((c) => c && c.id === clubId) || clubs[0] || null;
+  return getUserClubSelector(GameState);
 }
 
 export function getPlayerById(playerId) {
