@@ -3,3 +3,4 @@
 
 export * from './tacticsState.js';
 export * from './availability.js';
+export * from './medical.js';
