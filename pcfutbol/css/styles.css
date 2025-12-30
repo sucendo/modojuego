@@ -26,6 +26,13 @@ body {
   color: var(--text);
 }
 
+/* Seguridad: si por cualquier motivo .hidden no existe en algún build */
+.hidden {
+  display: none !important;
+}
+/* Partido: dejamos un solo botón visible (el de la previa) */
+#view-nextmatch #btn-simulate-current-matchday { display: none; }
+
 .app-header {
   padding: 0.75rem 1.5rem;
   background: var(--surface);
@@ -1624,6 +1631,7 @@ span#club-name-main img {
 }
 
 .stats-kpi {
+  display: inline-block;
   padding: 10px;
   border-radius: 12px;
   background: rgba(255,255,255,0.05);
