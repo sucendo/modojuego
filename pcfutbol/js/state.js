@@ -290,6 +290,12 @@ function createEmptyPlayerSeasonStats() {
     subsIn: 0,
     subsOut: 0,
     cleanSheets: 0,
+    // ---- advanced acumulados (para tu tabla) ----
+    dist: 0,
+    vmax: 0,
+    tiros: 0,
+    recup: 0,
+    entradas: 0,
   };
 }
 
@@ -467,7 +473,7 @@ function applyStatsToFixture(fx, season, playerIndex) {
           ainfo.player.stats[key].assists += 1;
         }
       }
-    } else if (ev.type === 'YELLOW_CARD' && ev.playerId) {
+    } else if ((ev.type === 'YELLOW_CARD' || ev.type === 'YELLOW' || ev.type === 'YC') && ev.playerId) {
       yellowsByPlayer.set(ev.playerId, (yellowsByPlayer.get(ev.playerId) || 0) + 1);
       const info = playerIndex.get(ev.playerId);
       if (info && info.player) {
@@ -476,7 +482,7 @@ function applyStatsToFixture(fx, season, playerIndex) {
       }
       if (ev.clubId === homeClub.id) hs.yellows += 1;
       if (ev.clubId === awayClub.id) as.yellows += 1;
-    } else if (ev.type === 'RED_CARD' && ev.playerId) {
+    } else if ((ev.type === 'RED_CARD' || ev.type === 'RED' || ev.type === 'RC') && ev.playerId) {
       redsByPlayer.set(ev.playerId, (redsByPlayer.get(ev.playerId) || 0) + 1);
       const info = playerIndex.get(ev.playerId);
       if (info && info.player) {
@@ -563,7 +569,22 @@ function applyStatsToFixture(fx, season, playerIndex) {
     const isHome = pClub.id === homeClub.id;
     const oppClub = isHome ? awayClub : homeClub;
 	
-    const adv = (fx && fx.playerStatsById && fx.playerStatsById[pid]) ? fx.playerStatsById[pid] : null;	
+    const adv = (fx && fx.playerStatsById && fx.playerStatsById[pid]) ? fx.playerStatsById[pid] : null;
+    // ✅ Acumular advanced en stats de temporada (si jugó)
+    if (apps.has(pid)) {
+      ensurePlayerSeasonStats(p, season);
+      const stSeason = p.stats[key];
+      const dist = adv ? Number(adv.distanceKm || 0) : 0;
+      const vmax = adv ? Number(adv.maxSpeedKmh || 0) : 0;
+      const tiros = adv ? Number(adv.shotsTotal || 0) : 0;
+      const recup = adv ? Number(adv.recoveries || 0) : 0;
+      const entradas = adv ? Number((adv.tacklesWon ?? adv.tackles ?? 0) + (adv.tacklesLost ?? 0)) : 0;
+      stSeason.dist += Number.isFinite(dist) ? dist : 0;
+      stSeason.vmax = Math.max(Number(stSeason.vmax || 0), Number.isFinite(vmax) ? vmax : 0);
+      stSeason.tiros += Number.isFinite(tiros) ? tiros : 0;
+      stSeason.recup += Number.isFinite(recup) ? recup : 0;
+      stSeason.entradas += Number.isFinite(entradas) ? entradas : 0;
+    }
 
     upsertPlayerMatchdayEntry(p, season, {
       season: season || 1,
@@ -589,11 +610,11 @@ function applyStatsToFixture(fx, season, playerIndex) {
       passesAttempted: adv ? Number(adv.passesAttempted || 0) : 0,
       passesCompleted: adv ? Number(adv.passesCompleted || 0) : 0,
       passAccuracyPct: adv ? Number(adv.passAccuracyPct || 0) : 0,
-      recoveries: adv ? Number(adv.recoveries || 0) : 0,
-      tacklesWon: adv ? Number(adv.tacklesWon || 0) : 0,
-      tacklesLost: adv ? Number(adv.tacklesLost || 0) : 0,
-      distanceKm: adv ? Number(adv.distanceKm || 0) : 0,
-      maxSpeedKmh: adv ? Number(adv.maxSpeedKmh || 0) : 0,
+      recoveries: adv ? Number(adv.recoveries ?? 0) : 0,
+      tacklesWon: adv ? Number(adv.tacklesWon ?? adv.tackles ?? 0) : 0,
+      tacklesLost: adv ? Number(adv.tacklesLost ?? 0) : 0,
+      distanceKm: adv ? Number(adv.distanceKm ?? 0) : 0,
+      maxSpeedKmh: adv ? Number(adv.maxSpeedKmh ?? 0) : 0,
       crossesAttempted: adv ? Number(adv.crossesAttempted || 0) : 0,
       crossesCompleted: adv ? Number(adv.crossesCompleted || 0) : 0,
       foulsCommitted: adv ? Number(adv.foulsCommitted || 0) : 0,
@@ -920,6 +941,51 @@ function getSeasonStartUTCInternal(season) {
   return new Date(Date.UTC(year, 7, 1)); // 1 de agosto
 }
 
+// ---------------------------
+// World leagues: calendario base por liga (para kickoffDate)
+// ---------------------------
+function getSeasonStartUTCForLeagueId(leagueId, season) {
+  const year = 2025 + (Number(season || 1) - 1);
+  const map = {
+    league_en_premier: { month: 8, day: 1 },     // 01/08
+    league_it_seriea: { month: 8, day: 10 },     // 10/08
+    league_de_bundesliga: { month: 8, day: 15 }, // 15/08
+    __default: { month: 8, day: 1 },
+  };
+  const cfg = map[String(leagueId || '')] || map.__default;
+  const m0 = Math.max(1, Math.min(12, Number(cfg.month || 8))) - 1;
+  const d0 = Math.max(1, Math.min(31, Number(cfg.day || 1)));
+  return new Date(Date.UTC(year, m0, d0, 12, 0, 0, 0));
+}
+
+function decorateWorldFixturesWithSchedule(fixtures, season, leagueId) {
+  if (!Array.isArray(fixtures) || fixtures.length === 0) return;
+  const start = getSeasonStartUTCForLeagueId(leagueId, season);
+  const slots = ['13:00', '16:15', '18:30', '21:00'];
+
+  const byMd = new Map();
+  fixtures.forEach((fx) => {
+    const md = Math.max(1, Number(fx?.matchday || 1));
+    if (!byMd.has(md)) byMd.set(md, []);
+    byMd.get(md).push(fx);
+  });
+
+  for (const [md, arr] of byMd.entries()) {
+    arr.sort((a, b) => `${a?.homeClubId||''}|${a?.awayClubId||''}`.localeCompare(`${b?.homeClubId||''}|${b?.awayClubId||''}`));
+    arr.forEach((fx, i) => {
+      if (!fx) return;
+      if (fx.kickoffDate) return;
+      const t = slots[i % slots.length];
+      const [hh, mm] = t.split(':').map((n) => Number(n || 0));
+      const d = new Date(start.getTime());
+      d.setUTCDate(d.getUTCDate() + (md - 1) * 7);
+      d.setUTCHours(hh, mm, 0, 0);
+      fx.kickoffTime = fx.kickoffTime || t;
+      fx.kickoffDate = d.toISOString();
+    });
+  }
+}
+
 function decorateGeneratedFixturesWithSchedule(fixtures, season) {
   if (!Array.isArray(fixtures) || fixtures.length === 0) return;
 
@@ -999,7 +1065,10 @@ function setupWorldLeagues() {
       fx.season = season;
       fx.statsApplied = false;
     });
-
+	
+    // ✅ Dar fechas a las ligas del mundo (para sincronizar por fecha/hora)
+    decorateWorldFixturesWithSchedule(fixtures, season, l.id);
+ 
     return {
       id: l.id,
       name: l.name || l.id,

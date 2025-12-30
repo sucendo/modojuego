@@ -1,5 +1,7 @@
 // js/ui.js
 
+import './game/bootstrap.js';
+
 import { GameState, newGame } from './state.js';
 import { initialLeague, allLeagues } from './data.js';
 import { exportGameToFile } from './saveLoad.js';
@@ -48,7 +50,7 @@ import { getPlayerGameAge } from './ui/utils/calendar.js';
 import { initAlignmentUI, updateAlignmentView } from './ui/alignment.js';
 import { initTacticsUI, updateTacticsView } from './ui/tactics.js';
 
-import { simulateCurrentMatchday } from './game/simulateMatchday.js';
+import { simulateCurrentMatchday, ensureGameTimeAndWorldSync } from './game/simulateMatchday.js';
 import { handleFileInput } from './ui/saveLoadUI.js';
 
 import { getPlayerById, handlePlayerAction as handlePlayerActionImpl } from './ui/playerActions.js';
@@ -59,6 +61,9 @@ import { initNegotiationUI, prepareNegotiationUI, attemptRenewal, scrollToNegoti
 // ================================
 
 let currentModalPlayer = null;
+
+// DEBUG: exponer GameState en consola (puedes quitarlo cuando quieras)
+window.GameState = GameState;
 
 let negYearsInput = null;
 let negWageInput = null;
@@ -152,7 +157,10 @@ export function initUI() {
 
   // Competición
   const simulateBtn = document.getElementById('btn-simulate-current-matchday');
-
+  
+  // Dejamos un solo botón visible (el de la pantalla Partido).
+  // Este se sigue usando internamente vía .click() desde nextMatchView.js.
+  if (simulateBtn) simulateBtn.classList.add('hidden');
 
   // ----------
   // Contexto común de navegación
@@ -181,6 +189,8 @@ export function initUI() {
   };
 
   const refreshAllViews = () => {
+    // ✅ Poner el juego al día por fecha/hora antes de renderizar (resultados ya jugados)
+    try { ensureGameTimeAndWorldSync(); } catch (e) { console.warn(e); }
     updateDashboard();
     updateSquadView();
     updateAlignmentView();
