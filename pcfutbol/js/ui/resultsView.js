@@ -1,7 +1,7 @@
 // js/ui/resultsView.js
 // Vista 2/3 de Competición: RESULTADOS (solo jugados)
 
-import { getGameDateFor, formatGameDateLabel } from './utils/calendar.js';
+import { formatFixtureKickoffLabel } from './utils/calendar.js';
 import { createCoatImgElement } from './utils/coats.js';
 import {
   getCompetitions,
@@ -26,11 +26,27 @@ function escapeHtml(v) {
     .replace(/'/g, '&#039;');
 }
 
+function getCurrentCompetitionId() {
+  const comps = getCompetitions();
+  if (!Array.isArray(comps) || comps.length === 0) return null;
+  const current = comps.find((c) => c && (c.isCurrent === true));
+  return (current && current.id) ? String(current.id) : String(comps[0].id);
+}
+
 function setSelectValueSafe(selectEl, value) {
   if (!selectEl) return;
-  const v = String(value);
+  const v = String(value ?? '');
   const opt = Array.from(selectEl.options || []).find((o) => o.value === v);
   if (opt) selectEl.value = v;
+}
+
+function selectOptionsMatchList(sel, list) {
+  const opts = Array.from(sel?.options || []);
+  if (opts.length !== list.length) return false;
+  for (let i = 0; i < list.length; i++) {
+    if (String(opts[i]?.value) !== String(list[i]?.id)) return false;
+  }
+  return true;
 }
 
 function renderCompetitionSelect(sel) {
@@ -45,13 +61,17 @@ function renderCompetitionSelect(sel) {
       sel.appendChild(opt);
     });
   }
-  setSelectValueSafe(sel, __selectedCompetitionId || getDefaultCompetitionId());
+  const def = String(getCurrentCompetitionId() || getDefaultCompetitionId() || '');
+  if (!__selectedCompetitionId) __selectedCompetitionId = def;
+  setSelectValueSafe(sel, __selectedCompetitionId || def);
 }
 
 function renderClubSelect(sel, clubs) {
   if (!sel) return;
   const list = Array.isArray(clubs) ? clubs : [];
-  if (sel.options.length !== list.length) {
+  // IMPORTANTE: no basta con comparar length (muchas ligas tienen 20 clubes)
+  // Si los IDs no coinciden, hay que reconstruir.
+  if (!selectOptionsMatchList(sel, list)) {
     sel.innerHTML = '';
     list.forEach((c) => {
       const opt = document.createElement('option');
@@ -61,6 +81,10 @@ function renderClubSelect(sel, clubs) {
     });
   }
   if (!__selectedClubId) __selectedClubId = getUserClubId();
+  // Si el club seleccionado no existe en esta competición, caer al primero
+  const selected = String(__selectedClubId || '');
+  const exists = list.some((c) => String(c?.id) === selected);
+  if (!exists) __selectedClubId = list?.[0]?.id || null;
   setSelectValueSafe(sel, __selectedClubId);
 }
 
@@ -107,7 +131,7 @@ function ensureBindings() {
 
 export function initResultsUI({ onOpenMatchDetail } = {}) {
   __onOpenMatchDetail = typeof onOpenMatchDetail === 'function' ? onOpenMatchDetail : null;
-  if (!__selectedCompetitionId) __selectedCompetitionId = getDefaultCompetitionId();
+  if (!__selectedCompetitionId) __selectedCompetitionId = getCurrentCompetitionId() || getDefaultCompetitionId();
   if (!__selectedClubId) __selectedClubId = getUserClubId();
 }
 
@@ -120,13 +144,23 @@ export function updateResultsView() {
   if (!compSel || !clubSel || !tbody) return;
 
   renderCompetitionSelect(compSel);
-  const comp = getCompetitionById(__selectedCompetitionId || getDefaultCompetitionId());
+  const compId = String(__selectedCompetitionId || getCurrentCompetitionId() || getDefaultCompetitionId() || '');
+  if (!__selectedCompetitionId) __selectedCompetitionId = compId;
+  const comp = getCompetitionById(compId);
   if (!comp) return;
 
   renderClubSelect(clubSel, comp.clubs);
   const clubsIndex = buildClubIndex(comp.clubs);
 
-  const clubId = String(__selectedClubId || getUserClubId() || '');
+  // Revalida aquí también (primera carga / estados raros)
+  let clubId = String(__selectedClubId || getUserClubId() || '');
+  if (!clubsIndex.has(clubId)) {
+    const fallback = comp.clubs?.[0]?.id || null;
+    __selectedClubId = fallback;
+    clubId = String(fallback || '');
+    setSelectValueSafe(clubSel, __selectedClubId);
+  }
+
   const club = clubsIndex.get(clubId) || null;
   // No hay hint en HTML; dejamos el título de la vista como referencia.
 
@@ -162,8 +196,8 @@ export function updateResultsView() {
     const awayName = (away && (away.shortName || away.name)) || fx.awayClubId || 'Visitante';
     const score = `${Number(fx.homeGoals || 0)} - ${Number(fx.awayGoals || 0)}`;
 
-    const fxDate = getGameDateFor(season, Number(fx.matchday || 1));
-    const dateLabel = formatGameDateLabel(fxDate) || '';
+    // Fecha/hora real si existe; si no, fallback al calendario interno
+    const dateLabel = formatFixtureKickoffLabel(fx, season, Number(fx.matchday || 1)) || '';
 
     const coatH = createCoatImgElement(fx.homeClubId, homeName, 18);
     const coatA = createCoatImgElement(fx.awayClubId, awayName, 18);

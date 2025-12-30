@@ -1,7 +1,12 @@
 // js/ui/calendarView.js
 // Vista 1/3 de Competición: CALENDARIO
 
-import { getGameDateFor, formatGameDateLabel } from './utils/calendar.js';
+import {
+  getGameDateFor,
+  getFixtureKickoffDate,
+  formatGameDateLabel,
+  formatFixtureKickoffLabel
+} from './utils/calendar.js';
 import { createCoatImgElement } from './utils/coats.js';
 import {
   getCompetitions,
@@ -184,8 +189,12 @@ export function updateCalendarView() {
   // Fecha (solo informativa, depende de la jornada seleccionada)
   const season = Number(comp.currentDate?.season || 1);
   const md = Number(__selectedMatchday || comp.currentDate?.matchday || 1);
-  const date = getGameDateFor(season, md);
-  if (dateEl) dateEl.textContent = formatGameDateLabel(date) || '';
+  const mdFixturesForLabel = (comp.fixtures || []).filter((fx) => fx && Number(fx.matchday) === md);
+  // Queremos FECHA + HORA si el fixture la trae (kickoffDate/kickoffTime)
+  const headerLabel = mdFixturesForLabel.length
+    ? (formatFixtureKickoffLabel(mdFixturesForLabel[0], season, md) || '')
+    : (formatGameDateLabel(getGameDateFor(season, md)) || '');
+  if (dateEl) dateEl.textContent = `Jornada ${md}${headerLabel ? ' • ' + headerLabel : ''}`;
 
   // Controles según modo
   mdSel.closest('.pcf-filter')?.classList.toggle('hidden', __mode !== 'MATCHDAY');
@@ -230,8 +239,10 @@ export function updateCalendarView() {
         : 'vs';
 
     const mdLabel = `J${Number(fx.matchday || md)}`;
-    const fxDate = getGameDateFor(season, Number(fx.matchday || md));
+    const fxDate = getFixtureKickoffDate(fx, season, Number(fx.matchday || md));
     const dateLabel = formatGameDateLabel(fxDate) || '';
+    // En la tabla queremos "dd/mm/aaaa • hh:mm" si existe hora real
+    const dateTimeLabel = formatFixtureKickoffLabel(fx, season, Number(fx.matchday || md)) || dateLabel;
 
     const tr = document.createElement('tr');
     tr.className = 'is-clickable';
@@ -243,12 +254,11 @@ export function updateCalendarView() {
 
     tr.innerHTML = `
       <td class="th-num">${escapeHtml(mdLabel)}</td>
-      <td>${escapeHtml(dateLabel)}</td>
+      <td>${escapeHtml(dateTimeLabel)}</td>
       <td class="pcf-team-cell">${coatH.outerHTML}<span>${escapeHtml(homeName)}</span></td>
       <td class="pcf-score-cell">${escapeHtml(score)}</td>
       <td class="pcf-team-cell">${coatA.outerHTML}<span>${escapeHtml(awayName)}</span></td>
       <td class="pcf-actions-cell">
-        <span class="muted">${escapeHtml(getFixtureKickoffTime(fx, idx))}</span>
         <button class="btn btn-small" type="button" data-competition-id="${escapeHtml(comp.id)}" data-fixture-id="${escapeHtml(fx.id)}">Detalle</button>
       </td>
     `;

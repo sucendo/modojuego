@@ -3,7 +3,7 @@
  */
 
 import { GameState } from '../state.js';
-import { getGameDateFor, formatGameDateLabel } from './utils/calendar.js';
+import { getGameDateFor, getFixtureKickoffDate, formatGameDateLabel, formatFixtureKickoffLabel } from './utils/calendar.js';
 import { createCoatImgElement } from './utils/coats.js';
 
 let selectedMatchday = 1;
@@ -160,13 +160,6 @@ export function updateCompetitionView() {
   const season = Number(GameState.currentDate?.season || 1);
   const md = Number(selectedMatchday || 1);
 
-  // Labels superiores
-  const date = getGameDateFor(season, md);
-  const dateLabel = formatGameDateLabel(date);
-  if (seasonLabel) seasonLabel.textContent = String(season);
-  if (currentMdLabel) currentMdLabel.textContent = String(GameState.currentDate?.matchday || 1);
-  if (dateLabelEl) dateLabelEl.textContent = dateLabel || '';
-
   // Select options (si no están rellenadas, las rellenamos una vez)
   if (matchdaySelect && matchdaySelect.options.length === 0) {
     const maxMd = getMaxMatchday();
@@ -191,6 +184,14 @@ export function updateCompetitionView() {
     .filter((fx) => fx && Number(fx.matchday) === md)
     .slice()
     .sort((a, b) => String(a.id).localeCompare(String(b.id)));
+	
+  // Labels superiores (FECHA + HORA si el fixture la trae)
+  const headerLabel = list.length
+    ? (formatFixtureKickoffLabel(list[0], season, md) || '')
+    : (formatGameDateLabel(getGameDateFor(season, md)) || '');
+  if (seasonLabel) seasonLabel.textContent = String(season);
+  if (currentMdLabel) currentMdLabel.textContent = String(GameState.currentDate?.matchday || 1);
+  if (dateLabelEl) dateLabelEl.textContent = `Jornada ${md}${headerLabel ? ' • ' + headerLabel : ''}`;
 
   if (fixturesBody) {
     if (list.length === 0) {
@@ -215,7 +216,9 @@ export function updateCompetitionView() {
 
         // Hora
         const tdTime = document.createElement('td');
-        tdTime.textContent = getFixtureKickoffTime(fx, idx);
+        tdTime.textContent =
+          (typeof fx?.kickoffTime === 'string' && fx.kickoffTime.includes(':'))
+            ? fx.kickoffTime : getFixtureKickoffTime(fx, idx);
 
         // Local (escudo + nombre)
         const tdHome = document.createElement('td');

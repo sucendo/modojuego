@@ -1,5 +1,5 @@
 import { GameState } from '../../state.js';
-import { getGameDateFor, formatGameDateLabel } from '../utils/calendar.js';
+import { formatFixtureKickoffLabel } from '../utils/calendar.js';
 import { findFixtureInCompetition } from '../utils/competitions.js';
 
 let currentFixtureId = null;
@@ -102,13 +102,14 @@ export function openMatchDetailModal(arg) {
   }
 
   if (subtitleEl) {
-    const season = (found?.comp?.currentDate?.season ?? GameState.currentDate?.season) || 1;
-    const matchday = fx.matchday || 1;
-    const gameDate = getGameDateFor(season, matchday);
-    const dateLabel = formatGameDateLabel(gameDate);
+    const season = Number(found?.comp?.currentDate?.season ?? GameState.currentDate?.season ?? 1);
+    const matchday = Number(fx.matchday || 1);
+    // Usa kickoff real si existe (calendar oficial / fixtures con fecha),
+    // y si no, cae al calendario interno (1 jornada = 7 días).
+    const kickoffLabel = formatFixtureKickoffLabel(fx, season, matchday) || '';
     const compName = found?.comp?.name ? ` • ${found.comp.name}` : '';
-    subtitleEl.textContent = `Jornada ${matchday} • ${dateLabel}${compName}`;
-  }
+     subtitleEl.textContent = `Jornada ${matchday} • ${kickoffLabel}${compName}`;
+   }
 
   if (eventsListEl) {
     const playerIndex = new Map();
