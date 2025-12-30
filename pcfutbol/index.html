@@ -661,9 +661,9 @@
 					</div>
 				</header>
 				<p class="competition-meta">
-					Temporada <span id="calendar-season-label">1</span> • Jornada: <span id="calendar-current-matchday-label">1</span>
-					• Fecha: <span id="calendar-date-label">01/08/2025</span>
-				</p>
+					Jornada <span id="calendar-current-matchday-label">1</span> • Fecha: <span id="calendar-date-label">01/08/2025</span>
+					• Temporada <span id="calendar-season-label">1</span>
+  				</p>
 				</article>	
 		
 				<article class="card">
@@ -749,7 +749,7 @@
 		
 				<div class="pcf-match-layout">
 					<!-- PREVIA (PCF) -->
-					<article class="card pcf-match-card">
+					<article id="nextmatch-card-pre" class="card pcf-match-card">
 						<div class="pcf-match-card__title">PREVIA DEL PARTIDO</div>
 						<div id="nextmatch-pre" class="pcf-pre-shell">
 							<!-- HOME -->
@@ -814,6 +814,10 @@
 
 								<div class="pcf-centerbox__actions">
 									<button id="nextmatch-open-next-detail" class="btn btn-small" type="button">Ver historial de partidos</button>
+									<!-- NUEVO: Simular desde esta pantalla -->
+									<button id="nextmatch-simulate" class="btn btn-primary" type="button">
+										Simular partido
+									</button>								
 								</div>
 							</section>
 
@@ -853,7 +857,8 @@
 					</article>
 		
 					<!-- FINAL (PCF) -->
-					<article class="card pcf-match-card">
+					<!-- Por defecto oculto: se muestra tras simular -->
+					<article id="nextmatch-card-post" class="card pcf-match-card hidden">
 						<div class="pcf-match-card__title">FINAL DEL PARTIDO</div>
 						<div id="nextmatch-post" class="pcf-post-shell">
 							<!-- SCOREBOARD -->
@@ -920,6 +925,10 @@
 
 							<div class="pcf-post-actions">
 								<button id="nextmatch-open-last-detail" class="btn btn-small" type="button">Detalle</button>
+								<!-- NUEVO: continuar -->
+								<button id="nextmatch-continue" class="btn btn-primary" type="button">
+									Continuar
+								</button>
 							</div>
 						</div>
 					</article>
