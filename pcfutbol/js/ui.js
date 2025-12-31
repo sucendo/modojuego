@@ -282,6 +282,14 @@ export function initUI() {
 
       const key = btn.getAttribute('data-nav-target');
       if (!key) return;
+	  
+      // Cosmetic: marcar selección en el HUB (sin afectar a la navegación)
+      const hubRoot = document.getElementById('view-dashboard');
+      if (hubRoot && hubRoot.contains(btn) && btn.classList.contains('pcf-hub-item') && !btn.disabled) {
+        hubRoot.querySelectorAll('.pcf-hub-item.is-active').forEach((el) => el.classList.remove('is-active'));
+        btn.classList.add('is-active');
+      }
+
 
       const map = {
         dashboard: btnNavDashboard,
