@@ -169,60 +169,203 @@
 			<!-- SUBVISTA: DASHBOARD (HUB) -->
 			<section id="view-dashboard" class="pcf-hub">
 				<div class="pcf-hub__grid">
-				<article class="pcf-panel">
-					<h2>COMPETICIONES</h2>
-					<div class="pcf-panel__list">				
-					<button class="pcf-linkbtn" data-nav-target="stats">Estadísticas</button>
-					<button class="pcf-linkbtn" data-nav-target="standings">Clasificación</button>
-					<button class="pcf-linkbtn" data-nav-target="calendar">Calendario</button>
-					<button class="pcf-linkbtn" data-nav-target="results">Resultados</button>
- 					</div>
-				</article>
-		
-				<article class="pcf-panel">
-					<h2>ESTILO DE JUEGO</h2>
-					<div class="pcf-panel__list">
-					<button class="pcf-linkbtn" data-nav-target="alignment">Alineación</button>
-					<button class="pcf-linkbtn" data-nav-target="tactics">Tácticas</button>
-					<button class="pcf-linkbtn" disabled>Marcajes</button>
-					<button class="pcf-linkbtn" disabled>Entrenamiento</button>
-					</div>
-				</article>
-		
-				<article class="pcf-panel">
-					<h2>MERCADO Y FICHAJES</h2>
-					<div class="pcf-panel__list">
-					<button class="pcf-linkbtn" data-nav-target="squad">Plantilla</button>
-					<button class="pcf-linkbtn" disabled>Escuela de fútbol</button>
-					<button class="pcf-linkbtn" disabled>Ojeador</button>
-					<button class="pcf-linkbtn" disabled>Fichajes</button>
-					</div>
-				</article>
-		
-				<article class="pcf-panel">
-					<h2>CLUB Y ESTADIO</h2>
-					<div class="pcf-panel__list">
-					<button class="pcf-linkbtn" disabled>Presidente</button>
-					<button class="pcf-linkbtn" disabled>Cuerpo técnico</button>
-					<button class="pcf-linkbtn" disabled>Estadio</button>
-					<button class="pcf-linkbtn" disabled>Finanzas</button>
-					</div>
-				</article>
-		
-				<article class="pcf-center">
-					<div class="pcf-center__ball" aria-hidden="true">
-						<img src="img/resources/balonfutbol.svg" alt="" loading="lazy" />
-					</div>
-					<button id="btn-go-next-match" class="pcf-big-action" data-nav-target="nextmatch" data-set-current-md="1">
-					PARTIDO
-					</button>
-					<div id="hub-next-hint" class="pcf-center__hint">—</div>
-				</article>
-		
-				<aside class="pcf-panel pcf-notes">
-					<h2>NOTAS RÁPIDAS</h2>
-					<ul id="quick-notes"></ul>
-				</aside>
+					<article class="pcf-panel pcf-panel--competitions">
+						<header class="pcf-panel__head"><h2>COMPETICIONES</h2></header>
+						<div class="pcf-panel__list">
+							<button class="pcf-hub-item pcf-linkbtn" data-nav-target="stats">
+								<span class="pcf-hub-item__icon" aria-hidden="true">
+									<svg class="pcf-ico"><use href="img/resources/pcf-icons.svg#ico-stats"></use></svg>
+								</span>
+								<span class="pcf-hub-item__label">Estadísticas</span>
+								<span class="pcf-hub-item__chev" aria-hidden="true">›</span>
+							</button>
+							<button class="pcf-hub-item pcf-linkbtn" data-nav-target="standings">
+								<span class="pcf-hub-item__icon" aria-hidden="true">
+									<svg class="pcf-ico"><use href="img/resources/pcf-icons.svg#ico-standings"></use></svg>
+								</span>
+								<span class="pcf-hub-item__label">Clasificación</span>
+								<span class="pcf-hub-item__chev" aria-hidden="true">›</span>
+							</button>
+							<button class="pcf-hub-item pcf-linkbtn" data-nav-target="calendar">
+								<span class="pcf-hub-item__icon" aria-hidden="true">
+									<svg class="pcf-ico"><use href="img/resources/pcf-icons.svg#ico-calendar"></use></svg>
+								</span>
+								<span class="pcf-hub-item__label">Calendario</span>
+								<span class="pcf-hub-item__chev" aria-hidden="true">›</span>
+							</button>
+							<button class="pcf-hub-item pcf-linkbtn" data-nav-target="results">
+								<span class="pcf-hub-item__icon" aria-hidden="true">
+									<svg class="pcf-ico"><use href="img/resources/pcf-icons.svg#ico-results"></use></svg>
+								</span>
+								<span class="pcf-hub-item__label">Resultados</span>
+								<span class="pcf-hub-item__chev" aria-hidden="true">›</span>
+							</button>
+						</div>
+					</article>
+
+					<article class="pcf-panel pcf-panel--style">
+						<header class="pcf-panel__head"><h2>ESTILO DE JUEGO</h2></header>
+						<div class="pcf-panel__list">
+							<button class="pcf-hub-item pcf-linkbtn" data-nav-target="alignment">
+								<span class="pcf-hub-item__icon" aria-hidden="true">
+									<svg class="pcf-ico"><use href="img/resources/pcf-icons.svg#ico-alignment"></use></svg>
+								</span>
+								<span class="pcf-hub-item__label">Alineación</span>
+								<span class="pcf-hub-item__chev" aria-hidden="true">›</span>
+							</button>
+							<button class="pcf-hub-item pcf-linkbtn" data-nav-target="tactics">
+								<span class="pcf-hub-item__icon" aria-hidden="true">
+									<svg class="pcf-ico"><use href="img/resources/pcf-icons.svg#ico-tactics"></use></svg>
+								</span>
+								<span class="pcf-hub-item__label">Tácticas</span>
+								<span class="pcf-hub-item__chev" aria-hidden="true">›</span>
+							</button>
+							<button class="pcf-hub-item pcf-linkbtn" disabled>
+								<span class="pcf-hub-item__icon" aria-hidden="true">
+									<svg class="pcf-ico"><use href="img/resources/pcf-icons.svg#ico-markings"></use></svg>
+								</span>
+								<span class="pcf-hub-item__label">Marcajes</span>
+								<span class="pcf-hub-item__chev" aria-hidden="true">›</span>
+							</button>
+							<button class="pcf-hub-item pcf-linkbtn" disabled>
+								<span class="pcf-hub-item__icon" aria-hidden="true">
+									<svg class="pcf-ico"><use href="img/resources/pcf-icons.svg#ico-training"></use></svg>
+								</span>
+								<span class="pcf-hub-item__label">Entrenamiento</span>
+								<span class="pcf-hub-item__chev" aria-hidden="true">›</span>
+							</button>
+						</div>
+					</article>
+
+					<article class="pcf-panel pcf-panel--market">
+						<header class="pcf-panel__head"><h2>MERCADO Y FICHAJES</h2></header>
+						<div class="pcf-panel__list">
+							<button class="pcf-hub-item pcf-linkbtn" data-nav-target="squad">
+								<span class="pcf-hub-item__icon" aria-hidden="true">
+									<svg class="pcf-ico"><use href="img/resources/pcf-icons.svg#ico-squad"></use></svg>
+								</span>
+								<span class="pcf-hub-item__label">Plantilla</span>
+								<span class="pcf-hub-item__chev" aria-hidden="true">›</span>
+							</button>
+							<button class="pcf-hub-item pcf-linkbtn" disabled>
+								<span class="pcf-hub-item__icon" aria-hidden="true">
+									<svg class="pcf-ico"><use href="img/resources/pcf-icons.svg#ico-school"></use></svg>
+								</span>
+								<span class="pcf-hub-item__label">Escuela de fútbol</span>
+								<span class="pcf-hub-item__chev" aria-hidden="true">›</span>
+							</button>
+							<button class="pcf-hub-item pcf-linkbtn" disabled>
+								<span class="pcf-hub-item__icon" aria-hidden="true">
+									<svg class="pcf-ico"><use href="img/resources/pcf-icons.svg#ico-scout"></use></svg>
+								</span>
+								<span class="pcf-hub-item__label">Ojeador</span>
+								<span class="pcf-hub-item__chev" aria-hidden="true">›</span>
+							</button>
+							<button class="pcf-hub-item pcf-linkbtn" disabled>
+								<span class="pcf-hub-item__icon" aria-hidden="true">
+									<svg class="pcf-ico"><use href="img/resources/pcf-icons.svg#ico-transfers"></use></svg>
+								</span>
+								<span class="pcf-hub-item__label">Fichajes</span>
+								<span class="pcf-hub-item__chev" aria-hidden="true">›</span>
+							</button>
+						</div>
+					</article>
+
+					<article class="pcf-panel pcf-panel--club">
+						<header class="pcf-panel__head"><h2>CLUB Y ESTADIO</h2></header>
+						<div class="pcf-panel__list">
+							<button class="pcf-hub-item pcf-linkbtn" disabled>
+								<span class="pcf-hub-item__icon" aria-hidden="true">
+									<svg class="pcf-ico"><use href="img/resources/pcf-icons.svg#ico-president"></use></svg>
+								</span>
+								<span class="pcf-hub-item__label">Presidente</span>
+								<span class="pcf-hub-item__chev" aria-hidden="true">›</span>
+							</button>
+							<button class="pcf-hub-item pcf-linkbtn" disabled>
+								<span class="pcf-hub-item__icon" aria-hidden="true">
+									<svg class="pcf-ico"><use href="img/resources/pcf-icons.svg#ico-staff"></use></svg>
+								</span>
+								<span class="pcf-hub-item__label">Cuerpo técnico</span>
+								<span class="pcf-hub-item__chev" aria-hidden="true">›</span>
+							</button>
+							<button class="pcf-hub-item pcf-linkbtn" disabled>
+								<span class="pcf-hub-item__icon" aria-hidden="true">
+									<svg class="pcf-ico"><use href="img/resources/pcf-icons.svg#ico-stadium"></use></svg>
+								</span>
+								<span class="pcf-hub-item__label">Estadio</span>
+								<span class="pcf-hub-item__chev" aria-hidden="true">›</span>
+							</button>
+							<button class="pcf-hub-item pcf-linkbtn" disabled>
+								<span class="pcf-hub-item__icon" aria-hidden="true">
+									<svg class="pcf-ico"><use href="img/resources/pcf-icons.svg#ico-finance"></use></svg>
+								</span>
+								<span class="pcf-hub-item__label">Finanzas</span>
+								<span class="pcf-hub-item__chev" aria-hidden="true">›</span>
+							</button>
+						</div>
+					</article>
+
+					<article class="pcf-center">
+						<!-- Fecha/hora del simulador (derivada del próximo partido) -->
+						<div class="pcf-center__now" aria-label="Fecha y hora del simulador">
+							<div id="hub-sim-date" class="pcf-center__now-date">—</div>
+							<div id="hub-sim-time" class="pcf-center__now-time">—</div>
+						</div>
+
+						<div class="pcf-center__ball" aria-hidden="true">
+							<img src="img/resources/balonfutbol.svg" alt="" loading="lazy" />
+						</div>
+
+						<button id="btn-go-next-match" class="pcf-big-action" data-nav-target="nextmatch" data-set-current-md="1">
+							PARTIDO
+						</button>
+
+						<!-- Próximo partido (tarjeta estilo captura) -->
+						<div id="hub-next-hint" class="pcf-nextcard" aria-label="Próximo partido">
+							<div class="pcf-nextcard__teams">
+								<div class="pcf-nextcard__team">
+									<div id="hub-next-home-coat" class="pcf-nextcard__coat"></div>
+									<div id="hub-next-home-name" class="pcf-nextcard__name">—</div>
+								</div>
+								<div class="pcf-nextcard__vs">vs</div>
+								<div class="pcf-nextcard__team">
+									<div id="hub-next-away-coat" class="pcf-nextcard__coat"></div>
+									<div id="hub-next-away-name" class="pcf-nextcard__name">—</div>
+								</div>
+							</div>
+
+							<div class="pcf-nextcard__meta">
+								<div class="pcf-nextcard__row pcf-nextcard__row--comp">
+									<span class="pcf-meta-ico" aria-hidden="true">
+										<svg class="pcf-ico"><use href="img/resources/pcf-icons.svg#ico-standings"></use></svg>
+									</span>
+									<span id="hub-next-comp">—</span>
+									<img id="hub-next-comp-logo" class="pcf-nextcard__comp-logo" src="" alt="" loading="lazy" />
+								</div>
+								<div class="pcf-nextcard__row">
+									<span class="pcf-meta-ico" aria-hidden="true">
+										<svg class="pcf-ico"><use href="img/resources/pcf-icons.svg#ico-pin"></use></svg>
+									</span>
+									<span id="hub-next-venue2">—</span>
+								</div>
+								<div class="pcf-nextcard__row">
+									<span class="pcf-meta-ico" aria-hidden="true">
+										<svg class="pcf-ico"><use href="img/resources/pcf-icons.svg#ico-calendar"></use></svg>
+									</span>
+									<span id="hub-next-date2">—</span>
+									<span class="pcf-meta-ico" aria-hidden="true">
+										<svg class="pcf-ico"><use href="img/resources/pcf-icons.svg#ico-clock"></use></svg>
+									</span>
+									<span id="hub-next-time2">—</span>
+								</div>
+							</div>
+						</div>
+					</article>
+
+					<aside class="pcf-panel pcf-notes">
+						<header class="pcf-panel__head"><h2>NOTAS RÁPIDAS</h2></header>
+						<ul id="quick-notes"></ul>
+					</aside>
 				</div>
 			</section>
 
@@ -880,7 +1023,7 @@
 								<div id="nextmatch-post-panels" class="pcf-post-main">
 									<section id="nextmatch-post-panel-general" class="pcf-post-panel is-active">
 										<div id="nextmatch-post-highlights" class="pcf-highlights"></div>
-										<div id="nextmatch-last-stats" style="margin-top:10px;"></div>
+										<div id="nextmatch-last-stats" class="pcf-laststats"></div>
 										<h4 class="pcf-subtitle">Cronología</h4>
 										<div id="nextmatch-last-timeline" class="pcf-timeline-wrap"></div>
 									</section>
@@ -1154,9 +1297,9 @@
 			<div class="match-detail-layout">
 			<section>
 				<h3>Cronología</h3>
-				<ul id="match-detail-events" class="match-events-list">
-				<!-- JS -->
-				</ul>
+				<div id="match-detail-events" class="pcf-mtl-wrap pcf-mtl-wrap--scroll" aria-label="Cronología del partido">
+					<!-- JS -->
+				</div>
 			</section>
 			</div>
 		</div>
