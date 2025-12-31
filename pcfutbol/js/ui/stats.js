@@ -16,6 +16,7 @@ import {
 } from './utils/competitions.js';
 import { getGameDateFor, formatGameDateLabel } from './utils/calendar.js';
 import { createCoatImgElement } from './utils/coats.js';
+import { buildMatchTimelineHTML } from './utils/matchTimeline.js';
 
 const ALL_COMP = '__all__';
 const MY_CLUB = '__my__';
@@ -1296,29 +1297,13 @@ function renderFixtureInlineDetail(comp, fx) {
     return p?.name || pid || 'Jugador';
   };
 
-  const timeline = (() => {
-    if (!events.length) return `<div class="muted">Sin cronología.</div>`;
-    const li = events.map((e) => {
-      const club = String(e.clubId) === String(fx.homeClubId) ? home : away;
-      const name = e.playerId ? getName(club, e.playerId) : '';
-      if (e.type === 'GOAL') {
-        return `<li><span class="tmin">${esc(fmtMinute(e.minute))}</span> Gol: <strong>${esc(name)}</strong></li>`;
-      }
-      if (e.type === 'YELLOW') {
-        return `<li><span class="tmin">${esc(fmtMinute(e.minute))}</span> Amarilla: <strong>${esc(name)}</strong></li>`;
-      }
-      if (e.type === 'RED') {
-        return `<li><span class="tmin">${esc(fmtMinute(e.minute))}</span> Roja: <strong>${esc(name)}</strong></li>`;
-      }
-      if (e.type === 'SUB') {
-        const inn = e.inPlayerId ? getName(club, e.inPlayerId) : '—';
-        const out = e.outPlayerId ? getName(club, e.outPlayerId) : '—';
-        return `<li><span class="tmin">${esc(fmtMinute(e.minute))}</span> Cambio: entra <strong>${esc(inn)}</strong> por ${esc(out)}</li>`;
-      }
-      return `<li><span class="tmin">${esc(fmtMinute(e.minute))}</span> ${esc(e.type || 'Evento')}</li>`;
-    }).join('');
-    return `<ul class="timeline">${li}</ul>`;
-  })();
+  const timeline = buildMatchTimelineHTML({
+    fx,
+    clubIndex: idx,
+    clubs: comp.clubs || [],
+    maxItems: 80,
+    withFinalLabel: true,
+  });
 
   return `
     <div class="stats-inline-detail">

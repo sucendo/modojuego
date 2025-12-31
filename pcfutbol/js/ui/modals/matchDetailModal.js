@@ -1,6 +1,7 @@
 import { GameState } from '../../state.js';
 import { formatFixtureKickoffLabel } from '../utils/calendar.js';
 import { findFixtureInCompetition } from '../utils/competitions.js';
+import { renderMatchTimeline } from '../utils/matchTimeline.js';
 
 let currentFixtureId = null;
 
@@ -119,106 +120,17 @@ export function openMatchDetailModal(arg) {
         if (p && p.id) playerIndex.set(p.id, { player: p, club });
       });
     });
-
-    const events = Array.isArray(fx.events) ? fx.events.slice() : [];
-    // Sustituciones como eventos
-    const subs = Array.isArray(fx.substitutions) ? fx.substitutions : [];
-    subs.forEach((s) => {
-      if (!s) return;
-      events.push({
-        type: 'SUB',
-        minute: Number(s.minute || 0) || 0,
-        clubId: s.clubId,
-        inPlayerId: s.inPlayerId,
-        outPlayerId: s.outPlayerId,
-      });
-    });
-    events.sort((a, b) => {
-      const ma = typeof a?.minute === 'number' ? a.minute : 999;
-      const mb = typeof b?.minute === 'number' ? b.minute : 999;
-      return ma - mb;
+	
+    renderMatchTimeline(eventsListEl, {
+      fx,
+      clubIndex,
+      clubs,
+      playerIndex,
+      maxItems: 80,
+      withFinalLabel: true,
+      withWrap: false,
     });
 
-    if (events.length === 0) {
-      const li = document.createElement('li');
-      li.className = 'match-event-item';
-      const minuteSpan = document.createElement('span');
-      minuteSpan.className = 'match-event-minute';
-      minuteSpan.textContent = '-';
-      const descSpan = document.createElement('span');
-      descSpan.className = 'match-event-desc';
-      descSpan.textContent = 'No se han registrado eventos para este partido.';
-      li.appendChild(minuteSpan);
-      li.appendChild(descSpan);
-      eventsListEl.appendChild(li);
-    } else {
-      events.forEach((ev) => {
-        if (!ev) return;
-
-        const li = document.createElement('li');
-        li.className = 'match-event-item';
-
-        const minuteSpan = document.createElement('span');
-        minuteSpan.className = 'match-event-minute';
-        const minute = typeof ev.minute === 'number' && ev.minute > 0 ? ev.minute : null;
-        minuteSpan.textContent = minute != null ? `${minute}'` : '-';
-
-        const descSpan = document.createElement('span');
-        descSpan.className = 'match-event-desc';
-
-        const info = ev.playerId ? playerIndex.get(ev.playerId) : null;
-        const playerName = (info && info.player && info.player.name) || 'Jugador';
-
-        const clubInfo = ev.clubId ? clubIndex.get(ev.clubId) : null;
-        const teamName =
-          (clubInfo && (clubInfo.shortName || clubInfo.name)) || ev.clubId || '';
-
-        if (ev.clubId === fx.homeClubId) descSpan.classList.add('match-event-team-home');
-        else if (ev.clubId === fx.awayClubId) descSpan.classList.add('match-event-team-away');
-
-        let text = '';
-        switch (ev.type) {
-          case 'GOAL':
-            if (ev.assistPlayerId) {
-              const ainfo = playerIndex.get(ev.assistPlayerId);
-              const an = (ainfo && ainfo.player && ainfo.player.name) || '';
-              text = an
-                ? `Gol de ${playerName} (${teamName}) · Asistencia: ${an}`
-                : `Gol de ${playerName} (${teamName})`;
-            } else {
-              text = `Gol de ${playerName} (${teamName})`;
-            }
-            break;
-          case 'YELLOW_CARD':
-            text = `Amarilla a ${playerName} (${teamName})`;
-            break;
-          case 'RED_CARD':
-            text = `Roja a ${playerName} (${teamName})`;
-            break;
-          case 'INJURY': {
-            const injuryType = ev.injuryType || 'Lesión';
-            text = `Lesión: ${playerName} (${teamName}) – ${injuryType}`;
-            break;
-          }
-          case 'SUB': {
-            const inInfo = ev.inPlayerId ? playerIndex.get(ev.inPlayerId) : null;
-            const outInfo = ev.outPlayerId ? playerIndex.get(ev.outPlayerId) : null;
-            const inName = (inInfo && inInfo.player && inInfo.player.name) || 'Jugador';
-            const outName = (outInfo && outInfo.player && outInfo.player.name) || 'Jugador';
-            text = `${inName} entra por ${outName} (${teamName})`;
-            break;
-          }		  
-          default:
-            text = `${ev.type || 'Evento'}: ${playerName} (${teamName})`;
-            break;
-        }
-        descSpan.textContent = text;
-
-        li.appendChild(minuteSpan);
-        li.appendChild(descSpan);
-        eventsListEl.appendChild(li);
-      });
-    }
   }
 
   show(modal);

@@ -12,6 +12,8 @@ import {
   formatFixtureKickoffLabel,
 } from './utils/calendar.js';
 import { createCoatImgElement } from './utils/coats.js';
+import { renderMatchTimeline } from './utils/matchTimeline.js';
+import { getFormationSlots, assignPlayersToSlots } from './utils/tacticsState.js';
 
 let __bound = false;
 let __onOpenMatchDetail = null;
@@ -313,37 +315,63 @@ function parseFormation(str) {
   return nums;
 }
 
-function renderMiniPitch(container, club) {
+function getShirtNumber(player) {
+  const n = player?.shirtNumber ?? player?.number ?? player?.dorsal;
+  const x = Number(n);
+  if (Number.isFinite(x) && x > 0) return String(Math.trunc(x));
+  return '';
+}
+
+function ensureMiniPitchBound(container) {
+  if (!container || container.dataset?.miniPitchBound === '1') return;
+  container.dataset.miniPitchBound = '1';
+  container.addEventListener('click', (e) => {
+    const dot =
+      e.target instanceof Element
+        ? e.target.closest('.pcf-pitch-dot[data-player-id]')
+        : null;
+    if (!dot) return;
+    const pid = dot.getAttribute('data-player-id') || '';
+    container.dataset.selectedPlayerId = pid;
+    container
+      .querySelectorAll('.pcf-pitch-dot.is-selected')
+      .forEach((el) => el.classList.remove('is-selected'));
+    dot.classList.add('is-selected');
+  });
+}
+
+function renderMiniPitch(container, club, xiPlayers = null) {
   if (!container) return;
+  ensureMiniPitchBound(container);
   container.innerHTML = '';
 
   const formation = club?.tactics?.formation || club?.formation || '4-4-2';
-  const rows = parseFormation(formation);
+  const slots = getFormationSlots(formation);
 
-  // GK
-  const gk = document.createElement('span');
-  gk.className = 'pcf-pitch-dot is-gk';
-  gk.style.left = '50%';
-  gk.style.top = '88%';
-  container.appendChild(gk);
+  const players =
+    Array.isArray(xiPlayers) && xiPlayers.length ? xiPlayers : getPreLineup(club).xi;
+  const assigned = assignPlayersToSlots(players, slots);
 
-  // Outfield rows distributed from bottom(74%) to top(16%)
-  const yStart = 74;
-  const yEnd = 16;
-  const nRows = rows.length;
-  for (let r = 0; r < nRows; r++) {
-    const count = rows[r];
-    const t = nRows <= 1 ? 0.5 : r / (nRows - 1);
-    const y = yStart + (yEnd - yStart) * t;
-    for (let i = 0; i < count; i++) {
-      const x = count === 1 ? 50 : 18 + 64 * (i / (count - 1));
-      const dot = document.createElement('span');
-      dot.className = 'pcf-pitch-dot';
-      dot.style.left = `${x}%`;
-      dot.style.top = `${y}%`;
-      container.appendChild(dot);
-    }
-  }
+  const selectedPid = container.dataset.selectedPlayerId
+    ? String(container.dataset.selectedPlayerId)
+    : '';
+
+  assigned.forEach((slot) => {
+    const p = slot?.player || null;
+    const pid = p?.id != null ? String(p.id) : '';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'pcf-pitch-dot' + (slot?.role === 'GK' ? ' is-gk' : '');
+    if (pid) btn.dataset.playerId = pid;
+    btn.style.left = `${Number(slot?.x ?? 50)}%`;
+    btn.style.top = `${Number(slot?.y ?? 50)}%`;
+    btn.textContent = getShirtNumber(p) || '·';
+    btn.title = p
+      ? `${p.name || 'Jugador'} (${String(p.position || '').toUpperCase() || '-'})`
+      : `${formation}`;
+    if (pid && selectedPid && pid === selectedPid) btn.classList.add('is-selected');
+    container.appendChild(btn);
+  });
 }
 
 function makeCoachName(club, isUser = false) {
@@ -405,103 +433,6 @@ function computeDifficultyLabel(myClub, oppClub) {
   if (diff <= -8) return 'Muy baja';
   if (diff <= -3) return 'Baja';
   return 'Media';
-}
-
-function buildTimelineItems(fx, clubIndex, playerIndex) {
-  const events = Array.isArray(fx?.events) ? fx.events.slice() : [];
-
-  // Inyectamos sustituciones como eventos si existen
-  const subs = Array.isArray(fx?.substitutions) ? fx.substitutions : [];
-  subs.forEach((s) => {
-    if (!s) return;
-    events.push({
-      type: 'SUB',
-      minute: Number(s.minute || 0) || 0,
-      clubId: s.clubId,
-      inPlayerId: s.inPlayerId,
-      outPlayerId: s.outPlayerId,
-    });
-  });
-
-  events.sort((a, b) => {
-    const ma = typeof a?.minute === 'number' ? a.minute : 999;
-    const mb = typeof b?.minute === 'number' ? b.minute : 999;
-    return ma - mb;
-  });
-
-  return events.map((ev) => {
-    const minute = typeof ev?.minute === 'number' && ev.minute > 0 ? ev.minute : null;
-    const club = ev?.clubId ? clubIndex.get(ev.clubId) : null;
-    const teamName = getClubName(club, ev?.clubId || '');
-
-    const getPlayerName = (pid) => {
-      if (!pid) return 'Jugador';
-      const info = playerIndex.get(pid);
-      return info?.player?.name || String(pid);
-    };
-
-    let text = '';
-    switch (ev?.type) {
-      case 'GOAL': {
-        const scorer = getPlayerName(ev.playerId);
-        const assister = ev.assistPlayerId ? getPlayerName(ev.assistPlayerId) : null;
-        text = assister ? `Gol de ${scorer} (${teamName}) · Asist.: ${assister}` : `Gol de ${scorer} (${teamName})`;
-        break;
-      }
-      case 'YELLOW':
-      case 'YELLOW_CARD':
-      case 'CARD_YELLOW':
-        text = `Amarilla a ${getPlayerName(ev.playerId)} (${teamName})`;
-        break;
-      case 'RED':
-      case 'RED_CARD':
-      case 'CARD_RED':
-        text = `Roja a ${getPlayerName(ev.playerId)} (${teamName})`;
-        break;
-      case 'INJURY': {
-        const it = ev.injuryType || 'Lesión';
-        text = `Lesión: ${getPlayerName(ev.playerId)} (${teamName}) – ${it}`;
-        break;
-      }
-      case 'SUB': {
-        const pin = getPlayerName(ev.inPlayerId);
-        const pout = getPlayerName(ev.outPlayerId);
-        text = `Cambio (${teamName}): ${pout} → ${pin}`;
-        break;
-      }
-      default:
-        text = `${ev?.type || 'Evento'} (${teamName})`;
-        break;
-    }
-
-    return { minute, text };
-  });
-}
-
-function renderTimeline(container, fx, clubIndex, playerIndex) {
-  if (!container) return;
-  container.innerHTML = '';
-  if (!fx?.played) {
-    container.innerHTML = '<div class="muted">Sin eventos.</div>';
-    return;
-  }
-  const items = buildTimelineItems(fx, clubIndex, playerIndex);
-  if (!items.length) {
-    container.innerHTML = '<div class="muted">Sin eventos.</div>';
-    return;
-  }
-  const list = document.createElement('div');
-  list.className = 'pcf-timeline';
-  items.slice(0, 18).forEach((it) => {
-    const row = document.createElement('div');
-    row.className = 'pcf-timeline__row';
-    row.innerHTML = `
-      <span class="pcf-timeline__min">${it.minute != null ? `${it.minute}'` : '-'}</span>
-      <span class="pcf-timeline__txt">${escapeHtml(it.text)}</span>
-    `;
-    list.appendChild(row);
-  });
-  container.appendChild(list);
 }
 
 function calcPlayerRating(player, st, seed) {
@@ -785,13 +716,13 @@ export function updateNextMatchView() {
       : estimateAttendance(nextFx, home, away);
     setText('nextmatch-next-attendance', `Aforo: ${attendance.toLocaleString('es-ES')} esp. / Cap.: ${capacity.toLocaleString('es-ES')}`);
 
-    // Mini pitches
-    renderMiniPitch(document.getElementById('nextmatch-pre-home-pitch'), home);
-    renderMiniPitch(document.getElementById('nextmatch-pre-away-pitch'), away);
-
     // Alineaciones
     const homeL = getPreLineup(home);
     const awayL = getPreLineup(away);
+
+    // Mini pitches (con XI real, asignado a slots como en Tácticas)
+    renderMiniPitch(document.getElementById('nextmatch-pre-home-pitch'), home, homeL.xi);
+    renderMiniPitch(document.getElementById('nextmatch-pre-away-pitch'), away, awayL.xi);
 
     renderPlayersList(document.getElementById('nextmatch-pre-home-xi'), homeL.xi);
     renderPlayersList(document.getElementById('nextmatch-pre-home-bench'), homeL.bench);
@@ -885,6 +816,29 @@ export function updateNextMatchView() {
 
   if (highlightsEl) {
     highlightsEl.innerHTML = '';
+	
+    // Matchhead (marcador + escudos)
+    const hCoatEl = createCoatImgElement(lastFx.homeClubId, lastHomeName, 22);
+    const aCoatEl = createCoatImgElement(lastFx.awayClubId, lastAwayName, 22);
+    if (hCoatEl) hCoatEl.classList.add('pcf-matchhead__coat');
+    if (aCoatEl) aCoatEl.classList.add('pcf-matchhead__coat');
+
+    const head = document.createElement('div');
+    head.className = 'pcf-matchhead';
+    head.innerHTML = `
+      <div class="pcf-matchhead__team is-home">
+        <span class="pcf-matchhead__name">${escapeHtml(lastHomeName)}</span>
+        ${hCoatEl ? hCoatEl.outerHTML : ''}
+      </div>
+      <div class="pcf-matchhead__score">
+        ${int(lastFx.homeGoals ?? 0)}<span>—</span>${int(lastFx.awayGoals ?? 0)}
+      </div>
+      <div class="pcf-matchhead__team is-away">
+        ${aCoatEl ? aCoatEl.outerHTML : ''}
+        <span class="pcf-matchhead__name">${escapeHtml(lastAwayName)}</span>
+      </div>
+    `;
+    highlightsEl.appendChild(head);
 
     // Goleador del partido
     const goalEvents = (lastFx.events || []).filter((e) => e?.type === 'GOAL' && e.playerId);
@@ -933,14 +887,27 @@ export function updateNextMatchView() {
     if (!h || !a) {
       statsEl.innerHTML = '<div class="muted">No hay estadísticas avanzadas para este partido.</div>';
     } else {
+      const hCoat = createCoatImgElement(lastFx.homeClubId, lastHomeName, 18);
+      const aCoat = createCoatImgElement(lastFx.awayClubId, lastAwayName, 18);
+
       const table = document.createElement('table');
       table.className = 'pcf-mini-table';
       table.innerHTML = `
         <thead>
           <tr>
-            <th class="num">${escapeHtml(lastHomeName)}</th>
+            <th class="pcf-th pcf-th--home">
+              <span class="pcf-thteam">
+                <span class="pcf-thteam__name">${escapeHtml(lastHomeName)}</span>
+                ${hCoat ? hCoat.outerHTML : ''}
+              </span>
+            </th>
             <th>Dato</th>
-            <th class="num">${escapeHtml(lastAwayName)}</th>
+            <th class="pcf-th pcf-th--away num">
+              <span class="pcf-thteam">
+                ${aCoat ? aCoat.outerHTML : ''}
+                <span class="pcf-thteam__name">${escapeHtml(lastAwayName)}</span>
+              </span>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -957,31 +924,33 @@ export function updateNextMatchView() {
     }
   }
 
-  renderTimeline(timelineEl, lastFx, clubIndex, playerIndex);
-
-  // Panel OCASIONES
+  // Panel OCASIONES (declarar ANTES de usar)
   const occEl = document.getElementById('nextmatch-post-occasions');
+
+  if (timelineEl) {
+    renderMatchTimeline(timelineEl, {
+      fx: lastFx,
+      clubIndex,
+      playerIndex,
+      maxItems: 60,
+      withFinalLabel: true,
+    });
+  }
+
   if (occEl) {
-    occEl.innerHTML = '';
-    const items = buildTimelineItems(lastFx, clubIndex, playerIndex)
-      .filter((it) => /Gol|Amarilla|Roja|Lesión|Cambio/.test(it.text))
-      .slice(0, 12);
-    if (!items.length) {
-      occEl.innerHTML = '<div class="muted">Sin acciones destacadas.</div>';
-    } else {
-      const list = document.createElement('div');
-      list.className = 'pcf-timeline';
-      items.forEach((it) => {
-        const row = document.createElement('div');
-        row.className = 'pcf-timeline__row';
-        row.innerHTML = `
-          <span class="pcf-timeline__min">${it.minute != null ? `${it.minute}'` : '-'}</span>
-          <span class="pcf-timeline__txt">${escapeHtml(it.text)}</span>
-        `;
-        list.appendChild(row);
-      });
-      occEl.appendChild(list);
-    }
+    renderMatchTimeline(occEl, {
+      fx: lastFx,
+      clubIndex,
+      playerIndex,
+      maxItems: 16,
+      withFinalLabel: false,
+      filter: (e) => {
+        const t = String(e?.type || '').toUpperCase();
+        return t === 'GOAL' || t === 'SUB' || t === 'INJURY' ||
+               t === 'YELLOW' || t === 'YELLOW_CARD' || t === 'CARD_YELLOW' ||
+               t === 'RED' || t === 'RED_CARD' || t === 'CARD_RED';
+      },
+    });
   }
 
   // Panel APORTACIONES

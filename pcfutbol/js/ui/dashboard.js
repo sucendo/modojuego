@@ -156,6 +156,19 @@ export function updateDashboard() {
   const hudNextLogo = document.getElementById('hud-next-logo');
   const hubNextHint = document.getElementById('hub-next-hint');
   const hudCoat = document.getElementById('hud-coat');
+  
+  // HUB Centro: “fecha/hora del simulador” + tarjeta partido detallada
+  const hubSimDate = document.getElementById('hub-sim-date');
+  const hubSimTime = document.getElementById('hub-sim-time');
+  const hubNextHomeCoat = document.getElementById('hub-next-home-coat');
+  const hubNextAwayCoat = document.getElementById('hub-next-away-coat');
+  const hubNextHomeName = document.getElementById('hub-next-home-name');
+  const hubNextAwayName = document.getElementById('hub-next-away-name');
+  const hubNextComp = document.getElementById('hub-next-comp');
+  const hubNextVenue2 = document.getElementById('hub-next-venue2');
+  const hubNextDate2 = document.getElementById('hub-next-date2');
+  const hubNextTime2 = document.getElementById('hub-next-time2');
+  const hubNextCompLogo = document.getElementById('hub-next-comp-logo');
 
   if (hudManager) hudManager.textContent = GameState.user?.name || 'Mánager';
   if (hudClub) hudClub.textContent = club.name || club.id || 'Club';
@@ -239,6 +252,23 @@ export function updateDashboard() {
         hudNextLogo.removeAttribute('alt');
       }
       if (hubNextHint) hubNextHint.textContent = hudNextSub?.textContent || '';
+
+      // Centro: limpiar tarjeta si existe
+      if (hubSimDate) hubSimDate.textContent = '—';
+      if (hubSimTime) hubSimTime.textContent = '—';
+      if (hubNextHomeCoat) hubNextHomeCoat.innerHTML = '';
+      if (hubNextAwayCoat) hubNextAwayCoat.innerHTML = '';
+      if (hubNextHomeName) hubNextHomeName.textContent = '—';
+      if (hubNextAwayName) hubNextAwayName.textContent = '—';
+      if (hubNextComp) hubNextComp.textContent = '—';
+      if (hubNextVenue2) hubNextVenue2.textContent = '—';
+      if (hubNextDate2) hubNextDate2.textContent = '—';
+      if (hubNextTime2) hubNextTime2.textContent = '—';
+      if (hubNextCompLogo) {
+        hubNextCompLogo.style.display = 'none';
+        hubNextCompLogo.removeAttribute('src');
+        hubNextCompLogo.removeAttribute('alt');
+      }
     } else {
       const { fx, season, idxInMatchday } = next;
       const home = clubIndex.get(fx.homeClubId);
@@ -249,6 +279,7 @@ export function updateDashboard() {
       const date = getFixtureKickoffDate(fx, season, md);
       const dateLabel = formatGameDateLabel(date);
       const timeLabel = (fx?.kickoffTime && String(fx.kickoffTime).includes(':')) ? fx.kickoffTime : deriveKickoffTime(fx, idxInMatchday);
+      const weekday = (date instanceof Date && !Number.isNaN(date.getTime())) ? capFirst(date.toLocaleDateString('es-ES', { weekday: 'long' })) : '';
  
       const stadium =
         home?.stadium?.name || home?.stadiumName || home?.stadium?.stadiumName ||
@@ -264,9 +295,6 @@ export function updateDashboard() {
       if (hudNextSub) hudNextSub.textContent = compLine;
       if (hudNextVenue) hudNextVenue.textContent = stadium;
       if (hudNextDate) {
-        const weekday = (date instanceof Date && !Number.isNaN(date.getTime()))
-          ? capFirst(date.toLocaleDateString('es-ES', { weekday: 'long' }))
-          : '';
         const base = `${weekday ? weekday + ' ' : ''}${dateLabel}`;
         // Mostrar siempre FECHA • HORA en el label (aunque exista hudNextTime)
         hudNextDate.textContent = timeLabel ? `${base} • ${timeLabel}` : base;
@@ -285,7 +313,54 @@ export function updateDashboard() {
         }
       }
       // HUB: bajo el botón PARTIDO, lo mismo pero un poco más grande
-      if (hubNextHint) {
+      // Centro: “fecha/hora del simulador” (tomamos la del próximo partido)
+      if (hubSimDate) hubSimDate.textContent = `${weekday ? weekday + ' ' : ''}${dateLabel}`;
+      if (hubSimTime) hubSimTime.textContent = timeLabel || '—';
+
+      // Centro: tarjeta detallada (si existe el markup nuevo)
+      const hasNewCard = Boolean(hubNextHomeName && hubNextAwayName && hubNextComp && hubNextVenue2 && hubNextDate2 && hubNextTime2);
+      if (hasNewCard) {
+        if (hubNextHomeName) hubNextHomeName.textContent = homeNameFull;
+        if (hubNextAwayName) hubNextAwayName.textContent = awayNameFull;
+
+        if (hubNextHomeCoat) {
+          hubNextHomeCoat.innerHTML = '';
+          const coat = createCoatImgElement(fx.homeClubId, homeNameFull, 40);
+          if (coat) hubNextHomeCoat.appendChild(coat);
+        }
+        if (hubNextAwayCoat) {
+          hubNextAwayCoat.innerHTML = '';
+          const coat = createCoatImgElement(fx.awayClubId, awayNameFull, 40);
+          if (coat) hubNextAwayCoat.appendChild(coat);
+        }
+
+        if (hubNextComp) hubNextComp.textContent = compLine; // "La Liga ... • Jornada X"
+        if (hubNextVenue2) hubNextVenue2.textContent = stadium;
+
+        // Fecha: "Sábado 16/08/2025 •"
+        if (hubNextDate2) {
+          const base = `${weekday ? weekday + ' ' : ''}${dateLabel}`;
+          hubNextDate2.textContent = `${base} •`;
+        }
+
+        // Hora: "21:30"
+        if (hubNextTime2) hubNextTime2.textContent = timeLabel || '—';
+
+        // Logo competición
+        if (hubNextCompLogo) {
+          const logoPath = getCompetitionLogoPath(GameState.league);
+          if (logoPath) {
+            hubNextCompLogo.src = logoPath;
+            hubNextCompLogo.alt = GameState.league?.name || 'Competición';
+            hubNextCompLogo.style.display = 'block';
+          } else {
+            hubNextCompLogo.style.display = 'none';
+            hubNextCompLogo.removeAttribute('src');
+            hubNextCompLogo.removeAttribute('alt');
+          }
+        }
+      } else if (hubNextHint) {
+        // Fallback si alguien abre un HTML viejo
         hubNextHint.innerHTML = '';
         renderMatchLine(hubNextHint, fx, clubIndex, 22, club.id, { useShortName: true });
         const meta = document.createElement('div');
