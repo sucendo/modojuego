@@ -2628,6 +2628,7 @@ span#club-name-main img {
 
 .pcf-match-card{ padding: 12px 12px 14px; }
 .pcf-match-card__title{
+  text-align: center;
   font-weight: 900;
   letter-spacing: 0.6px;
   text-transform: uppercase;
@@ -2667,6 +2668,23 @@ span#club-name-main img {
 
 .pcf-teambox__body{ padding: 10px; }
 
+/* Reutiliza el mismo campo de Tácticas, pero en tamaño reducido */
+.pcf-pitch--mini{
+  min-height: 170px;
+  margin-bottom: 10px;
+}
+.pcf-pitch--mini .pcf-dot{
+  width: 18px;
+  height: 18px;
+  font-size: 9px;
+  border-width: 2px;
+}
+.pcf-pitch--mini .pcf-dot.is-gk{
+  background: rgba(245, 158, 11, 0.88);
+  color: rgba(2, 6, 23, 0.92);
+  border-color: rgba(255, 255, 255, 0.70);
+}
+
 .pcf-mini-pitch{
   width: 100%;
   aspect-ratio: 420 / 300; /* igual que .pcf-pitch (tácticas) */
@@ -2685,13 +2703,13 @@ span#club-name-main img {
 
 .pcf-pitch-dot{
   position:absolute;
-  width: 18px;
-  height: 18px;
+  width: 26px;
+  height: 26px;
   border-radius: 999px;
   transform: translate(-50%, -50%);
   display: grid;
   place-items: center;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 900;
   letter-spacing: -0.02em;
   cursor: pointer;
@@ -2726,8 +2744,24 @@ span#club-name-main img {
 
 .pcf-lineup{ display:flex; flex-direction: column; gap: 4px; }
 .pcf-lineup--small{ font-size: 11px; opacity: 0.9; }
-.pcf-lineup-item{ display:flex; justify-content: space-between; gap: 10px; padding: 4px 6px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); }
-.pcf-lineup-item__num{ width: 28px; font-weight: 900; opacity: 0.85; }
+.pcf-lineup-item{
+  display:flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 4px 6px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  cursor: pointer;
+}
+.pcf-lineup-item:hover{
+  background: rgba(96, 165, 250, 0.08);
+  border-color: rgba(96, 165, 250, 0.18);
+}
+.pcf-lineup-item.is-selected{
+  outline: 2px solid rgba(59, 130, 246, 0.55);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+}.pcf-lineup-item__num{ width: 28px; font-weight: 900; opacity: 0.85; }
 .pcf-lineup-item__name{ flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pcf-lineup-item__note{ opacity: 0.7; font-size: 11px; white-space: nowrap; }
 
