@@ -18,6 +18,7 @@ import { getFormationSlots, assignPlayersToSlots } from './utils/tacticsState.js
 let __bound = false;
 let __onOpenMatchDetail = null;
 let __lastSimulatedMatchday = null;
+let __liveTacticsBound = false;
 
 // --------------------------
 // Helpers
@@ -31,6 +32,13 @@ function escapeHtml(v) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+function cssEscapeAttr(v) {
+  const s = String(v ?? '');
+  // CSS.escape está soportado en navegadores modernos. Fallback simple para IDs numéricos/alfanum.
+  if (typeof CSS !== 'undefined' && CSS && typeof CSS.escape === 'function') return CSS.escape(s);
+  return s.replace(/[^a-zA-Z0-9_\-]/g, (ch) => '\\' + ch);
 }
 
 function stableHash(str) {
@@ -265,6 +273,11 @@ function renderPlayersList(container, players, { note = 'overall' } = {}) {
   list.forEach((p) => {
     const div = document.createElement('div');
     div.className = 'pcf-lineup-item';
+    const pid = p?.id != null ? String(p.id) : '';
+    if (pid) div.dataset.playerId = pid;
+    // Clickable como la lista de Tácticas (para enlazar con el mini-campo)
+    div.setAttribute('role', 'button');
+    div.tabIndex = 0;
     const num = p?.shirtNumber ?? p?.number ?? '';
     const nm = p?.name || 'Jugador';
     const nte =
@@ -283,6 +296,88 @@ function renderPlayersList(container, players, { note = 'overall' } = {}) {
     `;
     container.appendChild(div);
   });
+}
+
+function setSelectedInLineup(lineupEl, pid) {
+  if (!lineupEl) return;
+  const id = pid ? String(pid) : '';
+  lineupEl.dataset.selectedPlayerId = id;
+
+  lineupEl
+    .querySelectorAll('.pcf-lineup-item.is-selected')
+    .forEach((el) => el.classList.remove('is-selected'));
+
+  if (!id) return;
+
+  const item = lineupEl.querySelector(
+    `.pcf-lineup-item[data-player-id="${cssEscapeAttr(id)}"]`
+  );
+  if (item) item.classList.add('is-selected');
+}
+
+function setSelectedInMiniPitch(pitchEl, pid) {
+  if (!pitchEl) return;
+  const id = pid ? String(pid) : '';
+  pitchEl.dataset.selectedPlayerId = id;
+
+  pitchEl
+    .querySelectorAll('.pcf-pitch-dot.is-selected')
+    .forEach((el) => el.classList.remove('is-selected'));
+
+  if (!id) return;
+
+  const dot = pitchEl.querySelector(
+    `.pcf-pitch-dot[data-player-id="${cssEscapeAttr(id)}"]`
+  );
+  if (dot) dot.classList.add('is-selected');
+  else pitchEl.dataset.selectedPlayerId = '';
+}
+
+function selectMiniPitchPlayer(pitchEl, lineupEl, pid) {
+  setSelectedInMiniPitch(pitchEl, pid);
+  setSelectedInLineup(lineupEl, pid);
+}
+
+function ensureLineupBoundToMiniPitch(lineupEl, pitchEl) {
+  if (!lineupEl || !pitchEl) return;
+
+  // Enlace para que el click del campo pueda iluminar también la lista
+  if (!lineupEl.id) lineupEl.id = `pcf-lineup-${Math.random().toString(36).slice(2, 9)}`;
+  pitchEl.dataset.linkedLineupId = lineupEl.id;
+
+  if (lineupEl.dataset.lineupBound === '1') return;
+  lineupEl.dataset.lineupBound = '1';
+
+  const onActivate = (itemEl) => {
+    if (!itemEl) return;
+    const pid = itemEl.getAttribute('data-player-id') || '';
+    if (!pid) return;
+    selectMiniPitchPlayer(pitchEl, lineupEl, pid);
+  };
+
+  // Click en lista -> ilumina punto en campo + fila
+  lineupEl.addEventListener('click', (e) => {
+    const item =
+      e.target instanceof Element
+        ? e.target.closest('.pcf-lineup-item[data-player-id]')
+        : null;
+    if (!item) return;
+    onActivate(item);
+  });
+
+  // Enter/Espacio en lista -> igual que click
+  lineupEl.addEventListener('keydown', (e) => {
+    if (!(e.target instanceof Element)) return;
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const item = e.target.closest('.pcf-lineup-item[data-player-id]');
+    if (!item) return;
+    e.preventDefault();
+    onActivate(item);
+  });
+
+  // Mantener selección si ya estaba marcada en el campo
+  const already = pitchEl.dataset.selectedPlayerId ? String(pitchEl.dataset.selectedPlayerId) : '';
+  if (already) selectMiniPitchPlayer(pitchEl, lineupEl, already);
 }
 
 function renderNotCalledList(container, club, xi, bench, maxItems = 3) {
@@ -332,15 +427,71 @@ function ensureMiniPitchBound(container) {
         : null;
     if (!dot) return;
     const pid = dot.getAttribute('data-player-id') || '';
-    container.dataset.selectedPlayerId = pid;
-    container
-      .querySelectorAll('.pcf-pitch-dot.is-selected')
-      .forEach((el) => el.classList.remove('is-selected'));
-    dot.classList.add('is-selected');
+    setSelectedInMiniPitch(container, pid);
+
+    // Si el mini-campo está enlazado a una lista (Titulares), iluminar también esa fila
+    const linkedListId = container.dataset.linkedLineupId || '';
+    if (linkedListId) {
+      const lineupEl = document.getElementById(linkedListId);
+      if (lineupEl) setSelectedInLineup(lineupEl, pid);
+    }
   });
 }
 
-function renderMiniPitch(container, club, xiPlayers = null) {
+function getSavedPitchPositionsMap(club){
+  // En tu tactics.js se guarda como:
+  // club.tactics.manualPositions = { [playerId]: { left:number, top:number } }  // % CSS
+  // Aceptamos también formatos legacy {x,y}.
+  const t = club?.tactics || club?.tactic || null;
+  const m =
+    t?.positionsByPlayerId ||
+    t?.playerPositions ||
+    t?.pitchPositions ||
+    t?.dotPositions ||
+    t?.positions ||
+	t?.manualPositions ||
+    null;
+  return m;
+}
+
+function readPitchPosFromSaved(map, playerId){
+  // Acepta varios formatos históricos:
+  // - { left, top }   -> ya son CSS % (como tactics.js/alignment.js)
+  // - { x, y }        -> coordenadas 0..100 (legacy)
+  if (!map || playerId == null) return null;
+  const key = String(playerId);
+  const v = map instanceof Map ? (map.get(key) || map.get(playerId)) : (map[key] || map[playerId]);
+  if (!v) return null;
+
+  const left = Number(v.left ?? v.x);
+  const top  = Number(v.top  ?? v.y);
+  if (!Number.isFinite(left) || !Number.isFinite(top)) return null;
+  return { left, top };
+}
+
+function slotToPitchCSS(slot){
+  // IMPORTANT: en Tácticas/Alignment, el pitch es horizontal (420x300)
+  // y se convierte así: left = 100 - y ; top = x
+  const sx = Number(slot?.x);
+  const sy = Number(slot?.y);
+  const top = Number.isFinite(sx) ? clamp(sx, 0, 100) : 50;
+  const left = Number.isFinite(sy) ? clamp(100 - sy, 0, 100) : 50;
+  return { left, top };
+}
+
+function rotate180IfAway(pos, isAway){
+  // Rotación 180°: invierte ambos ejes
+  // left' = 100 - left
+  // top'  = 100 - top
+  const l = Number(pos?.left);
+  const t = Number(pos?.top);
+  const left = Number.isFinite(l) ? l : 50;
+  const top  = Number.isFinite(t) ? t : 50;
+  if (!isAway) return { left, top };
+  return { left: 100 - left, top: 100 - top };
+}
+
+function renderMiniPitch(container, club, xiPlayers = null, side = 'home') {
   if (!container) return;
   ensureMiniPitchBound(container);
   container.innerHTML = '';
@@ -351,6 +502,12 @@ function renderMiniPitch(container, club, xiPlayers = null) {
   const players =
     Array.isArray(xiPlayers) && xiPlayers.length ? xiPlayers : getPreLineup(club).xi;
   const assigned = assignPlayersToSlots(players, slots);
+  
+  // ✅ Visitante ataca a la izquierda: rotación 180° del layout
+  const isAway = (String(side) === 'away');
+
+  // ✅ Posiciones guardadas en Tácticas (si existen)
+  const savedMap = getSavedPitchPositionsMap(club);
 
   const selectedPid = container.dataset.selectedPlayerId
     ? String(container.dataset.selectedPlayerId)
@@ -359,12 +516,20 @@ function renderMiniPitch(container, club, xiPlayers = null) {
   assigned.forEach((slot) => {
     const p = slot?.player || null;
     const pid = p?.id != null ? String(p.id) : '';
+	
+    // 1) Intentar usar posición guardada de Tácticas por jugador
+    const savedPos = p ? readPitchPosFromSaved(savedMap, p.id) : null;
+    const basePos = savedPos ? savedPos : slotToPitchCSS(slot);
+    const rotated = rotate180IfAway(basePos, isAway);
+    const left = clamp(rotated.left, 0, 100);
+    const top  = clamp(rotated.top, 0, 100);
+	
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'pcf-pitch-dot' + (slot?.role === 'GK' ? ' is-gk' : '');
     if (pid) btn.dataset.playerId = pid;
-    btn.style.left = `${Number(slot?.x ?? 50)}%`;
-    btn.style.top = `${Number(slot?.y ?? 50)}%`;
+    btn.style.left = `${left}%`;
+    btn.style.top = `${top}%`;
     btn.textContent = getShirtNumber(p) || '·';
     btn.title = p
       ? `${p.name || 'Jugador'} (${String(p.position || '').toUpperCase() || '-'})`
@@ -720,17 +885,28 @@ export function updateNextMatchView() {
     const homeL = getPreLineup(home);
     const awayL = getPreLineup(away);
 
-    // Mini pitches (con XI real, asignado a slots como en Tácticas)
-    renderMiniPitch(document.getElementById('nextmatch-pre-home-pitch'), home, homeL.xi);
-    renderMiniPitch(document.getElementById('nextmatch-pre-away-pitch'), away, awayL.xi);
+    // Enlaces pitch <-> listado (selección como en Tácticas)
+    const homePitchEl = document.getElementById('nextmatch-pre-home-pitch');
+    const awayPitchEl = document.getElementById('nextmatch-pre-away-pitch');
+    const homeXiEl = document.getElementById('nextmatch-pre-home-xi');
+    const awayXiEl = document.getElementById('nextmatch-pre-away-xi');
 
-    renderPlayersList(document.getElementById('nextmatch-pre-home-xi'), homeL.xi);
+    // Listas
+    renderPlayersList(homeXiEl, homeL.xi);
     renderPlayersList(document.getElementById('nextmatch-pre-home-bench'), homeL.bench);
     renderNotCalledList(document.getElementById('nextmatch-pre-home-out'), home, homeL.xi, homeL.bench);
 
-    renderPlayersList(document.getElementById('nextmatch-pre-away-xi'), awayL.xi);
+    renderPlayersList(awayXiEl, awayL.xi);
     renderPlayersList(document.getElementById('nextmatch-pre-away-bench'), awayL.bench);
     renderNotCalledList(document.getElementById('nextmatch-pre-away-out'), away, awayL.xi, awayL.bench);
+
+    // ✅ home / away para aplicar mirror correcto
+    renderMiniPitch(homePitchEl, home, homeL.xi, 'home');
+    renderMiniPitch(awayPitchEl, away, awayL.xi, 'away');
+
+    // Click en la lista (Titulares) <-> click en el campo (como en Tácticas)
+    ensureLineupBoundToMiniPitch(homeXiEl, homePitchEl);
+    ensureLineupBoundToMiniPitch(awayXiEl, awayPitchEl);
 
     // Expectativas (solo para el usuario)
     const myClub = isUserHome ? home : away;
@@ -813,6 +989,9 @@ export function updateNextMatchView() {
   const highlightsEl = document.getElementById('nextmatch-post-highlights');
   const statsEl = document.getElementById('nextmatch-last-stats');
   const timelineEl = document.getElementById('nextmatch-last-timeline');
+  
+  // Panel OCASIONES (mismo renderer, pestaña aparte)
+  const occEl = document.getElementById('nextmatch-post-occasions');
 
   if (highlightsEl) {
     highlightsEl.innerHTML = '';
@@ -924,9 +1103,6 @@ export function updateNextMatchView() {
     }
   }
 
-  // Panel OCASIONES (declarar ANTES de usar)
-  const occEl = document.getElementById('nextmatch-post-occasions');
-
   if (timelineEl) {
     renderMatchTimeline(timelineEl, {
       fx: lastFx,
@@ -1013,9 +1189,9 @@ export function updateNextMatchView() {
   
   // Si venimos de simular una jornada, saltamos automáticamente al POST del último partido jugado.
   if (__lastSimulatedMatchday != null) {
-    const mdTarget = Number(__lastSimulatedMatchday);
-    const lastFx = getFixtureForUser(mdTarget, userId, fixtures);
-    if (lastFx && lastFx.played) __matchScreen = 'post';
+    const md = Number(__lastSimulatedMatchday);
+    const maybeFx = getFixtureForUser(md, userId, fixtures);
+    if (maybeFx && maybeFx.played) __matchScreen = 'post';
   }
   setMatchScreen(__matchScreen);
 }
