@@ -9,8 +9,14 @@
  */
 
 import { initUI as legacyInitUI } from '../ui.js';
-
+import { initFullscreenButton, initSettingsModal } from './modals/settingsModal.js';
+ 
 export function initUI() {
+  // Controles globales (header/modales) que deben funcionar aunque alguna vista legacy falle.
+  // Estas funciones son seguras: si no existen los nodos en el DOM, simplemente retornan.
+  initFullscreenButton();
+  initSettingsModal();
+
   // De momento delegamos al monolito.
   legacyInitUI();
 }
