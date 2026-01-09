@@ -26,6 +26,11 @@ body {
   color: var(--text);
 }
 
+/* Evita scroll del fondo cuando hay modal */
+body.is-modal-open {
+  overflow: hidden;
+}
+
 /* Seguridad: si por cualquier motivo .hidden no existe en algún build */
 .hidden {
   display: none !important;
@@ -287,6 +292,36 @@ body {
   background: rgba(2,6,23,0.70);
 }
 #start-manager-name:active{
+  transform: translateY(1px);
+}
+
+/* ===========================
+   Modal Settings: input nombre manager (mismo look)
+   =========================== */
+#settings-manager-name{
+  width: min(420px, 100%);
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(148,163,184,0.28);
+  background: rgba(2,6,23,0.55);
+  color: rgba(255,255,255,0.92);
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  outline: none;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.22);
+  transition: border-color .15s ease, box-shadow .15s ease, transform .05s ease;
+}
+#settings-manager-name::placeholder{
+  color: rgba(148,163,184,0.75);
+  font-weight: 700;
+}
+#settings-manager-name:focus{
+  border-color: rgba(96,165,250,0.8);
+  box-shadow: 0 0 0 3px rgba(96,165,250,0.18), 0 10px 22px rgba(0,0,0,0.25);
+  background: rgba(2,6,23,0.70);
+}
+#settings-manager-name:active{
   transform: translateY(1px);
 }
 
@@ -1532,6 +1567,17 @@ html{
   justify-content: center;
 }
 
+.btn-icon svg{
+  display:block;
+  fill: currentColor;
+}
+
+/* Estado activo (fullscreen) */
+.btn-icon.is-active{
+  outline: 2px solid rgba(96,165,250,0.55);
+  outline-offset: 2px;
+}
+
 /* ===========================
    MODAL / FICHA DE JUGADOR (extra)
    =========================== */
@@ -2615,7 +2661,22 @@ span#club-name-main img {
 /* ===========================
    Responsive móvil (unificado)
    =========================== */
-
+   
+/* ===========================================================
+   NEXTMATCH (PREVIA): LOCAL con escudo a la derecha del nombre
+   =========================================================== */
+/* En index.html el HOME está como: coat -> name【turn79file3†index.html†L22-L25】
+   Reordenamos visualmente sin tocar markup. */
+.pcf-teambox--home .pcf-teambox__club{
+  justify-content: flex-end;
+}
+.pcf-teambox--home .pcf-teambox__name{
+  order: 1;
+  text-align: right;
+}
+.pcf-teambox--home .pcf-teambox__coat{
+  order: 2;
+}
 
 /* =========================================================
    PCF – PREVIA / FINAL PARTIDO (view-nextmatch)
