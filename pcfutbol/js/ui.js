@@ -24,6 +24,12 @@ import {
 } from './ui/modals/matchDetailModal.js';
 
 import {
+  initSettingsModal,
+  initFullscreenButton,
+  syncManagerNameUI,
+} from './ui/modals/settingsModal.js';
+
+import {
   initCalendarUI,
   updateCalendarView,
 } from './ui/calendarView.js';
@@ -243,6 +249,10 @@ export function initUI() {
   // ----------
   initPlayerModalImpl({ onRequestClose: closePlayerModal });
   initMatchDetailModalImpl({ onRequestClose: closeMatchDetailModal });
+
+  // Header + Configuración
+  initFullscreenButton();
+  initSettingsModal();
   
   // Subvistas de competición (3 vistas)
   initCalendarUI({ onOpenMatchDetail: openMatchDetailModal });
@@ -349,8 +359,12 @@ export function initUI() {
 
       newGame({ roleMode: 'TOTAL', leagueId, clubId, managerName: startManagerNameInput?.value || '',});
 
-      showDashboard(startScreen, dashboardScreen);
+      // Persistir/sincronizar nombre del mánager (settings + HUD)
+      try { syncManagerNameUI({ persist: true }); } catch (_) {}
 
+      showDashboard(startScreen, dashboardScreen);
+      // Sincronizar nombre manager desde save y persistir
+      try { syncManagerNameUI({ persist: true }); } catch (_) {}
       const md = GameState.currentDate?.matchday || 1;
       try { setStandingsSelectedMatchday(md); } catch (_) {}
 
@@ -366,6 +380,8 @@ export function initUI() {
     fileInputStart.addEventListener('change', (event) => {
       handleFileInput(event, startScreen, dashboardScreen, ctx, () => {
         showDashboard(startScreen, dashboardScreen);
+        // Sincronizar nombre manager desde save y persistir
+        try { syncManagerNameUI({ persist: true }); } catch (_) {}
         const md = GameState.currentDate?.matchday || 1;
         try { setStandingsSelectedMatchday(md); } catch (_) {}
         setActiveSubview('dashboard', ctx);
