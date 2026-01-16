@@ -1,0 +1,1411 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Solar Babylon - Orbit + Free Fly + Surface (Chunks/LOD)</title>
+  <style>
+    html,body{margin:0;height:100%;overflow:hidden;background:#050505}
+    #renderCanvas{width:100%;height:100%;touch-action:none;display:block}
+    #ui{
+      position:fixed;left:12px;top:12px;z-index:10;
+      font-family: 'Segoe UI', sans-serif;
+      color:#eee; background:rgba(0,0,0,.65); border:1px solid rgba(255,255,255,.15);
+      padding:12px; border-radius:10px; backdrop-filter: blur(4px);
+      width: 360px;
+    }
+    h1{font-size:14px;margin:0 0 10px 0;color:#fa0}
+    .row{display:flex;align-items:center;gap:8px;margin:7px 0;font-size:12px}
+    .btn{cursor:pointer;background:#2b2b2b;color:#fff;border:1px solid #555;padding:6px 10px;border-radius:6px;font-size:11px}
+    .btn:hover{background:#444}
+    .btn.primary{border-color:#a80;background:#3a2b10}
+    .btn.primary:hover{background:#4a3412}
+    select.btn{appearance:none}
+    label{color:#ddd}
+    .info{font-size:10px;color:#aaa;margin-top:8px;line-height:1.35}
+    .split{display:flex;gap:8px}
+    .split > *{flex:1}
+    #debugInfo{margin-top:8px;font-size:10px;color:#cfc}
+    .pill{display:inline-block;padding:2px 6px;border:1px solid rgba(255,255,255,.15);border-radius:999px;font-size:10px;color:#ddd}
+  </style>
+</head>
+<body>
+  <div id="ui">
+    <h1>🪐 Solar Babylon <span class="pill" id="modePill">Órbita</span></h1>
+
+    <div class="row split">
+      <button id="camOrbit" class="btn primary">Órbita</button>
+      <button id="camFly" class="btn">Vuelo libre</button>
+      <button id="camSurface" class="btn">Superficie</button>
+    </div>
+
+    <div class="row">
+      <label>Tiempo</label>
+      <input id="speedRange" type="range" min="0" max="50" value="1" step="0.1" style="flex:1">
+      <span id="speedVal" class="pill">1.0x</span>
+    </div>
+
+    <div class="row">
+      <label>Objetivo</label>
+      <select id="planetSelect" class="btn" style="flex:1"></select>
+      <button id="approachBtn" class="btn">Aproximar</button>
+    </div>
+
+    <div class="info">
+      <b>Vuelo libre:</b> WASD mover, ratón mirar, Shift correr, Espacio subir, Ctrl bajar.<br>
+      <b>Superficie:</b> WASD mover, ratón mirar, Espacio saltar, Shift correr. Gravedad hacia el centro.<br>
+      <b>LOD/chunks:</b> solo en el planeta activo en modo Superficie para no matar la CPU.
+    </div>
+
+    <div id="debugInfo">Chunks activos: 0 | FPS: 0</div>
+  </div>
+
+  <canvas id="renderCanvas"></canvas>
+
+  <script src="https://cdn.babylonjs.com/babylon.js"></script>
+  <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
+  <script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
+
+  <script>
+    // ====================================================================
+    // 0) Engine
+    // ====================================================================
+    const canvas = document.getElementById("renderCanvas");
+    const engine = new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: false, stencil: false });
+
+    // ====================================================================
+    // 1) Noise (determinista) + FBM
+    // ====================================================================
+    function hash3(x, y, z) {
+      x = Math.floor(x); y = Math.floor(y); z = Math.floor(z);
+      const s = Math.sin(x * 127.1 + y * 311.7 + z * 74.7) * 43758.5453123;
+      return s - Math.floor(s);
+    }
+    function lerp(a,b,t){ return a + (b-a)*t; }
+    function smooth(t){ return t*t*(3-2*t); }
+    function noise3(x, y, z) {
+      const xi = Math.floor(x), yi = Math.floor(y), zi = Math.floor(z);
+      const xf = x - xi, yf = y - yi, zf = z - zi;
+      const u = smooth(xf), v = smooth(yf), w = smooth(zf);
+
+      const n000 = hash3(xi,yi,zi),     n100 = hash3(xi+1,yi,zi);
+      const n010 = hash3(xi,yi+1,zi),   n110 = hash3(xi+1,yi+1,zi);
+      const n001 = hash3(xi,yi,zi+1),   n101 = hash3(xi+1,yi,zi+1);
+      const n011 = hash3(xi,yi+1,zi+1), n111 = hash3(xi+1,yi+1,zi+1);
+
+      const x00 = lerp(n000, n100, u), x10 = lerp(n010, n110, u);
+      const x01 = lerp(n001, n101, u), x11 = lerp(n011, n111, u);
+      const y0  = lerp(x00, x10, v),   y1  = lerp(x01, x11, v);
+      return lerp(y0, y1, w);
+    }
+    function fbm3(x, y, z, oct=6, pers=0.5, lac=2.0) {
+      let total = 0, f = 1, a = 1, maxV = 0;
+      for (let i=0;i<oct;i++){
+        total += noise3(x*f, y*f, z*f) * a;
+        maxV += a;
+        a *= pers;
+        f *= lac;
+      }
+      return total / Math.max(1e-6, maxV); // 0..1
+    }
+
+    // ====================================================================
+    // 2) Chunks / Quadtree terrain (cube-sphere)
+    // ====================================================================
+    class PlanetChunk {
+      constructor(parentPlanet, radius, detailLevel, localUp, bounds, material, seed) {
+        this.scene = parentPlanet.scene;
+        this.parentPlanet = parentPlanet;
+        this.localUp = localUp;
+        this.bounds = bounds; // {minX,maxX,minY,maxY} in [0..1]
+        this.detailLevel = detailLevel;
+        this.radius = radius;
+        this.material = material;
+        this.seed = seed;
+
+        this.children = [];
+        this.isLeaf = true;
+        this.mesh = null;
+
+        // split distance tuned for web
+        this.splitDistance = radius * (2.4 / Math.pow(1.75, detailLevel));
+        this.buildMesh();
+      }
+
+      buildMesh() {
+        const resolution = this.parentPlanet.chunkResolution; // vertices per side
+        const positions = [];
+        const indices = [];
+        const normals = [];
+        const uvs = [];
+        const colors = []; // vertex colors (biomas)
+
+        const axisA = new BABYLON.Vector3(this.localUp.y, this.localUp.z, this.localUp.x);
+        const axisB = BABYLON.Vector3.Cross(this.localUp, axisA);
+
+        for (let y = 0; y <= resolution; y++) {
+          for (let x = 0; x <= resolution; x++) {
+            const px = x / resolution;
+            const py = y / resolution;
+
+            const localX = this.bounds.minX + (this.bounds.maxX - this.bounds.minX) * px;
+            const localY = this.bounds.minY + (this.bounds.maxY - this.bounds.minY) * py;
+
+            const pointOnCube = this.localUp
+              .add(axisA.scale((localX - 0.5) * 2))
+              .add(axisB.scale((localY - 0.5) * 2));
+
+            const pointOnSphere = pointOnCube.clone().normalize();
+
+            // Terrain
+            let elevation = 0;
+            if (this.parentPlanet.hasTerrain) {
+              const f = this.parentPlanet.noiseFrequency;
+              const n = fbm3(
+                pointOnSphere.x * f + this.seed,
+                pointOnSphere.y * f + this.seed,
+                pointOnSphere.z * f + this.seed,
+                this.parentPlanet.noiseOctaves
+              );
+
+              // mountains
+              elevation = (n * 2 - 1) * this.parentPlanet.terrainScale;
+              // clamp mínimo (permite negativos si seaLevel es negativo)
+              elevation = Math.max(elevation, this.parentPlanet.seaLevel);
+            }
+
+            const finalPos = pointOnSphere.scale(this.radius * (1 + elevation));
+            positions.push(finalPos.x, finalPos.y, finalPos.z);
+
+            // normals initial, recomputed later
+            normals.push(pointOnSphere.x, pointOnSphere.y, pointOnSphere.z);
+
+            // (simple) face UVs; good enough for material blending, not for full textures
+            uvs.push(px, py);
+			
+            // Biomes via vertex colors (look “procedural ficticio”)
+            const c = this.parentPlanet.getBiomeColor(pointOnSphere, elevation);
+            colors.push(c.r, c.g, c.b, 1.0);
+          }
+        }
+
+        for (let y = 0; y < resolution; y++) {
+          for (let x = 0; x < resolution; x++) {
+            const i = x + y * (resolution + 1);
+            indices.push(i, i + 1, i + resolution + 1);
+            indices.push(i + 1, i + resolution + 2, i + resolution + 1);
+          }
+        }
+
+        const mesh = new BABYLON.Mesh(`chunk_L${this.detailLevel}`, this.scene);
+        const vd = new BABYLON.VertexData();
+        vd.positions = positions;
+        vd.indices = indices;
+        vd.normals = normals;
+        vd.uvs = uvs;
+		vd.colors = colors;
+        vd.applyToMesh(mesh);
+
+        // recompute normals for terrain
+        const tempNormals = [];
+        BABYLON.VertexData.ComputeNormals(positions, indices, tempNormals);
+        mesh.updateVerticesData(BABYLON.VertexBuffer.NormalKind, tempNormals);
+        // Low-poly look (faceted)
+        try { mesh.convertToFlatShadedMesh(); } catch(e){}
+
+        mesh.material = this.material;
+        mesh.parent = this.parentPlanet.root;
+        mesh.isPickable = true;
+
+        // we do raycast picking, no heavy physics impostors
+        mesh.checkCollisions = false;
+
+        if (this.parentPlanet.shadowGen) {
+          this.parentPlanet.shadowGen.addShadowCaster(mesh);
+          mesh.receiveShadows = true;
+        }
+
+        this.mesh = mesh;
+      }
+
+      updateLOD(cameraPos) {
+        if (!this.mesh) return;
+
+        // Measure distance to surface patch: camera to chunk bounding sphere center approximation
+        const dist = BABYLON.Vector3.Distance(cameraPos, this.mesh.getBoundingInfo().boundingSphere.centerWorld);
+
+        if (dist < this.splitDistance && this.detailLevel < this.parentPlanet.maxDetailLevel) {
+          if (this.isLeaf) this.split();
+          for (const c of this.children) c.updateLOD(cameraPos);
+        } else {
+          if (!this.isLeaf) this.merge();
+        }
+      }
+
+      split() {
+        this.isLeaf = false;
+        this.mesh.setEnabled(false);
+
+        const next = this.detailLevel + 1;
+        const b = this.bounds;
+        const midX = (b.minX + b.maxX) / 2;
+        const midY = (b.minY + b.maxY) / 2;
+
+        const b1 = { minX: b.minX, maxX: midX, minY: b.minY, maxY: midY };
+        const b2 = { minX: midX, maxX: b.maxX, minY: b.minY, maxY: midY };
+        const b3 = { minX: b.minX, maxX: midX, minY: midY, maxY: b.maxY };
+        const b4 = { minX: midX, maxX: b.maxX, minY: midY, maxY: b.maxY };
+
+        this.children = [
+          new PlanetChunk(this.parentPlanet, this.radius, next, this.localUp, b1, this.material, this.seed),
+          new PlanetChunk(this.parentPlanet, this.radius, next, this.localUp, b2, this.material, this.seed),
+          new PlanetChunk(this.parentPlanet, this.radius, next, this.localUp, b3, this.material, this.seed),
+          new PlanetChunk(this.parentPlanet, this.radius, next, this.localUp, b4, this.material, this.seed),
+        ];
+      }
+
+      merge() {
+        this.isLeaf = true;
+        this.mesh.setEnabled(true);
+        for (const c of this.children) c.dispose();
+        this.children = [];
+      }
+
+      dispose() {
+        if (this.mesh) {
+          if (this.parentPlanet.shadowGen) this.parentPlanet.shadowGen.removeShadowCaster(this.mesh);
+          this.mesh.dispose();
+          this.mesh = null;
+        }
+        for (const c of this.children) c.dispose();
+      }
+    }
+
+    class ProceduralPlanet {
+      constructor(scene, name, radius, shadowGen) {
+        this.scene = scene;
+        this.name = name;
+        this.radius = radius;
+        this.shadowGen = shadowGen;
+
+        this.root = new BABYLON.TransformNode(name + "_procRoot", scene);
+        this.faces = [];
+
+        // Tuning
+        this.hasTerrain = true;
+        this.terrainScale = 0.10;  // fraction of radius
+        this.seaLevel = -0.02;     // clamp (negativo => permite “mar” visual)
+        this.noiseFrequency = 2.8; // sample scale
+        this.noiseOctaves = 6;
+
+        this.chunkResolution = 18; // 18 => (19x19) vertices per chunk
+        this.maxDetailLevel = 6;   // keep sane on web
+
+        // Material for surface chunks (we'll share it)
+        this.material = new BABYLON.StandardMaterial(name + "_procMat", scene);
+        // con vertex colors: dejamos blanco para que el color venga del chunk
+        this.material.diffuseColor = new BABYLON.Color3(1, 1, 1);
+        this.material.specularColor = new BABYLON.Color3(0.06, 0.06, 0.06);
+        this.material.useVertexColor = true;
+
+        // Preset de biomas (se sobreescribe por planeta)
+        this.biomePreset = "default";
+
+        // Atmosphere (optional)
+        this.atmo = null;
+
+        // seed per planet
+        this.seed = (name.length * 17.13) % 1000;
+
+        const dirs = [
+          new BABYLON.Vector3(0, 1, 0), new BABYLON.Vector3(0, -1, 0),
+          new BABYLON.Vector3(1, 0, 0), new BABYLON.Vector3(-1, 0, 0),
+          new BABYLON.Vector3(0, 0, 1), new BABYLON.Vector3(0, 0, -1)
+        ];
+
+        for (const dir of dirs) {
+          this.faces.push(new PlanetChunk(
+            this,
+            this.radius,
+            0,
+            dir,
+            { minX: 0, maxX: 1, minY: 0, maxY: 1 },
+            this.material,
+            this.seed
+          ));
+        }
+
+        this.enabled = true;
+        this.setEnabled(false); // start hidden, enabled only in surface mode
+      }
+	  
+      // Color por bioma (inspirado en Dune / planetas ficticios)
+      getBiomeColor(pOnSphere, elevation) {
+        const clamp01 = (x) => Math.max(0, Math.min(1, x));
+        const lerp3 = (a,b,t) => new BABYLON.Color3(
+          lerp(a.r,b.r,t), lerp(a.g,b.g,t), lerp(a.b,b.b,t)
+        );
+
+        // normaliza altura a 0..1 aprox
+        const h = elevation; // suele estar en [-0.02 .. +0.16] según preset
+        const h01 = clamp01((h - this.seaLevel) / Math.max(1e-6, (this.terrainScale * 1.2)));
+
+        // latitud 0..1 (para nieve en polos si aplica)
+        const lat = clamp01(Math.abs(pOnSphere.y));
+
+        // presets
+        if (this.biomePreset === "arrakis") {
+          // Desierto: arena + roca oscura en montañas, casi sin agua
+          const sand = new BABYLON.Color3(0.82, 0.70, 0.46);
+          const dune = new BABYLON.Color3(0.90, 0.78, 0.52);
+          const rock = new BABYLON.Color3(0.35, 0.29, 0.22);
+          const t = clamp01(Math.pow(h01, 1.2));
+          // dunas (ligero “bandeado”)
+          const band = (Math.sin((pOnSphere.x + pOnSphere.z) * 18.0) * 0.5 + 0.5) * 0.08;
+          const base = lerp3(sand, dune, clamp01(t + band));
+          return lerp3(base, rock, clamp01((h01 - 0.65) * 2.2));
+        }
+
+        if (this.biomePreset === "caladan") {
+          // Oceánico: agua profunda + costas claras + verde húmedo + nieve en picos/polos
+          const deep = new BABYLON.Color3(0.03, 0.12, 0.22);
+          const water = new BABYLON.Color3(0.05, 0.22, 0.35);
+          const shore = new BABYLON.Color3(0.78, 0.72, 0.55);
+          const green = new BABYLON.Color3(0.16, 0.48, 0.18);
+          const rock  = new BABYLON.Color3(0.30, 0.28, 0.25);
+          const snow  = new BABYLON.Color3(0.92, 0.92, 0.92);
+
+          if (h < 0.0) {
+            const d = clamp01((-h) * 10);
+            return lerp3(water, deep, d);
+          }
+          // costa cerca de 0
+          const coast = clamp01(1 - Math.abs(h) * 55);
+          let land = (h01 < 0.55) ? green : lerp3(green, rock, clamp01((h01 - 0.55) * 1.8));
+          land = lerp3(land, shore, coast);
+          // nieve por altura + polos
+          const snowMask = clamp01((h01 - 0.82) * 4.0) * clamp01((lat - 0.25) * 1.4 + 0.3);
+          return lerp3(land, snow, snowMask);
+        }
+
+        if (this.biomePreset === "giedi") {
+          // Industrial oscuro: basaltos, ceniza, “brillos” verdosos
+          const ash = new BABYLON.Color3(0.10, 0.10, 0.11);
+          const basalt = new BABYLON.Color3(0.18, 0.17, 0.16);
+          const metal = new BABYLON.Color3(0.22, 0.23, 0.24);
+          const toxic = new BABYLON.Color3(0.10, 0.22, 0.12);
+          const t = clamp01(Math.pow(h01, 1.1));
+          let c = lerp3(ash, basalt, t);
+          c = lerp3(c, metal, clamp01((h01 - 0.6) * 2.0));
+          // “manchas” verdosas sutiles
+          const stain = clamp01((fbm3(pOnSphere.x*5+this.seed, pOnSphere.y*5+this.seed, pOnSphere.z*5+this.seed, 3) - 0.55) * 3.0);
+          c = lerp3(c, toxic, stain * 0.35);
+          return c;
+        }
+
+        if (this.biomePreset === "ice") {
+          // Helado: hielo + roca
+          const ice = new BABYLON.Color3(0.78, 0.86, 0.92);
+          const snow = new BABYLON.Color3(0.94, 0.95, 0.96);
+          const rock = new BABYLON.Color3(0.32, 0.32, 0.35);
+          const t = clamp01(h01);
+          let c = lerp3(ice, snow, clamp01((t - 0.2) * 1.4));
+          c = lerp3(c, rock, clamp01((t - 0.75) * 2.0));
+          return c;
+        }
+
+        if (this.biomePreset === "ix") {
+          // Ix: frío/tecnológico (acero + hielo + roca)
+          const steel = new BABYLON.Color3(0.38, 0.42, 0.46);
+          const rock  = new BABYLON.Color3(0.24, 0.25, 0.28);
+          const ice   = new BABYLON.Color3(0.82, 0.88, 0.94);
+          const t = clamp01(Math.pow(h01, 1.1));
+          let c = lerp3(steel, rock, clamp01((t - 0.35) * 1.5));
+          const frost = clamp01((lat - 0.18) * 1.6) * clamp01((0.55 - h01) * 2.0);
+          c = lerp3(c, ice, frost);
+          return c;
+        }
+
+        if (this.biomePreset === "kaitain") {
+          // Kaitain: templado imperial (praderas, tierras claras, mares)
+          const water = new BABYLON.Color3(0.05, 0.18, 0.30);
+          const deep  = new BABYLON.Color3(0.02, 0.08, 0.16);
+          const shore = new BABYLON.Color3(0.80, 0.74, 0.56);
+          const grass = new BABYLON.Color3(0.20, 0.55, 0.22);
+          const soil  = new BABYLON.Color3(0.58, 0.52, 0.38);
+          const rock  = new BABYLON.Color3(0.32, 0.30, 0.28);
+
+          if (h < 0.0) {
+            const d = clamp01((-h) * 10);
+            return lerp3(water, deep, d);
+          }
+          const coast = clamp01(1 - Math.abs(h) * 65);
+          let land = (h01 < 0.48) ? grass : lerp3(grass, soil, clamp01((h01 - 0.48) * 1.7));
+          land = lerp3(land, rock, clamp01((h01 - 0.78) * 2.2));
+          land = lerp3(land, shore, coast);
+          return land;
+        }
+
+        if (this.biomePreset === "salusa") {
+          // Salusa Secundus: áspero, cárcavas, roca rojiza
+          const dark = new BABYLON.Color3(0.12, 0.10, 0.10);
+          const rust = new BABYLON.Color3(0.42, 0.22, 0.16);
+          const rock = new BABYLON.Color3(0.30, 0.22, 0.20);
+          const t = clamp01(Math.pow(h01, 1.2));
+          let c = lerp3(dark, rust, clamp01(t + 0.12));
+          c = lerp3(c, rock, clamp01((h01 - 0.62) * 2.2));
+          // ceniza/tormentas sutiles
+          const ash = clamp01((fbm3(pOnSphere.x*4+this.seed, pOnSphere.y*4+this.seed, pOnSphere.z*4+this.seed, 3) - 0.55) * 3.2);
+          c = lerp3(c, dark, ash * 0.25);
+          return c;
+        }
+
+        if (this.biomePreset === "richese") {
+          // Richese: archipiélagos, mares turquesa, costas claras
+          const deep  = new BABYLON.Color3(0.02, 0.14, 0.20);
+          const water = new BABYLON.Color3(0.04, 0.28, 0.34);
+          const aqua  = new BABYLON.Color3(0.08, 0.42, 0.40);
+          const shore = new BABYLON.Color3(0.86, 0.80, 0.62);
+          const green = new BABYLON.Color3(0.18, 0.56, 0.22);
+          const rock  = new BABYLON.Color3(0.30, 0.30, 0.28);
+
+          if (h < 0.0) {
+            const d = clamp01((-h) * 10);
+            return lerp3(water, deep, d);
+          }
+          const coast = clamp01(1 - Math.abs(h) * 80);
+          let land = (h01 < 0.55) ? green : lerp3(green, rock, clamp01((h01 - 0.55) * 1.9));
+          land = lerp3(land, shore, coast);
+          // lagunas turquesa (manchas)
+          const lagoon = clamp01((fbm3(pOnSphere.x*6+this.seed, pOnSphere.y*6+this.seed, pOnSphere.z*6+this.seed, 2) - 0.58) * 3.4);
+          land = lerp3(land, aqua, lagoon * 0.18);
+          return land;
+        }
+
+        // default (rocoso simple)
+        const low = new BABYLON.Color3(0.35, 0.35, 0.37);
+        const high = new BABYLON.Color3(0.55, 0.55, 0.55);
+        return lerp3(low, high, h01);
+      }
+
+      setEnabled(on) {
+        this.enabled = on;
+        this.root.setEnabled(on);
+        for (const f of this.faces) this._setChunkTreeEnabled(f, on);
+        if (this.atmo) this.atmo.setEnabled(on);
+      }
+
+      _setChunkTreeEnabled(chunk, on) {
+        if (chunk.mesh) chunk.mesh.setEnabled(on && chunk.isLeaf);
+        if (!chunk.isLeaf) for (const c of chunk.children) this._setChunkTreeEnabled(c, on);
+      }
+
+      update(camera) {
+        if (!this.enabled) return;
+
+        // update lod only if camera is near
+        const dist = BABYLON.Vector3.Distance(camera.position, this.root.position);
+        if (dist < this.radius * 7) {
+          for (const f of this.faces) f.updateLOD(camera.position);
+        }
+
+        // count active leaves for debug
+      }
+
+      countActiveChunks() {
+        let total = 0;
+        for (const f of this.faces) total += this._countLeaves(f);
+        return total;
+      }
+      _countLeaves(chunk) {
+        if (chunk.isLeaf) return (chunk.mesh && chunk.mesh.isEnabled()) ? 1 : 0;
+        let c = 0;
+        for (const ch of chunk.children) c += this._countLeaves(ch);
+        return c;
+      }
+
+      dispose() {
+        for (const f of this.faces) f.dispose();
+        this.faces = [];
+        if (this.atmo) this.atmo.dispose();
+        this.root.dispose();
+      }
+    }
+
+    
+    // ====================================================================
+    // 3) Low-poly far planets (vertex-displaced + vertex colors)
+    // ====================================================================
+    function createLowPolyFarPlanet(scene, def, orbitNode) {
+      const seg = def.farSegments || 48;
+      const land = BABYLON.MeshBuilder.CreateSphere(def.name + "_land", { diameter: def.radius * 2, segments: seg }, scene);
+      land.parent = orbitNode;
+      land.position.set(def.orbitR, 0, 0);
+
+      // Material (vertex colors)
+      const landMat = new BABYLON.StandardMaterial(def.name + "_landMat", scene);
+      landMat.diffuseColor = new BABYLON.Color3(1,1,1);
+      landMat.specularColor = new BABYLON.Color3(0.06,0.06,0.06);
+      landMat.useVertexColor = true;
+      land.material = landMat;
+
+      // Optional micro bump to avoid "plastic" look
+      if (def.microBump) {
+        const bt = loadTextureOrNull(scene, def.microBump);
+        if (bt) {
+          bt.uScale = 6;
+          bt.vScale = 6;
+          landMat.bumpTexture = bt;
+          landMat.bumpTexture.level = 0.8;
+        }
+      }
+
+      const positions = land.getVerticesData(BABYLON.VertexBuffer.PositionKind);
+      const normals   = land.getVerticesData(BABYLON.VertexBuffer.NormalKind);
+      if (!positions || !normals) return { land, ocean: null };
+
+      const colors = new Array((positions.length/3) * 4);
+
+      // Dummy for palette reuse
+      const dummy = {
+        seed: (def.name.length * 17.13) % 1000,
+        biomePreset: def.biomePreset || "default",
+        seaLevel: (def.seaLevel ?? 0.0),
+        terrainScale: (def.terrainScale ?? 0.12),
+      };
+
+      const f = def.noiseFrequency ?? 2.6;
+      const oct = def.noiseOctaves ?? 6;
+      const amp = def.terrainScale ?? 0.12;
+      const sea = def.seaLevel ?? 0.0;
+
+      // Helpers
+      const clamp = (x,a,b)=>Math.max(a,Math.min(b,x));
+      const quant = (x,step)=> (step>0? (Math.round(x/step)*step) : x);
+
+      for (let i=0; i<positions.length; i+=3) {
+        // unit direction
+        const nx = normals[i], ny = normals[i+1], nz = normals[i+2];
+
+        // domain warp (reduces repetition)
+        const w = (fbm3(nx*f*1.2 + dummy.seed, ny*f*1.2 + dummy.seed, nz*f*1.2 + dummy.seed, 3) * 2 - 1) * 0.25;
+        const wx = nx + w, wy = ny + w*0.35, wz = nz - w*0.2;
+
+        const n0 = (fbm3(wx*f + dummy.seed, wy*f + dummy.seed, wz*f + dummy.seed, oct) * 2 - 1);
+        // ridged mountains
+        const r0 = 1.0 - Math.abs(n0);
+        const ridge = Math.pow(clamp(r0,0,1), 2.2);
+
+        // extra detail
+        const n1 = (fbm3(wx*f*2.4 + 19.7 + dummy.seed, wy*f*2.4 + 3.3 + dummy.seed, wz*f*2.4 + 11.1 + dummy.seed, 4) * 2 - 1);
+
+        // base elevation
+        let elev = (n0 * 0.55 + ridge * 0.55 + n1 * 0.12) * amp;
+
+        // Planet-specific flavor
+        if (dummy.biomePreset === "arrakis") {
+          // dunes banding
+          const band = (Math.sin((wx + wz) * 16.0) * 0.5 + 0.5) * 0.10;
+          elev += band * amp * 0.55;
+        }
+        if (dummy.biomePreset === "giedi" || dummy.biomePreset === "salusa") {
+          // harsher craters/erosion feel
+          const pits = (fbm3(wx*f*4.0 + 99.0 + dummy.seed, wy*f*4.0 + 17.0 + dummy.seed, wz*f*4.0 + 33.0 + dummy.seed, 3) - 0.55);
+          elev += pits * amp * 0.20;
+        }
+
+        // clamp by seaLevel (visual basins)
+        elev = Math.max(elev, sea);
+
+        // low-poly quantization for chunky facets
+        elev = quant(elev, amp * 0.11);
+
+        const scale = def.radius * (1 + elev);
+        positions[i]   = nx * scale;
+        positions[i+1] = ny * scale;
+        positions[i+2] = nz * scale;
+
+        const c = ProceduralPlanet.prototype.getBiomeColor.call(dummy, new BABYLON.Vector3(nx,ny,nz), elev);
+        const ci = (i/3)*4;
+        colors[ci] = c.r; colors[ci+1] = c.g; colors[ci+2] = c.b; colors[ci+3] = 1.0;
+      }
+
+      land.updateVerticesData(BABYLON.VertexBuffer.PositionKind, positions);
+      land.setVerticesData(BABYLON.VertexBuffer.ColorKind, colors);
+      // recompute normals after displacement
+      BABYLON.VertexData.ComputeNormals(positions, land.getIndices(), normals);
+      land.updateVerticesData(BABYLON.VertexBuffer.NormalKind, normals);
+      try { land.convertToFlatShadedMesh(); } catch(e){}
+
+      // Optional ocean sphere
+      let ocean = null;
+      if (def.ocean) {
+        const seaFrac = Math.max(0.6, 1 + sea + 0.002);
+        ocean = BABYLON.MeshBuilder.CreateSphere(def.name + "_ocean", { diameter: def.radius * 2 * seaFrac, segments: Math.max(24, Math.floor(seg*0.7)) }, scene);
+        ocean.parent = orbitNode;
+        ocean.position.set(def.orbitR, 0, 0);
+        ocean.isPickable = false;
+
+        const om = new BABYLON.PBRMaterial(def.name + "_oceanMat", scene);
+        om.albedoColor = def.oceanColor || new BABYLON.Color3(0.05,0.18,0.28);
+        om.metallic = 0.0;
+        om.roughness = 0.25;
+        om.alpha = 0.92;
+        om.useAlphaFromAlbedoTexture = false;
+        ocean.material = om;
+      }
+
+      return { land, ocean };
+    }
+// ====================================================================
+    // 3) Helpers (textures/materials/atmospheres)
+    // ====================================================================
+    function loadTextureOrNull(scene, url, { hasAlpha=false } = {}) {
+      try {
+        const t = new BABYLON.Texture(url, scene, true, false, BABYLON.Texture.TRILINEAR_SAMPLINGMODE,
+          null,
+          () => console.warn("[texture] no se pudo cargar:", url)
+        );
+        t.hasAlpha = !!hasAlpha;
+        return t;
+      } catch (e) {
+        console.warn("[texture] error creando textura:", url, e);
+        return null;
+      }
+    }
+
+    function makePlanetPBR(scene, name, maps) {
+      const mat = new BABYLON.PBRMaterial(name, scene);
+      mat.metallic = 0.0;
+      mat.roughness = maps?.roughness ?? 0.95;
+      mat.specularIntensity = maps?.specularIntensity ?? 0.15;
+
+      if (maps?.albedo) {
+        const a = loadTextureOrNull(scene, maps.albedo);
+        if (a) mat.albedoTexture = a;
+      } else {
+        mat.albedoColor = maps?.fallbackColor ?? new BABYLON.Color3(0.6,0.6,0.6);
+      }
+
+      if (maps?.normal) {
+        const n = loadTextureOrNull(scene, maps.normal);
+        if (n) {
+          mat.bumpTexture = n;
+          mat.bumpTexture.level = maps.bumpLevel ?? 1.0;
+        }
+      }
+      if (maps?.bump) {
+        const b = loadTextureOrNull(scene, maps.bump);
+        if (b) {
+          mat.bumpTexture = b;
+          mat.bumpTexture.level = maps.bumpLevel ?? 0.8;
+        }
+      }
+
+      return mat;
+    }
+
+    function makeAtmosphere(scene, parentNode, radius, color3, alpha=0.35) {
+      const atmo = BABYLON.MeshBuilder.CreateSphere(parentNode.name + "_Atmo", { diameter: radius * 2.18, segments: 48 }, scene);
+      atmo.parent = parentNode;
+      atmo.isPickable = false;
+
+      const mat = new BABYLON.StandardMaterial(parentNode.name + "_AtmoMat", scene);
+      mat.diffuseColor = BABYLON.Color3.Black();
+      mat.specularColor = BABYLON.Color3.Black();
+      mat.emissiveColor = color3;
+      mat.alpha = alpha;
+      mat.backFaceCulling = false;
+
+      // Fresnel-ish edge glow
+      mat.emissiveFresnelParameters = new BABYLON.FresnelParameters();
+      mat.emissiveFresnelParameters.bias = 0.2;
+      mat.emissiveFresnelParameters.power = 2.0;
+      mat.emissiveFresnelParameters.leftColor = BABYLON.Color3.Black();
+      mat.emissiveFresnelParameters.rightColor = color3;
+
+      atmo.material = mat;
+      return atmo;
+    }
+
+    // ====================================================================
+    // 4) Scene
+    // ====================================================================
+    const ui = {
+      camOrbitBtn: document.getElementById("camOrbit"),
+      camFlyBtn: document.getElementById("camFly"),
+      camSurfaceBtn: document.getElementById("camSurface"),
+      speedRange: document.getElementById("speedRange"),
+      speedVal: document.getElementById("speedVal"),
+      planetSelect: document.getElementById("planetSelect"),
+      approachBtn: document.getElementById("approachBtn"),
+      debugInfo: document.getElementById("debugInfo"),
+      modePill: document.getElementById("modePill"),
+    };
+
+    let timeScale = 1.0;
+
+    const createScene = () => {
+      const scn = new BABYLON.Scene(engine);
+      scn.clearColor = new BABYLON.Color3(0.01, 0.01, 0.012);
+
+      // Background stars (skybox)
+      const skybox = BABYLON.MeshBuilder.CreateBox("skyBox", { size: 6000 }, scn);
+      const skyMat = new BABYLON.StandardMaterial("skyMat", scn);
+      skyMat.backFaceCulling = false;
+      skyMat.reflectionTexture = new BABYLON.CubeTexture("https://playground.babylonjs.com/textures/skybox", scn);
+      skyMat.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
+      skyMat.disableLighting = true;
+      skybox.material = skyMat;
+      skybox.isPickable = false;
+
+      // Cameras
+      const cameraOrbit = new BABYLON.ArcRotateCamera("camOrbit", -Math.PI/2, Math.PI/3, 260, BABYLON.Vector3.Zero(), scn);
+      cameraOrbit.lowerRadiusLimit = 8;
+      cameraOrbit.upperRadiusLimit = 2500;
+      cameraOrbit.wheelDeltaPercentage = 0.01;
+      cameraOrbit.attachControl(canvas, true);
+
+      const cameraFly = new BABYLON.UniversalCamera("camFly", new BABYLON.Vector3(0, 60, -220), scn);
+      cameraFly.minZ = 0.1;
+      cameraFly.speed = 2.2;
+      cameraFly.angularSensibility = 4000;
+      cameraFly.keysUp = [87];    // W
+      cameraFly.keysDown = [83];  // S
+      cameraFly.keysLeft = [65];  // A
+      cameraFly.keysRight = [68]; // D
+      // add vertical controls
+      cameraFly.keysUpward = [32];       // Space up
+      cameraFly.keysDownward = [17, 67]; // Ctrl or C down
+
+      // Surface camera: use a playerRoot for proper orientation
+      const playerRoot = new BABYLON.TransformNode("playerRoot", scn);
+      playerRoot.rotationQuaternion = BABYLON.Quaternion.Identity();
+
+      const cameraSurface = new BABYLON.UniversalCamera("camSurface", new BABYLON.Vector3(0, 2, 0), scn);
+      cameraSurface.parent = playerRoot;
+      cameraSurface.minZ = 0.05;
+      cameraSurface.speed = 0; // we implement movement ourselves
+      cameraSurface.angularSensibility = 3500;
+
+      scn.activeCamera = cameraOrbit;
+
+      // Lights
+      const sunLight = new BABYLON.PointLight("sunLight", BABYLON.Vector3.Zero(), scn);
+      sunLight.intensity = 2.8;
+      sunLight.range = 8000;
+
+      const hemi = new BABYLON.HemisphericLight("hemi", new BABYLON.Vector3(0, 1, 0), scn);
+      hemi.intensity = 0.06;
+      hemi.groundColor = new BABYLON.Color3(0,0,0);
+
+      // Shadows (optional)
+      const shadowGen = new BABYLON.ShadowGenerator(2048, sunLight);
+      shadowGen.useBlurExponentialShadowMap = true;
+      shadowGen.blurKernel = 24;
+      shadowGen.bias = 0.00012;
+
+      // Glow
+      const glow = new BABYLON.GlowLayer("glow", scn);
+      glow.intensity = 0.8;
+
+      // Textures (put these in: /textures/planets/)
+      const T = (f) => "textures/planets/" + f;
+
+      const mapsByName = {
+        // Texturas opcionales (si las pones en /textures/planets/)
+        // Si no existen, el código hace fallback a colores.
+        "Canopus": { /* albedo: T("2k_sun.jpg") */ },
+      };
+
+      // Bodies definition (not to scale; tuned for visuals)
+      const bodyDefs = [
+        // --- Sistema Dune (no a escala; valores ajustados a visual) ---
+        {
+          name:"Canopus", kind:"sun", radius: 20,
+          orbitR: 0, orbitSpeed: 0, rotSpeed: 0.002,
+          rocky:false,
+        },
+
+        // Planetas de la novela
+        {
+          name:"Arrakis", kind:"planet", radius: 6.2,
+          orbitR: 140, orbitSpeed: 0.0060, rotSpeed: 0.020,
+          rocky:true,
+          biomePreset:"arrakis",
+          terrainScale: 0.22,
+          seaLevel: 0.01,          // sin océano
+          noiseFrequency: 2.9,
+          noiseOctaves: 6,
+          farSegments: 48,
+          ocean:false,
+          oceanColor: new BABYLON.Color3(0.04,0.12,0.18),
+          microBump: T("detail_rock3.png"),
+        },
+        {
+          name:"Caladan", kind:"planet", radius: 7.0,
+          orbitR: 200, orbitSpeed: 0.0052, rotSpeed: 0.017,
+          rocky:true,
+          biomePreset:"caladan",
+          terrainScale: 0.13,
+          seaLevel: -0.035,        // mucho mar
+          noiseFrequency: 2.1,
+          noiseOctaves: 6,
+          farSegments: 52,
+          ocean:true,
+          oceanColor: new BABYLON.Color3(0.04,0.20,0.30),
+          microBump: T("detail_craters.png"),
+        },
+        {
+          name:"Giedi Prime", kind:"planet", radius: 6.6,
+          orbitR: 265, orbitSpeed: 0.0046, rotSpeed: 0.022,
+          rocky:true,
+          biomePreset:"giedi",
+          terrainScale: 0.20,
+          seaLevel: -0.010,        // charcos/mares mínimos
+          noiseFrequency: 3.2,
+          noiseOctaves: 5,
+          farSegments: 50,
+          ocean:true,
+          oceanColor: new BABYLON.Color3(0.02,0.08,0.05),
+          microBump: T("detail_rock2.png"),
+        },
+        {
+          name:"Ix", kind:"planet", radius: 5.9,
+          orbitR: 330, orbitSpeed: 0.0040, rotSpeed: 0.024,
+          rocky:true,
+          biomePreset:"ix",
+          terrainScale: 0.16,
+          seaLevel: -0.012,
+          noiseFrequency: 2.7,
+          noiseOctaves: 6,
+          farSegments: 48,
+          ocean:true,
+          oceanColor: new BABYLON.Color3(0.03,0.12,0.18),
+          microBump: T("detail_snow.png"),
+        },
+        {
+          name:"Kaitain", kind:"planet", radius: 6.3,
+          orbitR: 395, orbitSpeed: 0.0035, rotSpeed: 0.016,
+          rocky:true,
+          biomePreset:"kaitain",
+          terrainScale: 0.12,
+          seaLevel: -0.022,
+          noiseFrequency: 2.2,
+          noiseOctaves: 6,
+          farSegments: 50,
+          ocean:true,
+          oceanColor: new BABYLON.Color3(0.04,0.18,0.26),
+          microBump: T("detail_craters.png"),
+        },
+        {
+          name:"Salusa Secundus", kind:"planet", radius: 6.0,
+          orbitR: 470, orbitSpeed: 0.0030, rotSpeed: 0.019,
+          rocky:true,
+          biomePreset:"salusa",
+          terrainScale: 0.24,
+          seaLevel: 0.01,          // sin océano
+          noiseFrequency: 3.0,
+          noiseOctaves: 6,
+          farSegments: 48,
+          ocean:false,
+          microBump: T("detail_rock3.png"),
+        },
+        {
+          name:"Richese", kind:"planet", radius: 6.4,
+          orbitR: 560, orbitSpeed: 0.0026, rotSpeed: 0.018,
+          rocky:true,
+          biomePreset:"richese",
+          terrainScale: 0.11,
+          seaLevel: -0.045,        // planeta muy oceánico
+          noiseFrequency: 2.0,
+          noiseOctaves: 6,
+          farSegments: 52,
+          ocean:true,
+          oceanColor: new BABYLON.Color3(0.05,0.26,0.30),
+          microBump: T("detail_craters.png"),
+        },
+      ];
+
+      // Create meshes
+      const bodies = new Map(); // name => body
+      const orbitNodes = new Map(); // name => node rotated around sun
+      const moonOrbitNodes = new Map(); // moon around parent
+
+      // Sun mesh
+      const sunMesh = BABYLON.MeshBuilder.CreateSphere("Canopus", { diameter: bodyDefs[0].radius * 2, segments: 64 }, scn);
+      sunMesh.position.set(0,0,0);
+
+      const sunMat = new BABYLON.StandardMaterial("sunMat", scn);
+      const sunTex = loadTextureOrNull(scn, (mapsByName[bodyDefs[0].name]||{}).albedo);
+      if (sunTex) {
+        sunMat.emissiveTexture = sunTex;
+        sunMat.emissiveColor = new BABYLON.Color3(1,1,1);
+        sunMat.diffuseColor = BABYLON.Color3.Black();
+      } else {
+        sunMat.emissiveColor = new BABYLON.Color3(1,0.9,0.6);
+        sunMat.diffuseColor = BABYLON.Color3.Black();
+      }
+      sunMat.specularColor = BABYLON.Color3.Black();
+      sunMat.disableLighting = true;
+      sunMesh.material = sunMat;
+      glow.addIncludedOnlyMesh(sunMesh);
+      shadowGen.addShadowCaster(sunMesh);
+
+      // Sun corona (simple)
+      const corona = BABYLON.MeshBuilder.CreateSphere("Canopus_Corona", { diameter: bodyDefs[0].radius * 2.6, segments: 48 }, scn);
+      corona.parent = sunMesh;
+      corona.isPickable = false;
+      const coronaMat = new BABYLON.StandardMaterial("coronaMat", scn);
+      coronaMat.emissiveColor = new BABYLON.Color3(1.0, 0.65, 0.2);
+      coronaMat.alpha = 0.18;
+      coronaMat.disableLighting = true;
+      coronaMat.backFaceCulling = false;
+      corona.material = coronaMat;
+      glow.addIncludedOnlyMesh(corona);
+
+      // Planets
+      for (const def of bodyDefs) {
+        if (def.kind === "sun") {
+          bodies.set(def.name, {
+            def,
+            farMesh: sunMesh,
+            atmo: null,
+            ring: null,
+            orbitAngle: 0,
+            orbitNode: null,
+            proc: null,
+          });
+          continue;
+        }
+
+        const orbitNode = new BABYLON.TransformNode(def.name + "_orbit", scn);
+        orbitNode.position.set(0,0,0);
+        orbitNodes.set(def.name, orbitNode);
+
+        const created = createLowPolyFarPlanet(scn, def, orbitNode);
+        const mesh = created.land;
+        const ocean = created.ocean;
+
+        shadowGen.addShadowCaster(mesh);
+        mesh.receiveShadows = true;
+        if (ocean) { ocean.receiveShadows = false; }
+
+        // rings
+        let ring = null;
+        if (def.rings && def.ringTex) {
+          ring = BABYLON.MeshBuilder.CreateDisc(def.name+"_Rings", { radius: def.radius * 3.3, tessellation: 128 }, scn);
+          ring.parent = mesh;
+          ring.rotation.x = Math.PI / 2;
+          ring.isPickable = false;
+
+          const ringMat = new BABYLON.StandardMaterial(def.name+"_RingMat", scn);
+          ringMat.backFaceCulling = false;
+          ringMat.disableLighting = true;
+          ringMat.emissiveColor = new BABYLON.Color3(0.9,0.85,0.75).scale(0.75);
+          ringMat.alpha = 0.95;
+
+          const rt = loadTextureOrNull(scn, def.ringTex, { hasAlpha: true });
+          if (rt) {
+            ringMat.diffuseTexture = rt;
+            ringMat.opacityTexture = rt;
+            ringMat.useAlphaFromDiffuseTexture = true;
+            ringMat.alphaMode = BABYLON.Engine.ALPHA_COMBINE;
+          }
+          ring.material = ringMat;
+        }
+
+        // Atmosferas desactivadas por ahora
+        let atmo = null;
+
+        bodies.set(def.name, {
+          def,
+          farMesh: mesh,
+          atmo,
+          ring,
+          orbitAngle: Math.random() * Math.PI * 2,
+          orbitNode,
+          proc: null,
+        });
+      }
+
+      // Ensure sunLight follows sun (in case you move it later)
+      sunLight.position.copyFrom(sunMesh.position);
+
+      // GUI labels (optional)
+      const gui = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("ui", true, scn);
+      function createLabel(text, mesh) {
+        const rect = new BABYLON.GUI.Rectangle("lbl_" + text);
+        rect.background = "rgba(0,0,0,0.35)";
+        rect.thickness = 1;
+        rect.color = "rgba(255,255,255,0.25)";
+        rect.cornerRadius = 8;
+        rect.height = "22px";
+        rect.width = "120px";
+        rect.isHitTestVisible = false;
+
+        const tb = new BABYLON.GUI.TextBlock();
+        tb.text = text;
+        tb.color = "#fff";
+        tb.fontSize = 12;
+        rect.addControl(tb);
+
+        gui.addControl(rect);
+        rect.linkWithMesh(mesh);
+        rect.linkOffsetY = -20;
+        return rect;
+      }
+
+      // Fill selector + labels
+      ui.planetSelect.innerHTML = "";
+      for (const def of bodyDefs) {
+        if (def.kind === "sun") continue;
+        const opt = document.createElement("option");
+        opt.value = def.name;
+        opt.innerText = def.name;
+        ui.planetSelect.appendChild(opt);
+        createLabel(def.name, bodies.get(def.name).farMesh);
+      }
+      ui.planetSelect.value = "Arrakis";
+
+      // ====================================================================
+      // 5) Modes: orbit / fly / surface
+      // ====================================================================
+      const mode = { value: "orbit" }; // orbit | fly | surface
+      function setMode(m) {
+        mode.value = m;
+        ui.modePill.textContent = (m === "orbit") ? "Órbita" : (m === "fly" ? "Vuelo" : "Superficie");
+
+        // detach all
+        try { cameraOrbit.detachControl(canvas); } catch(e){}
+        try { cameraFly.detachControl(canvas); } catch(e){}
+        try { cameraSurface.detachControl(canvas); } catch(e){}
+
+        if (m === "orbit") {
+          scn.activeCamera = cameraOrbit;
+          cameraOrbit.attachControl(canvas, true);
+        } else if (m === "fly") {
+          scn.activeCamera = cameraFly;
+          cameraFly.attachControl(canvas, true);
+        } else {
+          scn.activeCamera = cameraSurface;
+          cameraSurface.attachControl(canvas, true);
+        }
+      }
+
+      ui.camOrbitBtn.addEventListener("click", () => setMode("orbit"));
+      ui.camFlyBtn.addEventListener("click", () => setMode("fly"));
+      ui.camSurfaceBtn.addEventListener("click", () => setMode("surface"));
+
+      ui.speedRange.addEventListener("input", (e) => {
+        timeScale = parseFloat(e.target.value);
+        ui.speedVal.textContent = timeScale.toFixed(1) + "x";
+      });
+      ui.speedVal.textContent = timeScale.toFixed(1) + "x";
+
+      // ====================================================================
+      // 6) Approach: teleport camera to target (fly/surface)
+      // ====================================================================
+      function getTargetBody() {
+        const name = ui.planetSelect.value;
+        return bodies.get(name);
+      }
+
+      function approachTarget(preferredMode = null) {
+        const b = getTargetBody();
+        if (!b) return;
+
+        const targetPos = b.farMesh.getAbsolutePosition().clone();
+        const r = b.def.radius;
+
+        if (preferredMode) setMode(preferredMode);
+
+        // place camera near surface
+        const dir = new BABYLON.Vector3(0.2, 0.25, -1).normalize();
+        const camPos = targetPos.add(dir.scale(r * 4.2));
+
+        if (mode.value === "orbit") {
+          cameraOrbit.setTarget(targetPos);
+          cameraOrbit.radius = Math.max(8, r * 6);
+        } else if (mode.value === "fly") {
+          cameraFly.position.copyFrom(camPos);
+          cameraFly.setTarget(targetPos);
+        } else {
+          // surface mode: place player root above ground
+          const up = dir.scale(-1).normalize();
+          playerRoot.position.copyFrom(targetPos.add(up.scale(r * 1.15)));
+          cameraSurface.setTarget(targetPos);
+
+          // reset player orientation
+          playerRoot.rotationQuaternion = BABYLON.Quaternion.Identity();
+          cameraSurface.rotation.set(0,0,0);
+
+          // enable procedural planet for this target if rocky
+          ensureProceduralForBody(b);
+          enableProceduralOnly(b.def.name);
+        }
+      }
+
+      ui.approachBtn.addEventListener("click", () => {
+        // If currently orbit, go fly for approach (nice default)
+        if (mode.value === "orbit") setMode("fly");
+        approachTarget(null);
+      });
+
+      // ====================================================================
+      // 7) Procedural planet activation (Surface mode)
+      // ====================================================================
+      function ensureProceduralForBody(body) {
+        if (!body.def.rocky) return;
+        if (body.proc) return;
+
+        const proc = new ProceduralPlanet(scn, body.def.name, body.def.radius, shadowGen);
+
+        // Preset desde bodyDefs
+        if (body.def.biomePreset) proc.biomePreset = body.def.biomePreset;
+        if (body.def.terrainScale != null) proc.terrainScale = body.def.terrainScale;
+        if (body.def.seaLevel != null) proc.seaLevel = body.def.seaLevel;
+        if (body.def.noiseFrequency != null) proc.noiseFrequency = body.def.noiseFrequency;
+        if (body.def.noiseOctaves != null) proc.noiseOctaves = body.def.noiseOctaves;
+        // en superficie mantenemos low-poly pero con chunks
+        proc.chunkResolution = 16;
+        proc.maxDetailLevel = 6;
+
+        // Atmosfera desactivada por ahora
+
+        body.proc = proc;
+      }
+
+      function enableProceduralOnly(name) {
+        for (const [n, b] of bodies.entries()) {
+          if (b.proc) b.proc.setEnabled(false);
+          // also hide far mesh for active rocky planet to avoid z-fighting when near surface
+          if (b.def.rocky) b.farMesh.setEnabled(true);
+        }
+
+        const b = bodies.get(name);
+        if (!b || !b.proc) return;
+
+        // show proc, hide far sphere (and its atmo) for this planet
+        b.proc.setEnabled(true);
+        b.farMesh.setEnabled(false);
+      }
+
+      // When switching to surface mode, approach and enable LOD for selected planet
+      ui.camSurfaceBtn.addEventListener("click", () => {
+        // ensure procedural is prepared
+        const b = getTargetBody();
+        if (b && b.def.rocky) ensureProceduralForBody(b);
+        setMode("surface");
+        approachTarget("surface");
+      });
+
+      // If user changes planet while in surface mode, switch planet
+      ui.planetSelect.addEventListener("change", () => {
+        if (mode.value === "surface") {
+          const b = getTargetBody();
+          if (b && b.def.rocky) ensureProceduralForBody(b);
+          approachTarget("surface");
+        }
+      });
+
+      // ====================================================================
+      // 8) Surface movement + gravity (C-ready)
+      // ====================================================================
+      const input = {
+        forward:false, back:false, left:false, right:false,
+        sprint:false, jump:false,
+      };
+
+      window.addEventListener("keydown", (e) => {
+        if (e.code === "KeyW") input.forward = true;
+        if (e.code === "KeyS") input.back = true;
+        if (e.code === "KeyA") input.left = true;
+        if (e.code === "KeyD") input.right = true;
+        if (e.code === "ShiftLeft" || e.code === "ShiftRight") input.sprint = true;
+        if (e.code === "Space") input.jump = true;
+      });
+      window.addEventListener("keyup", (e) => {
+        if (e.code === "KeyW") input.forward = false;
+        if (e.code === "KeyS") input.back = false;
+        if (e.code === "KeyA") input.left = false;
+        if (e.code === "KeyD") input.right = false;
+        if (e.code === "ShiftLeft" || e.code === "ShiftRight") input.sprint = false;
+        if (e.code === "Space") input.jump = false;
+      });
+
+      let playerVel = new BABYLON.Vector3(0,0,0);
+      let onGround = false;
+
+      function surfaceStep(dt) {
+        const b = getTargetBody();
+        if (!b) return;
+
+        // center of planet in world
+        const center = b.farMesh.getAbsolutePosition().clone();
+        // if procedural enabled, its root matches farMesh position
+        if (b.proc && b.proc.enabled) center.copyFrom(b.proc.root.position);
+
+        const pos = playerRoot.position.clone();
+        const toCenter = center.subtract(pos);
+        const dist = toCenter.length();
+        const down = toCenter.normalize(); // gravity direction
+        const up = down.scale(-1);
+
+        // Orient playerRoot so its "up" matches local up (smooth)
+        // We'll build a basis where Y=up, Z=forward projected, X=right
+        const forwardWorld = cameraSurface.getForwardRay(1).direction;
+        const forwardOnTangent = forwardWorld.subtract(up.scale(BABYLON.Vector3.Dot(forwardWorld, up)));
+        const fLen = forwardOnTangent.length();
+        const forward = (fLen > 1e-4) ? forwardOnTangent.normalize() : BABYLON.Vector3.Cross(new BABYLON.Vector3(1,0,0), up).normalize();
+        const right = BABYLON.Vector3.Cross(up, forward).normalize();
+
+        // rotation quaternion from basis
+        // Babylon CDN: algunas versiones no traen Matrix.FromXYZAxes.
+        // Construimos la matriz de base (column-major) a mano:
+        // X = right, Y = up, Z = forward
+        const m = new BABYLON.Matrix();
+        const mm = m.m;
+        mm[0]  = right.x;  mm[1]  = right.y;  mm[2]  = right.z;  mm[3]  = 0;
+        mm[4]  = up.x;     mm[5]  = up.y;     mm[6]  = up.z;     mm[7]  = 0;
+        mm[8]  = forward.x;mm[9]  = forward.y;mm[10] = forward.z;mm[11] = 0;
+        mm[12] = 0;        mm[13] = 0;        mm[14] = 0;        mm[15] = 1;
+        const desiredQ = BABYLON.Quaternion.FromRotationMatrix(m);
+        playerRoot.rotationQuaternion = BABYLON.Quaternion.Slerp(playerRoot.rotationQuaternion, desiredQ, 0.18);
+
+        // Raycast to ground against procedural chunks if available, else against far mesh
+        const rayLen = Math.max(60, b.def.radius * 6);
+        const ray = new BABYLON.Ray(pos, down, rayLen);
+
+        let hit = null;
+        if (b.proc && b.proc.enabled) {
+          hit = scn.pickWithRay(ray, (mesh) => {
+            return mesh && mesh.name.startsWith("chunk_") && mesh.parent === b.proc.root;
+          });
+        } else {
+          hit = scn.pickWithRay(ray, (mesh) => mesh === b.farMesh);
+        }
+
+        onGround = false;
+        const eyeHeight = 2.0;
+
+        if (hit && hit.hit && hit.pickedPoint) {
+          const dGround = BABYLON.Vector3.Distance(pos, hit.pickedPoint);
+          if (dGround < eyeHeight + 0.8) {
+            onGround = true;
+            const targetPos = hit.pickedPoint.add(up.scale(eyeHeight));
+            // smooth snap to avoid LOD popping
+            playerRoot.position = BABYLON.Vector3.Lerp(playerRoot.position, targetPos, 0.25);
+            // damp gravity velocity on ground
+            playerVel = playerVel.scale(0.75);
+          }
+        }
+
+        // Gravity
+        const g = 9.8;
+        if (!onGround) {
+          playerVel.addInPlace(down.scale(g * dt));
+        } else {
+          // Jump
+          if (input.jump) {
+            playerVel.addInPlace(up.scale(7.0));
+            onGround = false;
+          }
+        }
+
+        // Tangential movement
+        const baseSpeed = input.sprint ? 11.0 : 6.0;
+        let move = new BABYLON.Vector3(0,0,0);
+        if (input.forward) move.addInPlace(forward);
+        if (input.back) move.addInPlace(forward.scale(-1));
+        if (input.left) move.addInPlace(right.scale(-1));
+        if (input.right) move.addInPlace(right);
+
+        if (move.length() > 1e-4) {
+          move = move.normalize().scale(baseSpeed * dt);
+          playerRoot.position.addInPlace(move);
+        }
+
+        // Apply gravity velocity
+        playerRoot.position.addInPlace(playerVel.scale(dt));
+      }
+
+      // ====================================================================
+      // 9) Orbit simulation (simple, for visuals)
+      // ====================================================================
+      function updateOrbits(dt) {
+        if (timeScale <= 0) return;
+
+        // Planets around sun
+        for (const [name, b] of bodies.entries()) {
+          if (b.def.kind !== "planet") continue;
+
+          b.orbitAngle += b.def.orbitSpeed * dt * timeScale;
+          b.orbitNode.rotation.y = b.orbitAngle;
+
+          // spin
+          b.farMesh.rotation.y += b.def.rotSpeed * dt * timeScale;
+          if (b.ring) b.ring.rotation.z += 0.3 * dt * timeScale;
+
+          // if procedural exists, keep it aligned with far mesh position and rotation
+          if (b.proc) {
+            b.proc.root.position.copyFrom(b.farMesh.getAbsolutePosition());
+            b.proc.root.rotationQuaternion = b.farMesh.rotationQuaternion ? b.farMesh.rotationQuaternion.clone() : BABYLON.Quaternion.FromEulerAngles(0, b.farMesh.rotation.y, 0);
+          }
+        }
+
+      // ====================================================================
+      // 10) Render loop logic
+      // ====================================================================
+      setMode("orbit");
+
+      // initial approach nice view
+      approachTarget(null);
+
+      scn.onBeforeRenderObservable.add(() => {
+        const dt = engine.getDeltaTime() / 1000;
+
+        // keep sunlight at sun
+        sunLight.position.copyFrom(sunMesh.position);
+
+        // animate corona
+        const t = performance.now() * 0.001;
+        corona.scaling.set(1 + Math.sin(t*0.8)*0.01, 1 + Math.sin(t*0.9)*0.01, 1 + Math.sin(t*0.7)*0.01);
+
+        // orbits always (even in fly), but you can pause by setting timeScale=0
+        updateOrbits(dt);
+
+        // surface mode: enable procedural only for selected rocky planet
+        let chunks = 0;
+        if (mode.value === "surface") {
+          const b = getTargetBody();
+          if (b && b.def.rocky) {
+            ensureProceduralForBody(b);
+            enableProceduralOnly(b.def.name);
+            if (b.proc) {
+              b.proc.update(scn.activeCamera);
+              chunks = b.proc.countActiveChunks();
+            }
+          }
+          surfaceStep(dt);
+        } else {
+          // not surface: hide procedural planets to save CPU
+          for (const [n, b] of bodies.entries()) {
+            if (b.proc) b.proc.setEnabled(false);
+            if (b.def.rocky) b.farMesh.setEnabled(true);
+          }
+        }
+
+        ui.debugInfo.textContent = `Chunks activos: ${chunks} | FPS: ${engine.getFps().toFixed(0)}`;
+      });
+
+      return scn;
+    };
+
+    const scene = createScene();
+    engine.runRenderLoop(() => scene.render());
+    window.addEventListener("resize", () => engine.resize());
+	
+  </script>
+</body>
+</html>
