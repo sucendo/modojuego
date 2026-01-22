@@ -241,9 +241,11 @@
         // we do raycast picking, no heavy physics impostors
         mesh.checkCollisions = false;
 
-        if (this.parentPlanet.shadowGen) {
+        if (this.parentPlanet.shadowGen && this.parentPlanet.shadowsEnabled) {
           this.parentPlanet.shadowGen.addShadowCaster(mesh);
           mesh.receiveShadows = true;
+        } else {
+          mesh.receiveShadows = false;
         }
 
         this.mesh = mesh;
@@ -308,6 +310,7 @@
         this.name = name;
         this.radius = radius;
         this.shadowGen = shadowGen;
+        this.shadowsEnabled = false;
 
         this.root = new BABYLON.TransformNode(name + "_procRoot", scene);
         this.faces = [];
@@ -321,6 +324,7 @@
 
         this.chunkResolution = 18; // 18 => (19x19) vertices per chunk
         this.maxDetailLevel = 6;   // keep sane on web
+        this.lodDistanceMul = 5.5;
 
         // Material para chunks de superficie (StandardMaterial = más barato que PBR)
         this.material = new BABYLON.StandardMaterial(name + "_procMat", scene);
@@ -549,6 +553,27 @@
         if (this.atmo) this.atmo.setEnabled(on);
       }
 
+// Sombras por sistema: se activan/desactivan sin recrear el planeta
+setShadowsEnabled(on) {
+  this.shadowsEnabled = !!on;
+  if (!this.shadowGen) return;
+
+  const sg = this.shadowGen;
+  const apply = (chunk) => {
+    if (chunk.mesh) {
+      if (this.shadowsEnabled) {
+        sg.addShadowCaster(chunk.mesh);
+        chunk.mesh.receiveShadows = true;
+      } else {
+        try { sg.removeShadowCaster(chunk.mesh); } catch(e) {}
+        chunk.mesh.receiveShadows = false;
+      }
+    }
+    if (!chunk.isLeaf) for (const c of chunk.children) apply(c);
+  };
+  for (const f of this.faces) apply(f);
+}
+
       _setChunkTreeEnabled(chunk, on) {
         if (chunk.mesh) chunk.mesh.setEnabled(on && chunk.isLeaf);
         if (!chunk.isLeaf) for (const c of chunk.children) this._setChunkTreeEnabled(c, on);
@@ -566,7 +591,7 @@
 
         // update lod only if camera is near
         const dist = BABYLON.Vector3.Distance(camera.position, this.root.position);
-        if (dist < this.radius * 5.5) {
+        if (dist < this.radius * this.lodDistanceMul) {
           for (const f of this.faces) f.updateLOD(camera.position);
         }
 
@@ -609,9 +634,6 @@
       const land = BABYLON.MeshBuilder.CreateSphere(def.name + "_land", { diameter: def.radius * 2, segments: seg }, scene);
       land.parent = orbitNode;
       land.position.set(def.orbitR, 0, 0);
-      // Rendimiento + colisiones
-      land.isPickable = false;
-      land.checkCollisions = true;
 
       // Material (vertex colors)
       const landMat = new BABYLON.StandardMaterial(def.name + "_landMat", scene);
@@ -720,7 +742,6 @@
 		ocean.parent = orbitNode;
 		ocean.position.set(def.orbitR, 0, 0);
 		ocean.isPickable = false;
-		ocean.checkCollisions = true;
 		
 		const oceanKind = def.oceanKind || "water";
 		const om = new BABYLON.PBRMaterial(def.name + "_oceanMat", scene);
@@ -866,11 +887,9 @@
 
     let timeScale = 1.0;
 
+    // Mode state must be declared early (used by labels/shadows helpers)
     const createScene = () => {
       const scn = new BABYLON.Scene(engine);
-      // Para escalas galácticas (sistemas muy separados) sin clipping ni z-fighting
-      // (si el build de Babylon no lo soporta, no pasa nada)
-      try { scn.useLogarithmicDepth = true; } catch(e) {}
       // Rendimiento: evita trabajo extra de picking continuo
       scn.skipPointerMovePicking = true;
       scn.blockMaterialDirtyMechanism = true;
@@ -923,34 +942,6 @@
         if (starsMesh && scn.activeCamera) {
           starsMesh.position.copyFrom(scn.activeCamera.position);
         }
-
-        // Ajuste de tamaño para los "dots" de estrellas (>= 1px en pantalla)
-        const cam = scn.activeCamera;
-        if (cam && galaxyStarDots.length) {
-          // cálculo worldUnits por píxel (aprox) usando FOV vertical
-          const vh = engine.getRenderHeight(true);
-          const fov = (typeof cam.fov === "number") ? cam.fov : 0.8;
-          const tanHalf = Math.tan(fov * 0.5);
-          const camPos = cam.globalPosition || cam.position;
-          const targetPx = 1.25; // "aunque sea un px"
-  
-          for (const s of galaxyStarDots) {
-            const dot = s.dot;
-            if (!dot || dot.isDisposed()) continue;
-  
-            const p = dot.getAbsolutePosition();
-            const dist = BABYLON.Vector3.Distance(camPos, p);
-            // world size que equivale a ~1.25px a esa distancia
-            const worldPerPx = (2 * dist * tanHalf) / Math.max(1, vh);
-            const size = Math.max(worldPerPx * targetPx, s.radius * 0.035);
-            dot.scaling.setAll(size);
-  
-            // si estás muy cerca de la estrella, el "dot" molesta: lo ocultamos
-            const nearCut = s.radius * 12;
-            dot.visibility = (dist < nearCut) ? 0 : 1;
-          }
-        }
-
       });
 
       // Cameras
@@ -958,14 +949,10 @@
       cameraOrbit.lowerRadiusLimit = 8;
       cameraOrbit.upperRadiusLimit = 2500;
       cameraOrbit.wheelDeltaPercentage = 0.01;
-      // Galaxia: que las estrellas/sistemas lejanos no desaparezcan por el plano lejano
-      const GALAXY_MAX_Z = 5e7;
-      cameraOrbit.maxZ = GALAXY_MAX_Z;
       cameraOrbit.attachControl(canvas, true);
 
       const cameraFly = new BABYLON.UniversalCamera("camFly", new BABYLON.Vector3(0, 60, -220), scn);
       cameraFly.minZ = 0.1;
-	  cameraFly.maxZ = GALAXY_MAX_Z;
       cameraFly.speed = 2.2;
       cameraFly.angularSensibility = 4000;
       cameraFly.keysUp = [87];    // W
@@ -975,19 +962,6 @@
       // add vertical controls
       cameraFly.keysUpward = [32];       // Space up
       cameraFly.keysDownward = [17, 67]; // Ctrl or C down
-	  
-      // ------------------------------------------------------------
-      // Collisions: impedir atravesar cuerpos celestes (fly)
-      // ------------------------------------------------------------
-      scn.collisionsEnabled = true;
-      cameraFly.checkCollisions = true;
-      cameraFly.applyGravity = false;
-      cameraFly.ellipsoid = new BABYLON.Vector3(1.2, 1.2, 1.2);
-      cameraFly.ellipsoidOffset = new BABYLON.Vector3(0, 1.2, 0);
-      cameraFly.onCollide = (collidedMesh) => {
-        // pequeño "rebote"/freno para que se note el impacto
-        try { cameraFly.cameraDirection.scaleInPlace(-0.25); } catch(e) {}
-      };
 
       // Surface camera: use a playerRoot for proper orientation
       const playerRoot = new BABYLON.TransformNode("playerRoot", scn);
@@ -996,7 +970,6 @@
       const cameraSurface = new BABYLON.UniversalCamera("camSurface", new BABYLON.Vector3(0, 2, 0), scn);
       cameraSurface.parent = playerRoot;
       cameraSurface.minZ = 0.05;
-	  cameraSurface.maxZ = GALAXY_MAX_Z;
       cameraSurface.speed = 0; // we implement movement ourselves
       cameraSurface.angularSensibility = 3500;
 
@@ -1018,14 +991,16 @@
 
       // Un pelín de ambiente para que no queden negros en superficie sin "subir" el cielo
       scn.ambientColor = new BABYLON.Color3(0.05, 0.05, 0.06);
+// Shadows (por sistema; se activan SOLO en el sistema que estás explorando)
+// Core (Canopus) usa sunLight
+const coreShadowGen = new BABYLON.ShadowGenerator(2048, sunLight);
+coreShadowGen.usePoissonSampling = true;
+coreShadowGen.bias = 0.00025;
+coreShadowGen.normalBias = 0.01;
 
-      // Shadows (optional)
-      const shadowGen = new BABYLON.ShadowGenerator(2048, sunLight);
-      // Rendimiento: Poisson es mucho más barato que contact hardening
-      shadowGen.usePoissonSampling = true;
-      shadowGen.bias = 0.00025;
-      shadowGen.normalBias = 0.01;
-
+// Por defecto: desactivado hasta que "Canopus" sea el sistema activo
+coreShadowGen.getShadowMap().refreshRate = BABYLON.RenderTargetTexture.REFRESHRATE_RENDER_ONCE;
+coreShadowGen.getShadowMap().renderList = [];
       // Glow desactivado por rendimiento (ya tenemos halo del sol)
       // const glow = new BABYLON.GlowLayer("glow", scn);
       // glow.intensity = 0.12;
@@ -1037,453 +1012,6 @@
         // Texturas opcionales (si las pones en /textures/planets/)
         // Si no existen, el código hace fallback a colores.
         "Canopus": { /* albedo: T("2k_sun.jpg") */ },
-      };
-
-      // ====================================================================
-      // DUNE GALAXY (data-driven)
-      // - Objetivo: que NINGÚN planeta quede "suelto" sin sistema/estrella.
-      // - Si no hay referencia fiable del sistema/estrella, lo asignamos a
-      //   un sistema "Outer-XX" (inventado) para mantener coherencia.
-      // - Esta capa SOLO construye defs visuales (radius/orbitR/orbitSpeed/etc.).
-      // ====================================================================
-
-      // ---- util: hash determinista para que los valores pseudo-random sean estables ----
-      const _hash32 = (str) => {
-        let h = 2166136261;
-        for (let i = 0; i < str.length; i++) {
-          h ^= str.charCodeAt(i);
-          h = Math.imul(h, 16777619);
-        }
-        return (h >>> 0);
-      };
-
-      const _rand01 = (seedStr) => {
-        const x = _hash32(seedStr);
-        // xorshift
-        let y = x ^ (x << 13);
-        y ^= (y >>> 17);
-        y ^= (y << 5);
-        return ((y >>> 0) % 100000) / 100000;
-      };
-
-      // ---- presets por planeta (cuando sí sabemos "qué aspecto" debe tener) ----
-      const DUNE_PLANET_OVERRIDES = {
-        // Canon-ish clave
-        "Arrakis":          { radius: 6.2, biomePreset: "arrakis", seaLevel: 0.01, ocean: false, terrainScale: 0.22, noiseFrequency: 2.9, noiseOctaves: 6, farSegments: 48, microBump: T("detail_rock3.png") },
-        "Caladan":          { radius: 7.0, biomePreset: "caladan", seaLevel: 0.0355, ocean: true,  oceanColor: new BABYLON.Color3(0.04,0.20,0.30), terrainScale: 0.13, noiseFrequency: 2.1, noiseOctaves: 6, farSegments: 52, microBump: T("detail_craters.png") },
-        "Giedi Prime":      { radius: 6.6, biomePreset: "giedi",   seaLevel: 0.008,  ocean: true,  oceanColor: new BABYLON.Color3(0.02,0.08,0.05), terrainScale: 0.20, noiseFrequency: 3.2, noiseOctaves: 5, farSegments: 50, microBump: T("detail_rock2.png") },
-        "Ix":               { radius: 5.9, biomePreset: "ix",      seaLevel: -0.012, ocean: true,  oceanColor: new BABYLON.Color3(0.03,0.12,0.18), terrainScale: 0.16, noiseFrequency: 2.7, noiseOctaves: 6, farSegments: 48, microBump: T("detail_snow.png") },
-        "Richese":          { radius: 6.4, biomePreset: "richese", seaLevel: -0.0125, ocean: true, oceanColor: new BABYLON.Color3(0.05,0.26,0.30), terrainScale: 0.11, noiseFrequency: 2.0, noiseOctaves: 6, farSegments: 52, microBump: T("detail_craters.png"),
-                             continentFreq: 0.55, continentStrength: 0.55, islandsFreq: 4.8, islandsStrength: 0.22 },
-        "Kaitain":          { radius: 6.3, biomePreset: "kaitain",  seaLevel: -0.022, ocean: true,  oceanColor: new BABYLON.Color3(0.04,0.18,0.26), terrainScale: 0.12, noiseFrequency: 2.2, noiseOctaves: 6, farSegments: 50, microBump: T("detail_craters.png") },
-        "Salusa Secundus":  { radius: 6.0, biomePreset: "salusa",   seaLevel: 0.01,   ocean: false, terrainScale: 0.24, noiseFrequency: 3.0, noiseOctaves: 6, farSegments: 48, microBump: T("detail_rock3.png") },
-        "Wallach IX":       { radius: 5.0, biomePreset: "kaitain",  seaLevel: -0.01,  ocean: true,  terrainScale: 0.12, noiseFrequency: 2.2, noiseOctaves: 6, farSegments: 36 },
-        "Tleilax":          { radius: 4.9, biomePreset: "giedi",    seaLevel: 0.02,   ocean: false, terrainScale: 0.18, noiseFrequency: 2.8, noiseOctaves: 6, farSegments: 32 },
-        "Rossak":           { radius: 4.8, biomePreset: "giedi",    seaLevel: 0.02,   ocean: false, terrainScale: 0.19, noiseFrequency: 2.6, noiseOctaves: 6, farSegments: 32 },
-        "Buzzell":          { radius: 4.6, biomePreset: "caladan",  seaLevel: -0.02,  ocean: true,  terrainScale: 0.12, noiseFrequency: 2.0, noiseOctaves: 6, farSegments: 32 },
-        "Lampadas":         { radius: 4.7, biomePreset: "kaitain",  seaLevel: -0.015, ocean: true,  terrainScale: 0.12, noiseFrequency: 2.1, noiseOctaves: 6, farSegments: 32 },
-        // Extra "no-canon" útil para tu demo (lava)
-        "Vulcanis":         { radius: 6.1, biomePreset: "lava", seaLevel: -0.098, ocean: true, oceanKind: "lava", lavaIntensity: 2.0, lavaFlowSpeed: 0.06,
-                             lavaColor: new BABYLON.Color3(1.0, 0.35, 0.08), terrainScale: 0.20, noiseFrequency: 2.9, noiseOctaves: 6, farSegments: 52, microBump: T("detail_rock2.png") },
-      };
-
-      // ---- sistemas/estrellas conocidas (si no está aquí => inventamos) ----
-      const DUNE_SYSTEM_STAR = {
-        "Canopus":            { name: "Canopus", kind: "sun", radius: 50, emissive: new BABYLON.Color3(1.0,0.92,0.70) },
-        "Delta Pavonis":      { name: "Delta Pavonis", kind: "sun", radius: 32, emissive: new BABYLON.Color3(1.0,0.86,0.65) },
-        "36 Ophiuchi B":      { name: "36 Ophiuchi B", kind: "sun", radius: 30, emissive: new BABYLON.Color3(1.0,0.90,0.70) },
-        "IX Eridani":         { name: "IX Eridani", kind: "sun", radius: 30, emissive: new BABYLON.Color3(0.92,0.95,1.0) },
-        "Eridani A":          { name: "Eridani A", kind: "sun", radius: 28, emissive: new BABYLON.Color3(1.0,0.92,0.75) },
-        "Alpha Centauri B":   { name: "Alpha Centauri B", kind: "sun", radius: 34, emissive: new BABYLON.Color3(1.0,0.84,0.60) },
-        "Laoujin":            { name: "Laoujin", kind: "sun", radius: 26, emissive: new BABYLON.Color3(0.95,0.92,0.78) },
-        "Thalim":             { name: "Thalim", kind: "sun", radius: 26, emissive: new BABYLON.Color3(1.0,0.70,0.55) },
-        "Gamma Waiping":      { name: "Gamma Waiping", kind: "sun", radius: 29, emissive: new BABYLON.Color3(1.0,0.94,0.80) },
-        "Kuentsing":          { name: "Kuentsing", kind: "sun", radius: 27, emissive: new BABYLON.Color3(0.95,0.88,0.70) },
-        "Epsilon Alangue":    { name: "Epsilon Alangue", kind: "sun", radius: 28, emissive: new BABYLON.Color3(0.90,0.92,1.0) },
-        "Theta Shalish":      { name: "Theta Shalish", kind: "sun", radius: 28, emissive: new BABYLON.Color3(1.0,0.82,0.60) },
-        "Theta Shaowewei":    { name: "Theta Shaowewei", kind: "sun", radius: 25, emissive: new BABYLON.Color3(0.95,0.78,0.55) },
-        "Niushe":             { name: "Niushe", kind: "sun", radius: 27, emissive: new BABYLON.Color3(0.95,0.90,0.82) },
-        // Corrin orbita Sigma Draconis (estrella gigante roja) en varias fuentes.
-        "Sigma Draconis":     { name: "Sigma Draconis", kind: "sun", radius: 42, emissive: new BABYLON.Color3(1.0,0.60,0.45) },
-        // Kaitain es especialmente confuso en fuentes (a veces se asocia a Sigma Draconis / a veces a "Kaitain" como designación),
-        // aquí lo tratamos como sistema propio para NO mezclar.
-        "Kaitain":            { name: "Kaitain", kind: "sun", radius: 30, emissive: new BABYLON.Color3(0.95,0.90,0.78) },
-      };
-
-      // ---- lista "completa" (según tu recopilación) para que no falte nada ----
-      // Formato flexible:
-      // - "Planeta"
-      // - "Planeta (Sistema IV)"  -> planeta en Sistema, posición IV
-      // - "Planeta (IV Sistema)"  -> planeta en Sistema, posición IV
-      // - "SYS: NombreSistema"     -> define sistema sin planetas explícitos (se rellenará)
-      const DUNE_RAW_BODIES = [
-        // Canopus / Arrakis
-        "Seban", "Menaris", "Arrakis", "Extaris", "Ven", "Revona",
-        // Otros mundos clave
-        "Caladan", "Giedi Prime", "Kaitain", "Salusa Secundus", "Ix", "Richese",
-        "Tleilax", "Wallach IX", "Ginaz", "Ecaz", "Chusuk", "Hagal", "Poritrin",
-        "Gamont", "Grumman", "Lankiveil", "Lampadas", "Rossak", "Buzzell", "Corrin",
-        "Vulcanis",
-        // Lista ampliada (tu listado)
-        "III Delta Kaising", "Acline", "Al Dhanab", "Alahir", "Alarkand",
-        "Allgrave (Andala IV)", "Anbus IV", "Andaur", "Andioyu", "Andosia", "Alpha Corvus",
-        "Arbelough", "Armouth", "Artisia", "Atar", "Balut", "Barandiko", "Beakkal",
-        "Bela Tegeuse (V Kuentsing)", "Bellaris", "Bellos", "Belos IV", "Biarek", "Bifkar",
-        "Borhees", "Boujet", "Buzzell", "Canidar", "Casa Capitular", "Cedon", "Ceel",
-        "Cherodo", "Chado", "Clione (Luna de Novebruns)", "Colonia Peridot", "Colonia Ventree",
-        "Conexión", "Conexión Alpha", "Crell", "Crompton", "Crustacea Tres", "Cuarte",
-        "Culat", "Denali", "Draemh (Enthi VII)", "Dross", "Dur", "Duvalle", "Ecaz",
-        "Ekhnot", "Eleccan", "Elegy", "Ellram", "Enfeil", "Fharris", "Fournier",
-        "Gaar", "Galicia", "Gangigisree", "Gansireed", "Gillek", "Grand Hein", "Grenbelle (Mycopterra XIV)",
-        "Harmonthep", "Hassika V", "Havari", "Hessra", "Honru", "Ilthamont", "Irawok",
-        "Ishkal", "Ishia", "Isla", "Issimo III", "Ipyr", "Ixap", "Izvinor", "Jakar",
-        "Jericha", "Jervish", "Jhibraith", "Jongleur", "Katinov (Alderamin IV)", "Kellinor",
-        "Kepler", "Keres (Kora II)", "Kirana III", "Klytemn", "Kobold (Kora II)", "Kolhar",
-        "Komider", "Kronin", "Lampadas", "Lectaire", "Lernaeus", "Mallador", "Markon",
-        "Meuse", "Midea", "Molitor", "Moroko", "Muritan", "Naraj", "Narcal", "Niushe",
-        "No-Planeta de las Honoradas Matres", "Nossus", "Novebruns", "Oalar", "Oculiat",
-        "Omwara", "Osmynea (estación sobre Wrasni)", "Otak", "Otorio", "Palma", "Parmentier",
-        "Parella", "Pedmiot", "Péle", "Perdiccas (Luna de Hagal)", "Perth", "Perrin XIV",
-        "Pilargo", "Pincknon", "Pirido", "Pital", "Planeta de los Adiestradores", "Pliesse",
-        "Ponciard", "Prix", "Qalloway", "Quardhyr (Mycopterra XVIII)", "Qelso", "Quadra",
-        "Reenol", "Relicon", "Renditai", "Rhisso", "Richese", "Risp VII", "Roc", "Romo",
-        "Ronto", "Ros-Jal", "Rossak", "Sansin", "Selos", "Seneca", "Seprek", "Sikun",
-        "Sincronía", "Souci (Luna)", "Subiak", "Taligari", "Tanegaard", "Tarahell", "Tengrid (Kublai XII)",
-        "Thonaris", "Tierra", "Tleilax Siete", "Tupile", "Tyndall", "Ularda", "Unsidor",
-        "Uthers", "Velan", "Walgis", "Wallach VI", "Wallach VII", "Wrasni (Uuokia IV)",
-        "Xuttuh", "Yardin", "Yondair", "Zabulon", "Zanbar", "Zanobar", "Zenha", "Zenith",
-        // define sistemas citados como tales (se rellenan si no tienen planetas)
-        "SYS: Unsidor", "SYS: Thonaris", "SYS: Yondair"
-      ];
-
-      // ---- parseo ligero de la lista anterior hacia entries {kind,name,system,pos,parent} ----
-      const _romanToInt = (r) => {
-        if (!r) return null;
-        const map = {I:1,V:5,X:10,L:50,C:100,D:500,M:1000};
-        let s = 0, prev = 0;
-        for (let i = r.length - 1; i >= 0; i--) {
-          const v = map[r[i]] || 0;
-          if (v < prev) s -= v; else { s += v; prev = v; }
-        }
-        return s || null;
-      };
-
-      const _pushUnique = (arr, v) => { if (!arr.includes(v)) arr.push(v); };
-
-      const parseDuneEntries = (rawList) => {
-        const entries = [];
-        const systemsExplicit = new Set();
-
-        for (const raw0 of rawList) {
-          const raw = String(raw0).trim();
-          if (!raw) continue;
-          if (raw.startsWith("SYS:")) {
-            systemsExplicit.add(raw.replace(/^SYS:\s*/i, "").trim());
-            continue;
-          }
-
-          // detect luna
-          const isMoon = /\b(luna)\b/i.test(raw);
-
-          // normaliza texto auxiliar
-          const cleaned = raw
-            .replace(/\s*:\s*.*$/, "")
-            .replace(/\s*—\s*.*$/, "")
-            .replace(/\s*\(estación.*\)$/i, "")
-            .trim();
-
-          // "Planet (System IV)" o "Planet (IV System)"
-          let name = cleaned;
-          let system = null;
-          let pos = null;
-          let parent = null;
-
-          const m = cleaned.match(/^(.*?)\s*\((.*?)\)\s*$/);
-          if (m) {
-            name = m[1].trim();
-            const inside = m[2].trim();
-
-            // "Luna de X"
-            const mMoonParent = inside.match(/luna\s+de\s+(.+)/i);
-            if (mMoonParent) {
-              parent = mMoonParent[1].trim();
-              // el sistema se determinará más tarde por el planeta padre si se conoce
-            }
-
-            // "Sistema IV" (roman al final)
-            const mSysRomanEnd = inside.match(/^(.+?)\s+([IVXLCM]+)$/i);
-            // "IV Sistema" (roman al inicio)
-            const mRomanSysStart = inside.match(/^([IVXLCM]+)\s+(.+)$/i);
-            // "V Kuentsing" / "IV Eridani A" etc.
-            if (mSysRomanEnd) {
-              system = mSysRomanEnd[1].trim();
-              pos = _romanToInt(mSysRomanEnd[2].toUpperCase());
-            } else if (mRomanSysStart) {
-              pos = _romanToInt(mRomanSysStart[1].toUpperCase());
-              system = mRomanSysStart[2].trim();
-            }
-          }
-
-          // hints manuales para planetas muy conocidos
-          const HINTS = {
-            "Arrakis":         { system: "Canopus", pos: 3 },
-            "Seban":           { system: "Canopus", pos: 1 },
-            "Menaris":         { system: "Canopus", pos: 2 },
-            "Extaris":         { system: "Canopus", pos: 4 },
-            "Ven":             { system: "Canopus", pos: 5 },
-            "Revona":          { system: "Canopus", pos: 6 },
-            "Caladan":         { system: "Delta Pavonis", pos: 3 },
-            "Giedi Prime":     { system: "36 Ophiuchi B", pos: 1 },
-            "Ix":              { system: "IX Eridani", pos: 9 },
-            "Richese":         { system: "Eridani A", pos: 4 },
-            "Ecaz":            { system: "Alpha Centauri B", pos: 4 },
-            "Wallach IX":      { system: "Laoujin", pos: 9 },
-            "Tleilax":         { system: "Thalim", pos: 1 },
-            "Salusa Secundus": { system: "Gamma Waiping", pos: 3 },
-            "Poritrin":        { system: "Epsilon Alangue", pos: 3 },
-            "Chusuk":          { system: "Theta Shalish", pos: 4 },
-            "Hagal":           { system: "Theta Shaowewei", pos: 2 },
-            "Grumman":         { system: "Niushe", pos: 2 },
-            "Gamont":          { system: "Niushe", pos: 3 },
-            "Corrin":          { system: "Sigma Draconis", pos: 6 },
-            // Kaitain: mantenemos sistema propio (ver comentario en DUNE_SYSTEM_STAR)
-            "Kaitain":         { system: "Kaitain", pos: 3 },
-          };
-
-          if (!system && HINTS[name]) {
-            system = HINTS[name].system;
-            pos = HINTS[name].pos;
-          }
-
-          entries.push({
-            kind: isMoon ? "moon" : "planet",
-            name,
-            system,
-            pos,
-            parent,
-            raw
-          });
-        }
-
-        // asegurar sistemas explícitos
-        for (const s of systemsExplicit) {
-          entries.push({ kind: "system", name: s, system: s, raw: "SYS:" + s });
-        }
-
-        return entries;
-      };
-
-      const makePlanetDef = (planetName, orbitIndex, overrides = {}) => {
-        const r0 = _rand01("r:" + planetName);
-        const r1 = _rand01("s:" + planetName);
-        const baseRadius = 3.2 + r0 * 4.4; // 3.2..7.6
-
-        // órbitas “bonitas” (solo visual)
-        const orbitR = 110 + orbitIndex * 70;
-        const orbitSpeed = 0.00095 / (1 + orbitIndex * 0.38);
-        const rotSpeed = (0.04 + r1 * 0.18) * (r0 > 0.5 ? 1 : -1);
-
-        const def = {
-          name: planetName,
-          kind: "planet",
-          radius: baseRadius,
-          orbitR,
-          orbitSpeed,
-          rotSpeed,
-          rocky: true,
-          biomePreset: "kaitain",
-          terrainScale: 0.14,
-          seaLevel: -0.01,
-          noiseFrequency: 2.2,
-          noiseOctaves: 6,
-          farSegments: 22,
-          ocean: true,
-        };
-
-        // default por “tipo” del nombre
-        const n = planetName.toLowerCase();
-        if (/(dune|arrakis|raki)/.test(n)) {
-          def.biomePreset = "arrakis";
-          def.ocean = false;
-          def.seaLevel = 0.01;
-          def.terrainScale = 0.22;
-          def.noiseFrequency = 2.9;
-        } else if (/(prime|industrial|giedi|komider|chado|tanegaard|connection|conex)/.test(n)) {
-          def.biomePreset = "giedi";
-          def.ocean = true;
-          def.seaLevel = 0.01;
-          def.terrainScale = 0.18;
-        } else if (/(caladan|buzzell|ocean|sea)/.test(n)) {
-          def.biomePreset = "caladan";
-          def.ocean = true;
-          def.seaLevel = -0.02;
-          def.terrainScale = 0.12;
-        } else if (/(ix|richese|kronin)/.test(n)) {
-          def.biomePreset = "ix";
-          def.ocean = false;
-          def.seaLevel = 0.02;
-          def.terrainScale = 0.16;
-        }
-
-        // overrides de canon
-        const ov = DUNE_PLANET_OVERRIDES[planetName] || {};
-        Object.assign(def, ov);
-        Object.assign(def, overrides);
-        return def;
-      };
-
-      const makeMoonDef = (moonName, parentName, moonIndex = 0) => {
-        const r0 = _rand01("m:" + moonName);
-        return {
-          name: moonName,
-          kind: "moon",
-          radius: 0.7 + r0 * 0.9,
-          orbitR: 9.5 + moonIndex * 6.5,
-          orbitSpeed: 0.05 + r0 * 0.06,
-          rotSpeed: 0.008 + r0 * 0.012,
-          atmo: false,
-          rocky: true,
-          parent: parentName,
-        };
-      };
-
-      const buildDuneExtraSystems = () => {
-        const entries = parseDuneEntries(DUNE_RAW_BODIES);
-
-        // mapa planeta->sistema (para colgar lunas correctamente)
-        const planetToSystem = new Map();
-        for (const e of entries) {
-          if (e.kind === "planet" && e.system) planetToSystem.set(e.name, e.system);
-        }
-
-        // 1) agrupar planetas por sistema (si falta sistema => "Outer-XX")
-        const bySystem = new Map();
-        const unknownPlanets = [];
-
-        const pendingMoons = [];
-        for (const e of entries) {
-          if (e.kind === "system") {
-            if (!bySystem.has(e.system)) bySystem.set(e.system, { planets: [], moons: [], meta: [] });
-            continue;
-          }
-
-          if (e.kind === "planet") {
-            if (!e.system) unknownPlanets.push(e);
-            else {
-              if (!bySystem.has(e.system)) bySystem.set(e.system, { planets: [], moons: [], meta: [] });
-              bySystem.get(e.system).planets.push(e);
-            }
-          } else if (e.kind === "moon") {
-            pendingMoons.push(e);
-          }
-        }
-
-        // adjuntar lunas al sistema del planeta padre si se conoce; si no, al primer Outer
-        // IMPORTANT: si la luna referencia un planeta "huérfano" (sin sistema),
-        // forzamos a que ese planeta vaya al MISMO Outer-XX que la luna para evitar:
-        //   [moon] parent no encontrado: <Planeta> para <Luna>
-        const _moveUnknownPlanetToSystem = (planetName, sysId) => {
-          const idx = unknownPlanets.findIndex(p => p.name === planetName);
-          if (idx >= 0) {
-            if (!bySystem.has(sysId)) bySystem.set(sysId, { planets: [], moons: [], meta: [] });
-            bySystem.get(sysId).planets.push(unknownPlanets.splice(idx, 1)[0]);
-            planetToSystem.set(planetName, sysId);
-            return true;
-          }
-          return false;
-        };
-		
-		for (const m of pendingMoons) {
-          const parentSys = (m.parent && planetToSystem.get(m.parent)) || m.system;
-          const targetSys = parentSys || "Outer-01";
-		  
-          // Si el padre existe pero aún está en unknownPlanets, muévelo al mismo sistema
-          if (m.parent && !planetToSystem.get(m.parent)) {
-            _moveUnknownPlanetToSystem(m.parent, targetSys);
-          }
-		  
-          if (!bySystem.has(targetSys)) bySystem.set(targetSys, { planets: [], moons: [], meta: [] });
-          bySystem.get(targetSys).moons.push(m);
-        }
-
-        // 2) repartir desconocidos en sistemas inventados para que nada quede huérfano
-        const OUTER_SIZE = 9;
-        let outerIdx = 1;
-        while (unknownPlanets.length) {
-          const sysId = `Outer-${String(outerIdx).padStart(2, "0")}`;
-          if (!bySystem.has(sysId)) bySystem.set(sysId, { planets: [], moons: [], meta: [] });
-          const bucket = bySystem.get(sysId);
-          bucket.planets.push(...unknownPlanets.splice(0, OUTER_SIZE));
-          outerIdx++;
-        }
-
-        // 3) construir defs de sistemas
-        const systems = [];
-        const sysIds = Array.from(bySystem.keys())
-          .filter(s => s !== "Canopus")
-          .sort((a,b)=> a.localeCompare(b));
-
-        // posiciones 3D simples (en anillo)
-        const ringR = 2200;
-        for (let si = 0; si < sysIds.length; si++) {
-          const id = sysIds[si];
-          const angle = (si / Math.max(1, sysIds.length)) * Math.PI * 2;
-          const pos = new BABYLON.Vector3(Math.cos(angle) * ringR, (si%5 - 2) * 60, Math.sin(angle) * ringR);
-
-          const starDef = DUNE_SYSTEM_STAR[id] || {
-            name: `Star ${id}`,
-            kind: "sun",
-            radius: 24 + _rand01("star:"+id) * 10,
-            emissive: new BABYLON.Color3(0.95, 0.92, 0.78)
-          };
-
-          // ordenar por pos (si hay), resolver colisiones
-          const group = bySystem.get(id);
-          const planets = (group?.planets || []).slice();
-          planets.sort((a,b)=>{
-            const ap = a.pos ?? 9999;
-            const bp = b.pos ?? 9999;
-            if (ap !== bp) return ap - bp;
-            return a.name.localeCompare(b.name);
-          });
-
-          // asigna índices de órbita estables
-          const usedPos = new Set();
-          const planetDefs = [];
-          for (let pi = 0; pi < planets.length; pi++) {
-            const p = planets[pi];
-            let idx = (p.pos != null ? p.pos : (pi + 1));
-            while (usedPos.has(idx)) idx++;
-            usedPos.add(idx);
-            planetDefs.push(makePlanetDef(p.name, idx));
-          }
-
-          // si el sistema quedó sin planetas (pero lo declaraste), lo rellenamos
-          if (planetDefs.length === 0) {
-            planetDefs.push(makePlanetDef(`${id} I`, 1));
-            planetDefs.push(makePlanetDef(`${id} II`, 2));
-          }
-
-          // moons: cuelgan del planeta padre si se indica; si no, del primero
-          const moonDefs = [];
-          const moons = (group?.moons || []).slice();
-          for (let mi = 0; mi < moons.length; mi++) {
-            const m = moons[mi];
-            const parent = m.parent || (planetDefs[0]?.name);
-            moonDefs.push(makeMoonDef(m.name, parent, mi));
-          }
-
-          systems.push({
-            id,
-            speedScale: 6,
-            pos,
-            star: starDef,
-            planets: planetDefs,
-            moons: moonDefs,
-          });
-        }
-
-        return systems;
       };
 
       // Bodies definition (not to scale; tuned for visuals)
@@ -1502,19 +1030,132 @@
           rocky:false,
         },
         planets: [
-
-          // Los 6 planetas del sistema Canopus (tu lista)
-          makePlanetDef("Seban",   1, { biomePreset: "salusa", seaLevel: 0.02, ocean: false, terrainScale: 0.18 }),
-          makePlanetDef("Menaris", 2, { biomePreset: "kaitain", seaLevel: -0.01, ocean: true, terrainScale: 0.12 }),
-          makePlanetDef("Arrakis", 3, DUNE_PLANET_OVERRIDES["Arrakis"]),
-          makePlanetDef("Extaris", 4, { biomePreset: "ix", seaLevel: 0.02, ocean: false, terrainScale: 0.16 }),
-          makePlanetDef("Ven",     5, { biomePreset: "caladan", seaLevel: -0.02, ocean: true, terrainScale: 0.12 }),
-          makePlanetDef("Revona",  6, { biomePreset: "kaitain", seaLevel: -0.015, ocean: true, terrainScale: 0.12 }),
+          // Planetas de la novela
+          {
+            name:"Arrakis", kind:"planet", radius: 6.2,
+            orbitR: -340, orbitSpeed: 0.00060, rotSpeed: 0.080,
+            rocky:true,
+            biomePreset:"arrakis",
+            near:{ chunkResolution:14, maxDetailLevel:6, maxSplitsPerFrame:8, lodDistanceMul:6.2, swapMul:7.2 },
+            terrainScale: 0.22,
+            seaLevel: 0.01,          // sin océano
+            noiseFrequency: 2.9,
+            noiseOctaves: 6,
+            farSegments: 48,
+            ocean:false,
+            oceanColor: new BABYLON.Color3(0.04,0.12,0.18),
+            microBump: T("detail_rock3.png"),
+          },
+          {
+            name:"Caladan", kind:"planet", radius: 7.0,
+            orbitR: 400, orbitSpeed: 0.00052, rotSpeed: -0.107,
+            rocky:true,
+            biomePreset:"caladan",
+            terrainScale: 0.13,
+            seaLevel: 0.0355,        // mucho mar
+            noiseFrequency: 2.1,
+            noiseOctaves: 6,
+            farSegments: 52,
+            ocean:true,
+            oceanColor: new BABYLON.Color3(0.04,0.20,0.30),
+            microBump: T("detail_craters.png"),
+          },
+          {
+            name:"Giedi Prime", kind:"planet", radius: 6.6,
+            orbitR: 465, orbitSpeed: 0.00046, rotSpeed: 0.092,
+            rocky:true,
+            biomePreset:"giedi",
+            terrainScale: 0.20,
+            seaLevel: 0.008,        // charcos/mares mínimos
+            noiseFrequency: 3.2,
+            noiseOctaves: 5,
+            farSegments: 50,
+            ocean:true,
+            oceanColor: new BABYLON.Color3(0.02,0.08,0.05),
+            microBump: T("detail_rock2.png"),
+          },
+          {
+            name:"Ix", kind:"planet", radius: 5.9,
+            orbitR: 530, orbitSpeed: 0.00040, rotSpeed: 0.204,
+            rocky:true,
+            biomePreset:"ix",
+            terrainScale: 0.16,
+            seaLevel: -0.012,
+            noiseFrequency: 2.7,
+            noiseOctaves: 6,
+            farSegments: 48,
+            ocean:true,
+            oceanColor: new BABYLON.Color3(0.03,0.12,0.18),
+            microBump: T("detail_snow.png"),
+          },
+          {
+            name:"Kaitain", kind:"planet", radius: 6.3,
+            orbitR: 595, orbitSpeed: 0.00035, rotSpeed: 0.106,
+            rocky:true,
+            biomePreset:"kaitain",
+            terrainScale: 0.12,
+            seaLevel: -0.022,
+            noiseFrequency: 2.2,
+            noiseOctaves: 6,
+            farSegments: 50,
+            ocean:true,
+            oceanColor: new BABYLON.Color3(0.04,0.18,0.26),
+            microBump: T("detail_craters.png"),
+          },
+          {
+            name:"Salusa Secundus", kind:"planet", radius: 6.0,
+            orbitR: 670, orbitSpeed: 0.00030, rotSpeed: 0.109,
+            rocky:true,
+            biomePreset:"salusa",
+            terrainScale: 0.24,
+            seaLevel: 0.01,          // sin océano
+            noiseFrequency: 3.0,
+            noiseOctaves: 6,
+            farSegments: 48,
+            ocean:false,
+            microBump: T("detail_rock3.png"),
+          },
+          {
+            name:"Richese", kind:"planet", radius: 6.4,
+            orbitR: 760, orbitSpeed: 0.00026, rotSpeed: 0.108,
+            rocky:true,
+            biomePreset:"richese",
+            terrainScale: 0.11,
+            seaLevel: -0.01250,        // planeta muy oceánico
+            noiseFrequency: 2.0,
+            noiseOctaves: 6,
+            farSegments: 52,
+            ocean:true,
+            oceanColor: new BABYLON.Color3(0.05,0.26,0.30),
+            microBump: T("detail_craters.png"),
+            // --- Continentes + archipiélagos (solo Richese) ---
+            continentFreq: 0.55,        // muy baja: forma masas grandes
+            continentStrength: 0.55,    // cuánto “levanta” el continente
+            islandsFreq: 4.8,           // alta: islas
+            islandsStrength: 0.22       // cuánto “muerde” cerca de costa
+          },
+			{
+			  name:"Vulcanis", kind:"planet", radius: 6.1,
+			  orbitR: 820, orbitSpeed: 0.00022, rotSpeed: 0.11,
+			  rocky:true,
+			  biomePreset:"lava",
+			  terrainScale: 0.20,
+			  seaLevel: -0.0980,          // bajo 0 => “mar” de lava
+			  noiseFrequency: 2.9,
+			  noiseOctaves: 6,
+			  farSegments: 52,
+			  ocean:true,
+			  oceanKind:"lava",          // <- clave
+			  lavaIntensity: 2.0,        // brillo
+			  lavaFlowSpeed: 0.06,       // animación
+			  lavaColor: new BABYLON.Color3(1.0, 0.35, 0.08), // tono lava
+			  microBump: T("detail_rock2.png"),
+			},
         ],
         moons: [
-          // Lunas de Arrakis (2) según tu recopilación
-          { name:"Krelln", kind:"moon", radius: 1.35, orbitR: 14.5, orbitSpeed: 0.060, rotSpeed: 0.010, atmo:false, rocky:true, parent:"Arrakis" },
-          { name:"Arvon",  kind:"moon", radius: 0.95, orbitR: 10.2, orbitSpeed: 0.085, rotSpeed: 0.012, atmo:false, rocky:true, parent:"Arrakis" },
+          // Lunas de Arrakis (novela: 2 lunas; una con "Hand of God" y otra llamada Muad'dib)
+          { name:"First Moon", kind:"moon", radius: 1.55, orbitR: 14.5, orbitSpeed: 0.060, rotSpeed: 0.010, atmo:false, rocky:true, parent:"Arrakis" },
+          { name:"Muad'dib",   kind:"moon", radius: 1.05, orbitR: 10.2, orbitSpeed: 0.085, rotSpeed: 0.012, atmo:false, rocky:true, parent:"Arrakis" },
         ],
       };
 
@@ -1526,10 +1167,123 @@
       ];
 
       const extraSystems = [
-
-        // Canopus es el núcleo y el resto se genera desde DUNE_RAW_BODIES
         coreSystem,
-        ...buildDuneExtraSystems(),
+        {
+          id: "Ecaz",
+          speedScale: 6,
+          pos: new BABYLON.Vector3(1400, 120, -900),
+          star: { name: "Star Ecaz", kind:"sun", radius: 28, emissive: new BABYLON.Color3(1.0,0.86,0.55) },
+          planets: [
+            { name:"Ecaz – Ecaz", kind:"planet", radius: 5.2, orbitR: 120, orbitSpeed: 0.00080, rotSpeed: 0.050, rocky:true, biomePreset:"caladan", seaLevel:-0.03, ocean:true, farSegments: 24 },
+            { name:"Ecaz – Tupile", kind:"planet", radius: 4.3, orbitR: 170, orbitSpeed: 0.00060, rotSpeed: 0.040, rocky:true, biomePreset:"kaitain", seaLevel:-0.01, ocean:true, farSegments: 24 },
+            { name:"Ecaz – Sikun", kind:"planet", radius: 3.8, orbitR: 230, orbitSpeed: 0.00048, rotSpeed: 0.060, rocky:true, biomePreset:"salusa", seaLevel:0.02, ocean:false, farSegments: 20 },
+            { name:"Ecaz – Chusuk", kind:"planet", radius: 3.1, orbitR: 290, orbitSpeed: 0.00038, rotSpeed: 0.070, rocky:true, biomePreset:"ix", seaLevel:-0.02, ocean:true, farSegments: 18 },
+          ],
+		  moons: [
+            { name:"Moonka", kind:"moon", radius: 1.55, orbitR: 14.5, orbitSpeed: 0.060, rotSpeed: 0.010, atmo:true, rocky:true, parent:"Ecaz – Sikun" },
+            { name:"Moonku", kind:"moon", radius: 1.05, orbitR: 10.2, orbitSpeed: 0.085, rotSpeed: 0.003, atmo:false, rocky:true, biomePreset:"salusa", parent:"Ecaz – Ecaz" },
+		  ],
+        },
+        {
+          id: "Wallach",
+          speedScale: 6,
+          pos: new BABYLON.Vector3(-1550, 40, -1050),
+          star: { name: "Star Wallach", kind:"sun", radius: 30, emissive: new BABYLON.Color3(0.95,0.92,0.78) },
+          planets: [
+            { name:"Wallach – Wallach IX", kind:"planet", radius: 5.0, orbitR: 110, orbitSpeed: 0.00085, rotSpeed: 0.045, rocky:true, biomePreset:"kaitain", seaLevel:-0.01, ocean:true, farSegments: 24 },
+            { name:"Wallach – Panope", kind:"planet", radius: 4.2, orbitR: 165, orbitSpeed: 0.00062, rotSpeed: 0.055, rocky:true, biomePreset:"caladan", seaLevel:-0.02, ocean:true, farSegments: 22 },
+            { name:"Wallach – Lankiveil", kind:"planet", radius: 4.6, orbitR: 235, orbitSpeed: 0.00048, rotSpeed: 0.040, rocky:true, biomePreset:"ix", seaLevel:0.015, ocean:false, farSegments: 22 },
+          ],
+        },
+        {
+          id: "Tleilax",
+          speedScale: 6,
+          pos: new BABYLON.Vector3(1120, -80, 1280),
+          star: { name: "Star Tleilax", kind:"sun", radius: 26, emissive: new BABYLON.Color3(1.0,0.70,0.55) },
+          planets: [
+            { name:"Tleilax – Tleilax", kind:"planet", radius: 4.9, orbitR: 120, orbitSpeed: 0.00075, rotSpeed: 0.060, rocky:true, biomePreset:"giedi", seaLevel:0.02, ocean:false, farSegments: 24 },
+            { name:"Tleilax – Bandalong", kind:"planet", radius: 3.7, orbitR: 175, orbitSpeed: 0.00056, rotSpeed: 0.070, rocky:true, biomePreset:"salusa", seaLevel:0.02, ocean:false, farSegments: 20 },
+            { name:"Tleilax – Sietch", kind:"planet", radius: 3.0, orbitR: 245, orbitSpeed: 0.00042, rotSpeed: 0.085, rocky:true, biomePreset:"arrakis", seaLevel:0.02, ocean:false, farSegments: 18 },
+          ],
+        },
+        {
+          id: "Ginaz",
+          speedScale: 6,
+          pos: new BABYLON.Vector3(-1250, 90, 1320),
+          star: { name: "Star Ginaz", kind:"sun", radius: 27, emissive: new BABYLON.Color3(0.90,0.92,1.0) },
+          planets: [
+            { name:"Ginaz – Ginaz", kind:"planet", radius: 4.6, orbitR: 115, orbitSpeed: 0.00082, rotSpeed: 0.055, rocky:true, biomePreset:"kaitain", seaLevel:-0.015, ocean:true, farSegments: 22 },
+            { name:"Ginaz – Naraj", kind:"planet", radius: 3.9, orbitR: 175, orbitSpeed: 0.00060, rotSpeed: 0.070, rocky:true, biomePreset:"ix", seaLevel:0.02, ocean:false, farSegments: 20 },
+            { name:"Ginaz – Wedlock", kind:"planet", radius: 3.4, orbitR: 250, orbitSpeed: 0.00045, rotSpeed: 0.080, rocky:true, biomePreset:"salusa", seaLevel:0.02, ocean:false, farSegments: 18 },
+          ],
+        },
+        {
+          id: "Grumman",
+          speedScale: 6,
+          pos: new BABYLON.Vector3(1850, -120, 250),
+          star: { name: "Star Grumman", kind:"sun", radius: 29, emissive: new BABYLON.Color3(1.0,0.94,0.80) },
+          planets: [
+            { name:"Grumman – Grumman", kind:"planet", radius: 4.8, orbitR: 120, orbitSpeed: 0.00080, rotSpeed: 0.050, rocky:true, biomePreset:"caladan", seaLevel:-0.03, ocean:true, farSegments: 22 },
+            { name:"Grumman – Kralizec", kind:"planet", radius: 4.1, orbitR: 190, orbitSpeed: 0.00058, rotSpeed: 0.065, rocky:true, biomePreset:"giedi", seaLevel:0.02, ocean:false, farSegments: 20 },
+            { name:"Grumman – Selusa", kind:"planet", radius: 3.3, orbitR: 265, orbitSpeed: 0.00042, rotSpeed: 0.090, rocky:true, biomePreset:"salusa", seaLevel:0.02, ocean:false, farSegments: 18 },
+          ],
+        },
+        {
+          id: "Buzzell",
+          speedScale: 6,
+          pos: new BABYLON.Vector3(-2100, -60, 250),
+          star: { name: "Star Buzzell", kind:"sun", radius: 25, emissive: new BABYLON.Color3(0.95,0.78,0.55) },
+          planets: [
+            { name:"Buzzell – Buzzell", kind:"planet", radius: 4.0, orbitR: 105, orbitSpeed: 0.00092, rotSpeed: 0.060, rocky:true, biomePreset:"arrakis", seaLevel:0.02, ocean:false, farSegments: 20 },
+            { name:"Buzzell – Harmonthep", kind:"planet", radius: 5.4, orbitR: 175, orbitSpeed: 0.00060, rotSpeed: 0.040, rocky:true, biomePreset:"kaitain", seaLevel:-0.02, ocean:true, farSegments: 24 },
+            { name:"Buzzell – Lampadas", kind:"planet", radius: 3.6, orbitR: 255, orbitSpeed: 0.00045, rotSpeed: 0.080, rocky:true, biomePreset:"ix", seaLevel:0.02, ocean:false, farSegments: 18 },
+          ],
+        },
+        {
+          id: "Junction",
+          speedScale: 6,
+          pos: new BABYLON.Vector3(0, 160, 2100),
+          star: { name: "Star Junction", kind:"sun", radius: 24, emissive: new BABYLON.Color3(0.85,0.90,1.0) },
+          planets: [
+            { name:"Junction – Junction", kind:"planet", radius: 4.2, orbitR: 120, orbitSpeed: 0.00088, rotSpeed: 0.055, rocky:true, biomePreset:"ix", seaLevel:0.015, ocean:false, farSegments: 22 },
+            { name:"Junction – Poritrin", kind:"planet", radius: 5.8, orbitR: 195, orbitSpeed: 0.00058, rotSpeed: 0.040, rocky:true, biomePreset:"caladan", seaLevel:-0.03, ocean:true, farSegments: 24 },
+            { name:"Junction – Ecaz Minor", kind:"planet", radius: 3.0, orbitR: 275, orbitSpeed: 0.00042, rotSpeed: 0.085, rocky:true, biomePreset:"kaitain", seaLevel:-0.01, ocean:true, farSegments: 18 },
+          ],
+        },
+        {
+          id: "Lampadas",
+          speedScale: 6,
+          pos: new BABYLON.Vector3(2200, 60, -1350),
+          star: { name: "Star Lampadas", kind:"sun", radius: 28, emissive: new BABYLON.Color3(1.0,0.82,0.60) },
+          planets: [
+            { name:"Lampadas – Lampadas", kind:"planet", radius: 4.9, orbitR: 125, orbitSpeed: 0.00082, rotSpeed: 0.050, rocky:true, biomePreset:"kaitain", seaLevel:-0.015, ocean:true, farSegments: 22 },
+            { name:"Lampadas – Rossak", kind:"planet", radius: 4.4, orbitR: 190, orbitSpeed: 0.00058, rotSpeed: 0.060, rocky:true, biomePreset:"giedi", seaLevel:0.02, ocean:false, farSegments: 20 },
+            { name:"Lampadas – Bela", kind:"planet", radius: 3.5, orbitR: 270, orbitSpeed: 0.00042, rotSpeed: 0.080, rocky:true, biomePreset:"salusa", seaLevel:0.02, ocean:false, farSegments: 18 },
+          ],
+        },
+        {
+          id: "Poritrin",
+          speedScale: 6,
+          pos: new BABYLON.Vector3(-2300, 120, -1750),
+          star: { name: "Star Poritrin", kind:"sun", radius: 26, emissive: new BABYLON.Color3(0.95,0.88,0.70) },
+          planets: [
+            { name:"Poritrin – Poritrin", kind:"planet", radius: 5.6, orbitR: 130, orbitSpeed: 0.00076, rotSpeed: 0.040, rocky:true, biomePreset:"caladan", seaLevel:-0.03, ocean:true, farSegments: 24 },
+            { name:"Poritrin – Grumman Minor", kind:"planet", radius: 3.6, orbitR: 205, orbitSpeed: 0.00054, rotSpeed: 0.070, rocky:true, biomePreset:"kaitain", seaLevel:-0.01, ocean:true, farSegments: 18 },
+            { name:"Poritrin – Tleilax Outpost", kind:"planet", radius: 3.1, orbitR: 280, orbitSpeed: 0.00040, rotSpeed: 0.085, rocky:true, biomePreset:"giedi", seaLevel:0.02, ocean:false, farSegments: 18 },
+          ],
+        },
+        {
+          id: "Naraj",
+          speedScale: 6,
+          pos: new BABYLON.Vector3(2550, -80, 1750),
+          star: { name: "Star Naraj", kind:"sun", radius: 24, emissive: new BABYLON.Color3(0.88,0.95,1.0) },
+          planets: [
+            { name:"Naraj – Naraj", kind:"planet", radius: 4.1, orbitR: 110, orbitSpeed: 0.00090, rotSpeed: 0.060, rocky:true, biomePreset:"ix", seaLevel:0.02, ocean:false, farSegments: 20 },
+            { name:"Naraj – Ixian Forge", kind:"planet", radius: 3.8, orbitR: 170, orbitSpeed: 0.00062, rotSpeed: 0.070, rocky:true, biomePreset:"ix", seaLevel:0.02, ocean:false, farSegments: 18 },
+            { name:"Naraj – Caladan Drift", kind:"planet", radius: 5.0, orbitR: 240, orbitSpeed: 0.00045, rotSpeed: 0.040, rocky:true, biomePreset:"caladan", seaLevel:-0.03, ocean:true, farSegments: 22 },
+          ],
+        },
+      
       ];
 
 
@@ -1574,6 +1328,7 @@
 // ============================================================
 const labelsByName = new Map(); // name -> { rect, kind, mesh }
 let showLabels = true;
+let _activeSystemId = null; // set by updateActiveSystemShadows()
 
 function registerLabel(name, kind, mesh) {
   if (!mesh) return null;
@@ -1597,6 +1352,7 @@ function setAllLabelsVisible(v) {
   for (const { rect } of labelsByName.values()) rect.isVisible = !!v;
 }
 
+
 function updateLabelVisibility(force = false) {
   if (!showLabels) { setAllLabelsVisible(false); return; }
   const cam = scn.activeCamera;
@@ -1608,36 +1364,122 @@ function updateLabelVisibility(force = false) {
 
   const camPos = cam.position;
   const maxD2 = LABEL_MAX_DIST * LABEL_MAX_DIST;
-
-  // 1) estrellas siempre visibles
-  for (const meta of labelsByName.values()) {
-    if (meta.kind === "sun") meta.rect.isVisible = true;
+  // Babylon CDN: algunas builds no exponen camera.getFrustumPlanes().
+  // Fallback robusto: calcula planos desde la matriz de transformación (viewProjection).
+  let planes = null;
+  try {
+    if (typeof cam.getFrustumPlanes === "function") {
+      planes = cam.getFrustumPlanes();
+    } else if (BABYLON.Frustum && typeof BABYLON.Frustum.GetPlanes === "function") {
+      planes = BABYLON.Frustum.GetPlanes(cam.getTransformationMatrix());
+    } else if (BABYLON.Frustum && typeof BABYLON.Frustum.GetPlanesToRef === "function") {
+      planes = [];
+      BABYLON.Frustum.GetPlanesToRef(cam.getTransformationMatrix(), planes);
+    }
+  } catch(e) {
+    planes = null;
   }
 
-  // 2) ranking de cercanos (planetas + lunas)
-  const ranked = [];
-  for (const [name, b] of bodies.entries()) {
-    if (!b || !b.def || !b.farMesh) continue;
-    const k = b.def.kind;
-    if (k !== "planet" && k !== "moon") continue;
-    const p = b.farMesh.getAbsolutePosition();
-    const d2 = BABYLON.Vector3.DistanceSquared(camPos, p);
-    ranked.push({ name, d2 });
-  }
-  ranked.sort((a,b)=>a.d2-b.d2);
+  const tb = getTargetBody();
+  const targetName = tb ? tb.def.name : null;
+  const targetSystemId = tb && tb.def ? tb.def._systemId : null;
+  const activeSys = _activeSystemId || computeActiveSystemId();
 
-  const visible = new Set();
-  for (let i=0; i<ranked.length && i<LABEL_NEAREST_BODIES; i++) visible.add(ranked[i].name);
-  for (const r of ranked) {
-    if (r.d2 <= maxD2) visible.add(r.name);
-    else break;
+  // Reset
+  for (const [n, b] of bodies.entries()) {
+    if (b.label) b.label.isVisible = false;
   }
 
-  // 3) aplica visibilidad (todo lo que no sea estrella => depende del set)
-  for (const [name, meta] of labelsByName.entries()) {
-    if (meta.kind === "sun") continue;
-    meta.rect.isVisible = visible.has(name);
+  function isOnScreen(mesh) {
+    if (!planes) return true; // fallback: sin frustum => no ocultar por pantalla
+    try { return mesh && mesh.isInFrustum(planes); } catch(e) { return true; }
   }
+
+  // 1) Estrellas: prioridad a sistema activo + sistema del objetivo
+  for (const [n, b] of bodies.entries()) {
+    if (b.def.type !== "star") continue;
+    const d2 = BABYLON.Vector3.DistanceSquared(camPos, b.farMesh.getAbsolutePosition());
+    const on = isOnScreen(b.farMesh);
+    const sysId = b.def._systemId || b.def.name;
+
+    const show =
+      (sysId === activeSys) ||
+      (targetSystemId && sysId === targetSystemId) ||
+      (on && d2 < maxD2);
+
+    if (b.label) b.label.isVisible = show;
+  }
+
+  // 2) Candidatos (planetas + lunas) con scoring
+  const candidates = [];
+  for (const [n, b] of bodies.entries()) {
+    if (!b.label) continue;
+    if (b.def.type === "star") continue;
+
+    const pos = b.farMesh.getAbsolutePosition();
+    const d2 = BABYLON.Vector3.DistanceSquared(camPos, pos);
+    const on = isOnScreen(b.farMesh);
+    const sysId = b.def._systemId || null;
+
+    // Lunas: solo cerca del planeta padre, o si son el objetivo
+    if (b.def.type === "moon") {
+      const parent = bodies.get(b.def.parent);
+      if (!parent) continue;
+
+      const parentPos = parent.farMesh.getAbsolutePosition();
+      const parentDist = BABYLON.Vector3.Distance(camPos, parentPos);
+      const closeToParent = parentDist < Math.max(parent.def.radius * 12.0, 220);
+
+      const allowed = closeToParent || (targetName === b.def.name) || (tb && tb.def && tb.def.name === parent.def.name);
+      if (!allowed) continue;
+
+      // además: que esté razonablemente visible
+      if (!on && sysId !== activeSys && targetName !== b.def.name) continue;
+      if (d2 > maxD2) continue;
+
+      let score = d2 * (closeToParent ? 0.55 : 1.15);
+      if (sysId === activeSys) score *= 0.70;
+      if (on) score *= 0.70;
+      if (targetName === b.def.name) score = -1;
+
+      candidates.push({ b, score });
+      continue;
+    }
+
+    // Planetas: prioridad al sistema activo + lo que está en pantalla
+    if (b.def.type === "planet") {
+      const eligible =
+        (sysId === activeSys && (d2 < maxD2 * 4 || on)) ||
+        (on && d2 < maxD2) ||
+        (targetName === b.def.name);
+
+      if (!eligible) continue;
+
+      let score = d2;
+      if (sysId === activeSys) score *= 0.60;
+      if (on) score *= 0.70;
+      if (targetName === b.def.name) score = -1;
+
+      candidates.push({ b, score });
+    }
+  }
+
+  candidates.sort((a, b) => a.score - b.score);
+
+  // 3) Enciende hasta N (sin perder objetivo)
+  let shown = 0;
+  const max = LABEL_MAX_ONSCREEN;
+
+  for (const c of candidates) {
+    if (!c.b.label) continue;
+    if (c.b.label.isVisible) continue; // ya visible (p.ej. estrella)
+    if (shown >= max) break;
+    c.b.label.isVisible = true;
+    shown++;
+  }
+
+  // 4) Asegura objetivo visible siempre (si existe)
+  if (tb && tb.label) tb.label.isVisible = true;
 }
 
 // UI hook
@@ -1657,90 +1499,37 @@ if (ui.toggleLabels) {
       // ====================================================================
       // 3b) Create extra star systems (FAR-only por defecto)
       // ====================================================================
-      const systemRoots = new Map(); // systemId -> root node
-      const systemLights = []; // {light, root, range}
-      const galaxyStarDots = []; // billboards para que las estrellas lejanas siempre se vean (>= 1px)
- 
-	  
-      // ====================================================================
-      // GALAXY LAYOUT: Spiral with empty center
-      // - Coloca los centros de los sistemas en una espiral (plano XZ)
-      // - Asegura un "hueco" central sin sistemas ni estrellas
-      // - Mantiene posiciones deterministas (mismo orden => misma galaxia)
-      // ====================================================================
+      
+const systemRoots = new Map(); // systemId -> root node
+const systemLights = []; // {light, root, range}
 
-      const GALAXY_LAYOUT = {
-        // Debe ser mayor que el mayor |orbitR| de tus planetas para que el centro quede vacío.
-        // (En tu Canopus tienes orbitR ~ 820)
-        holeRadius: 1200,		// antes 2600
-        radialStep: 700,		// antes 1200
-        angleStep: 0.92,      // radianes por sistema (más => espiral más "abierta")
-        verticalJitter: 140,  // pequeña variación Y para dar profundidad
-        globalScale: 0.75		// antes 1.0
-      };
-
-      // pseudo-random determinista (0..1) a partir de un string
-      function _galRand01(str) {
-        let h = 2166136261;
-        for (let i = 0; i < str.length; i++) {
-          h ^= str.charCodeAt(i);
-          h = Math.imul(h, 16777619);
-        }
-        h >>>= 0;
-        return (h % 100000) / 100000;
-      }
-
-      function buildSpiralSystemPositions(systems) {
-        const map = new Map();
-        for (let i = 0; i < systems.length; i++) {
-          const sys = systems[i];
-          const r = GALAXY_LAYOUT.holeRadius + i * GALAXY_LAYOUT.radialStep;
-          const a = i * GALAXY_LAYOUT.angleStep;
-          const x = Math.cos(a) * r;
-          const z = Math.sin(a) * r;
-          // jitter determinista por id para que no "salte" entre recargas
-          const j = (_galRand01("GALAXY_Y_" + sys.id) - 0.5) * 2.0;
-          const y = j * GALAXY_LAYOUT.verticalJitter;
-          map.set(sys.id, new BABYLON.Vector3(x, y, z).scale(GALAXY_LAYOUT.globalScale));
-        }
-        return map;
-      }
-
-      // Precalcula las posiciones (incluye Canopus)
-      const galaxyPosBySystemId = buildSpiralSystemPositions(extraSystems);
-	  
-      // Separación entre sistemas (más grande => sistemas más lejos entre sí)
-      const SYSTEM_POS_SCALE = 2.8;
-
+// Runtime por sistema: sombras y lista de meshes (para activar/desactivar barato)
+const systemRuntime = new Map(); // systemId -> { root, light, shadowGen, meshes:Set<Mesh>, oceans:Set<Mesh> }
+function getSystemRuntime(id) {
+  let rt = systemRuntime.get(id);
+  if (!rt) {
+    rt = { root: null, light: null, shadowGen: null, meshes: new Set(), oceans: new Set() };
+    systemRuntime.set(id, rt);
+  }
+  return rt;
+}
+function getSystemShadowGen(systemId) {
+  if (!systemId || systemId === "Canopus") return coreShadowGen;
+  const rt = systemRuntime.get(systemId);
+  return rt ? rt.shadowGen : null;
+}
       function createStarSystem(sys, opts = {}) {
         const isCore = !!opts.core || sys.id === "Canopus";
         const root = new BABYLON.TransformNode("sys_" + sys.id, scn);
-		
-        // ------------------------------------------------------------
-        // Seguridad de nombres (evita estrellas/planetas "sin nombre")
-        // - Si sys.star.name viene vacío/undefined, genera uno estable.
-        // ------------------------------------------------------------
-        if (!sys.star) sys.star = {};
-        if (!sys.star.kind) sys.star.kind = "sun";
-        if (typeof sys.star.radius !== "number") sys.star.radius = 26;
-        const _rawStarName =
-          (typeof sys.star.name === "string") ? sys.star.name.trim() : "";
-        const starName =
-          _rawStarName || (sys.id ? (sys.id + " Star") : "Unknown Star");
-        sys.star.name = starName;
-		
-        // Posición galáctica en espiral (centro vacío)
-        const gpos = galaxyPosBySystemId.get(sys.id) || (sys.pos || BABYLON.Vector3.Zero());
-        root.position.copyFrom(gpos);
+        root.position.copyFrom(sys.pos || BABYLON.Vector3.Zero());
         systemRoots.set(sys.id, root);
 
         // Star mesh
         const starSeg = isCore ? 64 : 48;
-        const star = BABYLON.MeshBuilder.CreateSphere(starName, { diameter: sys.star.radius * 2, segments: starSeg }, scn);
+        const star = BABYLON.MeshBuilder.CreateSphere(sys.star.name, { diameter: sys.star.radius * 2, segments: starSeg }, scn);
         star.parent = root;
         star.position.set(0,0,0);
         star.isPickable = false;
-		star.checkCollisions = true;
 
         // Star material
         if (isCore) {
@@ -1787,55 +1576,15 @@ if (ui.toggleLabels) {
           sunLight.parent = star;
           sunLight.position.set(0,0,0);
         } else {
-          const starMat = new BABYLON.StandardMaterial(starName + "_mat", scn);
+          const starMat = new BABYLON.StandardMaterial(sys.star.name + "_mat", scn);
           starMat.emissiveColor = sys.star.emissive || new BABYLON.Color3(1,0.9,0.7);
           starMat.diffuseColor = BABYLON.Color3.Black();
           starMat.specularColor = BABYLON.Color3.Black();
           starMat.disableLighting = true;
           star.material = starMat;
         }
-		
-        // ------------------------------------------------------------
-        // Star dot billboard (LOD): asegura que una estrella muy lejana
-        // se vea siempre al menos como 1-2 píxeles, sin “desaparecer”.
-        // (Respeta la oclusión: si un planeta tapa, no se ve.)
-        // ------------------------------------------------------------
-        const starDot = BABYLON.MeshBuilder.CreatePlane(starName + "_dot", { size: 1 }, scn);
-        starDot.parent = root;
-        starDot.position.set(0, 0, 0);
-        starDot.isPickable = false;
-        starDot.billboardMode = BABYLON.Mesh.BILLBOARDMODE_ALL;
-        starDot.renderingGroupId = 1;
-  
-        const dotTex = new BABYLON.DynamicTexture(starName + "_dotTex", { width: 64, height: 64 }, scn, false);
-        {
-          const ctx = dotTex.getContext();
-          ctx.clearRect(0,0,64,64);
-          const g = ctx.createRadialGradient(32,32,0,32,32,32);
-          // centro brillante + borde suave
-          g.addColorStop(0.00, "rgba(255,255,255,0.95)");
-          g.addColorStop(0.25, "rgba(255,255,255,0.55)");
-          g.addColorStop(0.55, "rgba(255,255,255,0.18)");
-          g.addColorStop(1.00, "rgba(0,0,0,0.00)");
-          ctx.fillStyle = g;
-          ctx.fillRect(0,0,64,64);
-          dotTex.update();
-        }
-  
-        const dotMat = new BABYLON.StandardMaterial(starName + "_dotMat", scn);
-        dotMat.diffuseTexture = dotTex;
-        dotMat.emissiveTexture = dotTex;
-        dotMat.opacityTexture = dotTex;
-        dotMat.emissiveColor = sys.star.emissive || new BABYLON.Color3(1,0.9,0.7);
-        dotMat.disableLighting = true;
-        dotMat.backFaceCulling = false;
-        dotMat.alpha = 1.0;
-        dotMat.alphaMode = BABYLON.Engine.ALPHA_ADD;
-        starDot.material = dotMat;
-  
-        galaxyStarDots.push({ dot: starDot, star, radius: sys.star.radius });
 
-        bodies.set(starName, {
+        bodies.set(sys.star.name, {
           def: sys.star,
           farMesh: star,
           atmo: null,
@@ -1845,42 +1594,71 @@ if (ui.toggleLabels) {
           proc: null,
         });
 
-        // Local/system light (extras) — Canopus usa sunLight
-        let local = null;
-        if (!isCore) {
-          local = new BABYLON.PointLight(sys.id + "_light", new BABYLON.Vector3(0,0,0), scn);
-          local.parent = star;
-          local.intensity = (sys.star.lightIntensity != null) ? sys.star.lightIntensity : 1.85;
-          local.range = (sys.star.lightRange != null) ? sys.star.lightRange : 900;
-          local.includedOnlyMeshes = [];
-          local.setEnabled(true);
-          systemLights.push({ light: local, root, range: local.range });
-        }
+        
+// Local/system light (extras) — Canopus usa sunLight
+let local = null;
+const rt = getSystemRuntime(sys.id);
+rt.root = root;
 
-        function linkToLight(mesh, ocean) {
-          if (!mesh) return;
-          if (isCore) {
-            mainLitMeshes.push(mesh);
-            if (ocean) mainLitMeshes.push(ocean);
-          } else if (local) {
-            local.includedOnlyMeshes.push(mesh);
-            if (ocean) local.includedOnlyMeshes.push(ocean);
-          }
-        }
+// Tag systemId en defs (para labels/near/shadows)
+sys.star._systemId = sys.id;
 
-        function applyShadows(mesh, ocean) {
-          if (!mesh) return;
-          if (isCore) {
-            shadowGen.addShadowCaster(mesh);
-            mesh.receiveShadows = true;
-            if (ocean) ocean.receiveShadows = false;
-          } else {
-            mesh.receiveShadows = false;
-            if (ocean) ocean.receiveShadows = false;
-          }
-        }
+if (!isCore) {
+  local = new BABYLON.PointLight(sys.id + "_light", new BABYLON.Vector3(0,0,0), scn);
+  local.parent = star;
+  local.intensity = (sys.star.lightIntensity != null) ? sys.star.lightIntensity : 1.85;
+  local.range = (sys.star.lightRange != null) ? sys.star.lightRange : 900;
+  local.includedOnlyMeshes = [];
+  local.setEnabled(true);
 
-        function createRings(def, planetMesh) {
+  // ShadowGen por sistema (se activará solo cuando este sistema sea el activo)
+  const sg = new BABYLON.ShadowGenerator(1024, local);
+  sg.usePoissonSampling = true;
+  sg.bias = 0.00028;
+  sg.normalBias = 0.012;
+  sg.getShadowMap().refreshRate = BABYLON.RenderTargetTexture.REFRESHRATE_RENDER_ONCE;
+  sg.getShadowMap().renderList = [];
+
+  rt.light = local;
+  rt.shadowGen = sg;
+
+  systemLights.push({ light: local, root, range: local.range });
+} else {
+  rt.light = sunLight;
+  rt.shadowGen = coreShadowGen;
+}
+
+        
+function linkToLight(mesh, ocean) {
+  if (!mesh) return;
+  // Registrar para toggles por sistema
+  rt.meshes.add(mesh);
+  if (ocean) rt.oceans.add(ocean);
+
+  if (isCore) {
+    mainLitMeshes.push(mesh);
+    if (ocean) mainLitMeshes.push(ocean);
+  } else if (local) {
+    local.includedOnlyMeshes.push(mesh);
+    if (ocean) local.includedOnlyMeshes.push(ocean);
+  }
+}
+
+function applyShadows(mesh, ocean) {
+  if (!mesh) return;
+
+  // Prepara lista de casters, pero NO renderiza sombras salvo sistema activo
+  const sg = isCore ? coreShadowGen : (rt.shadowGen || null);
+  if (sg) {
+    sg.addShadowCaster(mesh);
+  }
+
+  // Por defecto: apagado. Se activará sólo en el sistema activo.
+  mesh.receiveShadows = false;
+  if (ocean) ocean.receiveShadows = false;
+}
+
+function createRings(def, planetMesh) {
           if (!def || !planetMesh) return null;
           if (!(def.rings && def.ringTex)) return null;
 
@@ -1908,6 +1686,7 @@ if (ui.toggleLabels) {
 
         // Planets
         for (const pDef of (sys.planets || [])) {
+          pDef._systemId = sys.id;
           pDef._sysSpeed = sys.speedScale || 1;
 
           const orbitNode = new BABYLON.TransformNode(pDef.name + "_orbit", scn);
@@ -1948,6 +1727,7 @@ if (ui.toggleLabels) {
         // Moons (solo si sys.moons existe; coreSystem las usa)
         for (const mDef of (sys.moons || [])) {
           if (!mDef.parent) continue;
+          mDef._systemId = sys.id;
           mDef._sysSpeed = sys.speedScale || 1;
 
           const parentBody = bodies.get(mDef.parent);
@@ -2010,20 +1790,12 @@ if (ui.toggleLabels) {
       );
 
 	  for (const def of allDefs) {
-        if (!def) continue;
-        // Normaliza nombre y evita entries vacíos en el selector/labels
-        const n = (typeof def.name === "string") ? def.name.trim() : "";
-        if (!n) {
-          console.warn("[skip] body sin nombre:", def);
-          continue;
-        }
-        def.name = n;
         const opt = document.createElement("option");
-        opt.value = n;
-        opt.innerText = n;
+        opt.value = def.name;
+        opt.innerText = def.name;
         ui.planetSelect.appendChild(opt);
-        const lb = bodies.get(n);
-        if (lb && lb.farMesh) registerLabel(n, def.kind, lb.farMesh); 
+        const lb = bodies.get(def.name);
+        if (lb && lb.farMesh) registerLabel(def.name, def.kind, lb.farMesh);
       }
       ui.planetSelect.value = "Arrakis";
       updateLabelVisibility(true);
@@ -2087,6 +1859,82 @@ if (ui.toggleLabels) {
         return bodies.get(name);
       }
 
+
+// ==========================
+// Sistema activo (para sombras/labels)
+// ==========================
+// _activeSystemId declared earlier (labels section)
+
+function computeActiveSystemId() {
+  const cam = scn.activeCamera;
+  const tb = getTargetBody();
+
+  // Prioridad: modo superficie => sistema del objetivo
+  if (mode.value === "surface" && tb && tb.def && tb.def._systemId) return tb.def._systemId;
+
+  // Si estás cerca del root de un sistema, ese manda
+  if (cam) {
+    const camPos = cam.position;
+    let bestId = null;
+    let bestD2 = Infinity;
+    for (const [sid, root] of systemRoots.entries()) {
+      const p = root.getAbsolutePosition();
+      const d2 = BABYLON.Vector3.DistanceSquared(camPos, p);
+      if (d2 < bestD2) { bestD2 = d2; bestId = sid; }
+    }
+    // umbral razonable para "estoy explorando este sistema"
+    if (bestId && bestD2 < (1100 * 1100)) return bestId;
+  }
+
+  // Fallback: sistema del objetivo (si hay)
+  if (tb && tb.def && tb.def._systemId) return tb.def._systemId;
+
+  return "Canopus";
+}
+
+function updateActiveSystemShadows() {
+  const sid = computeActiveSystemId();
+  if (sid === _activeSystemId) {
+    // Aun así, necesitamos sincronizar sombras de procedural cuando se enciende/apaga
+    for (const [n, b] of bodies.entries()) {
+      if (b.proc) {
+        const should = (b.def._systemId === sid) && b.proc.root && b.proc.root.isEnabled();
+        b.proc.setShadowsEnabled(should);
+      }
+    }
+    return;
+  }
+  _activeSystemId = sid;
+
+  // 1) Desactiva/activa por sistema (shadow map + receiveShadows)
+  for (const [id, rt] of systemRuntime.entries()) {
+    const sg = rt.shadowGen;
+    if (!sg) continue;
+
+    const on = (id === sid);
+    const sm = sg.getShadowMap();
+
+    if (on) {
+      sm.refreshRate = BABYLON.RenderTargetTexture.REFRESHRATE_RENDER_ONEVERYFRAME;
+      sm.renderList = Array.from(rt.meshes);
+    } else {
+      sm.refreshRate = BABYLON.RenderTargetTexture.REFRESHRATE_RENDER_ONCE;
+      sm.renderList = [];
+    }
+
+    // Recepción de sombras: sólo en sistema activo
+    for (const m of rt.meshes) m.receiveShadows = on;
+    for (const o of rt.oceans) o.receiveShadows = on;
+  }
+
+  // 2) Procedural: sólo si está habilitado Y sistema activo
+  for (const [n, b] of bodies.entries()) {
+    if (!b.proc) continue;
+    const should = (b.def._systemId === sid) && b.proc.root && b.proc.root.isEnabled();
+    b.proc.setShadowsEnabled(should);
+  }
+}
+
       function approachTarget(preferredMode = null) {
         const b = getTargetBody();
         if (!b) return;
@@ -2102,8 +1950,7 @@ if (ui.toggleLabels) {
 
         if (mode.value === "orbit") {
           cameraOrbit.setTarget(targetPos);
-          cameraOrbit.lowerRadiusLimit = Math.max(8, r * 1.25);
-          cameraOrbit.radius = Math.max(cameraOrbit.lowerRadiusLimit * 1.25, r * 6);
+          cameraOrbit.radius = Math.max(8, r * 6);
         } else if (mode.value === "fly") {
           cameraFly.position.copyFrom(camPos);
           cameraFly.setTarget(targetPos);
@@ -2136,7 +1983,7 @@ if (ui.toggleLabels) {
         if (!body.def.rocky) return;
         if (body.proc) return;
 
-        const proc = new ProceduralPlanet(scn, body.def.name, body.def.radius, shadowGen);
+        const proc = new ProceduralPlanet(scn, body.def.name, body.def.radius, getSystemShadowGen(body.def._systemId));
 
         // Preset desde bodyDefs
         if (body.def.biomePreset) proc.biomePreset = body.def.biomePreset;
@@ -2144,11 +1991,12 @@ if (ui.toggleLabels) {
         if (body.def.seaLevel != null) proc.seaLevel = body.def.seaLevel;
         if (body.def.noiseFrequency != null) proc.noiseFrequency = body.def.noiseFrequency;
         if (body.def.noiseOctaves != null) proc.noiseOctaves = body.def.noiseOctaves;
-        // en superficie mantenemos low-poly pero con chunks
-        // Rendimiento: menos vértices y menos niveles
-        proc.chunkResolution = 12;
-        proc.maxDetailLevel = 5;
-        proc._maxSplitsPerFrame = 6;
+// Close-up tuning (por planeta; fallback a defaults)
+const near = body.def.near || {};
+proc.chunkResolution = (near.chunkResolution != null) ? near.chunkResolution : 12;
+proc.maxDetailLevel  = (near.maxDetailLevel  != null) ? near.maxDetailLevel  : 5;
+proc._maxSplitsPerFrame = (near.maxSplitsPerFrame != null) ? near.maxSplitsPerFrame : 6;
+proc.lodDistanceMul = (near.lodDistanceMul != null) ? near.lodDistanceMul : 5.5;
 
         // Atmosfera desactivada por ahora
 
@@ -2403,7 +2251,7 @@ if (ui.toggleLabels) {
         }
 
         // orbits always (even in fly), but you can pause by setting timeScale=0
-        updateOrbits(dt);
+        // updateOrbits(dt); // (desactivado: usamos updateAllOrbitsAbsolute para evitar doble trabajo)
 
         // surface mode: enable procedural only for selected rocky planet
         let chunks = 0;
@@ -2418,16 +2266,41 @@ if (ui.toggleLabels) {
             }
           }
           surfaceStep(dt);
-        } else {
-          // not surface: hide procedural planets to save CPU
-          for (const [n, b] of bodies.entries()) {
-            if (b.proc) b.proc.setEnabled(false);
-            if (b.def.rocky) b.farMesh.setEnabled(true);
-          }
-        }
 
-                // Labels: throttle (barato)
-        updateLabelVisibility(false);
+} else {
+  // Fly/orbit: procedural SOLO para el objetivo y solo en close-up
+  const tb = getTargetBody();
+  const camPos = scn.activeCamera ? scn.activeCamera.position : null;
+
+  // Apaga todo primero
+  for (const [n, b] of bodies.entries()) {
+    if (b.proc) b.proc.setEnabled(false);
+    if (b.def.rocky) b.farMesh.setEnabled(true);
+  }
+
+  // Enciende solo el target si procede
+  if (tb && camPos && tb.def.rocky) {
+    ensureProceduralForBody(tb);
+    const near = tb.def.near || {};
+    const swapMul = (near.swapMul != null) ? near.swapMul : 6.5;
+
+    const planetPos = tb.farMesh.getAbsolutePosition();
+    const dist = BABYLON.Vector3.Distance(camPos, planetPos);
+
+    if (dist < tb.def.radius * swapMul) {
+      tb.farMesh.setEnabled(false);
+      tb.proc.setEnabled(true);
+      // sombras: se gestionan por sistema activo (ver updateActiveSystemShadows)
+      tb.proc.update(scn.activeCamera);
+    }
+  }
+}
+
+                // Sombras: solo sistema activo
+        updateActiveSystemShadows();
+
+        // Labels: throttle (barato)
+updateLabelVisibility(false);
 
 // Rendimiento: no actualizar el DOM cada frame
         if (!scn._dbgT || (performance.now() - scn._dbgT) > 350) {
