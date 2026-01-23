@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Babylon System - Orbit + Free Fly + Surface (Chunks/LOD)</title>
+  <style>
+    html,body{margin:0;height:100%;overflow:hidden;background:#050505}
+    #renderCanvas{width:100%;height:100%;touch-action:none;display:block}
+    #ui{
+      position:fixed;left:12px;top:12px;z-index:10;
+      font-family: 'Segoe UI', sans-serif;
+      color:#eee; background:rgba(0,0,0,.65); border:1px solid rgba(255,255,255,.15);
+      padding:12px; border-radius:10px; backdrop-filter: blur(4px);
+      width: 360px;
+    }
+    h1{font-size:14px;margin:0 0 10px 0;color:#fa0}
+    .row{display:flex;align-items:center;gap:8px;margin:7px 0;font-size:12px}
+    .btn{cursor:pointer;background:#2b2b2b;color:#fff;border:1px solid #555;padding:6px 10px;border-radius:6px;font-size:11px}
+    .btn:hover{background:#444}
+
+    /* Estado activo del modo de cámara (iluminado) */
+    .btn.active{
+      border-color:#ffb000;
+      background:#3a2b10;
+      box-shadow: 0 0 0 1px rgba(255,176,0,.35) inset, 0 0 18px rgba(255,176,0,.22);
+    }
+    .btn.active:hover{background:#4a3412}
+
+    /* Compatibilidad: si algún botón usa .primary */
+    .btn.primary{border-color:#a80;background:#3a2b10}
+    .btn.primary:hover{background:#4a3412}
+    select.btn{appearance:none}
+    label{color:#ddd}
+    .info{font-size:10px;color:#aaa;margin-top:8px;line-height:1.35}
+    .split{display:flex;gap:8px}
+    .split > *{flex:1}
+    #debugInfo{margin-top:8px;font-size:10px;color:#cfc}
+    .chk{width:18px;height:18px}
+    .pill{display:inline-block;padding:2px 6px;border:1px solid rgba(255,255,255,.15);border-radius:999px;font-size:10px;color:#ddd}
+  </style>
+</head>
+<body>
+  <div id="ui">
+    <h1>🪐 Babylon System<span class="pill" id="modePill">Órbita</span></h1>
+
+    <div class="row split">
+      <button id="camOrbit" class="btn primary">Órbita</button>
+      <button id="camFly" class="btn">Vuelo libre</button>
+      <button id="camSurface" class="btn">Superficie</button>
+    </div>
+
+    <div class="row">
+      <label>Tiempo</label>
+      <input id="speedRange" type="range" min="0" max="50" value="1" step="0.1" style="flex:1">
+      <span id="speedVal" class="pill">1.0x</span>
+    </div>
+
+    <div class="row">
+      <label>Objetivo</label>
+      <select id="planetSelect" class="btn" style="flex:1"></select>
+      <button id="approachBtn" class="btn">Aproximar</button>
+    </div>
+
+    <div class="row">
+      <label style="flex:1">Nombres</label>
+      <input id="toggleLabels" class="chk" type="checkbox" checked>
+      <span id="labelsPill" class="pill">ON</span>
+    </div>
+
+    <div class="info">
+      <b>Vuelo libre:</b> WASD mover, ratón mirar, Shift correr, Espacio subir, Ctrl bajar.<br>
+      <b>Superficie:</b> WASD mover, ratón mirar, Espacio saltar, Shift correr. Gravedad hacia el centro.<br>
+      <b>LOD/chunks:</b> solo en el planeta activo en modo Superficie para no matar la CPU.
+    </div>
+
+    <div id="debugInfo">Chunks activos: 0 | FPS: 0</div>
+  </div>
+
+  <canvas id="renderCanvas"></canvas>
+
+  <script src="https://cdn.babylonjs.com/babylon.js"></script>
+  <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
+  <script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
