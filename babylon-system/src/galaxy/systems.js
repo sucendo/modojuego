@@ -740,7 +740,7 @@ const GALAXY_LIST = [
 			tags: ["ocean","cold","fjords"], 
 			nightLights: true,
 			nightLightsIntensity: 2.2,
-			radius: 6.6, biomePreset: "imperial_temperate", 
+			radius: 6.0, biomePreset: "imperial_temperate", 
 			/*seaLevel: -0.09, ocean: true,
 			oceanColor: new BABYLON.Color3(0.04,0.12,0.24),   oceanAlpha: 0.62,
 			oceanRoughness: 0.12, terrainScale: 0.10,
