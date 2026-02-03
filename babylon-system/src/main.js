@@ -157,7 +157,7 @@ import {
       cameraOrbit.upperRadiusLimit = 2500;
       cameraOrbit.wheelDeltaPercentage = 0.01;
       // En órbita queremos rotar/zoom alrededor de un objetivo (sin pan libre)
-      cameraOrbit.panningSensibility = 0;
+      //cameraOrbit.panningSensibility = 0;
       // Galaxia: que las estrellas/sistemas lejanos no desaparezcan por el plano lejano
       const GALAXY_MAX_Z = 5e7;
       cameraOrbit.maxZ = GALAXY_MAX_Z;

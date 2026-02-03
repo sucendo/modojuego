@@ -307,6 +307,10 @@ export function createLowPolyFarPlanet(scene, def, orbitNode) {
       // Gas giant renderer (far): bands + optional storms + clouds
       // ==========================================================
       function createGasGiantFarPlanet(scene, def, orbitNode) {
+        // Compat: algunos bloques antiguos usaban "bodyDef".
+        // Si en algún punto quedó una referencia, esto evita el ReferenceError.
+        const bodyDef = def;
+
         const seg = Math.max(def.farSegments || 56, 56);
         const land = BABYLON.MeshBuilder.CreateSphere(def.name + "_gas", { diameter: def.radius * 2, segments: seg }, scene);
         land.parent = orbitNode;
