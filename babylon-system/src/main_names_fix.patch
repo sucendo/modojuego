@@ -1,0 +1,421 @@
+--- src/main.js
++++ src/main.js
+@@ -359,11 +359,38 @@
+       } catch(e) {}
+ 
+       // Create meshes
+-      const bodies = new Map(); // name => body
+-      const orbitNodes = new Map(); // name => node rotated around sun
+-      const moonOrbitNodes = new Map(); // moon around parent
++      const bodies = new Map(); // id => body (internal stable key)
++      const orbitNodes = new Map(); // id => node rotated around its parent (star/planet)
++      const moonOrbitNodes = new Map(); // id => node rotated around its parent planet
+       let sunMesh = null; // set when Canopus is created via createStarSystem(coreSystem)
+       let halo = null; // core-system halo mesh (created in createStarSystem for Canopus)
++
++      // ------------------------------------------------------------
++      // Stable IDs (avoid name collisions across systems / moons)
++      // UI still shows ONLY the display name.
++      // ------------------------------------------------------------
++      const _normName = (s) => (typeof s === "string" ? s.trim() : "");
++      const _bodyKey = (systemId, kind, name, parentKey = "") =>
++        `${systemId || ""}|${kind || ""}|${parentKey || ""}|${name || ""}`;
++
++      function findBodyByNameInSystem(name, systemId, preferredKind = "planet") {
++        const n = _normName(name);
++        if (!n) return null;
++        // 1) exact match with preferred kind
++        for (const b of bodies.values()) {
++          if (!b || !b.def) continue;
++          if (b.def.systemId !== systemId) continue;
++          if (_normName(b.def.name) !== n) continue;
++          if (b.def.kind === preferredKind) return b;
++        }
++        // 2) any match in system
++        for (const b of bodies.values()) {
++          if (!b || !b.def) continue;
++          if (b.def.systemId !== systemId) continue;
++          if (_normName(b.def.name) === n) return b;
++        }
++        return null;
++      }
+ 
+       // Ensure sunLight follows sun (in case you move it later)
+       if (sunMesh) sunLight.position.copyFrom(sunMesh.position);
+@@ -397,19 +424,22 @@
+ // - Planetas y lunas: solo los cercanos (por ranking + distancia)
+ // - Permite apagar/encender desde UI
+ // ============================================================
+-const labelsByName = new Map(); // name -> { rect, kind, mesh }
++const labelsById = new Map(); // id -> { rect, kind, mesh, name }
+ let showLabels = true;
+ 
+-function registerLabel(name, kind, mesh) {
++function registerLabel(id, name, kind, mesh) {
+   if (!mesh) return null;
+-  let meta = labelsByName.get(name);
++  const key = String(id || "");
++  if (!key) return null;
++  let meta = labelsById.get(key);
+   if (!meta) {
+     const rect = createLabel(name, mesh);
+-    meta = { rect, kind, mesh };
+-    labelsByName.set(name, meta);
++    meta = { rect, name, kind, mesh };
++    labelsById.set(key, meta);
+   } else {
+     meta.kind = kind || meta.kind;
+     meta.mesh = mesh || meta.mesh;
++    meta.name = name || meta.name;
+   }
+   return meta.rect;
+ }
+@@ -419,8 +449,9 @@
+ const LABEL_UPDATE_MS = 220;       // throttle del cálculo
+ 
+ function setAllLabelsVisible(v) {
+-  for (const { rect } of labelsByName.values()) rect.isVisible = !!v;
++  for (const { rect } of labelsById.values()) rect.isVisible = !!v;
+ }
++
+ 
+ function updateLabelVisibility(force = false) {
+   if (!showLabels) { setAllLabelsVisible(false); return; }
+@@ -435,35 +466,43 @@
+   const maxD2 = LABEL_MAX_DIST * LABEL_MAX_DIST;
+ 
+   // 1) estrellas siempre visibles
+-  for (const meta of labelsByName.values()) {
++  for (const meta of labelsById.values()) {
+     if (meta.kind === "sun") meta.rect.isVisible = true;
+   }
+ 
+   // 2) ranking de cercanos (planetas + lunas)
+   const ranked = [];
+-  for (const [name, b] of bodies.entries()) {
++  for (const [id, b] of bodies.entries()) {
+     if (!b || !b.def || !b.farMesh) continue;
+     const k = b.def.kind;
+     if (k !== "planet" && k !== "moon") continue;
+     const p = b.farMesh.getAbsolutePosition();
+     const d2 = BABYLON.Vector3.DistanceSquared(camPos, p);
+-    ranked.push({ name, d2 });
++    ranked.push({ id, d2 });
+   }
+   ranked.sort((a,b)=>a.d2-b.d2);
+ 
+   const visible = new Set();
+-  for (let i=0; i<ranked.length && i<LABEL_NEAREST_BODIES; i++) visible.add(ranked[i].name);
++
++  // Siempre visible: el seleccionado (si existe)
++  try {
++    const selId = ui && ui.planetSelect ? ui.planetSelect.value : null;
++    if (selId) visible.add(selId);
++  } catch(e) {}
++
++  for (let i=0; i<ranked.length && i<LABEL_NEAREST_BODIES; i++) visible.add(ranked[i].id);
+   for (const r of ranked) {
+-    if (r.d2 <= maxD2) visible.add(r.name);
++    if (r.d2 <= maxD2) visible.add(r.id);
+     else break;
+   }
+ 
+   // 3) aplica visibilidad (todo lo que no sea estrella => depende del set)
+-  for (const [name, meta] of labelsByName.entries()) {
++  for (const [id, meta] of labelsById.entries()) {
+     if (meta.kind === "sun") continue;
+-    meta.rect.isVisible = visible.has(name);
++    meta.rect.isVisible = visible.has(id);
+   }
+ }
++
+ 
+ // UI hook
+ if (ui.toggleLabels) {
+@@ -655,7 +694,14 @@
+ 
+         galaxyStarDots.push({ dot: starDot, star, radius: sys.star.radius });
+ 
+-        bodies.set(starName, {
++        // Stable id for star (avoid name collisions across systems)
++        sys.star.kind = sys.star.kind || "sun";
++        sys.star.systemId = sys.id;
++        const starKey = _bodyKey(sys.id, "sun", starName, "");
++        sys.star._key = starKey;
++
++        bodies.set(starKey, {
++          id: starKey,
+           def: sys.star,
+           farMesh: star,
+ 		  ocean: null,
+@@ -817,10 +863,21 @@
+         for (const pDef of (sys.planets || [])) {
+           pDef._sysSpeed = sys.speedScale || 1;
+ 
++          // Normalize + stable id
++          pDef.kind = "planet";
++          pDef.systemId = sys.id;
++          pDef.name = _normName(pDef.name);
++          if (!pDef.name) { console.warn("[skip] planet sin nombre:", pDef, "en", sys.id); continue; }
++          pDef.parentKey = starKey;
++          pDef.parent = starName;
++          const pKey = _bodyKey(sys.id, "planet", pDef.name, starKey);
++          pDef._key = pKey;
++
++
+           const orbitNode = new BABYLON.TransformNode(pDef.name + "_orbit", scn);
+           orbitNode.parent = root;
+           orbitNode.position.set(0, 0, 0);
+-          orbitNodes.set(pDef.name, orbitNode);
++          orbitNodes.set(pKey, orbitNode);
+ 
+           let created = null;
+           let runtimeParams = null;
+@@ -855,7 +912,8 @@
+           applyShadows(mesh, ocean);
+           linkToLight(mesh, ocean);
+ 
+-          bodies.set(pDef.name, {
++          bodies.set(pKey, {
++            id: pKey,
+             def: pDef,
+             farMesh: mesh,
+ 			ocean,
+@@ -889,16 +947,29 @@
+           if (!mDef.parent) continue;
+           mDef._sysSpeed = sys.speedScale || 1;
+ 
+-          const parentBody = bodies.get(mDef.parent);
++          // Normalize + stable id
++          mDef.kind = "moon";
++          mDef.systemId = sys.id;
++          mDef.name = _normName(mDef.name);
++          mDef.parent = _normName(mDef.parent);
++          if (!mDef.name || !mDef.parent) { console.warn("[skip] moon sin nombre/parent:", mDef, "en", sys.id); continue; }
++
++
++          const parentBody = findBodyByNameInSystem(mDef.parent, sys.id, "planet");
+           if (!parentBody) {
+-            console.warn("[moon] parent no encontrado:", mDef.parent, "para", mDef.name);
++            console.warn("[moon] parent no encontrado:", mDef.parent, "para", mDef.name, "en", sys.id);
+             continue;
+           }
++
++          const parentKey = parentBody.id || (parentBody.def && parentBody.def._key) || "";
++          mDef.parentKey = parentKey;
++          const mKey = _bodyKey(sys.id, "moon", mDef.name, parentKey);
++          mDef._key = mKey;
+ 
+           const moonOrbitNode = new BABYLON.TransformNode(mDef.name + "_moonOrbit", scn);
+           moonOrbitNode.parent = parentBody.farMesh;
+           moonOrbitNode.position.set(0,0,0);
+-          moonOrbitNodes.set(mDef.name, moonOrbitNode);
++          moonOrbitNodes.set(mKey, moonOrbitNode);
+ 
+           let created = null;
+           let runtimeParams = null;
+@@ -923,7 +994,8 @@
+           applyShadows(mesh, ocean);
+           linkToLight(mesh, ocean);
+ 
+-          bodies.set(mDef.name, {
++          bodies.set(mKey, {
++            id: mKey,
+             def: mDef,
+             farMesh: mesh,
+ 			ocean,
+@@ -979,7 +1051,7 @@
+       };
+ 
+       let _lodTick = 0;
+-      let _lodActiveName = null;
++      let _lodActiveId = null;
+ 
+       function isRockyJsonBody(b) {
+         if (!b || !b.def) return false;
+@@ -989,12 +1061,12 @@
+         return !(b.def.gasGiant || b.def.rocky === false);
+       }
+ 
+-      function relinkMoonsParent(parentName, newParentMesh) {
+-        if (!parentName || !newParentMesh) return;
++      function relinkMoonsParent(parentKey, newParentMesh) {
++        if (!parentKey || !newParentMesh) return;
+         for (const [, mb] of bodies.entries()) {
+           if (!mb || !mb.def) continue;
+           if (mb.def.kind !== "moon") continue;
+-          if (mb.def.parent !== parentName) continue;
++          if (mb.def.parentKey !== parentKey) continue;
+           if (mb.orbitNode) mb.orbitNode.parent = newParentMesh;
+         }
+       }
+@@ -1053,7 +1125,7 @@
+ 
+         // Si este planeta tiene lunas, deben orbitar el mesh activo
+         if (b.def.kind === "planet") {
+-          relinkMoonsParent(b.def.name, hiMesh);
++          relinkMoonsParent(b.id, hiMesh);
+         }
+ 
+         // Oculta low
+@@ -1069,8 +1141,8 @@
+ 
+         // Labels: re-link al mesh activo (si existen)
+         try {
+-          if (typeof labelsByName !== "undefined") {
+-            const meta = labelsByName.get(b.def.name);
++          if (typeof labelsById !== "undefined") {
++            const meta = labelsById.get(b.id || "");
+             if (meta && meta.rect && meta.rect.linkWithMesh) {
+               meta.rect.linkWithMesh(hiMesh);
+               meta.mesh = hiMesh;
+@@ -1107,7 +1179,7 @@
+ 
+         // Lunas: vuelve a low
+         if (b.def.kind === "planet" && b.lowMesh) {
+-          relinkMoonsParent(b.def.name, b.lowMesh);
++          relinkMoonsParent(b.id, b.lowMesh);
+         }
+ 
+         // Elimina hi
+@@ -1123,8 +1195,8 @@
+ 
+         // Labels: re-link al mesh low (si existen)
+         try {
+-          if (typeof labelsByName !== "undefined") {
+-            const meta = labelsByName.get(b.def.name);
++          if (typeof labelsById !== "undefined") {
++            const meta = labelsById.get(b.id || "");
+             if (meta && meta.rect && meta.rect.linkWithMesh && b.lowMesh) {
+               meta.rect.linkWithMesh(b.lowMesh);
+               meta.mesh = b.lowMesh;
+@@ -1158,46 +1230,48 @@
+         }
+ 
+         // Si cambia el target, baja el anterior
+-        if (_lodActiveName && target && _lodActiveName !== target.def.name) {
+-          const prev = bodies.get(_lodActiveName);
++        if (_lodActiveId && target && _lodActiveId !== target.id) {
++          const prev = bodies.get(_lodActiveId);
+           if (prev) dropHiLOD(prev);
+-          _lodActiveName = null;
++          _lodActiveId = null;
+         }
+ 
+         // En surface, siempre high
+         if (target && mode.value === "surface") {
+           ensureHiLOD(target);
+-          _lodActiveName = target.def.name;
++          _lodActiveId = target.id;
+         } else if (target) {
+           const enter = (target.def.radius * LOD.enterMul) + LOD.enterPad;
+-          const exit  = (target.def.radius * LOD.exitMul) + LOD.exitPad;
+-
+-          if (!_lodActiveName) {
++          const exit  = (target.def.radius * LOD.exitMul)  + LOD.exitPad;
++
++          if (!_lodActiveId) {
+             if (targetDist < enter) {
+               ensureHiLOD(target);
+-              _lodActiveName = target.def.name;
++              _lodActiveId = target.id;
+             }
+           } else {
+-            // Ya activo: si te alejas demasiado, vuelve a low
+             if (targetDist > exit) {
+-              dropHiLOD(target);
+-              _lodActiveName = null;
++              const prev = bodies.get(_lodActiveId);
++              if (prev) dropHiLOD(prev);
++              _lodActiveId = null;
+             } else {
+               ensureHiLOD(target);
++              _lodActiveId = target.id;
+             }
+           }
+-        } else if (_lodActiveName) {
+-          const prev = bodies.get(_lodActiveName);
++        } else if (_lodActiveId) {
++          const prev = bodies.get(_lodActiveId);
+           if (prev) dropHiLOD(prev);
+-          _lodActiveName = null;
++          _lodActiveId = null;
+         }
+ 
+         // Asegura que solo 1 cuerpo queda en high
+         for (const [, b] of bodies.entries()) {
+           if (!b || b.lod !== "high") continue;
+-          if (!_lodActiveName || b.def.name !== _lodActiveName) dropHiLOD(b);
+-        }
+-      }
++          if (!_lodActiveId || b.id !== _lodActiveId) dropHiLOD(b);
++        }
++      }
++
+ 
+       // ====================================================================
+       // 4) Labels + UI populate (incluye sistemas extra)
+@@ -1210,22 +1284,33 @@
+ 
+ 	  for (const def of allDefs) {
+         if (!def) continue;
+-        // Normaliza nombre y evita entries vacíos en el selector/labels
+-        const n = (typeof def.name === "string") ? def.name.trim() : "";
++        // Normaliza nombre display
++        const n = _normName(def.name);
+         if (!n) {
+           console.warn("[skip] body sin nombre:", def);
+           continue;
+         }
+         def.name = n;
++
++        const id = def._key || _bodyKey(def.systemId || "", def.kind || "", n, def.parentKey || "");
++        def._key = id;
++
+         const opt = document.createElement("option");
+-        opt.value = n;
+-        opt.innerText = n;
++        opt.value = id;          // internal stable key
++        opt.innerText = n;       // display name ONLY
+         ui.planetSelect.appendChild(opt);
+-        const lb = bodies.get(n);
+-        if (lb && lb.farMesh) registerLabel(n, def.kind, lb.farMesh); 
+-      }
+-      ui.planetSelect.value = "Arrakis";
++
++        const lb = bodies.get(id);
++        if (lb && lb.farMesh) registerLabel(id, n, def.kind, lb.farMesh);
++      }
++
++      // Default selection by display name (Arrakis)
++      try {
++        const arrOpt = Array.from(ui.planetSelect.options).find(o => (o.textContent || o.innerText) === "Arrakis");
++        if (arrOpt) ui.planetSelect.value = arrOpt.value;
++      } catch (e) {}
+       updateLabelVisibility(true);
++
+ 
+       // ====================================================================
+       // 5) Modes: orbit / fly / surface
+@@ -1434,8 +1519,8 @@
+       // 6) Approach: teleport camera to target (fly/surface)
+       // ====================================================================
+       function getSelectedBody() {
+-        const name = ui.planetSelect.value;
+-        return bodies.get(name);
++        const id = ui.planetSelect.value;
++        return bodies.get(id);
+       }
+ 	  
+       function getTargetBody() {
+@@ -1851,8 +1936,8 @@
+         }
+ 
+         // Moons around their parent planet
+-        for (const [moonName, moonOrbitNode] of moonOrbitNodes.entries()) {
+-          const m = bodies.get(moonName);
++        for (const [moonId, moonOrbitNode] of moonOrbitNodes.entries()) {
++          const m = bodies.get(moonId);
+           if (!m) continue;
+ 
+           const sysSm = m.def._sysSpeed || 1;

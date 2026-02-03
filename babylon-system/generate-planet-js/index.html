@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Planeta procedural (Babylon.js) — WAMP</title>
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body>
+  <div id="hud">
+    <div class="hud-title">Planeta procedural (Babylon.js)</div>
+    <div class="hud-sub">Ratón: orbitar · rueda: zoom · clic derecho: pan</div>
+  </div>
+
+  <canvas id="renderCanvas"></canvas>
+
+  <!-- Babylon.js (UMD) para evitar problemas de módulos en WAMP -->
+  <script src="https://cdn.babylonjs.com/babylon.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
+
+  <script src="./js/noise.js"></script>
+  <script src="./js/planet.js"></script>
+  <script src="./js/atmospherePP.js"></script>
+  <script src="./js/main.js"></script>
+</body>
+</html>
