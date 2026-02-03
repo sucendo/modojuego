@@ -8,7 +8,7 @@ import { fbm3 } from "../utils/noise.js";
 // ------------------------------------------------------------
 function getBiomeColor(dummy, dir, elev) {
   const sea = dummy.seaLevel ?? 0.0;
-  const h = Math.max(0, elev - sea); // height above sea
+  const amp = (dummy.terrainScale ?? 0.12);
   const lat = Math.abs(dir.y);       // 0 equator -> 1 poles
   const clamp = (x,a,b)=>Math.max(a,Math.min(b,x));
 
@@ -37,6 +37,32 @@ function getBiomeColor(dummy, dir, elev) {
       break;
   }
 
+  // Underwater: keep seabeds visible through translucent oceans (matches generator feel).
+  // We do NOT want to force the terrain up to sea level in FAR LOD.
+  if (elev < sea) {
+    const depth = clamp((sea - elev) / Math.max(0.02, amp * 0.9), 0, 1);
+    let shallow, deep;
+    switch ((dummy.biomePreset || "default").toLowerCase()) {
+      case "desert_dunes":
+      case "arrakis":
+        shallow = new BABYLON.Color3(0.10, 0.14, 0.16);
+        deep    = new BABYLON.Color3(0.02, 0.05, 0.08);
+        break;
+      case "oceanic_temperate":
+      case "caladan":
+        shallow = new BABYLON.Color3(0.06, 0.15, 0.18);
+        deep    = new BABYLON.Color3(0.01, 0.03, 0.06);
+        break;
+      default:
+        shallow = new BABYLON.Color3(0.06, 0.14, 0.18);
+        deep    = new BABYLON.Color3(0.01, 0.03, 0.05);
+        break;
+    }
+    return BABYLON.Color3.Lerp(shallow, deep, depth);
+  }
+
+  const h = Math.max(0, elev - sea); // height above sea
+
   // Height blend: green -> rock
   const tRock = clamp(h / Math.max(0.02, (dummy.terrainScale ?? 0.12) * 0.7), 0, 1);
   let c = BABYLON.Color3.Lerp(base1, base2, clamp(tRock * 0.55, 0, 1));
@@ -48,6 +74,8 @@ function getBiomeColor(dummy, dir, elev) {
 
   return c;
 }
+
+
 
 // Low-poly far planets: vertex displaced sphere + optional ocean + rings.
 export function createLowPolyFarPlanet(scene, def, orbitNode) {
@@ -160,8 +188,10 @@ export function createLowPolyFarPlanet(scene, def, orbitNode) {
             elev += pits * amp * 0.20;
           }
  */ 
-          // clamp by seaLevel (visual basins)
-          elev = Math.max(elev, sea);
+          // IMPORTANT:
+          // Keep real basins (terrain below sea) so the FAR look matches the generator.
+          // Only avoid extreme collapse that could invert the sphere.
+          elev = Math.max(elev, -0.45);
   
           // low-poly quantization for chunky facets
           elev = quant(elev, amp * 0.11);
@@ -320,14 +350,8 @@ export function createLowPolyFarPlanet(scene, def, orbitNode) {
   // Rendering groups: tierra (0), océano patch (1) como en el generador
   land.renderingGroupId = 0;
 
-  // Sync de params JSON al "def" para que el LOD lejano (farPlanet) use el mismo mar/valores
-  if (bodyDef) {
-    bodyDef._jsonParams = params;
-    // Si no está definido explícitamente en systems.js, heredamos de JSON:
-    if (typeof bodyDef.seaLevel !== "number" && typeof params.seaLevel === "number") bodyDef.seaLevel = params.seaLevel;
-    if (typeof bodyDef.ocean !== "boolean" && typeof params.seaEnabled === "boolean") bodyDef.ocean = params.seaEnabled;
-    if (typeof bodyDef.atmo !== "boolean" && typeof params.atmoEnabled === "boolean") bodyDef.atmo = params.atmoEnabled;
-  }
+        // NOTA: aquí NO existe una variable "params" (era un bug).
+        // El gas-giant FAR no usa JSON params; solo usa valores del def.
         land.checkCollisions = false;
 
         // Generate a single shared dynamic texture per gas giant (cheap & stable)

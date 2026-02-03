@@ -39,6 +39,11 @@ export async function loadPlanetConfig(url) {
 export function buildRuntimePlanetParams(baseParams, bodyDef, opts = {}) {
   const p = deepClone(baseParams || {});
 
+  // If we are using a planet-specific exported JSON (generate-planet-js), we usually want
+  // the look to match the generator 1:1. In that case, avoid overriding key visual params
+  // (sea/seed, etc.) from systems.js unless explicitly desired.
+  const lockJsonParams = !!opts.lockJsonParams;
+
   // Radius: prefer bodyDef.radius (galaxy definition) so all systems stay coherent.
   // BUT: some generator params are expressed in world-units and must be scaled when radius changes,
   // otherwise sea/coast/atmo won't match the generator look.
@@ -56,8 +61,11 @@ export function buildRuntimePlanetParams(baseParams, bodyDef, opts = {}) {
   }
 
   // Sea: map babylon-system -> generator params
-  if (typeof bodyDef?.ocean === "boolean") p.seaEnabled = bodyDef.ocean;
-  if (typeof bodyDef?.seaLevel === "number") p.seaLevel = bodyDef.seaLevel;
+  // (but keep exported values if lockJsonParams is true)
+  if (!lockJsonParams) {
+    if (typeof bodyDef?.ocean === "boolean") p.seaEnabled = bodyDef.ocean;
+    if (typeof bodyDef?.seaLevel === "number") p.seaLevel = bodyDef.seaLevel;
+  }
 
   // Avoid absurd subdivision values in exported JSON (those were for UI / autoLOD).
   const maxSubdiv = (typeof opts.maxSubdiv === "number") ? opts.maxSubdiv : 6;
@@ -67,7 +75,7 @@ export function buildRuntimePlanetParams(baseParams, bodyDef, opts = {}) {
   // Give variation to planets that reuse default.json
   if (opts.forceSeedFromName) {
     p.seed = hashStringToSeed(String(bodyDef?.name || "planet"));
-  } else if (typeof bodyDef?.seed === "number") {
+  } else if (!lockJsonParams && typeof bodyDef?.seed === "number") {
     p.seed = bodyDef.seed | 0;
   }
 

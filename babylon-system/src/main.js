@@ -1022,6 +1022,9 @@ if (ui.toggleLabels) {
               maxSubdiv: (isCore || hasSpecific) ? 7 : 5,
               minSubdiv: 2,
               forceSeedFromName: !hasSpecific,
+              // When we use a planet-specific exported JSON, keep its sea/seed values
+              // so the result matches the generator.
+              lockJsonParams: hasSpecific,
             });
             created = createJsonPlanet(scn, pDef, orbitNode, runtimeParams);
             // Mark so surface-mode won't spawn the old chunked procedural planet for this body.
@@ -1112,6 +1115,7 @@ if (ui.toggleLabels) {
               maxSubdiv: (isCore || hasSpecificMoon) ? 6 : 4,
               minSubdiv: 2,
               forceSeedFromName: !hasSpecificMoon,
+              lockJsonParams: hasSpecificMoon,
             });
             created = createJsonPlanet(scn, mDef, moonOrbitNode, runtimeParams);
             mDef.useJsonPlanet = true;
