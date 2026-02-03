@@ -24,6 +24,10 @@ function deepClone(obj) {
   return obj ? JSON.parse(JSON.stringify(obj)) : obj;
 }
 
+function scaleIfNumber(v, s) {
+  return (typeof v === "number" && Number.isFinite(v)) ? (v * s) : v;
+}
+
 export async function loadPlanetConfig(url) {
   const r = await fetch(url);
   if (!r.ok) throw new Error(`No se pudo cargar ${url} (${r.status})`);
@@ -36,7 +40,20 @@ export function buildRuntimePlanetParams(baseParams, bodyDef, opts = {}) {
   const p = deepClone(baseParams || {});
 
   // Radius: prefer bodyDef.radius (galaxy definition) so all systems stay coherent.
-  if (typeof bodyDef?.radius === "number") p.radius = bodyDef.radius;
+  // BUT: some generator params are expressed in world-units and must be scaled when radius changes,
+  // otherwise sea/coast/atmo won't match the generator look.
+  const jsonRadius = (typeof p.radius === "number" && p.radius > 0) ? p.radius : null;
+  if (typeof bodyDef?.radius === "number") {
+    const newR = bodyDef.radius;
+    if (jsonRadius && newR > 0 && Math.abs(newR - jsonRadius) > 1e-6) {
+      const s = newR / jsonRadius;
+      // These are "world-ish" tuning knobs in the generator. Scale them to preserve the look.
+      p.seaHugBand = scaleIfNumber(p.seaHugBand, s);
+      p.waveAmp    = scaleIfNumber(p.waveAmp, s);
+      p.seaZOffset = scaleIfNumber(p.seaZOffset, s);
+    }
+    p.radius = newR;
+  }
 
   // Sea: map babylon-system -> generator params
   if (typeof bodyDef?.ocean === "boolean") p.seaEnabled = bodyDef.ocean;
@@ -110,4 +127,37 @@ export function createJsonPlanet(scene, bodyDef, orbitNode, params) {
 
   // Babylon-system expects this shape
   return { land, ocean, clouds: null, nightLights: null };
+}
+
+
+// Aplica el perfil de atmósfera exportado por el generador al post-process global (atmoPP).
+// Úsalo cuando este planeta sea el "activo" / el que estás viendo de cerca.
+export function applyJsonAtmosphereToPP(atmoPP, params, planetMesh, sunPos) {
+  if (!atmoPP || !params || !planetMesh) return;
+  const hexToVec3 = (hex) => {
+    const c = BABYLON.Color3.FromHexString(hex || "#000000");
+    return new BABYLON.Vector3(c.r, c.g, c.b);
+  };
+
+  atmoPP._enabled = !!params.atmoEnabled;
+  atmoPP._useDepth = !!params.atmoUseDepth;
+  atmoPP._atmoStrength = params.atmoStrength;
+  atmoPP._mieStrength = params.mieStrength;
+  atmoPP._upperStrength = params.upperStrength;
+  atmoPP._steps = params.atmoSteps;
+  atmoPP._c0 = hexToVec3(params.c0);
+  atmoPP._c1 = hexToVec3(params.c1);
+  atmoPP._c2 = hexToVec3(params.c2);
+
+  atmoPP._cloudAlpha = params.cloudAlpha;
+  atmoPP._cloudScale = params.cloudScale;
+  atmoPP._cloudSharpness = params.cloudSharpness;
+  atmoPP._cloudWind = new BABYLON.Vector3(params.cloudWindX || 0, 0.0, params.cloudWindZ || 0);
+  const ct = BABYLON.Color3.FromHexString(params.cloudTint || "#ffffff");
+  atmoPP._cloudTint = new BABYLON.Vector3(ct.r, ct.g, ct.b);
+
+  const r = params.radius;
+  const atmoR = r * (params.atmoRadiusMul || 1.15);
+  AtmospherePP.setAtmosphereTarget(atmoPP, planetMesh, r, atmoR, sunPos);
+  AtmospherePP.enableAtmospherePP(atmoPP, !!params.atmoEnabled);
 }

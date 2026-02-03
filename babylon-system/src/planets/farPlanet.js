@@ -51,6 +51,10 @@ function getBiomeColor(dummy, dir, elev) {
 
 // Low-poly far planets: vertex displaced sphere + optional ocean + rings.
 export function createLowPolyFarPlanet(scene, def, orbitNode) {
+        // Si el planeta viene de JSON exportado del generador, guardamos params en def._jsonParams
+        // y aquí los usamos para que el LOD lejano coincida con el aspecto del generador.
+        const jp = def && def._jsonParams ? def._jsonParams : null;
+
         // -----------------------------
         // Gas giant path: perfectly spherical (no rocky surface)
         // -----------------------------
@@ -97,17 +101,26 @@ export function createLowPolyFarPlanet(scene, def, orbitNode) {
         const colors = new Array((positions.length/3) * 4);
   
         // Dummy for palette reuse
+        const seaFromJson = (jp && typeof jp.seaLevel === "number") ? jp.seaLevel : undefined;
+        const sea = (typeof def.seaLevel === "number") ? def.seaLevel : (seaFromJson ?? 0.0);
+
+        const oceanFromJson = (jp && typeof jp.seaEnabled === "boolean") ? jp.seaEnabled : undefined;
+        const oceanEnabled =
+          (def.ocean === false) ? false :
+          (def.ocean === true)  ? true  :
+          !!oceanFromJson;
+
         const dummy = {
           seed: (def.name.length * 17.13) % 1000,
           biomePreset: def.biomePreset || "default",
-          seaLevel: (def.seaLevel ?? 0.0),
+          seaLevel: sea,
           terrainScale: (def.terrainScale ?? 0.12),
         };
   
         const f = def.noiseFrequency ?? 2.6;
         const oct = def.noiseOctaves ?? 6;
         const amp = def.terrainScale ?? 0.12;
-        const sea = def.seaLevel ?? 0.0;
+        // Reusar 'sea' calculado arriba
   
         // Helpers
         const clamp = (x,a,b)=>Math.max(a,Math.min(b,x));
@@ -174,18 +187,23 @@ export function createLowPolyFarPlanet(scene, def, orbitNode) {
         // Optional ocean sphere
         let ocean = null;
         let nightLights = null;
-  	  if (def.ocean) {
-  		const seaFrac = Math.max(0.6, 1 + sea + 0.002);
-  		ocean = BABYLON.MeshBuilder.CreateSphere(
-  			def.name + "_ocean",
-  			{ diameter: def.radius * 2 * seaFrac, segments: Math.max(24, Math.floor(seg * 0.7)) },
-  			scene
-  		);
+     if (oceanEnabled) {
+        // Match generator semantics: sea radius = radius * (1 + seaLevel) * seaThickness
+       const seaThickness =
+       (jp && typeof jp.seaThickness === "number") ? jp.seaThickness : 1.0;
+       // tiny epsilon to avoid z-fighting in extreme cases (kept very small)
+       const eps = 0.0005;
+       const seaFrac = Math.max(0.6, (1 + sea) * seaThickness + eps);
+    		ocean = BABYLON.MeshBuilder.CreateSphere(
+    			def.name + "_ocean",
+  	   		{ diameter: def.radius * 2 * seaFrac, segments: Math.max(24, Math.floor(seg * 0.7)) },
+    			scene
+    		);
   		ocean.parent = orbitNode;
   		ocean.position.set(def.orbitR, 0, 0);
   		ocean.isPickable = false;
-		ocean.checkCollisions = false;
-		ocean.renderingGroupId = 0;
+  		ocean.checkCollisions = false;
+	   	ocean.renderingGroupId = 0;
   		
 		const oceanKind = def.oceanKind || "water";
 		const om = new BABYLON.PBRMaterial(def.name + "_oceanMat", scene);
@@ -194,10 +212,18 @@ export function createLowPolyFarPlanet(scene, def, orbitNode) {
   		
   		if (oceanKind === "lava" || def.biomePreset === "lava") {
   			// --- LAVA: emisivo, sin refracción/translucidez, más rugoso ---
-  			om.albedoColor = new BABYLON.Color3(0.10, 0.03, 0.02); // base oscura
+        // Color: prioridad def.oceanColor, si no, JSON seaColor, si no, fallback
+        if (def.oceanColor) {
+          om.albedoColor = def.oceanColor;
+        } else if (jp && typeof jp.seaColor === "string" && jp.seaColor[0] === "#") {
+          om.albedoColor = BABYLON.Color3.FromHexString(jp.seaColor);
+        } else {
+          om.albedoColor = new BABYLON.Color3(0.05,0.18,0.28);
+        }
   			om.metallic = 0.0;
-  			om.roughness = 0.55; // lava "espesa" (menos espejo)
-  			om.alpha = 1.0;
+        // Rough/alpha desde JSON si existen, si no fallback
+        om.roughness = (jp && typeof jp.seaRoughness === "number") ? jp.seaRoughness : 0.2;
+        om.alpha = (jp && typeof jp.seaAlpha === "number") ? jp.seaAlpha : 0.9;
   			om.transparencyMode = BABYLON.PBRMaterial.PBR_OPAQUE;
   			om.backFaceCulling = true;
   		
@@ -225,15 +251,26 @@ export function createLowPolyFarPlanet(scene, def, orbitNode) {
   		
   		} else {
   			// --- AGUA: tu configuración actual ---
-  			const oc = def.oceanColor || new BABYLON.Color3(0.05,0.18,0.28);
+        // Color: def.oceanColor > JSON seaColor > fallback
+       const oc =
+          def.oceanColor ? def.oceanColor :
+          (jp && typeof jp.seaColor === "string" && jp.seaColor[0] === "#")
+            ? BABYLON.Color3.FromHexString(jp.seaColor)
+            : new BABYLON.Color3(0.05,0.18,0.28);
   			om.albedoColor = oc;
-  			om.metallic  = (typeof def.oceanMetallic  === "number") ? def.oceanMetallic  : 0.02;
-  			om.roughness = (typeof def.oceanRoughness === "number") ? def.oceanRoughness : 0.12;
- 
+       om.metallic  =
+          (typeof def.oceanMetallic  === "number") ? def.oceanMetallic :
+          (jp && typeof jp.seaMetallic === "number") ? jp.seaMetallic : 0.02;
+       om.roughness =
+          (typeof def.oceanRoughness === "number") ? def.oceanRoughness :
+          (jp && typeof jp.seaRoughness === "number") ? jp.seaRoughness : 0.12;
+  
             // IMPORTANTE:
             // El océano far es una esfera completa por encima del terreno.
             // Si es casi opaca o escribe profundidad, "tapa" el land y lo oscurece.
-  			om.alpha = (typeof def.oceanAlpha === "number") ? def.oceanAlpha : 0.62;
+       om.alpha =
+          (typeof def.oceanAlpha === "number") ? def.oceanAlpha :
+          (jp && typeof jp.seaAlpha === "number") ? jp.seaAlpha : 0.62;
 
   			om.useAlphaFromAlbedoTexture = false;
             // En Babylon 8, esta constante existe; si no, cae al modo clásico.
@@ -250,7 +287,9 @@ export function createLowPolyFarPlanet(scene, def, orbitNode) {
             // Without envTexture, oceans can read as "black". Add a subtle self-illumination.
             // (keeps the space look but avoids dead-black water)
             om.emissiveColor = oc.scale(0.22);
-            om.specularIntensity = (typeof def.oceanSpecular === "number") ? def.oceanSpecular : 0.55; 
+            om.specularIntensity =
+              (typeof def.oceanSpecular === "number") ? def.oceanSpecular :
+              (jp && typeof jp.seaSpecular === "number") ? jp.seaSpecular : 0.55;
   		}
   		
   		ocean.material = om;
@@ -273,6 +312,18 @@ export function createLowPolyFarPlanet(scene, def, orbitNode) {
         land.parent = orbitNode;
         land.position.set(def.orbitR, 0, 0);
         land.isPickable = false;
+
+  // Rendering groups: tierra (0), océano patch (1) como en el generador
+  land.renderingGroupId = 0;
+
+  // Sync de params JSON al "def" para que el LOD lejano (farPlanet) use el mismo mar/valores
+  if (bodyDef) {
+    bodyDef._jsonParams = params;
+    // Si no está definido explícitamente en systems.js, heredamos de JSON:
+    if (typeof bodyDef.seaLevel !== "number" && typeof params.seaLevel === "number") bodyDef.seaLevel = params.seaLevel;
+    if (typeof bodyDef.ocean !== "boolean" && typeof params.seaEnabled === "boolean") bodyDef.ocean = params.seaEnabled;
+    if (typeof bodyDef.atmo !== "boolean" && typeof params.atmoEnabled === "boolean") bodyDef.atmo = params.atmoEnabled;
+  }
         land.checkCollisions = false;
 
         // Generate a single shared dynamic texture per gas giant (cheap & stable)
