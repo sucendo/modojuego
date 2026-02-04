@@ -129,14 +129,13 @@ export function createLowPolyFarPlanet(scene, def, orbitNode) {
         const colors = new Array((positions.length/3) * 4);
   
         // Dummy for palette reuse
-        const seaFromJson = (jp && typeof jp.seaLevel === "number") ? jp.seaLevel : undefined;
-        const sea = (typeof def.seaLevel === "number") ? def.seaLevel : (seaFromJson ?? 0.0);
+        const sea = (jp && typeof jp.seaLevel === "number")
+          ? jp.seaLevel
+          : (def.seaLevel ?? 0.0);
 
-        const oceanFromJson = (jp && typeof jp.seaEnabled === "boolean") ? jp.seaEnabled : undefined;
-        const oceanEnabled =
-          (def.ocean === false) ? false :
-          (def.ocean === true)  ? true  :
-          !!oceanFromJson;
+        const oceanEnabled = (jp && typeof jp.seaEnabled === "boolean")
+          ? jp.seaEnabled
+          : !!def.ocean;
 
         const dummy = {
           seed: (def.name.length * 17.13) % 1000,

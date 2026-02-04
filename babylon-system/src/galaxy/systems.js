@@ -521,112 +521,37 @@ const GALAXY_LIST = [
 	  // Arrakis: órbita excéntrica + anillo tenue de polvo (tercera luna destruida, Dune Encyclopedia)
 	  // y rotación prógrada (como la Tierra): el sol “sale por el Este”
 		"Arrakis": {
-			jsonFile: "arrakis.json",
-		  tags: ["desert","spice","extreme"],
-		  radius: 6.2,
-		  biomePreset: "desert_dunes",
-		  seaLevel: 0.01,
-		  ocean: false,
-
-		  orbitEcc: 0.18,
-		  rotSpeed: 0.080,
-
-		  rings: true,
-		  ringTex: "proc:dust",
-		  ringAlpha: 0.22,
-		  ringRadiusMul: 2.55,
-		  ringTilt: 0.10,
-
-		  atmo: true,
-		  atmoColor: new BABYLON.Color3(0.30, 0.50, 1.00),
-		  atmoAlpha: 0.14,
-		  surfaceFogColor: new BABYLON.Color3(0.30,0.50,1.00),
-
-		  atmoOpts: {
-			miePower: 7.5,
-			mieStrength: 0.85,
-			pathPower: 2.2,
-			pathStrength: 0.18,
-			noiseStrength: 0.12,
-
-			// Dust/Mie global (amarillo arena)
-			mieColor: new BABYLON.Color3(0.95, 0.82, 0.55),
-
-			// Inside-sky (azul arriba, arena en horizonte)
-			skyZenithColor: new BABYLON.Color3(0.22, 0.42, 0.95),
-			skyHorizonColor: new BABYLON.Color3(0.98, 0.86, 0.62),
-			skyHazeStrength: 1.25,
-			skySunStrength: 1.35,
-
-			cloudStrength: 0.16,
-			cloudScale: 2.2,
-			cloudSharpness: 2.2,
-
-			// Solo dithering sutil (sin grano animado)
-			ditherStrength: 1.6,
-
-			segments: 32
-		  },
-
-		  // Capa inferior con tinte marrón (polvo cercano al suelo)
-		  atmoLayers: [
-			{
-			  mul: 1.120,
-			  aMul: 0.95,
-			  rimPower: 3.0,
-			  terminatorSoftness: 0.16,
-			  nightMin: 0.03,
-			  mieStrength: 0.30,
-			  pathStrength: 0.30,
-			  layerFade: 1.00,
-
-			  // 👇 marrón bajo (polvo denso cerca del suelo)
-			  mieColor: new BABYLON.Color3(0.62, 0.44, 0.22),
-			  atmoColor: new BABYLON.Color3(0.28, 0.46, 0.95)
-			},
-			{
-			  mul: 1.145,
-			  aMul: 0.85,
-			  rimPower: 4.6,
-			  terminatorSoftness: 0.22,
-			  nightMin: 0.06,
-			  mieStrength: 0.55,
-			  pathStrength: 0.22,
-			  layerFade: 0.85
-			},
-			{
-			  mul: 1.180,
-			  aMul: 0.45,
-			  rimPower: 6.2,
-			  terminatorSoftness: 0.30,
-			  nightMin: 0.08,
-			  mieStrength: 0.75,
-			  pathStrength: 0.10,
-			  layerFade: 0.55
-			}
-		  ],
-
-		  terrainScale: 0.20,
-		  noiseFrequency: 2.6,
-		  noiseOctaves: 6,
-		  farSegments: 48,
-		  microBump: T("detail_rock3.png")
+		    jsonFile: "arrakis.json",
+		    tags: ["desert","spice","extreme"],
+		    radius: 6.2,
+		    biomePreset: "desert_dunes",
+		    microBump: T("detail_rock3.png")
 		},
 		// Canopus (6 planetas): detalle visual según tu última descripción
-		"Seban":            {
+		"Seban": {
 			jsonFile: "seban.json",
-		  tags: ["rocky","hot","inner"], radius: 4.0, biomePreset: "harsh_badlands",  seaLevel: 0.02,  ocean: false,
-								terrainScale: 0.18, noiseFrequency: 3.4, noiseOctaves: 6, farSegments: 40,
-								rings: true, ringTex: "proc:ion" }, // nube tenue de metales ionizados
-		"Menaris":          {
-		  tags: ["rocky","temperate"], radius: 5.1, biomePreset: "imperial_temperate", seaLevel: -0.01, ocean: true,
-								oceanColor: new BABYLON.Color3(0.05,0.15,0.22), terrainScale: 0.12,
-								noiseFrequency: 2.4, noiseOctaves: 6, farSegments: 42 }, // “gemelo” de Extaris
-		"Extaris":          {
-		  tags: ["rocky","dry"], radius: 4.4, biomePreset: "techno_frost",      seaLevel: 0.02,  ocean: false,
-								terrainScale: 0.16, noiseFrequency: 2.8, noiseOctaves: 6, farSegments: 40 }, // pequeño exterior, 5 lunas
-		"Ven":              {
-		  tags: ["gas-giant","pink","storms"], radius: 12.0,
+		    tags: ["rocky","hot","inner"], 
+			radius: 4.0, 
+			biomePreset: "harsh_badlands",
+			rings: true, 
+			ringTex: "proc:ion",
+			microBump: T("detail_rock2.png")
+		}, // nube tenue de metales ionizados
+		"Menaris": {
+			jsonFile: "menaris.json",
+		    tags: ["rocky","temperate"], 
+			radius: 5.1, 
+			biomePreset: "imperial_temperate", 
+		}, // “gemelo” de Extaris
+		"Extaris": {
+			jsonFile: "extaris.json",
+		    tags: ["rocky","dry"], 
+			radius: 5.2, 
+			biomePreset: "techno_frost",
+		}, // pequeño exterior, 5 lunas
+		"Ven": {
+		    tags: ["gas-giant","pink","storms"], 
+			radius: 12.0,
 			// === GAS GIANT (sin superficie sólida) ===
 			gasGiant: true,
 			gasStorms: true,           // porque en META tiene "storms"
@@ -638,203 +563,95 @@ const GALAXY_LIST = [
 			noiseFrequency: 1.1,
 			noiseOctaves: 4,
 			farSegments: 64,
-			// atmósfera bien visible (rosada)
-			/*atmo: true,
-			atmoColor: new BABYLON.Color3(0.95,0.55,0.70),
-			atmoAlpha: 0.42 */}, // gigante rosado gaseoso (casi “estrella fallida”)
-	    "Revona":           {
-	      jsonFile: "revona.json",
-		  tags: ["ocean","cold","fjords"], radius: 6.6, biomePreset: "imperial_temperate", seaLevel: -0.02, ocean: true,
-			oceanColor: new BABYLON.Color3(0.04,0.12,0.24), terrainScale: 0.10,
-			noiseFrequency: 2.1, noiseOctaves: 6, farSegments: 48 }, // muy exterior, con Laran
+		}, // gigante rosado gaseoso (casi “estrella fallida”)
+	    "Revona": {
+	        jsonFile: "revona.json",
+		    tags: ["ocean","cold","fjords"], 
+		    radius: 6.6, 
+		    biomePreset: "imperial_temperate",
+		}, // muy exterior, con Laran
 		"Caladan": 		  {
 			jsonFile: "caladan.json",
-		  tags: ["ocean","stormy","forest"],
-			oceanAlpha: 0.60,
-			oceanRoughness: 0.14,
-			oceanMetallic: 0.05,
-			oceanSpecular: 0.45,
+		    tags: ["ocean","stormy","forest"],
 			nightLights: true,
 			nightLightsIntensity: 2.2,
-			oceanAlpha: 0.82,
 			radius: 7.0,
 			biomePreset: "oceanic_temperate",
-			seaLevel: 0.0355,
-			ocean: true,
-			oceanColor: new BABYLON.Color3(0.04,0.20,0.30),
-			terrainScale: 0.13,
-			noiseFrequency: 2.1,
-			noiseOctaves: 6,
-			farSegments: 52,
 			microBump: T("detail_craters.png"),
-			
-			atmo: true,
-			atmoColor: new BABYLON.Color3(0.28, 0.55, 1.00),
-			atmoAlpha: 0.12, // un pelín menos para evitar “aro”
-			surfaceFogColor: new BABYLON.Color3(0.70, 0.78, 0.86),
-			
-			atmoOpts: {
-			  rimPower: 4.6,
-			  terminatorSoftness: 0.26,
-			  nightMin: 0.03,
-			   
-			  miePower: 7.0,
-			  mieStrength: 0.42,      // humedad: menos agresivo que polvo
-			  pathPower: 2.2,
-			  pathStrength: 0.18,
-			  noiseStrength: 0.035,
-			   
-			  mieColor: new BABYLON.Color3(0.92, 0.95, 1.00),
-			  sunsetColor: new BABYLON.Color3(1.00, 0.55, 0.14),
-			  sunsetStrength: 0.55,   // menos naranja (más realista “tierra”)
-			   
-			  ditherStrength: 2.4,
-			  aerosolGrainStrength: 0.14,
-			  aerosolGrainScale: 0.95,
-			  aerosolGrainSpeed: 9.0,
-			   
-			  // Unas nubes muy sutiles (Arrakis casi siempre despejado)
-			  cloudStrength: 1.16,
-			  cloudScale: 5.2,
-			  cloudSharpness: 5.2, 
-			   
-			  segments: 36,
-			  // si tu atmosphere.js soporta esto:
-			  // blendMode: "premul",
-			},
-			
-			// Capas MUCHO más juntas (fusionan y desaparece la ralla)
-			atmoLayers: [
-			  { mul: 1.120, aMul: 0.95, rimPower: 3.8, terminatorSoftness: 0.22, nightMin: 0.02, mieStrength: 0.26, pathStrength: 0.22, layerFade: 0.95 },
-			  { mul: 1.140, aMul: 0.70, rimPower: 4.9, terminatorSoftness: 0.26, nightMin: 0.03, mieStrength: 0.40, pathStrength: 0.14, layerFade: 0.78 },
-			  { mul: 1.165, aMul: 0.40, rimPower: 6.2, terminatorSoftness: 0.30, nightMin: 0.04, mieStrength: 0.55, pathStrength: 0.09, layerFade: 0.58 },
-			],
 		},
 		"Giedi Prime":      {
 			jsonFile: "giedi-prime.json",
-			tags: ["industrial","polluted"], radius: 6.6, biomePreset: "industrial_toxic",   seaLevel: 0.008,  ocean: true,  oceanColor: new BABYLON.Color3(0.02,0.08,0.05), terrainScale: 0.20, noiseFrequency: 3.2, noiseOctaves: 5, farSegments: 50, microBump: T("detail_rock2.png") },
+			tags: ["industrial","polluted"], 
+			radius: 6.6, 
+			biomePreset: "industrial_toxic",    
+			microBump: T("detail_rock2.png") 
+		},
 		"Ix":               {
 			jsonFile: "ix.json",
-			tags: ["tech","subsurface","dry"], radius: 5.9, biomePreset: "techno_frost",      seaLevel: -0.012, ocean: true,  oceanColor: new BABYLON.Color3(0.03,0.12,0.18), terrainScale: 0.16, noiseFrequency: 2.7, noiseOctaves: 6, farSegments: 48, microBump: T("detail_snow.png") },
+			tags: ["tech","subsurface","dry"], 
+			radius: 5.9, 
+			biomePreset: "techno_frost", 
+			microBump: T("detail_snow.png") 
+		},
 		"Richese":          {
 			jsonFile: "richese.json",
-			tags: ["tech","ocean","miniaturization","archipelago"], radius: 6.4, biomePreset: "archipelago_turquoise", seaLevel: -0.0125, ocean: true, oceanColor: new BABYLON.Color3(0.05,0.26,0.30), terrainScale: 0.11, noiseFrequency: 2.0, noiseOctaves: 6, farSegments: 52, microBump: T("detail_craters.png"),
-					continentFreq: 0.55, continentStrength: 0.55, islandsFreq: 4.8, islandsStrength: 0.22 },
+			tags: ["tech","ocean","miniaturization","archipelago"], 
+			radius: 6.4, 
+			biomePreset: "archipelago_turquoise", 
+			microBump: T("detail_craters.png"),
+		},
 		"Kaitain":          {
-			tags: ["imperial","engineered-climate","temperate"], radius: 6.3, biomePreset: "imperial_temperate",  seaLevel: -0.022, ocean: true,  oceanColor: new BABYLON.Color3(0.04,0.18,0.26), terrainScale: 0.12, noiseFrequency: 2.2, noiseOctaves: 6, farSegments: 50, microBump: T("detail_craters.png") },
+			jsonFile: "kaitain.json",
+			tags: ["imperial","engineered-climate","temperate"], 
+			radius: 6.3, 
+			biomePreset: "imperial_temperate", 
+			rings: true, 
+			ringTex: "proc:ion",			
+			microBump: T("detail_craters.png") 
+		},
 		"Salusa Secundus":  {
-			tags: ["prison","harsh","military"], radius: 6.0, biomePreset: "harsh_badlands",   seaLevel: 0.01,   ocean: false, terrainScale: 0.24, noiseFrequency: 3.0, noiseOctaves: 6, farSegments: 48, microBump: T("detail_rock3.png") },
+			tags: ["prison","harsh","military"], 
+			radius: 6.0, 
+			biomePreset: "harsh_badlands", 
+			microBump: T("detail_rock3.png") 
+		},
 		"Wallach IX":       {
-			tags: ["bg","austere","humid"], radius: 5.0, biomePreset: "imperial_temperate",  seaLevel: -0.01,  ocean: true,  terrainScale: 0.12, noiseFrequency: 2.2, noiseOctaves: 6, farSegments: 36 },
+			tags: ["bg","austere","humid"], 
+			radius: 5.0, 
+			biomePreset: "imperial_temperate",
+		},
 		"Tleilax":          {
-			tags: ["secretive","dry","bioengineering"], radius: 4.9, biomePreset: "industrial_toxic",    seaLevel: 0.02,   ocean: false, terrainScale: 0.18, noiseFrequency: 2.8, noiseOctaves: 6, farSegments: 32 },
+			tags: ["secretive","dry","bioengineering"], 
+			radius: 4.9, 
+			biomePreset: "industrial_toxic",  
+		},
 		"Rossak":           {
 			jsonFile: "rossak.json",
-			tags: ["toxic","jungle","pharma","mystic"], radius: 4.8, biomePreset: "industrial_toxic",    seaLevel: 0.02,   ocean: false, terrainScale: 0.19, noiseFrequency: 2.6, noiseOctaves: 6, farSegments: 32 },
+			tags: ["toxic","jungle","pharma","mystic"], 
+			radius: 4.8, 
+			biomePreset: "industrial_toxic",
+		},
 		"Buzzell":          {
-			tags: ["ocean","punishment","storms"], radius: 4.6, biomePreset: "oceanic_temperate",  seaLevel: -0.02,  ocean: true,  terrainScale: 0.12, noiseFrequency: 2.0, noiseOctaves: 6, farSegments: 32 },
+			tags: ["ocean","punishment","storms"], 
+			radius: 4.6, 
+			biomePreset: "oceanic_temperate",
+		},
 		"Lampadas":         {
-			tags: ["bg","school","ruins","ash"], radius: 4.7, biomePreset: "imperial_temperate",  seaLevel: -0.035, ocean: true,  terrainScale: 0.12, noiseFrequency: 2.1, noiseOctaves: 6, farSegments: 32 },
+			tags: ["bg","school","ruins","ash"], 
+			radius: 4.7, 
+			biomePreset: "imperial_temperate",
+		},
 		"Tierra":          {
 			jsonFile: "tierra.json",
 			tags: ["ocean","cold","fjords"], 
 			nightLights: true,
 			nightLightsIntensity: 2.2,
-			radius: 6.0, biomePreset: "imperial_temperate", 
-			/*seaLevel: -0.09, ocean: true,
-			oceanColor: new BABYLON.Color3(0.04,0.12,0.24),   oceanAlpha: 0.62,
-			oceanRoughness: 0.12, terrainScale: 0.10,
-			noiseFrequency: 2.1, noiseOctaves: 6, farSegments: 48,
-
-			// Atmósfera multicapa (Tierra futura post-cataclismo)
-			atmo: true,
-			// Base is only used as a fallback; each layer has its own color
-			atmoColor: new BABYLON.Color3(0.20, 0.45, 0.95),
-			atmoAlpha: 0.34,
-			// Mostrar atmósfera/nubes solo al acercarse
-			atmoRange: 260,
-			cloudRange: 235,
-			cloudMinDist: 12.0,
-
-			// 3 capas: polvo gris-amarronado (baja), azul intenso (media), azul tenue (alta)
-			atmoLayers: [
-			  // Capa inferior: polvo/ceniza cerca del suelo
-			  {
-				mul: 1.068, aMul: 0.95,
-				color: new BABYLON.Color3(0.62, 0.58, 0.52),
-				mieColor: new BABYLON.Color3(0.78, 0.70, 0.58),
-				rimPower: 3.7, terminatorSoftness: 0.26, nightMin: 0.03,
-				mieStrength: 0.48, miePower: 6.5,
-				pathStrength: 0.22, pathPower: 2.0,
-				noiseStrength: 0.085,
-				sunsetColor: new BABYLON.Color3(1.0, 0.62, 0.30),
-				sunsetStrength: 0.42,
-				layerFade: 0.95,
-			  },
-			  // Capa intermedia: azul más fuerte (tipo Tierra, algo sucia)
-			  {
-				mul: 1.080, aMul: 0.72,
-				color: new BABYLON.Color3(0.18, 0.42, 0.95),
-				mieColor: new BABYLON.Color3(0.30, 0.48, 0.80),
-				rimPower: 4.9, terminatorSoftness: 0.28, nightMin: 0.04,
-				mieStrength: 0.46,
-				pathStrength: 0.18,
-				noiseStrength: 0.060,
-				layerFade: 0.78,
-			  },
-			  // Capa superior: azul muy tenue que se fusiona con el negro
-			  {
-				mul: 1.092, aMul: 0.36,
-				color: new BABYLON.Color3(0.08, 0.22, 0.55),
-				mieColor: new BABYLON.Color3(0.12, 0.26, 0.62),
-				rimPower: 6.4, terminatorSoftness: 0.32, nightMin: 0.05,
-				mieStrength: 0.62,
-				pathStrength: 0.10,
-				noiseStrength: 0.035,
-				layerFade: 0.58,
-			  },
-			],
-			atmoOpts: {
-				blendMode: "premul",
-				ditherStrength: 1.25,
-			},*/
-
-			// --- Atmósfera "Unity-style" (screen-space postprocess) ---
-			// Se activa solo al acercarte y desactiva automáticamente las mallas de atmo/nubes
-			// para evitar el look "por capas".
-			/*atmoPP: {
-				range: 400,
-				radiusMul: 1.08,
-				layers: [
-					// Capa inferior: polvo/ceniza (gris amarronado)
-					{ color: new BABYLON.Color3(0.62, 0.58, 0.52), alpha: 0.34, height: 0.10, falloff: 8.0 },
-					// Capa intermedia: azul intenso (algo sucia)
-					{ color: new BABYLON.Color3(0.18, 0.42, 0.95), alpha: 0.26, height: 0.48, falloff: 3.6 },
-					// Capa superior: azul tenue que se funde con el negro
-					{ color: new BABYLON.Color3(0.10, 0.28, 0.65), alpha: 0.22, height: 0.95, falloff: 1.7 },
-				],
-				clouds: {
-					alpha: 0.22,
-					scale: 2.7,
-					sharpness: 2.2,
-					wind: new BABYLON.Vector3(0.020, 0.0, 0.012),
-					tint: new BABYLON.Color3(0.92, 0.96, 1.08), // blanco + azul suave
-				},
-			},*/
-
-			// Nubes: blancas/azules, irregulares y evolutivas (solo cerca)
-			clouds: true,
-			cloudAlpha: 0.96,
-			cloudMul: 1.082,
-			cloudScale: 30.0,
-			cloudCoverage: 0.56,
-			cloudSharpness: 2.45,
-			cloudWind: new BABYLON.Vector2(0.022, -0.010),
-			cloudColorA: new BABYLON.Color3(0.98, 0.99, 1.00),
-			cloudColorB: new BABYLON.Color3(0.62, 0.78, 1.00),
+			radius: 6.0, 
+			biomePreset: "imperial_temperate", 
 		}, // muy exterior
 	    "Jupiter":          {
-		    tags: ["gas-giant","pink","storms"], radius: 12.0,
+		    tags: ["gas-giant","pink","storms"], 
+			radius: 12.0,
 			// === GAS GIANT (sin superficie sólida) ===
 			gasGiant: true,
 			gasStorms: true,           // porque en META tiene "storms"
@@ -846,11 +663,7 @@ const GALAXY_LIST = [
 			noiseFrequency: 1.1,
 			noiseOctaves: 4,
 			farSegments: 64,
-			// atmósfera bien visible (rosada)
-			/*atmo: true,
-			atmoColor: new BABYLON.Color3(0.95,0.55,0.70),
-			atmoAlpha: 0.42 */}, // gigante rosado gaseoso (casi “estrella fallida”)				
-	    // Extra "no-canon" útil para tu demo (lava)
+		}, // Extra "no-canon" útil para tu demo (lava)
 		"Saturno":              {
 			tags: ["gas-giant","red","storms"],
 			radius: 10.0,
@@ -864,16 +677,16 @@ const GALAXY_LIST = [
 			terrainScale: 0.03,
 			noiseFrequency: 1.1,
 			noiseOctaves: 4,
-			farSegments: 64,
-			
-			rings: true, ringTex: "proc:ion",
-			// atmósfera bien visible (rosada)
-			/*atmo: true,
-			atmoColor: new BABYLON.Color3(0.95,0.55,0.70),
-			atmoAlpha: 0.42 */}, // gigante rosado gaseoso (casi “estrella fallida”)
+			farSegments: 64,			
+			rings: true, 
+			ringTex: "proc:ion",
+		}, // gigante con anillos
 	    "Vulcanis": {
-			jsonFile: "vulcanis.json", radius: 6.6, biomePreset: "lava_world", seaLevel: -0.098, ocean: true, oceanKind: "lava", lavaIntensity: 2.0, lavaFlowSpeed: 0.06,
-			lavaColor: new BABYLON.Color3(1.0, 0.35, 0.08), terrainScale: 0.20, noiseFrequency: 2.9, noiseOctaves: 6, farSegments: 52, microBump: T("detail_rock2.png") },
+			jsonFile: "vulcanis.json", 
+			radius: 6.6, 
+			biomePreset: "lava_world", 
+			microBump: T("detail_rock2.png") 
+		},
 
 		// --- Planetas solo con tags/lore (sin overrides duros) ---
 		"Ginaz": { tags:["islands","tropical","martial"], production:["swordmasters"] },

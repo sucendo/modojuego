@@ -1,5 +1,7 @@
+import { createLabelsSystem } from "./scene/labels.js";
 import { createLowPolyFarPlanet } from "./planets/farPlanet.js";
 import { loadPlanetConfig, buildRuntimePlanetParams, createJsonPlanet } from "./planets/jsonPlanet.js";
+import { setupLighting } from "./scene/lights.js";
 import { makeRings, updateRings } from "./planets/rings.js";
 import { createStarDotManager, createStarDotSprite } from "./galaxy/starDots.js";
 import { buildSystems } from "./galaxy/systems.js";
@@ -11,8 +13,10 @@ import {
   enableAtmospherePP,
   updateAtmospherePP,
 } from "./planets/atmospherePP.js";
-
-
+import { initUI } from "./scene/ui.js";
+import { setupCamerasAndModes } from "./scene/cameras.js";
+import { createOrbitSystem } from "./scene/orbits.js";
+import { createCameraPlanetCollision } from "./scene/collision.js";
 
     // ====================================================================
     // 0) Engine
@@ -34,26 +38,20 @@ import {
     // ====================================================================
     // 4) Scene
     // ====================================================================
-    const ui = {
-      camOrbitBtn: document.getElementById("camOrbit"),
-      camFlyBtn: document.getElementById("camFly"),
-      camSurfaceBtn: document.getElementById("camSurface"),
-      speedRange: document.getElementById("speedRange"),
-      speedVal: document.getElementById("speedVal"),
-      planetSelect: document.getElementById("planetSelect"),
-      approachBtn: document.getElementById("approachBtn"),
-      debugInfo: document.getElementById("debugInfo"),
-      modePill: document.getElementById("modePill"),
-      toggleLabels: document.getElementById("toggleLabels"),
-      labelsPill: document.getElementById("labelsPill"),
-    };
-
-    let timeScale = 1.0;
+    const { ui, uiState } = initUI();
 
     const createScene = async () => {
       const scn = new BABYLON.Scene(engine);
       const starDotMgr = createStarDotManager(scn, 8000);
-	  
+
+      // ------------------------------------------------------------
+      // Helpers (MUST be defined before any use)
+      // ------------------------------------------------------------
+      function _normName(s) {
+        return (typeof s === "string") ? s.trim() : "";
+      }
+      const _bodyKey = (systemId, kind, name, parentKey = "") =>
+        `${systemId || ""}|${kind || ""}|${parentKey || ""}|${name || ""}`;	  
 
       // Star-dots (sprites): deben renderizar "como fondo" y respetar profundidad
       // Si están en un renderingGroup > planetas, se dibujan encima (parece que el agua queda detrás).
@@ -144,68 +142,32 @@ import {
       }, 250);
 
       scn.onBeforeRenderObservable.add(() => {
-        if (starsMesh && scn.activeCamera) {
-          starsMesh.position.copyFrom(scn.activeCamera.position);
+        const cam = scn.activeCamera;
+        const camPos = getCameraWorldPos(cam);
+        if (starsMesh && camPos) {
+          starsMesh.position.copyFrom(camPos);
         }
-
-	    updateStarDotsSize();
+        updateStarDotsSize();
       });
 
-      // Cameras
-      const cameraOrbit = new BABYLON.ArcRotateCamera("camOrbit", -Math.PI/2, Math.PI/3, 260, BABYLON.Vector3.Zero(), scn);
-      cameraOrbit.lowerRadiusLimit = 8;
-      cameraOrbit.upperRadiusLimit = 2500;
-      cameraOrbit.wheelDeltaPercentage = 0.01;
-      // En órbita queremos rotar/zoom alrededor de un objetivo (sin pan libre)
-      //cameraOrbit.panningSensibility = 0;
-      // Galaxia: que las estrellas/sistemas lejanos no desaparezcan por el plano lejano
-      const GALAXY_MAX_Z = 5e7;
-      cameraOrbit.maxZ = GALAXY_MAX_Z;
-      cameraOrbit.attachControl(canvas, true);
-
-      const cameraFly = new BABYLON.UniversalCamera("camFly", new BABYLON.Vector3(0, 60, -220), scn);
-      cameraFly.minZ = 0.1;
-	  cameraFly.maxZ = GALAXY_MAX_Z;
-      // Velocidad base + turbo (Shift) para vuelo libre
-      const FLY_SPEED_BASE = 2.2;
-      const FLY_SPEED_SPRINT = 7.5; // ajusta a gusto (más alto = turbo más bestia)
-      cameraFly.speed = FLY_SPEED_BASE;
-      cameraFly._flyBaseSpeed = FLY_SPEED_BASE;
-      cameraFly._flySprintSpeed = FLY_SPEED_SPRINT;
-      cameraFly.angularSensibility = 4000;
-      cameraFly.keysUp = [87];    // W
-      cameraFly.keysDown = [83];  // S
-      cameraFly.keysLeft = [65];  // A
-      cameraFly.keysRight = [68]; // D
-      // add vertical controls
-      cameraFly.keysUpward = [32];       // Space up
-      cameraFly.keysDownward = [17, 67]; // Ctrl or C down
-	  
-      // ------------------------------------------------------------
-      // Collisions: impedir atravesar cuerpos celestes (fly)
-      // ------------------------------------------------------------
-      scn.collisionsEnabled = false; // Optim: usamos colisión esférica barata + raycasts en superficie
-      cameraFly.checkCollisions = false;
-      cameraFly.applyGravity = false;
-      cameraFly.ellipsoid = new BABYLON.Vector3(1.2, 1.2, 1.2);
-      cameraFly.ellipsoidOffset = new BABYLON.Vector3(0, 1.2, 0);
-      cameraFly.onCollide = (collidedMesh) => {
-        // pequeño "rebote"/freno para que se note el impacto
-        try { cameraFly.cameraDirection.scaleInPlace(-0.25); } catch(e) {}
-      };
-
-      // Surface camera: use a playerRoot for proper orientation
-      const playerRoot = new BABYLON.TransformNode("playerRoot", scn);
-      playerRoot.rotationQuaternion = BABYLON.Quaternion.Identity();
-
-      const cameraSurface = new BABYLON.UniversalCamera("camSurface", new BABYLON.Vector3(0, 0, 0), scn);
-      cameraSurface.parent = playerRoot;
-      cameraSurface.minZ = 0.05;
-	  cameraSurface.maxZ = GALAXY_MAX_Z;
-      cameraSurface.speed = 0; // we implement movement ourselves
-      cameraSurface.angularSensibility = 3500;
-
-      scn.activeCamera = cameraOrbit;
+      // Cameras + modos (Paso 2 refactor)
+      const {
+        cameraOrbit,
+        cameraFly,
+        cameraSurface,
+        playerRoot,
+        mode,
+        setMode,
+        lockOrbitToBody,
+        unlockOrbit,
+        getOrbitLockedBodyName,
+      } = setupCamerasAndModes({
+        scn,
+        engine,
+        canvas,
+        ui,
+        onActiveCameraChanged: (cam) => ensureAtmoPPForCamera(cam),
+      });
 	  
       // ------------------------------------------------------------
       // Atmósfera screen-space (post-process) estilo "Unity"
@@ -227,9 +189,8 @@ import {
         try { attachDepthForAtmosphere(scn, cam, atmoPP); } catch (e) {}
       }
 
-      ensureAtmoPPForCamera(scn.activeCamera);
-
-
+      // Nota: setupCamerasAndModes ya llama a onActiveCameraChanged() una vez.
+ 
       // Luz de "linterna" en superficie (evita que el terreno quede negro si el sol no incluye los chunks)
       const playerLamp = new BABYLON.PointLight("playerLamp", new BABYLON.Vector3(0, 0.25, 0), scn);
       playerLamp.parent = cameraSurface;
@@ -237,160 +198,28 @@ import {
       playerLamp.range = 140;
       playerLamp.setEnabled(false);
 
-      // Lights
-      const sunLight = new BABYLON.PointLight("sunLight", BABYLON.Vector3.Zero(), scn);
-      // More intensity so PBR vertex-colored planets read well without needing a skybox.
-      sunLight.intensity = 7.5;
-      sunLight.range = 20000;
-      // IMPORTANTE: en escalas grandes, el falloff físico hace que "no llegue" luz
-      // Forzamos caída estándar (no inverse-square)
-      try { sunLight.falloffType = BABYLON.Light.FALLOFF_STANDARD; } catch(e) {}
-      try { sunLight.usePhysicalLightFalloff = false; } catch(e) {}
-      
-      // Light linking: Canopus sólo ilumina su propio sistema (mejora rendimiento y evita 'todo gira/ilumina Canopus')
-      const mainLitMeshes = [];
-      sunLight.includedOnlyMeshes = mainLitMeshes;
+      // Create meshes (moved up: lights module needs bodies reference)
+      const bodies = new Map(); // id => body (internal stable key)
+      const orbitNodes = new Map(); // id => node rotated around its parent (star/planet)
+      const moonOrbitNodes = new Map(); // id => node rotated around its parent planet
+      let sunMesh = null; // set when Canopus is created via createStarSystem(coreSystem)
+      let halo = null; // core-system halo mesh (created in createStarSystem for Canopus)
 
-      // Mapear "estrella -> luz" para poder incluir también los chunks procedurales en el light correcto
-      const lightByStarMesh = new Map(); // starMesh -> PointLight
-
-      // Evita duplicados cuando metemos meshes a includedOnlyMeshes
-      const _litKeySet = new Set();
-      function includeMeshInBodyLight(mesh, body) {
-        if (!mesh || !body) return;
-        const star = body.starRef;
-        const l = star ? lightByStarMesh.get(star) : null;
-
-        // key estable por mesh (uniqueId existe en Mesh)
-        const mid = (mesh.uniqueId != null) ? mesh.uniqueId : (mesh.id || mesh.name);
-
-        if (l && l.includedOnlyMeshes) {
-          const key = l.name + "::" + mid;
-          if (_litKeySet.has(key)) return;
-          _litKeySet.add(key);
-          l.includedOnlyMeshes.push(mesh);
-        } else {
-          // core (sunLight) usa mainLitMeshes
-          const key = "sunLight::" + mid;
-          if (_litKeySet.has(key)) return;
-          _litKeySet.add(key);
-          mainLitMeshes.push(mesh);
-        }
-      }
-
-      // ------------------------------------------------------------
-      // Safety net: (re)link meshes to their system light periodically.
-      // This prevents "some planets are dark" if a mesh was recreated (LOD)
-      // or created before a light list was ready.
-      // ------------------------------------------------------------
-      let _relinkTick = 0;
-      function relinkAllBodyMeshesToLights() {
-        const now = performance.now();
-        if (now - _relinkTick < 800) return;
-        _relinkTick = now;
-
-        for (const b of bodies.values()) {
-          if (!b) continue;
-          if (b.farMesh && b.farMesh.isDisposed && b.farMesh.isDisposed()) continue;
-          includeMeshInBodyLight(b.farMesh, b);
-          if (b.ocean) includeMeshInBodyLight(b.ocean, b);
-          if (b.lowMesh) includeMeshInBodyLight(b.lowMesh, b);
-          if (b.lowOcean) includeMeshInBodyLight(b.lowOcean, b);
-        }
-      }
-
-      function updateExtraSystemShadows() {
-        const now = performance.now();
-        if (now - _extraShadowTick < EXTRA_SHADOW.updateMs) return;
-        _extraShadowTick = now;
-
-        const cam = scn.activeCamera;
-        if (!cam) return;
-
-        // Pick nearest non-core system light
-        let best = null;
-        let bestD2 = Infinity;
-        const camPos = cam.position;
-
-        for (const s of systemLights) {
-          if (!s || !s.light || !s.root) continue;
-          // systemLights does NOT include core (sunLight), only extras
-          const d2 = BABYLON.Vector3.DistanceSquared(camPos, s.root.getAbsolutePosition());
-          if (d2 < bestD2) { bestD2 = d2; best = s; }
-        }
-
-        const enable = best && (bestD2 <= (EXTRA_SHADOW.enableDist * EXTRA_SHADOW.enableDist));
-        const targetSystemId = enable ? best.id : null;
-
-        if (targetSystemId === extraShadowSystemId) return;
-
-        // Switch / disable
-        if (extraShadowGen) {
-          try { extraShadowGen.dispose(); } catch(_) {}
-          extraShadowGen = null;
-        }
-        extraShadowSystemId = targetSystemId;
-
-        if (!enable) return;
-
-        // Create new shadow generator for the nearest system
-        try {
-          extraShadowGen = new BABYLON.ShadowGenerator(EXTRA_SHADOW.mapSize, best.light);
-          extraShadowGen.usePoissonSampling = true;
-          extraShadowGen.bias = EXTRA_SHADOW.bias;
-          extraShadowGen.normalBias = EXTRA_SHADOW.normalBias;
-        } catch (e) {
-          console.warn("No se pudo crear extraShadowGen:", e);
-          extraShadowGen = null;
-          extraShadowSystemId = null;
-          return;
-        }
-
-        // Register casters/receivers for this system
-        for (const b of bodies.values()) {
-          if (!b || b.systemId !== extraShadowSystemId) continue;
-          if (b.farMesh) {
-            b.farMesh.receiveShadows = true;
-            try { extraShadowGen.addShadowCaster(b.farMesh, true); } catch(_) {}
-          }
-          if (b.ocean) {
-            // Water looks better without shadow maps (avoid banding)
-            b.ocean.receiveShadows = false;
-          }
-        }
-      }	  
-
-      const hemi = new BABYLON.HemisphericLight("hemi", new BABYLON.Vector3(0, 1, 0), scn);
-      // A touch more fill light so distant planets don't read as pitch-black.
-      hemi.intensity = 0.10;
-      hemi.diffuse = new BABYLON.Color3(0.1, 0.1, 0.2); // Tinte azulado para ambiente espacial
-      hemi.groundColor = new BABYLON.Color3(0,0,0);
-
-      // Un pelín de ambiente para que no queden negros en superficie sin "subir" el cielo
-      scn.ambientColor = new BABYLON.Color3(0.06, 0.06, 0.07);
-
-      // Shadows (optional)
-      const shadowGen = new BABYLON.ShadowGenerator(2048, sunLight);
-      // Rendimiento: Poisson es mucho más barato que contact hardening
-      shadowGen.usePoissonSampling = true;
-      shadowGen.bias = 0.00025;
-      shadowGen.normalBias = 0.01;	  
-
-      // ------------------------------------------------------------
-      // Dynamic per-system shadows (extras)
-      // - Only one extra system gets a shadow map at a time (nearest to camera)
-      // - Keeps performance predictable while allowing planet-to-planet/moon shadows
-      // ------------------------------------------------------------
-      let extraShadowGen = null;
-      let extraShadowSystemId = null;
-      const EXTRA_SHADOW = {
-        enableDist: 3200,     // distance to system root to enable extra shadows
-        updateMs: 600,        // throttle
-        mapSize: 1024,        // 512/1024; 2048 is heavy for point light cubemaps
-        bias: 0.00035,
-        normalBias: 0.012,
-      };
-      let _extraShadowTick = 0;
+      // Lights (Paso 4 refactor)
+      const lighting = setupLighting({ scn, bodies });
+      const {
+        sunLight,
+        hemi,
+        shadowGen,
+        mainLitMeshes,
+        lightByStarMesh,
+        systemLights,
+        registerStarLight,
+        createLocalSystemLight,
+        includeMeshInBodyLight,
+        relinkAllBodyMeshesToLights,
+        updateExtraSystemShadows,
+      } = lighting;
 
       // Glow desactivado por rendimiento (ya tenemos halo del sol)
       // const glow = new BABYLON.GlowLayer("glow", scn);
@@ -433,14 +262,16 @@ import {
           if (b && b.jsonFile) {
             const f = String(b.jsonFile);
             if (!fileToBodies.has(f)) fileToBodies.set(f, []);
-            fileToBodies.get(f).push(b.name);
+             // IMPORTANT: later we normalize names (pDef.name = _normName(pDef.name))
+             // so store the normalized key here too, otherwise .has(pDef.name) may fail.
+             fileToBodies.get(f).push(_normName(b.name));
           }
         }
         for (const b of (sys.moons || [])) {
           if (b && b.jsonFile) {
             const f = String(b.jsonFile);
             if (!fileToBodies.has(f)) fileToBodies.set(f, []);
-            fileToBodies.get(f).push(b.name);
+            fileToBodies.get(f).push(_normName(b.name));
           }
         }
       }
@@ -449,7 +280,7 @@ import {
         [...fileToBodies.entries()].map(async ([file, bodyNames]) => {
           try {
             const params = await loadPlanetConfig("src/data/" + file);
-            for (const name of bodyNames) planetParamsByName.set(name, params);
+            for (const name of bodyNames) planetParamsByName.set(_normName(name), params);
           } catch (e) {
             console.warn(`[json planets] no se pudo cargar ${file}`, e);
           }
@@ -481,20 +312,10 @@ import {
         }
       } catch(e) {}
 
-      // Create meshes
-      const bodies = new Map(); // id => body (internal stable key)
-      const orbitNodes = new Map(); // id => node rotated around its parent (star/planet)
-      const moonOrbitNodes = new Map(); // id => node rotated around its parent planet
-      let sunMesh = null; // set when Canopus is created via createStarSystem(coreSystem)
-      let halo = null; // core-system halo mesh (created in createStarSystem for Canopus)
-
       // ------------------------------------------------------------
       // Stable IDs (avoid name collisions across systems / moons)
       // UI still shows ONLY the display name.
       // ------------------------------------------------------------
-      const _normName = (s) => (typeof s === "string" ? s.trim() : "");
-      const _bodyKey = (systemId, kind, name, parentKey = "") =>
-        `${systemId || ""}|${kind || ""}|${parentKey || ""}|${name || ""}`;
 
       function findBodyByNameInSystem(name, systemId, preferredKind = "planet") {
         const n = _normName(name);
@@ -517,130 +338,12 @@ import {
 
       // Ensure sunLight follows sun (in case you move it later)
       if (sunMesh) sunLight.position.copyFrom(sunMesh.position);
-      // GUI labels (optional)
-      const gui = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("ui", true, scn);
-      function createLabel(id, text, mesh) {
-        const rect = new BABYLON.GUI.Rectangle("lbl_" + String(id));
-        rect.background = "rgba(0,0,0,0.35)";
-        rect.thickness = 1;
-        rect.color = "rgba(255,255,255,0.25)";
-        rect.cornerRadius = 8;
-        rect.height = "22px";
-        rect.width = "120px";
-        rect.isHitTestVisible = false;
 
-        const tb = new BABYLON.GUI.TextBlock();
-        tb.text = text;
-        tb.color = "#fff";
-        tb.fontSize = 12;
-        rect.addControl(tb);
-
-        gui.addControl(rect);
-        rect.linkWithMesh(mesh);
-        rect.linkOffsetY = -20;
-
-        // Devuelve también el TextBlock para poder actualizarlo si cambia el displayName
-        rect._tb = tb;
-        return rect;
-      }
-
-              // ============================================================
-// Labels: registro + visibilidad (throttle)
-// - Estrellas siempre visibles
-// - Planetas y lunas: solo los cercanos (por ranking + distancia)
-// - Permite apagar/encender desde UI
-// ============================================================
-const labelsById = new Map(); // id -> { rect, kind, mesh, name }
-let showLabels = true;
-
-function registerLabel(id, name, kind, mesh) {
-  if (!mesh) return null;
-  const key = String(id || "");
-  if (!key) return null;
-  let meta = labelsById.get(key);
-  if (!meta) {
-    const rect = createLabel(key, name, mesh);
-    meta = { rect, tb: rect._tb || null, name, kind, mesh };
-    labelsById.set(key, meta);
-  } else {
-    meta.kind = kind || meta.kind;
-    meta.mesh = mesh || meta.mesh;
-    meta.name = name || meta.name;
-    // Re-link y actualiza el texto (por si cambió el displayName)
-    try { meta.rect && meta.rect.linkWithMesh && meta.rect.linkWithMesh(mesh); } catch (e) {}
-    try { (meta.tb || meta.rect._tb) && ((meta.tb || meta.rect._tb).text = meta.name); } catch (e) {}
-  }
-  return meta.rect;
-}
-
-const LABEL_NEAREST_BODIES = 10;   // cuántos planetas/lunas mostrar como "cercanos"
-const LABEL_MAX_DIST = 1200;       // además, muestra cuerpos dentro de esta distancia
-const LABEL_UPDATE_MS = 220;       // throttle del cálculo
-
-function setAllLabelsVisible(v) {
-  for (const { rect } of labelsById.values()) rect.isVisible = !!v;
-}
-
-function updateLabelVisibility(force = false) {
-  if (!showLabels) { setAllLabelsVisible(false); return; }
-  const cam = scn.activeCamera;
-  if (!cam) return;
-
-  const now = performance.now();
-  if (!force && scn._lblTick && (now - scn._lblTick) < LABEL_UPDATE_MS) return;
-  scn._lblTick = now;
-
-  const camPos = cam.position;
-  const maxD2 = LABEL_MAX_DIST * LABEL_MAX_DIST;
-
-  // 1) estrellas siempre visibles
-  for (const meta of labelsById.values()) {
-    if (meta.kind === "sun") meta.rect.isVisible = true;
-  }
-
-  // 2) ranking de cercanos (planetas + lunas)
-  const ranked = [];
-  for (const [id, b] of bodies.entries()) {
-    if (!b || !b.def || !b.farMesh) continue;
-    const k = b.def.kind;
-    if (k !== "planet" && k !== "moon") continue;
-    const p = b.farMesh.getAbsolutePosition();
-    const d2 = BABYLON.Vector3.DistanceSquared(camPos, p);
-    ranked.push({ id, d2 });
-  }
-  ranked.sort((a,b)=>a.d2-b.d2);
-
-  const visible = new Set();
-
-  // Siempre visible: el seleccionado (si existe)
-  try {
-    const selId = ui && ui.planetSelect ? ui.planetSelect.value : null;
-    if (selId) visible.add(selId);
-  } catch(e) {}
-
-  for (let i=0; i<ranked.length && i<LABEL_NEAREST_BODIES; i++) visible.add(ranked[i].id);
-   for (const r of ranked) {
-    if (r.d2 <= maxD2) visible.add(r.id);
-     else break;
-   }
-
-  // 3) aplica visibilidad (todo lo que no sea estrella => depende del set)
-  for (const [id, meta] of labelsById.entries()) {
-    if (meta.kind === "sun") continue;
-    meta.rect.isVisible = visible.has(id);
-  }
-}
-
-// UI hook
-if (ui.toggleLabels) {
-  showLabels = !!ui.toggleLabels.checked;
-  if (ui.labelsPill) ui.labelsPill.textContent = showLabels ? "ON" : "OFF";
-  ui.toggleLabels.addEventListener("change", () => {
-    showLabels = !!ui.toggleLabels.checked;
-    if (ui.labelsPill) ui.labelsPill.textContent = showLabels ? "ON" : "OFF";
-    updateLabelVisibility(true);
-  });
-}
+      // Labels system (Paso 3 refactor)
+      const labelsSys = createLabelsSystem({ scn, ui, bodies });
+      const { registerLabel, updateLabelVisibility } = labelsSys;
+      // Compat: el código LOD actual toca labelsById directamente para relink
+      const labelsById = labelsSys.labelsById;
 
       // Fill selector + labels
       ui.planetSelect.innerHTML = "";
@@ -649,7 +352,6 @@ if (ui.toggleLabels) {
       // 3b) Create extra star systems (FAR-only por defecto)
       // ====================================================================
       const systemRoots = new Map(); // systemId -> root node
-      const systemLights = []; // {light, root, range}
       const galaxyStarDots = []; // billboards para que las estrellas lejanas siempre se vean (>= 1px)
  
 	  
@@ -793,7 +495,7 @@ if (ui.toggleLabels) {
           sunLight.position.set(0,0,0);
 
           // Mapear estrella -> luz (para chunks procedurales)
-          lightByStarMesh.set(star, sunLight);
+          registerStarLight(star, sunLight);
         } else {
           const starMat = new BABYLON.StandardMaterial(starName + "_mat", scn);
           starMat.emissiveColor = sys.star.emissive || new BABYLON.Color3(1,0.9,0.7);
@@ -845,32 +547,19 @@ if (ui.toggleLabels) {
         // Local/system light (extras) — Canopus usa sunLight
         let local = null;
         if (!isCore) {
-          local = new BABYLON.PointLight(sys.id + "_light", new BABYLON.Vector3(0,0,0), scn);
-          local.parent = star;
-          local.intensity = (sys.star.lightIntensity != null) ? sys.star.lightIntensity : 7.0;
-          // Large enough to cover all orbits in the system (we still use includedOnlyMeshes).
-          local.range = (sys.star.lightRange != null) ? sys.star.lightRange : 20000;
-          // MISMO FIX: caída estándar para que ilumine planetas a distancias grandes
-          try { local.falloffType = BABYLON.Light.FALLOFF_STANDARD; } catch(e) {}
-          try { local.usePhysicalLightFalloff = false; } catch(e) {}
-
-          local.includedOnlyMeshes = [];
-          local.setEnabled(true);
-          systemLights.push({ id: sys.id, light: local, root, range: local.range });
-
-          // Mapear estrella -> luz local
-          lightByStarMesh.set(star, local);
+          local = createLocalSystemLight({
+            systemId: sys.id,
+            starMesh: star,
+            root,
+            intensity: sys.star.lightIntensity,
+            range: sys.star.lightRange,
+          });
         }
 
-        function linkToLight(mesh, ocean) {
+        function linkToLight(mesh, ocean, bodyRef) {
           if (!mesh) return;
-          if (isCore) {
-            mainLitMeshes.push(mesh);
-            if (ocean) mainLitMeshes.push(ocean);
-          } else if (local) {
-            local.includedOnlyMeshes.push(mesh);
-            if (ocean) local.includedOnlyMeshes.push(ocean);
-          }
+          includeMeshInBodyLight(mesh, bodyRef);
+          if (ocean) includeMeshInBodyLight(ocean, bodyRef);
         }
 
         function applyShadows(mesh, ocean) {
@@ -1022,8 +711,8 @@ if (ui.toggleLabels) {
               maxSubdiv: (isCore || hasSpecific) ? 7 : 5,
               minSubdiv: 2,
               forceSeedFromName: !hasSpecific,
-              // When we use a planet-specific exported JSON, keep its sea/seed values
-              // so the result matches the generator.
+              // If this body has its own exported JSON, keep its seaLevel/seaEnabled/etc
+              // so it matches the generator (don't override from systems.js).
               lockJsonParams: hasSpecific,
             });
             created = createJsonPlanet(scn, pDef, orbitNode, runtimeParams);
@@ -1035,6 +724,7 @@ if (ui.toggleLabels) {
           }
           const mesh  = created.land;
           const ocean = created.ocean;
+		  const bodyRefForLight = { starRef: star, systemId: sys.id };
 		  
           // rings (core only, por ahora)
           const ring = isCore ? createRings(pDef, mesh) : null;
@@ -1044,7 +734,7 @@ if (ui.toggleLabels) {
           if (ring) ring.isPickable = false;
 		  
           applyShadows(mesh, ocean);
-          linkToLight(mesh, ocean);
+          linkToLight(mesh, ocean, bodyRefForLight);
 
           bodies.set(pKey, {
             id: pKey,
@@ -1124,17 +814,21 @@ if (ui.toggleLabels) {
           }
           const mesh = created.land;
           const ocean = created.ocean;
+		  const bodyRefForLight = { starRef: star, systemId: sys.id };
 
           mesh.isPickable = false;
           if (ocean) ocean.isPickable = false;
 
           applyShadows(mesh, ocean);
-          linkToLight(mesh, ocean);
+		  linkToLight(mesh, ocean, bodyRefForLight);
 
           bodies.set(mKey, {
             id: mKey,
             def: mDef,
             farMesh: mesh,
+            // Mesh “real” del planeta (para PP atmósfera / surface)
+            landMesh: mesh,
+            mesh: mesh,
 			ocean,
             ring: null,
             starRef: star,
@@ -1692,7 +1386,12 @@ if (ui.toggleLabels) {
           const p = b.farMesh.getAbsolutePosition();
           const dist = BABYLON.Vector3.Distance(camPos, p);
 
-          const r = (b.def && typeof b.def.radius === "number") ? b.def.radius : 6;
+          // IMPORTANT: el radio de referencia debe venir del JSON (genParams.radius) si existe,
+          // no de systems.js, para que rangos y LOD casen con el generador.
+          const r =
+            (b.genParams && typeof b.genParams.radius === "number") ? b.genParams.radius :
+            (b.def && typeof b.def.radius === "number") ? b.def.radius :
+            6;
           const far = r * LOD.farMul + LOD.farPad;
           // Culling suave: si está MUY lejos, ni lo miramos (ahorra CPU).
           if (dist > far * 1.25) continue;
@@ -1708,9 +1407,13 @@ if (ui.toggleLabels) {
           // lo metemos al inicio si no estaba
           const already = candidates.find(x => x.b && x.b.id === surfaceBody.id);
           if (!already && surfaceBody.farMesh) {
-            const p = surfaceBody.farMesh.getAbsolutePosition();
+            const activeMesh = surfaceBody.surfaceMesh || surfaceBody.hiMesh || surfaceBody.mesh || surfaceBody.landMesh || surfaceBody.farMesh;
+            const p = activeMesh.getAbsolutePosition();
             const dist = BABYLON.Vector3.Distance(camPos, p);
-            const r = (surfaceBody.def && typeof surfaceBody.def.radius === "number") ? surfaceBody.def.radius : 6;
+            const r =
+              (surfaceBody.genParams && typeof surfaceBody.genParams.radius === "number") ? surfaceBody.genParams.radius :
+              (surfaceBody.def && typeof surfaceBody.def.radius === "number") ? surfaceBody.def.radius :
+              6;
             candidates.unshift({ b: surfaceBody, dist, r, forceSurface: true });
           } else if (already) {
             already.forceSurface = true;
@@ -1740,6 +1443,12 @@ if (ui.toggleLabels) {
           ensureLODSubdiv(b, targetSubdiv);
           const after = (b.genParams && typeof b.genParams.subdivisions === "number") ? (b.genParams.subdivisions|0) : null;
           if (before !== null && after !== null && before !== after) regenCount++;
+
+          // IMPORTANT: después de regenerar LOD, fuerza a que "mesh/landMesh"
+          // apunten al mesh actual que debe usar la atmósfera PP.
+          // (ensureLODSubdiv suele recrear b.farMesh / lowMesh, así que sincronizamos).
+          b.mesh = b.hiMesh || b.surfaceMesh || b.landMesh || b.farMesh;
+          b.landMesh = b.mesh;
         }
       }
 
@@ -1786,59 +1495,7 @@ if (ui.toggleLabels) {
       // ====================================================================
       // 5) Modes: orbit / fly / surface
       // ====================================================================
-      const mode = { value: "orbit" };
 
-      // Body currently used for surface mode (player attached)
-      let surfaceBody = null;
- // orbit | fly | surface
-
-      // Órbita "enganchada" a un cuerpo (ArcRotateCamera.lockedTarget)
-      let orbitLockedBodyName = null;
-      function lockOrbitToBody(body) {
-        if (!body || !body.farMesh) return;
-        orbitLockedBodyName = body.def?.name || body.farMesh.name;
-        try {
-          cameraOrbit.lockedTarget = body.farMesh;
-          cameraOrbit.setTarget(body.farMesh);
-        } catch (e) {
-          // Fallback si lockedTarget no existe en alguna build
-          cameraOrbit.setTarget(body.farMesh.getAbsolutePosition());
-        }
-        const r = body.def?.radius || 10;
-        cameraOrbit.lowerRadiusLimit = Math.max(8, r * 1.25);
-        cameraOrbit.upperRadiusLimit = Math.max(cameraOrbit.lowerRadiusLimit * 2, r * 80);
-        cameraOrbit.radius = Math.max(cameraOrbit.lowerRadiusLimit * 1.35, r * 6);
-      }
-      function unlockOrbit() {
-        orbitLockedBodyName = null;
-        try { cameraOrbit.lockedTarget = null; } catch (e) {}
-      }
-	  
-      // ====================================================================
-      // Surface attachment: si el planeta rota, el jugador debe heredar esa rotación.
-      // En modo superficie "paramos" el jugador al planeta (preferimos proc.root si existe).
-      // ====================================================================
-      let surfaceAttachedTo = null;
-
-      function attachPlayerToBody(b) {
-        if (!b || !playerRoot) return;
-        const parent = b.farMesh;
-        if (!parent) return;
-
-        // conservar posición world al re-parentar
-        const wp = playerRoot.getAbsolutePosition().clone();
-        playerRoot.parent = parent;
-        playerRoot.setAbsolutePosition(wp);
-        surfaceAttachedTo = b;
-      }
-
-      function detachPlayerFromBody() {
-        if (!playerRoot || !playerRoot.parent) { surfaceAttachedTo = null; return; }
-        const wp = playerRoot.getAbsolutePosition().clone();
-        playerRoot.parent = null;
-        playerRoot.position.copyFrom(wp);
-        surfaceAttachedTo = null;
-      }
 	  
       // ====================================================================
       // Full detail on demand (surface mode): regenerate ONLY the selected rocky JSON planet
@@ -1904,87 +1561,32 @@ if (ui.toggleLabels) {
         }
       }
 
-
-      function updateModeButtons() {
-        const is = (m) => mode.value === m;
-        if (ui.camOrbitBtn) ui.camOrbitBtn.classList.toggle("active", is("orbit"));
-        if (ui.camFlyBtn) ui.camFlyBtn.classList.toggle("active", is("fly"));
-        if (ui.camSurfaceBtn) ui.camSurfaceBtn.classList.toggle("active", is("surface"));
-        // compat: elimina primary si existe y deja active como estado visual
-        if (ui.camOrbitBtn) ui.camOrbitBtn.classList.toggle("primary", false);
-        if (ui.camFlyBtn) ui.camFlyBtn.classList.toggle("primary", false);
-        if (ui.camSurfaceBtn) ui.camSurfaceBtn.classList.toggle("primary", false);
-      }
-
-      // Estado inicial (modo por defecto = órbita)
-      updateModeButtons();
-
-      function setMode(m) {
-        mode.value = m;
-        if (m !== "surface") surfaceBody = null;
-        ui.modePill.textContent = (m === "orbit") ? "Órbita" : (m === "fly" ? "Vuelo" : "Superficie");
-
-        updateModeButtons();
-
-        // Fog/"aire" solo en superficie (se ajusta por planeta en el loop)
-        if (m !== "surface") {
-          try { scn.fogMode = BABYLON.Scene.FOGMODE_NONE; } catch(e) {}
-        }
-		
-        // Si salimos de Superficie, soltamos el "enganche" al planeta (world-space libre)
-        if (m !== "surface") detachPlayerFromBody();
-
-        // detach all
-        try { cameraOrbit.detachControl(canvas); } catch(e){}
-        try { cameraFly.detachControl(canvas); } catch(e){}
-        try { cameraSurface.detachControl(canvas); } catch(e){}
-
-        // Luz de apoyo (solo superficie)
-        try { playerLamp.setEnabled(m === "surface"); } catch (e) {}
-
-        if (m === "orbit") {
-          // Si volvemos a Órbita, soltamos el pointer-lock para no "pelearnos" con la UI.
-          if (document.pointerLockElement === canvas) {
-            try { document.exitPointerLock?.(); } catch(e) {}
-          }
-          scn.activeCamera = cameraOrbit;
-          cameraOrbit.attachControl(canvas, true);
-        } else if (m === "fly") {
-          // Salimos de órbita => soltamos cualquier "enganche" para volver a ser libres
-          unlockOrbit();
-          scn.activeCamera = cameraFly;
-          cameraFly.attachControl(canvas, true);
-        } else {
-          unlockOrbit();
-          scn.activeCamera = cameraSurface;
-          cameraSurface.attachControl(canvas, true);
-        }
-		
-        // Re-crear el post-process para la cámara activa (cada cámara tiene su cadena de PP)
-        ensureAtmoPPForCamera(scn.activeCamera);
-      }
-
-      // Pointer lock (como index-old): click en el canvas para capturar ratón en Vuelo/Superficie
-      scn.onPointerDown = () => {
-        if (mode.value !== "fly" && mode.value !== "surface") return;
-        if (document.pointerLockElement !== canvas) {
-          canvas.requestPointerLock?.();
-        }
-      };
-
-      // (hook listo por si quieres hacer UI cuando se suelta)
-      document.addEventListener("pointerlockchange", () => {});
-
-
-      ui.camOrbitBtn.addEventListener("click", () => setMode("orbit"));
-      ui.camFlyBtn.addEventListener("click", () => setMode("fly"));
-      // Surface button has its own handler below (needs target checks).
-
       ui.speedRange.addEventListener("input", (e) => {
-        timeScale = parseFloat(e.target.value);
-        ui.speedVal.textContent = timeScale.toFixed(1) + "x";
+        uiState.timeScale = parseFloat(e.target.value);
+        ui.speedVal.textContent = uiState.timeScale.toFixed(1) + "x";
       });
-      ui.speedVal.textContent = timeScale.toFixed(1) + "x";
+      ui.speedVal.textContent = uiState.timeScale.toFixed(1) + "x";
+
+      // Body currently used for surface mode (player attached)
+      let surfaceBody = null;
+      // Surface attachment: si el planeta rota, el jugador debe heredar esa rotación.
+      let surfaceAttachedTo = null;
+      function attachPlayerToBody(b) {
+        if (!b || !playerRoot) return;
+        const parent = b.farMesh;
+        if (!parent) return;
+        const wp = playerRoot.getAbsolutePosition().clone();
+        playerRoot.parent = parent;
+        playerRoot.setAbsolutePosition(wp);
+        surfaceAttachedTo = b;
+      }
+      function detachPlayerFromBody() {
+        if (!playerRoot || !playerRoot.parent) { surfaceAttachedTo = null; return; }
+        const wp = playerRoot.getAbsolutePosition().clone();
+        playerRoot.parent = null;
+        playerRoot.position.copyFrom(wp);
+        surfaceAttachedTo = null;
+      }
 
       // ====================================================================
       // 6) Approach: teleport camera to target (fly/surface)
@@ -2369,121 +1971,42 @@ if (ui.toggleLabels) {
         }
       }
 
-function updateOrbits(dt) {
-        if (timeScale <= 0) return;
-
-        // Planets around sun
-        for (const [name, b] of bodies.entries()) {
-          if (b.def.kind !== "planet") continue;
-
-          const sysS = b.def._sysSpeed || 1;
-          b.orbitAngle += (b.def.orbitSpeed * sysS) * dt * timeScale;
-          b.orbitNode.rotation.y = b.orbitAngle;
-		  
-          // órbita excéntrica (si orbitEcc > 0): ajusta el radio local en X del mesh (y océano)
-          const e = b.def.orbitEcc || 0;
-          if (e > 0) {
-            const a = b.def.orbitR;
-            const th = b.orbitAngle;
-            const r = (a * (1 - e*e)) / (1 + e * Math.cos(th));
-            b.farMesh.position.set(r, 0, 0);
-            if (b.ocean) {
-            // Si el océano es hijo del land (JSON), su posición local debe ser (0,0,0)
-            if (b.ocean.parent === b.farMesh) b.ocean.position.set(0, 0, 0);
-				else b.ocean.position.set(r, 0, 0);
-			}
-          } else {
-            // asegura que si alguien tocó position, vuelva al radio base
-            b.farMesh.position.set(b.def.orbitR, 0, 0);
-            if (b.ocean) {
-            if (b.ocean.parent === b.farMesh) b.ocean.position.set(0, 0, 0);
-				else b.ocean.position.set(b.def.orbitR, 0, 0);
-			}
-          }
-
-          // spin
-          b.farMesh.rotation.y += (b.def.rotSpeed || 0.01) * dt * timeScale;
-          if (b.ring) b.ring.rotation.z += 0.3 * dt * timeScale;
-        }
-
-        // Moons around their parent planet
-        for (const [moonId, moonOrbitNode] of moonOrbitNodes.entries()) {
-          const m = bodies.get(moonId);
-          if (!m) continue;
-
-          const sysSm = m.def._sysSpeed || 1;
-          m.orbitAngle += (m.def.orbitSpeed * sysSm) * dt * timeScale;
-          moonOrbitNode.rotation.y = m.orbitAngle;
-		  
-          // órbita excéntrica opcional para lunas (normalmente 0)
-          const me = m.def.orbitEcc || 0;
-          if (me > 0) {
-            const a = m.def.orbitR;
-            const th = m.orbitAngle;
-            const r = (a * (1 - me*me)) / (1 + me * Math.cos(th));
-            m.farMesh.position.set(r, 0, 0);
-            if (m.ocean) {
-            if (m.ocean.parent === m.farMesh) m.ocean.position.set(0, 0, 0);
-            else m.ocean.position.set(r, 0, 0);
-            }
-          } else {
-            m.farMesh.position.set(m.def.orbitR, 0, 0);
-            if (m.ocean) {
-            if (m.ocean.parent === m.farMesh) m.ocean.position.set(0, 0, 0);
-            else m.ocean.position.set(m.def.orbitR, 0, 0);
-            }
-          }
-
-          // spin
-          m.farMesh.rotation.y += m.def.rotSpeed * dt * timeScale;
-        }
-		
-      }
+      // Orbits system (Paso 5 refactor)
+      const orbitSys = createOrbitSystem({ bodies, moonOrbitNodes, uiState });
+      const { updateOrbits, updateAllOrbitsAbsolute } = orbitSys;
 
       // ====================================================================
       // 10) 
       // ====================================================================
       // 9b) Camera safety: evitar atravesar planetas (colisión esférica barata)
       // ====================================================================
-      const CAM_COLLISION_PADDING = 0.9; // uds
-      function enforcePlanetCollision(cam) {
-        if (!cam) return;
-        const p = cam.position;
-
-        for (const [, b] of bodies.entries()) {
-          if (!b || !b.farMesh || !b.def || !b.def.radius) continue;
-          if (b.def.kind !== "planet" && b.def.kind !== "moon") continue;
-
-          const c = b.farMesh.getAbsolutePosition();
-          const dx = p.x - c.x, dy = p.y - c.y, dz = p.z - c.z;
-          const d2 = dx*dx + dy*dy + dz*dz;
-
-          const minR = (b.def.radius + CAM_COLLISION_PADDING);
-          const minR2 = minR * minR;
-
-          // early out si lejos
-          if (d2 > (minR2 + 2500)) continue;
-
-          if (d2 < minR2) {
-            const d = Math.max(0.0001, Math.sqrt(d2));
-            const inv = 1.0 / d;
-            cam.position.x = c.x + dx * inv * minR;
-            cam.position.y = c.y + dy * inv * minR;
-            cam.position.z = c.z + dz * inv * minR;
-          }
-        }
-      }
+      const { enforcePlanetCollision } = createCameraPlanetCollision({ bodies, padding: 0.9 });
 
 	  // Render loop logic
       // ====================================================================
-      setMode("orbit");
+      setMode("orbit", {
+        onExitSurface: () => detachPlayerFromBody(),
+      });
 
       // initial approach nice view
       approachTarget(null);
+	  
+      // ------------------------------------------------------------
+      // Helper: posición REAL en mundo de la cámara
+      // (evita incoherencias cuando hay parenting / cámaras distintas)
+      // ------------------------------------------------------------
+      function getCameraWorldPos(cam) {
+        if (!cam) return null;
+        // Babylon suele mantener globalPosition actualizado en render.
+        if (cam.globalPosition) return cam.globalPosition;
+        if (typeof cam.getAbsolutePosition === "function") return cam.getAbsolutePosition();
+        return cam.position;
+      }
 
       scn.onBeforeRenderObservable.add(() => {
         const dt = engine.getDeltaTime() / 1000;
-        const camPos = scn.activeCamera ? scn.activeCamera.position : null;
+        const cam = scn.activeCamera;
+		const camPos = getCameraWorldPos(cam);
 
         // ------------------------------------------------------------
         // LOD dinámico: solo el planeta/luna más cercano se regenera en high
@@ -2517,11 +2040,17 @@ function updateOrbits(dt) {
           } else {
             for (const [, b] of bodies.entries()) {
               if (!b || !b.farMesh || !b.def || !b.genParams || !b.genParams.atmoEnabled) continue;
-              const p = b.farMesh.getAbsolutePosition();
+			  // Usa el mesh actualmente “activo” si existe (hi/surface/land),
+			  // porque el PP de atmósfera y el LOD deben referirse al mismo centro.
+			  const activeMesh = b.surfaceMesh || b.hiMesh || b.mesh || b.landMesh || b.farMesh;
+			  const p = activeMesh.getAbsolutePosition();
               const dist = BABYLON.Vector3.Distance(camPos, p);
               const range = (typeof b.genParams.atmoRange === "number")
                 ? b.genParams.atmoRange
-                : (b.def.radius * 60);
+                // En el simulador (órbita/vuelo) la cámara suele estar MUY lejos.
+                // 60x radio se queda corto y hace que nunca se active el PP.
+                // Subimos el rango por defecto para que se vea como en el generador.
+                : (b.def.radius * 250);
               if (dist < range && dist < bestDist) {
                 best = b;
                 bestDist = dist;
@@ -2533,21 +2062,33 @@ function updateOrbits(dt) {
             atmoPPBody = best;
 
             const params = best.genParams;
-            const planetRadius = best.def.radius;
-            const atmoRadius = planetRadius * (typeof params.atmoRadiusMul === "number" ? params.atmoRadiusMul : 1.055);
+
+            // IMPORTANT: igual que el generador:
+            // el radio que usa el PP es SIEMPRE el del JSON exportado.
+            const planetRadius = (typeof params.radius === "number") ? params.radius : best.def.radius;
+            const atmoRadius =
+              planetRadius *
+              ((typeof params.atmoRadiusMul === "number") ? params.atmoRadiusMul : 1.055);
 
             // Star for this body
             const starRef = best.starRef || sunMesh;
             let sunPos = starRef ? starRef.getAbsolutePosition() : BABYLON.Vector3.Zero();
 
+            // Target mesh: usar el mesh real si existe (como planet.mesh en el generador)
+            const targetMesh =
+              best.surfaceMesh ||
+              best.hiMesh || best.hiPlanetMesh ||
+              best.mesh || best.landMesh ||
+              best.farMesh;
+
             // Guard: evita sunPos == planetPos
-            const planetPos = best.farMesh.getAbsolutePosition();
+            const planetPos = targetMesh.getAbsolutePosition();
             if (BABYLON.Vector3.DistanceSquared(sunPos, planetPos) < 1e-6) {
               sunPos = planetPos.add(new BABYLON.Vector3(1000, 0, 0));
             }
 
             // Aplicar params del JSON (solo cuando cambia el planeta objetivo)
-            const defName = best.def.name || best.farMesh.name;
+            const defName = best.def.name || targetMesh.name;
             if (atmoPP._lastDefName !== defName) {
               atmoPP._lastDefName = defName;
 
@@ -2558,11 +2099,9 @@ function updateOrbits(dt) {
                 } catch (e) { return fallback; }
               };
 
-              atmoPP._useDepth = !!params.atmoUseDepth;
-              // IMPORTANTE:
-              // Con scene.useLogarithmicDepth=true, el depth sampler NO coincide con el shader del generador
-              // (se ve "raro"). Para que se vea como en generate-planet-js, forzamos sin depth.
-              if (scn.useLogarithmicDepth) atmoPP._useDepth = false;
+              // Igual que el generador, PERO con default seguro:
+              // si el JSON no trae atmoUseDepth, asumimos TRUE (evita "tinte del fondo").
+              atmoPP._useDepth = (typeof params.atmoUseDepth === "boolean") ? params.atmoUseDepth : true;
 
               atmoPP._atmoStrength  = (typeof params.atmoStrength === "number") ? params.atmoStrength : atmoPP._atmoStrength;
               atmoPP._mieStrength   = (typeof params.mieStrength === "number") ? params.mieStrength : atmoPP._mieStrength;
@@ -2583,8 +2122,9 @@ function updateOrbits(dt) {
               atmoPP._cloudTint = hexToV3(params.cloudTint, atmoPP._cloudTint);
             }
 
-            setAtmosphereTarget(atmoPP, best.farMesh, planetRadius, atmoRadius, sunPos);
-            enableAtmospherePP(atmoPP, true);
+            // Igual que el generador: target + enable según params
+            setAtmosphereTarget(atmoPP, targetMesh, planetRadius, atmoRadius, sunPos);
+            enableAtmospherePP(atmoPP, !!params.atmoEnabled);
             updateAtmospherePP(atmoPP, performance.now() * 0.001);
           } else {
             enableAtmospherePP(atmoPP, false);
@@ -2611,8 +2151,6 @@ function updateOrbits(dt) {
         if (mode.value === "fly") enforcePlanetCollision(cameraFly);
         if (mode.value === "orbit") enforcePlanetCollision(cameraOrbit);
 
-        // keep sunlight at sun
-        if (sunMesh) sunLight.position.copyFrom(sunMesh.position);
         // ------------------------------------------------------------
         // Rings update (shadow + lighting)
         // ------------------------------------------------------------
@@ -2650,30 +2188,7 @@ function updateOrbits(dt) {
         }
       });
 
-
-	  // Orbit update barato para TODOS usando tiempo absoluto
-	  function updateAllOrbitsAbsolute(nowSec) {
-	    const t = nowSec * timeScale;
-	    
-	    for (const [name, b] of bodies.entries()) {
-		  if (!b || !b.def) continue;
-		  const def = b.def;
-	    
-		  if (def.kind === "sun") {
-		  if (b.farMesh) b.farMesh.rotation.y = t * (def.rotSpeed || 0.02);
-		  continue;
-		  }
-	    
-		  if (b.orbitNode) {
-		  const ang = t * (def.orbitSpeed || 0.001);
-		  b.orbitNode.rotation.y = ang;
-		  }
-	    
-		  if (b.farMesh) {
-		  b.farMesh.rotation.y = t * (def.rotSpeed || 0.01);
-		  }
-	    }
-	  }
+      // updateAllOrbitsAbsolute está en orbitSys (por si lo necesitas)
 
       return scn;
     };

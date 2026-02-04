@@ -39,10 +39,10 @@ export async function loadPlanetConfig(url) {
 export function buildRuntimePlanetParams(baseParams, bodyDef, opts = {}) {
   const p = deepClone(baseParams || {});
 
-  // If we are using a planet-specific exported JSON (generate-planet-js), we usually want
-  // the look to match the generator 1:1. In that case, avoid overriding key visual params
-  // (sea/seed, etc.) from systems.js unless explicitly desired.
+  // Si hay jsonFile, queremos que el look sea 1:1 con el generador.
+  // No pisar mar/atmósfera/seed desde systems.js salvo que lo permitas explícitamente.
   const lockJsonParams = !!opts.lockJsonParams;
+  const hasJson = !!bodyDef?.jsonFile;
 
   // Radius: prefer bodyDef.radius (galaxy definition) so all systems stay coherent.
   // BUT: some generator params are expressed in world-units and must be scaled when radius changes,
@@ -56,15 +56,42 @@ export function buildRuntimePlanetParams(baseParams, bodyDef, opts = {}) {
       p.seaHugBand = scaleIfNumber(p.seaHugBand, s);
       p.waveAmp    = scaleIfNumber(p.waveAmp, s);
       p.seaZOffset = scaleIfNumber(p.seaZOffset, s);
+	  
+      // ------------------------------------------------------------
+      // Atmosphere + clouds are also sensitive to WORLD scale.
+      // If the planet radius is scaled up, the PP integrates a longer path
+      // and the atmosphere "over-accumulates" (tinted background / huge halo).
+      // To preserve the generator look, scale "strength" inversely with size.
+      // ------------------------------------------------------------
+      const inv = 1.0 / s;
+      p.atmoStrength  = scaleIfNumber(p.atmoStrength, inv);
+      p.mieStrength   = scaleIfNumber(p.mieStrength, inv);
+      p.upperStrength = scaleIfNumber(p.upperStrength, inv);
+
+      // Clouds: shader uses world position * cloudScale (+ wind * time).
+      // Keep same feature size and motion speed relative to planet size.
+      p.cloudScale = scaleIfNumber(p.cloudScale, inv);
+      p.cloudWindX = scaleIfNumber(p.cloudWindX, inv);
+      p.cloudWindZ = scaleIfNumber(p.cloudWindZ, inv);
     }
     p.radius = newR;
   }
 
-  // Sea: map babylon-system -> generator params
-  // (but keep exported values if lockJsonParams is true)
-  if (!lockJsonParams) {
+  // Sea:
+  // Si hay jsonFile (exportado del generador), por defecto el mar viene del JSON.
+  // Solo permitimos que systems.js lo pise si opts.allowSystemSeaOverride === true,
+  // y siempre que NO estemos lockeando params.
+  const allowOverride = (opts.allowSystemSeaOverride === true);
+  if (!lockJsonParams && (!hasJson || allowOverride)) {
     if (typeof bodyDef?.ocean === "boolean") p.seaEnabled = bodyDef.ocean;
     if (typeof bodyDef?.seaLevel === "number") p.seaLevel = bodyDef.seaLevel;
+  }
+  
+  // Atmosphere (si hay JSON, por defecto manda el JSON)
+  const allowAtmoOverride = (opts.allowSystemAtmoOverride === true);
+  if (!lockJsonParams && (!hasJson || allowAtmoOverride)) {
+    // compat: systems.js usa bodyDef.atmo boolean; JSON usa params.atmoEnabled
+    if (typeof bodyDef?.atmo === "boolean") p.atmoEnabled = bodyDef.atmo;
   }
 
   // Avoid absurd subdivision values in exported JSON (those were for UI / autoLOD).
@@ -99,6 +126,16 @@ export function createJsonPlanet(scene, bodyDef, orbitNode, params) {
   land.parent = orbitNode;
   land.position.set(bodyDef.orbitR || 0, 0, 0);
   land.isPickable = false;
+  land.renderingGroupId = 0;
+  
+  // Guardar params JSON en el def para LOD / otras rutas
+  if (bodyDef) {
+    bodyDef._jsonParams = params;
+    // Si systems.js no define estos campos, los rellenamos desde el JSON
+    if (typeof bodyDef.seaLevel !== "number" && typeof params.seaLevel === "number") bodyDef.seaLevel = params.seaLevel;
+    if (typeof bodyDef.ocean !== "boolean" && typeof params.seaEnabled === "boolean") bodyDef.ocean = params.seaEnabled;
+    if (typeof bodyDef.atmo !== "boolean" && typeof params.atmoEnabled === "boolean") bodyDef.atmo = params.atmoEnabled;
+  }
 
   // Make PBR a bit more responsive to point lights
   const mat = land.material;
@@ -115,10 +152,14 @@ export function createJsonPlanet(scene, bodyDef, orbitNode, params) {
     ocean.parent = land;
     ocean.position.set(0, 0, 0);
     ocean.isPickable = false;
-    // Asegura misma cola de render que el terreno (evita “x-ray water”)
-    ocean.renderingGroupId = land.renderingGroupId || 0;
-    // y que se dibuje después del terreno
-    ocean.alphaIndex = (land.alphaIndex || 0) + 1;
+	
+    // Igual que el generador: océano patch en grupo 1 y NO limpiar depth entre 0->1
+    ocean.renderingGroupId = 1;
+    ocean.alphaIndex = 1;
+    if (!scene._oceanDepthFixApplied) {
+      scene._oceanDepthFixApplied = true;
+      scene.setRenderingAutoClearDepthStencil(1, false);
+    }
 
     // Tune water from JSON if present
     const om = ocean.material;
