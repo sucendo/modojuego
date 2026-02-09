@@ -1,0 +1,833 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>🎮 Portal de Juegos de Repaso</title>
+  <meta name="theme-color" content="#6d28d9"/>
+  <style>
+    :root{
+      --bg1:#fff7ed; --bg2:#e0f2fe; --bg3:#ecfccb;
+      --ink:#0b1020; --muted:#334155;
+      --card:#ffffffee; --panel:#ffffffcc;
+      --shadow: 0 18px 48px rgba(2,6,23,.18);
+      --radius: 22px;
+      --tap: 48px;
+
+      --a:#6366f1; --b:#fb7185; --c:#22c55e; --d:#06b6d4; --e:#f59e0b; --f:#a78bfa;
+    }
+    *{box-sizing:border-box}
+    html{height:100%}
+    body{min-height:100%}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color:var(--ink);
+      background:
+        radial-gradient(900px 520px at 18% 15%, rgba(99,102,241,.22), transparent 62%),
+        radial-gradient(820px 520px at 88% 20%, rgba(251,113,133,.22), transparent 60%),
+        radial-gradient(900px 520px at 70% 88%, rgba(34,197,94,.18), transparent 58%),
+        linear-gradient(135deg, var(--bg1), var(--bg2), var(--bg3));
+      padding:18px;
+      overflow:auto;
+    }
+    .app{
+      width:min(1180px, 100%);
+      margin: 0 auto;
+      border-radius: var(--radius);
+      overflow:hidden;
+      box-shadow: var(--shadow);
+      border:2px solid rgba(255,255,255,.8);
+      backdrop-filter: blur(10px);
+      background: rgba(255,255,255,.55);
+      display:flex;
+      flex-direction:column;
+    }
+    header{
+      padding:18px 18px 14px 18px;
+      background: linear-gradient(90deg, rgba(109,40,217,.22), rgba(251,113,133,.16), rgba(34,197,94,.16));
+      border-bottom: 2px solid rgba(255,255,255,.75);
+      display:flex;
+      gap:12px;
+      align-items:flex-start;
+      justify-content:space-between;
+      flex-wrap:wrap;
+    }
+    .brand{display:flex; gap:12px; align-items:center}
+    .logo{
+      width:40px;height:40px;border-radius:14px;
+      display:grid;place-items:center;
+      background: linear-gradient(135deg, rgba(109,40,217,.92), rgba(251,113,133,.78));
+      box-shadow: 0 12px 22px rgba(2,6,23,.12);
+      color:white;
+      font-size:18px;
+      flex:0 0 auto;
+    }
+    h1{margin:0;font-size:18px;letter-spacing:.2px;line-height:1.1}
+    .subtitle{margin:2px 0 0 0;color:rgba(15,23,42,.75);font-weight:700;font-size:12.5px;max-width:720px}
+    .controls{display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:flex-end; flex:1 1 auto}
+    input, select, button{
+      border-radius: 16px;
+      border: 2px solid rgba(255,255,255,.92);
+      background: rgba(255,255,255,.82);
+      color: var(--ink);
+      padding:10px 12px;
+      font-size:14px;
+      outline:none;
+      box-shadow: 0 10px 18px rgba(2,6,23,.08);
+      min-height: var(--tap);
+    }
+    input{min-width:min(360px, 100%)}
+    select{cursor:pointer}
+    button{
+      cursor:pointer;
+      font-weight:950;
+      transition: transform .06s ease, filter .2s ease;
+      user-select:none;
+    }
+    button:hover{ filter: brightness(1.03) saturate(1.05); }
+    button:active{ transform: translateY(1px); }
+    .btn-a{ background: linear-gradient(135deg, rgba(99,102,241,.90), rgba(99,102,241,.45)); color:#fff; }
+    .btn-b{ background: linear-gradient(135deg, rgba(251,113,133,.90), rgba(251,113,133,.45)); color:#fff; }
+    .btn-c{ background: linear-gradient(135deg, rgba(34,197,94,.90), rgba(34,197,94,.42)); color:#fff; }
+    .btn-d{ background: linear-gradient(135deg, rgba(6,182,212,.90), rgba(6,182,212,.40)); color:#fff; }
+    .btn-ghost{ background: rgba(255,255,255,.78); }
+
+    .content{padding:16px; display:grid; gap:12px; flex:1 1 auto}
+    .stats{
+      display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;
+      background: rgba(255,255,255,.60);
+      border: 2px solid rgba(255,255,255,.82);
+      border-radius: var(--radius);
+      padding:12px 12px;
+      box-shadow: 0 14px 28px rgba(2,6,23,.08);
+    }
+    .chips{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+    .chip{
+      border-radius:999px;
+      padding:6px 10px;
+      border:2px solid rgba(255,255,255,.9);
+      background: rgba(255,255,255,.78);
+      box-shadow: 0 10px 18px rgba(2,6,23,.06);
+      font-weight:950;
+      font-size:12px;
+      white-space:nowrap;
+      cursor:pointer;
+      user-select:none;
+    }
+    .chip.on{
+      border-color: rgba(99,102,241,.55);
+      background: rgba(224,231,255,.72);
+    }
+    .pill{
+      display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:flex-end;
+      color: rgba(15,23,42,.75);
+      font-size:12px;
+      font-weight:800;
+    }
+    .pill b{color:#0f172a}
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      gap:12px;
+    }
+    @media (max-width: 960px){ .grid{ grid-template-columns: repeat(2, minmax(0,1fr)); } }
+    @media (max-width: 640px){ .grid{ grid-template-columns: 1fr; } input{min-width:100%} }
+    .card{
+      background: var(--card);
+      border:2px solid rgba(255,255,255,.92);
+      border-radius: var(--radius);
+      box-shadow: 0 16px 34px rgba(2,6,23,.10);
+      padding:14px;
+      display:grid;
+      gap:10px;
+      position:relative;
+      overflow:hidden;
+      transform: translateZ(0);
+    }
+    .card::before{
+      content:"";
+      position:absolute; inset:-2px;
+      background:
+        radial-gradient(420px 160px at 18% 10%, rgba(99,102,241,.16), transparent 60%),
+        radial-gradient(420px 160px at 90% 20%, rgba(251,113,133,.14), transparent 62%),
+        radial-gradient(420px 160px at 70% 110%, rgba(34,197,94,.12), transparent 58%);
+      pointer-events:none;
+      opacity:.9;
+    }
+    .card > *{position:relative}
+    .toprow{display:flex; align-items:flex-start; justify-content:space-between; gap:10px}
+    .titleRow{display:flex; gap:10px; align-items:center}
+    .icon{
+      width:42px; height:42px; border-radius:16px;
+      display:grid; place-items:center;
+      background: rgba(255,255,255,.78);
+      border:2px solid rgba(255,255,255,.9);
+      box-shadow: 0 12px 20px rgba(2,6,23,.06);
+      font-size:18px;
+      flex:0 0 auto;
+    }
+    .name{
+      font-weight:1000;
+      font-size:16px;
+      line-height:1.15;
+      margin:0;
+    }
+    .meta{
+      display:flex;
+      gap:6px;
+      flex-wrap:wrap;
+      color: rgba(15,23,42,.72);
+      font-weight:850;
+      font-size:12px;
+      margin-top:2px;
+    }
+    .tag{
+      padding:4px 8px;
+      border-radius:999px;
+      border:2px solid rgba(255,255,255,.9);
+      background: rgba(255,255,255,.75);
+      box-shadow: 0 10px 16px rgba(2,6,23,.05);
+      white-space:nowrap;
+    }
+    .desc{
+      color: rgba(15,23,42,.78);
+      font-size:13px;
+      line-height:1.35;
+      margin:0;
+      min-height: 36px;
+    }
+    .actions{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .actions button{flex:1 1 auto}
+    .fav{
+      width:44px; min-width:44px;
+      display:grid; place-items:center;
+      padding:0;
+      font-size:16px;
+    }
+    .fav.on{ background: linear-gradient(135deg, rgba(245,158,11,.92), rgba(245,158,11,.45)); color:white; }
+    .footer{
+      padding:12px 16px 16px 16px;
+      border-top: 2px solid rgba(255,255,255,.75);
+      background: rgba(255,255,255,.45);
+      color: rgba(15,23,42,.75);
+      font-size:12px;
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .kbd{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      border:2px solid rgba(15,23,42,.18);
+      padding:2px 6px;
+      border-radius:10px;
+      color: #0f172a;
+      background: rgba(255,255,255,.7);
+      font-size: 12px;
+      font-weight: 950;
+    }
+
+    /* Modal preview */
+    .modalBack{
+      position:fixed; inset:0;
+      background: rgba(2,6,23,.55);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:14px;
+      z-index:50;
+    }
+    .modal{
+      width:min(1180px, 100%);
+      height:min(82vh, 820px);
+      background: rgba(255,255,255,.85);
+      border:2px solid rgba(255,255,255,.9);
+      border-radius: 22px;
+      box-shadow: 0 26px 70px rgba(2,6,23,.35);
+      overflow:hidden;
+      display:grid;
+      grid-template-rows:auto 1fr;
+      backdrop-filter: blur(10px);
+    }
+    .modalHead{
+      display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+      padding:12px;
+      background: linear-gradient(90deg, rgba(99,102,241,.18), rgba(251,113,133,.14), rgba(34,197,94,.14));
+      border-bottom:2px solid rgba(255,255,255,.8);
+    }
+    .modalHead .left{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+    .modalHead .left b{font-weight:1000}
+    .modalHead .right{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+    .modal iframe{
+      width:100%;
+      height:100%;
+      border:0;
+      background:white;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="brand">
+        <div class="logo">🎮</div>
+        <div>
+          <h1>Portal de Juegos de Repaso</h1>
+          <div class="subtitle">
+            Tu “lobby” con todos los juegos en un solo sitio. Filtra por asignatura, curso o idioma, marca favoritos ⭐ y abre en pantalla completa.
+          </div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <select id="playerSelect" title="Elegir jugador">
+          <option value="">Jugador…</option>
+        </select>
+        <input id="playerName" type="text" placeholder="Nombre del jugador" style="min-width:180px" />
+        <button id="savePlayer" class="btn-c" title="Guardar/crear jugador">Guardar</button>
+        <button id="deletePlayer" class="btn-ghost" title="Eliminar jugador">Eliminar</button>
+
+        <input id="q" type="search" placeholder="Buscar: Oxford, verbos, rocas, Edad Moderna, comida…" autocomplete="off"/>
+        <select id="filter">
+          <option value="all">Todos</option>
+          <option value="ingles">Inglés</option>
+          <option value="sociales">Sociales</option>
+          <option value="ciencias">Ciencias / Naturales</option>
+          <option value="bilingue">Bilingüe</option>
+          <option value="fav">⭐ Favoritos</option>
+        </select>
+        <button id="resetFav" class="btn-b" title="Borrar favoritos">Reset ⭐</button>
+      </div>
+    </header>
+
+    <div class="content">
+      <div class="stats">
+        <div class="chips" id="chips"></div>
+        <div class="pill">
+          <span>Mostrando <b id="count">0</b> juegos</span>
+          <span>· Atajos: <span class="kbd">/</span> buscar, <span class="kbd">Esc</span> cerrar, <span class="kbd">F</span> favoritos</span>
+        </div>
+      </div>
+
+      <div class="grid" id="grid"></div>
+    </div>
+
+    <div class="footer">
+      <div>Tip móvil: “Añadir a pantalla de inicio” para abrirlo como app.</div>
+      <div>Si cambias nombres de archivos, edita el array <span class="kbd">GAMES</span> dentro de esta página.</div>
+    </div>
+  </div>
+
+  <!-- Preview modal -->
+  <div class="modalBack" id="modalBack" role="dialog" aria-modal="true" aria-label="Vista previa">
+    <div class="modal">
+      <div class="modalHead">
+        <div class="left">
+          <span class="logo" style="width:34px;height:34px;border-radius:14px;font-size:16px">👀</span>
+          <div><b id="mTitle">Vista previa</b> <span id="mMeta" class="tag" style="margin-left:8px">—</span></div>
+        </div>
+        <div class="right">
+          <button id="mOpen" class="btn-c">Abrir</button>
+          <button id="mCopy" class="btn-d">Copiar link</button>
+          <button id="mClose" class="btn-b">Cerrar</button>
+        </div>
+      </div>
+      <iframe id="mFrame" title="Vista previa del juego"></iframe>
+    </div>
+  </div>
+
+<script>
+(() => {
+  // ✅ IMPORTANTE:
+  // - Coloca este archivo (index.html) en la carpeta RAÍZ.
+  // - Tus juegos deben estar en ./games/ (ya configurado en "file").
+
+  const GAMES = [
+    {
+      id:"oxford5_master",
+      icon:"📘",
+      name:"Oxford English Master — 5º Primaria (UK)",
+      file:"games/oxford-english-master-5p-v2.html",
+      subject:"ingles",
+      level:"5º Primaria",
+      lang:["EN","ES"],
+      tags:["Oxford","Vocab","Grammar","Listening","Progreso"],
+      desc:"Juego completo tipo “app” (vocab + gramática + verbos irregulares + repaso inteligente)."
+    },
+    {
+      id:"irregular_verbs",
+      icon:"⚡",
+      name:"Irregular Verbs — 5º Primaria",
+      file:"games/juego-verbos-irregulares-5primaria.html",
+      subject:"ingles",
+      level:"5º Primaria",
+      lang:["EN","ES"],
+      tags:["Verbs","Flashcards","Quiz","Memory"],
+      desc:"Verbos irregulares: base/past/participle + juegos (quiz, spelling, memory)."
+    },
+    {
+      id:"oxford4_rooftops",
+      icon:"🏫",
+      name:"Oxford 4º — Tema 3 (Rooftops / School)",
+      file:"games/juego-oxford-4prim-tema3-rooftops-school.html",
+      subject:"ingles",
+      level:"4º Primaria",
+      lang:["EN","ES"],
+      tags:["Oxford","Tema 3","School"],
+      desc:"Vocabulario y práctica del tema 3 (Oxford) para 4º, con estilo móvil."
+    },
+    {
+      id:"oxford4_cando",
+      icon:"✅",
+      name:"Oxford 4º — Tema 3 (Can Do)",
+      file:"games/juego-oxford-tema3-can-do.html",
+      subject:"ingles",
+      level:"4º Primaria",
+      lang:["EN","ES"],
+      tags:["Oxford","Can Do","Tema 3"],
+      desc:"Repaso de objetivos “Can do” del tema 3, con actividades tipo quiz."
+    },
+    {
+      id:"oxford2_lessons_1_3",
+      icon:"✨",
+      name:"Oxford 2º — Lecciones 1–3",
+      file:"games/juego-english-2-oxford-lecciones-1-2-3.html",
+      subject:"ingles",
+      level:"2º Primaria",
+      lang:["EN","ES"],
+      tags:["Oxford","Lecciones 1–3","Flashcards","Quiz","Spelling","Memory","Grammar"],
+      desc:"Oxford 2º (lecciones 1–3): Flashcards, Quiz ES→EN, Spelling, Memory y Grammar con filtro “Solo/Hasta lección”."
+    },
+    {
+      id:"food_color",
+      icon:"🥗",
+      name:"Food & Vegetables — Color Edition",
+      file:"games/juego-comida-color.html",
+      subject:"ingles",
+      level:"—",
+      lang:["EN","ES"],
+      tags:["Food","Spelling","Memory"],
+      desc:"Vocabulario de comida/verduras (flashcards, quiz, spelling y memory)."
+    },
+
+    {
+      id:"sociales_base",
+      icon:"🏰",
+      name:"Sociales 5º — Edad Moderna",
+      file:"games/juego-sociales-edad-moderna.html",
+      subject:"sociales",
+      level:"5º Primaria",
+      lang:["ES"],
+      tags:["Quiz","V/F","Timeline","Memory"],
+      desc:"Edad Moderna: Renacimiento, Barroco, Ilustración y arte (juego completo)."
+    },
+    {
+      id:"sociales_completo",
+      icon:"👑",
+      name:"Sociales 5º — Edad Moderna (Completo)",
+      file:"games/juego-sociales-edad-moderna-completo.html",
+      subject:"sociales",
+      level:"5º Primaria",
+      lang:["ES"],
+      tags:["Quiz","Ordenar","Completar"],
+      desc:"Versión con más modos: ordenar reyes/épocas/eventos + completar frases."
+    },
+    {
+      id:"sociales_mega",
+      icon:"🧠",
+      name:"Sociales 5º — Edad Moderna (Mega Quiz)",
+      file:"games/juego-sociales-edad-moderna-megaquiz.html",
+      subject:"sociales",
+      level:"5º Primaria",
+      lang:["ES"],
+      tags:["Mega Quiz","V/F"],
+      desc:"Mega-quiz con banco amplio de preguntas de Edad Moderna."
+    },
+
+    {
+      id:"relieve_rocas",
+      icon:"🏔️",
+      name:"Relieve & Rocas (ES + EN)",
+      file:"games/juego-relieve-rocas-bilingue.html",
+      subject:"ciencias",
+      level:"4º Primaria",
+      lang:["ES","EN"],
+      tags:["Landforms","Rocks","Bilingüe"],
+      desc:"Relieve y tipos de rocas: quiz, true/false y fill (ES→EN)."
+    },
+    {
+      id:"geosfera",
+      icon:"🌍",
+      name:"Geosfera (Bilingüe)",
+      file:"games/juego-geosfera-bilingue-v2.html",
+      subject:"ciencias",
+      level:"5º Primaria",
+      lang:["ES","EN"],
+      tags:["Geosfera","Bilingüe"],
+      desc:"Juego bilingüe de ciencias naturales sobre la geosfera."
+    }
+  ];
+
+  // ====== State (players + per-player favorites + per-player UI) ======
+  const STORE_KEY = "portal_juegos_store_v3";
+
+  function defaultStore(){
+    return {
+      currentPlayerId: null,   // null = invitado (sin jugador)
+      players: {}
+    };
+  }
+
+  function loadStore(){
+    try {
+      const raw = localStorage.getItem(STORE_KEY);
+      return raw ? JSON.parse(raw) : defaultStore();
+    } catch (e) {
+      return defaultStore();
+    }
+  }
+
+  function saveStore(){ localStorage.setItem(STORE_KEY, JSON.stringify(store)); }
+
+  function newPlayerId(){
+    return "p_" + Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(2,6);
+  }
+
+  let store = loadStore();
+
+  function hasPlayerSelected(){
+    return !!(store.currentPlayerId && store.players && store.players[store.currentPlayerId]);
+  }
+
+  function getPlayer(){
+    return hasPlayerSelected() ? store.players[store.currentPlayerId] : null;
+  }
+
+  let favs = new Set((getPlayer()?.favs) || []);
+
+  function persistFavs(){
+    const p = getPlayer();
+    if (!p) return;
+    p.favs = Array.from(favs);
+    saveStore();
+  }
+
+  function persistUI(){
+    const p = getPlayer();
+    if (!p) return;
+    p.ui = p.ui || {};
+    p.ui.filter = document.querySelector("#filter").value;
+    p.ui.q = document.querySelector("#q").value;
+    saveStore();
+  }
+
+  function applyUIFromPlayer(){
+    const p = getPlayer();
+    if (!p) return;
+    const ui = (p.ui || {});
+    if (typeof ui.q === "string") document.querySelector("#q").value = ui.q;
+    if (typeof ui.filter === "string") document.querySelector("#filter").value = ui.filter;
+  }
+
+  // ====== Helpers ======
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu,"");
+  const uniq = (arr) => Array.from(new Set(arr));
+  const byId = (id) => GAMES.find(g => g.id === id);
+
+  function subjectLabel(s){
+    if (s==="ingles") return "Inglés";
+    if (s==="sociales") return "Sociales";
+    if (s==="ciencias") return "Ciencias";
+    return s;
+  }
+  function langLabel(arr){
+    return (arr||[]).join(" · ");
+  }
+
+  // ====== Player controls ======
+  const playerSelect = $("#playerSelect");
+  const playerName = $("#playerName");
+  const savePlayerBtn = $("#savePlayer");
+  const deletePlayerBtn = $("#deletePlayer");
+
+  function renderPlayerSelect(){
+    const cur = store.currentPlayerId;
+
+    const opts = [];
+    opts.push(`<option value="" ${!cur ? "selected" : ""}>Jugador…</option>`);
+    for (const [id,pl] of Object.entries(store.players || {})){
+      const name = (pl?.name || id);
+      opts.push(`<option value="${id}" ${id===cur?'selected':''}>${name}</option>`);
+    }
+    playerSelect.innerHTML = opts.join("");
+    playerName.value = hasPlayerSelected() ? (getPlayer().name || "") : "";
+  }
+
+  function switchPlayer(id, {applyUi=true} = {}){
+    persistUI();
+    persistFavs();
+
+    if (!id){
+      store.currentPlayerId = null;
+      saveStore();
+      favs = new Set();
+      $("#filter").value = "all";
+      $("#q").value = "";
+      renderPlayerSelect();
+      render();
+      return;
+    }
+
+    if (!store.players[id]) return;
+
+    store.currentPlayerId = id;
+    saveStore();
+
+    favs = new Set((getPlayer()?.favs) || []);
+    if (applyUi) applyUIFromPlayer();
+    renderPlayerSelect();
+    render();
+  }
+
+  // ====== Chips ======
+  const chipsEl = $("#chips");
+  const chipData = [
+    {k:"all",     t:"Todos"},
+    {k:"ingles",  t:"Inglés"},
+    {k:"sociales",t:"Sociales"},
+    {k:"ciencias",t:"Ciencias"},
+    {k:"bilingue",t:"Bilingüe"},
+    {k:"fav",     t:"⭐ Favoritos"}
+  ];
+
+  function renderChips(active){
+    chipsEl.innerHTML = chipData.map(x =>
+      `<div class="chip ${x.k===active?'on':''}" data-k="${x.k}">${x.t}</div>`
+    ).join("");
+    chipsEl.querySelectorAll(".chip").forEach(el=>{
+      el.onclick = () => {
+        $("#filter").value = el.dataset.k;
+        render();
+        persistUI();
+      };
+    });
+  }
+
+  // ====== Cards ======
+  function cardHTML(g){
+    const tags = uniq([subjectLabel(g.subject), g.level, langLabel(g.lang), ...(g.tags||[])]).filter(Boolean);
+    const isFav = favs.has(g.id);
+
+    return `
+      <article class="card" data-id="${g.id}">
+        <div class="toprow">
+          <div class="titleRow">
+            <div class="icon">${g.icon || "🎲"}</div>
+            <div>
+              <p class="name">${g.name}</p>
+              <div class="meta">
+                ${tags.slice(0,5).map(t => `<span class="tag">${t}</span>`).join("")}
+              </div>
+            </div>
+          </div>
+
+          <button class="fav ${isFav?'on':''}" title="Favorito" aria-label="Favorito">
+            ${isFav ? "⭐" : "☆"}
+          </button>
+        </div>
+
+        <p class="desc">${g.desc || ""}</p>
+
+        <div class="actions">
+          <button class="btn-a open">Abrir</button>
+          <button class="btn-d preview">Vista previa</button>
+          <button class="btn-ghost copy">Copiar link</button>
+        </div>
+      </article>
+    `;
+  }
+
+  function passesFilter(g, filterKey){
+    if (!filterKey || filterKey==="all") return true;
+    if (filterKey==="fav") return favs.has(g.id);
+    if (filterKey==="bilingue") return (g.lang||[]).includes("EN") && (g.lang||[]).includes("ES");
+    return g.subject === filterKey;
+  }
+
+  function passesQuery(g, q){
+    if (!q) return true;
+    const hay = esc([
+      g.name, g.file, g.subject, g.level,
+      (g.lang||[]).join(" "),
+      (g.tags||[]).join(" "),
+      g.desc
+    ].join(" | "));
+    return hay.includes(esc(q));
+  }
+
+  function render(){
+    const q = $("#q").value.trim();
+    const filterKey = $("#filter").value;
+
+    renderChips(filterKey);
+
+    const list = GAMES.filter(g => passesFilter(g, filterKey) && passesQuery(g, q));
+    $("#count").textContent = list.length;
+
+    const grid = $("#grid");
+    grid.innerHTML = list.map(cardHTML).join("");
+
+    grid.querySelectorAll(".card").forEach(card => {
+      const id = card.dataset.id;
+      const g = byId(id);
+
+      card.querySelector(".fav").onclick = (e) => {
+        e.preventDefault();
+        if (!hasPlayerSelected()){ toast("Primero guarda/elige un jugador 🙂"); return; }
+        if (favs.has(id)) favs.delete(id); else favs.add(id);
+        persistFavs();
+        render();
+      };
+
+      card.querySelector(".open").onclick = () => openGame(g);
+      card.querySelector(".preview").onclick = () => previewGame(g);
+      card.querySelector(".copy").onclick = () => copyLink(g);
+    });
+  }
+
+  function openGame(g){ window.open(g.file, "_blank", "noopener,noreferrer"); }
+
+  function copyLink(g){
+    const url = new URL(g.file, window.location.href).href;
+    navigator.clipboard?.writeText(url).then(()=>{ toast(`✅ Copiado: ${g.file}`); }).catch(()=>{ prompt("Copia el link:", url); });
+  }
+
+  // ====== Modal preview ======
+  const modalBack = $("#modalBack");
+  const mTitle = $("#mTitle");
+  const mMeta = $("#mMeta");
+  const mFrame = $("#mFrame");
+  const mOpen = $("#mOpen");
+  const mCopy = $("#mCopy");
+  const mClose = $("#mClose");
+
+  function previewGame(g){
+    mTitle.textContent = g.name;
+    mMeta.textContent = `${subjectLabel(g.subject)} · ${g.level || "—"} · ${langLabel(g.lang) || "—"}`;
+    mFrame.src = g.file;
+    mOpen.onclick = () => openGame(g);
+    mCopy.onclick = () => copyLink(g);
+    modalBack.style.display = "flex";
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeModal(){
+    modalBack.style.display = "none";
+    mFrame.src = "about:blank";
+    document.body.style.overflow = "";
+  }
+  mClose.onclick = closeModal;
+  modalBack.addEventListener("click", (e) => { if (e.target === modalBack) closeModal(); });
+
+  // ====== Toast ======
+  let toastT = null;
+  function toast(text){
+    let el = document.getElementById("toast");
+    if (!el){
+      el = document.createElement("div");
+      el.id = "toast";
+      el.style.position = "fixed";
+      el.style.left = "50%";
+      el.style.bottom = "18px";
+      el.style.transform = "translateX(-50%)";
+      el.style.padding = "10px 12px";
+      el.style.borderRadius = "999px";
+      el.style.border = "2px solid rgba(255,255,255,.9)";
+      el.style.background = "rgba(255,255,255,.92)";
+      el.style.boxShadow = "0 16px 34px rgba(2,6,23,.18)";
+      el.style.fontWeight = "950";
+      el.style.color = "#0b1020";
+      el.style.zIndex = "80";
+      document.body.appendChild(el);
+    }
+    el.textContent = text;
+    el.style.display = "block";
+    clearTimeout(toastT);
+    toastT = setTimeout(()=>{ el.style.display="none"; }, 1500);
+  }
+
+  // ====== Controls ======
+  $("#q").addEventListener("input", () => { render(); persistUI(); });
+  $("#filter").addEventListener("change", () => { render(); persistUI(); });
+  playerSelect.addEventListener("change", () => switchPlayer(playerSelect.value));
+
+  savePlayerBtn.addEventListener("click", () => {
+    const name = (playerName.value || "").trim();
+    if (!name){ toast("Pon un nombre 🙂"); playerName.focus(); return; }
+
+    const existing = Object.entries(store.players).find(([id,pl]) => (pl?.name||"").trim().toLowerCase() === name.toLowerCase());
+    if (existing){ toast("✅ Cargado: " + name); switchPlayer(existing[0], {applyUi:true}); return; }
+
+    const id = newPlayerId();
+    store.players[id] = { name, favs: [], ui: { filter: "all", q: "" } };
+    store.currentPlayerId = id;
+    saveStore();
+
+    favs = new Set();
+    $("#filter").value = "all";
+    $("#q").value = "";
+    renderPlayerSelect();
+    render();
+    toast("🎉 Jugador creado: " + name);
+  });
+
+  deletePlayerBtn.addEventListener("click", () => {
+    if (!hasPlayerSelected()){ toast("No hay jugador seleccionado"); return; }
+    const curId = store.currentPlayerId;
+    const curName = (getPlayer().name || "este jugador");
+    if (!confirm(`¿Eliminar a ${curName} y sus ajustes/favoritos?`)) return;
+
+    delete store.players[curId];
+    store.currentPlayerId = null;
+    saveStore();
+
+    favs = new Set();
+    $("#filter").value = "all";
+    $("#q").value = "";
+    renderPlayerSelect();
+    render();
+    toast("🗑️ Jugador eliminado");
+  });
+
+  $("#resetFav").onclick = () => {
+    if (!hasPlayerSelected()){ toast("Primero guarda/elige un jugador 🙂"); return; }
+    if (!confirm("¿Borrar todos los favoritos de este jugador?")) return;
+    favs = new Set();
+    persistFavs();
+    render();
+  };
+
+  // Shortcuts
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "/" && document.activeElement !== $("#q")){ e.preventDefault(); $("#q").focus(); $("#q").select(); }
+    if (e.key === "Escape") closeModal();
+    if (e.key.toLowerCase() === "f" && (e.ctrlKey || e.metaKey)){ e.preventDefault(); $("#filter").value = ($("#filter").value === "fav") ? "all" : "fav"; render(); persistUI(); }
+  });
+
+  // First render: mostrar TODO al entrar
+  $("#filter").value = "all";
+  $("#q").value = "";
+  renderPlayerSelect();
+  render();
+
+})();
+</script>
+</body>
+</html>

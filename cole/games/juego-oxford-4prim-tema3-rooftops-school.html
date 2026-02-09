@@ -1,0 +1,1011 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Oxford (4º Primaria) — Tema 3: At Rooftops School</title>
+  <style>
+    :root{
+      --bg1:#ffedd5;
+      --bg2:#dbeafe;
+      --bg3:#dcfce7;
+      --ink:#0b1020;
+      --muted:#334155;
+
+      --panel:#ffffffcc;
+      --card:#ffffffee;
+
+      --a:#a78bfa;
+      --b:#fb7185;
+      --c:#22c55e;
+      --d:#06b6d4;
+      --e:#f59e0b;
+
+      --shadow: 0 18px 40px rgba(2,6,23,.18);
+      --radius: 18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color:var(--ink);
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:18px;
+      background:
+        radial-gradient(900px 520px at 20% 15%, rgba(167,139,250,.35), transparent 62%),
+        radial-gradient(820px 520px at 85% 25%, rgba(251,113,133,.28), transparent 60%),
+        radial-gradient(900px 520px at 70% 85%, rgba(34,197,94,.22), transparent 58%),
+        linear-gradient(135deg, var(--bg1), var(--bg2), var(--bg3));
+    }
+    .app{
+      width:min(1020px, 100%);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      border:2px solid rgba(255,255,255,.75);
+      backdrop-filter: blur(10px);
+      background: rgba(255,255,255,.55);
+    }
+    header{
+      padding:16px 18px;
+      display:flex;
+      gap:12px;
+      align-items:center;
+      justify-content:space-between;
+      background: linear-gradient(90deg, rgba(167,139,250,.25), rgba(251,113,133,.18), rgba(34,197,94,.18));
+      border-bottom: 2px solid rgba(255,255,255,.7);
+    }
+    .title{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+    .title h1{
+      margin:0;
+      font-size:18px;
+      letter-spacing:.2px;
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+    .spark{
+      display:inline-grid;
+      place-items:center;
+      width:26px;
+      height:26px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, rgba(167,139,250,.8), rgba(251,113,133,.75));
+      color:white;
+      box-shadow: 0 10px 18px rgba(0,0,0,.10);
+    }
+    .title small{ color: rgba(15,23,42,.75); }
+    .controls{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:flex-end;
+    }
+    button, select, input{
+      border-radius: 14px;
+      border: 2px solid rgba(255,255,255,.9);
+      background: rgba(255,255,255,.75);
+      color: var(--ink);
+      padding:10px 12px;
+      font-size:14px;
+      outline:none;
+      box-shadow: 0 10px 18px rgba(2,6,23,.08);
+    }
+    select{ cursor:pointer; }
+    button{
+      cursor:pointer;
+      transition: transform .05s ease, filter .2s ease;
+      user-select:none;
+      font-weight: 700;
+    }
+    button:hover{ filter: brightness(1.03) saturate(1.05); }
+    button:active{ transform: translateY(1px); }
+
+    .btn-a{ background: linear-gradient(135deg, rgba(167,139,250,.85), rgba(167,139,250,.45)); color: white; border-color: rgba(255,255,255,.95); }
+    .btn-b{ background: linear-gradient(135deg, rgba(251,113,133,.85), rgba(251,113,133,.45)); color: white; border-color: rgba(255,255,255,.95); }
+    .btn-c{ background: linear-gradient(135deg, rgba(34,197,94,.85), rgba(34,197,94,.42)); color: white; border-color: rgba(255,255,255,.95); }
+    .btn-d{ background: linear-gradient(135deg, rgba(6,182,212,.85), rgba(6,182,212,.40)); color: white; border-color: rgba(255,255,255,.95); }
+    .btn-e{ background: linear-gradient(135deg, rgba(245,158,11,.85), rgba(245,158,11,.45)); color: white; border-color: rgba(255,255,255,.95); }
+
+    .main{
+      padding:18px;
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap:14px;
+    }
+    @media (max-width: 860px){
+      .main{ grid-template-columns: 1fr; }
+    }
+    .panel{
+      background: var(--panel);
+      border: 2px solid rgba(255,255,255,.8);
+      border-radius: var(--radius);
+      box-shadow: 0 14px 28px rgba(2,6,23,.10);
+      padding:14px;
+    }
+    .panel h2{
+      margin:0 0 10px 0;
+      font-size:16px;
+      color:#0f172a;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .badge{
+      font-size:12px;
+      font-weight:800;
+      padding:4px 10px;
+      border-radius:999px;
+      background: rgba(255,255,255,.8);
+      border: 2px solid rgba(255,255,255,.9);
+      box-shadow: 0 10px 18px rgba(2,6,23,.06);
+    }
+    .card{
+      background: var(--card);
+      border: 2px solid rgba(255,255,255,.9);
+      border-radius: var(--radius);
+      padding:16px;
+      display:grid;
+      gap:10px;
+      box-shadow: 0 14px 28px rgba(2,6,23,.10);
+    }
+    .bigWord{
+      font-size:34px;
+      font-weight:900;
+      letter-spacing:.3px;
+      text-align:center;
+      margin:4px 0 0 0;
+    }
+    .hint{
+      text-align:center;
+      color: var(--muted);
+      font-size:13px;
+      line-height: 1.35;
+    }
+    .row{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      justify-content:center;
+      align-items:center;
+    }
+    .status{ display:grid; gap:10px; }
+    .pill{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      padding:10px 12px;
+      border-radius: 16px;
+      background: rgba(255,255,255,.75);
+      border:2px solid rgba(255,255,255,.9);
+      color: rgba(15,23,42,.75);
+      font-size:13px;
+      box-shadow: 0 10px 18px rgba(2,6,23,.06);
+    }
+    .pill b{ color:#0f172a; }
+    .msg{
+      padding:10px 12px;
+      border-radius: 16px;
+      border:2px dashed rgba(15,23,42,.22);
+      color: rgba(15,23,42,.8);
+      font-size:13px;
+      min-height:44px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      background: rgba(255,255,255,.65);
+    }
+    .msg.good{ border-color: rgba(34,197,94,.45); color: #166534; background: rgba(220,252,231,.65); }
+    .msg.bad{ border-color: rgba(251,113,133,.55); color: #9f1239; background: rgba(255,228,230,.70); }
+
+    .options{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+      margin-top:8px;
+    }
+    @media (max-width: 520px){
+      .options{ grid-template-columns: 1fr; }
+    }
+    .opt{
+      padding:12px;
+      border-radius: 16px;
+      border:2px solid rgba(255,255,255,.9);
+      background: rgba(255,255,255,.72);
+      cursor:pointer;
+      text-align:center;
+      font-weight:850;
+      transition: transform .05s ease, filter .2s ease;
+      box-shadow: 0 10px 18px rgba(2,6,23,.06);
+      user-select:none;
+    }
+    .opt:hover{ filter: brightness(1.03) saturate(1.05); }
+    .opt:active{ transform: translateY(1px); }
+    .opt.correct{ border-color: rgba(34,197,94,.55); background: rgba(220,252,231,.75); }
+    .opt.wrong{ border-color: rgba(251,113,133,.6); background: rgba(255,228,230,.75); }
+
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap:10px;
+    }
+    @media (max-width: 860px){ .grid{ grid-template-columns: repeat(4, 1fr); } }
+    @media (max-width: 520px){ .grid{ grid-template-columns: repeat(3, 1fr); } }
+    .tile{
+      border-radius: 16px;
+      border:2px solid rgba(255,255,255,.9);
+      background: rgba(255,255,255,.72);
+      padding:14px 10px;
+      text-align:center;
+      font-weight:900;
+      min-height:54px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      user-select:none;
+      transition: transform .05s ease, filter .2s ease;
+      box-shadow: 0 10px 18px rgba(2,6,23,.06);
+    }
+    .tile:active{ transform: translateY(1px); }
+    .tile.revealed{ background: rgba(219,234,254,.75); border-color: rgba(59,130,246,.25); }
+    .tile.matched{ background: rgba(220,252,231,.75); border-color: rgba(34,197,94,.40); cursor:default; opacity:.97; }
+    .kbd{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      border:2px solid rgba(15,23,42,.18);
+      padding:2px 6px;
+      border-radius:10px;
+      color: #0f172a;
+      background: rgba(255,255,255,.7);
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .footer{
+      padding:12px 18px 16px 18px;
+      color: rgba(15,23,42,.75);
+      border-top: 2px solid rgba(255,255,255,.75);
+      background: rgba(255,255,255,.45);
+      font-size:12px;
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+
+    /* Grammar: sentence builder chips */
+    .chips{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      justify-content:center;
+      margin-top:6px;
+    }
+    .chip{
+      padding:8px 10px;
+      border-radius: 999px;
+      border:2px solid rgba(255,255,255,.9);
+      background: rgba(255,255,255,.72);
+      cursor:pointer;
+      font-weight:900;
+      box-shadow: 0 10px 18px rgba(2,6,23,.06);
+      user-select:none;
+    }
+    .chip.used{ opacity:.45; cursor:default; text-decoration: line-through; }
+    .answerBar{
+      min-height:52px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      justify-content:center;
+      align-items:center;
+      padding:10px;
+      border-radius: 16px;
+      border:2px dashed rgba(15,23,42,.22);
+      background: rgba(255,255,255,.60);
+    }
+    .answerBar .chip{ cursor:default; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="title">
+        <h1><span class="spark">✨</span> Oxford (4º Primaria) — Tema 3</h1>
+        <small>At Rooftops School · Flashcards · Quiz ES→EN · Spelling · Memory · Grammar (likes / have got)</small>
+      </div>
+      <div class="controls">
+        <select id="mode">
+          <option value="flash">Flashcards</option>
+          <option value="quiz">Quiz (ES → EN)</option>
+          <option value="spell">Spelling (escribe)</option>
+          <option value="memory">Memory (parejas)</option>
+          <option value="grammarLikes">Grammar (Do/Does + like)</option>
+          <option value="grammarHaveGot">Grammar (have got)</option>
+        </select>
+        <select id="group">
+          <option value="all">All words</option>
+          <option value="subjects">School subjects</option>
+          <option value="classroom">Classroom objects</option>
+          <option value="time">Time & timetable</option>
+          <option value="health">Health (illness)</option>
+        </select>
+        <button id="reset" class="btn-b">Reset</button>
+      </div>
+    </header>
+
+    <div class="main">
+      <section class="panel">
+        <h2 id="panelTitle">Flashcards <span class="badge" id="subBadge">EN → ES</span></h2>
+        <div id="stage" class="card"></div>
+      </section>
+
+      <aside class="panel status">
+        <h2>Progress <span class="badge">⭐</span></h2>
+        <div class="pill"><span>Score</span><b id="score">0</b></div>
+        <div class="pill"><span>Correct</span><b id="correct">0</b></div>
+        <div class="pill"><span>Wrong</span><b id="wrong">0</b></div>
+        <div class="pill"><span>Streak</span><b id="streak">0</b></div>
+        <div class="pill"><span>Items in set</span><b id="count">0</b></div>
+        <div id="message" class="msg">Elige modo y empieza 🙂</div>
+
+        <div class="card" style="padding:12px">
+          <div class="hint" style="margin:0">
+            Atajos: <span class="kbd">N</span> next · <span class="kbd">S</span> speak · <span class="kbd">R</span> reset
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <div class="footer">
+      <div>En este tema se practican <b>school subjects</b>, <b>timetable</b> y gramática tipo <b>Do/Does … like?</b> y <b>have got</b>.</div>
+      <div>Pronunciación: botón 🔊 (si el navegador lo permite).</div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  // Tema 3 (4º Primaria): Rooftops School (asignaturas, horario, gustos, "have got" para enfermedades)
+  const WORDS = {
+    subjects: [
+      { en: "Maths", es: "matemáticas" },
+      { en: "English", es: "inglés" },
+      { en: "Science", es: "ciencias" },
+      { en: "Geography", es: "geografía" },
+      { en: "History", es: "historia" },
+      { en: "Music", es: "música" },
+      { en: "Art", es: "plástica / arte" },
+      { en: "PE", es: "educación física" },
+      { en: "ICT", es: "informática / TIC" },
+    ],
+    classroom: [
+      { en: "book", es: "libro" },
+      { en: "notebook", es: "cuaderno" },
+      { en: "pencil", es: "lápiz" },
+      { en: "pen", es: "bolígrafo" },
+      { en: "rubber", es: "goma (de borrar)" },
+      { en: "ruler", es: "regla" },
+      { en: "sharpener", es: "sacapuntas" },
+      { en: "pencil case", es: "estuche" },
+      { en: "backpack", es: "mochila" },
+    ],
+    time: [
+      { en: "timetable", es: "horario" },
+      { en: "What time is it?", es: "¿Qué hora es?" },
+      { en: "o'clock", es: "en punto" },
+      { en: "half past", es: "y media" },
+      { en: "quarter past", es: "y cuarto" },
+      { en: "quarter to", es: "menos cuarto" },
+      { en: "break", es: "recreo" },
+      { en: "lesson", es: "clase / lección" },
+      { en: "favourite subject", es: "asignatura favorita" },
+    ],
+    health: [
+      { en: "a cold", es: "un resfriado" },
+      { en: "a cough", es: "tos" },
+      { en: "a headache", es: "dolor de cabeza" },
+      { en: "a toothache", es: "dolor de muelas/dientes" },
+      { en: "an earache", es: "dolor de oído" },
+      { en: "a stomach ache", es: "dolor de barriga" },
+      { en: "I've got...", es: "Tengo..." },
+      { en: "Have you got...?", es: "¿Tienes...?" },
+    ]
+  };
+
+  // Grammar A: Do/Does + like (school subjects)
+  const GRAMMAR_LIKES = [
+    { type: "choose", es: "Completa: ¿A él le gusta Música?", base: "___ he like Music?", options: ["Do", "Does"], answer: "Does" },
+    { type: "choose", es: "Completa: ¿A ella le gusta Geografía?", base: "___ she like Geography?", options: ["Do", "Does"], answer: "Does" },
+    { type: "choose", es: "Completa: ¿A ti te gusta Inglés?", base: "___ you like English?", options: ["Do", "Does"], answer: "Do" },
+    { type: "choose", es: "Completa: ¿A ellos les gusta Ciencias?", base: "___ they like Science?", options: ["Do", "Does"], answer: "Do" },
+
+    { type: "choose", es: "Completa la respuesta: Sí, a ella le gusta.", base: "Yes, she ___ .", options: ["do", "does"], answer: "does" },
+    { type: "choose", es: "Completa la respuesta: No, a él no le gusta.", base: "No, he ___ .", options: ["doesn't", "don't"], answer: "doesn't" },
+
+    { type: "order", es: "Ordena la pregunta:", words: ["Does", "he", "like", "Maths", "?"], answer: "Does he like Maths ?" },
+    { type: "order", es: "Ordena la respuesta:", words: ["Yes,", "he", "does", "."], answer: "Yes, he does ." },
+    { type: "order", es: "Ordena la respuesta:", words: ["No,", "she", "doesn't", "."], answer: "No, she doesn't ." },
+    { type: "order", es: "Ordena la frase:", words: ["My", "favourite", "subject", "is", "PE", "."], answer: "My favourite subject is PE ." },
+  ];
+
+  // Grammar B: have got (illness) — opción extra pedida
+  const GRAMMAR_HAVEGOT = [
+    { type: "choose", es: "Completa: Yo tengo tos.", base: "I ___ got a cough.", options: ["have", "has"], answer: "have" },
+    { type: "choose", es: "Completa: Ella tiene dolor de cabeza.", base: "She ___ got a headache.", options: ["have", "has"], answer: "has" },
+    { type: "choose", es: "Completa: Él tiene un resfriado.", base: "He ___ got a cold.", options: ["have", "has"], answer: "has" },
+
+    { type: "choose", es: "Completa la respuesta corta: Sí, tengo.", base: "Yes, I ___ .", options: ["have", "has"], answer: "have" },
+    { type: "choose", es: "Completa la respuesta corta: No, ella no tiene.", base: "No, she ___ .", options: ["hasn't", "haven't"], answer: "hasn't" },
+
+    { type: "order", es: "Ordena la pregunta:", words: ["Have", "you", "got", "a", "cold", "?"], answer: "Have you got a cold ?" },
+    { type: "order", es: "Ordena la pregunta:", words: ["Has", "he", "got", "a", "toothache", "?"], answer: "Has he got a toothache ?" },
+    { type: "order", es: "Ordena la respuesta:", words: ["No,", "I", "haven't", "."], answer: "No, I haven't ." },
+    { type: "order", es: "Ordena la frase:", words: ["I've", "got", "a", "stomach", "ache", "."], answer: "I've got a stomach ache ." },
+  ];
+
+  const $ = (s) => document.querySelector(s);
+  const modeEl = $("#mode");
+  const groupEl = $("#group");
+  const resetEl = $("#reset");
+  const stageEl = $("#stage");
+  const panelTitleEl = $("#panelTitle");
+  const subBadgeEl = $("#subBadge");
+  const msgEl = $("#message");
+
+  const scoreEl = $("#score");
+  const correctEl = $("#correct");
+  const wrongEl = $("#wrong");
+  const streakEl = $("#streak");
+  const countEl = $("#count");
+
+  let score = 0, correct = 0, wrong = 0, streak = 0;
+  let current = null;
+  let quizLocked = false;
+
+  let mem = { deck: [], revealed: [], matched: new Set(), lock: false };
+
+  function setMessage(text, type = "") {
+    msgEl.className = "msg" + (type ? " " + type : "");
+    msgEl.textContent = text;
+  }
+
+  function updateStats() {
+    scoreEl.textContent = score;
+    correctEl.textContent = correct;
+    wrongEl.textContent = wrong;
+    streakEl.textContent = streak;
+
+    const m = modeEl.value;
+    if (m === "grammarLikes") countEl.textContent = GRAMMAR_LIKES.length;
+    else if (m === "grammarHaveGot") countEl.textContent = GRAMMAR_HAVEGOT.length;
+    else countEl.textContent = getWordList().length;
+  }
+
+  function getWordList() {
+    const g = groupEl.value;
+    if (g === "subjects") return WORDS.subjects.slice();
+    if (g === "classroom") return WORDS.classroom.slice();
+    if (g === "time") return WORDS.time.slice();
+    if (g === "health") return WORDS.health.slice();
+    return [...WORDS.subjects, ...WORDS.classroom, ...WORDS.time, ...WORDS.health];
+  }
+
+  function randInt(n) { return Math.floor(Math.random() * n); }
+  function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = randInt(i + 1);
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function pickNewWord() {
+    const list = getWordList();
+    current = list[randInt(list.length)];
+    return current;
+  }
+
+  function speak(text) {
+    if (!("speechSynthesis" in window)) {
+      setMessage("Tu navegador no tiene pronunciación (SpeechSynthesis).", "bad");
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "en-GB"; // Oxford -> British English vibe
+    u.rate = 0.95;
+    window.speechSynthesis.speak(u);
+  }
+
+  function resetProgress() {
+    score = 0; correct = 0; wrong = 0; streak = 0;
+    quizLocked = false;
+    mem = { deck: [], revealed: [], matched: new Set(), lock: false };
+    updateStats();
+    setMessage("Progreso reiniciado.", "");
+    render();
+  }
+
+  // typo generator for ES→EN options
+  function makeTypos(word) {
+    const w = word.toLowerCase();
+    const typos = new Set();
+
+    if (w.length >= 4) { // swap adjacent
+      const i = randInt(w.length - 1);
+      const s = w.split("");
+      [s[i], s[i+1]] = [s[i+1], s[i]];
+      typos.add(s.join(""));
+    }
+
+    const vowels = ["a","e","i","o","u"];
+    const idxs = [];
+    for (let i=0;i<w.length;i++){
+      if (vowels.includes(w[i])) idxs.push(i);
+    }
+    if (idxs.length){
+      const i = idxs[randInt(idxs.length)];
+      const v = vowels[randInt(vowels.length)];
+      const s = w.split("");
+      s[i] = v;
+      typos.add(s.join(""));
+    }
+
+    if (w.length >= 4) { // remove letter
+      const i = randInt(w.length);
+      typos.add(w.slice(0,i) + w.slice(i+1));
+    }
+
+    if (w.length >= 3) { // add vowel
+      const i = randInt(w.length+1);
+      const letters = "aeiou";
+      const ch = letters[randInt(letters.length)];
+      typos.add(w.slice(0,i) + ch + w.slice(i));
+    }
+
+    if (w.length >= 3) { // last letter change
+      const letters = "abcdefghijklmnopqrstuvwxyz";
+      const ch = letters[randInt(letters.length)];
+      typos.add(w.slice(0,-1) + ch);
+    }
+
+    typos.delete(w);
+    return Array.from(typos).filter(t => t.length >= 3 && t.length <= 18);
+  }
+
+  function renderFlash() {
+    subBadgeEl.textContent = "EN → ES";
+    panelTitleEl.childNodes[0].nodeValue = "Flashcards ";
+    const w = pickNewWord();
+
+    stageEl.innerHTML = `
+      <div class="bigWord">${w.en}</div>
+      <div class="hint">¿Qué significa en español?</div>
+      <div class="row">
+        <button id="reveal" class="btn-a">Reveal</button>
+        <button id="speakBtn" class="btn-d">Speak 🔊</button>
+        <button id="next" class="btn-c">Next</button>
+      </div>
+      <div id="answer" class="hint" style="font-size:15px; display:none; margin-top:6px;"></div>
+    `;
+
+    $("#reveal").onclick = () => {
+      const a = $("#answer");
+      a.style.display = "block";
+      a.textContent = `= ${w.es}`;
+      setMessage("¡Genial! Ahora pulsa Next.", "good");
+    };
+    $("#speakBtn").onclick = () => speak(w.en);
+    $("#next").onclick = () => {
+      setMessage("Siguiente…", "");
+      renderFlash();
+    };
+  }
+
+  function renderQuiz() {
+    subBadgeEl.textContent = "ES → EN";
+    panelTitleEl.childNodes[0].nodeValue = "Quiz ";
+    const list = getWordList();
+    const w = pickNewWord();
+    quizLocked = false;
+
+    const options = new Set([w.en.toLowerCase()]);
+
+    const typos = makeTypos(w.en);
+    shuffle(typos);
+    for (const t of typos) {
+      if (options.size >= 4) break;
+      options.add(t);
+    }
+
+    const otherPool = list.map(x => x.en.toLowerCase()).filter(x => x !== w.en.toLowerCase());
+    shuffle(otherPool);
+    for (const o of otherPool) {
+      if (options.size >= 4) break;
+      options.add(o);
+    }
+
+    const opts = shuffle(Array.from(options)).slice(0,4);
+
+    stageEl.innerHTML = `
+      <div class="hint">Pregunta en español:</div>
+      <div class="bigWord">${w.es}</div>
+      <div class="hint">Elige la palabra correcta en inglés:</div>
+      <div class="options">
+        ${opts.map((o) => `<div class="opt" data-val="${o}">${o}</div>`).join("")}
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button id="speakBtn" class="btn-d">Speak correct 🔊</button>
+        <button id="next" class="btn-c">Next</button>
+      </div>
+      <div class="hint" style="margin-top:6px">Tip: a veces verás “trampas” (typos) para entrenar la ortografía 🙂</div>
+    `;
+
+    $("#speakBtn").onclick = () => speak(w.en);
+    $("#next").onclick = () => renderQuiz();
+
+    stageEl.querySelectorAll(".opt").forEach(opt => {
+      opt.addEventListener("click", () => {
+        if (quizLocked) return;
+        quizLocked = true;
+
+        const chosen = opt.getAttribute("data-val");
+        const target = w.en.toLowerCase();
+        const isCorrect = chosen === target;
+
+        stageEl.querySelectorAll(".opt").forEach(o => {
+          if (o.getAttribute("data-val") === target) o.classList.add("correct");
+        });
+
+        if (isCorrect) {
+          opt.classList.add("correct");
+          correct++; streak++; score += 10 + Math.min(10, streak);
+          setMessage("✅ Correct!", "good");
+          speak(w.en);
+        } else {
+          opt.classList.add("wrong");
+          wrong++; streak = 0; score = Math.max(0, score - 3);
+          setMessage(`❌ Wrong. Correct: ${w.en}`, "bad");
+        }
+        updateStats();
+      });
+    });
+  }
+
+  function renderSpelling() {
+    subBadgeEl.textContent = "ES → EN";
+    panelTitleEl.childNodes[0].nodeValue = "Spelling ";
+    const w = pickNewWord();
+
+    stageEl.innerHTML = `
+      <div class="hint">Escribe en inglés:</div>
+      <div class="bigWord">${w.es}</div>
+      <div class="hint">Consejo: respeta mayúsculas en asignaturas (Maths, Science...).</div>
+      <div class="row" style="margin-top:6px">
+        <input id="spellIn" autocomplete="off" placeholder="Type the English words…" style="width:min(460px, 100%); text-align:center;" />
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button id="check" class="btn-a">Check</button>
+        <button id="show" class="btn-e">Show answer</button>
+        <button id="speakBtn" class="btn-d">Speak 🔊</button>
+        <button id="next" class="btn-c">Next</button>
+      </div>
+      <div id="spellAns" class="hint" style="font-size:15px; display:none; margin-top:6px;"></div>
+    `;
+
+    const input = $("#spellIn");
+    input.focus();
+
+    function normalize(s){ return (s||"").trim(); }
+    function normalizeLoose(s){ return (s||"").trim().toLowerCase(); }
+
+    function check() {
+      const typed = normalize(input.value);
+      const target = normalize(w.en);
+      if (!typed) return;
+
+      // accept exact or case-insensitive for subjects
+      const ok = (typed === target) || (normalizeLoose(typed) === normalizeLoose(target));
+
+      if (ok) {
+        correct++; streak++; score += 12 + Math.min(12, streak);
+        setMessage("✅ Perfect spelling!", "good");
+        speak(w.en);
+      } else {
+        wrong++; streak = 0; score = Math.max(0, score - 3);
+        setMessage(`❌ Not quite. Correct: ${w.en}`, "bad");
+      }
+      updateStats();
+    }
+
+    $("#check").onclick = check;
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") check();
+    });
+
+    $("#show").onclick = () => {
+      const a = $("#spellAns");
+      a.style.display = "block";
+      a.textContent = `Answer: ${w.en}`;
+    };
+    $("#speakBtn").onclick = () => speak(w.en);
+    $("#next").onclick = () => renderSpelling();
+  }
+
+  function renderMemory() {
+    subBadgeEl.textContent = "EN ↔ ES";
+    panelTitleEl.childNodes[0].nodeValue = "Memory ";
+    const list = getWordList();
+
+    const deck = [];
+    list.forEach((w, idx) => {
+      deck.push({ pair: idx, text: w.en, kind: "en" });
+      deck.push({ pair: idx, text: w.es, kind: "es" });
+    });
+    shuffle(deck);
+
+    mem.deck = deck;
+    mem.revealed = [];
+    mem.matched = new Set();
+    mem.lock = false;
+
+    setMessage("Encuentra las parejas (inglés-español).", "");
+
+    stageEl.innerHTML = `
+      <div class="hint">Toca dos cartas. Si coinciden, ¡se quedan!</div>
+      <div class="grid" id="grid"></div>
+      <div class="row" style="margin-top:10px">
+        <button id="restartMem" class="btn-a">Shuffle</button>
+        <button id="speakMem" class="btn-d">Speak revealed 🔊</button>
+      </div>
+    `;
+
+    $("#restartMem").onclick = () => renderMemory();
+    $("#speakMem").onclick = () => {
+      const last = mem.revealed[mem.revealed.length - 1];
+      if (last && last.card.kind === "en") speak(last.card.text);
+    };
+
+    const grid = $("#grid");
+
+    function draw() {
+      grid.innerHTML = "";
+      mem.deck.forEach((card, i) => {
+        const isMatched = mem.matched.has(card.pair);
+        const isRevealed = mem.revealed.some(r => r.i === i);
+        const showText = isMatched || isRevealed;
+
+        const div = document.createElement("div");
+        div.className = "tile" + (isMatched ? " matched" : (isRevealed ? " revealed" : ""));
+        div.textContent = showText ? card.text : "❓";
+        div.onclick = () => onPick(i);
+        grid.appendChild(div);
+      });
+    }
+
+    function onPick(i) {
+      if (mem.lock) return;
+
+      const card = mem.deck[i];
+      if (mem.matched.has(card.pair)) return;
+      if (mem.revealed.some(r => r.i === i)) return;
+
+      mem.revealed.push({ i, card });
+
+      if (mem.revealed.length === 2) {
+        mem.lock = true;
+        const [a, b] = mem.revealed;
+        const samePair = a.card.pair === b.card.pair && a.card.kind !== b.card.kind;
+
+        draw();
+
+        if (samePair) {
+          mem.matched.add(a.card.pair);
+          correct++; streak++; score += 8 + Math.min(8, streak);
+          setMessage("✅ Match!", "good");
+          mem.revealed = [];
+          mem.lock = false;
+          updateStats();
+          draw();
+
+          if (mem.matched.size === list.length) {
+            setMessage("🏁 ¡Completado! Has encontrado todas las parejas.", "good");
+          }
+        } else {
+          wrong++; streak = 0; score = Math.max(0, score - 2);
+          setMessage("❌ No match. Inténtalo otra vez.", "bad");
+          updateStats();
+          setTimeout(() => {
+            mem.revealed = [];
+            mem.lock = false;
+            draw();
+          }, 700);
+        }
+      } else {
+        draw();
+      }
+    }
+
+    draw();
+  }
+
+  function pickGrammar(list) {
+    const item = list[randInt(list.length)];
+    return JSON.parse(JSON.stringify(item));
+  }
+
+  function renderGrammar(list, badgeText) {
+    subBadgeEl.textContent = badgeText;
+    panelTitleEl.childNodes[0].nodeValue = "Grammar ";
+    quizLocked = false;
+
+    const g = pickGrammar(list);
+
+    if (g.type === "choose") {
+      const options = g.options || ["can", "can't"];
+      stageEl.innerHTML = `
+        <div class="hint">Completa la frase:</div>
+        <div class="bigWord">${g.base.replace("___", "___")}</div>
+        <div class="hint" style="margin-top:-4px">Ayuda (ES): ${g.es}</div>
+        <div class="options">
+          ${options.map(o => `<div class="opt" data-val="${o}">${o}</div>`).join("")}
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button id="speakBtn" class="btn-d">Speak sentence 🔊</button>
+          <button id="next" class="btn-c">Next</button>
+        </div>
+        <div class="hint" style="margin-top:6px">${badgeText.includes("like") ? "Regla: <b>Does</b> con he/she/it, <b>Do</b> con I/you/we/they." : "Regla: <b>I/you/we/they have got</b> · <b>he/she has got</b>."}</div>
+      `;
+
+      const target = g.answer;
+      const sentence = g.base.replace("___", target);
+
+      $("#speakBtn").onclick = () => speak(sentence.replace(" ?", "?").replace(" .", "."));
+      $("#next").onclick = () => renderGrammar(list, badgeText);
+
+      stageEl.querySelectorAll(".opt").forEach(opt => {
+        opt.addEventListener("click", () => {
+          if (quizLocked) return;
+          quizLocked = true;
+
+          const chosen = opt.getAttribute("data-val");
+          const ok = (chosen === target);
+
+          stageEl.querySelectorAll(".opt").forEach(o => {
+            if (o.getAttribute("data-val") === target) o.classList.add("correct");
+          });
+
+          if (ok) {
+            opt.classList.add("correct");
+            correct++; streak++; score += 11 + Math.min(10, streak);
+            setMessage("✅ Perfect! (Grammar)", "good");
+            speak(sentence.replace(" ?", "?").replace(" .", "."));
+          } else {
+            opt.classList.add("wrong");
+            wrong++; streak = 0; score = Math.max(0, score - 3);
+            setMessage(`❌ Not quite. Correct: ${sentence}`, "bad");
+          }
+          updateStats();
+        });
+      });
+      return;
+    }
+
+    // type === "order"
+    const words = shuffle(g.words.slice());
+    const picked = [];
+
+    stageEl.innerHTML = `
+      <div class="hint">${g.es}</div>
+      <div class="hint">Toca las palabras para formar la frase:</div>
+
+      <div class="answerBar" id="answerBar"></div>
+      <div class="chips" id="chips"></div>
+
+      <div class="row" style="margin-top:10px">
+        <button id="undo" class="btn-e">Undo</button>
+        <button id="clear" class="btn-b">Clear</button>
+        <button id="checkG" class="btn-a">Check</button>
+        <button id="next" class="btn-c">Next</button>
+        <button id="speakBtn" class="btn-d">Speak 🔊</button>
+      </div>
+
+      <div class="hint" style="margin-top:6px">Consejo: en preguntas, el auxiliar va al principio 🙂</div>
+    `;
+
+    const chipsEl = $("#chips");
+    const barEl = $("#answerBar");
+
+    function redraw() {
+      barEl.innerHTML = picked.map(w => `<span class="chip">${w}</span>`).join("");
+      chipsEl.innerHTML = "";
+      words.forEach((w) => {
+        const used = picked.includes(w) && countIn(picked, w) >= countInPicked(w);
+        const span = document.createElement("span");
+        span.className = "chip" + (used ? " used" : "");
+        span.textContent = w;
+        span.onclick = () => {
+          if (span.classList.contains("used")) return;
+          picked.push(w);
+          redraw();
+        };
+        chipsEl.appendChild(span);
+      });
+    }
+
+    function countIn(arr, w){ return arr.filter(x => x === w).length; }
+    function countInPicked(w){ return picked.filter(x => x === w).length; }
+
+    function normalizeSentence(s){
+      return s.trim()
+        .replace(/\s+\?/g, " ?")
+        .replace(/\s+\./g, " .")
+        .replace(/\s+/g, " ");
+    }
+
+    $("#undo").onclick = () => { picked.pop(); redraw(); };
+    $("#clear").onclick = () => { picked.length = 0; redraw(); };
+
+    $("#checkG").onclick = () => {
+      const built = normalizeSentence(picked.join(" "));
+      const target = normalizeSentence(g.answer);
+      const ok = built === target;
+
+      if (ok) {
+        correct++; streak++; score += 13 + Math.min(10, streak);
+        setMessage("✅ Great! Sentence is correct.", "good");
+        speak(target.replace(" ?", "?").replace(" .", "."));
+      } else {
+        wrong++; streak = 0; score = Math.max(0, score - 3);
+        setMessage(`❌ Try again. Correct: ${target.replace(" ?", "?").replace(" .", ".")}`, "bad");
+      }
+      updateStats();
+    };
+
+    $("#speakBtn").onclick = () => {
+      const built = picked.length ? normalizeSentence(picked.join(" ")) : normalizeSentence(g.answer);
+      speak(built.replace(" ?", "?").replace(" .", "."));
+    };
+    $("#next").onclick = () => renderGrammar(list, badgeText);
+
+    redraw();
+  }
+
+  function render() {
+    updateStats();
+    const m = modeEl.value;
+    if (m === "flash") return renderFlash();
+    if (m === "quiz") return renderQuiz();
+    if (m === "spell") return renderSpelling();
+    if (m === "memory") return renderMemory();
+    if (m === "grammarLikes") return renderGrammar(GRAMMAR_LIKES, "Do/Does + like");
+    if (m === "grammarHaveGot") return renderGrammar(GRAMMAR_HAVEGOT, "have got / has got");
+  }
+
+  modeEl.addEventListener("change", () => { setMessage("Modo cambiado.", ""); render(); });
+  groupEl.addEventListener("change", () => { setMessage("Conjunto cambiado.", ""); render(); });
+  resetEl.addEventListener("click", resetProgress);
+
+  window.addEventListener("keydown", (e) => {
+    const k = e.key.toLowerCase();
+    if (k === "r") resetProgress();
+    if (k === "n") render();
+    if (k === "s" && current?.en) speak(current.en);
+  });
+
+  updateStats();
+  setMessage("Empieza con Flashcards 🙂", "");
+  render();
+})();
+</script>
+</body>
+</html>

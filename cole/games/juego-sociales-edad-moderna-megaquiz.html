@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sociales 5º · Edad Moderna · Mega Quiz</title>
+<style>
+body{
+  margin:0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  background: linear-gradient(135deg,#fde68a,#bfdbfe,#bbf7d0);
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+.app{
+  width:min(1100px,100%);
+  background:#ffffffee;
+  border-radius:22px;
+  box-shadow:0 20px 40px rgba(0,0,0,.25);
+  overflow:hidden;
+}
+header{
+  padding:16px;
+  background:linear-gradient(90deg,#7c3aed,#ec4899,#22c55e);
+  color:white;
+  font-weight:900;
+  font-size:18px;
+}
+.controls{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  padding:10px;
+}
+button,select{
+  border:none;
+  border-radius:16px;
+  padding:14px;
+  font-size:15px;
+  font-weight:800;
+}
+button{background:#22c55e;color:white}
+select{background:white}
+.main{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:14px;
+  padding:14px;
+}
+.card{
+  background:white;
+  border-radius:18px;
+  padding:16px;
+  box-shadow:0 10px 20px rgba(0,0,0,.12);
+}
+.big{font-size:21px;font-weight:900;text-align:center}
+.opt{
+  padding:14px;
+  border-radius:16px;
+  background:#e0e7ff;
+  margin:8px 0;
+  cursor:pointer;
+  font-weight:800;
+}
+.opt.correct{background:#bbf7d0}
+.opt.wrong{background:#fecaca}
+.msg{text-align:center;font-weight:900;font-size:16px}
+</style>
+</head>
+<body>
+<div class="app">
+<header>🏰 Sociales 5º · Edad Moderna · Mega Quiz</header>
+
+<div class="controls">
+<select id="mode">
+  <option value="quiz">Quiz</option>
+  <option value="tf">Verdadero / Falso</option>
+</select>
+<button onclick="next()">Siguiente pregunta</button>
+</div>
+
+<div class="main">
+  <div class="card" id="game"></div>
+  <div class="card msg" id="msg">¡A jugar! ⭐</div>
+</div>
+</div>
+
+<script>
+const quiz = [
+{q:"¿Entre qué siglos se desarrolla la Edad Moderna?",a:"Del XV al XVIII",o:["Del XV al XVIII","Del X al XII","Del XVIII al XX","Del V al X"]},
+{q:"¿Qué invento permitió copiar libros más rápido?",a:"La imprenta",o:["La imprenta","La brújula","El papel","La pólvora"]},
+{q:"¿Qué corriente cultural pone al ser humano en el centro?",a:"Humanismo",o:["Humanismo","Feudalismo","Barroco","Romanticismo"]},
+{q:"¿Qué se estudia durante el Humanismo?",a:"La Antigüedad clásica",o:["La Antigüedad clásica","La Prehistoria","La Edad Media","La Edad Contemporánea"]},
+{q:"¿Qué grupo social crece con el comercio?",a:"La burguesía",o:["La burguesía","La nobleza","El clero","Los siervos"]},
+{q:"¿Cómo se llamaban los nobles que financiaban artistas?",a:"Mecenas",o:["Mecenas","Siervos","Vasallos","Clérigos"]},
+{q:"¿Qué sistema político sustituye al feudalismo?",a:"Monarquía autoritaria",o:["Monarquía autoritaria","Democracia","República","Imperio romano"]},
+{q:"¿Quiénes fueron los Reyes Católicos?",a:"Isabel I y Fernando II",o:["Isabel I y Fernando II","Carlos I y Felipe II","Felipe III y Carlos II","Carlos III y Carlos IV"]},
+{q:"¿Qué ocurrió en 1492?",a:"Conquista de Granada",o:["Conquista de Granada","Batalla de Lepanto","Revolución Francesa","Tratado de Utrecht"]},
+{q:"¿Qué rey fue emperador de Alemania?",a:"Carlos I",o:["Carlos I","Felipe II","Carlos III","Felipe V"]},
+{q:"¿Dónde trasladó Felipe II la capital?",a:"Madrid",o:["Madrid","Toledo","Sevilla","Valladolid"]},
+{q:"¿En qué año fue la Batalla de Lepanto?",a:"1571",o:["1571","1492","1588","1700"]},
+{q:"¿Qué desastre sufrió España en 1588?",a:"Derrota de la Armada Invencible",o:["Derrota de la Armada Invencible","Guerra de Sucesión","Tratado de Utrecht","Revolución Francesa"]},
+{q:"¿En qué siglo se desarrolla el Barroco?",a:"Siglo XVII",o:["Siglo XVII","Siglo XV","Siglo XVI","Siglo XVIII"]},
+{q:"¿Qué dinastía gobernó España en el Barroco?",a:"Los Austrias",o:["Los Austrias","Los Borbones","Los Romanos","Los Visigodos"]},
+{q:"¿Quién fue el último rey de los Austrias?",a:"Carlos II",o:["Carlos II","Felipe IV","Felipe III","Carlos I"]},
+{q:"¿Qué ocurre tras la muerte de Carlos II?",a:"Guerra de Sucesión",o:["Guerra de Sucesión","Descubrimiento de América","Revolución Francesa","Renacimiento"]},
+{q:"¿Cómo se llama el siglo XVIII?",a:"Siglo de las Luces",o:["Siglo de las Luces","Siglo de Oro","Siglo Medieval","Siglo Romántico"]},
+{q:"¿Qué frase define el despotismo ilustrado?",a:"Todo para el pueblo, pero sin el pueblo",o:["Todo para el pueblo, pero sin el pueblo","El rey no manda","Libertad, igualdad, fraternidad","Dios lo quiere"]},
+{q:"¿Qué rey fue llamado el mejor alcalde de Madrid?",a:"Carlos III",o:["Carlos III","Carlos IV","Felipe V","Fernando VI"]},
+{q:"¿Qué revolución ocurrió en 1789?",a:"La Revolución Francesa",o:["La Revolución Francesa","La Industrial","La Americana","La Rusa"]},
+{q:"¿Qué estilo artístico es recargado y con curvas?",a:"Barroco",o:["Barroco","Renacimiento","Neoclasicismo","Románico"]},
+{q:"¿Quién pintó Las Meninas?",a:"Velázquez",o:["Velázquez","El Greco","Goya","Cervantes"]},
+{q:"¿Qué pintor pertenece al siglo XVIII?",a:"Goya",o:["Goya","Velázquez","El Greco","Lope de Vega"]},
+{q:"¿Quién escribió Don Quijote?",a:"Miguel de Cervantes",o:["Miguel de Cervantes","Lope de Vega","Quevedo","Goya"]}
+];
+
+const tf = [
+{s:"La Edad Moderna va del siglo XV al XVIII.",t:true},
+{s:"El Humanismo defiende el uso de la razón.",t:true},
+{s:"La burguesía era un grupo pobre del campo.",t:false},
+{s:"Los Reyes Católicos unificaron Castilla y Aragón.",t:true},
+{s:"Carlos I fue hijo de Felipe II.",t:false},
+{s:"Felipe II perdió la Armada Invencible.",t:true},
+{s:"El Barroco es un periodo de gran crisis.",t:true},
+{s:"Carlos II tuvo muchos hijos.",t:false},
+{s:"La Ilustración defiende el conocimiento.",t:true},
+{s:"La Revolución Francesa ocurrió en 1492.",t:false},
+];
+
+let currentMode="quiz";
+
+document.getElementById("mode").onchange=e=>{currentMode=e.target.value;next()};
+
+function shuffle(a){return a.sort(()=>Math.random()-.5)}
+
+function next(){
+const g=document.getElementById("game");
+document.getElementById("msg").textContent="";
+if(currentMode==="quiz"){
+ const q=quiz[Math.floor(Math.random()*quiz.length)];
+ const opts=shuffle(q.o.slice());
+ g.innerHTML=`<div class="big">${q.q}</div>`+opts.map(o=>`<div class="opt">${o}</div>`).join("");
+ g.querySelectorAll(".opt").forEach(el=>{
+  el.onclick=()=>{
+    el.classList.add(el.textContent===q.a?"correct":"wrong");
+    document.getElementById("msg").textContent=el.textContent===q.a?"✅ ¡Muy bien!":"❌ Inténtalo otra vez";
+  };
+ });
+}
+if(currentMode==="tf"){
+ const i=tf[Math.floor(Math.random()*tf.length)];
+ g.innerHTML=`<div class="big">${i.s}</div>
+ <div class="opt">Verdadero</div><div class="opt">Falso</div>`;
+ g.querySelectorAll(".opt").forEach(el=>{
+  el.onclick=()=>{
+    const v=el.textContent==="Verdadero";
+    el.classList.add(v===i.t?"correct":"wrong");
+    document.getElementById("msg").textContent=v===i.t?"✅ Correcto":"❌ Incorrecto";
+  };
+ });
+}
+}
+
+next();
+</script>
+</body>
+</html>

@@ -1,0 +1,922 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sociales 5º — Edad Moderna (Juego)</title>
+  <style>
+    :root{
+      --bg1:#fff7ed; --bg2:#e0f2fe; --bg3:#ecfccb;
+      --ink:#0b1020; --muted:#334155;
+      --panel:#ffffffcc; --card:#ffffffee;
+
+      --a:#8b5cf6; /* violet */
+      --b:#fb7185; /* rose */
+      --c:#22c55e; /* green */
+      --d:#06b6d4; /* cyan */
+      --e:#f59e0b; /* amber */
+
+      --shadow: 0 18px 40px rgba(2,6,23,.18);
+      --radius: 18px;
+      --tap: 50px; /* mobile */
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color:var(--ink);
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:14px;
+      background:
+        radial-gradient(900px 520px at 18% 15%, rgba(139,92,246,.28), transparent 62%),
+        radial-gradient(820px 520px at 88% 20%, rgba(251,113,133,.22), transparent 60%),
+        radial-gradient(900px 520px at 70% 88%, rgba(34,197,94,.18), transparent 58%),
+        linear-gradient(135deg, var(--bg1), var(--bg2), var(--bg3));
+    }
+    .app{
+      width:min(1080px, 100%);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      border:2px solid rgba(255,255,255,.75);
+      backdrop-filter: blur(10px);
+      background: rgba(255,255,255,.55);
+    }
+    header{
+      padding:14px;
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      background: linear-gradient(90deg, rgba(139,92,246,.24), rgba(251,113,133,.16), rgba(34,197,94,.16));
+      border-bottom: 2px solid rgba(255,255,255,.7);
+    }
+    .title{ display:flex; flex-direction:column; gap:4px; min-width: 260px; }
+    .title h1{
+      margin:0; font-size:16px; letter-spacing:.2px;
+      display:flex; gap:8px; align-items:center; line-height:1.1;
+    }
+    .spark{
+      display:inline-grid; place-items:center; width:28px; height:28px; border-radius:10px;
+      background: linear-gradient(135deg, rgba(139,92,246,.85), rgba(251,113,133,.75));
+      color:white; box-shadow: 0 10px 18px rgba(0,0,0,.10); flex:0 0 auto;
+    }
+    .title small{ color: rgba(15,23,42,.78); }
+    .controls{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:flex-end; flex: 1 1 auto; }
+
+    button, select, input{
+      border-radius: 14px;
+      border: 2px solid rgba(255,255,255,.9);
+      background: rgba(255,255,255,.80);
+      color: var(--ink);
+      padding:10px 12px;
+      font-size:14px;
+      outline:none;
+      box-shadow: 0 10px 18px rgba(2,6,23,.08);
+      min-height: var(--tap);
+    }
+    select{ cursor:pointer; }
+    button{
+      cursor:pointer;
+      transition: transform .05s ease, filter .2s ease;
+      user-select:none;
+      font-weight: 950;
+    }
+    button:hover{ filter: brightness(1.03) saturate(1.05); }
+    button:active{ transform: translateY(1px); }
+    .btn-a{ background: linear-gradient(135deg, rgba(139,92,246,.88), rgba(139,92,246,.45)); color: white; }
+    .btn-b{ background: linear-gradient(135deg, rgba(251,113,133,.88), rgba(251,113,133,.45)); color: white; }
+    .btn-c{ background: linear-gradient(135deg, rgba(34,197,94,.88), rgba(34,197,94,.42)); color: white; }
+    .btn-d{ background: linear-gradient(135deg, rgba(6,182,212,.88), rgba(6,182,212,.40)); color: white; }
+    .btn-e{ background: linear-gradient(135deg, rgba(245,158,11,.88), rgba(245,158,11,.45)); color: white; }
+
+    .main{
+      padding:14px;
+      display:grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap:12px;
+    }
+    @media (max-width: 900px){ .main{ grid-template-columns: 1fr; } }
+
+    .panel{
+      background: var(--panel);
+      border: 2px solid rgba(255,255,255,.8);
+      border-radius: var(--radius);
+      box-shadow: 0 14px 28px rgba(2,6,23,.10);
+      padding:12px;
+    }
+    .panel h2{
+      margin:0 0 10px 0;
+      font-size:15px;
+      color:#0f172a;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .badge{
+      font-size:12px;
+      font-weight:1000;
+      padding:4px 10px;
+      border-radius:999px;
+      background: rgba(255,255,255,.84);
+      border: 2px solid rgba(255,255,255,.92);
+      box-shadow: 0 10px 18px rgba(2,6,23,.06);
+      white-space:nowrap;
+    }
+    .card{
+      background: var(--card);
+      border: 2px solid rgba(255,255,255,.9);
+      border-radius: var(--radius);
+      padding:14px;
+      display:grid;
+      gap:10px;
+      box-shadow: 0 14px 28px rgba(2,6,23,.10);
+    }
+    .big{
+      font-size:22px;
+      font-weight:1000;
+      text-align:center;
+      line-height:1.15;
+      word-break: break-word;
+      margin:2px 0 0 0;
+    }
+    .hint{
+      text-align:center;
+      color: var(--muted);
+      font-size:13px;
+      line-height: 1.35;
+    }
+    .row{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      justify-content:center;
+      align-items:center;
+    }
+    .options{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+      margin-top:6px;
+    }
+    @media (max-width: 520px){ .options{ grid-template-columns: 1fr; } }
+    .opt{
+      padding:12px;
+      border-radius: 16px;
+      border:2px solid rgba(255,255,255,.9);
+      background: rgba(255,255,255,.74);
+      cursor:pointer;
+      text-align:center;
+      font-weight:1000;
+      transition: transform .05s ease, filter .2s ease;
+      box-shadow: 0 10px 18px rgba(2,6,23,.06);
+      min-height: var(--tap);
+      display:grid;
+      place-items:center;
+    }
+    .opt:hover{ filter: brightness(1.03) saturate(1.05); }
+    .opt:active{ transform: translateY(1px); }
+    .opt.correct{ border-color: rgba(34,197,94,.55); background: rgba(220,252,231,.78); }
+    .opt.wrong{ border-color: rgba(251,113,133,.6); background: rgba(255,228,230,.78); }
+
+    .status{ display:grid; gap:10px; }
+    .pill{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      padding:10px 12px;
+      border-radius: 16px;
+      background: rgba(255,255,255,.75);
+      border:2px solid rgba(255,255,255,.9);
+      color: rgba(15,23,42,.75);
+      font-size:13px;
+      box-shadow: 0 10px 18px rgba(2,6,23,.06);
+    }
+    .pill b{ color:#0f172a; }
+
+    .msg{
+      padding:10px 12px;
+      border-radius: 16px;
+      border:2px dashed rgba(15,23,42,.22);
+      color: rgba(15,23,42,.84);
+      font-size:13px;
+      min-height:52px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      background: rgba(255,255,255,.65);
+    }
+    .msg.good{ border-color: rgba(34,197,94,.45); color: #166534; background: rgba(220,252,231,.65); }
+    .msg.bad{ border-color: rgba(251,113,133,.55); color: #9f1239; background: rgba(255,228,230,.70); }
+
+    .timeline{
+      display:grid;
+      gap:10px;
+      margin-top:6px;
+    }
+    .lineRow{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+      align-items:stretch;
+    }
+    @media (max-width: 520px){ .lineRow{ grid-template-columns: 1fr; } }
+    .drop{
+      border-radius: 16px;
+      border:2px dashed rgba(15,23,42,.18);
+      background: rgba(255,255,255,.70);
+      padding:12px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height: var(--tap);
+      font-weight:1000;
+    }
+    .chipRow{ display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+    .chip{
+      border-radius: 999px;
+      border:2px solid rgba(255,255,255,.92);
+      background: rgba(255,255,255,.78);
+      padding:10px 12px;
+      min-height: var(--tap);
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      font-weight:1000;
+      cursor:grab;
+      user-select:none;
+      box-shadow: 0 10px 18px rgba(2,6,23,.06);
+    }
+    .chip:active{ cursor:grabbing; transform: translateY(1px); }
+    .chip.good{ border-color: rgba(34,197,94,.45); background: rgba(220,252,231,.78); }
+    .chip.bad{ border-color: rgba(251,113,133,.55); background: rgba(255,228,230,.78); }
+
+    .footer{
+      padding:12px 14px 14px 14px;
+      color: rgba(15,23,42,.75);
+      border-top: 2px solid rgba(255,255,255,.75);
+      background: rgba(255,255,255,.45);
+      font-size:12px;
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .kbd{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      border:2px solid rgba(15,23,42,.18);
+      padding:2px 6px;
+      border-radius:10px;
+      color: #0f172a;
+      background: rgba(255,255,255,.7);
+      font-size: 12px;
+      font-weight: 950;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="title">
+        <h1><span class="spark">🏰</span> Sociales 5º — Edad Moderna</h1>
+        <small>Quiz · Verdadero/Falso · Línea del tiempo · Memory</small>
+      </div>
+      <div class="controls">
+        <select id="mode">
+          <option value="quiz">Quiz (elige 1)</option>
+          <option value="tf">Verdadero / Falso</option>
+          <option value="timeline">Línea del tiempo (arrastra)</option>
+          <option value="memory">Memory (parejas)</option>
+          <option value="study">Repaso rápido</option>
+        </select>
+        <select id="topic">
+          <option value="all">Todo</option>
+          <option value="changes">Cambios (Humanismo/Renacimiento)</option>
+          <option value="kings">Reyes y hechos</option>
+          <option value="baroque">Barroco (s. XVII)</option>
+          <option value="enlight">Ilustración (s. XVIII)</option>
+          <option value="art">Arte (arquitectura/pintura/literatura)</option>
+        </select>
+        <button id="reset" class="btn-b">Reset</button>
+      </div>
+    </header>
+
+    <div class="main">
+      <section class="panel">
+        <h2 id="panelTitle">Quiz <span class="badge" id="subBadge">elige la respuesta</span></h2>
+        <div id="stage" class="card"></div>
+      </section>
+
+      <aside class="panel status">
+        <h2>Progreso <span class="badge">⭐</span></h2>
+        <div class="pill"><span>Score</span><b id="score">0</b></div>
+        <div class="pill"><span>Correct</span><b id="correct">0</b></div>
+        <div class="pill"><span>Wrong</span><b id="wrong">0</b></div>
+        <div class="pill"><span>Streak</span><b id="streak">0</b></div>
+        <div class="pill"><span>Preguntas</span><b id="count">0</b></div>
+        <div id="message" class="msg">Empieza 🙂</div>
+
+        <div class="card" style="padding:12px">
+          <div class="hint">Atajos: <span class="kbd">N</span> siguiente · <span class="kbd">R</span> reset</div>
+        </div>
+      </aside>
+    </div>
+
+    <div class="footer">
+      <div>Basado en el Tema 6 (Edad Moderna): Renacimiento, Barroco, Ilustración y el arte.</div>
+      <div>Consejo: en móvil, usa “Añadir a pantalla de inicio” para abrirlo como app.</div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  // ---------- DATA ----------
+  const BANK = {
+    changes: [
+      {q:"¿Qué invento acercó el conocimiento a muchas personas?", a:"La imprenta", opts:["La imprenta","La brújula","El telescopio","El reloj"]},
+      {q:"En el Humanismo, ¿qué se usa para entender el mundo?", a:"La razón", opts:["La razón","La magia","La suerte","El miedo"]},
+      {q:"En el Humanismo, el ser humano es…", a:"el centro", opts:["el centro","un esclavo","un robot","un rey siempre"]},
+      {q:"¿Qué se estudia mucho en el Humanismo?", a:"La Antigüedad (Grecia y Roma)", opts:["La Antigüedad (Grecia y Roma)","La Edad de Piedra","La Edad Media","Solo el futuro"]},
+      {q:"Otra idea del Humanismo es observar…", a:"la naturaleza", opts:["la naturaleza","solo castillos","solo guerras","solo dragones"]},
+      {q:"Un cambio científico/económico fue…", a:"avances en la navegación", opts:["avances en la navegación","volver al feudalismo","dejar de comerciar","no explorar"]},
+      {q:"Otro cambio científico/económico: expediciones y…", a:"descubrimientos", opts:["descubrimientos","apagones","terremotos","torneos"]},
+      {q:"¿Qué aparecen gracias a los descubrimientos?", a:"nuevas rutas comerciales", opts:["nuevas rutas comerciales","menos mapas","menos barcos","menos ciudades"]},
+      {q:"¿Qué grupo social crece en la Edad Moderna?", a:"la burguesía", opts:["la burguesía","los faraones","los gladiadores","los vikingos"]},
+      {q:"Con el crecimiento de la burguesía hay auge del…", a:"comercio", opts:["comercio","feudo","castillo","monasterio"]},
+      {q:"La sociedad era estamental: había privilegiados y…", a:"no privilegiados", opts:["no privilegiados","piratas","magos","robots"]},
+      {q:"Los mecenas eran…", a:"nobles que financiaban el arte", opts:["nobles que financiaban el arte","campesinos que viajaban","reyes que pintaban","monjes navegantes"]},
+      {q:"En política se pasa del sistema feudal a la…", a:"monarquía autoritaria", opts:["monarquía autoritaria","democracia moderna","anarquía","república romana"]},
+      {q:"En la monarquía autoritaria pierde poder la…", a:"nobleza", opts:["nobleza","escuela","ciudad","imprenta"]},
+      {q:"Con nuevas instituciones aparece el…", a:"Estado moderno", opts:["Estado moderno","Estado feudal","Imperio romano","Pueblo vikingo"]},
+    ],
+    kings: [
+      {q:"¿En qué año se unieron Castilla y Aragón?", a:"1479", opts:["1479","1492","1512","1588"]},
+      {q:"¿Qué ocurrió en 1492 además del viaje de Colón?", a:"Conquista de Granada", opts:["Conquista de Granada","Batalla de Lepanto","Derrota de la Armada Invencible","Revolución francesa"]},
+      {q:"¿Qué pasó en 1512?", a:"Anexión del reino de Navarra", opts:["Anexión del reino de Navarra","Conquista de Granada","Batalla de Lepanto","Primera vuelta al mundo"]},
+      {q:"Un hecho de unificación religiosa en 1492 fue…", a:"Expulsión de los judíos", opts:["Expulsión de los judíos","Capital a Madrid","Revolución industrial","Neoclasicismo"]},
+      {q:"¿Quién fue emperador de Alemania en 1519?", a:"Carlos I", opts:["Carlos I","Felipe II","Carlos III","Felipe V"]},
+      {q:"¿Qué gran viaje se asocia al tiempo de Carlos I?", a:"La primera vuelta al mundo", opts:["La primera vuelta al mundo","La Guerra de Sucesión","La Revolución francesa","La expulsión de los judíos"]},
+      {q:"Carlos I abdicó en…", a:"su hijo", opts:["su hijo","su madre","un general","nadie"]},
+      {q:"¿Quién trasladó la capital a Madrid en 1561?", a:"Felipe II", opts:["Felipe II","Felipe III","Carlos II","Fernando VI"]},
+      {q:"La Batalla de Lepanto fue en…", a:"1571", opts:["1571","1479","1700","1789"]},
+      {q:"¿Qué ocurrió en 1588?", a:"Derrota de la Armada Invencible", opts:["Derrota de la Armada Invencible","Conquista de Granada","Revolución francesa","Monasterio de El Escorial"]},
+      {q:"España se convirtió en una nación muy poderosa y defendió…", a:"el catolicismo", opts:["el catolicismo","la piratería","los dragones","los robots"]},
+    ],
+    baroque: [
+      {q:"El Barroco pertenece sobre todo al siglo…", a:"XVII", opts:["XVII","XVI","XV","XVIII"]},
+      {q:"En el siglo XVII se pasa de monarquías autoritarias a…", a:"monarquías absolutas", opts:["monarquías absolutas","feudos","repúblicas romanas","democracias actuales"]},
+      {q:"En el Barroco hay decadencia de la dinastía de los…", a:"Austrias", opts:["Austrias","Borbones","Faraones","Vikingos"]},
+      {q:"En el siglo XVII hubo crisis…", a:"demográfica y económica", opts:["demográfica y económica","de robots","de piratas","de castillos"]},
+      {q:"¿Por qué había crisis? (una razón)", a:"guerras y mucho gasto", opts:["guerras y mucho gasto","porque no había libros","porque no había música","porque no había pintura"]},
+      {q:"Los reyes dejaron gobernar a…", a:"validos", opts:["validos","caballeros","campesinos","astronautas"]},
+      {q:"Valido de Felipe III:", a:"Duque de Lerma", opts:["Duque de Lerma","Godoy","Cervantes","Velázquez"]},
+      {q:"Valido de Felipe IV:", a:"Conde-Duque de Olivares", opts:["Conde-Duque de Olivares","Duque de Lerma","Jovellanos","El Greco"]},
+      {q:"Carlos II fue…", a:"el último rey de los Austrias", opts:["el último rey de los Austrias","primer Borbón","pintor de la Corte","autor de Don Quijote"]},
+      {q:"Carlos II murió…", a:"sin descendencia", opts:["sin descendencia","en 1492","en 1789","en 1519"]},
+      {q:"Tras Carlos II hubo la…", a:"Guerra de Sucesión", opts:["Guerra de Sucesión","Revolución francesa","Batalla de Lepanto","Primera vuelta al mundo"]},
+      {q:"Aun con crisis, hay esplendor cultural: el…", a:"Siglo de Oro", opts:["Siglo de Oro","Siglo de Hielo","Siglo de Robots","Siglo de Bronce"]},
+    ],
+    enlight: [
+      {q:"La Ilustración pertenece al siglo…", a:"XVIII", opts:["XVIII","XVII","XVI","XV"]},
+      {q:"A la Ilustración también se le llama…", a:"Siglo de las Luces", opts:["Siglo de las Luces","Siglo de los Castillos","Edad de Piedra","Edad Media"]},
+      {q:"En 1700 comienza la dinastía de los…", a:"Borbones", opts:["Borbones","Austrias","Romanos","Visigodos"]},
+      {q:"El modelo de gobierno es el…", a:"despotismo ilustrado", opts:["despotismo ilustrado","feudalismo","democracia moderna","imperio vikingo"]},
+      {q:"La frase del despotismo ilustrado es…", a:"Todo para el pueblo, pero sin el pueblo", opts:["Todo para el pueblo, pero sin el pueblo","Veni, vidi, vici","Carpe diem","Eureka"]},
+      {q:"Los ilustrados valoraban el conocimiento de…", a:"Grecia y Roma", opts:["Grecia y Roma","Egipto y China","Solo España","Solo América"]},
+      {q:"En este siglo empieza la…", a:"Revolución industrial", opts:["Revolución industrial","Conquista de Granada","Armada Invencible","Guerra de Sucesión"]},
+      {q:"¿Qué revolución fue en 1789?", a:"La Revolución francesa", opts:["La Revolución francesa","La Revolución industrial","La Guerra de Sucesión","La Batalla de Lepanto"]},
+      {q:"Carlos III fue llamado el mejor…", a:"alcalde de Madrid", opts:["alcalde de Madrid","pintor de la Corte","valido","emperador de Alemania"]},
+      {q:"Carlos IV dejó el gobierno en manos de…", a:"Godoy", opts:["Godoy","Duque de Lerma","Velázquez","Cervantes"]},
+    ],
+    art: [
+      {q:"Arquitectura del siglo XVI: estilo…", a:"herreriano", opts:["herreriano","barroco","neoclásico","gótico"]},
+      {q:"El estilo herreriano es…", a:"austero y con poca decoración", opts:["austero y con poca decoración","muy recargado","con muchas curvas","como los romanos siempre"]},
+      {q:"Ejemplo del estilo herreriano:", a:"Monasterio de El Escorial", opts:["Monasterio de El Escorial","Torre Eiffel","Coliseo romano","Sagrada Familia"]},
+      {q:"Arquitectura del siglo XVII: edificios…", a:"barrocos", opts:["barrocos","neoclásicos","romanos","modernistas"]},
+      {q:"Los edificios barrocos tienen…", a:"muchas curvas y decoración recargada", opts:["muchas curvas y decoración recargada","poca decoración","solo líneas rectas","sin ventanas"]},
+      {q:"Arquitectura del siglo XVIII:…", a:"neoclasicismo", opts:["neoclasicismo","barroco","románico","herreriano"]},
+      {q:"El neoclasicismo imitaba la construcción de…", a:"los romanos", opts:["los romanos","los vikingos","los aztecas","los astronautas"]},
+      {q:"Pintor del siglo XVI con figuras alargadas:", a:"El Greco", opts:["El Greco","Goya","Velázquez","Murillo"]},
+      {q:"Obra de El Greco:", a:"El entierro del Conde Orgaz", opts:["El entierro del Conde Orgaz","Las Meninas","La familia de Carlos IV","Don Quijote"]},
+      {q:"Pintura del siglo XVII:…", a:"realismo", opts:["realismo","cubismo","impresionismo","surrealismo"]},
+      {q:"Velázquez fue…", a:"pintor de la Corte", opts:["pintor de la Corte","rey Borbón","valido","arquitecto"]},
+      {q:"Pintor del siglo XVIII:", a:"Francisco de Goya", opts:["Francisco de Goya","El Greco","Cervantes","Quevedo"]},
+      {q:"Escritor del siglo XVII:", a:"Miguel de Cervantes", opts:["Miguel de Cervantes","Jovellanos","Goya","El Greco"]},
+      {q:"Otros escritores del s. XVII:", a:"Quevedo y Lope de Vega", opts:["Quevedo y Lope de Vega","Goya y Velázquez","Godoy y Lerma","Felipe V y Carlos IV"]},
+      {q:"En el siglo XVIII, en literatura, destacan los…", a:"ilustrados", opts:["ilustrados","caballeros","faraones","vikingos"]},
+      {q:"Un ilustrado fue…", a:"Melchor de Jovellanos", opts:["Melchor de Jovellanos","Cervantes","Velázquez","Duque de Lerma"]},
+    ],
+  };
+
+  // Verdadero/Falso bank (with explanations)
+  const TF = {
+    all: [
+      {s:"La imprenta acercó el conocimiento a muchas personas.", t:true, why:"Gracias a la imprenta los libros se hicieron más accesibles."},
+      {s:"En el Humanismo se rechaza la razón y se usa la magia.", t:false, why:"El Humanismo defiende el uso de la razón."},
+      {s:"En la Edad Moderna crece la burguesía y el comercio.", t:true, why:"Aumenta el comercio y gana importancia la burguesía."},
+      {s:"La monarquía autoritaria quita poder a la nobleza.", t:true, why:"Los reyes crean nuevas instituciones y la nobleza pierde poder."},
+      {s:"Felipe II trasladó la capital a Madrid en 1561.", t:true, why:"En 1561 la capital se traslada a Madrid."},
+      {s:"La Batalla de Lepanto fue en 1789.", t:false, why:"Lepanto fue en 1571. En 1789 fue la Revolución francesa."},
+      {s:"En el Barroco los reyes dejaron gobernar a validos.", t:true, why:"En el s. XVII gobernaron validos como Lerma u Olivares."},
+      {s:"Carlos II fue el primer rey Borbón.", t:false, why:"Carlos II fue el último Austria. El primer Borbón fue Felipe V."},
+      {s:"La Ilustración es el Siglo de las Luces.", t:true, why:"Se llama así por la importancia del conocimiento."},
+      {s:"El despotismo ilustrado significa: 'Todo para el pueblo, pero sin el pueblo'.", t:true, why:"Es la frase típica del despotismo ilustrado."},
+      {s:"El neoclasicismo imitaba a los romanos.", t:true, why:"Se inspira en la arquitectura clásica."},
+      {s:"El Greco es un pintor del siglo XVIII.", t:false, why:"El Greco es del siglo XVI."},
+    ]
+  };
+
+  // Timeline (drag chips to correct slot)
+  const TIMELINE = [
+    {slot:"Reyes Católicos (s. XV-XVI)", year:"1479-1512", item:"Unión Castilla y Aragón (1479) / Granada (1492) / Navarra (1512)"},
+    {slot:"Carlos I", year:"1519-1558", item:"1519 emperador · 1ª vuelta al mundo · conquistas · abdica 1556"},
+    {slot:"Felipe II", year:"1561-1588", item:"Capital a Madrid 1561 · Lepanto 1571 · Armada Invencible 1588"},
+    {slot:"Barroco (s. XVII)", year:"1598-1700", item:"Felipe III-IV / Carlos II · validos · crisis · Siglo de Oro"},
+    {slot:"Ilustración (s. XVIII)", year:"1700-1789", item:"Borbones · despotismo ilustrado · reformas · Rev. industrial / francesa"},
+  ];
+
+  // Memory pairs (term ↔ explanation)
+  const PAIRS = [
+    ["Humanismo", "Uso de la razón y el ser humano como centro"],
+    ["Imprenta", "Acerca el conocimiento a muchas personas"],
+    ["Burguesía", "Grupo social que crece con el comercio"],
+    ["Monarquía autoritaria", "Pierde poder la nobleza y surgen instituciones"],
+    ["Barroco", "Siglo XVII: crisis y esplendor cultural (Siglo de Oro)"],
+    ["Validos", "Personas que gobernaban en nombre del rey"],
+    ["Ilustración", "Siglo de las Luces: importancia del conocimiento"],
+    ["Despotismo ilustrado", "Todo para el pueblo, pero sin el pueblo"],
+    ["Neoclasicismo", "Imita la construcción de los romanos"],
+    ["El Greco", "Pintor del siglo XVI (figuras alargadas)"],
+    ["Velázquez", "Pintor de la Corte (realismo, siglo XVII)"],
+    ["Goya", "Pintor del siglo XVIII"],
+  ];
+
+  // ---------- STATE ----------
+  const $ = (s) => document.querySelector(s);
+  const modeEl = $("#mode");
+  const topicEl = $("#topic");
+  const resetEl = $("#reset");
+  const stageEl = $("#stage");
+  const panelTitleEl = $("#panelTitle");
+  const subBadgeEl = $("#subBadge");
+  const msgEl = $("#message");
+
+  const scoreEl = $("#score");
+  const correctEl = $("#correct");
+  const wrongEl = $("#wrong");
+  const streakEl = $("#streak");
+  const countEl = $("#count");
+
+  let score=0, correct=0, wrong=0, streak=0;
+  let locked=false;
+
+  let mem = { deck:[], revealed:[], matched:new Set(), lock:false };
+
+  function setMessage(text, type=""){
+    msgEl.className = "msg" + (type ? " " + type : "");
+    msgEl.textContent = text;
+  }
+  function updateStats(total=0){
+    scoreEl.textContent = score;
+    correctEl.textContent = correct;
+    wrongEl.textContent = wrong;
+    streakEl.textContent = streak;
+    countEl.textContent = total;
+  }
+  function randInt(n){ return Math.floor(Math.random()*n); }
+  function shuffle(arr){
+    for(let i=arr.length-1;i>0;i--){
+      const j=randInt(i+1);
+      [arr[i],arr[j]]=[arr[j],arr[i]];
+    }
+    return arr;
+  }
+
+  function getQuizPool(){
+    const t = topicEl.value;
+    if(t==="all") return [].concat(...Object.values(BANK));
+    return BANK[t] || [];
+  }
+
+  // ---------- RENDERERS ----------
+  function renderQuiz(){
+    subBadgeEl.textContent = "elige 1";
+    panelTitleEl.childNodes[0].nodeValue = "Quiz ";
+    const pool = getQuizPool();
+    const q = pool[randInt(pool.length)];
+    locked=false;
+    updateStats(pool.length);
+    setMessage("Elige la respuesta correcta 🙂", "");
+
+    const opts = shuffle(q.opts.slice()).slice(0,4);
+    // ensure correct included
+    if(!opts.includes(q.a)){
+      opts[randInt(opts.length)] = q.a;
+      shuffle(opts);
+    }
+
+    stageEl.innerHTML = `
+      <div class="hint">Pregunta:</div>
+      <div class="big">${q.q}</div>
+      <div class="options">
+        ${opts.map(o => `<div class="opt" data-val="${escapeHtml(o)}">${escapeHtml(o)}</div>`).join("")}
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button id="next" class="btn-c">Next</button>
+        <button id="help" class="btn-e">Pista</button>
+      </div>
+      <div id="hintBox" class="hint" style="display:none; margin-top:6px"></div>
+    `;
+
+    $("#next").onclick = () => renderQuiz();
+    $("#help").onclick = () => {
+      const hb = $("#hintBox");
+      hb.style.display = "block";
+      hb.textContent = makeHintFromAnswer(q.a);
+    };
+
+    stageEl.querySelectorAll(".opt").forEach(el=>{
+      el.addEventListener("click", ()=>{
+        if(locked) return;
+        locked=true;
+        const chosen = el.getAttribute("data-val");
+        const isCorrect = unescapeHtml(chosen) === q.a;
+
+        // show correct
+        stageEl.querySelectorAll(".opt").forEach(o=>{
+          if(unescapeHtml(o.getAttribute("data-val")) === q.a) o.classList.add("correct");
+        });
+
+        if(isCorrect){
+          el.classList.add("correct");
+          correct++; streak++; score += 10 + Math.min(10, streak);
+          setMessage("✅ ¡Muy bien!", "good");
+        }else{
+          el.classList.add("wrong");
+          wrong++; streak=0; score = Math.max(0, score-3);
+          setMessage("❌ Casi… La correcta era: " + q.a, "bad");
+        }
+        updateStats(pool.length);
+      });
+    });
+  }
+
+  function renderTF(){
+    subBadgeEl.textContent = "V/F";
+    panelTitleEl.childNodes[0].nodeValue = "Verdadero / Falso ";
+    const pool = TF.all.slice();
+    const item = pool[randInt(pool.length)];
+    locked=false;
+    updateStats(pool.length);
+    setMessage("¿Verdadero o falso?", "");
+
+    stageEl.innerHTML = `
+      <div class="hint">Frase:</div>
+      <div class="big">${item.s}</div>
+      <div class="options">
+        <div class="opt" data-val="true">✅ Verdadero</div>
+        <div class="opt" data-val="false">❌ Falso</div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button id="next" class="btn-c">Next</button>
+      </div>
+      <div id="why" class="hint" style="display:none; margin-top:6px"></div>
+    `;
+    $("#next").onclick = () => renderTF();
+
+    stageEl.querySelectorAll(".opt").forEach(el=>{
+      el.addEventListener("click", ()=>{
+        if(locked) return;
+        locked=true;
+        const chosen = el.getAttribute("data-val")==="true";
+        const ok = chosen === item.t;
+
+        const why = $("#why");
+        why.style.display="block";
+        why.textContent = item.why;
+
+        if(ok){
+          el.classList.add("correct");
+          correct++; streak++; score += 9 + Math.min(9, streak);
+          setMessage("✅ Correcto", "good");
+        }else{
+          el.classList.add("wrong");
+          wrong++; streak=0; score=Math.max(0, score-2);
+          setMessage("❌ Ups…", "bad");
+        }
+        updateStats(pool.length);
+      });
+    });
+  }
+
+  function renderTimeline(){
+    subBadgeEl.textContent = "arrastra";
+    panelTitleEl.childNodes[0].nodeValue = "Línea del tiempo ";
+    updateStats(TIMELINE.length);
+    setMessage("Arrastra cada tarjeta a su sitio.", "");
+
+    const slots = TIMELINE.map((x,i)=>({i, slot:x.slot, year:x.year}));
+    const items = shuffle(TIMELINE.map((x,i)=>({i, text:x.item})).slice());
+
+    stageEl.innerHTML = `
+      <div class="hint">Arrastra las tarjetas (🧩) a la caja correcta:</div>
+
+      <div class="timeline" id="tl">
+        ${slots.map(s => `
+          <div class="lineRow">
+            <div class="drop" data-slot="${s.i}">
+              <div style="text-align:center">
+                <div style="font-size:12px; color: rgba(15,23,42,.70); font-weight:1000">${s.slot}</div>
+                <div style="font-size:12px; color: rgba(15,23,42,.62)">${s.year}</div>
+              </div>
+            </div>
+            <div class="drop" data-fill="${s.i}">⬇️ Suelta aquí</div>
+          </div>
+        `).join("")}
+      </div>
+
+      <div class="hint" style="margin-top:6px">Tarjetas:</div>
+      <div class="chipRow" id="chips">
+        ${items.map(it => `<div class="chip" draggable="true" data-item="${it.i}">🧩 ${escapeHtml(it.text)}</div>`).join("")}
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <button id="check" class="btn-a">Check</button>
+        <button id="resetTL" class="btn-e">Shuffle</button>
+        <button id="next" class="btn-c">Otro</button>
+      </div>
+      <div id="tlMsg" class="hint" style="margin-top:6px"></div>
+    `;
+
+    const placed = new Map(); // slot -> item
+    let dragged = null;
+
+    stageEl.querySelectorAll(".chip").forEach(ch => {
+      ch.addEventListener("dragstart", (e)=>{
+        dragged = ch;
+        e.dataTransfer.setData("text/plain", ch.getAttribute("data-item"));
+      });
+    });
+
+    stageEl.querySelectorAll(".drop[data-fill]").forEach(drop=>{
+      drop.addEventListener("dragover", (e)=>{ e.preventDefault(); });
+      drop.addEventListener("drop", (e)=>{
+        e.preventDefault();
+        if(!dragged) return;
+        const itemId = parseInt(dragged.getAttribute("data-item"),10);
+        const slotId = parseInt(drop.getAttribute("data-fill"),10);
+
+        // remove previous placement of item
+        for(const [s,i] of placed.entries()){
+          if(i===itemId) placed.delete(s);
+        }
+        placed.set(slotId, itemId);
+
+        drop.textContent = "🧩 " + dragged.textContent.replace("🧩 ","");
+        drop.style.borderStyle = "solid";
+        drop.style.borderColor = "rgba(15,23,42,.12)";
+      });
+    });
+
+    $("#resetTL").onclick = () => renderTimeline();
+    $("#next").onclick = () => renderTimeline();
+
+    $("#check").onclick = () => {
+      let ok = 0;
+      // evaluate
+      stageEl.querySelectorAll(".drop[data-fill]").forEach(drop=>{
+        const slotId = parseInt(drop.getAttribute("data-fill"),10);
+        const chosen = placed.get(slotId);
+        if(chosen === slotId){
+          ok++;
+          drop.style.borderColor = "rgba(34,197,94,.45)";
+          drop.style.background = "rgba(220,252,231,.72)";
+        }else{
+          drop.style.borderColor = "rgba(251,113,133,.55)";
+          drop.style.background = "rgba(255,228,230,.72)";
+        }
+      });
+
+      const tlMsg = $("#tlMsg");
+      tlMsg.textContent = `Has acertado ${ok}/${TIMELINE.length}.`;
+
+      if(ok===TIMELINE.length){
+        correct++; streak++; score += 25 + Math.min(15, streak);
+        setMessage("🏁 ¡Perfecto! Línea del tiempo completa.", "good");
+      }else{
+        wrong++; streak=0; score = Math.max(0, score-3);
+        setMessage("Sigue probando 🙂", "");
+      }
+      updateStats(TIMELINE.length);
+    };
+  }
+
+  function renderMemory(){
+    subBadgeEl.textContent = "parejas";
+    panelTitleEl.childNodes[0].nodeValue = "Memory ";
+    updateStats(PAIRS.length);
+    setMessage("Encuentra las parejas (palabra ↔ explicación).", "");
+
+    const deck = [];
+    PAIRS.forEach((p, idx)=>{
+      deck.push({pair: idx, text: p[0], kind:"term"});
+      deck.push({pair: idx, text: p[1], kind:"def"});
+    });
+    shuffle(deck);
+
+    mem = { deck, revealed:[], matched:new Set(), lock:false };
+
+    stageEl.innerHTML = `
+      <div class="hint">Toca 2 cartas. Si coinciden, ¡se quedan!</div>
+      <div class="options" id="grid" style="grid-template-columns: repeat(2, 1fr);"></div>
+      <div class="row" style="margin-top:10px">
+        <button id="shuffle" class="btn-a">Shuffle</button>
+        <button id="next" class="btn-c">Next</button>
+      </div>
+    `;
+
+    const grid = $("#grid");
+    $("#shuffle").onclick = () => renderMemory();
+    $("#next").onclick = () => renderMemory();
+
+    function draw(){
+      grid.innerHTML = "";
+      mem.deck.forEach((card, i)=>{
+        const matched = mem.matched.has(card.pair);
+        const revealed = mem.revealed.some(r=>r.i===i);
+        const show = matched || revealed;
+
+        const div = document.createElement("div");
+        div.className = "opt" + (matched ? " correct" : "");
+        div.textContent = show ? card.text : "❓";
+        div.onclick = ()=>pick(i);
+        grid.appendChild(div);
+      });
+    }
+
+    function pick(i){
+      if(mem.lock) return;
+      const card = mem.deck[i];
+      if(mem.matched.has(card.pair)) return;
+      if(mem.revealed.some(r=>r.i===i)) return;
+
+      mem.revealed.push({i, card});
+
+      if(mem.revealed.length===2){
+        mem.lock=true;
+        const [a,b]=mem.revealed;
+        const ok = a.card.pair===b.card.pair && a.card.kind!==b.card.kind;
+
+        draw();
+
+        if(ok){
+          mem.matched.add(a.card.pair);
+          correct++; streak++; score += 8 + Math.min(8, streak);
+          setMessage("✅ Match!", "good");
+          mem.revealed=[];
+          mem.lock=false;
+          updateStats(PAIRS.length);
+          draw();
+          if(mem.matched.size===PAIRS.length){
+            setMessage("🏁 ¡Completado! Has encontrado todas las parejas.", "good");
+          }
+        }else{
+          wrong++; streak=0; score=Math.max(0, score-2);
+          setMessage("❌ No match", "bad");
+          updateStats(PAIRS.length);
+          setTimeout(()=>{
+            mem.revealed=[];
+            mem.lock=false;
+            draw();
+          }, 700);
+        }
+      }else{
+        draw();
+      }
+    }
+
+    draw();
+  }
+
+  function renderStudy(){
+    subBadgeEl.textContent = "resumen";
+    panelTitleEl.childNodes[0].nodeValue = "Repaso ";
+    const blocks = [
+      {t:"Cambios (Humanismo/Renacimiento)", items:[
+        "Imprenta: acerca el conocimiento a muchas personas.",
+        "Humanismo: uso de la razón, ser humano como centro, estudio de Grecia y Roma, observación de la naturaleza.",
+        "Navegación, expediciones, descubrimientos y nuevas rutas comerciales.",
+        "Crecen la burguesía y el comercio. Sociedad estamental. Mecenas financian el arte.",
+        "Del feudalismo a la monarquía autoritaria → Estado moderno, menos poder de la nobleza."
+      ]},
+      {t:"Renacimiento (s. XV-XVI) — Reyes", items:[
+        "Reyes Católicos: unión Castilla-Aragón (1479), Granada (1492), Navarra (1512), expulsión de judíos (1492).",
+        "Carlos I: emperador (1519), 1ª vuelta al mundo, conquistas, abdica (1556).",
+        "Felipe II: capital a Madrid (1561), Lepanto (1571), Armada Invencible (1588)."
+      ]},
+      {t:"Barroco (s. XVII)", items:[
+        "Monarquías absolutas. Crisis demográfica y económica por guerras y gasto.",
+        "Decadencia de los Austrias pero esplendor cultural (Siglo de Oro).",
+        "Gobiernan validos: Lerma (Felipe III), Olivares (Felipe IV).",
+        "Carlos II muere sin descendencia → Guerra de Sucesión."
+      ]},
+      {t:"Ilustración (s. XVIII)", items:[
+        "Siglo de las Luces. Borbones desde 1700.",
+        "Despotismo ilustrado: “Todo para el pueblo, pero sin el pueblo”.",
+        "Reformas para modernizar. Valoración de Grecia y Roma.",
+        "Revolución industrial y Revolución francesa (1789)."
+      ]},
+      {t:"Arte en la Edad Moderna", items:[
+        "Arquitectura s. XVI: herreriano (austero), El Escorial.",
+        "Arquitectura s. XVII: barroco (curvas y decoración recargada).",
+        "Arquitectura s. XVIII: neoclasicismo (imita a los romanos).",
+        "Pintura: El Greco (s. XVI), Velázquez (s. XVII, realismo), Goya (s. XVIII).",
+        "Literatura: Cervantes/Quevedo/Lope (s. XVII) y Jovellanos (s. XVIII)."
+      ]}
+    ];
+    updateStats(blocks.length);
+
+    stageEl.innerHTML = `
+      <div class="hint">Lee 2 minutos y luego vuelve al Quiz 🙂</div>
+      ${blocks.map(b => `
+        <div style="border-radius:16px; border:2px solid rgba(255,255,255,.9); background: rgba(255,255,255,.72); padding:12px;">
+          <div style="font-weight:1000; margin-bottom:6px">${b.t}</div>
+          <ul style="margin:0; padding-left:18px; color: rgba(15,23,42,.80); line-height:1.35;">
+            ${b.items.map(it=>`<li>${it}</li>`).join("")}
+          </ul>
+        </div>
+      `).join("")}
+      <div class="row" style="margin-top:10px">
+        <button id="toQuiz" class="btn-c">Ir al Quiz</button>
+      </div>
+    `;
+    $("#toQuiz").onclick = ()=>{ modeEl.value="quiz"; render(); };
+    setMessage("Repaso listo. Cuando quieras, pulsa “Ir al Quiz”.", "");
+  }
+
+  function render(){
+    const m = modeEl.value;
+    if(m==="quiz") return renderQuiz();
+    if(m==="tf") return renderTF();
+    if(m==="timeline") return renderTimeline();
+    if(m==="memory") return renderMemory();
+    if(m==="study") return renderStudy();
+  }
+
+  function escapeHtml(s){
+    return (s+"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+  function unescapeHtml(s){
+    // minimal (only for our dataset)
+    return (s+"").replace(/&quot;/g,'"').replace(/&gt;/g,">").replace(/&lt;/g,"<").replace(/&amp;/g,"&");
+  }
+
+  function makeHintFromAnswer(ans){
+    // tiny hints
+    const a = ans.toLowerCase();
+    if(a.includes("imprenta")) return "Pista: sirve para imprimir libros.";
+    if(a.includes("razón")) return "Pista: pensar y usar la cabeza 🙂";
+    if(a.includes("grecia") || a.includes("roma")) return "Pista: civilizaciones de la Antigüedad.";
+    if(a.includes("burgues")) return "Pista: vive en ciudades y hace comercio.";
+    if(a.includes("monarqu")) return "Pista: el rey gana poder.";
+    if(a.includes("madrid")) return "Pista: la capital de España.";
+    if(a.includes("lepanto")) return "Pista: batalla naval importante.";
+    if(a.includes("armada")) return "Pista: una flota muy famosa.";
+    if(a.includes("austrias")) return "Pista: una dinastía de reyes.";
+    if(a.includes("borbon")) return "Pista: empieza en 1700.";
+    if(a.includes("luzes") || a.includes("luces")) return "Pista: época de ideas y conocimiento.";
+    if(a.includes("neocl")) return "Pista: imita a los romanos.";
+    if(a.includes("el escorial")) return "Pista: un gran monasterio.";
+    return "Pista: piensa en el siglo y en el tema (arte, reyes, cambios…).";
+  }
+
+  // events
+  modeEl.addEventListener("change", ()=>{ setMessage("Modo cambiado.", ""); render(); });
+  topicEl.addEventListener("change", ()=>{ setMessage("Tema cambiado.", ""); render(); });
+  resetEl.addEventListener("click", ()=>{
+    score=0; correct=0; wrong=0; streak=0; locked=false;
+    updateStats(0);
+    setMessage("Progreso reiniciado.", "");
+    render();
+  });
+
+  window.addEventListener("keydown", (e)=>{
+    const k = e.key.toLowerCase();
+    if(k==="r") resetEl.click();
+    if(k==="n") render();
+  });
+
+  // init
+  setMessage("Empieza con Quiz 🙂", "");
+  render();
+})();
+</script>
+</body>
+</html>

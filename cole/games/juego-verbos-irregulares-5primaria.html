@@ -1,0 +1,759 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Irregular Verbs — 5º Primaria (Mobile)</title>
+  <style>
+    :root{
+      --bg1:#ffe4e6; --bg2:#dbeafe; --bg3:#dcfce7;
+      --ink:#0b1020; --muted:#334155;
+      --panel:#ffffffcc; --card:#ffffffee;
+      --a:#a78bfa; --b:#fb7185; --c:#22c55e; --d:#06b6d4; --e:#f59e0b;
+      --shadow: 0 18px 40px rgba(2,6,23,.18);
+      --radius: 18px;
+      --tap: 48px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color:var(--ink);
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:14px;
+      background:
+        radial-gradient(900px 520px at 18% 15%, rgba(167,139,250,.32), transparent 62%),
+        radial-gradient(820px 520px at 88% 20%, rgba(251,113,133,.25), transparent 60%),
+        radial-gradient(900px 520px at 70% 88%, rgba(34,197,94,.20), transparent 58%),
+        linear-gradient(135deg, var(--bg1), var(--bg2), var(--bg3));
+    }
+    .app{
+      width:min(1020px, 100%);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      border:2px solid rgba(255,255,255,.75);
+      backdrop-filter: blur(10px);
+      background: rgba(255,255,255,.55);
+    }
+    header{
+      padding:14px;
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      background: linear-gradient(90deg, rgba(167,139,250,.25), rgba(251,113,133,.18), rgba(34,197,94,.18));
+      border-bottom: 2px solid rgba(255,255,255,.7);
+    }
+    .title{ display:flex; flex-direction:column; gap:4px; min-width: 240px; }
+    .title h1{
+      margin:0; font-size:16px; letter-spacing:.2px;
+      display:flex; gap:8px; align-items:center; line-height:1.1;
+    }
+    .spark{
+      display:inline-grid; place-items:center; width:26px; height:26px; border-radius:10px;
+      background: linear-gradient(135deg, rgba(167,139,250,.8), rgba(251,113,133,.75));
+      color:white; box-shadow: 0 10px 18px rgba(0,0,0,.10); flex:0 0 auto;
+    }
+    .title small{ color: rgba(15,23,42,.78); }
+    .controls{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:flex-end; flex: 1 1 auto; }
+
+    button, select, input{
+      border-radius: 14px;
+      border: 2px solid rgba(255,255,255,.9);
+      background: rgba(255,255,255,.78);
+      color: var(--ink);
+      padding:10px 12px;
+      font-size:14px;
+      outline:none;
+      box-shadow: 0 10px 18px rgba(2,6,23,.08);
+      min-height: var(--tap);
+    }
+    select{ cursor:pointer; }
+    button{
+      cursor:pointer;
+      transition: transform .05s ease, filter .2s ease;
+      user-select:none;
+      font-weight: 900;
+    }
+    button:hover{ filter: brightness(1.03) saturate(1.05); }
+    button:active{ transform: translateY(1px); }
+    .btn-a{ background: linear-gradient(135deg, rgba(167,139,250,.85), rgba(167,139,250,.45)); color: white; }
+    .btn-b{ background: linear-gradient(135deg, rgba(251,113,133,.85), rgba(251,113,133,.45)); color: white; }
+    .btn-c{ background: linear-gradient(135deg, rgba(34,197,94,.85), rgba(34,197,94,.42)); color: white; }
+    .btn-d{ background: linear-gradient(135deg, rgba(6,182,212,.85), rgba(6,182,212,.40)); color: white; }
+    .btn-e{ background: linear-gradient(135deg, rgba(245,158,11,.85), rgba(245,158,11,.45)); color: white; }
+
+    .main{
+      padding:14px;
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap:12px;
+    }
+    @media (max-width: 900px){ .main{ grid-template-columns: 1fr; } }
+
+    .panel{
+      background: var(--panel);
+      border: 2px solid rgba(255,255,255,.8);
+      border-radius: var(--radius);
+      box-shadow: 0 14px 28px rgba(2,6,23,.10);
+      padding:12px;
+    }
+    .panel h2{
+      margin:0 0 10px 0;
+      font-size:15px;
+      color:#0f172a;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .badge{
+      font-size:12px;
+      font-weight:950;
+      padding:4px 10px;
+      border-radius:999px;
+      background: rgba(255,255,255,.82);
+      border: 2px solid rgba(255,255,255,.9);
+      box-shadow: 0 10px 18px rgba(2,6,23,.06);
+      white-space:nowrap;
+    }
+    .card{
+      background: var(--card);
+      border: 2px solid rgba(255,255,255,.9);
+      border-radius: var(--radius);
+      padding:14px;
+      display:grid;
+      gap:10px;
+      box-shadow: 0 14px 28px rgba(2,6,23,.10);
+    }
+    .bigWord{
+      font-size:32px;
+      font-weight:1000;
+      letter-spacing:.4px;
+      text-align:center;
+      margin:2px 0 0 0;
+      line-height:1.05;
+      word-break: break-word;
+    }
+    .hint{
+      text-align:center;
+      color: var(--muted);
+      font-size:13px;
+      line-height: 1.35;
+    }
+    .row{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      justify-content:center;
+      align-items:center;
+    }
+
+    .tripleRow{
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap:8px;
+    }
+    @media (max-width: 520px){ .tripleRow{ grid-template-columns: 1fr; } }
+
+    .miniCard{
+      border-radius: 16px;
+      border:2px solid rgba(255,255,255,.92);
+      background: rgba(255,255,255,.72);
+      padding:10px;
+      text-align:center;
+      box-shadow: 0 10px 18px rgba(2,6,23,.06);
+    }
+    .miniCard .label{
+      font-size:12px;
+      font-weight:950;
+      color: rgba(15,23,42,.70);
+      margin-bottom:4px;
+    }
+    .miniCard .val{ font-size:18px; font-weight:1000; }
+
+    .status{ display:grid; gap:10px; }
+    .pill{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      padding:10px 12px;
+      border-radius: 16px;
+      background: rgba(255,255,255,.75);
+      border:2px solid rgba(255,255,255,.9);
+      color: rgba(15,23,42,.75);
+      font-size:13px;
+      box-shadow: 0 10px 18px rgba(2,6,23,.06);
+    }
+    .pill b{ color:#0f172a; }
+    .msg{
+      padding:10px 12px;
+      border-radius: 16px;
+      border:2px dashed rgba(15,23,42,.22);
+      color: rgba(15,23,42,.84);
+      font-size:13px;
+      min-height:52px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      background: rgba(255,255,255,.65);
+    }
+    .msg.good{ border-color: rgba(34,197,94,.45); color: #166534; background: rgba(220,252,231,.65); }
+    .msg.bad{ border-color: rgba(251,113,133,.55); color: #9f1239; background: rgba(255,228,230,.70); }
+
+    .options{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+      margin-top:6px;
+    }
+    @media (max-width: 520px){ .options{ grid-template-columns: 1fr; } }
+    .opt{
+      padding:12px;
+      border-radius: 16px;
+      border:2px solid rgba(255,255,255,.9);
+      background: rgba(255,255,255,.72);
+      cursor:pointer;
+      text-align:center;
+      font-weight:1000;
+      transition: transform .05s ease, filter .2s ease;
+      box-shadow: 0 10px 18px rgba(2,6,23,.06);
+      min-height: var(--tap);
+      display:grid;
+      place-items:center;
+    }
+    .opt:hover{ filter: brightness(1.03) saturate(1.05); }
+    .opt:active{ transform: translateY(1px); }
+    .opt.correct{ border-color: rgba(34,197,94,.55); background: rgba(220,252,231,.75); }
+    .opt.wrong{ border-color: rgba(251,113,133,.6); background: rgba(255,228,230,.75); }
+
+    .kbd{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      border:2px solid rgba(15,23,42,.18);
+      padding:2px 6px;
+      border-radius:10px;
+      color: #0f172a;
+      background: rgba(255,255,255,.7);
+      font-size: 12px;
+      font-weight: 950;
+    }
+    .footer{
+      padding:12px 14px 14px 14px;
+      color: rgba(15,23,42,.75);
+      border-top: 2px solid rgba(255,255,255,.75);
+      background: rgba(255,255,255,.45);
+      font-size:12px;
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .tiny{ font-size: 12px; color: rgba(15,23,42,.72); text-align:center; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="title">
+        <h1><span class="spark">⚡</span> Irregular Verbs — 5º Primaria</h1>
+        <small>Flashcards · Quiz (Base→Past) · Spelling (Past) · Memory (EN↔ES)</small>
+      </div>
+      <div class="controls">
+        <select id="mode">
+          <option value="flash">Flashcards</option>
+          <option value="quiz">Quiz (Base → Past)</option>
+          <option value="spell">Spelling (Past)</option>
+          <option value="memory">Memory (EN ↔ ES)</option>
+        </select>
+        <select id="set">
+          <option value="core">Set 1 (básicos)</option>
+          <option value="more">Set 2 (más verbos)</option>
+          <option value="all">All</option>
+        </select>
+        <button id="reset" class="btn-b">Reset</button>
+      </div>
+    </header>
+
+    <div class="main">
+      <section class="panel">
+        <h2 id="panelTitle">Flashcards <span class="badge" id="subBadge">3 formas</span></h2>
+        <div id="stage" class="card"></div>
+      </section>
+
+      <aside class="panel status">
+        <h2>Progreso <span class="badge">⭐</span></h2>
+        <div class="pill"><span>Score</span><b id="score">0</b></div>
+        <div class="pill"><span>Correct</span><b id="correct">0</b></div>
+        <div class="pill"><span>Wrong</span><b id="wrong">0</b></div>
+        <div class="pill"><span>Streak</span><b id="streak">0</b></div>
+        <div class="pill"><span>Verbs in set</span><b id="count">0</b></div>
+        <div id="message" class="msg">Elige modo y empieza 🙂</div>
+
+        <div class="card" style="padding:12px">
+          <div class="tiny">
+            Atajos: <span class="kbd">N</span> next · <span class="kbd">S</span> speak · <span class="kbd">R</span> reset
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <div class="footer">
+      <div>Tip móvil: usa pantalla completa / gira el teléfono. Botón 🔊 pronuncia en inglés.</div>
+      <div>Objetivo: Base / Past / Participle + significado.</div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const VERBS = {
+    core: [
+      { b:"be", p:"was/were", pp:"been", es:"ser/estar" },
+      { b:"have", p:"had", pp:"had", es:"tener" },
+      { b:"do", p:"did", pp:"done", es:"hacer" },
+      { b:"go", p:"went", pp:"gone", es:"ir" },
+      { b:"come", p:"came", pp:"come", es:"venir" },
+      { b:"make", p:"made", pp:"made", es:"hacer / fabricar" },
+      { b:"get", p:"got", pp:"got", es:"conseguir / obtener" },
+      { b:"give", p:"gave", pp:"given", es:"dar" },
+      { b:"see", p:"saw", pp:"seen", es:"ver" },
+      { b:"eat", p:"ate", pp:"eaten", es:"comer" },
+      { b:"drink", p:"drank", pp:"drunk", es:"beber" },
+      { b:"take", p:"took", pp:"taken", es:"coger / tomar" },
+      { b:"say", p:"said", pp:"said", es:"decir" },
+      { b:"tell", p:"told", pp:"told", es:"contar / decir a alguien" },
+      { b:"can", p:"could", pp:"(—)", es:"poder (habilidad)" },
+    ],
+    more: [
+      { b:"buy", p:"bought", pp:"bought", es:"comprar" },
+      { b:"bring", p:"brought", pp:"brought", es:"traer" },
+      { b:"think", p:"thought", pp:"thought", es:"pensar" },
+      { b:"know", p:"knew", pp:"known", es:"saber / conocer" },
+      { b:"find", p:"found", pp:"found", es:"encontrar" },
+      { b:"feel", p:"felt", pp:"felt", es:"sentir" },
+      { b:"leave", p:"left", pp:"left", es:"irse / dejar" },
+      { b:"meet", p:"met", pp:"met", es:"conocer / quedar con" },
+      { b:"put", p:"put", pp:"put", es:"poner" },
+      { b:"read", p:"read", pp:"read", es:"leer (pron. /red/)" },
+      { b:"write", p:"wrote", pp:"written", es:"escribir" },
+      { b:"run", p:"ran", pp:"run", es:"correr" },
+      { b:"sleep", p:"slept", pp:"slept", es:"dormir" },
+      { b:"speak", p:"spoke", pp:"spoken", es:"hablar" },
+      { b:"wear", p:"wore", pp:"worn", es:"llevar (ropa)" },
+    ]
+  };
+
+  const $ = (s) => document.querySelector(s);
+  const modeEl = $("#mode");
+  const setEl = $("#set");
+  const resetEl = $("#reset");
+  const stageEl = $("#stage");
+  const panelTitleEl = $("#panelTitle");
+  const subBadgeEl = $("#subBadge");
+  const msgEl = $("#message");
+
+  const scoreEl = $("#score");
+  const correctEl = $("#correct");
+  const wrongEl = $("#wrong");
+  const streakEl = $("#streak");
+  const countEl = $("#count");
+
+  let score = 0, correct = 0, wrong = 0, streak = 0;
+  let current = null;
+  let quizLocked = false;
+
+  let mem = { deck: [], revealed: [], matched: new Set(), lock: false };
+
+  function setMessage(text, type = "") {
+    msgEl.className = "msg" + (type ? " " + type : "");
+    msgEl.textContent = text;
+  }
+
+  function getList() {
+    const s = setEl.value;
+    if (s === "core") return VERBS.core.slice();
+    if (s === "more") return VERBS.more.slice();
+    return [...VERBS.core, ...VERBS.more];
+  }
+
+  function updateStats() {
+    scoreEl.textContent = score;
+    correctEl.textContent = correct;
+    wrongEl.textContent = wrong;
+    streakEl.textContent = streak;
+    countEl.textContent = getList().length;
+  }
+
+  function randInt(n) { return Math.floor(Math.random() * n); }
+  function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = randInt(i + 1);
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function pickNew() {
+    const list = getList();
+    current = list[randInt(list.length)];
+    return current;
+  }
+
+  function speak(text) {
+    if (!("speechSynthesis" in window)) {
+      setMessage("Tu navegador no tiene pronunciación (SpeechSynthesis).", "bad");
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "en-US";
+    u.rate = 0.95;
+    window.speechSynthesis.speak(u);
+  }
+
+  function resetProgress() {
+    score = 0; correct = 0; wrong = 0; streak = 0;
+    quizLocked = false;
+    mem = { deck: [], revealed: [], matched: new Set(), lock: false };
+    updateStats();
+    setMessage("Progreso reiniciado.", "");
+    render();
+  }
+
+  function norm(s){ return (s||"").trim().toLowerCase().replace(/\s+/g," "); }
+
+  // typo generator for "single" words (not "was/were")
+  function makeTypos(word) {
+    const w = word.toLowerCase();
+    if (w.includes("/")) return [];
+    const typos = new Set();
+    const vowels = ["a","e","i","o","u"];
+
+    if (w.length >= 4) {
+      const i = randInt(w.length - 1);
+      const s = w.split("");
+      [s[i], s[i+1]] = [s[i+1], s[i]];
+      typos.add(s.join(""));
+    }
+
+    const idxs = [];
+    for (let i=0;i<w.length;i++) if (vowels.includes(w[i])) idxs.push(i);
+    if (idxs.length){
+      const i = idxs[randInt(idxs.length)];
+      const v = vowels[randInt(vowels.length)];
+      const s = w.split("");
+      s[i] = v;
+      typos.add(s.join(""));
+    }
+
+    if (w.length >= 4) {
+      const i = randInt(w.length);
+      typos.add(w.slice(0,i) + w.slice(i+1));
+    }
+
+    if (w.length >= 3) {
+      const i = randInt(w.length+1);
+      const ch = vowels[randInt(vowels.length)];
+      typos.add(w.slice(0,i) + ch + w.slice(i));
+    }
+
+    typos.delete(w);
+    return Array.from(typos).filter(t => t.length >= 2 && t.length <= 14);
+  }
+
+  function renderFlash() {
+    subBadgeEl.textContent = "3 formas";
+    panelTitleEl.childNodes[0].nodeValue = "Flashcards ";
+    const v = pickNew();
+
+    stageEl.innerHTML = `
+      <div class="hint">Significado:</div>
+      <div class="bigWord">${v.es}</div>
+
+      <div class="tripleRow">
+        <div class="miniCard"><div class="label">Base</div><div class="val">${v.b}</div></div>
+        <div class="miniCard"><div class="label">Past</div><div class="val">${v.p}</div></div>
+        <div class="miniCard"><div class="label">Participle</div><div class="val">${v.pp}</div></div>
+      </div>
+
+      <div class="row" style="margin-top:8px">
+        <button id="speakBase" class="btn-d">Speak Base 🔊</button>
+        <button id="speakPast" class="btn-d">Speak Past 🔊</button>
+        <button id="next" class="btn-c">Next</button>
+      </div>
+      <div class="hint">Tip: aprende primero <b>Base → Past</b>.</div>
+    `;
+
+    $("#speakBase").onclick = () => speak(v.b.replace("/"," "));
+    $("#speakPast").onclick = () => speak(v.p.replace("/"," "));
+    $("#next").onclick = () => renderFlash();
+  }
+
+  function renderQuiz() {
+    subBadgeEl.textContent = "Base → Past";
+    panelTitleEl.childNodes[0].nodeValue = "Quiz ";
+    const list = getList();
+    const v = pickNew();
+    quizLocked = false;
+
+    const target = norm(v.p);
+
+    const options = new Set([target]);
+
+    const typos = makeTypos(v.p);
+    shuffle(typos);
+    for (const t of typos) {
+      if (options.size >= 4) break;
+      options.add(norm(t));
+    }
+
+    const otherPast = list.map(x => norm(x.p)).filter(x => x !== target);
+    shuffle(otherPast);
+    for (const o of otherPast) {
+      if (options.size >= 4) break;
+      options.add(o);
+    }
+
+    const opts = shuffle(Array.from(options)).slice(0,4);
+
+    stageEl.innerHTML = `
+      <div class="hint">Elige el <b>Past Simple</b>:</div>
+      <div class="bigWord">${v.b}</div>
+      <div class="hint">Significa: <b>${v.es}</b></div>
+
+      <div class="options">
+        ${opts.map((o) => `<div class="opt" data-val="${o}">${o}</div>`).join("")}
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <button id="speakBtn" class="btn-d">Speak correct 🔊</button>
+        <button id="showAll" class="btn-e">Show 3 forms</button>
+        <button id="next" class="btn-c">Next</button>
+      </div>
+
+      <div id="forms" class="hint" style="display:none; margin-top:6px">
+        Base: <b>${v.b}</b> · Past: <b>${v.p}</b> · Participle: <b>${v.pp}</b>
+      </div>
+    `;
+
+    $("#speakBtn").onclick = () => speak(v.p.replace("/"," "));
+    $("#next").onclick = () => renderQuiz();
+    $("#showAll").onclick = () => { $("#forms").style.display = "block"; };
+
+    stageEl.querySelectorAll(".opt").forEach(opt => {
+      opt.addEventListener("click", () => {
+        if (quizLocked) return;
+        quizLocked = true;
+
+        const chosen = opt.getAttribute("data-val");
+        const isCorrect = chosen === target;
+
+        stageEl.querySelectorAll(".opt").forEach(o => {
+          if (o.getAttribute("data-val") === target) o.classList.add("correct");
+        });
+
+        if (isCorrect) {
+          opt.classList.add("correct");
+          correct++; streak++; score += 10 + Math.min(10, streak);
+          setMessage("✅ Correct!", "good");
+          speak(v.p.replace("/"," "));
+        } else {
+          opt.classList.add("wrong");
+          wrong++; streak = 0; score = Math.max(0, score - 3);
+          setMessage(`❌ Wrong. Correct: ${v.p}`, "bad");
+        }
+        updateStats();
+      });
+    });
+  }
+
+  function renderSpelling() {
+    subBadgeEl.textContent = "Write Past";
+    panelTitleEl.childNodes[0].nodeValue = "Spelling ";
+    const v = pickNew();
+
+    stageEl.innerHTML = `
+      <div class="hint">Escribe el <b>Past Simple</b>:</div>
+      <div class="bigWord">${v.b}</div>
+      <div class="hint">Significa: <b>${v.es}</b></div>
+
+      <div class="row" style="margin-top:6px">
+        <input id="spellIn" autocomplete="off" placeholder="Type the past form…" style="width:min(520px, 100%); text-align:center; font-weight:1000;" />
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <button id="check" class="btn-a">Check</button>
+        <button id="show" class="btn-e">Show answer</button>
+        <button id="speakBtn" class="btn-d">Speak 🔊</button>
+        <button id="next" class="btn-c">Next</button>
+      </div>
+
+      <div id="ans" class="hint" style="display:none; margin-top:6px">
+        Past: <b>${v.p}</b> · Participle: <b>${v.pp}</b>
+      </div>
+    `;
+
+    const input = $("#spellIn");
+    input.focus();
+
+    function isCorrectTyped(typed, targetRaw){
+      const t = norm(typed);
+      const target = norm(targetRaw);
+      if (!target.includes("/")) return t === target;
+      // was/were -> accept either "was" or "were" (also accept "was were" etc.)
+      const parts = target.split("/").map(x => x.trim()).filter(Boolean);
+      return parts.includes(t);
+    }
+
+    function check() {
+      const typed = input.value || "";
+      if (!typed.trim()) return;
+
+      if (isCorrectTyped(typed, v.p)) {
+        correct++; streak++; score += 12 + Math.min(12, streak);
+        setMessage("✅ Perfect!", "good");
+        speak(v.p.replace("/"," "));
+      } else {
+        wrong++; streak = 0; score = Math.max(0, score - 3);
+        setMessage(`❌ Not quite. Correct: ${v.p}`, "bad");
+      }
+      updateStats();
+    }
+
+    $("#check").onclick = check;
+    input.addEventListener("keydown", (e) => { if (e.key === "Enter") check(); });
+
+    $("#show").onclick = () => { $("#ans").style.display = "block"; };
+    $("#speakBtn").onclick = () => speak(v.p.replace("/"," "));
+    $("#next").onclick = () => renderSpelling();
+  }
+
+  function renderMemory() {
+    subBadgeEl.textContent = "EN ↔ ES";
+    panelTitleEl.childNodes[0].nodeValue = "Memory ";
+    const list = getList();
+
+    // Use Base (EN) and Spanish meaning (ES)
+    const deck = [];
+    list.forEach((v, idx) => {
+      deck.push({ pair: idx, text: v.b, kind: "en" });
+      deck.push({ pair: idx, text: v.es, kind: "es" });
+    });
+    shuffle(deck);
+
+    mem.deck = deck;
+    mem.revealed = [];
+    mem.matched = new Set();
+    mem.lock = false;
+
+    setMessage("Encuentra las parejas: Base (EN) ↔ Significado (ES).", "");
+
+    stageEl.innerHTML = `
+      <div class="hint">Toca dos cartas. Si coinciden, ¡se quedan!</div>
+      <div class="options" id="grid" style="grid-template-columns: repeat(2, 1fr);"></div>
+      <div class="row" style="margin-top:10px">
+        <button id="restartMem" class="btn-a">Shuffle</button>
+        <button id="speakMem" class="btn-d">Speak revealed 🔊</button>
+      </div>
+    `;
+
+    const grid = $("#grid");
+    $("#restartMem").onclick = () => renderMemory();
+    $("#speakMem").onclick = () => {
+      const last = mem.revealed[mem.revealed.length - 1];
+      if (last && last.card.kind === "en") speak(last.card.text);
+    };
+
+    function draw() {
+      grid.innerHTML = "";
+      mem.deck.forEach((card, i) => {
+        const isMatched = mem.matched.has(card.pair);
+        const isRevealed = mem.revealed.some(r => r.i === i);
+        const showText = isMatched || isRevealed;
+
+        const div = document.createElement("div");
+        div.className = "opt" + (isMatched ? " correct" : (isRevealed ? "" : ""));
+        div.textContent = showText ? card.text : "❓";
+        div.onclick = () => onPick(i);
+        grid.appendChild(div);
+      });
+    }
+
+    function onPick(i) {
+      if (mem.lock) return;
+      const card = mem.deck[i];
+      if (mem.matched.has(card.pair)) return;
+      if (mem.revealed.some(r => r.i === i)) return;
+
+      mem.revealed.push({ i, card });
+
+      if (mem.revealed.length === 2) {
+        mem.lock = true;
+        const [a, b] = mem.revealed;
+        const samePair = a.card.pair === b.card.pair && a.card.kind !== b.card.kind;
+
+        draw();
+
+        if (samePair) {
+          mem.matched.add(a.card.pair);
+          correct++; streak++; score += 8 + Math.min(8, streak);
+          setMessage("✅ Match!", "good");
+          mem.revealed = [];
+          mem.lock = false;
+          updateStats();
+          draw();
+
+          if (mem.matched.size === list.length) {
+            setMessage("🏁 ¡Completado! Has encontrado todas las parejas.", "good");
+          }
+        } else {
+          wrong++; streak = 0; score = Math.max(0, score - 2);
+          setMessage("❌ No match. Inténtalo otra vez.", "bad");
+          updateStats();
+          setTimeout(() => {
+            mem.revealed = [];
+            mem.lock = false;
+            draw();
+          }, 700);
+        }
+      } else {
+        draw();
+      }
+    }
+
+    draw();
+  }
+
+  function render() {
+    updateStats();
+    const m = modeEl.value;
+    if (m === "flash") return renderFlash();
+    if (m === "quiz") return renderQuiz();
+    if (m === "spell") return renderSpelling();
+    if (m === "memory") return renderMemory();
+  }
+
+  modeEl.addEventListener("change", () => { setMessage("Modo cambiado.", ""); render(); });
+  setEl.addEventListener("change", () => { setMessage("Lista cambiada.", ""); render(); });
+  resetEl.addEventListener("click", resetProgress);
+
+  window.addEventListener("keydown", (e) => {
+    const k = e.key.toLowerCase();
+    if (k === "r") resetProgress();
+    if (k === "n") render();
+    if (k === "s" && current?.b) speak(current.b.replace("/"," "));
+  });
+
+  updateStats();
+  setMessage("Empieza con Flashcards 🙂", "");
+  render();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1958 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Oxford English Master — 5º Primaria (UK) · Juego completo</title>
+  <style>
+    :root{
+      --bg1:#fff7ed; --bg2:#e0f2fe; --bg3:#ecfccb;
+      --ink:#0b1020; --muted:#334155;
+      --panel:#ffffffcc; --card:#ffffffee;
+      --a:#6366f1; --b:#fb7185; --c:#22c55e; --d:#06b6d4; --e:#f59e0b; --f:#a78bfa;
+      --shadow: 0 18px 40px rgba(2,6,23,.18);
+      --radius: 18px;
+      --tap: 48px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color:var(--ink);
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:14px;
+      background:
+        radial-gradient(900px 520px at 18% 15%, rgba(99,102,241,.22), transparent 62%),
+        radial-gradient(820px 520px at 88% 20%, rgba(251,113,133,.22), transparent 60%),
+        radial-gradient(900px 520px at 70% 88%, rgba(34,197,94,.18), transparent 58%),
+        linear-gradient(135deg, var(--bg1), var(--bg2), var(--bg3));
+    }
+    .app{
+      width:min(1200px, 100%);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      border:2px solid rgba(255,255,255,.75);
+      backdrop-filter: blur(10px);
+      background: rgba(255,255,255,.55);
+    }
+    header{
+      padding:14px;
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      background: linear-gradient(90deg, rgba(99,102,241,.22), rgba(251,113,133,.18), rgba(34,197,94,.18));
+      border-bottom: 2px solid rgba(255,255,255,.7);
+    }
+    .title{ display:flex; flex-direction:column; gap:4px; min-width: 280px; }
+    .title h1{
+      margin:0; font-size:16px; letter-spacing:.2px;
+      display:flex; gap:8px; align-items:center; line-height:1.1;
+    }
+    .spark{
+      display:inline-grid; place-items:center; width:28px; height:28px; border-radius:10px;
+      background: linear-gradient(135deg, rgba(99,102,241,.85), rgba(251,113,133,.75));
+      color:white; box-shadow: 0 10px 18px rgba(0,0,0,.10); flex:0 0 auto;
+      font-size:16px;
+    }
+    .title small{ color: rgba(15,23,42,.78); max-width: 680px; }
+    .controls{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:flex-end; flex: 1 1 auto; }
+
+    button, select, input{
+      border-radius: 14px;
+      border: 2px solid rgba(255,255,255,.9);
+      background: rgba(255,255,255,.78);
+      color: var(--ink);
+      padding:10px 12px;
+      font-size:14px;
+      outline:none;
+      box-shadow: 0 10px 18px rgba(2,6,23,.08);
+      min-height: var(--tap);
+    }
+    select{ cursor:pointer; }
+    button{
+      cursor:pointer;
+      transition: transform .05s ease, filter .2s ease;
+      user-select:none;
+      font-weight: 950;
+      letter-spacing:.2px;
+    }
+    button:hover{ filter: brightness(1.03) saturate(1.05); }
+    button:active{ transform: translateY(1px); }
+    .btn-a{ background: linear-gradient(135deg, rgba(99,102,241,.85), rgba(99,102,241,.45)); color: white; }
+    .btn-b{ background: linear-gradient(135deg, rgba(251,113,133,.85), rgba(251,113,133,.45)); color: white; }
+    .btn-c{ background: linear-gradient(135deg, rgba(34,197,94,.85), rgba(34,197,94,.42)); color: white; }
+    .btn-d{ background: linear-gradient(135deg, rgba(6,182,212,.85), rgba(6,182,212,.40)); color: white; }
+    .btn-e{ background: linear-gradient(135deg, rgba(245,158,11,.85), rgba(245,158,11,.45)); color: white; }
+    .btn-f{ background: linear-gradient(135deg, rgba(167,139,250,.85), rgba(167,139,250,.45)); color: white; }
+    .btn-ghost{ background: rgba(255,255,255,.7); }
+    .btn-danger{ background: linear-gradient(135deg, rgba(239,68,68,.90), rgba(239,68,68,.50)); color: white; }
+
+    .main{
+      padding:14px;
+      display:grid;
+      grid-template-columns: 1.22fr .78fr;
+      gap:12px;
+    }
+    @media (max-width: 900px){ .main{ grid-template-columns: 1fr; } }
+
+    .panel{
+      background: rgba(255,255,255,.60);
+      border: 2px solid rgba(255,255,255,.8);
+      border-radius: var(--radius);
+      box-shadow: 0 14px 28px rgba(2,6,23,.10);
+      padding:12px;
+    }
+    .panel h2{
+      margin:0 0 10px 0;
+      font-size:15px;
+      color:#0f172a;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .badge{
+      font-size:12px;
+      font-weight:950;
+      padding:4px 10px;
+      border-radius:999px;
+      background: rgba(255,255,255,.82);
+      border: 2px solid rgba(255,255,255,.9);
+      box-shadow: 0 10px 18px rgba(2,6,23,.06);
+      white-space:nowrap;
+    }
+    .card{
+      background: rgba(255,255,255,.88);
+      border: 2px solid rgba(255,255,255,.9);
+      border-radius: var(--radius);
+      padding:14px;
+      display:grid;
+      gap:10px;
+      box-shadow: 0 14px 28px rgba(2,6,23,.10);
+    }
+    .bigWord{
+      font-size:32px;
+      font-weight:1000;
+      letter-spacing:.4px;
+      text-align:center;
+      margin:2px 0 0 0;
+      line-height:1.05;
+      word-break: break-word;
+    }
+    .subWord{
+      text-align:center;
+      font-size:14px;
+      color: rgba(15,23,42,.78);
+      font-weight:900;
+    }
+    .hint{
+      text-align:center;
+      color: #334155;
+      font-size:13px;
+      line-height: 1.35;
+    }
+    .row{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      justify-content:center;
+      align-items:center;
+    }
+    .tripleRow{
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap:8px;
+    }
+    @media (max-width: 520px){ .tripleRow{ grid-template-columns: 1fr; } }
+
+    .miniCard{
+      border-radius: 16px;
+      border:2px solid rgba(255,255,255,.92);
+      background: rgba(255,255,255,.72);
+      padding:10px;
+      text-align:center;
+      box-shadow: 0 10px 18px rgba(2,6,23,.06);
+    }
+    .miniCard .label{
+      font-size:12px;
+      font-weight:950;
+      color: rgba(15,23,42,.70);
+      margin-bottom:4px;
+    }
+    .miniCard .val{ font-size:18px; font-weight:1000; }
+
+    .status{ display:grid; gap:10px; }
+    .pill{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      padding:10px 12px;
+      border-radius: 16px;
+      background: rgba(255,255,255,.75);
+      border:2px solid rgba(255,255,255,.9);
+      color: rgba(15,23,42,.75);
+      font-size:13px;
+      box-shadow: 0 10px 18px rgba(2,6,23,.06);
+    }
+    .pill b{ color:#0f172a; }
+    .msg{
+      padding:10px 12px;
+      border-radius: 16px;
+      border:2px dashed rgba(15,23,42,.22);
+      color: rgba(15,23,42,.84);
+      font-size:13px;
+      min-height:52px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      background: rgba(255,255,255,.65);
+    }
+    .msg.good{ border-color: rgba(34,197,94,.45); color: #166534; background: rgba(220,252,231,.65); }
+    .msg.bad{ border-color: rgba(251,113,133,.55); color: #9f1239; background: rgba(255,228,230,.70); }
+
+    .options{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+      margin-top:6px;
+    }
+    @media (max-width: 520px){ .options{ grid-template-columns: 1fr; } }
+    .opt{
+      padding:12px;
+      border-radius: 16px;
+      border:2px solid rgba(255,255,255,.9);
+      background: rgba(255,255,255,.72);
+      cursor:pointer;
+      text-align:center;
+      font-weight:1000;
+      transition: transform .05s ease, filter .2s ease;
+      box-shadow: 0 10px 18px rgba(2,6,23,.06);
+      min-height: var(--tap);
+      display:grid;
+      place-items:center;
+      line-height:1.15;
+      white-space: pre-wrap;
+    }
+    .opt:hover{ filter: brightness(1.03) saturate(1.05); }
+    .opt:active{ transform: translateY(1px); }
+    .opt.correct{ border-color: rgba(34,197,94,.55); background: rgba(220,252,231,.75); }
+    .opt.wrong{ border-color: rgba(251,113,133,.6); background: rgba(255,228,230,.75); }
+
+    .kbd{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      border:2px solid rgba(15,23,42,.18);
+      padding:2px 6px;
+      border-radius:10px;
+      color: #0f172a;
+      background: rgba(255,255,255,.7);
+      font-size: 12px;
+      font-weight: 950;
+    }
+    .footer{
+      padding:12px 14px 14px 14px;
+      color: rgba(15,23,42,.75);
+      border-top: 2px solid rgba(255,255,255,.75);
+      background: rgba(255,255,255,.45);
+      font-size:12px;
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .tiny{ font-size: 12px; color: rgba(15,23,42,.72); text-align:center; }
+    .progressbar{
+      height: 12px;
+      border-radius: 999px;
+      background: rgba(15,23,42,.08);
+      border: 2px solid rgba(255,255,255,.85);
+      overflow:hidden;
+      box-shadow: 0 10px 18px rgba(2,6,23,.06);
+    }
+    .progressbar > div{
+      height:100%;
+      width:0%;
+      background: linear-gradient(90deg, rgba(34,197,94,.9), rgba(6,182,212,.85), rgba(99,102,241,.85));
+      border-radius:999px;
+    }
+    .chips{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      align-items:center;
+      justify-content:center;
+    }
+    .chip{
+      padding:6px 10px;
+      border-radius: 999px;
+      border:2px solid rgba(255,255,255,.9);
+      background: rgba(255,255,255,.72);
+      font-weight:950;
+      font-size:12px;
+      box-shadow: 0 10px 18px rgba(2,6,23,.06);
+      cursor:pointer;
+      user-select:none;
+    }
+    .chip.on{
+      border-color: rgba(99,102,241,.55);
+      background: rgba(224,231,255,.70);
+    }
+    .divider{
+      height:1px; background: rgba(15,23,42,.12);
+      margin:6px 0;
+    }
+    .twoCol{
+      display:grid; grid-template-columns: 1fr 1fr; gap:10px;
+    }
+    @media (max-width: 560px){ .twoCol{ grid-template-columns: 1fr; } }
+
+    .unitLine{
+      display:flex; gap:8px; flex-wrap:wrap; align-items:center;
+    }
+    .helpTag{
+      padding:6px 10px; border-radius: 999px;
+      border:2px solid rgba(255,255,255,.9);
+      background: rgba(224,231,255,.70);
+      font-weight:950;
+      font-size:12px;
+      box-shadow: 0 10px 18px rgba(2,6,23,.06);
+      white-space:nowrap;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="title">
+        <h1><span class="spark">📘</span> Oxford English Master — 5º Primaria (UK)</h1>
+        <small>
+          Adaptado a <b>Oxford Learn English</b> · Pronunciación <b>británica</b> 🇬🇧 · Ayuda en <b>español</b> (pistas y reglas).
+        </small>
+      </div>
+
+      <div class="controls">
+        <select id="unit" aria-label="Unit">
+          <option value="u1">Unit 1 — Daily routines</option>
+          <option value="u2">Unit 2 — School & free time</option>
+          <option value="u3">Unit 3 — Technology & online safety</option>
+          <option value="u4">Unit 4 — Past events</option>
+          <option value="u5">Unit 5 — Places & directions</option>
+          <option value="u6">Unit 6 — Food & health</option>
+          <option value="u7">Unit 7 — People & descriptions</option>
+          <option value="u8">Unit 8 — Nature & science</option>
+          <option value="all" selected>All units (Repaso)</option>
+        </select>
+
+        <select id="mode" aria-label="Mode">
+          <option value="flash">Flashcards</option>
+          <option value="quiz" selected>Quiz (Multiple choice)</option>
+          <option value="spell">Spelling</option>
+          <option value="listen">Listening 🔊</option>
+          <option value="builder">Sentence Builder</option>
+          <option value="grammar">Grammar Fix</option>
+          <option value="memory">Memory (EN ↔ ES)</option>
+          <option value="review">Review mistakes (Repaso de errores)</option>
+          <option value="exam">Exam (por unidad)</option>
+          <option value="challenge">Mixed Challenge</option>
+        </select>
+
+        <select id="topic" aria-label="Topic">
+          <option value="verbs">Irregular Verbs</option>
+          <option value="vocab">Vocabulary (General)</option>
+          <option value="tech">Vocabulary (Technology)</option>
+          <option value="grammar">Grammar</option>
+          <option value="mix" selected>Mix (Oxford)</option>
+        </select>
+
+        <select id="level" aria-label="Difficulty">
+          <option value="easy">Easy ⭐</option>
+          <option value="mid" selected>Medium ⭐⭐</option>
+          <option value="hard">Hard ⭐⭐⭐</option>
+        </select>
+
+        <button id="reset" class="btn-b">Reset</button>
+      </div>
+    </header>
+
+    <div class="main">
+      <section class="panel">
+        <h2 id="panelTitle">Quiz <span class="badge" id="subBadge">Oxford</span></h2>
+        <div class="unitLine" style="margin:-4px 0 8px 0; justify-content:center;">
+          <span class="helpTag">Ayuda ES: pistas + reglas</span>
+          <span class="badge" id="unitBadge">All units</span>
+          <span class="badge" id="topicBadge">Mix</span>
+        </div>
+        <div id="stage" class="card"></div>
+      </section>
+
+      <aside class="panel status">
+        <h2>Perfil & Progreso <span class="badge">🏆</span></h2>
+
+        <div class="pill"><span>XP</span><b id="xp">0</b></div>
+        <div class="pill"><span>Level</span><b id="lvl">1</b></div>
+        <div class="pill"><span>Coins</span><b id="coins">0</b></div>
+
+        <div class="pill"><span>Correct</span><b id="correct">0</b></div>
+        <div class="pill"><span>Wrong</span><b id="wrong">0</b></div>
+        <div class="pill"><span>Streak</span><b id="streak">0</b></div>
+
+        <div class="pill"><span>Mastery (unit/topic)</span><b id="mastery">0%</b></div>
+        <div class="progressbar" title="Mastery"><div id="masteryBar"></div></div>
+
+        <div id="message" class="msg">Elige unidad, tema y modo 🙂</div>
+
+        <div class="card" style="padding:12px">
+          <div class="tiny" style="display:grid; gap:6px">
+            <div><b>Atajos:</b> <span class="kbd">N</span> next · <span class="kbd">S</span> speak · <span class="kbd">R</span> reset · <span class="kbd">H</span> hint</div>
+            <div><b>Oxford tip:</b> en 5º suelen pedir <i>Present Simple</i>, <i>Past Simple</i>, <i>There is/are</i>, <i>prepositions</i>, <i>comparatives</i>… aquí lo practicas todo.</div>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <div class="footer">
+      <div>Consejo: usa <b>Listening 🔊</b> para pronunciación británica. En móvil, gira pantalla si quieres más espacio.</div>
+      <div>Objetivo: variedad + repaso inteligente (sale más lo que fallas).</div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  // =========================
+  // DATA (Oxford-style)
+  // =========================
+
+  const VERBS = [
+    { b:"be", p:"was/were", pp:"been", es:"ser/estar", u:["u1","u4"] },
+    { b:"have", p:"had", pp:"had", es:"tener", u:["u1","u6"] },
+    { b:"do", p:"did", pp:"done", es:"hacer", u:["u1","u2","u4"] },
+    { b:"go", p:"went", pp:"gone", es:"ir", u:["u1","u4","u5"] },
+    { b:"come", p:"came", pp:"come", es:"venir", u:["u1","u4"] },
+    { b:"make", p:"made", pp:"made", es:"hacer / fabricar", u:["u2","u3","u4"] },
+    { b:"get", p:"got", pp:"got", es:"conseguir / obtener", u:["u1","u3","u4"] },
+    { b:"give", p:"gave", pp:"given", es:"dar", u:["u2","u6"] },
+    { b:"take", p:"took", pp:"taken", es:"coger / tomar", u:["u4","u6"] },
+    { b:"see", p:"saw", pp:"seen", es:"ver", u:["u4","u8"] },
+    { b:"eat", p:"ate", pp:"eaten", es:"comer", u:["u6","u4"] },
+    { b:"drink", p:"drank", pp:"drunk", es:"beber", u:["u6","u4"] },
+    { b:"say", p:"said", pp:"said", es:"decir", u:["u2","u4"] },
+    { b:"tell", p:"told", pp:"told", es:"contar / decir a alguien", u:["u2","u4"] },
+    { b:"can", p:"could", pp:"(—)", es:"poder (habilidad)", u:["u8","u2"] },
+    { b:"buy", p:"bought", pp:"bought", es:"comprar", u:["u6","u4"] },
+    { b:"bring", p:"brought", pp:"brought", es:"traer", u:["u2","u4"] },
+    { b:"think", p:"thought", pp:"thought", es:"pensar", u:["u2","u7"] },
+    { b:"know", p:"knew", pp:"known", es:"saber / conocer", u:["u2","u7"] },
+    { b:"find", p:"found", pp:"found", es:"encontrar", u:["u5","u4"] },
+    { b:"feel", p:"felt", pp:"felt", es:"sentir", u:["u7","u4"] },
+    { b:"leave", p:"left", pp:"left", es:"irse / dejar", u:["u4","u5"] },
+    { b:"meet", p:"met", pp:"met", es:"conocer / quedar con", u:["u2","u4"] },
+    { b:"put", p:"put", pp:"put", es:"poner", u:["u5","u3"] },
+    { b:"read", p:"read", pp:"read", es:"leer (pron. /red/)", u:["u2","u4"] },
+    { b:"write", p:"wrote", pp:"written", es:"escribir", u:["u2","u4"] },
+    { b:"run", p:"ran", pp:"run", es:"correr", u:["u8","u4"] },
+    { b:"sleep", p:"slept", pp:"slept", es:"dormir", u:["u1","u4"] },
+    { b:"speak", p:"spoke", pp:"spoken", es:"hablar", u:["u2","u4"] },
+    { b:"wear", p:"wore", pp:"worn", es:"llevar (ropa)", u:["u7","u4"] },
+    { b:"begin", p:"began", pp:"begun", es:"empezar", u:["u1","u4"] },
+    { b:"build", p:"built", pp:"built", es:"construir", u:["u5","u4"] },
+    { b:"choose", p:"chose", pp:"chosen", es:"elegir", u:["u2","u7"] },
+    { b:"cut", p:"cut", pp:"cut", es:"cortar", u:["u6","u4"] },
+    { b:"drive", p:"drove", pp:"driven", es:"conducir", u:["u5","u4"] },
+    { b:"fly", p:"flew", pp:"flown", es:"volar", u:["u8","u4"] },
+    { b:"forget", p:"forgot", pp:"forgotten", es:"olvidar", u:["u3","u4"] },
+    { b:"hold", p:"held", pp:"held", es:"sujetar / celebrar", u:["u7","u4"] },
+    { b:"send", p:"sent", pp:"sent", es:"enviar", u:["u3","u4"] },
+    { b:"swim", p:"swam", pp:"swum", es:"nadar", u:["u8","u4"] },
+    { b:"sit", p:"sat", pp:"sat", es:"sentarse", u:["u1","u4"] },
+    { b:"stand", p:"stood", pp:"stood", es:"estar de pie", u:["u1","u4"] },
+    { b:"teach", p:"taught", pp:"taught", es:"enseñar", u:["u2","u4"] },
+    { b:"learn", p:"learnt/learned", pp:"learnt/learned", es:"aprender", u:["u2"] },
+    { b:"hear", p:"heard", pp:"heard", es:"oír", u:["u8","u4"] },
+    { b:"keep", p:"kept", pp:"kept", es:"guardar / mantener", u:["u3","u4"] },
+    { b:"pay", p:"paid", pp:"paid", es:"pagar", u:["u6","u4"] },
+    { b:"sell", p:"sold", pp:"sold", es:"vender", u:["u6","u4"] },
+    { b:"spend", p:"spent", pp:"spent", es:"gastar / pasar tiempo", u:["u2","u4"] },
+    { b:"win", p:"won", pp:"won", es:"ganar", u:["u2","u4"] },
+    { b:"catch", p:"caught", pp:"caught", es:"atrapar", u:["u8","u4"] },
+    { b:"fall", p:"fell", pp:"fallen", es:"caerse", u:["u8","u4"] },
+    { b:"grow", p:"grew", pp:"grown", es:"crecer", u:["u8","u4"] },
+    { b:"hit", p:"hit", pp:"hit", es:"golpear", u:["u2","u4"] },
+    { b:"hurt", p:"hurt", pp:"hurt", es:"hacer daño", u:["u6","u4"] },
+    { b:"let", p:"let", pp:"let", es:"dejar/permitir", u:["u3","u4"] },
+    { b:"lay", p:"laid", pp:"laid", es:"poner (colocar)", u:["u5","u4"] },
+    { b:"lie", p:"lay", pp:"lain", es:"tumbarse", u:["u1","u4"] },
+    { b:"light", p:"lit/lighted", pp:"lit/lighted", es:"encender", u:["u3","u4"] },
+    { b:"ring", p:"rang", pp:"rung", es:"sonar (teléfono)", u:["u3","u4"] },
+    { b:"shake", p:"shook", pp:"shaken", es:"agitar", u:["u8","u4"] },
+    { b:"shine", p:"shone", pp:"shone", es:"brillar", u:["u8","u4"] },
+    { b:"sing", p:"sang", pp:"sung", es:"cantar", u:["u2","u4"] },
+    { b:"stick", p:"stuck", pp:"stuck", es:"pegar/atascar", u:["u3","u4"] },
+    { b:"throw", p:"threw", pp:"thrown", es:"lanzar", u:["u2","u4"] },
+    { b:"understand", p:"understood", pp:"understood", es:"entender", u:["u2","u4"] },
+    { b:"wake", p:"woke", pp:"woken", es:"despertar", u:["u1","u4"] }
+  ];
+
+  const VOCAB_GENERAL = [
+    { en:"wake up", es:"despertarse", ex:"I wake up at seven o'clock.", u:["u1"] },
+    { en:"get up", es:"levantarse", ex:"She gets up early on Mondays.", u:["u1"] },
+    { en:"brush my teeth", es:"lavarme los dientes", ex:"I brush my teeth after breakfast.", u:["u1"] },
+    { en:"have a shower", es:"ducharme", ex:"I have a shower in the morning.", u:["u1"] },
+    { en:"have breakfast", es:"desayunar", ex:"We have breakfast at home.", u:["u1"] },
+    { en:"usually", es:"normalmente", ex:"He usually walks to school.", u:["u1"] },
+    { en:"sometimes", es:"a veces", ex:"I sometimes play chess.", u:["u1"] },
+    { en:"never", es:"nunca", ex:"I never eat sweets before dinner.", u:["u1"] },
+    { en:"always", es:"siempre", ex:"I always do my homework.", u:["u1"] },
+
+    { en:"timetable", es:"horario", ex:"Here is my timetable.", u:["u2"] },
+    { en:"homework", es:"deberes", ex:"I do my homework every day.", u:["u2"] },
+    { en:"break time", es:"recreo", ex:"We talk at break time.", u:["u2"] },
+    { en:"favourite subject", es:"asignatura favorita", ex:"Science is my favourite subject.", u:["u2"] },
+    { en:"playground", es:"patio", ex:"The playground is big.", u:["u2"] },
+    { en:"team", es:"equipo", ex:"Our team won the match.", u:["u2"] },
+    { en:"practice", es:"practicar", ex:"Practice makes perfect!", u:["u2"] },
+    { en:"join", es:"unirse", ex:"Join the club after school.", u:["u2"] },
+    { en:"learn", es:"aprender", ex:"We learn English at school.", u:["u2"] },
+
+    { en:"yesterday", es:"ayer", ex:"Yesterday I watched a film.", u:["u4"] },
+    { en:"last week", es:"la semana pasada", ex:"I visited my grandma last week.", u:["u4"] },
+    { en:"then", es:"entonces", ex:"Then we went home.", u:["u4"] },
+    { en:"suddenly", es:"de repente", ex:"Suddenly it started to rain.", u:["u4"] },
+    { en:"finally", es:"finalmente", ex:"Finally we arrived.", u:["u4"] },
+
+    { en:"between", es:"entre", ex:"The park is between the bank and the school.", u:["u5"] },
+    { en:"next to", es:"al lado de", ex:"The shop is next to the library.", u:["u5"] },
+    { en:"opposite", es:"enfrente de", ex:"My house is opposite the park.", u:["u5"] },
+    { en:"turn left", es:"gira a la izquierda", ex:"Turn left at the traffic lights.", u:["u5"] },
+    { en:"turn right", es:"gira a la derecha", ex:"Turn right at the corner.", u:["u5"] },
+    { en:"go straight on", es:"sigue recto", ex:"Go straight on and stop at the bus station.", u:["u5"] },
+    { en:"map", es:"mapa", ex:"Look at the map, please.", u:["u5"] },
+
+    { en:"healthy", es:"saludable", ex:"Fruit is healthy.", u:["u6"] },
+    { en:"water", es:"agua", ex:"Drink some water.", u:["u6"] },
+    { en:"vegetables", es:"verduras", ex:"I like vegetables.", u:["u6"] },
+    { en:"breakfast", es:"desayuno", ex:"Breakfast is important.", u:["u6","u1"] },
+    { en:"stomach ache", es:"dolor de barriga", ex:"I've got a stomach ache.", u:["u6"] },
+    { en:"toothache", es:"dolor de muelas", ex:"She's got toothache.", u:["u6"] },
+
+    { en:"friendly", es:"amable", ex:"My neighbour is friendly.", u:["u7"] },
+    { en:"quiet", es:"tranquilo/a", ex:"The classroom is quiet.", u:["u7","u2"] },
+    { en:"noisy", es:"ruidoso/a", ex:"The street is noisy.", u:["u7"] },
+    { en:"taller", es:"más alto/a", ex:"My brother is taller than me.", u:["u7"] },
+    { en:"the best", es:"el/la mejor", ex:"This is the best day!", u:["u7"] },
+
+    { en:"river", es:"río", ex:"The river is cold.", u:["u8"] },
+    { en:"mountain", es:"montaña", ex:"We climbed a mountain.", u:["u8"] },
+    { en:"island", es:"isla", ex:"Mallorca is an island.", u:["u8"] },
+    { en:"weather", es:"tiempo (clima)", ex:"The weather is sunny today.", u:["u8"] },
+    { en:"dangerous", es:"peligroso/a", ex:"That road is dangerous.", u:["u8"] }
+  ];
+
+  const VOCAB_TECH = [
+    { en:"keyboard", es:"teclado", ex:"Type on the keyboard.", u:["u3"] },
+    { en:"mouse", es:"ratón", ex:"Click the mouse.", u:["u3"] },
+    { en:"screen", es:"pantalla", ex:"The screen is bright.", u:["u3"] },
+    { en:"tablet", es:"tableta", ex:"I use a tablet for reading.", u:["u3"] },
+    { en:"laptop", es:"portátil", ex:"My laptop is new.", u:["u3"] },
+    { en:"headphones", es:"auriculares", ex:"Use headphones, please.", u:["u3"] },
+    { en:"microphone", es:"micrófono", ex:"The microphone is on.", u:["u3"] },
+    { en:"camera", es:"cámara", ex:"Turn on the camera.", u:["u3"] },
+    { en:"app", es:"aplicación", ex:"This app helps me learn.", u:["u3"] },
+    { en:"website", es:"página web", ex:"This website is fun.", u:["u3"] },
+    { en:"link", es:"enlace", ex:"Click the link.", u:["u3"] },
+    { en:"browser", es:"navegador", ex:"Open the browser.", u:["u3"] },
+    { en:"Wi‑Fi", es:"wifi", ex:"The Wi‑Fi is slow.", u:["u3"] },
+    { en:"password", es:"contraseña", ex:"Don't share your password.", u:["u3"] },
+    { en:"download", es:"descargar", ex:"Download the file.", u:["u3"] },
+    { en:"upload", es:"subir", ex:"Upload your photo.", u:["u3"] },
+    { en:"save", es:"guardar", ex:"Save your work.", u:["u3"] },
+    { en:"delete", es:"borrar", ex:"Delete the message.", u:["u3"] },
+    { en:"copy", es:"copiar", ex:"Copy this text.", u:["u3"] },
+    { en:"paste", es:"pegar", ex:"Paste it here.", u:["u3"] },
+    { en:"robot", es:"robot", ex:"The robot can dance.", u:["u3","u8"] },
+    { en:"code", es:"código", ex:"We write code in class.", u:["u3"] },
+    { en:"private", es:"privado/a", ex:"Keep your information private.", u:["u3"] },
+    { en:"safe online", es:"seguro en internet", ex:"Be safe online.", u:["u3"] }
+  ];
+
+  const GRAMMAR_FIX = [
+    { u:["u1"], tag:"Present Simple (3rd person)", esHint:"3ª persona (he/she/it) lleva -s.", wrong:"She play football on Mondays.", right:"She plays football on Mondays." },
+    { u:["u1"], tag:"Adverbs of frequency", esHint:"Va antes del verbo principal: usually goes.", wrong:"He goes usually to school.", right:"He usually goes to school." },
+    { u:["u2"], tag:"Like + -ing", esHint:"Después de like/love/hate suele ir -ing.", wrong:"I like play chess.", right:"I like playing chess." },
+    { u:["u2"], tag:"Questions (does)", esHint:"3ª persona en pregunta: Does she...?", wrong:"Do she like pizza?", right:"Does she like pizza?" },
+    { u:["u3"], tag:"Imperatives (Don't)", esHint:"Imperativo negativo: Don't + verbo.", wrong:"Don't to share your password.", right:"Don't share your password." },
+    { u:["u3"], tag:"Can + base", esHint:"Después de can va el verbo en base.", wrong:"I can to use a mouse.", right:"I can use a mouse." },
+    { u:["u4"], tag:"Past Simple (regular)", esHint:"Ayer → pasado: verb + -ed (walked).", wrong:"Yesterday I walk to school.", right:"Yesterday I walked to school." },
+    { u:["u4"], tag:"Past Simple (irregular)", esHint:"Irregular: go → went, see → saw…", wrong:"Last week we goed to the park.", right:"Last week we went to the park." },
+    { u:["u5"], tag:"There is / There are", esHint:"Singular: There is. Plural: There are.", wrong:"There are a shop next to the school.", right:"There is a shop next to the school." },
+    { u:["u5"], tag:"Prepositions", esHint:"On the table / in the box / under the chair.", wrong:"The cat is in the table.", right:"The cat is on the table." },
+    { u:["u6"], tag:"Some / any", esHint:"Negativa: any. Afirmativa: some.", wrong:"I haven't got some water.", right:"I haven't got any water." },
+    { u:["u6"], tag:"Countable/Uncountable", esHint:"Uncountable: some water (no plural).", wrong:"Two waters, please.", right:"Some water, please." },
+    { u:["u7"], tag:"Comparatives", esHint:"Adjetivo corto: big → bigger.", wrong:"My dog is more big than yours.", right:"My dog is bigger than yours." },
+    { u:["u7"], tag:"Pronouns", esHint:"My sister → she. My brother → he.", wrong:"My sister is 10. He is happy.", right:"My sister is 10. She is happy." },
+    { u:["u8"], tag:"Can/can't (ability)", esHint:"Can/can't para habilidad.", wrong:"Penguins can fly.", right:"Penguins can't fly." }
+  ];
+
+  const SENTENCE_BUILDER = [
+    { u:["u1"], words:["She","usually","gets","up","at","seven"], answer:"She usually gets up at seven.", hint:"Present Simple + adverbio de frecuencia." },
+    { u:["u2"], words:["Do","you","like","playing","football","?"], answer:"Do you like playing football?", hint:"Pregunta con Do + like + -ing." },
+    { u:["u3"], words:["Don't","share","your","password"], answer:"Don't share your password.", hint:"Imperative negativo." },
+    { u:["u4"], words:["Yesterday","I","went","to","the","market"], answer:"Yesterday I went to the market.", hint:"Past Simple irregular: go → went." },
+    { u:["u5"], words:["There","is","a","park","next","to","the","school"], answer:"There is a park next to the school.", hint:"There is + singular." },
+    { u:["u6"], words:["Have","you","got","any","fruit","?"], answer:"Have you got any fruit?", hint:"Any en preguntas/negativas." },
+    { u:["u7"], words:["My","house","is","bigger","than","yours"], answer:"My house is bigger than yours.", hint:"Comparative: bigger than." },
+    { u:["u8"], words:["Penguins","can","swim","but","they","can't","fly"], answer:"Penguins can swim but they can't fly.", hint:"Can/can't (ability)." }
+  ];
+
+  const UNITS = {
+    u1:{ name:"Unit 1 — Daily routines" },
+    u2:{ name:"Unit 2 — School & free time" },
+    u3:{ name:"Unit 3 — Technology & online safety" },
+    u4:{ name:"Unit 4 — Past events" },
+    u5:{ name:"Unit 5 — Places & directions" },
+    u6:{ name:"Unit 6 — Food & health" },
+    u7:{ name:"Unit 7 — People & descriptions" },
+    u8:{ name:"Unit 8 — Nature & science" },
+    all:{ name:"All units (Repaso)" }
+  };
+
+  const $ = (s) => document.querySelector(s);
+  const unitEl = $("#unit");
+  const modeEl = $("#mode");
+  const topicEl = $("#topic");
+  const levelEl = $("#level");
+  const resetEl = $("#reset");
+
+  const stageEl = $("#stage");
+  const panelTitleEl = $("#panelTitle");
+  const subBadgeEl = $("#subBadge");
+  const msgEl = $("#message");
+  const unitBadgeEl = $("#unitBadge");
+  const topicBadgeEl = $("#topicBadge");
+
+  const xpEl = $("#xp");
+  const lvlEl = $("#lvl");
+  const coinsEl = $("#coins");
+  const correctEl = $("#correct");
+  const wrongEl = $("#wrong");
+  const streakEl = $("#streak");
+  const masteryEl = $("#mastery");
+  const masteryBarEl = $("#masteryBar");
+
+  const STORE_KEY = "oxford_english_master_5p_v2";
+
+  let locked = false;
+  let exam = null;
+  let memory = { deck: [], revealed: [], matched: new Set(), lock: false };
+  const state = loadState();
+
+  function freshState(){
+    return { xp:0, coins:0, correct:0, wrong:0, streak:0, seen:{}, mistakes:{}, lastSpeak:"" };
+  }
+  function loadState(){
+    try{
+      const raw = localStorage.getItem(STORE_KEY);
+      if (!raw) return freshState();
+      const s = JSON.parse(raw);
+      return {
+        xp: Number(s.xp||0),
+        coins: Number(s.coins||0),
+        correct: Number(s.correct||0),
+        wrong: Number(s.wrong||0),
+        streak: Number(s.streak||0),
+        seen: s.seen || {},
+        mistakes: s.mistakes || {},
+        lastSpeak: s.lastSpeak || ""
+      };
+    }catch(e){ return freshState(); }
+  }
+  function saveState(){ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+
+  function levelFromXP(xp){
+    let lvl = 1, need = 90, remaining = xp;
+    while(remaining >= need){
+      remaining -= need; lvl++; need = Math.floor(need * 1.13 + 12);
+      if (lvl > 99) break;
+    }
+    return lvl;
+  }
+
+  function randInt(n){ return Math.floor(Math.random()*n); }
+  function shuffle(arr){
+    for (let i=arr.length-1; i>0; i--){
+      const j = randInt(i+1);
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+  function norm(s){ return (s||"").trim().toLowerCase().replace(/\s+/g," "); }
+
+  function setMessage(text, type=""){
+    msgEl.className = "msg" + (type ? " " + type : "");
+    msgEl.textContent = text;
+  }
+
+  function speak(text, lang="en-GB"){
+    if (!text) return;
+    state.lastSpeak = text; saveState();
+    if (!("speechSynthesis" in window)){ setMessage("Tu navegador no tiene pronunciación (SpeechSynthesis).", "bad"); return; }
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = lang; u.rate = 0.95; u.pitch = 1.0;
+    window.speechSynthesis.speak(u);
+  }
+
+  function keyFor(type, item){
+    if (type==="verbs") return `v:${item.b}`;
+    if (type==="vocab") return `g:${item.en}`;
+    if (type==="tech") return `t:${item.en}`;
+    if (type==="grammar") return `gr:${item.right}`;
+    if (type==="builder") return `sb:${item.answer}`;
+    return `x:${JSON.stringify(item).slice(0,60)}`;
+  }
+
+  function award(xp, coins=0){ state.xp += xp; state.coins += coins; if (state.coins < 0) state.coins = 0; saveState(); updateStats(); }
+  function markSeen(key, ok){
+    const m = state.seen[key] || { seen:0, ok:0 };
+    m.seen++; if (ok) m.ok++;
+    state.seen[key] = m; saveState(); updateStats();
+  }
+  function addMistake(key){ state.mistakes[key] = (state.mistakes[key]||0) + 1; saveState(); }
+
+  function rewardForCorrect(){
+    const d = levelEl.value;
+    const base = d==="easy" ? 8 : d==="mid" ? 12 : 16;
+    const streakBonus = Math.min(22, state.streak * 2);
+    const coins = d==="easy" ? 1 : d==="mid" ? 2 : 3;
+    award(base + streakBonus, coins);
+  }
+  function punishForWrong(){ award(0, -1); }
+
+  function onCorrect(key, msg="✅ Correct!"){
+    locked = true;
+    state.correct++; state.streak++;
+    markSeen(key, true);
+    rewardForCorrect();
+    setMessage(msg + " (+XP +coins)", "good");
+  }
+  function onWrong(key, correctText, msg="❌ Wrong"){
+    locked = true;
+    state.wrong++; state.streak = 0;
+    markSeen(key, false);
+    addMistake(key);
+    punishForWrong();
+    setMessage(`${msg}. Correct: ${correctText}`, "bad");
+  }
+
+  function getUnit(){ return unitEl.value; }
+  function filterByUnit(list){
+    const u = getUnit();
+    if (u === "all") return list.slice();
+    return list.filter(x => (x.u||[]).includes(u));
+  }
+  function getPools(){
+    return {
+      verbs: filterByUnit(VERBS),
+      vocab: filterByUnit(VOCAB_GENERAL),
+      tech:  filterByUnit(VOCAB_TECH),
+      gram:  filterByUnit(GRAMMAR_FIX),
+      build: filterByUnit(SENTENCE_BUILDER)
+    };
+  }
+
+  function getMasteryForCurrent(){
+    const t = topicEl.value;
+    const { verbs, vocab, tech, gram, build } = getPools();
+    let keys = [];
+    const add = (type, arr)=> arr.forEach(it => keys.push(keyFor(type, it)));
+
+    const allowed = (t==="mix") ? ["verbs","vocab","tech","grammar","builder"] : (t==="grammar" ? ["grammar","builder"] : [t]);
+    if (allowed.includes("verbs")) add("verbs", verbs);
+    if (allowed.includes("vocab")) add("vocab", vocab);
+    if (allowed.includes("tech")) add("tech", tech);
+    if (allowed.includes("grammar")) add("grammar", gram);
+    if (allowed.includes("builder")) add("builder", build);
+
+    keys = Array.from(new Set(keys));
+    if (!keys.length) return 0;
+
+    let mastered = 0;
+    keys.forEach(k=>{
+      const m = state.seen[k];
+      if (!m) return;
+      const rate = m.ok / Math.max(1,m.seen);
+      if (m.seen >= 3 && rate >= 0.7) mastered++;
+    });
+    return Math.round((mastered/keys.length) * 100);
+  }
+
+  function updateStats(){
+    xpEl.textContent = state.xp;
+    lvlEl.textContent = levelFromXP(state.xp);
+    coinsEl.textContent = state.coins;
+    correctEl.textContent = state.correct;
+    wrongEl.textContent = state.wrong;
+    streakEl.textContent = state.streak;
+
+    const m = getMasteryForCurrent();
+    masteryEl.textContent = m + "%";
+    masteryBarEl.style.width = m + "%";
+
+    unitBadgeEl.textContent = UNITS[getUnit()].name.replace("All units (Repaso)","All units");
+    const t = topicEl.value;
+    topicBadgeEl.textContent = t==="verbs"?"Irregular verbs":t==="vocab"?"Vocab":t==="tech"?"Tech":t==="grammar"?"Grammar":"Mix";
+  }
+
+  function resetProgress(){
+    if (!confirm("¿Seguro? Se borrará el progreso guardado en este navegador.")) return;
+    localStorage.removeItem(STORE_KEY);
+    Object.assign(state, freshState());
+    locked = false; exam = null;
+    updateStats();
+    setMessage("Progreso reiniciado.", "");
+    render();
+  }
+
+  function chooseMixedType(){
+    const d = levelEl.value;
+    const pool = [
+      {t:"verbs", w:5},
+      {t:"vocab", w:4},
+      {t:"tech",  w:3},
+      {t:"grammar", w: d==="easy"?2:3},
+      {t:"builder", w: d==="hard"?3:2}
+    ];
+    const total = pool.reduce((a,x)=>a+x.w,0);
+    let r = Math.random()*total;
+    for (const x of pool){ r -= x.w; if (r <= 0) return x.t; }
+    return "verbs";
+  }
+  function pickFrom(list){ return list.length ? list[randInt(list.length)] : null; }
+
+  function nextBtnRow(extra=""){
+    return `
+      <div class="row" style="margin-top:10px">
+        ${extra}
+        <button id="hint" class="btn-e">Hint (ES)</button>
+        <button id="next" class="btn-c">Next</button>
+      </div>
+    `;
+  }
+  function hookCommonButtons(hintText="Pista: escucha 🔊 y mira el contexto 🙂"){
+    const next = $("#next");
+    if (next) next.onclick = () => render();
+    const hint = $("#hint");
+    if (hint) hint.onclick = () => setMessage(hintText, "");
+  }
+
+  function makeTypos(word){
+    const w = (word||"").toLowerCase();
+    if (!w || w.includes("/") || w.includes(" ")) return [];
+    const typos = new Set();
+    const vowels = ["a","e","i","o","u"];
+    if (w.length >= 4){
+      const i = randInt(w.length - 1);
+      const s = w.split("");
+      [s[i], s[i+1]] = [s[i+1], s[i]];
+      typos.add(s.join(""));
+    }
+    const idxs = [];
+    for (let i=0;i<w.length;i++) if (vowels.includes(w[i])) idxs.push(i);
+    if (idxs.length){
+      const i = idxs[randInt(idxs.length)];
+      const v = vowels[randInt(vowels.length)];
+      const s = w.split("");
+      s[i] = v;
+      typos.add(s.join(""));
+    }
+    if (w.length >= 4){
+      const i = randInt(w.length);
+      typos.add(w.slice(0,i) + w.slice(i+1));
+    }
+    if (w.length >= 3){
+      const i = randInt(w.length+1);
+      const ch = vowels[randInt(vowels.length)];
+      typos.add(w.slice(0,i) + ch + w.slice(i));
+    }
+    typos.delete(w);
+    return Array.from(typos).filter(t => t.length >= 2 && t.length <= 16);
+  }
+
+  function renderFlash(){
+    locked = false;
+    const t = topicEl.value;
+    const { verbs, vocab, tech, gram, build } = getPools();
+    subBadgeEl.textContent = "Flashcards";
+    panelTitleEl.childNodes[0].nodeValue = "Flashcards ";
+
+    const type = (t==="mix") ? chooseMixedType() : (t==="grammar" ? (Math.random()<0.55?"grammar":"builder") : t);
+
+    if (type==="verbs"){
+      const v = pickFrom(verbs) || pickFrom(VERBS);
+      if (!v) return renderEmpty("No hay verbos para esta unidad.");
+      const key = keyFor("verbs", v);
+      markSeen(key, false);
+      stageEl.innerHTML = `
+        <div class="hint">Significado (ES):</div>
+        <div class="bigWord">${v.es}</div>
+        <div class="tripleRow">
+          <div class="miniCard"><div class="label">Base</div><div class="val">${v.b}</div></div>
+          <div class="miniCard"><div class="label">Past</div><div class="val">${v.p}</div></div>
+          <div class="miniCard"><div class="label">Participle</div><div class="val">${v.pp}</div></div>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <button id="s1" class="btn-d">Speak Base 🔊</button>
+          <button id="s2" class="btn-d">Speak Past 🔊</button>
+          <button id="s3" class="btn-d">Speak Participle 🔊</button>
+        </div>
+        ${nextBtnRow()}
+        <div class="hint">Ayuda ES: aprende <b>Base → Past</b> y reconoce el participio.</div>
+      `;
+      $("#s1").onclick = () => speak(v.b.replace("/"," "));
+      $("#s2").onclick = () => speak(v.p.replace("/"," "));
+      $("#s3").onclick = () => speak((v.pp||"").replace("/"," "));
+      hookCommonButtons("Pista ES: buy→bought, bring→brought… fíjate en patrones.");
+      return;
+    }
+
+    if (type==="vocab" || type==="tech"){
+      const list = type==="tech" ? tech : vocab;
+      const item = pickFrom(list) || pickFrom(type==="tech"?VOCAB_TECH:VOCAB_GENERAL);
+      if (!item) return renderEmpty("No hay vocabulario para esta unidad.");
+      const key = keyFor(type, item);
+      markSeen(key, false);
+      stageEl.innerHTML = `
+        <div class="hint">Traducción (ES):</div>
+        <div class="bigWord">${item.es}</div>
+        <div class="subWord">EN: <span style="font-size:18px">${item.en}</span></div>
+        <div class="miniCard">
+          <div class="label">Example (EN)</div>
+          <div class="val" style="font-size:14px; font-weight:900">${item.ex}</div>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <button id="w" class="btn-d">Speak word 🔊</button>
+          <button id="ex" class="btn-d">Speak example 🔊</button>
+        </div>
+        ${nextBtnRow()}
+        <div class="hint">Ayuda ES: repite en voz alta 2 veces 😄</div>
+      `;
+      $("#w").onclick = () => speak(item.en);
+      $("#ex").onclick = () => speak(item.ex);
+      hookCommonButtons("Pista ES: escucha 🔊 y mira la frase de ejemplo.");
+      return;
+    }
+
+    if (type==="grammar"){
+      const g = pickFrom(gram) || pickFrom(GRAMMAR_FIX);
+      if (!g) return renderEmpty("No hay gramática para esta unidad.");
+      const key = keyFor("grammar", g);
+      markSeen(key, false);
+      stageEl.innerHTML = `
+        <div class="hint"><b>${g.tag}</b></div>
+        <div class="bigWord" style="font-size:22px">Grammar rule</div>
+        <div class="miniCard">
+          <div class="label">Correct (EN)</div>
+          <div class="val" style="font-size:14px; font-weight:900">${g.right}</div>
+        </div>
+        <div class="miniCard">
+          <div class="label">Ayuda (ES)</div>
+          <div class="val" style="font-size:13px; font-weight:900">${g.esHint}</div>
+        </div>
+        <div class="row"><button id="s" class="btn-d">Speak 🔊</button></div>
+        ${nextBtnRow()}
+      `;
+      $("#s").onclick = () => speak(g.right);
+      hookCommonButtons("Pista ES: busca el sujeto (he/she/it) y la forma del verbo.");
+      return;
+    }
+
+    if (type==="builder"){ return renderBuilder(); }
+  }
+
+  function renderQuiz(){
+    locked = false;
+    subBadgeEl.textContent = "Quiz";
+    panelTitleEl.childNodes[0].nodeValue = "Quiz ";
+    const t = topicEl.value;
+    const d = levelEl.value;
+    const maxOpt = d==="easy" ? 3 : 4;
+
+    const { verbs, vocab, tech } = getPools();
+    const type = (t==="mix") ? chooseMixedType() : (t==="grammar" ? "grammar" : t);
+
+    if (type==="verbs"){
+      const v = pickFrom(verbs) || pickFrom(VERBS);
+      if (!v) return renderEmpty("No hay verbos para esta unidad.");
+      const key = keyFor("verbs", v);
+      const target = norm(v.p);
+
+      const options = new Set([target]);
+      const typos = makeTypos(v.p); shuffle(typos);
+      for (const x of typos){ if (options.size >= maxOpt) break; options.add(norm(x)); }
+      const other = (verbs.length?verbs:VERBS).map(x=>norm(x.p)).filter(x => x !== target);
+      shuffle(other);
+      for (const o of other){ if (options.size >= maxOpt) break; options.add(o); }
+      const opts = shuffle(Array.from(options)).slice(0,maxOpt);
+
+      stageEl.innerHTML = `
+        <div class="hint">Elige el <b>Past Simple</b> (ES: pasado) de:</div>
+        <div class="bigWord">${v.b}</div>
+        <div class="hint">Ayuda ES: significa <b>${v.es}</b></div>
+        <div class="options">
+          ${opts.map(o => `<div class="opt" data-val="${o}">${o}</div>`).join("")}
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button id="sp" class="btn-d">Speak correct 🔊</button>
+          <button id="showAll" class="btn-f">Show 3 forms</button>
+        </div>
+        ${nextBtnRow()}
+        <div id="forms" class="hint" style="display:none; margin-top:6px">
+          Base: <b>${v.b}</b> · Past: <b>${v.p}</b> · Participle: <b>${v.pp}</b>
+        </div>
+      `;
+      $("#sp").onclick = () => speak(v.p.replace("/"," "));
+      $("#showAll").onclick = () => { $("#forms").style.display = "block"; setMessage("Ayuda ES: mira las 3 formas 🙂", ""); };
+
+      stageEl.querySelectorAll(".opt").forEach(opt => {
+        opt.onclick = () => {
+          if (locked) return;
+          const chosen = opt.getAttribute("data-val");
+          const ok = chosen === target;
+
+          stageEl.querySelectorAll(".opt").forEach(o => { if (o.getAttribute("data-val") === target) o.classList.add("correct"); });
+
+          if (ok){ opt.classList.add("correct"); onCorrect(key, "✅ Correct! (Past Simple)"); speak(v.p.replace("/"," ")); }
+          else { opt.classList.add("wrong"); onWrong(key, v.p, "❌ Wrong"); }
+        };
+      });
+
+      hookCommonButtons("Pista ES: si dudas, pulsa 'Show 3 forms' y escucha 🔊.");
+      return;
+    }
+
+    if (type==="vocab" || type==="tech"){
+      const list = type==="tech" ? tech : vocab;
+      const item = pickFrom(list) || pickFrom(type==="tech"?VOCAB_TECH:VOCAB_GENERAL);
+      if (!item) return renderEmpty("No hay vocabulario para esta unidad.");
+      const key = keyFor(type, item);
+
+      const target = item.es;
+      const options = new Set([target]);
+      const pool = (list.length?list:(type==="tech"?VOCAB_TECH:VOCAB_GENERAL)).map(x => x.es).filter(x => x !== target);
+      shuffle(pool);
+      for (const o of pool){ if (options.size >= maxOpt) break; options.add(o); }
+      const opts = shuffle(Array.from(options)).slice(0,maxOpt);
+
+      stageEl.innerHTML = `
+        <div class="hint">¿Qué significa en español?</div>
+        <div class="bigWord">${item.en}</div>
+        <div class="hint">Ayuda ES: ${type==="tech" ? "Tecnología" : "Vocabulario general"}</div>
+        <div class="options">
+          ${opts.map(o => `<div class="opt" data-val="${encodeURIComponent(o)}">${o}</div>`).join("")}
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button id="sp" class="btn-d">Speak 🔊</button>
+          <button id="showEx" class="btn-f">Show example</button>
+        </div>
+        ${nextBtnRow()}
+        <div id="ex" class="hint" style="display:none; margin-top:6px"><b>Example (EN):</b> ${item.ex}</div>
+      `;
+      $("#sp").onclick = () => speak(item.en);
+      $("#showEx").onclick = () => { $("#ex").style.display = "block"; setMessage("Ayuda ES: lee el ejemplo 🙂", ""); };
+
+      stageEl.querySelectorAll(".opt").forEach(opt => {
+        opt.onclick = () => {
+          if (locked) return;
+          const chosen = decodeURIComponent(opt.getAttribute("data-val"));
+          const ok = chosen === target;
+
+          stageEl.querySelectorAll(".opt").forEach(o => { if (decodeURIComponent(o.getAttribute("data-val")) === target) o.classList.add("correct"); });
+
+          if (ok){ opt.classList.add("correct"); onCorrect(key, "✅ Correct! (Vocabulary)"); speak(item.ex); }
+          else { opt.classList.add("wrong"); onWrong(key, target, "❌ Wrong"); }
+        };
+      });
+
+      hookCommonButtons("Pista ES: pulsa 'Show example' y escucha la frase.");
+      return;
+    }
+
+    if (type==="grammar"){ modeEl.value = "grammar"; return renderGrammar(); }
+    if (type==="builder"){ modeEl.value = "builder"; return renderBuilder(); }
+    render();
+  }
+
+  function renderSpelling(){
+    locked = false;
+    subBadgeEl.textContent = "Spelling";
+    panelTitleEl.childNodes[0].nodeValue = "Spelling ";
+    const t = topicEl.value;
+    const { verbs, vocab, tech } = getPools();
+    const type = (t==="mix") ? (Math.random()<0.55?"verbs":(Math.random()<0.7?"vocab":"tech")) : t;
+
+    if (type==="verbs"){
+      const v = pickFrom(verbs) || pickFrom(VERBS);
+      if (!v) return renderEmpty("No hay verbos para esta unidad.");
+      const key = keyFor("verbs", v);
+      stageEl.innerHTML = `
+        <div class="hint">Escribe el <b>Past Simple</b> (ES: pasado) de:</div>
+        <div class="bigWord">${v.b}</div>
+        <div class="hint">Ayuda ES: significa <b>${v.es}</b></div>
+        <div class="row" style="margin-top:6px">
+          <input id="spellIn" autocomplete="off" placeholder="Type the past form…" style="width:min(520px, 100%); text-align:center; font-weight:1000;" />
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button id="check" class="btn-a">Check</button>
+          <button id="show" class="btn-f">Show answer</button>
+          <button id="sp" class="btn-d">Speak 🔊</button>
+        </div>
+        ${nextBtnRow()}
+        <div id="ans" class="hint" style="display:none; margin-top:6px">
+          Past: <b>${v.p}</b> · Participle: <b>${v.pp}</b>
+        </div>
+      `;
+      const input = $("#spellIn"); input.focus();
+
+      function isCorrectTyped(typed, targetRaw){
+        const t = norm(typed);
+        const target = norm(targetRaw);
+        if (!target.includes("/")) return t === target;
+        const parts = target.split("/").map(x=>x.trim()).filter(Boolean);
+        return parts.includes(t);
+      }
+      function check(){
+        const typed = input.value || "";
+        if (!typed.trim()) return;
+        if (isCorrectTyped(typed, v.p)){ onCorrect(key, "✅ Perfect! (Spelling)"); speak(v.p.replace("/"," ")); }
+        else { onWrong(key, v.p, "❌ Not quite"); }
+      }
+      $("#check").onclick = check;
+      input.addEventListener("keydown", (e)=>{ if(e.key==="Enter") check(); });
+      $("#show").onclick = () => { $("#ans").style.display = "block"; setMessage("Ayuda ES: respuesta mostrada.", ""); };
+      $("#sp").onclick = () => speak(v.p.replace("/"," "));
+      hookCommonButtons("Pista ES: 'read' se pronuncia /red/ aunque se escriba igual.");
+      return;
+    }
+
+    if (type==="vocab" || type==="tech"){
+      const list = type==="tech" ? tech : vocab;
+      const item = pickFrom(list) || pickFrom(type==="tech"?VOCAB_TECH:VOCAB_GENERAL);
+      if (!item) return renderEmpty("No hay vocabulario para esta unidad.");
+      const key = keyFor(type, item);
+
+      stageEl.innerHTML = `
+        <div class="hint">Escribe en inglés:</div>
+        <div class="bigWord">${item.es}</div>
+        <div class="hint">Ayuda ES: ${type==="tech"?"Tecnología":"General"}</div>
+        <div class="row" style="margin-top:6px">
+          <input id="spellIn" autocomplete="off" placeholder="Type the English word…" style="width:min(520px, 100%); text-align:center; font-weight:1000;" />
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button id="check" class="btn-a">Check</button>
+          <button id="sp" class="btn-d">Speak answer 🔊</button>
+          <button id="show" class="btn-f">Show answer</button>
+        </div>
+        ${nextBtnRow()}
+        <div id="ans" class="hint" style="display:none; margin-top:6px">
+          EN: <b>${item.en}</b> · Example: <b>${item.ex}</b>
+        </div>
+      `;
+      const input = $("#spellIn"); input.focus();
+      function check(){
+        const typed = input.value || "";
+        if (!typed.trim()) return;
+        const ok = norm(typed) === norm(item.en);
+        if (ok){ onCorrect(key, "✅ Great! (Spelling)"); speak(item.en); }
+        else { onWrong(key, item.en, "❌ Not quite"); }
+      }
+      $("#check").onclick = check;
+      input.addEventListener("keydown", (e)=>{ if(e.key==="Enter") check(); });
+      $("#sp").onclick = () => speak(item.en);
+      $("#show").onclick = () => { $("#ans").style.display = "block"; setMessage("Ayuda ES: respuesta mostrada.", ""); };
+      hookCommonButtons("Pista ES: en UK se escribe 'favourite', 'neighbour'…");
+      return;
+    }
+
+    modeEl.value = "quiz"; render();
+  }
+
+  function renderListening(){
+    locked = false;
+    subBadgeEl.textContent = "Listening";
+    panelTitleEl.childNodes[0].nodeValue = "Listening ";
+    const t = topicEl.value;
+    const d = levelEl.value;
+    const maxOpt = d==="easy" ? 3 : 4;
+    const { verbs, vocab, tech } = getPools();
+    const type = (t==="mix") ? (Math.random()<0.55?"verbs":(Math.random()<0.7?"vocab":"tech")) : t;
+
+    if (type==="verbs"){
+      const v = pickFrom(verbs) || pickFrom(VERBS);
+      if (!v) return renderEmpty("No hay verbos para esta unidad.");
+      const key = keyFor("verbs", v);
+      const ask = (d==="hard") ? v.p : v.b;
+      const target = ask;
+
+      const pool = (d==="hard")
+        ? (verbs.length?verbs:VERBS).map(x=>x.p)
+        : (verbs.length?verbs:VERBS).map(x=>x.b);
+
+      const options = new Set([target]);
+      const other = shuffle(pool.slice().filter(x=>norm(x)!==norm(target)));
+      for (const o of other){ if (options.size >= maxOpt) break; options.add(o); }
+      const opts = shuffle(Array.from(options));
+
+      stageEl.innerHTML = `
+        <div class="hint">Escucha 🔊 y elige (${d==="hard"?"Past":"Base"}). Ayuda ES: <b>${v.es}</b></div>
+        <div class="bigWord">🎧</div>
+        <div class="options">
+          ${opts.map(o => `<div class="opt" data-val="${encodeURIComponent(o)}">${o}</div>`).join("")}
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button id="play" class="btn-d">Play 🔊</button>
+          <button id="reveal" class="btn-f">Reveal</button>
+        </div>
+        ${nextBtnRow()}
+        <div id="revealBox" class="hint" style="display:none; margin-top:6px">
+          Base: <b>${v.b}</b> · Past: <b>${v.p}</b> · Participle: <b>${v.pp}</b>
+        </div>
+      `;
+      $("#play").onclick = () => speak(String(ask).replace("/"," "));
+      $("#reveal").onclick = () => { $("#revealBox").style.display = "block"; setMessage("Ayuda ES: respuesta revelada 🙂", ""); };
+      setTimeout(()=> speak(String(ask).replace("/"," ")), 140);
+
+      stageEl.querySelectorAll(".opt").forEach(opt=>{
+        opt.onclick = () => {
+          if (locked) return;
+          const chosen = decodeURIComponent(opt.getAttribute("data-val"));
+          const ok = norm(chosen) === norm(target);
+          stageEl.querySelectorAll(".opt").forEach(o=>{
+            if (norm(decodeURIComponent(o.getAttribute("data-val"))) === norm(target)) o.classList.add("correct");
+          });
+          if (ok){ opt.classList.add("correct"); onCorrect(key, "✅ Great listening!"); }
+          else { opt.classList.add("wrong"); onWrong(key, target, "❌ Try again"); }
+        };
+      });
+
+      hookCommonButtons("Pista ES: pulsa 'Play' varias veces. En hard, escuchas el pasado.");
+      return;
+    }
+
+    if (type==="vocab" || type==="tech"){
+      const list = type==="tech" ? tech : vocab;
+      const item = pickFrom(list) || pickFrom(type==="tech"?VOCAB_TECH:VOCAB_GENERAL);
+      if (!item) return renderEmpty("No hay vocabulario para esta unidad.");
+      const key = keyFor(type, item);
+
+      const target = item.en;
+      const options = new Set([target]);
+      const pool = (list.length?list:(type==="tech"?VOCAB_TECH:VOCAB_GENERAL)).map(x=>x.en).filter(x=>norm(x)!==norm(target));
+      shuffle(pool);
+      for (const o of pool){ if (options.size >= maxOpt) break; options.add(o); }
+      const opts = shuffle(Array.from(options));
+
+      stageEl.innerHTML = `
+        <div class="hint">Escucha 🔊 y elige la palabra. Ayuda ES: <b>${item.es}</b></div>
+        <div class="bigWord">🎧</div>
+        <div class="options">
+          ${opts.map(o => `<div class="opt" data-val="${encodeURIComponent(o)}">${o}</div>`).join("")}
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button id="play" class="btn-d">Play 🔊</button>
+          <button id="playEx" class="btn-d">Play example 🔊</button>
+          <button id="reveal" class="btn-f">Reveal</button>
+        </div>
+        ${nextBtnRow()}
+        <div id="revealBox" class="hint" style="display:none; margin-top:6px">
+          EN: <b>${item.en}</b> · Example: <b>${item.ex}</b>
+        </div>
+      `;
+      $("#play").onclick = () => speak(item.en);
+      $("#playEx").onclick = () => speak(item.ex);
+      $("#reveal").onclick = () => { $("#revealBox").style.display = "block"; setMessage("Ayuda ES: respuesta revelada 🙂", ""); };
+      setTimeout(()=> speak(item.en), 140);
+
+      stageEl.querySelectorAll(".opt").forEach(opt=>{
+        opt.onclick = () => {
+          if (locked) return;
+          const chosen = decodeURIComponent(opt.getAttribute("data-val"));
+          const ok = norm(chosen) === norm(target);
+          stageEl.querySelectorAll(".opt").forEach(o=>{
+            if (norm(decodeURIComponent(o.getAttribute("data-val"))) === norm(target)) o.classList.add("correct");
+          });
+          if (ok){ opt.classList.add("correct"); onCorrect(key, "✅ Great listening!"); }
+          else { opt.classList.add("wrong"); onWrong(key, target, "❌ Try again"); }
+        };
+      });
+
+      hookCommonButtons("Pista ES: usa 'Play example' para contexto.");
+      return;
+    }
+
+    modeEl.value = "quiz"; render();
+  }
+
+  function renderBuilder(){
+    locked = false;
+    subBadgeEl.textContent = "Sentence Builder";
+    panelTitleEl.childNodes[0].nodeValue = "Sentence Builder ";
+    const { build } = getPools();
+    const s = pickFrom(build) || pickFrom(SENTENCE_BUILDER);
+    if (!s) return renderEmpty("No hay frases para esta unidad.");
+    const key = keyFor("builder", s);
+    markSeen(key, false);
+
+    const words = shuffle(s.words.slice());
+    let chosen = [];
+
+    stageEl.innerHTML = `
+      <div class="hint">${s.hint}</div>
+      <div class="bigWord" style="font-size:22px">Build the sentence</div>
+
+      <div class="card" style="background: rgba(255,255,255,.70); border-style:dashed; box-shadow:none">
+        <div class="hint">Tu frase (EN):</div>
+        <div id="built" class="bigWord" style="font-size:20px">—</div>
+      </div>
+
+      <div class="divider"></div>
+      <div class="hint">Pulsa palabras en orden:</div>
+      <div class="chips" id="chips"></div>
+
+      <div class="row" style="margin-top:10px">
+        <button id="undo" class="btn-ghost">Undo</button>
+        <button id="clear" class="btn-ghost">Clear</button>
+        <button id="check" class="btn-a">Check</button>
+        <button id="sp" class="btn-d">Speak answer 🔊</button>
+      </div>
+
+      ${nextBtnRow()}
+      <div id="ans" class="hint" style="display:none; margin-top:6px">
+        Answer: <b>${s.answer}</b>
+      </div>
+    `;
+
+    const chips = $("#chips");
+    const built = $("#built");
+    const ans = $("#ans");
+
+    function draw(){
+      chips.innerHTML = "";
+      words.forEach((w,i)=>{
+        const div = document.createElement("div");
+        div.className = "chip" + (w==null ? "" : " on");
+        div.textContent = w==null ? "✓" : w;
+        div.style.opacity = w==null ? 0.55 : 1;
+        div.onclick = () => {
+          if (locked) return;
+          if (words[i]==null) return;
+          chosen.push(words[i]);
+          words[i] = null;
+          built.textContent = chosen.join(" ") || "—";
+          draw();
+        };
+        chips.appendChild(div);
+      });
+    }
+    draw();
+
+    $("#undo").onclick = () => {
+      if (locked) return;
+      if (!chosen.length) return;
+      const last = chosen.pop();
+      const idx = words.findIndex(x => x==null);
+      if (idx >= 0) words[idx] = last;
+      built.textContent = chosen.join(" ") || "—";
+      draw();
+    };
+    $("#clear").onclick = () => {
+      if (locked) return;
+      chosen = [];
+      const restored = shuffle(s.words.slice());
+      for (let i=0;i<words.length;i++) words[i] = restored[i];
+      built.textContent = "—";
+      draw();
+    };
+    $("#sp").onclick = () => speak(s.answer);
+    $("#check").onclick = () => {
+      if (locked) return;
+      const builtText = chosen.join(" ").trim().replace(/\.$/,"");
+      const target = s.answer.trim().replace(/\.$/,"");
+      if (norm(builtText) === norm(target)){ onCorrect(key, "✅ Nice sentence!"); ans.style.display = "block"; speak(s.answer); }
+      else { onWrong(key, s.answer, "❌ Not in the right order"); ans.style.display = "block"; }
+    };
+
+    hookCommonButtons("Pista ES: empieza por sujeto (I/You/She/There...).");
+  }
+
+  function renderGrammar(){
+    locked = false;
+    subBadgeEl.textContent = "Grammar Fix";
+    panelTitleEl.childNodes[0].nodeValue = "Grammar Fix ";
+    const { gram } = getPools();
+    const g = pickFrom(gram) || pickFrom(GRAMMAR_FIX);
+    if (!g) return renderEmpty("No hay gramática para esta unidad.");
+    const key = keyFor("grammar", g);
+    markSeen(key, false);
+
+    const d = levelEl.value;
+    const maxOpt = d==="easy" ? 2 : 4;
+    const options = [g.right, g.wrong];
+    const pool = shuffle((gram.length?gram:GRAMMAR_FIX).slice()).filter(x => x !== g);
+    for (const x of pool){ if (options.length >= maxOpt) break; options.push(d==="hard" ? x.wrong : x.right); }
+    shuffle(options);
+
+    stageEl.innerHTML = `
+      <div class="hint"><b>${g.tag}</b> · Ayuda ES: ${g.esHint}</div>
+      <div class="bigWord" style="font-size:22px">Choose the correct sentence</div>
+      <div class="options" style="grid-template-columns:1fr">
+        ${options.map(o => `<div class="opt" data-val="${encodeURIComponent(o)}">${o}</div>`).join("")}
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button id="sp" class="btn-d">Speak correct 🔊</button>
+        <button id="showRule" class="btn-f">Show rule (ES)</button>
+      </div>
+      ${nextBtnRow()}
+      <div id="rule" class="hint" style="display:none; margin-top:6px">Regla (ES): <b>${g.esHint}</b></div>
+    `;
+    $("#showRule").onclick = () => { $("#rule").style.display = "block"; setMessage("Regla mostrada 🙂", ""); };
+    $("#sp").onclick = () => speak(g.right);
+
+    stageEl.querySelectorAll(".opt").forEach(opt=>{
+      opt.onclick = () => {
+        if (locked) return;
+        const chosen = decodeURIComponent(opt.getAttribute("data-val"));
+        const ok = chosen === g.right;
+
+        stageEl.querySelectorAll(".opt").forEach(o=>{
+          const val = decodeURIComponent(o.getAttribute("data-val"));
+          if (val === g.right) o.classList.add("correct");
+        });
+
+        if (ok){ opt.classList.add("correct"); onCorrect(key, "✅ Grammar correct!"); speak(g.right); }
+        else { opt.classList.add("wrong"); onWrong(key, g.right, "❌ Grammar mistake"); }
+      };
+    });
+
+    hookCommonButtons("Pista ES: mira el sujeto (he/she/it) y la forma del verbo.");
+  }
+
+  function renderMemory(){
+    locked = false;
+    subBadgeEl.textContent = "Memory";
+    panelTitleEl.childNodes[0].nodeValue = "Memory ";
+    const { verbs, vocab, tech } = getPools();
+    const t = topicEl.value;
+    let deck = [];
+
+    function pushPair(pairId, en, es, say){
+      deck.push({ pair: pairId, text: en, kind:"en", say });
+      deck.push({ pair: pairId, text: es, kind:"es", say });
+    }
+
+    if (t === "verbs"){
+      const list = shuffle((verbs.length?verbs:VERBS).slice()).slice(0, 10);
+      list.forEach((v, idx)=> pushPair("v"+idx, v.b, v.es, v.b));
+    } else if (t === "vocab"){
+      const list = shuffle((vocab.length?vocab:VOCAB_GENERAL).slice()).slice(0, 10);
+      list.forEach((v, idx)=> pushPair("g"+idx, v.en, v.es, v.en));
+    } else if (t === "tech"){
+      const list = shuffle((tech.length?tech:VOCAB_TECH).slice()).slice(0, 10);
+      list.forEach((v, idx)=> pushPair("t"+idx, v.en, v.es, v.en));
+    } else {
+      const v1 = shuffle((verbs.length?verbs:VERBS).slice()).slice(0,5);
+      const g1 = shuffle((vocab.length?vocab:VOCAB_GENERAL).slice()).slice(0,3);
+      const t1 = shuffle((tech.length?tech:VOCAB_TECH).slice()).slice(0,2);
+      let idx=0;
+      v1.forEach(v=> pushPair("m"+(idx++), v.b, v.es, v.b));
+      g1.forEach(v=> pushPair("m"+(idx++), v.en, v.es, v.en));
+      t1.forEach(v=> pushPair("m"+(idx++), v.en, v.es, v.en));
+    }
+
+    shuffle(deck);
+    memory = { deck, revealed: [], matched: new Set(), lock: false };
+    setMessage("Ayuda ES: encuentra parejas EN ↔ ES (10 parejas).", "");
+
+    stageEl.innerHTML = `
+      <div class="hint">Toca dos cartas. Si coinciden, ¡se quedan!</div>
+      <div class="options" id="grid" style="grid-template-columns: repeat(2, 1fr);"></div>
+      <div class="row" style="margin-top:10px">
+        <button id="restartMem" class="btn-a">Shuffle</button>
+        <button id="sp" class="btn-d">Speak last EN 🔊</button>
+      </div>
+      ${nextBtnRow()}
+    `;
+
+    const grid = $("#grid");
+    $("#restartMem").onclick = () => renderMemory();
+    $("#sp").onclick = () => {
+      const last = memory.revealed[memory.revealed.length - 1];
+      if (last && last.card.kind === "en") speak(last.card.say || last.card.text);
+    };
+
+    function draw(){
+      grid.innerHTML = "";
+      memory.deck.forEach((card, i)=>{
+        const isMatched = memory.matched.has(card.pair);
+        const isRevealed = memory.revealed.some(r => r.i === i);
+        const showText = isMatched || isRevealed;
+
+        const div = document.createElement("div");
+        div.className = "opt" + (isMatched ? " correct" : "");
+        div.textContent = showText ? card.text : "❓";
+        div.onclick = () => onPick(i);
+        grid.appendChild(div);
+      });
+    }
+
+    function onPick(i){
+      if (memory.lock) return;
+      const card = memory.deck[i];
+      if (memory.matched.has(card.pair)) return;
+      if (memory.revealed.some(r => r.i === i)) return;
+
+      memory.revealed.push({ i, card });
+      if (card.kind === "en") speak(card.say || card.text);
+
+      if (memory.revealed.length === 2){
+        memory.lock = true;
+        const [a,b] = memory.revealed;
+        const samePair = a.card.pair === b.card.pair && a.card.kind !== b.card.kind;
+
+        draw();
+
+        if (samePair){
+          memory.matched.add(a.card.pair);
+          state.correct++; state.streak++;
+          award(8 + Math.min(12, state.streak), 1);
+          setMessage("✅ Match!", "good");
+          markSeen("mem:"+ (a.card.say || a.card.text), true);
+          memory.revealed = [];
+          memory.lock = false;
+          updateStats();
+          draw();
+
+          if (memory.matched.size >= (memory.deck.length/2)){
+            setMessage("🏁 ¡Completado! Has encontrado todas las parejas.", "good");
+          }
+        } else {
+          state.wrong++; state.streak = 0;
+          setMessage("❌ No match. Inténtalo otra vez.", "bad");
+          updateStats();
+          setTimeout(()=>{ memory.revealed = []; memory.lock = false; draw(); }, 650);
+        }
+      } else { draw(); }
+    }
+
+    draw();
+    hookCommonButtons("Pista ES: escucha la palabra EN 🔊 y busca su significado.");
+  }
+
+  function renderReview(){
+    locked = false;
+    subBadgeEl.textContent = "Repaso";
+    panelTitleEl.childNodes[0].nodeValue = "Review mistakes ";
+
+    const { verbs, vocab, tech, gram, build } = getPools();
+    const candidates = [];
+
+    function pushIfMistake(type, item){
+      const k = keyFor(type, item);
+      const c = state.mistakes[k] || 0;
+      if (c > 0) candidates.push({ type, item, k, c });
+    }
+
+    (verbs.length?verbs:VERBS).forEach(v=> pushIfMistake("verbs", v));
+    (vocab.length?vocab:VOCAB_GENERAL).forEach(v=> pushIfMistake("vocab", v));
+    (tech.length?tech:VOCAB_TECH).forEach(v=> pushIfMistake("tech", v));
+    (gram.length?gram:GRAMMAR_FIX).forEach(g=> pushIfMistake("grammar", g));
+    (build.length?build:SENTENCE_BUILDER).forEach(s=> pushIfMistake("builder", s));
+
+    if (!candidates.length){
+      stageEl.innerHTML = `
+        <div class="bigWord" style="font-size:22px">¡Sin errores pendientes!</div>
+        <div class="hint">Ayuda ES: juega Quiz/Spelling/Grammar y aquí te saldrán lo que falles.</div>
+        <div class="row" style="margin-top:10px">
+          <button id="goQuiz" class="btn-a">Go to Quiz</button>
+          <button id="goExam" class="btn-f">Try Exam</button>
+        </div>
+      `;
+      $("#goQuiz").onclick = () => { modeEl.value="quiz"; render(); };
+      $("#goExam").onclick = () => { modeEl.value="exam"; render(); };
+      setMessage("✅ No hay repaso pendiente.", "good");
+      return;
+    }
+
+    candidates.sort((a,b)=> b.c - a.c);
+    const pick = candidates[0];
+    setMessage(`Ayuda ES: repaso de tu error más repetido (fallos: ${pick.c}).`, "");
+    if (pick.type === "verbs"){ topicEl.value="verbs"; modeEl.value="quiz"; return renderQuiz(); }
+    if (pick.type === "vocab"){ topicEl.value="vocab"; modeEl.value="quiz"; return renderQuiz(); }
+    if (pick.type === "tech"){ topicEl.value="tech"; modeEl.value="quiz"; return renderQuiz(); }
+    if (pick.type === "grammar"){ topicEl.value="grammar"; modeEl.value="grammar"; return renderGrammar(); }
+    if (pick.type === "builder"){ topicEl.value="grammar"; modeEl.value="builder"; return renderBuilder(); }
+    modeEl.value="quiz"; render();
+  }
+
+  function renderExam(){
+    locked = false;
+    subBadgeEl.textContent = "Exam";
+    panelTitleEl.childNodes[0].nodeValue = "Exam ";
+    const d = levelEl.value;
+    const total = d==="easy" ? 10 : d==="mid" ? 12 : 15;
+
+    if (!exam || exam.done){
+      exam = { idx:0, total, ok:0, bad:0, items:[] , done:false };
+      for (let i=0;i<total;i++) exam.items.push({ type: chooseMixedType() });
+      shuffle(exam.items);
+      setMessage("🧪 Examen: sin ayudas (solo al final).", "");
+    }
+
+    stageEl.innerHTML = `
+      <div class="hint">Examen Oxford (unidad actual): <b>${UNITS[getUnit()].name}</b></div>
+      <div class="twoCol">
+        <div class="miniCard"><div class="label">Pregunta</div><div class="val">${exam.idx+1} / ${exam.total}</div></div>
+        <div class="miniCard"><div class="label">Puntos</div><div class="val">${exam.ok} ✅ · ${exam.bad} ❌</div></div>
+      </div>
+      <div class="divider"></div>
+      <div id="inner" class="card" style="box-shadow:none"></div>
+      <div class="row" style="margin-top:10px">
+        <button id="end" class="btn-danger">Finish exam</button>
+        <button id="sp" class="btn-d">Speak 🔊</button>
+      </div>
+    `;
+
+    const inner = $("#inner");
+    const sp = $("#sp");
+
+    function finish(){
+      exam.done = true;
+      const score = Math.round((exam.ok / Math.max(1, exam.total)) * 10);
+      const bonus = Math.max(0, exam.ok*12 - exam.bad*3);
+      award(bonus, Math.floor(exam.ok/3));
+      setMessage(`🏁 Examen terminado. Nota: ${score}/10. Bonus +${bonus} XP`, score>=7 ? "good" : score>=5 ? "" : "bad");
+      render();
+    }
+    $("#end").onclick = finish;
+
+    function next(){
+      if (exam.idx >= exam.total) return finish();
+
+      const { verbs, vocab, tech, gram, build } = getPools();
+      const entry = exam.items[exam.idx];
+      const maxOpt = 4;
+
+      if (entry.type === "verbs"){
+        const v = pickFrom(verbs) || pickFrom(VERBS);
+        const key = keyFor("verbs", v);
+        const target = norm(v.p);
+        const options = new Set([target]);
+        const pool = shuffle((verbs.length?verbs:VERBS).map(x=>norm(x.p)).filter(x=>x!==target));
+        while(options.size < maxOpt && pool.length) options.add(pool.pop());
+        const opts = shuffle(Array.from(options));
+        inner.innerHTML = `<div class="hint">Past Simple for <b>${v.b}</b></div><div class="options">${opts.map(o=>`<div class="opt" data-val="${o}">${o}</div>`).join("")}</div>`;
+        sp.onclick = () => speak(v.p.replace("/"," "));
+        inner.querySelectorAll(".opt").forEach(opt=>{
+          opt.onclick = () => {
+            if (locked) return;
+            locked = true;
+            const chosen = opt.getAttribute("data-val");
+            const ok = chosen === target;
+            inner.querySelectorAll(".opt").forEach(o=>{ if (o.getAttribute("data-val")==target) o.classList.add("correct"); });
+            if (ok){ opt.classList.add("correct"); exam.ok++; onCorrect(key, "✅"); }
+            else { opt.classList.add("wrong"); exam.bad++; onWrong(key, v.p, "❌"); }
+            locked = false;
+            exam.idx++;
+            renderExam();
+          };
+        });
+        return;
+      }
+
+      if (entry.type === "vocab" || entry.type === "tech"){
+        const type = entry.type;
+        const list = type==="tech" ? tech : vocab;
+        const item = pickFrom(list) || pickFrom(type==="tech"?VOCAB_TECH:VOCAB_GENERAL);
+        const key = keyFor(type, item);
+        const target = item.es;
+        const options = new Set([target]);
+        const pool = shuffle((list.length?list:(type==="tech"?VOCAB_TECH:VOCAB_GENERAL)).map(x=>x.es).filter(x=>x!==target));
+        while(options.size < maxOpt && pool.length) options.add(pool.pop());
+        const opts = shuffle(Array.from(options));
+        inner.innerHTML = `<div class="hint">Meaning in Spanish: <b>${item.en}</b></div><div class="options">${opts.map(o=>`<div class="opt" data-val="${encodeURIComponent(o)}">${o}</div>`).join("")}</div>`;
+        sp.onclick = () => speak(item.en);
+        inner.querySelectorAll(".opt").forEach(opt=>{
+          opt.onclick = () => {
+            if (locked) return;
+            locked = true;
+            const chosen = decodeURIComponent(opt.getAttribute("data-val"));
+            const ok = chosen === target;
+            inner.querySelectorAll(".opt").forEach(o=>{ if (decodeURIComponent(o.getAttribute("data-val"))==target) o.classList.add("correct"); });
+            if (ok){ opt.classList.add("correct"); exam.ok++; onCorrect(key, "✅"); }
+            else { opt.classList.add("wrong"); exam.bad++; onWrong(key, target, "❌"); }
+            locked = false;
+            exam.idx++;
+            renderExam();
+          };
+        });
+        return;
+      }
+
+      if (entry.type === "grammar"){
+        const g = pickFrom(gram) || pickFrom(GRAMMAR_FIX);
+        const key = keyFor("grammar", g);
+        const options = shuffle([g.right, g.wrong, ...(shuffle((gram.length?gram:GRAMMAR_FIX).slice()).slice(0,2).map(x=>x.right))]).slice(0,4);
+        inner.innerHTML = `<div class="hint">Choose the correct sentence</div><div class="options" style="grid-template-columns:1fr">${options.map(o=>`<div class="opt" data-val="${encodeURIComponent(o)}">${o}</div>`).join("")}</div>`;
+        sp.onclick = () => speak(g.right);
+        inner.querySelectorAll(".opt").forEach(opt=>{
+          opt.onclick = () => {
+            if (locked) return;
+            locked = true;
+            const chosen = decodeURIComponent(opt.getAttribute("data-val"));
+            const ok = chosen === g.right;
+            inner.querySelectorAll(".opt").forEach(o=>{ if (decodeURIComponent(o.getAttribute("data-val"))==g.right) o.classList.add("correct"); });
+            if (ok){ opt.classList.add("correct"); exam.ok++; onCorrect(key, "✅"); }
+            else { opt.classList.add("wrong"); exam.bad++; onWrong(key, g.right, "❌"); }
+            locked = false;
+            exam.idx++;
+            renderExam();
+          };
+        });
+        return;
+      }
+
+      const s = pickFrom(build) || pickFrom(SENTENCE_BUILDER);
+      const key = keyFor("builder", s);
+      const wrong1 = shuffle(s.words.slice()).join(" ") + ".";
+      const wrong2 = shuffle(s.words.slice()).join(" ") + ".";
+      const options = shuffle([s.answer, wrong1, wrong2]).slice(0,3);
+      inner.innerHTML = `<div class="hint">Choose the correct sentence</div><div class="options" style="grid-template-columns:1fr">${options.map(o=>`<div class="opt" data-val="${encodeURIComponent(o)}">${o}</div>`).join("")}</div>`;
+      sp.onclick = () => speak(s.answer);
+      inner.querySelectorAll(".opt").forEach(opt=>{
+        opt.onclick = () => {
+          if (locked) return;
+          locked = true;
+          const chosen = decodeURIComponent(opt.getAttribute("data-val"));
+          const ok = chosen === s.answer;
+          inner.querySelectorAll(".opt").forEach(o=>{ if (decodeURIComponent(o.getAttribute("data-val"))==s.answer) o.classList.add("correct"); });
+          if (ok){ opt.classList.add("correct"); exam.ok++; onCorrect(key, "✅"); }
+          else { opt.classList.add("wrong"); exam.bad++; onWrong(key, s.answer, "❌"); }
+          locked = false;
+          exam.idx++;
+          renderExam();
+        };
+      });
+    }
+
+    next();
+  }
+
+  function renderChallenge(){
+    locked = false;
+    subBadgeEl.textContent = "Boss";
+    panelTitleEl.childNodes[0].nodeValue = "Mixed Challenge ";
+    const total = levelEl.value==="easy" ? 6 : levelEl.value==="mid" ? 8 : 10;
+    let q = 0, ok = 0, bad = 0;
+
+    stageEl.innerHTML = `
+      <div class="hint">Ronda mixta Oxford: ${total} preguntas seguidas 💪</div>
+      <div class="twoCol">
+        <div class="miniCard"><div class="label">Round</div><div class="val" id="round">1 / ${total}</div></div>
+        <div class="miniCard"><div class="label">Session</div><div class="val" id="sess">0 ✅ · 0 ❌</div></div>
+      </div>
+      <div class="divider"></div>
+      <div id="inner" class="card" style="box-shadow:none"></div>
+      <div class="row" style="margin-top:10px">
+        <button id="end" class="btn-danger">End round</button>
+        <button id="sp" class="btn-d">Speak 🔊</button>
+      </div>
+    `;
+
+    const inner = $("#inner");
+    const roundEl = $("#round");
+    const sessEl = $("#sess");
+    const sp = $("#sp");
+
+    function updateHead(){ roundEl.textContent = `${q+1} / ${total}`; sessEl.textContent = `${ok} ✅ · ${bad} ❌`; }
+    function finish(){
+      const bonus = Math.max(0, ok*12 - bad*3);
+      award(bonus, Math.floor(ok/2));
+      setMessage(`🏁 Fin: ${ok} correctas, ${bad} fallos. Bonus +${bonus} XP`, ok>=bad ? "good" : "");
+      render();
+    }
+    $("#end").onclick = finish;
+
+    function one(){
+      if (q >= total) return finish();
+      updateHead();
+      const { verbs, vocab, tech, gram, build } = getPools();
+      const type = chooseMixedType();
+      const maxOpt = levelEl.value==="easy" ? 3 : 4;
+
+      if (type==="verbs"){
+        const v = pickFrom(verbs) || pickFrom(VERBS);
+        const key = keyFor("verbs", v);
+        const target = norm(v.p);
+        const options = new Set([target]);
+        const pool = shuffle((verbs.length?verbs:VERBS).map(x=>norm(x.p)).filter(x=>x!==target));
+        while(options.size < maxOpt && pool.length) options.add(pool.pop());
+        const opts = shuffle(Array.from(options));
+        inner.innerHTML = `<div class="hint">Past Simple for <b>${v.b}</b> (ES: ${v.es})</div><div class="options">${opts.map(o=>`<div class="opt" data-val="${o}">${o}</div>`).join("")}</div>`;
+        sp.onclick = () => speak(v.p.replace("/"," "));
+        inner.querySelectorAll(".opt").forEach(opt=>{
+          opt.onclick = () => {
+            if (locked) return;
+            locked = true;
+            const chosen = opt.getAttribute("data-val");
+            const good = chosen === target;
+            inner.querySelectorAll(".opt").forEach(o=>{ if (o.getAttribute("data-val")==target) o.classList.add("correct"); });
+            if (good){ opt.classList.add("correct"); ok++; onCorrect(key, "✅ Correct!"); }
+            else { opt.classList.add("wrong"); bad++; onWrong(key, v.p, "❌ Wrong"); }
+            locked = false;
+            q++;
+            setTimeout(one, 420);
+          };
+        });
+        return;
+      }
+
+      if (type==="vocab" || type==="tech"){
+        const list = type==="tech" ? tech : vocab;
+        const item = pickFrom(list) || pickFrom(type==="tech"?VOCAB_TECH:VOCAB_GENERAL);
+        const key = keyFor(type, item);
+        const target = item.es;
+        const options = new Set([target]);
+        const pool = shuffle((list.length?list:(type==="tech"?VOCAB_TECH:VOCAB_GENERAL)).map(x=>x.es).filter(x=>x!==target));
+        while(options.size < maxOpt && pool.length) options.add(pool.pop());
+        const opts = shuffle(Array.from(options));
+        inner.innerHTML = `<div class="hint">Meaning (ES) of <b>${item.en}</b></div><div class="options">${opts.map(o=>`<div class="opt" data-val="${encodeURIComponent(o)}">${o}</div>`).join("")}</div>`;
+        sp.onclick = () => speak(item.en);
+        inner.querySelectorAll(".opt").forEach(opt=>{
+          opt.onclick = () => {
+            if (locked) return;
+            locked = true;
+            const chosen = decodeURIComponent(opt.getAttribute("data-val"));
+            const good = chosen === target;
+            inner.querySelectorAll(".opt").forEach(o=>{ if (decodeURIComponent(o.getAttribute("data-val"))==target) o.classList.add("correct"); });
+            if (good){ opt.classList.add("correct"); ok++; onCorrect(key, "✅ Correct!"); }
+            else { opt.classList.add("wrong"); bad++; onWrong(key, target, "❌ Wrong"); }
+            locked = false;
+            q++;
+            setTimeout(one, 420);
+          };
+        });
+        return;
+      }
+
+      if (type==="grammar"){
+        const g = pickFrom(gram) || pickFrom(GRAMMAR_FIX);
+        const key = keyFor("grammar", g);
+        const options = shuffle([g.right, g.wrong, ...(shuffle((gram.length?gram:GRAMMAR_FIX).slice()).slice(0,2).map(x=>x.right))]).slice(0,4);
+        inner.innerHTML = `<div class="hint">Choose correct sentence · ES: ${g.esHint}</div><div class="options" style="grid-template-columns:1fr">${options.map(o=>`<div class="opt" data-val="${encodeURIComponent(o)}">${o}</div>`).join("")}</div>`;
+        sp.onclick = () => speak(g.right);
+        inner.querySelectorAll(".opt").forEach(opt=>{
+          opt.onclick = () => {
+            if (locked) return;
+            locked = true;
+            const chosen = decodeURIComponent(opt.getAttribute("data-val"));
+            const good = chosen === g.right;
+            inner.querySelectorAll(".opt").forEach(o=>{ if (decodeURIComponent(o.getAttribute("data-val"))==g.right) o.classList.add("correct"); });
+            if (good){ opt.classList.add("correct"); ok++; onCorrect(key, "✅ Correct!"); }
+            else { opt.classList.add("wrong"); bad++; onWrong(key, g.right, "❌ Wrong"); }
+            locked = false;
+            q++;
+            setTimeout(one, 420);
+          };
+        });
+        return;
+      }
+
+      const s = pickFrom(build) || pickFrom(SENTENCE_BUILDER);
+      const key = keyFor("builder", s);
+      const wrong1 = shuffle(s.words.slice()).join(" ") + ".";
+      const wrong2 = shuffle(s.words.slice()).join(" ") + ".";
+      const options = shuffle([s.answer, wrong1, wrong2]).slice(0,3);
+      inner.innerHTML = `<div class="hint">Choose correct sentence · ES: ${s.hint}</div><div class="options" style="grid-template-columns:1fr">${options.map(o=>`<div class="opt" data-val="${encodeURIComponent(o)}">${o}</div>`).join("")}</div>`;
+      sp.onclick = () => speak(s.answer);
+      inner.querySelectorAll(".opt").forEach(opt=>{
+        opt.onclick = () => {
+          if (locked) return;
+          locked = true;
+          const chosen = decodeURIComponent(opt.getAttribute("data-val"));
+          const good = chosen === s.answer;
+          inner.querySelectorAll(".opt").forEach(o=>{ if (decodeURIComponent(o.getAttribute("data-val"))==s.answer) o.classList.add("correct"); });
+          if (good){ opt.classList.add("correct"); ok++; onCorrect(key, "✅ Correct!"); }
+          else { opt.classList.add("wrong"); bad++; onWrong(key, s.answer, "❌ Wrong"); }
+          locked = false;
+          q++;
+          setTimeout(one, 420);
+        };
+      });
+    }
+
+    one();
+  }
+
+  function renderEmpty(text){
+    stageEl.innerHTML = `
+      <div class="bigWord" style="font-size:22px">Sin contenido</div>
+      <div class="hint">${text}</div>
+      <div class="row" style="margin-top:10px">
+        <button id="all" class="btn-a">Switch to All units</button>
+        <button id="mix" class="btn-f">Mix (Oxford)</button>
+      </div>
+    `;
+    $("#all").onclick = () => { unitEl.value="all"; render(); };
+    $("#mix").onclick = () => { topicEl.value="mix"; modeEl.value="quiz"; render(); };
+    setMessage("Ayuda ES: cambia de unidad o usa 'All units'.", "");
+  }
+
+  function render(){
+    updateStats();
+    locked = false;
+    const mode = modeEl.value;
+
+    if (mode === "flash") return renderFlash();
+    if (mode === "quiz") return renderQuiz();
+    if (mode === "spell") return renderSpelling();
+    if (mode === "listen") return renderListening();
+    if (mode === "builder") return renderBuilder();
+    if (mode === "grammar") return renderGrammar();
+    if (mode === "memory") return renderMemory();
+    if (mode === "review") return renderReview();
+    if (mode === "exam") return renderExam();
+    if (mode === "challenge") return renderChallenge();
+    return renderQuiz();
+  }
+
+  function onChange(){ exam = null; render(); }
+
+  unitEl.addEventListener("change", onChange);
+  modeEl.addEventListener("change", onChange);
+  topicEl.addEventListener("change", onChange);
+  levelEl.addEventListener("change", onChange);
+  resetEl.addEventListener("click", resetProgress);
+
+  window.addEventListener("keydown", (e)=>{
+    if (e.key === "n" || e.key === "N") render();
+    if (e.key === "r" || e.key === "R") resetProgress();
+    if (e.key === "s" || e.key === "S"){
+      if (state.lastSpeak) speak(state.lastSpeak);
+      else setMessage("Ayuda ES: todavía no hay nada para repetir 🔊", "");
+    }
+    if (e.key === "h" || e.key === "H"){
+      setMessage("Ayuda ES: usa Listening 🔊 para mejorar pronunciación (UK).", "");
+    }
+  });
+
+  updateStats();
+  render();
+})();
+</script>
+</body>
+</html>
