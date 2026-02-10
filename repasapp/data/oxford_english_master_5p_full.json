@@ -1,0 +1,2285 @@
+{
+  "id": "oxford_english_master_5p_full",
+  "publisher": "Oxford",
+  "series": "English Master",
+  "subject": "english",
+  "course": "5º Primaria",
+  "region": "España (adaptable)",
+  "title": "Oxford English Master — 5º Primaria (UK) — Full (Motor)",
+  "topics": [
+    {
+      "id": "u1",
+      "name": "Unit 1",
+      "order": 1
+    },
+    {
+      "id": "u2",
+      "name": "Unit 2",
+      "order": 2
+    },
+    {
+      "id": "u3",
+      "name": "Unit 3",
+      "order": 3
+    },
+    {
+      "id": "u4",
+      "name": "Unit 4",
+      "order": 4
+    },
+    {
+      "id": "u5",
+      "name": "Unit 5",
+      "order": 5
+    },
+    {
+      "id": "u6",
+      "name": "Unit 6",
+      "order": 6
+    },
+    {
+      "id": "u7",
+      "name": "Unit 7",
+      "order": 7
+    },
+    {
+      "id": "u8",
+      "name": "Unit 8",
+      "order": 8
+    }
+  ],
+  "categories": [
+    {
+      "id": "mix",
+      "name": "Mix"
+    },
+    {
+      "id": "verbs",
+      "name": "Irregular Verbs"
+    },
+    {
+      "id": "vocab",
+      "name": "Vocabulary"
+    },
+    {
+      "id": "grammar",
+      "name": "Grammar"
+    }
+  ],
+  "modes": [
+    "flashcards",
+    "quiz",
+    "spelling",
+    "listening",
+    "sentence_builder",
+    "grammar_fix",
+    "memory",
+    "review_errors",
+    "exam",
+    "mixed_challenge"
+  ],
+  "items": [
+    {
+      "id": "verb_be",
+      "type": "verb",
+      "base": "be",
+      "past": "was/were",
+      "pp": "been",
+      "es": "ser/estar",
+      "units": [
+        "u1",
+        "u4"
+      ],
+      "difficulty": 2,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_have",
+      "type": "verb",
+      "base": "have",
+      "past": "had",
+      "pp": "had",
+      "es": "tener",
+      "units": [
+        "u1",
+        "u6"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_do",
+      "type": "verb",
+      "base": "do",
+      "past": "did",
+      "pp": "done",
+      "es": "hacer",
+      "units": [
+        "u1",
+        "u2",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_go",
+      "type": "verb",
+      "base": "go",
+      "past": "went",
+      "pp": "gone",
+      "es": "ir",
+      "units": [
+        "u1",
+        "u4",
+        "u5"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_come",
+      "type": "verb",
+      "base": "come",
+      "past": "came",
+      "pp": "come",
+      "es": "venir",
+      "units": [
+        "u1",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_make",
+      "type": "verb",
+      "base": "make",
+      "past": "made",
+      "pp": "made",
+      "es": "hacer / fabricar",
+      "units": [
+        "u2",
+        "u3",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_get",
+      "type": "verb",
+      "base": "get",
+      "past": "got",
+      "pp": "got",
+      "es": "conseguir / obtener",
+      "units": [
+        "u1",
+        "u3",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_give",
+      "type": "verb",
+      "base": "give",
+      "past": "gave",
+      "pp": "given",
+      "es": "dar",
+      "units": [
+        "u2",
+        "u6"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_take",
+      "type": "verb",
+      "base": "take",
+      "past": "took",
+      "pp": "taken",
+      "es": "coger / tomar",
+      "units": [
+        "u4",
+        "u6"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_see",
+      "type": "verb",
+      "base": "see",
+      "past": "saw",
+      "pp": "seen",
+      "es": "ver",
+      "units": [
+        "u4",
+        "u8"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_eat",
+      "type": "verb",
+      "base": "eat",
+      "past": "ate",
+      "pp": "eaten",
+      "es": "comer",
+      "units": [
+        "u6",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_drink",
+      "type": "verb",
+      "base": "drink",
+      "past": "drank",
+      "pp": "drunk",
+      "es": "beber",
+      "units": [
+        "u6",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_say",
+      "type": "verb",
+      "base": "say",
+      "past": "said",
+      "pp": "said",
+      "es": "decir",
+      "units": [
+        "u2",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_tell",
+      "type": "verb",
+      "base": "tell",
+      "past": "told",
+      "pp": "told",
+      "es": "contar / decir a alguien",
+      "units": [
+        "u2",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_can",
+      "type": "verb",
+      "base": "can",
+      "past": "could",
+      "pp": "(—)",
+      "es": "poder (habilidad)",
+      "units": [
+        "u8",
+        "u2"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_buy",
+      "type": "verb",
+      "base": "buy",
+      "past": "bought",
+      "pp": "bought",
+      "es": "comprar",
+      "units": [
+        "u6",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_bring",
+      "type": "verb",
+      "base": "bring",
+      "past": "brought",
+      "pp": "brought",
+      "es": "traer",
+      "units": [
+        "u2",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_think",
+      "type": "verb",
+      "base": "think",
+      "past": "thought",
+      "pp": "thought",
+      "es": "pensar",
+      "units": [
+        "u2",
+        "u7"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_know",
+      "type": "verb",
+      "base": "know",
+      "past": "knew",
+      "pp": "known",
+      "es": "saber / conocer",
+      "units": [
+        "u2",
+        "u7"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_find",
+      "type": "verb",
+      "base": "find",
+      "past": "found",
+      "pp": "found",
+      "es": "encontrar",
+      "units": [
+        "u5",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_feel",
+      "type": "verb",
+      "base": "feel",
+      "past": "felt",
+      "pp": "felt",
+      "es": "sentir",
+      "units": [
+        "u7",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_leave",
+      "type": "verb",
+      "base": "leave",
+      "past": "left",
+      "pp": "left",
+      "es": "irse / dejar",
+      "units": [
+        "u4",
+        "u5"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_meet",
+      "type": "verb",
+      "base": "meet",
+      "past": "met",
+      "pp": "met",
+      "es": "conocer / quedar con",
+      "units": [
+        "u2",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_put",
+      "type": "verb",
+      "base": "put",
+      "past": "put",
+      "pp": "put",
+      "es": "poner",
+      "units": [
+        "u5",
+        "u3"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_read",
+      "type": "verb",
+      "base": "read",
+      "past": "read",
+      "pp": "read",
+      "es": "leer (pron. /red/)",
+      "units": [
+        "u2",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_write",
+      "type": "verb",
+      "base": "write",
+      "past": "wrote",
+      "pp": "written",
+      "es": "escribir",
+      "units": [
+        "u2",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_run",
+      "type": "verb",
+      "base": "run",
+      "past": "ran",
+      "pp": "run",
+      "es": "correr",
+      "units": [
+        "u8",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_sleep",
+      "type": "verb",
+      "base": "sleep",
+      "past": "slept",
+      "pp": "slept",
+      "es": "dormir",
+      "units": [
+        "u1",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_speak",
+      "type": "verb",
+      "base": "speak",
+      "past": "spoke",
+      "pp": "spoken",
+      "es": "hablar",
+      "units": [
+        "u2",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_wear",
+      "type": "verb",
+      "base": "wear",
+      "past": "wore",
+      "pp": "worn",
+      "es": "llevar (ropa)",
+      "units": [
+        "u7",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_begin",
+      "type": "verb",
+      "base": "begin",
+      "past": "began",
+      "pp": "begun",
+      "es": "empezar",
+      "units": [
+        "u1",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_build",
+      "type": "verb",
+      "base": "build",
+      "past": "built",
+      "pp": "built",
+      "es": "construir",
+      "units": [
+        "u5",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_choose",
+      "type": "verb",
+      "base": "choose",
+      "past": "chose",
+      "pp": "chosen",
+      "es": "elegir",
+      "units": [
+        "u2",
+        "u7"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_cut",
+      "type": "verb",
+      "base": "cut",
+      "past": "cut",
+      "pp": "cut",
+      "es": "cortar",
+      "units": [
+        "u6",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_drive",
+      "type": "verb",
+      "base": "drive",
+      "past": "drove",
+      "pp": "driven",
+      "es": "conducir",
+      "units": [
+        "u5",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_fly",
+      "type": "verb",
+      "base": "fly",
+      "past": "flew",
+      "pp": "flown",
+      "es": "volar",
+      "units": [
+        "u8",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_forget",
+      "type": "verb",
+      "base": "forget",
+      "past": "forgot",
+      "pp": "forgotten",
+      "es": "olvidar",
+      "units": [
+        "u3",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_hold",
+      "type": "verb",
+      "base": "hold",
+      "past": "held",
+      "pp": "held",
+      "es": "sujetar / celebrar",
+      "units": [
+        "u7",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_send",
+      "type": "verb",
+      "base": "send",
+      "past": "sent",
+      "pp": "sent",
+      "es": "enviar",
+      "units": [
+        "u3",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_swim",
+      "type": "verb",
+      "base": "swim",
+      "past": "swam",
+      "pp": "swum",
+      "es": "nadar",
+      "units": [
+        "u8",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_sit",
+      "type": "verb",
+      "base": "sit",
+      "past": "sat",
+      "pp": "sat",
+      "es": "sentarse",
+      "units": [
+        "u1",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_stand",
+      "type": "verb",
+      "base": "stand",
+      "past": "stood",
+      "pp": "stood",
+      "es": "estar de pie",
+      "units": [
+        "u1",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_teach",
+      "type": "verb",
+      "base": "teach",
+      "past": "taught",
+      "pp": "taught",
+      "es": "enseñar",
+      "units": [
+        "u2",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_learn",
+      "type": "verb",
+      "base": "learn",
+      "past": "learnt/learned",
+      "pp": "learnt/learned",
+      "es": "aprender",
+      "units": [
+        "u2"
+      ],
+      "difficulty": 2,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_hear",
+      "type": "verb",
+      "base": "hear",
+      "past": "heard",
+      "pp": "heard",
+      "es": "oír",
+      "units": [
+        "u8",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_keep",
+      "type": "verb",
+      "base": "keep",
+      "past": "kept",
+      "pp": "kept",
+      "es": "guardar / mantener",
+      "units": [
+        "u3",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_pay",
+      "type": "verb",
+      "base": "pay",
+      "past": "paid",
+      "pp": "paid",
+      "es": "pagar",
+      "units": [
+        "u6",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_sell",
+      "type": "verb",
+      "base": "sell",
+      "past": "sold",
+      "pp": "sold",
+      "es": "vender",
+      "units": [
+        "u6",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_spend",
+      "type": "verb",
+      "base": "spend",
+      "past": "spent",
+      "pp": "spent",
+      "es": "gastar / pasar tiempo",
+      "units": [
+        "u2",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_win",
+      "type": "verb",
+      "base": "win",
+      "past": "won",
+      "pp": "won",
+      "es": "ganar",
+      "units": [
+        "u2",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_catch",
+      "type": "verb",
+      "base": "catch",
+      "past": "caught",
+      "pp": "caught",
+      "es": "atrapar",
+      "units": [
+        "u8",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_fall",
+      "type": "verb",
+      "base": "fall",
+      "past": "fell",
+      "pp": "fallen",
+      "es": "caerse",
+      "units": [
+        "u8",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_grow",
+      "type": "verb",
+      "base": "grow",
+      "past": "grew",
+      "pp": "grown",
+      "es": "crecer",
+      "units": [
+        "u8",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_hit",
+      "type": "verb",
+      "base": "hit",
+      "past": "hit",
+      "pp": "hit",
+      "es": "golpear",
+      "units": [
+        "u2",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_hurt",
+      "type": "verb",
+      "base": "hurt",
+      "past": "hurt",
+      "pp": "hurt",
+      "es": "hacer daño",
+      "units": [
+        "u6",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_let",
+      "type": "verb",
+      "base": "let",
+      "past": "let",
+      "pp": "let",
+      "es": "dejar/permitir",
+      "units": [
+        "u3",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_lay",
+      "type": "verb",
+      "base": "lay",
+      "past": "laid",
+      "pp": "laid",
+      "es": "poner (colocar)",
+      "units": [
+        "u5",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_lie",
+      "type": "verb",
+      "base": "lie",
+      "past": "lay",
+      "pp": "lain",
+      "es": "tumbarse",
+      "units": [
+        "u1",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_light",
+      "type": "verb",
+      "base": "light",
+      "past": "lit/lighted",
+      "pp": "lit/lighted",
+      "es": "encender",
+      "units": [
+        "u3",
+        "u4"
+      ],
+      "difficulty": 2,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_ring",
+      "type": "verb",
+      "base": "ring",
+      "past": "rang",
+      "pp": "rung",
+      "es": "sonar (teléfono)",
+      "units": [
+        "u3",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_shake",
+      "type": "verb",
+      "base": "shake",
+      "past": "shook",
+      "pp": "shaken",
+      "es": "agitar",
+      "units": [
+        "u8",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_shine",
+      "type": "verb",
+      "base": "shine",
+      "past": "shone",
+      "pp": "shone",
+      "es": "brillar",
+      "units": [
+        "u8",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_sing",
+      "type": "verb",
+      "base": "sing",
+      "past": "sang",
+      "pp": "sung",
+      "es": "cantar",
+      "units": [
+        "u2",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_stick",
+      "type": "verb",
+      "base": "stick",
+      "past": "stuck",
+      "pp": "stuck",
+      "es": "pegar/atascar",
+      "units": [
+        "u3",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_throw",
+      "type": "verb",
+      "base": "throw",
+      "past": "threw",
+      "pp": "thrown",
+      "es": "lanzar",
+      "units": [
+        "u2",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_understand",
+      "type": "verb",
+      "base": "understand",
+      "past": "understood",
+      "pp": "understood",
+      "es": "entender",
+      "units": [
+        "u2",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "verb_wake",
+      "type": "verb",
+      "base": "wake",
+      "past": "woke",
+      "pp": "woken",
+      "es": "despertar",
+      "units": [
+        "u1",
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "verbs"
+    },
+    {
+      "id": "vocab_wake_up_general",
+      "type": "vocab",
+      "en": "wake up",
+      "es": "despertarse",
+      "example": "I wake up at seven o'clock.",
+      "units": [
+        "u1"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_get_up_general",
+      "type": "vocab",
+      "en": "get up",
+      "es": "levantarse",
+      "example": "She gets up early on Mondays.",
+      "units": [
+        "u1"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_brush_my_teeth_general",
+      "type": "vocab",
+      "en": "brush my teeth",
+      "es": "lavarme los dientes",
+      "example": "I brush my teeth after breakfast.",
+      "units": [
+        "u1"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_have_a_shower_general",
+      "type": "vocab",
+      "en": "have a shower",
+      "es": "ducharme",
+      "example": "I have a shower in the morning.",
+      "units": [
+        "u1"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_have_breakfast_general",
+      "type": "vocab",
+      "en": "have breakfast",
+      "es": "desayunar",
+      "example": "We have breakfast at home.",
+      "units": [
+        "u1"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_usually_general",
+      "type": "vocab",
+      "en": "usually",
+      "es": "normalmente",
+      "example": "He usually walks to school.",
+      "units": [
+        "u1"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_sometimes_general",
+      "type": "vocab",
+      "en": "sometimes",
+      "es": "a veces",
+      "example": "I sometimes play chess.",
+      "units": [
+        "u1"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_never_general",
+      "type": "vocab",
+      "en": "never",
+      "es": "nunca",
+      "example": "I never eat sweets before dinner.",
+      "units": [
+        "u1"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_always_general",
+      "type": "vocab",
+      "en": "always",
+      "es": "siempre",
+      "example": "I always do my homework.",
+      "units": [
+        "u1"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_timetable_general",
+      "type": "vocab",
+      "en": "timetable",
+      "es": "horario",
+      "example": "Here is my timetable.",
+      "units": [
+        "u2"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_homework_general",
+      "type": "vocab",
+      "en": "homework",
+      "es": "deberes",
+      "example": "I do my homework every day.",
+      "units": [
+        "u2"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_break_time_general",
+      "type": "vocab",
+      "en": "break time",
+      "es": "recreo",
+      "example": "We talk at break time.",
+      "units": [
+        "u2"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_favourite_subject_general",
+      "type": "vocab",
+      "en": "favourite subject",
+      "es": "asignatura favorita",
+      "example": "Science is my favourite subject.",
+      "units": [
+        "u2"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_playground_general",
+      "type": "vocab",
+      "en": "playground",
+      "es": "patio",
+      "example": "The playground is big.",
+      "units": [
+        "u2"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_team_general",
+      "type": "vocab",
+      "en": "team",
+      "es": "equipo",
+      "example": "Our team won the match.",
+      "units": [
+        "u2"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_practice_general",
+      "type": "vocab",
+      "en": "practice",
+      "es": "practicar",
+      "example": "Practice makes perfect!",
+      "units": [
+        "u2"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_join_general",
+      "type": "vocab",
+      "en": "join",
+      "es": "unirse",
+      "example": "Join the club after school.",
+      "units": [
+        "u2"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_learn_general",
+      "type": "vocab",
+      "en": "learn",
+      "es": "aprender",
+      "example": "We learn English at school.",
+      "units": [
+        "u2"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_yesterday_general",
+      "type": "vocab",
+      "en": "yesterday",
+      "es": "ayer",
+      "example": "Yesterday I watched a film.",
+      "units": [
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_last_week_general",
+      "type": "vocab",
+      "en": "last week",
+      "es": "la semana pasada",
+      "example": "I visited my grandma last week.",
+      "units": [
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_then_general",
+      "type": "vocab",
+      "en": "then",
+      "es": "entonces",
+      "example": "Then we went home.",
+      "units": [
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_suddenly_general",
+      "type": "vocab",
+      "en": "suddenly",
+      "es": "de repente",
+      "example": "Suddenly it started to rain.",
+      "units": [
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_finally_general",
+      "type": "vocab",
+      "en": "finally",
+      "es": "finalmente",
+      "example": "Finally we arrived.",
+      "units": [
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_between_general",
+      "type": "vocab",
+      "en": "between",
+      "es": "entre",
+      "example": "The park is between the bank and the school.",
+      "units": [
+        "u5"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_next_to_general",
+      "type": "vocab",
+      "en": "next to",
+      "es": "al lado de",
+      "example": "The shop is next to the library.",
+      "units": [
+        "u5"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_opposite_general",
+      "type": "vocab",
+      "en": "opposite",
+      "es": "enfrente de",
+      "example": "My house is opposite the park.",
+      "units": [
+        "u5"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_turn_left_general",
+      "type": "vocab",
+      "en": "turn left",
+      "es": "gira a la izquierda",
+      "example": "Turn left at the traffic lights.",
+      "units": [
+        "u5"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_turn_right_general",
+      "type": "vocab",
+      "en": "turn right",
+      "es": "gira a la derecha",
+      "example": "Turn right at the corner.",
+      "units": [
+        "u5"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_go_straight_on_general",
+      "type": "vocab",
+      "en": "go straight on",
+      "es": "sigue recto",
+      "example": "Go straight on and stop at the bus station.",
+      "units": [
+        "u5"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_map_general",
+      "type": "vocab",
+      "en": "map",
+      "es": "mapa",
+      "example": "Look at the map, please.",
+      "units": [
+        "u5"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_healthy_general",
+      "type": "vocab",
+      "en": "healthy",
+      "es": "saludable",
+      "example": "Fruit is healthy.",
+      "units": [
+        "u6"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_water_general",
+      "type": "vocab",
+      "en": "water",
+      "es": "agua",
+      "example": "Drink some water.",
+      "units": [
+        "u6"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_vegetables_general",
+      "type": "vocab",
+      "en": "vegetables",
+      "es": "verduras",
+      "example": "I like vegetables.",
+      "units": [
+        "u6"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_breakfast_general",
+      "type": "vocab",
+      "en": "breakfast",
+      "es": "desayuno",
+      "example": "Breakfast is important.",
+      "units": [
+        "u6",
+        "u1"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_stomach_ache_general",
+      "type": "vocab",
+      "en": "stomach ache",
+      "es": "dolor de barriga",
+      "example": "I've got a stomach ache.",
+      "units": [
+        "u6"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_toothache_general",
+      "type": "vocab",
+      "en": "toothache",
+      "es": "dolor de muelas",
+      "example": "She's got toothache.",
+      "units": [
+        "u6"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_friendly_general",
+      "type": "vocab",
+      "en": "friendly",
+      "es": "amable",
+      "example": "My neighbour is friendly.",
+      "units": [
+        "u7"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_quiet_general",
+      "type": "vocab",
+      "en": "quiet",
+      "es": "tranquilo/a",
+      "example": "The classroom is quiet.",
+      "units": [
+        "u7",
+        "u2"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_noisy_general",
+      "type": "vocab",
+      "en": "noisy",
+      "es": "ruidoso/a",
+      "example": "The street is noisy.",
+      "units": [
+        "u7"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_taller_general",
+      "type": "vocab",
+      "en": "taller",
+      "es": "más alto/a",
+      "example": "My brother is taller than me.",
+      "units": [
+        "u7"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_the_best_general",
+      "type": "vocab",
+      "en": "the best",
+      "es": "el/la mejor",
+      "example": "This is the best day!",
+      "units": [
+        "u7"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_river_general",
+      "type": "vocab",
+      "en": "river",
+      "es": "río",
+      "example": "The river is cold.",
+      "units": [
+        "u8"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_mountain_general",
+      "type": "vocab",
+      "en": "mountain",
+      "es": "montaña",
+      "example": "We climbed a mountain.",
+      "units": [
+        "u8"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_island_general",
+      "type": "vocab",
+      "en": "island",
+      "es": "isla",
+      "example": "Mallorca is an island.",
+      "units": [
+        "u8"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_weather_general",
+      "type": "vocab",
+      "en": "weather",
+      "es": "tiempo (clima)",
+      "example": "The weather is sunny today.",
+      "units": [
+        "u8"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_dangerous_general",
+      "type": "vocab",
+      "en": "dangerous",
+      "es": "peligroso/a",
+      "example": "That road is dangerous.",
+      "units": [
+        "u8"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "general"
+    },
+    {
+      "id": "vocab_keyboard_tech",
+      "type": "vocab",
+      "en": "keyboard",
+      "es": "teclado",
+      "example": "Type on the keyboard.",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "tech"
+    },
+    {
+      "id": "vocab_mouse_tech",
+      "type": "vocab",
+      "en": "mouse",
+      "es": "ratón",
+      "example": "Click the mouse.",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "tech"
+    },
+    {
+      "id": "vocab_screen_tech",
+      "type": "vocab",
+      "en": "screen",
+      "es": "pantalla",
+      "example": "The screen is bright.",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "tech"
+    },
+    {
+      "id": "vocab_tablet_tech",
+      "type": "vocab",
+      "en": "tablet",
+      "es": "tableta",
+      "example": "I use a tablet for reading.",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "tech"
+    },
+    {
+      "id": "vocab_laptop_tech",
+      "type": "vocab",
+      "en": "laptop",
+      "es": "portátil",
+      "example": "My laptop is new.",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "tech"
+    },
+    {
+      "id": "vocab_headphones_tech",
+      "type": "vocab",
+      "en": "headphones",
+      "es": "auriculares",
+      "example": "Use headphones, please.",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "tech"
+    },
+    {
+      "id": "vocab_microphone_tech",
+      "type": "vocab",
+      "en": "microphone",
+      "es": "micrófono",
+      "example": "The microphone is on.",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "tech"
+    },
+    {
+      "id": "vocab_camera_tech",
+      "type": "vocab",
+      "en": "camera",
+      "es": "cámara",
+      "example": "Turn on the camera.",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "tech"
+    },
+    {
+      "id": "vocab_app_tech",
+      "type": "vocab",
+      "en": "app",
+      "es": "aplicación",
+      "example": "This app helps me learn.",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "tech"
+    },
+    {
+      "id": "vocab_website_tech",
+      "type": "vocab",
+      "en": "website",
+      "es": "página web",
+      "example": "This website is fun.",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "tech"
+    },
+    {
+      "id": "vocab_link_tech",
+      "type": "vocab",
+      "en": "link",
+      "es": "enlace",
+      "example": "Click the link.",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "tech"
+    },
+    {
+      "id": "vocab_browser_tech",
+      "type": "vocab",
+      "en": "browser",
+      "es": "navegador",
+      "example": "Open the browser.",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "tech"
+    },
+    {
+      "id": "vocab_wi‑fi_tech",
+      "type": "vocab",
+      "en": "Wi‑Fi",
+      "es": "wifi",
+      "example": "The Wi‑Fi is slow.",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "tech"
+    },
+    {
+      "id": "vocab_password_tech",
+      "type": "vocab",
+      "en": "password",
+      "es": "contraseña",
+      "example": "Don't share your password.",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "tech"
+    },
+    {
+      "id": "vocab_download_tech",
+      "type": "vocab",
+      "en": "download",
+      "es": "descargar",
+      "example": "Download the file.",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "tech"
+    },
+    {
+      "id": "vocab_upload_tech",
+      "type": "vocab",
+      "en": "upload",
+      "es": "subir",
+      "example": "Upload your photo.",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "tech"
+    },
+    {
+      "id": "vocab_save_tech",
+      "type": "vocab",
+      "en": "save",
+      "es": "guardar",
+      "example": "Save your work.",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "tech"
+    },
+    {
+      "id": "vocab_delete_tech",
+      "type": "vocab",
+      "en": "delete",
+      "es": "borrar",
+      "example": "Delete the message.",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "tech"
+    },
+    {
+      "id": "vocab_copy_tech",
+      "type": "vocab",
+      "en": "copy",
+      "es": "copiar",
+      "example": "Copy this text.",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "tech"
+    },
+    {
+      "id": "vocab_paste_tech",
+      "type": "vocab",
+      "en": "paste",
+      "es": "pegar",
+      "example": "Paste it here.",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "tech"
+    },
+    {
+      "id": "vocab_robot_tech",
+      "type": "vocab",
+      "en": "robot",
+      "es": "robot",
+      "example": "The robot can dance.",
+      "units": [
+        "u3",
+        "u8"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "tech"
+    },
+    {
+      "id": "vocab_code_tech",
+      "type": "vocab",
+      "en": "code",
+      "es": "código",
+      "example": "We write code in class.",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "tech"
+    },
+    {
+      "id": "vocab_private_tech",
+      "type": "vocab",
+      "en": "private",
+      "es": "privado/a",
+      "example": "Keep your information private.",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "tech"
+    },
+    {
+      "id": "vocab_safe_online_tech",
+      "type": "vocab",
+      "en": "safe online",
+      "es": "seguro en internet",
+      "example": "Be safe online.",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "tech"
+    },
+    {
+      "id": "gramfix_01",
+      "type": "grammar_fix",
+      "tag": "Present Simple (3rd person)",
+      "hint_es": "3ª persona (he/she/it) lleva -s.",
+      "wrong": "She play football on Mondays.",
+      "right": "She plays football on Mondays.",
+      "units": [
+        "u1"
+      ],
+      "difficulty": 2,
+      "category": "grammar"
+    },
+    {
+      "id": "gramfix_02",
+      "type": "grammar_fix",
+      "tag": "Adverbs of frequency",
+      "hint_es": "Va antes del verbo principal: usually goes.",
+      "wrong": "He goes usually to school.",
+      "right": "He usually goes to school.",
+      "units": [
+        "u1"
+      ],
+      "difficulty": 2,
+      "category": "grammar"
+    },
+    {
+      "id": "gramfix_03",
+      "type": "grammar_fix",
+      "tag": "Like + -ing",
+      "hint_es": "Después de like/love/hate suele ir -ing.",
+      "wrong": "I like play chess.",
+      "right": "I like playing chess.",
+      "units": [
+        "u2"
+      ],
+      "difficulty": 2,
+      "category": "grammar"
+    },
+    {
+      "id": "gramfix_04",
+      "type": "grammar_fix",
+      "tag": "Questions (does)",
+      "hint_es": "3ª persona en pregunta: Does she...?",
+      "wrong": "Do she like pizza?",
+      "right": "Does she like pizza?",
+      "units": [
+        "u2"
+      ],
+      "difficulty": 2,
+      "category": "grammar"
+    },
+    {
+      "id": "gramfix_05",
+      "type": "grammar_fix",
+      "tag": "Imperatives (Don't)",
+      "hint_es": "Imperativo negativo: Don't + verbo.",
+      "wrong": "Don't to share your password.",
+      "right": "Don't share your password.",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 2,
+      "category": "grammar"
+    },
+    {
+      "id": "gramfix_06",
+      "type": "grammar_fix",
+      "tag": "Can + base",
+      "hint_es": "Después de can va el verbo en base.",
+      "wrong": "I can to use a mouse.",
+      "right": "I can use a mouse.",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 2,
+      "category": "grammar"
+    },
+    {
+      "id": "gramfix_07",
+      "type": "grammar_fix",
+      "tag": "Past Simple (regular)",
+      "hint_es": "Ayer → pasado: verb + -ed (walked).",
+      "wrong": "Yesterday I walk to school.",
+      "right": "Yesterday I walked to school.",
+      "units": [
+        "u4"
+      ],
+      "difficulty": 2,
+      "category": "grammar"
+    },
+    {
+      "id": "gramfix_08",
+      "type": "grammar_fix",
+      "tag": "Past Simple (irregular)",
+      "hint_es": "Irregular: go → went, see → saw…",
+      "wrong": "Last week we goed to the park.",
+      "right": "Last week we went to the park.",
+      "units": [
+        "u4"
+      ],
+      "difficulty": 2,
+      "category": "grammar"
+    },
+    {
+      "id": "gramfix_09",
+      "type": "grammar_fix",
+      "tag": "There is / There are",
+      "hint_es": "Singular: There is. Plural: There are.",
+      "wrong": "There are a shop next to the school.",
+      "right": "There is a shop next to the school.",
+      "units": [
+        "u5"
+      ],
+      "difficulty": 2,
+      "category": "grammar"
+    },
+    {
+      "id": "gramfix_10",
+      "type": "grammar_fix",
+      "tag": "Prepositions",
+      "hint_es": "On the table / in the box / under the chair.",
+      "wrong": "The cat is in the table.",
+      "right": "The cat is on the table.",
+      "units": [
+        "u5"
+      ],
+      "difficulty": 2,
+      "category": "grammar"
+    },
+    {
+      "id": "gramfix_11",
+      "type": "grammar_fix",
+      "tag": "Some / any",
+      "hint_es": "Negativa: any. Afirmativa: some.",
+      "wrong": "I haven't got some water.",
+      "right": "I haven't got any water.",
+      "units": [
+        "u6"
+      ],
+      "difficulty": 2,
+      "category": "grammar"
+    },
+    {
+      "id": "gramfix_12",
+      "type": "grammar_fix",
+      "tag": "Countable/Uncountable",
+      "hint_es": "Uncountable: some water (no plural).",
+      "wrong": "Two waters, please.",
+      "right": "Some water, please.",
+      "units": [
+        "u6"
+      ],
+      "difficulty": 2,
+      "category": "grammar"
+    },
+    {
+      "id": "gramfix_13",
+      "type": "grammar_fix",
+      "tag": "Comparatives",
+      "hint_es": "Adjetivo corto: big → bigger.",
+      "wrong": "My dog is more big than yours.",
+      "right": "My dog is bigger than yours.",
+      "units": [
+        "u7"
+      ],
+      "difficulty": 2,
+      "category": "grammar"
+    },
+    {
+      "id": "gramfix_14",
+      "type": "grammar_fix",
+      "tag": "Pronouns",
+      "hint_es": "My sister → she. My brother → he.",
+      "wrong": "My sister is 10. He is happy.",
+      "right": "My sister is 10. She is happy.",
+      "units": [
+        "u7"
+      ],
+      "difficulty": 2,
+      "category": "grammar"
+    },
+    {
+      "id": "gramfix_15",
+      "type": "grammar_fix",
+      "tag": "Can/can't (ability)",
+      "hint_es": "Can/can't para habilidad.",
+      "wrong": "Penguins can fly.",
+      "right": "Penguins can't fly.",
+      "units": [
+        "u8"
+      ],
+      "difficulty": 2,
+      "category": "grammar"
+    },
+    {
+      "id": "sent_01",
+      "type": "sentence_builder",
+      "words": [
+        "She",
+        "usually",
+        "gets",
+        "up",
+        "at",
+        "seven"
+      ],
+      "answer": "She usually gets up at seven.",
+      "hint": "Present Simple + adverbio de frecuencia.",
+      "units": [
+        "u1"
+      ],
+      "difficulty": 2,
+      "category": "grammar"
+    },
+    {
+      "id": "sent_02",
+      "type": "sentence_builder",
+      "words": [
+        "Do",
+        "you",
+        "like",
+        "playing",
+        "football",
+        "?"
+      ],
+      "answer": "Do you like playing football?",
+      "hint": "Pregunta con Do + like + -ing.",
+      "units": [
+        "u2"
+      ],
+      "difficulty": 2,
+      "category": "grammar"
+    },
+    {
+      "id": "sent_03",
+      "type": "sentence_builder",
+      "words": [
+        "Don't",
+        "share",
+        "your",
+        "password"
+      ],
+      "answer": "Don't share your password.",
+      "hint": "Imperative negativo.",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 2,
+      "category": "grammar"
+    },
+    {
+      "id": "sent_04",
+      "type": "sentence_builder",
+      "words": [
+        "Yesterday",
+        "I",
+        "went",
+        "to",
+        "the",
+        "market"
+      ],
+      "answer": "Yesterday I went to the market.",
+      "hint": "Past Simple irregular: go → went.",
+      "units": [
+        "u4"
+      ],
+      "difficulty": 2,
+      "category": "grammar"
+    },
+    {
+      "id": "sent_05",
+      "type": "sentence_builder",
+      "words": [
+        "There",
+        "is",
+        "a",
+        "park",
+        "next",
+        "to",
+        "the",
+        "school"
+      ],
+      "answer": "There is a park next to the school.",
+      "hint": "There is + singular.",
+      "units": [
+        "u5"
+      ],
+      "difficulty": 2,
+      "category": "grammar"
+    },
+    {
+      "id": "sent_06",
+      "type": "sentence_builder",
+      "words": [
+        "Have",
+        "you",
+        "got",
+        "any",
+        "fruit",
+        "?"
+      ],
+      "answer": "Have you got any fruit?",
+      "hint": "Any en preguntas/negativas.",
+      "units": [
+        "u6"
+      ],
+      "difficulty": 2,
+      "category": "grammar"
+    },
+    {
+      "id": "sent_07",
+      "type": "sentence_builder",
+      "words": [
+        "My",
+        "house",
+        "is",
+        "bigger",
+        "than",
+        "yours"
+      ],
+      "answer": "My house is bigger than yours.",
+      "hint": "Comparative: bigger than.",
+      "units": [
+        "u7"
+      ],
+      "difficulty": 2,
+      "category": "grammar"
+    },
+    {
+      "id": "sent_08",
+      "type": "sentence_builder",
+      "words": [
+        "Penguins",
+        "can",
+        "swim",
+        "but",
+        "they",
+        "can't",
+        "fly"
+      ],
+      "answer": "Penguins can swim but they can't fly.",
+      "hint": "Can/can't (ability).",
+      "units": [
+        "u8"
+      ],
+      "difficulty": 2,
+      "category": "grammar"
+    }
+  ]
+}

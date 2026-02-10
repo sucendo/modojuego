@@ -1,0 +1,869 @@
+{
+  "id": "vv_zoom_ccss_6_madrid",
+  "title": "Ciencias Sociales 6º — Vicens Vives (Comunidad Zoom) — Comunidad de Madrid",
+  "subject": "Sociales",
+  "level": "6º Primaria (Madrid)",
+  "publisher": "Vicens Vives",
+  "series": "Comunidad Zoom",
+  "region": "Comunidad de Madrid",
+  "topics": [
+    {
+      "id": "t1",
+      "name": "1. ¿Cuántos habitantes tiene la Tierra? (Población y migraciones)",
+      "page": 2
+    },
+    {
+      "id": "t2",
+      "name": "2. Un mundo más sostenible (Recursos, impacto y desigualdades)",
+      "page": 22
+    },
+    {
+      "id": "t3",
+      "name": "3. ¿La economía mueve el mundo? (Empresa, dinero, impuestos, publicidad)",
+      "page": 46
+    },
+    {
+      "id": "t4",
+      "name": "4. Una época de revoluciones (Industrial y siglo XIX)",
+      "page": 70
+    },
+    {
+      "id": "t5",
+      "name": "5. Un siglo de conflictos y cambios (siglo XX, España, arte)",
+      "page": 94
+    },
+    {
+      "id": "t6",
+      "name": "6. Grandes retos actuales (UE, conflictos, avances, arte)",
+      "page": 118
+    }
+  ],
+  "modes": [
+    "flashcards",
+    "quiz",
+    "truefalse",
+    "exam",
+    "memory",
+    "review_errors"
+  ],
+  "items": [
+    {
+      "id": "t1_card_0001",
+      "topic": "t1",
+      "tags": [
+        "poblacion"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Población",
+      "back": "Conjunto de personas que viven en un territorio."
+    },
+    {
+      "id": "t1_card_0002",
+      "topic": "t1",
+      "tags": [
+        "poblacion"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Densidad de población",
+      "back": "Número de habitantes por km²."
+    },
+    {
+      "id": "t1_card_0003",
+      "topic": "t1",
+      "tags": [
+        "demografia"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Natalidad",
+      "back": "Número de nacimientos en un lugar y periodo."
+    },
+    {
+      "id": "t1_card_0004",
+      "topic": "t1",
+      "tags": [
+        "demografia"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Mortalidad",
+      "back": "Número de defunciones en un lugar y periodo."
+    },
+    {
+      "id": "t1_card_0005",
+      "topic": "t1",
+      "tags": [
+        "demografia"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Crecimiento natural",
+      "back": "Diferencia entre nacimientos y defunciones."
+    },
+    {
+      "id": "t1_card_0006",
+      "topic": "t1",
+      "tags": [
+        "migraciones"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Migración",
+      "back": "Desplazamiento de personas para vivir en otro lugar."
+    },
+    {
+      "id": "t1_card_0007",
+      "topic": "t1",
+      "tags": [
+        "migraciones"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Emigración",
+      "back": "Salida de población de un lugar."
+    },
+    {
+      "id": "t1_card_0008",
+      "topic": "t1",
+      "tags": [
+        "migraciones"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Inmigración",
+      "back": "Entrada de población a un lugar."
+    },
+    {
+      "id": "t1_card_0009",
+      "topic": "t1",
+      "tags": [
+        "rural"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Despoblamiento rural",
+      "back": "Pérdida de habitantes en zonas rurales."
+    },
+    {
+      "id": "t1_mcq_0010",
+      "topic": "t1",
+      "tags": [
+        "poblacion"
+      ],
+      "difficulty": 1,
+      "type": "mcq",
+      "question": "¿Qué indica la densidad de población?",
+      "choices": [
+        "Nº de habitantes por km²",
+        "Nº de nacimientos al año",
+        "Nº de migrantes",
+        "Porcentaje de población urbana"
+      ],
+      "answer": "Nº de habitantes por km²"
+    },
+    {
+      "id": "t1_mcq_0011",
+      "topic": "t1",
+      "tags": [
+        "factores"
+      ],
+      "difficulty": 1,
+      "type": "mcq",
+      "question": "¿Cuál es un factor físico que influye en la distribución de la población?",
+      "choices": [
+        "El clima",
+        "La publicidad",
+        "Los impuestos",
+        "La moda"
+      ],
+      "answer": "El clima"
+    },
+    {
+      "id": "t1_mcq_0012",
+      "topic": "t1",
+      "tags": [
+        "factores"
+      ],
+      "difficulty": 1,
+      "type": "mcq",
+      "question": "¿Cuál es un factor humano que atrae población?",
+      "choices": [
+        "Trabajo y servicios",
+        "Desiertos",
+        "Altas montañas",
+        "Climas extremos"
+      ],
+      "answer": "Trabajo y servicios"
+    },
+    {
+      "id": "t1_tf_0013",
+      "topic": "t1",
+      "tags": [
+        "poblacion"
+      ],
+      "difficulty": 1,
+      "type": "tf",
+      "statement": "La densidad de población se mide en habitantes por km².",
+      "answer": true
+    },
+    {
+      "id": "t1_tf_0014",
+      "topic": "t1",
+      "tags": [
+        "migraciones"
+      ],
+      "difficulty": 1,
+      "type": "tf",
+      "statement": "La emigración es la llegada de población a un lugar.",
+      "answer": false
+    },
+    {
+      "id": "t1_short_0015",
+      "topic": "t1",
+      "tags": [
+        "poblacion"
+      ],
+      "difficulty": 1,
+      "type": "type",
+      "prompt": "¿Qué es un censo?",
+      "answer": "Un recuento y registro de la población de un territorio en un momento determinado."
+    },
+    {
+      "id": "t1_short_0016",
+      "topic": "t1",
+      "tags": [
+        "rural"
+      ],
+      "difficulty": 2,
+      "type": "type",
+      "prompt": "Explica dos causas del despoblamiento rural.",
+      "answer": "Falta de empleo y servicios; envejecimiento; baja natalidad; cierre de escuelas y comercios; mala comunicación."
+    },
+    {
+      "id": "t2_card_0017",
+      "topic": "t2",
+      "tags": [
+        "recursos"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Recurso natural",
+      "back": "Elemento de la naturaleza que usamos (agua, bosques, minerales…)."
+    },
+    {
+      "id": "t2_card_0018",
+      "topic": "t2",
+      "tags": [
+        "recursos"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Sobreexplotación",
+      "back": "Uso excesivo de un recurso hasta degradarlo o agotarlo."
+    },
+    {
+      "id": "t2_card_0019",
+      "topic": "t2",
+      "tags": [
+        "sostenibilidad"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Desarrollo sostenible",
+      "back": "Satisfacer necesidades actuales sin comprometer las futuras."
+    },
+    {
+      "id": "t2_card_0020",
+      "topic": "t2",
+      "tags": [
+        "sostenibilidad"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Huella ecológica",
+      "back": "Impacto de nuestro consumo sobre el planeta."
+    },
+    {
+      "id": "t2_card_0021",
+      "topic": "t2",
+      "tags": [
+        "desigualdad"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Desigualdad",
+      "back": "Diferencias grandes en riqueza, acceso a recursos y oportunidades."
+    },
+    {
+      "id": "t2_mcq_0022",
+      "topic": "t2",
+      "tags": [
+        "sostenibilidad"
+      ],
+      "difficulty": 1,
+      "type": "mcq",
+      "question": "¿Qué acción ayuda a la sostenibilidad?",
+      "choices": [
+        "Reducir, reutilizar y reciclar",
+        "Consumir sin planificar",
+        "Usar plásticos de un solo uso",
+        "Tirar comida"
+      ],
+      "answer": "Reducir, reutilizar y reciclar"
+    },
+    {
+      "id": "t2_tf_0023",
+      "topic": "t2",
+      "tags": [
+        "sostenibilidad"
+      ],
+      "difficulty": 1,
+      "type": "tf",
+      "statement": "El desarrollo sostenible busca cuidar recursos para el futuro.",
+      "answer": true
+    },
+    {
+      "id": "t2_short_0024",
+      "topic": "t2",
+      "tags": [
+        "sostenibilidad"
+      ],
+      "difficulty": 1,
+      "type": "type",
+      "prompt": "Pon tres ejemplos de acciones sostenibles en casa o en el cole.",
+      "answer": "Ahorrar agua y luz; reciclar; llevar botella reutilizable; comer fruta de temporada; evitar desperdicio."
+    },
+    {
+      "id": "t2_classify_0025",
+      "topic": "t2",
+      "tags": [
+        "sostenibilidad"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Clasificar",
+      "back": "Clasifica estas acciones en 'Sostenible' o 'No sostenible': Sostenible: Reciclar papel, Usar transporte público, Reparar objetos, Consumir de temporada | No sostenible: Dejar el grifo abierto, Tirar comida, Usar plásticos de un solo uso, Comprar sin necesidad"
+    },
+    {
+      "id": "t3_card_0026",
+      "topic": "t3",
+      "tags": [
+        "economia"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Empresa",
+      "back": "Organización que produce bienes o servicios."
+    },
+    {
+      "id": "t3_card_0027",
+      "topic": "t3",
+      "tags": [
+        "economia"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Impuestos",
+      "back": "Dinero que pagan ciudadanos/empresas para servicios públicos."
+    },
+    {
+      "id": "t3_card_0028",
+      "topic": "t3",
+      "tags": [
+        "economia"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Ahorro",
+      "back": "Parte del dinero que no se gasta y se guarda para el futuro."
+    },
+    {
+      "id": "t3_card_0029",
+      "topic": "t3",
+      "tags": [
+        "economia"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Publicidad",
+      "back": "Mensajes para informar y persuadir sobre productos o ideas."
+    },
+    {
+      "id": "t3_card_0030",
+      "topic": "t3",
+      "tags": [
+        "economia"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Producción",
+      "back": "Proceso de fabricar bienes o crear servicios."
+    },
+    {
+      "id": "t3_card_0031",
+      "topic": "t3",
+      "tags": [
+        "economia"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Distribución",
+      "back": "Proceso de llevar productos al consumidor."
+    },
+    {
+      "id": "t3_mcq_0032",
+      "topic": "t3",
+      "tags": [
+        "economia"
+      ],
+      "difficulty": 1,
+      "type": "mcq",
+      "question": "¿Para qué sirven los impuestos?",
+      "choices": [
+        "Para financiar servicios públicos",
+        "Para evitar el comercio",
+        "Para aumentar la contaminación",
+        "Para que no exista ahorro"
+      ],
+      "answer": "Para financiar servicios públicos"
+    },
+    {
+      "id": "t3_tf_0033",
+      "topic": "t3",
+      "tags": [
+        "economia"
+      ],
+      "difficulty": 1,
+      "type": "tf",
+      "statement": "La producción y la distribución son lo mismo.",
+      "answer": false
+    },
+    {
+      "id": "t3_classify_0034",
+      "topic": "t3",
+      "tags": [
+        "economia"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Clasificar",
+      "back": "Clasifica en 'Bien' o 'Servicio': Bien: Pan, Bicicleta, Libro, Móvil | Servicio: Peluquería, Sanidad, Educación, Transporte"
+    },
+    {
+      "id": "t4_card_0035",
+      "topic": "t4",
+      "tags": [
+        "historia"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Revolución Industrial",
+      "back": "Cambios económicos y sociales por el uso de máquinas y fábricas."
+    },
+    {
+      "id": "t4_card_0036",
+      "topic": "t4",
+      "tags": [
+        "historia"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Máquina de vapor",
+      "back": "Invento clave que impulsó industria y transportes."
+    },
+    {
+      "id": "t4_card_0037",
+      "topic": "t4",
+      "tags": [
+        "historia",
+        "poblacion"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Éxodo rural",
+      "back": "Salida del campo a la ciudad para trabajar."
+    },
+    {
+      "id": "t4_card_0038",
+      "topic": "t4",
+      "tags": [
+        "historia"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Burguesía",
+      "back": "Grupo social con poder económico en la ciudad."
+    },
+    {
+      "id": "t4_card_0039",
+      "topic": "t4",
+      "tags": [
+        "historia"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Proletariado",
+      "back": "Trabajadores asalariados de fábricas."
+    },
+    {
+      "id": "t4_mcq_0040",
+      "topic": "t4",
+      "tags": [
+        "historia"
+      ],
+      "difficulty": 1,
+      "type": "mcq",
+      "question": "¿Qué cambió con la Revolución Industrial?",
+      "choices": [
+        "La producción pasó a fábricas con máquinas",
+        "Desaparecieron las ciudades",
+        "No existía comercio",
+        "Se dejó de usar energía"
+      ],
+      "answer": "La producción pasó a fábricas con máquinas"
+    },
+    {
+      "id": "t4_tf_0041",
+      "topic": "t4",
+      "tags": [
+        "historia"
+      ],
+      "difficulty": 1,
+      "type": "tf",
+      "statement": "El éxodo rural es el traslado del campo a la ciudad.",
+      "answer": true
+    },
+    {
+      "id": "t4_timeline_0042",
+      "topic": "t4",
+      "tags": [
+        "historia"
+      ],
+      "difficulty": 2,
+      "type": "pair",
+      "front": "Línea del tiempo",
+      "back": "Ordena estos hechos:: Inicio de la Revolución Industrial (Gran Bretaña), Expansión del ferrocarril, Movimientos obreros organizados, Segunda Revolución Industrial"
+    },
+    {
+      "id": "t5_card_0043",
+      "topic": "t5",
+      "tags": [
+        "historia"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Colonialismo",
+      "back": "Dominación de territorios por potencias para obtener recursos."
+    },
+    {
+      "id": "t5_card_0044",
+      "topic": "t5",
+      "tags": [
+        "historia"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Primera Guerra Mundial",
+      "back": "Conflicto mundial (1914–1918)."
+    },
+    {
+      "id": "t5_card_0045",
+      "topic": "t5",
+      "tags": [
+        "historia"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Segunda Guerra Mundial",
+      "back": "Conflicto mundial (1939–1945)."
+    },
+    {
+      "id": "t5_card_0046",
+      "topic": "t5",
+      "tags": [
+        "historia"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Guerra Civil española",
+      "back": "Conflicto en España (1936–1939)."
+    },
+    {
+      "id": "t5_card_0047",
+      "topic": "t5",
+      "tags": [
+        "historia"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Dictadura franquista",
+      "back": "Régimen en España (1939–1975)."
+    },
+    {
+      "id": "t5_card_0048",
+      "topic": "t5",
+      "tags": [
+        "historia"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Transición democrática",
+      "back": "Paso a la democracia en España tras 1975."
+    },
+    {
+      "id": "t5_mcq_0049",
+      "topic": "t5",
+      "tags": [
+        "historia"
+      ],
+      "difficulty": 1,
+      "type": "mcq",
+      "question": "¿En qué años fue la Primera Guerra Mundial?",
+      "choices": [
+        "1914–1918",
+        "1939–1945",
+        "1810–1815",
+        "2001–2004"
+      ],
+      "answer": "1914–1918"
+    },
+    {
+      "id": "t5_tf_0050",
+      "topic": "t5",
+      "tags": [
+        "historia"
+      ],
+      "difficulty": 1,
+      "type": "tf",
+      "statement": "La Segunda Guerra Mundial empezó en 1939.",
+      "answer": true
+    },
+    {
+      "id": "t5_timeline_0051",
+      "topic": "t5",
+      "tags": [
+        "historia"
+      ],
+      "difficulty": 2,
+      "type": "pair",
+      "front": "Línea del tiempo",
+      "back": "Ordena cronológicamente:: Primera Guerra Mundial, Guerra Civil española, Segunda Guerra Mundial, Inicio de la Transición democrática (España)"
+    },
+    {
+      "id": "t6_card_0052",
+      "topic": "t6",
+      "tags": [
+        "ue"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Unión Europea (UE)",
+      "back": "Organización de países europeos que cooperan."
+    },
+    {
+      "id": "t6_card_0053",
+      "topic": "t6",
+      "tags": [
+        "actualidad"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Globalización",
+      "back": "Interconexión del mundo en economía, cultura y comunicación."
+    },
+    {
+      "id": "t6_card_0054",
+      "topic": "t6",
+      "tags": [
+        "sostenibilidad"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "ODS",
+      "back": "Objetivos de Desarrollo Sostenible."
+    },
+    {
+      "id": "t6_card_0055",
+      "topic": "t6",
+      "tags": [
+        "actualidad"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Innovación",
+      "back": "Creación o mejora de ideas, productos o procesos."
+    },
+    {
+      "id": "t6_mcq_0056",
+      "topic": "t6",
+      "tags": [
+        "ue"
+      ],
+      "difficulty": 1,
+      "type": "mcq",
+      "question": "¿Qué busca la Unión Europea?",
+      "choices": [
+        "Cooperación entre países europeos",
+        "Eliminar todos los comercios",
+        "Prohibir viajar",
+        "Que exista un solo idioma"
+      ],
+      "answer": "Cooperación entre países europeos"
+    },
+    {
+      "id": "t6_tf_0057",
+      "topic": "t6",
+      "tags": [
+        "actualidad"
+      ],
+      "difficulty": 1,
+      "type": "tf",
+      "statement": "Los conflictos actuales pueden tener causas económicas, políticas o sociales.",
+      "answer": true
+    },
+    {
+      "id": "t6_classify_0058",
+      "topic": "t6",
+      "tags": [
+        "actualidad"
+      ],
+      "difficulty": 2,
+      "type": "pair",
+      "front": "Clasificar",
+      "back": "Clasifica en 'Reto' o 'Acción': Reto: Cambio climático, Desigualdad, Conflictos, Desinformación | Acción: Ahorrar energía, Educación y cooperación, Ayuda humanitaria, Pensamiento crítico"
+    },
+    {
+      "id": "t4_timeline_0059",
+      "topic": "t4",
+      "type": "timeline",
+      "prompt": "Ordena cronológicamente estos cambios del siglo XIX:",
+      "events": [
+        {
+          "label": "Comienzo de la Revolución Industrial (Gran Bretaña)",
+          "year": 1760
+        },
+        {
+          "label": "Expansión del ferrocarril en Europa",
+          "year": 1830
+        },
+        {
+          "label": "Reivindicaciones del movimiento obrero",
+          "year": 1848
+        },
+        {
+          "label": "Segunda Revolución Industrial",
+          "year": 1870
+        }
+      ],
+      "difficulty": 2,
+      "tags": [
+        "historia",
+        "sigloXIX"
+      ]
+    },
+    {
+      "id": "t5_timeline_0060",
+      "topic": "t5",
+      "type": "timeline",
+      "prompt": "Ordena estos hechos del siglo XX (España y el mundo):",
+      "events": [
+        {
+          "label": "Primera Guerra Mundial",
+          "year": 1914
+        },
+        {
+          "label": "Guerra Civil española",
+          "year": 1936
+        },
+        {
+          "label": "Segunda Guerra Mundial",
+          "year": 1939
+        },
+        {
+          "label": "Inicio de la Transición democrática (España)",
+          "year": 1975
+        }
+      ],
+      "difficulty": 2,
+      "tags": [
+        "historia",
+        "sigloXX"
+      ]
+    },
+    {
+      "id": "t1_classify_0061",
+      "topic": "t1",
+      "type": "classify",
+      "prompt": "Clasifica estos factores en 'Físicos' o 'Humanos' (población):",
+      "groups": {
+        "Físicos": [
+          "Clima",
+          "Relieve",
+          "Disponibilidad de agua",
+          "Suelo fértil"
+        ],
+        "Humanos": [
+          "Trabajo",
+          "Servicios",
+          "Transporte",
+          "Conflictos"
+        ]
+      },
+      "difficulty": 2,
+      "tags": [
+        "poblacion",
+        "factores"
+      ]
+    },
+    {
+      "id": "t3_classify_0062",
+      "topic": "t3",
+      "type": "classify",
+      "prompt": "Clasifica en 'Producción' o 'Distribución':",
+      "groups": {
+        "Producción": [
+          "Fabricar pan",
+          "Montar un coche",
+          "Elaborar ropa",
+          "Construir una casa"
+        ],
+        "Distribución": [
+          "Transportar a tiendas",
+          "Almacenar en un centro logístico",
+          "Reparto a domicilio",
+          "Venta en un comercio"
+        ]
+      },
+      "difficulty": 2,
+      "tags": [
+        "economia"
+      ]
+    },
+    {
+      "id": "t6_classify_0063",
+      "topic": "t6",
+      "type": "classify",
+      "prompt": "Clasifica en 'Instituciones UE' o 'Conceptos/retos':",
+      "groups": {
+        "Instituciones UE": [
+          "Parlamento Europeo",
+          "Comisión Europea",
+          "Consejo de la Unión Europea"
+        ],
+        "Conceptos/retos": [
+          "Cambio climático",
+          "Desigualdad",
+          "Globalización",
+          "ODS"
+        ]
+      },
+      "difficulty": 3,
+      "tags": [
+        "ue",
+        "actualidad"
+      ]
+    }
+  ]
+}

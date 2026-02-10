@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 1,
+  "id": "sociales_edad_moderna",
+  "title": "Sociales 5º — Edad Moderna",
+  "subject": "sociales",
+  "level": "5º Primaria",
+  "langs": [
+    "ES"
+  ],
+  "modes": [
+    "flashcards",
+    "mcq"
+  ],
+  "items": [
+    {
+      "id": "p1",
+      "type": "pair",
+      "front": "Humanismo",
+      "back": "Uso de la razón y el ser humano como centro",
+      "tag": "conceptos"
+    },
+    {
+      "id": "p2",
+      "type": "pair",
+      "front": "Imprenta",
+      "back": "Acerca el conocimiento a muchas personas",
+      "tag": "conceptos"
+    },
+    {
+      "id": "p3",
+      "type": "pair",
+      "front": "Burguesía",
+      "back": "Grupo social que crece con el comercio",
+      "tag": "conceptos"
+    },
+    {
+      "id": "p4",
+      "type": "pair",
+      "front": "Monarquía autoritaria",
+      "back": "Pierde poder la nobleza y surgen instituciones",
+      "tag": "conceptos"
+    },
+    {
+      "id": "p5",
+      "type": "pair",
+      "front": "Barroco",
+      "back": "Siglo XVII: crisis y esplendor cultural (Siglo de Oro)",
+      "tag": "conceptos"
+    },
+    {
+      "id": "p6",
+      "type": "pair",
+      "front": "Validos",
+      "back": "Personas que gobernaban en nombre del rey",
+      "tag": "conceptos"
+    },
+    {
+      "id": "p7",
+      "type": "pair",
+      "front": "Ilustración",
+      "back": "Siglo de las Luces: importancia del conocimiento",
+      "tag": "conceptos"
+    },
+    {
+      "id": "p8",
+      "type": "pair",
+      "front": "Despotismo ilustrado",
+      "back": "Todo para el pueblo, pero sin el pueblo",
+      "tag": "conceptos"
+    },
+    {
+      "id": "p9",
+      "type": "pair",
+      "front": "Neoclasicismo",
+      "back": "Imita la construcción de los romanos",
+      "tag": "conceptos"
+    },
+    {
+      "id": "p10",
+      "type": "pair",
+      "front": "El Greco",
+      "back": "Pintor del siglo XVI (figuras alargadas)",
+      "tag": "conceptos"
+    },
+    {
+      "id": "p11",
+      "type": "pair",
+      "front": "Velázquez",
+      "back": "Pintor de la Corte (realismo, siglo XVII)",
+      "tag": "conceptos"
+    },
+    {
+      "id": "p12",
+      "type": "pair",
+      "front": "Goya",
+      "back": "Pintor del siglo XVIII",
+      "tag": "conceptos"
+    },
+    {
+      "id": "t1",
+      "type": "pair",
+      "front": "Reyes Católicos (s. XV-XVI) (1479-1512)",
+      "back": "Unión Castilla y Aragón (1479) / Granada (1492) / Navarra (1512)",
+      "tag": "timeline"
+    },
+    {
+      "id": "t2",
+      "type": "pair",
+      "front": "Carlos I (1519-1558)",
+      "back": "1519 emperador · 1ª vuelta al mundo · conquistas · abdica 1556",
+      "tag": "timeline"
+    },
+    {
+      "id": "t3",
+      "type": "pair",
+      "front": "Felipe II (1561-1588)",
+      "back": "Capital a Madrid 1561 · Lepanto 1571 · Armada Invencible 1588",
+      "tag": "timeline"
+    },
+    {
+      "id": "t4",
+      "type": "pair",
+      "front": "Barroco (s. XVII) (1598-1700)",
+      "back": "Felipe III-IV / Carlos II · validos · crisis · Siglo de Oro",
+      "tag": "timeline"
+    },
+    {
+      "id": "t5",
+      "type": "pair",
+      "front": "Ilustración (s. XVIII) (1700-1789)",
+      "back": "Borbones · despotismo ilustrado · reformas · Rev. industrial / francesa",
+      "tag": "timeline"
+    }
+  ]
+}

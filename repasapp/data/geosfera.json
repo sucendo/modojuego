@@ -1,0 +1,334 @@
+{
+  "schemaVersion": 1,
+  "id": "geosfera",
+  "title": "Geosfera (Bilingüe)",
+  "subject": "ciencias",
+  "level": "5º Primaria",
+  "langs": [
+    "ES",
+    "EN"
+  ],
+  "modes": [
+    "mcq",
+    "tf",
+    "flashcards"
+  ],
+  "items": [
+    {
+      "id": "q1",
+      "type": "mcq",
+      "question": "¿Cuál es la capa externa de la Tierra?",
+      "choices": [
+        "crust",
+        "mantle",
+        "core"
+      ],
+      "answer": "crust"
+    },
+    {
+      "id": "q2",
+      "type": "mcq",
+      "question": "¿Dónde está el núcleo?",
+      "choices": [
+        "center",
+        "surface",
+        "sky"
+      ],
+      "answer": "center"
+    },
+    {
+      "id": "q3",
+      "type": "mcq",
+      "question": "¿Qué proceso rompe rocas (las descompone)?",
+      "choices": [
+        "weathering",
+        "volcano",
+        "river"
+      ],
+      "answer": "weathering"
+    },
+    {
+      "id": "q4",
+      "type": "mcq",
+      "question": "¿Qué mueve las placas?",
+      "choices": [
+        "tectonics",
+        "rain",
+        "wind"
+      ],
+      "answer": "tectonics"
+    },
+    {
+      "id": "q5",
+      "type": "mcq",
+      "question": "¿Qué sale de un volcán?",
+      "choices": [
+        "lava",
+        "ice",
+        "sand"
+      ],
+      "answer": "lava"
+    },
+    {
+      "id": "q6",
+      "type": "mcq",
+      "question": "¿Qué roca se forma del magma?",
+      "choices": [
+        "igneous",
+        "sedimentary",
+        "metamorphic"
+      ],
+      "answer": "igneous"
+    },
+    {
+      "id": "q7",
+      "type": "mcq",
+      "question": "¿Qué roca se forma por presión y calor?",
+      "choices": [
+        "metamorphic",
+        "igneous",
+        "sand"
+      ],
+      "answer": "metamorphic"
+    },
+    {
+      "id": "q8",
+      "type": "mcq",
+      "question": "¿Qué roca se forma con sedimentos?",
+      "choices": [
+        "sedimentary",
+        "lava",
+        "metal"
+      ],
+      "answer": "sedimentary"
+    },
+    {
+      "id": "q9",
+      "type": "mcq",
+      "question": "¿Qué mide la dureza de un mineral?",
+      "choices": [
+        "hardness",
+        "color",
+        "size"
+      ],
+      "answer": "hardness"
+    },
+    {
+      "id": "q10",
+      "type": "mcq",
+      "question": "¿Qué mineral es el más duro?",
+      "choices": [
+        "diamond",
+        "gold",
+        "salt"
+      ],
+      "answer": "diamond"
+    },
+    {
+      "id": "q11",
+      "type": "mcq",
+      "question": "¿Qué capa es líquida y rodea al núcleo interno?",
+      "choices": [
+        "outer core",
+        "crust",
+        "lithosphere"
+      ],
+      "answer": "outer core"
+    },
+    {
+      "id": "q12",
+      "type": "mcq",
+      "question": "¿Cómo se llama la roca semilíquida del manto?",
+      "choices": [
+        "magma",
+        "ice",
+        "sand"
+      ],
+      "answer": "magma"
+    },
+    {
+      "id": "q13",
+      "type": "mcq",
+      "question": "¿Qué capa incluye la corteza y la parte superior del manto?",
+      "choices": [
+        "lithosphere",
+        "inner core",
+        "outer core"
+      ],
+      "answer": "lithosphere"
+    },
+    {
+      "id": "q14",
+      "type": "mcq",
+      "question": "¿Qué proceso es el movimiento de rocas por agua, hielo o aire?",
+      "choices": [
+        "erosion",
+        "deposition",
+        "weathering"
+      ],
+      "answer": "erosion"
+    },
+    {
+      "id": "q15",
+      "type": "mcq",
+      "question": "¿Qué proceso es cuando se dejan sedimentos en un relieve?",
+      "choices": [
+        "deposition",
+        "erosion",
+        "tectonics"
+      ],
+      "answer": "deposition"
+    },
+    {
+      "id": "q16",
+      "type": "mcq",
+      "question": "Una roca formada por sedimentos puede ser…",
+      "choices": [
+        "sandstone",
+        "granite",
+        "marble"
+      ],
+      "answer": "sandstone"
+    },
+    {
+      "id": "q17",
+      "type": "mcq",
+      "question": "El granito es una roca…",
+      "choices": [
+        "igneous",
+        "sedimentary",
+        "metamorphic"
+      ],
+      "answer": "igneous"
+    },
+    {
+      "id": "q18",
+      "type": "mcq",
+      "question": "El mármol es una roca…",
+      "choices": [
+        "metamorphic",
+        "igneous",
+        "sedimentary"
+      ],
+      "answer": "metamorphic"
+    },
+    {
+      "id": "q19",
+      "type": "mcq",
+      "question": "El brillo u opacidad de un mineral se llama…",
+      "choices": [
+        "luster",
+        "color",
+        "hardness"
+      ],
+      "answer": "luster"
+    },
+    {
+      "id": "q20",
+      "type": "mcq",
+      "question": "Cuando un mineral se rompe en planos se llama…",
+      "choices": [
+        "cleavage",
+        "friction",
+        "fusion"
+      ],
+      "answer": "cleavage"
+    },
+    {
+      "id": "tf1",
+      "type": "tf",
+      "statement": "The crust is the outer layer.",
+      "answer": true
+    },
+    {
+      "id": "tf2",
+      "type": "tf",
+      "statement": "Lava comes from volcanoes.",
+      "answer": true
+    },
+    {
+      "id": "tf3",
+      "type": "tf",
+      "statement": "Sedimentary rocks form from magma.",
+      "answer": false
+    },
+    {
+      "id": "tf4",
+      "type": "tf",
+      "statement": "Metamorphic rocks change by heat and pressure.",
+      "answer": true
+    },
+    {
+      "id": "tf5",
+      "type": "tf",
+      "statement": "Weathering breaks rocks.",
+      "answer": true
+    },
+    {
+      "id": "tf6",
+      "type": "tf",
+      "statement": "The core is on the surface.",
+      "answer": false
+    },
+    {
+      "id": "tf7",
+      "type": "tf",
+      "statement": "The outer core is liquid.",
+      "answer": true
+    },
+    {
+      "id": "tf8",
+      "type": "tf",
+      "statement": "The lithosphere includes the crust and upper mantle.",
+      "answer": true
+    },
+    {
+      "id": "tf9",
+      "type": "tf",
+      "statement": "Erosion is the movement of rocks by water, ice, or air.",
+      "answer": true
+    },
+    {
+      "id": "tf10",
+      "type": "tf",
+      "statement": "Deposition removes sediments from a place.",
+      "answer": false
+    },
+    {
+      "id": "tf11",
+      "type": "tf",
+      "statement": "Granite is an igneous rock.",
+      "answer": true
+    },
+    {
+      "id": "tf12",
+      "type": "tf",
+      "statement": "Marble is a sedimentary rock.",
+      "answer": false
+    },
+    {
+      "id": "tf13",
+      "type": "tf",
+      "statement": "Sandstone is a sedimentary rock.",
+      "answer": true
+    },
+    {
+      "id": "tf14",
+      "type": "tf",
+      "statement": "Luster means the shine of a mineral.",
+      "answer": true
+    },
+    {
+      "id": "tf15",
+      "type": "tf",
+      "statement": "Hardness is measured with the Mohs scale.",
+      "answer": true
+    },
+    {
+      "id": "tf16",
+      "type": "tf",
+      "statement": "Cleavage breaks into flat surfaces.",
+      "answer": true
+    }
+  ]
+}

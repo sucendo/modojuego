@@ -1,0 +1,166 @@
+{
+  "schemaVersion": 1,
+  "id": "oxford4_t3_cando",
+  "title": "Oxford 4º — Tema 3 (Can Do)",
+  "subject": "ingles",
+  "level": "4º Primaria",
+  "langs": [
+    "EN",
+    "ES"
+  ],
+  "modes": [
+    "mcq"
+  ],
+  "items": [
+    {
+      "id": "g1",
+      "type": "mcq",
+      "question": "Yo ___ nadar.\nI ___ swim.",
+      "choices": [
+        "can",
+        "can't"
+      ],
+      "answer": "can"
+    },
+    {
+      "id": "g2",
+      "type": "mcq",
+      "question": "Yo ___ volar.\nI ___ fly.",
+      "choices": [
+        "can",
+        "can't"
+      ],
+      "answer": "can't"
+    },
+    {
+      "id": "g3",
+      "type": "mcq",
+      "question": "Ella ___ bailar.\nShe ___ dance.",
+      "choices": [
+        "can",
+        "can't"
+      ],
+      "answer": "can"
+    },
+    {
+      "id": "g4",
+      "type": "mcq",
+      "question": "Él ___ conducir un coche.\nHe ___ drive a car.",
+      "choices": [
+        "can",
+        "can't"
+      ],
+      "answer": "can't"
+    },
+    {
+      "id": "g5",
+      "type": "mcq",
+      "question": "Nosotros ___ jugar al fútbol.\nWe ___ play football.",
+      "choices": [
+        "can",
+        "can't"
+      ],
+      "answer": "can"
+    },
+    {
+      "id": "g6",
+      "type": "mcq",
+      "question": "Ellos ___ nadar.\nThey ___ swim.",
+      "choices": [
+        "can",
+        "can't"
+      ],
+      "answer": "can"
+    },
+    {
+      "id": "g7",
+      "type": "mcq",
+      "question": "Tú ___ saltar muy alto.\nYou ___ jump very high.",
+      "choices": [
+        "can",
+        "can't"
+      ],
+      "answer": "can"
+    },
+    {
+      "id": "g8",
+      "type": "mcq",
+      "question": "El bebé ___ montar en bici.\nThe baby ___ ride a bike.",
+      "choices": [
+        "can",
+        "can't"
+      ],
+      "answer": "can't"
+    },
+    {
+      "id": "g9",
+      "type": "mcq",
+      "question": "Ordena la pregunta:",
+      "choices": [
+        "do",
+        "does",
+        "don't",
+        "doesn't",
+        "have",
+        "has"
+      ],
+      "answer": "Can you swim ?"
+    },
+    {
+      "id": "g10",
+      "type": "mcq",
+      "question": "Ordena la respuesta:",
+      "choices": [
+        "do",
+        "does",
+        "don't",
+        "doesn't",
+        "have",
+        "has"
+      ],
+      "answer": "Yes, I can ."
+    },
+    {
+      "id": "g11",
+      "type": "mcq",
+      "question": "Ordena la respuesta:",
+      "choices": [
+        "do",
+        "does",
+        "don't",
+        "doesn't",
+        "have",
+        "has"
+      ],
+      "answer": "No, I can't ."
+    },
+    {
+      "id": "g12",
+      "type": "mcq",
+      "question": "Ordena la frase:",
+      "choices": [
+        "do",
+        "does",
+        "don't",
+        "doesn't",
+        "have",
+        "has"
+      ],
+      "answer": "I can ride a bike ."
+    },
+    {
+      "id": "g13",
+      "type": "mcq",
+      "question": "Ordena la frase:",
+      "choices": [
+        "do",
+        "does",
+        "don't",
+        "doesn't",
+        "have",
+        "has"
+      ],
+      "answer": "She can't swim ."
+    }
+  ]
+}

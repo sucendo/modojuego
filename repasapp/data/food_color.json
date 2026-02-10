@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 1,
+  "id": "food_color",
+  "title": "Food & Vegetables — Color Edition",
+  "subject": "ingles",
+  "level": "—",
+  "langs": [
+    "EN",
+    "ES"
+  ],
+  "modes": [
+    "flashcards",
+    "mcq"
+  ],
+  "items": [
+    {
+      "id": "foods_cereal",
+      "type": "pair",
+      "front": "cereales",
+      "back": "cereal",
+      "tag": "foods"
+    },
+    {
+      "id": "foods_chips",
+      "type": "pair",
+      "front": "patatas fritas",
+      "back": "chips",
+      "tag": "foods"
+    },
+    {
+      "id": "foods_rice",
+      "type": "pair",
+      "front": "arroz",
+      "back": "rice",
+      "tag": "foods"
+    },
+    {
+      "id": "foods_chicken",
+      "type": "pair",
+      "front": "pollo",
+      "back": "chicken",
+      "tag": "foods"
+    },
+    {
+      "id": "foods_meatballs",
+      "type": "pair",
+      "front": "albóndigas",
+      "back": "meatballs",
+      "tag": "foods"
+    },
+    {
+      "id": "foods_biscuits",
+      "type": "pair",
+      "front": "galletas",
+      "back": "biscuits",
+      "tag": "foods"
+    },
+    {
+      "id": "foods_yoghurt",
+      "type": "pair",
+      "front": "yogur",
+      "back": "yoghurt",
+      "tag": "foods"
+    },
+    {
+      "id": "foods_sandwiches",
+      "type": "pair",
+      "front": "bocadillos / sándwiches",
+      "back": "sandwiches",
+      "tag": "foods"
+    },
+    {
+      "id": "vegetables_potatoes",
+      "type": "pair",
+      "front": "patatas",
+      "back": "potatoes",
+      "tag": "vegetables"
+    },
+    {
+      "id": "vegetables_peas",
+      "type": "pair",
+      "front": "guisantes",
+      "back": "peas",
+      "tag": "vegetables"
+    },
+    {
+      "id": "vegetables_carrots",
+      "type": "pair",
+      "front": "zanahorias",
+      "back": "carrots",
+      "tag": "vegetables"
+    },
+    {
+      "id": "vegetables_peppers",
+      "type": "pair",
+      "front": "pimientos",
+      "back": "peppers",
+      "tag": "vegetables"
+    },
+    {
+      "id": "vegetables_cucumbers",
+      "type": "pair",
+      "front": "pepinos",
+      "back": "cucumbers",
+      "tag": "vegetables"
+    },
+    {
+      "id": "vegetables_beans",
+      "type": "pair",
+      "front": "judías / alubias",
+      "back": "beans",
+      "tag": "vegetables"
+    },
+    {
+      "id": "extras_vegetables",
+      "type": "pair",
+      "front": "verduras",
+      "back": "vegetables",
+      "tag": "extras"
+    },
+    {
+      "id": "extras_pasta",
+      "type": "pair",
+      "front": "pasta",
+      "back": "pasta",
+      "tag": "extras"
+    },
+    {
+      "id": "extras_cake",
+      "type": "pair",
+      "front": "tarta / pastel",
+      "back": "cake",
+      "tag": "extras"
+    },
+    {
+      "id": "extras_drink",
+      "type": "pair",
+      "front": "bebida",
+      "back": "drink",
+      "tag": "extras"
+    }
+  ]
+}

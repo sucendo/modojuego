@@ -1,0 +1,1528 @@
+{
+  "schemaVersion": 1,
+  "id": "oxford_master_5p",
+  "title": "Oxford English Master — 5º Primaria (UK)",
+  "subject": "ingles",
+  "level": "5º Primaria",
+  "langs": [
+    "EN",
+    "ES"
+  ],
+  "modes": [
+    "flashcards",
+    "mcq",
+    "type"
+  ],
+  "items": [
+    {
+      "id": "v_be",
+      "type": "verb",
+      "base": "be",
+      "past": "was/were",
+      "pp": "been",
+      "es": "ser/estar",
+      "units": [
+        "u1",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_have",
+      "type": "verb",
+      "base": "have",
+      "past": "had",
+      "pp": "had",
+      "es": "tener",
+      "units": [
+        "u1",
+        "u6"
+      ]
+    },
+    {
+      "id": "v_do",
+      "type": "verb",
+      "base": "do",
+      "past": "did",
+      "pp": "done",
+      "es": "hacer",
+      "units": [
+        "u1",
+        "u2",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_go",
+      "type": "verb",
+      "base": "go",
+      "past": "went",
+      "pp": "gone",
+      "es": "ir",
+      "units": [
+        "u1",
+        "u4",
+        "u5"
+      ]
+    },
+    {
+      "id": "v_come",
+      "type": "verb",
+      "base": "come",
+      "past": "came",
+      "pp": "come",
+      "es": "venir",
+      "units": [
+        "u1",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_make",
+      "type": "verb",
+      "base": "make",
+      "past": "made",
+      "pp": "made",
+      "es": "hacer / fabricar",
+      "units": [
+        "u2",
+        "u3",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_get",
+      "type": "verb",
+      "base": "get",
+      "past": "got",
+      "pp": "got",
+      "es": "conseguir / obtener",
+      "units": [
+        "u1",
+        "u3",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_give",
+      "type": "verb",
+      "base": "give",
+      "past": "gave",
+      "pp": "given",
+      "es": "dar",
+      "units": [
+        "u2",
+        "u6"
+      ]
+    },
+    {
+      "id": "v_take",
+      "type": "verb",
+      "base": "take",
+      "past": "took",
+      "pp": "taken",
+      "es": "coger / tomar",
+      "units": [
+        "u4",
+        "u6"
+      ]
+    },
+    {
+      "id": "v_see",
+      "type": "verb",
+      "base": "see",
+      "past": "saw",
+      "pp": "seen",
+      "es": "ver",
+      "units": [
+        "u4",
+        "u8"
+      ]
+    },
+    {
+      "id": "v_eat",
+      "type": "verb",
+      "base": "eat",
+      "past": "ate",
+      "pp": "eaten",
+      "es": "comer",
+      "units": [
+        "u6",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_drink",
+      "type": "verb",
+      "base": "drink",
+      "past": "drank",
+      "pp": "drunk",
+      "es": "beber",
+      "units": [
+        "u6",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_say",
+      "type": "verb",
+      "base": "say",
+      "past": "said",
+      "pp": "said",
+      "es": "decir",
+      "units": [
+        "u2",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_tell",
+      "type": "verb",
+      "base": "tell",
+      "past": "told",
+      "pp": "told",
+      "es": "contar / decir a alguien",
+      "units": [
+        "u2",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_can",
+      "type": "verb",
+      "base": "can",
+      "past": "could",
+      "pp": "(—)",
+      "es": "poder (habilidad)",
+      "units": [
+        "u8",
+        "u2"
+      ]
+    },
+    {
+      "id": "v_buy",
+      "type": "verb",
+      "base": "buy",
+      "past": "bought",
+      "pp": "bought",
+      "es": "comprar",
+      "units": [
+        "u6",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_bring",
+      "type": "verb",
+      "base": "bring",
+      "past": "brought",
+      "pp": "brought",
+      "es": "traer",
+      "units": [
+        "u2",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_think",
+      "type": "verb",
+      "base": "think",
+      "past": "thought",
+      "pp": "thought",
+      "es": "pensar",
+      "units": [
+        "u2",
+        "u7"
+      ]
+    },
+    {
+      "id": "v_know",
+      "type": "verb",
+      "base": "know",
+      "past": "knew",
+      "pp": "known",
+      "es": "saber / conocer",
+      "units": [
+        "u2",
+        "u7"
+      ]
+    },
+    {
+      "id": "v_find",
+      "type": "verb",
+      "base": "find",
+      "past": "found",
+      "pp": "found",
+      "es": "encontrar",
+      "units": [
+        "u5",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_feel",
+      "type": "verb",
+      "base": "feel",
+      "past": "felt",
+      "pp": "felt",
+      "es": "sentir",
+      "units": [
+        "u7",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_leave",
+      "type": "verb",
+      "base": "leave",
+      "past": "left",
+      "pp": "left",
+      "es": "irse / dejar",
+      "units": [
+        "u4",
+        "u5"
+      ]
+    },
+    {
+      "id": "v_meet",
+      "type": "verb",
+      "base": "meet",
+      "past": "met",
+      "pp": "met",
+      "es": "conocer / quedar con",
+      "units": [
+        "u2",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_put",
+      "type": "verb",
+      "base": "put",
+      "past": "put",
+      "pp": "put",
+      "es": "poner",
+      "units": [
+        "u5",
+        "u3"
+      ]
+    },
+    {
+      "id": "v_read",
+      "type": "verb",
+      "base": "read",
+      "past": "read",
+      "pp": "read",
+      "es": "leer (pron. /red/)",
+      "units": [
+        "u2",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_write",
+      "type": "verb",
+      "base": "write",
+      "past": "wrote",
+      "pp": "written",
+      "es": "escribir",
+      "units": [
+        "u2",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_run",
+      "type": "verb",
+      "base": "run",
+      "past": "ran",
+      "pp": "run",
+      "es": "correr",
+      "units": [
+        "u8",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_sleep",
+      "type": "verb",
+      "base": "sleep",
+      "past": "slept",
+      "pp": "slept",
+      "es": "dormir",
+      "units": [
+        "u1",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_speak",
+      "type": "verb",
+      "base": "speak",
+      "past": "spoke",
+      "pp": "spoken",
+      "es": "hablar",
+      "units": [
+        "u2",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_wear",
+      "type": "verb",
+      "base": "wear",
+      "past": "wore",
+      "pp": "worn",
+      "es": "llevar (ropa)",
+      "units": [
+        "u7",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_begin",
+      "type": "verb",
+      "base": "begin",
+      "past": "began",
+      "pp": "begun",
+      "es": "empezar",
+      "units": [
+        "u1",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_build",
+      "type": "verb",
+      "base": "build",
+      "past": "built",
+      "pp": "built",
+      "es": "construir",
+      "units": [
+        "u5",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_choose",
+      "type": "verb",
+      "base": "choose",
+      "past": "chose",
+      "pp": "chosen",
+      "es": "elegir",
+      "units": [
+        "u2",
+        "u7"
+      ]
+    },
+    {
+      "id": "v_cut",
+      "type": "verb",
+      "base": "cut",
+      "past": "cut",
+      "pp": "cut",
+      "es": "cortar",
+      "units": [
+        "u6",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_drive",
+      "type": "verb",
+      "base": "drive",
+      "past": "drove",
+      "pp": "driven",
+      "es": "conducir",
+      "units": [
+        "u5",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_fly",
+      "type": "verb",
+      "base": "fly",
+      "past": "flew",
+      "pp": "flown",
+      "es": "volar",
+      "units": [
+        "u8",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_forget",
+      "type": "verb",
+      "base": "forget",
+      "past": "forgot",
+      "pp": "forgotten",
+      "es": "olvidar",
+      "units": [
+        "u3",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_hold",
+      "type": "verb",
+      "base": "hold",
+      "past": "held",
+      "pp": "held",
+      "es": "sujetar / celebrar",
+      "units": [
+        "u7",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_send",
+      "type": "verb",
+      "base": "send",
+      "past": "sent",
+      "pp": "sent",
+      "es": "enviar",
+      "units": [
+        "u3",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_swim",
+      "type": "verb",
+      "base": "swim",
+      "past": "swam",
+      "pp": "swum",
+      "es": "nadar",
+      "units": [
+        "u8",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_sit",
+      "type": "verb",
+      "base": "sit",
+      "past": "sat",
+      "pp": "sat",
+      "es": "sentarse",
+      "units": [
+        "u1",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_stand",
+      "type": "verb",
+      "base": "stand",
+      "past": "stood",
+      "pp": "stood",
+      "es": "estar de pie",
+      "units": [
+        "u1",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_teach",
+      "type": "verb",
+      "base": "teach",
+      "past": "taught",
+      "pp": "taught",
+      "es": "enseñar",
+      "units": [
+        "u2",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_learn",
+      "type": "verb",
+      "base": "learn",
+      "past": "learnt/learned",
+      "pp": "learnt/learned",
+      "es": "aprender",
+      "units": [
+        "u2"
+      ]
+    },
+    {
+      "id": "v_hear",
+      "type": "verb",
+      "base": "hear",
+      "past": "heard",
+      "pp": "heard",
+      "es": "oír",
+      "units": [
+        "u8",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_keep",
+      "type": "verb",
+      "base": "keep",
+      "past": "kept",
+      "pp": "kept",
+      "es": "guardar / mantener",
+      "units": [
+        "u3",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_pay",
+      "type": "verb",
+      "base": "pay",
+      "past": "paid",
+      "pp": "paid",
+      "es": "pagar",
+      "units": [
+        "u6",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_sell",
+      "type": "verb",
+      "base": "sell",
+      "past": "sold",
+      "pp": "sold",
+      "es": "vender",
+      "units": [
+        "u6",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_spend",
+      "type": "verb",
+      "base": "spend",
+      "past": "spent",
+      "pp": "spent",
+      "es": "gastar / pasar tiempo",
+      "units": [
+        "u2",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_win",
+      "type": "verb",
+      "base": "win",
+      "past": "won",
+      "pp": "won",
+      "es": "ganar",
+      "units": [
+        "u2",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_catch",
+      "type": "verb",
+      "base": "catch",
+      "past": "caught",
+      "pp": "caught",
+      "es": "atrapar",
+      "units": [
+        "u8",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_fall",
+      "type": "verb",
+      "base": "fall",
+      "past": "fell",
+      "pp": "fallen",
+      "es": "caerse",
+      "units": [
+        "u8",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_grow",
+      "type": "verb",
+      "base": "grow",
+      "past": "grew",
+      "pp": "grown",
+      "es": "crecer",
+      "units": [
+        "u8",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_hit",
+      "type": "verb",
+      "base": "hit",
+      "past": "hit",
+      "pp": "hit",
+      "es": "golpear",
+      "units": [
+        "u2",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_hurt",
+      "type": "verb",
+      "base": "hurt",
+      "past": "hurt",
+      "pp": "hurt",
+      "es": "hacer daño",
+      "units": [
+        "u6",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_let",
+      "type": "verb",
+      "base": "let",
+      "past": "let",
+      "pp": "let",
+      "es": "dejar/permitir",
+      "units": [
+        "u3",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_lay",
+      "type": "verb",
+      "base": "lay",
+      "past": "laid",
+      "pp": "laid",
+      "es": "poner (colocar)",
+      "units": [
+        "u5",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_lie",
+      "type": "verb",
+      "base": "lie",
+      "past": "lay",
+      "pp": "lain",
+      "es": "tumbarse",
+      "units": [
+        "u1",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_light",
+      "type": "verb",
+      "base": "light",
+      "past": "lit/lighted",
+      "pp": "lit/lighted",
+      "es": "encender",
+      "units": [
+        "u3",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_ring",
+      "type": "verb",
+      "base": "ring",
+      "past": "rang",
+      "pp": "rung",
+      "es": "sonar (teléfono)",
+      "units": [
+        "u3",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_shake",
+      "type": "verb",
+      "base": "shake",
+      "past": "shook",
+      "pp": "shaken",
+      "es": "agitar",
+      "units": [
+        "u8",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_shine",
+      "type": "verb",
+      "base": "shine",
+      "past": "shone",
+      "pp": "shone",
+      "es": "brillar",
+      "units": [
+        "u8",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_sing",
+      "type": "verb",
+      "base": "sing",
+      "past": "sang",
+      "pp": "sung",
+      "es": "cantar",
+      "units": [
+        "u2",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_stick",
+      "type": "verb",
+      "base": "stick",
+      "past": "stuck",
+      "pp": "stuck",
+      "es": "pegar/atascar",
+      "units": [
+        "u3",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_throw",
+      "type": "verb",
+      "base": "throw",
+      "past": "threw",
+      "pp": "thrown",
+      "es": "lanzar",
+      "units": [
+        "u2",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_understand",
+      "type": "verb",
+      "base": "understand",
+      "past": "understood",
+      "pp": "understood",
+      "es": "entender",
+      "units": [
+        "u2",
+        "u4"
+      ]
+    },
+    {
+      "id": "v_wake",
+      "type": "verb",
+      "base": "wake",
+      "past": "woke",
+      "pp": "woken",
+      "es": "despertar",
+      "units": [
+        "u1",
+        "u4"
+      ]
+    },
+    {
+      "id": "g_wake up",
+      "type": "pair",
+      "front": "despertarse",
+      "back": "wake up",
+      "tag": "general",
+      "units": [
+        "u1"
+      ]
+    },
+    {
+      "id": "g_get up",
+      "type": "pair",
+      "front": "levantarse",
+      "back": "get up",
+      "tag": "general",
+      "units": [
+        "u1"
+      ]
+    },
+    {
+      "id": "g_brush my teeth",
+      "type": "pair",
+      "front": "lavarme los dientes",
+      "back": "brush my teeth",
+      "tag": "general",
+      "units": [
+        "u1"
+      ]
+    },
+    {
+      "id": "g_have a shower",
+      "type": "pair",
+      "front": "ducharme",
+      "back": "have a shower",
+      "tag": "general",
+      "units": [
+        "u1"
+      ]
+    },
+    {
+      "id": "g_have breakfast",
+      "type": "pair",
+      "front": "desayunar",
+      "back": "have breakfast",
+      "tag": "general",
+      "units": [
+        "u1"
+      ]
+    },
+    {
+      "id": "g_usually",
+      "type": "pair",
+      "front": "normalmente",
+      "back": "usually",
+      "tag": "general",
+      "units": [
+        "u1"
+      ]
+    },
+    {
+      "id": "g_sometimes",
+      "type": "pair",
+      "front": "a veces",
+      "back": "sometimes",
+      "tag": "general",
+      "units": [
+        "u1"
+      ]
+    },
+    {
+      "id": "g_never",
+      "type": "pair",
+      "front": "nunca",
+      "back": "never",
+      "tag": "general",
+      "units": [
+        "u1"
+      ]
+    },
+    {
+      "id": "g_always",
+      "type": "pair",
+      "front": "siempre",
+      "back": "always",
+      "tag": "general",
+      "units": [
+        "u1"
+      ]
+    },
+    {
+      "id": "g_timetable",
+      "type": "pair",
+      "front": "horario",
+      "back": "timetable",
+      "tag": "general",
+      "units": [
+        "u2"
+      ]
+    },
+    {
+      "id": "g_homework",
+      "type": "pair",
+      "front": "deberes",
+      "back": "homework",
+      "tag": "general",
+      "units": [
+        "u2"
+      ]
+    },
+    {
+      "id": "g_break time",
+      "type": "pair",
+      "front": "recreo",
+      "back": "break time",
+      "tag": "general",
+      "units": [
+        "u2"
+      ]
+    },
+    {
+      "id": "g_favourite subject",
+      "type": "pair",
+      "front": "asignatura favorita",
+      "back": "favourite subject",
+      "tag": "general",
+      "units": [
+        "u2"
+      ]
+    },
+    {
+      "id": "g_playground",
+      "type": "pair",
+      "front": "patio",
+      "back": "playground",
+      "tag": "general",
+      "units": [
+        "u2"
+      ]
+    },
+    {
+      "id": "g_team",
+      "type": "pair",
+      "front": "equipo",
+      "back": "team",
+      "tag": "general",
+      "units": [
+        "u2"
+      ]
+    },
+    {
+      "id": "g_practice",
+      "type": "pair",
+      "front": "practicar",
+      "back": "practice",
+      "tag": "general",
+      "units": [
+        "u2"
+      ]
+    },
+    {
+      "id": "g_join",
+      "type": "pair",
+      "front": "unirse",
+      "back": "join",
+      "tag": "general",
+      "units": [
+        "u2"
+      ]
+    },
+    {
+      "id": "g_learn",
+      "type": "pair",
+      "front": "aprender",
+      "back": "learn",
+      "tag": "general",
+      "units": [
+        "u2"
+      ]
+    },
+    {
+      "id": "g_yesterday",
+      "type": "pair",
+      "front": "ayer",
+      "back": "yesterday",
+      "tag": "general",
+      "units": [
+        "u4"
+      ]
+    },
+    {
+      "id": "g_last week",
+      "type": "pair",
+      "front": "la semana pasada",
+      "back": "last week",
+      "tag": "general",
+      "units": [
+        "u4"
+      ]
+    },
+    {
+      "id": "g_then",
+      "type": "pair",
+      "front": "entonces",
+      "back": "then",
+      "tag": "general",
+      "units": [
+        "u4"
+      ]
+    },
+    {
+      "id": "g_suddenly",
+      "type": "pair",
+      "front": "de repente",
+      "back": "suddenly",
+      "tag": "general",
+      "units": [
+        "u4"
+      ]
+    },
+    {
+      "id": "g_finally",
+      "type": "pair",
+      "front": "finalmente",
+      "back": "finally",
+      "tag": "general",
+      "units": [
+        "u4"
+      ]
+    },
+    {
+      "id": "g_between",
+      "type": "pair",
+      "front": "entre",
+      "back": "between",
+      "tag": "general",
+      "units": [
+        "u5"
+      ]
+    },
+    {
+      "id": "g_next to",
+      "type": "pair",
+      "front": "al lado de",
+      "back": "next to",
+      "tag": "general",
+      "units": [
+        "u5"
+      ]
+    },
+    {
+      "id": "g_opposite",
+      "type": "pair",
+      "front": "enfrente de",
+      "back": "opposite",
+      "tag": "general",
+      "units": [
+        "u5"
+      ]
+    },
+    {
+      "id": "g_turn left",
+      "type": "pair",
+      "front": "gira a la izquierda",
+      "back": "turn left",
+      "tag": "general",
+      "units": [
+        "u5"
+      ]
+    },
+    {
+      "id": "g_turn right",
+      "type": "pair",
+      "front": "gira a la derecha",
+      "back": "turn right",
+      "tag": "general",
+      "units": [
+        "u5"
+      ]
+    },
+    {
+      "id": "g_go straight on",
+      "type": "pair",
+      "front": "sigue recto",
+      "back": "go straight on",
+      "tag": "general",
+      "units": [
+        "u5"
+      ]
+    },
+    {
+      "id": "g_map",
+      "type": "pair",
+      "front": "mapa",
+      "back": "map",
+      "tag": "general",
+      "units": [
+        "u5"
+      ]
+    },
+    {
+      "id": "g_healthy",
+      "type": "pair",
+      "front": "saludable",
+      "back": "healthy",
+      "tag": "general",
+      "units": [
+        "u6"
+      ]
+    },
+    {
+      "id": "g_water",
+      "type": "pair",
+      "front": "agua",
+      "back": "water",
+      "tag": "general",
+      "units": [
+        "u6"
+      ]
+    },
+    {
+      "id": "g_vegetables",
+      "type": "pair",
+      "front": "verduras",
+      "back": "vegetables",
+      "tag": "general",
+      "units": [
+        "u6"
+      ]
+    },
+    {
+      "id": "g_breakfast",
+      "type": "pair",
+      "front": "desayuno",
+      "back": "breakfast",
+      "tag": "general",
+      "units": [
+        "u6",
+        "u1"
+      ]
+    },
+    {
+      "id": "g_stomach ache",
+      "type": "pair",
+      "front": "dolor de barriga",
+      "back": "stomach ache",
+      "tag": "general",
+      "units": [
+        "u6"
+      ]
+    },
+    {
+      "id": "g_toothache",
+      "type": "pair",
+      "front": "dolor de muelas",
+      "back": "toothache",
+      "tag": "general",
+      "units": [
+        "u6"
+      ]
+    },
+    {
+      "id": "g_friendly",
+      "type": "pair",
+      "front": "amable",
+      "back": "friendly",
+      "tag": "general",
+      "units": [
+        "u7"
+      ]
+    },
+    {
+      "id": "g_quiet",
+      "type": "pair",
+      "front": "tranquilo/a",
+      "back": "quiet",
+      "tag": "general",
+      "units": [
+        "u7",
+        "u2"
+      ]
+    },
+    {
+      "id": "g_noisy",
+      "type": "pair",
+      "front": "ruidoso/a",
+      "back": "noisy",
+      "tag": "general",
+      "units": [
+        "u7"
+      ]
+    },
+    {
+      "id": "g_taller",
+      "type": "pair",
+      "front": "más alto/a",
+      "back": "taller",
+      "tag": "general",
+      "units": [
+        "u7"
+      ]
+    },
+    {
+      "id": "g_the best",
+      "type": "pair",
+      "front": "el/la mejor",
+      "back": "the best",
+      "tag": "general",
+      "units": [
+        "u7"
+      ]
+    },
+    {
+      "id": "g_river",
+      "type": "pair",
+      "front": "río",
+      "back": "river",
+      "tag": "general",
+      "units": [
+        "u8"
+      ]
+    },
+    {
+      "id": "g_mountain",
+      "type": "pair",
+      "front": "montaña",
+      "back": "mountain",
+      "tag": "general",
+      "units": [
+        "u8"
+      ]
+    },
+    {
+      "id": "g_island",
+      "type": "pair",
+      "front": "isla",
+      "back": "island",
+      "tag": "general",
+      "units": [
+        "u8"
+      ]
+    },
+    {
+      "id": "g_weather",
+      "type": "pair",
+      "front": "tiempo (clima)",
+      "back": "weather",
+      "tag": "general",
+      "units": [
+        "u8"
+      ]
+    },
+    {
+      "id": "g_dangerous",
+      "type": "pair",
+      "front": "peligroso/a",
+      "back": "dangerous",
+      "tag": "general",
+      "units": [
+        "u8"
+      ]
+    },
+    {
+      "id": "t_keyboard",
+      "type": "pair",
+      "front": "teclado",
+      "back": "keyboard",
+      "tag": "tech",
+      "units": [
+        "u3"
+      ]
+    },
+    {
+      "id": "t_mouse",
+      "type": "pair",
+      "front": "ratón",
+      "back": "mouse",
+      "tag": "tech",
+      "units": [
+        "u3"
+      ]
+    },
+    {
+      "id": "t_screen",
+      "type": "pair",
+      "front": "pantalla",
+      "back": "screen",
+      "tag": "tech",
+      "units": [
+        "u3"
+      ]
+    },
+    {
+      "id": "t_tablet",
+      "type": "pair",
+      "front": "tableta",
+      "back": "tablet",
+      "tag": "tech",
+      "units": [
+        "u3"
+      ]
+    },
+    {
+      "id": "t_laptop",
+      "type": "pair",
+      "front": "portátil",
+      "back": "laptop",
+      "tag": "tech",
+      "units": [
+        "u3"
+      ]
+    },
+    {
+      "id": "t_headphones",
+      "type": "pair",
+      "front": "auriculares",
+      "back": "headphones",
+      "tag": "tech",
+      "units": [
+        "u3"
+      ]
+    },
+    {
+      "id": "t_microphone",
+      "type": "pair",
+      "front": "micrófono",
+      "back": "microphone",
+      "tag": "tech",
+      "units": [
+        "u3"
+      ]
+    },
+    {
+      "id": "t_camera",
+      "type": "pair",
+      "front": "cámara",
+      "back": "camera",
+      "tag": "tech",
+      "units": [
+        "u3"
+      ]
+    },
+    {
+      "id": "t_app",
+      "type": "pair",
+      "front": "aplicación",
+      "back": "app",
+      "tag": "tech",
+      "units": [
+        "u3"
+      ]
+    },
+    {
+      "id": "t_website",
+      "type": "pair",
+      "front": "página web",
+      "back": "website",
+      "tag": "tech",
+      "units": [
+        "u3"
+      ]
+    },
+    {
+      "id": "t_link",
+      "type": "pair",
+      "front": "enlace",
+      "back": "link",
+      "tag": "tech",
+      "units": [
+        "u3"
+      ]
+    },
+    {
+      "id": "t_browser",
+      "type": "pair",
+      "front": "navegador",
+      "back": "browser",
+      "tag": "tech",
+      "units": [
+        "u3"
+      ]
+    },
+    {
+      "id": "t_Wi‑Fi",
+      "type": "pair",
+      "front": "wifi",
+      "back": "Wi‑Fi",
+      "tag": "tech",
+      "units": [
+        "u3"
+      ]
+    },
+    {
+      "id": "t_password",
+      "type": "pair",
+      "front": "contraseña",
+      "back": "password",
+      "tag": "tech",
+      "units": [
+        "u3"
+      ]
+    },
+    {
+      "id": "t_download",
+      "type": "pair",
+      "front": "descargar",
+      "back": "download",
+      "tag": "tech",
+      "units": [
+        "u3"
+      ]
+    },
+    {
+      "id": "t_upload",
+      "type": "pair",
+      "front": "subir",
+      "back": "upload",
+      "tag": "tech",
+      "units": [
+        "u3"
+      ]
+    },
+    {
+      "id": "t_save",
+      "type": "pair",
+      "front": "guardar",
+      "back": "save",
+      "tag": "tech",
+      "units": [
+        "u3"
+      ]
+    },
+    {
+      "id": "t_delete",
+      "type": "pair",
+      "front": "borrar",
+      "back": "delete",
+      "tag": "tech",
+      "units": [
+        "u3"
+      ]
+    },
+    {
+      "id": "t_copy",
+      "type": "pair",
+      "front": "copiar",
+      "back": "copy",
+      "tag": "tech",
+      "units": [
+        "u3"
+      ]
+    },
+    {
+      "id": "t_paste",
+      "type": "pair",
+      "front": "pegar",
+      "back": "paste",
+      "tag": "tech",
+      "units": [
+        "u3"
+      ]
+    },
+    {
+      "id": "t_robot",
+      "type": "pair",
+      "front": "robot",
+      "back": "robot",
+      "tag": "tech",
+      "units": [
+        "u3",
+        "u8"
+      ]
+    },
+    {
+      "id": "t_code",
+      "type": "pair",
+      "front": "código",
+      "back": "code",
+      "tag": "tech",
+      "units": [
+        "u3"
+      ]
+    },
+    {
+      "id": "t_private",
+      "type": "pair",
+      "front": "privado/a",
+      "back": "private",
+      "tag": "tech",
+      "units": [
+        "u3"
+      ]
+    },
+    {
+      "id": "t_safe online",
+      "type": "pair",
+      "front": "seguro en internet",
+      "back": "safe online",
+      "tag": "tech",
+      "units": [
+        "u3"
+      ]
+    }
+  ]
+}

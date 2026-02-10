@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>🎮 Repaso</title>
+  <meta name="theme-color" content="#6d28d9"/>
+  <link rel="stylesheet" href="../engine/game-ui.css">
+  <link rel="stylesheet" href="../engine/game-sidepanel.css">
+</head>
+<body>
+  <div id="app"></div>
+
+  <script type="module">
+    import { initUI, runGame } from "../engine/game-engine.js";
+
+    const root = document.getElementById("app");
+    initUI(root);
+
+    const qs = new URLSearchParams(location.search);
+    const deck = qs.get("deck");
+    if (!deck){
+      root.querySelector("#panel").innerHTML = `
+        <div class="big">
+          <h2>Falta el parámetro <code>deck</code></h2>
+          <p class="muted">Ejemplo: <code>play.html?deck=../data/geosfera.json</code></p>
+          <a class="btn" href="../index.html">Volver al portal</a>
+        </div>
+      `;
+    } else {
+      runGame({ root, deckUrl: deck }).catch(err => {
+        console.error(err);
+        root.querySelector("#panel").innerHTML = `
+          <div class="big">
+            <h2>No se pudo cargar el temario</h2>
+            <p class="muted">${String(err?.message || err)}</p>
+            <p class="muted">Si estás abriendo como <b>file://</b>, usa un servidor local (por ejemplo VSCode Live Server o <code>python -m http.server</code>).</p>
+            <a class="btn" href="../index.html">Volver al portal</a>
+          </div>
+        `;
+      });
+    }
+  </script>
+</body>
+</html>

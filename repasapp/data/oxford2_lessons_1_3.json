@@ -1,0 +1,585 @@
+{
+  "schemaVersion": 1,
+  "id": "oxford2_lessons_1_3",
+  "title": "Oxford 2º — Lecciones 1–3",
+  "subject": "ingles",
+  "level": "2º Primaria",
+  "langs": [
+    "EN",
+    "ES"
+  ],
+  "modes": [
+    "flashcards",
+    "mcq"
+  ],
+  "items": [
+    {
+      "id": "w_hello_1",
+      "type": "pair",
+      "front": "hola",
+      "back": "hello",
+      "lesson": 1
+    },
+    {
+      "id": "w_goodbye_1",
+      "type": "pair",
+      "front": "adiós",
+      "back": "goodbye",
+      "lesson": 1
+    },
+    {
+      "id": "w_please_1",
+      "type": "pair",
+      "front": "por favor",
+      "back": "please",
+      "lesson": 1
+    },
+    {
+      "id": "w_thank you_1",
+      "type": "pair",
+      "front": "gracias",
+      "back": "thank you",
+      "lesson": 1
+    },
+    {
+      "id": "w_sorry_1",
+      "type": "pair",
+      "front": "lo siento",
+      "back": "sorry",
+      "lesson": 1
+    },
+    {
+      "id": "w_teacher_1",
+      "type": "pair",
+      "front": "profesor/a",
+      "back": "teacher",
+      "lesson": 1
+    },
+    {
+      "id": "w_student_1",
+      "type": "pair",
+      "front": "alumno/a",
+      "back": "student",
+      "lesson": 1
+    },
+    {
+      "id": "w_book_1",
+      "type": "pair",
+      "front": "libro",
+      "back": "book",
+      "lesson": 1
+    },
+    {
+      "id": "w_pencil_1",
+      "type": "pair",
+      "front": "lápiz",
+      "back": "pencil",
+      "lesson": 1
+    },
+    {
+      "id": "w_pen_1",
+      "type": "pair",
+      "front": "bolígrafo",
+      "back": "pen",
+      "lesson": 1
+    },
+    {
+      "id": "w_rubber_1",
+      "type": "pair",
+      "front": "goma",
+      "back": "rubber",
+      "lesson": 1
+    },
+    {
+      "id": "w_bag_1",
+      "type": "pair",
+      "front": "mochila / bolsa",
+      "back": "bag",
+      "lesson": 1
+    },
+    {
+      "id": "w_one_1",
+      "type": "pair",
+      "front": "uno",
+      "back": "one",
+      "lesson": 1
+    },
+    {
+      "id": "w_two_1",
+      "type": "pair",
+      "front": "dos",
+      "back": "two",
+      "lesson": 1
+    },
+    {
+      "id": "w_three_1",
+      "type": "pair",
+      "front": "tres",
+      "back": "three",
+      "lesson": 1
+    },
+    {
+      "id": "w_four_1",
+      "type": "pair",
+      "front": "cuatro",
+      "back": "four",
+      "lesson": 1
+    },
+    {
+      "id": "w_five_1",
+      "type": "pair",
+      "front": "cinco",
+      "back": "five",
+      "lesson": 1
+    },
+    {
+      "id": "w_red_2",
+      "type": "pair",
+      "front": "rojo",
+      "back": "red",
+      "lesson": 2
+    },
+    {
+      "id": "w_blue_2",
+      "type": "pair",
+      "front": "azul",
+      "back": "blue",
+      "lesson": 2
+    },
+    {
+      "id": "w_green_2",
+      "type": "pair",
+      "front": "verde",
+      "back": "green",
+      "lesson": 2
+    },
+    {
+      "id": "w_yellow_2",
+      "type": "pair",
+      "front": "amarillo",
+      "back": "yellow",
+      "lesson": 2
+    },
+    {
+      "id": "w_orange_2",
+      "type": "pair",
+      "front": "naranja",
+      "back": "orange",
+      "lesson": 2
+    },
+    {
+      "id": "w_purple_2",
+      "type": "pair",
+      "front": "morado",
+      "back": "purple",
+      "lesson": 2
+    },
+    {
+      "id": "w_pink_2",
+      "type": "pair",
+      "front": "rosa",
+      "back": "pink",
+      "lesson": 2
+    },
+    {
+      "id": "w_apple_2",
+      "type": "pair",
+      "front": "manzana",
+      "back": "apple",
+      "lesson": 2
+    },
+    {
+      "id": "w_banana_2",
+      "type": "pair",
+      "front": "plátano",
+      "back": "banana",
+      "lesson": 2
+    },
+    {
+      "id": "w_bread_2",
+      "type": "pair",
+      "front": "pan",
+      "back": "bread",
+      "lesson": 2
+    },
+    {
+      "id": "w_milk_2",
+      "type": "pair",
+      "front": "leche",
+      "back": "milk",
+      "lesson": 2
+    },
+    {
+      "id": "w_water_2",
+      "type": "pair",
+      "front": "agua",
+      "back": "water",
+      "lesson": 2
+    },
+    {
+      "id": "w_cheese_2",
+      "type": "pair",
+      "front": "queso",
+      "back": "cheese",
+      "lesson": 2
+    },
+    {
+      "id": "w_sandwich_2",
+      "type": "pair",
+      "front": "sándwich",
+      "back": "sandwich",
+      "lesson": 2
+    },
+    {
+      "id": "w_run_3",
+      "type": "pair",
+      "front": "correr",
+      "back": "run",
+      "lesson": 3
+    },
+    {
+      "id": "w_jump_3",
+      "type": "pair",
+      "front": "saltar",
+      "back": "jump",
+      "lesson": 3
+    },
+    {
+      "id": "w_swim_3",
+      "type": "pair",
+      "front": "nadar",
+      "back": "swim",
+      "lesson": 3
+    },
+    {
+      "id": "w_dance_3",
+      "type": "pair",
+      "front": "bailar",
+      "back": "dance",
+      "lesson": 3
+    },
+    {
+      "id": "w_sing_3",
+      "type": "pair",
+      "front": "cantar",
+      "back": "sing",
+      "lesson": 3
+    },
+    {
+      "id": "w_read_3",
+      "type": "pair",
+      "front": "leer",
+      "back": "read",
+      "lesson": 3
+    },
+    {
+      "id": "w_write_3",
+      "type": "pair",
+      "front": "escribir",
+      "back": "write",
+      "lesson": 3
+    },
+    {
+      "id": "w_ride a bike_3",
+      "type": "pair",
+      "front": "montar en bici",
+      "back": "ride a bike",
+      "lesson": 3
+    },
+    {
+      "id": "w_play football_3",
+      "type": "pair",
+      "front": "jugar al fútbol",
+      "back": "play football",
+      "lesson": 3
+    },
+    {
+      "id": "w_draw_3",
+      "type": "pair",
+      "front": "dibujar",
+      "back": "draw",
+      "lesson": 3
+    },
+    {
+      "id": "w_paint_3",
+      "type": "pair",
+      "front": "pintar",
+      "back": "paint",
+      "lesson": 3
+    },
+    {
+      "id": "w_skate_3",
+      "type": "pair",
+      "front": "patinar",
+      "back": "skate",
+      "lesson": 3
+    },
+    {
+      "id": "w_my name is…_1",
+      "type": "pair",
+      "front": "me llamo…",
+      "back": "my name is…",
+      "lesson": 1
+    },
+    {
+      "id": "w_how are you?_1",
+      "type": "pair",
+      "front": "¿qué tal?",
+      "back": "how are you?",
+      "lesson": 1
+    },
+    {
+      "id": "w_I like…_2",
+      "type": "pair",
+      "front": "me gusta…",
+      "back": "I like…",
+      "lesson": 2
+    },
+    {
+      "id": "w_I don't like…_2",
+      "type": "pair",
+      "front": "no me gusta…",
+      "back": "I don't like…",
+      "lesson": 2
+    },
+    {
+      "id": "w_I can…_3",
+      "type": "pair",
+      "front": "puedo…",
+      "back": "I can…",
+      "lesson": 3
+    },
+    {
+      "id": "w_I can't…_3",
+      "type": "pair",
+      "front": "no puedo…",
+      "back": "I can't…",
+      "lesson": 3
+    },
+    {
+      "id": "gr1",
+      "type": "mcq",
+      "question": "Yo me llamo Ana.\nMy name ___ Ana.",
+      "choices": [
+        "am",
+        "is",
+        "are",
+        "have",
+        "has",
+        "do",
+        "does"
+      ],
+      "answer": "is"
+    },
+    {
+      "id": "gr2",
+      "type": "mcq",
+      "question": "Yo estoy bien.\nI ___ fine.",
+      "choices": [
+        "am",
+        "is",
+        "are",
+        "have",
+        "has",
+        "do",
+        "does"
+      ],
+      "answer": "am"
+    },
+    {
+      "id": "gr3",
+      "type": "mcq",
+      "question": "Él es mi profesor.\nHe ___ my teacher.",
+      "choices": [
+        "am",
+        "is",
+        "are",
+        "have",
+        "has",
+        "do",
+        "does"
+      ],
+      "answer": "is"
+    },
+    {
+      "id": "gr4",
+      "type": "mcq",
+      "question": "Ordena la pregunta:",
+      "choices": [
+        "am",
+        "is",
+        "are",
+        "have",
+        "has",
+        "do",
+        "does"
+      ],
+      "answer": "What is your name ?"
+    },
+    {
+      "id": "gr5",
+      "type": "mcq",
+      "question": "Ordena la respuesta:",
+      "choices": [
+        "am",
+        "is",
+        "are",
+        "have",
+        "has",
+        "do",
+        "does"
+      ],
+      "answer": "My name is Leo ."
+    },
+    {
+      "id": "gr6",
+      "type": "mcq",
+      "question": "Me gusta la leche.\nI ___ milk.",
+      "choices": [
+        "am",
+        "is",
+        "are",
+        "have",
+        "has",
+        "do",
+        "does"
+      ],
+      "answer": "like"
+    },
+    {
+      "id": "gr7",
+      "type": "mcq",
+      "question": "No me gusta el queso.\nI don't ___ cheese.",
+      "choices": [
+        "am",
+        "is",
+        "are",
+        "have",
+        "has",
+        "do",
+        "does"
+      ],
+      "answer": "like"
+    },
+    {
+      "id": "gr8",
+      "type": "mcq",
+      "question": "Ordena la frase:",
+      "choices": [
+        "am",
+        "is",
+        "are",
+        "have",
+        "has",
+        "do",
+        "does"
+      ],
+      "answer": "I like apples ."
+    },
+    {
+      "id": "gr9",
+      "type": "mcq",
+      "question": "Ordena la frase:",
+      "choices": [
+        "am",
+        "is",
+        "are",
+        "have",
+        "has",
+        "do",
+        "does"
+      ],
+      "answer": "I don't like bananas ."
+    },
+    {
+      "id": "gr10",
+      "type": "mcq",
+      "question": "Yo puedo nadar.\nI ___ swim.",
+      "choices": [
+        "am",
+        "is",
+        "are",
+        "have",
+        "has",
+        "do",
+        "does"
+      ],
+      "answer": "can"
+    },
+    {
+      "id": "gr11",
+      "type": "mcq",
+      "question": "Yo no puedo volar.\nI ___ fly.",
+      "choices": [
+        "am",
+        "is",
+        "are",
+        "have",
+        "has",
+        "do",
+        "does"
+      ],
+      "answer": "can't"
+    },
+    {
+      "id": "gr12",
+      "type": "mcq",
+      "question": "Ella puede bailar.\nShe ___ dance.",
+      "choices": [
+        "am",
+        "is",
+        "are",
+        "have",
+        "has",
+        "do",
+        "does"
+      ],
+      "answer": "can"
+    },
+    {
+      "id": "gr13",
+      "type": "mcq",
+      "question": "Ordena la pregunta:",
+      "choices": [
+        "am",
+        "is",
+        "are",
+        "have",
+        "has",
+        "do",
+        "does"
+      ],
+      "answer": "Can you swim ?"
+    },
+    {
+      "id": "gr14",
+      "type": "mcq",
+      "question": "Ordena la respuesta:",
+      "choices": [
+        "am",
+        "is",
+        "are",
+        "have",
+        "has",
+        "do",
+        "does"
+      ],
+      "answer": "Yes, I can ."
+    },
+    {
+      "id": "gr15",
+      "type": "mcq",
+      "question": "Ordena la respuesta:",
+      "choices": [
+        "am",
+        "is",
+        "are",
+        "have",
+        "has",
+        "do",
+        "does"
+      ],
+      "answer": "No, I can't ."
+    }
+  ]
+}

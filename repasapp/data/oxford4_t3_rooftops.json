@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "id": "oxford4_t3_rooftops",
+  "title": "Oxford 4º — Tema 3 (Rooftops / School)",
+  "subject": "ingles",
+  "level": "4º Primaria",
+  "langs": [
+    "EN",
+    "ES"
+  ],
+  "modes": [
+    "mcq"
+  ],
+  "items": [
+    {
+      "id": "likes1",
+      "type": "mcq",
+      "question": "Completa: ¿A él le gusta Música?\n___ he like Music?",
+      "choices": [
+        "Do",
+        "Does"
+      ],
+      "answer": "Does"
+    },
+    {
+      "id": "likes2",
+      "type": "mcq",
+      "question": "Completa: ¿A ella le gusta Geografía?\n___ she like Geography?",
+      "choices": [
+        "Do",
+        "Does"
+      ],
+      "answer": "Does"
+    },
+    {
+      "id": "likes3",
+      "type": "mcq",
+      "question": "Completa: ¿A ti te gusta Inglés?\n___ you like English?",
+      "choices": [
+        "Do",
+        "Does"
+      ],
+      "answer": "Do"
+    },
+    {
+      "id": "likes4",
+      "type": "mcq",
+      "question": "Completa: ¿A ellos les gusta Ciencias?\n___ they like Science?",
+      "choices": [
+        "Do",
+        "Does"
+      ],
+      "answer": "Do"
+    },
+    {
+      "id": "likes5",
+      "type": "mcq",
+      "question": "Completa la respuesta: Sí, a ella le gusta.\nYes, she ___ .",
+      "choices": [
+        "do",
+        "does"
+      ],
+      "answer": "does"
+    },
+    {
+      "id": "likes6",
+      "type": "mcq",
+      "question": "Completa la respuesta: No, a él no le gusta.\nNo, he ___ .",
+      "choices": [
+        "doesn't",
+        "don't"
+      ],
+      "answer": "doesn't"
+    },
+    {
+      "id": "havegot1",
+      "type": "mcq",
+      "question": "Completa: Yo tengo tos.\nI ___ got a cough.",
+      "choices": [
+        "have",
+        "has"
+      ],
+      "answer": "have"
+    },
+    {
+      "id": "havegot2",
+      "type": "mcq",
+      "question": "Completa: Ella tiene dolor de cabeza.\nShe ___ got a headache.",
+      "choices": [
+        "have",
+        "has"
+      ],
+      "answer": "has"
+    },
+    {
+      "id": "havegot3",
+      "type": "mcq",
+      "question": "Completa: Él tiene un resfriado.\nHe ___ got a cold.",
+      "choices": [
+        "have",
+        "has"
+      ],
+      "answer": "has"
+    },
+    {
+      "id": "havegot4",
+      "type": "mcq",
+      "question": "Completa la respuesta corta: Sí, tengo.\nYes, I ___ .",
+      "choices": [
+        "have",
+        "has"
+      ],
+      "answer": "have"
+    },
+    {
+      "id": "havegot5",
+      "type": "mcq",
+      "question": "Completa la respuesta corta: No, ella no tiene.\nNo, she ___ .",
+      "choices": [
+        "hasn't",
+        "haven't"
+      ],
+      "answer": "hasn't"
+    }
+  ]
+}

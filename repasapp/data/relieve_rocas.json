@@ -1,0 +1,618 @@
+{
+  "schemaVersion": 1,
+  "id": "relieve_rocas",
+  "title": "Relieve & Rocas (ES + EN)",
+  "subject": "ciencias",
+  "level": "4º Primaria",
+  "langs": [
+    "ES",
+    "EN"
+  ],
+  "modes": [
+    "mcq",
+    "tf",
+    "type",
+    "flashcards"
+  ],
+  "items": [
+    {
+      "id": "q1",
+      "type": "mcq",
+      "question": "¿Qué son los landforms?",
+      "choices": [
+        "features",
+        "animals",
+        "houses"
+      ],
+      "answer": "features"
+    },
+    {
+      "id": "q2",
+      "type": "mcq",
+      "question": "Un landform cerca del mar es un landform…",
+      "choices": [
+        "coastal",
+        "inland",
+        "polar"
+      ],
+      "answer": "coastal"
+    },
+    {
+      "id": "q3",
+      "type": "mcq",
+      "question": "Un landform lejos del mar es un landform…",
+      "choices": [
+        "inland",
+        "coastal",
+        "oceanic"
+      ],
+      "answer": "inland"
+    },
+    {
+      "id": "q4",
+      "type": "mcq",
+      "question": "¿Cómo se llama la punta (parte más alta) de una montaña?",
+      "choices": [
+        "peak",
+        "plain",
+        "plateau"
+      ],
+      "answer": "peak"
+    },
+    {
+      "id": "q5",
+      "type": "mcq",
+      "question": "La forma típica de una montaña es como un…",
+      "choices": [
+        "cone",
+        "square",
+        "circle"
+      ],
+      "answer": "cone"
+    },
+    {
+      "id": "q6",
+      "type": "mcq",
+      "question": "Las montañas tienen lados…",
+      "choices": [
+        "steep",
+        "gentle",
+        "flat"
+      ],
+      "answer": "steep"
+    },
+    {
+      "id": "q7",
+      "type": "mcq",
+      "question": "Muy altas montañas a menudo tienen…",
+      "choices": [
+        "snow cap",
+        "sand cap",
+        "rock cap"
+      ],
+      "answer": "snow cap"
+    },
+    {
+      "id": "q8",
+      "type": "mcq",
+      "question": "Una montaña puede ser parte de una… (grupo de montañas)",
+      "choices": [
+        "mountain range",
+        "archipelago",
+        "peninsula"
+      ],
+      "answer": "mountain range"
+    },
+    {
+      "id": "q9",
+      "type": "mcq",
+      "question": "Los acantilados son casi…",
+      "choices": [
+        "vertical",
+        "curved",
+        "soft"
+      ],
+      "answer": "vertical"
+    },
+    {
+      "id": "q10",
+      "type": "mcq",
+      "question": "La parte de arriba de un acantilado suele ser…",
+      "choices": [
+        "flat land",
+        "deep water",
+        "hot lava"
+      ],
+      "answer": "flat land"
+    },
+    {
+      "id": "q11",
+      "type": "mcq",
+      "question": "Una meseta es una zona alta y… arriba.",
+      "choices": [
+        "flat",
+        "wet",
+        "round"
+      ],
+      "answer": "flat"
+    },
+    {
+      "id": "q12",
+      "type": "mcq",
+      "question": "Una llanura es una zona…",
+      "choices": [
+        "flat",
+        "very high",
+        "full of rocks"
+      ],
+      "answer": "flat"
+    },
+    {
+      "id": "q13",
+      "type": "mcq",
+      "question": "Las colinas son más pequeñas que las montañas y tienen pendiente…",
+      "choices": [
+        "gentle",
+        "vertical",
+        "icy"
+      ],
+      "answer": "gentle"
+    },
+    {
+      "id": "q14",
+      "type": "mcq",
+      "question": "Un valle es una zona baja entre dos…",
+      "choices": [
+        "hills or mountains",
+        "oceans",
+        "deserts"
+      ],
+      "answer": "hills or mountains"
+    },
+    {
+      "id": "q15",
+      "type": "mcq",
+      "question": "Los valles pueden tener forma de U o de…",
+      "choices": [
+        "V",
+        "X",
+        "O"
+      ],
+      "answer": "V"
+    },
+    {
+      "id": "q16",
+      "type": "mcq",
+      "question": "Los valles suelen tener suelo… bueno para plantas.",
+      "choices": [
+        "fertile",
+        "poisonous",
+        "dry"
+      ],
+      "answer": "fertile"
+    },
+    {
+      "id": "q17",
+      "type": "mcq",
+      "question": "Una isla está rodeada por agua en… lados.",
+      "choices": [
+        "all",
+        "two",
+        "three"
+      ],
+      "answer": "all"
+    },
+    {
+      "id": "q18",
+      "type": "mcq",
+      "question": "Un grupo de islas cercanas forma un…",
+      "choices": [
+        "archipelago",
+        "plateau",
+        "valley"
+      ],
+      "answer": "archipelago"
+    },
+    {
+      "id": "q19",
+      "type": "mcq",
+      "question": "Una península está rodeada por agua en… lados.",
+      "choices": [
+        "three",
+        "one",
+        "all"
+      ],
+      "answer": "three"
+    },
+    {
+      "id": "q20",
+      "type": "mcq",
+      "question": "España tiene dos archipiélagos: …",
+      "choices": [
+        "Balearic and Canary",
+        "Azores and Madeira",
+        "Sicily and Sardinia"
+      ],
+      "answer": "Balearic and Canary"
+    },
+    {
+      "id": "q21",
+      "type": "mcq",
+      "question": "Las rocas se forman de…",
+      "choices": [
+        "minerals",
+        "plastic",
+        "wood"
+      ],
+      "answer": "minerals"
+    },
+    {
+      "id": "q22",
+      "type": "mcq",
+      "question": "Los científicos dividen las rocas en tres grupos:",
+      "choices": [
+        "sedimentary/igneous/metamorphic",
+        "gold/silver/bronze",
+        "soft/hard/wet"
+      ],
+      "answer": "sedimentary/igneous/metamorphic"
+    },
+    {
+      "id": "q23",
+      "type": "mcq",
+      "question": "La roca sedimentaria se forma en…",
+      "choices": [
+        "layers",
+        "bubbles",
+        "glass"
+      ],
+      "answer": "layers"
+    },
+    {
+      "id": "q24",
+      "type": "mcq",
+      "question": "Los ríos, lagos y el mar a menudo… materiales.",
+      "choices": [
+        "deposit",
+        "eat",
+        "burn"
+      ],
+      "answer": "deposit"
+    },
+    {
+      "id": "q25",
+      "type": "mcq",
+      "question": "Sandstone se hace de granos de…",
+      "choices": [
+        "sand",
+        "ice",
+        "metal"
+      ],
+      "answer": "sand"
+    },
+    {
+      "id": "q26",
+      "type": "mcq",
+      "question": "Shale se hace de barro de…",
+      "choices": [
+        "clay",
+        "salt",
+        "lava"
+      ],
+      "answer": "clay"
+    },
+    {
+      "id": "q27",
+      "type": "mcq",
+      "question": "Limestone se hace sobre todo de…",
+      "choices": [
+        "shells",
+        "leaves",
+        "plastic"
+      ],
+      "answer": "shells"
+    },
+    {
+      "id": "q28",
+      "type": "mcq",
+      "question": "Las rocas ígneas se forman por…",
+      "choices": [
+        "volcanoes",
+        "wind",
+        "rain"
+      ],
+      "answer": "volcanoes"
+    },
+    {
+      "id": "q29",
+      "type": "mcq",
+      "question": "La roca fundida caliente se llama… (debajo de la Tierra)",
+      "choices": [
+        "magma",
+        "steam",
+        "mud"
+      ],
+      "answer": "magma"
+    },
+    {
+      "id": "q30",
+      "type": "mcq",
+      "question": "Cuando el magma sale, se llama…",
+      "choices": [
+        "lava",
+        "soil",
+        "clay"
+      ],
+      "answer": "lava"
+    },
+    {
+      "id": "q31",
+      "type": "mcq",
+      "question": "Basalt tiene cristales muy…",
+      "choices": [
+        "tiny",
+        "huge",
+        "square"
+      ],
+      "answer": "tiny"
+    },
+    {
+      "id": "q32",
+      "type": "mcq",
+      "question": "Granite tiene cristales…",
+      "choices": [
+        "large",
+        "tiny",
+        "none"
+      ],
+      "answer": "large"
+    },
+    {
+      "id": "q33",
+      "type": "mcq",
+      "question": "Pumice tiene muchos… y puede flotar.",
+      "choices": [
+        "airspaces",
+        "worms",
+        "metals"
+      ],
+      "answer": "airspaces"
+    },
+    {
+      "id": "q34",
+      "type": "mcq",
+      "question": "Las rocas metamórficas cambian por calor y…",
+      "choices": [
+        "pressure",
+        "snow",
+        "wind"
+      ],
+      "answer": "pressure"
+    },
+    {
+      "id": "q35",
+      "type": "mcq",
+      "question": "Marble se forma a partir de…",
+      "choices": [
+        "limestone",
+        "granite",
+        "basalt"
+      ],
+      "answer": "limestone"
+    },
+    {
+      "id": "q36",
+      "type": "mcq",
+      "question": "Slate se forma a partir de…",
+      "choices": [
+        "shale",
+        "sandstone",
+        "pumice"
+      ],
+      "answer": "shale"
+    },
+    {
+      "id": "q37",
+      "type": "mcq",
+      "question": "Gneiss se forma a partir de…",
+      "choices": [
+        "granite",
+        "limestone",
+        "sand"
+      ],
+      "answer": "granite"
+    },
+    {
+      "id": "tf1",
+      "type": "tf",
+      "statement": "Landforms are features on the Earth's surface.",
+      "answer": true
+    },
+    {
+      "id": "tf2",
+      "type": "tf",
+      "statement": "Coastal landforms are away from the sea.",
+      "answer": false
+    },
+    {
+      "id": "tf3",
+      "type": "tf",
+      "statement": "Inland landforms are away from the sea.",
+      "answer": true
+    },
+    {
+      "id": "tf4",
+      "type": "tf",
+      "statement": "A peak is the pointed top of a mountain.",
+      "answer": true
+    },
+    {
+      "id": "tf5",
+      "type": "tf",
+      "statement": "Mountains usually have gentle sides.",
+      "answer": false
+    },
+    {
+      "id": "tf6",
+      "type": "tf",
+      "statement": "Cliffs are almost vertical like a wall.",
+      "answer": true
+    },
+    {
+      "id": "tf7",
+      "type": "tf",
+      "statement": "A plateau is high, flat land like a table.",
+      "answer": true
+    },
+    {
+      "id": "tf8",
+      "type": "tf",
+      "statement": "A plain is a wide area of flat land.",
+      "answer": true
+    },
+    {
+      "id": "tf9",
+      "type": "tf",
+      "statement": "A valley is low land between hills or mountains.",
+      "answer": true
+    },
+    {
+      "id": "tf10",
+      "type": "tf",
+      "statement": "Islands are surrounded by water on all sides.",
+      "answer": true
+    },
+    {
+      "id": "tf11",
+      "type": "tf",
+      "statement": "A peninsula is surrounded by water on three sides.",
+      "answer": true
+    },
+    {
+      "id": "tf12",
+      "type": "tf",
+      "statement": "An archipelago is a group of islands close to each other.",
+      "answer": true
+    },
+    {
+      "id": "tf13",
+      "type": "tf",
+      "statement": "Sedimentary rocks are made in layers.",
+      "answer": true
+    },
+    {
+      "id": "tf14",
+      "type": "tf",
+      "statement": "Igneous rocks form when lava cools.",
+      "answer": true
+    },
+    {
+      "id": "tf15",
+      "type": "tf",
+      "statement": "Metamorphic rocks change by heat and pressure.",
+      "answer": true
+    },
+    {
+      "id": "tf16",
+      "type": "tf",
+      "statement": "Marble is made from limestone.",
+      "answer": true
+    },
+    {
+      "id": "tf17",
+      "type": "tf",
+      "statement": "Slate is made from granite.",
+      "answer": false
+    },
+    {
+      "id": "tf18",
+      "type": "tf",
+      "statement": "Pumice can float because it has airspaces.",
+      "answer": true
+    },
+    {
+      "id": "fill1",
+      "type": "type",
+      "prompt": "Near the sea: ____ landforms.",
+      "answer": "coastal"
+    },
+    {
+      "id": "fill2",
+      "type": "type",
+      "prompt": "Away from the sea: ____ landforms.",
+      "answer": "inland"
+    },
+    {
+      "id": "fill3",
+      "type": "type",
+      "prompt": "The very top of a mountain: ____.",
+      "answer": "peak"
+    },
+    {
+      "id": "fill4",
+      "type": "type",
+      "prompt": "A group of mountains joined together: ____ ____.",
+      "answer": "mountain range"
+    },
+    {
+      "id": "fill5",
+      "type": "type",
+      "prompt": "Almost straight up-and-down: ____.",
+      "answer": "vertical"
+    },
+    {
+      "id": "fill6",
+      "type": "type",
+      "prompt": "A wide flat area: a ____.",
+      "answer": "plain"
+    },
+    {
+      "id": "fill7",
+      "type": "type",
+      "prompt": "High flat land: a ____.",
+      "answer": "plateau"
+    },
+    {
+      "id": "fill8",
+      "type": "type",
+      "prompt": "A group of islands: an ____.",
+      "answer": "archipelago"
+    },
+    {
+      "id": "fill9",
+      "type": "type",
+      "prompt": "A piece of land surrounded by water: an ____.",
+      "answer": "island"
+    },
+    {
+      "id": "fill10",
+      "type": "type",
+      "prompt": "Rocks made in layers: ____ rocks.",
+      "answer": "sedimentary"
+    },
+    {
+      "id": "fill11",
+      "type": "type",
+      "prompt": "Rocks from volcanoes: ____ rocks.",
+      "answer": "igneous"
+    },
+    {
+      "id": "fill12",
+      "type": "type",
+      "prompt": "Changed by heat and pressure: ____ rocks.",
+      "answer": "metamorphic"
+    },
+    {
+      "id": "fill13",
+      "type": "type",
+      "prompt": "Hot melted rock below Earth's surface: ____.",
+      "answer": "magma"
+    },
+    {
+      "id": "fill14",
+      "type": "type",
+      "prompt": "Magma above the surface is called ____.",
+      "answer": "lava"
+    }
+  ]
+}

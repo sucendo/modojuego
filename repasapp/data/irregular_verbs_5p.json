@@ -1,0 +1,288 @@
+{
+  "schemaVersion": 1,
+  "id": "irregular_verbs_5p",
+  "title": "Irregular Verbs — 5º Primaria",
+  "subject": "ingles",
+  "level": "5º Primaria",
+  "langs": [
+    "EN",
+    "ES"
+  ],
+  "modes": [
+    "flashcards",
+    "mcq",
+    "type"
+  ],
+  "items": [
+    {
+      "id": "core_be",
+      "type": "verb",
+      "base": "be",
+      "past": "was/were",
+      "pp": "been",
+      "es": "ser/estar",
+      "tag": "core"
+    },
+    {
+      "id": "core_have",
+      "type": "verb",
+      "base": "have",
+      "past": "had",
+      "pp": "had",
+      "es": "tener",
+      "tag": "core"
+    },
+    {
+      "id": "core_do",
+      "type": "verb",
+      "base": "do",
+      "past": "did",
+      "pp": "done",
+      "es": "hacer",
+      "tag": "core"
+    },
+    {
+      "id": "core_go",
+      "type": "verb",
+      "base": "go",
+      "past": "went",
+      "pp": "gone",
+      "es": "ir",
+      "tag": "core"
+    },
+    {
+      "id": "core_come",
+      "type": "verb",
+      "base": "come",
+      "past": "came",
+      "pp": "come",
+      "es": "venir",
+      "tag": "core"
+    },
+    {
+      "id": "core_make",
+      "type": "verb",
+      "base": "make",
+      "past": "made",
+      "pp": "made",
+      "es": "hacer / fabricar",
+      "tag": "core"
+    },
+    {
+      "id": "core_get",
+      "type": "verb",
+      "base": "get",
+      "past": "got",
+      "pp": "got",
+      "es": "conseguir / obtener",
+      "tag": "core"
+    },
+    {
+      "id": "core_give",
+      "type": "verb",
+      "base": "give",
+      "past": "gave",
+      "pp": "given",
+      "es": "dar",
+      "tag": "core"
+    },
+    {
+      "id": "core_see",
+      "type": "verb",
+      "base": "see",
+      "past": "saw",
+      "pp": "seen",
+      "es": "ver",
+      "tag": "core"
+    },
+    {
+      "id": "core_eat",
+      "type": "verb",
+      "base": "eat",
+      "past": "ate",
+      "pp": "eaten",
+      "es": "comer",
+      "tag": "core"
+    },
+    {
+      "id": "core_drink",
+      "type": "verb",
+      "base": "drink",
+      "past": "drank",
+      "pp": "drunk",
+      "es": "beber",
+      "tag": "core"
+    },
+    {
+      "id": "core_take",
+      "type": "verb",
+      "base": "take",
+      "past": "took",
+      "pp": "taken",
+      "es": "coger / tomar",
+      "tag": "core"
+    },
+    {
+      "id": "core_say",
+      "type": "verb",
+      "base": "say",
+      "past": "said",
+      "pp": "said",
+      "es": "decir",
+      "tag": "core"
+    },
+    {
+      "id": "core_tell",
+      "type": "verb",
+      "base": "tell",
+      "past": "told",
+      "pp": "told",
+      "es": "contar / decir a alguien",
+      "tag": "core"
+    },
+    {
+      "id": "core_can",
+      "type": "verb",
+      "base": "can",
+      "past": "could",
+      "pp": "(—)",
+      "es": "poder (habilidad)",
+      "tag": "core"
+    },
+    {
+      "id": "more_buy",
+      "type": "verb",
+      "base": "buy",
+      "past": "bought",
+      "pp": "bought",
+      "es": "comprar",
+      "tag": "more"
+    },
+    {
+      "id": "more_bring",
+      "type": "verb",
+      "base": "bring",
+      "past": "brought",
+      "pp": "brought",
+      "es": "traer",
+      "tag": "more"
+    },
+    {
+      "id": "more_think",
+      "type": "verb",
+      "base": "think",
+      "past": "thought",
+      "pp": "thought",
+      "es": "pensar",
+      "tag": "more"
+    },
+    {
+      "id": "more_know",
+      "type": "verb",
+      "base": "know",
+      "past": "knew",
+      "pp": "known",
+      "es": "saber / conocer",
+      "tag": "more"
+    },
+    {
+      "id": "more_find",
+      "type": "verb",
+      "base": "find",
+      "past": "found",
+      "pp": "found",
+      "es": "encontrar",
+      "tag": "more"
+    },
+    {
+      "id": "more_feel",
+      "type": "verb",
+      "base": "feel",
+      "past": "felt",
+      "pp": "felt",
+      "es": "sentir",
+      "tag": "more"
+    },
+    {
+      "id": "more_leave",
+      "type": "verb",
+      "base": "leave",
+      "past": "left",
+      "pp": "left",
+      "es": "irse / dejar",
+      "tag": "more"
+    },
+    {
+      "id": "more_meet",
+      "type": "verb",
+      "base": "meet",
+      "past": "met",
+      "pp": "met",
+      "es": "conocer / quedar con",
+      "tag": "more"
+    },
+    {
+      "id": "more_put",
+      "type": "verb",
+      "base": "put",
+      "past": "put",
+      "pp": "put",
+      "es": "poner",
+      "tag": "more"
+    },
+    {
+      "id": "more_read",
+      "type": "verb",
+      "base": "read",
+      "past": "read",
+      "pp": "read",
+      "es": "leer (pron. /red/)",
+      "tag": "more"
+    },
+    {
+      "id": "more_write",
+      "type": "verb",
+      "base": "write",
+      "past": "wrote",
+      "pp": "written",
+      "es": "escribir",
+      "tag": "more"
+    },
+    {
+      "id": "more_run",
+      "type": "verb",
+      "base": "run",
+      "past": "ran",
+      "pp": "run",
+      "es": "correr",
+      "tag": "more"
+    },
+    {
+      "id": "more_sleep",
+      "type": "verb",
+      "base": "sleep",
+      "past": "slept",
+      "pp": "slept",
+      "es": "dormir",
+      "tag": "more"
+    },
+    {
+      "id": "more_speak",
+      "type": "verb",
+      "base": "speak",
+      "past": "spoke",
+      "pp": "spoken",
+      "es": "hablar",
+      "tag": "more"
+    },
+    {
+      "id": "more_wear",
+      "type": "verb",
+      "base": "wear",
+      "past": "wore",
+      "pp": "worn",
+      "es": "llevar (ropa)",
+      "tag": "more"
+    }
+  ]
+}
