@@ -1,0 +1,596 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>🧠 Natural Science 6º (Cambridge) — Unit 1: Interaction</title>
+  <style>
+    :root{
+      --bg:#e3f2fd;
+      --card:#ffffff;
+      --accent:#1e88e5;
+      --accent2:#43a047;
+      --danger:#e57373;
+      --ok:#81c784;
+      --ink:#0b1320;
+      --muted:#2a3a55;
+      --border:#90caf9;
+      --shadow: 0 10px 24px rgba(0,0,0,.10);
+    }
+    *{box-sizing:border-box}
+    body{font-family:system-ui,-apple-system,Segoe UI,Arial; background:var(--bg); margin:0; padding:12px; color:var(--ink)}
+    .app{max-width:920px; margin:0 auto}
+    h1{margin:10px 0 6px; text-align:center; line-height:1.15}
+    .subtitle{margin:0 0 10px; text-align:center; color:var(--muted); font-weight:800}
+    .top{display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin:10px 0}
+    .pill{
+      background:var(--card); border-radius:999px; padding:10px 12px; font-weight:900;
+      border:2px solid var(--border); min-width:150px; text-align:center; box-shadow:var(--shadow);
+    }
+    .card{
+      background:var(--card); border-radius:16px; padding:14px; margin:10px 0;
+      box-shadow:var(--shadow); border:1px solid rgba(30,136,229,.12);
+    }
+    .row{display:flex; gap:10px; flex-wrap:wrap}
+    .row > *{flex:1; min-width:160px}
+    button,input,select,textarea{
+      width:100%; padding:14px; border-radius:14px; border:0; font-size:18px; margin:6px 0; font-weight:900;
+    }
+    input,select,textarea{border:2px solid rgba(30,136,229,.18); font-weight:800}
+    textarea{min-height:120px; resize:vertical}
+    .btn{background:var(--accent); color:#fff}
+    .btn2{background:var(--accent2); color:#fff}
+    .opt{background:#bbdefb; color:#0b1320}
+    .opt:disabled{opacity:.85}
+    .ok{background:var(--ok)!important; color:#083514!important}
+    .bad{background:var(--danger)!important; color:#4a0c0c!important}
+    .q{font-size:20px; font-weight:1000; text-align:center; line-height:1.25}
+    .sub{font-size:14px; font-weight:900; opacity:.88; text-align:center; margin-top:6px}
+    .msg{font-size:18px; font-weight:1000; text-align:center}
+    .small{font-size:13px; font-weight:850; opacity:.85}
+    .divider{height:1px; background:rgba(0,0,0,.08); margin:10px 0}
+    .tag{
+      display:inline-block; padding:6px 10px; border-radius:999px; font-weight:950;
+      border:2px solid rgba(30,136,229,.18); background:#f7fbff; margin:2px 6px 2px 0; font-size:12px;
+    }
+    .reviewItem{
+      padding:10px; border-radius:12px; border:1px solid rgba(0,0,0,.08); margin:8px 0;
+      background:linear-gradient(180deg, #ffffff, #fbfdff);
+    }
+    .reviewQ{font-weight:1000}
+    .reviewA{margin-top:6px; font-weight:900}
+    .reviewES{margin-top:6px; font-weight:900; opacity:.92}
+    .kbd{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-weight:1000}
+    .chips{margin-top:4px; text-align:center}
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <h1>🧠 Natural Science — 6º Primary (Cambridge)</h1>
+  <div class="subtitle">Unit 1: <b>Interaction</b> (stimulus → receptors → nervous system → response)</div>
+
+  <div class="top">
+    <div class="pill">✅ Correct: <span id="c">0</span></div>
+    <div class="pill">🧠 Total: <span id="t">0</span></div>
+    <div class="pill">🔥 Streak: <span id="s">0</span></div>
+    <div class="pill">🏷️ Focus: <span id="focusLbl">All</span></div>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <select id="focus" aria-label="Focus">
+        <option value="all">All (Unit 1)</option>
+        <option value="interaction">Interaction basics</option>
+        <option value="receptors">Stimuli & receptors</option>
+        <option value="nervous_system">Nervous system</option>
+        <option value="sight">Sense of sight</option>
+        <option value="reflexes">Reflexes & response</option>
+        <option value="health">Care & health</option>
+      </select>
+      <button class="btn" onclick="setMode('quiz')">🧠 Quiz</button>
+      <button class="btn" onclick="setMode('tf')">✅ True / False</button>
+      <button class="btn" onclick="setMode('exam')">📝 Exam</button>
+      <button class="btn2" onclick="setMode('study')">📚 Study (ES help)</button>
+    </div>
+    <div class="small" style="text-align:center">
+      Questions & answers in <b>English</b> • Short explanations in <b>Spanish</b> to study.
+    </div>
+  </div>
+
+  <div class="card" id="game"></div>
+  <div class="card msg" id="msg">Choose a mode 🙂</div>
+
+  <div class="small" style="text-align:center">
+    Tip: Use <span class="kbd">Focus</span> to practise one part (e.g. sight). Exam mode gives a grade + review.
+  </div>
+
+</div>
+
+<script>
+  // -------------------------
+  // Score + helpers
+  // -------------------------
+  let c=0,t=0,s=0,mode="quiz";
+  const cEl=document.getElementById("c");
+  const tEl=document.getElementById("t");
+  const sEl=document.getElementById("s");
+  const game=document.getElementById("game");
+  const msg=document.getElementById("msg");
+  const focusSel=document.getElementById("focus");
+  const focusLbl=document.getElementById("focusLbl");
+
+  function score(ok){
+    t++;
+    if(ok){ c++; s++; } else { s=0; }
+    cEl.textContent=c; tEl.textContent=t; sEl.textContent=s;
+  }
+  function r(arr){ return arr[Math.floor(Math.random()*arr.length)] }
+  function sh(arr){ return arr.slice().sort(()=>Math.random()-0.5) }
+  function esc(s){ return String(s).replace(/\\/g,"\\\\").replace(/'/g,"\\'"); }
+
+  focusSel.addEventListener("change", ()=>{
+    const v = focusSel.value;
+    focusLbl.textContent = v==="all" ? "All" : v.replaceAll("_"," ");
+    next();
+  });
+
+  function setMode(m){ mode=m; next(); }
+
+  function filteredBank(bank){
+    const f = focusSel.value;
+    if(f==="all") return bank.slice();
+    return bank.filter(x => x.topic === f);
+  }
+
+  // -------------------------
+  // Unit 1 question bank (Interaction / Nervous system / Sight / Reflexes)
+  // -------------------------
+  const BANK = [
+    // Interaction basics
+    {type:"mcq", topic:"interaction", difficulty:1,
+      q:"What is interaction in living things?",
+      o:["Receiving information and responding to it","Growing taller","Only moving from place to place"],
+      a:"Receiving information and responding to it",
+      es:"Interacción = captar información (estímulos) y responder (respuesta)."
+    },
+    {type:"mcq", topic:"interaction", difficulty:1,
+      q:"Which sequence is correct?",
+      o:["Stimulus → receptor → nervous system → effector → response","Response → stimulus → receptor → effector","Receptor → response → stimulus → effector"],
+      a:"Stimulus → receptor → nervous system → effector → response",
+      es:"Orden típico: estímulo → receptor → sistema nervioso → efector (músculo/glándula) → respuesta."
+    },
+    {type:"mcq", topic:"interaction", difficulty:2,
+      q:"What is an effector?",
+      o:["A muscle or gland that carries out a response","A type of neuron","A sense organ only"],
+      a:"A muscle or gland that carries out a response",
+      es:"Efector: músculos (mueven) o glándulas (secretan) para producir la respuesta."
+    },
+    {type:"tf", topic:"interaction", difficulty:1,
+      q:"A stimulus is any change inside or outside the body that can be detected.",
+      aBool:true,
+      es:"Estímulo = cambio interno o externo que puede detectarse."
+    },
+
+    // Stimuli & receptors
+    {type:"mcq", topic:"receptors", difficulty:1,
+      q:"What are receptors?",
+      o:["Cells or organs that detect stimuli","Bones that protect organs","Blood vessels"],
+      a:"Cells or organs that detect stimuli",
+      es:"Receptores: detectan estímulos (luz, sonido, presión, temperatura, sustancias químicas...)."
+    },
+    {type:"mcq", topic:"receptors", difficulty:2,
+      q:"Which is an example of a chemical stimulus?",
+      o:["Smell of food","Light from a lamp","A loud sound"],
+      a:"Smell of food",
+      es:"Químico: olores y sabores (sustancias). Luz y sonido son otros tipos."
+    },
+    {type:"mcq", topic:"receptors", difficulty:2,
+      q:"Which sense detects vibrations in the air?",
+      o:["Hearing","Sight","Taste"],
+      a:"Hearing",
+      es:"El oído detecta vibraciones (ondas sonoras) en el aire."
+    },
+    {type:"tf", topic:"receptors", difficulty:2,
+      q:"Skin receptors can detect temperature and pressure.",
+      aBool:true,
+      es:"La piel tiene receptores para temperatura, presión, dolor y tacto."
+    },
+
+    // Nervous system
+    {type:"mcq", topic:"nervous_system", difficulty:1,
+      q:"Which parts form the central nervous system (CNS)?",
+      o:["Brain and spinal cord","Heart and lungs","Stomach and intestines"],
+      a:"Brain and spinal cord",
+      es:"Sistema nervioso central: encéfalo (cerebro) y médula espinal."
+    },
+    {type:"mcq", topic:"nervous_system", difficulty:2,
+      q:"What is a neuron?",
+      o:["A nerve cell that transmits information","A red blood cell","A muscle fibre"],
+      a:"A nerve cell that transmits information",
+      es:"Neurona: célula nerviosa que transmite información con impulsos nerviosos."
+    },
+    {type:"mcq", topic:"nervous_system", difficulty:2,
+      q:"What does the cerebellum mainly control?",
+      o:["Balance and coordination","Digestion","Hearing only"],
+      a:"Balance and coordination",
+      es:"Cerebelo: equilibrio y coordinación de movimientos."
+    },
+    {type:"mcq", topic:"nervous_system", difficulty:2,
+      q:"What is the spinal cord for?",
+      o:["It connects the brain to the rest of the body and controls reflexes","It pumps blood","It makes hormones"],
+      a:"It connects the brain to the rest of the body and controls reflexes",
+      es:"La médula conecta encéfalo y cuerpo, y participa en reflejos."
+    },
+    {type:"tf", topic:"nervous_system", difficulty:2,
+      q:"Nerves carry information between the CNS and the rest of the body.",
+      aBool:true,
+      es:"Los nervios llevan información del SNC al cuerpo y del cuerpo al SNC."
+    },
+
+    // Sight
+    {type:"mcq", topic:"sight", difficulty:1,
+      q:"Which part of the eye lets light enter?",
+      o:["Pupil","Retina","Optic nerve"],
+      a:"Pupil",
+      es:"La pupila es el “agujero” por donde entra la luz (la controla el iris)."
+    },
+    {type:"mcq", topic:"sight", difficulty:2,
+      q:"What is the retina?",
+      o:["A light-sensitive layer that forms images","A muscle that moves the eye","A bone around the eye"],
+      a:"A light-sensitive layer that forms images",
+      es:"Retina: capa sensible a la luz donde se forma la imagen; envía señales al cerebro."
+    },
+    {type:"mcq", topic:"sight", difficulty:2,
+      q:"What does the optic nerve do?",
+      o:["Sends information from the eye to the brain","Produces tears","Changes pupil size"],
+      a:"Sends information from the eye to the brain",
+      es:"El nervio óptico lleva la información visual al cerebro."
+    },
+    {type:"tf", topic:"sight", difficulty:2,
+      q:"The iris changes the size of the pupil.",
+      aBool:true,
+      es:"El iris regula la entrada de luz cambiando el tamaño de la pupila."
+    },
+    {type:"mcq", topic:"sight", difficulty:3,
+      q:"Why do we have two eyes?",
+      o:["To see depth (3D) and estimate distances better","To taste better","To hear better"],
+      a:"To see depth (3D) and estimate distances better",
+      es:"Dos ojos ayudan a ver en 3D y calcular distancias (visión binocular)."
+    },
+
+    // Reflexes & response
+    {type:"mcq", topic:"reflexes", difficulty:1,
+      q:"What is a reflex?",
+      o:["A fast, automatic response","A slow decision","A type of digestion"],
+      a:"A fast, automatic response",
+      es:"Reflejo: respuesta rápida y automática (sin pensar) para protegerte."
+    },
+    {type:"mcq", topic:"reflexes", difficulty:2,
+      q:"Which structure is often involved in reflex actions?",
+      o:["Spinal cord","Stomach","Lungs"],
+      a:"Spinal cord",
+      es:"Muchos reflejos se coordinan en la médula espinal para ser más rápidos."
+    },
+    {type:"tf", topic:"reflexes", difficulty:2,
+      q:"Reflexes help protect the body from harm.",
+      aBool:true,
+      es:"Los reflejos protegen: retirar la mano del calor, parpadear, etc."
+    },
+
+    // Care & health
+    {type:"mcq", topic:"health", difficulty:1,
+      q:"Which habit helps to protect your eyes?",
+      o:["Take breaks from screens","Look at screens very close","Read in the dark all the time"],
+      a:"Take breaks from screens",
+      es:"Descansos de pantallas, buena iluminación y distancia adecuada ayudan a cuidar los ojos."
+    },
+    {type:"mcq", topic:"health", difficulty:2,
+      q:"Why is sleep important for the nervous system?",
+      o:["It helps the brain rest and process information","It makes bones longer instantly","It stops the heart"],
+      a:"It helps the brain rest and process information",
+      es:"Dormir ayuda al cerebro a recuperarse y organizar/aprender información."
+    },
+    {type:"tf", topic:"health", difficulty:2,
+      q:"Wearing a helmet can help protect the brain.",
+      aBool:true,
+      es:"El casco reduce el riesgo de golpes en la cabeza y lesiones cerebrales."
+    }
+  ];
+
+  // Study notes in Spanish (Unit 1)
+  const STUDY = [
+    {topic:"interaction", title:"Interaction (interacción)",
+     bullets:[
+       "Los seres vivos captan estímulos y responden para sobrevivir.",
+       "Ruta típica: estímulo → receptor → SNC (cerebro/médula) → efector → respuesta.",
+       "Efectores: músculos (movimiento) y glándulas (secreciones)."
+     ]},
+    {topic:"receptors", title:"Stimuli & receptors (estímulos y receptores)",
+     bullets:[
+       "Estímulos: luz, sonido, temperatura, presión, sustancias químicas (olor/sabor), dolor…",
+       "Receptores: estructuras que detectan estímulos (ojo, oído, piel, nariz, lengua…).",
+       "La información viaja como impulsos nerviosos hacia el sistema nervioso."
+     ]},
+    {topic:"nervous_system", title:"Nervous system (sistema nervioso)",
+     bullets:[
+       "SNC: encéfalo (cerebro) + médula espinal. SNP: nervios que conectan con el cuerpo.",
+       "Neuronas: transmiten información. Nervios: “cables” de muchas neuronas.",
+       "Cerebelo: equilibrio y coordinación. Médula: comunicación y reflejos."
+     ]},
+    {topic:"sight", title:"Sight (la vista)",
+     bullets:[
+       "La luz entra por la pupila (la controla el iris).",
+       "La retina capta la luz y forma la imagen; el nervio óptico la lleva al cerebro.",
+       "Dos ojos ayudan a ver profundidad (3D) y calcular distancias."
+     ]},
+    {topic:"reflexes", title:"Reflexes (reflejos)",
+     bullets:[
+       "Reflejo: respuesta rápida y automática (protección).",
+       "En muchos reflejos participa la médula espinal para actuar más rápido.",
+       "Ejemplos: parpadear, retirar la mano del calor."
+     ]},
+    {topic:"health", title:"Care & health (cuidado)",
+     bullets:[
+       "Pantallas: descansos, buena iluminación y distancia.",
+       "Sueño: el cerebro descansa y procesa información.",
+       "Protección: casco y hábitos seguros para evitar golpes."
+     ]}
+  ];
+
+  // -------------------------
+  // Game engine
+  // -------------------------
+  function next(){
+    if(mode==="quiz") return quiz();
+    if(mode==="tf") return tf();
+    if(mode==="exam") return examStartScreen();
+    if(mode==="study") return study();
+  }
+
+  function topicTags(topic, difficulty){
+    const t = topic ? `<span class="tag">Focus: ${topic.replaceAll("_"," ")}</span>` : "";
+    const d = difficulty ? `<span class="tag">Level: ${difficulty}</span>` : "";
+    return `<div class="chips">${t}${d}</div>`;
+  }
+
+  // --- QUIZ (MCQ) ---
+  function quiz(){
+    const bank = filteredBank(BANK).filter(x=>x.type==="mcq");
+    if(!bank.length){
+      game.innerHTML = `<div class="q">No quiz questions in this focus.</div><div class="sub">Try another Focus.</div>`;
+      msg.textContent=""; return;
+    }
+    const it = r(bank);
+    const opts = sh(it.o);
+
+    game.innerHTML =
+      `<div class="q">${it.q}</div>
+       <div class="sub">${topicTags(it.topic, it.difficulty)}</div>
+       <div class="divider"></div>
+       ${opts.map(x=>`<button class="opt" onclick="mcqAns('${esc(x)}','${esc(it.a)}','${esc(it.es)}',this)">${x}</button>`).join("")}
+       <div class="divider"></div>
+       <button class="btn" onclick="quiz()">➡️ Next</button>`;
+    msg.textContent="";
+  }
+
+  function mcqAns(x,a,es,btn){
+    document.querySelectorAll(".opt").forEach(b=>b.disabled=true);
+    const ok = (x===a);
+    btn.classList.add(ok?"ok":"bad");
+    score(ok);
+    msg.textContent = ok ? "✅ Correct!" : "❌ Correct answer: " + a;
+
+    const expl = document.createElement("div");
+    expl.className = "small";
+    expl.style.marginTop = "10px";
+    expl.innerHTML = "🇪🇸 " + es;
+    game.appendChild(expl);
+  }
+
+  // --- TRUE/FALSE ---
+  function tf(){
+    const bank = filteredBank(BANK).filter(x=>x.type==="tf");
+    if(!bank.length){
+      game.innerHTML = `<div class="q">No True/False in this focus.</div><div class="sub">Try another Focus.</div>`;
+      msg.textContent=""; return;
+    }
+    const it = r(bank);
+
+    game.innerHTML =
+      `<div class="q">${it.q}</div>
+       <div class="sub">${topicTags(it.topic, it.difficulty)}</div>
+       <div class="divider"></div>
+       <button class="opt" onclick="tfAns(true, ${it.aBool}, '${esc(it.es)}', this)">✅ True</button>
+       <button class="opt" onclick="tfAns(false, ${it.aBool}, '${esc(it.es)}', this)">❌ False</button>
+       <div class="divider"></div>
+       <button class="btn" onclick="tf()">➡️ Next</button>`;
+    msg.textContent="";
+  }
+
+  function tfAns(v,a,es,btn){
+    document.querySelectorAll(".opt").forEach(b=>b.disabled=true);
+    const ok = (v===a);
+    btn.classList.add(ok?"ok":"bad");
+    score(ok);
+    msg.textContent = ok ? "✅ Good!" : "❌ Incorrect";
+
+    const expl = document.createElement("div");
+    expl.className = "small";
+    expl.style.marginTop = "10px";
+    expl.innerHTML = "🇪🇸 " + es;
+    game.appendChild(expl);
+  }
+
+  // --- STUDY MODE ---
+  function study(){
+    const f = focusSel.value;
+    const list = (f==="all") ? STUDY : STUDY.filter(x=>x.topic===f);
+
+    game.innerHTML =
+      `<div class="q">📚 Study notes (Spanish help)</div>
+       <div class="sub">Read first, then practise with Quiz/Exam.</div>
+       <div class="divider"></div>
+       ${list.map(block => `
+         <div class="reviewItem">
+           <div class="reviewQ">${block.title}</div>
+           <div style="margin-top:6px;font-weight:850">
+             ${block.bullets.map(b=>`<div>• ${b}</div>`).join("")}
+           </div>
+           <div style="margin-top:8px;">${topicTags(block.topic, 0)}</div>
+         </div>
+       `).join("")}
+       <div class="divider"></div>
+       <button class="btn" onclick="setMode('quiz')">🧠 Go to Quiz</button>
+       <button class="btn" onclick="setMode('exam')">📝 Go to Exam</button>`;
+    msg.textContent="✅ Study + practice = perfect combo.";
+  }
+
+  // --- EXAM MODE ---
+  let exam = null;
+
+  function examStartScreen(){
+    const bankAll = filteredBank(BANK);
+    const countAvail = bankAll.length;
+
+    game.innerHTML =
+      `<div class="q">📝 Exam mode</div>
+       <div class="sub">Mixed questions (MCQ + True/False) • With review + Spanish explanations</div>
+       <div class="divider"></div>
+       <div class="small" style="text-align:center">
+         Available questions in this Focus: <b>${countAvail}</b>
+       </div>
+       <div class="divider"></div>
+       <label class="small" style="display:block;margin-top:6px;text-align:left;">Exam length (questions)</label>
+       <select id="examLen">
+         <option value="10">10</option>
+         <option value="15">15</option>
+         <option value="20" selected>20</option>
+         <option value="25">25</option>
+       </select>
+       <button class="btn2" onclick="examBegin()">▶️ Start Exam</button>
+       <div class="small" style="text-align:center">Tip: If Focus is too narrow, choose <b>All</b>.</div>`;
+
+    msg.textContent="";
+  }
+
+  function examBegin(){
+    const bankAll = filteredBank(BANK);
+    if(bankAll.length < 8){
+      msg.textContent = "⚠️ Not enough questions in this focus. Choose another Focus.";
+      return;
+    }
+
+    const len = Math.max(8, Math.min(25, parseInt(document.getElementById("examLen").value,10) || 20));
+    const pool = sh(bankAll).slice(0, Math.min(len, bankAll.length));
+
+    exam = {
+      idx:0,
+      items:pool.map(it => ({...it})),
+      answers:[],
+      startedAt: Date.now()
+    };
+    examAsk();
+  }
+
+  function examAsk(){
+    const it = exam.items[exam.idx];
+    const n = exam.idx + 1;
+    const total = exam.items.length;
+
+    if(it.type==="mcq"){
+      const opts = sh(it.o);
+      game.innerHTML =
+        `<div class="q">Question ${n} / ${total}</div>
+         <div class="sub">${topicTags(it.topic, it.difficulty)}</div>
+         <div class="divider"></div>
+         <div class="q" style="font-size:19px">${it.q}</div>
+         <div class="divider"></div>
+         ${opts.map(x=>`<button class="opt" onclick="examAnswer('${esc(x)}')">${x}</button>`).join("")}`;
+      msg.textContent=""; return;
+    }
+
+    game.innerHTML =
+      `<div class="q">Question ${n} / ${total}</div>
+       <div class="sub">${topicTags(it.topic, it.difficulty)}</div>
+       <div class="divider"></div>
+       <div class="q" style="font-size:19px">${it.q}</div>
+       <div class="divider"></div>
+       <button class="opt" onclick="examAnswer('true')">✅ True</button>
+       <button class="opt" onclick="examAnswer('false')">❌ False</button>`;
+    msg.textContent="";
+  }
+
+  function examAnswer(user){
+    const it = exam.items[exam.idx];
+    let correct = false;
+    let correctAns = "";
+
+    if(it.type==="mcq"){
+      correctAns = it.a;
+      correct = (user === it.a);
+    }else{
+      correctAns = it.aBool ? "true" : "false";
+      correct = (String(user) === correctAns);
+    }
+
+    exam.answers.push({
+      q: it.q,
+      type: it.type,
+      topic: it.topic,
+      user,
+      correct,
+      a: correctAns,
+      es: it.es
+    });
+
+    score(correct);
+
+    exam.idx++;
+    if(exam.idx >= exam.items.length){
+      return examFinish();
+    }
+    examAsk();
+  }
+
+  function examFinish(){
+    const total = exam.answers.length;
+    const correctN = exam.answers.filter(a=>a.correct).length;
+    const percent = Math.round((correctN/total)*100);
+    const grade10 = Math.round((percent/10)*10)/10;
+    const mins = Math.max(1, Math.round((Date.now() - exam.startedAt)/60000));
+
+    game.innerHTML =
+      `<div class="q">✅ Exam finished!</div>
+       <div class="divider"></div>
+       <div class="row">
+         <div class="pill">✅ ${correctN}/${total}</div>
+         <div class="pill">📊 ${percent}%</div>
+         <div class="pill">🧾 ${grade10}/10</div>
+         <div class="pill">⏱️ ${mins} min</div>
+       </div>
+       <div class="divider"></div>
+       <div class="sub">Review (with Spanish explanations)</div>
+       ${exam.answers.map((a,i)=>`
+         <div class="reviewItem">
+           <div class="reviewQ">${i+1}. ${a.q}</div>
+           <div class="reviewA">
+             Your answer: <b class="${a.correct?'':'bad'}" style="padding:2px 6px;border-radius:8px;">${a.user}</b>
+             ${a.correct ? '✅' : `❌ &nbsp; Correct: <b>${a.a}</b>`}
+           </div>
+           <div class="reviewES">🇪🇸 ${a.es}</div>
+           <div style="margin-top:8px;">${topicTags(a.topic, 0)}</div>
+         </div>
+       `).join("")}
+       <div class="divider"></div>
+       <button class="btn2" onclick="examStartScreen()">🔁 New Exam</button>
+       <button class="btn" onclick="setMode('quiz')">🧠 Back to Quiz</button>`;
+
+    msg.textContent = percent>=80 ? "🔥 Great job!" : (percent>=60 ? "💪 Keep going!" : "📚 Study mode + practice!");
+  }
+
+  // Start
+  next();
+</script>
+</body>
+</html>
