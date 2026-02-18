@@ -1,0 +1,3535 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Generador de Naves — Panel estilo GUI</title>
+  <style>
+    :root{
+      --bg:#05070c; --panel:rgba(10,14,22,.74); --stroke:rgba(140,180,255,.25);
+      --text:#dbe7ff; --chip:rgba(255,255,255,.06);
+    }
+    html,body{width:100%;height:100%;margin:0;overflow:hidden;background:var(--bg);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;}
+    #renderCanvas{width:100%;height:100%;touch-action:none;display:block;}
+    .ui{
+      position:absolute;right:12px !important;top:12px;left:auto !important;z-index:10;
+      background:var(--panel);border:1px solid var(--stroke);
+      color:var(--text);border-radius:16px;padding:12px 12px 10px;backdrop-filter:blur(10px);
+      width:min(520px, calc(100vw - 24px));
+      box-shadow:0 10px 30px rgba(0,0,0,.45);
+      max-height: calc(100vh - 24px);
+      overflow:auto;
+      overflow-x:hidden;
+      padding-bottom: max(10px, env(safe-area-inset-bottom));
+    }
+    .ui h1{margin:0 0 8px;font-size:15px;font-weight:820;letter-spacing:.2px;display:flex;align-items:center;gap:8px}
+    .pill{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);font-size:11px;color:rgba(219,231,255,.82)}
+    .section{margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.10)}
+    .section h2{margin:0 0 8px;font-size:12px;font-weight:820;letter-spacing:.2px;color:rgba(219,231,255,.9);display:flex;align-items:center;gap:8px}
+    .row{display:flex;gap:8px;align-items:center;margin:6px 0}
+    .row label{flex:0 0 138px;font-size:12px;opacity:.92}
+    .row input[type="range"]{flex:1}
+    .row input[type="number"], .row input[type="text"], .row select, .row input[type="color"]{
+      width:170px;background:var(--chip);border:1px solid rgba(255,255,255,.12);
+      color:#eaf1ff;border-radius:12px;padding:7px 8px;font-size:12px;outline:none;
+    }
+    .row input[type="color"]{padding:3px 6px;height:34px}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .grid1{display:grid;grid-template-columns:1fr;gap:6px;}
+
+    .btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+    button{
+      background:linear-gradient(180deg, rgba(70,120,255,.25), rgba(40,80,200,.18));
+      border:1px solid rgba(140,180,255,.25);color:#eaf1ff;border-radius:12px;
+      padding:9px 10px;font-size:12px;font-weight:740;cursor:pointer;
+    }
+    button.secondary{background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));border:1px solid rgba(255,255,255,.14);font-weight:680;}
+    button:hover{filter:brightness(1.08)} button:active{transform:translateY(1px)}
+    details{border:1px solid rgba(255,255,255,.10);border-radius:14px;padding:8px 10px;background:rgba(255,255,255,.04)}
+    details summary{cursor:pointer;font-weight:800;font-size:12px;color:rgba(219,231,255,.92)}
+    .hint{margin-top:8px;font-size:12px;opacity:.78;line-height:1.25}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;color:rgba(219,231,255,.78)}
+    .small{font-size:11px;opacity:.78}
+    .stickyBtns{
+      position:sticky;bottom:-1px;margin-top:12px;padding-top:10px;
+      background:linear-gradient(180deg, rgba(10,14,22,0), rgba(10,14,22,.82) 30%, rgba(10,14,22,.92));
+      border-top:1px solid rgba(255,255,255,.08);
+    }
+    .toggle{
+      display:flex;gap:10px;align-items:center;justify-content:space-between;
+      padding:8px 10px;border:1px solid rgba(255,255,255,.10);border-radius:14px;background:rgba(255,255,255,.04)
+    }
+    .toggle label{font-size:12px;opacity:.9}
+    .toggle input{transform:scale(1.1)}
+  
+    /* =============================
+       GUI skin — dat.GUI-like (v5)
+       ============================= */
+    :root{
+      --gui-bg:#0b0b0b;
+      --gui-row:#141414;
+      --gui-row2:#101010;
+      --gui-border:#252525;
+      --gui-text:#eaeaea;
+      --gui-muted:#bdbdbd;
+      --gui-blue:#2aa7ff;
+      --gui-red:#ff2b2b;
+    }
+    .ui{
+      right:12px; top:12px; bottom:12px;
+      left:auto;
+      width:360px; max-width:min(92vw, 420px);
+      height:auto; max-height:calc(100vh - 24px);
+      border-radius:0; padding:0;
+      background:var(--gui-bg);
+      border:0; border-right:1px solid var(--gui-border);
+      box-shadow:none;
+      backdrop-filter:none;
+      overflow:auto; overflow-x:hidden;
+    }
+    .ui.hidden{display:none}
+    .ui h1{
+      margin:0;
+      padding:10px 10px 8px;
+      font-size:12px;
+      font-weight:700;
+      letter-spacing:.3px;
+      background:linear-gradient(#121212,#0e0e0e);
+      border-bottom:1px solid var(--gui-border);
+    }
+    .ui .pill{display:none}
+    .toggle{margin:0;padding:8px 10px;background:#0f0f0f;border-bottom:1px solid var(--gui-border);border-radius:0}
+    .toggle label{font-size:11px;color:var(--gui-text);opacity:1}
+    .small{margin:0;padding:8px 10px;background:#0f0f0f;border-bottom:1px solid var(--gui-border);opacity:.9}
+    .hint{margin:0;padding:8px 10px;background:#0f0f0f;border-bottom:1px solid var(--gui-border)}
+    .section{
+      margin:0; padding:0;
+      border:0;
+      border-bottom:1px solid var(--gui-border);
+      background:transparent;
+      position:relative;
+    }
+    .section::before{
+      content:""; position:absolute; left:0; top:0; bottom:0;
+      width:3px; background:var(--gui-blue);
+      opacity:.95;
+    }
+    .section[data-accent="red"]::before{background:var(--gui-red)}
+    .section h2{
+      margin:0;
+      padding:8px 10px 8px 22px;
+      font-size:12px;
+      font-weight:700;
+      color:var(--gui-text);
+      background:linear-gradient(#121212,#0f0f0f);
+      border-top:1px solid rgba(255,255,255,.03);
+      cursor:pointer;
+      user-select:none;
+      position:relative;
+    }
+    .section h2::before{
+      content:"▾";
+      position:absolute;
+      left:8px; top:8px;
+      font-size:12px;
+      color:var(--gui-text);
+      opacity:.9;
+    }
+    .section.collapsed h2::before{content:"▸"}
+    .row{
+      margin:0;
+      padding:0 10px;
+      height:28px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      border-top:1px solid rgba(255,255,255,.02);
+      border-bottom:1px solid var(--gui-border);
+      background:var(--gui-row);
+    }
+    .section .row:nth-of-type(even){background:var(--gui-row2)}
+    .row label{
+      flex:0 0 46%;
+      font-size:11px;
+      color:var(--gui-text);
+      opacity:1;
+    }
+    .row input[type="range"]{flex:1}
+    .row input[type="number"], .row input[type="text"], .row select, .row input[type="color"], .row textarea{
+      width:54%;
+      background:#1b1b1b;
+      border:1px solid #343434;
+      color:var(--gui-text);
+      border-radius:0;
+      padding:2px 6px;
+      font-size:11px;
+      outline:none;
+    }
+    .row textarea{resize:vertical; height:auto; padding:6px; line-height:1.2}
+    .row input[type="color"]{padding:0;height:22px}
+    .row input[type="checkbox"]{transform:scale(1.05)}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0}
+    .grid2 .row{border-left:1px solid rgba(255,255,255,.03)}
+    .btns{
+      display:flex;
+      flex-direction:column;
+      gap:0;
+      margin:0;
+      background:transparent;
+    }
+    button{
+      border:0;
+      border-radius:0;
+      background:#141414;
+      color:var(--gui-text);
+      padding:8px 10px;
+      font-size:12px;
+      font-weight:650;
+      text-align:left;
+      border-bottom:1px solid var(--gui-border);
+      cursor:pointer;
+    }
+    button.secondary{
+      background:#141414;
+      border:0;
+      border-bottom:1px solid var(--gui-border);
+      font-weight:650;
+      opacity:1;
+    }
+    button:hover{filter:brightness(1.12)}
+    button:active{transform:none}
+    .stickyBtns{
+      position:sticky;
+      bottom:0;
+      left:0;
+      right:0;
+      background:var(--gui-bg);
+      border-top:1px solid var(--gui-border);
+      padding:0;
+    }
+    .stickyBtns .hint{border-bottom:0}
+    .guiTall{height:auto; align-items:stretch; padding-top:8px; padding-bottom:8px}
+    .guiBtns button{border-bottom:1px solid var(--gui-border)}
+    /* collapsed folders */
+    .section.collapsed .row,
+    .section.collapsed .grid2,
+    .section.collapsed .btns,
+    .section.collapsed .hint,
+    .section.collapsed .small,
+    .section.collapsed input[type="file"]{display:none}
+
+
+    /* Responsive: keep panel usable on small screens */
+    @media (max-width: 720px){
+      .ui{
+        width: min(420px, calc(100vw - 16px));
+        right: 8px; top: 8px;
+        border-radius: 14px;
+        max-height: calc(100vh - 16px);
+      }
+    }
+    @media (max-width: 460px){
+      .ui{
+        width: calc(100vw - 12px);
+        right: 6px; top: 6px;
+        max-height: calc(100vh - 12px);
+      }
+      .grid2{grid-template-columns: 1fr;}
+      .row label{width: 46%;}
+      input[type="range"]{min-width: 0;}
+    }
+
+    /* Panelado (una columna, sin overflow) */
+    .ui{overflow-x:hidden;}
+    .section.paneling .row{align-items:center;}
+    .section.paneling .row label{flex:0 0 138px;}
+    .ctrl{display:flex;gap:8px;flex:1;min-width:0;align-items:center;}
+    .ctrl input[type="range"]{flex:1;min-width:0;}
+    .numSmall{width:76px !important;min-width:76px !important;flex:0 0 76px !important;}
+    .selectWide{width:100% !important;flex:1;min-width:0;}
+    .section.paneling .row input[type="number"]{width:auto;}
+
+    /* Force panel to the right (avoid accidental overrides) */
+    .ui{right:12px !important; left:auto !important;}
+</style>
+</head>
+<body>
+  <canvas id="renderCanvas"></canvas>
+
+  <div class="ui">
+    <h1>Generador de Naves — Controles <span class="pill">organizado</span></h1>
+
+    <div class="toggle">
+      <label><b>Auto-update</b> (regenera al mover sliders)</label>
+      <input id="auto" type="checkbox" checked />
+    </div>
+    <div class="toggle">
+      <label><b>Auto-ajustar cámara</b> (solo si cambias mucho tamaño)</label>
+      <input id="autoFitCam" type="checkbox" />
+    </div>
+
+    <div class="small" style="margin-top:6px">
+      Esta versión <b>fusiona todo a una sola malla</b> para que no haya piezas “sueltas” y exporte limpio.
+      Si tu PC sufre, desactiva Auto-update y usa “Generar nave”.
+    </div>
+
+    <div class="section" data-accent="blue">
+      <h2>Proyecto</h2>
+    <details open>
+      <summary>Presets / Seed</summary>
+            <div class="row"><label>Seed</label><input id="seed" type="text" value="elite-001"/></div>
+            <div class="row"><label>Estilo base</label>
+              <select id="style">
+                <option value="elite">Elite Dangerous</option>
+                <option value="dune">Dune</option>
+                <option value="industrial">Industrial</option>
+                <option value="sleek">Sleek / Racing</option>
+              </select>
+            </div>
+            <div class="btns">
+              <button id="randomSeed">Seed aleatoria</button>
+              <button id="applyPreset" class="secondary">Aplicar preset</button>
+              <button id="generate">Generar nave</button>
+            <button id="cleanStrays" class="secondary">Limpiar sueltas</button>
+            </div>
+            <div class="hint">Tip: desactiva <b>Auto-update</b> si tu PC va justo, y usa “Generar nave”.</div>
+    </details>
+
+    </div>
+
+    <div class="section" data-accent="green">
+      <h2>Forma</h2>
+    <details open>
+      <summary>Casco y morro</summary>
+            <div class="row"><label>Tipo de casco</label>
+              <select id="hullType">
+                <option value="tube" selected>Tubo / cruiser (bobsleigh)</option>
+                <option value="wedge">Cuña / destructor</option>
+                <option value="catamaran">Catamarán / doble casco</option>
+                <option value="brick">Blocky / industrial</option>
+                <option value="pistol">Pistola / gunship</option>
+                <option value="falcon">Disco / Falcon-like</option>
+                <option value="rounded">Cápsula / redondeado</option>
+              </select>
+            </div>
+            <div class="row"><label>Tipo de morro</label>
+              <select id="noseType">
+                <option value="pointed">Punta</option>
+                <option value="needle">Aguja</option>
+                <option value="blunt">Redondeado</option>
+                <option value="chisel" selected>Cincel / Wedge</option>
+                <option value="beak">Pico</option>
+                <option value="hammer">Martillo</option>
+              </select>
+            </div>
+            <div class="row"><label>Longitud</label>
+              <input id="len" type="range" min="60" max="520" step="1" value="240"/>
+              <input id="lenN" type="number" min="60" max="520" step="1" value="240"/>
+            </div>
+            <div class="row"><label>Radio</label>
+              <input id="rad" type="range" min="5" max="70" step="0.5" value="18"/>
+              <input id="radN" type="number" min="5" max="70" step="0.5" value="18"/>
+            </div>
+            <div class="row"><label>Aplanado</label>
+              <input id="flat" type="range" min="0.55" max="1" step="0.01" value="0.72"/>
+              <input id="flatN" type="number" min="0.55" max="1" step="0.01" value="0.72"/>
+            </div>
+            <div class="row"><label>Agresividad</label>
+              <input id="agg" type="range" min="0" max="1" step="0.01" value="0.72"/>
+              <input id="aggN" type="number" min="0" max="1" step="0.01" value="0.72"/>
+            </div>
+            
+            <div class="row"><label>Detalle / subdiv</label>
+              <input id="detail" type="range" min="0" max="1" step="0.01" value="0.55"/>
+              <input id="detailN" type="number" min="0" max="1" step="0.01" value="0.55"/>
+            </div>
+<div class="row"><label>Long. morro</label>
+              <input id="noseLen" type="range" min="0.08" max="0.30" step="0.01" value="0.18"/>
+              <input id="noseLenN" type="number" min="0.08" max="0.30" step="0.01" value="0.18"/>
+            </div>
+    </details>
+
+    </div>
+
+    <div class="section" data-accent="orange">
+      <h2>Materiales</h2>
+    <details>
+      <summary>Colores y PBR</summary>
+            <div class="row"><label>Color casco</label>
+              <input id="hullColor" type="color" value="#EEF1F7"/>
+            </div>
+            <div class="row"><label>Color oscuro</label>
+              <input id="darkColor" type="color" value="#121826"/>
+            </div>
+            <div class="row"><label>Trim</label>
+              <input id="trimColor" type="color" value="#8A96AF"/>
+            </div>
+            <div class="row"><label>Emisión</label>
+              <input id="emColor" type="color" value="#2A88FF"/>
+            </div>
+            <div class="row"><label>Metallic</label>
+              <input id="metal" type="range" min="0" max="1" step="0.01" value="0.78"/>
+              <input id="metalN" type="number" min="0" max="1" step="0.01" value="0.78"/>
+            </div>
+            <div class="row"><label>Roughness</label>
+              <input id="rough" type="range" min="0.05" max="1" step="0.01" value="0.38"/>
+              <input id="roughN" type="number" min="0.05" max="1" step="0.01" value="0.38"/>
+            </div>
+            <div class="row"><label>Emissive Int.</label>
+              <input id="emInt" type="range" min="0" max="8" step="0.05" value="2.8"/>
+              <input id="emIntN" type="number" min="0" max="8" step="0.05" value="2.8"/>
+            </div>
+    </details>
+
+    <details>
+      <summary>Pintura por zonas</summary>
+      <div class="row"><label>Activar</label>
+        <select id="zonePaint">
+          <option value="0" selected>Off</option>
+          <option value="1">On</option>
+        </select>
+      </div>
+
+      <div class="row"><label>Accent A</label><input id="accentA" type="color" value="#FFCC66"/></div>
+      <div class="row"><label>Accent B</label><input id="accentB" type="color" value="#66CCFF"/></div>
+      <div class="row"><label>Accent C</label><input id="accentC" type="color" value="#FF6677"/></div>
+
+      <div class="hint">Elige qué material usar en cada zona. Se fusiona en una sola malla (submeshes), no quedan piezas sueltas.</div>
+
+      <div class="row"><label>Morro</label>
+        <select id="paintNose">
+          <option value="0" selected>Base</option><option value="1">Accent A</option><option value="2">Accent B</option><option value="3">Accent C</option>
+        </select>
+      </div>
+      <div class="row"><label>Puente</label>
+        <select id="paintBridge">
+          <option value="0" selected>Base</option><option value="1">Accent A</option><option value="2">Accent B</option><option value="3">Accent C</option>
+        </select>
+      </div>
+      <div class="row"><label>Alas</label>
+        <select id="paintWings">
+          <option value="0" selected>Base</option><option value="1">Accent A</option><option value="2">Accent B</option><option value="3">Accent C</option>
+        </select>
+      </div>
+      <div class="row"><label>Brazos (booms)</label>
+        <select id="paintBooms">
+          <option value="0" selected>Base</option><option value="1">Accent A</option><option value="2">Accent B</option><option value="3">Accent C</option>
+        </select>
+      </div>
+      <div class="row"><label>Motores</label>
+        <select id="paintEngines">
+          <option value="0" selected>Base</option><option value="1">Accent A</option><option value="2">Accent B</option><option value="3">Accent C</option>
+        </select>
+      </div>
+      <div class="row"><label>Costillas</label>
+        <select id="paintRibs">
+          <option value="0" selected>Base</option><option value="1">Accent A</option><option value="2">Accent B</option><option value="3">Accent C</option>
+        </select>
+      </div>
+    </details>
+
+    <details>
+      <summary>Secciones + bordes (gaps reales)</summary>
+
+      <div class="row"><label>Seccionar casco</label>
+        <select id="sectionMode">
+          <option value="0">Off</option>
+          <option value="1" selected>On</option>
+        </select>
+      </div>
+
+      <div class="row"><label>Nº secciones</label>
+        <input id="sectionCount" type="range" min="2" max="40" step="1" value="10"/>
+        <input id="sectionCountN" type="number" min="2" max="40" step="1" value="10"/>
+      </div>
+
+      <div class="row"><label>Gap (hueco)</label>
+        <input id="sectionGap" type="range" min="0" max="0.08" step="0.002" value="0.02"/>
+        <input id="sectionGapN" type="number" min="0" max="0.08" step="0.002" value="0.02"/>
+      </div>
+
+      <div class="row"><label>Aplicar a</label>
+        <select id="sectionApply">
+          <option value="base" selected>Casco principal</option>
+          <option value="all">Casco + decks</option>
+        </select>
+      </div>
+
+      <div class="row"><label>Patrón</label>
+        <select id="sectionPattern">
+          <option value="ABAB" selected>ABAB</option>
+          <option value="AABB">AABB</option>
+          <option value="FRONT_A">Frontal A</option>
+          <option value="BACK_A">Trasera A</option>
+          <option value="HALF">Mitad/mitad</option>
+        </select>
+      </div>
+
+      <div class="row"><label>Material A</label>
+        <select id="sectionMatA">
+          <option value="base" selected>Base</option>
+          <option value="trim">Trim</option>
+          <option value="dark">Oscuro</option>
+          <option value="a">Accent A</option>
+          <option value="b">Accent B</option>
+          <option value="c">Accent C</option>
+        </select>
+      </div>
+
+      <div class="row"><label>Material B</label>
+        <select id="sectionMatB">
+          <option value="trim" selected>Trim</option>
+          <option value="base">Base</option>
+          <option value="dark">Oscuro</option>
+          <option value="a">Accent A</option>
+          <option value="b">Accent B</option>
+          <option value="c">Accent C</option>
+        </select>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="row"><label>Panel interior</label>
+        <select id="insetMode">
+          <option value="0">Off</option>
+          <option value="1" selected>On</option>
+        </select>
+      </div>
+
+      <div class="row"><label>Inset (marco)</label>
+        <input id="inset" type="range" min="0.02" max="0.35" step="0.01" value="0.14"/>
+        <input id="insetN" type="number" min="0.02" max="0.35" step="0.01" value="0.14"/>
+      </div>
+
+      <div class="row"><label>Material interior</label>
+        <select id="insetMat">
+          <option value="dark" selected>Oscuro</option>
+          <option value="base">Base</option>
+          <option value="trim">Trim</option>
+          <option value="a">Accent A</option>
+          <option value="b">Accent B</option>
+          <option value="c">Accent C</option>
+        </select>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="row"><label>Bordes</label>
+        <select id="edgeMode">
+          <option value="0">Off</option>
+          <option value="1" selected>Strips</option>
+          <option value="2">Fillet</option>
+          <option value="3">Both</option>
+        </select>
+      </div>
+
+      <div class="row"><label>Grosor borde</label>
+        <input id="edgeThick" type="range" min="0.02" max="0.40" step="0.01" value="0.12"/>
+        <input id="edgeThickN" type="number" min="0.02" max="0.40" step="0.01" value="0.12"/>
+      </div>
+
+      <div class="row"><label>Material borde</label>
+        <select id="edgeMat">
+          <option value="trim" selected>Trim</option>
+          <option value="base">Base</option>
+          <option value="dark">Oscuro</option>
+          <option value="a">Accent A</option>
+          <option value="b">Accent B</option>
+          <option value="c">Accent C</option>
+        </select>
+      </div>
+
+      <div class="hint">Modo B: el casco "brick/wedge" se divide en secciones con huecos reales. Borde = strips/fillet (o ambos) + panel interior con inset.</div>
+    </details>
+        
+
+
+    <details>
+      <summary>Decals: letras, números, escudo</summary>
+      <div class="row"><label>Activar</label>
+        <select id="decalOn">
+          <option value="0" selected>Off</option>
+          <option value="1">On</option>
+        </select>
+      </div>
+
+      <div class="row"><label>Texto</label><input id="decalText" type="text" value="A-07"/></div>
+
+      <div class="row"><label>Emblema</label>
+        <select id="decalEmblem">
+          <option value="none" selected>Ninguno</option>
+          <option value="shield">Escudo</option>
+          <option value="circle">Círculo</option>
+          <option value="chevron">Chevron</option>
+        </select>
+      </div>
+
+      <div class="row"><label>Color</label><input id="decalColor" type="color" value="#FFFFFF"/></div>
+      <div class="row"><label>Contorno</label><input id="decalStroke" type="color" value="#000000"/></div>
+
+      <div class="row"><label>Posición Z</label>
+        <input id="decalPos" type="range" min="0.05" max="0.95" step="0.01" value="0.55"/>
+        <input id="decalPosN" type="number" min="0.05" max="0.95" step="0.01" value="0.55"/>
+      </div>
+
+      <div class="row"><label>Lado</label>
+        <select id="decalSide">
+          <option value="right" selected>Derecha</option>
+          <option value="left">Izquierda</option>
+          <option value="top">Arriba</option>
+        </select>
+      </div>
+
+      <div class="row"><label>Escala</label>
+        <input id="decalScale" type="range" min="0.2" max="2.2" step="0.01" value="1.0"/>
+        <input id="decalScaleN" type="number" min="0.2" max="2.2" step="0.01" value="1.0"/>
+      </div>
+
+      <div class="row"><label>Rotación</label>
+        <input id="decalRot" type="range" min="-180" max="180" step="1" value="0"/>
+        <input id="decalRotN" type="number" min="-180" max="180" step="1" value="0"/>
+      </div>
+
+      <div class="hint">Se crean como decals con textura dinámica (exportable a GLB).</div>
+    </details>
+
+
+    </div>
+
+    <div class="section" data-accent="purple">
+      <h2>Superficie</h2>
+    <details open>
+      <summary>Panelado / Costillas</summary>
+            <div class="row"><label>Panelado</label>
+              <select id="panelMode" class="selectWide">
+                  <option value="0">Off</option>
+                  <option value="1" selected>Seams limpios</option>
+                  <option value="2">Seams + Rails (grid)</option>
+                </select>
+            </div>
+            <div class="row"><label>Densidad panel</label>
+              <input id="panelDensity" type="range" min="0" max="1" step="0.01" value="0.66"/>
+              <input id="panelDensityN" class="numSmall" type="number" min="0" max="1" step="0.01" value="0.66"/>
+            </div>
+            <div class="row"><label>Placas</label>
+              <select id="sectionPlates" class="selectWide">
+                  <option value="0">Off</option>
+                  <option value="1">Placas</option>
+                  <option value="2" selected>Placas + Quillas</option>
+                </select>
+            </div>
+            <div class="row"><label>Greebles</label>
+              <input id="greeble" type="range" min="0" max="1" step="0.01" value="0.70"/>
+              <input id="greebleN" class="numSmall" type="number" min="0" max="1" step="0.01" value="0.70"/>
+            </div>
+            <div class="row"><label>Costillas</label>
+              <select id="ribsMode" class="selectWide">
+                  <option value="0">Off</option>
+                  <option value="1">Laterales</option>
+                  <option value="2" selected>Completo</option>
+                </select>
+            </div>
+            <div class="row"><label>Nº costillas</label><input id="ribCount" class="numSmall" type="number" min="4" max="42" step="1" value="16"/></div>
+            <div class="row"><label>Grosor cost.</label>
+              <input id="ribThick" type="range" min="0.2" max="2.2" step="0.01" value="0.95"/>
+              <input id="ribThickN" class="numSmall" type="number" min="0.2" max="2.2" step="0.01" value="0.95"/>
+            </div>
+            <div class="hint">Para look “industrial”: Costillas (laterales) + Placas. Para look limpio: Panelado Off + Greebles 0.</div>
+    </details>
+
+    </div>
+
+    <div class="section" data-accent="cyan">
+      <h2>Kit Corvette</h2>
+    <details>
+      <summary>Brazos / Quilla / Pylons</summary>
+            <div class="row"><label>Kit Corvette</label>
+              <select id="corvetteMode">
+                <option value="0" selected>Off</option>
+                <option value="1">On</option>
+              </select>
+            </div>
+            <div class="row"><label>Booms</label>
+              <select id="corvetteBooms">
+                <option value="2" selected>2</option>
+                <option value="4">4</option>
+              </select>
+            </div>
+            <div class="row"><label>Boom span</label>
+              <input id="boomSpan" type="range" min="0.6" max="2.4" step="0.01" value="1.35"/>
+              <input id="boomSpanN" type="number" min="0.6" max="2.4" step="0.01" value="1.35"/>
+            </div>
+            <div class="row"><label>Boom length</label>
+              <input id="boomLen" type="range" min="0.25" max="0.95" step="0.01" value="0.62"/>
+              <input id="boomLenN" type="number" min="0.25" max="0.95" step="0.01" value="0.62"/>
+            </div>
+            <div class="row"><label>Spine / Keel</label>
+              <select id="corvetteSpine">
+                <option value="0">Off</option>
+                <option value="1" selected>On</option>
+              </select>
+            </div>
+            <div class="row"><label>Spine height</label>
+              <input id="spineH" type="range" min="0.0" max="1.6" step="0.01" value="0.55"/>
+              <input id="spineHN" type="number" min="0.0" max="1.6" step="0.01" value="0.55"/>
+            </div>
+            <div class="row"><label>Keel depth</label>
+              <input id="keelD" type="range" min="0.0" max="1.6" step="0.01" value="0.45"/>
+              <input id="keelDN" type="number" min="0.0" max="1.6" step="0.01" value="0.45"/>
+            </div>
+            <div class="row"><label>Pylons</label>
+              <select id="corvettePylons">
+                <option value="0">Off</option>
+                <option value="1" selected>On</option>
+              </select>
+            </div>
+            <div class="row"><label>Pylon size</label>
+              <input id="pylonS" type="range" min="0.2" max="1.8" step="0.01" value="0.85"/>
+              <input id="pylonSN" type="number" min="0.2" max="1.8" step="0.01" value="0.85"/>
+            </div>
+            <div class="hint">Este kit añade brazos laterales, espina/quilla y pylons para acercarte al look tipo Corvette.</div>
+    </details>
+
+    </div>
+
+    <div class="section" data-accent="blue">
+      <h2>Cabina</h2>
+    <details open>
+      <summary>Cockpit / Puente</summary>
+            <div class="row"><label>Puente</label>
+              <select id="bridgeType">
+                    <option value="integrated">Integrado</option>
+                    <option value="armored">Blindado</option>
+                    <option value="recessed">Rehundido</option>
+                    <option value="lateral">Lateral (Falcon)</option>
+                    <option value="tower">Torre</option>
+                    <option value="none">Sin puente</option></select>
+            </div>
+            <div class="row"><label>Ventanas</label>
+              <select id="windowType">
+                    <option value="slit">Ranura</option>
+                    <option value="visor">Visor</option>
+                    <option value="none">Sin ventana</option>
+                  </select>
+            </div>
+            <div class="row"><label>Posición</label>
+              <input id="bridgePos" type="range" min="0.30" max="0.78" step="0.01" value="0.56"/>
+              <input id="bridgePosN" type="number" min="0.30" max="0.78" step="0.01" value="0.56"/>
+            </div>
+            <div class="row"><label>Tamaño</label>
+              <input id="bridgeSize" type="range" min="0.4" max="1.4" step="0.01" value="1.05"/>
+              <input id="bridgeSizeN" type="number" min="0.4" max="1.4" step="0.01" value="1.05"/>
+            </div>
+            <div class="hint">Si el puente “flota”, baja Tamaño o sube un poco Aplanado.</div>
+    </details>
+
+    </div>
+
+    <div class="section" data-accent="blue">
+      <h2>Alas</h2>
+    <details>
+      <summary>Alas / aletas</summary>
+            <div class="row"><label>Tipo ala</label>
+              <select id="wingType">
+                    <option value="none">Ninguna</option>
+                    <option value="delta">Delta</option>
+                    <option value="swept" selected>Barridas</option>
+                    <option value="fins">Aletas</option>
+                  </select>
+            </div>
+            <div class="row"><label>Simetría</label>
+              <select id="wingSym">
+                    <option value="mirror" selected>Espejo</option>
+                    <option value="single">Solo 1 ala</option>
+                  </select>
+            </div>
+            <div class="row"><label>Envergadura</label>
+              <input id="wingSpan" type="range" min="0.3" max="2.2" step="0.01" value="1.15"/>
+              <input id="wingSpanN" type="number" min="0.3" max="2.2" step="0.01" value="1.15"/>
+            </div>
+            <div class="row"><label>Cuerda</label>
+              <input id="wingChord" type="range" min="0.2" max="1.8" step="0.01" value="0.78"/>
+              <input id="wingChordN" type="number" min="0.2" max="1.8" step="0.01" value="0.78"/>
+            </div>
+            <div class="row"><label>Posición</label>
+              <input id="wingPos" type="range" min="0.35" max="0.92" step="0.01" value="0.63"/>
+              <input id="wingPosN" type="number" min="0.35" max="0.92" step="0.01" value="0.63"/>
+            </div>
+            <div class="row"><label>Dihedral</label>
+              <input id="wingDihed" type="range" min="-20" max="35" step="1" value="14"/>
+              <input id="wingDihedN" type="number" min="-20" max="35" step="1" value="14"/>
+            </div>
+    </details>
+
+    </div>
+
+    <div class="section" data-accent="blue">
+      <h2>Propulsión</h2>
+    <details open>
+      <summary>Motores / hardpoints</summary>
+            <div class="row"><label>Pods</label>
+              <input id="pods" type="range" min="0" max="6" step="1" value="2"/>
+              <input id="podsN" type="number" min="0" max="6" step="1" value="2"/>
+            </div>
+            <div class="row"><label>Motor</label>
+              <select id="engineType">
+                    <option value="cyl">Cilíndrico</option>
+                    <option value="ring">Anillo</option>
+                    <option value="nozzle" selected>Tobera</option>
+                  </select>
+            </div>
+            <div class="row"><label>Hardpoints</label>
+              <select id="hardpoints">
+                    <option value="0">0</option>
+                    <option value="2">2</option>
+                    <option value="4" selected>4</option>
+                    <option value="6">6</option>
+                    <option value="8">8</option>
+                  </select>
+            </div>
+            <div class="row"><label>Tamaño HP</label>
+              <input id="hpSize" type="range" min="0.3" max="1.8" step="0.01" value="0.92"/>
+              <input id="hpSizeN" type="number" min="0.3" max="1.8" step="0.01" value="0.92"/>
+            </div>
+    </details>
+
+    <details>
+      <summary>Luces</summary>
+            <div class="row"><label>Luces</label>
+              <select id="lightsMode">
+                  <option value="0">Off</option>
+                  <option value="1">Tiras</option>
+                  <option value="2" selected>Tiras + Anillos</option>
+                </select>
+            </div>
+            <div class="row"><label>Cantidad</label><input id="lightCount" type="number" min="0" max="24" step="1" value="6"/></div>
+            <div class="row"><label>Z luces</label>
+              <input id="lightZ" type="range" min="0.08" max="0.92" step="0.01" value="0.44"/>
+              <input id="lightZN" type="number" min="0.08" max="0.92" step="0.01" value="0.44"/>
+            </div>
+            <div class="row"><label>X luces</label>
+              <input id="lightX" type="range" min="0.2" max="1.8" step="0.01" value="0.98"/>
+              <input id="lightXN" type="number" min="0.2" max="1.8" step="0.01" value="0.98"/>
+            </div>
+            <div class="hint">Tip: muchos LEDs (50+) puede costar FPS. Si se ralentiza, baja Cantidad.</div>
+    </details>
+
+    </div>
+
+    <div class="section" data-accent="blue">
+      <h2>Guardar / Cargar</h2>
+    <details>
+      <summary>JSON / Navegador</summary>
+            <div class="btns">
+              <button id="saveJsonBtn" class="secondary">Guardar JSON</button>
+              <button id="loadJsonBtn" class="secondary">Cargar JSON</button>
+              <button id="saveBrowserBtn" class="secondary">Guardar (navegador)</button>
+              <button id="loadBrowserBtn" class="secondary">Cargar (navegador)</button>
+            </div>
+            <div class="hint">Guarda tu “genoma” en JSON o en el navegador (localStorage).</div>
+            <div class="row"><label>Genoma (JSON)</label></div>
+            <textarea id="genome" class="mono" rows="4" placeholder='{"seed":"..."}'></textarea>
+            <div class="btns">
+              <button id="copyGenome" class="secondary">Copiar</button>
+              <button id="loadGenome" class="secondary">Aplicar JSON</button>
+            </div>
+            <input id="jsonFile" type="file" accept="application/json" style="display:none"/>
+            <div class="hint mono" id="genomeHint"></div>
+    </details>
+
+    </div>
+
+    <div class="stickyBtns">
+      <div class="btns">
+        <button id="export">Exportar GLB</button>
+        <button id="resetCam" class="secondary">Reset cámara</button>
+        <button id="toggleUI" class="secondary">Close Controls</button>
+      </div>
+      <div class="hint">Exporta como <span class="mono">ship_generated.glb</span> (una sola malla).</div>
+    </div>
+  </div>
+
+  <!-- Babylon.js (CDN) -->
+  <script src="https://cdn.babylonjs.com/babylon.js"></script>
+  <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+  <script src="https://cdn.babylonjs.com/serializers/babylonjs.serializers.min.js"></script>
+
+  <script>
+    // =============================
+    // Seeded RNG + helpers
+    // =============================
+    function xmur3(str){
+      let h = 1779033703 ^ str.length;
+      for(let i=0;i<str.length;i++){
+        h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+        h = (h << 13) | (h >>> 19);
+      }
+      return function(){
+        h = Math.imul(h ^ (h >>> 16), 2246822507);
+        h = Math.imul(h ^ (h >>> 13), 3266489909);
+        return (h ^= (h >>> 16)) >>> 0;
+      }
+    }
+    function mulberry32(a){
+      return function(){
+        let t = a += 0x6D2B79F5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      }
+    }
+    const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+    const lerp=(a,b,t)=>a+(b-a)*t;
+    const smoothstep=(a,b,t)=>{ t=clamp((t-a)/(b-a),0,1); return t*t*(3-2*t); };
+    const deg2rad=(d)=>d*Math.PI/180;
+
+    // Snap a Z position so procedural details don't end up inside a section GAP (helps avoid 'floating' bits)
+    function snapZToSection(p, z, L){
+      const secOn = (parseInt(p.sectionMode||0,10)===1) && (parseInt(p.sectionCount||0,10) >= 2);
+      if(!secOn) return z;
+      const N = clamp(parseInt(p.sectionCount,10)||2, 2, 60);
+      const gap = clamp(parseFloat(p.sectionGap ?? 0.02), 0, 0.35);
+
+      // Where the segmented span actually lives (brick has a shortened base span)
+      let start = 0, span = L;
+      if(p.hullType === "brick"){
+        span = L*0.92;
+        start = (L*0.52 - span*0.5);
+      }
+      if(z < start || z > start + span) return z;
+
+      const step = span / N;
+      const segLen = Math.max(step * (1 - gap), step * 0.30);
+      const local = z - start;
+      const i = clamp(Math.floor(local / step), 0, N-1);
+      const within = local - i*step;
+
+      // If the point falls in the gap region, pull it back into the segment body
+      if(within > segLen){
+        return start + i*step + segLen*0.50;
+      }
+      return z;
+    }
+
+
+    function hexToColor3(hex){
+      const s = hex.replace("#","").trim();
+      const r = parseInt(s.substring(0,2),16)/255;
+      const g = parseInt(s.substring(2,4),16)/255;
+      const b = parseInt(s.substring(4,6),16)/255;
+      return new BABYLON.Color3(r,g,b);
+    }
+
+    // =============================
+    // Babylon setup
+    // =============================
+    const canvas = document.getElementById("renderCanvas");
+    const engine = new BABYLON.Engine(canvas, true, {preserveDrawingBuffer:true, stencil:true});
+    const scene = new BABYLON.Scene(engine);
+    scene.clearColor = new BABYLON.Color4(0.02,0.03,0.06,1);
+
+    const camera = new BABYLON.ArcRotateCamera("cam",
+      BABYLON.Tools.ToRadians(35), BABYLON.Tools.ToRadians(68),
+      520, new BABYLON.Vector3(0,10,120), scene);
+    camera.attachControl(canvas, true);
+    camera.lowerRadiusLimit = 40;
+    camera.upperRadiusLimit = 2400;
+    camera.wheelPrecision = 8;
+    camera.pinchPrecision = 55;
+    camera.angularSensibilityX = 650;
+    camera.angularSensibilityY = 650;
+    camera.panningSensibility = 1300;
+    camera.inertia = 0.78;
+
+    const hemi = new BABYLON.HemisphericLight("hemi", new BABYLON.Vector3(0,1,0), scene);
+    hemi.intensity = 0.16;
+
+    const dir = new BABYLON.DirectionalLight("dir", new BABYLON.Vector3(-0.35,-0.7,0.25), scene);
+    dir.intensity = 1.25;
+    dir.position = new BABYLON.Vector3(140, 220, -120);
+
+    const sky = BABYLON.MeshBuilder.CreateSphere("sky",{diameter:6200, sideOrientation:BABYLON.Mesh.BACKSIDE},scene);
+    const skyMat = new BABYLON.StandardMaterial("skyMat", scene);
+    skyMat.emissiveColor = new BABYLON.Color3(0.02,0.03,0.05);
+    sky.material = skyMat;
+
+    // =============================
+    // Materials (we'll merge meshes: keep multi-material)
+    // =============================
+    const matHull = new BABYLON.PBRMetallicRoughnessMaterial("Hull", scene);
+    const matDark = new BABYLON.PBRMetallicRoughnessMaterial("Dark", scene);
+    const matTrim = new BABYLON.PBRMetallicRoughnessMaterial("Trim", scene);
+    const matLight = new BABYLON.PBRMetallicRoughnessMaterial("Light", scene);
+    const matA = new BABYLON.PBRMetallicRoughnessMaterial("AccentA", scene);
+    const matB = new BABYLON.PBRMetallicRoughnessMaterial("AccentB", scene);
+    const matC = new BABYLON.PBRMetallicRoughnessMaterial("AccentC", scene);
+
+    function applyMaterialParams(p){
+      matHull.baseColor = hexToColor3(p.hullColor);
+      matDark.baseColor = hexToColor3(p.darkColor);
+      matTrim.baseColor = hexToColor3(p.trimColor);
+
+      matA.baseColor = hexToColor3(p.accentA ?? "#FFCC66");
+      matB.baseColor = hexToColor3(p.accentB ?? "#66CCFF");
+      matC.baseColor = hexToColor3(p.accentC ?? "#FF6677");
+      matHull.metallic = p.metallic;
+      matHull.roughness = p.roughness;
+
+      matDark.metallic = clamp(p.metallic*0.55, 0, 1);
+      matDark.roughness = clamp(p.roughness*0.7, 0.05, 1);
+
+      matTrim.metallic = clamp(p.metallic*0.9 + 0.05, 0, 1);
+      matTrim.roughness = clamp(p.roughness*0.6, 0.05, 1);
+
+
+      matA.metallic = clamp(p.metallic*0.85 + 0.05, 0, 1);
+      matA.roughness = clamp(p.roughness*0.55, 0.05, 1);
+      matB.metallic = clamp(p.metallic*0.85 + 0.05, 0, 1);
+      matB.roughness = clamp(p.roughness*0.55, 0.05, 1);
+      matC.metallic = clamp(p.metallic*0.85 + 0.05, 0, 1);
+      matC.roughness = clamp(p.roughness*0.55, 0.05, 1);
+      const em = hexToColor3(p.emColor);
+      matLight.baseColor = em.scale(0.9);
+      matLight.metallic = 0.0;
+      matLight.roughness = 0.35;
+      matLight.emissiveColor = em.scale(p.emissiveIntensity);
+    }
+
+
+    function matByKey(key, fallback){
+      switch((key||"").toLowerCase()){
+        case "base": return matHull;
+        case "dark": return matDark;
+        case "trim": return matTrim;
+        case "a": return matA;
+        case "b": return matB;
+        case "c": return matC;
+        case "light": return matLight;
+      }
+      return fallback || matHull;
+    }
+
+    function pickSectionKey(p, i, n){
+      const pat = (p.sectionPattern || "ABAB").toUpperCase();
+      if(pat === "ABAB"){
+        return (i%2===0) ? (p.sectionMatA||"base") : (p.sectionMatB||"trim");
+      }
+      if(pat === "AABB"){
+        return (Math.floor(i/2)%2===0) ? (p.sectionMatA||"base") : (p.sectionMatB||"trim");
+      }
+      if(pat === "FRONT_A"){
+        return (i < Math.ceil(n*0.35)) ? (p.sectionMatA||"base") : (p.sectionMatB||"trim");
+      }
+      if(pat === "BACK_A"){
+        return (i > Math.floor(n*0.65)) ? (p.sectionMatA||"base") : (p.sectionMatB||"trim");
+      }
+      if(pat === "HALF"){
+        return (i < n*0.5) ? (p.sectionMatA||"base") : (p.sectionMatB||"trim");
+      }
+      return (i%2===0) ? (p.sectionMatA||"base") : (p.sectionMatB||"trim");
+    }
+
+    function addSegmentPanelsAndEdges(p, segLen, w, h, R, radiusAtSeg, flatten, wedgeSharpness, zCenter){
+      const out = [];
+      const insetOn = parseInt(p.insetMode||0,10)===1;
+      const edgeMode = parseInt(p.edgeMode||0,10); // 0 off, 1 strips, 2 fillet, 3 both
+      const inset = clamp(parseFloat(p.inset ?? 0.14), 0.0, 0.45);
+      const edgeTh = clamp(parseFloat(p.edgeThick ?? 0.12), 0.01, 0.8);
+
+      const matInset = matByKey(p.insetMat, matDark);
+      const matEdge  = matByKey(p.edgeMat, matTrim);
+
+      const eps = Math.max(0.004, R*0.002);
+
+      if(insetOn){
+        // top panel
+        const ph = Math.max(0.02, h*0.05);
+        const pw = Math.max(0.02, w*(1 - inset*0.35));
+        const pd = Math.max(0.02, segLen*0.96);
+        const top = BABYLON.MeshBuilder.CreateBox("SegTopPanel",{width:pw, height:ph, depth:pd},scene);
+        top.material = matInset;
+        deformTaper(top, segLen, R, radiusAtSeg, flatten, wedgeSharpness);
+        top.position = new BABYLON.Vector3(0, (h*0.5*flatten) + ph*0.5 + eps, zCenter);
+        out.push(top);
+
+        // side panels (left/right)
+        const sw = Math.max(0.02, w*0.06);
+        const sh = Math.max(0.02, h*0.62);
+        const sd = pd;
+        for(const side of [-1,1]){
+          const sp = BABYLON.MeshBuilder.CreateBox("SegSidePanel",{width:sw, height:sh, depth:sd},scene);
+          sp.material = matInset;
+          deformTaper(sp, segLen, R, radiusAtSeg, flatten, wedgeSharpness);
+          sp.position = new BABYLON.Vector3(side*((w*0.5) - sw*0.5 - eps), 0, zCenter);
+          out.push(sp);
+        }
+      }
+
+      const doStrips = (edgeMode===1 || edgeMode===3);
+      const doFillet = (edgeMode===2 || edgeMode===3);
+
+      if(doStrips){
+        // edge strips: top ridge and side ribs
+        const sh = Math.max(0.02, h*0.06);
+        const sw = Math.max(0.02, w*0.10*edgeTh);
+        const sd = Math.max(0.02, segLen*0.98);
+
+        // top center strip
+        const topS = BABYLON.MeshBuilder.CreateBox("EdgeTop",{width:Math.max(0.02, w*(1-inset*0.25)), height:sh, depth:sd},scene);
+        topS.material = matEdge;
+        deformTaper(topS, segLen, R, radiusAtSeg, flatten, wedgeSharpness);
+        topS.position = new BABYLON.Vector3(0, (h*0.5*flatten) + sh*0.5 + eps*1.2, zCenter);
+        out.push(topS);
+
+        // side vertical strips
+        const vh = Math.max(0.02, h*0.75);
+        const vw = Math.max(0.02, w*0.04*edgeTh);
+        for(const side of [-1,1]){
+          const vs = BABYLON.MeshBuilder.CreateBox("EdgeSide",{width:vw, height:vh, depth:sd},scene);
+          vs.material = matEdge;
+          deformTaper(vs, segLen, R, radiusAtSeg, flatten, wedgeSharpness);
+          vs.position = new BABYLON.Vector3(side*((w*0.5) - vw*0.5 - eps*1.2), 0, zCenter);
+          out.push(vs);
+        }
+      }
+
+      if(doFillet){
+        // Fillet-like cylinders along top-left/top-right edges (visual rounding)
+        const rad = Math.max(0.02, Math.min(R*0.12, edgeTh*R*0.18));
+        const cylH = Math.max(0.02, segLen*0.98);
+        for(const side of [-1,1]){
+          const c = BABYLON.MeshBuilder.CreateCylinder("EdgeFillet",{height:cylH, diameter:rad*2, tessellation:20},scene);
+          c.rotation.x = Math.PI/2;
+          c.material = matEdge;
+          c.position = new BABYLON.Vector3(side*(w*0.5 - rad - eps), (h*0.5*flatten - rad), zCenter);
+          out.push(c);
+        }
+      }
+
+      return out;
+    }
+
+    
+    function zoneMat(p, zoneId, fallback){
+      if(parseInt(p.zonePaint,10) !== 1) return fallback;
+      const k = parseInt(p[zoneId] ?? 0, 10);
+      if(k === 1) return matA;
+      if(k === 2) return matB;
+      if(k === 3) return matC;
+      return fallback;
+    }
+
+    function addDecals(p, ship, L, R){
+      if(parseInt(p.decalOn,10) !== 1) return null;
+
+      const dt = new BABYLON.DynamicTexture("decalTex", {width:512, height:512}, scene, false);
+      dt.hasAlpha = true;
+      const ctx = dt.getContext();
+      ctx.clearRect(0,0,512,512);
+      ctx.fillStyle = "rgba(0,0,0,0)";
+      ctx.fillRect(0,0,512,512);
+
+      const col = (p.decalColor || "#FFFFFF");
+      const stroke = (p.decalStroke || "#000000");
+      const textStr = (p.decalText || "").toString().slice(0,14);
+
+      // Emblem
+      const emblem = (p.decalEmblem || "none");
+      ctx.save();
+      ctx.translate(256, 200);
+      ctx.lineWidth = 10;
+      ctx.strokeStyle = stroke;
+      ctx.fillStyle = col;
+
+      if(emblem === "shield"){
+        ctx.beginPath();
+        ctx.moveTo(0,-120);
+        ctx.lineTo(120,-60);
+        ctx.lineTo(100,70);
+        ctx.quadraticCurveTo(0,150,-100,70);
+        ctx.lineTo(-120,-60);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      } else if(emblem === "circle"){
+        ctx.beginPath();
+        ctx.arc(0,0,110,0,Math.PI*2);
+        ctx.fill();
+        ctx.stroke();
+      } else if(emblem === "chevron"){
+        ctx.beginPath();
+        ctx.moveTo(-140,-40);
+        ctx.lineTo(0,120);
+        ctx.lineTo(140,-40);
+        ctx.lineTo(85,-85);
+        ctx.lineTo(0,20);
+        ctx.lineTo(-85,-85);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // Text
+      if(textStr){
+        ctx.save();
+        ctx.translate(256, 360);
+        ctx.font = "bold 92px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = 10;
+        ctx.strokeText(textStr, 0, 0);
+        ctx.fillStyle = col;
+        ctx.fillText(textStr, 0, 0);
+        ctx.restore();
+      }
+
+      dt.update();
+
+      const mat = new BABYLON.StandardMaterial("decalMat", scene);
+      mat.diffuseTexture = dt;
+      mat.opacityTexture = dt;
+      mat.useAlphaFromDiffuseTexture = true;
+      mat.backFaceCulling = false;
+      mat.specularColor = new BABYLON.Color3(0.05,0.05,0.05);
+      mat.emissiveColor = new BABYLON.Color3(0.15,0.15,0.15);
+
+      const t = clamp(p.decalPos ?? 0.55, 0.05, 0.95);
+      const z = (t*L) - (L*0.12);
+      const side = (p.decalSide || "right");
+      const scale = clamp(p.decalScale ?? 1.0, 0.2, 2.2);
+      const ang = (clamp(p.decalRot ?? 0, -180, 180) * Math.PI/180);
+
+      let normal = new BABYLON.Vector3(1,0,0);
+      let pos = new BABYLON.Vector3(R*1.35, 0, z);
+      if(side === "left"){ normal = new BABYLON.Vector3(-1,0,0); pos = new BABYLON.Vector3(-R*1.35, 0, z); }
+      if(side === "top"){ normal = new BABYLON.Vector3(0,1,0); pos = new BABYLON.Vector3(0, R*0.85, z); }
+
+      const size = new BABYLON.Vector3(R*1.05*scale, R*0.62*scale, R*0.25);
+
+      const decal = BABYLON.MeshBuilder.CreateDecal("Decal", ship, {position:pos, normal:normal, size:size, angle:ang}, scene);
+      decal.material = mat;
+      decal.parent = ship;
+
+      decal.onDisposeObservable.add(()=>{
+        try{ mat.dispose(); }catch(e){}
+        try{ dt.dispose(); }catch(e){}
+      });
+
+      return decal;
+    }
+
+    // =============================
+    // Ship generator
+    // =============================
+    let shipRoot = null;
+
+    function noseShape(noseType, u, a){
+      // u in [0..1]
+      switch(noseType){
+        case "needle": return Math.pow(u, 2.6 + 1.6*a);
+        case "blunt":  return Math.pow(u, 0.72 + 0.22*a);
+        case "beak":   return Math.pow(u, 1.55 + 0.7*a) * (1.0 + 0.18*Math.sin(u*Math.PI));
+        case "hammer": return Math.pow(u, 1.25 + 0.55*a);
+        case "chisel": return Math.pow(u, 1.35 + 0.65*a);
+        default:       return Math.pow(u, 1.65 + 0.85*a); // pointed
+      }
+    }
+
+    function radiusProfileFactory(p, R){
+      const a = clamp(p.aggressiveness,0,1);
+      const noseLen = clamp(p.noseLen, 0.08, 0.30);
+
+      // base mid/tail by style
+      let midFn, tailFn;
+      if(p.style === "dune"){
+        midFn = (t)=> 1.05 + 0.18*Math.sin(t*Math.PI) + 0.08*Math.sin(t*2*Math.PI);
+        tailFn= (t)=> 1.0 - 0.16*Math.pow(smoothstep(0.70, 1.0, t), 1.05 + 0.35*a);
+      } else if(p.style === "industrial"){
+        midFn = (t)=> 1.0 + 0.06*Math.sin(t*Math.PI) + 0.02*Math.sin(t*4*Math.PI);
+        tailFn= (t)=> 1.0 - 0.10*Math.pow(smoothstep(0.78, 1.0, t), 1.1 + 0.6*a);
+      } else if(p.style === "sleek"){
+        midFn = (t)=> 0.95 + 0.10*Math.sin(t*Math.PI);
+        tailFn= (t)=> 1.0 - 0.26*Math.pow(smoothstep(0.72, 1.0, t), 1.2 + 0.6*a);
+      } else { // elite
+        midFn = (t)=> 1.0 + 0.16*Math.sin(t*Math.PI) + 0.06*Math.sin(t*2*Math.PI);
+        tailFn= (t)=> 1.0 - (0.20 + 0.10*a)*Math.pow(smoothstep(0.70, 1.0, t), 1.25 + 0.6*a);
+      }
+
+      return (t)=>{
+        const u = clamp(t / noseLen, 0, 1);
+        const n = noseShape(p.noseType, u, a);
+        const mid = midFn(t);
+        const tail= tailFn(t);
+        return Math.max(0.22, R * n * mid * tail);
+      };
+    }
+
+    function makeTubeHull(path, radiusAt, tess, flatY){
+      const hull = BABYLON.MeshBuilder.CreateTube("Hull", {
+        path,
+        radiusFunction:(i)=>radiusAt(i/(path.length-1)),
+        tessellation:tess,
+        cap:BABYLON.Mesh.CAP_ALL,
+      }, scene);
+      hull.scaling.y = flatY;
+      hull.material = matHull;
+      return hull;
+    }
+
+
+    function estimateHullTopY(p, R, rr){
+      // Approximate deck/top surface height for different hull types.
+      // This is used to mount the bridge so it never floats.
+      if(p.hullType === "brick"){
+        // base box + mid module roughly reaches ~0.84R*flatten
+        return (R * 0.84) * p.flatten;
+      }
+      if(p.hullType === "wedge"){
+        return (R * 0.78) * p.flatten;
+      }
+      if(p.hullType === "catamaran"){
+        return (rr * 0.86) * p.flatten;
+      }
+      // tube default
+      return (rr * 0.70) * p.flatten;
+    }
+
+    function makeBridge(p, L, R, radiusAt){
+      if(p.bridgeType === "none") return null;
+      const z = L * p.bridgePos;
+      const rr = radiusAt(p.bridgePos);
+      const bs = clamp((p.bridgeSize ?? 1), 0.0, 1.6);
+      const yTop = estimateHullTopY(p, R, rr);
+      const matBase = zoneMat(p, "paintBridge", matTrim);
+      const matInset = zoneMat(p, "paintBridge", matDark);
+
+      // helper: clamp bridge so it never floats
+      const snapY = (y)=> Math.min(y, yTop + R*0.40) ; // prevent crazy elevation
+
+      if(p.bridgeType === "tower"){
+        const towerH = R * lerp(0.35, 0.75, bs);
+        const towerW = R * lerp(0.35, 0.62, bs);
+        const towerD = R * lerp(0.70, 1.20, bs);
+        const tower = BABYLON.MeshBuilder.CreateBox("BridgeTower",{width:towerW, height:towerH, depth:towerD},scene);
+        tower.position = new BABYLON.Vector3(0, snapY(yTop + towerH*0.55), z);
+        tower.material = matBase;
+
+        const cap = BABYLON.MeshBuilder.CreateBox("BridgeCap",{width:towerW*0.92, height:towerH*0.22, depth:towerD*0.88},scene);
+        cap.material = matInset;
+        cap.parent = tower;
+        cap.position = new BABYLON.Vector3(0, towerH*0.38, 0);
+        return tower;
+      }
+
+      if(p.bridgeType === "armored"){
+        // low armored cabin: sloped front + spine
+        const bw = R * lerp(0.70, 1.30, bs);
+        const bh = R * lerp(0.18, 0.32, bs);
+        const bd = R * lerp(0.85, 1.45, bs);
+        const box = BABYLON.MeshBuilder.CreateBox("BridgeArmored",{width:bw, height:bh, depth:bd},scene);
+        box.material = matBase;
+        box.position = new BABYLON.Vector3(0, snapY(yTop + bh*0.40), z);
+
+        const slope = BABYLON.MeshBuilder.CreateBox("BridgeArmoredSlope",{width:bw*0.92, height:bh*0.70, depth:bd*0.55},scene);
+        slope.material = matInset;
+        slope.parent = box;
+        slope.position = new BABYLON.Vector3(0, 0, -bd*0.20);
+        slope.rotation.x = -0.35;
+
+        const spine = BABYLON.MeshBuilder.CreateBox("BridgeArmoredSpine",{width:bw*0.25, height:bh*0.55, depth:bd*1.05},scene);
+        spine.material = matInset;
+        spine.parent = box;
+        spine.position = new BABYLON.Vector3(0, bh*0.40, bd*0.05);
+
+        return box;
+      }
+
+      if(p.bridgeType === "recessed"){
+        // recessed bridge: a dark well + a trim rim
+        const bw = R * lerp(0.85, 1.55, bs);
+        const bh = R * lerp(0.16, 0.28, bs);
+        const bd = R * lerp(1.00, 1.70, bs);
+
+        const rim = BABYLON.MeshBuilder.CreateBox("BridgeRecessRim",{width:bw, height:bh*0.35, depth:bd},scene);
+        rim.material = matBase;
+        rim.position = new BABYLON.Vector3(0, snapY(yTop + bh*0.18), z);
+
+        const well = BABYLON.MeshBuilder.CreateBox("BridgeRecessWell",{width:bw*0.86, height:bh*0.55, depth:bd*0.78},scene);
+        well.material = matInset;
+        well.position = new BABYLON.Vector3(0, snapY(yTop + bh*0.04), z - bd*0.05);
+
+        // tiny sensor blister
+        const blister = BABYLON.MeshBuilder.CreateSphere("BridgeRecessBlister",{diameter:R*lerp(0.22,0.38,bs), segments:24},scene);
+        blister.material = matBase;
+        blister.position = new BABYLON.Vector3(0, snapY(yTop + bh*0.45), z + bd*0.15);
+
+        const root = new BABYLON.TransformNode("BridgeRecessRoot", scene);
+        rim.parent = root; well.parent = root; blister.parent = root;
+        return root;
+      }
+
+      if(p.bridgeType === "lateral"){
+        // Falcon-like offset cockpit: a cylinder + strut
+        const side = (p.wingSym === "mirror") ? 1 : 1;
+        const xOff = R * lerp(1.15, 1.85, bs) * side;
+        const rC = R * lerp(0.18, 0.32, bs);
+        const lenC = R * lerp(0.70, 1.20, bs);
+
+        const cockpit = BABYLON.MeshBuilder.CreateCylinder("BridgeLateral",{height:lenC, diameter:rC*2, tessellation:28},scene);
+        cockpit.rotation.x = Math.PI/2;
+        cockpit.material = matBase;
+        cockpit.position = new BABYLON.Vector3(xOff, snapY(yTop + rC*0.65), z - R*0.10);
+
+        const cap = BABYLON.MeshBuilder.CreateBox("BridgeLateralCap",{width:rC*1.8, height:rC*0.9, depth:rC*1.0},scene);
+        cap.material = matInset;
+        cap.parent = cockpit;
+        cap.position = new BABYLON.Vector3(0, rC*0.35, -lenC*0.08);
+
+        const strut = BABYLON.MeshBuilder.CreateBox("BridgeLateralStrut",{width:Math.abs(xOff)*0.85, height:rC*0.55, depth:rC*0.65},scene);
+        strut.material = matInset;
+        strut.position = new BABYLON.Vector3(xOff*0.45, snapY(yTop + rC*0.20), z - R*0.05);
+
+        const root = new BABYLON.TransformNode("BridgeLateralRoot", scene);
+        cockpit.parent = root;
+        strut.parent = root;
+        return root;
+      }
+
+      // integrated default: low dome
+      const bridge = BABYLON.MeshBuilder.CreateSphere("Bridge",{diameter:1, segments:32},scene);
+      const sx = R * lerp(0.35, 0.85, bs);
+      const sy = R * lerp(0.18, 0.42, bs);
+      const sz = L * lerp(0.06, 0.18, bs);
+      bridge.scaling = new BABYLON.Vector3(sx, sy, sz);
+      bridge.position = new BABYLON.Vector3(0, snapY(yTop + sy*0.10), z);
+      bridge.material = matBase;
+      return bridge;
+    }
+
+    function makeWindow(p, L, R){
+      if(p.windowType === "none") return null;
+
+      // When bridge is lateral, put windows on that cockpit
+      const isLat = (p.bridgeType === "lateral");
+      const zWinBase = (p.bridgeType && p.bridgeType !== "none") ? (L*clamp(p.bridgePos-0.18, 0.06, 0.80)) : (L*0.12);
+
+      if(p.windowType === "visor"){
+        const visor = BABYLON.MeshBuilder.CreateCylinder("Visor",{height:R*0.24, diameter:R*0.68, tessellation:28},scene);
+        visor.rotation.x = Math.PI/2;
+        if(isLat){
+          visor.scaling.y = 0.55;
+          visor.position = new BABYLON.Vector3(R*1.35, R*0.55, zWinBase);
+        }else{
+          visor.position = new BABYLON.Vector3(0, R*0.52, zWinBase);
+          visor.scaling.y = 0.55;
+        }
+        visor.material = matDark;
+        return visor;
+      }
+
+      // slit default
+      const win = BABYLON.MeshBuilder.CreateBox("Window",{width:R*0.62, height:R*0.11, depth:R*0.22},scene);
+      if(isLat){
+        win.position = new BABYLON.Vector3(R*1.35, R*0.55, zWinBase);
+        win.scaling.x = 0.65;
+      }else{
+        win.position = new BABYLON.Vector3(0, R*0.50, zWinBase);
+      }
+      win.material = matDark;
+      return win;
+    }
+
+    function addNoseAddon(p, L, R){
+      // Add extra "hard" nose forms that the tube alone can't represent.
+      // We'll make them slightly intersect the hull so the merge is continuous.
+      const out = [];
+      const noseZ = L * 0.03; // very front
+      const noseH = Math.max(R*0.85, L * p.noseLen * 0.55);
+      const noseW = R * 1.55;
+
+      if(p.noseType === "chisel"){
+        // square pyramid wedge
+        const wedge = BABYLON.MeshBuilder.CreateCylinder("NoseChisel",{
+          height:noseH,
+          diameterTop:0.01,
+          diameterBottom:noseW,
+          tessellation:4
+        }, scene);
+        wedge.rotation.x = Math.PI/2;
+        wedge.position = new BABYLON.Vector3(0, 0, noseZ);
+        wedge.scaling.y = p.flatten;
+        wedge.material = zoneMat(p, "paintNose", matHull);
+        out.push(wedge);
+      } else if(p.noseType === "hammer"){
+        const cone = BABYLON.MeshBuilder.CreateCylinder("NoseCone",{
+          height:noseH*0.9,
+          diameterTop:0.01,
+          diameterBottom:noseW*0.92,
+          tessellation:10
+        }, scene);
+        cone.rotation.x = Math.PI/2;
+        cone.position = new BABYLON.Vector3(0, 0, noseZ);
+        cone.scaling.y = p.flatten;
+        cone.material = zoneMat(p, "paintNose", matHull);
+        out.push(cone);
+
+        const bar = BABYLON.MeshBuilder.CreateBox("NoseHammerBar",{width:noseW*1.25, height:R*0.18, depth:R*0.55}, scene);
+        bar.position = new BABYLON.Vector3(0, R*p.flatten*0.12, noseZ + noseH*0.28);
+        bar.material = zoneMat(p, "paintNose", matDark);
+        out.push(bar);
+      } else if(p.noseType === "beak"){
+        const beak = BABYLON.MeshBuilder.CreateCylinder("NoseBeak",{
+          height:noseH*0.95,
+          diameterTop:0.01,
+          diameterBottom:noseW*0.72,
+          tessellation:12
+        }, scene);
+        beak.rotation.x = Math.PI/2;
+        beak.position = new BABYLON.Vector3(0, -R*p.flatten*0.10, noseZ);
+        beak.scaling.y = p.flatten;
+        beak.material = zoneMat(p, "paintNose", matHull);
+        out.push(beak);
+
+        const chin = BABYLON.MeshBuilder.CreateBox("BeakChin",{width:noseW*0.42, height:R*0.20, depth:noseH*0.55}, scene);
+        chin.position = new BABYLON.Vector3(0, -R*p.flatten*0.30, noseZ + noseH*0.18);
+        chin.rotation.x = deg2rad(6);
+        chin.material = zoneMat(p, "paintNose", matDark);
+        out.push(chin);
+      } else if(p.noseType === "blunt"){
+        const cap = BABYLON.MeshBuilder.CreateSphere("NoseBlunt",{diameter:noseW*0.78, segments:28}, scene);
+        cap.scaling.y = p.flatten;
+        cap.position = new BABYLON.Vector3(0, 0, noseZ + noseH*0.10);
+        cap.material = zoneMat(p, "paintNose", matHull);
+        out.push(cap);
+      } else if(p.noseType === "needle"){
+        const spike = BABYLON.MeshBuilder.CreateCylinder("NoseNeedle",{
+          height:noseH*1.25,
+          diameterTop:0.01,
+          diameterBottom:noseW*0.35,
+          tessellation:14
+        }, scene);
+        spike.rotation.x = Math.PI/2;
+        spike.position = new BABYLON.Vector3(0, 0, noseZ);
+        spike.scaling.y = p.flatten;
+        spike.material = matTrim;
+        out.push(spike);
+      }
+      return out;
+    }
+
+    function makeWings(p, L, R, radiusAt, rng){
+      if(p.wingType === "none") return [];
+      const t = p.wingPos;
+      const z = L * t;
+      const rr = radiusAt(t);
+      let span = rr * p.wingSpan;
+      let chord = rr * p.wingChord;
+      if(p.hullType === "catamaran"){
+        // In catamaran, keep wings within a sensible range
+        span *= 0.78;
+        chord *= 0.82;
+      }
+      const th = Math.max(rr * 0.06, rr * lerp(0.04, 0.09, p.aggressiveness));
+      const dihed = deg2rad(p.wingDihedral);
+
+      function wingMesh(name, side){
+        const wing = BABYLON.MeshBuilder.CreateBox(name, {width:span, height:th, depth:chord}, scene);
+        wing.material = zoneMat(p, "paintWings", matHull);
+
+        // push slightly INTO the hull to guarantee intersection
+        // Positioning: keep wings attached (catamaran uses hull separation instead of tube radius)
+        let baseX;
+        if(p.hullType === "catamaran"){
+          const halfSep = R*1.05;
+          const off = clamp(span*0.18, rr*0.06, rr*0.40);
+          baseX = side*(halfSep + off);
+        } else {
+          baseX = side*(rr*0.68 + span*0.34);
+        }
+        baseX = clamp(baseX, -R*3.2, R*3.2);
+        wing.position = new BABYLON.Vector3(baseX, rr*0.02, z);
+        wing.rotation.z = side*dihed;
+
+        if(p.wingType === "delta"){
+          wing.scaling.z = 1.18;
+          wing.rotation.y = side*deg2rad(6 + 14*p.aggressiveness);
+        } else if(p.wingType === "swept"){
+          wing.rotation.y = side*deg2rad(18 + 22*p.aggressiveness);
+        } else if(p.wingType === "fins"){
+          wing.scaling.x = 0.55;
+          wing.scaling.z = 0.65;
+          wing.rotation.x = deg2rad(14);
+          wing.rotation.y = side*deg2rad(6);
+          wing.position.y += rr*0.25;
+        }
+
+        // edge
+        const edge = BABYLON.MeshBuilder.CreateBox(name+"_edge", {width:span*0.98, height:th*0.6, depth:chord*0.14}, scene);
+        edge.material = matDark;
+        edge.parent = wing;
+        edge.position = new BABYLON.Vector3(0, th*0.10, -chord*0.36);
+        edge.rotation = BABYLON.Vector3.Zero();
+
+        // pylon to hull (ensures "connected" feeling)
+        const pyl = BABYLON.MeshBuilder.CreateBox(name+"_pylon",{width:th*1.15, height:th*1.05, depth:chord*0.62}, scene);
+        pyl.material = matTrim;
+        pyl.position = new BABYLON.Vector3(0, -th*0.15, chord*0.06);
+        pyl.parent = wing;
+
+        return wing;
+      }
+
+      const wings = [];
+      if(p.wingSym === "single"){
+        const side = (rng() < 0.5) ? 1 : -1;
+        wings.push(wingMesh("WingSingle", side));
+      } else {
+        wings.push(wingMesh("WingL", -1));
+        wings.push(wingMesh("WingR",  1));
+      }
+      return wings;
+    }
+
+    function makeEngines(p, L, R, radiusAt, rng){
+      const count = p.pods|0;
+      if(count <= 0) return [];
+      const out = [];
+
+      const z = L * lerp(0.78, 0.92, rng());
+      const t = z / L;
+      const rr = radiusAt(t);
+      const baseY = -rr * p.flatten * 0.10;
+
+      const podRadius = R*lerp(0.18, 0.40, clamp(0.35 + 0.45*p.aggressiveness,0,1));
+      const podLen = R*lerp(1.4, 2.8, clamp(0.35 + 0.55*p.aggressiveness,0,1));
+
+      let positions;
+      if(p.hullType === "catamaran"){
+        const halfSep = R*1.05;
+        positions = [
+          new BABYLON.Vector3( halfSep, baseY, z),
+          new BABYLON.Vector3(-halfSep, baseY, z),
+          new BABYLON.Vector3( halfSep*0.95, baseY + rr*0.18, z),
+          new BABYLON.Vector3(-halfSep*0.95, baseY + rr*0.18, z),
+          new BABYLON.Vector3( halfSep*0.80, baseY - rr*0.18, z),
+          new BABYLON.Vector3(-halfSep*0.80, baseY - rr*0.18, z),
+        ];
+      } else {
+        positions = [
+          new BABYLON.Vector3( rr*1.15, baseY, z),
+          new BABYLON.Vector3(-rr*1.15, baseY, z),
+          new BABYLON.Vector3( rr*0.82, baseY, z),
+          new BABYLON.Vector3(-rr*0.82, baseY, z),
+          new BABYLON.Vector3( 0, baseY + rr*0.55, z),
+          new BABYLON.Vector3( 0, baseY - rr*0.55, z),
+        ];
+      }
+
+      for(let i=0;i<count;i++){
+        const pos = positions[i % positions.length];
+        let pod;
+
+        const makePylonToHull = ()=>{
+          // connect pod to hull with a small beam (overlaps the hull a bit)
+          const isSide = Math.abs(pos.x) > 0.001;
+          if(isSide){
+            const pyl = BABYLON.MeshBuilder.CreateBox("EngPylon_"+i, {width:Math.abs(pos.x)*0.14, height:podRadius*0.46, depth:podRadius*0.70}, scene);
+            pyl.position = new BABYLON.Vector3(pos.x*0.62, pos.y, pos.z - podLen*0.15);
+            pyl.material = zoneMat(p, "paintEngines", matDark);
+            pyl.rotation.y = (pos.x>0?deg2rad(6):deg2rad(-6));
+            out.push(pyl);
+          } else {
+            const pyl = BABYLON.MeshBuilder.CreateBox("EngPylonC_"+i, {width:podRadius*0.55, height:podRadius*0.55, depth:podRadius*0.70}, scene);
+            pyl.position = new BABYLON.Vector3(0, pos.y*0.62, pos.z - podLen*0.15);
+            pyl.material = zoneMat(p, "paintEngines", matDark);
+            out.push(pyl);
+          }
+        };
+
+        if(p.engineType === "ring"){
+          pod = BABYLON.MeshBuilder.CreateTorus("EngineRing_"+i, {diameter:podRadius*2.4, thickness:podRadius*0.38, tessellation:56}, scene);
+          pod.rotation.x = Math.PI/2;
+          pod.position = pos.clone();
+          pod.material = zoneMat(p, "paintEngines", matTrim);
+          makePylonToHull();
+
+          if(p.lightsMode >= 2){
+            const glow = BABYLON.MeshBuilder.CreateTorus("EngineGlow_"+i, {diameter:podRadius*2.0, thickness:podRadius*0.12, tessellation:60}, scene);
+            glow.rotation.x = Math.PI/2;
+            glow.position = pos.add(new BABYLON.Vector3(0,0,podRadius*0.25));
+            glow.material = matLight;
+            out.push(glow);
+          }
+        } else if(p.engineType === "nozzle"){
+          pod = BABYLON.MeshBuilder.CreateCylinder("EngineNozzle_"+i, {height:podLen, diameterTop:podRadius*2.2, diameterBottom:podRadius*1.4, tessellation:32}, scene);
+          pod.rotation.x = Math.PI/2;
+          pod.position = pos.clone();
+          pod.material = matTrim;
+          makePylonToHull();
+
+          const collar = BABYLON.MeshBuilder.CreateTorus("NozzleCollar_"+i, {diameter:podRadius*2.3, thickness:podRadius*0.10, tessellation:48}, scene);
+          collar.rotation.x = Math.PI/2;
+          collar.position = pos.add(new BABYLON.Vector3(0,0,-podLen*0.38));
+          collar.material = matDark;
+          out.push(collar);
+
+          if(p.lightsMode >= 2){
+            const ring = BABYLON.MeshBuilder.CreateTorus("NozzleGlow_"+i, {diameter:podRadius*1.6, thickness:podRadius*0.08, tessellation:48}, scene);
+            ring.rotation.x = Math.PI/2;
+            ring.position = pos.add(new BABYLON.Vector3(0,0,podLen*0.45));
+            ring.material = matLight;
+            out.push(ring);
+          }
+        } else {
+          pod = BABYLON.MeshBuilder.CreateCylinder("EngineCyl_"+i, {height:podLen, diameter:podRadius*2, tessellation:32}, scene);
+          pod.rotation.x = Math.PI/2;
+          pod.position = pos.clone();
+          pod.material = matTrim;
+          makePylonToHull();
+
+          const tip = BABYLON.MeshBuilder.CreateCylinder("CylTip_"+i, {height:podLen*0.18, diameterTop:podRadius*1.6, diameterBottom:podRadius*1.2, tessellation:22}, scene);
+          tip.rotation.x = Math.PI/2;
+          tip.position = pos.add(new BABYLON.Vector3(0,0,podLen*0.55));
+          tip.material = matDark;
+          out.push(tip);
+
+          if(p.lightsMode >= 2){
+            const ring = BABYLON.MeshBuilder.CreateTorus("CylGlow_"+i, {diameter:podRadius*2.2, thickness:podRadius*0.08, tessellation:52}, scene);
+            ring.rotation.x = Math.PI/2;
+            ring.position = pos.add(new BABYLON.Vector3(0,0,podLen*0.45));
+            ring.material = matLight;
+            out.push(ring);
+          }
+        }
+
+        out.push(pod);
+      }
+      return out;
+    }
+
+    function makeHardpoints(p, L, R, radiusAt, rng){
+      const n = parseInt(p.hardpoints, 10) || 0;
+      if(n <= 0) return [];
+      const out = [];
+      const size = R * 0.16 * p.hpSize;
+      const tBase = lerp(0.30, 0.78, rng());
+      const zBase = L * tBase;
+      const rr = radiusAt(tBase);
+
+      for(let i=0;i<n;i++){
+        const ang = (i/n) * Math.PI*2;
+        let x = Math.cos(ang) * rr * 0.88;
+        let y = Math.sin(ang) * rr * p.flatten * 0.88;
+
+        if(p.hullType === "catamaran"){
+          const halfSep = R*1.05;
+          const side = (Math.cos(ang) >= 0) ? 1 : -1;
+          x = side * (halfSep + clamp(x, -rr*0.18, rr*0.18));
+          y = clamp(y, -rr*p.flatten*0.70, rr*p.flatten*0.70);
+        } else if(p.hullType && p.hullType !== "tube"){
+          x = clamp(x, -rr*1.30, rr*1.30);
+          y = clamp(y, -rr*p.flatten*1.00, rr*p.flatten*1.00);
+        }
+        let z = zBase + (rng()*2-1) * L*0.12;
+        z = snapZToSection(p, z, L);
+
+        const hp = BABYLON.MeshBuilder.CreateSphere("HP_"+i, {diameter:size, segments:16}, scene);
+        hp.position = new BABYLON.Vector3(x, y, z);
+        hp.material = matTrim;
+
+        // small base that intersects hull (so it looks attached)
+        const base = BABYLON.MeshBuilder.CreateCylinder("HPBase_"+i, {height:size*0.35, diameterTop:size*0.55, diameterBottom:size*0.72, tessellation:14}, scene);
+        base.rotation.x = Math.PI/2;
+        base.position = new BABYLON.Vector3(x*0.98, y*0.98, z);
+        base.material = matDark;
+
+        if(p.lightsMode >= 1 && rng() < 0.45){
+          const led = BABYLON.MeshBuilder.CreateSphere("HP_LED_"+i, {diameter:size*0.35, segments:12}, scene);
+          led.position = new BABYLON.Vector3(0,0,size*0.15);
+          led.material = matLight;
+          led.parent = hp;
+        }
+        out.push(base, hp);
+      }
+      return out;
+    }
+
+    function makeLightStrips(p, L, R, radiusAt, rng){
+      const mode = parseInt(p.lightsMode,10);
+      if(mode <= 0) return [];
+      const count = clamp(parseInt(p.lightCount,10)||0, 0, 24);
+      if(count <= 0) return [];
+
+      const out = [];
+      for(let i=0;i<count;i++){
+        const tz = clamp(p.lightZ + (i - (count-1)/2) * (0.028 + 0.010*rng()), 0.08, 0.92);
+        const z = L * tz;
+        const rr = radiusAt(tz);
+
+        const w = rr * lerp(0.55, 1.25, 0.45 + 0.55*rng());
+        const h = rr * 0.03;
+        const d = rr * lerp(0.08, 0.18, rng());
+
+        // Catamaran: place strips on each hull; otherwise clamp into hull bounds
+        let x;
+        if(p.hullType === "catamaran"){
+          const halfSep = R*1.05;
+          const side = (i % 2 === 0) ? 1 : -1;
+          x = side * halfSep * clamp(p.lightX, 0.25, 1.15);
+        } else {
+          x = rr * clamp(p.lightX, 0.15, 1.35) * 0.88; // slightly into hull
+        }
+        const y = -rr * p.flatten * lerp(0.06, 0.12, rng());
+
+        const stripL = BABYLON.MeshBuilder.CreateBox("StripL_"+i, {width:w, height:h, depth:d}, scene);
+        stripL.position = new BABYLON.Vector3(-x, y, z);
+        stripL.material = matLight;
+
+        const stripR = stripL.clone("StripR_"+i);
+        stripR.position.x = x;
+        out.push(stripL, stripR);
+
+        if(mode >= 2 && rng() < 0.55){
+          const ring = BABYLON.MeshBuilder.CreateTorus("LightRing_"+i, {diameter:rr*1.86, thickness:rr*0.018, tessellation:72}, scene);
+          ring.rotation.x = Math.PI/2;
+          ring.position = new BABYLON.Vector3(0, 0, z);
+          ring.scaling.y = p.flatten;
+          ring.material = matLight;
+          out.push(ring);
+        }
+      }
+      return out;
+    }
+
+    // ---------- Section plates (armor) ----------
+    function addSectionPlates(p, L, R, radiusAt, rng){
+      const mode = parseInt(p.sectionPlates,10);
+      if(mode <= 0) return [];
+      const out = [];
+
+      const plateCount = (p.style === "elite") ? 3 : 2;
+      for(let i=0;i<plateCount;i++){
+        const t0 = lerp(0.20, 0.58, (i+0.08)/plateCount);
+        const t1 = t0 + lerp(0.12, 0.22, 0.35 + 0.65*rng());
+        const tMid = (t0+t1)*0.5;
+        const zMid = L * tMid;
+        const zLen = L * (t1-t0);
+
+        const rr = radiusAt(tMid);
+        const w = rr * lerp(0.55, 0.95, 0.4 + 0.6*rng());
+        const h = rr * p.flatten * 0.12;
+        const d = Math.max(R*0.8, zLen);
+
+        for(const side of [-1,1]){
+          const plate = BABYLON.MeshBuilder.CreateBox("Plate_"+i+"_"+side, {width:w, height:h, depth:d}, scene);
+          plate.position = new BABYLON.Vector3(side*(rr*0.82), -rr*p.flatten*0.06, zMid); // closer => intersects hull
+          plate.material = (p.style === "dune") ? matTrim : matDark;
+          plate.rotation.y = side*deg2rad(2 + 6*p.aggressiveness);
+          plate.rotation.z = side*deg2rad(2);
+          out.push(plate);
+
+          // top rail
+          if(parseInt(p.panelMode,10) >= 2){
+            const rail = BABYLON.MeshBuilder.CreateBox("PlateRail_"+i+"_"+side, {width:w*0.95, height:h*0.25, depth:d*0.95}, scene);
+            rail.position = new BABYLON.Vector3(0, h*0.45, 0);
+            rail.material = matTrim;
+            rail.parent = plate;
+          }
+        }
+      }
+
+      if(mode >= 2){
+        const keel = BABYLON.MeshBuilder.CreateBox("Keel",{width:R*0.24, height:R*0.09, depth:L*0.76}, scene);
+        keel.position = new BABYLON.Vector3(0, -R*p.flatten*0.38, L*0.54);
+        keel.material = matDark;
+        out.push(keel);
+
+        const spine = BABYLON.MeshBuilder.CreateBox("Spine",{width:R*0.18, height:R*0.08, depth:L*0.66}, scene);
+        spine.position = new BABYLON.Vector3(0, R*p.flatten*0.44, L*0.52);
+        spine.material = matTrim;
+        out.push(spine);
+      }
+
+      return out;
+    }
+
+    // ---------- Panel seams PRO (rings + rails as tubes that follow curvature) ----------
+    function addPaneling(p, L, R, radiusAt, rng){
+      const mode = parseInt(p.panelMode,10);
+      if(mode <= 0) return [];
+
+      // Boxy hulls: use rectangular seams/rails instead of circular torus rings
+      if(p.hullType && p.hullType !== "tube"){
+        return addPanelingBoxy(p, L, R, radiusAt, rng);
+      }
+
+      const out = [];
+
+      const density = clamp(p.panelDensity,0,1);
+      const stepT = lerp(0.060, 0.028, density);       // normalized spacing
+      const startT = 0.14;
+      const endT   = 0.94;
+
+      // rings: clean seams
+      let idx = 0;
+      for(let t=startT; t<=endT; t+=stepT){
+        const rr = radiusAt(t);
+        const z  = L*t;
+        const dia = rr*1.95; // slightly inside => intersection
+        const thick = rr * lerp(0.006, 0.012, 0.35 + 0.65*density);
+
+        const seam = BABYLON.MeshBuilder.CreateTorus("RingSeam_"+(idx++), {diameter:dia, thickness:thick, tessellation:84}, scene);
+        seam.rotation.x = Math.PI/2;
+        seam.position = new BABYLON.Vector3(0, 0, z);
+        seam.scaling.y = p.flatten;
+        seam.material = (p.style === "dune") ? matTrim : matDark;
+        out.push(seam);
+      }
+
+      // rails: tubes running longitudinally on the hull
+      if(mode >= 2){
+        const railCount = Math.floor(lerp(2, 8, density));
+        const railRadFactor = lerp(0.006, 0.012, density);
+
+        for(let r=0;r<railCount;r++){
+          // choose stable angles: distribute around, bias to sides for "Elite" look
+          const a = (r/railCount) * Math.PI*2 + (p.style==="elite" ? (Math.PI/railCount)*0.5 : 0);
+          const sideBias = (p.style==="elite") ? (Math.abs(Math.cos(a))>0.6 ? 1.0 : 0.85) : 1.0;
+
+          const path = [];
+          const pCount = 40;
+          for(let i=0;i<pCount;i++){
+            const tt = lerp(0.18, 0.92, i/(pCount-1));
+            const rr = radiusAt(tt);
+            const x = Math.cos(a) * rr * 0.93 * sideBias;
+            const y = Math.sin(a) * rr * p.flatten * 0.93;
+            const z = L * tt;
+            path.push(new BABYLON.Vector3(x, y, z));
+          }
+          const rrMid = radiusAt(0.55);
+          const railR = Math.max(0.05, rrMid * railRadFactor);
+
+          const tube = BABYLON.MeshBuilder.CreateTube("RailTube_"+r, {
+            path, radius: railR, tessellation: 12, cap: BABYLON.Mesh.CAP_ALL
+          }, scene);
+          tube.material = matTrim;
+          out.push(tube);
+
+          // occasional tiny "panel nodes"
+          if(density > 0.55 && rng() < 0.65){
+            const nCount = Math.floor(lerp(1, 4, density));
+            for(let k=0;k<nCount;k++){
+              const tt = lerp(0.22, 0.88, rng());
+              const rr = radiusAt(tt);
+              const x = Math.cos(a) * rr * 0.92;
+              const y = Math.sin(a) * rr * p.flatten * 0.92;
+              const z = L * tt;
+
+              const node = BABYLON.MeshBuilder.CreateBox("RailNode_"+r+"_"+k, {width:railR*4.0, height:railR*2.2, depth:railR*5.0}, scene);
+              node.position = new BABYLON.Vector3(x, y, z);
+              node.rotation.y = (rng()*0.6 - 0.3);
+              node.material = matDark;
+              out.push(node);
+            }
+          }
+        }
+      }
+
+      return out;
+    }
+
+    
+    // ---------- Ribs / Costillas (look “estructura”) ----------
+    function addRibs(p, L, R, radiusAt, rng){
+      const mode = parseInt(p.ribsMode,10) || 0;
+      if(mode <= 0) return [];
+      const out = [];
+      const n = clamp(parseInt(p.ribCount,10)||16, 4, 42);
+      const thickK = clamp(p.ribThick ?? 0.95, 0.2, 2.2);
+
+      const t0 = 0.18, t1 = 0.92;
+      const halfSep = (p.hullType === "catamaran") ? (R*1.05) : 0;
+
+      for(let i=0;i<n;i++){
+        const tt = (n===1) ? 0.5 : (i/(n-1));
+        const t  = lerp(t0, t1, tt);
+        const z  = L*t;
+        const rr = radiusAt(t);
+
+        // taper ribs slightly
+        const taper = lerp(0.78, 1.15, smoothstep(0.22,0.78,t));
+        const depth = Math.max(0.02, rr * 0.055 * thickK);
+
+        if(p.hullType === "catamaran"){
+          // Individual hull ribs
+          const rHull = rr * 0.72;
+          const ribW = Math.max(0.12, rHull * 0.55);
+          const ribH = Math.max(0.12, rHull * p.flatten * 1.25) * taper;
+
+          for(const side of [-1,1]){
+            const rib = BABYLON.MeshBuilder.CreateBox("RibCat_"+i+"_"+side, {width:ribW, height:ribH, depth:depth}, scene);
+            rib.position = new BABYLON.Vector3(side*halfSep, 0, z);
+            rib.material = zoneMat(p, "paintRibs", matTrim);
+            out.push(rib);
+          }
+
+          if(mode >= 2){
+            // Cross bulkhead “frame” (creates that ribbed cage look)
+            const frameW = halfSep*2.25;
+            const frameH = Math.max(0.12, rHull * p.flatten * 1.05) * taper;
+            const frame = BABYLON.MeshBuilder.CreateBox("RibCatFrame_"+i, {width:frameW, height:frameH, depth:depth}, scene);
+            frame.position = new BABYLON.Vector3(0, 0, z);
+            frame.material = zoneMat(p, "paintRibs", matDark);
+            out.push(frame);
+          }
+
+          continue;
+        }
+
+        if(p.hullType && p.hullType !== "tube"){
+          // Boxy ribs
+          const width = rr * 2.4 * taper;
+          const height = rr * p.flatten * 1.35 * taper;
+          const rib = BABYLON.MeshBuilder.CreateBox("RibBox_"+i, {width:width, height:height, depth:depth}, scene);
+          rib.position = new BABYLON.Vector3(0, 0, z);
+          rib.material = matTrim;
+          out.push(rib);
+        } else {
+          // Tube ribs (thin rings)
+          const dia = rr * 1.98;
+          const rib = BABYLON.MeshBuilder.CreateTorus("RibRing_"+i, {diameter:dia, thickness:Math.max(0.02, rr*0.018*thickK), tessellation:84}, scene);
+          rib.rotation.x = Math.PI/2;
+          rib.position = new BABYLON.Vector3(0, 0, z);
+          rib.scaling.y = p.flatten;
+          rib.material = matTrim;
+          out.push(rib);
+        }
+      }
+      return out;
+    }
+
+
+    // ---------- Corvette kit (Elite-like): side booms + spine/keel + pylons ----------
+    function addCorvetteKit(p, root, L, R, radiusAt){
+      if(parseInt(p.corvetteMode,10) !== 1) return [];
+      const out = [];
+      const rrMid = radiusAt(0.62);
+      const rrRear = radiusAt(0.84);
+
+      const booms = clamp(parseInt(p.corvetteBooms,10)||2, 2, 4);
+      const spanK = clamp(p.boomSpan ?? 1.35, 0.6, 2.4);
+      const lenK  = clamp(p.boomLen  ?? 0.62, 0.25, 0.95);
+
+      const boomZ = L*0.58;
+      const boomDepth = L * (0.30 + 0.35*lenK);
+      const boomW = rrMid * 0.55;
+      const boomH = rrMid * p.flatten * 0.40;
+
+      const halfSep = (p.hullType === "catamaran") ? (R*1.05) : (rrMid * 1.35 * spanK);
+
+      const boomOffsets = (booms === 4)
+        ? [ -halfSep*1.10, -halfSep*0.50, halfSep*0.50, halfSep*1.10 ]
+        : [ -halfSep, halfSep ];
+
+      for(let i=0;i<boomOffsets.length;i++){
+        const x = boomOffsets[i];
+        const boom = BABYLON.MeshBuilder.CreateBox("CorvBoom_"+i, {width:boomW, height:boomH, depth:boomDepth}, scene);
+        boom.position = new BABYLON.Vector3(x, -rrMid*p.flatten*0.10, boomZ);
+        boom.material = zoneMat(p, "paintBooms", matDark);
+        out.push(boom);
+
+        // front fairing
+        const fair = BABYLON.MeshBuilder.CreateBox("CorvBoomFair_"+i, {width:boomW*0.92, height:boomH*0.92, depth:boomDepth*0.18}, scene);
+        fair.position = new BABYLON.Vector3(x, -rrMid*p.flatten*0.08, boomZ - boomDepth*0.41);
+        fair.material = zoneMat(p, "paintBooms", matTrim);
+        out.push(fair);
+
+        // rear thruster cap
+        const cap = BABYLON.MeshBuilder.CreateCylinder("CorvBoomCap_"+i, {height:boomW*0.65, diameter:boomH*1.35, tessellation:24}, scene);
+        cap.rotation.z = Math.PI/2;
+        cap.position = new BABYLON.Vector3(x, -rrMid*p.flatten*0.12, L*0.93);
+        cap.material = matHull;
+        out.push(cap);
+      }
+
+      // Spine/keel like the Corvette's central ridges
+      if(parseInt(p.corvetteSpine,10) === 1){
+        const spineH = clamp(p.spineH ?? 0.55, 0.0, 1.6);
+        const keelD  = clamp(p.keelD  ?? 0.45, 0.0, 1.6);
+
+        const spine = BABYLON.MeshBuilder.CreateBox("CorvSpine", {
+          width: rrMid*0.55,
+          height: rrMid*p.flatten*0.22 + rrMid*p.flatten*0.40*spineH,
+          depth: L*0.62
+        }, scene);
+        spine.position = new BABYLON.Vector3(0, rrMid*p.flatten*(0.20 + 0.30*spineH), L*0.58);
+        spine.material = matTrim;
+        out.push(spine);
+
+        const keel = BABYLON.MeshBuilder.CreateBox("CorvKeel", {
+          width: rrMid*0.65,
+          height: rrMid*p.flatten*0.18 + rrMid*p.flatten*0.38*keelD,
+          depth: L*0.66
+        }, scene);
+        keel.position = new BABYLON.Vector3(0, -rrMid*p.flatten*(0.25 + 0.32*keelD), L*0.60);
+        keel.material = matDark;
+        out.push(keel);
+      }
+
+      // Pylons for hardpoints (visual, still merges)
+      if(parseInt(p.corvettePylons,10) === 1){
+        const s = clamp(p.pylonS ?? 0.85, 0.2, 1.8);
+        const z = L*0.64;
+        const pW = rrMid*0.18*s;
+        const pH = rrMid*p.flatten*0.18*s;
+        const pD = rrMid*0.55*s;
+
+        const px = (p.hullType === "catamaran") ? (R*1.05) : (rrMid*1.05);
+        for(const side of [-1,1]){
+          const pyl = BABYLON.MeshBuilder.CreateBox("CorvPylon_"+side, {width:pW, height:pH, depth:pD}, scene);
+          pyl.position = new BABYLON.Vector3(side*px, -rrMid*p.flatten*0.10, z);
+          pyl.material = matHull;
+          out.push(pyl);
+        }
+      }
+
+      // Parent everything
+      for(const m of out){ m.parent = root; }
+
+      return out;
+    }
+// ---------- Greebles ----------
+    function addGreebles(p, L, R, radiusAt, rng){
+      const out = [];
+      const g = clamp(p.greeble,0,1);
+      const baseCount = Math.floor(lerp(6, 34, g));
+      const styleMul = (p.style === "industrial") ? 1.20 : (p.style === "dune" ? 0.75 : 1.0);
+      const count = Math.floor(baseCount * styleMul);
+
+      for(let i=0;i<count;i++){
+        let t = lerp(0.18, 0.95, rng());
+        let z = t*L;
+        z = snapZToSection(p, z, L);
+        t = clamp(z / L, 0, 1);
+        const rr = radiusAt(t);
+
+        // attach close to hull (always intersects a bit)
+        const ang = (rng()*Math.PI*2);
+        let x = Math.cos(ang) * rr * 0.92;
+        let y = Math.sin(ang) * rr * p.flatten * 0.92;
+
+        // Keep attachments from drifting away on non-tube hulls
+        if(p.hullType === "catamaran"){
+          const halfSep = R*1.05;
+          const side = (x >= 0) ? 1 : -1;
+          x = side * (halfSep + clamp(x, -rr*0.30, rr*0.30));
+          y = clamp(y, -rr*p.flatten*0.75, rr*p.flatten*0.75);
+        } else if(p.hullType && p.hullType !== "tube"){
+          x = clamp(x, -rr*1.35, rr*1.35);
+          y = clamp(y, -rr*p.flatten*1.05, rr*p.flatten*1.05);
+        }
+
+        // pull slightly inward so greebles always intersect the hull (reduces 'floating' bits)
+        x *= 0.92;
+        y *= 0.92;
+
+        let w = rr*lerp(0.06,0.18,rng());
+        let h = rr*lerp(0.03,0.10,rng());
+        let d = rr*lerp(0.06,0.22,rng());
+
+        if(p.style === "industrial"){ d *= 1.35; w *= 1.12; }
+        if(p.style === "dune"){ w *= 1.25; h *= 1.15; d *= 0.9; }
+
+        const b = BABYLON.MeshBuilder.CreateBox("G_"+i, {width:w,height:h,depth:d}, scene);
+        b.position = new BABYLON.Vector3(x, y, z);
+        b.rotation.y = (rng()*0.9 - 0.45);
+        b.rotation.z = (rng()*0.35 - 0.175);
+        b.material = (rng() < 0.55) ? matHull : (rng() < 0.82 ? matTrim : matDark);
+        out.push(b);
+
+        // vents
+        if(rng() < (0.18 + 0.22*g)){
+          const vent = BABYLON.MeshBuilder.CreateBox("Vent_"+i, {width:w*0.85,height:h*0.35,depth:d*0.22}, scene);
+          vent.position = new BABYLON.Vector3(0, h*0.15, -d*0.33);
+          vent.material = matDark;
+          vent.parent = b;
+
+          if(p.lightsMode>0 && rng() < 0.25){
+            const led = BABYLON.MeshBuilder.CreateBox("VentLED_"+i, {width:w*0.22,height:h*0.12,depth:d*0.10}, scene);
+            led.position = new BABYLON.Vector3((x>=0? w*0.32 : -w*0.32), 0, 0);
+            led.material = matLight;
+            led.parent = b;
+          }
+        }
+      }
+      return out;
+    }
+
+
+    // =============================
+    // Hull variants (tube / wedge / catamaran / brick)
+    // =============================
+    function deformTaper(mesh, L, R, radiusAt, flatten, wedgeSharpness){
+      // Deform a box/prism: taper X/Y along Z to approximate wedge/destroyer hulls.
+      const pos = mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
+      if(!pos) return mesh;
+      const halfL = L*0.5;
+      // mesh is centered at origin, z in [-halfL..halfL]
+      for(let i=0;i<pos.length;i+=3){
+        let x = pos[i], y = pos[i+1], z = pos[i+2];
+        const t = clamp((z + halfL)/L, 0, 1); // 0 front, 1 back
+
+        const rr = radiusAt(t);
+        const base = Math.max(0.001, R);
+        const wScale = clamp((rr/base), 0.14, 1.35);
+
+        // Make the planform more triangular: extra taper near the nose.
+        const tri = Math.pow(t, wedgeSharpness);
+        const xScale = wScale * lerp(0.35, 1.0, tri);
+        const yScale = lerp(0.22, 1.0, Math.pow(t, 0.8 + 0.6*wedgeSharpness));
+
+        // Slight "keel" bias: bottom a bit flatter for that destroyer silhouette.
+        const keel = (y < 0) ? 0.78 : 1.0;
+
+        pos[i]   = x * xScale;
+        pos[i+1] = y * yScale * flatten * keel;
+        pos[i+2] = z;
+      }
+      mesh.updateVerticesData(BABYLON.VertexBuffer.PositionKind, pos);
+      mesh.refreshBoundingInfo(true);
+      return mesh;
+    }
+
+    function makeWedgeHull(p, L, R, radiusAt){
+      // Wedge / destroyer: can be segmented with REAL gaps (mode B).
+      const w = R*3.2;
+      const h = R*1.5;
+      const wedgeSharp = 1.35 + 1.35*p.aggressiveness;
+
+      const secOn = (parseInt(p.sectionMode||0,10)===1) && (parseInt(p.sectionCount||0,10) >= 2);
+      if(!secOn){
+        const body = BABYLON.MeshBuilder.CreateBox("HullWedgeBody", {width:w, height:h, depth:L}, scene);
+        body.material = matHull;
+        deformTaper(body, L, R, radiusAt, p.flatten, wedgeSharp);
+        body.position.z = L*0.5;
+
+        const deck = BABYLON.MeshBuilder.CreateBox("HullWedgeDeck", {width:w*0.78, height:h*0.20, depth:L*0.72}, scene);
+        deck.material = matTrim;
+        deck.position = new BABYLON.Vector3(0, h*0.22*p.flatten, L*0.55);
+        deformTaper(deck, L*0.72, R*0.85, (t)=>radiusAt(lerp(0.25,0.92,t))*0.85, p.flatten, 1.10 + 0.8*p.aggressiveness);
+        return [body, deck];
+      }
+
+      const out = [];
+      const N = clamp(parseInt(p.sectionCount,10), 2, 60);
+      // sectionGap is a fraction of EACH segment length (not of total ship length).
+      // This keeps segments sturdy even with high sectionCount and avoids 'cage' artifacts.
+      const gap = clamp(parseFloat(p.sectionGap ?? 0.02), 0, 0.35);
+      const step = L / N;
+      const gapLen = step * gap;
+      const segLen = Math.max(step - gapLen, step * 0.30);
+
+      // BODY segments cover entire hull length
+      for(let i=0;i<N;i++){
+        const z0 = i*step;
+        const zCenter = z0 + segLen*0.5;
+        const ra = (tSeg)=> radiusAt(clamp((z0 + tSeg*segLen)/L, 0, 1));
+        const seg = BABYLON.MeshBuilder.CreateBox("HullWedgeSeg_"+i, {width:w, height:h, depth:segLen}, scene);
+        seg.material = matByKey(pickSectionKey(p,i,N), matHull);
+        deformTaper(seg, segLen, R, ra, p.flatten, wedgeSharp);
+        seg.position = new BABYLON.Vector3(0, 0, zCenter);
+        out.push(seg);
+        // interior panels + edge strips/fillet
+        out.push(...addSegmentPanelsAndEdges(p, segLen, w, h, R, ra, p.flatten, wedgeSharp, zCenter));
+      }
+
+      // DECK segments (optional)
+      if((p.sectionApply||"base") === "all"){
+        const deckLen = L*0.72;
+        const deckStart = L*0.55 - deckLen*0.5;
+        const deckW = w*0.78;
+        const deckH = h*0.20;
+        const deckSharp = 1.10 + 0.8*p.aggressiveness;
+
+        const step2 = deckLen / N;
+        const gapLen2 = step2 * gap;
+        const segLen2 = Math.max(step2 - gapLen2, step2 * 0.30);
+
+        for(let i=0;i<N;i++){
+          const z0 = deckStart + i*step2;
+          const zCenter = z0 + segLen2*0.5;
+          const ra2 = (tSeg)=> radiusAt(clamp((z0 + tSeg*segLen2)/L, 0, 1))*0.85;
+          const seg = BABYLON.MeshBuilder.CreateBox("HullWedgeDeckSeg_"+i, {width:deckW, height:deckH, depth:segLen2}, scene);
+          seg.material = matByKey(pickSectionKey(p,i,N), matTrim);
+          deformTaper(seg, segLen2, R*0.85, ra2, p.flatten, deckSharp);
+          seg.position = new BABYLON.Vector3(0, h*0.22*p.flatten, zCenter);
+          out.push(seg);
+        }
+      }
+
+      return out;
+    }
+
+    function makeBrickHull(p, L, R, radiusAt){
+      // Industrial / blocky: stacked modules. In V8 can be segmented with REAL gaps.
+      const out = [];
+      const baseW = R*3.4;
+      const baseH = R*1.55;
+
+      const secOn = (parseInt(p.sectionMode||0,10)===1) && (parseInt(p.sectionCount||0,10) >= 2);
+      const N = secOn ? clamp(parseInt(p.sectionCount,10), 2, 60) : 1;
+      const gap = secOn ? clamp(parseFloat(p.sectionGap ?? 0.02), 0, 0.12) : 0.0;
+
+      // BASE: length span
+      const baseLen = L*0.92;
+      const baseStart = (L*0.52 - baseLen*0.5);
+      const step = baseLen / N;
+      const gapLen = step * gap;
+      const segLen = secOn ? Math.max(step - gapLen, step * 0.30) : baseLen;
+
+      for(let i=0;i<N;i++){
+        const z0 = baseStart + i*step;
+        const zCenter = z0 + segLen*0.5;
+        const ra = (tSeg)=> radiusAt(lerp(0.18,0.95, clamp((z0 - baseStart + tSeg*segLen)/baseLen,0,1) ))*1.05;
+        const seg = BABYLON.MeshBuilder.CreateBox("HullBrickBaseSeg_"+i, {width:baseW, height:baseH, depth:segLen}, scene);
+        seg.material = matByKey(pickSectionKey(p,i,N), matHull);
+        deformTaper(seg, segLen, R, ra, p.flatten, 0.9);
+        seg.position = new BABYLON.Vector3(0, 0, zCenter);
+        out.push(seg);
+        out.push(...addSegmentPanelsAndEdges(p, segLen, baseW, baseH, R, ra, p.flatten, 0.9, zCenter));
+      }
+
+      // MID deck slab
+      const midW = baseW*0.72;
+      const midH = baseH*0.44;
+      const midLen = L*0.56;
+      const midStart = (L*0.56 - midLen*0.5);
+      const stepM = midLen / N;
+      const gapLenM = stepM * gap;
+      const segLenM = secOn ? Math.max(stepM - gapLenM, stepM * 0.30) : midLen;
+
+      if((!secOn) || ((p.sectionApply||"base")==="all")){
+        for(let i=0;i<N;i++){
+          const z0 = midStart + i*stepM;
+          const zCenter = z0 + segLenM*0.5;
+          const ra = (tSeg)=> radiusAt(lerp(0.25,0.90, clamp((z0 - midStart + tSeg*segLenM)/midLen,0,1) ))*0.85;
+          const seg = BABYLON.MeshBuilder.CreateBox("HullBrickMidSeg_"+i, {width:midW, height:midH, depth:segLenM}, scene);
+          seg.material = matByKey(pickSectionKey(p,i,N), matTrim);
+          deformTaper(seg, segLenM, R*0.9, ra, p.flatten, 0.85);
+          seg.position = new BABYLON.Vector3(0, baseH*0.32*p.flatten, zCenter);
+          out.push(seg);
+        }
+      } else {
+        const mid = BABYLON.MeshBuilder.CreateBox("HullBrickMid", {width:midW, height:midH, depth:midLen}, scene);
+        mid.material = matTrim;
+        mid.position = new BABYLON.Vector3(0, baseH*0.32*p.flatten, L*0.56);
+        deformTaper(mid, midLen, R*0.9, (t)=>radiusAt(lerp(0.25,0.90,t))*0.85, p.flatten, 0.85);
+        out.push(mid);
+      }
+
+      // NOSE block (single to keep silhouette)
+      const nose = BABYLON.MeshBuilder.CreateBox("HullBrickNose", {width:baseW*0.54, height:baseH*0.38, depth:L*0.28}, scene);
+      nose.material = matDark;
+      nose.position = new BABYLON.Vector3(0, -baseH*0.08*p.flatten, L*0.12);
+      deformTaper(nose, L*0.28, R*0.85, (t)=>radiusAt(lerp(0.02,0.36,t))*0.6, p.flatten, 1.45);
+      out.push(nose);
+
+      // Side sponsons (always intersect)
+      for(const side of [-1,1]){
+        const sp = BABYLON.MeshBuilder.CreateBox("BrickSponson_"+side, {width:baseW*0.22, height:baseH*0.28, depth:L*0.52}, scene);
+        sp.material = matDark;
+        sp.position = new BABYLON.Vector3(side*(baseW*0.36), -baseH*0.14*p.flatten, L*0.58);
+        out.push(sp);
+      }
+
+      return out;
+    }
+
+    function makeCatamaranHull(p, L, R, radiusAt){
+      // Two slimmer tube hulls + deck bridge
+      const out = [];
+      const halfSep = R*1.05;
+      const r2 = R*0.72;
+      const tess = (p.style === "industrial") ? 56 : 72;
+
+      const pathN = 110;
+      const path = [];
+      for(let i=0;i<pathN;i++){
+        const t = i/(pathN-1);
+        path.push(new BABYLON.Vector3(0, 0, t*L));
+      }
+      const rad2 = (t)=>Math.max(0.2, radiusAt(t)*(r2/R));
+      const makeHull = (name, x)=>{
+        const h = BABYLON.MeshBuilder.CreateTube(name, {
+          path, radiusFunction:(i)=>rad2(i/(path.length-1)),
+          tessellation:tess, cap:BABYLON.Mesh.CAP_ALL
+        }, scene);
+        h.scaling.y = p.flatten;
+        h.position.x = x;
+        h.material = matHull;
+        return h;
+      };
+      const left = makeHull("CatHullL", -halfSep);
+      const right= makeHull("CatHullR",  halfSep);
+      out.push(left, right);
+
+      const deck = BABYLON.MeshBuilder.CreateBox("CatDeck", {width:halfSep*2.05, height:R*0.30, depth:L*0.68}, scene);
+      deck.position = new BABYLON.Vector3(0, R*0.26*p.flatten, L*0.56);
+      deck.material = matTrim;
+      out.push(deck);
+
+      // Front bridge nose connector
+      const prow = BABYLON.MeshBuilder.CreateBox("CatProw", {width:halfSep*1.6, height:R*0.24, depth:L*0.20}, scene);
+      prow.position = new BABYLON.Vector3(0, 0, L*0.08);
+      prow.material = matDark;
+      deformTaper(prow, L*0.20, R*0.9, (t)=>radiusAt(lerp(0.02,0.22,t))*0.75, p.flatten, 1.55);
+      out.push(prow);
+
+      return out;
+    }
+
+    function makePistolHull(p, L, R, radiusAt){
+      const out = [];
+      const d = clamp(p.detail ?? 0.55, 0, 1);
+
+      const bodyW = R*2.6;
+      const bodyH = R*1.15*p.flatten;
+      const bodyD = L*0.64;
+
+      const body = BABYLON.MeshBuilder.CreateBox("HullPistolBody", {width:bodyW, height:bodyH, depth:bodyD}, scene);
+      body.material = matHull;
+      body.position = new BABYLON.Vector3(0, 0, L*0.56);
+      deformTaper(body, bodyD, R, (t)=>radiusAt(lerp(0.22,0.92,t))*0.92, p.flatten, 1.05);
+      out.push(body);
+
+      const barrelLen = L*0.42;
+      const barrelR = R*0.42;
+      const barrelTess = Math.round(lerp(24, 56, d));
+      const barrel = BABYLON.MeshBuilder.CreateCylinder("HullPistolBarrel", {height:barrelLen, diameter:barrelR*2, tessellation:barrelTess}, scene);
+      barrel.rotation.x = Math.PI/2;
+      barrel.position = new BABYLON.Vector3(0, -R*0.10*p.flatten, L*0.16);
+      barrel.material = zoneMat(p, "paintNose", matDark);
+      out.push(barrel);
+
+      const slide = BABYLON.MeshBuilder.CreateBox("HullPistolSlide", {width:bodyW*0.62, height:bodyH*0.28, depth:bodyD*0.78}, scene);
+      slide.position = new BABYLON.Vector3(0, bodyH*0.34, L*0.56);
+      slide.material = matTrim;
+      out.push(slide);
+
+      const grip = BABYLON.MeshBuilder.CreateBox("HullPistolGrip", {width:bodyW*0.34, height:bodyH*0.85, depth:bodyD*0.28}, scene);
+      grip.position = new BABYLON.Vector3(0, -bodyH*0.65, L*0.70);
+      grip.material = matDark;
+      out.push(grip);
+
+      return out;
+    }
+
+    function makeFalconHull(p, L, R, radiusAt){
+      const out = [];
+      const d = clamp(p.detail ?? 0.55, 0, 1);
+      const tess = Math.round(lerp(42, 96, d));
+
+      const discDia = R*3.2;
+      const discH = Math.max(0.6, R*0.55*p.flatten);
+      const disc = BABYLON.MeshBuilder.CreateCylinder("HullFalconDisc", {height:discH, diameter:discDia, tessellation:tess}, scene);
+      disc.position = new BABYLON.Vector3(0, 0, L*0.56);
+      disc.material = matHull;
+      out.push(disc);
+
+      const top = BABYLON.MeshBuilder.CreateCylinder("HullFalconTop", {height:discH*0.55, diameter:discDia*0.55, tessellation:Math.round(tess*0.7)}, scene);
+      top.position = new BABYLON.Vector3(0, discH*0.42, L*0.56);
+      top.material = matTrim;
+      out.push(top);
+
+      for(const side of [-1,1]){
+        const mand = BABYLON.MeshBuilder.CreateBox("HullFalconMand_"+side, {width:discDia*0.18, height:discH*0.62, depth:L*0.32}, scene);
+        mand.position = new BABYLON.Vector3(side*discDia*0.26, -discH*0.10, L*0.28);
+        mand.material = matDark;
+        out.push(mand);
+      }
+
+      const cockLen = L*0.34;
+      const cockR = R*0.22;
+      const cock = BABYLON.MeshBuilder.CreateTube("HullFalconCockpit", {
+        path:[new BABYLON.Vector3(0,0,0), new BABYLON.Vector3(0,0,cockLen)],
+        radius:cockR, tessellation:Math.round(lerp(24, 64, d)), cap:BABYLON.Mesh.CAP_ALL
+      }, scene);
+      cock.scaling.y = p.flatten;
+      cock.position = new BABYLON.Vector3(discDia*0.28, -discH*0.12, L*0.40);
+      cock.material = zoneMat(p, "paintBridge", matTrim);
+      out.push(cock);
+
+      const strip = BABYLON.MeshBuilder.CreateBox("HullFalconEngineStrip", {width:discDia*0.72, height:discH*0.18, depth:discH*0.35}, scene);
+      strip.position = new BABYLON.Vector3(0, -discH*0.10, L*0.92);
+      strip.material = matLight;
+      out.push(strip);
+
+      return out;
+    }
+
+    function buildBaseHull(p, L, R, radiusAt){
+      if(p.hullType === "wedge"){
+        return makeWedgeHull(p, L, R, radiusAt);
+      }
+      if(p.hullType === "brick"){
+        return makeBrickHull(p, L, R, radiusAt);
+      }
+      if(p.hullType === "catamaran"){
+        return makeCatamaranHull(p, L, R, radiusAt);
+      }
+      if(p.hullType === "pistol"){
+        return makePistolHull(p, L, R, radiusAt);
+      }
+      if(p.hullType === "falcon"){
+        return makeFalconHull(p, L, R, radiusAt);
+      }
+      
+      if(p.hullType === "rounded"){
+        return makeRoundedHull(p, L, R, radiusAt);
+      }
+// default tube
+      const d = clamp(p.detail ?? 0.55, 0, 1);
+      const tess = Math.round(lerp((p.style==="industrial")?48:58, (p.style==="industrial")?96:120, d));
+      const pathN = Math.round(lerp(70, 200, d));
+      const path = [];
+      for(let i=0;i<pathN;i++){
+        const t = i/(pathN-1);
+        path.push(new BABYLON.Vector3(0, 0, t*L));
+      }
+      const hull = makeTubeHull(path, radiusAt, tess, p.flatten);
+      return [hull];
+    }
+    function makeRoundedHull(p, L, R, radiusAt){
+      // Capsule / rounded cruiser. Smooth base for more "civil" shapes.
+      const out = [];
+      let cap = null;
+      try{
+        if(BABYLON.MeshBuilder.CreateCapsule){
+          cap = BABYLON.MeshBuilder.CreateCapsule("HullRounded", {height:L, radius:R*1.10, tessellation:48, subdivisions:6}, scene);
+        }
+      }catch(e){}
+      if(!cap){
+        // fallback: cylinder + two spheres
+        const cyl = BABYLON.MeshBuilder.CreateCylinder("HullRoundedCyl", {height:L*0.78, diameter:R*2.2, tessellation:48}, scene);
+        cyl.rotation.x = Math.PI/2;
+        cyl.position.z = L*0.5;
+        const s1 = BABYLON.MeshBuilder.CreateSphere("HullRoundedS1", {diameter:R*2.2, segments:32}, scene);
+        s1.position.z = L*0.11;
+        const s2 = BABYLON.MeshBuilder.CreateSphere("HullRoundedS2", {diameter:R*2.2, segments:32}, scene);
+        s2.position.z = L*0.89;
+        out.push(cyl, s1, s2);
+        for(const m of out) m.material = matHull;
+        for(const m of out) m.scaling.y = p.flatten;
+        return out;
+      }
+      cap.rotation.x = Math.PI/2;
+      cap.position.z = L*0.5;
+      cap.material = matHull;
+      cap.scaling.y = p.flatten;
+      out.push(cap);
+      return out;
+    }
+
+
+    function addPanelingBoxy(p, L, R, radiusAt, rng){
+      const mode = parseInt(p.panelMode,10);
+      if(mode <= 0) return [];
+      const out = [];
+
+      const density = clamp(p.panelDensity,0,1);
+      const stepT = lerp(0.070, 0.030, density);
+      const startT = 0.12;
+      const endT   = 0.95;
+
+      let idx = 0;
+      for(let t=startT; t<=endT; t+=stepT){
+        const rr = radiusAt(t);
+        const z  = L*t;
+
+        if(p.hullType === "catamaran"){
+          const halfSep = R*1.05;
+          const rHull = rr*0.72;
+          const w  = rHull*2.6;
+          const h  = rHull*p.flatten*1.7;
+          const d  = Math.max(0.05, rHull*0.06);
+
+          for(const side of [-1,1]){
+            const seam = BABYLON.MeshBuilder.CreateBox("BoxSeam_"+(idx++), {width:w, height:h, depth:d}, scene);
+            seam.position = new BABYLON.Vector3(side*halfSep, 0, z);
+            seam.material = (p.style==="dune") ? matTrim : matDark;
+            out.push(seam);
+          }
+        } else {
+          const w  = rr*3.6;
+          const h  = rr*p.flatten*1.8;
+          const d  = Math.max(0.05, rr*0.06);
+
+          const seam = BABYLON.MeshBuilder.CreateBox("BoxSeam_"+(idx++), {width:w, height:h, depth:d}, scene);
+          seam.position = new BABYLON.Vector3(0, 0, z);
+          seam.material = (p.style==="dune") ? matTrim : matDark;
+          out.push(seam);
+        }
+      }
+
+      if(mode >= 2){
+        // longitudinal rails as long thin boxes
+        const railCount = Math.floor(lerp(2, 8, density));
+        for(let r=0;r<railCount;r++){
+          const rr0 = radiusAt(0.60);
+          const side = (r % 2 === 0) ? 1 : -1;
+          const tier = Math.floor(r/2);
+
+          // Use per-hull radius for catamaran so rails don't float in empty space
+          const rr = (p.hullType === "catamaran") ? (rr0*0.72) : rr0;
+          const railW = Math.max(0.06, rr*0.08);
+          const railH = Math.max(0.06, rr*0.06);
+          const railD = L*0.78;
+
+          let x, y;
+          if(p.hullType === "catamaran"){
+            const halfSep = R*1.05;
+            x = side * halfSep;
+            y = (tier % 2 === 0) ? rr0*p.flatten*0.16 : -rr0*p.flatten*0.18;
+            y = clamp(y, -rr0*p.flatten*0.95, rr0*p.flatten*0.95);
+          } else {
+            x = side * rr0 * lerp(0.9, 1.45, (tier+1)/(Math.ceil(railCount/2)+1));
+            y = (tier % 2 === 0) ? rr0*p.flatten*0.20 : -rr0*p.flatten*0.22;
+            // Clamp to avoid "floating bars"
+            x = clamp(x, -rr0*1.55, rr0*1.55);
+            y = clamp(y, -rr0*p.flatten*1.15, rr0*p.flatten*1.15);
+          }
+
+          const rail = BABYLON.MeshBuilder.CreateBox("BoxRail_"+r, {width:railW, height:railH, depth:railD}, scene);
+          rail.position = new BABYLON.Vector3(x, y, L*0.56);
+          rail.material = matTrim;
+          out.push(rail);
+        }
+      }
+      return out;
+    }
+    function generateShip(p){
+      const seedFn = xmur3(p.seed || "seed");
+      const rng = mulberry32(seedFn());
+
+      const root = new BABYLON.TransformNode("ShipRoot_TMP", scene);
+      const L = p.length, R = p.radius;
+      const tess = (p.style === "industrial") ? 60 : 76;
+
+      // Path along +Z
+      const pathN = 120;
+      const path = [];
+      for(let i=0;i<pathN;i++){
+        const t = i/(pathN-1);
+        path.push(new BABYLON.Vector3(0, 0, t*L));
+      }
+
+      const radiusAt = radiusProfileFactory(p, R);
+
+      // Base hull (variant)
+      const hullParts = buildBaseHull(p, L, R, radiusAt);
+      for(const hp of hullParts){ hp.parent = root; }
+
+      // Bounds of base hull (used to cull any stray generated pieces)
+      const hullBounds = (function(){
+        let min = new BABYLON.Vector3( 1e9, 1e9, 1e9);
+        let max = new BABYLON.Vector3(-1e9,-1e9,-1e9);
+        for(const m of hullParts){
+          m.computeWorldMatrix(true);
+          const bi = m.getBoundingInfo();
+          const bb = bi.boundingBox;
+          min = BABYLON.Vector3.Minimize(min, bb.minimumWorld);
+          max = BABYLON.Vector3.Maximize(max, bb.maximumWorld);
+        }
+        const center = min.add(max).scale(0.5);
+        const size = max.subtract(min);
+        const radius = Math.max(size.x, size.y, size.z) * 1.35; // generous
+        return {min, max, center, radius};
+      })();
+
+
+      // Nose addon (hard shapes)
+      for(const n of addNoseAddon(p, L, R)) n.parent = root;
+
+      // Bridge + window
+      const bridge = makeBridge(p, L, R, radiusAt);
+      if(bridge){ bridge.parent = root; }
+      const win = makeWindow(p, L, R);
+      if(win){ win.parent = root; }
+
+      // Wings
+      for(const w of makeWings(p, L, R, radiusAt, rng)) w.parent = root;
+
+      // Engines
+      for(const e of makeEngines(p, L, R, radiusAt, rng)) e.parent = root;
+
+      // Hardpoints
+      for(const h of makeHardpoints(p, L, R, radiusAt, rng)) h.parent = root;
+
+      // Lights
+      for(const s of makeLightStrips(p, L, R, radiusAt, rng)) s.parent = root;
+
+      // Section plates + paneling + greebles
+      for(const m of addSectionPlates(p, L, R, radiusAt, rng)) m.parent = root;
+      for(const m of addPaneling(p, L, R, radiusAt, rng)) m.parent = root;
+      addCorvetteKit(p, root, L, R, radiusAt);
+      for(const r of addRibs(p, L, R, radiusAt, rng)) r.parent = root;
+      for(const g of addGreebles(p, L, R, radiusAt, rng)) g.parent = root;
+
+      // Cull any pieces generated far away (safety net)
+      for(const m of root.getChildMeshes(false)){
+        try{
+          const pAbs = m.getAbsolutePosition();
+          const d2 = BABYLON.Vector3.DistanceSquared(pAbs, hullBounds.center);
+          if(d2 > (hullBounds.radius*hullBounds.radius)*4.0){
+            m.dispose();
+          }
+        }catch(e){}
+      }
+
+      // Merge everything into ONE mesh (no separated elements)
+      const meshes = root.getChildMeshes(false);
+      let merged = null;
+      if(meshes.length === 1){
+        merged = meshes[0];
+      } else {
+        // keep submeshes per material so colors survive the merge
+        merged = BABYLON.Mesh.MergeMeshes(meshes, true, true, undefined, true, true);
+      }
+      if(!merged){
+        // fallback: keep first hull part
+        merged = (root.getChildMeshes(false)[0] || null);
+      }
+      merged.name = "ShipRoot";
+      merged.position = new BABYLON.Vector3(0, 0, -L*0.12);
+
+      // Decals (text/emblem)
+      addDecals(p, merged, L, R);
+
+      // cleanup temp root
+      root.dispose();
+
+      return merged;
+    }
+
+    // =============================
+    // Export GLB
+    // =============================
+    async function exportGLB(){
+      if(!shipRoot) return alert("Genera una nave primero.");
+      try{ cleanupNewMeshes(BASE_MESH_IDS, shipRoot); }catch(e){}
+      const isDescendantOf = (node, root)=>{
+        let n = node;
+        while(n){
+          if(n === root) return true;
+          n = n.parent;
+        }
+        return false;
+      };
+      const options = { shouldExportNode: (node)=>isDescendantOf(node, shipRoot) };
+      const res = await BABYLON.GLTF2Export.GLBAsync(scene, "ship_generated", options);
+      res.downloadFiles();
+    }
+
+    // =============================
+    // UI wiring
+    // =============================
+    const $ = (id)=>document.getElementById(id);
+
+    const bindPair = (rangeId, numberId, onChange)=>{
+      const r = $(rangeId), n = $(numberId);
+      const syncFromRange = ()=>{ n.value = r.value; onChange?.(); };
+      const syncFromNumber = ()=>{ r.value = n.value; onChange?.(); };
+      r.addEventListener("input", syncFromRange);
+      n.addEventListener("input", syncFromNumber);
+      n.value = r.value;
+    };
+
+    bindPair("len","lenN");
+    bindPair("rad","radN");
+    bindPair("flat","flatN");
+    bindPair("agg","aggN");
+    bindPair("noseLen","noseLenN");
+    bindPair("detail","detailN");
+    bindPair("metal","metalN", ()=>refreshMaterials());
+    bindPair("rough","roughN", ()=>refreshMaterials());
+    bindPair("emInt","emIntN", ()=>refreshMaterials());
+    bindPair("bridgePos","bridgePosN");
+    bindPair("bridgeSize","bridgeSizeN");
+    bindPair("wingSpan","wingSpanN");
+    bindPair("wingChord","wingChordN");
+    bindPair("wingPos","wingPosN");
+    bindPair("wingDihed","wingDihedN");
+    bindPair("pods","podsN");
+    bindPair("hpSize","hpSizeN");
+    bindPair("lightZ","lightZN");
+    bindPair("lightX","lightXN");
+    bindPair("panelDensity","panelDensityN");
+    bindPair("greeble","greebleN");
+    bindPair("ribThick","ribThickN");
+    bindPair("decalPos","decalPosN");
+    bindPair("decalScale","decalScaleN");
+    bindPair("decalRot","decalRotN");
+
+    // Sections & edges
+    bindPair("sectionCount","sectionCountN");
+    bindPair("sectionGap","sectionGapN");
+    bindPair("inset","insetN");
+    bindPair("edgeThick","edgeThickN");
+
+        bindPair("boomSpan","boomSpanN");
+    bindPair("boomLen","boomLenN");
+    bindPair("spineH","spineHN");
+    bindPair("keelD","keelDN");
+    bindPair("pylonS","pylonSN");
+function readParams(){
+      return {
+        seed: $("seed").value.trim() || "seed",
+        style: $("style").value,
+        hullType: $("hullType").value,
+        noseType: $("noseType").value,
+        noseLen: parseFloat($("noseLen").value),
+
+        length: parseFloat($("len").value),
+        radius: parseFloat($("rad").value),
+        flatten: parseFloat($("flat").value),
+        aggressiveness: parseFloat($("agg").value),
+
+
+        detail: parseFloat($("detail").value),
+        hullColor: $("hullColor").value,
+        darkColor: $("darkColor").value,
+        trimColor: $("trimColor").value,
+        emColor: $("emColor").value,
+        metallic: parseFloat($("metal").value),
+        roughness: parseFloat($("rough").value),
+        emissiveIntensity: parseFloat($("emInt").value),
+
+
+        // Paint zones
+        zonePaint: parseInt($("zonePaint").value,10),
+        accentA: $("accentA").value,
+        accentB: $("accentB").value,
+        accentC: $("accentC").value,
+        paintNose: parseInt($("paintNose").value,10),
+        paintBridge: parseInt($("paintBridge").value,10),
+        paintWings: parseInt($("paintWings").value,10),
+        paintBooms: parseInt($("paintBooms").value,10),
+        paintEngines: parseInt($("paintEngines").value,10),
+        paintRibs: parseInt($("paintRibs").value,10),
+
+        // Decals
+        decalOn: parseInt($("decalOn").value,10),
+        decalText: $("decalText").value,
+        decalEmblem: $("decalEmblem").value,
+        decalColor: $("decalColor").value,
+        decalStroke: $("decalStroke").value,
+        decalPos: parseFloat($("decalPos").value),
+        decalSide: $("decalSide").value,
+        decalScale: parseFloat($("decalScale").value),
+        decalRot: parseFloat($("decalRot").value),
+        panelMode: parseInt($("panelMode").value,10),
+        panelDensity: parseFloat($("panelDensity").value),
+        greeble: parseFloat($("greeble").value),
+        sectionPlates: parseInt($("sectionPlates").value,10),
+
+        ribsMode: parseInt($("ribsMode").value,10),
+        ribCount: parseInt($("ribCount").value,10),
+        ribThick: parseFloat($("ribThick").value),
+                corvetteMode: parseInt($("corvetteMode").value,10),
+        corvetteBooms: parseInt($("corvetteBooms").value,10),
+        boomSpan: parseFloat($("boomSpan").value),
+        boomLen: parseFloat($("boomLen").value),
+        corvetteSpine: parseInt($("corvetteSpine").value,10),
+        spineH: parseFloat($("spineH").value),
+        keelD: parseFloat($("keelD").value),
+        corvettePylons: parseInt($("corvettePylons").value,10),
+        pylonS: parseFloat($("pylonS").value),
+
+
+        bridgeType: $("bridgeType").value,
+        windowType: $("windowType").value,
+        bridgePos: parseFloat($("bridgePos").value),
+        bridgeSize: parseFloat($("bridgeSize").value),
+
+        wingType: $("wingType").value,
+        wingSym: $("wingSym").value,
+        wingSpan: parseFloat($("wingSpan").value),
+        wingChord: parseFloat($("wingChord").value),
+        wingPos: parseFloat($("wingPos").value),
+        wingDihedral: parseFloat($("wingDihed").value),
+
+        pods: parseInt($("pods").value, 10),
+        engineType: $("engineType").value,
+        hardpoints: $("hardpoints").value,
+        hpSize: parseFloat($("hpSize").value),
+
+        lightsMode: parseInt($("lightsMode").value,10),
+        lightCount: parseInt($("lightCount").value,10),
+        lightZ: parseFloat($("lightZ").value),
+        lightX: parseFloat($("lightX").value),
+
+        // Sections & edges
+        sectionMode: parseInt($("sectionMode")?.value ?? "0",10),
+        sectionCount: parseInt($("sectionCount")?.value ?? "10",10),
+        sectionGap: parseFloat($("sectionGap")?.value ?? "0.02"),
+        sectionApply: ($("sectionApply")?.value ?? "base"),
+        sectionPattern: ($("sectionPattern")?.value ?? "ABAB"),
+        sectionMatA: ($("sectionMatA")?.value ?? "base"),
+        sectionMatB: ($("sectionMatB")?.value ?? "trim"),
+        insetMode: parseInt($("insetMode")?.value ?? "1",10),
+        inset: parseFloat($("inset")?.value ?? "0.14"),
+        insetMat: ($("insetMat")?.value ?? "dark"),
+        edgeMode: parseInt($("edgeMode")?.value ?? "1",10),
+        edgeThick: parseFloat($("edgeThick")?.value ?? "0.12"),
+        edgeMat: ($("edgeMat")?.value ?? "trim")
+      };
+    }
+
+    function refreshMaterials(){
+      applyMaterialParams(readParams());
+    }
+
+    function updateGenomeField(p){
+      $("genome").value = JSON.stringify(p);
+      $("genomeHint").textContent = "Reproducible: mismo genoma => misma nave (1 malla).";
+    }
+
+    // Debounced live regeneration
+    let regenTimer = null;
+        let didFirstFit = false;
+    let lastFitSize = 0;
+let isRegenerating = false;
+
+    function scheduleRegen(force=false){
+      if(!$("auto").checked && !force) return;
+      if(regenTimer) clearTimeout(regenTimer);
+      regenTimer = setTimeout(()=>regenerate(), 140);
+    }
+
+    
+    // =============================
+    // Cleanup: remove any meshes created during generation that did NOT end up in the final ship
+    // (prevents "floating cubes" from bugs or temp meshes not parented/merged)
+    // =============================
+    function isDescendantOf(node, root){
+      let n = node;
+      while(n){
+        if(n === root) return true;
+        n = n.parent;
+      }
+      return false;
+    }
+
+    function cleanupNewMeshes(beforeIds, keepRoot){
+      // Copy array because we'll dispose while iterating
+      const all = scene.meshes.slice();
+      for(const m of all){
+        try{
+          if(beforeIds.has(m.uniqueId)) continue;          // existed before => not ours
+          if(!m || m.isDisposed()) continue;
+          if(keepRoot && (m === keepRoot || isDescendantOf(m, keepRoot))) continue;
+          // Don't ever touch the render canvas helpers if any (rare)
+          if(m.name && (m.name.startsWith("__") || m.name.startsWith("Axis") || m.name.startsWith("Gizmo"))) continue;
+          m.dispose(false, true);
+        }catch(e){}
+      }
+    }
+
+function regenerate(){
+      if(isRegenerating) return;
+      isRegenerating = true;
+
+      const p = readParams();
+      applyMaterialParams(p);
+
+      // Track meshes before generation so we can delete any strays created but not merged/parented
+      const beforeIds = new Set(scene.meshes.map(m=>m.uniqueId));
+
+      if(shipRoot) shipRoot.dispose(false, true);
+      shipRoot = generateShip(p);
+
+      // Remove any "floating" meshes created during generation that are not part of the final ship
+      cleanupNewMeshes(beforeIds, shipRoot);
+
+      // Keep camera stable while regenerating
+      const state = {
+        alpha: camera.alpha,
+        beta: camera.beta,
+        radius: camera.radius,
+        target: camera.target.clone(),
+        pos: camera.position ? camera.position.clone() : null
+      };
+
+      // Optional auto-fit (only when requested or first time)
+      const sizeKey = p.length * (0.6 + p.radius*0.02);
+      const wantFit = (!$("autoFitCam") ? false : $("autoFitCam").checked);
+      const sizeDelta = Math.abs(sizeKey - lastFitSize) / Math.max(1e-6, lastFitSize || sizeKey);
+      if(!didFirstFit || (wantFit && sizeDelta > 0.20)){
+        camera.target = new BABYLON.Vector3(0, p.radius*0.55, p.length*0.52 - p.length*0.12);
+        camera.radius = Math.max(240, p.length*2.25);
+        didFirstFit = true;
+        lastFitSize = sizeKey;
+      }else{
+        camera.alpha = state.alpha;
+        camera.beta = state.beta;
+        camera.radius = state.radius;
+        camera.target = state.target;
+      }
+
+      updateGenomeField(p);
+      isRegenerating = false;
+    }
+
+    // =============================
+    // Presets
+    // =============================
+    const PRESETS = {
+      elite: {
+        hullType:"tube",
+        noseType:"chisel", noseLen:0.18,
+        length:240, radius:18, flatten:0.72, aggressiveness:0.72,
+        hullColor:"#EEF1F7", darkColor:"#121826", trimColor:"#8A96AF", emColor:"#2A88FF",
+        metallic:0.78, roughness:0.38, emissiveIntensity:2.8,
+        panelMode:2, panelDensity:0.66, greeble:0.70, sectionPlates:2,
+        bridgeType:"tower", windowType:"slit", bridgePos:0.56, bridgeSize:1.05,
+        wingType:"swept", wingSym:"mirror", wingSpan:1.15, wingChord:0.78, wingPos:0.63, wingDihedral:14,
+        pods:2, engineType:"nozzle", hardpoints:"4", hpSize:0.92,
+        lightsMode:2, lightCount:6, lightZ:0.44, lightX:0.98
+      },
+      dune: {
+        hullType:"tube",
+        noseType:"blunt", noseLen:0.20,
+        length:290, radius:22, flatten:0.84, aggressiveness:0.46,
+        hullColor:"#E6D9C6", darkColor:"#2B2218", trimColor:"#9A7D55", emColor:"#FFB14A",
+        metallic:0.35, roughness:0.65, emissiveIntensity:1.7,
+        panelMode:1, panelDensity:0.52, greeble:0.48, sectionPlates:1,
+        bridgeType:"integrated", windowType:"visor", bridgePos:0.52, bridgeSize:1.10,
+        wingType:"delta", wingSym:"mirror", wingSpan:1.35, wingChord:1.08, wingPos:0.58, wingDihedral:8,
+        pods:2, engineType:"ring", hardpoints:"2", hpSize:0.80,
+        lightsMode:1, lightCount:4, lightZ:0.42, lightX:0.90
+      },
+      industrial: {
+        hullType:"brick",
+        noseType:"hammer", noseLen:0.16,
+        length:320, radius:26, flatten:0.70, aggressiveness:0.40,
+        hullColor:"#DDE3EA", darkColor:"#1A1F2A", trimColor:"#6E768A", emColor:"#42FFD2",
+        metallic:0.55, roughness:0.58, emissiveIntensity:2.1,
+        panelMode:2, panelDensity:0.74, greeble:0.82, sectionPlates:2,
+        bridgeType:"tower", windowType:"slit", bridgePos:0.60, bridgeSize:0.85,
+        wingType:"fins", wingSym:"mirror", wingSpan:0.85, wingChord:0.55, wingPos:0.70, wingDihedral:18,
+        pods:4, engineType:"cyl", hardpoints:"6", hpSize:1.05,
+        lightsMode:1, lightCount:8, lightZ:0.50, lightX:1.10
+      },
+      sleek: {
+        hullType:"tube",
+        noseType:"needle", noseLen:0.22,
+        length:180, radius:14, flatten:0.76, aggressiveness:0.80,
+        hullColor:"#F2F5FA", darkColor:"#0F1320", trimColor:"#7D8DB3", emColor:"#7B5CFF",
+        metallic:0.85, roughness:0.32, emissiveIntensity:3.2,
+        panelMode:1, panelDensity:0.58, greeble:0.55, sectionPlates:1,
+        bridgeType:"integrated", windowType:"slit", bridgePos:0.55, bridgeSize:0.78,
+        wingType:"delta", wingSym:"mirror", wingSpan:1.45, wingChord:0.68, wingPos:0.62, wingDihedral:10,
+        pods:2, engineType:"nozzle", hardpoints:"2", hpSize:0.75,
+        lightsMode:2, lightCount:6, lightZ:0.40, lightX:0.95
+      },
+      corvette: {
+        hullType:"wedge",
+        noseType:"chisel",
+        noseLen:0.18,
+        length:360,
+        radius:24,
+        flatten:0.72,
+        aggressiveness:0.78,
+        hullColor:"#d7dde7",
+        darkColor:"#141a25",
+        trimColor:"#6b7b98",
+        emColor:"#2a88ff",
+        metallic:0.78,
+        roughness:0.40,
+        emissiveIntensity:3.2,
+        panelMode:2,
+        panelDensity:0.55,
+        greeble:0.65,
+        sectionPlates:2,
+        ribsMode:0,
+        ribCount:16,
+        ribThick:0.95,
+        bridgeType:"integrated",
+        windowType:"slit",
+        bridgePos:0.50,
+        bridgeSize:0.88,
+        wingType:"fins",
+        wingSym:"mirror",
+        wingSpan:1.35,
+        wingChord:0.55,
+        wingPos:0.72,
+        wingDihedral:10,
+        pods:4,
+        engineType:"nozzle",
+        hardpoints:"6",
+        hpSize:0.95,
+        lightsMode:2,
+        lightCount:10,
+        lightZ:0.42,
+        lightX:0.95,
+        corvetteMode:1,
+        corvetteBooms:2,
+        boomSpan:1.35,
+        boomLen:0.62,
+        corvetteSpine:1,
+        spineH:0.55,
+        keelD:0.45,
+        corvettePylons:1,
+        pylonS:0.85
+      }
+
+};
+
+    function applyPreset(){
+      const key = $("style").value;
+      const p = PRESETS[key] || PRESETS.elite;
+
+      const setPair = (rid,nid,v)=>{ $(rid).value=v; $(nid).value=v; };
+      const set = (id,v)=>{ if(v!==undefined) $(id).value=v; };
+
+      set("hullType", p.hullType);
+      set("noseType", p.noseType);
+      setPair("noseLen","noseLenN", p.noseLen);
+
+      setPair("len","lenN", p.length);
+      setPair("rad","radN", p.radius);
+      setPair("flat","flatN", p.flatten);
+      setPair("agg","aggN", p.aggressiveness);
+      setPair("detail","detailN", p.detail ?? 0.55);
+
+      set("hullColor", p.hullColor);
+      set("darkColor", p.darkColor);
+      set("trimColor", p.trimColor);
+      set("emColor", p.emColor);
+      setPair("metal","metalN", p.metallic);
+      setPair("rough","roughN", p.roughness);
+      setPair("emInt","emIntN", p.emissiveIntensity);
+
+      // Paint zones
+      set("zonePaint", p.zonePaint ?? 0);
+      set("accentA", p.accentA ?? "#FFCC66");
+      set("accentB", p.accentB ?? "#66CCFF");
+      set("accentC", p.accentC ?? "#FF6677");
+      set("paintNose", p.paintNose ?? 0);
+      set("paintBridge", p.paintBridge ?? 0);
+      set("paintWings", p.paintWings ?? 0);
+      set("paintBooms", p.paintBooms ?? 0);
+      set("paintEngines", p.paintEngines ?? 0);
+      set("paintRibs", p.paintRibs ?? 0);
+
+      // Sections & edges
+      set("sectionMode", p.sectionMode ?? 1);
+      setPair("sectionCount","sectionCountN", p.sectionCount ?? 10);
+      setPair("sectionGap","sectionGapN", p.sectionGap ?? 0.02);
+      set("sectionApply", p.sectionApply ?? "base");
+      set("sectionPattern", p.sectionPattern ?? "ABAB");
+      set("sectionMatA", p.sectionMatA ?? "base");
+      set("sectionMatB", p.sectionMatB ?? "trim");
+      set("insetMode", p.insetMode ?? 1);
+      setPair("inset","insetN", p.inset ?? 0.14);
+      set("insetMat", p.insetMat ?? "dark");
+      set("edgeMode", p.edgeMode ?? 1);
+      setPair("edgeThick","edgeThickN", p.edgeThick ?? 0.12);
+      set("edgeMat", p.edgeMat ?? "trim");
+
+
+      // Decals
+      set("decalOn", p.decalOn ?? 0);
+      set("decalText", p.decalText ?? "A-07");
+      set("decalEmblem", p.decalEmblem ?? "none");
+      set("decalColor", p.decalColor ?? "#FFFFFF");
+      set("decalStroke", p.decalStroke ?? "#000000");
+      setPair("decalPos","decalPosN", p.decalPos ?? 0.55);
+      set("decalSide", p.decalSide ?? "right");
+      setPair("decalScale","decalScaleN", p.decalScale ?? 1.0);
+      setPair("decalRot","decalRotN", p.decalRot ?? 0);
+
+      set("panelMode", p.panelMode);
+      setPair("panelDensity","panelDensityN", p.panelDensity);
+      setPair("greeble","greebleN", p.greeble);
+      set("sectionPlates", p.sectionPlates);
+      set("ribsMode", (p.ribsMode ?? 1));
+      set("ribCount", (p.ribCount ?? 16));
+      setPair("ribThick","ribThickN", (p.ribThick ?? 0.95));
+
+      set("bridgeType", p.bridgeType);
+      set("windowType", p.windowType);
+      setPair("bridgePos","bridgePosN", p.bridgePos);
+      setPair("bridgeSize","bridgeSizeN", p.bridgeSize);
+
+      set("wingType", p.wingType);
+      set("wingSym", p.wingSym);
+      setPair("wingSpan","wingSpanN", p.wingSpan);
+      setPair("wingChord","wingChordN", p.wingChord);
+      setPair("wingPos","wingPosN", p.wingPos);
+      setPair("wingDihed","wingDihedN", p.wingDihedral);
+
+      setPair("pods","podsN", p.pods);
+      set("engineType", p.engineType);
+      set("hardpoints", p.hardpoints);
+      setPair("hpSize","hpSizeN", p.hpSize);
+
+      set("lightsMode", p.lightsMode);
+      set("lightCount", p.lightCount);
+      setPair("lightZ","lightZN", p.lightZ);
+      setPair("lightX","lightXN", p.lightX);
+
+      refreshMaterials();
+    }
+
+    // Genome copy/load
+    $("copyGenome").onclick = async ()=>{
+      const txt = $("genome").value;
+      try{
+        await navigator.clipboard.writeText(txt);
+        $("genomeHint").textContent = "Copiado ✓";
+        setTimeout(()=>{$("genomeHint").textContent="Reproducible: mismo genoma => misma nave (1 malla).";}, 900);
+      }catch(e){
+        alert("No pude copiar. Selecciona y copia manualmente.");
+      }
+    };
+
+    $("loadGenome").onclick = ()=>{
+      const txt = $("genome").value.trim();
+      if(!txt) return alert("Pega un JSON de genoma primero.");
+      let g;
+      try{ g = JSON.parse(txt); }catch(e){ return alert("JSON inválido."); }
+
+      const set = (id, v)=>{ if($(id) && v!==undefined && v!==null) $(id).value = v; };
+      const setPair = (rid,nid,v)=>{ if(v!==undefined && v!==null){ $(rid).value=v; $(nid).value=v; } };
+
+      set("seed", g.seed ?? $("seed").value);
+      set("style", g.style ?? $("style").value);
+      set("hullType", g.hullType ?? $("hullType").value);
+      set("noseType", g.noseType ?? $("noseType").value);
+      setPair("noseLen","noseLenN", g.noseLen);
+
+      setPair("len","lenN", g.length);
+      setPair("rad","radN", g.radius);
+      setPair("flat","flatN", g.flatten);
+      setPair("agg","aggN", g.aggressiveness);
+      setPair("detail","detailN", g.detail);
+
+      set("hullColor", g.hullColor);
+      set("darkColor", g.darkColor);
+      set("trimColor", g.trimColor);
+      set("emColor", g.emColor);
+      setPair("metal","metalN", g.metallic);
+      setPair("rough","roughN", g.roughness);
+      setPair("emInt","emIntN", g.emissiveIntensity);
+
+      // Paint zones
+      set("zonePaint", g.zonePaint);
+      set("accentA", g.accentA);
+      set("accentB", g.accentB);
+      set("accentC", g.accentC);
+      set("paintNose", g.paintNose);
+      set("paintBridge", g.paintBridge);
+      set("paintWings", g.paintWings);
+      set("paintBooms", g.paintBooms);
+      set("paintEngines", g.paintEngines);
+      set("paintRibs", g.paintRibs);
+
+      // Decals
+      set("decalOn", g.decalOn);
+      set("decalText", g.decalText);
+      set("decalEmblem", g.decalEmblem ?? "none");
+      set("decalColor", g.decalColor ?? "#FFFFFF");
+      set("decalStroke", g.decalStroke ?? "#000000");
+      setPair("decalPos","decalPosN", g.decalPos ?? 0.55);
+      set("decalSide", g.decalSide ?? "right");
+      setPair("decalScale","decalScaleN", g.decalScale ?? 1.0);
+      setPair("decalRot","decalRotN", g.decalRot ?? 0);
+
+      set("panelMode", g.panelMode);
+      setPair("panelDensity","panelDensityN", g.panelDensity);
+      setPair("greeble","greebleN", g.greeble);
+      set("sectionPlates", g.sectionPlates);
+      set("ribsMode", (g.ribsMode ?? $("ribsMode").value));
+      set("ribCount", (g.ribCount ?? $("ribCount").value));
+      if(g.ribThick != null) setPair("ribThick","ribThickN", g.ribThick);
+
+      set("bridgeType", g.bridgeType);
+      set("windowType", g.windowType);
+      setPair("bridgePos","bridgePosN", g.bridgePos);
+      setPair("bridgeSize","bridgeSizeN", g.bridgeSize);
+
+      set("wingType", g.wingType);
+      set("wingSym", g.wingSym);
+      setPair("wingSpan","wingSpanN", g.wingSpan);
+      setPair("wingChord","wingChordN", g.wingChord);
+      setPair("wingPos","wingPosN", g.wingPos);
+      setPair("wingDihed","wingDihedN", g.wingDihedral);
+
+      setPair("pods","podsN", g.pods);
+      set("engineType", g.engineType);
+      set("hardpoints", g.hardpoints);
+      setPair("hpSize","hpSizeN", g.hpSize);
+
+      set("lightsMode", g.lightsMode);
+      set("lightCount", g.lightCount);
+      setPair("lightZ","lightZN", g.lightZ);
+      setPair("lightX","lightXN", g.lightX);
+
+      refreshMaterials();
+      regenerate();
+    };
+
+    // UI events
+    $("randomSeed").onclick = ()=>{
+      $("seed").value = "seed-" + Math.random().toString(16).slice(2, 10);
+      scheduleRegen(true);
+    };
+    $("applyPreset").onclick = ()=>{
+      applyPreset();
+      scheduleRegen(true);
+    };
+    $("generate").onclick = ()=>scheduleRegen(true);
+    $("export").onclick = exportGLB;
+
+    $("resetCam").onclick = ()=>{
+      const p = readParams();
+      camera.alpha = BABYLON.Tools.ToRadians(35);
+      camera.beta  = BABYLON.Tools.ToRadians(68);
+      camera.radius = Math.max(240, p.length*2.25);
+      camera.target = new BABYLON.Vector3(0, p.radius*0.55, p.length*0.52 - p.length*0.12);
+      didFirstFit = true;
+      lastFitSize = p.length * (0.6 + p.radius*0.02);
+    };
+
+    // LIVE updates
+    const liveRegenIds = [
+      "style",
+      "hullType",
+      "seed",
+      "noseType",
+      "noseLen",
+      "noseLenN",
+      "len",
+      "lenN",
+      "rad",
+      "radN",
+      "flat",
+      "flatN",
+      "agg",
+      "aggN",
+      "panelMode",
+      "panelDensity",
+      "panelDensityN",
+      "sectionPlates",
+      "greeble",
+      "greebleN",
+      "ribsMode",
+      "ribCount",
+      "ribThick",
+      "ribThickN",
+      "corvetteMode",
+      "corvetteBooms",
+      "boomSpan",
+      "boomSpanN",
+      "boomLen",
+      "boomLenN",
+      "corvetteSpine",
+      "spineH",
+      "spineHN",
+      "keelD",
+      "keelDN",
+      "corvettePylons",
+      "pylonS",
+      "pylonSN",
+      "bridgeType",
+      "windowType",
+      "bridgePos",
+      "bridgePosN",
+      "bridgeSize",
+      "bridgeSizeN",
+      "wingType",
+      "wingSym",
+      "wingSpan",
+      "wingSpanN",
+      "wingChord",
+      "wingChordN",
+      "wingPos",
+      "wingPosN",
+      "wingDihed",
+      "wingDihedN",
+      "pods",
+      "podsN",
+      "engineType",
+      "hardpoints",
+      "hpSize",
+      "hpSizeN",
+      "lightsMode",
+      "lightCount",
+      "lightZ",
+      "lightZN",
+      "lightX",
+      "lightXN",
+      "detail",
+      "detailN",
+      "zonePaint",
+      "accentA",
+      "accentB",
+      "accentC",
+      "paintNose",
+      "paintBridge",
+      "paintWings",
+      "paintBooms",
+      "paintEngines",
+      "paintRibs",
+      "decalOn",
+      "decalText",
+      "decalEmblem",
+      "decalColor",
+      "decalStroke",
+      "decalPos",
+      "decalPosN",
+      "decalSide",
+      "decalScale",
+      "decalScaleN",
+      "decalRot",
+      "decalRotN"
+    ];
+
+    for(const id of liveRegenIds){
+      const el = $(id);
+      if(!el) continue;
+      const evt = (el.tagName === "SELECT" || el.type === "number" || el.type === "text") ? "change" : "input";
+      el.addEventListener(evt, ()=>scheduleRegen(false));
+    }
+
+    // Materials update instantly
+    ["hullColor","darkColor","trimColor","emColor"].forEach(id=>{
+      $(id).addEventListener("input", ()=>{ refreshMaterials(); });
+      $(id).addEventListener("change", ()=>{ refreshMaterials(); });
+    });
+
+    
+    // =============================
+    // GUI behavior (folders + save/load)
+    // =============================
+    (function setupGui(){
+      const ui = document.querySelector(".ui");
+
+      // Folder collapse/expand
+      const sections = Array.from(document.querySelectorAll(".section"));
+      sections.forEach((sec, i)=>{
+        const title = (sec.querySelector("h2")?.textContent || ("section"+i)).trim();
+        const key = "ship_gui_collapsed_" + title;
+        if(localStorage.getItem(key) === "1"){
+          sec.classList.add("collapsed");
+        }
+        const h = sec.querySelector("h2");
+        if(h){
+          h.addEventListener("click", ()=>{
+            sec.classList.toggle("collapsed");
+            localStorage.setItem(key, sec.classList.contains("collapsed") ? "1" : "0");
+          });
+        }
+      });
+
+      // Close Controls button + hotkey C
+      const toggleUI = ()=>{
+        ui.classList.toggle("hidden");
+        localStorage.setItem("ship_gui_hidden", ui.classList.contains("hidden") ? "1" : "0");
+      };
+      const btn = $("toggleUI");
+      if(btn) btn.onclick = toggleUI;
+      if(localStorage.getItem("ship_gui_hidden") === "1") ui.classList.add("hidden");
+      window.addEventListener("keydown", (e)=>{
+        if(e.key && e.key.toLowerCase() === "c"){
+          // avoid stealing focus while typing JSON
+          const a = document.activeElement;
+          const typing = a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA");
+          if(!typing) toggleUI();
+        }
+      });
+
+      // Guardar / Cargar JSON
+      const file = $("jsonFile");
+      const saveJsonBtn = $("saveJsonBtn");
+      const loadJsonBtn = $("loadJsonBtn");
+      const saveBrowserBtn = $("saveBrowserBtn");
+      const loadBrowserBtn = $("loadBrowserBtn");
+
+      const downloadText = (name, text)=>{
+        const blob = new Blob([text], {type:"application/json"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(()=>URL.revokeObjectURL(url), 250);
+      };
+
+      if(saveJsonBtn){
+        saveJsonBtn.onclick = ()=>{
+          // prefer the current genome field; if empty, serialize current params
+          const g = ($("genome").value || "").trim();
+          const payload = g.length ? g : JSON.stringify(readParams(), null, 2);
+          downloadText("ship_preset.json", payload);
+        };
+      }
+      if(loadJsonBtn && file){
+        loadJsonBtn.onclick = ()=>file.click();
+        file.addEventListener("change", ()=>{
+          const f = file.files && file.files[0];
+          if(!f) return;
+          const reader = new FileReader();
+          reader.onload = ()=>{
+            $("genome").value = (reader.result || "").toString();
+            // apply
+            $("loadGenome")?.click();
+          };
+          reader.readAsText(f);
+          file.value = "";
+        });
+      }
+      if(saveBrowserBtn){
+        saveBrowserBtn.onclick = ()=>{
+          const g = ($("genome").value || "").trim();
+          const payload = g.length ? g : JSON.stringify(readParams(), null, 2);
+          localStorage.setItem("ship_saved_genome", payload);
+          $("genomeHint").textContent = "Guardado en el navegador (localStorage).";
+        };
+      }
+      if(loadBrowserBtn){
+        loadBrowserBtn.onclick = ()=>{
+          const payload = localStorage.getItem("ship_saved_genome") || "";
+          if(!payload){
+            $("genomeHint").textContent = "No hay nada guardado aún.";
+            return;
+          }
+          $("genome").value = payload;
+          $("loadGenome")?.click();
+        };
+      }
+    })();
+
+
+
+    // Base/static meshes present before generating ships (used by the cleanup button)
+    const BASE_MESH_IDS = new Set(scene.meshes.map(m=>m.uniqueId));
+
+    // Manual cleanup button
+    $("cleanStrays")?.addEventListener("click", ()=>{
+      cleanupNewMeshes(BASE_MESH_IDS, shipRoot);
+    });
+
+// Initial run
+    applyPreset();
+    regenerate();
+
+    engine.runRenderLoop(()=>scene.render());
+    window.addEventListener("resize", ()=>engine.resize());
+  </script>
+</body>
+</html>
