@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Reproductor YouTube con Historial Detallado</title>
+  
+  <!-- Favicon -->
+  <link
+    rel="icon"
+    type="image/png"
+    href="img/radioyoutube/favicon.png"
+    sizes="32x32"
+  />
+	<link rel="icon" type="image/png" sizes="16x16" href="img/radioyoutube/favicon-16.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="img/radioyoutube/favicon-32.png">
+	<link rel="apple-touch-icon" href="img/radioyoutube/apple-touch-icon.png">
+	
+	<meta name="theme-color" content="#0e71b4">
+
+  
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    body {
+      margin: 0; padding: 20px;
+      background: #000; color: #fff;
+      font-family: Arial, sans-serif;
+      display: flex; flex-direction: column; align-items: center;
+    }
+    #load-url-container {
+      margin-bottom: 20px; width: 80%; max-width: 800px;
+    }
+    #url-input {
+      width: 85%; max-width: 658px; padding: 8px; font-size: 1rem;
+    }
+    #load-btn {
+      padding: 8px 12px; font-size: 1rem; margin-left: 8px;
+	  background: #0e71b4;
+      cursor: pointer;
+    }
+    #video-container {
+      position: relative;
+      width: 80%; max-width: 800px; height: 450px;
+      margin-top: 20px;
+      overflow: hidden;
+    }
+    #video-placeholder {
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%;
+	  pointer-events: none;
+	  background: url('img/radioyoutube/favicon.png') center/contain no-repeat;
+    }
+	
+    #video-placeholder iframe {
+      width: 100% !important;
+      height: 100% !important;
+    }
+    #controls-container {
+      position: absolute; bottom: 0; width: 100%; height: 35px;
+      background: rgba(0,0,0,0.5);
+      display: flex; flex-direction: column;
+      z-index: 3;
+      transition: opacity 0.5s;
+    }
+    #video-container.hide-controls #controls-container { opacity: 0; pointer-events: none; }
+    .buttons-container {
+      display: flex; justify-content: space-between; align-items: center; width: calc(100% - 0px); margin-top: 4px;
+    }
+    .left-controls, .right-controls {
+      display: flex; align-items: center; gap: 10px;
+    }
+    button { background: none; border: none; color: #fff; font-size: 24px; cursor: pointer; }
+    #progress-bar { width: calc(100% - 5px); margin-top: -4px; }
+    #mute-container { position: relative; display: inline-flex; align-items: center; }
+    #volume-control { display: none; width: 60px; margin-left: 5px; }
+    #mute-container:hover #volume-control { display: inline-block; }
+	
+	/*especial progress bar */
+	
+	/* Estilos comunes para sliders */
+input[type="range"] {
+  -webkit-appearance: none;
+  background: transparent;
+}
+
+/* Track (fondo) semitransparente y más fino */
+#progress-bar,
+#volume-control {
+  height: 4px;                          /* grosor reducido */
+}
+
+/* Chrome, Safari, Edge */
+#progress-bar::-webkit-slider-runnable-track,
+#volume-control::-webkit-slider-runnable-track {
+  height: 4px;
+  /*background: rgba(255, 255, 255, 0.5); *//* blanco al 50% */
+  border-radius: 2px;
+}
+
+#volume-control::-webkit-slider-runnable-track {
+	background: rgba(255, 255, 255, 0.5); /* blanco al 50% */
+}
+
+/* Thumb (control deslizante) */
+#progress-bar::-webkit-slider-thumb,
+#volume-control::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px; height: 12px;
+  background: #fff;
+  border-radius: 50%;
+  margin-top: -4px; /* centra el thumb en el track */
+  cursor: pointer;
+}
+
+/* Firefox */
+#progress-bar::-moz-range-track,
+#volume-control::-moz-range-track {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 2px;
+}
+#progress-bar::-moz-range-thumb,
+#volume-control::-moz-range-thumb {
+  width: 12px; height: 12px;
+  background: #fff;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+/* IE */
+#progress-bar::-ms-track,
+#volume-control::-ms-track {
+  height: 4px;
+  background: transparent;
+  border-color: transparent;
+  color: transparent;
+}
+#progress-bar::-ms-fill-lower,
+#volume-control::-ms-fill-lower {
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 2px;
+}
+#progress-bar::-ms-fill-upper,
+#volume-control::-ms-fill-upper {
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 2px;
+}
+#progress-bar::-ms-thumb,
+#volume-control::-ms-thumb {
+  width: 12px; height: 12px;
+  background: #fff;
+  border-radius: 50%;
+  margin-top: 0; /* ya está centrado */
+  cursor: pointer;
+}
+	
+	#repeatButton {
+	  background: none;
+	  border: none;
+	  font-size: 20px;
+	  color: #fff;
+	  cursor: pointer;
+	}
+	/* cuando esté activo, le damos un color destacado */
+	#repeatButton.active {
+	  color: #0e71b4;
+	}
+	
+	#openButton {
+	  background: none;
+	  border: none;
+	  font-size: 20px;
+	  color: #fff;
+	  cursor: pointer;
+	}
+	#openButton:hover {
+	  color: #0e71b4;
+	}
+
+    /* Historial */
+    #history-container {
+      margin-top: 30px;
+      width: 80%; max-width: 800px;
+      background: rgba(255,255,255,0.1);
+      padding: 10px; border-radius: 8px;
+    }
+    #history-container h2 {
+      margin: 0 0 10px; font-size: 1.2rem; color: #fff;
+    }
+    #history-list {
+      list-style: none; padding: 0; margin: 0;
+    }
+    #history-list li {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.2);
+    }
+    #history-list li:last-child { border-bottom: none; }
+    .history-item div {
+      display: flex; gap: 10px;
+    }
+    .play-button {
+      background: #0e71b4; padding: 4px 8px; border-radius: 4px; font-size: 0.9rem;
+      color: #fff; cursor: pointer;
+    }
+    .delete-button {
+      background: #ff4d4d; padding: 4px 8px; border-radius: 4px; font-size: 0.9rem;
+      color: #fff; cursor: pointer;
+    }
+    .history-meta {
+      font-size: 0.8rem; color: #ccc;
+      margin-left: 8px;
+    }
+	
+	/* 1) Vídeo responsivo con aspect-ratio */
+#video-container {
+  position: relative;
+  width: 100%;
+  max-width: 800px;
+  aspect-ratio: 16 / 9;
+  margin: 20px 0;
+  overflow: hidden;
+  height: initial;
+}
+
+#video-placeholder {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+}
+
+/* 2) Formulario adaptable */
+#load-url-container {
+  display: flex;
+  width: 100%;
+  max-width: 800px;
+  gap: 8px;
+}
+
+#url-input {
+  flex: 1;
+  padding: 8px;
+  font-size: 1rem;
+}
+
+#load-btn {
+  padding: 8px 12px;
+  font-size: 1rem;
+  background: #0e71b4;
+  border-radius: 4px;
+}
+
+/* 3) Historial ocupa todo el ancho */
+#history-container {
+  width: 100%;
+  max-width: 800px;
+  margin-top: 30px;
+}
+
+#gesture-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  bottom: 40px;        
+  display: none;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none; 
+  z-index: 4;
+  font-size: 64px;
+  color: rgba(255,255,255,0.85);
+  user-select: none;
+}
+
+#control-capture {
+  position: absolute;
+  bottom: 0; left: 0;
+  width: 100%;
+  height: 40px;       /* igual altura que controls-container */
+  z-index: 5;         /* por encima del gesture-overlay */
+  display: none;      /* sólo se activa vía la siguiente regla */
+}
+/* cuando hide-controls está activo, mostramos el escudo */
+#video-container.hide-controls #control-capture {
+  display: block;
+  /* detecta toques pero deja pasar clicks a los botones sólo cuando controles visibles */
+}
+
+/* El overlay por defecto no capta eventos */
+#gesture-overlay {
+  pointer-events: none;
+}
+
+/* Cuando el vídeo termine y no estemos en repeat, activamos este estado */
+#video-container.video-ended #gesture-overlay {
+  pointer-events: auto;    /* ahora sí captará el tap */
+  display: flex !important;/* lo mantenemos visible */
+}
+
+#gesture-overlay > .material-icons {
+	font-size:50px;
+	margin-top:36px;
+	background: rgba(0, 0, 0, 0.5);
+    border-radius: 100%;
+}
+
+/* ===== MÓVIL ===== */
+
+@media (max-width: 600px) {
+  body {
+    padding: 10px;
+  }
+  #load-url-container {
+    flex-direction: column; margin-bottom: 0px;
+  }
+  #load-url-container input,
+  #load-url-container button {
+    width: calc(100% - 25px);
+    padding: 4px 0;
+    margin: initial;
+    padding-inline: 0px;
+  }
+  #load-url-container button {
+	width: calc(100% - 22px);
+	margin-top: -5px;
+  };
+  #controls-container {
+    padding: 0px;
+  }
+  .buttons-container button {
+    font-size: 20px; padding-inline: 0px;
+  }
+  #time-display {
+    font-size: 0.9rem;
+  }
+  .history-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  .history-item div {
+    width: 100%;
+    justify-content: space-between;
+  }
+  #history-container {
+    margin-top: 0px;
+  }
+  .play-button, .delete-button {
+    font-size: 0.8rem;
+    padding: 4px 6px;
+  }
+  .left-controls, .right-controls {
+    gap: 2px;
+	}
+}
+
+@media (max-width: 600px) {
+  /* 1) Formulario fijo arriba */
+  #load-url-container {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%;
+    background: #000;
+    padding: 10px;
+    z-index: 1002;
+  }
+
+  /* 2) Player justo debajo del formulario */
+  #video-container {
+    position: fixed;
+    top: 50px; /* ajustar si tu formulario cambia de altura */
+    left: 0;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    z-index: 1001;
+  }
+
+  /* 3) Historial arrancando justo tras el player y scrollable */
+  #history-container {
+    margin-top: calc(56.25vw + 70px); /* 56.25vw = 9/16 de ancho; 70px = alto formulario + margen */
+    height: calc(100vh - (56.25vw + 70px));
+    overflow-y: auto;
+	border-radius: 0px;
+  }
+
+  /* 4) Ajustes generales */
+  body {
+    padding-top: 0; /* el formulario ya ocupa arriba */
+	padding-bottom: 0;
+  }
+}
+  </style>
+</head>
+<body>
+
+  <div id="load-url-container">
+    <input id="url-input" type="text" placeholder="https://youtu.be/VIDEO_ID" />
+    <button id="load-btn">Cargar URL</button>
+  </div>
+
+  <div id="video-container" onmousemove="showControls()" onmouseleave="hideControls()" >
+    <div id="video-placeholder"></div>
+	<div id="gesture-overlay"></div>
+	<div id="control-capture"></div>
+    <div id="controls-container">
+      <input id="progress-bar" type="range" min="0" max="100" value="0" step="0.1"
+             oninput="seekVideo(this.value)" />
+      <div class="buttons-container">
+        <div class="left-controls">
+          <button onclick="skipBackward()"><span class="material-icons">skip_previous</span></button>
+          <button id="playPauseButton" onclick="togglePlayPause()"><span class="material-icons">play_arrow</span></button>
+          <button onclick="skipForward()"><span class="material-icons">skip_next</span></button>
+          <div id="mute-container">
+            <button id="muteButton" onclick="toggleMute()"><span class="material-icons">volume_up</span></button>
+            <input id="volume-control" type="range" min="0" max="100" value="50"
+                   oninput="changeVolume(this.value)" />
+          </div>		  
+        </div>
+        <div class="right-controls">
+          <div id="time-display">0:00 / 0:00</div>
+		  <button id="repeatButton"><span class="material-icons">repeat</span></button>
+		  <button id="openButton"><span class="material-icons">open_in_new</span></button>
+          <button onclick="toggleFullScreen()"><span class="material-icons">fullscreen</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="history-container">
+    <h2>Historial de Vídeos</h2>
+    <ul id="history-list"></ul>
+  </div>
+
+  <script>
+		let player, isMuted=false, isPlaying=false, isRepeat = false;
+		let progressBar, timeDisplay, hideControlsTimeout;
+		let saveInterval, playerReady=false;
+		let firstLoad = true;
+		
+		const volumeKey = 'ytVolume';
+		let savedVolume = parseInt(localStorage.getItem(volumeKey));
+		if (isNaN(savedVolume)) savedVolume = 100;  // default 100%
+
+		const historyKey = 'ytHistory';
+		const raw = JSON.parse(localStorage.getItem(historyKey) || '{}');
+		const historyData = {};
+		// Migrar datos antiguos si hay (número ➔ {time,title,lastPlayed})
+		for (const [id,val] of Object.entries(raw)) {
+		  if (typeof val === 'object') {
+			historyData[id] = {
+			  time: val.time||0,
+			  title: val.title||id,
+			  lastPlayed: val.lastPlayed||new Date().toISOString()
+			};
+		  } else {
+			historyData[id] = {
+			  time: val,
+			  title: id,
+			  lastPlayed: new Date().toISOString()
+			};
+		  }
+		}
+
+		function saveHistory(){
+		  localStorage.setItem(historyKey, JSON.stringify(historyData));
+		}
+
+		function renderHistory(){
+		  const ul = document.getElementById('history-list');
+		  ul.innerHTML = '';
+		  // Ordenar por lastPlayed descendente
+		  const items = Object.entries(historyData)
+			.sort((a,b) => new Date(b[1].lastPlayed) - new Date(a[1].lastPlayed));
+		  for (const [id,data] of items) {
+			const m = Math.floor(data.time/60), s = Math.floor(data.time%60);
+			const ts = `${m}:${s<10?'0':''}${s}`;
+			// Fecha legible
+			const fecha = new Date(data.lastPlayed)
+							.toLocaleString('es-ES', { dateStyle:'short', timeStyle:'short' });
+			const li = document.createElement('li');
+			li.className = 'history-item';
+			li.innerHTML = `
+			  <div>
+				<span><strong>${data.title}</strong> — ${ts}</span>
+				<span class="history-meta">${fecha}</span>
+			  </div>
+			  <div>
+				<button class="play-button" data-id="${id}" data-time="${data.time}">
+				  Reproducir
+				</button>
+				<button class="delete-button" data-id="${id}">✖</button>
+			  </div>
+			`;
+			li.querySelector('.play-button').onclick = e => {
+			  loadAndPlay(e.target.dataset.id, parseFloat(e.target.dataset.time));
+			};
+			li.querySelector('.delete-button').onclick = e => {
+			  delete historyData[e.target.dataset.id];
+			  saveHistory();
+			  renderHistory();
+			};
+			ul.appendChild(li);
+		  }
+		}
+
+		function updateProgressStorage(){
+		  if (player && player.getCurrentTime) {
+			const id  = player.getVideoData().video_id;
+			const cur = player.getCurrentTime();
+			if (id) {
+			  historyData[id].time = cur;
+			  historyData[id].lastPlayed = new Date().toISOString();
+			  saveHistory();
+			  renderHistory();
+			}
+		  }
+		}
+		
+		document.getElementById('repeatButton').onclick = () => {
+		  isRepeat = !isRepeat;
+		  document.getElementById('repeatButton')
+				  .classList.toggle('active', isRepeat);
+		};	
+		
+		document.getElementById('openButton').onclick = () => {
+		  if (!player || !player.getVideoData) return;
+		  const id   = player.getVideoData().video_id;
+		  const sec  = Math.floor(player.getCurrentTime());
+		  // Construimos la URL con el parámetro de tiempo
+		  const url  = `https://www.youtube.com/watch?v=${id}&t=${sec}s`;
+		  window.open(url, '_blank');
+		};
+
+		function parseVideoID(url){
+		  const v = url.match(/[?&]v=([^&]+)/),
+				s = url.match(/youtu\.be\/([^?&]+)/);
+		  return v ? v[1] : s ? s[1] : null;
+		}
+		
+		function updatePlayButton() {
+		  let btn = document.getElementById("playPauseButton");
+		  if (isPlaying) {
+			btn.innerHTML = '<span class="material-icons">pause</span>';
+		  } else {
+			btn.innerHTML = '<span class="material-icons">play_arrow</span>';
+		  }
+		}
+
+		function onYouTubeIframeAPIReady(){
+		  player = new YT.Player('video-placeholder', {
+			videoId: '',
+			playerVars: {
+			  autoplay:0, controls:0, rel:0,
+			  modestbranding:1, playsinline:1, showinfo: 0,
+			cc_load_policy: 1, hl: 'es', playsinline:   1
+			},
+			events: {
+			  onReady: () => {
+				playerReady = true;
+				const iframe = player.getIframe();
+				iframe.setAttribute(
+				  'allow',
+				  'autoplay; encrypted-media; accelerometer; gyroscope; picture-in-picture; clipboard-write; web-share'
+				);
+				
+				// ↪ aplica el volumen guardado
+				  player.setVolume(savedVolume);
+				  const volControl = document.getElementById('volume-control');
+				  volControl.value = savedVolume;
+				
+				progressBar = document.getElementById('progress-bar');
+				timeDisplay = document.getElementById('time-display');
+				updateProgressBar();
+				renderHistory();
+			  },
+			  onStateChange: e => {
+			  clearInterval(saveInterval);
+
+			  if (e.data === YT.PlayerState.PLAYING) {
+				isPlaying    = true;
+				saveInterval = setInterval(updateProgressStorage, 2000);
+				hideControls();
+				// Nos aseguramos de quitar video-ended si volvemos a jugar
+				document.getElementById('video-container')
+						.classList.remove('video-ended');
+
+			  } else if (e.data === YT.PlayerState.ENDED) {
+				if (isRepeat) {
+				  player.seekTo(0);
+				  player.playVideo();
+				  return;
+				}
+				isPlaying = false;
+				showControls();
+
+				// 🚩 Estado “acabado” y repeat OFF: mostramos el overlay con replay
+				const vc = document.getElementById('video-container');
+				vc.classList.add('video-ended');
+
+				const overlay = document.getElementById('gesture-overlay');
+				overlay.innerHTML = '<span class="material-icons">replay</span>';
+				// display flex lo gestiona la clase .video-ended
+			  }
+			  else {
+				isPlaying = false;
+				showControls();
+			  }
+
+			  updatePlayButton();
+			},
+			  onError: () => alert('Error al reproducir el vídeo.')
+			}
+		  });
+		}
+		
+		function randomHexColor() {
+		  return '#' + Math.floor(Math.random() * 0xFFFFFF).toString(16).padStart(6, '0');
+		}
+
+		function loadAndPlay(id, start = 0) {
+		  if (!playerReady) return setTimeout(() => loadAndPlay(id, start), 100);
+		  player.loadVideoById({ videoId: id, startSeconds: start });
+		  player.playVideo();
+
+		  // Creo la entrada si no existe y actualizo lastPlayed
+		  historyData[id] = historyData[id] || { time: start, title: id };
+		  historyData[id].lastPlayed = new Date().toISOString();
+		  saveHistory();
+		  renderHistory();
+
+		  // 🚀 Aquí pedimos el título real y volvemos a renderizar
+		  fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${id}&format=json`)
+			.then(res => res.json())
+			.then(o => {
+			  historyData[id].title = o.title;
+			  saveHistory();
+			  renderHistory();
+			})
+			.catch(_ => {/* si falla, dejamos el ID como título */});
+			
+			// → CAMBIO DE COLOR DE LA BARRA:
+			  const newColor = randomHexColor();
+			  setThemeColor(newColor);
+
+			  player.loadVideoById({ videoId: id, startSeconds: start });
+			  player.playVideo();
+		}
+
+		document.getElementById('load-btn').onclick = () => {
+		  const url = document.getElementById('url-input').value.trim();
+		  const id  = parseVideoID(url);
+		  if (!id) return alert('URL no válida');
+		  loadAndPlay(id, 0);
+		  document.getElementById('url-input').value = '';
+		};
+
+		// Controles de reproducción
+		function togglePlayPause(){
+		  if (!player) return;
+		  isPlaying ? player.pauseVideo() : player.playVideo();
+		}
+		function skipForward(){ player.seekTo(player.getCurrentTime()+30, true); }
+		function skipBackward(){ player.seekTo(Math.max(player.getCurrentTime()-10,0), true); }
+		function changeVolume(v) {
+		  const vol = parseInt(v);
+		  player.setVolume(vol);
+		  localStorage.setItem(volumeKey, vol);  // guarda la preferencia
+		}
+		function seekVideo(v){ player.seekTo((v/100)*player.getDuration(), true); }
+		function toggleFullScreen(){
+		  const c = document.getElementById('video-container');
+		  document.fullscreenElement ? document.exitFullscreen() : c.requestFullscreen();
+		}
+		function showControls(){
+		  clearTimeout(hideControlsTimeout);
+		  document.getElementById('video-container').classList.remove('hide-controls');
+		  if (isPlaying) {
+			hideControlsTimeout = setTimeout(() => {
+			  document.getElementById('video-container').classList.add('hide-controls');
+			}, 2000);
+		  }
+		}
+		function hideControls(){
+		  if (isPlaying) {
+			hideControlsTimeout = setTimeout(() => {
+			  document.getElementById('video-container').classList.add('hide-controls');
+			}, 2000);
+		  }
+		}
+
+		function updateProgressBar(){
+		  setInterval(() => {
+			if (player && typeof player.getDuration === 'function') {
+			  const c = player.getCurrentTime();
+			  const d = player.getDuration();
+			  const percent = (c / d) * 100;
+
+			  // 1) Valor normal
+			  progressBar.value = percent;
+
+			  // 2) Background dinámico: azul hasta 'percent%', blanco50% resto
+			  progressBar.style.background = 
+				`linear-gradient(to right, 
+				  #0e71b4 0%, 
+				  #0e71b4 ${percent}%, 
+				  rgba(255,255,255,0.5) ${percent}%, 
+				  rgba(255,255,255,0.5) 100%)`;
+
+			  // Igual para volume-control si quieres el mismo efecto:
+			  // const v = player.isMuted() ? 0 : player.getVolume();
+			  // volumeControl.style.background = `linear-gradient(to right, #0e71b4 0%, #0e71b4 ${v}%, rgba(255,255,255,0.5) ${v}%, rgba(255,255,255,0.5) 100%)`;
+			  
+			  timeDisplay.innerText = `${formatTime(c)} / ${formatTime(d)}`;
+			}
+		  }, 500);
+		}
+		
+		function formatTime(s){
+		  const m = Math.floor(s/60), sec = Math.floor(s%60);
+		  return `${m}:${sec<10?'0':''}${sec}`;
+		}
+
+		// Carga inicial de la API YouTube
+		(function(){
+		  const tag = document.createElement('script');
+		  tag.src = 'https://www.youtube.com/iframe_api';
+		  document.head.appendChild(tag);
+		})();
+		
+		const controlCapture = document.getElementById('control-capture');
+		controlCapture.addEventListener('touchend', e => {
+		  // mostramos los controles y evitamos que el evento baje más
+		  showControls();
+		  e.stopPropagation();
+		  e.preventDefault();
+		}, { passive: false });
+				
+		// Detector de taps del video-container
+		(function setupMobileGestures(){
+			  const vc       = document.getElementById('video-container');
+			  const overlay  = document.getElementById('gesture-overlay');
+			  const controls = document.getElementById('controls-container');
+
+			  vc.addEventListener('touchend', e => {
+				const vcRect = vc.getBoundingClientRect();
+				const touch  = e.changedTouches[0];
+				const x      = touch.clientX - vcRect.left;
+				const y      = touch.clientY - vcRect.top;
+				const ch     = controls.getBoundingClientRect().height;
+
+				// 1) Si estás tocando en la franja inferior, solo mostramos controles
+				if (y > vcRect.height - ch) {
+				  showControls();
+				  return;
+				}
+
+				// 2) Si los controles están ocultos, primer toque los muestra
+				if (vc.classList.contains('hide-controls')) {
+				  showControls();
+				  return;
+				}
+
+				// 3) Controles visibles y fuera de la zona de controles → acción
+				if (x < vcRect.width * 0.33) {
+				  skipBackward();
+				  overlay.innerHTML = '<span class="material-icons">replay_10</span>';
+				} else if (x > vcRect.width * 0.66) {
+				  skipForward();
+				  overlay.innerHTML = '<span class="material-icons">forward_30</span>';
+				} else {
+				  togglePlayPause();
+				  overlay.innerHTML = isPlaying
+					? '<span class="material-icons">pause</span>'
+					: '<span class="material-icons">play_arrow</span>';
+				}
+
+				// Mostramos el overlay centrado con el icono
+				overlay.style.display = 'flex';
+				setTimeout(() => overlay.style.display = 'none', 600);
+			  }, { passive: true });
+			})();
+			
+			// Listener para el botón de “replay” fijo
+			const overlay = document.getElementById('gesture-overlay');
+			overlay.addEventListener('touchend', e => {
+			  const vc = document.getElementById('video-container');
+			  if (!vc.classList.contains('video-ended')) return;
+			  // Reiniciamos el vídeo
+			  player.seekTo(0);
+			  player.playVideo();
+			  vc.classList.remove('video-ended');
+			  // Ocultamos el overlay
+			  overlay.style.display = 'none';
+			}, { passive: true });
+			
+			function setThemeColor(color) {
+			  let meta = document.querySelector("meta[name='theme-color']");
+			  if (!meta) {
+				// si no existe, la creamos
+				meta = document.createElement('meta');
+				meta.setAttribute('name', 'theme-color');
+				document.head.appendChild(meta);
+			  }
+			  meta.setAttribute('content', color);
+			}
+			
+			window.addEventListener('load', () => {
+			  const tryLoadLast = () => {
+				if (!playerReady) {
+				  return setTimeout(tryLoadLast, 100);
+				}
+				if (firstLoad && Object.keys(historyData).length > 0) {
+				  // Ordena por lastPlayed y coge el más reciente
+				  const [lastId, lastData] = Object.entries(historyData)
+					.sort((a, b) => new Date(b[1].lastPlayed) - new Date(a[1].lastPlayed))[0];
+				  // Carga y reproduce donde lo dejaste
+				  loadAndPlay(lastId, lastData.time);
+				  firstLoad = false;
+				}
+			  };
+			  tryLoadLast();
+			});
+
+  </script>
+</body>
+</html>
