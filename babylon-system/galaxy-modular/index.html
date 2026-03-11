@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Babylon Floating Origin Demo (Modular)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
+  <style>
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background:#000; }
+    #renderCanvas {
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      display: block;
+	  background: #000;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="renderCanvas"></canvas>
+  <!-- Elite HUD se monta aquí (DOM creado desde src/ui/eliteHud.js) -->
+  <div id="eliteHudMount"></div>
+
+  <script src="https://cdn.babylonjs.com/babylon.js"></script>
+  <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
+
+  <!-- Planet-Editor procedural planet generator (used when a planet has def.jsonFile) -->
+  <script src="./src/planetgen/noise.js"></script>
+  <script src="./src/planetgen/hydrosphere.js"></script>
+  <script src="./src/planetgen/clouds.js"></script>
+  <script src="./src/planetgen/rings.js"></script>
+  <script src="./src/planetgen/lithosphere.js"></script>
+  <script src="./src/planetgen/geosphere.js"></script>
+  <script src="./src/planetgen/atmosphere.js"></script>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
