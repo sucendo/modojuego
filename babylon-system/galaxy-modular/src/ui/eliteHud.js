@@ -3,6 +3,7 @@
 // - C: mostrar/ocultar HUD
 // - L: labels on/off
 // - G: grid on/off
+// - N: mostrar/ocultar notes
 // - M/K: modos cámara (M oculto en HUD, sigue por teclado)
 // - 0..9: hitos de velocidad
 // - +/-: ajuste fino
@@ -28,7 +29,7 @@ function toggleFullscreen() {
   else doc.exitFullscreen?.();
 }
 
-const LAYOUT_KEY = 'eliteHudLayout_v3';
+const LAYOUT_KEY = 'eliteHudLayout_v5';
 
 function loadLayout() {
   try {
@@ -40,7 +41,9 @@ function loadLayout() {
 }
 
 function saveLayout(layout) {
-  try { localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout)); } catch (_) {}
+  try {
+    localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout));
+  } catch (_) {}
 }
 
 function clamp(n, a, b) {
@@ -103,6 +106,7 @@ function makeDraggable(panelEl, handleEl, layout, panelKey) {
 
     nextLeft = clamp(baseLeft + dx, 0, maxL);
     nextTop = clamp(baseTop + dy, 0, maxT);
+
     if (!raf) raf = requestAnimationFrame(paint);
   };
 
@@ -110,6 +114,7 @@ function makeDraggable(panelEl, handleEl, layout, panelKey) {
     if (!dragging) return;
     dragging = false;
     panelEl.classList.remove('dragging');
+
     window.removeEventListener('pointermove', onMove);
     window.removeEventListener('pointerup', onUp);
     window.removeEventListener('pointercancel', onUp);
@@ -192,6 +197,10 @@ export function createEliteHud({
   camCtrl = camCtrl || window.__camCtrl || null;
   const mount = document.getElementById(mountId) || document.body;
 
+  const isTouchLike =
+    !!window.matchMedia?.('(pointer: coarse)').matches ||
+    /Android|iPhone|iPad|iPod|Mobile|Tablet/i.test(navigator.userAgent || '');
+
   try { document.getElementById('eliteHudRoot')?.remove(); } catch (_) {}
 
   if (!document.getElementById('eliteHudStyles')) {
@@ -233,6 +242,9 @@ export function createEliteHud({
       }
       .elitePanel.dragging{
         outline: 2px solid rgba(0,255,204,0.18);
+      }
+      .elitePaneHidden{
+        display:none !important;
       }
 
       .eliteHdr{
@@ -311,12 +323,6 @@ export function createEliteHud({
         gap:8px;
         flex-wrap:wrap;
       }
-      .eliteCol{
-        display:flex;
-        flex-direction:column;
-        gap:8px;
-        min-width:0;
-      }
       .eliteK{
         color: rgba(0,255,204,0.88);
         font-size:10px;
@@ -381,13 +387,12 @@ export function createEliteHud({
       }
 
       .eliteMainLayout{
-        display:flex;
+        display:grid;
+        grid-template-columns: minmax(0, 1fr) 42px;
         align-items:flex-start;
-        justify-content:space-between;
-        gap:12px;
+        gap:10px;
       }
       .eliteMainLeft{
-        flex:1 1 auto;
         min-width:0;
       }
 
@@ -446,20 +451,20 @@ export function createEliteHud({
         position:fixed;
         left:10px;
         top:10px;
-        width:min(560px, calc(100vw - 20px));
+        width:min(470px, calc(100vw - 20px));
       }
 
       #eliteHudNotes{
         position:fixed;
         left:10px;
         bottom:10px;
-        width:min(300px, calc(100vw - 20px));
+        width:min(265px, calc(100vw - 20px));
       }
 
       .eliteNotes{
         display:block;
         width:100%;
-        min-height:90px;
+        min-height:76px;
         resize:vertical;
         background: rgba(0,0,0,0.24);
         color: rgba(236,255,251,0.96);
@@ -479,39 +484,46 @@ export function createEliteHud({
         left:50%;
         top:50%;
         transform:translate(-50%, -50%);
-        width:180px;
-        height:180px;
+        width:170px;
+        height:170px;
         pointer-events:none;
         opacity:0.96;
       }
-      .retRing{
+      .retBox{
         position:absolute;
         inset:0;
         margin:auto;
-        width:74px;
-        height:74px;
-        border-radius:50%;
-        border:1px solid rgba(0,255,204,0.18);
-        box-shadow: 0 0 18px rgba(0,255,204,0.06);
+        width:68px;
+        height:68px;
       }
+      .retCorner{
+        position:absolute;
+        width:14px;
+        height:14px;
+      }
+      .retCorner.tl{ left:0; top:0; border-left:1px solid; border-top:1px solid; border-color: rgba(0,255,204,0.55);}
+      .retCorner.tr{ right:0; top:0; border-right:1px solid; border-top:1px solid; border-color: rgba(0,255,204,0.55);}
+      .retCorner.bl{ left:0; bottom:0; border-left:1px solid; border-bottom:1px solid; border-color: rgba(0,255,204,0.55);}
+      .retCorner.br{ right:0; bottom:0; border-right:1px solid; border-bottom:1px solid; border-color: rgba(0,255,204,0.55);}
+
       .retCrossH,
       .retCrossV{
         position:absolute;
         left:50%;
         top:50%;
         transform:translate(-50%, -50%);
-        background: rgba(0,255,204,0.86);
+        background: rgba(0,255,204,0.88);
         box-shadow: 0 0 8px rgba(0,255,204,0.24);
       }
-      .retCrossH{ width:40px; height:1px; }
-      .retCrossV{ width:1px; height:40px; }
+      .retCrossH{ width:34px; height:1px; }
+      .retCrossV{ width:1px; height:34px; }
 
       .eliteHeadingMark{
         position:absolute;
         left:50%;
         top:50%;
-        width:14px;
-        height:14px;
+        width:22px;
+        height:22px;
         transform: translate(-50%, -50%);
         opacity:0.95;
       }
@@ -521,12 +533,23 @@ export function createEliteHud({
         position:absolute;
         left:50%;
         top:50%;
-        background: rgba(255,190,80,0.94);
+        background: rgba(255,190,80,0.92);
         box-shadow: 0 0 8px rgba(255,180,60,0.28);
         transform: translate(-50%, -50%);
       }
-      .eliteHeadingMark:before{ width:14px; height:2px; }
-      .eliteHeadingMark:after{ width:2px; height:14px; }
+      .eliteHeadingMark:before{ width:22px; height:2px; }
+      .eliteHeadingMark:after{ width:2px; height:22px; }
+      .eliteHeadingDot{
+        position:absolute;
+        left:50%;
+        top:50%;
+        width:6px;
+        height:6px;
+        border-radius:999px;
+        background: rgba(255,190,80,0.95);
+        transform: translate(-50%, -50%);
+        box-shadow: 0 0 10px rgba(255,180,60,0.34);
+      }
 
       #eliteHudHint{
         position:fixed;
@@ -547,7 +570,7 @@ export function createEliteHud({
           top:6px;
         }
         #eliteHudNotes{
-          display:none;
+          display:none !important;
         }
         .eliteHdr{
           padding:7px 8px 5px 8px;
@@ -580,7 +603,7 @@ export function createEliteHud({
           font-size:11px;
         }
         .eliteSpeedRail{
-          height:114px;
+          height:110px;
           width:14px;
         }
         .eliteSpeedRailThumb{
@@ -591,14 +614,50 @@ export function createEliteHud({
           width:150px;
           height:150px;
         }
-        .retRing{
-          width:62px;
-          height:62px;
+        .retBox{
+          width:60px;
+          height:60px;
         }
-        .retCrossH{ width:34px; }
-        .retCrossV{ height:34px; }
+        .retCrossH{ width:30px; }
+        .retCrossV{ height:30px; }
         #eliteHudHint{
           display:none;
+        }
+        .hideOnSmall{
+          display:none !important;
+        }
+      }
+
+      @media (pointer: coarse) and (orientation: landscape){
+        #eliteHudMain{
+          width:min(360px, calc(100vw - 10px));
+          left:5px;
+          top:5px;
+        }
+        #speedSeg{
+          display:none;
+        }
+        .eliteMainLayout{
+          grid-template-columns: minmax(0, 1fr) 36px;
+          gap:8px;
+        }
+        .eliteSpeedRail{
+          height:92px;
+          width:12px;
+        }
+        .eliteSpeedRailThumb{
+          width:18px;
+          height:8px;
+        }
+        .eliteMetrics{
+          gap:8px;
+        }
+        .eliteMetric{
+          min-width:52px;
+        }
+        .eliteBtn{
+          min-height:24px;
+          padding:4px 6px;
         }
       }
     `;
@@ -606,30 +665,29 @@ export function createEliteHud({
   }
 
   const layout = loadLayout();
-  const DEV_UI = false;
 
   const root = document.createElement('div');
   root.id = 'eliteHudRoot';
 
-	const ret = document.createElement('div');
-	ret.id = 'eliteHudReticle';
-	ret.innerHTML = `
-	  <div class="retBox">
-		<span class="retCorner tl"></span>
-		<span class="retCorner tr"></span>
-		<span class="retCorner bl"></span>
-		<span class="retCorner br"></span>
-		<div class="retCrossH"></div>
-		<div class="retCrossV"></div>
-	  </div>
-	  <div class="eliteHeadingMark" id="eliteHeadingMark">
-		<div class="eliteHeadingDot"></div>
-	  </div>
-	`;
+  const ret = document.createElement('div');
+  ret.id = 'eliteHudReticle';
+  ret.innerHTML = `
+    <div class="retBox">
+      <span class="retCorner tl"></span>
+      <span class="retCorner tr"></span>
+      <span class="retCorner bl"></span>
+      <span class="retCorner br"></span>
+      <div class="retCrossH"></div>
+      <div class="retCrossV"></div>
+    </div>
+    <div class="eliteHeadingMark" id="eliteHeadingMark">
+      <div class="eliteHeadingDot"></div>
+    </div>
+  `;
 
   const hint = document.createElement('div');
   hint.id = 'eliteHudHint';
-  hint.textContent = 'C HUD · L labels · G grid · M ratón(dev) · K nave · 0..9 hitos · +/- fino · º reversa · R centrar vista';
+  hint.textContent = 'C HUD · L labels · G grid · N notes · M ratón(dev) · K nave · 0..9 hitos · +/- fino · º reversa · R centrar vista';
 
   const main = document.createElement('div');
   main.id = 'eliteHudMain';
@@ -644,6 +702,7 @@ export function createEliteHud({
         </div>
       </div>
       <div class="eliteHdrRight">
+        <button class="eliteIconBtn hideOnSmall" id="btnNotesToggle" title="Notes (N)">N</button>
         <button class="eliteIconBtn" id="btnLayoutReset" title="Reset HUD">↺</button>
         <button class="eliteIconBtn" id="btnFullscreen" title="Pantalla completa">⛶</button>
         <span class="dragHandle" id="dragMain" title="Arrastra">⠿</span>
@@ -697,7 +756,7 @@ export function createEliteHud({
 
   const notesPanel = document.createElement('div');
   notesPanel.id = 'eliteHudNotes';
-  notesPanel.className = 'elitePanel';
+  notesPanel.className = 'elitePanel elitePaneHidden';
   notesPanel.innerHTML = `
     <div class="eliteHdr">
       <div class="eliteTitle">COMMS / NOTES</div>
@@ -733,6 +792,7 @@ export function createEliteHud({
   const uiState = {
     labelsVisible: true,
     gridVisible: false,
+    notesVisible: false,
   };
 
   try {
@@ -751,6 +811,7 @@ export function createEliteHud({
 
   const btnFs = root.querySelector('#btnFullscreen');
   const btnLayoutReset = root.querySelector('#btnLayoutReset');
+  const btnNotesToggle = root.querySelector('#btnNotesToggle');
   const btnShip = root.querySelector('#btnModeShip');
   const btnReverse = root.querySelector('#btnReverse');
   const btnLabels = root.querySelector('#btnLabels');
@@ -773,6 +834,11 @@ export function createEliteHud({
   const speedSeg = root.querySelector('#speedSeg');
   const notes = root.querySelector('#hudNotesArea');
 
+  if (!isTouchLike) {
+    btnGyro?.classList.add('elitePaneHidden');
+    btnGyroReset?.classList.add('elitePaneHidden');
+  }
+
   const speedBtns = [];
   for (let i = 0; i <= 9; i++) {
     const b = document.createElement('button');
@@ -786,6 +852,22 @@ export function createEliteHud({
     };
     speedSeg.appendChild(b);
     speedBtns.push(b);
+  }
+
+  function setNotesVisible(on) {
+    uiState.notesVisible = !!on;
+    notesPanel.classList.toggle('elitePaneHidden', !uiState.notesVisible);
+    if (btnNotesToggle) btnNotesToggle.classList.toggle('on', uiState.notesVisible);
+    if (uiState.notesVisible) {
+      try {
+        clampPanelIntoView(notesPanel);
+      } catch (_) {}
+    }
+  }
+
+  function toggleNotes() {
+    if (window.innerWidth <= 760) return;
+    setNotesVisible(!uiState.notesVisible);
   }
 
   function setLabelsVisible(on) {
@@ -820,6 +902,8 @@ export function createEliteHud({
       el.style.bottom = '';
     }
   });
+
+  btnNotesToggle?.addEventListener('click', toggleNotes);
 
   btnShip?.addEventListener('click', () => {
     if (camCtrl?.setMode) camCtrl.setMode('ship');
@@ -879,6 +963,12 @@ export function createEliteHud({
     if (k === 'g') {
       ev.preventDefault?.();
       toggleGrid();
+      return;
+    }
+
+    if (k === 'n') {
+      ev.preventDefault?.();
+      toggleNotes();
       return;
     }
   }
@@ -980,6 +1070,7 @@ export function createEliteHud({
       gyro: !!hud.gyroEnabled,
       labels: !!uiState.labelsVisible,
       grid: !!uiState.gridVisible,
+      notes: !!uiState.notesVisible,
       absX: fmtAbs(absPos.x),
       absY: fmtAbs(absPos.y),
       absZ: fmtAbs(absPos.z),
@@ -997,8 +1088,9 @@ export function createEliteHud({
     if (btnReverse) btnReverse.classList.toggle('on', !!spd.reverse);
     if (btnLabels) btnLabels.classList.toggle('on', !!uiState.labelsVisible);
     if (btnGrid) btnGrid.classList.toggle('on', !!uiState.gridVisible);
+    if (btnNotesToggle) btnNotesToggle.classList.toggle('on', !!uiState.notesVisible);
 
-    if (btnGyro) {
+    if (isTouchLike && btnGyro) {
       btnGyro.classList.toggle('on', !!hud.gyroEnabled);
       btnGyro.textContent = `GYR${hud.gyroEnabled ? '•' : ''}`;
     }
@@ -1033,12 +1125,16 @@ export function createEliteHud({
     }
 
     if (headingMark) {
-      const visible = mode === 'ship' && !!hud.headingMarker?.visible;
+      const dx = hud.headingMarker?.xN || 0;
+      const dy = hud.headingMarker?.yN || 0;
+      const separated = Math.abs(dx) > 0.035 || Math.abs(dy) > 0.035;
+      const visible = mode === 'ship' && !!hud.headingMarker?.visible && separated;
+
       headingMark.style.display = visible ? '' : 'none';
 
       if (visible) {
-        const left = clamp(50 + (hud.headingMarker?.xN || 0) * 38, 8, 92);
-        const top = clamp(50 + (hud.headingMarker?.yN || 0) * 32, 8, 92);
+        const left = clamp(50 + dx * 38, 8, 92);
+        const top = clamp(50 + dy * 32, 8, 92);
         headingMark.style.left = `${left}%`;
         headingMark.style.top = `${top}%`;
       }
@@ -1054,20 +1150,26 @@ export function createEliteHud({
 
   const onResize = () => {
     clampPanelIntoView(main);
-    clampPanelIntoView(notesPanel);
+    if (!notesPanel.classList.contains('elitePaneHidden')) {
+      clampPanelIntoView(notesPanel);
+    }
     const p = layout.panels || {};
     if (p.eliteHudMain) p.eliteHudMain = getPanelPos(main);
-    if (p.eliteHudNotes) p.eliteHudNotes = getPanelPos(notesPanel);
+    if (p.eliteHudNotes && !notesPanel.classList.contains('elitePaneHidden')) {
+      p.eliteHudNotes = getPanelPos(notesPanel);
+    }
     saveLayout(layout);
+
+    if (window.innerWidth <= 760) setNotesVisible(false);
   };
 
   window.addEventListener('resize', onResize, { passive: true });
-
+  
   function update() {
     const now = performance.now();
     if ((now - _lastUiT) < UI_MS) return;
     _lastUiT = now;
-
+  
     try {
       const fs = !!document.fullscreenElement;
       if (btnFs && fs !== _lastFs) {
@@ -1075,12 +1177,12 @@ export function createEliteHud({
         _lastFs = fs;
       }
     } catch (_) {}
-
+  
     updateModeAndSpeed();
   }
-
+  
   update();
-
+  
   try {
     const obs = engine?.onDisposeObservable || camera?.getScene?.()?.onDisposeObservable;
     obs?.add?.(() => {
@@ -1088,7 +1190,7 @@ export function createEliteHud({
       window.removeEventListener('resize', onResize);
     });
   } catch (_) {}
-
+  
   return {
     update,
     setVisible,

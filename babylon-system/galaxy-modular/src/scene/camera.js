@@ -20,7 +20,7 @@ export function setupCamera(scene, canvas, opts = {}) {
   const tmpForward = new BABYLON.Vector3();
 
   const state = {
-    mode: "mouse",
+    mode: "ship",
     isFast: false,
     ship: {
       unitsPerLy: Number.isFinite(opts.unitsPerLy) ? opts.unitsPerLy : 1_000_000,
@@ -743,6 +743,7 @@ export function setupCamera(scene, canvas, opts = {}) {
   _rebuildSpeedAnchors();
   _syncTargetFromStep();
   _ensureUi();
+  setMode('ship', { fromLoad: true });
 
   const controller = {
     setMode,

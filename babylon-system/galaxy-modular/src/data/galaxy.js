@@ -2649,11 +2649,26 @@ export const GALAXY = {
   },
 
   // --- Gamma Cephei (Yondair) ---
-  "Gamma Cephei": {
-    periapsis: 0, apoapsis: 0, orbitalPeriod: 0, inclination: 0, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 0, lastPerihelion: "2024-01-01",
-    size: 4800000, color: 0xffaa44, rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0, rotationPeriod: 70,
-    orbits: "Gamma Cephei", kind: "star", radius: 30, emissive: new BABYLON.Color3(0.9, 0.6, 0.2)
-  },
+        "Gamma Cephei": {
+          periapsis: 0, apoapsis: 0,
+          orbitalPeriod: 0,
+          inclination: 0,
+          argumentOfPeriapsis: 0,
+          longitudeOfAscendingNode: 0,
+          lastPerihelion: "2024-01-01",
+    
+          size: 650000,
+          color: 0xfff0d2,
+          rotationAxis: { x: 0, y: 1, z: 0 },
+          axialTilt: 0,
+          rotationPeriod: 27,
+    
+          orbits: "Gamma Cephei",
+    
+          kind: "sun",
+          radius: 26,
+          emissive: new BABYLON.Color3(0.95, 0.92, 0.78),
+        },
 
   // --- Caph ---
   "Caph": {
@@ -2687,11 +2702,26 @@ export const GALAXY = {
   },
 
   // --- Psi Draconis ---
-  "Psi Draconis": {
-    periapsis: 0, apoapsis: 0, orbitalPeriod: 0, inclination: 0, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 0, lastPerihelion: "2024-01-01",
-    size: 1300000, color: 0xffffcc, rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0, rotationPeriod: 15,
-    orbits: "Psi Draconis", kind: "star", radius: 15, emissive: new BABYLON.Color3(1.0, 1.0, 0.8)
-  },
+        "Psi Draconis": {
+          periapsis: 0, apoapsis: 0,
+          orbitalPeriod: 0,
+          inclination: 0,
+          argumentOfPeriapsis: 0,
+          longitudeOfAscendingNode: 0,
+          lastPerihelion: "2024-01-01",
+    
+          size: 670000,
+          color: 0xfff0dd,
+          rotationAxis: { x: 0, y: 1, z: 0 },
+          axialTilt: 0,
+          rotationPeriod: 27,
+    
+          orbits: "Psi Draconis",
+    
+          kind: "sun",
+          radius: 27,
+          emissive: new BABYLON.Color3(0.95, 0.90, 0.82),
+        },
 
   // --- Alphecca ---
   "Alphecca": {
@@ -2729,11 +2759,26 @@ export const GALAXY = {
   },
 
   // --- Mu Draconis (Laoujin) ---
-  "Mu Draconis": {
-    periapsis: 0, apoapsis: 0, orbitalPeriod: 0, inclination: 0, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 0, lastPerihelion: "2024-01-01",
-    size: 1500000, color: 0xffffff, rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0, rotationPeriod: 12,
-    orbits: "Mu Draconis", kind: "star", radius: 15, emissive: new BABYLON.Color3(1.0, 1.0, 1.0)
-  },
+        "Mu Draconis": {
+          periapsis: 0, apoapsis: 0,
+          orbitalPeriod: 0,
+          inclination: 0,
+          argumentOfPeriapsis: 0,
+          longitudeOfAscendingNode: 0,
+          lastPerihelion: "2024-01-01",
+    
+          size: 650000,
+          color: 0xfff0d2,
+          rotationAxis: { x: 0, y: 1, z: 0 },
+          axialTilt: 0,
+          rotationPeriod: 27,
+    
+          orbits: "Mu Draconis",
+    
+          kind: "sun",
+          radius: 26,
+          emissive: new BABYLON.Color3(0.95, 0.92, 0.78),
+        },
 
   // --- Algol (La estrella endemoniada) ---
   "Algol A": {
@@ -2767,11 +2812,26 @@ export const GALAXY = {
   },
 
   // --- Epsilon Ophiuchi (Epsilon Alangue) ---
-  "Epsilon Ophiuchi": {
-    periapsis: 0, apoapsis: 0, orbitalPeriod: 0, inclination: 0, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 0, lastPerihelion: "2024-01-01",
-    size: 10500000, color: 0xffaa44, rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0, rotationPeriod: 60,
-    orbits: "Epsilon Ophiuchi", kind: "star", radius: 42, emissive: new BABYLON.Color3(1.0, 0.7, 0.3)
-  },
+        "Epsilon Ophiuchi": {
+          periapsis: 0, apoapsis: 0,
+          orbitalPeriod: 0,
+          inclination: 0,
+          argumentOfPeriapsis: 0,
+          longitudeOfAscendingNode: 0,
+          lastPerihelion: "2024-01-01",
+    
+          size: 700000,
+          color: 0xe9f2ff,
+          rotationAxis: { x: 0, y: 1, z: 0 },
+          axialTilt: 0,
+          rotationPeriod: 27,
+    
+          orbits: "Epsilon Ophiuchi",
+    
+          kind: "sun",
+          radius: 28,
+          emissive: new BABYLON.Color3(0.90, 0.92, 1.0),
+        },
 
   // --- Miaplacidus ---
   "Miaplacidus": {
@@ -2787,18 +2847,48 @@ export const GALAXY = {
   },
 
   // --- Alkalurops ---
-  "Alkalurops": {
-    periapsis: 0, apoapsis: 0, orbitalPeriod: 0, inclination: 0, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 0, lastPerihelion: "2024-01-01",
-    size: 2500000, color: 0xccddff, rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0, rotationPeriod: 1.2,
-    orbits: "Alkalurops", kind: "star", radius: 18, emissive: new BABYLON.Color3(0.8, 0.9, 1.0)
-  },
+        "Alkalurops": {
+          periapsis: 0, apoapsis: 0,
+          orbitalPeriod: 0,
+          inclination: 0,
+          argumentOfPeriapsis: 0,
+          longitudeOfAscendingNode: 0,
+          lastPerihelion: "2024-01-01",
+    
+          size: 720000,
+          color: 0xe8f3ff,
+          rotationAxis: { x: 0, y: 1, z: 0 },
+          axialTilt: 0,
+          rotationPeriod: 27,
+    
+          orbits: "Alkalurops",
+    
+          kind: "sun",
+          radius: 30,
+          emissive: new BABYLON.Color3(0.92, 0.95, 1.0),
+        },
 
   // --- Gamma Piscium (Gamma Waiping) ---
-  "Gamma Piscium": {
-    periapsis: 0, apoapsis: 0, orbitalPeriod: 0, inclination: 0, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 0, lastPerihelion: "2024-01-01",
-    size: 11000000, color: 0xffffaa, rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0, rotationPeriod: 55,
-    orbits: "Gamma Piscium", kind: "star", radius: 45, emissive: new BABYLON.Color3(1.0, 0.9, 0.4)
-  },
+        "Gamma Piscium": {
+          periapsis: 0, apoapsis: 0,
+          orbitalPeriod: 0,
+          inclination: 0,
+          argumentOfPeriapsis: 0,
+          longitudeOfAscendingNode: 0,
+          lastPerihelion: "2024-01-01",
+    
+          size: 700000,
+          color: 0xfff5dd,
+          rotationAxis: { x: 0, y: 1, z: 0 },
+          axialTilt: 0,
+          rotationPeriod: 27,
+    
+          orbits: "Gamma Piscium",
+    
+          kind: "sun",
+          radius: 29,
+          emissive: new BABYLON.Color3(1.0, 0.94, 0.80),
+        },
 
   // --- Achernar (Muy achatada por rotación) ---
   "Achernar": {
@@ -2808,31 +2898,139 @@ export const GALAXY = {
   },
 
   // --- Alpha Piscium ---
-  "Alpha Piscium A": {
-    periapsis: 0, apoapsis: 0, orbitalPeriod: 0, inclination: 0, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 0, lastPerihelion: "2024-01-01",
-    size: 2000000, color: 0xccddff, orbits: "Alpha Piscium", kind: "star", radius: 18, emissive: new BABYLON.Color3(0.8, 0.9, 1.0), rotationPeriod: 1.5
-  },
+		"Alpha Piscium A": {
+		  periapsis: 6582375000, 
+		  apoapsis: 19747125000,
+		  orbitalPeriod: 262800, 
+		  inclination: 65, 
+		  argumentOfPeriapsis: 0,
+		  longitudeOfAscendingNode: 0,
+		  lastPerihelion: "2024-01-01",
+
+		  size: 1391400, 
+		  color: 0xe6f0ff,
+		  rotationAxis: { x: 0, y: 1, z: 0 },
+		  axialTilt: 0,
+		  rotationPeriod: 2.1,
+
+		  orbits: "Alpha Piscium",
+
+		  kind: "sun",
+		  radius: 52,
+		  emissive: new BABYLON.Color3(0.9, 0.94, 1.0),
+		},
+
+		"Alpha Piscium B": {
+		  periapsis: 8377625000, 
+		  apoapsis: 25132875000,
+		  orbitalPeriod: 262800, 
+		  inclination: 65, 
+		  argumentOfPeriapsis: 180, // Lado opuesto de la elipse
+		  longitudeOfAscendingNode: 0,
+		  lastPerihelion: "2024-01-01",
+
+		  size: 1043550, 
+		  color: 0xfffcf5,
+		  rotationAxis: { x: 0, y: 1, z: 0 },
+		  axialTilt: 0,
+		  rotationPeriod: 3.5,
+
+		  orbits: "Alpha Piscium",
+
+		  kind: "sun",
+		  radius: 39,
+		  emissive: new BABYLON.Color3(1.0, 0.98, 0.9),
+		},
 
   // --- Theta Eridani (Thalim) ---
-  "Theta Eridani A": {
-    periapsis: 0, apoapsis: 0, orbitalPeriod: 0, inclination: 0, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 0, lastPerihelion: "2024-01-01",
-    size: 4000000, color: 0xccddff, rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0, rotationPeriod: 1,
-    orbits: "Theta Eridani", kind: "star", radius: 28, emissive: new BABYLON.Color3(0.8, 0.9, 1.0)
-  },
+        "Theta Eridani A": {
+			periapsis: 0, 
+			apoapsis: 0,
+			orbitalPeriod: 0,
+			inclination: 0,
+			argumentOfPeriapsis: 0,
+			longitudeOfAscendingNode: 0,
+			lastPerihelion: "2024-01-01",
+
+			size: 1113000,             // Radio en km (~1.6 radios solares)
+			color: 0x99ccff,           // Blanco azulado (Tipo A)
+			rotationAxis: { x: 0, y: 1, z: 0 },
+			axialTilt: 0,
+			rotationPeriod: 2.1,       // Días terrestres (Rotación rápida típica de estrellas A)
+
+			orbits: "Theta Eridani",
+
+			kind: "sun",
+			radius: 45,                // Visualmente más grande por su alta luminosidad
+			emissive: new BABYLON.Color3(0.7, 0.8, 1.0), // Brillo blanco-azul frío
+		},
+		
+		"Theta Eridani B": {
+			// Parámetros orbitales (Sistema con separación visual de 8.3 segundos de arco)
+			periapsis: 52359254745,      // 350 UA en km
+			apoapsis: 74798935350,      // 500 UA en km
+			orbitalPeriod: 1168800,     // 3200 años en días
+			inclination: 54,            // Grados
+			argumentOfPeriapsis: 110,   // Grados
+			longitudeOfAscendingNode: 15, // Grados
+			lastPerihelion: "1550-01-01",
+
+			size: 904000,              // Radio en km (~1.3 radios solares)
+			color: 0xdae9ff,           // Blanco puro
+			rotationAxis: { x: 0, y: 1, z: 0 },
+			axialTilt: 0,
+			rotationPeriod: 1.8,       // Días terrestres
+
+			orbits: "Theta Eridani",
+
+			kind: "sun",
+			radius: 35,                // Un poco menor que la A
+			emissive: new BABYLON.Color3(0.9, 0.9, 1.0),
+		},
 
   // --- Alpha Crateris (Alces Minor) ---
-  "Alpha Crateris": {
-    periapsis: 0, apoapsis: 0, orbitalPeriod: 0, inclination: 0, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 0, lastPerihelion: "2024-01-01",
-    size: 13000000, color: 0xffaa44, rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0, rotationPeriod: 80,
-    orbits: "Alpha Crateris", kind: "star", radius: 52, emissive: new BABYLON.Color3(1.0, 0.7, 0.3)
-  },
+        "Alpha Crateris": {
+          periapsis: 0, apoapsis: 0,
+          orbitalPeriod: 0,
+          inclination: 0,
+          argumentOfPeriapsis: 0,
+          longitudeOfAscendingNode: 0,
+          lastPerihelion: "2024-01-01",
+    
+          size: 760000,
+          color: 0xfff0d2,
+          rotationAxis: { x: 0, y: 1, z: 0 },
+          axialTilt: 0,
+          rotationPeriod: 27,
+    
+          orbits: "Alpha Crateris",
+    
+          kind: "sun",
+          radius: 30,
+          emissive: new BABYLON.Color3(0.95, 0.90, 0.78),
+        },
 
   // --- Theta Leonis (Theta Shaowei) ---
-  "Theta Leonis": {
-    periapsis: 0, apoapsis: 0, orbitalPeriod: 0, inclination: 0, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 0, lastPerihelion: "2024-01-01",
-    size: 4200000, color: 0xffffff, rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0, rotationPeriod: 1,
-    orbits: "Theta Leonis", kind: "star", radius: 28, emissive: new BABYLON.Color3(1.0, 1.0, 1.0)
-  },
+        "Theta Leonis": {
+          periapsis: 0, apoapsis: 0,
+          orbitalPeriod: 0,
+          inclination: 0,
+          argumentOfPeriapsis: 0,
+          longitudeOfAscendingNode: 0,
+          lastPerihelion: "2024-01-01",
+    
+          size: 630000,
+          color: 0xffcfaa,
+          rotationAxis: { x: 0, y: 1, z: 0 },
+          axialTilt: 0,
+          rotationPeriod: 27,
+    
+          orbits: "Theta Leonis",
+    
+          kind: "sun",
+          radius: 25,
+          emissive: new BABYLON.Color3(0.95, 0.78, 0.55),
+        },
 
   // --- Peacock ---
   "Peacock": {
@@ -2849,11 +3047,26 @@ export const GALAXY = {
   },
 
   // --- Iota Leporis (Kuentsing) ---
-  "Iota Leporis": {
-    periapsis: 0, apoapsis: 0, orbitalPeriod: 0, inclination: 0, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 0, lastPerihelion: "2024-01-01",
-    size: 2100000, color: 0xccddff, rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0, rotationPeriod: 1,
-    orbits: "Iota Leporis", kind: "star", radius: 18, emissive: new BABYLON.Color3(0.8, 0.9, 1.0)
-  },
+        "Iota Leporis": {
+          periapsis: 0, apoapsis: 0,
+          orbitalPeriod: 0,
+          inclination: 0,
+          argumentOfPeriapsis: 0,
+          longitudeOfAscendingNode: 0,
+          lastPerihelion: "2024-01-01",
+    
+          size: 680000,
+          color: 0xffedd0,
+          rotationAxis: { x: 0, y: 1, z: 0 },
+          axialTilt: 0,
+          rotationPeriod: 27,
+    
+          orbits: "Iota Leporis",
+    
+          kind: "sun",
+          radius: 27,
+          emissive: new BABYLON.Color3(0.95, 0.88, 0.70),
+        },
 
   // --- Bellatrix ---
   "Bellatrix": {
@@ -2870,31 +3083,140 @@ export const GALAXY = {
   },
 
   // --- Alpha Carinae (Canopus) ---
-  "Alpha Carinae": {
-    periapsis: 0, apoapsis: 0, orbitalPeriod: 0, inclination: 0, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 0, lastPerihelion: "2024-01-01",
-    size: 70000000, color: 0xffffcc, rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0, rotationPeriod: 30,
-    orbits: "Alpha Carinae", kind: "star", radius: 130, emissive: new BABYLON.Color3(1.0, 1.0, 0.9)
-  },
+		"Alpha Carinae": {
+          periapsis: 0, apoapsis: 0,
+          orbitalPeriod: 0,
+          inclination: 0,
+          argumentOfPeriapsis: 0,
+          longitudeOfAscendingNode: 0,
+          lastPerihelion: "2024-01-01",
+    
+    	  // Ajustado para que Arrakis (a 87M km) esté fuera y sea habitable
+    	  // Un radio de ~15M km permite una visualización épica sin "comerse" al planeta
+    	  // Radio escalado (9M es el límite de Seban; usamos 7.65M para dejar espacio)
+          size: 7650000,
+          color: 0xffffff, // Blanco puro (Supergigante Clase A)
+          rotationAxis: { x: 0, y: 1, z: 0 },
+          axialTilt: 0,
+          rotationPeriod: 300,
+    
+          orbits: "Alpha Carinae",
+    
+          kind: "sun",
+          radius: 152.3,
+          emissive: new BABYLON.Color3(1.0, 0.95, 0.85),
+        },
 
   // --- HD 58661 (Beta Lyncis) ---
-  "HD 58661": {
-    periapsis: 0, apoapsis: 0, orbitalPeriod: 0, inclination: 0, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 0, lastPerihelion: "2024-01-01",
-    size: 28000000, color: 0xffaa44, rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0, rotationPeriod: 120,
-    orbits: "HD 58661", kind: "star", radius: 85, emissive: new BABYLON.Color3(1.0, 0.7, 0.3)
-  },
+        "HD 58661": {
+          periapsis: 0, apoapsis: 0,
+          orbitalPeriod: 0,
+          inclination: 0,
+          argumentOfPeriapsis: 0,
+          longitudeOfAscendingNode: 0,
+          lastPerihelion: "2024-01-01",
+    
+          size: 760000,
+          color: 0xfff0d2,
+          rotationAxis: { x: 0, y: 1, z: 0 },
+          axialTilt: 0,
+          rotationPeriod: 27,
+    
+          orbits: "HD 58661",
+    
+          kind: "sun",
+          radius: 30,
+          emissive: new BABYLON.Color3(0.95, 0.90, 0.78),
+        },
 
   // --- Polaris (Estrella Polar - Sistema Triple) ---
-  "Polaris Aa": {
-    periapsis: 0, apoapsis: 0, orbitalPeriod: 0, inclination: 0, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 0, lastPerihelion: "2024-01-01",
-    size: 45000000, color: 0xffffaa, orbits: "Polaris", kind: "star", radius: 110, emissive: new BABYLON.Color3(1.0, 1.0, 0.8), rotationPeriod: 119
-  },
+"Polaris Aa": {
+			periapsis: 0, 
+			apoapsis: 0,
+			orbitalPeriod: 0,
+			inclination: 0, 
+			argumentOfPeriapsis: 0,
+			longitudeOfAscendingNode: 0,
+			lastPerihelion: "2024-01-01",
+            
+            // Características físicas de la Supergigante (Polaris Aa)
+            size: 32000000,           // Radio estimado (~46 radios solares)
+            color: 0xffffcc,           // Blanco amarillento (Clase F7)
+            rotationAxis: { x: 0, y: 1, z: 0 },
+            axialTilt: 0,
+            rotationPeriod: 119,       // Días (rotación lenta de supergigante)
+            
+			orbits: "Polaris",
+            kind: "sun",
+            radius: 50,                // Escala visual mayor en el mapa
+            emissive: new BABYLON.Color3(1.0, 1.0, 0.8),
+        },
+
+        "Polaris Ab": {
+            // Órbita muy cercana a la estrella principal (A)
+            periapsis: 2244000000,     // ~15 UA en km
+            apoapsis: 3141500000,      // ~21 UA en km
+            orbitalPeriod: 10950,      // ~30 años en días
+            inclination: 50.0,
+            argumentOfPeriapsis: 303.0,
+            longitudeOfAscendingNode: 231.0,
+            lastPerihelion: "2006-01-01",
+
+            size: 723000,              // ~1.04 radios solares (Enana secuencia principal)
+            color: 0xffffff,
+            rotationAxis: { x: 0, y: 1, z: 0 },
+            axialTilt: 0,
+            rotationPeriod: 1.0,
+            
+            orbits: "Polaris",
+            kind: "sun",
+            radius: 5,
+            emissive: new BABYLON.Color3(0.9, 0.9, 1.0),
+        },
+
+        "Polaris B": {
+            // Órbita mucho más lejana (Referencia: respecto a A)
+            periapsis: 359000000000,   // ~2400 UA en km
+            apoapsis: 374000000000,    // Estimado (órbita casi circular a gran distancia)
+            orbitalPeriod: 15330000,   // ~42,000 años en días
+            inclination: 38.0,
+            argumentOfPeriapsis: 0,
+            longitudeOfAscendingNode: 0,
+            lastPerihelion: "1900-01-01",
+
+            size: 967000,              // ~1.39 radios solares (Clase F3)
+            color: 0xf0f0ff,
+            rotationAxis: { x: 0, y: 1, z: 0 },
+            axialTilt: 0,
+            rotationPeriod: 1.5,
+            
+            orbits: "Polaris",
+            kind: "sun",
+            radius: 8,
+            emissive: new BABYLON.Color3(0.8, 0.8, 1.0),
+        },
 
   // --- Theta Arietis (Theta Shalish) ---
-  "Theta Arietis": {
-    periapsis: 0, apoapsis: 0, orbitalPeriod: 0, inclination: 0, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 0, lastPerihelion: "2024-01-01",
-    size: 1800000, color: 0xffffff, rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0, rotationPeriod: 10,
-    orbits: "Theta Arietis", kind: "star", radius: 18, emissive: new BABYLON.Color3(1.0, 1.0, 1.0)
-  },
+        "Theta Arietis": {
+          periapsis: 0, apoapsis: 0,
+          orbitalPeriod: 0,
+          inclination: 0,
+          argumentOfPeriapsis: 0,
+          longitudeOfAscendingNode: 0,
+          lastPerihelion: "2024-01-01",
+    
+          size: 690000,
+          color: 0xffdfb0,
+          rotationAxis: { x: 0, y: 1, z: 0 },
+          axialTilt: 0,
+          rotationPeriod: 27,
+    
+          orbits: "Theta Arietis",
+    
+          kind: "sun",
+          radius: 28,
+          emissive: new BABYLON.Color3(1.0, 0.82, 0.60),
+        },
 
   // --- Mirfak ---
   "Mirfak": {
@@ -2918,11 +3240,26 @@ export const GALAXY = {
   },
 
   // --- Alpha Orionis (Betelgeuse - Unsidor) ---
-  "Alpha Orionis": {
-    periapsis: 0, apoapsis: 0, orbitalPeriod: 0, inclination: 0, argumentOfPeriapsis: 0, longitudeOfAscendingNode: 0, lastPerihelion: "2024-01-01",
-    size: 900000000, color: 0xff3300, rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0, rotationPeriod: 2000,
-    orbits: "Alpha Orionis", kind: "star", radius: 500, emissive: new BABYLON.Color3(1.0, 0.15, 0.0)
-  },
+        "Alpha Orionis": {
+          periapsis: 0, apoapsis: 0,
+          orbitalPeriod: 0,
+          inclination: 0,
+          argumentOfPeriapsis: 0,
+          longitudeOfAscendingNode: 0,
+          lastPerihelion: "2024-01-01",
+    
+          size: 700000,
+          color: 0xfff5dd,
+          rotationAxis: { x: 0, y: 1, z: 0 },
+          axialTilt: 0,
+          rotationPeriod: 27,
+    
+          orbits: "Alpha Orionis",
+    
+          kind: "sun",
+          radius: 29,
+          emissive: new BABYLON.Color3(1.0, 0.94, 0.80),
+        },
 
   // --- Saiph ---
   "Saiph": {
@@ -2988,443 +3325,6 @@ export const GALAXY = {
     orbits: "Galactic Center", kind: "black_hole", radius: 1000, emissive: new BABYLON.Color3(0.05, 0.0, 0.1)
   },
 		  
-		//---------------------------  
-		    
-        "Alkalurops": {
-          periapsis: 0, apoapsis: 0,
-          orbitalPeriod: 0,
-          inclination: 0,
-          argumentOfPeriapsis: 0,
-          longitudeOfAscendingNode: 0,
-          lastPerihelion: "2024-01-01",
-    
-          size: 720000,
-          color: 0xe8f3ff,
-          rotationAxis: { x: 0, y: 1, z: 0 },
-          axialTilt: 0,
-          rotationPeriod: 27,
-    
-          orbits: "Alkalurops",
-    
-          kind: "sun",
-          radius: 30,
-          emissive: new BABYLON.Color3(0.92, 0.95, 1.0),
-        },
-		    
-        "Gamma Piscium": {
-          periapsis: 0, apoapsis: 0,
-          orbitalPeriod: 0,
-          inclination: 0,
-          argumentOfPeriapsis: 0,
-          longitudeOfAscendingNode: 0,
-          lastPerihelion: "2024-01-01",
-    
-          size: 700000,
-          color: 0xfff5dd,
-          rotationAxis: { x: 0, y: 1, z: 0 },
-          axialTilt: 0,
-          rotationPeriod: 27,
-    
-          orbits: "Gamma Piscium",
-    
-          kind: "sun",
-          radius: 29,
-          emissive: new BABYLON.Color3(1.0, 0.94, 0.80),
-        },
-    
-        "Theta Arietis": {
-          periapsis: 0, apoapsis: 0,
-          orbitalPeriod: 0,
-          inclination: 0,
-          argumentOfPeriapsis: 0,
-          longitudeOfAscendingNode: 0,
-          lastPerihelion: "2024-01-01",
-    
-          size: 690000,
-          color: 0xffdfb0,
-          rotationAxis: { x: 0, y: 1, z: 0 },
-          axialTilt: 0,
-          rotationPeriod: 27,
-    
-          orbits: "Theta Arietis",
-    
-          kind: "sun",
-          radius: 28,
-          emissive: new BABYLON.Color3(1.0, 0.82, 0.60),
-        },
-    
-        "Theta Leonis": {
-          periapsis: 0, apoapsis: 0,
-          orbitalPeriod: 0,
-          inclination: 0,
-          argumentOfPeriapsis: 0,
-          longitudeOfAscendingNode: 0,
-          lastPerihelion: "2024-01-01",
-    
-          size: 630000,
-          color: 0xffcfaa,
-          rotationAxis: { x: 0, y: 1, z: 0 },
-          axialTilt: 0,
-          rotationPeriod: 27,
-    
-          orbits: "Theta Leonis",
-    
-          kind: "sun",
-          radius: 25,
-          emissive: new BABYLON.Color3(0.95, 0.78, 0.55),
-        },
-    
-        "Psi Draconis": {
-          periapsis: 0, apoapsis: 0,
-          orbitalPeriod: 0,
-          inclination: 0,
-          argumentOfPeriapsis: 0,
-          longitudeOfAscendingNode: 0,
-          lastPerihelion: "2024-01-01",
-    
-          size: 670000,
-          color: 0xfff0dd,
-          rotationAxis: { x: 0, y: 1, z: 0 },
-          axialTilt: 0,
-          rotationPeriod: 27,
-    
-          orbits: "Psi Draconis",
-    
-          kind: "sun",
-          radius: 27,
-          emissive: new BABYLON.Color3(0.95, 0.90, 0.82),
-        },
-    
-
-    
-		"Alpha Piscium A": {
-		  periapsis: 6582375000, 
-		  apoapsis: 19747125000,
-		  orbitalPeriod: 262800, 
-		  inclination: 65, 
-		  argumentOfPeriapsis: 0,
-		  longitudeOfAscendingNode: 0,
-		  lastPerihelion: "2024-01-01",
-
-		  size: 1391400, 
-		  color: 0xe6f0ff,
-		  rotationAxis: { x: 0, y: 1, z: 0 },
-		  axialTilt: 0,
-		  rotationPeriod: 2.1,
-
-		  orbits: "Alpha Piscium",
-
-		  kind: "sun",
-		  radius: 52,
-		  emissive: new BABYLON.Color3(0.9, 0.94, 1.0),
-		},
-
-		"Alpha Piscium B": {
-		  periapsis: 8377625000, 
-		  apoapsis: 25132875000,
-		  orbitalPeriod: 262800, 
-		  inclination: 65, 
-		  argumentOfPeriapsis: 180, // Lado opuesto de la elipse
-		  longitudeOfAscendingNode: 0,
-		  lastPerihelion: "2024-01-01",
-
-		  size: 1043550, 
-		  color: 0xfffcf5,
-		  rotationAxis: { x: 0, y: 1, z: 0 },
-		  axialTilt: 0,
-		  rotationPeriod: 3.5,
-
-		  orbits: "Alpha Piscium",
-
-		  kind: "sun",
-		  radius: 39,
-		  emissive: new BABYLON.Color3(1.0, 0.98, 0.9),
-		},
-    
-        "Mu Draconis": {
-          periapsis: 0, apoapsis: 0,
-          orbitalPeriod: 0,
-          inclination: 0,
-          argumentOfPeriapsis: 0,
-          longitudeOfAscendingNode: 0,
-          lastPerihelion: "2024-01-01",
-    
-          size: 650000,
-          color: 0xfff0d2,
-          rotationAxis: { x: 0, y: 1, z: 0 },
-          axialTilt: 0,
-          rotationPeriod: 27,
-    
-          orbits: "Mu Draconis",
-    
-          kind: "sun",
-          radius: 26,
-          emissive: new BABYLON.Color3(0.95, 0.92, 0.78),
-        },
-    
-		"Theta Eridani A": {
-			periapsis: 0, 
-			apoapsis: 0,
-			orbitalPeriod: 0,
-			inclination: 0,
-			argumentOfPeriapsis: 0,
-			longitudeOfAscendingNode: 0,
-			lastPerihelion: "2024-01-01",
-
-			size: 1113000,             // Radio en km (~1.6 radios solares)
-			color: 0x99ccff,           // Blanco azulado (Tipo A)
-			rotationAxis: { x: 0, y: 1, z: 0 },
-			axialTilt: 0,
-			rotationPeriod: 2.1,       // Días terrestres (Rotación rápida típica de estrellas A)
-
-			orbits: "Theta Eridani",
-
-			kind: "sun",
-			radius: 45,                // Visualmente más grande por su alta luminosidad
-			emissive: new BABYLON.Color3(0.7, 0.8, 1.0), // Brillo blanco-azul frío
-		},
-		
-		"Theta Eridani B": {
-			// Parámetros orbitales (Sistema con separación visual de 8.3 segundos de arco)
-			periapsis: 52359254745,      // 350 UA en km
-			apoapsis: 74798935350,      // 500 UA en km
-			orbitalPeriod: 1168800,     // 3200 años en días
-			inclination: 54,            // Grados
-			argumentOfPeriapsis: 110,   // Grados
-			longitudeOfAscendingNode: 15, // Grados
-			lastPerihelion: "1550-01-01",
-
-			size: 904000,              // Radio en km (~1.3 radios solares)
-			color: 0xdae9ff,           // Blanco puro
-			rotationAxis: { x: 0, y: 1, z: 0 },
-			axialTilt: 0,
-			rotationPeriod: 1.8,       // Días terrestres
-
-			orbits: "Theta Eridani",
-
-			kind: "sun",
-			radius: 35,                // Un poco menor que la A
-			emissive: new BABYLON.Color3(0.9, 0.9, 1.0),
-		},
-    
-        "Iota Leporis": {
-          periapsis: 0, apoapsis: 0,
-          orbitalPeriod: 0,
-          inclination: 0,
-          argumentOfPeriapsis: 0,
-          longitudeOfAscendingNode: 0,
-          lastPerihelion: "2024-01-01",
-    
-          size: 680000,
-          color: 0xffedd0,
-          rotationAxis: { x: 0, y: 1, z: 0 },
-          axialTilt: 0,
-          rotationPeriod: 27,
-    
-          orbits: "Iota Leporis",
-    
-          kind: "sun",
-          radius: 27,
-          emissive: new BABYLON.Color3(0.95, 0.88, 0.70),
-        },
-    
-        "Epsilon Ophiuchi": {
-          periapsis: 0, apoapsis: 0,
-          orbitalPeriod: 0,
-          inclination: 0,
-          argumentOfPeriapsis: 0,
-          longitudeOfAscendingNode: 0,
-          lastPerihelion: "2024-01-01",
-    
-          size: 700000,
-          color: 0xe9f2ff,
-          rotationAxis: { x: 0, y: 1, z: 0 },
-          axialTilt: 0,
-          rotationPeriod: 27,
-    
-          orbits: "Epsilon Ophiuchi",
-    
-          kind: "sun",
-          radius: 28,
-          emissive: new BABYLON.Color3(0.90, 0.92, 1.0),
-        },
-    
-        "HD 58661": {
-          periapsis: 0, apoapsis: 0,
-          orbitalPeriod: 0,
-          inclination: 0,
-          argumentOfPeriapsis: 0,
-          longitudeOfAscendingNode: 0,
-          lastPerihelion: "2024-01-01",
-    
-          size: 760000,
-          color: 0xfff0d2,
-          rotationAxis: { x: 0, y: 1, z: 0 },
-          axialTilt: 0,
-          rotationPeriod: 27,
-    
-          orbits: "HD 58661",
-    
-          kind: "sun",
-          radius: 30,
-          emissive: new BABYLON.Color3(0.95, 0.90, 0.78),
-        },
-    
-        "Alpha Crateris": {
-          periapsis: 0, apoapsis: 0,
-          orbitalPeriod: 0,
-          inclination: 0,
-          argumentOfPeriapsis: 0,
-          longitudeOfAscendingNode: 0,
-          lastPerihelion: "2024-01-01",
-    
-          size: 760000,
-          color: 0xfff0d2,
-          rotationAxis: { x: 0, y: 1, z: 0 },
-          axialTilt: 0,
-          rotationPeriod: 27,
-    
-          orbits: "Alpha Crateris",
-    
-          kind: "sun",
-          radius: 30,
-          emissive: new BABYLON.Color3(0.95, 0.90, 0.78),
-        },
-    
-
-    
-        "Alpha Orionis": {
-          periapsis: 0, apoapsis: 0,
-          orbitalPeriod: 0,
-          inclination: 0,
-          argumentOfPeriapsis: 0,
-          longitudeOfAscendingNode: 0,
-          lastPerihelion: "2024-01-01",
-    
-          size: 700000,
-          color: 0xfff5dd,
-          rotationAxis: { x: 0, y: 1, z: 0 },
-          axialTilt: 0,
-          rotationPeriod: 27,
-    
-          orbits: "Alpha Orionis",
-    
-          kind: "sun",
-          radius: 29,
-          emissive: new BABYLON.Color3(1.0, 0.94, 0.80),
-        },
-    
-        "Gamma Cephei": {
-          periapsis: 0, apoapsis: 0,
-          orbitalPeriod: 0,
-          inclination: 0,
-          argumentOfPeriapsis: 0,
-          longitudeOfAscendingNode: 0,
-          lastPerihelion: "2024-01-01",
-    
-          size: 650000,
-          color: 0xfff0d2,
-          rotationAxis: { x: 0, y: 1, z: 0 },
-          axialTilt: 0,
-          rotationPeriod: 27,
-    
-          orbits: "Gamma Cephei",
-    
-          kind: "sun",
-          radius: 26,
-          emissive: new BABYLON.Color3(0.95, 0.92, 0.78),
-        },
-		
-		"Alpha Carinae": {
-          periapsis: 0, apoapsis: 0,
-          orbitalPeriod: 0,
-          inclination: 0,
-          argumentOfPeriapsis: 0,
-          longitudeOfAscendingNode: 0,
-          lastPerihelion: "2024-01-01",
-    
-    	  // Ajustado para que Arrakis (a 87M km) esté fuera y sea habitable
-    	  // Un radio de ~15M km permite una visualización épica sin "comerse" al planeta
-    	  // Radio escalado (9M es el límite de Seban; usamos 7.65M para dejar espacio)
-          size: 7650000,
-          color: 0xffffff, // Blanco puro (Supergigante Clase A)
-          rotationAxis: { x: 0, y: 1, z: 0 },
-          axialTilt: 0,
-          rotationPeriod: 300,
-    
-          orbits: "Alpha Carinae",
-    
-          kind: "sun",
-          radius: 152.3,
-          emissive: new BABYLON.Color3(1.0, 0.95, 0.85),
-        },
-		
-		"Polaris Aa": {
-			periapsis: 0, 
-			apoapsis: 0,
-			orbitalPeriod: 0,
-			inclination: 0, 
-			argumentOfPeriapsis: 0,
-			longitudeOfAscendingNode: 0,
-			lastPerihelion: "2024-01-01",
-            
-            // Características físicas de la Supergigante (Polaris Aa)
-            size: 32000000,           // Radio estimado (~46 radios solares)
-            color: 0xffffcc,           // Blanco amarillento (Clase F7)
-            rotationAxis: { x: 0, y: 1, z: 0 },
-            axialTilt: 0,
-            rotationPeriod: 119,       // Días (rotación lenta de supergigante)
-            
-			orbits: "Polaris",
-            kind: "sun",
-            radius: 50,                // Escala visual mayor en el mapa
-            emissive: new BABYLON.Color3(1.0, 1.0, 0.8),
-        },
-
-        "Polaris Ab": {
-            // Órbita muy cercana a la estrella principal (A)
-            periapsis: 2244000000,     // ~15 UA en km
-            apoapsis: 3141500000,      // ~21 UA en km
-            orbitalPeriod: 10950,      // ~30 años en días
-            inclination: 50.0,
-            argumentOfPeriapsis: 303.0,
-            longitudeOfAscendingNode: 231.0,
-            lastPerihelion: "2006-01-01",
-
-            size: 723000,              // ~1.04 radios solares (Enana secuencia principal)
-            color: 0xffffff,
-            rotationAxis: { x: 0, y: 1, z: 0 },
-            axialTilt: 0,
-            rotationPeriod: 1.0,
-            
-            orbits: "Polaris",
-            kind: "sun",
-            radius: 5,
-            emissive: new BABYLON.Color3(0.9, 0.9, 1.0),
-        },
-
-        "Polaris B": {
-            // Órbita mucho más lejana (Referencia: respecto a A)
-            periapsis: 359000000000,   // ~2400 UA en km
-            apoapsis: 374000000000,    // Estimado (órbita casi circular a gran distancia)
-            orbitalPeriod: 15330000,   // ~42,000 años en días
-            inclination: 38.0,
-            argumentOfPeriapsis: 0,
-            longitudeOfAscendingNode: 0,
-            lastPerihelion: "1900-01-01",
-
-            size: 967000,              // ~1.39 radios solares (Clase F3)
-            color: 0xf0f0ff,
-            rotationAxis: { x: 0, y: 1, z: 0 },
-            axialTilt: 0,
-            rotationPeriod: 1.5,
-            
-            orbits: "Polaris",
-            kind: "sun",
-            radius: 8,
-            emissive: new BABYLON.Color3(0.8, 0.8, 1.0),
-        },
-		
       },	  
     
       // ============================================================

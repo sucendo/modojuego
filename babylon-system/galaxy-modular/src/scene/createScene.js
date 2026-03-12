@@ -208,7 +208,7 @@ export function bootstrap() {
   // ============================================================
   // Perf overlay (toggle with F3 / P)
   // ============================================================
-  const perfOverlay = createPerfOverlay({ engine, scene, repMgr, camera, opts: { intervalMs: 250, visible: true } });
+  const perfOverlay = createPerfOverlay({ engine, scene, repMgr, camera, opts: { intervalMs: 250, visible: false } });
   window.__perfOverlay = perfOverlay;
 
 
