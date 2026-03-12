@@ -276,6 +276,8 @@ export function createNavigationGridController({ scene, worldRoot, camera, opts 
     const lx = ax - px;
     const ly = ay - py;
     const lz = az - pz;
+    const anchorY = (fixedAnchor || followY) ? ly : 0;
+    const planeY = anchorY + yLevel;
 
     const each = (v, fn) => {
       if (!v) return;
@@ -286,32 +288,32 @@ export function createNavigationGridController({ scene, worldRoot, camera, opts 
     each(gridXZ, (m) => {
       m.position.x = lx;
       m.position.z = lz;
-      m.position.y = followY ? (ly + yLevel) : yLevel;
+      m.position.y = planeY;
     });
     each(gridXY, (m) => {
       m.position.x = lx;
       m.position.z = lz;
-      m.position.y = followY ? ly : 0;
+      m.position.y = anchorY;
     });
     each(gridYZ, (m) => {
       m.position.x = lx;
       m.position.z = lz;
-      m.position.y = followY ? ly : 0;
+      m.position.y = anchorY;
     });
     if (axisX) {
       axisX.position.x = lx;
+      axisX.position.y = anchorY;
       axisX.position.z = lz;
-      axisX.position.y = followY ? (ly + (yLevel + 0.001)) : (yLevel + 0.001);
     }
     if (axisY) {
       axisY.position.x = lx;
+      axisY.position.y = anchorY;
       axisY.position.z = lz;
-      axisY.position.y = followY ? ly : 0;
     }
     if (axisZ) {
       axisZ.position.x = lx;
+      axisZ.position.y = anchorY;
       axisZ.position.z = lz;
-      axisZ.position.y = followY ? (ly + (yLevel + 0.001)) : (yLevel + 0.001);
     }
   }
 

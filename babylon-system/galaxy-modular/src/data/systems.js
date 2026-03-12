@@ -9,7 +9,7 @@ export const SYSTEMS = {
   "Wolf 359": { posLY: new BABYLON.Vector3(-7.499198, 0.957777, 2.135749) },
   "Lalande 21185": { posLY: new BABYLON.Vector3(-6.516597, 4.877676, 1.644821) },
   "Sirius": { posLY: new BABYLON.Vector3(-1.612264, -2.473844, 8.078007) },
-  "Luyten 726-8 A": { posLY: new BABYLON.Vector3(7.661892, -2.733368, 3.535677) },
+  "Luyten 726-8": { posLY: new BABYLON.Vector3(7.661892, -2.733368, 3.535677) },
   "Gliese 729": { posLY: new BABYLON.Vector3(1.910893, -3.914273, -8.651138) },
   "Ross 248": { posLY: new BABYLON.Vector3(7.369205, 7.181162, -0.582550) },
   "Epsilon Eridani": { posLY: new BABYLON.Vector3(6.193000, -1.723000, 8.289000) }, // Lore Dune: Eridani A
@@ -39,7 +39,7 @@ export const SYSTEMS = {
   "Gaia DR2 4129144660321847040": { posLY: new BABYLON.Vector3(-11.450100, 1.234500, 10.550100) },
   "Wolf 1061": { posLY: new BABYLON.Vector3(-5.226083, -3.079185, -12.663641) },
   "Van Maanen's Star": { posLY: new BABYLON.Vector3(13.525549, 1.305759, 2.946881) },
-  "FL Virginis A": { posLY: new BABYLON.Vector3(-13.790913, 2.212977, -2.015442) },
+  "FL Virginis": { posLY: new BABYLON.Vector3(-13.790913, 2.212977, -2.015442) },
   "Gliese 1": { posLY: new BABYLON.Vector3(11.248612, -8.589344, 0.265439) },
   "2MASS J0429+3806": { posLY: new BABYLON.Vector3(12.450100, 4.521000, 10.334000) },
   "TZ Arietis": { posLY: new BABYLON.Vector3(12.291836, 3.290261, 7.113580) },
@@ -331,7 +331,7 @@ export const SYSTEMS = {
   "Gamma Piscium": { posLY: new BABYLON.Vector3(132.431000, 7.729000, -25.044000) },  // ~135.0 ly - Lore Dune: Gamma Waiping
   "Achernar": { posLY: new BABYLON.Vector3(42.550102, -135.112405, -22.442104) },   // ~143.4 ly
   "Alpha Piscium": { posLY: new BABYLON.Vector3(129.939000, 7.281000, 76.576000) },   // ~150.9 ly
-  "Theta Eridani A": { posLY: new BABYLON.Vector3(87.476000, -104.143000, 86.158000) }, // ~161.0 ly - Lore Dune: Thalim
+  "Theta Eridani": { posLY: new BABYLON.Vector3(87.476000, -104.143000, 86.158000) }, // ~161.0 ly - Lore Dune: Thalim
   "Alpha Crateris": { posLY: new BABYLON.Vector3(-146.825000, -50.280000, 39.497000) }, // ~160.1 ly - Lore Dune: Alces Minor
   "Theta Leonis": { posLY: new BABYLON.Vector3(-155.893000, 43.899000, 31.547000) },  // ~165.0 ly - Lore Dune: Theta Shaowei
   "Peacock": { posLY: new BABYLON.Vector3(135.112405, -112.442104, -85.121405) },   // ~195.1 ly

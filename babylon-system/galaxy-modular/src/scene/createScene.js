@@ -17,6 +17,8 @@ import { createSystemDotScaler } from '../ui/systemDots.js'
 import { createRepresentationManager } from '../representation/representationManager.js';
 import { saveState, loadState, clearState, applyLoadedState } from '../core/savegame.js';
 import { createOfflineTransport } from '../net/offlineTransport.js';
+import { createCameraOrbitAnchor } from './orbitAnchor.js';
+import { createCameraBodyCollision } from './collision.js';
 import { collectUniverseSnapshots } from '../sim/universeState.js';
 
 export function bootstrap() {
@@ -147,8 +149,35 @@ export function bootstrap() {
   camCtrl?.setUnitsPerLy?.(lyUnits);
   
   const starsApi = buildStars({ scene, systemNodes, GALAXY, lights, labelsApi, starMeshById, repMgr, kmPerUnitLocal: KM_PER_UNIT_LOCAL });
-  const { planetSystems } = buildPlanets({ scene, systemNodes, starMeshById, GALAXY, lights, labelsApi, repMgr, kmPerUnitLocal: KM_PER_UNIT_LOCAL });
+  const {
+    planetSystems,
+    planetMeshById,
+    moonMeshById,
+    asteroidMeshById,
+    cometMeshById,
+  } = buildPlanets({
+    scene,
+    systemNodes,
+    starMeshById,
+    GALAXY,
+    lights,
+    labelsApi,
+    repMgr,
+    kmPerUnitLocal: KM_PER_UNIT_LOCAL
+  });
 
+  const BODY_MAPS = [planetMeshById, moonMeshById, asteroidMeshById, cometMeshById];
+
+  const orbitAnchor = createCameraOrbitAnchor({
+    bodyMaps: BODY_MAPS,
+    captureMul: 24.0,
+    minCaptureGap: 0.10,
+    stickyMul: 48.0,
+  });
+  window.__orbitAnchor = orbitAnchor;
+
+  const bodyCollision = createCameraBodyCollision({ bodyMaps: BODY_MAPS, padding: 0.00017 });
+   
   const systemDotScaler = createSystemDotScaler({
     engine, camera, systemNodes,
     opts: { minPx: 22.0, throttleMs: 80 },
@@ -164,19 +193,37 @@ export function bootstrap() {
   let _lastPresenceT = 0;
   
   // ============================================================
-  // NavGrid (UI helper): anclado al origen absoluto 0,0,0
+  // NavGrid (UI helper): anclado al nodo real del Sol
+  // - Los 3 ejes pasan por el Sol y se quedan fijos ahí
+  // - Con floating origin, el anchor debe leerse cada frame desde el nodo de escena
   // ============================================================
+  const _navAnchorTmp = new BABYLON.Vector3();
+  function getSolAnchorNode() {
+    return (
+      starMeshById.get('Sol') ||
+      starMeshById.get('Sun') ||
+      systemNodes.find((it) => it?.name === 'Sol')?.primaryStar ||
+      systemNodes.find((it) => it?.name === 'Sol')?.system ||
+      null
+    );
+  }
+
   const navGrid = createNavigationGridController({
     scene, worldRoot, camera,
     opts: {
       fixedAnchor: true,
-      // OJO: con floating origin, la posición del nodo "Sol" en escena ya no es
-      // el 0,0,0 absoluto universal. El grid debe anclarse al origen ABS real.
-      getAnchorPosition: () => new BABYLON.Vector3(0, 0, 0),
+      getAnchorPosition: () => {
+        const n = getSolAnchorNode();
+        if (!n) return _navAnchorTmp.set(0, 0, 0);
+        try { n.computeWorldMatrix?.(true); } catch (_) {}
+        const p = (typeof n.getAbsolutePosition === 'function') ? n.getAbsolutePosition() : n.position;
+        return _navAnchorTmp.copyFrom(p || BABYLON.Vector3.Zero());
+      },
       throttleMs: 0,
       autoCenter: false,
       followY: false,
       includeYZ: true,
+      yLevel: 0,
       step: 250000,
       extent: 25000000,
       maxLinesPerAxis: 401,
@@ -308,12 +355,6 @@ export function bootstrap() {
   
   scene.onBeforeRenderObservable.add(() => {
     const dtSec = engine.getDeltaTime() * 0.001;
-    camCtrl.update(dtSec);
-	
-    floating.apply();
-
-    // Grid anclado (internamente hace early-exit si no hay cambios)
-    if (navGrid?.enabled) navGrid.update();
 
     // Sombras dinámicas (si tu lights.js lo tiene)
     if (typeof lights.updateNearestSystemShadows === 'function') {
@@ -342,12 +383,28 @@ export function bootstrap() {
     const orbitAlpha = 1.0 - Math.exp(-dtSec * ORBIT_SMOOTH_HZ);
     simDaysRender += (simDays - simDaysRender) * orbitAlpha;
 
-    // Movimiento orbital por tiempo absoluto, pero usando el reloj suavizado
+    // Movimiento orbital primero, para que el anclaje siga el frame actual del cuerpo.
     if (starsApi?.starSystems?.length) updateOrbits(starsApi.starSystems, simDaysRender);
     updateOrbits(planetSystems, simDaysRender);
 
+    const prevCamPos = camera.position.clone();
+    camCtrl.update(dtSec);
+
+    // Si speedLevel === 0 y estás cerca, quedas "enganchado" al cuerpo
+    // conservando tu offset relativo, sin caer hacia el centro.
+    orbitAnchor.applyOrbitAnchor(camera, camCtrl);
+
+    bodyCollision.enforceBodyCollision(camera, prevCamPos);
+
+    // Si la colisión corrigió algo, actualizamos el offset bloqueado real.
+    orbitAnchor.syncOffsetFromCamera(camera);
+
+    floating.apply();
+
+    // Grid anclado (internamente hace early-exit si no hay cambios)
+    if (navGrid?.enabled) navGrid.update();
+
     // Ahora sí: LOD y labels con posiciones ya actualizadas
-    // ... orbit updates ...
     systemDotScaler.update();
     repMgr.update();
     labelsApi.update(false);
@@ -365,6 +422,13 @@ export function bootstrap() {
       transport.publishSelf(runtime.getLocalPlayerState());
     }
   });
+
+  // Safety net extra: si la UniversalCamera mete movimiento por teclado/ratón
+  // fuera de camCtrl.update(), evitamos que el frame siguiente empiece dentro
+  // de la superficie.
+  scene.onAfterRenderObservable.add(() => {
+    bodyCollision.enforceBodyCollision(camera, null);
+  })
 
   engine.runRenderLoop(() => scene.render());
   window.addEventListener('resize', () => engine.resize());

@@ -3574,9 +3574,7 @@ export const GALAXY = {
       // PLANETS: planetId KEY. "orbits" apunta a starId.
       // ============================================================
       planets: {
-        // ----------------------------------------------------------
-        // Sistema SOL
-        // ----------------------------------------------------------
+        // --- Sol ---
         "Mercurio": {
           periapsis: 46000000, apoapsis: 69800000,
           size: 2439.5, color: 0xaaaaaa,
@@ -3600,7 +3598,7 @@ export const GALAXY = {
           rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0.034, rotationPeriod: 58.7,
           jsonFile: "mercurio.json",
         },
-    
+
         "Venus": {
           periapsis: 107480000, apoapsis: 108940000,
           size: 6052, color: 0xff9900,
@@ -3624,7 +3622,7 @@ export const GALAXY = {
           rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 177.36, rotationPeriod: -243.02,
           jsonFile: "venus.json",
         },
-    
+
         "Tierra": {
           periapsis: 147090000, apoapsis: 152100000,
           size: 6371, color: 0x0000ff,
@@ -3648,7 +3646,7 @@ export const GALAXY = {
           rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 23.44, rotationPeriod: 0.99726968,
           jsonFile: "tierra.json",
         },
-    
+
         "Marte": {
           periapsis: 206620000, apoapsis: 249230000,
           size: 3389.5, color: 0xff3300,
@@ -3672,7 +3670,17 @@ export const GALAXY = {
           rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 25.19, rotationPeriod: 1.02595675,
           jsonFile: "marte.json",
         },
-    
+
+        "Ceres": {
+    		periapsis: 413700000, apoapsis: 445600000, 
+    		size: 473, color: 0xb0c4de, 
+    		orbits: "Sol", orbitalPeriod: 1680,
+    		inclination: 10.59, argumentOfPeriapsis: 73.41, longitudeOfAscendingNode: 80.33, 
+    		lastPerihelion: "2022-01-01",
+    		rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 4, rotationPeriod: 0.38,
+			jsonFile: "ceres.json",
+    	},
+
         "Jupiter": {
           periapsis: 740520000, apoapsis: 816620000,
           size: 71492, color: 0xb5651d,
@@ -3696,7 +3704,7 @@ export const GALAXY = {
           rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 3.13, rotationPeriod: 0.41,
           jsonFile: "jupiter.json",
         },
-    
+
         "Saturno": {
           periapsis: 1352550000, apoapsis: 1514500000,
           size: 60268, color: 0xf4a460,
@@ -3720,8 +3728,8 @@ export const GALAXY = {
           rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 26.73, rotationPeriod: 0.45,
           jsonFile: "saturno.json",
         },
-    	
-    	"Urano": { 
+
+        "Urano": { 
     		periapsis: 2741300000, apoapsis: 3006300000, 
     		size: 25362, color: 0x00ffff, 
     		orbits: "Sol", orbitalPeriod: 30685, 
@@ -3744,7 +3752,8 @@ export const GALAXY = {
     		rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 97.77, rotationPeriod: -0.72, // Rotación retrógrada
 			jsonFile: "urano.json",
     	},
-    	"Neptuno": { 
+
+        "Neptuno": { 
     		periapsis: 4444400000, apoapsis: 4545700000, 
     		size: 24622, color: 0x0000ff, 
     		orbits: "Sol", orbitalPeriod: 60190, 
@@ -3767,16 +3776,8 @@ export const GALAXY = {
     		rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 28.32, rotationPeriod: 0.67,
 			jsonFile: "neptuno.json",
     	},
-    	"Ceres": {
-    		periapsis: 413700000, apoapsis: 445600000, 
-    		size: 473, color: 0xb0c4de, 
-    		orbits: "Sol", orbitalPeriod: 1680,
-    		inclination: 10.59, argumentOfPeriapsis: 73.41, longitudeOfAscendingNode: 80.33, 
-    		lastPerihelion: "2022-01-01",
-    		rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 4, rotationPeriod: 0.38,
-			jsonFile: "ceres.json",
-    	},
-    	"Pluton": {
+
+        "Pluton": {
     		periapsis: 4437000000, apoapsis: 7376000000, 
     		size: 1188.3, color: 0xa9a9a9, 
     		orbits: "Sol", orbitalPeriod: 90560,
@@ -3785,7 +3786,8 @@ export const GALAXY = {
     		rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 122.5, rotationPeriod: -6.39,
 			jsonFile: "pluton.json",
     	},
-    	"Haumea": {
+
+        "Haumea": {
     		periapsis: 5155000000, apoapsis: 7748000000, 
     		size: 780, color: 0xffffff, 
     		orbits: "Sol", orbitalPeriod: 103250,
@@ -3794,7 +3796,8 @@ export const GALAXY = {
     		rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 126, rotationPeriod: 0.16,
 			jsonFile: "haumea.json",
     	},
-    	"Makemake": {
+
+        "Makemake": {
     		periapsis: 5103000000, apoapsis: 7935000000, 
     		size: 715, color: 0xffd700, 
     		orbits: "Sol", orbitalPeriod: 112897,
@@ -3802,7 +3805,8 @@ export const GALAXY = {
     		lastPerihelion: "2023-01-01",
     		rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0, rotationPeriod: 0.32
     	},
-    	"Eris": {
+
+        "Eris": {
     		periapsis: 5766000000, apoapsis: 14544000000, 
     		size: 1163, color: 0xffffff, 
     		orbits: "Sol", orbitalPeriod: 204670,
@@ -3810,350 +3814,10 @@ export const GALAXY = {
     		lastPerihelion: "1699-08-01",
     		rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 78, rotationPeriod: 1.08
     	},
-    
-        // ----------------------------------------------------------
-        // Sistema CANOPUS (Dune)
-        // ----------------------------------------------------------
-        "Seban": {
-          periapsis: 36000000, apoapsis: 40000000,
-          size: 2440, color: 0xaaaaaa,
-          orbits: "Alpha Carinae", orbitalPeriod: 88,
-          inclination: 7.0, argumentOfPeriapsis: 29.124, longitudeOfAscendingNode: 48.331,
-          lastPerihelion: "2024-02-15",
-          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0.034, rotationPeriod: 58.646,
-          jsonFile: "seban.json",
-        },
-    
-        "Menaris": {
-          periapsis: 58000000, apoapsis: 62000000,
-          size: 5992, color: 0xff9900,
-          orbits: "Alpha Carinae", orbitalPeriod: 225.0,
-          inclination: 3.39, argumentOfPeriapsis: 54.852, longitudeOfAscendingNode: 76.67,
-          lastPerihelion: "2023-08-13",
-          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 177.36, rotationPeriod: -243.02,
-          jsonFile: "menaris.json",
-        },
-    
-        "Arrakis": {
-          periapsis: 82600000, apoapsis: 91400000,
-          size: 6128, color: 0xffeaaf,
-          orbits: "Alpha Carinae", orbitalPeriod: 353.041,
-          inclination: 1.25, argumentOfPeriapsis: 114.208, longitudeOfAscendingNode: 348.739,
-          lastPerihelion: "2024-01-03",
-          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0.5, rotationPeriod: 1.0,
-          jsonFile: "arrakis.json",
-        },
-    
-        "Extaris": {
-          periapsis: 135000000, apoapsis: 145000000,
-          size: 5341, color: 0xff3300,
-          orbits: "Alpha Carinae", orbitalPeriod: 687,
-          inclination: 1.85, argumentOfPeriapsis: 286.537, longitudeOfAscendingNode: 49.562,
-          lastPerihelion: "2023-11-20",
-          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 25.19, rotationPeriod: 1.02595675,
-          jsonFile: "extaris.json",
-        },
-    
-        "Ven": {
-          periapsis: 230000000, apoapsis: 250000000,
-          size: 61284, color: 0xb5651d,
-          orbits: "Alpha Carinae", orbitalPeriod: 1850.0,
-          inclination: 0.8, argumentOfPeriapsis: 150.0, longitudeOfAscendingNode: 22.0,
-          lastPerihelion: "2024-05-10",
-          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 3.13, rotationPeriod: 0.41,
-          jsonFile: "ven.json",
-        },
-    
-        "Revona": {
-          periapsis: 440000000, apoapsis: 470000000,
-          size: 51520, color: 0xf4a460,
-          orbits: "Alpha Carinae", orbitalPeriod: 4332.0,
-          inclination: 2.49, argumentOfPeriapsis: 94.3, longitudeOfAscendingNode: 131.7,
-          lastPerihelion: "2024-08-20",
-          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 26.73, rotationPeriod: 0.45,
-          jsonFile: "revona.json",
-        },
-    
-        // ----------------------------------------------------------
-        // Catálogo Dune (planetas sueltos, cada uno con su estrella)
-        // ----------------------------------------------------------
-        "Caladan": {
-          periapsis: 160000000, apoapsis: 170000000,
-          size: 4460, color: 0x2f6fb3,
-          orbits: "Delta Pavonis", orbitalPeriod: 410,
-          inclination: 1.9, argumentOfPeriapsis: 114.0, longitudeOfAscendingNode: 48.0,
-          lastPerihelion: "2024-01-01",
-          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 18.0, rotationPeriod: 0.92,
-          jsonFile: "caladan.json",
-        },
-    
-        "Giedi Prime": {
-          periapsis: 120000000, apoapsis: 140000000,
-          size: 4200, color: 0x4a4a4a,
-          orbits: "36 Ophiuchi B", orbitalPeriod: 290,
-          inclination: 3.2, argumentOfPeriapsis: 62.0, longitudeOfAscendingNode: 210.0,
-          lastPerihelion: "2024-01-01",
-          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 6.0, rotationPeriod: 0.78,
-          jsonFile: "giedi-prime.json",
-        },
-    
-        "Ix": {
-          periapsis: 105000000, apoapsis: 112000000,
-          size: 3750, color: 0x8fd3ff,
-          orbits: "Alkalurops", orbitalPeriod: 235,
-          inclination: 2.4, argumentOfPeriapsis: 18.0, longitudeOfAscendingNode: 320.0,
-          lastPerihelion: "2024-01-01",
-          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 11.0, rotationPeriod: 1.06,
-          jsonFile: "ix.json",
-        },
-    
-        "Richese": {
-          periapsis: 135000000, apoapsis: 155000000,
-          size: 4080, color: 0x2aa6c8,
-          orbits: "Epsilon Eridani", orbitalPeriod: 335,
-          inclination: 1.1, argumentOfPeriapsis: 140.0, longitudeOfAscendingNode: 75.0,
-          lastPerihelion: "2024-01-01",
-          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 23.0, rotationPeriod: 1.12,
-          jsonFile: "richese.json",
-        },
-    
-        "Kaitain": {
-          periapsis: 145000000, apoapsis: 155000000,
-          size: 4020, color: 0x5bc06a,
-          orbits: "Alpha Piscium A", orbitalPeriod: 365,
-          inclination: 0.8, argumentOfPeriapsis: 102.0, longitudeOfAscendingNode: 12.0,
-          lastPerihelion: "2024-01-01",
-          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 21.0, rotationPeriod: 0.98,
-          jsonFile: "kaitain.json",
-        },
-    
-        "Salusa Secundus": {
-          periapsis: 210000000, apoapsis: 255000000,
-          size: 3820, color: 0x8a6b4b,
-          orbits: "Gamma Piscium", orbitalPeriod: 620,
-          inclination: 4.7, argumentOfPeriapsis: 250.0, longitudeOfAscendingNode: 33.0,
-          lastPerihelion: "2024-01-01",
-          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 33.0, rotationPeriod: 1.45,
-        },
-    
-        "Wallach IX": {
-          periapsis: 98000000, apoapsis: 108000000,
-          size: 3180, color: 0x6cbf7a,
-          orbits: "Mu Draconis", orbitalPeriod: 210,
-          inclination: 1.6, argumentOfPeriapsis: 80.0, longitudeOfAscendingNode: 190.0,
-          lastPerihelion: "2024-01-01",
-          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 14.0, rotationPeriod: 0.74,
-        },
-    
-        "Tleilax": {
-          periapsis: 88000000, apoapsis: 103000000,
-          size: 3120, color: 0x7ea0b5,
-          orbits: "Theta Eridani A", orbitalPeriod: 185,
-          inclination: 2.8, argumentOfPeriapsis: 310.0, longitudeOfAscendingNode: 260.0,
-          lastPerihelion: "2024-01-01",
-          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 5.0, rotationPeriod: 1.90,
-        },
-    
-        "Rossak": {
-          periapsis: 72000000, apoapsis: 86000000,
-          size: 3060, color: 0x1b8f3f,
-          orbits: "Alpha Crateris", orbitalPeriod: 145,
-          inclination: 6.1, argumentOfPeriapsis: 170.0, longitudeOfAscendingNode: 45.0,
-          lastPerihelion: "2024-01-01",
-          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 29.0, rotationPeriod: 0.68,
-          jsonFile: "rossak.json",
-        },
-    
-        "Buzzell": {
-          periapsis: 175000000, apoapsis: 205000000,
-          size: 2930, color: 0x2a6fd6,
-          orbits: "Alpha Piscium B", orbitalPeriod: 510,
-          inclination: 3.9, argumentOfPeriapsis: 12.0, longitudeOfAscendingNode: 155.0,
-          lastPerihelion: "2024-01-01",
-          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 40.0, rotationPeriod: 0.83,
-        },
-    
-        "Lampadas": {
-          periapsis: 112000000, apoapsis: 138000000,
-          size: 2990, color: 0x555555,
-          orbits: "Mu Draconis", orbitalPeriod: 275,
-          inclination: 2.2, argumentOfPeriapsis: 205.0, longitudeOfAscendingNode: 88.0,
-          lastPerihelion: "2024-01-01",
-          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 9.0, rotationPeriod: 1.02,
-        },
-    
-        "Ginaz": {
-          periapsis: 130000000, apoapsis: 150000000,
-          size: 3600, color: 0x3aa5ff,
-          orbits: "Alpha Piscium B", orbitalPeriod: 320,
-          inclination: 1.3, argumentOfPeriapsis: 44.0, longitudeOfAscendingNode: 22.0,
-          lastPerihelion: "2024-01-01",
-          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 27.0, rotationPeriod: 0.88,
-        },
-    
-        "Ecaz": {
-			// Es el cuarto, así que lo alejamos más en el esquema
-			periapsis: 650000000, 
-			apoapsis: 720000000,
-			size: 6100,                  // Tamaño similar a Venus/Tierra
-			color: 0x2e8b57,             // Verde bosque (por su densa vegetación y maderas)
-			orbits: "Alpha Centauri B",  // Orbita específicamente a la estrella B
-			orbitalPeriod: 2200, 
-			inclination: 1.8, 
-			argumentOfPeriapsis: 240.0, 
-			longitudeOfAscendingNode: 15.0,
-			lastPerihelion: "2024-08-15",
-			
-			rotationAxis: { x: 0, y: 1, z: 0 }, 
-			axialTilt: 18.0, 
-			rotationPeriod: 0.98,        // Día casi terrestre			
-			jsonFile: "ecaz.json",
-        },
-    
-        "Chusuk": {
-          periapsis: 140000000, apoapsis: 165000000,
-          size: 3950, color: 0x2fb35a,
-          orbits: "Theta Arietis", orbitalPeriod: 360,
-          inclination: 1.7, argumentOfPeriapsis: 90.0, longitudeOfAscendingNode: 60.0,
-          lastPerihelion: "2024-01-01",
-          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 24.0, rotationPeriod: 1.05,
-        },
-    
-        "Hagal": {
-          periapsis: 60000000, apoapsis: 68000000,
-          size: 2800, color: 0xb3f0ff,
-          orbits: "Theta Leonis", orbitalPeriod: 120,
-          inclination: 5.6, argumentOfPeriapsis: 275.0, longitudeOfAscendingNode: 140.0,
-          lastPerihelion: "2024-01-01",
-          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 2.0, rotationPeriod: 0.51,
-        },
-    
-        "Gamont": {
-          periapsis: 155000000, apoapsis: 190000000,
-          size: 4100, color: 0x2f8f7f,
-          orbits: "Psi Draconis", orbitalPeriod: 460,
-          inclination: 2.9, argumentOfPeriapsis: 10.0, longitudeOfAscendingNode: 200.0,
-          lastPerihelion: "2024-01-01",
-          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 32.0, rotationPeriod: 0.97,
-        },
-    
-        "Grumman": {
-          periapsis: 220000000, apoapsis: 290000000,
-          size: 3750, color: 0x8c8c8c,
-          orbits: "Psi Draconis", orbitalPeriod: 780,
-          inclination: 4.1, argumentOfPeriapsis: 188.0, longitudeOfAscendingNode: 15.0,
-          lastPerihelion: "2024-01-01",
-          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 12.0, rotationPeriod: 1.62,
-        },
-    
-        "Poritrin": {
-          periapsis: 105000000, apoapsis: 128000000,
-          size: 4010, color: 0x3ac46a,
-          orbits: "Epsilon Ophiuchi", orbitalPeriod: 240,
-          inclination: 1.2, argumentOfPeriapsis: 56.0, longitudeOfAscendingNode: 270.0,
-          lastPerihelion: "2024-01-01",
-          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 28.0, rotationPeriod: 0.91,
-        },
-    
-        "Bela Tegeuse": {
-          periapsis: 180000000, apoapsis: 240000000,
-          size: 4200, color: 0x7fb4ff,
-          orbits: "Iota Leporis", orbitalPeriod: 640,
-          inclination: 3.0, argumentOfPeriapsis: 330.0, longitudeOfAscendingNode: 100.0,
-          lastPerihelion: "2024-01-01",
-          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 17.0, rotationPeriod: 1.10,
-        },
-    
-        "Lankiveil": {
-          periapsis: 520000000, apoapsis: 720000000,
-          size: 3900, color: 0x9bd7ff,
-          orbits: "Delta Pavonis", orbitalPeriod: 3200,
-          inclination: 7.8, argumentOfPeriapsis: 15.0, longitudeOfAscendingNode: 250.0,
-          lastPerihelion: "2024-01-01",
-          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 9.0, rotationPeriod: 1.28,
-        },
-    
-        "Corrin": {
-          periapsis: 240000000, apoapsis: 310000000,
-          size: 3950, color: 0xff6b3a,
-          orbits: "Sigma Draconis", orbitalPeriod: 860,
-          inclination: 5.1, argumentOfPeriapsis: 120.0, longitudeOfAscendingNode: 5.0,
-          lastPerihelion: "2024-01-01",
-          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 16.0, rotationPeriod: 1.34,
-        },
-    
-        "Tanegaard": {
-          periapsis: 150000000, apoapsis: 165000000,
-          size: 4050, color: 0x88a0a8,
-          orbits: "Alpha Piscium B", orbitalPeriod: 370,
-          inclination: 0.6, argumentOfPeriapsis: 240.0, longitudeOfAscendingNode: 40.0,
-          lastPerihelion: "2024-01-01",
-          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 3.0, rotationPeriod: 0.99,
-        },
-    
-        "Conexión": {
-          periapsis: 170000000, apoapsis: 210000000,
-          size: 3600, color: 0x6b7a7f,
-          orbits: "Psi Draconis", orbitalPeriod: 520,
-          inclination: 2.0, argumentOfPeriapsis: 96.0, longitudeOfAscendingNode: 180.0,
-          lastPerihelion: "2024-01-01",
-          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 7.0, rotationPeriod: 0.93,
-        },
-    
-        "Kolhar": {
-          periapsis: 260000000, apoapsis: 340000000,
-          size: 3700, color: 0xb9d8ff,
-          orbits: "Psi Draconis", orbitalPeriod: 980,
-          inclination: 6.4, argumentOfPeriapsis: 200.0, longitudeOfAscendingNode: 290.0,
-          lastPerihelion: "2024-01-01",
-          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 22.0, rotationPeriod: 1.08,
-        },
-
-		// --- PLANETAS DE PROXIMA CENTAURI ---
-		"Proxima b": {
-			periapsis: 7119183,
-			apoapsis: 7409762,
-			size: 6900,
-			color: 0x6b7a7f,
-			orbits: "Proxima Centauri",
-			orbitalPeriod: 11.186,
-			inclination: 0.0,
-			argumentOfPeriapsis: 310.0,
-			longitudeOfAscendingNode: 0.0,
-			lastPerihelion: "2024-01-01",
-			rotationAxis: { x: 0, y: 1, z: 0 },
-			axialTilt: 0.0,
-			rotationPeriod: 11.186,
-			kind: "planet",
-			radius: 2.2,
-            jsonFile: "proxima_b.json"
-		},
 
 
-		// Proxima d sigue siendo candidata en el archivo; se conserva como aproximación jugable.		
-		"Proxima d": {
-			periapsis: 3877577,
-			apoapsis: 4739261,
-			size: 3400,
-			color: 0x21353c,
-			orbits: "Proxima Centauri",
-			orbitalPeriod: 5.122,
-			inclination: 1.5,
-			argumentOfPeriapsis: 45.0,
-			longitudeOfAscendingNode: 210.0,
-			lastPerihelion: "2024-01-01",
-			rotationAxis: { x: 0, y: 1, z: 0 },
-			axialTilt: 2.0,
-			rotationPeriod: 5.122,
-			kind: "planet",
-			radius: 1.6,
-            jsonFile: "proxima_d.json"
-		},
-
-
-		// --- PLANETA DE ALPHA CENTAURI A (Candidato / lore jugable) ---
-
-		"Alp2Cen A-b": {
+        // --- Alpha Centauri ---
+        "Alp2Cen A-b": {
 			periapsis: 70310999,
 			apoapsis: 79286871,
 			size: 12000,
@@ -4172,10 +3836,7 @@ export const GALAXY = {
             jsonFile: "vulcanis.json"
 		},
 
-
-		// --- PLANETAS INTERIORES DE ALPHA CENTAURI B (candidatos / lore jugable) ---
-
-		"Alp2Cen B-b": {
+        "Alp2Cen B-b": {
 			periapsis: 25581236,
 			apoapsis: 31265955,
 			size: 3100,
@@ -4194,8 +3855,7 @@ export const GALAXY = {
 			jsonFile: "alp2cen_b-b.json",
 		},
 
-		// Alp2Cen B-c: El segundo planeta, un desierto de polvo sulfuroso.
-		"Alp2Cen B-c": {
+        "Alp2Cen B-c": {
 			periapsis: 48694107,
 			apoapsis: 56024403,
 			size: 4800,
@@ -4213,8 +3873,7 @@ export const GALAXY = {
 			radius: 2.6
 		},
 
-		// Alp2Cen B-d: El tercer planeta, un mundo volcánico activo.
-		"Alp2Cen B-d": {
+        "Alp2Cen B-d": {
 			periapsis: 71717219,
 			apoapsis: 80872609,
 			size: 5900,
@@ -4232,9 +3891,78 @@ export const GALAXY = {
 			radius: 2.8
 		},
 
-		// --- SISTEMA ESTRELLA DE BARNARD (confirmados en 2024–2025) ---
+        "Ecaz": {
+			// Es el cuarto, así que lo alejamos más en el esquema
+			periapsis: 650000000, 
+			apoapsis: 720000000,
+			size: 6100,                  // Tamaño similar a Venus/Tierra
+			color: 0x2e8b57,             // Verde bosque (por su densa vegetación y maderas)
+			orbits: "Alpha Centauri B",  // Orbita específicamente a la estrella B
+			orbitalPeriod: 2200, 
+			inclination: 1.8, 
+			argumentOfPeriapsis: 240.0, 
+			longitudeOfAscendingNode: 15.0,
+			lastPerihelion: "2024-08-15",
+			
+			rotationAxis: { x: 0, y: 1, z: 0 }, 
+			axialTilt: 18.0, 
+			rotationPeriod: 0.98,        // Día casi terrestre			
+			jsonFile: "ecaz.json",
+        },
 
-		"Barnard d": {
+        "Proxima d": {
+			periapsis: 3877577,
+			apoapsis: 4739261,
+			size: 3400,
+			color: 0x21353c,
+			orbits: "Proxima Centauri",
+			orbitalPeriod: 5.122,
+			inclination: 1.5,
+			argumentOfPeriapsis: 45.0,
+			longitudeOfAscendingNode: 210.0,
+			lastPerihelion: "2024-01-01",
+			rotationAxis: { x: 0, y: 1, z: 0 },
+			axialTilt: 2.0,
+			rotationPeriod: 5.122,
+			kind: "planet",
+			radius: 1.6,
+            jsonFile: "proxima_d.json"
+		},
+
+        "Proxima b": {
+			periapsis: 7119183,
+			apoapsis: 7409762,
+			size: 6900,
+			color: 0x6b7a7f,
+			orbits: "Proxima Centauri",
+			orbitalPeriod: 11.186,
+			inclination: 0.0,
+			argumentOfPeriapsis: 310.0,
+			longitudeOfAscendingNode: 0.0,
+			lastPerihelion: "2024-01-01",
+			rotationAxis: { x: 0, y: 1, z: 0 },
+			axialTilt: 0.0,
+			rotationPeriod: 11.186,
+			kind: "planet",
+			radius: 2.2,
+            jsonFile: "proxima_b.json"
+		},
+
+        "Proxima c": {
+			periapsis: 214762703,
+			apoapsis: 228046994,
+			size: 13312, color: 0x6f7f86,
+			orbits: "Proxima Centauri", orbitalPeriod: 1928,
+			inclination: 0.4, argumentOfPeriapsis: 24.0, longitudeOfAscendingNode: 12.0,
+			lastPerihelion: "2024-01-01",
+			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 1.0, rotationPeriod: 1.0,
+			kind: "planet",
+			radius: 3.5
+		},
+
+
+        // --- Barnard's Star ---
+        "Barnard d": {
 			periapsis: 2699942,
 			apoapsis: 2924938,
 			size: 2900,
@@ -4252,7 +3980,7 @@ export const GALAXY = {
 			radius: 1.2
 		},
 
-		"Barnard b": {
+        "Barnard b": {
 			periapsis: 3323018,
 			apoapsis: 3528565,
 			size: 3300,
@@ -4270,7 +3998,7 @@ export const GALAXY = {
 			radius: 1.35
 		},
 
-		"Barnard c": {
+        "Barnard c": {
 			periapsis: 3771063,
 			apoapsis: 4426900,
 			size: 3600,
@@ -4288,7 +4016,7 @@ export const GALAXY = {
 			radius: 1.45
 		},
 
-		"Barnard e": {
+        "Barnard e": {
 			periapsis: 5471692,
 			apoapsis: 5927666,
 			size: 3000,
@@ -4307,9 +4035,34 @@ export const GALAXY = {
 		},
 
 
-// --- SISTEMA LALANDE 21185 / GJ 411 (confirmados) ---
+        // --- Wolf 359 ---
+        "Wolf 359 c": {
+			periapsis: 2902199,
+			apoapsis: 3081716,
+			size: 10963, color: 0x7e8c93,
+			orbits: "Wolf 359", orbitalPeriod: 2.7,
+			inclination: 1.1, argumentOfPeriapsis: 61.0, longitudeOfAscendingNode: 38.0,
+			lastPerihelion: "2024-01-01",
+			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 3.5, rotationPeriod: 1.13,
+			kind: "planet",
+			radius: 3.2
+		},
 
-		"Lalande 21185 b": {
+        "Wolf 359 b": {
+			periapsis: 262918258,
+			apoapsis: 290593864,
+			size: 30689, color: 0xc7b8a3,
+			orbits: "Wolf 359", orbitalPeriod: 2938,
+			inclination: 1.8, argumentOfPeriapsis: 103.0, longitudeOfAscendingNode: 77.0,
+			lastPerihelion: "2024-01-01",
+			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 6.0, rotationPeriod: 1.26,
+			kind: "planet",
+			radius: 5.7
+		},
+
+
+        // --- Lalande 21185 ---
+        "Lalande 21185 b": {
 			periapsis: 11044247,
 			apoapsis: 12529386,
 			size: 6700,
@@ -4327,9 +4080,7 @@ export const GALAXY = {
 			radius: 2.4
 		},
 
-
-		// Se conserva Lalande 21185 d como candidato/lore jugable.
-		"Lalande 21185 d": {
+        "Lalande 21185 d": {
 			periapsis: 30966759,
 			apoapsis: 37848261,
 			size: 4800,
@@ -4346,9 +4097,8 @@ export const GALAXY = {
 			kind: "planet",
 			radius: 3.2
 		},
-		
-		// Lalande 21185 c: Un gigante gaseoso (similar a Neptuno/Urano).
-		"Lalande 21185 c": {
+
+        "Lalande 21185 c": {
 			periapsis: 381761798,
 			apoapsis: 497873682,
 			size: 26000,
@@ -4367,9 +4117,138 @@ export const GALAXY = {
 		},
 
 
-// --- EPSILON ERIDANI (confirmado) ---
+        // --- Sirius ---
+        "Sirius A-b": {
+			periapsis: 25581236,
+			apoapsis: 31265955,
+			size: 71000,
+			color: 0xdae4e8,
+			orbits: "Sirius", 
+			orbitalPeriod: 520,
+			inclination: 2.0, 
+			argumentOfPeriapsis: 96.0, 
+			longitudeOfAscendingNode: 180.0,
+			lastPerihelion: "2024-01-01",
+			rotationAxis: { x: 0, y: 1, z: 0 }, 
+			axialTilt: 3.0, 
+			rotationPeriod: 0.41, // Rotación muy rápida
+			kind: "planet",
+			radius: 9.0
+		},
 
-		"Epsilon Eridani b": {
+        "Sirius A-c": {
+			periapsis: 52299416,
+			apoapsis: 61394966,
+			size: 25000,
+			color: 0x8fa9b3,
+			orbits: "Sirius", 
+			orbitalPeriod: 1200,
+			inclination: 4.5, 
+			argumentOfPeriapsis: 210.0, 
+			longitudeOfAscendingNode: 45.0,
+			lastPerihelion: "2024-01-01",
+			rotationAxis: { x: 0, y: 1, z: 0 }, 
+			axialTilt: 28.0, 
+			rotationPeriod: 0.72,
+			kind: "planet",
+			radius: 6.0
+		},
+
+        "Sirius B-b": {
+			periapsis: 11982789,
+			apoapsis: 14944827,
+			size: 5800,
+			color: 0x4a4a4a,
+			orbits: "Sirius B",
+			orbitalPeriod: 310,
+			inclination: 12.0, 
+			argumentOfPeriapsis: 0.0, 
+			longitudeOfAscendingNode: 0.0,
+			lastPerihelion: "2024-01-01",
+			rotationAxis: { x: 0, y: 1, z: 0 }, 
+			axialTilt: 45.0, 
+			rotationPeriod: 2.1,
+			kind: "planet",
+			radius: 3.0
+		},
+
+
+        // --- Luyten 726-8 A ---
+        "Luyten 726-8 A b": {
+			periapsis: 39755664,
+			apoapsis: 43940471,
+			size: 27523, color: 0x5c6b70,
+			orbits: "Luyten 726-8 A", orbitalPeriod: 156,
+			inclination: 2.5, argumentOfPeriapsis: 147.0, longitudeOfAscendingNode: 121.0,
+			lastPerihelion: "2024-01-01",
+			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 8.5, rotationPeriod: 1.39,
+			kind: "planet",
+			radius: 5.3
+		},
+
+
+        // --- Gliese 729 ---
+        "Gliese 729 b": {
+			periapsis: 25581236,
+			apoapsis: 31265955,
+			size: 3400,
+			color: 0x8b4513,
+			orbits: "Gliese 729", 
+			orbitalPeriod: 520,
+			inclination: 2.0, 
+			argumentOfPeriapsis: 96.0, 
+			longitudeOfAscendingNode: 180.0,
+			lastPerihelion: "2024-01-01",
+			rotationAxis: { x: 0, y: 1, z: 0 }, 
+			axialTilt: 3.0, 
+			rotationPeriod: 0.93,
+			kind: "planet",
+			radius: 2.4
+		},
+
+        "Gliese 729 c": {
+			periapsis: 48694107,
+			apoapsis: 56024403,
+			size: 4000,
+			color: 0x696969,
+			orbits: "Gliese 729",
+			orbitalPeriod: 910,
+			inclination: 1.5, 
+			argumentOfPeriapsis: 210.0, 
+			longitudeOfAscendingNode: 60.0,
+			lastPerihelion: "2024-04-15",
+			rotationAxis: { x: 0, y: 1, z: 0 }, 
+			axialTilt: 15.0, 
+			rotationPeriod: 1.25,
+			kind: "planet",
+			radius: 2.8
+		},
+
+
+        // --- Epsilon Eridani ---
+        "Richese": {
+          periapsis: 135000000, apoapsis: 155000000,
+          size: 4080, color: 0x2aa6c8,
+          orbits: "Epsilon Eridani", orbitalPeriod: 335,
+          inclination: 1.1, argumentOfPeriapsis: 140.0, longitudeOfAscendingNode: 75.0,
+          lastPerihelion: "2024-01-01",
+          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 23.0, rotationPeriod: 1.12,
+          jsonFile: "richese.json",
+        },
+
+        "Epsilon Eridani b": {
+			periapsis: 484158549,
+			apoapsis: 557042631,
+			size: 58119, color: 0xb8c6d1,
+			orbits: "Epsilon Eridani", orbitalPeriod: 2775,
+			inclination: 3.2, argumentOfPeriapsis: 198.0, longitudeOfAscendingNode: 166.0,
+			lastPerihelion: "2024-01-01",
+			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 11.0, rotationPeriod: 1.52,
+			kind: "planet",
+			radius: 9.1
+		},
+
+        "Epsilon Eridani b": {
 			periapsis: 485834045,
 			apoapsis: 570326922,
 			size: 62000,
@@ -4387,10 +4266,121 @@ export const GALAXY = {
 			radius: 6.6
 		},
 
+        "Epsilon Eridani c": {
+			periapsis: 5684719087,
+			apoapsis: 6283110569,
+			size: 25650, color: 0x6b7f8e,
+			orbits: "Epsilon Eridani", orbitalPeriod: 102270,
+			inclination: 0.4, argumentOfPeriapsis: 245.0, longitudeOfAscendingNode: 214.0,
+			lastPerihelion: "2024-01-01",
+			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 13.5, rotationPeriod: 1.65,
+			kind: "planet",
+			radius: 5.0
+		},
 
-// --- GROOMBRIDGE 34 / GJ 15 A (confirmados) ---
 
-		"GJ 15 A b": {
+        // --- Lacaille 9352 ---
+        "Lacaille 9352 e": {
+			periapsis: 5804397,
+			apoapsis: 6163432,
+			size: 7137, color: 0x6f7f86,
+			orbits: "Lacaille 9352", orbitalPeriod: 4.4,
+			inclination: 1.1, argumentOfPeriapsis: 289.0, longitudeOfAscendingNode: 301.0,
+			lastPerihelion: "2024-01-01",
+			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 1.0, rotationPeriod: 1.78,
+			kind: "planet",
+			radius: 2.7
+		},
+
+        "Lacaille 9352 b": {
+			periapsis: 10157695,
+			apoapsis: 10786006,
+			size: 11040, color: 0x7e8c93,
+			orbits: "Lacaille 9352", orbitalPeriod: 9.3,
+			inclination: 1.8, argumentOfPeriapsis: 24.0, longitudeOfAscendingNode: 12.0,
+			lastPerihelion: "2024-01-01",
+			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 3.5, rotationPeriod: 1.91,
+			kind: "planet",
+			radius: 3.2
+		},
+
+        "Lacaille 9352 c": {
+			periapsis: 17413192,
+			apoapsis: 18490297,
+			size: 12673, color: 0x8e7864,
+			orbits: "Lacaille 9352", orbitalPeriod: 21.8,
+			inclination: 2.5, argumentOfPeriapsis: 61.0, longitudeOfAscendingNode: 38.0,
+			lastPerihelion: "2024-01-01",
+			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 6.0, rotationPeriod: 2.04,
+			kind: "planet",
+			radius: 3.4
+		},
+
+        "Lacaille 9352 d": {
+			periapsis: 30473086,
+			apoapsis: 32358019,
+			size: 12457, color: 0x778899,
+			orbits: "Lacaille 9352", orbitalPeriod: 50.8,
+			inclination: 3.2, argumentOfPeriapsis: 103.0, longitudeOfAscendingNode: 77.0,
+			lastPerihelion: "2024-01-01",
+			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 8.5, rotationPeriod: 2.17,
+			kind: "planet",
+			radius: 3.4
+		},
+
+
+        // --- Gliese 725 ---
+        "Struve 2398 A b": {
+			periapsis: 10157695,
+			apoapsis: 10786006,
+			size: 10095, color: 0x6b6f7a,
+			orbits: "Gliese 725 A", orbitalPeriod: 11.2,
+			inclination: 0.4, argumentOfPeriapsis: 147.0, longitudeOfAscendingNode: 121.0,
+			lastPerihelion: "2024-01-01",
+			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 11.0, rotationPeriod: 2.3,
+			kind: "planet",
+			radius: 3.1
+		},
+
+        "Struve 2398 B b": {
+			periapsis: 5804397,
+			apoapsis: 6163432,
+			size: 7137, color: 0x8b7d6b,
+			orbits: "Gliese 725 B", orbitalPeriod: 4.8,
+			inclination: 1.1, argumentOfPeriapsis: 198.0, longitudeOfAscendingNode: 166.0,
+			lastPerihelion: "2024-01-01",
+			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 13.5, rotationPeriod: 2.43,
+			kind: "planet",
+			radius: 2.7
+		},
+
+        "Struve 2398 B c": {
+			periapsis: 20315391,
+			apoapsis: 21572013,
+			size: 10722, color: 0x6f7f86,
+			orbits: "Gliese 725 B", orbitalPeriod: 37.9,
+			inclination: 1.8, argumentOfPeriapsis: 245.0, longitudeOfAscendingNode: 214.0,
+			lastPerihelion: "2024-01-01",
+			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 1.0, rotationPeriod: 2.56,
+			kind: "planet",
+			radius: 3.1
+		},
+
+
+        // --- Groombridge 34 ---
+        "Groombridge 34 A b": {
+			periapsis: 10157695,
+			apoapsis: 10786006,
+			size: 11116, color: 0x7e8c93,
+			orbits: "Groombridge 34 A", orbitalPeriod: 11.4,
+			inclination: 2.5, argumentOfPeriapsis: 289.0, longitudeOfAscendingNode: 301.0,
+			lastPerihelion: "2024-01-01",
+			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 3.5, rotationPeriod: 2.69,
+			kind: "planet",
+			radius: 3.2
+		},
+
+        "GJ 15 A b": {
 			periapsis: 12655980,
 			apoapsis: 15468420,
 			size: 7000,
@@ -4408,7 +4398,7 @@ export const GALAXY = {
 			radius: 2.4
 		},
 
-		"GJ 15 A c": {
+        "GJ 15 A c": {
 			periapsis: 800348608,
 			apoapsis: 800348608,
 			size: 30000,
@@ -4426,10 +4416,33 @@ export const GALAXY = {
 			radius: 5.2
 		},
 
+        "Groombridge 34 A c": {
+			periapsis: 767437077,
+			apoapsis: 848219927,
+			size: 27077, color: 0x7b8fa1,
+			orbits: "Groombridge 34 A", orbitalPeriod: 6694,
+			inclination: 3.2, argumentOfPeriapsis: 24.0, longitudeOfAscendingNode: 12.0,
+			lastPerihelion: "2024-01-01",
+			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 6.0, rotationPeriod: 2.82,
+			kind: "planet",
+			radius: 5.2
+		},
 
-// --- EPSILON INDI A (confirmado) ---
 
-		"Epsilon Indi Ab": {
+        // --- Epsilon Indi ---
+        "Epsilon Indi A b": {
+			periapsis: 1541516299,
+			apoapsis: 1773572516,
+			size: 63638, color: 0xa9c4d6,
+			orbits: "Epsilon Indi A", orbitalPeriod: 15676.5,
+			inclination: 0.4, argumentOfPeriapsis: 61.0, longitudeOfAscendingNode: 38.0,
+			lastPerihelion: "2024-01-01",
+			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 8.5, rotationPeriod: 2.95,
+			kind: "planet",
+			radius: 9.8
+		},
+
+        "Epsilon Indi Ab": {
 			periapsis: 1898666255,
 			apoapsis: 1937023149,
 			size: 68000,
@@ -4448,9 +4461,32 @@ export const GALAXY = {
 		},
 
 
-// --- TAU CETI (confirmados, marcados como controvertidos en el archivo) ---
+        // --- Tau Ceti ---
+        "Tau Ceti b": {
+			periapsis: 15962093,
+			apoapsis: 16949439,
+			size: 7736, color: 0x6b6f7a,
+			orbits: "Tau Ceti", orbitalPeriod: 14.0,
+			inclination: 1.1, argumentOfPeriapsis: 103.0, longitudeOfAscendingNode: 77.0,
+			lastPerihelion: "2024-01-01",
+			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 11.0, rotationPeriod: 3.08,
+			kind: "planet",
+			radius: 2.8
+		},
 
-		"tau Cet g": {
+        "Tau Ceti g": {
+			periapsis: 18864291,
+			apoapsis: 20031155,
+			size: 7511, color: 0x8b7d6b,
+			orbits: "Tau Ceti", orbitalPeriod: 20.0,
+			inclination: 1.8, argumentOfPeriapsis: 147.0, longitudeOfAscendingNode: 121.0,
+			lastPerihelion: "2024-01-01",
+			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 13.5, rotationPeriod: 3.21,
+			kind: "planet",
+			radius: 2.7
+		},
+
+        "tau Cet g": {
 			periapsis: 18702726,
 			apoapsis: 21090308,
 			size: 4300,
@@ -4468,7 +4504,31 @@ export const GALAXY = {
 			radius: 1.6
 		},
 
-		"tau Cet h": {
+        "Tau Ceti c": {
+			periapsis: 29021987,
+			apoapsis: 30817161,
+			size: 7008, color: 0x6f7f86,
+			orbits: "Tau Ceti", orbitalPeriod: 35.4,
+			inclination: 2.5, argumentOfPeriapsis: 198.0, longitudeOfAscendingNode: 166.0,
+			lastPerihelion: "2024-01-01",
+			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 1.0, rotationPeriod: 3.34,
+			kind: "planet",
+			radius: 2.7
+		},
+
+        "Tau Ceti h": {
+			periapsis: 34826384,
+			apoapsis: 36980594,
+			size: 7511, color: 0x7e8c93,
+			orbits: "Tau Ceti", orbitalPeriod: 49.4,
+			inclination: 3.2, argumentOfPeriapsis: 245.0, longitudeOfAscendingNode: 214.0,
+			lastPerihelion: "2024-01-01",
+			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 3.5, rotationPeriod: 3.47,
+			kind: "planet",
+			radius: 2.7
+		},
+
+        "tau Cet h": {
 			periapsis: 27991258,
 			apoapsis: 44713308,
 			size: 4500,
@@ -4486,7 +4546,7 @@ export const GALAXY = {
 			radius: 1.7
 		},
 
-		"tau Cet e": {
+        "tau Cet e": {
 			periapsis: 65996597,
 			apoapsis: 94970712,
 			size: 7200,
@@ -4504,7 +4564,31 @@ export const GALAXY = {
 			radius: 2.4
 		},
 
-		"tau Cet f": {
+        "Tau Ceti e": {
+			periapsis: 78359365,
+			apoapsis: 83206336,
+			size: 11040, color: 0x8e7864,
+			orbits: "Tau Ceti", orbitalPeriod: 162.8,
+			inclination: 0.4, argumentOfPeriapsis: 289.0, longitudeOfAscendingNode: 301.0,
+			lastPerihelion: "2024-01-01",
+			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 6.0, rotationPeriod: 3.6,
+			kind: "planet",
+			radius: 3.2
+		},
+
+        "Tau Ceti f": {
+			periapsis: 192996213,
+			apoapsis: 204934123,
+			size: 11040, color: 0x778899,
+			orbits: "Tau Ceti", orbitalPeriod: 636.1,
+			inclination: 1.1, argumentOfPeriapsis: 24.0, longitudeOfAscendingNode: 12.0,
+			lastPerihelion: "2024-01-01",
+			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 8.5, rotationPeriod: 3.73,
+			kind: "planet",
+			radius: 3.2
+		},
+
+        "tau Cet f": {
 			periapsis: 167633390,
 			apoapsis: 231493729,
 			size: 7400,
@@ -4523,9 +4607,20 @@ export const GALAXY = {
 		},
 
 
-// --- GLIESE 1061 (confirmados) ---
+        // --- Gliese 1061 ---
+        "Gliese 1061 b": {
+			periapsis: 2902199,
+			apoapsis: 3081716,
+			size: 7137, color: 0x6b6f7a,
+			orbits: "Gliese 1061", orbitalPeriod: 3.2,
+			inclination: 1.8, argumentOfPeriapsis: 61.0, longitudeOfAscendingNode: 38.0,
+			lastPerihelion: "2024-01-01",
+			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 11.0, rotationPeriod: 3.86,
+			kind: "planet",
+			radius: 2.7
+		},
 
-		"Gliese 1061 b": {
+        "Gliese 1061 b": {
 			periapsis: 2827400,
 			apoapsis: 3455711,
 			size: 5200,
@@ -4543,7 +4638,7 @@ export const GALAXY = {
 			radius: 1.8
 		},
 
-		"Gliese 1061 c": {
+        "Gliese 1061 c": {
 			periapsis: 4817051,
 			apoapsis: 5654800,
 			size: 5600,
@@ -4561,7 +4656,31 @@ export const GALAXY = {
 			radius: 1.95
 		},
 
-		"Gliese 1061 d": {
+        "Gliese 1061 c": {
+			periapsis: 5804397,
+			apoapsis: 6163432,
+			size: 7392, color: 0x8b7d6b,
+			orbits: "Gliese 1061", orbitalPeriod: 6.7,
+			inclination: 2.5, argumentOfPeriapsis: 103.0, longitudeOfAscendingNode: 77.0,
+			lastPerihelion: "2024-01-01",
+			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 13.5, rotationPeriod: 3.99,
+			kind: "planet",
+			radius: 2.7
+		},
+
+        "Gliese 1061 d": {
+			periapsis: 7255497,
+			apoapsis: 7704290,
+			size: 7392, color: 0x6f7f86,
+			orbits: "Gliese 1061", orbitalPeriod: 13.0,
+			inclination: 3.2, argumentOfPeriapsis: 147.0, longitudeOfAscendingNode: 121.0,
+			lastPerihelion: "2024-01-01",
+			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 1.0, rotationPeriod: 4.12,
+			kind: "planet",
+			radius: 2.7
+		},
+
+        "Gliese 1061 d": {
 			periapsis: 6866542,
 			apoapsis: 9290028,
 			size: 5900,
@@ -4580,9 +4699,8 @@ export const GALAXY = {
 		},
 
 
-// --- YZ CETI (confirmados; se usa la solución compacta clásica del sistema) ---
-
-		"YZ Ceti b": {
+        // --- YZ Ceti ---
+        "YZ Ceti b": {
 			periapsis: 2316523,
 			apoapsis: 2560368,
 			size: 4200,
@@ -4600,7 +4718,31 @@ export const GALAXY = {
 			radius: 1.45
 		},
 
-		"YZ Ceti c": {
+        "YZ Ceti b": {
+			periapsis: 2902199,
+			apoapsis: 3081716,
+			size: 5765, color: 0x7e8c93,
+			orbits: "YZ Ceti", orbitalPeriod: 2.0,
+			inclination: 0.4, argumentOfPeriapsis: 198.0, longitudeOfAscendingNode: 166.0,
+			lastPerihelion: "2024-01-01",
+			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 3.5, rotationPeriod: 4.25,
+			kind: "planet",
+			radius: 2.5
+		},
+
+        "YZ Ceti c": {
+			periapsis: 2902199,
+			apoapsis: 3081716,
+			size: 6371, color: 0x8e7864,
+			orbits: "YZ Ceti", orbitalPeriod: 3.1,
+			inclination: 1.1, argumentOfPeriapsis: 245.0, longitudeOfAscendingNode: 214.0,
+			lastPerihelion: "2024-01-01",
+			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 6.0, rotationPeriod: 4.38,
+			kind: "planet",
+			radius: 2.6
+		},
+
+        "YZ Ceti c": {
 			periapsis: 3001532,
 			apoapsis: 3251659,
 			size: 4600,
@@ -4618,7 +4760,7 @@ export const GALAXY = {
 			radius: 1.55
 		},
 
-		"YZ Ceti d": {
+        "YZ Ceti d": {
 			periapsis: 3839878,
 			apoapsis: 4417924,
 			size: 5200,
@@ -4636,10 +4778,21 @@ export const GALAXY = {
 			radius: 1.75
 		},
 
+        "YZ Ceti d": {
+			periapsis: 4353298,
+			apoapsis: 4622574,
+			size: 6543, color: 0x778899,
+			orbits: "YZ Ceti", orbitalPeriod: 4.7,
+			inclination: 1.8, argumentOfPeriapsis: 289.0, longitudeOfAscendingNode: 301.0,
+			lastPerihelion: "2024-01-01",
+			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 8.5, rotationPeriod: 4.51,
+			kind: "planet",
+			radius: 2.6
+		},
 
-// --- LUYTEN'S STAR / GJ 273 (confirmados) ---
 
-		"GJ 273 c": {
+        // --- Luyten's Star ---
+        "GJ 273 c": {
 			periapsis: 4527970,
 			apoapsis: 6382801,
 			size: 4700,
@@ -4657,7 +4810,31 @@ export const GALAXY = {
 			radius: 1.55
 		},
 
-		"GJ 273 b": {
+        "Luyten's Star c": {
+			periapsis: 5804397,
+			apoapsis: 6163432,
+			size: 6705, color: 0x6b6f7a,
+			orbits: "Luyten's Star", orbitalPeriod: 4.7,
+			inclination: 2.5, argumentOfPeriapsis: 24.0, longitudeOfAscendingNode: 12.0,
+			lastPerihelion: "2024-01-01",
+			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 11.0, rotationPeriod: 4.64,
+			kind: "planet",
+			radius: 2.6
+		},
+
+        "Luyten's Star b": {
+			periapsis: 13059894,
+			apoapsis: 13867723,
+			size: 9459, color: 0x8b7d6b,
+			orbits: "Luyten's Star", orbitalPeriod: 18.7,
+			inclination: 3.2, argumentOfPeriapsis: 61.0, longitudeOfAscendingNode: 38.0,
+			lastPerihelion: "2024-01-01",
+			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 13.5, rotationPeriod: 4.77,
+			kind: "planet",
+			radius: 3.0
+		},
+
+        "GJ 273 b": {
 			periapsis: 12265664,
 			apoapsis: 14991367,
 			size: 6500,
@@ -4675,10 +4852,33 @@ export const GALAXY = {
 			radius: 2.2
 		},
 
+        "Luyten's Star d": {
+			periapsis: 100903764,
+			apoapsis: 111525213,
+			size: 16284, color: 0x7b8fa1,
+			orbits: "Luyten's Star", orbitalPeriod: 413.9,
+			inclination: 0.4, argumentOfPeriapsis: 103.0, longitudeOfAscendingNode: 77.0,
+			lastPerihelion: "2024-01-01",
+			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 1.0, rotationPeriod: 4.9,
+			kind: "planet",
+			radius: 3.8
+		},
 
-// --- TEEGARDEN'S STAR (confirmados) ---
+        "Luyten's Star e": {
+			periapsis: 123343444,
+			apoapsis: 130972936,
+			size: 13960, color: 0x7e8c93,
+			orbits: "Luyten's Star", orbitalPeriod: 542.0,
+			inclination: 1.1, argumentOfPeriapsis: 147.0, longitudeOfAscendingNode: 121.0,
+			lastPerihelion: "2024-01-01",
+			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 3.5, rotationPeriod: 5.03,
+			kind: "planet",
+			radius: 3.6
+		},
 
-		"Teegarden's Star b": {
+
+        // --- Teegarden's Star ---
+        "Teegarden's Star b": {
 			periapsis: 3758347,
 			apoapsis: 3990822,
 			size: 5600,
@@ -4696,7 +4896,31 @@ export const GALAXY = {
 			radius: 1.9
 		},
 
-		"Teegarden's Star c": {
+        "Teegarden's Star b": {
+			periapsis: 4353298,
+			apoapsis: 4622574,
+			size: 6543, color: 0x8e7864,
+			orbits: "Teegarden's Star", orbitalPeriod: 4.9,
+			inclination: 1.8, argumentOfPeriapsis: 198.0, longitudeOfAscendingNode: 166.0,
+			lastPerihelion: "2024-01-01",
+			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 6.0, rotationPeriod: 5.16,
+			kind: "planet",
+			radius: 2.6
+		},
+
+        "Teegarden's Star c": {
+			periapsis: 5804397,
+			apoapsis: 6163432,
+			size: 6543, color: 0x778899,
+			orbits: "Teegarden's Star", orbitalPeriod: 11.4,
+			inclination: 2.5, argumentOfPeriapsis: 245.0, longitudeOfAscendingNode: 214.0,
+			lastPerihelion: "2024-01-01",
+			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 8.5, rotationPeriod: 5.29,
+			kind: "planet",
+			radius: 2.6
+		},
+
+        "Teegarden's Star c": {
 			periapsis: 6534435,
 			apoapsis: 7078971,
 			size: 5400,
@@ -4714,7 +4938,7 @@ export const GALAXY = {
 			radius: 1.85
 		},
 
-		"Teegarden's Star d": {
+        "Teegarden's Star d": {
 			periapsis: 11004868,
 			apoapsis: 12661515,
 			size: 5000,
@@ -4732,10 +4956,45 @@ export const GALAXY = {
 			radius: 1.7
 		},
 
+        "Teegarden's Star d": {
+			periapsis: 11608795,
+			apoapsis: 12326865,
+			size: 5985, color: 0x6b6f7a,
+			orbits: "Teegarden's Star", orbitalPeriod: 26.1,
+			inclination: 3.2, argumentOfPeriapsis: 289.0, longitudeOfAscendingNode: 301.0,
+			lastPerihelion: "2024-01-01",
+			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 11.0, rotationPeriod: 5.42,
+			kind: "planet",
+			radius: 2.6
+		},
 
-// --- KAPTEYN'S STAR (confirmado / controvertido en el archivo) ---
 
-		"Kapteyn c": {
+        // --- Kapteyn's Star ---
+        "Kapteyn's Star b": {
+			periapsis: 24668689,
+			apoapsis: 26194587,
+			size: 11677, color: 0x8b7d6b,
+			orbits: "Kapteyn's Star", orbitalPeriod: 49.3,
+			inclination: 0.4, argumentOfPeriapsis: 24.0, longitudeOfAscendingNode: 12.0,
+			lastPerihelion: "2024-01-01",
+			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 13.5, rotationPeriod: 5.5,
+			kind: "planet",
+			radius: 3.3
+		},
+
+        "Kapteyn's Star c": {
+			periapsis: 44984080,
+			apoapsis: 47766600,
+			size: 12929, color: 0x6f7f86,
+			orbits: "Kapteyn's Star", orbitalPeriod: 121.3,
+			inclination: 1.1, argumentOfPeriapsis: 61.0, longitudeOfAscendingNode: 38.0,
+			lastPerihelion: "2024-01-01",
+			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 1.0, rotationPeriod: 5.5,
+			kind: "planet",
+			radius: 3.4
+		},
+
+        "Kapteyn c": {
 			periapsis: 35824202,
 			apoapsis: 57225673,
 			size: 7600,
@@ -4754,583 +5013,297 @@ export const GALAXY = {
 		},
 
 
-// --- PLANETAS DE SIRIUS A (lore jugable) ---
-
-		"Sirius A-b": {
-			periapsis: 25581236,
-			apoapsis: 31265955,
-			size: 71000,
-			color: 0xdae4e8,
-			orbits: "Sirius", 
-			orbitalPeriod: 520,
-			inclination: 2.0, 
-			argumentOfPeriapsis: 96.0, 
-			longitudeOfAscendingNode: 180.0,
-			lastPerihelion: "2024-01-01",
-			rotationAxis: { x: 0, y: 1, z: 0 }, 
-			axialTilt: 3.0, 
-			rotationPeriod: 0.41, // Rotación muy rápida
-			kind: "planet",
-			radius: 9.0
-		},
-		
-		// Sirius A-c: Un gigante helado en el borde del sistema
-		"Sirius A-c": {
-			periapsis: 52299416,
-			apoapsis: 61394966,
-			size: 25000,
-			color: 0x8fa9b3,
-			orbits: "Sirius", 
-			orbitalPeriod: 1200,
-			inclination: 4.5, 
-			argumentOfPeriapsis: 210.0, 
-			longitudeOfAscendingNode: 45.0,
-			lastPerihelion: "2024-01-01",
-			rotationAxis: { x: 0, y: 1, z: 0 }, 
-			axialTilt: 28.0, 
-			rotationPeriod: 0.72,
-			kind: "planet",
-			radius: 6.0
-		},
+        // --- Sigma Draconis ---
+        "Corrin": {
+          periapsis: 240000000, apoapsis: 310000000,
+          size: 3950, color: 0xff6b3a,
+          orbits: "Sigma Draconis", orbitalPeriod: 860,
+          inclination: 5.1, argumentOfPeriapsis: 120.0, longitudeOfAscendingNode: 5.0,
+          lastPerihelion: "2024-01-01",
+          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 16.0, rotationPeriod: 1.34,
+        },
 
 
-		// --- PLANETA DE SIRIUS B (lore jugable) ---
+        // --- 36 Ophiuchi ---
+        "Giedi Prime": {
+          periapsis: 120000000, apoapsis: 140000000,
+          size: 4200, color: 0x4a4a4a,
+          orbits: "36 Ophiuchi B", orbitalPeriod: 290,
+          inclination: 3.2, argumentOfPeriapsis: 62.0, longitudeOfAscendingNode: 210.0,
+          lastPerihelion: "2024-01-01",
+          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 6.0, rotationPeriod: 0.78,
+          jsonFile: "giedi-prime.json",
+        },
 
-		"Sirius B-b": {
-			periapsis: 11982789,
-			apoapsis: 14944827,
-			size: 5800,
-			color: 0x4a4a4a,
-			orbits: "Sirius B",
-			orbitalPeriod: 310,
-			inclination: 12.0, 
-			argumentOfPeriapsis: 0.0, 
-			longitudeOfAscendingNode: 0.0,
-			lastPerihelion: "2024-01-01",
-			rotationAxis: { x: 0, y: 1, z: 0 }, 
-			axialTilt: 45.0, 
-			rotationPeriod: 2.1,
-			kind: "planet",
-			radius: 3.0
-		},
-		
-		// --- SISTEMA GL 729 (ROSS 154) ---
-		
-		// Gl 729 b: Un mundo abrasado por las fulguraciones
-		"Gliese 729 b": {
-			periapsis: 25581236,
-			apoapsis: 31265955,
-			size: 3400,
-			color: 0x8b4513,
-			orbits: "Gliese 729", 
-			orbitalPeriod: 520,
-			inclination: 2.0, 
-			argumentOfPeriapsis: 96.0, 
-			longitudeOfAscendingNode: 180.0,
-			lastPerihelion: "2024-01-01",
-			rotationAxis: { x: 0, y: 1, z: 0 }, 
-			axialTilt: 3.0, 
-			rotationPeriod: 0.93,
-			kind: "planet",
-			radius: 2.4
-		},
-		
-		// Gl 729 c: Un mundo desértico con atmósfera tenue
-		"Gliese 729 c": {
-			periapsis: 48694107,
-			apoapsis: 56024403,
-			size: 4000,
-			color: 0x696969,
-			orbits: "Gliese 729",
-			orbitalPeriod: 910,
-			inclination: 1.5, 
-			argumentOfPeriapsis: 210.0, 
-			longitudeOfAscendingNode: 60.0,
-			lastPerihelion: "2024-04-15",
-			rotationAxis: { x: 0, y: 1, z: 0 }, 
-			axialTilt: 15.0, 
-			rotationPeriod: 1.25,
-			kind: "planet",
-			radius: 2.8
-		},
-		
-		// --- EXOPLANETAS AÑADIDOS: 30 SISTEMAS MÁS CERCANOS (Stellar Catalog) ---
 
-		// Proxima Centauri
-		// Proxima c (Stellar Catalog: unconfirmed)
-		"Proxima c": {
-			periapsis: 214762703,
-			apoapsis: 228046994,
-			size: 13312, color: 0x6f7f86,
-			orbits: "Proxima Centauri", orbitalPeriod: 1928,
-			inclination: 0.4, argumentOfPeriapsis: 24.0, longitudeOfAscendingNode: 12.0,
-			lastPerihelion: "2024-01-01",
-			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 1.0, rotationPeriod: 1.0,
-			kind: "planet",
-			radius: 3.5
-		},
+        // --- Delta Pavonis ---
+        "Caladan": {
+          periapsis: 160000000, apoapsis: 170000000,
+          size: 4460, color: 0x2f6fb3,
+          orbits: "Delta Pavonis", orbitalPeriod: 410,
+          inclination: 1.9, argumentOfPeriapsis: 114.0, longitudeOfAscendingNode: 48.0,
+          lastPerihelion: "2024-01-01",
+          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 18.0, rotationPeriod: 0.92,
+          jsonFile: "caladan.json",
+        },
 
-		// Wolf 359
-		// Wolf 359 c
-		"Wolf 359 c": {
-			periapsis: 2902199,
-			apoapsis: 3081716,
-			size: 10963, color: 0x7e8c93,
-			orbits: "Wolf 359", orbitalPeriod: 2.7,
-			inclination: 1.1, argumentOfPeriapsis: 61.0, longitudeOfAscendingNode: 38.0,
-			lastPerihelion: "2024-01-01",
-			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 3.5, rotationPeriod: 1.13,
-			kind: "planet",
-			radius: 3.2
-		},
-		// Wolf 359 b (Stellar Catalog: unconfirmed)
-		"Wolf 359 b": {
-			periapsis: 262918258,
-			apoapsis: 290593864,
-			size: 30689, color: 0xc7b8a3,
-			orbits: "Wolf 359", orbitalPeriod: 2938,
-			inclination: 1.8, argumentOfPeriapsis: 103.0, longitudeOfAscendingNode: 77.0,
-			lastPerihelion: "2024-01-01",
-			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 6.0, rotationPeriod: 1.26,
-			kind: "planet",
-			radius: 5.7
-		},
+        "Lankiveil": {
+          periapsis: 520000000, apoapsis: 720000000,
+          size: 3900, color: 0x9bd7ff,
+          orbits: "Delta Pavonis", orbitalPeriod: 3200,
+          inclination: 7.8, argumentOfPeriapsis: 15.0, longitudeOfAscendingNode: 250.0,
+          lastPerihelion: "2024-01-01",
+          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 9.0, rotationPeriod: 1.28,
+        },
 
-		// Luyten 726-8 A
-		// Luyten 726-8 A b (Stellar Catalog: unconfirmed; semimajor axis estimated from period)
-		"Luyten 726-8 A b": {
-			periapsis: 39755664,
-			apoapsis: 43940471,
-			size: 27523, color: 0x5c6b70,
-			orbits: "Luyten 726-8 A", orbitalPeriod: 156,
-			inclination: 2.5, argumentOfPeriapsis: 147.0, longitudeOfAscendingNode: 121.0,
-			lastPerihelion: "2024-01-01",
-			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 8.5, rotationPeriod: 1.39,
-			kind: "planet",
-			radius: 5.3
-		},
 
-		// Epsilon Eridani
-		// Epsilon Eridani b
-		"Epsilon Eridani b": {
-			periapsis: 484158549,
-			apoapsis: 557042631,
-			size: 58119, color: 0xb8c6d1,
-			orbits: "Epsilon Eridani", orbitalPeriod: 2775,
-			inclination: 3.2, argumentOfPeriapsis: 198.0, longitudeOfAscendingNode: 166.0,
-			lastPerihelion: "2024-01-01",
-			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 11.0, rotationPeriod: 1.52,
-			kind: "planet",
-			radius: 9.1
-		},
-		// Epsilon Eridani c (Stellar Catalog: unconfirmed)
-		"Epsilon Eridani c": {
-			periapsis: 5684719087,
-			apoapsis: 6283110569,
-			size: 25650, color: 0x6b7f8e,
-			orbits: "Epsilon Eridani", orbitalPeriod: 102270,
-			inclination: 0.4, argumentOfPeriapsis: 245.0, longitudeOfAscendingNode: 214.0,
-			lastPerihelion: "2024-01-01",
-			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 13.5, rotationPeriod: 1.65,
-			kind: "planet",
-			radius: 5.0
-		},
+        // --- Psi Draconis ---
+        "Gamont": {
+          periapsis: 155000000, apoapsis: 190000000,
+          size: 4100, color: 0x2f8f7f,
+          orbits: "Psi Draconis", orbitalPeriod: 460,
+          inclination: 2.9, argumentOfPeriapsis: 10.0, longitudeOfAscendingNode: 200.0,
+          lastPerihelion: "2024-01-01",
+          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 32.0, rotationPeriod: 0.97,
+        },
 
-		// Lacaille 9352
-		// Lacaille 9352 e
-		"Lacaille 9352 e": {
-			periapsis: 5804397,
-			apoapsis: 6163432,
-			size: 7137, color: 0x6f7f86,
-			orbits: "Lacaille 9352", orbitalPeriod: 4.4,
-			inclination: 1.1, argumentOfPeriapsis: 289.0, longitudeOfAscendingNode: 301.0,
-			lastPerihelion: "2024-01-01",
-			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 1.0, rotationPeriod: 1.78,
-			kind: "planet",
-			radius: 2.7
-		},
-		// Lacaille 9352 b
-		"Lacaille 9352 b": {
-			periapsis: 10157695,
-			apoapsis: 10786006,
-			size: 11040, color: 0x7e8c93,
-			orbits: "Lacaille 9352", orbitalPeriod: 9.3,
-			inclination: 1.8, argumentOfPeriapsis: 24.0, longitudeOfAscendingNode: 12.0,
-			lastPerihelion: "2024-01-01",
-			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 3.5, rotationPeriod: 1.91,
-			kind: "planet",
-			radius: 3.2
-		},
-		// Lacaille 9352 c
-		"Lacaille 9352 c": {
-			periapsis: 17413192,
-			apoapsis: 18490297,
-			size: 12673, color: 0x8e7864,
-			orbits: "Lacaille 9352", orbitalPeriod: 21.8,
-			inclination: 2.5, argumentOfPeriapsis: 61.0, longitudeOfAscendingNode: 38.0,
-			lastPerihelion: "2024-01-01",
-			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 6.0, rotationPeriod: 2.04,
-			kind: "planet",
-			radius: 3.4
-		},
-		// Lacaille 9352 d
-		"Lacaille 9352 d": {
-			periapsis: 30473086,
-			apoapsis: 32358019,
-			size: 12457, color: 0x778899,
-			orbits: "Lacaille 9352", orbitalPeriod: 50.8,
-			inclination: 3.2, argumentOfPeriapsis: 103.0, longitudeOfAscendingNode: 77.0,
-			lastPerihelion: "2024-01-01",
-			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 8.5, rotationPeriod: 2.17,
-			kind: "planet",
-			radius: 3.4
-		},
+        "Conexión": {
+          periapsis: 170000000, apoapsis: 210000000,
+          size: 3600, color: 0x6b7a7f,
+          orbits: "Psi Draconis", orbitalPeriod: 520,
+          inclination: 2.0, argumentOfPeriapsis: 96.0, longitudeOfAscendingNode: 180.0,
+          lastPerihelion: "2024-01-01",
+          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 7.0, rotationPeriod: 0.93,
+        },
 
-		// Gliese 725 A
-		// Struve 2398 A b (Stellar Catalog: unconfirmed)
-		"Struve 2398 A b": {
-			periapsis: 10157695,
-			apoapsis: 10786006,
-			size: 10095, color: 0x6b6f7a,
-			orbits: "Gliese 725 A", orbitalPeriod: 11.2,
-			inclination: 0.4, argumentOfPeriapsis: 147.0, longitudeOfAscendingNode: 121.0,
-			lastPerihelion: "2024-01-01",
-			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 11.0, rotationPeriod: 2.3,
-			kind: "planet",
-			radius: 3.1
-		},
+        "Grumman": {
+          periapsis: 220000000, apoapsis: 290000000,
+          size: 3750, color: 0x8c8c8c,
+          orbits: "Psi Draconis", orbitalPeriod: 780,
+          inclination: 4.1, argumentOfPeriapsis: 188.0, longitudeOfAscendingNode: 15.0,
+          lastPerihelion: "2024-01-01",
+          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 12.0, rotationPeriod: 1.62,
+        },
 
-		// Gliese 725 B
-		// Struve 2398 B b (Stellar Catalog: unconfirmed)
-		"Struve 2398 B b": {
-			periapsis: 5804397,
-			apoapsis: 6163432,
-			size: 7137, color: 0x8b7d6b,
-			orbits: "Gliese 725 B", orbitalPeriod: 4.8,
-			inclination: 1.1, argumentOfPeriapsis: 198.0, longitudeOfAscendingNode: 166.0,
-			lastPerihelion: "2024-01-01",
-			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 13.5, rotationPeriod: 2.43,
-			kind: "planet",
-			radius: 2.7
-		},
-		// Struve 2398 B c
-		"Struve 2398 B c": {
-			periapsis: 20315391,
-			apoapsis: 21572013,
-			size: 10722, color: 0x6f7f86,
-			orbits: "Gliese 725 B", orbitalPeriod: 37.9,
-			inclination: 1.8, argumentOfPeriapsis: 245.0, longitudeOfAscendingNode: 214.0,
-			lastPerihelion: "2024-01-01",
-			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 1.0, rotationPeriod: 2.56,
-			kind: "planet",
-			radius: 3.1
-		},
+        "Kolhar": {
+          periapsis: 260000000, apoapsis: 340000000,
+          size: 3700, color: 0xb9d8ff,
+          orbits: "Psi Draconis", orbitalPeriod: 980,
+          inclination: 6.4, argumentOfPeriapsis: 200.0, longitudeOfAscendingNode: 290.0,
+          lastPerihelion: "2024-01-01",
+          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 22.0, rotationPeriod: 1.08,
+        },
 
-		// Groombridge 34 A
-		// Groombridge 34 A b
-		"Groombridge 34 A b": {
-			periapsis: 10157695,
-			apoapsis: 10786006,
-			size: 11116, color: 0x7e8c93,
-			orbits: "Groombridge 34 A", orbitalPeriod: 11.4,
-			inclination: 2.5, argumentOfPeriapsis: 289.0, longitudeOfAscendingNode: 301.0,
-			lastPerihelion: "2024-01-01",
-			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 3.5, rotationPeriod: 2.69,
-			kind: "planet",
-			radius: 3.2
-		},
-		// Groombridge 34 A c
-		"Groombridge 34 A c": {
-			periapsis: 767437077,
-			apoapsis: 848219927,
-			size: 27077, color: 0x7b8fa1,
-			orbits: "Groombridge 34 A", orbitalPeriod: 6694,
-			inclination: 3.2, argumentOfPeriapsis: 24.0, longitudeOfAscendingNode: 12.0,
-			lastPerihelion: "2024-01-01",
-			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 6.0, rotationPeriod: 2.82,
-			kind: "planet",
-			radius: 5.2
-		},
 
-		// Epsilon Indi A
-		// Epsilon Indi A b
-		"Epsilon Indi A b": {
-			periapsis: 1541516299,
-			apoapsis: 1773572516,
-			size: 63638, color: 0xa9c4d6,
-			orbits: "Epsilon Indi A", orbitalPeriod: 15676.5,
-			inclination: 0.4, argumentOfPeriapsis: 61.0, longitudeOfAscendingNode: 38.0,
-			lastPerihelion: "2024-01-01",
-			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 8.5, rotationPeriod: 2.95,
-			kind: "planet",
-			radius: 9.8
-		},
+        // --- Mu Draconis ---
+        "Wallach IX": {
+          periapsis: 98000000, apoapsis: 108000000,
+          size: 3180, color: 0x6cbf7a,
+          orbits: "Mu Draconis", orbitalPeriod: 210,
+          inclination: 1.6, argumentOfPeriapsis: 80.0, longitudeOfAscendingNode: 190.0,
+          lastPerihelion: "2024-01-01",
+          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 14.0, rotationPeriod: 0.74,
+        },
 
-		// Tau Ceti
-		// Tau Ceti b (Stellar Catalog: unconfirmed)
-		"Tau Ceti b": {
-			periapsis: 15962093,
-			apoapsis: 16949439,
-			size: 7736, color: 0x6b6f7a,
-			orbits: "Tau Ceti", orbitalPeriod: 14.0,
-			inclination: 1.1, argumentOfPeriapsis: 103.0, longitudeOfAscendingNode: 77.0,
-			lastPerihelion: "2024-01-01",
-			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 11.0, rotationPeriod: 3.08,
-			kind: "planet",
-			radius: 2.8
-		},
-		// Tau Ceti g
-		"Tau Ceti g": {
-			periapsis: 18864291,
-			apoapsis: 20031155,
-			size: 7511, color: 0x8b7d6b,
-			orbits: "Tau Ceti", orbitalPeriod: 20.0,
-			inclination: 1.8, argumentOfPeriapsis: 147.0, longitudeOfAscendingNode: 121.0,
-			lastPerihelion: "2024-01-01",
-			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 13.5, rotationPeriod: 3.21,
-			kind: "planet",
-			radius: 2.7
-		},
-		// Tau Ceti c (Stellar Catalog: unconfirmed; mass not specified in catalog)
-		"Tau Ceti c": {
-			periapsis: 29021987,
-			apoapsis: 30817161,
-			size: 7008, color: 0x6f7f86,
-			orbits: "Tau Ceti", orbitalPeriod: 35.4,
-			inclination: 2.5, argumentOfPeriapsis: 198.0, longitudeOfAscendingNode: 166.0,
-			lastPerihelion: "2024-01-01",
-			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 1.0, rotationPeriod: 3.34,
-			kind: "planet",
-			radius: 2.7
-		},
-		// Tau Ceti h
-		"Tau Ceti h": {
-			periapsis: 34826384,
-			apoapsis: 36980594,
-			size: 7511, color: 0x7e8c93,
-			orbits: "Tau Ceti", orbitalPeriod: 49.4,
-			inclination: 3.2, argumentOfPeriapsis: 245.0, longitudeOfAscendingNode: 214.0,
-			lastPerihelion: "2024-01-01",
-			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 3.5, rotationPeriod: 3.47,
-			kind: "planet",
-			radius: 2.7
-		},
-		// Tau Ceti e
-		"Tau Ceti e": {
-			periapsis: 78359365,
-			apoapsis: 83206336,
-			size: 11040, color: 0x8e7864,
-			orbits: "Tau Ceti", orbitalPeriod: 162.8,
-			inclination: 0.4, argumentOfPeriapsis: 289.0, longitudeOfAscendingNode: 301.0,
-			lastPerihelion: "2024-01-01",
-			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 6.0, rotationPeriod: 3.6,
-			kind: "planet",
-			radius: 3.2
-		},
-		// Tau Ceti f
-		"Tau Ceti f": {
-			periapsis: 192996213,
-			apoapsis: 204934123,
-			size: 11040, color: 0x778899,
-			orbits: "Tau Ceti", orbitalPeriod: 636.1,
-			inclination: 1.1, argumentOfPeriapsis: 24.0, longitudeOfAscendingNode: 12.0,
-			lastPerihelion: "2024-01-01",
-			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 8.5, rotationPeriod: 3.73,
-			kind: "planet",
-			radius: 3.2
-		},
+        "Lampadas": {
+          periapsis: 112000000, apoapsis: 138000000,
+          size: 2990, color: 0x555555,
+          orbits: "Mu Draconis", orbitalPeriod: 275,
+          inclination: 2.2, argumentOfPeriapsis: 205.0, longitudeOfAscendingNode: 88.0,
+          lastPerihelion: "2024-01-01",
+          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 9.0, rotationPeriod: 1.02,
+        },
 
-		// Gliese 1061
-		// Gliese 1061 b
-		"Gliese 1061 b": {
-			periapsis: 2902199,
-			apoapsis: 3081716,
-			size: 7137, color: 0x6b6f7a,
-			orbits: "Gliese 1061", orbitalPeriod: 3.2,
-			inclination: 1.8, argumentOfPeriapsis: 61.0, longitudeOfAscendingNode: 38.0,
-			lastPerihelion: "2024-01-01",
-			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 11.0, rotationPeriod: 3.86,
-			kind: "planet",
-			radius: 2.7
-		},
-		// Gliese 1061 c
-		"Gliese 1061 c": {
-			periapsis: 5804397,
-			apoapsis: 6163432,
-			size: 7392, color: 0x8b7d6b,
-			orbits: "Gliese 1061", orbitalPeriod: 6.7,
-			inclination: 2.5, argumentOfPeriapsis: 103.0, longitudeOfAscendingNode: 77.0,
-			lastPerihelion: "2024-01-01",
-			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 13.5, rotationPeriod: 3.99,
-			kind: "planet",
-			radius: 2.7
-		},
-		// Gliese 1061 d
-		"Gliese 1061 d": {
-			periapsis: 7255497,
-			apoapsis: 7704290,
-			size: 7392, color: 0x6f7f86,
-			orbits: "Gliese 1061", orbitalPeriod: 13.0,
-			inclination: 3.2, argumentOfPeriapsis: 147.0, longitudeOfAscendingNode: 121.0,
-			lastPerihelion: "2024-01-01",
-			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 1.0, rotationPeriod: 4.12,
-			kind: "planet",
-			radius: 2.7
-		},
 
-		// YZ Ceti
-		// YZ Ceti b
-		"YZ Ceti b": {
-			periapsis: 2902199,
-			apoapsis: 3081716,
-			size: 5765, color: 0x7e8c93,
-			orbits: "YZ Ceti", orbitalPeriod: 2.0,
-			inclination: 0.4, argumentOfPeriapsis: 198.0, longitudeOfAscendingNode: 166.0,
-			lastPerihelion: "2024-01-01",
-			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 3.5, rotationPeriod: 4.25,
-			kind: "planet",
-			radius: 2.5
-		},
-		// YZ Ceti c
-		"YZ Ceti c": {
-			periapsis: 2902199,
-			apoapsis: 3081716,
-			size: 6371, color: 0x8e7864,
-			orbits: "YZ Ceti", orbitalPeriod: 3.1,
-			inclination: 1.1, argumentOfPeriapsis: 245.0, longitudeOfAscendingNode: 214.0,
-			lastPerihelion: "2024-01-01",
-			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 6.0, rotationPeriod: 4.38,
-			kind: "planet",
-			radius: 2.6
-		},
-		// YZ Ceti d
-		"YZ Ceti d": {
-			periapsis: 4353298,
-			apoapsis: 4622574,
-			size: 6543, color: 0x778899,
-			orbits: "YZ Ceti", orbitalPeriod: 4.7,
-			inclination: 1.8, argumentOfPeriapsis: 289.0, longitudeOfAscendingNode: 301.0,
-			lastPerihelion: "2024-01-01",
-			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 8.5, rotationPeriod: 4.51,
-			kind: "planet",
-			radius: 2.6
-		},
+        // --- Epsilon Ophiuchi ---
+        "Poritrin": {
+          periapsis: 105000000, apoapsis: 128000000,
+          size: 4010, color: 0x3ac46a,
+          orbits: "Epsilon Ophiuchi", orbitalPeriod: 240,
+          inclination: 1.2, argumentOfPeriapsis: 56.0, longitudeOfAscendingNode: 270.0,
+          lastPerihelion: "2024-01-01",
+          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 28.0, rotationPeriod: 0.91,
+        },
 
-		// Luyten's Star
-		// Luyten's Star c
-		"Luyten's Star c": {
-			periapsis: 5804397,
-			apoapsis: 6163432,
-			size: 6705, color: 0x6b6f7a,
-			orbits: "Luyten's Star", orbitalPeriod: 4.7,
-			inclination: 2.5, argumentOfPeriapsis: 24.0, longitudeOfAscendingNode: 12.0,
-			lastPerihelion: "2024-01-01",
-			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 11.0, rotationPeriod: 4.64,
-			kind: "planet",
-			radius: 2.6
-		},
-		// Luyten's Star b
-		"Luyten's Star b": {
-			periapsis: 13059894,
-			apoapsis: 13867723,
-			size: 9459, color: 0x8b7d6b,
-			orbits: "Luyten's Star", orbitalPeriod: 18.7,
-			inclination: 3.2, argumentOfPeriapsis: 61.0, longitudeOfAscendingNode: 38.0,
-			lastPerihelion: "2024-01-01",
-			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 13.5, rotationPeriod: 4.77,
-			kind: "planet",
-			radius: 3.0
-		},
-		// Luyten's Star d
-		"Luyten's Star d": {
-			periapsis: 100903764,
-			apoapsis: 111525213,
-			size: 16284, color: 0x7b8fa1,
-			orbits: "Luyten's Star", orbitalPeriod: 413.9,
-			inclination: 0.4, argumentOfPeriapsis: 103.0, longitudeOfAscendingNode: 77.0,
-			lastPerihelion: "2024-01-01",
-			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 1.0, rotationPeriod: 4.9,
-			kind: "planet",
-			radius: 3.8
-		},
-		// Luyten's Star e
-		"Luyten's Star e": {
-			periapsis: 123343444,
-			apoapsis: 130972936,
-			size: 13960, color: 0x7e8c93,
-			orbits: "Luyten's Star", orbitalPeriod: 542.0,
-			inclination: 1.1, argumentOfPeriapsis: 147.0, longitudeOfAscendingNode: 121.0,
-			lastPerihelion: "2024-01-01",
-			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 3.5, rotationPeriod: 5.03,
-			kind: "planet",
-			radius: 3.6
-		},
 
-		// Teegarden's Star
-		// Teegarden's Star b
-		"Teegarden's Star b": {
-			periapsis: 4353298,
-			apoapsis: 4622574,
-			size: 6543, color: 0x8e7864,
-			orbits: "Teegarden's Star", orbitalPeriod: 4.9,
-			inclination: 1.8, argumentOfPeriapsis: 198.0, longitudeOfAscendingNode: 166.0,
-			lastPerihelion: "2024-01-01",
-			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 6.0, rotationPeriod: 5.16,
-			kind: "planet",
-			radius: 2.6
-		},
-		// Teegarden's Star c
-		"Teegarden's Star c": {
-			periapsis: 5804397,
-			apoapsis: 6163432,
-			size: 6543, color: 0x778899,
-			orbits: "Teegarden's Star", orbitalPeriod: 11.4,
-			inclination: 2.5, argumentOfPeriapsis: 245.0, longitudeOfAscendingNode: 214.0,
-			lastPerihelion: "2024-01-01",
-			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 8.5, rotationPeriod: 5.29,
-			kind: "planet",
-			radius: 2.6
-		},
-		// Teegarden's Star d
-		"Teegarden's Star d": {
-			periapsis: 11608795,
-			apoapsis: 12326865,
-			size: 5985, color: 0x6b6f7a,
-			orbits: "Teegarden's Star", orbitalPeriod: 26.1,
-			inclination: 3.2, argumentOfPeriapsis: 289.0, longitudeOfAscendingNode: 301.0,
-			lastPerihelion: "2024-01-01",
-			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 11.0, rotationPeriod: 5.42,
-			kind: "planet",
-			radius: 2.6
-		},
+        // --- Alkalurops ---
+        "Ix": {
+          periapsis: 105000000, apoapsis: 112000000,
+          size: 3750, color: 0x8fd3ff,
+          orbits: "Alkalurops", orbitalPeriod: 235,
+          inclination: 2.4, argumentOfPeriapsis: 18.0, longitudeOfAscendingNode: 320.0,
+          lastPerihelion: "2024-01-01",
+          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 11.0, rotationPeriod: 1.06,
+          jsonFile: "ix.json",
+        },
 
-		// Kapteyn's Star
-		// Kapteyn's Star b (period estimated from semimajor axis and stellar mass)
-		"Kapteyn's Star b": {
-			periapsis: 24668689,
-			apoapsis: 26194587,
-			size: 11677, color: 0x8b7d6b,
-			orbits: "Kapteyn's Star", orbitalPeriod: 49.3,
-			inclination: 0.4, argumentOfPeriapsis: 24.0, longitudeOfAscendingNode: 12.0,
-			lastPerihelion: "2024-01-01",
-			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 13.5, rotationPeriod: 5.5,
-			kind: "planet",
-			radius: 3.3
-		},
-		// Kapteyn's Star c (period estimated from semimajor axis and stellar mass)
-		"Kapteyn's Star c": {
-			periapsis: 44984080,
-			apoapsis: 47766600,
-			size: 12929, color: 0x6f7f86,
-			orbits: "Kapteyn's Star", orbitalPeriod: 121.3,
-			inclination: 1.1, argumentOfPeriapsis: 61.0, longitudeOfAscendingNode: 38.0,
-			lastPerihelion: "2024-01-01",
-			rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 1.0, rotationPeriod: 5.5,
-			kind: "planet",
-			radius: 3.4
-		},
 
-		
+        // --- Gamma Piscium ---
+        "Salusa Secundus": {
+          periapsis: 210000000, apoapsis: 255000000,
+          size: 3820, color: 0x8a6b4b,
+          orbits: "Gamma Piscium", orbitalPeriod: 620,
+          inclination: 4.7, argumentOfPeriapsis: 250.0, longitudeOfAscendingNode: 33.0,
+          lastPerihelion: "2024-01-01",
+          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 33.0, rotationPeriod: 1.45,
+        },
+
+
+        // --- Alpha Piscium ---
+        "Kaitain": {
+          periapsis: 145000000, apoapsis: 155000000,
+          size: 4020, color: 0x5bc06a,
+          orbits: "Alpha Piscium A", orbitalPeriod: 365,
+          inclination: 0.8, argumentOfPeriapsis: 102.0, longitudeOfAscendingNode: 12.0,
+          lastPerihelion: "2024-01-01",
+          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 21.0, rotationPeriod: 0.98,
+          jsonFile: "kaitain.json",
+        },
+
+        "Ginaz": {
+          periapsis: 130000000, apoapsis: 150000000,
+          size: 3600, color: 0x3aa5ff,
+          orbits: "Alpha Piscium B", orbitalPeriod: 320,
+          inclination: 1.3, argumentOfPeriapsis: 44.0, longitudeOfAscendingNode: 22.0,
+          lastPerihelion: "2024-01-01",
+          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 27.0, rotationPeriod: 0.88,
+        },
+
+        "Tanegaard": {
+          periapsis: 150000000, apoapsis: 165000000,
+          size: 4050, color: 0x88a0a8,
+          orbits: "Alpha Piscium B", orbitalPeriod: 370,
+          inclination: 0.6, argumentOfPeriapsis: 240.0, longitudeOfAscendingNode: 40.0,
+          lastPerihelion: "2024-01-01",
+          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 3.0, rotationPeriod: 0.99,
+        },
+
+        "Buzzell": {
+          periapsis: 175000000, apoapsis: 205000000,
+          size: 2930, color: 0x2a6fd6,
+          orbits: "Alpha Piscium B", orbitalPeriod: 510,
+          inclination: 3.9, argumentOfPeriapsis: 12.0, longitudeOfAscendingNode: 155.0,
+          lastPerihelion: "2024-01-01",
+          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 40.0, rotationPeriod: 0.83,
+        },
+
+
+        // --- Theta Eridani A ---
+        "Tleilax": {
+          periapsis: 88000000, apoapsis: 103000000,
+          size: 3120, color: 0x7ea0b5,
+          orbits: "Theta Eridani A", orbitalPeriod: 185,
+          inclination: 2.8, argumentOfPeriapsis: 310.0, longitudeOfAscendingNode: 260.0,
+          lastPerihelion: "2024-01-01",
+          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 5.0, rotationPeriod: 1.90,
+        },
+
+
+        // --- Alpha Crateris ---
+        "Rossak": {
+          periapsis: 72000000, apoapsis: 86000000,
+          size: 3060, color: 0x1b8f3f,
+          orbits: "Alpha Crateris", orbitalPeriod: 145,
+          inclination: 6.1, argumentOfPeriapsis: 170.0, longitudeOfAscendingNode: 45.0,
+          lastPerihelion: "2024-01-01",
+          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 29.0, rotationPeriod: 0.68,
+          jsonFile: "rossak.json",
+        },
+
+
+        // --- Theta Leonis ---
+        "Hagal": {
+          periapsis: 60000000, apoapsis: 68000000,
+          size: 2800, color: 0xb3f0ff,
+          orbits: "Theta Leonis", orbitalPeriod: 120,
+          inclination: 5.6, argumentOfPeriapsis: 275.0, longitudeOfAscendingNode: 140.0,
+          lastPerihelion: "2024-01-01",
+          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 2.0, rotationPeriod: 0.51,
+        },
+
+
+        // --- Iota Leporis ---
+        "Bela Tegeuse": {
+          periapsis: 180000000, apoapsis: 240000000,
+          size: 4200, color: 0x7fb4ff,
+          orbits: "Iota Leporis", orbitalPeriod: 640,
+          inclination: 3.0, argumentOfPeriapsis: 330.0, longitudeOfAscendingNode: 100.0,
+          lastPerihelion: "2024-01-01",
+          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 17.0, rotationPeriod: 1.10,
+        },
+
+
+        // --- Alpha Carinae ---
+        "Seban": {
+          periapsis: 36000000, apoapsis: 40000000,
+          size: 2440, color: 0xaaaaaa,
+          orbits: "Alpha Carinae", orbitalPeriod: 88,
+          inclination: 7.0, argumentOfPeriapsis: 29.124, longitudeOfAscendingNode: 48.331,
+          lastPerihelion: "2024-02-15",
+          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0.034, rotationPeriod: 58.646,
+          jsonFile: "seban.json",
+        },
+
+        "Menaris": {
+          periapsis: 58000000, apoapsis: 62000000,
+          size: 5992, color: 0xff9900,
+          orbits: "Alpha Carinae", orbitalPeriod: 225.0,
+          inclination: 3.39, argumentOfPeriapsis: 54.852, longitudeOfAscendingNode: 76.67,
+          lastPerihelion: "2023-08-13",
+          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 177.36, rotationPeriod: -243.02,
+          jsonFile: "menaris.json",
+        },
+
+        "Arrakis": {
+          periapsis: 82600000, apoapsis: 91400000,
+          size: 6128, color: 0xffeaaf,
+          orbits: "Alpha Carinae", orbitalPeriod: 353.041,
+          inclination: 1.25, argumentOfPeriapsis: 114.208, longitudeOfAscendingNode: 348.739,
+          lastPerihelion: "2024-01-03",
+          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 0.5, rotationPeriod: 1.0,
+          jsonFile: "arrakis.json",
+        },
+
+        "Extaris": {
+          periapsis: 135000000, apoapsis: 145000000,
+          size: 5341, color: 0xff3300,
+          orbits: "Alpha Carinae", orbitalPeriod: 687,
+          inclination: 1.85, argumentOfPeriapsis: 286.537, longitudeOfAscendingNode: 49.562,
+          lastPerihelion: "2023-11-20",
+          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 25.19, rotationPeriod: 1.02595675,
+          jsonFile: "extaris.json",
+        },
+
+        "Ven": {
+          periapsis: 230000000, apoapsis: 250000000,
+          size: 61284, color: 0xb5651d,
+          orbits: "Alpha Carinae", orbitalPeriod: 1850.0,
+          inclination: 0.8, argumentOfPeriapsis: 150.0, longitudeOfAscendingNode: 22.0,
+          lastPerihelion: "2024-05-10",
+          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 3.13, rotationPeriod: 0.41,
+          jsonFile: "ven.json",
+        },
+
+        "Revona": {
+          periapsis: 440000000, apoapsis: 470000000,
+          size: 51520, color: 0xf4a460,
+          orbits: "Alpha Carinae", orbitalPeriod: 4332.0,
+          inclination: 2.49, argumentOfPeriapsis: 94.3, longitudeOfAscendingNode: 131.7,
+          lastPerihelion: "2024-08-20",
+          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 26.73, rotationPeriod: 0.45,
+          jsonFile: "revona.json",
+        },
+
+
+        // --- Theta Arietis ---
+        "Chusuk": {
+          periapsis: 140000000, apoapsis: 165000000,
+          size: 3950, color: 0x2fb35a,
+          orbits: "Theta Arietis", orbitalPeriod: 360,
+          inclination: 1.7, argumentOfPeriapsis: 90.0, longitudeOfAscendingNode: 60.0,
+          lastPerihelion: "2024-01-01",
+          rotationAxis: { x: 0, y: 1, z: 0 }, axialTilt: 24.0, rotationPeriod: 1.05,
+        },
       },
     
       // ============================================================

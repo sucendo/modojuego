@@ -29,7 +29,7 @@ function toggleFullscreen() {
   else doc.exitFullscreen?.();
 }
 
-const LAYOUT_KEY = 'eliteHudLayout_v5';
+const LAYOUT_KEY = 'eliteHudLayout_v6';
 
 function loadLayout() {
   try {
@@ -210,6 +210,7 @@ export function createEliteHud({
       :root{
         --hudC: rgba(0,255,204,0.92);
         --hudBg: rgba(0,0,0,0.34);
+        --hudBg2: rgba(0,0,0,0.48);
         --hudLine: rgba(0,255,204,0.18);
         --hudWarn: rgba(255,170,60,0.95);
       }
@@ -229,16 +230,17 @@ export function createEliteHud({
         border-radius:12px;
         border:1px solid var(--hudLine);
         background:var(--hudBg);
-        backdrop-filter: blur(6px);
+        backdrop-filter: blur(3px);
         box-shadow: 0 0 0 1px rgba(0,0,0,0.35) inset;
         font-family: Orbitron, system-ui, -apple-system, Segoe UI, Arial, sans-serif;
         color: rgba(215,255,247,0.96);
       }
       .elitePanel:before{
         content:'';
-        position:absolute; inset:0;
+        position:absolute;
+        inset:0;
         pointer-events:none;
-        background: linear-gradient(90deg, rgba(0,255,204,0.06), transparent 40%, transparent 60%, rgba(0,255,204,0.04));
+        background: linear-gradient(90deg, rgba(0,255,204,0.05), transparent 40%, transparent 60%, rgba(0,255,204,0.04));
       }
       .elitePanel.dragging{
         outline: 2px solid rgba(0,255,204,0.18);
@@ -361,57 +363,59 @@ export function createEliteHud({
         color: rgba(255,230,190,0.95);
       }
 
-      .eliteSeg{
-        display:flex;
-        gap:5px;
-        flex-wrap:wrap;
-      }
-      .eliteSeg .eliteBtn{
-        min-width:30px;
-        height:26px;
-        padding:4px 7px;
-        border-radius:9px;
-      }
-
       .eliteMetrics{
         display:flex;
-        gap:14px;
-        flex-wrap:wrap;
+        gap:18px;
         align-items:flex-start;
+        margin-bottom:6px;
       }
       .eliteMetric{
         display:flex;
         flex-direction:column;
         gap:2px;
-        min-width:70px;
+        min-width:72px;
       }
+	  .eliteMetric:first-child {
+		min-width: 15px;
+	  }
 
       .eliteMainLayout{
         display:grid;
-        grid-template-columns: minmax(0, 1fr) 42px;
-        align-items:flex-start;
+        grid-template-columns: minmax(0, 1fr) 66px;
+        align-items:stretch;
         gap:10px;
       }
       .eliteMainLeft{
         min-width:0;
       }
 
-      .eliteSpeedRailWrap{
-        display:flex;
-        flex-direction:column;
-        align-items:center;
-        gap:6px;
-        min-width:40px;
+      .eliteSpeedSeg{
+        display:grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap:7px 7px;
+        max-width: 250px;
       }
-      .eliteRailLabel{
-        font-size:10px;
-        color: var(--hudC);
-        letter-spacing:0.8px;
+      .eliteSpeedSeg .eliteBtn{
+        min-width:0;
+        height:28px;
+        padding:4px 0;
+        border-radius:10px;
+      }
+
+      .eliteSpeedRailWrap{
+        position:relative;
+        display:block;
+        width:66px;
+        min-width:66px;
+        height:176px;
       }
       .eliteSpeedRail{
-        position:relative;
+        position:absolute;
+        left:50%;
+        top:12px;
+        transform:translateX(-50%);
         width:16px;
-        height:150px;
+        height:152px;
         border-radius:14px;
         border:1px solid rgba(0,255,204,0.18);
         background: linear-gradient(180deg, rgba(0,255,204,0.08), rgba(0,0,0,0.44) 40%, rgba(0,0,0,0.52) 60%, rgba(255,120,70,0.08));
@@ -421,7 +425,9 @@ export function createEliteHud({
       }
       .eliteSpeedRailCenter{
         position:absolute;
-        left:2px; right:2px; top:50%;
+        left:2px;
+        right:2px;
+        top:50%;
         height:1px;
         background: rgba(255,255,255,0.20);
         transform: translateY(-50%);
@@ -438,27 +444,61 @@ export function createEliteHud({
         box-shadow: 0 0 10px rgba(0,255,204,0.14);
         transform: translate(-50%, -50%);
       }
-      .eliteRailScale{
-        display:flex;
-        flex-direction:column;
-        align-items:center;
-        gap:4px;
-        font-size:9px;
-        color: rgba(215,255,247,0.74);
+
+      .eliteRailTop{
+        position:absolute;
+        top:0;
+        right:0;
+        font-size:10px;
+        color: rgba(215,255,247,0.82);
+      }
+      .eliteRailMid{
+        position:absolute;
+        left:2px;
+        top:50%;
+        transform: translateY(-50%);
+        font-size:10px;
+        color: rgba(215,255,247,0.82);
+      }
+      .eliteRailBottom{
+        position:absolute;
+        bottom:0;
+        right:0;
+        font-size:10px;
+        color: rgba(215,255,247,0.82);
+      }
+      .eliteRailTag{
+        position:absolute;
+        right:0;
+        top:50%;
+        transform: translateY(-50%);
+        font-size:11px;
+        color: var(--hudC);
+        letter-spacing:0.8px;
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
       }
 
       #eliteHudMain{
         position:fixed;
-        left:10px;
-        top:10px;
-        width:min(470px, calc(100vw - 20px));
+        left:8px;
+        top:8px;
+        width:min(372px, calc(100vw - 16px));
       }
 
       #eliteHudNotes{
         position:fixed;
-        left:10px;
-        bottom:10px;
-        width:min(265px, calc(100vw - 20px));
+        left:8px;
+        bottom:8px;
+        width:min(372px, calc(100vw - 16px));
+      }
+
+      .eliteAbsLine{
+        margin-top:8px;
+        font-size:10px;
+        line-height:1.2;
+        color: rgba(215,255,247,0.82);
+        white-space:nowrap;
       }
 
       .eliteNotes{
@@ -474,9 +514,34 @@ export function createEliteHud({
         outline:none;
         box-sizing:border-box;
         font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(0,255,204,0.42) rgba(0,0,0,0.18);
       }
       .eliteNotes::placeholder{
         color: rgba(215,255,247,0.44);
+      }
+      .eliteNotes::-webkit-scrollbar{
+        width:10px;
+      }
+      .eliteNotes::-webkit-scrollbar-track{
+        background: linear-gradient(180deg, rgba(0,0,0,0.20), rgba(0,0,0,0.34));
+        border-left:1px solid rgba(0,255,204,0.08);
+        border-radius:10px;
+      }
+      .eliteNotes::-webkit-scrollbar-thumb{
+        background: linear-gradient(180deg, rgba(0,255,204,0.34), rgba(0,190,255,0.24));
+        border:1px solid rgba(0,255,204,0.22);
+        border-radius:10px;
+        box-shadow:
+          inset 0 0 0 1px rgba(255,255,255,0.04),
+          0 0 8px rgba(0,255,204,0.10);
+      }
+      .eliteNotes::-webkit-scrollbar-thumb:hover{
+        background: linear-gradient(180deg, rgba(0,255,204,0.48), rgba(0,190,255,0.34));
+        border-color: rgba(0,255,204,0.34);
+      }
+      .eliteNotes::-webkit-scrollbar-corner{
+        background: transparent;
       }
 
       #eliteHudReticle{
@@ -500,6 +565,7 @@ export function createEliteHud({
         position:absolute;
         width:14px;
         height:14px;
+        filter: drop-shadow(0 0 6px rgba(0,255,204,0.12));
       }
       .retCorner.tl{ left:0; top:0; border-left:1px solid; border-top:1px solid; border-color: rgba(0,255,204,0.55);}
       .retCorner.tr{ right:0; top:0; border-right:1px solid; border-top:1px solid; border-color: rgba(0,255,204,0.55);}
@@ -602,9 +668,18 @@ export function createEliteHud({
         .eliteV{
           font-size:11px;
         }
+        .eliteMainLayout{
+          grid-template-columns: minmax(0, 1fr) 56px;
+        }
+        .eliteSpeedRailWrap{
+          width:56px;
+          min-width:56px;
+          height:136px;
+        }
         .eliteSpeedRail{
-          height:110px;
+          height:118px;
           width:14px;
+		  top:9px;
         }
         .eliteSpeedRailThumb{
           width:22px;
@@ -638,12 +713,18 @@ export function createEliteHud({
           display:none;
         }
         .eliteMainLayout{
-          grid-template-columns: minmax(0, 1fr) 36px;
+          grid-template-columns: minmax(0, 1fr) 48px;
           gap:8px;
         }
+        .eliteSpeedRailWrap{
+          width:48px;
+          min-width:48px;
+          height:108px;
+        }
         .eliteSpeedRail{
-          height:92px;
+          height:94px;
           width:12px;
+		  top:7px;
         }
         .eliteSpeedRailThumb{
           width:18px;
@@ -687,7 +768,14 @@ export function createEliteHud({
 
   const hint = document.createElement('div');
   hint.id = 'eliteHudHint';
-  hint.textContent = 'C HUD · L labels · G grid · N notes · M ratón(dev) · K nave · 0..9 hitos · +/- fino · º reversa · R centrar vista';
+  hint.textContent = 'C Activa/desactiva el HUD';
+
+  const controlsExtra = isTouchLike
+    ? `
+      <button class="eliteBtn" id="btnGyro" title="Giroscopio">GYR</button>
+      <button class="eliteBtn" id="btnGyroReset" title="Recalibrar giroscopio">GYR↺</button>
+    `
+    : '';
 
   const main = document.createElement('div');
   main.id = 'eliteHudMain';
@@ -698,11 +786,9 @@ export function createEliteHud({
         <img id="eliteLogo" class="eliteLogo" alt="Logo">
         <div class="eliteTitleWrap">
           <div class="eliteTitle">GALAXY MODULAR · FLIGHT <span id="hudModeInline">K</span></div>
-          <div class="eliteSub">ABS X <span id="absX">—</span> · Y <span id="absY">—</span> · Z <span id="absZ">—</span></div>
         </div>
       </div>
       <div class="eliteHdrRight">
-        <button class="eliteIconBtn hideOnSmall" id="btnNotesToggle" title="Notes (N)">N</button>
         <button class="eliteIconBtn" id="btnLayoutReset" title="Reset HUD">↺</button>
         <button class="eliteIconBtn" id="btnFullscreen" title="Pantalla completa">⛶</button>
         <span class="dragHandle" id="dragMain" title="Arrastra">⠿</span>
@@ -713,16 +799,14 @@ export function createEliteHud({
       <div class="eliteMainLayout">
         <div class="eliteMainLeft">
           <div class="eliteRow" style="margin-bottom:8px;">
-            <button class="eliteBtn" id="btnModeShip">K</button>
-            <button class="eliteBtn warn" id="btnReverse" title="Alternar reversa (º)">REV</button>
+            <button class="eliteBtn hideOnSmall" id="btnNotesToggle" title="Notes (N)">NOT</button>
             <button class="eliteBtn" id="btnLabels" title="Labels (L)">LBL</button>
             <button class="eliteBtn" id="btnGrid" title="Grid (G)">GRD</button>
-            <button class="eliteBtn" id="btnGyro" title="Giroscopio">GYR</button>
-            <button class="eliteBtn" id="btnGyroReset" title="Recalibrar giroscopio">GYR↺</button>
+            ${controlsExtra}
             <button class="eliteBtn" id="btnViewCenter" title="Centrar vista (R)">VIEW↺</button>
           </div>
 
-          <div class="eliteMetrics" style="margin-bottom:7px;">
+          <div class="eliteMetrics">
             <div class="eliteMetric">
               <span class="eliteK">STEP</span>
               <span class="eliteV" id="hudSpeed">0</span>
@@ -737,18 +821,21 @@ export function createEliteHud({
             </div>
           </div>
 
-          <div class="eliteMuted" id="hudSpeedMeta" style="margin-bottom:7px;">FWD · paso 0/49 · +/- fino · º reversa</div>
+          <div class="eliteMuted" id="hudSpeedMeta" style="margin-bottom:8px;">FWD · paso 0/49 · +/- fino · º reversa</div>
 
-          <div class="eliteSeg" id="speedSeg"></div>
+          <div class="eliteSpeedSeg" id="speedSeg"></div>
+          <div class="eliteAbsLine">ABS X <span id="absX">—</span> · Y <span id="absY">—</span> · Z <span id="absZ">—</span></div>
         </div>
 
         <div class="eliteSpeedRailWrap">
-          <div class="eliteRailLabel">RNG</div>
+          <div class="eliteRailTop">FWD</div>
+          <div class="eliteRailMid">0</div>
+          <div class="eliteRailTag">RNG</div>
           <div class="eliteSpeedRail" id="speedRail" title="Arrastra para ajustar velocidad">
             <div class="eliteSpeedRailCenter"></div>
             <div class="eliteSpeedRailThumb" id="speedRailThumb"></div>
           </div>
-          <div class="eliteRailScale"><span>FWD</span><span>0</span><span>REV</span></div>
+          <div class="eliteRailBottom">REV</div>
         </div>
       </div>
     </div>
@@ -812,8 +899,6 @@ export function createEliteHud({
   const btnFs = root.querySelector('#btnFullscreen');
   const btnLayoutReset = root.querySelector('#btnLayoutReset');
   const btnNotesToggle = root.querySelector('#btnNotesToggle');
-  const btnShip = root.querySelector('#btnModeShip');
-  const btnReverse = root.querySelector('#btnReverse');
   const btnLabels = root.querySelector('#btnLabels');
   const btnGrid = root.querySelector('#btnGrid');
   const btnGyro = root.querySelector('#btnGyro');
@@ -834,11 +919,6 @@ export function createEliteHud({
   const speedSeg = root.querySelector('#speedSeg');
   const notes = root.querySelector('#hudNotesArea');
 
-  if (!isTouchLike) {
-    btnGyro?.classList.add('elitePaneHidden');
-    btnGyroReset?.classList.add('elitePaneHidden');
-  }
-
   const speedBtns = [];
   for (let i = 0; i <= 9; i++) {
     const b = document.createElement('button');
@@ -855,12 +935,19 @@ export function createEliteHud({
   }
 
   function setNotesVisible(on) {
+    const wasHidden = notesPanel.classList.contains('elitePaneHidden');
     uiState.notesVisible = !!on;
     notesPanel.classList.toggle('elitePaneHidden', !uiState.notesVisible);
     if (btnNotesToggle) btnNotesToggle.classList.toggle('on', uiState.notesVisible);
+
     if (uiState.notesVisible) {
       try {
-        clampPanelIntoView(notesPanel);
+        const mainPos = getPanelPos(main);
+        notesPanel.style.right = 'auto';
+        notesPanel.style.top = 'auto';
+        notesPanel.style.left = `${mainPos.left}px`;
+        notesPanel.style.bottom = '8px';
+        if (wasHidden) clampPanelIntoView(notesPanel);
       } catch (_) {}
     }
   }
@@ -904,19 +991,6 @@ export function createEliteHud({
   });
 
   btnNotesToggle?.addEventListener('click', toggleNotes);
-
-  btnShip?.addEventListener('click', () => {
-    if (camCtrl?.setMode) camCtrl.setMode('ship');
-    else safeDispatchKey('k');
-    updateModeAndSpeed(true);
-  });
-
-  btnReverse?.addEventListener('click', () => {
-    if (camCtrl?.toggleReverse) camCtrl.toggleReverse();
-    else safeDispatchKey('º');
-    updateModeAndSpeed(true);
-  });
-
   btnLabels?.addEventListener('click', toggleLabels);
   btnGrid?.addEventListener('click', toggleGrid);
 
@@ -1084,13 +1158,11 @@ export function createEliteHud({
 
     if (modeInline) modeInline.textContent = mode === 'ship' ? 'K' : 'M';
 
-    if (btnShip) btnShip.classList.toggle('on', mode === 'ship');
-    if (btnReverse) btnReverse.classList.toggle('on', !!spd.reverse);
     if (btnLabels) btnLabels.classList.toggle('on', !!uiState.labelsVisible);
     if (btnGrid) btnGrid.classList.toggle('on', !!uiState.gridVisible);
     if (btnNotesToggle) btnNotesToggle.classList.toggle('on', !!uiState.notesVisible);
 
-    if (isTouchLike && btnGyro) {
+    if (btnGyro) {
       btnGyro.classList.toggle('on', !!hud.gyroEnabled);
       btnGyro.textContent = `GYR${hud.gyroEnabled ? '•' : ''}`;
     }
@@ -1164,12 +1236,12 @@ export function createEliteHud({
   };
 
   window.addEventListener('resize', onResize, { passive: true });
-  
+
   function update() {
     const now = performance.now();
     if ((now - _lastUiT) < UI_MS) return;
     _lastUiT = now;
-  
+
     try {
       const fs = !!document.fullscreenElement;
       if (btnFs && fs !== _lastFs) {
@@ -1177,12 +1249,12 @@ export function createEliteHud({
         _lastFs = fs;
       }
     } catch (_) {}
-  
+
     updateModeAndSpeed();
   }
-  
+
   update();
-  
+
   try {
     const obs = engine?.onDisposeObservable || camera?.getScene?.()?.onDisposeObservable;
     obs?.add?.(() => {
@@ -1190,7 +1262,7 @@ export function createEliteHud({
       window.removeEventListener('resize', onResize);
     });
   } catch (_) {}
-  
+
   return {
     update,
     setVisible,

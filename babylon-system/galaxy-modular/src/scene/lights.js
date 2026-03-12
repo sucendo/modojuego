@@ -16,10 +16,11 @@ export function setupLights(scene, opts = {}) {
   const CONFIG = {
     // Igual que en tu proyecto anterior: una luz de rellen4o suave + un poco de ambient.
     // Para negro total: pasa { hemiIntensity: 0, ambientColor: new Color3(0,0,0) }
-    hemiIntensity: (typeof opts.hemiIntensity === "number") ? opts.hemiIntensity : 0.10,
-    hemiDiffuse: opts.hemiDiffuse ?? new BABYLON.Color3(0.10, 0.10, 0.20),
+    hemiIntensity: (typeof opts.hemiIntensity === "number") ? opts.hemiIntensity : 0.03,
+    hemiDiffuse: opts.hemiDiffuse ?? new BABYLON.Color3(0.03, 0.03, 0.06),
+    ambientColor: opts.ambientColor ?? new BABYLON.Color3(0.01, 0.01, 0.015),
     hemiGround: opts.hemiGround ?? new BABYLON.Color3(0, 0, 0),
-    ambientColor: opts.ambientColor ?? new BABYLON.Color3(0.06, 0.06, 0.07),
+
 
     // Normalización opcional: si alguien sigue pasando intensidades “astronómicas” (200000)
     // pero el falloff físico está DESACTIVADO, conviene bajar a valores razonables.

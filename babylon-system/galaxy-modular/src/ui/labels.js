@@ -27,12 +27,13 @@ export function createLabels({ scene, camera, engine }) {
   let lastAcceptMs = 0;
   
   // Category preference: when a child target is visually indistinguishable from its parent,
-  // promote the pointer label to the parent category (MOON→PLANET→STAR→SYSTEM).
+  // promote the pointer label to the parent category (MOON→PLANET→STAR).
+  // IMPORTANT: do NOT promote STAR -> SYSTEM for distance readout, so interstellar
+  // targets always use a real body (star) instead of the system anchor/baricenter.
   // Tune these thresholds to taste (pixels).
   const CATEGORY_PREFS = {
     moon:   { parent: "planet", minChildDiamPx: 7, overlapMarginPx: 10 },
     planet: { parent: "star",   minChildDiamPx: 7, overlapMarginPx: 12 },
-    star:   { parent: "system", minChildDiamPx: 6, overlapMarginPx: 12 },
   };
 
   // Index for fast parent lookup: `${group}|${system}|${nameLower}` -> meta
@@ -47,7 +48,7 @@ const HUD_ID = "sciHud";
   function formatAU(au) {
     if (!isFinite(au)) return "—";
     const v = Math.abs(au);
-    if (v >= 1000) return au.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",") + " AU";
+    if (v >= 1000) return au.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " AU";
     if (v >= 100)  return au.toFixed(1) + " AU";
     if (v >= 10)   return au.toFixed(2) + " AU";
     return au.toFixed(3) + " AU";
@@ -786,20 +787,22 @@ const HUD_ID = "sciHud";
       }
 
       // Selection rules:
-      // 1) If something non-system is closest to center, respect it (planet can win over star).
-      // 2) If the closest-to-center is the SYSTEM, but a big body exists (>=5px), prefer the body (ignore system pointer).
-      // 3) If all bodies are tiny (<1px), prefer the SYSTEM label.
+      // 1) If something non-system is closest to center, respect it.
+      // 2) If the closest-to-center is the SYSTEM, prefer a real body whenever one exists.
+      // 3) Only use SYSTEM if there is literally no selectable non-system body.
 
       const bestKind = String(best.kind || "").toLowerCase();
       const bestIsSystem = (bestKind === "system" || bestKind === "sys");
 
       if (bestIsSystem) {
-        // If everything in the system is visually tiny (<1px), show the system name
-        if (bestNonSystem && bestNonSystemDiam < 1 && bestSystem) {
-          best = bestSystem;
-        } else if (bestBig) {
-          // Otherwise, if there is a visually big body, ignore system pointer
+        // Unify criteria: for distance readout, prefer real bodies over system labels.
+        // This avoids mixing star distances with system-anchor/baricenter distances.
+        if (bestBig) {
           best = bestBig;
+        } else if (bestNonSystem) {
+          best = bestNonSystem;
+        } else if (bestSystem) {
+          best = bestSystem;
         }
       } else {
         // best is already a body (star/planet/moon). Do NOT override it with bestBig.
@@ -844,7 +847,7 @@ const HUD_ID = "sciHud";
     }
 
 
-    // Category preference (MOON→PLANET→STAR→SYSTEM) when child is not visually separable
+    // Category preference (MOON→PLANET→STAR) when child is not visually separable
     best = applyCategoryPreference(best, w, h);
     if (!best) {
       hud.root.dataset.hidden = "1";
