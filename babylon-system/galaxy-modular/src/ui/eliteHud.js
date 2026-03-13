@@ -154,6 +154,14 @@ function fmtAbs(v) {
   return v.toFixed(3);
 }
 
+function fmtAlt(vMeters) {
+  if (!Number.isFinite(vMeters)) return '—';
+  if (vMeters < 1000) return `${vMeters.toFixed(0)} m`;
+  if (vMeters < 10000) return `${(vMeters / 1000).toFixed(2)} km`;
+  if (vMeters < 100000) return `${(vMeters / 1000).toFixed(1)} km`;
+  return `${(vMeters / 1000).toFixed(0)} km`;
+}
+
 function getAbsoluteCameraPosition(camera, floating) {
   try {
     if (floating?.getCameraAbsoluteToRef && typeof BABYLON !== 'undefined') {
@@ -186,6 +194,7 @@ export function createEliteHud({
   camera,
   engine,
   floating,
+  surfaceAltimeter,
   labelsApi,
   gridController,
   camCtrl,
@@ -376,7 +385,7 @@ export function createEliteHud({
         min-width:72px;
       }
 	  .eliteMetric:first-child {
-		min-width: 15px;
+		min-width: 25px;
 	  }
 
       .eliteMainLayout{
@@ -819,9 +828,14 @@ export function createEliteHud({
               <span class="eliteK">LY/H</span>
               <span class="eliteV" id="hudLyH">0.000000</span>
             </div>
+            <div class="eliteMetric">
+              <span class="eliteK">ALT</span>
+              <span class="eliteV" id="hudAlt">—</span>
+            </div>
           </div>
 
           <div class="eliteMuted" id="hudSpeedMeta" style="margin-bottom:8px;">FWD · paso 0/49 · +/- fino · º reversa</div>
+          <div class="eliteMuted" id="hudAltMeta" style="margin-bottom:8px;">SURF —</div>
 
           <div class="eliteSpeedSeg" id="speedSeg"></div>
           <div class="eliteAbsLine">ABS X <span id="absX">—</span> · Y <span id="absY">—</span> · Z <span id="absZ">—</span></div>
@@ -914,6 +928,8 @@ export function createEliteHud({
   const elKmS = root.querySelector('#hudKmS');
   const elLyH = root.querySelector('#hudLyH');
   const elSpeedMeta = root.querySelector('#hudSpeedMeta');
+  const elAlt = root.querySelector('#hudAlt');
+  const elAltMeta = root.querySelector('#hudAltMeta');
   const speedRail = root.querySelector('#speedRail');
   const speedRailThumb = root.querySelector('#speedRailThumb');
   const speedSeg = root.querySelector('#speedSeg');
@@ -1119,6 +1135,7 @@ export function createEliteHud({
     const mode = hud.mode || 'mouse';
     const spd = hud.speed || {};
     const absPos = getAbsoluteCameraPosition(camera, floating);
+    const alt = surfaceAltimeter?.getState?.() || { visible: false, bodyName: '', meters: null };
 
     try {
       if (typeof labelsApi?.getShowLabels === 'function') {
@@ -1148,6 +1165,9 @@ export function createEliteHud({
       absX: fmtAbs(absPos.x),
       absY: fmtAbs(absPos.y),
       absZ: fmtAbs(absPos.z),
+      altVisible: !!alt.visible,
+      altMeters: Number.isFinite(alt.meters) ? alt.meters.toFixed(1) : '—',
+      altBody: String(alt.bodyName || ''),
       markerX: Number(hud.headingMarker?.xN || 0).toFixed(3),
       markerY: Number(hud.headingMarker?.yN || 0).toFixed(3),
       markerV: !!hud.headingMarker?.visible,
@@ -1174,6 +1194,8 @@ export function createEliteHud({
     if (elSpeed) elSpeed.textContent = String(spd.signedStep ?? 0);
     if (elKmS) elKmS.textContent = Number(spd.currentKmS || 0).toFixed(3);
     if (elLyH) elLyH.textContent = Number(spd.currentLyH || 0).toFixed(6);
+    if (elAlt) elAlt.textContent = alt.visible ? fmtAlt(Number(alt.meters)) : '—';
+    if (elAltMeta) elAltMeta.textContent = alt.visible ? `SURF ${alt.bodyName}` : 'SURF —';
 
     if (elSpeedMeta) {
       const dir = spd.reverse ? 'REV' : 'FWD';

@@ -1,9 +1,3 @@
-// src/scene/orbitAnchor.js
-// Anclaje orbital suave:
-// - no atrae al centro
-// - hace que la cámara viaje con el cuerpo cercano
-// - permite moverte alrededor sin perder el enganche
-// - entrada/salida y seguimiento del offset con suavizado temporal
 
 export function createCameraOrbitAnchor({
   bodyMaps = [],
@@ -11,9 +5,16 @@ export function createCameraOrbitAnchor({
   captureMul = 60.0,
   stickyMul = 120.0,
   minCaptureGap = 0.03,
-  influenceHz = 2.5,
-  offsetFollowHz = 6.0,
+  influenceHz = 2.0,
+  offsetFollowHz = 5.0,
   carryFactor = 1.0,
+
+  // Mucho más suave cerca de superficie
+  surfaceSpinFullMul = 0.005,
+  surfaceSpinFadeMul = 0.06,
+  minSurfaceSpinFullGap = 0.00005,
+  minSurfaceSpinFadeGap = 0.002,
+  surfaceSpinCarry = 0.12,
 }) {
   const kinds = new Set(
     Array.isArray(allowedKinds)
@@ -28,6 +29,10 @@ export function createCameraOrbitAnchor({
 
   const smoothedOffset = new BABYLON.Vector3(0, 0, 0);
   const desiredOffset = new BABYLON.Vector3(0, 0, 0);
+  const _currentOffset = new BABYLON.Vector3(0, 0, 0);
+  const _rotatedOffset = new BABYLON.Vector3(0, 0, 0);
+  const _rotatedSmoothed = new BABYLON.Vector3(0, 0, 0);
+  const _rotM = new BABYLON.Matrix();
 
   function alphaFromHz(hz, dtSec) {
     return 1.0 - Math.exp(-Math.max(0, hz) * Math.max(0, dtSec));
@@ -42,13 +47,24 @@ export function createCameraOrbitAnchor({
     return t * t * (3 - 2 * t);
   }
 
+  function inverseSmoothBand(value, fullValue, fadeValue) {
+    if (value <= fullValue) return 1.0;
+    if (value >= fadeValue) return 0.0;
+    const t = (value - fullValue) / Math.max(1e-8, (fadeValue - fullValue));
+    return 1.0 - smoothstep01(t);
+  }
+
+  function computeSurfaceSpinFactor(radiusWorld, gap) {
+    const fullGap = Math.max(minSurfaceSpinFullGap, radiusWorld * surfaceSpinFullMul);
+    const fadeGap = Math.max(minSurfaceSpinFadeGap, radiusWorld * surfaceSpinFadeMul);
+    return inverseSmoothBand(gap, fullGap, fadeGap);
+  }
+
   function eachBody(fn) {
     for (const map of bodyMaps) {
       if (!map || typeof map.values !== 'function') continue;
-
       for (const node of map.values()) {
         if (!node) continue;
-
         const md = node.metadata || {};
         if (!kinds.has(md.kind)) continue;
 
@@ -61,10 +77,7 @@ export function createCameraOrbitAnchor({
   }
 
   function getNodeWorldPos(node) {
-    try {
-      node.computeWorldMatrix?.(true);
-    } catch (_) {}
-
+    try { node.computeWorldMatrix?.(true); } catch (_) {}
     try {
       return (typeof node.getAbsolutePosition === 'function')
         ? node.getAbsolutePosition()
@@ -72,6 +85,24 @@ export function createCameraOrbitAnchor({
     } catch (_) {
       return node.position;
     }
+  }
+
+  function getWorldSpinAxis(node, localAxis) {
+    const axis = localAxis || BABYLON.Axis.Y;
+    try {
+      const out = node?.getDirection?.(axis);
+      if (out) return out.normalize();
+    } catch (_) {}
+    try {
+      return axis.clone().normalize();
+    } catch (_) {
+      return new BABYLON.Vector3(0, 1, 0);
+    }
+  }
+
+  function rotateVectorAroundAxisToRef(vec, axis, angle, out) {
+    BABYLON.Matrix.RotationAxisToRef(axis, angle, _rotM);
+    BABYLON.Vector3.TransformNormalToRef(vec, _rotM, out);
   }
 
   function chooseTarget(cam) {
@@ -102,7 +133,7 @@ export function createCameraOrbitAnchor({
     return best;
   }
 
-  function applyOrbitAnchor(cam, camCtrl, dtSec = 0) {
+  function applyOrbitAnchor(cam, camCtrl, dtSec = 0, dtDays = 0) {
     if (!cam?.position) return null;
 
     if (camCtrl?.getMode?.() !== 'ship') {
@@ -116,18 +147,15 @@ export function createCameraOrbitAnchor({
     if (!target) {
       const aOut = alphaFromHz(influenceHz, dtSec);
       influence += (0.0 - influence) * aOut;
-
       if (influence < 0.001) {
         influence = 0.0;
         lockedNode = null;
       }
-
       return null;
     }
 
     if (lockedNode !== target.node) {
       lockedNode = target.node;
-
       smoothedOffset.x = cam.position.x - target.center.x;
       smoothedOffset.y = cam.position.y - target.center.y;
       smoothedOffset.z = cam.position.z - target.center.z;
@@ -143,20 +171,44 @@ export function createCameraOrbitAnchor({
     const bodyDy = target.center.y - prevCenter.y;
     const bodyDz = target.center.z - prevCenter.z;
 
-    // 1) Viajar con el planeta/cuerpo
-    cam.position.x += bodyDx * carryFactor;
-    cam.position.y += bodyDy * carryFactor;
-    cam.position.z += bodyDz * carryFactor;
-
-    // 2) El usuario puede moverse alrededor: seguimos ese offset suavemente
-    desiredOffset.x = cam.position.x - target.center.x;
-    desiredOffset.y = cam.position.y - target.center.y;
-    desiredOffset.z = cam.position.z - target.center.z;
-
     const aInf = alphaFromHz(influenceHz, dtSec);
     const t = 1.0 - Math.min(1.0, target.gap / Math.max(target.captureGap, 1e-8));
     const wantedInfluence = smoothstep01(t);
     influence += (wantedInfluence - influence) * aInf;
+
+    // 1) Viajar con el cuerpo
+    cam.position.x += bodyDx * carryFactor * influence;
+    cam.position.y += bodyDy * carryFactor * influence;
+    cam.position.z += bodyDz * carryFactor * influence;
+
+    // 1b) Cerca de la superficie, solo una pequeña fracción del spin
+    const md = target.node?.metadata || {};
+    const spin = Number(md.spin);
+    if (Number.isFinite(spin) && dtDays !== 0) {
+      const surfaceSpinFactor = computeSurfaceSpinFactor(target.radiusWorld, target.gap) * influence;
+      const angle = spin * dtDays * surfaceSpinFactor * surfaceSpinCarry;
+
+      if (Math.abs(angle) > 1e-12) {
+        const axisWorld = getWorldSpinAxis(target.node, md.spinAxis || BABYLON.Axis.Y);
+
+        _currentOffset.x = cam.position.x - target.center.x;
+        _currentOffset.y = cam.position.y - target.center.y;
+        _currentOffset.z = cam.position.z - target.center.z;
+
+        rotateVectorAroundAxisToRef(_currentOffset, axisWorld, angle, _rotatedOffset);
+        cam.position.x = target.center.x + _rotatedOffset.x;
+        cam.position.y = target.center.y + _rotatedOffset.y;
+        cam.position.z = target.center.z + _rotatedOffset.z;
+
+        rotateVectorAroundAxisToRef(smoothedOffset, axisWorld, angle, _rotatedSmoothed);
+        smoothedOffset.copyFrom(_rotatedSmoothed);
+      }
+    }
+
+    // 2) Movimiento libre alrededor del cuerpo, suavizado
+    desiredOffset.x = cam.position.x - target.center.x;
+    desiredOffset.y = cam.position.y - target.center.y;
+    desiredOffset.z = cam.position.z - target.center.z;
 
     const aOff = alphaFromHz(offsetFollowHz, dtSec);
     smoothedOffset.x += (desiredOffset.x - smoothedOffset.x) * aOff;
@@ -172,13 +224,11 @@ export function createCameraOrbitAnchor({
     cam.position.z += (targetZ - cam.position.z) * influence;
 
     prevCenter.copyFrom(target.center);
-
     return target;
   }
 
   function syncOffsetFromCamera(cam) {
     if (!lockedNode || !cam?.position) return;
-
     const center = getNodeWorldPos(lockedNode);
     if (!center) return;
 

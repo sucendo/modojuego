@@ -256,6 +256,9 @@ export function buildPlanets({ scene, systemNodes, starMeshById, GALAXY, lights,
   function createBodyNode({ systemName, parentOrbit, bodyId, def, kind, defaultSizeKm }) {
     // size se interpreta como radio en km
     const radiusKm = Number(def?.size || defaultSizeKm);
+    const radiusWorld = (Number.isFinite(radiusKm) && radiusKm > 0) ? (radiusKm * KM_TO_UNITS) : 0.001;
+    const collisionRadiusMul = Math.max(1.0, Number(def?.collisionRadiusMul || 1.0));
+
     const node = new BABYLON.TransformNode(`body_${kind}_${systemName}_${bodyId}`, scene);
     node.parent = parentOrbit;
     node.position.set(0, 0, 0);
@@ -265,8 +268,10 @@ export function buildPlanets({ scene, systemNodes, starMeshById, GALAXY, lights,
       bodyId,
       kind,
       radiusKm,
-      radiusWorld: (Number.isFinite(radiusKm) && radiusKm > 0) ? (radiusKm * KM_TO_UNITS) : 0.001,
-    });
+      radiusWorld,
+      collisionRadiusMul,
+      collisionRadiusWorld: radiusWorld * collisionRadiusMul,
+	});
     ensureSimMeta(node, {
       bodyId,
       kind,

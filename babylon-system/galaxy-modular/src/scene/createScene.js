@@ -1,3 +1,5 @@
+// createScene.js
+
 import { SYSTEMS } from '../data/systems.js';
 import { GALAXY } from '../data/galaxy.js';
 import { createEngine } from '../core/engine.js';
@@ -19,11 +21,100 @@ import { saveState, loadState, clearState, applyLoadedState } from '../core/save
 import { createOfflineTransport } from '../net/offlineTransport.js';
 import { createCameraOrbitAnchor } from './orbitAnchor.js';
 import { createCameraBodyCollision } from './collision.js';
+import { createLocalSurfaceFlight } from './localSurfaceFlight.js';
+import { createSurfaceAltimeter } from './surfaceAltimeter.js';
 import { collectUniverseSnapshots } from '../sim/universeState.js';
 
 export function bootstrap() {
+  const BOOT_LOGO_URL = new URL('../resources/logo.svg', import.meta.url).href;
+
   const canvas = document.getElementById('renderCanvas');
   const engine = createEngine(canvas);
+  
+  function createBootSplash({
+    title = 'SIMULADOR',
+    logoUrl = '',
+    delayMs = 2000,
+    fadeMs = 2000,
+  } = {}) {
+    const root = document.createElement('div');
+    root.id = 'bootSplash';
+    root.style.position = 'fixed';
+    root.style.inset = '0';
+    root.style.zIndex = '99999';
+    root.style.display = 'flex';
+    root.style.alignItems = 'center';
+    root.style.justifyContent = 'center';
+    root.style.background = '#000';
+    root.style.opacity = '1';
+    root.style.pointerEvents = 'auto';
+    root.style.transition = `opacity ${fadeMs}ms ease`;
+
+    const wrap = document.createElement('div');
+    wrap.style.display = 'flex';
+    wrap.style.flexDirection = 'column';
+    wrap.style.alignItems = 'center';
+    wrap.style.justifyContent = 'center';
+    wrap.style.gap = '22px';
+    wrap.style.padding = '24px';
+    wrap.style.transform = 'translateY(-2%)';
+
+    const img = document.createElement('img');
+    img.alt = 'Logo';
+    img.src = logoUrl;
+    img.style.display = logoUrl ? 'block' : 'none';
+    img.style.width = 'min(42vw, 420px)';
+    img.style.maxWidth = '80vw';
+    img.style.maxHeight = '40vh';
+    img.style.objectFit = 'contain';
+    img.style.filter = 'drop-shadow(0 0 24px rgba(255,255,255,0.10))';
+    img.style.userSelect = 'none';
+    img.draggable = false;
+    img.onerror = () => {
+      img.style.display = 'none';
+    };
+
+    const titleEl = document.createElement('div');
+    titleEl.textContent = title;
+    titleEl.style.color = '#fff';
+    titleEl.style.fontFamily = 'Arial, Helvetica, sans-serif';
+    titleEl.style.fontSize = 'clamp(28px, 4vw, 56px)';
+    titleEl.style.fontWeight = '700';
+    titleEl.style.letterSpacing = '0.28em';
+    titleEl.style.textAlign = 'center';
+    titleEl.style.textShadow = '0 0 22px rgba(255,255,255,0.12)';
+    titleEl.style.userSelect = 'none';
+
+    wrap.appendChild(img);
+    wrap.appendChild(titleEl);
+    root.appendChild(wrap);
+    document.body.appendChild(root);
+
+    let removed = false;
+
+    const remove = () => {
+      if (removed) return;
+      removed = true;
+      try { root.remove(); } catch (_) {}
+    };
+
+    const startFadeOut = () => {
+      window.setTimeout(() => {
+        root.style.opacity = '0';
+        root.style.pointerEvents = 'none';
+        window.setTimeout(remove, fadeMs + 60);
+      }, delayMs);
+    };
+
+    return { root, remove, startFadeOut };
+  }
+
+  const bootSplash = createBootSplash({
+    title: 'SIMULADOR',
+    logoUrl: BOOT_LOGO_URL,
+    delayMs: 2000,
+    fadeMs: 1000,
+  });
 
   const scene = new BABYLON.Scene(engine);
   // Perf: si no haces picking por “hover”, esto ahorra CPU
@@ -84,7 +175,6 @@ export function bootstrap() {
   // Shift/turbo ya lo gestiona camera.js (state.isFast). No duplicar handlers aquí.
 
   // Ajustes cámara (si setupCamera ya los fija, esto solo los sobreescribe)
-  camera.position.set(2, 50, -540);
   camera.angularSensibility = 3500;
   camera.inertia = 0.0;
   camera.angularInertia = 0.0;
@@ -96,7 +186,7 @@ export function bootstrap() {
   camera.keysDownward = [17];// Ctrl
   // Near plane too small destroys depth precision (z-fighting / shimmer on clouds/sea/rings).
   // Keep it small, but not *microscopic*. You can override via ?near=1e-6
-  let nearZ = 1e-4;
+  let nearZ = 1e-6;
   try {
     const u = new URL(location.href);
     const nz = Number(u.searchParams.get('near'));
@@ -143,6 +233,7 @@ export function bootstrap() {
   // Builders (extraídos)
   // ============================================================
   const KM_PER_UNIT_LOCAL = 1e6;
+  const KM_PER_UNIT = KM_PER_UNIT_LOCAL;
   const starMeshById = new Map();
 
   const { systemNodes, lyUnits } = buildSystemNodes({ scene, worldRoot, GALAXY, SYSTEMS, labelsApi });
@@ -167,17 +258,202 @@ export function bootstrap() {
   });
 
   const BODY_MAPS = [planetMeshById, moonMeshById, asteroidMeshById, cometMeshById];
+  
+  function getEarthNode() {
+    return (
+      planetMeshById.get('Tierra') ||
+      planetMeshById.get('Earth') ||
+      planetMeshById.get('Terra') ||
+      null
+    );
+  }
+  
+  function getSunNode() {
+    return (
+      starMeshById.get('Sol') ||
+      starMeshById.get('Sun') ||
+      starMeshById.get('Solis') ||
+      null
+    );
+  }
+
+  function spawnCameraInEarthOrbit() {
+    const earth = getEarthNode();
+    if (!earth) return false;
+  
+    try { earth.computeWorldMatrix?.(true); } catch (_) {}
+  
+    const earthPos =
+      (typeof earth.getAbsolutePosition === 'function')
+        ? earth.getAbsolutePosition()
+        : earth.position;
+  
+    if (!earthPos) return false;
+  
+    const radiusWorld = Number(earth?.metadata?.radiusWorld) || 0.01;
+  
+    // Altura baja, tipo órbita visual cercana
+    const orbitalAltitude = Math.max(radiusWorld * 0.10, 0.0057);
+    const orbitalRadius = radiusWorld + orbitalAltitude;
+  
+    // Posición real del Sol
+    let sunNode = null;
+    try {
+      sunNode = getSolAnchorNode?.() || getSunNode();
+    } catch (_) {
+      sunNode = getSunNode();
+    }
+  
+    let sunPos = null;
+    if (sunNode) {
+      try { sunNode.computeWorldMatrix?.(true); } catch (_) {}
+      sunPos = (typeof sunNode.getAbsolutePosition === 'function')
+        ? sunNode.getAbsolutePosition()
+        : sunNode.position;
+    }
+  
+    let sunDir = new BABYLON.Vector3(0, 0, 1);
+    if (sunPos) {
+      sunDir = sunPos.subtract(earthPos);
+      if (sunDir.lengthSquared() > 1e-12) sunDir.normalize();
+    }
+  
+    const worldUp = new BABYLON.Vector3(0, 1, 0);
+  
+    // Base del terminador
+    let northOnTerminator = worldUp.subtract(
+      sunDir.scale(BABYLON.Vector3.Dot(worldUp, sunDir))
+    );
+    if (northOnTerminator.lengthSquared() < 1e-8) {
+      northOnTerminator = BABYLON.Axis.Z.subtract(
+        sunDir.scale(BABYLON.Vector3.Dot(BABYLON.Axis.Z, sunDir))
+      );
+    }
+    northOnTerminator.normalize();
+  
+    let eastOnTerminator = BABYLON.Vector3.Cross(sunDir, northOnTerminator);
+    if (eastOnTerminator.lengthSquared() < 1e-8) {
+      eastOnTerminator = BABYLON.Vector3.Cross(sunDir, BABYLON.Axis.X);
+    }
+    eastOnTerminator.normalize();
+  
+    // Spawn:
+    // - casi sobre el terminador
+    // - un poquito en lado iluminado para que el Sol sí aparezca
+    // - leve sesgo lateral para composición cinematográfica
+    const spawnNormal = northOnTerminator.scale(0.96)
+      .add(eastOnTerminator.scale(-0.14))
+      .add(sunDir.scale(0.10))
+      .normalize();
+  
+    const spawnPos = earthPos.add(spawnNormal.scale(orbitalRadius));
+    camera.position.copyFrom(spawnPos);
+  
+    camera.rotationQuaternion = null;
+    if (camera.rotation?.set) camera.rotation.set(0, 0, 0);
+  
+    // Dirección tangencial hacia el Sol sobre el horizonte
+    let towardSunOnTangent = sunDir.subtract(
+      spawnNormal.scale(BABYLON.Vector3.Dot(sunDir, spawnNormal))
+    );
+    if (towardSunOnTangent.lengthSquared() < 1e-8) {
+      towardSunOnTangent = eastOnTerminator.clone();
+    }
+    towardSunOnTangent.normalize();
+  
+    let localRight = BABYLON.Vector3.Cross(towardSunOnTangent, spawnNormal);
+    if (localRight.lengthSquared() < 1e-8) {
+      localRight = eastOnTerminator.clone();
+    }
+    localRight.normalize();
+  
+    // Base local
+    const localLeft = localRight.scale(-1);
+    
+    // 60° a la izquierda sobre el plano tangente
+    const yawDeg = 60;
+    const yawRad = BABYLON.Angle.FromDegrees(yawDeg).radians();
+    
+    const horizDir = towardSunOnTangent.scale(Math.cos(yawRad))
+      .add(localLeft.scale(Math.sin(yawRad)))
+      .normalize();
+    
+    // 20° hacia abajo respecto al horizonte local
+    const pitchDownDeg = 20;
+    const pitchRad = BABYLON.Angle.FromDegrees(pitchDownDeg).radians();
+    
+    const lookDir = horizDir.scale(Math.cos(pitchRad))
+      .add(spawnNormal.scale(-Math.sin(pitchRad)))
+      .normalize();
+  
+    const targetPos = camera.position.add(lookDir.scale(radiusWorld * 4.5));
+  
+    if (typeof camera.setTarget === 'function') {
+      camera.setTarget(targetPos);
+    } else if (typeof camera.lookAt === 'function') {
+      camera.lookAt(targetPos.x, targetPos.y, targetPos.z);
+    }
+  
+    // Ayuda a mantener horizonte lógico
+    try {
+      camera.upVector = spawnNormal.clone();
+    } catch (_) {}
+  
+    try { orbitAnchor?.syncOffsetFromCamera?.(camera); } catch (_) {}
+    try { camera.computeWorldMatrix?.(true); } catch (_) {}
+  
+    return true;
+  }
 
   const orbitAnchor = createCameraOrbitAnchor({
     bodyMaps: BODY_MAPS,
-    captureMul: 24.0,
-    minCaptureGap: 0.10,
-    stickyMul: 48.0,
+    captureMul: 6.0,
+    minCaptureGap: 0.00010,
+    stickyMul: 12.0,
+    influenceHz: 1.5,
+    offsetFollowHz: 4.0,
+    carryFactor: 1.0,
   });
   window.__orbitAnchor = orbitAnchor;
 
-  const bodyCollision = createCameraBodyCollision({ bodyMaps: BODY_MAPS, padding: 0.00017 });
-   
+  const bodyCollision = createCameraBodyCollision({ bodyMaps: BODY_MAPS, padding: 0.0000005 });
+
+  const localSurfaceFlight = createLocalSurfaceFlight({
+    bodyMaps: BODY_MAPS,
+    moveFullMul: 0.002,
+    moveFadeMul: 0.05,
+    minMoveFullGap: 0.00001,
+    minMoveFadeGap: 0.00015,
+    alignFullMul: 0.0005,
+    alignFadeMul: 0.008,
+    minAlignFullGap: 0.000003,
+    minAlignFadeGap: 0.00003,
+    tangentMoveScale: 1.00,
+    upMoveScale: 0.88,
+    downMoveScale: 1.03,
+    alignHz: 0.60,
+    alignMix: 0.14,
+  });
+
+  const surfaceAltimeter = createSurfaceAltimeter({ camera, bodyMaps: BODY_MAPS });
+  
+  function updateDynamicNearPlane() {
+    const alt = surfaceAltimeter?.getState?.();
+    if (!alt?.visible || !Number.isFinite(alt.meters)) {
+      camera.minZ = 1e-4;
+      return;
+    }
+  
+    // Convertimos metros -> km -> units de escena usando la escala REAL del proyecto
+    const altUnits = (alt.meters / 1000) / KM_PER_UNIT;
+  
+    // Queremos un near pequeño cerca del suelo, pero sin volverlo microscópico
+    // para no romper la precisión de profundidad.
+    const dynamicNear = Math.max(1e-8, Math.min(1e-4, altUnits * 0.15));
+  
+    camera.minZ = dynamicNear;
+  }
+  
   const systemDotScaler = createSystemDotScaler({
     engine, camera, systemNodes,
     opts: { minPx: 22.0, throttleMs: 80 },
@@ -238,6 +514,7 @@ export function bootstrap() {
     camera,
     engine,
     floating,
+	surfaceAltimeter,
     labelsApi,
     gridController: navGrid,
     camCtrl,
@@ -295,6 +572,10 @@ export function bootstrap() {
   // amortigua micro-parones del frame loop sin cambiar el tiempo simulado guardado.
   const ORBIT_SMOOTH_HZ = 12.0;
 
+  // Sitúa los cuerpos en su posición inicial antes de decidir spawn.
+  if (starsApi?.starSystems?.length) updateOrbits(starsApi.starSystems, simDaysRender, 0);
+  updateOrbits(planetSystems, simDaysRender, 0);
+
   // ============================
   // Load saved travel (optional)
   // ============================
@@ -309,61 +590,72 @@ export function bootstrap() {
     });
     // estabiliza antes del primer render (evita micro-salto)
     floating.apply();
+  } else {
+    spawnCameraInEarthOrbit();
+    // estabiliza antes del primer render
+    floating.apply();
   }
   
   let _lastSaveT = 0;
   const SAVE_MS = 30000;
+  let _saveDisabled = false;
+  
   const doSave = () => {
+    if (_saveDisabled) return;
     try { saveState({ floating, camera, camCtrl }); } catch (_) {}
   };
-	scene.onBeforeRenderObservable.add(() => {
-	  const now = performance.now();
-	  if (now - _lastSaveT > SAVE_MS) {
-		_lastSaveT = now;
-		doSave();
-	  }
-	});
+
+  scene.onBeforeRenderObservable.add(() => {
+    const now = performance.now();
+    if (now - _lastSaveT > SAVE_MS) {
+      _lastSaveT = now;
+      doSave();
+    }
+  });
+
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) doSave();
   });
+  
   window.addEventListener("beforeunload", doSave);
-	
-	if (!window.__gm13_saveKeysBound) {
-	  window.__gm13_saveKeysBound = true;
-	  window.addEventListener("keydown", (e) => {
-		  if (e.code === "F9") {
-			saveState({ floating, camera, camCtrl });
-			console.log("[SAVE] ok");
-		  } else if (e.code === "F8") {
-			clearState();
-			console.log("[SAVE] cleared");
-		  } else if (e.code === "F10") {
-			const st = loadState();
-			if (st) {
-			  applyLoadedState({
-				state: st,
-				worldRoot,
-				floating,
-				camera,
-				camCtrl,
-			  });
-			  console.log("[SAVE] loaded");
-			}
-		  }
-	  });
-	}
+
+  if (!window.__gm13_saveKeysBound) {
+    window.__gm13_saveKeysBound = true;
+    window.addEventListener("keydown", (e) => {
+      if (e.code === "F9") {
+        _saveDisabled = false;
+        saveState({ floating, camera, camCtrl });
+        console.log("[SAVE] ok");
+      } else if (e.code === "F8") {
+        _saveDisabled = true;
+        clearState();
+        console.log("[SAVE] cleared");
+      } else if (e.code === "F10") {
+        _saveDisabled = false;
+        const st = loadState();
+        if (st) {
+          applyLoadedState({
+            state: st,
+            worldRoot,
+            floating,
+            camera,
+            camCtrl,
+          });
+          console.log("[SAVE] loaded");
+        }
+      }
+    });
+  }
   
   scene.onBeforeRenderObservable.add(() => {
     const dtSec = engine.getDeltaTime() * 0.001;
-
-    // Sombras dinámicas (si tu lights.js lo tiene)
+  
+    // Sombras dinámicas
     if (typeof lights.updateNearestSystemShadows === 'function') {
       lights.updateNearestSystemShadows();
     }
-
-	// (mantén aquí solo lo que NO depende de órbitas si quieres)
-
-    // Binarios/trinarios (throttle)	
+  
+    // Binarios/trinarios (throttle)
     if (starsApi?.updateBinaries) {
       const now = performance.now();
       binAccSec += dtSec;
@@ -373,49 +665,58 @@ export function bootstrap() {
         binLastT = now;
       }
     }
-
-    // Órbitas
+  
+    // Tiempo simulado
     const dtDays = dtSec * DAYS_PER_REAL_SECOND;
     simDays += dtDays;
-
-    // Suaviza el tiempo de render de órbitas para esconder pequeños stalls
-    // (autosave, GC, pestaña, etc.) sin tocar el tiempo simulado "real".
+  
+    // Suavizado visual del tiempo orbital
+    const prevSimDaysRender = simDaysRender;
     const orbitAlpha = 1.0 - Math.exp(-dtSec * ORBIT_SMOOTH_HZ);
     simDaysRender += (simDays - simDaysRender) * orbitAlpha;
-
-    // Movimiento orbital primero, para que el anclaje siga el frame actual del cuerpo.
-    if (starsApi?.starSystems?.length) updateOrbits(starsApi.starSystems, simDaysRender);
-    updateOrbits(planetSystems, simDaysRender);
-
+    const dtDaysRender = simDaysRender - prevSimDaysRender;
+  
+    // Órbitas y spin primero
+    if (starsApi?.starSystems?.length) {
+      updateOrbits(starsApi.starSystems, simDaysRender, dtDaysRender);
+    }
+    updateOrbits(planetSystems, simDaysRender, dtDaysRender);
+  
+    // Movimiento jugador
     const prevCamPos = camera.position.clone();
     camCtrl.update(dtSec);
+	
+    // Movimiento local cerca de superficie, con cabeceo mucho más suave
+    localSurfaceFlight.apply(camera, camCtrl, prevCamPos, dtSec);
 
-    // Si speedLevel === 0 y estás cerca, quedas "enganchado" al cuerpo
-    // conservando tu offset relativo, sin caer hacia el centro.
-    orbitAnchor.applyOrbitAnchor(camera, camCtrl);
-
+    // Anclaje orbital + arrastre por spin superficial
+    orbitAnchor.applyOrbitAnchor(camera, camCtrl, dtSec);
+  
+    // Colisión superficie
     bodyCollision.enforceBodyCollision(camera, prevCamPos);
-
-    // Si la colisión corrigió algo, actualizamos el offset bloqueado real.
+  
+    // Resincroniza offset por si la colisión corrigió
     orbitAnchor.syncOffsetFromCamera(camera);
-
+  
     floating.apply();
-
-    // Grid anclado (internamente hace early-exit si no hay cambios)
+  
+    // Grid anclado
     if (navGrid?.enabled) navGrid.update();
-
-    // Ahora sí: LOD y labels con posiciones ya actualizadas
+  
+    // LOD + labels
     systemDotScaler.update();
     repMgr.update();
     labelsApi.update(false);
-
+  
     // HUD debug floating origin
     if (typeof floating.updateHud === 'function') floating.updateHud();
-
-    // Elite HUD (modo, velocidad, fullscreen icon, etc.)
+  
+    // Altímetro primero, HUD después
+    surfaceAltimeter.update();
+	updateDynamicNearPlane();
     eliteHud?.update?.();
-
-    // Publicación local/offline: deja lista la frontera para un futuro transport real.
+  
+    // Publicación local/offline
     const now = performance.now();
     if ((now - _lastPresenceT) >= 100) {
       _lastPresenceT = now;
@@ -427,9 +728,20 @@ export function bootstrap() {
   // fuera de camCtrl.update(), evitamos que el frame siguiente empiece dentro
   // de la superficie.
   scene.onAfterRenderObservable.add(() => {
+    // Safety net solo para modo ratón.
+    // En ship ya corregimos en onBeforeRender y repetir aquí mete jitter.
+    if (camCtrl?.getMode?.() !== 'mouse') return;
     bodyCollision.enforceBodyCollision(camera, null);
-  })
+  });
 
   engine.runRenderLoop(() => scene.render());
+
+  // El splash permanece visible al inicio, empieza a desvanecerse a los 2 s
+  // y desaparece totalmente al 3º segundo.
+  // Lo lanzamos tras arrancar el render loop para tapar la carga inicial.
+  try {
+    bootSplash.startFadeOut();
+  } catch (_) {}
+
   window.addEventListener('resize', () => engine.resize());
 }

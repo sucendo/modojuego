@@ -3,9 +3,10 @@
 
 import { ensureSimMeta, setSimLocalU, setSimAbsKm } from '../sim/universeState.js';
 
-export function updateOrbits(planetSystems, simDays) {
+export function updateOrbits(planetSystems, simDays, dtDays = 0) {
   if (!Array.isArray(planetSystems)) return;
   simDays = Number(simDays) || 0;
+  dtDays = Number(dtDays) || 0;
   
   const TAU = Math.PI * 2;
 
@@ -163,9 +164,8 @@ export function updateOrbits(planetSystems, simDays) {
         const parentAbsKm = getAbsKm(parentNode);
         syncBodySim(planet, simDays, parentNode, parentAbsKm);
       }
-      if (planet) stepSpin(planet, 0); // spin lo llevaremos desde createScene con dtDays real
- 
-      updateSatelliteList(obj?.satellites || obj?.moons, simDays, 0);
+	  if (planet) stepSpin(planet, dtDays);
+	  updateSatelliteList(obj?.satellites || obj?.moons, simDays, dtDays);
     }
   }
 }

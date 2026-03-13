@@ -18,6 +18,14 @@ export function setupCamera(scene, canvas, opts = {}) {
   const HOTKEY_STEPS = [0, 4, 8, 12, 16, 21, 27, 34, 41, 49];
 
   const tmpForward = new BABYLON.Vector3();
+  const tmpShipUp = new BABYLON.Vector3();
+  const tmpShipRight = new BABYLON.Vector3();
+  const tmpTargetForward = new BABYLON.Vector3();
+  const tmpTargetUp = new BABYLON.Vector3();
+  const tmpTargetRight = new BABYLON.Vector3();
+  const tmpRotM = new BABYLON.Matrix();
+  const tmpTargetRotM = new BABYLON.Matrix();
+  const tmpTargetQuat = new BABYLON.Quaternion();
 
   const state = {
     mode: "ship",
@@ -42,11 +50,12 @@ export function setupCamera(scene, canvas, opts = {}) {
       gyroEnabled: true,
       gyroInitialized: false,
       gyroPermissionAsked: false,
+      gyroScreenAngle: 0,
       gyroBase: { alpha: 0, beta: 0, gamma: 0 },
       gyroInput: { pitch: 0, yaw: 0, roll: 0 },
       gyroGain: Number.isFinite(opts.shipGyroGain) ? opts.shipGyroGain : 1.8,
-      gyroDeadZone: Number.isFinite(opts.shipGyroDeadZone) ? opts.shipGyroDeadZone : 0.03,
-      gyroPitchLimit: Number.isFinite(opts.shipGyroPitchLimit) ? opts.shipGyroPitchLimit : (Math.PI / 3),
+      gyroSmoothing: Number.isFinite(opts.shipGyroSmoothing) ? opts.shipGyroSmoothing : 0.18,
+      gyroDeadZone: Number.isFinite(opts.shipGyroDeadZone) ? opts.shipGyroDeadZone : 0.03,gyroPitchLimit: Number.isFinite(opts.shipGyroPitchLimit) ? opts.shipGyroPitchLimit : (Math.PI / 3),
       gyroYawLimit: Number.isFinite(opts.shipGyroYawLimit) ? opts.shipGyroYawLimit : (Math.PI / 2),
       gyroRollLimit: Number.isFinite(opts.shipGyroRollLimit) ? opts.shipGyroRollLimit : (Math.PI / 2),
       speedAnchorsUps: []
@@ -169,6 +178,61 @@ export function setupCamera(scene, canvas, opts = {}) {
     state.ship.freeLookYaw = wrapPi(yaw);
     state.ship.freeLookPitch = clamp(pitch, -state.ship.maxFreeLookPitch, state.ship.maxFreeLookPitch);
     if (state.mode === 'ship') _applyShipCameraOrientation();
+  }
+  
+  function stabilizeToLocalUp(targetUp, influence = 1, dtSec = 0, opts = {}) {
+    if (state.mode !== 'ship') return;
+    if (!targetUp) return;
+
+    const inf = clamp(Number(influence) || 0, 0, 1);
+    if (inf <= 1e-4) return;
+
+    const alignHz = Number.isFinite(opts.alignHz) ? opts.alignHz : 1.4;
+    const alpha = 1.0 - Math.exp(-Math.max(0, alignHz) * inf * Math.max(0, dtSec));
+    if (alpha <= 1e-5) return;
+
+    const shipQ = _ensureShipQuatFromCamera();
+    shipQ.toRotationMatrix(tmpRotM);
+
+    BABYLON.Vector3.TransformNormalToRef(BABYLON.Axis.Z, tmpRotM, tmpForward);
+    BABYLON.Vector3.TransformNormalToRef(BABYLON.Axis.Y, tmpRotM, tmpShipUp);
+    BABYLON.Vector3.TransformNormalToRef(BABYLON.Axis.X, tmpRotM, tmpShipRight);
+    tmpForward.normalize();
+    tmpShipUp.normalize();
+    tmpShipRight.normalize();
+
+    tmpTargetUp.copyFrom(targetUp);
+    if (tmpTargetUp.lengthSquared() < 1e-10) return;
+    tmpTargetUp.normalize();
+
+    // Conserva la sensación de rumbo actual, pero proyectada al plano tangente local
+    const fDotUp = BABYLON.Vector3.Dot(tmpForward, tmpTargetUp);
+    tmpTargetForward.x = tmpForward.x - tmpTargetUp.x * fDotUp;
+    tmpTargetForward.y = tmpForward.y - tmpTargetUp.y * fDotUp;
+    tmpTargetForward.z = tmpForward.z - tmpTargetUp.z * fDotUp;
+
+    if (tmpTargetForward.lengthSquared() < 1e-10) {
+      const rDotUp = BABYLON.Vector3.Dot(tmpShipRight, tmpTargetUp);
+      tmpTargetRight.x = tmpShipRight.x - tmpTargetUp.x * rDotUp;
+      tmpTargetRight.y = tmpShipRight.y - tmpTargetUp.y * rDotUp;
+      tmpTargetRight.z = tmpShipRight.z - tmpTargetUp.z * rDotUp;
+      if (tmpTargetRight.lengthSquared() < 1e-10) return;
+      tmpTargetRight.normalize();
+      BABYLON.Vector3.CrossToRef(tmpTargetRight, tmpTargetUp, tmpTargetForward);
+    } else {
+      tmpTargetForward.normalize();
+      BABYLON.Vector3.CrossToRef(tmpTargetUp, tmpTargetForward, tmpTargetRight);
+    }
+
+    tmpTargetRight.normalize();
+    BABYLON.Vector3.CrossToRef(tmpTargetRight, tmpTargetUp, tmpTargetForward);
+    tmpTargetForward.normalize();
+
+    BABYLON.Matrix.FromXYZAxesToRef(tmpTargetRight, tmpTargetUp, tmpTargetForward, tmpTargetRotM);
+    BABYLON.Quaternion.FromRotationMatrixToRef(tmpTargetRotM, tmpTargetQuat);
+    state.ship.shipQuat = BABYLON.Quaternion.Slerp(shipQ, tmpTargetQuat, alpha);
+    state.ship.shipQuat.normalize();
+    _applyShipCameraOrientation();
   }
 
   function centerView() {
@@ -373,6 +437,7 @@ export function setupCamera(scene, canvas, opts = {}) {
 
   function resetGyroscope() {
     state.ship.gyroInitialized = false;
+    state.ship.gyroScreenAngle = 0;
     state.ship.gyroInput.pitch = 0;
     state.ship.gyroInput.yaw = 0;
     state.ship.gyroInput.roll = 0;
@@ -539,56 +604,81 @@ export function setupCamera(scene, canvas, opts = {}) {
   window.addEventListener('deviceorientation', (event) => {
     if (!state.ship.gyroEnabled) return;
     if (state.mode !== 'ship') return;
-
+  
     const alpha = (event.alpha || 0) * Math.PI / 180;
     const beta = (event.beta || 0) * Math.PI / 180;
     const gamma = (event.gamma || 0) * Math.PI / 180;
-
-    if (!state.ship.gyroInitialized) {
-      state.ship.gyroBase.alpha = alpha;
-      state.ship.gyroBase.beta = beta;
-      state.ship.gyroBase.gamma = gamma;
-      state.ship.gyroInitialized = true;
-      return;
-    }
-
-    const angle = (
+  
+    let angle = (
       Number(window.screen?.orientation?.angle)
       || Number(window.orientation)
       || 0
     );
-
-    let dYaw = wrapPi(alpha - state.ship.gyroBase.alpha);
-    let dPitch = wrapPi(beta - state.ship.gyroBase.beta);
-    let dRoll = wrapPi(gamma - state.ship.gyroBase.gamma);
-
-    if (angle === 90) {
-      const prevPitch = dPitch;
-      dPitch = -dRoll;
-      dRoll = prevPitch;
-    } else if (angle === -90 || angle === 270) {
-      const prevPitch = dPitch;
-      dPitch = dRoll;
-      dRoll = -prevPitch;
-    } else if (Math.abs(angle) === 180) {
-      dPitch = -dPitch;
-      dRoll = -dRoll;
-      dYaw = -dYaw;
+  
+    angle = ((Math.round(angle / 90) * 90) % 360 + 360) % 360;
+  
+    if (!state.ship.gyroInitialized || state.ship.gyroScreenAngle !== angle) {
+      state.ship.gyroBase.alpha = alpha;
+      state.ship.gyroBase.beta = beta;
+      state.ship.gyroBase.gamma = gamma;
+      state.ship.gyroScreenAngle = angle;
+      state.ship.gyroInitialized = true;
+      state.ship.gyroInput.pitch = 0;
+      state.ship.gyroInput.yaw = 0;
+      state.ship.gyroInput.roll = 0;
+      return;
     }
-
+  
+    const dAlpha = wrapPi(alpha - state.ship.gyroBase.alpha);
+    const dBeta = wrapPi(beta - state.ship.gyroBase.beta);
+    const dGamma = wrapPi(gamma - state.ship.gyroBase.gamma);
+  
+    // Ejes de pantalla
+    let screenX = 0; // inclinación izquierda/derecha
+    let screenY = 0; // inclinación arriba/abajo
+  
+    if (angle === 0) {
+      screenX = dGamma;
+      screenY = dBeta;
+    } else if (angle === 90) {
+      screenX = -dBeta;
+      screenY = dGamma;
+    } else if (angle === 180) {
+      screenX = -dGamma;
+      screenY = -dBeta;
+    } else if (angle === 270) {
+      screenX = dBeta;
+      screenY = -dGamma;
+    }
+  
+    // Pitch y yaw salen de la inclinación en pantalla.
+    let dPitch = screenY;
+    let dYaw = screenX;
+  
+    // Roll: usa alpha con suavizado fuerte y límite menor.
+    // Así no contaminas el yaw pero recuperas el alabeo.
+    let dRoll = dAlpha;
+  
     dPitch = clamp(dPitch, -state.ship.gyroPitchLimit, state.ship.gyroPitchLimit);
     dYaw = clamp(dYaw, -state.ship.gyroYawLimit, state.ship.gyroYawLimit);
     dRoll = clamp(dRoll, -state.ship.gyroRollLimit, state.ship.gyroRollLimit);
-
+  
     const dead = state.ship.gyroDeadZone;
     const norm = (value, limit) => {
       const n = clamp(value / Math.max(1e-5, limit), -1, 1);
       return Math.abs(n) < dead ? 0 : n;
     };
-
-    state.ship.gyroInput.pitch = norm(dPitch, state.ship.gyroPitchLimit);
-    state.ship.gyroInput.yaw = norm(dYaw, state.ship.gyroYawLimit);
-    state.ship.gyroInput.roll = norm(dRoll, state.ship.gyroRollLimit);
+  
+    const targetPitch = norm(dPitch, state.ship.gyroPitchLimit);
+    const targetYaw = norm(dYaw, state.ship.gyroYawLimit);
+  
+    // Roll más amortiguado para que no meta ruido
+    const targetRoll = norm(dRoll, state.ship.gyroRollLimit) * 0.65;
+  
+    const s = clamp(state.ship.gyroSmoothing, 0, 1);
+    state.ship.gyroInput.pitch += (targetPitch - state.ship.gyroInput.pitch) * s;
+    state.ship.gyroInput.yaw += (targetYaw - state.ship.gyroInput.yaw) * s;
+    state.ship.gyroInput.roll += (targetRoll - state.ship.gyroInput.roll) * (s * 0.6);
   }, { passive: true });
 
   scene.onDisposeObservable?.add(() => {
@@ -759,6 +849,7 @@ export function setupCamera(scene, canvas, opts = {}) {
     setGyroEnabled,
     getGyroEnabled: () => !!state.ship.gyroEnabled,
     resetGyroscope,
+    stabilizeToLocalUp,
     getSpeedMetrics,
     getHudState,
     serializeState,

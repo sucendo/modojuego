@@ -523,6 +523,9 @@ export function createRepresentationManager({ scene, engine, camera, labelsApi, 
       const root = gen.mesh;
       if (!root) throw new Error('PlanetGenerator did not create mesh');
 
+      // La mesh procedural real se usará para colisión cercana.
+      try { root.isPickable = true; } catch (_) {}
+
       root.parent = entry.bodyNode;
       root.position.set(0, 0, 0);
 
@@ -608,6 +611,7 @@ export function createRepresentationManager({ scene, engine, camera, labelsApi, 
 
       if (entry.activeState === 'sphere_high') {
         try { root.setEnabled(true); } catch (_) { root.isVisible = true; }
+		setTerrainCollisionMesh(entry, root);
         if (labelsApi && typeof labelsApi.registerLabel === 'function' && entry.label?.key) {
           try { labelsApi.registerLabel(entry.label.key, entry.label.text, entry.label.kind, root, entry.label.extra); } catch (_) {}
         }
@@ -616,6 +620,9 @@ export function createRepresentationManager({ scene, engine, camera, labelsApi, 
         // Atmosphere (bind to this procedural planet, editor-style)
         try { _applyAtmosphere(entry, root); } catch (_) {}
       } else {
+        if (entry?.bodyNode?.metadata?.__terrainCollisionMesh === root) {
+          setTerrainCollisionMesh(entry, null);
+        }
         try { root.setEnabled(false); } catch (_) { root.isVisible = false; }
       }
     } catch (e) {
@@ -712,6 +719,18 @@ export function createRepresentationManager({ scene, engine, camera, labelsApi, 
       repState: entry.activeState,
     });
     if (entry.label?.key) mesh.metadata.labelKey = entry.label.key;
+  }
+
+  function setTerrainCollisionMesh(entry, mesh) {
+    const bodyNode = entry?.bodyNode;
+    if (!bodyNode) return;
+    if (!bodyNode.metadata) bodyNode.metadata = {};
+
+    if (mesh) {
+      bodyNode.metadata.__terrainCollisionMesh = mesh;
+    } else {
+      delete bodyNode.metadata.__terrainCollisionMesh;
+    }
   }
 
   function ensureRepMesh(entry, state) {
@@ -835,6 +854,10 @@ export function createRepresentationManager({ scene, engine, camera, labelsApi, 
       if (!m) continue;
       if (st === ns) continue;
 
+      if (st === 'sphere_high' && entry?.bodyNode?.metadata?.__terrainCollisionMesh === m) {
+        setTerrainCollisionMesh(entry, null);
+      }	  
+
       try { m.setEnabled(false); } catch (_) { m.isVisible = false; }
 
       // Procedural sphere_high is heavy: cache a few, otherwise free.
@@ -861,9 +884,13 @@ export function createRepresentationManager({ scene, engine, camera, labelsApi, 
       try { m.setEnabled(true); } catch (_) { m.isVisible = true; }
 
       if (ns === 'sphere_high' && m?.metadata?.__procRep) {
+        setTerrainCollisionMesh(entry, m);
         try { _applyAtmosphere(entry, m); } catch (_) {}
       } else if (_atmoActiveKey && _atmoActiveKey === entry.key) {
         try { _disableAtmosphere(); } catch (_) {}
+        setTerrainCollisionMesh(entry, null);
+      } else {
+        setTerrainCollisionMesh(entry, null);
       }
 
       // Re-bind label target to the active mesh
