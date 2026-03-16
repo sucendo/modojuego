@@ -1,3 +1,5 @@
+import { APP_CONFIG } from '../config/appConfig.js';
+
 // src/core/savegame.js
 // Guarda/recupera estado del viaje en localStorage:
 // - floating origin offset
@@ -6,9 +8,10 @@
 // - estado de vuelo del modo K (rumbo, vista libre, velocidad, gyro)
 // - NO guarda tiempo orbital: el universo siempre sigue tiempo real
 
-const KEY = "gm14_save_v2";
+const KEY = APP_CONFIG.storage.saveKey;
+const LEGACY_KEYS = APP_CONFIG.storage.legacySaveKeys;
 
-export function saveState({ floating, camera, camCtrl }) {
+export function saveState({ floating, camera, camCtrl, orbitAnchor }) {
   try {
     const off = floating?.originOffset || { x: 0, y: 0, z: 0 };
     const p = camera?.position || { x: 0, y: 0, z: 0 };
@@ -19,15 +22,17 @@ export function saveState({ floating, camera, camCtrl }) {
     const cameraRotQ = q ? { x: q.x, y: q.y, z: q.z, w: q.w } : null;
     const cameraRotE = (!q && r) ? { x: r.x, y: r.y, z: r.z } : null;
     const flightState = camCtrl?.serializeState?.() || null;
+    const orbitAnchorState = orbitAnchor?.serializeState?.(camera) || null;
 
     localStorage.setItem(KEY, JSON.stringify({
-      v: 4,
+      v: 5,
       savedAt: Date.now(),
       originOffset: { x: off.x, y: off.y, z: off.z },
       cameraLocal: { x: p.x, y: p.y, z: p.z },
       cameraRotQ,
       cameraRotE,
       flightState,
+	  orbitAnchorState,
     }));
     return true;
   } catch (e) {
@@ -38,13 +43,13 @@ export function saveState({ floating, camera, camCtrl }) {
 
 export function loadState() {
   try {
-    const keys = [KEY, 'gm13_save_v1'];
+    const keys = [KEY, ...LEGACY_KEYS];
     for (const key of keys) {
       const raw = localStorage.getItem(key);
       if (!raw) continue;
       const s = JSON.parse(raw);
       if (!s) continue;
-      if (s.v !== 1 && s.v !== 2 && s.v !== 3 && s.v !== 4) continue;
+      if (s.v !== 1 && s.v !== 2 && s.v !== 3 && s.v !== 4 && s.v !== 5) continue;
       return s;
     }
     return null;
@@ -56,11 +61,11 @@ export function loadState() {
 export function clearState() {
   try {
     localStorage.removeItem(KEY);
-    localStorage.removeItem('gm13_save_v1');
+    for (const legacyKey of LEGACY_KEYS) localStorage.removeItem(legacyKey);
   } catch {}
 }
 
-export function applyLoadedState({ state, worldRoot, floating, camera, camCtrl }) {
+export function applyLoadedState({ state, worldRoot, floating, camera, camCtrl, orbitAnchor }) {
   if (!state) return false;
 
   const S = new BABYLON.Vector3(
@@ -77,7 +82,14 @@ export function applyLoadedState({ state, worldRoot, floating, camera, camCtrl }
 
   if (floating?.originOffset?.copyFrom) floating.originOffset.copyFrom(S);
 
-  if (camera?.position?.set) {
+  let restoredFromOrbitAnchor = false;
+  try {
+    restoredFromOrbitAnchor = !!orbitAnchor?.applySavedState?.(state.orbitAnchorState, camera);
+  } catch (e) {
+    console.warn('Load orbit anchor state failed:', e);
+  }
+
+  if (!restoredFromOrbitAnchor && camera?.position?.set) {
     const c = state.cameraLocal || { x: 0, y: 0, z: 0 };
     camera.position.set(c.x || 0, c.y || 0, c.z || 0);
   }
@@ -105,6 +117,7 @@ export function applyLoadedState({ state, worldRoot, floating, camera, camCtrl }
     try { camCtrl?.applySavedState?.(state.flightState); } catch (e) { console.warn('Load flight state failed:', e); }
   }
 
+  try { orbitAnchor?.syncOffsetFromCamera?.(camera); } catch (_) {}
   try { camera?.computeWorldMatrix?.(true); } catch (_) {}
   return true;
 }

@@ -235,6 +235,107 @@ export function createCameraOrbitAnchor({
     smoothedOffset.x = cam.position.x - center.x;
     smoothedOffset.y = cam.position.y - center.y;
     smoothedOffset.z = cam.position.z - center.z;
+
+    desiredOffset.x = smoothedOffset.x;
+    desiredOffset.y = smoothedOffset.y;
+    desiredOffset.z = smoothedOffset.z;
+
+    let prevCenter = prevCenters.get(lockedNode);
+    if (!prevCenter) {
+      prevCenter = center.clone();
+      prevCenters.set(lockedNode, prevCenter);
+    } else {
+      prevCenter.copyFrom(center);
+    }
+  }
+  
+  function getBodyKey(node) {
+    const md = node?.metadata || {};
+    return String(md.bodyId || md.id || node?.name || '');
+  }
+
+  function findBodyById(bodyId) {
+    if (!bodyId) return null;
+    const wanted = String(bodyId);
+    let found = null;
+
+    eachBody((node) => {
+      if (found) return;
+      if (getBodyKey(node) === wanted) found = node;
+    });
+
+    return found;
+  }
+
+  function serializeState(cam) {
+    if (!cam?.position) return null;
+
+    let node = lockedNode;
+    let center = node ? getNodeWorldPos(node) : null;
+
+    // Si aún no estaba "locked", intenta usar el cuerpo candidato actual
+    if (!node || !center) {
+      const target = chooseTarget(cam);
+      node = target?.node || null;
+      center = target?.center || (node ? getNodeWorldPos(node) : null);
+    }
+
+    if (!node || !center) return null;
+
+    const bodyId = getBodyKey(node);
+    if (!bodyId) return null;
+
+    return {
+      version: 1,
+      bodyId,
+      offset: {
+        x: cam.position.x - center.x,
+        y: cam.position.y - center.y,
+        z: cam.position.z - center.z,
+      },
+      influence: Number.isFinite(influence) ? influence : 1.0,
+    };
+  }
+
+  function applySavedState(saved, cam) {
+    if (!saved || !cam?.position) return false;
+
+    const bodyId = String(saved.bodyId || '');
+    const ox = Number(saved?.offset?.x);
+    const oy = Number(saved?.offset?.y);
+    const oz = Number(saved?.offset?.z);
+
+    if (!bodyId || !Number.isFinite(ox) || !Number.isFinite(oy) || !Number.isFinite(oz)) {
+      return false;
+    }
+
+    const node = findBodyById(bodyId);
+    if (!node) return false;
+
+    const center = getNodeWorldPos(node);
+    if (!center) return false;
+
+    lockedNode = node;
+    influence = clamp01(Number.isFinite(saved.influence) ? saved.influence : 1.0);
+
+    smoothedOffset.copyFromFloats(ox, oy, oz);
+    desiredOffset.copyFromFloats(ox, oy, oz);
+
+    cam.position.copyFromFloats(
+      center.x + ox,
+      center.y + oy,
+      center.z + oz,
+    );
+
+    let prevCenter = prevCenters.get(node);
+    if (!prevCenter) {
+      prevCenter = center.clone();
+      prevCenters.set(node, prevCenter);
+    } else {
+      prevCenter.copyFrom(center);
+    }
+
+    return true;
   }
 
   function clearOrbitAnchor() {
@@ -247,5 +348,8 @@ export function createCameraOrbitAnchor({
     syncOffsetFromCamera,
     clearOrbitAnchor,
     getLockedBody: () => lockedNode,
+    findBodyById,
+    serializeState,
+    applySavedState,
   };
 }

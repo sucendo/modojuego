@@ -1,3 +1,5 @@
+import { APP_CONFIG } from '../config/appConfig.js';
+
 // src/ui/eliteHud.js
 // HUD compacto tipo cabina
 // - C: mostrar/ocultar HUD
@@ -29,7 +31,9 @@ function toggleFullscreen() {
   else doc.exitFullscreen?.();
 }
 
-const LAYOUT_KEY = 'eliteHudLayout_v6';
+const LAYOUT_KEY = APP_CONFIG.storage.hudLayoutKey;
+const NOTES_KEY = APP_CONFIG.storage.hudNotesKey || 'eliteHudNotes';
+const NOTES_DRAFT_KEY = APP_CONFIG.storage.hudNotesDraftKey || 'eliteHudNotesDraft';
 
 function loadLayout() {
   try {
@@ -190,11 +194,103 @@ function getAbsoluteCameraPosition(camera, floating) {
   return camera?.position || { x: 0, y: 0, z: 0 };
 }
 
+function fmtSigned(v, digits = 3) {
+  if (!Number.isFinite(v)) return '—';
+  return `${v >= 0 ? '+' : ''}${v.toFixed(digits)}`;
+}
+
+function pad2(n) {
+  return String(Math.trunc(n)).padStart(2, '0');
+}
+
+function fmtLocalTimestamp(d = new Date()) {
+  return `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}/${d.getFullYear()} ${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+}
+
+function fmtUtcTimestamp(d = new Date()) {
+  return `${d.getUTCFullYear()}-${pad2(d.getUTCMonth() + 1)}-${pad2(d.getUTCDate())} ${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}:${pad2(d.getUTCSeconds())} UTC`;
+}
+
+function getForwardDirection(camera) {
+  try {
+    const dir = camera?.getForwardRay?.(1)?.direction;
+    if (dir) {
+      const out = dir.clone ? dir.clone() : new BABYLON.Vector3(dir.x || 0, dir.y || 0, dir.z || 1);
+      if (out.lengthSquared() > 1e-12) out.normalize();
+      return out;
+    }
+  } catch (_) {}
+  return new BABYLON.Vector3(0, 0, 1);
+}
+
+function getHeadingFromDirection(dir) {
+  const az = ((Math.atan2(dir.x || 0, dir.z || 1) * 180 / Math.PI) + 360) % 360;
+  const el = Math.asin(clamp(dir.y || 0, -1, 1)) * 180 / Math.PI;
+  return { azimuthDeg: az, elevationDeg: el };
+}
+
+function getLockedBodyName(orbitAnchor) {
+  try {
+    const node = orbitAnchor?.getLockedBody?.();
+    return String(node?.metadata?.bodyId || node?.name || '');
+  } catch (_) {
+    return '';
+  }
+}
+
+function buildTelemetryStamp({
+  camera,
+  floating,
+  surfaceAltimeter,
+  camCtrl,
+  orbitAnchor,
+}) {
+  const now = new Date();
+  const absPos = getAbsoluteCameraPosition(camera, floating);
+  const hud = camCtrl?.getHudState?.() || {};
+  const spd = hud.speed || {};
+  const alt = surfaceAltimeter?.getState?.() || { visible: false, bodyName: '', meters: null };
+  const lockedBody = getLockedBodyName(orbitAnchor);
+  const dir = getForwardDirection(camera);
+  const heading = getHeadingFromDirection(dir);
+
+  let context = 'TRÁNSITO LIBRE';
+  let body = lockedBody || alt.bodyName || '—';
+
+  if (lockedBody) context = 'ÓRBITA / MARCO LOCAL';
+  if (alt.visible) {
+    context = (Number(alt.meters) <= 1500) ? 'SUPERFICIE / RASANTE' : 'PROXIMIDAD';
+    body = alt.bodyName || body;
+  }
+
+  const stepSigned = Number.isFinite(spd.signedStep) ? spd.signedStep : 0;
+  const stepAbs = Number.isFinite(spd.absStep) ? spd.absStep : Math.abs(stepSigned);
+  const stepMax = Number.isFinite(spd.maxStep) ? spd.maxStep : 49;
+  const dirLabel = spd.reverse ? 'REV' : 'FWD';
+  const gyroLabel = hud.gyroEnabled ? 'ON' : 'OFF';
+  const freeYawDeg = (Number(hud.freeLookYaw || 0) * 180 / Math.PI);
+  const freePitchDeg = (Number(hud.freeLookPitch || 0) * 180 / Math.PI);
+
+  return [
+    `[BITÁCORA ${fmtUtcTimestamp(now)} | local ${fmtLocalTimestamp(now)}]`,
+    `ESTADO: ${context}`,
+    `CUERPO: ${body}`,
+    `ALT: ${alt.visible ? fmtAlt(Number(alt.meters)) : '—'}`,
+    `POS ABS: X ${fmtAbs(absPos.x)} · Y ${fmtAbs(absPos.y)} · Z ${fmtAbs(absPos.z)}`,
+    `VEL: ${dirLabel} · paso ${stepAbs}/${stepMax} · ${Number(spd.currentKmS || 0).toFixed(3)} km/s · ${Number(spd.currentLyH || 0).toFixed(6)} ly/h`,
+    `RUMBO: az ${heading.azimuthDeg.toFixed(1)}° · el ${heading.elevationDeg.toFixed(1)}°`,
+    `VECTOR FWD: ${fmtSigned(dir.x, 5)}, ${fmtSigned(dir.y, 5)}, ${fmtSigned(dir.z, 5)}`,
+    `VISTA: yaw ${fmtSigned(freeYawDeg, 1)}° · pitch ${fmtSigned(freePitchDeg, 1)}° · gyro ${gyroLabel}`,
+    `OBS: `,
+  ].join('\n');
+}
+
 export function createEliteHud({
   camera,
   engine,
   floating,
   surfaceAltimeter,
+  orbitAnchor,
   labelsApi,
   gridController,
   camCtrl,
@@ -553,6 +649,42 @@ export function createEliteHud({
         background: transparent;
       }
 
+      .eliteNotesTools{
+        display:flex;
+        gap:8px;
+        margin-bottom:8px;
+        flex-wrap:wrap;
+      }
+
+      .eliteNotesComposer{
+        display:flex;
+        gap:8px;
+        margin-top:8px;
+        align-items:center;
+      }
+
+      .eliteNotesInput{
+        flex:1 1 auto;
+        min-width:0;
+        height:32px;
+        background: rgba(0,0,0,0.24);
+        color: rgba(236,255,251,0.96);
+        border:1px solid rgba(0,255,204,0.16);
+        border-radius:10px;
+        padding:0 11px;
+        outline:none;
+        box-sizing:border-box;
+        font: 12px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+      .eliteNotesInput::placeholder{
+        color: rgba(215,255,247,0.44);
+      }
+
+      .eliteBtn.eliteBtnMini{
+        min-height:32px;
+        padding:5px 10px;
+      }
+	  
       #eliteHudReticle{
         position:fixed;
         left:50%;
@@ -866,7 +998,14 @@ export function createEliteHud({
       </div>
     </div>
     <div class="eliteBody">
+      <div class="eliteNotesTools">
+        <button class="eliteBtn eliteBtnMini" id="btnNotesStamp" title="Inserta datos técnicos de la siguiente entrada">+DATA</button>
+      </div>
       <textarea class="eliteNotes" id="hudNotesArea" placeholder="Notas… / comandos…"></textarea>
+      <div class="eliteNotesComposer">
+        <input class="eliteNotesInput" id="hudNotesInput" type="text" placeholder="Escribe la observación y pulsa Enter…">
+        <button class="eliteBtn eliteBtnMini" id="btnNotesAppend" title="Añade la observación a la bitácora">ADD</button>
+      </div>
     </div>
   `;
 
@@ -934,6 +1073,71 @@ export function createEliteHud({
   const speedRailThumb = root.querySelector('#speedRailThumb');
   const speedSeg = root.querySelector('#speedSeg');
   const notes = root.querySelector('#hudNotesArea');
+  const notesInput = root.querySelector('#hudNotesInput');
+  const btnNotesStamp = root.querySelector('#btnNotesStamp');
+  const btnNotesAppend = root.querySelector('#btnNotesAppend');
+
+  let pendingStampedEntry = false;
+
+  function saveNotesValue() {
+    try { localStorage.setItem(NOTES_KEY, notes.value); } catch (_) {}
+  }
+
+  function saveDraftValue() {
+    try { localStorage.setItem(NOTES_DRAFT_KEY, notesInput?.value || ''); } catch (_) {}
+  }
+
+  function focusNotesEnd() {
+    try {
+      notes.focus();
+      const end = notes.value.length;
+      notes.setSelectionRange(end, end);
+    } catch (_) {}
+  }
+
+  function appendRawToNotes(text, { focus = true } = {}) {
+    if (!notes) return;
+    const prefix = notes.value && !notes.value.endsWith('\n') ? '\n' : '';
+    notes.value += `${prefix}${text}`;
+    saveNotesValue();
+    if (focus) focusNotesEnd();
+  }
+
+  function insertTelemetryEntry() {
+    const stamp = buildTelemetryStamp({
+      camera,
+      floating,
+      surfaceAltimeter,
+      camCtrl,
+      orbitAnchor,
+    });
+    appendRawToNotes(`${stamp}\n`, { focus: false });
+    pendingStampedEntry = true;
+    try { notesInput?.focus(); } catch (_) {}
+  }
+
+  function appendDraftNote() {
+    const draft = String(notesInput?.value || '').trim();
+    if (!draft) return;
+
+    if (!pendingStampedEntry) {
+      insertTelemetryEntry();
+    }
+
+    const endsWithObsPrompt = /OBS:\s*$/.test(notes.value);
+    if (endsWithObsPrompt) {
+      notes.value += `${draft}\n\n`;
+    } else {
+      const prefix = notes.value && !notes.value.endsWith('\n') ? '\n' : '';
+      notes.value += `${prefix}OBS: ${draft}\n\n`;
+    }
+
+    pendingStampedEntry = false;
+    notesInput.value = '';
+    saveDraftValue();
+    saveNotesValue();
+    focusNotesEnd();
+  }
 
   const speedBtns = [];
   for (let i = 0; i <= 9; i++) {
@@ -1026,13 +1230,31 @@ export function createEliteHud({
   });
 
   try {
-    const key = 'eliteHudNotes';
-    const saved = localStorage.getItem(key);
+    const saved = localStorage.getItem(NOTES_KEY);
     if (saved != null) notes.value = saved;
-    notes.addEventListener('input', () => localStorage.setItem(key, notes.value));
+    const savedDraft = localStorage.getItem(NOTES_DRAFT_KEY);
+    if (savedDraft != null && notesInput) notesInput.value = savedDraft;
+
+    notes.addEventListener('input', () => {
+      saveNotesValue();
+      pendingStampedEntry = /OBS:\s*$/.test(notes.value);
+    });
     notes.addEventListener('keydown', (e) => e.stopPropagation());
     notes.addEventListener('keyup', (e) => e.stopPropagation());
+
+    notesInput?.addEventListener('input', saveDraftValue);
+    notesInput?.addEventListener('keydown', (e) => {
+      e.stopPropagation();
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        appendDraftNote();
+      }
+    });
+    notesInput?.addEventListener('keyup', (e) => e.stopPropagation());
   } catch (_) {}
+
+  btnNotesStamp?.addEventListener('click', insertTelemetryEntry);
+  btnNotesAppend?.addEventListener('click', appendDraftNote);
 
   function onKeyDown(ev) {
     if (shouldIgnoreKey(ev)) return;

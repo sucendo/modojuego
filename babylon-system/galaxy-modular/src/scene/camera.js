@@ -1,3 +1,5 @@
+import { APP_CONFIG } from '../config/appConfig.js';
+
 export function setupCamera(scene, canvas, opts = {}) {
   const camera = new BABYLON.UniversalCamera(
     "cam",
@@ -6,8 +8,8 @@ export function setupCamera(scene, canvas, opts = {}) {
   );
   camera.attachControl(canvas, true);
 
-  const BASE_SPEED = Number.isFinite(opts.baseSpeed) ? opts.baseSpeed : 100.0;
-  const FAST_MULT = Number.isFinite(opts.fastMult) ? opts.fastMult : 20.0;
+  const BASE_SPEED = Number.isFinite(opts.baseSpeed) ? opts.baseSpeed : APP_CONFIG.camera.baseSpeed;
+  const FAST_MULT = Number.isFinite(opts.fastMult) ? opts.fastMult : APP_CONFIG.camera.fastMult;
 
   camera.speed = BASE_SPEED;
 
@@ -16,6 +18,9 @@ export function setupCamera(scene, canvas, opts = {}) {
   const HOTKEY_COUNT = 10;
   const MAX_SPEED_STEP = 49; // 50 velocidades totales: 0..49
   const HOTKEY_STEPS = [0, 4, 8, 12, 16, 21, 27, 34, 41, 49];
+  // Ancla extra entre atajo 4 (step 16) y atajo 5 (step 21)
+  // step 18 será un “intermedio” suave (≈ 13.6k km/s si 5≈c)
+  const MID_STEP_4_5 = 18;
 
   const tmpForward = new BABYLON.Vector3();
   const tmpShipUp = new BABYLON.Vector3();
@@ -26,39 +31,43 @@ export function setupCamera(scene, canvas, opts = {}) {
   const tmpRotM = new BABYLON.Matrix();
   const tmpTargetRotM = new BABYLON.Matrix();
   const tmpTargetQuat = new BABYLON.Quaternion();
+  const tmpSetFwd = new BABYLON.Vector3();
+  const tmpSetUp = new BABYLON.Vector3();
+  const tmpSetRight = new BABYLON.Vector3();
+  const tmpSetM = new BABYLON.Matrix();
+  const tmpSetQuat = new BABYLON.Quaternion();
 
   const state = {
     mode: "ship",
     isFast: false,
     ship: {
-      unitsPerLy: Number.isFinite(opts.unitsPerLy) ? opts.unitsPerLy : 1_000_000,
+      unitsPerLy: Number.isFinite(opts.unitsPerLy) ? opts.unitsPerLy : APP_CONFIG.camera.unitsPerLyDefault,
       speedStep: 0,                 // 0..49 (magnitud)
       reverse: false,
       selectedHotkey: 0,            // 0..9 o null si estás entre hitos
       targetSpeedUps: 0,            // units/sec
       currentSpeedUps: 0,           // units/sec
-      rotAccel: Number.isFinite(opts.shipRotAccel) ? opts.shipRotAccel : 2.15, // rad/s²
-      rotDamping: Number.isFinite(opts.shipRotDamping) ? opts.shipRotDamping : 3.0,
-      accelK: Number.isFinite(opts.shipAccelK) ? opts.shipAccelK : 3.5,
+      rotAccel: Number.isFinite(opts.shipRotAccel) ? opts.shipRotAccel : APP_CONFIG.camera.ship.rotAccel, // rad/s²
+      rotDamping: Number.isFinite(opts.shipRotDamping) ? opts.shipRotDamping : APP_CONFIG.camera.ship.rotDamping,
+      accelK: Number.isFinite(opts.shipAccelK) ? opts.shipAccelK : APP_CONFIG.camera.ship.accelK,
       rotVel: { pitch: 0, yaw: 0, roll: 0 },
       shipQuat: null,
       freeLookYaw: 0,
       freeLookPitch: 0,
-      lookSensitivityMouse: Number.isFinite(opts.shipLookSensitivityMouse) ? opts.shipLookSensitivityMouse : 0.0032,
-      lookSensitivityTouch: Number.isFinite(opts.shipLookSensitivityTouch) ? opts.shipLookSensitivityTouch : 0.0040,
-      maxFreeLookPitch: Number.isFinite(opts.shipMaxFreeLookPitch) ? opts.shipMaxFreeLookPitch : (Math.PI * 0.495),
+      lookSensitivityMouse: Number.isFinite(opts.shipLookSensitivityMouse) ? opts.shipLookSensitivityMouse : APP_CONFIG.camera.ship.lookSensitivityMouse,
+      lookSensitivityTouch: Number.isFinite(opts.shipLookSensitivityTouch) ? opts.shipLookSensitivityTouch : APP_CONFIG.camera.ship.lookSensitivityTouch,
+      maxFreeLookPitch: Number.isFinite(opts.shipMaxFreeLookPitch) ? opts.shipMaxFreeLookPitch : APP_CONFIG.camera.ship.maxFreeLookPitch,
       gyroEnabled: true,
       gyroInitialized: false,
       gyroPermissionAsked: false,
       gyroScreenAngle: 0,
       gyroBase: { alpha: 0, beta: 0, gamma: 0 },
       gyroInput: { pitch: 0, yaw: 0, roll: 0 },
-      gyroGain: Number.isFinite(opts.shipGyroGain) ? opts.shipGyroGain : 1.8,
-      gyroSmoothing: Number.isFinite(opts.shipGyroSmoothing) ? opts.shipGyroSmoothing : 0.18,
-      gyroDeadZone: Number.isFinite(opts.shipGyroDeadZone) ? opts.shipGyroDeadZone : 0.03,gyroPitchLimit: Number.isFinite(opts.shipGyroPitchLimit) ? opts.shipGyroPitchLimit : (Math.PI / 3),
-      gyroYawLimit: Number.isFinite(opts.shipGyroYawLimit) ? opts.shipGyroYawLimit : (Math.PI / 2),
-      gyroRollLimit: Number.isFinite(opts.shipGyroRollLimit) ? opts.shipGyroRollLimit : (Math.PI / 2),
-      speedAnchorsUps: []
+      gyroGain: Number.isFinite(opts.shipGyroGain) ? opts.shipGyroGain : APP_CONFIG.camera.ship.gyroGain,
+      gyroSmoothing: Number.isFinite(opts.shipGyroSmoothing) ? opts.shipGyroSmoothing : APP_CONFIG.camera.ship.gyroSmoothing,
+      gyroDeadZone: Number.isFinite(opts.shipGyroDeadZone) ? opts.shipGyroDeadZone : APP_CONFIG.camera.ship.gyroDeadZone,gyroPitchLimit: Number.isFinite(opts.shipGyroPitchLimit) ? opts.shipGyroPitchLimit : APP_CONFIG.camera.ship.gyroPitchLimit,
+      gyroYawLimit: Number.isFinite(opts.shipGyroYawLimit) ? opts.shipGyroYawLimit : APP_CONFIG.camera.ship.gyroYawLimit,
+      gyroRollLimit: Number.isFinite(opts.shipGyroRollLimit) ? opts.shipGyroRollLimit : APP_CONFIG.camera.ship.gyroRollLimit,      speedAnchorsUps: []
     }
   };
 
@@ -116,6 +125,23 @@ export function setupCamera(scene, canvas, opts = {}) {
       const v0 = anchors[i] || 0;
       const v1 = anchors[i + 1] || 0;
       if (s1 <= s0) return v1;
+
+      // Caso especial: entre atajo 4 (i=4, step 16) y atajo 5 (i=5, step 21)
+      // insertamos un ancla intermedia en MID_STEP_4_5
+      if (i === 4 && MID_STEP_4_5 > s0 && MID_STEP_4_5 < s1) {
+        const sm = MID_STEP_4_5;
+        const vMid = (v0 > 0 && v1 > 0) ? Math.sqrt(v0 * v1) : lerp(v0, v1, 0.5);
+        if (absStep <= sm) {
+          const t2 = clamp((absStep - s0) / (sm - s0), 0, 1);
+          if (v0 <= 0 || vMid <= 0) return lerp(v0, vMid, t2);
+          return v0 * Math.pow(vMid / v0, t2);
+        } else {
+          const t2 = clamp((absStep - sm) / (s1 - sm), 0, 1);
+          if (vMid <= 0 || v1 <= 0) return lerp(vMid, v1, t2);
+          return vMid * Math.pow(v1 / vMid, t2);
+        }
+      }
+
       const t = clamp((absStep - s0) / (s1 - s0), 0, 1);
       if (v0 <= 0 || v1 <= 0) return lerp(v0, v1, t);
       return v0 * Math.pow(v1 / v0, t);
@@ -232,6 +258,44 @@ export function setupCamera(scene, canvas, opts = {}) {
     BABYLON.Quaternion.FromRotationMatrixToRef(tmpTargetRotM, tmpTargetQuat);
     state.ship.shipQuat = BABYLON.Quaternion.Slerp(shipQ, tmpTargetQuat, alpha);
     state.ship.shipQuat.normalize();
+    _applyShipCameraOrientation();
+  }
+
+  function setShipLookDirection(forward, upHint = BABYLON.Axis.Y) {
+    if (state.mode !== 'ship') return;
+    if (!forward) return;
+
+    tmpSetFwd.copyFrom(forward);
+    if (tmpSetFwd.lengthSquared() < 1e-10) return;
+    tmpSetFwd.normalize();
+
+    tmpSetUp.copyFrom(upHint || BABYLON.Axis.Y);
+    if (tmpSetUp.lengthSquared() < 1e-10) tmpSetUp.copyFrom(BABYLON.Axis.Y);
+    tmpSetUp.normalize();
+
+    // right = up x forward
+    BABYLON.Vector3.CrossToRef(tmpSetUp, tmpSetFwd, tmpSetRight);
+    if (tmpSetRight.lengthSquared() < 1e-10) {
+      BABYLON.Vector3.CrossToRef(BABYLON.Axis.Y, tmpSetFwd, tmpSetRight);
+      if (tmpSetRight.lengthSquared() < 1e-10) {
+        BABYLON.Vector3.CrossToRef(BABYLON.Axis.X, tmpSetFwd, tmpSetRight);
+      }
+    }
+    tmpSetRight.normalize();
+
+    // up corregido = forward x right
+    BABYLON.Vector3.CrossToRef(tmpSetFwd, tmpSetRight, tmpSetUp);
+    tmpSetUp.normalize();
+
+    BABYLON.Matrix.FromXYZAxesToRef(tmpSetRight, tmpSetUp, tmpSetFwd, tmpSetM);
+    BABYLON.Quaternion.FromRotationMatrixToRef(tmpSetM, tmpSetQuat);
+
+    state.ship.shipQuat = tmpSetQuat.clone();
+    state.ship.shipQuat.normalize();
+    state.ship.rotVel.pitch = 0;
+    state.ship.rotVel.yaw = 0;
+    state.ship.rotVel.roll = 0;
+
     _applyShipCameraOrientation();
   }
 
@@ -651,13 +715,13 @@ export function setupCamera(scene, canvas, opts = {}) {
       screenY = -dGamma;
     }
   
-    // Pitch y yaw salen de la inclinación en pantalla.
+    // Pitch sale de la inclinación vertical de pantalla.
     let dPitch = screenY;
-    let dYaw = screenX;
+    // La inclinación lateral se siente más natural como ROLL que como YAW.
+    let dRoll = screenX;
   
-    // Roll: usa alpha con suavizado fuerte y límite menor.
-    // Así no contaminas el yaw pero recuperas el alabeo.
-    let dRoll = dAlpha;
+    // Yaw: lo derivamos de alpha, pero más amortiguado porque suele ser ruidoso.
+    let dYaw = dAlpha;
   
     dPitch = clamp(dPitch, -state.ship.gyroPitchLimit, state.ship.gyroPitchLimit);
     dYaw = clamp(dYaw, -state.ship.gyroYawLimit, state.ship.gyroYawLimit);
@@ -670,15 +734,15 @@ export function setupCamera(scene, canvas, opts = {}) {
     };
   
     const targetPitch = norm(dPitch, state.ship.gyroPitchLimit);
-    const targetYaw = norm(dYaw, state.ship.gyroYawLimit);
+    const targetYaw = norm(dYaw, state.ship.gyroYawLimit) * 0.55;
   
-    // Roll más amortiguado para que no meta ruido
-    const targetRoll = norm(dRoll, state.ship.gyroRollLimit) * 0.65;
+    // Roll principal: viene de la inclinación lateral del dispositivo
+    const targetRoll = norm(dRoll, state.ship.gyroRollLimit);
   
     const s = clamp(state.ship.gyroSmoothing, 0, 1);
     state.ship.gyroInput.pitch += (targetPitch - state.ship.gyroInput.pitch) * s;
-    state.ship.gyroInput.yaw += (targetYaw - state.ship.gyroInput.yaw) * s;
-    state.ship.gyroInput.roll += (targetRoll - state.ship.gyroInput.roll) * (s * 0.6);
+    state.ship.gyroInput.yaw += (targetYaw - state.ship.gyroInput.yaw) * (s * 0.55);
+    state.ship.gyroInput.roll += (targetRoll - state.ship.gyroInput.roll) * s;
   }, { passive: true });
 
   scene.onDisposeObservable?.add(() => {
@@ -850,6 +914,7 @@ export function setupCamera(scene, canvas, opts = {}) {
     getGyroEnabled: () => !!state.ship.gyroEnabled,
     resetGyroscope,
     stabilizeToLocalUp,
+    setShipLookDirection,
     getSpeedMetrics,
     getHudState,
     serializeState,

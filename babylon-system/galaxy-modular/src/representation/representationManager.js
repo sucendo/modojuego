@@ -74,6 +74,7 @@ export function createRepresentationManager({ scene, engine, camera, labelsApi, 
   let _atmoActiveEntry = null;
   let _atmoActiveMesh = null;
   let _atmoLastPickT = 0;
+  let _warnedMissingAtmosphereRuntime = false;
 
   function _getProcParamsForEntry(entry) {
     const mesh = entry?.reps?.sphere_high;
@@ -92,6 +93,19 @@ export function createRepresentationManager({ scene, engine, camera, labelsApi, 
     } catch (_) {
       return new BABYLON.Vector3(1, 1, 1);
     }
+  }
+
+  function _getEditorLikeAtmosphereComp(p) {
+    // El editor trabaja con radios de referencia tipo 6.0.
+    // En el simulador el preset se reescala al radio físico real (`desiredR`),
+    // así que el recorrido óptico en el shader se vuelve muchísimo menor.
+    // Compensamos esa pérdida para recuperar el look del editor.
+    const tuningScale = Number(p?.__tuningScale ?? 1.0);
+    if (!Number.isFinite(tuningScale) || tuningScale <= 1e-9) return 1.0;
+
+    // Compensación lineal por escala.
+    // Clamp defensivo para evitar valores absurdos.
+    return _clamp(1.0 / tuningScale, 1.0, 4096.0);
   }
 
   function _getSunPosFor(entry, planetPos) {
@@ -150,11 +164,47 @@ export function createRepresentationManager({ scene, engine, camera, labelsApi, 
     } catch (_) {
       return null;
     }
+  }  
+
+  function _getAtmosphereContext(entry, mesh) {
+    if (!entry || !mesh) return null;
+
+    const worldPos = mesh.getAbsolutePosition
+      ? mesh.getAbsolutePosition()
+      : (entry.bodyNode?.getAbsolutePosition?.() || entry.bodyNode?.position);
+    if (!worldPos) return null;
+
+    let planetR = Number(entry.radiusWorld || 0);
+    if (!Number.isFinite(planetR) || planetR <= 0) {
+      try {
+        planetR = mesh.getBoundingInfo?.().boundingSphere?.radiusWorld || 1;
+      } catch (_) {
+        planetR = 1;
+      }
+    }
+
+    const p = _getProcParamsForEntry(entry) || {};
+    const atmoR = planetR * Number(p.atmoRadiusMul || 1.055);
+	const atmoComp = _getEditorLikeAtmosphereComp(p);
+
+    const camPos = camera.globalPosition || camera.position || BABYLON.Vector3.Zero();
+    const camDist = BABYLON.Vector3.Distance(camPos, worldPos);
+
+    return {
+      worldPos,
+      planetR,
+      atmoR,
+      camDist,
+      insideAtmo: camDist <= (atmoR * 1.03),
+      nearAtmo: camDist <= Math.max(atmoR * 3.0, planetR * 6.0),
+    };
   }
   
-  function _pickAtmosphereEntry() {
+  function _pickEditorLikeAtmosphereEntry() {
+    const camPos = camera.globalPosition || camera.position || BABYLON.Vector3.Zero();
     let best = null;
-    let bestScore = -Infinity;
+    let bestScore = Infinity;
+
     for (const entry of entryList) {
       if (!entry || entry.activeState !== 'sphere_high') continue;
       const mesh = entry?.reps?.sphere_high;
@@ -162,34 +212,39 @@ export function createRepresentationManager({ scene, engine, camera, labelsApi, 
       if (!(mesh?.isEnabled?.() ?? mesh?.isVisible)) continue;
       if (!_entryWantsAtmosphere(entry)) continue;
 
-      const worldPos = mesh.getAbsolutePosition ? mesh.getAbsolutePosition() : (entry.bodyNode?.getAbsolutePosition?.() || entry.bodyNode?.position);
+      const worldPos = mesh.getAbsolutePosition
+        ? mesh.getAbsolutePosition()
+        : (entry.bodyNode?.getAbsolutePosition?.() || entry.bodyNode?.position);
       if (!worldPos) continue;
 
-      const diamPx = computeDiameterPx({ engine, camera, worldPos, radiusWorld: entry.radiusWorld });
-      if (!Number.isFinite(diamPx) || diamPx <= 2.0) continue;
+      const d = BABYLON.Vector3.Distance(camPos, worldPos);
 
-      const proj = _projectToScreen(worldPos);
-      if (!proj?.onScreen) continue;
+      // Fuerte histéresis a favor del cuerpo activo para evitar parpadeos.
+      const sticky = (_atmoActiveKey && _atmoActiveKey === entry.key) ? -1e6 : 0;
+      const score = d + sticky;
 
-      // Prioriza el cuerpo realmente visible y cercano al centro de pantalla,
-      // no el más grande “en cualquier parte” del sistema.
-      const centerWeight = Math.max(0.35, 1.20 - (proj.centerDistN * 0.55));
-      const score = diamPx * centerWeight;
-      if (!best || score > bestScore) {
+      if (!best || score < bestScore) {
         best = entry;
         bestScore = score;
       }
     }
+
     return best;
   }
 
   function _refreshAtmosphereBinding(nowMs) {
-    if (!_atmoPP || !ATM) return;
+    if (!ATM || !_atmoPP) {
+      if (!_warnedMissingAtmosphereRuntime) {
+        _warnedMissingAtmosphereRuntime = true;
+        console.warn('[repMgr] AtmospherePP no disponible; revisa runtimeGlobals.js');
+      }
+      return;
+    }
     const now = Number(nowMs) || ((typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now());
     if ((now - _atmoLastPickT) < 120) return;
     _atmoLastPickT = now;
 
-    const best = _pickAtmosphereEntry();
+    const best = _pickEditorLikeAtmosphereEntry();
     if (!best) {
       if (_atmoActiveKey) _disableAtmosphere();
       return;
@@ -240,9 +295,9 @@ export function createRepresentationManager({ scene, engine, camera, labelsApi, 
     try {
       _atmoPP._enabled = true;
       _atmoPP._useDepth = !!p.atmoUseDepth;
-      _atmoPP._atmoStrength = Number(p.atmoStrength ?? 2.8);
-      _atmoPP._mieStrength = Number(p.mieStrength ?? 2.4);
-      _atmoPP._upperStrength = Number(p.upperStrength ?? 1.6);
+      _atmoPP._atmoStrength = Number(p.atmoStrength ?? 2.8) * atmoComp;
+      _atmoPP._mieStrength = Number(p.mieStrength ?? 2.4) * atmoComp;
+      _atmoPP._upperStrength = Number(p.upperStrength ?? 1.6) * atmoComp;
       _atmoPP._steps = Number(p.atmoSteps ?? 48);
       _atmoPP._c0 = _hexToVec3(p.c0);
       _atmoPP._c1 = _hexToVec3(p.c1);

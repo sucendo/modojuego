@@ -1,8 +1,10 @@
+import { APP_CONFIG } from '../config/appConfig.js';
+
 // ui/perfOverlay.js
 // Tiny performance overlay (FPS + mesh counts + repMgr stats)
 
 export function createPerfOverlay({ engine, scene, repMgr, camera, opts = {} }) {
-  const intervalMs = (typeof opts.intervalMs === 'number') ? opts.intervalMs : 250;
+  const intervalMs = (typeof opts.intervalMs === 'number') ? opts.intervalMs : APP_CONFIG.perfOverlay.intervalMs;
 
   const el = document.createElement('div');
   el.style.position = 'fixed';
@@ -20,7 +22,7 @@ export function createPerfOverlay({ engine, scene, repMgr, camera, opts = {} }) 
   el.style.whiteSpace = 'pre';
   el.style.pointerEvents = 'none';
 
-  let visible = (opts.visible !== false);
+  let visible = (typeof opts.visible === 'boolean') ? opts.visible : APP_CONFIG.perfOverlay.visible;
   el.style.display = visible ? 'block' : 'none';
 
   document.body.appendChild(el);
@@ -86,9 +88,9 @@ export function createPerfOverlay({ engine, scene, repMgr, camera, opts = {} }) 
     el.style.display = visible ? 'block' : 'none';
   }
 
-  // Toggle with F3 or P
+  const toggleKeys = new Set(APP_CONFIG.perfOverlay.toggleKeys || ['F3', 'KeyP']);
   window.addEventListener('keydown', (ev) => {
-    if (ev.code === 'F3' || ev.key === 'p' || ev.key === 'P') {
+    if (toggleKeys.has(ev.code) || toggleKeys.has(ev.key)) {
       toggle();
     }
   });

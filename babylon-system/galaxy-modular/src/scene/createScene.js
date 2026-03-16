@@ -24,96 +24,38 @@ import { createCameraBodyCollision } from './collision.js';
 import { createLocalSurfaceFlight } from './localSurfaceFlight.js';
 import { createSurfaceAltimeter } from './surfaceAltimeter.js';
 import { collectUniverseSnapshots } from '../sim/universeState.js';
+import { APP_CONFIG } from '../config/appConfig.js';
+import { createBootSplash, createIntroModal } from '../ui/bootIntro.js';
+import { spawnCameraInEarthOrbit } from './initialSpawn.js';
+import { registerGlobalShortcuts, scheduleIntroOpen } from '../input/globalShortcuts.js';
 
 export function bootstrap() {
-  const BOOT_LOGO_URL = new URL('../resources/logo.svg', import.meta.url).href;
+  const BOOT_LOGO_URL = new URL(APP_CONFIG.resources.bootLogoPath, import.meta.url).href;
 
   const canvas = document.getElementById('renderCanvas');
   const engine = createEngine(canvas);
   
-  function createBootSplash({
-    title = 'SIMULADOR',
-    logoUrl = '',
-    delayMs = 2000,
-    fadeMs = 2000,
-  } = {}) {
-    const root = document.createElement('div');
-    root.id = 'bootSplash';
-    root.style.position = 'fixed';
-    root.style.inset = '0';
-    root.style.zIndex = '99999';
-    root.style.display = 'flex';
-    root.style.alignItems = 'center';
-    root.style.justifyContent = 'center';
-    root.style.background = '#000';
-    root.style.opacity = '1';
-    root.style.pointerEvents = 'auto';
-    root.style.transition = `opacity ${fadeMs}ms ease`;
-
-    const wrap = document.createElement('div');
-    wrap.style.display = 'flex';
-    wrap.style.flexDirection = 'column';
-    wrap.style.alignItems = 'center';
-    wrap.style.justifyContent = 'center';
-    wrap.style.gap = '22px';
-    wrap.style.padding = '24px';
-    wrap.style.transform = 'translateY(-2%)';
-
-    const img = document.createElement('img');
-    img.alt = 'Logo';
-    img.src = logoUrl;
-    img.style.display = logoUrl ? 'block' : 'none';
-    img.style.width = 'min(42vw, 420px)';
-    img.style.maxWidth = '80vw';
-    img.style.maxHeight = '40vh';
-    img.style.objectFit = 'contain';
-    img.style.filter = 'drop-shadow(0 0 24px rgba(255,255,255,0.10))';
-    img.style.userSelect = 'none';
-    img.draggable = false;
-    img.onerror = () => {
-      img.style.display = 'none';
-    };
-
-    const titleEl = document.createElement('div');
-    titleEl.textContent = title;
-    titleEl.style.color = '#fff';
-    titleEl.style.fontFamily = 'Arial, Helvetica, sans-serif';
-    titleEl.style.fontSize = 'clamp(28px, 4vw, 56px)';
-    titleEl.style.fontWeight = '700';
-    titleEl.style.letterSpacing = '0.28em';
-    titleEl.style.textAlign = 'center';
-    titleEl.style.textShadow = '0 0 22px rgba(255,255,255,0.12)';
-    titleEl.style.userSelect = 'none';
-
-    wrap.appendChild(img);
-    wrap.appendChild(titleEl);
-    root.appendChild(wrap);
-    document.body.appendChild(root);
-
-    let removed = false;
-
-    const remove = () => {
-      if (removed) return;
-      removed = true;
-      try { root.remove(); } catch (_) {}
-    };
-
-    const startFadeOut = () => {
-      window.setTimeout(() => {
-        root.style.opacity = '0';
-        root.style.pointerEvents = 'none';
-        window.setTimeout(remove, fadeMs + 60);
-      }, delayMs);
-    };
-
-    return { root, remove, startFadeOut };
-  }
-
   const bootSplash = createBootSplash({
-    title: 'SIMULADOR',
+    title: APP_CONFIG.app.title,
     logoUrl: BOOT_LOGO_URL,
-    delayMs: 2000,
-    fadeMs: 1000,
+    delayMs: APP_CONFIG.boot.delayMs,
+    fadeMs: APP_CONFIG.boot.fadeMs,
+  });
+
+  // Importante: armamos el fade-out inmediatamente.
+  // Si hay cualquier error posterior en bootstrap, el splash no se quedará fijo.
+  try {
+    bootSplash.startFadeOut();
+  } catch (_) {}
+
+  const introModal = createIntroModal({
+    title: APP_CONFIG.app.title,
+    subtitle: APP_CONFIG.intro.subtitle,
+    logoUrl: BOOT_LOGO_URL,
+    storyHtml: APP_CONFIG.intro.storyHtml,
+    controlsHtml: APP_CONFIG.intro.controlsHtml,
+    storageKey: APP_CONFIG.storage.introSeenKey,
+    dontShowCheckedByDefault: APP_CONFIG.intro.dontShowCheckedByDefault,
   });
 
   const scene = new BABYLON.Scene(engine);
@@ -127,25 +69,25 @@ export function bootstrap() {
   // Los orbitalPeriod/rotationPeriod están en *días*, así que convertimos:
   //   dtDays = dtSeconds / 86400
   // ============================================================
-  const DAYS_PER_REAL_SECOND = 1.0 / 86400.0;
+  const DAYS_PER_REAL_SECOND = APP_CONFIG.scene.daysPerRealSecond;
 
   // ============================================================
   // Fondo negro garantizado
   // ============================================================
   scene.autoClear = true;
   scene.autoClearDepthAndStencil = true;
-  scene.clearColor = new BABYLON.Color4(0, 0, 0, 1);
+  scene.clearColor = new BABYLON.Color4(...APP_CONFIG.scene.clearColor);
   scene.environmentTexture = null;
 
   // Like planet-editor: keep depth between rendering groups (terrain→sea→clouds→rings).
   // Prevents rings/clouds from drawing over the planet when using renderingGroupId 1/2/3.
   try {
-    scene.setRenderingAutoClearDepthStencil(1, false);
-    scene.setRenderingAutoClearDepthStencil(2, false);
-    scene.setRenderingAutoClearDepthStencil(3, false);
+    for (const groupId of APP_CONFIG.scene.keepDepthGroups) {
+      scene.setRenderingAutoClearDepthStencil(groupId, false);
+    }
   } catch (_) {}
 
-  try { engine.getRenderingCanvas().style.background = '#000'; } catch (e) {}
+  try { engine.getRenderingCanvas().style.background = APP_CONFIG.scene.canvasBackground; } catch (e) {}
 
   // ============================================================
   // ROOT del mundo
@@ -155,17 +97,17 @@ export function bootstrap() {
   // ============================================================
   // Lights + Camera
   // ============================================================
-  const lights = setupLights(scene, { hemiIntensity: 0.10 });
+  const lights = setupLights(scene, { hemiIntensity: 0.16 });
   const unitsPerLy =
     (GALAXY?.system && Number.isFinite(GALAXY.system.__LY)) ? GALAXY.system.__LY :
     (Number.isFinite(SYSTEMS?.__LY)) ? SYSTEMS.__LY :
-    1_000_000;
+    APP_CONFIG.camera.unitsPerLyDefault;
   const camCfg = setupCamera(scene, canvas, {
-    baseSpeed: 100.0,
-    fastMult: 1000.0,
+    baseSpeed: APP_CONFIG.camera.baseSpeed,
+    fastMult: APP_CONFIG.camera.fastMult,
     unitsPerLy,
     // Evita que salga el mini panel antiguo de camera.js (ya tenemos HUD Elite)
-    enableModeUI: false
+    enableModeUI: APP_CONFIG.camera.enableModeUI
   });
   const camera = camCfg.camera;
   
@@ -175,25 +117,25 @@ export function bootstrap() {
   // Shift/turbo ya lo gestiona camera.js (state.isFast). No duplicar handlers aquí.
 
   // Ajustes cámara (si setupCamera ya los fija, esto solo los sobreescribe)
-  camera.angularSensibility = 3500;
-  camera.inertia = 0.0;
-  camera.angularInertia = 0.0;
-  camera.keysUp = [87];      // W
-  camera.keysDown = [83];    // S
-  camera.keysLeft = [65];    // A
-  camera.keysRight = [68];   // D
-  camera.keysUpward = [32];  // Space
-  camera.keysDownward = [17];// Ctrl
+  camera.angularSensibility = APP_CONFIG.camera.angularSensibility;
+  camera.inertia = APP_CONFIG.camera.inertia;
+  camera.angularInertia = APP_CONFIG.camera.angularInertia;
+  camera.keysUp = [...APP_CONFIG.camera.keysUp];
+  camera.keysDown = [...APP_CONFIG.camera.keysDown];
+  camera.keysLeft = [...APP_CONFIG.camera.keysLeft];
+  camera.keysRight = [...APP_CONFIG.camera.keysRight];
+  camera.keysUpward = [...APP_CONFIG.camera.keysUpward];
+  camera.keysDownward = [...APP_CONFIG.camera.keysDownward];
   // Near plane too small destroys depth precision (z-fighting / shimmer on clouds/sea/rings).
   // Keep it small, but not *microscopic*. You can override via ?near=1e-6
-  let nearZ = 1e-6;
+  let nearZ = APP_CONFIG.scene.nearZDefault;
   try {
     const u = new URL(location.href);
     const nz = Number(u.searchParams.get('near'));
     if (Number.isFinite(nz) && nz > 0) nearZ = nz;
   } catch (_) {}
   camera.minZ = nearZ;
-  camera.maxZ = 5e9;
+  camera.maxZ = APP_CONFIG.scene.maxZ;
 
   // ============================================================
   // Labels API
@@ -212,27 +154,14 @@ export function bootstrap() {
     labelsApi,
     lights,
     opts: {
-      evalIntervalMs: 33,
-      evalBudgetMs: 0.8,
-      evalMaxPerTick: 250,
-      transitionBudgetMs: 1.5,
-      transitionMaxPerTick: 10,
-      hysteresisRatio: 0.25,
-      minStateHoldMs: 900,
-      initialState: 'dot',
-      createInitialRep: true,
-      offDisablesLabels: true,
-      offDisablesMesh: true,
-
-      // Avoid heavy planet-editor regenerations while the camera is moving fast.
-      procRefineMaxCamSpeed: 200.0,
+      ...APP_CONFIG.representation,
     },
   });
 
   // ============================================================
   // Builders (extraídos)
   // ============================================================
-  const KM_PER_UNIT_LOCAL = 1e6;
+  const KM_PER_UNIT_LOCAL = APP_CONFIG.world.kmPerUnitLocal;
   const KM_PER_UNIT = KM_PER_UNIT_LOCAL;
   const starMeshById = new Map();
 
@@ -258,181 +187,18 @@ export function bootstrap() {
   });
 
   const BODY_MAPS = [planetMeshById, moonMeshById, asteroidMeshById, cometMeshById];
-  
-  function getEarthNode() {
-    return (
-      planetMeshById.get('Tierra') ||
-      planetMeshById.get('Earth') ||
-      planetMeshById.get('Terra') ||
-      null
-    );
-  }
-  
-  function getSunNode() {
-    return (
-      starMeshById.get('Sol') ||
-      starMeshById.get('Sun') ||
-      starMeshById.get('Solis') ||
-      null
-    );
-  }
-
-  function spawnCameraInEarthOrbit() {
-    const earth = getEarthNode();
-    if (!earth) return false;
-  
-    try { earth.computeWorldMatrix?.(true); } catch (_) {}
-  
-    const earthPos =
-      (typeof earth.getAbsolutePosition === 'function')
-        ? earth.getAbsolutePosition()
-        : earth.position;
-  
-    if (!earthPos) return false;
-  
-    const radiusWorld = Number(earth?.metadata?.radiusWorld) || 0.01;
-  
-    // Altura baja, tipo órbita visual cercana
-    const orbitalAltitude = Math.max(radiusWorld * 0.10, 0.0057);
-    const orbitalRadius = radiusWorld + orbitalAltitude;
-  
-    // Posición real del Sol
-    let sunNode = null;
-    try {
-      sunNode = getSolAnchorNode?.() || getSunNode();
-    } catch (_) {
-      sunNode = getSunNode();
-    }
-  
-    let sunPos = null;
-    if (sunNode) {
-      try { sunNode.computeWorldMatrix?.(true); } catch (_) {}
-      sunPos = (typeof sunNode.getAbsolutePosition === 'function')
-        ? sunNode.getAbsolutePosition()
-        : sunNode.position;
-    }
-  
-    let sunDir = new BABYLON.Vector3(0, 0, 1);
-    if (sunPos) {
-      sunDir = sunPos.subtract(earthPos);
-      if (sunDir.lengthSquared() > 1e-12) sunDir.normalize();
-    }
-  
-    const worldUp = new BABYLON.Vector3(0, 1, 0);
-  
-    // Base del terminador
-    let northOnTerminator = worldUp.subtract(
-      sunDir.scale(BABYLON.Vector3.Dot(worldUp, sunDir))
-    );
-    if (northOnTerminator.lengthSquared() < 1e-8) {
-      northOnTerminator = BABYLON.Axis.Z.subtract(
-        sunDir.scale(BABYLON.Vector3.Dot(BABYLON.Axis.Z, sunDir))
-      );
-    }
-    northOnTerminator.normalize();
-  
-    let eastOnTerminator = BABYLON.Vector3.Cross(sunDir, northOnTerminator);
-    if (eastOnTerminator.lengthSquared() < 1e-8) {
-      eastOnTerminator = BABYLON.Vector3.Cross(sunDir, BABYLON.Axis.X);
-    }
-    eastOnTerminator.normalize();
-  
-    // Spawn:
-    // - casi sobre el terminador
-    // - un poquito en lado iluminado para que el Sol sí aparezca
-    // - leve sesgo lateral para composición cinematográfica
-    const spawnNormal = northOnTerminator.scale(0.96)
-      .add(eastOnTerminator.scale(-0.14))
-      .add(sunDir.scale(0.10))
-      .normalize();
-  
-    const spawnPos = earthPos.add(spawnNormal.scale(orbitalRadius));
-    camera.position.copyFrom(spawnPos);
-  
-    camera.rotationQuaternion = null;
-    if (camera.rotation?.set) camera.rotation.set(0, 0, 0);
-  
-    // Dirección tangencial hacia el Sol sobre el horizonte
-    let towardSunOnTangent = sunDir.subtract(
-      spawnNormal.scale(BABYLON.Vector3.Dot(sunDir, spawnNormal))
-    );
-    if (towardSunOnTangent.lengthSquared() < 1e-8) {
-      towardSunOnTangent = eastOnTerminator.clone();
-    }
-    towardSunOnTangent.normalize();
-  
-    let localRight = BABYLON.Vector3.Cross(towardSunOnTangent, spawnNormal);
-    if (localRight.lengthSquared() < 1e-8) {
-      localRight = eastOnTerminator.clone();
-    }
-    localRight.normalize();
-  
-    // Base local
-    const localLeft = localRight.scale(-1);
-    
-    // 60° a la izquierda sobre el plano tangente
-    const yawDeg = 60;
-    const yawRad = BABYLON.Angle.FromDegrees(yawDeg).radians();
-    
-    const horizDir = towardSunOnTangent.scale(Math.cos(yawRad))
-      .add(localLeft.scale(Math.sin(yawRad)))
-      .normalize();
-    
-    // 20° hacia abajo respecto al horizonte local
-    const pitchDownDeg = 20;
-    const pitchRad = BABYLON.Angle.FromDegrees(pitchDownDeg).radians();
-    
-    const lookDir = horizDir.scale(Math.cos(pitchRad))
-      .add(spawnNormal.scale(-Math.sin(pitchRad)))
-      .normalize();
-  
-    const targetPos = camera.position.add(lookDir.scale(radiusWorld * 4.5));
-  
-    if (typeof camera.setTarget === 'function') {
-      camera.setTarget(targetPos);
-    } else if (typeof camera.lookAt === 'function') {
-      camera.lookAt(targetPos.x, targetPos.y, targetPos.z);
-    }
-  
-    // Ayuda a mantener horizonte lógico
-    try {
-      camera.upVector = spawnNormal.clone();
-    } catch (_) {}
-  
-    try { orbitAnchor?.syncOffsetFromCamera?.(camera); } catch (_) {}
-    try { camera.computeWorldMatrix?.(true); } catch (_) {}
-  
-    return true;
-  }
 
   const orbitAnchor = createCameraOrbitAnchor({
     bodyMaps: BODY_MAPS,
-    captureMul: 6.0,
-    minCaptureGap: 0.00010,
-    stickyMul: 12.0,
-    influenceHz: 1.5,
-    offsetFollowHz: 4.0,
-    carryFactor: 1.0,
+    ...APP_CONFIG.orbitAnchor,
   });
   window.__orbitAnchor = orbitAnchor;
 
-  const bodyCollision = createCameraBodyCollision({ bodyMaps: BODY_MAPS, padding: 0.0000005 });
+  const bodyCollision = createCameraBodyCollision({ bodyMaps: BODY_MAPS, ...APP_CONFIG.bodyCollision });
 
   const localSurfaceFlight = createLocalSurfaceFlight({
     bodyMaps: BODY_MAPS,
-    moveFullMul: 0.002,
-    moveFadeMul: 0.05,
-    minMoveFullGap: 0.00001,
-    minMoveFadeGap: 0.00015,
-    alignFullMul: 0.0005,
-    alignFadeMul: 0.008,
-    minAlignFullGap: 0.000003,
-    minAlignFadeGap: 0.00003,
-    tangentMoveScale: 1.00,
-    upMoveScale: 0.88,
-    downMoveScale: 1.03,
-    alignHz: 0.60,
-    alignMix: 0.14,
+    ...APP_CONFIG.localSurfaceFlight,
   });
 
   const surfaceAltimeter = createSurfaceAltimeter({ camera, bodyMaps: BODY_MAPS });
@@ -440,7 +206,7 @@ export function bootstrap() {
   function updateDynamicNearPlane() {
     const alt = surfaceAltimeter?.getState?.();
     if (!alt?.visible || !Number.isFinite(alt.meters)) {
-      camera.minZ = 1e-4;
+      camera.minZ = APP_CONFIG.scene.nearZSurfaceDefault;
       return;
     }
   
@@ -449,20 +215,28 @@ export function bootstrap() {
   
     // Queremos un near pequeño cerca del suelo, pero sin volverlo microscópico
     // para no romper la precisión de profundidad.
-    const dynamicNear = Math.max(1e-8, Math.min(1e-4, altUnits * 0.15));
+    const dynamicNear = Math.max(
+      APP_CONFIG.scene.nearZSurfaceMin,
+      Math.min(APP_CONFIG.scene.nearZSurfaceDefault, altUnits * APP_CONFIG.scene.nearZSurfaceFactor)
+    );
   
     camera.minZ = dynamicNear;
   }
   
   const systemDotScaler = createSystemDotScaler({
     engine, camera, systemNodes,
-    opts: { minPx: 22.0, throttleMs: 80 },
+    opts: { ...APP_CONFIG.systemDots },
   });
 
   // ============================================================
   // Floating Origin
   // ============================================================
-  const floating = createFloatingOrigin({ scene, camera, worldRoot });
+  const floating = createFloatingOrigin({
+    scene,
+    camera,
+    worldRoot,
+    ...APP_CONFIG.floatingOrigin,
+  });
   const transport = createOfflineTransport();
   transport.connect();
   const _camAbsTmp = new BABYLON.Vector3();
@@ -495,15 +269,7 @@ export function bootstrap() {
         const p = (typeof n.getAbsolutePosition === 'function') ? n.getAbsolutePosition() : n.position;
         return _navAnchorTmp.copyFrom(p || BABYLON.Vector3.Zero());
       },
-      throttleMs: 0,
-      autoCenter: false,
-      followY: false,
-      includeYZ: true,
-      yLevel: 0,
-      step: 250000,
-      extent: 25000000,
-      maxLinesPerAxis: 401,
-      rebuildDistance: 0,
+      ...APP_CONFIG.navGrid,
     }
   });
   
@@ -514,7 +280,8 @@ export function bootstrap() {
     camera,
     engine,
     floating,
-	surfaceAltimeter,
+    surfaceAltimeter,
+    orbitAnchor,
     labelsApi,
     gridController: navGrid,
     camCtrl,
@@ -532,14 +299,14 @@ export function bootstrap() {
   // ============================================================
   // Perf overlay (toggle with F3 / P)
   // ============================================================
-  const perfOverlay = createPerfOverlay({ engine, scene, repMgr, camera, opts: { intervalMs: 250, visible: false } });
+  const perfOverlay = createPerfOverlay({ engine, scene, repMgr, camera, opts: { ...APP_CONFIG.perfOverlay } });
   window.__perfOverlay = perfOverlay;
 
 
   // Throttles for heavy tickers
   let binAccSec = 0;
   let binLastT = 0;
-  const BIN_MS = 33;
+  const BIN_MS = APP_CONFIG.scene.binaryUpdateMs;
 
   let simDays = 0;
 
@@ -570,7 +337,7 @@ export function bootstrap() {
   let simDaysRender = 0;
   // Suavizado SOLO visual para órbitas:
   // amortigua micro-parones del frame loop sin cambiar el tiempo simulado guardado.
-  const ORBIT_SMOOTH_HZ = 12.0;
+  const ORBIT_SMOOTH_HZ = APP_CONFIG.scene.orbitSmoothHz;
 
   // Sitúa los cuerpos en su posición inicial antes de decidir spawn.
   if (starsApi?.starSystems?.length) updateOrbits(starsApi.starSystems, simDaysRender, 0);
@@ -580,6 +347,7 @@ export function bootstrap() {
   // Load saved travel (optional)
   // ============================
   const saved = loadState();
+  const hasSavedState = !!saved;
   if (saved) {
     applyLoadedState({
       state: saved,
@@ -587,22 +355,31 @@ export function bootstrap() {
       floating,
       camera,
 	  camCtrl,
+	  orbitAnchor,
     });
     // estabiliza antes del primer render (evita micro-salto)
     floating.apply();
   } else {
-    spawnCameraInEarthOrbit();
+    spawnCameraInEarthOrbit({
+      camera,
+      camCtrl,
+      orbitAnchor,
+      planetMeshById,
+      starMeshById,
+      getSunAnchorNode: getSolAnchorNode,
+      initialSpawn: APP_CONFIG.scene.initialSpawn,
+    });
     // estabiliza antes del primer render
     floating.apply();
   }
   
   let _lastSaveT = 0;
-  const SAVE_MS = 30000;
+  const SAVE_MS = APP_CONFIG.scene.saveIntervalMs;
   let _saveDisabled = false;
   
   const doSave = () => {
     if (_saveDisabled) return;
-    try { saveState({ floating, camera, camCtrl }); } catch (_) {}
+    try { saveState({ floating, camera, camCtrl, orbitAnchor }); } catch (_) {}
   };
 
   scene.onBeforeRenderObservable.add(() => {
@@ -619,33 +396,33 @@ export function bootstrap() {
   
   window.addEventListener("beforeunload", doSave);
 
-  if (!window.__gm13_saveKeysBound) {
-    window.__gm13_saveKeysBound = true;
-    window.addEventListener("keydown", (e) => {
-      if (e.code === "F9") {
-        _saveDisabled = false;
-        saveState({ floating, camera, camCtrl });
-        console.log("[SAVE] ok");
-      } else if (e.code === "F8") {
-        _saveDisabled = true;
-        clearState();
-        console.log("[SAVE] cleared");
-      } else if (e.code === "F10") {
-        _saveDisabled = false;
-        const st = loadState();
-        if (st) {
-          applyLoadedState({
-            state: st,
-            worldRoot,
-            floating,
-            camera,
-            camCtrl,
-          });
-          console.log("[SAVE] loaded");
-        }
-      }
-    });
-  }
+  registerGlobalShortcuts({
+    onSave: () => {
+      _saveDisabled = false;
+      saveState({ floating, camera, camCtrl, orbitAnchor });
+      console.log("[SAVE] ok");
+    },
+    onClearSave: () => {
+      _saveDisabled = true;
+      clearState();
+      console.log("[SAVE] cleared");
+    },
+    onLoadSave: () => {
+      _saveDisabled = false;
+      const st = loadState();
+      if (!st) return;
+      applyLoadedState({
+        state: st,
+        worldRoot,
+        floating,
+        camera,
+        camCtrl,
+        orbitAnchor,
+      });
+      console.log("[SAVE] loaded");
+    },
+    introModal,
+  });
   
   scene.onBeforeRenderObservable.add(() => {
     const dtSec = engine.getDeltaTime() * 0.001;
@@ -690,15 +467,17 @@ export function bootstrap() {
     localSurfaceFlight.apply(camera, camCtrl, prevCamPos, dtSec);
 
     // Anclaje orbital + arrastre por spin superficial
-    orbitAnchor.applyOrbitAnchor(camera, camCtrl, dtSec);
+    orbitAnchor.applyOrbitAnchor(camera, camCtrl, dtSec, dtDaysRender);
   
     // Colisión superficie
     bodyCollision.enforceBodyCollision(camera, prevCamPos);
-  
-    // Resincroniza offset por si la colisión corrigió
-    orbitAnchor.syncOffsetFromCamera(camera);
-  
+
     floating.apply();
+
+    // Muy importante:
+    // si floating ha hecho rebase, orbitAnchor debe resincronizarse
+    // con el nuevo marco local ya rebajado.
+    orbitAnchor.syncOffsetFromCamera(camera);
   
     // Grid anclado
     if (navGrid?.enabled) navGrid.update();
@@ -718,7 +497,7 @@ export function bootstrap() {
   
     // Publicación local/offline
     const now = performance.now();
-    if ((now - _lastPresenceT) >= 100) {
+    if ((now - _lastPresenceT) >= APP_CONFIG.scene.presencePublishMs) {
       _lastPresenceT = now;
       transport.publishSelf(runtime.getLocalPlayerState());
     }
@@ -736,12 +515,11 @@ export function bootstrap() {
 
   engine.runRenderLoop(() => scene.render());
 
-  // El splash permanece visible al inicio, empieza a desvanecerse a los 2 s
-  // y desaparece totalmente al 3º segundo.
-  // Lo lanzamos tras arrancar el render loop para tapar la carga inicial.
-  try {
-    bootSplash.startFadeOut();
-  } catch (_) {}
+  scheduleIntroOpen({
+    introModal,
+    hasSavedState,
+    delayMs: APP_CONFIG.boot.delayMs + APP_CONFIG.boot.fadeMs + APP_CONFIG.intro.openDelayAfterBootMs,
+  });
 
   window.addEventListener('resize', () => engine.resize());
 }

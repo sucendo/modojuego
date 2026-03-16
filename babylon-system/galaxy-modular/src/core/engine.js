@@ -1,10 +1,12 @@
+import { APP_CONFIG } from '../config/appConfig.js';
+
 export function createEngine(canvas){
   // Perf defaults:
   // - preserveDrawingBuffer is *very* expensive. Enable only when you really need captures.
   // - stencil is only needed for specific post-process / masking techniques.
-  let preserve = false;
-  let stencil = false;
-  let antialias = true;
+  let preserve = APP_CONFIG.engine.preserveDrawingBuffer;
+  let stencil = APP_CONFIG.engine.stencil;
+  let antialias = APP_CONFIG.engine.antialias;
   let hardwareScale = null;
 
   try{
@@ -25,7 +27,7 @@ export function createEngine(canvas){
   });
 
   // Improve depth precision dramatically for huge scenes
-  engine.useReverseDepthBuffer = true;
+  engine.useReverseDepthBuffer = !!APP_CONFIG.engine.reverseDepthBuffer;
 
   if (hardwareScale != null && typeof engine.setHardwareScalingLevel === 'function') {
     engine.setHardwareScalingLevel(hardwareScale);

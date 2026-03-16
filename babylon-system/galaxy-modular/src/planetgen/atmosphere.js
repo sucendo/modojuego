@@ -10,6 +10,7 @@ function createAtmospherePostProcess(scene, camera) {
     "atmoPP",
     [
       "useDepth",
+      "reverseDepth",
       "planetPos", "sunPos", "cameraPos",
       "planetRadius", "atmoRadius",
       "invView", "invProjection",
@@ -76,6 +77,7 @@ function createAtmospherePostProcess(scene, camera) {
     const invP = cam.getProjectionMatrix().clone().invert();
 
     effect.setFloat("useDepth", pp._useDepth ? 1.0 : 0.0);
+    effect.setFloat("reverseDepth", scene.getEngine()?.useReverseDepthBuffer ? 1.0 : 0.0);
     effect.setVector3("planetPos", pp._planetPos);
     effect.setVector3("sunPos", pp._sunPos);
     effect.setVector3("cameraPos", cam.globalPosition || cam.position);
@@ -177,6 +179,7 @@ function ensureShaders() {
     uniform sampler2D textureSampler;
     uniform sampler2D depthSampler;
     uniform float useDepth;
+	uniform float reverseDepth;
 
     uniform vec3 planetPos, sunPos, cameraPos;
     uniform float planetRadius, atmoRadius;
@@ -263,8 +266,25 @@ function ensureShaders() {
 
       float sceneT = 1e20;
       if (useDepth > 0.5) {
-        float sceneD = texture2D(depthSampler, uvDepth).r;
-        if (sceneD > 0.0001 && sceneD < 0.9999) {
+        float rawDepth = texture2D(depthSampler, uvDepth).r;
+        float sceneD = rawDepth;
+        bool hasSceneDepth = false;
+
+        if (reverseDepth > 0.5) {
+          // Reverse depth: 0 suele ser fondo/clear, valores altos son geometría cercana.
+          if (rawDepth > 0.000001) {
+            hasSceneDepth = true;
+            sceneD = 1.0 - rawDepth;
+          }
+        } else {
+          // Depth “normal”: 1 suele ser fondo/clear.
+          if (rawDepth < 0.999999) {
+            hasSceneDepth = true;
+            sceneD = rawDepth;
+          }
+        }
+
+        if (hasSceneDepth) {
           float clipZ = sceneD * 2.0 - 1.0;
           vec4 clipD = vec4(ndc, clipZ, 1.0);
           vec4 viewD = invProjection * clipD;
