@@ -19,17 +19,19 @@
       mat.backFaceCulling=true;
       mat.specularColor=new BABYLON.Color3(0,0,0);
       mat.needDepthPrePass=true;
-      mat.transparencyMode=BABYLON.Material.MATERIAL_ALPHATESTANDBLEND;
+      // Para vista de superficie evita bordes recortados duros en el horizonte.
+      mat.transparencyMode=BABYLON.Material.MATERIAL_ALPHABLEND;
       mat.useAlphaFromDiffuseTexture=true;
-      mat.alphaCutOff=clamp(params.cloudAlphaCutoff??0.35,0.05,0.95);
-      if(typeof mat.forceDepthWrite!=="undefined") mat.forceDepthWrite=true;
+      mat.alphaCutOff=clamp(params.cloudAlphaCutoff??0.18,0.02,0.60);
+      if(typeof mat.forceDepthWrite!=="undefined") mat.forceDepthWrite=false;
       gen.cloudMesh.material=mat;
     }
 
     const r=gen.radius;
     const seaR=r*(1+(params.seaEnabled?(params.seaLevel||0):0));
-    const minCloudR=seaR*1.004;
-    const targetR=Math.max(r*(params.cloudLayerMul||1.02), minCloudR);
+    // Un poco más separada del suelo para evitar bandas/“cortes” con el relieve.
+    const minCloudR=seaR*1.010;
+    const targetR=Math.max(r*(params.cloudLayerMul||1.028), minCloudR);
     gen.cloudMesh.scaling.setAll(targetR);
     gen.cloudMesh.setEnabled(true);
 
@@ -37,8 +39,9 @@
     if(gen._cloudTexKey!==key){ gen._cloudTexKey=key; rebuildTexture(gen, params); }
 
     const mat=gen.cloudMesh.material;
-    mat.alpha=clamp(params.cloudLayerAlpha??0.75,0,1);
-    mat.alphaCutOff=clamp(params.cloudAlphaCutoff??0.35,0.05,0.95);
+    // En superficie debe ser sutil; la atmósfera ya aporta scattering.
+    mat.alpha=clamp(params.cloudLayerAlpha??0.42,0,1);
+    mat.alphaCutOff=clamp(params.cloudAlphaCutoff??0.18,0.02,0.60);
   }
 
   function rebuildTexture(gen, params){
@@ -91,7 +94,7 @@
     mat.diffuseTexture=dt;
     mat.opacityTexture=dt;
     mat.useAlphaFromDiffuseTexture=true;
-    mat.emissiveColor=col.scale(0.18);
+    mat.emissiveColor=col.scale(0.05);
   }
 
   function updateClouds(gen, dtMs, params){

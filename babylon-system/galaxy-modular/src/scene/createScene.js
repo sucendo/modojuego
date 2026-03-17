@@ -206,7 +206,7 @@ export function bootstrap() {
   function updateDynamicNearPlane() {
     const alt = surfaceAltimeter?.getState?.();
     if (!alt?.visible || !Number.isFinite(alt.meters)) {
-      camera.minZ = APP_CONFIG.scene.nearZSurfaceDefault;
+      camera.minZ = APP_CONFIG.scene.nearZDefault;
       return;
     }
   

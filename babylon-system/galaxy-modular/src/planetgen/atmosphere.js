@@ -132,8 +132,10 @@ function attachDepthForAtmosphere(scene, camera, pp) {
   pp._useDepth = true;
 }
 
-function setAtmosphereTarget(pp, planetMesh, planetRadius, atmoRadius, sunPos) {
-  const p = planetMesh.getAbsolutePosition();
+function setAtmosphereTarget(pp, planetTarget, planetRadius, atmoRadius, sunPos) {
+  const p = (planetTarget && typeof planetTarget.getAbsolutePosition === 'function')
+    ? planetTarget.getAbsolutePosition()
+    : (planetTarget?.position || BABYLON.Vector3.Zero());
   pp._planetPos = new BABYLON.Vector3(p.x, p.y, p.z);
   pp._planetRadius = planetRadius;
   pp._atmoRadius = atmoRadius;
@@ -248,6 +250,17 @@ function ensureShaders() {
       return exp(-abs(hn - h) * fall);
     }
 
+    // 1.0 = iluminado por el sol, 0.0 = en sombra del planeta
+    float sphereShadow(vec3 p, vec3 L, vec3 c, float r){
+      vec3 oc = p - c;
+      float b = dot(oc, L);
+      float c2 = dot(oc, oc) - r*r;
+      float h = b*b - c2;
+      if(h < 0.0) return 1.0;
+      float t = -b - sqrt(h);
+      return (t > 0.0) ? 0.0 : 1.0;
+    }
+
     // Beer-Lambert
     vec3 exp3(vec3 v){ return vec3(exp(v.x), exp(v.y), exp(v.z)); }
 
@@ -264,11 +277,22 @@ function ensureShaders() {
       vec3 rdW = safeNormalize((invView * vec4(rdV, 0.0)).xyz);
       vec3 roW = cameraPos;
 
+      float camCenterDist = length(roW - planetPos);
+      float camAlt = camCenterDist - planetRadius;
+      float atmoThickness = max(1e-6, atmoRadius - planetRadius);
+	  
+      // Ya no apagamos depth cerca del suelo: eso era lo que dejaba
+      // que el halo atravesase montañas. Con el fix del raySphere,
+      // mantener depth activo da una oclusión mucho más realista.
+      bool cameraInsideAtmo = (camCenterDist <= atmoRadius + 1e-5);
+      bool cameraNearSurface = (camAlt <= max(atmoThickness * 0.20, planetRadius * 0.0015));
+      bool allowDepth = (useDepth > 0.5);
+
       float sceneT = 1e20;
-      if (useDepth > 0.5) {
+      bool hasSceneDepth = false;
+      if (allowDepth) {
         float rawDepth = texture2D(depthSampler, uvDepth).r;
         float sceneD = rawDepth;
-        bool hasSceneDepth = false;
 
         if (reverseDepth > 0.5) {
           // Reverse depth: 0 suele ser fondo/clear, valores altos son geometría cercana.
@@ -298,17 +322,47 @@ function ensureShaders() {
       }
 
       vec2 hitA = raySphere(roW, rdW, planetPos, atmoRadius);
-      if (hitA.x < 0.0) { gl_FragColor = base; return; }
+      // Si la cámara está dentro de la atmósfera, hitA.x puede ser negativo
+      // y hitA.y sigue siendo la salida válida hacia delante.
+      if (hitA.y < 0.0) { gl_FragColor = base; return; }
 
-      vec2 hitP = raySphere(roW, rdW, planetPos, planetRadius);
+      // Un poco más pequeña que el radio visual para evitar cortes bruscos
+      // del halo cuando la cámara está pegada al suelo o al relieve.
+      // Pero no demasiado pequeña, o el brillo se "cuela" por el horizonte.
+      float occRadius = planetRadius * 0.9992;
+      vec2 hitP = raySphere(roW, rdW, planetPos, occRadius);
 
+	  vec3 upN = safeNormalize(roW - planetPos);
       float t0 = max(hitA.x, 0.0);
       float t1 = hitA.y;
-      if (hitP.x > 0.0) t1 = min(t1, hitP.x);
-      t1 = min(t1, sceneT);
-      if (t1 <= t0) { gl_FragColor = base; return; }
+
+      if (!cameraInsideAtmo) {
+        if (hitP.x > 0.0) t1 = min(t1, hitP.x);
+        t1 = min(t1, sceneT);
+      } else {
+        // Dentro de la atmósfera no dejes que la rama "sin depth" mate el cielo.
+        // Solo recortamos con el planeta si realmente miramos hacia abajo.
+        if (dot(rdW, upN) < -0.05) {
+          if (hitP.y > 0.0) t1 = min(t1, hitP.y);
+          t1 = min(t1, sceneT);
+        } else if (allowDepth) {
+          t1 = min(t1, sceneT);
+        }
+      }
+
+      if (t1 <= t0 + 1e-5) { gl_FragColor = base; return; }
 
       vec3 sunDir = safeNormalize(sunPos - planetPos);
+      vec3 camUp = upN;
+      float sunElev = dot(camUp, sunDir); // >0 día, ~0 horizonte, <0 noche
+      float dayAmt = smoothstep(-0.08, 0.16, sunElev);
+      float twilight = 1.0 - smoothstep(0.10, 0.34, abs(sunElev));
+      float zenithAmt = saturate(dot(rdW, camUp));
+      float horizonAmt = 1.0 - smoothstep(0.02, 0.72, zenithAmt);
+      float sunHorizonBand = twilight * horizonAmt;
+      float nearSun = saturate(dot(rdW, sunDir));
+      float horizonStreak = pow(nearSun, 18.0) * pow(horizonAmt, 1.25) * sunHorizonBand;
+      vec3 horizonWarm = mix(vec3(0.84, 0.92, 1.02), vec3(1.30, 0.82, 0.42), twilight);
 
       // Más pasos + integración físicamente inspirada => adiós anillos
       float steps = max(24.0, min(96.0, stepsF));
@@ -318,23 +372,28 @@ function ensureShaders() {
 
       // Perfil de densidad (exponencial): ajusta estos para “objetivo”
       // Rayleigh (azul) dominante arriba; Mie (polvo) más abajo
-      float HR = 0.18;  // escala Rayleigh (relativa al espesor atmósfera)
-      float HM = 0.08;  // escala Mie (más pegada al suelo)
-
+      float HR = mix(0.22, 0.30, dayAmt);     // más bóveda azul de día
+      float HM = mix(0.040, 0.060, twilight); // algo más de aerosol al amanecer/atardecer
+ 
       // Coeficientes (tuneables). Puedes mapear tus 3 capas aquí:
-      // Intensidad (subida): más halo y más "aerial perspective" como tu objetivo
-      // Rayleigh (azul) + Mie (polvo bajo) + tinte alto
-      vec3 betaR = c1 * a1 * 0.070 * atmoStrength;
-      vec3 betaM = c0 * a0 * 0.110 * mieStrength;
-      vec3 betaO = c2 * a2 * 0.018 * upperStrength;
-
-      // Extinción: un poco más alta para que el horizonte "lave" la superficie
-      vec3 betaExt = betaR * 1.15 + betaM * 1.55 + betaO * 1.10;
+      // Día: más Rayleigh azul. Horizonte: más calidez Mie/ozono.
+      vec3 warmTint = mix(
+        vec3(1.0),
+        vec3(1.45, 0.74, 0.30),
+        twilight * (0.30 + 0.70 * horizonAmt)
+      );
+      vec3 betaR = c1 * a1 * 0.060 * atmoStrength * mix(0.85, 1.40, dayAmt);
+      vec3 betaM = mix(vec3(1.0), c0, 0.25) * warmTint * a0 * 0.026 * mieStrength * mix(1.0, 1.35, sunHorizonBand);
+      vec3 betaO = mix(c2, vec3(1.00, 0.44, 0.16), twilight * 0.35) * a2 * 0.006 * upperStrength;
+ 
+      // Más extinción diurna para que el cielo tape mejor las estrellas.
+      vec3 betaExt = betaR * 1.05 + betaM * 0.95 + betaO * 0.24;
 
       // Fase simple (Rayleigh + Mie). No es perfecta, pero da el look.
       float muSun = dot(rdW, sunDir);
       float phaseR = 0.75 * (1.0 + muSun*muSun);               // ~Rayleigh
-      float g = 0.76;                                          // anisotropía Mie
+      // Un poco más de forward scattering para que el sol "deslumbre" ligeramente.
+      float g = mix(0.62, 0.76, sunHorizonBand);
       float denom = (1.0 + g*g - 2.0*g*muSun);
       float phaseM = (1.0 - g*g) / max(1e-3, pow(denom, 1.5)); // Henyey-Greenstein
 
@@ -354,8 +413,17 @@ function ensureShaders() {
         float dM = exp(-hn / max(1e-3, HM));
         float dU = exp(-hn / 0.35);
 		
+        // Sombra planetaria respecto al Sol
+        float shSun = sphereShadow(pos, sunDir, planetPos, planetRadius * 1.0005);
+
+        // Amanecer/atardecer: más cálido y menos azul en capas bajas.
+        float warmBand = twilight * (1.0 - smoothstep(0.0, 0.72, hn)) * (0.20 + 0.80 * horizonAmt);
+        vec3 sunsetTint = mix(vec3(1.0), vec3(1.55, 0.78, 0.34), warmBand);
+        vec3 rayCol = betaR * mix(1.0, 0.72, warmBand) * dR * phaseR;
+        vec3 mieCol = (betaM * dM * phaseM + betaO * dU) * sunsetTint;
+
         // Scattering local
-        vec3 scat = betaR * dR * phaseR + betaM * dM * phaseM + betaO * dU;
+        vec3 scat = (rayCol + mieCol) * shSun;
         vec3 ext  = betaExt * (0.55*dR + 1.35*dM + 0.20*dU);
 
         // Acumular optical depth
@@ -372,17 +440,43 @@ function ensureShaders() {
           vec3 dir = safeNormalize(pos - planetPos);
           vec3 p = dir * cloudScale + cloudWind * time;
           float n = fbm(p);
-          // Un poco más de cobertura
-          float m = pow(saturate((n - 0.48) * 2.2), cloudSharpness);
-          // Nubes como “Mie” suave (blancas/azules) con transmittance
-          // Más contribución (se nota sin “quemar”)
-          ins += Tr * (cloudTint * (m * cloudAlpha * cloudBand)) * dt * 1.55;
+          float m = pow(saturate((n - 0.52) * 1.9), cloudSharpness);
+          // Mucho menos aporte aditivo: las nubes ya existen como mesh,
+          // aquí solo queremos insinuar volumen atmosférico, no quemar el cielo.
+          ins += Tr * (cloudTint * (m * cloudAlpha * cloudBand)) * dt * 0.55 * shSun;
         }
       }
 
       // aplicar transmittance al color base + añadir in-scattering
       vec3 TrEnd = exp3(-tau);
-      vec3 outCol = base.rgb * TrEnd + ins;
+      // Más cielo visible de día, sin volverlo lechoso.
+      vec3 skyAdd = vec3(1.0) - exp(-ins * 1.28);
+      // Raya de luz rasante cerca del sol cuando está pegado al horizonte.
+      // Es local/direccional, no uniforme en todo el borde.
+      float mieAmt = saturate(mieStrength * 0.08);
+      vec3 streakAdd = horizonWarm * (0.18 * horizonStreak) * mix(0.55, 0.90, mieAmt);
+
+      // En píxeles de cielo, de día, la atmósfera debe tapar casi todas las estrellas.
+      vec3 baseRgb = base.rgb;
+      float skyPixel = hasSceneDepth ? 0.0 : 1.0;
+      float skyLuma = dot(skyAdd, vec3(0.2126, 0.7152, 0.0722));
+      float dayVeil = dayAmt * mix(0.72, 1.0, horizonAmt) * smoothstep(0.015, 0.10, skyLuma);
+      baseRgb *= mix(1.0, 0.04, skyPixel * dayVeil);
+
+      // Sol ligeramente deslumbrante, más visible cuando miras hacia él.
+      float sunGlow = pow(saturate(muSun), 96.0) * dayAmt;
+      float sunCore = pow(saturate(muSun), 1200.0) * dayAmt;
+      vec3 sunGlowCol = mix(
+        vec3(1.0, 0.84, 0.62),
+        vec3(1.0, 0.96, 0.90),
+        saturate(sunElev * 3.0 + 0.5)
+      );
+      vec3 sunAdd = sunGlowCol * (0.18 * sunGlow + 0.55 * sunCore);
+
+      vec3 outCol = baseRgb * TrEnd + skyAdd + streakAdd + sunAdd;
+
+      // Un pelín de gamma visual para acercarlo a un cielo más "terraqueo".
+      outCol = pow(max(outCol, vec3(0.0)), vec3(0.92));
       outCol = clamp(outCol, 0.0, 20.0);
       gl_FragColor = vec4(outCol, 1.0);
     }

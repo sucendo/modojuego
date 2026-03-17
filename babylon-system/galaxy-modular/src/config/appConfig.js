@@ -127,7 +127,7 @@ export const APP_CONFIG = {
     clearColor: [0, 0, 0, 1],
     keepDepthGroups: [1, 2, 3],
     canvasBackground: '#000',
-    nearZDefault: 1e-4,
+    nearZDefault: 5e-4,
     nearZSurfaceDefault: 1e-3,
     nearZSurfaceMin: 1e-5,
     nearZSurfaceFactor: 0.15,
