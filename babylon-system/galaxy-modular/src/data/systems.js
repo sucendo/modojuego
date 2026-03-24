@@ -1,5 +1,5 @@
 export const SYSTEMS = {
-  __LY: 1000000,
+  __LY: 10000000,
   
   "Sol": { posLY: new BABYLON.Vector3(0.000000, 0.000000, 0.000000) }, // Lore Dune: Al-Lat
   "Alpha Centauri": { posLY: new BABYLON.Vector3(-1.615000, -3.773000, -1.350000) },

@@ -4,11 +4,11 @@
 //   se crea su jerarquía de órbita (Ω/i/ω) y se anima con el mismo Kepler solver
 //   que los planetas (via updateOrbits).
 // - Si en un sistema N-ario ninguna estrella tiene órbita definida, se mantiene
-//   el fallback legacy: separación en círculo + rotación simple.
+//   un fallback visual, pero resuelto contra tiempo canónico absoluto.
 
-import { ensureSimMeta, setSimLocalU, setSimAbsKm } from '../sim/universeState.js';
+import { ensureSimMeta, setSimLocalU, setSimAbsKm, sanitizeSimTimeState } from '../sim/universeState.js';
 
-export function buildStars({ scene, systemNodes, GALAXY, lights, labelsApi, starMeshById, repMgr, kmPerUnitLocal = 1e6 }) {
+export function buildStars({ scene, systemNodes, GALAXY, lights, labelsApi, starMeshById, repMgr, kmPerUnitLocal = 1e6, canonicalTimeState = null }) {
   if (!scene || !Array.isArray(systemNodes)) throw new Error('[stars] scene/systemNodes required');
   if (!starMeshById) starMeshById = new Map();
   starMeshById.clear();
@@ -35,7 +35,18 @@ export function buildStars({ scene, systemNodes, GALAXY, lights, labelsApi, star
   const DEG = Math.PI / 180;
   const TAU = Math.PI * 2;
 
+  const canonicalTime = sanitizeSimTimeState(canonicalTimeState, {
+    authority: 'local-absolute',
+    epochUnixMs: 0,
+    epochSimDays: 0,
+    daysPerRealSecond: 1 / 86400,
+  });
+  const canonicalZeroUnixMs = canonicalTime.epochUnixMs - ((canonicalTime.epochSimDays / canonicalTime.daysPerRealSecond) * 1000);
+  const CANONICAL_REF_UNIX_MS = Number.isFinite(canonicalZeroUnixMs) ? canonicalZeroUnixMs : 0;
+  const CANONICAL_REF_SIM_DAYS = 0;
+
   const binaryGroups = [];
+  const LEGACY_BINARY_OMEGA_RAD_PER_DAY = 0.06 * 86400;
   const starSystems = []; // reutiliza updateOrbits() (estructura { planets:[{orbit, planet}] })
 
   function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
@@ -45,18 +56,19 @@ export function buildStars({ scene, systemNodes, GALAXY, lights, labelsApi, star
     if (v < 0) v += 360;
     return v;
   }
-  function nowJD() {
-    return (Date.now() / 86400000) + JD_UNIX_EPOCH;
+  function jdAtUnixMs(unixMs) {
+    return (_numUnixMs(unixMs) / 86400000) + JD_UNIX_EPOCH;
   }
-  function epochCenturies(def) {
+  function _numUnixMs(v) { return Number.isFinite(Number(v)) ? Number(v) : CANONICAL_REF_UNIX_MS; }
+  function epochCenturies(def, unixMs = CANONICAL_REF_UNIX_MS) {
     const epochJD = num(def?.epochJD, JD_J2000);
-    return (nowJD() - epochJD) / 36525.0;
+    return (jdAtUnixMs(unixMs) - epochJD) / 36525.0;
   }
   function hasJplEpochElements(def) {
     return Number.isFinite(Number(def?.meanLongitudeAtEpoch))
       && Number.isFinite(Number(def?.longitudeOfPerihelionAtEpoch));
   }
-  function getJplAnglesRad(def) {
+  function getJplAnglesRad(def, unixMs = CANONICAL_REF_UNIX_MS) {
     if (!hasJplEpochElements(def)) {
       return {
         lonAsc: num(def?.longitudeOfAscendingNode, 0) * DEG,
@@ -64,7 +76,7 @@ export function buildStars({ scene, systemNodes, GALAXY, lights, labelsApi, star
         argPeri: num(def?.argumentOfPeriapsis, 0) * DEG,
       };
     }
-    const T = epochCenturies(def);
+    const T = epochCenturies(def, unixMs);
     const I = num(def?.inclinationAtEpoch, def?.inclination) +
       num(def?.inclinationRateDegPerCentury, 0) * T;
     const Omega = num(def?.longitudeOfAscendingNodeAtEpoch, def?.longitudeOfAscendingNode) +
@@ -78,9 +90,9 @@ export function buildStars({ scene, systemNodes, GALAXY, lights, labelsApi, star
       argPeri: argPeri * DEG,
     };
   }
-  function getEpochOrbitShape(def) {
+  function getEpochOrbitShape(def, unixMs = CANONICAL_REF_UNIX_MS) {
     if (Number.isFinite(Number(def?.semiMajorAxisAuAtEpoch)) || Number.isFinite(Number(def?.eccentricityAtEpoch))) {
-      const T = epochCenturies(def);
+      const T = epochCenturies(def, unixMs);
       const aAU = num(def?.semiMajorAxisAuAtEpoch, 0) + num(def?.semiMajorAxisRateAuPerCentury, 0) * T;
       const e = clamp(num(def?.eccentricityAtEpoch, 0) + num(def?.eccentricityRatePerCentury, 0) * T, 0, 0.999999);
       if (aAU > 0) {
@@ -92,9 +104,9 @@ export function buildStars({ scene, systemNodes, GALAXY, lights, labelsApi, star
     }
     return null;
   }
-  function getMeanNowFromEpoch(def) {
+  function getMeanAtUnixMsFromEpoch(def, unixMs = CANONICAL_REF_UNIX_MS) {
     if (!hasJplEpochElements(def)) return null;
-    const T = epochCenturies(def);
+    const T = epochCenturies(def, unixMs);
     const L = num(def?.meanLongitudeAtEpoch, 0) +
       num(def?.meanLongitudeRateDegPerCentury, 0) * T;
     const longPeri = num(def?.longitudeOfPerihelionAtEpoch, 0) +
@@ -175,14 +187,14 @@ export function buildStars({ scene, systemNodes, GALAXY, lights, labelsApi, star
     return 1;
   }
 
-  function meanFromLastPerihelion(def, nAbs) {
-    const jplMean = getMeanNowFromEpoch(def);
+  function meanAtUnixMs(def, nAbs, unixMs = CANONICAL_REF_UNIX_MS) {
+    const jplMean = getMeanAtUnixMsFromEpoch(def, unixMs);
     if (Number.isFinite(jplMean)) return jplMean;
     const s = def?.lastPerihelion;
     if (!s || !nAbs) return 0;
     const t0 = Date.parse(s);
     if (Number.isNaN(t0)) return 0;
-    const daysSince = (Date.now() - t0) / 86400000;
+    const daysSince = (_numUnixMs(unixMs) - t0) / 86400000;
     return (daysSince * nAbs);
   }
 
@@ -197,7 +209,7 @@ export function buildStars({ scene, systemNodes, GALAXY, lights, labelsApi, star
 
   function createOrbitNodes({ systemName, parentMesh, bodyId, def }) {
     // Orientación orbital: Ω (Y), i (X), ω (Y dentro del plano)
-    const { lonAsc, inc, argPeri } = getJplAnglesRad(def);
+    const { lonAsc, inc, argPeri } = getJplAnglesRad(def, CANONICAL_REF_UNIX_MS);
 
     const orbitPlane = new BABYLON.TransformNode(`orbPlane_${systemName}_${bodyId}`, scene);
     orbitPlane.parent = parentMesh;
@@ -212,7 +224,7 @@ export function buildStars({ scene, systemNodes, GALAXY, lights, labelsApi, star
   }
 
   function initOrbit(orbitNode, def) {
-    const epochShape = getEpochOrbitShape(def);
+    const epochShape = getEpochOrbitShape(def, CANONICAL_REF_UNIX_MS);
     let aU, e;
     if (epochShape) {
       aU = epochShape.aU;
@@ -235,12 +247,13 @@ export function buildStars({ scene, systemNodes, GALAXY, lights, labelsApi, star
       ? jplNAbs
       : ((pAbs > 0) ? (TAU / pAbs) : 0);
 
-    const Mnow = meanFromLastPerihelion(def, nAbs);
+    const Mref = meanAtUnixMs(def, nAbs, CANONICAL_REF_UNIX_MS);
+    const mean0 = orbitDir * (Mref - (nAbs * CANONICAL_REF_SIM_DAYS));
 
     orbitNode.metadata = Object.assign({}, orbitNode.metadata, {
       aU, e,
-      mean0: orbitDir * Mnow,
-      mean: orbitDir * Mnow,
+      mean0,
+      mean: mean0,
       n: nAbs,
       dir: orbitDir,
     });
@@ -319,6 +332,7 @@ export function buildStars({ scene, systemNodes, GALAXY, lights, labelsApi, star
       mesh.metadata = Object.assign({}, mesh.metadata, {
         spin: spinDir * spinAbs,
         spinAxis: axis,
+		spinPhase0: num(def?.rotationPhaseDeg, 0) * DEG - ((spinDir * spinAbs) * CANONICAL_REF_SIM_DAYS),
       });
     }
   }
@@ -396,6 +410,11 @@ export function buildStars({ scene, systemNodes, GALAXY, lights, labelsApi, star
             const ang = (TAU) * (i / total);
             starNode.position.set(Math.cos(ang) * baseSep, 0, Math.sin(ang) * baseSep);
           }
+          starNode.metadata.legacyBinaryBasePos = {
+            x: starNode.position.x,
+            y: starNode.position.y,
+            z: starNode.position.z,
+          };
         } else {
           starNode.position.set(0, 0, 0);
         }
@@ -445,21 +464,32 @@ export function buildStars({ scene, systemNodes, GALAXY, lights, labelsApi, star
       if (primaryCandidate && starId === primaryCandidate) it.primaryStar = starNode;
     }
 
-    // Si no hay órbitas keplerianas, mantenemos el “spin” visual legacy para binarios/trinarios
-    if (!anyOrbit && it.stars.length > 1) binaryGroups.push({ stars: it.stars.slice(), parentNode: it.system, omega: 0.06 });
+    // Si no hay órbitas keplerianas, mantenemos el fallback visual legacy,
+    // pero evaluado contra un tiempo canónico común entre sesiones/pestañas.
+    if (!anyOrbit && it.stars.length > 1) {
+      binaryGroups.push({
+        stars: it.stars.slice(),
+        parentNode: it.system,
+        omegaRadPerDay: LEGACY_BINARY_OMEGA_RAD_PER_DAY,
+        phase0: 0,
+      });
+    }
     if (sysBucket && sysBucket.planets.length > 0) starSystems.push(sysBucket);
   }
 
-  function updateBinaries(dtSec) {
-    if (!dtSec) return;
+  function updateBinaries(simDays = 0) {
+    const tDays = Number(simDays) || 0;
     for (const g of binaryGroups) {
-      const rot = g.omega * dtSec;
+      const rot = normAngle((Number(g.phase0) || 0) + ((Number(g.omegaRadPerDay) || 0) * tDays));
       const c = Math.cos(rot), s = Math.sin(rot);
       for (const starMesh of g.stars) {
-        const x = starMesh.position.x, z = starMesh.position.z;
+        const base = starMesh?.metadata?.legacyBinaryBasePos || { x: starMesh.position.x, y: starMesh.position.y, z: starMesh.position.z };
+        const x = Number(base.x) || 0;
+        const z = Number(base.z) || 0;
         starMesh.position.x = x * c - z * s;
+		starMesh.position.y = Number(base.y) || 0;
         starMesh.position.z = x * s + z * c;
-		syncNodeSimFromScene(starMesh, g.parentNode, starMesh?.metadata?.sim?.simDays || 0);
+		syncNodeSimFromScene(starMesh, g.parentNode, tDays);
       }
     }
   }

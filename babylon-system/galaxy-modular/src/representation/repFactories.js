@@ -8,6 +8,13 @@ function _asColor3(c, fallback) {
   return fallback;
 }
 
+function _hexToColor3(hex, fallback = new BABYLON.Color3(1, 1, 1)) {
+  try {
+    return BABYLON.Color3.FromHexString(String(hex || '#ffffff'));
+  } catch (_) {}
+  return fallback;
+}
+
 export function createDotRep({ scene, entry, profile }) {
   const { kind, systemName, bodyId } = entry;
 
@@ -32,6 +39,67 @@ export function createDotRep({ scene, entry, profile }) {
 
   m.material = mat;
   return m;
+}
+
+export function createAtmosphereHaloRep({
+  scene,
+  name,
+  parent = null,
+  radiusWorld,
+  colorHex = '#88bbff',
+  segments = 20,
+  renderingGroupId = 2,
+}) {
+  const atmoR = Math.max(1e-6, Number(radiusWorld || 0));
+  const seg = Math.max(8, Math.floor(Number(segments || 20)));
+  const meshName = String(name || 'rep_atmo_halo');
+
+  const m = BABYLON.MeshBuilder.CreateSphere(
+    meshName,
+    { diameter: 2, segments: seg },
+    scene
+  );
+
+  if (parent) m.parent = parent;
+  m.position.set(0, 0, 0);
+  m.scaling.set(atmoR, atmoR, atmoR);
+  m.isPickable = false;
+  m.alwaysSelectAsActiveMesh = false;
+  m.renderingGroupId = renderingGroupId;
+
+  const mat = new BABYLON.StandardMaterial(`${meshName}_mat`, scene);
+  mat.backFaceCulling = false;
+  mat.disableLighting = true;
+  mat.diffuseColor = new BABYLON.Color3(0, 0, 0);
+  mat.specularColor = new BABYLON.Color3(0, 0, 0);
+  mat.alpha = 0.08;
+  mat.emissiveColor = _hexToColor3(colorHex).scale(1.15);
+
+  try { mat.alphaMode = BABYLON.Engine.ALPHA_ADD; } catch (_) {}
+  try { mat.disableDepthWrite = true; } catch (_) {}
+
+  try {
+    const op = new BABYLON.FresnelParameters();
+    op.bias = 0.05;
+    op.power = 4.5;
+    op.leftColor = BABYLON.Color3.Black();
+    op.rightColor = BABYLON.Color3.White();
+    mat.opacityFresnelParameters = op;
+  } catch (_) {}
+
+  try {
+    const em = new BABYLON.FresnelParameters();
+    em.bias = 0.00;
+    em.power = 5.5;
+    em.leftColor = BABYLON.Color3.Black();
+    em.rightColor = mat.emissiveColor.clone();
+    mat.emissiveFresnelParameters = em;
+  } catch (_) {}
+
+  m.material = mat;
+  try { m.setEnabled(false); } catch (_) { m.isVisible = false; }
+
+  return { mesh: m, material: mat };
 }
 
 export function createSphereRep({ scene, entry, profile, segments, repTag }) {

@@ -6,6 +6,7 @@ export function createOfflineTransport() {
   const listeners = new Map();
   const peers = new Map();
   let selfState = null;
+  const timeAuthorityId = 'offline-local-clock';
 
   function emit(type, payload) {
     const set = listeners.get(type);
@@ -21,12 +22,19 @@ export function createOfflineTransport() {
     return () => listeners.get(type)?.delete(fn);
   }
 
+  function getAuthoritativeNowMs() {
+    return Date.now();
+  }
+
   function connect() {
-    emit('open', { mode: 'offline' });
+    emit('open', { mode: 'offline', timeAuthorityId, nowMs: getAuthoritativeNowMs() });
   }
 
   function publishSelf(state) {
-    selfState = Object.assign({}, state || {}, { ts: Date.now() });
+    selfState = Object.assign({}, state || {}, {
+      ts: getAuthoritativeNowMs(),
+      timeAuthorityId,
+    });
     emit('self', selfState);
     return selfState;
   }
@@ -42,7 +50,10 @@ export function createOfflineTransport() {
   // Útil para demos futuras sin backend real.
   function injectPeer(id, state) {
     if (!id) return null;
-    const p = Object.assign({ id }, state || {}, { ts: Date.now() });
+    const p = Object.assign({ id }, state || {}, {
+      ts: getAuthoritativeNowMs(),
+      timeAuthorityId,
+    });
     peers.set(id, p);
     emit('peer', { ...p });
     return p;
@@ -56,6 +67,7 @@ export function createOfflineTransport() {
 
   return {
     mode: 'offline',
+    timeAuthorityId,
     connect,
     on,
     publishSelf,
@@ -63,5 +75,6 @@ export function createOfflineTransport() {
     getPeers,
     injectPeer,
     removePeer,
+    getAuthoritativeNowMs,
   };
 }

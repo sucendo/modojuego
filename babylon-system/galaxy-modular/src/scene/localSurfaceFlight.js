@@ -1,10 +1,9 @@
 // src/scene/localSurfaceFlight.js
-// Movimiento planetario local:
-// - cerca de un cuerpo grande, separa movimiento tangencial + radial
-// - el efecto de movimiento entra antes que la alineación de cámara
-// - subir cuesta algo más, pero no exagerado
-// - bajar cuesta algo menos
-// - el cabeceo/align al suelo local es MUCHO más suave y solo muy cerca
+// Maniobrabilidad local cerca de superficie:
+// - detecta un marco local estable respecto al cuerpo cercano
+// - proyecta el movimiento al plano tangente local + componente radial
+// - suaviza la normal local para evitar vibración de ejes
+// - separa mejor transición / modo local / alineación
 
 export function createLocalSurfaceFlight({
   bodyMaps = [],
@@ -24,16 +23,25 @@ export function createLocalSurfaceFlight({
 
   // Escalas de movimiento
   tangentMoveScale = 1.00,
-  upMoveScale = 0.88,
-  downMoveScale = 1.03,
+  upMoveScale = 0.94,
+  downMoveScale = 1.00,
+  
+  // Suavizado del cambio de marco y del delta aplicado
+  moveBlendHz = 18.0,
 
   // Alineación de cámara/nave con el suelo local
-  alignHz = 0.60,
-  alignMix = 0.14,
+  alignHz = 0.85,
+  alignMix = 0.10,
+  upSmoothingHz = 10.0,
 
   // Si vas rápido, todavía menos alineación
   alignSpeedFullKmS = 0.15,
   alignSpeedFadeKmS = 2.00,
+
+  // Si estás girando activamente, reducimos aún más la autoalineación
+  turnAlignFullRadS = 0.20,
+  turnAlignFadeRadS = 1.20,
+  turnAlignMinFactor = 0.25,
 }) {
   const EPS = 1e-8;
   const kinds = new Set(
@@ -44,8 +52,16 @@ export function createLocalSurfaceFlight({
 
   const _move = new BABYLON.Vector3();
   const _up = new BABYLON.Vector3();
+  const _rawUp = new BABYLON.Vector3();
   const _radial = new BABYLON.Vector3();
   const _tangent = new BABYLON.Vector3();
+  const _correctedMove = new BABYLON.Vector3();
+  const _targetMove = new BABYLON.Vector3();
+
+  let lockedBody = null;
+  let hadSurfaceFrame = false;
+  const smoothedUp = new BABYLON.Vector3(0, 1, 0);
+  const smoothedAppliedMove = new BABYLON.Vector3(0, 0, 0);
 
   function clamp01(v) {
     return Math.max(0, Math.min(1, v));
@@ -61,6 +77,38 @@ export function createLocalSurfaceFlight({
     if (value >= fadeValue) return 0.0;
     const t = (value - fullValue) / Math.max(1e-8, (fadeValue - fullValue));
     return 1.0 - smoothstep01(t);
+  }
+
+  function alphaFromHz(hz, dtSec) {
+    return 1.0 - Math.exp(-Math.max(0, hz) * Math.max(0, dtSec));
+  }
+
+  function smoothUnitVectorToRef(from, to, alpha, out) {
+    if (alpha >= 1.0) {
+      out.copyFrom(to);
+      out.normalize();
+      return;
+    }
+
+    out.x = from.x + (to.x - from.x) * alpha;
+    out.y = from.y + (to.y - from.y) * alpha;
+    out.z = from.z + (to.z - from.z) * alpha;
+
+    const lenSq = out.lengthSquared();
+    if (lenSq < 1e-12) {
+      out.copyFrom(to);
+    }
+    out.normalize();
+  }
+
+  function smoothVectorToRef(from, to, alpha, out) {
+    if (alpha >= 1.0) {
+      out.copyFrom(to);
+      return;
+    }
+    out.x = from.x + (to.x - from.x) * alpha;
+    out.y = from.y + (to.y - from.y) * alpha;
+    out.z = from.z + (to.z - from.z) * alpha;
   }
 
   function eachBody(fn) {
@@ -115,7 +163,8 @@ export function createLocalSurfaceFlight({
       const alignInfluence = inverseSmoothBand(gap, alignFullGap, alignFadeGap);
 
       const normGap = gap / Math.max(radiusWorld, EPS);
-      const score = normGap - moveInfluence * 0.10;
+      const stickyBias = (node === lockedBody) ? 0.03 : 0.0;
+      const score = normGap - moveInfluence * 0.10 - stickyBias;
 
       if (!best || score < best.score) {
         best = {
@@ -138,20 +187,50 @@ export function createLocalSurfaceFlight({
     return inverseSmoothBand(kmS, alignSpeedFullKmS, alignSpeedFadeKmS);
   }
 
+  function turnAlignFactor(camCtrl) {
+    const radS = Math.abs(Number(camCtrl?.getAngularMetrics?.()?.speedRadS ?? 0));
+    const relaxed = inverseSmoothBand(radS, turnAlignFullRadS, turnAlignFadeRadS);
+    return turnAlignMinFactor + ((1.0 - turnAlignMinFactor) * relaxed);
+  }
+
   function apply(cam, camCtrl, prevPos, dtSec = 0) {
-    if (!cam?.position || !prevPos) return null;
-    if (camCtrl?.getMode?.() !== 'ship') return null;
+    if (!cam?.position || !prevPos) {
+      lockedBody = null;
+	  hadSurfaceFrame = false;
+      return null;
+    }
+    if (camCtrl?.getMode?.() !== 'ship') {
+      lockedBody = null;
+	  hadSurfaceFrame = false;
+      return null;
+    }
 
     const target = chooseSurfaceBody(cam);
-    if (!target) return null;
+    if (!target) {
+      lockedBody = null;
+	  hadSurfaceFrame = false;
+      return null;
+    }
 
-    _up.x = cam.position.x - target.center.x;
-    _up.y = cam.position.y - target.center.y;
-    _up.z = cam.position.z - target.center.z;
+    const bodyChanged = lockedBody !== target.node;
+    lockedBody = target.node;
 
-    const upLen = Math.sqrt(_up.x * _up.x + _up.y * _up.y + _up.z * _up.z);
+    _rawUp.x = cam.position.x - target.center.x;
+    _rawUp.y = cam.position.y - target.center.y;
+    _rawUp.z = cam.position.z - target.center.z;
+
+    const upLen = Math.sqrt(_rawUp.x * _rawUp.x + _rawUp.y * _rawUp.y + _rawUp.z * _rawUp.z);
     if (upLen < EPS) return null;
-    _up.scaleInPlace(1 / upLen);
+    _rawUp.scaleInPlace(1 / upLen);
+
+    if (smoothedUp.lengthSquared() < 1e-10 || bodyChanged) {
+      smoothedUp.copyFrom(_rawUp);
+    } else {
+      const upAlpha = alphaFromHz(upSmoothingHz, dtSec);
+      smoothUnitVectorToRef(smoothedUp, _rawUp, upAlpha, smoothedUp);
+    }
+
+    _up.copyFrom(smoothedUp);
 
     _move.x = cam.position.x - prevPos.x;
     _move.y = cam.position.y - prevPos.y;
@@ -174,19 +253,45 @@ export function createLocalSurfaceFlight({
     const downScale = 1.0 + (downMoveScale - 1.0) * moveInf;
     const radialScale = (radialDot >= 0) ? upScale : downScale;
 
-    cam.position.x = prevPos.x + (_tangent.x * tangScale) + (_radial.x * radialScale);
-    cam.position.y = prevPos.y + (_tangent.y * tangScale) + (_radial.y * radialScale);
-    cam.position.z = prevPos.z + (_tangent.z * tangScale) + (_radial.z * radialScale);
+    // Mezcla real entre delta libre y delta corregido local.
+    // Antes solo se mezclaban escalas, no el cambio de marco.
+    _correctedMove.x = (_tangent.x * tangScale) + (_radial.x * radialScale);
+    _correctedMove.y = (_tangent.y * tangScale) + (_radial.y * radialScale);
+    _correctedMove.z = (_tangent.z * tangScale) + (_radial.z * radialScale);
 
-    // Alineación suave y solo muy cerca + despacio
-    const alignInf = target.alignInfluence * speedAlignFactor(camCtrl) * alignMix;
+    _targetMove.x = _move.x + ((_correctedMove.x - _move.x) * moveInf);
+    _targetMove.y = _move.y + ((_correctedMove.y - _move.y) * moveInf);
+    _targetMove.z = _move.z + ((_correctedMove.z - _move.z) * moveInf);
+
+    const moveAlpha = alphaFromHz(moveBlendHz, dtSec);
+    if (!hadSurfaceFrame || bodyChanged) {
+      smoothedAppliedMove.copyFrom(_targetMove);
+    } else {
+      smoothVectorToRef(smoothedAppliedMove, _targetMove, moveAlpha, smoothedAppliedMove);
+    }
+    hadSurfaceFrame = true;
+
+    cam.position.x = prevPos.x + smoothedAppliedMove.x;
+    cam.position.y = prevPos.y + smoothedAppliedMove.y;
+    cam.position.z = prevPos.z + smoothedAppliedMove.z;
+
+    const alignInf = target.alignInfluence
+      * speedAlignFactor(camCtrl)
+      * turnAlignFactor(camCtrl)
+      * alignMix;
+
     if (alignInf > 1e-4) {
       try {
         camCtrl?.stabilizeToLocalUp?.(_up, alignInf, dtSec, { alignHz });
       } catch (_) {}
     }
 
-    return target;
+    return {
+      ...target,
+      localUp: _up.clone(),
+      frameBlend: moveInf,
+      isLocalFrame: moveInf >= 0.55,
+    };
   }
 
   return {

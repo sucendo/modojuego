@@ -55,6 +55,21 @@ export function createRepresentationManager({ scene, engine, camera, labelsApi, 
 
     // Skip heavy procedural refinements while the camera is moving fast (units/sec). 0 => disabled.
     procRefineMaxCamSpeed: (typeof opts.procRefineMaxCamSpeed === 'number') ? Math.max(0, opts.procRefineMaxCamSpeed) : 3.5,
+
+    remoteAtmosphere: {
+      enabled: opts?.remoteAtmosphere?.enabled !== false,
+      throttleMs: (typeof opts?.remoteAtmosphere?.throttleMs === 'number') ? Math.max(0, opts.remoteAtmosphere.throttleMs) : 120,
+      minPx: (typeof opts?.remoteAtmosphere?.minPx === 'number') ? Math.max(0, opts.remoteAtmosphere.minPx) : 6,
+      strongPx: (typeof opts?.remoteAtmosphere?.strongPx === 'number') ? Math.max(1, opts.remoteAtmosphere.strongPx) : 28,
+      maxVisible: (typeof opts?.remoteAtmosphere?.maxVisible === 'number') ? Math.max(0, Math.floor(opts.remoteAtmosphere.maxVisible)) : 8,
+      maxCenterDistN: (typeof opts?.remoteAtmosphere?.maxCenterDistN === 'number') ? Math.max(0.5, opts.remoteAtmosphere.maxCenterDistN) : 1.85,
+      localSuppressMul: (typeof opts?.remoteAtmosphere?.localSuppressMul === 'number') ? Math.max(1.0, opts.remoteAtmosphere.localSuppressMul) : 1.25,
+      segments: (typeof opts?.remoteAtmosphere?.segments === 'number') ? Math.max(8, Math.floor(opts.remoteAtmosphere.segments)) : 20,
+      ppMinPx: (typeof opts?.remoteAtmosphere?.ppMinPx === 'number') ? Math.max(0, opts.remoteAtmosphere.ppMinPx) : 5,
+      ppExitPx: (typeof opts?.remoteAtmosphere?.ppExitPx === 'number') ? Math.max(0, opts.remoteAtmosphere.ppExitPx) : 4,
+      maxRemotePP: (typeof opts?.remoteAtmosphere?.maxRemotePP === 'number') ? Math.max(0, Math.floor(opts.remoteAtmosphere.maxRemotePP)) : 2,
+      maxTotalPP: (typeof opts?.remoteAtmosphere?.maxTotalPP === 'number') ? Math.max(1, Math.floor(opts.remoteAtmosphere.maxTotalPP)) : 3,
+    },
   };
   
   // ------------------------------------------------------------
@@ -64,7 +79,7 @@ export function createRepresentationManager({ scene, engine, camera, labelsApi, 
   // ------------------------------------------------------------
   const ATM = (opts.enableAtmospherePP === false) ? null : globalThis.AtmospherePP;
   const _atmoPP = (ATM && typeof ATM.createAtmospherePostProcess === 'function')
-    ? ATM.createAtmospherePostProcess(scene, camera)
+    ? ATM.createAtmospherePostProcess(scene, camera, { name: 'atmoPP_local', role: 'local' })
     : null;
   if (_atmoPP && ATM && typeof ATM.attachDepthForAtmosphere === 'function') {
     try { ATM.attachDepthForAtmosphere(scene, camera, _atmoPP); } catch (_) {}
@@ -74,7 +89,9 @@ export function createRepresentationManager({ scene, engine, camera, labelsApi, 
   let _atmoActiveEntry = null;
   let _atmoActiveMesh = null;
   let _atmoLastPickT = 0;
+  let _remoteAtmoLastT = 0;
   let _warnedMissingAtmosphereRuntime = false;
+  const _remotePPs = new Map();
 
   function _getProcParamsForEntry(entry) {
     if (!entry) return null;
@@ -94,6 +111,8 @@ export function createRepresentationManager({ scene, engine, camera, labelsApi, 
       .then((raw) => {
         if (!entry.__procParams) {
           entry.__procParams = _normalizeEditorParams(raw, entry, entry.profile);
+          _atmoLastPickT = 0;
+          _remoteAtmoLastT = 0;
         }
       })
       .catch(() => {});
@@ -224,12 +243,178 @@ export function createRepresentationManager({ scene, engine, camera, labelsApi, 
     };
   }
 
-  function _updateAtmosphereDepthMode(entry, mesh) {
-    if (!_atmoPP) return;
+  function _isLocalAtmosphereContext(ctx) {
+    return !!(ctx && (ctx.onSurface || ctx.insideAtmo || ctx.nearAtmo));
+  }
+
+  function _getActiveVisibleBodyMesh(entry) {
+    if (!entry || !entry.reps) return null;
+    const st = String(entry.activeState || '');
+    if (!st.startsWith('sphere_')) return null;
+
+    const m = entry.reps[st] || null;
+    if (!m) return null;
+
+    try {
+      if (typeof m.isEnabled === 'function' && !m.isEnabled()) return null;
+    } catch (_) {}
+    if (m.isVisible === false) return null;
+
+    return m;
+  }
+
+  function _getAtmosphereScreenInfo(entry, mesh = null) {
+    if (!entry || !camera || !engine || !scene) {
+      return { onScreen: false, centerDistN: Infinity, diamPx: 0 };
+    }
+
+    try { mesh?.computeWorldMatrix?.(true); } catch (_) {}
+    try { entry?.bodyNode?.computeWorldMatrix?.(true); } catch (_) {}
+
+    const worldPos = mesh?.getAbsolutePosition
+      ? mesh.getAbsolutePosition()
+      : (entry?.bodyNode?.getAbsolutePosition?.() || entry?.bodyNode?.position);
+    if (!worldPos) {
+      return { onScreen: false, centerDistN: Infinity, diamPx: 0 };
+    }
+
+    let planetR = Number(entry?.radiusWorld || 0);
+    if (!Number.isFinite(planetR) || planetR <= 0) {
+      try { planetR = Number(mesh?.getBoundingInfo?.().boundingSphere?.radiusWorld || 0); } catch (_) { planetR = 0; }
+    }
+    if (!(planetR > 0)) {
+      return { onScreen: false, centerDistN: Infinity, diamPx: 0 };
+    }
+
+    const p = _getProcParamsForEntry(entry) || {};
+    const atmoR = planetR * Number(p.atmoRadiusMul || 1.055);
+    const proj = _projectToScreen(worldPos);
+    const diamPx = computeDiameterPx({
+      engine,
+      camera,
+      worldPos,
+      radiusWorld: atmoR,
+    });
+
+    return {
+      onScreen: !!proj?.onScreen,
+      centerDistN: Number.isFinite(proj?.centerDistN) ? proj.centerDistN : Infinity,
+      diamPx: Number.isFinite(diamPx) ? diamPx : 0,
+    };
+  }
+
+  function _ensureRemotePP(entry) {
+    if (!CONFIG.remoteAtmosphere.enabled) return null;
+    if (!_atmoPP || !ATM || typeof ATM.createAtmospherePostProcess !== 'function') return null;
+
+    let info = _remotePPs.get(entry.key) || null;
+    if (info?.pp) return info;
+
+    const pp = ATM.createAtmospherePostProcess(scene, camera, {
+      name: `atmoPP_remote_${entry.key}`,
+      role: 'remote',
+    });
+    if (!pp) return null;
+
+    try { ATM.attachDepthForAtmosphere(scene, camera, pp); } catch (_) {}
+    try { ATM.enableAtmospherePP(pp, false); } catch (_) {}
+    try { pp._enabled = false; } catch (_) {}
+
+    info = { pp, active: false };
+    _remotePPs.set(entry.key, info);
+    return info;
+  }
+
+  function _disableRemotePP(entryKey) {
+    const info = _remotePPs.get(entryKey);
+    if (!info?.pp || !ATM) return;
+    try { ATM.enableAtmospherePP(info.pp, false); } catch (_) {}
+    try { info.pp._enabled = false; } catch (_) {}
+    info.active = false;
+  }
+
+  function _refreshRemoteAtmospheres(nowMs) {
+    if (!CONFIG.remoteAtmosphere.enabled) {
+      for (const k of _remotePPs.keys()) _disableRemotePP(k);
+      return;
+    }
+
+    const now = Number(nowMs) || ((typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now());
+    if ((now - _remoteAtmoLastT) < CONFIG.remoteAtmosphere.throttleMs) return;
+    _remoteAtmoLastT = now;
+
+    const localCtx = _atmoActiveEntry
+      ? _getAtmosphereContext(_atmoActiveEntry, _atmoActiveMesh || _atmoActiveEntry?.bodyNode || null)
+      : null;
+    const localLocked = _isLocalAtmosphereContext(localCtx);
+
+    const candidates = [];
+    for (const entry of entryList) {
+      if (!entry) continue;
+      if (!_entryWantsAtmosphere(entry)) continue;
+
+      // SOLO PP sobre un cuerpo celeste realmente visible.
+      // Nada de enganchar PP a bodyNode "vacío" o a un sphere_* oculto.
+      const targetNode = _getActiveVisibleBodyMesh(entry);
+      if (!targetNode) continue;
+
+      const scr = _getAtmosphereScreenInfo(entry, targetNode);
+      if (!scr.onScreen) continue;
+      if (scr.centerDistN > CONFIG.remoteAtmosphere.maxCenterDistN) continue;
+      if (scr.diamPx < CONFIG.remoteAtmosphere.minPx) continue;
+
+      if (localLocked && _atmoActiveKey === entry.key) continue;
+
+      const score = scr.diamPx - (scr.centerDistN * 12.0);
+      candidates.push({ entry, scr, score, targetNode });
+    }
+
+    candidates.sort((a, b) => b.score - a.score);
+    const remotePPActive = new Set();
+    let usedRemotePP = 0;
+
+    const maxVisible = CONFIG.remoteAtmosphere.maxVisible;
+    const maxRemotePP = Math.min(
+      CONFIG.remoteAtmosphere.maxRemotePP,
+      Math.max(0, CONFIG.remoteAtmosphere.maxTotalPP - 1)
+    );
+
+    for (let i = 0; i < candidates.length && i < maxVisible; i += 1) {
+      const { entry, scr, targetNode } = candidates[i];
+      const ppInfo = _remotePPs.get(entry.key) || null;
+      const ppWasActive = !!ppInfo?.active;
+      const wantsPP = ppWasActive
+        ? (scr.diamPx >= CONFIG.remoteAtmosphere.ppExitPx)
+        : (scr.diamPx >= CONFIG.remoteAtmosphere.ppMinPx);
+
+      if (!wantsPP || !targetNode || usedRemotePP >= maxRemotePP) {
+        _disableRemotePP(entry.key);
+        continue;
+      }
+
+      const remotePP = _ensureRemotePP(entry);
+      if (!remotePP?.pp) {
+        _disableRemotePP(entry.key);
+        continue;
+      }
+
+      _applyAtmosphereToPP(remotePP.pp, entry, targetNode);
+      remotePP.active = true;
+      remotePPActive.add(entry.key);
+      usedRemotePP += 1;
+    }
+
+    for (const k of _remotePPs.keys()) {
+      if (!remotePPActive.has(k)) _disableRemotePP(k);
+    }
+  }
+
+  function _updateAtmosphereDepthMode(entry, mesh, pp = _atmoPP) {
+    if (!pp) return;
     const p = _getProcParamsForEntry(entry) || {};
     const wantsDepth = !!p.atmoUseDepth;
     if (!wantsDepth) {
-      _atmoPP._useDepth = false;
+      pp._useDepth = false;
       return;
     }
 
@@ -238,7 +423,68 @@ export function createRepresentationManager({ scene, engine, camera, labelsApi, 
     // correctamente el cielo/halo y no aparezcan franjas extrañas.
     void entry;
     void mesh;
-    _atmoPP._useDepth = true;
+    pp._useDepth = true;
+  }
+
+  function _applyAtmosphereToPP(pp, entry, targetNode) {
+    if (!pp || !ATM || !entry || !targetNode) return;
+    const p = _getProcParamsForEntry(entry);
+    if (!(p && p.atmoEnabled)) return;
+
+    try {
+      if (typeof targetNode.isEnabled === 'function' && !targetNode.isEnabled()) return;
+    } catch (_) {}
+    if (targetNode.isVisible === false) return;
+
+    try { targetNode.computeWorldMatrix?.(true); } catch (_) {}
+
+    let planetR = Number(entry.radiusWorld || 0);
+    if (!Number.isFinite(planetR) || planetR <= 0) {
+      try { planetR = Number(targetNode.getBoundingInfo?.().boundingSphere?.radiusWorld || 0); } catch (_) { planetR = 0; }
+    }
+    if (!(planetR > 0)) return;
+
+    const atmoR = planetR * Number(p.atmoRadiusMul || 1.055);
+    const editorRadiusRef = _getEditorRadiusRef(p);
+    const atmoComp = _getAtmosphereCompensation(editorRadiusRef, planetR);
+
+    const depthMesh =
+      entry?.bodyNode?.metadata?.__terrainCollisionMesh ||
+      (targetNode?.metadata?.__procRep ? targetNode : null) ||
+      entry?.reps?.sphere_high ||
+      targetNode;
+    const atmoCtx = _getAtmosphereContext(entry, depthMesh || targetNode);
+    const baseSteps = Number(p.atmoSteps ?? 48);
+    const tunedSteps = atmoCtx?.onSurface
+      ? Math.min(baseSteps, 32)
+      : atmoCtx?.insideAtmo
+        ? Math.min(baseSteps, 40)
+        : Math.max(40, baseSteps);
+
+    try {
+      pp._enabled = true;
+      pp._useDepth = !!p.atmoUseDepth;
+      pp._atmoStrength = Number(p.atmoStrength ?? 2.8) * atmoComp;
+      pp._mieStrength = Number(p.mieStrength ?? 2.4) * atmoComp;
+      pp._upperStrength = Number(p.upperStrength ?? 1.6) * atmoComp;
+      pp._steps = Math.max(24, tunedSteps);
+      pp._c0 = _hexToVec3(p.c0);
+      pp._c1 = _hexToVec3(p.c1);
+      pp._c2 = _hexToVec3(p.c2);
+      pp._cloudAlpha = Math.min(0.18, Number(p.cloudAlpha ?? 0.22));
+      pp._cloudScale = Number(p.cloudScale ?? 2.7);
+      pp._cloudSharpness = Number(p.cloudSharpness ?? 2.2);
+      pp._cloudWind = new BABYLON.Vector3(Number(p.cloudWindX ?? 0.02), 0.0, Number(p.cloudWindZ ?? 0.012));
+      pp._cloudTint = _hexToVec3(p.cloudTint || '#eef6ff');
+    } catch (_) {}
+
+    const planetPos = targetNode.getAbsolutePosition
+      ? targetNode.getAbsolutePosition()
+      : (entry.bodyNode?.getAbsolutePosition?.() || entry.bodyNode?.position || BABYLON.Vector3.Zero());
+    const sunPos = _getSunPosFor(entry, planetPos);
+    try { ATM.setAtmosphereTarget(pp, targetNode, planetR, atmoR, sunPos); } catch (_) {}
+    try { _updateAtmosphereDepthMode(entry, depthMesh || targetNode, pp); } catch (_) {}
+    try { ATM.enableAtmospherePP(pp, true); } catch (_) {}
   }
   
   function _pickEditorLikeAtmosphereEntry() {
@@ -250,23 +496,31 @@ export function createRepresentationManager({ scene, engine, camera, labelsApi, 
       if (!_entryWantsAtmosphere(entry)) continue;
 
       const mesh = entry?.reps?.sphere_high || null;
-
-      const ctx = _getAtmosphereContext(entry, mesh);
+      const targetNode = mesh || entry?.bodyNode || null;
+      const ctx = _getAtmosphereContext(entry, targetNode);
 	  if (!ctx) {
 		console.warn('[ATMO] context null', entry.key);
 		continue;
 	  }
-	  
-	  // 🔥 PRIORIDAD ABSOLUTA: si estás en superficie, este es el planeta sí o sí
-	  if (ctx.onSurface) {
-	    return entry;
-	  }
+
+      const scr = _getAtmosphereScreenInfo(entry, targetNode);
+
+      // El PP local solo se usa cuando realmente estás en/sobre/cerca
+      // de una atmósfera. Las atmósferas lejanas las llevan los remote PPs.
+      if (!_isLocalAtmosphereContext(ctx)) continue;
+      if (ctx.onSurface) return entry;
 
       // Histéresis fuerte para el cuerpo activo y prioridad máxima
       // si ya estamos dentro o muy cerca de su atmósfera.
       const sticky = (_atmoActiveKey && _atmoActiveKey === entry.key) ? -1e6 : 0;
       const nearBoost = ctx.insideAtmo ? -1e7 : (ctx.nearAtmo ? -1e5 : 0);
-      const score = ctx.camDist + sticky + nearBoost;
+      const screenBoost = scr.onScreen
+        ? -(
+            Math.min(80, scr.diamPx * 2.5) +
+            Math.max(0, 1.5 - Math.min(scr.centerDistN, 1.5)) * 20
+          )
+        : 0;
+      const score = ctx.camDist + sticky + nearBoost + screenBoost;
 
       if (!best || score < bestScore) {
         best = entry;
@@ -278,26 +532,34 @@ export function createRepresentationManager({ scene, engine, camera, labelsApi, 
   }
 
   function _refreshAtmosphereBinding(nowMs) {
+    const now = Number(nowMs) || ((typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now());
+
     if (!ATM || !_atmoPP) {
       if (!_warnedMissingAtmosphereRuntime) {
         _warnedMissingAtmosphereRuntime = true;
         console.warn('[repMgr] AtmospherePP no disponible; revisa runtimeGlobals.js');
       }
+      _refreshRemoteAtmospheres(now);
       return;
     }
-    const now = Number(nowMs) || ((typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now());
-    if ((now - _atmoLastPickT) < 120) return;
+    if ((now - _atmoLastPickT) < 120) {
+      _refreshRemoteAtmospheres(now);
+      return;
+    }
     _atmoLastPickT = now;
 
     const best = _pickEditorLikeAtmosphereEntry();
     if (!best) {
-    // 🔥 NO apagar si estamos ya dentro de una atmósfera
-    if (_atmoActiveKey) return;
+      _disableAtmosphere();
+      _refreshRemoteAtmospheres(now);
       return;
     }
 
     let mesh = best?.reps?.sphere_high || null;
     if (!mesh) {
+      // Recuperamos el fallback estable:
+      // el mejor candidato atmosférico puede pedir sphere_high para
+      // asegurar un target consistente al arrancar cerca de él.
       try { ensureRepMesh(best, 'sphere_high'); } catch (_) {}
       mesh = best?.reps?.sphere_high || null;
     }
@@ -306,6 +568,7 @@ export function createRepresentationManager({ scene, engine, camera, labelsApi, 
 
     if (_atmoActiveKey !== best.key || _atmoActiveMesh !== targetNode) {
       _applyAtmosphere(best, targetNode);
+	  _refreshRemoteAtmospheres(now);
       return;
     }
 
@@ -315,8 +578,9 @@ export function createRepresentationManager({ scene, engine, camera, labelsApi, 
     const p = _getProcParamsForEntry(best) || {};
     const atmoR = planetR * Number(p.atmoRadiusMul || 1.055);
     try { ATM.setAtmosphereTarget(_atmoPP, targetNode, planetR, atmoR, _getSunPosFor(best, planetPos)); } catch (_) {}
-    try { _updateAtmosphereDepthMode(best, targetNode); } catch (_) {}
-	try { ATM.enableAtmospherePP(_atmoPP, true); } catch (_) {}
+    try { _updateAtmosphereDepthMode(best, targetNode, _atmoPP); } catch (_) {}
+    try { ATM.enableAtmospherePP(_atmoPP, true); } catch (_) {}
+    _refreshRemoteAtmospheres(now);
   }
 
   function _disableAtmosphere() {
@@ -326,6 +590,22 @@ export function createRepresentationManager({ scene, engine, camera, labelsApi, 
     _atmoActiveKey = null;
     _atmoActiveEntry = null;
     _atmoActiveMesh = null;
+  }
+
+  function _maybeApplyLocalAtmosphere(entry, targetNode) {
+    if (!entry || !targetNode || !_entryWantsAtmosphere(entry)) {
+      _atmoLastPickT = 0;
+      _remoteAtmoLastT = 0;
+      return;
+    }
+
+    const ctx = _getAtmosphereContext(entry, targetNode);
+    if (_atmoActiveKey === entry.key || _isLocalAtmosphereContext(ctx)) {
+      try { _applyAtmosphere(entry, targetNode); } catch (_) {}
+    } else {
+      _atmoLastPickT = 0;
+      _remoteAtmoLastT = 0;
+    }
   }
 
   function _applyAtmosphere(entry, targetNode) {
@@ -381,7 +661,7 @@ export function createRepresentationManager({ scene, engine, camera, labelsApi, 
     const planetPos = targetNode.getAbsolutePosition ? targetNode.getAbsolutePosition() : (entry.bodyNode?.getAbsolutePosition?.() || entry.bodyNode?.position || BABYLON.Vector3.Zero());
     const sunPos = _getSunPosFor(entry, planetPos);
     try { ATM.setAtmosphereTarget(_atmoPP, targetNode, planetR, atmoR, sunPos); } catch (_) {}
-	try { _updateAtmosphereDepthMode(entry, targetNode); } catch (_) {}
+    try { _updateAtmosphereDepthMode(entry, targetNode, _atmoPP); } catch (_) {}
     try { ATM.enableAtmospherePP(_atmoPP, true); } catch (_) {}
 
     try {
@@ -765,7 +1045,7 @@ export function createRepresentationManager({ scene, engine, camera, labelsApi, 
         _animEntries.add(entry);
 
         // Atmosphere (bind to this procedural planet, editor-style)
-        try { _applyAtmosphere(entry, root); } catch (_) {}
+        _maybeApplyLocalAtmosphere(entry, root);
       } else {
         if (entry?.bodyNode?.metadata?.__terrainCollisionMesh === root) {
           setTerrainCollisionMesh(entry, null);
@@ -1013,7 +1293,7 @@ export function createRepresentationManager({ scene, engine, camera, labelsApi, 
       // hacemos fallback inmediato al bodyNode del mismo planeta para no perderla
       // al volver desde otro cuerpo o durante un cambio de LOD.
       if (wasActiveAtmoTarget && _entryWantsAtmosphere(entry) && entry?.bodyNode) {
-        try { _applyAtmosphere(entry, entry.bodyNode); } catch (_) {}
+        _maybeApplyLocalAtmosphere(entry, entry.bodyNode);
       }
 
       // Procedural sphere_high is heavy: cache a few, otherwise free.
@@ -1038,11 +1318,11 @@ export function createRepresentationManager({ scene, engine, camera, labelsApi, 
 
       if (ns === 'sphere_high' && m?.metadata?.__procRep) {
         setTerrainCollisionMesh(entry, m);
-        try { _applyAtmosphere(entry, m); } catch (_) {}
+        _maybeApplyLocalAtmosphere(entry, m);
       } else {
         setTerrainCollisionMesh(entry, null);
         if (_entryWantsAtmosphere(entry) && entry?.bodyNode) {
-          try { _applyAtmosphere(entry, entry.bodyNode); } catch (_) {}
+          _maybeApplyLocalAtmosphere(entry, entry.bodyNode);
         }
       }
 
@@ -1171,7 +1451,7 @@ export function createRepresentationManager({ scene, engine, camera, labelsApi, 
           if (_atmoActiveEntry && _atmoActiveMesh) {
             const pos = _atmoActiveMesh.getAbsolutePosition ? _atmoActiveMesh.getAbsolutePosition() : BABYLON.Vector3.Zero();
             _atmoPP._sunPos = _getSunPosFor(_atmoActiveEntry, pos);
-            _updateAtmosphereDepthMode(_atmoActiveEntry, _atmoActiveMesh);
+            _updateAtmosphereDepthMode(_atmoActiveEntry, _atmoActiveMesh, _atmoPP);
           }
         } catch (_) {}
       }

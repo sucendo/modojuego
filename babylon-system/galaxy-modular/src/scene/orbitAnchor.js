@@ -133,7 +133,7 @@ export function createCameraOrbitAnchor({
     return best;
   }
 
-  function applyOrbitAnchor(cam, camCtrl, dtSec = 0, dtDays = 0) {
+  function applyOrbitAnchor(cam, camCtrl, dtSec = 0, dtDays = 0, surfaceState = null) {
     if (!cam?.position) return null;
 
     if (camCtrl?.getMode?.() !== 'ship') {
@@ -206,14 +206,22 @@ export function createCameraOrbitAnchor({
     }
 
     // 2) Movimiento libre alrededor del cuerpo, suavizado
+    // En vuelo local/superficie evitamos el retardo artificial del ancla:
+    // debe acompañar al cuerpo, no amortiguar la entrada del piloto.
     desiredOffset.x = cam.position.x - target.center.x;
     desiredOffset.y = cam.position.y - target.center.y;
     desiredOffset.z = cam.position.z - target.center.z;
 
-    const aOff = alphaFromHz(offsetFollowHz, dtSec);
-    smoothedOffset.x += (desiredOffset.x - smoothedOffset.x) * aOff;
-    smoothedOffset.y += (desiredOffset.y - smoothedOffset.y) * aOff;
-    smoothedOffset.z += (desiredOffset.z - smoothedOffset.z) * aOff;
+    const surfaceBlend = clamp01(Number(surfaceState?.frameBlend) || 0);
+    if (surfaceBlend >= 0.55) {
+      smoothedOffset.copyFrom(desiredOffset);
+    } else {
+      const dynamicOffsetHz = offsetFollowHz + (22.0 * surfaceBlend);
+      const aOff = alphaFromHz(dynamicOffsetHz, dtSec);
+      smoothedOffset.x += (desiredOffset.x - smoothedOffset.x) * aOff;
+      smoothedOffset.y += (desiredOffset.y - smoothedOffset.y) * aOff;
+      smoothedOffset.z += (desiredOffset.z - smoothedOffset.z) * aOff;
+    }
 
     const targetX = target.center.x + smoothedOffset.x;
     const targetY = target.center.y + smoothedOffset.y;

@@ -28,9 +28,11 @@ export function setupCamera(scene, canvas, opts = {}) {
   const tmpTargetForward = new BABYLON.Vector3();
   const tmpTargetUp = new BABYLON.Vector3();
   const tmpTargetRight = new BABYLON.Vector3();
+  const tmpAlignAxis = new BABYLON.Vector3();
   const tmpRotM = new BABYLON.Matrix();
   const tmpTargetRotM = new BABYLON.Matrix();
   const tmpTargetQuat = new BABYLON.Quaternion();
+  const tmpAlignQuat = new BABYLON.Quaternion();
   const tmpSetFwd = new BABYLON.Vector3();
   const tmpSetUp = new BABYLON.Vector3();
   const tmpSetRight = new BABYLON.Vector3();
@@ -231,32 +233,25 @@ export function setupCamera(scene, canvas, opts = {}) {
     if (tmpTargetUp.lengthSquared() < 1e-10) return;
     tmpTargetUp.normalize();
 
-    // Conserva la sensación de rumbo actual, pero proyectada al plano tangente local
-    const fDotUp = BABYLON.Vector3.Dot(tmpForward, tmpTargetUp);
-    tmpTargetForward.x = tmpForward.x - tmpTargetUp.x * fDotUp;
-    tmpTargetForward.y = tmpForward.y - tmpTargetUp.y * fDotUp;
-    tmpTargetForward.z = tmpForward.z - tmpTargetUp.z * fDotUp;
+    const dot = clamp(BABYLON.Vector3.Dot(tmpShipUp, tmpTargetUp), -1, 1);
+    if (dot > 0.999999) return;
 
-    if (tmpTargetForward.lengthSquared() < 1e-10) {
-      const rDotUp = BABYLON.Vector3.Dot(tmpShipRight, tmpTargetUp);
-      tmpTargetRight.x = tmpShipRight.x - tmpTargetUp.x * rDotUp;
-      tmpTargetRight.y = tmpShipRight.y - tmpTargetUp.y * rDotUp;
-      tmpTargetRight.z = tmpShipRight.z - tmpTargetUp.z * rDotUp;
-      if (tmpTargetRight.lengthSquared() < 1e-10) return;
-      tmpTargetRight.normalize();
-      BABYLON.Vector3.CrossToRef(tmpTargetRight, tmpTargetUp, tmpTargetForward);
-    } else {
-      tmpTargetForward.normalize();
-      BABYLON.Vector3.CrossToRef(tmpTargetUp, tmpTargetForward, tmpTargetRight);
+    BABYLON.Vector3.CrossToRef(tmpShipUp, tmpTargetUp, tmpAlignAxis);
+    if (tmpAlignAxis.lengthSquared() < 1e-10) {
+      // Up y targetUp opuestos: usamos el eje longitudinal actual como fallback
+      // para evitar imponer un bank/yaw artificial.
+      tmpAlignAxis.copyFrom(tmpForward);
+      if (tmpAlignAxis.lengthSquared() < 1e-10) {
+        tmpAlignAxis.copyFrom(tmpShipRight);
+      }
     }
 
-    tmpTargetRight.normalize();
-    BABYLON.Vector3.CrossToRef(tmpTargetRight, tmpTargetUp, tmpTargetForward);
-    tmpTargetForward.normalize();
+    tmpAlignAxis.normalize();
+    const angle = Math.acos(dot) * alpha;
+    if (Math.abs(angle) <= 1e-6) return;
 
-    BABYLON.Matrix.FromXYZAxesToRef(tmpTargetRight, tmpTargetUp, tmpTargetForward, tmpTargetRotM);
-    BABYLON.Quaternion.FromRotationMatrixToRef(tmpTargetRotM, tmpTargetQuat);
-    state.ship.shipQuat = BABYLON.Quaternion.Slerp(shipQ, tmpTargetQuat, alpha);
+    BABYLON.Quaternion.RotationAxisToRef(tmpAlignAxis, angle, tmpAlignQuat);
+    state.ship.shipQuat = tmpAlignQuat.multiply(shipQ);
     state.ship.shipQuat.normalize();
     _applyShipCameraOrientation();
   }
@@ -369,6 +364,22 @@ export function setupCamera(scene, canvas, opts = {}) {
       targetLyH: (targetUps * 3600) / Math.max(1, state.ship.unitsPerLy),
       hotkeySteps: HOTKEY_STEPS.slice(),
       maxStep: MAX_SPEED_STEP,
+    };
+  }
+
+  function getAngularMetrics() {
+    const pitchRadS = Number(state.ship.rotVel?.pitch) || 0;
+    const yawRadS = Number(state.ship.rotVel?.yaw) || 0;
+    const rollRadS = Number(state.ship.rotVel?.roll) || 0;
+    return {
+      pitchRadS,
+      yawRadS,
+      rollRadS,
+      speedRadS: Math.sqrt(
+        (pitchRadS * pitchRadS) +
+        (yawRadS * yawRadS) +
+        (rollRadS * rollRadS)
+      ),
     };
   }
 
@@ -916,6 +927,7 @@ export function setupCamera(scene, canvas, opts = {}) {
     stabilizeToLocalUp,
     setShipLookDirection,
     getSpeedMetrics,
+	getAngularMetrics,
     getHudState,
     serializeState,
     applySavedState,

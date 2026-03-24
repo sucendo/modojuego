@@ -23,7 +23,8 @@ import { createCameraOrbitAnchor } from './orbitAnchor.js';
 import { createCameraBodyCollision } from './collision.js';
 import { createLocalSurfaceFlight } from './localSurfaceFlight.js';
 import { createSurfaceAltimeter } from './surfaceAltimeter.js';
-import { collectUniverseSnapshots } from '../sim/universeState.js';
+import { createLocalBodyGravity } from './gravity.js';
+import { collectUniverseSnapshots, createCanonicalSimClock } from '../sim/universeState.js';
 import { APP_CONFIG } from '../config/appConfig.js';
 import { createBootSplash, createIntroModal } from '../ui/bootIntro.js';
 import { spawnCameraInEarthOrbit } from './initialSpawn.js';
@@ -159,6 +160,26 @@ export function bootstrap() {
   });
 
   // ============================================================
+  // Tiempo canónico / autoridad temporal
+  // ============================================================
+  const transport = createOfflineTransport();
+  transport.connect();
+  const getAuthoritativeNowMs = () => transport?.getAuthoritativeNowMs?.() ?? Date.now();
+  const saved = loadState();
+  const hasSavedState = !!saved;
+  const simClock = createCanonicalSimClock({
+    persistedState: saved?.timeState,
+    defaults: {
+      authority: transport?.timeAuthorityId || transport?.mode || 'local-absolute',
+      epochUnixMs: 0,
+      epochSimDays: 0,
+      daysPerRealSecond: DAYS_PER_REAL_SECOND,
+    },
+    getNowMs: getAuthoritativeNowMs,
+  });
+  const canonicalTimeState = simClock.getState();
+
+  // ============================================================
   // Builders (extraídos)
   // ============================================================
   const KM_PER_UNIT_LOCAL = APP_CONFIG.world.kmPerUnitLocal;
@@ -167,8 +188,18 @@ export function bootstrap() {
 
   const { systemNodes, lyUnits } = buildSystemNodes({ scene, worldRoot, GALAXY, SYSTEMS, labelsApi });
   camCtrl?.setUnitsPerLy?.(lyUnits);
-  
-  const starsApi = buildStars({ scene, systemNodes, GALAXY, lights, labelsApi, starMeshById, repMgr, kmPerUnitLocal: KM_PER_UNIT_LOCAL });
+
+  const starsApi = buildStars({
+    scene,
+    systemNodes,
+    GALAXY,
+    lights,
+    labelsApi,
+    starMeshById,
+    repMgr,
+    kmPerUnitLocal: KM_PER_UNIT_LOCAL,
+    canonicalTimeState,
+  });
   const {
     planetSystems,
     planetMeshById,
@@ -183,7 +214,8 @@ export function bootstrap() {
     lights,
     labelsApi,
     repMgr,
-    kmPerUnitLocal: KM_PER_UNIT_LOCAL
+    kmPerUnitLocal: KM_PER_UNIT_LOCAL,
+    canonicalTimeState,
   });
 
   const BODY_MAPS = [planetMeshById, moonMeshById, asteroidMeshById, cometMeshById];
@@ -199,6 +231,10 @@ export function bootstrap() {
   const localSurfaceFlight = createLocalSurfaceFlight({
     bodyMaps: BODY_MAPS,
     ...APP_CONFIG.localSurfaceFlight,
+  });
+  
+  const localBodyGravity = createLocalBodyGravity({
+    ...APP_CONFIG.localBodyGravity,
   });
 
   const surfaceAltimeter = createSurfaceAltimeter({ camera, bodyMaps: BODY_MAPS });
@@ -237,8 +273,6 @@ export function bootstrap() {
     worldRoot,
     ...APP_CONFIG.floatingOrigin,
   });
-  const transport = createOfflineTransport();
-  transport.connect();
   const _camAbsTmp = new BABYLON.Vector3();
   let _lastPresenceT = 0;
   
@@ -304,17 +338,35 @@ export function bootstrap() {
 
 
   // Throttles for heavy tickers
-  let binAccSec = 0;
   let binLastT = 0;
   const BIN_MS = APP_CONFIG.scene.binaryUpdateMs;
 
-  let simDays = 0;
+  let simDays = simClock.getSimDays();
+  let simDaysRender = simDays;
+
+  function snapBodiesToCanonicalTime() {
+    simDays = simClock.getSimDays();
+    simDaysRender = simDays;
+    if (starsApi?.starSystems?.length) updateOrbits(starsApi.starSystems, simDays, 0);
+    updateOrbits(planetSystems, simDays, 0);
+	if (starsApi?.updateBinaries) starsApi.updateBinaries(simDays);
+  }
+
+  function applyLoadedTimeState(timeState, { snapRender = false } = {}) {
+    if (!timeState) return;
+    simClock.setState(timeState);
+    simDays = simClock.getSimDays();
+    if (snapRender) simDaysRender = simDays;
+  }
 
   const runtime = {
     getSimDays: () => simDays,
+    getSimDaysRender: () => simDaysRender,
+    getSimTimeState: () => simClock.getState(),
     getUniverseSnapshot: () => collectUniverseSnapshots(scene),
     getLocalPlayerState: () => {
       const abs = floating.getCameraAbsoluteToRef(_camAbsTmp);
+	  const nowMs = getAuthoritativeNowMs();
       return {
         id: 'local',
         mode: camCtrl?.getMode?.() || 'mouse',
@@ -325,7 +377,9 @@ export function bootstrap() {
           z: Number(abs.z || 0),
         },
         simDays,
-        ts: Date.now(),
+        simTimeState: simClock.getState(),
+        authorityNowMs: nowMs,
+        ts: nowMs,
       };
     },
     transport,
@@ -334,21 +388,19 @@ export function bootstrap() {
   window.__runtime = runtime;
   window.__transport = transport;
 
-  let simDaysRender = 0;
   // Suavizado SOLO visual para órbitas:
-  // amortigua micro-parones del frame loop sin cambiar el tiempo simulado guardado.
+  // amortigua micro-parones del frame loop sin cambiar el tiempo simulado canónico.
   const ORBIT_SMOOTH_HZ = APP_CONFIG.scene.orbitSmoothHz;
+  const ORBIT_SNAP_GAP_DAYS = Math.max(DAYS_PER_REAL_SECOND * 2.0, 1e-6);
 
   // Sitúa los cuerpos en su posición inicial antes de decidir spawn.
-  if (starsApi?.starSystems?.length) updateOrbits(starsApi.starSystems, simDaysRender, 0);
-  updateOrbits(planetSystems, simDaysRender, 0);
-
+  snapBodiesToCanonicalTime();
+  
   // ============================
   // Load saved travel (optional)
   // ============================
-  const saved = loadState();
-  const hasSavedState = !!saved;
   if (saved) {
+	applyLoadedTimeState(saved.timeState, { snapRender: true });
     applyLoadedState({
       state: saved,
       worldRoot,
@@ -359,6 +411,7 @@ export function bootstrap() {
     });
     // estabiliza antes del primer render (evita micro-salto)
     floating.apply();
+	snapBodiesToCanonicalTime();
   } else {
     spawnCameraInEarthOrbit({
       camera,
@@ -371,6 +424,7 @@ export function bootstrap() {
     });
     // estabiliza antes del primer render
     floating.apply();
+	snapBodiesToCanonicalTime();
   }
   
   let _lastSaveT = 0;
@@ -379,7 +433,7 @@ export function bootstrap() {
   
   const doSave = () => {
     if (_saveDisabled) return;
-    try { saveState({ floating, camera, camCtrl, orbitAnchor }); } catch (_) {}
+    try { saveState({ floating, camera, camCtrl, orbitAnchor, timeState: simClock.getState() }); } catch (_) {}
   };
 
   scene.onBeforeRenderObservable.add(() => {
@@ -391,15 +445,21 @@ export function bootstrap() {
   });
 
   document.addEventListener("visibilitychange", () => {
-    if (document.hidden) doSave();
+    if (document.hidden) {
+      doSave();
+      return;
+    }
+    snapBodiesToCanonicalTime();
   });
-  
+
+  window.addEventListener('pageshow', snapBodiesToCanonicalTime);
+  window.addEventListener('focus', snapBodiesToCanonicalTime);  
   window.addEventListener("beforeunload", doSave);
 
   registerGlobalShortcuts({
     onSave: () => {
       _saveDisabled = false;
-      saveState({ floating, camera, camCtrl, orbitAnchor });
+      saveState({ floating, camera, camCtrl, orbitAnchor, timeState: simClock.getState() });
       console.log("[SAVE] ok");
     },
     onClearSave: () => {
@@ -411,6 +471,7 @@ export function bootstrap() {
       _saveDisabled = false;
       const st = loadState();
       if (!st) return;
+	  applyLoadedTimeState(st.timeState, { snapRender: true });
       applyLoadedState({
         state: st,
         worldRoot,
@@ -419,6 +480,8 @@ export function bootstrap() {
         camCtrl,
         orbitAnchor,
       });
+      floating.apply();
+      snapBodiesToCanonicalTime();
       console.log("[SAVE] loaded");
     },
     introModal,
@@ -432,42 +495,48 @@ export function bootstrap() {
       lights.updateNearestSystemShadows();
     }
   
-    // Binarios/trinarios (throttle)
-    if (starsApi?.updateBinaries) {
-      const now = performance.now();
-      binAccSec += dtSec;
-      if ((now - binLastT) >= BIN_MS) {
-        starsApi.updateBinaries(binAccSec);
-        binAccSec = 0;
-        binLastT = now;
-      }
-    }
-  
-    // Tiempo simulado
-    const dtDays = dtSec * DAYS_PER_REAL_SECOND;
-    simDays += dtDays;
-  
-    // Suavizado visual del tiempo orbital
+    // Tiempo simulado canónico (autoridad local ahora; backend después).
+    simDays = simClock.getSimDays();
+
+    // Suavizado SOLO de render: nunca altera el tiempo canónico guardado.
     const prevSimDaysRender = simDaysRender;
-    const orbitAlpha = 1.0 - Math.exp(-dtSec * ORBIT_SMOOTH_HZ);
-    simDaysRender += (simDays - simDaysRender) * orbitAlpha;
+    const simGapDays = simDays - simDaysRender;
+    if (!Number.isFinite(simDaysRender) || Math.abs(simGapDays) > ORBIT_SNAP_GAP_DAYS) {
+      simDaysRender = simDays;
+    } else {
+      const orbitAlpha = 1.0 - Math.exp(-dtSec * ORBIT_SMOOTH_HZ);
+      simDaysRender += simGapDays * orbitAlpha;
+    }
     const dtDaysRender = simDaysRender - prevSimDaysRender;
-  
-    // Órbitas y spin primero
+
+    // Órbitas y spin primero: ambos usan el tiempo simulado absoluto canónico.
     if (starsApi?.starSystems?.length) {
       updateOrbits(starsApi.starSystems, simDaysRender, dtDaysRender);
     }
     updateOrbits(planetSystems, simDaysRender, dtDaysRender);
+
+    // Binarios/trinarios legacy, pero resueltos con tiempo canónico absoluto
+    if (starsApi?.updateBinaries) {
+      const now = performance.now();
+      if (!binLastT || (now - binLastT) >= BIN_MS) {
+        starsApi.updateBinaries(simDaysRender);
+        binLastT = now;
+      }
+    }
   
     // Movimiento jugador
     const prevCamPos = camera.position.clone();
     camCtrl.update(dtSec);
 	
     // Movimiento local cerca de superficie, con cabeceo mucho más suave
-    localSurfaceFlight.apply(camera, camCtrl, prevCamPos, dtSec);
+    const surfaceFlightState = localSurfaceFlight.apply(camera, camCtrl, prevCamPos, dtSec);
+
+    // Gravedad local simplificada: solo radial, con assist fuerte cerca de superficie.
+    // No toca el vuelo espacial lejano ni introduce física multibody.
+    localBodyGravity.apply(camera, dtSec, surfaceFlightState);
 
     // Anclaje orbital + arrastre por spin superficial
-    orbitAnchor.applyOrbitAnchor(camera, camCtrl, dtSec, dtDaysRender);
+    orbitAnchor.applyOrbitAnchor(camera, camCtrl, dtSec, dtDaysRender, surfaceFlightState);
   
     // Colisión superficie
     bodyCollision.enforceBodyCollision(camera, prevCamPos);

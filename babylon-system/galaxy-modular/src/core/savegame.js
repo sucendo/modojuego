@@ -1,4 +1,5 @@
 import { APP_CONFIG } from '../config/appConfig.js';
+import { sanitizeSimTimeState } from '../sim/universeState.js';
 
 // src/core/savegame.js
 // Guarda/recupera estado del viaje en localStorage:
@@ -6,12 +7,12 @@ import { APP_CONFIG } from '../config/appConfig.js';
 // - posición local de cámara
 // - orientación de cámara
 // - estado de vuelo del modo K (rumbo, vista libre, velocidad, gyro)
-// - NO guarda tiempo orbital: el universo siempre sigue tiempo real
+// - base temporal canónica (época + velocidad + autoridad de tiempo)
 
 const KEY = APP_CONFIG.storage.saveKey;
 const LEGACY_KEYS = APP_CONFIG.storage.legacySaveKeys;
 
-export function saveState({ floating, camera, camCtrl, orbitAnchor }) {
+export function saveState({ floating, camera, camCtrl, orbitAnchor, timeState }) {
   try {
     const off = floating?.originOffset || { x: 0, y: 0, z: 0 };
     const p = camera?.position || { x: 0, y: 0, z: 0 };
@@ -23,16 +24,18 @@ export function saveState({ floating, camera, camCtrl, orbitAnchor }) {
     const cameraRotE = (!q && r) ? { x: r.x, y: r.y, z: r.z } : null;
     const flightState = camCtrl?.serializeState?.() || null;
     const orbitAnchorState = orbitAnchor?.serializeState?.(camera) || null;
+    const savedTimeState = timeState ? sanitizeSimTimeState(timeState) : null;
 
     localStorage.setItem(KEY, JSON.stringify({
-      v: 5,
+      v: 6,
       savedAt: Date.now(),
       originOffset: { x: off.x, y: off.y, z: off.z },
       cameraLocal: { x: p.x, y: p.y, z: p.z },
       cameraRotQ,
       cameraRotE,
       flightState,
-	  orbitAnchorState,
+      orbitAnchorState,
+      timeState: savedTimeState,
     }));
     return true;
   } catch (e) {
@@ -49,7 +52,7 @@ export function loadState() {
       if (!raw) continue;
       const s = JSON.parse(raw);
       if (!s) continue;
-      if (s.v !== 1 && s.v !== 2 && s.v !== 3 && s.v !== 4 && s.v !== 5) continue;
+      if (s.v !== 1 && s.v !== 2 && s.v !== 3 && s.v !== 4 && s.v !== 5 && s.v !== 6) continue;
       return s;
     }
     return null;

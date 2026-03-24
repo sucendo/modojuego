@@ -2,11 +2,18 @@
 (function(global){
   // Requiere BABYLON global
 // src/planets/atmosphere.js
-function createAtmospherePostProcess(scene, camera) {
+function createAtmospherePostProcess(scene, camera, options) {
   ensureShaders();
+  options = options || {};
+
+  const ppName = String(options.name || "atmoPP");
+  const ppRatio = Number.isFinite(options.ratio) ? Math.max(0.25, options.ratio) : 1.0;
+  const samplingMode = Number.isFinite(options.samplingMode)
+    ? options.samplingMode
+    : BABYLON.Texture.BILINEAR_SAMPLINGMODE;
 
   const pp = new BABYLON.PostProcess(
-    "atmoPP",
+    ppName,
     "atmoPP",
     [
       "useDepth",
@@ -28,14 +35,16 @@ function createAtmospherePostProcess(scene, camera) {
       "minZ", "maxZ",
     ],
     ["depthSampler"],
-    1.0,
+    ppRatio,
     camera,
-    BABYLON.Texture.BILINEAR_SAMPLINGMODE,
+    samplingMode,
     scene.getEngine(),
     false
   );
 
   pp.alphaMode = BABYLON.Engine.ALPHA_DISABLE;
+  pp._name = ppName;
+  pp._role = String(options.role || 'generic');
 
   pp._camera = camera;
   pp._attached = true;
@@ -127,9 +136,25 @@ function createAtmospherePostProcess(scene, camera) {
 }
 
 function attachDepthForAtmosphere(scene, camera, pp) {
-  const depth = scene.enableDepthRenderer(camera, true);
-  pp._depthTex = depth.getDepthMap();
+  if (!scene || !camera || !pp) return null;
+
+  let depth = null;
+  try {
+    if (!scene.__atmoDepthRendererByCamera) {
+      scene.__atmoDepthRendererByCamera = new WeakMap();
+    }
+    depth = scene.__atmoDepthRendererByCamera.get(camera) || null;
+    if (!depth) {
+      depth = scene.enableDepthRenderer(camera, true);
+      try { scene.__atmoDepthRendererByCamera.set(camera, depth); } catch (_) {}
+    }
+  } catch (_) {
+    depth = scene.enableDepthRenderer(camera, true);
+  }
+
+  pp._depthTex = depth?.getDepthMap?.() || null;
   pp._useDepth = true;
+  return depth;
 }
 
 function setAtmosphereTarget(pp, planetTarget, planetRadius, atmoRadius, sunPos) {
@@ -155,6 +180,21 @@ function enableAtmospherePP(pp, enabled) {
 }
 
 function updateAtmospherePP(pp, timeSeconds) { pp._time = timeSeconds; }
+
+function disposeAtmospherePP(pp) {
+  if (!pp) return;
+  try {
+    const cam = pp._camera;
+    if (pp._attached && cam) {
+      cam.detachPostProcess(pp);
+    }
+  } catch (e) {}
+
+  pp._attached = false;
+  pp._enabled = false;
+
+  try { pp.dispose(); } catch (e) {}
+}
 
 function ensureShaders() {
   try {
@@ -326,10 +366,10 @@ function ensureShaders() {
       // y hitA.y sigue siendo la salida válida hacia delante.
       if (hitA.y < 0.0) { gl_FragColor = base; return; }
 
-      // Un poco más pequeña que el radio visual para evitar cortes bruscos
-      // del halo cuando la cámara está pegada al suelo o al relieve.
-      // Pero no demasiado pequeña, o el brillo se "cuela" por el horizonte.
-      float occRadius = planetRadius * 0.9992;
+      // Ligero solape con el horizonte para evitar la costura negra
+      // entre el disco del planeta y la atmósfera.
+      float occRadius = planetRadius * 1.00045;
+      float horizonOverlap = max(atmoThickness * 0.03, planetRadius * 0.00035);
       vec2 hitP = raySphere(roW, rdW, planetPos, occRadius);
 
 	  vec3 upN = safeNormalize(roW - planetPos);
@@ -337,13 +377,13 @@ function ensureShaders() {
       float t1 = hitA.y;
 
       if (!cameraInsideAtmo) {
-        if (hitP.x > 0.0) t1 = min(t1, hitP.x);
+        if (hitP.x > 0.0) t1 = min(t1, hitP.x + horizonOverlap);
         t1 = min(t1, sceneT);
       } else {
         // Dentro de la atmósfera no dejes que la rama "sin depth" mate el cielo.
         // Solo recortamos con el planeta si realmente miramos hacia abajo.
         if (dot(rdW, upN) < -0.05) {
-          if (hitP.y > 0.0) t1 = min(t1, hitP.y);
+          if (hitP.y > 0.0) t1 = min(t1, hitP.y + horizonOverlap);
           t1 = min(t1, sceneT);
         } else if (allowDepth) {
           t1 = min(t1, sceneT);
@@ -489,6 +529,7 @@ function ensureShaders() {
     attachDepthForAtmosphere,
     setAtmosphereTarget,
     enableAtmospherePP,
-    updateAtmospherePP
+    updateAtmospherePP,
+    disposeAtmospherePP
   };
 })(window);

@@ -6,6 +6,8 @@
 // - parentesco lógico
 // - tiempo de simulación
 
+const DEFAULT_DAYS_PER_REAL_SECOND = 1 / 86400;
+
 function _num(v, fb = 0) {
   return Number.isFinite(Number(v)) ? Number(v) : fb;
 }
@@ -15,6 +17,103 @@ function _vec3Like(v, fb = 0) {
     x: _num(v?.x, fb),
     y: _num(v?.y, fb),
     z: _num(v?.z, fb),
+  };
+}
+
+export function sanitizeSimTimeState(state, defaults = {}) {
+  const fallbackEpochUnixMs = _num(defaults?.epochUnixMs, 0);
+  const fallbackEpochSimDays = _num(defaults?.epochSimDays, 0);
+  const fallbackDaysPerRealSecond = _num(
+    defaults?.daysPerRealSecond,
+    DEFAULT_DAYS_PER_REAL_SECOND
+  );
+  const out = {
+    v: 1,
+    authority: String(state?.authority || defaults?.authority || 'local-absolute'),
+    epochUnixMs: _num(state?.epochUnixMs, fallbackEpochUnixMs),
+    epochSimDays: _num(state?.epochSimDays, fallbackEpochSimDays),
+    daysPerRealSecond: _num(state?.daysPerRealSecond, fallbackDaysPerRealSecond),
+    paused: !!(state?.paused ?? defaults?.paused ?? false),
+    pausedSimDays: _num(state?.pausedSimDays, fallbackEpochSimDays),
+    updatedAtUnixMs: _num(state?.updatedAtUnixMs, _num(state?.epochUnixMs, fallbackEpochUnixMs)),
+  };
+
+  if (!Number.isFinite(out.daysPerRealSecond) || out.daysPerRealSecond === 0) {
+    out.daysPerRealSecond = fallbackDaysPerRealSecond || DEFAULT_DAYS_PER_REAL_SECOND;
+  }
+
+  if (out.paused) {
+    out.pausedSimDays = _num(state?.pausedSimDays, out.epochSimDays);
+  }
+
+  return out;
+}
+
+export function resolveSimDaysAtUnixMs(timeState, nowUnixMs = Date.now()) {
+  const s = sanitizeSimTimeState(timeState);
+  if (s.paused) return _num(s.pausedSimDays, s.epochSimDays);
+  const elapsedMs = _num(nowUnixMs, s.epochUnixMs) - s.epochUnixMs;
+  return s.epochSimDays + ((elapsedMs / 1000) * s.daysPerRealSecond);
+}
+
+export function rebaseSimTimeState(timeState, simDays, atUnixMs = Date.now()) {
+  const s = sanitizeSimTimeState(timeState);
+  const out = sanitizeSimTimeState(s, s);
+  out.epochUnixMs = _num(atUnixMs, out.epochUnixMs);
+  out.epochSimDays = _num(simDays, resolveSimDaysAtUnixMs(out, out.epochUnixMs));
+  out.updatedAtUnixMs = out.epochUnixMs;
+  if (out.paused) out.pausedSimDays = out.epochSimDays;
+  return out;
+}
+
+export function createCanonicalSimClock({
+  persistedState = null,
+  defaults = {},
+  getNowMs = () => Date.now(),
+} = {}) {
+  const readNowMs = (typeof getNowMs === 'function') ? getNowMs : (() => Date.now());
+
+  let state = sanitizeSimTimeState(persistedState, {
+    authority: defaults?.authority || 'local-absolute',
+    epochUnixMs: _num(defaults?.epochUnixMs, 0),
+    epochSimDays: _num(defaults?.epochSimDays, 0),
+    daysPerRealSecond: _num(defaults?.daysPerRealSecond, DEFAULT_DAYS_PER_REAL_SECOND),
+    paused: !!defaults?.paused,
+  });
+
+  function getState() {
+    return { ...state };
+  }
+
+  function getSimDays(atUnixMs = readNowMs()) {
+    return resolveSimDaysAtUnixMs(state, atUnixMs);
+  }
+
+  function getSimDaysAtUnixMs(atUnixMs) {
+    return resolveSimDaysAtUnixMs(state, atUnixMs);
+  }
+
+  function setState(nextState, { preserveCurrentSimDays = false } = {}) {
+    const nowMs = readNowMs();
+    const fallback = preserveCurrentSimDays
+      ? rebaseSimTimeState(state, getSimDays(nowMs), nowMs)
+      : state;
+    state = sanitizeSimTimeState(nextState, fallback);
+    return getState();
+  }
+
+  function rebase(simDays = getSimDays(), atUnixMs = readNowMs()) {
+    state = rebaseSimTimeState(state, simDays, atUnixMs);
+    return getState();
+  }
+
+  return {
+    getNowMs: readNowMs,
+    getState,
+    setState,
+    rebase,
+    getSimDays,
+    getSimDaysAtUnixMs,
   };
 }
 

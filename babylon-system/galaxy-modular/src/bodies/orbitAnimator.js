@@ -127,16 +127,49 @@ export function updateOrbits(planetSystems, simDays, dtDays = 0) {
     }
   }
 
-  function stepSpin(mesh, dt) {
+  function ensureSpinBase(mesh) {
+    if (!mesh) return null;
+    const md = (mesh.metadata = Object.assign({}, mesh.metadata));
+    if (md._spinBaseQ) return md._spinBaseQ;
+
+    const baseQ = mesh.rotationQuaternion
+      ? mesh.rotationQuaternion.clone()
+      : BABYLON.Quaternion.FromEulerAngles(
+          Number(mesh.rotation?.x || 0),
+          Number(mesh.rotation?.y || 0),
+          Number(mesh.rotation?.z || 0)
+        );
+
+    md._spinBaseQ = baseQ;
+    if (!mesh.rotationQuaternion) {
+      mesh.rotationQuaternion = baseQ.clone();
+    }
+    return md._spinBaseQ;
+  }
+
+  function stepSpin(mesh, tDays) {
     const md = mesh?.metadata;
     if (!md) return;
     const spin = Number(md.spin);
     if (!Number.isFinite(spin)) return;
+	
     const axis = md.spinAxis || BABYLON.Axis.Y;
-    mesh.rotate(axis, spin * dt, BABYLON.Space.LOCAL);
+    const baseQ = ensureSpinBase(mesh);
+    if (!baseQ) return;
+
+    const spinPhase0 = Number(md.spinPhase0) || 0;
+    const spinAngle = spinPhase0 + (spin * tDays);
+    const qSpin = BABYLON.Quaternion.RotationAxis(axis, spinAngle);
+    const qAbs = baseQ.multiply(qSpin);
+
+    if (!mesh.rotationQuaternion) {
+      mesh.rotationQuaternion = qAbs.clone();
+    } else {
+      mesh.rotationQuaternion.copyFrom(qAbs);
+    }
   }
 
-  function updateSatelliteList(list, tDays, dtDays) {
+  function updateSatelliteList(list, tDays) {
     if (!Array.isArray(list)) return;
     for (const s of list) {
       const orbit = s?.orbit;
@@ -147,8 +180,8 @@ export function updateOrbits(planetSystems, simDays, dtDays = 0) {
         const parentAbsKm = getAbsKm(parentNode);
         syncBodySim(mesh, tDays, parentNode, parentAbsKm);
       }
-      if (mesh) stepSpin(mesh, dtDays);
-      updateSatelliteList(s?.satellites || s?.moons, tDays, dtDays);
+      if (mesh) stepSpin(mesh, tDays);
+      updateSatelliteList(s?.satellites || s?.moons, tDays);
     }
   }
 
@@ -164,8 +197,8 @@ export function updateOrbits(planetSystems, simDays, dtDays = 0) {
         const parentAbsKm = getAbsKm(parentNode);
         syncBodySim(planet, simDays, parentNode, parentAbsKm);
       }
-	  if (planet) stepSpin(planet, dtDays);
-	  updateSatelliteList(obj?.satellites || obj?.moons, simDays, dtDays);
+      if (planet) stepSpin(planet, simDays);
+      updateSatelliteList(obj?.satellites || obj?.moons, simDays);
     }
   }
 }

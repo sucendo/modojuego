@@ -7,9 +7,9 @@
 //  - GALAXY.satellites
 //  - GALAXY.artificialSatellites (o GALAXY.artificial_satellites)
 
-import { ensureSimMeta, setSimLocalU, setSimAbsKm } from '../sim/universeState.js';
+import { ensureSimMeta, setSimLocalU, setSimAbsKm, sanitizeSimTimeState } from '../sim/universeState.js';
 
-export function buildPlanets({ scene, systemNodes, starMeshById, GALAXY, lights, labelsApi, repMgr, kmPerUnitLocal = 1e6 }) {
+export function buildPlanets({ scene, systemNodes, starMeshById, GALAXY, lights, labelsApi, repMgr, kmPerUnitLocal = 1e6, canonicalTimeState = null }) {
   if (!scene || !Array.isArray(systemNodes)) throw new Error('[planets] scene/systemNodes required');
 
   const planetSystems = [];
@@ -76,6 +76,16 @@ export function buildPlanets({ scene, systemNodes, starMeshById, GALAXY, lights,
   const TAU = Math.PI * 2;
   const DEG = Math.PI / 180;
 
+  const canonicalTime = sanitizeSimTimeState(canonicalTimeState, {
+    authority: 'local-absolute',
+    epochUnixMs: 0,
+    epochSimDays: 0,
+    daysPerRealSecond: 1 / 86400,
+  });
+  const canonicalZeroUnixMs = canonicalTime.epochUnixMs - ((canonicalTime.epochSimDays / canonicalTime.daysPerRealSecond) * 1000);
+  const CANONICAL_REF_UNIX_MS = Number.isFinite(canonicalZeroUnixMs) ? canonicalZeroUnixMs : 0;
+  const CANONICAL_REF_SIM_DAYS = 0;
+
   function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
   function num(v, fb = 0) { return Number.isFinite(Number(v)) ? Number(v) : fb; }
   function normDeg(v) {
@@ -83,18 +93,19 @@ export function buildPlanets({ scene, systemNodes, starMeshById, GALAXY, lights,
     if (v < 0) v += 360;
     return v;
   }
-  function nowJD() {
-    return (Date.now() / 86400000) + JD_UNIX_EPOCH;
+  function jdAtUnixMs(unixMs) {
+    return (_numUnixMs(unixMs) / 86400000) + JD_UNIX_EPOCH;
   }
-  function epochCenturies(def) {
+  function _numUnixMs(v) { return Number.isFinite(Number(v)) ? Number(v) : CANONICAL_REF_UNIX_MS; }
+  function epochCenturies(def, unixMs = CANONICAL_REF_UNIX_MS) {
     const epochJD = num(def?.epochJD, JD_J2000);
-    return (nowJD() - epochJD) / 36525.0;
+    return (jdAtUnixMs(unixMs) - epochJD) / 36525.0;
   }
   function hasJplEpochElements(def) {
     return Number.isFinite(Number(def?.meanLongitudeAtEpoch))
       && Number.isFinite(Number(def?.longitudeOfPerihelionAtEpoch));
   }
-  function getJplAnglesRad(def) {
+  function getJplAnglesRad(def, unixMs = CANONICAL_REF_UNIX_MS) {
     if (!hasJplEpochElements(def)) {
       return {
         lonAsc: num(def?.longitudeOfAscendingNode, 0) * DEG,
@@ -102,7 +113,7 @@ export function buildPlanets({ scene, systemNodes, starMeshById, GALAXY, lights,
         argPeri: num(def?.argumentOfPeriapsis, 0) * DEG,
       };
     }
-    const T = epochCenturies(def);
+    const T = epochCenturies(def, unixMs);
     const I = num(def?.inclinationAtEpoch, def?.inclination) +
       num(def?.inclinationRateDegPerCentury, 0) * T;
     const Omega = num(def?.longitudeOfAscendingNodeAtEpoch, def?.longitudeOfAscendingNode) +
@@ -116,9 +127,9 @@ export function buildPlanets({ scene, systemNodes, starMeshById, GALAXY, lights,
       argPeri: argPeri * DEG,
     };
   }
-  function getEpochOrbitShape(def) {
+  function getEpochOrbitShape(def, unixMs = CANONICAL_REF_UNIX_MS) {
     if (Number.isFinite(Number(def?.semiMajorAxisAuAtEpoch)) || Number.isFinite(Number(def?.eccentricityAtEpoch))) {
-      const T = epochCenturies(def);
+      const T = epochCenturies(def, unixMs);
       const aAU = num(def?.semiMajorAxisAuAtEpoch, 0) + num(def?.semiMajorAxisRateAuPerCentury, 0) * T;
       const e = clamp(num(def?.eccentricityAtEpoch, 0) + num(def?.eccentricityRatePerCentury, 0) * T, 0, 0.999999);
       if (aAU > 0) {
@@ -130,9 +141,9 @@ export function buildPlanets({ scene, systemNodes, starMeshById, GALAXY, lights,
     }
     return null;
   }
-  function getMeanNowFromEpoch(def) {
+  function getMeanAtUnixMsFromEpoch(def, unixMs = CANONICAL_REF_UNIX_MS) {
     if (!hasJplEpochElements(def)) return null;
-    const T = epochCenturies(def);
+    const T = epochCenturies(def, unixMs);
     const L = num(def?.meanLongitudeAtEpoch, 0) +
       num(def?.meanLongitudeRateDegPerCentury, 0) * T;
     const longPeri = num(def?.longitudeOfPerihelionAtEpoch, 0) +
@@ -225,21 +236,21 @@ export function buildPlanets({ scene, systemNodes, starMeshById, GALAXY, lights,
     return 1;
   }
 
-  function meanFromLastPerihelion(def, nAbs) {
-    const jplMean = getMeanNowFromEpoch(def);
+  function meanAtUnixMs(def, nAbs, unixMs = CANONICAL_REF_UNIX_MS) {
+    const jplMean = getMeanAtUnixMsFromEpoch(def, unixMs);
     if (Number.isFinite(jplMean)) return jplMean;
     // mean anomaly at "now" (radian)
     const s = def?.lastPerihelion;
     if (!s || !nAbs) return 0;
     const t0 = Date.parse(s);
     if (Number.isNaN(t0)) return 0;
-    const daysSince = (Date.now() - t0) / 86400000;
+    const daysSince = (_numUnixMs(unixMs) - t0) / 86400000;
     return (daysSince * nAbs);
   }
 
   function createOrbitNodes({ systemName, parentMesh, bodyId, def }) {
     // Orientación orbital: Ω (Y), i (X), ω (Y dentro del plano)
-    const { lonAsc, inc, argPeri } = getJplAnglesRad(def);
+    const { lonAsc, inc, argPeri } = getJplAnglesRad(def, CANONICAL_REF_UNIX_MS);
 
     const orbitPlane = new BABYLON.TransformNode(`orbPlane_${systemName}_${bodyId}`, scene);
     orbitPlane.parent = parentMesh;
@@ -319,11 +330,12 @@ export function buildPlanets({ scene, systemNodes, starMeshById, GALAXY, lights,
     // Guardamos axis en metadata y giramos sobre él (LOCAL)
     mesh.metadata.spin = spinDir * spinAbs;
     mesh.metadata.spinAxis = axis;
+	mesh.metadata.spinPhase0 = num(def?.rotationPhaseDeg, 0) * DEG - ((spinDir * spinAbs) * CANONICAL_REF_SIM_DAYS);
   }
 
   function initOrbit(orbitNode, def) {
     // Kepler: a,e,n,mean (mean anomaly)
-    const epochShape = getEpochOrbitShape(def);
+    const epochShape = getEpochOrbitShape(def, CANONICAL_REF_UNIX_MS);
     let aU, e;
     if (epochShape) {
       aU = epochShape.aU;
@@ -347,12 +359,13 @@ export function buildPlanets({ scene, systemNodes, starMeshById, GALAXY, lights,
       ? jplNAbs
       : ((pAbs > 0) ? (TAU / pAbs) : (TAU / 365.25)); // rad/día
 
-    const Mnow = meanFromLastPerihelion(def, nAbs);
+    const Mref = meanAtUnixMs(def, nAbs, CANONICAL_REF_UNIX_MS);
+    const mean0 = orbitDir * (Mref - (nAbs * CANONICAL_REF_SIM_DAYS));
 
     orbitNode.metadata = Object.assign({}, orbitNode.metadata, {
       aU, e,
-      mean0: orbitDir * Mnow,
-      mean: orbitDir * Mnow,
+      mean0,
+      mean: mean0,
       n: nAbs,
       dir: orbitDir,
     });

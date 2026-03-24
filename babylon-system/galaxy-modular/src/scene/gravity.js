@@ -1,49 +1,50 @@
 // src/scene/gravity.js
-// "Pseudo-gravedad" de cámara:
-// - atrae suavemente hacia el cuerpo dominante cercano
-// - arrastra la cámara con el desplazamiento orbital del cuerpo
-//   para que "siga" al objeto cuando estás cerca
-//
-// No usa masa real; usa radio + distancia para una sensación estable.
+// Gravedad local simplificada para vuelo de superficie:
+// - solo actúa respecto al cuerpo local activo
+// - aplica aceleración radial suave hacia el centro
+// - compensa gran parte de la caída cerca de superficie (flight assist vertical)
+// - no introduce física multibody ni órbitas reales
+// - mantiene el coste muy bajo y evita pelearse con la maniobrabilidad local
 
-export function createCameraBodyGravity({
-  bodyMaps = [],
-  padding = 0.0,
-  allowedKinds = ['planet', 'moon', 'asteroid', 'comet'],
-  influenceMul = 400.0,   // alcance extra = radiusWorld * influenceMul
-  minInfluence = 1.25,    // alcance mínimo en unidades de escena
-  carryFactor = 1.0,      // cuánto arrastra la traslación orbital del cuerpo
-  pullMul = 400.0,        // fuerza base ≈ radiusWorld * pullMul
-  minPullPerSec = 0.35,   // mínimo para cuerpos pequeños
-  maxPullPerSec = 80.0,   // techo por estabilidad
-  maxCarryDelta = 5000.0, // evita teleports raros si algo salta
-}) {
+export function createLocalBodyGravity({
+  // Aceleración radial base (pseudo-física jugable, no masa real)
+  accelMul = 0.020,
+  minAccel = 0.0000005,
+  maxAccel = 0.000040,
+
+  // Assist vertical: cerca del suelo compensa casi toda la caída.
+  assistNear = 0.985,
+  assistFar = 0.0,
+  assistFullMul = 0.0012,
+  assistFadeMul = 0.040,
+  minAssistFullGap = 0.000008,
+  minAssistFadeGap = 0.00015,
+
+  // Estabilidad radial
+  radialDampingNear = 12.0,
+  radialDampingFar = 1.5,
+  groundClampMul = 0.00030,
+  minGroundClampGap = 0.000004,
+  maxFallSpeed = 0.0000045,
+} = {}) {
   const EPS = 1e-8;
-  const PAD = Number.isFinite(padding) ? padding : 0.0;
-  const kinds = new Set(Array.isArray(allowedKinds) ? allowedKinds : ['planet', 'moon', 'asteroid', 'comet']);
-  const prevCenters = new WeakMap(); // node -> Vector3
-  let activeBody = null;
+  const _up = new BABYLON.Vector3(0, 1, 0);
+  let lockedBody = null;
+  let radialVel = 0.0; // signed speed along local up; < 0 means falling toward the body
 
   function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
-
-  function eachBody(fn) {
-    for (const map of bodyMaps) {
-      if (!map || typeof map.values !== 'function') continue;
-      for (const node of map.values()) {
-        if (!node) continue;
-        const md = node.metadata || {};
-        const kind = md.kind;
-        if (!kinds.has(kind)) continue;
-
-        const radiusWorld = Number(md.radiusWorld);
-        if (!(radiusWorld > 0)) continue;
-
-        fn(node, radiusWorld, md);
-      }
-    }
+  function clamp01(v) { return clamp(v, 0, 1); }
+  function smoothstep01(t) {
+    t = clamp01(t);
+    return t * t * (3 - 2 * t);
   }
+  function alphaFromHz(hz, dtSec) {
+    return 1.0 - Math.exp(-Math.max(0, hz) * Math.max(0, dtSec));
+  }
+  function lerp(a, b, t) { return a + ((b - a) * t); }
 
   function getNodeWorldPos(node) {
+    if (!node) return null;
     try { node.computeWorldMatrix?.(true); } catch (_) {}
     try {
       return (typeof node.getAbsolutePosition === 'function')
@@ -54,113 +55,107 @@ export function createCameraBodyGravity({
     }
   }
 
-  function applyBodyGravity(cam, dtSec) {
-    if (!cam?.position) return null;
-    dtSec = Number(dtSec) || 0;
-    if (dtSec <= 0) return null;
+  function reset() {
+    lockedBody = null;
+    radialVel = 0.0;
+  }
 
-    let best = null;
-
-    eachBody((node, radiusWorld) => {
-      const center = getNodeWorldPos(node);
-      if (!center) return;
-
-      const cx = center.x, cy = center.y, cz = center.z;
-
-      let prev = prevCenters.get(node);
-      if (!prev) {
-        prev = new BABYLON.Vector3(cx, cy, cz);
-        prevCenters.set(node, prev);
-      }
-
-      const dx = cx - cam.position.x;
-      const dy = cy - cam.position.y;
-      const dz = cz - cam.position.z;
-      const d2 = dx * dx + dy * dy + dz * dz;
-      const d = Math.sqrt(Math.max(EPS, d2));
-
-      const effectiveRadius = Math.max(EPS, radiusWorld + PAD);
-      const influenceRadius = effectiveRadius + Math.max(minInfluence, radiusWorld * influenceMul);
-      const surfaceGap = Math.max(0, d - effectiveRadius);
-
-      if (d <= influenceRadius) {
-        const normGap = surfaceGap / effectiveRadius;
-        const stickyBias = (node === activeBody) ? 0.15 : 0.0;
-        const score = normGap - stickyBias;
-
-        if (!best || score < best.score) {
-          best = {
-            node,
-            score,
-            radiusWorld,
-            effectiveRadius,
-            influenceRadius,
-            cx, cy, cz,
-            px: prev.x, py: prev.y, pz: prev.z,
-          };
-        }
-      }
-
-      prev.copyFromFloats(cx, cy, cz);
-    });
-
-    if (!best) {
-      activeBody = null;
+  function apply(cam, dtSec, surfaceState = null) {
+    if (!cam?.position) {
+      reset();
       return null;
     }
 
-    activeBody = best.node;
+    dtSec = Number(dtSec) || 0;
+    if (dtSec <= 0) return null;
 
-    // 1) Arrastre orbital: la cámara acompaña al cuerpo en su traslación.
-    const bdx = best.cx - best.px;
-    const bdy = best.cy - best.py;
-    const bdz = best.cz - best.pz;
-    const bodyDelta2 = bdx * bdx + bdy * bdy + bdz * bdz;
-    if (carryFactor !== 0 && bodyDelta2 > EPS) {
-      const bodyDelta = Math.sqrt(bodyDelta2);
-      if (bodyDelta < maxCarryDelta) {
-        cam.position.x += bdx * carryFactor;
-        cam.position.y += bdy * carryFactor;
-        cam.position.z += bdz * carryFactor;
-      }
+    const targetNode = surfaceState?.node || surfaceState?.body || null;
+    if (!targetNode) {
+      reset();
+      return null;
     }
 
-    // 2) Atracción suave hacia el centro del cuerpo dominante.
-    const dx = best.cx - cam.position.x;
-    const dy = best.cy - cam.position.y;
-    const dz = best.cz - cam.position.z;
-    const d2 = dx * dx + dy * dy + dz * dz;
-    const d = Math.sqrt(Math.max(EPS, d2));
+    const center = getNodeWorldPos(targetNode);
+    if (!center) {
+      reset();
+      return null;
+    }
 
-    const surfaceGap = Math.max(0, d - best.effectiveRadius);
-    const t = 1.0 - clamp(
-      surfaceGap / Math.max(EPS, (best.influenceRadius - best.effectiveRadius)),
-      0, 1
-    );
-    const strength = t * t;
-    const pullPerSec = Math.min(
-      maxPullPerSec,
-      Math.max(minPullPerSec, best.radiusWorld * pullMul) * strength
-    );
+    const radiusWorld = Math.max(EPS, Number(surfaceState?.radiusWorld) || 0);
+    if (!(radiusWorld > 0)) {
+      reset();
+      return null;
+    }
 
-    if (pullPerSec > 0 && d > EPS) {
-      const invD = 1.0 / d;
-      const step = pullPerSec * dtSec;
-      cam.position.x += dx * invD * step;
-      cam.position.y += dy * invD * step;
-      cam.position.z += dz * invD * step;
+    const bodyChanged = lockedBody !== targetNode;
+    lockedBody = targetNode;
+
+    _up.x = cam.position.x - center.x;
+    _up.y = cam.position.y - center.y;
+    _up.z = cam.position.z - center.z;
+    const dist = Math.sqrt((_up.x * _up.x) + (_up.y * _up.y) + (_up.z * _up.z));
+    if (!(dist > EPS)) return null;
+    _up.scaleInPlace(1.0 / dist);
+
+    const gap = Math.max(0, dist - radiusWorld);
+
+    const assistFullGap = Math.max(minAssistFullGap, radiusWorld * assistFullMul);
+    const assistFadeGap = Math.max(minAssistFadeGap, radiusWorld * assistFadeMul);
+    const assistT = clamp01((gap - assistFullGap) / Math.max(EPS, assistFadeGap - assistFullGap));
+    const assistBlend = smoothstep01(assistT);
+    const assistFactor = lerp(assistNear, assistFar, assistBlend);
+
+    const surfaceAccel = clamp(radiusWorld * accelMul, minAccel, maxAccel);
+    const gravityAccel = surfaceAccel * Math.max(0, 1.0 - assistFactor);
+
+    const dampingHz = lerp(radialDampingNear, radialDampingFar, assistBlend);
+    const dampAlpha = alphaFromHz(dampingHz, dtSec);
+
+    if (bodyChanged) {
+      radialVel = Math.min(0.0, radialVel * 0.25);
+    }
+
+    radialVel -= gravityAccel * dtSec;
+    radialVel += (0.0 - radialVel) * dampAlpha;
+
+    const groundClampGap = Math.max(minGroundClampGap, radiusWorld * groundClampMul);
+    if (gap <= groundClampGap && radialVel < 0) {
+      radialVel *= Math.exp(-18.0 * dtSec);
+      if (Math.abs(radialVel) < 1e-7) radialVel = 0.0;
+    }
+
+    if (radialVel < 0) {
+      radialVel = Math.max(radialVel, -Math.max(0, maxFallSpeed));
+    }
+
+    const radialDelta = radialVel * dtSec;
+    if (Math.abs(radialDelta) > 0) {
+      cam.position.x += _up.x * radialDelta;
+      cam.position.y += _up.y * radialDelta;
+      cam.position.z += _up.z * radialDelta;
     }
 
     return {
-      body: best.node,
-      strength,
-      influenceRadius: best.influenceRadius,
-      effectiveRadius: best.effectiveRadius,
+      node: targetNode,
+      center,
+      radiusWorld,
+      gap,
+      localUp: _up.clone(),
+      assistFactor,
+      gravityAccel,
+      radialVel,
+      radialDelta,
     };
   }
 
   return {
-    applyBodyGravity,
-    getActiveBody: () => activeBody,
+    apply,
+    reset,
+    getLockedBody: () => lockedBody,
+    getRadialVelocity: () => radialVel,
   };
 }
+
+// Alias de compatibilidad por si en algún momento se había referenciado
+// el nombre antiguo del experimento de pseudo-gravedad.
+export const createCameraBodyGravity = createLocalBodyGravity;
