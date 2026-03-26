@@ -3977,7 +3977,8 @@ export const GALAXY = {
 			axialTilt: 2.0,
 			rotationPeriod: 2.34,
 			kind: "planet",
-			radius: 1.2
+			radius: 1.2,
+            jsonFile: "barnard_d.json"
 		},
         "Barnard b": {
 			periapsis: 3323018,
@@ -4012,7 +4013,8 @@ export const GALAXY = {
 			axialTilt: 5.0,
 			rotationPeriod: 4.12,
 			kind: "planet",
-			radius: 1.45
+			radius: 1.45,
+            jsonFile: "barnard_c.json",
 		},
         "Barnard e": {
 			periapsis: 5471692,
@@ -4029,7 +4031,8 @@ export const GALAXY = {
 			axialTilt: 8.0,
 			rotationPeriod: 6.74,
 			kind: "planet",
-			radius: 1.25
+			radius: 1.25,
+            jsonFile: "barnard_e.json",
 		},
 
         // --- Wolf 359 ---
