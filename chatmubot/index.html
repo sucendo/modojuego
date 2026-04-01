@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="description" content="ChatmuBot - chatbot conversacional local con juegos, contexto, traducción, corrección y búsqueda.">
+  <title>ChatmuBot</title>
+  <link rel="stylesheet" href="assets/css/chatmubot.css">
+  <script src="https://unpkg.com/mathjs/lib/browser/math.js"></script>
+  <script src="assets/js/core/chatbotConfig.js"></script>
+</head>
+<body>
+  <div id="chat-app">
+    <header class="app-header">
+      <div class="app-title-wrap">
+        <h1 class="app-title">ChatmuBot</h1>
+        <p id="botStatus" class="app-status">Asistente conversacional local</p>
+      </div>
+      <div class="header-actions">
+        <button id="clearChatBtn" class="icon-btn" title="Limpiar historial">🗑️</button>
+        <button id="exportChatBtn" class="icon-btn" title="Exportar historial">⬇️</button>
+      </div>
+    </header>
+
+    <section id="quickActions" class="quick-actions" aria-label="Acciones rápidas"></section>
+
+    <main id="chat-container">
+      <section id="chat" aria-live="polite" aria-label="Conversación"></section>
+
+      <form id="input-container" autocomplete="off">
+        <label class="sr-only" for="userInput">Escribe tu mensaje</label>
+        <textarea id="userInput" rows="1" placeholder="Escribe tu pregunta aquí"></textarea>
+        <div id="controles">
+          <button type="submit" id="enviar">Enviar</button>
+          <button type="button" id="btnModo" title="Cambiar tema">🌙</button>
+          <button type="button" id="btnVoz" title="Activar lectura de respuestas">🔊</button>
+          <button type="button" id="micBtn" title="Dictado por voz">🎙️</button>
+          <button type="button" id="fullscreenBtn" title="Pantalla completa">↕️</button>
+        </div>
+      </form>
+    </main>
+  </div>
+
+  <script src="assets/js/core/chatbotLoader.js" defer></script>
+</body>
+</html>

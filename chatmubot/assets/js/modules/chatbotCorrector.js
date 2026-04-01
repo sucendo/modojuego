@@ -68,6 +68,14 @@ function levenshteinDistance(a, b) {
 	return matriz[b.length][a.length];
 }
 
+function escapeHTML(s) {
+  return String(s)
+	.replace(/&/g, "&amp;")
+	.replace(/</g, "&lt;")
+	.replace(/>/g, "&gt;")
+	.replace(/"/g, "&quot;");
+}
+
 // Función para consultar LanguageTool y corregir ortografía
 async function corregirTexto(texto) {
 	// Si el texto está entre comillas dobles, no corregir
@@ -124,7 +132,7 @@ async function corregirTexto(texto) {
 
 					// Reemplazar la palabra en ambas versiones (HTML y texto simple)
 					textoCorregidoSimple.splice(start, end - start, ...sugerencia);
-					const palabraCorregidaHTML = `<em>${sugerencia}</em>`;
+					const palabraCorregidaHTML = `<em>${escapeHTML(sugerencia)}</em>`;
 					textoCorregidoHTML.splice(start, end - start, ...palabraCorregidaHTML);
 				}
 			});
@@ -169,7 +177,7 @@ function restaurarComillas(textoCorregido, partesExcluidas) {
 async function procesarTextoConCorreccion(texto) {
 	const { textoSinComillas, partesExcluidas } = excluirComillas(texto);
 	const textoCorregido = await corregirTexto(textoSinComillas);
-	return restaurarComillas(textoCorregido, partesExcluidas);
+	return restaurarComillas(textoCorregido.corregidoSimple, partesExcluidas);
 }
 
 // Función para corregir ortografía de la consulta
