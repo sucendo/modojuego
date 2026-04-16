@@ -1,0 +1,9 @@
+{
+  "users": [
+    {
+      "username_b64": "bW9u",
+      "password_b64": "TW9uY2hpdGE=",
+      "role": "viewer"
+    }
+  ]
+}

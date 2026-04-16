@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>videmon</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <section id="login-view" class="view active">
+      <div class="login-card">
+        <div class="brand">
+          <span class="brand-badge">VIDEMON</span>
+          <h1>videmon</h1>
+          <p>Accede con tu usuario y contraseña para ver la videoteca privada.</p>
+        </div>
+
+        <form id="login-form" class="login-form" autocomplete="off">
+          <label>
+            <span>Usuario</span>
+            <input type="text" id="username" name="username" placeholder="Introduce tu usuario" required />
+          </label>
+
+          <label>
+            <span>Contraseña</span>
+            <input type="password" id="password" name="password" placeholder="Introduce tu contraseña" required />
+          </label>
+
+          <button type="submit" class="btn-primary">Entrar</button>
+          <p id="login-error" class="error-message" aria-live="polite"></p>
+        </form>
+
+        <p class="security-note">Credenciales leídas desde <code>users.json</code> con valores ofuscados en Base64.</p>
+      </div>
+    </section>
+
+    <section id="gallery-view" class="view">
+      <header class="topbar">
+        <div>
+          <span class="brand-badge">VIDEMON</span>
+          <h2>Videoteca privada</h2>
+          <p class="topbar-subtitle">Grid responsive, buscador, tema oscuro/claro y fecha de última reproducción guardada en el navegador.</p>
+        </div>
+
+        <div class="topbar-actions">
+          <input id="search-input" type="search" placeholder="Buscar por título o ID..." />
+          <button id="theme-toggle" class="btn-secondary" type="button">Modo día</button>
+          <button id="logout-btn" class="btn-secondary" type="button">Cerrar sesión</button>
+        </div>
+      </header>
+
+      <main>
+        <div id="stats" class="stats"></div>
+        <div id="video-grid" class="video-grid"></div>
+      </main>
+    </section>
+  </div>
+
+  <div id="player-modal" class="modal" aria-hidden="true">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-header">
+        <h3 id="modal-title"></h3>
+        <button id="modal-close" class="icon-button" type="button" aria-label="Cerrar reproductor">✕</button>
+      </div>
+      <div id="modal-player" class="modal-player"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
