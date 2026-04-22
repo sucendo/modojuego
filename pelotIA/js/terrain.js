@@ -114,7 +114,7 @@ export function drawTerrainSVG(containerId, terrain, resolution = RESOLUTION) {
   div.appendChild(svg);
 }
 
-export function initTerrain(containerId, ball, target, windDisplay) {
+export function initTerrain(containerId, ball, target, windDisplay, launcher = null) {
   const div = document.getElementById(containerId);
   const width = div.clientWidth;
   const height = div.clientHeight;
@@ -126,6 +126,13 @@ export function initTerrain(containerId, ball, target, windDisplay) {
 
   ball.style.left = '10px';
   ball.style.bottom = `${launchY}px`;
+  ball.style.display = 'block';
+
+  if (launcher) {
+    launcher.style.left = '8px';
+    launcher.style.bottom = `${Math.max(0, launchY - 4)}px`;
+    launcher.style.display = 'block';
+  }
 
   relocateTarget(target, containerId, windDisplay, terrain, ball);
   return terrain;
@@ -147,4 +154,5 @@ export function relocateTarget(target, containerId, windDisplay, terrain) {
   windDisplay.textContent = (Math.random() * 4 - 2).toFixed(2);
   target.style.left = `${posPx}px`;
   target.style.bottom = `${terrainHeight}px`;
+  target.style.display = 'block';
 }

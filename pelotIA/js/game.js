@@ -15,6 +15,7 @@ const ball = document.getElementById('ball');
 const target = document.getElementById('target');
 const trailCanvas = document.getElementById('trailCanvas');
 const trailCtx = trailCanvas.getContext('2d');
+const launcher = document.getElementById('launcher');
 
 const attemptsDisplay = document.getElementById('attempts');
 const bestDistanceDisplay = document.getElementById('bestDistance');
@@ -55,6 +56,20 @@ function resizeCanvases() {
 function updateModelState(text) {
   if (modelStateDisplay) modelStateDisplay.textContent = text;
 }
+
+function setVisibleScene() {
+  ball.style.display = 'block';
+  target.style.display = 'block';
+  if (launcher) launcher.style.display = 'block';
+}
+
+function positionLauncher(angle = bestAngle) {
+  if (!launcher) return;
+  const ballBottom = Number.parseFloat(ball.style.bottom) || 0;
+  launcher.style.bottom = `${Math.max(0, ballBottom - 4)}px`;
+  launcher.style.transform = `rotate(${Math.max(10, Math.min(80, angle))}deg)`;
+}
+
 
 function resetTelemetry() {
   attempts = 0;
@@ -146,6 +161,8 @@ async function maybeTrainModel() {
 export function throwBall(angle, force) {
   if (ballMoving || !terrain.length || !isSessionActive) return;
 
+  positionLauncher(angle);
+  setVisibleScene();
   ballMoving = true;
   let x = 10;
   let y = getTerrainHeight(x, terrain, RESOLUTION);
@@ -318,8 +335,10 @@ export function closeModal() {
 }
 
 async function setupScene() {
-  terrain = initTerrain('terrainContainer', ball, target, windDisplay);
+  terrain = initTerrain('terrainContainer', ball, target, windDisplay, launcher);
   refreshWindFromUI();
+  setVisibleScene();
+  positionLauncher(bestAngle);
 }
 
 export async function initGame() {
@@ -344,6 +363,7 @@ export async function initGame() {
 
   await setupScene();
   chooseOpeningShot();
+  positionLauncher(bestAngle);
   renderSummary();
   addComment('🚀 Entrenamiento iniciado. Buscando la parábola óptima…');
 
@@ -396,10 +416,20 @@ document.querySelectorAll('button').forEach((button) => {
 document.addEventListener('mousemove', cancelAutoRestart);
 document.addEventListener('keydown', cancelAutoRestart);
 
+
+async function bootstrapPreview() {
+  resizeCanvases();
+  resetTelemetry();
+  updateModelState('Pendiente');
+  await setupScene();
+  addComment('🎯 Escena lista. Pulsa “Iniciar entrenamiento” para lanzar.');
+}
+
 handleChartToggle();
-resizeCanvases();
-resetTelemetry();
-updateModelState('Pendiente');
+bootstrapPreview().catch((error) => {
+  console.error(error);
+  updateModelState('Error al preparar escena');
+});
 
 window.closeModal = closeModal;
 window.initGame = initGame;
