@@ -149,13 +149,7 @@
     }
 
     .aim-line {
-      height: 2px;
-      background: linear-gradient(90deg, rgba(255,120,120,.9), rgba(255,204,0,.9));
-      border-radius: 999px;
-      opacity: .95;
-      z-index: 4;
-      transform-origin: left center;
-      box-shadow: 0 0 8px rgba(255,204,0,.45);
+      display: none;
     }
 
     .impact-pulse {
@@ -220,6 +214,11 @@
 
     .hud-box.collapsed .panel-body { display: none; }
     .hud-box.collapsed .panel-header { border-bottom: none; }
+    .hud-box.collapsed { height: auto !important; }
+    #chartPanel.collapsed {
+      height: auto !important;
+      width: min(360px, calc(100vw - 32px));
+    }
 
     .info-box {
       top: 14px;
@@ -567,7 +566,8 @@
       <h2>¡Objetivo alcanzado! 🎯</h2>
       <p>Intentos acumulados: <span id="modalAttempts">0</span></p>
       <p id="modalSummary">Resumen del tiro ganador.</p>
-      <button onclick="closeModal()">Aceptar</button>
+      <p id="modalCountdown">La IA puede seguir entrenando unos segundos más.</p>
+      <button onclick="closeModal()">Cerrar</button>
     </div>
   </div>
   <script type="module" src="js/game.js"></script>

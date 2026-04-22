@@ -55,12 +55,12 @@ const seedShots = [
   { angle: 74, force: 48 }
 ];
 const trailColors = {
-  user: 'rgba(255, 80, 80, 0.52)',
-  ai: 'rgba(255, 255, 255, 0.62)'
+  user: 'rgba(255, 140, 140, 0.52)',
+  ai: 'rgba(160, 160, 160, 0.58)'
 };
 const impactColors = {
-  user: 'rgba(255, 110, 110, 0.95)',
-  ai: 'rgba(255, 255, 255, 0.95)'
+  user: 'rgba(255, 140, 140, 0.95)',
+  ai: 'rgba(170, 170, 170, 0.95)'
 };
 
 let terrain = [];
@@ -81,8 +81,70 @@ let workerReady = false;
 let aiReady = false;
 let sceneVersion = 0;
 let nextAIShotTimeout = null;
+let successCountdownInterval = null;
+let successAutoPauseTimeout = null;
+let aiControlAngle = 45;
+let aiControlForce = 24;
 const activeShots = { user: null, ai: null };
 
+const aiFunny = {
+  start: [
+    '🤖 Modo superentreno activado. Hoy no vengo a fallar… demasiado.',
+    '🤖 La IA se ha tomado un café virtual. Allá voy.',
+    '🤖 Activando puntería premium de mercadillo.'
+  ],
+  adjust: [
+    '🤖 Giro de tuerca: {angle}° y empujón {force}.',
+    '🤖 Recalculando con estilo: {angle}° / {force}.',
+    '🤖 Mi intuición de tostadora dice {angle}° y fuerza {force}.'
+  ],
+  best: [
+    '🤖 ¡Ojo! Me acerco más que el GPS del futuro: error {error}px.',
+    '🤖 Eso ya huele a diana: solo {error}px de error.',
+    '🤖 ¡Ja! Ajuste fino del bueno: {error}px.'
+  ],
+  miss: [
+    '🤖 He fallado, sí, pero con mucha personalidad: {error}px.',
+    '🤖 No era la diana. Era un saludo táctico a {error}px.',
+    '🤖 Bueno… casi. En mi defensa, la física estaba mirando.'
+  ],
+  hit: [
+    '🤖 ¡Toma diana! Dadme una medalla y una batería nueva.',
+    '🤖 ¡Objetivo alcanzado! Soy peligroso incluso en modo pruebas.',
+    '🤖 ¡Pam! Centro aproximado certificado por la IA.'
+  ],
+  workerReady: [
+    '🧠 Worker listo para entrenar en segundo plano.',
+    '🧠 El mini-cerebro auxiliar ya está calentando GPU imaginaria.'
+  ],
+  workerDone: [
+    '✅ La IA ha refinado el modelo en segundo plano.',
+    '✅ Entrenamiento completado. Ahora fallo con más elegancia.'
+  ]
+};
+
+function pickRandom(items) {
+  return items[Math.floor(Math.random() * items.length)];
+}
+
+function funnyAI(kind, values = {}) {
+  let message = pickRandom(aiFunny[kind] || ['🤖 Bip bop.']);
+  for (const [key, value] of Object.entries(values)) {
+    message = message.replaceAll(`{${key}}`, value);
+  }
+  return message;
+}
+
+function clearSuccessTimers() {
+  if (successCountdownInterval) {
+    clearInterval(successCountdownInterval);
+    successCountdownInterval = null;
+  }
+  if (successAutoPauseTimeout) {
+    clearTimeout(successAutoPauseTimeout);
+    successAutoPauseTimeout = null;
+  }
+}
 
 function validateDOM() {
   const required = [
@@ -175,6 +237,7 @@ function isAnyShotActive() {
 }
 
 function resetRunData({ preserveLogMessage = false } = {}) {
+  clearSuccessTimers();
   attemptLog = [];
   totalAttempts = 0;
   userAttempts = 0;
@@ -182,6 +245,8 @@ function resetRunData({ preserveLogMessage = false } = {}) {
   bestDistance = Infinity;
   bestAngle = Number(angleSlider.value || 45);
   bestForce = Number(forceSlider.value || 24);
+  aiControlAngle = bestAngle;
+  aiControlForce = bestForce;
   bestAttempts = [];
   noProgressCounter = 0;
   attemptsDisplay.textContent = '0';
@@ -285,10 +350,10 @@ async function ensureAI() {
       if (data.cmd === 'inited') {
         workerReady = true;
         setAIState('Worker listo');
-        appendComment('🧠 Worker listo para entrenar en segundo plano.');
+        appendComment(funnyAI('workerReady'));
       } else if (data.cmd === 'trained') {
         setAIState('Modelo actualizado');
-        if (!data.skipped) appendComment('✅ La IA ha refinado el modelo en segundo plano.');
+        if (!data.skipped) appendComment(funnyAI('workerDone'));
         try {
           await initNeuralNetwork();
         } catch (error) {
@@ -368,11 +433,10 @@ function queueNextAIShot(delay = AI_RETRY_DELAY) {
       bestForce
     );
     noProgressCounter = next.newCounter;
-    angleSlider.value = `${next.newAngle}`;
-    forceSlider.value = `${next.newForce}`;
-    syncManualOutputs();
-    appendComment(`🤖 La IA ajusta a ${next.newAngle}° / ${next.newForce}.`);
-    launchShot(next.newAngle, next.newForce, { shooter: 'ai' });
+    aiControlAngle = next.newAngle;
+    aiControlForce = next.newForce;
+    appendComment(funnyAI('adjust', { angle: next.newAngle, force: next.newForce }));
+    launchShot(aiControlAngle, aiControlForce, { shooter: 'ai' });
   }, delay);
 }
 
@@ -484,10 +548,14 @@ async function evaluateThrow(distance, angle, force, shooter) {
     bestForce = force;
     bestAttempts.push({ source: shooter, angle, force, errorX });
     if (bestAttempts.length > 10) bestAttempts.shift();
-    appendComment(`🎯 ${fromAI ? 'IA' : 'Tú'} mejora el récord: error ${Math.round(errorX)} px.`);
+    appendComment(fromAI
+      ? funnyAI('best', { error: Math.round(errorX) })
+      : `🎯 Tú mejoras el récord: error ${Math.round(errorX)} px.`);
   } else {
     noProgressCounter += 1;
-    appendComment(`${fromAI ? '🤖 IA' : '🕹️ Tú'} deja un error de ${Math.round(errorX)} px.`);
+    appendComment(fromAI
+      ? funnyAI('miss', { error: Math.round(errorX) })
+      : `🕹️ Tu disparo deja un error de ${Math.round(errorX)} px.`);
   }
 
   updateBestDisplays();
@@ -497,13 +565,19 @@ async function evaluateThrow(distance, angle, force, shooter) {
 
   const hitRadius = target.clientWidth / 2 + 2;
   if (errorX <= hitRadius) {
-    autoTrainingEnabled = false;
-    trainingPaused = false;
-    pauseTrainingBtn.textContent = '⏯️ Pausar IA';
     setStatus('Objetivo alcanzado');
-    setAIState(fromAI ? 'La IA acertó' : 'Has acertado');
+    setAIState(fromAI ? 'La IA acertó' : '¡Diana!');
     updateModeLabel();
+    if (fromAI) {
+      appendComment(funnyAI('hit'));
+    } else {
+      appendComment('🏆 ¡Diana! Tu disparo ha clavado el objetivo.');
+    }
     showSuccessModal(angle, force, errorX, shooter);
+    if (autoTrainingEnabled && !trainingPaused) {
+      setStatus('Superentreno activo durante 15 s…');
+      queueNextAIShot(120);
+    }
     return;
   }
 
@@ -516,33 +590,58 @@ async function evaluateThrow(distance, angle, force, shooter) {
 }
 
 function showSuccessModal(angle, force, errorX, shooter) {
+  clearSuccessTimers();
   const modal = document.getElementById('successModal');
+  const countdownEl = document.getElementById('modalCountdown');
   document.getElementById('modalAttempts').textContent = `${totalAttempts}`;
   document.getElementById('modalSummary').textContent = `${shooter === 'ai' ? 'La IA' : 'Tu disparo'} acertó con ${Math.round(angle)}°, fuerza ${Math.round(force)} y error ${Math.round(errorX)} px.`;
   modal.style.display = 'flex';
+
+  if (autoTrainingEnabled && !trainingPaused) {
+    let remaining = 15;
+    countdownEl.textContent = `⏳ Superentreno en curso. La IA seguirá 15 s y luego se pausará sola.`;
+    successCountdownInterval = window.setInterval(() => {
+      remaining -= 1;
+      if (remaining > 0) {
+        countdownEl.textContent = `⏳ Superentreno en curso. Pausa automática en ${remaining} s.`;
+      }
+    }, 1000);
+
+    successAutoPauseTimeout = window.setTimeout(() => {
+      clearSuccessTimers();
+      trainingPaused = true;
+      pauseTrainingBtn.textContent = '▶️ Reanudar IA';
+      setStatus('IA pausada tras superentreno');
+      setAIState('Pausada');
+      appendComment('⏸️ La IA se ha pausado sola tras 15 s extra de entrenamiento.');
+      countdownEl.textContent = '⏸️ La IA se ha pausado automáticamente. Puedes cerrarlo o reanudarla.';
+    }, 15000);
+  } else {
+    countdownEl.textContent = 'Puedes cerrar esta ventana y seguir jugando.';
+  }
 }
 
 function closeModal() {
   document.getElementById('successModal').style.display = 'none';
-  setStatus('Listo para continuar');
+  setStatus(trainingPaused ? 'IA en pausa' : 'Listo para continuar');
 }
 
 async function startAITraining() {
   await ensureAI();
+  clearSuccessTimers();
   autoTrainingEnabled = true;
   trainingPaused = false;
   pauseTrainingBtn.textContent = '⏯️ Pausar IA';
   updateModeLabel();
   setStatus('IA activa');
   setAIState(workerReady ? 'Aprendiendo' : 'Preparando');
-  appendComment('🤖 Entrenamiento automático iniciado. Puedes disparar a la vez.');
+  appendComment(funnyAI('start'));
 
   if (!activeShots.ai) {
     const seed = pickSeedShot();
-    angleSlider.value = `${seed.angle}`;
-    forceSlider.value = `${seed.force}`;
-    syncManualOutputs();
-    launchShot(seed.angle, seed.force, { shooter: 'ai' });
+    aiControlAngle = seed.angle;
+    aiControlForce = seed.force;
+    launchShot(aiControlAngle, aiControlForce, { shooter: 'ai' });
   }
 }
 
@@ -553,6 +652,7 @@ function toggleAIPause() {
   }
 
   trainingPaused = !trainingPaused;
+  clearSuccessTimers();
   pauseTrainingBtn.textContent = trainingPaused ? '▶️ Reanudar IA' : '⏯️ Pausar IA';
   setStatus(trainingPaused ? 'IA en pausa' : 'IA activa');
   setAIState(trainingPaused ? 'Pausada' : 'Aprendiendo');
@@ -581,6 +681,7 @@ function prepareNewChallenge() {
 }
 
 function randomizeTarget() {
+  clearSuccessTimers();
   prepareNewChallenge();
   relocateTarget(target, 'terrainContainer', windDisplay, terrain);
   updateWindFromUI();
@@ -592,6 +693,7 @@ function randomizeTarget() {
 
 function placeTargetByClick(event) {
   if (!terrain.length) return;
+  clearSuccessTimers();
   const rect = terrainContainer.getBoundingClientRect();
   const x = event.clientX - rect.left;
   prepareNewChallenge();
@@ -603,6 +705,7 @@ function placeTargetByClick(event) {
 }
 
 function randomizeTerrain() {
+  clearSuccessTimers();
   stopAllShots();
   resetRunData({ preserveLogMessage: true });
   setupScene();
@@ -611,6 +714,7 @@ function randomizeTerrain() {
 }
 
 async function clearTrainingAndReset() {
+  clearSuccessTimers();
   autoTrainingEnabled = false;
   trainingPaused = false;
   pauseTrainingBtn.textContent = '⏯️ Pausar IA';
@@ -646,11 +750,12 @@ function togglePanel(button) {
   if (!panel) return;
   panel.classList.toggle('collapsed');
   const collapsed = panel.classList.contains('collapsed');
+  if (panel.id === 'chartPanel') {
+    panel.style.height = collapsed ? 'auto' : '';
+  }
   button.textContent = collapsed ? '＋' : '−';
   button.setAttribute('aria-expanded', String(!collapsed));
-  if (!collapsed) {
-    window.setTimeout(() => window.dispatchEvent(new Event('resize')), 20);
-  }
+  window.setTimeout(() => window.dispatchEvent(new Event('resize')), 20);
 }
 
 function bindEvents() {
