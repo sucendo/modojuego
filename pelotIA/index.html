@@ -148,9 +148,7 @@
       box-shadow: 0 2px 6px rgba(0,0,0,.25);
     }
 
-    .aim-line {
-      display: none;
-    }
+    .aim-line { display: none; }
 
     .impact-pulse {
       width: 18px;
@@ -161,9 +159,7 @@
       opacity: 0;
     }
 
-    .impact-pulse.visible {
-      animation: pulse .55s ease-out;
-    }
+    .impact-pulse.visible { animation: pulse .55s ease-out; }
 
     @keyframes pulse {
       from { transform: translate(-50%, 50%) scale(0.6); opacity: 0.95; }
@@ -179,6 +175,21 @@
       box-shadow: 0 10px 28px rgba(0, 0, 0, .22);
       backdrop-filter: blur(8px);
       overflow: hidden;
+      min-width: 260px;
+    }
+
+    #controlPanel, #statsPanel {
+      width: min(380px, calc(100vw - 24px));
+    }
+
+    #chartPanel {
+      width: min(52vw, 760px);
+      height: 34vh;
+      min-height: 230px;
+    }
+
+    #commentsPanel {
+      width: min(540px, calc(100vw - 24px));
     }
 
     .panel-header {
@@ -188,7 +199,12 @@
       gap: 12px;
       padding: 14px 16px 10px;
       border-bottom: 1px solid rgba(255,255,255,.08);
+      cursor: grab;
+      touch-action: none;
+      user-select: none;
     }
+
+    .panel-header.dragging { cursor: grabbing; }
 
     .panel-title {
       margin: 0;
@@ -196,7 +212,14 @@
       font-size: 18px;
     }
 
-    .panel-toggle {
+    .panel-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel-toggle,
+    .panel-dock {
       width: 32px;
       height: 32px;
       border-radius: 50%;
@@ -210,20 +233,14 @@
 
     .panel-body {
       padding: 0 16px 16px;
+      user-select: auto;
     }
 
     .hud-box.collapsed .panel-body { display: none; }
     .hud-box.collapsed .panel-header { border-bottom: none; }
-    .hud-box.collapsed { height: auto !important; }
-    #chartPanel.collapsed {
+    .hud-box.collapsed {
       height: auto !important;
-      width: min(360px, calc(100vw - 32px));
-    }
-
-    .info-box {
-      top: 14px;
-      right: 14px;
-      width: min(380px, calc(100vw - 24px));
+      min-height: 0 !important;
     }
 
     .status-row {
@@ -251,7 +268,7 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px;
-      margin-bottom: 14px;
+      margin: 12px 0 0;
     }
 
     .stat-card {
@@ -274,6 +291,13 @@
       font-size: 18px;
       font-weight: bold;
       color: white;
+    }
+
+    .panel-subhint {
+      margin: 12px 0 0;
+      font-size: 12px;
+      color: #d7dfeb;
+      line-height: 1.35;
     }
 
     .control-block {
@@ -317,7 +341,8 @@
     }
 
     .start-button,
-    .ghost-button {
+    .ghost-button,
+    .dock-button {
       padding: 11px 12px;
       font-size: 14px;
       font-weight: bold;
@@ -329,9 +354,15 @@
     }
 
     .start-button { background: linear-gradient(45deg, #ff7b00, #ff4500); }
-    .ghost-button { background: linear-gradient(45deg, #506174, #2e3947); }
+    .ghost-button,
+    .dock-button { background: linear-gradient(45deg, #506174, #2e3947); }
+
     .start-button:hover,
-    .ghost-button:hover { transform: translateY(-1px); filter: brightness(1.05); }
+    .ghost-button:hover,
+    .dock-button:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.05);
+    }
 
     .full-width { grid-column: 1 / -1; }
 
@@ -342,11 +373,11 @@
       line-height: 1.35;
     }
 
-    #chartPanel {
-      top: 88px;
-      left: 16px;
-      width: min(52vw, 760px);
-      height: 34vh;
+    .layout-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
     }
 
     #chartContainer {
@@ -360,12 +391,6 @@
       width: 100% !important;
       height: 100% !important;
       display: block;
-    }
-
-    .comment-panel {
-      left: 16px;
-      bottom: 16px;
-      width: min(540px, calc(100vw - 32px));
     }
 
     #commentBox {
@@ -445,22 +470,10 @@
 
     @media (max-width: 980px) {
       #chartPanel {
-        width: calc(100vw - 32px);
-        top: auto;
-        bottom: 206px;
-        left: 16px;
-        height: 24vh;
+        width: calc(100vw - 24px);
+        height: 28vh;
       }
-
-      .info-box {
-        width: calc(100vw - 32px);
-        max-height: 48vh;
-        overflow: auto;
-      }
-
       .game-title {
-        top: auto;
-        bottom: 154px;
         font-size: 18px;
       }
     }
@@ -489,29 +502,19 @@
   <h1 class="game-title">🎯 Simulador de Lanzamiento con IA</h1>
   <div id="trainingStatus" class="training-status">Modo preparación</div>
 
-  <div id="infoPanel" class="hud-box info-box">
+  <div id="controlPanel" class="hud-box draggable-panel">
     <div class="panel-header">
-      <h3 class="panel-title">📊 Centro de control</h3>
-      <button class="panel-toggle" aria-expanded="true">−</button>
+      <h3 class="panel-title">🎛️ Centro de control</h3>
+      <div class="panel-actions">
+        <button class="panel-dock" type="button" title="Traer al frente">↥</button>
+        <button class="panel-toggle" type="button" aria-expanded="true">−</button>
+      </div>
     </div>
     <div class="panel-body">
       <div class="status-row">
         <span class="pill">Modo: <strong id="modeValue">Manual</strong></span>
         <span class="pill">Mejor tiro: <strong id="bestShotValue">—</strong></span>
         <span class="pill">Estado IA: <strong id="aiStateValue">Lista</strong></span>
-      </div>
-
-      <div class="stats-grid">
-        <div class="stat-card"><span class="stat-label">Intentos totales</span><span class="stat-value" id="attempts">0</span></div>
-        <div class="stat-card"><span class="stat-label">Mejor error</span><span class="stat-value" id="bestDistance">0 px</span></div>
-        <div class="stat-card"><span class="stat-label">Intentos usuario</span><span class="stat-value" id="userAttempts">0</span></div>
-        <div class="stat-card"><span class="stat-label">Intentos IA</span><span class="stat-value" id="aiAttempts">0</span></div>
-        <div class="stat-card"><span class="stat-label">Viento</span><span class="stat-value" id="windSpeed">0 m/s</span></div>
-        <div class="stat-card"><span class="stat-label">Distancia</span><span class="stat-value" id="distanceThrown">0 px</span></div>
-        <div class="stat-card"><span class="stat-label">Ángulo</span><span class="stat-value" id="angleValue">45°</span></div>
-        <div class="stat-card"><span class="stat-label">Fuerza</span><span class="stat-value" id="forceValue">24</span></div>
-        <div class="stat-card"><span class="stat-label">Error actual</span><span class="stat-value" id="errorValue">0 px</span></div>
-        <div class="stat-card"><span class="stat-label">Objetivo X</span><span class="stat-value" id="targetPosValue">—</span></div>
       </div>
 
       <div class="control-block">
@@ -536,25 +539,61 @@
           <button id="clear-training" class="start-button">🗑️ Reiniciar modelo</button>
         </div>
 
-        <p class="hint-text">Ahora puedes disparar mientras la IA también lo hace. La pelota del usuario es roja y la de la IA es blanca. Haz clic en el terreno para mover el objetivo a una nueva posición.</p>
+        <div class="layout-actions">
+          <button id="restore-layout-btn" class="dock-button">🧭 Restaurar layout</button>
+          <button id="snap-layout-btn" class="dock-button">📌 Centrar paneles</button>
+        </div>
+
+        <p class="hint-text">Ahora puedes arrastrar el centro de control, las estadísticas, el gráfico y el registro a cualquier parte. Sus posiciones quedan guardadas en el navegador.</p>
       </div>
     </div>
   </div>
 
-  <div id="chartPanel" class="hud-box">
+  <div id="statsPanel" class="hud-box draggable-panel">
+    <div class="panel-header">
+      <h3 class="panel-title">📊 Estadísticas</h3>
+      <div class="panel-actions">
+        <button class="panel-dock" type="button" title="Traer al frente">↥</button>
+        <button class="panel-toggle" type="button" aria-expanded="true">−</button>
+      </div>
+    </div>
+    <div class="panel-body">
+      <div class="stats-grid">
+        <div class="stat-card"><span class="stat-label">Intentos totales</span><span class="stat-value" id="attempts">0</span></div>
+        <div class="stat-card"><span class="stat-label">Mejor error</span><span class="stat-value" id="bestDistance">0 px</span></div>
+        <div class="stat-card"><span class="stat-label">Intentos usuario</span><span class="stat-value" id="userAttempts">0</span></div>
+        <div class="stat-card"><span class="stat-label">Intentos IA</span><span class="stat-value" id="aiAttempts">0</span></div>
+        <div class="stat-card"><span class="stat-label">Viento</span><span class="stat-value" id="windSpeed">0 m/s</span></div>
+        <div class="stat-card"><span class="stat-label">Distancia</span><span class="stat-value" id="distanceThrown">0 px</span></div>
+        <div class="stat-card"><span class="stat-label">Ángulo</span><span class="stat-value" id="angleValue">45°</span></div>
+        <div class="stat-card"><span class="stat-label">Fuerza</span><span class="stat-value" id="forceValue">24</span></div>
+        <div class="stat-card"><span class="stat-label">Error actual</span><span class="stat-value" id="errorValue">0 px</span></div>
+        <div class="stat-card"><span class="stat-label">Objetivo X</span><span class="stat-value" id="targetPosValue">—</span></div>
+      </div>
+      <p class="panel-subhint">Separa control y métricas para leer mejor lo que hace la IA y lo que haces tú en cada ronda.</p>
+    </div>
+  </div>
+
+  <div id="chartPanel" class="hud-box draggable-panel">
     <div class="panel-header">
       <h3 class="panel-title">📉 Evolución del error</h3>
-      <button class="panel-toggle" aria-expanded="true">−</button>
+      <div class="panel-actions">
+        <button class="panel-dock" type="button" title="Traer al frente">↥</button>
+        <button class="panel-toggle" type="button" aria-expanded="true">−</button>
+      </div>
     </div>
     <div class="panel-body">
       <div id="chartContainer"></div>
     </div>
   </div>
 
-  <div id="commentsPanel" class="hud-box comment-panel">
+  <div id="commentsPanel" class="hud-box draggable-panel">
     <div class="panel-header">
       <h3 class="panel-title">📝 Registro</h3>
-      <button class="panel-toggle" aria-expanded="true">−</button>
+      <div class="panel-actions">
+        <button class="panel-dock" type="button" title="Traer al frente">↥</button>
+        <button class="panel-toggle" type="button" aria-expanded="true">−</button>
+      </div>
     </div>
     <div class="panel-body">
       <div id="commentBox"><p>Escena lista. Puedes disparar tú mientras la IA sigue entrenando.</p></div>

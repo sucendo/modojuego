@@ -44,6 +44,13 @@ const pauseTrainingBtn = document.getElementById('pause-training-btn');
 const newTargetBtn = document.getElementById('new-target-btn');
 const newTerrainBtn = document.getElementById('new-terrain-btn');
 const clearTrainingBtn = document.getElementById('clear-training');
+const restoreLayoutBtn = document.getElementById('restore-layout-btn');
+const snapLayoutBtn = document.getElementById('snap-layout-btn');
+
+const controlPanel = document.getElementById('controlPanel');
+const statsPanel = document.getElementById('statsPanel');
+const chartPanel = document.getElementById('chartPanel');
+const commentsPanel = document.getElementById('commentsPanel');
 
 const START_X = 12;
 const AI_RETRY_DELAY = 420;
@@ -87,6 +94,11 @@ let successModalLocked = false;
 let aiControlAngle = 45;
 let aiControlForce = 24;
 const activeShots = { user: null, ai: null };
+
+const PANEL_STORAGE_KEY = 'pelotia-panel-layout-v2';
+const PANEL_IDS = ['controlPanel', 'statsPanel', 'chartPanel', 'commentsPanel'];
+let panelZCounter = 30;
+let panelDragState = null;
 
 const aiFunny = {
   start: [
@@ -183,12 +195,205 @@ function validateDOM() {
     ['pause-training-btn', pauseTrainingBtn],
     ['new-target-btn', newTargetBtn],
     ['new-terrain-btn', newTerrainBtn],
-    ['clear-training', clearTrainingBtn]
+    ['clear-training', clearTrainingBtn],
+    ['restore-layout-btn', restoreLayoutBtn],
+    ['snap-layout-btn', snapLayoutBtn],
+    ['controlPanel', controlPanel],
+    ['statsPanel', statsPanel],
+    ['chartPanel', chartPanel],
+    ['commentsPanel', commentsPanel]
   ];
   const missing = required.filter(([, el]) => !el).map(([name]) => name);
   if (missing.length) {
     throw new Error(`Faltan elementos del DOM: ${missing.join(', ')}`);
   }
+}
+
+
+function getPanels() {
+  return PANEL_IDS.map(id => document.getElementById(id)).filter(Boolean);
+}
+
+function clampPanelPosition(panel, x, y) {
+  const margin = 8;
+  const maxX = Math.max(margin, window.innerWidth - panel.offsetWidth - margin);
+  const maxY = Math.max(margin, window.innerHeight - panel.offsetHeight - margin);
+  return {
+    x: Math.min(maxX, Math.max(margin, x)),
+    y: Math.min(maxY, Math.max(margin, y))
+  };
+}
+
+function getPanelDefaultLayout() {
+  const controlWidth = controlPanel?.offsetWidth || 360;
+  const controlHeight = controlPanel?.offsetHeight || 340;
+  const statsWidth = statsPanel?.offsetWidth || 360;
+  const chartWidth = chartPanel?.offsetWidth || 620;
+  const chartHeight = chartPanel?.offsetHeight || 260;
+  const commentsWidth = commentsPanel?.offsetWidth || 520;
+  const commentsHeight = commentsPanel?.offsetHeight || 220;
+
+  const defaults = {
+    controlPanel: { x: window.innerWidth - controlWidth - 16, y: 16, collapsed: false },
+    statsPanel: { x: window.innerWidth - statsWidth - 16, y: 16 + controlHeight + 16, collapsed: false },
+    chartPanel: { x: 16, y: 88, collapsed: false },
+    commentsPanel: { x: 16, y: window.innerHeight - commentsHeight - 16, collapsed: false }
+  };
+
+  for (const [id, pos] of Object.entries(defaults)) {
+    const panel = document.getElementById(id);
+    if (!panel) continue;
+    defaults[id] = { ...pos, ...clampPanelPosition(panel, pos.x, pos.y) };
+  }
+  return defaults;
+}
+
+function readPanelLayout() {
+  try {
+    return JSON.parse(localStorage.getItem(PANEL_STORAGE_KEY) || '{}');
+  } catch {
+    return {};
+  }
+}
+
+function writePanelLayout(layout) {
+  localStorage.setItem(PANEL_STORAGE_KEY, JSON.stringify(layout));
+}
+
+function setPanelCollapsed(panel, collapsed, { silent = false } = {}) {
+  panel.classList.toggle('collapsed', collapsed);
+  const button = panel.querySelector('.panel-toggle');
+  if (button) {
+    button.textContent = collapsed ? '＋' : '−';
+    button.setAttribute('aria-expanded', String(!collapsed));
+  }
+  if (panel.id === 'chartPanel') {
+    panel.style.height = collapsed ? 'auto' : '';
+  }
+  if (!silent) {
+    savePanelLayout();
+    window.setTimeout(() => window.dispatchEvent(new Event('resize')), 20);
+  }
+}
+
+function capturePanelLayout() {
+  const layout = {};
+  for (const panel of getPanels()) {
+    const left = Number.parseFloat(panel.style.left || `${panel.offsetLeft}`) || 0;
+    const top = Number.parseFloat(panel.style.top || `${panel.offsetTop}`) || 0;
+    layout[panel.id] = {
+      x: left,
+      y: top,
+      collapsed: panel.classList.contains('collapsed')
+    };
+  }
+  return layout;
+}
+
+function savePanelLayout() {
+  writePanelLayout(capturePanelLayout());
+}
+
+function bringPanelToFront(panel) {
+  panelZCounter += 1;
+  panel.style.zIndex = String(panelZCounter);
+}
+
+function applyPanelLayout({ forceDefault = false, announce = false } = {}) {
+  const defaults = getPanelDefaultLayout();
+  const saved = forceDefault ? {} : readPanelLayout();
+
+  for (const panel of getPanels()) {
+    const item = saved[panel.id] || defaults[panel.id];
+    if (!item) continue;
+    const position = clampPanelPosition(panel, item.x, item.y);
+    panel.style.left = `${position.x}px`;
+    panel.style.top = `${position.y}px`;
+    panel.style.right = 'auto';
+    panel.style.bottom = 'auto';
+    setPanelCollapsed(panel, Boolean(item.collapsed), { silent: true });
+  }
+
+  savePanelLayout();
+  if (announce) appendComment('🧭 Layout restaurado.');
+  window.setTimeout(() => window.dispatchEvent(new Event('resize')), 20);
+}
+
+function constrainPanelsToViewport() {
+  for (const panel of getPanels()) {
+    const left = Number.parseFloat(panel.style.left || `${panel.offsetLeft}`) || 0;
+    const top = Number.parseFloat(panel.style.top || `${panel.offsetTop}`) || 0;
+    const position = clampPanelPosition(panel, left, top);
+    panel.style.left = `${position.x}px`;
+    panel.style.top = `${position.y}px`;
+  }
+  savePanelLayout();
+}
+
+function onPanelPointerMove(event) {
+  if (!panelDragState) return;
+  const { panel, offsetX, offsetY } = panelDragState;
+  const position = clampPanelPosition(panel, event.clientX - offsetX, event.clientY - offsetY);
+  panel.style.left = `${position.x}px`;
+  panel.style.top = `${position.y}px`;
+}
+
+function onPanelPointerUp() {
+  if (!panelDragState) return;
+  panelDragState.header.classList.remove('dragging');
+  savePanelLayout();
+  document.removeEventListener('pointermove', onPanelPointerMove);
+  document.removeEventListener('pointerup', onPanelPointerUp);
+  panelDragState = null;
+}
+
+function enablePanelDragging() {
+  for (const panel of getPanels()) {
+    const header = panel.querySelector('.panel-header');
+    const dockBtn = panel.querySelector('.panel-dock');
+    if (dockBtn) {
+      dockBtn.addEventListener('click', () => {
+        bringPanelToFront(panel);
+        savePanelLayout();
+      });
+    }
+    if (!header) continue;
+    header.addEventListener('pointerdown', event => {
+      if (event.target.closest('button')) return;
+      bringPanelToFront(panel);
+      const rect = panel.getBoundingClientRect();
+      panelDragState = {
+        panel,
+        header,
+        offsetX: event.clientX - rect.left,
+        offsetY: event.clientY - rect.top
+      };
+      header.classList.add('dragging');
+      document.addEventListener('pointermove', onPanelPointerMove);
+      document.addEventListener('pointerup', onPanelPointerUp);
+      event.preventDefault();
+    });
+  }
+}
+
+function resetPanelLayout() {
+  localStorage.removeItem(PANEL_STORAGE_KEY);
+  applyPanelLayout({ forceDefault: true, announce: true });
+}
+
+function snapPanelsToEdges() {
+  const defaults = getPanelDefaultLayout();
+  for (const panel of getPanels()) {
+    const item = defaults[panel.id];
+    if (!item) continue;
+    const position = clampPanelPosition(panel, item.x, item.y);
+    panel.style.left = `${position.x}px`;
+    panel.style.top = `${position.y}px`;
+    bringPanelToFront(panel);
+  }
+  savePanelLayout();
+  appendComment('📌 Paneles recolocados en una disposición limpia.');
+  window.setTimeout(() => window.dispatchEvent(new Event('resize')), 20);
 }
 
 function appendComment(message) {
@@ -824,20 +1029,16 @@ async function clearTrainingAndReset() {
 function togglePanel(button) {
   const panel = button.closest('.hud-box');
   if (!panel) return;
-  panel.classList.toggle('collapsed');
-  const collapsed = panel.classList.contains('collapsed');
-  if (panel.id === 'chartPanel') {
-    panel.style.height = collapsed ? 'auto' : '';
-  }
-  button.textContent = collapsed ? '＋' : '−';
-  button.setAttribute('aria-expanded', String(!collapsed));
-  window.setTimeout(() => window.dispatchEvent(new Event('resize')), 20);
+  setPanelCollapsed(panel, !panel.classList.contains('collapsed'));
+  bringPanelToFront(panel);
 }
+
 
 function bindEvents() {
   window.addEventListener('resize', () => {
     resizeCanvases();
     placeProjectilesAtLauncher();
+    constrainPanelsToViewport();
   });
 
   angleSlider.min = `${ANGLE_MIN}`;
@@ -853,23 +1054,28 @@ function bindEvents() {
   newTargetBtn.addEventListener('click', randomizeTarget);
   newTerrainBtn.addEventListener('click', randomizeTerrain);
   clearTrainingBtn.addEventListener('click', clearTrainingAndReset);
+  restoreLayoutBtn.addEventListener('click', resetPanelLayout);
+  snapLayoutBtn.addEventListener('click', snapPanelsToEdges);
   terrainContainer.addEventListener('click', placeTargetByClick);
 
   document.querySelectorAll('.panel-toggle').forEach(button => {
     button.addEventListener('click', () => togglePanel(button));
   });
+
+  enablePanelDragging();
 }
 
 async function boot() {
   validateDOM();
   angleSlider.value = String(Math.max(45, ANGLE_MIN));
   forceSlider.value = String(Math.max(24, FORCE_MIN));
+  bindEvents();
   initErrorChart();
   resetRunData();
   setupScene();
   syncManualOutputs();
   refreshAIButtons();
-  bindEvents();
+  requestAnimationFrame(() => applyPanelLayout());
   try {
     await initNeuralNetwork();
     aiReady = true;
