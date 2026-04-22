@@ -167,9 +167,10 @@
     }
 
     .hud-box {
-      position: absolute;
+      position: fixed;
       z-index: 15;
       background: var(--panel-bg);
+      touch-action: none;
       border: 1px solid var(--panel-border);
       border-radius: 18px;
       box-shadow: 0 10px 28px rgba(0, 0, 0, .22);
@@ -191,6 +192,12 @@
     #commentsPanel {
       width: min(540px, calc(100vw - 24px));
     }
+
+    /* Posiciones de respaldo por si el layout JS aún no se ha aplicado */
+    #controlPanel { top: 16px; right: 16px; left: auto; }
+    #statsPanel { top: 410px; right: 16px; left: auto; }
+    #chartPanel { top: 88px; left: 16px; }
+    #commentsPanel { left: 16px; bottom: 16px; }
 
     .panel-header {
       display: flex;

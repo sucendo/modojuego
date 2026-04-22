@@ -307,6 +307,7 @@ function applyPanelLayout({ forceDefault = false, announce = false } = {}) {
     const item = saved[panel.id] || defaults[panel.id];
     if (!item) continue;
     const position = clampPanelPosition(panel, item.x, item.y);
+    panel.style.position = 'fixed';
     panel.style.left = `${position.x}px`;
     panel.style.top = `${position.y}px`;
     panel.style.right = 'auto';
@@ -324,27 +325,65 @@ function constrainPanelsToViewport() {
     const left = Number.parseFloat(panel.style.left || `${panel.offsetLeft}`) || 0;
     const top = Number.parseFloat(panel.style.top || `${panel.offsetTop}`) || 0;
     const position = clampPanelPosition(panel, left, top);
+    panel.style.position = 'fixed';
     panel.style.left = `${position.x}px`;
     panel.style.top = `${position.y}px`;
+    panel.style.right = 'auto';
+    panel.style.bottom = 'auto';
   }
   savePanelLayout();
 }
 
-function onPanelPointerMove(event) {
-  if (!panelDragState) return;
-  const { panel, offsetX, offsetY } = panelDragState;
-  const position = clampPanelPosition(panel, event.clientX - offsetX, event.clientY - offsetY);
-  panel.style.left = `${position.x}px`;
-  panel.style.top = `${position.y}px`;
+function getClientPoint(event) {
+  if (event.touches && event.touches.length) {
+    return { x: event.touches[0].clientX, y: event.touches[0].clientY };
+  }
+  if (event.changedTouches && event.changedTouches.length) {
+    return { x: event.changedTouches[0].clientX, y: event.changedTouches[0].clientY };
+  }
+  return { x: event.clientX, y: event.clientY };
 }
 
-function onPanelPointerUp() {
+function onPanelDragMove(event) {
+  if (!panelDragState) return;
+  const { panel, offsetX, offsetY } = panelDragState;
+  const point = getClientPoint(event);
+  const position = clampPanelPosition(panel, point.x - offsetX, point.y - offsetY);
+  panel.style.left = `${position.x}px`;
+  panel.style.top = `${position.y}px`;
+  panel.style.right = 'auto';
+  panel.style.bottom = 'auto';
+  if (event.cancelable) event.preventDefault();
+}
+
+function onPanelDragEnd() {
   if (!panelDragState) return;
   panelDragState.header.classList.remove('dragging');
   savePanelLayout();
-  document.removeEventListener('pointermove', onPanelPointerMove);
-  document.removeEventListener('pointerup', onPanelPointerUp);
+  document.removeEventListener('mousemove', onPanelDragMove);
+  document.removeEventListener('mouseup', onPanelDragEnd);
+  document.removeEventListener('touchmove', onPanelDragMove);
+  document.removeEventListener('touchend', onPanelDragEnd);
   panelDragState = null;
+}
+
+function startPanelDrag(panel, header, event) {
+  if (event.target.closest('button, input, label, output, canvas')) return;
+  bringPanelToFront(panel);
+  const rect = panel.getBoundingClientRect();
+  const point = getClientPoint(event);
+  panelDragState = {
+    panel,
+    header,
+    offsetX: point.x - rect.left,
+    offsetY: point.y - rect.top
+  };
+  header.classList.add('dragging');
+  document.addEventListener('mousemove', onPanelDragMove);
+  document.addEventListener('mouseup', onPanelDragEnd);
+  document.addEventListener('touchmove', onPanelDragMove, { passive: false });
+  document.addEventListener('touchend', onPanelDragEnd);
+  if (event.cancelable) event.preventDefault();
 }
 
 function enablePanelDragging() {
@@ -358,21 +397,8 @@ function enablePanelDragging() {
       });
     }
     if (!header) continue;
-    header.addEventListener('pointerdown', event => {
-      if (event.target.closest('button')) return;
-      bringPanelToFront(panel);
-      const rect = panel.getBoundingClientRect();
-      panelDragState = {
-        panel,
-        header,
-        offsetX: event.clientX - rect.left,
-        offsetY: event.clientY - rect.top
-      };
-      header.classList.add('dragging');
-      document.addEventListener('pointermove', onPanelPointerMove);
-      document.addEventListener('pointerup', onPanelPointerUp);
-      event.preventDefault();
-    });
+    header.addEventListener('mousedown', event => startPanelDrag(panel, header, event));
+    header.addEventListener('touchstart', event => startPanelDrag(panel, header, event), { passive: false });
   }
 }
 
@@ -1070,12 +1096,21 @@ async function boot() {
   angleSlider.value = String(Math.max(45, ANGLE_MIN));
   forceSlider.value = String(Math.max(24, FORCE_MIN));
   bindEvents();
+  applyPanelLayout();
   initErrorChart();
   resetRunData();
-  setupScene();
+  try {
+    setupScene();
+  } catch (error) {
+    console.error(error);
+    appendComment('⚠️ Hubo un problema al montar la escena, pero el layout sigue disponible.');
+  }
   syncManualOutputs();
   refreshAIButtons();
-  requestAnimationFrame(() => applyPanelLayout());
+  requestAnimationFrame(() => {
+    applyPanelLayout();
+    constrainPanelsToViewport();
+  });
   try {
     await initNeuralNetwork();
     aiReady = true;
