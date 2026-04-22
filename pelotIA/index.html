@@ -12,8 +12,6 @@
       --accent-2: #ff7b00;
       --text: #f5f7fb;
       --muted: #b6c2d0;
-      --good: #74d99f;
-      --danger: #ff8e8e;
     }
 
     * { box-sizing: border-box; }
@@ -40,14 +38,8 @@
       border: none !important;
     }
 
-    #terrainContainer {
-      z-index: 1;
-    }
-
-    #terrainContainer svg {
-      width: 100%;
-      height: 100%;
-    }
+    #terrainContainer { z-index: 1; cursor: crosshair; }
+    #terrainContainer svg { width: 100%; height: 100%; }
 
     canvas {
       position: absolute;
@@ -88,10 +80,18 @@
       width: 14px;
       height: 14px;
       border-radius: 50%;
-      background: radial-gradient(circle at 35% 35%, #ffb3b3 0%, #ff4747 45%, #7d1111 100%);
-      box-shadow: 0 0 10px rgba(255, 71, 71, 0.65);
       z-index: 6;
       transform: translate(-20%, -20%);
+    }
+
+    .ball.user {
+      background: radial-gradient(circle at 35% 35%, #ffb3b3 0%, #ff4747 45%, #7d1111 100%);
+      box-shadow: 0 0 10px rgba(255, 71, 71, 0.65);
+    }
+
+    .ball.ai {
+      background: radial-gradient(circle at 35% 35%, #ffffff 0%, #ececec 45%, #9198a3 100%);
+      box-shadow: 0 0 12px rgba(255, 255, 255, 0.72);
     }
 
     .target {
@@ -150,9 +150,9 @@
 
     .aim-line {
       height: 2px;
-      background: linear-gradient(90deg, rgba(255,255,255,.8), rgba(255,204,0,.85));
+      background: linear-gradient(90deg, rgba(255,120,120,.9), rgba(255,204,0,.9));
       border-radius: 999px;
-      opacity: .9;
+      opacity: .95;
       z-index: 4;
       transform-origin: left center;
       box-shadow: 0 0 8px rgba(255,204,0,.45);
@@ -184,22 +184,69 @@
       border-radius: 18px;
       box-shadow: 0 10px 28px rgba(0, 0, 0, .22);
       backdrop-filter: blur(8px);
+      overflow: hidden;
     }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px 10px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+
+    .panel-title {
+      margin: 0;
+      color: var(--accent);
+      font-size: 18px;
+    }
+
+    .panel-toggle {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.08);
+      color: white;
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .panel-body {
+      padding: 0 16px 16px;
+    }
+
+    .hud-box.collapsed .panel-body { display: none; }
+    .hud-box.collapsed .panel-header { border-bottom: none; }
 
     .info-box {
       top: 14px;
       right: 14px;
-      width: min(360px, calc(100vw - 24px));
-      padding: 16px;
+      width: min(380px, calc(100vw - 24px));
     }
 
-    .info-box h3,
-    .chart-title,
-    .comments-title {
-      margin: 0 0 12px;
-      color: var(--accent);
-      font-size: 18px;
+    .status-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 12px 0;
     }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      background: rgba(255,255,255,.08);
+      color: white;
+      border: 1px solid rgba(255,255,255,.08);
+    }
+
+    .pill strong { color: var(--accent); }
 
     .stats-grid {
       display: grid;
@@ -230,27 +277,6 @@
       color: white;
     }
 
-    .status-row {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-bottom: 12px;
-    }
-
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 10px;
-      border-radius: 999px;
-      font-size: 12px;
-      background: rgba(255,255,255,.08);
-      color: white;
-      border: 1px solid rgba(255,255,255,.08);
-    }
-
-    .pill strong { color: var(--accent); }
-
     .control-block {
       margin-top: 12px;
       padding-top: 12px;
@@ -271,7 +297,7 @@
     }
 
     .control-row output {
-      min-width: 54px;
+      min-width: 64px;
       text-align: right;
       color: var(--accent);
       font-size: 13px;
@@ -303,22 +329,18 @@
       transition: transform .18s ease, opacity .18s ease, filter .18s ease;
     }
 
-    .start-button {
-      background: linear-gradient(45deg, #ff7b00, #ff4500);
-    }
-
-    .ghost-button {
-      background: linear-gradient(45deg, #506174, #2e3947);
-    }
-
+    .start-button { background: linear-gradient(45deg, #ff7b00, #ff4500); }
+    .ghost-button { background: linear-gradient(45deg, #506174, #2e3947); }
     .start-button:hover,
-    .ghost-button:hover {
-      transform: translateY(-1px);
-      filter: brightness(1.05);
-    }
+    .ghost-button:hover { transform: translateY(-1px); filter: brightness(1.05); }
 
-    .full-width {
-      grid-column: 1 / -1;
+    .full-width { grid-column: 1 / -1; }
+
+    .hint-text {
+      margin: 10px 0 0;
+      font-size: 12px;
+      color: #d7dfeb;
+      line-height: 1.35;
     }
 
     #chartPanel {
@@ -326,32 +348,13 @@
       left: 16px;
       width: min(52vw, 760px);
       height: 34vh;
-      padding: 14px 14px 10px;
-    }
-
-    .chart-toolbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 8px;
-      flex-wrap: wrap;
-    }
-
-    .chart-title { margin: 0; }
-
-    .toggle-label {
-      color: #fff;
-      font-size: 13px;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
     }
 
     #chartContainer {
       position: relative;
       width: 100%;
-      height: calc(100% - 36px);
+      height: 100%;
+      min-height: 200px;
     }
 
     #chartContainer canvas {
@@ -360,19 +363,19 @@
       display: block;
     }
 
-    .comment-box {
+    .comment-panel {
       left: 16px;
       bottom: 16px;
-      width: min(520px, calc(100vw - 32px));
-      padding: 14px;
+      width: min(540px, calc(100vw - 32px));
     }
 
     #commentBox {
-      max-height: 116px;
+      max-height: 132px;
       overflow: auto;
       text-align: left;
       font-size: 14px;
       color: #f0f5ff;
+      padding-right: 6px;
     }
 
     #commentBox p {
@@ -420,7 +423,7 @@
       padding: 22px;
       border-radius: 16px;
       text-align: center;
-      width: min(340px, calc(100vw - 24px));
+      width: min(360px, calc(100vw - 24px));
       box-shadow: 0 10px 34px rgba(0,0,0,.25);
       animation: fadeIn .25s ease;
     }
@@ -445,20 +448,20 @@
       #chartPanel {
         width: calc(100vw - 32px);
         top: auto;
-        bottom: 190px;
+        bottom: 206px;
         left: 16px;
         height: 24vh;
       }
 
       .info-box {
         width: calc(100vw - 32px);
-        max-height: 45vh;
+        max-height: 48vh;
         overflow: auto;
       }
 
       .game-title {
         top: auto;
-        bottom: 148px;
+        bottom: 154px;
         font-size: 18px;
       }
     }
@@ -470,7 +473,7 @@
 </head>
 <body>
   <div class="game-container">
-    <div id="terrainContainer"></div>
+    <div id="terrainContainer" title="Haz clic para mover el objetivo"></div>
     <canvas id="trailCanvas"></canvas>
     <div class="aim-line" id="aimLine"></div>
     <div class="launcher" id="launcher">
@@ -479,76 +482,92 @@
       <div class="launcher-wheel right"></div>
       <div class="launcher-barrel" id="launcherBarrel"></div>
     </div>
-    <div class="ball" id="ball"></div>
+    <div class="ball user" id="ballUser"></div>
+    <div class="ball ai" id="ballAI"></div>
     <div class="target" id="target"></div>
     <div class="impact-pulse" id="impactPulse"></div>
   </div>
 
   <h1 class="game-title">🎯 Simulador de Lanzamiento con IA</h1>
-
   <div id="trainingStatus" class="training-status">Modo preparación</div>
 
-  <div class="hud-box info-box">
-    <h3>📊 Centro de control</h3>
-
-    <div class="status-row">
-      <span class="pill">Modo: <strong id="modeValue">Manual</strong></span>
-      <span class="pill">Mejor tiro: <strong id="bestShotValue">—</strong></span>
-      <span class="pill">Estado IA: <strong id="aiStateValue">Lista</strong></span>
+  <div id="infoPanel" class="hud-box info-box">
+    <div class="panel-header">
+      <h3 class="panel-title">📊 Centro de control</h3>
+      <button class="panel-toggle" aria-expanded="true">−</button>
     </div>
-
-    <div class="stats-grid">
-      <div class="stat-card"><span class="stat-label">Intentos</span><span class="stat-value" id="attempts">0</span></div>
-      <div class="stat-card"><span class="stat-label">Mejor error</span><span class="stat-value" id="bestDistance">0 px</span></div>
-      <div class="stat-card"><span class="stat-label">Viento</span><span class="stat-value" id="windSpeed">0 m/s</span></div>
-      <div class="stat-card"><span class="stat-label">Distancia</span><span class="stat-value" id="distanceThrown">0 px</span></div>
-      <div class="stat-card"><span class="stat-label">Ángulo</span><span class="stat-value" id="angleValue">45°</span></div>
-      <div class="stat-card"><span class="stat-label">Fuerza</span><span class="stat-value" id="forceValue">20</span></div>
-      <div class="stat-card"><span class="stat-label">Error actual</span><span class="stat-value" id="errorValue">0 px</span></div>
-      <div class="stat-card"><span class="stat-label">Objetivo X</span><span class="stat-value" id="targetPosValue">—</span></div>
-    </div>
-
-    <div class="control-block">
-      <div class="control-row">
-        <label for="angleSlider">Ángulo manual</label>
-        <output id="angleSliderValue">45°</output>
+    <div class="panel-body">
+      <div class="status-row">
+        <span class="pill">Modo: <strong id="modeValue">Manual</strong></span>
+        <span class="pill">Mejor tiro: <strong id="bestShotValue">—</strong></span>
+        <span class="pill">Estado IA: <strong id="aiStateValue">Lista</strong></span>
       </div>
-      <input id="angleSlider" type="range" min="10" max="80" value="45" />
 
-      <div class="control-row">
-        <label for="forceSlider">Fuerza manual</label>
-        <output id="forceSliderValue">20</output>
+      <div class="stats-grid">
+        <div class="stat-card"><span class="stat-label">Intentos totales</span><span class="stat-value" id="attempts">0</span></div>
+        <div class="stat-card"><span class="stat-label">Mejor error</span><span class="stat-value" id="bestDistance">0 px</span></div>
+        <div class="stat-card"><span class="stat-label">Intentos usuario</span><span class="stat-value" id="userAttempts">0</span></div>
+        <div class="stat-card"><span class="stat-label">Intentos IA</span><span class="stat-value" id="aiAttempts">0</span></div>
+        <div class="stat-card"><span class="stat-label">Viento</span><span class="stat-value" id="windSpeed">0 m/s</span></div>
+        <div class="stat-card"><span class="stat-label">Distancia</span><span class="stat-value" id="distanceThrown">0 px</span></div>
+        <div class="stat-card"><span class="stat-label">Ángulo</span><span class="stat-value" id="angleValue">45°</span></div>
+        <div class="stat-card"><span class="stat-label">Fuerza</span><span class="stat-value" id="forceValue">24</span></div>
+        <div class="stat-card"><span class="stat-label">Error actual</span><span class="stat-value" id="errorValue">0 px</span></div>
+        <div class="stat-card"><span class="stat-label">Objetivo X</span><span class="stat-value" id="targetPosValue">—</span></div>
       </div>
-      <input id="forceSlider" type="range" min="5" max="40" value="20" />
 
-      <div class="button-grid">
-        <button id="manual-shot-btn" class="start-button">🎯 Disparo manual</button>
-        <button id="start-training-btn" class="start-button">🤖 Iniciar IA</button>
-        <button id="pause-training-btn" class="ghost-button">⏯️ Pausar IA</button>
-        <button id="new-target-btn" class="ghost-button">📍 Nuevo objetivo</button>
-        <button id="clear-training" class="ghost-button full-width">🗑️ Borrar modelo y reiniciar</button>
+      <div class="control-block">
+        <div class="control-row">
+          <label for="angleSlider">Ángulo manual</label>
+          <output id="angleSliderValue">45°</output>
+        </div>
+        <input id="angleSlider" type="range" min="5" max="88" value="45" />
+
+        <div class="control-row">
+          <label for="forceSlider">Fuerza manual</label>
+          <output id="forceSliderValue">24</output>
+        </div>
+        <input id="forceSlider" type="range" min="5" max="65" value="24" />
+
+        <div class="button-grid">
+          <button id="manual-shot-btn" class="start-button">🔴 Disparo manual</button>
+          <button id="start-training-btn" class="ghost-button">⚪ Iniciar IA</button>
+          <button id="pause-training-btn" class="ghost-button">⏯️ Pausar IA</button>
+          <button id="new-target-btn" class="ghost-button">📍 Nuevo objetivo</button>
+          <button id="new-terrain-btn" class="ghost-button">⛰️ Nuevo terreno</button>
+          <button id="clear-training" class="start-button">🗑️ Reiniciar modelo</button>
+        </div>
+
+        <p class="hint-text">Ahora puedes disparar mientras la IA también lo hace. La pelota del usuario es roja y la de la IA es blanca. Haz clic en el terreno para mover el objetivo a una nueva posición.</p>
       </div>
     </div>
   </div>
 
   <div id="chartPanel" class="hud-box">
-    <div class="chart-toolbar">
-      <h3 class="chart-title">📉 Evolución del aprendizaje</h3>
-      <label class="toggle-label"><input type="checkbox" id="toggleChart" checked /> Mostrar gráfico</label>
+    <div class="panel-header">
+      <h3 class="panel-title">📉 Evolución del error</h3>
+      <button class="panel-toggle" aria-expanded="true">−</button>
     </div>
-    <div id="chartContainer"></div>
+    <div class="panel-body">
+      <div id="chartContainer"></div>
+    </div>
   </div>
 
-  <div class="hud-box comment-box">
-    <h3 class="comments-title">🧠 Registro</h3>
-    <div id="commentBox"><p>Escena lista. Ajusta el disparo o inicia el entrenamiento.</p></div>
+  <div id="commentsPanel" class="hud-box comment-panel">
+    <div class="panel-header">
+      <h3 class="panel-title">📝 Registro</h3>
+      <button class="panel-toggle" aria-expanded="true">−</button>
+    </div>
+    <div class="panel-body">
+      <div id="commentBox"><p>Escena lista. Puedes disparar tú mientras la IA sigue entrenando.</p></div>
+    </div>
   </div>
 
   <div id="successModal" class="modal">
     <div class="modal-content">
       <h2>¡Objetivo alcanzado! 🎯</h2>
-      <p>Intentos realizados: <strong id="modalAttempts">0</strong></p>
-      <p id="modalSummary">Buen trabajo.</p>
+      <p>Intentos acumulados: <span id="modalAttempts">0</span></p>
+      <p id="modalSummary">Resumen del tiro ganador.</p>
       <button onclick="closeModal()">Aceptar</button>
     </div>
   </div>

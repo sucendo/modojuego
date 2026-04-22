@@ -1,9 +1,9 @@
-import { initTerrain, relocateTarget, currentTargetPosition, getTerrainHeight, RESOLUTION } from './terrain.js';
-import { initNeuralNetwork, adjustLearning, clearModel } from './ai.js';
+import { initTerrain, relocateTarget, setTargetAtX, currentTargetPosition, getTerrainHeight, RESOLUTION } from './terrain.js';
+import { initNeuralNetwork, adjustLearning, clearModel, ANGLE_MIN, ANGLE_MAX, FORCE_MIN, FORCE_MAX } from './ai.js';
 import { initErrorChart, updateErrorChart, clearErrorChart } from './errorChart.js';
 
 const gameContainer = document.querySelector('.game-container');
-const ball = document.getElementById('ball');
+const terrainContainer = document.getElementById('terrainContainer');
 const target = document.getElementById('target');
 const launcher = document.getElementById('launcher');
 const launcherBarrel = document.getElementById('launcherBarrel');
@@ -12,7 +12,14 @@ const impactPulse = document.getElementById('impactPulse');
 const trailCanvas = document.getElementById('trailCanvas');
 const trailCtx = trailCanvas.getContext('2d');
 
+const projectiles = {
+  user: document.getElementById('ballUser'),
+  ai: document.getElementById('ballAI')
+};
+
 const attemptsDisplay = document.getElementById('attempts');
+const userAttemptsDisplay = document.getElementById('userAttempts');
+const aiAttemptsDisplay = document.getElementById('aiAttempts');
 const bestDistanceDisplay = document.getElementById('bestDistance');
 const angleDisplay = document.getElementById('angleValue');
 const forceDisplay = document.getElementById('forceValue');
@@ -25,8 +32,6 @@ const modeValue = document.getElementById('modeValue');
 const aiStateValue = document.getElementById('aiStateValue');
 const trainingStatus = document.getElementById('trainingStatus');
 const commentBox = document.getElementById('commentBox');
-const chartPanel = document.getElementById('chartPanel');
-const toggleChart = document.getElementById('toggleChart');
 
 const angleSlider = document.getElementById('angleSlider');
 const forceSlider = document.getElementById('forceSlider');
@@ -37,16 +42,36 @@ const manualShotBtn = document.getElementById('manual-shot-btn');
 const startTrainingBtn = document.getElementById('start-training-btn');
 const pauseTrainingBtn = document.getElementById('pause-training-btn');
 const newTargetBtn = document.getElementById('new-target-btn');
+const newTerrainBtn = document.getElementById('new-terrain-btn');
 const clearTrainingBtn = document.getElementById('clear-training');
+
+const START_X = 12;
+const AI_RETRY_DELAY = 420;
+const seedShots = [
+  { angle: 18, force: 14 },
+  { angle: 30, force: 22 },
+  { angle: 42, force: 28 },
+  { angle: 58, force: 38 },
+  { angle: 74, force: 48 }
+];
+const trailColors = {
+  user: 'rgba(255, 80, 80, 0.52)',
+  ai: 'rgba(255, 255, 255, 0.62)'
+};
+const impactColors = {
+  user: 'rgba(255, 110, 110, 0.95)',
+  ai: 'rgba(255, 255, 255, 0.95)'
+};
 
 let terrain = [];
 let attemptLog = [];
-let attempts = 0;
+let totalAttempts = 0;
+let userAttempts = 0;
+let aiAttempts = 0;
 let bestDistance = Infinity;
 let bestAngle = 45;
-let bestForce = 20;
+let bestForce = 24;
 let wind = 0;
-let ballMoving = false;
 let bestAttempts = [];
 let noProgressCounter = 0;
 let autoTrainingEnabled = false;
@@ -54,21 +79,15 @@ let trainingPaused = false;
 let worker = null;
 let workerReady = false;
 let aiReady = false;
-
-const START_X = 10;
-const seedShots = [
-  { angle: 22, force: 12 },
-  { angle: 34, force: 18 },
-  { angle: 44, force: 21 },
-  { angle: 56, force: 28 },
-  { angle: 68, force: 34 }
-];
+let sceneVersion = 0;
+let nextAIShotTimeout = null;
+const activeShots = { user: null, ai: null };
 
 function appendComment(message) {
   const p = document.createElement('p');
   p.textContent = message;
   commentBox.appendChild(p);
-  while (commentBox.childNodes.length > 6) {
+  while (commentBox.childNodes.length > 8) {
     commentBox.removeChild(commentBox.firstChild);
   }
   commentBox.scrollTop = commentBox.scrollHeight;
@@ -79,12 +98,18 @@ function setStatus(text) {
   trainingStatus.textContent = text;
 }
 
-function setMode(mode) {
-  modeValue.textContent = mode;
-}
-
 function setAIState(text) {
   aiStateValue.textContent = text;
+}
+
+function updateModeLabel() {
+  if (autoTrainingEnabled && (activeShots.ai || activeShots.user)) {
+    modeValue.textContent = 'Simultáneo';
+  } else if (autoTrainingEnabled) {
+    modeValue.textContent = 'Mixto';
+  } else {
+    modeValue.textContent = 'Manual';
+  }
 }
 
 function resizeCanvases() {
@@ -93,30 +118,55 @@ function resizeCanvases() {
   drawLauncherAndAim(Number(angleSlider.value));
 }
 
-function resetRunData() {
+function cancelScheduledAI() {
+  if (nextAIShotTimeout) {
+    clearTimeout(nextAIShotTimeout);
+    nextAIShotTimeout = null;
+  }
+}
+
+function isAnyShotActive() {
+  return Boolean(activeShots.user || activeShots.ai);
+}
+
+function resetRunData({ preserveLogMessage = false } = {}) {
   attemptLog = [];
-  attempts = 0;
+  totalAttempts = 0;
+  userAttempts = 0;
+  aiAttempts = 0;
   bestDistance = Infinity;
+  bestAngle = Number(angleSlider.value || 45);
+  bestForce = Number(forceSlider.value || 24);
   bestAttempts = [];
   noProgressCounter = 0;
   attemptsDisplay.textContent = '0';
+  userAttemptsDisplay.textContent = '0';
+  aiAttemptsDisplay.textContent = '0';
   bestDistanceDisplay.textContent = '0 px';
   bestShotValue.textContent = '—';
   distanceDisplay.textContent = '0 px';
   errorDisplay.textContent = '0 px';
-  commentBox.innerHTML = '<p>Escena lista. Ajusta el disparo o inicia el entrenamiento.</p>';
   trailCtx.clearRect(0, 0, trailCanvas.width, trailCanvas.height);
   clearErrorChart();
+  if (!preserveLogMessage) {
+    commentBox.innerHTML = '<p>Escena lista. Puedes disparar tú mientras la IA sigue entrenando.</p>';
+  }
 }
 
 function syncManualOutputs() {
   angleSliderValue.textContent = `${angleSlider.value}°`;
   forceSliderValue.textContent = `${forceSlider.value}`;
-  if (!ballMoving) {
-    angleDisplay.textContent = `${angleSlider.value}°`;
-    forceDisplay.textContent = `${forceSlider.value}`;
-  }
+  angleDisplay.textContent = `${angleSlider.value}°`;
+  forceDisplay.textContent = `${forceSlider.value}`;
   drawLauncherAndAim(Number(angleSlider.value));
+}
+
+function getStartPosition(shooter) {
+  const launchY = terrain.length ? getTerrainHeight(START_X, terrain, RESOLUTION) : 0;
+  const offset = shooter === 'user'
+    ? { x: 10, y: 8 }
+    : { x: 16, y: 16 };
+  return { x: START_X + offset.x, y: launchY + offset.y };
 }
 
 function drawLauncherAndAim(angle) {
@@ -126,22 +176,26 @@ function drawLauncherAndAim(angle) {
   launcher.style.bottom = `${groundY}px`;
   launcherBarrel.style.transform = `rotate(${-angle}deg)`;
 
-  const originX = 26;
-  const originY = groundY + 16;
-  const aimLength = 120;
-  const radians = angle * Math.PI / 180;
+  const originX = 30;
+  const originY = groundY + 18;
   aimLine.style.left = `${originX}px`;
   aimLine.style.bottom = `${originY}px`;
-  aimLine.style.width = `${aimLength}px`;
+  aimLine.style.width = '128px';
   aimLine.style.transform = `rotate(${-angle}deg)`;
 }
 
-function placeBallAtLauncher() {
+function placeProjectileAtLauncher(shooter) {
   if (!terrain.length) return;
-  const launchY = getTerrainHeight(START_X, terrain, RESOLUTION);
-  ball.style.left = `${START_X}px`;
-  ball.style.bottom = `${launchY}px`;
-  ball.style.display = 'block';
+  const projectile = projectiles[shooter];
+  const start = getStartPosition(shooter);
+  projectile.style.left = `${start.x}px`;
+  projectile.style.bottom = `${start.y}px`;
+  projectile.style.display = 'block';
+}
+
+function placeProjectilesAtLauncher() {
+  placeProjectileAtLauncher('user');
+  placeProjectileAtLauncher('ai');
   target.style.display = 'block';
   drawLauncherAndAim(Number(angleSlider.value));
 }
@@ -151,12 +205,13 @@ function updateWindFromUI() {
 }
 
 function updateTargetPositionLabel() {
-  targetPosValue.textContent = currentTargetPosition ? `${Math.round(currentTargetPosition)} px` : '—';
+  targetPosValue.textContent = Number.isFinite(currentTargetPosition) ? `${Math.round(currentTargetPosition)} px` : '—';
 }
 
-function showImpactPulse(x, y) {
+function showImpactPulse(x, y, shooter) {
   impactPulse.style.left = `${x}px`;
   impactPulse.style.bottom = `${y}px`;
+  impactPulse.style.borderColor = impactColors[shooter];
   impactPulse.classList.remove('visible');
   void impactPulse.offsetWidth;
   impactPulse.classList.add('visible');
@@ -164,10 +219,12 @@ function showImpactPulse(x, y) {
 
 function setupScene() {
   resizeCanvases();
-  terrain = initTerrain('terrainContainer', ball, target, windDisplay);
+  terrain = initTerrain('terrainContainer', projectiles.user, target, windDisplay);
+  projectiles.ai.style.display = 'block';
   updateWindFromUI();
   updateTargetPositionLabel();
-  placeBallAtLauncher();
+  placeProjectilesAtLauncher();
+  updateModeLabel();
   setStatus('Modo preparación');
 }
 
@@ -186,7 +243,7 @@ async function ensureAI() {
         appendComment('🧠 Worker listo para entrenar en segundo plano.');
       } else if (data.cmd === 'trained') {
         setAIState('Modelo actualizado');
-        appendComment('✅ La IA ha refinado el modelo en segundo plano.');
+        if (!data.skipped) appendComment('✅ La IA ha refinado el modelo en segundo plano.');
         try {
           await initNeuralNetwork();
         } catch (error) {
@@ -207,8 +264,8 @@ function pickSeedShot() {
     const avgAngle = bestAttempts.reduce((sum, shot) => sum + shot.angle, 0) / bestAttempts.length;
     const avgForce = bestAttempts.reduce((sum, shot) => sum + shot.force, 0) / bestAttempts.length;
     return {
-      angle: Math.max(10, Math.min(80, Math.round(avgAngle + (Math.random() * 6 - 3)))),
-      force: Math.max(5, Math.min(40, Math.round(avgForce + (Math.random() * 6 - 3))))
+      angle: Math.max(ANGLE_MIN, Math.min(ANGLE_MAX, Math.round(avgAngle + (Math.random() * 8 - 4)))),
+      force: Math.max(FORCE_MIN, Math.min(FORCE_MAX, Math.round(avgForce + (Math.random() * 10 - 5))))
     };
   }
   return seedShots[Math.floor(Math.random() * seedShots.length)];
@@ -225,7 +282,8 @@ function updateBestDisplays() {
   bestDistanceDisplay.textContent = Number.isFinite(bestDistance) ? `${Math.round(bestDistance)} px` : '0 px';
   if (bestAttempts.length) {
     const best = bestAttempts[bestAttempts.length - 1];
-    bestShotValue.textContent = `${Math.round(best.angle)}° / ${Math.round(best.force)}`;
+    const tag = best.source === 'ai' ? 'IA' : 'Tú';
+    bestShotValue.textContent = `${tag}: ${Math.round(best.angle)}° / ${Math.round(best.force)}`;
   } else {
     bestShotValue.textContent = '—';
   }
@@ -243,70 +301,127 @@ function sendTrainingBatch() {
   });
 }
 
-function launchShot(angle, force, { fromAI = false } = {}) {
-  if (ballMoving || !terrain.length) return;
+function stopAllShots() {
+  sceneVersion += 1;
+  activeShots.user = null;
+  activeShots.ai = null;
+  cancelScheduledAI();
+}
 
-  ballMoving = true;
-  setStatus(fromAI ? 'IA disparando…' : 'Disparo manual en curso…');
+function queueNextAIShot(delay = AI_RETRY_DELAY) {
+  cancelScheduledAI();
+  nextAIShotTimeout = window.setTimeout(async () => {
+    nextAIShotTimeout = null;
+    if (!autoTrainingEnabled || trainingPaused || activeShots.ai) return;
+    const referenceError = Number.isFinite(bestDistance) ? bestDistance : 400;
+    const next = await adjustLearning(
+      referenceError,
+      noProgressCounter,
+      attemptLog,
+      currentTargetPosition,
+      bestAngle,
+      bestForce
+    );
+    noProgressCounter = next.newCounter;
+    angleSlider.value = `${next.newAngle}`;
+    forceSlider.value = `${next.newForce}`;
+    syncManualOutputs();
+    appendComment(`🤖 La IA ajusta a ${next.newAngle}° / ${next.newForce}.`);
+    launchShot(next.newAngle, next.newForce, { shooter: 'ai' });
+  }, delay);
+}
 
-  let x = START_X;
-  let y = getTerrainHeight(START_X, terrain, RESOLUTION);
+function launchShot(angle, force, { shooter = 'user' } = {}) {
+  if (!terrain.length || activeShots[shooter]) return false;
+
+  const projectile = projectiles[shooter];
+  const start = getStartPosition(shooter);
+  const shotSceneVersion = sceneVersion;
   const radians = angle * Math.PI / 180;
-  let vx = force * Math.cos(radians) + wind;
-  let vy = force * Math.sin(radians);
+
+  const shot = {
+    shooter,
+    angle,
+    force,
+    x: start.x,
+    y: start.y,
+    vx: force * Math.cos(radians) + wind,
+    vy: force * Math.sin(radians),
+    startedAt: performance.now(),
+    sceneVersion: shotSceneVersion
+  };
+
+  activeShots[shooter] = shot;
+  projectile.style.display = 'block';
+  projectile.style.left = `${shot.x}px`;
+  projectile.style.bottom = `${shot.y}px`;
+  updateModeLabel();
+  setStatus(shooter === 'ai' ? 'IA disparando…' : 'Disparo manual en curso…');
+
   const gravity = -9.81;
   const dt = 0.16;
 
-  ball.style.display = 'block';
-  ball.style.left = `${x}px`;
-  ball.style.bottom = `${y}px`;
-
   const step = () => {
+    if (!activeShots[shooter] || activeShots[shooter] !== shot || shot.sceneVersion !== sceneVersion) return;
+
     if (document.hidden) {
       requestAnimationFrame(step);
       return;
     }
 
-    x += vx;
-    y += vy;
-    vy += gravity * dt;
+    shot.x += shot.vx;
+    shot.y += shot.vy;
+    shot.vy += gravity * dt;
 
-    const terrainHeight = getTerrainHeight(Math.max(0, Math.min(x, gameContainer.clientWidth - 1)), terrain, RESOLUTION);
-    const outOfBounds = x > gameContainer.clientWidth + 20 || x < -20 || y < -30;
+    const clampedX = Math.max(0, Math.min(shot.x, gameContainer.clientWidth - 1));
+    const terrainHeight = getTerrainHeight(clampedX, terrain, RESOLUTION);
+    const outOfBounds = shot.x > gameContainer.clientWidth + 20 || shot.x < -20 || shot.y < -30;
 
-    if (outOfBounds || y <= terrainHeight) {
-      y = Math.max(terrainHeight, y);
-      ball.style.left = `${Math.max(0, x)}px`;
-      ball.style.bottom = `${Math.max(0, y)}px`;
-      trailCtx.fillStyle = 'rgba(255, 70, 70, 0.5)';
-      trailCtx.fillRect(Math.max(0, x), trailCanvas.height - Math.max(0, y), 3, 3);
-      ballMoving = false;
-      showImpactPulse(Math.max(0, x), Math.max(0, y));
-      evaluateThrow(Math.max(0, x), angle, force, fromAI).catch(error => {
+    if (outOfBounds || shot.y <= terrainHeight) {
+      shot.y = Math.max(terrainHeight, shot.y);
+      projectile.style.left = `${Math.max(0, shot.x)}px`;
+      projectile.style.bottom = `${Math.max(0, shot.y)}px`;
+      trailCtx.fillStyle = trailColors[shooter];
+      trailCtx.fillRect(Math.max(0, shot.x), trailCanvas.height - Math.max(0, shot.y), 3, 3);
+      activeShots[shooter] = null;
+      showImpactPulse(Math.max(0, shot.x), Math.max(0, shot.y), shooter);
+      evaluateThrow(Math.max(0, shot.x), angle, force, shooter).catch(error => {
         console.error(error);
         appendComment('⚠️ Error al evaluar el disparo.');
       });
       return;
     }
 
-    ball.style.left = `${x}px`;
-    ball.style.bottom = `${y}px`;
-    trailCtx.fillStyle = 'rgba(255, 70, 70, 0.42)';
-    trailCtx.fillRect(x, trailCanvas.height - y, 2.5, 2.5);
+    projectile.style.left = `${shot.x}px`;
+    projectile.style.bottom = `${shot.y}px`;
+    trailCtx.fillStyle = trailColors[shooter];
+    trailCtx.fillRect(shot.x, trailCanvas.height - shot.y, 2.6, 2.6);
 
     requestAnimationFrame(step);
   };
 
   requestAnimationFrame(step);
+  return true;
 }
 
-async function evaluateThrow(distance, angle, force, fromAI) {
+async function evaluateThrow(distance, angle, force, shooter) {
   const errorX = Math.abs(currentTargetPosition - distance);
-  attempts += 1;
-  attemptsDisplay.textContent = `${attempts}`;
+  const fromAI = shooter === 'ai';
+
+  totalAttempts += 1;
+  attemptsDisplay.textContent = `${totalAttempts}`;
+  if (fromAI) {
+    aiAttempts += 1;
+    aiAttemptsDisplay.textContent = `${aiAttempts}`;
+  } else {
+    userAttempts += 1;
+    userAttemptsDisplay.textContent = `${userAttempts}`;
+  }
+
   updateShotDisplays(angle, force, distance, errorX);
 
   const shot = {
+    source: shooter,
     angle,
     force,
     distance,
@@ -316,66 +431,49 @@ async function evaluateThrow(distance, angle, force, fromAI) {
     bestForce
   };
   attemptLog.push(shot);
-  updateErrorChart(errorX, attempts);
+  updateErrorChart(errorX, totalAttempts, shooter);
 
   if (errorX < bestDistance) {
     bestDistance = errorX;
     bestAngle = angle;
     bestForce = force;
-    bestAttempts.push({ angle, force, errorX });
+    bestAttempts.push({ source: shooter, angle, force, errorX });
     if (bestAttempts.length > 10) bestAttempts.shift();
-    appendComment(`🎯 Nuevo mejor intento: error ${Math.round(errorX)} px.`);
+    appendComment(`🎯 ${fromAI ? 'IA' : 'Tú'} mejora el récord: error ${Math.round(errorX)} px.`);
   } else {
     noProgressCounter += 1;
-    appendComment(`🤔 Error actual ${Math.round(errorX)} px. La IA seguirá ajustando.`);
+    appendComment(`${fromAI ? '🤖 IA' : '🕹️ Tú'} deja un error de ${Math.round(errorX)} px.`);
   }
 
   updateBestDisplays();
+  updateModeLabel();
   sendTrainingBatch();
+  placeProjectileAtLauncher(shooter);
 
   const hitRadius = target.clientWidth / 2 + 2;
   if (errorX <= hitRadius) {
     autoTrainingEnabled = false;
     trainingPaused = false;
+    pauseTrainingBtn.textContent = '⏯️ Pausar IA';
     setStatus('Objetivo alcanzado');
-    setAIState('Objetivo alcanzado');
-    setMode(fromAI ? 'IA' : 'Manual');
-    showSuccessModal(angle, force, errorX);
+    setAIState(fromAI ? 'La IA acertó' : 'Has acertado');
+    updateModeLabel();
+    showSuccessModal(angle, force, errorX, shooter);
     return;
   }
 
   if (fromAI && autoTrainingEnabled && !trainingPaused) {
-    const next = await adjustLearning(
-      errorX,
-      noProgressCounter,
-      attemptLog,
-      currentTargetPosition,
-      bestAngle,
-      bestForce
-    );
-
-    noProgressCounter = next.newCounter;
-    angleSlider.value = `${next.newAngle}`;
-    forceSlider.value = `${next.newForce}`;
-    syncManualOutputs();
-    appendComment(`🔄 Próximo ajuste IA: ${next.newAngle}° / ${next.newForce}.`);
-
-    window.setTimeout(() => {
-      if (autoTrainingEnabled && !trainingPaused && !ballMoving) {
-        launchShot(next.newAngle, next.newForce, { fromAI: true });
-      }
-    }, 450);
     setStatus('IA calculando siguiente tiro…');
-  } else {
+    queueNextAIShot();
+  } else if (!isAnyShotActive()) {
     setStatus('Listo para otro disparo');
-    placeBallAtLauncher();
   }
 }
 
-function showSuccessModal(angle, force, errorX) {
+function showSuccessModal(angle, force, errorX, shooter) {
   const modal = document.getElementById('successModal');
-  document.getElementById('modalAttempts').textContent = `${attempts}`;
-  document.getElementById('modalSummary').textContent = `Ángulo ${Math.round(angle)}°, fuerza ${Math.round(force)}, error ${Math.round(errorX)} px.`;
+  document.getElementById('modalAttempts').textContent = `${totalAttempts}`;
+  document.getElementById('modalSummary').textContent = `${shooter === 'ai' ? 'La IA' : 'Tu disparo'} acertó con ${Math.round(angle)}°, fuerza ${Math.round(force)} y error ${Math.round(errorX)} px.`;
   modal.style.display = 'flex';
 }
 
@@ -385,21 +483,22 @@ function closeModal() {
 }
 
 async function startAITraining() {
-  if (ballMoving) return;
-
   await ensureAI();
   autoTrainingEnabled = true;
   trainingPaused = false;
-  setMode('IA');
+  pauseTrainingBtn.textContent = '⏯️ Pausar IA';
+  updateModeLabel();
   setStatus('IA activa');
   setAIState(workerReady ? 'Aprendiendo' : 'Preparando');
-  appendComment('🤖 Entrenamiento automático iniciado.');
+  appendComment('🤖 Entrenamiento automático iniciado. Puedes disparar a la vez.');
 
-  const seed = pickSeedShot();
-  angleSlider.value = `${seed.angle}`;
-  forceSlider.value = `${seed.force}`;
-  syncManualOutputs();
-  launchShot(seed.angle, seed.force, { fromAI: true });
+  if (!activeShots.ai) {
+    const seed = pickSeedShot();
+    angleSlider.value = `${seed.angle}`;
+    forceSlider.value = `${seed.force}`;
+    syncManualOutputs();
+    launchShot(seed.angle, seed.force, { shooter: 'ai' });
+  }
 }
 
 function toggleAIPause() {
@@ -414,41 +513,66 @@ function toggleAIPause() {
   setAIState(trainingPaused ? 'Pausada' : 'Aprendiendo');
   appendComment(trainingPaused ? '⏸️ IA pausada.' : '▶️ IA reanudada.');
 
-  if (!trainingPaused && !ballMoving) {
-    launchShot(Number(angleSlider.value), Number(forceSlider.value), { fromAI: true });
+  if (!trainingPaused && !activeShots.ai) {
+    queueNextAIShot(80);
   }
 }
 
 function manualShot() {
-  if (ballMoving) return;
-  autoTrainingEnabled = false;
-  trainingPaused = false;
-  pauseTrainingBtn.textContent = '⏯️ Pausar IA';
-  setMode('Manual');
-  setStatus('Disparo manual');
+  if (activeShots.user) {
+    appendComment('⌛ Tu proyectil sigue en el aire.');
+    return;
+  }
   const angle = Number(angleSlider.value);
   const force = Number(forceSlider.value);
   appendComment(`🕹️ Disparo manual: ${angle}° / ${force}.`);
-  launchShot(angle, force, { fromAI: false });
+  launchShot(angle, force, { shooter: 'user' });
 }
 
-function relocateTargetOnly() {
-  if (!terrain.length || ballMoving) return;
-  relocateTarget(target, 'terrainContainer', windDisplay, terrain, ball);
+function prepareNewChallenge() {
+  stopAllShots();
+  resetRunData({ preserveLogMessage: true });
+  placeProjectilesAtLauncher();
+}
+
+function randomizeTarget() {
+  prepareNewChallenge();
+  relocateTarget(target, 'terrainContainer', windDisplay, terrain);
   updateWindFromUI();
   updateTargetPositionLabel();
-  placeBallAtLauncher();
-  setStatus('Nuevo objetivo listo');
   appendComment('📍 Objetivo recolocado.');
+  setStatus('Nuevo objetivo listo');
+  if (autoTrainingEnabled && !trainingPaused) queueNextAIShot(150);
+}
+
+function placeTargetByClick(event) {
+  if (!terrain.length) return;
+  const rect = terrainContainer.getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  prepareNewChallenge();
+  setTargetAtX(target, 'terrainContainer', x, terrain);
+  updateTargetPositionLabel();
+  appendComment(`🎯 Objetivo movido manualmente a X=${Math.round(currentTargetPosition)}.`);
+  setStatus('Objetivo recolocado a mano');
+  if (autoTrainingEnabled && !trainingPaused) queueNextAIShot(150);
+}
+
+function randomizeTerrain() {
+  stopAllShots();
+  resetRunData({ preserveLogMessage: true });
+  setupScene();
+  appendComment('⛰️ Terreno regenerado sin recargar la página.');
+  if (autoTrainingEnabled && !trainingPaused) queueNextAIShot(180);
 }
 
 async function clearTrainingAndReset() {
   autoTrainingEnabled = false;
   trainingPaused = false;
   pauseTrainingBtn.textContent = '⏯️ Pausar IA';
-  setMode('Manual');
+  updateModeLabel();
   setStatus('Reiniciando modelo…');
   setAIState('Limpiando');
+  stopAllShots();
 
   if (worker) {
     worker.terminate();
@@ -472,26 +596,47 @@ async function clearTrainingAndReset() {
   }
 }
 
+function togglePanel(button) {
+  const panel = button.closest('.hud-box');
+  if (!panel) return;
+  panel.classList.toggle('collapsed');
+  const collapsed = panel.classList.contains('collapsed');
+  button.textContent = collapsed ? '＋' : '−';
+  button.setAttribute('aria-expanded', String(!collapsed));
+  if (!collapsed) {
+    window.setTimeout(() => window.dispatchEvent(new Event('resize')), 20);
+  }
+}
+
 function bindEvents() {
   window.addEventListener('resize', () => {
     resizeCanvases();
-    placeBallAtLauncher();
+    placeProjectilesAtLauncher();
   });
 
-  toggleChart.addEventListener('change', () => {
-    chartPanel.style.display = toggleChart.checked ? 'block' : 'none';
-  });
+  angleSlider.min = `${ANGLE_MIN}`;
+  angleSlider.max = `${ANGLE_MAX}`;
+  forceSlider.min = `${FORCE_MIN}`;
+  forceSlider.max = `${FORCE_MAX}`;
 
   angleSlider.addEventListener('input', syncManualOutputs);
   forceSlider.addEventListener('input', syncManualOutputs);
   manualShotBtn.addEventListener('click', manualShot);
   startTrainingBtn.addEventListener('click', startAITraining);
   pauseTrainingBtn.addEventListener('click', toggleAIPause);
-  newTargetBtn.addEventListener('click', relocateTargetOnly);
+  newTargetBtn.addEventListener('click', randomizeTarget);
+  newTerrainBtn.addEventListener('click', randomizeTerrain);
   clearTrainingBtn.addEventListener('click', clearTrainingAndReset);
+  terrainContainer.addEventListener('click', placeTargetByClick);
+
+  document.querySelectorAll('.panel-toggle').forEach(button => {
+    button.addEventListener('click', () => togglePanel(button));
+  });
 }
 
 async function boot() {
+  angleSlider.value = String(Math.max(45, ANGLE_MIN));
+  forceSlider.value = String(Math.max(24, FORCE_MIN));
   initErrorChart();
   resetRunData();
   setupScene();

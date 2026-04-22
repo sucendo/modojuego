@@ -1,5 +1,3 @@
-import { addBuildings, addTrees, addRiver, addBridge } from './terrain_extras.js';
-
 export let currentTargetPosition = null;
 export const RESOLUTION = 10;
 const LAUNCH_ZONE_PX = 50;
@@ -71,14 +69,10 @@ export function drawTerrainSVG(containerId, terrain) {
 
   const widths = generateWidthMap(N, W);
   const xs = [0];
-  for (let i = 1; i < N; i++) {
-    xs[i] = xs[i - 1] + widths[i - 1];
-  }
+  for (let i = 1; i < N; i++) xs[i] = xs[i - 1] + widths[i - 1];
 
   let d = `M0,${H} L0,${H - terrain[0]}`;
-  for (let i = 1; i < N; i++) {
-    d += ` L${xs[i]},${H - terrain[i]}`;
-  }
+  for (let i = 1; i < N; i++) d += ` L${xs[i]},${H - terrain[i]}`;
   const lastY = H - terrain[N - 1];
   d += ` L${W},${lastY} L${W},${H} Z`;
 
@@ -94,10 +88,6 @@ export function drawTerrainSVG(containerId, terrain) {
       <stop offset="0%" stop-color="#79c45f"/>
       <stop offset="45%" stop-color="#5fa74a"/>
       <stop offset="100%" stop-color="#3f6c2f"/>
-    </linearGradient>
-    <linearGradient id="skyGlow" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="rgba(255,255,255,0.4)"/>
-      <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
     </linearGradient>
   `;
   svg.appendChild(defs);
@@ -123,7 +113,6 @@ export function initTerrain(containerId, ball, target, windDisplay) {
   const div = document.getElementById(containerId);
   const W = div.clientWidth;
   const H = div.clientHeight;
-
   const terrain = generateTerrainData(W, RESOLUTION, H);
 
   const launchCols = Math.ceil(LAUNCH_ZONE_PX / RESOLUTION);
@@ -138,20 +127,31 @@ export function initTerrain(containerId, ball, target, windDisplay) {
   }
 
   flattenLaunchZone(terrain, RESOLUTION);
-  drawTerrainSVG(containerId, terrain, RESOLUTION);
+  drawTerrainSVG(containerId, terrain);
 
-  ball.style.left = '10px';
-  ball.style.bottom = `${launchY}px`;
-  target.style.display = 'block';
-  ball.style.display = 'block';
+  if (ball) {
+    ball.style.left = '10px';
+    ball.style.bottom = `${launchY}px`;
+    ball.style.display = 'block';
+  }
+  if (target) target.style.display = 'block';
 
-  relocateTarget(target, containerId, windDisplay, terrain, ball);
+  relocateTarget(target, containerId, windDisplay, terrain);
   return terrain;
+}
+
+export function setTargetAtX(target, containerId, x, terrain) {
+  const div = document.getElementById(containerId);
+  const clampedX = Math.max(180, Math.min(div.clientWidth - 18, x));
+  const h = getTerrainHeight(clampedX, terrain, RESOLUTION);
+  currentTargetPosition = clampedX;
+  target.style.left = `${clampedX}px`;
+  target.style.bottom = `${h}px`;
+  return { x: clampedX, height: h };
 }
 
 export function relocateTarget(target, containerId, windDisplay, terrain) {
   const div = document.getElementById(containerId);
-  div.querySelectorAll('.trail').forEach(el => el.remove());
 
   let posPx = 0;
   let h = 0;
@@ -162,7 +162,8 @@ export function relocateTarget(target, containerId, windDisplay, terrain) {
   }
 
   currentTargetPosition = posPx;
-  windDisplay.textContent = (Math.random() * 4 - 2).toFixed(2);
+  if (windDisplay) windDisplay.textContent = (Math.random() * 4 - 2).toFixed(2);
   target.style.left = `${posPx}px`;
   target.style.bottom = `${h}px`;
+  return { x: posPx, height: h };
 }

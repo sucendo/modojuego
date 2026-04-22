@@ -20,25 +20,37 @@ export function initErrorChart(containerId = 'chartContainer') {
       labels: [],
       datasets: [
         {
-          label: 'Error por intento',
+          label: 'Usuario',
           data: [],
-          backgroundColor: 'rgba(255, 99, 132, 0.14)',
-          borderColor: 'rgba(255, 99, 132, 1)',
+          borderColor: 'rgba(255, 90, 90, 1)',
+          backgroundColor: 'rgba(255, 90, 90, 0.14)',
           borderWidth: 2,
-          pointRadius: 2.5,
+          pointRadius: 3,
           pointHoverRadius: 4,
-          tension: 0.28,
-          fill: false
+          tension: 0.25,
+          spanGaps: true
         },
         {
-          label: 'Mejor error acumulado',
+          label: 'IA',
           data: [],
-          backgroundColor: 'rgba(255, 204, 0, 0.12)',
+          borderColor: 'rgba(255,255,255,0.95)',
+          backgroundColor: 'rgba(255,255,255,0.12)',
+          borderWidth: 2,
+          pointRadius: 3,
+          pointHoverRadius: 4,
+          tension: 0.25,
+          spanGaps: true
+        },
+        {
+          label: 'Mejor error total',
+          data: [],
           borderColor: 'rgba(255, 204, 0, 1)',
+          backgroundColor: 'rgba(255, 204, 0, 0.1)',
           borderWidth: 2,
           pointRadius: 0,
-          tension: 0.2,
-          fill: false
+          pointHoverRadius: 0,
+          tension: 0.15,
+          spanGaps: true
         }
       ]
     },
@@ -56,8 +68,8 @@ export function initErrorChart(containerId = 'chartContainer') {
         tooltip: {
           callbacks: {
             label(context) {
-              const value = Number(context.raw ?? 0).toFixed(1);
-              return `${context.dataset.label}: ${value} px`;
+              const value = context.raw == null ? '—' : `${Number(context.raw).toFixed(1)} px`;
+              return `${context.dataset.label}: ${value}`;
             }
           }
         }
@@ -81,13 +93,14 @@ export function initErrorChart(containerId = 'chartContainer') {
   return errorChartInstance;
 }
 
-export function updateErrorChart(error, attempt) {
+export function updateErrorChart(error, attempt, shotType = 'user') {
   if (!errorChartInstance) return;
 
   bestSoFar = Math.min(bestSoFar, error);
   errorChartInstance.data.labels.push(attempt);
-  errorChartInstance.data.datasets[0].data.push(error);
-  errorChartInstance.data.datasets[1].data.push(bestSoFar);
+  errorChartInstance.data.datasets[0].data.push(shotType === 'user' ? error : null);
+  errorChartInstance.data.datasets[1].data.push(shotType === 'ai' ? error : null);
+  errorChartInstance.data.datasets[2].data.push(bestSoFar);
   errorChartInstance.update('none');
 }
 

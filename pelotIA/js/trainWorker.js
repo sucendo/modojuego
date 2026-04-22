@@ -1,5 +1,10 @@
 importScripts('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js');
 
+const ANGLE_MIN = 5;
+const ANGLE_MAX = 88;
+const FORCE_MIN = 5;
+const FORCE_MAX = 65;
+
 let model = null;
 let isTraining = false;
 
@@ -34,10 +39,9 @@ self.onmessage = async ({ data }) => {
     return;
   }
 
-  if (data.cmd !== 'train') return;
-  if (isTraining) return;
+  if (data.cmd !== 'train' || isTraining) return;
 
-  const attempts = Array.isArray(data.attempts) ? data.attempts.slice(-180) : [];
+  const attempts = Array.isArray(data.attempts) ? data.attempts.slice(-220) : [];
   if (attempts.length < 10) {
     self.postMessage({ cmd: 'trained', skipped: true });
     return;
@@ -48,14 +52,14 @@ self.onmessage = async ({ data }) => {
 
   try {
     const xs = tf.tensor2d(attempts.map(a => [
-      normalize(a.angle, 10, 80),
-      normalize(a.force, 5, 40),
+      normalize(a.angle, ANGLE_MIN, ANGLE_MAX),
+      normalize(a.force, FORCE_MIN, FORCE_MAX),
       normalize((a.distance ?? 0) - (a.targetPosition ?? 0), -2000, 2000)
     ]));
 
     const ys = tf.tensor2d(attempts.map(a => [
-      ((a.bestAngle ?? 45) - a.angle) / 70,
-      ((a.bestForce ?? 20) - a.force) / 35
+      ((a.bestAngle ?? 45) - a.angle) / (ANGLE_MAX - ANGLE_MIN),
+      ((a.bestForce ?? 20) - a.force) / (FORCE_MAX - FORCE_MIN)
     ]));
 
     await model.fit(xs, ys, {
