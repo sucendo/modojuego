@@ -100,7 +100,9 @@ export function drawTerrainSVG(containerId, terrain) {
   svg.appendChild(path);
 
   const ridge = document.createElementNS(NS, 'path');
-  ridge.setAttribute('d', d.replace(`M0,${H} `, '').replace(` L${W},${H} Z`, ''));
+  let ridgeD = `M0,${H - terrain[0]}`;
+  for (let i = 1; i < N; i++) ridgeD += ` L${xs[i]},${H - terrain[i]}`;
+  ridge.setAttribute('d', ridgeD);
   ridge.setAttribute('fill', 'none');
   ridge.setAttribute('stroke', 'rgba(255,255,255,0.26)');
   ridge.setAttribute('stroke-width', '1.5');
@@ -142,6 +144,10 @@ export function initTerrain(containerId, ball, target, windDisplay) {
 
 export function setTargetAtX(target, containerId, x, terrain) {
   const div = document.getElementById(containerId);
+  if (!div || !target) {
+    console.warn('setTargetAtX: falta el contenedor o el objetivo.');
+    return { x: 0, height: 0 };
+  }
   const clampedX = Math.max(180, Math.min(div.clientWidth - 18, x));
   const h = getTerrainHeight(clampedX, terrain, RESOLUTION);
   currentTargetPosition = clampedX;
@@ -152,6 +158,10 @@ export function setTargetAtX(target, containerId, x, terrain) {
 
 export function relocateTarget(target, containerId, windDisplay, terrain) {
   const div = document.getElementById(containerId);
+  if (!div || !target) {
+    console.warn('relocateTarget: falta el contenedor o el objetivo.');
+    return { x: 0, height: 0 };
+  }
 
   let posPx = 0;
   let h = 0;

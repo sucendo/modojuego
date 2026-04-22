@@ -83,6 +83,51 @@ let sceneVersion = 0;
 let nextAIShotTimeout = null;
 const activeShots = { user: null, ai: null };
 
+
+function validateDOM() {
+  const required = [
+    ['gameContainer', gameContainer],
+    ['terrainContainer', terrainContainer],
+    ['target', target],
+    ['launcher', launcher],
+    ['launcherBarrel', launcherBarrel],
+    ['aimLine', aimLine],
+    ['impactPulse', impactPulse],
+    ['trailCanvas', trailCanvas],
+    ['ballUser', projectiles.user],
+    ['ballAI', projectiles.ai],
+    ['attempts', attemptsDisplay],
+    ['userAttempts', userAttemptsDisplay],
+    ['aiAttempts', aiAttemptsDisplay],
+    ['bestDistance', bestDistanceDisplay],
+    ['angleValue', angleDisplay],
+    ['forceValue', forceDisplay],
+    ['distanceThrown', distanceDisplay],
+    ['errorValue', errorDisplay],
+    ['windSpeed', windDisplay],
+    ['targetPosValue', targetPosValue],
+    ['bestShotValue', bestShotValue],
+    ['modeValue', modeValue],
+    ['aiStateValue', aiStateValue],
+    ['trainingStatus', trainingStatus],
+    ['commentBox', commentBox],
+    ['angleSlider', angleSlider],
+    ['forceSlider', forceSlider],
+    ['angleSliderValue', angleSliderValue],
+    ['forceSliderValue', forceSliderValue],
+    ['manual-shot-btn', manualShotBtn],
+    ['start-training-btn', startTrainingBtn],
+    ['pause-training-btn', pauseTrainingBtn],
+    ['new-target-btn', newTargetBtn],
+    ['new-terrain-btn', newTerrainBtn],
+    ['clear-training', clearTrainingBtn]
+  ];
+  const missing = required.filter(([, el]) => !el).map(([name]) => name);
+  if (missing.length) {
+    throw new Error(`Faltan elementos del DOM: ${missing.join(', ')}`);
+  }
+}
+
 function appendComment(message) {
   const p = document.createElement('p');
   p.textContent = message;
@@ -635,6 +680,7 @@ function bindEvents() {
 }
 
 async function boot() {
+  validateDOM();
   angleSlider.value = String(Math.max(45, ANGLE_MIN));
   forceSlider.value = String(Math.max(24, FORCE_MIN));
   initErrorChart();
