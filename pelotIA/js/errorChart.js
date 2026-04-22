@@ -1,20 +1,18 @@
-// 📌 errorChart.js
-
 let errorChartInstance = null;
+let bestSoFar = Infinity;
 
 export function initErrorChart(containerId = 'chartContainer') {
   const container = document.getElementById(containerId);
   if (!container) return null;
 
-  const old = container.querySelector('canvas#errorChart');
-  if (old) old.remove();
-
+  container.innerHTML = '';
   const canvas = document.createElement('canvas');
   canvas.id = 'errorChart';
   container.appendChild(canvas);
 
   const ctx = canvas.getContext('2d');
   if (errorChartInstance) errorChartInstance.destroy();
+  bestSoFar = Infinity;
 
   errorChartInstance = new Chart(ctx, {
     type: 'line',
@@ -22,25 +20,25 @@ export function initErrorChart(containerId = 'chartContainer') {
       labels: [],
       datasets: [
         {
-          label: 'Error (px)',
+          label: 'Error por intento',
           data: [],
+          backgroundColor: 'rgba(255, 99, 132, 0.14)',
           borderColor: 'rgba(255, 99, 132, 1)',
-          backgroundColor: 'rgba(255, 99, 132, 0.15)',
           borderWidth: 2,
-          pointRadius: 2,
+          pointRadius: 2.5,
           pointHoverRadius: 4,
           tension: 0.28,
-          fill: true
+          fill: false
         },
         {
-          label: 'Mejor error',
+          label: 'Mejor error acumulado',
           data: [],
-          borderColor: 'rgba(255, 206, 86, 1)',
-          backgroundColor: 'rgba(255, 206, 86, 0)',
+          backgroundColor: 'rgba(255, 204, 0, 0.12)',
+          borderColor: 'rgba(255, 204, 0, 1)',
           borderWidth: 2,
           pointRadius: 0,
-          tension: 0.1,
-          borderDash: [6, 4]
+          tension: 0.2,
+          fill: false
         }
       ]
     },
@@ -48,8 +46,21 @@ export function initErrorChart(containerId = 'chartContainer') {
       responsive: true,
       maintainAspectRatio: false,
       interaction: {
-        intersect: false,
-        mode: 'index'
+        mode: 'index',
+        intersect: false
+      },
+      plugins: {
+        legend: {
+          labels: { color: '#ffefb0' }
+        },
+        tooltip: {
+          callbacks: {
+            label(context) {
+              const value = Number(context.raw ?? 0).toFixed(1);
+              return `${context.dataset.label}: ${value} px`;
+            }
+          }
+        }
       },
       scales: {
         x: {
@@ -60,12 +71,8 @@ export function initErrorChart(containerId = 'chartContainer') {
         y: {
           title: { display: true, text: 'Error (px)', color: '#fff' },
           ticks: { color: '#fff' },
-          grid: { color: 'rgba(255,255,255,0.08)' }
-        }
-      },
-      plugins: {
-        legend: {
-          labels: { color: '#ffcc00' }
+          grid: { color: 'rgba(255,255,255,0.08)' },
+          beginAtZero: true
         }
       }
     }
@@ -74,11 +81,29 @@ export function initErrorChart(containerId = 'chartContainer') {
   return errorChartInstance;
 }
 
-export function updateErrorChart(error, attempt, bestError) {
+export function updateErrorChart(error, attempt) {
   if (!errorChartInstance) return;
 
+  bestSoFar = Math.min(bestSoFar, error);
   errorChartInstance.data.labels.push(attempt);
   errorChartInstance.data.datasets[0].data.push(error);
-  errorChartInstance.data.datasets[1].data.push(bestError);
+  errorChartInstance.data.datasets[1].data.push(bestSoFar);
+  errorChartInstance.update('none');
+}
+
+export function clearErrorChart() {
+  bestSoFar = Infinity;
+  if (!errorChartInstance) return;
+  errorChartInstance.data.labels = [];
+  errorChartInstance.data.datasets.forEach(dataset => {
+    dataset.data = [];
+  });
   errorChartInstance.update();
+}
+
+export function destroyErrorChart() {
+  if (errorChartInstance) {
+    errorChartInstance.destroy();
+    errorChartInstance = null;
+  }
 }
