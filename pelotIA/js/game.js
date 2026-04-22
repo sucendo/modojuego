@@ -83,6 +83,7 @@ let sceneVersion = 0;
 let nextAIShotTimeout = null;
 let successCountdownInterval = null;
 let successAutoPauseTimeout = null;
+let successModalLocked = false;
 let aiControlAngle = 45;
 let aiControlForce = 24;
 const activeShots = { user: null, ai: null };
@@ -209,6 +210,22 @@ function setAIState(text) {
   aiStateValue.textContent = text;
 }
 
+function refreshAIButtons() {
+  if (!autoTrainingEnabled) {
+    startTrainingBtn.textContent = '⚪ Iniciar IA';
+    pauseTrainingBtn.textContent = '⏯️ Pausar IA';
+    pauseTrainingBtn.disabled = true;
+    pauseTrainingBtn.style.opacity = '0.65';
+    return;
+  }
+
+  const label = trainingPaused ? '▶️ Reanudar IA' : '⏸️ Pausar IA';
+  startTrainingBtn.textContent = label;
+  pauseTrainingBtn.textContent = label;
+  pauseTrainingBtn.disabled = false;
+  pauseTrainingBtn.style.opacity = '1';
+}
+
 function updateModeLabel() {
   if (autoTrainingEnabled && (activeShots.ai || activeShots.user)) {
     modeValue.textContent = 'Simultáneo';
@@ -238,6 +255,7 @@ function isAnyShotActive() {
 
 function resetRunData({ preserveLogMessage = false } = {}) {
   clearSuccessTimers();
+  successModalLocked = false;
   attemptLog = [];
   totalAttempts = 0;
   userAttempts = 0;
@@ -261,7 +279,9 @@ function resetRunData({ preserveLogMessage = false } = {}) {
   if (!preserveLogMessage) {
     commentBox.innerHTML = '<p>Escena lista. Puedes disparar tú mientras la IA sigue entrenando.</p>';
   }
+  refreshAIButtons();
 }
+
 
 function syncManualOutputs() {
   angleSliderValue.textContent = `${angleSlider.value}°`;
@@ -422,7 +442,7 @@ function queueNextAIShot(delay = AI_RETRY_DELAY) {
   cancelScheduledAI();
   nextAIShotTimeout = window.setTimeout(async () => {
     nextAIShotTimeout = null;
-    if (!autoTrainingEnabled || trainingPaused || activeShots.ai) return;
+    if (!autoTrainingEnabled || trainingPaused || successModalLocked || activeShots.ai) return;
     const referenceError = Number.isFinite(bestDistance) ? bestDistance : 400;
     const next = await adjustLearning(
       referenceError,
@@ -441,7 +461,7 @@ function queueNextAIShot(delay = AI_RETRY_DELAY) {
 }
 
 function launchShot(angle, force, { shooter = 'user' } = {}) {
-  if (!terrain.length || activeShots[shooter]) return false;
+  if (!terrain.length || activeShots[shooter] || successModalLocked) return false;
 
   const projectile = projectiles[shooter];
   const start = getStartPosition(shooter);
@@ -574,10 +594,6 @@ async function evaluateThrow(distance, angle, force, shooter) {
       appendComment('🏆 ¡Diana! Tu disparo ha clavado el objetivo.');
     }
     showSuccessModal(angle, force, errorX, shooter);
-    if (autoTrainingEnabled && !trainingPaused) {
-      setStatus('Superentreno activo durante 15 s…');
-      queueNextAIShot(120);
-    }
     return;
   }
 
@@ -591,47 +607,80 @@ async function evaluateThrow(distance, angle, force, shooter) {
 
 function showSuccessModal(angle, force, errorX, shooter) {
   clearSuccessTimers();
+  successModalLocked = true;
+  stopAllShots();
+  placeProjectilesAtLauncher();
+
   const modal = document.getElementById('successModal');
   const countdownEl = document.getElementById('modalCountdown');
   document.getElementById('modalAttempts').textContent = `${totalAttempts}`;
   document.getElementById('modalSummary').textContent = `${shooter === 'ai' ? 'La IA' : 'Tu disparo'} acertó con ${Math.round(angle)}°, fuerza ${Math.round(force)} y error ${Math.round(errorX)} px.`;
   modal.style.display = 'flex';
+  setStatus('Diana conseguida. Ronda en pausa…');
+  setAIState(successModalLocked ? 'Esperando nueva ronda' : aiStateValue.textContent);
 
-  if (autoTrainingEnabled && !trainingPaused) {
-    let remaining = 15;
-    countdownEl.textContent = `⏳ Superentreno en curso. La IA seguirá 15 s y luego se pausará sola.`;
-    successCountdownInterval = window.setInterval(() => {
-      remaining -= 1;
-      if (remaining > 0) {
-        countdownEl.textContent = `⏳ Superentreno en curso. Pausa automática en ${remaining} s.`;
-      }
-    }, 1000);
+  let secondsLeft = 15;
+  countdownEl.textContent = `Reiniciar entrenamiento en ${secondsLeft} seg`;
 
-    successAutoPauseTimeout = window.setTimeout(() => {
-      clearSuccessTimers();
-      trainingPaused = true;
-      pauseTrainingBtn.textContent = '▶️ Reanudar IA';
-      setStatus('IA pausada tras superentreno');
-      setAIState('Pausada');
-      appendComment('⏸️ La IA se ha pausado sola tras 15 s extra de entrenamiento.');
-      countdownEl.textContent = '⏸️ La IA se ha pausado automáticamente. Puedes cerrarlo o reanudarla.';
-    }, 15000);
-  } else {
-    countdownEl.textContent = 'Puedes cerrar esta ventana y seguir jugando.';
-  }
+  successCountdownInterval = window.setInterval(() => {
+    secondsLeft -= 1;
+    if (secondsLeft > 0) {
+      countdownEl.textContent = `Reiniciar entrenamiento en ${secondsLeft} seg`;
+    } else {
+      closeModal({ source: 'timer' });
+    }
+  }, 1000);
 }
 
-function closeModal() {
+function resumeAfterSuccess(source = 'button') {
+  clearSuccessTimers();
+  successModalLocked = false;
   document.getElementById('successModal').style.display = 'none';
-  setStatus(trainingPaused ? 'IA en pausa' : 'Listo para continuar');
+
+  stopAllShots();
+  resetRunData({ preserveLogMessage: true });
+  setupScene();
+
+  if (source === 'timer') {
+    appendComment('⏱️ Cuenta atrás terminada. Nueva ronda lista.');
+  } else {
+    appendComment('▶️ Nueva ronda preparada tras la diana.');
+  }
+
+  if (autoTrainingEnabled && !trainingPaused) {
+    setStatus('IA reanudada en nueva ronda');
+    setAIState(workerReady ? 'Aprendiendo' : 'Preparando');
+    queueNextAIShot(120);
+  } else {
+    setStatus(trainingPaused ? 'IA en pausa' : 'Nueva ronda lista');
+    setAIState(trainingPaused ? 'Pausada' : 'Lista');
+  }
+
+  updateModeLabel();
+  refreshAIButtons();
+}
+
+function closeModal({ source = 'button' } = {}) {
+  if (!successModalLocked) {
+    document.getElementById('successModal').style.display = 'none';
+    setStatus(trainingPaused ? 'IA en pausa' : 'Listo para continuar');
+    return;
+  }
+
+  resumeAfterSuccess(source);
 }
 
 async function startAITraining() {
+  if (successModalLocked) {
+    appendComment('⏳ Hay una diana en pausa. Cierra el aviso o espera la cuenta atrás.');
+    return;
+  }
+
   await ensureAI();
   clearSuccessTimers();
   autoTrainingEnabled = true;
   trainingPaused = false;
-  pauseTrainingBtn.textContent = '⏯️ Pausar IA';
+  refreshAIButtons();
   updateModeLabel();
   setStatus('IA activa');
   setAIState(workerReady ? 'Aprendiendo' : 'Preparando');
@@ -652,18 +701,32 @@ function toggleAIPause() {
   }
 
   trainingPaused = !trainingPaused;
-  clearSuccessTimers();
-  pauseTrainingBtn.textContent = trainingPaused ? '▶️ Reanudar IA' : '⏯️ Pausar IA';
+  if (!successModalLocked) {
+    clearSuccessTimers();
+  }
+  refreshAIButtons();
   setStatus(trainingPaused ? 'IA en pausa' : 'IA activa');
   setAIState(trainingPaused ? 'Pausada' : 'Aprendiendo');
   appendComment(trainingPaused ? '⏸️ IA pausada.' : '▶️ IA reanudada.');
 
-  if (!trainingPaused && !activeShots.ai) {
+  if (!trainingPaused && !activeShots.ai && !successModalLocked) {
     queueNextAIShot(80);
   }
 }
 
+function handleAIPrimaryButton() {
+  if (!autoTrainingEnabled) {
+    startAITraining();
+    return;
+  }
+  toggleAIPause();
+}
+
 function manualShot() {
+  if (successModalLocked) {
+    appendComment('⏳ Ahora mismo la ronda está en pausa por la diana.');
+    return;
+  }
   if (activeShots.user) {
     appendComment('⌛ Tu proyectil sigue en el aire.');
     return;
@@ -681,6 +744,10 @@ function prepareNewChallenge() {
 }
 
 function randomizeTarget() {
+  if (successModalLocked) {
+    appendComment('⏳ Cierra primero el aviso de diana para cambiar el objetivo.');
+    return;
+  }
   clearSuccessTimers();
   prepareNewChallenge();
   relocateTarget(target, 'terrainContainer', windDisplay, terrain);
@@ -692,6 +759,10 @@ function randomizeTarget() {
 }
 
 function placeTargetByClick(event) {
+  if (successModalLocked) {
+    appendComment('⏳ Cierra primero el aviso de diana para recolocar el objetivo.');
+    return;
+  }
   if (!terrain.length) return;
   clearSuccessTimers();
   const rect = terrainContainer.getBoundingClientRect();
@@ -705,6 +776,10 @@ function placeTargetByClick(event) {
 }
 
 function randomizeTerrain() {
+  if (successModalLocked) {
+    appendComment('⏳ Cierra primero el aviso de diana para cambiar el terreno.');
+    return;
+  }
   clearSuccessTimers();
   stopAllShots();
   resetRunData({ preserveLogMessage: true });
@@ -717,7 +792,7 @@ async function clearTrainingAndReset() {
   clearSuccessTimers();
   autoTrainingEnabled = false;
   trainingPaused = false;
-  pauseTrainingBtn.textContent = '⏯️ Pausar IA';
+  refreshAIButtons();
   updateModeLabel();
   setStatus('Reiniciando modelo…');
   setAIState('Limpiando');
@@ -737,6 +812,7 @@ async function clearTrainingAndReset() {
     resetRunData();
     setupScene();
     setAIState('Lista');
+    refreshAIButtons();
     appendComment('🗑️ Modelo borrado y sesión reiniciada.');
   } catch (error) {
     console.error(error);
@@ -772,7 +848,7 @@ function bindEvents() {
   angleSlider.addEventListener('input', syncManualOutputs);
   forceSlider.addEventListener('input', syncManualOutputs);
   manualShotBtn.addEventListener('click', manualShot);
-  startTrainingBtn.addEventListener('click', startAITraining);
+  startTrainingBtn.addEventListener('click', handleAIPrimaryButton);
   pauseTrainingBtn.addEventListener('click', toggleAIPause);
   newTargetBtn.addEventListener('click', randomizeTarget);
   newTerrainBtn.addEventListener('click', randomizeTerrain);
@@ -792,6 +868,7 @@ async function boot() {
   resetRunData();
   setupScene();
   syncManualOutputs();
+  refreshAIButtons();
   bindEvents();
   try {
     await initNeuralNetwork();
