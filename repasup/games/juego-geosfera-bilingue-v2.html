@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>🌍 Geosphere Game (ES + EN)</title>
+<style>
+body{font-family:Arial,system-ui;background:#e3f2fd;padding:10px;margin:0}
+.app{max-width:760px;margin:auto}
+h1{text-align:center;margin:12px 0}
+.pill{background:#fff;border-radius:999px;padding:10px 12px;font-weight:900;border:2px solid #90caf9;min-width:140px;text-align:center}
+.top{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:10px 0}
+.card{background:#fff;border-radius:16px;padding:14px;margin:10px 0}
+.q{font-size:20px;font-weight:900;text-align:center}
+button,input{width:100%;padding:14px;border-radius:14px;border:0;font-size:18px;margin:6px 0;font-weight:800}
+.opt{background:#bbdefb;color:#0b1320}
+.ok{background:#81c784;color:#083514}
+.bad{background:#e57373;color:#4a0c0c}
+.btn{background:#2196f3;color:#fff}
+.btn2{background:#4caf50;color:#fff}
+.msg{text-align:center;font-size:18px;font-weight:900}
+.small{text-align:center;font-weight:700;opacity:.85;margin:6px 0 0}
+</style>
+</head>
+<body>
+<div class="app">
+
+<h1>🌍 Geosphere Game</h1>
+
+<div class="top">
+  <div class="pill">✅ Correct: <span id="c">0</span></div>
+  <div class="pill">🧠 Total: <span id="t">0</span></div>
+  <div class="pill">🔥 Streak: <span id="s">0</span></div>
+</div>
+
+<div class="top">
+  <button class="btn" onclick="mode='quiz';next()">🧠 Quiz</button>
+  <button class="btn" onclick="mode='tf';next()">✅ True / False</button>
+  <button class="btn" onclick="mode='order';next()">🔢 Order</button>
+  <button class="btn" onclick="mode='fill';next()">✍️ Fill</button>
+</div>
+
+<div class="card" id="game"></div>
+<div class="card msg" id="msg">Choose a game mode 🙂</div>
+
+<div class="small">Preguntas en español — Respuestas en inglés</div>
+
+</div>
+
+<script>
+let c=0,t=0,s=0,mode="quiz";
+const cEl=document.getElementById("c");
+const tEl=document.getElementById("t");
+const sEl=document.getElementById("s");
+const game=document.getElementById("game");
+const msg=document.getElementById("msg");
+
+function score(ok){
+  t++;
+  if(ok){ c++; s++; } else { s=0; }
+  cEl.textContent=c; tEl.textContent=t; sEl.textContent=s;
+}
+
+function r(arr){ return arr[Math.floor(Math.random()*arr.length)] }
+function sh(arr){ return arr.slice().sort(()=>Math.random()-0.5) }
+function esc(s){ return String(s).replace(/\\/g,"\\\\").replace(/'/g,"\\'"); }
+function norm(s){ return (s||"").toLowerCase().trim(); }
+
+// QUIZ (ES -> respuestas EN)
+const QUIZ=[
+  // 10 originales
+  {q:"¿Cuál es la capa externa de la Tierra?",o:["crust","mantle","core"],a:"crust"},
+  {q:"¿Dónde está el núcleo?",o:["center","surface","sky"],a:"center"},
+  {q:"¿Qué proceso rompe rocas (las descompone)?",o:["weathering","volcano","river"],a:"weathering"},
+  {q:"¿Qué mueve las placas?",o:["tectonics","rain","wind"],a:"tectonics"},
+  {q:"¿Qué sale de un volcán?",o:["lava","ice","sand"],a:"lava"},
+  {q:"¿Qué roca se forma del magma?",o:["igneous","sedimentary","metamorphic"],a:"igneous"},
+  {q:"¿Qué roca se forma por presión y calor?",o:["metamorphic","igneous","sand"],a:"metamorphic"},
+  {q:"¿Qué roca se forma con sedimentos?",o:["sedimentary","lava","metal"],a:"sedimentary"},
+  {q:"¿Qué mide la dureza de un mineral?",o:["hardness","color","size"],a:"hardness"},
+  {q:"¿Qué mineral es el más duro?",o:["diamond","gold","salt"],a:"diamond"},
+
+  // +10 nuevas (basadas en el mapa)
+  {q:"¿Qué capa es líquida y rodea al núcleo interno?",o:["outer core","crust","lithosphere"],a:"outer core"},
+  {q:"¿Cómo se llama la roca semilíquida del manto?",o:["magma","ice","sand"],a:"magma"},
+  {q:"¿Qué capa incluye la corteza y la parte superior del manto?",o:["lithosphere","inner core","outer core"],a:"lithosphere"},
+  {q:"¿Qué proceso es el movimiento de rocas por agua, hielo o aire?",o:["erosion","deposition","weathering"],a:"erosion"},
+  {q:"¿Qué proceso es cuando se dejan sedimentos en un relieve?",o:["deposition","erosion","tectonics"],a:"deposition"},
+  {q:"Una roca formada por sedimentos puede ser…",o:["sandstone","granite","marble"],a:"sandstone"},
+  {q:"El granito es una roca…",o:["igneous","sedimentary","metamorphic"],a:"igneous"},
+  {q:"El mármol es una roca…",o:["metamorphic","igneous","sedimentary"],a:"metamorphic"},
+  {q:"El brillo u opacidad de un mineral se llama…",o:["luster","color","hardness"],a:"luster"},
+  {q:"Cuando un mineral se rompe en planos se llama…",o:["cleavage","friction","fusion"],a:"cleavage"}
+];
+
+// TRUE/FALSE (en inglés, como en tu ejemplo)
+const TF=[
+  // 6 originales
+  ["The crust is the outer layer.", true],
+  ["Lava comes from volcanoes.", true],
+  ["Sedimentary rocks form from magma.", false],
+  ["Metamorphic rocks change by heat and pressure.", true],
+  ["Weathering breaks rocks.", true],
+  ["The core is on the surface.", false],
+
+  // +10 nuevas
+  ["The outer core is liquid.", true],
+  ["The lithosphere includes the crust and upper mantle.", true],
+  ["Erosion is the movement of rocks by water, ice, or air.", true],
+  ["Deposition removes sediments from a place.", false],
+  ["Granite is an igneous rock.", true],
+  ["Marble is a sedimentary rock.", false],
+  ["Sandstone is a sedimentary rock.", true],
+  ["Luster means the shine of a mineral.", true],
+  ["Hardness is measured with the Mohs scale.", true],
+  ["Cleavage breaks into flat surfaces.", true]
+];
+
+// ORDER (capas)
+const ORDER=["crust","mantle","core"];
+let picked=[];
+
+// FILL (completar en inglés)
+const FILL=[
+  ["The outer layer is the ____.","crust"],
+  ["Volcanoes release ____.","lava"],
+  ["Rocks from magma are ____ rocks.","igneous"],
+  ["Heat and pressure form ____ rocks.","metamorphic"],
+  ["Diamond is very ____.","hard"],
+  ["Sedimentary rocks form from ____.","sediments"],
+  ["The shine of a mineral is ____.","luster"]
+];
+
+function next(){
+  if(mode==="quiz") return quiz();
+  if(mode==="tf") return tf();
+  if(mode==="order") return order();
+  if(mode==="fill") return fill();
+}
+
+function quiz(){
+  const q=r(QUIZ);
+  const opts=sh(q.o);
+  game.innerHTML = `<div class="q">${q.q}</div>` +
+    opts.map(x=>`<button class="opt" onclick="ans('${esc(x)}','${esc(q.a)}',this)">${x}</button>`).join("");
+  msg.textContent="";
+}
+
+function ans(x,a,btn){
+  document.querySelectorAll(".opt").forEach(b=>b.disabled=true);
+  const ok = (x===a);
+  btn.classList.add(ok?"ok":"bad");
+  score(ok);
+  msg.textContent = ok ? "✅ Correct!" : "❌ It was: " + a;
+}
+
+function tf(){
+  const it=r(TF);
+  game.innerHTML = `<div class="q">${it[0]}</div>
+    <button class="opt" onclick="tfans(true, ${it[1]})">✅ True</button>
+    <button class="opt" onclick="tfans(false, ${it[1]})">❌ False</button>`;
+  msg.textContent="";
+}
+
+function tfans(v,a){
+  document.querySelectorAll(".opt").forEach(b=>b.disabled=true);
+  const ok = (v===a);
+  const pressed = v ? document.querySelectorAll(".opt")[0] : document.querySelectorAll(".opt")[1];
+  pressed.classList.add(ok?"ok":"bad");
+  score(ok);
+  msg.textContent = ok ? "✅ Good!" : "❌ Try again";
+}
+
+function order(){
+  picked=[];
+  const mix=sh(ORDER);
+  game.innerHTML = `<div class="q">Order Earth layers</div>` +
+    mix.map(x=>`<button class="opt" onclick="pickOrder('${esc(x)}',this)">${x}</button>`).join("") +
+    `<div class="small" id="line">Your order: —</div>`;
+  msg.textContent="";
+}
+
+function pickOrder(x,btn){
+  if(btn.disabled) return;
+  btn.disabled=true;
+  btn.classList.add("ok");
+  picked.push(x);
+  document.getElementById("line").textContent="Your order: " + picked.join(" → ");
+  if(picked.length===ORDER.length){
+    const ok = picked.join("|")===ORDER.join("|");
+    score(ok);
+    msg.textContent = ok ? "✅ Perfect!" : "❌ Correct: crust → mantle → core";
+  }
+}
+
+function fill(){
+  const it=r(FILL);
+  game.innerHTML = `<div class="q">${it[0]}</div>
+    <input id="inp" placeholder="Write in English...">
+    <button class="btn2" onclick="checkFill('${esc(it[1])}')">✅ Check</button>`;
+  msg.textContent="";
+  setTimeout(()=>document.getElementById("inp").focus(), 60);
+}
+
+function checkFill(a){
+  const v=norm(document.getElementById("inp").value);
+  const ok = (v===norm(a));
+  score(ok);
+  msg.textContent = ok ? "✅ Correct!" : "❌ It was: " + a;
+}
+
+next();
+</script>
+</body>
+</html>

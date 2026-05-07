@@ -1,0 +1,1759 @@
+{
+  "id": "vv_zoom_sociales_2_general",
+  "title": "Ciencias Sociales 2º — Vicens Vives (Comunidad Zoom)",
+  "subject": "Sociales",
+  "level": "2º Primaria",
+  "publisher": "Vicens Vives",
+  "series": "Comunidad Zoom",
+  "region": "General",
+  "topics": [
+    {
+      "id": "t1",
+      "name": "1. Nos orientamos y representamos el espacio",
+      "page": 2
+    },
+    {
+      "id": "t2",
+      "name": "2. Vivimos en el municipio",
+      "page": 18
+    },
+    {
+      "id": "t3",
+      "name": "3. Los trabajos y los sectores",
+      "page": 34
+    },
+    {
+      "id": "t4",
+      "name": "4. Nos movemos con seguridad",
+      "page": 50
+    },
+    {
+      "id": "t5",
+      "name": "5. Medimos el tiempo",
+      "page": 66
+    },
+    {
+      "id": "t6",
+      "name": "6. Mi historia y nuestro patrimonio",
+      "page": 82
+    }
+  ],
+  "categories": [
+    {
+      "id": "mapas",
+      "name": "Mapas y orientación"
+    },
+    {
+      "id": "municipio",
+      "name": "Municipio y servicios"
+    },
+    {
+      "id": "trabajos",
+      "name": "Trabajos y sectores"
+    },
+    {
+      "id": "movilidad",
+      "name": "Transporte y seguridad vial"
+    },
+    {
+      "id": "tiempo",
+      "name": "Tiempo y calendario"
+    },
+    {
+      "id": "historia",
+      "name": "Historia y patrimonio"
+    }
+  ],
+  "modes": [
+    "flashcards",
+    "quiz",
+    "truefalse",
+    "exam",
+    "memory",
+    "review_errors",
+    "timeline",
+    "classify"
+  ],
+  "items": [
+    {
+      "id": "t1_card_0001",
+      "topic": "t1",
+      "tags": [
+        "orientacion"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Punto cardinal",
+      "back": "Cada una de las cuatro direcciones principales: norte, sur, este y oeste.",
+      "category": "mapas"
+    },
+    {
+      "id": "t1_card_0002",
+      "topic": "t1",
+      "tags": [
+        "mapas"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Plano",
+      "back": "Representación de un lugar pequeño visto desde arriba.",
+      "category": "mapas"
+    },
+    {
+      "id": "t1_card_0003",
+      "topic": "t1",
+      "tags": [
+        "mapas"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Mapa",
+      "back": "Representación de un territorio más amplio, como una ciudad o un país.",
+      "category": "mapas"
+    },
+    {
+      "id": "t1_card_0004",
+      "topic": "t1",
+      "tags": [
+        "mapas"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Leyenda",
+      "back": "Parte del mapa o plano que explica el significado de los símbolos.",
+      "category": "mapas"
+    },
+    {
+      "id": "t1_card_0005",
+      "topic": "t1",
+      "tags": [
+        "mapas"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Símbolo",
+      "back": "Dibujo o señal que representa un elemento en un plano o mapa.",
+      "category": "mapas"
+    },
+    {
+      "id": "t1_card_0006",
+      "topic": "t1",
+      "tags": [
+        "entorno"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Barrio",
+      "back": "Zona de una ciudad o un pueblo donde viven personas y hay servicios.",
+      "category": "mapas"
+    },
+    {
+      "id": "t1_card_0007",
+      "topic": "t1",
+      "tags": [
+        "entorno"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Calle",
+      "back": "Vía por la que circulan personas y vehículos en una localidad.",
+      "category": "mapas"
+    },
+    {
+      "id": "t1_card_0008",
+      "topic": "t1",
+      "tags": [
+        "entorno"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Plaza",
+      "back": "Espacio abierto en una localidad donde se reúnen las personas.",
+      "category": "mapas"
+    },
+    {
+      "id": "t1_card_0009",
+      "topic": "t1",
+      "tags": [
+        "orientacion"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Rosa de los vientos",
+      "back": "Dibujo que indica los puntos cardinales en un plano o mapa.",
+      "category": "mapas"
+    },
+    {
+      "id": "t1_mcq_0010",
+      "topic": "t1",
+      "tags": [
+        "orientacion"
+      ],
+      "difficulty": 1,
+      "type": "mcq",
+      "question": "¿Cuáles son los cuatro puntos cardinales?",
+      "choices": [
+        "Norte, sur, este y oeste",
+        "Arriba, abajo, derecha e izquierda",
+        "Montaña, río, mar y valle",
+        "Calle, plaza, barrio y parque"
+      ],
+      "answer": "Norte, sur, este y oeste",
+      "category": "mapas"
+    },
+    {
+      "id": "t1_mcq_0011",
+      "topic": "t1",
+      "tags": [
+        "mapas"
+      ],
+      "difficulty": 1,
+      "type": "mcq",
+      "question": "¿Para qué sirve la leyenda de un plano?",
+      "choices": [
+        "Para explicar los símbolos",
+        "Para medir la temperatura",
+        "Para contar edificios",
+        "Para ordenar las calles"
+      ],
+      "answer": "Para explicar los símbolos",
+      "category": "mapas"
+    },
+    {
+      "id": "t1_mcq_0012",
+      "topic": "t1",
+      "tags": [
+        "mapas"
+      ],
+      "difficulty": 1,
+      "type": "mcq",
+      "question": "¿Qué usarías para localizar tu colegio en el barrio?",
+      "choices": [
+        "Un plano",
+        "Un reloj",
+        "Un cuento",
+        "Una receta"
+      ],
+      "answer": "Un plano",
+      "category": "mapas"
+    },
+    {
+      "id": "t1_mcq_0013",
+      "topic": "t1",
+      "tags": [
+        "orientacion"
+      ],
+      "difficulty": 2,
+      "type": "mcq",
+      "question": "Si el sol sale por el este, ¿qué punto cardinal queda a tu espalda?",
+      "choices": [
+        "Oeste",
+        "Norte",
+        "Sur",
+        "Este"
+      ],
+      "answer": "Oeste",
+      "category": "mapas"
+    },
+    {
+      "id": "t1_tf_0014",
+      "topic": "t1",
+      "tags": [
+        "mapas"
+      ],
+      "difficulty": 1,
+      "type": "tf",
+      "statement": "La leyenda de un mapa explica qué significa cada símbolo.",
+      "answer": true,
+      "category": "mapas"
+    },
+    {
+      "id": "t1_tf_0015",
+      "topic": "t1",
+      "tags": [
+        "orientacion"
+      ],
+      "difficulty": 1,
+      "type": "tf",
+      "statement": "Un plano representa normalmente un espacio pequeño.",
+      "answer": true,
+      "category": "mapas"
+    },
+    {
+      "id": "t1_type_0016",
+      "topic": "t1",
+      "tags": [
+        "orientacion"
+      ],
+      "difficulty": 1,
+      "type": "type",
+      "prompt": "Escribe los cuatro puntos cardinales.",
+      "answer": "Norte, sur, este y oeste.",
+      "category": "mapas"
+    },
+    {
+      "id": "t1_type_0017",
+      "topic": "t1",
+      "tags": [
+        "mapas"
+      ],
+      "difficulty": 1,
+      "type": "type",
+      "prompt": "¿Para qué sirve un plano?",
+      "answer": "Sirve para representar un lugar pequeño y orientarnos en él.",
+      "category": "mapas"
+    },
+    {
+      "id": "t1_classify_0018",
+      "topic": "t1",
+      "tags": [
+        "entorno"
+      ],
+      "difficulty": 2,
+      "type": "classify",
+      "prompt": "Clasifica en 'Elementos naturales' o 'Elementos humanos':",
+      "groups": {
+        "Elementos naturales": [
+          "Río",
+          "Montaña",
+          "Bosque",
+          "Playa"
+        ],
+        "Elementos humanos": [
+          "Puente",
+          "Carretera",
+          "Colegio",
+          "Hospital"
+        ]
+      },
+      "category": "mapas"
+    },
+    {
+      "id": "t2_card_0019",
+      "topic": "t2",
+      "tags": [
+        "municipio"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Municipio",
+      "back": "Territorio formado por una o varias localidades gobernadas por un ayuntamiento.",
+      "category": "municipio"
+    },
+    {
+      "id": "t2_card_0020",
+      "topic": "t2",
+      "tags": [
+        "municipio"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Ayuntamiento",
+      "back": "Edificio e institución que organiza los servicios del municipio.",
+      "category": "municipio"
+    },
+    {
+      "id": "t2_card_0021",
+      "topic": "t2",
+      "tags": [
+        "municipio"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Alcalde o alcaldesa",
+      "back": "Persona que dirige el ayuntamiento.",
+      "category": "municipio"
+    },
+    {
+      "id": "t2_card_0022",
+      "topic": "t2",
+      "tags": [
+        "municipio"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Concejal o concejala",
+      "back": "Persona que ayuda a organizar áreas del municipio como deportes o limpieza.",
+      "category": "municipio"
+    },
+    {
+      "id": "t2_card_0023",
+      "topic": "t2",
+      "tags": [
+        "servicios"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Servicio público",
+      "back": "Servicio que ofrece el ayuntamiento para cuidar y ayudar a la población.",
+      "category": "municipio"
+    },
+    {
+      "id": "t2_card_0024",
+      "topic": "t2",
+      "tags": [
+        "servicios"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Biblioteca",
+      "back": "Lugar público donde se pueden leer o tomar prestados libros.",
+      "category": "municipio"
+    },
+    {
+      "id": "t2_card_0025",
+      "topic": "t2",
+      "tags": [
+        "servicios"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Centro de salud",
+      "back": "Lugar donde nos atienden médicos y enfermeras.",
+      "category": "municipio"
+    },
+    {
+      "id": "t2_card_0026",
+      "topic": "t2",
+      "tags": [
+        "convivencia"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Norma de convivencia",
+      "back": "Regla que ayuda a vivir mejor con otras personas.",
+      "category": "municipio"
+    },
+    {
+      "id": "t2_card_0027",
+      "topic": "t2",
+      "tags": [
+        "servicios"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Parque",
+      "back": "Espacio público para jugar, pasear y descansar.",
+      "category": "municipio"
+    },
+    {
+      "id": "t2_mcq_0028",
+      "topic": "t2",
+      "tags": [
+        "municipio"
+      ],
+      "difficulty": 1,
+      "type": "mcq",
+      "question": "¿Quién dirige el ayuntamiento?",
+      "choices": [
+        "El alcalde o la alcaldesa",
+        "El bibliotecario",
+        "El conductor del autobús",
+        "El panadero"
+      ],
+      "answer": "El alcalde o la alcaldesa",
+      "category": "municipio"
+    },
+    {
+      "id": "t2_mcq_0029",
+      "topic": "t2",
+      "tags": [
+        "servicios"
+      ],
+      "difficulty": 1,
+      "type": "mcq",
+      "question": "¿Cuál es un servicio público del municipio?",
+      "choices": [
+        "La recogida de basuras",
+        "Una mochila",
+        "Un videojuego",
+        "Una bicicleta"
+      ],
+      "answer": "La recogida de basuras",
+      "category": "municipio"
+    },
+    {
+      "id": "t2_mcq_0030",
+      "topic": "t2",
+      "tags": [
+        "convivencia"
+      ],
+      "difficulty": 1,
+      "type": "mcq",
+      "question": "¿Qué acción ayuda a convivir mejor?",
+      "choices": [
+        "Respetar turnos y normas",
+        "Empujar en la fila",
+        "Gritar en la biblioteca",
+        "Tirar papeles al suelo"
+      ],
+      "answer": "Respetar turnos y normas",
+      "category": "municipio"
+    },
+    {
+      "id": "t2_mcq_0031",
+      "topic": "t2",
+      "tags": [
+        "servicios"
+      ],
+      "difficulty": 1,
+      "type": "mcq",
+      "question": "¿Dónde irías para pedir prestado un libro?",
+      "choices": [
+        "A la biblioteca",
+        "Al semáforo",
+        "A la gasolinera",
+        "Al polideportivo"
+      ],
+      "answer": "A la biblioteca",
+      "category": "municipio"
+    },
+    {
+      "id": "t2_tf_0032",
+      "topic": "t2",
+      "tags": [
+        "municipio"
+      ],
+      "difficulty": 1,
+      "type": "tf",
+      "statement": "El ayuntamiento organiza servicios para las personas que viven en el municipio.",
+      "answer": true,
+      "category": "municipio"
+    },
+    {
+      "id": "t2_tf_0033",
+      "topic": "t2",
+      "tags": [
+        "convivencia"
+      ],
+      "difficulty": 1,
+      "type": "tf",
+      "statement": "Las normas de convivencia solo sirven en el colegio y no en la calle.",
+      "answer": false,
+      "category": "municipio"
+    },
+    {
+      "id": "t2_type_0034",
+      "topic": "t2",
+      "tags": [
+        "municipio"
+      ],
+      "difficulty": 1,
+      "type": "type",
+      "prompt": "¿Qué es un municipio?",
+      "answer": "Es un territorio formado por una o varias localidades gobernadas por un ayuntamiento.",
+      "category": "municipio"
+    },
+    {
+      "id": "t2_type_0035",
+      "topic": "t2",
+      "tags": [
+        "servicios"
+      ],
+      "difficulty": 1,
+      "type": "type",
+      "prompt": "Nombra dos servicios públicos del municipio.",
+      "answer": "Por ejemplo: biblioteca y centro de salud.",
+      "category": "municipio"
+    },
+    {
+      "id": "t2_classify_0036",
+      "topic": "t2",
+      "tags": [
+        "servicios"
+      ],
+      "difficulty": 2,
+      "type": "classify",
+      "prompt": "Clasifica en 'Servicios públicos' o 'Espacios de convivencia':",
+      "groups": {
+        "Servicios públicos": [
+          "Biblioteca",
+          "Centro de salud",
+          "Polideportivo",
+          "Recogida de basuras"
+        ],
+        "Espacios de convivencia": [
+          "Parque",
+          "Plaza",
+          "Calle peatonal",
+          "Patio del colegio"
+        ]
+      },
+      "category": "municipio"
+    },
+    {
+      "id": "t3_card_0037",
+      "topic": "t3",
+      "tags": [
+        "trabajo"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Trabajo",
+      "back": "Actividad que realizan las personas para producir bienes o prestar servicios.",
+      "category": "trabajos"
+    },
+    {
+      "id": "t3_card_0038",
+      "topic": "t3",
+      "tags": [
+        "trabajo"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Profesión",
+      "back": "Trabajo que una persona realiza habitualmente.",
+      "category": "trabajos"
+    },
+    {
+      "id": "t3_card_0039",
+      "topic": "t3",
+      "tags": [
+        "sectores"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Sector primario",
+      "back": "Sector que obtiene productos de la naturaleza.",
+      "category": "trabajos"
+    },
+    {
+      "id": "t3_card_0040",
+      "topic": "t3",
+      "tags": [
+        "sectores"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Sector secundario",
+      "back": "Sector que transforma materias primas en productos elaborados.",
+      "category": "trabajos"
+    },
+    {
+      "id": "t3_card_0041",
+      "topic": "t3",
+      "tags": [
+        "sectores"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Sector terciario",
+      "back": "Sector que ofrece servicios a las personas.",
+      "category": "trabajos"
+    },
+    {
+      "id": "t3_card_0042",
+      "topic": "t3",
+      "tags": [
+        "trabajos"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Agricultor o agricultora",
+      "back": "Persona que cultiva la tierra.",
+      "category": "trabajos"
+    },
+    {
+      "id": "t3_card_0043",
+      "topic": "t3",
+      "tags": [
+        "trabajos"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Ganadero o ganadera",
+      "back": "Persona que cuida animales para obtener productos.",
+      "category": "trabajos"
+    },
+    {
+      "id": "t3_card_0044",
+      "topic": "t3",
+      "tags": [
+        "trabajos"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Pescador o pescadora",
+      "back": "Persona que obtiene peces del mar o del río.",
+      "category": "trabajos"
+    },
+    {
+      "id": "t3_card_0045",
+      "topic": "t3",
+      "tags": [
+        "trabajos"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Comerciante",
+      "back": "Persona que vende productos.",
+      "category": "trabajos"
+    },
+    {
+      "id": "t3_card_0046",
+      "topic": "t3",
+      "tags": [
+        "trabajos"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Fábrica",
+      "back": "Lugar donde se transforman materias primas en productos.",
+      "category": "trabajos"
+    },
+    {
+      "id": "t3_mcq_0047",
+      "topic": "t3",
+      "tags": [
+        "sectores"
+      ],
+      "difficulty": 1,
+      "type": "mcq",
+      "question": "¿En qué sector trabaja una panadera que vende pan en una tienda?",
+      "choices": [
+        "Sector terciario",
+        "Sector primario",
+        "Sector secundario",
+        "Ninguno"
+      ],
+      "answer": "Sector terciario",
+      "category": "trabajos"
+    },
+    {
+      "id": "t3_mcq_0048",
+      "topic": "t3",
+      "tags": [
+        "sectores"
+      ],
+      "difficulty": 1,
+      "type": "mcq",
+      "question": "¿Qué sector transforma materias primas en productos elaborados?",
+      "choices": [
+        "Sector secundario",
+        "Sector primario",
+        "Sector terciario",
+        "Sector municipal"
+      ],
+      "answer": "Sector secundario",
+      "category": "trabajos"
+    },
+    {
+      "id": "t3_mcq_0049",
+      "topic": "t3",
+      "tags": [
+        "trabajos"
+      ],
+      "difficulty": 1,
+      "type": "mcq",
+      "question": "¿Qué trabajo pertenece al sector primario?",
+      "choices": [
+        "Agricultor",
+        "Dependiente",
+        "Conductor de autobús",
+        "Bibliotecario"
+      ],
+      "answer": "Agricultor",
+      "category": "trabajos"
+    },
+    {
+      "id": "t3_mcq_0050",
+      "topic": "t3",
+      "tags": [
+        "trabajos"
+      ],
+      "difficulty": 1,
+      "type": "mcq",
+      "question": "¿Qué hace una persona comerciante?",
+      "choices": [
+        "Vende productos",
+        "Pesca en el mar",
+        "Conduce un tractor",
+        "Construye una carretera"
+      ],
+      "answer": "Vende productos",
+      "category": "trabajos"
+    },
+    {
+      "id": "t3_tf_0051",
+      "topic": "t3",
+      "tags": [
+        "sectores"
+      ],
+      "difficulty": 1,
+      "type": "tf",
+      "statement": "El sector terciario ofrece servicios como el transporte o la enseñanza.",
+      "answer": true,
+      "category": "trabajos"
+    },
+    {
+      "id": "t3_tf_0052",
+      "topic": "t3",
+      "tags": [
+        "trabajos"
+      ],
+      "difficulty": 1,
+      "type": "tf",
+      "statement": "Un pescador pertenece al sector secundario.",
+      "answer": false,
+      "category": "trabajos"
+    },
+    {
+      "id": "t3_type_0053",
+      "topic": "t3",
+      "tags": [
+        "sectores"
+      ],
+      "difficulty": 1,
+      "type": "type",
+      "prompt": "¿Qué es una profesión?",
+      "answer": "Es el trabajo que una persona realiza habitualmente.",
+      "category": "trabajos"
+    },
+    {
+      "id": "t3_type_0054",
+      "topic": "t3",
+      "tags": [
+        "sectores"
+      ],
+      "difficulty": 1,
+      "type": "type",
+      "prompt": "Nombra un trabajo de cada sector.",
+      "answer": "Por ejemplo: agricultor, trabajador de fábrica y médico.",
+      "category": "trabajos"
+    },
+    {
+      "id": "t3_classify_0055",
+      "topic": "t3",
+      "tags": [
+        "sectores"
+      ],
+      "difficulty": 2,
+      "type": "classify",
+      "prompt": "Clasifica estos trabajos por sectores:",
+      "groups": {
+        "Sector primario": [
+          "Agricultor",
+          "Ganadero",
+          "Pescador",
+          "Minero"
+        ],
+        "Sector secundario": [
+          "Panadero en fábrica",
+          "Carpintero",
+          "Trabajadora textil",
+          "Mecánico de fábrica"
+        ],
+        "Sector terciario": [
+          "Médica",
+          "Maestra",
+          "Conductora de autobús",
+          "Dependiente"
+        ]
+      },
+      "category": "trabajos"
+    },
+    {
+      "id": "t4_card_0056",
+      "topic": "t4",
+      "tags": [
+        "transporte"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Transporte público",
+      "back": "Medio de transporte que pueden usar muchas personas.",
+      "category": "movilidad"
+    },
+    {
+      "id": "t4_card_0057",
+      "topic": "t4",
+      "tags": [
+        "transporte"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Transporte privado",
+      "back": "Medio de transporte usado por una persona o familia.",
+      "category": "movilidad"
+    },
+    {
+      "id": "t4_card_0058",
+      "topic": "t4",
+      "tags": [
+        "seguridad vial"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Peatón",
+      "back": "Persona que va a pie.",
+      "category": "movilidad"
+    },
+    {
+      "id": "t4_card_0059",
+      "topic": "t4",
+      "tags": [
+        "seguridad vial"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Paso de cebra",
+      "back": "Lugar señalizado para cruzar la calle con seguridad.",
+      "category": "movilidad"
+    },
+    {
+      "id": "t4_card_0060",
+      "topic": "t4",
+      "tags": [
+        "seguridad vial"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Semáforo",
+      "back": "Señal luminosa que regula el paso de peatones y vehículos.",
+      "category": "movilidad"
+    },
+    {
+      "id": "t4_card_0061",
+      "topic": "t4",
+      "tags": [
+        "seguridad vial"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Acera",
+      "back": "Parte de la calle por donde caminan los peatones.",
+      "category": "movilidad"
+    },
+    {
+      "id": "t4_card_0062",
+      "topic": "t4",
+      "tags": [
+        "seguridad vial"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Calzada",
+      "back": "Parte de la vía por donde circulan los vehículos.",
+      "category": "movilidad"
+    },
+    {
+      "id": "t4_card_0063",
+      "topic": "t4",
+      "tags": [
+        "seguridad vial"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Cinturón de seguridad",
+      "back": "Elemento que protege a las personas dentro del coche.",
+      "category": "movilidad"
+    },
+    {
+      "id": "t4_card_0064",
+      "topic": "t4",
+      "tags": [
+        "transporte"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Bicicleta",
+      "back": "Vehículo de dos ruedas que se mueve con pedales.",
+      "category": "movilidad"
+    },
+    {
+      "id": "t4_card_0065",
+      "topic": "t4",
+      "tags": [
+        "transporte"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Carretera",
+      "back": "Vía que comunica distintos lugares fuera de la ciudad.",
+      "category": "movilidad"
+    },
+    {
+      "id": "t4_mcq_0066",
+      "topic": "t4",
+      "tags": [
+        "seguridad vial"
+      ],
+      "difficulty": 1,
+      "type": "mcq",
+      "question": "¿Por dónde debe caminar un peatón?",
+      "choices": [
+        "Por la acera",
+        "Por la calzada",
+        "Por el arcén siempre",
+        "Por el carril bici"
+      ],
+      "answer": "Por la acera",
+      "category": "movilidad"
+    },
+    {
+      "id": "t4_mcq_0067",
+      "topic": "t4",
+      "tags": [
+        "seguridad vial"
+      ],
+      "difficulty": 1,
+      "type": "mcq",
+      "question": "¿Qué debes hacer antes de cruzar por un paso de cebra?",
+      "choices": [
+        "Mirar a ambos lados",
+        "Correr sin parar",
+        "Cruzar mirando al suelo",
+        "Esperar en medio"
+      ],
+      "answer": "Mirar a ambos lados",
+      "category": "movilidad"
+    },
+    {
+      "id": "t4_mcq_0068",
+      "topic": "t4",
+      "tags": [
+        "transporte"
+      ],
+      "difficulty": 1,
+      "type": "mcq",
+      "question": "¿Cuál es un transporte público?",
+      "choices": [
+        "Autobús",
+        "Bicicleta personal",
+        "Patinete propio",
+        "Coche familiar"
+      ],
+      "answer": "Autobús",
+      "category": "movilidad"
+    },
+    {
+      "id": "t4_mcq_0069",
+      "topic": "t4",
+      "tags": [
+        "seguridad vial"
+      ],
+      "difficulty": 1,
+      "type": "mcq",
+      "question": "¿Para qué sirve el cinturón de seguridad?",
+      "choices": [
+        "Para protegernos en el vehículo",
+        "Para abrir la puerta",
+        "Para tocar el claxon",
+        "Para aparcar"
+      ],
+      "answer": "Para protegernos en el vehículo",
+      "category": "movilidad"
+    },
+    {
+      "id": "t4_tf_0070",
+      "topic": "t4",
+      "tags": [
+        "seguridad vial"
+      ],
+      "difficulty": 1,
+      "type": "tf",
+      "statement": "El semáforo ayuda a ordenar el paso de peatones y vehículos.",
+      "answer": true,
+      "category": "movilidad"
+    },
+    {
+      "id": "t4_tf_0071",
+      "topic": "t4",
+      "tags": [
+        "transporte"
+      ],
+      "difficulty": 1,
+      "type": "tf",
+      "statement": "La bicicleta es un medio de transporte aéreo.",
+      "answer": false,
+      "category": "movilidad"
+    },
+    {
+      "id": "t4_type_0072",
+      "topic": "t4",
+      "tags": [
+        "seguridad vial"
+      ],
+      "difficulty": 1,
+      "type": "type",
+      "prompt": "¿Qué es un paso de cebra?",
+      "answer": "Es un lugar señalizado para cruzar la calle con seguridad.",
+      "category": "movilidad"
+    },
+    {
+      "id": "t4_type_0073",
+      "topic": "t4",
+      "tags": [
+        "transporte"
+      ],
+      "difficulty": 1,
+      "type": "type",
+      "prompt": "Nombra dos medios de transporte públicos.",
+      "answer": "Por ejemplo: autobús y metro.",
+      "category": "movilidad"
+    },
+    {
+      "id": "t4_classify_0074",
+      "topic": "t4",
+      "tags": [
+        "transporte"
+      ],
+      "difficulty": 2,
+      "type": "classify",
+      "prompt": "Clasifica estos medios de transporte:",
+      "groups": {
+        "Terrestres": [
+          "Autobús",
+          "Coche",
+          "Bicicleta",
+          "Tren"
+        ],
+        "Aéreos": [
+          "Avión",
+          "Helicóptero"
+        ],
+        "Marítimos": [
+          "Barco",
+          "Ferry"
+        ]
+      },
+      "category": "movilidad"
+    },
+    {
+      "id": "t5_card_0075",
+      "topic": "t5",
+      "tags": [
+        "tiempo"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Día",
+      "back": "Tiempo que tarda la Tierra en dar una vuelta sobre sí misma.",
+      "category": "tiempo"
+    },
+    {
+      "id": "t5_card_0076",
+      "topic": "t5",
+      "tags": [
+        "tiempo"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Semana",
+      "back": "Conjunto de siete días.",
+      "category": "tiempo"
+    },
+    {
+      "id": "t5_card_0077",
+      "topic": "t5",
+      "tags": [
+        "tiempo"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Mes",
+      "back": "Cada una de las doce partes del año.",
+      "category": "tiempo"
+    },
+    {
+      "id": "t5_card_0078",
+      "topic": "t5",
+      "tags": [
+        "tiempo"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Año",
+      "back": "Periodo de doce meses.",
+      "category": "tiempo"
+    },
+    {
+      "id": "t5_card_0079",
+      "topic": "t5",
+      "tags": [
+        "tiempo"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Estación",
+      "back": "Cada uno de los cuatro periodos del año: primavera, verano, otoño e invierno.",
+      "category": "tiempo"
+    },
+    {
+      "id": "t5_card_0080",
+      "topic": "t5",
+      "tags": [
+        "tiempo"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Calendario",
+      "back": "Organiza los días, semanas y meses del año.",
+      "category": "tiempo"
+    },
+    {
+      "id": "t5_card_0081",
+      "topic": "t5",
+      "tags": [
+        "tiempo"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Reloj",
+      "back": "Instrumento que sirve para medir el paso de las horas.",
+      "category": "tiempo"
+    },
+    {
+      "id": "t5_card_0082",
+      "topic": "t5",
+      "tags": [
+        "tiempo"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Pasado",
+      "back": "Lo que ya ocurrió antes.",
+      "category": "tiempo"
+    },
+    {
+      "id": "t5_card_0083",
+      "topic": "t5",
+      "tags": [
+        "tiempo"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Presente",
+      "back": "Lo que ocurre ahora.",
+      "category": "tiempo"
+    },
+    {
+      "id": "t5_card_0084",
+      "topic": "t5",
+      "tags": [
+        "tiempo"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Futuro",
+      "back": "Lo que ocurrirá más adelante.",
+      "category": "tiempo"
+    },
+    {
+      "id": "t5_mcq_0085",
+      "topic": "t5",
+      "tags": [
+        "tiempo"
+      ],
+      "difficulty": 1,
+      "type": "mcq",
+      "question": "¿Cuántos días tiene una semana?",
+      "choices": [
+        "Siete",
+        "Cinco",
+        "Diez",
+        "Doce"
+      ],
+      "answer": "Siete",
+      "category": "tiempo"
+    },
+    {
+      "id": "t5_mcq_0086",
+      "topic": "t5",
+      "tags": [
+        "tiempo"
+      ],
+      "difficulty": 1,
+      "type": "mcq",
+      "question": "¿Qué usamos para saber en qué día del mes estamos?",
+      "choices": [
+        "El calendario",
+        "La brújula",
+        "La mochila",
+        "La farola"
+      ],
+      "answer": "El calendario",
+      "category": "tiempo"
+    },
+    {
+      "id": "t5_mcq_0087",
+      "topic": "t5",
+      "tags": [
+        "tiempo"
+      ],
+      "difficulty": 1,
+      "type": "mcq",
+      "question": "¿Cuál de estas palabras habla del tiempo que ya pasó?",
+      "choices": [
+        "Pasado",
+        "Presente",
+        "Futuro",
+        "Mañana"
+      ],
+      "answer": "Pasado",
+      "category": "tiempo"
+    },
+    {
+      "id": "t5_mcq_0088",
+      "topic": "t5",
+      "tags": [
+        "tiempo"
+      ],
+      "difficulty": 1,
+      "type": "mcq",
+      "question": "¿Cuántos meses tiene un año?",
+      "choices": [
+        "Doce",
+        "Siete",
+        "Veinticuatro",
+        "Cien"
+      ],
+      "answer": "Doce",
+      "category": "tiempo"
+    },
+    {
+      "id": "t5_tf_0089",
+      "topic": "t5",
+      "tags": [
+        "tiempo"
+      ],
+      "difficulty": 1,
+      "type": "tf",
+      "statement": "El calendario nos ayuda a organizar los días y los meses.",
+      "answer": true,
+      "category": "tiempo"
+    },
+    {
+      "id": "t5_tf_0090",
+      "topic": "t5",
+      "tags": [
+        "tiempo"
+      ],
+      "difficulty": 1,
+      "type": "tf",
+      "statement": "El verano es una estación del año.",
+      "answer": true,
+      "category": "tiempo"
+    },
+    {
+      "id": "t5_type_0091",
+      "topic": "t5",
+      "tags": [
+        "tiempo"
+      ],
+      "difficulty": 1,
+      "type": "type",
+      "prompt": "Nombra las cuatro estaciones del año.",
+      "answer": "Primavera, verano, otoño e invierno.",
+      "category": "tiempo"
+    },
+    {
+      "id": "t5_type_0092",
+      "topic": "t5",
+      "tags": [
+        "tiempo"
+      ],
+      "difficulty": 1,
+      "type": "type",
+      "prompt": "¿Qué es el presente?",
+      "answer": "Es lo que ocurre ahora.",
+      "category": "tiempo"
+    },
+    {
+      "id": "t5_timeline_0093",
+      "topic": "t5",
+      "tags": [
+        "tiempo"
+      ],
+      "difficulty": 2,
+      "type": "timeline",
+      "prompt": "Ordena las partes del día:",
+      "events": [
+        {
+          "label": "Mañana",
+          "year": 1
+        },
+        {
+          "label": "Mediodía",
+          "year": 2
+        },
+        {
+          "label": "Tarde",
+          "year": 3
+        },
+        {
+          "label": "Noche",
+          "year": 4
+        }
+      ],
+      "category": "tiempo"
+    },
+    {
+      "id": "t5_timeline_0094",
+      "topic": "t5",
+      "tags": [
+        "tiempo"
+      ],
+      "difficulty": 2,
+      "type": "timeline",
+      "prompt": "Ordena los días de la semana desde el lunes:",
+      "events": [
+        {
+          "label": "Lunes",
+          "year": 1
+        },
+        {
+          "label": "Martes",
+          "year": 2
+        },
+        {
+          "label": "Miércoles",
+          "year": 3
+        },
+        {
+          "label": "Jueves",
+          "year": 4
+        },
+        {
+          "label": "Viernes",
+          "year": 5
+        }
+      ],
+      "category": "tiempo"
+    },
+    {
+      "id": "t6_card_0095",
+      "topic": "t6",
+      "tags": [
+        "historia"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Historia personal",
+      "back": "Conjunto de hechos importantes de la vida de una persona.",
+      "category": "historia"
+    },
+    {
+      "id": "t6_card_0096",
+      "topic": "t6",
+      "tags": [
+        "historia"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Árbol genealógico",
+      "back": "Esquema que muestra las personas de una familia y su relación.",
+      "category": "historia"
+    },
+    {
+      "id": "t6_card_0097",
+      "topic": "t6",
+      "tags": [
+        "historia"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Recuerdo",
+      "back": "Objeto, imagen o idea que nos ayuda a recordar algo del pasado.",
+      "category": "historia"
+    },
+    {
+      "id": "t6_card_0098",
+      "topic": "t6",
+      "tags": [
+        "patrimonio"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Tradición",
+      "back": "Costumbre que se repite y se transmite con el tiempo.",
+      "category": "historia"
+    },
+    {
+      "id": "t6_card_0099",
+      "topic": "t6",
+      "tags": [
+        "patrimonio"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Fiesta local",
+      "back": "Celebración importante de un pueblo o ciudad.",
+      "category": "historia"
+    },
+    {
+      "id": "t6_card_0100",
+      "topic": "t6",
+      "tags": [
+        "patrimonio"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Monumento",
+      "back": "Construcción o elemento importante por su valor histórico o cultural.",
+      "category": "historia"
+    },
+    {
+      "id": "t6_card_0101",
+      "topic": "t6",
+      "tags": [
+        "patrimonio"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Museo",
+      "back": "Lugar donde se conservan y muestran objetos importantes del pasado.",
+      "category": "historia"
+    },
+    {
+      "id": "t6_card_0102",
+      "topic": "t6",
+      "tags": [
+        "patrimonio"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Patrimonio cultural",
+      "back": "Conjunto de monumentos, tradiciones y obras que debemos cuidar.",
+      "category": "historia"
+    },
+    {
+      "id": "t6_card_0103",
+      "topic": "t6",
+      "tags": [
+        "historia"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Fuente histórica",
+      "back": "Elemento que nos da información sobre el pasado.",
+      "category": "historia"
+    },
+    {
+      "id": "t6_card_0104",
+      "topic": "t6",
+      "tags": [
+        "historia"
+      ],
+      "difficulty": 1,
+      "type": "pair",
+      "front": "Fotografía antigua",
+      "back": "Imagen que ayuda a conocer cómo era la vida antes.",
+      "category": "historia"
+    },
+    {
+      "id": "t6_mcq_0105",
+      "topic": "t6",
+      "tags": [
+        "historia"
+      ],
+      "difficulty": 1,
+      "type": "mcq",
+      "question": "¿Qué muestra un árbol genealógico?",
+      "choices": [
+        "Las relaciones entre personas de una familia",
+        "Las calles de un barrio",
+        "Los meses del año",
+        "Los trabajos de una ciudad"
+      ],
+      "answer": "Las relaciones entre personas de una familia",
+      "category": "historia"
+    },
+    {
+      "id": "t6_mcq_0106",
+      "topic": "t6",
+      "tags": [
+        "patrimonio"
+      ],
+      "difficulty": 1,
+      "type": "mcq",
+      "question": "¿Qué debemos hacer con el patrimonio cultural?",
+      "choices": [
+        "Cuidarlo y respetarlo",
+        "Romperlo",
+        "Ignorarlo",
+        "Esconderlo"
+      ],
+      "answer": "Cuidarlo y respetarlo",
+      "category": "historia"
+    },
+    {
+      "id": "t6_mcq_0107",
+      "topic": "t6",
+      "tags": [
+        "historia"
+      ],
+      "difficulty": 1,
+      "type": "mcq",
+      "question": "¿Cuál es una fuente histórica?",
+      "choices": [
+        "Una fotografía antigua",
+        "Un videojuego nuevo",
+        "Un semáforo",
+        "Un bocadillo"
+      ],
+      "answer": "Una fotografía antigua",
+      "category": "historia"
+    },
+    {
+      "id": "t6_mcq_0108",
+      "topic": "t6",
+      "tags": [
+        "patrimonio"
+      ],
+      "difficulty": 1,
+      "type": "mcq",
+      "question": "¿Dónde podemos ver objetos antiguos y aprender sobre el pasado?",
+      "choices": [
+        "En un museo",
+        "En un garaje",
+        "En un autobús",
+        "En un ascensor"
+      ],
+      "answer": "En un museo",
+      "category": "historia"
+    },
+    {
+      "id": "t6_tf_0109",
+      "topic": "t6",
+      "tags": [
+        "patrimonio"
+      ],
+      "difficulty": 1,
+      "type": "tf",
+      "statement": "Las tradiciones forman parte del patrimonio cultural.",
+      "answer": true,
+      "category": "historia"
+    },
+    {
+      "id": "t6_tf_0110",
+      "topic": "t6",
+      "tags": [
+        "historia"
+      ],
+      "difficulty": 1,
+      "type": "tf",
+      "statement": "Un árbol genealógico sirve para medir el tiempo con horas y minutos.",
+      "answer": false,
+      "category": "historia"
+    },
+    {
+      "id": "t6_type_0111",
+      "topic": "t6",
+      "tags": [
+        "historia"
+      ],
+      "difficulty": 1,
+      "type": "type",
+      "prompt": "¿Qué es un árbol genealógico?",
+      "answer": "Es un esquema que muestra las personas de una familia y su relación.",
+      "category": "historia"
+    },
+    {
+      "id": "t6_type_0112",
+      "topic": "t6",
+      "tags": [
+        "patrimonio"
+      ],
+      "difficulty": 1,
+      "type": "type",
+      "prompt": "Nombra dos elementos del patrimonio cultural.",
+      "answer": "Por ejemplo: un monumento y una tradición.",
+      "category": "historia"
+    },
+    {
+      "id": "t6_timeline_0113",
+      "topic": "t6",
+      "tags": [
+        "historia"
+      ],
+      "difficulty": 2,
+      "type": "timeline",
+      "prompt": "Ordena estos momentos de una vida:",
+      "events": [
+        {
+          "label": "Nacer",
+          "year": 1
+        },
+        {
+          "label": "Aprender a caminar",
+          "year": 2
+        },
+        {
+          "label": "Empezar el colegio",
+          "year": 3
+        },
+        {
+          "label": "Cumplir años",
+          "year": 4
+        }
+      ],
+      "category": "historia"
+    },
+    {
+      "id": "t6_timeline_0114",
+      "topic": "t6",
+      "tags": [
+        "historia"
+      ],
+      "difficulty": 2,
+      "type": "timeline",
+      "prompt": "Ordena estos hechos de la historia de una localidad:",
+      "events": [
+        {
+          "label": "Se construye la plaza",
+          "year": 1
+        },
+        {
+          "label": "Se abre la escuela",
+          "year": 2
+        },
+        {
+          "label": "Se inaugura el parque",
+          "year": 3
+        },
+        {
+          "label": "Se crea la biblioteca",
+          "year": 4
+        }
+      ],
+      "category": "historia"
+    },
+    {
+      "id": "t6_classify_0115",
+      "topic": "t6",
+      "tags": [
+        "patrimonio"
+      ],
+      "difficulty": 2,
+      "type": "classify",
+      "prompt": "Clasifica en 'Patrimonio natural' o 'Patrimonio cultural':",
+      "groups": {
+        "Patrimonio natural": [
+          "Parque natural",
+          "Bosque protegido",
+          "Acantilado",
+          "Laguna"
+        ],
+        "Patrimonio cultural": [
+          "Castillo",
+          "Museo",
+          "Fiesta local",
+          "Monumento"
+        ]
+      },
+      "category": "historia"
+    }
+  ],
+  "icon": "🧭",
+  "description": "Deck completo de Ciencias Sociales 2º de Vicens Vives Comunidad Zoom.",
+  "tags": [
+    "Vicens Vives",
+    "Comunidad Zoom",
+    "2º Primaria",
+    "Timeline",
+    "Clasificar"
+  ],
+  "order": 100,
+  "published": true
+}

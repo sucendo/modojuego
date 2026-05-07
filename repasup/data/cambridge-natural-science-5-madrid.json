@@ -1,0 +1,2131 @@
+{
+  "id": "cambridge_natural_science_5_madrid",
+  "publisher": "Cambridge",
+  "series": "Natural Science Primary",
+  "subject": "natural_science",
+  "course": "5º Primaria",
+  "level": "5º Primaria (Madrid)",
+  "region": "Comunidad de Madrid",
+  "title": "Ciencias Naturales 5º — Cambridge — Madrid (Natural Science in English)",
+  "langs": [
+    "EN",
+    "ES"
+  ],
+  "topics": [
+    {
+      "id": "u1",
+      "name": "Unit 1. Living Things and Cells",
+      "order": 1
+    },
+    {
+      "id": "u2",
+      "name": "Unit 2. The Human Body and Health",
+      "order": 2
+    },
+    {
+      "id": "u3",
+      "name": "Unit 3. Matter, Materials and Changes",
+      "order": 3
+    },
+    {
+      "id": "u4",
+      "name": "Unit 4. Forces, Energy and Electricity",
+      "order": 4
+    },
+    {
+      "id": "u5",
+      "name": "Unit 5. The Earth, Weather and Space",
+      "order": 5
+    },
+    {
+      "id": "u6",
+      "name": "Unit 6. Ecosystems and the Environment",
+      "order": 6
+    }
+  ],
+  "categories": [
+    {
+      "id": "mix",
+      "name": "Mix"
+    },
+    {
+      "id": "science",
+      "name": "Science Concepts"
+    },
+    {
+      "id": "vocab",
+      "name": "Vocabulary"
+    },
+    {
+      "id": "grammar",
+      "name": "Grammar"
+    }
+  ],
+  "modes": [
+    "flashcards",
+    "quiz",
+    "spelling",
+    "listening",
+    "sentence_builder",
+    "grammar_fix",
+    "memory",
+    "review_errors",
+    "exam",
+    "mixed_challenge",
+    "truefalse",
+    "timeline",
+    "classify"
+  ],
+  "items": [
+    {
+      "id": "u1_vocab_01",
+      "type": "vocab",
+      "en": "cell",
+      "es": "célula",
+      "example": "A cell is the basic unit of life.",
+      "units": [
+        "u1"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u1_vocab_02",
+      "type": "vocab",
+      "en": "microscope",
+      "es": "microscopio",
+      "example": "We use a microscope to see tiny things.",
+      "units": [
+        "u1"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u1_vocab_03",
+      "type": "vocab",
+      "en": "tissue",
+      "es": "tejido",
+      "example": "A tissue is a group of similar cells.",
+      "units": [
+        "u1"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u1_vocab_04",
+      "type": "vocab",
+      "en": "organ",
+      "es": "órgano",
+      "example": "The heart is an organ.",
+      "units": [
+        "u1"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u1_vocab_05",
+      "type": "vocab",
+      "en": "vertebrate",
+      "es": "vertebrado",
+      "example": "A dog is a vertebrate animal.",
+      "units": [
+        "u1"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u1_vocab_06",
+      "type": "vocab",
+      "en": "invertebrate",
+      "es": "invertebrado",
+      "example": "A snail is an invertebrate.",
+      "units": [
+        "u1"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u1_vocab_07",
+      "type": "vocab",
+      "en": "mammal",
+      "es": "mamífero",
+      "example": "A whale is a mammal.",
+      "units": [
+        "u1"
+      ],
+      "difficulty": 2,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u1_vocab_08",
+      "type": "vocab",
+      "en": "reptile",
+      "es": "reptil",
+      "example": "A lizard is a reptile.",
+      "units": [
+        "u1"
+      ],
+      "difficulty": 2,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u1_vocab_09",
+      "type": "vocab",
+      "en": "amphibian",
+      "es": "anfibio",
+      "example": "A frog is an amphibian.",
+      "units": [
+        "u1"
+      ],
+      "difficulty": 2,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u1_vocab_10",
+      "type": "vocab",
+      "en": "flowering plant",
+      "es": "planta con flor",
+      "example": "A rose is a flowering plant.",
+      "units": [
+        "u1"
+      ],
+      "difficulty": 2,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u2_vocab_01",
+      "type": "vocab",
+      "en": "skeleton",
+      "es": "esqueleto",
+      "example": "The skeleton supports the body.",
+      "units": [
+        "u2"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u2_vocab_02",
+      "type": "vocab",
+      "en": "muscle",
+      "es": "músculo",
+      "example": "Muscles help us move.",
+      "units": [
+        "u2"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u2_vocab_03",
+      "type": "vocab",
+      "en": "joint",
+      "es": "articulación",
+      "example": "A joint connects two bones.",
+      "units": [
+        "u2"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u2_vocab_04",
+      "type": "vocab",
+      "en": "brain",
+      "es": "cerebro",
+      "example": "The brain controls the body.",
+      "units": [
+        "u2"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u2_vocab_05",
+      "type": "vocab",
+      "en": "lungs",
+      "es": "pulmones",
+      "example": "The lungs help us breathe.",
+      "units": [
+        "u2"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u2_vocab_06",
+      "type": "vocab",
+      "en": "heart",
+      "es": "corazón",
+      "example": "The heart pumps blood.",
+      "units": [
+        "u2"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u2_vocab_07",
+      "type": "vocab",
+      "en": "nutrients",
+      "es": "nutrientes",
+      "example": "Food gives us nutrients.",
+      "units": [
+        "u2"
+      ],
+      "difficulty": 2,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u2_vocab_08",
+      "type": "vocab",
+      "en": "balanced diet",
+      "es": "dieta equilibrada",
+      "example": "A balanced diet helps us stay healthy.",
+      "units": [
+        "u2"
+      ],
+      "difficulty": 2,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u2_vocab_09",
+      "type": "vocab",
+      "en": "exercise",
+      "es": "ejercicio",
+      "example": "Exercise keeps us fit.",
+      "units": [
+        "u2"
+      ],
+      "difficulty": 2,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u2_vocab_10",
+      "type": "vocab",
+      "en": "hygiene",
+      "es": "higiene",
+      "example": "Good hygiene prevents illness.",
+      "units": [
+        "u2"
+      ],
+      "difficulty": 2,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u3_vocab_01",
+      "type": "vocab",
+      "en": "matter",
+      "es": "materia",
+      "example": "Everything around us is matter.",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u3_vocab_02",
+      "type": "vocab",
+      "en": "solid",
+      "es": "sólido",
+      "example": "Ice is a solid.",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u3_vocab_03",
+      "type": "vocab",
+      "en": "liquid",
+      "es": "líquido",
+      "example": "Water is a liquid.",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u3_vocab_04",
+      "type": "vocab",
+      "en": "gas",
+      "es": "gas",
+      "example": "Air is a gas.",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u3_vocab_05",
+      "type": "vocab",
+      "en": "mixture",
+      "es": "mezcla",
+      "example": "Salad is a mixture.",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u3_vocab_06",
+      "type": "vocab",
+      "en": "solution",
+      "es": "disolución",
+      "example": "Salt water is a solution.",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u3_vocab_07",
+      "type": "vocab",
+      "en": "evaporation",
+      "es": "evaporación",
+      "example": "Evaporation turns liquid into gas.",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 2,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u3_vocab_08",
+      "type": "vocab",
+      "en": "melting",
+      "es": "fusión",
+      "example": "Melting changes ice into water.",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 2,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u3_vocab_09",
+      "type": "vocab",
+      "en": "condensation",
+      "es": "condensación",
+      "example": "Condensation forms tiny drops of water.",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 2,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u3_vocab_10",
+      "type": "vocab",
+      "en": "recycling",
+      "es": "reciclaje",
+      "example": "Recycling reduces waste.",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 2,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u4_vocab_01",
+      "type": "vocab",
+      "en": "force",
+      "es": "fuerza",
+      "example": "A force can push or pull an object.",
+      "units": [
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u4_vocab_02",
+      "type": "vocab",
+      "en": "friction",
+      "es": "fricción",
+      "example": "Friction slows objects down.",
+      "units": [
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u4_vocab_03",
+      "type": "vocab",
+      "en": "gravity",
+      "es": "gravedad",
+      "example": "Gravity pulls objects towards Earth.",
+      "units": [
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u4_vocab_04",
+      "type": "vocab",
+      "en": "lever",
+      "es": "palanca",
+      "example": "A lever helps us lift heavy things.",
+      "units": [
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u4_vocab_05",
+      "type": "vocab",
+      "en": "pulley",
+      "es": "polea",
+      "example": "A pulley changes the direction of a force.",
+      "units": [
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u4_vocab_06",
+      "type": "vocab",
+      "en": "energy",
+      "es": "energía",
+      "example": "Energy makes things happen.",
+      "units": [
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u4_vocab_07",
+      "type": "vocab",
+      "en": "electric circuit",
+      "es": "circuito eléctrico",
+      "example": "A lamp needs an electric circuit.",
+      "units": [
+        "u4"
+      ],
+      "difficulty": 2,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u4_vocab_08",
+      "type": "vocab",
+      "en": "battery",
+      "es": "pila",
+      "example": "A battery provides electrical energy.",
+      "units": [
+        "u4"
+      ],
+      "difficulty": 2,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u4_vocab_09",
+      "type": "vocab",
+      "en": "conductor",
+      "es": "conductor",
+      "example": "Metal is a good conductor.",
+      "units": [
+        "u4"
+      ],
+      "difficulty": 2,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u4_vocab_10",
+      "type": "vocab",
+      "en": "insulator",
+      "es": "aislante",
+      "example": "Plastic is an insulator.",
+      "units": [
+        "u4"
+      ],
+      "difficulty": 2,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u5_vocab_01",
+      "type": "vocab",
+      "en": "crust",
+      "es": "corteza terrestre",
+      "example": "The crust is the outer layer of Earth.",
+      "units": [
+        "u5"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u5_vocab_02",
+      "type": "vocab",
+      "en": "mantle",
+      "es": "manto",
+      "example": "The mantle is below the crust.",
+      "units": [
+        "u5"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u5_vocab_03",
+      "type": "vocab",
+      "en": "core",
+      "es": "núcleo",
+      "example": "The core is the hottest part of Earth.",
+      "units": [
+        "u5"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u5_vocab_04",
+      "type": "vocab",
+      "en": "weather",
+      "es": "tiempo atmosférico",
+      "example": "Weather changes from day to day.",
+      "units": [
+        "u5"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u5_vocab_05",
+      "type": "vocab",
+      "en": "climate",
+      "es": "clima",
+      "example": "Climate is the usual weather of a place.",
+      "units": [
+        "u5"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u5_vocab_06",
+      "type": "vocab",
+      "en": "forecast",
+      "es": "pronóstico",
+      "example": "We check the forecast on TV.",
+      "units": [
+        "u5"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u5_vocab_07",
+      "type": "vocab",
+      "en": "rotation",
+      "es": "rotación",
+      "example": "Earth's rotation causes day and night.",
+      "units": [
+        "u5"
+      ],
+      "difficulty": 2,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u5_vocab_08",
+      "type": "vocab",
+      "en": "orbit",
+      "es": "órbita",
+      "example": "Earth travels in orbit around the Sun.",
+      "units": [
+        "u5"
+      ],
+      "difficulty": 2,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u5_vocab_09",
+      "type": "vocab",
+      "en": "planet",
+      "es": "planeta",
+      "example": "Earth is a planet.",
+      "units": [
+        "u5"
+      ],
+      "difficulty": 2,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u5_vocab_10",
+      "type": "vocab",
+      "en": "satellite",
+      "es": "satélite",
+      "example": "The Moon is Earth's natural satellite.",
+      "units": [
+        "u5"
+      ],
+      "difficulty": 2,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u6_vocab_01",
+      "type": "vocab",
+      "en": "ecosystem",
+      "es": "ecosistema",
+      "example": "A pond is an ecosystem.",
+      "units": [
+        "u6"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u6_vocab_02",
+      "type": "vocab",
+      "en": "habitat",
+      "es": "hábitat",
+      "example": "A camel lives in a desert habitat.",
+      "units": [
+        "u6"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u6_vocab_03",
+      "type": "vocab",
+      "en": "food chain",
+      "es": "cadena alimentaria",
+      "example": "Plants start many food chains.",
+      "units": [
+        "u6"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u6_vocab_04",
+      "type": "vocab",
+      "en": "producer",
+      "es": "productor",
+      "example": "Plants are producers.",
+      "units": [
+        "u6"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u6_vocab_05",
+      "type": "vocab",
+      "en": "consumer",
+      "es": "consumidor",
+      "example": "A rabbit is a consumer.",
+      "units": [
+        "u6"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u6_vocab_06",
+      "type": "vocab",
+      "en": "decomposer",
+      "es": "descomponedor",
+      "example": "Fungi are decomposers.",
+      "units": [
+        "u6"
+      ],
+      "difficulty": 1,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u6_vocab_07",
+      "type": "vocab",
+      "en": "pollution",
+      "es": "contaminación",
+      "example": "Pollution harms ecosystems.",
+      "units": [
+        "u6"
+      ],
+      "difficulty": 2,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u6_vocab_08",
+      "type": "vocab",
+      "en": "deforestation",
+      "es": "deforestación",
+      "example": "Deforestation destroys habitats.",
+      "units": [
+        "u6"
+      ],
+      "difficulty": 2,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u6_vocab_09",
+      "type": "vocab",
+      "en": "endangered",
+      "es": "en peligro de extinción",
+      "example": "The Iberian lynx was endangered.",
+      "units": [
+        "u6"
+      ],
+      "difficulty": 2,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u6_vocab_10",
+      "type": "vocab",
+      "en": "conservation",
+      "es": "conservación",
+      "example": "Conservation protects nature.",
+      "units": [
+        "u6"
+      ],
+      "difficulty": 2,
+      "category": "vocab",
+      "sub": "science"
+    },
+    {
+      "id": "u1_pair_01",
+      "type": "pair",
+      "front": "Cell",
+      "back": "The basic unit of life.",
+      "units": [
+        "u1"
+      ],
+      "difficulty": 1,
+      "category": "science"
+    },
+    {
+      "id": "u1_pair_02",
+      "type": "pair",
+      "front": "Organism",
+      "back": "A living thing.",
+      "units": [
+        "u1"
+      ],
+      "difficulty": 1,
+      "category": "science"
+    },
+    {
+      "id": "u1_pair_03",
+      "type": "pair",
+      "front": "Classification",
+      "back": "Grouping living things by shared features.",
+      "units": [
+        "u1"
+      ],
+      "difficulty": 2,
+      "category": "science"
+    },
+    {
+      "id": "u1_pair_04",
+      "type": "pair",
+      "front": "Life process",
+      "back": "A function that living things carry out.",
+      "units": [
+        "u1"
+      ],
+      "difficulty": 2,
+      "category": "science"
+    },
+    {
+      "id": "u2_pair_01",
+      "type": "pair",
+      "front": "Digestive system",
+      "back": "The body system that breaks down food.",
+      "units": [
+        "u2"
+      ],
+      "difficulty": 1,
+      "category": "science"
+    },
+    {
+      "id": "u2_pair_02",
+      "type": "pair",
+      "front": "Respiratory system",
+      "back": "The body system that exchanges oxygen and carbon dioxide.",
+      "units": [
+        "u2"
+      ],
+      "difficulty": 1,
+      "category": "science"
+    },
+    {
+      "id": "u2_pair_03",
+      "type": "pair",
+      "front": "Circulatory system",
+      "back": "The body system that moves blood around the body.",
+      "units": [
+        "u2"
+      ],
+      "difficulty": 2,
+      "category": "science"
+    },
+    {
+      "id": "u2_pair_04",
+      "type": "pair",
+      "front": "Healthy habit",
+      "back": "An action that helps your body stay well.",
+      "units": [
+        "u2"
+      ],
+      "difficulty": 2,
+      "category": "science"
+    },
+    {
+      "id": "u3_pair_01",
+      "type": "pair",
+      "front": "Physical change",
+      "back": "A change in appearance without creating a new substance.",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 1,
+      "category": "science"
+    },
+    {
+      "id": "u3_pair_02",
+      "type": "pair",
+      "front": "Chemical change",
+      "back": "A change that forms a new substance.",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 1,
+      "category": "science"
+    },
+    {
+      "id": "u3_pair_03",
+      "type": "pair",
+      "front": "Property",
+      "back": "A characteristic of a material.",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 2,
+      "category": "science"
+    },
+    {
+      "id": "u3_pair_04",
+      "type": "pair",
+      "front": "Waste",
+      "back": "Material we throw away after using it.",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 2,
+      "category": "science"
+    },
+    {
+      "id": "u4_pair_01",
+      "type": "pair",
+      "front": "Machine",
+      "back": "A device that makes work easier.",
+      "units": [
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "science"
+    },
+    {
+      "id": "u4_pair_02",
+      "type": "pair",
+      "front": "Electrical appliance",
+      "back": "A device that uses electricity.",
+      "units": [
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "science"
+    },
+    {
+      "id": "u4_pair_03",
+      "type": "pair",
+      "front": "Renewable energy",
+      "back": "Energy from sources that can be replaced naturally.",
+      "units": [
+        "u4"
+      ],
+      "difficulty": 2,
+      "category": "science"
+    },
+    {
+      "id": "u4_pair_04",
+      "type": "pair",
+      "front": "Non-renewable energy",
+      "back": "Energy from sources that can run out.",
+      "units": [
+        "u4"
+      ],
+      "difficulty": 2,
+      "category": "science"
+    },
+    {
+      "id": "u5_pair_01",
+      "type": "pair",
+      "front": "Volcano",
+      "back": "An opening in Earth's crust where magma can escape.",
+      "units": [
+        "u5"
+      ],
+      "difficulty": 1,
+      "category": "science"
+    },
+    {
+      "id": "u5_pair_02",
+      "type": "pair",
+      "front": "Rock",
+      "back": "A natural solid material that forms part of Earth's crust.",
+      "units": [
+        "u5"
+      ],
+      "difficulty": 1,
+      "category": "science"
+    },
+    {
+      "id": "u5_pair_03",
+      "type": "pair",
+      "front": "Solar System",
+      "back": "The Sun and all the objects that orbit it.",
+      "units": [
+        "u5"
+      ],
+      "difficulty": 2,
+      "category": "science"
+    },
+    {
+      "id": "u5_pair_04",
+      "type": "pair",
+      "front": "Meteorologist",
+      "back": "A scientist who studies weather.",
+      "units": [
+        "u5"
+      ],
+      "difficulty": 2,
+      "category": "science"
+    },
+    {
+      "id": "u6_pair_01",
+      "type": "pair",
+      "front": "Biodiversity",
+      "back": "The variety of living things in an ecosystem.",
+      "units": [
+        "u6"
+      ],
+      "difficulty": 1,
+      "category": "science"
+    },
+    {
+      "id": "u6_pair_02",
+      "type": "pair",
+      "front": "Adaptation",
+      "back": "A feature that helps a living thing survive.",
+      "units": [
+        "u6"
+      ],
+      "difficulty": 1,
+      "category": "science"
+    },
+    {
+      "id": "u6_pair_03",
+      "type": "pair",
+      "front": "Natural resource",
+      "back": "A useful material found in nature.",
+      "units": [
+        "u6"
+      ],
+      "difficulty": 2,
+      "category": "science"
+    },
+    {
+      "id": "u6_pair_04",
+      "type": "pair",
+      "front": "Sustainability",
+      "back": "Using resources without damaging the future.",
+      "units": [
+        "u6"
+      ],
+      "difficulty": 2,
+      "category": "science"
+    },
+    {
+      "id": "u1_mcq_01",
+      "type": "mcq",
+      "question": "What is the basic unit of life?",
+      "choices": [
+        "A cell",
+        "A tissue",
+        "An organ",
+        "A system"
+      ],
+      "answer": "A cell",
+      "units": [
+        "u1"
+      ],
+      "difficulty": 1,
+      "category": "science"
+    },
+    {
+      "id": "u1_mcq_02",
+      "type": "mcq",
+      "question": "Which group does a frog belong to?",
+      "choices": [
+        "Amphibian",
+        "Reptile",
+        "Mammal",
+        "Bird"
+      ],
+      "answer": "Amphibian",
+      "units": [
+        "u1"
+      ],
+      "difficulty": 1,
+      "category": "science"
+    },
+    {
+      "id": "u1_mcq_03",
+      "type": "mcq",
+      "question": "Which instrument helps us see tiny living things?",
+      "choices": [
+        "Microscope",
+        "Thermometer",
+        "Compass",
+        "Barometer"
+      ],
+      "answer": "Microscope",
+      "units": [
+        "u1"
+      ],
+      "difficulty": 2,
+      "category": "science"
+    },
+    {
+      "id": "u2_mcq_01",
+      "type": "mcq",
+      "question": "Which organ pumps blood around the body?",
+      "choices": [
+        "Heart",
+        "Lungs",
+        "Brain",
+        "Stomach"
+      ],
+      "answer": "Heart",
+      "units": [
+        "u2"
+      ],
+      "difficulty": 1,
+      "category": "science"
+    },
+    {
+      "id": "u2_mcq_02",
+      "type": "mcq",
+      "question": "Which body system helps us breathe?",
+      "choices": [
+        "Respiratory system",
+        "Digestive system",
+        "Circulatory system",
+        "Skeletal system"
+      ],
+      "answer": "Respiratory system",
+      "units": [
+        "u2"
+      ],
+      "difficulty": 1,
+      "category": "science"
+    },
+    {
+      "id": "u2_mcq_03",
+      "type": "mcq",
+      "question": "Which is part of a balanced diet?",
+      "choices": [
+        "Fruit and vegetables",
+        "Only sweets",
+        "Only fizzy drinks",
+        "No water"
+      ],
+      "answer": "Fruit and vegetables",
+      "units": [
+        "u2"
+      ],
+      "difficulty": 2,
+      "category": "science"
+    },
+    {
+      "id": "u3_mcq_01",
+      "type": "mcq",
+      "question": "Which state of matter has no fixed shape or volume?",
+      "choices": [
+        "Gas",
+        "Solid",
+        "Liquid",
+        "Crystal"
+      ],
+      "answer": "Gas",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 1,
+      "category": "science"
+    },
+    {
+      "id": "u3_mcq_02",
+      "type": "mcq",
+      "question": "What happens during evaporation?",
+      "choices": [
+        "A liquid turns into a gas",
+        "A solid turns into a liquid",
+        "A gas turns into a liquid",
+        "A liquid freezes"
+      ],
+      "answer": "A liquid turns into a gas",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 1,
+      "category": "science"
+    },
+    {
+      "id": "u3_mcq_03",
+      "type": "mcq",
+      "question": "Which example is a solution?",
+      "choices": [
+        "Salt water",
+        "Sand and pebbles",
+        "Oil and stones",
+        "A wooden table"
+      ],
+      "answer": "Salt water",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 2,
+      "category": "science"
+    },
+    {
+      "id": "u4_mcq_01",
+      "type": "mcq",
+      "question": "Which force pulls objects towards Earth?",
+      "choices": [
+        "Gravity",
+        "Friction",
+        "Magnetism",
+        "Tension"
+      ],
+      "answer": "Gravity",
+      "units": [
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "science"
+    },
+    {
+      "id": "u4_mcq_02",
+      "type": "mcq",
+      "question": "Which material is usually a conductor?",
+      "choices": [
+        "Metal",
+        "Plastic",
+        "Rubber",
+        "Wood"
+      ],
+      "answer": "Metal",
+      "units": [
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "science"
+    },
+    {
+      "id": "u4_mcq_03",
+      "type": "mcq",
+      "question": "What does a battery provide in a circuit?",
+      "choices": [
+        "Electrical energy",
+        "Light",
+        "Heat only",
+        "Sound"
+      ],
+      "answer": "Electrical energy",
+      "units": [
+        "u4"
+      ],
+      "difficulty": 2,
+      "category": "science"
+    },
+    {
+      "id": "u5_mcq_01",
+      "type": "mcq",
+      "question": "What causes day and night?",
+      "choices": [
+        "Earth's rotation",
+        "Earth's orbit",
+        "The Moon's orbit",
+        "Cloud movement"
+      ],
+      "answer": "Earth's rotation",
+      "units": [
+        "u5"
+      ],
+      "difficulty": 1,
+      "category": "science"
+    },
+    {
+      "id": "u5_mcq_02",
+      "type": "mcq",
+      "question": "What is the usual weather pattern of a place called?",
+      "choices": [
+        "Climate",
+        "Forecast",
+        "Season",
+        "Temperature"
+      ],
+      "answer": "Climate",
+      "units": [
+        "u5"
+      ],
+      "difficulty": 1,
+      "category": "science"
+    },
+    {
+      "id": "u5_mcq_03",
+      "type": "mcq",
+      "question": "What is Earth's natural satellite?",
+      "choices": [
+        "The Moon",
+        "Mars",
+        "The Sun",
+        "Venus"
+      ],
+      "answer": "The Moon",
+      "units": [
+        "u5"
+      ],
+      "difficulty": 2,
+      "category": "science"
+    },
+    {
+      "id": "u6_mcq_01",
+      "type": "mcq",
+      "question": "Who starts most food chains?",
+      "choices": [
+        "Plants",
+        "Lions",
+        "Fungi",
+        "Humans"
+      ],
+      "answer": "Plants",
+      "units": [
+        "u6"
+      ],
+      "difficulty": 1,
+      "category": "science"
+    },
+    {
+      "id": "u6_mcq_02",
+      "type": "mcq",
+      "question": "What is deforestation?",
+      "choices": [
+        "Cutting down large areas of forest",
+        "Planting many trees",
+        "Protecting rivers",
+        "Reducing waste"
+      ],
+      "answer": "Cutting down large areas of forest",
+      "units": [
+        "u6"
+      ],
+      "difficulty": 1,
+      "category": "science"
+    },
+    {
+      "id": "u6_mcq_03",
+      "type": "mcq",
+      "question": "Which word means protecting nature and habitats?",
+      "choices": [
+        "Conservation",
+        "Pollution",
+        "Erosion",
+        "Extinction"
+      ],
+      "answer": "Conservation",
+      "units": [
+        "u6"
+      ],
+      "difficulty": 2,
+      "category": "science"
+    },
+    {
+      "id": "u1_tf_01",
+      "type": "tf",
+      "statement": "All mammals are vertebrates.",
+      "answer": true,
+      "units": [
+        "u1"
+      ],
+      "difficulty": 1,
+      "category": "science"
+    },
+    {
+      "id": "u1_tf_02",
+      "type": "tf",
+      "statement": "Reptiles breathe through gills.",
+      "answer": false,
+      "units": [
+        "u1"
+      ],
+      "difficulty": 1,
+      "category": "science"
+    },
+    {
+      "id": "u2_tf_01",
+      "type": "tf",
+      "statement": "Muscles help the body move.",
+      "answer": true,
+      "units": [
+        "u2"
+      ],
+      "difficulty": 1,
+      "category": "science"
+    },
+    {
+      "id": "u2_tf_02",
+      "type": "tf",
+      "statement": "Good hygiene can increase illness.",
+      "answer": false,
+      "units": [
+        "u2"
+      ],
+      "difficulty": 1,
+      "category": "science"
+    },
+    {
+      "id": "u3_tf_01",
+      "type": "tf",
+      "statement": "Air is a gas.",
+      "answer": true,
+      "units": [
+        "u3"
+      ],
+      "difficulty": 1,
+      "category": "science"
+    },
+    {
+      "id": "u3_tf_02",
+      "type": "tf",
+      "statement": "Melting changes liquid water into ice.",
+      "answer": false,
+      "units": [
+        "u3"
+      ],
+      "difficulty": 1,
+      "category": "science"
+    },
+    {
+      "id": "u4_tf_01",
+      "type": "tf",
+      "statement": "Friction can slow things down.",
+      "answer": true,
+      "units": [
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "science"
+    },
+    {
+      "id": "u4_tf_02",
+      "type": "tf",
+      "statement": "Plastic is usually a good conductor.",
+      "answer": false,
+      "units": [
+        "u4"
+      ],
+      "difficulty": 1,
+      "category": "science"
+    },
+    {
+      "id": "u5_tf_01",
+      "type": "tf",
+      "statement": "The Earth orbits around the Sun.",
+      "answer": true,
+      "units": [
+        "u5"
+      ],
+      "difficulty": 1,
+      "category": "science"
+    },
+    {
+      "id": "u5_tf_02",
+      "type": "tf",
+      "statement": "Weather and climate mean exactly the same thing.",
+      "answer": false,
+      "units": [
+        "u5"
+      ],
+      "difficulty": 1,
+      "category": "science"
+    },
+    {
+      "id": "u6_tf_01",
+      "type": "tf",
+      "statement": "A producer makes its own food.",
+      "answer": true,
+      "units": [
+        "u6"
+      ],
+      "difficulty": 1,
+      "category": "science"
+    },
+    {
+      "id": "u6_tf_02",
+      "type": "tf",
+      "statement": "Pollution always helps ecosystems.",
+      "answer": false,
+      "units": [
+        "u6"
+      ],
+      "difficulty": 1,
+      "category": "science"
+    },
+    {
+      "id": "u1_type_01",
+      "type": "type",
+      "prompt": "What is a tissue?",
+      "answer": "A group of similar cells working together.",
+      "units": [
+        "u1"
+      ],
+      "difficulty": 2,
+      "category": "science"
+    },
+    {
+      "id": "u1_type_02",
+      "type": "type",
+      "prompt": "Name one vertebrate group.",
+      "answer": "Mammals, birds, fish, reptiles or amphibians.",
+      "units": [
+        "u1"
+      ],
+      "difficulty": 2,
+      "category": "science"
+    },
+    {
+      "id": "u2_type_01",
+      "type": "type",
+      "prompt": "What is the function of the skeleton?",
+      "answer": "It supports and protects the body and helps movement.",
+      "units": [
+        "u2"
+      ],
+      "difficulty": 2,
+      "category": "science"
+    },
+    {
+      "id": "u2_type_02",
+      "type": "type",
+      "prompt": "Why is exercise important?",
+      "answer": "It keeps the body fit and healthy.",
+      "units": [
+        "u2"
+      ],
+      "difficulty": 2,
+      "category": "science"
+    },
+    {
+      "id": "u3_type_01",
+      "type": "type",
+      "prompt": "What is matter?",
+      "answer": "Anything that has mass and takes up space.",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 2,
+      "category": "science"
+    },
+    {
+      "id": "u3_type_02",
+      "type": "type",
+      "prompt": "What is a physical change?",
+      "answer": "A change in size, shape or state without forming a new substance.",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 2,
+      "category": "science"
+    },
+    {
+      "id": "u4_type_01",
+      "type": "type",
+      "prompt": "What is a force?",
+      "answer": "A push or a pull.",
+      "units": [
+        "u4"
+      ],
+      "difficulty": 2,
+      "category": "science"
+    },
+    {
+      "id": "u4_type_02",
+      "type": "type",
+      "prompt": "What is an electric circuit?",
+      "answer": "A closed path through which electricity can flow.",
+      "units": [
+        "u4"
+      ],
+      "difficulty": 2,
+      "category": "science"
+    },
+    {
+      "id": "u5_type_01",
+      "type": "type",
+      "prompt": "What is climate?",
+      "answer": "The usual weather conditions of a place over a long time.",
+      "units": [
+        "u5"
+      ],
+      "difficulty": 2,
+      "category": "science"
+    },
+    {
+      "id": "u5_type_02",
+      "type": "type",
+      "prompt": "What causes day and night?",
+      "answer": "Earth's rotation.",
+      "units": [
+        "u5"
+      ],
+      "difficulty": 2,
+      "category": "science"
+    },
+    {
+      "id": "u6_type_01",
+      "type": "type",
+      "prompt": "What is an ecosystem?",
+      "answer": "A community of living things and their environment.",
+      "units": [
+        "u6"
+      ],
+      "difficulty": 2,
+      "category": "science"
+    },
+    {
+      "id": "u6_type_02",
+      "type": "type",
+      "prompt": "What is a decomposer?",
+      "answer": "A living thing that breaks down dead matter.",
+      "units": [
+        "u6"
+      ],
+      "difficulty": 2,
+      "category": "science"
+    },
+    {
+      "id": "u1_grammarfix_01",
+      "type": "grammar_fix",
+      "tag": "There is / There are",
+      "hint_es": "Use There are with plural nouns.",
+      "wrong": "There is many living things in a forest.",
+      "right": "There are many living things in a forest.",
+      "units": [
+        "u1"
+      ],
+      "difficulty": 2,
+      "category": "grammar"
+    },
+    {
+      "id": "u2_grammarfix_02",
+      "type": "grammar_fix",
+      "tag": "Present Simple",
+      "hint_es": "Third person singular takes -s.",
+      "wrong": "The heart pump blood around the body.",
+      "right": "The heart pumps blood around the body.",
+      "units": [
+        "u2"
+      ],
+      "difficulty": 2,
+      "category": "grammar"
+    },
+    {
+      "id": "u3_grammarfix_03",
+      "type": "grammar_fix",
+      "tag": "Question form",
+      "hint_es": "Use Does with singular subjects in the present simple.",
+      "wrong": "Does water changes into gas when it evaporates?",
+      "right": "Does water change into gas when it evaporates?",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 2,
+      "category": "grammar"
+    },
+    {
+      "id": "u4_grammarfix_04",
+      "type": "grammar_fix",
+      "tag": "Can + base verb",
+      "hint_es": "After can, use the base form of the verb.",
+      "wrong": "A battery can gives energy to a circuit.",
+      "right": "A battery can give energy to a circuit.",
+      "units": [
+        "u4"
+      ],
+      "difficulty": 2,
+      "category": "grammar"
+    },
+    {
+      "id": "u5_grammarfix_05",
+      "type": "grammar_fix",
+      "tag": "Articles",
+      "hint_es": "Use the before unique nouns like Sun and Moon.",
+      "wrong": "Earth orbits around Sun.",
+      "right": "Earth orbits around the Sun.",
+      "units": [
+        "u5"
+      ],
+      "difficulty": 2,
+      "category": "grammar"
+    },
+    {
+      "id": "u6_grammarfix_06",
+      "type": "grammar_fix",
+      "tag": "Comparatives",
+      "hint_es": "Use more with longer adjectives.",
+      "wrong": "A forest is importanter than a car park for biodiversity.",
+      "right": "A forest is more important than a car park for biodiversity.",
+      "units": [
+        "u6"
+      ],
+      "difficulty": 2,
+      "category": "grammar"
+    },
+    {
+      "id": "u1_sentence_01",
+      "type": "sentence_builder",
+      "words": [
+        "A",
+        "microscope",
+        "helps",
+        "us",
+        "see",
+        "tiny",
+        "cells"
+      ],
+      "answer": "A microscope helps us see tiny cells.",
+      "hint": "Science vocabulary in a present simple sentence.",
+      "units": [
+        "u1"
+      ],
+      "difficulty": 2,
+      "category": "grammar"
+    },
+    {
+      "id": "u2_sentence_02",
+      "type": "sentence_builder",
+      "words": [
+        "The",
+        "skeleton",
+        "supports",
+        "and",
+        "protects",
+        "the",
+        "body"
+      ],
+      "answer": "The skeleton supports and protects the body.",
+      "hint": "Present simple with a scientific fact.",
+      "units": [
+        "u2"
+      ],
+      "difficulty": 2,
+      "category": "grammar"
+    },
+    {
+      "id": "u3_sentence_03",
+      "type": "sentence_builder",
+      "words": [
+        "Water",
+        "changes",
+        "into",
+        "gas",
+        "during",
+        "evaporation"
+      ],
+      "answer": "Water changes into gas during evaporation.",
+      "hint": "Matter and changes.",
+      "units": [
+        "u3"
+      ],
+      "difficulty": 2,
+      "category": "grammar"
+    },
+    {
+      "id": "u4_sentence_04",
+      "type": "sentence_builder",
+      "words": [
+        "Metal",
+        "is",
+        "a",
+        "good",
+        "conductor",
+        "of",
+        "electricity"
+      ],
+      "answer": "Metal is a good conductor of electricity.",
+      "hint": "Scientific statement.",
+      "units": [
+        "u4"
+      ],
+      "difficulty": 2,
+      "category": "grammar"
+    },
+    {
+      "id": "u5_sentence_05",
+      "type": "sentence_builder",
+      "words": [
+        "The",
+        "Earth",
+        "rotates",
+        "once",
+        "every",
+        "twenty-four",
+        "hours"
+      ],
+      "answer": "The Earth rotates once every twenty-four hours.",
+      "hint": "Earth and space.",
+      "units": [
+        "u5"
+      ],
+      "difficulty": 2,
+      "category": "grammar"
+    },
+    {
+      "id": "u6_sentence_06",
+      "type": "sentence_builder",
+      "words": [
+        "Plants",
+        "are",
+        "producers",
+        "in",
+        "many",
+        "food",
+        "chains"
+      ],
+      "answer": "Plants are producers in many food chains.",
+      "hint": "Ecosystems vocabulary.",
+      "units": [
+        "u6"
+      ],
+      "difficulty": 2,
+      "category": "grammar"
+    },
+    {
+      "id": "u3_timeline_01",
+      "type": "timeline",
+      "prompt": "Order these changes of matter and materials:",
+      "events": [
+        {
+          "label": "Ice melts into water",
+          "year": 1
+        },
+        {
+          "label": "Water evaporates",
+          "year": 2
+        },
+        {
+          "label": "Water vapour cools",
+          "year": 3
+        },
+        {
+          "label": "Condensation forms drops",
+          "year": 4
+        }
+      ],
+      "units": [
+        "u3"
+      ],
+      "difficulty": 2,
+      "category": "science"
+    },
+    {
+      "id": "u5_timeline_02",
+      "type": "timeline",
+      "prompt": "Order these Earth and space events or facts:",
+      "events": [
+        {
+          "label": "The Earth rotates",
+          "year": 1
+        },
+        {
+          "label": "Day and night happen",
+          "year": 2
+        },
+        {
+          "label": "The Earth continues its orbit",
+          "year": 3
+        },
+        {
+          "label": "A new season arrives later in the year",
+          "year": 4
+        }
+      ],
+      "units": [
+        "u5"
+      ],
+      "difficulty": 2,
+      "category": "science"
+    },
+    {
+      "id": "u6_timeline_03",
+      "type": "timeline",
+      "prompt": "Order this simple ecosystem sequence:",
+      "events": [
+        {
+          "label": "Plants grow using sunlight",
+          "year": 1
+        },
+        {
+          "label": "A rabbit eats the plants",
+          "year": 2
+        },
+        {
+          "label": "A fox eats the rabbit",
+          "year": 3
+        },
+        {
+          "label": "Decomposers break down remains",
+          "year": 4
+        }
+      ],
+      "units": [
+        "u6"
+      ],
+      "difficulty": 2,
+      "category": "science"
+    },
+    {
+      "id": "u1_classify_01",
+      "type": "classify",
+      "prompt": "Classify these living things into 'Vertebrates' or 'Invertebrates':",
+      "groups": {
+        "Vertebrates": [
+          "dog",
+          "eagle",
+          "frog",
+          "lizard"
+        ],
+        "Invertebrates": [
+          "snail",
+          "spider",
+          "earthworm",
+          "octopus"
+        ]
+      },
+      "units": [
+        "u1"
+      ],
+      "difficulty": 2,
+      "category": "science"
+    },
+    {
+      "id": "u2_classify_02",
+      "type": "classify",
+      "prompt": "Classify these parts into 'Bones and support' or 'Organs and systems':",
+      "groups": {
+        "Bones and support": [
+          "skull",
+          "rib",
+          "spine",
+          "joint"
+        ],
+        "Organs and systems": [
+          "heart",
+          "lungs",
+          "brain",
+          "stomach"
+        ]
+      },
+      "units": [
+        "u2"
+      ],
+      "difficulty": 2,
+      "category": "science"
+    },
+    {
+      "id": "u3_classify_03",
+      "type": "classify",
+      "prompt": "Classify these materials into 'Solids' or 'Liquids':",
+      "groups": {
+        "Solids": [
+          "wood",
+          "glass",
+          "ice",
+          "metal spoon"
+        ],
+        "Liquids": [
+          "milk",
+          "oil",
+          "water",
+          "juice"
+        ]
+      },
+      "units": [
+        "u3"
+      ],
+      "difficulty": 2,
+      "category": "science"
+    },
+    {
+      "id": "u4_classify_04",
+      "type": "classify",
+      "prompt": "Classify these materials into 'Conductors' or 'Insulators':",
+      "groups": {
+        "Conductors": [
+          "copper",
+          "aluminium foil",
+          "iron",
+          "metal key"
+        ],
+        "Insulators": [
+          "plastic",
+          "rubber",
+          "wood",
+          "glass handle"
+        ]
+      },
+      "units": [
+        "u4"
+      ],
+      "difficulty": 2,
+      "category": "science"
+    },
+    {
+      "id": "u5_classify_05",
+      "type": "classify",
+      "prompt": "Classify these words into 'Weather' or 'Space':",
+      "groups": {
+        "Weather": [
+          "rain",
+          "wind",
+          "forecast",
+          "temperature"
+        ],
+        "Space": [
+          "planet",
+          "orbit",
+          "satellite",
+          "Solar System"
+        ]
+      },
+      "units": [
+        "u5"
+      ],
+      "difficulty": 2,
+      "category": "science"
+    },
+    {
+      "id": "u6_classify_06",
+      "type": "classify",
+      "prompt": "Classify these roles into 'Producers' or 'Consumers':",
+      "groups": {
+        "Producers": [
+          "grass",
+          "tree",
+          "algae",
+          "bush"
+        ],
+        "Consumers": [
+          "rabbit",
+          "fox",
+          "deer",
+          "bird"
+        ]
+      },
+      "units": [
+        "u6"
+      ],
+      "difficulty": 2,
+      "category": "science"
+    }
+  ],
+  "icon": "🔬",
+  "description": "Natural Science de Cambridge para 5º, con vocabulario, grammar y modos avanzados.",
+  "tags": [
+    "Cambridge",
+    "Natural Science",
+    "Madrid",
+    "English",
+    "Science"
+  ],
+  "order": 140,
+  "published": true
+}

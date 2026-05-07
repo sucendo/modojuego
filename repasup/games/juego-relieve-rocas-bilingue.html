@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>🏔️ Landforms & Rocks Game (ES + EN)</title>
+<style>
+  :root{
+    --bg:#e8f5e9;
+    --card:#ffffff;
+    --border:#a5d6a7;
+    --btn:#2e7d32;
+    --opt:#c8e6c9;
+    --ok:#81c784;
+    --bad:#e57373;
+    --txt:#0b1320;
+  }
+  *{box-sizing:border-box}
+  body{font-family:Arial,system-ui;background:var(--bg);padding:10px;margin:0;color:var(--txt)}
+  .app{max-width:760px;margin:auto}
+  h1{text-align:center;margin:12px 0}
+  .top{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:10px 0}
+  .pill{background:var(--card);border-radius:999px;padding:10px 12px;font-weight:900;border:2px solid var(--border);min-width:150px;text-align:center}
+  .card{background:var(--card);border-radius:16px;padding:14px;margin:10px 0;box-shadow:0 6px 18px rgba(0,0,0,.07)}
+  .q{font-size:20px;font-weight:900;text-align:center;margin-bottom:8px}
+  button,input{width:100%;padding:14px;border-radius:14px;border:0;font-size:18px;margin:6px 0;font-weight:800}
+  .opt{background:var(--opt)}
+  .ok{background:var(--ok)}
+  .bad{background:var(--bad)}
+  .btn{background:var(--btn);color:#fff}
+  .msg{text-align:center;font-size:18px;font-weight:900}
+  .small{text-align:center;font-weight:700;opacity:.85;margin-top:6px}
+  .row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+  .row .btn{flex:1;min-width:160px}
+  .hint{font-size:14px;text-align:center;opacity:.8;margin-top:6px}
+  .chipbar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:8px 0 0}
+  .chip{background:#f1f8e9;border:1px dashed #c5e1a5;border-radius:999px;padding:6px 10px;font-weight:800;font-size:14px}
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>🏔️ Landforms & Rocks Game</h1>
+
+  <div class="top">
+    <div class="pill">✅ Correct: <span id="c">0</span></div>
+    <div class="pill">🧠 Total: <span id="t">0</span></div>
+    <div class="pill">🔥 Streak: <span id="s">0</span></div>
+  </div>
+
+  <div class="row">
+    <button class="btn" onclick="setMode('quiz')">🧠 Quiz</button>
+    <button class="btn" onclick="setMode('tf')">✅ True / False</button>
+    <button class="btn" onclick="setMode('fill')">✍️ Fill</button>
+    <button class="btn" onclick="resetScore()">🔄 Reset</button>
+  </div>
+
+  <div class="card" id="game"></div>
+  <div class="card msg" id="msg">Elige un modo 🙂 / Choose a mode 🙂</div>
+
+  <div class="chipbar">
+    <div class="chip">ES → EN</div>
+    <div class="chip">4º Primaria</div>
+    <div class="chip">Relieve + Rocas</div>
+  </div>
+  <div class="small">Preguntas en español — Respuestas en inglés</div>
+  <div class="hint">Tip: escribe en inglés (plain, plateau, sedimentary…)</div>
+</div>
+
+<script>
+let c=0,t=0,s=0,mode="quiz";
+const cEl=document.getElementById("c");
+const tEl=document.getElementById("t");
+const sEl=document.getElementById("s");
+const game=document.getElementById("game");
+const msg=document.getElementById("msg");
+
+function score(ok){
+  t++;
+  if(ok){ c++; s++; } else { s=0; }
+  cEl.textContent=c; tEl.textContent=t; sEl.textContent=s;
+}
+function resetScore(){
+  c=0; t=0; s=0;
+  cEl.textContent=c; tEl.textContent=t; sEl.textContent=s;
+  msg.textContent="Puntuación reiniciada ✅ / Score reset ✅";
+  next();
+}
+function setMode(m){
+  mode=m;
+  next();
+}
+function r(a){return a[Math.floor(Math.random()*a.length)]}
+function sh(a){return a.slice().sort(()=>Math.random()-0.5)}
+function norm(s){return (s||"").toLowerCase().trim()}
+function esc(s){ return String(s).replace(/\\/g,"\\\\").replace(/'/g,"\\'"); }
+
+// =====================
+// DATA (según imágenes)
+// =====================
+
+// QUIZ (pregunta ES -> opciones EN)
+const QUIZ=[
+  // Landforms general
+  {q:"¿Qué son los landforms?", o:["features","animals","houses"], a:"features"},
+  {q:"Un landform cerca del mar es un landform…", o:["coastal","inland","polar"], a:"coastal"},
+  {q:"Un landform lejos del mar es un landform…", o:["inland","coastal","oceanic"], a:"inland"},
+
+  // Mountains & cliffs
+  {q:"¿Cómo se llama la punta (parte más alta) de una montaña?", o:["peak","plain","plateau"], a:"peak"},
+  {q:"La forma típica de una montaña es como un…", o:["cone","square","circle"], a:"cone"},
+  {q:"Las montañas tienen lados…", o:["steep","gentle","flat"], a:"steep"},
+  {q:"Muy altas montañas a menudo tienen…", o:["snow cap","sand cap","rock cap"], a:"snow cap"},
+  {q:"Una montaña puede ser parte de una… (grupo de montañas)", o:["mountain range","archipelago","peninsula"], a:"mountain range"},
+  {q:"Los acantilados son casi…", o:["vertical","curved","soft"], a:"vertical"},
+  {q:"La parte de arriba de un acantilado suele ser…", o:["flat land","deep water","hot lava"], a:"flat land"},
+
+  // Plateaus / plains / hills / valleys
+  {q:"Una meseta es una zona alta y… arriba.", o:["flat","wet","round"], a:"flat"},
+  {q:"Una llanura es una zona…", o:["flat","very high","full of rocks"], a:"flat"},
+  {q:"Las colinas son más pequeñas que las montañas y tienen pendiente…", o:["gentle","vertical","icy"], a:"gentle"},
+  {q:"Un valle es una zona baja entre dos…", o:["hills or mountains","oceans","deserts"], a:"hills or mountains"},
+  {q:"Los valles pueden tener forma de U o de…", o:["V","X","O"], a:"V"},
+  {q:"Los valles suelen tener suelo… bueno para plantas.", o:["fertile","poisonous","dry"], a:"fertile"},
+
+  // Water around land
+  {q:"Una isla está rodeada por agua en… lados.", o:["all","two","three"], a:"all"},
+  {q:"Un grupo de islas cercanas forma un…", o:["archipelago","plateau","valley"], a:"archipelago"},
+  {q:"Una península está rodeada por agua en… lados.", o:["three","one","all"], a:"three"},
+  {q:"España tiene dos archipiélagos: …", o:["Balearic and Canary","Azores and Madeira","Sicily and Sardinia"], a:"Balearic and Canary"},
+
+  // Rocks
+  {q:"Las rocas se forman de…", o:["minerals","plastic","wood"], a:"minerals"},
+  {q:"Los científicos dividen las rocas en tres grupos:", o:["sedimentary/igneous/metamorphic","gold/silver/bronze","soft/hard/wet"], a:"sedimentary/igneous/metamorphic"},
+  {q:"La roca sedimentaria se forma en…", o:["layers","bubbles","glass"], a:"layers"},
+  {q:"Los ríos, lagos y el mar a menudo… materiales.", o:["deposit","eat","burn"], a:"deposit"},
+  {q:"Sandstone se hace de granos de…", o:["sand","ice","metal"], a:"sand"},
+  {q:"Shale se hace de barro de…", o:["clay","salt","lava"], a:"clay"},
+  {q:"Limestone se hace sobre todo de…", o:["shells","leaves","plastic"], a:"shells"},
+  {q:"Las rocas ígneas se forman por…", o:["volcanoes","wind","rain"], a:"volcanoes"},
+  {q:"La roca fundida caliente se llama… (debajo de la Tierra)", o:["magma","steam","mud"], a:"magma"},
+  {q:"Cuando el magma sale, se llama…", o:["lava","soil","clay"], a:"lava"},
+  {q:"Basalt tiene cristales muy…", o:["tiny","huge","square"], a:"tiny"},
+  {q:"Granite tiene cristales…", o:["large","tiny","none"], a:"large"},
+  {q:"Pumice tiene muchos… y puede flotar.", o:["airspaces","worms","metals"], a:"airspaces"},
+  {q:"Las rocas metamórficas cambian por calor y…", o:["pressure","snow","wind"], a:"pressure"},
+  {q:"Marble se forma a partir de…", o:["limestone","granite","basalt"], a:"limestone"},
+  {q:"Slate se forma a partir de…", o:["shale","sandstone","pumice"], a:"shale"},
+  {q:"Gneiss se forma a partir de…", o:["granite","limestone","sand"], a:"granite"}
+];
+
+// TRUE/FALSE (EN)
+const TF=[
+  ["Landforms are features on the Earth's surface.", true],
+  ["Coastal landforms are away from the sea.", false],
+  ["Inland landforms are away from the sea.", true],
+  ["A peak is the pointed top of a mountain.", true],
+  ["Mountains usually have gentle sides.", false],
+  ["Cliffs are almost vertical like a wall.", true],
+  ["A plateau is high, flat land like a table.", true],
+  ["A plain is a wide area of flat land.", true],
+  ["A valley is low land between hills or mountains.", true],
+  ["Islands are surrounded by water on all sides.", true],
+  ["A peninsula is surrounded by water on three sides.", true],
+  ["An archipelago is a group of islands close to each other.", true],
+  ["Sedimentary rocks are made in layers.", true],
+  ["Igneous rocks form when lava cools.", true],
+  ["Metamorphic rocks change by heat and pressure.", true],
+  ["Marble is made from limestone.", true],
+  ["Slate is made from granite.", false],
+  ["Pumice can float because it has airspaces.", true]
+];
+
+// FILL (EN) — completar palabra
+const FILL=[
+  ["Near the sea: ____ landforms.", "coastal"],
+  ["Away from the sea: ____ landforms.", "inland"],
+  ["The very top of a mountain: ____.", "peak"],
+  ["A group of mountains joined together: ____ ____.", "mountain range"],
+  ["Almost straight up-and-down: ____.", "vertical"],
+  ["A wide flat area: a ____.", "plain"],
+  ["High flat land: a ____.", "plateau"],
+  ["A group of islands: an ____.", "archipelago"],
+  ["A piece of land surrounded by water: an ____.", "island"],
+  ["Rocks made in layers: ____ rocks.", "sedimentary"],
+  ["Rocks from volcanoes: ____ rocks.", "igneous"],
+  ["Changed by heat and pressure: ____ rocks.", "metamorphic"],
+  ["Hot melted rock below Earth's surface: ____.", "magma"],
+  ["Magma above the surface is called ____.", "lava"]
+];
+
+function next(){
+  if(mode==="quiz") return quiz();
+  if(mode==="tf") return tf();
+  if(mode==="fill") return fill();
+}
+
+function quiz(){
+  const q=r(QUIZ);
+  const opts=sh(q.o);
+  game.innerHTML = `<div class="q">${q.q}</div>` +
+    opts.map(x=>`<button class="opt" onclick="ans('${esc(x)}','${esc(q.a)}',this)">${x}</button>`).join("");
+  msg.textContent="";
+}
+
+function ans(x,a,btn){
+  document.querySelectorAll(".opt").forEach(b=>b.disabled=true);
+  const ok = (x===a);
+  btn.classList.add(ok?"ok":"bad");
+  score(ok);
+  msg.textContent = ok ? "✅ Correct!" : "❌ It was: " + a;
+}
+
+function tf(){
+  const it=r(TF);
+  game.innerHTML = `<div class="q">${it[0]}</div>
+    <button class="opt" onclick="tfans(true, ${it[1]}, this)">✅ True</button>
+    <button class="opt" onclick="tfans(false, ${it[1]}, this)">❌ False</button>`;
+  msg.textContent="";
+}
+
+function tfans(v,a,btn){
+  document.querySelectorAll(".opt").forEach(b=>b.disabled=true);
+  const ok = (v===a);
+  btn.classList.add(ok?"ok":"bad");
+  score(ok);
+  msg.textContent = ok ? "✅ Good!" : "❌ Try again";
+}
+
+function fill(){
+  const it=r(FILL);
+  game.innerHTML = `<div class="q">${it[0]}</div>
+    <input id="inp" placeholder="Write in English...">
+    <button class="btn" onclick="checkFill('${esc(it[1])}')">✅ Check</button>`;
+  msg.textContent="";
+  setTimeout(()=>document.getElementById("inp").focus(), 60);
+}
+
+function checkFill(a){
+  const v=norm(document.getElementById("inp").value);
+  const ok = (v===norm(a));
+  score(ok);
+  msg.textContent = ok ? "✅ Correct!" : "❌ It was: " + a;
+}
+
+next();
+</script>
+</body>
+</html>

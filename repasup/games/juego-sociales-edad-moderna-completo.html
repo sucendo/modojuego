@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sociales 5º · Edad Moderna · Juego Completo</title>
+<style>
+body{
+  margin:0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  background: linear-gradient(135deg,#fde68a,#bfdbfe,#bbf7d0);
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+.app{
+  width:min(1200px,100%);
+  background:#ffffffee;
+  border-radius:22px;
+  box-shadow:0 20px 40px rgba(0,0,0,.25);
+  overflow:hidden;
+}
+header{
+  padding:16px;
+  background:linear-gradient(90deg,#7c3aed,#ec4899,#22c55e);
+  color:white;
+  font-weight:900;
+  font-size:18px;
+}
+.controls{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  padding:10px;
+}
+button,select{
+  border:none;
+  border-radius:16px;
+  padding:14px;
+  font-size:15px;
+  font-weight:800;
+}
+button{background:#22c55e;color:white}
+select{background:white}
+.main{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:14px;
+  padding:14px;
+}
+.card{
+  background:white;
+  border-radius:18px;
+  padding:16px;
+  box-shadow:0 10px 20px rgba(0,0,0,.12);
+}
+.big{font-size:21px;font-weight:900;text-align:center}
+.opt{
+  padding:14px;
+  border-radius:16px;
+  background:#e0e7ff;
+  margin:8px 0;
+  cursor:pointer;
+  font-weight:800;
+}
+.opt.correct{background:#bbf7d0}
+.opt.wrong{background:#fecaca}
+.msg{text-align:center;font-weight:900;font-size:16px}
+input{
+  padding:12px;
+  border-radius:14px;
+  border:2px solid #c7d2fe;
+  width:100%;
+  font-size:16px;
+  font-weight:700;
+}
+</style>
+</head>
+<body>
+<div class="app">
+<header>🏰 Sociales 5º · Edad Moderna · Juego Completo</header>
+
+<div class="controls">
+<select id="mode">
+  <option value="quiz">Quiz</option>
+  <option value="tf">Verdadero / Falso</option>
+  <option value="orderKings">Ordenar reyes</option>
+  <option value="orderEras">Ordenar épocas</option>
+  <option value="orderEvents">Ordenar acontecimientos</option>
+  <option value="fill">Completa la frase</option>
+</select>
+<button onclick="next()">Siguiente</button>
+</div>
+
+<div class="main">
+  <div class="card" id="game"></div>
+  <div class="card msg" id="msg">¡A jugar! ⭐</div>
+</div>
+</div>
+
+<script>
+function shuffle(a){return a.sort(()=>Math.random()-.5)}
+const msg=e=>document.getElementById("msg").textContent=e;
+const game=document.getElementById("game");
+
+const quiz=[
+{q:"¿Entre qué siglos se desarrolla la Edad Moderna?",a:"Del XV al XVIII",o:["Del XV al XVIII","Del X al XII","Del XVIII al XX","Del V al X"]},
+{q:"¿Qué invento permitió difundir el conocimiento?",a:"La imprenta",o:["La imprenta","La brújula","El papel","La pólvora"]},
+{q:"¿Qué rey trasladó la capital a Madrid?",a:"Felipe II",o:["Felipe II","Carlos I","Felipe III","Carlos III"]},
+];
+
+const tf=[
+{s:"La Edad Moderna va del siglo XV al XVIII.",t:true},
+{s:"Carlos II fue el primer rey Borbón.",t:false},
+{s:"El Barroco pertenece al siglo XVII.",t:true},
+];
+
+const orderKings=[
+["Reyes Católicos","Carlos I","Felipe II"],
+["Felipe III","Felipe IV","Carlos II"],
+["Felipe V","Fernando VI","Carlos III","Carlos IV"]
+];
+
+const orderEras=[
+["Renacimiento","Barroco","Ilustración"]
+];
+
+const orderEvents=[
+["Unión Castilla y Aragón (1479)","Conquista de Granada (1492)","Batalla de Lepanto (1571)","Armada Invencible (1588)","Revolución Francesa (1789)"]
+];
+
+const fill=[
+{q:"La imprenta permitió que el __________ llegara a más personas.",a:"conocimiento"},
+{q:"El Humanismo usa la __________ para comprender el mundo.",a:"razón"},
+{q:"El Barroco pertenece al siglo __________.",a:"XVII"},
+{q:"Carlos III fue llamado el mejor __________ de Madrid.",a:"alcalde"},
+{q:"La Revolución Francesa ocurrió en __________.",a:"1789"},
+];
+
+let mode="quiz";
+document.getElementById("mode").onchange=e=>{mode=e.target.value;next()};
+
+function renderOrder(arr){
+ const correct=arr;
+ const cards=shuffle(arr.slice());
+ game.innerHTML=`<div class="big">Ordena correctamente</div>`+cards.map(c=>`<div class="opt">${c}</div>`).join("");
+ msg("Tócalos en orden");
+ let pick=[];
+ game.querySelectorAll(".opt").forEach(el=>{
+  el.onclick=()=>{
+    pick.push(el.textContent);
+    el.style.opacity=.5;
+    if(pick.length===correct.length){
+      msg(JSON.stringify(pick)===JSON.stringify(correct)?"✅ Perfecto":"❌ Revisa el orden");
+    }
+  };
+ });
+}
+
+function next(){
+msg("");
+if(mode==="quiz"){
+ const q=quiz[Math.floor(Math.random()*quiz.length)];
+ const o=shuffle(q.o.slice());
+ game.innerHTML=`<div class="big">${q.q}</div>`+o.map(x=>`<div class="opt">${x}</div>`).join("");
+ game.querySelectorAll(".opt").forEach(el=>{
+  el.onclick=()=>msg(el.textContent===q.a?"✅ Correcto":"❌ Incorrecto");
+ });
+}
+if(mode==="tf"){
+ const i=tf[Math.floor(Math.random()*tf.length)];
+ game.innerHTML=`<div class="big">${i.s}</div>
+ <div class="opt">Verdadero</div><div class="opt">Falso</div>`;
+ game.querySelectorAll(".opt").forEach(el=>{
+  const v=el.textContent==="Verdadero";
+  el.onclick=()=>msg(v===i.t?"✅ Correcto":"❌ Incorrecto");
+ });
+}
+if(mode==="orderKings") renderOrder(orderKings[Math.floor(Math.random()*orderKings.length)]);
+if(mode==="orderEras") renderOrder(orderEras[0]);
+if(mode==="orderEvents") renderOrder(orderEvents[0]);
+if(mode==="fill"){
+ const f=fill[Math.floor(Math.random()*fill.length)];
+ game.innerHTML=`<div class="big">${f.q}</div><input id="inp" placeholder="Escribe aquí">`;
+ document.getElementById("inp").onchange=e=>msg(e.target.value.toLowerCase().includes(f.a)?"✅ Correcto":"❌ Revisa");
+}
+}
+
+next();
+</script>
+</body>
+</html>

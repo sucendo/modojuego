@@ -1,0 +1,151 @@
+:root{
+  --bg1:#fff7ed; --bg2:#e0f2fe; --bg3:#ecfccb;
+  --ink:#0b1020; --muted:#334155;
+  --card:#ffffffee; --panel:#ffffffcc;
+  --surface-soft: rgba(255,255,255,.78);
+  --line-soft: rgba(255,255,255,.86);
+  --focus-ring: rgba(37,99,235,.45);
+  --shadow: 0 18px 48px rgba(2,6,23,.18);
+  --radius: 24px; --tap: 48px;
+  --a:#6366f1; --b:#fb7185; --c:#22c55e; --d:#06b6d4; --e:#f59e0b; --f:#a78bfa;
+  --glow-a: rgba(99,102,241,.22); --glow-b: rgba(251,113,133,.22); --glow-c: rgba(34,197,94,.18);
+  --overlay: rgba(2,6,23,.45);
+}
+[data-theme="aurora"]{--bg1:#f5f3ff; --bg2:#ecfeff; --bg3:#fdf2f8; --a:#7c3aed; --b:#db2777; --c:#06b6d4; --d:#22d3ee; --e:#f97316; --f:#a855f7; --glow-a: rgba(124,58,237,.24); --glow-b: rgba(219,39,119,.24); --glow-c: rgba(34,211,238,.20);}
+[data-theme="ocean"]{--bg1:#ecfeff; --bg2:#e0f2fe; --bg3:#cffafe; --a:#0284c7; --b:#0891b2; --c:#0ea5e9; --d:#06b6d4; --e:#38bdf8; --f:#22d3ee; --glow-a: rgba(2,132,199,.24); --glow-b: rgba(8,145,178,.24); --glow-c: rgba(6,182,212,.20);}
+[data-theme="forest"]{--bg1:#f0fdf4; --bg2:#ecfdf5; --bg3:#dcfce7; --a:#15803d; --b:#16a34a; --c:#22c55e; --d:#65a30d; --e:#84cc16; --f:#4d7c0f; --glow-a: rgba(21,128,61,.24); --glow-b: rgba(22,163,74,.24); --glow-c: rgba(101,163,13,.20);}
+[data-theme="sunset"]{--bg1:#fff7ed; --bg2:#ffedd5; --bg3:#ffe4e6; --a:#ea580c; --b:#fb7185; --c:#f97316; --d:#f43f5e; --e:#f59e0b; --f:#e11d48; --glow-a: rgba(234,88,12,.23); --glow-b: rgba(244,63,94,.22); --glow-c: rgba(249,115,22,.20);}
+[data-theme="midnight"]{
+  --bg1:#0b1220;
+  --bg2:#101a2e;
+  --bg3:#0f172a;
+  --ink:#e5edff;
+  --muted:#c5d1f0;
+  --card: rgba(30,41,59,.92);
+  --panel: rgba(15,23,42,.90);
+  --surface-soft: rgba(30,41,59,.92);
+  --line-soft: rgba(148,163,184,.34);
+  --focus-ring: rgba(96,165,250,.6);
+  --overlay: rgba(2,6,23,.72);
+  --glow-a: rgba(99,102,241,.35);
+  --glow-b: rgba(34,211,238,.28);
+  --glow-c: rgba(52,211,153,.24);
+}
+*{box-sizing:border-box} html{min-height:100%}
+body{min-height:100%;margin:0;padding:18px;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--ink);background:radial-gradient(900px 520px at 18% 15%, var(--glow-a), transparent 62%),radial-gradient(820px 520px at 88% 20%, var(--glow-b), transparent 60%),radial-gradient(900px 520px at 70% 88%, var(--glow-c), transparent 58%),linear-gradient(135deg, var(--bg1), var(--bg2), var(--bg3));}
+body[data-density="compact"] .cardsGrid{gap:10px} body[data-density="compact"] .card{padding:12px;gap:8px}
+.shell{width:min(1220px,100%);margin:0 auto;border-radius:var(--radius);overflow:hidden;background:rgba(255,255,255,.55);backdrop-filter:blur(10px);border:2px solid rgba(255,255,255,.8);box-shadow:var(--shadow)}
+.shellHeader{padding:18px;display:flex;gap:14px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;background:linear-gradient(90deg,color-mix(in oklab,var(--a) 20%,transparent),color-mix(in oklab,var(--b) 14%,transparent),color-mix(in oklab,var(--c) 14%,transparent));border-bottom:2px solid rgba(255,255,255,.78)}
+.brandBlock{display:flex;gap:14px;align-items:flex-start}.brandLogo{width:48px;height:48px;border-radius:16px;display:grid;place-items:center;background:linear-gradient(135deg,color-mix(in oklab,var(--a) 92%, white 4%),color-mix(in oklab,var(--b) 78%, white 6%));color:#fff;font-size:22px;font-weight:900;box-shadow:0 12px 22px rgba(2,6,23,.12)}
+.eyebrow{margin:0 0 4px 0;font-size:11px;font-weight:900;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)} .shellHeader h1,.routeCard h2{margin:0;line-height:1.1} .subcopy,.muted{margin:6px 0 0 0;color:var(--muted)}
+.shellControls{display:flex;gap:10px;align-items:center;justify-content:flex-end;flex-wrap:wrap;flex:1 1 380px}.searchWrap{min-width:min(360px,100%);flex:1 1 300px}
+input,select,button,textarea{width:100%;border-radius:16px;border:2px solid var(--line-soft);background:var(--surface-soft);color:var(--ink);padding:10px 12px;font-size:14px;min-height:var(--tap);outline:none;box-shadow:0 10px 18px rgba(2,6,23,.08)}
+input::placeholder,textarea::placeholder{color:color-mix(in oklab,var(--muted) 86%, transparent)}
+button{width:auto;cursor:pointer;font-weight:950;transition:transform .06s ease,filter .2s ease} button:hover{filter:brightness(1.03) saturate(1.05)} button:active{transform:translateY(1px)} button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--focus-ring);outline-offset:2px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px}.btn.primary{background:linear-gradient(135deg,color-mix(in oklab,var(--a) 92%,white 2%),color-mix(in oklab,var(--a) 44%,transparent));color:#fff}.btn.accent{background:linear-gradient(135deg,color-mix(in oklab,var(--b) 92%,white 2%),color-mix(in oklab,var(--b) 44%,transparent));color:#fff}.btn.soft{background:var(--surface-soft)}
+.shellMain{padding:16px;display:grid;gap:14px}.summaryBar,.routeCard,.card,.emptyState,.shellModal,.modal{background:var(--panel);border:2px solid var(--line-soft);border-radius:var(--radius);box-shadow:0 14px 28px rgba(2,6,23,.08)}
+.summaryBar{padding:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.summaryChips,.metaChips,.headActions,.routeActions,.cardActions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.chip,.countPill,.tag,.playerBadge{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:6px 10px;border:2px solid var(--line-soft);background:var(--surface-soft);font-weight:900;font-size:12px}.playerBadge{font-size:13px}
+.homeLayout{display:grid;gap:12px}.sectionHead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}.sectionHead h2{margin:0}.cardsGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.card{padding:14px;display:grid;gap:10px}.cardTop{display:flex;gap:12px;justify-content:space-between;align-items:flex-start}.cardTitle{display:flex;gap:12px;align-items:flex-start}.cardIcon{width:46px;height:46px;border-radius:16px;display:grid;place-items:center;background:linear-gradient(135deg,color-mix(in oklab,var(--a) 84%, white 6%),color-mix(in oklab,var(--d) 56%, transparent));box-shadow:0 12px 22px rgba(2,6,23,.12);font-size:22px;color:#fff}.card h3{margin:0;font-size:16px}.card p{margin:0}.cardActions .btn{flex:1 1 120px}.favBtn{min-width:46px}.desc{color:var(--muted);line-height:1.4}
+.routeCard{padding:14px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.modalBack,.shellModalBack{position:fixed;inset:0;padding:16px;background:var(--overlay);display:none;align-items:center;justify-content:center;z-index:2000}.shellModalBack.is-open,.modalBack.is-open{display:flex}.shellModalBack[hidden]{display:none !important}
+.shellModal,.modal{width:min(860px,100%);max-height:min(88vh,820px);overflow:hidden;backdrop-filter:blur(10px)} .shellModalHead,.modalHead{padding:12px 14px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;border-bottom:2px solid var(--line-soft);background:linear-gradient(90deg,color-mix(in oklab,var(--a) 20%,transparent),color-mix(in oklab,var(--b) 14%,transparent),color-mix(in oklab,var(--c) 14%,transparent))}.shellModalHead h3,.modalHead h3{margin:0} #shellModalBody,#modalBody{padding:14px;overflow:auto;max-height:min(75vh,700px)}
+.formGrid{display:grid;gap:10px}.formGrid.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.avatarRow{display:flex;flex-wrap:wrap;gap:8px}
+.avatarOpt{
+  width:46px;
+  height:46px;
+  border-radius:14px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border:2px solid var(--line-soft);
+  background:var(--surface-soft);
+  cursor:pointer;
+  font-size:22px;
+  line-height:1;
+  padding:0;
+  overflow:hidden;
+}
+.avatarEmoji{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:1.15em;
+  height:1.15em;
+  line-height:1;
+}
+.avatarOpt.on{border-color:color-mix(in oklab,var(--a) 65%, white 12%);box-shadow:0 0 0 3px color-mix(in oklab,var(--a) 20%, transparent)}
+.emptyState{padding:28px;text-align:center}.emptyState h3{margin:0 0 8px 0}.hidden{display:none !important} code{background:rgba(255,255,255,.72);border:2px solid var(--line-soft);padding:2px 6px;border-radius:10px}
+.gameView .repaso-game-ui{min-height:auto;display:block;padding:0;background:none}.gameView .repaso-game-ui .main{padding:0}.gameView .repaso-game-ui .panel,.gameView .repaso-game-ui .sidePanel{background:rgba(255,255,255,.6)}
+@media (max-width:980px){.cardsGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.formGrid.two{grid-template-columns:1fr}}
+@media (max-width:700px){body{padding:10px}.cardsGrid{grid-template-columns:1fr}.shellHeader{padding:14px}.shellControls{width:100%;justify-content:stretch}.searchWrap{min-width:100%}.shellControls>*{flex:1 1 100%}.cardActions .btn{flex:1 1 100%}}
+
+[data-theme="midnight"] .shell{
+  background: rgba(8,13,25,.72);
+  border-color: rgba(148,163,184,.26);
+  box-shadow: 0 20px 52px rgba(2,6,23,.42);
+}
+
+[data-theme="midnight"] .shellHeader{
+  border-bottom-color: rgba(148,163,184,.22);
+}
+
+[data-theme="midnight"] .summaryBar,
+[data-theme="midnight"] .routeCard,
+[data-theme="midnight"] .card,
+[data-theme="midnight"] .emptyState,
+[data-theme="midnight"] .shellModal,
+[data-theme="midnight"] .modal{
+  background: rgba(15,23,42,.90);
+  border-color: rgba(148,163,184,.26);
+  box-shadow: 0 16px 36px rgba(2,6,23,.28);
+}
+
+[data-theme="midnight"] input::placeholder,
+[data-theme="midnight"] textarea::placeholder{
+  color: rgba(197,209,240,.78);
+}
+
+[data-theme="midnight"] .shellHeader h1,
+[data-theme="midnight"] .sectionHead h2,
+[data-theme="midnight"] .card h3{
+  color: var(--ink);
+}
+
+[data-theme="midnight"] code{
+  background: rgba(30,41,59,.95);
+  color: var(--ink);
+  border-color: rgba(148,163,184,.28);
+}
+
+[data-theme="midnight"] .chip,
+[data-theme="midnight"] .countPill,
+[data-theme="midnight"] .tag,
+[data-theme="midnight"] .playerBadge{
+  background: rgba(30,41,59,.92);
+  border-color: rgba(148,163,184,.28);
+}
+
+[data-theme="midnight"] .btn.soft{
+  background: rgba(30,41,59,.92);
+}
+
+[data-theme="midnight"] .btn.primary{
+  box-shadow: 0 10px 20px rgba(99,102,241,.24);
+}
+
+[data-theme="midnight"] .btn.accent{
+  box-shadow: 0 10px 20px rgba(34,211,238,.18);
+}
+
+[data-theme="midnight"] .cardIcon,
+[data-theme="midnight"] .brandLogo{
+  box-shadow: 0 14px 26px rgba(2,6,23,.24);
+}
+
+[data-theme="midnight"] .gameView .repaso-game-ui .panel,
+[data-theme="midnight"] .gameView .repaso-game-ui .sidePanel{
+  background: rgba(15,23,42,.84);
+}

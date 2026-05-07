@@ -1,0 +1,901 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Oxford (2º Primaria) — Lecciones 1–3</title>
+  <style>
+    :root{
+      --bg1:#ffedd5; --bg2:#dbeafe; --bg3:#dcfce7;
+      --ink:#0b1020; --muted:#334155;
+      --panel:#ffffffcc; --card:#ffffffee;
+      --shadow: 0 18px 40px rgba(2,6,23,.18);
+      --radius: 18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color:var(--ink);
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:18px;
+      background:
+        radial-gradient(900px 520px at 20% 15%, rgba(167,139,250,.35), transparent 62%),
+        radial-gradient(820px 520px at 85% 25%, rgba(251,113,133,.28), transparent 60%),
+        radial-gradient(900px 520px at 70% 85%, rgba(34,197,94,.22), transparent 58%),
+        linear-gradient(135deg, var(--bg1), var(--bg2), var(--bg3));
+    }
+    .app{
+      width:min(1080px, 100%);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      border:2px solid rgba(255,255,255,.75);
+      backdrop-filter: blur(10px);
+      background: rgba(255,255,255,.55);
+    }
+    header{
+      padding:16px 18px;
+      display:flex;
+      gap:12px;
+      align-items:center;
+      justify-content:space-between;
+      background: linear-gradient(90deg, rgba(167,139,250,.25), rgba(251,113,133,.18), rgba(34,197,94,.18));
+      border-bottom: 2px solid rgba(255,255,255,.7);
+    }
+    .title{display:flex; flex-direction:column; gap:4px;}
+    .title h1{margin:0; font-size:18px; letter-spacing:.2px; display:flex; gap:8px; align-items:center;}
+    .spark{
+      display:inline-grid; place-items:center; width:26px; height:26px; border-radius: 10px;
+      background: linear-gradient(135deg, rgba(167,139,250,.8), rgba(251,113,133,.75));
+      color:white; box-shadow: 0 10px 18px rgba(0,0,0,.10);
+    }
+    .title small{ color: rgba(15,23,42,.75); }
+    .controls{display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:flex-end;}
+    button, select, input{
+      border-radius: 14px;
+      border: 2px solid rgba(255,255,255,.9);
+      background: rgba(255,255,255,.75);
+      color: var(--ink);
+      padding:10px 12px;
+      font-size:14px;
+      outline:none;
+      box-shadow: 0 10px 18px rgba(2,6,23,.08);
+    }
+    select{ cursor:pointer; }
+    button{
+      cursor:pointer;
+      transition: transform .05s ease, filter .2s ease;
+      user-select:none;
+      font-weight: 800;
+    }
+    button:hover{ filter: brightness(1.03) saturate(1.05); }
+    button:active{ transform: translateY(1px); }
+    .btn-a{ background: linear-gradient(135deg, rgba(167,139,250,.85), rgba(167,139,250,.45)); color: white; }
+    .btn-b{ background: linear-gradient(135deg, rgba(251,113,133,.85), rgba(251,113,133,.45)); color: white; }
+    .btn-c{ background: linear-gradient(135deg, rgba(34,197,94,.85), rgba(34,197,94,.42)); color: white; }
+    .btn-d{ background: linear-gradient(135deg, rgba(6,182,212,.85), rgba(6,182,212,.40)); color: white; }
+    .btn-e{ background: linear-gradient(135deg, rgba(245,158,11,.85), rgba(245,158,11,.45)); color: white; }
+
+    .main{ padding:18px; display:grid; grid-template-columns: 1.2fr .8fr; gap:14px; }
+    @media (max-width: 900px){ .main{ grid-template-columns: 1fr; } }
+
+    .panel{
+      background: rgba(255,255,255,.78);
+      border: 2px solid rgba(255,255,255,.8);
+      border-radius: var(--radius);
+      box-shadow: 0 14px 28px rgba(2,6,23,.10);
+      padding:14px;
+    }
+    .panel h2{ margin:0 0 10px 0; font-size:16px; color:#0f172a; display:flex; align-items:center; gap:8px; }
+    .badge{
+      font-size:12px; font-weight:900; padding:4px 10px; border-radius:999px;
+      background: rgba(255,255,255,.8); border: 2px solid rgba(255,255,255,.9);
+      box-shadow: 0 10px 18px rgba(2,6,23,.06);
+    }
+    .card{
+      background: rgba(255,255,255,.92);
+      border: 2px solid rgba(255,255,255,.9);
+      border-radius: var(--radius);
+      padding:16px;
+      display:grid;
+      gap:10px;
+      box-shadow: 0 14px 28px rgba(2,6,23,.10);
+    }
+    .bigWord{ font-size:34px; font-weight:950; letter-spacing:.3px; text-align:center; margin:4px 0 0 0; }
+    .hint{ text-align:center; color: #334155; font-size:13px; line-height: 1.35; }
+    .row{ display:flex; gap:8px; flex-wrap:wrap; justify-content:center; align-items:center; }
+    .status{ display:grid; gap:10px; }
+    .pill{
+      display:flex; justify-content:space-between; gap:10px;
+      padding:10px 12px; border-radius: 16px;
+      background: rgba(255,255,255,.75);
+      border:2px solid rgba(255,255,255,.9);
+      color: rgba(15,23,42,.75);
+      font-size:13px;
+      box-shadow: 0 10px 18px rgba(2,6,23,.06);
+    }
+    .pill b{ color:#0f172a; }
+    .msg{
+      padding:10px 12px;
+      border-radius: 16px;
+      border:2px dashed rgba(15,23,42,.22);
+      color: rgba(15,23,42,.8);
+      font-size:13px;
+      min-height:44px;
+      display:flex; align-items:center; justify-content:center;
+      text-align:center;
+      background: rgba(255,255,255,.65);
+    }
+    .msg.good{ border-color: rgba(34,197,94,.45); color: #166534; background: rgba(220,252,231,.65); }
+    .msg.bad{ border-color: rgba(251,113,133,.55); color: #9f1239; background: rgba(255,228,230,.70); }
+
+    .options{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:8px; }
+    @media (max-width: 520px){ .options{ grid-template-columns: 1fr; } }
+    .opt{
+      padding:12px; border-radius: 16px;
+      border:2px solid rgba(255,255,255,.9);
+      background: rgba(255,255,255,.72);
+      cursor:pointer; text-align:center; font-weight:950;
+      transition: transform .05s ease, filter .2s ease;
+      box-shadow: 0 10px 18px rgba(2,6,23,.06);
+      user-select:none;
+    }
+    .opt:hover{ filter: brightness(1.03) saturate(1.05); }
+    .opt:active{ transform: translateY(1px); }
+    .opt.correct{ border-color: rgba(34,197,94,.55); background: rgba(220,252,231,.75); }
+    .opt.wrong{ border-color: rgba(251,113,133,.6); background: rgba(255,228,230,.75); }
+
+    .grid{ display:grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap:10px; }
+    @media (max-width: 900px){ .grid{ grid-template-columns: repeat(4, 1fr); } }
+    @media (max-width: 520px){ .grid{ grid-template-columns: repeat(3, 1fr); } }
+    .tile{
+      border-radius: 16px; border:2px solid rgba(255,255,255,.9);
+      background: rgba(255,255,255,.72);
+      padding:14px 10px; text-align:center; font-weight:950;
+      min-height:54px; display:flex; align-items:center; justify-content:center;
+      cursor:pointer; user-select:none;
+      transition: transform .05s ease, filter .2s ease;
+      box-shadow: 0 10px 18px rgba(2,6,23,.06);
+    }
+    .tile:active{ transform: translateY(1px); }
+    .tile.revealed{ background: rgba(219,234,254,.75); border-color: rgba(59,130,246,.25); }
+    .tile.matched{ background: rgba(220,252,231,.75); border-color: rgba(34,197,94,.40); cursor:default; opacity:.97; }
+
+    .kbd{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      border:2px solid rgba(15,23,42,.18);
+      padding:2px 6px;
+      border-radius:10px;
+      color: #0f172a;
+      background: rgba(255,255,255,.7);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .footer{
+      padding:12px 18px 16px 18px;
+      color: rgba(15,23,42,.75);
+      border-top: 2px solid rgba(255,255,255,.75);
+      background: rgba(255,255,255,.45);
+      font-size:12px;
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+
+    /* Grammar chips */
+    .chips{ display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-top:6px; }
+    .chip{
+      padding:8px 10px;
+      border-radius: 999px;
+      border:2px solid rgba(255,255,255,.9);
+      background: rgba(255,255,255,.72);
+      cursor:pointer;
+      font-weight:950;
+      box-shadow: 0 10px 18px rgba(2,6,23,.06);
+      user-select:none;
+    }
+    .answerBar{
+      min-height:52px;
+      display:flex; flex-wrap:wrap;
+      gap:8px;
+      justify-content:center;
+      align-items:center;
+      padding:10px;
+      border-radius: 16px;
+      border:2px dashed rgba(15,23,42,.22);
+      background: rgba(255,255,255,.60);
+    }
+    .answerBar .chip{ cursor:default; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="title">
+        <h1><span class="spark">✨</span> Oxford (2º Primaria) — Lecciones 1–3</h1>
+        <small>Flashcards · Quiz ES→EN · Spelling · Memory · Grammar · Selector: “Solo lección” o “Hasta lección”</small>
+      </div>
+      <div class="controls">
+        <select id="mode">
+          <option value="flash">Flashcards</option>
+          <option value="quiz">Quiz (ES → EN)</option>
+          <option value="spell">Spelling (escribe)</option>
+          <option value="memory">Memory (parejas)</option>
+          <option value="grammar">Grammar</option>
+        </select>
+
+        <select id="lessonMode" title="Cómo filtrar las lecciones">
+          <option value="only">Solo lección…</option>
+          <option value="upto">Hasta lección…</option>
+        </select>
+        <select id="lessonN" title="Lección">
+          <option value="1">Lección 1</option>
+          <option value="2">Lección 2</option>
+          <option value="3" selected>Lección 3</option>
+        </select>
+
+        <select id="group" title="Grupo (opcional)">
+          <option value="all">All</option>
+          <option value="lesson1">Lesson 1</option>
+          <option value="lesson2">Lesson 2</option>
+          <option value="lesson3">Lesson 3</option>
+          <option value="mixed">Mixed</option>
+        </select>
+
+        <button id="reset" class="btn-b">Reset</button>
+      </div>
+    </header>
+
+    <div class="main">
+      <section class="panel">
+        <h2 id="panelTitle">Flashcards <span class="badge" id="subBadge">EN → ES</span></h2>
+        <div id="stage" class="card"></div>
+      </section>
+
+      <aside class="panel status">
+        <h2>Progress <span class="badge">⭐</span></h2>
+        <div class="pill"><span>Score</span><b id="score">0</b></div>
+        <div class="pill"><span>Correct</span><b id="correct">0</b></div>
+        <div class="pill"><span>Wrong</span><b id="wrong">0</b></div>
+        <div class="pill"><span>Streak</span><b id="streak">0</b></div>
+        <div class="pill"><span>Items in set</span><b id="count">0</b></div>
+        <div id="message" class="msg">Elige modo y empieza 🙂</div>
+
+        <div class="card" style="padding:12px">
+          <div class="hint" style="margin:0">
+            Atajos: <span class="kbd">N</span> next · <span class="kbd">S</span> speak · <span class="kbd">R</span> reset
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <div class="footer">
+      <div><b>Filtro</b>: “Solo lección 2” o “Hasta lección 2” (incluye 1+2). · <b>Group</b> sirve para acotar aún más.</div>
+      <div>Pronunciación: botón 🔊 (si el navegador lo permite).</div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const WORDS = [
+    // Lesson 1 (hello/class/numbers)
+    { lesson: 1, group: "lesson1", en: "hello", es: "hola" },
+    { lesson: 1, group: "lesson1", en: "goodbye", es: "adiós" },
+    { lesson: 1, group: "lesson1", en: "please", es: "por favor" },
+    { lesson: 1, group: "lesson1", en: "thank you", es: "gracias" },
+    { lesson: 1, group: "lesson1", en: "sorry", es: "lo siento" },
+    { lesson: 1, group: "lesson1", en: "teacher", es: "profesor/a" },
+    { lesson: 1, group: "lesson1", en: "student", es: "alumno/a" },
+    { lesson: 1, group: "lesson1", en: "book", es: "libro" },
+    { lesson: 1, group: "lesson1", en: "pencil", es: "lápiz" },
+    { lesson: 1, group: "lesson1", en: "pen", es: "bolígrafo" },
+    { lesson: 1, group: "lesson1", en: "rubber", es: "goma" },
+    { lesson: 1, group: "lesson1", en: "bag", es: "mochila / bolsa" },
+    { lesson: 1, group: "lesson1", en: "one", es: "uno" },
+    { lesson: 1, group: "lesson1", en: "two", es: "dos" },
+    { lesson: 1, group: "lesson1", en: "three", es: "tres" },
+    { lesson: 1, group: "lesson1", en: "four", es: "cuatro" },
+    { lesson: 1, group: "lesson1", en: "five", es: "cinco" },
+
+    // Lesson 2 (colours/food/likes)
+    { lesson: 2, group: "lesson2", en: "red", es: "rojo" },
+    { lesson: 2, group: "lesson2", en: "blue", es: "azul" },
+    { lesson: 2, group: "lesson2", en: "green", es: "verde" },
+    { lesson: 2, group: "lesson2", en: "yellow", es: "amarillo" },
+    { lesson: 2, group: "lesson2", en: "orange", es: "naranja" },
+    { lesson: 2, group: "lesson2", en: "purple", es: "morado" },
+    { lesson: 2, group: "lesson2", en: "pink", es: "rosa" },
+    { lesson: 2, group: "lesson2", en: "apple", es: "manzana" },
+    { lesson: 2, group: "lesson2", en: "banana", es: "plátano" },
+    { lesson: 2, group: "lesson2", en: "bread", es: "pan" },
+    { lesson: 2, group: "lesson2", en: "milk", es: "leche" },
+    { lesson: 2, group: "lesson2", en: "water", es: "agua" },
+    { lesson: 2, group: "lesson2", en: "cheese", es: "queso" },
+    { lesson: 2, group: "lesson2", en: "sandwich", es: "sándwich" },
+
+    // Lesson 3 (can do)
+    { lesson: 3, group: "lesson3", en: "run", es: "correr" },
+    { lesson: 3, group: "lesson3", en: "jump", es: "saltar" },
+    { lesson: 3, group: "lesson3", en: "swim", es: "nadar" },
+    { lesson: 3, group: "lesson3", en: "dance", es: "bailar" },
+    { lesson: 3, group: "lesson3", en: "sing", es: "cantar" },
+    { lesson: 3, group: "lesson3", en: "read", es: "leer" },
+    { lesson: 3, group: "lesson3", en: "write", es: "escribir" },
+    { lesson: 3, group: "lesson3", en: "ride a bike", es: "montar en bici" },
+    { lesson: 3, group: "lesson3", en: "play football", es: "jugar al fútbol" },
+    { lesson: 3, group: "lesson3", en: "draw", es: "dibujar" },
+    { lesson: 3, group: "lesson3", en: "paint", es: "pintar" },
+    { lesson: 3, group: "lesson3", en: "skate", es: "patinar" },
+
+    // Mixed
+    { lesson: 1, group: "mixed", en: "my name is…", es: "me llamo…" },
+    { lesson: 1, group: "mixed", en: "how are you?", es: "¿qué tal?" },
+    { lesson: 2, group: "mixed", en: "I like…", es: "me gusta…" },
+    { lesson: 2, group: "mixed", en: "I don't like…", es: "no me gusta…" },
+    { lesson: 3, group: "mixed", en: "I can…", es: "puedo…" },
+    { lesson: 3, group: "mixed", en: "I can't…", es: "no puedo…" },
+  ];
+
+  const GRAMMAR = [
+    // Lesson 1 (am/is)
+    { lesson: 1, type:"choose", es:"Yo me llamo Ana.", base:"My name ___ Ana.", answer:"is" },
+    { lesson: 1, type:"choose", es:"Yo estoy bien.", base:"I ___ fine.", answer:"am" },
+    { lesson: 1, type:"choose", es:"Él es mi profesor.", base:"He ___ my teacher.", answer:"is" },
+    { lesson: 1, type:"order",  es:"Ordena la pregunta:", words:["What","is","your","name","?"], answer:"What is your name ?" },
+    { lesson: 1, type:"order",  es:"Ordena la respuesta:", words:["My","name","is","Leo","."], answer:"My name is Leo ." },
+
+    // Lesson 2 (like / don't like)
+    { lesson: 2, type:"choose", es:"Me gusta la leche.", base:"I ___ milk.", answer:"like" },
+    { lesson: 2, type:"choose", es:"No me gusta el queso.", base:"I don't ___ cheese.", answer:"like" },
+    { lesson: 2, type:"order",  es:"Ordena la frase:", words:["I","like","apples","."], answer:"I like apples ." },
+    { lesson: 2, type:"order",  es:"Ordena la frase:", words:["I","don't","like","bananas","."], answer:"I don't like bananas ." },
+
+    // Lesson 3 (can / can't)
+    { lesson: 3, type:"choose", es:"Yo puedo nadar.", base:"I ___ swim.", answer:"can" },
+    { lesson: 3, type:"choose", es:"Yo no puedo volar.", base:"I ___ fly.", answer:"can't" },
+    { lesson: 3, type:"choose", es:"Ella puede bailar.", base:"She ___ dance.", answer:"can" },
+    { lesson: 3, type:"order",  es:"Ordena la pregunta:", words:["Can","you","swim","?"], answer:"Can you swim ?" },
+    { lesson: 3, type:"order",  es:"Ordena la respuesta:", words:["Yes,","I","can","."], answer:"Yes, I can ." },
+    { lesson: 3, type:"order",  es:"Ordena la respuesta:", words:["No,","I","can't","."], answer:"No, I can't ." },
+  ];
+
+  const $ = (s) => document.querySelector(s);
+  const modeEl = $("#mode");
+  const groupEl = $("#group");
+  const lessonModeEl = $("#lessonMode");
+  const lessonNEl = $("#lessonN");
+  const resetEl = $("#reset");
+  const stageEl = $("#stage");
+  const panelTitleEl = $("#panelTitle");
+  const subBadgeEl = $("#subBadge");
+  const msgEl = $("#message");
+  const scoreEl = $("#score");
+  const correctEl = $("#correct");
+  const wrongEl = $("#wrong");
+  const streakEl = $("#streak");
+  const countEl = $("#count");
+
+  let score = 0, correct = 0, wrong = 0, streak = 0;
+  let current = null;
+  let quizLocked = false;
+  let mem = { deck: [], revealed: [], matched: new Set(), lock: false };
+
+  function setMessage(text, type = "") {
+    msgEl.className = "msg" + (type ? " " + type : "");
+    msgEl.textContent = text;
+  }
+
+  function getLessonFilterFn() {
+    const mode = lessonModeEl.value;
+    const n = parseInt(lessonNEl.value, 10);
+    if (mode === "upto") return (x) => x.lesson <= n;
+    return (x) => x.lesson === n;
+  }
+
+  function getWordList() {
+    const lf = getLessonFilterFn();
+    const g = groupEl.value;
+    let list = WORDS.filter(lf);
+    if (g !== "all") list = list.filter(w => w.group === g);
+    if (!list.length) list = WORDS.filter(lf);
+    if (!list.length) list = WORDS.slice(0);
+    return list;
+  }
+
+  function getGrammarList() {
+    const lf = getLessonFilterFn();
+    const g = groupEl.value;
+    let list = GRAMMAR.filter(lf);
+    if (g === "lesson1") list = list.filter(x => x.lesson === 1);
+    if (g === "lesson2") list = list.filter(x => x.lesson === 2);
+    if (g === "lesson3") list = list.filter(x => x.lesson === 3);
+    if (!list.length) list = GRAMMAR.filter(lf);
+    if (!list.length) list = GRAMMAR.slice(0);
+    return list;
+  }
+
+  function updateStats() {
+    scoreEl.textContent = score;
+    correctEl.textContent = correct;
+    wrongEl.textContent = wrong;
+    streakEl.textContent = streak;
+    countEl.textContent = (modeEl.value === "grammar") ? getGrammarList().length : getWordList().length;
+  }
+
+  function randInt(n) { return Math.floor(Math.random() * n); }
+  function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = randInt(i + 1);
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function pickNewWord() {
+    const list = getWordList();
+    current = list[randInt(list.length)];
+    return current;
+  }
+
+  function speak(text) {
+    if (!("speechSynthesis" in window)) {
+      setMessage("Tu navegador no tiene pronunciación (SpeechSynthesis).", "bad");
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "en-US";
+    u.rate = 0.95;
+    window.speechSynthesis.speak(u);
+  }
+
+  function resetProgress() {
+    score = 0; correct = 0; wrong = 0; streak = 0;
+    quizLocked = false;
+    mem = { deck: [], revealed: [], matched: new Set(), lock: false };
+    updateStats();
+    setMessage("Progreso reiniciado.", "");
+    render();
+  }
+
+  function makeTypos(word) {
+    const w = (word||"").toLowerCase();
+    const typos = new Set();
+    if (!w) return [];
+    if (w.length >= 4) {
+      const i = randInt(w.length - 1);
+      const s = w.split("");
+      [s[i], s[i+1]] = [s[i+1], s[i]];
+      typos.add(s.join(""));
+    }
+    const vowels = ["a","e","i","o","u"];
+    const idxs = [];
+    for (let i=0;i<w.length;i++){
+      if (vowels.includes(w[i])) idxs.push(i);
+    }
+    if (idxs.length){
+      const i = idxs[randInt(idxs.length)];
+      const v = vowels[randInt(vowels.length)];
+      const s = w.split("");
+      s[i] = v;
+      typos.add(s.join(""));
+    }
+    if (w.length >= 4) {
+      const i = randInt(w.length);
+      typos.add(w.slice(0,i) + w.slice(i+1));
+    }
+    if (w.length >= 3) {
+      const i = randInt(w.length+1);
+      const letters = "aeiou";
+      const ch = letters[randInt(letters.length)];
+      typos.add(w.slice(0,i) + ch + w.slice(i));
+    }
+    if (w.length >= 3) {
+      const letters = "abcdefghijklmnopqrstuvwxyz";
+      const ch = letters[randInt(letters.length)];
+      typos.add(w.slice(0,-1) + ch);
+    }
+    typos.delete(w);
+    return Array.from(typos).filter(t => t.length >= 2 && t.length <= 22);
+  }
+
+  function renderFlash() {
+    subBadgeEl.textContent = "EN → ES";
+    panelTitleEl.childNodes[0].nodeValue = "Flashcards ";
+    const w = pickNewWord();
+
+    stageEl.innerHTML = `
+      <div class="bigWord">${w.en}</div>
+      <div class="hint">¿Qué significa en español?</div>
+      <div class="row">
+        <button id="reveal" class="btn-a">Reveal</button>
+        <button id="speakBtn" class="btn-d">Speak 🔊</button>
+        <button id="next" class="btn-c">Next</button>
+      </div>
+      <div class="hint" style="margin-top:6px"><span class="badge">Lesson ${w.lesson}</span></div>
+      <div id="answer" class="hint" style="font-size:15px; display:none; margin-top:6px;"></div>
+    `;
+
+    $("#reveal").onclick = () => {
+      const a = $("#answer");
+      a.style.display = "block";
+      a.textContent = `= ${w.es}`;
+      setMessage("¡Genial! Ahora pulsa Next.", "good");
+    };
+    $("#speakBtn").onclick = () => speak(w.en);
+    $("#next").onclick = () => { setMessage("Siguiente…", ""); renderFlash(); };
+  }
+
+  function renderQuiz() {
+    subBadgeEl.textContent = "ES → EN";
+    panelTitleEl.childNodes[0].nodeValue = "Quiz ";
+    const list = getWordList();
+    const w = pickNewWord();
+    quizLocked = false;
+
+    const options = new Set([w.en.toLowerCase()]);
+    const typos = makeTypos(w.en);
+    shuffle(typos);
+    for (const t of typos) { if (options.size >= 4) break; options.add(t); }
+
+    const otherPool = list.map(x => x.en.toLowerCase()).filter(x => x !== w.en.toLowerCase());
+    shuffle(otherPool);
+    for (const o of otherPool) { if (options.size >= 4) break; options.add(o); }
+
+    const opts = shuffle(Array.from(options)).slice(0,4);
+
+    stageEl.innerHTML = `
+      <div class="hint">Pregunta en español:</div>
+      <div class="bigWord">${w.es}</div>
+      <div class="hint">Elige la palabra correcta en inglés:</div>
+      <div class="options">
+        ${opts.map((o) => `<div class="opt" data-val="${o}">${o}</div>`).join("")}
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button id="speakBtn" class="btn-d">Speak correct 🔊</button>
+        <button id="next" class="btn-c">Next</button>
+      </div>
+      <div class="hint" style="margin-top:6px"><span class="badge">Lesson ${w.lesson}</span> · Tip: a veces hay “trampas” 🙂</div>
+    `;
+
+    $("#speakBtn").onclick = () => speak(w.en);
+    $("#next").onclick = () => renderQuiz();
+
+    stageEl.querySelectorAll(".opt").forEach(opt => {
+      opt.addEventListener("click", () => {
+        if (quizLocked) return;
+        quizLocked = true;
+
+        const chosen = opt.getAttribute("data-val");
+        const target = w.en.toLowerCase();
+        const isCorrect = chosen === target;
+
+        stageEl.querySelectorAll(".opt").forEach(o => {
+          if (o.getAttribute("data-val") === target) o.classList.add("correct");
+        });
+
+        if (isCorrect) {
+          opt.classList.add("correct");
+          correct++; streak++; score += 10 + Math.min(10, streak);
+          setMessage("✅ Correct!", "good");
+          speak(w.en);
+        } else {
+          opt.classList.add("wrong");
+          wrong++; streak = 0; score = Math.max(0, score - 3);
+          setMessage(`❌ Wrong. Correct: ${w.en}`, "bad");
+        }
+        updateStats();
+      });
+    });
+  }
+
+  function renderSpelling() {
+    subBadgeEl.textContent = "ES → EN";
+    panelTitleEl.childNodes[0].nodeValue = "Spelling ";
+    const w = pickNewWord();
+
+    stageEl.innerHTML = `
+      <div class="hint">Escribe en inglés:</div>
+      <div class="bigWord">${w.es}</div>
+      <div class="row" style="margin-top:6px">
+        <input id="spellIn" autocomplete="off" placeholder="Type the English…" style="width:min(460px, 100%); text-align:center;" />
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button id="check" class="btn-a">Check</button>
+        <button id="show" class="btn-e">Show</button>
+        <button id="speakBtn" class="btn-d">Speak 🔊</button>
+        <button id="next" class="btn-c">Next</button>
+      </div>
+      <div class="hint" style="margin-top:6px"><span class="badge">Lesson ${w.lesson}</span></div>
+      <div id="spellAns" class="hint" style="font-size:15px; display:none; margin-top:6px;"></div>
+    `;
+
+    const input = $("#spellIn");
+    input.focus();
+
+    function normalize(s){ return (s||"").trim().toLowerCase(); }
+    function check() {
+      const typed = normalize(input.value);
+      const target = normalize(w.en);
+      if (!typed) return;
+
+      if (typed === target) {
+        correct++; streak++; score += 12 + Math.min(12, streak);
+        setMessage("✅ Perfect spelling!", "good");
+        speak(w.en);
+      } else {
+        wrong++; streak = 0; score = Math.max(0, score - 3);
+        setMessage(`❌ Not quite. Correct: ${w.en}`, "bad");
+      }
+      updateStats();
+    }
+
+    $("#check").onclick = check;
+    input.addEventListener("keydown", (e) => { if (e.key === "Enter") check(); });
+    $("#show").onclick = () => { const a = $("#spellAns"); a.style.display = "block"; a.textContent = `Answer: ${w.en}`; };
+    $("#speakBtn").onclick = () => speak(w.en);
+    $("#next").onclick = () => renderSpelling();
+  }
+
+  function renderMemory() {
+    subBadgeEl.textContent = "EN ↔ ES";
+    panelTitleEl.childNodes[0].nodeValue = "Memory ";
+    const list = getWordList();
+
+    const deck = [];
+    list.forEach((w, idx) => {
+      deck.push({ pair: idx, text: w.en, kind: "en" });
+      deck.push({ pair: idx, text: w.es, kind: "es" });
+    });
+    shuffle(deck);
+
+    mem.deck = deck;
+    mem.revealed = [];
+    mem.matched = new Set();
+    mem.lock = false;
+
+    setMessage("Encuentra las parejas (inglés-español).", "");
+
+    stageEl.innerHTML = `
+      <div class="hint">Toca dos cartas. Si coinciden, ¡se quedan!</div>
+      <div class="grid" id="grid"></div>
+      <div class="row" style="margin-top:10px">
+        <button id="restartMem" class="btn-a">Shuffle</button>
+        <button id="speakMem" class="btn-d">Speak revealed 🔊</button>
+      </div>
+      <div class="hint" style="margin-top:6px">Consejo: usa el filtro de lección para que sea más fácil 🙂</div>
+    `;
+
+    $("#restartMem").onclick = () => renderMemory();
+    $("#speakMem").onclick = () => {
+      const last = mem.revealed[mem.revealed.length - 1];
+      if (last && last.card.kind === "en") speak(last.card.text);
+    };
+
+    const grid = $("#grid");
+
+    function draw() {
+      grid.innerHTML = "";
+      mem.deck.forEach((card, i) => {
+        const isMatched = mem.matched.has(card.pair);
+        const isRevealed = mem.revealed.some(r => r.i === i);
+        const showText = isMatched || isRevealed;
+
+        const div = document.createElement("div");
+        div.className = "tile" + (isMatched ? " matched" : (isRevealed ? " revealed" : ""));
+        div.textContent = showText ? card.text : "❓";
+        div.onclick = () => onPick(i);
+        grid.appendChild(div);
+      });
+    }
+
+    function onPick(i) {
+      if (mem.lock) return;
+      const card = mem.deck[i];
+      if (mem.matched.has(card.pair)) return;
+      if (mem.revealed.some(r => r.i === i)) return;
+
+      mem.revealed.push({ i, card });
+
+      if (mem.revealed.length === 2) {
+        mem.lock = true;
+        const [a, b] = mem.revealed;
+        const samePair = a.card.pair === b.card.pair && a.card.kind !== b.card.kind;
+
+        draw();
+
+        if (samePair) {
+          mem.matched.add(a.card.pair);
+          correct++; streak++; score += 8 + Math.min(8, streak);
+          setMessage("✅ Match!", "good");
+          mem.revealed = [];
+          mem.lock = false;
+          updateStats();
+          draw();
+          if (mem.matched.size === list.length) setMessage("🏁 ¡Completado! Has encontrado todas las parejas.", "good");
+        } else {
+          wrong++; streak = 0; score = Math.max(0, score - 2);
+          setMessage("❌ No match. Inténtalo otra vez.", "bad");
+          updateStats();
+          setTimeout(() => { mem.revealed = []; mem.lock = false; draw(); }, 700);
+        }
+      } else {
+        draw();
+      }
+    }
+
+    draw();
+  }
+
+  function pickGrammar() {
+    const list = getGrammarList();
+    const item = list[randInt(list.length)];
+    return JSON.parse(JSON.stringify(item));
+  }
+
+  function renderGrammar() {
+    subBadgeEl.textContent = "grammar";
+    panelTitleEl.childNodes[0].nodeValue = "Grammar ";
+    quizLocked = false;
+
+    const g = pickGrammar();
+    const lessonBadge = `<div class="hint" style="margin-top:6px"><span class="badge">Lesson ${g.lesson}</span></div>`;
+
+    if (g.type === "choose") {
+      let opts = [];
+      if (g.lesson === 1) opts = ["am","is","are","be"];
+      else if (g.lesson === 2) opts = ["like","likes","don't like","am like"];
+      else opts = ["can","can't","can’t","cant"];
+
+      stageEl.innerHTML = `
+        <div class="hint">Completa la frase:</div>
+        <div class="bigWord">${g.base.replace("___", "___")}</div>
+        <div class="hint" style="margin-top:-4px">Ayuda (ES): ${g.es}</div>
+        <div class="options">
+          ${opts.map(o => `<div class="opt" data-val="${o}">${o}</div>`).join("")}
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button id="speakBtn" class="btn-d">Speak 🔊</button>
+          <button id="next" class="btn-c">Next</button>
+        </div>
+        ${lessonBadge}
+      `;
+
+      const target = g.answer;
+      const sentence = g.base.replace("___", target);
+
+      $("#speakBtn").onclick = () => speak(sentence.replace(" ?", "?").replace(" .", "."));
+      $("#next").onclick = () => renderGrammar();
+
+      stageEl.querySelectorAll(".opt").forEach(opt => {
+        opt.addEventListener("click", () => {
+          if (quizLocked) return;
+          quizLocked = true;
+
+          const chosen = opt.getAttribute("data-val");
+          const ok = (chosen === target);
+
+          stageEl.querySelectorAll(".opt").forEach(o => {
+            if (o.getAttribute("data-val") === target) o.classList.add("correct");
+          });
+
+          if (ok) {
+            opt.classList.add("correct");
+            correct++; streak++; score += 11 + Math.min(10, streak);
+            setMessage("✅ Perfect! (Grammar)", "good");
+            speak(sentence.replace(" ?", "?").replace(" .", "."));
+          } else {
+            opt.classList.add("wrong");
+            wrong++; streak = 0; score = Math.max(0, score - 3);
+            setMessage(`❌ Not quite. Correct: ${sentence}`, "bad");
+          }
+          updateStats();
+        });
+      });
+      return;
+    }
+
+    // order
+    const words = shuffle(g.words.slice());
+    const picked = [];
+
+    stageEl.innerHTML = `
+      <div class="hint">${g.es}</div>
+      <div class="hint">Toca las palabras para formar la frase:</div>
+      <div class="answerBar" id="answerBar"></div>
+      <div class="chips" id="chips"></div>
+      <div class="row" style="margin-top:10px">
+        <button id="undo" class="btn-e">Undo</button>
+        <button id="clear" class="btn-b">Clear</button>
+        <button id="checkG" class="btn-a">Check</button>
+        <button id="next" class="btn-c">Next</button>
+        <button id="speakBtn" class="btn-d">Speak 🔊</button>
+      </div>
+      ${lessonBadge}
+    `;
+
+    const chipsEl = $("#chips");
+    const barEl = $("#answerBar");
+
+    function redraw() {
+      barEl.innerHTML = picked.map(w => `<span class="chip">${w}</span>`).join("");
+      chipsEl.innerHTML = "";
+      words.forEach((w) => {
+        const span = document.createElement("span");
+        span.className = "chip";
+        span.textContent = w;
+        span.onclick = () => { picked.push(w); redraw(); };
+        chipsEl.appendChild(span);
+      });
+    }
+
+    function normalizeSentence(s){
+      return s.trim()
+        .replace(/\s+\?/g, " ?")
+        .replace(/\s+\./g, " .")
+        .replace(/\s+/g, " ");
+    }
+
+    $("#undo").onclick = () => { picked.pop(); redraw(); };
+    $("#clear").onclick = () => { picked.length = 0; redraw(); };
+    $("#checkG").onclick = () => {
+      const built = normalizeSentence(picked.join(" "));
+      const target = normalizeSentence(g.answer);
+      const ok = built === target;
+
+      if (ok) {
+        correct++; streak++; score += 13 + Math.min(10, streak);
+        setMessage("✅ Great! Sentence is correct.", "good");
+        speak(target.replace(" ?", "?").replace(" .", "."));
+      } else {
+        wrong++; streak = 0; score = Math.max(0, score - 3);
+        setMessage(`❌ Try again. Correct: ${target.replace(" ?", "?").replace(" .", ".")}`, "bad");
+      }
+      updateStats();
+    };
+    $("#speakBtn").onclick = () => {
+      const built = picked.length ? normalizeSentence(picked.join(" ")) : normalizeSentence(g.answer);
+      speak(built.replace(" ?", "?").replace(" .", "."));
+    };
+    $("#next").onclick = () => renderGrammar();
+
+    redraw();
+  }
+
+  function render() {
+    updateStats();
+    const m = modeEl.value;
+    if (m === "flash") return renderFlash();
+    if (m === "quiz") return renderQuiz();
+    if (m === "spell") return renderSpelling();
+    if (m === "memory") return renderMemory();
+    if (m === "grammar") return renderGrammar();
+  }
+
+  modeEl.addEventListener("change", () => { setMessage("Modo cambiado.", ""); render(); });
+  groupEl.addEventListener("change", () => { setMessage("Conjunto cambiado.", ""); render(); });
+  lessonModeEl.addEventListener("change", () => { setMessage("Filtro de lecciones cambiado.", ""); render(); });
+  lessonNEl.addEventListener("change", () => { setMessage("Lección cambiada.", ""); render(); });
+  resetEl.addEventListener("click", resetProgress);
+
+  window.addEventListener("keydown", (e) => {
+    const k = e.key.toLowerCase();
+    if (k === "r") resetProgress();
+    if (k === "n") render();
+    if (k === "s" && current?.en) speak(current.en);
+  });
+
+  updateStats();
+  setMessage("Empieza con Flashcards 🙂", "");
+  render();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>🎮 Repasup · Portal de estudio</title>
+  <meta name="theme-color" content="#6d28d9"/>
+  <link rel="stylesheet" href="./app/app.css"/>
+  <link rel="stylesheet" href="./engine/game-ui.css"/>
+</head>
+<body>
+  <div class="shell">
+    <header class="shellHeader">
+      <div class="brandBlock">
+        <div class="brandLogo" id="brandLogo">🎮</div>
+        <div>
+          <p class="eyebrow">Repasup · Fase 1</p>
+          <h1>Portal unificado de repaso</h1>
+          <p class="subcopy" id="headerSubcopy">Catálogo leído desde <code>data/manifest.json</code> + cabecera de cada deck JSON.</p>
+        </div>
+      </div>
+      <div class="shellControls">
+        <div class="searchWrap homeOnly"><input id="searchInput" type="search" placeholder="Buscar juego, tema, tag…" autocomplete="off"/></div>
+        <select id="subjectFilter" class="homeOnly"></select>
+        <select id="playerSelect"></select>
+        <button id="btnNewPlayer" class="btn primary">+ Jugador</button>
+        <button id="btnPlayerOptions" class="btn soft">Perfil</button>
+        <button id="btnDeckHome" class="btn soft routeOnly" hidden>Temario</button>
+        <button id="btnGameStats" class="btn primary routeOnly" hidden>Stats</button>
+        <button id="btnBackPortal" class="btn accent routeOnly" hidden>Portal</button>
+      </div>
+    </header>
+    <main class="shellMain">
+      <section class="summaryBar" id="summaryBar"></section>
+      <section class="homeOnly homeLayout" id="homeView">
+        <div class="sectionHead">
+          <div>
+            <h2>Catálogo de juegos</h2>
+            <p class="muted">Añade o actualiza decks JSON y el portal los leerá desde el manifest, sin tocar <code>index.html</code>.</p>
+          </div>
+          <div class="headActions">
+            <button id="btnShowFavs" class="btn soft">⭐ Favoritos</button>
+            <span class="countPill"><b id="countLabel">0</b> decks</span>
+          </div>
+        </div>
+        <div class="cardsGrid" id="cardsGrid"></div>
+      </section>
+      <section class="routeOnly gameView hidden" id="gameView" hidden>
+        <div id="gameMount" class="repaso-game-ui"></div>
+      </section>
+    </main>
+  </div>
+  <div class="modalBack" id="modalBack" style="display:none">
+    <div class="modal statsModal" role="dialog" aria-modal="true" aria-labelledby="statsTitle">
+      <header class="modalHead">
+        <h3 id="statsTitle">📊 Estadísticas</h3>
+        <button id="closeModal" class="btn soft">Cerrar</button>
+      </header>
+      <div id="modalBody" class="body"></div>
+    </div>
+  </div>
+  <div class="shellModalBack" id="shellModalBack" hidden>
+    <div class="shellModal" role="dialog" aria-modal="true" aria-labelledby="shellModalTitle">
+      <div class="shellModalHead">
+        <div>
+          <p class="eyebrow" id="shellModalEyebrow">Opciones</p>
+          <h3 id="shellModalTitle">Modal</h3>
+        </div>
+        <button id="shellModalClose" class="btn soft">Cerrar</button>
+      </div>
+      <div id="shellModalBody"></div>
+    </div>
+  </div>
+  <script type="module" src="./app/app.js"></script>
+</body>
+</html>
