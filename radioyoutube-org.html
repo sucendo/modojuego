@@ -1188,74 +1188,12 @@ function toast(msg, type="info"){
 // --- Media Session API (controles del sistema) ------------
 const HAS_MEDIA_SESSION = ("mediaSession" in navigator) && (typeof window.MediaMetadata !== "undefined");
 
-/*
-  Chrome/Android 148+ puede dejar de mostrar la notificación multimedia cuando
-  el único audio viene de un iframe de YouTube. Este pequeño <audio> silencioso
-  se inicia SIEMPRE dentro de un gesto del usuario y sirve como ancla para que
-  Android mantenga viva la Media Session.
-  Nota: no sustituye al audio de YouTube; solo ayuda a que vuelvan los controles.
-*/
-let mediaSessionAnchor = null;
-let mediaSessionAnchorStarted = false;
-
-function ensureMediaSessionAnchor(){
-  if (mediaSessionAnchor) return mediaSessionAnchor;
-
-  mediaSessionAnchor = document.createElement("audio");
-  mediaSessionAnchor.id = "media-session-anchor";
-  mediaSessionAnchor.loop = true;
-  mediaSessionAnchor.preload = "auto";
-  mediaSessionAnchor.setAttribute("playsinline", "");
-  mediaSessionAnchor.setAttribute("aria-hidden", "true");
-  mediaSessionAnchor.style.position = "fixed";
-  mediaSessionAnchor.style.left = "-9999px";
-  mediaSessionAnchor.style.width = "1px";
-  mediaSessionAnchor.style.height = "1px";
-  mediaSessionAnchor.volume = 0.001;
-
-  // WAV PCM 1s de silencio. Fuente local/data URI: no depende de red ni permisos.
-  mediaSessionAnchor.src = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=";
-  document.body.appendChild(mediaSessionAnchor);
-  return mediaSessionAnchor;
-}
-
-function startMediaSessionAnchor(){
-  const a = ensureMediaSessionAnchor();
-  try{
-    const pr = a.play();
-    if (pr && typeof pr.then === "function") {
-      pr.then(() => { mediaSessionAnchorStarted = true; }).catch(() => {});
-    } else {
-      mediaSessionAnchorStarted = true;
-    }
-  }catch{}
-}
-
-function refreshMediaSession(id){
-  setupMediaSession();
-  updateMediaSessionMetadata(id || getExpectedVideoId() || currentVideoId || lastKnownVideoId);
-  updateMediaSessionPlaybackState();
-}
-
-function playCurrentVideoFromSystem(){
-  startMediaSessionAnchor();
-  if (playerReady && player) {
-    try{ player.playVideo(); }catch{}
-  }
-}
-
-function pauseCurrentVideoFromSystem(){
-  if (playerReady && player) {
-    try{ player.pauseVideo(); }catch{}
-  }
-}
-
 function setupMediaSession(){
   if (!HAS_MEDIA_SESSION) return;
 
   try{
-    navigator.mediaSession.setActionHandler("play", playCurrentVideoFromSystem);
-    navigator.mediaSession.setActionHandler("pause", pauseCurrentVideoFromSystem);
+    navigator.mediaSession.setActionHandler("play", () => { if (playerReady) player.playVideo(); });
+    navigator.mediaSession.setActionHandler("pause", () => { if (playerReady) player.pauseVideo(); });
 
     navigator.mediaSession.setActionHandler("previoustrack", () => {
       if (playMode === "queue") queuePrev();
@@ -2394,7 +2332,6 @@ function syncRepeatUI(){
     // Color automático
     if (autoAccent){ setAccent(randomHexColor()); }
 
-    if (forcePlay) startMediaSessionAnchor();
     player.loadVideoById({ videoId: id, startSeconds: item.time });
     if (forcePlay) { try { player.playVideo(); } catch {} }
 
@@ -2559,13 +2496,6 @@ function syncRepeatUI(){
     adScore = 0;
   }
 
-  // Primer toque/click del usuario: desbloquea el audio auxiliar de Android.
-  ["pointerdown", "touchstart", "keydown"].forEach((ev) => {
-    window.addEventListener(ev, () => {
-      ensureMediaSessionAnchor();
-    }, { once:true, passive:true });
-  });
-
   // --- Eventos UI -------------------------------------------
   ui.loadBtn.addEventListener("click", () => {
     const parsed = parseYouTubeInput(ui.urlInput.value);
@@ -2624,9 +2554,7 @@ function syncRepeatUI(){
 
   ui.playPause.addEventListener("click", () => {
     if (!playerReady) return;
-    startMediaSessionAnchor();
     isPlaying ? player.pauseVideo() : player.playVideo();
-    refreshMediaSession(getExpectedVideoId() || currentVideoId);
   });
 
   ui.btnPrev.addEventListener("click", skipBackward);
@@ -2961,13 +2889,9 @@ else if (e.code === "BracketRight") { // subir velocidad
             item.time = player.getCurrentTime() || item.time;
             item.lastPlayed = new Date().toISOString();
             saveHistory();
-            refreshMediaSession(id);
           }
         }
       }catch{}
-    } else {
-      // Al volver a la pestaña, re-publica metadatos por si Chrome los ha descartado.
-      refreshMediaSession(getExpectedVideoId() || currentVideoId || lastKnownVideoId);
     }
   });
 
@@ -2998,7 +2922,6 @@ else if (e.code === "BracketRight") { // subir velocidad
           // velocidad preferida
           setPlaybackRate(playbackRate, true, false);
           setupMediaSession();
-          ensureMediaSessionAnchor();
 
           scheduleResizePlayer();
           syncRepeatUI();
@@ -3016,7 +2939,6 @@ else if (e.code === "BracketRight") { // subir velocidad
             }catch{}
             updateRadioCover(lastId);
             fetchTitleIfNeeded(lastId);
-            refreshMediaSession(lastId);
             toast("Último vídeo cargado. Pulsa ▶ para reanudar o añade a la lista.");
           } else {
             toast("Listo. Pega una URL de YouTube para empezar.");
@@ -3031,7 +2953,6 @@ else if (e.code === "BracketRight") { // subir velocidad
           // -1 unstarted, 0 ended, 1 playing, 2 paused, 3 buffering, 5 cued
           if (e.data === YT.PlayerState.PLAYING){
             isPlaying = true;
-            startMediaSessionAnchor();
             updatePlayButton();
             updateInlinePlayIcons();
             showControls();
