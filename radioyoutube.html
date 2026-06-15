@@ -1189,161 +1189,52 @@ function toast(msg, type="info"){
 const HAS_MEDIA_SESSION = ("mediaSession" in navigator) && (typeof window.MediaMetadata !== "undefined");
 
 /*
-  Chrome/Android 148+ puede dejar de mostrar la notificación multimedia cuando
-  el único audio viene de un iframe de YouTube. Este pequeño <audio> silencioso
-  se inicia SIEMPRE dentro de un gesto del usuario y sirve como ancla para que
-  Android mantenga viva la Media Session.
-  Nota: no sustituye al audio de YouTube; solo ayuda a que vuelvan los controles.
+  Media Session estable.
+
+  No se crea un <audio> silencioso para simular una reproducción activa.
+  Ese recurso hacía aparecer una tarjeta multimedia independiente del vídeo
+  de YouTube y, al ocultar la pestaña, Android mostraba controles que ya no
+  podían gobernar el iframe suspendido.
 */
-let mediaSessionAnchor = null;
-let mediaSessionAnchorStarted = false;
-let mediaSessionAnchorUrl = "";
-
-/*
-  Crea un WAV REAL de 2 segundos con una señal prácticamente inaudible.
-  La versión anterior usaba un WAV con 0 muestras: Android mostraba la
-  notificación, pero la sesión quedaba sin un flujo multimedia vivo.
-*/
-function createMediaSessionAnchorUrl(){
-  if (mediaSessionAnchorUrl) return mediaSessionAnchorUrl;
-
-  const sampleRate = 8000;
-  const seconds = 2;
-  const sampleCount = sampleRate * seconds;
-  const bytesPerSample = 2;
-  const dataSize = sampleCount * bytesPerSample;
-  const buffer = new ArrayBuffer(44 + dataSize);
-  const view = new DataView(buffer);
-
-  const writeText = (offset, text) => {
-    for (let i = 0; i < text.length; i++) view.setUint8(offset + i, text.charCodeAt(i));
-  };
-
-  writeText(0, "RIFF");
-  view.setUint32(4, 36 + dataSize, true);
-  writeText(8, "WAVE");
-  writeText(12, "fmt ");
-  view.setUint32(16, 16, true);       // PCM
-  view.setUint16(20, 1, true);        // formato PCM
-  view.setUint16(22, 1, true);        // mono
-  view.setUint32(24, sampleRate, true);
-  view.setUint32(28, sampleRate * bytesPerSample, true);
-  view.setUint16(32, bytesPerSample, true);
-  view.setUint16(34, 16, true);
-  writeText(36, "data");
-  view.setUint32(40, dataSize, true);
-
-  // Señal de amplitud 1: evita un archivo de duración cero o silencio vacío,
-  // pero es imperceptible incluso con el volumen del ancla por encima de cero.
-  for (let i = 0; i < sampleCount; i++) {
-    view.setInt16(44 + (i * 2), (i & 1) ? 1 : -1, true);
-  }
-
-  mediaSessionAnchorUrl = URL.createObjectURL(new Blob([buffer], { type: "audio/wav" }));
-  return mediaSessionAnchorUrl;
-}
-
-function ensureMediaSessionAnchor(){
-  if (mediaSessionAnchor) return mediaSessionAnchor;
-
-  mediaSessionAnchor = document.createElement("audio");
-  mediaSessionAnchor.id = "media-session-anchor";
-  mediaSessionAnchor.loop = true;
-  mediaSessionAnchor.preload = "auto";
-  mediaSessionAnchor.setAttribute("playsinline", "");
-  mediaSessionAnchor.setAttribute("aria-hidden", "true");
-  mediaSessionAnchor.style.position = "fixed";
-  mediaSessionAnchor.style.left = "-9999px";
-  mediaSessionAnchor.style.width = "1px";
-  mediaSessionAnchor.style.height = "1px";
-  mediaSessionAnchor.volume = 0.001;
-  mediaSessionAnchor.src = createMediaSessionAnchorUrl();
-
-  mediaSessionAnchor.addEventListener("error", () => {
-    mediaSessionAnchorStarted = false;
-  });
-
-  // Algunos fabricantes detienen el elemento aunque tenga loop.
-  mediaSessionAnchor.addEventListener("ended", () => {
-    mediaSessionAnchorStarted = false;
-    if (isPlaying) startMediaSessionAnchor();
-  });
-
-  document.body.appendChild(mediaSessionAnchor);
-  try{ mediaSessionAnchor.load(); }catch{}
-  return mediaSessionAnchor;
-}
-
-function startMediaSessionAnchor(){
-  const a = ensureMediaSessionAnchor();
-
-  try{
-    if (a.ended || !Number.isFinite(a.currentTime)) a.currentTime = 0;
-    const pr = a.play();
-    if (pr && typeof pr.then === "function") {
-      pr.then(() => {
-        mediaSessionAnchorStarted = true;
-      }).catch(() => {
-        mediaSessionAnchorStarted = false;
-      });
-    } else {
-      mediaSessionAnchorStarted = true;
-    }
-  }catch{
-    mediaSessionAnchorStarted = false;
-  }
-}
-
 function setSystemPlaybackState(state){
   if (!HAS_MEDIA_SESSION) return;
   try{ navigator.mediaSession.playbackState = state; }catch{}
 }
 
-function verifySystemMediaAction(expectedState){
-  // Da tiempo al iframe para responder al comando recibido desde Android.
-  setTimeout(() => {
-    if (!playerReady || !player) return;
-    try{
-      const state = player.getPlayerState();
-      isPlaying = state === YT.PlayerState.PLAYING;
-      setSystemPlaybackState(isPlaying ? "playing" : "paused");
-      updatePlayButton();
-      updateInlinePlayIcons();
-
-      // Si Android pidió reproducir y el primer postMessage llegó demasiado
-      // pronto, hacemos un segundo intento mientras el ancla sigue activa.
-      if (expectedState === "playing" && !isPlaying){
-        try{ player.playVideo(); }catch{}
-      }
-    }catch{}
-  }, 450);
+function clearMediaSessionForBackground(){
+  if (!HAS_MEDIA_SESSION) return;
+  try{ navigator.mediaSession.playbackState = "none"; }catch{}
+  try{ navigator.mediaSession.metadata = null; }catch{}
+  try{
+    if (navigator.mediaSession.setPositionState) {
+      navigator.mediaSession.setPositionState();
+    }
+  }catch{}
 }
 
 function refreshMediaSession(id){
+  if (document.hidden) return;
   setupMediaSession();
   updateMediaSessionMetadata(id || getExpectedVideoId() || currentVideoId || lastKnownVideoId);
   updateMediaSessionPlaybackState();
 }
 
 function playCurrentVideoFromSystem(){
-  startMediaSessionAnchor();
-  setSystemPlaybackState("playing");
+  // Un iframe de YouTube oculto no ofrece reproducción de fondo fiable.
+  // Evitamos publicar un estado falso o dejar la tarjeta bloqueada.
+  if (document.hidden){
+    clearMediaSessionForBackground();
+    return;
+  }
 
   if (playerReady && player) {
     try{ player.playVideo(); }catch{}
-    verifySystemMediaAction("playing");
-  } else {
-    setSystemPlaybackState("paused");
   }
 }
 
 function pauseCurrentVideoFromSystem(){
-  // El ancla se mantiene viva para que Android no destruya la tarjeta.
-  // Solo pausamos el vídeo real y publicamos inmediatamente el estado.
-  setSystemPlaybackState("paused");
   if (playerReady && player) {
     try{ player.pauseVideo(); }catch{}
-    verifySystemMediaAction("paused");
   }
 }
 
@@ -1355,23 +1246,28 @@ function setupMediaSession(){
     navigator.mediaSession.setActionHandler("pause", pauseCurrentVideoFromSystem);
 
     navigator.mediaSession.setActionHandler("previoustrack", () => {
+      if (document.hidden) return clearMediaSessionForBackground();
       if (playMode === "queue") queuePrev();
       else skipBackward();
     });
     navigator.mediaSession.setActionHandler("nexttrack", () => {
+      if (document.hidden) return clearMediaSessionForBackground();
       if (playMode === "queue") queueNext();
       else skipForward();
     });
 
     navigator.mediaSession.setActionHandler("seekbackward", (details) => {
+      if (document.hidden) return clearMediaSessionForBackground();
       const off = details && details.seekOffset ? details.seekOffset : 10;
       if (playerReady) player.seekTo((player.getCurrentTime() || 0) - off, true);
     });
     navigator.mediaSession.setActionHandler("seekforward", (details) => {
+      if (document.hidden) return clearMediaSessionForBackground();
       const off = details && details.seekOffset ? details.seekOffset : 30;
       if (playerReady) player.seekTo((player.getCurrentTime() || 0) + off, true);
     });
     navigator.mediaSession.setActionHandler("seekto", (details) => {
+      if (document.hidden) return clearMediaSessionForBackground();
       if (!playerReady || !details) return;
       if (typeof details.seekTime === "number") player.seekTo(details.seekTime, true);
     });
@@ -2491,7 +2387,6 @@ function syncRepeatUI(){
     // Color automático
     if (autoAccent){ setAccent(randomHexColor()); }
 
-    if (forcePlay) startMediaSessionAnchor();
     player.loadVideoById({ videoId: id, startSeconds: item.time });
     if (forcePlay) { try { player.playVideo(); } catch {} }
 
@@ -3058,12 +2953,13 @@ else if (e.code === "BracketRight") { // subir velocidad
             item.time = player.getCurrentTime() || item.time;
             item.lastPlayed = new Date().toISOString();
             saveHistory();
-            refreshMediaSession(id);
           }
         }
       }catch{}
+      // No mostramos una tarjeta falsa cuando el iframe deja de estar activo.
+      clearMediaSessionForBackground();
     } else {
-      // Al volver a la pestaña, re-publica metadatos por si Chrome los ha descartado.
+      // Al volver a primer plano, registramos de nuevo la sesión real.
       refreshMediaSession(getExpectedVideoId() || currentVideoId || lastKnownVideoId);
     }
   });
@@ -3095,7 +2991,6 @@ else if (e.code === "BracketRight") { // subir velocidad
           // velocidad preferida
           setPlaybackRate(playbackRate, true, false);
           setupMediaSession();
-          ensureMediaSessionAnchor();
 
           scheduleResizePlayer();
           syncRepeatUI();
@@ -3128,7 +3023,6 @@ else if (e.code === "BracketRight") { // subir velocidad
           // -1 unstarted, 0 ended, 1 playing, 2 paused, 3 buffering, 5 cued
           if (e.data === YT.PlayerState.PLAYING){
             isPlaying = true;
-            startMediaSessionAnchor();
             updatePlayButton();
             updateInlinePlayIcons();
             showControls();
