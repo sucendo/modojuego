@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>RadioYouTube · Reproductor YouTube (Cola · Radio · Media)</title>
+  <title>RadioYouTube · Reproductor YouTube (parche Android v5)</title>
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="img/radioyoutube/favicon.png" sizes="32x32"/>
@@ -950,7 +950,7 @@
 
 <script>
 /* =========================================================
-   RadioYouTube v6.2
+   RadioYouTube v6.2 · parche Android v5 (sonido)
    - Cola real (Next/Prev) + botón "A cola"
    - Reanudar por vídeo (Continuar / Desde 0)
    - Modo Radio (carátula, menos consumo)
@@ -1281,26 +1281,36 @@ function unlockMediaSessionAnchor(){
   const audio = ensureMediaSessionAnchor();
   if (mediaSessionAnchorUnlocked) return;
 
+  // Lo activamos durante la interacción real del usuario y lo pausamos en
+  // cuanto Chrome autoriza la reproducción. Así Android conoce el elemento,
+  // pero este no compite por el foco de audio con el iframe de YouTube.
   try{
     const promise = audio.play();
     if (promise && typeof promise.then === "function") {
       promise.then(() => {
         mediaSessionAnchorUnlocked = true;
-        // Si YouTube todavía no está sonando, lo dejamos preparado pero pausado.
-        if (!isPlaying) {
-          audio.pause();
-          try{ audio.currentTime = 0; }catch{}
-        }
+        try{ audio.pause(); }catch{}
+        try{ audio.currentTime = 0; }catch{}
       }).catch(() => {});
     }
   }catch{}
 }
 
 function startMediaSessionAnchor(){
+  // IMPORTANTE: el ancla debe permanecer pausada. Reproducirla simultáneamente
+  // hacía que Android le diera el foco multimedia y dejara inaudible a YouTube.
   const audio = ensureMediaSessionAnchor();
+  try{ audio.pause(); }catch{}
+}
+
+function restoreYouTubeAudio(){
+  if (!playerReady || !player) return;
   try{
-    const promise = audio.play();
-    if (promise && typeof promise.catch === "function") promise.catch(() => {});
+    const vol = Math.max(0, Math.min(100, Number(savedVolume) || 0));
+    if (!isMuted && vol > 0) {
+      player.unMute && player.unMute();
+      player.setVolume && player.setVolume(vol);
+    }
   }catch{}
 }
 
@@ -1359,7 +1369,8 @@ function refreshMediaSession(id){
 }
 
 function playCurrentVideoFromSystem(){
-  startMediaSessionAnchor();
+  pauseMediaSessionAnchor();
+  restoreYouTubeAudio();
   isPlaying = true;
   setSystemPlaybackState("playing");
   updatePlayButton();
@@ -3195,7 +3206,8 @@ else if (e.code === "BracketRight") { // subir velocidad
           // -1 unstarted, 0 ended, 1 playing, 2 paused, 3 buffering, 5 cued
           if (e.data === YT.PlayerState.PLAYING){
             isPlaying = true;
-            startMediaSessionAnchor();
+            pauseMediaSessionAnchor();
+            restoreYouTubeAudio();
             updatePlayButton();
             updateInlinePlayIcons();
             showControls();
