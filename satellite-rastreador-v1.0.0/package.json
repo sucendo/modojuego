@@ -1,0 +1,10 @@
+{
+  "name": "satellite-rastreador",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "catalog:update": "node scripts/update-catalog.mjs",
+    "check": "node scripts/check-project.mjs"
+  }
+}

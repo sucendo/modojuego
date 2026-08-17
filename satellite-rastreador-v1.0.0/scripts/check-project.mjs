@@ -1,0 +1,14 @@
+import { access, readdir, readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { dirname } from 'node:path';
+const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
+const required=['index.html','css/app.css','manifest.webmanifest','sw.js','js/app.js','js/orbit.js','js/passes.js','js/catalog.js','js/weather.js','js/map.js','js/overlays.js','js/icons.js','js/metadata.js','data/catalog.json','.github/workflows/pages.yml','assets/satellite-icons/32/iss.png','assets/satellite-icons/64/iss.png'];
+for(const f of required)await access(resolve(root,f));
+const html=await readFile(resolve(root,'index.html'),'utf8');
+for(const id of ['map','sidePanel','trackedList','catalogResults','satDetails','detailIcon','manualIconBtn','labelsBtn','footprintsBtn','detailColor','timeControls','mobileDock','mobileSelectedCard','mobileFullscreenBtn','mobileLocateBtn','mobileVisibleCountBtn','catalogInfoGrid'])if(!html.includes(`id="${id}"`))throw new Error(`Falta #${id}`);
+const js=(await readdir(resolve(root,'js'))).filter(f=>f.endsWith('.js'));
+const icons32=(await readdir(resolve(root,'assets/satellite-icons/32'))).filter(f=>f.endsWith('.png'));
+const icons64=(await readdir(resolve(root,'assets/satellite-icons/64'))).filter(f=>f.endsWith('.png'));
+if(icons32.length!==18||icons64.length!==18)throw new Error(`Catálogo de iconos incompleto: ${icons32.length}/${icons64.length}`);
+console.log(`OK: ${required.length} archivos críticos, ${js.length} módulos JS, ${icons32.length} iconos x2, estructura completa.`);
