@@ -1,0 +1,11 @@
+{
+  "schema": "system-forge-v1",
+  "version": "1.7.0",
+  "projectName": "Sistema Solar",
+  "preset": "solar",
+  "simulatedYears": 0,
+  "visualScale": 0.5,
+  "autoScale": true,
+  "labelMode": "all",
+  "note": "Preset de ejemplo. La aplicación contiene además las lunas principales."
+}
