@@ -1,0 +1,588 @@
+:root{
+  --bg:#0b1020; --panel:#121832; --panel2:#0f1630; --line:#27335f; --text:#e7eefb; --muted:#9dacca;
+  --accent:#6aa8ff; --accent2:#2f69de; --good:#63d99a; --warn:#f4c769; --bad:#ff7f8e;
+  --shadow:0 16px 40px rgba(0,0,0,.38); --safe-bottom:env(safe-area-inset-bottom,0px);
+  --header-h:58px; --time-h:0px;
+}
+*{box-sizing:border-box}
+html,body,#app{height:100%;margin:0}
+body{overflow:hidden;background:var(--bg);color:var(--text);font:14px/1.35 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+button,input,select,textarea{font:inherit}
+button,select,input,textarea{color:var(--text)}
+button{cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+[hidden]{display:none!important}
+.muted{color:var(--muted);font-size:.82rem}
+
+#app{display:grid;grid-template-rows:auto 1fr;min-height:100dvh}
+.topbar{display:flex;align-items:center;gap:.7rem;min-height:var(--header-h);padding:.45rem .7rem;background:rgba(11,16,32,.98);border-bottom:1px solid #1e294d;z-index:1300}
+.brand{display:flex;align-items:center;gap:.55rem;min-width:210px}
+.brand__icon{width:34px;height:34px;flex:none}
+.brand h1{font-size:1rem;margin:0;white-space:nowrap}
+.brand small{color:var(--muted);font-size:.72rem;display:block;max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top-actions{display:flex;align-items:center;gap:.4rem;margin-left:auto;min-width:0}
+.icon-btn,.small-btn,.primary-btn,.category-grid button,.tab{border:1px solid var(--line);background:#11183a;color:var(--text);border-radius:.55rem;transition:.15s ease}
+.icon-btn{width:36px;height:36px;padding:0;display:inline-grid;place-items:center;font-size:1rem;flex:none}
+.icon-btn:hover,.small-btn:hover,.category-grid button:hover,.tab:hover{border-color:#4665a9;background:#16224b}
+.icon-btn.active,.icon-btn[aria-pressed="true"]{box-shadow:inset 0 0 0 2px rgba(106,168,255,.7);background:#132252}
+.small-btn{padding:.38rem .6rem;white-space:nowrap}
+.primary-btn{padding:.45rem .75rem;background:linear-gradient(180deg,#274a9e,#173579);font-weight:650}
+.primary-btn:hover{filter:brightness(1.08)}
+.primary-btn:disabled{opacity:.45;cursor:not-allowed}
+.compact-control{display:flex;align-items:center;gap:.3rem;color:var(--muted);font-size:.76rem}
+.compact-control select{background:#11183a;border:1px solid var(--line);border-radius:.5rem;padding:.42rem .45rem}
+.mobile-only{display:none}
+
+.main-area{position:relative;min-height:0}
+#map{position:absolute;inset:0;background:#08101b}
+.leaflet-control-attribution{background:rgba(255,255,255,.72)!important;font-size:10px!important}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#101833;color:var(--text)}
+.sat-marker{background:transparent;border:0}
+.sat-marker .sat-svg{width:30px;height:30px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.65));transition:transform .15s ease}
+.sat-marker.selected .sat-svg{transform:scale(1.22);filter:drop-shadow(0 0 6px rgba(106,168,255,.9))}
+.me-marker{width:14px;height:14px;border:2px solid #fff;border-radius:50%;background:#2a7bff;box-shadow:0 0 0 5px rgba(42,123,255,.25)}
+
+.side-panel{position:absolute;z-index:1200;top:8px;right:8px;bottom:calc(12px + var(--safe-bottom) + var(--time-h));width:min(390px,calc(100vw - 16px));display:flex;flex-direction:column;background:rgba(18,24,50,.97);border:1px solid var(--line);border-radius:.8rem;box-shadow:var(--shadow);overflow:hidden;backdrop-filter:blur(4px)}
+.panel-head{display:flex;align-items:flex-start;justify-content:space-between;padding:.7rem .75rem .5rem;border-bottom:1px solid rgba(39,51,95,.7)}
+.panel-head h2{font-size:1rem;margin:.05rem 0 .15rem}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:.3rem;padding:.45rem .55rem;border-bottom:1px solid rgba(39,51,95,.7)}
+.tab{padding:.38rem .2rem;font-size:.84rem}
+.tab.active{background:#18285a;border-color:#5270bd;color:#fff}
+.tab-page{display:none;min-height:0;flex:1;padding:.6rem;overflow:hidden}
+.tab-page.active{display:flex;flex-direction:column}
+.scroll-list{overflow:auto;min-height:0;flex:1;margin-top:.45rem;padding-right:.1rem;scrollbar-width:thin;scrollbar-color:#344779 transparent}
+.section-row,.section-title-row,.detail-title-row{display:flex;align-items:center;gap:.45rem}
+.section-title-row,.detail-title-row{justify-content:space-between}
+.text-input,.text-area,.datetime-input{width:100%;background:#0c1330;border:1px solid var(--line);border-radius:.5rem;padding:.48rem .55rem}
+.text-area{min-height:100px;resize:vertical;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.78rem}
+.manual-box{margin-top:.55rem;border:1px dashed #344373;border-radius:.65rem;padding:.45rem .55rem;max-height:43%;overflow:auto}
+.manual-box summary{cursor:pointer;font-weight:650}
+.manual-box label{display:block;margin-top:.55rem;color:var(--muted);font-size:.8rem}
+.manual-box label input,.manual-box label textarea{display:block;margin-top:.25rem}
+
+.sat-card,.catalog-card,.pass-card{border:1px solid #26345f;background:rgba(12,19,48,.76);border-radius:.65rem;padding:.55rem;margin-bottom:.45rem}
+.sat-card.selected{border-color:#5f86df;box-shadow:inset 0 0 0 1px rgba(106,168,255,.28)}
+.sat-card__top,.catalog-card__top{display:flex;gap:.45rem;align-items:center}
+.sat-card__main,.catalog-card__main{min-width:0;flex:1}
+.sat-card__name,.catalog-card__name{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sat-card__sub,.catalog-card__sub{font-size:.77rem;color:var(--muted);margin-top:.1rem}
+.sat-card__actions{display:flex;gap:.3rem;margin-top:.42rem;align-items:center;flex-wrap:wrap}
+.mini-icon{width:30px;height:30px;padding:0;border:1px solid var(--line);background:#10183a;border-radius:.45rem;color:var(--text)}
+.color-dot{width:10px;height:10px;border-radius:50%;display:inline-block;box-shadow:0 0 0 2px rgba(255,255,255,.1)}
+.visibility-toggle{accent-color:#6aa8ff}
+
+.search-box{display:grid;grid-template-columns:1fr auto;gap:.4rem}
+.category-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.35rem;margin-top:.5rem}
+.category-grid button{padding:.42rem .25rem;font-size:.76rem}
+.catalog-meta{display:flex;justify-content:space-between;gap:.5rem;color:var(--muted);font-size:.72rem;margin:.45rem .1rem 0}
+.catalog-card button[data-action="add"]{margin-left:auto}
+.catalog-card.is-added{opacity:.68}
+
+.details-page{overflow:auto!important}
+.details-page h3{margin:.05rem 0;font-size:1.12rem}
+.details-page h4{margin:.75rem 0 .35rem;font-size:.82rem;text-transform:uppercase;letter-spacing:.05em;color:#b9c6e3}
+.empty-state{display:grid;place-items:center;text-align:center;color:var(--muted);min-height:180px;padding:1rem}
+.badges{display:flex;gap:.3rem;flex-wrap:wrap;margin-top:.45rem}
+.badge{border:1px solid #354675;background:#0d1637;border-radius:999px;padding:.18rem .42rem;font-size:.72rem}
+.badge.good{border-color:#2f8058;color:#a7f0c8}.badge.warn{border-color:#856a2c;color:#f9dd99}.badge.bad{border-color:#7e3944;color:#ffc1c8}
+.metric-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.35rem}
+.metric{background:#0c1330;border:1px solid #23315a;border-radius:.5rem;padding:.4rem .45rem;min-width:0}
+.metric span{display:block;color:var(--muted);font-size:.69rem;text-transform:uppercase;letter-spacing:.03em}
+.metric strong{display:block;font-size:.86rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:.1rem}
+.pass-list{margin-top:.35rem}
+.pass-card{font-size:.78rem}
+.pass-card__head{display:flex;justify-content:space-between;gap:.5rem;font-weight:700}
+.pass-card__grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.25rem;margin-top:.3rem;color:var(--muted)}
+.pass-card__grid strong{color:var(--text);display:block}
+.weather-card{border:1px solid #26345f;background:#0c1330;border-radius:.65rem;padding:.55rem;font-size:.8rem}
+.weather-score{display:flex;justify-content:space-between;align-items:center;gap:.5rem;margin-bottom:.4rem}.weather-score strong{font-size:1rem}
+
+.floating-panel-btn{position:absolute;z-index:1150;right:8px;top:8px;border:1px solid var(--line);border-radius:.6rem;background:#11183a;color:var(--text);padding:.5rem .75rem;box-shadow:var(--shadow)}
+.time-controls{position:absolute;z-index:1250;left:50%;bottom:calc(8px + var(--safe-bottom));transform:translateX(-50%);display:none;grid-template-columns:auto auto auto minmax(160px,230px);grid-template-rows:auto auto;align-items:center;gap:.35rem .55rem;width:min(620px,calc(100vw - 18px));background:rgba(14,21,64,.94);border:1px solid var(--line);border-radius:.7rem;padding:.45rem .55rem;box-shadow:var(--shadow);backdrop-filter:blur(3px)}
+.time-controls.active{display:grid}
+.time-slider{grid-column:1/-1;width:100%;accent-color:#6aa8ff}
+.rate-label{font-variant-numeric:tabular-nums;color:var(--muted);min-width:7ch;text-align:right}
+.datetime-input{padding:.35rem .45rem}
+.is-now{border-color:#2e9f5f!important;color:#aef3c0!important}
+.toast-host{position:absolute;z-index:3000;left:50%;top:12px;transform:translateX(-50%);display:grid;gap:.35rem;pointer-events:none}
+.toast{max-width:min(540px,90vw);background:#101936;border:1px solid #3a4d82;border-radius:.65rem;padding:.5rem .7rem;box-shadow:var(--shadow);animation:toastin .2s ease}
+.toast.error{border-color:#873d49}.toast.success{border-color:#2f8058}
+@keyframes toastin{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+
+@media(max-width:1050px){
+  .brand small{display:none}.compact-control span{display:none}.compact-control select{max-width:105px}
+}
+@media(max-width:760px){
+  :root{--header-h:48px}
+  .topbar{padding:.32rem .45rem;position:relative}.brand{min-width:0;flex:1}.brand__icon{width:28px;height:28px}.brand h1{font-size:.9rem}
+  .mobile-only{display:inline-grid}.top-actions{display:none;position:fixed;z-index:1450;left:0;right:0;top:var(--header-h);margin:0;padding:.45rem;background:rgba(11,16,32,.98);border-bottom:1px solid var(--line);overflow-x:auto}.top-actions.open{display:flex}.compact-control{flex:none}
+  .side-panel{top:auto;left:6px;right:6px;bottom:calc(8px + var(--safe-bottom) + var(--time-h));width:auto;max-height:72vh}
+  .panel-head{padding:.55rem}.category-grid{grid-template-columns:repeat(2,1fr)}
+  .time-controls{grid-template-columns:auto 1fr auto;grid-template-rows:auto auto auto;width:calc(100vw - 12px)}
+  .datetime-input{grid-column:1/-1;grid-row:2}.time-slider{grid-row:3}.rate-label{text-align:center}
+}
+@media(max-width:390px){
+  .metric-grid{grid-template-columns:1fr 1fr}.pass-card__grid{grid-template-columns:1fr}.category-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-height:560px) and (orientation:landscape){
+  .side-panel{top:6px;bottom:calc(6px + var(--safe-bottom) + var(--time-h));max-height:none}.manual-box{max-height:36%}
+}
+.edit-dialog{width:min(520px,calc(100vw - 24px));background:#121832;color:var(--text);border:1px solid var(--line);border-radius:.75rem;box-shadow:var(--shadow);padding:.8rem}.edit-dialog::backdrop{background:rgba(0,0,0,.55)}.edit-dialog h3{margin:.1rem 0 .7rem}.edit-dialog label{display:block;color:var(--muted);font-size:.8rem;margin-top:.5rem}.edit-dialog label input,.edit-dialog label textarea{display:block;margin-top:.25rem}.edit-dialog .section-row{justify-content:flex-end;margin-top:.7rem}
+
+/* ===== iconos de satélite (base 2.1, afinado en 2.3) ===== */
+.satellite-image-marker{object-fit:contain;filter:drop-shadow(0 2px 4px rgba(0,0,0,.7));transition:transform .15s ease,filter .15s ease;image-rendering:auto}
+.satellite-image-marker.selected{transform:scale(1.24);filter:drop-shadow(0 0 7px rgba(106,168,255,.95)) drop-shadow(0 2px 4px rgba(0,0,0,.7))}
+.sat-list-icon{width:30px;height:30px;object-fit:contain;flex:none;filter:drop-shadow(0 1px 2px rgba(0,0,0,.55))}
+.sat-icon-button{display:inline-grid;place-items:center;overflow:hidden}
+.sat-icon-button img{width:24px;height:24px;object-fit:contain;pointer-events:none}
+.detail-identity{display:flex;align-items:center;gap:.55rem;min-width:0}
+.detail-sat-icon{width:48px;height:48px;object-fit:contain;flex:none;filter:drop-shadow(0 2px 4px rgba(0,0,0,.55))}
+.icon-dialog{width:min(610px,calc(100vw - 20px));max-height:min(720px,calc(100vh - 20px));overflow:auto;background:#121832;color:var(--text);border:1px solid var(--line);border-radius:.8rem;box-shadow:var(--shadow);padding:.8rem}
+.icon-dialog::backdrop{background:rgba(0,0,0,.58)}
+.icon-dialog h3{margin:.05rem 0 .25rem}
+.satellite-icon-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:.42rem;margin-top:.65rem}
+.satellite-icon-choice{min-width:0;background:#0c1330;color:var(--text);border:1px solid #293967;border-radius:.6rem;padding:.35rem .2rem;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:.2rem}
+.satellite-icon-choice:hover{border-color:#5270bd;background:#111c45}
+.satellite-icon-choice.selected{border-color:#6aa8ff;box-shadow:inset 0 0 0 2px rgba(106,168,255,.45)}
+.satellite-icon-choice img{width:48px;height:48px;object-fit:contain}
+.satellite-icon-choice span{max-width:100%;font-size:.65rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dialog-actions{justify-content:flex-end;margin-top:.7rem}
+@media(max-width:600px){.satellite-icon-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.detail-sat-icon{width:42px;height:42px}}
+@media(max-width:390px){.satellite-icon-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.detail-actions{display:flex;gap:.35rem;align-items:center;flex:none}
+
+/* ===== v2.4: identidad cromática sin recuadro, halo más difuso ===== */
+/*
+   El halo usa dos sombras amplias y semitransparentes. Se conserva el color
+   elegido sin crear un borde duro alrededor del PNG.
+*/
+.satellite-image-marker,
+.sat-list-icon,
+.detail-sat-icon{
+  --sat-color:#6aa8ff;
+  border:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  padding:0 !important;
+  filter:
+    drop-shadow(0 0 7px color-mix(in srgb,var(--sat-color) 30%,transparent))
+    drop-shadow(0 0 14px color-mix(in srgb,var(--sat-color) 18%,transparent))
+    drop-shadow(0 2px 4px rgba(0,0,0,.68));
+}
+.satellite-image-marker{transition:transform .15s ease,filter .15s ease}
+.satellite-image-marker.selected{
+  transform:scale(1.26);
+  border:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  filter:
+    drop-shadow(0 0 9px color-mix(in srgb,var(--sat-color) 38%,transparent))
+    drop-shadow(0 0 19px color-mix(in srgb,var(--sat-color) 23%,transparent))
+    drop-shadow(0 2px 5px rgba(0,0,0,.72));
+}
+.sat-list-icon,.detail-sat-icon{transition:filter .15s ease,transform .15s ease}
+.sat-icon-button{
+  --sat-color:#6aa8ff;
+  border-color:#293967;
+  background:#10183a;
+  box-shadow:none;
+}
+.sat-icon-button:hover{border-color:#5270bd;background:#111c45}
+.sat-icon-button img{
+  filter:
+    drop-shadow(0 0 6px color-mix(in srgb,var(--sat-color) 28%,transparent))
+    drop-shadow(0 0 11px color-mix(in srgb,var(--sat-color) 15%,transparent));
+}
+
+/* ===== v2.4: nubes adaptadas automáticamente al mapa base =====
+   OSM/Claro: algo más grises para seguir viéndose sobre continentes claros.
+   Oscuro: mucha menos presencia, menor contraste y un suavizado leve.
+   Satélite: blancas y naturales, pero sin ocultar la imagen de superficie.
+*/
+.leaflet-pane.leaflet-clouds-pane .live-cloud-tile{
+  mix-blend-mode:normal;
+  transition:opacity .2s ease,filter .2s ease;
+}
+.leaflet-pane.leaflet-clouds-pane.clouds-on-light .live-cloud-tile{
+  opacity:.60;
+  filter:grayscale(1) contrast(.84) brightness(.91) blur(.18px);
+}
+.leaflet-pane.leaflet-clouds-pane.clouds-on-dark .live-cloud-tile{
+  opacity:.43;
+  filter:grayscale(1) contrast(.72) brightness(.98) blur(.35px);
+}
+.leaflet-pane.leaflet-clouds-pane.clouds-on-satellite .live-cloud-tile{
+  opacity:.56;
+  filter:grayscale(1) contrast(.88) brightness(1.06) blur(.20px);
+}
+
+/* ===== v2.5: integración visual refinada =====
+   - halos de satélite todavía más difusos
+   - nubes más suaves y menos intrusivas, especialmente en mapa oscuro
+   - en oscuro se usa mezcla tipo screen para que la nube se integre mejor
+*/
+.satellite-image-marker,
+.sat-list-icon,
+.detail-sat-icon{
+  filter:
+    drop-shadow(0 0 10px color-mix(in srgb,var(--sat-color) 22%,transparent))
+    drop-shadow(0 0 24px color-mix(in srgb,var(--sat-color) 11%,transparent))
+    drop-shadow(0 2px 5px rgba(0,0,0,.55));
+}
+.satellite-image-marker.selected{
+  filter:
+    drop-shadow(0 0 12px color-mix(in srgb,var(--sat-color) 28%,transparent))
+    drop-shadow(0 0 28px color-mix(in srgb,var(--sat-color) 14%,transparent))
+    drop-shadow(0 2px 5px rgba(0,0,0,.58));
+}
+.sat-icon-button img{
+  filter:
+    drop-shadow(0 0 8px color-mix(in srgb,var(--sat-color) 20%,transparent))
+    drop-shadow(0 0 18px color-mix(in srgb,var(--sat-color) 10%,transparent));
+}
+
+.leaflet-pane.leaflet-clouds-pane .live-cloud-tile{
+  transition:opacity .22s ease,filter .22s ease,mix-blend-mode .22s ease;
+}
+.leaflet-pane.leaflet-clouds-pane.clouds-on-light .live-cloud-tile{
+  opacity:.46;
+  mix-blend-mode:normal;
+  filter:grayscale(1) contrast(.78) brightness(.93) blur(.52px);
+}
+.leaflet-pane.leaflet-clouds-pane.clouds-on-dark .live-cloud-tile{
+  opacity:.34;
+  mix-blend-mode:screen;
+  filter:grayscale(1) contrast(.66) brightness(.95) blur(.82px);
+}
+.leaflet-pane.leaflet-clouds-pane.clouds-on-satellite .live-cloud-tile{
+  opacity:.50;
+  mix-blend-mode:screen;
+  filter:grayscale(1) contrast(.82) brightness(1.02) blur(.45px);
+}
+
+/* ===== v2.6: ajustes solicitados =====
+   - sin doble trazo orbital
+   - halo más visible en los satélites
+*/
+.satellite-image-marker,
+.sat-list-icon,
+.detail-sat-icon{
+  filter:
+    drop-shadow(0 0 12px color-mix(in srgb,var(--sat-color) 34%,transparent))
+    drop-shadow(0 0 26px color-mix(in srgb,var(--sat-color) 18%,transparent))
+    drop-shadow(0 0 40px color-mix(in srgb,var(--sat-color) 10%,transparent))
+    drop-shadow(0 2px 5px rgba(0,0,0,.52));
+}
+.satellite-image-marker.selected{
+  transform:scale(1.28);
+  filter:
+    drop-shadow(0 0 14px color-mix(in srgb,var(--sat-color) 42%,transparent))
+    drop-shadow(0 0 30px color-mix(in srgb,var(--sat-color) 23%,transparent))
+    drop-shadow(0 0 46px color-mix(in srgb,var(--sat-color) 12%,transparent))
+    drop-shadow(0 2px 5px rgba(0,0,0,.56));
+}
+.sat-icon-button img{
+  filter:
+    drop-shadow(0 0 10px color-mix(in srgb,var(--sat-color) 30%,transparent))
+    drop-shadow(0 0 22px color-mix(in srgb,var(--sat-color) 14%,transparent));
+}
+
+/* ===== v2.7 =====
+   - más halo de color para los satélites
+   - nubes en oscuro con opacidad 0.40
+*/
+.satellite-image-marker,
+.sat-list-icon,
+.detail-sat-icon{
+  filter:
+    drop-shadow(0 0 16px color-mix(in srgb,var(--sat-color) 46%,transparent))
+    drop-shadow(0 0 34px color-mix(in srgb,var(--sat-color) 24%,transparent))
+    drop-shadow(0 0 54px color-mix(in srgb,var(--sat-color) 12%,transparent))
+    drop-shadow(0 2px 5px rgba(0,0,0,.50));
+}
+.satellite-image-marker.selected{
+  transform:scale(1.30);
+  filter:
+    drop-shadow(0 0 18px color-mix(in srgb,var(--sat-color) 56%,transparent))
+    drop-shadow(0 0 38px color-mix(in srgb,var(--sat-color) 30%,transparent))
+    drop-shadow(0 0 62px color-mix(in srgb,var(--sat-color) 14%,transparent))
+    drop-shadow(0 2px 5px rgba(0,0,0,.54));
+}
+.sat-icon-button img{
+  filter:
+    drop-shadow(0 0 12px color-mix(in srgb,var(--sat-color) 38%,transparent))
+    drop-shadow(0 0 28px color-mix(in srgb,var(--sat-color) 18%,transparent));
+}
+.leaflet-pane.leaflet-clouds-pane.clouds-on-dark .live-cloud-tile{
+  opacity:.40;
+  mix-blend-mode:screen;
+  filter:grayscale(1) contrast(.66) brightness(.95) blur(.82px);
+}
+
+
+/* ===== v2.7.1 =====
+   Forzamos opacidad de nubes por variable CSS para evitar que quede tapada
+   por reglas anteriores o por caché parcial del navegador.
+*/
+.leaflet-pane.leaflet-clouds-pane.clouds-on-light .live-cloud-tile{
+  opacity:var(--cloud-opacity, .46) !important;
+}
+.leaflet-pane.leaflet-clouds-pane.clouds-on-dark .live-cloud-tile{
+  opacity:var(--cloud-opacity, .40) !important;
+  mix-blend-mode:screen;
+  filter:grayscale(1) contrast(.66) brightness(.95) blur(.82px) !important;
+}
+.leaflet-pane.leaflet-clouds-pane.clouds-on-satellite .live-cloud-tile{
+  opacity:var(--cloud-opacity, .50) !important;
+}
+
+
+/* ===== v2.7.2 =====
+   Opacidad final pedida por el usuario:
+   - oscuro: 0.4
+   - claro: 0.4
+   - satélite: 1.0
+   - OSM: 1.0
+   Nota: OSM comparte la clase clouds-on-light, así que se controla por variable CSS.
+*/
+.leaflet-pane.leaflet-clouds-pane.clouds-on-light .live-cloud-tile{
+  opacity:var(--cloud-opacity, .40) !important;
+}
+.leaflet-pane.leaflet-clouds-pane.clouds-on-dark .live-cloud-tile{
+  opacity:var(--cloud-opacity, .40) !important;
+}
+.leaflet-pane.leaflet-clouds-pane.clouds-on-satellite .live-cloud-tile{
+  opacity:var(--cloud-opacity, 1.00) !important;
+}
+
+/* ===== v2.8 ===== */
+.map-labels-btn{font-size:.72rem;font-weight:750;letter-spacing:-.04em}
+.detail-color-picker{width:34px;height:34px;padding:1px;border:1px solid var(--line);border-radius:.5rem;background:#10183a;cursor:pointer}
+.location-dialog{width:min(520px,calc(100vw - 24px));background:#121832;color:var(--text);border:1px solid var(--line);border-radius:.75rem;box-shadow:var(--shadow);padding:.85rem}
+.location-dialog::backdrop{background:rgba(0,0,0,.58)}
+.location-dialog h3{margin:.05rem 0 .4rem}
+.location-grid{display:grid;grid-template-columns:1fr 1fr;gap:.55rem;margin:.7rem 0 .45rem}
+.location-grid label{display:block;color:var(--muted);font-size:.8rem}
+.location-grid input{display:block;margin-top:.25rem}
+@media(max-width:520px){.location-grid{grid-template-columns:1fr}}
+
+/* Halo definitivo solicitado: primera sombra al 86 %. */
+.satellite-image-marker,
+.sat-list-icon,
+.detail-sat-icon{
+  filter:
+    drop-shadow(0 0 16px color-mix(in srgb,var(--sat-color) 86%,transparent))
+    drop-shadow(0 0 34px color-mix(in srgb,var(--sat-color) 24%,transparent))
+    drop-shadow(0 0 54px color-mix(in srgb,var(--sat-color) 12%,transparent))
+    drop-shadow(0 2px 5px rgba(0,0,0,.50)) !important;
+}
+.satellite-image-marker.selected{
+  transform:scale(1.30);
+  filter:
+    drop-shadow(0 0 16px color-mix(in srgb,var(--sat-color) 86%,transparent))
+    drop-shadow(0 0 34px color-mix(in srgb,var(--sat-color) 24%,transparent))
+    drop-shadow(0 0 54px color-mix(in srgb,var(--sat-color) 12%,transparent))
+    drop-shadow(0 2px 5px rgba(0,0,0,.50)) !important;
+}
+
+/* ========================================================================== */
+/* v2.9 — ficha de situación + experiencia móvil                              */
+/* ========================================================================== */
+:root{--mobile-dock-h:0px}
+
+.detail-hero{border:1px solid #2c3c6d;background:linear-gradient(180deg,rgba(22,35,78,.92),rgba(12,19,48,.88));border-radius:.82rem;padding:.7rem;box-shadow:0 10px 24px rgba(0,0,0,.18)}
+.detail-heading{min-width:0}.detail-heading h3{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.detail-situation{margin-top:.55rem;color:#dce8ff;font-size:.86rem;line-height:1.45}
+.detail-primary-actions{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:.38rem;margin-top:.65rem}
+.detail-primary-actions button{min-height:38px}
+.quick-status-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.4rem;margin-top:.55rem}
+.quick-status{border:1px solid #273762;background:rgba(9,16,40,.86);border-radius:.65rem;padding:.48rem;min-width:0}
+.quick-status span{display:block;color:var(--muted);font-size:.67rem;text-transform:uppercase;letter-spacing:.045em}
+.quick-status strong{display:block;margin-top:.12rem;font-size:.89rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.quick-status small{display:block;margin-top:.08rem;color:#bcc9e6;font-size:.67rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.detail-block{margin-top:.58rem;border:1px solid #26345f;background:rgba(12,19,48,.58);border-radius:.72rem;padding:.58rem}
+.detail-block h4{margin:.02rem 0 .42rem}
+.next-pass-hero{border-radius:.62rem;background:linear-gradient(135deg,rgba(35,57,117,.55),rgba(12,21,53,.7));border:1px solid #334a82;padding:.58rem;margin-bottom:.38rem}
+.next-pass-empty{color:var(--muted);font-size:.8rem}
+.next-pass-main{display:flex;align-items:flex-start;justify-content:space-between;gap:.65rem}
+.next-pass-time strong{font-size:1.03rem;display:block}.next-pass-time small{display:block;color:var(--muted);margin-top:.08rem}
+.next-pass-elevation{text-align:right}.next-pass-elevation strong{font-size:1.12rem;display:block}.next-pass-elevation small{color:var(--muted)}
+.next-pass-meta{display:flex;gap:.3rem;flex-wrap:wrap;margin-top:.48rem}
+.observer-situation{font-size:.8rem;color:#d5e0f5;margin-bottom:.42rem;line-height:1.4}
+.detail-advanced{margin-top:.58rem;border:1px solid #25345e;background:rgba(10,16,40,.55);border-radius:.72rem;padding:.55rem}
+.detail-advanced summary{cursor:pointer;font-weight:700;color:#cbd7ef;user-select:none}
+.detail-advanced[open] summary{margin-bottom:.5rem}
+.detail-advanced h4:first-of-type{margin-top:.2rem}
+
+.mobile-sheet-handle{display:none}
+.mobile-selected-card,.mobile-dock{display:none}
+
+@media(max-width:760px){
+  :root{--mobile-dock-h:62px;--header-h:48px}
+  body{overscroll-behavior:none}
+  .topbar{min-height:var(--header-h);padding:.3rem .42rem;gap:.35rem}
+  .brand{min-width:0}.brand h1{font-size:.88rem}.brand__icon{width:28px;height:28px}.brand small{display:none}
+  #mobileMenuBtn{width:40px;height:40px}
+
+  /* Controles secundarios: panel de capas, no carrusel horizontal. */
+  .top-actions{display:none;position:fixed;z-index:1700;left:6px;right:6px;top:calc(var(--header-h) + 5px);margin:0;padding:.6rem;max-height:calc(100dvh - var(--header-h) - var(--mobile-dock-h) - 18px);overflow-y:auto;overflow-x:hidden;background:rgba(11,16,32,.985);border:1px solid var(--line);border-radius:.85rem;box-shadow:var(--shadow);grid-template-columns:repeat(4,minmax(0,1fr));align-items:stretch;gap:.42rem}
+  .top-actions.open{display:grid}
+  .top-actions>.icon-btn{width:100%;height:44px}
+  .top-actions>.compact-control{display:flex;flex-direction:column;align-items:stretch;gap:.2rem;grid-column:span 2;font-size:.7rem}
+  .top-actions>.compact-control span{display:block}
+  .top-actions>.compact-control select{width:100%;max-width:none;min-height:42px}
+  #fullscreenBtn,#lowPowerBtn{grid-column:auto}
+
+  /* Bottom sheet. Cerrado deja el mapa completamente utilizable. */
+  .side-panel{top:auto;left:5px;right:5px;bottom:calc(var(--mobile-dock-h) + 6px + var(--safe-bottom));width:auto;height:50dvh;max-height:none;border-radius:1rem 1rem .72rem .72rem;transition:height .22s ease,transform .22s ease;backdrop-filter:blur(9px);box-shadow:0 -10px 32px rgba(0,0,0,.36)}
+  .side-panel.mobile-expanded{height:min(82dvh,calc(100dvh - var(--header-h) - var(--mobile-dock-h) - 14px))}
+  .mobile-sheet-handle{display:block!important;position:relative;width:100%;height:24px;min-height:24px;border:0;background:transparent;padding:0;cursor:pointer}
+  .mobile-sheet-handle span{display:block;width:44px;height:4px;border-radius:99px;background:#53658f;margin:8px auto 0}
+  .panel-head{padding:.28rem .62rem .42rem;align-items:center}.panel-head h2{font-size:.94rem}.panel-head .muted{font-size:.7rem}
+  #panelCloseBtn{width:38px;height:38px}
+  .tabs{position:sticky;top:0;z-index:4;padding:.35rem .45rem;background:rgba(18,24,50,.985)}
+  .tab{min-height:40px}
+  .tab-page{padding:.48rem}
+  .scroll-list{overscroll-behavior:contain}
+
+  /* Targets táctiles más cómodos. */
+  .small-btn,.primary-btn{min-height:40px}
+  .mini-icon{min-width:38px;min-height:38px}
+  .text-input,.datetime-input{min-height:42px;font-size:16px}
+  .text-area{font-size:16px}
+  .sat-card,.catalog-card,.pass-card{padding:.62rem;margin-bottom:.5rem}
+  .sat-card__actions{gap:.38rem}
+  .sat-card__actions .small-btn{padding:.38rem .65rem}
+  .category-grid{grid-template-columns:repeat(2,1fr)}
+  .category-grid button{min-height:42px}
+
+  /* Ficha: primero la situación, los datos técnicos quedan secundarios. */
+  .details-page{padding:.42rem!important}
+  .detail-hero{padding:.58rem;border-radius:.75rem}
+  .detail-title-row{align-items:flex-start;gap:.45rem}
+  .detail-identity{gap:.45rem;min-width:0;flex:1}.detail-sat-icon{width:46px;height:46px}
+  .detail-actions{gap:.3rem}.detail-actions .small-btn{padding:.32rem .52rem;min-height:36px}.detail-color-picker{width:36px;height:36px}
+  .detail-primary-actions{grid-template-columns:1fr 1fr 1fr}.detail-primary-actions button{padding:.4rem .32rem;font-size:.78rem}
+  .detail-situation{font-size:.8rem}
+  .badges{margin-top:.38rem}
+  .quick-status-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:.34rem}
+  .quick-status{padding:.46rem}.quick-status strong{font-size:.86rem}
+  .detail-block,.detail-advanced{margin-top:.45rem;padding:.5rem}
+  .metric-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:.32rem}
+  .metric{padding:.42rem}.metric strong{font-size:.83rem}
+  .pass-list .pass-card:not(:first-child){display:none}
+  .next-pass-main{gap:.4rem}.next-pass-time strong{font-size:.95rem}.next-pass-elevation strong{font-size:1.02rem}
+
+  /* Navegación principal móvil. */
+  .mobile-dock{display:grid!important;position:fixed;z-index:1800;left:0;right:0;bottom:0;height:calc(var(--mobile-dock-h) + var(--safe-bottom));padding:4px 5px var(--safe-bottom);grid-template-columns:repeat(5,1fr);background:rgba(8,13,29,.985);border-top:1px solid #28365f;box-shadow:0 -8px 24px rgba(0,0,0,.28)}
+  .mobile-dock button{border:0;background:transparent;color:#93a5ca;border-radius:.55rem;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:1px;min-width:0;padding:2px}
+  .mobile-dock button span{font-size:1.08rem;line-height:1}.mobile-dock button small{font-size:.63rem;line-height:1.05}
+  .mobile-dock button.active{color:#fff;background:#172654}
+
+  .mobile-selected-card{display:flex!important;position:fixed;z-index:1350;left:8px;right:8px;bottom:calc(var(--mobile-dock-h) + 9px + var(--safe-bottom));min-height:54px;align-items:center;gap:.5rem;padding:.42rem .55rem;border:1px solid #344775;border-radius:.75rem;background:rgba(14,21,48,.94);color:var(--text);box-shadow:var(--shadow);backdrop-filter:blur(8px);text-align:left}
+  .mobile-selected-card[hidden]{display:none!important}
+  .mobile-selected-card img{width:36px;height:36px;object-fit:contain;flex:none}
+  .mobile-selected-main{display:block;min-width:0;flex:1}.mobile-selected-main strong,.mobile-selected-main small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mobile-selected-main strong{font-size:.82rem}.mobile-selected-main small{font-size:.69rem;color:var(--muted);margin-top:2px}
+  .mobile-selected-chevron{font-size:1rem;color:#a9b9da}
+
+  .floating-panel-btn{display:none!important}
+
+  /* El panel temporal es una hoja propia y no compite con el panel de satélites. */
+  .time-controls{position:fixed;left:6px;right:6px;bottom:calc(var(--mobile-dock-h) + 8px + var(--safe-bottom));transform:none;width:auto;grid-template-columns:auto 1fr auto;grid-template-rows:auto auto auto;z-index:1750;border-radius:.85rem;padding:.55rem}
+  .datetime-input{grid-column:1/-1;grid-row:2}.time-slider{grid-row:3}.rate-label{text-align:center}
+  .toast-host{top:calc(var(--header-h) + 6px);max-width:94vw}
+}
+
+@media(max-width:390px){
+  .detail-primary-actions{grid-template-columns:1fr 1fr}.detail-primary-actions #detailCenterBtn{grid-column:1/-1}
+  .detail-actions .small-btn{font-size:.72rem;padding:.3rem .4rem}
+  .quick-status-grid{grid-template-columns:1fr 1fr}
+  .mobile-dock button small{font-size:.58rem}
+}
+
+@media(max-height:560px) and (orientation:landscape) and (max-width:900px){
+  :root{--mobile-dock-h:52px}
+  .side-panel{height:70dvh;left:45%;right:5px;bottom:calc(var(--mobile-dock-h) + 5px);border-radius:.8rem}
+  .side-panel.mobile-expanded{height:calc(100dvh - var(--header-h) - var(--mobile-dock-h) - 8px)}
+  .mobile-selected-card{left:8px;right:56%;bottom:calc(var(--mobile-dock-h) + 7px)}
+}
+
+/* ========================================================================== */
+/* v3.0 — metadatos de misión + control explícito del dock móvil              */
+/* ========================================================================== */
+.catalog-card__mission{margin-top:.22rem;color:#dbe6fb;font-size:.76rem;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.catalog-card__facts{display:flex;gap:.28rem;flex-wrap:wrap;margin-top:.28rem}
+.catalog-card__facts span{border:1px solid #31436f;background:#0f1838;border-radius:999px;padding:.12rem .35rem;color:#aebddd;font-size:.66rem}
+.satellite-info-block{background:linear-gradient(180deg,rgba(15,25,57,.72),rgba(9,16,39,.72))}
+.mission-summary{font-size:.88rem;font-weight:700;color:#e2ecff;margin-bottom:.5rem}
+.satellite-info-grid{margin-top:.15rem}
+.physical-info{margin-top:.48rem;padding:.42rem .5rem;border-left:3px solid #40578d;background:rgba(7,13,32,.52);border-radius:.3rem;color:#b8c7e3;font-size:.75rem;line-height:1.4}
+.physical-info strong{color:#e1e9f8}.physical-info small{color:#91a2c2}
+
+@media(max-width:760px){
+  html.mobile-dock-hidden{--mobile-dock-h:0px}
+  .mobile-dock.menu-hidden{display:none!important}
+  #mobileMenuBtn.active{background:#172654;box-shadow:inset 0 0 0 2px rgba(106,168,255,.55)}
+  .catalog-card__mission{white-space:normal;line-height:1.25}
+  .catalog-card__facts{margin-top:.32rem}
+  .mission-summary{font-size:.82rem}
+  .physical-info{font-size:.72rem}
+}
+
+/* ========================================================================== */
+/* v1.0.0 — reorganización móvil estable                                      */
+/* ========================================================================== */
+.mobile-header-actions,.mobile-map-action,.mobile-visible-count,.mobile-layers-title{display:none}
+
+@media(max-width:760px){
+  .mobile-header-actions{display:flex!important;align-items:center;gap:.32rem;margin-left:auto}
+  .mobile-header-actions .icon-btn{width:40px;height:40px}
+  #mobileMenuBtn{margin:0}
+  #mobileFullscreenBtn.active{background:#172654;box-shadow:inset 0 0 0 2px rgba(106,168,255,.55)}
+
+  /* Pantalla completa y ubicación quedan siempre a mano sin abrir paneles. */
+  .mobile-map-action{display:grid!important;position:absolute;z-index:1125;right:10px;top:10px;width:44px;height:44px;place-items:center;border:1px solid #344775;border-radius:50%;background:rgba(12,19,43,.90);color:#fff;box-shadow:0 8px 22px rgba(0,0,0,.30);backdrop-filter:blur(7px);font-size:1.22rem}
+  .mobile-map-action:active{transform:scale(.96)}
+
+  /* Contador discreto: informa de cuántos satélites están realmente en pantalla. */
+  .mobile-visible-count{display:flex!important;position:absolute;z-index:1120;left:10px;top:10px;height:38px;align-items:center;gap:.3rem;padding:0 .58rem;border:1px solid #344775;border-radius:999px;background:rgba(12,19,43,.88);color:#dfe9fb;box-shadow:0 7px 20px rgba(0,0,0,.24);backdrop-filter:blur(7px)}
+  .mobile-visible-count[hidden]{display:none!important}
+  .mobile-visible-count span{font-size:.9rem}.mobile-visible-count strong{font-size:.8rem}.mobile-visible-count small{font-size:.66rem;color:#aebddd}
+
+  /* Capas pasa a ser una auténtica hoja inferior. */
+  .top-actions{top:auto!important;bottom:calc(var(--mobile-dock-h) + 7px + var(--safe-bottom));left:5px;right:5px;max-height:min(68dvh,620px);border-radius:1rem 1rem .72rem .72rem;padding:.65rem;grid-template-columns:repeat(4,minmax(0,1fr));box-shadow:0 -10px 32px rgba(0,0,0,.38)}
+  .mobile-layers-title{display:flex!important;grid-column:1/-1;flex-direction:column;gap:.06rem;padding:.12rem .12rem .5rem;border-bottom:1px solid rgba(39,51,95,.7);margin-bottom:.08rem}
+  .mobile-layers-title strong{font-size:.92rem}.mobile-layers-title small{font-size:.69rem;color:var(--muted)}
+  #locateBtn,#timeToggleBtn,#fullscreenBtn{display:none!important}
+  #lowPowerBtn{grid-column:auto}
+
+  /* Satélites agrupa Seguidos y Catálogo en un único destino del dock. */
+  .side-panel{height:52dvh}
+  .side-panel.mobile-expanded{height:min(84dvh,calc(100dvh - var(--header-h) - var(--mobile-dock-h) - 12px))}
+  .mobile-sheet-handle{touch-action:pan-y}
+
+  /* La tarjeta seleccionada es estable: nunca cambia por sí sola a otro satélite. */
+  .mobile-selected-card{touch-action:pan-y}
+  .mobile-selected-card::after{content:'Desliza hacia arriba para abrir';position:absolute;right:38px;bottom:4px;font-size:.54rem;color:#7284aa;opacity:.75}
+
+  /* El dock es la navegación primaria; ☰ únicamente lo oculta/muestra. */
+  .mobile-dock button[data-mobile-view="satellites"] span{font-size:1.03rem}
+
+  /* En modo inmersivo las acciones flotantes siguen disponibles y la tarjeta baja al borde. */
+  html.mobile-dock-hidden .mobile-selected-card{bottom:calc(9px + var(--safe-bottom))}
+  html.mobile-dock-hidden .top-actions{bottom:calc(7px + var(--safe-bottom))}
+  html.mobile-dock-hidden .time-controls{bottom:calc(8px + var(--safe-bottom))}
+  html.mobile-dock-hidden .side-panel{bottom:calc(6px + var(--safe-bottom))}
+}
+
+@media(max-width:390px){
+  .mobile-selected-card::after{display:none}
+  .mobile-visible-count small{display:none}
+}
+
+@media(max-width:760px){
+  .top-actions>.icon-btn[data-mobile-label]{height:54px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:1rem}
+  .top-actions>.icon-btn[data-mobile-label]::after{content:attr(data-mobile-label);font-size:.61rem;line-height:1;color:#aebddd;font-weight:600}
+  .top-actions>.icon-btn[data-mobile-label].active::after{color:#e8f0ff}
+  .mobile-map-action.active{background:#173569;border-color:#5d83d5;box-shadow:0 0 0 3px rgba(74,125,231,.22),0 8px 22px rgba(0,0,0,.30)}
+}
