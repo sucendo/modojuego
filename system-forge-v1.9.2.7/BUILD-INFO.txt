@@ -1,0 +1,35 @@
+System Forge v1.9.2.7
+=====================
+
+Base exacta usada:
+  system-forge-v1.9.2.6.zip
+  SHA-256: c038936ddbf66f08b234d010924d6fe192ee9c90c07d1df42c542c10c98241ea
+
+Cambios sobre la base:
+  - README.md
+  - index.html
+  - src/catalog/voyastris-galaxy.js
+  - setup-voyastris-offline.cmd (nuevo)
+  - tools/install-voyastris-offline.mjs (nuevo)
+  - tools/smoke-test-voyastris.mjs (nuevo)
+  - src/catalog/voyastris-source/README.txt (nuevo)
+
+Revisiones Voyastris exigidas por el instalador:
+  galaxy.js  Git blob b79b61ba4523005daa9433d3fd63dbd0c3f1dcc4
+  systems.js Git blob 123ceea4c5557f99e232ac8390cedd4a509f3fe5
+
+El catálogo privado NO se distribuye dentro de este ZIP. setup-voyastris-offline.cmd
+lo copia byte a byte desde el checkout local autorizado del usuario y verifica los
+Git blob SHA anteriores antes de habilitarlo.
+
+Validación de build realizada:
+  - sintaxis JS del nuevo cargador: OK
+  - sintaxis Node de instalador y smoke-test: OK
+  - índice local: 353 sistemas: OK
+  - mapeo de jerarquía Barnard / Wolf 359 / Lalande 21185 con fixture: OK
+  - cargador de catálogo sin URL remota ni fetch(): OK
+  - instalador: copia byte a byte: OK
+  - instalador: rechazo de revisión no coincidente: OK
+
+Nota: Three.js permanece como dependencia CDN del index.html. La corrección offline
+se refiere al catálogo Voyastris.
