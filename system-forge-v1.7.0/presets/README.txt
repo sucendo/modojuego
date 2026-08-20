@@ -1,1 +1,0 @@
-Los presets completos pueden exportarse desde System Forge con «Preset JSON». Estos metadatos acompañan el proyecto; la app mantiene Sistema Solar y Canopus/Arrakis embebidos para funcionar al abrir index.html directamente.
