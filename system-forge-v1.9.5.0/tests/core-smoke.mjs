@@ -1,0 +1,11 @@
+import {createRequire} from 'node:module';
+import assert from 'node:assert/strict';
+const require=createRequire(import.meta.url);
+global.window={SystemForgeCore:{}};
+require('../src/app/event-bus.js');
+require('../src/app/preferences.js');
+const {EventBus,PreferenceStore}=window.SystemForgeCore;
+const bus=new EventBus();let seen=0;const off=bus.on('body:selected',p=>{seen+=p.id==='earth'?1:0});bus.emit('body:selected',{id:'earth'});off();bus.emit('body:selected',{id:'earth'});assert.equal(seen,1);
+const data=new Map([['legacy',JSON.stringify({showPerformancePanel:false,cameraTravelDuration:3})]]);const storage={getItem:k=>data.get(k)||null,setItem:(k,v)=>data.set(k,v)};
+const prefs=new PreferenceStore({key:'current',legacyKeys:['legacy'],defaults:{showPerformancePanel:true,cameraTravelDuration:1.5},storage});assert.equal(prefs.get('showPerformancePanel'),false);assert.equal(prefs.setNumber('cameraTravelDuration',99,.1,20),20);assert.equal(JSON.parse(data.get('current')).cameraTravelDuration,20);
+console.log('core-smoke OK');

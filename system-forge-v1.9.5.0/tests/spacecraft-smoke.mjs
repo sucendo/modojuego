@@ -1,0 +1,14 @@
+import {createRequire} from 'node:module';
+import assert from 'node:assert/strict';
+const require=createRequire(import.meta.url);
+global.window={SystemForgeCore:{}};
+require('../src/model/spacecraft.js');
+const S=window.SystemForgeCore.SpacecraftModel;
+assert.equal(S.isSpacecraft({kind:'spacecraft'}),true);
+assert.equal(S.classLabel('probe'),'sonda');
+assert.equal(S.classLabel('crewed'),'nave tripulada');
+assert.ok(S.massEarthFromKg(1000)>0&&S.massEarthFromKg(1000)<1e-20);
+const craft={kind:'spacecraft',dryMassKg:900,propellantMassKg:100};S.normalize(craft);
+assert.equal(craft.spacecraftClass,'other');assert.equal(craft.missionStatus,'planned');assert.equal(S.totalMassKg(craft),1000);assert.equal(S.defaultRadiusKm(craft),.005);
+assert.equal(S.reducedFollower({kind:'spacecraft'}),true);assert.equal(S.reducedFollower({kind:'moon'}),true);assert.equal(S.reducedFollower({kind:'planet'}),false);
+console.log('spacecraft-smoke OK');

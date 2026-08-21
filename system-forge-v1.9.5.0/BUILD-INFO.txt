@@ -1,0 +1,16 @@
+System Forge v1.9.5.0
+
+Scientific Instruments I + Spacecraft I
+
+Cambios principales:
+- Instrumento Medir A↔B con inspector relativo y línea 3D.
+- Distancia, tiempo-luz, velocidades, energía/momento angular y elementos relativos.
+- Creación/edición de spacecraft y nueva capa/categoría de etiquetas.
+- Preset Solar ampliado a 75 cuerpos: ISS, Hubble, Parker Solar Probe, Voyager 1 y Voyager 2.
+- Estados observacionales/modelados documentados con epoch y limitaciones de propagación.
+- Spacecraft I permanece balístico: sin empuje, maniobras, drag/reboost ni consumo dinámico.
+- appVersion 1.9.5.0; schema 22.
+
+Dependencias:
+- Three.js 0.180.0 sigue cargándose desde jsDelivr.
+- El catálogo privado de Voyastris se instala localmente mediante setup-voyastris-offline.cmd y no se incluye en el ZIP público/base.

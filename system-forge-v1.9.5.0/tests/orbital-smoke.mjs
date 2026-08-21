@@ -1,0 +1,12 @@
+import {createRequire} from 'node:module';
+import assert from 'node:assert/strict';
+const require=createRequire(import.meta.url);
+global.window={SystemForgeCore:{}};
+require('../src/analysis/orbital-dynamics.js');
+const mu=4*Math.PI*Math.PI;
+const e=window.SystemForgeCore.OrbitalDynamics.elementsFromState([1,0,0],[0,0,-2*Math.PI],mu);
+assert.ok(e);
+assert.ok(Math.abs(e.aAU-1)<1e-10,`a=${e.aAU}`);
+assert.ok(e.e<1e-10,`e=${e.e}`);
+assert.ok(Math.abs(e.periodYears-1)<1e-10,`P=${e.periodYears}`);
+console.log('orbital-smoke OK');

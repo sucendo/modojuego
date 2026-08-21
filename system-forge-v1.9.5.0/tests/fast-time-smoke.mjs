@@ -1,0 +1,15 @@
+import {createRequire} from 'node:module';
+import assert from 'node:assert/strict';
+const require=createRequire(import.meta.url);
+global.window={SystemForgeCore:{}};
+require('../src/physics/fast-time.js');
+const F=window.SystemForgeCore.FastTimeController;
+assert.equal(F.TIME_PRESETS.length,28);
+assert.deepEqual(F.TIME_PRESETS[15],['1 mes',1/12]);
+assert.equal(F.chooseIntegrationMode({current:'full',fullReq:.83,fullBudget:1}), 'reduced');
+assert.equal(F.chooseIntegrationMode({current:'full',fullReq:.82,fullBudget:1}), 'full');
+assert.equal(F.chooseIntegrationMode({current:'reduced',fullReq:.49,fullBudget:1,reducedReq:2,reducedBudget:1}), 'full');
+assert.equal(F.chooseIntegrationMode({current:'reduced',fullReq:.6,fullBudget:1,reducedReq:.91,reducedBudget:1,forceReduced:false}), 'kepler');
+assert.equal(F.chooseIntegrationMode({current:'kepler',reducedReq:.54,reducedBudget:1,forceReduced:false}), 'reduced');
+assert.equal(F.chooseIntegrationMode({current:'kepler',reducedReq:2,reducedBudget:1,forceReduced:true}), 'reduced');
+console.log('fast-time-smoke OK');
