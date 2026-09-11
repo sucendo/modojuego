@@ -1,0 +1,48 @@
+<svg viewBox="0 0 0.2 1.5" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <defs>
+    <filter id="j">
+      <feGaussianBlur stdDeviation=".25316"></feGaussianBlur>
+    </filter>
+    <linearGradient id="a">
+      <stop stop-color="#8a5529" offset="0"></stop>
+      <stop stop-color="#e6bb72" offset="0.2956"></stop>
+      <stop stop-color="#fffee5" offset="1"></stop>
+    </linearGradient>
+    <linearGradient id="h" x1="291.13" x2="290.83" y1="629.8" y2="617.78" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#a16f3b" offset="0"></stop>
+      <stop stop-color="#a16f3b" stop-opacity="0" offset="1"></stop>
+    </linearGradient>
+    <linearGradient id="f" x2="0" y1="622.24" y2="625.35" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#a16f3b" offset="0"></stop>
+      <stop stop-color="#e5ba71" offset="1"></stop>
+    </linearGradient>
+    <linearGradient id="e" x1="284.27" x2="295.06" gradientUnits="userSpaceOnUse" spreadMethod="reflect">
+      <stop stop-color="#fefcf7" offset="0"></stop>
+      <stop stop-color="#e3cfa9" offset="1"></stop>
+    </linearGradient>
+    <linearGradient id="d" x1="276.73" x2="294.36" gradientUnits="userSpaceOnUse" spreadMethod="reflect">
+      <stop stop-color="#2e0300" offset="0"></stop>
+      <stop stop-color="#e9b276" offset="1"></stop>
+    </linearGradient>
+    <linearGradient id="c" x2="0" y1="403.02" y2="408.13" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fcf9f0" offset="0"></stop>
+      <stop stop-color="#fcf9f0" stop-opacity="0" offset="1"></stop>
+    </linearGradient>
+    <linearGradient id="i" x1="270.05" x2="294.03" gradientUnits="userSpaceOnUse" spreadMethod="reflect" xlink:href="#a"></linearGradient>
+    <linearGradient id="g" x1="270.07" x2="294.06" gradientUnits="userSpaceOnUse" spreadMethod="reflect" xlink:href="#a"></linearGradient>
+    <linearGradient id="b" x1="277.11" x2="294.16" gradientUnits="userSpaceOnUse" spreadMethod="reflect" xlink:href="#a"></linearGradient>
+  </defs>
+  <g transform="matrix(0.004055, 0, 0, 0.004713, 0, 0)" style="">
+    <defs></defs>
+    <g transform="translate(-269.47 -311.65)">
+      <path d="m274.95 619.67h38.163v6.6109h-38.163z" fill="url(#f)"></path>
+      <path d="m276.27 408.93v14.874l-6.7994 22.735v175.46h49.136v-175.46l-6.7994-22.735v-14.874h-35.537z" fill="url(#i)"></path>
+      <path d="m270.1 617.78h48.079v4.2069h-48.079z" fill="url(#h)" opacity=".65141"></path>
+      <path d="m269.47 625.97v3.8632h49.136v-3.8632h-49.136z" fill="url(#g)"></path>
+      <path d="m294.32 311.65c-10.158 24.978-16.622 57.687-17.586 93.757h35.171c-0.96349-36.07-7.4278-68.779-17.586-93.757z" fill="url(#d)"></path>
+      <path d="m276.7 403.89v22.074h34.927v-22.074h-34.927z" fill="url(#b)"></path>
+      <path transform="matrix(1.7322 0 0 1.6998 -198.24 -440.78)" d="m274.17 508.85-3.8231 12.764v1.0536h27.846v-1.0536l-3.8231-12.764h-20.199z" fill="url(#e)" filter="url(#j)" opacity=".86268"></path>
+      <path d="m276.28 403.92h35.458v4.2069h-35.458z" fill="url(#c)"></path>
+    </g>
+  </g>
+</svg>
