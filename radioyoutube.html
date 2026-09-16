@@ -4,7 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <meta name="referrer" content="strict-origin-when-cross-origin"/>
-  <title>RadioYouTube v7.6 · Reproductor multimedia</title>
+  <title>RadioYouTube v7.7 · Reproductor multimedia</title>
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="img/radioyoutube/favicon.png" sizes="32x32"/>
@@ -899,6 +899,24 @@ body.pocket-active{
 }
 #pocket-overlay.active{display:block}
 
+/* v7.7: bloqueo REAL del modo bolsillo. Mientras está activo, ningún
+   control/overlay del reproductor puede recibir eventos detrás de la capa negra. */
+body.pocket-active #video-container > :not(#pocket-overlay){
+  pointer-events:none !important;
+}
+body.pocket-active #controls-container,
+body.pocket-active #gesture-overlay,
+body.pocket-active #ad-overlay{
+  visibility:hidden !important;
+  opacity:0 !important;
+  pointer-events:none !important;
+}
+body.pocket-active #pocket-overlay{
+  display:block !important;
+  pointer-events:auto !important;
+  z-index:2147483647 !important;
+}
+
 #pocket-overlay .pocket-ambient{
   position:absolute; inset:0;
   background:#000;
@@ -961,7 +979,7 @@ body.pocket-active{
 }
 
 /* =========================================================
-   RadioYouTube v7.6 · Design System profesional
+   RadioYouTube v7.7 · Design System profesional
    Escritorio y móvil usan composiciones diferentes.
    ========================================================= */
 :root{
@@ -1293,7 +1311,7 @@ ul.list li.now-playing::before{content:"";position:absolute;left:0;top:12px;bott
 
 
 /* =========================================================
-   RadioYouTube v7.6 · Modos móvil + PiP + multitarea
+   RadioYouTube v7.7 · Modos móvil + PiP + multitarea
    ========================================================= */
 #player-stack{min-width:0;width:100%;display:flex;flex-direction:column;gap:10px}
 #now-playing-card{
@@ -1354,7 +1372,7 @@ ul.list .row-left{flex:1 1 auto;min-width:0}
 
 
 /* =========================================================
-   v7.6 · Modos móvil: Flotante / PiP + Multitarea
+   v7.7 · Modos móvil: Flotante / PiP + Multitarea
    ========================================================= */
 #multitask-banner{
   display:none;position:fixed;z-index:1490;left:10px;right:10px;top:max(10px,env(safe-area-inset-top));
@@ -1419,11 +1437,10 @@ body.pip-window #controls-container{height:48px!important}
   body.multitask-active #player-stack{display:flex!important;flex-direction:column!important;width:100%!important;gap:7px!important;margin:0!important}
   body.multitask-active #video-container{
     display:block!important;width:100%!important;max-width:none!important;border-radius:0!important;box-shadow:none!important;
-    min-height:210px!important;max-height:calc(100dvh - 150px)!important
+    height:calc(100dvh - 82px)!important;min-height:120px!important;max-height:none!important;aspect-ratio:auto!important
   }
-  body.multitask-active #now-playing-card{
-    display:grid!important;margin:0 8px!important;border-radius:13px!important;padding:7px 8px!important;min-height:62px!important
-  }
+  /* En pantalla dividida interesa reservar el máximo espacio posible al reproductor. */
+  body.multitask-active #now-playing-card{display:none!important}
   body.multitask-active #controls-container{display:flex!important}
   body.multitask-active #fullscreenButton,
   body.multitask-active #pocketButton,
@@ -1432,11 +1449,18 @@ body.pip-window #controls-container{height:48px!important}
   body.multitask-active #time-display{display:none!important}
   .mode-guide-actions .btn{flex:1 1 140px}
 }
+@media (max-width:980px) and (max-height:430px){
+  body.multitask-active{padding-top:56px!important;overflow:hidden!important}
+  body.multitask-active #multitask-banner{top:4px;left:5px;right:5px;padding:6px 8px;border-radius:11px}
+  body.multitask-active #multitask-banner .copy small{display:none}
+  body.multitask-active #multitaskExit{width:32px;height:32px;min-width:32px;min-height:32px}
+  body.multitask-active #video-container{height:calc(100dvh - 58px)!important;min-height:90px!important}
+}
 
 
 
 /* =========================================================
-   RadioYouTube v7.6 · Biblioteca + diálogo de carga
+   RadioYouTube v7.7 · Biblioteca + diálogo de carga
    ========================================================= */
 body.modal-open{overflow:hidden}
 .app-header-actions{display:flex;align-items:center;gap:9px}
@@ -1548,7 +1572,7 @@ body.modal-open{overflow:hidden}
       </div>
     </div>
     <div class="app-header-actions">
-      <span class="version-chip">v7.6</span>
+      <span class="version-chip">v7.7</span>
       <button id="open-load-dialog" class="header-add-btn" type="button" title="Añadir contenido" aria-label="Añadir contenido">
         <span class="material-icons" aria-hidden="true">add</span>
         <span class="header-add-label">Añadir contenido</span>
@@ -1779,8 +1803,8 @@ body.modal-open{overflow:hidden}
   <div id="player-more-menu" role="menu" aria-label="Más opciones del reproductor">
     <div class="menu-title">Opciones</div>
     <button class="menu-action" data-player-action="pocket" role="menuitem"><span class="material-icons">shield</span><span class="menu-label">Modo bolsillo</span><span class="menu-value" data-value-for="pocket"></span></button>
-    <button class="menu-action" data-player-action="floating" role="menuitem"><span class="material-icons">picture_in_picture_alt</span><span class="menu-label">Modo flotante</span><span class="menu-value" data-value-for="floating"></span></button>
-    <button class="menu-action" data-player-action="multitask" role="menuitem"><span class="material-icons">splitscreen</span><span class="menu-label">Multitarea</span><span class="menu-value" data-value-for="multitask"></span></button>
+    <button class="menu-action" data-player-action="floating" role="menuitem"><span class="material-icons">picture_in_picture_alt</span><span class="menu-label">Flotante / PiP</span><span class="menu-value" data-value-for="floating"></span></button>
+    <button class="menu-action" data-player-action="multitask" role="menuitem"><span class="material-icons">splitscreen</span><span class="menu-label">Pantalla dividida</span><span class="menu-value" data-value-for="multitask"></span></button>
     <button class="menu-action" data-player-action="radio" role="menuitem"><span class="material-icons">radio</span><span class="menu-label">Modo radio</span><span class="menu-value" data-value-for="radio"></span></button>
     <button class="menu-action" data-player-action="repeat" role="menuitem"><span class="material-icons">repeat</span><span class="menu-label">Repetición</span><span class="menu-value" data-value-for="repeat"></span></button>
     <button class="menu-action" data-player-action="speed" role="menuitem"><span class="material-icons">speed</span><span class="menu-label">Velocidad</span><span class="menu-value" data-value-for="speed"></span></button>
@@ -1921,7 +1945,7 @@ body.modal-open{overflow:hidden}
 
 <script>
 /* =========================================================
-   RadioYouTube v7.6 · UI profesional + Bolsillo + Flotante + Multitarea + PWA
+   RadioYouTube v7.7 · UI profesional + Bolsillo + Flotante + Multitarea + PWA
    - Cola real (Next/Prev) + botón "A cola"
    - Reanudar por vídeo (Continuar / Desde 0)
    - Modo Radio (carátula, menos consumo)
@@ -1965,7 +1989,7 @@ body.modal-open{overflow:hidden}
   let pocketEnteredFullscreen = false;
   let pocketGesture = null;
 
-  // v7.6 · Flotante / PiP + multitarea
+  // v7.7 · Flotante / PiP + multitarea
   let floatingMode = "off"; // off | native | document | prepared
   let floatingWindow = null;
   let floatingRestore = null;
@@ -1980,7 +2004,7 @@ body.modal-open{overflow:hidden}
   let queue = [];
   let queueIndex = -1;
 
-  // v7.6: cola temporal, aleatorio, favoritos y modos móvil
+  // v7.7: cola temporal, aleatorio, favoritos y modos móvil
   const FAVORITES_ID = "favorites";
   let upNext = [];
   let upNextReturnContext = null;
@@ -2140,7 +2164,7 @@ body.modal-open{overflow:hidden}
   };
 
 
-  // --- Navegación móvil v7.6 --------------------------------
+  // --- Navegación móvil v7.7 --------------------------------
   const MOBILE_VIEW_KEY = "ytMobileView";
   function setMobileView(view, persist=true){
     const allowed = ["now","lists","history"];
@@ -2178,7 +2202,7 @@ body.modal-open{overflow:hidden}
 
 
 
-  // --- v7.6 · Diálogo de carga y menús de biblioteca --------
+  // --- v7.7 · Diálogo de carga y menús de biblioteca --------
   function updateLoadDialogListLabel(){
     if (!ui.loadActiveListLabel) return;
     const list = getCurrentList?.();
@@ -2357,9 +2381,12 @@ body.modal-open{overflow:hidden}
       if (v) v.textContent = value;
     };
     set("pocket", pocketMode, pocketMode ? "ON" : "OFF");
-    const floatingLabel = floatingMode === "document" ? "PiP" : floatingMode === "native" ? "PiP" : floatingMode === "prepared" ? "Preparado" : (("documentPictureInPicture" in window || document.pictureInPictureEnabled) ? "Disponible" : "Probar");
+    const realVideo = currentTopLevelVideo();
+    const realPip = !!(realVideo && document.pictureInPictureEnabled && typeof realVideo.requestPictureInPicture === "function");
+    const docPip = !!("documentPictureInPicture" in window && window.isSecureContext);
+    const floatingLabel = floatingMode === "document" || floatingMode === "native" ? "PiP" : (realPip || docPip ? "Disponible" : "No en Android");
     set("floating", floatingMode !== "off", floatingLabel);
-    set("multitask", multitaskMode, multitaskMode ? "ON" : "OFF");
+    set("multitask", multitaskMode, multitaskMode ? "Vista compacta" : "Preparar");
     set("radio", radioMode, radioMode ? "ON" : "OFF");
     set("repeat", repeatMode !== "off", repeatMode === "one" ? "Pista" : repeatMode === "queue" ? "Lista" : "OFF");
     set("speed", playbackRate !== 1, formatRate(playbackRate));
@@ -3946,7 +3973,7 @@ function syncRepeatUI(){
     resizeTimer = setTimeout(resizePlayer, 80);
   }
 
-  // --- v7.6 · Flotante / PiP + Multitarea ------------------
+  // --- v7.7 · Flotante / PiP + Multitarea ------------------
   function currentTopLevelVideo(){
     // Preparado para futuros proveedores HTML5. El iframe de YouTube no expone su <video> por cross-origin.
     return Array.from(document.querySelectorAll("video")).find(v => v.id !== "media-session-anchor" && !v.closest("iframe")) || null;
@@ -3956,16 +3983,17 @@ function syncRepeatUI(){
     if (!ui.modeGuide) return;
     const isFloat = kind === "floating";
     ui.modeGuideIcon.textContent = isFloat ? "picture_in_picture_alt" : "splitscreen";
-    ui.modeGuideTitle.textContent = isFloat ? "Modo flotante" : "Modo multitarea";
-    ui.modeGuideSub.textContent = isFloat ? "Picture-in-Picture · compatibilidad del navegador" : "Pantalla dividida · Android";
+    ui.modeGuideTitle.textContent = isFloat ? "Flotante / Picture-in-Picture" : "Pantalla dividida";
+    ui.modeGuideSub.textContent = isFloat ? "YouTube embebido · limitación de Android" : "RadioYouTube + otra app";
     ui.modeGuideText.innerHTML = isFloat
-      ? "RadioYouTube ha preparado la reproducción para <b>Picture-in-Picture</b>. Si tu navegador permite PiP para el reproductor embebido de YouTube, al salir de la app puede aparecer la ventana flotante."
-      : "He dejado RadioYouTube en una vista compacta para usarlo en <b>pantalla dividida</b>. Abre Apps recientes, toca el icono de la app/navegador y elige <b>Pantalla dividida</b>; después selecciona la otra aplicación.";
+      ? "Con YouTube dentro de un iframe, <b>RadioYouTube no puede forzar PiP en Android</b>. Solo se activará si el navegador dispone de PiP real para el contenido. Para jugar a chess.com mientras escuchas, usa <b>Pantalla dividida</b>."
+      : "RadioYouTube ya está en <b>vista compacta</b>. Ahora abre <b>Apps recientes</b>, toca el icono de RadioYouTube/Chrome, elige <b>Abrir en pantalla dividida</b> y selecciona <b>chess.com</b>. Puedes mover el separador para dejar RadioYouTube en una franja pequeña.";
     ui.modeGuideNoteText.textContent = isFloat
-      ? "YouTube se reproduce dentro de un iframe de otro dominio. En Android una web no puede obligar al vídeo interno a entrar en PiP; depende de Chrome/YouTube y del contenido."
-      : "Una web no puede abrir por sí sola el selector de pantalla dividida de Android. Este modo prepara la interfaz para que RadioYouTube siga visible mientras usas otra app.";
+      ? "Document Picture-in-Picture está orientado a escritorio y la web no puede acceder al <video> interno del iframe de YouTube en Android."
+      : "Android no permite a una página web activar por sí sola la pantalla dividida. RadioYouTube se mantiene visible para que YouTube no pase completamente a segundo plano.";
     ui.modeGuideSecondary.style.display = isFloat ? "inline-flex" : "none";
-    ui.modeGuidePrimary.textContent = isFloat ? "Entendido" : "Ya está preparado";
+    ui.modeGuideSecondary.textContent = "Usar pantalla dividida";
+    ui.modeGuidePrimary.textContent = isFloat ? "Entendido" : "Mostrar Recientes";
     ui.modeGuide.dataset.kind = kind;
     ui.modeGuide.classList.add("open");
   }
@@ -4066,18 +4094,12 @@ function syncRepeatUI(){
     // 2) Document PiP (principalmente escritorio Chromium): movemos el reproductor REAL, no una copia.
     if (await enterDocumentPictureInPicture()) return;
 
-    // 3) Android / iframe YouTube: no existe acceso al <video> interno cross-origin.
-    // Preparamos la sesión y dejamos el vídeo visible; el navegador decidirá si ofrece PiP al salir.
-    if (isFullscreenActive()) {
-      try{ if (document.exitFullscreen) await document.exitFullscreen(); else document.webkitExitFullscreen?.(); }catch{}
-    }
-    if (window.matchMedia("(max-width:980px)").matches) setMobileView("now", false);
-    ui.vc.classList.remove("hide-controls");
-    refreshMediaSession(id);
-    floatingMode = "prepared";
+    // 3) Android + iframe de YouTube: no hay un <video> accesible al documento.
+    // No fingimos que PiP esté activo: explicamos la limitación y ofrecemos pantalla dividida.
+    floatingMode = "off";
     syncMoreMenuUI();
     if (!opts.fromMediaSession) showModeGuide("floating");
-    toast("Modo flotante preparado. Si Android no ofrece PiP, usa Multitarea.");
+    else toast("PiP no está disponible para el iframe de YouTube en este navegador.", "error");
   }
 
   async function toggleFloatingMode(){
@@ -4101,6 +4123,7 @@ function syncRepeatUI(){
     syncMoreMenuUI();
     setTimeout(scheduleResizePlayer, 80);
     if (showGuide) showModeGuide("multitask");
+    else toast("Vista compacta preparada para pantalla dividida.");
   }
 
   async function exitMultitaskMode(showToast=true){
@@ -4279,6 +4302,7 @@ function syncRepeatUI(){
     ui.pocketOverlay.addEventListener("pointerdown", (e) => {
       if (!pocketMode) return;
       e.preventDefault();
+      e.stopPropagation();
       showPocketUi(4000);
       const h = window.innerHeight || document.documentElement.clientHeight || 1;
       // Solo un gesto iniciado en el 38% inferior puede desbloquear.
@@ -4291,6 +4315,7 @@ function syncRepeatUI(){
     ui.pocketOverlay.addEventListener("pointermove", (e) => {
       if (!pocketGesture || pocketGesture.id !== e.pointerId) return;
       e.preventDefault();
+      e.stopPropagation();
       pocketGesture.dy = Math.max(0, pocketGesture.y - e.clientY);
       pocketGesture.dx = Math.abs(e.clientX - pocketGesture.x);
       const p = Math.max(0, Math.min(100, (pocketGesture.dy / REQUIRED) * 100));
@@ -4300,6 +4325,7 @@ function syncRepeatUI(){
     const finish = async (e) => {
       if (!pocketGesture || pocketGesture.id !== e.pointerId) return;
       e.preventDefault();
+      e.stopPropagation();
       const g = pocketGesture;
       const elapsed = performance.now() - g.at;
       const valid = g.dy >= REQUIRED && g.dx < 120 && elapsed >= 220 && elapsed <= 2600;
@@ -4308,7 +4334,13 @@ function syncRepeatUI(){
     };
     ui.pocketOverlay.addEventListener("pointerup", finish, { passive:false });
     ui.pocketOverlay.addEventListener("pointercancel", resetPocketGesture, { passive:false });
-    ui.pocketOverlay.addEventListener("contextmenu", (e) => e.preventDefault());
+    ["click","dblclick","contextmenu"].forEach(type => {
+      ui.pocketOverlay.addEventListener(type, (e) => {
+        if (!pocketMode) return;
+        e.preventDefault();
+        e.stopPropagation();
+      }, { passive:false });
+    });
   }
 
   function isFullscreenActive(){
@@ -4326,6 +4358,7 @@ function syncRepeatUI(){
   }
 
   async function toggleFullScreen(){
+    if (pocketMode) return;
     const el = ui.vc;
     try{
       if (isFullscreenActive()){
@@ -4346,6 +4379,7 @@ function syncRepeatUI(){
   }
 
   function showControls(){
+    if (pocketMode) return;
     clearTimeout(showControls._t);
     ui.vc.classList.remove("hide-controls");
     if (isPlaying){
@@ -4353,6 +4387,7 @@ function syncRepeatUI(){
     }
   }
   function hideControls(){
+    if (pocketMode) return;
     if (!isPlaying) return;
     clearTimeout(showControls._t);
     showControls._t = setTimeout(() => ui.vc.classList.add("hide-controls"), 2000);
@@ -4802,12 +4837,15 @@ if (ui.moreMenu){
   });
 }
 
-// Modos móvil v7.6
+// Modos móvil v7.7
 ui.multitaskExit?.addEventListener("click", () => exitMultitaskMode());
-ui.modeGuidePrimary?.addEventListener("click", () => closeModeGuide());
+ui.modeGuidePrimary?.addEventListener("click", () => {
+  const kind = ui.modeGuide?.dataset.kind || "";
+  closeModeGuide();
+  if (kind === "multitask") toast("Ahora abre <b>Apps recientes</b> → icono de RadioYouTube/Chrome → <b>Pantalla dividida</b> → chess.com.");
+});
 ui.modeGuideSecondary?.addEventListener("click", async () => {
   closeModeGuide();
-  if (floatingMode === "prepared") floatingMode = "off";
   await enterMultitaskMode(true);
 });
 ui.modeGuide?.addEventListener("pointerdown", (e) => { if (e.target === ui.modeGuide) closeModeGuide(); });
@@ -4868,6 +4906,7 @@ ui.speedMenu.addEventListener("click", (e) => {
 
   // Gestos (tap/click)
   ui.vc.addEventListener("pointerup", (e) => {
+    if (pocketMode) { e.preventDefault(); e.stopPropagation(); return; }
     if (ui.vc.classList.contains("video-ended")) return;
 
     // Si el usuario habilitó la interacción con el iframe, no interceptamos (para que pueda clicar dentro)
@@ -5072,6 +5111,7 @@ ui.queueRepeatToggle.addEventListener("click", () => {
 
   // Atajos teclado
   window.addEventListener("keydown", (e) => {
+    if (pocketMode) { e.preventDefault(); return; }
     if (e.target && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")) return;
 
     if (e.code === "Space") { e.preventDefault(); ui.playPause.click(); }
