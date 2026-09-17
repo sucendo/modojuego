@@ -4,7 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <meta name="referrer" content="strict-origin-when-cross-origin"/>
-  <title>RadioYouTube v7.7 · Reproductor multimedia</title>
+  <title>RadioYouTube v7.8 · Reproductor multimedia</title>
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="img/radioyoutube/favicon.png" sizes="32x32"/>
@@ -938,11 +938,16 @@ body.pocket-active #pocket-overlay{
 }
 .pocket-shield .material-icons{font-size:36px;color:#d8efff}
 .pocket-title{font-size:1.15rem;font-weight:900;letter-spacing:.2px}
+.pocket-clock{display:flex;flex-direction:column;align-items:center;text-align:center;margin-bottom:22px;font-variant-numeric:tabular-nums}
+.pocket-weekday{font-size:clamp(1.15rem,4.8vw,1.65rem);font-weight:850;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.92)}
+.pocket-date{margin-top:5px;font-size:clamp(.88rem,3.4vw,1.05rem);font-weight:600;color:rgba(255,255,255,.62)}
+.pocket-time{margin-top:4px;font-size:clamp(4.2rem,19vw,7.6rem);line-height:.98;font-weight:270;letter-spacing:-.055em;color:#fff;text-shadow:0 12px 46px rgba(0,0,0,.45)}
 .pocket-track{
-  max-width:min(86vw,620px); margin-top:8px; text-align:center;
-  color:rgba(255,255,255,.68); font-size:.9rem; white-space:nowrap;
+  max-width:min(88vw,680px); margin-top:10px; text-align:center;
+  color:rgba(255,255,255,.88); font-size:clamp(.9rem,3.5vw,1.05rem); font-weight:760; white-space:nowrap;
   overflow:hidden; text-overflow:ellipsis;
 }
+.pocket-author{max-width:min(86vw,620px);margin-top:5px;text-align:center;color:rgba(255,255,255,.5);font-size:.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pocket-wake{
   margin-top:12px;display:flex;align-items:center;gap:7px;
   padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.055);
@@ -975,7 +980,16 @@ body.pocket-active #pocket-overlay{
 
 @media (max-width:760px){
   #pocketButton{display:inline-flex!important}
-  .pocket-shield{width:62px;height:62px;border-radius:20px}
+  .pocket-shield{width:58px;height:58px;border-radius:18px;margin-bottom:12px}
+  #pocket-overlay .pocket-ui{padding:18px 18px max(24px,env(safe-area-inset-bottom))}
+  .pocket-clock{margin-bottom:16px}
+}
+@media (max-height:520px){
+  .pocket-clock{margin-bottom:8px}.pocket-weekday{font-size:.92rem}.pocket-date{font-size:.76rem;margin-top:2px}
+  .pocket-time{font-size:3.2rem;margin-top:0}.pocket-shield{width:42px;height:42px;border-radius:13px;margin-bottom:7px}
+  .pocket-shield .material-icons{font-size:26px}.pocket-title{font-size:.92rem}.pocket-track{margin-top:5px;font-size:.82rem}
+  .pocket-author{margin-top:2px;font-size:.7rem}.pocket-wake{margin-top:6px;padding:4px 8px;font-size:.68rem}
+  .pocket-unlock{bottom:max(10px,env(safe-area-inset-bottom))}.pocket-unlock-sub{display:none}
 }
 
 /* =========================================================
@@ -1556,6 +1570,15 @@ body.modal-open{overflow:hidden}
   .modern-row-actions .row-favorite-action{display:none}
   .modern-row-actions .mini-btn{width:38px;height:38px}
   #load-dialog.open #load-url-container{display:flex!important}
+  #load-dialog.keyboard-open{align-items:flex-start!important;justify-content:center!important;padding:8px!important;backdrop-filter:none}
+  #load-dialog.keyboard-open #load-url-container{max-height:100%!important;overflow:auto!important;overscroll-behavior:contain;border-radius:18px!important;padding:12px!important;gap:9px!important}
+  #load-dialog.keyboard-open .load-dialog-help,
+  #load-dialog.keyboard-open .load-dialog-divider,
+  #load-dialog.keyboard-open #resume-btn{display:none!important}
+  #load-dialog.keyboard-open .load-dialog-head h3{font-size:1.02rem}
+  #load-dialog.keyboard-open .load-dialog-actions{grid-template-columns:1fr 1fr!important;gap:7px}
+  #load-dialog.keyboard-open .load-choice{min-height:52px!important;padding:8px 9px!important}
+  #load-dialog.keyboard-open .load-choice small{display:none}
 }
 
 </style>
@@ -1572,7 +1595,7 @@ body.modal-open{overflow:hidden}
       </div>
     </div>
     <div class="app-header-actions">
-      <span class="version-chip">v7.7</span>
+      <span class="version-chip">v7.8</span>
       <button id="open-load-dialog" class="header-add-btn" type="button" title="Añadir contenido" aria-label="Añadir contenido">
         <span class="material-icons" aria-hidden="true">add</span>
         <span class="header-add-label">Añadir contenido</span>
@@ -1658,9 +1681,15 @@ body.modal-open{overflow:hidden}
     <div id="pocket-overlay" aria-hidden="true">
       <div class="pocket-ambient"></div>
       <div class="pocket-ui">
+        <div class="pocket-clock" aria-live="off">
+          <div class="pocket-weekday" id="pocket-weekday">—</div>
+          <div class="pocket-date" id="pocket-date">—</div>
+          <div class="pocket-time" id="pocket-time">--:--</div>
+        </div>
         <div class="pocket-shield"><span class="material-icons">shield</span></div>
         <div class="pocket-title">Modo bolsillo</div>
         <div class="pocket-track" id="pocket-track">RadioYouTube</div>
+        <div class="pocket-author" id="pocket-author"></div>
         <div class="pocket-wake" id="pocket-wake"><span class="dot"></span><span id="pocket-wake-text">Preparando pantalla activa…</span></div>
         <div class="pocket-unlock">
           <span class="material-icons">keyboard_arrow_up</span>
@@ -1945,7 +1974,7 @@ body.modal-open{overflow:hidden}
 
 <script>
 /* =========================================================
-   RadioYouTube v7.7 · UI profesional + Bolsillo + Flotante + Multitarea + PWA
+   RadioYouTube v7.8 · UI profesional + Bolsillo inteligente + teclado móvil + PWA
    - Cola real (Next/Prev) + botón "A cola"
    - Reanudar por vídeo (Continuar / Desde 0)
    - Modo Radio (carátula, menos consumo)
@@ -2052,6 +2081,10 @@ body.modal-open{overflow:hidden}
     pocketBtn: $("pocketButton"),
     pocketOverlay: $("pocket-overlay"),
     pocketTrack: $("pocket-track"),
+    pocketAuthor: $("pocket-author"),
+    pocketWeekday: $("pocket-weekday"),
+    pocketDate: $("pocket-date"),
+    pocketTime: $("pocket-time"),
     pocketWake: $("pocket-wake"),
     pocketWakeText: $("pocket-wake-text"),
     pocketUnlockProgress: $("pocket-unlock-progress"),
@@ -2213,11 +2246,47 @@ body.modal-open{overflow:hidden}
     updateLoadDialogListLabel();
     ui.loadDialog?.classList.add("open");
     document.body.classList.add("modal-open");
-    setTimeout(() => { try{ ui.urlInput?.focus({preventScroll:true}); }catch{} }, 50);
+    syncLoadDialogViewport();
+    setTimeout(() => {
+      try{ ui.urlInput?.focus({preventScroll:true}); }catch{}
+      syncLoadDialogViewport();
+    }, 50);
+    setTimeout(syncLoadDialogViewport, 260); // el teclado móvil suele terminar su animación después del focus
   }
+  function resetLoadDialogViewport(){
+    if (!ui.loadDialog) return;
+    ui.loadDialog.classList.remove("keyboard-open");
+    ui.loadDialog.style.removeProperty("inset");
+    ui.loadDialog.style.removeProperty("height");
+    const card = ui.loadDialog.querySelector("#load-url-container");
+    if (card) card.style.removeProperty("max-height");
+  }
+
+  function syncLoadDialogViewport(){
+    if (!ui.loadDialog?.classList.contains("open")) return;
+    const mobile = window.matchMedia("(max-width:760px)").matches;
+    const vv = window.visualViewport;
+    if (!mobile || !vv) { resetLoadDialogViewport(); return; }
+
+    const keyboardHeight = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+    const keyboardOpen = keyboardHeight > 100 || vv.height < window.innerHeight * .78;
+    ui.loadDialog.classList.toggle("keyboard-open", keyboardOpen);
+
+    // El backdrop se ajusta al viewport visual, es decir, a la zona que queda por encima del teclado.
+    ui.loadDialog.style.inset = `${Math.max(0, vv.offsetTop)}px 0 auto 0`;
+    ui.loadDialog.style.height = `${Math.max(220, vv.height)}px`;
+    const card = ui.loadDialog.querySelector("#load-url-container");
+    if (card) card.style.maxHeight = `${Math.max(200, vv.height - 16)}px`;
+
+    if (keyboardOpen) {
+      requestAnimationFrame(() => { try{ ui.urlInput?.scrollIntoView({ block:"nearest", behavior:"auto" }); }catch{} });
+    }
+  }
+
   function closeLoadDialog(){
     ui.loadDialog?.classList.remove("open");
     document.body.classList.remove("modal-open");
+    resetLoadDialogViewport();
   }
 
   function positionContextMenu(menu, trigger){
@@ -2270,6 +2339,12 @@ body.modal-open{overflow:hidden}
   ui.openLoadDialogBtn?.addEventListener("click", (e) => { e.stopPropagation(); openLoadDialog(); });
   ui.closeLoadDialogBtn?.addEventListener("click", closeLoadDialog);
   ui.loadDialog?.addEventListener("pointerdown", (e) => { if (e.target === ui.loadDialog) closeLoadDialog(); });
+  ui.urlInput?.addEventListener("focus", () => setTimeout(syncLoadDialogViewport, 60));
+  ui.urlInput?.addEventListener("blur", () => setTimeout(syncLoadDialogViewport, 120));
+  if (window.visualViewport){
+    window.visualViewport.addEventListener("resize", syncLoadDialogViewport, { passive:true });
+    window.visualViewport.addEventListener("scroll", syncLoadDialogViewport, { passive:true });
+  }
 
   ui.listActionsBtn?.addEventListener("click", (e) => {
     e.stopPropagation(); closeItemActionsMenu();
@@ -4152,6 +4227,44 @@ function syncRepeatUI(){
     ui.pocketWakeText.textContent = text;
   }
 
+  function capitalizeFirst(text){
+    const str = String(text || "");
+    return str ? str.charAt(0).toLocaleUpperCase("es-ES") + str.slice(1) : str;
+  }
+
+  function updatePocketInfo(){
+    const now = new Date();
+    if (ui.pocketWeekday) ui.pocketWeekday.textContent = capitalizeFirst(new Intl.DateTimeFormat("es-ES", { weekday:"long" }).format(now));
+    if (ui.pocketDate) ui.pocketDate.textContent = capitalizeFirst(new Intl.DateTimeFormat("es-ES", { day:"numeric", month:"long", year:"numeric" }).format(now));
+    if (ui.pocketTime) ui.pocketTime.textContent = new Intl.DateTimeFormat("es-ES", { hour:"2-digit", minute:"2-digit", hour12:false }).format(now);
+    if (ui.pocketTrack) ui.pocketTrack.textContent = getCurrentTrackLabel();
+    if (ui.pocketAuthor){
+      const id = getExpectedVideoId() || currentVideoId || lastKnownVideoId;
+      const author = id ? getBestAuthorForId(id) : "";
+      ui.pocketAuthor.textContent = (author && author !== "YouTube") ? author : "";
+    }
+  }
+
+  function pocketPlaybackIsActive(){
+    if (!playerReady || !player) return false;
+    try{
+      const state = Number(player.getPlayerState?.());
+      // 1=playing, 3=buffering. Buffering es transitorio y no debe sacar del modo bolsillo.
+      return state === 1 || state === 3;
+    }catch{
+      return !!isPlaying;
+    }
+  }
+
+  async function reconcilePocketPlayback(){
+    if (!pocketMode) return;
+    if (!pocketPlaybackIsActive()) {
+      await exitPocketMode();
+      return;
+    }
+    if (!document.hidden) await requestPocketWakeLock(false);
+  }
+
   function syncPocketUI(){
     if (ui.pocketBtn){
       ui.pocketBtn.classList.toggle("active", pocketMode);
@@ -4160,12 +4273,13 @@ function syncRepeatUI(){
       ui.pocketBtn.title = pocketMode ? "Salir del modo bolsillo" : "Modo bolsillo";
       ui.pocketBtn.setAttribute("aria-label", ui.pocketBtn.title);
     }
-    if (ui.pocketTrack) ui.pocketTrack.textContent = getCurrentTrackLabel();
+    updatePocketInfo();
     try{ syncMoreMenuUI(); }catch{}
   }
 
-  function showPocketUi(ms=2600){
+  function showPocketUi(ms=4500){
     if (!ui.pocketOverlay || !pocketMode) return;
+    updatePocketInfo(); // El reloj solo se actualiza cuando se muestra: consumo prácticamente nulo.
     ui.pocketOverlay.classList.remove("idle");
     clearTimeout(pocketUiTimer);
     pocketUiTimer = setTimeout(() => {
@@ -4220,6 +4334,7 @@ function syncRepeatUI(){
     if (pocketMode) return;
     const id = getExpectedVideoId() || currentVideoId || lastKnownVideoId;
     if (!playerReady || !id) return toast("Carga un vídeo antes de activar el modo bolsillo.", "error");
+    if (!pocketPlaybackIsActive()) return toast("Reproduce el audio antes de activar el modo bolsillo.", "error");
 
     closeMoreMenu(); closeSleepMenu(); closeSpeedMenu();
     if (floatingMode !== "off") await exitFloatingMode();
@@ -4234,7 +4349,7 @@ function syncRepeatUI(){
     setThemeColor("#000000");
     setPocketWakeStatus("", "Preparando pantalla activa…");
     syncPocketUI();
-    showPocketUi(3000);
+    showPocketUi(5000);
 
     // Pantalla completa se solicita desde la misma interacción del usuario.
     if (!isFullscreenActive()) {
@@ -4303,7 +4418,7 @@ function syncRepeatUI(){
       if (!pocketMode) return;
       e.preventDefault();
       e.stopPropagation();
-      showPocketUi(4000);
+      showPocketUi(5000);
       const h = window.innerHeight || document.documentElement.clientHeight || 1;
       // Solo un gesto iniciado en el 38% inferior puede desbloquear.
       if (e.clientY < h * 0.62) return;
@@ -5166,7 +5281,7 @@ else if (e.code === "BracketRight") { // subir velocidad
       refreshMediaSession(id);
     } else {
       refreshMediaSession(id);
-      if (pocketMode) requestPocketWakeLock(false);
+      if (pocketMode) setTimeout(() => { void reconcilePocketPlayback(); }, 180);
       // Si el navegador no llegó a activar PiP, dejamos el estado preparado pero
       // no afirmamos que exista una ventana flotante real.
       if (floatingMode === "prepared") syncMoreMenuUI();
@@ -5175,12 +5290,12 @@ else if (e.code === "BracketRight") { // subir velocidad
 
   window.addEventListener("pageshow", () => {
     refreshMediaSession(getExpectedVideoId() || currentVideoId || lastKnownVideoId);
-    if (pocketMode) requestPocketWakeLock(false);
+    if (pocketMode) setTimeout(() => { void reconcilePocketPlayback(); }, 180);
   });
 
   document.addEventListener("resume", () => {
     refreshMediaSession(getExpectedVideoId() || currentVideoId || lastKnownVideoId);
-    if (pocketMode) requestPocketWakeLock(false);
+    if (pocketMode) setTimeout(() => { void reconcilePocketPlayback(); }, 180);
   });
 
   window.addEventListener("pagehide", () => {
@@ -5299,6 +5414,7 @@ else if (e.code === "BracketRight") { // subir velocidad
           }
           else if (e.data === YT.PlayerState.PAUSED){
             isPlaying = false;
+            if (pocketMode) void exitPocketMode();
             pauseMediaSessionAnchor();
             updatePlayButton();
             updateInlinePlayIcons();
@@ -5327,6 +5443,7 @@ else if (e.code === "BracketRight") { // subir velocidad
             // Sleep: al terminar
             if (sleep.type === "end"){
               clearSleep();
+              if (pocketMode) void exitPocketMode();
               try{ player.stopVideo(); }catch{}
               toast("Sleep timer: fin.");
               return;
@@ -5356,9 +5473,12 @@ else if (e.code === "BracketRight") { // subir velocidad
               }
             }
 
+            if (pocketMode) void exitPocketMode();
             showEndedState();
           }
           else {
+            // Si vuelve a estado CUED/UNSTARTED sin estar reproduciendo, no dejamos una pantalla bolsillo “huérfana”.
+            if (pocketMode && (e.data === YT.PlayerState.CUED || e.data === YT.PlayerState.UNSTARTED)) void exitPocketMode();
             updatePlayButton();
           }
 
