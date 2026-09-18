@@ -2,103 +2,323 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>ModoJuego.es</title>
+    <title>ModoJuego.es · Juegos, simuladores y proyectos</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Juegos, simuladores, herramientas y proyectos personales publicados en ModoJuego.es.">
     <link rel="stylesheet" type="text/css" href="css/styles.css">
+    <style>
+        html { scroll-behavior: smooth; }
+
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            box-shadow: 0 8px 24px rgba(0,0,0,.18);
+        }
+
+        nav ul {
+            margin: 0;
+            padding: 12px 16px;
+        }
+
+        .hero {
+            padding: 38px 0 18px;
+        }
+
+        .hero h1 {
+            margin: 0 0 10px;
+            font-size: clamp(2rem, 5vw, 3.4rem);
+        }
+
+        .hero p {
+            margin: 0;
+            max-width: 760px;
+            color: #c9c9c9;
+            font-size: 1.05rem;
+            line-height: 1.6;
+        }
+
+        .section {
+            padding: 18px 0 24px;
+            scroll-margin-top: 80px;
+        }
+
+        .section h2 {
+            margin: 0 0 6px;
+        }
+
+        .section-intro {
+            margin: 0 0 18px;
+            color: #bdbdbd;
+        }
+
+        .grid-item {
+            border-radius: 14px;
+            border: 1px solid rgba(255,255,255,.08);
+            transition: transform .18s ease, border-color .18s ease, background-color .18s ease;
+        }
+
+        .grid-item:hover {
+            transform: translateY(-3px);
+            border-color: rgba(255,136,0,.55);
+            background-color: #4a4a4a;
+        }
+
+        .grid-item a {
+            display: block;
+            height: 100%;
+        }
+
+        .grid-item h3 {
+            margin: 0 0 8px;
+        }
+
+        .grid-item p {
+            margin: 0;
+            color: #cfcfcf;
+            line-height: 1.45;
+        }
+
+        .tag {
+            display: inline-block;
+            margin-bottom: 10px;
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: rgba(255,136,0,.12);
+            color: #ffad42;
+            font-size: .75rem;
+            font-weight: 700;
+            letter-spacing: .03em;
+            text-transform: uppercase;
+        }
+
+        footer {
+            margin-top: 28px;
+            padding: 26px 20px 36px;
+            text-align: center;
+            color: #aaa;
+            border-top: 1px solid rgba(255,255,255,.08);
+        }
+
+        @media (max-width: 700px) {
+            .container {
+                width: auto;
+                padding: 16px;
+            }
+
+            nav li {
+                display: inline-block;
+                margin: 5px 8px;
+            }
+
+            .hero {
+                padding-top: 26px;
+            }
+        }
+    </style>
 </head>
-<body>
+<body id="inicio">
     <header>
-        <nav>
+        <nav aria-label="Navegación principal">
             <ul>
-                <li><a href="#">Inicio</a></li>
-                <li><a href="#">Juegos</a></li>
-                <li><a href="#">Noticias</a></li>
-                <li><a href="#">Contacto</a></li>
+                <li><a href="#inicio">Inicio</a></li>
+                <li><a href="#juegos">Juegos y simuladores</a></li>
+                <li><a href="#estudio">Estudio</a></li>
+                <li><a href="#multimedia">Multimedia</a></li>
             </ul>
         </nav>
     </header>
 
-    <div class="container">
-        <h1>Bienvenido a ModoJuego.es</h1>
-        <p>¡Tu fuente de entretenimiento de juegos en línea!</p>
+    <main class="container">
+        <section class="hero">
+            <h1>ModoJuego.es</h1>
+            <p>Una colección de juegos, simuladores y proyectos interactivos desarrollados para experimentar, aprender y jugar directamente desde el navegador.</p>
+        </section>
 
-        <h2>Explora nuestros juegos populares:</h2>
+        <section class="section" id="juegos">
+            <h2>Juegos y simuladores</h2>
+            <p class="section-intro">Proyectos jugables, simuladores y experimentos interactivos disponibles actualmente.</p>
 
-        <div class="grid">
-            <div class="grid-item">
-                <a href="WizardAdventure.html">
-                    <h3>Wizard Adventure</h3>
-                    <p>Nuestra aventura mágica</p>
-                </a>
+            <div class="grid">
+                <div class="grid-item">
+                    <a href="Apex_Formula_26_v5_149.html">
+                        <span class="tag">Conducción</span>
+                        <h3>Apex Formula 26</h3>
+                        <p>Simulador de Fórmula 1 con conducción, circuitos, HUD y diferentes modos de juego.</p>
+                    </a>
+                </div>
+
+                <div class="grid-item">
+                    <a href="plane/">
+                        <span class="tag">Arcade</span>
+                        <h3>F-22 Raptor</h3>
+                        <p>Juego arcade de combate aéreo y misiones con un F-22.</p>
+                    </a>
+                </div>
+
+                <div class="grid-item">
+                    <a href="castles/">
+                        <span class="tag">Estrategia</span>
+                        <h3>Castles &amp; Lords</h3>
+                        <p>Viaja a la Edad Media, gestiona tu territorio y construye tu castillo.</p>
+                    </a>
+                </div>
+
+                <div class="grid-item">
+                    <a href="wargames/">
+                        <span class="tag">Estrategia</span>
+                        <h3>Juegos de Guerra</h3>
+                        <p>Proyecto inspirado en los juegos de estrategia y en la película WarGames.</p>
+                    </a>
+                </div>
+
+                <div class="grid-item">
+                    <a href="pcfutbol/">
+                        <span class="tag">Manager</span>
+                        <h3>PC Fútbol Manager</h3>
+                        <p>Prototipo de gestión futbolística inspirado en los clásicos managers.</p>
+                    </a>
+                </div>
+
+                <div class="grid-item">
+                    <a href="simulador/">
+                        <span class="tag">Simulación</span>
+                        <h3>Simulador de Vuelo</h3>
+                        <p>Vuela y explora el mundo con un simulador basado en CesiumJS.</p>
+                    </a>
+                </div>
+
+                <div class="grid-item">
+                    <a href="satellite-pulse/">
+                        <span class="tag">Espacio</span>
+                        <h3>Satellite Pulse</h3>
+                        <p>Descubre y visualiza qué está pasando sobre tu cabeza.</p>
+                    </a>
+                </div>
+
+                <div class="grid-item">
+                    <a href="babylon-system/">
+                        <span class="tag">Espacio 3D</span>
+                        <h3>Babylon System</h3>
+                        <p>Exploración orbital, vuelo libre y superficies planetarias en 3D.</p>
+                    </a>
+                </div>
+
+                <div class="grid-item">
+                    <a href="system-forge-v1.9.5.0/">
+                        <span class="tag">Astronomía</span>
+                        <h3>System Forge</h3>
+                        <p>Generador y simulador de sistemas gravitatorios N-body.</p>
+                    </a>
+                </div>
+
+                <div class="grid-item">
+                    <a href="cuerpos-gbl.html">
+                        <span class="tag">Espacio</span>
+                        <h3>Cuerpos Celestes</h3>
+                        <p>Explora cuerpos celestes y experimenta con una simulación espacial interactiva.</p>
+                    </a>
+                </div>
+
+                <div class="grid-item">
+                    <a href="pelotIA/">
+                        <span class="tag">IA</span>
+                        <h3>PelotIA</h3>
+                        <p>Simulador de lanzamiento de pelotas que experimenta con aprendizaje e IA.</p>
+                    </a>
+                </div>
+
+                <div class="grid-item">
+                    <a href="ajedrez.html">
+                        <span class="tag">Tablero</span>
+                        <h3>Ajedrez</h3>
+                        <p>Proyecto de ajedrez jugable directamente desde el navegador.</p>
+                    </a>
+                </div>
+
+                <div class="grid-item">
+                    <a href="WizardAdventure.html">
+                        <span class="tag">Aventura</span>
+                        <h3>Wizard Adventure</h3>
+                        <p>Una pequeña aventura de temática mágica.</p>
+                    </a>
+                </div>
+
+                <div class="grid-item">
+                    <a href="company.html">
+                        <span class="tag">Juego</span>
+                        <h3>Company</h3>
+                        <p>Uno de los primeros proyectos de juego publicados en ModoJuego.</p>
+                    </a>
+                </div>
+
+                <div class="grid-item">
+                    <a href="chatmubot/">
+                        <span class="tag">IA</span>
+                        <h3>ChatmuBot</h3>
+                        <p>Proyecto de chat e interacción con inteligencia artificial.</p>
+                    </a>
+                </div>
+
+                <div class="grid-item">
+                    <a href="videmon/">
+                        <span class="tag">Experimento</span>
+                        <h3>Videmon</h3>
+                        <p>Proyecto interactivo experimental publicado en ModoJuego.</p>
+                    </a>
+                </div>
             </div>
-            <div class="grid-item">
-                <a href="company.html">
-                    <h3>Company</h3>
-                    <p>Juego de JC en nuestra compañia</p>
-                </a>
+        </section>
+
+        <section class="section" id="estudio">
+            <h2>Estudio y repaso</h2>
+            <p class="section-intro">Aplicaciones pensadas para aprender y repasar mediante actividades interactivas.</p>
+
+            <div class="grid">
+                <div class="grid-item">
+                    <a href="repasup/">
+                        <span class="tag">Estudio</span>
+                        <h3>Repasup</h3>
+                        <p>Portal unificado de repaso y estudio.</p>
+                    </a>
+                </div>
+
+                <div class="grid-item">
+                    <a href="repasapp/">
+                        <span class="tag">Repaso</span>
+                        <h3>RepasApp</h3>
+                        <p>Portal de juegos y actividades de repaso.</p>
+                    </a>
+                </div>
+
+                <div class="grid-item">
+                    <a href="cole/">
+                        <span class="tag">Cole</span>
+                        <h3>Portal de Juegos de Repaso</h3>
+                        <p>Actividades educativas para practicar jugando.</p>
+                    </a>
+                </div>
             </div>
-            <div class="grid-item">
-                <a href="wargames">
-                    <h3>Juegos de Guerra</h3>
-                    <p>Inspirado en la pelicula War Games</p>
-                </a>
+        </section>
+
+        <section class="section" id="multimedia">
+            <h2>Multimedia y utilidades</h2>
+            <p class="section-intro">Herramientas y proyectos que no son estrictamente juegos.</p>
+
+            <div class="grid">
+                <div class="grid-item">
+                    <a href="sonusarca/">
+                        <span class="tag">Multimedia</span>
+                        <h3>SonusArca</h3>
+                        <p>Reproductor multimedia personal con listas, historial, favoritos, radio y modo bolsillo.</p>
+                    </a>
+                </div>
             </div>
-            <div class="grid-item">
-                <a href="chatbot.html">
-                    <h3>Chat IA</h3>
-                    <p>Inspirado en IA</p>
-                </a>
-            </div>
-            <div class="grid-item">
-                <a href="ajedrez.html">
-                    <h3>Ajedrez</h3>
-                    <p>Inspirado en el ajedrez</p>
-                </a>
-            </div>
-			<div class="grid-item">
-                <a href="plane.html">
-                    <h3>Avión</h3>
-                    <p>Inspirado en los juegos arcade de aviones</p>
-                </a>
-            </div>
-            <div class="grid-item">
-                <a href="pelotIA">
-                    <h3>PelotIA</h3>
-                    <p>Inspirado en un lanzador de pelotas que aprende con IA</p>
-                </a>
-            </div>
-            <div class="grid-item">
-                <a href="cuerpos-gbl.html">
-                    <h3>Cuerpos Celestes</h3>
-                    <p>Explora el espacio con este apasionante simulador</p>
-                </a>
-            </div>
-            <div class="grid-item">
-                <a href="simulador">
-                    <h3>Simulador de Vuelo</h3>
-                    <p>Vuela por todo el mundo con nuestro simulador</p>
-                </a>
-            </div>
-			<div class="grid-item">
-                <a href="satellite-pulse">
-                    <h3>Satellite Pulse</h3>
-                    <p>Descubre qué está pasando sobre tu cabeza</p>
-                </a>
-            </div>
-			<div class="grid-item">
-                <a href="castles">
-                    <h3>Castles</h3>
-                    <p>Viaja a la Edad Media y construye tu castillo</p>
-                </a>
-            </div>
-			<div class="grid-item">
-                <a href="cole">
-                    <h3>Cole</h3>
-                    <p>Repasamos?</p>
-                </a>
-            </div>
-            <!-- Agrega más elementos de la grilla según sea necesario -->
-        </div>
-    </div>
+        </section>
+    </main>
+
+    <footer>
+        ModoJuego.es · Proyectos personales, juegos y simuladores web
+    </footer>
 </body>
 </html>
