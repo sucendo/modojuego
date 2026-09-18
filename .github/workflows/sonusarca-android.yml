@@ -1,17 +1,21 @@
 name: SonusArca Android · Compilar y publicar APK
 
 on:
+  push:
+    branches: ["main"]
+    paths:
+      - "sonusarca-android/app/src/main/res/drawable/sonusarca_logo.xml"
   workflow_dispatch:
     inputs:
       version_name:
-        description: "Versión visible (ej. 8.1)"
+        description: "Versión visible (ej. 8.1.1)"
         required: true
-        default: "8.1"
+        default: "8.1.1"
         type: string
       version_code:
-        description: "Código Android entero y creciente (ej. 801)"
+        description: "Código Android entero y creciente (ej. 802)"
         required: true
-        default: "801"
+        default: "802"
         type: string
 
 permissions:
@@ -74,8 +78,8 @@ jobs:
 
       - name: Compilar APK release firmado
         env:
-          SONUSARCA_VERSION_NAME: ${{ inputs.version_name }}
-          SONUSARCA_VERSION_CODE: ${{ inputs.version_code }}
+          SONUSARCA_VERSION_NAME: ${{ inputs.version_name || '8.1.1' }}
+          SONUSARCA_VERSION_CODE: ${{ inputs.version_code || '802' }}
           SONUSARCA_KEYSTORE_PATH: ${{ github.workspace }}/sonusarca-android/signing/sonusarca-release.jks
           SONUSARCA_KEYSTORE_PASSWORD: ${{ secrets.SONUSARCA_KEYSTORE_PASSWORD }}
           SONUSARCA_KEY_ALIAS: ${{ secrets.SONUSARCA_KEY_ALIAS }}
@@ -91,7 +95,7 @@ jobs:
       - name: Guardar APK como artifact de Actions
         uses: actions/upload-artifact@v7
         with:
-          name: SonusArca-Android-${{ inputs.version_name }}
+          name: SonusArca-Android-${{ inputs.version_name || '8.1.1' }}
           path: |
             sonusarca-android/dist/SonusArca.apk
             sonusarca-android/dist/SonusArca.apk.sha256
@@ -101,8 +105,8 @@ jobs:
         working-directory: ${{ github.workspace }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION_NAME: ${{ inputs.version_name }}
-          VERSION_CODE: ${{ inputs.version_code }}
+          VERSION_NAME: ${{ inputs.version_name || '8.1.1' }}
+          VERSION_CODE: ${{ inputs.version_code || '802' }}
         run: |
           set -e
           TAG="sonusarca-latest"
@@ -128,7 +132,7 @@ jobs:
           {
             echo "## SonusArca Android listo"
             echo ""
-            echo "- Versión: ${{ inputs.version_name }}"
-            echo "- Version code: ${{ inputs.version_code }}"
+            echo "- Versión: ${{ inputs.version_name || '8.1.1' }}"
+            echo "- Version code: ${{ inputs.version_code || '802' }}"
             echo "- APK: https://github.com/${{ github.repository }}/releases/download/sonusarca-latest/SonusArca.apk"
           } >> "$GITHUB_STEP_SUMMARY"

@@ -1,8 +1,8 @@
 plugins { id 'com.android.application' }
 
 def env = System.getenv()
-def versionCodeValue = (env['SONUSARCA_VERSION_CODE'] ?: '801') as Integer
-def versionNameValue = env['SONUSARCA_VERSION_NAME'] ?: '8.1'
+def versionCodeValue = (env['SONUSARCA_VERSION_CODE'] ?: '802') as Integer
+def versionNameValue = env['SONUSARCA_VERSION_NAME'] ?: '8.1.1'
 def signingReady = env['SONUSARCA_KEYSTORE_PATH'] && env['SONUSARCA_KEYSTORE_PASSWORD'] && env['SONUSARCA_KEY_ALIAS'] && env['SONUSARCA_KEY_PASSWORD']
 
 android {

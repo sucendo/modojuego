@@ -1,12 +1,11 @@
-const CACHE = "sonusarca-v8-1-shell-v3";
+const CACHE = "sonusarca-v8-1-1-shell-v4";
 const SHELL = [
   "./",
   "./index.html",
   "./sonusarca_v8_1.html",
   "./sonusarca-config.js",
   "./manifest.webmanifest",
-  "./img/sonusarca/icon-192.png",
-  "./img/sonusarca/icon-512.png"
+  "./img/sonusarca/sonusarca-logo.svg"
 ];
 self.addEventListener("install", event => event.waitUntil((async()=>{
   const cache=await caches.open(CACHE); await Promise.allSettled(SHELL.map(url=>cache.add(url))); await self.skipWaiting();

@@ -4,11 +4,11 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <meta name="referrer" content="strict-origin-when-cross-origin"/>
-  <title>SonusArca v8.1 · Reproductor multimedia</title>
+  <title>SonusArca v8.1.1 · Reproductor multimedia</title>
 
   <!-- Favicon -->
-  <link rel="icon" type="image/png" href="img/sonusarca/icon-512.png"/>
-  <link rel="apple-touch-icon" href="img/sonusarca/icon-512.png"/>
+  <link rel="icon" type="image/svg+xml" href="img/sonusarca/sonusarca-logo.svg"/>
+  <link rel="apple-touch-icon" href="img/sonusarca/sonusarca-logo.svg"/>
   <meta name="theme-color" content="#0e71b4"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="mobile-web-app-capable" content="yes"/>
@@ -162,7 +162,7 @@
     }
 
     /* Por defecto bloqueamos interacción directa con el iframe (usamos nuestros controles) */
-    #video-placeholder{ pointer-events:none; background: url('img/sonusarca/icon-512.png') center/contain no-repeat; }
+    #video-placeholder{ pointer-events:none; background: url('img/sonusarca/sonusarca-logo.svg') center/contain no-repeat; }
     #video-container.allow-iframe #video-placeholder{ pointer-events:auto; }
 
     /* ===== Radio mode (carátula + blur) ===== */
@@ -1629,14 +1629,14 @@ html.native-android #android-install-card{display:none!important}
 
   <header id="app-header">
     <div class="app-brand">
-      <div class="app-brand-mark" aria-hidden="true"><img src="img/sonusarca/icon-192.png" alt=""></div>
+      <div class="app-brand-mark" aria-hidden="true"><img src="img/sonusarca/sonusarca-logo.svg" alt=""></div>
       <div class="app-brand-copy">
         <div class="app-brand-title">SonusArca</div>
         <div class="app-brand-sub">Tu reproductor, tus listas, tu radio</div>
       </div>
     </div>
     <div class="app-header-actions">
-      <span class="version-chip">v8.1</span>
+      <span class="version-chip">v8.1.1</span>
       <button id="open-load-dialog" class="header-add-btn" type="button" title="Añadir contenido" aria-label="Añadir contenido">
         <span class="material-icons" aria-hidden="true">add</span>
         <span class="header-add-label">Añadir contenido</span>

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="SonusArca">
+  <rect x="8" y="8" width="496" height="496" rx="112" fill="#168bf5"/>
+  <path d="M150 292 105 205c-8-16-4-31 8-43 8-8 17-12 29-13l128-15" fill="none" stroke="#fff" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M150 292 285 260 382 300v83c0 13-7 21-19 26l-123 43c-11 4-20 3-30-3l-61-37c-8-5-11-12-11-22v-90Z" fill="#fff"/>
+  <path d="M157 294 285 267 362 300 250 329Z" fill="#168bf5"/>
+  <path d="M289 303h31v43c0 13-7 21-16 21s-15-7-15-18Z" fill="#168bf5"/>
+  <path d="M326 211v-97c0-11 7-14 17-9 35 17 53 40 45 63-5 14-17 25-38 32v-41c14-3 20-10 18-17-2-6-8-11-20-16v85Z" fill="#fff"/>
+  <circle cx="303" cy="214" r="29" fill="#fff"/>
+  <path d="M399 282v-66c0-8 5-10 12-6 24 12 36 27 31 43-4 10-12 17-26 22v-28c9-2 13-6 12-11-1-4-5-7-12-10v56Z" fill="#fff"/>
+  <circle cx="383" cy="285" r="20" fill="#fff"/>
+</svg>
