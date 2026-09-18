@@ -1,0 +1,47 @@
+plugins { id 'com.android.application' }
+
+def env = System.getenv()
+def versionCodeValue = (env['SONUSARCA_VERSION_CODE'] ?: '801') as Integer
+def versionNameValue = env['SONUSARCA_VERSION_NAME'] ?: '8.1'
+def signingReady = env['SONUSARCA_KEYSTORE_PATH'] && env['SONUSARCA_KEYSTORE_PASSWORD'] && env['SONUSARCA_KEY_ALIAS'] && env['SONUSARCA_KEY_PASSWORD']
+
+android {
+    namespace 'com.sonusarca.app'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.sonusarca.app'
+        minSdk 26
+        targetSdk 35
+        versionCode versionCodeValue
+        versionName versionNameValue
+    }
+
+    signingConfigs {
+        release {
+            if (signingReady) {
+                storeFile file(env['SONUSARCA_KEYSTORE_PATH'])
+                storePassword env['SONUSARCA_KEYSTORE_PASSWORD']
+                keyAlias env['SONUSARCA_KEY_ALIAS']
+                keyPassword env['SONUSARCA_KEY_PASSWORD']
+            }
+        }
+    }
+
+    buildTypes {
+        debug {
+            applicationIdSuffix '.debug'
+            versionNameSuffix '-debug'
+        }
+        release {
+            minifyEnabled false
+            shrinkResources false
+            if (signingReady) signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
