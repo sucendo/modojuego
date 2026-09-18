@@ -7,10 +7,8 @@
   <title>SonusArca v8.1 · Reproductor multimedia</title>
 
   <!-- Favicon -->
-  <link rel="icon" type="image/png" href="img/sonusarca/favicon.png" sizes="32x32"/>
-  <link rel="icon" type="image/png" sizes="16x16" href="img/sonusarca/favicon-16.png"/>
-  <link rel="icon" type="image/png" sizes="32x32" href="img/sonusarca/favicon-32.png"/>
-  <link rel="apple-touch-icon" href="img/sonusarca/apple-touch-icon.png"/>
+  <link rel="icon" type="image/png" href="img/sonusarca/icon-512.png"/>
+  <link rel="apple-touch-icon" href="img/sonusarca/icon-512.png"/>
   <meta name="theme-color" content="#0e71b4"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="mobile-web-app-capable" content="yes"/>
@@ -164,7 +162,7 @@
     }
 
     /* Por defecto bloqueamos interacción directa con el iframe (usamos nuestros controles) */
-    #video-placeholder{ pointer-events:none; background: url('img/sonusarca/favicon.png') center/contain no-repeat; }
+    #video-placeholder{ pointer-events:none; background: url('img/sonusarca/icon-512.png') center/contain no-repeat; }
     #video-container.allow-iframe #video-placeholder{ pointer-events:auto; }
 
     /* ===== Radio mode (carátula + blur) ===== */
@@ -1607,6 +1605,18 @@ body.modal-open{overflow:hidden}
 @media(display-mode:standalone){#android-pwa-button{display:none}}
 html.native-android #android-install-card{display:none!important}
 
+
+/* SonusArca · logo oficial */
+.app-brand-mark{
+  overflow:hidden;
+  padding:0!important;
+  background:transparent!important;
+  border:none!important;
+  box-shadow:none!important;
+}
+.app-brand-mark img{
+  width:100%;height:100%;display:block;object-fit:cover;border-radius:inherit;
+}
 </style>
 <script>
   // El puente lo inyecta la app Android antes de cargar la página.
@@ -1619,7 +1629,7 @@ html.native-android #android-install-card{display:none!important}
 
   <header id="app-header">
     <div class="app-brand">
-      <div class="app-brand-mark" aria-hidden="true"><span class="material-icons">radio</span></div>
+      <div class="app-brand-mark" aria-hidden="true"><img src="img/sonusarca/icon-192.png" alt=""></div>
       <div class="app-brand-copy">
         <div class="app-brand-title">SonusArca</div>
         <div class="app-brand-sub">Tu reproductor, tus listas, tu radio</div>
