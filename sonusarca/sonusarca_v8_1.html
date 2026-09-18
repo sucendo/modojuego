@@ -1605,8 +1605,14 @@ body.modal-open{overflow:hidden}
   .android-install-sub{font-size:.69rem}
 }
 @media(display-mode:standalone){#android-pwa-button{display:none}}
+html.native-android #android-install-card{display:none!important}
 
 </style>
+<script>
+  // El puente lo inyecta la app Android antes de cargar la página.
+  // Marcamos el documento cuanto antes para no mostrar ni un instante la tarjeta APK.
+  if (window.AndroidBridge) document.documentElement.classList.add("native-android");
+</script>
 </head>
 
 <body>
@@ -4013,7 +4019,8 @@ function queuePrev(){
       });
     }
 
-    setupDistributionUI();
+    // La UI de distribución se inicializa fuera de setupPWA para que también
+    // pueda ocultarse correctamente dentro del APK nativo.
 
     // Service Worker real. Debe servirse por HTTPS/localhost y estar junto al HTML.
     if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")){
@@ -5464,6 +5471,7 @@ else if (e.code === "BracketRight") { // subir velocidad
           renderQueue();
           renderHistory();
           initCollapsibles();
+          setupDistributionUI();
           if (!window.AndroidBridge) setupPWA();
           setupPocketGesture();
           syncPocketUI();
