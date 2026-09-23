@@ -30,14 +30,16 @@
     return m[bb.length][aa.length];
   }
 
-  function _esRespuestaParecida(usuario, correcta) {
+  function _esRespuestaParecida(usuario, correcta, alternativas = []) {
     const u = _norm(usuario);
     const c = _norm(correcta);
     if (!u || !c) return false;
-    if (u === c) return true;
-    if (c.includes(u) || u.includes(c)) return true;
+    const admitidas = [c, ...(Array.isArray(alternativas) ? alternativas : []).map(_norm)];
+    if (admitidas.includes(u)) return true;
+    // Nunca aceptamos subcadenas: «p» no puede resolver «plátano».
+    if (u.length < 4 || c.length < 5 || Math.abs(u.length - c.length) > 1) return false;
     const dist = _levenshtein(u, c);
-    const limite = Math.max(1, Math.floor(c.length * 0.18));
+    const limite = c.length < 10 ? 1 : 2;
     return dist <= limite;
   }
 
@@ -128,8 +130,15 @@
       return `La respuesta correcta era: ${solucion}.\nSi quieres otra, escribe \"otra\".`;
     }
 
+    if (ctx.adivinanza.esperandoSiguiente) {
+      ctx.adivinanza.esperandoSiguiente = false;
+      ctx.palabraClave = null;
+      ctx.modo = null;
+      return null; // Permite conversar sobre otro tema tras finalizar la ronda.
+    }
+
     const actual = ctx.adivinanza.actual;
-    if (_esRespuestaParecida(txt, actual.respuesta)) {
+    if (_esRespuestaParecida(txt, actual.respuesta, actual.respuestasAlternativas)) {
       ctx.adivinanza.aciertos = (ctx.adivinanza.aciertos || 0) + 1;
       ctx.adivinanza.activa = false;
       ctx.adivinanza.esperandoSiguiente = true;
@@ -151,17 +160,15 @@
     return `No es eso. Intento ${actual.intentos} de 3.\n${pista}`;
   }
 
-  function _respuestaDueloValida(usuario, correcta, palabrasClave) {
+  function _respuestaDueloValida(usuario, correcta, alternativas = []) {
     const u = _norm(usuario);
     const c = _norm(correcta);
     if (!u || !c) return false;
-    if (u === c) return true;
-    if (Array.isArray(palabrasClave) && palabrasClave.length) {
-      const okPalabras = palabrasClave.every(p => u.includes(_norm(p)));
-      if (okPalabras) return true;
-    }
+    if (u === c || (Array.isArray(alternativas) && alternativas.map(_norm).includes(u))) return true;
+    // Las palabrasClave son SOLO para pistas, no un criterio suficiente de victoria.
+    if (u.length < 12 || c.length < 12 || Math.abs(u.length - c.length) > 2) return false;
     const dist = _levenshtein(u, c);
-    return dist <= Math.max(2, Math.floor(c.length * 0.18));
+    return dist <= Math.max(1, Math.floor(c.length * 0.06));
   }
 
   function _pistaDuelo(par) {
@@ -230,8 +237,15 @@
       return `Te rindes en este asalto. La réplica correcta era: ${correcta}\nMarcador: ${ctx.duelo.ganados || 0} ganados, ${ctx.duelo.perdidos} perdidos.\nEscribe \"siguiente\" para continuar.`;
     }
 
+    if (ctx.duelo.esperandoSiguiente) {
+      ctx.duelo.esperandoSiguiente = false;
+      ctx.palabraClave = null;
+      ctx.modo = null;
+      return null;
+    }
+
     const actual = ctx.duelo.actual;
-    if (_respuestaDueloValida(txt, actual.respuesta, actual.palabrasClave)) {
+    if (_respuestaDueloValida(txt, actual.respuesta, actual.respuestasAlternativas)) {
       ctx.duelo.ganados = (ctx.duelo.ganados || 0) + 1;
       ctx.duelo.activa = false;
       ctx.duelo.esperandoSiguiente = true;

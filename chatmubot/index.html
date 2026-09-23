@@ -2,12 +2,12 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0f172a">
   <meta name="description" content="ChatmuBot - chatbot conversacional local con juegos, contexto, traducción, corrección y búsqueda.">
   <title>ChatmuBot</title>
   <link rel="stylesheet" href="assets/css/chatmubot.css">
-  <script src="https://unpkg.com/mathjs/lib/browser/math.js"></script>
+  <!-- El cálculo básico ya se resuelve localmente: sin CDN ni modelos externos. -->
   <script src="assets/js/core/chatbotConfig.js"></script>
 </head>
 <body>
@@ -18,8 +18,8 @@
         <p id="botStatus" class="app-status">Asistente conversacional local</p>
       </div>
       <div class="header-actions">
-        <button id="clearChatBtn" class="icon-btn" title="Limpiar historial">🗑️</button>
-        <button id="exportChatBtn" class="icon-btn" title="Exportar historial">⬇️</button>
+        <button id="clearChatBtn" class="icon-btn" title="Limpiar historial" aria-label="Limpiar historial">🗑️</button>
+        <button id="exportChatBtn" class="icon-btn" title="Exportar historial" aria-label="Exportar historial">⬇️</button>
       </div>
     </header>
 
@@ -38,6 +38,7 @@
           <button type="button" id="micBtn" title="Dictado por voz">🎙️</button>
           <button type="button" id="fullscreenBtn" title="Pantalla completa">↕️</button>
         </div>
+        <label class="correction-optin"><input type="checkbox" id="autoCorrect" /> Corrección ortográfica automática <small>(opcional: envía tus mensajes a LanguageTool)</small></label>
       </form>
     </main>
   </div>

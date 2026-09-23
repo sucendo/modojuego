@@ -7,10 +7,19 @@
 (() => {
   if (window.__CHATBOT_CORE_READY__) return;
 
-  let nombreUsuario = localStorage.getItem("chatbot_nombreUsuario") || "";
+  // El acceso al almacenamiento puede fallar (modo privado, bloqueo del navegador).
+  const storageGet = (key) => { try { return localStorage.getItem(key); } catch { return null; } };
+  const storageSet = (key, val) => { try { localStorage.setItem(key, val); return true; } catch { return false; } };
+  const sessionGet = (key) => { try { return sessionStorage.getItem(key); } catch { return null; } };
+  const sessionSet = (key, val) => { try { sessionStorage.setItem(key, val); } catch {} };
+  const sessionDel = (key) => { try { sessionStorage.removeItem(key); } catch {} };
+  let nombreUsuario = storageGet("chatbot_nombreUsuario") || "";
   let RESPUESTAS = null;
   let replayingHistory = false;
   let recognition = null;
+  let procesando = false;
+  let noPersistirRespuesta = false;
+  const CTX_KEY = "chatbot_contexto_sesion_v301";
 
   const DEFAULTS = {
     hola: ["¡Hola! ¿Cómo puedo ayudarte?", "¡Hola! ¿Qué tal te encuentras?"],
@@ -42,6 +51,48 @@
     adivinanza: { usadas: [], aciertos: 0, fallos: 0, ronda: 0, activa: false, esperandoSiguiente: false },
     duelo: { usadas: [], ganados: 0, perdidos: 0, ronda: 0, intentoActual: 0, activa: false, esperandoSiguiente: false },
   };
+
+  function cancelarTareaActual() {
+    contextoConversacion.modo = null;
+    contextoConversacion.palabraClave = null;
+    contextoConversacion.confirm = null;
+    contextoConversacion.adivinanza.activa = false;
+    contextoConversacion.adivinanza.esperandoSiguiente = false;
+    contextoConversacion.duelo.activa = false;
+    contextoConversacion.duelo.esperandoSiguiente = false;
+  }
+
+  function reiniciarContexto() {
+    Object.assign(contextoConversacion, {
+      palabraClave: null, repeticiones: 0, juegoIniciado: false,
+      respuestaCorrecta: null, modo: null, confirm: null, buscaUltimo: null,
+      ultimoTema: null, ultimoTipo: null, ultimaRespuestaBot: null,
+      ultimaEntradaUsuario: null, ultimaRespuestaTs: null, historialTemas: [],
+      calcValor: undefined, traducirIdioma: null, traducirUltima: null, ortoUltima: null,
+      adivinanza: { usadas: [], aciertos: 0, fallos: 0, ronda: 0, activa: false, esperandoSiguiente: false },
+      duelo: { usadas: [], ganados: 0, perdidos: 0, ronda: 0, intentoActual: 0, activa: false, esperandoSiguiente: false },
+    });
+    sessionDel(CTX_KEY);
+  }
+
+  function guardarContexto() {
+    // Solo se restaura la sesión de la pestaña, no se envía a terceros.
+    sessionSet(CTX_KEY, JSON.stringify(contextoConversacion));
+  }
+
+  function restaurarContexto() {
+    try {
+      const guardado = JSON.parse(sessionGet(CTX_KEY) || "null");
+      if (!guardado || typeof guardado !== "object" || Array.isArray(guardado)) return;
+      const claves = ["palabraClave", "repeticiones", "respuestaCorrecta", "modo", "buscaUltimo", "ultimoTema", "ultimoTipo", "ultimaRespuestaBot", "ultimaEntradaUsuario", "ultimaRespuestaTs", "historialTemas", "calcValor", "traducirIdioma", "traducirUltima", "ortoUltima"];
+      for (const clave of claves) if (Object.hasOwn(guardado, clave)) contextoConversacion[clave] = guardado[clave];
+      for (const juego of ["adivinanza", "duelo"]) {
+        if (guardado[juego] && typeof guardado[juego] === "object")
+          contextoConversacion[juego] = { ...contextoConversacion[juego], ...guardado[juego] };
+      }
+      if (!Array.isArray(contextoConversacion.historialTemas)) contextoConversacion.historialTemas = [];
+    } catch { sessionDel(CTX_KEY); }
+  }
 
   const idiomasSoportados = {
     español: "es",
@@ -108,10 +159,10 @@
       }
       for (const attr of Array.from(el.attributes)) {
         const name = attr.name.toLowerCase();
-        const val = String(attr.value || "").trim().toLowerCase();
-        if (name.startsWith("on") || (name === "href" && val.startsWith("javascript:"))) {
-          el.removeAttribute(attr.name);
-        }
+        const val = String(attr.value || "").trim();
+        if (el.tagName === "A" && name === "href" && /^(https?:\/\/|mailto:|\/[^\/]|#[\w-])/.test(val)) continue;
+        if (el.tagName === "A" && name === "title") continue;
+        el.removeAttribute(attr.name);
       }
       if (el.tagName === "A") {
         if (!el.hasAttribute("target")) el.setAttribute("target", "_blank");
@@ -217,7 +268,7 @@
       window.Chatmu?.memoria?.add?.({ actor, contenido, html });
     }
 
-    if (actor !== "Usuario") {
+    if (actor !== "Usuario" && !replayingHistory) {
       leerEnVozAlta(html ? body.textContent : contenido);
     }
   }
@@ -257,12 +308,12 @@ async function cargarRespuestas() {
       if (!r.ok) continue;
       const json = await r.json();
       RESPUESTAS = { ...DEFAULTS, ...(json || {}) };
-      localStorage.setItem(cacheKey, JSON.stringify(RESPUESTAS));
+      storageSet(cacheKey, JSON.stringify(RESPUESTAS));
       return RESPUESTAS;
     } catch {}
   }
 
-  const cache = localStorage.getItem(cacheKey);
+  const cache = storageGet(cacheKey);
   if (cache) {
     try {
       RESPUESTAS = JSON.parse(cache);
@@ -275,7 +326,8 @@ async function cargarRespuestas() {
 }
 
   async function safeCorregirConsulta(q) {
-    if (tiene(window.corregirConsulta)) {
+    // No enviamos consultas a LanguageTool sin consentimiento explícito.
+    if (window.Chatmu?.memoria?.obtenerPrefs?.().autoCorrect && tiene(window.corregirConsulta)) {
       try { return await window.corregirConsulta(q); } catch {}
     }
     return q;
@@ -300,10 +352,12 @@ async function cargarRespuestas() {
 
   function evalSeguro(expr) {
     let s = String(expr || "").replace(/,/g, ".").trim();
-    if (s.length > 200) throw new Error("Expresión demasiado larga");
+    if (s.length > 120) throw new Error("Expresión demasiado larga");
     if (!/^[\d+\-*/().\s^]+$/.test(s)) throw new Error("Expresión inválida");
     s = s.replace(/\^/g, "**");
-    return Function(`"use strict"; return (${s});`)();
+    const resultado = Function(`"use strict"; return (${s});`)();
+    if (typeof resultado !== "number" || !Number.isFinite(resultado)) throw new Error("Resultado no finito");
+    return resultado;
   }
 
   function sugerirClaves(textoNorm, respuestas) {
@@ -328,36 +382,54 @@ async function cargarRespuestas() {
       "- Ortografía: `como se escribe cocreta`, `corrige: ola ke ase`",
       "- Juegos: `adivinanza`, `pista`, `otra`, `me rindo`, `duelo`, `siguiente`",
       "- Memoria local: `guardar color azul`, `mostrar color`, `mostrar datos`",
-      "- Comandos rápidos: `/reset`, `/limpiar`, `/exportar`",
+      "- Comandos rápidos: `/reset` (contexto), `/limpiar` (historial), `/exportar`",
+      "- Privacidad: `borrar todos mis datos` (pide confirmación)",
+      "- La corrección automática es opcional y se activa en la casilla inferior.",
       "- Contexto: `de qué hablábamos`, `repíteme`, `resúmelo`, `háblame más de eso`",
       "También puedes usar los botones superiores para limpiar, exportar, dictar por voz o activar lectura de respuestas."
     ].join("\n");
   }
 
   function manejarComandosLocal(texto, tnorm) {
+    if (contextoConversacion.confirm?.action === "borrar_todo") {
+      if (/^(si|confirmar|confirmo|borrar)$/i.test(tnorm)) {
+        window.Chatmu?.memoria?.borrarTodo?.();
+        try {
+          for (let i = localStorage.length - 1; i >= 0; i--) {
+            const key = localStorage.key(i);
+            if (key?.startsWith("chatbot_")) localStorage.removeItem(key);
+          }
+        } catch {}
+        nombreUsuario = "";
+        reiniciarContexto();
+        const chat = $("#chat");
+        if (chat) chat.innerHTML = "";
+        const correctToggle = $("#autoCorrect");
+        if (correctToggle) correctToggle.checked = false;
+        const voiceToggle = $("#btnVoz");
+        voiceToggle?.classList.remove("activo");
+        const lang = $("#langSelect");
+        if (lang) lang.value = "es";
+        document.body.classList.remove("modo-nocturno");
+        const theme = $("#btnModo");
+        if (theme) { theme.textContent = "🌙"; theme.classList.remove("activo"); }
+        noPersistirRespuesta = true;
+        return "He borrado tu historial, nombre, datos guardados y preferencias de ChatmuBot. Esta confirmación no se guardará.";
+      }
+      if (/^(no|cancelar|cancela)$/i.test(tnorm)) {
+        contextoConversacion.confirm = null;
+        return "Borrado cancelado. No he eliminado tus datos.";
+      }
+      return "Para borrar todos tus datos escribe «sí». Para conservarlos escribe «no».";
+    }
+
+    if (["borrar todos mis datos", "/borrar-todo"].includes(tnorm)) {
+      contextoConversacion.confirm = { action: "borrar_todo" };
+      return "¿Seguro? Se eliminarán tu nombre, historial, datos y preferencias de ChatmuBot en este navegador. Responde «sí» o «no».";
+    }
+
     if (["/reset", "/reiniciar", "resetear contexto"].includes(tnorm)) {
-      Object.assign(contextoConversacion, {
-        palabraClave: null,
-        repeticiones: 0,
-        juegoIniciado: false,
-        respuestaCorrecta: null,
-        modo: null,
-        confirm: null,
-        buscaUltimo: null,
-        ultimoTema: null,
-        ultimoTipo: null,
-        ultimaRespuestaBot: null,
-        ultimaEntradaUsuario: null,
-        ultimaRespuestaTs: null,
-        historialTemas: [],
-    historialTemas: [],
-        calcValor: undefined,
-        traducirIdioma: null,
-        traducirUltima: null,
-        ortoUltima: null,
-        adivinanza: { usadas: [], aciertos: 0, fallos: 0, ronda: 0, activa: false, esperandoSiguiente: false },
-        duelo: { usadas: [], ganados: 0, perdidos: 0, ronda: 0, intentoActual: 0, activa: false, esperandoSiguiente: false },
-      });
+      reiniciarContexto();
       return "He reiniciado el contexto de la conversación.";
     }
 
@@ -416,6 +488,87 @@ async function cargarRespuestas() {
     return null;
   }
 
+  // v3.0.1: las herramientas explícitas tienen prioridad sobre saludos y juegos.
+  // El texto de una solicitud de traducción/corrección nunca se interpreta como un saludo.
+  async function resolverHerramientasExplicitas(texto, tnorm) {
+    const traduccion = texto.match(/^\s*(?:traduce(?:me)?|traducci[oó]n)\s+al\s+([a-záéíóúñü]+)\s*:?[ \t]*([\s\S]*)$/i);
+    if (traduccion) {
+      const code = idiomasSoportados[normalizarTexto(traduccion[1])];
+      if (!code) return `No tengo configurado el idioma «${traduccion[1]}».`;
+      cancelarTareaActual();
+      contextoConversacion.modo = "traduce";
+      contextoConversacion.traducirIdioma = code;
+      const frase = traduccion[2].trim();
+      if (!frase) return `¿Qué frase quieres traducir al ${traduccion[1]}?`;
+      contextoConversacion.traducirUltima = frase;
+      registrarTema(frase, "traduccion");
+      const tr = await safeTraducir(frase, code);
+      return `Traducción al ${traduccion[1]}: «${tr}»`;
+    }
+    if (/^(traduce|traduccion|traducción)\b/.test(tnorm))
+      return "Escribe «traduce al inglés: buenos días» o indica otro idioma.";
+
+    if (/^\s*corrige\s*:/i.test(texto) || /^como se escribe\b/i.test(tnorm)) {
+      const frase = texto.replace(/^\s*corrige\s*:/i, "").replace(/^\s*c[oó]mo se escribe\s*/i, "").trim();
+      cancelarTareaActual();
+      contextoConversacion.modo = "ortografia";
+      if (!frase) return "Dime el texto que quieres corregir. Se enviará a LanguageTool.";
+      contextoConversacion.ortoUltima = frase;
+      registrarTema(frase, "ortografia");
+      if (!tiene(window.corregirTexto)) return "El servicio de corrección no está disponible.";
+      try {
+        const { corregidoSimple } = await window.corregirTexto(frase);
+        return `Revisión ortográfica: ${corregidoSimple}`;
+      } catch {
+        return "No he podido contactar con LanguageTool. Tu mensaje no ha sido modificado.";
+      }
+    }
+
+    if (contextoConversacion.modo === "traduce") {
+      if (/^(salir|cancelar|terminar|dejar de traducir|salir de traduccion)$/i.test(tnorm)) {
+        cancelarTareaActual();
+        return "He salido del modo traducción.";
+      }
+      const cambio = texto.match(/^\s*(?:y\s+)?(?:al|a)\s+([a-záéíóúñü]+)\s*:?[ \t]*([\s\S]*)$/i);
+      if (cambio) {
+        const nuevo = idiomasSoportados[normalizarTexto(cambio[1])];
+        if (!nuevo) return `No tengo configurado el idioma «${cambio[1]}».`;
+        contextoConversacion.traducirIdioma = nuevo;
+        const frase = cambio[2].trim() || contextoConversacion.traducirUltima;
+        if (!frase) return `¿Qué frase quieres traducir al ${cambio[1]}?`;
+        contextoConversacion.traducirUltima = frase;
+        const tr = await safeTraducir(frase, nuevo);
+        return `Traducción al ${cambio[1]}: «${tr}»`;
+      }
+      if (!/^(busca|que es|quien es|calcula|cuanto es|adivinanza|duelo|corrige)\b/.test(tnorm)) {
+        const frase = texto.replace(/^\s*(?:ahora|y ahora|tambien|también)\s+/i, "").trim();
+        if (frase) {
+          contextoConversacion.traducirUltima = frase;
+          return `Traducción: «${await safeTraducir(frase, contextoConversacion.traducirIdioma || "en") }»`;
+        }
+      }
+      cancelarTareaActual();
+    }
+
+    if (contextoConversacion.modo === "ortografia") {
+      if (/^(salir|cancelar|terminar|dejar de corregir)$/i.test(tnorm)) {
+        cancelarTareaActual();
+        return "He salido del modo ortografía.";
+      }
+      if (!/^(busca|que es|quien es|calcula|cuanto es|adivinanza|duelo|traduce)\b/.test(tnorm)) {
+        if (!tiene(window.corregirTexto)) return "El corrector no está disponible.";
+        const frase = texto.replace(/^\s*(?:ahora|y ahora)\s+/i, "").trim();
+        contextoConversacion.ortoUltima = frase;
+        try {
+          const { corregidoSimple } = await window.corregirTexto(frase);
+          return `Revisión ortográfica: ${corregidoSimple}`;
+        } catch { return "No he podido contactar con LanguageTool."; }
+      }
+      cancelarTareaActual();
+    }
+    return null;
+  }
+
   async function resolverIntents(textoOriginal) {
     const respuestas = await cargarRespuestas();
     const texto = String(textoOriginal || "").trim();
@@ -424,6 +577,13 @@ async function cargarRespuestas() {
 
     const cmd = manejarComandosLocal(texto, tnorm);
     if (cmd) return cmd;
+
+    const herramienta = await resolverHerramientasExplicitas(texto, tnorm);
+    if (herramienta !== null) return herramienta;
+
+    // Una orden nueva cambia de actividad, conservando los marcadores de los juegos.
+    const cambioActividad = /^(?:busca|que es|quien es|calcula|cuanto es|adivinanza|duelo)\b/.test(tnorm);
+    if (cambioActividad) cancelarTareaActual();
 
     if (tiene(window.manejarContextoConversacion)) {
       try {
@@ -446,15 +606,32 @@ async function cargarRespuestas() {
         const nuevo = tokens[idx + 1].replace(/[^\p{L}\p{N}\-_]/gu, "");
         if (nuevo) {
           nombreUsuario = nuevo;
-          localStorage.setItem("chatbot_nombreUsuario", nombreUsuario);
+      storageSet("chatbot_nombreUsuario", nombreUsuario);
           registrarTema(nuevo, "nombre_usuario");
           return `Encantado de conocerte, ${nombreUsuario}.`;
         }
       }
     }
 
-    if (tnorm.includes("como me llamo") || tnorm.includes("como me llamo?")) {
+    if (tnorm.includes("como me llamo")) {
       return nombreUsuario ? `Te llamas ${nombreUsuario}.` : "Aún no me has dicho tu nombre.";
+    }
+
+    // Las respuestas del juego tienen prioridad sobre coincidencias casuales con saludos.
+    const adivinanzaEnCurso = contextoConversacion.palabraClave === "adivinanza" && (contextoConversacion.adivinanza?.activa || contextoConversacion.adivinanza?.esperandoSiguiente);
+    if (adivinanzaEnCurso && tiene(window.manejarAdivinanza)) {
+      try {
+        const juego = window.manejarAdivinanza(contextoConversacion, texto, respuestas);
+        if (juego !== null) return juego;
+      } catch (e) { console.warn(e); }
+    }
+
+    const dueloEnCurso = contextoConversacion.palabraClave === "duelo" && (contextoConversacion.duelo?.activa || contextoConversacion.duelo?.esperandoSiguiente);
+    if (dueloEnCurso && tiene(window.manejarRespuestaInsulto)) {
+      try {
+        const juego = window.manejarRespuestaInsulto(contextoConversacion, texto, respuestas);
+        if (juego !== null) return juego;
+      } catch (e) { console.warn(e); }
     }
 
     if (/\b(hora)\b/i.test(tnorm)) {
@@ -471,16 +648,6 @@ async function cargarRespuestas() {
 
     if (tnorm.includes("buenos dias") || tnorm.includes("buenas tardes") || tnorm.includes("buenas noches")) {
       return tiene(window.saludoDia) ? window.saludoDia(texto) : "¡Hola!";
-    }
-
-    const adivinanzaEnCurso = contextoConversacion.palabraClave === "adivinanza" && (contextoConversacion.adivinanza?.activa || contextoConversacion.adivinanza?.esperandoSiguiente);
-    if (adivinanzaEnCurso && tiene(window.manejarAdivinanza)) {
-      try { return window.manejarAdivinanza(contextoConversacion, texto, respuestas); } catch {}
-    }
-
-    const dueloEnCurso = contextoConversacion.palabraClave === "duelo" && (contextoConversacion.duelo?.activa || contextoConversacion.duelo?.esperandoSiguiente);
-    if (dueloEnCurso && tiene(window.manejarRespuestaInsulto)) {
-      try { return window.manejarRespuestaInsulto(contextoConversacion, texto, respuestas); } catch {}
     }
 
     const esOperacionRelativa = /^\s*[+\-*/]\s*[\d.,]+\s*$/.test(texto);
@@ -559,85 +726,26 @@ async function cargarRespuestas() {
 ${resultado}`;
     }
 
-    if (/^corrige\s*:/i.test(texto) || tnorm.startsWith("como se escribe")) {
-      const q = texto.replace(/^corrige\s*:/i, "").replace(/como se escribe/i, "").replace(/^\s*[:;,.-]+\s*/, "").trim();
-      if (!q) return "Dime la palabra o frase que quieres revisar.";
-      contextoConversacion.modo = "ortografia";
-      contextoConversacion.ortoUltima = q;
-      registrarTema(q, "ortografia");
-      if (tiene(window.corregirTexto)) {
-        try {
-          const { corregidoSimple } = await window.corregirTexto(q);
-          return `Se escribe así: ${corregidoSimple}`;
-        } catch {}
-      }
-      return `Se escribe de la siguiente manera ${q}`;
+    // Coincidencia con palabras completas y prioridad a la frase más específica.
+    // Evita, por ejemplo, detectar «si» dentro de «necesito» o «hora» en «ahora».
+    const coincidencias = [];
+    for (const [clave, lista] of Object.entries(respuestas || {})) {
+      if (!clave || clave === "no_entender" || !Array.isArray(lista) || !lista.length || typeof lista[0] !== "string") continue;
+      const k = normalizarTexto(clave);
+      if (!k) continue;
+      const pos = (` ${tnorm} `).indexOf(` ${k} `);
+      if (pos < 0) continue;
+      // Las claves cortas de conversación solo cuentan si constituyen todo el mensaje.
+      if (k.length <= 3 && tnorm !== k) continue;
+      coincidencias.push({ clave, lista, exacta: tnorm === k, longitud: k.length, palabras: k.split(" ").length });
     }
-
-    if (contextoConversacion.modo === "ortografia") {
-      const mO = texto.match(/^\s*(?:ahora|y\s+ahora|y)?\s*(.+)$/i);
-      if (mO && mO[1] && mO[1].trim()) {
-        const q2 = mO[1].trim();
-        if (tiene(window.corregirTexto)) {
-          try {
-            const { corregidoSimple } = await window.corregirTexto(q2);
-            contextoConversacion.ortoUltima = q2;
-            return `Se escribe así: ${corregidoSimple}`;
-          } catch {}
-        }
-      }
-    }
-
-    if (tnorm.startsWith("traduce al") || tnorm.startsWith("traduccion al")) {
-      const m = texto.match(/^(traduce al|traduccion al)\s+([a-záéíóúñü]+)\s*:?\s*(.+)$/i);
-      if (!m) return "Formato: traduce al <idioma>: <frase>.";
-      const idiomaTexto = normalizarTexto(m[2]);
-      const frase = m[3].trim();
-      const code = idiomasSoportados[idiomaTexto];
-      if (!code) return `Lo siento, no soporto traducciones al idioma «${m[2]}».`;
-      const tr = await safeTraducir(frase, code);
-      contextoConversacion.modo = "traduce";
-      contextoConversacion.traducirIdioma = code;
-      contextoConversacion.traducirUltima = frase;
-      registrarTema(frase, "traduccion");
-      return `Traducción al ${m[2]}: "${tr}"`;
-    }
-
-    if (contextoConversacion.modo === "traduce") {
-      const mLang = texto.match(/^\s*(?:al|a)\s+([a-záéíóúñü]+)\s*:?\s*(.*)$/i);
-      if (mLang) {
-        const idiomaTexto2 = normalizarTexto(mLang[1]);
-        const code2 = idiomasSoportados[idiomaTexto2];
-        if (code2) {
-          contextoConversacion.traducirIdioma = code2;
-          const frase2 = (mLang[2] && mLang[2].trim()) ? mLang[2].trim() : (contextoConversacion.traducirUltima || "");
-          if (!frase2) return `Listo, dime qué quieres traducir al ${mLang[1]}.`;
-          const tr2 = await safeTraducir(frase2, code2);
-          contextoConversacion.traducirUltima = frase2;
-          return `Traducción al ${mLang[1]}: "${tr2}"`;
-        }
-      }
-      const mF = texto.match(/^\s*(?:ahora|y\s+ahora|y|tambien|también)?\s*(.+)$/i);
-      if (mF && mF[1] && mF[1].trim()) {
-        const fraseX = mF[1].trim();
-        const lang = contextoConversacion.traducirIdioma || "en";
-        const trX = await safeTraducir(fraseX, lang);
-        contextoConversacion.traducirUltima = fraseX;
-        return `Traducción: "${trX}"`;
-      }
-    }
-
-    for (const clave of Object.keys(respuestas || {})) {
-      if (!clave || clave === "no_entender") continue;
-      if (tnorm.includes(normalizarTexto(clave))) {
-        const lista = respuestas[clave];
-        if (Array.isArray(lista) && lista.length) {
-          contextoConversacion.palabraClave = clave;
-          contextoConversacion.repeticiones = 0;
-          registrarTema(clave, "respuesta_json");
-          return elegirAleatoria(lista);
-        }
-      }
+    coincidencias.sort((a, b) => Number(b.exacta) - Number(a.exacta) || b.palabras - a.palabras || b.longitud - a.longitud);
+    if (coincidencias.length) {
+      const { clave, lista } = coincidencias[0];
+      contextoConversacion.palabraClave = clave;
+      contextoConversacion.repeticiones = 0;
+      registrarTema(clave, "respuesta_json");
+      return elegirAleatoria(lista);
     }
 
     const sugerencias = sugerirClaves(tnorm, respuestas);
@@ -651,44 +759,47 @@ ${resultado}`;
   async function procesarEntrada(textoForzado = null) {
     const input = $("#userInput");
     const btn = $("#enviar");
-    if (!input || !btn) return;
+    if (!input || !btn || procesando) return;
 
     const original = (textoForzado ?? input.value).trim();
     if (!original) return;
-
-    let corregidoHTML = original;
-    let corregidoSimple = original;
-    try {
-      if (tiene(window.corregirTexto)) {
-        const r = await window.corregirTexto(original);
-        if (r && (r.corregidoHTML || r.corregidoSimple)) {
-          corregidoHTML = r.corregidoHTML || original;
-          corregidoSimple = r.corregidoSimple || original;
-        }
-      }
-    } catch {}
-
-    mostrarMensaje("Usuario", corregidoHTML, { html: true });
+    procesando = true;
+    btn.disabled = true;
+    // Se vacía de inmediato para que una respuesta lenta no borre texto nuevo.
     input.value = "";
     autoResizeTextarea();
-
-    btn.disabled = true;
     setEstado("Pensando…");
     setEscribiendo(true);
+    mostrarMensaje("Usuario", original);
 
-    let respuesta;
     try {
-      respuesta = await resolverIntents(corregidoSimple);
+      let textoProcesar = original;
+      const prefs = window.Chatmu?.memoria?.obtenerPrefs?.() || {};
+      const esOrdenHerramienta = /^(?:corrige|como se escribe|traduce|traduccion|traducción|\/[a-z]|borrar todos mis datos)\b/i.test(normalizarTexto(original));
+      if (prefs.autoCorrect && !esOrdenHerramienta && tiene(window.corregirTexto)) {
+        try {
+          const revision = await window.corregirTexto(original);
+          if (revision?.corregidoSimple && revision.corregidoSimple !== original) {
+            textoProcesar = revision.corregidoSimple;
+            mostrarMensaje("Robot", `Corrección automática sugerida: ${textoProcesar}`);
+          }
+        } catch {
+          mostrarMensaje("Robot", "No pude revisar la ortografía; interpretaré tu mensaje original.");
+        }
+      }
+      const respuesta = await resolverIntents(textoProcesar);
+      mostrarMensaje("Robot", typeof respuesta === "string" && respuesta.trim() ? respuesta : "Lo siento, no pude generar una respuesta.", { persist: !noPersistirRespuesta });
+      if (!noPersistirRespuesta) guardarContexto();
     } catch (e) {
       console.error(e);
-      respuesta = "Ups, algo falló procesando tu mensaje.";
+      mostrarMensaje("Robot", "Ups, algo falló procesando tu mensaje.");
     } finally {
       setEscribiendo(false);
       btn.disabled = false;
+      procesando = false;
+      noPersistirRespuesta = false;
       setEstado(`Listo · v${window.ChatmuConfig?.version || "3"}`);
     }
-
-    mostrarMensaje("Robot", typeof respuesta === "string" && respuesta.trim() ? respuesta : "Lo siento, no pude generar una respuesta.");
   }
 
   function renderQuickActions() {
@@ -751,7 +862,8 @@ ${resultado}`;
     }
 
     recognition = new SpeechRecognition();
-    recognition.lang = "es-ES";
+    const lang = window.Chatmu?.memoria?.obtenerPrefs?.().lang || "es";
+    recognition.lang = lang === "es" ? "es-ES" : lang;
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
 
@@ -800,6 +912,13 @@ ${resultado}`;
     const btnVoz = $("#btnVoz");
     const clearBtn = $("#clearChatBtn");
     const exportBtn = $("#exportChatBtn");
+    const correctToggle = $("#autoCorrect");
+
+    if (correctToggle && !correctToggle.__bound) {
+      correctToggle.checked = !!window.Chatmu?.memoria?.obtenerPrefs?.().autoCorrect;
+      correctToggle.addEventListener("change", () => window.Chatmu?.memoria?.setPref?.("autoCorrect", correctToggle.checked));
+      correctToggle.__bound = true;
+    }
 
     if (form && !form.__bound) {
       form.addEventListener("submit", (e) => {
@@ -828,7 +947,7 @@ ${resultado}`;
         const dark = document.body.classList.contains("modo-nocturno");
         btnModo.textContent = dark ? "☀️" : "🌙";
         btnModo.classList.toggle("activo", dark);
-        localStorage.setItem("chatbot_modo_nocturno", dark ? "1" : "0");
+        storageSet("chatbot_modo_nocturno", dark ? "1" : "0");
       });
       btnModo.__bound = true;
     }
@@ -843,7 +962,7 @@ ${resultado}`;
 
     if (clearBtn && !clearBtn.__bound) {
       clearBtn.addEventListener("click", () => {
-        limpiarChat();
+        limpiarChat(true);
         mostrarMensaje("Robot", "Hola, ¿en qué puedo ayudarte?", { persist: true });
       });
       clearBtn.__bound = true;
@@ -863,7 +982,7 @@ ${resultado}`;
     const cont = $("#controles");
     if (!cont || $("#langSelect")) return;
     const prefs = window.Chatmu?.memoria?.obtenerPrefs?.() || {};
-    const langActual = prefs.lang || localStorage.getItem("chatbot_lang") || "es";
+    const langActual = prefs.lang || storageGet("chatbot_lang") || "es";
     const sel = document.createElement("select");
     sel.id = "langSelect";
     sel.title = "Idioma";
@@ -879,7 +998,8 @@ ${resultado}`;
     sel.value = langActual;
     sel.addEventListener("change", () => {
       window.Chatmu?.memoria?.setPref?.("lang", sel.value);
-      localStorage.setItem("chatbot_lang", sel.value);
+      storageSet("chatbot_lang", sel.value);
+      if (recognition) recognition.lang = sel.value === "es" ? "es-ES" : sel.value;
     });
     cont.appendChild(sel);
   }
@@ -898,7 +1018,7 @@ ${resultado}`;
     }
 
     const prefs = window.Chatmu?.memoria?.obtenerPrefs?.() || {};
-    const lang = prefs.lang || localStorage.getItem("chatbot_lang") || "es";
+    const lang = prefs.lang || storageGet("chatbot_lang") || "es";
     let saludo = "Hola, ¿en qué puedo ayudarte?";
     if (lang && lang !== "es") {
       try { saludo = await safeTraducir(saludo, lang); } catch {}
@@ -911,7 +1031,7 @@ ${resultado}`;
     window.__CHATBOT_CORE_READY__ = true;
 
     try {
-      const dark = localStorage.getItem("chatbot_modo_nocturno") === "1";
+      const dark = storageGet("chatbot_modo_nocturno") === "1";
       document.body.classList.toggle("modo-nocturno", dark);
       const botonModo = $("#btnModo");
       if (botonModo) {
@@ -924,9 +1044,11 @@ ${resultado}`;
 
     bindEventos();
     ensureLangSelect();
+    restaurarContexto();
     await cargarRespuestas();
     await cargarHistorialOSaludo();
-    setEstado(`Listo · v${window.ChatmuConfig?.version || "3"}`);
+    const sinAlmacenamiento = window.Chatmu?.memoria?.sinPersistencia?.();
+    setEstado(sinAlmacenamiento ? `Listo · v${window.ChatmuConfig?.version} · Sin almacenamiento persistente` : `Listo · v${window.ChatmuConfig?.version || "3"}`);
 
     document.addEventListener("keydown", (e) => {
       const isMac = navigator.platform.toUpperCase().includes("MAC");
@@ -942,7 +1064,7 @@ ${resultado}`;
       }
       if (ctrl && e.shiftKey && (e.key === "Delete" || e.key === "Backspace")) {
         e.preventDefault();
-        limpiarChat();
+        limpiarChat(true);
         mostrarMensaje("Robot", "Hola, ¿en qué puedo ayudarte?", { persist: true });
       }
     });
@@ -950,6 +1072,9 @@ ${resultado}`;
 
   window.inicializarChatbot = inicializarChatbot;
   window.cambiarModo = () => $("#btnModo")?.click();
+  if (window.ChatmuConfig?.testMode === true) {
+    window.__CHATMUBOT_TEST__ = { resolverIntents, procesarEntrada, contextoConversacion, reiniciarContexto, cargarRespuestas };
+  }
 
   document.addEventListener("DOMContentLoaded", () => {
     if (!window.__CHATBOT_CORE_READY__) inicializarChatbot();

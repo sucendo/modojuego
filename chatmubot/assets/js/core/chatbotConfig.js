@@ -3,7 +3,7 @@
 */
 
 window.ChatmuConfig = {
-  version: "3.0.0",
+  version: "3.0.1",
   appName: "ChatmuBot",
   data: {
     responses: "data/chatmubot/chatbotrespuestas.json",
@@ -24,7 +24,7 @@ window.ChatmuConfig = {
     ]
   },
   features: {
-    mathJS: true,
+    mathJS: false, // Cálculo aritmético local: no necesita la biblioteca de un CDN.
     tts: true,
     speechRecognition: true,
     wikipedia: true,

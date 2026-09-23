@@ -25,13 +25,15 @@ async function traducirTexto(frase, idiomaDestino = 'en') {
 			body: JSON.stringify(data),
 		});
 
+		if (!respuesta.ok) throw new Error(`LibreTranslate HTTP ${respuesta.status}`);
 		const resultado = await respuesta.json();
 		
 		// Devolver el texto traducido
+		if (typeof resultado.translatedText !== "string") throw new Error("Respuesta de traducción no válida");
 		return resultado.translatedText;
 	} catch (error) {
 		console.error('Error al traducir:', error);
-		return 'Hubo un error al traducir la frase.';
+		throw error;
 	}
 }
 
@@ -62,12 +64,15 @@ async function traducirGoogle(frase, idiomaDestino) {
 
 	try {
 		const respuesta = await fetch(apiUrl);
+		if (!respuesta.ok) throw new Error(`Traductor HTTP ${respuesta.status}`);
 		const resultado = await respuesta.json();
 
 		// El resultado es un array, tomamos la primera traducción
-		return resultado[0][0][0];
+		const traducido = resultado?.[0]?.map(parte => parte?.[0] || "").join("");
+		if (!traducido) throw new Error("Respuesta de traducción no válida");
+		return traducido;
 	} catch (error) {
 		console.error('Error al traducir:', error);
-		return 'Hubo un error al traducir la frase.';
+		throw error;
 	}
 }

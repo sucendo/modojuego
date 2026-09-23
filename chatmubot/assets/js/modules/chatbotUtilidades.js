@@ -55,36 +55,67 @@ function saludoDia() {
 
 window.Chatmu = window.Chatmu || {};
 Chatmu.memoria = (function () {
+  // Claves heredadas de v3.0.0: la actualización no borra el historial existente.
   const K = "chatbot_historial_v2";
   const KPREF = "chatbot_prefs_v2";
   const KDATA = "chatbot_datos_v2";
   const MAX = 500;
+  const fallback = new Map();
+  let sinPersistencia = false;
+  try {
+    localStorage.setItem("chatbot_test_almacen", "1");
+    localStorage.removeItem("chatbot_test_almacen");
+  } catch { sinPersistencia = true; }
 
-  function cargar() {
-    try { return JSON.parse(localStorage.getItem(K)) || []; } catch { return []; }
+  function leer(key) {
+    if (fallback.has(key)) return fallback.get(key);
+    try { return localStorage.getItem(key); }
+    catch { sinPersistencia = true; return null; }
   }
-
-  function guardar(hist) {
-    localStorage.setItem(K, JSON.stringify((hist || []).slice(-MAX)));
+  function escribir(key, value) {
+    fallback.set(key, value);
+    try { localStorage.setItem(key, value); }
+    catch { sinPersistencia = true; }
   }
-
+  function quitar(key) {
+    fallback.delete(key);
+    try { localStorage.removeItem(key); }
+    catch { sinPersistencia = true; }
+  }
+  function json(key, fallbackValue) {
+    try {
+      const value = JSON.parse(leer(key));
+      return value && typeof value === "object" && !Array.isArray(value) === !Array.isArray(fallbackValue) ? value : fallbackValue;
+    } catch { return fallbackValue; }
+  }
+  function cargar() { return json(K, []); }
+  function guardar(hist) { escribir(K, JSON.stringify((hist || []).slice(-MAX))); }
   function add(entry) {
-    if (!entry || !entry.actor) return;
+    if (!entry?.actor) return;
     const h = cargar();
     h.push({ ...entry, t: Date.now() });
     guardar(h);
   }
-
-  function limpiar() {
-    localStorage.removeItem(K);
+  function limpiar() { quitar(K); }
+  function obtenerPrefs() { return json(KPREF, {}); }
+  function setPref(key, val) {
+    const p = obtenerPrefs(); p[key] = val; escribir(KPREF, JSON.stringify(p));
   }
-
+  function obtenerDatos() { return json(KDATA, {}); }
+  function setDato(clave, valor) {
+    const d = obtenerDatos(); d[clave] = valor; escribir(KDATA, JSON.stringify(d));
+  }
+  function getDato(clave) { return obtenerDatos()[clave]; }
+  function borrarDato(clave) {
+    const d = obtenerDatos(); delete d[clave]; escribir(KDATA, JSON.stringify(d));
+  }
+  function limpiarDatos() { quitar(KDATA); }
+  function borrarTodo() { [K, KPREF, KDATA].forEach(quitar); }
   function exportar() {
     const data = {
       exportedAt: new Date().toISOString(),
-      history: cargar(),
-      prefs: obtenerPrefs(),
-      savedData: obtenerDatos(),
+      version: "3.0.1",
+      history: cargar(), prefs: obtenerPrefs(), savedData: obtenerDatos()
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -92,57 +123,12 @@ Chatmu.memoria = (function () {
     a.href = url;
     a.download = `chatmubot_${new Date().toISOString().slice(0, 10)}.json`;
     document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+    a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
-
-  function obtenerPrefs() {
-    try { return JSON.parse(localStorage.getItem(KPREF)) || {}; } catch { return {}; }
-  }
-
-  function setPref(key, val) {
-    const p = obtenerPrefs();
-    p[key] = val;
-    localStorage.setItem(KPREF, JSON.stringify(p));
-  }
-
-  function obtenerDatos() {
-    try { return JSON.parse(localStorage.getItem(KDATA)) || {}; } catch { return {}; }
-  }
-
-  function setDato(clave, valor) {
-    const datos = obtenerDatos();
-    datos[clave] = valor;
-    localStorage.setItem(KDATA, JSON.stringify(datos));
-  }
-
-  function getDato(clave) {
-    return obtenerDatos()[clave];
-  }
-
-  function borrarDato(clave) {
-    const datos = obtenerDatos();
-    delete datos[clave];
-    localStorage.setItem(KDATA, JSON.stringify(datos));
-  }
-
-  function limpiarDatos() {
-    localStorage.removeItem(KDATA);
-  }
-
   return {
-    cargar,
-    guardar,
-    add,
-    limpiar,
-    exportar,
-    obtenerPrefs,
-    setPref,
-    obtenerDatos,
-    setDato,
-    getDato,
-    borrarDato,
-    limpiarDatos,
+    cargar, guardar, add, limpiar, exportar, obtenerPrefs, setPref,
+    obtenerDatos, setDato, getDato, borrarDato, limpiarDatos, borrarTodo,
+    sinPersistencia: () => sinPersistencia,
   };
 })();

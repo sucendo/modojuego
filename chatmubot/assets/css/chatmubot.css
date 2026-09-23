@@ -56,12 +56,27 @@ button, textarea, select {
 #chat-app {
   max-width: 1100px;
   height: 100vh;
+  height: 100dvh;
   margin: 0 auto;
   padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
+
+.correction-optin {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  column-gap: 7px;
+  color: var(--muted);
+  font-size: .82rem;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+.correction-optin input { accent-color: var(--primary); width: 17px; height: 17px; cursor: pointer; }
+.correction-optin small { font-size: inherit; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 
 .app-header {
   display: flex;
