@@ -16,6 +16,10 @@ Chatbot web con **motor conversacional propio** (reglas, contexto, respuestas y 
 
 **Importante:** no abras `index.html` directamente mediante `file://`, ya que el navegador puede impedir cargar el JSON por seguridad. No hace falta instalar Node ni Python si vas a alojar la carpeta en Apache, Nginx o un servicio web estático.
 
+## Corrección de interfaz (23/09/2026)
+
+La versión con corrección de interfaz rediseña el área de escritura para que no se comprima por encima de 768 px y mantenga controles accesibles en móvil. El motor sigue siendo el de v3.0.1.
+
 ## Novedades de la v3.0.1
 
 - Prioridad de herramientas explícitas: «traduce al inglés: buenos días» no se confunde con un saludo; «al francés» reutiliza la frase anterior.

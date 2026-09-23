@@ -31,14 +31,16 @@
       <form id="input-container" autocomplete="off">
         <label class="sr-only" for="userInput">Escribe tu mensaje</label>
         <textarea id="userInput" rows="1" placeholder="Escribe tu pregunta aquí"></textarea>
-        <div id="controles">
-          <button type="submit" id="enviar">Enviar</button>
-          <button type="button" id="btnModo" title="Cambiar tema">🌙</button>
-          <button type="button" id="btnVoz" title="Activar lectura de respuestas">🔊</button>
-          <button type="button" id="micBtn" title="Dictado por voz">🎙️</button>
-          <button type="button" id="fullscreenBtn" title="Pantalla completa">↕️</button>
+        <div class="composer-footer">
+          <label class="correction-optin"><input type="checkbox" id="autoCorrect" /> Corrección ortográfica automática <small>(opcional: envía tus mensajes a LanguageTool)</small></label>
+          <div id="controles" role="group" aria-label="Controles del chat">
+            <button type="submit" id="enviar">Enviar</button>
+            <button type="button" id="btnModo" title="Cambiar tema" aria-label="Cambiar tema">🌙</button>
+            <button type="button" id="btnVoz" title="Activar lectura de respuestas" aria-label="Activar lectura de respuestas">🔊</button>
+            <button type="button" id="micBtn" title="Dictado por voz" aria-label="Dictado por voz">🎙️</button>
+            <button type="button" id="fullscreenBtn" title="Pantalla completa" aria-label="Pantalla completa">↕️</button>
+          </div>
         </div>
-        <label class="correction-optin"><input type="checkbox" id="autoCorrect" /> Corrección ortográfica automática <small>(opcional: envía tus mensajes a LanguageTool)</small></label>
       </form>
     </main>
   </div>
