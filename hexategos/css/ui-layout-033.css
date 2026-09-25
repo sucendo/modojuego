@@ -354,3 +354,46 @@
   #rankResizeBottom033{height:14px;right:30px}
   #rankResize3303{width:30px!important;height:30px!important}
 }
+
+
+/* HEXATEGOS 0.33 · DIALOGOS LEFT RAIL CENTRADOS Y MOVIBLES */
+#gameMenu3306,
+#systemsPanel3213{
+  left:50%!important;
+  right:auto!important;
+  top:50%!important;
+  bottom:auto!important;
+  transform:translate(-50%,-50%)!important;
+}
+
+#gameMenu3306.uiMoved033,
+#systemsPanel3213.uiMoved033{
+  right:auto!important;
+  bottom:auto!important;
+  transform:none!important;
+}
+
+.gameMenuHead3306,
+.sysHead3213{
+  cursor:grab;
+  user-select:none;
+  touch-action:none;
+}
+#gameMenu3306.dragging033 .gameMenuHead3306,
+#systemsPanel3213.dragging033 .sysHead3213{
+  cursor:grabbing;
+}
+
+#gameMenu3306.dragging033,
+#systemsPanel3213.dragging033{
+  box-shadow:0 22px 64px rgba(0,0,0,.58)!important;
+  border-color:rgba(218,181,91,.42)!important;
+}
+
+@media(max-width:760px){
+  #gameMenu3306,
+  #systemsPanel3213{
+    max-width:calc(100vw - 12px)!important;
+    max-height:calc(100dvh - 12px)!important;
+  }
+}
