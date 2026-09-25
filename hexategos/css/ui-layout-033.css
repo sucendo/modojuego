@@ -105,3 +105,90 @@
     height:28px;
   }
 }
+
+
+/* HEXATEGOS 0.33 · RAIL SIMPLE + CLASIFICACIÓN AJUSTABLE */
+#leftRail3306 .railTitle3306,
+#leftRail3306 .railSep3306,
+#leftRail3306 .railItem3306 small,
+#leftRail3306 .railDragHandle033{
+  display:none!important;
+}
+
+#leftRail3306{
+  gap:5px!important;
+  padding:5px!important;
+  cursor:grab;
+}
+#leftRail3306.dragging033{cursor:grabbing!important}
+#leftRail3306 .railItem3306{width:auto!important;gap:0!important}
+#leftRail3306 .railItem3306 .icon{
+  width:44px!important;
+  height:42px!important;
+  min-width:44px!important;
+  border:1px solid rgba(185,220,241,.24)!important;
+  border-radius:10px!important;
+  background:linear-gradient(180deg,rgba(25,57,82,.97),rgba(10,31,48,.97))!important;
+  color:#f4f9fc!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.07),
+    0 3px 9px rgba(0,0,0,.20)!important;
+  font-size:18px!important;
+  font-weight:900!important;
+  line-height:1!important;
+  text-shadow:0 1px 2px rgba(0,0,0,.45);
+}
+#leftRail3306 .railItem3306 .icon:hover{
+  border-color:rgba(137,202,239,.55)!important;
+  background:linear-gradient(180deg,rgba(34,76,106,.98),rgba(13,39,59,.98))!important;
+}
+#leftRail3306 .railItem3306 .icon.active,
+#leftRail3306 .railItem3306 .icon[aria-pressed="true"]{
+  border-color:rgba(116,198,244,.78)!important;
+  box-shadow:
+    inset 0 0 0 1px rgba(118,197,242,.22),
+    0 0 12px rgba(57,150,207,.20)!important;
+}
+
+/* Clasificación: posición libre, tamaño libre y control sin tapar la última fila. */
+#rankPanel3213{
+  box-sizing:border-box!important;
+  max-width:none!important;
+  max-height:none!important;
+}
+#rankRows3213{
+  box-sizing:border-box!important;
+  padding-bottom:27px!important;
+  scroll-padding-bottom:27px!important;
+}
+#rankResize3303{
+  right:4px!important;
+  bottom:4px!important;
+  width:22px!important;
+  height:22px!important;
+  z-index:8!important;
+  box-shadow:0 2px 8px rgba(0,0,0,.32)!important;
+}
+#rankPanel3213.rankMoving033,
+#rankPanel3213.rankSizing033{
+  right:auto!important;
+  bottom:auto!important;
+}
+#rankPanel3213.rankMoving033{cursor:grabbing!important}
+#rankPanel3213.rankSizing033{cursor:nwse-resize!important}
+
+@media(max-width:760px){
+  #leftRail3306{
+    gap:3px!important;
+    padding:4px!important;
+  }
+  #leftRail3306 .railItem3306 .icon{
+    width:34px!important;
+    height:34px!important;
+    min-width:34px!important;
+    border-radius:8px!important;
+    font-size:14px!important;
+  }
+  #rankRows3213{padding-bottom:30px!important;scroll-padding-bottom:30px!important}
+  #rankResize3303{width:25px!important;height:25px!important}
+}
