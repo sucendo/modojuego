@@ -118,7 +118,6 @@
 
     let pending = null;
     let suppressClick = false;
-    const threshold = 7;
 
     rail.addEventListener('pointerdown', e => {
       if (e.button !== undefined && e.button !== 0) return;
@@ -129,7 +128,8 @@
         startY:e.clientY,
         dx:e.clientX-r.left,
         dy:e.clientY-r.top,
-        moved:false
+        moved:false,
+        threshold:e.pointerType === 'touch' ? 16 : 7
       };
       try { rail.setPointerCapture(e.pointerId); } catch (_) {}
     }, true);
@@ -139,7 +139,7 @@
 
       if (!pending.moved){
         const dist = Math.hypot(e.clientX-pending.startX,e.clientY-pending.startY);
-        if (dist < threshold) return;
+        if (dist < pending.threshold) return;
 
         const r = rail.getBoundingClientRect();
         rail.style.left = r.left + 'px';
