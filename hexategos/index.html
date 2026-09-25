@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#050b14">
+<title>HEXATEGOS — Global Geopolitical Strategy · v0.33 Web Modular</title>
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="apple-touch-icon" href="assets/favicon.png">
+<link rel="stylesheet" href="css/hexategos.css">
+
+</head>
+<body class="bootPending3305">
+
+<div id="landing3305" class="landing3305">
+  <img class="landingFullBg3306 landingBgSeparated3308 landingHexBg3309" src="assets/background-hex.webp" alt="" aria-hidden="true">
+  <div class="landingShade3308"></div>
+  <main class="landingCenter3308">
+    <div class="landingBrand3308 landingBrandImg3311" aria-label="HEXATEGOS Global Geopolitical Strategy">
+      <img id="landingLogoImg3311" src="assets/logo-main.png" alt="HEXATEGOS">
+    </div>
+
+    <div class="landingActions3305 landingActions3308">
+      <button id="landingContinue3305" class="landingPrimary3305" type="button">CONTINUAR PARTIDA</button>
+      <button id="landingNew3305" type="button">NUEVA PARTIDA</button>
+      <button id="landingLoad3305" type="button">CARGAR PARTIDA</button>
+      <button id="landingOptions3305" type="button">OPCIONES</button>
+    </div>
+
+    <div id="landingOptionsPanel3305" class="landingOptionsPanel3305 landingOptions3308" aria-hidden="true">
+      <label><input id="landingGrid3305" type="checkbox" checked> Mostrar malla al iniciar</label>
+      <label><input id="landingLabels3305" type="checkbox" checked> Mostrar nombres geográficos</label>
+      <label><input id="landingFullscreen3305" type="checkbox"> Intentar pantalla completa al comenzar</label>
+      <button id="landingOptionsClose3305" type="button">VOLVER</button>
+    </div>
+
+    <input id="landingFile3305" type="file" accept=".hexategos,.openfront,application/json" hidden>
+    <div id="landingStatus3305" class="landingStatus3305 landingStatus3308">El mundo se cargará únicamente al comenzar o cargar una partida.</div>
+  </main>
+</div>
+<div id="bootOverlay3305" class="bootOverlay3305" aria-hidden="true">
+  <div class="bootCard3305">
+    <div class="bootSpinner3305"></div>
+    <b id="bootTitle3305">Preparando mundo…</b>
+    <small id="bootSub3305">Cargando la malla geopolítica y los sistemas estratégicos.</small>
+  </div>
+</div>
+
+<canvas id="view"></canvas>
+<div id="top">
+  <div class="brand brandSolo3313" aria-label="HEXATEGOS">
+  <img id="headerEmblem3313" src="assets/logo-emblem.png" alt="HEXATEGOS">
+</div>
+  <div class="chips statusHud3308" id="statusHud3308">
+    <section class="statusGroup3308 statusNation3308" aria-label="Estado nacional">
+      <span class="statusGroupTitle3308">NACIÓN</span>
+      <div class="statusItem3308"><span>Territorio</span><b id="territoryStat">0</b></div>
+      <div class="statusItem3308"><span>Reserva</span><b id="troopStat3230">0</b></div>
+      <div class="statusItem3308"><span>Oro</span><b id="goldStat">0</b></div>
+      <div class="statusItem3308"><span>Dominio</span><b id="domStat3230">0%</b></div>
+    </section>
+    <section class="statusGroup3308 statusEconomy3308" aria-label="Economía">
+      <span class="statusGroupTitle3308">ECONOMÍA</span>
+      <div class="statusItem3308"><span>Ingreso</span><b id="incomeMini3213">—</b></div>
+      <div class="statusItem3308"><span>Comercio</span><b id="tradeMini3213">+0</b></div>
+      <div class="statusItem3308"><span>Industria</span><b id="industryMini3213">0</b></div>
+    </section>
+    <section class="statusGroup3308 statusMilitary3308" aria-label="Operaciones">
+      <span class="statusGroupTitle3308">OPERACIONES</span>
+      <div class="statusItem3308"><span>Frentes</span><b id="frontMini3213">0</b></div>
+      <div class="statusItem3308"><span>Flota</span><b id="fleetMini3213">0</b></div>
+      <div class="statusItem3308"><span>Puertos</span><b id="portStat">0</b></div>
+    </section>
+    <div class="legacyStatHidden3230"><b id="incomeStat">—</b><b id="zoomStat">1.00×</b></div>
+  </div>
+</div>
+
+<div id="leftRail3306" class="hudRail3306 leftRail3306" aria-label="Controles principales">
+  <div class="railTitle3306">CONTROL</div>
+  <div class="railItem3306"><button class="icon" id="homeBtn3213" aria-label="Volver a la capital" title="Capital">⌂</button><small>Capital</small></div>
+  <div class="railItem3306"><button class="icon" id="systemsBtn3213" aria-label="Diplomacia, economía e inteligencia" title="Sistemas">☷</button><small>Sistemas</small></div>
+  <div class="railItem3306"><button class="icon" id="mapModeBtn3252" aria-label="Modo de mapa: político" title="Modo de mapa">P</button><small>Mapa</small></div>
+  <div class="railSep3306"></div>
+  <div class="railTitle3306">TIEMPO</div>
+  <div class="railItem3306"><button class="icon" id="speedBtn" aria-label="Velocidad" title="Velocidad">1×</button><small>Velocidad</small></div>
+  <div class="railItem3306"><button class="icon" id="pauseBtn3230" aria-label="Pausa" title="Pausa">Ⅱ</button><small>Pausa</small></div>
+</div>
+
+<div id="rightRail3306" class="hudRail3306 rightRail3306" aria-label="Vista y partida">
+  <div class="railTitle3306">VISTA</div>
+  <div class="railItem3306"><button class="icon" id="gridBtn" aria-label="Malla" title="Malla">⌗</button><small>Malla</small></div>
+  <div class="railItem3306"><button class="icon" id="labelBtn" aria-label="Nombres" title="Nombres">Aa</button><small>Nombres</small></div>
+  <div class="railItem3306"><button class="icon" id="resetViewBtn" aria-label="Centrar vista" title="Centrar vista">◎</button><small>Centrar</small></div>
+  <div class="railItem3306"><button class="icon" id="fsBtn3213" aria-label="Pantalla completa" title="Pantalla completa">⛶</button><small>Pantalla</small></div>
+  <div class="railSep3306"></div>
+  <div class="railItem3306"><button class="icon gameMenuIcon3306" id="gameMenuBtn3306" aria-label="Menú de partida" title="Partida">☰</button><small>Partida</small></div>
+</div>
+
+<div id="gameMenu3306" aria-hidden="true">
+  <div class="gameMenuHead3306"><b>PARTIDA</b><button id="gameMenuClose3306" type="button">×</button></div>
+  <button id="gameSaveLocal3306" type="button">💾 <span><b>Guardar partida</b><small>Guardar progreso en este dispositivo</small></span></button>
+  <button id="fileSaveBtn3276" type="button">⬇ <span><b>Guardar archivo</b><small>Crear una copia .hexategos</small></span></button>
+  <button id="gameLoad3306" type="button">📂 <span><b>Cargar partida</b><small>Cargar un archivo .hexategos</small></span></button>
+  <button id="newGameBtn" type="button">↻ <span><b>Nueva partida</b><small>Elegir una nueva ubicación inicial</small></span></button>
+  <div class="gameMenuSep3306"></div>
+  <button id="gameExitMenu3306" class="danger3306" type="button">⇥ <span><b>Salir al menú</b><small>Guardar y volver a la pantalla inicial</small></span></button>
+  <input id="gameLoadFile3306" type="file" accept=".hexategos,.openfront,application/json,.json" hidden>
+</div>
+
+
+<div id="economyMini3213" class="economyMiniLegacy3308" aria-hidden="true"></div>
+<div id="frontDock3213"></div>
+<div id="rankPanel3213">
+ <div class="rankTitle3213" id="rankDragHandle3303"><span>CLASIFICACIÓN</span><small class="rankMoveHint3303">arrastrar</small><button id="rankToggle3302" type="button" aria-label="Abrir o cerrar clasificación">−</button></div>
+ <div id="rankRows3213"></div>
+ <div id="rankResize3303" aria-label="Redimensionar clasificación" title="Arrastra para cambiar el tamaño">↘</div>
+</div>
+<div id="systemsPanel3213">
+ <div class="sysHead3213"><b>SISTEMAS</b><button id="systemsClose3213">×</button></div>
+ <div class="sysTabs3213">
+  <button data-tab="dip" class="active">🤝 DIPLO.</button><button data-tab="eco">⇄ ECON.</button><button data-tab="research">🔬 I+D</button><button data-tab="intel">🕵 INTEL.</button><button data-tab="naval">⚓ NAVAL</button><button data-tab="settings">⚙ AJUST.</button>
+ </div>
+ <div id="sysContent3213"></div>
+</div>
+
+<div id="panel">
+  <button id="panelClose3213" aria-label="Cerrar">×</button>
+  <div id="sel">Territorio</div>
+  <small id="selSub">Toca uno de tus hexágonos o marca un objetivo.</small>
+  <small id="actionHint3230"><span class="actionLegend3230">Azul = disponible</span> · gris = bloqueado</small>
+  <div class="actions">
+    <button id="startBtn" class="primary" disabled><span class="actionMain3230">▶ JUGAR</span><span class="actionState3230">INICIO</span></button>
+    <button id="attackBtn" class="warn" disabled><span class="actionMain3230">⚔ OPERACIÓN</span><span class="actionState3230" id="attackState3230">OBJETIVO</span></button>
+    <button id="fleetBtn" disabled><span class="actionMain3230">⚓ FLOTA</span><span class="actionState3230" id="fleetState3230">TRANSPORTE</span></button>
+    <button id="fortBtn" class="good" disabled><span class="actionMain3230">🛡 DEFENSA</span><span class="actionState3230" id="fortState3230">—</span></button>
+    <button id="cityBtn" class="good" disabled><span class="actionMain3230">🏙 CIUDAD</span><span class="actionState3230" id="cityState3230">—</span></button>
+    <button id="capitalBtn" class="good" disabled><span class="actionMain3230">★ CAPITAL</span><span class="actionState3230" id="capitalState3230">—</span></button>
+    <button id="portBtn" disabled><span class="actionMain3230">⚓ PUERTO</span><span class="actionState3230" id="portState3230">—</span></button>
+    <button id="industryBtn" class="good" disabled><span class="actionMain3230">🏭 INDUSTRIA</span><span class="actionState3230" id="industryState3230">—</span></button>
+    <button id="roadBtn" disabled><span class="actionMain3230">🛣 CARRETERA</span><span class="actionState3230" id="roadState3230">ELIGE DESTINO</span></button>
+    <button id="cancelBtn" class="secondary3230" disabled><span class="actionMain3230">✕ MODO</span><span class="actionState3230">CANCELAR</span></button>
+  </div>
+  <div id="modeLine3212"></div>
+  <div class="ranges3212">
+    <label class="range3212"><span>FUERZA</span><input id="strength3212" type="range" min="25" max="100" step="25" value="75"><b id="strengthVal3212">75%</b></label>
+    <label class="range3212"><span>AVANCE</span><input id="advance3212" type="range" min="0" max="100" step="10" value="70"><b id="advanceVal3212">70% CONS.</b></label>
+  </div>
+  <div id="capitalPanel3230"></div>
+</div>
+<div id="hint">La esfera usa una malla geodésica real: casi todas las celdas son hexágonos y hay 12 pentágonos. Ríos y cordilleras siguen aristas geodésicas. Carreteras, puertos, flotas, economía, defensas y operaciones usan la misma malla mundial.</div>
+
+<div id="terrainLegend3250" aria-label="Leyenda de terreno">
+ <span class="tl3250"><i style="background:#526346"></i>Llanura</span>
+ <span class="tl3250"><i style="background:#2f523d"></i>Bosque</span>
+ <span class="tl3250"><i style="background:#234d38"></i>Selva</span>
+ <span class="tl3250"><i style="background:#8f7146"></i>Desierto</span>
+ <span class="tl3250"><i style="background:#605b3f"></i>Estepa</span>
+ <span class="tl3250"><i style="background:#5b4e42"></i>Montaña</span>
+ <span class="tl3250"><i style="background:#b0c2c9"></i>Hielo</span>
+</div>
+
+<div id="zoomCtl3232">
+ <button id="zoomOut3232" aria-label="Alejar">−</button>
+ <b id="zoomRead3232">1.0×</b>
+ <button id="zoomIn3232" aria-label="Acercar">＋</button>
+</div>
+
+<div id="contextMenu3244" role="dialog" aria-modal="false" aria-label="Acciones contextuales">
+  <div class="ctxHead3244">
+    <div class="ctxTitleWrap3244">
+      <b id="ctxTitle3244">Territorio</b>
+      <small id="ctxMeta3244"></small>
+    </div>
+    <button id="ctxClose3244" class="ctxClose3244" aria-label="Cerrar">×</button>
+  </div>
+  <div id="ctxBreadcrumb3244" class="ctxBreadcrumb3244"></div>
+  <div id="ctxActions3244" class="ctxActions3244"></div>
+</div>
+
+<div id="interactionBar3244" aria-live="polite">
+  <span id="interactionText3244">Selecciona destino</span>
+  <button id="interactionCancel3244">Cancelar</button>
+</div>
+
+<div id="modal3244" class="modal3244" aria-hidden="true">
+  <div id="modalCard3244" class="modalCard3244">
+    <div class="modalHead3244"><b id="modalTitle3244">Información</b><button id="modalClose3244" aria-label="Cerrar">×</button></div>
+    <div id="modalBody3244" class="modalBody3244"></div>
+    <div id="modalActions3244" class="modalActions3244"></div>
+  </div>
+</div>
+
+
+<div id="newGameSetup3302" aria-hidden="true">
+ <div class="newGameSetupCard3302">
+  <div class="newGameSetupHead3302"><b>NUEVA PARTIDA · UBICACIÓN INICIAL</b><button id="setupClose3302" type="button">×</button></div>
+  <div class="newGameSetupHelp3302">Gira el globo, haz zoom y toca una casilla de tierra. Esa casilla será tu capital. Empezarás con la capital y únicamente sus casillas terrestres inmediatas.</div>
+  <div id="setupSelection3302" class="newGameSetupSelection3302">Selecciona una ubicación en el mapa.</div>
+  <div class="newGameSetupActions3302">
+   <button id="setupRandom3302" type="button">⌖ UBICACIÓN ALEATORIA</button>
+   <button id="setupConfirm3302" type="button" class="primary3302" disabled>▶ COMENZAR AQUÍ</button>
+  </div>
+  <div class="newGameSetupMeta3302">Las otras 15 naciones aparecerán en ubicaciones distintas y recibirán un nombre ficticio coherente con su región.</div>
+ </div>
+</div>
+
+<div id="toast"></div>
+
+<div id="modeBanner3230"></div>
+<div id="debug3230"><div id="debugText3230"></div><button id="debugExport3230">EXPORTAR DEBUG</button><button id="geoValidate3242">VALIDAR GEO</button><button id="labelValidate3243">VALIDAR ETIQ.</button><button id="labelBoxes3243">CAJAS ETIQ.</button><button id="uiValidate3244">VALIDAR UI</button><button id="stabilityValidate3298">VALIDAR ESTAB.</button></div>
+<div id="intro3230">
+ <div class="introCard3230">
+  <div class="introTitle3230">HEXATEGOS <span>Global Geopolitical Strategy</span></div>
+  <p>Conquista el planeta por regiones geográficas sobre la nueva esfera. Toca un hexágono, elige una acción y administra frentes, tropas, economía, diplomacia, carreteras y transportes.</p>
+  <div class="gestures3230"><div><b>☝</b><small>Selecciona objetivo</small></div><div><b>↻</b><small>Rota el planeta</small></div><div><b>⤢</b><small>Pellizca zoom</small></div></div>
+  <button id="continue3230">EMPEZAR / CONTINUAR</button>
+  <button id="new3230">NUEVA PARTIDA</button>
+ </div>
+</div>
+<div id="end3230"><div class="endCard3230"><h2 id="endTitle3230">Fin de partida</h2><p id="endText3230"></p><button id="endRestart3230">NUEVA PARTIDA</button></div></div>
+
+
+<script src="js/vendor/pako.min.js"></script>
+<script src="data/bootstrap.js"></script>
+<script src="data/mesh-3.js"></script>
+<script src="data/mesh-4.js"></script>
+<script src="data/mesh-5.js"></script>
+<script src="data/mesh-6.js"></script>
+<script src="data/mesh-8-init.js"></script>
+<script src="data/mesh-8-centers-01.js"></script>
+<script src="data/mesh-8-centers-02.js"></script>
+<script src="data/mesh-8-faceCenters-01.js"></script>
+<script src="data/mesh-8-faceCenters-02.js"></script>
+<script src="data/mesh-8-faceCenters-03.js"></script>
+<script src="data/mesh-8-offsets-01.js"></script>
+<script src="data/mesh-8-adj-01.js"></script>
+<script src="data/mesh-8-adj-02.js"></script>
+<script src="data/mesh-8-edgeNbr-01.js"></script>
+<script src="data/mesh-8-edgeNbr-02.js"></script>
+<script src="data/mesh-8-land-01.js"></script>
+<script src="data/groups-3.js"></script>
+<script src="data/groups-4.js"></script>
+<script src="data/groups-5.js"></script>
+<script src="data/groups-6.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
