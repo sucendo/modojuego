@@ -1,0 +1,122 @@
+/* HEXATEGOS 0.33 · notificaciones diplomáticas y de conflicto */
+#hexategosEventStack033{
+  position:fixed;
+  z-index:70;
+  left:50%;
+  bottom:calc(18px + env(safe-area-inset-bottom));
+  width:min(430px,calc(100vw - 16px));
+  height:0;
+  transform:translateX(-50%);
+  pointer-events:none;
+}
+
+.hexEvent033{
+  --slot:0;
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:calc(var(--slot) * 88px);
+  min-height:76px;
+  box-sizing:border-box;
+  display:grid;
+  grid-template-columns:38px minmax(0,1fr) auto;
+  gap:9px;
+  align-items:center;
+  padding:9px 10px;
+  border:1px solid rgba(129,190,227,.28);
+  border-left:3px solid #6aaed7;
+  border-radius:12px;
+  background:
+    linear-gradient(180deg,rgba(8,27,43,.985),rgba(4,17,29,.985));
+  box-shadow:0 12px 34px rgba(0,0,0,.46);
+  backdrop-filter:blur(12px);
+  color:#eaf5fb;
+  pointer-events:auto;
+  animation:hexEventIn033 .16s ease-out both;
+}
+.hexEvent033[data-type="diplomacy"]{border-left-color:#d7b85e}
+.hexEvent033[data-type="war"]{border-left-color:#d66b61}
+.hexEvent033[data-type="attack"]{border-left-color:#e38a58}
+
+.hexEventIcon033{
+  width:36px;
+  height:36px;
+  display:grid;
+  place-items:center;
+  border-radius:9px;
+  background:rgba(255,255,255,.055);
+  border:1px solid rgba(255,255,255,.08);
+  font-size:18px;
+}
+.hexEventBody033{min-width:0}
+.hexEventTitle033{
+  display:block;
+  margin-bottom:3px;
+  color:#fff3c7;
+  font:900 11px/1.15 system-ui;
+  letter-spacing:.02em;
+}
+.hexEventMsg033{
+  display:-webkit-box;
+  overflow:hidden;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:2;
+  color:#bfd1dc;
+  font:700 9.5px/1.32 system-ui;
+}
+.hexEventActions033{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+.hexEventActions033 button{
+  min-width:58px;
+  height:27px;
+  padding:0 7px;
+  border-radius:7px;
+  border:1px solid rgba(255,255,255,.12);
+  background:#102a40;
+  color:#dcecf5;
+  font:900 8px/1 system-ui;
+}
+.hexEventActions033 .view033{
+  border-color:rgba(215,184,94,.40);
+  color:#f4d77d;
+  background:linear-gradient(180deg,#17364f,#0d263a);
+}
+.hexEventActions033 button:hover{filter:brightness(1.12)}
+.hexEvent033.closing033{
+  animation:hexEventOut033 .15s ease-in both;
+}
+
+@keyframes hexEventIn033{
+  from{opacity:0;transform:translateY(8px) scale(.985)}
+  to{opacity:1;transform:none}
+}
+@keyframes hexEventOut033{
+  from{opacity:1;transform:none}
+  to{opacity:0;transform:translateY(5px) scale(.985)}
+}
+
+/* Cuando un toast antiguo se transforma en aviso importante, se oculta
+   solo ese toast para que el usuario no vea el mensaje duplicado. */
+#toast.hexategosIntercepted033{opacity:0!important}
+
+@media(max-width:760px){
+  #hexategosEventStack033{
+    width:min(390px,calc(100vw - 12px));
+    bottom:calc(10px + env(safe-area-inset-bottom));
+  }
+  .hexEvent033{
+    bottom:calc(var(--slot) * 82px);
+    min-height:70px;
+    grid-template-columns:32px minmax(0,1fr) auto;
+    gap:7px;
+    padding:7px 8px;
+    border-radius:10px;
+  }
+  .hexEventIcon033{width:30px;height:30px;font-size:15px}
+  .hexEventTitle033{font-size:9.5px}
+  .hexEventMsg033{font-size:8.5px}
+  .hexEventActions033 button{min-width:52px;height:25px;font-size:7.5px}
+}
