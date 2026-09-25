@@ -131,7 +131,8 @@
         moved:false,
         threshold:e.pointerType === 'touch' ? 16 : 7
       };
-      try { rail.setPointerCapture(e.pointerId); } catch (_) {}
+      // Un toque normal sigue perteneciendo al botón. La captura se activa
+      // únicamente después de superar el umbral de arrastre.
     }, true);
 
     rail.addEventListener('pointermove', e => {
@@ -150,6 +151,7 @@
         rail.classList.add('uiMoved033','dragging033');
         pending.moved = true;
         suppressClick = true;
+        try { rail.setPointerCapture(e.pointerId); } catch (_) {};
       }
 
       const p = clampXY(rail,e.clientX-pending.dx,e.clientY-pending.dy);
@@ -162,7 +164,9 @@
     const finishRailDrag = e => {
       if (!pending || (e.pointerId !== undefined && pending.id !== e.pointerId)) return;
       const moved = pending.moved;
-      try { rail.releasePointerCapture(pending.id); } catch (_) {}
+      if (moved) {
+        try { rail.releasePointerCapture(pending.id); } catch (_) {}
+      }
       pending = null;
       rail.classList.remove('dragging033');
 
