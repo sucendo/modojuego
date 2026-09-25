@@ -25,6 +25,7 @@
     setup.style.removeProperty('top');
     setup.style.removeProperty('bottom');
     setup.style.removeProperty('transform');
+    setup.classList.remove('uiMoved033','dragging033');
   };
 
   const applySavedPosition = () => {
@@ -39,11 +40,12 @@
     const maxY = Math.max(margin, innerHeight - r.height - margin);
     const x = Math.min(maxX, Math.max(margin, pos.x));
     const y = Math.min(maxY, Math.max(margin, pos.y));
-    setup.style.left = x + 'px';
-    setup.style.top = y + 'px';
-    setup.style.right = 'auto';
-    setup.style.bottom = 'auto';
-    setup.style.transform = 'none';
+    setup.classList.add('uiMoved033');
+    setup.style.setProperty('left', x + 'px', 'important');
+    setup.style.setProperty('top', y + 'px', 'important');
+    setup.style.setProperty('right', 'auto', 'important');
+    setup.style.setProperty('bottom', 'auto', 'important');
+    setup.style.setProperty('transform', 'none', 'important');
   };
 
   const setMinimized = value => {
@@ -70,12 +72,12 @@
       dy: e.clientY - r.top
     };
 
-    setup.style.left = r.left + 'px';
-    setup.style.top = r.top + 'px';
-    setup.style.right = 'auto';
-    setup.style.bottom = 'auto';
-    setup.style.transform = 'none';
-    setup.classList.add('dragging033');
+    setup.classList.add('uiMoved033','dragging033');
+    setup.style.setProperty('left', r.left + 'px', 'important');
+    setup.style.setProperty('top', r.top + 'px', 'important');
+    setup.style.setProperty('right', 'auto', 'important');
+    setup.style.setProperty('bottom', 'auto', 'important');
+    setup.style.setProperty('transform', 'none', 'important');
 
     try { head.setPointerCapture(e.pointerId); } catch (_) {}
     e.preventDefault();
@@ -89,8 +91,8 @@
     const maxY = Math.max(margin, innerHeight - r.height - margin);
     const x = Math.min(maxX, Math.max(margin, e.clientX - drag.dx));
     const y = Math.min(maxY, Math.max(margin, e.clientY - drag.dy));
-    setup.style.left = x + 'px';
-    setup.style.top = y + 'px';
+    setup.style.setProperty('left', x + 'px', 'important');
+    setup.style.setProperty('top', y + 'px', 'important');
     e.preventDefault();
   });
 
