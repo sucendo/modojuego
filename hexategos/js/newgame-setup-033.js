@@ -7,6 +7,17 @@
 
   let drag = null;
   let wasOpen = setup.classList.contains('open3302');
+  const POS_KEY = 'hexategos.ui.newGameSetup.pos.033';
+
+  const readPos = () => {
+    try { return JSON.parse(localStorage.getItem(POS_KEY) || 'null'); }
+    catch (_) { return null; }
+  };
+
+  const savePos = () => {
+    const r = setup.getBoundingClientRect();
+    try { localStorage.setItem(POS_KEY, JSON.stringify({x:r.left,y:r.top})); } catch (_) {}
+  };
 
   const resetPosition = () => {
     setup.style.removeProperty('left');
@@ -14,6 +25,25 @@
     setup.style.removeProperty('top');
     setup.style.removeProperty('bottom');
     setup.style.removeProperty('transform');
+  };
+
+  const applySavedPosition = () => {
+    const pos = readPos();
+    if (!pos || !Number.isFinite(pos.x) || !Number.isFinite(pos.y)) {
+      resetPosition();
+      return;
+    }
+    const r = setup.getBoundingClientRect();
+    const margin = 4;
+    const maxX = Math.max(margin, innerWidth - r.width - margin);
+    const maxY = Math.max(margin, innerHeight - r.height - margin);
+    const x = Math.min(maxX, Math.max(margin, pos.x));
+    const y = Math.min(maxY, Math.max(margin, pos.y));
+    setup.style.left = x + 'px';
+    setup.style.top = y + 'px';
+    setup.style.right = 'auto';
+    setup.style.bottom = 'auto';
+    setup.style.transform = 'none';
   };
 
   const setMinimized = value => {
@@ -69,16 +99,17 @@
     try { head.releasePointerCapture(drag.id); } catch (_) {}
     drag = null;
     setup.classList.remove('dragging033');
+    savePos();
   };
   head.addEventListener('pointerup', endDrag);
   head.addEventListener('pointercancel', endDrag);
 
-  // Cada nueva apertura empieza limpia y compacta, pero el mapa queda totalmente
-  // interactivo fuera de la propia tarjeta.
+  // Cada nueva apertura conserva la última posición elegida por el usuario.
+  // El mapa sigue totalmente interactivo fuera de la propia tarjeta.
   const obs = new MutationObserver(() => {
     const open = setup.classList.contains('open3302');
     if (open && !wasOpen) {
-      resetPosition();
+      applySavedPosition();
       setMinimized(false);
     }
     wasOpen = open;
@@ -87,7 +118,7 @@
 
   addEventListener('resize', () => {
     if (!setup.classList.contains('open3302')) return;
-    const r = setup.getBoundingClientRect();
-    if (r.right > innerWidth || r.bottom > innerHeight || r.left < 0 || r.top < 0) resetPosition();
+    applySavedPosition();
+    savePos();
   }, { passive: true });
 })();
