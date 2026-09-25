@@ -1,0 +1,177 @@
+/* HEXATEGOS 0.33 · estabilización específica para móvil */
+
+/* Evita que el rail vertical se salga por abajo en teléfonos apaisados. */
+@media(max-width:900px) and (orientation:landscape){
+  #leftRail3306:not(.uiMoved033){
+    left:max(5px,env(safe-area-inset-left))!important;
+    top:calc(6px + env(safe-area-inset-top))!important;
+  }
+  #leftRail3306{
+    padding:2px!important;
+    gap:0!important;
+    max-height:calc(100dvh - 12px)!important;
+  }
+  #leftRail3306 .railItem3306 .icon{
+    width:36px!important;
+    min-width:36px!important;
+    height:30px!important;
+    font-size:14px!important;
+  }
+
+  /* Diálogos centrados, pero nunca fuera del viewport real del móvil. */
+  #gameMenu3306,
+  #systemsPanel3213{
+    max-height:calc(100dvh - 12px)!important;
+    max-width:calc(100vw - 12px)!important;
+  }
+  #systemsPanel3213{
+    width:min(470px,78vw)!important;
+  }
+  #sysContent3213{
+    max-height:calc(100dvh - 116px)!important;
+    overflow:auto!important;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+  }
+  #gameMenu3306{
+    width:min(330px,64vw)!important;
+    overflow:auto!important;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  /* Nueva partida compacta pero centrada. */
+  #newGameSetup3302:not(.uiMoved033){
+    width:min(330px,48vw)!important;
+    max-height:calc(100dvh - 12px)!important;
+  }
+  .newGameSetupCard3302{
+    max-height:calc(100dvh - 16px)!important;
+    overflow:auto!important;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  /* Clasificación: controles táctiles más fáciles de alcanzar. */
+  #rankResizeRight033{
+    width:18px!important;
+  }
+  #rankResizeBottom033{
+    height:18px!important;
+  }
+  #rankResize3303{
+    width:34px!important;
+    height:34px!important;
+  }
+}
+
+/* Retrato: rail vertical compacto bajo el emblema y paneles seguros. */
+@media(max-width:600px) and (orientation:portrait){
+  #leftRail3306:not(.uiMoved033){
+    left:max(5px,env(safe-area-inset-left))!important;
+    top:calc(49px + env(safe-area-inset-top))!important;
+  }
+  #leftRail3306{
+    flex-direction:column!important;
+    padding:2px!important;
+    gap:0!important;
+    max-height:calc(100dvh - 58px)!important;
+  }
+  #leftRail3306 .railItem3306 .icon{
+    width:34px!important;
+    min-width:34px!important;
+    height:34px!important;
+    font-size:14px!important;
+    border-right:0!important;
+    border-bottom:1px solid rgba(255,255,255,.055)!important;
+    box-shadow:
+      inset 3px 0 0 rgba(74,151,198,.16),
+      inset 0 1px 0 rgba(255,255,255,.035)!important;
+  }
+  #leftRail3306 .railItem3306:first-child .icon{
+    border-radius:9px 9px 0 0!important;
+  }
+  #leftRail3306 .railItem3306:last-child .icon{
+    border-radius:0 0 9px 9px!important;
+    border-bottom:0!important;
+  }
+
+  #gameMenu3306,
+  #systemsPanel3213{
+    width:min(92vw,390px)!important;
+    max-width:calc(100vw - 12px)!important;
+    max-height:calc(100dvh - 12px)!important;
+  }
+  #sysContent3213{
+    max-height:calc(100dvh - 160px)!important;
+    overflow:auto!important;
+    -webkit-overflow-scrolling:touch;
+  }
+  #gameMenu3306{
+    overflow:auto!important;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  #newGameSetup3302:not(.uiMoved033){
+    width:min(360px,calc(100vw - 12px))!important;
+    max-height:calc(100dvh - 12px)!important;
+  }
+  .newGameSetupCard3302{
+    max-height:calc(100dvh - 16px)!important;
+    overflow:auto!important;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  #rankResizeRight033{width:18px!important}
+  #rankResizeBottom033{height:18px!important}
+  #rankResize3303{width:34px!important;height:34px!important}
+}
+
+/* Avisos importantes: mucho más compactos en móvil para que varios quepan. */
+@media(max-width:760px){
+  #hexategosEventStack033{
+    width:min(400px,calc(100vw - 10px))!important;
+    bottom:calc(7px + env(safe-area-inset-bottom))!important;
+  }
+  .hexEvent033{
+    bottom:calc(var(--slot) * 62px)!important;
+    min-height:56px!important;
+    grid-template-columns:28px minmax(0,1fr) auto!important;
+    gap:6px!important;
+    padding:6px 7px!important;
+    border-radius:9px!important;
+  }
+  .hexEventIcon033{
+    width:27px!important;
+    height:27px!important;
+    font-size:14px!important;
+  }
+  .hexEventTitle033{
+    margin-bottom:2px!important;
+    font-size:8.7px!important;
+  }
+  .hexEventMsg033{
+    font-size:7.8px!important;
+    line-height:1.22!important;
+    -webkit-line-clamp:2!important;
+  }
+  .hexEventActions033{
+    gap:3px!important;
+  }
+  .hexEventActions033 button{
+    min-width:48px!important;
+    height:22px!important;
+    padding:0 5px!important;
+    font-size:6.9px!important;
+  }
+}
+
+/* En pantallas de muy poca altura, todavía más compacto. */
+@media(max-height:420px) and (orientation:landscape){
+  #leftRail3306 .railItem3306 .icon{
+    height:28px!important;
+  }
+  .hexEvent033{
+    bottom:calc(var(--slot) * 56px)!important;
+    min-height:51px!important;
+  }
+}
