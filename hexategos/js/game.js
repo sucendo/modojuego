@@ -682,7 +682,7 @@ canvas.addEventListener('pointermove',e=>{
   pitch=Math.max(-Math.PI/2,Math.min(Math.PI/2,pitch));p.px=p.x;p.py=p.y;needsRender=true;
  }else if(pointers.size===2){
   const a=[...pointers.values()],d=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);
-  zoom=Math.max(.62,Math.min(24,pinchZoom*(d/Math.max(20,pinchStart))));showZoom3232();needsRender=true;
+  zoom=Math.max(.62,Math.min(40,pinchZoom*(d/Math.max(20,pinchStart))));showZoom3232();needsRender=true;
  }
 });
 canvas.addEventListener('pointerup',e=>{
@@ -16329,4 +16329,11 @@ debug3230=function(){
 
 // ================= v0.33 · WEB MODULAR =================
 window.HEXATEGOS_BUILD = '0.33';
+// ================= /v0.33 =================
+
+
+// ================= v0.33 · TOUCH CORE v3.30.15 =================
+// Conserva un único flujo pointerdown/pointermove/pointerup para el canvas.
+// Única diferencia funcional: pinch táctil permitido hasta 40×.
+window.HEXATEGOS_TOUCH_CORE='v3.30.15-single-handler-40x';
 // ================= /v0.33 =================
