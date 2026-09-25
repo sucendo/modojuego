@@ -1,0 +1,107 @@
+/* HEXATEGOS 0.33 · HUD unificado y elementos móviles */
+
+#rightRail3306{display:none!important}
+
+#leftRail3306{
+  touch-action:none;
+  user-select:none;
+  max-height:calc(100dvh - 16px);
+  max-width:calc(100vw - 16px);
+}
+
+#leftRail3306.uiMoved033{
+  right:auto!important;
+  bottom:auto!important;
+}
+
+.railDragHandle033{
+  display:grid;
+  place-items:center;
+  flex:none;
+  width:34px;
+  height:24px;
+  border:1px dashed rgba(151,193,219,.28);
+  border-radius:7px;
+  color:#7fa2b8;
+  background:rgba(11,30,45,.55);
+  font:900 14px/1 system-ui;
+  letter-spacing:-2px;
+  cursor:grab;
+  touch-action:none;
+}
+.railDragHandle033:active{cursor:grabbing}
+#leftRail3306.dragging033{
+  box-shadow:0 18px 45px rgba(0,0,0,.52)!important;
+  border-color:rgba(130,201,244,.45)!important;
+}
+
+#zoomCtl3232{
+  touch-action:none;
+}
+#zoomCtl3232.uiMoved033{
+  right:auto!important;
+  bottom:auto!important;
+}
+#zoomCtl3232.zoomCtlHidden033{
+  display:none!important;
+}
+#zoomRead3232{
+  cursor:grab;
+  touch-action:none;
+  user-select:none;
+  border-radius:7px;
+  padding:5px 3px;
+}
+#zoomRead3232:active{cursor:grabbing}
+#zoomCtl3232.dragging033{
+  box-shadow:0 14px 36px rgba(0,0,0,.52);
+  border-color:rgba(130,201,244,.48);
+}
+
+.uiSettingRow033{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin:8px 0 0;
+  padding:8px 9px;
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:9px;
+  background:rgba(77,135,174,.08);
+  color:#d8e8f2;
+  font:700 11px/1.25 system-ui;
+}
+.uiSettingRow033 input{
+  width:16px;
+  height:16px;
+  flex:none;
+}
+
+@media(max-width:760px){
+  #leftRail3306{
+    overflow:visible!important;
+    max-width:calc(100vw - 8px)!important;
+  }
+  #leftRail3306 .railDragHandle033{
+    width:20px;
+    height:29px;
+    border-radius:6px;
+    font-size:11px;
+  }
+}
+
+@media(max-width:480px){
+  #leftRail3306{
+    gap:2px!important;
+    padding:3px!important;
+  }
+  #leftRail3306 .railItem3306 .icon{
+    width:27px!important;
+    height:28px!important;
+    min-width:27px!important;
+    font-size:11px!important;
+  }
+  #leftRail3306 .railDragHandle033{
+    width:18px;
+    height:28px;
+  }
+}
