@@ -8,6 +8,7 @@
 <link rel="icon" type="image/png" href="assets/favicon.png">
 <link rel="apple-touch-icon" href="assets/favicon.png">
 <link rel="stylesheet" href="css/hexategos.css">
+<link rel="stylesheet" href="css/ui-layout-033.css">
 
 </head>
 <body class="bootPending3305">
@@ -30,6 +31,7 @@
     <div id="landingOptionsPanel3305" class="landingOptionsPanel3305 landingOptions3308" aria-hidden="true">
       <label><input id="landingGrid3305" type="checkbox" checked> Mostrar malla al iniciar</label>
       <label><input id="landingLabels3305" type="checkbox" checked> Mostrar nombres geográficos</label>
+      <label><input id="landingZoomCtl033" type="checkbox" checked> Mostrar control de zoom</label>
       <label><input id="landingFullscreen3305" type="checkbox"> Intentar pantalla completa al comenzar</label>
       <button id="landingOptionsClose3305" type="button">VOLVER</button>
     </div>
@@ -76,24 +78,22 @@
 </div>
 
 <div id="leftRail3306" class="hudRail3306 leftRail3306" aria-label="Controles principales">
+  <div class="railItem3306"><button class="icon gameMenuIcon3306" id="gameMenuBtn3306" aria-label="Menú de partida" title="Partida">☰</button><small>Partida</small></div>
   <div class="railTitle3306">CONTROL</div>
   <div class="railItem3306"><button class="icon" id="homeBtn3213" aria-label="Volver a la capital" title="Capital">⌂</button><small>Capital</small></div>
   <div class="railItem3306"><button class="icon" id="systemsBtn3213" aria-label="Diplomacia, economía e inteligencia" title="Sistemas">☷</button><small>Sistemas</small></div>
   <div class="railItem3306"><button class="icon" id="mapModeBtn3252" aria-label="Modo de mapa: político" title="Modo de mapa">P</button><small>Mapa</small></div>
   <div class="railSep3306"></div>
-  <div class="railTitle3306">TIEMPO</div>
-  <div class="railItem3306"><button class="icon" id="speedBtn" aria-label="Velocidad" title="Velocidad">1×</button><small>Velocidad</small></div>
-  <div class="railItem3306"><button class="icon" id="pauseBtn3230" aria-label="Pausa" title="Pausa">Ⅱ</button><small>Pausa</small></div>
-</div>
-
-<div id="rightRail3306" class="hudRail3306 rightRail3306" aria-label="Vista y partida">
   <div class="railTitle3306">VISTA</div>
   <div class="railItem3306"><button class="icon" id="gridBtn" aria-label="Malla" title="Malla">⌗</button><small>Malla</small></div>
   <div class="railItem3306"><button class="icon" id="labelBtn" aria-label="Nombres" title="Nombres">Aa</button><small>Nombres</small></div>
   <div class="railItem3306"><button class="icon" id="resetViewBtn" aria-label="Centrar vista" title="Centrar vista">◎</button><small>Centrar</small></div>
-  <div class="railItem3306"><button class="icon" id="fsBtn3213" aria-label="Pantalla completa" title="Pantalla completa">⛶</button><small>Pantalla</small></div>
   <div class="railSep3306"></div>
-  <div class="railItem3306"><button class="icon gameMenuIcon3306" id="gameMenuBtn3306" aria-label="Menú de partida" title="Partida">☰</button><small>Partida</small></div>
+  <div class="railTitle3306">TIEMPO</div>
+  <div class="railItem3306"><button class="icon" id="speedBtn" aria-label="Velocidad" title="Velocidad">1×</button><small>Velocidad</small></div>
+  <div class="railItem3306"><button class="icon" id="pauseBtn3230" aria-label="Pausa" title="Pausa">Ⅱ</button><small>Pausa</small></div>
+  <div class="railSep3306"></div>
+  <div class="railItem3306"><button class="icon" id="fsBtn3213" aria-label="Pantalla completa" title="Pantalla completa">⛶</button><small>Pantalla</small></div>
 </div>
 
 <div id="gameMenu3306" aria-hidden="true">
@@ -250,6 +250,8 @@
 <script src="data/groups-5.js"></script>
 <script src="data/groups-6.js"></script>
 <script src="js/game.js"></script>
-<script src="js/newgame-setup-033.js"></script>\n<script src="js/mobile-zoom-033.js"></script>
+<script src="js/newgame-setup-033.js"></script>
+<script src="js/mobile-zoom-033.js"></script>
+<script src="js/ui-layout-033.js"></script>
 </body>
 </html>
