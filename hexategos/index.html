@@ -193,14 +193,21 @@
 
 <div id="newGameSetup3302" aria-hidden="true">
  <div class="newGameSetupCard3302">
-  <div class="newGameSetupHead3302"><b>NUEVA PARTIDA · UBICACIÓN INICIAL</b><button id="setupClose3302" type="button">×</button></div>
-  <div class="newGameSetupHelp3302">Gira el globo, haz zoom y toca una casilla de tierra. Esa casilla será tu capital. Empezarás con la capital y únicamente sus casillas terrestres inmediatas.</div>
+  <div class="newGameSetupHead3302" title="Arrastra para mover este panel">
+   <b>NUEVA PARTIDA · CAPITAL</b>
+   <div class="newGameSetupHeadActions033">
+    <button id="setupMinimize033" type="button" aria-label="Minimizar panel" title="Minimizar panel">−</button>
+    <button id="setupClose3302" type="button" aria-label="Cancelar nueva partida" title="Cancelar">×</button>
+   </div>
+  </div>
+  <div class="newGameSetupHelp3302">Gira o pellizca el globo y toca una casilla de tierra para elegir tu capital. Puedes seguir moviéndote por todo el mundo mientras eliges.</div>
   <div id="setupSelection3302" class="newGameSetupSelection3302">Selecciona una ubicación en el mapa.</div>
   <div class="newGameSetupActions3302">
-   <button id="setupRandom3302" type="button">⌖ UBICACIÓN ALEATORIA</button>
-   <button id="setupConfirm3302" type="button" class="primary3302" disabled>▶ COMENZAR AQUÍ</button>
+   <button id="setupRandom3302" type="button">⌖ ALEATORIA</button>
+   <button id="setupConfirm3302" type="button" class="primary3302" disabled>▶ COMENZAR</button>
   </div>
-  <div class="newGameSetupMeta3302">Las otras 15 naciones aparecerán en ubicaciones distintas y recibirán un nombre ficticio coherente con su región.</div>
+  <div class="newGameSetupMeta3302">Las otras 15 naciones se generarán al comenzar, separadas por el mundo.</div>
+  <div class="newGameSetupMapHint033">Arrastra la cabecera para apartar el panel · el mapa permanece activo.</div>
  </div>
 </div>
 
@@ -243,5 +250,6 @@
 <script src="data/groups-5.js"></script>
 <script src="data/groups-6.js"></script>
 <script src="js/game.js"></script>
+<script src="js/newgame-setup-033.js"></script>
 </body>
 </html>
