@@ -109,23 +109,79 @@
     handle.addEventListener('pointercancel', end);
   }
 
-  // Barra izquierda unificada: el asa es el segundo elemento visual,
-  // de modo que Partida siga siendo el primer botón y Pantalla el último.
+  // Barra unificada: se puede arrastrar desde cualquier punto.
+  // Un toque corto sobre un botón sigue activándolo; solo se convierte en arrastre
+  // cuando el puntero supera el umbral de movimiento.
   if (rail){
-    let handle = rail.querySelector('.railDragHandle033');
-    if (!handle){
-      handle = document.createElement('div');
-      handle.className = 'railDragHandle033';
-      handle.setAttribute('role','button');
-      handle.setAttribute('aria-label','Mover barra de controles');
-      handle.title = 'Arrastra para mover la barra';
-      handle.textContent = '⋮⋮';
-      const first = rail.firstElementChild;
-      if (first) first.insertAdjacentElement('afterend',handle);
-      else rail.appendChild(handle);
-    }
+    rail.querySelector('.railDragHandle033')?.remove();
     applyPosition(rail, readJSON(K_RAIL));
-    makeDraggable(rail, handle, K_RAIL);
+
+    let pending = null;
+    let suppressClick = false;
+    const threshold = 7;
+
+    rail.addEventListener('pointerdown', e => {
+      if (e.button !== undefined && e.button !== 0) return;
+      const r = rail.getBoundingClientRect();
+      pending = {
+        id:e.pointerId,
+        startX:e.clientX,
+        startY:e.clientY,
+        dx:e.clientX-r.left,
+        dy:e.clientY-r.top,
+        moved:false
+      };
+      try { rail.setPointerCapture(e.pointerId); } catch (_) {}
+    }, true);
+
+    rail.addEventListener('pointermove', e => {
+      if (!pending || pending.id !== e.pointerId) return;
+
+      if (!pending.moved){
+        const dist = Math.hypot(e.clientX-pending.startX,e.clientY-pending.startY);
+        if (dist < threshold) return;
+
+        const r = rail.getBoundingClientRect();
+        rail.style.left = r.left + 'px';
+        rail.style.top = r.top + 'px';
+        rail.style.right = 'auto';
+        rail.style.bottom = 'auto';
+        rail.style.transform = 'none';
+        rail.classList.add('uiMoved033','dragging033');
+        pending.moved = true;
+        suppressClick = true;
+      }
+
+      const p = clampXY(rail,e.clientX-pending.dx,e.clientY-pending.dy);
+      rail.style.left = p.x + 'px';
+      rail.style.top = p.y + 'px';
+      e.preventDefault();
+      e.stopPropagation();
+    }, true);
+
+    const finishRailDrag = e => {
+      if (!pending || (e.pointerId !== undefined && pending.id !== e.pointerId)) return;
+      const moved = pending.moved;
+      try { rail.releasePointerCapture(pending.id); } catch (_) {}
+      pending = null;
+      rail.classList.remove('dragging033');
+
+      if (moved){
+        savePosition(rail,K_RAIL);
+        e.preventDefault?.();
+        e.stopPropagation?.();
+        setTimeout(() => { suppressClick = false; }, 0);
+      }
+    };
+    rail.addEventListener('pointerup',finishRailDrag,true);
+    rail.addEventListener('pointercancel',finishRailDrag,true);
+
+    rail.addEventListener('click', e => {
+      if (!suppressClick) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      suppressClick = false;
+    }, true);
   }
 
   if (zoomCtl && zoomHandle){
