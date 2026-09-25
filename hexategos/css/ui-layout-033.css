@@ -397,3 +397,66 @@
     max-height:calc(100dvh - 12px)!important;
   }
 }
+
+
+/* HEXATEGOS 0.33 · POSICIONES POR DEFECTO DE NUEVA PARTIDA */
+/* La barra principal nace debajo del logotipo. Una vez movida, manda su posición guardada. */
+#leftRail3306:not(.uiMoved033){
+  left:max(8px,env(safe-area-inset-left))!important;
+  right:auto!important;
+  top:calc(76px + env(safe-area-inset-top))!important;
+  bottom:auto!important;
+  transform:none!important;
+}
+#leftRail3306{
+  flex-direction:column!important;
+  width:auto!important;
+  height:auto!important;
+}
+
+/* Los diálogos asociados a la barra se abren siempre visibles y centrados si no se han movido. */
+#gameMenu3306:not(.uiMoved033),
+#systemsPanel3213:not(.uiMoved033){
+  left:50%!important;
+  right:auto!important;
+  top:50%!important;
+  bottom:auto!important;
+  transform:translate(-50%,-50%)!important;
+}
+#gameMenu3306{z-index:50!important}
+#systemsPanel3213{z-index:49!important}
+
+/* Selección inicial: centrada por defecto; tras moverla conserva la posición. */
+#newGameSetup3302:not(.uiMoved033){
+  left:50%!important;
+  right:auto!important;
+  top:50%!important;
+  bottom:auto!important;
+  transform:translate(-50%,-50%)!important;
+  width:min(420px,calc(100vw - 16px))!important;
+  max-width:calc(100vw - 16px)!important;
+}
+#newGameSetup3302.uiMoved033{
+  right:auto!important;
+  bottom:auto!important;
+  transform:none!important;
+}
+
+/* Clasificación: estado inicial inequívoco arriba a la derecha. */
+#rankPanel3213{
+  right:max(8px,env(safe-area-inset-right));
+  left:auto;
+  top:calc(62px + env(safe-area-inset-top));
+  bottom:auto;
+}
+
+@media(max-width:760px){
+  #leftRail3306:not(.uiMoved033){
+    left:max(6px,env(safe-area-inset-left))!important;
+    top:calc(52px + env(safe-area-inset-top))!important;
+  }
+  #newGameSetup3302:not(.uiMoved033){
+    width:min(360px,calc(100vw - 12px))!important;
+    max-height:calc(100dvh - 12px)!important;
+  }
+}
