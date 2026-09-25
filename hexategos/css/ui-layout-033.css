@@ -192,3 +192,165 @@
   #rankRows3213{padding-bottom:30px!important;scroll-padding-bottom:30px!important}
   #rankResize3303{width:25px!important;height:25px!important}
 }
+
+
+/* HEXATEGOS 0.33 · RAIL COMPACTO + RESIZE CLASIFICACION V2 */
+#leftRail3306{
+  gap:0!important;
+  padding:3px!important;
+  border-radius:12px!important;
+  overflow:hidden!important;
+  background:
+    linear-gradient(180deg,rgba(8,27,43,.97),rgba(4,17,29,.97))!important;
+  border:1px solid rgba(202,164,76,.30)!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.04),
+    0 10px 28px rgba(0,0,0,.34)!important;
+}
+#leftRail3306 .railItem3306{
+  margin:0!important;
+  padding:0!important;
+  width:auto!important;
+}
+#leftRail3306 .railItem3306 .icon{
+  margin:0!important;
+  width:46px!important;
+  height:42px!important;
+  min-width:46px!important;
+  border-radius:0!important;
+  border:0!important;
+  border-bottom:1px solid rgba(255,255,255,.055)!important;
+  background:
+    linear-gradient(180deg,rgba(18,50,74,.96),rgba(9,31,49,.96))!important;
+  color:#eaf5fb!important;
+  box-shadow:
+    inset 3px 0 0 rgba(74,151,198,.16),
+    inset 0 1px 0 rgba(255,255,255,.035)!important;
+  font-family:system-ui,-apple-system,"Segoe UI",sans-serif!important;
+  font-size:18px!important;
+  font-weight:900!important;
+  text-shadow:0 1px 2px rgba(0,0,0,.5)!important;
+}
+#leftRail3306 .railItem3306:first-child .icon{
+  border-radius:9px 9px 0 0!important;
+}
+#leftRail3306 .railItem3306:last-child .icon{
+  border-radius:0 0 9px 9px!important;
+  border-bottom:0!important;
+}
+#leftRail3306 .railItem3306 .icon:hover{
+  background:
+    linear-gradient(180deg,rgba(28,70,98,.98),rgba(12,40,60,.98))!important;
+  box-shadow:
+    inset 3px 0 0 rgba(211,174,84,.75),
+    inset 0 1px 0 rgba(255,255,255,.05)!important;
+}
+#leftRail3306 .railItem3306 .icon.active,
+#leftRail3306 .railItem3306 .icon[aria-pressed="true"]{
+  color:#fff3c7!important;
+  background:
+    linear-gradient(180deg,rgba(31,72,96,.98),rgba(13,43,63,.98))!important;
+  box-shadow:
+    inset 3px 0 0 rgba(222,184,89,.95),
+    inset 0 0 18px rgba(208,169,75,.08)!important;
+}
+
+/* El panel de clasificación reserva siempre espacio para los controles. */
+#rankPanel3213{
+  resize:none!important;
+  overflow:hidden!important;
+}
+#rankRows3213{
+  padding-right:12px!important;
+  padding-bottom:30px!important;
+}
+
+/* Zonas de agarre amplias e invisibles: derecha, abajo y esquina. */
+#rankResizeRight033{
+  position:absolute;
+  z-index:7;
+  top:32px;
+  right:0;
+  bottom:24px;
+  width:10px;
+  cursor:ew-resize;
+  touch-action:none;
+}
+#rankResizeBottom033{
+  position:absolute;
+  z-index:7;
+  left:0;
+  right:24px;
+  bottom:0;
+  height:10px;
+  cursor:ns-resize;
+  touch-action:none;
+}
+#rankResize3303{
+  z-index:9!important;
+  right:2px!important;
+  bottom:2px!important;
+  width:24px!important;
+  height:24px!important;
+  cursor:nwse-resize!important;
+  touch-action:none!important;
+  color:#d7b85e!important;
+  background:rgba(8,28,44,.96)!important;
+  border:1px solid rgba(214,179,87,.38)!important;
+}
+#rankPanel3213.collapsed3302 #rankResizeRight033,
+#rankPanel3213.collapsed3302 #rankResizeBottom033{
+  display:none!important;
+}
+
+@media(max-width:760px) and (orientation:landscape){
+  #leftRail3306{
+    flex-direction:column!important;
+    width:auto!important;
+    height:auto!important;
+    gap:0!important;
+    padding:2px!important;
+  }
+  #leftRail3306 .railItem3306 .icon{
+    width:38px!important;
+    height:34px!important;
+    min-width:38px!important;
+    font-size:15px!important;
+  }
+}
+@media(orientation:portrait) and (max-width:800px){
+  #leftRail3306{
+    flex-direction:row!important;
+    width:auto!important;
+    height:auto!important;
+    gap:0!important;
+    padding:2px!important;
+  }
+  #leftRail3306 .railItem3306 .icon{
+    width:36px!important;
+    height:36px!important;
+    min-width:36px!important;
+    border-bottom:0!important;
+    border-right:1px solid rgba(255,255,255,.055)!important;
+    box-shadow:
+      inset 0 3px 0 rgba(74,151,198,.16),
+      inset 0 1px 0 rgba(255,255,255,.035)!important;
+  }
+  #leftRail3306 .railItem3306:first-child .icon{
+    border-radius:9px 0 0 9px!important;
+  }
+  #leftRail3306 .railItem3306:last-child .icon{
+    border-radius:0 9px 9px 0!important;
+    border-right:0!important;
+  }
+  #leftRail3306 .railItem3306 .icon.active,
+  #leftRail3306 .railItem3306 .icon[aria-pressed="true"]{
+    box-shadow:
+      inset 0 3px 0 rgba(222,184,89,.95),
+      inset 0 0 18px rgba(208,169,75,.08)!important;
+  }
+
+  #rankResizeRight033{width:14px;bottom:30px}
+  #rankResizeBottom033{height:14px;right:30px}
+  #rankResize3303{width:30px!important;height:30px!important}
+}
