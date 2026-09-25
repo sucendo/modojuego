@@ -1,53 +1,54 @@
-// HEXATEGOS 0.33 · clasificación móvil, libre y redimensionable en 2 ejes
+// HEXATEGOS 0.33 · clasificación libre y redimensionable desde bordes/esquina
 (() => {
   const panel = document.getElementById('rankPanel3213');
   const title = document.getElementById('rankDragHandle3303');
-  const resize = document.getElementById('rankResize3303');
+  const corner = document.getElementById('rankResize3303');
+  const edgeRight = document.getElementById('rankResizeRight033');
+  const edgeBottom = document.getElementById('rankResizeBottom033');
   const toggle = document.getElementById('rankToggle3302');
-  if (!panel || !title || !resize) return;
+  if (!panel || !title || !corner) return;
 
-  const POS_KEY = 'hexategos.ui.rank.pos.033';
-  const SIZE_KEY = 'hexategos.ui.rank.size.033';
+  const POS_KEY='hexategos.ui.rank.pos.033';
+  const SIZE_KEY='hexategos.ui.rank.size.033';
 
-  const read = key => {
-    try { return JSON.parse(localStorage.getItem(key) || 'null'); }
-    catch (_) { return null; }
+  const read=key=>{
+    try{return JSON.parse(localStorage.getItem(key)||'null')}
+    catch(_){return null}
   };
-  const write = (key,value) => {
-    try { localStorage.setItem(key,JSON.stringify(value)); } catch (_) {}
+  const write=(key,value)=>{
+    try{localStorage.setItem(key,JSON.stringify(value))}catch(_){}
   };
 
-  function limits(){
-    return {
-      margin:4,
-      minW:132,
-      minH:84,
-      maxW:Math.max(132,innerWidth-8),
-      maxH:Math.max(84,innerHeight-8)
-    };
+  const limits=()=>({
+    margin:4,
+    minW:132,
+    minH:92,
+    maxW:Math.max(132,innerWidth-8),
+    maxH:Math.max(92,innerHeight-8)
+  });
+
+  function place(x,y){
+    const lim=limits();
+    const r=panel.getBoundingClientRect();
+    const px=Math.min(Math.max(lim.margin,x),Math.max(lim.margin,innerWidth-r.width-lim.margin));
+    const py=Math.min(Math.max(lim.margin,y),Math.max(lim.margin,innerHeight-r.height-lim.margin));
+    panel.style.setProperty('left',px+'px','important');
+    panel.style.setProperty('top',py+'px','important');
+    panel.style.setProperty('right','auto','important');
+    panel.style.setProperty('bottom','auto','important');
   }
 
-  function applySaved(){
-    if (panel.classList.contains('collapsed3302')) return;
-    const lim = limits();
-    const size = read(SIZE_KEY);
-    if (size && Number.isFinite(size.w) && Number.isFinite(size.h)){
-      panel.style.width = Math.min(lim.maxW,Math.max(lim.minW,size.w)) + 'px';
-      panel.style.height = Math.min(lim.maxH,Math.max(lim.minH,size.h)) + 'px';
-      panel.style.maxWidth = 'none';
-      panel.style.maxHeight = 'none';
-    }
-
-    const pos = read(POS_KEY);
-    if (pos && Number.isFinite(pos.x) && Number.isFinite(pos.y)){
-      const r=panel.getBoundingClientRect();
-      const x=Math.min(Math.max(lim.margin,pos.x),Math.max(lim.margin,innerWidth-r.width-lim.margin));
-      const y=Math.min(Math.max(lim.margin,pos.y),Math.max(lim.margin,innerHeight-r.height-lim.margin));
-      panel.style.left=x+'px';
-      panel.style.top=y+'px';
-      panel.style.right='auto';
-      panel.style.bottom='auto';
-    }
+  function size(w,h){
+    const lim=limits();
+    const r=panel.getBoundingClientRect();
+    const maxW=Math.max(lim.minW,innerWidth-r.left-lim.margin);
+    const maxH=Math.max(lim.minH,innerHeight-r.top-lim.margin);
+    const ww=Math.min(maxW,Math.max(lim.minW,w));
+    const hh=Math.min(maxH,Math.max(lim.minH,h));
+    panel.style.setProperty('width',ww+'px','important');
+    panel.style.setProperty('height',hh+'px','important');
+    panel.style.setProperty('max-width','none','important');
+    panel.style.setProperty('max-height','none','important');
   }
 
   function savePos(){
@@ -59,46 +60,39 @@
     write(SIZE_KEY,{w:r.width,h:r.height});
   }
 
-  // Capture-phase handlers replace the old drag/resize behaviour without
-  // touching the ranking renderer itself.
+  function applySaved(){
+    if(panel.classList.contains('collapsed3302'))return;
+    const s=read(SIZE_KEY);
+    if(s&&Number.isFinite(s.w)&&Number.isFinite(s.h))size(s.w,s.h);
+    const p=read(POS_KEY);
+    if(p&&Number.isFinite(p.x)&&Number.isFinite(p.y))place(p.x,p.y);
+  }
+
+  // Movimiento libre por cabecera.
   let move=null;
   title.addEventListener('pointerdown',e=>{
-    if (e.target.closest('button')) return;
-    if (e.button !== undefined && e.button !== 0) return;
-
+    if(e.target.closest('button'))return;
+    if(e.button!==undefined&&e.button!==0)return;
     const r=panel.getBoundingClientRect();
     move={id:e.pointerId,dx:e.clientX-r.left,dy:e.clientY-r.top};
-
-    panel.style.left=r.left+'px';
-    panel.style.top=r.top+'px';
-    panel.style.width=r.width+'px';
-    panel.style.height=r.height+'px';
-    panel.style.right='auto';
-    panel.style.bottom='auto';
-    panel.style.maxWidth='none';
-    panel.style.maxHeight='none';
+    panel.style.setProperty('width',r.width+'px','important');
+    panel.style.setProperty('height',r.height+'px','important');
+    place(r.left,r.top);
     panel.classList.add('rankMoving033');
-
     try{title.setPointerCapture(e.pointerId)}catch(_){}
     e.preventDefault();
     e.stopImmediatePropagation();
   },true);
 
   title.addEventListener('pointermove',e=>{
-    if(!move || move.id!==e.pointerId)return;
-    const r=panel.getBoundingClientRect(),lim=limits();
-    const x=Math.min(Math.max(lim.margin,e.clientX-move.dx),Math.max(lim.margin,innerWidth-r.width-lim.margin));
-    const y=Math.min(Math.max(lim.margin,e.clientY-move.dy),Math.max(lim.margin,innerHeight-r.height-lim.margin));
-    panel.style.left=x+'px';
-    panel.style.top=y+'px';
-    panel.style.right='auto';
-    panel.style.bottom='auto';
+    if(!move||move.id!==e.pointerId)return;
+    place(e.clientX-move.dx,e.clientY-move.dy);
     e.preventDefault();
     e.stopImmediatePropagation();
   },true);
 
   const endMove=e=>{
-    if(!move || (e.pointerId!==undefined && move.id!==e.pointerId))return;
+    if(!move||(e.pointerId!==undefined&&move.id!==e.pointerId))return;
     try{title.releasePointerCapture(move.id)}catch(_){}
     move=null;
     panel.classList.remove('rankMoving033');
@@ -109,72 +103,72 @@
   title.addEventListener('pointerup',endMove,true);
   title.addEventListener('pointercancel',endMove,true);
 
-  let sizing=null;
-  resize.addEventListener('pointerdown',e=>{
-    if(e.button!==undefined && e.button!==0)return;
-    const r=panel.getBoundingClientRect();
-    sizing={
-      id:e.pointerId,
-      startX:e.clientX,
-      startY:e.clientY,
-      w:r.width,
-      h:r.height,
-      x:r.left,
-      y:r.top
+  // Redimensionado por derecha, abajo o esquina.
+  function bindResize(handle,mode){
+    if(!handle)return;
+    let drag=null;
+
+    handle.addEventListener('pointerdown',e=>{
+      if(e.button!==undefined&&e.button!==0)return;
+      const r=panel.getBoundingClientRect();
+      drag={
+        id:e.pointerId,
+        sx:e.clientX,
+        sy:e.clientY,
+        w:r.width,
+        h:r.height,
+        x:r.left,
+        y:r.top
+      };
+      place(r.left,r.top);
+      panel.style.setProperty('width',r.width+'px','important');
+      panel.style.setProperty('height',r.height+'px','important');
+      panel.style.setProperty('max-width','none','important');
+      panel.style.setProperty('max-height','none','important');
+      panel.classList.add('rankSizing033');
+      try{handle.setPointerCapture(e.pointerId)}catch(_){}
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    },true);
+
+    handle.addEventListener('pointermove',e=>{
+      if(!drag||drag.id!==e.pointerId)return;
+      const dw=e.clientX-drag.sx;
+      const dh=e.clientY-drag.sy;
+      const w=(mode==='right'||mode==='corner')?drag.w+dw:drag.w;
+      const h=(mode==='bottom'||mode==='corner')?drag.h+dh:drag.h;
+      size(w,h);
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    },true);
+
+    const end=e=>{
+      if(!drag||(e.pointerId!==undefined&&drag.id!==e.pointerId))return;
+      try{handle.releasePointerCapture(drag.id)}catch(_){}
+      drag=null;
+      panel.classList.remove('rankSizing033');
+      saveSize();
+      savePos();
+      e.preventDefault?.();
+      e.stopImmediatePropagation?.();
     };
+    handle.addEventListener('pointerup',end,true);
+    handle.addEventListener('pointercancel',end,true);
+  }
 
-    panel.style.left=r.left+'px';
-    panel.style.top=r.top+'px';
-    panel.style.right='auto';
-    panel.style.bottom='auto';
-    panel.style.width=r.width+'px';
-    panel.style.height=r.height+'px';
-    panel.style.maxWidth='none';
-    panel.style.maxHeight='none';
-    panel.classList.add('rankSizing033');
+  bindResize(edgeRight,'right');
+  bindResize(edgeBottom,'bottom');
+  bindResize(corner,'corner');
 
-    try{resize.setPointerCapture(e.pointerId)}catch(_){}
-    e.preventDefault();
-    e.stopImmediatePropagation();
-  },true);
-
-  resize.addEventListener('pointermove',e=>{
-    if(!sizing || sizing.id!==e.pointerId)return;
-    const lim=limits();
-    const availableW=Math.max(lim.minW,innerWidth-sizing.x-lim.margin);
-    const availableH=Math.max(lim.minH,innerHeight-sizing.y-lim.margin);
-    const w=Math.min(availableW,Math.max(lim.minW,sizing.w+(e.clientX-sizing.startX)));
-    const h=Math.min(availableH,Math.max(lim.minH,sizing.h+(e.clientY-sizing.startY)));
-
-    panel.style.width=w+'px';
-    panel.style.height=h+'px';
-    panel.style.maxWidth='none';
-    panel.style.maxHeight='none';
-    e.preventDefault();
-    e.stopImmediatePropagation();
-  },true);
-
-  const endSize=e=>{
-    if(!sizing || (e.pointerId!==undefined && sizing.id!==e.pointerId))return;
-    try{resize.releasePointerCapture(sizing.id)}catch(_){}
-    sizing=null;
-    panel.classList.remove('rankSizing033');
-    saveSize();
-    savePos();
-    e.preventDefault?.();
-    e.stopImmediatePropagation?.();
-  };
-  resize.addEventListener('pointerup',endSize,true);
-  resize.addEventListener('pointercancel',endSize,true);
-
-  // Recover the chosen geometry after expanding again.
   toggle?.addEventListener('click',()=>setTimeout(applySaved,0));
 
   addEventListener('resize',()=>{
     if(panel.classList.contains('collapsed3302'))return;
-    applySaved();
-    savePos();
+    const r=panel.getBoundingClientRect();
+    size(r.width,r.height);
+    place(r.left,r.top);
     saveSize();
+    savePos();
   },{passive:true});
 
   requestAnimationFrame(applySaved);
