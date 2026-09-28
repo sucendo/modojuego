@@ -886,8 +886,48 @@ const FACTIONS3230=[
 {"name":"Maravia","color":"#4ca6c8","dark":"#2b687e","aggr":0.82,"role":"naval"},
 {"name":"Nambara","color":"#c17a5a","dark":"#7b4935","aggr":0.79,"role":"balanced"}
 ];
+const FACTION_CAPACITY3230=50;
+const FACTION_COUNT_OPTIONS3230=[16,25,35,50];
+let activeFactionCount3230=16;
+const EXTRA_FACTION_NAMES3230=[
+ 'Altavia','Bellaria','Cyrania','Dameria','Esteria','Faronia','Galvera','Helion',
+ 'Istrava','Jandor','Korvia','Lunara','Merovia','Novara','Ostara','Pavonia',
+ 'Quiralia','Rovenia','Serenia','Tirania','Uldara','Varelia','Westria','Xandria',
+ 'Yavora','Zeravia','Arkania','Beloria','Cendria','Doravia','Elaris','Fjordia',
+ 'Galdor','Hesperia'
+];
+const EXTRA_FACTION_COLORS3230=[
+ '#d05f72','#4f9bd6','#8f78d8','#5ab487','#d18b4d','#6d91c9','#bd6fa5','#7fae55',
+ '#d36e54','#5aada9','#9b73c7','#c69b46','#578bc2','#b86483','#73a65b','#cc7951',
+ '#6f83cf','#4fa98d','#ad70b2','#8ca04f','#d16663','#4d9fc1','#a17ac8','#64a46a',
+ '#c78a45','#5b8fd0','#c26898','#78a856','#d1704f','#58aaa5','#8d78cf','#b99b49',
+ '#548fc4','#b96f77'
+];
+const EXTRA_FACTION_ROLES3230=['balanced','growth','defense','naval','aggressive'];
+for(let i=FACTIONS3230.length;i<FACTION_CAPACITY3230;i++){
+ const j=i-16,color=EXTRA_FACTION_COLORS3230[j%EXTRA_FACTION_COLORS3230.length];
+ FACTIONS3230.push({
+   name:EXTRA_FACTION_NAMES3230[j]||('Estado '+(i+1)),
+   color,dark:color,
+   aggr:.76+((i*7)%17)/100,
+   role:EXTRA_FACTION_ROLES3230[j%EXTRA_FACTION_ROLES3230.length]
+ });
+}
+function normalizeFactionCount3230(v){
+ const n=Number(v);
+ return FACTION_COUNT_OPTIONS3230.includes(n)?n:16;
+}
+function fitFactionList3230(src,fill=-1){
+ const out=Array(FACTION_CAPACITY3230).fill(fill);
+ if(Array.isArray(src))for(let i=0;i<Math.min(src.length,out.length);i++)out[i]=src[i];
+ return out;
+}
+
 const SEED_CELLS3230=[281182,474077,216468,326868,69771,46143,274285,112359,277356,470582,212805,295665,318895,38879,134184,302631]
 const factionCapitalNames3230=["Madrid","Washington","Brasilia","El Cairo","Nueva Delhi","Pekín","Moscú","Sídney","Londres","Ciudad de México","Buenos Aires","Kinshasa","Teherán","Tokio","Yakarta","Abuya"];
+while(SEED_CELLS3230.length<FACTION_CAPACITY3230)SEED_CELLS3230.push(-1);
+while(factionCapitalNames3230.length<FACTION_CAPACITY3230)factionCapitalNames3230.push('Capital');
+
 const SAVE_KEY3230='openfront-globe-v3.24.0-163k';
 let TOTAL_LAND3230=1; // calculado al arrancar el mundo
 
@@ -930,7 +970,7 @@ function structureCounts3230(f){
 }
 function tradeIncome3230(){
  let v=0;if(!started3230)return 0;
- for(let f=1;f<FACTIONS3230.length;f++)if(relations3220[f]===1||relations3220[f]===3){
+ for(let f=1;f<activeFactionCount3230;f++)if(relations3220[f]===1||relations3220[f]===3){
   const ally=relations3220[f]===3?0.28:0;
   const st=structureCounts3230(f),me=structureCounts3230(0);
   v+=.45+Math.min(1.25,(countFaction3230(f)+countFaction3230(0))/800)+(st.industryLevels+me.industryLevels)*.045+ally+(me.ports&&st.ports?.18:0);
@@ -971,7 +1011,7 @@ function resetGame3230(clearSave=true){
  troops3230.fill(225);troops3230[0]=280;botGold3230.fill(145);gold3212=260;nationalism3230.fill(60);nationalism3230[0]=68;capitalShockUntil3230.fill(0);capitalShockFactor3230.fill(1);
  relations3220.fill(0);research3230={points:0,focus:'technology',levels:{technology:0,policy:0,medicine:0,science:0}};spyIntel3230.fill(0);spyIntel3230[0]=3;
  campaignSeconds3230=0;gameSpeed3212=1;paused3230=true;started3230=false;endShown3230=false;selected=null;targetMode3212=null;targetSource3212=-1;
- for(let f=0;f<FACTIONS3230.length;f++){const c=capitals[f];seedCluster3230(c,f,5);cities3212.add(c);cityLevel3230[c]=1}
+ for(let f=0;f<activeFactionCount3230;f++){const c=capitals[f];if(!Number.isInteger(c)||c<0||c>=L.n||L.land[c]<0)continue;seedCluster3230(c,f,5);cities3212.add(c);cityLevel3230[c]=1}
  cacheDirty=true;supplyDirty3220=true;supplyDist3220=null;rebuildRoadEdges3212();
  if(clearSave)try{localStorage.removeItem(SAVE_KEY3230)}catch(e){}
  updateUI3230();needsRender=true;
@@ -980,7 +1020,7 @@ function resetGame3230(clearSave=true){
 function saveGame3212(){
  if(!started3230)return;
  try{
-  const s={v:'3.23.0',owner:Array.from(owner6),gold:gold3212,troops:Array.from(troops3230),botGold:Array.from(botGold3230),
+  const s={v:'3.23.0',factionCount:activeFactionCount3230,owner:Array.from(owner6),gold:gold3212,troops:Array.from(troops3230),botGold:Array.from(botGold3230),
    forts:Array.from(forts3212),cities:Array.from(cities3212),cityLevels:Array.from(cityLevel3230),
    industries:Array.from(industries3212),industryLevels:Array.from(industryLevel3230),ports:Array.from(ports3212),roads:roads3212,
    capitals, historicCapital:historicCapital3230,nationalism:Array.from(nationalism3230),capitalShockUntil:Array.from(capitalShockUntil3230),
@@ -994,15 +1034,16 @@ function loadGame3212(){
  try{
   const raw=localStorage.getItem(SAVE_KEY3230);if(!raw){resetGame3230(false);introHadSave3230=false;return false}
   const s=JSON.parse(raw),L=loadLevel(MAX_GAME_LEVEL3233);if(!s||!Array.isArray(s.owner)||s.owner.length!==L.n){resetGame3230(false);return false}
+  activeFactionCount3230=normalizeFactionCount3230(s.factionCount??16);
   owner6.set(s.owner);gold3212=Number(s.gold)||260;
-  troops3230.set((s.troops||[]).slice(0,FACTIONS3230.length));for(let f=0;f<FACTIONS3230.length;f++)if(!troops3230[f])troops3230[f]=f?225:280;
+  troops3230.set((s.troops||[]).slice(0,FACTIONS3230.length));for(let f=0;f<activeFactionCount3230;f++)if(!troops3230[f])troops3230[f]=f?225:280;
   botGold3230.set((s.botGold||[]).slice(0,FACTIONS3230.length));forts3212.set((s.forts||[]).slice(0,L.n));
   cities3212=new Set(s.cities||[]);industries3212=new Set(s.industries||[]);ports3212=new Set(s.ports||[]);roads3212=Array.isArray(s.roads)?s.roads:[];
   cityLevel3230=new Uint8Array(L.n);industryLevel3230=new Uint8Array(L.n);
   if(Array.isArray(s.cityLevels))cityLevel3230.set(s.cityLevels.slice(0,L.n));else for(const i of cities3212)cityLevel3230[i]=1;
   if(Array.isArray(s.industryLevels))industryLevel3230.set(s.industryLevels.slice(0,L.n));else for(const i of industries3212)industryLevel3230[i]=1;
-  capitals=Array.isArray(s.capitals)?s.capitals.slice(0,FACTIONS3230.length):SEED_CELLS3230.slice();
-  historicCapital3230=Array.isArray(s.historicCapital)?s.historicCapital.slice(0,FACTIONS3230.length):SEED_CELLS3230.slice();
+  capitals=fitFactionList3230(Array.isArray(s.capitals)?s.capitals:SEED_CELLS3230,-1);
+  historicCapital3230=fitFactionList3230(Array.isArray(s.historicCapital)?s.historicCapital:SEED_CELLS3230,-1);
   nationalism3230.fill(60);if(Array.isArray(s.nationalism))nationalism3230.set(s.nationalism.slice(0,FACTIONS3230.length));
   capitalShockUntil3230.fill(0);if(Array.isArray(s.capitalShockUntil))capitalShockUntil3230.set(s.capitalShockUntil.slice(0,FACTIONS3230.length));
   capitalShockFactor3230.fill(1);if(Array.isArray(s.capitalShockFactor))capitalShockFactor3230.set(s.capitalShockFactor.slice(0,FACTIONS3230.length));
@@ -1243,13 +1284,13 @@ function botBuild3230(f){
 }
 aiTick3212=function(){
  if(paused3230||!started3230||gameSpeed3212<=0)return;
- for(let step=0;step<gameSpeed3212;step++)for(let f=1;f<FACTIONS3230.length;f++){aiTry3230(f);botBuild3230(f)}
+ for(let step=0;step<gameSpeed3212;step++)for(let f=1;f<activeFactionCount3230;f++){aiTry3230(f);botBuild3230(f)}
  updateRanking3220();updateFrontDock3220();checkEnd3230();needsRender=true;
 }
 economyTick3212=function(){
  if(paused3230||!started3230||gameSpeed3212<=0)return;
  const dt=gameSpeed3212;campaignSeconds3230+=dt;
- for(let f=0;f<FACTIONS3230.length;f++){
+ for(let f=0;f<activeFactionCount3230;f++){
   const r=economyRate3230(f);if(f===0)gold3212=Math.min(9999,gold3212+r.gold*dt);else botGold3230[f]=Math.min(9999,botGold3230[f]+r.gold*dt);
   troops3230[f]=Math.min(r.max,troops3230[f]+r.troop*dt);
  }
@@ -1257,7 +1298,7 @@ economyTick3212=function(){
 }
 
 function updateRanking3220(){
- const arr=[];for(let f=0;f<FACTIONS3230.length;f++)arr.push([f,countFaction3230(f)]);arr.sort((a,b)=>b[1]-a[1]);
+ const arr=[];for(let f=0;f<activeFactionCount3230;f++)arr.push([f,countFaction3230(f)]);arr.sort((a,b)=>b[1]-a[1]);
  document.getElementById('rankRows3213').innerHTML=arr.map((r,k)=>`<div class="rankRow3213"><i class="rankDot3213" style="background:${FACTIONS3230[r[0]].color}"></i><span>${k+1}. ${factionName3230(r[0])}</span><small>${r[1].toLocaleString('es-ES')}</small></div>`).join('');
 }
 function frontSummary3220(){
@@ -1354,7 +1395,7 @@ function openSystems3220(tab='dip'){sysTab3220=tab;document.getElementById('syst
 function checkEnd3230(){
  if(endShown3230||!started3230)return;if(countFaction3230(0)<=0){showEnd3230('DERROTA','Has perdido todo tu territorio.');return}
  if(domination3230(0)>=80){showEnd3230('VICTORIA','Has alcanzado el 80 % del territorio terrestre conquistable.');return}
- for(let f=1;f<FACTIONS3230.length;f++)if(domination3230(f)>=80){showEnd3230('DERROTA',`${factionName3230(f)} domina más del 80 % del mundo.`);return}
+ for(let f=1;f<activeFactionCount3230;f++)if(domination3230(f)>=80){showEnd3230('DERROTA',`${factionName3230(f)} domina más del 80 % del mundo.`);return}
 }
 function showEnd3230(title,text){endShown3230=true;paused3230=true;document.getElementById('endTitle3230').textContent=title;document.getElementById('endText3230').textContent=text;document.getElementById('end3230').classList.add('open3230')}
 
@@ -5802,7 +5843,7 @@ function strategicThink3260(force=false){
  }
  const t0=performance.now();
  const snap=rebuildAISnapshot3260();
- for(let f=1;f<FACTIONS3230.length;f++){
+ for(let f=1;f<activeFactionCount3230;f++){
    const st=aiStrategicState3260[f];
    if(force||!st||campaignSeconds3230>=st.nextThink||aiSnapshotDirty3260)aiPlanFaction3260(f,snap);
    else{
@@ -6083,7 +6124,7 @@ aiTick3212=function(){
  // Tactical execution scales with simulation speed, but strategy itself remains
  // throttled. Defensive plans deliberately attack less often.
  for(let step=0;step<gameSpeed3212;step++){
-   for(let f=1;f<FACTIONS3230.length;f++){
+   for(let f=1;f<activeFactionCount3230;f++){
      const st=aiStrategicState3260[f];
      const rp=AI_ROLE_PROFILE3260[FACTIONS3230[f].role]||AI_ROLE_PROFILE3260.balanced;
      let actionChance=.70*rp.attack;
@@ -6132,7 +6173,7 @@ debug3230=function(){
  const e=document.getElementById('debugText3230');
  if(!e||!showDebug3230)return;
  e.textContent+=`\nIA v3.26.0 · snapshot ${aiSnapshotBuildMs3260.toFixed(1)} ms · think ${aiThinkBuildMs3260.toFixed(1)} ms · exec ${aiExecMs3260.toFixed(2)} ms`;
- for(let f=1;f<FACTIONS3230.length;f++){
+ for(let f=1;f<activeFactionCount3230;f++){
    const s=aiStrategicState3260[f];if(!s)continue;
    const obj=s.objective>=0?landName3230(s.objective):'—';
    e.textContent+=`\n${factionName3230(f)}: ${AI_STANCE_LABEL3260[s.stance]||s.stance}/${AI_MANEUVER_LABEL3260[s.maneuver]||s.maneuver} · ${obj} · R${Math.round(s.reserveFloor)} · S${Math.round(s.supply||0)}`;
@@ -6248,7 +6289,7 @@ function tradeIncome3261(f,snap){
 
  if(f===0){
    let v=0;
-   for(let o=1;o<FACTIONS3230.length;o++){
+   for(let o=1;o<activeFactionCount3230;o++){
      if(relations3220[o]!==1&&relations3220[o]!==3)continue;
      const ally=relations3220[o]===3?.18:0;
      const partnerPorts=snap.portCount[o]||0;
@@ -6268,7 +6309,7 @@ function tradeIncome3261(f,snap){
 
 function warCount3261(f){
  if(f===0){
-   let n=0;for(let o=1;o<FACTIONS3230.length;o++)if(relations3220[o]===-1)n++;
+   let n=0;for(let o=1;o<activeFactionCount3230;o++)if(relations3220[o]===-1)n++;
    return n;
  }
  return relations3220[f]===-1?1:0;
@@ -6361,7 +6402,7 @@ economyTick3212=function(){
  campaignSeconds3230+=dt;
  ensureEconomySnapshot3261(false);
 
- for(let f=0;f<FACTIONS3230.length;f++){
+ for(let f=0;f<activeFactionCount3230;f++){
    const r=economyRate3230(f);
    if(f===0){
      gold3212=Math.max(0,Math.min(9999,gold3212+r.net*dt));
@@ -7421,7 +7462,7 @@ function navalTick3270(){
 
  for(const tr of fleets3212)if(!tr.id3270)tr.id3270=nextTransportId3270++;
 
- for(let f=1;f<FACTIONS3230.length;f++)aiNavalPlan3270(f);
+ for(let f=1;f<activeFactionCount3230;f++)aiNavalPlan3270(f);
 
  for(const g of navalGroups3270){
    updateNavalOrder3270(g,campaignSeconds3230);
@@ -8035,7 +8076,7 @@ function chooseStrategicGoal3271(f,snap,stance){
  }
 
  // Capitals are sparse and important.
- for(let o=0;o<FACTIONS3230.length;o++){
+ for(let o=0;o<activeFactionCount3230;o++){
    if(o===f)continue;
    const c=capitals[o];
    if(c<0||owner6[c]===f)continue;
@@ -8045,7 +8086,7 @@ function chooseStrategicGoal3271(f,snap,stance){
  }
 
  // Sparse infrastructure lists from the shared snapshot.
- for(let o=0;o<FACTIONS3230.length;o++){
+ for(let o=0;o<activeFactionCount3230;o++){
    if(o===f)continue;
    for(const c of (snap.cities[o]||[])){
      const sc=aiGoalValue3271(f,c,'city',snap,stance);evals++;
@@ -8359,7 +8400,7 @@ debug3230=function(){
  const e=document.getElementById('debugText3230');
  if(!e||!showDebug3230)return;
  e.textContent+=`\nIA adaptativa v3.27.1 · goals ${aiGoalEvaluations3271} eval · ${aiGoalBuildMs3271.toFixed(1)} ms`;
- for(let f=1;f<FACTIONS3230.length;f++){
+ for(let f=1;f<activeFactionCount3230;f++){
    const g=aiGoal3271[f],s=aiStrategicState3260[f];
    if(!g||!s)continue;
    const goal=g.cell>=0?(isNamedSettlement3271(g.cell)?cityDisplayName3271(g.cell):landName3230(g.cell)):'—';
@@ -8865,6 +8906,7 @@ let portableLastBytes3275=0;
 function buildMainState3275(){
  return {
    v:'3.27.5',
+   factionCount:activeFactionCount3230,
    owner:Array.from(owner6),
    gold:gold3212,
    troops:Array.from(troops3230),
@@ -9020,6 +9062,7 @@ exportGameFile3273=async function(){
 
 function applyMainState3275(s){
  const L=loadLevel(MAX_GAME_LEVEL3233);
+ activeFactionCount3230=normalizeFactionCount3230(s?.factionCount??16);
  owner6.set(s.owner);
  gold3212=Number(s.gold)||0;
 
@@ -9043,8 +9086,8 @@ function applyMainState3275(s){
  if(Array.isArray(s.industryLevels))industryLevel3230.set(s.industryLevels.slice(0,L.n));
  else for(const c of industries3212)industryLevel3230[c]=1;
 
- capitals=Array.isArray(s.capitals)?s.capitals.slice(0,FACTIONS3230.length):SEED_CELLS3230.slice();
- historicCapital3230=Array.isArray(s.historicCapital)?s.historicCapital.slice(0,FACTIONS3230.length):SEED_CELLS3230.slice();
+ capitals=fitFactionList3230(Array.isArray(s.capitals)?s.capitals:SEED_CELLS3230,-1);
+ historicCapital3230=fitFactionList3230(Array.isArray(s.historicCapital)?s.historicCapital:SEED_CELLS3230,-1);
 
  nationalism3230.fill(60);
  if(Array.isArray(s.nationalism))nationalism3230.set(s.nationalism.slice(0,FACTIONS3230.length));
@@ -9471,7 +9514,7 @@ function ensureNationalPlans3275(force=false){
     wall-aiNationalLastWall3275<NATIONAL_WALL_MIN3275)return;
 
  rebuildNationalSamples3275();
- for(let f=1;f<FACTIONS3230.length;f++)chooseNationalPolicy3275(f);
+ for(let f=1;f<activeFactionCount3230;f++)chooseNationalPolicy3275(f);
  aiNationalLastCampaign3275=campaignSeconds3230;
  aiNationalLastWall3275=wall;
 }
@@ -9641,7 +9684,7 @@ renderSystems3220=function(){
    const c=document.getElementById('sysContent3213');if(!c)return;
    ensureNationalPlans3275(false);
    const rows=[];
-   for(let f=1;f<FACTIONS3230.length;f++){
+   for(let f=1;f<activeFactionCount3230;f++){
      const p=aiNationalPlan3275[f];if(!p)continue;
      const sc=structureCounts3230(f);
      rows.push(`<div>${factionName3230(f)} · <b>${NATIONAL_POLICY_LABEL3275[p.policy]}</b> · ciudades ${sc.cities} · industria ${sc.industry} · puertos ${sc.ports}</div>`);
@@ -9666,7 +9709,7 @@ debug3230=function(){
  const e=document.getElementById('debugText3230');
  if(!e||!showDebug3230)return;
  e.textContent+=`\nIA nacional v3.27.5 · scan ${aiNationalBuildMs3275.toFixed(1)} ms · path ${aiNationalPathMs3275.toFixed(1)} ms`;
- for(let f=1;f<FACTIONS3230.length;f++){
+ for(let f=1;f<activeFactionCount3230;f++){
    const p=aiNationalPlan3275[f];if(!p)continue;
    const sc=structureCounts3230(f);
    e.textContent+=`\n${factionName3230(f)} · ${NATIONAL_POLICY_LABEL3275[p.policy]} · centros ${p.centers.length} · C${sc.cities} I${sc.industry} P${sc.ports} R${sc.roads}`;
@@ -9809,7 +9852,7 @@ economyTick3212=function(){
  campaignSeconds3230+=dt;
  ensureEconomySnapshot3261(false);
 
- for(let f=0;f<FACTIONS3230.length;f++){
+ for(let f=0;f<activeFactionCount3230;f++){
    const r=economyRate3230(f);
    if(f===0){
      gold3212=Math.max(0,Math.min(9999,gold3212+r.net*dt));
@@ -9903,7 +9946,7 @@ function rebuildAISupply3276(){
  let reached=0;
 
  // Capital = 100. Operational unblocked port = 88.
- for(let f=1;f<FACTIONS3230.length;f++){
+ for(let f=1;f<activeFactionCount3230;f++){
    const cap=capitals[f];
    if(cap>=0&&owner6[cap]===f){
      aiSupplyScore3276[cap]=100;buckets[100].push(cap);
@@ -10031,7 +10074,7 @@ function balanceWarnings3276(f){
 }
 
 function updateBalanceBias3276(){
- for(let f=1;f<FACTIONS3230.length;f++){
+ for(let f=1;f<activeFactionCount3230;f++){
    const w=balanceWarnings3276(f);
    let policy=null,reason='';
    if(w.includes('déficit')||w.includes('industria estancada')){
@@ -10189,7 +10232,7 @@ toast=function(msg){
 
 function auditDiffReport3276(before,after){
  const out=[];
- for(let f=1;f<FACTIONS3230.length;f++){
+ for(let f=1;f<activeFactionCount3230;f++){
    const a=before[f],b=after[f],w=[];
    if(b.net<0)w.push('déficit');
    if(b.cities<=a.cities&&b.industries<=a.industries&&b.roads<=a.roads)w.push('sin desarrollo');
@@ -10305,7 +10348,7 @@ function auditRowsHtml3276(){
    <span class="head">NACIÓN</span><span class="head">NETO</span><span class="head">CIUD.</span>
    <span class="head">IND.</span><span class="head">CAR.</span>
    <span class="head hideMobile3276">CON.</span><span class="head hideMobile3276">AVISOS</span>`;
- for(let f=1;f<FACTIONS3230.length;f++){
+ for(let f=1;f<activeFactionCount3230;f++){
    const r=rows[f],w=balanceWarnings3276(f),cls=r.net<0?'auditBad3276':w.length?'auditWarn3276':'auditGood3276';
    h+=`<span>${factionName3230(f)}</span>
      <b class="${cls}">${r.net>=0?'+':''}${r.net.toFixed(1)}</b>
@@ -10393,7 +10436,7 @@ debug3230=function(){
  if(!e||!showDebug3230)return;
  e.textContent+=`\nEstabilidad v3.27.6 · AI supply ${aiSupplyBuildMs3276.toFixed(1)} ms / ${aiSupplyReached3276} celdas`;
  e.textContent+=`\nAutosave ≥25s reales · auditoría ${balanceAuditRunning3276?balanceAuditProgress3276.toFixed(0)+'%':'inactiva'}`;
- for(let f=1;f<FACTIONS3230.length;f++){
+ for(let f=1;f<activeFactionCount3230;f++){
    const w=balanceWarnings3276(f),bias=aiBalanceBias3276[f];
    if(w.length||bias)
      e.textContent+=`\n${factionName3230(f)} audit: ${w.join(', ')||'OK'}${bias?` → ${NATIONAL_POLICY_LABEL3275[bias.policy]}`:''}`;
@@ -11223,9 +11266,9 @@ aiTick3212=function(){
  const t0=performance.now();
  strategicThink3260(false);
  // National evaluations are staggered by each nation's own next timestamp.
- for(let f=1;f<FACTIONS3230.length;f++)aiNationalCampaignEval3280(f,false);
+ for(let f=1;f<activeFactionCount3230;f++)aiNationalCampaignEval3280(f,false);
  for(let step=0;step<Math.max(1,gameSpeed3212);step++){
-   for(let f=1;f<FACTIONS3230.length;f++){
+   for(let f=1;f<activeFactionCount3230;f++){
      aiNationTactical3280(f);
      botBuild3230(f);
    }
@@ -11239,7 +11282,7 @@ economyTick3212=function(){
  if(paused3230||!started3230||gameSpeed3212<=0)return;
  const dt=gameSpeed3212;campaignSeconds3230+=dt;
  ensureEconomySnapshot3261(false);
- for(let f=0;f<FACTIONS3230.length;f++){
+ for(let f=0;f<activeFactionCount3230;f++){
    const r=economyRate3230(f);
    if(f===0){
      gold3212=Math.max(0,Math.min(9999,gold3212+r.net*dt));
@@ -11366,7 +11409,7 @@ function restoreAICampaigns3280(data){
    if(!AI_FRONT_TYPES3280.includes(front.type))front.type='OFFENSIVE';
    aiFronts3280.push(front);
  }
- if(Array.isArray(data.military))for(let f=1;f<FACTIONS3230.length;f++)if(data.military[f])aiMilitary3280[f]={...aiMilitary3280[f],...data.military[f]};
+ if(Array.isArray(data.military))for(let f=1;f<activeFactionCount3230;f++)if(data.military[f])aiMilitary3280[f]={...aiMilitary3280[f],...data.military[f]};
  aiClaims3280=Array.from({length:FACTIONS3230.length},(_,f)=>new Set(Array.isArray(data.claims?.[f])?data.claims[f].slice(0,400):[]));
  nextAIFrontId3280=Math.max(Number(data.nextAIFrontId)||1,...aiFronts3280.map(x=>x.id+1));
  if(Array.isArray(data.nextNational))aiNationNextCampaignEval3280.set(data.nextNational.slice(0,FACTIONS3230.length));
@@ -11401,7 +11444,7 @@ const _applyPortableCampaignBase3280=applyPortableFile3275;
 applyPortableFile3275=function(file){
  const v=_applyPortableCampaignBase3280(file);
  restoreAICampaigns3280(file?.payload?.aiCampaigns||null);
- for(let f=1;f<FACTIONS3230.length;f++)aiNationalCampaignEval3280(f,true);
+ for(let f=1;f<activeFactionCount3230;f++)aiNationalCampaignEval3280(f,true);
  saveAICampaignsLocal3280();return v;
 };
 
@@ -11442,7 +11485,7 @@ function validateAICampaigns3280(){
    if(!AI_FRONT_PHASES3280.includes(fr.phase))errors.push(`fase inválida F${fr.id}`);
    if(fr.objective<0||fr.objective>=owner6.length)errors.push(`objetivo inválido F${fr.id}`);
  }
- for(let f=1;f<FACTIONS3230.length;f++){
+ for(let f=1;f<activeFactionCount3230;f++){
    if(troops3230[f]<-.001)errors.push(`${factionName3230(f)} reserva negativa`);
    const total=aiTotalMilitary3280(f),max=economyRate3230(f).max;
    if(total>max+12)errors.push(`${factionName3230(f)} ejército ${total.toFixed(1)} > máximo ${max.toFixed(1)}`);
@@ -11529,7 +11572,7 @@ debug3230=function(){
  _debugCampaignBase3280();const e=document.getElementById('debugText3230');if(!e||!showDebug3230)return;
  const errs=validateAICampaigns3280();
  e.textContent+=`\nCampañas v3.28 · frentes ${aiFronts3280.length} · manager ${aiFrontManagerMs3280.toFixed(2)} ms · tick ${aiFrontTacticalMs3280.toFixed(2)} ms · path ${aiFrontPathMs3280.toFixed(1)} ms/${aiFrontPathNodes3280} nodos`;
- for(let f=1;f<FACTIONS3230.length;f++){
+ for(let f=1;f<activeFactionCount3230;f++){
    const fs=aiFrontsForNation3280(f),m=aiMilitary3280[f];if(!fs.length)continue;
    e.textContent+=`\n${factionName3230(f)} · R${Math.round(troops3230[f])}/${Math.round(m.reserveTarget)} · frentes ${fs.length}`;
    for(const fr of fs)e.textContent+=`\n  F${fr.id} ${fr.type}/${fr.phase} vs ${fr.enemyId<0?'neutral':factionName3230(fr.enemyId)} · ${Math.round(fr.assignedForces)} · obj ${aiFrontObjectiveName3280(fr.objective)} · E${Math.round(fr.enemyStrengthEstimate)} · ${fr.reason}`;
@@ -11558,7 +11601,7 @@ function bootAICampaigns3281(){
  if(!worldReady)return false;
 
  aiCampaignBooted3281=true;
- for(let f=1;f<FACTIONS3230.length;f++){
+ for(let f=1;f<activeFactionCount3230;f++){
    aiNationNextCampaignEval3280[f]=campaignSeconds3230+1.5+f*.55;
    aiNationNextTactical3280[f]=campaignSeconds3230+.6+f*.14;
  }
@@ -12087,7 +12130,7 @@ botBuild3230=function(f){
 function aiDevSummaryHtml3283(){
  ensureNationalPlans3275(false);
  let rows='';
- for(let f=1;f<FACTIONS3230.length;f++){
+ for(let f=1;f<activeFactionCount3230;f++){
    const st=evaluateDevelopmentNeed3283(f),c=st.counts;
    const money=Math.floor(botGold3230[f]);
    const short=(c.cities<st.targetCities||c.industries<st.targetIndustries||c.roadRoutes<st.targetRoads);
@@ -12121,14 +12164,14 @@ debug3230=function(){
  _debugDevBase3283();
  const e=document.getElementById('debugText3230');if(!e||!showDebug3230)return;
  e.textContent+='\nDesarrollo IA v3.28.3';
- for(let f=1;f<FACTIONS3230.length;f++){
+ for(let f=1;f<activeFactionCount3230;f++){
    const st=evaluateDevelopmentNeed3283(f),c=st.counts;
    e.textContent+=`\n${factionName3230(f)} · oro ${Math.floor(botGold3230[f])}/res ${st.reserve} · C${c.cities}/${st.targetCities} I${c.industries}/${st.targetIndustries} R${c.roadRoutes}/${st.targetRoads} P${c.ports}/${st.targetPorts} -> ${st.nextAction} (${st.reason})`;
  }
 };
 
 setTimeout(()=>{
- if(owner6?.length){ensureNationalPlans3275(true);for(let f=1;f<FACTIONS3230.length;f++)evaluateDevelopmentNeed3283(f)}
+ if(owner6?.length){ensureNationalPlans3275(true);for(let f=1;f<activeFactionCount3230;f++)evaluateDevelopmentNeed3283(f)}
 },120);
 // ================= /v3.28.3 =================
 
@@ -12518,7 +12561,7 @@ function regionalRestore3284(data){
  regionalPlans3284=Array.from({length:FACTIONS3230.length},()=>null);
  regionalEvents3284=Array.from({length:FACTIONS3230.length},()=>[]);
  if(!data||data.version!==1||!Array.isArray(data.plans))return false;
- for(let f=1;f<FACTIONS3230.length;f++){
+ for(let f=1;f<activeFactionCount3230;f++){
    const p=data.plans[f];if(!p||p.nationId!==f)continue;
    const regions=Array.isArray(p.regions)?p.regions.filter(r=>regionalSaneCell3284(f,r.center)).slice(0,6):[];
    const tasks=Array.isArray(p.tasks)?p.tasks.filter(t=>['road','city','industry','port'].includes(t.kind)&&
@@ -12566,7 +12609,7 @@ applyPortableFile3275=function(file){
 };
 function regionalInvariants3284(){
  const errors=[];
- for(let f=1;f<FACTIONS3230.length;f++){
+ for(let f=1;f<activeFactionCount3230;f++){
    const p=regionalPlans3284[f];if(!p)continue;
    if(p.regions.length>6||p.tasks.length>8)errors.push(`${f}: límites de plan superados`);
    const centers=new Set();
@@ -12582,7 +12625,7 @@ const _debugRegionalBase3284=debug3230;
 debug3230=function(){
  _debugRegionalBase3284();const e=document.getElementById('debugText3230');if(!e||!showDebug3230)return;
  e.textContent+=`\nRegiones IA v3.28.4 · plan ${regionalComputeMs3284.toFixed(1)} ms · errores ${regionalInvariants3284().length}`;
- for(let f=1;f<FACTIONS3230.length;f++){
+ for(let f=1;f<activeFactionCount3230;f++){
    const p=regionalPlans3284[f];if(!p)continue;
    e.textContent+=`\n${factionName3230(f)} · ${p.regions.length} regiones · ${p.tasks.length} inversiones · construidas ${p.successes} · próximo ${p.tasks[0]?REGIONAL_TASK_NAMES3284[p.tasks[0].kind]+' '+regionalSafeName3284(p.tasks[0].target):'desarrollo equilibrado'}`;
  }
@@ -13821,7 +13864,7 @@ updateRanking3220=function(){
    const f=owner6[i];if(f>=0&&f<counts.length)counts[f]++;
  }
  const arr=[];
- for(let f=0;f<FACTIONS3230.length;f++)arr.push([f,counts[f]]);
+ for(let f=0;f<activeFactionCount3230;f++)arr.push([f,counts[f]]);
  arr.sort((a,b)=>b[1]-a[1]);
  const el=document.getElementById('rankRows3213');
  if(el)el.innerHTML=arr.map((r,k)=>`<div class="rankRow3213"><i class="rankDot3213" style="background:${FACTIONS3230[r[0]].color}"></i><span>${k+1}. ${factionName3230(r[0])}</span><small>${r[1].toLocaleString('es-ES')}</small></div>`).join('');
@@ -13957,7 +14000,7 @@ function validateStability3298(showToast=true){
 
  // Reservas y guarniciones IA.
  let negativeArmy=0;
- for(let f=0;f<FACTIONS3230.length;f++){
+ for(let f=0;f<activeFactionCount3230;f++){
    if((troops3230[f]??0)<-.001)negativeArmy++;
    const m=aiMilitary3280?.[f];
    if(m&&(m.capitalDefense<0||m.territorialDefense<0||m.coastalDefense<0||m.reserveTarget<0))negativeArmy++;
@@ -14142,7 +14185,7 @@ function dipRelationColor3300(v){return relationColor3220(v)}
 function dipOpinionLabel3300(v){return v>=60?'EXCELENTE':v>=25?'BUENA':v>=-15?'CORRECTA':v>=-45?'TENSA':'HOSTIL'}
 function dipTrustLabel3300(v){return v>=75?'ALTA':v>=45?'MEDIA':v>=25?'BAJA':'MUY BAJA'}
 function aiNationAtWar3300(f){
- for(let o=0;o<DIP_F3300;o++)if(o!==f&&diplomaticRelation3300(f,o)===-1)return true;
+ for(let o=0;o<activeFactionCount3230;o++)if(o!==f&&diplomaticRelation3300(f,o)===-1)return true;
  return false;
 }
 // Compatibilidad con la lógica de desarrollo v3.28.3.
@@ -14180,7 +14223,9 @@ function initDiplomacy3300(preservePlayer=true){
 
 function serializeDiplomacy3300(){
  return {
-   version:1,
+   version:2,
+   matrixSize:DIP_F3300,
+   factionCount:activeFactionCount3230,
    relations:Array.from(dipRelations3300),
    opinion:Array.from(dipOpinion3300),
    trust:Array.from(dipTrust3300),
@@ -14195,18 +14240,55 @@ function serializeDiplomacy3300(){
  };
 }
 function restoreDiplomacy3300(s){
- if(!s||!Array.isArray(s.relations)||s.relations.length!==DIP_F3300*DIP_F3300){
+ if(!s||!Array.isArray(s.relations)){
    initDiplomacy3300(true);return false;
  }
- const copy=(dst,src)=>{dst.fill(0);if(Array.isArray(src))dst.set(src.slice(0,dst.length))};
- copy(dipRelations3300,s.relations);copy(dipOpinion3300,s.opinion);copy(dipTrust3300,s.trust);
- copy(dipTreatyUntil3300,s.treatyUntil);copy(dipNoWarUntil3300,s.noWarUntil);copy(dipWarStarted3300,s.warStarted);
- copy(dipWarWeariness3300,s.weariness);copy(dipNextReview3300,s.nextReview);
- dipOffers3300=Array.isArray(s.offers)?s.offers.filter(x=>x&&x.from>0&&x.from<DIP_F3300).slice(0,12):[];
+ const matrixSize=Number.isInteger(s.matrixSize)&&s.matrixSize>0
+   ?s.matrixSize:Math.round(Math.sqrt(s.relations.length));
+ if(matrixSize<1||matrixSize>DIP_F3300||matrixSize*matrixSize!==s.relations.length){
+   initDiplomacy3300(true);return false;
+ }
+
+ dipRelations3300.fill(0);dipOpinion3300.fill(0);dipTrust3300.fill(50);
+ dipTreatyUntil3300.fill(0);dipNoWarUntil3300.fill(0);dipWarStarted3300.fill(0);
+ dipWarWeariness3300.fill(0);dipNextReview3300.fill(0);
+
+ for(let a=0;a<DIP_F3300;a++){
+   dipRelations3300[dipIdx3300(a,a)]=3;
+   dipOpinion3300[dipIdx3300(a,a)]=100;
+   dipTrust3300[dipIdx3300(a,a)]=100;
+   dipNextReview3300[a]=(campaignSeconds3230||0)+5+a*1.15;
+ }
+
+ const copyMatrix=(dst,src)=>{
+   if(!Array.isArray(src))return;
+   const lim=Math.min(matrixSize,DIP_F3300);
+   for(let a=0;a<lim;a++)for(let b=0;b<lim;b++){
+     const oldIx=a*matrixSize+b,newIx=dipIdx3300(a,b);
+     if(oldIx<src.length)dst[newIx]=src[oldIx];
+   }
+ };
+ copyMatrix(dipRelations3300,s.relations);
+ copyMatrix(dipOpinion3300,s.opinion);
+ copyMatrix(dipTrust3300,s.trust);
+ copyMatrix(dipTreatyUntil3300,s.treatyUntil);
+ copyMatrix(dipNoWarUntil3300,s.noWarUntil);
+ copyMatrix(dipWarStarted3300,s.warStarted);
+
+ if(Array.isArray(s.weariness))
+   dipWarWeariness3300.set(s.weariness.slice(0,Math.min(s.weariness.length,DIP_F3300)));
+ if(Array.isArray(s.nextReview))
+   dipNextReview3300.set(s.nextReview.slice(0,Math.min(s.nextReview.length,DIP_F3300)));
+
+ dipOffers3300=Array.isArray(s.offers)
+   ?s.offers.filter(x=>x&&x.from>0&&x.from<activeFactionCount3230).slice(0,12):[];
  dipEvents3300=Array.isArray(s.events)?s.events.slice(0,24):[];
  dipOfferSeq3300=Number(s.offerSeq)||1;
- // El row del jugador también se refleja al vector histórico.
- for(let b=1;b<DIP_F3300;b++)relations3220[b]=dipRelations3300[dipIdx3300(0,b)]||0;
+
+ relations3220.fill(0);
+ for(let b=1;b<activeFactionCount3230;b++)
+   relations3220[b]=dipRelations3300[dipIdx3300(0,b)]||0;
+
  dipBooted3300=true;
  return true;
 }
@@ -14314,7 +14396,7 @@ function rebuildDiplomaticBorders3300(force=false){
  if(!force&&snap.campaign===dipLastBorderCampaign3300)return dipBorderMatrix3300;
  dipBorderMatrix3300.fill(0);
  const L=loadLevel(MAX_GAME_LEVEL3233);
- for(let f=0;f<DIP_F3300;f++){
+ for(let f=0;f<activeFactionCount3230;f++){
    for(const c of snap.frontier[f]||[]){
      if(owner6[c]!==f)continue;
      const s=L.offsets[c],e=L.offsets[c+1];
@@ -14356,7 +14438,7 @@ function dipOpinionTarget3300(a,b){
  return dipClamp3300(v,-100,100);
 }
 function updateDiplomaticOpinion3300(f){
- for(let o=0;o<DIP_F3300;o++)if(o!==f){
+ for(let o=0;o<activeFactionCount3230;o++)if(o!==f){
    const cur=dipOpinionOf3300(f,o),target=dipOpinionTarget3300(f,o);
    dipSetOpinion3300(f,o,cur+(target-cur)*.16);
    const rel=diplomaticRelation3300(f,o);
@@ -14489,7 +14571,7 @@ function aiReviewDiplomacy3300(f){
  const role=FACTIONS3230[f]?.role||'balanced';
  const ownPower=dipPower3300(f),now=campaignSeconds3230;
 
- for(let o=0;o<DIP_F3300;o++){
+ for(let o=0;o<activeFactionCount3230;o++){
    if(o===f||(snap.territory[o]||0)<=0)continue;
    const rel=diplomaticRelation3300(f,o),op=dipOpinionOf3300(f,o),trust=dipTrustOf3300(f,o);
    const border=dipBorder3300(f,o),ratio=ownPower/Math.max(1,dipPower3300(o));
@@ -14594,7 +14676,7 @@ function diplomacyTick3300(){
  if(before!==dipOffers3300.length&&sysTab3220==='dip')renderSystems3220();
 
  // Una nación por tick, escalonada.
- if(dipReviewCursor3300<=0||dipReviewCursor3300>=DIP_F3300)dipReviewCursor3300=1;
+ if(dipReviewCursor3300<=0||dipReviewCursor3300>=activeFactionCount3230)dipReviewCursor3300=1;
  const f=dipReviewCursor3300++;
  if(now>=dipNextReview3300[f]){
    dipNextReview3300[f]=now+9+(f%4)*2.1;
@@ -14618,8 +14700,8 @@ economyTick3212=function(){
  if(started3230&&!paused3230&&dipBooted3300){
    const dt=Math.max(0,campaignSeconds3230-before);
    if(dt>0){
-     for(let f=0;f<DIP_F3300;f++){
-       let wars=0;for(let o=0;o<DIP_F3300;o++)if(o!==f&&diplomaticRelation3300(f,o)===-1)wars++;
+     for(let f=0;f<activeFactionCount3230;f++){
+       let wars=0;for(let o=0;o<activeFactionCount3230;o++)if(o!==f&&diplomaticRelation3300(f,o)===-1)wars++;
        if(wars){
          let lossPressure=0;
          for(const fr of aiFronts3280)if(fr.nationId===f)lossPressure+=Math.min(10,(fr.losses||0)*.025);
@@ -14705,7 +14787,7 @@ aiChooseOverseasPort3280=function(f){
 // -----------------------------------------------------------------------------
 tradeIncome3261=function(f,snap){
  let total=0,partners=0;
- for(let o=0;o<DIP_F3300;o++){
+ for(let o=0;o<activeFactionCount3230;o++){
    if(o===f)continue;
    const rel=diplomaticRelation3300(f,o);
    if(rel!==1&&rel!==3)continue;
@@ -14725,7 +14807,7 @@ tradeIncome3261=function(f,snap){
  return Math.min(3.2,total*Math.min(1.35,.82+ownPorts*.055)*roleBonus);
 };
 warCount3261=function(f){
- let n=0;for(let o=0;o<DIP_F3300;o++)if(o!==f&&diplomaticRelation3300(f,o)===-1)n++;
+ let n=0;for(let o=0;o<activeFactionCount3230;o++)if(o!==f&&diplomaticRelation3300(f,o)===-1)n++;
  return n;
 };
 
@@ -14747,13 +14829,13 @@ function renderDiplomacy3300(){
  rebuildDiplomaticBorders3300(false);
  const snap=aiSnapshot3260||rebuildAISnapshot3260();
  let wars=0,trade=0,allies=0;
- for(let i=1;i<DIP_F3300;i++){
+ for(let i=1;i<activeFactionCount3230;i++){
    const r=diplomaticRelation3300(0,i);
    if(r===-1)wars++;if(r===1)trade++;if(r===3)allies++;
  }
  const offers=dipOffers3300.filter(x=>x.expires>campaignSeconds3230);
  let arr=[];
- for(let i=1;i<DIP_F3300;i++)if((snap.territory[i]||0)>0)arr.push(i);
+ for(let i=1;i<activeFactionCount3230;i++)if((snap.territory[i]||0)>0)arr.push(i);
  arr.sort((a,b)=>
    (dipBorder3300(0,b)>0?1:0)-(dipBorder3300(0,a)>0?1:0) ||
    diplomaticRelation3300(0,a)-diplomaticRelation3300(0,b) ||
@@ -14859,7 +14941,7 @@ debug3230=function(){
  }
  e.textContent+=`\nDiplomacia v3.30.0 · guerras ${wars} · tratados ${treaties} · ofertas ${dipOffers3300.length}`;
  e.textContent+=`\nDip tick ${dipLastTickMs3300.toFixed(1)} ms · revisión ${dipLastReviewMs3300.toFixed(1)} ms`;
- for(let f=1;f<DIP_F3300;f++){
+ for(let f=1;f<activeFactionCount3230;f++){
    const r=diplomaticRelation3300(0,f);
    e.textContent+=`\n${factionName3230(f)}↔Jugador: ${DIP_RELATION_LABEL3300[r]} · opinión ${dipOpinionOf3300(f,0)} · confianza ${dipTrustOf3300(f,0)} · desgaste ${dipWarWeariness3300[f].toFixed(0)}%`;
  }
@@ -14912,7 +14994,7 @@ updateRanking3220=function(){
    const f=owner6[i];if(f>=0&&f<counts.length)counts[f]++;
  }
  const arr=[];
- for(let f=0;f<FACTIONS3230.length;f++)if(counts[f]>0||f===0)arr.push([f,counts[f]]);
+ for(let f=0;f<activeFactionCount3230;f++)if(counts[f]>0||f===0)arr.push([f,counts[f]]);
  arr.sort((a,b)=>b[1]-a[1]);
  const el=document.getElementById('rankRows3213');
  if(el)el.innerHTML=arr.map((r,k)=>`<div class="rankRow3213"><i class="rankDot3213" style="background:${FACTIONS3230[r[0]]?.color||'#80909b'}"></i><span>${k+1}. ${factionName3230(r[0])}</span><small>${r[1].toLocaleString('es-ES')}</small></div>`).join('');
@@ -15023,12 +15105,12 @@ function ensureFactionExpansion3301(migrateOldSave=false){
  // Ensure capital arrays have all 16 entries.
  if(!Array.isArray(capitals))capitals=[];
  if(!Array.isArray(historicCapital3230))historicCapital3230=[];
- for(let f=0;f<FACTIONS3230.length;f++){
+ for(let f=0;f<activeFactionCount3230;f++){
    if(!Number.isInteger(capitals[f])||capitals[f]<0)capitals[f]=SEED_CELLS3230[f];
    if(!Number.isInteger(historicCapital3230[f])||historicCapital3230[f]<0)historicCapital3230[f]=SEED_CELLS3230[f];
  }
  // Typed arrays are allocated from FACTIONS3230.length in this build.
- for(let f=FACTION_EXPANSION_FIRST3301;f<FACTIONS3230.length;f++){
+ for(let f=FACTION_EXPANSION_FIRST3301;f<activeFactionCount3230;f++){
    if(!Number.isFinite(troops3230[f])||troops3230[f]<=0)troops3230[f]=225;
    if(!Number.isFinite(botGold3230[f])||botGold3230[f]<=0)botGold3230[f]=145;
    if(!Number.isFinite(nationalism3230[f])||nationalism3230[f]<=0)nationalism3230[f]=60;
@@ -15036,7 +15118,7 @@ function ensureFactionExpansion3301(migrateOldSave=false){
  }
 
  if(migrateOldSave){
-   for(let f=FACTION_EXPANSION_FIRST3301;f<FACTIONS3230.length;f++)seedMissingFaction3301(f);
+   for(let f=FACTION_EXPANSION_FIRST3301;f<Math.min(activeFactionCount3230,16);f++)seedMissingFaction3301(f);
    cacheDirty=true;supplyDirty3220=true;aiSnapshotDirty3260=true;
    economyDirty3261=true;encirclementDirty3254=true;frontVisualDirty3255=true;
    clearAIFrontPathCache3280();
@@ -15079,8 +15161,8 @@ const _buildPortableFactionExpansion3301=buildPortableFile3276;
 buildPortableFile3276=function(){
  const file=_buildPortableFactionExpansion3301();
  file.gameVersion='3.30.1';
- file.payload.factionCount=FACTIONS3230.length;
- file.payload.factionNames=FACTIONS3230.map(x=>x.name);
+ file.payload.factionCount=activeFactionCount3230;
+ file.payload.factionNames=FACTIONS3230.slice(0,activeFactionCount3230).map(x=>x.name);
  file.checksum=fnv1a3273(JSON.stringify(file.payload));
  return file;
 };
@@ -15090,8 +15172,8 @@ debug3230=function(){
  _debugFactionExpansion3301();
  const e=document.getElementById('debugText3230');if(!e||!showDebug3230)return;
  let alive=0;
- if(worldReady3301())for(let f=0;f<FACTIONS3230.length;f++)if(factionTerritoryCount3301(f)>0)alive++;
- e.textContent+=`\nFacciones v3.30.1 · ${alive}/${FACTIONS3230.length} activas · arranque ${worldReady3301()?'OK':'pendiente'}`;
+ if(worldReady3301())for(let f=0;f<activeFactionCount3230;f++)if(factionTerritoryCount3301(f)>0)alive++;
+ e.textContent+=`\nFacciones v3.30.1 · ${alive}/${activeFactionCount3230} activas · capacidad ${FACTION_CAPACITY3230} · arranque ${worldReady3301()?'OK':'pendiente'}`;
 };
 
 // ================= /v3.30.1 =================
@@ -15165,7 +15247,8 @@ function logicalNationName3302(cell,used){
    if(!used.has(n)){used.add(n);return n}
  }
  const {lon,lat}=cellLonLat3302(cell);
- const n=`${pool[0]} ${Math.abs(Math.round(lat))}${lon>=0?'E':'O'}`;
+ const base=`${pool[0]} ${Math.abs(Math.round(lat))}${lon>=0?'E':'O'}`;
+ let n=base,k=2;while(used.has(n))n=`${base} ${k++}`;
  used.add(n);return n;
 }
 
@@ -15276,12 +15359,12 @@ function buildCustomWorld3302(playerCell){
  factionCapitalNames3230[0]=(playerNear&&playerNear.distance<7)?playerNear.city:'Capital inicial';
  claimInitialRing3302(0,playerCell);
 
- const ai=chooseAICapitals3302(playerCell,FACTIONS3230.length-1);
- if(ai.length<FACTIONS3230.length-1){
+ const ai=chooseAICapitals3302(playerCell,activeFactionCount3230-1);
+ if(ai.length<activeFactionCount3230-1){
    console.warn('OpenFront v3.30.2: no se pudieron generar todas las capitales IA',ai.length);
  }
  const starts=[playerCell];
- for(let f=1;f<FACTIONS3230.length;f++){
+ for(let f=1;f<activeFactionCount3230;f++){
    const p=ai[f-1];
    if(!p)continue;
    starts[f]=p.cell;
@@ -15301,7 +15384,8 @@ function buildCustomWorld3302(playerCell){
  if(typeof regionalPlans3284!=='undefined')regionalPlans3284=Array.from({length:FACTIONS3230.length},()=>null);
 
  worldSetupState3302={
-   version:1,
+   version:2,
+   factionCount:activeFactionCount3230,
    playerStart:playerCell,
    starts,
    names:FACTIONS3230.map(x=>x.name),
@@ -15315,14 +15399,16 @@ function buildCustomWorld3302(playerCell){
 }
 
 function serializeWorldSetup3302(){
- return worldSetupState3302||{
-   version:1,playerStart:capitals[0],starts:capitals.slice(),
+ const base=worldSetupState3302||{
+   playerStart:capitals[0],starts:capitals.slice(),
    names:FACTIONS3230.map(x=>x.name),capitalNames:factionCapitalNames3230.slice()
  };
+ return {...base,version:2,factionCount:activeFactionCount3230};
 }
 function restoreWorldSetup3302(s){
  if(!s||!Array.isArray(s.names))return false;
- for(let f=0;f<FACTIONS3230.length;f++){
+ if(Number.isFinite(Number(s.factionCount)))activeFactionCount3230=normalizeFactionCount3230(Number(s.factionCount));
+ for(let f=0;f<activeFactionCount3230;f++){
    if(typeof s.names[f]==='string'&&s.names[f].trim())FACTIONS3230[f].name=s.names[f].trim();
    if(Array.isArray(s.capitalNames)&&typeof s.capitalNames[f]==='string')factionCapitalNames3230[f]=s.capitalNames[f];
  }
@@ -15437,7 +15523,7 @@ function confirmNewGameSetup3302(){
  mapMode3252='political';if(typeof updateMapModeUI3252==='function')updateMapModeUI3252(false);
  selected=null;zoom=Math.max(2.8,zoom);rotateToCell3220(cell);
  saveWorldSetup3302();saveGame3212();updateUI3230();updateRanking3220();needsRender=true;
- toast(`Nueva partida · ${factionCapitalNames3230[0]} · 16 naciones`);
+ toast(`Nueva partida · ${factionCapitalNames3230[0]} · ${activeFactionCount3230} naciones`);
 }
 
 // Setup buttons.
@@ -15572,7 +15658,7 @@ debug3230=function(){
  _debugWorldSetup3302();
  const e=document.getElementById('debugText3230');if(!e||!showDebug3230)return;
  e.textContent+=`\nSetup v3.30.2 · inicio libre ${worldSetupState3302?'sí':'no'} · colocación ${newGamePlacementMode3302?'activa':'inactiva'} · ranking ${rankCollapsed3302?'cerrado':'abierto'}`;
- if(worldSetupState3302?.starts)e.textContent+=`\nCapitales iniciales: ${worldSetupState3302.starts.filter(Number.isInteger).length}/${FACTIONS3230.length}`;
+ if(worldSetupState3302?.starts)e.textContent+=`\nCapitales iniciales: ${worldSetupState3302.starts.filter(Number.isInteger).length}/${activeFactionCount3230}`;
 };
 // ================= /v3.30.2 =================
 
