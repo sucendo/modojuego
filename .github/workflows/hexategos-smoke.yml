@@ -1,0 +1,22 @@
+name: Hexategos smoke
+
+on:
+  push:
+    paths:
+      - 'hexategos/**'
+      - '.github/workflows/hexategos-smoke.yml'
+  pull_request:
+    paths:
+      - 'hexategos/**'
+      - '.github/workflows/hexategos-smoke.yml'
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run Hexategos 0.34.2 smoke checks
+        run: node hexategos/tests/smoke-0342.mjs
