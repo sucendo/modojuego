@@ -1,0 +1,42 @@
+/* HEXATEGOS Stable Rebuild 8 · mensajes contextuales dentro de Sistemas */
+
+/* El contador pertenece ahora a Sistemas y a su pestaña concreta, nunca a Opciones. */
+#systemsBtn3213{position:relative}
+#systemsBtn3213.hasMessagesStable8::after,
+.sysTabs3213 button.hasMessagesStable8::after{
+  content:attr(data-badge);
+  position:absolute;right:1px;top:1px;
+  min-width:14px;height:14px;padding:0 3px;
+  display:grid;place-items:center;border-radius:9px;
+  background:#c54c43;color:#fff;border:1px solid rgba(255,255,255,.55);
+  box-shadow:0 2px 8px rgba(0,0,0,.45);font:900 8px/1 system-ui;
+}
+.sysTabs3213 button{position:relative}
+#optionsBtnStable6::after{display:none!important}
+
+.messagesSectionStable8{
+  border-color:rgba(215,184,94,.28)!important;
+  background:linear-gradient(180deg,rgba(42,42,28,.24),rgba(12,29,42,.18))!important;
+}
+.messagesHeadStable8{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px}
+.messagesHeadStable8>span{flex:none;padding:3px 6px;border-radius:8px;background:rgba(215,184,94,.13);color:#f1d77d;font:900 7px/1 system-ui}
+.messageCardStable8{display:grid;grid-template-columns:31px minmax(0,1fr);gap:7px;margin-top:6px;padding:7px;border:1px solid rgba(255,255,255,.09);border-radius:9px;background:rgba(9,28,43,.72);transition:border-color .18s,box-shadow .18s,background .18s}
+.messageCardStable8.offerStable8,.messageTargetStable8{border-left:3px solid #d7b85e!important}
+.messageCardStable8.readStable8{opacity:.62}
+.messageFocusStable8{border-color:rgba(244,215,125,.9)!important;box-shadow:0 0 0 2px rgba(215,184,94,.18),0 6px 22px rgba(0,0,0,.35)!important}
+.messageIconStable8{width:29px;height:29px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.08);border-radius:8px;background:rgba(255,255,255,.045);font-size:14px}
+.messageBodyStable8{min-width:0}.messageBodyStable8>b{font-size:8px;color:#f7e5a3}.messageTitleStable8{margin-top:2px;color:#dcebf4;font:800 9px/1.25 system-ui}
+.messageActionsStable8{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap}.messageActionsStable8 button{min-height:26px;padding:4px 8px;border-radius:7px;border:1px solid rgba(255,255,255,.12);background:#102a40;color:#dcecf5;font:900 7.5px/1 system-ui}.messageActionsStable8 button.good{color:#eafff3;border-color:rgba(97,193,137,.38);background:#163c2b}
+
+#eventStackStable8{position:fixed;z-index:75;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(430px,calc(100vw - 16px));display:flex;flex-direction:column-reverse;gap:7px;pointer-events:none}
+.eventCardStable8{min-height:70px;display:grid;grid-template-columns:35px minmax(0,1fr) auto;gap:8px;align-items:center;padding:8px 9px;border:1px solid rgba(129,190,227,.28);border-left:3px solid #6aaed7;border-radius:11px;background:linear-gradient(180deg,rgba(8,27,43,.985),rgba(4,17,29,.985));box-shadow:0 12px 34px rgba(0,0,0,.46);backdrop-filter:blur(12px);color:#eaf5fb;pointer-events:auto;animation:eventInStable8 .16s ease-out both}
+.eventCardStable8[data-type="offer"]{border-left-color:#d7b85e}.eventCardStable8[data-type="war"]{border-left-color:#d66b61}.eventCardStable8[data-type="attack"]{border-left-color:#e38a58}.eventCardStable8.closingStable8{animation:eventOutStable8 .15s ease-in both}
+.eventIconStable8{width:33px;height:33px;display:grid;place-items:center;border-radius:8px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.08);font-size:16px}.eventBodyStable8{min-width:0}.eventBodyStable8>b{display:block;margin-bottom:3px;color:#fff3c7;font:900 9px/1.1 system-ui}.eventBodyStable8>div{color:#bfd1dc;font:700 8.5px/1.28 system-ui;white-space:normal;overflow-wrap:anywhere}.eventBodyStable8>small{display:block;margin-top:3px;color:#7897aa;font:800 7px/1 system-ui}
+.eventActionsStable8{display:flex;flex-direction:column;gap:4px}.eventActionsStable8 button{min-width:54px;height:25px;padding:0 6px;border-radius:7px;border:1px solid rgba(255,255,255,.12);background:#102a40;color:#dcecf5;font:900 7px/1 system-ui}.eventActionsStable8 .viewStable8{border-color:rgba(215,184,94,.42);color:#f4d77d}
+@keyframes eventInStable8{from{opacity:0;transform:translateY(7px) scale(.985)}to{opacity:1;transform:none}}@keyframes eventOutStable8{from{opacity:1;transform:none}to{opacity:0;transform:translateY(5px) scale(.985)}}
+
+@media(max-width:760px){
+  #eventStackStable8{width:min(390px,calc(100vw - 10px));bottom:calc(8px + env(safe-area-inset-bottom));gap:5px}
+  .eventCardStable8{min-height:55px;grid-template-columns:28px minmax(0,1fr) auto;gap:6px;padding:6px 7px;border-radius:9px}.eventIconStable8{width:27px;height:27px;font-size:13px}.eventBodyStable8>b{font-size:8px}.eventBodyStable8>div{font-size:7.6px}.eventActionsStable8 button{min-width:48px;height:22px;font-size:6.5px}
+  .messageCardStable8{grid-template-columns:27px minmax(0,1fr);padding:6px}.messageIconStable8{width:25px;height:25px;font-size:12px}
+}

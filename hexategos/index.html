@@ -4,14 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#050b14">
-<title>HEXATEGOS — Global Geopolitical Strategy · v0.33 Web Modular</title>
+<title>HEXATEGOS — Global Geopolitical Strategy · v0.33 Stable Rebuild 8</title>
 <link rel="icon" type="image/png" href="assets/favicon.png">
 <link rel="apple-touch-icon" href="assets/favicon.png">
 <link rel="stylesheet" href="css/hexategos.css">
-<link rel="stylesheet" href="css/ui-layout-033.css">
-<link rel="stylesheet" href="css/event-notifications-033.css">
-<link rel="stylesheet" href="css/mobile-polish-033.css">
+<link rel="stylesheet" href="css/ui-stable-step3-033.css">
+<link rel="stylesheet" href="css/ui-stable-step4-033.css">
 
+<link rel="stylesheet" href="css/ui-stable-step5-033.css">
+<link rel="stylesheet" href="css/ui-stable-step6-033.css">
+<link rel="stylesheet" href="css/ui-stable-step8-033.css">
 </head>
 <body class="bootPending3305">
 
@@ -79,24 +81,24 @@
   </div>
 </div>
 
-<div id="leftRail3306" class="hudRail3306 leftRail3306" aria-label="Controles principales">
+<div id="leftRail3306" class="hudRail3306 leftRail3306 stableRailStep2 stableRailStep6" aria-label="Controles principales">
   <div class="railItem3306"><button class="icon gameMenuIcon3306" id="gameMenuBtn3306" aria-label="Menú de partida" title="Partida">☰</button><small>Partida</small></div>
-  <div class="railTitle3306">CONTROL</div>
+  <div class="railSep3306"></div>
   <div class="railItem3306"><button class="icon" id="homeBtn3213" aria-label="Volver a la capital" title="Capital">★</button><small>Capital</small></div>
-  <div class="railItem3306"><button class="icon" id="systemsBtn3213" aria-label="Diplomacia, economía e inteligencia" title="Sistemas">⚙</button><small>Sistemas</small></div>
-  <div class="railItem3306"><button class="icon" id="mapModeBtn3252" aria-label="Modo de mapa: político" title="Modo de mapa">◈</button><small>Mapa</small></div>
+  <div class="railItem3306"><button class="icon" id="systemsBtn3213" aria-label="Diplomacia, economía, investigación e inteligencia" title="Sistemas">▦</button><small>Sistemas</small></div>
+  <div class="railItem3306"><button class="icon" id="mapModeBtn3252" aria-label="Cambiar modo de mapa" title="Mapa">▧</button><small>Mapa</small></div>
+  <div class="railItem3306"><button class="icon" id="optionsBtnStable6" aria-label="Opciones" title="Opciones">⚙</button><small>Opciones</small></div>
   <div class="railSep3306"></div>
-  <div class="railTitle3306">VISTA</div>
-  <div class="railItem3306"><button class="icon" id="gridBtn" aria-label="Malla" title="Malla">⌗</button><small>Malla</small></div>
-  <div class="railItem3306"><button class="icon" id="labelBtn" aria-label="Nombres" title="Nombres">Aa</button><small>Nombres</small></div>
-  <div class="railItem3306"><button class="icon" id="resetViewBtn" aria-label="Centrar vista" title="Centrar vista">◎</button><small>Centrar</small></div>
-  <div class="railSep3306"></div>
-  <div class="railTitle3306">TIEMPO</div>
   <div class="railItem3306"><button class="icon" id="pauseBtn3230" aria-label="Pausa" title="Pausa">Ⅱ</button><small>Pausa</small></div>
   <div class="railSep3306"></div>
   <div class="railItem3306"><button class="icon" id="fsBtn3213" aria-label="Pantalla completa" title="Pantalla completa">⛶</button><small>Pantalla</small></div>
 </div>
-<button id="speedBtn" type="button" hidden aria-hidden="true" tabindex="-1"></button>
+<div id="legacyViewControlsStable6" hidden aria-hidden="true">
+  <button id="gridBtn" type="button" tabindex="-1">Malla</button>
+  <button id="labelBtn" type="button" tabindex="-1">Nombres</button>
+  <button id="resetViewBtn" type="button" tabindex="-1">Centrar</button>
+</div>
+<button id="speedBtn" type="button" hidden aria-hidden="true" tabindex="-1">1×</button>
 
 <div id="gameMenu3306" aria-hidden="true">
   <div class="gameMenuHead3306"><b>PARTIDA</b><button id="gameMenuClose3306" type="button">×</button></div>
@@ -113,16 +115,16 @@
 <div id="economyMini3213" class="economyMiniLegacy3308" aria-hidden="true"></div>
 <div id="frontDock3213"></div>
 <div id="rankPanel3213">
- <div class="rankTitle3213" id="rankDragHandle3303"><span>CLASIFICACIÓN</span><button id="rankToggle3302" type="button" aria-label="Abrir o cerrar clasificación">−</button></div>
+ <div class="rankTitle3213" id="rankDragHandle3303"><span>CLASIFICACIÓN</span><small class="rankMoveHint3303">arrastrar</small><button id="rankToggle3302" type="button" aria-label="Abrir o cerrar clasificación">−</button></div>
  <div id="rankRows3213"></div>
  <div id="rankResizeRight033" aria-hidden="true"></div>
  <div id="rankResizeBottom033" aria-hidden="true"></div>
- <div id="rankResize3303" aria-label="Redimensionar clasificación" title="Arrastra para cambiar ancho y alto">↘</div>
+ <div id="rankResize3303" aria-label="Redimensionar clasificación" title="Arrastra para cambiar el tamaño">↘</div>
 </div>
 <div id="systemsPanel3213">
  <div class="sysHead3213"><b>SISTEMAS</b><button id="systemsClose3213">×</button></div>
  <div class="sysTabs3213">
-  <button data-tab="dip" class="active">🤝 DIPLO.</button><button data-tab="eco">⇄ ECON.</button><button data-tab="research">🔬 I+D</button><button data-tab="intel">🕵 INTEL.</button><button data-tab="naval">⚓ NAVAL</button><button data-tab="settings">⚙ AJUST.</button>
+  <button data-tab="dip" class="active">🤝 DIPLO.</button><button data-tab="eco">⇄ ECON.</button><button data-tab="research">🔬 I+D</button><button data-tab="intel">🕵 INTEL.</button><button data-tab="naval">⚓ NAVAL</button>
  </div>
  <div id="sysContent3213"></div>
 </div>
@@ -199,19 +201,18 @@
  <div class="newGameSetupCard3302">
   <div class="newGameSetupHead3302" title="Arrastra para mover este panel">
    <b>NUEVA PARTIDA · CAPITAL</b>
-   <div class="newGameSetupHeadActions033">
-    <button id="setupMinimize033" type="button" aria-label="Minimizar panel" title="Minimizar panel">−</button>
+   <div class="newGameSetupHeadActionsStep2">
+    <button id="setupMinimizeStep2" type="button" aria-label="Minimizar panel" title="Minimizar panel">−</button>
     <button id="setupClose3302" type="button" aria-label="Cancelar nueva partida" title="Cancelar">×</button>
    </div>
   </div>
-  <div class="newGameSetupHelp3302">Gira o pellizca el globo y toca una casilla de tierra para elegir tu capital. Puedes seguir moviéndote por todo el mundo mientras eliges.</div>
+  <div class="newGameSetupHelp3302">Gira el globo, haz zoom y toca una casilla de tierra. Esa casilla será tu capital. Empezarás con la capital y únicamente sus casillas terrestres inmediatas.</div>
   <div id="setupSelection3302" class="newGameSetupSelection3302">Selecciona una ubicación en el mapa.</div>
   <div class="newGameSetupActions3302">
-   <button id="setupRandom3302" type="button">⌖ ALEATORIA</button>
-   <button id="setupConfirm3302" type="button" class="primary3302" disabled>▶ COMENZAR</button>
+   <button id="setupRandom3302" type="button">⌖ UBICACIÓN ALEATORIA</button>
+   <button id="setupConfirm3302" type="button" class="primary3302" disabled>▶ COMENZAR AQUÍ</button>
   </div>
-  <div class="newGameSetupMeta3302">Las otras 15 naciones se generarán al comenzar, separadas por el mundo.</div>
-  <div class="newGameSetupMapHint033">Arrastra la cabecera para apartar el panel · el mapa permanece activo.</div>
+  <div class="newGameSetupMeta3302">Las otras 15 naciones aparecerán en ubicaciones distintas y recibirán un nombre ficticio coherente con su región.</div>
  </div>
 </div>
 
@@ -254,11 +255,12 @@
 <script src="data/groups-5.js"></script>
 <script src="data/groups-6.js"></script>
 <script src="js/game.js"></script>
-<script src="js/newgame-setup-033.js"></script>
-<script src="js/ui-layout-033.js"></script>
-<script src="js/ranking-layout-033.js"></script>
-<script src="js/left-dialogs-033.js"></script>
-<script src="js/layout-reset-033.js"></script>
-<script src="js/event-notifications-033.js"></script>
+<script src="js/diagnostics-stable-033.js"></script>
+<script src="js/ui-stable-step2-033.js"></script>
+<script src="js/ui-stable-step3-033.js"></script>
+<script src="js/ui-stable-step4-033.js"></script>
+<script src="js/ui-stable-step5-033.js"></script>
+<script src="js/ui-stable-step6-033.js"></script>
+<script src="js/ui-stable-step8-033.js"></script>
 </body>
 </html>
