@@ -15389,6 +15389,7 @@ function resetContextAfterSetup3315(){
 
 function beginNewGameSetup3302(origin='intro'){
  if(!worldReady3301())return;
+ document.getElementById('newGameSetup3302').inert=false;
  resetMapPointerState3315();
  resetContextAfterSetup3315();
  newGameSetupOrigin3302=origin;
@@ -15410,8 +15411,11 @@ function cancelNewGameSetup3302(){
  resetMapPointerState3315();
  resetContextAfterSetup3315();
  newGamePlacementMode3302=false;newGamePlayerCell3302=-1;
- document.getElementById('newGameSetup3302').classList.remove('open3302');
- document.getElementById('newGameSetup3302').setAttribute('aria-hidden','true');
+ const setupPanel3302=document.getElementById('newGameSetup3302');
+ const active3302=document.activeElement;
+ if(active3302&&setupPanel3302.contains(active3302))try{active3302.blur()}catch(_){}
+ setupPanel3302.classList.remove('open3302');
+ setupPanel3302.setAttribute('aria-hidden','true');setupPanel3302.inert=true;
  mapMode3252=newGameSetupOldMapMode3302;if(typeof updateMapModeUI3252==='function')updateMapModeUI3252(false);
  selected=null;
  if(newGameSetupOrigin3302==='intro'||!started3230)document.getElementById('intro3230').classList.remove('hidden3230');
@@ -15425,8 +15429,11 @@ function confirmNewGameSetup3302(){
  resetContextAfterSetup3315();
  if(!buildCustomWorld3302(cell)){toast('No se pudo crear la partida en esa ubicación');return}
  newGamePlacementMode3302=false;
- document.getElementById('newGameSetup3302').classList.remove('open3302');
- document.getElementById('newGameSetup3302').setAttribute('aria-hidden','true');
+ const setupPanel3302=document.getElementById('newGameSetup3302');
+ const active3302=document.activeElement;
+ if(active3302&&setupPanel3302.contains(active3302))try{active3302.blur()}catch(_){}
+ setupPanel3302.classList.remove('open3302');
+ setupPanel3302.setAttribute('aria-hidden','true');setupPanel3302.inert=true;
  mapMode3252='political';if(typeof updateMapModeUI3252==='function')updateMapModeUI3252(false);
  selected=null;zoom=Math.max(2.8,zoom);rotateToCell3220(cell);
  saveWorldSetup3302();saveGame3212();updateUI3230();updateRanking3220();needsRender=true;
@@ -16097,11 +16104,13 @@ window.__hexategosLandingReady3305=true;
 
 function closeGameMenu3306(){
  const m=document.getElementById('gameMenu3306');
- m.classList.remove('open3306');m.setAttribute('aria-hidden','true');
+ const active=document.activeElement;
+ if(active&&m.contains(active))try{active.blur()}catch(_){}
+ m.classList.remove('open3306');m.setAttribute('aria-hidden','true');m.inert=true;
 }
 function openGameMenu3306(){
  const m=document.getElementById('gameMenu3306');
- m.classList.add('open3306');m.setAttribute('aria-hidden','false');
+ m.inert=false;m.classList.add('open3306');m.setAttribute('aria-hidden','false');
 }
 document.getElementById('gameMenuBtn3306').onclick=e=>{
  e.stopPropagation();
@@ -16332,8 +16341,10 @@ window.HEXATEGOS_BUILD = '0.33';
 // ================= /v0.33 =================
 
 
-// ================= v0.33 · TOUCH CORE v3.30.15 =================
-// Conserva un único flujo pointerdown/pointermove/pointerup para el canvas.
-// Única diferencia funcional: pinch táctil permitido hasta 40×.
-window.HEXATEGOS_TOUCH_CORE='v3.30.15-single-handler-40x';
-// ================= /v0.33 =================
+// ================= STABLE REBUILD 1 =================
+window.HEXATEGOS_STABLE_REBUILD='0.33-SR1';
+// ================= /STABLE REBUILD 1 =================
+
+
+// HEXATEGOS Stable Rebuild 4 · touch core 40x
+window.HEXATEGOS_TOUCH_CORE='stable-rebuild-4-single-handler-40x';

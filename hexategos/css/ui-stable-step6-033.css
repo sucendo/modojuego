@@ -1,0 +1,71 @@
+/* HEXATEGOS Stable Rebuild 6 · rail simplificado + Opciones */
+
+/* Los controles de malla, nombres y centrar siguen existiendo ocultos para
+   conservar los handlers del motor, pero ya no pertenecen al rail visible. */
+#legacyViewControlsStable6{display:none!important}
+
+/* Rail: Partida / Capital / Sistemas / Mapa / Opciones / Pausa / Pantalla. */
+#leftRail3306.stableRailStep6 .railSep3306{
+  width:28px!important;
+  margin:4px auto!important;
+}
+#leftRail3306.stableRailStep6 #systemsBtn3213,
+#leftRail3306.stableRailStep6 #mapModeBtn3252,
+#leftRail3306.stableRailStep6 #optionsBtnStable6{
+  font-family:system-ui,-apple-system,"Segoe UI Symbol","Segoe UI",sans-serif!important;
+  font-size:18px!important;
+}
+#leftRail3306.stableRailStep6 #optionsBtnStable6.active,
+#leftRail3306.stableRailStep6 #systemsBtn3213.active{
+  color:#fff3c7!important;
+  background:linear-gradient(180deg,rgba(31,72,96,.99),rgba(13,43,63,.99))!important;
+  box-shadow:inset 3px 0 0 rgba(222,184,89,.96),inset 0 0 17px rgba(208,169,75,.09)!important;
+}
+
+/* Opciones integradas en la pestaña Ajustes del panel Sistemas. */
+.optionsViewStable6{
+  border-color:rgba(215,184,94,.22)!important;
+  background:linear-gradient(180deg,rgba(27,48,61,.32),rgba(12,31,44,.25))!important;
+}
+.optionsGridStable6{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:6px;
+  margin-top:8px;
+}
+.optionsGridStable6 button{
+  min-height:40px;
+  padding:7px 8px;
+  border:1px solid rgba(255,255,255,.11);
+  border-radius:8px;
+  background:linear-gradient(180deg,#132f46,#0b2234);
+  color:#dcebf4;
+  text-align:left;
+  font:800 9px/1.25 system-ui;
+}
+.optionsGridStable6 button:hover{
+  border-color:rgba(111,186,230,.42);
+  filter:brightness(1.08);
+}
+.optionsGridStable6 button.active{
+  border-color:rgba(215,184,94,.46);
+  color:#fff0be;
+  box-shadow:inset 3px 0 0 rgba(215,184,94,.82);
+}
+.optionsGridStable6 button strong{
+  float:right;
+  color:#8fc4e3;
+  font-size:8px;
+}
+.optionsGridStable6 button.active strong{color:#f0d476}
+
+@media(max-width:760px){
+  .optionsGridStable6{grid-template-columns:1fr 1fr;gap:5px}
+  .optionsGridStable6 button{min-height:34px;padding:5px 6px;font-size:8px}
+  #leftRail3306.stableRailStep6 #systemsBtn3213,
+  #leftRail3306.stableRailStep6 #mapModeBtn3252,
+  #leftRail3306.stableRailStep6 #optionsBtnStable6{font-size:15px!important}
+}
+@media(max-width:430px){
+  .optionsGridStable6{grid-template-columns:1fr}
+}
