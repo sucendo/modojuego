@@ -1,3 +1,16 @@
-HEXATEGOS_0_33_STABLE_REBUILD_8
-Base estable reconstruida con mensajes contextuales en Sistemas.
-Cambios específicos: js/ui-stable-step8-033.js, css/ui-stable-step8-033.css, index.html.
+HEXATEGOS_0_34_2
+
+Base:
+- HEXATEGOS 0.34.1
+- Stable Rebuild 8 preservada en hexategos-stable-0.33-r8
+
+Módulos principales de esta versión:
+- js/game.js
+- js/diplomatic-network-034.js
+- js/nation-scale-0341.js
+- js/stability-0342.js
+- tests/smoke-0342.mjs
+- .github/workflows/hexategos-smoke.yml
+
+Objetivo:
+Estabilizar la ampliación a 16/25/35/50 naciones, garantizar creación exacta de estados y proteger compatibilidad de guardados.
