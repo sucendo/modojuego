@@ -10,7 +10,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#05070b">
-<title>Apex Formula 26 v5.230.62.8.4.2.1 · Edificios refinados · budget fix</title>
+<title>Apex Formula 26 v5.230.62.8.5 · Edificios refinados · budget fix</title>
 <style>
 :root{--a:#59f3ff;--r:#ff405d;--panel:rgba(8,12,18,.94);--line:rgba(255,255,255,.14);--mut:#93a0b2}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -913,14 +913,14 @@ body.menu-open #menu::after,body.menu-open .menuBgCar{display:none!important}
 @media(max-width:600px){.apexRaceLoadCard{padding:22px 20px}.apexRaceLoadBar{height:11px}}
 </style>
 
-<script>window.APEX_BUILD_TAG="v5.230.62.8.4.2.1_EDIFICIOS_BUDGET_FIX_23_CIRCUITOS";window.APEX_AUT_SVG_WALL_AWARE=true;window.APEX_AUT_BRAKE_COMMIT=true;window.APEX_EXPORT_CORNER_MARKERS=true;window.APEX_PIT_CYCLE_LOCK=true;window.APEX_CORNER_REFERENCE_MODEL=true;window.APEX_BANKING_CORNER_ANCHORED=true;window.APEX_TERRAIN_CONTOURS=true;window.APEX_TERRAIN_CONTOUR_MODEL="POLYGON_V3_CORNERS_FILL";</script>
+<script>window.APEX_BUILD_TAG="v5.230.62.8.5_DENSIDAD_ADAPTATIVA_GLOBAL_23_CIRCUITOS";window.APEX_AUT_SVG_WALL_AWARE=true;window.APEX_AUT_BRAKE_COMMIT=true;window.APEX_EXPORT_CORNER_MARKERS=true;window.APEX_PIT_CYCLE_LOCK=true;window.APEX_CORNER_REFERENCE_MODEL=true;window.APEX_BANKING_CORNER_ANCHORED=true;window.APEX_TERRAIN_CONTOURS=true;window.APEX_TERRAIN_CONTOUR_MODEL="POLYGON_V3_CORNERS_FILL";</script>
 <script>
 (function(){
   function apexFatal(msg){
     try{
       var d=document.getElementById('apexFatalMobile');
       if(!d){d=document.createElement('div');d.id='apexFatalMobile';d.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#07090d;color:#fff;padding:18px;font:13px/1.45 monospace;white-space:pre-wrap;overflow:auto';document.documentElement.appendChild(d);}
-      d.textContent='APEX v5.230.62.8.4.2.1 · error de ejecución\n\n'+String(msg)+'\n\nHaz una captura de esta pantalla y pásamela.';
+      d.textContent='APEX v5.230.62.8.5 · error de ejecución\n\n'+String(msg)+'\n\nHaz una captura de esta pantalla y pásamela.';
     }catch(e){}
   }
   window.addEventListener('error',function(e){apexFatal((e&&e.message?e.message:'Error')+(e&&e.filename?'\n'+e.filename+':'+e.lineno+':'+e.colno:''));});
@@ -946,7 +946,7 @@ body.menu-open #menu::after,body.menu-open .menuBgCar{display:none!important}
 
 <section id="menu" class="panel">
   <div class="menuBgCar" aria-hidden="true"></div>
-  <div class="logo">APEX <b>26</b> <span id="versionBadge" style="font-size:.22em;letter-spacing:.05em;color:#8d99a9">v5.230.62.8.4.2.1 · EDIFICIOS REFINADOS</span></div>
+  <div class="logo">APEX <b>26</b> <span id="versionBadge" style="font-size:.22em;letter-spacing:.05em;color:#8d99a9">v5.230.62.8.5 · DENSIDAD ADAPTATIVA</span></div>
   <div class="tag">Cuatro formas de jugar: <b>Carrera rápida</b>, <b>Gran Premio</b>, <b>Temporada 2026</b> y <b>Entrenamientos libres</b>. La portada se ha rediseñado para que sea más clara, más cómoda en móvil y más rápida de usar, manteniendo toda la base del cockpit, rivales, física, sonido y fin de semana de competición.</div>
   <div class="menuHeroMeta"><div class="heroPill"><span class="hpK">Modos</span><b class="hpV">4</b></div><div class="heroPill"><span class="hpK">Escuderías</span><b class="hpV">11</b></div><div class="heroPill"><span class="hpK">Parrilla</span><b class="hpV">22 coches</b></div><div class="heroPill"><span class="hpK">Vista</span><b class="hpV">Cockpit</b></div><div class="heroPill"><span class="hpK">Sesiones</span><b class="hpV">FP1 · FP2 · FP3 · Q</b></div><div class="heroPill"><span class="hpK">Móvil</span><b class="hpV">Optimizado</b></div></div>
   <div id="menuModeRow">
@@ -1147,7 +1147,7 @@ body.menu-open #menu::after,body.menu-open .menuBgCar{display:none!important}
 // Apex Formula 26 v5.80 · Progressive Mobile Quality
 // v5.230.36: cedemos un frame al navegador para que la portada pueda pintarse antes del arranque pesado.
 requestAnimationFrame(()=>setTimeout(()=>{
-const APP_VERSION="v5.230.62.8.4.2.1",APP_BUILD="BASE UNIVERSAL · 23 CIRCUITOS · EDIFICIOS REFINADOS + LOD";
+const APP_VERSION="v5.230.62.8.5",APP_BUILD="BASE UNIVERSAL · 23 CIRCUITOS · DENSIDAD ADAPTATIVA GLOBAL";
 const $=id=>document.getElementById(id),clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),mod=(n,m)=>((n%m)+m)%m,lerp=(a,b,t)=>a+(b-a)*t;
 const appStorage=(()=>{try{return window.localStorage}catch(e){return{getItem(){return null},setItem(){},removeItem(){},clear(){}}}})();
 const finite=(v,f=0)=>Number.isFinite(v)?v:f,finiteClamp=(v,a,b,f=0)=>clamp(finite(v,f),a,b);
@@ -2445,7 +2445,7 @@ function apexEnrichExportSvg(svgText,spec){
    }
    apexWriteCircuitMetadata(doc,root,spec);
    apexSvgApplyUniversalSchema(root);
-   root.setAttribute('data-apex-export','COMPLETE_CIRCUIT_V5');root.setAttribute('data-apex-export-version','v5.230.62.8.4.2.1');root.setAttribute('data-apex-library-version','5');root.setAttribute('data-apex-metadata-version','2');
+   root.setAttribute('data-apex-export','COMPLETE_CIRCUIT_V5');root.setAttribute('data-apex-export-version','v5.230.62.8.5');root.setAttribute('data-apex-library-version','5');root.setAttribute('data-apex-metadata-version','2');
    const out=`<?xml version="1.0" encoding="UTF-8"?>\n${new XMLSerializer().serializeToString(root)}`;if(terrainExportCtx&&terrainExportCtx.root&&terrainExportCtx.root.isConnected)terrainExportCtx.root.remove();return out;
  }catch(e){if(terrainExportCtx&&terrainExportCtx.root&&terrainExportCtx.root.isConnected)terrainExportCtx.root.remove();return svgText}
 }
@@ -5496,11 +5496,44 @@ function apexGrandstandFrameXZ(frame,u,depth){
 function apexGrandstandWorldCam(frame,u,depth,y,cam){
  const p=apexGrandstandFrameXZ(frame,u,depth),yy=apexWorldGroundY(p[0],p[1])+y;return worldToCamera(p[0],yy,p[1],cam);
 }
+function apexSceneDetailBudget(){
+ const mobile=mobilePerformanceMode(),q=clamp(Number(renderQualityT())||0,0,1),fm=Math.max(0,Number(telemetryPerf&&telemetryPerf.frameMs)||16.7),rm=Math.max(0,Number(telemetryPerf&&telemetryPerf.renderMs)||0);
+ let pressure=0;
+ if(fm>46||rm>34)pressure=3;else if(fm>34||rm>25)pressure=2;else if(fm>25||rm>18)pressure=1;
+ let density=mobile?.78:1,detailScale=1,farScale=1;
+ if(q<.68){density*=.86;detailScale*=.88;farScale*=.92}if(q<.42){density*=.78;detailScale*=.80;farScale*=.84}if(q<.24){density*=.70;detailScale*=.72;farScale*=.76}
+ if(pressure===1){density*=.82;detailScale*=.84;farScale*=.90}
+ else if(pressure===2){density*=.62;detailScale*=.68;farScale*=.78}
+ else if(pressure>=3){density*=.44;detailScale*=.52;farScale*=.66}
+ return {mobile,q,fm,renderMs:rm,pressure,density:clamp(density,.28,1),detailScale:clamp(detailScale,.42,1),farScale:clamp(farScale,.58,1)};
+}
+function apexSceneryDensity(type='',ds=999){
+ const b=apexSceneDetailBudget(),t=String(type||'').toLowerCase();let d=b.density;
+ if(ds<120)return 1;
+ if(['tree','flagpole','billboard','advertising','parking','ferris','forestzone'].includes(t)){
+   if(ds>900*b.farScale)d*=.58;else if(ds>520*b.farScale)d*=.76;
+ }
+ return clamp(d,.20,1);
+}
+function apexObjectLodBudget(type,lod,ds=999){
+ const b=apexSceneDetailBudget(),t=String(type||'').toLowerCase();let out=Math.max(0,Math.round(Number(lod)||0));
+ if(['road','tunnel','tunnelportal','barrier','bridge','pit'].includes(t))return out;
+ if(b.pressure>=3&&ds>170)out=Math.max(out,2);else if(b.pressure>=2&&ds>240)out=Math.max(out,2);else if(b.pressure>=1&&ds>420)out=Math.max(out,2);
+ if((t==='grandstand'||t==='block'||t==='building'||t==='tower')&&b.detailScale<.72&&ds>260)out=Math.max(out,1);
+ return clamp(out,0,3);
+}
+function apexSceneryShouldRender(it,index=0,ds=999,z=999){
+ if(!it)return false;const t=String(it.type||'').toLowerCase();
+ if(!['tree','flagpole','billboard','advertising','parking','ferris'].includes(t))return true;
+ if(ds<140||z<130)return true;
+ const d=apexSceneryDensity(t,ds),seed=apexStringHash(String(it.sourceId||it.name||t)+'|'+index),r=((seed>>>0)&65535)/65535;
+ return r<=d;
+}
 function apexGrandstandRenderBudget(lod,ds=999){
- const mobile=mobilePerformanceMode(),q=renderQualityT(),fm=Math.max(0,Number(telemetryPerf&&telemetryPerf.frameMs)||16.7),pressure=fm>42?3:(fm>31?2:(fm>23?1:0));
+ const scene=apexSceneDetailBudget(),mobile=scene.mobile,q=scene.q,fm=scene.fm,pressure=scene.pressure;
  let tier=lod<=0?2:(lod===1?1:0);
- if(ds>(mobile?230:320))tier=Math.min(tier,1);if(ds>(mobile?430:620))tier=0;
- if(mobile&&q<.55)tier--;if(q<.28)tier--;tier-=pressure;
+ if(ds>(mobile?230:320)*scene.farScale)tier=Math.min(tier,1);if(ds>(mobile?430:620)*scene.farScale)tier=0;
+ if(mobile&&q<.55)tier--;if(q<.28)tier--;if(pressure>=2)tier--;if(pressure>=3)tier--;
  tier=clamp(Math.round(tier),0,2);
  if(tier===2)return{tier,crowdRows:6,crowdCols:9,stairs:true,braces:true,vip:true,flags:true,roofSupports:true,crowdHeight:1.10};
  if(tier===1)return{tier,crowdRows:3,crowdCols:6,stairs:false,braces:true,vip:false,flags:false,roofSupports:true,crowdHeight:1.05};
@@ -5563,12 +5596,11 @@ function apexBuildingStyleProfile(it){
  return {...base,body:'#b0b5b8',side:'#9aa1a6',roof:'#d7dcdf',roofDark:'#bcc3c8',glass:'#8298a5',glassAlt:'#93a7b3',window:'#8f9ea7',windowAlt:'#a9b6bd',accent:'#6f787f',floors:Math.max(3,Math.round((it&&it.height||16)/4.5)),windowMode:'concrete',hvacCount:2};
 }
 function apexBuildingRenderBudget(lod,detail=1){
- const mobile=mobilePerformanceMode(),q=renderQualityT(),fm=Math.max(0,Number(telemetryPerf&&telemetryPerf.frameMs)||16.7),d=clamp(Number(detail)||0,0,1);
+ const scene=apexSceneDetailBudget(),mobile=scene.mobile,q=scene.q,fm=scene.fm,d=clamp(Number(detail)||0,0,1);
  let budget=lod<=0?2:(lod===1?1:0);
- // Los edificios decorativos ceden detalle antes que pista, física o coches.
  if(d<.16)budget=Math.min(budget,0);else if(d<.42)budget=Math.min(budget,1);
  if(mobile&&q<.62)budget--;if(q<.34)budget--;
- if(fm>38)budget-=2;else if(fm>27)budget--;
+ if(scene.pressure>=3)budget-=2;else if(scene.pressure>=1)budget--;
  return clamp(Math.round(budget),0,2);
 }
 function apexBuildingFrontEdge(it){
@@ -5691,7 +5723,9 @@ function drawWorldLandmarks(cam,pitch){
    const pa=projectRoadLocal(a.x,a.y,a.z,pitch),pb=projectRoadLocal(b.x,b.y,b.z,pitch);if(!pa||!pb)return false;line(pa,pb,stroke,w,alpha);return true;
  };
  const labelQueue=[],visible=[];
+ let sceneItemIndex=0;
  for(const it of items){
+   const itemIndex=sceneItemIndex++;
    const skyline=apexIsSkylineLandmark(it),gy=groundedY(it.anchor),maxZ=skyline?Math.max(6000,it.maxRenderDistance||it.anchor.maxRenderDistance||0):(it.maxRenderDistance||it.anchor.maxRenderDistance||1750);
    let p=project(it.anchor.x,gy,it.anchor.z,maxZ);
    if(skyline){
@@ -5707,8 +5741,9 @@ function drawWorldLandmarks(cam,pitch){
      if(!p)continue;
      if(p.x<-W*.32||p.x>W*1.32)continue;
    }
+   let dsLm=1e9;
    if(player&&Number.isFinite(it.anchor.s)){
-     const L=trackData.km*1000,ds=Math.abs(wrapDeltaS(it.anchor.s,player.s,L));
+     const L=trackData.km*1000,ds=Math.abs(wrapDeltaS(it.anchor.s,player.s,L));dsLm=ds;
      if(mobileSvgScene&&!skyline){
        const baseMax=(it.type==="tree"?520:(it.type==="grandstand"?1050:(it.type==="pit"||it.type==="block"?900:760)))*sceneScale;
        if(ds>baseMax&&p.z>baseMax*.72)continue;
@@ -5719,6 +5754,7 @@ function drawWorldLandmarks(cam,pitch){
        if(it.type==="ferris"&&(ds>3100||p.z>2400))continue;
      }
    }
+   if(!apexSceneryShouldRender(it,itemIndex,dsLm,p.z))continue;
    const baseCam=p&&p.c?p.c:worldToCamera(it.anchor.x,gy,it.anchor.z,cam);if(apexStaticLandmarkOccluded(it,baseCam,cam,pitch,staticOcclusion))continue;
    visible.push({it,p});
  }
@@ -10543,7 +10579,7 @@ function webglPushSuzukaLandmarks(cam,pitch){
    const li=ent.i,it=ent.it,a=it.anchor,base=webglLandmarkCam(a,0,0,0,cam),skyline=apexIsSkylineLandmark(it),exactClip=skyline&&Array.isArray(it.worldFootprint)&&it.worldFootprint.length>=3?apexLandmarkFootprintClipInfo(it,cam,pitch,Math.max(6000,it.maxDs||0),.30):null;
    if(exactClip?!exactClip.visible:!suzukaLandmarkVisible(it,base,pitch,cam))continue;
    if(apexStaticLandmarkOccluded(it,base,cam,pitch,staticOcclusion))continue;
-   const radius=webglLandmarkRadius(it),dsLm=Number.isFinite(a.s)?Math.abs(wrapDeltaS(a.s,player.s,L)):1e9,lodZ=exactClip&&exactClip.visible?exactClip.depth:(skyline?apexLandmarkEffectiveCamDepth(it,cam,base):base.z);let lod=it.farGeo?2:webglCircuitLod(it.type,lodZ,radius,'lm:'+li+':'+(it.type||''));if(it.type==='grandstand'){const q=renderQualityT(),m=mobilePerformanceMode(),near=(m?115:150)+90*q,mid=(m?280:360)+160*q,far=(m?720:920)+220*q;if(dsLm<near)lod=Math.min(lod,0);else if(dsLm<mid)lod=Math.min(lod,1);else if(dsLm<far)lod=Math.min(lod,2);else lod=Math.max(lod,2);}if(skyline&&lodZ>1)lod=Math.min(lod,2);if(lod>=3)continue;
+   const radius=webglLandmarkRadius(it),dsLm=Number.isFinite(a.s)?Math.abs(wrapDeltaS(a.s,player.s,L)):1e9,lodZ=exactClip&&exactClip.visible?exactClip.depth:(skyline?apexLandmarkEffectiveCamDepth(it,cam,base):base.z);let lod=it.farGeo?2:webglCircuitLod(it.type,lodZ,radius,'lm:'+li+':'+(it.type||''));if(it.type==='grandstand'){const q=renderQualityT(),m=mobilePerformanceMode(),near=(m?115:150)+90*q,mid=(m?280:360)+160*q,far=(m?720:920)+220*q;if(dsLm<near)lod=Math.min(lod,0);else if(dsLm<mid)lod=Math.min(lod,1);else if(dsLm<far)lod=Math.min(lod,2);else lod=Math.max(lod,2);}if(!apexSceneryShouldRender(it,li,dsLm,lodZ))continue;lod=apexObjectLodBudget(it.type,lod,dsLm);if(skyline&&lodZ>1)lod=Math.min(lod,2);if(lod>=3)continue;
    const P=(along=0,lat=0,y=0)=>webglLandmarkCam(a,along,lat,y,cam);
    if(it.type==='surfaceZone'||it.type==='terrainZone'||it.type==='water'||it.type==='marking'||it.type==='forestZone'){
      if(it.type==='terrainZone')continue;
@@ -11478,7 +11514,7 @@ function captureSessionTelemetry(){
   lastRivalContactAgo:raceT-(player.autoLastRivalContact||-99)<20?telemetryRound(raceT-player.autoLastRivalContact,2):null,
   autDecision:{baseKph:telemetryRound((player.autoBaseTrackTargetSpeed||0)*3.6,1),afterGeometryKph:telemetryRound((player.autoDecisionAfterGeometry||player.autoBaseTrackTargetSpeed||0)*3.6,1),beforeStabilityKph:telemetryRound((player.autoDecisionBeforeStability||player.autoPreTrafficTargetSpeed||0)*3.6,1),afterStabilityKph:telemetryRound((player.autoDecisionAfterStability||player.autoPreTrafficTargetSpeed||0)*3.6,1),finalKph:telemetryRound((player.autoTargetSpeed||0)*3.6,1),rawTargetLat:telemetryRound(player.autoRawTargetLat,3),targetLat:telemetryRound(player.autoTargetLat,3),laneErrorM:telemetryRound((player.lat||0)-(player.autoTargetLat||0),3),laneRateMps:telemetryRound(player.autoLaneRate,3),desiredHeadingDeg:telemetryRound((player.autoDesiredHeading||player.heading)*deg,2)},
   corner:telemetryCornerSnapshot(),nearRivals:telemetryCompactRivals(4),
-  performance:{fps:telemetryRound(telemetryPerf.fps,1),frameMs:telemetryRound(telemetryPerf.frameMs,2),lastFrameMs:telemetryRound(telemetryPerf.lastFrameMs,2),renderMs:telemetryRound(telemetryPerf.renderMs,2),physicsMs:telemetryRound(telemetryPerf.physicsMs,2),aiMs:telemetryRound(telemetryPerf.aiMs,2),collisionMs:telemetryRound(telemetryPerf.collisionMs,2),telemetryMs:telemetryRound(telemetryPerf.telemetryMs,2),hudMs:telemetryRound(telemetryPerf.hudMs,2),audioMs:telemetryRound(telemetryPerf.audioMs,2),trackRenderMs:telemetryRound(telemetryPerf.trackRenderMs,2),terrainRenderMs:telemetryRound(telemetryPerf.terrainRenderMs,2),tunnelRenderMs:telemetryRound(telemetryPerf.tunnelRenderMs,2),environmentRenderMs:telemetryRound(telemetryPerf.environmentRenderMs,2),carsRenderMs:telemetryRound(telemetryPerf.carsRenderMs,2),mirrorsRenderMs:telemetryRound(telemetryPerf.mirrorsRenderMs,2),cockpitRenderMs:telemetryRound(telemetryPerf.cockpitRenderMs,2),effectsRenderMs:telemetryRound(telemetryPerf.effectsRenderMs,2),miniMapRenderMs:telemetryRound(telemetryPerf.miniMapRenderMs,2),webglSubmitMs:telemetryRound(telemetryPerf.webglSubmitMs,2),webglTriangles:telemetryPerf.webglTriangles||0,staticBatch:typeof apexStaticBatchStatsSnapshot==='function'?apexStaticBatchStatsSnapshot():null,staticOcclusion:typeof apexStaticOcclusionStatsSnapshot==='function'?apexStaticOcclusionStatsSnapshot():null,renderer:rendererBackendId(),physicsSteps:telemetryPerf.physicsSteps||1,aiSteps:telemetryPerf.aiSteps||0},
+  performance:{fps:telemetryRound(telemetryPerf.fps,1),frameMs:telemetryRound(telemetryPerf.frameMs,2),lastFrameMs:telemetryRound(telemetryPerf.lastFrameMs,2),renderMs:telemetryRound(telemetryPerf.renderMs,2),physicsMs:telemetryRound(telemetryPerf.physicsMs,2),aiMs:telemetryRound(telemetryPerf.aiMs,2),collisionMs:telemetryRound(telemetryPerf.collisionMs,2),telemetryMs:telemetryRound(telemetryPerf.telemetryMs,2),hudMs:telemetryRound(telemetryPerf.hudMs,2),audioMs:telemetryRound(telemetryPerf.audioMs,2),trackRenderMs:telemetryRound(telemetryPerf.trackRenderMs,2),terrainRenderMs:telemetryRound(telemetryPerf.terrainRenderMs,2),tunnelRenderMs:telemetryRound(telemetryPerf.tunnelRenderMs,2),environmentRenderMs:telemetryRound(telemetryPerf.environmentRenderMs,2),carsRenderMs:telemetryRound(telemetryPerf.carsRenderMs,2),mirrorsRenderMs:telemetryRound(telemetryPerf.mirrorsRenderMs,2),cockpitRenderMs:telemetryRound(telemetryPerf.cockpitRenderMs,2),effectsRenderMs:telemetryRound(telemetryPerf.effectsRenderMs,2),miniMapRenderMs:telemetryRound(telemetryPerf.miniMapRenderMs,2),webglSubmitMs:telemetryRound(telemetryPerf.webglSubmitMs,2),webglTriangles:telemetryPerf.webglTriangles||0,staticBatch:typeof apexStaticBatchStatsSnapshot==='function'?apexStaticBatchStatsSnapshot():null,staticOcclusion:typeof apexStaticOcclusionStatsSnapshot==='function'?apexStaticOcclusionStatsSnapshot():null,sceneBudget:typeof apexSceneDetailBudget==='function'?apexSceneDetailBudget():null,renderer:rendererBackendId(),physicsSteps:telemetryPerf.physicsSteps||1,aiSteps:telemetryPerf.aiSteps||0},
   localRisk:telemetryRound(autoRiskAt(player.s),3),reverse:!!player.reverse,ers:telemetryRound(player.ers,2),hp:telemetryRound(player.hp,2),balance:player.balanceState||null
  };
  sessionTelemetry.samples.push(sample);
