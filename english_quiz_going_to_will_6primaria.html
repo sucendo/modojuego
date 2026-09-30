@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>English Quiz · Be going to & Will · 6º Primaria</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--ink:#1f2937;--muted:#64748b;--primary:#6d28d9;--primary2:#8b5cf6;--ok:#15803d;--bad:#b91c1c;--line:#e2e8f0;--soft:#ede9fe}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:linear-gradient(135deg,#f8fafc,#eef2ff);color:var(--ink)}
+.wrap{max-width:900px;margin:auto;padding:18px}
+header{background:linear-gradient(135deg,var(--primary),var(--primary2));color:white;border-radius:22px;padding:22px;box-shadow:0 12px 30px #6d28d925}
+header h1{margin:0 0 6px;font-size:clamp(1.5rem,4vw,2.3rem)}
+header p{margin:0;opacity:.95}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px;text-align:center}
+.stat b{display:block;font-size:1.35rem;color:var(--primary)}
+.progress{height:12px;background:#e9eaf0;border-radius:999px;overflow:hidden;margin:16px 0}
+.progress>div{height:100%;width:0;background:linear-gradient(90deg,var(--primary),#22c55e);transition:width .25s}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px;box-shadow:0 8px 24px #0f172a0c}
+.tag{display:inline-block;background:var(--soft);color:#5b21b6;border-radius:999px;padding:6px 10px;font-size:.85rem;font-weight:700;margin-bottom:10px}
+.qnum{color:var(--muted);font-size:.95rem}
+.question{font-size:1.25rem;font-weight:750;line-height:1.4;margin:8px 0 16px}
+.options{display:grid;gap:10px}
+.opt{width:100%;text-align:left;border:2px solid var(--line);background:white;border-radius:14px;padding:13px 14px;font-size:1rem;cursor:pointer;transition:.15s}
+.opt:hover{border-color:#c4b5fd;background:#fafaff}
+.opt.selected{border-color:var(--primary);background:var(--soft)}
+.opt.correct{border-color:#22c55e;background:#f0fdf4}
+.opt.wrong{border-color:#ef4444;background:#fef2f2}
+input.answer{width:100%;border:2px solid var(--line);border-radius:14px;padding:13px;font-size:1rem}
+input.answer:focus{outline:3px solid #c4b5fd;border-color:var(--primary)}
+.feedback{min-height:26px;margin-top:12px;font-weight:700}
+.feedback.ok{color:var(--ok)} .feedback.bad{color:var(--bad)}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+button.action{border:0;border-radius:14px;padding:12px 18px;font-size:1rem;font-weight:750;cursor:pointer}
+.primary{background:var(--primary);color:white}.secondary{background:#e2e8f0;color:#1e293b}
+button:disabled{opacity:.45;cursor:not-allowed}
+.results{display:none}
+.results.show{display:block}
+.scoreBig{font-size:3rem;font-weight:900;color:var(--primary);margin:8px 0}
+.review{margin-top:14px;display:grid;gap:10px}
+.reviewItem{border:1px solid var(--line);border-radius:14px;padding:12px;background:#fff}
+.reviewItem.ok{border-left:6px solid #22c55e}.reviewItem.bad{border-left:6px solid #ef4444}
+.note{margin-top:14px;color:var(--muted);font-size:.92rem}
+@media(max-width:560px){.wrap{padding:10px}.stats{grid-template-columns:1fr 1fr 1fr}.card{padding:16px}.question{font-size:1.1rem}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>🎯 English Quiz: <em>be going to</em> & <em>will</em></h1>
+  <p>6º de Primaria · Planes, decisiones, ofrecimientos y preguntas de futuro</p>
+</header>
+
+<div class="stats">
+  <div class="stat"><b id="pos">1</b><span>Pregunta</span></div>
+  <div class="stat"><b id="score">0</b><span>Puntos</span></div>
+  <div class="stat"><b id="total">20</b><span>Total</span></div>
+</div>
+<div class="progress" aria-label="Progreso"><div id="bar"></div></div>
+
+<section class="card" id="quizCard">
+  <div class="tag" id="typeTag">Choose</div>
+  <div class="qnum" id="qnum"></div>
+  <div class="question" id="question"></div>
+  <div id="answerArea"></div>
+  <div class="feedback" id="feedback" aria-live="polite"></div>
+  <div class="actions">
+    <button class="action primary" id="checkBtn">Comprobar</button>
+    <button class="action primary" id="nextBtn" style="display:none">Siguiente →</button>
+  </div>
+</section>
+
+<section class="card results" id="results">
+  <div class="tag">Resultado final</div>
+  <div class="scoreBig" id="scoreBig"></div>
+  <p id="resultText"></p>
+  <div class="actions">
+    <button class="action primary" id="newQuizBtn">🔄 Nuevo quiz diferente</button>
+    <button class="action secondary" id="reviewBtn">📘 Ver corrección</button>
+  </div>
+  <div class="review" id="review" style="display:none"></div>
+</section>
+
+<p class="note">Cada vez que pulses <strong>Nuevo quiz diferente</strong>, cambia el orden y se seleccionan nuevas variaciones de ejercicios.</p>
+</div>
+
+<script>
+(() => {
+const bank = [
+{t:'Choose',q:'We have tickets for Saturday. We ___ see a musical.',o:['are going to','will','is going to'],a:'are going to',e:'Es un plan ya organizado → be going to.'},
+{t:'Choose',q:'“I can’t carry this box.” “Don’t worry. I ___ help you.”',o:['will','am going to','going to'],a:'will',e:'Es un ofrecimiento hecho en ese momento → will.'},
+{t:'Choose',q:'Laura has already decided her project. She ___ write about a doctor.',o:['is going to','will','are going to'],a:'is going to',e:'Plan ya decidido → is going to.'},
+{t:'Choose',q:'“I’m thirsty.” “I ___ get you some water.”',o:['will','am going to','are going to'],a:'will',e:'Decisión/ofrecimiento en el momento → will.'},
+{t:'Choose',q:'My parents planned it yesterday. They ___ visit my grandparents this weekend.',o:['are going to','will','is going to'],a:'are going to',e:'Ya estaba planeado → are going to.'},
+{t:'Choose',q:'I think I ___ be a programmer when I grow up.',o:['will','am going to','going to'],a:'will',e:'Con “I think” usamos normalmente will para una decisión/predicción.'},
+{t:'Choose',q:'Tom has his football kit ready. He ___ play a match this afternoon.',o:['is going to','will','are going to'],a:'is going to',e:'Hay un plan preparado → is going to.'},
+{t:'Choose',q:'“The phone is ringing!” “I ___ answer it!”',o:['will','am going to','is going to'],a:'will',e:'Decisión tomada al hablar → will.'},
+{t:'Choose',q:'We booked the hotel last week. We ___ travel to London next month.',o:['are going to','will','is going to'],a:'are going to',e:'Reserva previa = plan → are going to.'},
+{t:'Choose',q:'Maybe I ___ go to the library this afternoon.',o:['will','am going to','is going to'],a:'will',e:'No está decidido previamente; es una decisión posible → will.'},
+
+{t:'Plan / Decision / Offer',q:'I’m going to play basketball on Saturday.',o:['Plan','Decision','Offer'],a:'Plan',e:'“Going to” expresa aquí un plan ya decidido.'},
+{t:'Plan / Decision / Offer',q:'“This exercise is difficult.” “I’ll help you.”',o:['Offer','Plan','Decision'],a:'Offer',e:'“I’ll help you” es un ofrecimiento.'},
+{t:'Plan / Decision / Offer',q:'I think I’ll watch the documentary tonight.',o:['Decision','Plan','Offer'],a:'Decision',e:'La decisión se expresa con will.'},
+{t:'Plan / Decision / Offer',q:'We’re going to have a picnic tomorrow.',o:['Plan','Offer','Decision'],a:'Plan',e:'Es un plan ya preparado.'},
+{t:'Plan / Decision / Offer',q:'“I can’t open the door.” “I’ll open it for you.”',o:['Offer','Decision','Plan'],a:'Offer',e:'Se ofrece ayuda en ese momento.'},
+{t:'Plan / Decision / Offer',q:'I don’t think I’ll become an engineer.',o:['Decision','Plan','Offer'],a:'Decision',e:'La frase expresa una decisión/opinión sobre el futuro.'},
+
+{t:'Short answer',q:'Are Tom and Lucy going to visit the museum?',o:['Yes, they are.','Yes, they will.','Yes, they do.'],a:'Yes, they are.',e:'Con “Are ... going to...?” respondemos “Yes, they are.”'},
+{t:'Short answer',q:'Will Peter help us?',o:['Yes, he will.','Yes, he is.','Yes, he going to.'],a:'Yes, he will.',e:'Con Will, la respuesta corta mantiene will.'},
+{t:'Short answer',q:'Is Emma going to learn to drive?',o:['Yes, she is.','Yes, she will.','Yes, she does.'],a:'Yes, she is.',e:'Con “Is ... going to...?” → “Yes, she is.”'},
+{t:'Short answer',q:'Will you come with me?',o:['No, I won’t.','No, I’m not.','No, I don’t.'],a:'No, I won’t.',e:'La forma negativa corta de will es won’t.'},
+{t:'Short answer',q:'Are you going to study this afternoon?',o:['No, I’m not.','No, I won’t.','No, I doesn’t.'],a:'No, I’m not.',e:'Con “Are you going to...?” → “No, I’m not.”'},
+
+{t:'Correct the sentence',q:'Choose the correct sentence.',o:['She is going to be a teacher.','She are going to be a teacher.','She going to be a teacher.'],a:'She is going to be a teacher.',e:'Con she usamos is.'},
+{t:'Correct the sentence',q:'Choose the correct sentence.',o:['Will you help me?','Will you going to help me?','Do will you help me?'],a:'Will you help me?',e:'Will + sujeto + verbo base.'},
+{t:'Correct the sentence',q:'Choose the correct sentence.',o:['They are going to watch a film.','They is going to watch a film.','They going to watching a film.'],a:'They are going to watch a film.',e:'Con they usamos are + going to + verbo.'},
+{t:'Correct the sentence',q:'Choose the correct sentence.',o:['I will help you with your homework.','I will to help you with your homework.','I will helping you with your homework.'],a:'I will help you with your homework.',e:'Después de will usamos el verbo base, sin “to”.'},
+{t:'Correct the sentence',q:'Choose the correct question.',o:['Is he going to play football?','Are he going to play football?','Is he going play football?'],a:'Is he going to play football?',e:'Is + he + going to + verbo.'},
+
+{t:'Make a question',q:'Choose the correct question for: you / study / tonight (plan)',o:['Are you going to study tonight?','Will you going to study tonight?','Do you going to study tonight?'],a:'Are you going to study tonight?',e:'Para preguntar por un plan usamos be going to.'},
+{t:'Make a question',q:'Choose the correct question for: you / help / me (offer/request)',o:['Will you help me?','Are you help me?','Will you to help me?'],a:'Will you help me?',e:'Will + sujeto + verbo base.'},
+{t:'Make a question',q:'Choose the correct question for: she / be / a doctor (plan)',o:['Is she going to be a doctor?','Will she going to be a doctor?','Does she going to be a doctor?'],a:'Is she going to be a doctor?',e:'Is + she + going to + be.'},
+{t:'Make a question',q:'Choose the correct question: what / you / do / if / it rains?',o:['What will you do if it rains?','What are you do if it rains?','What will you to do if it rains?'],a:'What will you do if it rains?',e:'Wh-word + will + sujeto + verbo base.'},
+{t:'Make a question',q:'Choose the correct question for: they / watch / the film (plan)',o:['Are they going to watch the film?','Will they going to watch the film?','Is they going to watch the film?'],a:'Are they going to watch the film?',e:'Con they usamos are.'},
+
+{t:'Complete',q:'Marta bought flour and eggs. She ___ make a cake.',o:['is going to','will','are going to'],a:'is going to',e:'Ya hay preparación previa → is going to.'},
+{t:'Complete',q:'“My bike is broken.” “My dad ___ repair it for you.”',o:['will','is going to','are going to'],a:'will',e:'Es un ofrecimiento/decisión en el momento.'},
+{t:'Complete',q:'They bought cinema tickets yesterday. They ___ watch a film tonight.',o:['are going to','will','is going to'],a:'are going to',e:'Entradas compradas = plan ya hecho.'},
+{t:'Complete',q:'“I forgot my pencil.” “I ___ lend you mine.”',o:['will','am going to','is going to'],a:'will',e:'Ofrecimiento espontáneo → will.'},
+{t:'Complete',q:'Sophie has packed her suitcase. She ___ travel tomorrow.',o:['is going to','will','are going to'],a:'is going to',e:'La maleta preparada muestra un plan previo.'},
+{t:'Complete',q:'I don’t know yet. I think I ___ stay at home.',o:['will','am going to','are going to'],a:'will',e:'“I think” indica una decisión/opinión no fijada previamente.'}
+];
+
+const TOTAL = 20;
+let questions=[], idx=0, score=0, selected=null, locked=false, history=[];
+
+const $=id=>document.getElementById(id);
+const shuffle=a=>a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(x=>x[1]);
+
+function buildQuiz(){
+  const groups={};
+  bank.forEach(x=>(groups[x.t]??=[]).push(x));
+  let picked=[];
+  const quotas={'Choose':5,'Plan / Decision / Offer':4,'Short answer':3,'Correct the sentence':3,'Make a question':3,'Complete':2};
+  Object.entries(quotas).forEach(([k,n])=>picked.push(...shuffle(groups[k]).slice(0,n)));
+  questions=shuffle(picked).slice(0,TOTAL).map(x=>({...x,o:shuffle([...x.o])}));
+  idx=0;score=0;selected=null;locked=false;history=[];
+  $('score').textContent='0'; $('total').textContent=TOTAL;
+  $('results').classList.remove('show'); $('quizCard').style.display='block';
+  $('review').style.display='none';
+  render();
+}
+function render(){
+  const q=questions[idx];
+  $('pos').textContent=idx+1;
+  $('qnum').textContent='Pregunta '+(idx+1)+' de '+TOTAL;
+  $('typeTag').textContent=q.t;
+  $('question').textContent=q.q;
+  $('feedback').textContent=''; $('feedback').className='feedback';
+  $('checkBtn').style.display='inline-block'; $('checkBtn').disabled=true;
+  $('nextBtn').style.display='none';
+  $('bar').style.width=((idx)/TOTAL*100)+'%';
+  selected=null;locked=false;
+  const area=$('answerArea'); area.innerHTML='';
+  const box=document.createElement('div'); box.className='options';
+  q.o.forEach(opt=>{
+    const b=document.createElement('button');
+    b.type='button'; b.className='opt'; b.textContent=opt;
+    b.addEventListener('click',()=>{
+      if(locked)return;
+      [...box.children].forEach(x=>x.classList.remove('selected'));
+      b.classList.add('selected'); selected=opt; $('checkBtn').disabled=false;
+    });
+    box.appendChild(b);
+  });
+  area.appendChild(box);
+}
+function check(){
+  if(!selected||locked)return;
+  locked=true;
+  const q=questions[idx], ok=selected===q.a;
+  if(ok)score++;
+  $('score').textContent=score;
+  const buttons=[...$('answerArea').querySelectorAll('.opt')];
+  buttons.forEach(b=>{
+    if(b.textContent===q.a)b.classList.add('correct');
+    if(b.textContent===selected && !ok)b.classList.add('wrong');
+    b.disabled=true;
+  });
+  $('feedback').textContent=(ok?'✅ ¡Correcto! ':'❌ Casi. ')+q.e;
+  $('feedback').className='feedback '+(ok?'ok':'bad');
+  history.push({q:q.q,chosen:selected,correct:q.a,ok,explain:q.e});
+  $('checkBtn').style.display='none'; $('nextBtn').style.display='inline-block';
+}
+function next(){
+  idx++;
+  if(idx>=TOTAL){finish();return;}
+  render();
+}
+function finish(){
+  $('quizCard').style.display='none'; $('results').classList.add('show'); $('bar').style.width='100%';
+  const pct=Math.round(score/TOTAL*100);
+  $('scoreBig').textContent=score+' / '+TOTAL+' · '+pct+'%';
+  let msg=pct>=90?'🌟 ¡Excelente! Dominas muy bien el tema.':pct>=75?'👏 ¡Muy bien! Solo faltan unos pequeños detalles.':pct>=60?'👍 Bien. Conviene repasar algunas reglas.':'📚 Vamos a repasar be going to y will y volver a intentarlo.';
+  $('resultText').textContent=msg;
+  const review=$('review'); review.innerHTML='';
+  history.forEach((h,i)=>{
+    const d=document.createElement('div'); d.className='reviewItem '+(h.ok?'ok':'bad');
+    d.innerHTML='<strong>'+(i+1)+'. '+escapeHtml(h.q)+'</strong><br>Tu respuesta: '+escapeHtml(h.chosen)+'<br>Correcta: <strong>'+escapeHtml(h.correct)+'</strong><br><span style="color:#64748b">'+escapeHtml(h.explain)+'</span>';
+    review.appendChild(d);
+  });
+}
+function escapeHtml(s){return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
+$('checkBtn').addEventListener('click',check);
+$('nextBtn').addEventListener('click',next);
+$('newQuizBtn').addEventListener('click',buildQuiz);
+$('reviewBtn').addEventListener('click',()=>{
+  const r=$('review'); const show=r.style.display==='none'; r.style.display=show?'grid':'none'; $('reviewBtn').textContent=show?'🙈 Ocultar corrección':'📘 Ver corrección';
+});
+buildQuiz();
+})();
+</script>
+</body>
+</html>
