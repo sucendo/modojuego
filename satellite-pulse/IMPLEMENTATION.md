@@ -1,4 +1,4 @@
-# Cobertura de Satellite Pulse 1.0.0
+# Cobertura de Satellite Pulse 1.0.1
 
 Este archivo sirve como lista de comprobación de la refactorización.
 
@@ -82,3 +82,12 @@ Este archivo sirve como lista de comprobación de la refactorización.
 - [x] Meteorología y geometría de observación integradas en la misma ficha.
 - [x] Selección de observador mediante geolocalización, coordenadas o punto del mapa.
 - [x] Datos orbitales avanzados relegados a un bloque desplegable.
+
+
+## 1.0.1 — cartografía sin API key
+
+- [x] Eliminadas todas las teselas CARTO del proyecto Satellite Pulse.
+- [x] OSM, Claro y Oscuro migrados a OpenFreeMap/OpenStreetMap mediante MapLibre GL dentro de Leaflet.
+- [x] El botón Aa oculta únicamente `text-field` en las capas vectoriales: no cambia bosques, carreteras, agua, edificios ni iconos.
+- [x] Satélite sigue usando Esri World Imagery y sus etiquetas se mantienen como overlay independiente.
+- [x] No se necesita API key para los mapas incluidos.
