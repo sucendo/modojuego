@@ -12,6 +12,7 @@ import { editSatelliteDialog, pickObserverLocationDialog, pickSatelliteIconDialo
 import { defaultSatelliteIcon, normalizeSatelliteIcon, satelliteIconUrl } from './icons.js';
 
 const settings={...DEFAULTS,...Storage.loadSettings()};
+settings.mapLabels=true; // v1.0.2: control oculto; los mapas se muestran siempre con textos.
 delete settings.nightOpacity; // v2.8: intensidad nocturna fija (Suave = 0,45).
 const state={sats:new Map(),selectedId:null,observer:null,weatherData:null,catalogResults:[],trackDirty:true,lastTrackAt:0,lastOverlayAt:0,lastWeatherAt:0,lastDetailAt:0,mobileView:'map',mobileCardSatId:null};
 const mapManager=new MapManager('map');
