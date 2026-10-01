@@ -36,8 +36,8 @@ export class MapManager extends EventTarget {
     }).setView([0,0],2);
     this.map.on('dblclick',e=>this.map.setZoomAround(e.latlng,Math.min(this.map.getMaxZoom(),this.map.getZoom()+.5)));
     this.map.on('contextmenu',e=>this.dispatchEvent(new CustomEvent('observerpick',{detail:{lat:e.latlng.lat,lon:e.latlng.lng,altMeters:0}})));
-    this.createPanes(); this.createBases(); this.layers=new Map(); this.selectedId=null;this.followId=null;this.watchId=null;this.observer=null;this.observerMode=null;this._worldOffsetsKey='';
     this.currentBaseKey='osm'; this.showLabels=true;
+    this.createPanes(); this.createBases(); this.layers=new Map(); this.selectedId=null;this.followId=null;this.watchId=null;this.observer=null;this.observerMode=null;this._worldOffsetsKey='';
     const saved=Storage.loadMapView(); if(saved?.center&&Number.isFinite(saved.zoom)) this.map.setView(saved.center,saved.zoom,{animate:false});
     this.showFootprints=true;
     this.map.on('moveend zoomend',()=>{
@@ -56,36 +56,107 @@ export class MapManager extends EventTarget {
   createBases(){
     const common={maxZoom:22,updateWhenZooming:true,updateWhenIdle:false,keepBuffer:3,noWrap:false};
 
-    // Todos los mapas se montan sobre una base SIN textos y una capa de etiquetas
-    // independiente. Así el botón Aa solo quita/añade nombres; no cambia bosques,
-    // carreteras, costas, relieve ni el resto de la cartografía.
-    this.bases={
-      osm:L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png',{...common,maxNativeZoom:20,attribution:'© OpenStreetMap © CARTO'}),
-      light:L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png',{...common,maxNativeZoom:20,attribution:'© OpenStreetMap © CARTO'}),
-      dark:L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',{...common,maxNativeZoom:20,attribution:'© OpenStreetMap © CARTO'}),
-      sat:L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{...common,maxNativeZoom:19,attribution:'Tiles © Esri'})
+    // v1.0.1: OSM/Claro/Oscuro usan OpenFreeMap (datos OpenStreetMap)
+    // mediante MapLibre GL dentro de Leaflet. No requieren API key.
+    // El botón Aa modifica únicamente text-field: bosques, carreteras,
+    // agua, edificios e iconos permanecen en el mapa.
+    this.vectorStyles={
+      osm:'https://tiles.openfreemap.org/styles/liberty',
+      light:'https://tiles.openfreemap.org/styles/positron',
+      dark:'https://tiles.openfreemap.org/styles/dark'
     };
-    this.labelOverlays={
-      osm:L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png',{...common,pane:'baseLabelsPane',maxNativeZoom:20,attribution:'© OpenStreetMap © CARTO'}),
-      light:L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png',{...common,pane:'baseLabelsPane',maxNativeZoom:20,attribution:'© OpenStreetMap © CARTO'}),
-      dark:L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png',{...common,pane:'baseLabelsPane',maxNativeZoom:20,attribution:'© OpenStreetMap © CARTO'}),
-      sat:L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',{...common,pane:'baseLabelsPane',maxNativeZoom:19,attribution:'Labels © Esri'})
-    };
-    this.currentBase=null; this.currentLabelOverlay=null;
+    this.openFreeMapAttribution='OpenFreeMap © OpenMapTiles Data from OpenStreetMap';
+    this.openFreeMapAttributionActive=false;
+    this.satelliteBase=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{
+      ...common,maxNativeZoom:19,attribution:'Tiles © Esri'
+    });
+    this.satelliteLabels=L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',{
+      ...common,pane:'baseLabelsPane',maxNativeZoom:19,attribution:'Labels © Esri'
+    });
+    this.currentBase=null;this.currentLabelOverlay=null;this.currentVectorMap=null;this.vectorLabelFields=new Map();
     this.applyBase();
   }
-  applyBase(){
-    const next=this.bases[this.currentBaseKey]||this.bases.osm;
-    if(this.currentBase&&this.map.hasLayer(this.currentBase))this.map.removeLayer(this.currentBase);
-    next.addTo(this.map); this.currentBase=next;
 
-    if(this.currentLabelOverlay&&this.map.hasLayer(this.currentLabelOverlay))this.map.removeLayer(this.currentLabelOverlay);
-    this.currentLabelOverlay=null;
-    const wanted=this.showLabels?this.labelOverlays[this.currentBaseKey]:null;
-    if(wanted){wanted.addTo(this.map);this.currentLabelOverlay=wanted;}
+  setOpenFreeMapAttribution(on){
+    const ctl=this.map.attributionControl;if(!ctl)return;
+    if(on&&!this.openFreeMapAttributionActive){ctl.addAttribution(this.openFreeMapAttribution);this.openFreeMapAttributionActive=true;}
+    if(!on&&this.openFreeMapAttributionActive){ctl.removeAttribution(this.openFreeMapAttribution);this.openFreeMapAttributionActive=false;}
   }
-  setBase(key){ this.currentBaseKey=key||'osm'; this.applyBase(); }
-  setLabels(on){ this.showLabels=!!on; this.applyBase(); }
+
+  captureVectorLabels(gl){
+    if(!gl?.isStyleLoaded?.())return false;
+    const layers=gl.getStyle?.()?.layers||[];
+    this.vectorLabelFields=new Map();
+    for(const layer of layers){
+      if(layer?.type!=='symbol')continue;
+      const layout=layer.layout||{};
+      if(!Object.prototype.hasOwnProperty.call(layout,'text-field'))continue;
+      this.vectorLabelFields.set(layer.id,layout['text-field']);
+    }
+    return true;
+  }
+
+  applyVectorLabels(){
+    const gl=this.currentVectorMap;if(!gl?.isStyleLoaded?.())return;
+    if(!this.vectorLabelFields.size&&!this.captureVectorLabels(gl))return;
+    for(const [id,textField] of this.vectorLabelFields){
+      if(!gl.getLayer?.(id))continue;
+      try{gl.setLayoutProperty(id,'text-field',this.showLabels?textField:'');}catch{}
+    }
+  }
+
+  createVectorBase(key){
+    const style=this.vectorStyles[key]||this.vectorStyles.osm;
+    if(typeof L.maplibreGL!=='function'){
+      console.error('MapLibre GL Leaflet no está disponible; se usa OSM raster como respaldo.');
+      this.currentVectorMap=null;this.vectorLabelFields=new Map();
+      return L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+        maxZoom:22,maxNativeZoom:19,noWrap:false,keepBuffer:3,attribution:'© OpenStreetMap'
+      });
+    }
+    const layer=L.maplibreGL({
+      style,interactive:false,attributionControl:false,renderWorldCopies:true,pane:'tilePane'
+    });
+    const gl=layer.getMaplibreMap?.();
+    this.currentVectorMap=gl||null;this.vectorLabelFields=new Map();
+    if(gl){
+      const ready=()=>{if(this.currentVectorMap!==gl)return;this.captureVectorLabels(gl);this.applyVectorLabels();};
+      if(gl.isStyleLoaded?.())ready();else gl.once?.('load',ready);
+    }
+    return layer;
+  }
+
+  applyBase(){
+    if(this.currentBase&&this.map.hasLayer(this.currentBase))this.map.removeLayer(this.currentBase);
+    if(this.currentLabelOverlay&&this.map.hasLayer(this.currentLabelOverlay))this.map.removeLayer(this.currentLabelOverlay);
+    this.currentBase=null;this.currentLabelOverlay=null;this.currentVectorMap=null;this.vectorLabelFields=new Map();
+
+    if(this.currentBaseKey==='sat'){
+      this.setOpenFreeMapAttribution(false);
+      this.satelliteBase.addTo(this.map);this.currentBase=this.satelliteBase;
+      if(this.showLabels){this.satelliteLabels.addTo(this.map);this.currentLabelOverlay=this.satelliteLabels;}
+      return;
+    }
+
+    this.setOpenFreeMapAttribution(true);
+    const next=this.createVectorBase(this.currentBaseKey);
+    next.addTo(this.map);this.currentBase=next;
+  }
+
+  setBase(key){
+    this.currentBaseKey=['osm','light','dark','sat'].includes(key)?key:'osm';
+    this.applyBase();
+  }
+  setLabels(on){
+    this.showLabels=!!on;
+    if(this.currentBaseKey==='sat'){
+      if(this.currentLabelOverlay&&this.map.hasLayer(this.currentLabelOverlay))this.map.removeLayer(this.currentLabelOverlay);
+      this.currentLabelOverlay=null;
+      if(this.showLabels){this.satelliteLabels.addTo(this.map);this.currentLabelOverlay=this.satelliteLabels;}
+      return;
+    }
+    this.applyVectorLabels();
+  }
 
   visibleWorldOffsets(){
     const b=this.map.getBounds(),west=b.getWest(),east=b.getEast();
