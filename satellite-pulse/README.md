@@ -1,4 +1,4 @@
-# Satellite Pulse 1.0.2
+# Satellite Pulse 1.0.3
 
 Aplicación web estática para GitHub Pages orientada al seguimiento de satélites artificiales mediante SGP4. Es una refactorización completa del proyecto original de una sola página, manteniendo el mapa 2D y ampliándolo con catálogo OMM, predicción de pasos, geometría de observación, iluminación y meteorología.
 
@@ -168,3 +168,11 @@ La ficha se ha convertido en un panel de situación: posición, rumbo aproximado
 
 - El control **Aa** para mostrar/ocultar textos queda oculto temporalmente y los mapas arrancan siempre con etiquetas visibles.
 - Radar RainViewer limitado al zoom máximo oficial **z=7**. Al acercar más el mapa, la capa de radar se oculta automáticamente y vuelve a mostrarse al alejarse, evitando las teselas `Zoom level not supported`.
+
+
+## Ajustes 1.0.3
+
+- OSM, Claro y Oscuro muestran los nombres preferentemente en **español** usando `name:es` cuando OpenStreetMap lo ofrece, con fallback al nombre local.
+- El control **Aa** solo aparece con el mapa **Satélite**, porque ahí sí existe una capa de nombres separada que puede activarse o desactivarse.
+- En OSM, Claro y Oscuro los textos permanecen siempre visibles.
+- En Satélite, las etiquetas pasan a proceder de OpenFreeMap/OpenStreetMap para poder mostrarlas también en español.
