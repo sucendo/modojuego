@@ -1,10 +1,10 @@
-# Satellite Pulse 1.0.0
+# Satellite Pulse 1.0.1
 
 Aplicación web estática para GitHub Pages orientada al seguimiento de satélites artificiales mediante SGP4. Es una refactorización completa del proyecto original de una sola página, manteniendo el mapa 2D y ampliándolo con catálogo OMM, predicción de pasos, geometría de observación, iluminación y meteorología.
 
 ## Funciones implementadas
 
-- Mapa Leaflet con OSM, CARTO claro/oscuro y Esri World Imagery.
+- Mapa Leaflet con OpenFreeMap/OpenStreetMap (OSM, Claro y Oscuro) y Esri World Imagery. OpenFreeMap se integra mediante MapLibre GL y no requiere API key.
 - Propagación SGP4/SDP4 con **satellite.js 7.1.0**, fijado por versión.
 - Soporte de **OMM/JSON** mediante `json2satrec()` y soporte TLE manual mediante `twoline2satrec()`.
 - Catálogo y búsqueda por nombre o NORAD ID.
@@ -122,14 +122,15 @@ Es una herramienta educativa/de observación. SGP4 predice a partir de los eleme
 ## Dependencias de red
 
 - Leaflet 1.9.4 (CDN)
+- MapLibre GL JS 5.18.0 + MapLibre GL Leaflet 0.1.4 (CDN)
 - satellite.js 7.1.0 (CDN ESM)
 - CelesTrak (OMM/JSON)
 - Open-Meteo
 - RainViewer (radar)
 - Live Cloud Maps / EUMETSAT (textura alfa global de nubes)
-- OSM / CARTO / Esri para cartografía
+- OpenFreeMap / OpenStreetMap / Esri para cartografía
 
-No requiere claves API para las funciones incluidas en esta versión.
+No requiere claves API para las funciones incluidas en esta versión. OSM/Claro/Oscuro usan los estilos vectoriales públicos de OpenFreeMap; el botón Aa oculta únicamente los campos de texto del estilo y conserva bosques, carreteras, agua, edificios e iconos.
 
 ## Iconos de satélite
 
