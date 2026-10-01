@@ -56,10 +56,9 @@ export class MapManager extends EventTarget {
   createBases(){
     const common={maxZoom:22,updateWhenZooming:true,updateWhenIdle:false,keepBuffer:3,noWrap:false};
 
-    // v1.0.1: OSM/Claro/Oscuro usan OpenFreeMap (datos OpenStreetMap)
-    // mediante MapLibre GL dentro de Leaflet. No requieren API key.
-    // El botón Aa modifica únicamente text-field: bosques, carreteras,
-    // agua, edificios e iconos permanecen en el mapa.
+    // OSM/Claro/Oscuro: OpenFreeMap + OpenStreetMap sin API key.
+    // Sus nombres se fuerzan a español cuando existe name:es; si no,
+    // se conserva el nombre local/original del objeto.
     this.vectorStyles={
       osm:'https://tiles.openfreemap.org/styles/liberty',
       light:'https://tiles.openfreemap.org/styles/positron',
@@ -70,10 +69,8 @@ export class MapManager extends EventTarget {
     this.satelliteBase=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{
       ...common,maxNativeZoom:19,attribution:'Tiles © Esri'
     });
-    this.satelliteLabels=L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',{
-      ...common,pane:'baseLabelsPane',maxNativeZoom:19,attribution:'Labels © Esri'
-    });
-    this.currentBase=null;this.currentLabelOverlay=null;this.currentVectorMap=null;this.vectorLabelFields=new Map();
+    this.satelliteLabels=null;
+    this.currentBase=null;this.currentLabelOverlay=null;this.currentVectorMap=null;
     this.applyBase();
   }
 
@@ -83,25 +80,40 @@ export class MapManager extends EventTarget {
     if(!on&&this.openFreeMapAttributionActive){ctl.removeAttribution(this.openFreeMapAttribution);this.openFreeMapAttributionActive=false;}
   }
 
-  captureVectorLabels(gl){
-    if(!gl?.isStyleLoaded?.())return false;
-    const layers=gl.getStyle?.()?.layers||[];
-    this.vectorLabelFields=new Map();
-    for(const layer of layers){
-      if(layer?.type!=='symbol')continue;
-      const layout=layer.layout||{};
-      if(!Object.prototype.hasOwnProperty.call(layout,'text-field'))continue;
-      this.vectorLabelFields.set(layer.id,layout['text-field']);
+  localizeTextField(value){
+    if(Array.isArray(value)){
+      if(value[0]==='get'&&typeof value[1]==='string'){
+        const field=value[1];
+        if(field==='name:es')return value;
+        if(field==='name'||field==='name_en'||field==='name:en'||field==='name:latin'||field==='name_int'||field==='name:nonlatin'){
+          return ['coalesce',['get','name:es'],['get','name'],value];
+        }
+      }
+      return value.map(v=>this.localizeTextField(v));
     }
-    return true;
+    if(typeof value==='string'&&/\{name(?::(?:en|latin|nonlatin)|_en|_int)?\}/.test(value)){
+      return ['coalesce',['get','name:es'],['get','name'],['get','name:latin'],['get','name_en']];
+    }
+    return value;
   }
 
-  applyVectorLabels(){
-    const gl=this.currentVectorMap;if(!gl?.isStyleLoaded?.())return;
-    if(!this.vectorLabelFields.size&&!this.captureVectorLabels(gl))return;
-    for(const [id,textField] of this.vectorLabelFields){
-      if(!gl.getLayer?.(id))continue;
-      try{gl.setLayoutProperty(id,'text-field',this.showLabels?textField:'');}catch{}
+  applySpanishLabels(gl,{labelsOnly=false}={}){
+    if(!gl?.isStyleLoaded?.())return;
+    const layers=gl.getStyle?.()?.layers||[];
+    for(const layer of layers){
+      try{
+        if(labelsOnly&&layer.type!=='symbol'){
+          gl.setLayoutProperty(layer.id,'visibility','none');
+          continue;
+        }
+        if(layer.type!=='symbol')continue;
+        const layout=layer.layout||{};
+        if(!Object.prototype.hasOwnProperty.call(layout,'text-field')){
+          if(labelsOnly)gl.setLayoutProperty(layer.id,'visibility','none');
+          continue;
+        }
+        gl.setLayoutProperty(layer.id,'text-field',this.localizeTextField(layout['text-field']));
+      }catch{}
     }
   }
 
@@ -109,7 +121,7 @@ export class MapManager extends EventTarget {
     const style=this.vectorStyles[key]||this.vectorStyles.osm;
     if(typeof L.maplibreGL!=='function'){
       console.error('MapLibre GL Leaflet no está disponible; se usa OSM raster como respaldo.');
-      this.currentVectorMap=null;this.vectorLabelFields=new Map();
+      this.currentVectorMap=null;
       return L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
         maxZoom:22,maxNativeZoom:19,noWrap:false,keepBuffer:3,attribution:'© OpenStreetMap'
       });
@@ -118,26 +130,47 @@ export class MapManager extends EventTarget {
       style,interactive:false,attributionControl:false,renderWorldCopies:true,pane:'tilePane'
     });
     const gl=layer.getMaplibreMap?.();
-    this.currentVectorMap=gl||null;this.vectorLabelFields=new Map();
+    this.currentVectorMap=gl||null;
     if(gl){
-      const ready=()=>{if(this.currentVectorMap!==gl)return;this.captureVectorLabels(gl);this.applyVectorLabels();};
+      const ready=()=>{if(this.currentVectorMap!==gl)return;this.applySpanishLabels(gl);};
       if(gl.isStyleLoaded?.())ready();else gl.once?.('load',ready);
     }
+    return layer;
+  }
+
+  createSatelliteLabels(){
+    if(this.satelliteLabels)return this.satelliteLabels;
+    if(typeof L.maplibreGL!=='function')return null;
+    const layer=L.maplibreGL({
+      style:this.vectorStyles.osm,interactive:false,attributionControl:false,renderWorldCopies:true,pane:'baseLabelsPane'
+    });
+    const gl=layer.getMaplibreMap?.();
+    if(gl){
+      const ready=()=>this.applySpanishLabels(gl,{labelsOnly:true});
+      if(gl.isStyleLoaded?.())ready();else gl.once?.('load',ready);
+    }
+    this.satelliteLabels=layer;
     return layer;
   }
 
   applyBase(){
     if(this.currentBase&&this.map.hasLayer(this.currentBase))this.map.removeLayer(this.currentBase);
     if(this.currentLabelOverlay&&this.map.hasLayer(this.currentLabelOverlay))this.map.removeLayer(this.currentLabelOverlay);
-    this.currentBase=null;this.currentLabelOverlay=null;this.currentVectorMap=null;this.vectorLabelFields=new Map();
+    this.currentBase=null;this.currentLabelOverlay=null;this.currentVectorMap=null;
 
     if(this.currentBaseKey==='sat'){
-      this.setOpenFreeMapAttribution(false);
       this.satelliteBase.addTo(this.map);this.currentBase=this.satelliteBase;
-      if(this.showLabels){this.satelliteLabels.addTo(this.map);this.currentLabelOverlay=this.satelliteLabels;}
+      if(this.showLabels){
+        const labels=this.createSatelliteLabels();
+        if(labels){labels.addTo(this.map);this.currentLabelOverlay=labels;}
+      }
+      this.setOpenFreeMapAttribution(!!this.currentLabelOverlay);
       return;
     }
 
+    // En los mapas vectoriales los textos siempre se muestran y siempre
+    // intentan usar name:es. El usuario no puede ocultarlos desde la UI.
+    this.showLabels=true;
     this.setOpenFreeMapAttribution(true);
     const next=this.createVectorBase(this.currentBaseKey);
     next.addTo(this.map);this.currentBase=next;
@@ -148,14 +181,17 @@ export class MapManager extends EventTarget {
     this.applyBase();
   }
   setLabels(on){
+    // Solo Satélite dispone de modo con/sin textos. En OSM/Claro/Oscuro
+    // los nombres forman parte del estilo vectorial y permanecen visibles.
+    if(this.currentBaseKey!=='sat'){this.showLabels=true;return;}
     this.showLabels=!!on;
-    if(this.currentBaseKey==='sat'){
-      if(this.currentLabelOverlay&&this.map.hasLayer(this.currentLabelOverlay))this.map.removeLayer(this.currentLabelOverlay);
-      this.currentLabelOverlay=null;
-      if(this.showLabels){this.satelliteLabels.addTo(this.map);this.currentLabelOverlay=this.satelliteLabels;}
-      return;
+    if(this.currentLabelOverlay&&this.map.hasLayer(this.currentLabelOverlay))this.map.removeLayer(this.currentLabelOverlay);
+    this.currentLabelOverlay=null;
+    if(this.showLabels){
+      const labels=this.createSatelliteLabels();
+      if(labels){labels.addTo(this.map);this.currentLabelOverlay=labels;}
     }
-    this.applyVectorLabels();
+    this.setOpenFreeMapAttribution(!!this.currentLabelOverlay);
   }
 
   visibleWorldOffsets(){
