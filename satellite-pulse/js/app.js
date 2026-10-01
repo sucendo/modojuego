@@ -12,7 +12,6 @@ import { editSatelliteDialog, pickObserverLocationDialog, pickSatelliteIconDialo
 import { defaultSatelliteIcon, normalizeSatelliteIcon, satelliteIconUrl } from './icons.js';
 
 const settings={...DEFAULTS,...Storage.loadSettings()};
-settings.mapLabels=true; // v1.0.2: control oculto; los mapas se muestran siempre con textos.
 delete settings.nightOpacity; // v2.8: intensidad nocturna fija (Suave = 0,45).
 const state={sats:new Map(),selectedId:null,observer:null,weatherData:null,catalogResults:[],trackDirty:true,lastTrackAt:0,lastOverlayAt:0,lastWeatherAt:0,lastDetailAt:0,mobileView:'map',mobileCardSatId:null};
 const mapManager=new MapManager('map');
@@ -311,10 +310,19 @@ function validateManual(){
   els.manualAddBtn.disabled=!(valid&&hasName);
 }
 
+function syncLabelsControl(){
+  const btn=$('labelsBtn'),allowed=settings.baseMap==='sat';
+  if(!btn)return;
+  btn.hidden=!allowed;
+  btn.setAttribute('aria-hidden',String(!allowed));
+  btn.tabIndex=allowed?0:-1;
+  if(allowed)setButtonState(btn,settings.mapLabels);
+}
+
 function applySettingsToUI(){
   $('baseMapSelect').value=settings.baseMap;$('trackMinutesSelect').value=String(settings.trackMinutes);$('minElevationSelect').value=String(settings.minElevationDeg);
-  setButtonState($('terminatorBtn'),settings.terminator);setButtonState($('radarBtn'),settings.radar);setButtonState($('cloudsBtn'),settings.clouds);setButtonState($('labelsBtn'),settings.mapLabels);setButtonState($('footprintsBtn'),settings.footprints);setButtonState($('lowPowerBtn'),settings.lowPower);setButtonState($('timeToggleBtn'),settings.timeControlsVisible);
-  overlays.setNightOpacity(.45);overlays.setState('terminator',settings.terminator);overlays.setState('radar',settings.radar);overlays.setState('clouds',settings.clouds);mapManager.setFootprints(settings.footprints);mapManager.setBase(settings.baseMap);mapManager.setLabels(settings.mapLabels);overlays.setBaseMap(settings.baseMap);
+  setButtonState($('terminatorBtn'),settings.terminator);setButtonState($('radarBtn'),settings.radar);setButtonState($('cloudsBtn'),settings.clouds);setButtonState($('footprintsBtn'),settings.footprints);setButtonState($('lowPowerBtn'),settings.lowPower);setButtonState($('timeToggleBtn'),settings.timeControlsVisible);
+  overlays.setNightOpacity(.45);overlays.setState('terminator',settings.terminator);overlays.setState('radar',settings.radar);overlays.setState('clouds',settings.clouds);mapManager.setFootprints(settings.footprints);mapManager.setBase(settings.baseMap);if(settings.baseMap==='sat')mapManager.setLabels(settings.mapLabels);overlays.setBaseMap(settings.baseMap);syncLabelsControl();
   els.timeControls.classList.toggle('active',settings.timeControlsVisible);updateTimeHeight();setPanelCollapsed(settings.panelCollapsed,false);
 }
 
@@ -338,8 +346,8 @@ function bindEvents(){
   $('detailColor').addEventListener('input',e=>{const r=selected();if(!r)return;r.color=e.target.value;mapManager.updateColor(r);persistSats();renderAllLists();renderSelectedDetails();});
   $('detailFollowBtn').addEventListener('click',()=>{const r=selected();if(!r)return;mapManager.follow(r.id);mapManager.zoomTo(r.id);renderAllLists();renderSelectedDetails();});$('computePassesBtn').addEventListener('click',calculatePasses);
 
-  $('baseMapSelect').addEventListener('change',e=>{settings.baseMap=e.target.value;mapManager.setBase(settings.baseMap);mapManager.setLabels(settings.mapLabels);overlays.setBaseMap(settings.baseMap);persistSettings();});
-  $('labelsBtn').addEventListener('click',()=>{settings.mapLabels=!settings.mapLabels;setButtonState($('labelsBtn'),settings.mapLabels);mapManager.setLabels(settings.mapLabels);persistSettings();});
+  $('baseMapSelect').addEventListener('change',e=>{settings.baseMap=e.target.value;mapManager.setBase(settings.baseMap);if(settings.baseMap==='sat')mapManager.setLabels(settings.mapLabels);overlays.setBaseMap(settings.baseMap);syncLabelsControl();persistSettings();});
+  $('labelsBtn').addEventListener('click',()=>{if(settings.baseMap!=='sat')return;settings.mapLabels=!settings.mapLabels;setButtonState($('labelsBtn'),settings.mapLabels);mapManager.setLabels(settings.mapLabels);persistSettings();});
   $('trackMinutesSelect').addEventListener('change',e=>{settings.trackMinutes=Number(e.target.value);state.trackDirty=true;persistSettings();});
   $('minElevationSelect').addEventListener('change',e=>{settings.minElevationDeg=Number(e.target.value);for(const r of state.sats.values())r.passes=[];state.trackDirty=true;persistSettings();renderSelectedDetails();scheduleAutoPasses();});
   for(const [id,key] of [['terminatorBtn','terminator'],['radarBtn','radar'],['cloudsBtn','clouds']])$(id).addEventListener('click',()=>{settings[key]=!settings[key];setButtonState($(id),settings[key]);overlays.setState(key,settings[key]);persistSettings();if(settings[key]&&key!=='terminator')overlays.updateWeather(time.now(),time.manual);});
