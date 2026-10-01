@@ -1,4 +1,4 @@
-# Cobertura de Satellite Pulse 1.0.1
+# Cobertura de Satellite Pulse 1.0.3
 
 Este archivo sirve como lista de comprobación de la refactorización.
 
@@ -91,3 +91,11 @@ Este archivo sirve como lista de comprobación de la refactorización.
 - [x] El botón Aa oculta únicamente `text-field` en las capas vectoriales: no cambia bosques, carreteras, agua, edificios ni iconos.
 - [x] Satélite sigue usando Esri World Imagery y sus etiquetas se mantienen como overlay independiente.
 - [x] No se necesita API key para los mapas incluidos.
+
+
+## 1.0.3 — idioma de cartografía
+
+- [x] Etiquetas de OSM/Claro/Oscuro localizadas a español mediante `name:es` con fallback al nombre local.
+- [x] El botón Aa se muestra únicamente en el mapa Satélite.
+- [x] Satélite usa una capa vectorial de etiquetas OpenFreeMap en español sobre Esri World Imagery.
+- [x] OSM/Claro/Oscuro mantienen siempre sus textos visibles.
