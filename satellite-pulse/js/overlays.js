@@ -2,6 +2,7 @@ import { clamp, deg, normLon, rad } from './utils.js';
 import { satellite } from './orbit.js';
 
 const RAIN_META='https://api.rainviewer.com/public/weather-maps.json';
+const RAIN_RADAR_MAX_ZOOM=7; // Límite oficial de la API pública de RainViewer desde 2026.
 const MERC_MAX=85.05112878;
 const LIVE_CLOUD_SOURCES=[
   'https://clouds.matteason.co.uk/images/4096x2048/clouds-alpha.png',
@@ -142,6 +143,7 @@ export class OverlayManager {
     this.terminatorBase=[];this.nightRingsBase=[];this._terminatorWorldKey='';this.baseMap='osm';
     this.ensurePanes();this.initDayNight();this.setBaseMap('osm');
     this.map.on('moveend zoomend',()=>this.refreshTerminatorCopies());
+    this.map.on('zoomend',()=>this.applyStates());
     this.map.on('move',()=>this.refreshTerminatorCopies());
   }
   ensurePanes(){
@@ -218,7 +220,7 @@ export class OverlayManager {
     const ts=Math.floor(new Date(date).getTime()/1000);if(ts<frames[0].time)return null;
     let best=frames[0];for(const f of frames){if(f.time<=ts)best=f;else break;}return best;
   }
-  ensureRadar(){if(!this.radar)this.radar=L.tileLayer('',{pane:'radarPane',opacity:.82,maxNativeZoom:9,maxZoom:22,noWrap:false,keepBuffer:2,crossOrigin:true,attribution:'Radar © RainViewer'});}
+  ensureRadar(){if(!this.radar)this.radar=L.tileLayer('',{pane:'radarPane',opacity:.82,maxNativeZoom:RAIN_RADAR_MAX_ZOOM,maxZoom:RAIN_RADAR_MAX_ZOOM,noWrap:false,keepBuffer:2,crossOrigin:true,attribution:'Radar © RainViewer'});}
   ensureClouds(){
     if(!this.clouds){
       this.clouds=new LiveCloudLayer({pane:'cloudsPane',tileSize:256,opacity:1,noWrap:false,keepBuffer:2,attribution:'Nubes: Contains modified EUMETSAT data'});
@@ -228,6 +230,9 @@ export class OverlayManager {
   updateClouds(force=false){this.ensureClouds();this.clouds.refresh(force);}
   async updateRadar(date,manual=false){
     this.ensureRadar();
+    // RainViewer admite como máximo z=7. A mayor zoom ocultamos el radar
+    // para evitar las teselas "Zoom level not supported".
+    if(this.map.getZoom()>RAIN_RADAR_MAX_ZOOM){this.applyStates();return;}
     try{
       const meta=await this.fetchMeta(),host=meta.host||'https://tilecache.rainviewer.com';
       const frames=[...(meta.radar?.past||[]),...(meta.radar?.nowcast||[])].sort((a,b)=>a.time-b.time),rf=this.pick(frames,date,manual);
@@ -245,6 +250,6 @@ export class OverlayManager {
   setState(kind,on){this.states[kind]=!!on;if(kind==='clouds'&&on)this.ensureClouds();if(kind==='radar'&&on)this.ensureRadar();this.applyStates();}
   applyStates(){
     const toggle=(layer,on)=>{if(!layer)return;if(on&&!this.map.hasLayer(layer))layer.addTo(this.map);if(!on&&this.map.hasLayer(layer))this.map.removeLayer(layer);};
-    toggle(this.nightLayer,this.states.terminator);toggle(this.line,this.states.terminator);toggle(this.radar,this.states.radar);toggle(this.clouds,this.states.clouds);
+    toggle(this.nightLayer,this.states.terminator);toggle(this.line,this.states.terminator);toggle(this.radar,this.states.radar&&this.map.getZoom()<=RAIN_RADAR_MAX_ZOOM);toggle(this.clouds,this.states.clouds);
   }
 }
