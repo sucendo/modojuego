@@ -1,4 +1,4 @@
-# Satellite Pulse 1.0.1
+# Satellite Pulse 1.0.2
 
 Aplicación web estática para GitHub Pages orientada al seguimiento de satélites artificiales mediante SGP4. Es una refactorización completa del proyecto original de una sola página, manteniendo el mapa 2D y ampliándolo con catálogo OMM, predicción de pasos, geometría de observación, iluminación y meteorología.
 
@@ -130,7 +130,7 @@ Es una herramienta educativa/de observación. SGP4 predice a partir de los eleme
 - Live Cloud Maps / EUMETSAT (textura alfa global de nubes)
 - OpenFreeMap / OpenStreetMap / Esri para cartografía
 
-No requiere claves API para las funciones incluidas en esta versión. OSM/Claro/Oscuro usan los estilos vectoriales públicos de OpenFreeMap; el botón Aa oculta únicamente los campos de texto del estilo y conserva bosques, carreteras, agua, edificios e iconos.
+No requiere claves API para las funciones incluidas en esta versión. OSM/Claro/Oscuro usan los estilos vectoriales públicos de OpenFreeMap. El control para ocultar etiquetas se mantiene internamente pero queda oculto en la interfaz; por ahora los mapas se muestran siempre con sus textos.
 
 ## Iconos de satélite
 
@@ -162,3 +162,9 @@ Las nubes se adaptan automáticamente al mapa base: en mapa oscuro tienen menor 
 La interfaz móvil prioriza el mapa y utiliza una barra inferior con cinco destinos: Mapa, Seguidos, Ficha, Capas y Tiempo. El panel de satélites funciona como una hoja inferior ampliable. Al seleccionar un satélite desde el mapa aparece primero una tarjeta compacta, evitando cubrir inmediatamente la cartografía.
 
 La ficha se ha convertido en un panel de situación: posición, rumbo aproximado sobre la superficie, altitud, velocidad, cobertura, iluminación, relación con el horizonte del observador, próximo paso y condiciones meteorológicas. Si existe una ubicación de observación, se calcula automáticamente una previsión inicial de pasos durante 24 horas; el cálculo manual de 48 horas sigue disponible.
+
+
+## Ajustes 1.0.2
+
+- El control **Aa** para mostrar/ocultar textos queda oculto temporalmente y los mapas arrancan siempre con etiquetas visibles.
+- Radar RainViewer limitado al zoom máximo oficial **z=7**. Al acercar más el mapa, la capa de radar se oculta automáticamente y vuelve a mostrarse al alejarse, evitando las teselas `Zoom level not supported`.
