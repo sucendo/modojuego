@@ -129,12 +129,19 @@ export class MapManager extends EventTarget {
     const layer=L.maplibreGL({
       style,interactive:false,attributionControl:false,renderWorldCopies:true,pane:'tilePane'
     });
-    const gl=layer.getMaplibreMap?.();
-    this.currentVectorMap=gl||null;
-    if(gl){
-      const ready=()=>{if(this.currentVectorMap!==gl)return;this.applySpanishLabels(gl);};
-      if(gl.isStyleLoaded?.())ready();else gl.once?.('load',ready);
-    }
+    const wire=()=>{
+      let tries=0;
+      const connect=()=>{
+        const gl=layer.getMaplibreMap?.();
+        if(!gl&&tries++<12){setTimeout(connect,25);return;}
+        if(!gl)return;
+        this.currentVectorMap=gl;
+        const ready=()=>{if(this.currentVectorMap!==gl)return;this.applySpanishLabels(gl);};
+        if(gl.isStyleLoaded?.())ready();else gl.once?.('load',ready);
+      };
+      connect();
+    };
+    layer.on('add',wire);
     return layer;
   }
 
@@ -144,11 +151,18 @@ export class MapManager extends EventTarget {
     const layer=L.maplibreGL({
       style:this.vectorStyles.osm,interactive:false,attributionControl:false,renderWorldCopies:true,pane:'baseLabelsPane'
     });
-    const gl=layer.getMaplibreMap?.();
-    if(gl){
-      const ready=()=>this.applySpanishLabels(gl,{labelsOnly:true});
-      if(gl.isStyleLoaded?.())ready();else gl.once?.('load',ready);
-    }
+    const wire=()=>{
+      let tries=0;
+      const connect=()=>{
+        const gl=layer.getMaplibreMap?.();
+        if(!gl&&tries++<12){setTimeout(connect,25);return;}
+        if(!gl)return;
+        const ready=()=>this.applySpanishLabels(gl,{labelsOnly:true});
+        if(gl.isStyleLoaded?.())ready();else gl.once?.('load',ready);
+      };
+      connect();
+    };
+    layer.on('add',wire);
     this.satelliteLabels=layer;
     return layer;
   }
