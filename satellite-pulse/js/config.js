@@ -1,4 +1,4 @@
-export const APP_VERSION = '1.0.2';
+export const APP_VERSION = '1.0.3';
 export const STORAGE_PREFIX = 'satellitePulse.v1';
 export const LEGACY_STORAGE_PREFIX = 'satelliteRastreador.v2';
 export const CELESTRAK_BASE = 'https://celestrak.org/NORAD/elements/gp.php';
