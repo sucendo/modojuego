@@ -6,7 +6,7 @@ const here=dirname(fileURLToPath(import.meta.url)), root=resolve(here,'..'), gro
 const groups=['stations','visual','weather','resource','gps-ops','galileo','amateur','science','starlink'];
 const gpBase='https://celestrak.org/NORAD/elements/gp.php';
 const satcatBase='https://celestrak.org/satcat/records.php';
-const userAgent='Satellite-Pulse-GitHub-Pages/1.0.0';
+const userAgent='Satellite-Pulse-GitHub-Pages/1.0.1';
 await mkdir(groupDir,{recursive:true});
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 
