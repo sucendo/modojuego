@@ -1,11 +1,11 @@
 'use strict';
 
-// HEXATEGOS 0.35.7 · mosaico político ligero + IA jerárquica.
+// HEXATEGOS 0.35.8 · entidades políticas unificadas + compatibilidad de partidas.
 // Las 16/25/35/50 plazas siguen siendo naciones principales con IA completa.
 // Las entidades menores viven en una capa independiente y barata: no amplían
 // matrices diplomáticas, no participan en los bucles O(N²) y no consumen slots.
 (() => {
-  const BUILD='0.35.7';
+  const BUILD='0.35.8';
   const SAVE_KEY='hexategos-minor-polities-0357';
   const TARGET_SECONDS=300;
   const TARGET_OCCUPANCY=.975;
@@ -38,7 +38,8 @@
   let queue0357=null,head0357=0,tail0357=0;
   let totalLand0357=0,majorAtInit0357=0,claimed0357=0;
   let initialized0357=false,lastCampaign0357=-1;
-  let seed0357=1,restoredMeta0357=null,lastStepMs0357=0;
+  let seed0357=1,restoredMeta0357=null,lastStepMs0357=0,layerStartedCampaign0357=0;
+  let rankingLastWall0358=-1e9,rankingSignature0358='';
 
   function hash0357(x){
     x=(x|0)+0x6D2B79F5;
@@ -73,12 +74,17 @@
     }catch(_){return 'Territorio'}
   }
   function uniqueName0357(type,cell,n){
+    // El nombre visible no revela nunca la categoría interna de la entidad.
     const g=shortGeo0357(cell);
-    const base=type==='village'?'Comunidad de '+g:
-      type==='citystate'?'Ciudad de '+g:
-      type==='regional'?'Estado regional de '+g:'Estado de '+g;
-    const dup=entities0357.filter(e=>e.name===base).length;
+    const variants=[g,g+' Norte',g+' Sur',g+' Oriental',g+' Occidental',g+' Central'];
+    let base=variants[hash0357(seed0357^n^cell)%variants.length]||g;
+    let dup=entities0357.filter(e=>e.name===base).length;
     return dup?base+' '+String.fromCharCode(65+(dup%26)):base;
+  }
+  function neutralizeLegacyName0358(name,cell,n){
+    const raw=String(name||'').trim();
+    if(!/^(Comunidad de |Ciudad de |Estado regional de |Estado de |Entidad \d+$)/i.test(raw))return raw;
+    return uniqueName0357('minor',cell,n);
   }
   function computeSeed0357(){
     let h=(activeFactionCount3230*2654435761)>>>0;
@@ -125,12 +131,14 @@
       used.add(cell);
       const row=savedRows?.[n];
       const type=row?.type||typeFor0357(n),p=PERSONALITIES.find(x=>x.id===row?.personality)||personalityFor0357(n);
-      const e={id:n,seed:cell,type,name:row?.name||uniqueName0357(type,cell,n),color:row?.color||color0357(n,type),personality:p.id,growth:(TYPES[type]?.growth||.7)*p.growth};
+      const visibleName=row?.name?neutralizeLegacyName0358(row.name,cell,n):uniqueName0357(type,cell,n);
+      const e={id:n,seed:cell,type,name:visibleName,color:row?.color||color0357(n,type),personality:p.id,growth:(TYPES[type]?.growth||.7)*p.growth};
       entities0357.push(e);
       ownerMinor0357[cell]=n;queue0357[tail0357++]=cell;claimed0357++;n++;
     }
 
     initialized0357=true;
+    layerStartedCampaign0357=campaignSeconds3230;
     lastCampaign0357=campaignSeconds3230;
     persistMeta0357();
     needsRender=true;
@@ -152,9 +160,11 @@
   function clearMeta0357(){try{localStorage.removeItem(SAVE_KEY)}catch(_){}}
 
   function desiredCoverage0357(){
-    // La ocupación política acelera al principio y converge al 97,5% a 5 min.
-    const t=clamp0357(campaignSeconds3230/TARGET_SECONDS,0,1);
-    return Math.min(TARGET_OCCUPANCY,.035+(TARGET_OCCUPANCY-.035)*Math.pow(t,.70));
+    // Cada campaña existente recibe cinco minutos reales de simulación desde que
+    // esta capa se incorpora; no intentamos rellenar de golpe una partida antigua.
+    const elapsed=Math.max(0,campaignSeconds3230-layerStartedCampaign0357);
+    const t=clamp0357(elapsed/TARGET_SECONDS,0,1);
+    return Math.min(TARGET_OCCUPANCY,.055+(TARGET_OCCUPANCY-.055)*Math.pow(t,.70));
   }
   function targetMinorClaims0357(){
     return Math.max(entities0357.length,Math.floor(totalLand0357*desiredCoverage0357())-majorAtInit0357);
@@ -181,12 +191,12 @@
     }
   }
 
-  function grow0357(){
-    if(!initialized0357||paused3230||!started3230||!queue0357)return;
+  function grow0357(force=false,maxClaims=MAX_CLAIMS_PER_TICK){
+    if(!initialized0357||(!force&&paused3230)||!started3230||!queue0357)return;
     const t0=performance.now(),L=loadLevel(MAX_GAME_LEVEL3233),target=targetMinorClaims0357();
     if(claimed0357>=target)return;
     reseedFrontier0357(L);
-    let budget=clamp0357(target-claimed0357,MIN_CLAIMS_PER_TICK,MAX_CLAIMS_PER_TICK);
+    let budget=clamp0357(target-claimed0357,MIN_CLAIMS_PER_TICK,Math.max(MIN_CLAIMS_PER_TICK,maxClaims));
     let guard=0;
     while(head0357<tail0357&&budget>0&&guard<MAX_CLAIMS_PER_TICK*14){
       const c=queue0357[head0357++],id=ownerMinor0357[c];guard++;
@@ -204,7 +214,26 @@
       }
     }
     lastStepMs0357=performance.now()-t0;
-    if(budget<MAX_CLAIMS_PER_TICK)needsRender=true;
+    if(budget<Math.max(MIN_CLAIMS_PER_TICK,maxClaims))needsRender=true;
+  }
+
+  function bootstrapVisible0358(){
+    if(!initialized0357||!started3230)return;
+    const goal=Math.max(entities0357.length,Math.floor(totalLand0357*.09)-majorAtInit0357);
+    let rounds=0;
+    const run=()=>{
+      if(!initialized0357||claimed0357>=goal||rounds>=20){updateRanking3220();needsRender=true;return}
+      const before=claimed0357;
+      // Fuerza crecimiento aun si la partida cargada está en pausa, pero en trozos.
+      const originalStart=layerStartedCampaign0357;
+      layerStartedCampaign0357=Math.min(layerStartedCampaign0357,campaignSeconds3230-TARGET_SECONDS*.12);
+      grow0357(true,2400);
+      layerStartedCampaign0357=originalStart;
+      rounds++;
+      if(claimed0357===before){needsRender=true;updateRanking3220();return}
+      (window.requestIdleCallback||((fn)=>setTimeout(fn,0)))(run,{timeout:80});
+    };
+    run();
   }
 
   function syncMajorConquests0357(){
@@ -226,7 +255,15 @@
       const id=ownerMinor0357[i];
       if(id>=0){
         const e=entities0357[id];
-        if(e)return shadeColor(e.color,z);
+        if(e){
+          // Exactamente el mismo lenguaje visual que las demás naciones:
+          // terreno base + tinte político. No hay un estilo "menor".
+          const type=terrainType3247(key,i,L);
+          const base=TERRAIN_PALETTE3247[type]||TERRAIN_PALETTE3247.plain;
+          const rgb=hexRGB3247(e.color);
+          const tint=zoom<1.7?.58:zoom<3.5?.50:zoom<7?.43:.36;
+          return shadedRGB3247(mixRGB3247(base,rgb,tint),z);
+        }
       }
     }
     return baseTerrainFill0357.apply(this,arguments);
@@ -246,13 +283,12 @@
       if(c<0||c>=L.n||owner6[c]>=0||ownerMinor0357[c]!==e.id)continue;
       const j=c*3,p=projectVec(C[j]/32767,C[j+1]/32767,C[j+2]/32767,R,cx,cy);
       if(!globeIconVisible3249(p,.08))continue;
-      const r=zoom>=4?3.1:2.4;
-      ctx.beginPath();ctx.arc(p[0],p[1],r,0,Math.PI*2);
-      ctx.fillStyle=e.color;ctx.fill();ctx.strokeStyle='rgba(2,8,12,.88)';ctx.lineWidth=1;ctx.stroke();
-      if(zoom>=3.25&&drawn<55){
-        ctx.font=(zoom>=5?'11':'10')+'px system-ui,sans-serif';
-        ctx.lineWidth=3;ctx.strokeStyle='rgba(2,7,11,.84)';ctx.strokeText(e.name,p[0],p[1]-5);
-        ctx.fillStyle='rgba(236,243,247,.92)';ctx.fillText(e.name,p[0],p[1]-5);
+      const px=globeIconScale3249();
+      drawGlobeCapitalIcon3249(p[0],p[1],false,px*.93);
+      if(zoom>=3.15&&p[2]>.35&&drawn<55){
+        ctx.font='700 7px system-ui';ctx.textAlign='left';ctx.textBaseline='middle';
+        ctx.lineWidth=2.2;ctx.strokeStyle='rgba(2,7,12,.85)';ctx.strokeText(e.name,p[0]+px*.78,p[1]);
+        ctx.fillStyle='rgba(241,246,250,.88)';ctx.fillText(e.name,p[0]+px*.78,p[1]);
       }
       drawn++;
     }
@@ -275,7 +311,7 @@
   buildCustomWorld3302=function(){
     clearMeta0357();initialized0357=false;restoredMeta0357=null;
     const out=baseBuildWorld0357.apply(this,arguments);
-    if(out)setTimeout(()=>{if(started3230)buildEntities0357(null)},0);
+    if(out)setTimeout(()=>{if(started3230){buildEntities0357(null);bootstrapVisible0358()}},0);
     return out;
   };
 
@@ -284,7 +320,7 @@
     restoredMeta0357=loadMeta0357();
     initialized0357=false;
     const out=baseLoad0357.apply(this,arguments);
-    setTimeout(()=>{if(started3230&&!initialized0357)buildEntities0357(restoredMeta0357)},0);
+    setTimeout(()=>{if(started3230&&!initialized0357){buildEntities0357(restoredMeta0357);bootstrapVisible0358()}},0);
     return out;
   };
 
@@ -316,26 +352,14 @@
       if(m){try{localStorage.setItem(SAVE_KEY,JSON.stringify(m))}catch(_){}}
       else clearMeta0357();
       restoredMeta0357=m||null;initialized0357=false;
-      setTimeout(()=>{if(started3230)buildEntities0357(restoredMeta0357)},0);
+      setTimeout(()=>{if(started3230){buildEntities0357(restoredMeta0357);bootstrapVisible0358()}},0);
       return out;
     };
   }
 
-  // Información ligera en INTEL para comprobar la densidad sin abrir debug.
-  const baseSystems0357=renderSystems3220;
-  renderSystems3220=function(){
-    const out=baseSystems0357.apply(this,arguments);
-    if(sysTab3220!=='intel'||!initialized0357)return out;
-    const host=document.getElementById('sysContent3213');if(!host)return out;
-    const counts={village:0,citystate:0,minor:0,regional:0};
-    for(const e of entities0357)counts[e.type]=(counts[e.type]||0)+1;
-    const occupancy=totalLand0357?Math.min(100,((majorAtInit0357+claimed0357)/totalLand0357)*100):0;
-    host.insertAdjacentHTML('beforeend',
-      '<div class="sysBlock3213"><b>🗺 Mosaico político secundario</b>'+
-      '<div class="sysMeta3213">'+entities0357.length+' entidades ligeras · ocupación '+occupancy.toFixed(1)+'% · objetivo 5 min ≈ '+Math.round(TARGET_OCCUPANCY*100)+'%.</div>'+
-      '<div class="sysMeta3213">Pueblos '+counts.village+' · ciudades-estado '+counts.citystate+' · estados menores '+counts.minor+' · regionales '+counts.regional+'.</div></div>');
-    return out;
-  };
+  // No mostramos al jugador ninguna etiqueta que revele la jerarquía interna.
+  // El diagnóstico queda disponible únicamente para desarrollo mediante la API.
+
 
   function stats0357(){
     const counts={village:0,citystate:0,minor:0,regional:0};
@@ -350,14 +374,14 @@
     };
   }
 
-  // Ajuste semántico del selector: las plazas configurables son principales.
+  // El jugador elige la escala inicial sin exponer la jerarquía interna.
   function relabelSetup0357(){
     const title=document.querySelector('#nationScale0341 .nationScaleTitle0341 b');
-    if(title)title.textContent='NACIONES PRINCIPALES';
+    if(title)title.textContent='NACIONES';
     const hint=document.getElementById('nationScaleHint0341');
-    if(hint)hint.textContent=activeFactionCount3230+' plazas de IA completa; pueblos y estados menores se generan aparte y en cantidad variable.';
+    if(hint)hint.textContent=activeFactionCount3230+' naciones iniciales · el mapa político evolucionará de forma dinámica durante la partida.';
     const meta=document.querySelector('#newGameSetup3302 .newGameSetupMeta3302');
-    if(meta)meta.textContent='Las naciones principales usan IA completa. El resto del planeta se poblará dinámicamente con entidades políticas ligeras de tamaños y personalidades diferentes.';
+    if(meta)meta.textContent='Las demás entidades políticas aparecerán y evolucionarán de forma dinámica según la geografía y el desarrollo de la partida.';
   }
   const baseBeginSetup0357=beginNewGameSetup3302;
   beginNewGameSetup3302=function(){
@@ -366,6 +390,75 @@
     return out;
   };
   setTimeout(relabelSetup0357,0);
+
+  function focusMinor0358(id){
+    id=Number(id);const e=entities0357[id];if(!e)return false;
+    const cell=e.seed;
+    if(cell<0||owner6[cell]>=0||ownerMinor0357?.[cell]!==id)return false;
+    try{
+      closeContextDialog3244?.();
+      const {lon,lat}=cellLonLat3302(cell);
+      const coarse=typeof matchMedia==='function'&&matchMedia('(pointer:coarse)').matches;
+      rotateToGeo3243(lon,lat,coarse?7.1:5.7);
+      selected={key:MAX_GAME_LEVEL3233,i:cell};
+      if(typeof uiInteractionState3244!=='undefined')uiInteractionState3244.selectedCell=cell;
+      updatePanel();needsRender=true;toast(e.name);
+      return true;
+    }catch(_){return false}
+  }
+
+  function unifiedRanking0358(force=false){
+    if(!initialized0357||!ownerMinor0357||!owner6)return;
+    const wall=performance.now();
+    if(!force&&wall-rankingLastWall0358<850)return;
+    rankingLastWall0358=wall;
+
+    const majorCounts=new Int32Array(activeFactionCount3230);
+    const minorCounts=new Int32Array(entities0357.length);
+    for(let i=0;i<owner6.length;i++){
+      const f=owner6[i];
+      if(f>=0&&f<majorCounts.length)majorCounts[f]++;
+      else{
+        const m=ownerMinor0357[i];
+        if(m>=0&&m<minorCounts.length)minorCounts[m]++;
+      }
+    }
+    const rows=[];
+    for(let f=0;f<majorCounts.length;f++)if(majorCounts[f]>0||f===0)
+      rows.push({kind:'major',id:f,name:factionName3230(f),color:FACTIONS3230[f]?.color||'#80909b',count:majorCounts[f]});
+    for(let m=0;m<minorCounts.length;m++)if(minorCounts[m]>0){
+      const e=entities0357[m];
+      rows.push({kind:'minor',id:m,name:e.name,color:e.color,count:minorCounts[m]});
+    }
+    rows.sort((a,b)=>b.count-a.count||a.name.localeCompare(b.name,'es'));
+    const signature=rows.map(r=>r.kind[0]+r.id+':'+r.count).join('|');
+    if(!force&&signature===rankingSignature0358)return;
+    rankingSignature0358=signature;
+
+    const host=document.getElementById('rankRows3213');if(!host)return;
+    host.innerHTML=rows.map((r,k)=>
+      '<div class="rankRow3213" role="button" tabindex="0" '+
+      (r.kind==='major'?'data-faction="'+r.id+'"':'data-minor0358="'+r.id+'"')+
+      ' aria-label="Ir a la capital de '+String(r.name).replace(/"/g,'&quot;')+'" title="Ir a la capital de '+String(r.name).replace(/"/g,'&quot;')+'">'+
+      '<i class="rankDot3213" style="background:'+r.color+'"></i><span>'+(k+1)+'. '+r.name+'</span><small>'+r.count.toLocaleString('es-ES')+'</small></div>'
+    ).join('');
+  }
+
+  const baseRankingUnified0358=updateRanking3220;
+  updateRanking3220=function(){
+    if(!initialized0357)return baseRankingUnified0358.apply(this,arguments);
+    return unifiedRanking0358(false);
+  };
+  const rankHost0358=document.getElementById('rankRows3213');
+  rankHost0358?.addEventListener('click',e=>{
+    const row=e.target.closest('.rankRow3213[data-minor0358]');
+    if(row)focusMinor0358(row.dataset.minor0358);
+  });
+  rankHost0358?.addEventListener('keydown',e=>{
+    if(e.key!=='Enter'&&e.key!==' ')return;
+    const row=e.target.closest('.rankRow3213[data-minor0358]');
+    if(!row)return;e.preventDefault();focusMinor0358(row.dataset.minor0358);
+  });
 
   window.HexategosMinorPolities0357={
     version:BUILD,stats:stats0357,entityAt:entityAt0357,
@@ -376,8 +469,8 @@
 
   // Campañas abiertas al actualizar reciben la capa nueva sin reiniciarse.
   setTimeout(()=>{
-    if(started3230&&!initialized0357)buildEntities0357(loadMeta0357());
+    if(started3230&&!initialized0357){buildEntities0357(loadMeta0357());bootstrapVisible0358();}
   },0);
 
-  console.info('[HEXATEGOS] 0.35.7 mosaico político ligero activo · HexategosMinorPolities0357.stats()');
+  console.info('[HEXATEGOS] 0.35.8 entidades políticas unificadas activas · HexategosMinorPolities0357.stats()');
 })();
