@@ -1,3 +1,27 @@
+HEXATEGOS_0_35_9
+
+Módulo nuevo:
+- js/universal-polities-0359.js
+
+Capacidades universales:
+- diplomacia completa visible
+- economía y tropas
+- guerra y conquista bidireccional
+- desarrollo de ciudad / industria / puerto / fortificación
+- comercio con efecto económico
+- mismo lenguaje visual y misma clasificación
+- diferencias únicamente en comportamiento/frecuencia de IA
+
+Rendimiento:
+- snapshot territorial compartido cada 10 s
+- máximo 24 muestras por entidad
+- decisiones escalonadas por cuartos
+- sin matriz diplomática masiva adicional
+
+Pruebas:
+- tests/smoke-0359.mjs
+
+--- MANIFEST ANTERIOR ---
 HEXATEGOS_0_35_8
 
 Cambios:
