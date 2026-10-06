@@ -61,8 +61,8 @@
     try{
       if(aiStrategicState3260?.[f])aiStrategicState3260[f].nextThink=0;
       if(aiNationNextCampaignEval3280?.length>f)aiNationNextCampaignEval3280[f]=0;
-      if(aiNationalPlan3275?.[f])aiNationalPlan3275[f].nextReview=0;
-      if(regionalPlans3284?.[f])regionalPlans3284[f].nextEval=0;
+      if(typeof aiNationalPlan3275!=='undefined'&&aiNationalPlan3275?.[f])aiNationalPlan3275[f]=null;
+      if(typeof regionalPlans3284!=='undefined'&&regionalPlans3284?.[f])regionalPlans3284[f]=null;
       if(aiDevState3283?.[f])aiDevState3283[f].lastTerritory=-1;
     }catch(_){}
   }
