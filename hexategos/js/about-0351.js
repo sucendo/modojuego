@@ -4,79 +4,20 @@
 (() => {
   const HISTORY=[
     {
-      version:'0.36.2',
+      version:'0.35.7',
       date:'Octubre 2026',
-      title:'Mundo de unas 500 naciones',
+      title:'IA jerárquica y mosaico político',
       current:true,
-      summary:'El modelo político se unifica alrededor de unas 500 naciones rivales: todas comparten capacidades y solo cambia la forma y frecuencia con la que piensa su IA.',
+      summary:'Las plazas configurables pasan a representar naciones principales y el resto del planeta se puebla con entidades políticas ligeras, variables y de muy bajo coste de CPU.',
       changes:[
-        'El mundo apunta a unas 460–540 naciones totales según la semilla y la escala inicial.',
-        'Las 16/25/35/50 elegidas conservan el planificador estratégico de alta frecuencia; el resto usa un scheduler ligero, pero tiene las mismas capacidades visibles.',
-        'Las antiguas categorías internas dejan de determinar crecimiento o posibilidades de juego.',
-        'Las IA pueden cambiar de perfil especialmente durante los primeros cinco minutos y todavía de forma moderada hasta alrededor de diez minutos.',
-        'Se añade diplomacia dispersa entre naciones dinámicas y entre estas y las IA principales, evitando una matriz global de 500×500.',
-        'Las naciones dinámicas pueden combatir también contra las IA principales y estas pueden abrir campañas contra ellas.',
-        'La clasificación se construye desde snapshots compartidos para evitar escanear todo el planeta cada segundo.'
-      ]
-    },
-    {
-      version:'0.36.1',
-      date:'Octubre 2026',
-      title:'Integración política contextual',
-      summary:'Las naciones dinámicas dejan de aparecer como terreno neutral al pulsarlas: muestran propietario, extensión, diplomacia y ataque igual que el resto.',
-      changes:[
-        'Pulsar cualquier territorio de una nación dinámica muestra claramente qué nación lo controla.',
-        'El menú contextual ofrece Atacar, Inspeccionar y Diplomacia en lugar de Expandirse sobre un territorio ocupado.',
-        'La diplomacia contextual incluye guerra, paz, comercio, no agresión y alianza.',
-        'Los ataques contra estas naciones crean un frente real y avanzan por su territorio en lugar de tratarlo como tierra neutral.',
-        'Los frentes actualizan territorio, capital y posible desaparición de la nación derrotada.',
-        'Se mantiene la representación compacta interna para no aumentar el coste del mapa.'
-      ]
-    },
-    {
-      version:'0.36.0',
-      date:'Octubre 2026',
-      title:'Evolución política e IA adaptativa',
-      summary:'Las naciones dinámicas dejan de ser estáticas: todas intentan crecer al menos un territorio razonable, pueden competir entre sí y su forma de pensar puede evolucionar durante la partida.',
-      changes:[
-        'Toda entidad viva mantiene una ambición territorial mínima; incluso las más conformistas intentan expandirse algo antes de estabilizarse.',
-        'Las naciones dinámicas pueden competir por territorio, perder su capital y desaparecer por completo.',
-        'Las entidades desaparecidas no reaparecen después durante el relleno automático del mapa.',
-        'Las personalidades internas pueden evolucionar y no son estados permanentes.',
-        'Los cambios de carácter son más frecuentes durante los primeros minutos y se vuelven mucho más raros al madurar la campaña.',
-        'Las naciones principales también pueden cambiar su doctrina estratégica durante las primeras fases de la partida.',
-        'El sistema conserva decisiones escalonadas, snapshots compartidos y límites de cálculo para proteger el rendimiento.'
-      ]
-    },
-    {
-      version:'0.35.9',
-      date:'Octubre 2026',
-      title:'Entidades políticas universales',
-      summary:'Todas las entidades políticas se presentan con las mismas capacidades jugables; la diferencia interna queda limitada a cómo y cada cuánto decide su IA.',
-      changes:[
-        'Diplomacia completa también con las naciones generadas dinámicamente: guerra, paz, comercio, no agresión y alianza.',
-        'Las entidades dinámicas disponen de economía, tropas, ciudades, industria, puertos y fortificaciones propias.',
-        'Pueden atacar y perder territorio, conquistar al jugador y ser conquistadas mediante las mismas operaciones visibles.',
-        'La clasificación y el mapa mantienen una presentación única sin revelar categorías internas.',
-        'La personalidad solo modifica frecuencia y propensión de decisión: conformismo, defensa, comercio u oportunismo no aparecen como etiquetas de juego.',
-        'El cálculo se escalona por grupos y reutiliza snapshots territoriales periódicos para mantener controlado el coste con cientos de entidades.',
-        'Las partidas existentes migran sin alterar el territorio de las naciones ya presentes.'
-      ]
-    },
-    {
-      version:'0.35.8',
-      date:'Octubre 2026',
-      title:'Entidades políticas unificadas',
-      summary:'El mapa incorpora muchas más entidades políticas sin distinguir visualmente entre categorías internas: todas aparecen como naciones normales y su importancia se descubre por su comportamiento y evolución.',
-      changes:[
-        'La escala elegida al iniciar mantiene las naciones con IA completa y el mundo añade otras entidades políticas de forma dinámica.',
-        'Las entidades adicionales usan una simulación ligera para mantener el rendimiento sin delatar su categoría al jugador.',
-        'La cantidad total de entidades varía en cada mundo según la escala y la semilla de la partida.',
-        'Cada entidad recibe un nombre, color y comportamiento propio; algunas son conformistas y otras más expansivas, comerciales o defensivas.',
-        'La expansión sobre tierra neutral utiliza una simulación territorial muy barata para mantener el coste controlado.',
-        'El objetivo de densidad sigue siendo aproximadamente un 97,5 % de tierra políticamente ocupada a los cinco minutos.',
-        'La expansión tiene un presupuesto máximo por tick para proteger el rendimiento y evitar picos de CPU.',
-        'Las partidas ya empezadas reciben las nuevas entidades automáticamente y la clasificación mezcla a todas las naciones sin indicar su categoría interna.'
+        'Las 16/25/35/50 plazas elegidas al iniciar siguen usando la IA completa de HEXATEGOS.',
+        'Se añade una segunda capa independiente para pueblos, ciudades-estado, estados menores y estados regionales.',
+        'La cantidad de entidades secundarias varía según la escala de la partida y una semilla determinista.',
+        'Cada entidad menor recibe tamaño emergente, color, nombre, tipo y personalidad propia: conformista, comercial, defensiva, oportunista o localista.',
+        'Las entidades menores ocupan terreno neutral mediante una expansión territorial muy barata basada en cola BFS y no entran en las matrices diplomáticas de 50 plazas.',
+        'El objetivo de densidad es aproximadamente un 97,5 % de tierra políticamente ocupada a los cinco minutos de campaña.',
+        'La expansión secundaria tiene un presupuesto máximo por tick para proteger el rendimiento y no realiza escaneos mundiales periódicos.',
+        'Las campañas ya empezadas reciben automáticamente esta capa sin reiniciar ni alterar los territorios de las naciones principales.'
       ]
     },
     {
@@ -273,7 +214,7 @@
         '<header class="aboutHead0351">'+
           '<div class="aboutHeadText0351">'+
             '<h2 id="aboutTitle0351">ACERCA DE HEXATEGOS</h2>'+
-            '<p>Global Geopolitical Strategy · versión 0.36.2</p>'+
+            '<p>Global Geopolitical Strategy · versión 0.35.7</p>'+
           '</div>'+
           '<button id="aboutClose0351" class="aboutClose0351" type="button" aria-label="Cerrar">×</button>'+
         '</header>'+
@@ -331,5 +272,5 @@
     history:HISTORY.map(v=>({...v,changes:v.changes.slice()}))
   };
 
-  console.info('[HEXATEGOS] historial actualizado para 0.36.2');
+  console.info('[HEXATEGOS] historial actualizado para 0.35.7');
 })();
