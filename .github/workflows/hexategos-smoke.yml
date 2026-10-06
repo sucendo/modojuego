@@ -38,3 +38,5 @@ jobs:
         run: node hexategos/tests/smoke-0358.mjs
       - name: Run Hexategos 0.35.9 universal political entities smoke
         run: node hexategos/tests/smoke-0359.mjs
+      - name: Run Hexategos 0.36.0 adaptive political evolution smoke
+        run: node hexategos/tests/smoke-0360.mjs
