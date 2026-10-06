@@ -7,7 +7,7 @@ const base=read('js/minor-polities-0357.js');
 const index=read('index.html');
 
 assert.doesNotThrow(()=>new Function(js),'universal-polities-0359.js must parse');
-assert.ok(js.includes("const BUILD='0.35.9'"),'0.35.9 marker missing');
+assert.ok(js.includes("const BUILD='0.35.9'")||js.includes("const BUILD='0.36.0'"),'universal political entity build marker missing');
 assert.ok(js.includes('playerDiplomaticAction3300=function'),'player diplomacy bridge missing');
 assert.ok(js.includes('renderDiplomacy3300=function'),'unified diplomacy UI missing');
 assert.ok(js.includes('operation3212=function'),'player combat bridge missing');
