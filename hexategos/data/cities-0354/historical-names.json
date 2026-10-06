@@ -1,0 +1,123 @@
+{
+  "version": 1,
+  "scope": "Curated historical names for Spanish cities; conservative and non-exhaustive",
+  "records": {
+    "ES|Madrid": [
+      "Mayrit",
+      "La Villa y Corte de Madrid"
+    ],
+    "ES|Barcelona": [
+      "Barcino",
+      "la Ciudad Condal"
+    ],
+    "ES|Zaragoza": [
+      "Caesaraugusta",
+      "Saraqusta"
+    ],
+    "ES|Mérida": [
+      "Emerita Augusta"
+    ],
+    "ES|Tarragona": [
+      "Tarraco"
+    ],
+    "ES|Cadiz": [
+      "Gadir",
+      "Gades"
+    ],
+    "ES|Cádiz": [
+      "Gadir",
+      "Gades"
+    ],
+    "ES|Cartagena": [
+      "Qart Hadasht",
+      "Carthago Nova"
+    ],
+    "ES|Córdoba": [
+      "Corduba",
+      "Qurtuba"
+    ],
+    "ES|Sevilla": [
+      "Hispalis",
+      "Ishbiliya"
+    ],
+    "ES|Málaga": [
+      "Malaka",
+      "Malaca"
+    ],
+    "ES|Valencia": [
+      "Valentia",
+      "Balansiya"
+    ],
+    "ES|Alicante": [
+      "Lucentum",
+      "al-Laqant"
+    ],
+    "ES|Almería": [
+      "al-Mariyya"
+    ],
+    "ES|Murcia": [
+      "Mursiya"
+    ],
+    "ES|Granada": [
+      "Garnata"
+    ],
+    "ES|Jaén": [
+      "Aurgi",
+      "Yayyan"
+    ],
+    "ES|Badajoz": [
+      "Batalyaws"
+    ],
+    "ES|Cáceres": [
+      "Norba Caesarina"
+    ],
+    "ES|Toledo": [
+      "Toletum",
+      "Tulaytula"
+    ],
+    "ES|Huesca": [
+      "Osca",
+      "Wasqa"
+    ],
+    "ES|Lleida": [
+      "Ilerda"
+    ],
+    "ES|Girona": [
+      "Gerunda"
+    ],
+    "ES|Pamplona": [
+      "Pompaelo"
+    ],
+    "ES|León": [
+      "Legio"
+    ],
+    "ES|Lugo": [
+      "Lucus Augusti"
+    ],
+    "ES|Salamanca": [
+      "Salmantica"
+    ],
+    "ES|Albacete": [
+      "al-Basit"
+    ],
+    "ES|Guadalajara": [
+      "Wādī al-Ḥijāra"
+    ],
+    "ES|Cuenca": [
+      "Qūnka"
+    ],
+    "ES|Ciudad Real": [
+      "Villa Real"
+    ],
+    "ES|Palma": [
+      "Madina Mayurqa"
+    ],
+    "ES|Oviedo": [
+      "Ovetum"
+    ]
+  },
+  "notes": [
+    "Only display entries explicitly listed here; absence means no historical label is shown.",
+    "Forms are intended as concise game context, not as a complete scholarly chronology."
+  ]
+}
