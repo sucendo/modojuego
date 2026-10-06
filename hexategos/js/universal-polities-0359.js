@@ -276,9 +276,13 @@
   };
 
   function captureMinorByPlayer(target,id){
-    if(playerCountry<0||!playerAdjacent(target)||gold3212<8)return false;
+    if(playerCountry<0||gold3212<8)return false;
     const st=states[id],entity=API.entityRef(id);if(!st||!entity)return false;
-    if(st.rel!==-1)setRelationWithPlayer(id,-1,'ataque del jugador');
+    if(!playerAdjacent(target)){toast('Necesitas contacto terrestre con '+entity.name);return false}
+    if(st.rel!==-1){
+      if(st.rel>0&&!confirm('Hay un acuerdo vigente con '+entity.name+'. ¿Romperlo y declarar la guerra?'))return false;
+      setRelationWithPlayer(id,-1,'ataque del jugador');
+    }
     const L=loadLevel(MAX_GAME_LEVEL3233),strength=Number(strength3212.value),advance=Number(advance3212.value);
     let power=2+Math.floor(strength/25)+Math.floor(advance/25);
     const maxCells=1+Math.floor(advance/20)+Math.floor(strength/50);
@@ -306,10 +310,119 @@
     toast('La defensa y el terreno han detenido la operación');return false;
   }
 
+  function findVirtualPath0359(target,id){
+    const L=loadLevel(MAX_GAME_LEVEL3233);
+    if(target<0||L.land[target]<0||API.ownerIdAt(target)!==id)return null;
+    const prev=new Int32Array(L.n);prev.fill(-2);
+    const q=new Int32Array(L.n);let h=0,t=0;q[t++]=target;prev[target]=-1;let source=-1;
+    while(h<t&&t<L.n){
+      const u=q[h++],s=L.offsets[u],e=L.offsets[u+1];
+      for(let k=s;k<e;k++){
+        const n=L.edgeNbr[k];if(n<0||L.land[n]<0||prev[n]!==-2)continue;
+        if(owner6[n]===0){prev[n]=u;source=n;h=t;break}
+        if(owner6[n]>=0)continue;
+        const m=API.ownerIdAt(n);
+        if(m>=0&&m!==id)continue;
+        prev[n]=u;q[t++]=n;
+      }
+    }
+    if(source<0)return null;
+    const path=[source];let u=prev[source],guard=0;
+    while(u>=0&&guard++<L.n){path.push(u);if(u===target)break;u=prev[u]}
+    return path[path.length-1]===target?path:null;
+  }
+
+  function createVirtualFront0359(target,id){
+    const st=states[id],entity=API.entityRef(id);if(!st||!entity||API.ownerIdAt(target)!==id)return null;
+    if(activeFronts3230.length>=4){toast('Máximo 4 frentes simultáneos');return null}
+    if(st.rel===3){toast('Es un aliado · rompe la alianza antes de atacar');return null}
+    if(st.rel>0&&!confirm('Hay un acuerdo vigente con '+entity.name+'. ¿Romperlo y declarar la guerra?'))return null;
+    if(st.rel!==-1)setRelationWithPlayer(id,-1,'declaración del jugador');
+    const path=findVirtualPath0359(target,id);
+    if(!path){toast(isCoastal3212(target)?'Sin ruta terrestre · utiliza transporte naval':'No existe una ruta terrestre válida');return null}
+    const pool=allocateFrontTroops3230();if(pool<1)return null;
+    const adv=Number(advance3212.value);
+    const front={
+      id:nextFrontId3230++,kind:'war',goal:target,target:path[1]??target,targetOwner:-1,
+      virtualMinorId:id,targetGeo:loadLevel(MAX_GAME_LEVEL3233).land[target],
+      pool,initial:pool,status:adv>=60?'ocupación amplia':'asalto rápido',advance:adv,
+      route:path,secureBudget:adv>=60?Math.max(3,Math.min(22,Math.floor(pool/12))):0,
+      secured:0,lastSrc:path[0],ticks:0
+    };
+    activeFronts3230.push(front);activeFrontId3230=front.id;
+    toast(Math.floor(pool)+' tropas comprometidas contra '+entity.name);
+    banner3230('⚔ '+entity.name);updateUI3230();updateFrontDock3220(true);needsRender=true;saveGame3212();
+    return front;
+  }
+
+  function captureVirtualFrontCell0359(front,target,src){
+    const id=front.virtualMinorId,st=states[id];if(!st)return false;
+    const defenderId=API.ownerIdAt(target),enemy=defenderId===id;
+    let terrain=0;
+    if(mountainTier3212[target]>=3)terrain+=1.1;else if(mountainTier3212[target])terrain+=.5;
+    if(typeof riverCross3230==='function'&&riverCross3230(src,target))terrain+=.55;
+    if(typeof roadCross3230==='function'&&roadCross3230(src,target))terrain=Math.max(0,terrain-.55);
+    const cost=(enemy?1.55:.65)+terrain*.35;if(front.pool<cost)return false;
+    front.pool-=cost;
+    let p=.94;
+    if(enemy){
+      const defender=Math.max(12,st.troops||50),ratio=front.pool/(front.pool+defender),supply=supplyAt3230(src)/100;
+      p=.27+ratio*.44+.09*(Number(strength3212.value)/100)+.10*supply-(forts3212[target]||0)*.11-terrain*.07;
+      p=clamp(p,.07,.82);
+    }
+    if(Math.random()>=p){front.pool=Math.max(0,front.pool-(enemy?1.05:.20));return false}
+    if(enemy){
+      API.setOwner(target,-1);
+      territoryCounts[id]=Math.max(0,(territoryCounts[id]||0)-1);
+      st.troops=Math.max(0,st.troops-(1.1+front.pool*.003));
+      relocateOrEliminate0359(id,target);
+    }
+    owner6[target]=0;forts3212[target]=0;front.pool=Math.max(0,front.pool-(enemy?.42:.08));
+    front.lastSrc=target;cacheDirty=true;supplyDirty3220=true;aiSnapshotDirty3260=true;needsRender=true;
+    return true;
+  }
+
+  function nextVirtualTarget0359(front){
+    if(front.secureBudget<=0)return -1;
+    const id=front.virtualMinorId,L=loadLevel(MAX_GAME_LEVEL3233),base=front.lastSrc>=0?front.lastSrc:front.goal;
+    const opts=[];
+    for(let k=L.offsets[base];k<L.offsets[base+1];k++){
+      const n=L.edgeNbr[k];if(n>=0&&API.ownerIdAt(n)===id)opts.push(n);
+    }
+    return opts.length?opts[hash((campaignSeconds3230|0)^front.id^base)%opts.length]:-1;
+  }
+
+  const baseCreateFront0359=createFront3230;
+  createFront3230=function(target,poolOverride=null,kindOverride=null){
+    const id=API.ownerIdAt(target);
+    if(id>=0&&poolOverride===null)return createVirtualFront0359(target,id);
+    return baseCreateFront0359.apply(this,arguments);
+  };
+
+  const baseFrontTick0359=frontTick3230;
+  frontTick3230=function(front){
+    if(front?.virtualMinorId==null)return baseFrontTick0359.apply(this,arguments);
+    const id=front.virtualMinorId,st=states[id];
+    if(!st||(territoryCounts[id]||0)<=0){finishFront3230(front,'Nación derrotada',1);return}
+    if(front.pool<1){finishFront3230(front,'Frente agotado',0);return}
+    if(owner6[front.goal]===0){
+      const extra=front.advance>=60?nextVirtualTarget0359(front):-1;
+      if(extra<0){finishFront3230(front,'Objetivo conquistado',1);return}
+      front.target=extra;front.status='asegurando';
+      if(captureVirtualFrontCell0359(front,extra,front.lastSrc)){front.secureBudget--;front.secured++}
+      front.ticks++;return;
+    }
+    const path=findVirtualPath0359(front.goal,id);
+    if(!path||path.length<2){front.status='sin contacto';return}
+    front.route=path;front.target=path[1];front.lastSrc=path[0];front.status='combate';
+    captureVirtualFrontCell0359(front,front.target,front.lastSrc);front.ticks++;
+    if((front.ticks%3)===0){rebuildSnapshot(true);API.refreshRanking()}
+  };
+
   const baseOperation0359=operation3212;
   operation3212=function(target){
     const id=API.ownerIdAt(target);
-    if(id>=0)return captureMinorByPlayer(target,id);
+    if(id>=0)return createVirtualFront0359(target,id);
     return baseOperation0359.apply(this,arguments);
   };
 
@@ -598,6 +711,114 @@
       }
     }
     return out;
+  };
+
+  // --- Integración total con el controlador contextual ---
+  // owner6 conserva -1 para estas entidades por rendimiento, así que traducimos
+  // esa propiedad compacta al mismo contexto visible que cualquier otra nación.
+  const baseOwnerSummary0360=ownerSummary3244;
+  ownerSummary3244=function(cell){
+    const id=API.ownerIdAt(cell),e=id>=0?API.entityRef(id):null;
+    return e?e.name:baseOwnerSummary0360.apply(this,arguments);
+  };
+
+  const baseCellContext0360=cellContext3244;
+  cellContext3244=function(cell){
+    const id=API.ownerIdAt(cell);
+    if(id<0)return baseCellContext0360.apply(this,arguments);
+    const e=API.entityRef(id),st=states[id],base=baseCellContext0360(cell);
+    return {...base,
+      owner:vid(id),own:false,neutral:false,enemy:true,virtualMinorId:id,
+      capital:e?.seed===cell,
+      port:!!st?.portCells?.includes(cell),
+      city:st?.cityCells?.includes(cell)?1:0,
+      industry:st?.industryCells?.includes(cell)?1:0,
+      geo:geographicNameForCell3244(cell)
+    };
+  };
+
+  const baseContextHeader0360=contextHeader3244;
+  contextHeader3244=function(ctx){
+    if(ctx?.virtualMinorId==null)return baseContextHeader0360.apply(this,arguments);
+    const id=ctx.virtualMinorId,e=API.entityRef(id),st=states[id];
+    const bits=[
+      (REL_LABEL[st?.rel??0]||'NEUTRAL'),
+      (territoryCounts[id]||0).toLocaleString('es-ES')+' territorios',
+      ctx.geo,
+      terrainSummary3244(ctx.cell)
+    ];
+    if(e?.seed===ctx.cell)bits.unshift('★ capital');
+    else if(ctx.port)bits.unshift('⚓ puerto');
+    else if(ctx.city)bits.unshift('🏙 ciudad');
+    return {title:e?.name||ctx.geo,meta:bits.join(' · ')};
+  };
+
+  const baseContextActions0360=buildContextActions3244;
+  buildContextActions3244=function(ctx,submenu=null){
+    if(ctx?.virtualMinorId==null)return baseContextActions0360.apply(this,arguments);
+    const id=ctx.virtualMinorId,e=API.entityRef(id),a=[];
+    if(started3230&&playerCountry>=0)
+      a.push(action3244('attack','Atacar','⚔','Abrir frente contra '+(e?.name||'esta nación'),'warn3244'));
+    a.push(action3244('inspect','Inspeccionar','ⓘ','Información del territorio'));
+    a.push(action3244('diplomacy','Diplomacia','🤝','Relaciones con '+(e?.name||'esta nación'),'',true));
+    return a;
+  };
+
+  const baseOpenModal0360=openModal3244;
+  openModal3244=function(type,data){
+    if(data?.virtualMinorId==null)return baseOpenModal0360.apply(this,arguments);
+    const id=data.virtualMinorId,e=API.entityRef(id),st=states[id];
+    closeContextDialog3244();uiInteractionState3244.modal={type,data};
+    modal3244.classList.add('open3244');modal3244.setAttribute('aria-hidden','false');
+    modalActions3244.innerHTML='';
+    if(type==='inspect'){
+      modalTitle3244.textContent=e?.name||data.geo;
+      modalBody3244.innerHTML=
+        '<div class="stat3244"><b>Control:</b> '+(e?.name||'—')+'</div>'+
+        '<div class="stat3244"><b>Territorios:</b> '+(territoryCounts[id]||0).toLocaleString('es-ES')+'</div>'+
+        '<div class="stat3244"><b>Relación:</b> '+(REL_LABEL[st?.rel??0]||'NEUTRAL')+'</div>'+
+        '<div class="stat3244"><b>Región:</b> '+data.geo+'</div>'+
+        '<div class="stat3244"><b>Terreno:</b> '+terrainSummary3244(data.cell)+'</div>'+
+        '<div class="stat3244"><b>Infraestructura:</b> '+(data.city?'ciudad · ':'')+(data.industry?'industria · ':'')+(data.port?'puerto · ':'')+(data.fort?'defensa '+data.fort+'/3':'sin fortificación')+'</div>';
+      modalActions3244.innerHTML='<button data-modal-action="close">Cerrar</button>';
+      return;
+    }
+    if(type==='diplomacy'){
+      modalTitle3244.textContent='Diplomacia · '+(e?.name||'Nación');
+      modalBody3244.innerHTML=
+        '<div class="stat3244"><b>Estado actual:</b> '+(REL_LABEL[st?.rel??0]||'NEUTRAL')+'</div>'+
+        '<div class="stat3244"><b>Territorios:</b> '+(territoryCounts[id]||0).toLocaleString('es-ES')+'</div>';
+      modalActions3244.innerHTML=
+        '<button class="danger3244" data-modal-action="relation" data-value="-1">Guerra</button>'+
+        '<button data-modal-action="relation" data-value="0">Paz</button>'+
+        '<button data-modal-action="relation" data-value="1">Comercio</button>'+
+        '<button data-modal-action="relation" data-value="2">No agresión</button>'+
+        '<button class="good3244" data-modal-action="relation" data-value="3">Alianza</button>'+
+        '<button data-modal-action="close">Cerrar</button>';
+      return;
+    }
+    return baseOpenModal0360.apply(this,arguments);
+  };
+
+  const baseSetRelation0360=setRelation3220;
+  setRelation3220=function(country,val){
+    if(!isVirtual(country))return baseSetRelation0360.apply(this,arguments);
+    const id=mid(country),cur=relationWithPlayer(id);
+    const type=val===-1?'war':val===1?'trade':val===2?'nap':val===3?'alliance':cur===-1?'peace':'break';
+    return playerDiplomaticAction3300(country,type);
+  };
+
+  const baseHandleContext0360=handleContextAction3244;
+  handleContextAction3244=function(id){
+    const ctx=uiInteractionState3244.contextData;
+    if(ctx?.virtualMinorId!=null&&id==='attack'){
+      const cell=ctx.cell;
+      closeContextDialog3244();
+      selected={key:MAX_GAME_LEVEL3233,i:cell};
+      uiInteractionState3244.selectedCell=cell;
+      return operation3212(cell);
+    }
+    return baseHandleContext0360.apply(this,arguments);
   };
 
   // Portable/local persistence.
