@@ -1,16 +1,25 @@
-HEXATEGOS_0_35_3
+HEXATEGOS_0_35_4
 
 Base estable:
-- HEXATEGOS 0.35.2
-- Rama de recuperación: hexategos-stable-0.35.2
+- HEXATEGOS 0.35.3
+- Rama de recuperación: hexategos-stable-0.35.3
 
 Módulos nuevos:
-- js/movable-panels-0353.js
-- css/movable-panels-0353.css
+- js/real-cities-0354.js
+- css/real-cities-0354.css
+
+Atlas:
+- data/cities-0354/manifest.json
+- data/cities-0354/ATTRIBUTION.txt
+- data/cities-0354/band-00.json ... band-11.json
+- 140.607 localidades
+- índice por 12 franjas de longitud + teselas de 1 grado
 
 Integración:
-- js/geopolitical-map-0352.js re-registra su cabecera al refrescar.
-- Acerca de adopta el estándar de panel movible.
+- clasificación -> navegación a capital
+- construcción de ciudad -> propuestas reales dentro del hexágono
+- fallback honesto a localidades cercanas con distancia
+- selector integrado en modal movible
 
 Pruebas:
 - tests/smoke-0342.mjs
@@ -18,4 +27,5 @@ Pruebas:
 - tests/smoke-0351.mjs
 - tests/smoke-0352.mjs
 - tests/smoke-0353.mjs
+- tests/smoke-0354.mjs
 - .github/workflows/hexategos-smoke.yml
