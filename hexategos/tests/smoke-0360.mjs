@@ -26,6 +26,8 @@ assert.ok(ai.includes('aiNationalCampaignEval3280(f,false)'),'all scheduled nati
 assert.ok(ai.includes('aiNationTactical3280(f)'),'all scheduled nations must use the full tactical AI');
 assert.ok(ai.includes('botBuild3230(f)'),'all scheduled nations must use the same construction AI');
 assert.ok(ai.includes('schedulerBudget0360'),'staggered AI scheduler missing');
+assert.ok(ai.includes('diplomacyTick3300=function'),'scaled diplomacy scheduler missing');
+assert.ok(ai.includes('activeFactionCount3230>=450?7'),'500-nation diplomacy review budget missing');
 assert.ok(ai.includes('ensureSnapshot0360'),'shared snapshot throttle missing');
 assert.ok(ai.includes('ownedCounts3220=function'),'single-pass/shared territorial counts missing');
 assert.ok(ai.includes("format:'contact-sparse'"),'compact 500-nation diplomacy save missing');
