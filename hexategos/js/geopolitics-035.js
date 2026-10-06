@@ -195,6 +195,7 @@
   }
 
   function evaluateFaction035(f,force=false){
+    if(!started3230)return state[f]||null;
     const t0=performance.now();
     const snap=aiSnapshot3260||rebuildAISnapshot3260();
     if(!alive035(f,snap))return null;
