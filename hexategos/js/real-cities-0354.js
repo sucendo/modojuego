@@ -1,11 +1,11 @@
 'use strict';
 
-// HEXATEGOS 0.35.4 · navegación de clasificación + atlas de localidades reales.
+// HEXATEGOS 0.35.5 · clasificación enlazada + atlas sin barrios + nombres históricos.
 // Atlas: snapshot cities1000 basado en GeoNames, indexado por longitud y teselas de 1°.
 // La búsqueda exacta comprueba si la coordenada real cae dentro del polígono esférico
 // del hexágono/pentágono de la malla de juego.
 (() => {
-  const BUILD='0.35.4';
+  const BUILD='0.35.5';
   const DATA_ROOT='data/cities-0354/';
   const BAND_DEG=30;
   const BAND_COUNT=12;
@@ -266,7 +266,7 @@
       const result=await suggestForCell0354(cell);
       renderCityProposal0354(result);
     }catch(err){
-      console.warn('[HEXATEGOS 0.35.4] No se pudo consultar el atlas',err);
+      console.warn('[HEXATEGOS 0.35.5] No se pudo consultar el atlas',err);
       if(uiInteractionState3244.modal?.type==='real_city_0354'){
         modalTitle3244.textContent='Nombre de ciudad';
         modalBody3244.innerHTML='<div class="realCityIntro0354">El atlas no está disponible. Puedes construir la ciudad con el nombre automático y renombrarla después.</div>';
@@ -420,14 +420,14 @@
     cachedBands:()=>[...bandCache.keys()].sort((a,b)=>a-b),
     source:{
       name:'GeoNames cities1000',
-      records:140607,
+      sourceRecords:140607,
+      records:135179,
       excludedPPLX:5428,
-      usableRecords:135179,
-      historicalRecords:33,
+      historicalRecords:15,
       attribution:'GeoNames · CC BY 4.0'
     }
   };
 
   window.HEXATEGOS_VERSION=BUILD;
-  console.info('[HEXATEGOS] 0.35.4 navegación de capitales + atlas de localidades reales activo');
+  console.info('[HEXATEGOS] 0.35.5 clasificación enlazada + atlas sin barrios + nombres históricos activo');
 })();
