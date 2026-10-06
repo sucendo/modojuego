@@ -886,9 +886,10 @@ const FACTIONS3230=[
 {"name":"Maravia","color":"#4ca6c8","dark":"#2b687e","aggr":0.82,"role":"naval"},
 {"name":"Nambara","color":"#c17a5a","dark":"#7b4935","aggr":0.79,"role":"balanced"}
 ];
-const FACTION_CAPACITY3230=50;
-const FACTION_COUNT_OPTIONS3230=[16,25,35,50];
-let activeFactionCount3230=16;
+const FACTION_CAPACITY3230=500;
+const FACTION_COUNT_OPTIONS3230=[150,250,350,500];
+const LEGACY_FACTION_COUNT_OPTIONS3230=[16,25,35,50];
+let activeFactionCount3230=150;
 const EXTRA_FACTION_NAMES3230=[
  'Altavia','Bellaria','Cyrania','Dameria','Esteria','Faronia','Galvera','Helion',
  'Istrava','Jandor','Korvia','Lunara','Merovia','Novara','Ostara','Pavonia',
@@ -904,18 +905,32 @@ const EXTRA_FACTION_COLORS3230=[
  '#548fc4','#b96f77'
 ];
 const EXTRA_FACTION_ROLES3230=['balanced','growth','defense','naval','aggressive'];
+const GENERATED_FACTION_STARTS3230=['Al','Ar','Bel','Cal','Cor','Dar','El','Far','Gal','Hel','Is','Jan','Kor','Lor','Mar','Nor','Or','Pra','Quel','Rav','Sel','Tor','Ul','Var','Wes','Xan','Yor','Zel'];
+const GENERATED_FACTION_ENDS3230=['aria','avia','enia','oria','ara','eria','onia','essa','anda','ara','eria','una','ora','ira','elia','essa','avia','oria'];
+function generatedFactionName3230(i){
+ const j=Math.max(0,i-16),a=GENERATED_FACTION_STARTS3230[j%GENERATED_FACTION_STARTS3230.length];
+ const b=GENERATED_FACTION_ENDS3230[Math.floor(j/GENERATED_FACTION_STARTS3230.length)%GENERATED_FACTION_ENDS3230.length];
+ return a+b;
+}
+function generatedFactionColor3230(i){
+ const h=((i*137.508)%360+360)%360,s=.57,l=.55;
+ const a=s*Math.min(l,1-l),f=n=>{const k=(n+h/30)%12;return l-a*Math.max(-1,Math.min(k-3,9-k,1))};
+ const hex=x=>Math.round(255*x).toString(16).padStart(2,'0');
+ return '#'+hex(f(0))+hex(f(8))+hex(f(4));
+}
 for(let i=FACTIONS3230.length;i<FACTION_CAPACITY3230;i++){
- const j=i-16,color=EXTRA_FACTION_COLORS3230[j%EXTRA_FACTION_COLORS3230.length];
+ const j=i-16,color=EXTRA_FACTION_COLORS3230[j]||generatedFactionColor3230(i);
  FACTIONS3230.push({
-   name:EXTRA_FACTION_NAMES3230[j]||('Estado '+(i+1)),
+   name:EXTRA_FACTION_NAMES3230[j]||generatedFactionName3230(i),
    color,dark:color,
-   aggr:.76+((i*7)%17)/100,
+   aggr:.68+((i*7)%25)/100,
    role:EXTRA_FACTION_ROLES3230[j%EXTRA_FACTION_ROLES3230.length]
  });
 }
 function normalizeFactionCount3230(v){
  const n=Number(v);
- return FACTION_COUNT_OPTIONS3230.includes(n)?n:16;
+ if(FACTION_COUNT_OPTIONS3230.includes(n)||LEGACY_FACTION_COUNT_OPTIONS3230.includes(n))return n;
+ return 150;
 }
 function fitFactionList3230(src,fill=-1){
  const out=Array(FACTION_CAPACITY3230).fill(fill);
@@ -1034,7 +1049,7 @@ function loadGame3212(){
  try{
   const raw=localStorage.getItem(SAVE_KEY3230);if(!raw){resetGame3230(false);introHadSave3230=false;return false}
   const s=JSON.parse(raw),L=loadLevel(MAX_GAME_LEVEL3233);if(!s||!Array.isArray(s.owner)||s.owner.length!==L.n){resetGame3230(false);return false}
-  activeFactionCount3230=normalizeFactionCount3230(s.factionCount??16);
+  activeFactionCount3230=normalizeFactionCount3230(s.factionCount??150);
   owner6.set(s.owner);gold3212=Number(s.gold)||260;
   troops3230.set((s.troops||[]).slice(0,FACTIONS3230.length));for(let f=0;f<activeFactionCount3230;f++)if(!troops3230[f])troops3230[f]=f?225:280;
   botGold3230.set((s.botGold||[]).slice(0,FACTIONS3230.length));forts3212.set((s.forts||[]).slice(0,L.n));
@@ -9062,7 +9077,7 @@ exportGameFile3273=async function(){
 
 function applyMainState3275(s){
  const L=loadLevel(MAX_GAME_LEVEL3233);
- activeFactionCount3230=normalizeFactionCount3230(s?.factionCount??16);
+ activeFactionCount3230=normalizeFactionCount3230(s?.factionCount??150);
  owner6.set(s.owner);
  gold3212=Number(s.gold)||0;
 
@@ -15160,7 +15175,7 @@ resetGame3230=function(clearSave=true){
 const _buildPortableFactionExpansion3301=buildPortableFile3276;
 buildPortableFile3276=function(){
  const file=_buildPortableFactionExpansion3301();
- file.gameVersion='3.30.1';
+ file.gameVersion='3.30.16-500';
  file.payload.factionCount=activeFactionCount3230;
  file.payload.factionNames=FACTIONS3230.slice(0,activeFactionCount3230).map(x=>x.name);
  file.checksum=fnv1a3273(JSON.stringify(file.payload));
@@ -15241,14 +15256,33 @@ function regionKey3302(cell){
 }
 function logicalNationName3302(cell,used){
  const key=regionKey3302(cell),pool=REGION_NAMES3302[key]||REGION_NAMES3302.europe;
- const start=Math.floor(Math.random()*pool.length);
+ const start=((cell*2654435761)>>>0)%pool.length;
  for(let i=0;i<pool.length;i++){
    const n=pool[(start+i)%pool.length];
    if(!used.has(n)){used.add(n);return n}
  }
- const {lon,lat}=cellLonLat3302(cell);
- const base=`${pool[0]} ${Math.abs(Math.round(lat))}${lon>=0?'E':'O'}`;
- let n=base,k=2;while(used.has(n))n=`${base} ${k++}`;
+ const roots={
+   europe:['Alv','Bren','Car','Dan','Eld','Fjor','Gal','Hel','Istr','Lor','Nor','Val'],
+   northamerica:['Arv','Bor','Cal','Cor','Mon','Nor','Red','Sol','Tal','West','Yuk','Ver'],
+   southamerica:['And','Aur','Bra','Cor','Lum','Mer','Pla','Sel','Sol','Ver','Ama','Pat'],
+   africa:['Aza','Dam','Kam','Kor','Lum','Nam','Sav','Zaf','Nub','Kas','Mal','Sen'],
+   westasia:['Azr','Khor','Mer','Ori','Qad','Sar','Tal','Var','Ara','Mes','Tur','Zag'],
+   southasia:['Ard','Ind','Kes','Mal','Sin','Sur','Tam','Vey','Gan','Dek','Ben','Kas'],
+   eastasia:['Aok','Han','Kai','Kor','Miz','Shin','Tai','Yun','Jin','Lin','Wei','Zen'],
+   maritime:['Kor','Mar','Mel','Nus','Pel','Ser','Tav','Mal','Sul','Tim','Bor','Flo'],
+   pacific:['Aur','Cor','Mir','Oce','Pel','Sor','Tas','Van','Moa','Rai','Koa','Aro'],
+   arctic:['Aur','Bor','Fro','Isk','Niv','Nor','Ska','Vin','Kar','Tund','Sve','Pol']
+ };
+ const suffix=['aria','avia','enia','oria','ara','eria','onia','essa','anda','una','ora','ira'];
+ const rr=roots[key]||roots.europe;
+ const h=((cell*1103515245+12345)>>>0);
+ for(let ntry=0;ntry<rr.length*suffix.length;ntry++){
+   const r=rr[(h+ntry)%rr.length],s=suffix[(Math.floor(h/rr.length)+ntry*5)%suffix.length];
+   const n=r+s;
+   if(!used.has(n)){used.add(n);return n}
+ }
+ const base=(pool[0]||'Estado')+' '+(used.size+1);
+ let n=base,k=2;while(used.has(n))n=base+' '+k++;
  used.add(n);return n;
 }
 
@@ -15292,25 +15326,40 @@ function randomLandCell3302(){
  return -1;
 }
 function chooseAICapitals3302(playerCell,count){
- const pool=shuffled3302(capitalCandidates3302()),chosen=[playerCell],result=[];
+ const pool=shuffled3302(capitalCandidates3302()),chosen=[playerCell],used=new Set([playerCell]),result=[];
  const tryThreshold=(minDist)=>{
-   for(const c of pool){
+   for(const item of pool){
      if(result.length>=count)break;
-     if(result.some(x=>x.cell===c.cell))continue;
+     if(used.has(item.cell))continue;
      let ok=true;
-     for(const x of chosen)if(angularHeuristic3254(x,c.cell)<minDist){ok=false;break}
-     if(ok){result.push(c);chosen.push(c.cell)}
+     for(const x of chosen)if(angularHeuristic3254(x,item.cell)<minDist){ok=false;break}
+     if(ok){result.push(item);chosen.push(item.cell);used.add(item.cell)}
    }
  };
- for(const d of [18,14,11,8,5]){if(result.length<count)tryThreshold(d)}
- let guard=0;
- while(result.length<count&&guard++<20000){
-   const cell=randomLandCell3302();if(cell<0)break;
-   let ok=true;for(const x of chosen)if(angularHeuristic3254(x,cell)<4.5){ok=false;break}
+ const thresholds=count>=450?[8,5,3.2,2.2,1.45]:count>=300?[10,7,4.5,3,1.8]:count>=200?[12,8,5,3.5,2.2]:[16,11,7,4.5,3];
+ for(const d of thresholds){if(result.length<count)tryThreshold(d)}
+ const randomMin=count>=450?1.25:count>=300?1.55:count>=200?1.9:2.4;
+ let guard=0,maxGuard=Math.max(24000,count*180);
+ while(result.length<count&&guard++<maxGuard){
+   const cell=randomLandCell3302();if(cell<0||used.has(cell))continue;
+   let ok=true;
+   for(const x of chosen)if(angularHeuristic3254(x,cell)<randomMin){ok=false;break}
    if(!ok)continue;
    const near=nearestCapitalCandidate3302(cell);
    result.push({cell,city:(near&&near.distance<8)?near.city:'Capital regional',geo:landName3230(cell)});
-   chosen.push(cell);
+   chosen.push(cell);used.add(cell);
+ }
+ // Última red de seguridad: ninguna opción 150/250/350/500 puede quedarse
+ // sin una nación por falta de separación estética entre capitales.
+ if(result.length<count){
+   const L=loadLevel(MAX_GAME_LEVEL3233),start=((playerCell+1)*2654435761>>>0)%L.n,stride=7919;
+   for(let step=0;step<L.n&&result.length<count;step++){
+     const cell=(start+step*stride)%L.n;
+     if(used.has(cell)||L.land[cell]<0)continue;
+     const near=nearestCapitalCandidate3302(cell);
+     result.push({cell,city:(near&&near.distance<8)?near.city:'Capital regional',geo:landName3230(cell)});
+     chosen.push(cell);used.add(cell);
+   }
  }
  return result.slice(0,count);
 }
