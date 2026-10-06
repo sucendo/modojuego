@@ -52,7 +52,7 @@
     ensureNationScaleUI0341();
     const value=document.getElementById('nationScaleValue0341');
     const hint=document.getElementById('nationScaleHint0341');
-    if(value)value.textContent=(pendingCount-1)+' NPC + tú';
+    if(value)value.textContent=pendingCount+' naciones';
     document.querySelectorAll('[data-nations0341]').forEach(b=>{
       const active=Number(b.dataset.nations0341)===pendingCount;
       b.classList.toggle('active0341',active);
@@ -65,7 +65,7 @@
       hint.textContent=pendingCount+' naciones · '+mode+'. Cada estado comienza con su capital y el primer anillo terrestre.';
     }
     const meta=document.querySelector('#newGameSetup3302 .newGameSetupMeta3302');
-    if(meta)meta.textContent='Las otras '+(pendingCount-1)+' naciones aparecerán separadas por el mundo y recibirán un nombre ficticio coherente con su región.';
+    if(meta)meta.textContent='Las otras '+(pendingCount-1)+' naciones aparecerán separadas por el mundo. Todas usan las mismas reglas, sistemas y capacidades.';
   }
 
   const baseBeginNewGame0341=beginNewGameSetup3302;
