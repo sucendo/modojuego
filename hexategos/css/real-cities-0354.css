@@ -1,0 +1,104 @@
+/* HEXATEGOS 0.35.4 · clasificación navegable + nombres reales de ciudades */
+
+#rankRows3213 .rankRow3213[data-faction]{
+  cursor:pointer;
+  transition:background-color .14s ease,border-color .14s ease,transform .14s ease;
+}
+#rankRows3213 .rankRow3213[data-faction]:hover,
+#rankRows3213 .rankRow3213[data-faction]:focus-visible{
+  background:rgba(111,174,211,.09);
+  outline:none;
+  transform:translateX(2px);
+}
+#rankRows3213 .rankRow3213[data-faction]::after{
+  content:'⌖';
+  margin-left:5px;
+  color:#607e91;
+  font-size:8px;
+  opacity:.72;
+}
+#rankRows3213 .rankRow3213[data-faction]:hover::after,
+#rankRows3213 .rankRow3213[data-faction]:focus-visible::after{
+  color:#9fd7f3;
+  opacity:1;
+}
+
+.realCityLoading0354,
+.realCityIntro0354{
+  padding:10px 11px;
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:10px;
+  background:rgba(255,255,255,.025);
+  color:#b9c8d2;
+  font-size:11px;
+  line-height:1.5;
+}
+.realCityList0354{
+  display:grid;
+  gap:7px;
+  margin-top:10px;
+}
+.realCityChoice0354{
+  width:100%;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  grid-template-areas:
+    "name pop"
+    "meta pop";
+  gap:2px 10px;
+  padding:9px 10px;
+  text-align:left;
+  border:1px solid rgba(126,172,200,.13);
+  border-radius:10px;
+  background:rgba(11,28,41,.72);
+  color:#e9f0f4;
+  cursor:pointer;
+}
+.realCityChoice0354:hover,
+.realCityChoice0354:focus-visible{
+  border-color:rgba(218,174,84,.42);
+  background:rgba(42,43,31,.72);
+  outline:none;
+}
+.realCityChoice0354 b{
+  grid-area:name;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:#f0f4f7;
+  font-size:11px;
+}
+.realCityChoice0354 span{
+  grid-area:meta;
+  color:#819aab;
+  font-size:8px;
+}
+.realCityChoice0354 small{
+  grid-area:pop;
+  align-self:center;
+  color:#d7b766;
+  font-size:8px;
+  white-space:nowrap;
+}
+.realCitySource0354{
+  margin-top:9px;
+  color:#5d7587;
+  font-size:7px;
+  line-height:1.4;
+}
+#modalCard3244[data-hex-movable-0353="generic-modal"] .modalHead3244{
+  cursor:grab;
+}
+#modalCard3244.hexDragging0353 .modalHead3244{
+  cursor:grabbing;
+}
+
+@media(max-width:700px){
+  .realCityChoice0354{
+    grid-template-columns:1fr;
+    grid-template-areas:"name" "meta" "pop";
+  }
+  .realCityChoice0354 small{
+    margin-top:3px;
+  }
+}
