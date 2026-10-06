@@ -4,8 +4,10 @@ import assert from 'node:assert/strict';
 const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
 const js=read('js/minor-polities-0357.js');
 const index=read('index.html');
+const about=read('js/about-0351.js');
 
 assert.doesNotThrow(()=>new Function(js),'political entities module must parse');
+assert.doesNotThrow(()=>new Function(about),'About module must parse');
 assert.ok(js.includes("const BUILD='0.35.8'"),'0.35.8 build marker missing');
 assert.ok(js.includes('unifiedRanking0358'),'unified ranking missing');
 assert.ok(js.includes('data-minor0358'),'minor entities must appear in the same ranking');
