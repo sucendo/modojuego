@@ -1,3 +1,24 @@
+HEXATEGOS_0_36_2
+
+Modelo político:
+- ~460–540 naciones totales por partida
+- mismas capacidades visibles para todas
+- perfiles IA intercambiables sobre todo al inicio
+- diplomacia dispersa nación↔nación
+- conflictos dinámicas↔principales
+- ranking unificado optimizado por snapshots
+
+Rendimiento:
+- sin matriz diplomática global 500×500
+- relaciones solo por contacto
+- ownership compacto Int16
+- snapshots periódicos
+- scheduler escalonado
+
+Pruebas:
+- tests/smoke-0362.mjs
+
+--- MANIFEST ANTERIOR ---
 HEXATEGOS_0_36_0
 
 Cambios:
