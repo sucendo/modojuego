@@ -4,10 +4,25 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.36.2',
+      date:'Octubre 2026',
+      title:'Mundo de unas 500 naciones',
+      current:true,
+      summary:'El modelo político se unifica alrededor de unas 500 naciones rivales: todas comparten capacidades y solo cambia la forma y frecuencia con la que piensa su IA.',
+      changes:[
+        'El mundo apunta a unas 460–540 naciones totales según la semilla y la escala inicial.',
+        'Las 16/25/35/50 elegidas conservan el planificador estratégico de alta frecuencia; el resto usa un scheduler ligero, pero tiene las mismas capacidades visibles.',
+        'Las antiguas categorías internas dejan de determinar crecimiento o posibilidades de juego.',
+        'Las IA pueden cambiar de perfil especialmente durante los primeros cinco minutos y todavía de forma moderada hasta alrededor de diez minutos.',
+        'Se añade diplomacia dispersa entre naciones dinámicas y entre estas y las IA principales, evitando una matriz global de 500×500.',
+        'Las naciones dinámicas pueden combatir también contra las IA principales y estas pueden abrir campañas contra ellas.',
+        'La clasificación se construye desde snapshots compartidos para evitar escanear todo el planeta cada segundo.'
+      ]
+    },
+    {
       version:'0.36.1',
       date:'Octubre 2026',
       title:'Integración política contextual',
-      current:true,
       summary:'Las naciones dinámicas dejan de aparecer como terreno neutral al pulsarlas: muestran propietario, extensión, diplomacia y ataque igual que el resto.',
       changes:[
         'Pulsar cualquier territorio de una nación dinámica muestra claramente qué nación lo controla.',
@@ -258,7 +273,7 @@
         '<header class="aboutHead0351">'+
           '<div class="aboutHeadText0351">'+
             '<h2 id="aboutTitle0351">ACERCA DE HEXATEGOS</h2>'+
-            '<p>Global Geopolitical Strategy · versión 0.36.1</p>'+
+            '<p>Global Geopolitical Strategy · versión 0.36.2</p>'+
           '</div>'+
           '<button id="aboutClose0351" class="aboutClose0351" type="button" aria-label="Cerrar">×</button>'+
         '</header>'+
@@ -316,5 +331,5 @@
     history:HISTORY.map(v=>({...v,changes:v.changes.slice()}))
   };
 
-  console.info('[HEXATEGOS] historial actualizado para 0.36.1');
+  console.info('[HEXATEGOS] historial actualizado para 0.36.2');
 })();
