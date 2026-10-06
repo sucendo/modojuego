@@ -1,20 +1,23 @@
-HEXATEGOS_0_35_0
+HEXATEGOS_0_35_1
 
 Base estable:
-- HEXATEGOS 0.34.2
-- Rama de recuperación: hexategos-stable-0.34.2
+- HEXATEGOS 0.35.0
+- Rama de recuperación anterior: hexategos-stable-0.34.2
 
-Módulos de escala/IA:
+Módulos principales:
 - js/game.js
 - js/diplomatic-network-034.js
 - js/nation-scale-0341.js
 - js/stability-0342.js
 - js/geopolitics-035.js
+- js/about-0351.js
+- css/about-0351.css
 
 Pruebas:
 - tests/smoke-0342.mjs
 - tests/smoke-035.mjs
+- tests/smoke-0351.mjs
 - .github/workflows/hexategos-smoke.yml
 
 Objetivo:
-Dar a cada NPC una estrategia geopolítica persistente y comprensible sin romper la arquitectura estable, la escalabilidad a 50 naciones ni la compatibilidad de guardados.
+Añadir una sección Acerca de accesible desde la portada con el historial de versiones y sus mejoras, sin alterar la carga ligera del menú ni la simulación.
