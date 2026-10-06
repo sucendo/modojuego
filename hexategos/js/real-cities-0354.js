@@ -250,7 +250,7 @@
   // The contextual handler may have been wrapped by city rename and other layers,
   // so let it reach build3212; the wrapper above is the single interception point.
 
-  modalActions3244.addEventListener('click',e=>{
+  modal3244.addEventListener('click',e=>{
     const b=e.target.closest('[data-modal-action="real_city_build"]');
     if(!b)return;
     const m=uiInteractionState3244.modal;
