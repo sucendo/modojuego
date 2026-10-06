@@ -32,7 +32,8 @@ assert.ok(js.includes("modal3244.addEventListener('click'"),
 assert.ok(!js.includes('setInterval('),'0.35.4 must not add periodic timers');
 assert.ok(!js.includes('new MutationObserver('),'0.35.4 must not add MutationObserver');
 
-assert.equal(manifest.records,140607,'atlas manifest record count changed');
+assert.equal(manifest.sourceRecords,140607,'source atlas record count changed');
+assert.equal(manifest.records,135179,'filtered atlas record count changed');
 assert.equal(manifest.excludedPPLX,5428,'PPLX exclusion count changed');
 assert.equal(manifest.usableRecords,135179,'usable atlas count changed');
 assert.equal(exclusions.records,5428,'PPLX exclusion file count changed');
