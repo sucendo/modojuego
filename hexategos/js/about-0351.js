@@ -4,10 +4,25 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.35.4',
+      date:'Octubre 2026',
+      title:'Capitales navegables y ciudades reales',
+      current:true,
+      summary:'La clasificación se convierte en una herramienta de navegación y la construcción de ciudades empieza a usar topónimos reales según la geografía del hexágono.',
+      changes:[
+        'Pulsar una nación en la clasificación centra el globo en su capital actual.',
+        'Las filas de clasificación son accesibles también con teclado.',
+        'Atlas offline de 140.607 localidades reales basado en GeoNames cities1000.',
+        'Al construir una ciudad se proponen localidades que caen realmente dentro del hexágono.',
+        'Si el hexágono no contiene una localidad registrada, se muestran localidades reales cercanas con su distancia.',
+        'El atlas se carga por franjas geográficas y queda en caché para no penalizar el arranque.',
+        'El selector de nombre usa el diálogo común movible.'
+      ]
+    },
+    {
       version:'0.35.3',
       date:'Octubre 2026',
       title:'Paneles movibles',
-      current:true,
       summary:'Se establece como norma de interfaz que los diálogos y paneles flotantes nuevos puedan reposicionarse sin perderse fuera de la pantalla.',
       changes:[
         'El panel del mapa geopolítico ahora se puede arrastrar.',
@@ -168,7 +183,7 @@
         '<header class="aboutHead0351">'+
           '<div class="aboutHeadText0351">'+
             '<h2 id="aboutTitle0351">ACERCA DE HEXATEGOS</h2>'+
-            '<p>Global Geopolitical Strategy · versión 0.35.3</p>'+
+            '<p>Global Geopolitical Strategy · versión 0.35.4</p>'+
           '</div>'+
           '<button id="aboutClose0351" class="aboutClose0351" type="button" aria-label="Cerrar">×</button>'+
         '</header>'+

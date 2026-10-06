@@ -28,3 +28,5 @@ jobs:
         run: node hexategos/tests/smoke-0352.mjs
       - name: Run Hexategos 0.35.3 movable panels smoke
         run: node hexategos/tests/smoke-0353.mjs
+      - name: Run Hexategos 0.35.4 real cities smoke
+        run: node hexategos/tests/smoke-0354.mjs
