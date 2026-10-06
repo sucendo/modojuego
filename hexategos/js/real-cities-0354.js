@@ -264,7 +264,17 @@
     closeModal3244();
 
     selected={key:MAX_GAME_LEVEL3233,i:cell};
+    if(typeof uiInteractionState3244!=='undefined')uiInteractionState3244.selectedCell=cell;
     const before=cities3212.has(cell);
+
+    // v3.28.2 protects construction with a short-lived permit issued by an
+    // explicit context action. Opening the city-name modal consumes the first
+    // permit, so confirming the chosen name must issue a fresh permit for the
+    // same cell before calling the protected builder.
+    if(typeof contextBuildPermit3282!=='undefined'){
+      contextBuildPermit3282={type:'city',cell,until:performance.now()+900};
+    }
+
     cityBuildBypass0354=true;
     try{baseBuild0354('city')}finally{cityBuildBypass0354=false}
     const built=!before&&cities3212.has(cell);
