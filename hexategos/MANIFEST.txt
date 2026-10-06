@@ -1,8 +1,8 @@
-HEXATEGOS_0_35_1
+HEXATEGOS_0_35_2
 
 Base estable:
-- HEXATEGOS 0.35.0
-- Rama de recuperación anterior: hexategos-stable-0.34.2
+- HEXATEGOS 0.35.1
+- Rama de recuperación: hexategos-stable-0.35.1
 
 Módulos principales:
 - js/game.js
@@ -11,13 +11,16 @@ Módulos principales:
 - js/stability-0342.js
 - js/geopolitics-035.js
 - js/about-0351.js
+- js/geopolitical-map-0352.js
 - css/about-0351.css
+- css/geopolitical-map-0352.css
 
 Pruebas:
 - tests/smoke-0342.mjs
 - tests/smoke-035.mjs
 - tests/smoke-0351.mjs
+- tests/smoke-0352.mjs
 - .github/workflows/hexategos-smoke.yml
 
 Objetivo:
-Añadir una sección Acerca de accesible desde la portada con el historial de versiones y sus mejoras, sin alterar la carga ligera del menú ni la simulación.
+Hacer visible y comprensible la IA geopolítica para el jugador mediante un modo de mapa específico, manteniendo un diagnóstico técnico oculto para desarrollo.
