@@ -73,6 +73,6 @@ for(let i=0;i<12;i++){
     }
   }
 }
-assert.equal(matchedExcluded,exclusions.records,'every PPLX exclusion must match the atlas exactly');
+assert.equal(matchedExcluded,0,'filtered atlas must not retain any PPLX exclusion');
 
 console.log('HEXATEGOS 0.35.4 real cities smoke: OK · '+records+' raw · '+(records-matchedExcluded)+' usable localities');
