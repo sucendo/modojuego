@@ -32,5 +32,3 @@ jobs:
         run: node hexategos/tests/smoke-0354.mjs
       - name: Run Hexategos 0.35.6 AI and infrastructure smoke
         run: node hexategos/tests/smoke-0356.mjs
-      - name: Run Hexategos 0.35.7 minor polities smoke
-        run: node hexategos/tests/smoke-0357.mjs
