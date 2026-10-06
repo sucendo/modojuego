@@ -2,25 +2,10 @@
 
 #rankRows3213 .rankRow3213[data-faction]{
   cursor:pointer;
-  transition:background-color .14s ease,border-color .14s ease,transform .14s ease;
 }
-#rankRows3213 .rankRow3213[data-faction]:hover,
 #rankRows3213 .rankRow3213[data-faction]:focus-visible{
-  background:rgba(111,174,211,.09);
-  outline:none;
-  transform:translateX(2px);
-}
-#rankRows3213 .rankRow3213[data-faction]::after{
-  content:'⌖';
-  margin-left:5px;
-  color:#607e91;
-  font-size:8px;
-  opacity:.72;
-}
-#rankRows3213 .rankRow3213[data-faction]:hover::after,
-#rankRows3213 .rankRow3213[data-faction]:focus-visible::after{
-  color:#9fd7f3;
-  opacity:1;
+  outline:1px solid rgba(159,215,243,.45);
+  outline-offset:-1px;
 }
 
 .realCityLoading0354,
