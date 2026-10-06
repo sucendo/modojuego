@@ -1,3 +1,25 @@
+HEXATEGOS 0.35.9 · ENTIDADES POLÍTICAS UNIVERSALES
+
+Objetivo:
+- El jugador no distingue categorías técnicas de nación.
+- Todas las entidades visibles pueden relacionarse, guerrear, comerciar, pactar y desarrollar economía e infraestructura.
+- La diferencia entre unas y otras reside únicamente en la estrategia y frecuencia de decisión de su IA.
+
+Integración:
+- Diplomacia completa del jugador con entidades dinámicas.
+- Economía, tropas, ciudades, industria, puertos y fortificaciones propias.
+- Conquista bidireccional jugador ↔ entidades dinámicas.
+- Comercio integrado en los ingresos del jugador.
+- Infraestructura dibujada con la misma familia visual del juego.
+- Persistencia local y en archivos .hexategos.
+
+Rendimiento:
+- Snapshot territorial compartido cada 10 s de campaña.
+- Muestras limitadas a 24 celdas por entidad para desarrollo y decisiones.
+- IA escalonada: solo 1/4 de las entidades revisa decisiones en cada pasada.
+- Sin una matriz diplomática global adicional de cientos × cientos.
+- La capa territorial compacta de 0.35.8 se conserva como almacenamiento eficiente, pero deja de limitar las capacidades visibles.
+
 HEXATEGOS 0.35.8 · ENTIDADES POLÍTICAS UNIFICADAS
 
 Cambios sobre 0.35.7:
