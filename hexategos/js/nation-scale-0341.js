@@ -1,7 +1,7 @@
 'use strict';
 
 // HEXATEGOS 0.34.1 · selector de escala política.
-// El motor mantiene 50 slots permanentes; cada partida decide cuántos activa.
+// El motor mantiene 500 slots permanentes; cada partida decide cuántos activa.
 (() => {
   const PREF_KEY='hexategos-newgame-faction-count-0341';
   let pendingCount=activeFactionCount3230;
@@ -59,9 +59,9 @@
       b.setAttribute('aria-pressed',active?'true':'false');
     });
     if(hint){
-      const mode=pendingCount===16?'escala clásica y más ligera':
-                 pendingCount===25?'escala intermedia para probar rendimiento':
-                 pendingCount===35?'escala grande':'escala mundial máxima';
+      const mode=pendingCount===150?'escala amplia y más ligera':
+                 pendingCount===250?'escala continental densa':
+                 pendingCount===350?'escala mundial grande':'escala mundial máxima';
       hint.textContent=pendingCount+' naciones · '+mode+'. Cada estado comienza con su capital y el primer anillo terrestre.';
     }
     const meta=document.querySelector('#newGameSetup3302 .newGameSetupMeta3302');
@@ -71,7 +71,7 @@
   const baseBeginNewGame0341=beginNewGameSetup3302;
   beginNewGameSetup3302=function(origin='intro'){
     // Never alter the active campaign merely by opening the setup.
-    pendingCount=activeFactionCount3230;
+    pendingCount=FACTION_COUNT_OPTIONS3230.includes(activeFactionCount3230)?activeFactionCount3230:150;
     const r=baseBeginNewGame0341.apply(this,arguments);
     renderNationScale0341();
     return r;
@@ -104,7 +104,7 @@
     let storedCount=null,storedDipMatrix=null;
     try{
       const raw=localStorage.getItem(SAVE_KEY3230);
-      if(raw)storedCount=normalizeFactionCount3230(JSON.parse(raw)?.factionCount??16);
+      if(raw)storedCount=normalizeFactionCount3230(JSON.parse(raw)?.factionCount??150);
       const dr=localStorage.getItem(DIP_SAVE_KEY3300);
       if(dr){
         const d=JSON.parse(dr),len=Array.isArray(d?.relations)?d.relations.length:0;
@@ -125,16 +125,17 @@
 
   function validateNationScale0341(){
     const errors=[],st=nationScaleStats0341();
-    if(!FACTION_COUNT_OPTIONS3230.includes(activeFactionCount3230))
+    if(!FACTION_COUNT_OPTIONS3230.includes(activeFactionCount3230)&&
+       !(typeof LEGACY_FACTION_COUNT_OPTIONS3230!=='undefined'&&LEGACY_FACTION_COUNT_OPTIONS3230.includes(activeFactionCount3230)))
       errors.push('activeFactionCount no permitido');
     if(FACTIONS3230.length!==FACTION_CAPACITY3230)
       errors.push('capacidad de FACTIONS inconsistente');
     if(troops3230.length!==FACTION_CAPACITY3230||botGold3230.length!==FACTION_CAPACITY3230)
-      errors.push('arrays militares no tienen capacidad 50');
+      errors.push('arrays militares no tienen capacidad 500');
     if(relations3220.length!==FACTION_CAPACITY3230)
-      errors.push('vector de relaciones jugador no tiene capacidad 50');
+      errors.push('vector de relaciones jugador no tiene capacidad 500');
     if(DIP_F3300!==FACTION_CAPACITY3230)
-      errors.push('matriz diplomática no tiene capacidad 50');
+      errors.push('matriz diplomática no tiene capacidad 500');
     if(st.maxOwner>=activeFactionCount3230)
       errors.push('hay territorios asignados a una nación inactiva');
     return {ok:errors.length===0,errors,stats:st};
