@@ -1,3 +1,25 @@
+HEXATEGOS_0_35_6
+
+Base estable:
+- HEXATEGOS 0.35.5
+- Compatibilidad directa con partidas 0.35.x
+
+Módulos nuevos:
+- js/ai-infra-0356.js
+
+Integración 0.35.6:
+- capital histórica -> lógica conservada, marcador secundario oculto
+- ciudad + industria + puerto -> composición visual por LOD
+- zoom pequeño -> prioridad visual de ciudad
+- IA -> objetivos de desarrollo escalables por territorio
+- fortificaciones IA -> límite estratégico y prioridad al desarrollo cuando existe déficit
+- partidas existentes -> invalidación de planes y recálculo inmediato
+
+Pruebas nuevas:
+- tests/smoke-0356.mjs
+- .github/workflows/hexategos-smoke.yml
+
+--- MANIFEST ANTERIOR ---
 HEXATEGOS_0_35_4
 
 Base estable:
