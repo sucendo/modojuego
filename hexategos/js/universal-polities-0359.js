@@ -4,7 +4,7 @@
 // Todas las entidades se presentan y se juegan como naciones normales.
 // La diferencia interna es únicamente el coste/frecuencia de decisión de su IA.
 (() => {
-  const BUILD='0.36.0';
+  const BUILD='0.36.1';
   const API=window.HexategosMinorPolities0357;
   if(!API){console.warn('[HEXATEGOS 0.35.9] capa política base no disponible');return}
 
@@ -826,7 +826,7 @@
     const baseBuild0359=buildPortableFile3276;
     buildPortableFile3276=function(){
       const file=baseBuild0359.apply(this,arguments);
-      file.gameVersion='0.36.0';file.payload.universalPolities0359=serialize();
+      file.gameVersion='0.36.1';file.payload.universalPolities0359=serialize();
       if(typeof fnv1a3273==='function')file.checksum=fnv1a3273(JSON.stringify(file.payload));
       return file;
     };
@@ -880,5 +880,5 @@
     API.refreshRanking();
   },0);
 
-  console.info('[HEXATEGOS] 0.36.0 evolución política + IA adaptativa activa');
+  console.info('[HEXATEGOS] 0.36.1 integración política contextual activa');
 })();
