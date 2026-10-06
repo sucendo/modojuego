@@ -127,9 +127,6 @@
       const c=e.seed;
       if(c>=0&&API.ownerIdAt(c)===s.id){
         if(!s.cityCells.length)s.cityCells=[c];
-        cities3212.add(c);
-        if(s.industryCells.includes(c))industries3212.add(c);
-        if(s.portCells.includes(c))ports3212.add(c);
       }
     }
   }
@@ -280,13 +277,13 @@
     st.cityCells=cities;st.industryCells=inds;st.portCells=ports;
 
     if(st.gold>=80&&cities.length<Math.max(1,Math.ceil(Math.sqrt(Math.max(1,territoryCounts[id]))*.42))){
-      st.gold-=80;if(!cities3212.has(pick)){cities3212.add(pick);st.cityCells.push(pick)};return;
+      st.gold-=80;if(!st.cityCells.includes(pick))st.cityCells.push(pick);return;
     }
     if(st.gold>=110&&inds.length<Math.max(1,Math.ceil(cities.length*.65))){
-      st.gold-=110;if(!industries3212.has(pick)){industries3212.add(pick);st.industryCells.push(pick)};return;
+      st.gold-=110;if(!st.industryCells.includes(pick))st.industryCells.push(pick);return;
     }
     if(st.gold>=70&&isCoastal3212(pick)&&ports.length<Math.max(1,Math.ceil(cities.length*.22))){
-      st.gold-=70;if(!ports3212.has(pick)){ports3212.add(pick);st.portCells.push(pick)};return;
+      st.gold-=70;if(!st.portCells.includes(pick))st.portCells.push(pick);return;
     }
     if(st.gold>=50&&forts3212[pick]<2){
       st.gold-=50;forts3212[pick]++;
