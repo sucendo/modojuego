@@ -60,6 +60,10 @@
     return String(row?.[0]??'')+'\u0001'+Number(row?.[1])+'\u0001'+Number(row?.[2])+'\u0001'+String(row?.[4]??'');
   }
 
+  function exclusionKey0355(row){
+    return String(row?.[0]??'')+'\u0001'+Number(row?.[1])+'\u0001'+Number(row?.[2])+'\u0001'+String(row?.[3]??'');
+  }
+
   async function loadCityMeta0355(){
     if(cityMetaPromise0355)return cityMetaPromise0355;
     cityMetaPromise0355=Promise.all([
@@ -67,7 +71,7 @@
       fetch(DATA_ROOT+'historical-names.json',{cache:'force-cache'}).then(r=>r.ok?r.json():null).catch(()=>null)
     ]).then(([excluded,history])=>{
       const rows=excluded?.rows||[];
-      pplxExclusions0355=new Set(rows.map(rowKey0355));
+      pplxExclusions0355=new Set(rows.map(exclusionKey0355));
       historicalNames0355=history?.records||Object.create(null);
       return {
         excluded:pplxExclusions0355.size,
