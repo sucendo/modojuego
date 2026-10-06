@@ -343,7 +343,8 @@
       const ab=dipIdx3300(a,b),ba=dipIdx3300(b,a),rel=Number(p[2])||0;
       dipRelations3300[ab]=rel;dipRelations3300[ba]=rel;
       dipOpinion3300[ab]=Number(p[3])||0;dipOpinion3300[ba]=Number(p[4])||0;
-      dipTrust3300[ab]=clamp(Number(p[5])||50,0,100);dipTrust3300[ba]=clamp(Number(p[6])||50,0,100);
+      const ta=Number(p[5]),tb=Number(p[6]);
+      dipTrust3300[ab]=clamp(Number.isFinite(ta)?ta:50,0,100);dipTrust3300[ba]=clamp(Number.isFinite(tb)?tb:50,0,100);
       dipTreatyUntil3300[ab]=dipTreatyUntil3300[ba]=Number(p[7])||0;
       dipNoWarUntil3300[ab]=dipNoWarUntil3300[ba]=Number(p[8])||0;
       dipWarStarted3300[ab]=dipWarStarted3300[ba]=Number(p[9])||0;
