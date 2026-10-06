@@ -169,10 +169,23 @@
     return r<p;
   }
 
+  function reseedFrontier0357(L,maxSeeds=48){
+    if(head0357<tail0357||claimed0357>=targetMinorClaims0357())return;
+    let added=0,tries=0,probe=hash0357(seed0357^claimed0357^Math.floor(campaignSeconds3230*17))%L.n;
+    while(added<maxSeeds&&tries<Math.min(L.n,18000)&&tail0357<queue0357.length){
+      const cell=probe;
+      probe=(probe+7919)%L.n;tries++;
+      if(L.land[cell]<0||owner6[cell]>=0||ownerMinor0357[cell]>=0)continue;
+      const id=hash0357(seed0357^cell)%Math.max(1,entities0357.length);
+      ownerMinor0357[cell]=id;queue0357[tail0357++]=cell;claimed0357++;added++;
+    }
+  }
+
   function grow0357(){
     if(!initialized0357||paused3230||!started3230||!queue0357)return;
     const t0=performance.now(),L=loadLevel(MAX_GAME_LEVEL3233),target=targetMinorClaims0357();
     if(claimed0357>=target)return;
+    reseedFrontier0357(L);
     let budget=clamp0357(target-claimed0357,MIN_CLAIMS_PER_TICK,MAX_CLAIMS_PER_TICK);
     let guard=0;
     while(head0357<tail0357&&budget>0&&guard<MAX_CLAIMS_PER_TICK*14){
