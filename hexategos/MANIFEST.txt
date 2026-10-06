@@ -1,3 +1,15 @@
+HEXATEGOS_0_35_8
+
+Cambios:
+- clasificación unificada para todas las entidades políticas
+- sin etiquetas visibles de categoría interna
+- nombres neutrales
+- mismo símbolo de capital
+- mismo tratamiento de color político
+- bootstrap visible para partidas existentes, incluso cargadas en pausa
+- smoke test tests/smoke-0358.mjs
+
+--- MANIFEST ANTERIOR ---
 HEXATEGOS_0_35_7
 
 Base estable:
