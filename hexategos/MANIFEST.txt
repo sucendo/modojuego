@@ -1,3 +1,24 @@
+HEXATEGOS_0_36_0
+
+Cambios:
+- ambición territorial mínima para todas las entidades vivas
+- conquistas entre entidades dinámicas
+- desaparición real y traslado de capital
+- no reaparición de entidades desaparecidas
+- personalidad IA adaptable con mayor volatilidad inicial
+- doctrina adaptable también para naciones principales
+- persistencia de conflictos, mentalidad y doctrina
+
+Rendimiento:
+- crecimiento local mediante muestras limitadas
+- fronteras reutilizadas desde snapshot compartido
+- decisiones escalonadas 1/4 de entidades
+- revisión de doctrina principal de una nación cada pasada lenta
+
+Pruebas:
+- tests/smoke-0360.mjs
+
+--- MANIFEST ANTERIOR ---
 HEXATEGOS_0_35_9
 
 Módulo nuevo:
