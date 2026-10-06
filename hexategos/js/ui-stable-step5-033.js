@@ -5,6 +5,7 @@
   const BUILD='5';
   const RANK_KEY='hexategos.stable5.rank.layout';
   const RANK_COLLAPSED_KEY='hexategos.stable5.rank.collapsed';
+  const RANK_COMPACT_KEY='hexategos.stable5.rank.compact.v1';
 
   // -----------------------------------------------------------------------
   // Rail: conserva las etiquetas accesibles y las usa como tooltip CSS.
@@ -50,12 +51,22 @@
 
   function defaults(){
     const mobile=innerWidth<=760;
-    const w=mobile?Math.min(210,Math.max(166,innerWidth*.40)):250;
-    const h=mobile?Math.min(260,Math.max(145,innerHeight*.46)):310;
+    const w=mobile?Math.min(190,Math.max(158,innerWidth*.36)):220;
+    const h=mobile?Math.min(230,Math.max(128,innerHeight*.40)):252;
     return {x:Math.max(6,innerWidth-w-10),y:Math.max(6,(window.visualViewport?.offsetTop||0)+58),w,h};
   }
 
   let layout=read()||defaults();
+  try{
+    if(localStorage.getItem(RANK_COMPACT_KEY)!=='1'){
+      const d=defaults();
+      const oldW=Number(layout.w)||d.w;
+      layout.w=Math.min(oldW,d.w);
+      layout.h=Math.min(Number(layout.h)||d.h,d.h);
+      layout.x=(Number(layout.x)||d.x)+Math.max(0,oldW-layout.w);
+      localStorage.setItem(RANK_COMPACT_KEY,'1');
+    }
+  }catch(_){}
   let collapsed=false;
   try{collapsed=localStorage.getItem(RANK_COLLAPSED_KEY)==='1'}catch(_){}
 
