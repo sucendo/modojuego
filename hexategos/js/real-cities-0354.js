@@ -10,6 +10,9 @@
   const BAND_DEG=30;
   const BAND_COUNT=12;
   const bandCache=new Map();
+  let cityMetaPromise0355=null;
+  let pplxExclusions0355=new Set();
+  let historicalNames0355=Object.create(null);
   let cityProposalState0354=null;
   let cityBuildBypass0354=false;
 
@@ -51,6 +54,35 @@
     while(x<-180)x+=360;
     while(x>=180)x-=360;
     return x;
+  }
+
+  function rowKey0355(row){
+    return String(row?.[0]??'')+'\u0001'+Number(row?.[1])+'\u0001'+Number(row?.[2])+'\u0001'+String(row?.[4]??'');
+  }
+
+  async function loadCityMeta0355(){
+    if(cityMetaPromise0355)return cityMetaPromise0355;
+    cityMetaPromise0355=Promise.all([
+      fetch(DATA_ROOT+'pplx-exclusions.json',{cache:'force-cache'}).then(r=>r.ok?r.json():null).catch(()=>null),
+      fetch(DATA_ROOT+'historical-names.json',{cache:'force-cache'}).then(r=>r.ok?r.json():null).catch(()=>null)
+    ]).then(([excluded,history])=>{
+      const rows=excluded?.rows||[];
+      pplxExclusions0355=new Set(rows.map(rowKey0355));
+      historicalNames0355=history?.records||Object.create(null);
+      return {
+        excluded:pplxExclusions0355.size,
+        historical:Object.keys(historicalNames0355).length
+      };
+    });
+    return cityMetaPromise0355;
+  }
+
+  function validSettlementRow0355(row){
+    return !pplxExclusions0355.has(rowKey0355(row));
+  }
+
+  function historicalNamesFor0355(country,name){
+    return historicalNames0355[String(country||'')+'|'+String(name||'')]||[];
   }
 
   async function tileCities0354(latTile,lonTile){
@@ -115,23 +147,27 @@
   }
 
   function cityObject0354(row,lat,lon){
+    const country=row[4]||'',name=row[0];
     return {
-      name:row[0],
+      name,
       lat:Number(row[1]),
       lon:Number(row[2]),
       population:Number(row[3])||0,
-      country:row[4]||'',
+      country,
+      historicalNames:historicalNamesFor0355(country,name),
       distanceKm:distanceKm0354(lat,lon,Number(row[1]),Number(row[2]))
     };
   }
 
   async function suggestForCell0354(cell){
+    await loadCityMeta0355();
     const {lat,lon}=cellLonLat3302(cell);
     // The geodesic cells are small, but longitude width grows near the poles.
     const localRows=await collectTiles0354(lat,lon,.9);
     const exact=[];
     const seen=new Set();
     for(const row of localRows){
+      if(!validSettlementRow0355(row))continue;
       const key=row[0]+'|'+row[1]+'|'+row[2];
       if(seen.has(key))continue;
       seen.add(key);
@@ -150,6 +186,7 @@
       const rows=await collectTiles0354(lat,lon,radius);
       const uniq=new Map();
       for(const row of rows){
+        if(!validSettlementRow0355(row))continue;
         const c=cityObject0354(row,lat,lon);
         const k=row[0]+'|'+row[1]+'|'+row[2];
         const old=uniq.get(k);
@@ -164,7 +201,7 @@
       const all=await Promise.all(Array.from({length:BAND_COUNT},(_,i)=>loadBand0354(i)));
       for(const data of all){
         for(const rows of Object.values(data.tiles||{})){
-          for(const row of rows)nearby.push(cityObject0354(row,lat,lon));
+          for(const row of rows)if(validSettlementRow0355(row))nearby.push(cityObject0354(row,lat,lon));
         }
       }
       nearby.sort((a,b)=>a.distanceKm-b.distanceKm||b.population-a.population);
@@ -193,18 +230,21 @@
       ?'Estas localidades del atlas están realmente situadas dentro del hexágono seleccionado.'
       :'El atlas no contiene una localidad de más de 1.000 habitantes dentro de este hexágono. Puedes usar una localidad real cercana o construir la ciudad sin asignar nombre real.';
 
-    const cards=result.options.map((c,i)=>
-      '<button class="realCityChoice0354" data-modal-action="real_city_build" data-index="'+i+'">'+
+    const cards=result.options.map((c,i)=>{
+      const history=Array.isArray(c.historicalNames)&&c.historicalNames.length
+        ?'<small class="realCityHistory0355">Hist.: '+escape0354(c.historicalNames.join(' → '))+' → '+escape0354(c.name)+'</small>'
+        :'';
+      return '<button class="realCityChoice0354" data-modal-action="real_city_build" data-index="'+i+'">'+
         '<b>'+escape0354(c.name)+'</b>'+
         '<span>'+escape0354(c.country)+(exact?' · dentro del hexágono':' · '+c.distanceKm.toFixed(c.distanceKm<10?1:0)+' km')+'</span>'+
-        '<small>'+formatPopulation0354(c.population)+'</small>'+
-      '</button>'
-    ).join('');
+        history+
+      '</button>';
+    }).join('');
 
     modalBody3244.innerHTML=
       '<div class="realCityIntro0354">'+lead+'</div>'+
       '<div class="realCityList0354">'+cards+'</div>'+
-      '<div class="realCitySource0354">Datos geográficos: GeoNames · atlas offline HEXATEGOS.</div>';
+      '<div class="realCitySource0354">Datos geográficos: GeoNames · barrios/distritos PPLX excluidos · nombres históricos solo cuando están documentados.</div>';
 
     modalActions3244.innerHTML=
       '<button data-modal-action="real_city_build" data-index="-1">CONSTRUIR SIN NOMBRE REAL</button>'+
@@ -381,6 +421,9 @@
     source:{
       name:'GeoNames cities1000',
       records:140607,
+      excludedPPLX:5428,
+      usableRecords:135179,
+      historicalRecords:33,
       attribution:'GeoNames · CC BY 4.0'
     }
   };
