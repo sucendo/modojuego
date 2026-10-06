@@ -4,26 +4,10 @@
 (() => {
   const HISTORY=[
     {
-      version:'0.35.7',
-      date:'Octubre 2026',
-      title:'IA jerárquica y mosaico político',
-      current:true,
-      summary:'Las plazas configurables pasan a representar naciones principales y el resto del planeta se puebla con entidades políticas ligeras, variables y de muy bajo coste de CPU.',
-      changes:[
-        'Las 16/25/35/50 plazas elegidas al iniciar siguen usando la IA completa de HEXATEGOS.',
-        'Se añade una segunda capa independiente para pueblos, ciudades-estado, estados menores y estados regionales.',
-        'La cantidad de entidades secundarias varía según la escala de la partida y una semilla determinista.',
-        'Cada entidad menor recibe tamaño emergente, color, nombre, tipo y personalidad propia: conformista, comercial, defensiva, oportunista o localista.',
-        'Las entidades menores ocupan terreno neutral mediante una expansión territorial muy barata basada en cola BFS y no entran en las matrices diplomáticas de 50 plazas.',
-        'El objetivo de densidad es aproximadamente un 97,5 % de tierra políticamente ocupada a los cinco minutos de campaña.',
-        'La expansión secundaria tiene un presupuesto máximo por tick para proteger el rendimiento y no realiza escaneos mundiales periódicos.',
-        'Las campañas ya empezadas reciben automáticamente esta capa sin reiniciar ni alterar los territorios de las naciones principales.'
-      ]
-    },
-    {
       version:'0.35.6',
       date:'Octubre 2026',
       title:'Infraestructura combinada y desarrollo IA',
+      current:true,
       summary:'Las ciudades pueden convivir visualmente con industria y puerto, desaparece el marcador de capital histórica y las naciones IA desarrollan una red urbana e industrial acorde a su tamaño.',
       changes:[
         'La capital histórica permanece en la lógica de nacionalismo, pero deja de dibujarse como una segunda estrella sobre el mapa.',
@@ -214,7 +198,7 @@
         '<header class="aboutHead0351">'+
           '<div class="aboutHeadText0351">'+
             '<h2 id="aboutTitle0351">ACERCA DE HEXATEGOS</h2>'+
-            '<p>Global Geopolitical Strategy · versión 0.35.7</p>'+
+            '<p>Global Geopolitical Strategy · versión 0.35.6</p>'+
           '</div>'+
           '<button id="aboutClose0351" class="aboutClose0351" type="button" aria-label="Cerrar">×</button>'+
         '</header>'+
@@ -272,5 +256,5 @@
     history:HISTORY.map(v=>({...v,changes:v.changes.slice()}))
   };
 
-  console.info('[HEXATEGOS] historial actualizado para 0.35.7');
+  console.info('[HEXATEGOS] historial actualizado para 0.35.6');
 })();
