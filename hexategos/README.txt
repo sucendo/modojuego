@@ -1,3 +1,17 @@
+HEXATEGOS 0.35.8 · ENTIDADES POLÍTICAS UNIFICADAS
+
+Cambios sobre 0.35.7:
+- Las entidades adicionales aparecen en la misma clasificación que el resto de naciones.
+- La clasificación no muestra si una nación pertenece a una categoría interna u otra.
+- Los nombres visibles dejan de usar prefijos como Pueblo, Comunidad, Estado menor o Estado regional.
+- Las capitales usan el mismo símbolo visual que las demás naciones.
+- El color político usa el mismo tratamiento gráfico que las naciones completas.
+- Se elimina de Sistemas → Intel cualquier bloque que revele la jerarquía interna.
+- El selector vuelve a llamarse simplemente NACIONES.
+- En partidas antiguas se fuerza un arranque territorial en pequeños bloques incluso si la partida carga en pausa, para que las nuevas entidades sean visibles desde el principio sin congelar el navegador.
+- La clasificación permite pulsar también cualquiera de estas naciones para centrar el mapa en su capital.
+- El objetivo global sigue siendo ≈97,5 % de tierra ocupada tras unos 5 minutos de simulación desde que la capa se activa.
+
 HEXATEGOS 0.35.7 · IA JERÁRQUICA + MOSAICO POLÍTICO
 
 Base:
