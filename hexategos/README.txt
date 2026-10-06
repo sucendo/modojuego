@@ -1,25 +1,40 @@
-HEXATEGOS 0.34.2 · STABILITY UPDATE
+HEXATEGOS 0.35.0 · DOCTRINA GEOPOLÍTICA
 
-Base: HEXATEGOS 0.34.1 sobre Stable Rebuild 8.
+Base:
+- HEXATEGOS 0.34.2 Stability Update.
+- Red diplomática escalable 0.34.
+- Escala de 16 / 25 / 35 / 50 naciones 0.34.1.
+- Generación exacta y diagnósticos 0.34.2.
 
-Cambios principales:
-- Partidas de 16 / 25 / 35 / 50 naciones sobre capacidad fija de 50 plazas.
-- Compatibilidad con partidas antiguas de 16 naciones.
-- Migración de matrices diplomáticas antiguas 16x16 a 50x50.
-- Red diplomática escalable según frontera, región, distancia, puertos y relaciones existentes.
-- Generación reforzada: una partida solo se acepta si crea exactamente el número de naciones solicitado.
-- Recuperación determinista de capitales con relajación progresiva de distancia.
-- Auditoría de capitales, propietarios inactivos y capacidad diplomática.
-- Métricas específicas para partidas de 50 naciones.
-- Smoke test automático para escala y compatibilidad de guardados.
-- Sin MutationObserver ni nuevos temporizadores periódicos.
+Novedades 0.35:
+- Cada nación dispone de una doctrina geopolítica coherente con su personalidad previa:
+  * expansionista,
+  * marítima,
+  * defensiva,
+  * comercial,
+  * continental.
+- Intereses nacionales persistentes: seguridad, expansión regional, salida al mar, puertos, comercio, recuperación de capital y equilibrio de poder.
+- Esfera de influencia que crece con territorio y potencia.
+- Rival estratégico persistente con histéresis para evitar cambios arbitrarios.
+- Evaluación de amenaza basada en frontera, distancia, potencia relativa, confianza, opinión, guerra y memoria de conflictos.
+- Equilibrio de poder: las potencias dominantes generan presión de contención.
+- Estados tapón: determinadas naciones pequeñas entre un país y su rival reciben valor estratégico defensivo.
+- Memoria diplomática: guerras y ruptura de tratados dejan agravios persistentes.
+- La doctrina modifica la valoración real de objetivos militares y la opinión/aceptación diplomática.
+- Las razones de guerra pueden reflejar rivalidad, esfera regional o contención.
+- El plan estratégico de la IA muestra razones como presión al rival, salida al mar o consolidación regional.
+- Nueva sección "Lectura geopolítica 0.35" en Diplomacia con doctrina, rival, objetivo y lectura de la relación con el jugador.
+- Estado geopolítico incluido en partidas portables nuevas y persistencia local separada.
+- Partidas antiguas siguen siendo válidas: si no existe estado 0.35, se reconstruye automáticamente.
+- Sin MutationObserver y sin nuevos setInterval.
 
-Diagnóstico en consola:
-- HexategosNationScale0341.validate()
+Diagnóstico:
+- HexategosGeopolitics035.stats()
+- HexategosGeopolitics035.validate()
+- HexategosGeopolitics035.explain(nacion, otraNacion)
 - HexategosDiplomacyNetwork3301.stats()
-- HexategosStability0342.stats()
-- HexategosStability0342.validate(true)
 - HexategosStability0342.smoke()
 
-Rama estable de recuperación:
+Ramas estables de recuperación:
 - hexategos-stable-0.33-r8
+- hexategos-stable-0.34.2
