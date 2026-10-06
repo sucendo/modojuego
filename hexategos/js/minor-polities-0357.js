@@ -59,9 +59,12 @@
     return PERSONALITIES[hash0357(seed0357+n*193)%PERSONALITIES.length];
   }
   function minorCount0357(){
-    const jitter=(hash0357(seed0357^0x35A7)%51)-25;
-    // Con más naciones principales hacen falta menos entidades de relleno.
-    return clamp0357(Math.round(224-(activeFactionCount3230-16)*2.15+jitter),105,245);
+    // Modelo 0.36.2: el mundo se comporta como una partida de unas 500 naciones.
+    // Las 16/25/35/50 elegidas siguen usando el planificador pesado; el resto
+    // son actores políticos completos con un scheduler más barato.
+    const jitter=(hash0357(seed0357^0x35A7)%61)-30;
+    const totalTarget=clamp0357(500+jitter,460,540);
+    return clamp0357(totalTarget-activeFactionCount3230,380,525);
   }
   function color0357(n,type){
     const shift=type==='regional'?3:type==='minor'?1:type==='citystate'?5:0;
@@ -132,7 +135,10 @@
       const row=savedRows?.[n];
       const type=row?.type||typeFor0357(n),p=PERSONALITIES.find(x=>x.id===row?.personality)||personalityFor0357(n);
       const visibleName=row?.name?neutralizeLegacyName0358(row.name,cell,n):uniqueName0357(type,cell,n);
-      const e={id:n,seed:cell,type,name:visibleName,color:row?.color||color0357(n,type),personality:p.id,growth:(TYPES[type]?.growth||.7)*p.growth};
+      // "type" se conserva únicamente para compatibilidad con guardados 0.35.x.
+      // Ya no determina capacidades ni ambición: eso depende solo de la IA.
+      const variability=.90+rand010357(seed0357^Math.imul(n+1,4099))*.20;
+      const e={id:n,seed:cell,type,name:visibleName,color:row?.color||color0357(n,type),personality:p.id,growth:clamp0357(p.growth*variability,.55,1.12)};
       entities0357.push(e);
       ownerMinor0357[cell]=n;queue0357[tail0357++]=cell;claimed0357++;n++;
     }
@@ -170,11 +176,9 @@
     return Math.max(entities0357.length,Math.floor(totalLand0357*desiredCoverage0357())-majorAtInit0357);
   }
   function acceptClaim0357(entity,cell,from){
-    const type=TYPES[entity.type]||TYPES.minor;
-    // Se permite que los conformistas/localistas formen territorios más pequeños
-    // sin crear una IA táctica por entidad.
-    let p=clamp0357(entity.growth,.30,.98);
-    if(type===TYPES.regional)p=Math.min(.99,p+.04);
+    // La expansión ya no depende de una categoría política oculta. Todas son
+    // naciones; la diferencia procede de su perfil de IA y una pequeña variación.
+    let p=clamp0357(entity.growth,.42,.98);
     const r=rand010357(seed0357^Math.imul(cell+1,1103515245)^Math.imul(from+7,12345));
     return r<p;
   }
@@ -490,7 +494,7 @@
     },
     entityRef(id){return entities0357[id]||null},
     entities:()=>entities0357.map(e=>({...e})),
-    refreshRanking:()=>unifiedRanking0358(true),
+    refreshRanking:()=>updateRanking3220(),
     rebuild:()=>{initialized0357=false;buildEntities0357(loadMeta0357());return stats0357()}
   };
   window.HEXATEGOS_VERSION=BUILD;
