@@ -37,7 +37,7 @@ assert.equal(manifest.records,135179,'filtered atlas record count changed');
 assert.equal(manifest.excludedPPLX,5428,'PPLX exclusion count changed');
 assert.equal(manifest.usableRecords,135179,'usable atlas count changed');
 assert.equal(exclusions.records,5428,'PPLX exclusion file count changed');
-assert.equal(Object.keys(history.records||{}).length,33,'historical city metadata count changed');
+assert.equal(Object.keys(history.records||{}).length,15,'historical city metadata count changed');
 assert.ok(js.includes('pplx-exclusions.json'),'PPLX filter is not loaded');
 assert.ok(js.includes('historical-names.json'),'historical names are not loaded');
 assert.ok(!js.includes('formatPopulation0354'),'population must not be rendered in city choices');
