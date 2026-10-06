@@ -4,20 +4,20 @@
 (() => {
   const HISTORY=[
     {
-      version:'0.35.7',
+      version:'0.35.8',
       date:'Octubre 2026',
-      title:'IA jerárquica y mosaico político',
+      title:'Entidades políticas unificadas',
       current:true,
-      summary:'Las plazas configurables pasan a representar naciones principales y el resto del planeta se puebla con entidades políticas ligeras, variables y de muy bajo coste de CPU.',
+      summary:'El mapa incorpora muchas más entidades políticas sin distinguir visualmente entre categorías internas: todas aparecen como naciones normales y su importancia se descubre por su comportamiento y evolución.'
       changes:[
-        'Las 16/25/35/50 plazas elegidas al iniciar siguen usando la IA completa de HEXATEGOS.',
-        'Se añade una segunda capa independiente para pueblos, ciudades-estado, estados menores y estados regionales.',
-        'La cantidad de entidades secundarias varía según la escala de la partida y una semilla determinista.',
-        'Cada entidad menor recibe tamaño emergente, color, nombre, tipo y personalidad propia: conformista, comercial, defensiva, oportunista o localista.',
-        'Las entidades menores ocupan terreno neutral mediante una expansión territorial muy barata basada en cola BFS y no entran en las matrices diplomáticas de 50 plazas.',
-        'El objetivo de densidad es aproximadamente un 97,5 % de tierra políticamente ocupada a los cinco minutos de campaña.',
-        'La expansión secundaria tiene un presupuesto máximo por tick para proteger el rendimiento y no realiza escaneos mundiales periódicos.',
-        'Las campañas ya empezadas reciben automáticamente esta capa sin reiniciar ni alterar los territorios de las naciones principales.'
+        'La escala elegida al iniciar mantiene las naciones con IA completa y el mundo añade otras entidades políticas de forma dinámica.',
+        'Las entidades adicionales usan una simulación ligera para mantener el rendimiento sin delatar su categoría al jugador.',
+        'La cantidad total de entidades varía en cada mundo según la escala y la semilla de la partida.',
+        'Cada entidad recibe un nombre, color y comportamiento propio; algunas son conformistas y otras más expansivas, comerciales o defensivas.',
+        'La expansión sobre tierra neutral utiliza una simulación territorial muy barata para mantener el coste controlado.',
+        'El objetivo de densidad sigue siendo aproximadamente un 97,5 % de tierra políticamente ocupada a los cinco minutos.',
+        'La expansión tiene un presupuesto máximo por tick para proteger el rendimiento y evitar picos de CPU.',
+        'Las partidas ya empezadas reciben las nuevas entidades automáticamente y la clasificación mezcla a todas las naciones sin indicar su categoría interna.'
       ]
     },
     {
@@ -214,7 +214,7 @@
         '<header class="aboutHead0351">'+
           '<div class="aboutHeadText0351">'+
             '<h2 id="aboutTitle0351">ACERCA DE HEXATEGOS</h2>'+
-            '<p>Global Geopolitical Strategy · versión 0.35.7</p>'+
+            '<p>Global Geopolitical Strategy · versión 0.35.8</p>'+
           '</div>'+
           '<button id="aboutClose0351" class="aboutClose0351" type="button" aria-label="Cerrar">×</button>'+
         '</header>'+
@@ -272,5 +272,5 @@
     history:HISTORY.map(v=>({...v,changes:v.changes.slice()}))
   };
 
-  console.info('[HEXATEGOS] historial actualizado para 0.35.7');
+  console.info('[HEXATEGOS] historial actualizado para 0.35.8');
 })();
