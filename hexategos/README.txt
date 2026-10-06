@@ -1,3 +1,22 @@
+HEXATEGOS 0.36.0 · EVOLUCIÓN POLÍTICA + IA ADAPTATIVA
+
+Novedades:
+- Toda nación dinámica viva intenta conseguir un territorio mínimo antes de conformarse.
+- Una entidad conformista o localista puede quedar pequeña, pero no debería permanecer eternamente en una sola casilla si tiene espacio libre alrededor.
+- Las entidades dinámicas pueden competir entre sí, conquistar territorio, perder capitales y desaparecer completamente.
+- Una nación desaparecida no reaparece por el sistema de relleno de huecos.
+- La personalidad interna puede cambiar durante la partida.
+- Los cambios son relativamente frecuentes durante los primeros 180 segundos, moderados hasta unos 480 segundos y muy raros después.
+- Las naciones principales también pueden cambiar de doctrina en las primeras fases.
+- Los cambios de IA no se muestran como etiquetas al jugador: se perciben únicamente por su comportamiento.
+
+Rendimiento:
+- Las disputas territoriales reutilizan fronteras ya presentes en el snapshot compartido.
+- La expansión mínima examina únicamente muestras territoriales pequeñas y sus vecinos inmediatos.
+- Solo una cuarta parte de las entidades revisa decisiones en cada pasada.
+- Las doctrinas de las naciones principales se revisan de una en una y con intervalos largos.
+- No se añade ningún escaneo mundial por entidad.
+
 HEXATEGOS 0.35.9 · ENTIDADES POLÍTICAS UNIVERSALES
 
 Objetivo:
