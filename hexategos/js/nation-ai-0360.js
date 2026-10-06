@@ -238,6 +238,32 @@
     return reviewed;
   }
 
+  // La implementación original revisaba una sola nación por tick, adecuada para
+  // 16–50 países pero demasiado lenta con 500. Conservamos exactamente la misma
+  // lógica de revisión y solo escalamos el número de países atendidos.
+  diplomacyTick3300=function(){
+    const t0=performance.now();
+    if(!started3230||paused3230||gameSpeed3212<=0||!dipBooted3300)return;
+    absorbLegacyPlayerRelations3300();
+    rebuildDiplomaticBorders3300(false);
+    const now=campaignSeconds3230;
+    const before=dipOffers3300.length;
+    dipOffers3300=dipOffers3300.filter(x=>x.expires>now);
+    if(before!==dipOffers3300.length&&sysTab3220==='dip')renderSystems3220();
+
+    const budget=activeFactionCount3230>=450?7:activeFactionCount3230>=350?6:
+                 activeFactionCount3230>=250?5:3;
+    for(let n=0;n<budget;n++){
+      if(dipReviewCursor3300<=0||dipReviewCursor3300>=activeFactionCount3230)dipReviewCursor3300=1;
+      const f=dipReviewCursor3300++;
+      if(now>=dipNextReview3300[f]){
+        dipNextReview3300[f]=now+9+(f%4)*2.1;
+        aiReviewDiplomacy3300(f);
+      }
+    }
+    dipLastTickMs3300=performance.now()-t0;
+  };
+
   aiTick3212=function(){
     if(paused3230||!started3230||gameSpeed3212<=0)return;
     const t0=performance.now(),now=campaignSeconds3230;
