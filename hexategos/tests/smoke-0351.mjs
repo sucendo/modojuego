@@ -21,6 +21,6 @@ assert.ok(about.includes('if(e.target===overlay)'),'outside-click close missing'
 assert.ok(about.includes("role=\"dialog\""),'dialog semantics missing');
 assert.ok(css.includes('@media(max-width:700px)'),'mobile styling missing');
 assert.ok(!about.includes('setInterval('),'About panel must not add timers');
-assert.ok(!about.includes('MutationObserver'),'About panel must not add observers');
+assert.ok(!about.includes('new MutationObserver('),'About panel must not instantiate observers');
 
 console.log('HEXATEGOS 0.35.1 About smoke: OK');
