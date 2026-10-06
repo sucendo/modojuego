@@ -1,13 +1,13 @@
 'use strict';
 
 // HEXATEGOS 0.34.2 · estabilización de escala política.
-// - Garantiza exactamente 16/25/35/50 naciones al crear mundo.
+// - Garantiza exactamente 150/250/350/500 naciones al crear mundo.
 // - Añade validación y telemetría sin timers ni observers.
 // - Conserva intacta la base estable y los guardados 0.33/0.34.1.
 (() => {
   const BUILD='0.34.2';
   const PREF_KEY='hexategos-newgame-faction-count-0341';
-  const FALLBACK_THRESHOLDS=[4.5,3.8,3.1,2.5,1.9,1.35,.9,.55];
+  const FALLBACK_THRESHOLDS=[2.6,2.1,1.7,1.35,1.05,.78,.52,.28,0];
   const SCAN_STRIDE=7919;
 
   const baseChooseAICapitals0342=chooseAICapitals3302;
@@ -160,7 +160,7 @@
   };
 
   // En una campaña existente se conserva su escala. Desde la portada sin campaña
-  // se recupera la última preferencia 16/25/35/50 del jugador.
+  // se recupera la última preferencia 150/250/350/500 del jugador.
   beginNewGameSetup3302=function(origin='intro'){
     const hadCampaign=!!started3230;
     const r=baseBeginNewGame0342.apply(this,arguments);
@@ -213,10 +213,11 @@
 
   function validate0342(full=false){
     const errors=[],warnings=[],st=stats0342();
-    if(!FACTION_COUNT_OPTIONS3230.includes(activeFactionCount3230))
+    if(!FACTION_COUNT_OPTIONS3230.includes(activeFactionCount3230)&&
+       !(typeof LEGACY_FACTION_COUNT_OPTIONS3230!=='undefined'&&LEGACY_FACTION_COUNT_OPTIONS3230.includes(activeFactionCount3230)))
       errors.push('Número activo de naciones no permitido');
     if(FACTIONS3230.length!==FACTION_CAPACITY3230)
-      errors.push('Capacidad de facciones distinta de 50');
+      errors.push('Capacidad de facciones distinta de 500');
     if(DIP_F3300!==FACTION_CAPACITY3230)
       errors.push('Matriz diplomática con capacidad incorrecta');
 
@@ -239,9 +240,9 @@
     }
 
     const p=st.performance;
-    if(activeFactionCount3230>=50&&p.aiAvg>45)warnings.push(`IA media alta: ${p.aiAvg.toFixed(1)} ms`);
-    if(activeFactionCount3230>=50&&p.renderAvg>36)warnings.push(`Render medio alto: ${p.renderAvg.toFixed(1)} ms`);
-    if(activeFactionCount3230>=50&&p.diplomacyBuildMs>20)warnings.push(`Red diplomática alta: ${p.diplomacyBuildMs.toFixed(1)} ms`);
+    if(activeFactionCount3230>=350&&p.aiAvg>45)warnings.push(`IA media alta: ${p.aiAvg.toFixed(1)} ms`);
+    if(activeFactionCount3230>=350&&p.renderAvg>36)warnings.push(`Render medio alto: ${p.renderAvg.toFixed(1)} ms`);
+    if(activeFactionCount3230>=350&&p.diplomacyBuildMs>28)warnings.push(`Red diplomática alta: ${p.diplomacyBuildMs.toFixed(1)} ms`);
 
     return {ok:errors.length===0,errors,warnings,stats:st};
   }
