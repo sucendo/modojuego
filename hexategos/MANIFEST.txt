@@ -1,3 +1,32 @@
+HEXATEGOS_0_35_7
+
+Base estable:
+- HEXATEGOS 0.35.6
+- Compatibilidad con partidas 0.35.x
+
+Módulos nuevos:
+- js/minor-polities-0357.js
+
+Nueva arquitectura política:
+- 16/25/35/50 = naciones principales con IA completa
+- entidades secundarias fuera de los 50 slots
+- Pueblo / Ciudad-Estado / Estado menor / Estado regional
+- personalidades conformista / comercial / defensiva / oportunista / localista
+- objetivo de ocupación política ≈97,5 % de tierra a los 300 s
+
+Rendimiento:
+- Int16Array de propiedad menor
+- Int32Array de frontera BFS
+- máximo 4.200 reclamaciones/tick
+- sin setInterval nuevo
+- sin matrices diplomáticas extra
+- sin escaneo mundial periódico durante el crecimiento
+
+Pruebas nuevas:
+- tests/smoke-0357.mjs
+- .github/workflows/hexategos-smoke.yml
+
+--- MANIFEST ANTERIOR ---
 HEXATEGOS_0_35_6
 
 Base estable:
