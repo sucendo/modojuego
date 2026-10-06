@@ -41,10 +41,11 @@
 .realCityChoice0354{
   width:100%;
   display:grid;
-  grid-template-columns:minmax(0,1fr) auto;
+  grid-template-columns:minmax(0,1fr);
   grid-template-areas:
-    "name pop"
-    "meta pop";
+    "name"
+    "meta"
+    "history";
   gap:2px 10px;
   padding:9px 10px;
   text-align:left;
@@ -73,12 +74,13 @@
   color:#819aab;
   font-size:8px;
 }
-.realCityChoice0354 small{
-  grid-area:pop;
-  align-self:center;
-  color:#d7b766;
+.realCityHistory0355{
+  grid-area:history;
+  margin-top:3px;
+  color:#c9ad68;
   font-size:8px;
-  white-space:nowrap;
+  line-height:1.35;
+  white-space:normal;
 }
 .realCitySource0354{
   margin-top:9px;
@@ -96,9 +98,6 @@
 @media(max-width:700px){
   .realCityChoice0354{
     grid-template-columns:1fr;
-    grid-template-areas:"name" "meta" "pop";
-  }
-  .realCityChoice0354 small{
-    margin-top:3px;
+    grid-template-areas:"name" "meta" "history";
   }
 }
