@@ -153,6 +153,7 @@
       '</div>'+relationToPlayer+
       '<small class="geoHint0352">Selecciona territorio de otro país para cambiar la nación observada.</small>'+
       debug;
+    window.HexategosMovablePanels0353?.register(panel,'.geoPanelHead0352','geopolitical-map');
   }
 
   const baseUpdateMapUI0352=updateMapModeUI3252;

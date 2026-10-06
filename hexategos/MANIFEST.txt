@@ -1,26 +1,21 @@
-HEXATEGOS_0_35_2
+HEXATEGOS_0_35_3
 
 Base estable:
-- HEXATEGOS 0.35.1
-- Rama de recuperación: hexategos-stable-0.35.1
+- HEXATEGOS 0.35.2
+- Rama de recuperación: hexategos-stable-0.35.2
 
-Módulos principales:
-- js/game.js
-- js/diplomatic-network-034.js
-- js/nation-scale-0341.js
-- js/stability-0342.js
-- js/geopolitics-035.js
-- js/about-0351.js
-- js/geopolitical-map-0352.js
-- css/about-0351.css
-- css/geopolitical-map-0352.css
+Módulos nuevos:
+- js/movable-panels-0353.js
+- css/movable-panels-0353.css
+
+Integración:
+- js/geopolitical-map-0352.js re-registra su cabecera al refrescar.
+- Acerca de adopta el estándar de panel movible.
 
 Pruebas:
 - tests/smoke-0342.mjs
 - tests/smoke-035.mjs
 - tests/smoke-0351.mjs
 - tests/smoke-0352.mjs
+- tests/smoke-0353.mjs
 - .github/workflows/hexategos-smoke.yml
-
-Objetivo:
-Hacer visible y comprensible la IA geopolítica para el jugador mediante un modo de mapa específico, manteniendo un diagnóstico técnico oculto para desarrollo.
