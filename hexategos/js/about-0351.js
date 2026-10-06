@@ -4,10 +4,24 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.36.1',
+      date:'Octubre 2026',
+      title:'Integración política contextual',
+      current:true,
+      summary:'Las naciones dinámicas dejan de aparecer como terreno neutral al pulsarlas: muestran propietario, extensión, diplomacia y ataque igual que el resto.',
+      changes:[
+        'Pulsar cualquier territorio de una nación dinámica muestra claramente qué nación lo controla.',
+        'El menú contextual ofrece Atacar, Inspeccionar y Diplomacia en lugar de Expandirse sobre un territorio ocupado.',
+        'La diplomacia contextual incluye guerra, paz, comercio, no agresión y alianza.',
+        'Los ataques contra estas naciones crean un frente real y avanzan por su territorio en lugar de tratarlo como tierra neutral.',
+        'Los frentes actualizan territorio, capital y posible desaparición de la nación derrotada.',
+        'Se mantiene la representación compacta interna para no aumentar el coste del mapa.'
+      ]
+    },
+    {
       version:'0.36.0',
       date:'Octubre 2026',
       title:'Evolución política e IA adaptativa',
-      current:true,
       summary:'Las naciones dinámicas dejan de ser estáticas: todas intentan crecer al menos un territorio razonable, pueden competir entre sí y su forma de pensar puede evolucionar durante la partida.',
       changes:[
         'Toda entidad viva mantiene una ambición territorial mínima; incluso las más conformistas intentan expandirse algo antes de estabilizarse.',
@@ -244,7 +258,7 @@
         '<header class="aboutHead0351">'+
           '<div class="aboutHeadText0351">'+
             '<h2 id="aboutTitle0351">ACERCA DE HEXATEGOS</h2>'+
-            '<p>Global Geopolitical Strategy · versión 0.36.0</p>'+
+            '<p>Global Geopolitical Strategy · versión 0.36.1</p>'+
           '</div>'+
           '<button id="aboutClose0351" class="aboutClose0351" type="button" aria-label="Cerrar">×</button>'+
         '</header>'+
@@ -302,5 +316,5 @@
     history:HISTORY.map(v=>({...v,changes:v.changes.slice()}))
   };
 
-  console.info('[HEXATEGOS] historial actualizado para 0.36.0');
+  console.info('[HEXATEGOS] historial actualizado para 0.36.1');
 })();
