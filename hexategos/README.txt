@@ -1,3 +1,44 @@
+HEXATEGOS 0.36.0 · 150 / 250 / 350 / 500 NACIONES REALES
+
+CONCEPTO
+- Se elimina la idea de entidades políticas adicionales o de segunda categoría.
+- El propio motor original dispone ahora de 500 plazas de nación.
+- Una nueva partida permite elegir 150, 250, 350 o 500 naciones.
+- Todas son exactamente el mismo tipo de actor del juego: owner6, capital, ciudad inicial, economía, tropas, diplomacia, guerra, campañas, flotas, construcción, carreteras, industria, puertos, fortificaciones, nacionalismo y pérdida/traslado de capital.
+
+IA ADAPTATIVA
+- Todas las naciones ejecutan los mismos sistemas de IA del motor.
+- Internamente cada IA tiene uno de cinco perfiles: conformista, comercial, defensiva, oportunista o localista.
+- El perfil no elimina ninguna capacidad; modifica propensión, agresividad, doctrina y ritmo de decisión.
+- Una IA puede cambiar de perfil durante los primeros 3.600 segundos de campaña (60 min).
+- 0–10 min: cambios relativamente frecuentes.
+- 10–30 min: cambios moderados.
+- 30–45 min: cambios poco frecuentes.
+- 45–60 min: cambios raros.
+- Después de 60 min el perfil queda estabilizado.
+- Situaciones como desgaste de guerra, reservas bajas, mala economía, expansión exitosa, fronteras hostiles o disponibilidad de tierra influyen en la evolución.
+
+RENDIMIENTO
+- Scheduler escalonado: todas las IA conservan el mismo planificador, pero no reciben CPU en el mismo instante.
+- Presupuesto por tick creciente según escala: hasta unas 60 naciones atendidas por tick en partidas de 500.
+- Snapshot mundial compartido y limitado temporalmente para evitar cientos de barridos de las ~510.000 celdas.
+- Clasificación calculada desde un único conteo/snapshot, nunca mediante 500 recorridos del planeta.
+- Red diplomática de contactos optimizada y sin propagación N³.
+- La diplomacia conserva matrices completas en memoria, pero el guardado 500 usa pares de contacto relevantes para evitar JSON gigantes.
+- La defensa IA ya no llama a un conteo mundial independiente por nación.
+
+GENERACIÓN
+- Las capitales se distribuyen con separación dinámica según la escala.
+- Si las capitales geográficas catalogadas no bastan, se usan celdas terrestres adicionales sin crear un actor distinto.
+- Todas las naciones nacen con capital real y ciudad inicial mediante claimInitialRing3302.
+- Los nombres adicionales se generan de forma coherente con la región y los colores se distribuyen automáticamente.
+
+COMPATIBILIDAD
+- Las nuevas opciones son 150/250/350/500.
+- Los guardados antiguos con 16/25/35/50 siguen siendo aceptados.
+- Se mantiene una rama de seguridad anterior al cambio:
+  backup/hexategos-0.35.6-before-500-nations
+
 HEXATEGOS 0.35.6 · INFRAESTRUCTURA COMBINADA + DESARROLLO IA
 
 Base:
