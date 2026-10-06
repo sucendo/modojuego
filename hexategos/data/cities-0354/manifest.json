@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "dataset": "GeoNames cities1000",
   "records": 140607,
   "bands": 12,
@@ -13,5 +13,18 @@
     "lon",
     "population",
     "countryCode"
+  ],
+  "excludedPPLX": 5428,
+  "usableRecords": 135179,
+  "historicalNameRecords": 33,
+  "filters": {
+    "excludedFeatureCodes": [
+      "PPLX"
+    ],
+    "note": "PPLX = section of populated place; excluded from city-name proposals"
+  },
+  "supplementalFiles": [
+    "pplx-exclusions.json",
+    "historical-names.json"
   ]
 }
