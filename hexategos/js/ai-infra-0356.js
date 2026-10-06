@@ -131,7 +131,7 @@
   }
 
   nationalDefense3275=function(f,p){
-    const territory=Math.max(1,countFaction3230(f));
+    const territory=Math.max(1,aiSnapshot3260?.territory?.[f]||territorialEconomy3261(f)?.territory||1);
     const role=FACTIONS3230[f]?.role||'balanced';
     const threatened=(aiSnapshot3260?.capThreat[f]??99)<12||(aiSnapshot3260?.encCount[f]||0)>0;
     const dev=typeof aiDevState3283!=='undefined'?aiDevState3283[f]:null;
