@@ -1,48 +1,26 @@
-HEXATEGOS 0.35.2 · MAPA GEOPOLÍTICO
+HEXATEGOS 0.35.3 · PANELES MOVIBLES
 
 Base:
+- HEXATEGOS 0.35.2 Mapa Geopolítico.
 - HEXATEGOS 0.35.1 Acerca de / Historial.
-- HEXATEGOS 0.35.0 Doctrina Geopolítica.
-- HEXATEGOS 0.34.2 Stability Update.
 
-Novedades 0.35.2:
-- Nuevo cuarto modo de mapa: GEOPOLÍTICA.
-- El modo se integra en el botón Mapa existente: Político → Terreno → Suministro → Geopolítica.
-- El jugador puede seleccionar cualquier nación y analizar el mundo desde su perspectiva.
-- Colores por relación:
-  * nación observada,
-  * rival estratégico,
-  * guerra,
-  * alianza,
-  * pacto de no agresión,
-  * comercio,
-  * estado tapón,
-  * potencia a contener.
-- Se dibuja el radio de influencia de la nación observada.
-- Líneas sobre el globo muestran rivalidad, contención, estados tapón y hasta cuatro alianzas.
-- Panel de lectura con doctrina, esfera regional, rival, estado tapón y tres prioridades nacionales.
-- Si se observa una IA, el panel resume también su relación geopolítica con el jugador.
-- El modo se conserva al guardar/cargar cuando corresponde y usa la infraestructura de modos de mapa existente.
-- Diseño responsive para escritorio y móvil.
+Novedades 0.35.3:
+- Se establece como norma de interfaz que los diálogos y paneles flotantes nuevos puedan reposicionarse.
+- El panel del mapa Geopolítica es ahora arrastrable desde su cabecera.
+- La ventana Acerca de también puede moverse.
+- Las posiciones se guardan localmente.
+- Los paneles se mantienen siempre dentro del viewport, también tras redimensionar la ventana.
+- El encabezado geopolítico se vuelve a registrar tras cambiar de nación, por lo que no pierde la capacidad de arrastre.
+- Nueva API reutilizable: HexategosMovablePanels0353.register(panel, handle, key).
+- Sin MutationObserver y sin nuevos temporizadores periódicos.
 
-Diagnóstico de desarrollo:
-- No hay botón visible para usuarios.
-- Activación desde consola: HexategosGeoMap0352.debug(true)
-- Desactivación: HexategosGeoMap0352.debug(false)
-- Snapshot técnico: HexategosGeoMap0352.snapshot()
-- Validación: HexategosGeoMap0352.validate()
-- En diagnóstico se añaden potencia, contactos diplomáticos, amenaza, agravio y coste del overlay.
-
-Rendimiento:
-- No se añaden setInterval.
-- No se añaden MutationObserver.
-- La coloración reutiliza las celdas ya visibles del render.
-- La paleta diplomática se cachea y se reconstruye solo cuando cambia la nación observada o el periodo de campaña.
-
-Historial:
-- Acerca de incorpora ya la entrada 0.35.2.
+Comportamiento del mapa Geopolítica:
+- Si no hay otra nación seleccionada, el análisis usa la nación del jugador.
+- Si se selecciona territorio de otra nación, el panel pasa a mostrar esa nación.
+- El panel muestra doctrina, esfera, rival, estado tapón, prioridades y relación con el jugador.
 
 Ramas estables:
 - hexategos-stable-0.33-r8
 - hexategos-stable-0.34.2
 - hexategos-stable-0.35.1
+- hexategos-stable-0.35.2
