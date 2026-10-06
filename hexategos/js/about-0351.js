@@ -4,10 +4,25 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.36.0',
+      date:'Octubre 2026',
+      title:'Evolución política e IA adaptativa',
+      current:true,
+      summary:'Las naciones dinámicas dejan de ser estáticas: todas intentan crecer al menos un territorio razonable, pueden competir entre sí y su forma de pensar puede evolucionar durante la partida.',
+      changes:[
+        'Toda entidad viva mantiene una ambición territorial mínima; incluso las más conformistas intentan expandirse algo antes de estabilizarse.',
+        'Las naciones dinámicas pueden competir por territorio, perder su capital y desaparecer por completo.',
+        'Las entidades desaparecidas no reaparecen después durante el relleno automático del mapa.',
+        'Las personalidades internas pueden evolucionar y no son estados permanentes.',
+        'Los cambios de carácter son más frecuentes durante los primeros minutos y se vuelven mucho más raros al madurar la campaña.',
+        'Las naciones principales también pueden cambiar su doctrina estratégica durante las primeras fases de la partida.',
+        'El sistema conserva decisiones escalonadas, snapshots compartidos y límites de cálculo para proteger el rendimiento.'
+      ]
+    },
+    {
       version:'0.35.9',
       date:'Octubre 2026',
       title:'Entidades políticas universales',
-      current:true,
       summary:'Todas las entidades políticas se presentan con las mismas capacidades jugables; la diferencia interna queda limitada a cómo y cada cuánto decide su IA.',
       changes:[
         'Diplomacia completa también con las naciones generadas dinámicamente: guerra, paz, comercio, no agresión y alianza.',
@@ -229,7 +244,7 @@
         '<header class="aboutHead0351">'+
           '<div class="aboutHeadText0351">'+
             '<h2 id="aboutTitle0351">ACERCA DE HEXATEGOS</h2>'+
-            '<p>Global Geopolitical Strategy · versión 0.35.9</p>'+
+            '<p>Global Geopolitical Strategy · versión 0.36.0</p>'+
           '</div>'+
           '<button id="aboutClose0351" class="aboutClose0351" type="button" aria-label="Cerrar">×</button>'+
         '</header>'+
@@ -287,5 +302,5 @@
     history:HISTORY.map(v=>({...v,changes:v.changes.slice()}))
   };
 
-  console.info('[HEXATEGOS] historial actualizado para 0.35.9');
+  console.info('[HEXATEGOS] historial actualizado para 0.36.0');
 })();
