@@ -209,10 +209,6 @@
     return {cell,lat,lon,kind:'nearby',options:nearby.slice(0,6)};
   }
 
-  function formatPopulation0354(n){
-    return n>0?Math.round(n).toLocaleString('es-ES')+' hab.':'población no disponible';
-  }
-
   function ensureModalMovable0354(){
     const card=document.getElementById('modalCard3244');
     if(card)window.HexategosMovablePanels0353?.register(card,'.modalHead3244','generic-modal');
