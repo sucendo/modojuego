@@ -1,3 +1,36 @@
+HEXATEGOS 0.36.2 · MUNDO DE ~500 NACIONES
+
+Concepto:
+- El planeta se comporta como si hubiera alrededor de 500 naciones/rivales.
+- Todas comparten las mismas posibilidades visibles: territorio, capital, diplomacia, guerra, economía e infraestructura.
+- La diferencia es exclusivamente la IA y la frecuencia con la que toma decisiones.
+- Las 16/25/35/50 seleccionadas al inicio conservan el planificador estratégico más costoso; el resto usa planificación escalonada.
+
+Escala:
+- Objetivo total por partida: aproximadamente 460–540 naciones.
+- La cantidad exacta varía con la semilla.
+- El número de naciones ligeras se calcula restando las naciones iniciales elegidas al objetivo total.
+
+IA:
+- perfiles conformista, comercial, defensivo, oportunista y localista;
+- el perfil puede cambiar con bastante más frecuencia durante los primeros 300 s;
+- sigue siendo moderadamente variable hasta 600 s;
+- después los cambios son poco frecuentes;
+- las IA principales también pueden revisar su doctrina al principio.
+
+Diplomacia y guerras:
+- relaciones dispersas entre naciones dinámicas: guerra, neutralidad, comercio, no agresión y alianza;
+- relaciones también entre IA principal y nación dinámica;
+- las naciones dinámicas pueden conquistar territorio de IA principales y viceversa;
+- una conquista principal elimina la propiedad compacta subyacente para impedir reapariciones.
+
+Rendimiento:
+- no se crea una matriz diplomática 500×500;
+- solo se almacenan relaciones de países que realmente tienen contacto;
+- snapshots compartidos del mapa;
+- clasificación basada en snapshots en lugar de un escaneo mundial continuo;
+- decisiones distribuidas por turnos de IA.
+
 HEXATEGOS 0.36.0 · EVOLUCIÓN POLÍTICA + IA ADAPTATIVA
 
 Novedades:
