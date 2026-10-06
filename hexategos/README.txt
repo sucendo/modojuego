@@ -15,9 +15,10 @@ Novedades 0.35.4:
 - Las filas admiten teclado (Enter / Espacio).
 
 2. ATLAS DE LOCALIDADES REALES
-- Atlas offline de 140.607 localidades.
+- Atlas offline base de 140.607 registros.
 - Fuente: GeoNames cities1000, a través del snapshot público w3c/cities.
-- Datos conservados: nombre, latitud, longitud, población y país.
+- Se excluyen 5.428 registros PPLX (secciones/barrios de núcleos de población), quedando 135.179 propuestas utilizables.
+- Datos base conservados: nombre, latitud, longitud, población y país. La población se usa internamente para ordenar propuestas, pero ya no se muestra en el selector.
 - Datos divididos en 12 franjas de 30° de longitud.
 - Dentro de cada franja hay un índice por teselas de 1°.
 - Los datos no se cargan en el arranque: se descargan bajo demanda y se cachean.
@@ -26,7 +27,9 @@ Novedades 0.35.4:
 - Al crear una nueva ciudad se consulta el atlas.
 - Se comprueba geométricamente si una localidad real cae dentro del hexágono/pentágono seleccionado.
 - Si existen varias, se muestran hasta seis propuestas.
-- Se priorizan las localidades más pobladas dentro del mismo hexágono.
+- Los barrios/distritos PPLX nunca se proponen como ciudades.
+- Se priorizan internamente las localidades más pobladas dentro del mismo hexágono, sin mostrar la cifra de población.
+- Si existe información histórica conservadora para la localidad, se muestra una secuencia breve de nombres anteriores.
 - Si no hay ninguna localidad del atlas dentro del hexágono, se muestran localidades reales cercanas indicando la distancia.
 - El jugador puede construir sin asignar nombre real y seguir usando el sistema de renombrado existente.
 - Las mejoras de una ciudad ya construida conservan su nombre.
@@ -34,7 +37,7 @@ Novedades 0.35.4:
 4. INTERFAZ
 - El selector de localidad utiliza el modal común.
 - Ese modal se registra en HexategosMovablePanels0353, por lo que puede reposicionarse.
-- La clasificación muestra visualmente que una fila permite navegar a su capital.
+- La clasificación conserva su aspecto anterior; cada fila actúa como enlace a la capital actual de la nación.
 
 FUENTE Y LICENCIA
 - GeoNames: CC BY 4.0.
