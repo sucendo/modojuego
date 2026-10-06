@@ -6,7 +6,7 @@ const ai=read('js/universal-polities-0359.js');
 const index=read('index.html');
 
 assert.doesNotThrow(()=>new Function(ai),'0.36.1 universal polity module must parse');
-assert.ok(ai.includes("const BUILD='0.36.1'"),'0.36.1 build marker missing');
+assert.ok(ai.includes("const BUILD='0.36.1'")||ai.includes("const BUILD='0.36.2'"),'contextual political build marker missing');
 assert.ok(ai.includes('cellContext3244=function'),'dynamic polity territory context bridge missing');
 assert.ok(ai.includes('ownerSummary3244=function'),'dynamic polity ownership label bridge missing');
 assert.ok(ai.includes('buildContextActions3244=function'),'context actions integration missing');
