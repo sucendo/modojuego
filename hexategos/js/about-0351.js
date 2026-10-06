@@ -1,13 +1,28 @@
 'use strict';
 
-// HEXATEGOS 0.35.1 · Acerca de / historial de versiones.
+// HEXATEGOS 0.35.2 · Acerca de / historial de versiones.
 (() => {
   const HISTORY=[
+    {
+      version:'0.35.2',
+      date:'Octubre 2026',
+      title:'Mapa geopolítico',
+      current:true,
+      summary:'La nueva inteligencia geopolítica se convierte en información visible y comprensible directamente sobre el mundo.',
+      changes:[
+        'Nuevo modo de mapa GEOPOLÍTICA junto a Político, Terreno y Suministro.',
+        'Colores por relación con la nación observada: rival, guerra, alianza, no agresión, comercio y estado tapón.',
+        'Visualización del radio de influencia de la nación seleccionada.',
+        'Líneas estratégicas para rivalidad, contención de potencias, estados tapón y alianzas.',
+        'Panel para jugadores con doctrina, esfera, rival y prioridades actuales.',
+        'Seleccionar territorio de otra nación cambia inmediatamente el análisis geopolítico.',
+        'Diagnóstico avanzado oculto para desarrollo, sin controles visibles para el jugador.'
+      ]
+    },
     {
       version:'0.35.1',
       date:'Octubre 2026',
       title:'Acerca de e historial',
-      current:true,
       summary:'La portada incorpora una sección permanente para consultar la evolución del proyecto sin entrar en una partida.',
       changes:[
         'Nuevo botón «ACERCA DE…» junto a Opciones.',
@@ -140,7 +155,7 @@
         '<header class="aboutHead0351">'+
           '<div class="aboutHeadText0351">'+
             '<h2 id="aboutTitle0351">ACERCA DE HEXATEGOS</h2>'+
-            '<p>Global Geopolitical Strategy · versión 0.35.1</p>'+
+            '<p>Global Geopolitical Strategy · versión 0.35.2</p>'+
           '</div>'+
           '<button id="aboutClose0351" class="aboutClose0351" type="button" aria-label="Cerrar">×</button>'+
         '</header>'+
@@ -198,5 +213,5 @@
     history:HISTORY.map(v=>({...v,changes:v.changes.slice()}))
   };
 
-  console.info('[HEXATEGOS] 0.35.1 Acerca de / historial preparado');
+  console.info('[HEXATEGOS] historial actualizado para 0.35.2');
 })();
