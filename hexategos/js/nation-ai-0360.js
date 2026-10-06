@@ -298,7 +298,9 @@
   updateRanking3220=function(force=false){
     if(!worldReady3301?.())return;
     const wall=performance.now();
-    if(!force&&wall-rankingWall<2600)return;
+    const rankPeriod=activeFactionCount3230>=450?5000:activeFactionCount3230>=350?4200:
+                     activeFactionCount3230>=250?3400:2800;
+    if(!force&&wall-rankingWall<rankPeriod)return;
     rankingWall=wall;
     const counts=ownedCounts3220(),arr=[];
     for(let f=0;f<activeFactionCount3230;f++)if((counts[f]||0)>0||f===0)arr.push([f,counts[f]||0]);
