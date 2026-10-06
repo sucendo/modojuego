@@ -477,6 +477,10 @@
       if(!ownerMinor0357||cell<0||cell>=ownerMinor0357.length||owner6[cell]>=0)return -1;
       return ownerMinor0357[cell];
     },
+    rawOwnerIdAt(cell){
+      if(!ownerMinor0357||cell<0||cell>=ownerMinor0357.length)return -1;
+      return ownerMinor0357[cell];
+    },
     setOwner(cell,id){
       if(!ownerMinor0357||cell<0||cell>=ownerMinor0357.length)return false;
       const prev=ownerMinor0357[cell];
