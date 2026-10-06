@@ -344,8 +344,13 @@
   }
 
   function serialize035(){
+    const grievanceSparse=[];
+    for(let i=0;i<grievance.length;i++){
+      const v=grievance[i];
+      if(Math.abs(v)>.001)grievanceSparse.push([i,Number(v.toFixed(3))]);
+    }
     return {
-      version:1,
+      version:2,
       state:state.map(x=>x?{
         doctrine:x.doctrine,
         homeRegion:x.homeRegion,
@@ -355,14 +360,20 @@
         balanceTarget:x.balanceTarget,
         lastEval:x.lastEval
       }:null),
-      grievance:Array.from(grievance)
+      grievanceSparse
     };
   }
 
   function restore035(data){
     if(!data||!Array.isArray(data.state))return false;
     grievance.fill(0);
-    if(Array.isArray(data.grievance))
+    if(Array.isArray(data.grievanceSparse)){
+      for(const row of data.grievanceSparse){
+        if(!Array.isArray(row)||row.length<2)continue;
+        const i=Number(row[0]),v=Number(row[1]);
+        if(Number.isInteger(i)&&i>=0&&i<grievance.length&&Number.isFinite(v))grievance[i]=v;
+      }
+    }else if(Array.isArray(data.grievance))
       grievance.set(data.grievance.slice(0,grievance.length));
     state=Array.from({length:N},(_,f)=>{
       const x=data.state[f];if(!x)return null;
