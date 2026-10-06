@@ -4,10 +4,25 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.35.9',
+      date:'Octubre 2026',
+      title:'Entidades políticas universales',
+      current:true,
+      summary:'Todas las entidades políticas se presentan con las mismas capacidades jugables; la diferencia interna queda limitada a cómo y cada cuánto decide su IA.',
+      changes:[
+        'Diplomacia completa también con las naciones generadas dinámicamente: guerra, paz, comercio, no agresión y alianza.',
+        'Las entidades dinámicas disponen de economía, tropas, ciudades, industria, puertos y fortificaciones propias.',
+        'Pueden atacar y perder territorio, conquistar al jugador y ser conquistadas mediante las mismas operaciones visibles.',
+        'La clasificación y el mapa mantienen una presentación única sin revelar categorías internas.',
+        'La personalidad solo modifica frecuencia y propensión de decisión: conformismo, defensa, comercio u oportunismo no aparecen como etiquetas de juego.',
+        'El cálculo se escalona por grupos y reutiliza snapshots territoriales periódicos para mantener controlado el coste con cientos de entidades.',
+        'Las partidas existentes migran sin alterar el territorio de las naciones ya presentes.'
+      ]
+    },
+    {
       version:'0.35.8',
       date:'Octubre 2026',
       title:'Entidades políticas unificadas',
-      current:true,
       summary:'El mapa incorpora muchas más entidades políticas sin distinguir visualmente entre categorías internas: todas aparecen como naciones normales y su importancia se descubre por su comportamiento y evolución.',
       changes:[
         'La escala elegida al iniciar mantiene las naciones con IA completa y el mundo añade otras entidades políticas de forma dinámica.',
@@ -214,7 +229,7 @@
         '<header class="aboutHead0351">'+
           '<div class="aboutHeadText0351">'+
             '<h2 id="aboutTitle0351">ACERCA DE HEXATEGOS</h2>'+
-            '<p>Global Geopolitical Strategy · versión 0.35.8</p>'+
+            '<p>Global Geopolitical Strategy · versión 0.35.9</p>'+
           '</div>'+
           '<button id="aboutClose0351" class="aboutClose0351" type="button" aria-label="Cerrar">×</button>'+
         '</header>'+
@@ -272,5 +287,5 @@
     history:HISTORY.map(v=>({...v,changes:v.changes.slice()}))
   };
 
-  console.info('[HEXATEGOS] historial actualizado para 0.35.8');
+  console.info('[HEXATEGOS] historial actualizado para 0.35.9');
 })();
