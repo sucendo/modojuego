@@ -1,7 +1,7 @@
 {
-  "version": 2,
+  "version": 3,
   "dataset": "GeoNames cities1000",
-  "records": 140607,
+  "records": 135179,
   "bands": 12,
   "bandDegrees": 30,
   "tileDegrees": 1,
@@ -16,7 +16,7 @@
   ],
   "excludedPPLX": 5428,
   "usableRecords": 135179,
-  "historicalNameRecords": 33,
+  "historicalNameRecords": 15,
   "filters": {
     "excludedFeatureCodes": [
       "PPLX"
@@ -26,5 +26,7 @@
   "supplementalFiles": [
     "pplx-exclusions.json",
     "historical-names.json"
-  ]
+  ],
+  "sourceRecords": 140607,
+  "note": "Atlas materializado sin feature code PPLX; población conservada solo para orden interno, no se muestra en la interfaz."
 }
