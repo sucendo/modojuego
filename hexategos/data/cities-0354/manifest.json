@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "dataset": "GeoNames cities1000",
+  "records": 140607,
+  "bands": 12,
+  "bandDegrees": 30,
+  "tileDegrees": 1,
+  "source": "w3c/cities snapshot based on GeoNames",
+  "attribution": "GeoNames, CC BY 4.0",
+  "fields": [
+    "name",
+    "lat",
+    "lon",
+    "population",
+    "countryCode"
+  ]
+}
