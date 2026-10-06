@@ -8,7 +8,7 @@
       date:'Octubre 2026',
       title:'Entidades políticas unificadas',
       current:true,
-      summary:'El mapa incorpora muchas más entidades políticas sin distinguir visualmente entre categorías internas: todas aparecen como naciones normales y su importancia se descubre por su comportamiento y evolución.'
+      summary:'El mapa incorpora muchas más entidades políticas sin distinguir visualmente entre categorías internas: todas aparecen como naciones normales y su importancia se descubre por su comportamiento y evolución.',
       changes:[
         'La escala elegida al iniciar mantiene las naciones con IA completa y el mundo añade otras entidades políticas de forma dinámica.',
         'Las entidades adicionales usan una simulación ligera para mantener el rendimiento sin delatar su categoría al jugador.',
