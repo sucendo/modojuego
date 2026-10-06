@@ -15,8 +15,8 @@ assert.ok(game.includes('const FACTION_COUNT_OPTIONS3230=[150,250,350,500];'),'n
 assert.ok(game.includes('LEGACY_FACTION_COUNT_OPTIONS3230=[16,25,35,50]'),'legacy scale compatibility missing');
 assert.ok(game.includes('let owner6=new Int16Array(0)'),'owner6 must support faction IDs above 255');
 assert.ok(game.includes('function claimInitialRing3302'),'all nations must use the normal initial territory system');
-assert.ok(game.includes('capitals[f]=capitalCell'),'normal capital assignment missing');
-assert.ok(game.includes('cityLevel3230[capitalCell]=1'),'normal capital city missing');
+assert.ok(game.includes('capitals[f]=capital;historicCapital3230[f]=capital;'),'normal capital assignment missing');
+assert.ok(game.includes('cities3212.add(capital);cityLevel3230[capital]=1;'),'normal capital city missing');
 assert.ok(game.includes('const DIP_F3300=FACTIONS3230.length'),'diplomacy must scale with real faction capacity');
 
 for(const m of ['conformist','commercial','defensive','opportunist','localist'])
