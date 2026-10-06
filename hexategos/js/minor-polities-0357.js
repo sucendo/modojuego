@@ -186,7 +186,14 @@
       const cell=probe;
       probe=(probe+7919)%L.n;tries++;
       if(L.land[cell]<0||owner6[cell]>=0||ownerMinor0357[cell]>=0)continue;
-      const id=hash0357(seed0357^cell)%Math.max(1,entities0357.length);
+      if(!entities0357.length)break;
+      let id=hash0357(seed0357^cell)%entities0357.length,found=-1;
+      for(let step=0;step<Math.min(entities0357.length,24);step++){
+        const cand=(id+step)%entities0357.length,ent=entities0357[cand];
+        if(ent&&ent.seed>=0&&owner6[ent.seed]<0&&ownerMinor0357[ent.seed]===cand){found=cand;break}
+      }
+      if(found<0)continue;
+      id=found;
       ownerMinor0357[cell]=id;queue0357[tail0357++]=cell;claimed0357++;added++;
     }
   }
