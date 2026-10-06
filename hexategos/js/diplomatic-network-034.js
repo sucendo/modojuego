@@ -5,8 +5,9 @@
 // la IA con frecuencia según contacto geopolítico real.
 (() => {
   const N = DIP_F3300;
-  const MAX_TARGETS = 12;
-  const MIN_TARGETS = 4;
+  const MAX_TARGETS = 16;
+  const MIN_TARGETS = 5;
+  const REBUILD_PERIOD = 12;
 
   const CONTACT_NONE = 0;
   const CONTACT_STRATEGIC = 1;
@@ -88,9 +89,8 @@
   function rebuildDiplomaticContactNetwork3301(force=false){
     const t0=performance.now();
     const snap=aiSnapshot3260 || rebuildAISnapshot3260();
+    if(!force && !dirty && snap.campaign-lastCampaign<REBUILD_PERIOD) return contactTargets;
     rebuildDiplomaticBorders3300(force);
-
-    if(!force && !dirty && snap.campaign===lastCampaign) return contactTargets;
 
     contactLevel.fill(0);
     rebuildRelationCaches();
@@ -129,15 +129,23 @@
       }
     }
 
+    // Propagación de vecinos-de-vecinos sin bucle N³. Para cada nación
+    // solo usamos sus contactos directos reales y un máximo de 12 vecinos por
+    // intermediario. Mantiene la lógica regional con coste acotado.
+    const direct=Array.from({length:N},()=>[]);
     for(let a=0;a<N;a++){
-      if(!alive(a,snap)) continue;
-      for(let m=0;m<N;m++){
-        if(m===a || contactLevel[ix(a,m)]<CONTACT_DIRECT) continue;
-        for(let b=0;b<N;b++){
-          if(b===a || b===m || !alive(b,snap)) continue;
-          if(contactLevel[ix(m,b)]>=CONTACT_DIRECT && contactLevel[ix(a,b)]<CONTACT_REGIONAL){
-            setContact(a,b,CONTACT_REGIONAL);
-          }
+      if(!alive(a,snap))continue;
+      for(let b=0;b<N;b++)if(b!==a&&contactLevel[ix(a,b)]>=CONTACT_DIRECT)direct[a].push(b);
+    }
+    for(let a=0;a<N;a++){
+      if(!alive(a,snap))continue;
+      const da=direct[a];
+      for(let mi=0;mi<da.length;mi++){
+        const m=da[mi],dm=direct[m]||[],lim=Math.min(12,dm.length);
+        for(let bi=0;bi<lim;bi++){
+          const b=dm[bi];
+          if(b===a||b===m||!alive(b,snap))continue;
+          if(contactLevel[ix(a,b)]<CONTACT_REGIONAL)setContact(a,b,CONTACT_REGIONAL);
         }
       }
     }
@@ -445,5 +453,5 @@
     };
   }
 
-  console.info('[HEXATEGOS] Red diplomática activa 0.34 preparada · HexategosDiplomacyNetwork3301.stats()');
+  console.info('[HEXATEGOS] Red diplomática activa 0.36 optimizada para 500 naciones · HexategosDiplomacyNetwork3301.stats()');
 })();
