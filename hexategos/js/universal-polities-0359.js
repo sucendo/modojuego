@@ -1,10 +1,10 @@
 'use strict';
 
-// HEXATEGOS 0.36.0 · EVOLUCIÓN POLÍTICA + IA ADAPTATIVA.
+// HEXATEGOS 0.36.2 · MUNDO DE ~500 NACIONES + IA INTERCAMBIABLE.
 // Todas las entidades se presentan y se juegan como naciones normales.
 // La diferencia interna es únicamente el coste/frecuencia de decisión de su IA.
 (() => {
-  const BUILD='0.36.1';
+  const BUILD='0.36.2';
   const API=window.HexategosMinorPolities0357;
   if(!API){console.warn('[HEXATEGOS 0.35.9] capa política base no disponible');return}
 
@@ -12,7 +12,7 @@
   const VIRTUAL_BASE=1000;
   const SNAP_PERIOD=10;
   const MAX_SAMPLES=24;
-  const MAX_DIP_ROWS=260;
+  const MAX_DIP_ROWS=560;
   const REL_LABEL={[-1]:'GUERRA',0:'NEUTRAL',1:'COMERCIO',2:'NO AGRESIÓN',3:'ALIANZA'};
 
   let states=[];
@@ -22,7 +22,10 @@
   let borderPairs=[];
   let lastThinkCampaign=-1e9;
   let restored0359=null;
-  let minorWars0359=new Map();
+  let minorWars0359=new Map(); // mapa disperso de relación nación↔nación: -1..3
+  let majorMinorRelations0359=new Map();
+  let tradeDegree0359=new Uint16Array(0);
+  let rankingLastWall0362=-1e9,rankingSignature0362='';
   let majorRoles0359=[];
   let majorNextReview0359=[];
   let majorDoctrineCursor0359=1;
@@ -75,6 +78,7 @@
       lastBuild:s.lastBuild,lastAction:s.lastAction
     })),
     minorWars:[...minorWars0359.entries()],
+    majorMinorRelations:[...majorMinorRelations0359.entries()],
     majorRoles:majorRoles0359.slice(),
     majorNextReview:majorNextReview0359.slice()};
   }
@@ -104,6 +108,8 @@
       return merged;
     });
     minorWars0359=new Map(Array.isArray(data?.minorWars)?data.minorWars:[]);
+    majorMinorRelations0359=new Map(Array.isArray(data?.majorMinorRelations)?data.majorMinorRelations:[]);
+    tradeDegree0359=new Uint16Array(states.length);
     majorRoles0359=Array.isArray(data?.majorRoles)?data.majorRoles.slice(0,activeFactionCount3230):[];
     majorNextReview0359=Array.isArray(data?.majorNextReview)?data.majorNextReview.slice(0,activeFactionCount3230):[];
     for(let f=1;f<activeFactionCount3230;f++){
@@ -114,6 +120,7 @@
     }
     territoryCounts=new Int32Array(states.length);
     samples=Array.from({length:states.length},()=>[]);
+    rebuildTradeDegree0359();
     rebuildSnapshot(true);
     ensureStarterInfrastructure();
   }
@@ -127,7 +134,14 @@
     const pairSeen=new Set();
 
     for(let i=0;i<L.n;i++){
-      const m=API.ownerIdAt(i);
+      const raw=typeof API.rawOwnerIdAt==='function'?API.rawOwnerIdAt(i):API.ownerIdAt(i);
+      // Si una nación principal ha conquistado esta casilla, se elimina la
+      // propiedad compacta subyacente para impedir "reapariciones fantasma".
+      if(owner6[i]>=0){
+        if(raw>=0)API.setOwner(i,-1);
+        continue;
+      }
+      const m=raw;
       if(m<0||m>=states.length)continue;
       territoryCounts[m]++;
       const a=samples[m];
@@ -460,7 +474,8 @@
       const city=st.cityCells.filter(c=>structureValid(st.id,c)).length;
       const ind=st.industryCells.filter(c=>structureValid(st.id,c)).length;
       const port=st.portCells.filter(c=>structureValid(st.id,c)).length;
-      const gross=.014*t+.34*city+.62*ind+.28*port;
+      const tradeBonus=(tradeDegree0359[st.id]||0)*.11;
+      const gross=.014*t+.34*city+.62*ind+.28*port+tradeBonus;
       const upkeep=.0018*st.troops+.025*st.cityCells.length;
       st.gold=clamp(st.gold+Math.max(-2.2,gross-upkeep)*Math.max(1,gameSpeed3212),0,9999);
       st.troops=clamp(st.troops+(.045+.0018*t+.012*city)*Math.max(1,gameSpeed3212),0,1200);
@@ -480,18 +495,37 @@
   }
 
   function warKey0359(a,b){return a<b?a+'|'+b:b+'|'+a}
-  function atWarMinor0359(a,b){return minorWars0359.get(warKey0359(a,b))===-1}
-  function setMinorWar0359(a,b,on){
+  function minorRelation0359(a,b){return minorWars0359.get(warKey0359(a,b))??0}
+  function setMinorRelation0359(a,b,v){
     const key=warKey0359(a,b);
-    if(on)minorWars0359.set(key,-1);else minorWars0359.delete(key);
+    if(v===0)minorWars0359.delete(key);else minorWars0359.set(key,v);
+    rebuildTradeDegree0359();
+  }
+  function atWarMinor0359(a,b){return minorRelation0359(a,b)===-1}
+  function setMinorWar0359(a,b,on){setMinorRelation0359(a,b,on?-1:0)}
+
+  function majorMinorKey0359(f,id){return f+'|'+id}
+  function majorMinorRelation0359(f,id){return majorMinorRelations0359.get(majorMinorKey0359(f,id))??0}
+  function setMajorMinorRelation0359(f,id,v){
+    const key=majorMinorKey0359(f,id);
+    if(v===0)majorMinorRelations0359.delete(key);else majorMinorRelations0359.set(key,v);
+  }
+  function rebuildTradeDegree0359(){
+    tradeDegree0359=new Uint16Array(states.length);
+    for(const [key,v] of minorWars0359){
+      if(v!==1&&v!==3)continue;
+      const [a,b]=key.split('|').map(Number);
+      if(a>=0&&a<tradeDegree0359.length)tradeDegree0359[a]++;
+      if(b>=0&&b<tradeDegree0359.length)tradeDegree0359[b]++;
+    }
   }
 
   function maybeChangeMindset0359(id){
     const st=states[id],e=API.entityRef(id);if(!st||!e)return;
     const now=campaignSeconds3230;if(now<st.nextMindsetReview)return;
     const age=Math.max(0,now-(st.bornAt||0));
-    st.nextMindsetReview=now+(age<180?28:age<480?55:150)+(id%17);
-    const chance=age<180?.26:age<480?.10:.018;
+    st.nextMindsetReview=now+(age<300?32:age<600?65:170)+(id%17);
+    const chance=age<300?.24:age<600?.085:.012;
     if(Math.random()>chance)return;
 
     const current=st.mindset||'conformist';
@@ -568,9 +602,62 @@
     return true;
   }
 
+  function maybeMinorDiplomacy0359(id,contacts){
+    const st=states[id];if(!st)return;
+    const p=st.mindset||'conformist';
+    const neighbours=contacts.filter(x=>x.otherKind==='minor'&&(territoryCounts[x.other]||0)>0);
+    if(!neighbours.length)return;
+    const c=neighbours[hash(id*577+(campaignSeconds3230|0))%neighbours.length];
+    const rel=minorRelation0359(id,c.other);
+    const roll=Math.random();
+    if(rel===0){
+      if(p==='commercial'&&roll<.075)setMinorRelation0359(id,c.other,1);
+      else if((p==='defensive'||p==='conformist')&&roll<.055)setMinorRelation0359(id,c.other,2);
+      else if(p==='localist'&&roll<.025)setMinorRelation0359(id,c.other,2);
+      else if(roll<.006)setMinorRelation0359(id,c.other,3);
+    }else if(rel>0&&roll<.006){
+      setMinorRelation0359(id,c.other,0);
+    }
+  }
+
+  function attackMajorNeighbour0359(id,contact){
+    const st=states[id],f=contact.other;
+    if(!st||contact.otherKind!=='major'||f<=0||majorMinorRelation0359(f,id)!==-1)return false;
+    const target=contact.b;if(owner6[target]!==f||st.troops<24)return false;
+    const ratio=st.troops/Math.max(20,troops3230[f]||60);
+    const chance=clamp(.10+(ratio-1)*.12+(st.mindset==='opportunist'?.075:0)-(forts3212[target]||0)*.05,.025,.34);
+    if(Math.random()>chance){st.troops=Math.max(0,st.troops-.18);return false}
+    owner6[target]=-1;API.setOwner(target,id);forts3212[target]=0;
+    territoryCounts[id]=(territoryCounts[id]||0)+1;
+    st.troops=Math.max(0,st.troops-.85);troops3230[f]=Math.max(0,(troops3230[f]||0)-1.2);
+    if(capitals[f]===target){
+      const next=chooseEmergencyCapital3230(f,target);
+      if(next>=0)setCapital3230(f,next,'forced');else capitals[f]=-1;
+    }
+    cacheDirty=true;supplyDirty3220=true;aiSnapshotDirty3260=true;needsRender=true;
+    return true;
+  }
+
+  function maybeMajorMinorDiplomacy0359(id,contacts){
+    const st=states[id];if(!st)return;
+    const p=st.mindset||'conformist';
+    const neighbours=contacts.filter(x=>x.otherKind==='major'&&x.other>0);
+    if(!neighbours.length)return;
+    const c=neighbours[hash(id*839+(campaignSeconds3230|0))%neighbours.length],f=c.other;
+    let rel=majorMinorRelation0359(f,id);
+    const roll=Math.random();
+    if(rel===0){
+      if(p==='commercial'&&roll<.055)setMajorMinorRelation0359(f,id,1);
+      else if((p==='defensive'||p==='conformist')&&roll<.04)setMajorMinorRelation0359(f,id,2);
+      else if(p==='opportunist'&&st.troops>80&&roll<.035)setMajorMinorRelation0359(f,id,-1);
+    }else if(rel>0&&roll<.004)setMajorMinorRelation0359(f,id,0);
+    rel=majorMinorRelation0359(f,id);
+    if(rel===-1)attackMajorNeighbour0359(id,c);
+  }
+
   function maybeMinorWar0359(id,contacts){
     const st=states[id];if(!st)return false;
-    const candidates=contacts.filter(x=>x.otherKind==='minor'&&(territoryCounts[x.other]||0)>0);
+    const candidates=contacts.filter(x=>x.otherKind==='minor'&&(territoryCounts[x.other]||0)>0&&minorRelation0359(id,x.other)<=0);
     if(!candidates.length)return false;
     const active=candidates.find(x=>atWarMinor0359(id,x.other));
     if(active){
@@ -595,7 +682,7 @@
     const f=majorDoctrineCursor0359++;
     if(majorDoctrineCursor0359>=activeFactionCount3230)majorDoctrineCursor0359=1;
     if(f<=0||f>=activeFactionCount3230||now<(majorNextReview0359[f]||0))return;
-    const early=now<180,mid=now<480;
+    const early=now<300,mid=now<600;
     majorNextReview0359[f]=now+(early?32:mid?70:190)+(f%9);
     if(Math.random()>(early?.20:mid?.065:.012))return;
     let pool=MAIN_ROLES0359;
@@ -643,7 +730,10 @@
       }
     }
 
-    // Las naciones dinámicas también pueden guerrear entre ellas y desaparecer.
+    // Diplomacia dispersa entre las ~500 naciones: mismas relaciones, sin
+    // construir una matriz 500×500 ni revisar pares que nunca tienen contacto.
+    maybeMinorDiplomacy0359(id,contacts);
+    maybeMajorMinorDiplomacy0359(id,contacts);
     maybeMinorWar0359(id,contacts);
   }
 
@@ -658,21 +748,31 @@
     maybeChangeMainDoctrine0359();
   }
 
-  // Main-AI attacks against these nations are allowed only once a virtual war exists.
-  // For now their diplomatic behaviour towards principal AIs is deliberately sparse
-  // and border-driven, preserving performance.
+  // Las IA de alta frecuencia también consideran a las demás naciones rivales.
+  // La relación se guarda de forma dispersa solo cuando existe contacto.
   if(typeof aiTargetAllowed3260==='function'){
     const baseAllowed0359=aiTargetAllowed3260;
     aiTargetAllowed3260=function(f,target){
       const id=API.ownerIdAt(target);
       if(id>=0){
-        // Major powers do not silently consume a neighbour: contact creates a
-        // lightweight war state deterministically from aggression/personality.
-        const e=API.entityRef(id),aggr=FACTIONS3230[f]?.aggr??.5;
-        const gate=((hash(f*977+id*131+(Math.floor(campaignSeconds3230/30)))%1000)/1000);
-        return gate<Math.max(.035,(aggr-.42)*.18+(e?.personality==='opportunist'?.025:0));
+        let rel=majorMinorRelation0359(f,id);
+        if(rel===-1)return true;
+        if(rel>0)return false;
+        const aggr=FACTIONS3230[f]?.aggr??.5,role=FACTIONS3230[f]?.role||'balanced';
+        const gate=((hash(f*977+id*131+Math.floor(campaignSeconds3230/25))%1000)/1000);
+        const chance=Math.max(.018,(aggr-.40)*.13+(role==='aggressive'?.035:role==='growth'?.012:0));
+        if(gate<chance){setMajorMinorRelation0359(f,id,-1);return true}
+        return false;
       }
       return baseAllowed0359.apply(this,arguments);
+    };
+  }
+  if(typeof aiCampaignCellAllowed3280==='function'){
+    const baseCampaignCell0362=aiCampaignCellAllowed3280;
+    aiCampaignCellAllowed3280=function(f,cell,enemy){
+      const id=API.ownerIdAt(cell);
+      if(id>=0)return majorMinorRelation0359(f,id)===-1;
+      return baseCampaignCell0362.apply(this,arguments);
     };
   }
 
@@ -826,7 +926,7 @@
     const baseBuild0359=buildPortableFile3276;
     buildPortableFile3276=function(){
       const file=baseBuild0359.apply(this,arguments);
-      file.gameVersion='0.36.1';file.payload.universalPolities0359=serialize();
+      file.gameVersion='0.36.2';file.payload.universalPolities0359=serialize();
       if(typeof fnv1a3273==='function')file.checksum=fnv1a3273(JSON.stringify(file.payload));
       return file;
     };
@@ -853,16 +953,46 @@
   resetGame3230=function(clearSave=true){
     const out=baseReset0359.apply(this,arguments);
     states=[];territoryCounts=new Int32Array(0);samples=[];borderPairs=[];
-    minorWars0359=new Map();majorRoles0359=[];majorNextReview0359=[];
+    minorWars0359=new Map();majorMinorRelations0359=new Map();tradeDegree0359=new Uint16Array(0);majorRoles0359=[];majorNextReview0359=[];
     if(clearSave)try{localStorage.removeItem(SAVE_KEY)}catch(_){}
     return out;
+  };
+
+  function universalRanking0362(force=false){
+    if(!states.length)return;
+    const wall=performance.now();if(!force&&wall-rankingLastWall0362<1100)return;
+    rankingLastWall0362=wall;rebuildSnapshot(false);
+    const snap=aiSnapshot3260||rebuildAISnapshot3260(),rows=[];
+    for(let f=0;f<activeFactionCount3230;f++){
+      const count=snap?.territory?.[f]||0;
+      if(count>0||f===0)rows.push({kind:'major',id:f,name:factionName3230(f),color:FACTIONS3230[f]?.color||'#80909b',count});
+    }
+    for(let id=0;id<states.length;id++){
+      const count=territoryCounts[id]||0,e=API.entityRef(id);
+      if(count>0&&e)rows.push({kind:'minor',id,name:e.name,color:e.color,count});
+    }
+    rows.sort((a,b)=>b.count-a.count||a.name.localeCompare(b.name,'es'));
+    const signature=rows.map(r=>r.kind[0]+r.id+':'+r.count).join('|');
+    if(!force&&signature===rankingSignature0362)return;
+    rankingSignature0362=signature;
+    const host=document.getElementById('rankRows3213');if(!host)return;
+    host.innerHTML=rows.map((r,k)=>
+      '<div class="rankRow3213" role="button" tabindex="0" '+(r.kind==='major'?'data-faction="'+r.id+'"':'data-minor0358="'+r.id+'"')+
+      ' aria-label="Ir a la capital de '+String(r.name).replace(/"/g,'&quot;')+'" title="Ir a la capital de '+String(r.name).replace(/"/g,'&quot;')+'">'+
+      '<i class="rankDot3213" style="background:'+r.color+'"></i><span>'+(k+1)+'. '+r.name+'</span><small>'+r.count.toLocaleString('es-ES')+'</small></div>'
+    ).join('');
+  }
+  const baseRanking0362=updateRanking3220;
+  updateRanking3220=function(){
+    if(!states.length)return baseRanking0362.apply(this,arguments);
+    return universalRanking0362(false);
   };
 
   function stats(){
     rebuildSnapshot(false);
     return {
       version:BUILD,entities:states.length,territory:Array.from(territoryCounts),
-      borders:borderPairs.length,minorWars:minorWars0359.size,
+      borders:borderPairs.length,sparseRelations:minorWars0359.size,majorMinorRelations:majorMinorRelations0359.size,
       mindsets:states.reduce((a,s)=>{a[s.mindset]=(a[s.mindset]||0)+1;return a},{}),
       relations:states.reduce((a,s)=>{a[s.rel]=(a[s.rel]||0)+1;return a},{}),
       perf:window.__hexategos0359Perf||null
@@ -880,5 +1010,5 @@
     API.refreshRanking();
   },0);
 
-  console.info('[HEXATEGOS] 0.36.1 integración política contextual activa');
+  console.info('[HEXATEGOS] 0.36.2 mundo de ~500 naciones + IA intercambiable activo');
 })();
