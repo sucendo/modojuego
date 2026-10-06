@@ -462,7 +462,28 @@
 
   window.HexategosMinorPolities0357={
     version:BUILD,stats:stats0357,entityAt:entityAt0357,
+    ownerIdAt(cell){
+      if(!ownerMinor0357||cell<0||cell>=ownerMinor0357.length||owner6[cell]>=0)return -1;
+      return ownerMinor0357[cell];
+    },
+    setOwner(cell,id){
+      if(!ownerMinor0357||cell<0||cell>=ownerMinor0357.length)return false;
+      const prev=ownerMinor0357[cell];
+      if(prev===id)return true;
+      ownerMinor0357[cell]=Number.isInteger(id)?id:-1;
+      if(prev<0&&id>=0)claimed0357++;
+      else if(prev>=0&&id<0)claimed0357=Math.max(0,claimed0357-1);
+      needsRender=true;rankingSignature0358='';
+      return true;
+    },
+    setCapital(id,cell){
+      const e=entities0357[id];
+      if(!e||cell<0||owner6[cell]>=0||ownerMinor0357?.[cell]!==id)return false;
+      e.seed=cell;persistMeta0357();rankingSignature0358='';needsRender=true;return true;
+    },
+    entityRef(id){return entities0357[id]||null},
     entities:()=>entities0357.map(e=>({...e})),
+    refreshRanking:()=>unifiedRanking0358(true),
     rebuild:()=>{initialized0357=false;buildEntities0357(loadMeta0357());return stats0357()}
   };
   window.HEXATEGOS_VERSION=BUILD;
