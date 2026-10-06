@@ -56,6 +56,20 @@
   }
 
   let layout=read()||defaults();
+  // One-time rollback for the short-lived compact experiment. Only browsers
+  // that actually loaded that build carry this marker, so previous custom
+  // layouts are left untouched.
+  try{
+    const compactKey='hexategos.stable5.rank.compact.v1';
+    if(localStorage.getItem(compactKey)==='1'){
+      const d=defaults(),oldW=Number(layout.w)||d.w,newW=Math.max(oldW,d.w);
+      layout.x=(Number(layout.x)||d.x)-Math.max(0,newW-oldW);
+      layout.w=newW;
+      layout.h=Math.max(Number(layout.h)||d.h,d.h);
+      localStorage.removeItem(compactKey);
+      localStorage.setItem(RANK_KEY,JSON.stringify(layout));
+    }
+  }catch(_){}
   let collapsed=false;
   try{collapsed=localStorage.getItem(RANK_COLLAPSED_KEY)==='1'}catch(_){}
 
