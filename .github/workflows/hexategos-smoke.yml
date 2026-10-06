@@ -18,5 +18,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Run Hexategos 0.34.2 smoke checks
+      - name: Run Hexategos 0.34.2 stability smoke
         run: node hexategos/tests/smoke-0342.mjs
+      - name: Run Hexategos 0.35 geopolitical smoke
+        run: node hexategos/tests/smoke-035.mjs
