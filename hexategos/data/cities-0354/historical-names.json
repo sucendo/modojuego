@@ -1,24 +1,31 @@
 {
-  "version": 1,
-  "scope": "Curated historical names for Spanish cities; conservative and non-exhaustive",
+  "version": 2,
+  "scope": "Nombres históricos conservadores para ciudades españolas; solo equivalencias documentadas y no exhaustivas",
   "records": {
-    "ES|Madrid": [
-      "Mayrit",
-      "La Villa y Corte de Madrid"
-    ],
     "ES|Barcelona": [
       "Barcino",
-      "la Ciudad Condal"
+      "Barcenone"
     ],
     "ES|Zaragoza": [
+      "Salduie",
       "Caesaraugusta",
-      "Saraqusta"
+      "Saraqusta",
+      "Saragoça",
+      "Çaragoça"
+    ],
+    "ES|Sevilla": [
+      "Hispalis"
+    ],
+    "ES|Córdoba": [
+      "Corduba"
     ],
     "ES|Mérida": [
-      "Emerita Augusta"
+      "Augusta Emerita",
+      "Marida"
     ],
-    "ES|Tarragona": [
-      "Tarraco"
+    "ES|Cartagena": [
+      "Qart-Hadast",
+      "Carthago Nova"
     ],
     "ES|Cadiz": [
       "Gadir",
@@ -28,96 +35,39 @@
       "Gadir",
       "Gades"
     ],
-    "ES|Cartagena": [
-      "Qart Hadasht",
-      "Carthago Nova"
-    ],
-    "ES|Córdoba": [
-      "Corduba",
-      "Qurtuba"
-    ],
-    "ES|Sevilla": [
-      "Hispalis",
-      "Ishbiliya"
-    ],
-    "ES|Málaga": [
-      "Malaka",
-      "Malaca"
-    ],
-    "ES|Valencia": [
-      "Valentia",
-      "Balansiya"
-    ],
-    "ES|Alicante": [
-      "Lucentum",
-      "al-Laqant"
-    ],
-    "ES|Almería": [
-      "al-Mariyya"
-    ],
-    "ES|Murcia": [
-      "Mursiya"
-    ],
-    "ES|Granada": [
-      "Garnata"
-    ],
-    "ES|Jaén": [
-      "Aurgi",
-      "Yayyan"
-    ],
-    "ES|Badajoz": [
-      "Batalyaws"
-    ],
-    "ES|Cáceres": [
-      "Norba Caesarina"
-    ],
-    "ES|Toledo": [
-      "Toletum",
-      "Tulaytula"
-    ],
-    "ES|Huesca": [
-      "Osca",
-      "Wasqa"
+    "ES|Alcalá de Henares": [
+      "Complutum",
+      "Conplutum"
     ],
     "ES|Lleida": [
-      "Ilerda"
+      "Iltirta",
+      "Ilerda",
+      "Larida"
+    ],
+    "ES|Lugo": [
+      "Lucus Augusta",
+      "Luco Augusti"
+    ],
+    "ES|Pamplona": [
+      "Pompaelo",
+      "Pompelo",
+      "Pompelone",
+      "Pompeyopolis"
     ],
     "ES|Girona": [
       "Gerunda"
     ],
-    "ES|Pamplona": [
-      "Pompaelo"
+    "ES|Astorga": [
+      "Asturica Augusta",
+      "Astorica"
     ],
-    "ES|León": [
-      "Legio"
-    ],
-    "ES|Lugo": [
-      "Lucus Augusti"
-    ],
-    "ES|Salamanca": [
-      "Salmantica"
-    ],
-    "ES|Albacete": [
-      "al-Basit"
-    ],
-    "ES|Guadalajara": [
-      "Wādī al-Ḥijāra"
-    ],
-    "ES|Cuenca": [
-      "Qūnka"
-    ],
-    "ES|Ciudad Real": [
-      "Villa Real"
-    ],
-    "ES|Palma": [
-      "Madina Mayurqa"
-    ],
-    "ES|Oviedo": [
-      "Ovetum"
+    "ES|Valencia": [
+      "Valentia"
     ]
   },
   "notes": [
-    "Only display entries explicitly listed here; absence means no historical label is shown.",
-    "Forms are intended as concise game context, not as a complete scholarly chronology."
+    "Se muestran solo entradas explícitamente documentadas; si no hay registro, no aparece ninguna etiqueta histórica.",
+    "No se incluyen apodos, gentilicios ni denominaciones turísticas.",
+    "La secuencia resume topónimos históricos y no pretende ser una cronología académica completa."
   ]
 }
