@@ -80,7 +80,7 @@
     if(L.land[i]<0)return shadeColor('#17384f',z);
     const base=baseTerrainRGB0352(key,i,L);
     if(own<0||own>=activeFactionCount3230)return shadedRGB3247(mixRGB3247(base,REL_COLORS.neutral,.22),z);
-    rebuildPalette0352(false);
+    if(paletteFocus<0)rebuildPalette0352(false);
     const cls=relationPalette[own]||'neutral';
     const tint=cls==='own'?.70:cls==='neutral'?.38:.61;
     return shadedRGB3247(mixRGB3247(base,REL_COLORS[cls]||REL_COLORS.neutral,tint),z);
@@ -269,6 +269,7 @@
   function drawGeoOverlay0352(R,cx,cy){
     if(mapMode3252!==MODE||!started3230)return;
     const t0=performance.now();
+    rebuildPalette0352(false);
     const focus=activeFocus0352();
     const st=window.HexategosGeopolitics035?.evaluate?.(focus,false);
     if(!st)return;
