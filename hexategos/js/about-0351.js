@@ -4,10 +4,25 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.35.6',
+      date:'Octubre 2026',
+      title:'Infraestructura combinada y desarrollo IA',
+      current:true,
+      summary:'Las ciudades pueden convivir visualmente con industria y puerto, desaparece el marcador de capital histórica y las naciones IA desarrollan una red urbana e industrial acorde a su tamaño.',
+      changes:[
+        'La capital histórica permanece en la lógica de nacionalismo, pero deja de dibujarse como una segunda estrella sobre el mapa.',
+        'Ciudad, industria y puerto pueden coexistir en un mismo hexágono sin ocultarse al acercar el mapa.',
+        'Con zoom pequeño prevalece el icono de ciudad para mantener la lectura territorial.',
+        'Los objetivos de ciudades, industrias, carreteras y puertos de la IA escalan con el tamaño real de cada nación.',
+        'Las naciones grandes dejan de quedar limitadas a 11 ciudades y 10 industrias.',
+        'La fortificación deja de absorber el excedente económico cuando el país todavía está claramente infradesarrollado.',
+        'Las partidas ya iniciadas invalidan sus planes de desarrollo y adoptan los nuevos objetivos sin reiniciar el mundo.'
+      ]
+    },
+    {
       version:'0.35.4',
       date:'Octubre 2026',
       title:'Capitales navegables y ciudades reales',
-      current:true,
       summary:'La clasificación se convierte en una herramienta de navegación y la construcción de ciudades empieza a usar topónimos reales según la geografía del hexágono.',
       changes:[
         'Pulsar una nación en la clasificación centra el globo en su capital actual.',
@@ -183,7 +198,7 @@
         '<header class="aboutHead0351">'+
           '<div class="aboutHeadText0351">'+
             '<h2 id="aboutTitle0351">ACERCA DE HEXATEGOS</h2>'+
-            '<p>Global Geopolitical Strategy · versión 0.35.4</p>'+
+            '<p>Global Geopolitical Strategy · versión 0.35.6</p>'+
           '</div>'+
           '<button id="aboutClose0351" class="aboutClose0351" type="button" aria-label="Cerrar">×</button>'+
         '</header>'+
@@ -241,5 +256,5 @@
     history:HISTORY.map(v=>({...v,changes:v.changes.slice()}))
   };
 
-  console.info('[HEXATEGOS] historial actualizado para 0.35.2');
+  console.info('[HEXATEGOS] historial actualizado para 0.35.6');
 })();
