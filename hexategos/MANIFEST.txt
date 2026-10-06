@@ -1,3 +1,40 @@
+HEXATEGOS_0_36_0
+
+Escala:
+- capacidad nativa: 500 facciones
+- nueva partida: 150 / 250 / 350 / 500
+- compatibilidad de carga: 16 / 25 / 35 / 50
+
+Módulo nuevo:
+- js/nation-ai-0360.js
+
+Motor:
+- todas las naciones usan owner6 y FACTIONS3230
+- capital, ciudad inicial y territorio normal
+- economía, diplomacia, infraestructura, frentes, guerra y flotas sin capa secundaria
+- nombres y colores suficientes para 500 actores
+
+IA:
+- conformista
+- comercial
+- defensiva
+- oportunista
+- localista
+- perfiles variables hasta 60 min de campaña
+- mismas capacidades para todos; solo cambia la toma de decisiones
+- scheduler escalonado para repartir CPU
+
+Rendimiento:
+- snapshots mundiales compartidos
+- ranking desde snapshot / un único conteo
+- red diplomática sin propagación N³
+- guardado diplomático de contactos compacto a gran escala
+- defensa IA sin conteo mundial por facción
+
+Rama de recuperación:
+- backup/hexategos-0.35.6-before-500-nations
+
+--- MANIFEST ANTERIOR ---
 HEXATEGOS_0_35_6
 
 Base estable:
