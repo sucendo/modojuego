@@ -10,7 +10,7 @@ const index=read('index.html');
 assert.doesNotThrow(()=>new Function(ai),'adaptive polity module must parse');
 assert.doesNotThrow(()=>new Function(base),'political ownership module must parse');
 assert.doesNotThrow(()=>new Function(about),'About module must parse');
-assert.ok(ai.includes("const BUILD='0.36.0'")||ai.includes("const BUILD='0.36.1'"),'adaptive political build marker missing');
+assert.ok(ai.includes("const BUILD='0.36.0'")||ai.includes("const BUILD='0.36.1'")||ai.includes("const BUILD='0.36.2'"),'adaptive political build marker missing');
 assert.ok(ai.includes('tryPeacefulExpansion0359'),'minimum peaceful expansion drive missing');
 assert.ok(ai.includes('settlementFloor'),'minimum territorial ambition missing');
 assert.ok(ai.includes('maybeMinorWar0359'),'wars between dynamic nations missing');
