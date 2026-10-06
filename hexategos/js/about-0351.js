@@ -4,10 +4,23 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.35.3',
+      date:'Octubre 2026',
+      title:'Paneles movibles',
+      current:true,
+      summary:'Se establece como norma de interfaz que los diálogos y paneles flotantes nuevos puedan reposicionarse sin perderse fuera de la pantalla.',
+      changes:[
+        'El panel del mapa geopolítico ahora se puede arrastrar.',
+        'La ventana Acerca de también puede reposicionarse.',
+        'Las posiciones se recuerdan entre aperturas.',
+        'El movimiento queda limitado al viewport para evitar paneles inaccesibles.',
+        'Se crea una API reutilizable para que los próximos diálogos adopten el mismo comportamiento.'
+      ]
+    },
+    {
       version:'0.35.2',
       date:'Octubre 2026',
       title:'Mapa geopolítico',
-      current:true,
       summary:'La nueva inteligencia geopolítica se convierte en información visible y comprensible directamente sobre el mundo.',
       changes:[
         'Nuevo modo de mapa GEOPOLÍTICA junto a Político, Terreno y Suministro.',
@@ -155,7 +168,7 @@
         '<header class="aboutHead0351">'+
           '<div class="aboutHeadText0351">'+
             '<h2 id="aboutTitle0351">ACERCA DE HEXATEGOS</h2>'+
-            '<p>Global Geopolitical Strategy · versión 0.35.2</p>'+
+            '<p>Global Geopolitical Strategy · versión 0.35.3</p>'+
           '</div>'+
           '<button id="aboutClose0351" class="aboutClose0351" type="button" aria-label="Cerrar">×</button>'+
         '</header>'+
