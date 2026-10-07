@@ -28,7 +28,7 @@ assert.ok(trade.includes('const maxGroups=coarsePointer3255?54:96'),'domestic ro
 assert.ok(trade.includes('const maxVisits=g.f===0?14000:6500'),'bounded road-tree visits missing');
 assert.ok(trade.includes('candidates.slice(0,coarsePointer3255?100:220)'),'global domestic candidate cap missing');
 
-assert.ok(index.includes('v0.37.14</title>')||index.includes('v0.37.15</title>')||index.includes('v0.37.16</title>')||index.includes('v0.37.17</title>')||index.includes('v0.37.18</title>'),'visible version must be 0.37.14 or compatible successor');
+assert.ok(index.includes('v0.37.14</title>')||index.includes('v0.37.15</title>')||index.includes('v0.37.16</title>')||index.includes('v0.37.17</title>')||index.includes('v0.37.18</title>')||index.includes('v0.37.19</title>'),'visible version must be 0.37.14 or compatible successor');
 assert.ok(about.includes("version:'0.37.14'"),'about history must include 0.37.14');
 
 console.log('HEXATEGOS 0.37.14 native route picker + node-to-node trucks smoke: OK');
