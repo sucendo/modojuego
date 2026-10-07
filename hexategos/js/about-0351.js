@@ -4,10 +4,26 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.36.1',
+      date:'Octubre 2026',
+      title:'Rendimiento para 500 naciones',
+      current:true,
+      summary:'La escala de 150/250/350/500 naciones mantiene todas las capacidades del motor, pero reparte el cálculo mediante presupuestos temporales, cachés compartidas y menos barridos globales.',
+      changes:[
+        'El scheduler de IA deja de basarse solo en número de países por tick y añade un presupuesto real de milisegundos adaptable al dispositivo y al coste de render.',
+        'Las IA que no caben en el presupuesto se aplazan manteniendo rotación justa, sin perder sistemas ni capacidades.',
+        'Los conteos territoriales y la condición de victoria reutilizan snapshots compartidos en lugar de recorrer 510.762 celdas una vez por nación.',
+        'El desgaste diplomático deja de ejecutar una búsqueda cuadrática completa por cada país en cada tick económico.',
+        'Comercio y número de guerras reutilizan la red diplomática activa en vez de revisar continuamente las 500 relaciones de cada nación.',
+        'El snapshot económico agrupa cambios cercanos para no volver a recorrer el planeta tras cada conquista individual.',
+        'La caché visual de propietario reutiliza buffers y elimina cientos de asignaciones temporales por celda LOD.',
+        'La pestaña de diplomacia evita reconstruir cientos de filas DOM si no ha cambiado nada.'
+      ]
+    },
+    {
       version:'0.36.0',
       date:'Octubre 2026',
       title:'150 / 250 / 350 / 500 naciones reales',
-      current:true,
       summary:'HEXATEGOS amplía el propio motor de naciones hasta 500 actores completos. No hay entidades secundarias: todas utilizan el mismo territorio, capital, economía, diplomacia, infraestructura, guerra, frentes y flotas.',
       changes:[
         'El selector de nueva partida pasa a 150, 250, 350 o 500 naciones.',
@@ -214,7 +230,7 @@
         '<header class="aboutHead0351">'+
           '<div class="aboutHeadText0351">'+
             '<h2 id="aboutTitle0351">ACERCA DE HEXATEGOS</h2>'+
-            '<p>Global Geopolitical Strategy · versión 0.36.0</p>'+
+            '<p>Global Geopolitical Strategy · versión 0.36.1</p>'+
           '</div>'+
           '<button id="aboutClose0351" class="aboutClose0351" type="button" aria-label="Cerrar">×</button>'+
         '</header>'+
@@ -272,5 +288,5 @@
     history:HISTORY.map(v=>({...v,changes:v.changes.slice()}))
   };
 
-  console.info('[HEXATEGOS] historial actualizado para 0.36.0');
+  console.info('[HEXATEGOS] historial actualizado para 0.36.1');
 })();
