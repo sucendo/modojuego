@@ -4,6 +4,27 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.37.9',
+      date:'Octubre 2026',
+      title:'Corredores económicos consolidados',
+      current:true,
+      summary:'Las IA dejan de dibujar pasillos territoriales mínimos para comerciar: alternan avance y consolidación lateral y convierten los corredores largos en ejes con ciudades e industria.',
+      changes:[
+        'El proyecto comercial ya no premia únicamente avanzar por la línea más corta hacia el socio.',
+        'Aproximadamente uno de cada tres microturnos de expansión neutral se dedica a ensanchar y consolidar el corredor.',
+        'La consolidación prioriza hexágonos con apoyo de dos territorios propios o junto a una carretera existente.',
+        'La IA evita desviarse demasiado del eje entre las dos capitales y penaliza montaña, alta montaña y hielo.',
+        'Los corredores antiguos de una sola casilla también pueden ir rellenando flancos conforme vuelven a ser atendidos.',
+        'Cada seis ciclos de corredor se reserva la posibilidad de crear un nodo económico en lugar de seguir conquistando.',
+        'Las nuevas ciudades del corredor solo aparecen sobre carretera, con suministro suficiente, lejos de otras ciudades y fuera de contacto enemigo inmediato.',
+        'Las industrias de corredor se apoyan preferentemente en ciudades del propio eje y respetan separación respecto a otros polos industriales.',
+        'La construcción ordinaria de la IA puede seguir desarrollando después esos nuevos núcleos con el mismo sistema que el resto del país.',
+        'Solo se realiza una conquista o una construcción relevante por servicio: nunca se expande una franja completa de golpe.',
+        'Se reutilizan frontier, aiNationalSamples3275 y cachés existentes; no hay barridos globales nuevos ni setInterval adicional.',
+        'Las partidas anteriores siguen siendo compatibles: el estado de fase del corredor es efímero y se recalcula al cargar.'
+      ]
+    },
+    {
       version:'0.37.8',
       date:'Octubre 2026',
       title:'Tráfico, barcos y flotas con identidad nacional',
