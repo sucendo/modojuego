@@ -1,3 +1,40 @@
+HEXATEGOS 0.37.0 · RUTAS FÍSICAS, TRÁNSITO Y PUERTOS-BASE
+
+Objetivo:
+- Hacer que el comercio dependa de rutas reales en vez de existir principalmente como una cifra diplomática.
+- Vincular cada flota a un puerto concreto y permitir el traslado de base.
+- Mantener el sistema viable con 150 / 250 / 350 / 500 naciones.
+
+Comercio físico:
+- una relación de Comercio o Alianza sin ruta conserva un intercambio residual casi simbólico;
+- el ingreso importante necesita una ruta terrestre o marítima efectiva;
+- las rutas terrestres nacen cuando las redes de carreteras de los socios se conectan físicamente;
+- si una ruta cruza una tercera nación necesita tránsito autorizado;
+- una ruta terrestre bloqueada puede convertirse en contrabando, con menor rendimiento y riesgo diplomático;
+- las rutas marítimas unen puerto con puerto y tienen en cuenta terceros, bloqueos y riesgo naval;
+- el flujo de mercancías se muestra como indicador económico además del ingreso.
+
+Puertos y flotas:
+- desde un puerto propio se puede transportar tropas, construir flota y abrir ruta comercial marítima;
+- cada flota mantiene un puerto-base concreto;
+- una flota puede trasladar su base a otro puerto propio;
+- si pierde el puerto-base no se teletransporta: queda sin base hasta que se le asigne otra;
+- las IA usan las mismas reglas y pueden reorganizar sus bases.
+
+Visualización y rendimiento:
+- a zoom cercano aparecen puntos de tráfico sobre carreteras y rutas marítimas;
+- esos puntos son solo representación gráfica: no son vehículos simulados;
+- las rutas guardan trayectorias muestreadas para limitar memoria;
+- las búsquedas marítimas A* están presupuestadas y no se lanzan masivamente en el mismo tick;
+- la red terrestre se reconstruye desde las celdas con carretera, no recorriendo el planeta por nación;
+- el scheduler comercial trabaja por lotes y comparte cachés de ingreso;
+- existe un límite global de rutas y límites por nación.
+
+Compatibilidad:
+- conserva partidas 0.36.x;
+- no elimina carreteras, puertos, flotas o infraestructura ya existentes;
+- el nuevo estado comercial se incluye también en los archivos .hexategos.
+
 HEXATEGOS 0.36.2 · CONSTRUCCIÓN IA MÁS HUMANA
 
 Objetivo:
