@@ -191,7 +191,9 @@
       if(vis.moving)animate=true;
       if(!p||p[2]<.025||p[0]<-14||p[0]>vw+14||p[1]<-14||p[1]>vh+14)continue;
 
-      const r=3.4+Math.min(2,g.strength/14);
+      // 0.37.20: triángulo naval ligeramente mayor, comparable al
+      // punto comercial marítimo sin tapar el mapa.
+      const r=(zoom>32?4.65:4.05)+Math.min(1.20,Math.max(0,g.strength)/24);
       ctx.beginPath();
       ctx.moveTo(p[0],p[1]-r);
       ctx.lineTo(p[0]+r*.85,p[1]+r*.65);
@@ -237,7 +239,8 @@
       smoothNaval:true,
       patrolRoutesHidden:true,
       continuousVisualAnchor:true,
-      patrolPortAnchors:true
+      patrolPortAnchors:true,
+      fleetTriangleRadius03720:zoom>32?4.65:4.05
     })
   };
   window.HEXATEGOS_VERSION=BUILD;
