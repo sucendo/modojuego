@@ -24,7 +24,7 @@ assert.ok(ai.includes('diplomacyTick3300();diplomacyServices++'),'guaranteed dip
 assert.ok(!ai.includes('setInterval('),'0.37.5 must not add another periodic timer');
 assert.ok(trade.includes('return r===1||r===2||r===3'),'physical trade must remain valid under NAP/alliance');
 assert.ok(trade.includes('ensureLandRoute:(a,b)=>'),'safe land-route materialization API missing');
-assert.ok(index.includes('v0.37.5</title>')||index.includes('v0.37.6</title>')||index.includes('v0.37.7</title>')||index.includes('v0.37.8</title>')||index.includes('v0.37.9</title>')||index.includes('v0.37.10</title>')||index.includes('v0.37.11</title>'),'visible version must be 0.37.5');
+assert.ok(index.includes('v0.37.5</title>')||index.includes('v0.37.6</title>')||index.includes('v0.37.7</title>')||index.includes('v0.37.8</title>')||index.includes('v0.37.9</title>')||index.includes('v0.37.10</title>')||index.includes('v0.37.11</title>')||index.includes('v0.37.12</title>'),'visible version must be 0.37.5');
 assert.ok(index.indexOf('js/ai-commerce-0375.js')>index.indexOf('js/road-removal-0374.js'),'0.37.5 must load after 0.37.4');
 assert.ok(about.includes("version:'0.37.5'"),'about history must include 0.37.5');
 
