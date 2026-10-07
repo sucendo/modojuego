@@ -4,10 +4,29 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.37.17',
+      date:'Octubre 2026',
+      title:'Gestor de rutas comerciales',
+      current:true,
+      summary:'Economía incorpora un gestor completo de rutas físicas con origen, destino, estado, flujo, riesgo, tránsito, suministro interior y navegación directa al mapa.',
+      changes:[
+        'La lista de Economía deja de truncarse a 12 rutas y muestra todas las rutas comerciales del jugador.',
+        'Cada tarjeta muestra origen y destino reales, tipo marítima/terrestre, comercio interior o socio y estado operativo.',
+        'Se muestran ingreso por segundo, flujo estimado de mercancías, distancia y riesgo naval cuando corresponde.',
+        'Las rutas marítimas interiores indican si están aportando abastecimiento a su red logística.',
+        'Los países de tránsito aparecen directamente en la ficha de ruta.',
+        'Se mantienen las acciones de solicitar tránsito, contrabando y cerrar ruta.',
+        'Nueva acción Ver en mapa: cierra Sistemas, centra el trazado y deja la ruta resaltada.',
+        'El resaltado funciona tanto para rutas terrestres como marítimas y permanece hasta seleccionar otra ruta o cerrarla.',
+        'La pestaña Naval incorpora también Ver en mapa para sus rutas marítimas.',
+        'No se modifica la lógica de creación de rutas estabilizada en 0.37.16.'
+      ]
+    },
+    {
       version:'0.37.16',
       date:'Octubre 2026',
       title:'Integración real de rutas comerciales con el controlador final',
-      current:true,
+      current:false,
       summary:'Se corrige la causa raíz que impedía seleccionar destinos: el comercio estaba conectado a un controlador de interacción antiguo y no obtenía el permiso exigido por el controlador táctil final.',
       changes:[
         'Se audita de extremo a extremo el flujo de rutas comerciales desde el menú hasta el guardado.',
