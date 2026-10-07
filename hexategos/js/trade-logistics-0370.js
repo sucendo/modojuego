@@ -789,7 +789,7 @@
     const r=routes.find(x=>x.id===id);
     if(!r||!(r.a===0||r.b===0))return;
     r.status='closed';
-    if(focusedTradeRoute03717===r.id)focusedTradeRoute03717=-1;
+    if(focusedTradeRoute03717===r.id)clearTradeRouteFocus03717(false);
     markTradeDirty0370();saveGame3212();renderSystems3220();needsRender=true;
   }
 
@@ -1192,6 +1192,24 @@
     return routeOperationalSupply03713(r)?'Abastecimiento interior activo':'Sin abastecimiento interior';
   }
 
+  function showTradeRouteFocusBar03718(r){
+    if(typeof interactionBar3244==='undefined'||typeof interactionText3244==='undefined')return;
+    if(typeof cancelInteractionMode3245==='function'&&uiInteractionState3244?.interactionMode!=='normal')
+      cancelInteractionMode3245();
+    interactionText3244.textContent='Ruta comercial · '+tradeRouteEndpointLabel03717(r.from)+' ↔ '+tradeRouteEndpointLabel03717(r.to);
+    const btn=document.getElementById('interactionCancel3244');
+    if(btn)btn.textContent='Salir';
+    interactionBar3244.classList.add('show3244');
+  }
+
+  function hideTradeRouteFocusBar03718(){
+    const btn=document.getElementById('interactionCancel3244');
+    if(btn)btn.textContent='Cancelar';
+    if(typeof interactionBar3244!=='undefined'&&
+       (typeof uiInteractionState3244==='undefined'||uiInteractionState3244.interactionMode==='normal'))
+      interactionBar3244.classList.remove('show3244');
+  }
+
   function focusTradeRoute03717(id){
     const r=tradeRouteById03717(id);
     if(!r){toast('Ruta comercial no disponible');return false}
@@ -1205,14 +1223,27 @@
       const p=cellLonLat3302(cell);
       rotateToGeo3243(p.lon,p.lat,r.type==='sea'?4.8:6.0);
     }
+    showTradeRouteFocusBar03718(r);
     needsRender=true;
-    toast(tradeRouteEndpointLabel03717(r.from)+' ↔ '+tradeRouteEndpointLabel03717(r.to));
     return true;
   }
 
-  function clearTradeRouteFocus03717(){
-    focusedTradeRoute03717=-1;needsRender=true;
+  function clearTradeRouteFocus03717(notify=true){
+    if(focusedTradeRoute03717<0)return false;
+    focusedTradeRoute03717=-1;
+    hideTradeRouteFocusBar03718();
+    needsRender=true;
+    if(notify)toast('Vista de ruta cerrada');
+    return true;
   }
+
+  // El botón de la barra contextual funciona como SALIR mientras se visualiza
+  // una ruta. Se captura antes del listener genérico de "Cancelar destino".
+  document.getElementById('interactionCancel3244')?.addEventListener('click',e=>{
+    if(focusedTradeRoute03717<0)return;
+    e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+    clearTradeRouteFocus03717(true);
+  },true);
 
   function sortedOwnRoutes03717(){
     const rank={active:0,smuggling:1,risky:2,inspected:3,rebuilding:4,blocked:5,suspended:6,broken:7};
@@ -1605,6 +1636,7 @@
 
   function restore0370(data){
     if(!data||typeof data!=='object')return false;
+    focusedTradeRoute03717=-1;hideTradeRouteFocusBar03718();
     permits=new Map(Array.isArray(data.permits)?data.permits:[]);
     routes=[];
     for(const x of data.routes||[]){
@@ -1655,6 +1687,7 @@
   const baseReset0370=resetGame3230;
   resetGame3230=function(clearSave=true){
     const out=baseReset0370.apply(this,arguments);
+    focusedTradeRoute03717=-1;hideTradeRouteFocusBar03718();
     routes=[];permits.clear();nextRouteId=1;dirty=true;lastRoadCampaign=-1e9;
     if(clearSave)try{localStorage.removeItem(SAVE_KEY)}catch(e){}
     return out;
