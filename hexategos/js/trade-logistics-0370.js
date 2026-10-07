@@ -63,7 +63,10 @@
 
   function tradeRelation0370(a,b){
     const r=diplomaticRelation3300(a,b);
-    return r===1||r===3;
+    // El motor diplomático actual guarda un único estado por pareja.
+    // NO AGRESIÓN y ALIANZA son tratados cooperativos superiores: conservan
+    // los derechos comerciales ya implícitos en la relación.
+    return r===1||r===2||r===3;
   }
 
   function diplomaticTargets0370(f){
