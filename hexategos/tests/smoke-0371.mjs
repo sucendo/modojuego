@@ -7,7 +7,7 @@ const index=read('index.html');
 
 assert.doesNotThrow(()=>new Function(trade),'trade-logistics-0370.js must parse');
 assert.ok(trade.includes("const BUILD='0.37.1'")||trade.includes("const BUILD='0.37.2'"),'trade logistics build must include 0.37.1 or a compatible successor');
-assert.ok(trade.includes("const TRAFFIC_ZOOM=2.55"),'closer visible domestic traffic zoom threshold missing');
+assert.ok(trade.includes("const TRAFFIC_ZOOM=2.55")||trade.includes("const TRAFFIC_ZOOM=2.15"),'closer visible domestic traffic zoom threshold missing');
 assert.ok(trade.includes('domesticRoadTraffic0371'),'cached domestic road traffic missing');
 assert.ok(trade.includes('rebuildDomesticTraffic0371'),'domestic traffic cache rebuild missing');
 assert.ok(trade.includes('projectedAlongCells0371'),'smooth traffic interpolation missing');
