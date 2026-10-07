@@ -1,3 +1,34 @@
+HEXATEGOS_0_37_19
+
+Patrulla:
+- buildLocalPatrolRoute03719
+- salida solo desde homeSea
+- outbound <= 7 pasos
+- return = outbound reverse
+- ruta cerrada homeSea -> ... -> homeSea
+- _patrolHomeSea03719
+- _patrolPort03719
+- _patrolAwaitingNext03719
+
+Visual:
+- visibleNavalRoute0378 oculta patrol para jugador + IA
+- visualVector03719
+- _visualVecPath03719
+- anclaje visual al puerto
+- continuidad entre ticks
+- NAVAL_VISUAL_STEP_MS03719 = 1400
+
+Rendimiento:
+- sin A* adicional de patrulla
+- sin timers nuevos
+
+Pruebas:
+- tests/smoke-03719.mjs
+
+Rama de seguridad:
+- backup/hexategos-0.37.18-before-patrol-cycle-03719
+
+--- MANIFEST ANTERIOR ---
 HEXATEGOS_0_37_18
 
 Vista de ruta:
