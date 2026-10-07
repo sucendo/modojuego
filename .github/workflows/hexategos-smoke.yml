@@ -98,3 +98,7 @@ jobs:
 
       - name: Run Hexategos 0.37.16 final commercial controller smoke
         run: node hexategos/tests/smoke-03716.mjs
+
+
+      - name: Run Hexategos 0.37.17 trade route manager smoke
+        run: node hexategos/tests/smoke-03717.mjs
