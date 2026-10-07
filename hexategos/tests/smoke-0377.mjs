@@ -23,7 +23,9 @@ assert.ok(geo.includes('trySmuggling0377'),'smuggling fallback missing');
 assert.ok(geo.includes('setDiplomaticRelation3300(a,via,-1'),'late corridor-war escalation missing');
 assert.ok(geo.includes("via===0")===false,'corridor module should not special-case player as auto-war target');
 assert.ok(geo.includes("if(a<=0||via<=0"),'automatic corridor escalation must exclude player');
-assert.ok(!geo.includes('setInterval('),'0.37.7 must not add a periodic timer');\nassert.ok(geo.includes('HexategosEconomicCorridors0379?.prepare?.(a,b,sa,sb)'),\n  '0.37.9 economic consolidation hook missing from geopolitical corridor service');
+assert.ok(!geo.includes('setInterval('),'0.37.7 must not add a periodic timer');
+assert.ok(geo.includes('HexategosEconomicCorridors0379?.prepare?.(a,b,sa,sb)'),
+  '0.37.9 economic consolidation hook missing from geopolitical corridor service');
 
 assert.ok(trade.includes('requestTransit:(a,b,via)=>'),'transit API must be exposed');
 assert.ok(trade.includes('enableSmuggling:(a,b)=>'),'smuggling route API must be exposed');
