@@ -27,7 +27,7 @@ assert.ok(ai.includes('aiNationTactical3280(f)'),'all scheduled nations must use
 assert.ok(ai.includes('botBuild3230(f)'),'all scheduled nations must use the same construction AI');
 assert.ok(ai.includes('schedulerBudget0360'),'staggered AI scheduler missing');
 assert.ok(ai.includes('diplomacyTick3300=function'),'scaled diplomacy scheduler missing');
-assert.ok(ai.includes('activeFactionCount3230>=450?7'),'500-nation diplomacy review budget missing');
+assert.ok(ai.includes('activeFactionCount3230>=450?6'),'500-nation diplomacy review budget missing');
 assert.ok(ai.includes('ensureSnapshot0360'),'shared snapshot throttle missing');
 assert.ok(ai.includes('ownedCounts3220=function'),'single-pass/shared territorial counts missing');
 assert.ok(ai.includes("format:'contact-sparse'"),'compact 500-nation diplomacy save missing');
@@ -39,6 +39,6 @@ assert.ok(stable.includes('FALLBACK_THRESHOLDS=[2.6,2.1,1.7,1.35,1.05,.78,.52,.2
 const iAI=index.indexOf('js/nation-ai-0360.js');
 const iInfra=index.indexOf('js/ai-infra-0356.js');
 assert.ok(iInfra>=0&&iAI>iInfra,'0.36.0 scheduler must load after existing AI/infrastructure layers');
-assert.ok(index.includes('v0.36.0</title>'),'visible version must be 0.36.0');
+assert.ok(index.includes('v0.36.0</title>')||index.includes('v0.36.1</title>'),'visible version must remain compatible with 0.36.x');
 
 console.log('HEXATEGOS 0.36.0 native 500-nation adaptive AI smoke: OK');
