@@ -169,10 +169,17 @@
     if(!best)return false;
     if(!best.pair.otherRoad&&mindset!=='commercial'&&role!=='growth'&&best.priority<3)return false;
 
-    // Si nuestra carretera ya llegó al paso elegido, esperamos al socio en vez
-    // de construir otra rama redundante.
+    // Llegar a la frontera NO une automáticamente las dos redes.
+    // IA↔IA puede construir la aduana explícita; jugador↔IA espera al botón
+    // CONEXIÓN TERRESTRE del jugador.
     if(best.pair.ownRoad){
-      window.HexategosTradeLogistics0370?.ensureLandRoute?.(Math.min(f,best.o),Math.max(f,best.o));
+      if(best.pair.otherRoad&&f>0&&best.o>0){
+        const made=window.HexategosBorderRoad0376?.createAI?.(
+          best.pair.own,best.pair.other,f,best.o
+        );
+        if(made)window.HexategosTradeLogistics0370?.ensureLandRoute?.(Math.min(f,best.o),Math.max(f,best.o));
+        return !!made;
+      }
       return false;
     }
 
@@ -180,10 +187,11 @@
     const reserve=Math.max(24,Math.min(55,(aiDevState3283?.[f]?.reserve||42)*.72));
     if(!buildRoadPath0375(f,source,best.pair.own,reserve,'corredor comercial fronterizo'))return false;
     corridorBuilds++;
-    // Si el socio ya tenía carretera al otro lado, la unión física acaba de nacer.
-    if(best.pair.otherRoad){
-      window.HexategosTradeLogistics0370?.refresh?.();
-      window.HexategosTradeLogistics0370?.ensureLandRoute?.(Math.min(f,best.o),Math.max(f,best.o));
+    if(best.pair.otherRoad&&f>0&&best.o>0){
+      const made=window.HexategosBorderRoad0376?.createAI?.(
+        best.pair.own,best.pair.other,f,best.o
+      );
+      if(made)window.HexategosTradeLogistics0370?.ensureLandRoute?.(Math.min(f,best.o),Math.max(f,best.o));
     }
     return true;
   }
