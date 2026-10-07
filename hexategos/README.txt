@@ -1,3 +1,34 @@
+HEXATEGOS 0.37.10 · TRÁFICO COMERCIAL Y VELOCIDAD CONSTANTE
+
+Patrullas navales:
+- una flota que patrulla sigue recorriendo su zona con la misma lógica de simulación;
+- la ruta de patrulla deja de dibujarse por completo;
+- la posición de la flota continúa visible e interpolada.
+
+Visibilidad del comercio:
+- barcos comerciales algo mayores;
+- camiones/puntos de rutas comerciales terrestres algo mayores;
+- tráfico interior por carretera ligeramente mayor;
+- los umbrales se mantienen: tráfico fino desde zoom 25 y flotas desde zoom 15.
+
+Velocidad:
+- ya no se recorre un porcentaje fijo de la ruta por segundo;
+- barco comercial base: velocidad constante en hexágonos/segundo;
+- camión comercial base: velocidad constante en hexágonos/segundo;
+- una ruta dos veces más larga tarda aproximadamente el doble en recorrerse;
+- la distancia de la ruta no altera la velocidad física del vehículo.
+
+Tecnología futura:
+- existe un único multiplicador de velocidad por tipo de transporte y nación;
+- actualmente devuelve 1.0 para todos;
+- un futuro sistema tecnológico podrá aumentar la velocidad de todos los barcos o camiones de una nación sin modificar la lógica de rutas.
+
+Rendimiento:
+- no se crean entidades adicionales;
+- no hay pathfinding nuevo;
+- no hay temporizadores nuevos;
+- se reutilizan los mismos puntos y rutas visuales existentes.
+
 HEXATEGOS 0.37.9 · CORREDORES ECONÓMICOS CONSOLIDADOS
 
 Objetivo:
