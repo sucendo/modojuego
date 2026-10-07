@@ -332,7 +332,7 @@ function drawInfrastructure3212(R,cx,cy,now){
    const i=path[j]*3,p=projectVec(C[i]/32767,C[i+1]/32767,C[i+2]/32767,R,cx,cy);
    if(p[2]<.02){started=false;continue}if(!started){ctx.moveTo(p[0],p[1]);started=true}else ctx.lineTo(p[0],p[1]);
   }
-  ctx.strokeStyle='rgba(239,207,108,.70)';ctx.lineWidth=Math.max(.8,1.15*Math.sqrt(zoom));ctx.stroke();
+  ctx.strokeStyle='rgba(239,207,108,.70)';ctx.lineWidth=Math.max(.70,.98*Math.sqrt(zoom));ctx.stroke();
  }
  // v3.24.9: recovered vector map icons from the v3.20.1 branch.
  // They remain screen-sized on the globe, so zoom does not turn them into blobs.
