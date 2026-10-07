@@ -667,7 +667,9 @@
     return null;
   }
 
-  function beginSeaTradeMapPick03715(from){
+  let seaTradeTargetStartedAt03716=-1e9;
+
+  function beginSeaTradeMapPick03716(from){
     if(from<0||!ports3212.has(from)||owner6[from]!==0){
       toast('Selecciona uno de tus puertos');return false;
     }
@@ -675,7 +677,22 @@
       toast('Has alcanzado el límite de rutas comerciales');return false;
     }
     if(typeof closeModal3244==='function')closeModal3244();
-    setInteractionMode3244('select_trade_route_target',from,'sea_trade_0370');
+
+    // El controlador v3.28.2 exige que todo modo de segundo destino nazca
+    // mediante beginTargetFromDialog3282(), igual que carretera/transporte.
+    let armed=false;
+    if(typeof beginTargetFromDialog3282==='function'){
+      beginTargetFromDialog3282('select_trade_route_target',from,'sea_trade_0370');
+      armed=uiInteractionState3244.interactionMode==='select_trade_route_target';
+    }else{
+      // Fallback de compatibilidad para builds antiguos sin controlador estricto.
+      armed=setInteractionMode3244('select_trade_route_target',from,'sea_trade_0370')!==false;
+    }
+    if(!armed){
+      toast('No se pudo activar la selección de destino comercial');
+      return false;
+    }
+    seaTradeTargetStartedAt03716=performance.now();
     interactionText3244.textContent='Ruta comercial · selecciona cualquier puerto válido en el mapa';
     toast('Selecciona el puerto de destino');
     return true;
@@ -695,46 +712,60 @@
     return best;
   }
 
-  // En modo comercial, prioriza el icono/hexágono exacto del puerto sobre
-  // la selección genérica del LOD. Esto evita caer en la casilla vecina.
-  const basePick03715=pick;
-  pick=function(x,y){
-    if(uiInteractionState3244.interactionMode==='select_trade_route_target'){
-      const port=nearestPortScreen03715(x,y);
-      if(port>=0){
-        handleInteractionTarget3244(port);
-        return;
-      }
-    }
-    return basePick03715.apply(this,arguments);
-  };
+  function tradeTargetFailure03716(from,cell){
+    const b=owner6[cell];
+    if(routes.length>=MAX_ROUTES)return 'Se alcanzó el límite global de rutas';
+    if(routeCount0370(0)>=routeLimit0370(0))return 'Has alcanzado el límite de rutas comerciales';
+    if(b>0&&routeCount0370(b)>=routeLimit0370(b))return factionName3230(b)+' no admite más rutas';
+    if(bestPortSea3270(from)<0||bestPortSea3270(cell)<0)return 'Uno de los puertos no tiene acceso marítimo navegable';
+    return 'No se pudo encontrar un corredor marítimo navegable entre ambos puertos';
+  }
 
-  const baseHandleInteractionTarget03714=handleInteractionTarget3244;
-  handleInteractionTarget3244=function(cell){
-    if(uiInteractionState3244.interactionMode!=='select_trade_route_target')
-      return baseHandleInteractionTarget03714.apply(this,arguments);
-
+  function handleSeaTradeTarget03716(cell){
     const from=uiInteractionState3244.sourceCell;
     const reason=seaTradeTargetReason03711(from,cell);
     if(reason){
       interactionText3244.textContent='Ruta comercial · '+reason;
       toast(reason);
-      return;
+      return false;
     }
     const r=createPlayerSeaRoute0370(from,cell);
     if(!r){
-      const b=owner6[cell];
-      let msg='No se pudo abrir esa ruta marítima';
-      if(routes.length>=MAX_ROUTES)msg='Se alcanzó el límite global de rutas';
-      else if(routeCount0370(0)>=routeLimit0370(0))msg='Has alcanzado el límite de rutas comerciales';
-      else if(b>0&&routeCount0370(b)>=routeLimit0370(b))msg=factionName3230(b)+' no admite más rutas';
-      else if(bestPortSea3270(from)<0||bestPortSea3270(cell)<0)msg='Uno de los puertos no tiene acceso marítimo navegable';
+      const msg=tradeTargetFailure03716(from,cell);
       interactionText3244.textContent='Ruta comercial · '+msg;
       toast(msg);
-      return;
+      return false;
     }
-    cancelInteractionMode3244();
+    cancelInteractionMode3245();
     toast('Ruta comercial creada · '+placeDisplayName3271(from)+' → '+placeDisplayName3271(cell));
+    return true;
+  }
+
+  // El pick final del juego (v3.28.2) llama a handleInteractionTarget3245.
+  // Interceptamos ESE manejador, no la compatibilidad 3244.
+  const baseHandleInteractionTarget03716=handleInteractionTarget3245;
+  handleInteractionTarget3245=function(cell){
+    if(uiInteractionState3244.interactionMode!=='select_trade_route_target')
+      return baseHandleInteractionTarget03716.apply(this,arguments);
+
+    // Misma defensa anti click-through del controlador estricto.
+    if(performance.now()-seaTradeTargetStartedAt03716<220)return;
+    return handleSeaTradeTarget03716(cell);
+  };
+  // Mantener el alias de compatibilidad alineado con el controlador real.
+  handleInteractionTarget3244=handleInteractionTarget3245;
+
+  // En modo comercial, prioriza el icono/hexágono exacto del puerto.
+  const basePick03716=pick;
+  pick=function(x,y){
+    if(uiInteractionState3244.interactionMode==='select_trade_route_target'){
+      const port=nearestPortScreen03715(x,y);
+      if(port>=0){
+        handleInteractionTarget3245(port);
+        return;
+      }
+    }
+    return basePick03716.apply(this,arguments);
   };
 
   function rebaseFleet0370(id,port,notify=true){
@@ -781,7 +812,7 @@
 
   window.HexategosTradeActions0370={
     openSeaTrade:openSeaTradeModal0370,
-    pickSeaOnMap:beginSeaTradeMapPick03715,
+    pickSeaOnMap:beginSeaTradeMapPick03716,
     canPickSeaTarget:(from,to)=>seaTradeTargetReason03711(Number(from),Number(to)),
     createSea:createPlayerSeaRoute0370,
     rebase:rebaseFleet0370,
@@ -814,7 +845,7 @@
       if(!ctx||ctx.kind!=='cell'||!ctx.own||!ctx.port)return;
       closeContextDialog3244();
       if(id==='naval_build_0370')buildNavalGroup3270(0,ctx.cell,true);
-      else beginSeaTradeMapPick03715(ctx.cell);
+      else beginSeaTradeMapPick03716(ctx.cell);
       return;
     }
     return baseContextAction0370(id);
