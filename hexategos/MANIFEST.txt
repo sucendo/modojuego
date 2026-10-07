@@ -1,3 +1,26 @@
+HEXATEGOS_0_37_4
+
+Retirada manual de carreteras:
+- al pulsar un hexágono propio con carretera aparece ABANDONAR CARRETERA
+- elimina todos los tramos que llegan al hexágono seleccionado
+- no devuelve oro
+- si el punto es un nudo, corta todas las conexiones incidentes y conserva los subtramos válidos
+- recalcula inmediatamente roadEdgeSet, suministro, economía, IA y comercio
+- fuerza una auditoría de degradación para detectar infraestructuras recién aisladas
+- se guarda de forma natural dentro de roads3212 y mantiene compatibilidad con partidas anteriores
+
+Rendimiento:
+- no añade temporizadores
+- no recorre las celdas del mundo
+- solo procesa roads3212 cuando el jugador ejecuta la acción
+
+Módulo nuevo:
+- js/road-removal-0374.js
+
+Pruebas:
+- tests/smoke-0374.mjs
+
+--- MANIFEST ANTERIOR ---
 HEXATEGOS_0_37_3
 
 Degradación por aislamiento:
