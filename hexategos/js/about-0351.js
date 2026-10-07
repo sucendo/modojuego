@@ -4,10 +4,28 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.37.13',
+      date:'Octubre 2026',
+      title:'Logística interior y tráfico propio visible',
+      current:true,
+      summary:'Las rutas marítimas entre puertos propios funcionan como puentes de suministro y el tráfico doméstico del jugador deja de quedar oculto por el volumen de tráfico de cientos de IA.',
+      changes:[
+        'Las rutas marítimas pueden seguir creándose entre dos puertos de la misma nación.',
+        'La selección de destinos propios amplía su exploración hasta 24 puertos por nación para no omitir islas o enclaves secundarios.',
+        'Una ruta marítima interior activa abastece directamente sus dos puertos.',
+        'Las ciudades e industrias conectadas por carretera a esos puertos reciben también un suelo de suministro marítimo.',
+        'Esto permite mantener y desarrollar islas o territorios separados del núcleo continental mediante puertos y carreteras locales.',
+        'El tráfico doméstico del jugador tiene prioridad dentro del presupuesto visual global.',
+        'Con cientos de IA, sus carreteras ya no pueden expulsar los camiones del jugador de la lista de candidatos dibujables.',
+        'Los tramos propios suficientemente largos muestran hasta dos puntos comerciales para mejorar su legibilidad.',
+        'No aumenta el límite global de puntos ni se añaden nuevos temporizadores.'
+      ]
+    },
+    {
       version:'0.37.12',
       date:'Octubre 2026',
       title:'Simbología clara de transportes',
-      current:true,
+      current:false,
       summary:'La forma del marcador identifica de inmediato el tipo de unidad o tráfico, independientemente de su nación.',
       changes:[
         'Todo transporte comercial se representa mediante puntos circulares.',
