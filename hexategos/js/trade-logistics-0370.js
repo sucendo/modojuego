@@ -1307,20 +1307,15 @@
         const p=projectedAlongCells0371(visual,phase,C,R,cx,cy);
         if(!pointVisible0378(p))continue;
         const color=factionTrafficColor0378(faction);
-        if(r.type==='sea'){
-          // Tiny commercial ship, coloured by the nation operating it.
-          const rr=zoom>32?4.40:3.70;
-          ctx.beginPath();
-          ctx.moveTo(p[0],p[1]-rr);
-          ctx.lineTo(p[0]+rr*.72,p[1]+rr*.75);
-          ctx.lineTo(p[0]-rr*.72,p[1]+rr*.75);
-          ctx.closePath();ctx.fillStyle=color;ctx.fill();
-          ctx.lineWidth=.55;ctx.strokeStyle='rgba(2,10,16,.88)';ctx.stroke();
-        }else{
-          ctx.beginPath();ctx.arc(p[0],p[1],zoom>32?3.20:2.70,0,Math.PI*2);
-          ctx.fillStyle=color;ctx.fill();
-          ctx.lineWidth=.55;ctx.strokeStyle='rgba(245,250,255,.76)';ctx.stroke();
-        }
+        // Convención visual 0.37.12:
+        // todo transporte COMERCIAL es un punto, también en rutas marítimas.
+        // El tamaño marítimo sigue siendo algo mayor para conservar legibilidad.
+        const rr=r.type==='sea'?(zoom>32?4.40:3.70):(zoom>32?3.20:2.70);
+        ctx.beginPath();ctx.arc(p[0],p[1],rr,0,Math.PI*2);
+        ctx.fillStyle=color;ctx.fill();
+        ctx.lineWidth=.65;
+        ctx.strokeStyle=r.type==='sea'?'rgba(2,10,16,.90)':'rgba(245,250,255,.78)';
+        ctx.stroke();
         trafficDrawn++;
       }
     }
