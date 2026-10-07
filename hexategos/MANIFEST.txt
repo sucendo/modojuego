@@ -1,3 +1,45 @@
+HEXATEGOS_0_37_11
+
+Franjas comerciales IA:
+- rutas terrestres activas siguen en mantenimiento estratégico
+- ACTIVE_BELT_EVERY=3
+- ACTIVE_DEVELOP_EVERY=6
+- MAX_ACTIVE_ROUTE_SAMPLES=96
+- revisión del path físico real de la ruta
+- ocupación de neutral adyacente con apoyo territorial >=2
+- evita contacto enemigo inmediato
+- expansión lateral con noRoad=true
+- ciudad/industria pueden aparecer en corredores ya maduros
+
+Ruta comercial en mapa:
+- RUTA COMERCIAL desde puerto propio -> modo seleccionar destino
+- destino válido = puerto propio o extranjero con derechos comerciales
+- casilla inválida mantiene el modo activo
+- barra interactionBar3244 usada para instrucciones/cancelación
+- API pickSeaOnMap disponible
+
+Marcadores:
+- barcos comerciales 4.40 / 3.70 px según zoom
+- comercio terrestre 3.20 / 2.70 px
+- tráfico interior 3.20 / 2.60 px
+
+Flotas:
+- patrulla sigue sin trayectoria visual
+- otras órdenes pueden seguir mostrando ruta
+
+Rendimiento:
+- sin setInterval nuevo
+- sin búsqueda global de territorio alrededor de rutas
+- se reutiliza route.path ya calculado
+- una expansión/construcción relevante por servicio
+
+Pruebas:
+- tests/smoke-03711.mjs
+
+Rama de seguridad:
+- backup/hexategos-0.37.10-before-active-route-belt-03711
+
+--- MANIFEST ANTERIOR ---
 HEXATEGOS_0_37_10
 
 Patrulla naval:
