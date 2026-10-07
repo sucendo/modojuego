@@ -11,9 +11,13 @@
   const MAX_FRONTIER_SAMPLES=180;
   const MAX_NODE_SAMPLES=190;
   const MAX_AXIS_EXCESS=5.2;
+  const ACTIVE_BELT_EVERY=3;
+  const MAX_ACTIVE_ROUTE_SAMPLES=96;
 
   const corridorCycles=new Uint16Array(FACTIONS3230.length);
+  const activeBeltCycles=new Uint16Array(FACTIONS3230.length);
   let consolidationPlans=0,corridorCities=0,corridorIndustries=0,developmentSkips=0;
+  let activeBeltPlans=0;
 
   function roadCell0379(c){
     return c>=0&&typeof aiRoadDegree3260==='function'&&aiRoadDegree3260(c)>0;
@@ -67,11 +71,58 @@
           ((n*29+src*11+f*7)%997)*.0001;
         if(score<bestScore){
           bestScore=score;
-          best={src,target:n,score,progress:base-d,consolidation:true,
+          best={src,target:n,score,progress:base-d,consolidation:true,noRoad:true,
             ownSupport:support.own,roadSupport:support.road};
         }
       }
     }
+    return best;
+  }
+
+  function bestActiveRouteBeltStep03711(f){
+    if(f<=0||f>=activeFactionCount3230)return null;
+    const cycle=(activeBeltCycles[f]=(activeBeltCycles[f]+1)%65535||1);
+    if(cycle%ACTIVE_BELT_EVERY!==0)return null;
+
+    const all=window.HexategosTradeLogistics0370?.routes?.()||[];
+    const land=all.filter(r=>r?.type==='land'&&
+      (r.status==='active'||r.status==='smuggling')&&
+      (r.a===f||r.b===f)&&Array.isArray(r.path)&&r.path.length>=2);
+    if(!land.length)return null;
+
+    const route=land[(cycle/ACTIVE_BELT_EVERY+f)%land.length|0];
+    const path=route.path,L=loadLevel(MAX_GAME_LEVEL3233);
+    const stride=Math.max(1,Math.floor(path.length/MAX_ACTIVE_ROUTE_SAMPLES));
+    let best=null,bestScore=1e9,checked=0;
+
+    for(let i=0;i<path.length&&checked<MAX_ACTIVE_ROUTE_SAMPLES;i+=stride,checked++){
+      const src=path[i];
+      if(src<0||owner6[src]!==f||!roadCell0379(src))continue;
+      for(let k=L.offsets[src];k<L.offsets[src+1];k++){
+        const n=L.edgeNbr[k];
+        if(n<0||L.land[n]<0||owner6[n]>=0)continue;
+        if(typeof aiEnemyNeighbours3260==='function'&&aiEnemyNeighbours3260(f,n)>0)continue;
+        const support=localSupport0379(f,n,L);
+        if(support.own<2)continue;
+
+        const tk=terrainKey3250(n);
+        let terrainPenalty=0;
+        if(tk==='highmountain')terrainPenalty=8;
+        else if(tk==='mountain')terrainPenalty=3;
+        else if(tk==='ice')terrainPenalty=6;
+
+        // El corredor ya existe: aquí importa compactar la franja real,
+        // no seguir acercándose a la capital del socio.
+        const score=terrainPenalty-support.own*9-support.road*4+
+          ((n*31+src*17+f*13)%997)*.0001;
+        if(score<bestScore){
+          bestScore=score;
+          best={src,target:n,score,progress:0,consolidation:true,activeRouteBelt:true,
+            noRoad:true,ownSupport:support.own,roadSupport:support.road,routeId:route.id};
+        }
+      }
+    }
+    if(best)activeBeltPlans++;
     return best;
   }
 
@@ -192,7 +243,7 @@
     return {done:false,kind:'consolidation',step:chosen};
   }
 
-  function reset0379(){corridorCycles.fill(0)}
+  function reset0379(){corridorCycles.fill(0);activeBeltCycles.fill(0)}
 
   const baseReset0379=resetGame3230;
   resetGame3230=function(){
@@ -215,13 +266,15 @@
   function stats0379(){
     let active=0;for(let f=1;f<activeFactionCount3230;f++)if(corridorCycles[f])active++;
     return {build:BUILD,activeProjects:active,consolidationPlans,corridorCities,corridorIndustries,
-      developmentSkips,consolidateEvery:CONSOLIDATE_EVERY,developEvery:DEVELOP_EVERY,
-      maxFrontierSamples:MAX_FRONTIER_SAMPLES,maxNodeSamples:MAX_NODE_SAMPLES};
+      developmentSkips,activeBeltPlans,consolidateEvery:CONSOLIDATE_EVERY,developEvery:DEVELOP_EVERY,
+      activeBeltEvery:ACTIVE_BELT_EVERY,maxFrontierSamples:MAX_FRONTIER_SAMPLES,
+      maxNodeSamples:MAX_NODE_SAMPLES,maxActiveRouteSamples:MAX_ACTIVE_ROUTE_SAMPLES};
   }
 
   window.HexategosEconomicCorridors0379={
     version:BUILD,
     prepare:prepare0379,
+    activeRouteStep:bestActiveRouteBeltStep03711,
     stats:stats0379,
     validate:()=>({ok:true,errors:[],warnings:[],stats:stats0379()})
   };
