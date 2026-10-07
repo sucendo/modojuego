@@ -4,10 +4,25 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.36.2',
+      date:'Octubre 2026',
+      title:'Construcción IA más humana',
+      current:true,
+      summary:'Las naciones dejan de sembrar industria por todo el territorio y pasan a desarrollar núcleos urbanos, polos industriales concentrados y corredores que se parecen mucho más a las decisiones de un jugador.',
+      changes:[
+        'Los objetivos industriales se reducen a una densidad proporcional al tamaño del país, calibrada contra el patrón de construcción humano.',
+        'Una industria nueva necesita un emplazamiento urbano o logístico: ciudad, puerto o conexión viaria.',
+        'Al alcanzar el número razonable de polos industriales, la IA mejora instalaciones existentes en lugar de abrir nuevas fábricas.',
+        'Los planes regionales comprueban los objetivos reales justo antes de construir para evitar ejecutar tareas antiguas que ya han quedado cubiertas.',
+        'Ciudades, puertos y carreteras mantienen objetivos limitados y coherentes con la extensión del país.',
+        'Las partidas existentes no pierden edificios: las naciones ya sobreindustrializadas dejan de extender la alfombra y pasan a consolidar lo construido.',
+        'La corrección conserva el scheduler y las optimizaciones de 500 naciones de la versión 0.36.1.'
+      ]
+    },
+    {
       version:'0.36.1',
       date:'Octubre 2026',
       title:'Rendimiento para 500 naciones',
-      current:true,
       summary:'La escala de 150/250/350/500 naciones mantiene todas las capacidades del motor, pero reparte el cálculo mediante presupuestos temporales, cachés compartidas y menos barridos globales.',
       changes:[
         'El scheduler de IA deja de basarse solo en número de países por tick y añade un presupuesto real de milisegundos adaptable al dispositivo y al coste de render.',
@@ -230,7 +245,7 @@
         '<header class="aboutHead0351">'+
           '<div class="aboutHeadText0351">'+
             '<h2 id="aboutTitle0351">ACERCA DE HEXATEGOS</h2>'+
-            '<p>Global Geopolitical Strategy · versión 0.36.1</p>'+
+            '<p>Global Geopolitical Strategy · versión 0.36.2</p>'+
           '</div>'+
           '<button id="aboutClose0351" class="aboutClose0351" type="button" aria-label="Cerrar">×</button>'+
         '</header>'+
