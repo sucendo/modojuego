@@ -127,10 +127,17 @@
   };
 
   function territoryCounts0361(){
-    if(aiSnapshot3260?.territory?.length>=activeFactionCount3230)
-      return aiSnapshot3260.territory;
-    if(economySnapshot3261?.territory?.length>=activeFactionCount3230)
-      return economySnapshot3261.territory;
+    // Elegir el snapshot MÁS RECIENTE. Ambos ya recorren el mundo por otros
+    // motivos; reutilizamos el último disponible para que HUD/ranking no queden
+    // artificialmente atrasados sin provocar un nuevo barrido de 510k celdas.
+    const aiOk=aiSnapshot3260?.territory?.length>=activeFactionCount3230;
+    const ecoOk=economySnapshot3261?.territory?.length>=activeFactionCount3230;
+    if(aiOk&&ecoOk){
+      const aiT=Number(aiSnapshot3260.campaign)||0,ecoT=Number(economySnapshot3261.campaign)||0;
+      return ecoT>aiT?economySnapshot3261.territory:aiSnapshot3260.territory;
+    }
+    if(aiOk)return aiSnapshot3260.territory;
+    if(ecoOk)return economySnapshot3261.territory;
     if(fallbackTerritory&&fallbackTerritoryStamp===ownerCacheVersion3298)
       return fallbackTerritory;
     const counts=new Int32Array(F);
