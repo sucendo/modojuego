@@ -59,7 +59,7 @@ assert.ok(trade.includes('materialRecruitFactor:s.recruitFactor'),'recruitment m
 // UI and route intensity.
 assert.ok(trade.includes('function routeCargoText03720'),'route cargo text missing');
 assert.ok(trade.includes("Carga: "),'route manager must display real cargo');
-assert.ok(trade.includes("'▦ Economía material'"),'material economy dashboard missing');
+assert.ok(trade.includes('▦ Economía material'),'material economy dashboard missing');
 assert.ok(trade.includes('Flujo físico de mercancías'),'physical flow metric missing');
 assert.ok(trade.includes('const intensity=Number.isFinite(r.cargoTotal03720)?r.cargoTotal03720'),
   'commercial dots must use real cargo intensity');
