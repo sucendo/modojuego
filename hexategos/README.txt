@@ -1,3 +1,30 @@
+HEXATEGOS 0.37.13 · LOGÍSTICA INTERIOR Y TRÁFICO PROPIO
+
+Rutas marítimas propias:
+- se pueden crear entre dos puertos de la misma nación;
+- sirven para conectar islas, enclaves o regiones sin continuidad terrestre;
+- la selección de candidatos propios revisa hasta 24 puertos;
+- el destino elegido directamente en el mapa sigue pudiendo ser cualquier puerto propio válido;
+- una ruta interior activa funciona como puente logístico real.
+
+Suministro marítimo:
+- puerto extremo de una ruta interior activa: suelo de suministro 64;
+- estructuras de la misma nación conectadas por carretera a cualquiera de esos puertos: suelo de suministro 58;
+- el suministro base mayor se conserva: solo se eleva el mínimo cuando existe el puente marítimo;
+- cerrar, romper o bloquear la ruta elimina ese apoyo al invalidarse la caché logística.
+
+Camiones del jugador:
+- los candidatos de tráfico doméstico de la nación del jugador se ordenan antes que los de las IA;
+- así no desaparecen de la bolsa visual al jugar con 150/250/350/500 naciones;
+- tramos propios de más de 3 celdas muestran hasta dos puntos;
+- se mantiene zoom mínimo 25;
+- no aumenta maxDots ni el número global de entidades dibujadas.
+
+Rendimiento:
+- se reutilizan componentes de carretera ya calculados;
+- la red marítima de suministro se cachea por época de carreteras y revisión comercial;
+- sin nuevos timers ni escaneos de mapa completo.
+
 HEXATEGOS 0.37.12 · SIMBOLOGÍA DE TRANSPORTES
 
 Convención visual:
