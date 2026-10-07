@@ -66,3 +66,7 @@ jobs:
 
       - name: Run Hexategos 0.37.8 national traffic and naval visuals smoke
         run: node hexategos/tests/smoke-0378.mjs
+
+
+      - name: Run Hexategos 0.37.9 consolidated economic corridors smoke
+        run: node hexategos/tests/smoke-0379.mjs
