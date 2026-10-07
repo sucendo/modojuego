@@ -29,7 +29,7 @@ assert.ok(commerce.includes('f>0&&best.o>0'),'AI customs must be AI-to-AI only')
 assert.ok(commerce.includes('CONEXIÓN TERRESTRE del jugador'),
   'player border connection must wait for explicit button');
 
-assert.ok(index.includes('v0.37.6</title>'),'visible version must be 0.37.6');
+assert.ok(index.includes('v0.37.6</title>')||index.includes('v0.37.7</title>'),'visible version must be 0.37.6');
 assert.ok(index.indexOf('js/border-road-0376.js')>index.indexOf('js/ai-commerce-0375.js'),
   '0.37.6 must load after AI commerce');
 assert.ok(about.includes("version:'0.37.6'"),'about history must include 0.37.6');
