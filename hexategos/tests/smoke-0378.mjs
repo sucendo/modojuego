@@ -25,7 +25,7 @@ assert.ok(visuals.includes('function factionColor0378'),'faction color resolver 
 assert.ok(visuals.includes('drawTransportColor0378'),'transport recolor layer missing');
 assert.ok(visuals.includes('drawNavalGroupsColor0378'),'military fleet recolor layer missing');
 assert.ok(visuals.includes('drawBlueSeaPath0378')&&visuals.includes("rgba(99,206,226,'+alpha+')"),'naval route must use light-blue dashed style');
-assert.ok(visuals.includes("if(g.order==='patrol')"),'patrol must keep immediate-route behavior');
+assert.ok(visuals.includes("if(g.order==='patrol')return null"),'patrol route must be completely hidden');
 assert.ok(visuals.includes('const NAVAL_MIN_ZOOM0378=15'),'military fleets must start at zoom 15');
 assert.ok(visuals.includes('const NAVAL_VISUAL_STEP_MS0378=1320'),'smooth naval interpolation duration missing');
 assert.ok(visuals.includes('const baseNavalAdvance0378=navalAdvanceGroup3270'),'naval movement interpolation hook missing');
@@ -36,7 +36,7 @@ assert.ok(visuals.includes('trafficMinZoom:TRAFFIC_MIN_ZOOM0378'),'public visual
 assert.ok(visuals.includes('navalMinZoom:NAVAL_MIN_ZOOM0378'),'public visual status must expose zoom 15');
 assert.ok(!visuals.includes('setInterval('),'0.37.8 must not add another periodic timer');
 
-assert.ok(index.includes('v0.37.8</title>')||index.includes('v0.37.9</title>'),'visible version must be 0.37.8 or compatible successor');
+assert.ok(index.includes('v0.37.8</title>')||index.includes('v0.37.9</title>')||index.includes('v0.37.10</title>'),'visible version must be 0.37.8 or compatible successor');
 assert.ok(index.indexOf('js/national-visuals-0378.js')>index.indexOf('js/trade-geopolitics-0377.js'),
   '0.37.8 must load after trade geopolitics');
 assert.ok(about.includes("version:'0.37.8'"),'about history must include 0.37.8');
