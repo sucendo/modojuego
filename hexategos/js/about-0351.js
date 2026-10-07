@@ -4,10 +4,30 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.37.10',
+      date:'Octubre 2026',
+      title:'Tráfico comercial legible y velocidad física constante',
+      current:true,
+      summary:'Las patrullas navales ya no dibujan su trayectoria; barcos y camiones comerciales son más visibles y su velocidad deja de depender de la longitud total de la ruta.',
+      changes:[
+        'Las flotas en orden de patrulla mantienen su movimiento y su ruta interna, pero no dibujan ninguna línea de trayectoria.',
+        'Los marcadores de barcos comerciales aumentan de tamaño para ser legibles desde zoom 25.',
+        'Los marcadores de camiones y tráfico terrestre comercial aumentan moderadamente de tamaño.',
+        'El tráfico interior por carretera también gana algo de tamaño manteniendo los límites adaptativos de puntos.',
+        'La velocidad visual deja de medirse como porcentaje de ruta por segundo.',
+        'Los barcos comerciales usan una velocidad base constante expresada en hexágonos por segundo.',
+        'Los camiones comerciales usan una velocidad base constante expresada en hexágonos por segundo.',
+        'Una ruta larga tarda proporcionalmente más en recorrerse que una corta: la longitud ya no acelera artificialmente el vehículo.',
+        'Se añade un punto de extensión para que futuras tecnologías modifiquen la velocidad por nación y tipo de transporte sin rehacer el sistema.',
+        'El multiplicador tecnológico actual es 1.0 para todas las naciones; la progresión tecnológica queda para una versión futura.',
+        'No se añaden nuevas entidades, pathfinding ni temporizadores; el cambio es visual y de parametrización del movimiento comercial.'
+      ]
+    },
+    {
       version:'0.37.9',
       date:'Octubre 2026',
       title:'Corredores económicos consolidados',
-      current:true,
+      current:false,
       summary:'Las IA dejan de dibujar pasillos territoriales mínimos para comerciar: alternan avance y consolidación lateral y convierten los corredores largos en ejes con ciudades e industria.',
       changes:[
         'El proyecto comercial ya no premia únicamente avanzar por la línea más corta hacia el socio.',
