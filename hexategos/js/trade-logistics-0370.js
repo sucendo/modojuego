@@ -1328,6 +1328,19 @@
       pathBudget0370=Math.max(pathBudget0370,1);
       return createLandRoute0370(a,b);
     },
+    requestTransit:(a,b,via)=>requestTransit0370('land',Number(a),Number(b),Number(via),false),
+    hasTransit:(a,b,via)=>hasTransitPermit0370('land',Number(a),Number(b),Number(via)),
+    enableSmuggling:(a,b)=>{
+      a=Number(a);b=Number(b);
+      let r=routes.find(x=>x.type==='land'&&x.status!=='closed'&&
+        ((x.a===a&&x.b===b)||(x.a===b&&x.b===a)));
+      if(!r){
+        rebuildRoadGraph0370(true);pathBudget0370=Math.max(pathBudget0370,1);
+        r=createLandRoute0370(a,b);
+      }
+      if(!r)return null;
+      r.mode='smuggle';r.status='smuggling';markTradeDirty0370();return r;
+    },
     refresh:()=>{lastRoadCampaign=-1e9;markTradeDirty0370();rebuildTradeCache0370(true)}
   };
   window.HEXATEGOS_VERSION=BUILD;
