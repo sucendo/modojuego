@@ -66,11 +66,10 @@
   }
 
   function visibleNavalRoute0378(g){
+    // Patrulla: la trayectoria existe para la simulación, pero se oculta por completo.
+    if(g.order==='patrol')return null;
     if(!Array.isArray(g.route)||!g.route.length)return null;
     const pos=Math.max(0,g.routePos||0);
-    if(g.order==='patrol'){
-      return [g.cell,...g.route.slice(pos,pos+3)].filter((v,i,a)=>i===0||v!==a[i-1]);
-    }
     return g.route.slice(pos);
   }
 
