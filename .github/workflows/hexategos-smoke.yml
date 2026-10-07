@@ -110,3 +110,7 @@ jobs:
 
       - name: Run Hexategos 0.37.19 closed smooth naval patrol smoke
         run: node hexategos/tests/smoke-03719.mjs
+
+
+      - name: Run Hexategos 0.37.20 material economy and active patrols smoke
+        run: node hexategos/tests/smoke-03720.mjs
