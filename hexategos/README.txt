@@ -1,3 +1,34 @@
+HEXATEGOS 0.37.6 · CONEXIÓN TERRESTRE / ADUANA FRONTERIZA
+
+Regla:
+- una carretera de un país y una carretera de otro país pueden llegar a dos hexágonos fronterizos contiguos sin quedar conectadas;
+- el contacto visual ya no crea por sí mismo una red viaria internacional;
+- hace falta construir explícitamente la unión fronteriza.
+
+Jugador:
+- si tu hexágono tiene carretera y, justo al otro lado de la frontera, un país con relación cooperativa tiene también carretera, aparece CONEXIÓN TERRESTRE;
+- el botón muestra ADUANA · 12 ORO · país;
+- al pulsarlo se construye el tramo que cruza la frontera;
+- ese tramo queda visible como parte real de la carretera;
+- después el sistema intenta crear la ruta comercial terrestre entre ambos países.
+
+IA:
+- las IA siguen construyendo corredores comerciales hacia socios;
+- cuando el socio es el jugador, la IA llega hasta la frontera pero no crea unilateralmente la aduana: espera a que el jugador pulse CONEXIÓN TERRESTRE;
+- entre dos IA, cuando ambas carreteras alcanzan el mismo paso fronterizo, pueden construir la conexión explícita y pagar su coste;
+- no existen conexiones internacionales mágicas por mera proximidad.
+
+Diplomacia:
+- solo puede construirse una conexión con una relación cooperativa que mantenga derechos comerciales;
+- comercio, no agresión y alianza son válidos;
+- si después la relación deja de permitir comercio, la ruta comercial puede suspenderse, aunque la carretera física siga existiendo.
+
+Persistencia y rendimiento:
+- el enlace fronterizo se guarda en localStorage y en archivos .hexategos;
+- las partidas anteriores siguen siendo compatibles y empiezan sin aduanas internacionales registradas;
+- la detección del botón solo revisa los vecinos del hexágono seleccionado;
+- no se añade ningún temporizador nuevo.
+
 HEXATEGOS 0.37.5 · IA CIVIL Y COMERCIO FÍSICO ENTRE NACIONES
 
 Problemas corregidos:
