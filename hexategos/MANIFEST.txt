@@ -1,3 +1,25 @@
+HEXATEGOS_0_37_18
+
+Vista de ruta:
+- showTradeRouteFocusBar03718
+- hideTradeRouteFocusBar03718
+- interactionCancel3244 -> Salir
+- listener capture para salir antes del cancelador genérico
+- clearTradeRouteFocus03717(notify)
+
+Persistencia:
+- rutas sí serializadas por serialize0370
+- guardado local vía save0370 / saveGame3212
+- guardado portable vía tradeLogistics0370
+- foco visual NO serializado
+
+Pruebas:
+- tests/smoke-03718.mjs
+
+Rama de seguridad:
+- backup/hexategos-0.37.17-before-route-exit-03718
+
+--- MANIFEST ANTERIOR ---
 HEXATEGOS_0_37_17
 
 Gestor comercial:
