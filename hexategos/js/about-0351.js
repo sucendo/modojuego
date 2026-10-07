@@ -4,10 +4,31 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.37.7',
+      date:'Octubre 2026',
+      title:'Corredores comerciales y geopolítica del tránsito',
+      current:true,
+      summary:'Las IA ya no esperan conexiones comerciales perfectas: intentan crear físicamente el corredor mediante expansión neutral, permisos de tránsito, alternativas, contrabando o escalada diplomática.',
+      changes:[
+        'Si dos IA quieren comerciar y existe espacio neutral entre ellas, intentan expandirse progresivamente hacia el socio comercial.',
+        'La expansión comercial ocupa un único hexágono neutral por ciclo y prolonga la carretera cuando la red ya llega al frente de expansión.',
+        'Si un tercer país bloquea el corredor, las IA solicitan permiso de tránsito usando el sistema diplomático existente.',
+        'Con permiso concedido se construye físicamente el corredor por el territorio de tránsito y se crean las conexiones terrestres/aduanas necesarias.',
+        'El corredor se construye paso a paso: como máximo una conquista, carretera o aduana relevante por servicio.',
+        'Si se deniega el tránsito, primero se busca una ruta alternativa por otros Estados.',
+        'Las personalidades oportunistas o agresivas pueden intentar contrabando, pero solo reutilizando carreteras ya existentes en el país intermedio.',
+        'Las negativas repetidas deterioran opinión y confianza y pueden romper tratados.',
+        'Solo después de varias negativas, y si existe suficiente superioridad estratégica, una IA agresiva puede escalar la disputa del corredor hasta la guerra.',
+        'El jugador nunca recibe una declaración automática de guerra desde este subsistema de corredores; esa relación sigue bajo la diplomacia general.',
+        'Las negativas y el estado estratégico se conservan en guardado local y en archivos .hexategos.',
+        'El sistema reutiliza muestras de frontera, cachés viarias y el scheduler existente para proteger el rendimiento con hasta 500 naciones.'
+      ]
+    },
+    {
       version:'0.37.6',
       date:'Octubre 2026',
       title:'Conexión terrestre y aduana fronteriza',
-      current:true,
+      current:false,
       summary:'Las carreteras de dos países distintos ya no se conectan automáticamente al tocarse: la unión fronteriza se construye de forma explícita mediante una conexión terrestre/aduana.',
       changes:[
         'Cuando una carretera propia llega a un hexágono fronterizo junto a una carretera extranjera compatible aparece CONEXIÓN TERRESTRE.',
