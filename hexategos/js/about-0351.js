@@ -15,6 +15,8 @@
         'Las rutas comerciales terrestres internacionales muestran tráfico usando los colores de las naciones implicadas.',
         'Los barcos comerciales marítimos usan el color de la nación operadora.',
         'Las flotas militares y los convoyes navales muestran el color propio de su nación en lugar del azul/rojo genérico.',
+        'Las flotas y convoyes solo aparecen a partir de zoom 15.',
+        'El avance naval discreto de 1,4 s se interpola visualmente por todos los hexágonos recorridos para eliminar saltos.',
         'Las rutas marítimas comerciales, incluidas IA↔IA, mantienen la línea azul claro discontinua.',
         'Las rutas de movimiento naval conservan el mismo azul claro discontinuo para mejorar legibilidad.',
         'Las patrullas siguen mostrando solo su tramo inmediato y no toda la ruta completa.',
