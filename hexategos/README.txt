@@ -14,8 +14,8 @@ Ciclo:
 - si se restablece la comunicación antes de ese momento, el proceso se cancela y el núcleo se recupera.
 
 Comunicaciones:
-- una carretera solo protege al núcleo cuando forma parte de una red que llega a otro núcleo, a una capital o a una ruta comercial terrestre activa;
-- una carretera corta que termina en ninguna parte no evita el abandono;
+- cualquier carretera conectada al hexágono de una ciudad, industria o puerto cuenta por sí misma como ruta terrestre interna;
+- no es necesario crear además una ruta comercial terrestre formal para evitar la degradación;
 - un puerto puede mantenerse comunicado mediante una ruta marítima activa;
 - si ciudad o industria comparten hexágono con ese puerto, se benefician de la misma salida marítima;
 - la capital se considera nodo básico de comunicaciones y no entra en degradación por arrancar una partida todavía sin red viaria.

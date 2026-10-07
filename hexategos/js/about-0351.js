@@ -14,7 +14,7 @@
         'Entre 60 y 180 segundos pierde progresivamente color y rendimiento económico.',
         'Desde 180 segundos queda abandonada: gris y con una actividad residual mínima.',
         'A partir de 300 segundos se desvanece gradualmente y a los 360 segundos desaparece del mapa.',
-        'Una carretera solo cuenta si integra el núcleo en una red que llega a otro núcleo, a la capital o a una ruta terrestre comercial activa; una carretera a ninguna parte no evita el abandono.',
+        'Cualquier carretera conectada al hexágono de una ciudad, industria o puerto ya cuenta como ruta terrestre interna y evita su degradación; no necesita además una ruta comercial formal.',
         'Los puertos y complejos portuarios también pueden mantenerse comunicados mediante una ruta marítima activa.',
         'La capital está protegida como nodo básico de comunicaciones para no degradarse al comenzar una partida sin carreteras.',
         'Si las comunicaciones se restauran antes de la desaparición, la infraestructura recupera su estado y producción.',

@@ -14,10 +14,10 @@ assert.ok(decay.includes('const GRACE_SECONDS=60'),'communication grace period m
 assert.ok(decay.includes('const ABANDONED_SECONDS=180'),'abandoned threshold missing');
 assert.ok(decay.includes('const FADE_SECONDS=300'),'fade threshold missing');
 assert.ok(decay.includes('const REMOVE_SECONDS=360'),'removal threshold missing');
-assert.ok(decay.includes('api.roadComponent(cell)'),'cached physical road-component reuse missing');
+assert.ok(decay.includes('api.roadComponent(c)>=0'),'any physical road connection must count as internal land route');
 assert.ok(trade.includes('roadComponent:(cell)=>'),'trade logistics road-component API missing');
 assert.ok(decay.includes("r.type!=='sea'"),'maritime-route connectivity missing');
-assert.ok(decay.includes("r.type!=='land'"),'land-route connectivity missing');
+assert.ok(decay.includes('function roadCommunications0373()'),'internal road communications helper missing');
 assert.ok(decay.includes('isCapital0373(cell,f)'), 'capital communications protection missing');
 assert.ok(decay.includes("cities3212.delete(cell)"),'city disappearance missing');
 assert.ok(decay.includes("industries3212.delete(cell)"),'industry disappearance missing');

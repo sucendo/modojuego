@@ -48,42 +48,21 @@
     return out;
   }
 
-  // A road only counts as communications when the cached logistics graph
-  // really joins this node to another national node, a capital, or an active
-  // external land route. This reuses 0.37.x road components instead of
-  // rebuilding a second world graph, which is important with 500 nations.
-  function roadCommunications0373(routes=tradeRoutes0373()){
+  // Any real road touching the structure is already an internal land route.
+  // Reuse the cached 0.37.x road components so this remains O(structures),
+  // not O(world cells), even with 500 nations.
+  function roadCommunications0373(){
     const api=window.HexategosTradeLogistics0370;
     if(!api||typeof api.roadComponent!=='function')return new Set();
     const anchors=new Set();
     for(const c of cities3212)anchors.add(c);
     for(const c of industries3212)anchors.add(c);
     for(const c of ports3212)anchors.add(c);
-    for(let f=0;f<activeFactionCount3230;f++){
-      const c=capitals?.[f];if(Number.isInteger(c)&&c>=0&&owner6[c]===f)anchors.add(c);
-    }
-
-    const firstAnchor=new Map(),multiKey=new Set(),externalKey=new Set();
-    const keyFor=(cell,f)=>{
-      if(cell<0||f<0)return '';
-      const comp=api.roadComponent(cell);
-      return comp>=0?f+':'+comp:'';
-    };
-    for(const c of anchors){
-      const f=owner6[c],key=keyFor(c,f);if(!key)continue;
-      if(!firstAnchor.has(key))firstAnchor.set(key,c);
-      else if(firstAnchor.get(key)!==c)multiKey.add(key);
-    }
-    for(const r of routes){
-      if(!routeOperational0373(r)||r.type!=='land')continue;
-      const aKey=keyFor(r.from,r.a),bKey=keyFor(r.to,r.b);
-      if(aKey)externalKey.add(aKey);if(bKey)externalKey.add(bKey);
-    }
 
     const connected=new Set();
     for(const c of anchors){
-      const key=keyFor(c,owner6[c]);
-      if(key&&(multiKey.has(key)||externalKey.has(key)))connected.add(c);
+      if(c<0||owner6[c]<0)continue;
+      if(api.roadComponent(c)>=0)connected.add(c);
     }
     return connected;
   }
@@ -191,7 +170,7 @@
     const t0=performance.now();
     const routes=tradeRoutes0373();
     const seaEndpoints=activeSeaEndpoints0373(routes);
-    const roadConnected=roadCommunications0373(routes);
+    const roadConnected=roadCommunications0373();
     const removalsBefore=removals;
     let dirty=false;
     dirty=auditSet0373('city',cities3212,cityDecay,now,roadConnected,seaEndpoints)||dirty;
@@ -335,7 +314,7 @@
 
   window.HexategosInfrastructureDecay0373={
     version:BUILD,status:status0373,stats:stats0373,validate:validate0373,
-    audit:()=>audit0373(true),isCommunicated:(cell)=>{const routes=tradeRoutes0373();return communicated0373(cell,owner6[cell],roadCommunications0373(routes),activeSeaEndpoints0373(routes))}
+    audit:()=>audit0373(true),isCommunicated:(cell)=>{const routes=tradeRoutes0373();return communicated0373(cell,owner6[cell],roadCommunications0373(),activeSeaEndpoints0373(routes))}
   };
   window.HEXATEGOS_VERSION=BUILD;
   console.info('[HEXATEGOS] 0.37.3 · degradación de infraestructuras aisladas activa');

@@ -10,10 +10,9 @@ Degradación por aislamiento:
 - recuperar comunicaciones antes de desaparecer restaura el núcleo
 
 Qué cuenta como comunicación:
-- red de carretera que conecte con otro núcleo/capital
-- extremo conectado a una ruta comercial terrestre activa
+- cualquier carretera conectada al hexágono de la ciudad/industria/puerto cuenta como ruta terrestre interna
+- no hace falta crear además una ruta comercial terrestre formal
 - puerto/complejo portuario con ruta marítima activa
-- una carretera aislada que no llega a ningún nodo útil no cuenta
 - la capital actúa como nodo básico protegido
 
 Naval:
