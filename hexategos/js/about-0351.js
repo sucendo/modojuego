@@ -4,10 +4,34 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.37.20',
+      date:'Octubre 2026',
+      title:'Economía material física y patrullas navales visibles',
+      current:true,
+      summary:'Cinco recursos reales pasan a producirse, consumirse y transportarse por la red logística; las patrullas navales vuelven a salir de puerto de forma fiable y sus triángulos ganan presencia visual.',
+      changes:[
+        'Se añaden cinco recursos: alimentos, materias primas, energía/combustible, bienes industriales y material militar.',
+        'Solo capitales, ciudades, industrias, puertos y extremos logísticos mantienen inventario; no existe stock por hexágono.',
+        'El territorio genera producción primaria que se deposita entre los nodos logísticos de cada nación.',
+        'Las industrias consumen materias primas y combustible para producir bienes y material militar.',
+        'Las ciudades consumen alimentos, combustible y bienes; capitales y puertos añaden demanda y capacidad estratégica.',
+        'Las carreteras redistribuyen stocks dentro de cada componente conectado sin crear nuevas entidades.',
+        'Las rutas comerciales mueven excedentes reales hacia déficits y registran cargamento por tipo de recurso.',
+        'El valor económico de una ruta depende también de su flujo material real.',
+        'La escasez de recursos reduce producción económica y reclutamiento para jugador e IA.',
+        'Economía muestra stock, capacidad y cobertura de los cinco recursos y cada ruta enseña su cargamento.',
+        'Los puntos comerciales reflejan la intensidad de cargamento sin aumentar el límite global de puntos.',
+        'Los stocks del jugador y la cobertura nacional se guardan de forma compatible con partidas anteriores.',
+        'Se corrige el estado Infinity que podía impedir que una flota volviera a iniciar una patrulla.',
+        'Las patrullas locales se amplían ligeramente y siguen siendo ciclos cerrados puerto → mar → puerto.',
+        'El triángulo de las flotas aumenta ligeramente de tamaño, comparable al punto comercial marítimo.'
+      ]
+    },
+    {
       version:'0.37.19',
       date:'Octubre 2026',
       title:'Patrullas navales cerradas y movimiento continuo',
-      current:true,
+      current:false,
       summary:'Las patrullas de jugador e IA dejan de mostrar su trayectoria, salen visualmente desde su puerto, recorren un ciclo local y regresan al mismo puerto sin saltos entre ticks.',
       changes:[
         'Las rutas internas de patrulla no se dibujan para ninguna nación.',
