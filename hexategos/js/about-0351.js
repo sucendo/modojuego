@@ -4,10 +4,28 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.37.15',
+      date:'Octubre 2026',
+      title:'Selector comercial desbloqueado y ajuste exacto a puertos',
+      current:true,
+      summary:'Crear una ruta comercial deja de depender de una lista precalculada de destinos y el clic del mapa se ajusta al puerto real para evitar seleccionar una casilla vecina.',
+      changes:[
+        'RUTA COMERCIAL se habilita desde cualquier puerto propio mientras no se haya alcanzado el límite de rutas.',
+        'Entrar en el modo de destino ya no depende de seaCandidates0370 ni de su caché de puertos.',
+        'El puerto destino se valida únicamente cuando el jugador lo pulsa en el mapa.',
+        'El selector permanece activo si se pulsa una casilla inválida.',
+        'En modo comercial el clic se ajusta al puerto visible más cercano antes de usar la selección genérica del mapa.',
+        'Esto evita que un icono de puerto termine resolviéndose como una celda terrestre vecina a zoom intermedio.',
+        'Si la creación falla, el juego informa de límite global, límite nacional o falta de acceso marítimo navegable.',
+        'Las rutas entre puertos propios y las rutas con socios comerciales siguen usando la misma lógica marítima y de suministro.',
+        'No se añade trabajo por frame: la búsqueda del puerto cercano solo se ejecuta cuando el jugador hace clic durante el modo comercial.'
+      ]
+    },
+    {
       version:'0.37.14',
       date:'Octubre 2026',
       title:'Selector comercial nativo y camiones origen-destino',
-      current:true,
+      current:false,
       summary:'La selección de destino comercial se integra en el modo nativo del mapa y el tráfico por carretera deja de recorrer tramos aislados para representar viajes completos entre nodos logísticos.',
       changes:[
         'RUTA COMERCIAL usa ahora el mismo interactionMode nativo que carreteras y transporte de tropas.',
