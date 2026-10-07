@@ -45,6 +45,8 @@
   let domesticRoadTraffic0371=[];
   let domesticTrafficSig0371='';
   let domesticTrafficBuiltAt0371=-1e9;
+  let domesticSeaSupplyCache03713=null;
+  let tradeRevision03713=0;
   let navalPathBucket0371=-1;
   let navalPathUsed0371=0;
 
@@ -112,7 +114,7 @@
     return out;
   }
 
-  function markTradeDirty0370(){dirty=true}
+  function markTradeDirty0370(){dirty=true;tradeRevision03713++;domesticSeaSupplyCache03713=null}
   function routeLimit0370(f){return f===0?16:MAX_ROUTES_PER_FACTION}
 
   function routeCount0370(f,type){
@@ -292,7 +294,7 @@
       components.push({id,cells,factions:[...factions],reps});
       for(const f of factions)factionComponents[f].push(id);
     }
-    lastRoadCampaign=now;roadEpoch++;
+    lastRoadCampaign=now;roadEpoch++;domesticSeaSupplyCache03713=null;
     roadBuildMs=performance.now()-t0;
     for(const r of routes)if(r.type==='land'&&r.status!=='closed')r.needsRebuild=true;
   }
@@ -601,7 +603,8 @@
     rebuildPorts0370();
     for(let b=0;b<activeFactionCount3230;b++){
       if((b!==a&&!tradeRelation0370(a,b))||!(portsByFaction[b]||[]).length)continue;
-      for(const to of portsByFaction[b].slice(0,8)){
+      const portLimit=b===a?24:8;
+      for(const to of portsByFaction[b].slice(0,portLimit)){
         if(to===port||routeExists0370('sea',a,b,port,to))continue;
         const d=angularHeuristic3254(port,to);
         out.push({b,to,d,value:routeBaseValue0370('sea',a,b,Math.max(2,d*14),port,to)});
@@ -1194,7 +1197,11 @@
       }
       flush();
     }
-    candidates.sort((a,b)=>b.score-a.score);
+    candidates.sort((a,b)=>{
+      const ap=a.faction===0?1:0,bp=b.faction===0?1:0;
+      if(ap!==bp)return bp-ap; // nunca dejar que 500 IA expulsen el tráfico del jugador
+      return b.score-a.score;
+    });
     // At zoom 25 the viewport is very local. Keep a wider candidate pool and
     // stop only after the visible-dot budget is filled.
     domesticRoadTraffic0371=candidates.slice(0,coarsePointer3255?100:220);
@@ -1283,7 +1290,7 @@
     for(let i=0;i<Math.min(domesticCap,domesticRoadTraffic0371.length)&&trafficDrawn<maxDots;i++){
       const d=domesticRoadTraffic0371[i],path=d.path;
       if(!path||path.length<2)continue;
-      const dots=d.anchors>=2&&path.length>7?2:1;
+      const dots=d.faction===0?(path.length>3?2:1):(d.anchors>=2&&path.length>7?2:1);
       for(let k=0;k<dots&&trafficDrawn<maxDots;k++){
         const phase=domesticTravelPhase03710(d,k,now);
         const p=projectedAlongCells0371(path,phase,C,R,cx,cy);
@@ -1453,6 +1460,54 @@
     };
   }
 
+  function routeOperationalSupply03713(r){
+    return !!r&&r.type==='sea'&&r.a===r.b&&r.status!=='closed'&&
+      r.status!=='broken'&&r.status!=='blocked'&&r.status!=='suspended';
+  }
+
+  function domesticSeaSupplyNetwork03713(){
+    rebuildRoadGraph0370(false);
+    const cached=domesticSeaSupplyCache03713;
+    if(cached&&cached.roadEpoch===roadEpoch&&cached.revision===tradeRevision03713)return cached;
+
+    const endpoints=Array.from({length:FACTIONS3230.length},()=>new Set());
+    const componentsByFaction=Array.from({length:FACTIONS3230.length},()=>new Set());
+    let activeRoutes=0;
+    for(const r of routes){
+      if(!routeOperationalSupply03713(r))continue;
+      const f=r.a;
+      if(f<0||f>=activeFactionCount3230||!ports3212.has(r.from)||!ports3212.has(r.to))continue;
+      if(owner6[r.from]!==f||owner6[r.to]!==f)continue;
+      endpoints[f].add(r.from);endpoints[f].add(r.to);
+      const cf=roadComp&&r.from<roadComp.length?roadComp[r.from]:-1;
+      const ct=roadComp&&r.to<roadComp.length?roadComp[r.to]:-1;
+      if(cf>=0)componentsByFaction[f].add(cf);
+      if(ct>=0)componentsByFaction[f].add(ct);
+      activeRoutes++;
+    }
+    domesticSeaSupplyCache03713={roadEpoch,revision:tradeRevision03713,endpoints,componentsByFaction,activeRoutes};
+    return domesticSeaSupplyCache03713;
+  }
+
+  function domesticSeaSupplyFloor03713(f,cell){
+    f=Number(f);cell=Number(cell);
+    if(!Number.isInteger(f)||!Number.isInteger(cell)||f<0||cell<0||owner6[cell]!==f)return 0;
+    const net=domesticSeaSupplyNetwork03713();
+    if(net.endpoints[f]?.has(cell))return 64;
+    const comp=roadComp&&cell<roadComp.length?roadComp[cell]:-1;
+    return comp>=0&&net.componentsByFaction[f]?.has(comp)?58:0;
+  }
+
+  // Una ruta marítima interior funciona como puente logístico real:
+  // abastece el puerto remoto y su red viaria local, por ejemplo una isla.
+  if(typeof economyStructureSupply3261==='function'){
+    const baseEconomyStructureSupply03713=economyStructureSupply3261;
+    economyStructureSupply3261=function(f,cell){
+      const base=Number(baseEconomyStructureSupply03713.apply(this,arguments))||0;
+      return Math.max(base,domesticSeaSupplyFloor03713(f,cell));
+    };
+  }
+
   function stats0370(){
     rebuildTradeCache0370(false);
     return {
@@ -1486,6 +1541,7 @@
   window.HexategosTradeLogistics0370={
     version:BUILD,stats:stats0370,validate:validate0370,
     routes:()=>routes,
+    domesticSeaSupply:(f,cell)=>domesticSeaSupplyFloor03713(Number(f),Number(cell)),
     roadComponent:(cell)=>{rebuildRoadGraph0370(false);return Number.isInteger(cell)&&cell>=0&&roadComp&&cell<roadComp.length?roadComp[cell]:-1},
     visualSpeed:(kind,faction)=>({
       cellsPerSecond:(kind==='sea'?SEA_TRADE_CELLS_PER_SECOND:LAND_TRADE_CELLS_PER_SECOND)*
