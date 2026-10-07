@@ -1,3 +1,41 @@
+HEXATEGOS_0_37_10
+
+Patrulla naval:
+- ruta visual de patrulla eliminada por completo
+- la ruta interna y el movimiento de simulación se conservan
+
+Tráfico comercial:
+- barcos comerciales más grandes
+- camiones/puntos comerciales terrestres más grandes
+- tráfico interior ligeramente más grande
+- mismo presupuesto visual y mismos umbrales de zoom
+
+Velocidad física:
+- eliminado avance por porcentaje fijo de ruta
+- DOMESTIC_TRAFFIC_CELLS_PER_SECOND=.78
+- LAND_TRADE_CELLS_PER_SECOND=.92
+- SEA_TRADE_CELLS_PER_SECOND=.72
+- fase calculada usando distancia real de la ruta
+- rutas más largas tardan proporcionalmente más
+- helper tradeSpeedMultiplier03710 preparado para tecnología futura
+- multiplicador actual: 1.0 salvo API tecnológica futura
+
+Rendimiento:
+- sin nuevas entidades
+- sin nuevas búsquedas de ruta
+- sin temporizadores adicionales
+
+Archivos modificados:
+- js/trade-logistics-0370.js
+- js/national-visuals-0378.js
+
+Pruebas:
+- tests/smoke-03710.mjs
+
+Rama de seguridad:
+- backup/hexategos-0.37.9-before-traffic-motion-03710
+
+--- MANIFEST ANTERIOR ---
 HEXATEGOS_0_37_9
 
 Corredores económicos consolidados:
