@@ -637,6 +637,18 @@
     modalActions3244.innerHTML='<button data-modal-action="close">Cancelar</button>';
   }
 
+  function seaTradeTargetReason03711(from,to){
+    if(!Number.isInteger(to)||to<0||to===from)return 'Selecciona otro puerto en el mapa';
+    if(!ports3212.has(to))return 'El destino debe ser un puerto';
+    const b=owner6[to];
+    if(b<0)return 'Ese puerto no pertenece a una nación';
+    if(b!==0&&!tradeRelation0370(0,b))return 'Necesitas Comercio, No agresión o Alianza con ese país';
+    if(routeExists0370('sea',0,b,from,to))return 'Ya existe una ruta comercial con ese puerto';
+    if(routeCount0370(0)>=routeLimit0370(0))return 'Has alcanzado el límite de rutas comerciales';
+    if(b!==0&&routeCount0370(b)>=routeLimit0370(b))return factionName3230(b)+' no admite más rutas';
+    return '';
+  }
+
   function createPlayerSeaRoute0370(from,to){
     const b=owner6[to];
     if(owner6[from]!==0||b<0||from===to)return null;
@@ -655,94 +667,39 @@
     return null;
   }
 
-  let seaTradeMapPick03711=null;
-
-  function tradeMapBar03711(){
-    return {
-      bar:document.getElementById('interactionBar3244'),
-      text:document.getElementById('interactionText3244'),
-      cancel:document.getElementById('interactionCancel3244')
-    };
-  }
-
-  function setTradeMapHint03711(msg){
-    const el=tradeMapBar03711();
-    if(el.text)el.text.textContent=msg;
-    if(el.bar)el.bar.classList.add('show3244');
-  }
-
-  function cancelSeaTradeMapPick03711(silent=false){
-    if(!seaTradeMapPick03711)return;
-    seaTradeMapPick03711=null;
-    const el=tradeMapBar03711();
-    if(el.bar)el.bar.classList.remove('show3244');
-    if(!silent)toast('Selección de ruta comercial cancelada');
-  }
-
-  function seaTradeTargetReason03711(from,to){
-    if(!Number.isInteger(to)||to<0||to===from)return 'Selecciona otro puerto en el mapa';
-    if(!ports3212.has(to))return 'El destino debe ser un puerto';
-    const b=owner6[to];
-    if(b<0)return 'Ese puerto no pertenece a una nación';
-    if(b!==0&&!tradeRelation0370(0,b))return 'Necesitas Comercio, No agresión o Alianza con ese país';
-    if(routeExists0370('sea',0,b,from,to))return 'Ya existe una ruta comercial con ese puerto';
-    if(routeCount0370(0)>=routeLimit0370(0))return 'Has alcanzado el límite de rutas comerciales';
-    if(b!==0&&routeCount0370(b)>=routeLimit0370(b))return factionName3230(b)+' no admite más rutas';
-    return '';
-  }
-
-  function beginSeaTradeMapPick03711(from){
+  function beginSeaTradeMapPick03714(from){
     if(from<0||!ports3212.has(from)||owner6[from]!==0){
       toast('Selecciona uno de tus puertos');return false;
     }
     if(!seaCandidates0370(from).length){
       toast('No hay puertos compatibles para abrir una ruta comercial');return false;
     }
-    closeContextDialog3244();
     if(typeof closeModal3244==='function')closeModal3244();
-    const current=selected?.key===MAX_GAME_LEVEL3233?selected.i:from;
-    seaTradeMapPick03711={from,lastCell:Number.isInteger(current)?current:from};
-    setTradeMapHint03711('Ruta comercial · selecciona puerto de destino');
-    toast('Selecciona el puerto de destino en el mapa');
+    setInteractionMode3244('select_trade_route_target',from,'sea_trade_0370');
+    interactionText3244.textContent='Ruta comercial · selecciona un puerto de destino';
     return true;
   }
 
-  function handleSeaTradeMapCell03711(cell){
-    const pick=seaTradeMapPick03711;if(!pick)return false;
-    closeContextDialog3244?.();
-    const reason=seaTradeTargetReason03711(pick.from,cell);
+  const baseHandleInteractionTarget03714=handleInteractionTarget3244;
+  handleInteractionTarget3244=function(cell){
+    if(uiInteractionState3244.interactionMode!=='select_trade_route_target')
+      return baseHandleInteractionTarget03714.apply(this,arguments);
+
+    const from=uiInteractionState3244.sourceCell;
+    const reason=seaTradeTargetReason03711(from,cell);
     if(reason){
-      setTradeMapHint03711('Ruta comercial · '+reason);
-      return false;
+      interactionText3244.textContent='Ruta comercial · '+reason;
+      toast(reason);
+      return;
     }
-    const r=createPlayerSeaRoute0370(pick.from,cell);
-    if(r){
-      cancelSeaTradeMapPick03711(true);
-      toast('Ruta comercial creada · '+placeDisplayName3271(pick.from)+' → '+placeDisplayName3271(cell));
-      return true;
+    const r=createPlayerSeaRoute0370(from,cell);
+    if(!r){
+      interactionText3244.textContent='Ruta comercial · no se pudo abrir esa ruta';
+      return;
     }
-    setTradeMapHint03711('Ruta comercial · no se pudo abrir esa ruta');
-    return false;
-  }
-
-  const baseUpdatePanel03711=updatePanel;
-  updatePanel=function(){
-    const out=baseUpdatePanel03711.apply(this,arguments);
-    if(seaTradeMapPick03711&&selected?.key===MAX_GAME_LEVEL3233){
-      const cell=selected.i;
-      if(Number.isInteger(cell)&&cell>=0&&cell!==seaTradeMapPick03711.lastCell){
-        seaTradeMapPick03711.lastCell=cell;
-        requestAnimationFrame(()=>handleSeaTradeMapCell03711(cell));
-      }
-    }
-    return out;
+    cancelInteractionMode3244();
+    toast('Ruta comercial creada · '+placeDisplayName3271(from)+' → '+placeDisplayName3271(cell));
   };
-
-  document.getElementById('interactionCancel3244')?.addEventListener('click',e=>{
-    if(!seaTradeMapPick03711)return;
-    e.preventDefault();e.stopImmediatePropagation();
-    cancelSeaTradeMapPick03711(false);
-  },true);
 
   function rebaseFleet0370(id,port,notify=true){
     const g=navalGroups3270.find(x=>x.id===id);
@@ -788,7 +745,7 @@
 
   window.HexategosTradeActions0370={
     openSeaTrade:openSeaTradeModal0370,
-    pickSeaOnMap:beginSeaTradeMapPick03711,
+    pickSeaOnMap:beginSeaTradeMapPick03714,
     createSea:createPlayerSeaRoute0370,
     rebase:rebaseFleet0370,
     closeRoute:closeRoute0370,
@@ -819,7 +776,7 @@
       if(!ctx||ctx.kind!=='cell'||!ctx.own||!ctx.port)return;
       closeContextDialog3244();
       if(id==='naval_build_0370')buildNavalGroup3270(0,ctx.cell,true);
-      else beginSeaTradeMapPick03711(ctx.cell);
+      else beginSeaTradeMapPick03714(ctx.cell);
       return;
     }
     return baseContextAction0370(id);
@@ -1165,45 +1122,121 @@
     c.insertAdjacentHTML('beforeend',html);
   };
 
+  function domesticAnchorKind03714(cell,f){
+    if(capitals[f]===cell)return 'capital';
+    if(ports3212.has(cell))return 'port';
+    if(industries3212.has(cell))return 'industry';
+    if(cities3212.has(cell))return 'city';
+    return '';
+  }
+
+  function domesticAnchorWeight03714(cell,f){
+    let w=0;
+    if(capitals[f]===cell)w+=60;
+    if(cities3212.has(cell))w+=20+(cityLevel3230[cell]||1)*5;
+    if(industries3212.has(cell))w+=18+(industryLevel3230[cell]||1)*6;
+    if(ports3212.has(cell))w+=24;
+    return w;
+  }
+
+  function roadTree03714(f,hub,compId,maxVisits){
+    const L=loadLevel(MAX_GAME_LEVEL3233),prev=new Map([[hub,-1]]),q=[hub];
+    for(let h=0;h<q.length&&q.length<maxVisits;h++){
+      const u=q[h];
+      for(let k=L.offsets[u];k<L.offsets[u+1];k++){
+        const v=L.edgeNbr[k];
+        if(v<0||prev.has(v)||owner6[v]!==f||roadComp[v]!==compId||!roadJoin0370(u,v))continue;
+        prev.set(v,u);q.push(v);
+      }
+    }
+    return prev;
+  }
+
+  function pathFromRoadTree03714(prev,hub,target){
+    if(target===hub)return [hub];
+    if(!prev.has(target))return null;
+    const out=[];let u=target,guard=0;
+    while(u>=0&&guard++<18000){
+      out.push(u);
+      if(u===hub)break;
+      u=prev.get(u);
+      if(u==null)return null;
+    }
+    if(out[out.length-1]!==hub)return null;
+    return out.reverse();
+  }
+
   function rebuildDomesticTraffic0371(now){
     if(now-domesticTrafficBuiltAt0371<3500&&domesticRoadTraffic0371.length)return;
     const sig=roads3212.length+':'+cities3212.size+':'+industries3212.size+':'+ports3212.size+':'+activeFactionCount3230;
     if(sig===domesticTrafficSig0371&&now-domesticTrafficBuiltAt0371<9000)return;
     domesticTrafficSig0371=sig;domesticTrafficBuiltAt0371=now;
+    rebuildRoadGraph0370(false);
+
+    // Los camiones representan viajes completos ENTRE nodos logísticos,
+    // no vehículos pegados a cada array/tramo individual de roads3212.
+    const groups=new Map(),seenAnchors=new Set();
+    const addAnchor=(cell,f)=>{
+      if(!Number.isInteger(cell)||cell<0||f<0||f>=activeFactionCount3230||owner6[cell]!==f||seenAnchors.has(cell))return;
+      const comp=roadComp&&cell<roadComp.length?roadComp[cell]:-1;
+      if(comp<0)return;
+      seenAnchors.add(cell);
+      const key=f+':'+comp;
+      if(!groups.has(key))groups.set(key,{f,comp,anchors:[]});
+      groups.get(key).anchors.push(cell);
+    };
+    for(const cell of cities3212){const f=owner6[cell];if(f>=0)addAnchor(cell,f)}
+    for(const cell of industries3212){const f=owner6[cell];if(f>=0)addAnchor(cell,f)}
+    for(const cell of ports3212){const f=owner6[cell];if(f>=0)addAnchor(cell,f)}
+    for(let f=0;f<activeFactionCount3230;f++)addAnchor(capitals[f],f);
+
+    const ordered=[...groups.values()].filter(g=>g.anchors.length>=2);
+    ordered.sort((a,b)=>{
+      const ap=a.f===0?1:0,bp=b.f===0?1:0;
+      if(ap!==bp)return bp-ap;
+      return b.anchors.length-a.anchors.length;
+    });
+
     const candidates=[];
-    for(let ri=0;ri<roads3212.length;ri++){
-      const path=roads3212[ri];if(!Array.isArray(path)||path.length<2)continue;
-      let run=[],runFaction=-1;
-      const flush=()=>{
-        if(run.length<2||runFaction<0){run=[];runFaction=-1;return}
-        let anchors=0;
-        for(const cell of run){
-          if(cities3212.has(cell)||industries3212.has(cell)||ports3212.has(cell)||capitals[runFaction]===cell)anchors++;
-        }
-        const sampled=samplePath0370(run,120);
+    const maxGroups=coarsePointer3255?54:96;
+    let groupsDone=0;
+    for(const g of ordered){
+      if(groupsDone>=maxGroups&&g.f!==0)break;
+      const anchors=g.anchors.slice().sort((a,b)=>domesticAnchorWeight03714(b,g.f)-domesticAnchorWeight03714(a,g.f));
+      let hub=anchors[0];
+      if(Number.isInteger(capitals[g.f])&&anchors.includes(capitals[g.f]))hub=capitals[g.f];
+
+      const maxVisits=g.f===0?14000:6500;
+      const prev=roadTree03714(g.f,hub,g.comp,maxVisits);
+      const targets=anchors.filter(x=>x!==hub&&prev.has(x));
+      targets.sort((a,b)=>{
+        const ka=domesticAnchorKind03714(a,g.f),kb=domesticAnchorKind03714(b,g.f);
+        const diversityA=ka!==domesticAnchorKind03714(hub,g.f)?1:0;
+        const diversityB=kb!==domesticAnchorKind03714(hub,g.f)?1:0;
+        return diversityB-diversityA+domesticAnchorWeight03714(b,g.f)-domesticAnchorWeight03714(a,g.f);
+      });
+
+      const perGroup=g.f===0?Math.min(18,targets.length):Math.min(2,targets.length);
+      for(let i=0;i<perGroup;i++){
+        const target=targets[i],full=pathFromRoadTree03714(prev,hub,target);
+        if(!full||full.length<2)continue;
         candidates.push({
-          path:sampled,faction:runFaction,anchors,
-          score:anchors*18+Math.min(20,run.length),
-          seed:ri*37+run[0]+runFaction*101
+          path:samplePath0370(full,160),faction:g.f,anchors:2,
+          origin:hub,destination:target,
+          originKind:domesticAnchorKind03714(hub,g.f),
+          destinationKind:domesticAnchorKind03714(target,g.f),
+          score:domesticAnchorWeight03714(hub,g.f)+domesticAnchorWeight03714(target,g.f)+Math.min(40,full.length),
+          seed:g.comp*37+hub*7+target*13+g.f*101
         });
-        run=[];runFaction=-1;
-      };
-      for(const cell of path){
-        const f=cell>=0?owner6[cell]:-1;
-        if(f<0){flush();continue}
-        if(runFaction<0)runFaction=f;
-        if(f!==runFaction){flush();runFaction=f}
-        run.push(cell);
       }
-      flush();
+      groupsDone++;
     }
+
     candidates.sort((a,b)=>{
       const ap=a.faction===0?1:0,bp=b.faction===0?1:0;
-      if(ap!==bp)return bp-ap; // nunca dejar que 500 IA expulsen el tráfico del jugador
+      if(ap!==bp)return bp-ap;
       return b.score-a.score;
     });
-    // At zoom 25 the viewport is very local. Keep a wider candidate pool and
-    // stop only after the visible-dot budget is filled.
     domesticRoadTraffic0371=candidates.slice(0,coarsePointer3255?100:220);
   }
 
@@ -1290,7 +1323,7 @@
     for(let i=0;i<Math.min(domesticCap,domesticRoadTraffic0371.length)&&trafficDrawn<maxDots;i++){
       const d=domesticRoadTraffic0371[i],path=d.path;
       if(!path||path.length<2)continue;
-      const dots=d.faction===0?(path.length>3?2:1):(d.anchors>=2&&path.length>7?2:1);
+      const dots=d.faction===0?(path.length>3?2:1):(path.length>7?2:1);
       for(let k=0;k<dots&&trafficDrawn<maxDots;k++){
         const phase=domesticTravelPhase03710(d,k,now);
         const p=projectedAlongCells0371(path,phase,C,R,cx,cy);
