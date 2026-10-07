@@ -1,3 +1,50 @@
+HEXATEGOS 0.37.17 · GESTOR DE RUTAS COMERCIALES
+
+Economía:
+- listado completo de todas las rutas del jugador;
+- sin corte a 12 elementos;
+- ordenadas por estado operativo, tipo y valor;
+- origen ↔ destino visibles;
+- tipo marítima / terrestre;
+- interior / socio comercial;
+- estado;
+- ingreso;
+- mercancías estimadas;
+- distancia;
+- riesgo naval;
+- tránsito;
+- indicador de abastecimiento interior en rutas marítimas propias.
+
+Acciones:
+- Ver en mapa;
+- Solicitar tránsito;
+- Contrabando cuando procede;
+- Cerrar ruta.
+
+Ver en mapa:
+- focusTradeRoute03717(id);
+- cierra el panel Sistemas;
+- usa el punto medio del trazado;
+- centra mediante cellLonLat3302 + rotateToGeo3243;
+- zoom 4.8 para mar y 6.0 para tierra;
+- focusedTradeRoute03717 conserva la selección;
+- drawFocusedTradeRoute03717 resalta el trazado;
+- rutas marítimas: línea azul clara discontinua;
+- terrestres: línea clara continua.
+
+Pestaña Naval:
+- las rutas marítimas también ofrecen Ver en mapa.
+
+Rendimiento:
+- no se añade ningún timer;
+- el gestor solo se construye al renderizar Economía;
+- el resaltado procesa una única ruta seleccionada;
+- se mantiene intacto el presupuesto de tráfico comercial.
+
+Compatibilidad:
+- no cambia createPlayerSeaRoute0370 ni createSeaRoute0370;
+- conserva la integración 0.37.16 con el controlador final de destinos.
+
 HEXATEGOS 0.37.16 · REVISIÓN COMPLETA DEL FLUJO DE RUTA COMERCIAL
 
 CAUSA RAÍZ ENCONTRADA
