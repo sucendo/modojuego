@@ -886,7 +886,26 @@
       if(p>=0)rebaseFleet0370(g.id,p,false);
       break;
     }
-    return baseAiNavalPlan0370(f);
+
+    const before=new Map();
+    for(const g of navalGroups3270)if(g.f===f)before.set(g.id,g.home);
+    const out=baseAiNavalPlan0370(f);
+
+    let transferUsed=false;
+    for(const g of navalGroups3270){
+      if(g.f!==f)continue;
+      const oldHome=before.get(g.id);
+      if(oldHome==null||oldHome<0||g.home===oldHome)continue;
+      const requested=g.home;
+      if(ports3212.has(oldHome)&&owner6[oldHome]===f){
+        g.home=oldHome;
+        if(!transferUsed&&requested>=0&&ports3212.has(requested)&&owner6[requested]===f){
+          g.route=null;g.routeGoal=-1;
+          if(rebaseFleet0370(g.id,requested,false))transferUsed=true;
+        }
+      }
+    }
+    return out;
   };
 
   const baseRepairFleet0370=repairNavalGroup3270;
