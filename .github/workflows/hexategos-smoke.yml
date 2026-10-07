@@ -48,3 +48,6 @@ jobs:
 
       - name: Run Hexategos 0.37.2 traffic visibility and patrol route smoke
         run: node hexategos/tests/smoke-0372.mjs
+
+      - name: Run Hexategos 0.37.3 isolated infrastructure decay smoke
+        run: node hexategos/tests/smoke-0373.mjs

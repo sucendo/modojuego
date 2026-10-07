@@ -1,3 +1,47 @@
+HEXATEGOS_0_37_3
+
+Degradación por aislamiento:
+- ciudades, industrias y puertos necesitan comunicaciones reales
+- 0-60 s sin conexión: margen de adaptación
+- 60-180 s: degradación progresiva y pérdida de producción
+- 180-300 s: abandono, icono gris y actividad residual mínima
+- 300-360 s: desvanecimiento progresivo
+- 360 s: desaparición definitiva de la infraestructura
+- recuperar comunicaciones antes de desaparecer restaura el núcleo
+
+Qué cuenta como comunicación:
+- red de carretera que conecte con otro núcleo/capital
+- extremo conectado a una ruta comercial terrestre activa
+- puerto/complejo portuario con ruta marítima activa
+- una carretera aislada que no llega a ningún nodo útil no cuenta
+- la capital actúa como nodo básico protegido
+
+Naval:
+- si desaparece un puerto-base, la flota queda sin base
+- no se teletransporta ni se elimina
+- puede recibir después un traslado válido; la IA usa el mismo sistema naval
+
+Rendimiento:
+- auditoría cada 10 s de campaña, no por frame
+- reutiliza la caché de componentes viarios de 0.37.x
+- reutiliza economyTick3212 y no crea un setInterval adicional
+- solo recorre las colecciones dispersas de ciudades/industrias/puertos
+
+Compatibilidad:
+- partidas anteriores cargan sin estado de degradación y empiezan sanas
+- persistencia local independiente
+- estado incluido también en archivos .hexategos
+
+Módulo nuevo:
+- js/infrastructure-decay-0373.js
+
+Pruebas:
+- tests/smoke-0373.mjs
+
+Rama de seguridad:
+- backup/hexategos-0.37.2-before-infra-decay-0373
+
+--- MANIFEST ANTERIOR ---
 HEXATEGOS_0_37_2
 
 Visualización:

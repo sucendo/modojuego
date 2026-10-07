@@ -1312,6 +1312,7 @@
   window.HexategosTradeLogistics0370={
     version:BUILD,stats:stats0370,validate:validate0370,
     routes:()=>routes,
+    roadComponent:(cell)=>{rebuildRoadGraph0370(false);return Number.isInteger(cell)&&cell>=0&&roadComp&&cell<roadComp.length?roadComp[cell]:-1},
     refresh:()=>{lastRoadCampaign=-1e9;markTradeDirty0370();rebuildTradeCache0370(true)}
   };
   window.HEXATEGOS_VERSION=BUILD;

@@ -4,10 +4,30 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.37.3',
+      date:'Octubre 2026',
+      title:'Degradación y abandono por aislamiento',
+      current:true,
+      summary:'Ciudades, industrias y puertos necesitan comunicaciones reales: si quedan aislados pierden actividad, se vuelven grises, se abandonan y finalmente desaparecen.',
+      changes:[
+        'Una infraestructura aislada dispone de 60 segundos de campaña de margen antes de empezar a degradarse.',
+        'Entre 60 y 180 segundos pierde progresivamente color y rendimiento económico.',
+        'Desde 180 segundos queda abandonada: gris y con una actividad residual mínima.',
+        'A partir de 300 segundos se desvanece gradualmente y a los 360 segundos desaparece del mapa.',
+        'Una carretera solo cuenta si integra el núcleo en una red que llega a otro núcleo, a la capital o a una ruta terrestre comercial activa; una carretera a ninguna parte no evita el abandono.',
+        'Los puertos y complejos portuarios también pueden mantenerse comunicados mediante una ruta marítima activa.',
+        'La capital está protegida como nodo básico de comunicaciones para no degradarse al comenzar una partida sin carreteras.',
+        'Si las comunicaciones se restauran antes de la desaparición, la infraestructura recupera su estado y producción.',
+        'Todas las naciones IA están sujetas exactamente a las mismas reglas.',
+        'Si desaparece un puerto-base, sus flotas no se borran ni se teletransportan: quedan sin base hasta que el sistema naval asigne u ordene un traslado válido.',
+        'El cálculo reutiliza los componentes de carretera ya cacheados por el sistema comercial y el reloj económico existente; no añade otro temporizador periódico.',
+        'El estado de degradación se conserva en guardado local y en archivos .hexategos manteniendo compatibilidad con partidas anteriores.'
+      ]
+    },
+    {
       version:'0.37.2',
       date:'Octubre 2026',
       title:'Tráfico terrestre visible y patrulla limpia',
-      current:true,
       summary:'El tráfico terrestre se hace más visible y adopta el color del jugador, las carreteras se afinan y las flotas en patrulla solo enseñan el tramo inmediato de su recorrido.',
       changes:[
         'Los puntos terrestres aparecen desde un zoom más cercano y son más fáciles de distinguir.',
@@ -293,7 +313,7 @@
         '<header class="aboutHead0351">'+
           '<div class="aboutHeadText0351">'+
             '<h2 id="aboutTitle0351">ACERCA DE HEXATEGOS</h2>'+
-            '<p>Global Geopolitical Strategy · versión 0.37.2</p>'+
+            '<p>Global Geopolitical Strategy · versión 0.37.3</p>'+
           '</div>'+
           '<button id="aboutClose0351" class="aboutClose0351" type="button" aria-label="Cerrar">×</button>'+
         '</header>'+
@@ -351,5 +371,5 @@
     history:HISTORY.map(v=>({...v,changes:v.changes.slice()}))
   };
 
-  console.info('[HEXATEGOS] historial actualizado para 0.36.1');
+  console.info('[HEXATEGOS] historial actualizado para 0.37.3');
 })();

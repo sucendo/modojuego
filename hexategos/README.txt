@@ -1,3 +1,42 @@
+HEXATEGOS 0.37.3 · DEGRADACIÓN, ABANDONO Y DESAPARICIÓN POR AISLAMIENTO
+
+Objetivo:
+- Hacer que una ciudad, industria o puerto necesite formar parte de una red de comunicaciones útil.
+- Convertir el aislamiento prolongado en un proceso visible y con consecuencias económicas reales.
+- Mantener la regla idéntica para el jugador y para las 150 / 250 / 350 / 500 naciones IA.
+
+Ciclo:
+- durante los primeros 60 segundos de campaña sin comunicaciones no hay penalización;
+- entre 60 y 180 segundos el icono pierde progresivamente saturación y la producción cae;
+- entre 180 y 300 segundos la infraestructura queda abandonada, completamente gris y casi improductiva;
+- desde 300 segundos comienza a volverse transparente;
+- a los 360 segundos desaparece definitivamente;
+- si se restablece la comunicación antes de ese momento, el proceso se cancela y el núcleo se recupera.
+
+Comunicaciones:
+- una carretera solo protege al núcleo cuando forma parte de una red que llega a otro núcleo, a una capital o a una ruta comercial terrestre activa;
+- una carretera corta que termina en ninguna parte no evita el abandono;
+- un puerto puede mantenerse comunicado mediante una ruta marítima activa;
+- si ciudad o industria comparten hexágono con ese puerto, se benefician de la misma salida marítima;
+- la capital se considera nodo básico de comunicaciones y no entra en degradación por arrancar una partida todavía sin red viaria.
+
+Economía y flotas:
+- la producción de una infraestructura degradada cae de forma continua;
+- una estructura abandonada conserva solo una actividad residual hasta desaparecer;
+- si desaparece un puerto que era base de una flota, la flota queda sin base: no se borra ni se teletransporta;
+- las IA están sujetas al mismo abandono y al mismo sistema de reasignación/traslado naval.
+
+Rendimiento:
+- no existe un nuevo bucle periódico;
+- la auditoría se engancha al tick económico ya existente y solo actúa cada 10 segundos de campaña;
+- las conexiones terrestres reutilizan los componentes de carretera cacheados por trade-logistics-0370;
+- se recorren únicamente ciudades, industrias y puertos, no todos los hexágonos del mundo.
+
+Compatibilidad:
+- las partidas antiguas siguen cargando;
+- al no contener estado 0.37.3 comienzan con sus infraestructuras sanas y la degradación se calcula desde ese momento;
+- el estado se guarda tanto localmente como dentro de los archivos .hexategos.
+
 HEXATEGOS 0.37.2 · TRÁFICO TERRESTRE VISIBLE Y PATRULLA LIMPIA
 
 Cambios:
