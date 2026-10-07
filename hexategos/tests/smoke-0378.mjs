@@ -24,7 +24,7 @@ assert.ok(visuals.includes("const BUILD='0.37.8'"),'national visuals build must 
 assert.ok(visuals.includes('function factionColor0378'),'faction color resolver missing');
 assert.ok(visuals.includes('drawTransportColor0378'),'transport recolor layer missing');
 assert.ok(visuals.includes('drawNavalGroupsColor0378'),'military fleet recolor layer missing');
-assert.ok(visuals.includes("ctx.strokeStyle='rgba(99,206,226,.36)'"),'naval route must use light-blue dashed style');
+assert.ok(visuals.includes('drawBlueSeaPath0378')&&visuals.includes("rgba(99,206,226,'+alpha+')"),'naval route must use light-blue dashed style');
 assert.ok(visuals.includes("if(g.order==='patrol')"),'patrol must keep immediate-route behavior');
 assert.ok(visuals.includes('const NAVAL_MIN_ZOOM0378=15'),'military fleets must start at zoom 15');
 assert.ok(visuals.includes('const NAVAL_VISUAL_STEP_MS0378=1320'),'smooth naval interpolation duration missing');
