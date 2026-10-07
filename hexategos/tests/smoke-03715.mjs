@@ -23,7 +23,7 @@ assert.ok(trade.includes('p[2]<.035'),'hidden/back-side ports must not be picked
 assert.ok(trade.includes('Uno de los puertos no tiene acceso marítimo navegable'),'explicit maritime-access diagnostic missing');
 assert.ok(trade.includes('canPickSeaTarget:(from,to)=>'),'target validation diagnostic API missing');
 
-assert.ok(index.includes('v0.37.15</title>')||index.includes('v0.37.16</title>')||index.includes('v0.37.17</title>')||index.includes('v0.37.18</title>')||index.includes('v0.37.19</title>'),'visible version must be 0.37.15 or compatible successor');
+assert.ok(index.includes('v0.37.15</title>')||index.includes('v0.37.16</title>')||index.includes('v0.37.17</title>')||index.includes('v0.37.18</title>')||index.includes('v0.37.19</title>')||index.includes('v0.37.20</title>'),'visible version must be 0.37.15 or compatible successor');
 assert.ok(about.includes("version:'0.37.15'"),'about history must include 0.37.15');
 
 console.log('HEXATEGOS 0.37.15 robust commercial picker smoke: OK');
