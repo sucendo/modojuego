@@ -4,10 +4,27 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.37.0',
+      date:'Octubre 2026',
+      title:'Rutas físicas y puertos-base',
+      current:true,
+      summary:'El comercio deja de ser principalmente abstracto: los ingresos importantes necesitan rutas terrestres o marítimas reales, mientras que cada flota pertenece a un puerto-base concreto y puede trasladarse a otro.',
+      changes:[
+        'Las relaciones comerciales por sí solas mantienen un intercambio residual, pero el enriquecimiento importante exige infraestructura física.',
+        'El comercio terrestre aparece cuando las redes de carreteras de dos socios quedan conectadas físicamente.',
+        'Si una ruta terrestre cruza una tercera nación necesita permiso de tránsito; como alternativa puede abrirse contrabando con menos beneficio y riesgo diplomático.',
+        'Las rutas marítimas se abren directamente entre puertos y comprueban tránsito, bloqueos, riesgo naval e incidentes con terceros.',
+        'Desde cada puerto se puede transportar tropas, construir una flota y abrir una ruta comercial marítima.',
+        'Cada flota conserva un puerto-base concreto; si lo pierde queda sin base hasta trasladarse a otro puerto propio.',
+        'Las IA utilizan las mismas rutas, permisos, puertos y reglas de contrabando que el jugador.',
+        'Con zoom cercano aparecen indicadores de tráfico moviéndose sobre carreteras y rutas marítimas sin crear vehículos simulados.',
+        'El sistema limita rutas, búsquedas marítimas, reconstrucciones de carreteras y elementos animados para mantener el rendimiento con hasta 500 naciones.'
+      ]
+    },
+    {
       version:'0.36.2',
       date:'Octubre 2026',
       title:'Construcción IA más humana',
-      current:true,
       summary:'Las naciones dejan de sembrar industria por todo el territorio y pasan a desarrollar núcleos urbanos, polos industriales concentrados y corredores que se parecen mucho más a las decisiones de un jugador.',
       changes:[
         'Los objetivos industriales se reducen a una densidad proporcional al tamaño del país, calibrada contra el patrón de construcción humano.',
@@ -245,7 +262,7 @@
         '<header class="aboutHead0351">'+
           '<div class="aboutHeadText0351">'+
             '<h2 id="aboutTitle0351">ACERCA DE HEXATEGOS</h2>'+
-            '<p>Global Geopolitical Strategy · versión 0.36.2</p>'+
+            '<p>Global Geopolitical Strategy · versión 0.37.0</p>'+
           '</div>'+
           '<button id="aboutClose0351" class="aboutClose0351" type="button" aria-label="Cerrar">×</button>'+
         '</header>'+
