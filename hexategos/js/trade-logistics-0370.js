@@ -636,19 +636,110 @@
 
   function createPlayerSeaRoute0370(from,to){
     const b=owner6[to];
-    if(owner6[from]!==0||b<0||from===to)return;
+    if(owner6[from]!==0||b<0||from===to)return null;
     pathBudget0370=1;seaPathUsed0370=false;
     let r=createSeaRoute0370(0,b,from,to,false,true);
     if(r&&r.needsRisk){
       const names=r.denied.map(factionName3230).join(', ');
-      if(!confirm('No se ha obtenido permiso de tránsito de '+names+'. ¿Abrir la ruta igualmente y exponerte a inspecciones e incidentes diplomáticos?'))return;
+      if(!confirm('No se ha obtenido permiso de tránsito de '+names+'. ¿Abrir la ruta igualmente y exponerte a inspecciones e incidentes diplomáticos?'))return null;
       pathBudget0370=1;seaPathUsed0370=false;
       r=createSeaRoute0370(0,b,from,to,true,true);
     }
     if(r&&!r.needsRisk&&!r.deferred){
       closeModal3244();saveGame3212();renderSystems3220();needsRender=true;
+      return r;
     }
+    return null;
   }
+
+  let seaTradeMapPick03711=null;
+
+  function tradeMapBar03711(){
+    return {
+      bar:document.getElementById('interactionBar3244'),
+      text:document.getElementById('interactionText3244'),
+      cancel:document.getElementById('interactionCancel3244')
+    };
+  }
+
+  function setTradeMapHint03711(msg){
+    const el=tradeMapBar03711();
+    if(el.text)el.text.textContent=msg;
+    if(el.bar)el.bar.classList.add('show3244');
+  }
+
+  function cancelSeaTradeMapPick03711(silent=false){
+    if(!seaTradeMapPick03711)return;
+    seaTradeMapPick03711=null;
+    const el=tradeMapBar03711();
+    if(el.bar)el.bar.classList.remove('show3244');
+    if(!silent)toast('Selección de ruta comercial cancelada');
+  }
+
+  function seaTradeTargetReason03711(from,to){
+    if(!Number.isInteger(to)||to<0||to===from)return 'Selecciona otro puerto en el mapa';
+    if(!ports3212.has(to))return 'El destino debe ser un puerto';
+    const b=owner6[to];
+    if(b<0)return 'Ese puerto no pertenece a una nación';
+    if(b!==0&&!tradeRelation0370(0,b))return 'Necesitas Comercio, No agresión o Alianza con ese país';
+    if(routeExists0370('sea',0,b,from,to))return 'Ya existe una ruta comercial con ese puerto';
+    if(routeCount0370(0)>=routeLimit0370(0))return 'Has alcanzado el límite de rutas comerciales';
+    if(b!==0&&routeCount0370(b)>=routeLimit0370(b))return factionName3230(b)+' no admite más rutas';
+    return '';
+  }
+
+  function beginSeaTradeMapPick03711(from){
+    if(from<0||!ports3212.has(from)||owner6[from]!==0){
+      toast('Selecciona uno de tus puertos');return false;
+    }
+    if(!seaCandidates0370(from).length){
+      toast('No hay puertos compatibles para abrir una ruta comercial');return false;
+    }
+    closeContextDialog3244();
+    if(typeof closeModal3244==='function')closeModal3244();
+    const current=selected?.key===MAX_GAME_LEVEL3233?selected.i:from;
+    seaTradeMapPick03711={from,lastCell:Number.isInteger(current)?current:from};
+    setTradeMapHint03711('Ruta comercial · selecciona puerto de destino');
+    toast('Selecciona el puerto de destino en el mapa');
+    return true;
+  }
+
+  function handleSeaTradeMapCell03711(cell){
+    const pick=seaTradeMapPick03711;if(!pick)return false;
+    closeContextDialog3244?.();
+    const reason=seaTradeTargetReason03711(pick.from,cell);
+    if(reason){
+      setTradeMapHint03711('Ruta comercial · '+reason);
+      return false;
+    }
+    const r=createPlayerSeaRoute0370(pick.from,cell);
+    if(r){
+      cancelSeaTradeMapPick03711(true);
+      toast('Ruta comercial creada · '+placeDisplayName3271(pick.from)+' → '+placeDisplayName3271(cell));
+      return true;
+    }
+    setTradeMapHint03711('Ruta comercial · no se pudo abrir esa ruta');
+    return false;
+  }
+
+  const baseUpdatePanel03711=updatePanel;
+  updatePanel=function(){
+    const out=baseUpdatePanel03711.apply(this,arguments);
+    if(seaTradeMapPick03711&&selected?.key===MAX_GAME_LEVEL3233){
+      const cell=selected.i;
+      if(Number.isInteger(cell)&&cell>=0&&cell!==seaTradeMapPick03711.lastCell){
+        seaTradeMapPick03711.lastCell=cell;
+        requestAnimationFrame(()=>handleSeaTradeMapCell03711(cell));
+      }
+    }
+    return out;
+  };
+
+  document.getElementById('interactionCancel3244')?.addEventListener('click',e=>{
+    if(!seaTradeMapPick03711)return;
+    e.preventDefault();e.stopImmediatePropagation();
+    cancelSeaTradeMapPick03711(false);
+  },true);
 
   function rebaseFleet0370(id,port,notify=true){
     const g=navalGroups3270.find(x=>x.id===id);
@@ -694,6 +785,7 @@
 
   window.HexategosTradeActions0370={
     openSeaTrade:openSeaTradeModal0370,
+    pickSeaOnMap:beginSeaTradeMapPick03711,
     createSea:createPlayerSeaRoute0370,
     rebase:rebaseFleet0370,
     closeRoute:closeRoute0370,
@@ -711,7 +803,7 @@
       const canFleet=gold3212>=NAVAL_BUILD_COST3270;
       a.splice(at+1,0,
         classicAction3246('naval_build_0370','CONSTRUIR FLOTA','⚓',canFleet?NAVAL_BUILD_COST3270+' ORO':'NECESITA '+NAVAL_BUILD_COST3270+' ORO',canFleet,'good3244'),
-        classicAction3246('sea_trade_0370','RUTA COMERCIAL','⇄',seaCandidates0370(ctx.cell).length?'ELEGIR PUERTO':'SIN SOCIO / PUERTO',seaCandidates0370(ctx.cell).length>0,'')
+        classicAction3246('sea_trade_0370','RUTA COMERCIAL','⇄',seaCandidates0370(ctx.cell).length?'ELIGE EN MAPA':'SIN SOCIO / PUERTO',seaCandidates0370(ctx.cell).length>0,'')
       );
     }
     return a;
@@ -724,7 +816,7 @@
       if(!ctx||ctx.kind!=='cell'||!ctx.own||!ctx.port)return;
       closeContextDialog3244();
       if(id==='naval_build_0370')buildNavalGroup3270(0,ctx.cell,true);
-      else openSeaTradeModal0370(ctx.cell);
+      else beginSeaTradeMapPick03711(ctx.cell);
       return;
     }
     return baseContextAction0370(id);
@@ -1196,7 +1288,7 @@
         const phase=domesticTravelPhase03710(d,k,now);
         const p=projectedAlongCells0371(path,phase,C,R,cx,cy);
         if(!pointVisible0378(p))continue;
-        ctx.beginPath();ctx.arc(p[0],p[1],zoom>32?2.20:1.90,0,Math.PI*2);
+        ctx.beginPath();ctx.arc(p[0],p[1],zoom>32?3.20:2.60,0,Math.PI*2);
         ctx.fillStyle=factionTrafficColor0378(d.faction);ctx.fill();
         ctx.lineWidth=.6;ctx.strokeStyle='rgba(245,250,255,.78)';ctx.stroke();
         trafficDrawn++;
@@ -1217,7 +1309,7 @@
         const color=factionTrafficColor0378(faction);
         if(r.type==='sea'){
           // Tiny commercial ship, coloured by the nation operating it.
-          const rr=zoom>32?2.85:2.35;
+          const rr=zoom>32?4.40:3.70;
           ctx.beginPath();
           ctx.moveTo(p[0],p[1]-rr);
           ctx.lineTo(p[0]+rr*.72,p[1]+rr*.75);
@@ -1225,7 +1317,7 @@
           ctx.closePath();ctx.fillStyle=color;ctx.fill();
           ctx.lineWidth=.55;ctx.strokeStyle='rgba(2,10,16,.88)';ctx.stroke();
         }else{
-          ctx.beginPath();ctx.arc(p[0],p[1],zoom>32?2.20:1.85,0,Math.PI*2);
+          ctx.beginPath();ctx.arc(p[0],p[1],zoom>32?3.20:2.70,0,Math.PI*2);
           ctx.fillStyle=color;ctx.fill();
           ctx.lineWidth=.55;ctx.strokeStyle='rgba(245,250,255,.76)';ctx.stroke();
         }
