@@ -1,3 +1,22 @@
+HEXATEGOS_0_37_2
+
+Visualización:
+- tráfico terrestre propio en color de la nación del jugador
+- puntos terrestres más visibles
+- umbral de zoom reducido
+- carreteras ligeramente más estrechas
+- patrulla naval: solo se dibuja el tramo inmediato, no la ruta completa
+
+Rendimiento:
+- la ruta completa de patrulla no se recalcula para dibujarla
+- el recorte visual se hace temporalmente durante el render
+- se mantienen los límites adaptativos de puntos y rutas
+- no se añaden entidades de tráfico reales
+
+Rama de seguridad:
+- backup/hexategos-0.37.1-before-traffic-visibility-0372
+
+--- MANIFEST ANTERIOR ---
 HEXATEGOS_0_37_1
 
 Tráfico interior:
