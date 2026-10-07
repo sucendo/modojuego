@@ -26,7 +26,14 @@ assert.ok(visuals.includes('drawTransportColor0378'),'transport recolor layer mi
 assert.ok(visuals.includes('drawNavalGroupsColor0378'),'military fleet recolor layer missing');
 assert.ok(visuals.includes("ctx.strokeStyle='rgba(99,206,226,.36)'"),'naval route must use light-blue dashed style');
 assert.ok(visuals.includes("if(g.order==='patrol')"),'patrol must keep immediate-route behavior');
-assert.ok(visuals.includes('trafficMinZoom:25'),'public visual status must expose zoom 25');
+assert.ok(visuals.includes('const NAVAL_MIN_ZOOM0378=15'),'military fleets must start at zoom 15');
+assert.ok(visuals.includes('const NAVAL_VISUAL_STEP_MS0378=1320'),'smooth naval interpolation duration missing');
+assert.ok(visuals.includes('const baseNavalAdvance0378=navalAdvanceGroup3270'),'naval movement interpolation hook missing');
+assert.ok(visuals.includes('_visualSegment0378'),'fleet visual segment interpolation state missing');
+assert.ok(visuals.includes('navalVisualPosition0378'),'continuous naval position renderer missing');
+assert.ok(visuals.includes('if(animate)needsRender=true'),'moving fleets must request continuous rendering');
+assert.ok(visuals.includes('trafficMinZoom:TRAFFIC_MIN_ZOOM0378'),'public visual status must expose zoom 25');
+assert.ok(visuals.includes('navalMinZoom:NAVAL_MIN_ZOOM0378'),'public visual status must expose zoom 15');
 assert.ok(!visuals.includes('setInterval('),'0.37.8 must not add another periodic timer');
 
 assert.ok(index.includes('v0.37.8</title>'),'visible version must be 0.37.8');
