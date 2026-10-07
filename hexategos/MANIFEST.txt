@@ -1,3 +1,42 @@
+HEXATEGOS_0_37_0
+
+Comercio y logística física:
+- relaciones comerciales con ingreso residual mínimo sin infraestructura
+- rutas terrestres sobre carreteras realmente conectadas
+- rutas marítimas puerto a puerto
+- tránsito por terceras naciones con permisos
+- contrabando terrestre con riesgo diplomático
+- rutas marítimas sin permiso con inspecciones e incidentes
+- flujo de mercancías e ingreso comercial dependientes de rutas
+
+Naval:
+- cada flota pertenece a un puerto-base
+- traslado de base a otro puerto propio
+- pérdida del puerto -> flota sin base, sin teletransporte automático
+- construir flota / transportar tropas / abrir ruta comercial desde puerto
+- IA sujeta a las mismas reglas
+
+Rendimiento:
+- tick comercial: 2800 ms
+- máximo global: 720 rutas
+- IA: 4 rutas por nación; jugador: hasta 16
+- máximo 2 reconstrucciones/búsquedas de ruta costosas por tick
+- máximo 1 búsqueda marítima A* nueva por tick
+- red terrestre cacheada y reconstruida sobre celdas de carretera
+- trayectorias de comercio muestreadas para limitar memoria
+- tráfico visible solo con zoom cercano y con límites adaptativos de rutas/puntos
+
+Módulos nuevos:
+- js/trade-logistics-0370.js
+- css/trade-logistics-0370.css
+
+Pruebas:
+- tests/smoke-0370.mjs
+
+Rama de seguridad:
+- backup/hexategos-0.36.2-before-logistics-0370
+
+--- MANIFEST ANTERIOR ---
 HEXATEGOS_0_36_2
 
 Construcción IA más humana:
