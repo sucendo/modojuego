@@ -47,6 +47,7 @@
   let domesticTrafficBuiltAt0371=-1e9;
   let domesticSeaSupplyCache03713=null;
   let tradeRevision03713=0;
+  let focusedTradeRoute03717=-1;
   let navalPathBucket0371=-1;
   let navalPathUsed0371=0;
 
@@ -787,7 +788,9 @@
   function closeRoute0370(id){
     const r=routes.find(x=>x.id===id);
     if(!r||!(r.a===0||r.b===0))return;
-    r.status='closed';markTradeDirty0370();saveGame3212();renderSystems3220();needsRender=true;
+    r.status='closed';
+    if(focusedTradeRoute03717===r.id)focusedTradeRoute03717=-1;
+    markTradeDirty0370();saveGame3212();renderSystems3220();needsRender=true;
   }
 
   function requestRouteTransit0370(id){
@@ -813,6 +816,8 @@
   window.HexategosTradeActions0370={
     openSeaTrade:openSeaTradeModal0370,
     pickSeaOnMap:beginSeaTradeMapPick03716,
+    focusRoute:focusTradeRoute03717,
+    clearRouteFocus:clearTradeRouteFocus03717,
     canPickSeaTarget:(from,to)=>seaTradeTargetReason03711(Number(from),Number(to)),
     createSea:createPlayerSeaRoute0370,
     rebase:rebaseFleet0370,
@@ -1151,7 +1156,7 @@
       for(const r of seaRoutes.slice(0,12)){
         html+='<div class="tradeRoute0370"><b>'+escapeHtml3271(placeDisplayName3271(r.from))+' ↔ '+escapeHtml3271(placeDisplayName3271(r.to))+'</b>'+
           '<span>'+(r.a===r.b?'Comercio interior':escapeHtml3271(factionName3230(r.a===0?r.b:r.a)))+' · '+routeStatusName0370(r)+' · +'+(r.lastValue||0).toFixed(2)+'/s</span>'+
-          '<div class="acts">'+(missingPermits0370(r).length?'<button onclick="HexategosTradeActions0370.requestTransit('+r.id+')">Solicitar permisos</button>':'')+
+          '<div class="acts"><button class="good" onclick="HexategosTradeActions0370.focusRoute('+r.id+')">Ver en mapa</button>'+(missingPermits0370(r).length?'<button onclick="HexategosTradeActions0370.requestTransit('+r.id+')">Solicitar permisos</button>':'')+
           '<button class="warn" onclick="HexategosTradeActions0370.closeRoute('+r.id+')">Cerrar ruta</button></div></div>';
       }
       html+='</div></div>';
@@ -1159,33 +1164,117 @@
     c.innerHTML=html;
   };
 
+  function tradeRouteById03717(id){
+    id=Number(id);
+    return routes.find(r=>r.id===id&&r.status!=='closed')||null;
+  }
+
+  function tradeRouteTypeLabel03717(r){
+    return r.type==='sea'?'Marítima':'Terrestre';
+  }
+
+  function tradeRoutePartnerLabel03717(r){
+    if(r.a===r.b)return 'Comercio interior';
+    return factionName3230(r.a===0?r.b:r.a);
+  }
+
+  function tradeRouteEndpointLabel03717(cell){
+    if(!Number.isInteger(cell)||cell<0)return '—';
+    return placeDisplayName3271(cell);
+  }
+
+  function tradeRouteGoods03717(r){
+    return Math.max(0,Math.round((r.lastValue||0)*9.5));
+  }
+
+  function tradeRouteSupplyLabel03717(r){
+    if(r.type!=='sea'||r.a!==r.b)return '';
+    return routeOperationalSupply03713(r)?'Abastecimiento interior activo':'Sin abastecimiento interior';
+  }
+
+  function focusTradeRoute03717(id){
+    const r=tradeRouteById03717(id);
+    if(!r){toast('Ruta comercial no disponible');return false}
+    const visual=routeVisualPath0371(r);
+    if(!visual.length){toast('La ruta no tiene trazado visible');return false}
+    const cell=visual[Math.floor((visual.length-1)*.5)]??r.from;
+    if(cell<0){toast('No se pudo localizar la ruta');return false}
+    focusedTradeRoute03717=r.id;
+    if(typeof closeSystems3220==='function')closeSystems3220();
+    if(typeof cellLonLat3302==='function'&&typeof rotateToGeo3243==='function'){
+      const p=cellLonLat3302(cell);
+      rotateToGeo3243(p.lon,p.lat,r.type==='sea'?4.8:6.0);
+    }
+    needsRender=true;
+    toast(tradeRouteEndpointLabel03717(r.from)+' ↔ '+tradeRouteEndpointLabel03717(r.to));
+    return true;
+  }
+
+  function clearTradeRouteFocus03717(){
+    focusedTradeRoute03717=-1;needsRender=true;
+  }
+
+  function sortedOwnRoutes03717(){
+    const rank={active:0,smuggling:1,risky:2,inspected:3,rebuilding:4,blocked:5,suspended:6,broken:7};
+    return routes.filter(r=>(r.a===0||r.b===0)&&r.status!=='closed').slice().sort((a,b)=>{
+      const ra=rank[a.status]??4,rb=rank[b.status]??4;
+      if(ra!==rb)return ra-rb;
+      if(a.type!==b.type)return a.type==='sea'?-1:1;
+      return (b.lastValue||0)-(a.lastValue||0);
+    });
+  }
+
+  function renderTradeManagerRoute03717(r){
+    const miss=missingPermits0370(r);
+    const origin=escapeHtml3271(tradeRouteEndpointLabel03717(r.from));
+    const dest=escapeHtml3271(tradeRouteEndpointLabel03717(r.to));
+    const partner=escapeHtml3271(tradeRoutePartnerLabel03717(r));
+    const status=escapeHtml3271(routeStatusName0370(r));
+    const supply=tradeRouteSupplyLabel03717(r);
+    const focused=r.id===focusedTradeRoute03717?' focused03717':'';
+    let details='<span class="tradeRouteMetrics03717">'+
+      '<i><em>Ingreso</em><b>+'+(r.lastValue||0).toFixed(2)+'/s</b></i>'+
+      '<i><em>Mercancías</em><b>'+tradeRouteGoods03717(r)+'</b></i>'+
+      '<i><em>Distancia</em><b>'+Math.max(0,Math.round(r.distance||0))+'</b></i>';
+    if(r.type==='sea')details+='<i><em>Riesgo naval</em><b>'+Number(r.navalRisk||0).toFixed(1)+'</b></i>';
+    details+='</span>';
+    return '<div class="tradeRoute0370 tradeManagerRoute03717'+focused+'">'+
+      '<div class="tradeRouteHead03717"><b>'+origin+' ↔ '+dest+'</b><small>'+tradeRouteTypeLabel03717(r)+'</small></div>'+
+      '<span>'+partner+' · '+status+'</span>'+
+      details+
+      (supply?'<small class="tradeSupply03717">'+escapeHtml3271(supply)+'</small>':'')+
+      (r.via&&r.via.length?'<small>Tránsito: '+r.via.map(x=>escapeHtml3271(factionName3230(x))).join(', ')+'</small>':'')+
+      '<div class="acts">'+
+      '<button class="good" onclick="HexategosTradeActions0370.focusRoute('+r.id+')">Ver en mapa</button>'+
+      (miss.length?'<button onclick="HexategosTradeActions0370.requestTransit('+r.id+')">Solicitar tránsito</button>':'')+
+      (r.type==='land'&&miss.length&&r.mode!=='smuggle'?'<button class="warn" onclick="HexategosTradeActions0370.smuggle('+r.id+')">Contrabando</button>':'')+
+      '<button class="warn" onclick="HexategosTradeActions0370.closeRoute('+r.id+')">Cerrar ruta</button>'+
+      '</div></div>';
+  }
+
   const baseRenderSystems0370=renderSystems3220;
   renderSystems3220=function(){
     baseRenderSystems0370();
     if(sysTab3220!=='eco')return;
     rebuildTradeCache0370(false);
     const c=document.getElementById('sysContent3213');if(!c)return;
-    const own=routes.filter(r=>(r.a===0||r.b===0)&&r.status!=='closed');
+    const own=sortedOwnRoutes03717();
     const residual=residualTrade0370(0);
-    let html='<div class="sysBlock3213"><b>⇄ Comercio físico · v0.37.2</b>'+
-      '<div class="sysMeta3213">Las relaciones comerciales sin infraestructura generan solo +'+residual.toFixed(2)+'/s. El ingreso importante exige carreteras conectadas o rutas marítimas entre puertos.</div>'+
-      '<div class="econGrid3261"><span>Rutas activas / registradas</span><b>'+own.filter(r=>(r.lastFactor||0)>0).length+' / '+own.length+'</b>'+
+    const active=own.filter(r=>(r.lastFactor||0)>0).length;
+    let html='<div class="sysBlock3213 tradeManager03717">'+
+      '<div class="tradeManagerTitle03717"><b>⇄ Gestor de rutas comerciales</b><small>'+own.length+' registradas</small></div>'+
+      '<div class="sysMeta3213">Las relaciones diplomáticas aportan solo un comercio residual de +'+residual.toFixed(2)+'/s. El flujo importante depende de rutas físicas.</div>'+
+      '<div class="econGrid3261">'+
+      '<span>Rutas activas / registradas</span><b>'+active+' / '+own.length+'</b>'+
       '<span>Flujo de mercancías</span><b>'+Math.round(goodsCache[0]||0)+'</b>'+
-      '<span>Ingreso comercial</span><b>+'+(tradeCache[0]||0).toFixed(2)+'/s</b></div>';
+      '<span>Ingreso comercial</span><b>+'+(tradeCache[0]||0).toFixed(2)+'/s</b>'+
+      '</div>';
     if(own.length){
-      html+='<div class="tradeRoutes0370">';
-      for(const r of own.slice(0,12)){
-        const miss=missingPermits0370(r);
-        html+='<div class="tradeRoute0370"><b>'+(r.type==='sea'?'Marítima':'Terrestre')+' · '+(r.a===r.b?'Comercio interior':escapeHtml3271(factionName3230(r.a===0?r.b:r.a)))+'</b>'+
-          '<span>'+routeStatusName0370(r)+' · +'+(r.lastValue||0).toFixed(2)+'/s</span>'+
-          (r.via&&r.via.length?'<small>Tránsito: '+r.via.map(factionName3230).join(', ')+'</small>':'')+
-          '<div class="acts">'+(miss.length?'<button onclick="HexategosTradeActions0370.requestTransit('+r.id+')">Solicitar tránsito</button>':'')+
-          (r.type==='land'&&miss.length&&r.mode!=='smuggle'?'<button class="warn" onclick="HexategosTradeActions0370.smuggle('+r.id+')">Abrir contrabando</button>':'')+
-          '<button onclick="HexategosTradeActions0370.closeRoute('+r.id+')">Cerrar</button></div></div>';
-      }
+      html+='<div class="tradeRoutes0370 tradeManagerList03717">';
+      for(const r of own)html+=renderTradeManagerRoute03717(r);
       html+='</div>';
     }else{
-      html+='<div class="sysMeta3213">Todavía no hay rutas físicas. Une carreteras con un socio o abre una ruta desde un puerto.</div>';
+      html+='<div class="sysMeta3213 tradeEmpty03717">Todavía no hay rutas físicas. Une carreteras con un socio o crea una ruta desde uno de tus puertos.</div>';
     }
     html+='</div>';
     c.insertAdjacentHTML('beforeend',html);
@@ -1364,6 +1453,32 @@
     ctx.lineWidth=.85;ctx.stroke();ctx.setLineDash([]);
   }
 
+  function drawFocusedTradeRoute03717(C,R,cx,cy){
+    const r=tradeRouteById03717(focusedTradeRoute03717);
+    if(!r||!r.path||!r.path.length)return;
+    const visual=routeVisualPath0371(r);
+    if(!routeScreenRelevant0378(visual,C,R,cx,cy))return;
+    ctx.save();
+    ctx.beginPath();let started=false;
+    const stride=Math.max(1,Math.floor(visual.length/130));
+    for(let i=0;i<visual.length;i+=stride){
+      const j=visual[i]*3,p=projectVec(C[j]/32767,C[j+1]/32767,C[j+2]/32767,R,cx,cy);
+      if(p[2]<.03){started=false;continue}
+      if(!started){ctx.moveTo(p[0],p[1]);started=true}else ctx.lineTo(p[0],p[1]);
+    }
+    const last=visual[visual.length-1];
+    if(last!=null){
+      const j=last*3,p=projectVec(C[j]/32767,C[j+1]/32767,C[j+2]/32767,R,cx,cy);
+      if(p[2]>=.03){if(!started)ctx.moveTo(p[0],p[1]);else ctx.lineTo(p[0],p[1])}
+    }
+    ctx.setLineDash(r.type==='sea'?[7,4]:[]);
+    ctx.lineWidth=r.type==='sea'?3.1:3.4;
+    ctx.strokeStyle=r.type==='sea'?'rgba(126,229,246,.92)':'rgba(244,247,250,.88)';
+    ctx.shadowBlur=8;ctx.shadowColor=r.type==='sea'?'rgba(80,210,236,.62)':'rgba(235,242,249,.42)';
+    ctx.stroke();
+    ctx.restore();
+  }
+
   function drawTradeTraffic0370(R,cx,cy,now){
     trafficDrawn=0;
     const C=loadLevel(MAX_GAME_LEVEL3233).centers;
@@ -1384,6 +1499,8 @@
         drawSeaTradeLine0378(visual,C,R,cx,cy);seaLines++;
       }
     }
+
+    drawFocusedTradeRoute03717(C,R,cx,cy);
 
     if(!showDots){ctx.restore();return}
 
@@ -1643,6 +1760,8 @@
   window.HexategosTradeLogistics0370={
     version:BUILD,stats:stats0370,validate:validate0370,
     routes:()=>routes,
+    focusedRoute:()=>focusedTradeRoute03717,
+    focusRoute:(id)=>focusTradeRoute03717(Number(id)),
     domesticSeaSupply:(f,cell)=>domesticSeaSupplyFloor03713(Number(f),Number(cell)),
     roadComponent:(cell)=>{rebuildRoadGraph0370(false);return Number.isInteger(cell)&&cell>=0&&roadComp&&cell<roadComp.length?roadComp[cell]:-1},
     visualSpeed:(kind,faction)=>({
