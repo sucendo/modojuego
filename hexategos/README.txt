@@ -1,3 +1,35 @@
+HEXATEGOS 0.37.5 · IA CIVIL Y COMERCIO FÍSICO ENTRE NACIONES
+
+Problemas corregidos:
+- con muchas naciones, la diplomacia comercial podía quedarse sin tiempo de CPU si el scheduler militar agotaba su presupuesto;
+- una relación comercial solo generaba ruta terrestre si las carreteras de ambos países ya estaban unidas por casualidad;
+- las IA no tenían una motivación específica para prolongar sus carreteras hacia la frontera de un socio;
+- algunas IA podían dejar de construir después de su fase inicial al quedarse sin candidatos que cumplieran todos los filtros de desarrollo.
+
+Comercio:
+- cada tratado cooperativo mantiene derechos comerciales: comercio, no agresión y alianza;
+- las IA detectan socios comerciales próximos mediante la red diplomática y sus fronteras reales;
+- ambos países valoran el mismo paso fronterizo con una puntuación determinista;
+- si uno de los dos ya tiene carretera en la frontera, el otro recibe una prioridad fuerte para encontrarse allí;
+- esto permite que una carretera del jugador llevada hasta la frontera sea continuada desde el lado de la IA cuando existe una relación comercial;
+- cuando las dos redes quedan físicamente unidas, el sistema intenta crear inmediatamente la ruta comercial terrestre real;
+- las rutas siguen dependiendo de carreteras físicas: no se inventa una conexión a distancia.
+
+Desarrollo civil:
+- una ciudad, industria o puerto propio sin carretera se intenta reconectar antes de abrir nueva infraestructura;
+- el constructor nacional normal sigue siendo el sistema principal;
+- si una IA acumula aproximadamente 30 segundos de campaña sin progreso y sigue por debajo de sus objetivos, entra un watchdog;
+- ese watchdog relaja solo de forma moderada distancia/suministro para encontrar una ciudad o industria viable;
+- sigue necesitando territorio propio, recursos, seguridad y un mínimo de suministro;
+- no se regalan edificios ni oro.
+
+Rendimiento:
+- no se añade ningún temporizador periódico;
+- la diplomacia garantizada reutiliza economyTick3212 y sigue obedeciendo dipNextReview;
+- la búsqueda de corredores usa las muestras de frontera ya cacheadas;
+- la comprobación comercial de cada nación está espaciada;
+- el conteo civil más caro solo se ejecuta tras un estancamiento prolongado, no en cada tick IA.
+
 HEXATEGOS 0.37.4 · RETIRADA MANUAL DE CARRETERAS
 
 Cambios:
