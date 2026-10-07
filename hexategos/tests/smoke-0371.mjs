@@ -6,7 +6,7 @@ const trade=read('js/trade-logistics-0370.js');
 const index=read('index.html');
 
 assert.doesNotThrow(()=>new Function(trade),'trade-logistics-0370.js must parse');
-assert.ok(trade.includes("const BUILD='0.37.1'"),'trade logistics build must be 0.37.1');
+assert.ok(trade.includes("const BUILD='0.37.1'")||trade.includes("const BUILD='0.37.2'"),'trade logistics build must include 0.37.1 or a compatible successor');
 assert.ok(trade.includes("const TRAFFIC_ZOOM=2.55"),'closer visible domestic traffic zoom threshold missing');
 assert.ok(trade.includes('domesticRoadTraffic0371'),'cached domestic road traffic missing');
 assert.ok(trade.includes('rebuildDomesticTraffic0371'),'domestic traffic cache rebuild missing');
@@ -21,6 +21,6 @@ assert.ok(trade.includes('startInterceptExcursion0371'),'enemy-zone interception
 assert.ok(trade.includes("g.interceptReturn0371=outward.slice().reverse()"),'interception return path reuse missing');
 assert.ok(trade.includes('navalPathPermit0371'),'naval pathfinding budget missing');
 assert.ok(trade.includes("diplomaticRelation3300(a,b)===-1"),'naval hostility must follow real war state');
-assert.ok(index.includes('v0.37.1</title>'),'visible version must be 0.37.1');
+assert.ok(index.includes('v0.37.1</title>')||index.includes('v0.37.2</title>'),'visible version must include 0.37.1 or a compatible successor');
 
 console.log('HEXATEGOS 0.37.1 domestic traffic + visible naval movement smoke: OK');
