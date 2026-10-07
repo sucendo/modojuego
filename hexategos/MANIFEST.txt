@@ -1,3 +1,37 @@
+HEXATEGOS_0_37_14
+
+Selector comercial:
+- beginSeaTradeMapPick03714
+- interactionMode select_trade_route_target
+- override handleInteractionTarget3244
+- sin hook de updatePanel
+- conserva seaTradeTargetReason03711 para validación
+
+Camiones origen-destino:
+- domesticAnchorKind03714
+- domesticAnchorWeight03714
+- roadTree03714
+- pathFromRoadTree03714
+- nodos: capital / city / industry / port
+- origin + destination explícitos
+- rutas completas sobre roadComp + roadJoin0370
+- jugador prioritario
+
+Rendimiento:
+- maxGroups 96 / 54
+- maxVisits jugador 14000
+- maxVisits IA 6500
+- rutas muestreadas a 160
+- sin nuevos timers
+- maxDots sin cambios
+
+Pruebas:
+- tests/smoke-03714.mjs
+
+Rama de seguridad:
+- backup/hexategos-0.37.13-before-route-picker-domestic-03714
+
+--- MANIFEST ANTERIOR ---
 HEXATEGOS_0_37_13
 
 Rutas propias:
