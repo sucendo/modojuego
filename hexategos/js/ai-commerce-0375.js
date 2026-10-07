@@ -283,21 +283,24 @@
   const baseBotBuild0375=botBuild3230;
   botBuild3230=function(f){
     if(f<=0||f>=activeFactionCount3230||!started3230)return;
-    const beforeC=aiPhysicalCounts3283(f),beforeRoads=roads3212.length;
 
     // Una infraestructura existente aislada tiene prioridad sobre abrir otra.
     if(tryRepairCommunications0375(f)){lastCivilBuild[f]=campaignSeconds3230;return}
     // Un tratado comercial puede generar inversión real hasta la frontera.
     if(tryCommercialCorridor0375(f)){lastCivilBuild[f]=campaignSeconds3230;return}
 
+    // El constructor 3.28.x ya registra lastBuild cuando hace una inversión.
+    // Usamos ese marcador en vez de volver a contar toda la infraestructura de
+    // la nación en cada servicio: crítico con 500 IA.
+    const st=aiDevState3283?.[f],beforeLast=st?.lastBuild??-1e9,beforeRoads=roads3212.length;
     const out=baseBotBuild0375.apply(this,arguments);
-    const afterC=aiPhysicalCounts3283(f);
-    if(afterC.cities!==beforeC.cities||afterC.industries!==beforeC.industries||
-       afterC.ports!==beforeC.ports||afterC.roadRoutes!==beforeC.roadRoutes||
-       roads3212.length!==beforeRoads){
+    const afterLast=aiDevState3283?.[f]?.lastBuild??-1e9;
+    if(afterLast>beforeLast||roads3212.length!==beforeRoads){
       lastCivilBuild[f]=campaignSeconds3230;civilStalls[f]=0;
       return out;
     }
+
+    // Solo si lleva tiempo sin progresar se ejecuta el conteo/diagnóstico caro.
     tryCivilWatchdog0375(f);
     return out;
   };
