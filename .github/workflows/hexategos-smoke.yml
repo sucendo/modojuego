@@ -42,3 +42,6 @@ jobs:
 
       - name: Run Hexategos 0.37.0 physical trade and naval logistics smoke
         run: node hexategos/tests/smoke-0370.mjs
+
+      - name: Run Hexategos 0.37.1 domestic traffic and visible naval movement smoke
+        run: node hexategos/tests/smoke-0371.mjs
