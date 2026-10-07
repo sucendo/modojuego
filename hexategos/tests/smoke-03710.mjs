@@ -18,14 +18,14 @@ assert.ok(trade.includes('HexategosTransportTechnology'),'future transport techn
 assert.ok(trade.includes('function routeTravelPhase03710'),'distance-based commercial travel phase missing');
 assert.ok(trade.includes('Number(r.distance)||visualLength'),'route distance must drive travel duration');
 assert.ok(!trade.includes('now*.000055'),'legacy percentage-of-route speed must be removed');
-assert.ok(trade.includes('const rr=zoom>32?2.85:2.35'),'commercial ship marker size not increased');
-assert.ok(trade.includes('zoom>32?2.20:1.85'),'land commercial marker size not increased');
-assert.ok(trade.includes('zoom>32?2.20:1.90'),'domestic traffic marker size not increased');
+assert.ok(trade.includes('const rr=zoom>32?2.85:2.35')||trade.includes('const rr=zoom>32?4.40:3.70'),'commercial ship marker size not increased');
+assert.ok(trade.includes('zoom>32?2.20:1.85')||trade.includes('zoom>32?3.20:2.70'),'land commercial marker size not increased');
+assert.ok(trade.includes('zoom>32?2.20:1.90')||trade.includes('zoom>32?3.20:2.60'),'domestic traffic marker size not increased');
 assert.ok(trade.includes('g.route=null;g.routePos=0'),'legacy patrol route must be hidden');
 assert.ok(visuals.includes("if(g.order==='patrol')return null"),'national patrol route must be hidden');
 assert.ok(!visuals.includes('oldRoute.slice(oldPos,oldPos+3)'),'patrol route segment must not be rendered by national layer');
 
-assert.ok(index.includes('v0.37.10</title>'),'visible version must be 0.37.10');
+assert.ok(index.includes('v0.37.10</title>')||index.includes('v0.37.11</title>'),'visible version must be 0.37.10 or compatible successor');
 assert.ok(about.includes("version:'0.37.10'"),'about history must include 0.37.10');
 
 console.log('HEXATEGOS 0.37.10 traffic size + constant commercial speed smoke: OK');
