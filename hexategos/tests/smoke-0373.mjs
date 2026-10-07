@@ -30,7 +30,7 @@ assert.ok(decay.includes('const baseEconomyTick0373=economyTick3212'),'existing 
 assert.ok(!decay.includes('setInterval('),'0.37.3 must not add another periodic timer');
 assert.ok(decay.includes('const removalsBefore=removals'),'batched removal refresh guard missing');
 assert.ok(decay.includes('infrastructureDecay0373=serialize0373()'),'portable save extension missing');
-assert.ok(index.includes('v0.37.3</title>'||index.includes('v0.37.4</title>')),'visible version must be 0.37.3');
+assert.ok(index.includes('v0.37.3</title>')||index.includes('v0.37.4</title>'),'visible version must be 0.37.3');
 assert.ok(index.indexOf('js/infrastructure-decay-0373.js')>index.indexOf('js/trade-logistics-0370.js'),'decay module must load after logistics');
 assert.ok(about.includes("version:'0.37.3'"),'about history must include 0.37.3');
 
