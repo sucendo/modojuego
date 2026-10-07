@@ -8,8 +8,13 @@
 
   function roadTouchesCell0374(cell){
     if(!Number.isInteger(cell)||cell<0)return false;
-    for(const path of roads3212){
-      if(Array.isArray(path)&&path.length>=2&&path.includes(cell))return true;
+    // O(grado del hexágono): usa el índice de aristas existente en vez de
+    // recorrer todas las carreteras cada vez que se abre el menú contextual.
+    if(typeof aiRoadDegree3260==='function')return aiRoadDegree3260(cell)>0;
+    const L=loadLevel(MAX_GAME_LEVEL3233),s=L.offsets[cell],e=L.offsets[cell+1];
+    for(let k=s;k<e;k++){
+      const n=L.edgeNbr[k];
+      if(n>=0&&roadEdgeSet3212.has(edgeKey3212(cell,n)))return true;
     }
     return false;
   }
