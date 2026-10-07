@@ -24,7 +24,7 @@ assert.ok(trade.includes('return Math.max(base,domesticSeaSupplyFloor03713(f,cel
 assert.ok(trade.includes('domesticSeaSupply:(f,cell)=>'),'domestic supply diagnostic API missing');
 assert.ok(!trade.includes('setInterval(domestic'),'domestic logistics must not add a new timer');
 
-assert.ok(index.includes('v0.37.13</title>')||index.includes('v0.37.14</title>')||index.includes('v0.37.15</title>')||index.includes('v0.37.16</title>')||index.includes('v0.37.17</title>'),'visible version must be 0.37.13 or compatible successor');
+assert.ok(index.includes('v0.37.13</title>')||index.includes('v0.37.14</title>')||index.includes('v0.37.15</title>')||index.includes('v0.37.16</title>')||index.includes('v0.37.17</title>')||index.includes('v0.37.18</title>'),'visible version must be 0.37.13 or compatible successor');
 assert.ok(about.includes("version:'0.37.13'"),'about history must include 0.37.13');
 
 console.log('HEXATEGOS 0.37.13 domestic sea logistics + player traffic smoke: OK');
