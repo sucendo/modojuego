@@ -12,6 +12,7 @@
   const MAX_NODE_SAMPLES=190;
   const MAX_AXIS_EXCESS=5.2;
   const ACTIVE_BELT_EVERY=3;
+  const ACTIVE_DEVELOP_EVERY=6;
   const MAX_ACTIVE_ROUTE_SAMPLES=96;
 
   const corridorCycles=new Uint16Array(FACTIONS3230.length);
@@ -79,10 +80,9 @@
     return best;
   }
 
-  function bestActiveRouteBeltStep03711(f){
+  function activeRoutePlan03711(f){
     if(f<=0||f>=activeFactionCount3230)return null;
     const cycle=(activeBeltCycles[f]=(activeBeltCycles[f]+1)%65535||1);
-    if(cycle%ACTIVE_BELT_EVERY!==0)return null;
 
     const all=window.HexategosTradeLogistics0370?.routes?.()||[];
     const land=all.filter(r=>r?.type==='land'&&
@@ -90,7 +90,17 @@
       (r.a===f||r.b===f)&&Array.isArray(r.path)&&r.path.length>=2);
     if(!land.length)return null;
 
-    const route=land[(cycle/ACTIVE_BELT_EVERY+f)%land.length|0];
+    const route=land[Math.floor(cycle/ACTIVE_BELT_EVERY+f)%land.length];
+    const partner=route.a===f?route.b:route.a;
+
+    // Una ruta madura puede generar nodos económicos sin esperar a que vuelva
+    // a existir un proyecto de conexión pendiente.
+    if(cycle%ACTIVE_DEVELOP_EVERY===0&&partner>0){
+      if(buildCorridorCity0379(f,partner)||buildCorridorIndustry0379(f,partner))
+        return {done:true,kind:'active-route-development',routeId:route.id};
+    }
+
+    if(cycle%ACTIVE_BELT_EVERY!==0)return null;
     const path=route.path,L=loadLevel(MAX_GAME_LEVEL3233);
     const stride=Math.max(1,Math.floor(path.length/MAX_ACTIVE_ROUTE_SAMPLES));
     let best=null,bestScore=1e9,checked=0;
@@ -122,8 +132,8 @@
         }
       }
     }
-    if(best)activeBeltPlans++;
-    return best;
+    if(best){activeBeltPlans++;return {done:false,kind:'active-route-belt',step:best}}
+    return null;
   }
 
   function nodePool0379(f){
@@ -267,14 +277,15 @@
     let active=0;for(let f=1;f<activeFactionCount3230;f++)if(corridorCycles[f])active++;
     return {build:BUILD,activeProjects:active,consolidationPlans,corridorCities,corridorIndustries,
       developmentSkips,activeBeltPlans,consolidateEvery:CONSOLIDATE_EVERY,developEvery:DEVELOP_EVERY,
-      activeBeltEvery:ACTIVE_BELT_EVERY,maxFrontierSamples:MAX_FRONTIER_SAMPLES,
+      activeBeltEvery:ACTIVE_BELT_EVERY,activeDevelopEvery:ACTIVE_DEVELOP_EVERY,
+      maxFrontierSamples:MAX_FRONTIER_SAMPLES,
       maxNodeSamples:MAX_NODE_SAMPLES,maxActiveRouteSamples:MAX_ACTIVE_ROUTE_SAMPLES};
   }
 
   window.HexategosEconomicCorridors0379={
     version:BUILD,
     prepare:prepare0379,
-    activeRouteStep:bestActiveRouteBeltStep03711,
+    activeRoutePlan:activeRoutePlan03711,
     stats:stats0379,
     validate:()=>({ok:true,errors:[],warnings:[],stats:stats0379()})
   };
