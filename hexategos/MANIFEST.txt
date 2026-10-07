@@ -1,3 +1,37 @@
+HEXATEGOS_0_37_6
+
+Conexión terrestre fronteriza:
+- dos carreteras de países distintos NO se unen automáticamente por tocarse
+- al pulsar un hexágono propio con carretera junto a una carretera extranjera compatible aparece CONEXIÓN TERRESTRE
+- subtítulo: ADUANA · 12 ORO · nombre del país
+- al activarlo se construye físicamente el tramo fronterizo entre ambos hexágonos
+- el enlace se registra como aduana/conexión internacional explícita
+- después se intenta crear la ruta comercial terrestre física
+- jugador↔IA: la IA llega hasta frontera, pero el jugador confirma/construye el enlace
+- IA↔IA: pueden construir el enlace automáticamente cuando ambas carreteras están preparadas
+- requiere relación cooperativa con derechos comerciales
+- romper la relación puede suspender el comercio, pero la carretera física permanece
+
+Persistencia:
+- localStorage independiente para enlaces fronterizos
+- payload borderRoad0376 en partidas .hexategos
+- partidas anteriores cargan sin aduanas internacionales preexistentes
+
+Rendimiento:
+- detección del botón solo mira vecinos del hexágono
+- sin setInterval nuevo
+- no recorre el mapa global
+
+Módulo:
+- js/border-road-0376.js
+
+Pruebas:
+- tests/smoke-0376.mjs
+
+Rama de seguridad:
+- backup/hexategos-0.37.5-before-border-road-0376
+
+--- MANIFEST ANTERIOR ---
 HEXATEGOS_0_37_5
 
 IA civil y comercio físico:
