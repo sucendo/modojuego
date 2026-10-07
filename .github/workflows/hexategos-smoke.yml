@@ -102,3 +102,7 @@ jobs:
 
       - name: Run Hexategos 0.37.17 trade route manager smoke
         run: node hexategos/tests/smoke-03717.mjs
+
+
+      - name: Run Hexategos 0.37.18 route-view exit and persistence smoke
+        run: node hexategos/tests/smoke-03718.mjs
