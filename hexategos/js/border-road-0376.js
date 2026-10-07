@@ -223,8 +223,6 @@
     return baseHandleContextAction0376(id);
   };
 
-  load0376();
-
   window.HexategosBorderRoad0376={
     version:BUILD,
     hasLink:hasLink0376,
@@ -241,6 +239,9 @@
       return {ok:errors.length===0,errors,stats:{links:links.size,playerLinks,aiLinks}};
     }
   };
+  // La API debe existir antes de reconstruir la caché comercial inicial:
+  // roadJoin0370 consulta hasLink() al recorrer una frontera internacional.
+  load0376();
   window.HEXATEGOS_VERSION=BUILD;
   console.info('[HEXATEGOS] 0.37.6 · conexión terrestre fronteriza explícita activa');
 })();
