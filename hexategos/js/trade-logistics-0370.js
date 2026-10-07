@@ -36,6 +36,10 @@
   let routeEvals=0;
   let seaSearches=0;
   let restoredPortable=null;
+  let domesticRoadTraffic0371=[];
+  let domesticTrafficSig0371='';
+  let navalPathBucket0371=-1;
+  let navalPathUsed0371=0;
 
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const pair=(a,b)=>a<b?a+':'+b:b+':'+a;
@@ -441,8 +445,19 @@
   function bestSeaCandidate0370(f){
     if(routeCount0370(f)>=routeLimit0370(f))return null;
     rebuildPorts0370();
-    if(!(portsByFaction[f]||[]).length)return null;
+    const own=portsByFaction[f]||[];
+    if(!own.length)return null;
     const snap=ensureEconomySnapshot3261(false),out=[];
+    if(own.length>=2&&!routes.some(r=>r.type==='sea'&&r.status!=='closed'&&r.a===f&&r.b===f)){
+      let best=null,bestScore=1e9;
+      for(let i=0;i<Math.min(8,own.length);i++)for(let j=i+1;j<Math.min(8,own.length);j++){
+        const from=own[i],to=own[j],d=angularHeuristic3254(from,to);
+        const score=d-(cityLevel3230[from]||0)*.7-(cityLevel3230[to]||0)*.7-
+          (industryLevel3230[from]||0)*.5-(industryLevel3230[to]||0)*.5;
+        if(score<bestScore){bestScore=score;best={o:f,from,to,score:26-score*.05,domestic:true}}
+      }
+      if(best)out.push(best);
+    }
     for(const o of diplomaticTargets0370(f)){
       if(o===f||o<0||o>=activeFactionCount3230||!tradeRelation0370(f,o)||
          !(portsByFaction[o]||[]).length||routeCount0370(o)>=routeLimit0370(o))continue;
@@ -671,12 +686,73 @@
   const baseNavalOrderPlayer0370=navalOrderPlayer3270;
   navalOrderPlayer3270=function(id,order){
     const g=navalGroups3270.find(x=>x.id===id&&x.f===0);
+    if(g){g.interceptPhase0371=null;g.interceptReturn0371=null;g.interceptEnemyPort0371=-1}
     if(g&&(order==='return'||order==='patrol')&&g.home<0){
       toast('La flota no tiene base · selecciona un puerto propio y traslada la base');
       return;
     }
     return baseNavalOrderPlayer0370(id,order);
   };
+
+  function navalPathPermit0371(nowCampaign){
+    const bucket=Math.floor((nowCampaign||0)/1.35);
+    if(bucket!==navalPathBucket0371){navalPathBucket0371=bucket;navalPathUsed0371=0}
+    if(navalPathUsed0371>=1)return false;
+    navalPathUsed0371++;return true;
+  }
+
+  function buildLocalPatrolRoute0371(g,nowCampaign){
+    if(!g||g.home<0)return false;
+    const homeSea=bestPortSea3270(g.home,g.cell);
+    if(homeSea<0)return false;
+    const L=loadLevel(MAX_GAME_LEVEL3233),route=[g.cell],seed=(g.id*1103515245+Math.floor(nowCampaign/4)*12345)>>>0;
+    let u=g.cell,prev=-1;
+    for(let step=0;step<7;step++){
+      const opts=[];
+      for(let k=L.offsets[u];k<L.offsets[u+1];k++){
+        const v=L.edgeNbr[k];if(v<0||L.land[v]>=0||v===prev)continue;
+        opts.push(v);
+      }
+      if(!opts.length)break;
+      opts.sort((a,b)=>angularHeuristic3254(a,homeSea)-angularHeuristic3254(b,homeSea));
+      let pick;
+      if(step<3)pick=opts[Math.min(opts.length-1,Math.floor(opts.length*.55)+((seed>>>step)%Math.max(1,Math.ceil(opts.length*.45))))];
+      else pick=opts[(seed+step)%Math.min(opts.length,Math.max(1,Math.ceil(opts.length*.55)))];
+      prev=u;u=pick;route.push(u);
+    }
+    for(let step=0;step<10&&u!==homeSea;step++){
+      let best=-1,bestD=1e9;
+      for(let k=L.offsets[u];k<L.offsets[u+1];k++){
+        const v=L.edgeNbr[k];if(v<0||L.land[v]>=0)continue;
+        const d=angularHeuristic3254(v,homeSea);
+        if(d<bestD){bestD=d;best=v}
+      }
+      if(best<0||best===u)break;
+      u=best;route.push(u);
+    }
+    if(route.length<3)return false;
+    g.route=route;g.routePos=0;g.routeGoal=homeSea;
+    g.patrolNext0371=nowCampaign+4+(g.id%4);
+    return true;
+  }
+
+  function startInterceptExcursion0371(g,nowCampaign){
+    if(!g||g.home<0||!navalPathPermit0371(nowCampaign))return false;
+    const enemyPort=nearestHostilePort3270(g.f,g.home);
+    if(enemyPort<0)return false;
+    const start=bestPortSea3270(g.home,g.cell),goal=bestPortSea3270(enemyPort,start);
+    if(start<0||goal<0)return false;
+    const full=findSeaPathCells3270(g.cell,goal);
+    if(!full||full.length<4)return false;
+    const maxLeg=32+(g.id%17),cut=Math.min(full.length-1,maxLeg,Math.max(3,Math.floor(full.length*.68)));
+    const outward=full.slice(0,cut+1);
+    g.route=outward;g.routePos=0;g.routeGoal=outward[outward.length-1];
+    g.interceptPhase0371='out';
+    g.interceptReturn0371=outward.slice().reverse();
+    g.interceptEnemyPort0371=enemyPort;
+    g.interceptNext0371=nowCampaign+12+(g.id%9);
+    return true;
+  }
 
   updateNavalOrder3270=function(g,nowCampaign){
     if(g.home>=0&&(!ports3212.has(g.home)||owner6[g.home]!==g.f)){
@@ -751,16 +827,43 @@
     if(g.order==='intercept'){
       const hit=nearestTransport3270(g.f,g.cell,true);
       if(hit&&hit.d<36&&nowCampaign-g.lastRetarget>3){
+        g.interceptPhase0371=null;g.interceptReturn0371=null;
         setNavalDestination3270(g,hit.sea);g.lastRetarget=nowCampaign;
-      }else if(!hit){
-        const hs=bestPortSea3270(g.home,g.cell);
-        if(hs>=0&&angularHeuristic3254(g.cell,hs)>12)setNavalDestination3270(g,hs);
+        return;
       }
+      if(g.interceptPhase0371==='out'){
+        if(g.route&&g.route.length)return;
+        const back=g.interceptReturn0371;
+        if(back&&back.length>1){
+          g.route=back;g.routePos=0;g.routeGoal=back[back.length-1];g.interceptPhase0371='back';
+        }else g.interceptPhase0371=null;
+        return;
+      }
+      if(g.interceptPhase0371==='back'){
+        if(g.route&&g.route.length)return;
+        g.interceptPhase0371=null;g.interceptReturn0371=null;
+        g.interceptNext0371=nowCampaign+7+(g.id%7);
+        return;
+      }
+      const hs=bestPortSea3270(g.home,g.cell);
+      if(hs>=0&&angularHeuristic3254(g.cell,hs)>12){
+        if(navalPathPermit0371(nowCampaign))setNavalDestination3270(g,hs);
+        return;
+      }
+      if(nowCampaign>=(g.interceptNext0371||0)){
+        if(startInterceptExcursion0371(g,nowCampaign))return;
+        g.interceptNext0371=nowCampaign+6+(g.id%6);
+      }
+      if(!g.route&&nowCampaign>=(g.patrolNext0371||0))buildLocalPatrolRoute0371(g,nowCampaign);
       return;
     }
     if(g.order==='patrol'){
       const homeSea=bestPortSea3270(g.home,g.cell);
-      if(homeSea>=0&&angularHeuristic3254(g.cell,homeSea)>8)setNavalDestination3270(g,homeSea);
+      if(homeSea>=0&&angularHeuristic3254(g.cell,homeSea)>10){
+        if(navalPathPermit0371(nowCampaign))setNavalDestination3270(g,homeSea);
+        return;
+      }
+      if(!g.route&&nowCampaign>=(g.patrolNext0371||0))buildLocalPatrolRoute0371(g,nowCampaign);
     }
   };
 
@@ -797,7 +900,7 @@
     const ownSelected=selected>=0&&owner6[selected]===0;
     const enemySelected=selected>=0&&owner6[selected]!==0;
     const seaRoutes=routes.filter(r=>r.type==='sea'&&(r.a===0||r.b===0)&&r.status!=='closed');
-    let html='<div class="sysBlock3213"><b>⚓ Naval y puertos · v0.37.0</b>'+
+    let html='<div class="sysBlock3213"><b>⚓ Naval y puertos · v0.37.1</b>'+
       '<div class="sysMeta3213">Cada flota pertenece a un puerto-base. Desde un puerto puedes construir flota, transportar tropas y abrir rutas comerciales marítimas.</div>'+
       '<div class="navalSummary3270"><span>Flotas</span><b>'+own.length+'</b>'+
       '<span>Fuerza</span><b>'+Math.round(own.reduce((s,g)=>s+g.strength,0))+'</b>'+
@@ -848,7 +951,7 @@
       html+='<div class="sysBlock3213"><b>⇄ Rutas marítimas</b><div class="tradeRoutes0370">';
       for(const r of seaRoutes.slice(0,12)){
         html+='<div class="tradeRoute0370"><b>'+escapeHtml3271(placeDisplayName3271(r.from))+' ↔ '+escapeHtml3271(placeDisplayName3271(r.to))+'</b>'+
-          '<span>'+escapeHtml3271(factionName3230(r.a===0?r.b:r.a))+' · '+routeStatusName0370(r)+' · +'+(r.lastValue||0).toFixed(2)+'/s</span>'+
+          '<span>'+(r.a===r.b?'Comercio interior':escapeHtml3271(factionName3230(r.a===0?r.b:r.a)))+' · '+routeStatusName0370(r)+' · +'+(r.lastValue||0).toFixed(2)+'/s</span>'+
           '<div class="acts">'+(missingPermits0370(r).length?'<button onclick="HexategosTradeActions0370.requestTransit('+r.id+')">Solicitar permisos</button>':'')+
           '<button class="warn" onclick="HexategosTradeActions0370.closeRoute('+r.id+')">Cerrar ruta</button></div></div>';
       }
@@ -865,7 +968,7 @@
     const c=document.getElementById('sysContent3213');if(!c)return;
     const own=routes.filter(r=>(r.a===0||r.b===0)&&r.status!=='closed');
     const residual=residualTrade0370(0);
-    let html='<div class="sysBlock3213"><b>⇄ Comercio físico · v0.37.0</b>'+
+    let html='<div class="sysBlock3213"><b>⇄ Comercio físico · v0.37.1</b>'+
       '<div class="sysMeta3213">Las relaciones comerciales sin infraestructura generan solo +'+residual.toFixed(2)+'/s. El ingreso importante exige carreteras conectadas o rutas marítimas entre puertos.</div>'+
       '<div class="econGrid3261"><span>Rutas activas / registradas</span><b>'+own.filter(r=>(r.lastFactor||0)>0).length+' / '+own.length+'</b>'+
       '<span>Flujo de mercancías</span><b>'+Math.round(goodsCache[0]||0)+'</b>'+
