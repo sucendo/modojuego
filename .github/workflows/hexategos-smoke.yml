@@ -74,3 +74,7 @@ jobs:
 
       - name: Run Hexategos 0.37.10 traffic size and constant commercial speed smoke
         run: node hexategos/tests/smoke-03710.mjs
+
+
+      - name: Run Hexategos 0.37.11 active trade belts and map destination smoke
+        run: node hexategos/tests/smoke-03711.mjs
