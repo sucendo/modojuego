@@ -63,3 +63,6 @@ jobs:
 
       - name: Run Hexategos 0.37.7 geopolitical trade corridors smoke
         run: node hexategos/tests/smoke-0377.mjs
+
+      - name: Run Hexategos 0.37.8 national traffic and naval visuals smoke
+        run: node hexategos/tests/smoke-0378.mjs
