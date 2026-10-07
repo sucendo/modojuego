@@ -1,3 +1,30 @@
+HEXATEGOS_0_37_16
+
+Causa raíz:
+- controlador estricto v3.28.2 exige contextTargetPermit3282
+- versiones previas armaban el modo sin beginTargetFromDialog3282
+- pick final usa handleInteractionTarget3245
+- comercio interceptaba 3244
+
+Corrección:
+- beginSeaTradeMapPick03716
+- beginTargetFromDialog3282(select_trade_route_target,...)
+- seaTradeTargetStartedAt03716
+- baseHandleInteractionTarget03716 = handleInteractionTarget3245
+- override real de handleInteractionTarget3245
+- alias handleInteractionTarget3244 actualizado
+- port snap -> handleInteractionTarget3245
+- handleSeaTradeTarget03716
+- createPlayerSeaRoute0370 sin cambios de lógica
+
+Pruebas:
+- tests/smoke-03716.mjs
+- valida también restricciones del controlador final dentro de game.js
+
+Rama de seguridad:
+- backup/hexategos-0.37.15-before-trade-controller-03716
+
+--- MANIFEST ANTERIOR ---
 HEXATEGOS_0_37_15
 
 Selector comercial:
