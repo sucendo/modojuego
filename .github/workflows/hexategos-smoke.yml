@@ -54,3 +54,6 @@ jobs:
 
       - name: Run Hexategos 0.37.4 road removal smoke
         run: node hexategos/tests/smoke-0374.mjs
+
+      - name: Run Hexategos 0.37.5 AI commerce and civil watchdog smoke
+        run: node hexategos/tests/smoke-0375.mjs
