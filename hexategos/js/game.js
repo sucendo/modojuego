@@ -14715,11 +14715,15 @@ economyTick3212=function(){
  if(started3230&&!paused3230&&dipBooted3300){
    const dt=Math.max(0,campaignSeconds3230-before);
    if(dt>0){
+     const perf=window.HexategosPerformance0361;
      for(let f=0;f<activeFactionCount3230;f++){
-       let wars=0;for(let o=0;o<activeFactionCount3230;o++)if(o!==f&&diplomaticRelation3300(f,o)===-1)wars++;
+       let wars=0;
+       if(perf?.warCount)wars=perf.warCount(f);
+       else for(let o=0;o<activeFactionCount3230;o++)if(o!==f&&diplomaticRelation3300(f,o)===-1)wars++;
        if(wars){
          let lossPressure=0;
-         for(const fr of aiFronts3280)if(fr.nationId===f)lossPressure+=Math.min(10,(fr.losses||0)*.025);
+         if(perf?.frontLossPressure)lossPressure=perf.frontLossPressure(f);
+         else for(const fr of aiFronts3280)if(fr.nationId===f)lossPressure+=Math.min(10,(fr.losses||0)*.025);
          dipWarWeariness3300[f]=dipClamp3300(dipWarWeariness3300[f]+dt*(.16+.055*wars)+lossPressure*.02,0,100);
        }else dipWarWeariness3300[f]=dipClamp3300(dipWarWeariness3300[f]-dt*.24,0,100);
      }
