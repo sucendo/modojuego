@@ -15,6 +15,7 @@
   let lastEndCheck=-1e9;
   let lastEconomyRebuildWall=-1e9;
   let dipUiWall=-1e9,dipUiDirty=true;
+  let rankPerfWall=-1e9,rankOrderSignature='',rankCountSignature='';
   let ownerCacheOptimizedMs=0;
   let exactEndScans=0;
 
@@ -27,6 +28,7 @@
 
   function relationTargets0361(f){
     const net=window.HexategosDiplomacyNetwork3301;
+    if(net?.targetsRef)return net.targetsRef(f);
     if(net?.targets)return net.targets(f);
     const out=[];
     for(let o=0;o<activeFactionCount3230;o++)if(o!==f)out.push(o);
@@ -220,6 +222,42 @@
     ownerCacheBuildMs3298=performance.now()-t0;
     ownerCacheOptimizedMs=ownerCacheBuildMs3298;
     return arr;
+  };
+
+  // Clasificación de hasta 500 filas: si el orden no cambia, actualizamos
+  // únicamente las cifras. Evita destruir/recrear cientos de nodos DOM en cada
+  // refresco durante las fases de expansión rápida.
+  updateRanking3220=function(force=false){
+    if(typeof worldReady3301==='function'&&!worldReady3301())return;
+    const wall=performance.now();
+    const period=activeFactionCount3230>=450?5000:activeFactionCount3230>=350?4200:
+                 activeFactionCount3230>=250?3400:2800;
+    if(!force&&wall-rankPerfWall<period)return;
+    rankPerfWall=wall;
+    const t0=performance.now(),counts=territoryCounts0361(),arr=[];
+    for(let f=0;f<activeFactionCount3230;f++)
+      if((counts[f]||0)>0||f===0)arr.push([f,counts[f]||0]);
+    arr.sort((a,b)=>b[1]-a[1]||a[0]-b[0]);
+    const orderSig=arr.map(x=>x[0]).join(',');
+    const countSig=arr.map(x=>x[1]).join(',');
+    if(!force&&orderSig===rankOrderSignature&&countSig===rankCountSignature)return;
+    const el=document.getElementById('rankRows3213');if(!el)return;
+    if(orderSig!==rankOrderSignature||el.children.length!==arr.length){
+      el.innerHTML=arr.map((r,k)=>
+        '<div class="rankRow3213" data-faction="'+r[0]+'" role="button" tabindex="0" aria-label="Ir a la capital de '+
+        factionName3230(r[0]).replace(/"/g,'&quot;')+'" title="Ir a la capital de '+
+        factionName3230(r[0]).replace(/"/g,'&quot;')+'">'+
+        '<i class="rankDot3213" style="background:'+(FACTIONS3230[r[0]]?.color||'#80909b')+'"></i>'+
+        '<span>'+(k+1)+'. '+factionName3230(r[0])+'</span><small>'+r[1].toLocaleString('es-ES')+'</small></div>'
+      ).join('');
+    }else{
+      for(let k=0;k<arr.length;k++){
+        const small=el.children[k]?.querySelector('small'),txt=arr[k][1].toLocaleString('es-ES');
+        if(small&&small.textContent!==txt)small.textContent=txt;
+      }
+    }
+    rankOrderSignature=orderSig;rankCountSignature=countSig;
+    if(typeof rankingCountMs3298!=='undefined')rankingCountMs3298=performance.now()-t0;
   };
 
   // La pestaña de diplomacia puede contener cientos de filas. Evitamos recrear
