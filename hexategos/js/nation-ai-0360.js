@@ -1,10 +1,10 @@
 'use strict';
 
-// HEXATEGOS 0.36.0 · 150/250/350/500 NACIONES REALES + IA ADAPTATIVA.
+// HEXATEGOS 0.36.1 · 150/250/350/500 NACIONES REALES + IA ADAPTATIVA + SCHEDULER POR TIEMPO.
 // No existe una segunda clase de entidad: las 500 plazas usan owner6, capitales,
 // economía, diplomacia, campañas, flotas e infraestructura del motor normal.
 (() => {
-  const BUILD='0.36.0';
+  const BUILD='0.36.1';
   const SAVE_KEY='hexategos-nation-ai-0360';
   const CHANGE_LIMIT=3600; // 60 minutos de campaña.
   const MINDSETS=['conformist','commercial','defensive','opportunist','localist'];
@@ -23,6 +23,7 @@
   let snapshotCampaign=-1e9,snapshotWall=-1e9;
   let rankingWall=-1e9,rankingSignature='';
   let lastTickMs=0,lastSnapshotMs=0,lastServed=0,lastReviewed=0;
+  let lastTickBudgetMs=0,lastDeferred=0;
   let restoredPortable=null;
 
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -179,7 +180,23 @@
   // --------------------------------------------------------------------------
   function schedulerBudget0360(){
     const n=activeFactionCount3230;
-    return n<=150?42:n<=250?48:n<=350?54:60;
+    return n<=150?34:n<=250?40:n<=350?46:52;
+  }
+  function schedulerTimeBudget0361(){
+    const cores=Number(navigator.hardwareConcurrency)||4;
+    const mem=Number(navigator.deviceMemory)||4;
+    let ms=activeFactionCount3230>=450?10.5:activeFactionCount3230>=350?9.5:
+           activeFactionCount3230>=250?8.5:7.5;
+    if(cores<=4)ms*=.72; else if(cores>=10)ms*=1.12;
+    if(mem<=4)ms*=.82;
+    if(typeof coarsePointer3255!=='undefined'&&coarsePointer3255)ms*=.78;
+    if(typeof renderMsAvg3255!=='undefined'){
+      if(renderMsAvg3255>28)ms*=.58;
+      else if(renderMsAvg3255>20)ms*=.76;
+    }
+    if(lastTickMs>30)ms*=.72;
+    else if(lastTickMs>18)ms*=.86;
+    return clamp(ms,4.2,12.5);
   }
   function ensureSnapshot0360(force=false){
     const now=campaignSeconds3230,wall=performance.now();
@@ -251,14 +268,17 @@
     dipOffers3300=dipOffers3300.filter(x=>x.expires>now);
     if(before!==dipOffers3300.length&&sysTab3220==='dip')renderSystems3220();
 
-    const budget=activeFactionCount3230>=450?7:activeFactionCount3230>=350?6:
-                 activeFactionCount3230>=250?5:3;
+    const budget=activeFactionCount3230>=450?6:activeFactionCount3230>=350?5:
+                 activeFactionCount3230>=250?4:3;
+    const deadline=t0+(activeFactionCount3230>=350?3.4:2.8);
+    let reviewed=0;
     for(let n=0;n<budget;n++){
+      if(n>0&&performance.now()>=deadline)break;
       if(dipReviewCursor3300<=0||dipReviewCursor3300>=activeFactionCount3230)dipReviewCursor3300=1;
       const f=dipReviewCursor3300++;
       if(now>=dipNextReview3300[f]){
         dipNextReview3300[f]=now+9+(f%4)*2.1;
-        aiReviewDiplomacy3300(f);
+        aiReviewDiplomacy3300(f);reviewed++;
       }
     }
     dipLastTickMs3300=performance.now()-t0;
@@ -268,18 +288,26 @@
     if(paused3230||!started3230||gameSpeed3212<=0)return;
     const t0=performance.now(),now=campaignSeconds3230;
     const snap=ensureSnapshot0360(false);
-    const budget=schedulerBudget0360();
+    const maxServe=schedulerBudget0360();
+    const minServe=activeFactionCount3230>=350?5:4;
+    const timeBudget=schedulerTimeBudget0361();
+    const deadline=t0+timeBudget;
     let served=0,scanned=0;
-    while(served<budget&&scanned<Math.max(1,(activeFactionCount3230-1)*2)){
+    while(served<maxServe&&scanned<Math.max(1,(activeFactionCount3230-1)*2)){
+      if(served>=minServe&&performance.now()>=deadline)break;
       if(serviceCursor<=0||serviceCursor>=activeFactionCount3230)serviceCursor=1;
       const f=serviceCursor++;scanned++;
       if(now+1e-6<nextService[f])continue;
       serviceFaction0360(f,snap);served++;
     }
-    lastReviewed=reviewSome0360();
-    if(typeof diplomacyTick3300==='function')diplomacyTick3300();
-    updateRanking3220();updateFrontDock3220();checkEnd3230();needsRender=true;
-    lastServed=served;lastTickMs=performance.now()-t0;
+    lastDeferred=Math.max(0,maxServe-served);
+    // Revisiones de personalidad y diplomacia usan sus propios límites y se
+    // posponen si el tick principal ya ha consumido demasiado tiempo.
+    lastReviewed=performance.now()<deadline+2?reviewSome0360():0;
+    if(typeof diplomacyTick3300==='function'&&performance.now()<deadline+4)diplomacyTick3300();
+    updateRanking3220();updateFrontDock3220();checkEnd3230();
+    lastServed=served;lastTickBudgetMs=timeBudget;lastTickMs=performance.now()-t0;
+    if(served>0)needsRender=true;
     if(typeof stabilitySample3298==='function')stabilitySample3298('ai',lastTickMs);
   };
 
@@ -440,7 +468,7 @@
     const basePortableBuild0360=buildPortableFile3276;
     buildPortableFile3276=function(){
       const file=basePortableBuild0360.apply(this,arguments);
-      file.gameVersion='0.36.0';
+      file.gameVersion='0.36.1';
       file.payload.nationAI0360=serializeAI0360();
       file.payload.diplomacy=serializeDiplomacy3300();
       if(typeof fnv1a3273==='function')file.checksum=fnv1a3273(JSON.stringify(file.payload));
@@ -466,7 +494,8 @@
       build:BUILD,active:activeFactionCount3230,capacity:FACTION_CAPACITY3230,
       mindsets:counts,changeWindowRemaining:Math.max(0,CHANGE_LIMIT-campaignSeconds3230),
       scheduler:{lastTickMs:Number(lastTickMs.toFixed(2)),lastSnapshotMs:Number(lastSnapshotMs.toFixed(2)),
-        lastServed,lastReviewed,budget:schedulerBudget0360(),snapshotAge:campaignSeconds3230-snapshotCampaign}
+        lastServed,lastReviewed,maxPerTick:schedulerBudget0360(),timeBudgetMs:Number(lastTickBudgetMs.toFixed(2)),
+        deferred:lastDeferred,snapshotAge:campaignSeconds3230-snapshotCampaign}
     };
   }
   function validate0360(){
@@ -490,5 +519,5 @@
   };
   window.HEXATEGOS_VERSION=BUILD;
 
-  console.info('[HEXATEGOS] 0.36.0 · 150/250/350/500 naciones reales + IA adaptativa hasta 60 min');
+  console.info('[HEXATEGOS] 0.36.1 · scheduler adaptativo por tiempo para 150/250/350/500 naciones');
 })();
