@@ -1,3 +1,34 @@
+HEXATEGOS_0_37_8
+
+Identidad visual nacional:
+- puntitos de tráfico SOLO desde zoom 25
+- tráfico terrestre interior para todas las naciones, no solo jugador
+- cada tramo conserva faction y se dibuja con el color real del país
+- rutas terrestres internacionales alternan actividad de las naciones implicadas
+- barcos comerciales marítimos con color nacional
+- convoyes navales con color nacional
+- flotas militares con color nacional
+- rutas marítimas comerciales IA↔IA también visibles
+- líneas marítimas: azul claro discontinuo común
+- patrulla naval: solo tramo inmediato
+
+Rendimiento:
+- mismo recorrido de carreteras existente; ahora segmenta por propietario
+- pool visual acotado
+- puntitos ocultos por completo bajo zoom 25
+- prioridad a rutas/puntos que realmente proyectan dentro de pantalla
+- sin setInterval nuevo
+
+Módulo:
+- js/national-visuals-0378.js
+
+Pruebas:
+- tests/smoke-0378.mjs
+
+Rama de seguridad:
+- backup/hexategos-0.37.7-before-national-traffic-0378
+
+--- MANIFEST ANTERIOR ---
 HEXATEGOS_0_37_7
 
 Corredores comerciales geopolíticos IA:
