@@ -667,16 +667,17 @@
     return null;
   }
 
-  function beginSeaTradeMapPick03714(from){
+  function beginSeaTradeMapPick03715(from){
     if(from<0||!ports3212.has(from)||owner6[from]!==0){
       toast('Selecciona uno de tus puertos');return false;
     }
-    if(!seaCandidates0370(from).length){
-      toast('No hay puertos compatibles para abrir una ruta comercial');return false;
+    if(routeCount0370(0)>=routeLimit0370(0)){
+      toast('Has alcanzado el límite de rutas comerciales');return false;
     }
     if(typeof closeModal3244==='function')closeModal3244();
     setInteractionMode3244('select_trade_route_target',from,'sea_trade_0370');
-    interactionText3244.textContent='Ruta comercial · selecciona un puerto de destino';
+    interactionText3244.textContent='Ruta comercial · selecciona cualquier puerto válido en el mapa';
+    toast('Selecciona el puerto de destino');
     return true;
   }
 
@@ -694,7 +695,14 @@
     }
     const r=createPlayerSeaRoute0370(from,cell);
     if(!r){
-      interactionText3244.textContent='Ruta comercial · no se pudo abrir esa ruta';
+      const b=owner6[cell];
+      let msg='No se pudo abrir esa ruta marítima';
+      if(routes.length>=MAX_ROUTES)msg='Se alcanzó el límite global de rutas';
+      else if(routeCount0370(0)>=routeLimit0370(0))msg='Has alcanzado el límite de rutas comerciales';
+      else if(b>0&&routeCount0370(b)>=routeLimit0370(b))msg=factionName3230(b)+' no admite más rutas';
+      else if(bestPortSea3270(from)<0||bestPortSea3270(cell)<0)msg='Uno de los puertos no tiene acceso marítimo navegable';
+      interactionText3244.textContent='Ruta comercial · '+msg;
+      toast(msg);
       return;
     }
     cancelInteractionMode3244();
@@ -745,7 +753,8 @@
 
   window.HexategosTradeActions0370={
     openSeaTrade:openSeaTradeModal0370,
-    pickSeaOnMap:beginSeaTradeMapPick03714,
+    pickSeaOnMap:beginSeaTradeMapPick03715,
+    canPickSeaTarget:(from,to)=>seaTradeTargetReason03711(Number(from),Number(to)),
     createSea:createPlayerSeaRoute0370,
     rebase:rebaseFleet0370,
     closeRoute:closeRoute0370,
@@ -761,9 +770,10 @@
       if(tr){tr.label='TRANSPORTE';tr.sub=tr.enabled?'TROPAS · ELIGE COSTA':tr.sub}
       let at=a.findIndex(x=>x.id==='transport');if(at<0)at=0;
       const canFleet=gold3212>=NAVAL_BUILD_COST3270;
+      const canTrade=routeCount0370(0)<routeLimit0370(0);
       a.splice(at+1,0,
         classicAction3246('naval_build_0370','CONSTRUIR FLOTA','⚓',canFleet?NAVAL_BUILD_COST3270+' ORO':'NECESITA '+NAVAL_BUILD_COST3270+' ORO',canFleet,'good3244'),
-        classicAction3246('sea_trade_0370','RUTA COMERCIAL','⇄',seaCandidates0370(ctx.cell).length?'ELIGE EN MAPA':'SIN SOCIO / PUERTO',seaCandidates0370(ctx.cell).length>0,'')
+        classicAction3246('sea_trade_0370','RUTA COMERCIAL','⇄',canTrade?'ELIGE PUERTO EN MAPA':'LÍMITE DE RUTAS',canTrade,'')
       );
     }
     return a;
@@ -776,7 +786,7 @@
       if(!ctx||ctx.kind!=='cell'||!ctx.own||!ctx.port)return;
       closeContextDialog3244();
       if(id==='naval_build_0370')buildNavalGroup3270(0,ctx.cell,true);
-      else beginSeaTradeMapPick03714(ctx.cell);
+      else beginSeaTradeMapPick03715(ctx.cell);
       return;
     }
     return baseContextAction0370(id);
