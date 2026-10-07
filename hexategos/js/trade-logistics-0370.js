@@ -206,11 +206,15 @@
   }
 
   function roadJoin0370(a,b){
-    if(roadCross3230(a,b))return true;
-    if(!roadMask||!roadMask[a]||!roadMask[b])return false;
     const oa=owner6[a],ob=owner6[b];
-    if(oa<0||ob<0||oa===ob)return false;
-    return aiRoadDegree3260(a)>0&&aiRoadDegree3260(b)>0;
+    // Dentro de un país basta una carretera física normal.
+    if(oa===ob)return roadCross3230(a,b);
+    // Entre países, el simple contacto de dos carreteras NO crea una unión.
+    // Hace falta un enlace fronterizo / aduana explícito de 0.37.6.
+    if(oa>=0&&ob>=0&&oa!==ob){
+      return !!window.HexategosBorderRoad0376?.hasLink?.(a,b);
+    }
+    return false;
   }
 
   function rebuildRoadGraph0370(force=false){
