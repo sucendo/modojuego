@@ -1,3 +1,21 @@
+HEXATEGOS 0.37.18 · SALIR DE VER EN MAPA
+
+Vista de ruta:
+- al pulsar Ver en mapa, la barra contextual muestra:
+  Ruta comercial · ORIGEN ↔ DESTINO
+- el botón Cancelar pasa a llamarse Salir;
+- Salir borra únicamente focusedTradeRoute03717;
+- no cierra, suspende ni modifica la ruta comercial;
+- la barra recupera después el texto Cancelar.
+
+Persistencia:
+- serialize0370 guarda las rutas comerciales reales;
+- save0370 persiste ese bloque en localStorage;
+- saveGame3212 queda envuelto para guardar también tradeLogistics;
+- los archivos portables .hexategos incluyen payload.tradeLogistics0370;
+- restore0370 recupera las rutas;
+- focusedTradeRoute03717 NO se serializa porque es solo estado visual temporal.
+
 HEXATEGOS 0.37.17 · GESTOR DE RUTAS COMERCIALES
 
 Economía:
