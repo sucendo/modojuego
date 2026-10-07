@@ -1,3 +1,24 @@
+HEXATEGOS 0.36.2 · CONSTRUCCIÓN IA MÁS HUMANA
+
+Objetivo:
+- Hacer que las naciones construyan como un jugador: pocos núcleos útiles, industria concentrada y carreteras que conectan centros.
+- Evitar la acumulación visual de fábricas en casi todos los hexágonos.
+- Mantener intactas las capacidades de las 150 / 250 / 350 / 500 naciones y las optimizaciones de rendimiento.
+
+Cambios:
+- una nación de unas 50 celdas apunta aproximadamente a 7 ciudades y 3 polos industriales;
+- una nación de unas 186 celdas apunta aproximadamente a 13 ciudades y 6 polos industriales;
+- las nuevas industrias se priorizan en ciudades, puertos y nodos con carretera;
+- al alcanzar el objetivo de polos, la IA solo mejora industria existente;
+- los planes regionales vuelven a comprobar los conteos reales antes de ejecutar una construcción pendiente;
+- ciudades, carreteras y puertos conservan una densidad limitada y proporcional al tamaño nacional;
+- las partidas antiguas no pierden edificios ya construidos: simplemente dejan de extender infraestructura redundante.
+
+Compatibilidad:
+- no cambia el formato de guardado;
+- no se modifica la malla, diplomacia, economía, guerra, frentes o flotas;
+- las personalidades de IA siguen modificando prioridades, no las reglas disponibles.
+
 HEXATEGOS 0.36.1 · RENDIMIENTO PARA 150 / 250 / 350 / 500 NACIONES
 
 Objetivo:
