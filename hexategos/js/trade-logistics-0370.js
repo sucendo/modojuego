@@ -364,7 +364,7 @@
       if(missing.length){r.status='blocked';return 0}
       r.status='active';return 1;
     }
-    let f=(r.mode==='risky'&&missing.length)?.62:1;
+    let f=(r.mode==='risky'&&missing.length)?0.62:1;
     const blockade=Math.max(navalPortBlockadeLevel3270(r.from)||0,navalPortBlockadeLevel3270(r.to)||0);
     f*=Math.max(.08,1-blockade*.72);
     f*=clamp(1-(r.navalRisk||0)*.022,.42,1);
@@ -467,7 +467,7 @@
   function tradeIncident0370(r){
     const missing=missingPermits0370(r);
     if(!missing.length)return;
-    const chance=r.mode==='smuggle'?.12:.075;
+    const chance=r.mode==='smuggle'?0.12:0.075;
     if(Math.random()>=chance)return;
     const via=missing[(Math.floor(campaignSeconds3230)+r.id)%missing.length];
     const offender=r.a===0?0:r.b===0?0:r.a;
