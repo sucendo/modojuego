@@ -188,7 +188,7 @@
     markEconomyDirty3261();aiMarkDirty3260();markEncirclementDirty3254?.();
     neighborCache.clear();
     // La conquista comercial intenta prolongar la carretera con el avance.
-    if(roadCell0377(step.src)&&botGold3230[f]>=12){
+    if(!step.noRoad&&roadCell0377(step.src)&&botGold3230[f]>=12){
       botGold3230[f]-=12;roads3212.push([step.src,step.target]);rebuildRoadEdges3212();
       corridorRoads++;
     }
@@ -364,6 +364,11 @@
     if(now<nextService[f])return false;
     nextService[f]=now+SERVICE_SECONDS+(f%7)*1.35;
     if(f<=0||f>=activeFactionCount3230||!started3230)return false;
+
+    // Aunque la ruta comercial ya exista, la IA sigue consolidando poco a poco
+    // el terreno neutral inmediatamente adyacente a su trazado real.
+    const activeBelt03711=window.HexategosEconomicCorridors0379?.activeRouteStep?.(f)||null;
+    if(activeBelt03711)return expandNeutral0377(f,activeBelt03711);
 
     const p=chooseProject0377(f);if(!p)return false;
     const a=p.a,b=p.b;
