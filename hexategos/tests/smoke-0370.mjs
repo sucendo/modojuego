@@ -33,6 +33,6 @@ const iHuman=index.indexOf('js/human-build-0362.js');
 const iTrade=index.indexOf('js/trade-logistics-0370.js');
 assert.ok(iHuman>=0&&iTrade>iHuman,'0.37.0 logistics layer must load after 0.36.2 AI construction');
 assert.ok(index.includes('css/trade-logistics-0370.css'),'0.37.0 trade CSS missing');
-assert.ok(index.includes('v0.37.0</title>')||index.includes('v0.37.1</title>')||index.includes('v0.37.2</title>')||index.includes('v0.37.3</title>'),'visible version must include 0.37.0 or a compatible successor');
+assert.ok(index.includes('v0.37.0</title>')||index.includes('v0.37.1</title>')||index.includes('v0.37.2</title>')||index.includes('v0.37.3</title>'||index.includes('v0.37.4</title>')),'visible version must include 0.37.0 or a compatible successor');
 
 console.log('HEXATEGOS 0.37.0 physical trade + port-based fleets smoke: OK');
