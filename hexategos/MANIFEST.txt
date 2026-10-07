@@ -1,3 +1,36 @@
+HEXATEGOS_0_37_13
+
+Rutas propias:
+- puerto propio -> puerto propio permitido
+- candidatos propios: hasta 24 puertos
+- navegación directa por mapa compatible con rutas interiores
+
+Suministro interior:
+- domesticSeaSupplyFloor03713
+- endpoint activo: mínimo 64
+- red viaria conectada al endpoint: mínimo 58
+- caché domesticSeaSupplyCache03713
+- invalidación por cambios de comercio/carreteras
+- API domesticSeaSupply(f,cell)
+
+Tráfico doméstico:
+- candidatos del jugador ordenados antes que IA
+- hasta 2 puntos en tramos propios >3 celdas
+- mismo presupuesto maxDots
+- mismo zoom mínimo 25
+
+Rendimiento:
+- reutiliza roadComp
+- sin timers nuevos
+- sin aumentar número máximo de puntos
+
+Pruebas:
+- tests/smoke-03713.mjs
+
+Rama de seguridad:
+- backup/hexategos-0.37.12-before-domestic-logistics-03713
+
+--- MANIFEST ANTERIOR ---
 HEXATEGOS_0_37_12
 
 Simbología:
