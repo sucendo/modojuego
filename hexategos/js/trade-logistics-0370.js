@@ -442,7 +442,7 @@
     const snap=ensureEconomySnapshot3261(false),out=[];
     for(const o of diplomaticTargets0370(f)){
       if(o===f||o<0||o>=activeFactionCount3230||!tradeRelation0370(f,o)||
-         !(portsByFaction[o]||[]).length||routeCount0370(o)>=MAX_ROUTES_PER_FACTION)continue;
+         !(portsByFaction[o]||[]).length||routeCount0370(o)>=routeLimit0370(o))continue;
       const pp=bestPortPair0370(f,o);
       if(!pp||routeExists0370('sea',f,o,pp.from,pp.to))continue;
       const role=FACTIONS3230[f]&&FACTIONS3230[f].role||'balanced';
