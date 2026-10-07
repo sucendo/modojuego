@@ -4,10 +4,29 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.37.8',
+      date:'Octubre 2026',
+      title:'Tráfico, barcos y flotas con identidad nacional',
+      current:true,
+      summary:'El tráfico y las unidades navales usan el color real de cada nación; los puntitos aparecen solo desde zoom 25 y las rutas marítimas conservan la línea azul claro discontinua.',
+      changes:[
+        'Los puntitos de tráfico terrestre aparecen únicamente a partir de zoom 25.',
+        'El tráfico interior ya no se calcula solo para el jugador: las carreteras de todas las naciones generan actividad visual de su propio color.',
+        'Las rutas comerciales terrestres internacionales muestran tráfico usando los colores de las naciones implicadas.',
+        'Los barcos comerciales marítimos usan el color de la nación operadora.',
+        'Las flotas militares y los convoyes navales muestran el color propio de su nación en lugar del azul/rojo genérico.',
+        'Las rutas marítimas comerciales, incluidas IA↔IA, mantienen la línea azul claro discontinua.',
+        'Las rutas de movimiento naval conservan el mismo azul claro discontinuo para mejorar legibilidad.',
+        'Las patrullas siguen mostrando solo su tramo inmediato y no toda la ruta completa.',
+        'El render prioriza elementos realmente visibles en pantalla y mantiene límites de rutas y puntos.',
+        'No se añade ningún temporizador ni escaneo mundial adicional por frame.'
+      ]
+    },
+    {
       version:'0.37.7',
       date:'Octubre 2026',
       title:'Corredores comerciales y geopolítica del tránsito',
-      current:true,
+      current:false,
       summary:'Las IA ya no esperan conexiones comerciales perfectas: intentan crear físicamente el corredor mediante expansión neutral, permisos de tránsito, alternativas, contrabando o escalada diplomática.',
       changes:[
         'Si dos IA quieren comerciar y existe espacio neutral entre ellas, intentan expandirse progresivamente hacia el socio comercial.',
