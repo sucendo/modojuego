@@ -1,3 +1,29 @@
+HEXATEGOS 0.37.9 · CORREDORES ECONÓMICOS CONSOLIDADOS
+
+Objetivo:
+- una IA que busca una conexión comercial ya no conquista una simple línea mínima de hexágonos;
+- el corredor se trata como un eje territorial y económico que debe ser razonablemente defendible y útil.
+
+Expansión:
+- dos microturnos tienden a mantener el avance hacia el socio y aproximadamente uno de cada tres puede consolidar los flancos;
+- la consolidación prefiere casillas neutrales apoyadas por territorio propio y carreteras;
+- el sistema intenta rellenar estrechamientos y ensanchar corredores antiguos sin convertir la expansión en una mancha indiscriminada;
+- la desviación respecto al eje entre capitales está limitada y el terreno difícil recibe penalización.
+
+Desarrollo:
+- cada cierto número de ciclos se puede sustituir la expansión por una inversión civil;
+- las ciudades nuevas se sitúan sobre la carretera del corredor, con suministro, separación urbana y seguridad suficientes;
+- la industria puede aparecer en ciudades del eje cuando no existe otro polo industrial demasiado cerca;
+- esos nuevos núcleos pasan a formar parte del sistema normal de construcción IA, que puede seguir desarrollándolos.
+
+Rendimiento:
+- sin escaneos globales adicionales;
+- máximo 180 muestras de frontera para consolidación;
+- máximo 190 muestras territoriales para buscar nodos;
+- una única conquista o construcción relevante por servicio;
+- sin setInterval nuevo;
+- compatible con guardados anteriores.
+
 HEXATEGOS 0.37.8 · TRÁFICO, BARCOS Y FLOTAS POR COLOR NACIONAL
 
 Zoom:
