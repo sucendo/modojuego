@@ -1,13 +1,13 @@
 'use strict';
 
 (() => {
-  const BUILD='0.37.1';
+  const BUILD='0.37.2';
   const SAVE_KEY='hexategos-trade-logistics-0370';
   const TRADE_TICK_MS=2800;
   const ROAD_REFRESH_SECONDS=18;
   const MAX_ROUTES=720;
   const MAX_ROUTES_PER_FACTION=4;
-  const TRAFFIC_ZOOM=2.55;
+  const TRAFFIC_ZOOM=2.15;
 
   let routes=[];
   let nextRouteId=1;
@@ -44,6 +44,10 @@
 
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const pair=(a,b)=>a<b?a+':'+b:b+':'+a;
+  function playerTrafficColor0372(){
+    return (FACTIONS3230&&FACTIONS3230[0]&&FACTIONS3230[0].color)||
+      (typeof PLAYER_COLOR!=='undefined'?PLAYER_COLOR:'#2f91ff');
+  }
   const baseNavalHostile0371=navalHostile3270;
   navalHostile3270=function(a,b){
     if(a===b||a<0||b<0)return false;
@@ -930,7 +934,7 @@
     const ownSelected=selected>=0&&owner6[selected]===0;
     const enemySelected=selected>=0&&owner6[selected]!==0;
     const seaRoutes=routes.filter(r=>r.type==='sea'&&(r.a===0||r.b===0)&&r.status!=='closed');
-    let html='<div class="sysBlock3213"><b>⚓ Naval y puertos · v0.37.1</b>'+
+    let html='<div class="sysBlock3213"><b>⚓ Naval y puertos · v0.37.2</b>'+
       '<div class="sysMeta3213">Cada flota pertenece a un puerto-base. Desde un puerto puedes construir flota, transportar tropas y abrir rutas comerciales marítimas.</div>'+
       '<div class="navalSummary3270"><span>Flotas</span><b>'+own.length+'</b>'+
       '<span>Fuerza</span><b>'+Math.round(own.reduce((s,g)=>s+g.strength,0))+'</b>'+
@@ -998,7 +1002,7 @@
     const c=document.getElementById('sysContent3213');if(!c)return;
     const own=routes.filter(r=>(r.a===0||r.b===0)&&r.status!=='closed');
     const residual=residualTrade0370(0);
-    let html='<div class="sysBlock3213"><b>⇄ Comercio físico · v0.37.1</b>'+
+    let html='<div class="sysBlock3213"><b>⇄ Comercio físico · v0.37.2</b>'+
       '<div class="sysMeta3213">Las relaciones comerciales sin infraestructura generan solo +'+residual.toFixed(2)+'/s. El ingreso importante exige carreteras conectadas o rutas marítimas entre puertos.</div>'+
       '<div class="econGrid3261"><span>Rutas activas / registradas</span><b>'+own.filter(r=>(r.lastFactor||0)>0).length+' / '+own.length+'</b>'+
       '<span>Flujo de mercancías</span><b>'+Math.round(goodsCache[0]||0)+'</b>'+
@@ -1076,7 +1080,7 @@
 
   function drawTradeTraffic0370(R,cx,cy,now){
     trafficDrawn=0;
-    const minZoom=adaptiveDetail3255>=2?3.55:TRAFFIC_ZOOM;
+    const minZoom=coarsePointer3255?2.65:TRAFFIC_ZOOM;
     if(zoom<minZoom)return;
     const C=loadLevel(MAX_GAME_LEVEL3233).centers;
     const maxRoutes=coarsePointer3255?24:adaptiveDetail3255>=2?30:56;
@@ -1095,8 +1099,10 @@
         if((d.seed+k)&1)phase=1-phase;
         const p=projectedAlongCells0371(path,phase,C,R,cx,cy);
         if(!p||p[2]<.045)continue;
-        ctx.beginPath();ctx.arc(p[0],p[1],zoom>4?1.35:1.1,0,Math.PI*2);
-        ctx.fillStyle='rgba(255,221,118,.96)';ctx.fill();trafficDrawn++;
+        ctx.beginPath();ctx.arc(p[0],p[1],zoom>4?1.85:1.55,0,Math.PI*2);
+        ctx.fillStyle=playerTrafficColor0372();ctx.fill();
+        ctx.lineWidth=.65;ctx.strokeStyle='rgba(245,250,255,.88)';ctx.stroke();
+        trafficDrawn++;
       }
     }
 
@@ -1131,6 +1137,22 @@
     }
     ctx.restore();
   }
+
+  const baseDrawFleets0372=drawFleetsSea3261;
+  drawFleetsSea3261=function(R,cx,cy,now,C){
+    const changed=[];
+    for(const g of navalGroups3270){
+      if(g.order!=='patrol'||!Array.isArray(g.route)||!g.route.length)continue;
+      const oldRoute=g.route,oldPos=g.routePos||0;
+      const immediate=[g.cell,...oldRoute.slice(oldPos,oldPos+3)].filter((v,i,a)=>i===0||v!==a[i-1]);
+      changed.push([g,oldRoute,oldPos]);
+      g.route=immediate;g.routePos=0;
+    }
+    try{return baseDrawFleets0372.apply(this,arguments)}
+    finally{
+      for(const [g,route,pos] of changed){g.route=route;g.routePos=pos}
+    }
+  };
 
   const baseDrawInfrastructure0370=drawInfrastructure3212;
   drawInfrastructure3212=function(R,cx,cy,now){
@@ -1233,7 +1255,7 @@
     const basePortableBuild0370=buildPortableFile3275;
     buildPortableFile3275=function(){
       const file=basePortableBuild0370.apply(this,arguments);
-      file.gameVersion='0.37.1';file.payload.tradeLogistics0370=serialize0370();
+      file.gameVersion='0.37.2';file.payload.tradeLogistics0370=serialize0370();
       if(typeof fnv1a3273==='function')file.checksum=fnv1a3273(JSON.stringify(file.payload));
       return file;
     };
@@ -1286,5 +1308,5 @@
   window.HEXATEGOS_VERSION=BUILD;
 
   setInterval(tradeTick0370,TRADE_TICK_MS);
-  console.info('[HEXATEGOS] 0.37.1 · tráfico interior, rutas puerto a puerto y movimiento naval visible');
+  console.info('[HEXATEGOS] 0.37.2 · tráfico terrestre visible, carreteras finas y patrulla naval local');
 })();
