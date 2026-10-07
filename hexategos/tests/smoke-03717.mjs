@@ -34,7 +34,7 @@ assert.ok(css.includes('.tradeManager03717'),'trade manager styles missing');
 assert.ok(css.includes('.tradeManagerRoute03717.focused03717'),'focused route style missing');
 assert.ok(css.includes('.tradeRouteMetrics03717'),'route metrics layout missing');
 
-assert.ok(index.includes('v0.37.17</title>')||index.includes('v0.37.18</title>'),'visible version must be 0.37.17 or compatible successor');
+assert.ok(index.includes('v0.37.17</title>')||index.includes('v0.37.18</title>')||index.includes('v0.37.19</title>'),'visible version must be 0.37.17 or compatible successor');
 assert.ok(about.includes("version:'0.37.17'"),'about history must include 0.37.17');
 
 // 0.37.16 creation flow must remain intact.
