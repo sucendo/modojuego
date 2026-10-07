@@ -1,0 +1,37 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+
+const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
+const trade=read('js/trade-logistics-0370.js');
+const visuals=read('js/national-visuals-0378.js');
+const index=read('index.html');
+const about=read('js/about-0351.js');
+
+assert.doesNotThrow(()=>new Function(trade),'trade-logistics-0370.js must parse');
+assert.doesNotThrow(()=>new Function(visuals),'national-visuals-0378.js must parse');
+
+assert.ok(trade.includes('const TRAFFIC_ZOOM=25'),'traffic dots must start at zoom 25');
+assert.ok(trade.includes('faction:runFaction'),'domestic traffic must retain faction identity');
+assert.ok(trade.includes('ctx.fillStyle=factionTrafficColor0378(d.faction)'),'domestic dots must use faction color');
+assert.ok(trade.includes('function routeDotFaction0378'),'international route dots must resolve a nation');
+assert.ok(trade.includes("ctx.strokeStyle='rgba(99,206,226,.30)'"),'sea trade route must keep light-blue dashed style');
+assert.ok(trade.includes("if(zoom>3.15)"),'sea route line must remain visible before zoom 25');
+assert.ok(!trade.includes("if(r.type==='sea'&&(r.a===0||r.b===0)&&zoom>3.15)"),
+  'AI-to-AI sea routes must no longer be player-only');
+assert.ok(trade.includes('Tiny commercial ship'),'sea commerce must render ship marker');
+
+assert.ok(visuals.includes("const BUILD='0.37.8'"),'national visuals build must be 0.37.8');
+assert.ok(visuals.includes('function factionColor0378'),'faction color resolver missing');
+assert.ok(visuals.includes('drawTransportColor0378'),'transport recolor layer missing');
+assert.ok(visuals.includes('drawNavalGroupsColor0378'),'military fleet recolor layer missing');
+assert.ok(visuals.includes("ctx.strokeStyle='rgba(99,206,226,.36)'"),'naval route must use light-blue dashed style');
+assert.ok(visuals.includes("if(g.order==='patrol')"),'patrol must keep immediate-route behavior');
+assert.ok(visuals.includes('trafficMinZoom:25'),'public visual status must expose zoom 25');
+assert.ok(!visuals.includes('setInterval('),'0.37.8 must not add another periodic timer');
+
+assert.ok(index.includes('v0.37.8</title>'),'visible version must be 0.37.8');
+assert.ok(index.indexOf('js/national-visuals-0378.js')>index.indexOf('js/trade-geopolitics-0377.js'),
+  '0.37.8 must load after trade geopolitics');
+assert.ok(about.includes("version:'0.37.8'"),'about history must include 0.37.8');
+
+console.log('HEXATEGOS 0.37.8 national traffic/naval visuals smoke: OK');
