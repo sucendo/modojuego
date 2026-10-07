@@ -23,14 +23,14 @@ assert.ok(geo.includes('trySmuggling0377'),'smuggling fallback missing');
 assert.ok(geo.includes('setDiplomaticRelation3300(a,via,-1'),'late corridor-war escalation missing');
 assert.ok(geo.includes("via===0")===false,'corridor module should not special-case player as auto-war target');
 assert.ok(geo.includes("if(a<=0||via<=0"),'automatic corridor escalation must exclude player');
-assert.ok(!geo.includes('setInterval('),'0.37.7 must not add a periodic timer');
+assert.ok(!geo.includes('setInterval('),'0.37.7 must not add a periodic timer');\nassert.ok(geo.includes('HexategosEconomicCorridors0379?.prepare?.(a,b,sa,sb)'),\n  '0.37.9 economic consolidation hook missing from geopolitical corridor service');
 
 assert.ok(trade.includes('requestTransit:(a,b,via)=>'),'transit API must be exposed');
 assert.ok(trade.includes('enableSmuggling:(a,b)=>'),'smuggling route API must be exposed');
 assert.ok(border.includes('createTransitAI:'),'authorized transit-border API missing');
 assert.ok(border.includes('createClandestineAI:'),'clandestine crossing API missing');
 
-assert.ok(index.includes('v0.37.7</title>')||index.includes('v0.37.8</title>'),'visible version must be 0.37.7');
+assert.ok(index.includes('v0.37.7</title>')||index.includes('v0.37.8</title>')||index.includes('v0.37.9</title>'),'visible version must be 0.37.7');
 assert.ok(index.indexOf('js/trade-geopolitics-0377.js')>index.indexOf('js/border-road-0376.js'),
   '0.37.7 must load after explicit border-road layer');
 assert.ok(about.includes("version:'0.37.7'"),'about history must include 0.37.7');
