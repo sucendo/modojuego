@@ -34,3 +34,5 @@ jobs:
         run: node hexategos/tests/smoke-0356.mjs
       - name: Run Hexategos 0.36.0 native 500-nation adaptive AI smoke
         run: node hexategos/tests/smoke-0360.mjs
+      - name: Run Hexategos 0.36.1 500-nation performance smoke
+        run: node hexategos/tests/smoke-0361.mjs
