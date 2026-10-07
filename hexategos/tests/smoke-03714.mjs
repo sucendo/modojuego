@@ -8,12 +8,12 @@ const about=read('js/about-0351.js');
 
 assert.doesNotThrow(()=>new Function(trade),'trade logistics must parse');
 
-assert.ok(trade.includes('function beginSeaTradeMapPick03715'),'native commercial destination picker missing');
-assert.ok(trade.includes("setInteractionMode3244('select_trade_route_target'"),'commercial picker must use native interaction mode');
-assert.ok(trade.includes('const baseHandleInteractionTarget03714=handleInteractionTarget3244'),'native target handler hook missing');
+assert.ok(trade.includes('function beginSeaTradeMapPick03716'),'native commercial destination picker missing');
+assert.ok(trade.includes("beginTargetFromDialog3282('select_trade_route_target'"),'commercial picker must use strict native interaction flow');
+assert.ok(trade.includes('const baseHandleInteractionTarget03716=handleInteractionTarget3245'),'final native target handler hook missing');
 assert.ok(trade.includes("uiInteractionState3244.interactionMode!=='select_trade_route_target'"),'trade target mode dispatch missing');
 assert.ok(trade.includes('const reason=seaTradeTargetReason03711(from,cell)'),'commercial target validation missing');
-assert.ok(trade.includes('cancelInteractionMode3244()'),'successful commercial target must cancel native mode');
+assert.ok(trade.includes('cancelInteractionMode3245()'),'successful commercial target must cancel final native mode');
 assert.ok(!trade.includes('const baseUpdatePanel03711=updatePanel'),'fragile updatePanel picker must be removed');
 
 assert.ok(trade.includes('function domesticAnchorKind03714'),'domestic logistics node classifier missing');
@@ -28,7 +28,7 @@ assert.ok(trade.includes('const maxGroups=coarsePointer3255?54:96'),'domestic ro
 assert.ok(trade.includes('const maxVisits=g.f===0?14000:6500'),'bounded road-tree visits missing');
 assert.ok(trade.includes('candidates.slice(0,coarsePointer3255?100:220)'),'global domestic candidate cap missing');
 
-assert.ok(index.includes('v0.37.14</title>')||index.includes('v0.37.15</title>'),'visible version must be 0.37.14 or compatible successor');
+assert.ok(index.includes('v0.37.14</title>')||index.includes('v0.37.15</title>')||index.includes('v0.37.16</title>'),'visible version must be 0.37.14 or compatible successor');
 assert.ok(about.includes("version:'0.37.14'"),'about history must include 0.37.14');
 
 console.log('HEXATEGOS 0.37.14 native route picker + node-to-node trucks smoke: OK');
