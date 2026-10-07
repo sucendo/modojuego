@@ -367,8 +367,9 @@
 
     // Aunque la ruta comercial ya exista, la IA sigue consolidando poco a poco
     // el terreno neutral inmediatamente adyacente a su trazado real.
-    const activeBelt03711=window.HexategosEconomicCorridors0379?.activeRouteStep?.(f)||null;
-    if(activeBelt03711)return expandNeutral0377(f,activeBelt03711);
+    const activeBelt03711=window.HexategosEconomicCorridors0379?.activeRoutePlan?.(f)||null;
+    if(activeBelt03711?.done)return true;
+    if(activeBelt03711?.step)return expandNeutral0377(f,activeBelt03711.step);
 
     const p=chooseProject0377(f);if(!p)return false;
     const a=p.a,b=p.b;
