@@ -27,20 +27,20 @@ assert.ok(geo.includes('HexategosEconomicCorridors0379?.activeRoutePlan?.(f)'),
 assert.ok(geo.includes('if(!step.noRoad&&roadCell0377(step.src)'),
   'neutral expansion must honor no-road consolidation cells');
 
-assert.ok(trade.includes('function beginSeaTradeMapPick03711'),'map destination selector missing');
-assert.ok(trade.includes("document.getElementById('interactionBar3244')"),'map picker must use interaction bar');
+assert.ok(trade.includes('function beginSeaTradeMapPick03714'),'native map destination selector missing');
+assert.ok(trade.includes("setInteractionMode3244('select_trade_route_target'"),'map picker must use native interaction mode');
 assert.ok(trade.includes('function seaTradeTargetReason03711'),'map target validation missing');
 assert.ok(trade.includes("ports3212.has(to)"),'map destination must require a port');
 assert.ok(trade.includes("!tradeRelation0370(0,b)"),'foreign map destination must require commercial rights');
-assert.ok(trade.includes("beginSeaTradeMapPick03711(ctx.cell)"),'RUTA COMERCIAL must enter map-pick mode');
+assert.ok(trade.includes("beginSeaTradeMapPick03714(ctx.cell)"),'RUTA COMERCIAL must enter native map-pick mode');
 assert.ok(trade.includes("'ELIGE EN MAPA'"),'route action must advertise map selection');
-assert.ok(trade.includes('pickSeaOnMap:beginSeaTradeMapPick03711'),'map picker public API missing');
+assert.ok(trade.includes('pickSeaOnMap:beginSeaTradeMapPick03714'),'map picker public API missing');
 assert.ok(trade.includes("r.type==='sea'?(zoom>32?4.40:3.70):(zoom>32?3.20:2.70)"),'larger commercial marker sizing missing');
 assert.ok(trade.includes('zoom>32?3.20:2.70'),'larger land trade marker missing');
 assert.ok(trade.includes('zoom>32?3.20:2.60'),'larger domestic marker missing');
 
 assert.ok(visuals.includes("if(g.order==='patrol')return null"),'patrol route must remain hidden');
-assert.ok(index.includes('v0.37.11</title>')||index.includes('v0.37.12</title>')||index.includes('v0.37.13</title>'),'visible version must be 0.37.11 or compatible successor');
+assert.ok(index.includes('v0.37.11</title>')||index.includes('v0.37.12</title>')||index.includes('v0.37.13</title>')||index.includes('v0.37.14</title>'),'visible version must be 0.37.11 or compatible successor');
 assert.ok(about.includes("version:'0.37.11'"),'about history must include 0.37.11');
 
 console.log('HEXATEGOS 0.37.11 active trade belts + map route destination smoke: OK');
