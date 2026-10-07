@@ -1,3 +1,37 @@
+HEXATEGOS 0.37.19 · PATRULLAS NAVALES PUERTO → MAR → PUERTO
+
+Visibilidad:
+- una flota con order === 'patrol' nunca dibuja su ruta;
+- se aplica por igual al jugador y a todas las IA;
+- la ruta sigue existiendo internamente para simulación y combate.
+
+Ciclo de patrulla:
+- buildLocalPatrolRoute03719 solo se ejecuta desde la salida marítima del puerto base;
+- la ida se genera con un máximo de 7 pasos locales;
+- la vuelta reutiliza exactamente la ida en sentido inverso;
+- primer y último nodo lógico = homeSea;
+- no se usa A* adicional para el regreso;
+- el ciclo siempre termina junto al mismo puerto del que salió.
+
+Anclaje visual al puerto:
+- en reposo de patrulla, el triángulo se dibuja sobre el puerto base;
+- al salir: puerto → homeSea → patrulla;
+- al volver: patrulla → homeSea → puerto;
+- la simulación sigue manteniendo g.cell sobre agua para no romper combate/pathfinding.
+
+Movimiento continuo:
+- visualVector03719 calcula la posición interpolada actual;
+- antes de cada tick se toma esa posición como origen del siguiente tramo;
+- no se reinicia visualmente desde la celda lógica anterior;
+- NAVAL_VISUAL_STEP_MS03719 = 1400, igual que el tick naval;
+- al acabar una patrulla se programa una breve estancia en puerto.
+
+Rendimiento:
+- sin timers nuevos;
+- sin A* adicional para patrullas;
+- máximo 7 pasos de ida + retorno inverso;
+- misma lógica para 150/250/350/500 naciones.
+
 HEXATEGOS 0.37.18 · SALIR DE VER EN MAPA
 
 Vista de ruta:
