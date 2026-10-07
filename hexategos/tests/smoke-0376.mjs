@@ -14,7 +14,7 @@ assert.ok(border.includes('const LINK_COST=12'),'border road must cost one minim
 assert.ok(border.includes("'border_road_0376','CONEXIÓN TERRESTRE'"),'context connection button missing');
 assert.ok(border.includes("'ADUANA · '+LINK_COST+' ORO · '"),'customs subtitle missing');
 assert.ok(border.includes('roads3212.push([a,b])'),'physical cross-border road segment missing');
-assert.ok(border.includes('links.add(key0376(a,b))'),'explicit customs/link registry missing');
+assert.ok(border.includes("links.add(k);linkModes.set(k,'legal')")||border.includes("links.add(key);linkModes.set(key,mode)"),'explicit customs/link registry missing');
 assert.ok(border.includes('createAI:createAILink0376'),'AI customs creation API missing');
 assert.ok(border.includes('if(f<=0||o<=0'),'AI must not auto-create player border customs');
 assert.ok(border.includes('payload.borderRoad0376'),'portable save persistence missing');
