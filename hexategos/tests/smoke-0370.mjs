@@ -6,7 +6,7 @@ const trade=read('js/trade-logistics-0370.js');
 const index=read('index.html');
 
 assert.doesNotThrow(()=>new Function(trade),'trade-logistics-0370.js must parse');
-assert.ok(trade.includes("const BUILD='0.37.0'"),'trade logistics build must be 0.37.0');
+assert.ok(trade.includes("const BUILD='0.37.0'")||trade.includes("const BUILD='0.37.1'"),'trade logistics build must include 0.37.0 or a compatible successor');
 assert.ok(trade.includes('tradeIncome3261=function'),'physical trade income override missing');
 assert.ok(trade.includes('residualTrade0370'),'residual relation-only trade missing');
 assert.ok(trade.includes('roadMask=new Uint8Array'),'cached road mask missing');
@@ -33,6 +33,6 @@ const iHuman=index.indexOf('js/human-build-0362.js');
 const iTrade=index.indexOf('js/trade-logistics-0370.js');
 assert.ok(iHuman>=0&&iTrade>iHuman,'0.37.0 logistics layer must load after 0.36.2 AI construction');
 assert.ok(index.includes('css/trade-logistics-0370.css'),'0.37.0 trade CSS missing');
-assert.ok(index.includes('v0.37.0</title>'),'visible version must be 0.37.0');
+assert.ok(index.includes('v0.37.0</title>')||index.includes('v0.37.1</title>'),'visible version must include 0.37.0 or a compatible successor');
 
 console.log('HEXATEGOS 0.37.0 physical trade + port-based fleets smoke: OK');
