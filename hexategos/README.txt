@@ -2,6 +2,7 @@ HEXATEGOS 0.37.8 · TRÁFICO, BARCOS Y FLOTAS POR COLOR NACIONAL
 
 Zoom:
 - los puntitos de tráfico terrestre y los pequeños barcos comerciales aparecen únicamente desde zoom 25;
+- los convoyes navales y las flotas militares aparecen desde zoom 15;
 - por debajo de zoom 25 no se dibuja ese tráfico fino, reduciendo carga y ruido visual;
 - las rutas marítimas pueden seguir viéndose antes porque su línea es una referencia estratégica de bajo coste.
 
@@ -11,6 +12,7 @@ Colores:
 - los pequeños barcos comerciales marítimos usan color nacional;
 - los convoyes de transporte usan color nacional;
 - las flotas militares usan color nacional;
+- su simulación sigue avanzando en ticks navales, pero la posición visible se interpola continuamente por el tramo recorrido, eliminando los saltos entre hexágonos;
 - desaparece la identificación genérica azul para jugador / roja para IA en los símbolos navales.
 
 Rutas marítimas:
