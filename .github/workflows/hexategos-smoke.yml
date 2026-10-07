@@ -82,3 +82,7 @@ jobs:
 
       - name: Run Hexategos 0.37.12 transport symbols smoke
         run: node hexategos/tests/smoke-03712.mjs
+
+
+      - name: Run Hexategos 0.37.13 domestic logistics and player traffic smoke
+        run: node hexategos/tests/smoke-03713.mjs
