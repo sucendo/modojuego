@@ -44,6 +44,12 @@
 
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const pair=(a,b)=>a<b?a+':'+b:b+':'+a;
+  const baseNavalHostile0371=navalHostile3270;
+  navalHostile3270=function(a,b){
+    if(a===b||a<0||b<0)return false;
+    if(typeof diplomaticRelation3300==='function')return diplomaticRelation3300(a,b)===-1;
+    return baseNavalHostile0371(a,b);
+  };
   const permitKey=(kind,a,b,via)=>kind+':'+pair(a,b)+':'+via;
 
   function tradeRelation0370(a,b){
@@ -449,10 +455,14 @@
     const own=portsByFaction[f]||[];
     if(!own.length)return null;
     const snap=ensureEconomySnapshot3261(false),out=[];
-    if(own.length>=2&&!routes.some(r=>r.type==='sea'&&r.status!=='closed'&&r.a===f&&r.b===f)){
+    const domesticCount=routes.filter(r=>r.type==='sea'&&r.status!=='closed'&&r.a===f&&r.b===f).length;
+    const domesticWanted=Math.min(2,Math.floor(own.length/2));
+    if(own.length>=2&&domesticCount<domesticWanted){
       let best=null,bestScore=1e9;
       for(let i=0;i<Math.min(8,own.length);i++)for(let j=i+1;j<Math.min(8,own.length);j++){
-        const from=own[i],to=own[j],d=angularHeuristic3254(from,to);
+        const from=own[i],to=own[j];
+        if(routeExists0370('sea',f,f,from,to))continue;
+        const d=angularHeuristic3254(from,to);
         const score=d-(cityLevel3230[from]||0)*.7-(cityLevel3230[to]||0)*.7-
           (industryLevel3230[from]||0)*.5-(industryLevel3230[to]||0)*.5;
         if(score<bestScore){bestScore=score;best={o:f,from,to,score:26-score*.05,domestic:true}}
