@@ -160,7 +160,6 @@
     if(typeof economyDirty3261!=='undefined')economyDirty3261=true;
     if(typeof aiSnapshotDirty3260!=='undefined')aiSnapshotDirty3260=true;
     if(typeof markEconomyDirty3261==='function')markEconomyDirty3261();
-    if(window.HexategosTradeLogistics0370?.refresh)window.HexategosTradeLogistics0370.refresh();
     if(selected?.key===MAX_GAME_LEVEL3233&&selected.i===cell&&typeof updatePanel==='function')updatePanel();
     return true;
   }
@@ -193,12 +192,14 @@
     const routes=tradeRoutes0373();
     const seaEndpoints=activeSeaEndpoints0373(routes);
     const roadConnected=roadCommunications0373(routes);
+    const removalsBefore=removals;
     let dirty=false;
     dirty=auditSet0373('city',cities3212,cityDecay,now,roadConnected,seaEndpoints)||dirty;
     dirty=auditSet0373('industry',industries3212,industryDecay,now,roadConnected,seaEndpoints)||dirty;
     dirty=auditSet0373('port',ports3212,portDecay,now,roadConnected,seaEndpoints)||dirty;
     lastAudit=now;audits++;lastAuditMs=performance.now()-t0;
     if(typeof markEconomyDirty3261==='function')markEconomyDirty3261();
+    if(removals>removalsBefore&&window.HexategosTradeLogistics0370?.refresh)window.HexategosTradeLogistics0370.refresh();
     if(dirty){save0373();needsRender=true}
     return dirty;
   }

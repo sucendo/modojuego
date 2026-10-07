@@ -28,6 +28,7 @@ assert.ok(decay.includes("filter:'grayscale"),'greyscale visual states missing')
 assert.ok(decay.includes('ctx.globalAlpha*=v.alpha'),'fade-to-transparent rendering missing');
 assert.ok(decay.includes('const baseEconomyTick0373=economyTick3212'),'existing simulation clock must be reused');
 assert.ok(!decay.includes('setInterval('),'0.37.3 must not add another periodic timer');
+assert.ok(decay.includes('const removalsBefore=removals'),'batched removal refresh guard missing');
 assert.ok(decay.includes('infrastructureDecay0373=serialize0373()'),'portable save extension missing');
 assert.ok(index.includes('v0.37.3</title>'),'visible version must be 0.37.3');
 assert.ok(index.indexOf('js/infrastructure-decay-0373.js')>index.indexOf('js/trade-logistics-0370.js'),'decay module must load after logistics');
