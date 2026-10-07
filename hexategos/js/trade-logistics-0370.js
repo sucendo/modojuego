@@ -9,6 +9,12 @@
   const MAX_ROUTES_PER_FACTION=4;
   const TRAFFIC_ZOOM=25;
 
+  // 0.37.10: velocidad visual expresada en hexágonos/segundo.
+  // La longitud total de la ruta deja de alterar la velocidad del vehículo.
+  const DOMESTIC_TRAFFIC_CELLS_PER_SECOND=.78;
+  const LAND_TRADE_CELLS_PER_SECOND=.92;
+  const SEA_TRADE_CELLS_PER_SECOND=.72;
+
   let routes=[];
   let nextRouteId=1;
   let permits=new Map();
@@ -53,6 +59,31 @@
   function routeDotFaction0378(r,d){
     if(r.a===r.b)return r.a;
     return ((r.id+d)&1)?r.a:r.b;
+  }
+
+  // Punto único para futuras tecnologías de transporte. Hoy todas devuelven 1.
+  // En el futuro un módulo tecnológico podrá exponer speedMultiplier(kind,faction).
+  function tradeSpeedMultiplier03710(kind,faction){
+    const api=window.HexategosTransportTechnology;
+    const v=Number(api?.speedMultiplier?.(kind,faction));
+    return Number.isFinite(v)&&v>0?clamp(v,.35,3):1;
+  }
+
+  function domesticTravelPhase03710(d,k,now){
+    const distance=Math.max(2,d?.path?.length||2);
+    const speed=DOMESTIC_TRAFFIC_CELLS_PER_SECOND*tradeSpeedMultiplier03710('land',d.faction);
+    const offset=(((d.seed||0)*17+k*43)%997)/997*distance;
+    let phase=((now*.001*speed+offset)%distance)/distance;
+    if(((d.seed||0)+k)&1)phase=1-phase;
+    return phase;
+  }
+
+  function routeTravelPhase03710(r,d,now,visualLength,faction){
+    const distance=Math.max(2,Number(r.distance)||visualLength||2);
+    const base=r.type==='sea'?SEA_TRADE_CELLS_PER_SECOND:LAND_TRADE_CELLS_PER_SECOND;
+    const speed=base*tradeSpeedMultiplier03710(r.type,faction);
+    const offset=((r.id*37+d*53)%997)/997*distance;
+    return ((now*.001*speed+offset)%distance)/distance;
   }
   const baseNavalHostile0371=navalHostile3270;
   navalHostile3270=function(a,b){
@@ -1162,11 +1193,10 @@
       if(!path||path.length<2)continue;
       const dots=d.anchors>=2&&path.length>7?2:1;
       for(let k=0;k<dots&&trafficDrawn<maxDots;k++){
-        let phase=((now*.000075+d.seed*.013+k/dots)%1+1)%1;
-        if((d.seed+k)&1)phase=1-phase;
+        const phase=domesticTravelPhase03710(d,k,now);
         const p=projectedAlongCells0371(path,phase,C,R,cx,cy);
         if(!pointVisible0378(p))continue;
-        ctx.beginPath();ctx.arc(p[0],p[1],zoom>32?1.85:1.55,0,Math.PI*2);
+        ctx.beginPath();ctx.arc(p[0],p[1],zoom>32?2.20:1.90,0,Math.PI*2);
         ctx.fillStyle=factionTrafficColor0378(d.faction);ctx.fill();
         ctx.lineWidth=.6;ctx.strokeStyle='rgba(245,250,255,.78)';ctx.stroke();
         trafficDrawn++;
@@ -1180,14 +1210,14 @@
       seen++;
       const dots=Math.max(1,Math.min(3,Math.round((r.lastValue||r.baseValue||.2)*1.35)));
       for(let d=0;d<dots&&trafficDrawn<maxDots;d++){
-        const phase=((now*.000055*(r.type==='sea'?.72:1)+r.id*.173+d/dots)%1+1)%1;
+        const faction=routeDotFaction0378(r,d);
+        const phase=routeTravelPhase03710(r,d,now,visual.length,faction);
         const p=projectedAlongCells0371(visual,phase,C,R,cx,cy);
         if(!pointVisible0378(p))continue;
-        const faction=routeDotFaction0378(r,d);
         const color=factionTrafficColor0378(faction);
         if(r.type==='sea'){
           // Tiny commercial ship, coloured by the nation operating it.
-          const rr=zoom>32?2.25:1.85;
+          const rr=zoom>32?2.85:2.35;
           ctx.beginPath();
           ctx.moveTo(p[0],p[1]-rr);
           ctx.lineTo(p[0]+rr*.72,p[1]+rr*.75);
@@ -1195,7 +1225,7 @@
           ctx.closePath();ctx.fillStyle=color;ctx.fill();
           ctx.lineWidth=.55;ctx.strokeStyle='rgba(2,10,16,.88)';ctx.stroke();
         }else{
-          ctx.beginPath();ctx.arc(p[0],p[1],faction===0?1.65:1.35,0,Math.PI*2);
+          ctx.beginPath();ctx.arc(p[0],p[1],zoom>32?2.20:1.85,0,Math.PI*2);
           ctx.fillStyle=color;ctx.fill();
           ctx.lineWidth=.55;ctx.strokeStyle='rgba(245,250,255,.76)';ctx.stroke();
         }
@@ -1207,13 +1237,12 @@
 
   const baseDrawFleets0372=drawFleetsSea3261;
   drawFleetsSea3261=function(R,cx,cy,now,C){
+    // 0.37.10: una patrulla se mueve, pero su ruta NO se dibuja.
     const changed=[];
     for(const g of navalGroups3270){
       if(g.order!=='patrol'||!Array.isArray(g.route)||!g.route.length)continue;
-      const oldRoute=g.route,oldPos=g.routePos||0;
-      const immediate=[g.cell,...oldRoute.slice(oldPos,oldPos+3)].filter((v,i,a)=>i===0||v!==a[i-1]);
-      changed.push([g,oldRoute,oldPos]);
-      g.route=immediate;g.routePos=0;
+      changed.push([g,g.route,g.routePos||0]);
+      g.route=null;g.routePos=0;
     }
     try{return baseDrawFleets0372.apply(this,arguments)}
     finally{
@@ -1371,6 +1400,11 @@
     version:BUILD,stats:stats0370,validate:validate0370,
     routes:()=>routes,
     roadComponent:(cell)=>{rebuildRoadGraph0370(false);return Number.isInteger(cell)&&cell>=0&&roadComp&&cell<roadComp.length?roadComp[cell]:-1},
+    visualSpeed:(kind,faction)=>({
+      cellsPerSecond:(kind==='sea'?SEA_TRADE_CELLS_PER_SECOND:LAND_TRADE_CELLS_PER_SECOND)*
+        tradeSpeedMultiplier03710(kind,Number(faction)||0),
+      multiplier:tradeSpeedMultiplier03710(kind,Number(faction)||0)
+    }),
     ensureLandRoute:(a,b)=>{
       a=Number(a);b=Number(b);
       if(!Number.isInteger(a)||!Number.isInteger(b)||a<0||b<0||a===b)return null;
