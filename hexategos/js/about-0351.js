@@ -4,10 +4,26 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.37.4',
+      date:'Octubre 2026',
+      title:'Retirada manual de carreteras',
+      current:true,
+      summary:'Las carreteras propias pueden abandonarse directamente desde el hexágono para cortar la red viaria y provocar aislamiento logístico de forma deliberada.',
+      changes:[
+        'Al seleccionar un hexágono propio atravesado por carretera aparece ABANDONAR CARRETERA.',
+        'La acción elimina todos los tramos de carretera que llegan al hexágono seleccionado y no devuelve oro.',
+        'Si el hexágono era un nudo de varias carreteras, el corte afecta a todas las conexiones que pasan por ese punto y conserva los tramos válidos a ambos lados.',
+        'La red viaria, suministro, comercio, economía y planificación IA se invalidan y recalculan inmediatamente.',
+        'El sistema de degradación 0.37.3 se audita tras el corte, de modo que una ciudad, industria o puerto recién aislado empieza su ciclo normal de degradación.',
+        'La representación sigue usando la misma estructura roads3212, por lo que el cambio queda guardado con total compatibilidad con las partidas existentes.',
+        'No se añade ningún temporizador ni recorrido del mapa completo: la retirada solo procesa las rutas de carretera cuando el jugador ejecuta la acción.'
+      ]
+    },
+    {
       version:'0.37.3',
       date:'Octubre 2026',
       title:'Degradación y abandono por aislamiento',
-      current:true,
+      current:false,
       summary:'Ciudades, industrias y puertos necesitan comunicaciones reales: si quedan aislados pierden actividad, se vuelven grises, se abandonan y finalmente desaparecen.',
       changes:[
         'Una infraestructura aislada dispone de 60 segundos de campaña de margen antes de empezar a degradarse.',
