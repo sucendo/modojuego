@@ -4,10 +4,27 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.37.12',
+      date:'Octubre 2026',
+      title:'Simbología clara de transportes',
+      current:true,
+      summary:'La forma del marcador identifica de inmediato el tipo de unidad o tráfico, independientemente de su nación.',
+      changes:[
+        'Todo transporte comercial se representa mediante puntos circulares.',
+        'Los camiones y el tráfico comercial terrestre mantienen su representación como puntos.',
+        'Los barcos comerciales pasan de triángulos a puntos circulares.',
+        'Los transportes de tropas permanecen como rombos.',
+        'Las flotas militares permanecen como triángulos.',
+        'Los colores continúan identificando la nación propietaria u operadora.',
+        'Las rutas marítimas comerciales siguen diferenciándose mediante su línea azul clara discontinua.',
+        'No cambia ninguna lógica de simulación, velocidad, comercio, navegación ni rendimiento.'
+      ]
+    },
+    {
       version:'0.37.11',
       date:'Octubre 2026',
       title:'Franjas comerciales maduras y destino de rutas en el mapa',
-      current:true,
+      current:false,
       summary:'Las rutas terrestres activas siguen consolidando territorio y generando desarrollo; las rutas comerciales marítimas del jugador eligen su puerto de destino directamente sobre el mapa y los marcadores comerciales ganan mucha más presencia.',
       changes:[
         'Una IA ya no deja de consolidar un corredor cuando la ruta terrestre entra en estado activo.',
