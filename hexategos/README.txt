@@ -1,3 +1,72 @@
+HEXATEGOS 0.37.20 · ECONOMÍA MATERIAL FÍSICA
+
+RECURSOS
+- alimentos
+- materias primas
+- energía / combustible
+- bienes industriales
+- material militar
+
+Nodos:
+- capital
+- ciudad
+- industria
+- puerto
+- extremo logístico de ruta cuando sea necesario
+- NO hay inventario por cada hexágono
+
+Producción y consumo:
+- el territorio genera alimentos, materias primas y energía de forma agregada;
+- esa producción se deposita entre los nodos logísticos nacionales;
+- las ciudades consumen alimentos, combustible y bienes;
+- las industrias consumen materias primas y combustible;
+- las industrias producen bienes industriales y material militar según disponibilidad de inputs;
+- capitales y puertos añaden capacidad y demanda estratégica.
+
+Logística interior:
+- resourceRoadComp03720 enlaza cada nodo a la red viaria;
+- redistributeRoadResources03720 redistribuye de forma limitada dentro de cada componente;
+- el stock total se conserva durante la redistribución;
+- no hay pathfinding adicional por mercancía.
+
+Rutas:
+- transferRouteResources03720 mueve excedentes hacia déficits;
+- cada ruta registra cargo por los cinco recursos;
+- la capacidad depende de tipo de ruta, valor base y factor operativo;
+- bloqueos, riesgos y permisos siguen afectando al caudal;
+- el valor monetario incorpora materialFactor03720;
+- el gestor muestra la carga real de cada ruta;
+- la intensidad visual de los puntos comerciales usa cargo real cuando existe.
+
+Efectos:
+- resourceNation03720 calcula cobertura nacional;
+- alimentos, materias, combustible y bienes afectan al factor económico;
+- alimentos, combustible, bienes y material militar afectan al reclutamiento;
+- se aplica por igual a jugador e IA.
+
+Persistencia:
+- resources03720.version = 1;
+- se guardan stocks exactos de nodos del jugador;
+- se guarda cobertura agregada de todas las naciones;
+- partidas antiguas sin resources03720 inicializan stocks de forma segura;
+- el formato de rutas existente sigue siendo compatible.
+
+PATRULLAS 0.37.20
+- al ordenar Patrulla se limpia cualquier espera Infinity heredada;
+- una patrulla de IA también recupera automáticamente un patrolNext válido;
+- excursión local ampliada de 7 a 9 pasos de ida;
+- se mantiene retorno inverso exacto al puerto;
+- no se muestran líneas de patrulla;
+- triángulo naval ligeramente mayor, similar al punto comercial marítimo.
+
+Rendimiento:
+- resourceTick03720 se ejecuta dentro del tick comercial existente;
+- sin timers nuevos;
+- nodos sparse;
+- sin simulación por hexágono;
+- sin A* por recurso;
+- mismo límite global de puntos comerciales.
+
 HEXATEGOS 0.37.19 · PATRULLAS NAVALES PUERTO → MAR → PUERTO
 
 Visibilidad:
