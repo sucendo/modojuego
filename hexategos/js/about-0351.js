@@ -7,7 +7,7 @@
       version:'0.37.8',
       date:'Octubre 2026',
       title:'Tráfico, barcos y flotas con identidad nacional',
-      current:true,
+      current:false,
       summary:'El tráfico y las unidades navales usan el color real de cada nación; los puntitos aparecen solo desde zoom 25 y las rutas marítimas conservan la línea azul claro discontinua.',
       changes:[
         'Los puntitos de tráfico terrestre aparecen únicamente a partir de zoom 25.',
