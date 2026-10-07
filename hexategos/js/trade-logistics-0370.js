@@ -681,6 +681,34 @@
     return true;
   }
 
+  function nearestPortScreen03715(x,y){
+    if(!ports3212?.size)return -1;
+    const L=loadLevel(MAX_GAME_LEVEL3233),C=L.centers,R=baseRadius(),cx=vw/2,cy=vh/2;
+    let best=-1,bd=Math.max(22,Math.min(34,18+zoom*.35));
+    bd*=bd;
+    for(const port of ports3212){
+      const j=port*3,p=projectVec(C[j]/32767,C[j+1]/32767,C[j+2]/32767,R,cx,cy);
+      if(p[2]<.035)continue;
+      const dx=p[0]-x,dy=p[1]-y,d=dx*dx+dy*dy;
+      if(d<bd){bd=d;best=port}
+    }
+    return best;
+  }
+
+  // En modo comercial, prioriza el icono/hexágono exacto del puerto sobre
+  // la selección genérica del LOD. Esto evita caer en la casilla vecina.
+  const basePick03715=pick;
+  pick=function(x,y){
+    if(uiInteractionState3244.interactionMode==='select_trade_route_target'){
+      const port=nearestPortScreen03715(x,y);
+      if(port>=0){
+        handleInteractionTarget3244(port);
+        return;
+      }
+    }
+    return basePick03715.apply(this,arguments);
+  };
+
   const baseHandleInteractionTarget03714=handleInteractionTarget3244;
   handleInteractionTarget3244=function(cell){
     if(uiInteractionState3244.interactionMode!=='select_trade_route_target')
