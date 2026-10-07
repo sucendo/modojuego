@@ -1,3 +1,49 @@
+HEXATEGOS_0_37_20
+
+Economía material:
+- RESOURCE_KEYS03720
+- resourceNodes03720
+- resourceNation03720
+- resourceNodeProfile03720
+- ensureResourceNodes03720
+- redistributeRoadResources03720
+- transferRouteResources03720
+- summarizeResources03720
+- resourceTick03720
+- resourceSummary03720
+- routeCargoText03720
+
+Recursos:
+- food
+- raw
+- fuel
+- goods
+- military
+
+Persistencia:
+- resources03720
+- playerNodes
+- nationCoverage
+- compatible con saves previos
+
+Impacto económico:
+- materialEconomyFactor
+- materialRecruitFactor
+- economyRate3230 = territorialEconomy3261 actualizado
+
+Patrullas:
+- patrolNext Infinity corregido
+- 9 pasos de ida
+- mismo regreso inverso
+- triángulo naval mayor
+
+Pruebas:
+- tests/smoke-03720.mjs
+
+Rama de seguridad:
+- backup/hexategos-0.37.19-before-resource-economy-03720
+
+--- MANIFEST ANTERIOR ---
 HEXATEGOS_0_37_19
 
 Patrulla:
