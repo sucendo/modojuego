@@ -4,10 +4,29 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.37.5',
+      date:'Octubre 2026',
+      title:'IA civil y comercio físico entre naciones',
+      current:true,
+      summary:'Las IA recuperan un desarrollo civil continuo y convierten los tratados comerciales en carreteras y rutas físicas reales, incluso cuando deben encontrarse en una frontera.',
+      changes:[
+        'La diplomacia recibe un microturno garantizado cada pocos segundos de campaña y ya no depende de que sobre tiempo del scheduler militar.',
+        'Los acuerdos de comercio, no agresión y alianza mantienen derechos comerciales dentro del modelo diplomático de estado único.',
+        'Una IA con tratado comercial detecta la frontera con su socio y puede prolongar su carretera hasta un paso común.',
+        'Si el jugador lleva una carretera hasta la frontera de un socio comercial, la IA prioriza encontrarse con esa carretera desde su lado.',
+        'Dos IA comerciales eligen de forma determinista un paso fronterizo compatible y convergen hacia él sin crear rutas mágicas.',
+        'Cuando ambas redes quedan físicamente unidas se intenta crear inmediatamente la ruta terrestre comercial real.',
+        'Antes de abrir nueva infraestructura, la IA intenta reconectar ciudades, industrias o puertos propios que hayan quedado sin carretera.',
+        'Un watchdog civil solo actúa si una nación lleva unos 30 segundos de campaña sin progresar pese a tener déficit y recursos, relajando moderadamente los criterios de emplazamiento.',
+        'El watchdog evita conteos globales en cada servicio: el diagnóstico más caro solo se ejecuta en IA realmente estancadas.',
+        'No se añade ningún temporizador nuevo; se reutilizan el tick económico, el scheduler IA y las cachés existentes.'
+      ]
+    },
+    {
       version:'0.37.4',
       date:'Octubre 2026',
       title:'Retirada manual de carreteras',
-      current:true,
+      current:false,
       summary:'Las carreteras propias pueden abandonarse directamente desde el hexágono para cortar la red viaria y provocar aislamiento logístico de forma deliberada.',
       changes:[
         'Al seleccionar un hexágono propio atravesado por carretera aparece ABANDONAR CARRETERA.',
