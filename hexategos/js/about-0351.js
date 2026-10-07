@@ -4,10 +4,30 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.37.14',
+      date:'Octubre 2026',
+      title:'Selector comercial nativo y camiones origen-destino',
+      current:true,
+      summary:'La selección de destino comercial se integra en el modo nativo del mapa y el tráfico por carretera deja de recorrer tramos aislados para representar viajes completos entre nodos logísticos.',
+      changes:[
+        'RUTA COMERCIAL usa ahora el mismo interactionMode nativo que carreteras y transporte de tropas.',
+        'El clic de destino se procesa directamente por handleInteractionTarget3244, sin observar cambios secundarios de updatePanel.',
+        'Una casilla inválida mantiene activo el modo de selección y explica el motivo.',
+        'Un puerto válido crea la ruta, cancela el modo de destino y conserva toda la lógica de tránsito y permisos.',
+        'Los camiones domésticos ya no se generan a partir de cada array independiente de roads3212.',
+        'Se identifican capitales, ciudades, industrias y puertos como nodos logísticos reales.',
+        'Los nodos que comparten red viaria se conectan mediante caminos completos calculados sobre el grafo de carreteras.',
+        'Los puntos comerciales recorren la ruta completa origen-destino atravesando todos los tramos necesarios.',
+        'La nación del jugador mantiene prioridad visual y más rutas completas dentro del presupuesto.',
+        'Las IA usan el mismo modelo origen-destino de forma acotada para proteger el rendimiento.',
+        'No se añaden nuevos timers ni aumenta el presupuesto global de puntos.'
+      ]
+    },
+    {
       version:'0.37.13',
       date:'Octubre 2026',
       title:'Logística interior y tráfico propio visible',
-      current:true,
+      current:false,
       summary:'Las rutas marítimas entre puertos propios funcionan como puentes de suministro y el tráfico doméstico del jugador deja de quedar oculto por el volumen de tráfico de cientos de IA.',
       changes:[
         'Las rutas marítimas pueden seguir creándose entre dos puertos de la misma nación.',
