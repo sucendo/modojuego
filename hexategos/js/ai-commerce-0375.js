@@ -22,7 +22,7 @@
 
   function tradeRelation0375(a,b){
     const r=diplomaticRelation3300(a,b);
-    return r===1||r===3;
+    return r===1||r===2||r===3;
   }
 
   function tradePartners0375(f){
@@ -220,7 +220,7 @@
       if(owner6[c]!==f||cities3212.has(c)||encircledMask3254?.[c]||aiEnemyNeighbours3260(f,c)>0)continue;
       const tk=terrainKey3250(c);if(tk==='ice'||tk==='highmountain')continue;
       let d=999;
-      for(const x of cities3212)if(owner6[x]===f)d=Math.min(d,angularHeuristic3254(c,x));
+      for(const x of aiSnapshot3260?.cities?.[f]||[])d=Math.min(d,angularHeuristic3254(c,x));
       if(d<2.2)continue;
       const supply=aiLocalSupply3260(f,c);if(supply<25)continue;
       let sc=supply*.05+Math.min(5,d*.22)+aiRoadDegree3260(c)*2.2;
@@ -247,7 +247,7 @@
     for(const c of pool){
       if(industryLevel3230[c]>0||encircledMask3254?.[c]||aiEnemyNeighbours3260(f,c)>0)continue;
       const supply=aiLocalSupply3260(f,c);if(supply<28)continue;
-      let d=999;for(const x of industries3212)if(owner6[x]===f)d=Math.min(d,angularHeuristic3254(c,x));
+      let d=999;for(const x of aiSnapshot3260?.industries?.[f]||[])d=Math.min(d,angularHeuristic3254(c,x));
       if(d<1.8)continue;
       const sc=supply*.055+aiRoadDegree3260(c)*1.9+(cityLevel3230[c]||0)*2.2+(ports3212.has(c)?1.2:0)+Math.min(3,d*.18);
       if(sc>bestScore){bestScore=sc;best=c}
