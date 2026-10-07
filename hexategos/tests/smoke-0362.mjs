@@ -20,6 +20,6 @@ assert.ok(human.includes('live.industries<targets.targetIndustries'),'live indus
 const iPerf=index.indexOf('js/performance-0361.js');
 const iHuman=index.indexOf('js/human-build-0362.js');
 assert.ok(iPerf>=0&&iHuman>iPerf,'0.36.2 construction layer must load after 0.36.1 performance layer');
-assert.ok(index.includes('v0.36.2</title>')||index.includes('v0.37.0</title>'),'visible version must include 0.36.2 construction or a compatible successor');
+assert.ok(index.includes('v0.36.2</title>')||index.includes('v0.37.0</title>')||index.includes('v0.37.1</title>'),'visible version must include 0.36.2 construction or a compatible successor');
 
 console.log('HEXATEGOS 0.36.2 human-like AI construction smoke: OK');
