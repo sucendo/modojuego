@@ -1,3 +1,19 @@
+HEXATEGOS 0.37.4 · RETIRADA MANUAL DE CARRETERAS
+
+Cambios:
+- al seleccionar un hexágono propio que ya contiene carretera aparece la acción ABANDONAR CARRETERA;
+- al confirmarla se eliminan los tramos viarios que llegan a ese hexágono, sin devolución de oro;
+- si la carretera atraviesa el hexágono, la ruta queda partida y se conservan automáticamente los subtramos válidos a cada lado;
+- si varias carreteras confluyen en el mismo punto, se eliminan todas las conexiones incidentes a ese hexágono;
+- el suministro, comercio físico, economía y cachés de IA se recalculan de inmediato;
+- el sistema de degradación 0.37.3 vuelve a auditar las comunicaciones para que cualquier núcleo recién aislado inicie su proceso normal;
+- la modificación se persiste dentro de la misma colección roads3212, por lo que no cambia el formato de guardado ni rompe partidas anteriores.
+
+Rendimiento:
+- la acción solo recorre las rutas existentes en el momento de abandonar una carretera;
+- no se añade ningún setInterval ni cálculo por frame;
+- el resto del tiempo el coste es cero.
+
 HEXATEGOS 0.37.3 · DEGRADACIÓN, ABANDONO Y DESAPARICIÓN POR AISLAMIENTO
 
 Objetivo:
