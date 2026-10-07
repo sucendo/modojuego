@@ -1,3 +1,24 @@
+HEXATEGOS 0.37.1 · TRÁFICO INTERIOR Y MOVIMIENTO NAVAL VISIBLE
+
+Cambios principales:
+- el tráfico interior ya se ve sobre carreteras propias aunque todavía no exista comercio exterior;
+- los puntos se mueven suavemente por la red y aparecen con zoom cercano;
+- la selección prioriza corredores propios con ciudad, industria, capital o puerto, pero mantiene circulación en el resto de la red conectada;
+- los puertos de una misma nación pueden abrir rutas comerciales marítimas interiores;
+- el comercio marítimo interior aporta menos que una ruta exterior equivalente;
+- las líneas marítimas terminan exactamente en los puertos, no en el hexágono de mar adyacente;
+- las IA pueden abrir también rutas interiores entre sus propios puertos;
+- una flota en patrulla recorre un circuito corto alrededor de su puerto-base y regresa;
+- una flota en intercepción persigue transportes enemigos y, si no encuentra uno, realiza una salida hacia zona enemiga y vuelve;
+- la hostilidad naval respeta el estado diplomático real.
+
+Rendimiento:
+- el tráfico terrestre interior se obtiene de una caché y no se reconstruye en cada frame;
+- los corredores visibles y los puntos tienen topes adaptativos según dispositivo/detalle;
+- la patrulla local usa pasos vecinos de mar y evita A* global;
+- las salidas de intercepción limitan la búsqueda marítima nueva a una por intervalo y reutilizan el camino inverso para volver;
+- se mantienen los límites de rutas y el scheduler por lotes de 0.37.0.
+
 HEXATEGOS 0.37.0 · RUTAS FÍSICAS, TRÁNSITO Y PUERTOS-BASE
 
 Objetivo:
