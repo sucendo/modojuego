@@ -23,7 +23,7 @@ assert.ok(!eco.includes('setInterval('),'0.37.9 must not add another periodic ti
 
 assert.ok(geo.includes('HexategosEconomicCorridors0379?.prepare?.(a,b,sa,sb)'),
   '0.37.7 corridor service must delegate consolidation/development to 0.37.9');
-assert.ok(index.includes('v0.37.9</title>')||index.includes('v0.37.10</title>')||index.includes('v0.37.11</title>')||index.includes('v0.37.12</title>')||index.includes('v0.37.13</title>')||index.includes('v0.37.14</title>')||index.includes('v0.37.15</title>')||index.includes('v0.37.16</title>')||index.includes('v0.37.17</title>')||index.includes('v0.37.18</title>'),'visible version must be 0.37.9 or compatible successor');
+assert.ok(index.includes('v0.37.9</title>')||index.includes('v0.37.10</title>')||index.includes('v0.37.11</title>')||index.includes('v0.37.12</title>')||index.includes('v0.37.13</title>')||index.includes('v0.37.14</title>')||index.includes('v0.37.15</title>')||index.includes('v0.37.16</title>')||index.includes('v0.37.17</title>')||index.includes('v0.37.18</title>')||index.includes('v0.37.19</title>'),'visible version must be 0.37.9 or compatible successor');
 assert.ok(index.indexOf('js/economic-corridors-0379.js')>index.indexOf('js/national-visuals-0378.js'),
   '0.37.9 must load after 0.37.8');
 assert.ok(about.includes("version:'0.37.9'"),'about history must include 0.37.9');
