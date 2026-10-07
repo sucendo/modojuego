@@ -25,7 +25,7 @@ assert.ok(trade.includes('g.route=null;g.routePos=0'),'legacy patrol route must 
 assert.ok(visuals.includes("if(g.order==='patrol')return null"),'national patrol route must be hidden');
 assert.ok(!visuals.includes('oldRoute.slice(oldPos,oldPos+3)'),'patrol route segment must not be rendered by national layer');
 
-assert.ok(index.includes('v0.37.10</title>')||index.includes('v0.37.11</title>')||index.includes('v0.37.12</title>')||index.includes('v0.37.13</title>'),'visible version must be 0.37.10 or compatible successor');
+assert.ok(index.includes('v0.37.10</title>')||index.includes('v0.37.11</title>')||index.includes('v0.37.12</title>')||index.includes('v0.37.13</title>')||index.includes('v0.37.14</title>'),'visible version must be 0.37.10 or compatible successor');
 assert.ok(about.includes("version:'0.37.10'"),'about history must include 0.37.10');
 
 console.log('HEXATEGOS 0.37.10 traffic size + constant commercial speed smoke: OK');
