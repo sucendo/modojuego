@@ -48,7 +48,7 @@ assert.ok(trade.includes("const full=findSeaPathCells3270(s,g)"),'continuous mar
 assert.ok(trade.includes('routes.push(r);markTradeDirty0370()'),'route persistence/cache insertion missing');
 assert.ok(trade.includes('saveGame3212();renderSystems3220();needsRender=true'),'player route must save and render');
 
-assert.ok(index.includes('v0.37.16</title>')||index.includes('v0.37.17</title>')||index.includes('v0.37.18</title>'),'visible version must be 0.37.16');
+assert.ok(index.includes('v0.37.16</title>')||index.includes('v0.37.17</title>')||index.includes('v0.37.18</title>')||index.includes('v0.37.19</title>'),'visible version must be 0.37.16');
 assert.ok(about.includes("version:'0.37.16'"),'about history must include 0.37.16');
 
 console.log('HEXATEGOS 0.37.16 final-controller commercial route smoke: OK');
