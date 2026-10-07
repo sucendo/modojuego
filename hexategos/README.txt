@@ -1,3 +1,44 @@
+HEXATEGOS 0.37.7 · CORREDORES COMERCIALES GEOPOLÍTICOS
+
+Principio:
+Una relación comercial ya no es solo un modificador diplomático. Si dos IA quieren comerciar pero todavía no existe conexión física, intentan crearla dentro del propio mundo.
+
+Espacio libre:
+- si entre una IA y su socio existe territorio neutral útil, la IA puede orientar su expansión hacia ese corredor;
+- cada servicio solo intenta conquistar un hexágono neutral, usando tropas y probabilidad de éxito similares a la expansión normal;
+- si la carretera ya llega al frente de expansión y dispone de oro, se prolonga sobre el nuevo territorio;
+- por tanto el corredor aparece poco a poco en el mapa y no de golpe.
+
+Terceros países:
+- cuando el camino razonable atraviesa uno o varios Estados, se busca una cadena fronteriza de hasta cinco países;
+- cada país intermedio debe conceder permiso de tránsito;
+- la solicitud utiliza opinión, confianza y relaciones diplomáticas reales;
+- si el permiso se concede, se construye el corredor físico por el territorio intermedio;
+- las carreteras interiores y las conexiones/aduanas fronterizas siguen siendo objetos físicos reales;
+- el solicitante puede financiar la infraestructura acordada de tránsito.
+
+Negativa:
+1. se registra la negativa y se deterioran gradualmente opinión y confianza;
+2. se busca una alternativa geográfica por otros países;
+3. si no existe, una IA oportunista/agresiva puede intentar contrabando;
+4. el contrabando solo funciona si ya hay una red viaria utilizable: no crea carreteras completas a escondidas;
+5. varias negativas pueden romper relaciones cooperativas;
+6. tras una escalada prolongada, una IA agresiva con superioridad suficiente puede declarar la guerra al Estado bloqueador.
+
+Seguridad diplomática:
+- esta escalada automática de corredores solo opera entre IA;
+- el jugador no recibe una guerra automática desde este módulo;
+- las relaciones del jugador siguen pasando por el sistema diplomático normal.
+
+Rendimiento:
+- el servicio de corredor está escalonado por nación;
+- cada IA lo revisa aproximadamente cada 17 segundos de campaña;
+- se evalúan como máximo cinco socios en una revisión;
+- la búsqueda de países vecinos usa las muestras de frontera ya cacheadas por la IA;
+- la profundidad máxima del recorrido entre Estados es cinco;
+- solo se ejecuta una obra, conquista o conexión relevante por servicio;
+- no existe un nuevo setInterval.
+
 HEXATEGOS 0.37.6 · CONEXIÓN TERRESTRE / ADUANA FRONTERIZA
 
 Regla:
