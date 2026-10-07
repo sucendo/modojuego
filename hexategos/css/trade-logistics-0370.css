@@ -36,3 +36,18 @@
  .tradeRouteHead03717{align-items:flex-start}
  .tradeRouteHead03717>b{white-space:normal}
 }
+
+
+/* HEXATEGOS 0.37.20 · economía material */
+.resourceEconomy03720{display:grid;gap:8px}
+.resourceGrid03720{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}
+.resourceGrid03720>span{display:grid;gap:3px;min-width:0;padding:6px;border:1px solid rgba(142,177,202,.14);border-radius:7px;background:rgba(255,255,255,.025)}
+.resourceGrid03720 b{font-size:8.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.resourceGrid03720 i{display:block;height:5px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden}
+.resourceGrid03720 i>em{display:block;height:100%;border-radius:inherit;background:currentColor;opacity:.72}
+.resourceGrid03720 small{font-size:7.5px!important;opacity:.62!important;white-space:nowrap}
+.tradeCargo03720{color:#c7e6f3!important;opacity:.9!important}
+@media (max-width:880px){
+ .resourceGrid03720{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .resourceGrid03720>span:last-child{grid-column:1/-1}
+}
