@@ -1,3 +1,14 @@
+HEXATEGOS 0.37.2 · TRÁFICO TERRESTRE VISIBLE Y PATRULLA LIMPIA
+
+Cambios:
+- los puntos de tráfico terrestre propio usan el color del jugador;
+- el tráfico terrestre se muestra desde un zoom más cercano y con un tamaño/contorno algo más visible;
+- las rutas terrestres comerciales del jugador mantienen ese mismo color;
+- las carreteras se han estrechado ligeramente;
+- las flotas en patrulla siguen recorriendo su zona, pero solo muestran en pantalla el siguiente tramo inmediato de su ruta;
+- el recorrido completo sigue existiendo internamente para el movimiento, pero no se dibuja entero;
+- se conservan los topes de puntos y la caché de tráfico de 0.37.1.
+
 HEXATEGOS 0.37.1 · TRÁFICO INTERIOR Y MOVIMIENTO NAVAL VISIBLE
 
 Cambios principales:
