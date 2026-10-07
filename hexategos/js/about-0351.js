@@ -4,10 +4,27 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.37.1',
+      date:'Octubre 2026',
+      title:'Tráfico interior y movimiento naval visible',
+      current:true,
+      summary:'Las carreteras propias muestran circulación incluso antes de abrir comercio exterior, los puertos de una misma nación pueden enlazarse por mar y las flotas patrullan e interceptan de forma visible y coherente.',
+      changes:[
+        'El tráfico terrestre interior aparece sobre las carreteras propias que conectan la red de ciudades, industrias, capital y puertos.',
+        'Los puntos de tráfico se interpolan suavemente entre hexágonos y solo se dibujan con zoom cercano, con límites adaptativos para proteger el rendimiento.',
+        'Dos puertos propios pueden abrir una ruta comercial marítima interior, con un valor menor que el comercio exterior.',
+        'Las rutas marítimas visuales empiezan y terminan en el propio icono/hexágono del puerto, no en la loseta de mar adyacente.',
+        'Las IA también pueden abrir rutas marítimas interiores entre sus puertos, dentro de los mismos límites de rutas.',
+        'Patrulla hace que la flota recorra un circuito corto alrededor de su puerto-base y vuelva, sin usar búsquedas A* globales.',
+        'Interceptar busca transportes enemigos; si no hay uno cerca, la flota realiza una salida hacia una zona enemiga y regresa a su base.',
+        'Las salidas de intercepción reutilizan la ruta de vuelta y limitan las búsquedas marítimas nuevas a una por intervalo naval.',
+        'La hostilidad naval entre IA respeta ahora el estado diplomático real: una zona enemiga es una nación en guerra.'
+      ]
+    },
+    {
       version:'0.37.0',
       date:'Octubre 2026',
       title:'Rutas físicas y puertos-base',
-      current:true,
       summary:'El comercio deja de ser principalmente abstracto: los ingresos importantes necesitan rutas terrestres o marítimas reales, mientras que cada flota pertenece a un puerto-base concreto y puede trasladarse a otro.',
       changes:[
         'Las relaciones comerciales por sí solas mantienen un intercambio residual, pero el enriquecimiento importante exige infraestructura física.',
@@ -262,7 +279,7 @@
         '<header class="aboutHead0351">'+
           '<div class="aboutHeadText0351">'+
             '<h2 id="aboutTitle0351">ACERCA DE HEXATEGOS</h2>'+
-            '<p>Global Geopolitical Strategy · versión 0.37.0</p>'+
+            '<p>Global Geopolitical Strategy · versión 0.37.1</p>'+
           '</div>'+
           '<button id="aboutClose0351" class="aboutClose0351" type="button" aria-label="Cerrar">×</button>'+
         '</header>'+
