@@ -1,3 +1,29 @@
+HEXATEGOS_0_36_1
+
+Rendimiento 500 naciones:
+- scheduler IA con presupuesto temporal adaptativo
+- rotación justa y trabajo diferido
+- conteos territoriales desde snapshots compartidos
+- condición de victoria sin barridos por nación
+- guerra/comercio desde red diplomática activa
+- desgaste de guerra sin hot loop cuadrático repetido
+- snapshot económico coalescido
+- caché LOD sin asignaciones de contador por celda
+- refresco diplomático DOM limitado
+
+Módulo nuevo:
+- js/performance-0361.js
+
+Módulo actualizado:
+- js/nation-ai-0360.js
+
+Pruebas:
+- tests/smoke-0361.mjs
+
+Rama de seguridad:
+- backup/hexategos-0.36.0-before-performance-0361
+
+--- MANIFEST ANTERIOR ---
 HEXATEGOS_0_36_0
 
 Escala:
