@@ -86,3 +86,7 @@ jobs:
 
       - name: Run Hexategos 0.37.13 domestic logistics and player traffic smoke
         run: node hexategos/tests/smoke-03713.mjs
+
+
+      - name: Run Hexategos 0.37.14 native route picker and node-to-node trucks smoke
+        run: node hexategos/tests/smoke-03714.mjs
