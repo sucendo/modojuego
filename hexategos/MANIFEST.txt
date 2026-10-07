@@ -1,3 +1,33 @@
+HEXATEGOS_0_37_5
+
+IA civil y comercio físico:
+- la diplomacia recibe servicio garantizado y espaciado aunque el scheduler militar agote su presupuesto
+- COMERCIO, NO AGRESIÓN y ALIANZA conservan derechos comerciales en el modelo diplomático de estado único
+- las IA con relaciones comerciales buscan un paso fronterizo común
+- si una carretera del jugador llega a la frontera, la IA comercial del otro lado intenta conectarse a ella
+- dos IA comerciales pueden construir corredores hasta encontrarse físicamente
+- al quedar unidas las redes se fuerza la creación segura de una ruta terrestre real
+- las IA intentan reconectar primero infraestructuras propias aisladas
+- watchdog civil tras ~30 s de campaña sin progreso: ciudad/industria de respaldo si existen déficit y recursos
+- el watchdog usa muestras/cachés y no cuenta toda la infraestructura en cada servicio
+
+Rendimiento:
+- sin nuevos setInterval
+- diplomacia garantizada desde economyTick3212 con su propio dipNextReview
+- corredores revisados con cadencia por nación
+- fronteras muestreadas, no se escanea el planeta
+- diagnóstico civil caro solo para IA estancadas
+
+Módulo nuevo:
+- js/ai-commerce-0375.js
+
+Pruebas:
+- tests/smoke-0375.mjs
+
+Rama de seguridad:
+- backup/hexategos-0.37.4-before-ai-commerce-0375
+
+--- MANIFEST ANTERIOR ---
 HEXATEGOS_0_37_4
 
 Retirada manual de carreteras:
