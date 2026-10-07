@@ -1,3 +1,31 @@
+HEXATEGOS 0.37.14 · SELECTOR COMERCIAL NATIVO + CAMIONES ORIGEN-DESTINO
+
+Selector de ruta comercial:
+- abandona el observador de updatePanel usado desde 0.37.11;
+- usa setInteractionMode3244('select_trade_route_target', ...);
+- el clic sobre el mapa llega al mismo handleInteractionTarget3244 que carreteras y transporte de tropas;
+- destino válido = puerto propio o puerto extranjero con relación comercial compatible;
+- un destino inválido no cancela el modo;
+- Escape / Cancelar usan el mecanismo nativo de interacción.
+
+Tráfico doméstico:
+- deja de convertir cada elemento de roads3212 en un tráfico independiente;
+- los nodos son capital, ciudad, industria y puerto;
+- se agrupan por red de carreteras;
+- para cada grupo se construye un árbol viario y se generan caminos completos hub -> nodo;
+- cada marcador tiene origin y destination explícitos;
+- el punto recorre la ruta completa aunque atraviese varios tramos de carretera;
+- jugador: hasta 18 destinos por grupo;
+- IA: máximo 2 destinos por grupo y número de grupos limitado;
+- prioridad del jugador preservada.
+
+Rendimiento:
+- máximo 96 grupos viarios por reconstrucción en escritorio, 54 en puntero grueso;
+- BFS limitado a 14.000 celdas para el jugador y 6.500 para IA;
+- caminos visuales muestreados a máximo 160 celdas;
+- mismo maxDots y mismo zoom mínimo 25;
+- sin timers nuevos.
+
 HEXATEGOS 0.37.13 · LOGÍSTICA INTERIOR Y TRÁFICO PROPIO
 
 Rutas marítimas propias:
