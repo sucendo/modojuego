@@ -70,3 +70,7 @@ jobs:
 
       - name: Run Hexategos 0.37.9 consolidated economic corridors smoke
         run: node hexategos/tests/smoke-0379.mjs
+
+
+      - name: Run Hexategos 0.37.10 traffic size and constant commercial speed smoke
+        run: node hexategos/tests/smoke-03710.mjs
