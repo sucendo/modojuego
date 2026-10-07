@@ -1,3 +1,26 @@
+HEXATEGOS 0.36.1 · RENDIMIENTO PARA 150 / 250 / 350 / 500 NACIONES
+
+Objetivo:
+- Mantener exactamente las mismas capacidades para todas las naciones.
+- Mejorar especialmente la opción de 500 sin convertir ninguna IA en una entidad simplificada.
+
+Optimizaciones:
+- scheduler IA con presupuesto de tiempo real por tick, adaptado a CPU, memoria, móvil y coste de render;
+- rotación justa: las naciones que no caben en un tick quedan aplazadas, no eliminadas del cálculo;
+- conteo territorial compartido para HUD, clasificación y condiciones de victoria;
+- check de victoria O(naciones) normalmente y un único barrido mundial exacto solo cerca del 80 %;
+- número de guerras y comercio calculados desde la red diplomática activa;
+- desgaste de guerra sin el antiguo bucle cuadrático repetido por nación;
+- snapshots económicos agrupados para evitar reconstrucciones tras cada hexágono conquistado;
+- caché LOD de propietarios con buffers reutilizados y sin Int32Array temporal por celda;
+- panel diplomático con refresco DOM limitado cuando no existen cambios.
+
+Compatibilidad:
+- 150 / 250 / 350 / 500 siguen siendo naciones completas del mismo motor.
+- Los cinco perfiles de IA y su evolución hasta los 60 minutos se mantienen.
+- No cambia el formato territorial ni se introduce una segunda clase de actor.
+- Las partidas anteriores continúan siendo compatibles.
+
 HEXATEGOS 0.36.0 · 150 / 250 / 350 / 500 NACIONES REALES
 
 CONCEPTO
