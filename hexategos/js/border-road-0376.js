@@ -9,7 +9,8 @@
   const LINK_COST=12;
 
   const links=new Set();
-  let playerLinks=0,aiLinks=0;
+  const linkModes=new Map(); // legal | transit | clandestine
+  let playerLinks=0,aiLinks=0,transitLinks=0,clandestineLinks=0;
 
   const key0376=(a,b)=>a<b?a+'|'+b:b+'|'+a;
   const parseKey0376=k=>k.split('|').map(Number);
@@ -86,7 +87,8 @@
       }
     }
 
-    links.add(key0376(a,b));
+    const k=key0376(a,b);
+    links.add(k);linkModes.set(k,'legal');
     ensureVisualSegment0376(a,b);
     save0376();
     afterLink0376(a,b);
@@ -115,30 +117,57 @@
     aiLinks++;
     return true;
   }
+  function createSpecialAILink0376(a,b,builder,mode='transit'){
+    a=Number(a);b=Number(b);builder=Number(builder);
+    if(!Number.isInteger(a)||!Number.isInteger(b)||a<0||b<0||a===b||builder<=0)return false;
+    const oa=owner6[a],ob=owner6[b];
+    if(oa<0||ob<0||oa===ob||builder!==oa&&builder!==ob)return false;
+    if(diplomaticRelation3300(oa,ob)===-1)return false;
+    if(!roadCell0376(a)||!roadCell0376(b))return false;
+    const L=loadLevel(MAX_GAME_LEVEL3233);
+    let adjacent=false;
+    for(let k=L.offsets[a];k<L.offsets[a+1];k++)if(L.edgeNbr[k]===b){adjacent=true;break}
+    if(!adjacent)return false;
+    const key=key0376(a,b);
+    if(hasLink0376(a,b))return true;
+    const cost=mode==='clandestine'?Math.max(LINK_COST,16):LINK_COST;
+    if(botGold3230[builder]<cost)return false;
+    botGold3230[builder]-=cost;
+    links.add(key);linkModes.set(key,mode);
+    ensureVisualSegment0376(a,b);
+    save0376();afterLink0376(a,b);
+    if(mode==='clandestine')clandestineLinks++;else transitLinks++;
+    return true;
+  }
+
 
   function removeInvalidLinks0376(){
     let changed=false;
     const L=loadLevel(MAX_GAME_LEVEL3233);
     for(const k of [...links]){
       const [a,b]=parseKey0376(k);
-      if(a<0||b<0||a>=owner6.length||b>=owner6.length){links.delete(k);changed=true;continue}
+      if(a<0||b<0||a>=owner6.length||b>=owner6.length){links.delete(k);linkModes.delete(k);changed=true;continue}
       let adjacent=false;
       for(let i=L.offsets[a];i<L.offsets[a+1];i++)if(L.edgeNbr[i]===b){adjacent=true;break}
-      if(!adjacent){links.delete(k);changed=true}
+      if(!adjacent){links.delete(k);linkModes.delete(k);changed=true}
     }
     if(changed)save0376();
     return changed;
   }
 
   function serialize0376(){
-    return {version:1,links:[...links].map(parseKey0376)};
+    return {version:2,links:[...links].map(k=>{
+      const [a,b]=parseKey0376(k);return [a,b,linkModes.get(k)||'legal'];
+    })};
   }
   function restore0376(data){
-    links.clear();
+    links.clear();linkModes.clear();
     if(data&&Array.isArray(data.links)){
       for(const row of data.links){
-        const a=Number(row?.[0]),b=Number(row?.[1]);
-        if(Number.isInteger(a)&&Number.isInteger(b)&&a>=0&&b>=0&&a!==b)links.add(key0376(a,b));
+        const a=Number(row?.[0]),b=Number(row?.[1]),mode=typeof row?.[2]==='string'?row[2]:'legal';
+        if(Number.isInteger(a)&&Number.isInteger(b)&&a>=0&&b>=0&&a!==b){
+          const k=key0376(a,b);links.add(k);linkModes.set(k,mode);
+        }
       }
     }
     removeInvalidLinks0376();
@@ -168,7 +197,7 @@
   const baseReset0376=resetGame3230;
   resetGame3230=function(clearSave=true){
     const out=baseReset0376.apply(this,arguments);
-    links.clear();
+    links.clear();linkModes.clear();
     if(clearSave)try{localStorage.removeItem(SAVE_KEY)}catch(_){}
     return out;
   };
@@ -227,16 +256,19 @@
     version:BUILD,
     hasLink:hasLink0376,
     createAI:createAILink0376,
+    createTransitAI:(a,b,builder)=>createSpecialAILink0376(a,b,builder,'transit'),
+    createClandestineAI:(a,b,builder)=>createSpecialAILink0376(a,b,builder,'clandestine'),
+    mode:(a,b)=>linkModes.get(key0376(Number(a),Number(b)))||null,
     createPlayer:createPlayerLink0376,
     candidates:adjacentForeignRoads0376,
-    stats:()=>({build:BUILD,links:links.size,playerLinks,aiLinks,cost:LINK_COST}),
+    stats:()=>({build:BUILD,links:links.size,playerLinks,aiLinks,transitLinks,clandestineLinks,cost:LINK_COST}),
     validate:()=>{
       const errors=[];
       for(const k of links){
         const [a,b]=parseKey0376(k);
         if(a<0||b<0||a>=owner6.length||b>=owner6.length)errors.push('enlace fronterizo inválido: '+k);
       }
-      return {ok:errors.length===0,errors,stats:{links:links.size,playerLinks,aiLinks}};
+      return {ok:errors.length===0,errors,stats:{links:links.size,playerLinks,aiLinks,transitLinks,clandestineLinks}};
     }
   };
   // La API debe existir antes de reconstruir la caché comercial inicial:
