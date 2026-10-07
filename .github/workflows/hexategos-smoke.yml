@@ -36,3 +36,6 @@ jobs:
         run: node hexategos/tests/smoke-0360.mjs
       - name: Run Hexategos 0.36.1 500-nation performance smoke
         run: node hexategos/tests/smoke-0361.mjs
+
+      - name: Run Hexategos 0.36.2 human-like AI construction smoke
+        run: node hexategos/tests/smoke-0362.mjs
