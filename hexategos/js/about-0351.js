@@ -4,10 +4,26 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.37.18',
+      date:'Octubre 2026',
+      title:'Salida de vista de ruta y persistencia aclarada',
+      current:true,
+      summary:'La vista de una ruta comercial en el mapa incorpora una salida explícita sin modificar la ruta ni su actividad.',
+      changes:[
+        'Ver en mapa reutiliza la barra contextual para mostrar origen y destino de la ruta enfocada.',
+        'El botón de la barra cambia temporalmente de Cancelar a Salir.',
+        'Salir elimina únicamente el resaltado visual y devuelve la barra a su estado normal.',
+        'Cerrar una ruta enfocada limpia también el modo de visualización.',
+        'Cargar o reiniciar una partida nunca conserva un foco visual obsoleto.',
+        'El foco visual no se serializa: solo las rutas comerciales reales se guardan.',
+        'Las rutas siguen persistiendo en el guardado local y en los archivos .hexategos.'
+      ]
+    },
+    {
       version:'0.37.17',
       date:'Octubre 2026',
       title:'Gestor de rutas comerciales',
-      current:true,
+      current:false,
       summary:'Economía incorpora un gestor completo de rutas físicas con origen, destino, estado, flujo, riesgo, tránsito, suministro interior y navegación directa al mapa.',
       changes:[
         'La lista de Economía deja de truncarse a 12 rutas y muestra todas las rutas comerciales del jugador.',
