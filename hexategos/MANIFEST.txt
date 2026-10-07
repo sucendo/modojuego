@@ -1,3 +1,36 @@
+HEXATEGOS_0_37_17
+
+Gestor comercial:
+- sortedOwnRoutes03717
+- renderTradeManagerRoute03717
+- tradeRouteGoods03717
+- tradeRouteSupplyLabel03717
+- todas las rutas del jugador
+
+Navegación:
+- focusedTradeRoute03717
+- focusTradeRoute03717
+- clearTradeRouteFocus03717
+- cellLonLat3302 + rotateToGeo3243
+
+Mapa:
+- drawFocusedTradeRoute03717
+- resaltado marítimo y terrestre
+- foco visible incluso por debajo de zoom 25
+
+API:
+- HexategosTradeActions0370.focusRoute
+- HexategosTradeActions0370.clearRouteFocus
+- HexategosTradeLogistics0370.focusedRoute
+- HexategosTradeLogistics0370.focusRoute
+
+Pruebas:
+- tests/smoke-03717.mjs
+
+Rama de seguridad:
+- backup/hexategos-0.37.16-before-trade-manager-03717
+
+--- MANIFEST ANTERIOR ---
 HEXATEGOS_0_37_16
 
 Causa raíz:
