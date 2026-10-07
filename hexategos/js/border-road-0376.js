@@ -121,8 +121,10 @@
     a=Number(a);b=Number(b);builder=Number(builder);
     if(!Number.isInteger(a)||!Number.isInteger(b)||a<0||b<0||a===b||builder<=0)return false;
     const oa=owner6[a],ob=owner6[b];
-    if(oa<0||ob<0||oa===ob||builder!==oa&&builder!==ob)return false;
-    if(diplomaticRelation3300(oa,ob)===-1)return false;
+    if(oa<0||ob<0||oa===ob)return false;
+    // En corredores de tránsito la obra puede financiarla el país solicitante
+    // aunque el tramo fronterizo esté entre dos terceros que han dado permiso.
+    if(diplomaticRelation3300(oa,ob)===-1&&mode!=='clandestine')return false;
     if(!roadCell0376(a)||!roadCell0376(b))return false;
     const L=loadLevel(MAX_GAME_LEVEL3233);
     let adjacent=false;
