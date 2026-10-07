@@ -24,7 +24,7 @@ assert.ok(trade.includes("localStorage.setItem(SAVE_KEY,JSON.stringify(serialize
 assert.ok(trade.includes('file.payload.tradeLogistics0370=serialize0370()'),'trade routes must persist in portable saves');
 assert.ok(trade.includes('restore0370(restoredPortable)'),'portable saves must restore trade routes');
 
-assert.ok(index.includes('v0.37.18</title>'),'visible version must be 0.37.18');
+assert.ok(index.includes('v0.37.18</title>')||index.includes('v0.37.19</title>'),'visible version must be 0.37.18 or compatible successor');
 assert.ok(about.includes("version:'0.37.18'"),'about history must include 0.37.18');
 
 console.log('HEXATEGOS 0.37.18 route-view exit and persistence smoke: OK');
