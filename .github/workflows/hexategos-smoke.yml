@@ -94,3 +94,7 @@ jobs:
 
       - name: Run Hexategos 0.37.15 robust commercial picker smoke
         run: node hexategos/tests/smoke-03715.mjs
+
+
+      - name: Run Hexategos 0.37.16 final commercial controller smoke
+        run: node hexategos/tests/smoke-03716.mjs
