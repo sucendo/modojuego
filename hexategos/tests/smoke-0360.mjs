@@ -39,6 +39,6 @@ assert.ok(stable.includes('FALLBACK_THRESHOLDS=[2.6,2.1,1.7,1.35,1.05,.78,.52,.2
 const iAI=index.indexOf('js/nation-ai-0360.js');
 const iInfra=index.indexOf('js/ai-infra-0356.js');
 assert.ok(iInfra>=0&&iAI>iInfra,'0.36.0 scheduler must load after existing AI/infrastructure layers');
-assert.ok(index.includes('v0.36.0</title>')||index.includes('v0.36.1</title>')||index.includes('v0.36.2</title>')||index.includes('v0.37.0</title>')||index.includes('v0.37.1</title>'),'visible version must remain compatible with later Hexategos versions');
+assert.ok(index.includes('v0.36.0</title>')||index.includes('v0.36.1</title>')||index.includes('v0.36.2</title>')||index.includes('v0.37.0</title>')||index.includes('v0.37.1</title>')||index.includes('v0.37.2</title>'),'visible version must remain compatible with later Hexategos versions');
 
 console.log('HEXATEGOS 0.36.0 native 500-nation adaptive AI smoke: OK');
