@@ -1,3 +1,24 @@
+HEXATEGOS_0_37_12
+
+Simbología:
+- comercio terrestre = punto
+- comercio marítimo = punto
+- transporte de tropas = rombo
+- flota militar = triángulo
+- color = identidad nacional
+
+Cambio visual:
+- barcos comerciales dejan de usar marcador triangular
+- conservan mayor tamaño que los puntos terrestres para legibilidad
+- sin cambios de simulación/rendimiento
+
+Pruebas:
+- tests/smoke-03712.mjs
+
+Rama de seguridad:
+- backup/hexategos-0.37.11-before-transport-symbols-03712
+
+--- MANIFEST ANTERIOR ---
 HEXATEGOS_0_37_11
 
 Franjas comerciales IA:
