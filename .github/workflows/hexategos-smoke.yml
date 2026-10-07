@@ -51,3 +51,6 @@ jobs:
 
       - name: Run Hexategos 0.37.3 isolated infrastructure decay smoke
         run: node hexategos/tests/smoke-0373.mjs
+
+      - name: Run Hexategos 0.37.4 road removal smoke
+        run: node hexategos/tests/smoke-0374.mjs
