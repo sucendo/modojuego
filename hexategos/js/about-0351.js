@@ -4,10 +4,29 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.37.19',
+      date:'Octubre 2026',
+      title:'Patrullas navales cerradas y movimiento continuo',
+      current:true,
+      summary:'Las patrullas de jugador e IA dejan de mostrar su trayectoria, salen visualmente desde su puerto, recorren un ciclo local y regresan al mismo puerto sin saltos entre ticks.',
+      changes:[
+        'Las rutas internas de patrulla no se dibujan para ninguna nación.',
+        'Cada patrulla se genera únicamente cuando la flota está en la salida marítima de su puerto base.',
+        'La excursión de patrulla usa un recorrido de ida y regreso garantizado que termina exactamente en la misma salida del puerto.',
+        'El retorno reutiliza el recorrido de ida en sentido inverso, evitando una búsqueda marítima adicional y protegiendo el rendimiento.',
+        'Visualmente una flota en reposo de patrulla se dibuja en su puerto, aunque la simulación permanezca en la celda marítima adyacente.',
+        'La salida se interpola puerto → mar y el regreso mar → puerto.',
+        'La interpolación de cada tick parte de la posición visual actual, evitando saltos al actualizar la posición lógica.',
+        'La duración visual se sincroniza con el tick naval de 1,4 s.',
+        'Tras completar una patrulla hay una breve estancia en puerto antes de la siguiente salida.',
+        'La lógica se aplica igual a flotas del jugador y de la IA.'
+      ]
+    },
+    {
       version:'0.37.18',
       date:'Octubre 2026',
       title:'Salida de vista de ruta y persistencia aclarada',
-      current:true,
+      current:false,
       summary:'La vista de una ruta comercial en el mapa incorpora una salida explícita sin modificar la ruta ni su actividad.',
       changes:[
         'Ver en mapa reutiliza la barra contextual para mostrar origen y destino de la ruta enfocada.',
