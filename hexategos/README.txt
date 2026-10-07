@@ -1,3 +1,35 @@
+HEXATEGOS 0.37.15 · SELECTOR COMERCIAL ROBUSTO
+
+Entrada al modo:
+- desde cualquier puerto propio se puede pulsar RUTA COMERCIAL;
+- solo se bloquea si el jugador ha alcanzado su límite de rutas;
+- ya no se usa seaCandidates0370() para decidir si el botón está habilitado;
+- la lista precalculada queda únicamente como apoyo del modal/diagnóstico, no como requisito de interacción.
+
+Selección del destino:
+- usa interactionMode select_trade_route_target;
+- el puerto se valida al hacer clic;
+- puerto propio: permitido;
+- puerto extranjero: exige relación comercial compatible;
+- destino inválido: mantiene el modo activo.
+
+Precisión:
+- nearestPortScreen03715 proyecta los puertos a pantalla solo durante el clic;
+- si el clic cae cerca de un icono de puerto, se usa la celda exacta de ese puerto;
+- evita seleccionar la celda vecina por el LOD o por la resolución genérica del mapa.
+
+Diagnóstico:
+- límite global de rutas;
+- límite comercial del jugador;
+- límite del socio;
+- puerto sin acceso marítimo navegable;
+- imposibilidad de encontrar camino marítimo continuo.
+
+Rendimiento:
+- ningún escaneo extra por frame;
+- el ajuste a puerto se evalúa únicamente durante un clic en modo comercial;
+- sin timers nuevos.
+
 HEXATEGOS 0.37.14 · SELECTOR COMERCIAL NATIVO + CAMIONES ORIGEN-DESTINO
 
 Selector de ruta comercial:
