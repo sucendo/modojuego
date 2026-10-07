@@ -106,3 +106,7 @@ jobs:
 
       - name: Run Hexategos 0.37.18 route-view exit and persistence smoke
         run: node hexategos/tests/smoke-03718.mjs
+
+
+      - name: Run Hexategos 0.37.19 closed smooth naval patrol smoke
+        run: node hexategos/tests/smoke-03719.mjs
