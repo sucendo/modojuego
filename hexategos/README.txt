@@ -1,3 +1,19 @@
+HEXATEGOS 0.37.12 · SIMBOLOGÍA DE TRANSPORTES
+
+Convención visual:
+- transporte comercial terrestre: punto circular;
+- transporte comercial marítimo: punto circular;
+- transporte de tropas: rombo;
+- flota militar: triángulo;
+- el color sigue identificando la nación.
+
+La forma identifica el tipo de tráfico, no el medio:
+- comercio = punto;
+- tropas = rombo;
+- militar = triángulo.
+
+No cambia la simulación, las velocidades, el número de entidades visibles ni los umbrales de zoom.
+
 HEXATEGOS 0.37.11 · FRANJAS COMERCIALES MADURAS + DESTINO EN MAPA
 
 Rutas terrestres IA:
