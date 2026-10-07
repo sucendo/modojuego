@@ -1,3 +1,30 @@
+HEXATEGOS 0.37.8 · TRÁFICO, BARCOS Y FLOTAS POR COLOR NACIONAL
+
+Zoom:
+- los puntitos de tráfico terrestre y los pequeños barcos comerciales aparecen únicamente desde zoom 25;
+- por debajo de zoom 25 no se dibuja ese tráfico fino, reduciendo carga y ruido visual;
+- las rutas marítimas pueden seguir viéndose antes porque su línea es una referencia estratégica de bajo coste.
+
+Colores:
+- cada nación utiliza su propio color para su tráfico interior;
+- el tráfico de rutas comerciales internacionales usa los colores de las naciones que participan;
+- los pequeños barcos comerciales marítimos usan color nacional;
+- los convoyes de transporte usan color nacional;
+- las flotas militares usan color nacional;
+- desaparece la identificación genérica azul para jugador / roja para IA en los símbolos navales.
+
+Rutas marítimas:
+- se conserva el azul claro discontinuo que ya utilizaba el juego;
+- ahora también se dibuja para rutas comerciales IA↔IA, no solo para rutas donde participa el jugador;
+- las rutas de movimiento naval usan el mismo lenguaje visual azul claro;
+- una patrulla sigue enseñando únicamente el tramo inmediato de su recorrido.
+
+Rendimiento:
+- el tráfico interior aprovecha el mismo barrido de roads3212 y separa los tramos por propietario;
+- se mantiene un presupuesto máximo de puntos y rutas por frame;
+- se descartan primero elementos fuera de pantalla;
+- no se añade ningún timer adicional.
+
 HEXATEGOS 0.37.7 · CORREDORES COMERCIALES GEOPOLÍTICOS
 
 Principio:
