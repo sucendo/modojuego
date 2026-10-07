@@ -6,8 +6,10 @@ Identidad visual nacional:
 - cada tramo conserva faction y se dibuja con el color real del país
 - rutas terrestres internacionales alternan actividad de las naciones implicadas
 - barcos comerciales marítimos con color nacional
+- convoyes navales y flotas militares visibles desde zoom 15
 - convoyes navales con color nacional
 - flotas militares con color nacional
+- movimiento visual de flotas interpolado de forma continua entre ticks navales
 - rutas marítimas comerciales IA↔IA también visibles
 - líneas marítimas: azul claro discontinuo común
 - patrulla naval: solo tramo inmediato
