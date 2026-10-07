@@ -886,12 +886,18 @@
     navalPathUsed0371++;return true;
   }
 
-  function buildLocalPatrolRoute0371(g,nowCampaign){
-    if(!g||g.home<0)return false;
+  function buildLocalPatrolRoute03719(g,nowCampaign){
+    if(!g||g.home<0||!ports3212.has(g.home)||owner6[g.home]!==g.f)return false;
     const homeSea=bestPortSea3270(g.home,g.cell);
-    if(homeSea<0)return false;
-    const L=loadLevel(MAX_GAME_LEVEL3233),route=[g.cell],seed=(g.id*1103515245+Math.floor(nowCampaign/4)*12345)>>>0;
-    let u=g.cell,prev=-1;
+    if(homeSea<0||g.cell!==homeSea)return false;
+
+    // Patrulla cerrada y determinista: sale de la celda de mar del puerto,
+    // recorre una excursión local y vuelve EXACTAMENTE a la misma celda.
+    // El regreso reutiliza el camino de ida al revés: cero A* adicional y
+    // garantía de cierre incluso con 500 naciones.
+    const L=loadLevel(MAX_GAME_LEVEL3233),outbound=[homeSea];
+    const seed=(g.id*1103515245+Math.floor(nowCampaign/4)*12345)>>>0;
+    let u=homeSea,prev=-1;
     for(let step=0;step<7;step++){
       const opts=[];
       for(let k=L.offsets[u];k<L.offsets[u+1];k++){
@@ -900,24 +906,22 @@
       }
       if(!opts.length)break;
       opts.sort((a,b)=>angularHeuristic3254(a,homeSea)-angularHeuristic3254(b,homeSea));
-      let pick;
-      if(step<3)pick=opts[Math.min(opts.length-1,Math.floor(opts.length*.55)+((seed>>>step)%Math.max(1,Math.ceil(opts.length*.45))))];
-      else pick=opts[(seed+step)%Math.min(opts.length,Math.max(1,Math.ceil(opts.length*.55)))];
-      prev=u;u=pick;route.push(u);
+      const farStart=Math.max(0,Math.floor(opts.length*.45));
+      const span=Math.max(1,opts.length-farStart);
+      const pick=opts[Math.min(opts.length-1,farStart+((seed>>>Math.min(20,step*2))%span))];
+      prev=u;u=pick;outbound.push(u);
     }
-    for(let step=0;step<10&&u!==homeSea;step++){
-      let best=-1,bestD=1e9;
-      for(let k=L.offsets[u];k<L.offsets[u+1];k++){
-        const v=L.edgeNbr[k];if(v<0||L.land[v]>=0)continue;
-        const d=angularHeuristic3254(v,homeSea);
-        if(d<bestD){bestD=d;best=v}
-      }
-      if(best<0||best===u)break;
-      u=best;route.push(u);
-    }
-    if(route.length<3)return false;
+    if(outbound.length<3)return false;
+
+    const route=outbound.concat(outbound.slice(0,-1).reverse());
+    if(route[0]!==homeSea||route[route.length-1]!==homeSea)return false;
     g.route=route;g.routePos=0;g.routeGoal=homeSea;
-    g.patrolNext0371=nowCampaign+4+(g.id%4);
+    g._patrolHomeSea03719=homeSea;
+    g._patrolPort03719=g.home;
+    g._patrolCycle03719=(g._patrolCycle03719||0)+1;
+    // Mientras la ruta está activa no se lanza otra. Al finalizar se programa
+    // una breve estancia en puerto antes de la siguiente salida.
+    g.patrolNext0371=Number.POSITIVE_INFINITY;
     return true;
   }
 
@@ -1043,12 +1047,25 @@
       return;
     }
     if(g.order==='patrol'){
+      // Una patrulla en curso termina siempre su ciclo antes de recibir otro.
+      if(g.route&&g.route.length)return;
+
       const homeSea=bestPortSea3270(g.home,g.cell);
-      if(homeSea>=0&&angularHeuristic3254(g.cell,homeSea)>10){
+      if(homeSea<0)return;
+
+      // Si por combate, carga o una orden previa quedó lejos de la base,
+      // primero regresa al mar adyacente a SU puerto. No patrulla "desde donde esté".
+      if(g.cell!==homeSea){
         if(navalPathPermit0371(nowCampaign))setNavalDestination3270(g,homeSea);
         return;
       }
-      if(!g.route&&nowCampaign>=(g.patrolNext0371||0))buildLocalPatrolRoute0371(g,nowCampaign);
+
+      // Si acaba de finalizar un ciclo, permanece un instante en puerto.
+      if(g._patrolAwaitingNext03719){
+        if(nowCampaign<(g.patrolNext0371||0))return;
+        g._patrolAwaitingNext03719=false;
+      }
+      if(nowCampaign>=(g.patrolNext0371||0))buildLocalPatrolRoute03719(g,nowCampaign);
     }
   };
 
@@ -1822,6 +1839,10 @@
       }
       if(!r)return null;
       r.mode='smuggle';r.status='smuggling';markTradeDirty0370();return r;
+    },
+    patrolCycle:(id)=>{
+      const g=navalGroups3270.find(x=>x.id===Number(id));
+      return g?{home:g.home,cell:g.cell,order:g.order,route:Array.isArray(g.route)?g.route.slice():[],homeSea:g._patrolHomeSea03719??-1,cycle:g._patrolCycle03719||0}:null;
     },
     refresh:()=>{lastRoadCampaign=-1e9;markTradeDirty0370();rebuildTradeCache0370(true)}
   };
