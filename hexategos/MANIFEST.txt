@@ -1,3 +1,34 @@
+HEXATEGOS_0_37_1
+
+Tráfico interior:
+- circulación visible sobre carreteras propias
+- puntos suavemente interpolados entre celdas
+- umbral de zoom rebajado para que el tráfico sea visible antes
+- caché de corredores propios y límites adaptativos de dibujo
+
+Rutas marítimas interiores:
+- puerto propio <-> puerto propio
+- menor rendimiento que comercio exterior equivalente
+- IA puede crear hasta 2 rutas interiores según número de puertos
+- trazado visual puerto a puerto, incluyendo los dos extremos terrestres
+
+Movimiento naval:
+- patrulla local alrededor del puerto-base
+- intercepción hacia transporte enemigo cuando existe
+- si no hay transporte, salida controlada hacia zona enemiga y regreso
+- ruta de retorno reutilizada, sin segunda búsqueda A*
+- hostilidad naval basada en guerra real
+
+Rendimiento:
+- máximo 1 búsqueda de salida naval por intervalo
+- patrullas locales sin pathfinding global
+- tráfico interior cacheado
+- límites de puntos y corredores según dispositivo
+
+Rama de seguridad:
+- backup/hexategos-0.37.0-before-traffic-naval-0371
+
+--- MANIFEST ANTERIOR ---
 HEXATEGOS_0_37_0
 
 Comercio y logística física:
