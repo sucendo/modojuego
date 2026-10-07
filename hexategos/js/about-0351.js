@@ -4,10 +4,24 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.37.2',
+      date:'Octubre 2026',
+      title:'Tráfico terrestre visible y patrulla limpia',
+      current:true,
+      summary:'El tráfico terrestre se hace más visible y adopta el color del jugador, las carreteras se afinan y las flotas en patrulla solo enseñan el tramo inmediato de su recorrido.',
+      changes:[
+        'Los puntos terrestres aparecen desde un zoom más cercano y son más fáciles de distinguir.',
+        'El tráfico propio utiliza el color de la nación del jugador, con un pequeño contorno para conservar contraste sobre cualquier terreno.',
+        'Las rutas terrestres comerciales del jugador usan el mismo color que su nación.',
+        'Las carreteras son ligeramente más estrechas para no dominar visualmente el mapa.',
+        'Una flota en patrulla sigue moviéndose por su circuito local, pero en el mapa solo se dibuja el siguiente tramo inmediato y no toda la ruta prevista.',
+        'Se mantienen los límites adaptativos de tráfico y el sistema de caché para no penalizar el rendimiento.'
+      ]
+    },
+    {
       version:'0.37.1',
       date:'Octubre 2026',
       title:'Tráfico interior y movimiento naval visible',
-      current:true,
       summary:'Las carreteras propias muestran circulación incluso antes de abrir comercio exterior, los puertos de una misma nación pueden enlazarse por mar y las flotas patrullan e interceptan de forma visible y coherente.',
       changes:[
         'El tráfico terrestre interior aparece sobre las carreteras propias que conectan la red de ciudades, industrias, capital y puertos.',
@@ -279,7 +293,7 @@
         '<header class="aboutHead0351">'+
           '<div class="aboutHeadText0351">'+
             '<h2 id="aboutTitle0351">ACERCA DE HEXATEGOS</h2>'+
-            '<p>Global Geopolitical Strategy · versión 0.37.1</p>'+
+            '<p>Global Geopolitical Strategy · versión 0.37.2</p>'+
           '</div>'+
           '<button id="aboutClose0351" class="aboutClose0351" type="button" aria-label="Cerrar">×</button>'+
         '</header>'+
