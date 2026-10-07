@@ -1,3 +1,38 @@
+HEXATEGOS_0_37_9
+
+Corredores económicos consolidados:
+- avance comercial deja de ser un pasillo mínimo de una casilla
+- aproximadamente 2 ciclos de avance / 1 de consolidación lateral
+- consolidación prioriza apoyo territorial y carretera existente
+- eje limitado alrededor de la dirección entre capitales
+- penalización por terreno difícil
+- corredores antiguos pueden rellenar flancos progresivamente
+- cada 6 ciclos puede sustituirse expansión por desarrollo civil
+- nuevas ciudades sobre carretera, con suministro, distancia urbana y seguridad
+- industria en nodos urbanos del corredor con separación respecto a otros polos
+- el constructor IA normal continúa desarrollando después esos núcleos
+
+Rendimiento:
+- MAX_FRONTIER_SAMPLES=180
+- MAX_NODE_SAMPLES=190
+- reutiliza aiSnapshot3260 y aiNationalSamples3275
+- una sola conquista o construcción relevante por servicio
+- sin setInterval nuevo
+- sin payload persistente nuevo; compatible con partidas anteriores
+
+Módulo:
+- js/economic-corridors-0379.js
+
+Integración:
+- js/trade-geopolitics-0377.js delega planificación de consolidación/desarrollo a 0.37.9
+
+Pruebas:
+- tests/smoke-0379.mjs
+
+Rama de seguridad:
+- backup/hexategos-0.37.8-before-economic-corridors-0379
+
+--- MANIFEST ANTERIOR ---
 HEXATEGOS_0_37_8
 
 Identidad visual nacional:
