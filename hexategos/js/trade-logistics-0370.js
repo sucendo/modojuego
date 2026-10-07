@@ -1313,6 +1313,14 @@
     version:BUILD,stats:stats0370,validate:validate0370,
     routes:()=>routes,
     roadComponent:(cell)=>{rebuildRoadGraph0370(false);return Number.isInteger(cell)&&cell>=0&&roadComp&&cell<roadComp.length?roadComp[cell]:-1},
+    ensureLandRoute:(a,b)=>{
+      a=Number(a);b=Number(b);
+      if(!Number.isInteger(a)||!Number.isInteger(b)||a<0||b<0||a===b)return null;
+      if(!tradeRelation0370(a,b))return null;
+      rebuildRoadGraph0370(true);
+      pathBudget0370=Math.max(pathBudget0370,1);
+      return createLandRoute0370(a,b);
+    },
     refresh:()=>{lastRoadCampaign=-1e9;markTradeDirty0370();rebuildTradeCache0370(true)}
   };
   window.HEXATEGOS_VERSION=BUILD;
