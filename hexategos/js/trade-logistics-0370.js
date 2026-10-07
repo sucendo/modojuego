@@ -58,6 +58,7 @@
   }
 
   function markTradeDirty0370(){dirty=true}
+  function routeLimit0370(f){return f===0?16:MAX_ROUTES_PER_FACTION}
 
   function routeCount0370(f,type){
     let n=0;
@@ -281,8 +282,8 @@
   }
 
   function createLandRoute0370(a,b){
-    if(routes.length>=MAX_ROUTES||routeCount0370(a)>=MAX_ROUTES_PER_FACTION||
-       routeCount0370(b)>=MAX_ROUTES_PER_FACTION||routeExists0370('land',a,b))return null;
+    if(routes.length>=MAX_ROUTES||routeCount0370(a)>=routeLimit0370(a)||
+       routeCount0370(b)>=routeLimit0370(b)||routeExists0370('land',a,b))return null;
     const comp=sharedRoadComponent0370(a,b);
     if(comp<0)return null;
     const full=buildLandPath0370(a,b,comp);
@@ -316,8 +317,8 @@
 
   function createSeaRoute0370(a,b,from,to,risky=false,notify=false){
     if(seaPathUsed0370||pathBudget0370<=0)return {deferred:true};
-    if(routes.length>=MAX_ROUTES||routeCount0370(a)>=MAX_ROUTES_PER_FACTION||
-       routeCount0370(b)>=MAX_ROUTES_PER_FACTION||routeExists0370('sea',a,b,from,to))return null;
+    if(routes.length>=MAX_ROUTES||routeCount0370(a)>=routeLimit0370(a)||
+       routeCount0370(b)>=routeLimit0370(b)||routeExists0370('sea',a,b,from,to))return null;
     if(!tradeRelation0370(a,b)||!ports3212.has(from)||!ports3212.has(to)||
        owner6[from]!==a||owner6[to]!==b)return null;
     const s=bestPortSea3270(from),g=bestPortSea3270(to,s);
@@ -411,10 +412,10 @@
   }
 
   function autoLandTrade0370(f){
-    if(pathBudget0370<=0||routeCount0370(f)>=MAX_ROUTES_PER_FACTION)return false;
+    if(pathBudget0370<=0||routeCount0370(f)>=routeLimit0370(f))return false;
     for(const o of diplomaticTargets0370(f)){
       if(o<=f||o>=activeFactionCount3230||!tradeRelation0370(f,o)||
-         routeCount0370(o)>=MAX_ROUTES_PER_FACTION||routeExists0370('land',f,o))continue;
+         routeCount0370(o)>=routeLimit0370(o)||routeExists0370('land',f,o))continue;
       const r=createLandRoute0370(f,o);
       if(!r)continue;
       if(r.status==='blocked'&&f>0&&o>0){
@@ -435,12 +436,12 @@
   }
 
   function bestSeaCandidate0370(f){
-    if(routeCount0370(f)>=MAX_ROUTES_PER_FACTION)return null;
+    if(routeCount0370(f)>=routeLimit0370(f))return null;
     rebuildPorts0370();
     if(!(portsByFaction[f]||[]).length)return null;
     const snap=ensureEconomySnapshot3261(false),out=[];
     for(const o of diplomaticTargets0370(f)){
-      if(o===f||o<=0||o>=activeFactionCount3230||!tradeRelation0370(f,o)||
+      if(o===f||o<0||o>=activeFactionCount3230||!tradeRelation0370(f,o)||
          !(portsByFaction[o]||[]).length||routeCount0370(o)>=MAX_ROUTES_PER_FACTION)continue;
       const pp=bestPortPair0370(f,o);
       if(!pp||routeExists0370('sea',f,o,pp.from,pp.to))continue;
@@ -495,6 +496,7 @@
     pathBudget0370=2;seaPathUsed0370=false;
     rebuildRoadGraph0370();rebuildPorts0370();
     repairOneLandRoute0370();
+    autoLandTrade0370(0);
     const batch=activeFactionCount3230>=450?7:activeFactionCount3230>=350?9:12;
     for(let i=0;i<batch;i++){
       if(aiCursor<=0||aiCursor>=activeFactionCount3230)aiCursor=1;
