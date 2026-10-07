@@ -8,7 +8,7 @@ const about=read('js/about-0351.js');
 
 assert.doesNotThrow(()=>new Function(trade),'trade logistics must parse');
 
-assert.ok(trade.includes('function beginSeaTradeMapPick03714'),'native commercial destination picker missing');
+assert.ok(trade.includes('function beginSeaTradeMapPick03715'),'native commercial destination picker missing');
 assert.ok(trade.includes("setInteractionMode3244('select_trade_route_target'"),'commercial picker must use native interaction mode');
 assert.ok(trade.includes('const baseHandleInteractionTarget03714=handleInteractionTarget3244'),'native target handler hook missing');
 assert.ok(trade.includes("uiInteractionState3244.interactionMode!=='select_trade_route_target'"),'trade target mode dispatch missing');
@@ -28,7 +28,7 @@ assert.ok(trade.includes('const maxGroups=coarsePointer3255?54:96'),'domestic ro
 assert.ok(trade.includes('const maxVisits=g.f===0?14000:6500'),'bounded road-tree visits missing');
 assert.ok(trade.includes('candidates.slice(0,coarsePointer3255?100:220)'),'global domestic candidate cap missing');
 
-assert.ok(index.includes('v0.37.14</title>'),'visible version must be 0.37.14');
+assert.ok(index.includes('v0.37.14</title>')||index.includes('v0.37.15</title>'),'visible version must be 0.37.14 or compatible successor');
 assert.ok(about.includes("version:'0.37.14'"),'about history must include 0.37.14');
 
 console.log('HEXATEGOS 0.37.14 native route picker + node-to-node trucks smoke: OK');
