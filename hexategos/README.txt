@@ -1,3 +1,65 @@
+HEXATEGOS 0.37.16 · REVISIÓN COMPLETA DEL FLUJO DE RUTA COMERCIAL
+
+CAUSA RAÍZ ENCONTRADA
+
+El motor contiene varias generaciones del controlador contextual.
+
+El controlador final v3.28.2:
+- arma destinos mediante beginTargetFromDialog3282();
+- protege setInteractionMode3245() con contextTargetPermit3282;
+- recibe los clics definitivos en handleInteractionTarget3245();
+- pick3245 es el pick final asignado al canvas;
+- los modos no reconocidos por el manejador final se cancelan.
+
+Las versiones 0.37.14/0.37.15:
+- intentaban armar select_trade_route_target mediante setInteractionMode3244();
+- el controlador estricto rechazaba esa llamada al no existir contextTargetPermit3282;
+- además interceptaban handleInteractionTarget3244;
+- pero el pick final consumía destinos mediante handleInteractionTarget3245.
+
+Resultado: el botón podía aparecer y el código de creación ser correcto, pero el destino del mapa nunca llegaba a createPlayerSeaRoute0370.
+
+SOLUCIÓN 0.37.16
+
+Entrada:
+RUTA COMERCIAL
+→ beginSeaTradeMapPick03716()
+→ beginTargetFromDialog3282('select_trade_route_target', origen, 'sea_trade_0370')
+→ permiso válido del controlador
+→ setInteractionMode3245()
+→ interactionMode activo.
+
+Destino:
+pointerup
+→ pick final
+→ pick3245 / wrapper comercial
+→ puerto exacto si hay icono cercano
+→ handleInteractionTarget3245()
+→ handleSeaTradeTarget03716()
+→ seaTradeTargetReason03711()
+→ createPlayerSeaRoute0370()
+→ createSeaRoute0370()
+→ saveGame3212()
+→ render.
+
+CREACIÓN MARÍTIMA REVISADA
+
+createSeaRoute0370:
+- admite a===b para rutas interiores;
+- exige que origen y destino sean puertos reales;
+- valida propietarios;
+- busca las celdas marítimas adyacentes;
+- calcula un camino marítimo continuo;
+- solicita permisos de tránsito cuando procede;
+- crea ruta active;
+- calcula valor y riesgo naval;
+- marca caché comercial como dirty.
+
+createPlayerSeaRoute0370:
+- reutiliza exactamente esta lógica;
+- mantiene confirmación de tránsito de riesgo;
+- guarda partida y fuerza render.
+
 HEXATEGOS 0.37.15 · SELECTOR COMERCIAL ROBUSTO
 
 Entrada al modo:
