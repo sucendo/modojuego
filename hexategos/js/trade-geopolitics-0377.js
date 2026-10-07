@@ -386,6 +386,13 @@
     // Si existe espacio neutral en dirección razonable, la IA prefiere ocuparlo
     // antes que exigir tránsito por un país ajeno.
     const sa=bestNeutralStep0377(a,b),sb=bestNeutralStep0377(b,a);
+
+    // 0.37.9 puede dedicar este microturno a consolidar lateralmente el eje
+    // o a crear un nodo económico sobre una carretera ya conquistada.
+    const economicPlan0379=window.HexategosEconomicCorridors0379?.prepare?.(a,b,sa,sb)||null;
+    if(economicPlan0379?.done)return true;
+    if(economicPlan0379?.step?.s)return expandNeutral0377(economicPlan0379.step.f,economicPlan0379.step.s);
+
     const step=sa&&sb?(sa.score<=sb.score?{f:a,s:sa}:{f:b,s:sb}):sa?{f:a,s:sa}:sb?{f:b,s:sb}:null;
     if(step&&step.s.progress>-.2)return expandNeutral0377(step.f,step.s);
 
