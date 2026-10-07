@@ -1,0 +1,14 @@
+/* HEXATEGOS 0.37.0 · logística y comercio físico */
+.tradeRouteList0370,.tradeRoutes0370{display:grid;gap:7px;margin-top:8px}
+.tradeCandidate0370,.tradeRoute0370{border:1px solid rgba(125,166,195,.24);background:rgba(10,24,35,.66);border-radius:8px;padding:8px 10px;text-align:left;color:inherit}
+.tradeCandidate0370{display:grid;width:100%;cursor:pointer;gap:2px}
+.tradeCandidate0370:hover{border-color:rgba(119,211,225,.56);background:rgba(14,34,47,.78)}
+.tradeCandidate0370 b,.tradeRoute0370 b{font-size:11px;letter-spacing:.02em}
+.tradeCandidate0370 span,.tradeRoute0370 span{display:block;font-size:10px;opacity:.88;margin-top:2px}
+.tradeCandidate0370 small,.tradeRoute0370 small{display:block;font-size:9px;opacity:.67;margin-top:3px}
+.tradeRoute0370 .acts{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+.tradeRoute0370 .acts button{font-size:9px;padding:5px 7px}
+@media (max-width:760px){
+ .tradeCandidate0370,.tradeRoute0370{padding:7px 8px}
+ .tradeRoute0370 .acts button{flex:1 1 auto}
+}
