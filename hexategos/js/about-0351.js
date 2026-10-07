@@ -4,10 +4,31 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.37.11',
+      date:'Octubre 2026',
+      title:'Franjas comerciales maduras y destino de rutas en el mapa',
+      current:true,
+      summary:'Las rutas terrestres activas siguen consolidando territorio y generando desarrollo; las rutas comerciales marítimas del jugador eligen su puerto de destino directamente sobre el mapa y los marcadores comerciales ganan mucha más presencia.',
+      changes:[
+        'Una IA ya no deja de consolidar un corredor cuando la ruta terrestre entra en estado activo.',
+        'Cada cierto número de servicios revisa el trazado físico real de sus rutas terrestres activas o de contrabando.',
+        'La IA puede ocupar terreno neutral inmediatamente adyacente a la carretera comercial si existe apoyo territorial suficiente.',
+        'La expansión lateral de consolidación no crea automáticamente una carretera en cada nuevo hexágono, evitando redes artificialmente densas.',
+        'Las franjas comerciales maduras pueden generar nuevas ciudades o industria con la misma lógica de suministro, seguridad y separación de 0.37.9.',
+        'El mantenimiento de rutas activas está muestreado y limitado para conservar rendimiento con cientos de naciones.',
+        'Desde un puerto propio, RUTA COMERCIAL entra ahora en modo de selección de destino directamente sobre el mapa.',
+        'El destino puede ser un puerto propio o un puerto de una nación con derechos comerciales compatibles.',
+        'Si se pulsa una casilla inválida, el modo de selección permanece activo y muestra el motivo sin cancelar la orden.',
+        'El botón Cancelar de la barra superior abandona la selección de ruta comercial.',
+        'Los barcos comerciales y los puntos/camiones terrestres se han aumentado de tamaño de forma claramente visible.',
+        'Las rutas visuales de patrulla siguen completamente ocultas; las rutas que aún se ven en flotas corresponden a órdenes activas como interceptación, regreso, bloqueo, escolta o traslado.'
+      ]
+    },
+    {
       version:'0.37.10',
       date:'Octubre 2026',
       title:'Tráfico comercial legible y velocidad física constante',
-      current:true,
+      current:false,
       summary:'Las patrullas navales ya no dibujan su trayectoria; barcos y camiones comerciales son más visibles y su velocidad deja de depender de la longitud total de la ruta.',
       changes:[
         'Las flotas en orden de patrulla mantienen su movimiento y su ruta interna, pero no dibujan ninguna línea de trayectoria.',
