@@ -21,6 +21,6 @@ assert.ok(trade.includes('startInterceptExcursion0371'),'enemy-zone interception
 assert.ok(trade.includes("g.interceptReturn0371=outward.slice().reverse()"),'interception return path reuse missing');
 assert.ok(trade.includes('navalPathPermit0371'),'naval pathfinding budget missing');
 assert.ok(trade.includes("diplomaticRelation3300(a,b)===-1"),'naval hostility must follow real war state');
-assert.ok(index.includes('v0.37.1</title>')||index.includes('v0.37.2</title>')||index.includes('v0.37.3</title>')||index.includes('v0.37.4</title>')||index.includes('v0.37.5</title>'),'visible version must include 0.37.1 or a compatible successor');
+assert.ok(index.includes('v0.37.1</title>')||index.includes('v0.37.2</title>')||index.includes('v0.37.3</title>')||index.includes('v0.37.4</title>')||index.includes('v0.37.5</title>')||index.includes('v0.37.6</title>'),'visible version must include 0.37.1 or a compatible successor');
 
 console.log('HEXATEGOS 0.37.1 domestic traffic + visible naval movement smoke: OK');
