@@ -7,7 +7,7 @@
   const ROAD_REFRESH_SECONDS=18;
   const MAX_ROUTES=720;
   const MAX_ROUTES_PER_FACTION=4;
-  const TRAFFIC_ZOOM=2.15;
+  const TRAFFIC_ZOOM=25;
 
   let routes=[];
   let nextRouteId=1;
@@ -44,14 +44,15 @@
 
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const pair=(a,b)=>a<b?a+':'+b:b+':'+a;
-  function playerTrafficColor0372(){
-    return (FACTIONS3230&&FACTIONS3230[0]&&FACTIONS3230[0].color)||
+  function factionTrafficColor0378(f){
+    if(f===0)return (FACTIONS3230&&FACTIONS3230[0]&&FACTIONS3230[0].color)||
       (typeof PLAYER_COLOR!=='undefined'?PLAYER_COLOR:'#2f91ff');
-  }
-  function landRouteTrafficColor0372(r){
-    if(r.a===0||r.b===0)return playerTrafficColor0372();
-    const f=r.a>=0?r.a:r.b;
     return (FACTIONS3230&&FACTIONS3230[f]&&FACTIONS3230[f].color)||'#8da9c2';
+  }
+  function playerTrafficColor0372(){return factionTrafficColor0378(0)}
+  function routeDotFaction0378(r,d){
+    if(r.a===r.b)return r.a;
+    return ((r.id+d)&1)?r.a:r.b;
   }
   const baseNavalHostile0371=navalHostile3270;
   navalHostile3270=function(a,b){
@@ -1040,31 +1041,40 @@
 
   function rebuildDomesticTraffic0371(now){
     if(now-domesticTrafficBuiltAt0371<3500&&domesticRoadTraffic0371.length)return;
-    const sig=roads3212.length+':'+cities3212.size+':'+industries3212.size+':'+ports3212.size+':'+capitals[0];
+    const sig=roads3212.length+':'+cities3212.size+':'+industries3212.size+':'+ports3212.size+':'+activeFactionCount3230;
     if(sig===domesticTrafficSig0371&&now-domesticTrafficBuiltAt0371<9000)return;
     domesticTrafficSig0371=sig;domesticTrafficBuiltAt0371=now;
     const candidates=[];
     for(let ri=0;ri<roads3212.length;ri++){
       const path=roads3212[ri];if(!Array.isArray(path)||path.length<2)continue;
-      let run=[];
+      let run=[],runFaction=-1;
       const flush=()=>{
-        if(run.length<2){run=[];return}
+        if(run.length<2||runFaction<0){run=[];runFaction=-1;return}
         let anchors=0;
         for(const cell of run){
-          if(cities3212.has(cell)||industries3212.has(cell)||ports3212.has(cell)||capitals[0]===cell)anchors++;
+          if(cities3212.has(cell)||industries3212.has(cell)||ports3212.has(cell)||capitals[runFaction]===cell)anchors++;
         }
         const sampled=samplePath0370(run,120);
-        candidates.push({path:sampled,anchors,score:anchors*18+Math.min(20,run.length),seed:ri*37+run[0]});
-        run=[];
+        candidates.push({
+          path:sampled,faction:runFaction,anchors,
+          score:anchors*18+Math.min(20,run.length),
+          seed:ri*37+run[0]+runFaction*101
+        });
+        run=[];runFaction=-1;
       };
       for(const cell of path){
-        if(cell>=0&&owner6[cell]===0)run.push(cell);
-        else flush();
+        const f=cell>=0?owner6[cell]:-1;
+        if(f<0){flush();continue}
+        if(runFaction<0)runFaction=f;
+        if(f!==runFaction){flush();runFaction=f}
+        run.push(cell);
       }
       flush();
     }
     candidates.sort((a,b)=>b.score-a.score);
-    domesticRoadTraffic0371=candidates.slice(0,coarsePointer3255?22:40);
+    // At zoom 25 the viewport is very local. Keep a wider candidate pool and
+    // stop only after the visible-dot budget is filled.
+    domesticRoadTraffic0371=candidates.slice(0,coarsePointer3255?100:220);
   }
 
   function projectedAlongCells0371(path,phase,C,R,cx,cy){
@@ -1090,18 +1100,63 @@
     return out;
   }
 
+  function pointVisible0378(p){
+    return !!p&&p[2]>=.045&&p[0]>=-12&&p[0]<=vw+12&&p[1]>=-12&&p[1]<=vh+12;
+  }
+
+  function routeScreenRelevant0378(path,C,R,cx,cy){
+    if(!path||!path.length)return false;
+    const ids=[0,Math.floor((path.length-1)*.5),path.length-1];
+    for(const ii of ids){
+      const cell=path[Math.max(0,Math.min(path.length-1,ii))],j=cell*3;
+      const p=projectVec(C[j]/32767,C[j+1]/32767,C[j+2]/32767,R,cx,cy);
+      if(pointVisible0378(p))return true;
+    }
+    return false;
+  }
+
+  function drawSeaTradeLine0378(visual,C,R,cx,cy){
+    ctx.beginPath();let started=false;
+    const stride=Math.max(1,Math.floor(visual.length/72));
+    for(let i=0;i<visual.length;i+=stride){
+      const j=visual[i]*3,p=projectVec(C[j]/32767,C[j+1]/32767,C[j+2]/32767,R,cx,cy);
+      if(p[2]<.03){started=false;continue}
+      if(!started){ctx.moveTo(p[0],p[1]);started=true}else ctx.lineTo(p[0],p[1]);
+    }
+    if(visual.length>1&&(visual.length-1)%stride!==0){
+      const j=visual[visual.length-1]*3,p=projectVec(C[j]/32767,C[j+1]/32767,C[j+2]/32767,R,cx,cy);
+      if(p[2]>=.03){if(!started)ctx.moveTo(p[0],p[1]);else ctx.lineTo(p[0],p[1])}
+    }
+    ctx.setLineDash([2.5,3.5]);
+    ctx.strokeStyle='rgba(99,206,226,.30)';
+    ctx.lineWidth=.85;ctx.stroke();ctx.setLineDash([]);
+  }
+
   function drawTradeTraffic0370(R,cx,cy,now){
     trafficDrawn=0;
-    const minZoom=coarsePointer3255?2.65:TRAFFIC_ZOOM;
-    if(zoom<minZoom)return;
     const C=loadLevel(MAX_GAME_LEVEL3233).centers;
+    const showDots=zoom>=TRAFFIC_ZOOM;
     const maxRoutes=coarsePointer3255?24:adaptiveDetail3255>=2?30:56;
     const maxDots=coarsePointer3255?50:adaptiveDetail3255>=2?66:126;
     let seen=0;
     ctx.save();
 
+    // Maritime trade routes stay visible as the light-blue dashed line even
+    // before zoom 25. This applies equally to player and AI↔AI routes.
+    if(zoom>3.15){
+      let seaLines=0;
+      for(const r of routes){
+        if(seaLines>=maxRoutes||r.type!=='sea'||r.status==='closed'||!r.path||!r.path.length||(r.lastFactor||0)<=0)continue;
+        const visual=routeVisualPath0371(r);
+        if(!routeScreenRelevant0378(visual,C,R,cx,cy))continue;
+        drawSeaTradeLine0378(visual,C,R,cx,cy);seaLines++;
+      }
+    }
+
+    if(!showDots){ctx.restore();return}
+
     rebuildDomesticTraffic0371(now);
-    const domesticCap=coarsePointer3255?18:adaptiveDetail3255>=2?22:34;
+    const domesticCap=coarsePointer3255?100:220;
     for(let i=0;i<Math.min(domesticCap,domesticRoadTraffic0371.length)&&trafficDrawn<maxDots;i++){
       const d=domesticRoadTraffic0371[i],path=d.path;
       if(!path||path.length<2)continue;
@@ -1110,43 +1165,39 @@
         let phase=((now*.000075+d.seed*.013+k/dots)%1+1)%1;
         if((d.seed+k)&1)phase=1-phase;
         const p=projectedAlongCells0371(path,phase,C,R,cx,cy);
-        if(!p||p[2]<.045)continue;
-        ctx.beginPath();ctx.arc(p[0],p[1],zoom>4?1.85:1.55,0,Math.PI*2);
-        ctx.fillStyle=playerTrafficColor0372();ctx.fill();
-        ctx.lineWidth=.65;ctx.strokeStyle='rgba(245,250,255,.88)';ctx.stroke();
+        if(!pointVisible0378(p))continue;
+        ctx.beginPath();ctx.arc(p[0],p[1],zoom>32?1.85:1.55,0,Math.PI*2);
+        ctx.fillStyle=factionTrafficColor0378(d.faction);ctx.fill();
+        ctx.lineWidth=.6;ctx.strokeStyle='rgba(245,250,255,.78)';ctx.stroke();
         trafficDrawn++;
       }
     }
 
     for(const r of routes){
       if(seen>=maxRoutes||trafficDrawn>=maxDots||r.status==='closed'||!r.path||!r.path.length||(r.lastFactor||0)<=0)continue;
-      if(!(r.a===0||r.b===0)&&seen>maxRoutes*.58)continue;
-      seen++;
       const visual=routeVisualPath0371(r);
-      if(r.type==='sea'&&(r.a===0||r.b===0)&&zoom>3.15){
-        ctx.beginPath();let started=false;
-        const stride=Math.max(1,Math.floor(visual.length/72));
-        for(let i=0;i<visual.length;i+=stride){
-          const j=visual[i]*3,p=projectVec(C[j]/32767,C[j+1]/32767,C[j+2]/32767,R,cx,cy);
-          if(p[2]<.03){started=false;continue}
-          if(!started){ctx.moveTo(p[0],p[1]);started=true}else ctx.lineTo(p[0],p[1]);
-        }
-        if(visual.length>1&&(visual.length-1)%stride!==0){
-          const j=visual[visual.length-1]*3,p=projectVec(C[j]/32767,C[j+1]/32767,C[j+2]/32767,R,cx,cy);
-          if(p[2]>=.03){if(!started)ctx.moveTo(p[0],p[1]);else ctx.lineTo(p[0],p[1])}
-        }
-        ctx.setLineDash([2.5,3.5]);ctx.strokeStyle='rgba(99,206,226,.30)';ctx.lineWidth=.85;ctx.stroke();ctx.setLineDash([]);
-      }
+      if(!routeScreenRelevant0378(visual,C,R,cx,cy))continue;
+      seen++;
       const dots=Math.max(1,Math.min(3,Math.round((r.lastValue||r.baseValue||.2)*1.35)));
       for(let d=0;d<dots&&trafficDrawn<maxDots;d++){
         const phase=((now*.000055*(r.type==='sea'?.72:1)+r.id*.173+d/dots)%1+1)%1;
         const p=projectedAlongCells0371(visual,phase,C,R,cx,cy);
-        if(!p||p[2]<.045)continue;
-        ctx.beginPath();ctx.arc(p[0],p[1],r.type==='sea'?1.45:(r.a===0||r.b===0?1.65:1.25),0,Math.PI*2);
-        ctx.fillStyle=r.type==='sea'?'rgba(133,235,247,.94)':landRouteTrafficColor0372(r);
-        ctx.fill();
-        if(r.type==='land'&&(r.a===0||r.b===0)){
-          ctx.lineWidth=.6;ctx.strokeStyle='rgba(245,250,255,.84)';ctx.stroke();
+        if(!pointVisible0378(p))continue;
+        const faction=routeDotFaction0378(r,d);
+        const color=factionTrafficColor0378(faction);
+        if(r.type==='sea'){
+          // Tiny commercial ship, coloured by the nation operating it.
+          const rr=zoom>32?2.25:1.85;
+          ctx.beginPath();
+          ctx.moveTo(p[0],p[1]-rr);
+          ctx.lineTo(p[0]+rr*.72,p[1]+rr*.75);
+          ctx.lineTo(p[0]-rr*.72,p[1]+rr*.75);
+          ctx.closePath();ctx.fillStyle=color;ctx.fill();
+          ctx.lineWidth=.55;ctx.strokeStyle='rgba(2,10,16,.88)';ctx.stroke();
+        }else{
+          ctx.beginPath();ctx.arc(p[0],p[1],faction===0?1.65:1.35,0,Math.PI*2);
+          ctx.fillStyle=color;ctx.fill();
+          ctx.lineWidth=.55;ctx.strokeStyle='rgba(245,250,255,.76)';ctx.stroke();
         }
         trafficDrawn++;
       }
