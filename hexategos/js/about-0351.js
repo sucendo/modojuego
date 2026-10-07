@@ -4,10 +4,29 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.37.6',
+      date:'Octubre 2026',
+      title:'Conexión terrestre y aduana fronteriza',
+      current:true,
+      summary:'Las carreteras de dos países distintos ya no se conectan automáticamente al tocarse: la unión fronteriza se construye de forma explícita mediante una conexión terrestre/aduana.',
+      changes:[
+        'Cuando una carretera propia llega a un hexágono fronterizo junto a una carretera extranjera compatible aparece CONEXIÓN TERRESTRE.',
+        'El botón construye físicamente un tramo de carretera entre ambos hexágonos y establece la aduana fronteriza.',
+        'La conexión cuesta 12 de oro, equivalente al coste mínimo de un tramo viario.',
+        'Solo aparece con países que mantienen una relación cooperativa con derechos comerciales.',
+        'El simple contacto visual de dos carreteras de países distintos ya no basta para formar una red comercial común.',
+        'Jugador e IA: la IA puede llevar su carretera hasta tu frontera, pero espera a que el jugador construya la conexión terrestre.',
+        'IA e IA: cuando ambas redes llegan al mismo paso fronterizo, una de las IA puede construir explícitamente la conexión y pagar su coste.',
+        'Tras construir la aduana, el sistema intenta materializar inmediatamente la ruta comercial terrestre si el resto de requisitos se cumplen.',
+        'Las conexiones se guardan de forma independiente y también dentro de archivos .hexategos.',
+        'No se añade ningún temporizador ni escaneo global adicional.'
+      ]
+    },
+    {
       version:'0.37.5',
       date:'Octubre 2026',
       title:'IA civil y comercio físico entre naciones',
-      current:true,
+      current:false,
       summary:'Las IA recuperan un desarrollo civil continuo y convierten los tratados comerciales en carreteras y rutas físicas reales, incluso cuando deben encontrarse en una frontera.',
       changes:[
         'La diplomacia recibe un microturno garantizado cada pocos segundos de campaña y ya no depende de que sobre tiempo del scheduler militar.',
