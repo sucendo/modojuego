@@ -1,3 +1,27 @@
+HEXATEGOS_0_37_15
+
+Selector comercial:
+- beginSeaTradeMapPick03715
+- botón independiente de seaCandidates0370
+- canTrade = routeCount0370(0) < routeLimit0370(0)
+- selector nativo select_trade_route_target
+- nearestPortScreen03715
+- wrapper de pick durante modo comercial
+- diagnóstico explícito de fallos
+- API canPickSeaTarget(from,to)
+
+Rendimiento:
+- búsqueda de puerto solo en clic
+- sin coste por frame
+- sin nuevos timers
+
+Pruebas:
+- tests/smoke-03715.mjs
+
+Rama de seguridad:
+- backup/hexategos-0.37.14-before-trade-picker-03715
+
+--- MANIFEST ANTERIOR ---
 HEXATEGOS_0_37_14
 
 Selector comercial:
