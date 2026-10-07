@@ -38,6 +38,7 @@
   let restoredPortable=null;
   let domesticRoadTraffic0371=[];
   let domesticTrafficSig0371='';
+  let domesticTrafficBuiltAt0371=-1e9;
   let navalPathBucket0371=-1;
   let navalPathUsed0371=0;
 
@@ -977,7 +978,7 @@
       html+='<div class="tradeRoutes0370">';
       for(const r of own.slice(0,12)){
         const miss=missingPermits0370(r);
-        html+='<div class="tradeRoute0370"><b>'+(r.type==='sea'?'Marítima':'Terrestre')+' · '+escapeHtml3271(factionName3230(r.a===0?r.b:r.a))+'</b>'+
+        html+='<div class="tradeRoute0370"><b>'+(r.type==='sea'?'Marítima':'Terrestre')+' · '+(r.a===r.b?'Comercio interior':escapeHtml3271(factionName3230(r.a===0?r.b:r.a)))+'</b>'+
           '<span>'+routeStatusName0370(r)+' · +'+(r.lastValue||0).toFixed(2)+'/s</span>'+
           (r.via&&r.via.length?'<small>Tránsito: '+r.via.map(factionName3230).join(', ')+'</small>':'')+
           '<div class="acts">'+(miss.length?'<button onclick="HexategosTradeActions0370.requestTransit('+r.id+')">Solicitar tránsito</button>':'')+
@@ -992,36 +993,110 @@
     c.insertAdjacentHTML('beforeend',html);
   };
 
+  function rebuildDomesticTraffic0371(now){
+    if(now-domesticTrafficBuiltAt0371<3500&&domesticRoadTraffic0371.length)return;
+    const sig=roads3212.length+':'+cities3212.size+':'+industries3212.size+':'+ports3212.size+':'+capitals[0];
+    if(sig===domesticTrafficSig0371&&now-domesticTrafficBuiltAt0371<9000)return;
+    domesticTrafficSig0371=sig;domesticTrafficBuiltAt0371=now;
+    const candidates=[];
+    for(let ri=0;ri<roads3212.length;ri++){
+      const path=roads3212[ri];if(!Array.isArray(path)||path.length<2)continue;
+      let run=[];
+      const flush=()=>{
+        if(run.length<2){run=[];return}
+        let anchors=0;
+        for(const cell of run){
+          if(cities3212.has(cell)||industries3212.has(cell)||ports3212.has(cell)||capitals[0]===cell)anchors++;
+        }
+        const sampled=samplePath0370(run,120);
+        candidates.push({path:sampled,anchors,score:anchors*18+Math.min(20,run.length),seed:ri*37+run[0]});
+        run=[];
+      };
+      for(const cell of path){
+        if(cell>=0&&owner6[cell]===0)run.push(cell);
+        else flush();
+      }
+      flush();
+    }
+    candidates.sort((a,b)=>b.score-a.score);
+    domesticRoadTraffic0371=candidates.slice(0,coarsePointer3255?22:40);
+  }
+
+  function projectedAlongCells0371(path,phase,C,R,cx,cy){
+    if(!path||path.length<2)return null;
+    const x=clamp(phase,0,.999999)*(path.length-1),i=Math.floor(x),t=x-i;
+    const a=path[i]*3,b=path[Math.min(path.length-1,i+1)]*3;
+    let vx=(C[a]/32767)*(1-t)+(C[b]/32767)*t;
+    let vy=(C[a+1]/32767)*(1-t)+(C[b+1]/32767)*t;
+    let vz=(C[a+2]/32767)*(1-t)+(C[b+2]/32767)*t;
+    const n=Math.hypot(vx,vy,vz)||1;vx/=n;vy/=n;vz/=n;
+    return projectVec(vx,vy,vz,R,cx,cy);
+  }
+
+  function routeVisualPath0371(r){
+    const raw=r.path||[];
+    if(r.type!=='sea')return raw;
+    const needA=raw[0]!==r.from,needB=raw[raw.length-1]!==r.to;
+    if(!needA&&!needB)return raw;
+    const out=[];
+    if(needA)out.push(r.from);
+    for(const x of raw)out.push(x);
+    if(needB)out.push(r.to);
+    return out;
+  }
+
   function drawTradeTraffic0370(R,cx,cy,now){
     trafficDrawn=0;
-    const minZoom=adaptiveDetail3255>=2?4.15:TRAFFIC_ZOOM;
+    const minZoom=adaptiveDetail3255>=2?3.55:TRAFFIC_ZOOM;
     if(zoom<minZoom)return;
     const C=loadLevel(MAX_GAME_LEVEL3233).centers;
-    const maxRoutes=coarsePointer3255?22:adaptiveDetail3255>=2?28:52;
-    const maxDots=coarsePointer3255?44:adaptiveDetail3255>=2?58:115;
+    const maxRoutes=coarsePointer3255?24:adaptiveDetail3255>=2?30:56;
+    const maxDots=coarsePointer3255?50:adaptiveDetail3255>=2?66:126;
     let seen=0;
     ctx.save();
+
+    rebuildDomesticTraffic0371(now);
+    const domesticCap=coarsePointer3255?18:adaptiveDetail3255>=2?22:34;
+    for(let i=0;i<Math.min(domesticCap,domesticRoadTraffic0371.length)&&trafficDrawn<maxDots;i++){
+      const d=domesticRoadTraffic0371[i],path=d.path;
+      if(!path||path.length<2)continue;
+      const dots=d.anchors>=2&&path.length>7?2:1;
+      for(let k=0;k<dots&&trafficDrawn<maxDots;k++){
+        let phase=((now*.000075+d.seed*.013+k/dots)%1+1)%1;
+        if((d.seed+k)&1)phase=1-phase;
+        const p=projectedAlongCells0371(path,phase,C,R,cx,cy);
+        if(!p||p[2]<.045)continue;
+        ctx.beginPath();ctx.arc(p[0],p[1],zoom>4?1.35:1.1,0,Math.PI*2);
+        ctx.fillStyle='rgba(255,221,118,.96)';ctx.fill();trafficDrawn++;
+      }
+    }
+
     for(const r of routes){
       if(seen>=maxRoutes||trafficDrawn>=maxDots||r.status==='closed'||!r.path||!r.path.length||(r.lastFactor||0)<=0)continue;
       if(!(r.a===0||r.b===0)&&seen>maxRoutes*.58)continue;
       seen++;
-      if(r.type==='sea'&&(r.a===0||r.b===0)&&zoom>3.45){
+      const visual=routeVisualPath0371(r);
+      if(r.type==='sea'&&(r.a===0||r.b===0)&&zoom>3.15){
         ctx.beginPath();let started=false;
-        for(let i=0;i<r.path.length;i+=Math.max(1,Math.floor(r.path.length/70))){
-          const j=r.path[i]*3,p=projectVec(C[j]/32767,C[j+1]/32767,C[j+2]/32767,R,cx,cy);
+        const stride=Math.max(1,Math.floor(visual.length/72));
+        for(let i=0;i<visual.length;i+=stride){
+          const j=visual[i]*3,p=projectVec(C[j]/32767,C[j+1]/32767,C[j+2]/32767,R,cx,cy);
           if(p[2]<.03){started=false;continue}
           if(!started){ctx.moveTo(p[0],p[1]);started=true}else ctx.lineTo(p[0],p[1]);
         }
-        ctx.setLineDash([2.5,3.5]);ctx.strokeStyle='rgba(99,206,226,.24)';ctx.lineWidth=.75;ctx.stroke();ctx.setLineDash([]);
+        if(visual.length>1&&(visual.length-1)%stride!==0){
+          const j=visual[visual.length-1]*3,p=projectVec(C[j]/32767,C[j+1]/32767,C[j+2]/32767,R,cx,cy);
+          if(p[2]>=.03){if(!started)ctx.moveTo(p[0],p[1]);else ctx.lineTo(p[0],p[1])}
+        }
+        ctx.setLineDash([2.5,3.5]);ctx.strokeStyle='rgba(99,206,226,.30)';ctx.lineWidth=.85;ctx.stroke();ctx.setLineDash([]);
       }
       const dots=Math.max(1,Math.min(3,Math.round((r.lastValue||r.baseValue||.2)*1.35)));
       for(let d=0;d<dots&&trafficDrawn<maxDots;d++){
         const phase=((now*.000055*(r.type==='sea'?.72:1)+r.id*.173+d/dots)%1+1)%1;
-        const cell=r.path[Math.min(r.path.length-1,Math.floor(phase*(r.path.length-1)))];
-        const j=cell*3,p=projectVec(C[j]/32767,C[j+1]/32767,C[j+2]/32767,R,cx,cy);
-        if(p[2]<.045)continue;
-        ctx.beginPath();ctx.arc(p[0],p[1],r.type==='sea'?1.35:1.05,0,Math.PI*2);
-        ctx.fillStyle=r.type==='sea'?'rgba(133,235,247,.92)':'rgba(255,220,112,.94)';
+        const p=projectedAlongCells0371(visual,phase,C,R,cx,cy);
+        if(!p||p[2]<.045)continue;
+        ctx.beginPath();ctx.arc(p[0],p[1],r.type==='sea'?1.45:1.15,0,Math.PI*2);
+        ctx.fillStyle=r.type==='sea'?'rgba(133,235,247,.94)':'rgba(255,220,112,.96)';
         ctx.fill();trafficDrawn++;
       }
     }
@@ -1038,7 +1113,7 @@
   const baseRebuildRoads0370=rebuildRoadEdges3212;
   rebuildRoadEdges3212=function(){
     const out=baseRebuildRoads0370.apply(this,arguments);
-    lastRoadCampaign=-1e9;markTradeDirty0370();
+    lastRoadCampaign=-1e9;domesticTrafficBuiltAt0371=-1e9;domesticTrafficSig0371='';markTradeDirty0370();
     return out;
   };
 
