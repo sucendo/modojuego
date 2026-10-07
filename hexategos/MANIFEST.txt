@@ -1,3 +1,23 @@
+HEXATEGOS_0_36_2
+
+Construcción IA más humana:
+- menos polos industriales por territorio
+- industria nueva concentrada en ciudades, puertos o corredores
+- al cubrir la red industrial, la IA mejora fábricas existentes en vez de sembrar otras
+- tareas regionales obsoletas se descartan antes de invertir
+- objetivos urbanos, viarios y portuarios limitados y proporcionales
+- partidas existentes compatibles y sin eliminación automática de infraestructuras
+
+Módulo nuevo:
+- js/human-build-0362.js
+
+Pruebas:
+- tests/smoke-0362.mjs
+
+Rama de seguridad:
+- backup/hexategos-0.36.1-before-human-ai-build-0362
+
+--- MANIFEST ANTERIOR ---
 HEXATEGOS_0_36_1
 
 Rendimiento 500 naciones:
