@@ -684,7 +684,11 @@
   function resourceSummary03720(f){
     f=Number(f);
     if(!Number.isInteger(f)||f<0||f>=activeFactionCount3230)return null;
-    if(!resourceNodes03720.size)resourceTick03720(true);
+    // Consultar la pantalla de Economía no debe avanzar producción/consumo.
+    if(!resourceNodes03720.size){
+      ensureResourceNodes03720(true);
+      summarizeResources03720();
+    }
     return resourceNation03720[f]||null;
   }
 
