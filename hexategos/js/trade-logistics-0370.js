@@ -48,6 +48,19 @@
   let domesticSeaSupplyCache03713=null;
   let tradeRevision03713=0;
   let focusedTradeRoute03717=-1;
+
+  // 0.37.20 · economía material física. Inventario solo en nodos logísticos
+  // (estructura/puerto/extremo de ruta), nunca por hexágono.
+  const RESOURCE_KEYS03720=['food','raw','fuel','goods','military'];
+  const RESOURCE_LABELS03720=['Alimentos','Materias primas','Energía/combustible','Bienes industriales','Material militar'];
+  const RESOURCE_SHORT03720=['Alimentos','Materias','Combustible','Bienes','Militar'];
+  let resourceNodes03720=new Map();
+  let resourceNation03720=[];
+  let resourceSig03720='';
+  let resourceLastCampaign03720=-1e9;
+  let resourceTickMs03720=0;
+  let restoredResources03720=null;
+
   let navalPathBucket0371=-1;
   let navalPathUsed0371=0;
 
@@ -437,6 +450,267 @@
     return f;
   }
 
+  function resourceKind03720(cell,f){
+    const kinds=[];
+    if(capitals[f]===cell)kinds.push('capital');
+    if(cities3212.has(cell))kinds.push('city');
+    if(industries3212.has(cell))kinds.push('industry');
+    if(ports3212.has(cell))kinds.push('port');
+    return kinds.length?kinds.join('+'):'hub';
+  }
+
+  function resourceStructureSignature03720(){
+    let h=(cities3212.size*31+industries3212.size*37+ports3212.size*41+routes.length*43+activeFactionCount3230*47)>>>0;
+    const mix=cell=>{const f=owner6[cell];h=Math.imul(h^((cell+1)*17+(f+2)*29),16777619)>>>0};
+    for(const x of cities3212)mix(x);
+    for(const x of industries3212)mix(x);
+    for(const x of ports3212)mix(x);
+    for(let f=0;f<activeFactionCount3230;f++)if(Number.isInteger(capitals[f])&&capitals[f]>=0)mix(capitals[f]);
+    for(const r of routes)if(r.status!=='closed'){mix(r.from);mix(r.to)}
+    return h+':'+roadEpoch;
+  }
+
+  function resourceRoadComp03720(cell,f){
+    if(roadComp&&cell>=0&&cell<roadComp.length&&roadComp[cell]>=0)return roadComp[cell];
+    const L=loadLevel(MAX_GAME_LEVEL3233);
+    if(cell<0||cell>=L.n)return -1;
+    for(let k=L.offsets[cell];k<L.offsets[cell+1];k++){
+      const n=L.edgeNbr[k];
+      if(n>=0&&owner6[n]===f&&roadComp&&roadComp[n]>=0)return roadComp[n];
+    }
+    return -1;
+  }
+
+  function resourceNodeProfile03720(cell,f,nodeCount,snap){
+    const city=cities3212.has(cell)?Math.max(1,cityLevel3230[cell]||1):0;
+    const ind=industries3212.has(cell)?Math.max(1,industryLevel3230[cell]||1):0;
+    const port=ports3212.has(cell)?1:0;
+    const capital=capitals[f]===cell?1:0;
+    const hub=!city&&!ind&&!port&&!capital?1:0;
+
+    const cap=[18,18,16,16,10],prod=[0,0,0,0,0],demand=[0,0,0,0,0];
+    if(city){
+      cap[0]+=20*city;cap[2]+=9*city;cap[3]+=17*city;cap[4]+=4*city;
+      prod[0]+=.025*city;
+      demand[0]+=.090*city;demand[2]+=.024*city;demand[3]+=.055*city;
+    }
+    if(ind){
+      cap[1]+=28*ind;cap[2]+=24*ind;cap[3]+=28*ind;cap[4]+=24*ind;
+      demand[0]+=.012*ind;demand[1]+=.105*ind;demand[2]+=.078*ind;
+      // goods / military output is added later using the actual input-stock factor.
+      demand[3]+=.008*ind;
+    }
+    if(port){
+      cap[0]+=16;cap[1]+=20;cap[2]+=24;cap[3]+=18;cap[4]+=8;
+      demand[2]+=.026;demand[3]+=.012;
+    }
+    if(capital){
+      cap[0]+=36;cap[1]+=20;cap[2]+=24;cap[3]+=38;cap[4]+=28;
+      demand[0]+=.125;demand[2]+=.035;demand[3]+=.082;demand[4]+=.014;
+    }
+    if(hub){
+      for(let i=0;i<5;i++)cap[i]+=8;
+    }
+
+    // El territorio genera la producción primaria. Se deposita de forma
+    // repartida en sus nodos logísticos, evitando un scan/stock por hexágono.
+    const territory=Math.max(1,snap.territory[f]||1),div=Math.max(1,nodeCount);
+    const regional=territory/div;
+    prod[0]+=regional*.00072;
+    prod[1]+=regional*.00056;
+    prod[2]+=regional*.00025;
+
+    return {cap,prod,demand,city,ind,port,capital,hub};
+  }
+
+  function ensureResourceNodes03720(force=false){
+    rebuildRoadGraph0370(false);
+    const sig=resourceStructureSignature03720();
+    if(!force&&resourceSig03720===sig&&resourceNodes03720.size)return resourceNodes03720;
+
+    const old=resourceNodes03720,next=new Map(),cellsByFaction=Array.from({length:activeFactionCount3230},()=>new Set());
+    const add=(cell,f)=>{
+      if(!Number.isInteger(cell)||cell<0||f<0||f>=activeFactionCount3230||owner6[cell]!==f)return;
+      cellsByFaction[f].add(cell);
+    };
+    for(const cell of cities3212)add(cell,owner6[cell]);
+    for(const cell of industries3212)add(cell,owner6[cell]);
+    for(const cell of ports3212)add(cell,owner6[cell]);
+    for(let f=0;f<activeFactionCount3230;f++)add(capitals[f],f);
+    for(const r of routes){
+      if(r.status==='closed')continue;
+      add(r.from,r.a);add(r.to,r.b);
+    }
+
+    const snap=ensureEconomySnapshot3261(false);
+    const restoredPlayer=new Map(Array.isArray(restoredResources03720?.playerNodes)?restoredResources03720.playerNodes:[]);
+    const restoredCoverage=Array.isArray(restoredResources03720?.nationCoverage)?restoredResources03720.nationCoverage:[];
+
+    for(let f=0;f<activeFactionCount3230;f++){
+      const count=Math.max(1,cellsByFaction[f].size);
+      for(const cell of cellsByFaction[f]){
+        const profile=resourceNodeProfile03720(cell,f,count,snap),prev=old.get(cell);
+        let stock;
+        if(prev&&prev.f===f&&Array.isArray(prev.stock)){
+          stock=profile.cap.map((mx,i)=>clamp(Number(prev.stock[i])||0,0,mx));
+        }else if(f===0&&restoredPlayer.has(cell)){
+          const saved=restoredPlayer.get(cell);
+          stock=profile.cap.map((mx,i)=>clamp(Number(saved?.[i])||0,0,mx));
+        }else{
+          const cov=Array.isArray(restoredCoverage[f])?restoredCoverage[f]:null;
+          stock=profile.cap.map((mx,i)=>mx*clamp(Number(cov?.[i])||.56,.12,.92));
+        }
+        next.set(cell,{
+          cell,f,kind:resourceKind03720(cell,f),stock,
+          cap:profile.cap,prod:profile.prod,demand:profile.demand,
+          city:profile.city,ind:profile.ind,port:profile.port,capital:profile.capital,
+          comp:resourceRoadComp03720(cell,f)
+        });
+      }
+    }
+    resourceNodes03720=next;resourceSig03720=sig;restoredResources03720=null;
+    return next;
+  }
+
+  function redistributeRoadResources03720(blend=.28){
+    const groups=new Map();
+    for(const n of resourceNodes03720.values()){
+      if(n.comp<0)continue;
+      const key=n.f+':'+n.comp;
+      if(!groups.has(key))groups.set(key,[]);
+      groups.get(key).push(n);
+    }
+    for(const list of groups.values()){
+      if(list.length<2)continue;
+      for(let r=0;r<5;r++){
+        let total=0,totalCap=0;
+        for(const n of list){total+=n.stock[r];totalCap+=n.cap[r]}
+        if(totalCap<=0)continue;
+        const ratio=total/totalCap;
+        for(const n of list)n.stock[r]=clamp(n.stock[r]*(1-blend)+n.cap[r]*ratio*blend,0,n.cap[r]);
+      }
+    }
+  }
+
+  function transferRouteResources03720(r,dt){
+    r.cargo03720=[0,0,0,0,0];r.cargoTotal03720=0;r.materialFactor03720=.48;
+    const k=routeFactor0370(r);
+    if(k<=0)return;
+    const a=resourceNodes03720.get(r.from),b=resourceNodes03720.get(r.to);
+    if(!a||!b)return;
+
+    const perSec=(r.type==='sea'?.62:.44)*(.72+Math.min(2.2,r.baseValue||.2)*.42)*k;
+    const importance=[1.18,1.00,1.08,1.12,.72],needs=[],sumBase={v:0};
+    for(let i=0;i<5;i++){
+      const ra=a.cap[i]>0?a.stock[i]/a.cap[i]:0,rb=b.cap[i]>0?b.stock[i]/b.cap[i]:0;
+      const diff=ra-rb;
+      const score=Math.max(0,Math.abs(diff)-.025)*importance[i];
+      needs[i]={diff,score};sumBase.v+=score;
+    }
+    if(sumBase.v<=.0001){r.materialFactor03720=.62;return}
+
+    let total=0;
+    for(let i=0;i<5;i++){
+      const x=needs[i];if(x.score<=0)continue;
+      const src=x.diff>0?a:b,dst=x.diff>0?b:a;
+      const budget=perSec*dt*(x.score/sumBase.v);
+      const reserve=src.cap[i]*.16,space=Math.max(0,dst.cap[i]*.88-dst.stock[i]);
+      const amount=Math.max(0,Math.min(budget,src.stock[i]-reserve,space));
+      if(amount<=0)continue;
+      src.stock[i]-=amount;dst.stock[i]+=amount;
+      r.cargo03720[i]=amount/Math.max(.1,dt);
+      total+=amount/Math.max(.1,dt);
+    }
+    r.cargoTotal03720=total;
+    r.materialFactor03720=clamp(.45+total/Math.max(.08,perSec)*.70,.45,1.16);
+  }
+
+  function summarizeResources03720(){
+    resourceNation03720=Array.from({length:activeFactionCount3230},()=>({
+      stock:[0,0,0,0,0],cap:[0,0,0,0,0],prod:[0,0,0,0,0],demand:[0,0,0,0,0],
+      coverage:[.55,.55,.55,.55,.55],economyFactor:1,recruitFactor:1,nodes:0
+    }));
+    for(const n of resourceNodes03720.values()){
+      const s=resourceNation03720[n.f];if(!s)continue;
+      s.nodes++;
+      for(let i=0;i<5;i++){s.stock[i]+=n.stock[i];s.cap[i]+=n.cap[i];s.prod[i]+=n.prod[i];s.demand[i]+=n.demand[i]}
+    }
+    const norm=x=>clamp(x/.55,.42,1.12);
+    for(const s of resourceNation03720){
+      for(let i=0;i<5;i++)s.coverage[i]=s.cap[i]>0?clamp(s.stock[i]/s.cap[i],0,1):.55;
+      const food=norm(s.coverage[0]),raw=norm(s.coverage[1]),fuel=norm(s.coverage[2]),
+            goods=norm(s.coverage[3]),mil=norm(s.coverage[4]);
+      s.economyFactor=clamp(.36+food*.23+raw*.10+fuel*.18+goods*.13,.55,1.10);
+      s.recruitFactor=clamp(.30+food*.24+fuel*.16+goods*.08+mil*.22,.45,1.08);
+    }
+  }
+
+  function resourceTick03720(force=false){
+    const t0=performance.now(),now=Number(campaignSeconds3230)||0;
+    let dt=resourceLastCampaign03720<-1e8?1:now-resourceLastCampaign03720;
+    if(!force&&dt<=.05)return;
+    dt=clamp(dt,.1,8);resourceLastCampaign03720=now;
+    ensureResourceNodes03720(force);
+
+    // Producción / consumo local.
+    for(const n of resourceNodes03720.values()){
+      const rawRatio=n.cap[1]?n.stock[1]/n.cap[1]:1,fuelRatio=n.cap[2]?n.stock[2]/n.cap[2]:1;
+      const industryInput=n.ind?clamp(Math.min(rawRatio/.34,fuelRatio/.30),.12,1.08):0;
+      for(let i=0;i<5;i++){
+        let production=n.prod[i];
+        if(i===3&&n.ind)production+=.105*n.ind*industryInput;
+        if(i===4&&n.ind)production+=.046*n.ind*industryInput;
+        n.stock[i]=clamp(n.stock[i]+production*dt,0,n.cap[i]);
+      }
+      for(let i=0;i<5;i++)n.stock[i]=Math.max(0,n.stock[i]-n.demand[i]*dt);
+    }
+
+    // Camiones/logística interna: redistribución limitada dentro de la red viaria.
+    redistributeRoadResources03720(.30);
+
+    // Comercio físico: cada ruta mueve excedente real hacia el nodo deficitario.
+    for(const r of routes){
+      if(r.status==='closed')continue;
+      transferRouteResources03720(r,dt);
+    }
+
+    // Lo descargado en un puerto/aduana se reparte por la red local.
+    redistributeRoadResources03720(.22);
+    summarizeResources03720();
+    resourceTickMs03720=performance.now()-t0;
+    markTradeDirty0370();
+  }
+
+  function resourceSummary03720(f){
+    f=Number(f);
+    if(!Number.isInteger(f)||f<0||f>=activeFactionCount3230)return null;
+    if(!resourceNodes03720.size)resourceTick03720(true);
+    return resourceNation03720[f]||null;
+  }
+
+  function routeCargoText03720(r){
+    const a=Array.isArray(r.cargo03720)?r.cargo03720:[];
+    const parts=[];
+    for(let i=0;i<5;i++)if((a[i]||0)>=.015)parts.push(RESOURCE_SHORT03720[i]+' '+a[i].toFixed(2)+'/s');
+    return parts.join(' · ');
+  }
+
+  const baseTerritorialEconomy03720=territorialEconomy3261;
+  territorialEconomy3261=function(f){
+    const r=baseTerritorialEconomy03720.apply(this,arguments);
+    const s=resourceNation03720[Number(f)];
+    if(!s||!r||typeof r!=='object')return r;
+    const gross=(Number(r.gross)||0)*s.economyFactor;
+    const maintenance=Number(r.maintenance)||0;
+    return {...r,
+      gross,net:gross-maintenance,gold:gross-maintenance,
+      troop:(Number(r.troop)||0)*s.recruitFactor,
+      materialEconomyFactor:s.economyFactor,
+      materialRecruitFactor:s.recruitFactor
+    };
+  };
+  economyRate3230=territorialEconomy3261;
+
   function rebuildTradeCache0370(force=false){
     const wall=performance.now();
     if(!force&&!dirty&&wall-lastCacheWall<1700)return;
@@ -447,11 +721,13 @@
     routeEvals=0;
     for(const r of routes){
       if(r.status==='closed')continue;
-      const k=routeFactor0370(r),value=(r.baseValue||0)*k,share=value*.56;
+      const k=routeFactor0370(r),material=Number.isFinite(r.materialFactor03720)?r.materialFactor03720:1,
+            value=(r.baseValue||0)*k*material,share=value*.56,
+            physical=Number.isFinite(r.cargoTotal03720)?r.cargoTotal03720:value*9.5;
       r.lastFactor=k;r.lastValue=value;routeEvals++;
       if(k<=0)continue;
-      if(r.a<activeFactionCount3230){tradeCache[r.a]+=share;goodsCache[r.a]+=value*9.5}
-      if(r.b<activeFactionCount3230){tradeCache[r.b]+=share;goodsCache[r.b]+=value*9.5}
+      if(r.a<activeFactionCount3230){tradeCache[r.a]+=share;goodsCache[r.a]+=physical}
+      if(r.b<activeFactionCount3230){tradeCache[r.b]+=share;goodsCache[r.b]+=physical}
     }
     dirty=false;lastCacheWall=wall;
   }
@@ -594,6 +870,7 @@
         tradeIncident0370(r);
       }
     }
+    resourceTick03720(false);
     rebuildTradeCache0370(true);
     lastTickMs=performance.now()-t0;
   }
@@ -871,7 +1148,10 @@
   const baseNavalOrderPlayer0370=navalOrderPlayer3270;
   navalOrderPlayer3270=function(id,order){
     const g=navalGroups3270.find(x=>x.id===id&&x.f===0);
-    if(g){g.interceptPhase0371=null;g.interceptReturn0371=null;g.interceptEnemyPort0371=-1}
+    if(g){
+      g.interceptPhase0371=null;g.interceptReturn0371=null;g.interceptEnemyPort0371=-1;
+      if(order==='patrol'){g.patrolNext0371=0;g._patrolAwaitingNext03719=false}
+    }
     if(g&&(order==='return'||order==='patrol')&&g.home<0){
       toast('La flota no tiene base · selecciona un puerto propio y traslada la base');
       return;
@@ -898,7 +1178,7 @@
     const L=loadLevel(MAX_GAME_LEVEL3233),outbound=[homeSea];
     const seed=(g.id*1103515245+Math.floor(nowCampaign/4)*12345)>>>0;
     let u=homeSea,prev=-1;
-    for(let step=0;step<7;step++){
+    for(let step=0;step<9;step++){
       const opts=[];
       for(let k=L.offsets[u];k<L.offsets[u+1];k++){
         const v=L.edgeNbr[k];if(v<0||L.land[v]>=0||v===prev)continue;
@@ -1043,12 +1323,16 @@
         if(startInterceptExcursion0371(g,nowCampaign))return;
         g.interceptNext0371=nowCampaign+6+(g.id%6);
       }
-      if(!g.route&&nowCampaign>=(g.patrolNext0371||0))buildLocalPatrolRoute0371(g,nowCampaign);
+      if(!g.route&&nowCampaign>=(g.patrolNext0371||0))buildLocalPatrolRoute03719(g,nowCampaign);
       return;
     }
     if(g.order==='patrol'){
       // Una patrulla en curso termina siempre su ciclo antes de recibir otro.
       if(g.route&&g.route.length)return;
+
+      // Una orden nueva de patrulla o un cambio de orden de la IA puede haber
+      // heredado el Infinity usado durante el ciclo anterior.
+      if(!g._patrolAwaitingNext03719&&!Number.isFinite(g.patrolNext0371))g.patrolNext0371=nowCampaign;
 
       const homeSea=bestPortSea3270(g.home,g.cell);
       if(homeSea<0)return;
@@ -1201,7 +1485,7 @@
   }
 
   function tradeRouteGoods03717(r){
-    return Math.max(0,Math.round((r.lastValue||0)*9.5));
+    return Number.isFinite(r.cargoTotal03720)?Number(r.cargoTotal03720.toFixed(2)):Math.max(0,Math.round((r.lastValue||0)*9.5));
   }
 
   function tradeRouteSupplyLabel03717(r){
@@ -1290,6 +1574,7 @@
       '<div class="tradeRouteHead03717"><b>'+origin+' ↔ '+dest+'</b><small>'+tradeRouteTypeLabel03717(r)+'</small></div>'+
       '<span>'+partner+' · '+status+'</span>'+
       details+
+      (routeCargoText03720(r)?'<small class="tradeCargo03720">Carga: '+escapeHtml3271(routeCargoText03720(r))+'</small>':'')+
       (supply?'<small class="tradeSupply03717">'+escapeHtml3271(supply)+'</small>':'')+
       (r.via&&r.via.length?'<small>Tránsito: '+r.via.map(x=>escapeHtml3271(factionName3230(x))).join(', ')+'</small>':'')+
       '<div class="acts">'+
@@ -1309,12 +1594,28 @@
     const own=sortedOwnRoutes03717();
     const residual=residualTrade0370(0);
     const active=own.filter(r=>(r.lastFactor||0)>0).length;
-    let html='<div class="sysBlock3213 tradeManager03717">'+
+    const material=resourceSummary03720(0);
+    let html='';
+    if(material){
+      html+='<div class="sysBlock3213 resourceEconomy03720"><div class="tradeManagerTitle03717"><b>▦ Economía material</b><small>'+material.nodes+' nodos logísticos</small></div>'+
+        '<div class="sysMeta3213">Los stocks se producen, consumen y redistribuyen por carreteras y rutas físicas. La escasez reduce economía y reclutamiento.</div>'+
+        '<div class="resourceGrid03720">';
+      for(let i=0;i<5;i++){
+        const pct=Math.round((material.coverage[i]||0)*100);
+        html+='<span><b>'+RESOURCE_LABELS03720[i]+'</b><i><em style="width:'+pct+'%"></em></i><small>'+pct+'% · '+material.stock[i].toFixed(1)+' / '+material.cap[i].toFixed(1)+'</small></span>';
+      }
+      html+='</div><div class="econGrid3261">'+
+        '<span>Factor económico material</span><b>'+Math.round(material.economyFactor*100)+'%</b>'+
+        '<span>Factor de reclutamiento</span><b>'+Math.round(material.recruitFactor*100)+'%</b>'+
+        '<span>Cálculo material</span><b>'+resourceTickMs03720.toFixed(1)+' ms</b>'+
+        '</div></div>';
+    }
+    html+='<div class="sysBlock3213 tradeManager03717">'+
       '<div class="tradeManagerTitle03717"><b>⇄ Gestor de rutas comerciales</b><small>'+own.length+' registradas</small></div>'+
       '<div class="sysMeta3213">Las relaciones diplomáticas aportan solo un comercio residual de +'+residual.toFixed(2)+'/s. El flujo importante depende de rutas físicas.</div>'+
       '<div class="econGrid3261">'+
       '<span>Rutas activas / registradas</span><b>'+active+' / '+own.length+'</b>'+
-      '<span>Flujo de mercancías</span><b>'+Math.round(goodsCache[0]||0)+'</b>'+
+      '<span>Flujo físico de mercancías</span><b>'+Number(goodsCache[0]||0).toFixed(2)+' u/s</b>'+
       '<span>Ingreso comercial</span><b>+'+(tradeCache[0]||0).toFixed(2)+'/s</b>'+
       '</div>';
     if(own.length){
@@ -1574,7 +1875,8 @@
       const visual=routeVisualPath0371(r);
       if(!routeScreenRelevant0378(visual,C,R,cx,cy))continue;
       seen++;
-      const dots=Math.max(1,Math.min(3,Math.round((r.lastValue||r.baseValue||.2)*1.35)));
+      const intensity=Number.isFinite(r.cargoTotal03720)?r.cargoTotal03720:(r.lastValue||r.baseValue||.2)*1.35;
+      const dots=Math.max(1,Math.min(3,Math.round(intensity*1.7)));
       for(let d=0;d<dots&&trafficDrawn<maxDots;d++){
         const faction=routeDotFaction0378(r,d);
         const phase=routeTravelPhase03710(r,d,now,visual.length,faction);
@@ -1635,7 +1937,12 @@
 
   function serialize0370(){
     return {
-      version:1,nextRouteId,permits:[...permits.entries()],
+      version:2,nextRouteId,permits:[...permits.entries()],
+      resources03720:{
+        version:1,
+        playerNodes:[...resourceNodes03720.values()].filter(n=>n.f===0).map(n=>[n.cell,n.stock.map(x=>Number(x.toFixed(3)))]),
+        nationCoverage:resourceNation03720.map(s=>s?s.coverage.map(x=>Number(x.toFixed(4))):null)
+      },
       routes:routes.filter(r=>r.status!=='closed').map(r=>({
         id:r.id,type:r.type,a:r.a,b:r.b,from:r.from,to:r.to,path:r.path||[],
         via:r.via||[],distance:r.distance||0,baseValue:r.baseValue||0,navalRisk:r.navalRisk||0,
@@ -1654,6 +1961,8 @@
   function restore0370(data){
     if(!data||typeof data!=='object')return false;
     focusedTradeRoute03717=-1;hideTradeRouteFocusBar03718();
+    restoredResources03720=data.resources03720&&typeof data.resources03720==='object'?data.resources03720:null;
+    resourceNodes03720=new Map();resourceNation03720=[];resourceSig03720='';resourceLastCampaign03720=-1e9;
     permits=new Map(Array.isArray(data.permits)?data.permits:[]);
     routes=[];
     for(const x of data.routes||[]){
@@ -1705,6 +2014,7 @@
   resetGame3230=function(clearSave=true){
     const out=baseReset0370.apply(this,arguments);
     focusedTradeRoute03717=-1;hideTradeRouteFocusBar03718();
+    resourceNodes03720=new Map();resourceNation03720=[];resourceSig03720='';resourceLastCampaign03720=-1e9;restoredResources03720=null;
     routes=[];permits.clear();nextRouteId=1;dirty=true;lastRoadCampaign=-1e9;
     if(clearSave)try{localStorage.removeItem(SAVE_KEY)}catch(e){}
     return out;
@@ -1812,6 +2122,13 @@
     routes:()=>routes,
     focusedRoute:()=>focusedTradeRoute03717,
     focusRoute:(id)=>focusTradeRoute03717(Number(id)),
+    resourceKeys:()=>RESOURCE_KEYS03720.slice(),
+    resourceSummary:(f=0)=>resourceSummary03720(Number(f)),
+    resourceNode:(cell)=>{
+      ensureResourceNodes03720(false);
+      const n=resourceNodes03720.get(Number(cell));
+      return n?{cell:n.cell,f:n.f,kind:n.kind,stock:n.stock.slice(),cap:n.cap.slice(),demand:n.demand.slice(),prod:n.prod.slice()}:null;
+    },
     domesticSeaSupply:(f,cell)=>domesticSeaSupplyFloor03713(Number(f),Number(cell)),
     roadComponent:(cell)=>{rebuildRoadGraph0370(false);return Number.isInteger(cell)&&cell>=0&&roadComp&&cell<roadComp.length?roadComp[cell]:-1},
     visualSpeed:(kind,faction)=>({
