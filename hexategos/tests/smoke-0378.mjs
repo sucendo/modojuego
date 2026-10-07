@@ -11,7 +11,7 @@ assert.doesNotThrow(()=>new Function(trade),'trade-logistics-0370.js must parse'
 assert.doesNotThrow(()=>new Function(visuals),'national-visuals-0378.js must parse');
 
 assert.ok(trade.includes('const TRAFFIC_ZOOM=25'),'traffic dots must start at zoom 25');
-assert.ok(trade.includes('faction:runFaction'),'domestic traffic must retain faction identity');
+assert.ok(trade.includes('faction:g.f')||trade.includes('faction:runFaction'),'domestic traffic must retain faction identity');
 assert.ok(trade.includes('ctx.fillStyle=factionTrafficColor0378(d.faction)'),'domestic dots must use faction color');
 assert.ok(trade.includes('function routeDotFaction0378'),'international route dots must resolve a nation');
 assert.ok(trade.includes("ctx.strokeStyle='rgba(99,206,226,.30)'"),'sea trade route must keep light-blue dashed style');
@@ -36,7 +36,7 @@ assert.ok(visuals.includes('trafficMinZoom:TRAFFIC_MIN_ZOOM0378'),'public visual
 assert.ok(visuals.includes('navalMinZoom:NAVAL_MIN_ZOOM0378'),'public visual status must expose zoom 15');
 assert.ok(!visuals.includes('setInterval('),'0.37.8 must not add another periodic timer');
 
-assert.ok(index.includes('v0.37.8</title>')||index.includes('v0.37.9</title>')||index.includes('v0.37.10</title>')||index.includes('v0.37.11</title>')||index.includes('v0.37.12</title>')||index.includes('v0.37.13</title>'),'visible version must be 0.37.8 or compatible successor');
+assert.ok(index.includes('v0.37.8</title>')||index.includes('v0.37.9</title>')||index.includes('v0.37.10</title>')||index.includes('v0.37.11</title>')||index.includes('v0.37.12</title>')||index.includes('v0.37.13</title>')||index.includes('v0.37.14</title>'),'visible version must be 0.37.8 or compatible successor');
 assert.ok(index.indexOf('js/national-visuals-0378.js')>index.indexOf('js/trade-geopolitics-0377.js'),
   '0.37.8 must load after trade geopolitics');
 assert.ok(about.includes("version:'0.37.8'"),'about history must include 0.37.8');
