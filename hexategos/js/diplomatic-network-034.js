@@ -439,6 +439,8 @@
     level:diplomaticContactLevel3301,
     label:(a,b)=>CONTACT_LABEL[diplomaticContactLevel3301(a,b)]||CONTACT_LABEL[0],
     targets:(f)=>diplomaticTargets3301(f).slice(),
+    // Internal hot-path accessor. Callers must treat the returned array as read-only.
+    targetsRef:(f)=>diplomaticTargets3301(f),
     stats:stats3301,
     markDirty:()=>{dirty=true;lastCampaign=-Infinity}
   };
