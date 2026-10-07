@@ -8,6 +8,7 @@
   const TRAFFIC_MIN_ZOOM0378=25;
   const NAVAL_MIN_ZOOM0378=15;
   const NAVAL_VISUAL_STEP_MS0378=1320;
+  const NAVAL_VISUAL_STEP_MS03719=1400;
 
   function factionColor0378(f){
     f=Number.isInteger(f)?f:0;
@@ -66,22 +67,64 @@
   }
 
   function visibleNavalRoute0378(g){
-    // Patrulla: la trayectoria existe para la simulación, pero se oculta por completo.
-    if(g.order==='patrol')return null;
+    // Patrulla de jugador o IA: NUNCA se dibuja su trayectoria.
+    // La ruta interna existe exclusivamente para simulación/movimiento.
+    if(!g||g.order==='patrol')return null;
     if(!Array.isArray(g.route)||!g.route.length)return null;
     const pos=Math.max(0,g.routePos||0);
     return g.route.slice(pos);
   }
 
-  // Internal naval simulation keeps its efficient 1.4 s tick. We remember the
-  // cells crossed by that tick and animate through them until the next tick.
+  function cellVector03719(cell,C){
+    if(!Number.isInteger(cell)||cell<0)return null;
+    const j=cell*3;
+    return [C[j]/32767,C[j+1]/32767,C[j+2]/32767];
+  }
+
+  function normalizedVector03719(v){
+    if(!Array.isArray(v)||v.length<3)return null;
+    const n=Math.hypot(v[0],v[1],v[2])||1;
+    return [v[0]/n,v[1]/n,v[2]/n];
+  }
+
+  function visualVector03719(g,now,C){
+    const path=g?._visualVecPath03719;
+    const start=Number(g?._visualStart0378)||0;
+    const duration=Math.max(1,Number(g?._visualDuration0378)||NAVAL_VISUAL_STEP_MS03719);
+    if(Array.isArray(path)&&path.length>=2&&now-start<duration){
+      const phase=Math.max(0,Math.min(.999999,(now-start)/duration));
+      const x=phase*(path.length-1),i=Math.floor(x),q=x-i;
+      const a=path[i],b=path[Math.min(path.length-1,i+1)];
+      return {v:q<=0?a:slerp3212(a,b,q),moving:true};
+    }
+
+    // Una patrulla sin ruta está visualmente atracada en SU puerto. La
+    // simulación sigue usando la celda marina adyacente para combate/pathfinding.
+    if(g?.order==='patrol'&&Number.isInteger(g.home)&&g.home>=0&&
+       ports3212.has(g.home)&&owner6[g.home]===g.f&&
+       typeof navalGroupAtHome3270==='function'&&navalGroupAtHome3270(g)){
+      const port=cellVector03719(g.home,C);
+      if(port)return {v:port,moving:false};
+    }
+    return {v:cellVector03719(g?.cell,C),moving:false};
+  }
+
+  // Internal naval simulation stays on its efficient 1.4 s tick. The visual
+  // animation starts from the CURRENT interpolated vector, never from the last
+  // logical cell, so a new tick cannot make a fleet jump backwards/forwards.
   const baseNavalAdvance0378=navalAdvanceGroup3270;
   navalAdvanceGroup3270=function(g){
+    const C=loadLevel(MAX_GAME_LEVEL3233).centers;
+    const now=performance.now();
+    const visualBefore=visualVector03719(g,now,C).v;
     const from=g?.cell;
     const route=Array.isArray(g?.route)?g.route.slice():null;
     const fromPos=Math.max(0,g?.routePos||0);
+    const wasPatrol=g?.order==='patrol';
+    const homePort=wasPatrol&&Number.isInteger(g?.home)?g.home:-1;
     const out=baseNavalAdvance0378.apply(this,arguments);
     const to=g?.cell;
+
     if(Number.isInteger(from)&&Number.isInteger(to)&&from!==to){
       let segment=[from,to];
       if(route?.length){
@@ -91,29 +134,46 @@
         if(segment[0]!==from)segment.unshift(from);
         if(segment[segment.length-1]!==to)segment.push(to);
       }
+
+      // Preserve old state for compatibility/debug, but render from vectors.
       g._visualSegment0378=segment;
-      g._visualStart0378=performance.now();
-      g._visualDuration0378=NAVAL_VISUAL_STEP_MS0378;
+      const vecPath=[];
+      const startVec=normalizedVector03719(visualBefore)||cellVector03719(from,C);
+      if(startVec)vecPath.push(startVec);
+
+      // When leaving on patrol from an idle port, visualBefore is the port
+      // itself. Add the real adjacent sea cell before continuing outward.
+      for(const cell of segment){
+        const v=cellVector03719(cell,C);
+        if(!v)continue;
+        const last=vecPath[vecPath.length-1];
+        if(!last||Math.abs(last[0]-v[0])+Math.abs(last[1]-v[1])+Math.abs(last[2]-v[2])>1e-7)
+          vecPath.push(v);
+      }
+
+      // A completed patrol visually enters the port itself, not merely the
+      // adjacent sea cell. This applies identically to player and AI fleets.
+      const patrolFinished=wasPatrol&&route?.length&&!g.route&&homePort>=0&&
+        typeof navalGroupAtHome3270==='function'&&navalGroupAtHome3270(g);
+      if(patrolFinished){
+        const pv=cellVector03719(homePort,C);
+        if(pv)vecPath.push(pv);
+        g._patrolAwaitingNext03719=true;
+        g.patrolNext0371=(typeof campaignSeconds3230==='number'?campaignSeconds3230:0)+2+(g.id%3)*.55;
+      }
+
+      g._visualVecPath03719=vecPath;
+      g._visualStart0378=now;
+      g._visualDuration0378=NAVAL_VISUAL_STEP_MS03719;
     }
     return out;
   };
 
   function navalVisualPosition0378(g,now,C,R,cx,cy){
-    const seg=g._visualSegment0378;
-    const start=Number(g._visualStart0378)||0;
-    const duration=Math.max(1,Number(g._visualDuration0378)||NAVAL_VISUAL_STEP_MS0378);
-    if(Array.isArray(seg)&&seg.length>=2&&now-start<duration){
-      const phase=Math.max(0,Math.min(.999999,(now-start)/duration));
-      const x=phase*(seg.length-1),i=Math.floor(x),q=x-i;
-      const a=seg[i],b=seg[Math.min(seg.length-1,i+1)],ia=a*3,ib=b*3;
-      const av=[C[ia]/32767,C[ia+1]/32767,C[ia+2]/32767],
-            bv=[C[ib]/32767,C[ib+1]/32767,C[ib+2]/32767];
-      const v=a===b?av:slerp3212(av,bv,q);
-      const p=projectVec(v[0],v[1],v[2],R,cx,cy);
-      return {p,moving:true};
-    }
-    const j=g.cell*3;
-    return {p:projectVec(C[j]/32767,C[j+1]/32767,C[j+2]/32767,R,cx,cy),moving:false};
+    const vis=visualVector03719(g,now,C);
+    const v=vis.v;
+    if(!v)return {p:null,moving:false};
+    return {p:projectVec(v[0],v[1],v[2],R,cx,cy),moving:vis.moving};
   }
 
   function drawNavalGroupsColor0378(R,cx,cy,now,C){
@@ -174,7 +234,10 @@
       fleetCount:Array.isArray(navalGroups3270)?navalGroups3270.length:0,
       trafficMinZoom:TRAFFIC_MIN_ZOOM0378,
       navalMinZoom:NAVAL_MIN_ZOOM0378,
-      smoothNaval:true
+      smoothNaval:true,
+      patrolRoutesHidden:true,
+      continuousVisualAnchor:true,
+      patrolPortAnchors:true
     })
   };
   window.HEXATEGOS_VERSION=BUILD;
