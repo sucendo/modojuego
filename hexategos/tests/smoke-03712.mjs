@@ -22,7 +22,7 @@ assert.ok(visuals.includes('ctx.lineTo(p[0]-r*.82,p[1])'),'troop transport diamo
 assert.ok(visuals.includes('ctx.lineTo(p[0]+r*.85,p[1]+r*.65)'),'military fleet triangle right vertex missing');
 assert.ok(visuals.includes('ctx.lineTo(p[0]-r*.85,p[1]+r*.65)'),'military fleet triangle left vertex missing');
 
-assert.ok(index.includes('v0.37.12</title>')||index.includes('v0.37.13</title>')||index.includes('v0.37.14</title>')||index.includes('v0.37.15</title>')||index.includes('v0.37.16</title>')||index.includes('v0.37.17</title>')||index.includes('v0.37.18</title>')||index.includes('v0.37.19</title>'),'visible version must be 0.37.12');
+assert.ok(index.includes('v0.37.12</title>')||index.includes('v0.37.13</title>')||index.includes('v0.37.14</title>')||index.includes('v0.37.15</title>')||index.includes('v0.37.16</title>')||index.includes('v0.37.17</title>')||index.includes('v0.37.18</title>')||index.includes('v0.37.19</title>')||index.includes('v0.37.20</title>'),'visible version must be 0.37.12');
 assert.ok(about.includes("version:'0.37.12'"),'about history must include 0.37.12');
 
 console.log('HEXATEGOS 0.37.12 transport symbols smoke: OK');
