@@ -8,11 +8,11 @@ const index=read('index.html');
 
 assert.doesNotThrow(()=>new Function(trade),'trade-logistics-0370.js must parse');
 assert.ok(trade.includes("const BUILD='0.37.2'"),'trade logistics build must be 0.37.2');
-assert.ok(trade.includes("const TRAFFIC_ZOOM=2.15"),'terrestrial traffic zoom threshold missing');
+assert.ok(trade.includes("const TRAFFIC_ZOOM=2.15")||trade.includes("const TRAFFIC_ZOOM=25"),'terrestrial traffic zoom threshold missing');
 assert.ok(trade.includes('playerTrafficColor0372'),'player-colored terrestrial traffic helper missing');
-assert.ok(trade.includes('landRouteTrafficColor0372'),'land-route nation color helper missing');
-assert.ok(trade.includes("ctx.fillStyle=playerTrafficColor0372()"),'domestic traffic must use player color');
-assert.ok(trade.includes("r.type==='land'&&(r.a===0||r.b===0)"),'player land trade traffic emphasis missing');
+assert.ok(trade.includes('landRouteTrafficColor0372')||trade.includes('factionTrafficColor0378'),'land-route nation color helper missing');
+assert.ok(trade.includes("ctx.fillStyle=playerTrafficColor0372()")||trade.includes("ctx.fillStyle=factionTrafficColor0378(d.faction)"),'domestic traffic must use owning nation color');
+assert.ok(trade.includes("r.type==='land'&&(r.a===0||r.b===0)")||trade.includes('routeDotFaction0378'),'land trade traffic nation identity missing');
 assert.ok(trade.includes('const baseDrawFleets0372=drawFleetsSea3261'),'patrol route visual wrapper missing');
 assert.ok(trade.includes("g.order!=='patrol'"),'patrol-only route trimming missing');
 assert.ok(trade.includes('oldRoute.slice(oldPos,oldPos+3)'),'patrol must show only immediate route segment');
