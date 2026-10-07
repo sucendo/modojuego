@@ -60,3 +60,6 @@ jobs:
 
       - name: Run Hexategos 0.37.6 explicit border-road customs smoke
         run: node hexategos/tests/smoke-0376.mjs
+
+      - name: Run Hexategos 0.37.7 geopolitical trade corridors smoke
+        run: node hexategos/tests/smoke-0377.mjs
