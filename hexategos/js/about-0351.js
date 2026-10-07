@@ -4,10 +4,29 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.37.16',
+      date:'Octubre 2026',
+      title:'Integración real de rutas comerciales con el controlador final',
+      current:true,
+      summary:'Se corrige la causa raíz que impedía seleccionar destinos: el comercio estaba conectado a un controlador de interacción antiguo y no obtenía el permiso exigido por el controlador táctil final.',
+      changes:[
+        'Se audita de extremo a extremo el flujo de rutas comerciales desde el menú hasta el guardado.',
+        'El controlador v3.28.2 exige un permiso de destino emitido por beginTargetFromDialog3282; la ruta comercial ahora usa ese mismo flujo.',
+        'La selección comercial deja de llamar directamente a setInteractionMode3244, que era rechazada por el controlador estricto.',
+        'El destino comercial se integra en handleInteractionTarget3245, que es el manejador final realmente utilizado por pick3245.',
+        'Se mantiene handleInteractionTarget3244 únicamente como alias de compatibilidad.',
+        'El ajuste de clic al icono del puerto entrega el destino directamente al manejador 3245.',
+        'Un destino inválido mantiene el modo comercial activo y muestra el motivo.',
+        'Un destino válido reutiliza createPlayerSeaRoute0370, la misma lógica que ya funcionaba con el listado antiguo.',
+        'La creación conserva ruta marítima, permisos, riesgo, guardado, caché económica, suministro interior y renderizado.',
+        'No se modifica la IA comercial ni el tráfico terrestre.'
+      ]
+    },
+    {
       version:'0.37.15',
       date:'Octubre 2026',
       title:'Selector comercial desbloqueado y ajuste exacto a puertos',
-      current:true,
+      current:false,
       summary:'Crear una ruta comercial deja de depender de una lista precalculada de destinos y el clic del mapa se ajusta al puerto real para evitar seleccionar una casilla vecina.',
       changes:[
         'RUTA COMERCIAL se habilita desde cualquier puerto propio mientras no se haya alcanzado el límite de rutas.',
