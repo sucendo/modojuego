@@ -48,6 +48,11 @@
     return (FACTIONS3230&&FACTIONS3230[0]&&FACTIONS3230[0].color)||
       (typeof PLAYER_COLOR!=='undefined'?PLAYER_COLOR:'#2f91ff');
   }
+  function landRouteTrafficColor0372(r){
+    if(r.a===0||r.b===0)return playerTrafficColor0372();
+    const f=r.a>=0?r.a:r.b;
+    return (FACTIONS3230&&FACTIONS3230[f]&&FACTIONS3230[f].color)||'#8da9c2';
+  }
   const baseNavalHostile0371=navalHostile3270;
   navalHostile3270=function(a,b){
     if(a===b||a<0||b<0)return false;
@@ -1130,9 +1135,13 @@
         const phase=((now*.000055*(r.type==='sea'?.72:1)+r.id*.173+d/dots)%1+1)%1;
         const p=projectedAlongCells0371(visual,phase,C,R,cx,cy);
         if(!p||p[2]<.045)continue;
-        ctx.beginPath();ctx.arc(p[0],p[1],r.type==='sea'?1.45:1.15,0,Math.PI*2);
-        ctx.fillStyle=r.type==='sea'?'rgba(133,235,247,.94)':'rgba(255,220,112,.96)';
-        ctx.fill();trafficDrawn++;
+        ctx.beginPath();ctx.arc(p[0],p[1],r.type==='sea'?1.45:(r.a===0||r.b===0?1.65:1.25),0,Math.PI*2);
+        ctx.fillStyle=r.type==='sea'?'rgba(133,235,247,.94)':landRouteTrafficColor0372(r);
+        ctx.fill();
+        if(r.type==='land'&&(r.a===0||r.b===0)){
+          ctx.lineWidth=.6;ctx.strokeStyle='rgba(245,250,255,.84)';ctx.stroke();
+        }
+        trafficDrawn++;
       }
     }
     ctx.restore();
