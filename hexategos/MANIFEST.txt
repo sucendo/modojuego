@@ -1,3 +1,42 @@
+HEXATEGOS_0_37_7
+
+Corredores comerciales geopolíticos IA:
+- relación comercial sin conexión física -> se genera un proyecto de corredor
+- si hay espacio neutral en dirección al socio -> expansión gradual para acercarse
+- la carretera acompaña al avance cuando la red ya llega al frente
+- si un tercer país separa a los socios -> solicitud real de permiso de tránsito
+- permiso concedido -> carretera física por el país intermedio + conexiones/aduanas fronterizas
+- corredor de varios Estados -> se procesa paso a paso y cada intermediario necesita autorización
+- negativa -> primero busca otra ruta entre Estados
+- si no hay alternativa -> personalidades oportunistas/agresivas pueden intentar contrabando
+- el contrabando solo reutiliza carreteras ya existentes; no construye una autopista ilegal completa
+- negativas repetidas -> pérdida de opinión/confianza y posible ruptura de tratados
+- escalada tardía -> posible guerra por acceso al corredor, solo entre IA y con ventaja estratégica
+- el jugador queda fuera de la guerra automática de este subsistema
+
+Rendimiento:
+- servicio por nación cada ~17 s de campaña, escalonado
+- vecinos estatales calculados desde muestras de frontera ya existentes
+- caché de vecinos ~22 s
+- profundidad máxima de búsqueda geopolítica: 5 Estados
+- máximo 5 socios evaluados por servicio
+- una sola obra/conquista/aduana relevante por ciclo
+- sin setInterval nuevo
+
+Persistencia:
+- negativas de tránsito en localStorage
+- payload tradeGeopolitics0377 en .hexategos
+
+Módulo:
+- js/trade-geopolitics-0377.js
+
+Pruebas:
+- tests/smoke-0377.mjs
+
+Rama de seguridad:
+- backup/hexategos-0.37.6-before-trade-geopolitics-0377
+
+--- MANIFEST ANTERIOR ---
 HEXATEGOS_0_37_6
 
 Conexión terrestre fronteriza:
