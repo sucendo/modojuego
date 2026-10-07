@@ -1,3 +1,37 @@
+HEXATEGOS 0.37.11 · FRANJAS COMERCIALES MADURAS + DESTINO EN MAPA
+
+Rutas terrestres IA:
+- una ruta comercial activa sigue siendo atendida estratégicamente;
+- cada ~3 servicios de corredor se puede revisar su trazado físico;
+- la IA busca hexágonos neutrales adyacentes a sus propias casillas de carretera dentro de esa ruta;
+- solo ocupa terreno con apoyo territorial suficiente y sin contacto enemigo inmediato;
+- la expansión lateral no extiende una carretera a cada hexágono conquistado;
+- periódicamente una ruta madura puede generar ciudad o industria vinculada al eje comercial;
+- por tanto una conexión ya terminada puede evolucionar hacia una franja territorial más ancha y económicamente útil.
+
+Rutas comerciales del jugador:
+- desde un puerto propio, RUTA COMERCIAL activa selección de destino en el mapa;
+- se puede elegir otro puerto propio o uno extranjero con relación comercial compatible;
+- seleccionar una casilla no válida no cancela el modo;
+- la barra de interacción explica qué falta y permite Cancelar;
+- la lógica física de puertos, tránsito, riesgo y pathfinding marítimo no cambia.
+
+Marcadores:
+- barcos comerciales: aumento notable de tamaño;
+- tráfico comercial terrestre: aumento notable de tamaño;
+- tráfico interior por carretera: también más legible;
+- se mantienen el mismo número máximo de puntos y las mismas reglas de zoom.
+
+Rutas de flotas:
+- patrulla: ninguna ruta visual;
+- interceptación, regreso, bloqueo, escolta o traslado sí pueden mostrar su trayectoria porque son órdenes activas no patrulleras.
+
+Rendimiento:
+- máximo 96 muestras del trazado de una ruta activa por revisión;
+- mantenimiento territorial cada 3 ciclos aproximadamente;
+- desarrollo económico maduro cada 6 ciclos aproximadamente;
+- sin timers nuevos ni barridos globales adicionales.
+
 HEXATEGOS 0.37.10 · TRÁFICO COMERCIAL Y VELOCIDAD CONSTANTE
 
 Patrullas navales:
