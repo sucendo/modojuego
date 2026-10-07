@@ -18,7 +18,7 @@ assert.ok(trade.includes("ctx.strokeStyle='rgba(99,206,226,.30)'"),'sea trade ro
 assert.ok(trade.includes("if(zoom>3.15)"),'sea route line must remain visible before zoom 25');
 assert.ok(!trade.includes("if(r.type==='sea'&&(r.a===0||r.b===0)&&zoom>3.15)"),
   'AI-to-AI sea routes must no longer be player-only');
-assert.ok(trade.includes('Tiny commercial ship'),'sea commerce must render ship marker');
+assert.ok(trade.includes('todo transporte COMERCIAL es un punto')&&trade.includes("ctx.beginPath();ctx.arc(p[0],p[1],rr,0,Math.PI*2)"),'sea commerce must render as a commercial point');
 
 assert.ok(visuals.includes("const BUILD='0.37.8'"),'national visuals build must be 0.37.8');
 assert.ok(visuals.includes('function factionColor0378'),'faction color resolver missing');
