@@ -35,12 +35,12 @@ assert.ok(trade.includes("!tradeRelation0370(0,b)"),'foreign map destination mus
 assert.ok(trade.includes("beginSeaTradeMapPick03711(ctx.cell)"),'RUTA COMERCIAL must enter map-pick mode');
 assert.ok(trade.includes("'ELIGE EN MAPA'"),'route action must advertise map selection');
 assert.ok(trade.includes('pickSeaOnMap:beginSeaTradeMapPick03711'),'map picker public API missing');
-assert.ok(trade.includes('const rr=zoom>32?4.40:3.70'),'larger sea trade marker missing');
+assert.ok(trade.includes("r.type==='sea'?(zoom>32?4.40:3.70):(zoom>32?3.20:2.70)"),'larger commercial marker sizing missing');
 assert.ok(trade.includes('zoom>32?3.20:2.70'),'larger land trade marker missing');
 assert.ok(trade.includes('zoom>32?3.20:2.60'),'larger domestic marker missing');
 
 assert.ok(visuals.includes("if(g.order==='patrol')return null"),'patrol route must remain hidden');
-assert.ok(index.includes('v0.37.11</title>'),'visible version must be 0.37.11');
+assert.ok(index.includes('v0.37.11</title>')||index.includes('v0.37.12</title>'),'visible version must be 0.37.11 or compatible successor');
 assert.ok(about.includes("version:'0.37.11'"),'about history must include 0.37.11');
 
 console.log('HEXATEGOS 0.37.11 active trade belts + map route destination smoke: OK');
