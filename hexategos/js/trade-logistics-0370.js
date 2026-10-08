@@ -743,7 +743,7 @@
     // Perfil rápido: no recrea cinco vectores, no vuelve a preguntar terreno,
     // no inspecciona puertos/ciudades y no fuerza snapshots completos.
     for(let i=0;i<limit;i++){
-      if(i>=8&&(i&7)===0&&performance.now()-t0>=GEO_REFRESH_BUDGET_MS0384)break;
+      if(i>=2&&(i&1)===0&&performance.now()-t0>=GEO_REFRESH_BUDGET_MS0384)break;
       let item=geoProductionIterator0383.next();
       if(item.done){
         geoProductionIterator0383=resourceNodes03720.values();
@@ -2583,6 +2583,8 @@
     focusRoute:(id)=>focusTradeRoute03717(Number(id)),
     resourceKeys:()=>RESOURCE_KEYS03720.slice(),
     resourceSummary:(f=0)=>resourceSummary03720(Number(f)),
+    // Lectura O(1) para la IA; nunca reconstruye la red ni el stock en pleno frame.
+    resourceSummaryCached:(f=0)=>resourceNation03720[Number(f)]||null,
     geography:(cell)=>terrainResourceProfile0382(Number(cell)),
     urbanWeight:(cell)=>{
       const c=Number(cell),f=owner6[c];
