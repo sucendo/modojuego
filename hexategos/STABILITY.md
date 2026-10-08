@@ -45,3 +45,39 @@ Pruebas necesarias antes de fusionar:
 - [ ] Comprobar que la manufactura sin central no consume energía ficticia.
 - [ ] Probar redes aisladas: la central de una red no abastece a otra.
 - [ ] Ejecutar smoke en CI y partidas prolongadas de 150 y 500 IA.
+
+
+## Fase 2 · Industrialización material I–IV (0.38.25)
+
+- Nivel I: incorpora carbón geológico con mina e inventario material. Cultivos y ganado
+  producen físicamente fibras vegetales, lácteos, lana y pieles en la instalación;
+  no se crean objetos de inventario por celda.
+- Nivel II: refino, procesado de gas, siderurgia y metalurgia; acero y cobre refinado
+  precisan electricidad. Hilandería, alimentación y curtido utilizan derivados.
+- Nivel III: manufactura civil, maquinaria, textil, química y electrónica dependen
+  de sus insumos y de electricidad. Los telares existentes pueden consumir fibras
+  naturales con rendimiento inferior al material transformado.
+- Nivel IV: centrales térmicas eligen **un** combustible disponible, por preferencia
+  carbón, combustible refinado y gas procesado. Las armamentísticas necesitan
+  acero, cobre refinado, maquinaria producida y electricidad.
+- Electricidad: no se guarda como mercancía ni cruza redes de carreteras aisladas.
+  Refino y procesado inicial preceden a generación; la generación precede a
+  metalurgia y manufactura.
+- UI: estado de cada instalación (produciendo, falta material, falta electricidad,
+  aislamiento, almacén lleno o actividad reducida) y suministros recientes.
+- IA: utiliza las mismas instalaciones y combustibles que el jugador, con análisis
+  energético incremental y limitación del número de centrales por nación.
+- Persistencia: `production0388` versión 2; acepta versiones antiguas sin
+  `byproducts`. Mantiene los tipos y claves previos.
+- Prueba nueva: `hexategos/tests/smoke-03825.mjs` cubre combustibles,
+  transporte de carbón por mar, redes eléctricas aisladas, metales, derivados,
+  armamento, guardados del navegador y archivos portables.
+
+**Atención a partidas antiguas:** las industrias se conservan, pero ciertas
+recetas pasan a exigir electricidad o productos intermedios. Una armamentística
+sin maquinaria o una siderurgia sin suministro eléctrico puede quedar parada
+hasta completar su cadena. Esto es un cambio de reglas, no pérdida del edificio.
+
+**Pendiente de certificación manual:** partidas reales prolongadas con 150/250/
+350/500 IA, prueba de ida y vuelta de archivo .hexategos en navegador y
+observación de la interfaz móvil con partidas previas.
