@@ -172,24 +172,27 @@
     const s={cell,f,kind,level:1,pct:100,stock:0,output:0,potential:def.group==='extract'?potential(cell,f,kind):1,updated:campaignSeconds3230||0};
     if(!addSite(s))return false;
     revision++;
+    if(isPlayer)persistProduction0388();
     return true;
   }
   function upgrade(cell){
     const s=siteById(cell);if(!s||s.f!==0||s.level>=5)return false;
     const cost=TYPES[s.kind].cost*(s.level+1);
     if(gold3212<cost)return false;
-    gold3212-=cost;s.level++;revision++;return true;
+    gold3212-=cost;s.level++;revision++;persistProduction0388();return true;
   }
   function setPct(cell,pct){
     const s=siteById(cell);
     if(!s||s.f!==0)return false;
     s.pct=clamp(Math.round(Number(pct)||0),0,100);
+    persistProduction0388();
     return true;
   }
   function setSector(f,name,pct){
     if(!SECTORS[name]||f!==0)return false;
     if(!sectorPct.has(f))sectorPct.set(f,{});
     sectorPct.get(f)[name]=clamp(Math.round(Number(pct)||0),0,100);
+    persistProduction0388();
     return true;
   }
   function groupKey(f,comp,cell){
@@ -530,13 +533,37 @@
       }
     }
   }
+  // Escribir la instantánea ANTES y después del guardado general: algunos
+  // guardados internos vuelven a invocar reset / sincronizaciones de otros módulos.
+  function persistProduction0388(){
+    try{
+      const state=JSON.stringify(saveState());
+      localStorage.setItem(SAVE_KEY,state);
+      return localStorage.getItem(SAVE_KEY)===state;
+    }catch(error){console.warn('[Hexategos producción] No se pudo guardar',error);return false}
+  }
   const baseSave=saveGame3212;
-  saveGame3212=function(){const out=baseSave.apply(this,arguments);
-    try{localStorage.setItem(SAVE_KEY,JSON.stringify(saveState()))}catch(_){}return out};
+  saveGame3212=function(){
+    persistProduction0388();
+    const out=baseSave.apply(this,arguments);
+    if(out!==false)persistProduction0388();
+    return out;
+  };
   const baseLoad=loadGame3212;
-  loadGame3212=function(){const out=baseLoad.apply(this,arguments);
-    try{restore(JSON.parse(localStorage.getItem(SAVE_KEY)||'null'))}catch(_){restore(null)}
-    return out};
+  loadGame3212=function(){
+    // Captura previa: la carga general puede inicializar otros subsistemas.
+    let snapshot=null;
+    try{snapshot=JSON.parse(localStorage.getItem(SAVE_KEY)||'null')}catch(error){
+      console.warn('[Hexategos producción] Copia industrial ilegible; se preserva el estado anterior',error);
+    }
+    const out=baseLoad.apply(this,arguments);
+    if(out!==false){
+      // No borrar industrias si la partida no contiene copia industrial.
+      // Las partidas antiguas siguen siendo válidas y pueden no incluirla.
+      if(snapshot&&Array.isArray(snapshot.sites))restore(snapshot);
+    }
+    return out;
+  };
   const baseReset=resetGame3230;
   resetGame3230=function(clearSave=true){const out=baseReset.apply(this,arguments);
     restore(null);if(clearSave)try{localStorage.removeItem(SAVE_KEY)}catch(_){}
@@ -555,8 +582,10 @@
     applyPortableFile3275=function(file){
       const input=file?.payload?.production0388||null;
       const out=base.apply(this,arguments);
-      restore(input);
-      try{localStorage.setItem(SAVE_KEY,JSON.stringify(saveState()))}catch(_){}
+      if(out!==false&&input&&Array.isArray(input.sites)){
+        restore(input);
+        persistProduction0388();
+      }
       return out;
     };
   }
@@ -850,6 +879,7 @@
     intermediates:()=>({...RESOURCE_PRODUCT_LABELS}),futureIndustries:()=>FUTURE_INDUSTRIES.map(v=>({...v})),
     iconOffset:iconOffset03811,
     drawCandidates:()=>sites.values(),
+    snapshot:saveState,persist:persistProduction0388,
     stats:()=>({...lastStats}),validate:()=>{
       const errors=[];for(const s of sites.values())if(!TYPES[s.kind]||s.cell<0)errors.push('instalación inválida');
       return {ok:!errors.length,errors,stats:lastStats};
