@@ -32,7 +32,7 @@
     civilian:{name:'Manufactura civil',icon:'📦',sector:'manufacturing',group:'manufacture',inputs:['steel','lumber'],output:3,cost:155},
     machinery:{name:'Industria de maquinaria',icon:'⚙️',sector:'manufacturing',group:'manufacture',inputs:['steel','copperref'],output:3,cost:200},
     arms:{name:'Industria armamentística',icon:'🛡️',sector:'manufacturing',group:'manufacture',inputs:['steel','copperref','machinerygoods'],output:4,cost:230},
-    textile:{name:'Industria textil',icon:'🧵',sector:'manufacturing',group:'manufacture',inputs:['textilebase','leather'],inputMode:'any',output:3,cost:120},
+    textile:{name:'Industria textil',icon:'🧵',sector:'manufacturing',group:'manufacture',inputs:['textilebase','leather','plantfiber','wool'],inputMode:'any',output:3,cost:120},
     chemical:{name:'Industria química',icon:'⚗️',sector:'manufacturing',group:'manufacture',inputs:['fuel','gasfuel'],inputMode:'any',output:3,cost:195},
     electronics:{name:'Industria electrónica',icon:'🔌',sector:'manufacturing',group:'manufacture',inputs:['copperref','steel'],output:3,cost:215}
   };
@@ -420,11 +420,14 @@
           let chosen=null,maximum=0;
           for(const kind of inputs){
             const qty=available(g,kind);
-            if(powerStation&&qty>0){chosen=kind;maximum=qty;break}
+            if((powerStation||s.kind==='textile')&&qty>0){chosen=kind;maximum=qty;break}
             if(qty>maximum){chosen=kind;maximum=qty}
           }
           if(!chosen||maximum<=0){if(s.f===0)s.status=connect(s.cell,s.f)<0?'Sin conexión logística':'Falta materia prima';continue}
           amount=Math.min(amount,maximum);
+          // Los telares antiguos pueden seguir usando lana o fibras naturales
+          // sin hilandería; los materiales elaborados rinden más por unidad.
+          if(s.kind==='textile'&&(chosen==='plantfiber'||chosen==='wool'))amount*=.72;
           amount=take(g,chosen,amount);
         }else{
           for(const kind of inputs)amount=Math.min(amount,available(g,kind));
