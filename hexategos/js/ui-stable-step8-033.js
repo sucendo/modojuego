@@ -4,8 +4,15 @@
   'use strict';
   const BUILD='8';
   const DURATION=5000;
-  const MAX_POPUPS=5;
-  const MAX_LOG=24;
+  const MAX_POPUPS=2;
+  const MAX_LOG=36;
+  const REPEAT_NOTICE_MS=60000;
+  const POPUP_GAP_MS=45000;
+  const PREF='hexategos.messages.quiet.0387';
+  let quiet=true; // Por defecto todos los avisos van al registro, sin ventanas flotantes.
+  try{quiet=localStorage.getItem(PREF)!=='0'}catch(_){}
+  let lastPopupWall=-1e9;
+  const toastDedup=new Map();
   const systemsBtn=document.getElementById('systemsBtn3213');
   const optionsBtn=document.getElementById('optionsBtnStable6');
   const tabs=document.querySelector('.sysTabs3213');
@@ -43,15 +50,16 @@
     if(n?.tab)return n.tab;
     return n?.type==='economy'||n?.type==='trade'?'eco':
       n?.type==='research'?'research':n?.type==='intel'?'intel':
-      n?.type==='naval'?'naval':'dip';
+      n?.type==='naval'?'naval':n?.type==='government'?'government':'dip';
   }
   function tabLabel(tab){
-    return tab==='eco'?'Economía':tab==='research'?'I+D':tab==='intel'?'Inteligencia':tab==='naval'?'Naval':'Diplomacia';
+    return tab==='eco'?'Economía':tab==='research'?'I+D':tab==='intel'?'Inteligencia':
+      tab==='naval'?'Naval':tab==='government'?'Gobierno':tab==='military'?'Militar':'Diplomacia';
   }
   function addNotice(type,message,meta={}){
     const tab=meta.tab||tabForNotice({type});
-    const recent=notices.find(n=>n.type===type&&n.message===String(message||'')&&Date.now()-n.created<1400);
-    if(recent)return recent;
+    const recent=notices.find(n=>n.type===type&&n.tab===tab&&n.message===String(message||'')&&Date.now()-n.created<REPEAT_NOTICE_MS);
+    if(recent){recent.repeats=(recent.repeats||1)+1;return recent;}
     const n={id:nextNoticeId++,type:type||'info',message:String(message||''),created:Date.now(),read:false,tab,...meta};
     notices.unshift(n);
     if(notices.length>MAX_LOG)notices.length=MAX_LOG;
@@ -59,7 +67,7 @@
     return n;
   }
   function pendingByTab(){
-    const counts={dip:0,eco:0,research:0,intel:0,naval:0};
+    const counts={dip:0,eco:0,research:0,intel:0,government:0,military:0,naval:0};
     for(const o of liveOffers()) counts[tabForOffer(o)]++;
     for(const n of notices) if(!n.read) counts[tabForNotice(n)]=(counts[tabForNotice(n)]||0)+1;
     return counts;
@@ -151,12 +159,21 @@
   function injectNoticesForCurrentTab(){
     if(typeof sysTab3220==='undefined'||sysTab3220==='settings')return;
     const tab=sysTab3220;
-    const list=notices.filter(n=>tabForNotice(n)===tab).slice(0,10);
+    const all=notices.filter(n=>tabForNotice(n)===tab);
+    const list=all.slice(0,4);
     if(!list.length)return;
     const c=document.getElementById('sysContent3213');if(!c)return;
     const block=document.createElement('div');
     block.className='sysBlock3213 messagesSectionStable8 noticesStable8';
-    block.innerHTML=`<div class="messagesHeadStable8"><div><b>🔔 Avisos · ${tabLabel(tab)}</b><div class="sysMeta3213">Eventos recientes relacionados con esta sección.</div></div><span>${list.filter(n=>!n.read).length} nuevos</span></div>`;
+    block.innerHTML=`<div class="messagesHeadStable8"><div><b>🔔 Avisos · ${tabLabel(tab)}</b><div class="sysMeta3213">Registro tranquilo · ${all.length} eventos · máximo 4 visibles</div></div><span>${all.filter(n=>!n.read).length} nuevos</span></div>`;
+    const readAll=document.createElement('button');
+    readAll.type='button';readAll.className='sysBtn3213';
+    readAll.textContent='Marcar todos como leídos';
+    readAll.addEventListener('click',()=>{
+      for(const n of all)n.read=true;
+      updateBadges();renderSystems3220();
+    });
+    block.appendChild(readAll);
     for(const n of list){
       const art=document.createElement('article');
       art.className='messageCardStable8 '+(n.read?'readStable8':'');
@@ -222,6 +239,12 @@
     setTimeout(()=>card.remove(),160);
   }
   function showPopup(type,message,tab,key=''){
+    // No mostrar ventanas por cada suceso de la simulación. Las propuestas
+    // permanecen en Sistemas con su contador y sus botones de aceptar.
+    if(quiet)return;
+    const now=Date.now();
+    if(now-lastPopupWall<POPUP_GAP_MS)return;
+    lastPopupWall=now;
     const current=[...stack.querySelectorAll('.eventCardStable8:not(.closingStable8)')];
     if(current.length>=MAX_POPUPS)closePopup(current[0]);
     const card=document.createElement('div');
@@ -246,12 +269,20 @@
   }
   const baseToast=toast;
   toast=function(msg){
-    const v=baseToast.apply(this,arguments);
+    const type=classifyToast(msg);
+    const now=Date.now(),sig=type+'|'+String(msg);
+    const seen=toastDedup.get(sig)||-1e9;
+    // Conservar feedback de acciones manuales; suprimir toasts repetidos
+    // de guerras/ataques que los bots emiten al revisar el mismo evento.
+    const repetitive=!!type&&now-seen<REPEAT_NOTICE_MS;
+    if(type){
+      if(toastDedup.size>128)toastDedup.clear();
+      toastDedup.set(sig,now);
+    }
+    const v=(!repetitive&&!quiet)||!type?baseToast.apply(this,arguments):undefined;
     try{
       if(typeof balanceAuditRunning3276!=='undefined'&&balanceAuditRunning3276)return v;
-      const type=classifyToast(msg);if(!type)return v;
-      const now=Date.now(),sig=type+'|'+String(msg);
-      if(sig===lastToastSignature&&now-lastToastWall<1200)return v;
+      if(!type||repetitive)return v;
       lastToastSignature=sig;lastToastWall=now;
       if(type==='offer'){
         const o=latestOffer();
@@ -286,8 +317,24 @@
 
   updateBadges();
   window.HexategosMessagesStable8={
-    show:(message,type='info',tab='dip')=>{const n=addNotice(type,message,{tab});showPopup(type,message,tab,'notice-'+n.id);return n.id},
+    show:(message,type='info',tab='dip')=>{
+      const prev=notices.length;
+      const n=addNotice(type,message,{tab});
+      if(notices.length!==prev||n.repeats==null)showPopup(type,message,tab,'notice-'+n.id);
+      return n.id;
+    },
     open:(tab='dip')=>openSystems3220(tab),
+    quiet:()=>quiet,
+    setQuiet:(value)=>{
+      quiet=!!value;
+      try{localStorage.setItem(PREF,quiet?'1':'0')}catch(_){}
+      if(quiet)for(const card of [...stack.querySelectorAll('.eventCardStable8')])closePopup(card);
+      return quiet;
+    },
+    markAll:(tab=null)=>{
+      for(const n of notices)if(!tab||tabForNotice(n)===tab)n.read=true;
+      updateBadges();
+    },
     notices
   };
   window.HEXATEGOS_STABLE_REBUILD=BUILD;
