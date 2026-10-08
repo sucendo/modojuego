@@ -55,6 +55,7 @@
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const sites=new Map(),perCell=new Map(),nationSites=new Map(),nationCounts=new Map(),manufacturingCounts=new Map(),depots=new Map(),sectorPct=new Map(),nextAI=new Float64Array(FACTIONS3230.length);
   let revision=1, aiCursor=1, lastStats={produced:0,processed:0,shipped:0,disconnected:0,sites:0};
+  const nationalElectricDeficit=new Map();
   let loadedPortable=null;
   const api=()=>window.HexategosTradeLogistics0370;
   const geography=cell=>api()?.geography?.(cell);
@@ -444,6 +445,7 @@
         if(powerStation){
           // Combustible procesado -> electricidad, sin crear combustible extra.
           g.electricity+=outputQty;
+          g.generatedElectricity=(g.generatedElectricity||0)+outputQty;
           s.output+=outputQty;
           processed+=outputQty;
           continue;
@@ -456,6 +458,21 @@
         if(intermediate)s.stock+=stored;
         n.stock[out]+=delivered;
         processed+=stored+delivered;s.output+=stored+delivered;
+      }
+    }
+    // Planificador energético: déficit por nación, calculado sobre los grupos
+    // logísticos reales, sin examinar todo el mapa ni los 500 países por turno.
+    nationalElectricDeficit.clear();
+    for(const g of groups.values()){
+      let demand=0;
+      for(const {site} of g.factories){
+        const def=TYPES[site.kind];
+        const power=def.group==='manufacture'?.12:(def.electricity||0);
+        if(power>0)demand+=.39*site.level*activeFactor(site)*dt*power;
+      }
+      if(demand>0){
+        const old=nationalElectricDeficit.get(g.f)||0;
+        nationalElectricDeficit.set(g.f,Math.max(old,clamp(1-(g.generatedElectricity||0)/demand,0,1)));
       }
     }
     // La IA invierte escalonadamente, siempre con su presupuesto y de forma
@@ -496,15 +513,21 @@
       if(ownKinds.has(kind)&&recipe&&!ownKinds.has(recipe))factoryNeeds.add(recipe);
     }
     const needsElectric=own.some(s=>TYPES[s.kind]?.electricity||TYPES[s.kind]?.group==='manufacture');
-    if(needsElectric&&!ownKinds.has('thermal'))factoryNeeds.add('thermal');
+    const electricShortage=nationalElectricDeficit.get(f)||0;
+    const thermals=own.filter(s=>s.kind==='thermal').length;
     const availableOutputs=new Set(ownKinds);
     for(const site of own){
       const output=PROCESSED[site.kind];
       if(output)availableOutputs.add(output);
     }
+    // La IA necesita centrales si no tiene ninguna, o si su red está por
+    // debajo de la demanda. Siempre debe disponer de combustible potencial.
+    const fuelChain=['coal','fuel','gasfuel'].some(k=>availableOutputs.has(k));
+    if(needsElectric&&fuelChain&&thermals<3&&(thermals===0||electricShortage>.15))
+      factoryNeeds.add('thermal');
     for(const [kind,def] of Object.entries(TYPES)){
       if(def.group!=='manufacture'&&def.group!=='power')continue;
-      if(ownKinds.has(kind))continue;
+      if(ownKinds.has(kind)&&!(kind==='thermal'&&electricShortage>.15&&thermals<3))continue;
       const sourceAvailable=def.inputMode==='any'?
         def.inputs.some(k=>availableOutputs.has(k)):
         def.inputs.every(k=>availableOutputs.has(k));
@@ -537,7 +560,7 @@
       for(const kind of factoryNeeds){
         const type=TYPES[kind];
         const strategic=kind==='arms'?(role==='aggressive'?1.45:.77):
-          kind==='thermal'?(1+pressure.energy*.5):
+          kind==='thermal'?(1+pressure.energy*.5+electricShortage*1.1):
           kind==='machinery'?(role==='growth'?1.35:1):
           kind==='civilian'?1.08:1;
         const value=(road>=0?2.7:.28)*strategic*(role==='growth'?1.12:1);
@@ -572,7 +595,7 @@
       depots:[...depots],sectors:[...sectorPct]};
   }
   function restore(data){
-    sites.clear();perCell.clear();nationSites.clear();nationCounts.clear();manufacturingCounts.clear();depots.clear();sectorPct.clear();revision++;aiCursor=1;nextAI.fill(0);
+    sites.clear();perCell.clear();nationSites.clear();nationCounts.clear();manufacturingCounts.clear();depots.clear();sectorPct.clear();nationalElectricDeficit.clear();revision++;aiCursor=1;nextAI.fill(0);
     if(!data||!Array.isArray(data.sites))return;
     for(const x of data.sites.slice(0,MAX_SITES)){
       if(!x||!TYPES[x.kind]||!Number.isInteger(x.cell)||x.cell<0||x.cell>=owner6.length)continue;
@@ -955,7 +978,7 @@
     iconOffset:iconOffset03811,
     drawCandidates:()=>sites.values(),
     snapshot:saveState,persist:persistProduction0388,
-    stats:()=>({...lastStats}),validate:()=>{
+    stats:()=>({...lastStats}),electricDeficit:f=>nationalElectricDeficit.get(Number(f))||0,validate:()=>{
       const errors=[];for(const s of sites.values())if(!TYPES[s.kind]||s.cell<0)errors.push('instalación inválida');
       return {ok:!errors.length,errors,stats:lastStats};
     }
