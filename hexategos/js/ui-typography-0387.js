@@ -25,8 +25,11 @@
     root.dataset.hexFontMode=selected==='auto'?'auto':'custom';
     if(selected==='auto'){
       root.style.removeProperty('--hex-ui-scale');
+      root.style.removeProperty('--hex-dialog-zoom');
     }else{
-      root.style.setProperty('--hex-ui-scale',(Number(selected)/100).toFixed(2));
+      // Se escala el diálogo entero; evita duplicar el factor en las fuentes.
+      root.style.setProperty('--hex-ui-scale','1');
+      root.style.setProperty('--hex-dialog-zoom',(Number(selected)/100).toFixed(2));
     }
     if(persist)try{localStorage.setItem(STORAGE,selected)}catch(_){}
     for(const select of document.querySelectorAll('[data-hex-font-select0387]')){
