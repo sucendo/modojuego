@@ -4,10 +4,31 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.37.21',
+      date:'Octubre 2026',
+      title:'Mapa de suministro material',
+      current:true,
+      summary:'El mapa de suministro existente pasa a combinar conectividad logística y disponibilidad real de recursos, mostrando de forma progresiva la degradación de islas, enclaves y redes aisladas.',
+      changes:[
+        'El mapa de suministro v3.25.3 se conserva como base; no se crea una capa paralela.',
+        'El porcentaje final combina el suministro logístico físico con la disponibilidad material de la red local.',
+        'Cada componente viario mantiene una cobertura agregada de alimentos, materias primas, combustible, bienes y material militar.',
+        'Los nodos exactos usan su propio stock; el resto de celdas conectadas usa la cobertura de su red viaria.',
+        'Las zonas sin red local usan la cobertura nacional como último nivel de referencia material.',
+        'Alimentos, combustible y bienes actúan como cuellos de botella principales del suministro utilizable.',
+        'Una ruta marítima bloqueada deja de reponer el puerto remoto; sus stocks bajan y el mapa cambia progresivamente de verde a amarillo, naranja y rojo.',
+        'La leyenda del mapa de suministro pasa a cuatro estados: abastecido, tensión, bajo y crítico.',
+        'Al seleccionar una zona propia en modo Suministro se muestra logística física, disponibilidad material y desglose de los cinco recursos.',
+        'El contexto del mapa muestra además alimentos, combustible y bienes cuando la vista de suministro está activa.',
+        'Los frentes usan el mismo porcentaje combinado, de modo que una escasez material real puede degradar operaciones militares.',
+        'El cálculo sigue siendo cacheado y se limita a nodos/componente viario; no se añade ningún trabajo global por frame.'
+      ]
+    },
+    {
       version:'0.37.20',
       date:'Octubre 2026',
       title:'Economía material física y patrullas navales visibles',
-      current:true,
+      current:false,
       summary:'Cinco recursos reales pasan a producirse, consumirse y transportarse por la red logística; las patrullas navales vuelven a salir de puerto de forma fiable y sus triángulos ganan presencia visual.',
       changes:[
         'Se añaden cinco recursos: alimentos, materias primas, energía/combustible, bienes industriales y material militar.',
