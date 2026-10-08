@@ -1,7 +1,7 @@
 'use strict';
 
 (() => {
-  const BUILD='0.37.2';
+  const BUILD='0.37.22';
   const SAVE_KEY='hexategos-trade-logistics-0370';
   const TRADE_TICK_MS=2800;
   const ROAD_REFRESH_SECONDS=18;
@@ -742,6 +742,109 @@
     if(!coverage)return null;
     const resourcePct=coverage.map(x=>Math.round(clamp(x,0,1)*100));
     return {resourcePct,material:materialSupplyScore03721(coverage)};
+  }
+
+  function effectiveNodeProduction03722(n){
+    const out=Array.isArray(n?.prod)?n.prod.slice():[0,0,0,0,0];
+    if(n?.ind){
+      const rawRatio=n.cap?.[1]?n.stock[1]/n.cap[1]:1;
+      const fuelRatio=n.cap?.[2]?n.stock[2]/n.cap[2]:1;
+      const input=clamp(Math.min(rawRatio/.34,fuelRatio/.30),.12,1.08);
+      out[3]=(out[3]||0)+.105*n.ind*input;
+      out[4]=(out[4]||0)+.046*n.ind*input;
+    }
+    return out;
+  }
+
+  function supplyDiagnosis03722(cell){
+    cell=Number(cell);
+    if(!Number.isInteger(cell)||cell<0||cell>=owner6.length)return null;
+    const f=owner6[cell];
+    if(f<0||f>=activeFactionCount3230)return null;
+    ensureResourceNodes03720(false);
+    if(!resourceNation03720[f])summarizeResources03720();
+
+    const detail=materialSupplyDetail03721(cell);
+    if(!detail)return null;
+    const logistic=Math.round(clamp(Number(baseSupplyPct03721(cell))||0,0,100));
+    const combined=Math.round(clamp(Number(supplyPct3220(cell))||0,0,100));
+    const comp=roadComp&&cell<roadComp.length?roadComp[cell]:-1;
+    const exact=resourceNodes03720.get(cell)||null;
+    const nodes=[];
+    if(exact)nodes.push(exact);
+    else if(comp>=0){
+      for(const n of resourceNodes03720.values())if(n.f===f&&n.comp===comp)nodes.push(n);
+    }else{
+      for(const n of resourceNodes03720.values())if(n.f===f)nodes.push(n);
+    }
+
+    const stock=[0,0,0,0,0],cap=[0,0,0,0,0],prod=[0,0,0,0,0],demand=[0,0,0,0,0];
+    for(const n of nodes){
+      const p=effectiveNodeProduction03722(n);
+      for(let i=0;i<5;i++){
+        stock[i]+=Number(n.stock?.[i])||0;
+        cap[i]+=Number(n.cap?.[i])||0;
+        prod[i]+=Number(p[i])||0;
+        demand[i]+=Number(n.demand?.[i])||0;
+      }
+    }
+    const sum=a=>a.reduce((x,y)=>x+(Number(y)||0),0);
+    const production=sum(prod),consumption=sum(demand),balance=production-consumption;
+
+    let tradeFlow=0,blockedRoutes=0,activeRoutes=0;
+    for(const r of routes){
+      if(r.status==='closed')continue;
+      const touches=(r.a===f&&(r.from===cell||r.to===cell||(comp>=0&&(resourceNodes03720.get(r.from)?.comp===comp||resourceNodes03720.get(r.to)?.comp===comp))))||
+                    (r.b===f&&(r.from===cell||r.to===cell||(comp>=0&&(resourceNodes03720.get(r.from)?.comp===comp||resourceNodes03720.get(r.to)?.comp===comp))));
+      if(!touches)continue;
+      if((r.lastFactor||0)>0){activeRoutes++;tradeFlow+=Number(r.cargoTotal03720)||0}
+      else blockedRoutes++;
+    }
+
+    const criticalIndexes=[0,2,3];
+    let critical=criticalIndexes[0];
+    for(const i of criticalIndexes)if(detail.resourcePct[i]<detail.resourcePct[critical])critical=i;
+
+    let cause='Suministro estable';
+    const recommendations=[];
+    if(logistic<35){
+      cause=comp<0?'Zona aislada de la red logística':'Capacidad logística muy insuficiente';
+      recommendations.push(comp<0?'Conecta la zona por carretera o mediante un puerto':'Refuerza la red de carreteras y sus conexiones');
+    }else if(detail.resourcePct[critical]<40){
+      cause='Escasez de '+RESOURCE_LABELS03720[critical].toLowerCase();
+      if(critical===0)recommendations.push('Aumenta producción de alimentos o impórtalos mediante una ruta comercial');
+      else if(critical===2)recommendations.push('Aumenta combustible/energía o abre una ruta de importación');
+      else recommendations.push('Construye o mejora industria y garantiza materias primas y combustible');
+    }else if(production+tradeFlow<consumption*.9){
+      cause='Producción insuficiente para el consumo de la red';
+      recommendations.push('Construye o mejora industria en ciudades conectadas');
+      recommendations.push('Abre rutas comerciales para importar recursos');
+    }else if(blockedRoutes>0){
+      cause='Rutas comerciales bloqueadas o suspendidas';
+      recommendations.push('Restablece tránsito, desbloquea puertos o crea una ruta alternativa');
+    }else if(combined<55){
+      cause='Presión combinada de logística y reservas';
+      recommendations.push(logistic<detail.material?'Mejora conexiones y capacidad de transporte':'Aumenta producción o importaciones');
+    }else if(combined<75){
+      cause='Red en tensión';
+      recommendations.push(balance<0?'Aumenta producción o reduce consumo':'Refuerza la distribución hacia esta zona');
+    }else{
+      recommendations.push('No requiere intervención inmediata');
+    }
+
+    if(exact?.ind&&detail.resourcePct[1]<45)recommendations.push('La industria necesita más materias primas');
+    if(exact?.ind&&detail.resourcePct[2]<45)recommendations.push('La industria está limitada por combustible');
+    if(blockedRoutes>0&&!recommendations.some(x=>x.includes('ruta')))recommendations.push('Revisa las rutas comerciales bloqueadas');
+    const unique=[...new Set(recommendations)].slice(0,3);
+
+    return {
+      cell,f,scope:exact?'nodo':(comp>=0?'red conectada':'nacional'),component:comp,
+      logistic,material:detail.material,combined,resourcePct:detail.resourcePct.slice(),
+      stock,cap,prod,demand,production,consumption,balance,
+      activeRoutes,blockedRoutes,tradeFlow,
+      criticalResource:RESOURCE_LABELS03720[critical],criticalPct:detail.resourcePct[critical],
+      cause,recommendations:unique
+    };
   }
 
   function routeCargoText03720(r){
@@ -1748,6 +1851,7 @@
         '</div></div>';
     }
     if(selectedMaterial){
+      const diag=supplyDiagnosis03722(selectedSupplyCell);
       html+='<div class="sysBlock3213 supplyMaterialSelected03721">'+
         '<div class="tradeManagerTitle03717"><b>📦 Suministro seleccionado</b><small>'+selectedCombined+'%</small></div>'+
         '<div class="sysMeta3213">Logística física <b>'+Math.round(selectedLogistic)+'%</b> · disponibilidad material <b>'+selectedMaterial.material+'%</b></div>'+
@@ -1756,7 +1860,24 @@
         const p=selectedMaterial.resourcePct[i];
         html+='<span><b>'+RESOURCE_LABELS03720[i]+'</b><i><em style="width:'+p+'%"></em></i><small>'+p+'%</small></span>';
       }
-      html+='</div></div>';
+      html+='</div>';
+      if(diag){
+        const bal=(diag.balance>=0?'+':'')+diag.balance.toFixed(2);
+        html+='<div class="supplyDiagnosis03722">'+
+          '<div class="tradeManagerTitle03717"><b>Diagnóstico</b><small>'+escapeHtml3271(diag.scope)+'</small></div>'+
+          '<div class="supplyDiagnosisGrid03722">'+
+            '<span>Producción</span><b>'+diag.production.toFixed(2)+' u/s</b>'+
+            '<span>Consumo</span><b>'+diag.consumption.toFixed(2)+' u/s</b>'+
+            '<span>Balance</span><b class="'+(diag.balance>=0?'good03722':'bad03722')+'">'+bal+' u/s</b>'+
+            '<span>Flujo comercial</span><b>'+diag.tradeFlow.toFixed(2)+' u/s</b>'+
+            '<span>Rutas activas</span><b>'+diag.activeRoutes+'</b>'+
+            '<span>Rutas bloqueadas</span><b>'+diag.blockedRoutes+'</b>'+
+          '</div>'+
+          '<div class="supplyCause03722"><small>Principal problema</small><b>'+escapeHtml3271(diag.cause)+'</b></div>'+
+          '<div class="supplyAdvice03722">'+diag.recommendations.map(x=>'<span>› '+escapeHtml3271(x)+'</span>').join('')+'</div>'+
+        '</div>';
+      }
+      html+='</div>';
     }
     html+='<div class="sysBlock3213 tradeManager03717">'+
       '<div class="tradeManagerTitle03717"><b>⇄ Gestor de rutas comerciales</b><small>'+own.length+' registradas</small></div>'+
@@ -2273,6 +2394,7 @@
     resourceKeys:()=>RESOURCE_KEYS03720.slice(),
     resourceSummary:(f=0)=>resourceSummary03720(Number(f)),
     materialSupply:(cell)=>materialSupplyDetail03721(Number(cell)),
+    supplyDiagnosis:(cell)=>supplyDiagnosis03722(Number(cell)),
     combinedSupply:(cell)=>supplyPct3220(Number(cell)),
     resourceNode:(cell)=>{
       ensureResourceNodes03720(false);
@@ -2316,5 +2438,5 @@
   window.HEXATEGOS_VERSION=BUILD;
 
   setInterval(tradeTick0370,TRADE_TICK_MS);
-  console.info('[HEXATEGOS] 0.37.2 · tráfico terrestre visible, carreteras finas y patrulla naval local');
+  console.info('[HEXATEGOS] 0.37.22 · diagnóstico de suministro por territorio activo');
 })();
