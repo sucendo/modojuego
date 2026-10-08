@@ -20,3 +20,14 @@
 .nationRoute0380{display:grid;grid-template-columns:auto 1fr;gap:2px 7px;padding:6px 7px;border-bottom:1px solid rgba(255,255,255,.06)}.nationRoute0380 b{font-size:9px}.nationRoute0380 span{font-size:8px;color:#d5e2eb}.nationRoute0380 small{grid-column:2;font-size:7px;color:#8298a8}
 .statecraftResearch0380{display:grid;gap:6px}
 @media(max-width:720px){.nationTabs0380{grid-template-columns:repeat(3,1fr)}.nationStatus0380,.nationTradeSummary0380{grid-template-columns:repeat(2,1fr)}}
+
+
+/* HEXATEGOS 0.38.2 · buscador de proveedores */
+.supplierResourceTabs0382{display:flex;flex-wrap:wrap;gap:4px}
+.supplierResourceTabs0382 button{border:1px solid rgba(102,180,229,.2);background:#0d2132;color:#93aabc;border-radius:7px;padding:5px 7px;font-size:7px;font-weight:800}
+.supplierResourceTabs0382 button.active{background:#185680;color:#fff;border-color:#4a9cd0}
+.supplierList0382{display:grid;gap:4px}
+.supplierRow0382{display:grid!important;grid-template-columns:minmax(110px,1fr) auto!important;gap:8px!important;align-items:center!important;width:100%;text-align:left!important;padding:7px 8px!important;border:1px solid rgba(151,181,201,.1)!important;border-radius:8px!important;background:rgba(255,255,255,.025)!important;color:#dceaf3!important}
+.supplierMain0382,.supplierMeta0382{display:grid;gap:2px}
+.supplierMeta0382{text-align:right}.supplierMain0382 b,.supplierMeta0382 b{font-size:8px}.supplierMain0382 small,.supplierMeta0382 small{font-size:7px;color:#7f98aa}
+@media(max-width:720px){.supplierRow0382{grid-template-columns:1fr!important}.supplierMeta0382{text-align:left}}
