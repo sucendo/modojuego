@@ -14,7 +14,7 @@ assert.match(html,/js\/systems-hub-03851\.js\?v=\d+/);
 assert.ok(systemsCode.includes('focus({preventScroll:true})'),'embassy input focus must not scroll automatically');
 
 const host={scrollTop:92},main={scrollTop:34},panel={
-  scrollTop:11,classList:{contains:c=>c==='open'},
+  scrollTop:11,addEventListener(){},classList:{contains:c=>c==='open'},
   querySelector:s=>s==='.sysMain0385'?main:null
 };
 const doc={getElementById:id=>id==='systemsPanel3213'?panel:
