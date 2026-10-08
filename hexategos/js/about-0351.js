@@ -4,10 +4,29 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.38.15',
+      date:'Octubre 2026',
+      title:'Industria manufacturera diversificada y Comercio independiente',
+      current:true,
+      summary:'Industria se convierte en un catálogo único por niveles. Manufactura civil, maquinaria, armamento, textil, química y electrónica consumen recursos transformados y electricidad. Comercio pasa a ser una pestaña propia.',
+      changes:[
+        'Un único diálogo INDUSTRIA con cuatro niveles operativos: extracción, transformación, manufactura, energía y material militar.',
+        'La industria general se denomina industria manufacturera y mejora la capacidad productiva de las instalaciones de su hexágono.',
+        'Manufactura civil, maquinaria, industria armamentística, textil, química y electrónica con recetas e inventarios industriales.',
+        'Central termoeléctrica que convierte combustible o gas procesado en energía utilizable por fábricas conectadas.',
+        'Mantenimiento de la producción genérica heredada en partidas antiguas, reducida a medida que aparecen fábricas especializadas.',
+        'Fabricación con reparto proporcional de materias primas y energía entre plantas que comparten red, sin prioridad arbitraria.',
+        'Las IA invierten progresivamente en actividades finales cuando tienen materias primas y transformadoras suficientes.',
+        'Reserva visual de energía nuclear, aeronáutica, armamento nuclear y arsenales de misiles como tecnologías futuras todavía bloqueadas.',
+        'Comercio cuenta con pestaña propia en Sistemas y reutiliza el gestor real de rutas terrestres y marítimas.',
+        'Compatibilidad con partidas antiguas y pruebas de cadenas productivas, economía y cartografía.'
+      ]
+    },
+    {
       version:'0.38.14',
       date:'Octubre 2026',
       title:'Capital integrada en la ciudad y sin estrellas históricas',
-      current:true,
+      current:false,
       summary:'Las capitales dejan de dibujarse como estrellas sueltas. La ciudad capital ocupa el centro del hexágono, algo mayor que las demás, con estrella de fondo del color de su nación.',
       changes:[
         'Eliminadas por completo las estrellas históricas independientes (incluida la que reaparecía en azul).',
