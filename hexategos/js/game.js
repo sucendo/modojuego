@@ -1306,7 +1306,7 @@ economyTick3212=function(){
  if(paused3230||!started3230||gameSpeed3212<=0)return;
  const dt=gameSpeed3212;campaignSeconds3230+=dt;
  for(let f=0;f<activeFactionCount3230;f++){
-  const r=economyRate3230(f);if(f===0)gold3212=Math.min(9999,gold3212+r.gold*dt);else botGold3230[f]=Math.min(9999,botGold3230[f]+r.gold*dt);
+  const r=economyRate3230(f);if(f===0)gold3212=Math.max(0,Math.min(1000000000,gold3212+r.gold*dt));else botGold3230[f]=Math.max(0,Math.min(1000000000,botGold3230[f]+r.gold*dt));
   troops3230[f]=Math.min(r.max,troops3230[f]+r.troop*dt);
  }
  research3230.points+=researchRate3230()*dt;updateUI3230();if(Math.floor(campaignSeconds3230)%7===0)saveGame3212();checkEnd3230();
