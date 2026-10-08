@@ -367,7 +367,7 @@
     sp.lastOp=now();sp.level=clamp(sp.level-(success?18:26),5,100);
     if(success){
       operationEffect(target,type);
-      notify('Operación de inteligencia completada en '+factionName3230(target),'intel','intel');
+      notify('Operación de inteligencia completada en '+factionName3230(target),'intel','intel',{faction:target});
     }else{
       const detected=Math.random()*100<clamp(22+counter*.55-sp.level*.12,14,82);
       if(detected){
@@ -375,7 +375,7 @@
         if(typeof dipSetOpinion3300==='function')dipSetOpinion3300(target,0,(dipOpinionOf3300(target,0)||0)-18);
         if(typeof dipSetTrust3300==='function')dipSetTrust3300(target,0,(dipTrustOf3300(target,0)||45)-22);
         if(Math.random()<.22&&hasEmbassy(0,target))setEmbassy(0,target,'expelled',target);
-        notify(factionName3230(target)+' ha detectado una operación de inteligencia','war','intel');
+        notify(factionName3230(target)+' ha detectado una operación de inteligencia','war','intel',{faction:target});
       }else notify('La operación fracasa sin atribución confirmada','intel','intel');
     }
     save0380();renderNationDossier(target,'intel');return success;
@@ -498,7 +498,7 @@
     if(type==='repression'){st.stability=clamp(st.stability+7,0,100);st.nationalism=clamp(st.nationalism+14,0,100)}
     if(f===0){
       save0380();
-      if(interactive)notify(policy.name+' en '+placeDisplayName3271(cell)+' · '+policy.cost+' oro','government','government');
+      if(interactive)notify(policy.name+' en '+placeDisplayName3271(cell)+' · '+policy.cost+' oro','government','government',{cell});
     }
     return true;
   }
