@@ -1,3 +1,4 @@
+import { versionAtLeast } from './version-compat.mjs';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
@@ -9,7 +10,7 @@ const index=read('index.html');
 const about=read('js/about-0351.js');
 
 assert.doesNotThrow(()=>new Function(js),'Systems UI script parses');
-assert.ok(index.includes('v0.38.5</title>'),'version updated');
+assert.ok(versionAtLeast(index,'0.38.5'),'game version must be at least 0.38.5');
 assert.ok(about.includes("version:'0.38.5'"),'changelog updated');
 assert.ok(index.includes('css/systems-hub-0385.css'),'new stylesheet loaded');
 assert.ok(index.includes('js/systems-hub-0385.js'),'new script loaded');

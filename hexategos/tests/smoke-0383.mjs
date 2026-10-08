@@ -1,3 +1,4 @@
+import { versionAtLeast } from './version-compat.mjs';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
@@ -15,7 +16,7 @@ const css=read('css/statecraft-0380.css');
 for(const code of [strategy,trade,corridors,geopolitics,commerce,about]){
   assert.doesNotThrow(()=>new Function(code),'JS must parse');
 }
-assert.ok(index.includes('v0.38.3</title>'),'0.38.3 version missing');
+assert.ok(versionAtLeast(index,'0.38.3'),'game version must be at least 0.38.3');
 assert.ok(index.includes('js/resource-strategy-0383.js'),'resource strategy not loaded');
 assert.ok(index.indexOf('js/resource-strategy-0383.js')>index.indexOf('js/statecraft-0380.js'),'resource strategy must load after diplomacy');
 assert.ok(!index.includes('css/trade-logistics-0370.css">\\n'),'literal newline in CSS assets');

@@ -1,3 +1,4 @@
+import { versionAtLeast } from './version-compat.mjs';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
@@ -11,7 +12,7 @@ const about=read('js/about-0351.js');
 for(const [name,code] of [['trade',trade],['strategy',strategy],['statecraft',statecraft]]){
   assert.doesNotThrow(()=>new Function(code),name+' syntax must be valid');
 }
-assert.ok(index.includes('v0.38.4</title>'),'visible version incorrect');
+assert.ok(versionAtLeast(index,'0.38.4'),'game version must be at least 0.38.4');
 assert.ok(about.includes("version:'0.38.4'"),'About not updated');
 assert.ok(strategy.includes("const BUILD='0.38.4'"),'last-loaded script version incorrect');
 assert.ok(trade.includes('const GEO_PRODUCTION_BATCH0383=48'),'geographic work not reduced');

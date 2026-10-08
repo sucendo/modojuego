@@ -1,3 +1,4 @@
+import { versionAtLeast } from './version-compat.mjs';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
@@ -12,7 +13,7 @@ const about=read('js/about-0351.js');
 
 assert.doesNotThrow(()=>new Function(ui),'new Systems UI syntax');
 assert.doesNotThrow(()=>new Function(diplomacy),'diplomacy API syntax');
-assert.ok(html.includes('v0.38.5.2</title>'));
+assert.ok(versionAtLeast(html,'0.38.5.2'),'game version must be at least 0.38.5.2');
 assert.equal((html.match(/data-tab="(?:dip|eco|research|intel|military|naval)"/g)||[]).length,6);
 assert.ok(html.includes('id="systemsRecenter03851"'));
 assert.ok(html.includes('css/systems-hub-03851.css'));

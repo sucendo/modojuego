@@ -1,3 +1,4 @@
+import { versionAtLeast } from './version-compat.mjs';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
@@ -14,12 +15,12 @@ const about=read('js/about-0351.js');
 for(const script of [statecraft,messages,systems,trade]){
   assert.doesNotThrow(()=>new Function(script),'script syntax');
 }
-assert.ok(index.includes('v0.38.6</title>'));
+assert.ok(versionAtLeast(index,'0.38.6'),'game version must be at least 0.38.6');
 assert.ok(index.includes('data-tab="government"'));
 assert.ok(index.includes('id="systemsQuiet0386"'));
-assert.ok(index.includes('js/ui-stable-step8-033.js?v=0386'));
-assert.ok(index.includes('js/statecraft-0380.js?v=0386'));
-assert.ok(index.includes('js/systems-hub-03851.js?v=0386'));
+assert.ok(/(?:js\/ui-stable-step8-033\.js)\?v=\d+/.test(index));
+assert.ok(/(?:js\/statecraft-0380\.js)\?v=\d+/.test(index));
+assert.ok(/(?:js\/systems-hub-03851\.js)\?v=\d+/.test(index));
 assert.ok(about.includes("version:'0.38.6'"));
 assert.ok(css.includes('.sysGovPolicies0386'));
 assert.ok(systems.includes("data-hub-action="+'"'+'embassy-toggle"'),

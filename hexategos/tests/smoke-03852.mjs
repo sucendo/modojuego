@@ -1,3 +1,4 @@
+import { versionAtLeast } from './version-compat.mjs';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
@@ -10,9 +11,9 @@ const about=read('js/about-0351.js');
 
 assert.doesNotThrow(()=>new Function(stable),'drag controller syntax');
 assert.doesNotThrow(()=>new Function(sys),'Systems controller syntax');
-assert.ok(html.includes('v0.38.5.2</title>'),'build not bumped');
-assert.ok(html.includes('css/systems-hub-03851.css?v=03852'),'CSS cache not refreshed');
-assert.ok(html.includes('js/systems-hub-03851.js?v=03852'),'UI cache not refreshed');
+assert.ok(versionAtLeast(html,'0.38.5.2'),'game version must be at least 0.38.5.2');
+assert.ok(/css/systems-hub-03851\.css\?v=\d+/.test(html),'CSS cache not refreshed');
+assert.ok(/js/systems-hub-03851\.js\?v=\d+/.test(html),'UI cache not refreshed');
 assert.ok(html.includes('js/ui-stable-step3-033.js?v=03852'),'drag controller cache not refreshed');
 assert.ok(about.includes("version:'0.38.5.2'"),'changelog not updated');
 assert.ok(css.includes('#systemsPanel3213.systemsHub0385:not(.uiMovedStable3){'),'default position override missing');

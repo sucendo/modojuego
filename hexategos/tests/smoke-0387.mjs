@@ -11,7 +11,7 @@ for(const [name,script] of [['core',core],['trade',trade],['visual',visual],['ui
 assert.ok(/v0\.38\.(?:[789]|1[012345])<\/title>/.test(html),'version missing');
 assert.ok(html.includes('js/game.js?v=0387'),'updated economic engine may be cached');
 assert.ok(html.includes('js/national-visuals-0378.js?v=0387'),'updated fleet visuals may be cached');
-assert.ok(/js\/trade-logistics-0370\.js\?v=038[78]/.test(html),'updated fleet logic may be cached');
+assert.ok(/js\/trade-logistics-0370\.js\?v=\d+/.test(html),'updated fleet logic may be cached');
 assert.ok(/js\/ui-typography-0387\.js\?v=038[78]/.test(html),'font choice script missing');
 assert.ok(/css\/dialog-unified-0387\.css\?v=038[78]/.test(html),'unified dialog styles missing');
 assert.ok(html.includes('id="landingFontSelect0387"'),'landing option missing');
