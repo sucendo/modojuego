@@ -22,6 +22,8 @@
   const refusalKey=(a,b,v)=>pairKey(a,b)+'|'+v;
 
   function cooperative0377(a,b){
+    const api=window.HexategosStatecraft0380;
+    if(api?.canTrade)return !!api.canTrade(a,b);
     const r=diplomaticRelation3300(a,b);
     return r===1||r===2||r===3;
   }
@@ -169,6 +171,9 @@
         let score=d-(roadCell0377(src)?13:0);
         if(terrainKey3250(n)==='highmountain')score+=8;
         else if(terrainKey3250(n)==='mountain')score+=3;
+        // Recurso cercano y escaso = incentivo económico, sin eliminar
+        // continuidad terrestre, pendiente ni coste de carreteras.
+        score-=Math.min(5,window.HexategosResourceStrategy0383?.priority?.(f,n)||0);
         if(score<bestScore){bestScore=score;best={src,target:n,score,progress:base-d}}
       }
     }
@@ -353,8 +358,9 @@
       if(r&&(r.status==='active'||r.status==='smuggling'))continue;
       const cf=capitals[f],co=capitals[o];
       const d=cf>=0&&co>=0?angularHeuristic3254(cf,co):99;
-      const score=d+(r?.status==='blocked'?-18:0);
-      if(score<bestScore){bestScore=score;best={a:f,b:o,route:r}}
+      const importValue=window.HexategosResourceStrategy0383?.tradeOpportunity?.(f,o)||0;
+      const score=d+(r?.status==='blocked'?-18:0)-importValue*2.7;
+      if(score<bestScore){bestScore=score;best={a:f,b:o,route:r,importValue}}
     }
     return best;
   }
