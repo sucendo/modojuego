@@ -40,7 +40,7 @@
       card.innerHTML='<div class="hubHeader03851"><div><b>🤝 Embajadas y contacto exterior</b>'+
         '<p>El alcance diplomático permite iniciar contactos; una embajada abre las negociaciones formales. No concede comercio automáticamente.</p></div></div>'+
         '<div class="hubStats03851" data-hub-tech></div>'+
-        '<div class="hubButtons03851"><button type="button" class="hubPrimary03851" data-hub-action="embassy-toggle">Gestionar embajadas</button>'+
+        '<div class="hubButtons03851"><button type="button" class="hubPrimary03851" data-hub-action="embassy-toggle">Enviar embajada</button>'+
         '<button type="button" data-hub-action="go-research">Mejorar alcance en Investigación</button></div>'+
         '<div id="hubEmbassyPanel03851" hidden></div>';
     }
@@ -274,7 +274,7 @@
       if(embassyOpen)refreshEmbassyContacts();
       const v=host.querySelector('#hubEmbassyPanel03851');
       if(v){v.hidden=!embassyOpen;if(embassyOpen)renderEmbassyRoster()}
-      b.textContent=embassyOpen?'Ocultar embajadas':'Gestionar embajadas';
+      b.textContent=embassyOpen?'Ocultar embajadas':'Enviar embajada';
       return;
     }
     if(action.startsWith('embassy-')){
