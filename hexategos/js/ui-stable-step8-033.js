@@ -261,12 +261,17 @@
 
   function focusCurrentMessage(){
     if(!focusMessageKey)return;
+    // El foco "VER" es una orden de navegación que se consume UNA SOLA VEZ.
+    // Antes quedaba guardada para siempre y cada renderizado de Sistemas
+    // ejecutaba de nuevo scrollIntoView(smooth), desplazando el panel solo.
     const key=focusMessageKey;
+    focusMessageKey='';
     requestAnimationFrame(()=>{
       const el=document.querySelector(`[data-message-key="${CSS.escape(key)}"]`);
-      if(!el)return;
+      if(!el||!document.getElementById('sysContent3213')?.contains(el))return;
       el.classList.add('messageFocusStable8');
-      el.scrollIntoView({block:'nearest',behavior:'smooth'});
+      // Sin animación que pueda solaparse con una actualización o un gesto.
+      el.scrollIntoView({block:'nearest',inline:'nearest',behavior:'auto'});
       setTimeout(()=>el.classList.remove('messageFocusStable8'),1200);
     });
   }
