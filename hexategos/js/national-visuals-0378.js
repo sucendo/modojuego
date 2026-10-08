@@ -100,7 +100,7 @@
 
     // Una patrulla sin ruta está visualmente atracada en SU puerto. La
     // simulación sigue usando la celda marina adyacente para combate/pathfinding.
-    if(g?.order==='patrol'&&Number.isInteger(g.home)&&g.home>=0&&
+    if((g?.order==='patrol'||g?.order==='intercept')&&!g.route&&Number.isInteger(g.home)&&g.home>=0&&
        ports3212.has(g.home)&&owner6[g.home]===g.f&&
        typeof navalGroupAtHome3270==='function'&&navalGroupAtHome3270(g)){
       const port=cellVector03719(g.home,C);
@@ -153,10 +153,15 @@
 
       // A completed patrol visually enters the port itself, not merely the
       // adjacent sea cell. This applies identically to player and AI fleets.
-      const patrolFinished=wasPatrol&&route?.length&&!g.route&&homePort>=0&&
+      const patrolHome=Number.isInteger(g._patrolHomeSea03719)?g._patrolHomeSea03719:-1;
+      const returningPatrol=wasPatrol||(patrolHome>=0&&
+        route?.length>=3&&route[route.length-1]===patrolHome&&to===patrolHome);
+      const realPort=homePort>=0?homePort:g?.home;
+      const patrolFinished=returningPatrol&&route?.length&&!g.route&&
+        Number.isInteger(realPort)&&realPort>=0&&
         typeof navalGroupAtHome3270==='function'&&navalGroupAtHome3270(g);
       if(patrolFinished){
-        const pv=cellVector03719(homePort,C);
+        const pv=cellVector03719(realPort,C);
         if(pv)vecPath.push(pv);
         g._patrolAwaitingNext03719=true;
         g.patrolNext0371=(typeof campaignSeconds3230==='number'?campaignSeconds3230:0)+2+(g.id%3)*.55;
