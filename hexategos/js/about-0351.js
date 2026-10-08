@@ -4,10 +4,26 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.38.9',
+      date:'Octubre 2026',
+      title:'Avisos localizables, decisiones diplomáticas y toponimia histórica',
+      current:true,
+      summary:'Los avisos incluyen VER con navegación al mapa para eventos geolocalizables. Las embajadas recibidas se pueden aceptar o rechazar. La geografía condiciona el nombre de países, capitales y ciudades de IA.',
+      changes:[
+        'Los avisos geolocalizados permiten centrar el mapa en el hexágono implicado, o en la capital de la nación que los origina.',
+        'Las solicitudes de embajada permanecen como decisiones pendientes y admiten ACEPTAR y RECHAZAR; las ofertas comerciales conservan sus decisiones.',
+        'Los mensajes informativos mantienen ENTENDIDO y la aspa de descarte sin interrumpir la partida.',
+        'Las denominaciones nacionales se inspiran en regiones históricas según la capital, sin reivindicar fronteras históricas exactas.',
+        'Las capitales y ciudades de las IA consultan progresivamente el atlas offline de GeoNames y prefieren localidades que estén dentro del hexágono.',
+        'Barcelona deja de heredar Madrid como nombre de capital cuando el atlas confirma la ubicación; se conservan los nombres personalizados del jugador.',
+        'Búsquedas de atlas progresivas, cola O(1) de nuevas ciudades y persistencia compatible con guardados anteriores.'
+      ]
+    },
+    {
       version:'0.38.8',
       date:'Octubre 2026',
       title:'Economía productiva territorial y cadenas logísticas',
-      current:true,
+      current:false,
       summary:'La extracción especializada explota hasta siete hexágonos, las fábricas transforman materias primas físicas y las rutas conectan los centros productivos, con regulación sectorial e IA adaptada a cada territorio.',
       changes:[
         'Pozos de petróleo y gas, minas, madera, cultivos y ganadería con rendimiento según riqueza geológica y territorio controlado.',
