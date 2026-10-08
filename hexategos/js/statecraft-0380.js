@@ -1,9 +1,9 @@
 'use strict';
 
-// HEXATEGOS 0.38.2 · economía geográfica, peso urbano y buscador de proveedores.
+// HEXATEGOS 0.38.6 · Gobierno y estabilidad interna sobre ciudades existentes.
 // Capa incremental: reutiliza diplomacia, comercio material, IA, guardados y reloj existentes.
 (() => {
-  const BUILD='0.38.2';
+  const BUILD='0.38.6';
   const SAVE_KEY='hexategos-statecraft-0380';
   const RESOURCE_LABELS=['Alimentos','Materias primas','Energía/combustible','Bienes industriales','Material militar'];
   const RESOURCE_ICONS=['🍞','⛏','⛽','📦','🎖'];
@@ -1022,7 +1022,7 @@
   const baseEconomyTick0380=economyTick3212;
   economyTick3212=function(){
     const out=baseEconomyTick0380.apply(this,arguments);
-    try{service0380()}catch(err){console.warn('[HEXATEGOS 0.38.2 statecraft]',err)}
+    try{service0380()}catch(err){console.warn('[HEXATEGOS 0.38.6 statecraft]',err)}
     return out;
   };
 
@@ -1148,5 +1148,5 @@
 
   initialize0380();
   window.HEXATEGOS_VERSION=BUILD;
-  console.info('[HEXATEGOS] 0.38.2 · economía geográfica, peso urbano y buscador de proveedores');
+  console.info('[HEXATEGOS] 0.38.6 · Gobierno y estabilidad interna con decisiones IA');
 })();
