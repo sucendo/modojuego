@@ -4,10 +4,25 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.38.14',
+      date:'Octubre 2026',
+      title:'Capital integrada en la ciudad y sin estrellas históricas',
+      current:true,
+      summary:'Las capitales dejan de dibujarse como estrellas sueltas. La ciudad capital ocupa el centro del hexágono, algo mayor que las demás, con estrella de fondo del color de su nación.',
+      changes:[
+        'Eliminadas por completo las estrellas históricas independientes (incluida la que reaparecía en azul).',
+        'La capital actual se representa mediante un único símbolo: ciudad dorada sobre estrella de fondo con el color de la facción.',
+        'El símbolo de ciudad capital es algo mayor que las ciudades ordinarias y se pinta por encima de carreteras y otras estructuras.',
+        'Las capitales de IA usan igualmente su propio color y no generan un segundo icono de estrella.',
+        'Conservadas las ubicaciones costeras de los puertos y las instalaciones industriales distribuidas alrededor.',
+        'Compatibilidad con las partidas anteriores: solo se modifica la representación, no el dato histórico de capitalidad.'
+      ]
+    },
+    {
       version:'0.38.13',
       date:'Octubre 2026',
       title:'Iconos originales con color propio por tipo y mayor tamaño',
-      current:true,
+      current:false,
       summary:'La cartografía recupera el estilo clásico de símbolos sobre círculos de color, con paleta distintiva para cada industria y recurso, mayor tamaño y la jerarquía de iconos establecida en la versión anterior.',
       changes:[
         'Recuperación de fondos circulares sólidos y pictogramas oscuros de la familia visual original de ciudades, puertos e industrias.',
