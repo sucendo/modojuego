@@ -501,7 +501,7 @@
       addHub(r.from);addHub(r.to);
     }
     for(const cell of hubs)mix(cell);
-    const production=window.HexategosProduction0388;
+    const production=typeof window!=='undefined'?window.HexategosProduction0388:null;
     for(const cell of production?.cells?.()||[])mix(cell);
     return h+':'+roadEpoch+':'+(production?.revision?.()||0);
   }
