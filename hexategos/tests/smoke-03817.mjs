@@ -6,7 +6,7 @@ const html=read('index.html'),trade=read('js/trade-logistics-0370.js');
 const production=read('js/production-0388.js');
 assert.doesNotThrow(()=>new Function(js));
 assert.match(html,/v0\.38\.1[789]<\/title>/);
-assert.match(html,/js\/hex-inspector-03817\.js\?v=03817/);
+assert.match(html,/js\/hex-inspector-03817\.js\?v=0381[78]/);
 assert.match(html,/css\/hex-inspector-03817\.css\?v=03817/);
 assert.match(html,/js\/trade-logistics-0370\.js\?v=03817/);
 assert.match(html,/js\/production-0388\.js\?v=03817/);
