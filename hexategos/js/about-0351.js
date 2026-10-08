@@ -4,10 +4,27 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.38.7',
+      date:'Octubre 2026',
+      title:'Oro sin límite de 9.999, flotas IA y diálogos unificados',
+      current:true,
+      summary:'Se elimina el límite artificial de oro, se reactivan los ciclos de patrulla de la IA tras una interceptación y se aplica el aspecto de Sistemas a los demás diálogos, con tipografía adaptable.',
+      changes:[
+        'El oro del jugador y de las IA deja de detenerse en 9.999 y puede continuar creciendo, sin modificar los saldos de partidas anteriores.',
+        'La animación naval distingue el final de patrullas IA aunque cambien entre interceptar y patrullar; las flotas regresan visualmente al puerto.',
+        'Se corrige la espera infinita que podía impedir iniciar nuevas patrullas después de terminar una ruta o cambiar de orden.',
+        'Menús de territorio, diálogo de información, nueva partida, menú de partida, Acerca de y pantallas de inicio/fin utilizan el esquema del centro de mando.',
+        'Opciones incorpora el ajuste de tamaño de letra con modo Automático y seis tamaños manuales, del 90 al 145 por ciento.',
+        'El modo Automático aumenta ligeramente la letra en móviles y adapta cuadros y controles al espacio disponible.',
+        'La preferencia de tamaño se guarda localmente sin tocar las partidas, el mapa ni los tiempos de simulación.',
+        'Se fuerzan nuevas versiones de CSS/JS para evitar caché anterior de economía o visualización naval.'
+      ]
+    },
+    {
       version:'0.38.6',
       date:'Octubre 2026',
       title:'Gobierno urbano y avisos sin interrupciones',
-      current:true,
+      current:false,
       summary:'La gestión política de ciudades se convierte en una herramienta real para jugador e IA. Los avisos pasan a un registro tranquilo dentro de Sistemas en lugar de saltar constantemente sobre el mapa.',
       changes:[
         'Se silencian por defecto las ventanas emergentes automáticas; los eventos y ofertas permanecen accesibles desde las insignias de Sistemas.',
