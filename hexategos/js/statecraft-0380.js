@@ -984,6 +984,31 @@
     performance:()=>({lastServiceMs:Number(statecraftServiceMs0384.toFixed(2)),citiesUpdated:citiesUpdated0384,trackedCities:cityState.size,spyNetworks:spies.size}),
     dossier:(f,tab='dip')=>renderNationDossier(Number(f),tab),
     requestEmbassy:(a,b)=>requestEmbassy(Number(a),Number(b),false),
+    requestEmbassyPlayer:(f)=>requestEmbassy(0,Number(f),true),
+    answerEmbassyPlayer:(f,accept)=>answerEmbassy(Number(f),!!accept),
+    embassyStatus:(a,b)=>{
+      const e=embassyRecord(Number(a),Number(b));
+      return e?{status:e.status,requestedBy:e.requestedBy,retry:Math.ceil(embassyRetryRemaining(Number(a),Number(b)))}:
+        {status:'none',requestedBy:-1,retry:0};
+    },
+    // Solo bajo acción explícita del usuario: jamás recorrer 500 naciones
+    // en cada actualización de los diálogos.
+    embassyContacts:()=>{
+      const result=[];
+      for(let f=1;f<activeFactionCount3230;f++){
+        if(typeof countFaction3230==='function'&&countFaction3230(f)<=0)continue;
+        const e=embassyRecord(0,f),pending=e?.status==='pending'&&e?.requestedBy===f;
+        if(!pending&&!canContact(0,f)&&!hasEmbassy(0,f))continue;
+        result.push({
+          f,name:factionName3230(f),
+          status:e?.status||'none',
+          pending,
+          retry:Math.ceil(embassyRetryRemaining(0,f)),
+          treaty:tradeTreaty(0,f)
+        });
+      }
+      return result;
+    },
     deploySpy:(a,b)=>deploySpy(Number(a),Number(b),false),
     serialize:serialize0380
   };
