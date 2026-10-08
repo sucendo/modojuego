@@ -6,8 +6,8 @@ const js=read('js/production-0388.js'),css=read('css/production-0388.css'),index
 assert.doesNotThrow(()=>new Function(js),'0.38.11 production syntax');
 assert.ok(js.includes('iconOffset03811'),'co-located marker layout missing');
 assert.ok(css.includes('industryBudget0388'),'disabled-choice explanation styling missing');
-assert.match(index,/js\/production-0388\.js\?v=0381[12]/);
-assert.match(index,/css\/production-0388\.css\?v=03811/);
+assert.match(index,/js\/production-0388\.js\?v=0381[125]/);
+assert.match(index,/css\/production-0388\.css\?v=0381[15]/);
 
 const owner=Array(20).fill(0),gold=[0,2500];
 const centers=Array(60).fill(5000),edges=[],offsets=[0];
@@ -30,7 +30,7 @@ const names=[
  'drawInfrastructure3212','document','modalBody3244','console','aiNationalSamples3275',
  'ports3212','localStorage','capitals','cities3212','industries3212','zoom',
  'drawGlobeCityIcon3249','drawGlobePortIcon3249','drawGlobeIndustryIcon3249',
- 'globeIconScale3249','currentKey','ctx','projectVec','vw','vh'
+ 'globeIconScale3249','currentKey','ctx','projectVec','vw','vh','industryLevel3230'
 ];
 const native=[];
 const args=[
@@ -41,7 +41,7 @@ const args=[
  [4,12],cities,generalIndustry,10,
  (x,y)=>native.push(['city',x,y]),(x,y)=>native.push(['port',x,y]),
  (x,y)=>native.push(['industry',x,y]),()=>8,5,ctx,
- (x,y,z)=>[300,220,.99],800,500
+ (x,y,z)=>[300,220,.99],800,500,new Uint8Array(owner.length)
 ];
 const boot=new Function(...names,js+
   '\nreturn {api:window.HexategosProduction0388,save:saveGame3212,load:loadGame3212,reset:resetGame3230,draw:drawInfrastructure3212,city:drawGlobeCityIcon3249,port:drawGlobePortIcon3249,industry:drawGlobeIndustryIcon3249,gold:()=>gold3212};');
