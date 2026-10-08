@@ -5,8 +5,8 @@ const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
 const source=read('js/map-icons-03812.js');
 const html=read('index.html'),history=read('js/about-0351.js');
 assert.doesNotThrow(()=>new Function(source),'icon renderer syntax');
-assert.match(html,/v0\.38\.1[34]<\/title>/,'version number');
-assert.match(html,/js\/map-icons-03812\.js\?v=0381[34]/,'browser must reload icon styling');
+assert.match(html,/v0\.38\.1[345]<\/title>/,'version number');
+assert.match(html,/js\/map-icons-03812\.js\?v=0381[345]/,'browser must reload icon styling');
 assert.ok(history.includes("version:'0.38.13'"),'missing changelog version');
 
 const start=source.indexOf('  const COLORS=');
@@ -30,7 +30,8 @@ const run=new Function('ctx','finite','globeIconScale3249',
 const {COLORS,radius,badge}=run(ctx,Number.isFinite,()=>8.0);
 const types=['city','capital','historic','port','industry','oil','gas',
   'iron','copper','quarry','timber','crops','livestock',
-  'refinery','gasplant','steel','smelter','sawmill','cement','foodplant'];
+  'refinery','gasplant','steel','smelter','sawmill','cement','foodplant',
+  'thermal','civilian','machinery','arms','textile','chemical','electronics'];
 assert.equal(Object.keys(COLORS).length,types.length,'unexpected missing or extra types');
 assert.equal(new Set(types.map(type=>COLORS[type])).size,types.length,
   'all background fills should have unique colors');
