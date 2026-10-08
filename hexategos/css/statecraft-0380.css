@@ -31,3 +31,15 @@
 .supplierMain0382,.supplierMeta0382{display:grid;gap:2px}
 .supplierMeta0382{text-align:right}.supplierMain0382 b,.supplierMeta0382 b{font-size:8px}.supplierMain0382 small,.supplierMeta0382 small{font-size:7px;color:#7f98aa}
 @media(max-width:720px){.supplierRow0382{grid-template-columns:1fr!important}.supplierMeta0382{text-align:left}}
+
+
+/* HEXATEGOS 0.38.3 · lectura del potencial territorial */
+.resourcePotential0383{gap:9px}
+.resourcePotentialRow0383{display:grid;grid-template-columns:1fr auto;gap:4px 9px;border:1px solid rgba(151,181,201,.13);background:rgba(255,255,255,.025);padding:7px 9px;border-radius:8px;align-items:center}
+.resourcePotentialRow0383>span{color:#b9cbd8;font-size:9px}
+.resourcePotentialRow0383>b{color:#f2f9ff;font-size:9px}
+.resourcePotentialBar0383{grid-column:1/-1;border-radius:99px;overflow:hidden;height:5px;background:rgba(110,155,185,.17)}
+.resourcePotentialBar0383 i{display:block;height:100%;border-radius:99px;background:#73bfa4;max-width:100%}
+.resourcePotentialAdvice0383{display:grid;gap:3px;border-radius:8px;padding:8px 9px;background:rgba(90,164,216,.08);border:1px solid rgba(120,174,205,.16)}
+.resourcePotentialAdvice0383 b{font-size:9px;color:#d8e6ef}
+.resourcePotentialAdvice0383 span{font-size:8px;color:#a6c3d6}
