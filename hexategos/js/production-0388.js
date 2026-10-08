@@ -12,7 +12,7 @@
   const TYPES={
     oil:     {name:'Pozo de petróleo', icon:'🛢',sector:'energy',   group:'extract',material:'oil', cost:100},
     gas:     {name:'Pozo de gas',       icon:'🔥',sector:'energy',   group:'extract',material:'gas', cost:100},
-    coal:    {name:'Mina de carbón',    icon:'⚒️',sector:'mining',group:'extract',material:'coal',cost:85},
+    coal:    {name:'Mina de carbón',    icon:'⛏',sector:'mining',group:'extract',material:'coal',cost:85},
     iron:    {name:'Mina de hierro',    icon:'⛏',sector:'mining',   group:'extract',material:'iron',cost:85},
     copper:  {name:'Mina de cobre',     icon:'⛏',sector:'mining',   group:'extract',material:'copper',cost:90},
     timber:  {name:'Explotación forestal',icon:'🌲',sector:'mining',group:'extract',material:'timber',cost:65},
