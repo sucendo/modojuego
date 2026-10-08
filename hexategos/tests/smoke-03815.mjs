@@ -77,4 +77,63 @@ load();
 assert.ok(api.sites().some(s=>s.kind==='arms'),'new recipes lost on saved-game load');
 assert.ok(api.sites().some(s=>s.kind==='thermal'),'energy plant lost on saved-game load');
 assert.ok(api.validate().ok);
+// Commerce reutiliza el gestor real de rutas y no mezcla su listado con Economía.
+const makeElement=(name='div')=>{
+  const el={name,children:[],dataset:{},innerHTML:'',classList:{toggle(){}},
+    setAttribute(){},removeAttribute(){},addEventListener(){}};
+  el.appendChild=function(child){
+    child.remove?.();this.children.push(child);child.parent=this;return child;
+  };
+  el.insertBefore=function(child,next){
+    child.remove?.();const i=this.children.indexOf(next);
+    if(i<0)return this.appendChild(child);
+    this.children.splice(i,0,child);child.parent=this;return child;
+  };
+  el.replaceChildren=function(...children){
+    for(const old of this.children)old.parent=null;
+    this.children=[];
+    for(const child of children)this.appendChild(child);
+  };
+  el.remove=function(){
+    if(!this.parent)return;const i=this.parent.children.indexOf(this);
+    if(i>=0)this.parent.children.splice(i,1);this.parent=null;
+  };
+  return el;
+};
+const tabs=makeElement('tabs'),economyButton=makeElement('button');
+economyButton.dataset.tab='eco';tabs.appendChild(economyButton);
+tabs.querySelector=selector=>selector.includes('commerce')?
+  tabs.children.find(b=>b.dataset.tab==='commerce'):
+  selector.includes('eco')?economyButton:null;
+const panel=makeElement('panel'),commerceHost=makeElement('host');
+panel.querySelector=selector=>selector==='.sysTabs3213'?tabs:null;
+panel.querySelectorAll=()=>tabs.children;
+commerceHost.querySelector=selector=>selector==='.tradeManager03717'?
+  commerceHost.children.find(x=>x.trade===true):
+  selector.includes('nth-child(2)')?commerceHost.children[1]:null;
+const doc={getElementById:id=>id==='systemsPanel3213'?panel:
+  id==='sysContent3213'?commerceHost:null,createElement:tag=>makeElement(tag)};
+const harness=
+  "let sysTab3220='eco';"+
+  "function renderSystems3220(){"+
+  "const h=doc.getElementById('sysContent3213');"+
+  "const summary=makeElement('summary');"+
+  "summary.innerHTML='<br>⇄ Socios comerciales: <b>2</b><br>Comercio: <b>+4</b>';"+
+  "const production=makeElement('production');"+
+  "const routes=makeElement('routes');routes.trade=true;"+
+  "h.replaceChildren(summary,production,routes);return 'rendered'}"+
+  com+
+  "return {renderSystems3220,choose:tab=>{sysTab3220=tab;renderSystems3220()},current:()=>sysTab3220};";
+const factoryCommerce=new Function('doc','window','makeElement',harness);
+const tradeWindow={};
+const commerceRuntime=factoryCommerce(doc,tradeWindow,makeElement);
+assert.ok(tradeWindow.HexategosSystemsCommerce03815.available(),'Commerce tab not created');
+commerceRuntime.choose('commerce');
+assert.equal(commerceRuntime.current(),'commerce');
+assert.equal(commerceHost.children.length,2,'Commerce must show intro and original route manager only');
+assert.ok(commerceHost.children[1].trade,'real route manager not retained');
+commerceRuntime.choose('eco');
+assert.equal(commerceHost.children.length,2,'Economy must retain summary and production');
+assert.ok(!commerceHost.children.some(el=>el.trade),'route cards duplicated in Economy');
+
 console.log('HEXATEGOS 0.38.15 manufacturing chains, electricity, future tech locks and saves: OK');
