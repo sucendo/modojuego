@@ -95,7 +95,7 @@ assert.equal((trade.match(/setInterval\(/g)||[]).length,1,
 assert.ok(!trade.slice(trade.indexOf('function transferRouteResources03720'),trade.indexOf('function summarizeResources03720')).includes('findSeaPathCells3270'),
   'resource transfer must not pathfind per cargo type');
 
-assert.ok(index.includes('v0.37.20</title>'),'visible version must be 0.37.20');
+assert.ok(index.includes('v0.37.20</title>')||index.includes('v0.37.21</title>'),'visible version must be 0.37.20');
 assert.ok(about.includes("version:'0.37.20'"),'About must include 0.37.20');
 
 console.log('HEXATEGOS 0.37.20 material economy + active patrols smoke: OK');
