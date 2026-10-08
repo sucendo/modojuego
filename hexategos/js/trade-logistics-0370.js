@@ -61,6 +61,10 @@
   let resourceTickMs03720=0;
   let restoredResources03720=null;
   let resourceComponentCoverage03721=new Map();
+  // Producción geográfica refrescada progresivamente, sin barrer el mundo
+  // ni reconstruir el grafo logístico al conquistar una casilla.
+  let geoProductionIterator0383=null;
+  const GEO_PRODUCTION_BATCH0383=160;
 
   let navalPathBucket0371=-1;
   let navalPathUsed0371=0;
@@ -501,16 +505,21 @@
       ice:[.10,.78,.62]
     }[type]||[1,.95,.82];
 
-    // Variación geológica determinista por región: evita que todo desierto,
-    // montaña o llanura tenga exactamente el mismo valor estratégico.
-    let h=Math.imul((Number(cell)+1)^0x9e3779b9,2654435761)>>>0;
+    // Yacimientos abstractos compartidos por áreas vecinas (~6°), no ruido
+    // independiente por hexágono: los distritos ricos forman zonas continuas.
+    let lat=0,lon=0;
+    try{
+      const p=cellLonLat3302(cell);
+      lat=Number(p?.lat)||0;lon=Number(p?.lon)||0;
+    }catch(_){}
+    const zoneLat=Math.floor((lat+90)/6);
+    const zoneLon=Math.floor((lon+180)/6);
+    let h=Math.imul((zoneLat+11)*73856093^(zoneLon+47)*19349663,2654435761)>>>0;
     h^=h>>>13;h=Math.imul(h,1274126177)>>>0;h^=h>>>16;
     const rawNoise=.78+((h&1023)/1023)*.52;
     const fuelNoise=.56+(((h>>>10)&1023)/1023)*1.02;
-
-    let lat=0;
-    try{lat=Math.abs(Number(cellLonLat3302(cell)?.lat)||0)}catch(_){}
-    const climateFood=lat>72?.48:lat>62?.72:lat<23?1.04:1;
+    const absLat=Math.abs(lat);
+    const climateFood=absLat>72?.48:absLat>62?.72:absLat<23?1.04:1;
     return {
       type,
       food:clamp(base[0]*climateFood,.08,1.7),
@@ -566,9 +575,13 @@
     const territory=Math.max(1,snap.territory[f]||1),div=Math.max(1,nodeCount);
     const regional=territory/div;
     const geo=terrainResourceProfile0382(cell);
-    prod[0]+=regional*.00072*geo.food;
-    prod[1]+=regional*.00056*geo.raw;
-    prod[2]+=regional*.00025*geo.fuel;
+    const nation=window.HexategosResourceStrategy0383?.nationalPotential?.(f);
+    // La riqueza de las casillas conquistadas forma el grueso de la producción;
+    // el nodo local modula el resto. La muestra nacional es acotada.
+    const mix=(v,r)=>clamp(nation?.[r]!=null?(nation[r]*.72+v*.28):v,.18,2.2);
+    prod[0]+=regional*.00072*mix(geo.food,0);
+    prod[1]+=regional*.00056*mix(geo.raw,1);
+    prod[2]+=regional*.00025*mix(geo.fuel,2);
 
     return {cap,prod,demand,city,ind,port,capital,hub,urbanWeight,geo};
   }
@@ -620,6 +633,7 @@
       }
     }
     resourceNodes03720=next;resourceSig03720=sig;restoredResources03720=null;
+    geoProductionIterator0383=null;
     return next;
   }
 
@@ -712,12 +726,33 @@
     }
   }
 
+  function refreshGeoProduction0383(snap){
+    if(!window.HexategosResourceStrategy0383?.nationalPotential||!resourceNodes03720.size)return;
+    if(!geoProductionIterator0383)geoProductionIterator0383=resourceNodes03720.values();
+    for(let i=0;i<GEO_PRODUCTION_BATCH0383;i++){
+      let item=geoProductionIterator0383.next();
+      if(item.done){
+        geoProductionIterator0383=resourceNodes03720.values();
+        item=geoProductionIterator0383.next();
+        if(item.done)break;
+      }
+      const n=item.value;
+      if(n.f<0||owner6[n.cell]!==n.f)continue;
+      const count=Math.max(1,resourceNation03720[n.f]?.nodes||1);
+      const profile=resourceNodeProfile03720(n.cell,n.f,count,snap);
+      // No tocar stock, logística, demanda ni niveles industriales.
+      n.prod[0]=profile.prod[0];n.prod[1]=profile.prod[1];n.prod[2]=profile.prod[2];
+    }
+  }
+
   function resourceTick03720(force=false){
     const t0=performance.now(),now=Number(campaignSeconds3230)||0;
     let dt=resourceLastCampaign03720<-1e8?1:now-resourceLastCampaign03720;
     if(!force&&dt<=.05)return;
     dt=clamp(dt,.1,8);resourceLastCampaign03720=now;
     ensureResourceNodes03720(force);
+    // Incremental: hasta 160 nodos por tick comercial; no hay scan global.
+    refreshGeoProduction0383(ensureEconomySnapshot3261(false));
 
     // Producción / consumo local.
     for(const n of resourceNodes03720.values()){
