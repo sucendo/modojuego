@@ -112,9 +112,10 @@
 
   function tradeRelation0370(a,b){
     const r=diplomaticRelation3300(a,b);
-    // El motor diplomático actual guarda un único estado por pareja.
-    // NO AGRESIÓN y ALIANZA son tratados cooperativos superiores: conservan
-    // los derechos comerciales ya implícitos en la relación.
+    // 0.38.0: los tratados comerciales internacionales requieren embajada
+    // y consentimiento formal. Las rutas interiores siguen siempre permitidas.
+    const statecraft=window.HexategosStatecraft0380;
+    if(a!==b&&statecraft?.canTrade&&!statecraft.canTrade(a,b))return false;
     return r===1||r===2||r===3;
   }
 
@@ -614,6 +615,8 @@
     for(let i=0;i<5;i++){
       const x=needs[i];if(x.score<=0)continue;
       const src=x.diff>0?a:b,dst=x.diff>0?b:a;
+      const statecraft=window.HexategosStatecraft0380;
+      if(src.f!==dst.f&&statecraft?.resourceTradeAllowed&&!statecraft.resourceTradeAllowed(src.f,dst.f,i))continue;
       const budget=perSec*dt*(x.score/sumBase.v);
       const reserve=src.cap[i]*.16,space=Math.max(0,dst.cap[i]*.88-dst.stock[i]);
       const amount=Math.max(0,Math.min(budget,src.stock[i]-reserve,space));
@@ -634,7 +637,8 @@
     for(const n of resourceNodes03720.values()){
       const s=resourceNation03720[n.f];if(!s)continue;
       s.nodes++;
-      for(let i=0;i<5;i++){s.stock[i]+=n.stock[i];s.cap[i]+=n.cap[i];s.prod[i]+=n.prod[i];s.demand[i]+=n.demand[i]}
+      const effectiveProd=effectiveNodeProduction03722(n);
+      for(let i=0;i<5;i++){s.stock[i]+=n.stock[i];s.cap[i]+=n.cap[i];s.prod[i]+=effectiveProd[i]||0;s.demand[i]+=n.demand[i]}
     }
 
     resourceComponentCoverage03721=new Map();
@@ -674,6 +678,8 @@
         let production=n.prod[i];
         if(i===3&&n.ind)production+=.105*n.ind*industryInput;
         if(i===4&&n.ind)production+=.046*n.ind*industryInput;
+        const statecraft=window.HexategosStatecraft0380;
+        if(statecraft?.resourceProductionMultiplier)production*=statecraft.resourceProductionMultiplier(n.cell,i,n.f);
         n.stock[i]=clamp(n.stock[i]+production*dt,0,n.cap[i]);
       }
       for(let i=0;i<5;i++)n.stock[i]=Math.max(0,n.stock[i]-n.demand[i]*dt);
