@@ -4,10 +4,26 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.38.16',
+      date:'Octubre 2026',
+      title:'Estabilidad diplomática al reanudar partidas',
+      current:true,
+      summary:'Las naciones agresivas dejan de repetir declaraciones de guerra al reabrir una partida. Las guerras y treguas se guardan inmediatamente y las IA necesitan tensiones diplomáticas reales para iniciar nuevos conflictos contra el jugador.',
+      changes:[
+        'Sin nuevas declaraciones automáticas de guerra contra el jugador durante los primeros 90 segundos de campaña tras cargar una partida.',
+        'Las guerras que ya estaban activas en el guardado permanecen activas, sin crear otra declaración.',
+        'Guerras y acuerdos de paz contra el jugador guardados inmediatamente para evitar perder sus cambios al salir antes del autoguardado.',
+        'Tras una paz, tregua de 210 segundos de campaña para evitar que el mismo adversario vuelva a declarar la guerra de inmediato.',
+        'La IA necesita tensión diplomática y frontera real para iniciar un conflicto, además de su perfil de agresividad y situación militar.',
+        'En una partida nueva hay un período inicial de 75 segundos antes de las primeras guerras automáticas contra el jugador.',
+        'Compatibilidad con partidas anteriores, datos de tregua en guardados portables y prueba de reanudación y persistencia.'
+      ]
+    },
+    {
       version:'0.38.15',
       date:'Octubre 2026',
       title:'Industria manufacturera diversificada y Comercio independiente',
-      current:true,
+      current:false,
       summary:'Industria se convierte en un catálogo único por niveles. Manufactura civil, maquinaria, armamento, textil, química y electrónica consumen recursos transformados y electricidad. Comercio pasa a ser una pestaña propia.',
       changes:[
         'Un único diálogo INDUSTRIA con cuatro niveles operativos: extracción, transformación, manufactura, energía y material militar.',
