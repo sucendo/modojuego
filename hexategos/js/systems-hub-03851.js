@@ -180,6 +180,12 @@
       return;
     }
     const cities=api.governmentCities(0,65),policies=api.governmentPolicies?.()||{};
+    // Una ciudad elegida en el mapa debe aparecer aunque la nación tenga
+    // cientos de ciudades y no esté entre las 65 más problemáticas.
+    const chosen=api.governmentCity(governmentCity0386);
+    if(chosen?.owner===0&&!cities.some(c=>c.cell===governmentCity0386))
+      cities.unshift({cell:chosen.cell,stability:chosen.stability,scarcity:chosen.scarcity,
+        nationalism:chosen.nationalism,occupied:chosen.occupied});
     if(governmentCity0386<0||!cities.some(x=>x.cell===governmentCity0386))
       governmentCity0386=cities[0]?.cell??-1;
     const st=api.governmentCity(governmentCity0386);
