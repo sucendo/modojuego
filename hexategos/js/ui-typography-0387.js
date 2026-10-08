@@ -6,6 +6,7 @@
   const STORAGE='hexategos.ui.fontSize.0387';
   const PRESETS=[
     {value:'auto',label:'Automático (se adapta a la pantalla)'},
+    {value:'75',label:'Muy compacto · 75 %'},
     {value:'90',label:'Compacto · 90 %'},
     {value:'100',label:'Normal · 100 %'},
     {value:'110',label:'Grande · 110 %'},
