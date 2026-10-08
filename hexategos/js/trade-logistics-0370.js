@@ -64,6 +64,7 @@
   // Producción geográfica refrescada progresivamente, sin barrer el mundo
   // ni reconstruir el grafo logístico al conquistar una casilla.
   let geoProductionIterator0383=null;
+  let geoNodeCounts0383=new Uint16Array(FACTIONS3230.length);
   const GEO_PRODUCTION_BATCH0383=160;
 
   let navalPathBucket0371=-1;
@@ -609,8 +610,10 @@
     const restoredPlayer=new Map(Array.isArray(restoredResources03720?.playerNodes)?restoredResources03720.playerNodes:[]);
     const restoredCoverage=Array.isArray(restoredResources03720?.nationCoverage)?restoredResources03720.nationCoverage:[];
 
+    geoNodeCounts0383.fill(0);
     for(let f=0;f<activeFactionCount3230;f++){
       const count=Math.max(1,cellsByFaction[f].size);
+      geoNodeCounts0383[f]=Math.min(65535,count);
       for(const cell of cellsByFaction[f]){
         const profile=resourceNodeProfile03720(cell,f,count,snap),prev=old.get(cell);
         let stock;
@@ -738,7 +741,7 @@
       }
       const n=item.value;
       if(n.f<0||owner6[n.cell]!==n.f)continue;
-      const count=Math.max(1,resourceNation03720[n.f]?.nodes||1);
+      const count=Math.max(1,geoNodeCounts0383[n.f]||1);
       const profile=resourceNodeProfile03720(n.cell,n.f,count,snap);
       // No tocar stock, logística, demanda ni niveles industriales.
       n.prod[0]=profile.prod[0];n.prod[1]=profile.prod[1];n.prod[2]=profile.prod[2];
