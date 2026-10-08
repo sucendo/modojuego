@@ -31,6 +31,8 @@
   let restoredPortable=null;
   let lastService=-1e9;
   let cityCursor=0;
+  let cityIterator0384=null, cityCollection0384=null;
+  let statecraftServiceMs0384=0, citiesUpdated0384=0;
   let aiCursor=1;
   let openNation=-1;
   let openTab='dip';
@@ -480,14 +482,28 @@
   }
 
   function serviceStability(dt){
-    const cities=[...cities3212];
-    if(!cities.length)return;
-    if(cityCursor>=cities.length)cityCursor=0;
-    const lim=Math.min(STABILITY_BATCH,cities.length);
-    for(let i=0;i<lim;i++){
-      const cell=cities[cityCursor++%cities.length];
-      updateOneCity(cell,dt);
+    // 0.38.4: evitar copiar todas las ciudades cada cinco segundos.
+    // Set.values() permite iterarlas de forma incremental y sin asignaciones.
+    if(!cities3212.size){
+      cityIterator0384=null;cityCollection0384=null;citiesUpdated0384=0;return;
     }
+    if(!cityIterator0384||cityCollection0384!==cities3212){
+      cityCollection0384=cities3212;
+      cityIterator0384=cities3212.values();
+    }
+    const lim=Math.min(STABILITY_BATCH,cities3212.size);
+    let done=0;
+    for(let i=0;i<lim;i++){
+      let item=cityIterator0384.next();
+      if(item.done){
+        cityIterator0384=cities3212.values();
+        item=cityIterator0384.next();
+        if(item.done)break;
+      }
+      updateOneCity(item.value,dt);
+      done++;
+    }
+    citiesUpdated0384=done;
   }
 
   function serviceSpies(dt){
@@ -554,8 +570,10 @@
     if(!initialized){initialize0380();return}
     if(n-lastService<SERVICE_SECONDS)return;
     const dt=clamp(n-lastService,1,12);lastService=n;
+    const start=performance.now();
     serviceStability(dt);serviceSpies(dt);serviceAI();
     operations=operations.filter(x=>x.until>n);
+    statecraftServiceMs0384=performance.now()-start;
   }
 
   function initialize0380(){
@@ -901,6 +919,7 @@
     const ci=Array.isArray(s.counterIntel)?s.counterIntel:[];
     for(let i=0;i<Math.min(ci.length,counterIntel.length);i++)counterIntel[i]=clamp(Number(ci[i])||0,0,100);
     cityState=new Map(Array.isArray(s.cities)?s.cities:[]);
+    cityIterator0384=null;cityCollection0384=null;
     operations=Array.isArray(s.operations)?s.operations.filter(x=>x&&x.until>now()):[];
     const a=Array.isArray(s.dipTech)?s.dipTech:[];
     dipTech.fill(0);for(let i=0;i<Math.min(a.length,dipTech.length);i++)dipTech[i]=clamp(Number(a[i])||0,0,5);
@@ -920,6 +939,7 @@
   resetGame3230=function(clearSave=true){
     const out=baseReset0380.apply(this,arguments);
     embassies.clear();treaties.clear();spies.clear();counterIntel.fill(0);cityState.clear();operations=[];dipTech.fill(0);initialized=false;
+    cityIterator0384=null;cityCollection0384=null;
     if(clearSave)try{localStorage.removeItem(SAVE_KEY)}catch(_){}
     return out;
   };
@@ -961,6 +981,7 @@
     suppliers:(resource)=>providerCandidates0382(Number(resource)).map(x=>({f:x.f,intel:x.intel,distance:x.distance,willing:x.willing.allowed,status:x.q.text,coverage:x.q.exact?x.q.pct:null,trade:x.trade,embassy:x.embassy})),
     stability:(cell)=>{const s=cityState.get(Number(cell));return s?{...s}:null},
     nationStability:(f)=>averageStability(Number(f)),
+    performance:()=>({lastServiceMs:Number(statecraftServiceMs0384.toFixed(2)),citiesUpdated:citiesUpdated0384,trackedCities:cityState.size,spyNetworks:spies.size}),
     dossier:(f,tab='dip')=>renderNationDossier(Number(f),tab),
     requestEmbassy:(a,b)=>requestEmbassy(Number(a),Number(b),false),
     deploySpy:(a,b)=>deploySpy(Number(a),Number(b),false),
