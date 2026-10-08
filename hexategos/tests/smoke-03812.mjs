@@ -37,9 +37,11 @@ const params=[world,owners,[3],1,[],cities,ports,ind,10,()=>8,
   {info(){}}];
 const source='drawInfrastructure3212=function(R,cx,cy,now){'+
   "order.push('road');"+
+  'if(zoom>2.15){'+
   'drawGlobeIndustryIcon3249(100,100,3,8);'+
   'drawGlobePortIcon3249(100,100,3,8);'+
   'drawGlobeCityIcon3249(100,100,3,8);'+
+  '}'+
   '};'+src+
   'return {draw:drawInfrastructure3212,oldCapital:drawGlobeCapitalIcon3249,'+
   'setZoom:x=>zoom=x,api:window.HexategosMapIcons03812};';
