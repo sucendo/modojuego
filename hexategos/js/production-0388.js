@@ -49,7 +49,7 @@
   const TYPE_SALTS=Object.fromEntries(rawTypes.map(kind=>[
     kind,[...kind].reduce((h,c)=>Math.imul(h^c.charCodeAt(0),16777619)>>>0,2166136261)]));
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-  const sites=new Map(),perCell=new Map(),nationCounts=new Map(),manufacturingCounts=new Map(),depots=new Map(),sectorPct=new Map(),nextAI=new Float64Array(FACTIONS3230.length);
+  const sites=new Map(),perCell=new Map(),nationSites=new Map(),nationCounts=new Map(),manufacturingCounts=new Map(),depots=new Map(),sectorPct=new Map(),nextAI=new Float64Array(FACTIONS3230.length);
   let revision=1, aiCursor=1, lastStats={produced:0,processed:0,shipped:0,disconnected:0,sites:0};
   let loadedPortable=null;
   const api=()=>window.HexategosTradeLogistics0370;
@@ -112,12 +112,25 @@
       if(m>0)manufacturingCounts.set(f,m);else manufacturingCounts.delete(f);
     }
   }
+  function moveNationSite(s,previous,next){
+    if(previous!=null){
+      const old=nationSites.get(previous);
+      old?.delete(s);
+      if(old&&!old.size)nationSites.delete(previous);
+    }
+    if(next!=null){
+      let collection=nationSites.get(next);
+      if(!collection){collection=new Set();nationSites.set(next,collection)}
+      collection.add(s);
+    }
+  }
   function addSite(s){
     const key=siteKey(s.cell,s.kind);
     if(sites.has(key))return false;
     sites.set(key,s);
     if(!perCell.has(s.cell))perCell.set(s.cell,[]);
     perCell.get(s.cell).push(s);trackNation(s.f,1,s.kind);
+    moveNationSite(s,null,s.f);
     return true;
   }
   function siteById(id){
@@ -199,7 +212,7 @@
     // Capturas y pérdida de instalaciones: no se reconstruye el mapa entero.
     for(const s of sites.values()){
       const owner=owner6[s.cell];
-      if(owner>=0&&owner!==s.f){trackNation(s.f,-1,s.kind);s.f=owner;trackNation(s.f,1,s.kind);s.stock*=.5;s.pct=75;s.updated=-1e9;revision++}
+      if(owner>=0&&owner!==s.f){const previous=s.f;trackNation(previous,-1,s.kind);s.f=owner;trackNation(s.f,1,s.kind);moveNationSite(s,previous,owner);s.stock*=.5;s.pct=75;s.updated=-1e9;revision++}
       if(owner<0||owner!==s.f)continue;
       const n=nodes.get(s.cell);
       if(!n)continue;
@@ -403,7 +416,7 @@
     if(now<nextAI[f])return;
     nextAI[f]=now+44+(f%11)*6;
     if(botGold3230[f]<150||countNation(f)>=nationLimit(f))return;
-    const own=[...sites.values()].filter(s=>s.f===f);
+    const own=Array.from(nationSites.get(f)||[]);
     const summary=api()?.resourceSummaryCached?.(f);
     const coverage=summary?.coverage||[.5,.5,.5];
     const pressure={energy:Math.max(.05,1-(coverage[2]||0)),mining:Math.max(.05,1-(coverage[1]||0)),
@@ -490,7 +503,7 @@
       depots:[...depots],sectors:[...sectorPct]};
   }
   function restore(data){
-    sites.clear();perCell.clear();nationCounts.clear();manufacturingCounts.clear();depots.clear();sectorPct.clear();revision++;aiCursor=1;nextAI.fill(0);
+    sites.clear();perCell.clear();nationSites.clear();nationCounts.clear();manufacturingCounts.clear();depots.clear();sectorPct.clear();revision++;aiCursor=1;nextAI.fill(0);
     if(!data||!Array.isArray(data.sites))return;
     for(const x of data.sites.slice(0,MAX_SITES)){
       if(!x||!TYPES[x.kind]||!Number.isInteger(x.cell)||x.cell<0||x.cell>=owner6.length)continue;
