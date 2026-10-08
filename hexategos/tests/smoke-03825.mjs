@@ -21,7 +21,7 @@ function fixture(){
   const storage={getItem:k=>saved.get(k)||null,setItem:(k,v)=>saved.set(k,v),removeItem:k=>saved.delete(k)};
   const args=[win,[{role:'balanced'}],owner,[0],8000,()=>({n:50,offsets,edgeNbr:edges}),
     0,100,true,1,()=>true,()=>true,()=>true,()=>{},()=>[],()=>{},()=>{},
-    {getElementById:()=>null},null,{info(){},warn(){}},[[]],new Set([15,16]),
+    {getElementById:()=>null},null,{info(){},warn(){}},[[]],new Set([15,25]),
     storage,[0],new Uint8Array(50),new Set(),
     ()=>({payload:{}}),()=>true,undefined];
   const boot=new Function(...names,src+
@@ -61,6 +61,16 @@ const output=(g,cell,kind)=>g.api.sitesOnCell(cell).find(s=>s.kind===kind)?.outp
   g.importFile(old);
   assert.equal(g.api.sites().length,1,'old saves must restore without new materials');
   assert.equal(g.api.sitesOnCell(2)[0].level,2);
+}
+// Coal has to travel physically when the generator is in a separate network.
+{
+  const g=fixture();construct(g,[[1,'coal'],[26,'thermal']]);
+  g.run(3);assert.equal(output(g,26,'thermal'),0,'isolated station cannot use distant coal');
+  const route={type:'sea',a:0,b:0,from:15,to:25,status:'active',navalRisk:0};
+  for(let i=0;i<12;i++)g.api.tick({nodes:g.nodes,routes:[route],dt:4});
+  assert.ok(output(g,26,'thermal')>0,'coal shipping must supply an isolated thermal station');
+  assert.ok(g.api.snapshot().depots.some(([cell,goods])=>cell===25&&'coal' in goods),
+    'coal must be inventoried in destination port');
 }
 // Oil/gas are usable immediately if the required source, processor and power plant exist.
 for(const [fuel,processor] of [['oil','refinery'],['gas','gasplant']]){
