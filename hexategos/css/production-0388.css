@@ -26,3 +26,108 @@
  .industrySite0388>div{grid-column:1/-1}
  .industrySector0388{grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto}
 }
+
+
+/* 0.38.10: jerarquía visual del menú INDUSTRIA, consistente con Sistemas.
+   Contraste alto y colores semánticos, sin oscurecer los textos de botones. */
+#modal3244 .industryModal0388{
+  --industry-surface:#112c3d;
+  --industry-surface-hover:#183d52;
+  --industry-border:rgba(155,194,217,.36);
+  --industry-text:#edf7fd;
+  --industry-subtext:#bfd5e4;
+  width:100%;min-width:0;max-width:100%;
+  display:grid;gap:14px;
+  color:var(--industry-text)!important;
+}
+#modal3244 .industryIntro0388{
+  border:1px solid rgba(115,179,211,.28);
+  border-left:3px solid #80c6e4;
+  background:linear-gradient(125deg,rgba(34,86,115,.38),rgba(13,38,56,.7));
+  border-radius:10px;padding:14px;min-width:0;
+}
+#modal3244 .industryIntro0388>b{
+  display:block;color:#f0f9fe!important;font-weight:750!important;margin-bottom:6px;
+}
+#modal3244 .industryIntro0388 p{color:var(--industry-subtext)!important;margin:0}
+#modal3244 .industryChoices0388{display:grid;gap:10px;min-width:0}
+#modal3244 .industryChoice0388{
+  appearance:none;display:grid!important;
+  grid-template-columns:42px minmax(0,1fr) auto;
+  align-items:center;gap:13px;min-height:79px!important;
+  width:100%;padding:14px!important;
+  border:1px solid var(--industry-border)!important;
+  border-left:3px solid #8fc5df!important;
+  background:var(--industry-surface)!important;
+  color:var(--industry-text)!important;border-radius:11px!important;
+  text-align:left;cursor:pointer;
+}
+#modal3244 .industryChoice0388[data-industry-view0388="specialized"]{border-left-color:#79bea6!important}
+#modal3244 .industryChoice0388:enabled:hover,
+#modal3244 .industryBuildChoice0388:enabled:hover{
+  background:var(--industry-surface-hover)!important;
+  border-color:#9bcee8!important;
+}
+#modal3244 .industryChoice0388:focus-visible,
+#modal3244 .industryBuildChoice0388:focus-visible,
+#modal3244 .industryModal0388 button:focus-visible{
+  outline:2px solid #a9def5!important;outline-offset:2px!important;
+}
+#modal3244 .industryChoiceIcon0388{
+  width:40px;height:40px;border-radius:10px;display:grid;
+  place-items:center;background:rgba(123,190,219,.13);
+  font-size:24px!important;
+}
+#modal3244 .industryChoice0388>span:nth-child(2),
+#modal3244 .industryBuildText0388{min-width:0;display:grid;gap:5px}
+#modal3244 .industryChoice0388 b,
+#modal3244 .industryBuildChoice0388 b{
+  font-weight:750!important;color:var(--industry-text)!important;
+}
+#modal3244 .industryChoice0388 small,
+#modal3244 .industryBuildChoice0388 small{
+  display:block;color:var(--industry-subtext)!important;
+  font-weight:450!important;white-space:normal;
+}
+#modal3244 .industryChoiceArrow0388{font-size:25px!important;color:#a4d5ec!important}
+#modal3244 .industryGroup0388{
+  border:1px solid rgba(143,183,204,.24);
+  background:rgba(8,31,47,.52);
+  border-radius:12px;padding:12px;min-width:0;
+}
+#modal3244 .industryGroup0388 h4{
+  margin:0 0 10px!important;color:#ecf7ff!important;
+  padding-left:10px;border-left:3px solid #d0ad70;
+}
+#modal3244 .industryGroup-factory0388 h4{border-left-color:#79bea6}
+#modal3244 .industryBuildGrid0388{
+  grid-template-columns:repeat(auto-fit,minmax(min(186px,100%),1fr));
+  gap:9px!important;
+}
+#modal3244 .industryBuildChoice0388{
+  display:grid!important;grid-template-columns:31px minmax(0,1fr)!important;
+  align-items:center;gap:10px;min-height:76px!important;
+  width:100%;padding:11px!important;text-align:left!important;
+  background:#133144!important;color:var(--industry-text)!important;
+  border:1px solid rgba(157,196,216,.31)!important;
+  border-radius:9px!important;cursor:pointer;
+}
+#modal3244 .industryGroup-extract0388 .industryBuildChoice0388{border-left:3px solid #d0ad70!important}
+#modal3244 .industryGroup-factory0388 .industryBuildChoice0388{border-left:3px solid #79bea6!important}
+#modal3244 .industryTypeIcon0388{font-size:22px!important;line-height:1.1!important}
+#modal3244 .industryBuildText0388 small{grid-column:auto!important}
+#modal3244 .industryChoice0388:disabled,
+#modal3244 .industryBuildChoice0388:disabled{
+  cursor:not-allowed;opacity:.55!important;filter:grayscale(.25);
+}
+#modal3244 .industryExisting0388{
+  padding:12px;border-radius:9px;border:1px solid rgba(220,185,108,.3);
+  background:rgba(148,103,40,.10);color:#f4e7c9!important;
+}
+#modal3244 .industryExisting0388 b{color:#f4e7c9!important}
+#modal3244 .industryExisting0388 p{color:#d7c8aa!important;margin:5px 0 0}
+@media(max-width:600px){
+  #modal3244 .industryChoice0388{grid-template-columns:34px minmax(0,1fr) auto;gap:9px;padding:11px!important}
+  #modal3244 .industryChoiceIcon0388{width:32px;height:32px;font-size:19px!important}
+  #modal3244 .industryGroup0388{padding:9px}
+}
