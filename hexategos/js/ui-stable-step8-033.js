@@ -360,6 +360,18 @@
     if(/bajo ataque|ataque enemigo|te atac|nos atac|invad/.test(s))return 'attack';
     return '';
   }
+  function inferredNation(message){
+    const text=String(message||'').toLocaleLowerCase('es');
+    let best=-1,length=0;
+    // Solo al registrar un suceso, jamás durante el dibujado o cada frame.
+    for(let f=1;f<activeFactionCount3230;f++){
+      const name=String(factionName3230(f)||'');
+      if(name.length>length&&name.length>=6&&text.includes(name.toLocaleLowerCase('es'))){
+        best=f;length=name.length;
+      }
+    }
+    return best>=0?{faction:best}:{};
+  }
   const baseToast=toast;
   toast=function(msg){
     const type=classifyToast(msg);
@@ -385,7 +397,7 @@
           updateBadges();
         }else showPopup('offer',msg,'dip','');
       }else{
-        const n=addNotice(type,msg,{tab:'dip'});
+        const n=addNotice(type,msg,{tab:'dip',...inferredNation(msg)});
         if(n)showPopup(type,msg,'dip','notice-'+n.id,n);
       }
     }catch(err){console.warn('[HEXATEGOS Stable8 notifications]',err)}
