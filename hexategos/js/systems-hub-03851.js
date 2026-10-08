@@ -142,6 +142,13 @@
   }
   function maritimeCard(){
     if(!started3230)return;
+    // La vista naval clásica también enumera las rutas; retiramos SOLO ese
+    // bloque duplicado de la pantalla (las rutas y acciones siguen intactas).
+    for(const block of host.querySelectorAll(':scope > .sysBlock3213')){
+      if(block.dataset.hubTab)continue;
+      const title=block.querySelector(':scope > b')?.textContent||'';
+      if(title.startsWith('⇄ Rutas marítimas'))block.remove();
+    }
     let card=host.querySelector('[data-hub-tab="naval"]');
     if(!card){card=introBlock('naval');host.prepend(card)}
     const ports=ownPorts();
