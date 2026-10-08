@@ -4,10 +4,30 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.38.2',
+      date:'Octubre 2026',
+      title:'Economía geográfica, peso urbano y proveedores',
+      current:true,
+      summary:'Los recursos primarios dejan de depender solo del tamaño territorial: el terreno y la geología regional modifican producción, las ciudades adquieren peso urbano y Comercio incorpora un buscador de proveedores basado en conocimiento real.',
+      changes:[
+        'Llanuras y zonas mediterráneas favorecen alimentos; bosques y montañas favorecen materias primas; desiertos y estepas pueden favorecer combustible.',
+        'Se añade variación geológica determinista por región para que territorios del mismo tipo no sean económicamente idénticos.',
+        'Latitudes extremas reducen la productividad alimentaria de forma abstracta.',
+        'Cada ciudad recibe un peso urbano de 1 a 10 según nivel, capitalidad, industria y puerto.',
+        'El peso urbano modifica capacidad y consumo, evitando que todas las ciudades tengan el mismo impacto económico.',
+        'La API logística expone geography(cell) y urbanWeight(cell) para diagnóstico y futuras decisiones de IA.',
+        'La ficha de TU NACIÓN incorpora una vista comercial con las cinco coberturas materiales.',
+        'El recurso más deficitario ofrece BUSCAR PROVEEDORES directamente.',
+        'El buscador solo muestra naciones dentro del alcance diplomático y con información mínima conocida.',
+        'Los candidatos se ordenan por disponibilidad, voluntad de exportar, tratado comercial, embajada, inteligencia y distancia.',
+        'Desde un proveedor se abre directamente su ficha de Comercio, sin revelar información que la inteligencia todavía no conoce.'
+      ]
+    },
+    {
       version:'0.38.1',
       date:'Octubre 2026',
       title:'Núcleo diplomático coherente y contrainteligencia',
-      current:true,
+      current:false,
       summary:'Se corrigen las incoherencias detectadas tras 0.38.0: los tratados dejan de ser un único estado, la IA ya no recibe doble penalización de suministro y embajadas/espionaje adquieren memoria, coste y defensa.',
       changes:[
         'Comercio, no agresión y alianza pasan a mantenerse como acuerdos independientes aunque el motor antiguo conserve un estado diplomático de compatibilidad.',
