@@ -298,8 +298,21 @@
     scrollCell=ctx.cell;scrollTab=tab;
   }
   function render(ctx){
+    // El motor original también reconstruye el menú contextual. Tomar la
+    // posición ANTES de llamar al renderer original para evitar saltos.
+    const sameCell=ctx?.kind==='cell'&&ctx.cell===lastCell;
+    const previousOuter=sameCell?(root.scrollTop||0):0;
+    const previousTab=tab;
+    const previousInner=sameCell?(panel.querySelector?.('.ctxDetails03817')?.scrollTop||0):0;
     const out=original.apply(this,arguments);
     try{mount(ctx)}catch(err){console.warn('[HEXATEGOS 0.38.17 Inspector]',err)}
+    if(sameCell){
+      root.scrollTop=previousOuter;
+      if(tab===previousTab){
+        const details=panel.querySelector?.('.ctxDetails03817');
+        if(details)details.scrollTop=previousInner;
+      }
+    }
     return out;
   }
   renderContextDialog3244=render;
