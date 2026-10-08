@@ -28,3 +28,20 @@ for file in $(find hexategos/tests -maxdepth 1 -name 'smoke-*.mjs' | sort -V); d
 - [ ] Repetir en escritorio y móvil horizontal; comprobar letras escaladas, desplazamiento de diálogos y ausencia de desbordamientos.
 
 **Estado:** candidato a estabilización. La automatización cubre regresiones unitarias, pero no sustituye una partida real prolongada ni una comprobación visual completa.
+
+## Estabilización económica experimental · rama 0.38.24
+
+**No fusionar aún con main.** La generación eléctrica se separa del combustible:
+la central térmica consume combustible procesado y produce electricidad por ciclo;
+las manufacturas consumen electricidad disponible en su componente viario.
+El esquema portable `production0388` conserva su versión y estructura, por lo que
+las partidas antiguas son legibles. Es posible que una partida anterior tenga
+manufacturas sin central: estas quedarán sin electricidad hasta conectar generación.
+
+Pruebas necesarias antes de fusionar:
+- [ ] Abrir una partida antigua con industrias especializadas y comprobar cantidades, niveles e inventarios antes/después de recargar.
+- [ ] Exportar e importar una partida con dos industrias por hexágono, central térmica y rutas marítimas.
+- [ ] Medir consumo de combustible en central y energía suministrada a manufacturas.
+- [ ] Comprobar que la manufactura sin central no consume energía ficticia.
+- [ ] Probar redes aisladas: la central de una red no abastece a otra.
+- [ ] Ejecutar smoke en CI y partidas prolongadas de 150 y 500 IA.
