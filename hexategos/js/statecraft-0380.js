@@ -1,9 +1,9 @@
 'use strict';
 
-// HEXATEGOS 0.38.1 · tratados separados, embajadas con memoria y contrainteligencia.
+// HEXATEGOS 0.38.2 · economía geográfica, peso urbano y buscador de proveedores.
 // Capa incremental: reutiliza diplomacia, comercio material, IA, guardados y reloj existentes.
 (() => {
-  const BUILD='0.38.1';
+  const BUILD='0.38.2';
   const SAVE_KEY='hexategos-statecraft-0380';
   const RESOURCE_LABELS=['Alimentos','Materias primas','Energía/combustible','Bienes industriales','Material militar'];
   const RESOURCE_ICONS=['🍞','⛏','⛽','📦','🎖'];
@@ -618,6 +618,56 @@
       treaty+'<div class="nationActions0380">'+acts+'</div></div>';
   }
 
+  function providerCandidates0382(resource){
+    resource=clamp(Number(resource)||0,0,4);
+    const out=[];
+    for(let f=1;f<activeFactionCount3230;f++){
+      if(typeof countFaction3230==='function'&&countFaction3230(f)<=0)continue;
+      if(!canContact(0,f))continue;
+      if(diplomaticRelation3300(0,f)===-1)continue;
+      const intel=intelScore(0,f);
+      if(intel<15)continue;
+      const q=qualitativeResource(0,f,resource);
+      const d=resourceBalance(f,resource);
+      const willing=exportWillingness(f,0,resource);
+      const distance=capitalDistance(0,f);
+      const embassy=hasEmbassy(0,f),trade=tradeTreaty(0,f);
+      const score=(willing.allowed?120:0)+(trade?30:0)+(embassy?14:0)+d.coverage*70-Math.min(55,distance*.55)+intel*.16;
+      out.push({f,intel,q,d,willing,distance,embassy,trade,score});
+    }
+    out.sort((a,b)=>b.score-a.score||a.distance-b.distance);
+    return out.slice(0,18);
+  }
+
+  function providerSearchPanel0382(resource){
+    resource=clamp(Number(resource)||0,0,4);
+    const list=providerCandidates0382(resource);
+    let html='<div class="nationSection0380 supplierSearch0382"><h4>Buscar proveedores · '+RESOURCE_LABELS[resource]+'</h4>'+
+      '<p>Solo aparecen países dentro de tu alcance diplomático y con información mínima conocida. La disposición real depende de reservas, política comercial y tratados.</p>'+
+      '<div class="supplierResourceTabs0382">'+RESOURCE_LABELS.map((x,i)=>'<button data-provider-resource0382="'+i+'" class="'+(i===resource?'active':'')+'">'+RESOURCE_ICONS[i]+' '+esc(x)+'</button>').join('')+'</div>';
+    if(!list.length)return html+'<div class="nationWarning0380">No conocemos todavía ningún proveedor plausible. Amplía alcance diplomático, abre embajadas o mejora inteligencia.</div></div>';
+    html+='<div class="supplierList0382">';
+    for(const x of list){
+      const status=x.willing.allowed?(x.trade?'PUEDE COMERCIAR':'POSIBLE PROVEEDOR'):(x.q.willing||'NO CONFIRMADO');
+      html+='<button class="supplierRow0382" data-provider-faction0382="'+x.f+'">'+
+        '<span class="supplierMain0382"><b>'+esc(factionName3230(x.f))+'</b><small>'+esc(x.q.text)+(x.q.exact?' · '+x.q.pct+'%':'')+'</small></span>'+
+        '<span class="supplierMeta0382"><b>'+esc(status)+'</b><small>'+Math.round(x.distance)+'° · intel '+x.intel+'%'+(x.embassy?' · embajada':'')+'</small></span>'+
+      '</button>';
+    }
+    return html+'</div></div>';
+  }
+
+  function selfCommerceTab0382(){
+    const summary=nationResourceSummary(0);
+    const cov=summary?.coverage||[.55,.55,.55,.55,.55];
+    let critical=0;
+    for(let i=1;i<5;i++)if((cov[i]??1)<(cov[critical]??1))critical=i;
+    return '<div class="nationSection0380"><h4>Necesidades comerciales nacionales</h4>'+
+      '<div class="nationResources0380">'+RESOURCE_LABELS.map((x,i)=>'<div class="nationResource0380"><span>'+RESOURCE_ICONS[i]+' '+esc(x)+'</span><b>'+Math.round((cov[i]||0)*100)+'%</b><small>'+((cov[i]||0)<.4?'Escasez':(cov[i]||0)<.6?'Déficit':(cov[i]||0)<.78?'Equilibrado':'Reserva alta')+'</small></div>').join('')+'</div>'+
+      '<button data-provider-open0382="'+critical+'">BUSCAR PROVEEDORES DE '+esc(RESOURCE_LABELS[critical].toUpperCase())+'</button>'+
+      '<p>El buscador usa únicamente información diplomática e inteligencia ya descubierta; no revela datos ocultos de otras naciones.</p></div>';
+  }
+
   function commerceTab(target){
     const rel=diplomaticRelation3300(0,target),routes=routesForPair(0,target);
     return '<div class="nationSection0380"><h4>Recursos y comercio</h4>'+
@@ -676,8 +726,13 @@
     const labels={dip:'DIPLOMACIA',commerce:'COMERCIO',intel:'INTELIGENCIA',military:'MILITAR',routes:'RUTAS'};
     let body=dossierHeader(target)+'<div class="nationTabs0380">'+tabs.map(t=>'<button data-nation-tab0380="'+t+'" class="'+(openTab===t?'active':'')+'">'+labels[t]+'</button>').join('')+'</div>';
     if(target===0){
-      const s=nationResourceSummary(0),stab=averageStability(0);
-      body+='<div class="nationSection0380"><h4>Estado nacional</h4><div class="nationTradeSummary0380"><span>I+D diplomática <b>Nivel '+techLevel(0)+'</b></span><span>Alcance <b>'+reachDeg(0)+'°</b></span><span>Estabilidad urbana <b>'+Math.round(stab.avg)+'%</b></span></div></div>';
+      const summary=nationResourceSummary(0),stab=averageStability(0);
+      if(openTab==='commerce')body+=selfCommerceTab0382();
+      else if(openTab==='intel'){
+        body+='<div class="nationSection0380"><h4>Inteligencia nacional</h4><div class="nationTradeSummary0380"><span>Contrainteligencia <b>'+Math.round(counterIntelLevel(0))+'%</b></span><span>Redes exteriores <b>'+[...spies].filter(([k,v])=>k.startsWith('0:')&&v.active).length+'</b></span></div><p>Gestiona mejoras adicionales desde SISTEMAS · INTELIGENCIA.</p></div>';
+      }else{
+        body+='<div class="nationSection0380"><h4>Estado nacional</h4><div class="nationTradeSummary0380"><span>I+D diplomática <b>Nivel '+techLevel(0)+'</b></span><span>Alcance <b>'+reachDeg(0)+'°</b></span><span>Estabilidad urbana <b>'+Math.round(stab.avg)+'%</b></span></div></div>';
+      }
     }else if(openTab==='dip')body+=diplomacyTab(target);
     else if(openTab==='commerce')body+=commerceTab(target);
     else if(openTab==='intel')body+=intelTab(target);
@@ -737,8 +792,22 @@
   modalBody3244.addEventListener('click',e=>{
     const tab=e.target.closest?.('[data-nation-tab0380]');
     if(tab&&openNation>=0){renderNationDossier(openNation,tab.dataset.nationTab0380);return}
-    const b=e.target.closest?.('[data-sc0380]');if(!b||openNation<=0)return;
+    const providerOpen=e.target.closest?.('[data-provider-open0382],[data-provider-resource0382]');
+    if(providerOpen){
+      const r=Number(providerOpen.dataset.providerOpen0382??providerOpen.dataset.providerResource0382);
+      modalTitle3244.textContent='Comercio · Buscar proveedores';
+      modalBody3244.innerHTML=providerSearchPanel0382(r);
+      modalActions3244.innerHTML='<button data-sc0380="back_self_commerce">← VOLVER</button><button data-modal-action="close">CERRAR</button>';
+      return;
+    }
+    const provider=e.target.closest?.('[data-provider-faction0382]');
+    if(provider){
+      renderNationDossier(Number(provider.dataset.providerFaction0382),'commerce');return;
+    }
+    const b=e.target.closest?.('[data-sc0380]');if(!b)return;
     const a=b.dataset.sc0380;
+    if(a==='back_self_commerce'){renderNationDossier(0,'commerce');return}
+    if(openNation<=0)return;
     if(a==='embassy_request')requestEmbassy(0,openNation,true);
     else if(a==='embassy_accept')answerEmbassy(openNation,true);
     else if(a==='embassy_reject')answerEmbassy(openNation,false);
@@ -807,7 +876,7 @@
   const baseEconomyTick0380=economyTick3212;
   economyTick3212=function(){
     const out=baseEconomyTick0380.apply(this,arguments);
-    try{service0380()}catch(err){console.warn('[HEXATEGOS 0.38.1 statecraft]',err)}
+    try{service0380()}catch(err){console.warn('[HEXATEGOS 0.38.2 statecraft]',err)}
     return out;
   };
 
@@ -889,6 +958,7 @@
     resourceTradeAllowed:(exporter,importer,r)=>resourceTradeAllowed(Number(exporter),Number(importer),Number(r)),
     resourceProductionMultiplier:(cell,r,f)=>resourceProductionMultiplier(Number(cell),Number(r),Number(f)),
     resourceProfile:(viewer,target)=>RESOURCE_LABELS.map((_,r)=>qualitativeResource(Number(viewer),Number(target),r)),
+    suppliers:(resource)=>providerCandidates0382(Number(resource)).map(x=>({f:x.f,intel:x.intel,distance:x.distance,willing:x.willing.allowed,status:x.q.text,coverage:x.q.exact?x.q.pct:null,trade:x.trade,embassy:x.embassy})),
     stability:(cell)=>{const s=cityState.get(Number(cell));return s?{...s}:null},
     nationStability:(f)=>averageStability(Number(f)),
     dossier:(f,tab='dip')=>renderNationDossier(Number(f),tab),
@@ -899,5 +969,5 @@
 
   initialize0380();
   window.HEXATEGOS_VERSION=BUILD;
-  console.info('[HEXATEGOS] 0.38.1 · tratados separados, memoria diplomática y contrainteligencia');
+  console.info('[HEXATEGOS] 0.38.2 · economía geográfica, peso urbano y buscador de proveedores');
 })();
