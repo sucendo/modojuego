@@ -469,6 +469,9 @@
     const policy=GOV_POLICY0386[type];
     if(!policy||!Number.isInteger(cell)||cell<0||!cities3212.has(cell)||owner6[cell]!==f)return false;
     const st=ensureCityState(cell),n=now(),occupied=st.origin>=0&&st.origin!==f;
+    // Al renovar una guarnición expirada, reincorporar primero las tropas
+    // supervivientes incluso si aún no ha pasado el siguiente tick urbano.
+    governanceMaintain0386(st);
     if(policy.occupied&&!occupied)return false;
     const gov=st.gov||(st.gov={orders:{}});
     const orders=gov.orders||(gov.orders={});
