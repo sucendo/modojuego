@@ -3,6 +3,7 @@
 (() => {
   const BUILD='0.37.24';
   const SAVE_KEY='hexategos-trade-logistics-0370';
+  let lastPeriodicSaveWall03827=0;
   const TRADE_TICK_MS=2800;
   const ROAD_REFRESH_SECONDS=18;
   const MAX_ROUTES=720;
@@ -1260,6 +1261,12 @@
       cacheMs:Number((tDone0384-tMaterials0384).toFixed(2))
     };
     lastTickMs=tDone0384-t0;
+    // AI-created routes and changed permissions do not necessarily call
+    // saveGame3212. Persist on the existing trade scheduler, not a new timer.
+    if(tDone0384-lastPeriodicSaveWall03827>=20000){
+      lastPeriodicSaveWall03827=tDone0384;
+      save0370();
+    }
   }
 
   function seaCandidates0370(port){
@@ -2523,21 +2530,45 @@
     dirty=true;lastRoadCampaign=-1e9;return true;
   }
 
-  function save0370(){
-    try{localStorage.setItem(SAVE_KEY,JSON.stringify(serialize0370()))}catch(e){}
+  // The same physical routes are persisted independently from the main map.
+  // Compression is an on-device detail: old JSON saves remain readable.
+  function read0370(){
+    const codec=window.HexategosSaveStorage03827;
+    return codec?.get?codec.get(SAVE_KEY):JSON.parse(localStorage.getItem(SAVE_KEY)||'null');
   }
-  function load0370(){
-    try{return restore0370(JSON.parse(localStorage.getItem(SAVE_KEY)||'null'))}catch(e){return false}
+  function save0370(){
+    const snapshot=serialize0370();
+    const codec=window.HexategosSaveStorage03827;
+    if(codec?.set)return codec.set(SAVE_KEY,snapshot);
+    try{
+      localStorage.setItem(SAVE_KEY,JSON.stringify(snapshot));
+      return true;
+    }catch(error){
+      console.warn('[Hexategos] No se han podido guardar las rutas comerciales',error);
+      return false;
+    }
+  }
+  function load0370(snapshot){
+    try{return restore0370(snapshot===undefined?read0370():snapshot)}
+    catch(error){console.warn('[Hexategos] Falló la recuperación de rutas',error);return false}
   }
 
   const baseSave0370=saveGame3212;
   saveGame3212=function(){
-    const out=baseSave0370.apply(this,arguments);save0370();return out;
+    const out=baseSave0370.apply(this,arguments);
+    if(started3230)save0370();
+    return out;
   };
   const baseLoad0370=loadGame3212;
   loadGame3212=function(){
-    const out=baseLoad0370.apply(this,arguments);load0370();
-    setTimeout(()=>{lastRoadCampaign=-1e9;markTradeDirty0370()},0);
+    // Capture the sidecar before other modules restore/reset their state.
+    let snapshot=null;
+    try{snapshot=read0370()}catch(error){
+      console.warn('[Hexategos] Copia de rutas ilegible: no se borrará automáticamente',error);
+    }
+    const out=baseLoad0370.apply(this,arguments);
+    if(out!==false&&snapshot&&typeof snapshot==='object')load0370(snapshot);
+    if(out!==false)setTimeout(()=>{lastRoadCampaign=-1e9;markTradeDirty0370()},0);
     return out;
   };
   const baseReset0370=resetGame3230;
@@ -2564,8 +2595,14 @@
     applyPortableFile3275=function(file){
       restoredPortable=file&&file.payload&&file.payload.tradeLogistics0370||null;
       const out=basePortableApply0370.apply(this,arguments);
-      if(restoredPortable)restore0370(restoredPortable);
-      save0370();return out;
+      if(out!==false){
+        // A legacy portable file has no routes. Never inherit routes from
+        // a different campaign when importing it.
+        restore0370(restoredPortable&&typeof restoredPortable==='object'?
+          restoredPortable:{version:2,routes:[],permits:[],fleets:[]});
+        save0370();
+      }
+      return out;
     };
   }
 
@@ -2655,7 +2692,7 @@
 
   window.HexategosTradeLogistics0370={
     version:BUILD,stats:stats0370,validate:validate0370,
-    routes:()=>routes,
+    routes:()=>routes,snapshot:serialize0370,persist:save0370,
     focusedRoute:()=>focusedTradeRoute03717,
     focusRoute:(id)=>focusTradeRoute03717(Number(id)),
     resourceKeys:()=>RESOURCE_KEYS03720.slice(),

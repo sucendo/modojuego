@@ -55,6 +55,7 @@
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const sites=new Map(),perCell=new Map(),nationSites=new Map(),nationCounts=new Map(),manufacturingCounts=new Map(),depots=new Map(),sectorPct=new Map(),nextAI=new Float64Array(FACTIONS3230.length);
   let revision=1, aiCursor=1, lastStats={produced:0,processed:0,shipped:0,disconnected:0,sites:0};
+  let lastPeriodicSaveWall03827=0;
   const nationalElectricDeficit=new Map();
   let loadedPortable=null;
   const api=()=>window.HexategosTradeLogistics0370;
@@ -489,6 +490,13 @@
     }
     lastStats={aiReviewed,produced:+produced.toFixed(2),processed:+processed.toFixed(2),
       shipped:+shipped.toFixed(2),disconnected,sites:sites.size};
+    // Physical stocks change even without player actions; checkpoint them
+    // on the existing simulation tick, never with a new polling timer.
+    const wall=performance.now();
+    if(wall-lastPeriodicSaveWall03827>=20000){
+      lastPeriodicSaveWall03827=wall;
+      persistProduction0388();
+    }
   }
   function aiDevelop(f){
     if(f<=0||f>=activeFactionCount3230||!Number.isInteger(capitals[f]))return;
@@ -629,12 +637,21 @@
   }
   // Escribir la instantánea ANTES y después del guardado general: algunos
   // guardados internos vuelven a invocar reset / sincronizaciones de otros módulos.
+  function readProduction03827(){
+    const codec=window.HexategosSaveStorage03827;
+    return codec?.get?codec.get(SAVE_KEY):JSON.parse(localStorage.getItem(SAVE_KEY)||'null');
+  }
   function persistProduction0388(){
+    const state=saveState(),codec=window.HexategosSaveStorage03827;
+    if(codec?.set)return codec.set(SAVE_KEY,state);
     try{
-      const state=JSON.stringify(saveState());
-      localStorage.setItem(SAVE_KEY,state);
-      return localStorage.getItem(SAVE_KEY)===state;
-    }catch(error){console.warn('[Hexategos producción] No se pudo guardar',error);return false}
+      const text=JSON.stringify(state);
+      localStorage.setItem(SAVE_KEY,text);
+      return localStorage.getItem(SAVE_KEY)===text;
+    }catch(error){
+      console.warn('[Hexategos producción] No se pudo guardar. Exporta una copia.',error);
+      return false;
+    }
   }
   const baseSave=saveGame3212;
   saveGame3212=function(){
@@ -647,7 +664,7 @@
   loadGame3212=function(){
     // Captura previa: la carga general puede inicializar otros subsistemas.
     let snapshot=null;
-    try{snapshot=JSON.parse(localStorage.getItem(SAVE_KEY)||'null')}catch(error){
+    try{snapshot=readProduction03827()}catch(error){
       console.warn('[Hexategos producción] Copia industrial ilegible; se preserva el estado anterior',error);
     }
     const out=baseLoad.apply(this,arguments);
