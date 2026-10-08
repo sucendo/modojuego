@@ -63,4 +63,16 @@ assert.equal(g.route.length,5,'AI fleet patrol has continuous sea path');
 g.route=null;g.cell=22;tick(g,56);
 assert.ok(Number.isFinite(g.patrolNext0371),'return must rearm next patrol');
 
+// Una flota a pocos hexágonos de su base debe volver al puerto exacto.
+// Antes quedaba bloqueada por el antiguo umbral de distancia >12.
+let orderedHome=-1;
+const near=ctor(owner,new Set([9]),()=>22,()=>9,()=>[22],()=>null,
+  ()=>false,()=>0,()=>true,(_fleet,port)=>{orderedHome=port;return true},
+  ()=>true);
+const gNear={id:9,cell:24,f:1,home:9,order:'intercept',targetPort:-1,route:null,
+  routeGoal:-1,routePos:0,patrolNext0371:Infinity,interceptNext0371:40,
+  lastRetarget:-1e9,pendingHome0370:-1};
+near(gNear,40);
+assert.equal(orderedHome,22,'near-home interception fleet must return to exact port sea cell');
+
 console.log('HEXATEGOS 0.38.7 gold, AI naval and unified dialogs smoke: OK');
