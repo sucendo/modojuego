@@ -811,7 +811,10 @@
         if(statecraft?.resourceProductionMultiplier)production*=statecraft.resourceProductionMultiplier(n.cell,i,n.f);
         n.stock[i]=clamp(n.stock[i]+production*dt,0,n.cap[i]);
       }
-      for(let i=0;i<5;i++)n.stock[i]=Math.max(0,n.stock[i]-n.demand[i]*dt);
+      for(let i=0;i<5;i++){
+        const demandFactor=window.HexategosStatecraft0380?.governmentDemandMultiplier?.(n.cell,i,n.f)??1;
+        n.stock[i]=Math.max(0,n.stock[i]-n.demand[i]*dt*demandFactor);
+      }
     }
 
     // Camiones/logística interna: redistribución limitada dentro de la red viaria.
