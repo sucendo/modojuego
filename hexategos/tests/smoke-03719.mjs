@@ -1,3 +1,4 @@
+import { versionAtLeast } from './version-compat.mjs';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
@@ -42,7 +43,7 @@ assert.ok(visuals.includes('return {p:projectVec(v[0],v[1],v[2],R,cx,cy),moving:
 // Visually start/end at actual port while simulation remains on water.
 assert.ok(visuals.includes("g?.order==='patrol'")&&visuals.includes('navalGroupAtHome3270(g)'),
   'idle patrol must visually anchor to home port');
-assert.ok(visuals.includes('const patrolFinished=wasPatrol'),
+assert.ok(visuals.includes('const patrolFinished=returningPatrol'),
   'patrol completion detection missing');
 assert.ok(visuals.includes('const pv=cellVector03719(homePort,C)'),
   'completed patrol must append actual port position');
@@ -56,7 +57,7 @@ assert.ok(!visuals.includes('setInterval('),'visual layer must not add a periodi
 const builder=trade.slice(trade.indexOf('function buildLocalPatrolRoute03719'),trade.indexOf('function startInterceptExcursion0371'));
 assert.ok(!builder.includes('findSeaPathCells3270'),'patrol return must not add A* pathfinding');
 
-assert.ok(index.includes('v0.37.19</title>')||index.includes('v0.37.20</title>')||index.includes('v0.37.21</title>'),'visible version must be 0.37.19');
+assert.ok(versionAtLeast(index,'0.37.19'),'visible game version must be 0.37.19 or newer');
 assert.ok(about.includes("version:'0.37.19'"),'About must include 0.37.19');
 
 console.log('HEXATEGOS 0.37.19 closed smooth naval patrol smoke: OK');

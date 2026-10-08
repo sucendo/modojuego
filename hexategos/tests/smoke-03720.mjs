@@ -1,3 +1,4 @@
+import { versionAtLeast } from './version-compat.mjs';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
@@ -33,7 +34,7 @@ assert.ok(trade.includes("if(i===3&&n.ind)production+=.105*n.ind*industryInput")
   'industrial goods production missing');
 assert.ok(trade.includes("if(i===4&&n.ind)production+=.046*n.ind*industryInput"),
   'military material production missing');
-assert.ok(trade.includes('n.stock[i]=Math.max(0,n.stock[i]-n.demand[i]*dt)'),
+assert.ok(trade.includes('n.stock[i]=Math.max(0,n.stock[i]-n.demand[i]*dt*demandFactor)'),
   'material consumption missing');
 
 // Physical logistics.
@@ -95,7 +96,7 @@ assert.equal((trade.match(/setInterval\(/g)||[]).length,1,
 assert.ok(!trade.slice(trade.indexOf('function transferRouteResources03720'),trade.indexOf('function summarizeResources03720')).includes('findSeaPathCells3270'),
   'resource transfer must not pathfind per cargo type');
 
-assert.ok(index.includes('v0.37.20</title>')||index.includes('v0.37.21</title>'),'visible version must be 0.37.20');
+assert.ok(versionAtLeast(index,'0.37.20'),'visible game version must be 0.37.20 or newer');
 assert.ok(about.includes("version:'0.37.20'"),'About must include 0.37.20');
 
 console.log('HEXATEGOS 0.37.20 material economy + active patrols smoke: OK');

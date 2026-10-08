@@ -1,3 +1,4 @@
+import { versionAtLeast } from './version-compat.mjs';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
@@ -12,7 +13,7 @@ assert.doesNotThrow(()=>new Function(sc),'statecraft must parse');
 assert.doesNotThrow(()=>new Function(trade),'trade logistics must parse');
 assert.doesNotThrow(()=>new Function(ai),'AI commerce must parse');
 
-assert.ok(sc.includes("const BUILD='0.38.1'"),'0.38.1 statecraft build missing');
+assert.ok(versionAtLeast(sc,'0.38.1'),'module build must be compatible with 0.38.1');
 assert.ok(sc.includes('let treaties=new Map()'),'separate treaty registry missing');
 assert.ok(sc.includes('function tradeTreaty'),'trade treaty flag missing');
 assert.ok(sc.includes('function napTreaty'),'NAP treaty flag missing');
@@ -27,7 +28,7 @@ assert.ok(!sc.includes('setInterval('),'0.38.1 must reuse existing simulation cl
 
 assert.ok(ai.includes('statecraft?.canTrade'),'AI commerce must respect explicit trade treaty');
 assert.ok(trade.includes('statecraft?.canTrade?statecraft.canTrade'),'residual income must respect explicit trade treaty');
-assert.ok(index.includes('v0.38.1</title>'),'visible version must be 0.38.1');
+assert.ok(versionAtLeast(index,'0.38.1'),'visible game version must be 0.38.1 or newer');
 assert.ok(about.includes("version:'0.38.1'"),'About must include 0.38.1');
 
 console.log('HEXATEGOS 0.38.1 diplomatic core smoke: OK');

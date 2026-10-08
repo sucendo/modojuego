@@ -1,3 +1,4 @@
+import { versionAtLeast } from './version-compat.mjs';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
@@ -8,7 +9,7 @@ const index=read('index.html');
 const about=read('js/about-0351.js');
 
 assert.doesNotThrow(()=>new Function(sc),'statecraft must parse');
-assert.ok(sc.includes("const BUILD='0.38.0'"),'statecraft version missing');
+assert.ok(versionAtLeast(sc,'0.38.0'),'module build must be compatible with 0.38.0');
 assert.ok(sc.includes('function requestEmbassy'),'embassy flow missing');
 assert.ok(sc.includes('function renderNationDossier'),'nation dossier missing');
 assert.ok(sc.includes("['dip','commerce','intel','military','routes']"),'nation dossier tabs missing');
@@ -24,7 +25,7 @@ assert.ok(trade.includes('statecraft?.canTrade'),'physical trade must require fo
 assert.ok(trade.includes('statecraft?.resourceTradeAllowed'),'route cargo must respect export policy');
 assert.ok(trade.includes('statecraft?.resourceProductionMultiplier'),'resource production must accept sabotage/unrest effects');
 
-assert.ok(index.includes('v0.38.0</title>'),'visible version must be 0.38.0');
+assert.ok(versionAtLeast(index,'0.38.0'),'visible game version must be 0.38.0 or newer');
 assert.ok(index.includes('js/statecraft-0380.js'),'statecraft script missing');
 assert.ok(index.includes('css/statecraft-0380.css'),'statecraft css missing');
 assert.ok(about.includes("version:'0.38.0'"),'About must include 0.38.0');

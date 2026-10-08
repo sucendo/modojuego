@@ -1,3 +1,4 @@
+import { versionAtLeast } from './version-compat.mjs';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
@@ -56,7 +57,7 @@ const transfer=trade.slice(trade.indexOf('function transferRouteResources03720')
 assert.ok(transfer.includes('const k=routeFactor0370(r)'),'physical resource transfer must obey route operational factor');
 assert.ok(transfer.includes('if(k<=0)return'),'blocked/suspended routes must move no resources');
 assert.ok(transfer.includes('src.stock[i]-=amount;dst.stock[i]+=amount'),'active route must replenish remote stock');
-assert.ok(trade.includes('n.stock[i]=Math.max(0,n.stock[i]-n.demand[i]*dt)'),
+assert.ok(trade.includes('n.stock[i]=Math.max(0,n.stock[i]-n.demand[i]*dt*demandFactor)'),
   'remote stocks must continue consuming when route stops');
 
 // Military supply now consumes the combined percentage through the existing front hook.
@@ -75,7 +76,7 @@ assert.equal((trade.match(/setInterval\(/g)||[]).length,1,
 assert.ok(!trade.slice(trade.indexOf('function materialCoverageForCell03721'),trade.indexOf('function routeCargoText03720')).includes('findSeaPathCells3270'),
   'supply-map lookup must not pathfind');
 
-assert.ok(index.includes('v0.37.21</title>'),'visible version must be 0.37.21');
+assert.ok(versionAtLeast(index,'0.37.21'),'visible game version must be 0.37.21 or newer');
 assert.ok(about.includes("version:'0.37.21'"),'About must include 0.37.21');
 
 console.log('HEXATEGOS 0.37.21 material supply map smoke: OK');
