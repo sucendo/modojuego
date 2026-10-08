@@ -15,7 +15,8 @@
         'Las decisiones tácticas y comerciales de IA leen resúmenes económicos ya calculados y no fuerzan reconstrucciones de la red de suministros.',
         'La caché de riqueza geográfica expulsa una entrada antigua cuando se llena en lugar de vaciar 12.000 entradas de una sola vez.',
         'La estabilidad utiliza un iterador persistente para no copiar todas las ciudades cada cinco segundos.',
-        'El tick de comercio incorpora métricas separadas para carreteras, planificación de rutas, recursos y caché comercial.',
+        'Las rutas comerciales entre puertos o ciudades ya existentes no fuerzan una reconstrucción global de los nodos de recursos; los hubs nuevos siguen detectándose.',
+        'El tick de comercio incorpora métricas separadas para carreteras, planificación de rutas, recursos, reconstrucción de nodos y caché comercial.',
         'Los diagnósticos de rendimiento exponen el tiempo de actualización geográfica y las ciudades procesadas.',
         'Se conservan la estrategia económica territorial, los sistemas diplomáticos y la compatibilidad con partidas anteriores.'
       ]
