@@ -12,7 +12,7 @@ const about=read('js/about-0351.js');
 
 assert.doesNotThrow(()=>new Function(ui),'new Systems UI syntax');
 assert.doesNotThrow(()=>new Function(diplomacy),'diplomacy API syntax');
-assert.ok(html.includes('v0.38.5.1</title>'));
+assert.ok(html.includes('v0.38.5.2</title>'));
 assert.equal((html.match(/data-tab="(?:dip|eco|research|intel|military|naval)"/g)||[]).length,6);
 assert.ok(html.includes('id="systemsRecenter03851"'));
 assert.ok(html.includes('css/systems-hub-03851.css'));
@@ -98,5 +98,5 @@ assert.ok(host.children[0]?.innerHTML.includes('Ejército y frentes'),
   'Militar tab must render');
 assert.ok(host.children[0]?.innerHTML.includes('Operación terrestre'),
   'Militar tab must reuse military controls');
-assert.equal(window.HEXATEGOS_VERSION,'0.38.5.1');
+assert.equal(window.HEXATEGOS_VERSION,'0.38.5.2');
 console.log('HEXATEGOS 0.38.5.1 Systems usability smoke: OK');
