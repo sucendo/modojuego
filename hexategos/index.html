@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#050b14">
-<title>HEXATEGOS — Global Geopolitical Strategy · v0.38.4</title>
+<title>HEXATEGOS — Global Geopolitical Strategy · v0.38.5</title>
 <link rel="icon" type="image/png" href="assets/favicon.png">
 <link rel="apple-touch-icon" href="assets/favicon.png">
 <link rel="stylesheet" href="css/hexategos.css">
@@ -20,6 +20,7 @@
 <link rel="stylesheet" href="css/real-cities-0354.css">
 <link rel="stylesheet" href="css/trade-logistics-0370.css">
 <link rel="stylesheet" href="css/statecraft-0380.css">
+<link rel="stylesheet" href="css/systems-hub-0385.css">
 </head>
 <body class="bootPending3305">
 
@@ -128,12 +129,22 @@
  <div id="rankResizeBottom033" aria-hidden="true"></div>
  <div id="rankResize3303" aria-label="Redimensionar clasificación" title="Arrastra para cambiar el tamaño">↘</div>
 </div>
-<div id="systemsPanel3213">
- <div class="sysHead3213"><b>SISTEMAS</b><button id="systemsClose3213">×</button></div>
- <div class="sysTabs3213">
-  <button data-tab="dip" class="active">🤝 DIPLO.</button><button data-tab="eco">⇄ ECON.</button><button data-tab="research">🔬 I+D</button><button data-tab="intel">🕵 INTEL.</button><button data-tab="naval">⚓ NAVAL</button>
+<div id="systemsPanel3213" class="systemsHub0385" role="dialog" aria-label="Centro de mando" aria-modal="false">
+ <div class="sysHead3213">
+  <div class="sysHeadTitles0385"><span>CENTRO DE MANDO</span><b>SISTEMAS</b><small>Arrastra la cabecera para mover el panel</small></div>
+  <button id="systemsClose3213" type="button" aria-label="Cerrar Sistemas" title="Cerrar">×</button>
  </div>
- <div id="sysContent3213"></div>
+ <nav class="sysTabs3213" aria-label="Secciones de Sistemas">
+  <button type="button" data-tab="dip" class="active"><span class="sysNavIcon0385" aria-hidden="true">🤝</span><span class="sysNavText0385"><b>Diplomacia</b><small>Acuerdos y relaciones</small></span></button>
+  <button type="button" data-tab="eco"><span class="sysNavIcon0385" aria-hidden="true">📦</span><span class="sysNavText0385"><b>Economía</b><small>Recursos y comercio</small></span></button>
+  <button type="button" data-tab="research"><span class="sysNavIcon0385" aria-hidden="true">🔬</span><span class="sysNavText0385"><b>Investigación</b><small>Desarrollo e I+D</small></span></button>
+  <button type="button" data-tab="intel"><span class="sysNavIcon0385" aria-hidden="true">🕵</span><span class="sysNavText0385"><b>Inteligencia</b><small>Información y espías</small></span></button>
+  <button type="button" data-tab="naval"><span class="sysNavIcon0385" aria-hidden="true">⚓</span><span class="sysNavText0385"><b>Naval</b><small>Puertos y flotas</small></span></button>
+ </nav>
+ <div class="sysMain0385">
+  <div class="sysIntro0385" aria-live="polite"><div><span id="sysEyebrow0385">GESTIÓN NACIONAL</span><h2 id="sysSectionTitle0385">Diplomacia</h2><p id="sysSectionDescription0385">Embajadas, acuerdos, relaciones y propuestas con otras naciones.</p></div></div>
+  <div id="sysContent3213"></div>
+ </div>
 </div>
 
 <div id="panel">
@@ -291,5 +302,6 @@
 <script src="js/economic-corridors-0379.js"></script>
 <script src="js/statecraft-0380.js"></script>
 <script src="js/resource-strategy-0383.js"></script>
+<script src="js/systems-hub-0385.js"></script>
 </body>
 </html>
