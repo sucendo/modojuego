@@ -4,7 +4,7 @@ const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
 const src=read('js/map-icons-03812.js'),production=read('js/production-0388.js');
 const html=read('index.html');
 assert.doesNotThrow(()=>new Function(src),'map icons syntax');
-assert.match(html,/js\/map-icons-03812\.js\?v=0381[234]/);
+assert.match(html,/js\/map-icons-03812\.js\?v=0381[2345]/);
 assert.ok(production.includes('HexategosMapIcons03812?.active'),'legacy productive emojis not disabled');
 assert.ok(production.includes('drawCandidates:()=>sites.values()'),'specialized vector iterator missing');
 const land=Array(9).fill(1);land[4]=-1;
