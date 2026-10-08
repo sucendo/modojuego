@@ -1,7 +1,7 @@
 'use strict';
 
 (() => {
-  const BUILD='0.37.23';
+  const BUILD='0.37.24';
   const SAVE_KEY='hexategos-trade-logistics-0370';
   const TRADE_TICK_MS=2800;
   const ROAD_REFRESH_SECONDS=18;
@@ -1329,6 +1329,22 @@
   const baseClassicActions0370=buildClassicActions3246;
   buildClassicActions3246=function(ctx){
     const a=baseClassicActions0370(ctx);
+    // 0.37.24: reutiliza la acción INFORMACIÓN nativa, pero la enruta al
+    // diagnóstico completo de suministro. Evita que el manejador antiguo
+    // muestre únicamente "Suministro: XX%".
+    if(ctx&&ctx.kind==='cell'&&ctx.own){
+      const info=a.find(x=>{
+        const label=String(x?.label||'').toUpperCase();
+        const sub=String(x?.sub||'').toUpperCase();
+        return label.includes('INFORM')&&(sub.includes('SUMIN')||sub.includes('TERRENO'));
+      });
+      if(info){
+        info.id='supply_diagnosis_03724';
+        info.label='INFORMACIÓN';
+        info.sub='TERRENO Y SUMINISTRO';
+        info.enabled=true;
+      }
+    }
     if(ctx&&ctx.kind==='cell'&&ctx.own&&ctx.port){
       const tr=a.find(x=>x.id==='transport');
       if(tr){tr.label='TRANSPORTE';tr.sub=tr.enabled?'TROPAS · ELIGE COSTA':tr.sub}
@@ -1345,6 +1361,13 @@
 
   const baseContextAction0370=handleContextAction3244;
   handleContextAction3244=function(id){
+    if(id==='supply_diagnosis_03724'){
+      const ctx=uiInteractionState3244.contextData;
+      if(!ctx||ctx.kind!=='cell'||!ctx.own)return;
+      closeContextDialog3244();
+      openSupplyDiagnosis03723(ctx.cell);
+      return;
+    }
     if(id==='naval_build_0370'||id==='sea_trade_0370'){
       const ctx=uiInteractionState3244.contextData;
       if(!ctx||ctx.kind!=='cell'||!ctx.own||!ctx.port)return;
@@ -2490,5 +2513,5 @@
   window.HEXATEGOS_VERSION=BUILD;
 
   setInterval(tradeTick0370,TRADE_TICK_MS);
-  console.info('[HEXATEGOS] 0.37.23 · diagnóstico de suministro accesible desde INFORMACIÓN');
+  console.info('[HEXATEGOS] 0.37.24 · INFORMACIÓN enlazada al diagnóstico completo de suministro');
 })();
