@@ -4,10 +4,28 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.38.5',
+      date:'Octubre 2026',
+      title:'Sistemas rediseñado como centro de mando',
+      current:true,
+      summary:'Reorganización visual de Sistemas para leer mejor la diplomacia, economía, investigación, inteligencia y naval sin perder las acciones existentes.',
+      changes:[
+        'Panel ampliado con cabecera identificable, navegación lateral y descripciones claras de cada sección en ordenador.',
+        'Menú de secciones horizontal y adaptable a teléfonos y pantallas pequeñas.',
+        'Se aumentan los tamaños de texto, subtítulos, cifras y botones que todavía resultaban demasiado pequeños.',
+        'El contenido se divide en tarjetas, con apartados avanzados desplegables para evitar listados interminables.',
+        'Las propuestas y mensajes importantes permanecen visibles sin tener que expandirlos.',
+        'Sistemas y Opciones siguen separados: las opciones abren la configuración en el mismo diseño, sin mostrar pestañas duplicadas.',
+        'El diálogo puede arrastrarse por la cabecera y conserva su posición utilizando el sistema de paneles movibles existente.',
+        'Se conservan los IDs, controles y funciones actuales de economía, comercio, diplomacia, inteligencia, I+D y flotas.',
+        'El nuevo diseño es puramente de interfaz: no altera IA, suministro, partidas guardadas ni añade tareas periódicas.'
+      ]
+    },
+    {
       version:'0.38.4',
       date:'Octubre 2026',
       title:'Rendimiento: eliminar tirones periódicos',
-      current:true,
+      current:false,
       summary:'El cálculo geográfico, la selección de recursos y el mantenimiento de ciudades se reparten de manera incremental para reducir pausas en el renderizado, sin alterar las reglas estratégicas.',
       changes:[
         'El refresco geográfico deja de reconstruir 160 perfiles completos por tick comercial: solo ajusta producción primaria sobre nodos existentes.',
