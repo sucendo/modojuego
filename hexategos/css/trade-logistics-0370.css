@@ -81,3 +81,14 @@
 @media (max-width:720px){
   .supplyResourceGrid03721{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+
+
+/* HEXATEGOS 0.37.23 · ficha de diagnóstico desde INFORMACIÓN */
+.supplyModal03723{display:grid;gap:9px}
+.supplyModalHero03723{display:flex;align-items:end;justify-content:space-between;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,.035);border:1px solid rgba(151,181,201,.13)}
+.supplyModalHero03723 span{font-size:9px;letter-spacing:.07em;color:#a9bdcb}
+.supplyModalHero03723 b{font-size:22px;line-height:1;color:#e9f1f6}
+.supplyModalTriplet03723{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.supplyModalTriplet03723 span{display:grid;gap:3px;padding:6px 7px;border-radius:7px;background:rgba(255,255,255,.025);border:1px solid rgba(151,181,201,.1)}
+.supplyModalTriplet03723 small{font-size:8px;color:#8297a8}
+.supplyModalTriplet03723 b{font-size:10px;color:#dce8f1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
