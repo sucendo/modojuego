@@ -38,7 +38,9 @@
   function needs(f){
     const tick=now(),old=needCache.get(f);
     if(old&&tick-old.time<8)return old.vector;
-    const s=resourceApi()?.resourceSummary?.(f);
+    // No disparar reconstrucción de economía desde el planificador táctico.
+    // Si todavía no ha ocurrido el primer tick de recursos, usar valores neutros.
+    const s=resourceApi()?.resourceSummaryCached?.(f)||null;
     const coverage=s?.coverage||[];
     const prod=s?.prod||[],demand=s?.demand||[];
     const v=[0,1,2].map(i=>{
@@ -95,8 +97,8 @@
   }
 
   function tradeOpportunity(f,partner){
-    const a=resourceApi()?.resourceSummary?.(f);
-    const b=resourceApi()?.resourceSummary?.(partner);
+    const a=resourceApi()?.resourceSummaryCached?.(f)||null;
+    const b=resourceApi()?.resourceSummaryCached?.(partner)||null;
     if(!a||!b)return 0;
     const n=needs(f);
     let score=0;
