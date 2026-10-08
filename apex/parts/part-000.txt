@@ -1,0 +1,1000 @@
+<!-- v5.230.62.8.6.7.6.4.14: rendimiento adaptativo reforzado; surfaceZone/escapatorias físicamente bajo el asfalto; timing F1 conserva salida separada, meta/control, S1, S2 y speed-trap. -->
+<!-- v4.17: CONTROL CLÁSICO inspirado en la filosofía de GP4. Física del jugador a paso fijo de 100 Hz independiente del FPS, dirección digital progresiva pero con autoridad suficiente a alta velocidad, pedales más directos y ayudas TC/ABS no intrusivas. Se elimina el contravolante automático que podía luchar contra el jugador. Conserva timing FIA v4.15, superficies/rendimiento v4.14 y modos de v4.16. -->
+<!-- v4.16: Conducción accesible sin piloto automático. Añade perfiles ASISTIDO / SIMULACIÓN / SIN AYUDAS, dirección dependiente de velocidad y dispositivo, autocentrado, contravolante moderado, TC/ABS físicos, estabilidad en pianos/escapatorias y gamepad analógico. Conserva timing FIA v4.15, rendimiento y superficies v4.14. -->
+<!-- v4.15: Cronometraje FIA de salida en parrilla. El tiempo de la primera vuelta comienza con la señal de salida; la Control Line completa la vuelta al primer cruce si está antes de Start Line y al segundo si está después/coincide. Distancia de primera vuelta y carrera coherentes con la regla FIA 8.4.5. -->
+<!-- v4.5: Raya blanca en S1/S2/meta. Parciales medidos en torre TV, pilotos, entrenamiento y resultados. Sin carteles de cronometraje. -->
+
+<!-- v5.230.62.8.6.7.6.4.10: INSPECCIÓN 3D · ESCENA COMPLETA. Restaura “Render y tecnología” en el editor y, sólo durante la inspección, fuerza la escena completa: todos los elementos SVG/JSON, carteles, curvas, pit y timing visibles simultáneamente, sin omitir objetos por densidad, distancia móvil u oclusión de optimización; el LOD puede simplificar el detalle lejano para no bloquear el móvil. Amplía distancia y altura de cámara y añade VISTA COMPLETA para encuadrar todo el circuito al estilo Google Earth. -->
+<!-- v5.230.62.8.6.7.6.4.2: INSPECCIÓN 3D A PANTALLA COMPLETA. En móvil el circuito ocupa todo el visor: menús/HUD/paneles de carrera se ocultan durante la inspección. Sólo quedan controles flotantes mínimos, que se autoocultan y reaparecen con un toque. Cámara libre estilo Google Earth y timing físico de v6.4 conservados. -->
+<!-- v5.230.62.8.6.7.6.4.1: INSPECCIÓN 3D móvil estilo Google Earth. El visor ocupa toda la pantalla y los controles avanzados quedan ocultos en un cajón opcional. Cámara libre sobre X/Z: arrastre con un dedo para desplazarse, pellizco para zoom/altura, giro con dos dedos para rotar y gesto vertical a dos dedos para inclinar. Conserva la inspección del circuito real, el SVG/JSON autoritativo y el cronometraje por cruce físico de S1/S2/meta/speed-trap de v6.4. -->
+<!-- v5.230.62.8.6.7.6.3: LOTE 3 validado (Hungaroring, Zandvoort, Monza, Madrid, Baku). Tn y sentido auditados 2026; Monza/Madrid/Baku corregidos; frenadas rápidas exentas; carteles SVG autoritativos reconstruidos con ancho local. Conserva lotes 1 y 2. -->
+<!-- v5.230.62.4.1: corrige la reentrada a una nueva sesión tras volver al menú. El warmup restaura siempre el botón que lo inició y el menú reactiva defensivamente todos los lanzadores. Se limpia además la caché de espejos entre sesiones para evitar estado visual obsoleto. Retrovisores adaptativos de v62.4 intactos. La escena del espejo se reconstruye a frecuencia independiente (30 Hz nominal, menor sólo bajo presión), reutiliza geometría/proyecciones entre frames y reduce muestreo lejano antes de tocar el mundo principal. Edificios, boxes, gradas, torres, puentes y gantries relevantes se proyectan también en el espejo y ocluyen rivales cuando quedan delante. El mundo principal y el LOD 3D de rivales de v62.3.1 permanecen intactos. -->
+<!-- v5.230.27: mejora visual del puente peatonal, árboles y luces interiores de túneles. -->
+<!-- v5.230.29: túneles SVG conservan el terreno natural; se elimina el rebaje/embudo artificial en sus bocas. -->
+<!-- v5.230.30: tribunas, boxes y edificios respetan la huella/planta del SVG; altura mediante data-apex-height. -->
+<!-- v5.230.62.8.6.7.6: pianos curb-left/curb-right activos en SVG y consumidos por el simulador; orientación visual F1 horneada en BASE SVG para que SVG, menú y minimapa compartan una única geometría de presentación. -->
+<!-- v5.230.62.8.6.7.6: SVG autoritativo sin transform global; orientación horneada en coordenadas; pianos activos conservadores por curva; carteles de frenada reubicados junto a pista; etiquetas SALIDA/META y Tn legibles. -->
+<!-- v5.230.62.8.6.7.6 FINAL: auditoría individual T1–Tn y frenadas; distancias 2026 FastF1/MultiViewer cuando disponibles, F1/FIA como referencia; SVG autoritativo, sin transform global. -->
+<!-- v5.230.62.8.6.7.6.1: Lote 1 validado: Australia, China, Japón, Miami y Canadá. Corrige sentido Tn, exterior de carteles, agrupaciones de frenada, S1 Suzuka/Canadá y auditor sin contar APEX_ELEMENT_LIBRARY. -->
+<!doctype html>
+<!-- v5.230.62.8.2: Túneles SVG universales. El SVG define tipo/familia/estilo/parametros; el motor interpreta fisica, LOD, colision y render. Conserva WALL_F1 visual realista y compatibilidad legacy. -->
+<!-- v5.230.62.7.3: clima dinámico evolutivo + nubes altas/bajas + iluminación perceptual barata, sobre la base estable de oclusión/culling y carga progresiva. -->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#05070b">
+<title>Apex Formula 26 · v4.17 · Control clásico</title>
+<style>
+:root{--a:#59f3ff;--r:#ff405d;--panel:rgba(8,12,18,.94);--line:rgba(255,255,255,.14);--mut:#93a0b2}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#05070b;color:#fff;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif}
+button,select{font:inherit}
+#game{position:fixed;inset:0;width:100%;height:100%;display:block;background:#05070b}
+.hidden{display:none!important}
+.panel{position:fixed;z-index:30;left:50%;top:50%;transform:translate(-50%,-50%);width:min(980px,94vw);max-height:92vh;overflow:auto;padding:20px;border:1px solid var(--line);border-radius:20px;background:linear-gradient(180deg,rgba(18,25,35,.97),rgba(5,8,12,.97));box-shadow:0 25px 85px #0009}
+.logo{font-size:clamp(40px,8vw,78px);font-weight:950;font-style:italic;letter-spacing:-.065em;line-height:.9}.logo b{color:var(--a)}
+.tag{color:#c6d0dc;margin:10px 0 18px;max-width:820px}
+.tabs,.row{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+.tab,.btn{border:1px solid var(--line);background:#ffffff0d;color:#fff;border-radius:12px;padding:11px 14px;font-weight:850;cursor:pointer}
+.tab.active{color:var(--a);border-color:#59f3ff88}.btn.primary{border:0;background:linear-gradient(135deg,#0fa8bd,#2f72ff);padding:14px 20px}
+.grid{display:grid;grid-template-columns:1.25fr .75fr;gap:15px}.card{border:1px solid var(--line);border-radius:15px;padding:14px;background:#ffffff08}
+label{display:block;color:var(--mut);font-size:11px;font-weight:850;letter-spacing:.08em;text-transform:uppercase;margin:11px 0 6px}
+select{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:#0d131d;color:#fff}
+.stat{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #ffffff0c}.stat:last-child{border:0}
+#schedule{display:grid;grid-template-columns:repeat(auto-fill,minmax(205px,1fr));gap:8px;max-height:47vh;overflow:auto;margin-top:12px}.event{border:1px solid var(--line);border-radius:12px;padding:9px;background:#ffffff07}.event.current{border-color:var(--a)}.event.done{opacity:.55}
+.muted{color:var(--mut)} .small{font-size:11px}
+#hud{position:fixed;inset:0;z-index:7;pointer-events:none;text-shadow:0 2px 8px #000}
+.top{position:absolute;top:max(8px,env(safe-area-inset-top));left:10px;right:10px;display:grid;grid-template-columns:1fr minmax(196px,.86fr) minmax(180px,.84fr);gap:10px;align-items:flex-start}#gpInfo{display:none!important}
+.box{background:#060a10d2;border:1px solid rgba(255,255,255,.16);border-radius:12px;padding:7px 10px;backdrop-filter:blur(8px);box-shadow:0 10px 26px rgba(0,0,0,.28)}
+.gpBox{justify-self:start;min-width:0;border-top:3px solid #26d7e5}.gpBox #gpName{font-size:20px;font-weight:950;line-height:1.05;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.gpBox #gpMeta{margin-top:4px;color:#d7e1ee;font-size:10px;letter-spacing:.11em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.speedBox{justify-self:center;min-width:0;text-align:center;border-top:3px solid #e03a2d;background:rgba(5,9,15,.76)}.speedLabel{font-size:10px;letter-spacing:.14em;color:#eef4ff;text-transform:uppercase;font-weight:900;text-align:center}.speedMain{display:flex;align-items:baseline;justify-content:center;gap:8px;line-height:1;margin-top:2px}#speed{font-size:40px;font-weight:950;color:#ff4b57;font-variant-numeric:tabular-nums;letter-spacing:-.03em}.speedUnit{font-size:11px;color:#d4deea;letter-spacing:.12em;font-weight:900}#gear{display:inline-block;font-size:30px;color:var(--a);font-weight:950;margin-left:4px}
+.timeBox{justify-self:end;min-width:0;text-align:right;border-top:3px solid #7cf2ff;background:rgba(5,9,15,.76);padding-top:8px;padding-bottom:8px}.timeRow{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:12px}.timeRow+.timeRow{margin-top:5px}.timeCap{font-size:10px;font-weight:950;letter-spacing:.14em;color:#95a5b8;text-transform:uppercase}.timeVal{font-size:18px;font-weight:950;line-height:1;color:#fff;font-variant-numeric:tabular-nums;letter-spacing:-.02em}.timeRow.bestRow .timeVal{color:#ffd44d}.timeRow.currentRow .timeVal{color:#f6fbff}
+#mini{position:fixed;right:max(10px,env(safe-area-inset-right));top:88px;width:176px;height:134px;border:1px solid #ffffff20;border-radius:12px;background:#0005;z-index:11;box-shadow:0 8px 22px rgba(0,0,0,.24)}
+#lb{position:absolute;left:10px;top:88px;bottom:max(72px,calc(env(safe-area-inset-bottom) + 66px));width:clamp(154px,16.4vw,184px);max-height:calc(100dvh - 88px - max(72px,calc(env(safe-area-inset-bottom) + 66px)));font-size:9px;border:1px solid rgba(255,255,255,.14);border-radius:12px;overflow:hidden;background:rgba(4,7,12,.40);box-shadow:0 10px 28px rgba(0,0,0,.24);backdrop-filter:blur(4px)}#lb .tvgp{padding:6px 8px 5px;background:linear-gradient(180deg,rgba(6,10,16,.66),rgba(8,12,18,.42));border-bottom:1px solid rgba(255,255,255,.07)}#lb .tvgp .gpn{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:950;line-height:1.05;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#lb .tvgp .gpm{margin-top:3px;font-size:8px;letter-spacing:.08em;color:#d8e3ef;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.gpAbbr{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:16px;padding:0 5px;border-radius:999px;background:rgba(255,255,255,.09);font-size:10px;font-weight:950;letter-spacing:.08em}.gpFlag .flagVec{transform:scale(.84);transform-origin:left center;display:inline-block}.wx{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;font-size:10px;font-weight:900}.wx.sun{color:#ffbf3b}.wx.cloud,.wx.overcast{color:#d4e7ff}.wx.drizzle{color:#8fd2ff}.wx.rain{color:#63b8ff}.wx.storm{color:#d8c8ff;text-shadow:0 0 8px rgba(190,205,255,.8)}.wx.night{color:#d8dcff}.wx.sunset{color:#ff9b5d}#lb .tvh{display:grid;grid-template-columns:1fr auto;align-items:center;padding:5px 8px;background:linear-gradient(180deg,rgba(6,10,16,.68),rgba(8,12,18,.40));font-weight:950}#lb .tvh .small{font-size:7px;letter-spacing:.14em;color:#cfd8e3}#lb .tvh .big{font-size:17px;line-height:1;color:#fff;font-weight:950}#lb .tvt{padding:4px 8px;border-top:2px solid #e33524;border-bottom:1px solid rgba(255,255,255,.07);font-size:7px;letter-spacing:.14em;font-weight:900;color:#f2f4f8;background:rgba(255,255,255,.015)}#lb .lbr{display:grid;grid-template-columns:20px 1fr 16px 40px;align-items:center;gap:5px;padding:4px 5px;background:rgba(0,0,0,.26);border-bottom:1px solid rgba(255,255,255,.05)}#lb .lbr.you{background:rgba(89,243,255,.15)}#lb .lbr.fastest{background:rgba(255,215,77,.12)}#lb .lpos{display:inline-flex;align-items:center;justify-content:center;height:18px;border-radius:4px;background:#f1f2f4;color:#111;font-weight:950;font-size:10px}#lb .ldriver{display:flex;align-items:center;gap:5px;min-width:0;font-weight:900;letter-spacing:.04em}#lb .ldc{display:inline-block;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#lb .tvlogo{width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;border-radius:5px;background:rgba(255,255,255,.055);overflow:hidden;flex:0 0 18px}#lb .tvlogo svg{width:16px;height:16px;display:block}#lb .tvtyre{width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;border:2px solid #ff3047;background:#090a0ddd;color:#fff;font-size:8px;font-weight:950;box-shadow:0 0 0 1px rgba(0,0,0,.55) inset}#lb .tvgap{font-size:9px;font-weight:850;color:#e6ebf2;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}#lb .tvgap.self{color:#9feeff}
+#bars{position:absolute;right:10px;bottom:22%;width:135px;font-size:9px;font-weight:850}.bar{height:7px;background:#0008;border:1px solid #ffffff25;border-radius:7px;overflow:hidden}.bar i{display:block;height:100%;background:linear-gradient(90deg,#36e7b0,#59f3ff);width:100%}
+#touch{position:fixed;inset:0;z-index:10;pointer-events:none}.tb{position:absolute;pointer-events:auto;touch-action:none;user-select:none;border:1px solid #ffffff35;background:#0d1422a6;color:#fff;border-radius:50%;font-weight:900;backdrop-filter:blur(5px)}
+#left,#right,#gas,#brake{width:64px;height:64px}#left{left:14px;bottom:max(134px,calc(env(safe-area-inset-bottom) + 128px))}#right{left:87px;bottom:max(134px,calc(env(safe-area-inset-bottom) + 128px))}#brake{left:14px;bottom:max(60px,calc(env(safe-area-inset-bottom) + 54px));font-size:10px}#gas{left:87px;bottom:max(60px,calc(env(safe-area-inset-bottom) + 54px));font-size:10px}
+body.gyro-active #left,body.gyro-active #right,body.gyro-active #gas,body.gyro-active #brake{display:none!important}
+#toolHud{position:absolute;pointer-events:none;left:0;right:0;bottom:max(2px,env(safe-area-inset-bottom));height:54px;z-index:16}.toolBar{position:absolute;pointer-events:auto;display:flex;align-items:center;gap:4px;padding:4px 6px;border:1px solid rgba(255,255,255,.16);border-radius:17px;background:rgba(5,10,17,.62);box-shadow:0 8px 30px rgba(0,0,0,.32);backdrop-filter:blur(10px)}#toolLeft{left:12px}#toolRight{right:12px}.toolBar .tb{position:relative;inset:auto;transform:none;width:auto;min-width:42px;height:34px;padding:0 7px;border-radius:11px;font-size:9px;background:rgba(18,27,40,.72)}#toolLeft #ers{color:var(--a);min-width:50px}#toolLeft #box{color:#8dffb6;min-width:48px}#toolLeft #box.on{background:rgba(83,255,154,.16);border-color:rgba(83,255,154,.52);color:#d9ffe7}#toolLeft #box.service{background:rgba(105,245,255,.18);border-color:rgba(105,245,255,.62);color:#e5fcff}#toolLeft #box:disabled{opacity:.38;filter:saturate(.45);cursor:default}#toolLeft #telemetryBtn{min-width:44px;color:#7fe7ff}#toolRight #sound{min-width:48px;color:#8fffcf}#toolRight #fs{font-size:18px;min-width:46px}#toolRight #optionsBtn{font-size:15px;min-width:44px;color:#cbe9ff}#toolLeft #invert{min-width:44px}#toolLeft #demo{min-width:48px;color:#ffd66b}#toolLeft #demo.on{background:rgba(255,214,107,.18);border-color:rgba(255,214,107,.48);color:#fff1bd}#gyroReadout{display:none!important}#toolLeft #diag{min-width:46px;color:#ffd66b;display:none}body.diag-unlocked #toolLeft #diag{display:inline-flex}.diagPanel{position:fixed;z-index:45;left:50%;bottom:max(58px,calc(env(safe-area-inset-bottom) + 52px));transform:translateX(-50%);width:min(460px,92vw);padding:13px 14px;border:1px solid rgba(255,255,255,.18);border-radius:15px;background:rgba(5,10,17,.92);box-shadow:0 14px 50px rgba(0,0,0,.48);backdrop-filter:blur(12px);font-size:11px}.diagGrid{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px}.diagRow{display:flex;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.07);padding:5px 0}
+.telemetryPanel{position:fixed;z-index:44;left:max(8px,env(safe-area-inset-left));bottom:max(56px,calc(env(safe-area-inset-bottom) + 50px));width:min(265px,47vw);padding:9px 11px;border:1px solid rgba(127,231,255,.22);border-radius:13px;background:rgba(5,10,17,.78);backdrop-filter:blur(9px);box-shadow:0 10px 30px rgba(0,0,0,.32);font:800 10px/1.25 system-ui;pointer-events:none}
+.telemetryPanel .tr{display:flex;justify-content:space-between;gap:9px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.telemetryPanel .tv{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;color:#d8f9ff;text-align:right}
+.telemetryPanel .state{margin-top:6px;font-size:11px;font-weight:950;letter-spacing:.08em;text-align:center}
+.telemetryPanel .meter{height:4px;background:#ffffff14;border-radius:9px;overflow:hidden;margin:2px 0 5px}.telemetryPanel .meter i{display:block;height:100%;width:0;background:#d9f8ff}
+.ok{color:#68ffc0}.warn{color:#ffd66b}.bad{color:#ff7788}
+.tb.on{background:#59f3ff35!important;border-color:var(--a)!important}
+
+body.compact #lb{top:80px;bottom:max(62px,calc(env(safe-area-inset-bottom) + 58px));width:148px;font-size:9px}
+body.compact #mini{top:82px;width:138px;height:104px}
+body.compact #bars{width:118px;bottom:24%}
+body.compact .box{padding:5px 8px;border-radius:10px}
+body.compact #speed{font-size:22px}body.compact #gear{font-size:22px}body.compact #pos{font-size:19px}body.compact #raceTime{font-size:15px}body.compact .timeVal{font-size:14px}body.compact .timeCap{font-size:8px}
+body.compact #toolHud{height:46px}body.compact .toolBar{padding:3px 5px;border-radius:15px}body.compact .toolBar .tb{min-width:38px;height:30px;font-size:8px;border-radius:10px}body.compact #toolLeft{left:10px}body.compact #toolRight{right:10px}body.compact #gyroReadout{min-width:66px;font-size:7px}
+body.compact .telemetryPanel{font-size:9px;width:min(240px,42vw)}
+body.compact #msg{top:26%}
+#msg{position:fixed;z-index:8;top:30%;left:50%;transform:translateX(-50%);font-size:clamp(32px,8vw,72px);font-weight:950;font-style:italic;text-shadow:0 4px 20px #000;pointer-events:none;white-space:nowrap}
+#finish:not(.finishPanel) h1{font-size:clamp(34px,7vw,64px);color:var(--a);font-style:italic;margin:0}.results{display:grid;grid-template-columns:1fr 1fr;gap:12px}.res{display:grid;grid-template-columns:28px 1fr 62px;gap:7px;padding:7px;border-bottom:1px solid #ffffff0e}.res.you{background:#59f3ff22}
+@media(max-width:680px){.grid,.results{grid-template-columns:1fr}.panel{padding:14px}#lb{display:none}#mini{width:122px;height:92px;top:82px}#bars{width:96px}.box{padding:5px 7px}#speed{font-size:22px}#gear{font-size:22px}#pos{font-size:18px}}
+/* v5.27 responsive UI / v5.25 cockpit visuals preserved */
+body.mobile-landscape .panel{width:min(1040px,96vw);max-height:96dvh;padding:10px 12px;border-radius:14px}
+body.mobile-landscape .logo{font-size:clamp(25px,7vh,44px)}
+body.mobile-landscape .tag{margin:6px 0 9px;font-size:11px;line-height:1.25}
+body.mobile-landscape .grid{grid-template-columns:1.18fr .82fr;gap:9px}
+body.mobile-landscape .card{padding:9px;border-radius:11px}
+body.mobile-landscape label{font-size:9px;margin:6px 0 3px}
+body.mobile-landscape select{padding:7px 9px}
+body.mobile-landscape .tab,body.mobile-landscape .btn{padding:7px 10px;border-radius:9px;font-size:10px}
+body.mobile-landscape .top{top:max(3px,env(safe-area-inset-top));left:max(5px,env(safe-area-inset-left));right:max(5px,env(safe-area-inset-right));gap:5px;grid-template-columns:1fr minmax(112px,.85fr) minmax(112px,.85fr)}
+body.mobile-landscape .box{padding:3px 6px;border-radius:8px;background:rgba(4,8,13,.76);backdrop-filter:blur(4px)}
+/* v5.100: HUD superior estilo broadcast. */
+.top>.box{line-height:1.12}
+body.mobile-landscape .gpBox #gpName{font-size:11px}body.mobile-landscape .gpBox #gpMeta{font-size:6px;margin-top:2px;letter-spacing:.1em}
+body.mobile-landscape .speedLabel{font-size:6px}body.mobile-landscape #speed{font-size:22px}body.mobile-landscape .speedUnit{font-size:7px}body.mobile-landscape #gear{font-size:18px;margin-left:2px}
+body.mobile-landscape .timeBox{padding-top:6px;padding-bottom:6px}body.mobile-landscape .timeRow{gap:6px}body.mobile-landscape .timeRow+.timeRow{margin-top:3px}body.mobile-landscape .timeCap{font-size:6px}body.mobile-landscape .timeVal{font-size:12px}
+body.mobile-landscape #lb{display:block;left:max(6px,env(safe-area-inset-left));top:48px;bottom:max(96px,calc(env(safe-area-inset-bottom) + 92px));width:clamp(116px,25vw,138px);max-height:calc(100dvh - 48px - max(96px,calc(env(safe-area-inset-bottom) + 92px)));font-size:8px;border-radius:8px;background:rgba(4,7,12,.34)}body.mobile-landscape #lb .tvgp{padding:4px 6px 4px}body.mobile-landscape #lb .tvgp .gpn{gap:4px;font-size:8px}body.mobile-landscape #lb .tvgp .gpm{font-size:5px;margin-top:2px;letter-spacing:.08em}body.mobile-landscape .gpAbbr{min-width:20px;height:12px;padding:0 3px;font-size:7px}body.mobile-landscape .gpFlag .flagVec{transform:scale(.72)}body.mobile-landscape #lb .tvh{padding:4px 6px}body.mobile-landscape #lb .tvh .small{font-size:5px}body.mobile-landscape #lb .tvh .big{font-size:12px}body.mobile-landscape #lb .tvt{padding:3px 6px;font-size:5px}body.mobile-landscape #lb .lbr{grid-template-columns:14px 1fr 12px 30px;gap:3px;padding:3px 4px}body.mobile-landscape #lb .lpos{height:14px;font-size:7px}body.mobile-landscape #lb .tvlogo{width:14px;height:14px;flex-basis:14px}body.mobile-landscape #lb .tvlogo svg{width:13px;height:13px}body.mobile-landscape #lb .tvtyre{width:12px;height:12px;font-size:6px;border-width:1.5px}body.mobile-landscape #lb .tvgap{font-size:6px}body.mobile-landscape #mini{right:max(6px,env(safe-area-inset-right));top:48px;width:128px;height:88px;border-radius:8px}body.mobile-landscape #bars{right:max(7px,env(safe-area-inset-right));top:126px;bottom:auto;width:80px;font-size:6px}body.mobile-landscape #bars .bar{height:5px}body.mobile-landscape #raceAlert{top:17%!important;font-size:clamp(12px,3.1vh,20px)!important}body.mobile-landscape #msg{top:22%;font-size:clamp(25px,12vh,54px)}body.mobile-landscape #left,body.mobile-landscape #right,body.mobile-landscape #gas,body.mobile-landscape #brake{width:50px;height:50px;font-size:11px;background:rgba(13,20,34,.58)}body.mobile-landscape #left{left:max(8px,env(safe-area-inset-left));bottom:max(96px,calc(env(safe-area-inset-bottom) + 92px))}body.mobile-landscape #right{left:max(62px,calc(env(safe-area-inset-left) + 60px));bottom:max(96px,calc(env(safe-area-inset-bottom) + 92px))}body.mobile-landscape #gas{left:max(62px,calc(env(safe-area-inset-left) + 60px));bottom:max(40px,calc(env(safe-area-inset-bottom) + 36px))}body.mobile-landscape #brake{left:max(8px,env(safe-area-inset-left));bottom:max(40px,calc(env(safe-area-inset-bottom) + 36px))}body.mobile-landscape #toolHud{height:32px;bottom:max(1px,env(safe-area-inset-bottom))}body.mobile-landscape .toolBar{gap:2px;padding:2px 4px;border-radius:12px;background:rgba(5,10,17,.52)}body.mobile-landscape .toolBar .tb{min-width:30px;height:26px;padding:0 4px;border-radius:8px;font-size:7px}body.mobile-landscape #toolLeft{left:max(120px,calc(env(safe-area-inset-left) + 118px))}body.mobile-landscape #toolRight{right:max(6px,env(safe-area-inset-right))}body.mobile-landscape #toolLeft #ers{min-width:37px}body.mobile-landscape #toolLeft #box{min-width:34px}body.mobile-landscape #toolRight #sound{min-width:34px}body.mobile-landscape #toolRight #fs{min-width:34px;font-size:14px}body.mobile-landscape #toolRight #optionsBtn{min-width:32px;font-size:12px}body.mobile-landscape #gyroReadout{display:none!important}
+body.mobile-landscape .telemetryPanel{left:max(6px,env(safe-area-inset-left));bottom:max(38px,calc(env(safe-area-inset-bottom) + 35px));width:min(220px,35vw);max-height:49vh;overflow:hidden;padding:6px 8px;font-size:7px;border-radius:9px}
+body.mobile-landscape .diagPanel{bottom:max(39px,calc(env(safe-area-inset-bottom) + 36px));width:min(570px,88vw);max-height:70vh;overflow:auto;padding:9px 11px;font-size:9px}
+body.mobile-landscape #schedule{max-height:48vh}
+body.mobile-landscape.short-landscape #mini{width:116px;height:78px;top:44px}
+body.mobile-landscape.short-landscape #bars{width:72px;top:108px;bottom:auto}
+body.mobile-landscape.short-landscape #lb{width:110px;bottom:max(84px,calc(env(safe-area-inset-bottom) + 80px));max-height:calc(100dvh - 48px - max(84px,calc(env(safe-area-inset-bottom) + 80px)))}body.mobile-landscape.short-landscape #toolLeft #diag,body.mobile-landscape.short-landscape #toolLeft #telemetryBtn{display:none}body.mobile-landscape.short-landscape #gyroReadout{display:none}body.mobile-landscape.short-landscape .toolBar .tb{min-width:29px;padding:0 3px}
+body.mobile-landscape.short-landscape #left,body.mobile-landscape.short-landscape #right,body.mobile-landscape.short-landscape #gas,body.mobile-landscape.short-landscape #brake{width:46px;height:46px}
+body.mobile-landscape.short-landscape #right{left:max(56px,calc(env(safe-area-inset-left) + 54px));bottom:max(84px,calc(env(safe-area-inset-bottom) + 80px))}
+body.mobile-landscape.short-landscape #left{bottom:max(84px,calc(env(safe-area-inset-bottom) + 80px))}
+body.mobile-landscape.short-landscape #brake{left:max(8px,env(safe-area-inset-left));bottom:max(34px,calc(env(safe-area-inset-bottom) + 30px))}
+body.mobile-landscape.short-landscape #gas{left:max(56px,calc(env(safe-area-inset-left) + 54px));bottom:max(34px,calc(env(safe-area-inset-bottom) + 30px))}
+body.mobile-landscape.short-landscape #brake{right:max(59px,calc(env(safe-area-inset-right) + 57px))}
+@media (orientation:portrait) and (max-width:680px){.panel{width:95vw;max-height:94dvh;padding:12px}.toolBar{max-width:96vw;overflow:hidden}.toolBar .tb{min-width:35px;padding:0 5px}#toolLeft{left:10px}#toolRight{right:10px}#gyroReadout{display:none}}
+
+@media(pointer:fine){#left,#right,#gas,#brake,#gyro,#center,#invert{display:none}#toolLeft{left:12px}#toolRight{right:12px}}
+
+/* v5.60 weekend / qualifying / practice */
+.tabs{display:flex;flex-wrap:wrap;gap:6px}.tabs .tab{flex:1 1 130px}
+#menuModeRow{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+#menuModeTabs{display:flex;flex-wrap:wrap;gap:6px;flex:1}
+#menuModeTabs .tab{flex:1 1 135px}
+#controlsTab{flex:0 0 auto;margin-left:8px;background:#0b111a;border-color:#344155;color:#b8c7d8;padding-left:17px;padding-right:17px}
+#controlsTab.active{color:#fff;border-color:#75869b;background:#151d28}
+#teamGarage{margin:6px 0 13px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#070b11aa}
+#teamChoice{display:grid;grid-template-columns:58px minmax(180px,1.4fr) minmax(145px,.8fr) 74px 190px;gap:10px;align-items:end}
+#selectedTeamLogoWrap{height:58px;width:58px;border-radius:12px;border:1px solid #2c3746;background:#0b1018;display:flex;align-items:center;justify-content:center;align-self:end}
+#selectedTeamLogoWrap .teamLogoSvg{width:46px;height:46px;display:block}
+.teamChoiceField label{margin-top:0}
+#teamGarage select{height:42px}
+#teamGarage #carColor{height:42px}
+#teamGarage #applyTeam{height:42px;white-space:nowrap}
+#selectedTeamName{font-size:9px;color:#8fa1b4;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.teamLogoSvg{width:35px;height:35px;display:block}
+.flagVec{width:27px;height:18px;display:inline-block;vertical-align:-4px;margin-right:7px;border-radius:2px;overflow:hidden;box-shadow:0 0 0 1px #ffffff2c}.flagVec svg{width:100%;height:100%;display:block}
+.modeIntro{margin:7px 0 12px;color:#9caabd;font-size:11px}.recordBox{font-size:20px;font-weight:950;color:#d9c7ff;margin:8px 0}
+#weekendPanel{width:min(980px,95vw)}.weekendHead{display:flex;align-items:center;justify-content:space-between;gap:10px}.weekendStages{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:12px 0}.sessionStage{padding:8px 5px;border-radius:9px;border:1px solid #273140;background:#0b1018;text-align:center;font-size:10px}.sessionStage.current{border-color:#b78cff;color:#fff;background:#221936}.sessionStage.done{border-color:#4bcf8a;color:#aef1ce}.sessionStage.skipped{border-color:#8a94a3;color:#929ba8}.sessionStage b{display:block;font-size:12px;margin-bottom:3px}.weekendActions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.weekendActions .btn{flex:1 1 160px}
+.timingBoard{background:#05070a;border:1px solid #252d39;border-radius:12px;overflow:hidden;margin-top:10px}.timingTitle{background:linear-gradient(90deg,#1a1027,#090c12 70%);padding:9px 12px;font-weight:950;letter-spacing:.08em;border-bottom:2px solid #a66cff}.timingRow{display:grid;grid-template-columns:38px 1.35fr 1fr 90px 80px;gap:5px;align-items:center;padding:6px 9px;border-bottom:1px solid #ffffff0b;font-size:10px}.timingRow:last-child{border-bottom:0}.timingRow.you{background:#36dff10c}.timingRow .pos{font-weight:950}.timingRow .time{font-weight:900;color:#f4f6f8}.timingRow .gap{color:#aab6c5;text-align:right}.timingRow.best .time{color:#c78cff}.teamMiniLogo{width:20px;height:20px;vertical-align:middle;margin-right:5px}.weekendNote{font-size:10px;color:#8fa0b2;margin-top:8px}
+#sessionBadge{position:absolute;left:50%;top:64px;transform:translateX(-50%);z-index:10;background:#080b10dd;border:1px solid #444e5e;border-left:4px solid #b06dff;padding:5px 11px;border-radius:7px;font-size:9px;font-weight:950;letter-spacing:.07em;pointer-events:none}
+@media(pointer:fine){#controlsTab{margin-left:18px}}
+@media(max-width:820px){#teamChoice{grid-template-columns:54px 1fr 1fr}.teamChoiceColor,.teamChoiceApply{grid-column:auto}#controlsTab{margin-left:0}}
+@media(max-width:620px){#menuModeRow{align-items:stretch;flex-direction:column}#controlsTab{align-self:flex-end;margin-top:2px}#teamChoice{grid-template-columns:50px 1fr}.teamChoiceChassis,.teamChoiceColor,.teamChoiceApply{grid-column:2}#selectedTeamLogoWrap{grid-row:1 / span 4}}
+@media(max-width:700px){.weekendStages{grid-template-columns:repeat(5,minmax(62px,1fr));overflow-x:auto}.timingRow{grid-template-columns:30px 1.2fr 70px 72px}.timingRow .teamCell{display:none}#sessionBadge{top:58px}}
+
+
+/* v5.61 main menu UX polish */
+html{scrollbar-gutter:auto}
+#menu{scrollbar-gutter:stable}
+body::before,body::after{content:"";position:fixed;pointer-events:none;z-index:0;border-radius:50%;filter:blur(16px);opacity:.55}
+body::before{width:42vw;height:42vw;left:-10vw;top:-14vw;background:radial-gradient(circle at center,rgba(89,243,255,.16),rgba(89,243,255,0) 70%)}
+body::after{width:44vw;height:44vw;right:-12vw;top:-16vw;background:radial-gradient(circle at center,rgba(130,94,255,.14),rgba(130,94,255,0) 72%)}
+*{scrollbar-width:thin;scrollbar-color:rgba(89,243,255,.55) rgba(8,14,22,.85)}
+::-webkit-scrollbar{width:12px;height:12px}
+::-webkit-scrollbar-track{background:linear-gradient(180deg,rgba(8,14,22,.95),rgba(13,20,31,.95));border-radius:999px}
+::-webkit-scrollbar-thumb{background:linear-gradient(180deg,rgba(89,243,255,.68),rgba(108,126,255,.66));border-radius:999px;border:2px solid rgba(8,14,22,.95)}
+::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,rgba(126,247,255,.92),rgba(131,147,255,.9))}
+::-webkit-scrollbar-corner{background:rgba(8,14,22,.92)}
+.panel{border-color:rgba(255,255,255,.11);background:linear-gradient(180deg,rgba(15,21,31,.96),rgba(6,10,16,.97));backdrop-filter:blur(14px);box-shadow:0 30px 90px rgba(0,0,0,.54), inset 0 1px 0 rgba(255,255,255,.04)}
+#menu{width:min(1120px,95vw);padding:22px 22px 20px;border-radius:24px;overflow:auto;overscroll-behavior:contain;position:fixed}
+#menu::before{content:"";position:absolute;inset:0 0 auto 0;height:4px;background:linear-gradient(90deg,#59f3ff,#6c7eff,#d57dff);opacity:.92}
+.logo{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 14px}
+.logo span{display:inline-block;padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)}
+.tag{margin:14px 0 14px;max-width:none;padding:14px 16px;border-radius:16px;background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.022));border:1px solid rgba(255,255,255,.07);line-height:1.42;color:#cdd7e3}
+.menuHeroMeta{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin:0 0 16px}
+.heroPill{padding:12px 13px;border-radius:16px;border:1px solid rgba(255,255,255,.08);background:linear-gradient(180deg,rgba(13,18,27,.95),rgba(8,12,18,.92));box-shadow:inset 0 1px 0 rgba(255,255,255,.03)}
+.hpK{display:block;font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:#8ea1b4;font-weight:850;margin-bottom:5px}.hpV{font-size:15px;font-weight:950;color:#f4f8fb}
+#menuModeRow{position:sticky;top:-10px;z-index:3;padding:10px;border-radius:18px;background:linear-gradient(180deg,rgba(10,15,23,.92),rgba(8,12,18,.84));backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.06);box-shadow:0 10px 28px rgba(0,0,0,.22);margin-bottom:14px}
+#menuModeTabs{gap:8px}
+#menuModeTabs .tab,#controlsTab{min-height:48px;border-radius:14px;font-size:13px;letter-spacing:.01em;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.04));transition:transform .16s ease,border-color .16s ease,background .16s ease,box-shadow .16s ease}
+#menuModeTabs .tab:hover,#controlsTab:hover,.btn:hover{transform:translateY(-1px)}
+#menuModeTabs .tab.active,#controlsTab.active{background:linear-gradient(135deg,rgba(22,160,190,.24),rgba(96,112,255,.18));border-color:rgba(89,243,255,.55);box-shadow:0 0 0 1px rgba(89,243,255,.12) inset,0 8px 22px rgba(47,114,255,.12)}
+#controlsTab{min-width:150px}
+.grid{gap:16px}
+.card{padding:16px;border-radius:18px;background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.03));border-color:rgba(255,255,255,.08);box-shadow:inset 0 1px 0 rgba(255,255,255,.03)}
+label{font-size:10px;letter-spacing:.12em;color:#9eb0c2;margin:10px 0 7px}
+select,input[type="color"]{min-height:44px;border-radius:12px;border:1px solid rgba(255,255,255,.10);background:linear-gradient(180deg,#111925,#0b1118);box-shadow:inset 0 1px 0 rgba(255,255,255,.03)}
+.tab,.btn{border-radius:14px}
+.btn{background:linear-gradient(180deg,rgba(255,255,255,.085),rgba(255,255,255,.045));border-color:rgba(255,255,255,.10);min-height:44px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03)}
+.btn.primary{background:linear-gradient(135deg,#10abc0,#2e72ff 60%,#7e63ff);box-shadow:0 12px 26px rgba(38,111,255,.22)}
+#teamGarage{margin:2px 0 16px;padding:14px;border-radius:18px;background:linear-gradient(135deg,rgba(10,14,20,.96),rgba(14,21,32,.9));border:1px solid rgba(255,255,255,.08);box-shadow:0 10px 30px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.03)}
+#teamChoice{grid-template-columns:74px minmax(180px,1.25fr) minmax(160px,.85fr) 88px 190px;gap:12px}
+#selectedTeamLogoWrap{height:74px;width:74px;border-radius:18px;border:1px solid rgba(255,255,255,.10);background:radial-gradient(circle at 30% 20%,rgba(89,243,255,.12),rgba(89,243,255,0) 45%), linear-gradient(180deg,#101722,#090d14);box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 8px 18px rgba(0,0,0,.25)}
+#selectedTeamLogoWrap .teamLogoSvg{width:62px;height:62px}
+#selectedTeamName{font-size:11px;color:#a8b7c8;margin-top:6px;white-space:normal;line-height:1.25}
+.teamLogoSvg{width:42px;height:42px}
+.teamMiniLogo{width:23px;height:23px;vertical-align:middle;margin-right:7px}
+#chassisInfo{border-radius:12px!important;background:linear-gradient(180deg,#101722,#0b1219)!important;border-color:rgba(255,255,255,.1)!important}
+#schedule{gap:10px;padding-right:4px;scrollbar-gutter:stable}
+.event{padding:11px 11px 10px;border-radius:14px;background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.03));border-color:rgba(255,255,255,.08)}
+.event.current{box-shadow:0 0 0 1px rgba(89,243,255,.18) inset,0 8px 22px rgba(89,243,255,.08)}
+.modeIntro,.weekendNote,.muted.small{line-height:1.38}
+#quick>.grid,#grandprix>.grid,#practice>.grid{align-items:start}
+@media(max-width:980px){.menuHeroMeta{grid-template-columns:repeat(3,minmax(0,1fr))}#teamChoice{grid-template-columns:68px 1fr 1fr;gap:10px}}
+@media(max-width:700px){#menu{padding:14px 14px 16px;border-radius:18px}.menuHeroMeta{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}#menuModeTabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%}#menuModeTabs .tab{min-height:52px}#menuModeRow{top:-6px;padding:8px}#controlsTab{width:100%;min-height:44px}#teamGarage{padding:12px}#selectedTeamLogoWrap{height:66px;width:66px}#selectedTeamLogoWrap .teamLogoSvg{width:54px;height:54px}.grid{grid-template-columns:1fr!important}.card{padding:13px}}
+@media(max-width:620px){#menuModeRow{align-items:stretch;flex-direction:column}#controlsTab{align-self:stretch;margin-top:2px}#teamChoice{grid-template-columns:66px 1fr}.teamChoiceChassis,.teamChoiceColor,.teamChoiceApply{grid-column:1 / -1}#selectedTeamLogoWrap{grid-row:1 / span 2;align-self:start}#teamGarage select,#teamGarage #carColor,#teamGarage #applyTeam,#chassisInfo{height:46px!important}.logo{gap:8px 10px}.logo span{font-size:10px}}
+body.mobile-landscape .menuHeroMeta{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+body.mobile-landscape .heroPill{padding:8px 9px;border-radius:12px}body.mobile-landscape .hpV{font-size:12px}
+body.mobile-landscape #menu{padding:10px 10px 12px}
+body.mobile-landscape #menuModeRow{top:-4px;padding:7px 8px;border-radius:13px}
+body.mobile-landscape #menuModeTabs .tab,body.mobile-landscape #controlsTab{min-height:38px;font-size:10px;padding:7px 8px;border-radius:10px}
+body.mobile-landscape #teamGarage{padding:9px 10px;border-radius:12px}
+body.mobile-landscape #selectedTeamLogoWrap{width:54px;height:54px;border-radius:12px}
+body.mobile-landscape #selectedTeamLogoWrap .teamLogoSvg{width:42px;height:42px}
+body.mobile-landscape #selectedTeamName{font-size:9px}
+body.mobile-landscape .teamLogoSvg{width:28px;height:28px}
+
+
+/* v5.62 menu refinements */
+#menu{position:fixed;overflow:auto;padding-bottom:122px}
+#menu::after{content:"";position:absolute;inset:auto -6% 10px auto;width:min(62vw,760px);height:min(35vw,320px);background-image:url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%201200%20520%27%3E%0A%3Cdefs%3E%0A%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%3Cstop%20offset%3D%270%27%20stop-color%3D%27%238ef7ff%27%20stop-opacity%3D%27.55%27/%3E%3Cstop%20offset%3D%271%27%20stop-color%3D%27%238f74ff%27%20stop-opacity%3D%27.32%27/%3E%3C/linearGradient%3E%0A%3ClinearGradient%20id%3D%27g2%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%270%27%3E%3Cstop%20offset%3D%270%27%20stop-color%3D%27%23ffffff%27%20stop-opacity%3D%27.18%27/%3E%3Cstop%20offset%3D%271%27%20stop-color%3D%27%23ffffff%27%20stop-opacity%3D%270%27/%3E%3C/linearGradient%3E%0A%3C/defs%3E%0A%3Cg%20fill%3D%27none%27%20stroke%3D%27url%28%23g%29%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%0A%3Cpath%20d%3D%27M170%20248h126l64-40h196l56-64h66l36%2064h116l58%2040h130%27%20stroke-width%3D%2718%27/%3E%0A%3Cpath%20d%3D%27M362%20208l-34%2082h132l24-82%27%20stroke-width%3D%2714%27/%3E%0A%3Cpath%20d%3D%27M713%20145l-21%2063h95l-33-63%27%20stroke-width%3D%2714%27/%3E%0A%3Cpath%20d%3D%27M531%20290h122l35%2076H489z%27%20stroke-width%3D%2712%27/%3E%0A%3Cpath%20d%3D%27M590%20141v51%27%20stroke-width%3D%2712%27/%3E%0A%3Cpath%20d%3D%27M233%20181h92v134h-92zM875%20181h92v134h-92z%27%20stroke-width%3D%2717%27/%3E%0A%3Cpath%20d%3D%27M114%20220h68v61h-68zM1015%20220h68v61h-68z%27%20stroke-width%3D%2712%27/%3E%0A%3Cpath%20d%3D%27M377%20126h435%27%20stroke%3D%27url%28%23g2%29%27%20stroke-width%3D%2710%27/%3E%0A%3C/g%3E%0A%3Cg%20fill%3D%27url%28%23g%29%27%20opacity%3D%27.35%27%3E%0A%3Ccircle%20cx%3D%27279%27%20cy%3D%27249%27%20r%3D%2764%27/%3E%3Ccircle%20cx%3D%27923%27%20cy%3D%27249%27%20r%3D%2764%27/%3E%3Ccircle%20cx%3D%27149%27%20cy%3D%27250%27%20r%3D%2743%27/%3E%3Ccircle%20cx%3D%271050%27%20cy%3D%27250%27%20r%3D%2743%27/%3E%0A%3C/g%3E%3C/svg%3E");background-repeat:no-repeat;background-size:contain;background-position:right bottom;opacity:.22;pointer-events:none;z-index:0;filter:drop-shadow(0 18px 36px rgba(0,0,0,.35))}
+#menu>*{position:relative;z-index:1}
+#menuModeRow{position:relative!important;top:auto!important;display:block!important;padding:0!important;margin:0 0 14px!important;background:transparent!important;border:0!important;box-shadow:none!important;backdrop-filter:none!important}
+#menuModeTabs{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px!important}
+#menuModeTabs .tab{min-height:54px}
+#controlsDock{margin-top:16px;display:flex;justify-content:flex-end}
+#controlsTab{min-width:170px}
+#teamGarage{padding:14px 14px 12px;border-radius:20px;background:linear-gradient(180deg,rgba(11,18,27,.95),rgba(8,12,18,.88));border:1px solid rgba(255,255,255,.09)}
+#teamChoice{grid-template-columns:84px minmax(220px,1.4fr) minmax(150px,.9fr) 82px 110px!important;gap:12px;align-items:end}
+#selectedTeamLogoWrap{height:84px!important;width:84px!important;border-radius:20px!important;background:radial-gradient(circle at 28% 24%,rgba(89,243,255,.18),rgba(89,243,255,0) 48%),linear-gradient(180deg,#121c2a,#091019)!important;border:1px solid rgba(255,255,255,.12)!important;box-shadow:0 12px 24px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.05)}
+#selectedTeamLogoWrap .teamLogoSvg{width:70px!important;height:70px!important}
+#selectedTeamName{font-size:11px!important;line-height:1.24;white-space:normal!important;color:#c6d3df!important}
+select{appearance:none;-webkit-appearance:none;-moz-appearance:none;padding:12px 42px 12px 14px!important;border-radius:13px!important;border:1px solid rgba(255,255,255,.14)!important;background-color:#0f1621!important;background-image:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5 7l5 6 5-6' fill='none' stroke='%239ec8ff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"),linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.015))!important;background-repeat:no-repeat,no-repeat!important;background-size:16px 16px,100% 100%!important;background-position:right 14px center,0 0!important;color:#fff!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 6px 16px rgba(0,0,0,.16)}
+select:hover{border-color:rgba(89,243,255,.34)!important} select:focus{outline:none;border-color:rgba(89,243,255,.65)!important;box-shadow:0 0 0 2px rgba(89,243,255,.12), inset 0 1px 0 rgba(255,255,255,.03),0 6px 16px rgba(0,0,0,.16)!important}
+input[type="color"]{min-width:0;border-radius:12px!important;padding:0!important;overflow:hidden;background:#0f1621;border:1px solid rgba(255,255,255,.12)!important}
+#teamGarage #carColor{height:38px!important}
+#teamGarage #applyTeam{height:38px!important;font-size:11px;padding:0 10px;letter-spacing:.04em}
+.teamChoiceApply label{opacity:.75}
+.teamChoiceColor,.teamChoiceApply{align-self:end}
+#chassisInfo{min-height:44px;display:flex;align-items:center}
+.grid.circuitSplit{grid-template-columns:minmax(0,1.02fr) minmax(280px,.98fr)!important}
+.circuitInfoCard{display:flex;flex-direction:column;gap:12px;min-height:100%}
+.circuitHero{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.circuitHeroText b{display:block;font-size:18px;line-height:1.1;margin-bottom:4px}
+.circuitMeta{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.circuitMeta .stat{padding:9px 0}
+.trackPreviewBox{position:relative;display:grid;place-items:center;min-height:190px;border-radius:18px;border:1px solid rgba(255,255,255,.08);background:radial-gradient(circle at 30% 18%,rgba(89,243,255,.08),rgba(89,243,255,0) 42%),linear-gradient(180deg,rgba(6,10,16,.95),rgba(11,18,26,.9));overflow:hidden}
+.trackPreviewBox svg{width:min(100%,290px);height:auto;display:block;filter:drop-shadow(0 6px 12px rgba(0,0,0,.35))}
+.trackPreviewHint{position:absolute;right:10px;bottom:10px;padding:5px 8px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.08);font-size:10px;color:#c7d2de}
+.renderDock{position:absolute;left:14px;right:14px;bottom:14px;border:1px solid rgba(255,255,255,.09);border-radius:16px;background:linear-gradient(180deg,rgba(7,11,17,.95),rgba(10,16,24,.92));overflow:hidden;box-shadow:0 10px 28px rgba(0,0,0,.22)}
+.renderDock summary{list-style:none;cursor:pointer;padding:12px 14px;font-weight:900;letter-spacing:.05em;display:flex;align-items:center;justify-content:space-between}
+.renderDock summary::-webkit-details-marker{display:none}
+.renderDock summary span{color:#9fb0c4;font-size:11px;font-weight:700;letter-spacing:.03em}
+.renderDock .renderBody{padding:0 14px 14px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.renderMini{padding:11px 12px;border-radius:13px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06)}
+.renderMini b{display:block;font-size:11px;color:#95a9bc;margin-bottom:6px} .renderMini div{font-size:13px;font-weight:850;color:#eef4f8}
+@media(max-width:980px){#menuModeTabs{grid-template-columns:repeat(2,minmax(0,1fr))}#teamChoice{grid-template-columns:78px 1fr 1fr 82px 104px!important}.grid.circuitSplit{grid-template-columns:1fr!important}}
+@media(max-width:720px){#menu{padding-bottom:136px}#controlsDock{justify-content:stretch}#controlsTab{width:100%}#teamChoice{grid-template-columns:74px 1fr!important}#selectedTeamLogoWrap{height:76px!important;width:76px!important}#selectedTeamLogoWrap .teamLogoSvg{width:62px!important;height:62px!important}.teamChoiceChassis,.teamChoiceColor,.teamChoiceApply{grid-column:1 / -1}.trackPreviewBox{min-height:170px}.renderDock .renderBody{grid-template-columns:1fr}}
+body.mobile-landscape #menuModeTabs{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:6px!important}
+body.mobile-landscape #menuModeTabs .tab{min-height:38px!important;font-size:10px}
+body.mobile-landscape #controlsDock{margin-top:10px} body.mobile-landscape #controlsTab{min-height:36px!important;font-size:10px}
+body.mobile-landscape #teamChoice{grid-template-columns:54px 1fr 1fr 72px 96px!important;gap:8px} body.mobile-landscape #selectedTeamLogoWrap{height:54px!important;width:54px!important;border-radius:12px!important} body.mobile-landscape #selectedTeamLogoWrap .teamLogoSvg{width:42px!important;height:42px!important} body.mobile-landscape #selectedTeamName{font-size:9px!important} body.mobile-landscape #teamGarage #carColor,body.mobile-landscape #teamGarage #applyTeam{height:32px!important} body.mobile-landscape #menu::after{width:min(60vw,500px);height:min(34vw,220px);opacity:.17} body.mobile-landscape .trackPreviewBox{min-height:118px} body.mobile-landscape .circuitHeroText b{font-size:14px} body.mobile-landscape .circuitMeta{grid-template-columns:1fr 1fr} body.mobile-landscape .renderDock{left:10px;right:10px;bottom:10px} body.mobile-landscape .renderDock summary{padding:9px 11px;font-size:11px} body.mobile-landscape .renderMini{padding:8px 9px}
+
+
+/* v5.63 alignment / large background / dual team colour */
+#menu{padding-bottom:22px!important}
+#menu::after{inset:68px 0 auto 0!important;width:100%!important;height:clamp(280px,43vw,470px)!important;background-size:cover!important;background-position:center 38%!important;opacity:.20!important;filter:drop-shadow(0 20px 42px rgba(0,0,0,.26))!important;-webkit-mask-image:linear-gradient(to bottom,transparent 0%,#000 11%,#000 70%,transparent 100%);mask-image:linear-gradient(to bottom,transparent 0%,#000 11%,#000 70%,transparent 100%)}
+#controlsDock{margin-top:18px!important;padding-top:14px;border-top:1px solid rgba(255,255,255,.07);display:flex!important;justify-content:flex-end!important;position:relative!important}
+.renderDock{position:relative!important;left:auto!important;right:auto!important;bottom:auto!important;margin:10px 0 0!important;width:100%!important;z-index:2}
+#teamGarage{padding:15px 16px 14px!important;margin-bottom:16px!important}
+#teamChoice{display:grid!important;grid-template-columns:92px minmax(220px,1.45fr) minmax(165px,.95fr) 88px 88px 118px!important;gap:12px!important;align-items:end!important}
+.teamChoiceField{min-width:0;align-self:end}
+.teamChoiceField label{margin:0 0 7px!important;line-height:1!important;height:12px;display:block!important}
+#selectedTeamLogoWrap{align-self:end!important;width:92px!important;height:58px!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;display:flex!important;align-items:center!important;justify-content:flex-start!important;overflow:visible!important}
+#selectedTeamLogoWrap .teamLogoSvg{width:82px!important;height:58px!important;overflow:visible!important;filter:drop-shadow(0 8px 14px rgba(0,0,0,.33))}
+#selectedTeamName{display:none!important}
+#chassisInfo{height:44px!important;min-height:44px!important;width:100%!important;display:flex!important;align-items:center!important;padding:0 13px!important;border-radius:13px!important;border:1px solid rgba(255,255,255,.14)!important;background:linear-gradient(180deg,#111925,#0b1118)!important;color:#eaf2f7!important;font-weight:850!important;overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important}
+#teamGarage select{height:44px!important;min-height:44px!important;width:100%!important}
+#teamGarage input[type="color"]{width:100%!important;height:44px!important;min-height:44px!important;padding:4px!important;border-radius:13px!important;border:1px solid rgba(255,255,255,.14)!important;background:#0f1621!important;overflow:hidden!important;display:block!important}
+#teamGarage input[type="color"]::-webkit-color-swatch-wrapper{padding:0!important}
+#teamGarage input[type="color"]::-webkit-color-swatch{border:0!important;border-radius:9px!important}
+#teamGarage input[type="color"]::-moz-color-swatch{border:0!important;border-radius:9px!important}
+#teamGarage #applyTeam{width:100%!important;height:44px!important;min-height:44px!important;margin:0!important;padding:0 10px!important;font-size:10px!important;white-space:nowrap!important}
+.teamChoiceApply label{visibility:hidden!important}
+.teamLogoSvg{background:transparent!important;border:0!important}
+@media(max-width:1020px){#teamChoice{grid-template-columns:82px minmax(210px,1.4fr) minmax(150px,.9fr) 82px 82px 106px!important}#selectedTeamLogoWrap{width:82px!important}#selectedTeamLogoWrap .teamLogoSvg{width:72px!important}}
+@media(max-width:820px){#teamChoice{grid-template-columns:78px minmax(0,1.35fr) minmax(140px,.9fr) 80px 80px!important}.teamChoiceApply{grid-column:2 / -1}.teamChoiceApply label{display:none!important}#teamGarage #applyTeam{margin-top:4px!important}}
+@media(max-width:620px){#teamChoice{grid-template-columns:72px minmax(0,1fr) minmax(72px,.42fr) minmax(72px,.42fr)!important;gap:9px!important}.teamChoiceTeam{grid-column:2 / -1}.teamChoiceChassis{grid-column:1 / -1}.teamChoiceColor{grid-column:2}.teamChoiceAccent{grid-column:3}.teamChoiceApply{grid-column:4}.teamChoiceApply label{display:block!important;visibility:hidden!important}#selectedTeamLogoWrap{grid-row:1!important;grid-column:1!important;width:72px!important;height:58px!important}#selectedTeamLogoWrap .teamLogoSvg{width:68px!important;height:54px!important}#teamGarage #applyTeam{font-size:9px!important;padding:0 6px!important;margin:0!important}}
+body.mobile-landscape #menu::after{inset:46px 0 auto 0!important;width:100%!important;height:clamp(190px,48vh,300px)!important;background-size:cover!important;background-position:center 42%!important;opacity:.17!important}
+body.mobile-landscape #teamChoice{grid-template-columns:58px minmax(150px,1.3fr) minmax(120px,.85fr) 66px 66px 88px!important;gap:7px!important}
+body.mobile-landscape #selectedTeamLogoWrap{width:58px!important;height:42px!important}body.mobile-landscape #selectedTeamLogoWrap .teamLogoSvg{width:56px!important;height:42px!important}
+body.mobile-landscape #teamGarage select,body.mobile-landscape #chassisInfo,body.mobile-landscape #teamGarage input[type="color"],body.mobile-landscape #teamGarage #applyTeam{height:34px!important;min-height:34px!important}
+body.mobile-landscape .teamChoiceField label{font-size:8px!important;height:9px!important;margin-bottom:4px!important}
+body.mobile-landscape #controlsDock{margin-top:10px!important;padding-top:8px!important}
+body.mobile-landscape .renderDock{margin-top:6px!important}
+
+
+/* v5.80 · Progressive mobile graphics control */
+.renderQualityControl{grid-column:1/-1;margin-top:4px;padding:13px 14px;border:1px solid rgba(89,243,255,.16);border-radius:14px;background:linear-gradient(180deg,rgba(14,22,32,.88),rgba(8,13,20,.88))}
+.renderQualityHead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:9px}.renderQualityHead b{font-size:11px;letter-spacing:.06em}.renderQualityHead span{font-size:10px;color:#8fefff;font-weight:900}
+#renderQuality{width:100%;height:28px;margin:0;accent-color:#59f3ff;cursor:pointer}
+.qualityScale{display:flex;justify-content:space-between;margin-top:-2px;color:#788899;font-size:8px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
+.qualityStats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:10px}.qualityStat{padding:7px 8px;border-radius:9px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.055)}.qualityStat span{display:block;color:#778697;font-size:7px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}.qualityStat b{display:block;margin-top:2px;font-size:10px;color:#e9f4fa;white-space:nowrap}
+.qualityHint{margin-top:8px;color:#8595a5;font-size:8px;line-height:1.35}
+@media(max-width:680px){.qualityStats{grid-template-columns:repeat(2,minmax(0,1fr))}.renderQualityControl{padding:10px 11px}.renderQualityHead{align-items:flex-start;flex-direction:column;gap:3px}}
+
+/* v5.84 · Demo / autopilot review mode */
+.demoModeControl{margin:10px 0 2px;padding:10px 13px;border:1px solid rgba(255,214,107,.16);border-radius:13px;background:rgba(255,214,107,.035)}
+.demoModeControl label{display:flex;align-items:center;gap:10px;cursor:pointer;margin:0}.demoModeControl input{width:18px;height:18px;accent-color:#ffd66b;flex:0 0 auto}.demoModeControl b{display:block;font-size:10px;letter-spacing:.08em;color:#ffe39a}.demoModeControl small{display:block;margin-top:2px;color:#8796a6;font-size:8px;line-height:1.25}
+.driveProfileControl{margin:10px 0 2px;padding:10px 13px;border:1px solid rgba(111,238,190,.18);border-radius:13px;background:rgba(111,238,190,.035)}.driveProfileControl label{margin:0;display:grid;grid-template-columns:minmax(150px,.8fr) minmax(190px,1fr);gap:12px;align-items:center}.driveProfileControl label span{font-size:10px;font-weight:950;letter-spacing:.08em;color:#9ff3c8}.driveProfileControl select{min-height:38px!important}.driveProfileControl small{display:block;margin-top:6px;color:#879baa;font-size:8px;line-height:1.35}@media(max-width:620px){.driveProfileControl label{grid-template-columns:1fr;gap:5px}}
+#toolLeft #demo{min-width:48px;color:#ffd66b}#toolLeft #demo.on{background:rgba(255,214,107,.18);border-color:rgba(255,214,107,.48);color:#fff1bd}
+body.demo-active #left,body.demo-active #right,body.demo-active #gas,body.demo-active #brake{display:none!important}
+body.mobile-landscape #toolLeft #demo{min-width:35px}
+
+
+
+/* v5.103 · HUD de tres zonas */
+.top{top:max(8px,env(safe-area-inset-top));left:0;right:0;display:block;pointer-events:none}
+#speedBox{position:fixed;top:max(8px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);width:clamp(178px,18vw,238px);z-index:12}
+#timeBox{position:fixed;top:max(8px,env(safe-area-inset-top));right:max(10px,env(safe-area-inset-right));width:clamp(180px,17vw,230px);z-index:12}
+.speedMain{gap:7px}.gearStack{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;min-width:42px;margin-left:3px;vertical-align:middle}#gear{display:block;margin:0!important;line-height:.86}#rpm{display:block;margin-top:4px;font-size:7px;line-height:1;color:#aab7c7;letter-spacing:.08em;font-weight:850;font-variant-numeric:tabular-nums;white-space:nowrap}
+#lb{--tower-row-h:23px;top:max(8px,env(safe-area-inset-top));bottom:max(48px,calc(env(safe-area-inset-bottom) + 46px));width:clamp(160px,16.8vw,190px);max-height:none;height:auto;display:flex;flex-direction:column;overflow:hidden}#lb .towerRows{flex:1 1 auto;min-height:0;overflow:hidden;display:flex;flex-direction:column}#lb .towerRows .lbr{height:var(--tower-row-h);min-height:var(--tower-row-h);flex:0 0 var(--tower-row-h)}
+#lb .tvgp{display:grid;grid-template-columns:34px minmax(0,1fr);column-gap:7px;align-items:start;padding:7px 8px 6px}
+#lb .gpCountryStack{display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0}
+#lb .gpTextStack{display:flex;flex-direction:column;min-width:0;padding-top:1px}
+#lb .gpTitle{font-size:11px;font-weight:950;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#lb .gpCityWx{margin-top:4px;font-size:8px;line-height:1.1;color:#d8e3ef;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.04em;text-transform:none}
+#lb .gpFlag{height:18px;display:flex;align-items:center}#lb .gpFlag .flagVec{margin-right:0!important;transform:scale(.86);transform-origin:left center}
+#lb .gpAbbr{min-width:27px;height:16px;padding:0 4px}
+#toolLeft{left:max(12px,env(safe-area-inset-left));bottom:0}
+#toolLeft #invert,#toolLeft #diag{display:none!important}
+@media(pointer:fine){#toolLeft #gyro,#toolLeft #center{display:none!important}}
+@media(max-width:680px) and (orientation:portrait){#lb{display:none}}
+body.mobile-landscape #speedBox{top:max(3px,env(safe-area-inset-top));width:clamp(132px,26vw,176px)}
+body.mobile-landscape #timeBox{top:max(3px,env(safe-area-inset-top));right:max(5px,env(safe-area-inset-right));width:clamp(118px,22vw,154px)}
+body.mobile-landscape #speedBox #speed{font-size:24px}body.mobile-landscape #speedBox #gear{font-size:19px}body.mobile-landscape #rpm{font-size:5.5px;margin-top:2px}
+body.mobile-landscape #lb{--tower-row-h:18px;top:max(3px,env(safe-area-inset-top));bottom:max(34px,calc(env(safe-area-inset-bottom) + 31px));width:clamp(118px,25vw,142px);max-height:none;height:auto}
+body.mobile-landscape #lb .tvgp{grid-template-columns:26px minmax(0,1fr);column-gap:4px;padding:4px 5px}body.mobile-landscape #lb .gpTitle{font-size:8px}body.mobile-landscape #lb .gpCityWx{font-size:5.5px;margin-top:2px}body.mobile-landscape #lb .gpAbbr{min-width:20px;height:12px;font-size:7px}body.mobile-landscape #lb .gpFlag{height:13px}body.mobile-landscape #lb .gpFlag .flagVec{transform:scale(.70)}
+body.mobile-landscape #toolLeft{left:max(6px,env(safe-area-inset-left));bottom:0}
+body.mobile-landscape #toolLeft #gyro,body.mobile-landscape #toolLeft #center,body.mobile-landscape #toolLeft #demo,body.mobile-landscape #toolLeft #telemetryBtn,body.mobile-landscape #toolLeft #ers{display:inline-flex!important}
+body.mobile-landscape.short-landscape #toolLeft #telemetryBtn{display:inline-flex!important}
+
+
+/* v5.105 · Torre completa: prioridad sobre compact y filas sin hueco inferior */
+#lb{--tower-min-row-h:21px!important;}
+body.compact #lb{
+  top:max(8px,env(safe-area-inset-top))!important;
+  bottom:max(48px,calc(env(safe-area-inset-bottom) + 46px))!important;
+  max-height:none!important;
+  height:auto!important;
+  --tower-min-row-h:19px!important;
+}
+#lb .towerRows{
+  flex:1 1 auto!important;
+  min-height:0!important;
+  display:flex!important;
+  flex-direction:column!important;
+  overflow:hidden!important;
+}
+#lb .towerRows .lbr{
+  height:auto!important;
+  min-height:var(--tower-min-row-h)!important;
+  flex:1 1 0!important;
+}
+body.mobile-landscape #lb{
+  top:max(3px,env(safe-area-inset-top))!important;
+  bottom:max(34px,calc(env(safe-area-inset-bottom) + 31px))!important;
+  max-height:none!important;
+  height:auto!important;
+  --tower-min-row-h:16px!important;
+}
+body.mobile-landscape.short-landscape #lb{
+  top:max(3px,env(safe-area-inset-top))!important;
+  bottom:max(34px,calc(env(safe-area-inset-bottom) + 31px))!important;
+  max-height:none!important;
+}
+
+
+/* v5.106 · Torre: logo en columna propia + diferencia real para TÚ */
+#lb .lbr{
+  grid-template-columns:20px minmax(24px,1fr) 19px 16px 40px!important;
+  column-gap:4px!important;
+}
+#lb .ldriver{
+  display:block!important;
+  min-width:0!important;
+  overflow:hidden!important;
+}
+#lb .ldc{
+  display:block!important;
+  width:100%!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+#lb .tvlogo{
+  grid-column:auto!important;
+  width:19px!important;
+  height:19px!important;
+  min-width:19px!important;
+  flex:none!important;
+  justify-self:center!important;
+  align-self:center!important;
+  display:grid!important;
+  place-items:center!important;
+  padding:0!important;
+  margin:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  overflow:visible!important;
+}
+#lb .tvlogo svg{
+  width:18px!important;
+  height:18px!important;
+  max-width:none!important;
+  display:block!important;
+  overflow:visible!important;
+  filter:drop-shadow(0 0 1px rgba(255,255,255,.45)) drop-shadow(0 1px 1px rgba(0,0,0,.8));
+}
+body.mobile-landscape #lb .lbr{
+  grid-template-columns:14px minmax(18px,1fr) 14px 12px 30px!important;
+  column-gap:3px!important;
+}
+body.mobile-landscape #lb .tvlogo{width:14px!important;height:14px!important;min-width:14px!important}
+body.mobile-landscape #lb .tvlogo svg{width:14px!important;height:14px!important}
+
+
+
+/* v5.107 · Barra inferior compacta: iconos o abreviaturas de 3 letras, sin checks */
+#toolLeft .tb{
+  width:36px!important;min-width:36px!important;max-width:36px!important;
+  padding:0!important;justify-content:center!important;
+  font-size:8px!important;letter-spacing:.08em!important;
+}
+#toolLeft #demo,#toolLeft #telemetryBtn,#toolLeft #ers,#toolLeft #gyro,#toolLeft #center,#toolLeft #invert,#toolLeft #diag{min-width:36px!important}
+#toolLeft .tb.on{
+  box-shadow:0 0 0 1px rgba(89,243,255,.32) inset,0 0 13px rgba(89,243,255,.20)!important;
+}
+#toolLeft #demo.on{box-shadow:0 0 0 1px rgba(255,214,107,.35) inset,0 0 13px rgba(255,214,107,.18)!important}
+#toolRight .tb{padding-left:0!important;padding-right:0!important;text-align:center!important;justify-content:center!important}
+body.compact #toolLeft .tb{width:34px!important;min-width:34px!important;max-width:34px!important;font-size:7px!important}
+body.mobile-landscape #toolLeft .tb{width:31px!important;min-width:31px!important;max-width:31px!important;padding:0!important;font-size:6.5px!important;letter-spacing:.06em!important}
+body.mobile-landscape #toolLeft #demo,body.mobile-landscape #toolLeft #telemetryBtn,body.mobile-landscape #toolLeft #ers,body.mobile-landscape #toolLeft #gyro,body.mobile-landscape #toolLeft #center{min-width:31px!important}
+
+
+/* v5.113 · Recovery Planner 2.0: elige hueco, estrategia y reincorporación segura */
+/* v5.117 · AUT anti-stall + zero-speed brake fix */
+/* v5.118 · AUT technical gates for chicanes / hairpins + short recovery horizon */
+/* v5.119 · Chicane escape recovery + solo Free Practice timing HUD */
+/* v5.120 · AUT local corner learning + strict technical mode + simple solo practice HUD */
+#lb.practiceSolo{--tower-min-row-h:0!important}
+#lb.practiceSolo .practiceStats{display:flex;flex-direction:column;flex:1 1 auto;min-height:0;padding:8px;background:linear-gradient(180deg,rgba(4,8,14,.20),rgba(4,8,14,.48));gap:6px}
+#lb.practiceSolo .practiceStat{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;padding:7px 7px 6px;border-radius:7px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.055)}
+#lb.practiceSolo .practiceStat span{font-size:7px;font-weight:850;letter-spacing:.13em;color:#aebac8;text-transform:uppercase}
+#lb.practiceSolo .practiceStat b{font-size:15px;line-height:1;font-weight:950;color:#f5f7fa;font-variant-numeric:tabular-nums;white-space:nowrap}
+#lb.practiceSolo .practiceStat.primary{border-left:2px solid #e33524}
+#lb.practiceSolo .practiceStat.delta b{font-size:17px}
+#lb.practiceSolo .practiceStat.delta.gain b{color:#71f3a5}
+#lb.practiceSolo .practiceStat.delta.loss b{color:#ff7785}
+#lb.practiceSolo .practiceStat.delta.neutral b{color:#d7e0ea}
+#lb.practiceSolo .practiceHint{margin-top:auto;padding:5px 2px 1px;font-size:6.5px;line-height:1.3;letter-spacing:.06em;color:#8895a5;text-transform:uppercase}
+body.mobile-landscape #lb.practiceSolo .practiceStats{padding:5px;gap:4px}
+body.mobile-landscape #lb.practiceSolo .practiceStat{padding:4px 4px 3px;border-radius:5px}
+body.mobile-landscape #lb.practiceSolo .practiceStat span{font-size:5px}
+body.mobile-landscape #lb.practiceSolo .practiceStat b{font-size:10px}
+body.mobile-landscape #lb.practiceSolo .practiceStat.delta b{font-size:11px}
+body.mobile-landscape #lb.practiceSolo .practiceHint{font-size:5px;padding:2px 1px 0}
+
+/* v5.120 · Entrenamiento libre: vuelve al aspecto de torre, sólo TÚ + vuelta + delta */
+#lb.practiceSolo{--tower-min-row-h:21px!important}
+#lb.practiceSolo .soloPracticeRows{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;background:rgba(4,8,14,.22)}
+#lb.practiceSolo .soloPracticeRow{display:grid!important;grid-template-columns:30px minmax(0,1fr) auto!important;column-gap:7px!important;align-items:center!important;min-height:30px!important;height:auto!important;flex:0 0 30px!important;padding:5px 7px!important}
+#lb.practiceSolo .soloPracticeRow .lpos{width:30px!important}
+#lb.practiceSolo .soloLapTime{font-size:13px;font-weight:950;font-variant-numeric:tabular-nums;color:#f5f7fa;white-space:nowrap}
+#lb.practiceSolo .soloDelta{font-size:11px;font-weight:950;font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
+#lb.practiceSolo .soloDelta.gain{color:#71f3a5}
+#lb.practiceSolo .soloDelta.loss{color:#ff7785}
+#lb.practiceSolo .soloDelta.neutral{color:#d7e0ea}
+body.mobile-landscape #lb.practiceSolo .soloPracticeRow{grid-template-columns:22px minmax(0,1fr) auto!important;column-gap:4px!important;min-height:22px!important;flex-basis:22px!important;padding:3px 4px!important}
+body.mobile-landscape #lb.practiceSolo .soloPracticeRow .lpos{width:22px!important}
+body.mobile-landscape #lb.practiceSolo .soloLapTime{font-size:8px}
+body.mobile-landscape #lb.practiceSolo .soloDelta{font-size:7px}
+
+#lb .gpCircuit{
+  margin-top:2px;font-size:9px;line-height:1.05;font-weight:900;letter-spacing:.055em;
+  color:#f2f6fa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase;
+}
+#lb .gpCityWx{margin-top:3px!important;color:#b9c6d4!important}
+#lb .towerRows{position:relative!important}
+#lb .lbr{
+  grid-template-columns:20px minmax(23px,1fr) 19px 16px 35px 10px!important;
+  column-gap:3px!important;
+}
+#lb .lbr.you .ldc{color:#9feeff!important}
+#lb .tvgap.self{color:#e6ebf2!important}
+#lb .fastLapMark{
+  width:10px;height:10px;display:grid;place-items:center;justify-self:end;align-self:center;
+  color:#c77dff;opacity:0;visibility:hidden;filter:drop-shadow(0 0 3px rgba(199,125,255,.65));
+}
+#lb .lbr.fastestLap .fastLapMark{opacity:1;visibility:visible}
+#lb .fastLapMark svg{width:10px;height:10px;display:block;overflow:visible}
+#lb .lbr.fastestLap.freshFastest .tvgap{color:#d59aff!important}
+#lb .lbr.fastestLap.freshFastest .fastLapMark{animation:fastLapPulse .55s ease-in-out 4}
+@keyframes fastLapPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.26);opacity:.72}}
+#lb .fastLapToast{
+  position:absolute;z-index:5;left:4px;right:4px;top:3px;height:27px;padding:3px 6px;
+  display:flex;align-items:center;justify-content:space-between;gap:5px;border-radius:6px;
+  border:1px solid rgba(199,125,255,.55);background:rgba(31,12,45,.94);
+  box-shadow:0 5px 16px rgba(0,0,0,.35);color:#f3dcff;pointer-events:none;
+  font-size:7px;font-weight:950;letter-spacing:.07em;text-transform:uppercase;
+}
+#lb .fastLapToast b{font-size:9px;color:#d69cff;font-variant-numeric:tabular-nums;letter-spacing:0}
+.timeRow.bestRow .timeVal{color:#c77dff!important}
+body.mobile-landscape #lb .gpCircuit{font-size:6px;margin-top:1px;letter-spacing:.04em}
+body.mobile-landscape #lb .gpCityWx{margin-top:1.5px!important}
+body.mobile-landscape #lb .lbr{
+  grid-template-columns:14px minmax(18px,1fr) 14px 12px 26px 8px!important;
+  column-gap:2px!important;
+}
+body.mobile-landscape #lb .fastLapMark,body.mobile-landscape #lb .fastLapMark svg{width:8px;height:8px}
+body.mobile-landscape #lb .fastLapToast{left:2px;right:2px;top:2px;height:21px;padding:2px 4px;font-size:5px;border-radius:5px}
+body.mobile-landscape #lb .fastLapToast b{font-size:7px}
+@media(prefers-reduced-motion:reduce){#lb .lbr.fastestLap.freshFastest .fastLapMark{animation:none}}
+
+
+/* v5.121 · Entrenamiento libre en solitario: torre autoajustable, sin hueco muerto */
+#lb.practiceSolo{
+  bottom:auto!important;height:auto!important;max-height:none!important;min-height:0!important;
+  display:flex!important;flex-direction:column!important;background:rgba(4,7,12,.52)!important;
+}
+body.compact #lb.practiceSolo,body.mobile-landscape #lb.practiceSolo,body.mobile-landscape.short-landscape #lb.practiceSolo{
+  bottom:auto!important;height:auto!important;max-height:none!important;min-height:0!important;
+}
+#lb.practiceSolo .soloSessionClock{
+  display:grid;grid-template-columns:1fr auto;align-items:end;gap:8px;padding:7px 8px 6px;
+  background:linear-gradient(180deg,rgba(245,249,253,.96),rgba(224,232,240,.94));
+  border-top:1px solid rgba(255,255,255,.70);border-bottom:1px solid rgba(0,0,0,.22);color:#111820;
+}
+#lb.practiceSolo .soloSessionClock span{font-size:7px;line-height:1;font-weight:950;letter-spacing:.13em;color:#52606d;text-transform:uppercase}
+#lb.practiceSolo .soloSessionClock b{font-size:16px;line-height:1;font-weight:950;font-variant-numeric:tabular-nums;white-space:nowrap;color:#111820}
+#lb.practiceSolo .soloPracticeRows{
+  flex:0 0 auto!important;min-height:0!important;display:block!important;overflow:visible!important;background:transparent!important;
+}
+#lb.practiceSolo .soloPracticeCard{
+  display:grid;grid-template-columns:34px minmax(0,1fr);align-items:stretch;min-height:50px;background:rgba(0,0,0,.28);
+}
+#lb.practiceSolo .soloWho{
+  display:flex;align-items:center;justify-content:center;margin:5px 0 5px 5px;border-radius:4px;
+  background:#f1f2f4;color:#111;font-size:10px;font-weight:950;letter-spacing:.02em;
+}
+#lb.practiceSolo .soloLapStack{display:flex;flex-direction:column;justify-content:center;min-width:0;padding:3px 6px 3px 7px}
+#lb.practiceSolo .soloLapLine{
+  display:grid;grid-template-columns:58px minmax(0,1fr);align-items:center;gap:6px;min-height:21px;
+  border-bottom:1px solid rgba(255,255,255,.055);font-variant-numeric:tabular-nums;
+}
+#lb.practiceSolo .soloLapLine:last-child{border-bottom:0}
+#lb.practiceSolo .soloLapNo{font-size:8px;font-weight:950;letter-spacing:.08em;color:#aebac8}
+#lb.practiceSolo .soloLapLine b{font-size:11px;font-weight:950;text-align:right;color:#f4f7fa;white-space:nowrap}
+#lb.practiceSolo .soloLapLine.current .soloLapNo{color:#9feeff}
+#lb.practiceSolo .soloDelta.gain{color:#71f3a5!important}
+#lb.practiceSolo .soloDelta.loss{color:#ff7785!important}
+#lb.practiceSolo .soloDelta.neutral{color:#d7e0ea!important}
+body.mobile-landscape #lb.practiceSolo .soloSessionClock{padding:4px 5px 4px;gap:4px}
+body.mobile-landscape #lb.practiceSolo .soloSessionClock span{font-size:5px}
+body.mobile-landscape #lb.practiceSolo .soloSessionClock b{font-size:11px}
+body.mobile-landscape #lb.practiceSolo .soloPracticeCard{grid-template-columns:25px minmax(0,1fr);min-height:38px}
+body.mobile-landscape #lb.practiceSolo .soloWho{margin:3px 0 3px 3px;font-size:7px}
+body.mobile-landscape #lb.practiceSolo .soloLapStack{padding:2px 4px 2px 5px}
+body.mobile-landscape #lb.practiceSolo .soloLapLine{grid-template-columns:42px minmax(0,1fr);gap:3px;min-height:16px}
+body.mobile-landscape #lb.practiceSolo .soloLapNo{font-size:5.5px}
+body.mobile-landscape #lb.practiceSolo .soloLapLine b{font-size:7px}
+
+
+/* --- v5.122 Broadcast finish boards --- */
+#finish.finishPanel{background:linear-gradient(145deg,#090d18 0%,#101728 45%,#0c1221 100%);border:1px solid rgba(255,255,255,.08);box-shadow:0 18px 46px rgba(0,0,0,.42);padding:0;overflow:hidden}
+#finish.finishPanel::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 86% 18%,rgba(227,30,36,.18),transparent 28%),radial-gradient(circle at 88% 18%,rgba(227,30,36,.18) 0 1.8px,transparent 2px);background-size:auto,18px 18px;opacity:.75;pointer-events:none}
+#finish.finishPanel::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(125deg,rgba(255,255,255,.03) 0 34px,rgba(255,255,255,0) 34px 86px);mix-blend-mode:screen;pointer-events:none}
+.finishBroadcast{position:relative;z-index:1;display:flex;flex-direction:column;gap:0;min-height:0;height:min(88vh,860px)}
+.finishHero{padding:18px 24px 8px;border-bottom:3px solid #e21e24;text-align:center}
+.finishBrand{display:inline-flex;align-items:center;gap:12px;margin-bottom:8px}
+.finishBrandWing{position:relative;display:inline-block;width:74px;height:26px}
+.finishBrandWing::before,.finishBrandWing::after{content:"";position:absolute;left:0;top:4px;height:8px;background:#e21e24;border-radius:2px;transform:skewX(-28deg)}
+.finishBrandWing::before{width:46px;box-shadow:20px 10px 0 #e21e24}
+.finishBrandWing::after{width:66px;top:0;height:10px}
+.finishBrandWord{font-weight:1000;letter-spacing:.06em;color:#f4f7fb;font-size:15px}
+#finishGpTitle{margin:0;color:#fff;font-size:42px;line-height:1.02;font-weight:1000;letter-spacing:.04em;text-transform:uppercase}
+.finishSessionTitle{margin-top:6px;color:#e9eef5;font-size:24px;line-height:1.05;letter-spacing:.04em;text-transform:uppercase}
+.finishSummaryBar{display:flex;flex-wrap:wrap;gap:10px;padding:12px 24px 10px;justify-content:center}
+.finishChip{display:flex;align-items:baseline;gap:8px;padding:9px 13px;border-radius:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.08);color:#fff;box-shadow:0 8px 18px rgba(0,0,0,.18)}
+.finishChip span{font-size:10px;line-height:1;font-weight:900;letter-spacing:.12em;color:#a9b4c1;text-transform:uppercase}
+.finishChip b{font-size:18px;line-height:1;font-weight:1000;font-variant-numeric:tabular-nums;white-space:nowrap}
+.finishBoardWrap{flex:1 1 auto;min-height:0;overflow:auto;padding:6px 24px 12px}
+.finishTable{width:100%;border-collapse:separate;border-spacing:0 4px;color:#fff;font-variant-numeric:tabular-nums}
+.finishTable thead th{padding:8px 10px;font-size:11px;line-height:1;font-style:italic;font-weight:900;letter-spacing:.04em;color:#1c2127;background:rgba(240,242,245,.92);text-transform:uppercase}
+.finishTable thead th:first-child{border-top-left-radius:8px}
+.finishTable thead th:last-child{border-top-right-radius:8px}
+.finishTable tbody tr{background:rgba(17,25,39,.68)}
+.finishTable tbody tr.you{background:linear-gradient(90deg,rgba(34,46,72,.92),rgba(20,30,48,.92));box-shadow:inset 4px 0 0 #6ed8ff}
+.finishTable tbody tr.best{background:rgba(240,242,245,.95);color:#0c1015}
+.finishTable tbody td{padding:8px 10px;vertical-align:middle}
+.finishTable tbody td.pos{width:44px;text-align:center;font-weight:1000;font-size:14px}
+.finishTable tbody td.driver{font-size:14px;line-height:1.05;font-weight:950;text-transform:uppercase;white-space:nowrap}
+.finishTable tbody td.driver small{display:block;font-size:10px;font-weight:700;letter-spacing:.02em;color:#a9b4c1}
+.finishTable tbody tr.best td.driver small{color:#4c5562}
+.finishTable tbody td.team{text-align:center;width:90px}
+.finishTable tbody td.metric,.finishTable tbody td.metric2{text-align:right;white-space:nowrap;font-weight:900;font-size:14px}
+.finishTable tbody td.metric2{width:78px}
+.finishTable tbody td.center{text-align:center}
+.finishTeamLogo{width:28px;height:28px;display:inline-block;vertical-align:middle}
+.finishBestFlag{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:#b053ff;color:#fff;font-size:11px;font-weight:1000;margin-left:8px;box-shadow:0 0 0 2px rgba(176,83,255,.22)}
+.finishPageTitle{color:#fff;font-size:16px;font-weight:1000;letter-spacing:.08em;text-transform:uppercase;margin:2px 0 10px}
+.finishMuted{color:#a7b3c2;font-size:12px}
+.finishPager{display:flex;align-items:center;justify-content:center;gap:8px;padding:0 0 10px}
+.finishDot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.22);box-shadow:inset 0 0 0 1px rgba(255,255,255,.10)}
+.finishDot.on{background:#e21e24;box-shadow:0 0 0 3px rgba(226,30,36,.16)}
+.finishFooter{padding:4px 24px 18px}
+.finishActions{justify-content:center}
+.finishLapList{display:grid;grid-template-columns:1fr;gap:4px}
+.finishLapRow{display:grid;grid-template-columns:68px 1fr 120px 90px;gap:10px;align-items:center;padding:9px 12px;border-radius:10px;background:rgba(17,25,39,.7);border:1px solid rgba(255,255,255,.06);color:#f5f8fc;font-variant-numeric:tabular-nums}
+.finishLapRow.head{background:rgba(240,242,245,.92);color:#1a2028;font-style:italic;font-weight:900;text-transform:uppercase;letter-spacing:.04em}
+.finishLapRow.you{box-shadow:inset 4px 0 0 #6ed8ff}
+.finishLapCell.right{text-align:right}
+.finishLapCell.center{text-align:center}
+.finishLapCell.deltaUp{color:#ff8e98;font-weight:950}
+.finishLapCell.deltaDn{color:#7df7a5;font-weight:950}
+.finishLapCell.deltaEq{color:#e5edf5;font-weight:950}
+.finishTwoCol{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,34%);gap:18px}
+.finishSideCard{border:1px solid rgba(255,255,255,.08);background:rgba(10,16,28,.58);border-radius:14px;padding:12px}
+.finishSummaryLine{display:grid;grid-template-columns:1fr auto;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.08);color:#eff4fb;font-variant-numeric:tabular-nums}
+.finishSummaryLine:last-child{border-bottom:0}
+.finishSummaryLine span{color:#aab5c1;font-size:11px;font-weight:900;letter-spacing:.1em;text-transform:uppercase}
+.finishSummaryLine b{font-size:16px;font-weight:1000}
+@media (max-width:980px){
+  .finishBroadcast{height:min(92vh,900px)}
+  #finishGpTitle{font-size:34px}
+  .finishSessionTitle{font-size:21px}
+  .finishBoardWrap{padding:6px 14px 10px}
+  .finishFooter{padding:4px 14px 14px}
+  .finishTable tbody td.driver{font-size:13px}
+  .finishLapRow{grid-template-columns:52px 1fr 98px 82px;gap:8px;padding:8px 9px}
+  .finishTwoCol{grid-template-columns:1fr}
+}
+@media (max-width:760px){
+  .finishHero{padding:14px 12px 8px}
+  .finishBrandWord{font-size:12px}
+  .finishBrandWing{width:60px;height:22px}
+  #finishGpTitle{font-size:26px}
+  .finishSessionTitle{font-size:17px}
+  .finishSummaryBar{gap:8px;padding:10px 12px 8px}
+  .finishChip{padding:7px 10px;gap:6px;border-radius:8px}
+  .finishChip span{font-size:8px}.finishChip b{font-size:14px}
+  .finishTable thead th{font-size:8px;padding:7px 6px}
+  .finishTable tbody td{padding:7px 6px}
+  .finishTable tbody td.pos{width:28px;font-size:12px}
+  .finishTable tbody td.driver{font-size:10px}
+  .finishTable tbody td.driver small{font-size:8px}
+  .finishTable tbody td.metric,.finishTable tbody td.metric2{font-size:11px}
+  .finishTeamLogo{width:20px;height:20px}
+  .finishBestFlag{width:14px;height:14px;font-size:9px;margin-left:4px}
+  .finishFooter{padding:4px 12px 12px}
+  .finishPager{padding-bottom:8px}
+  .finishLapRow{grid-template-columns:42px 1fr 78px 64px;gap:5px;padding:7px 8px;font-size:10px}
+  .finishPageTitle{font-size:13px;margin-bottom:8px}
+  .finishSummaryLine b{font-size:13px}
+}
+
+
+/* v5.135 · Resultado final realmente responsive en pantallas horizontales bajas */
+@media (orientation:landscape) and (max-height:560px){
+  #finish.finishPanel{width:min(1180px,98vw);max-height:98dvh;border-radius:10px}
+  .finishBroadcast{height:96dvh;max-height:96dvh}
+  .finishHero{padding:5px 10px 4px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;column-gap:8px;text-align:left;border-bottom-width:2px}
+  .finishBrand{margin:0;gap:5px;min-width:0}
+  .finishBrandWing{width:34px;height:15px;transform:scale(.68);transform-origin:left center;margin-right:-9px}
+  .finishBrandWord{font-size:8px;white-space:nowrap}
+  #finishGpTitle{min-width:0;font-size:clamp(16px,3.6vw,24px);line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .finishSessionTitle{margin:0;font-size:10px;line-height:1;white-space:nowrap}
+  .finishSummaryBar{flex-wrap:nowrap;justify-content:flex-start;overflow-x:auto;gap:4px;padding:4px 8px 3px;scrollbar-width:none}
+  .finishSummaryBar::-webkit-scrollbar{display:none}
+  .finishChip{flex:0 0 auto;padding:4px 6px;gap:4px;border-radius:6px}
+  .finishChip span{font-size:6px}.finishChip b{font-size:10px}
+  .finishBoardWrap{padding:2px 8px 3px;overscroll-behavior:contain}
+  .finishTable{border-spacing:0 2px}
+  .finishTable thead{position:sticky;top:0;z-index:3}
+  .finishTable thead th{font-size:7px;padding:4px 5px}
+  .finishTable tbody td{padding:4px 5px}
+  .finishTable tbody td.pos{width:26px;font-size:10px}
+  .finishTable tbody td.driver{font-size:9px}
+  .finishTable tbody td.driver small{font-size:7px}
+  .finishTable tbody td.team{width:48px}
+  .finishTable tbody td.metric,.finishTable tbody td.metric2{font-size:9px}
+  .finishTable tbody td.metric2{width:46px}
+  .finishTeamLogo{width:17px;height:17px}
+  .finishBestFlag{width:12px;height:12px;font-size:8px;margin-left:3px}
+  .finishPageTitle{font-size:10px;margin:0 0 4px}
+  .finishLapRow{grid-template-columns:36px 1fr 70px 58px;gap:4px;padding:4px 6px;font-size:9px}
+  .finishTwoCol{gap:6px}
+  .finishSideCard{padding:6px;border-radius:8px}
+  .finishSummaryLine{padding:4px 0}
+  .finishSummaryLine span{font-size:7px}.finishSummaryLine b{font-size:10px}
+  .finishFooter{padding:1px 8px 4px;display:flex;align-items:center;justify-content:center;gap:8px}
+  .finishPager{padding:0;gap:5px}
+  .finishDot{width:6px;height:6px}
+  .finishActions{gap:4px}
+  .finishActions .btn{min-height:24px;padding:4px 9px;font-size:8px}
+}
+@media (orientation:landscape) and (max-height:430px){
+  .finishBrandWing,.finishBrandWord{display:none}
+  .finishHero{grid-template-columns:minmax(0,1fr) auto;padding-block:4px}
+  #finishGpTitle{font-size:15px}
+  .finishSessionTitle{font-size:9px}
+  .finishSummaryBar{padding-block:3px}
+}
+
+/* v5.140 · Resumen final nunca colapsa en horizontal bajo */
+#finish.finishPanel .finishHero{flex:0 0 auto}
+#finish.finishPanel .finishSummaryBar{flex:0 0 auto;min-height:38px;box-sizing:border-box;position:relative;z-index:4}
+#finish.finishPanel .finishBoardWrap{flex:1 1 0;min-height:0}
+#finish.finishPanel .finishFooter{flex:0 0 auto}
+@media (orientation:landscape) and (max-height:560px){
+  #finish.finishPanel .finishSummaryBar{min-height:27px;padding-top:4px!important;padding-bottom:4px!important}
+  #finish.finishPanel .finishChip{min-height:19px;box-sizing:border-box}
+  #finish.finishPanel .finishBoardWrap{padding-top:4px!important}
+}
+@media (orientation:landscape) and (max-height:380px){
+  #finish.finishPanel .finishSummaryBar{min-height:25px}
+}
+
+/* v5.138 · Legibilidad del panel final + logos con pastilla */
+#finish.finishPanel{width:min(1220px,96vw);max-height:min(95dvh,920px);border-radius:18px}
+#finish.finishPanel #finishGpTitle{color:#f7fbff;font-style:normal;font-size:clamp(24px,4.2vw,44px);line-height:1.02;letter-spacing:.025em;text-shadow:0 2px 18px rgba(0,0,0,.32);margin:0;white-space:normal;overflow-wrap:anywhere}
+#finish.finishPanel #finishSessionTitle{color:#ecf2f8;font-style:normal;font-weight:900}
+#finish.finishPanel .finishBoardWrap{scrollbar-width:thin;scrollbar-color:rgba(74,216,255,.7) rgba(255,255,255,.08)}
+#finish.finishPanel .finishBoardWrap::-webkit-scrollbar{width:10px;height:10px}
+#finish.finishPanel .finishBoardWrap::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#61e9ff,#2aa8ff);border-radius:999px}
+#finish.finishPanel .finishTable{table-layout:fixed}
+#finish.finishPanel .finishTable thead th{position:sticky;top:0;z-index:3}
+#finish.finishPanel .finishTable tbody tr{background:rgba(12,18,30,.82)}
+#finish.finishPanel .finishTable tbody tr:nth-child(even):not(.best):not(.you){background:rgba(16,24,38,.94)}
+#finish.finishPanel .finishTable tbody td.driver{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#finish.finishPanel .finishTable tbody td.driver small{margin-top:4px}
+#finish.finishPanel .finishTable tbody td.team{width:78px}
+#finish.finishPanel .finishTeamLogoWrap{display:inline-flex;align-items:center;justify-content:center;min-width:40px;height:30px;padding:0 7px;border-radius:999px;background:rgba(255,255,255,.08);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+#finish.finishPanel .finishTable tbody tr.best .finishTeamLogoWrap{background:rgba(12,16,21,.08);box-shadow:inset 0 0 0 1px rgba(12,16,21,.14)}
+#finish.finishPanel .finishTable tbody tr.you td.driver,#finish.finishPanel .finishTable tbody tr.you td.metric,#finish.finishPanel .finishTable tbody tr.you td.metric2{color:#eff9ff}
+#finish.finishPanel .finishTable tbody tr.best td.metric,#finish.finishPanel .finishTable tbody tr.best td.metric2{color:#0c1015}
+#finish.finishPanel .finishFooter{padding-top:8px}
+#finish.finishPanel .finishActions .btn{min-width:110px}
+@media (orientation:landscape) and (max-height:560px){
+  #finish.finishPanel{width:min(1220px,98vw);max-height:98dvh;border-radius:12px}
+  #finish.finishPanel .finishBroadcast{height:min(97dvh,97vh);max-height:97dvh}
+  #finish.finishPanel .finishHero{padding:6px 10px 5px;display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"brand title" "brand sub";column-gap:8px;row-gap:2px;align-items:center;text-align:left;border-bottom-width:2px}
+  #finish.finishPanel .finishBrand{grid-area:brand;align-self:start;margin:0;gap:5px;min-width:0}
+  #finish.finishPanel .finishBrandWing{width:38px;height:15px;transform:scale(.72);transform-origin:left center;margin-right:-8px}
+  #finish.finishPanel .finishBrandWord{font-size:8px;white-space:nowrap}
+  #finish.finishPanel #finishGpTitle{grid-area:title;font-size:clamp(15px,3.2vw,24px);line-height:.98;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:normal;text-overflow:clip}
+  #finish.finishPanel #finishSessionTitle{grid-area:sub;margin:0;font-size:10px;line-height:1.05;letter-spacing:.06em}
+  #finish.finishPanel .finishSummaryBar{flex-wrap:nowrap;justify-content:flex-start;overflow-x:auto;gap:4px;padding:4px 8px 3px;scrollbar-width:none}
+  #finish.finishPanel .finishSummaryBar::-webkit-scrollbar{display:none}
+  #finish.finishPanel .finishChip{flex:0 0 auto;padding:4px 6px;gap:4px;border-radius:6px}
+  #finish.finishPanel .finishChip span{font-size:6px}
+  #finish.finishPanel .finishChip b{font-size:10px}
+  #finish.finishPanel .finishBoardWrap{padding:4px 8px 6px}
+  #finish.finishPanel .finishTable{border-spacing:0 2px}
+  #finish.finishPanel .finishTable thead th{font-size:7px;padding:5px 5px}
+  #finish.finishPanel .finishTable tbody td{padding:5px 5px}
+  #finish.finishPanel .finishTable tbody td.pos{width:28px;font-size:10px}
+  #finish.finishPanel .finishTable tbody td.driver{font-size:10px}
+  #finish.finishPanel .finishTable tbody td.driver small{font-size:7px}
+  #finish.finishPanel .finishTable tbody td.team{width:52px}
+  #finish.finishPanel .finishTable tbody td.metric,#finish.finishPanel .finishTable tbody td.metric2{font-size:10px}
+  #finish.finishPanel .finishTable tbody td.metric2{width:50px}
+  #finish.finishPanel .finishTeamLogoWrap{min-width:28px;height:22px;padding:0 5px}
+  #finish.finishPanel .finishTeamLogo{width:16px;height:16px}
+  #finish.finishPanel .finishBestFlag{width:12px;height:12px;font-size:8px;margin-left:3px}
+  #finish.finishPanel .finishPageTitle{font-size:10px;margin:0 0 4px}
+  #finish.finishPanel .finishLapRow{grid-template-columns:36px 1fr 70px 58px;gap:4px;padding:4px 6px;font-size:9px}
+  #finish.finishPanel .finishTwoCol{gap:6px}
+  #finish.finishPanel .finishSideCard{padding:6px;border-radius:8px}
+  #finish.finishPanel .finishSummaryLine{padding:4px 0}
+  #finish.finishPanel .finishSummaryLine span{font-size:7px}
+  #finish.finishPanel .finishSummaryLine b{font-size:10px}
+  #finish.finishPanel .finishFooter{padding:2px 8px 6px;display:flex;align-items:center;justify-content:center;gap:8px}
+  #finish.finishPanel .finishPager{padding:0;gap:5px}
+  #finish.finishPanel .finishDot{width:6px;height:6px}
+  #finish.finishPanel .finishActions{gap:4px}
+  #finish.finishPanel .finishActions .btn{min-width:0;min-height:26px;padding:5px 9px;font-size:8px}
+}
+@media (orientation:landscape) and (max-height:430px){
+  #finish.finishPanel .finishBrandWing,#finish.finishPanel .finishBrandWord{display:none}
+  #finish.finishPanel .finishHero{grid-template-columns:minmax(0,1fr);grid-template-areas:"title" "sub";padding:4px 8px}
+  #finish.finishPanel #finishGpTitle{font-size:14px}
+  #finish.finishPanel #finishSessionTitle{font-size:9px}
+  #finish.finishPanel .finishSummaryBar{padding-block:3px}
+}
+
+/* v5.123 · HUD libres: sesión en minutos + nº de mejor/actual */
+#lb.practiceSolo .soloLapNo{white-space:nowrap;letter-spacing:.035em}
+body.mobile-landscape #lb.practiceSolo .soloLapNo{letter-spacing:.015em}
+
+
+/* v5.124 · Controles inferiores simétricos + HUD mm:ss */
+#toolLeft,#toolRight{bottom:0!important}
+#toolRight .tb{width:42px!important;min-width:42px!important;max-width:42px!important;height:34px!important;padding:0!important}
+#toolRight #sound,#toolRight #optionsBtn,#toolRight #fs{min-width:42px!important;max-width:42px!important}
+body.compact #toolRight .tb{width:38px!important;min-width:38px!important;max-width:38px!important;height:30px!important;padding:0!important}
+body.mobile-landscape #toolLeft{left:max(6px,env(safe-area-inset-left))!important;bottom:0!important}
+body.mobile-landscape #toolRight{right:max(6px,env(safe-area-inset-right))!important;bottom:0!important}
+body.mobile-landscape #toolRight .tb,
+body.mobile-landscape #toolRight #sound,
+body.mobile-landscape #toolRight #optionsBtn,
+body.mobile-landscape #toolRight #fs{width:31px!important;min-width:31px!important;max-width:31px!important;height:26px!important;padding:0!important}
+body.mobile-landscape #toolRight #sound{font-size:11px!important}
+body.mobile-landscape #toolRight #optionsBtn{font-size:11px!important}
+body.mobile-landscape #toolRight #fs{font-size:12px!important}
+
+
+/* v5.125 · AUT asistido, exportación TEL y protección visual a 90º */
+#toolLeft #demo.assist{background:rgba(255,142,35,.28)!important;border-color:rgba(255,154,58,.82)!important;color:#ffe2bf!important;box-shadow:0 0 0 1px rgba(255,149,46,.16),0 0 14px rgba(255,133,24,.16)}
+.telemetryPanel .telemetryRecordRow{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;padding-top:7px;border-top:1px solid rgba(255,255,255,.08);pointer-events:auto}.telemetryPanel .telemetryRecordRow span{color:#8fa6b7;font-size:8px;font-weight:950;letter-spacing:.08em}.telemetryPanel .telemetryRecordBtn{min-width:112px;height:28px;border:1px solid rgba(127,231,255,.30);border-radius:9px;background:rgba(127,231,255,.10);color:#d9f8ff;font:950 8px/1 system-ui;letter-spacing:.055em;cursor:pointer;pointer-events:auto}.telemetryPanel .telemetryRecordBtn.events{border-color:rgba(255,214,107,.45);background:rgba(255,214,107,.12);color:#ffe6a0}.telemetryPanel .telemetryRecordBtn.off{border-color:rgba(255,121,136,.35);background:rgba(255,121,136,.08);color:#ffb0ba}.telemetryPanel .telemetryRecordBtn.full{border-color:rgba(127,231,255,.48);background:rgba(127,231,255,.15);color:#e8fbff}
+.telemetryPanel .telemetryActions{display:flex;align-items:center;gap:6px;margin-top:6px;pointer-events:auto}
+.telemetryPanel .telemetryExportBtn{flex:1 1 auto;width:auto;height:30px;border:1px solid rgba(127,231,255,.30);border-radius:9px;background:rgba(127,231,255,.10);color:#d9f8ff;font:900 9px/1 system-ui;letter-spacing:.06em;cursor:pointer;pointer-events:auto;transition:background .15s,border-color .15s,transform .08s}
+.telemetryPanel .telemetryExportBtn:hover{background:rgba(127,231,255,.18);border-color:rgba(127,231,255,.50)}
+.telemetryPanel .telemetryExportBtn:active{transform:translateY(1px)}
+.telemetryPanel .telemetryHint{margin-top:5px;color:#8fa6b7;font-size:8px;line-height:1.25;text-align:center}
+.telemetryPanel .telemetryPopBtn{display:none;flex:0 0 36px;width:36px;height:30px;align-items:center;justify-content:center;padding:0;letter-spacing:0}
+.telemetryPanel .telemetryPopBtn svg{width:15px;height:15px;display:block;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+body.desktop-telemetry .telemetryPanel .telemetryPopBtn{display:inline-flex}
+
+
+
+/* v5.128 · Classic position tower isolation/restoration */
+#lb.positionTower{
+  min-height:0!important;
+  display:flex!important;
+  flex-direction:column!important;
+  overflow:hidden!important;
+}
+#lb.positionTower .towerRows{
+  flex:1 1 auto!important;
+  min-height:0!important;
+  display:flex!important;
+  flex-direction:column!important;
+  overflow:hidden!important;
+}
+
+/* v5.152 · DEV performance profiler */
+.diagPerfTitle{margin:11px 0 5px;padding-top:9px;border-top:1px solid rgba(255,255,255,.10);font-size:9px;font-weight:950;letter-spacing:.10em;color:#8fefff}.diagPerfTitle span{color:#fff}.diagPerfGrid .diagRow b{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:10px}.diagPerfGrid .diagRow span{color:#9eb0c2}.diagPerfGrid .diagRow{min-width:0}.diagPerfGrid .diagRow b{white-space:nowrap}
+
+/* v5.153 · WebGL2 experimental backend */
+#webglGame{position:fixed;inset:0;width:100%;height:100%;display:none;background:#05070b;z-index:1;pointer-events:none}
+#webglGame.active{display:block}
+#game{z-index:2}
+.rendererControl{grid-column:1/-1;margin-top:2px;padding:13px 14px;border:1px solid rgba(125,170,255,.18);border-radius:14px;background:linear-gradient(180deg,rgba(16,22,36,.90),rgba(8,13,22,.90))}
+.rendererControlHead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:9px}.rendererControlHead b{display:block;font-size:11px;letter-spacing:.07em}.rendererControlHead small{display:block;margin-top:4px;color:#8393a5;font-size:8px;line-height:1.35}.rendererControlHead span{flex:0 0 auto;padding:5px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.045);font-size:8px;font-weight:950;letter-spacing:.06em;color:#a9b8c8}.rendererControlHead span.ok{color:#8fffcf;border-color:rgba(105,255,190,.28);background:rgba(105,255,190,.07)}.rendererControlHead span.warn{color:#ffd66b;border-color:rgba(255,214,107,.28);background:rgba(255,214,107,.07)}
+#rendererSelect{width:100%;min-height:42px}
+body.renderer-webgl #rendererSummary{color:#90d8ff}
+body.renderer-webgl #rendererSelect{border-color:rgba(100,184,255,.55)!important;box-shadow:0 0 0 2px rgba(80,170,255,.10)!important}
+@media(max-width:680px){.rendererControl{padding:10px 11px}.rendererControlHead{flex-direction:column;gap:5px}}
+
+body.renderer-webgl #game{background:transparent!important}
+
+/* v5.183 · El menú conserva el mismo fondo visual aunque WebGL2 esté seleccionado. */
+body:has(#menu:not(.hidden)) #webglGame{display:none!important}
+body:has(#menu:not(.hidden)) #game{background:#05070b!important}
+
+/* v5.226.3 · Editor SVG optimizado */
+.svgToolsPanel{margin:14px 0 16px;padding:14px 15px;border:1px solid rgba(120,188,255,.18);border-radius:16px;background:linear-gradient(180deg,rgba(12,18,30,.88),rgba(8,13,22,.92));box-shadow:0 14px 38px rgba(0,0,0,.18)}
+.svgToolsHead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}
+.svgToolsHead b{display:block;font-size:12px;letter-spacing:.07em;color:#eef8ff}
+.svgToolsHead small{display:block;margin-top:4px;color:#8ca1b5;font-size:9px;line-height:1.4}
+.svgToolsTag{flex:0 0 auto;padding:5px 8px;border-radius:999px;border:1px solid rgba(127,231,255,.22);background:rgba(127,231,255,.08);font-size:8px;font-weight:950;letter-spacing:.08em;color:#9fefff}
+.svgToolsGrid{display:grid;grid-template-columns:minmax(190px,1.2fr) repeat(3,minmax(120px,.7fr));gap:8px;align-items:end}
+.svgToolsField label{display:block;margin-bottom:5px;color:#90a5b8;font-size:8px;font-weight:900;letter-spacing:.08em}
+.svgToolsField select,.svgToolsPanel .btn{width:100%}
+.svgToolsStatus{margin-top:9px;min-height:16px;color:#89a0b4;font-size:8px;line-height:1.45}
+.svgToolsStatus.ok{color:#9ff3c8}.svgToolsStatus.err{color:#ffb4be}.svgToolsStatus.warn{color:#ffdb86}
+@media(max-width:880px){.svgToolsGrid{grid-template-columns:1fr 1fr}.svgToolsField.track{grid-column:1/-1}}
+@media(max-width:540px){.svgToolsGrid{grid-template-columns:1fr}.svgToolsHead{flex-direction:column;align-items:flex-start}}
+
+
+.trackEditorDock{position:relative;margin:10px 0 0;width:100%;border:1px solid rgba(89,243,255,.12);border-radius:16px;background:linear-gradient(180deg,rgba(7,12,18,.96),rgba(8,15,22,.94));overflow:hidden;box-shadow:0 10px 28px rgba(0,0,0,.18)}
+.trackEditorDock summary{list-style:none;cursor:pointer;padding:12px 14px;font-weight:900;letter-spacing:.05em;display:flex;align-items:center;justify-content:space-between}.trackEditorDock summary::-webkit-details-marker{display:none}.trackEditorDock summary span{color:#8fefff;font-size:10px;font-weight:800;letter-spacing:.04em}
+.trackEditorBody{padding:0 14px 14px;display:grid;gap:10px}.trackEditorBody .svgToolsPanel,.trackEditorBody .circuitJsonPanel,.trackEditorBody .extraTracksPanel{margin:0}
+.jsonSchemaBadge{min-height:40px;display:flex;align-items:center;padding:0 11px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:rgba(255,255,255,.035);font-size:10px;font-weight:850;color:#b7c8d8}
+.extraTrackChips{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}.extraTrackChips span{padding:7px 9px;border-radius:999px;background:rgba(89,243,255,.06);border:1px solid rgba(89,243,255,.14);font-size:9px;font-weight:800;color:#cdebf1}
+@media(max-width:680px){.trackEditorDock summary{align-items:flex-start;flex-direction:column;gap:4px}.trackEditorBody{padding:0 10px 10px}.extraTrackChips span{font-size:8px}}
+
+/* v5.230.62.8.6.7.6.4 · Inspector 3D de circuitos */
+.circuitInspectorPanel{margin:0;padding:15px;border:1px solid rgba(115,230,255,.22);border-radius:16px;background:linear-gradient(180deg,rgba(8,20,29,.95),rgba(7,13,21,.96));box-shadow:inset 0 1px 0 rgba(255,255,255,.035)}
+.circuitInspectorActions{display:grid;grid-template-columns:minmax(220px,1.2fr) repeat(2,minmax(130px,.55fr));gap:9px;align-items:end;margin-top:10px}.circuitInspectorHint{margin-top:9px;color:#9fb4c7;font-size:10px;line-height:1.45}.circuitInspectorHint b{color:#d9f8ff}
+#circuitInspectorHud{position:fixed;inset:0;z-index:70;pointer-events:none;color:#fff;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif}
+#circuitInspectorHud .insTop{position:absolute;left:max(10px,env(safe-area-inset-left));right:max(10px,env(safe-area-inset-right));top:max(10px,env(safe-area-inset-top));display:flex;justify-content:space-between;gap:10px;align-items:flex-start;pointer-events:none}
+#circuitInspectorHud .insCard{pointer-events:auto;border:1px solid rgba(255,255,255,.16);border-radius:14px;background:rgba(5,10,17,.88);backdrop-filter:blur(12px);box-shadow:0 12px 34px rgba(0,0,0,.38);padding:10px 12px}
+#circuitInspectorHud .insTitle{font-size:14px;font-weight:950;letter-spacing:.035em}.insSub{font-size:9px;color:#9fb3c7;margin-top:3px}.insBadge{display:inline-flex;align-items:center;padding:3px 7px;border-radius:999px;background:rgba(89,243,255,.13);border:1px solid rgba(89,243,255,.28);font-size:8px;font-weight:900;letter-spacing:.08em;color:#aef8ff;margin-left:7px}
+#circuitInspectorHud .insControls{position:absolute;left:50%;bottom:max(10px,env(safe-area-inset-bottom));transform:translateX(-50%);width:min(1040px,96vw);pointer-events:auto;border:1px solid rgba(255,255,255,.16);border-radius:16px;background:rgba(5,10,17,.91);backdrop-filter:blur(13px);box-shadow:0 14px 46px rgba(0,0,0,.42);padding:10px 12px}
+.insGrid{display:grid;grid-template-columns:1.25fr .75fr .75fr .75fr .75fr;gap:8px;align-items:end}.insField label{display:block;margin:0 0 4px;font-size:8px;letter-spacing:.1em;color:#8fa6bb}.insField input[type=range]{width:100%;accent-color:#59f3ff}.insValue{font-size:10px;font-weight:900;color:#e7f8ff;white-space:nowrap}.insActions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center}.insActions .btn{min-height:34px;padding:6px 10px;font-size:9px;border-radius:9px}.insLayer{display:inline-flex;align-items:center;gap:4px;font-size:9px;color:#c9d7e4;padding:4px 7px;border-radius:9px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.07)}.insLayer input{accent-color:#59f3ff}.insHelp{font-size:8px;color:#879bad;margin-left:auto}.insReadout{display:flex;gap:8px;flex-wrap:wrap;margin-top:7px;padding-top:7px;border-top:1px solid rgba(255,255,255,.07);font-size:9px;color:#a9bbc9}.insReadout b{color:#fff}.insTimingQuality{max-width:min(680px,70vw);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.apex-inspection #hud,body.apex-inspection #touch{display:none!important}body.apex-inspection #circuitInspectorHud{display:block!important}body.apex-inspection canvas#game{cursor:grab}body.apex-inspection.ins-drag canvas#game{cursor:grabbing}
+@media(max-width:760px){.circuitInspectorActions{grid-template-columns:1fr}.insGrid{grid-template-columns:1fr 1fr 1fr}.insField.position{grid-column:1/-1}.insHelp{width:100%;margin-left:0}.insTimingQuality{max-width:92vw}#circuitInspectorHud .insControls{padding:8px}.insActions .btn{padding:5px 8px}}
+body.mobile-landscape #circuitInspectorHud .insTop{top:max(5px,env(safe-area-inset-top));left:max(5px,env(safe-area-inset-left));right:max(5px,env(safe-area-inset-right))}body.mobile-landscape #circuitInspectorHud .insCard{padding:6px 8px;border-radius:10px}body.mobile-landscape #circuitInspectorHud .insControls{bottom:max(4px,env(safe-area-inset-bottom));padding:6px 8px;border-radius:11px;width:min(1100px,98vw)}body.mobile-landscape .insGrid{grid-template-columns:1.35fr .72fr .72fr .72fr .72fr;gap:5px}body.mobile-landscape .insActions{margin-top:5px;gap:4px}body.mobile-landscape .insActions .btn{min-height:27px;font-size:7px;padding:3px 6px}body.mobile-landscape .insLayer{font-size:7px;padding:3px 5px}body.mobile-landscape .insReadout{margin-top:4px;padding-top:4px;font-size:7px}body.mobile-landscape .insHelp{font-size:7px}
+
+
+/* v5.230.62.8.6.7.6.4.1 · Inspección libre móvil tipo Google Earth */
+body.apex-inspection{overscroll-behavior:none}
+body.apex-inspection canvas#game{touch-action:none;cursor:grab}
+body.apex-inspection.ins-drag canvas#game{cursor:grabbing}
+#circuitInspectorHud .insTop{z-index:4}
+#circuitInspectorHud .insCard{background:rgba(5,10,17,.70);backdrop-filter:blur(7px);box-shadow:0 5px 18px rgba(0,0,0,.24)}
+#circuitInspectorHud .insTop .insCard:first-child{max-width:min(62vw,540px)}
+#circuitInspectorHud .insTitle{font-size:12px}
+#circuitInspectorHud .insBadge{font-size:7px;padding:2px 5px}
+#circuitInspectorHud .insSub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#circuitInspectorHud .insControls{z-index:6;left:auto;right:max(10px,env(safe-area-inset-right));bottom:max(58px,calc(env(safe-area-inset-bottom) + 54px));transform:none;width:min(430px,calc(100vw - 20px));max-height:min(72vh,620px);overflow:auto;padding:10px 11px;transition:opacity .15s ease,transform .15s ease}
+#circuitInspectorHud .insControls.insCollapsed{display:none!important}
+.insControlsHead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;font-size:10px;font-weight:950;letter-spacing:.04em;color:#dff8ff}
+.insControlsHead .btn{min-height:32px;padding:5px 9px;font-size:9px}
+#circuitInspectorHud .insGrid{grid-template-columns:1fr 1fr;gap:7px}
+#circuitInspectorHud .insField.position{grid-column:1/-1}
+#circuitInspectorHud .insActions{gap:5px;margin-top:7px}
+#circuitInspectorHud .insHelp{width:100%;margin:4px 0 0;line-height:1.35}
+#circuitInspectorHud .insReadout{font-size:8px}
+.insQuickDock{position:absolute;z-index:5;left:50%;bottom:max(8px,env(safe-area-inset-bottom));transform:translateX(-50%);pointer-events:auto;display:flex;align-items:center;gap:5px;padding:5px;border:1px solid rgba(255,255,255,.13);border-radius:14px;background:rgba(5,10,17,.66);backdrop-filter:blur(8px);box-shadow:0 7px 22px rgba(0,0,0,.28)}
+.insQuickDock .btn{min-height:38px;padding:6px 10px;border-radius:10px;font-size:9px;white-space:nowrap}
+.insGestureHint{position:absolute;z-index:3;left:50%;top:max(62px,calc(env(safe-area-inset-top) + 54px));transform:translateX(-50%);max-width:min(640px,88vw);padding:7px 10px;border-radius:999px;background:rgba(3,8,14,.57);border:1px solid rgba(255,255,255,.10);backdrop-filter:blur(7px);font-size:9px;font-weight:800;color:#d8e8f5;text-align:center;pointer-events:none;transition:opacity .5s ease}
+.insGestureHint.isFaded{opacity:0}
+body.mobile-landscape #circuitInspectorHud .insTop{top:max(4px,env(safe-area-inset-top));left:max(4px,env(safe-area-inset-left));right:max(4px,env(safe-area-inset-right))}
+body.mobile-landscape #circuitInspectorHud .insCard{padding:5px 7px;border-radius:9px}
+body.mobile-landscape #circuitInspectorHud .insTitle{font-size:9px}
+body.mobile-landscape #circuitInspectorHud .insBadge{display:none}
+body.mobile-landscape #circuitInspectorHud .insSub{font-size:7px;margin-top:1px}
+body.mobile-landscape #closeCircuitInspectorBtn{min-height:32px!important;padding:4px 7px!important;font-size:0!important}
+body.mobile-landscape #closeCircuitInspectorBtn::after{content:'✕';font-size:15px}
+body.mobile-landscape .insGestureHint{top:max(42px,calc(env(safe-area-inset-top) + 36px));font-size:7px;padding:4px 7px;max-width:78vw}
+body.mobile-landscape .insQuickDock{bottom:max(4px,env(safe-area-inset-bottom));gap:3px;padding:3px;border-radius:11px}
+body.mobile-landscape .insQuickDock .btn{min-height:31px;padding:4px 7px;font-size:7px;border-radius:8px}
+body.mobile-landscape #circuitInspectorHud .insControls{right:max(4px,env(safe-area-inset-right));bottom:max(42px,calc(env(safe-area-inset-bottom) + 38px));width:min(355px,54vw);max-height:calc(100dvh - 88px);padding:7px 8px;border-radius:11px}
+body.mobile-landscape #circuitInspectorHud .insGrid{grid-template-columns:1fr 1fr;gap:4px}
+body.mobile-landscape #circuitInspectorHud .insField.position{grid-column:1/-1}
+body.mobile-landscape #circuitInspectorHud .insField label{font-size:6px;margin-bottom:2px}
+body.mobile-landscape #circuitInspectorHud .insValue{font-size:7px}
+body.mobile-landscape #circuitInspectorHud .insActions{margin-top:4px;gap:3px}
+body.mobile-landscape #circuitInspectorHud .insActions .btn{min-height:25px;font-size:6px;padding:3px 5px}
+body.mobile-landscape #circuitInspectorHud .insLayer{font-size:6px;padding:2px 4px}
+body.mobile-landscape #circuitInspectorHud .insReadout{font-size:6px;gap:4px}
+@media(max-width:760px) and (orientation:portrait){#circuitInspectorHud .insTop .insCard:first-child{max-width:68vw}.insGestureHint{top:max(66px,calc(env(safe-area-inset-top) + 58px));border-radius:12px}.insQuickDock{width:auto;max-width:94vw}.insQuickDock .btn{min-width:42px;padding:6px 8px}#circuitInspectorHud .insControls{left:8px;right:8px;bottom:max(58px,calc(env(safe-area-inset-bottom) + 52px));width:auto;max-height:55vh}.insHelp{display:none}}
+
+
+/* v5.230.62.8.6.7.6.4.2 · Inspector verdaderamente fullscreen */
+body.apex-inspection{margin:0!important;padding:0!important;overflow:hidden!important;background:#05070b!important}
+body.apex-inspection #menu,
+body.apex-inspection .panel,
+body.apex-inspection .renderDock,
+body.apex-inspection #hud,
+body.apex-inspection #touch,
+body.apex-inspection #weekendPanel,
+body.apex-inspection #finish,
+body.apex-inspection #pausePanel,
+body.apex-inspection #optionsPanel,
+body.apex-inspection #diagPanel,
+body.apex-inspection #telemetryPanel{display:none!important}
+body.apex-inspection #circuitInspectorHud{display:block!important;inset:0!important}
+body.apex-inspection #game,
+body.apex-inspection #webglGame{position:fixed!important;inset:0!important;width:100%!important;height:100%!important;margin:0!important;padding:0!important}
+#circuitInspectorHud .insTop,
+#circuitInspectorHud .insQuickDock,
+#circuitInspectorHud .insGestureHint{transition:opacity .22s ease,transform .22s ease}
+body.apex-inspection.ins-ui-hidden #circuitInspectorHud .insTop,
+body.apex-inspection.ins-ui-hidden #circuitInspectorHud .insQuickDock,
+body.apex-inspection.ins-ui-hidden #circuitInspectorHud .insGestureHint{opacity:0!important;pointer-events:none!important}
+body.apex-inspection.ins-ui-hidden #circuitInspectorHud .insTop{transform:translateY(-12px)}
+body.apex-inspection.ins-ui-hidden #circuitInspectorHud .insQuickDock{transform:translate(-50%,16px)}
+#circuitInspectorHud .insQuickDock .btn{width:42px;min-width:42px;height:42px;min-height:42px;padding:0!important;display:inline-flex;align-items:center;justify-content:center;font-size:17px!important;line-height:1;border-radius:12px}
+#circuitInspectorHud .insTop .insCard:first-child{display:none!important}
+#circuitInspectorHud .insTop{justify-content:flex-end!important}
+#closeCircuitInspectorBtn{width:42px!important;min-width:42px!important;height:42px!important;min-height:42px!important;padding:0!important;font-size:0!important;border-radius:12px!important}
+#closeCircuitInspectorBtn::after{content:'✕';font-size:18px;line-height:1}
+@media(max-width:900px){
+  #circuitInspectorHud .insTop{top:max(5px,env(safe-area-inset-top));left:auto!important;right:max(5px,env(safe-area-inset-right))!important}
+  #circuitInspectorHud .insCard{padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;backdrop-filter:none!important}
+  #circuitInspectorHud .insQuickDock{bottom:max(5px,env(safe-area-inset-bottom));padding:3px!important;gap:3px!important;border-radius:13px!important;background:rgba(5,10,17,.52)!important}
+  #circuitInspectorHud .insQuickDock .btn{width:40px;min-width:40px;height:40px;min-height:40px;font-size:16px!important}
+  #circuitInspectorHud .insControls{left:6px!important;right:6px!important;bottom:max(52px,calc(env(safe-area-inset-bottom) + 48px))!important;width:auto!important;max-height:58dvh!important}
+  .insGestureHint{top:max(7px,env(safe-area-inset-top))!important;max-width:calc(100vw - 110px)!important;font-size:7px!important;padding:4px 7px!important}
+}
+
+
+
+/* v5.230.36 · ARRANQUE MÓVIL SEGURO
+   La portada se pinta antes de inicializar circuitos/WebGL. En móvil se eliminan
+   efectos caros de composición que pueden provocar renderer blanco en file://. */
+#apexBootSplash{
+  position:fixed;inset:0;z-index:2147483000;
+  display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;
+  background:#05070b;color:#fff;font:900 24px/1 system-ui,Segoe UI,Arial,sans-serif;
+  letter-spacing:.04em;
+}
+#apexBootSplash small{font-size:11px;font-weight:700;color:#93a0b2;letter-spacing:.08em}
+body.apex-ready #apexBootSplash{display:none!important}
+body.menu-open #game,body.menu-open #webglGame{display:none!important}
+body.menu-open #menu::after,body.menu-open .menuBgCar{display:none!important}
+@media(max-width:900px){
+  body.menu-open #menu{
+    background:#0b1119!important;
+    box-shadow:none!important;
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+    filter:none!important;
+  }
+  body.menu-open #menuModeRow,
+  body.menu-open .box,
+  body.menu-open .toolBar{
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+    box-shadow:none!important;
+  }
+  body.menu-open .trackPreviewBox svg{filter:none!important}
