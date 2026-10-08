@@ -4,10 +4,25 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.38.13',
+      date:'Octubre 2026',
+      title:'Iconos originales con color propio por tipo y mayor tamaño',
+      current:true,
+      summary:'La cartografía recupera el estilo clásico de símbolos sobre círculos de color, con paleta distintiva para cada industria y recurso, mayor tamaño y la jerarquía de iconos establecida en la versión anterior.',
+      changes:[
+        'Recuperación de fondos circulares sólidos y pictogramas oscuros de la familia visual original de ciudades, puertos e industrias.',
+        'Veinte colores de fondo diferenciados para ciudades, capitales, puertos, industrias, explotaciones y plantas transformadoras.',
+        'Tamaño de iconos incrementado aproximadamente un 10–15 %, manteniendo el cálculo de posición y los límites de zoom.',
+        'Borde claro y halo oscuro suave, evitando gradientes costosos durante el dibujado de cientos de símbolos.',
+        'Se conservan ciudad centrada, puertos costeros, capitales por encima de carreteras y separación de edificios compartidos.',
+        'Pruebas de paleta, tamaño, estilo del icono y regresiones cartográficas anteriores.'
+      ]
+    },
+    {
       version:'0.38.12',
       date:'Octubre 2026',
       title:'Jerarquía de iconos y cartografía costera',
-      current:true,
+      current:false,
       summary:'Las ciudades conservan el centro del hexágono; los puertos se sitúan hacia su costa, la estrella de la capital se representa por encima de las carreteras y las instalaciones comparten pictogramas vectoriales homogéneos.',
       changes:[
         'Ciudad siempre en el centro y único tipo de icono de infraestructura visible al alejar el zoom.',
