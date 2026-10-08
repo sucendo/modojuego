@@ -60,6 +60,7 @@
   let resourceLastCampaign03720=-1e9;
   let resourceTickMs03720=0;
   let restoredResources03720=null;
+  let resourceComponentCoverage03721=new Map();
 
   let navalPathBucket0371=-1;
   let navalPathUsed0371=0;
@@ -635,6 +636,19 @@
       s.nodes++;
       for(let i=0;i<5;i++){s.stock[i]+=n.stock[i];s.cap[i]+=n.cap[i];s.prod[i]+=n.prod[i];s.demand[i]+=n.demand[i]}
     }
+
+    resourceComponentCoverage03721=new Map();
+    const compTotals=new Map();
+    for(const n of resourceNodes03720.values()){
+      if(n.comp<0)continue;
+      const key=n.f+':'+n.comp;
+      let g=compTotals.get(key);
+      if(!g){g={stock:[0,0,0,0,0],cap:[0,0,0,0,0]};compTotals.set(key,g)}
+      for(let i=0;i<5;i++){g.stock[i]+=n.stock[i];g.cap[i]+=n.cap[i]}
+    }
+    for(const [key,g] of compTotals){
+      resourceComponentCoverage03721.set(key,g.cap.map((mx,i)=>mx>0?clamp(g.stock[i]/mx,0,1):.55));
+    }
     const norm=x=>clamp(x/.55,.42,1.12);
     for(const s of resourceNation03720){
       for(let i=0;i<5;i++)s.coverage[i]=s.cap[i]>0?clamp(s.stock[i]/s.cap[i],0,1):.55;
@@ -692,12 +706,62 @@
     return resourceNation03720[f]||null;
   }
 
+  function materialCoverageForCell03721(cell){
+    cell=Number(cell);
+    if(!Number.isInteger(cell)||cell<0||cell>=owner6.length)return null;
+    const f=owner6[cell];
+    if(f<0||f>=activeFactionCount3230||!resourceNation03720[f])return null;
+
+    const exact=resourceNodes03720.get(cell);
+    if(exact){
+      return exact.cap.map((mx,i)=>mx>0?clamp(exact.stock[i]/mx,0,1):.55);
+    }
+    const comp=roadComp&&cell<roadComp.length?roadComp[cell]:-1;
+    if(comp>=0){
+      const group=resourceComponentCoverage03721.get(f+':'+comp);
+      if(group)return group.slice();
+    }
+    return resourceNation03720[f].coverage.slice();
+  }
+
+  function materialSupplyScore03721(coverage){
+    if(!Array.isArray(coverage)||coverage.length<5)return 100;
+    const w=[.30,.10,.27,.21,.12];
+    let weighted=0;
+    for(let i=0;i<5;i++)weighted+=clamp(Number(coverage[i])||0,0,1)*w[i];
+    const bottleneck=Math.min(
+      clamp(Number(coverage[0])||0,0,1),
+      clamp(Number(coverage[2])||0,0,1),
+      clamp(Number(coverage[3])||0,0,1)
+    );
+    return Math.round(clamp((weighted*.72+bottleneck*.28)*100,0,100));
+  }
+
+  function materialSupplyDetail03721(cell){
+    const coverage=materialCoverageForCell03721(cell);
+    if(!coverage)return null;
+    const resourcePct=coverage.map(x=>Math.round(clamp(x,0,1)*100));
+    return {resourcePct,material:materialSupplyScore03721(coverage)};
+  }
+
   function routeCargoText03720(r){
     const a=Array.isArray(r.cargo03720)?r.cargo03720:[];
     const parts=[];
     for(let i=0;i<5;i++)if((a[i]||0)>=.015)parts.push(RESOURCE_SHORT03720[i]+' '+a[i].toFixed(2)+'/s');
     return parts.join(' · ');
   }
+
+  const baseSupplyPct03721=supplyPct3220;
+  supplyPct3220=function(cell){
+    const logistic=Number(baseSupplyPct03721.apply(this,arguments))||0;
+    if(logistic<=0||owner6[cell]!==0||!resourceNation03720[0])return logistic;
+    const detail=materialSupplyDetail03721(cell);
+    if(!detail)return logistic;
+    // La conexión física sigue siendo obligatoria; los materiales solo pueden
+    // reducir el suministro utilizable. Con material crítico, una red físicamente
+    // conectada pasa gradualmente a naranja/rojo.
+    return Math.round(clamp(logistic*(.25+.75*detail.material/100),0,logistic));
+  };
 
   const baseTerritorialEconomy03720=territorialEconomy3261;
   territorialEconomy3261=function(f){
@@ -1589,6 +1653,71 @@
       '</div></div>';
   }
 
+  const RESOURCE_SUPPLY_COLORS03721={
+    good:'rgba(93,208,135,.76)',
+    tension:'rgba(214,189,100,.75)',
+    low:'rgba(214,141,76,.77)',
+    critical:'rgba(182,79,79,.80)'
+  };
+
+  function supplyClass03721(p){
+    return p>=75?'good':p>=55?'tension':p>=35?'low':'critical';
+  }
+
+  const baseUpdateMapModeUI03721=updateMapModeUI3252;
+  updateMapModeUI3252=function(showToast=false){
+    const out=baseUpdateMapModeUI03721.apply(this,arguments);
+    if(mapMode3252==='supply'){
+      const leg=document.getElementById('terrainLegend3250');
+      if(leg){
+        leg.innerHTML=
+          '<span class="tl3250"><i style="background:#5dd087"></i>Abastecido ≥75%</span>'+
+          '<span class="tl3250"><i style="background:#d6bd64"></i>Tensión 55–74%</span>'+
+          '<span class="tl3250"><i style="background:#d68d4c"></i>Bajo 35–54%</span>'+
+          '<span class="tl3250"><i style="background:#b64f4f"></i>Crítico &lt;35%</span>';
+      }
+      if(showToast)toast('Mapa de suministro · conexión logística + recursos materiales');
+    }
+    return out;
+  };
+
+  const baseDrawSupply03721=drawSupply3230;
+  drawSupply3230=function(R,cx,cy){
+    if(!showSupplyOverlay3230||currentKey!==MAX_GAME_LEVEL3233||zoom<2)
+      return baseDrawSupply03721.apply(this,arguments);
+    if(supplyDirty3220)supplyMap3220(false);
+    const L=loadLevel(MAX_GAME_LEVEL3233),F=L.faceCenters,O=L.offsets,A=L.adj;
+    ctx.save();ctx.globalAlpha=.40;
+    for(const d of drawn){
+      const i=d[0];if(owner6[i]!==0)continue;
+      const p=supplyPct3220(i),s=O[i],e=O[i+1];ctx.beginPath();
+      for(let k=s;k<e;k++){
+        const fi=A[k],j=fi*3,q=projectVec(F[j]/32767,F[j+1]/32767,F[j+2]/32767,R,cx,cy);
+        if(k===s)ctx.moveTo(q[0],q[1]);else ctx.lineTo(q[0],q[1]);
+      }
+      ctx.closePath();
+      ctx.fillStyle=RESOURCE_SUPPLY_COLORS03721[supplyClass03721(p)];
+      ctx.fill();
+    }
+    ctx.restore();
+    drawSupplyRoute3253(R,cx,cy);
+  };
+
+  const baseContextHeader03721=contextHeader3244;
+  contextHeader3244=function(ctx){
+    const h=baseContextHeader03721.apply(this,arguments);
+    if(ctx?.kind==='cell'&&ctx.cell>=0&&owner6[ctx.cell]===0&&mapMode3252==='supply'){
+      const material=materialSupplyDetail03721(ctx.cell);
+      if(material){
+        h.meta+=' · material '+material.material+'%'+
+          ' · 🍞 '+material.resourcePct[0]+'%'+
+          ' · ⛽ '+material.resourcePct[2]+'%'+
+          ' · 📦 '+material.resourcePct[3]+'%';
+      }
+    }
+    return h;
+  };
+
   const baseRenderSystems0370=renderSystems3220;
   renderSystems3220=function(){
     baseRenderSystems0370();
@@ -1599,6 +1728,10 @@
     const residual=residualTrade0370(0);
     const active=own.filter(r=>(r.lastFactor||0)>0).length;
     const material=resourceSummary03720(0);
+    const selectedSupplyCell=selectedGameCell3230();
+    const selectedMaterial=selectedSupplyCell>=0&&owner6[selectedSupplyCell]===0?materialSupplyDetail03721(selectedSupplyCell):null;
+    const selectedLogistic=selectedSupplyCell>=0&&owner6[selectedSupplyCell]===0?Number(baseSupplyPct03721(selectedSupplyCell))||0:0;
+    const selectedCombined=selectedSupplyCell>=0&&owner6[selectedSupplyCell]===0?supplyPct3220(selectedSupplyCell):0;
     let html='';
     if(material){
       html+='<div class="sysBlock3213 resourceEconomy03720"><div class="tradeManagerTitle03717"><b>▦ Economía material</b><small>'+material.nodes+' nodos logísticos</small></div>'+
@@ -1613,6 +1746,17 @@
         '<span>Factor de reclutamiento</span><b>'+Math.round(material.recruitFactor*100)+'%</b>'+
         '<span>Cálculo material</span><b>'+resourceTickMs03720.toFixed(1)+' ms</b>'+
         '</div></div>';
+    }
+    if(selectedMaterial){
+      html+='<div class="sysBlock3213 supplyMaterialSelected03721">'+
+        '<div class="tradeManagerTitle03717"><b>📦 Suministro seleccionado</b><small>'+selectedCombined+'%</small></div>'+
+        '<div class="sysMeta3213">Logística física <b>'+Math.round(selectedLogistic)+'%</b> · disponibilidad material <b>'+selectedMaterial.material+'%</b></div>'+
+        '<div class="supplyResourceGrid03721">';
+      for(let i=0;i<5;i++){
+        const p=selectedMaterial.resourcePct[i];
+        html+='<span><b>'+RESOURCE_LABELS03720[i]+'</b><i><em style="width:'+p+'%"></em></i><small>'+p+'%</small></span>';
+      }
+      html+='</div></div>';
     }
     html+='<div class="sysBlock3213 tradeManager03717">'+
       '<div class="tradeManagerTitle03717"><b>⇄ Gestor de rutas comerciales</b><small>'+own.length+' registradas</small></div>'+
@@ -1966,7 +2110,7 @@
     if(!data||typeof data!=='object')return false;
     focusedTradeRoute03717=-1;hideTradeRouteFocusBar03718();
     restoredResources03720=data.resources03720&&typeof data.resources03720==='object'?data.resources03720:null;
-    resourceNodes03720=new Map();resourceNation03720=[];resourceSig03720='';resourceLastCampaign03720=-1e9;
+    resourceNodes03720=new Map();resourceNation03720=[];resourceComponentCoverage03721=new Map();resourceSig03720='';resourceLastCampaign03720=-1e9;
     permits=new Map(Array.isArray(data.permits)?data.permits:[]);
     routes=[];
     for(const x of data.routes||[]){
@@ -2018,7 +2162,7 @@
   resetGame3230=function(clearSave=true){
     const out=baseReset0370.apply(this,arguments);
     focusedTradeRoute03717=-1;hideTradeRouteFocusBar03718();
-    resourceNodes03720=new Map();resourceNation03720=[];resourceSig03720='';resourceLastCampaign03720=-1e9;restoredResources03720=null;
+    resourceNodes03720=new Map();resourceNation03720=[];resourceComponentCoverage03721=new Map();resourceSig03720='';resourceLastCampaign03720=-1e9;restoredResources03720=null;
     routes=[];permits.clear();nextRouteId=1;dirty=true;lastRoadCampaign=-1e9;
     if(clearSave)try{localStorage.removeItem(SAVE_KEY)}catch(e){}
     return out;
@@ -2128,6 +2272,8 @@
     focusRoute:(id)=>focusTradeRoute03717(Number(id)),
     resourceKeys:()=>RESOURCE_KEYS03720.slice(),
     resourceSummary:(f=0)=>resourceSummary03720(Number(f)),
+    materialSupply:(cell)=>materialSupplyDetail03721(Number(cell)),
+    combinedSupply:(cell)=>supplyPct3220(Number(cell)),
     resourceNode:(cell)=>{
       ensureResourceNodes03720(false);
       const n=resourceNodes03720.get(Number(cell));
