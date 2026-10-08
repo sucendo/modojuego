@@ -191,7 +191,7 @@
     const group=(f,comp,cell)=>{
       const key=groupKey(f,comp,cell);
       let g=groups.get(key);
-      if(!g){g={key,f,raw:new Map(),factories:[]};groups.set(key,g)}
+      if(!g){g={key,f,raw:new Map(),factories:[],powerNodes:new Set()};groups.set(key,g)}
       return g;
     };
     const conn=new Map();
@@ -207,6 +207,7 @@
       conn.set(s.cell,comp);
       if(comp<0)disconnected++;
       const g=group(s.f,comp,s.cell);
+      g.powerNodes.add(n);
       const def=TYPES[s.kind];
       if(def.group==='extract'){
         if(now-s.updated>=36){
@@ -254,6 +255,19 @@
     }
     function available(g,kind){
       return (g?.raw.get(kind)||[]).reduce((total,x)=>total+(x.site?x.site.stock:x.depot[kind]||0),0);
+    }
+    function availablePower(g){
+      let result=0;
+      for(const node of g.powerNodes)result+=Math.max(0,node.stock[2]||0);
+      return result;
+    }
+    function consumePower(g,required){
+      let left=required;
+      for(const node of g.powerNodes){
+        if(left<=.000001)break;
+        const qty=Math.min(left,Math.max(0,node.stock[2]||0));
+        node.stock[2]-=qty;left-=qty;
+      }
     }
     // Solo se mueve materia físicamente por rutas existentes entre nodos.
     // Las fábricas receptoras determinan qué mercancía debe viajar.
@@ -311,7 +325,7 @@
         if(amount<=0)continue;
         // Reservar energía ANTES de consumir materias para no perder cargamentos
         // cuando una fábrica tenga apagones o capacidad eléctrica insuficiente.
-        if(def.group==='manufacture')amount=Math.min(amount,Math.max(0,n.stock[2]||0)/.12);
+        if(def.group==='manufacture')amount=Math.min(amount,availablePower(g)/.12);
         if(amount<=0)continue;
         const inputs=def.inputs||[];
         if(!inputs.length)continue;
@@ -332,7 +346,7 @@
         if(amount<=0)continue;
         // Los bienes finales necesitan energía; las centrales son las
         // encargadas de generarla. No consumir el stock a nivel de mapa.
-        if(def.group==='manufacture')n.stock[2]=Math.max(0,n.stock[2]-amount*.12);
+        if(def.group==='manufacture')consumePower(g,amount*.12);
         const outputQty=amount*.90;
         const stored=intermediate?Math.min(buffer,outputQty*.62):0;
         const delivered=Math.min(room,outputQty-stored);
