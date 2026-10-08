@@ -17,7 +17,7 @@
     return d?.group==='extract'?'Extracción':d?.group==='factory'?'Transformación':
       d?.group==='power'?'Electricidad':d?.group==='manufacture'?'Manufactura':'Industria';
   };
-  let tab='summary',lastCell=-1;
+  let tab='summary',lastCell=-1,scrollCell=-1,scrollTab='summary';
   const panel=document.createElement('div');
   panel.id='ctxInspector03817';
   panel.className='ctxInspector03817';
@@ -277,16 +277,25 @@
   }
   function mount(ctx){
     if(ctx?.kind!=='cell'||!Number.isInteger(ctx.cell)){
-      panel.hidden=true;root.classList.remove('hexInspectorActive03817');return;
+      panel.hidden=true;root.classList.remove('hexInspectorActive03817');
+      scrollCell=-1;return;
     }
     if(lastCell!==ctx.cell){tab='summary';lastCell=ctx.cell}
     const permitted=tabsFor(ctx);
     if(!permitted.some(v=>v[0]===tab))tab='summary';
+    // La ficha puede renovarse mientras se juega. Mantener las dos barras
+    // en el mismo hexágono; una pestaña diferente comienza al principio.
+    const sameCell=scrollCell===ctx.cell,oldOuter=sameCell?(root.scrollTop||0):0;
+    const sameView=sameCell&&scrollTab===tab;
+    const oldInner=sameView?(panel.querySelector?.('.ctxDetails03817')?.scrollTop||0):0;
     root.classList.add('hexInspectorActive03817');panel.hidden=false;
     panel.innerHTML='<nav class="ctxNav03817" aria-label="Información del hexágono">'+
       permitted.map(([key,name])=>'<button type="button" data-inspect-tab03817="'+key+'" aria-pressed="'+(key===tab)+'">'+name+'</button>').join('')+
       '</nav><div class="ctxDetails03817">'+renderDetails(ctx)+'</div>';
     simplifyActions(ctx);
+    if(sameCell)root.scrollTop=oldOuter;
+    if(sameView){const details=panel.querySelector?.('.ctxDetails03817');if(details)details.scrollTop=oldInner}
+    scrollCell=ctx.cell;scrollTab=tab;
   }
   function render(ctx){
     const out=original.apply(this,arguments);
