@@ -7,8 +7,8 @@ const index=read('index.html');
 const css=read('css/production-0388.css');
 assert.doesNotThrow(()=>new Function(moduleCode),'production syntax');
 assert.doesNotThrow(()=>new Function(logistics),'logistics syntax');
-assert.match(index,/js\/production-0388\.js\?v=038(?:8|1[012])/);
-assert.match(index,/css\/production-0388\.css\?v=038(?:8|1[01])/);
+assert.match(index,/js\/production-0388\.js\?v=038(?:8|1[012345])/);
+assert.match(index,/css\/production-0388\.css\?v=038(?:8|1[012345])/);
 assert.ok(logistics.includes('HexategosProduction0388?.tick?.('),'production not connected to material tick');
 assert.ok(logistics.includes('production?.cells?.()'),'extraction nodes not connected to national inventories');
 assert.ok(css.includes('industryBuildGrid0388'));
@@ -17,7 +17,7 @@ const names=['window','FACTIONS3230','owner6','botGold3230','gold3212','loadLeve
   'MAX_GAME_LEVEL3233','campaignSeconds3230','started3230','activeFactionCount3230',
   'saveGame3212','loadGame3212','resetGame3230','renderSystems3220','buildClassicActions3246',
   'handleContextAction3244','drawInfrastructure3212','document','modalBody3244','console',
-  'aiNationalSamples3275','ports3212','localStorage','capitals'];
+  'aiNationalSamples3275','ports3212','localStorage','capitals','industryLevel3230','industries3212'];
 const owner=Array(40).fill(1);for(let i=0;i<=8;i++)owner[i]=0;
 const edges=[],offsets=[0];
 for(let i=0;i<owner.length;i++){
@@ -37,7 +37,7 @@ const args=[world,[{role:'balanced'},{role:'growth'}],owner,gold,4000,
   {getElementById:()=>null},null,{info(){}},
   [[],Array.from({length:30},(_,i)=>i+9)],new Set([4,5]),
   {getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v),
-    removeItem:k=>storage.delete(k)},[0,9]];
+    removeItem:k=>storage.delete(k)},[0,9],new Uint8Array(owner.length),new Set()];
 const factory=new Function(...names,moduleCode+
   '\nreturn {api:window.HexategosProduction0388,save:saveGame3212,load:loadGame3212,reset:resetGame3230}');
 const {api,save,load,reset}=factory(...args);
