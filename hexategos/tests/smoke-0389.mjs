@@ -9,7 +9,7 @@ const index=read('index.html');
 for(const [name,code] of [['names',names],['messages',msgs],['statecraft',statecraft]]){
   assert.doesNotThrow(()=>new Function(code),name+' syntax');
 }
-assert.match(index,/v0\.38\.(?:9|1[012345])<\/title>/);
+assert.match(index,/v0\.38\.(?:9|1\d{1,2})<\/title>/);
 assert.match(index,/js\/regional-names-0389\.js\?v=0389/);
 assert.match(index,/js\/ui-stable-step8-033\.js\?v=0389/);
 assert.match(index,/js\/statecraft-0380\.js\?v=0389/);

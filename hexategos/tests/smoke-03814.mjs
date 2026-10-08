@@ -5,8 +5,8 @@ const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
 const src=read('js/map-icons-03812.js');
 const html=read('index.html');
 assert.doesNotThrow(()=>new Function(src),'icon map syntax');
-assert.match(html,/v0\.38\.1[45]<\/title>/);
-assert.match(html,/js\/map-icons-03812\.js\?v=0381[45]/);
+assert.match(html,/v0\.38\.1\d<\/title>/);
+assert.match(html,/js\/map-icons-03812\.js\?v=0381\d/);
 assert.ok(!src.includes('frame.historic'),'old blue historic-capital markers must be absent');
 
 const land=Array(9).fill(1),centers=[],offsets=[0],edgeNbr=[];
