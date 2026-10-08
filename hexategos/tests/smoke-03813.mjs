@@ -29,7 +29,7 @@ const run=new Function('ctx','finite','globeIconScale3249',
   palette+radiusFn+badgeFn+'return {COLORS,radius,badge}');
 const {COLORS,radius,badge}=run(ctx,Number.isFinite,()=>8.0);
 const types=['city','capital','historic','port','industry','oil','gas',
-  'iron','copper','quarry','timber','crops','livestock',
+  'coal','iron','copper','quarry','timber','crops','livestock',
   'refinery','gasplant','steel','smelter','sawmill','cement','foodplant',
   'thermal','civilian','machinery','arms','textile','chemical','electronics'];
 assert.equal(Object.keys(COLORS).length,types.length,'unexpected missing or extra types');
@@ -48,4 +48,4 @@ for(const type of types){
 assert.notEqual(COLORS.oil,COLORS.gas);
 assert.notEqual(COLORS.city,COLORS.port);
 assert.notEqual(COLORS.industry,COLORS.refinery);
-console.log('HEXATEGOS 0.38.13 original circular background, 20 unique type colors and larger icons: OK');
+console.log('HEXATEGOS 0.38.13 original circular background, unique type colors including coal and larger icons: OK');
