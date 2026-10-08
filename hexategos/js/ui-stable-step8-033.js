@@ -210,25 +210,26 @@
   function injectNoticesForCurrentTab(){
     if(typeof sysTab3220==='undefined'||sysTab3220==='settings')return;
     const tab=sysTab3220;
-    if(tab==='dip'){
-      // Recuperar solicitudes que siguen pendientes aunque el historial
-      // de avisos se haya truncado o se haya cargado otra partida.
-      for(const pending of window.HexategosStatecraft0380?.pendingEmbassies?.()||[]){
-        if(!notices.some(n=>n.requestKind==='embassy'&&Number(n.faction)===pending.f))
-          addNotice('diplomacy',factionName3230(pending.f)+' solicita establecer una embajada',
-            {tab:'dip',requestKind:'embassy',faction:pending.f});
-      }
-    }
+    // Las embajadas pendientes se tramitan en «Embajadas y contacto exterior».
+    // No creamos una segunda tarjeta accionable dentro de Avisos.
     const c=document.getElementById('sysContent3213');if(!c)return;
     // Una renderización encadenada puede conservar la tarjeta anterior.
     // Mantener una sola sección de avisos para la pestaña activa.
-    c.querySelectorAll(':scope > .noticesStable8').forEach(node=>node.remove());
-    const all=notices.filter(n=>tabForNotice(n)===tab);
+    c.querySelectorAll('.noticesStable8').forEach(node=>node.remove());
+    const all=notices.filter(n=>tabForNotice(n)===tab && !(tab==='dip' && n.requestKind==='embassy'));
+    // Un mismo acontecimiento diplomático puede llegar desde el motor de
+    // relaciones y desde el emisor de mensajes. Mostrarlo una sola vez.
+    const unique=new Map();
+    for(const n of all){
+      const k=noticeSignature(n.type,n.message,tab);
+      if(!unique.has(k))unique.set(k,n);
+    }
+    const visibleNotices=[...unique.values()];
     // Las solicitudes pendientes se muestran antes que los avisos ordinarios.
     const pending=n=>n.requestKind==='embassy'&&
       window.HexategosStatecraft0380?.embassyStatus?.(0,Number(n.faction))?.status==='pending'&&
       window.HexategosStatecraft0380?.embassyStatus?.(0,Number(n.faction))?.requestedBy===Number(n.faction);
-    const list=[...all].sort((a,b)=>Number(pending(b))-Number(pending(a))||b.created-a.created).slice(0,4);
+    const list=visibleNotices.sort((a,b)=>Number(pending(b))-Number(pending(a))||b.created-a.created).slice(0,4);
     if(!list.length)return;
     const block=document.createElement('div');
     block.className='sysBlock3213 messagesSectionStable8 noticesStable8';
