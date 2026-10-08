@@ -4,10 +4,27 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.38.4',
+      date:'Octubre 2026',
+      title:'Rendimiento: eliminar tirones periódicos',
+      current:true,
+      summary:'El cálculo geográfico, la selección de recursos y el mantenimiento de ciudades se reparten de manera incremental para reducir pausas en el renderizado, sin alterar las reglas estratégicas.',
+      changes:[
+        'El refresco geográfico deja de reconstruir 160 perfiles completos por tick comercial: solo ajusta producción primaria sobre nodos existentes.',
+        'El trabajo por ciclo se limita a 24, 32 o 48 nodos según el número de naciones y respeta un presupuesto aproximado de 1,4 ms.',
+        'Las decisiones tácticas y comerciales de IA leen resúmenes económicos ya calculados y no fuerzan reconstrucciones de la red de suministros.',
+        'La caché de riqueza geográfica expulsa una entrada antigua cuando se llena en lugar de vaciar 12.000 entradas de una sola vez.',
+        'La estabilidad utiliza un iterador persistente para no copiar todas las ciudades cada cinco segundos.',
+        'El tick de comercio incorpora métricas separadas para carreteras, planificación de rutas, recursos y caché comercial.',
+        'Los diagnósticos de rendimiento exponen el tiempo de actualización geográfica y las ciudades procesadas.',
+        'Se conservan la estrategia económica territorial, los sistemas diplomáticos y la compatibilidad con partidas anteriores.'
+      ]
+    },
+    {
       version:'0.38.3',
       date:'Octubre 2026',
       title:'IA con objetivos económicos territoriales',
-      current:true,
+      current:false,
       summary:'El valor de la geografía deja de ser un dato pasivo: la IA busca tierras productivas cuando tiene escasez, conecta proveedores reales y evalúa sectores mineros y energéticos sin saltarse seguridad, distancias ni diplomacia.',
       changes:[
         'La planificación militar considera alimentos, materias primas y combustible de cada hexágono según el déficit material nacional.',
