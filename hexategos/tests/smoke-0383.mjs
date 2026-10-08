@@ -28,7 +28,8 @@ const sampleLimit=Number(strategy.match(/const MAX_NATIONAL_SAMPLES=(\d+)/)?.[1]
 assert.ok(sampleLimit>=24&&sampleLimit<=96,'national sampling must remain bounded');
 assert.ok(!strategy.includes('setInterval('),'no new independent simulation timer allowed');
 assert.ok(trade.includes('function refreshGeoProduction0383'),'conquered land must update material production');
-assert.ok(trade.includes('GEO_PRODUCTION_BATCH0383=160'),'node reprofiling must be bounded');
+const geoBatch=Number(trade.match(/GEO_PRODUCTION_BATCH0383=(\d+)/)?.[1]);
+assert.ok(geoBatch>=16&&geoBatch<=160,'geographic node reprofiling must remain bounded');
 assert.ok(trade.includes('geoNodeCounts0383[f]'),'production must divide correctly over national nodes');
 assert.ok(geopolitics.includes('ResourceStrategy0383?.priority'),'neutral corridor expansion must favor rich cells');
 assert.ok(geopolitics.includes('ResourceStrategy0383?.tradeOpportunity'),'trade corridors must evaluate import needs');
