@@ -691,7 +691,7 @@
   }
 
   function transferRouteResources03720(r,dt){
-    r.cargo03720=[0,0,0,0,0];r.cargoTotal03720=0;r.materialFactor03720=.48;
+    r.cargo03720=[0,0,0,0,0];r.cargoDirection03720=[0,0,0,0,0];r.cargoTotal03720=0;r.materialFactor03720=.48;
     const k=routeFactor0370(r);
     if(k<=0)return;
     const a=resourceNodes03720.get(r.from),b=resourceNodes03720.get(r.to);
@@ -719,6 +719,7 @@
       if(amount<=0)continue;
       src.stock[i]-=amount;dst.stock[i]+=amount;
       r.cargo03720[i]=amount/Math.max(.1,dt);
+      r.cargoDirection03720[i]=src===a?1:-1;
       total+=amount/Math.max(.1,dt);
     }
     r.cargoTotal03720=total;
