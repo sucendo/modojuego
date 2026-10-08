@@ -1048,6 +1048,9 @@
     const a=Array.isArray(r.cargo03720)?r.cargo03720:[];
     const parts=[];
     for(let i=0;i<5;i++)if((a[i]||0)>=.015)parts.push(RESOURCE_SHORT03720[i]+' '+a[i].toFixed(2)+'/s');
+    const types=window.HexategosProduction0388?.types||{};
+    for(const [kind,amount] of Object.entries(r.productionCargo0388||{}))
+      if(amount>=.015)parts.push((types[kind]?.name||kind)+' '+Number(amount).toFixed(2)+'/s');
     return parts.join(' · ');
   }
 
@@ -1906,7 +1909,9 @@
   }
 
   function tradeRouteGoods03717(r){
-    return Number.isFinite(r.cargoTotal03720)?Number(r.cargoTotal03720.toFixed(2)):Math.max(0,Math.round((r.lastValue||0)*9.5));
+    const cargo=Object.values(r.productionCargo0388||{}).reduce((a,b)=>a+(Number(b)||0),0);
+    const baseline=Number.isFinite(r.cargoTotal03720)?r.cargoTotal03720:Math.max(0,(r.lastValue||0)*9.5);
+    return Number((baseline+cargo).toFixed(2));
   }
 
   function tradeRouteSupplyLabel03717(r){
