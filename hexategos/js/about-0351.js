@@ -4,10 +4,26 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.38.11',
+      date:'Octubre 2026',
+      title:'Instalaciones especializadas compartiendo hexágono y símbolos sin solapes',
+      current:true,
+      summary:'Un hexágono admite hasta tres instalaciones productivas especializadas distintas junto a ciudad, puerto e industria general. El menú explica las restricciones de construcción y reserva capacidad para el jugador.',
+      changes:[
+        'Hasta tres instalaciones especializadas diferentes por hexágono, con controles individuales y sin duplicados del mismo tipo.',
+        'Ciudad, puerto, industria general y especializadas mantienen sus iconos separados cuando comparten un hexágono.',
+        'La capital conserva su símbolo central y las instalaciones se distribuyen alrededor.',
+        'Las opciones muestran las razones de bloqueo: oro insuficiente, instalación duplicada, límite local o capacidad nacional.',
+        'Límite nacional separado para el jugador y cupos de IA escalables a 500 naciones; reserva de capacidad para construcciones humanas.',
+        'Compatibilidad de los guardados anteriores, inventarios y controles individuales, incluidos hexágonos con varias industrias.',
+        'Prueba de regresión para símbolos, industrias compartidas, restricciones, controles y restauración de partidas.'
+      ]
+    },
+    {
       version:'0.38.10',
       date:'Octubre 2026',
       title:'Industria unificada y selección de hexágonos desbloqueada',
-      current:true,
+      current:false,
       summary:'Se corrige el bloqueo del mapa tras construir una instalación productora; la industria general y las explotaciones especializadas comparten un único menú con subniveles y colores contrastados.',
       changes:[
         'La construcción productiva cierra el diálogo con la función normal del motor y elimina el estado que bloqueaba la selección de hexágonos.',
