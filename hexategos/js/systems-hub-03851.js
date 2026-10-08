@@ -35,6 +35,9 @@
     const api=nationApi();
     if(!api)return;
     if(!card){card=introBlock('dip');host.prepend(card)}
+    // Posición estable: Embajadas siempre por encima de Avisos · Diplomacia.
+    // Los avisos se reinsertan en cada render y pueden adelantar esta tarjeta.
+    if(host.firstElementChild!==card)host.insertBefore(card,host.firstElementChild);
     const tech=api.tech?.(0)??0, reach=api.reach?.(0)??18;
     const prevTech=card.querySelector('[data-hub-tech]');
     if(!prevTech){
