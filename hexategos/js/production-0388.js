@@ -686,6 +686,8 @@
   const baseDraw=drawInfrastructure3212;
   drawInfrastructure3212=function(R,cx,cy,now){
     const out=baseDraw.apply(this,arguments);
+    // El sistema cartográfico 0.38.12 unifica los símbolos en una pasada posterior.
+    if(window.HexategosMapIcons03812?.active)return out;
     if(currentKey!==MAX_GAME_LEVEL3233||zoom<7||!sites.size)return out;
     const C=loadLevel(MAX_GAME_LEVEL3233).centers;
     let drawn=0;
@@ -715,6 +717,7 @@
     sites:()=>[...sites.values()].map(s=>({...s})),sector:(f,s)=>sec(f,s),
     build,upgrade,setPct,setSector,potential,efficiency,availability,sitesOnCell:cell=>sitesOnCell(cell).map(s=>({...s})),
     iconOffset:iconOffset03811,
+    drawCandidates:()=>sites.values(),
     stats:()=>({...lastStats}),validate:()=>{
       const errors=[];for(const s of sites.values())if(!TYPES[s.kind]||s.cell<0)errors.push('instalación inválida');
       return {ok:!errors.length,errors,stats:lastStats};
