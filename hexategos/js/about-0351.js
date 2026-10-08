@@ -4,10 +4,25 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.37.22',
+      date:'Octubre 2026',
+      title:'Diagnóstico de suministro',
+      current:true,
+      summary:'Cada territorio explica ahora por qué está abastecido, en tensión, bajo o crítico y qué acción concreta puede corregir el problema.',
+      changes:[
+        'El suministro seleccionado muestra producción, consumo, balance y flujo comercial de su nodo o red conectada.',
+        'Se distingue explícitamente logística física, disponibilidad material y suministro combinado.',
+        'El diagnóstico identifica el cuello de botella principal: aislamiento, capacidad logística, escasez de alimentos, combustible o bienes, producción insuficiente o rutas bloqueadas.',
+        'Las recomendaciones cambian según la causa real: mejorar carreteras, abrir rutas comerciales, aumentar industria, importar recursos o restablecer tránsito.',
+        'El cálculo reutiliza los nodos y componentes logísticos existentes y solo agrega la red seleccionada, evitando barridos globales por frame.',
+        'La API HexategosTradeLogistics0370 expone supplyDiagnosis(cell) para depuración y futuras decisiones de IA.'
+      ]
+    },
+    {
       version:'0.37.21',
       date:'Octubre 2026',
       title:'Mapa de suministro material',
-      current:true,
+      current:false,
       summary:'El mapa de suministro existente pasa a combinar conectividad logística y disponibilidad real de recursos, mostrando de forma progresiva la degradación de islas, enclaves y redes aisladas.',
       changes:[
         'El mapa de suministro v3.25.3 se conserva como base; no se crea una capa paralela.',
