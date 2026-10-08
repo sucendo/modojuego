@@ -402,9 +402,11 @@
           processed+=outputQty;
           continue;
         }
-        // El remanente va al buffer: no descartar producción tras consumir insumos.
-        const delivered=Math.min(room,outputQty);
-        const stored=intermediate?Math.min(buffer,outputQty-delivered):0;
+        // Reservar parte del intermedio para la cadena real y entregar el resto
+        // al inventario logístico clásico, sin perder masa si uno está lleno.
+        let stored=intermediate?Math.min(buffer,outputQty*.62):0;
+        const delivered=Math.min(room,outputQty-stored);
+        if(intermediate)stored+=Math.min(buffer-stored,outputQty-stored-delivered);
         if(intermediate)s.stock+=stored;
         n.stock[out]+=delivered;
         processed+=stored+delivered;s.output+=stored+delivered;
