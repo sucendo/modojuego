@@ -71,6 +71,7 @@
   const GEO_PRODUCTION_BATCH0383=48;
   const GEO_REFRESH_BUDGET_MS0384=1.4;
   let geoRefreshMs0384=0,geoRefreshedNodes0384=0;
+  let nodeRebuildMs0384=0,nodeRebuildCount0384=0;
 
   let navalPathBucket0371=-1;
   let navalPathUsed0371=0;
@@ -475,13 +476,30 @@
   }
 
   function resourceStructureSignature03720(){
-    let h=(cities3212.size*31+industries3212.size*37+ports3212.size*41+routes.length*43+activeFactionCount3230*47)>>>0;
+    // Solo cambian los nodos cuando cambia infraestructura o aparece/desaparece
+    // un extremo de ruta que NO estaba ya representado por ciudad/industria/
+    // puerto/capital. Una ruta entre puertos existentes no debe reconstruir
+    // todos los nodos económicos de 500 naciones.
+    let h=(cities3212.size*31+industries3212.size*37+
+      ports3212.size*41+activeFactionCount3230*47)>>>0;
     const mix=cell=>{const f=owner6[cell];h=Math.imul(h^((cell+1)*17+(f+2)*29),16777619)>>>0};
     for(const x of cities3212)mix(x);
     for(const x of industries3212)mix(x);
     for(const x of ports3212)mix(x);
-    for(let f=0;f<activeFactionCount3230;f++)if(Number.isInteger(capitals[f])&&capitals[f]>=0)mix(capitals[f]);
-    for(const r of routes)if(r.status!=='closed'){mix(r.from);mix(r.to)}
+    for(let f=0;f<activeFactionCount3230;f++)
+      if(Number.isInteger(capitals[f])&&capitals[f]>=0)mix(capitals[f]);
+    const hubs=new Set();
+    for(const r of routes){
+      if(r.status==='closed')continue;
+      for(const cell of [r.from,r.to]){
+        if(!Number.isInteger(cell)||cell<0||cell>=owner6.length)continue;
+        const f=owner6[cell];
+        if(cities3212.has(cell)||industries3212.has(cell)||
+           ports3212.has(cell)||(f>=0&&capitals[f]===cell))continue;
+        hubs.add(cell);
+      }
+    }
+    for(const cell of hubs)mix(cell);
     return h+':'+roadEpoch;
   }
 
@@ -596,6 +614,7 @@
     rebuildRoadGraph0370(false);
     const sig=resourceStructureSignature03720();
     if(!force&&resourceSig03720===sig&&resourceNodes03720.size)return resourceNodes03720;
+    const rebuildStarted0384=performance.now();
 
     const old=resourceNodes03720,next=new Map(),cellsByFaction=Array.from({length:activeFactionCount3230},()=>new Set());
     const add=(cell,f)=>{
@@ -642,6 +661,8 @@
     }
     resourceNodes03720=next;resourceSig03720=sig;restoredResources03720=null;
     geoProductionIterator0383=null;
+    nodeRebuildMs0384=performance.now()-rebuildStarted0384;
+    nodeRebuildCount0384++;
     return next;
   }
 
@@ -2569,6 +2590,8 @@
         resourceTickMs:Number(resourceTickMs03720.toFixed(2)),
         geoRefreshMs:Number(geoRefreshMs0384.toFixed(2)),
         geoRefreshedNodes:geoRefreshedNodes0384,
+        nodeRebuildMs:Number(nodeRebuildMs0384.toFixed(2)),
+        nodeRebuildCount:nodeRebuildCount0384,
         phases:tradePhases0384,
         roadBuildMs:Number(roadBuildMs.toFixed(2)),
         routeEvals,seaSearches,trafficDrawn
