@@ -158,9 +158,10 @@
   };
   async function nameCell(cell,f,isCapital){
     const marker=(isCapital?'c':'t')+':'+cell+':'+f;
-    if(working.has(marker)||checked.has(marker))return;
-    working.add(marker);
-    const before=capitals?.[f],epoch=generation;
+    const epoch=generation,job=epoch+':'+marker;
+    if(working.has(job)||checked.has(marker))return;
+    working.add(job);
+    const before=capitals?.[f];
     try{
       const atlas=window.HexategosRealCities0354;
       if(!atlas?.suggest)return;
@@ -181,7 +182,7 @@
       tryApplyCity(cell,option.name,f);
       checked.add(marker);
     }catch(err){failures++;console.warn('[Hexategos topónimos]',err?.message||err)}
-    finally{working.delete(marker)}
+    finally{working.delete(job)}
   }
   function service(){
     if(!started3230||paused3230||!owner6?.length)return;
