@@ -4,10 +4,27 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.38.8',
+      date:'Octubre 2026',
+      title:'Economía productiva territorial y cadenas logísticas',
+      current:true,
+      summary:'La extracción especializada explota hasta siete hexágonos, las fábricas transforman materias primas físicas y las rutas conectan los centros productivos, con regulación sectorial e IA adaptada a cada territorio.',
+      changes:[
+        'Pozos de petróleo y gas, minas, madera, cultivos y ganadería con rendimiento según riqueza geológica y territorio controlado.',
+        'Refinerías, plantas de gas, siderurgias, metalurgias, aserraderos, cementeras e industria alimentaria transforman materias extraídas.',
+        'Cada explotación conserva inventario propio; la materia solo llega a una fábrica por carretera, o mediante puertos y rutas comerciales.',
+        'Controles individuales por instalación, controles nacionales por sector, cinco niveles y costes de inversión.',
+        'Las IA invierten con su presupuesto, eligen zonas y fábricas según recursos y escasez, y presentan eficiencia variable.',
+        'Los iconos aparecen solo al acercar el mapa; no se dibujan los seis hexágonos de influencia como construcciones.',
+        'Los nuevos datos se guardan localmente y en partidas exportadas, manteniendo las antiguas partidas sin instalaciones.',
+        'Se mantiene temporalmente la producción territorial heredada para evitar quiebras al cargar partidas previas.'
+      ]
+    },
+    {
       version:'0.38.7',
       date:'Octubre 2026',
       title:'Oro sin límite de 9.999, flotas IA y diálogos unificados',
-      current:true,
+      current:false,
       summary:'Se elimina el límite artificial de oro, se reactivan los ciclos de patrulla de la IA tras una interceptación y se aplica el aspecto de Sistemas a los demás diálogos, con tipografía adaptable.',
       changes:[
         'El oro del jugador y de las IA deja de detenerse en 9.999 y puede continuar creciendo, sin modificar los saldos de partidas anteriores.',
