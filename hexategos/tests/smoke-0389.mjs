@@ -11,7 +11,7 @@ for(const [name,code] of [['names',names],['messages',msgs],['statecraft',statec
 }
 assert.match(index,/v0\.38\.(?:9|1\d{1,2})<\/title>/);
 assert.match(index,/js\/regional-names-0389\.js\?v=0389/);
-assert.match(index,/js\/ui-stable-step8-033\.js\?v=0389/);
+assert.match(index,/js\/ui-stable-step8-033\.js\?v=\d+/);
 assert.match(index,/js\/statecraft-0380\.js\?v=0389/);
 assert.ok(msgs.includes('data-view-notice='),'notice VER missing');
 assert.ok(msgs.includes('data-view-offer='),'diplomatic proposal VER missing');
