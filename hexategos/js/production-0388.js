@@ -3,7 +3,7 @@
    Una instalación explota como máximo 7 hexágonos; inventario material
    concentrado en nodos, nunca un objeto de producción por celda. */
 (() => {
-  const VERSION='0.38.8';
+  const VERSION='0.38.10';
   const SAVE_KEY='hexategos.production.0388';
   const MAX_SITES=3200,MAX_PER_NATION=18;
   const TYPES={
