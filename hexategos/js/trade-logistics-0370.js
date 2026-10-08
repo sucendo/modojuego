@@ -1052,9 +1052,10 @@
     const a=Array.isArray(r.cargo03720)?r.cargo03720:[];
     const parts=[];
     for(let i=0;i<5;i++)if((a[i]||0)>=.015)parts.push(RESOURCE_SHORT03720[i]+' '+a[i].toFixed(2)+'/s');
-    const types=window.HexategosProduction0388?.types||{};
+    const production=window.HexategosProduction0388;
+    const types=production?.types||{},processed=production?.intermediates?.()||{};
     for(const [kind,amount] of Object.entries(r.productionCargo0388||{}))
-      if(amount>=.015)parts.push((types[kind]?.name||kind)+' '+Number(amount).toFixed(2)+'/s');
+      if(amount>=.015)parts.push((types[kind]?.name||processed[kind]||kind)+' '+Number(amount).toFixed(2)+'/s');
     return parts.join(' · ');
   }
 
