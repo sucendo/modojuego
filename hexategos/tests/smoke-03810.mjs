@@ -9,7 +9,7 @@ assert.doesNotThrow(()=>new Function(js),'productive module syntax');
 assert.ok(css.includes('.industryChoice0388'),'unified dialog colors missing');
 assert.ok(!css.includes('color:#112c3d!important'),'dialog text contrast regression');
 const start=js.indexOf('  function industryContext0388(');
-const end=js.indexOf('  // Un único icono discreto',start);
+const end=js.indexOf('  // Distribución de símbolos por hexágono:',start);
 assert.ok(start>0&&end>start,'new unified industry menu missing');
 const ui=js.slice(start,end);
 assert.ok(ui.includes('closeModal3244();'),'normal modal close missing');
@@ -33,7 +33,7 @@ const args=[
  'closeContextDialog3244','closeModal3244','modal3244','modalTitle3244',
  'modalBody3244','modalActions3244','buildClassicActions3246','classicAction3246',
  'handleContextAction3244','sites','TYPES','gold3212','MAX_SITES',
- 'MAX_PER_NATION','countNation','potential','esc','placeDisplayName3271',
+ 'MAX_PER_NATION','MAX_PER_CELL','MAX_PLAYER_SITES','sitesOnCell','availability','countNation','potential','esc','placeDisplayName3271',
  'build','saveGame3212','updateUI3230','sysTab3220','renderSystems3220',
  'selected','MAX_GAME_LEVEL3233','contextBuildPermit3282',
  'industryLevel3230','industries3212','build3212','performance','toast',
@@ -46,7 +46,8 @@ const value=[
  overlay,title,body,actionsPanel,
  ()=>[{id:'build_road',enabled:true},{id:'build_industry',enabled:true}],
  (id,label,icon,sub,enabled,cls)=>({id,label,icon,sub,enabled,cls}),()=>{},
- sites,types,1500,3200,18,()=>sites.size,()=>1,s=>s,s=>'Lugar 8',
+ sites,types,1500,3200,18,3,160,cell=>[...sites.values()].filter(s=>s.cell===cell),
+ ()=>({ok:true,reason:'Disponible'}),()=>sites.size,()=>1,s=>s,s=>'Lugar 8',
  (f,cell,kind)=>{sites.set(cell,{f,cell,kind,level:1});buildCount++;return true},
  ()=>{},()=>{},'dip',()=>{},null,5,null,levels,industries,
  type=>{assert.equal(type,'industry');industries.add(8);levels[8]++;return true},
