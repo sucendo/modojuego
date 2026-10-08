@@ -341,7 +341,8 @@
       embassyFilter=e.target.value||'';
       renderEmbassyRoster();
       const field=host.querySelector('[data-embassy-search]');
-      field?.focus();
+      // No desplazar el diálogo mientras se escribe en el buscador.
+      field?.focus({preventScroll:true});
       field?.setSelectionRange?.(embassyFilter.length,embassyFilter.length);
     }
   });
