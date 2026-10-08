@@ -230,7 +230,8 @@
           }
         }
       }
-      // A zoom lejano solamente quedan ciudades; las capitales sin ciudad
+    }
+    // A zoom lejano solamente quedan ciudades; las capitales sin ciudad
       // mantienen su estrella para evitar desaparecer completamente.
       if(zoom<DETAIL_ZOOM&&zoom>=1.3){
         for(let f=0;f<activeFactionCount3230;f++){
@@ -264,7 +265,6 @@
           badge(xy[0],xy[1],'capital',f===0?1.05:.94);rendered.capital++;
         }
       }
-    }
     frame=null;
     return output;
   };
