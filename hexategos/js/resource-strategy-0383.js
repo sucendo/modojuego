@@ -5,8 +5,8 @@
 (() => {
   const BUILD='0.38.4';
   const MAX_GEO_CACHE=12000;
-  const MAX_NATIONAL_SAMPLES=48;
-  const MAX_NATIONAL_AGE=20;
+  const MAX_NATIONAL_SAMPLES=96;
+  const MAX_NATIONAL_AGE=8;
   const BASE=['Alimentos','Materias primas','Combustible'];
   const ICONS=['🍞','⛏','⛽'];
   const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
@@ -77,21 +77,29 @@
     // Muestra del snapshot YA generado por la IA: no se barre el mapa mundial.
     const raw=aiNationalSamples3275?.[f]||[];
     const step=Math.max(1,Math.ceil(raw.length/MAX_NATIONAL_SAMPLES));
-    const total=[0,0,0];let count=0;
+    const total=[0,0,0],richest=[[],[],[]];let count=0;
     for(let j=0;j<raw.length&&count<MAX_NATIONAL_SAMPLES;j+=step){
       const cell=raw[j];
       if(owner6[cell]!==f)continue;
       const g=geography(cell);
       if(!g)continue;
-      for(let i=0;i<3;i++)total[i]+=g.vector[i];
+      for(let i=0;i<3;i++){
+        const value=g.vector[i];total[i]+=value;
+        const top=richest[i];top.push(value);top.sort((a,b)=>b-a);if(top.length>4)top.pop();
+      }
       count++;
     }
     // País sin muestras recientes: su capital ofrece una estimación razonable.
     if(!count){
       const cell=capitals[f],g=geography(cell);
-      if(g){for(let i=0;i<3;i++)total[i]=g.vector[i];count=1}
+      if(g){for(let i=0;i<3;i++){total[i]=g.vector[i];richest[i]=[g.vector[i]]}count=1}
     }
-    const vector=count?total.map(v=>clamp(v/count,.30,1.9)):[1,1,1];
+    // Las áreas excepcionalmente ricas deben influir aunque sean una parte
+    // pequeña del país; combinar media territorial y mejores yacimientos.
+    const vector=count?total.map((v,i)=>{
+      const peak=richest[i].reduce((a,b)=>a+b,0)/Math.max(1,richest[i].length);
+      return clamp(v/count*.65+peak*.35,.30,2.1);
+    }):[1,1,1];
     countryCache.set(f,{time,vector});
     return vector;
   }
