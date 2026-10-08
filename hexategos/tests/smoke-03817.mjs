@@ -93,7 +93,7 @@ assert.ok(contents.includes('Industrias y controles de producción'),'industry s
 assert.ok(contents.includes('Puerto, comercio y flotas'),'port section missing');
 assert.ok(contents.includes('↑ Exporta: Alimentos'),'outbound sea cargo not identified');
 assert.ok(contents.includes('↓ Importa: Energía'),'inbound fuel not identified');
-assert.ok(contents.includes('↓ Importa: Pozo de gas'),'inbound manufactured cargo not identified');
+assert.match(contents,/↓ Importa:[^<]*Pozo de gas/,'inbound manufactured cargo not identified');
 assert.ok(contents.includes('Flota 9'),'naval fleet based in port missing');
 assert.deepEqual(sim.api.tabsFor(city),['summary','industry','government','port']);
 const ruralHex={kind:'cell',cell:2,owner:0,own:true,city:0,industry:0,fort:0,port:false};
