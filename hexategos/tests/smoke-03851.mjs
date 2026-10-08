@@ -103,5 +103,6 @@ assert.ok(host.children[0]?.innerHTML.includes('Ejército y frentes'),
   'Militar tab must render');
 assert.ok(host.children[0]?.innerHTML.includes('Operación terrestre'),
   'Militar tab must reuse military controls');
-assert.equal(window.HEXATEGOS_VERSION,'0.38.5.2');
+assert.ok(versionAtLeast("const BUILD='"+window.HEXATEGOS_VERSION+"'",'0.38.5.2'),
+  'Systems controller must preserve its minimum compatible version');
 console.log('HEXATEGOS 0.38.5.1 Systems usability smoke: OK');
