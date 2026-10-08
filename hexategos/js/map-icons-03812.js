@@ -3,7 +3,7 @@
    Ciudad centrada; puerto en borde costero real; carreteras bajo capital;
    pictogramas vectoriales homogéneos, sin emojis superpuestos. */
 (() => {
-  const VERSION='0.38.13',DETAIL_ZOOM=5.5,PRODUCTION_ZOOM=7,AI_PRODUCTION_ZOOM=13;
+  const VERSION='0.38.14',DETAIL_ZOOM=5.5,PRODUCTION_ZOOM=7,AI_PRODUCTION_ZOOM=13;
   // Paleta del estilo original: círculo sólido por categoría y dibujo oscuro.
   // Todos los tipos tienen fondo propio, evitando el azul genérico anterior.
   const COLORS={
@@ -71,26 +71,21 @@
     if(l)return l;
     const owner=owner6[cell],point=centerPoint(cell);
     if(owner<0||!point){l={coords:new Map(),center:point};frame.layouts.set(cell,l);return l}
-    const city=cities3212.has(cell);
+    const cap=capitals?.[owner]===cell;
+    const city=cities3212.has(cell)||cap;
     const showDetail=zoom>=DETAIL_ZOOM;
     const hasPort=showDetail&&ports3212.has(cell);
-    const cap=capitals?.[owner]===cell;
-    const hist=!!frame.historic?.has(cell);
     const specialVisible=zoom>=PRODUCTION_ZOOM&&(owner===0||zoom>=AI_PRODUCTION_ZOOM);
     const specials=specialVisible?(production()?.sitesOnCell?.(cell)||[]).filter(s=>s.f===owner):[];
     const roles=[];
-    if(showDetail&&cap)roles.push('capital');
-    else if(showDetail&&hist)roles.push('historic');
     if(showDetail&&industries3212.has(cell))roles.push('industry');
     for(const s of specials)roles.push(entryRole(s));
     const coords=new Map();
     if(city)coords.set('city',[point[0],point[1]]);
-    // Incluso sin ciudad, una capital no queda oculta por la carretera.
-    if(!city&&cap&&!showDetail)coords.set('capital',[point[0],point[1]]);
     const shore=hasPort?portPosition(cell,point):null;
     if(hasPort&&shore)coords.set('port',[shore.x,shore.y]);
     else if(hasPort)roles.push('port');
-    const central=!city&&roles.length?roles.shift():null;
+    const central=!city&&!cap&&roles.length?roles.shift():null;
     if(central)coords.set(central,[point[0],point[1]]);
     const n=roles.length,hasShore=!!shore;
     const r=hasShore?Math.max(24,22+n*5.2):Math.max(21,20+n*3.6);
@@ -188,6 +183,31 @@
     }
     ctx.restore();
   }
+  // Capital = CIUDAD central, ligeramente mayor, con estrella en el
+  // color real de la nación detrás. Nunca se pinta una segunda estrella.
+  function capitalCityIcon03814(x,y,f,scale=1){
+    if(!finite(x)||!finite(y))return;
+    const cityR=radius()*scale;
+    const factionColor=typeof FACTIONS3230!=='undefined'?
+      (FACTIONS3230[f]?.color||COLORS.capital):COLORS.capital;
+    ctx.save();
+    ctx.translate(x,y);
+    ctx.beginPath();
+    const outer=cityR*1.63,inner=cityR*.76;
+    for(let i=0;i<10;i++){
+      const a=-Math.PI/2+i*Math.PI/5,r=i%2?inner:outer;
+      if(i===0)ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r);
+      else ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);
+    }
+    ctx.closePath();
+    ctx.fillStyle=factionColor;
+    ctx.strokeStyle='rgba(3,10,18,.95)';
+    ctx.lineWidth=2.5;
+    ctx.fill();ctx.stroke();
+    ctx.restore();
+    badge(x,y,'city',scale);
+    rendered.capital++;
+  }
   function landIcon(type,x,y,cell,scale=1){
     if(zoom<DETAIL_ZOOM&&type!=='city'&&type!=='capital')return;
     if(!frame)return;
@@ -198,7 +218,12 @@
   // Sustituimos los dibujantes originales sin alterar sus bucles de
   // visibilidad ni sus conjuntos de datos: el coste queda acotado.
   if(typeof drawGlobeCityIcon3249==='function')
-    drawGlobeCityIcon3249=function(x,y,cell){landIcon('city',x,y,cell)};
+    drawGlobeCityIcon3249=function(x,y,cell){
+      // Las capitales se pintan una sola vez, al final, como ciudad + estrella.
+      const owner=owner6[cell];
+      if(owner>=0&&capitals?.[owner]===cell)return;
+      landIcon('city',x,y,cell);
+    };
   if(typeof drawGlobePortIcon3249==='function')
     drawGlobePortIcon3249=function(x,y,cell){landIcon('port',x,y,cell)};
   if(typeof drawGlobeIndustryIcon3249==='function')
@@ -210,14 +235,8 @@
   const baseDraw=drawInfrastructure3212;
   drawInfrastructure3212=function(R,cx,cy,now){
     const L=loadLevel(MAX_GAME_LEVEL3233);
-    frame={R,cx,cy,L,layouts:new Map(),historic:new Set()};
+    frame={R,cx,cy,L,layouts:new Map()};
     rendered={city:0,port:0,capital:0,industry:0,special:0};
-    if(zoom>=DETAIL_ZOOM&&typeof historicCapital3230!=='undefined'){
-      for(let f=0;f<activeFactionCount3230;f++){
-        const old=historicCapital3230[f],cap=capitals[f];
-        if(old>=0&&old!==cap&&owner6[old]===f)frame.historic.add(old);
-      }
-    }
     // El dibujo base incluye las carreteras; los símbolos nativos ya
     // usan nuestro estilo y la ciudad conserva exactamente el centro.
     const output=baseDraw.apply(this,arguments);
@@ -240,46 +259,25 @@
         }
       }
     }
-    // A zoom lejano solamente quedan ciudades; las capitales sin ciudad
-      // mantienen su estrella para evitar desaparecer completamente.
-      if(zoom<DETAIL_ZOOM&&zoom>=1.3){
-        for(let f=0;f<activeFactionCount3230;f++){
-          const cell=capitals[f];
-          if(cell<0||owner6[cell]!==f)continue;
-          if(zoom<1.65&&f!==0)continue;
-          // Por encima de 2.15, las ciudades ya se dibujan en la pasada
-          // original; no duplicar un símbolo sobre otro.
-          const isCity=cities3212.has(cell);
-          if(isCity&&zoom>2.15)continue;
-          const p=centerPoint(cell);
-          if(!p||p[2]<.10||p[0]<-20||p[0]>vw+20||p[1]<-20||p[1]>vh+20)continue;
-          badge(p[0],p[1],isCity?'city':'capital',f===0?1.1:1);
-        }
+    // La capital NO es otra estrella: es la propia ciudad central,
+    // con una estrella del color nacional por detrás. Se dibuja DESPUÉS
+    // de las carreteras y del resto de infraestructuras.
+    if(zoom>=1.3){
+      for(let f=0;f<activeFactionCount3230;f++){
+        const cell=capitals[f];
+        if(!Number.isInteger(cell)||cell<0||cell>=owner6.length||owner6[cell]!==f)continue;
+        if(zoom<1.65&&f!==0)continue;
+        const p=centerPoint(cell);
+        if(!p||p[2]<.10||p[0]<-24||p[0]>vw+24||p[1]<-24||p[1]>vh+24)continue;
+        capitalCityIcon03814(p[0],p[1],f,f===0?1.22:1.15);
       }
-      if(zoom>=DETAIL_ZOOM){
-        // Histórico primero, capitales actuales al final: siempre POR ENCIMA
-        // de carreteras, ciudades, puertos y explotaciones.
-        for(const cell of frame.historic){
-          const p=centerPoint(cell);
-          if(!p||p[2]<.10||p[0]<-28||p[0]>vw+28||p[1]<-28||p[1]>vh+28)continue;
-          const xy=iconPosition(cell,'historic',p[0],p[1]);
-          badge(xy[0],xy[1],'historic',.9);
-        }
-        for(let f=0;f<activeFactionCount3230;f++){
-          const cell=capitals[f];
-          if(cell<0||owner6[cell]!==f)continue;
-          const p=centerPoint(cell);
-          if(!p||p[2]<.10||p[0]<-28||p[0]>vw+28||p[1]<-28||p[1]>vh+28)continue;
-          const xy=iconPosition(cell,'capital',p[0],p[1]);
-          badge(xy[0],xy[1],'capital',f===0?1.12:1.02);rendered.capital++;
-        }
-      }
+    }
     frame=null;
     return output;
   };
   window.HexategosMapIcons03812={
     active:true,version:VERSION,
-    palette:{...COLORS},iconRadius:radius,
+    palette:{...COLORS},iconRadius:radius,capitalCityIcon:capitalCityIcon03814,
     positionFor:(cell,role)=>{
       // Sin un fotograma activo, la proyección depende del giro del globo.
       const v=frame?.layouts.get(cell)?.coords.get(role);
@@ -289,5 +287,5 @@
     coastalNeighbours:cell=>[...coastNeighbours(cell)],
     zooms:{detail:DETAIL_ZOOM,production:PRODUCTION_ZOOM,aiProduction:AI_PRODUCTION_ZOOM}
   };
-  console.info('[HEXATEGOS] '+VERSION+' · ciudades centrales, puertos costeros, capitales sobre carreteras, iconos vectoriales.');
+  console.info('[HEXATEGOS] '+VERSION+' · capital como ciudad con estrella nacional; sin estrellas históricas independientes.');
 })();
