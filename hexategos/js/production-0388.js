@@ -305,7 +305,9 @@
         const room=Math.max(0,n.cap[out]-n.stock[out]);
         const buffer=intermediate?Math.max(0,65*s.level-s.stock):0;
         if(room+buffer<=.000001)continue;
-        let amount=Math.min(.39*s.level*activeFactor(s)*dt,(room+buffer)/.90);
+        const sharedLevel=industries3212.has(s.cell)?Math.max(1,industryLevel3230[s.cell]||1):0;
+        const industrialBonus=1+Math.min(.24,sharedLevel*.08);
+        let amount=Math.min(.39*s.level*activeFactor(s)*dt*industrialBonus,(room+buffer)/.90);
         if(amount<=0)continue;
         // Reservar energía ANTES de consumir materias para no perder cargamentos
         // cuando una fábrica tenga apagones o capacidad eléctrica insuficiente.
@@ -363,11 +365,25 @@
     const pressure={energy:Math.max(.05,1-(coverage[2]||0)),mining:Math.max(.05,1-(coverage[1]||0)),
       farming:Math.max(.05,1-(coverage[0]||0))};
     const missing=rawTypes.filter(kind=>!own.some(s=>s.kind===kind));
-    const factoryNeeds=[];
+    const factoryNeeds=new Set();
     for(const site of own){
       const recipe=RECIPE[site.kind];
       if(TYPES[site.kind].group==='extract'&&recipe&&!own.some(s=>s.kind===recipe))
-        factoryNeeds.push(recipe);
+        factoryNeeds.add(recipe);
+    }
+    const ownKinds=new Set(own.map(s=>s.kind));
+    const availableOutputs=new Set(ownKinds);
+    for(const site of own){
+      const output=PROCESSED[site.kind];
+      if(output)availableOutputs.add(output);
+    }
+    for(const [kind,def] of Object.entries(TYPES)){
+      if(def.group!=='manufacture'&&def.group!=='power')continue;
+      if(ownKinds.has(kind))continue;
+      const sourceAvailable=def.inputMode==='any'?
+        def.inputs.some(k=>availableOutputs.has(k)):
+        def.inputs.every(k=>availableOutputs.has(k));
+      if(sourceAvailable)factoryNeeds.add(kind);
     }
     const role=FACTIONS3230[f]?.role||'balanced';
     // Las IA ajustan autónomamente el uso sectorial según la escasez.
@@ -395,7 +411,11 @@
       }
       for(const kind of factoryNeeds){
         const type=TYPES[kind];
-        const value=(road>=0?2.7:.28)*(role==='growth'?1.25:1);
+        const strategic=kind==='arms'?(role==='aggressive'?1.45:.77):
+          kind==='thermal'?(1+pressure.energy*.5):
+          kind==='machinery'?(role==='growth'?1.35:1):
+          kind==='civilian'?1.08:1;
+        const value=(road>=0?2.7:.28)*strategic*(role==='growth'?1.12:1);
         if(value>score&&availability(f,cell,kind,true).ok&&botGold3230[f]>type.cost+65){score=value;choice={cell,kind}}
       }
     }
@@ -771,6 +791,8 @@
     version:VERSION,types:TYPES,cells:()=>perCell.keys(),revision:()=>revision,tick,
     sites:()=>[...sites.values()].map(s=>({...s})),sector:(f,s)=>sec(f,s),
     build,upgrade,setPct,setSector,potential,efficiency,availability,sitesOnCell:cell=>sitesOnCell(cell).map(s=>({...s})),
+    legacyManufacturingFactor:f=>Math.max(.15,1-(manufacturingCounts.get(Number(f))||0)*.22),
+    intermediates:()=>({...RESOURCE_PRODUCT_LABELS}),futureIndustries:()=>FUTURE_INDUSTRIES.map(v=>({...v})),
     iconOffset:iconOffset03811,
     drawCandidates:()=>sites.values(),
     stats:()=>({...lastStats}),validate:()=>{
