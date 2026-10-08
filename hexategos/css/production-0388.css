@@ -131,3 +131,16 @@
   #modal3244 .industryChoiceIcon0388{width:32px;height:32px;font-size:19px!important}
   #modal3244 .industryGroup0388{padding:9px}
 }
+
+/* 0.38.11 · estado de capacidad y restricciones transparentes */
+#modal3244 .industryBudget0388{
+  display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;
+  padding:10px 12px;border-radius:9px;
+  background:rgba(41,94,119,.26);border:1px solid rgba(117,178,212,.38);
+  color:#d9effa!important;font-size:var(--hex-dialog-small)!important;
+}
+#modal3244 .industryBudget0388 b{color:#ffffff!important;font-weight:800!important}
+#modal3244 .industryBuildChoice0388:disabled .industryBuildText0388 small{
+  color:#efd19e!important;opacity:1!important
+}
+#modal3244 .industryBuildChoice0388:disabled{opacity:.76!important}
