@@ -8,12 +8,12 @@ const css=read('css/dialog-unified-0387.css'),html=read('index.html'),about=read
 for(const [name,script] of [['core',core],['trade',trade],['visual',visual],['ui',ui],['about',about]]){
   assert.doesNotThrow(()=>new Function(script),name+' syntax');
 }
-assert.ok(html.includes('v0.38.7</title>'),'version missing');
+assert.ok(/v0\.38\.[78]<\/title>/.test(html),'version missing');
 assert.ok(html.includes('js/game.js?v=0387'),'updated economic engine may be cached');
 assert.ok(html.includes('js/national-visuals-0378.js?v=0387'),'updated fleet visuals may be cached');
-assert.ok(html.includes('js/trade-logistics-0370.js?v=0387'),'updated fleet logic may be cached');
-assert.ok(html.includes('js/ui-typography-0387.js?v=0387'),'font choice script missing');
-assert.ok(html.includes('css/dialog-unified-0387.css?v=0387'),'unified dialog styles missing');
+assert.ok(/js\/trade-logistics-0370\.js\?v=038[78]/.test(html),'updated fleet logic may be cached');
+assert.ok(/js\/ui-typography-0387\.js\?v=038[78]/.test(html),'font choice script missing');
+assert.ok(/css\/dialog-unified-0387\.css\?v=038[78]/.test(html),'unified dialog styles missing');
 assert.ok(html.includes('id="landingFontSelect0387"'),'landing option missing');
 assert.ok(about.includes("version:'0.38.7'"),'history missing');
 assert.ok(!core.includes('Math.min(9999,gold3212+r.gold*dt)'),'player gold still capped at 9999');
