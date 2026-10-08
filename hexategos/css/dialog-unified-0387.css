@@ -295,3 +295,29 @@
 @media(prefers-reduced-motion:reduce){
   #contextMenu3244{transition:none!important}
 }
+
+/* 0.38.8: escala compacta y adaptación real al espacio disponible. */
+:where(#systemsPanel3213,#modalCard3244,#contextMenu3244,#gameMenu3306,.newGameSetupCard3302,.aboutCard0351){
+  max-height:calc(100dvh - 16px)!important;
+  max-width:calc(100dvw - 16px)!important;
+  min-width:0;
+}
+#systemsPanel3213 :is(.sysMain0385,#sysContent3213),
+#modalCard3244 .modalBody3244,
+.aboutCard0351 .aboutBody0351{
+  min-height:0;min-width:0;overflow-x:hidden;overflow-y:auto;
+  overscroll-behavior:contain;
+}
+#systemsPanel3213 :is(button,select,input,textarea),
+#modalCard3244 :is(button,select,input,textarea),
+#gameMenu3306 :is(button,select,input,textarea){
+  box-sizing:border-box;max-width:100%;
+}
+#systemsPanel3213 :is(.sysBlock3213,.sysMain0385,#sysContent3213),
+#modalCard3244 .modalBody3244 > *{
+  min-width:0;overflow-wrap:anywhere;
+}
+@media(max-width:760px){
+  #systemsPanel3213{max-height:calc(100dvh - 12px)!important;max-width:calc(100dvw - 12px)!important}
+  #systemsPanel3213 .sysMain0385{min-width:0;overflow-y:auto}
+}
