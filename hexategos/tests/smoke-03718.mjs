@@ -21,9 +21,9 @@ assert.ok(trade.includes('clearTradeRouteFocus03717(true)'),'Salir must clear on
 const ser=trade.slice(trade.indexOf('function serialize0370'),trade.indexOf('function restore0370'));
 assert.ok(ser.includes('routes:routes.filter'),'commercial routes must remain serialized');
 assert.ok(!ser.includes('focusedTradeRoute03717'),'visual focus must not be serialized');
-assert.ok(trade.includes("localStorage.setItem(SAVE_KEY,JSON.stringify(serialize0370()))"),'trade routes must persist in local storage');
+assert.ok(trade.includes('codec?.set')&&trade.includes('save0370();'),'trade routes must persist using compact storage or compatible fallback');
 assert.ok(trade.includes('file.payload.tradeLogistics0370=serialize0370()'),'trade routes must persist in portable saves');
-assert.ok(trade.includes('restore0370(restoredPortable)'),'portable saves must restore trade routes');
+assert.ok(trade.includes('restore0370(restoredPortable&&typeof restoredPortable')&&trade.includes('restoredPortable:{version:2,routes:[],permits:[],fleets:[]}'),'portable saves must restore trade routes and isolate legacy files');
 
 assert.ok(versionAtLeast(index,'0.37.18'),'visible game version must be 0.37.18 or newer');
 assert.ok(about.includes("version:'0.37.18'"),'about history must include 0.37.18');
