@@ -10,7 +10,7 @@
     city:'#ffd76f',capital:'#f7e493',historic:'#b4becd',port:'#67d5df',
     industry:'#f0a05b',
     oil:'#c4a17a',gas:'#f0b959',
-    iron:'#a8b7c7',copper:'#e3a075',quarry:'#c9c5b8',
+    coal:'#92989c',iron:'#a8b7c7',copper:'#e3a075',quarry:'#c9c5b8',
     timber:'#78bc8f',crops:'#acd477',livestock:'#9dc995',
     refinery:'#80abc9',gasplant:'#8fc5d9',steel:'#9aafc3',
     smelter:'#c6ada1',sawmill:'#8abfa6',cement:'#b9bfba',
@@ -164,10 +164,12 @@
       ctx.stroke();
       if(type==='gas')line(0,-1,2,1.5,0,3.5);
       else ctx.fillRect(-1.1,1,2.2,2.5);
-    }else if(type==='iron'||type==='copper'){
+    }else if(type==='coal'||type==='iron'||type==='copper'){
+      // Las tres minas comparten el mismo pico vectorial y se distinguen
+      // por el color y el símbolo químico/abreviatura de su recurso.
       line(-5,-4.7,4.5,4.5);line(-4,0,-1,-3,1,-4,4,-4.3);
       ctx.font='bold 5.5px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
-      ctx.fillText(type==='iron'?'Fe':'Cu',0,5);
+      ctx.fillText(type==='coal'?'C':type==='iron'?'Fe':'Cu',0,5);
     }else if(type==='timber'){
       line(0,-6,-5,1,-2,1,-5,4,5,4,2,1,5,1,0,-6);
       line(0,4,0,6);
