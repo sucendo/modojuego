@@ -56,7 +56,7 @@ assert.ok(!visuals.includes('setInterval('),'visual layer must not add a periodi
 const builder=trade.slice(trade.indexOf('function buildLocalPatrolRoute03719'),trade.indexOf('function startInterceptExcursion0371'));
 assert.ok(!builder.includes('findSeaPathCells3270'),'patrol return must not add A* pathfinding');
 
-assert.ok(index.includes('v0.37.19</title>')||index.includes('v0.37.20</title>'),'visible version must be 0.37.19');
+assert.ok(index.includes('v0.37.19</title>')||index.includes('v0.37.20</title>')||index.includes('v0.37.21</title>'),'visible version must be 0.37.19');
 assert.ok(about.includes("version:'0.37.19'"),'About must include 0.37.19');
 
 console.log('HEXATEGOS 0.37.19 closed smooth naval patrol smoke: OK');
