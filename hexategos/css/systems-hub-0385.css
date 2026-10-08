@@ -143,6 +143,7 @@
   height:auto!important;
   padding:15px 19px 20px!important;
   color:#d0e1ed!important;
+  overflow-wrap:anywhere;
   font:450 13px/1.5 system-ui!important;
 }
 /* Mucho material anterior fija textos a 6–9 px.
@@ -274,7 +275,7 @@
     padding:6px 3px!important;gap:4px!important;
   }
   #systemsPanel3213 .sysNavIcon0385{font-size:18px!important;width:22px;height:22px;background:none}
-  #systemsPanel3213 .sysNavText0385 b{font-size:11px!important}
+  #systemsPanel3213 .sysNavText0385 b{font-size:13px!important;overflow-wrap:anywhere}
   #systemsPanel3213 .sysNavText0385 small{display:none}
   #systemsPanel3213 .sysIntro0385{padding:11px 13px!important}
   #systemsPanel3213 #sysSectionTitle0385{font-size:18px!important;margin:2px 0 3px!important}
