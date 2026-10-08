@@ -1,9 +1,9 @@
 'use strict';
 
-// HEXATEGOS 0.38.3 · Recursos estratégicos: valoración local, IA y auditoría.
+// HEXATEGOS 0.38.4 · Recursos estratégicos con caché incremental y IA sin bloqueos.
 // No hay nuevos timers, barridos globales ni reservas añadidas por hexágono.
 (() => {
-  const BUILD='0.38.3';
+  const BUILD='0.38.4';
   const MAX_GEO_CACHE=12000;
   const MAX_NATIONAL_SAMPLES=48;
   const MAX_NATIONAL_AGE=20;
@@ -214,5 +214,5 @@
     stats:()=>({evaluated,bonuses:planBonuses,cachedCells:geoCache.size,cachedNations:countryCache.size,maxSample:MAX_NATIONAL_SAMPLES})
   };
   window.HEXATEGOS_VERSION=BUILD;
-  console.info('[HEXATEGOS] 0.38.3 · riqueza de hexágonos en decisiones territoriales y consulta económica');
+  console.info('[HEXATEGOS] 0.38.4 · recursos territoriales y cachés optimizados');
 })();
