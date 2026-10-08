@@ -645,8 +645,44 @@
     event.preventDefault();
     renderIndustryModal0388(uiInteractionState3244.modal.data.cell,change.dataset.industryView0388);
   });
-  // Un único icono discreto por instalación visible; nunca se dibujan
-  // los otros seis hexágonos ni una carretera por cada recurso.
+  // Distribución de símbolos por hexágono: respeta ciudad, puerto,
+  // industria general y capital, además de hasta tres especializadas.
+  // Los iconos originales no se borran ni se sustituyen por los nuevos.
+  function iconSlots03811(cell){
+    const f=owner6[cell];if(f<0)return {items:[],capital:false};
+    const types=[];
+    if(cities3212.has(cell))types.push('city');
+    if(ports3212.has(cell))types.push('port');
+    if(industries3212.has(cell))types.push('industry');
+    if(zoom>=7&&(f===0||zoom>=13))
+      for(const s of sitesOnCell(cell))if(s.f===f)types.push(siteKey(cell,s.kind));
+    return {items:types,capital:capitals?.[f]===cell};
+  }
+  function iconOffset03811(cell,role){
+    const slots=iconSlots03811(cell);
+    const index=slots.items.indexOf(role),count=slots.items.length;
+    if(index<0||(!slots.capital&&count<2))return [0,0];
+    const px=globeIconScale3249();
+    const radius=px*(slots.capital?2.65:count>=5?2.5:count===4?1.75:count===3?1.82:1.52);
+    // Cuando hay una capital, la estrella queda en el centro y la
+    // infraestructura ocupa su corona exterior, sin superponerse.
+    const angle=-Math.PI/2+(2*Math.PI*index)/count;
+    return [Math.cos(angle)*radius,Math.sin(angle)*radius];
+  }
+  function shiftNativeIcon03811(base,role){
+    return function(x,y,cell,px){
+      if(zoom<7)return base.apply(this,arguments);
+      const delta=iconOffset03811(cell,role);
+      return base.call(this,x+delta[0],y+delta[1],cell,px);
+    };
+  }
+  if(typeof drawGlobeCityIcon3249==='function')
+    drawGlobeCityIcon3249=shiftNativeIcon03811(drawGlobeCityIcon3249,'city');
+  if(typeof drawGlobePortIcon3249==='function')
+    drawGlobePortIcon3249=shiftNativeIcon03811(drawGlobePortIcon3249,'port');
+  if(typeof drawGlobeIndustryIcon3249==='function')
+    drawGlobeIndustryIcon3249=shiftNativeIcon03811(drawGlobeIndustryIcon3249,'industry');
+  // No se dibujan los otros seis hexágonos de explotación ni carreteras nuevas.
   const baseDraw=drawInfrastructure3212;
   drawInfrastructure3212=function(R,cx,cy,now){
     const out=baseDraw.apply(this,arguments);
@@ -662,11 +698,14 @@
       const p=projectVec(C[j]/32767,C[j+1]/32767,C[j+2]/32767,R,cx,cy);
       if(p[2]<.06||p[0]<-14||p[0]>vw+14||p[1]<-14||p[1]>vh+14)continue;
       const icon=TYPES[s.kind].icon;
-      const radius=Math.min(11,Math.max(6,globeIconScale3249()*.62));
-      ctx.fillStyle='rgba(5,18,28,.82)';
-      ctx.beginPath();ctx.arc(p[0],p[1],radius,0,Math.PI*2);ctx.fill();
-      ctx.font=Math.round(radius*1.5)+'px system-ui, sans-serif';
-      ctx.fillText(icon,p[0],p[1]+.4);
+      const radius=Math.min(8.0,Math.max(6,globeIconScale3249()*.82));
+      const delta=iconOffset03811(s.cell,siteKey(s.cell,s.kind));
+      const x=p[0]+delta[0],y=p[1]+delta[1];
+      ctx.fillStyle='rgba(5,18,28,.9)';
+      ctx.beginPath();ctx.arc(x,y,radius+1,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle='rgba(194,221,237,.7)';ctx.lineWidth=.8;ctx.stroke();
+      ctx.font=Math.round(radius*1.72)+'px system-ui, sans-serif';
+      ctx.fillText(icon,x,y+.4);
       drawn++;
     }
     ctx.restore();return out;
@@ -675,6 +714,7 @@
     version:VERSION,types:TYPES,cells:()=>perCell.keys(),revision:()=>revision,tick,
     sites:()=>[...sites.values()].map(s=>({...s})),sector:(f,s)=>sec(f,s),
     build,upgrade,setPct,setSector,potential,efficiency,availability,sitesOnCell:cell=>sitesOnCell(cell).map(s=>({...s})),
+    iconOffset:iconOffset03811,
     stats:()=>({...lastStats}),validate:()=>{
       const errors=[];for(const s of sites.values())if(!TYPES[s.kind]||s.cell<0)errors.push('instalación inválida');
       return {ok:!errors.length,errors,stats:lastStats};
