@@ -1,3 +1,4 @@
+import { versionAtLeast } from './version-compat.mjs';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
@@ -6,7 +7,7 @@ const trade=read('js/trade-logistics-0370.js');
 const index=read('index.html');
 
 assert.doesNotThrow(()=>new Function(trade),'trade-logistics-0370.js must parse');
-assert.ok(trade.includes("const BUILD='0.37.0'")||trade.includes("const BUILD='0.37.1'")||trade.includes("const BUILD='0.37.2'"),'trade logistics build must include 0.37.0 or a compatible successor');
+assert.ok(versionAtLeast(trade,'0.37.0'),'module version must be 0.37.0 or a compatible successor');
 assert.ok(trade.includes('tradeIncome3261=function'),'physical trade income override missing');
 assert.ok(trade.includes('residualTrade0370'),'residual relation-only trade missing');
 assert.ok(trade.includes('roadMask=new Uint8Array'),'cached road mask missing');
@@ -33,6 +34,6 @@ const iHuman=index.indexOf('js/human-build-0362.js');
 const iTrade=index.indexOf('js/trade-logistics-0370.js');
 assert.ok(iHuman>=0&&iTrade>iHuman,'0.37.0 logistics layer must load after 0.36.2 AI construction');
 assert.ok(index.includes('css/trade-logistics-0370.css'),'0.37.0 trade CSS missing');
-assert.ok(index.includes('v0.37.0</title>')||index.includes('v0.37.1</title>')||index.includes('v0.37.2</title>')||index.includes('v0.37.3</title>')||index.includes('v0.37.4</title>')||index.includes('v0.37.5</title>')||index.includes('v0.37.6</title>')||index.includes('v0.37.7</title>')||index.includes('v0.37.8</title>')||index.includes('v0.37.9</title>')||index.includes('v0.37.10</title>')||index.includes('v0.37.11</title>')||index.includes('v0.37.12</title>')||index.includes('v0.37.13</title>')||index.includes('v0.37.14</title>')||index.includes('v0.37.15</title>')||index.includes('v0.37.16</title>')||index.includes('v0.37.17</title>')||index.includes('v0.37.18</title>')||index.includes('v0.37.19</title>')||index.includes('v0.37.20</title>')||index.includes('v0.37.21</title>')||index.includes('v0.37.11</title>')||index.includes('v0.37.12</title>')||index.includes('v0.37.13</title>')||index.includes('v0.37.14</title>')||index.includes('v0.37.15</title>')||index.includes('v0.37.16</title>')||index.includes('v0.37.17</title>')||index.includes('v0.37.18</title>')||index.includes('v0.37.19</title>')||index.includes('v0.37.20</title>')||index.includes('v0.37.21</title>'),'visible version must include 0.37.0 or a compatible successor');
+assert.ok(versionAtLeast(index,'0.37.0'),'visible version must be compatible with 0.37.0 or later');
 
 console.log('HEXATEGOS 0.37.0 physical trade + port-based fleets smoke: OK');

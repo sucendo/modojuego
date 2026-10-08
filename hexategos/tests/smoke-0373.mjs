@@ -1,3 +1,4 @@
+import { versionAtLeast } from './version-compat.mjs';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
@@ -30,7 +31,7 @@ assert.ok(decay.includes('const baseEconomyTick0373=economyTick3212'),'existing 
 assert.ok(!decay.includes('setInterval('),'0.37.3 must not add another periodic timer');
 assert.ok(decay.includes('const removalsBefore=removals'),'batched removal refresh guard missing');
 assert.ok(decay.includes('infrastructureDecay0373=serialize0373()'),'portable save extension missing');
-assert.ok(index.includes('v0.37.3</title>')||index.includes('v0.37.4</title>')||index.includes('v0.37.5</title>')||index.includes('v0.37.6</title>')||index.includes('v0.37.7</title>')||index.includes('v0.37.8</title>')||index.includes('v0.37.9</title>')||index.includes('v0.37.10</title>')||index.includes('v0.37.11</title>')||index.includes('v0.37.12</title>')||index.includes('v0.37.13</title>')||index.includes('v0.37.14</title>')||index.includes('v0.37.15</title>')||index.includes('v0.37.16</title>')||index.includes('v0.37.17</title>')||index.includes('v0.37.18</title>')||index.includes('v0.37.19</title>')||index.includes('v0.37.20</title>')||index.includes('v0.37.21</title>'),'visible version must be 0.37.3');
+assert.ok(versionAtLeast(index,'0.37.3'),'visible version must be compatible with 0.37.3 or later');
 assert.ok(index.indexOf('js/infrastructure-decay-0373.js')>index.indexOf('js/trade-logistics-0370.js'),'decay module must load after logistics');
 assert.ok(about.includes("version:'0.37.3'"),'about history must include 0.37.3');
 

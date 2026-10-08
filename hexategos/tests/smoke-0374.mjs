@@ -1,3 +1,4 @@
+import { versionAtLeast } from './version-compat.mjs';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
@@ -21,7 +22,7 @@ assert.ok(road.includes("'road_abandon_0374','ABANDONAR CARRETERA'"),'context ac
 assert.ok(road.includes("ctx?.kind==='cell'&&ctx.own"),'road abandonment must be restricted to own cells');
 assert.ok(road.includes('SIN REEMBOLSO'),'no-refund rule missing');
 assert.ok(!road.includes('setInterval('),'road removal must not add a periodic timer');
-assert.ok(index.includes('v0.37.4</title>')||index.includes('v0.37.5</title>')||index.includes('v0.37.6</title>')||index.includes('v0.37.7</title>')||index.includes('v0.37.8</title>')||index.includes('v0.37.9</title>')||index.includes('v0.37.10</title>')||index.includes('v0.37.11</title>')||index.includes('v0.37.12</title>')||index.includes('v0.37.13</title>')||index.includes('v0.37.14</title>')||index.includes('v0.37.15</title>')||index.includes('v0.37.16</title>')||index.includes('v0.37.17</title>')||index.includes('v0.37.18</title>')||index.includes('v0.37.19</title>')||index.includes('v0.37.20</title>')||index.includes('v0.37.21</title>'),'visible version must be 0.37.4');
+assert.ok(versionAtLeast(index,'0.37.4'),'visible version must be compatible with 0.37.4 or later');
 assert.ok(index.indexOf('js/road-removal-0374.js')>index.indexOf('js/infrastructure-decay-0373.js'),'road removal module must load after decay');
 assert.ok(about.includes("version:'0.37.4'"),'about history must include 0.37.4');
 
