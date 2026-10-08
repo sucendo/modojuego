@@ -36,7 +36,7 @@ assert.ok(visuals.includes('trafficMinZoom:TRAFFIC_MIN_ZOOM0378'),'public visual
 assert.ok(visuals.includes('navalMinZoom:NAVAL_MIN_ZOOM0378'),'public visual status must expose zoom 15');
 assert.ok(!visuals.includes('setInterval('),'0.37.8 must not add another periodic timer');
 
-assert.ok(index.includes('v0.37.8</title>')||index.includes('v0.37.9</title>')||index.includes('v0.37.10</title>')||index.includes('v0.37.11</title>')||index.includes('v0.37.12</title>')||index.includes('v0.37.13</title>')||index.includes('v0.37.14</title>')||index.includes('v0.37.15</title>')||index.includes('v0.37.16</title>')||index.includes('v0.37.17</title>')||index.includes('v0.37.18</title>')||index.includes('v0.37.19</title>')||index.includes('v0.37.20</title>'),'visible version must be 0.37.8 or compatible successor');
+assert.ok(index.includes('v0.37.8</title>')||index.includes('v0.37.9</title>')||index.includes('v0.37.10</title>')||index.includes('v0.37.11</title>')||index.includes('v0.37.12</title>')||index.includes('v0.37.13</title>')||index.includes('v0.37.14</title>')||index.includes('v0.37.15</title>')||index.includes('v0.37.16</title>')||index.includes('v0.37.17</title>')||index.includes('v0.37.18</title>')||index.includes('v0.37.19</title>')||index.includes('v0.37.20</title>')||index.includes('v0.37.21</title>'),'visible version must be 0.37.8 or compatible successor');
 assert.ok(index.indexOf('js/national-visuals-0378.js')>index.indexOf('js/trade-geopolitics-0377.js'),
   '0.37.8 must load after trade geopolitics');
 assert.ok(about.includes("version:'0.37.8'"),'about history must include 0.37.8');
