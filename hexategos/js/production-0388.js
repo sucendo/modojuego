@@ -573,62 +573,59 @@
     if(!Number.isInteger(cell)||owner6[cell]!==0)return null;
     return typeof cellContext3244==='function'?cellContext3244(cell):null;
   }
-  function renderIndustryModal0388(cell,section='menu'){
+  function renderIndustryModal0388(cell){
     const state=uiInteractionState3244?.modal;
     if(state?.type!=='production0388'||state.data?.cell!==cell)return false;
     const context=industryContext0388(cell);
     if(!context){closeModal3244();return false}
-    state.data.section=section;
-    const place=typeof placeDisplayName3271==='function'?placeDisplayName3271(cell):'Hexágono '+cell;
+    state.data.section='catalog';
     const existing=sitesOnCell(cell);
-    const industryCost=context.industry?115+context.industry*55:110;
-    const canGeneral=typeof canIndustry3244==='function'?canIndustry3244(context):false;
+    const place=typeof placeDisplayName3271==='function'?placeDisplayName3271(cell):'Hexágono '+cell;
+    const generalLevel=context.industry||0;
+    const generalCost=generalLevel?115+generalLevel*55:110;
+    const generalEnabled=typeof canIndustry3244==='function'&&canIndustry3244(context);
+    const gold=Math.floor(gold3212);
     modalTitle3244.textContent='Industria · '+place;
-    const intro='<div class="industryIntro0388"><b>🏭 Gestión industrial del territorio</b>'+
-      '<p>La industria general representa el desarrollo industrial existente. Las explotaciones y fábricas especializadas utilizan recursos reales y la red logística.</p></div>';
-    const general='<button type="button" class="industryChoice0388" data-industry-general0388 '+
-       (canGeneral?'':'disabled')+'><span class="industryChoiceIcon0388">🏭</span>'+
-       '<span><b>'+(context.industry?'Mejorar industria general':'Construir industria general')+'</b>'+
-       '<small>Nivel '+(context.industry||0)+'/3 · '+industryCost+' oro · producción industrial base</small></span>'+
-       '<span class="industryChoiceArrow0388">›</span></button>';
-    const specialized='<button type="button" class="industryChoice0388" data-industry-view0388="specialized">'+
-      '<span class="industryChoiceIcon0388">⛏</span><span><b>Producción especializada</b>'+
-      '<small>Pozos, minas, cultivos, granjas y fábricas transformadoras</small></span>'+
-      '<span class="industryChoiceArrow0388">›</span></button>';
-    if(section==='menu'){
-      modalBody3244.innerHTML='<div class="industryModal0388">'+intro+
-        '<div class="industryChoices0388">'+general+specialized+'</div>'+
-        (existing.length?'<div class="industryExisting0388"><b>Instalaciones en este hexágono</b>'+ 
-          '<p>'+existing.map(site=>esc(TYPES[site.kind].icon+' '+TYPES[site.kind].name)+' (nivel '+site.level+'/5)').join(' · ')+
-          ' · Controles individuales en Sistemas → Economía.</p></div>':'')+
-        '</div>';
-      modalActions3244.innerHTML='<button type="button" data-modal-action="close">CERRAR</button>';
-    }else{
-      const sections=[['extract','Explotaciones primarias'],['factory','Industrias transformadoras']];
-      const spent=countNation(0);
-      const gold=Math.floor(gold3212);
-      const status='<div class="industryBudget0388">Oro disponible: <b>'+gold.toLocaleString('es-ES')+'</b> · Instalaciones: <b>'+spent+'/'+MAX_PLAYER_SITES+'</b> · En este hexágono: <b>'+existing.length+'/'+MAX_PER_CELL+'</b></div>';
-      const types=sections.map(([group,title])=>
-        '<section class="industryGroup0388 industryGroup-'+group+'0388"><h4>'+title+'</h4>'+
-        '<div class="industryBuildGrid0388">'+Object.entries(TYPES).filter(([,def])=>def.group===group).map(([kind,def])=>{
-          const strength=group==='extract'?Math.round(potential(cell,0,kind)*100):null;
-          const test=availability(0,cell,kind,true);
-          const allowed=test.ok;
-          return '<button type="button" class="industryBuildChoice0388" data-industry-build0388="'+kind+'" '+
-            (allowed?'':'disabled')+'><span class="industryTypeIcon0388">'+def.icon+'</span>'+
-            '<span class="industryBuildText0388"><b>'+esc(def.name)+'</b>'+
-            '<small>'+def.cost+' oro'+(strength===null?'':' · potencial '+strength+'%')+
-            (allowed?' · Disponible':' · '+esc(test.reason))+'</small></span></button>';
-        }).join('')+'</div></section>').join('');
-      modalBody3244.innerHTML='<div class="industryModal0388"><div class="industryIntro0388">'+
-        '<b>Explotaciones e industria transformadora</b>'+
-        '<p>Una explotación aprovecha hasta siete hexágonos propios. Para abastecer fábricas y ciudades necesita conexiones terrestres o marítimas. Puedes combinar hasta tres instalaciones diferentes por hexágono.</p></div>'+status+
-        (existing.length?'<div class="industryExisting0388">Ya construidas: '+
-        existing.map(site=>esc(TYPES[site.kind].name)).join(' · ')+
-        '. Puedes añadir otras diferentes o mejorarlas desde Sistemas → Economía.</div>':'')+types+'</div>';
-      modalActions3244.innerHTML='<button type="button" data-industry-view0388="menu">← VOLVER</button>'+
-        '<button type="button" data-modal-action="close">CERRAR</button>';
-    }
+    const primary=Object.entries(TYPES);
+    const groups=[
+      {name:'Nivel I · Industrias primarias',tip:'Explotaciones de recursos naturales (hasta siete hexágonos)',kinds:primary.filter(([,d])=>d.group==='extract')},
+      {name:'Nivel II · Transformación y materias elaboradas',tip:'Refino, siderurgia, metalurgia, madera, cemento y alimentos',kinds:primary.filter(([,d])=>d.group==='factory')},
+      {name:'Nivel III · Manufactura y bienes finales',tip:'Bienes civiles, maquinaria, textiles, química y electrónica',kinds:primary.filter(([k,d])=>d.group==='manufacture'&&k!=='arms')},
+      {name:'Nivel IV · Electricidad y producción militar',tip:'Centrales térmicas y fabricación de material para el ejército',kinds:primary.filter(([k,d])=>d.group==='power'||k==='arms')}
+    ];
+    const general='<button type="button" class="industryBuildChoice0388 industryGeneric03815" data-industry-general0388 '+
+      (generalEnabled?'':'disabled')+'><span class="industryTypeIcon0388">🏭</span>'+
+      '<span class="industryBuildText0388"><b>Industria manufacturera · área general</b>'+
+      '<small>Nivel '+generalLevel+'/3 · '+generalCost+' oro · infraestructura y capacidad industrial'+
+      (generalEnabled?'':' · mejora no disponible')+'</small></span></button>';
+    const cards=groups.map((group,i)=>
+      '<section class="industryGroup0388 industryStage03815" data-stage03815="'+(i+1)+'">'+
+      '<h4>'+group.name+'</h4><p class="industryStageHint03815">'+group.tip+'</p>'+
+      '<div class="industryBuildGrid0388">'+(i===2?general:'')+
+      group.kinds.map(([kind,def])=>{
+        const strength=def.group==='extract'?Math.round(potential(cell,0,kind)*100):null;
+        const test=availability(0,cell,kind,true);
+        return '<button type="button" class="industryBuildChoice0388" data-industry-build0388="'+kind+'" '+
+          (test.ok?'':'disabled')+'><span class="industryTypeIcon0388">'+def.icon+'</span>'+
+          '<span class="industryBuildText0388"><b>'+esc(def.name)+'</b>'+
+          '<small>'+def.cost+' oro'+(strength===null?'':' · potencial '+strength+'%')+
+          (test.ok?' · Disponible':' · '+esc(test.reason))+'</small></span></button>';
+      }).join('')+'</div></section>').join('');
+    const future='<section class="industryGroup0388 industryFuture03815"><h4>Nivel V · Tecnologías futuras</h4>'+
+      '<p class="industryStageHint03815">Planificación tecnológica. Estas industrias aún no pueden construirse ni fabricar recursos.</p>'+
+      '<div class="industryBuildGrid0388">'+FUTURE_INDUSTRIES.map(t=>
+        '<div class="industryFutureCard03815"><b>🔒 '+esc(t.name)+'</b><small>'+esc(t.note)+'</small></div>'
+      ).join('')+'</div></section>';
+    modalBody3244.innerHTML='<div class="industryModal0388 industryCatalog03815">'+
+      '<div class="industryIntro0388"><b>🏭 Complejo industrial</b>'+
+      '<p>Todos los tipos en un mismo catálogo, ordenados por etapa. Las materias pasan de extracción a transformación y manufactura. Las industrias finales necesitan energía y transporte.</p></div>'+
+      '<div class="industryBudget0388">Oro: <b>'+gold.toLocaleString('es-ES')+'</b> · '+
+      'Instalaciones especializadas: <b>'+countNation(0)+'/'+MAX_PLAYER_SITES+'</b> · '+
+      'En este hexágono: <b>'+existing.length+'/'+MAX_PER_CELL+'</b></div>'+
+      (existing.length?'<div class="industryExisting0388"><b>Ya construidas aquí:</b> '+
+         existing.map(site=>esc(TYPES[site.kind].name)).join(' · ')+'</div>':'')+
+      cards+future+'</div>';
+    modalActions3244.innerHTML='<button type="button" data-modal-action="close">CERRAR</button>';
     return true;
   }
   function showBuildModal(cell){
@@ -637,10 +634,10 @@
     // Rescatar por seguridad cualquier modal de producción anterior. Las
     // acciones normales de cierre vacían la bandera modal además del overlay.
     if(uiInteractionState3244?.modal?.type==='production0388')closeModal3244();
-    uiInteractionState3244.modal={type:'production0388',data:{cell,section:'menu'}};
+    uiInteractionState3244.modal={type:'production0388',data:{cell,section:'catalog'}};
     modal3244.classList.add('open3244');
     modal3244.setAttribute('aria-hidden','false');
-    return renderIndustryModal0388(cell,'menu');
+    return renderIndustryModal0388(cell);
   }
   const baseActions=buildClassicActions3246;
   buildClassicActions3246=function(ctx){
@@ -648,7 +645,7 @@
     if(ctx?.kind!=='cell'||!Number.isInteger(ctx.cell)||!ctx.own)return actions;
     const general=actions.findIndex(a=>a.id==='build_industry');
     const merged=classicAction3246('production0388','INDUSTRIA','🏭',
-      'GENERAL · EXTRACTIVA · TRANSFORMADORA',true,'good3244');
+      'PRIMARIA · TRANSFORMACIÓN · MANUFACTURA',true,'good3244');
     if(general>=0)actions.splice(general,1,merged);
     else actions.push(merged);
     return actions.filter(a=>a.id!=='industry_menu_0388');
