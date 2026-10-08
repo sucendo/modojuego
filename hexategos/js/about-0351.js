@@ -4,10 +4,29 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.38.5.1',
+      date:'Octubre 2026',
+      title:'Sistemas ajustado: embajadas, rutas marítimas, militar y desplazamiento',
+      current:true,
+      summary:'Corrección del centro de mando tras la primera revisión visual: se evita el desbordamiento, se unifican diplomacia e investigación y se facilitan las operaciones de embajadas, rutas marítimas y ejército.',
+      changes:[
+        'Solucionados los anchos mínimos rígidos y los textos sin salto de línea de listas, recursos, rutas y tarjetas.',
+        'Diplomacia muestra un botón Enviar embajada y un selector de naciones dentro del alcance con aceptación, rechazo y cooldown.',
+        'Diplomacia e Investigación muestran los mismos valores de nivel y alcance obtenidos del sistema diplomático real.',
+        'Naval incluye un gestor de rutas comerciales desde un puerto propio, con destinos por lista o mapa y acciones Ver y Cerrar.',
+        'Se retira del panel la lista marítima antigua duplicada, sin eliminar ninguna ruta ni alterar su persistencia.',
+        'Nueva pestaña Militar para consultar tropas, guerras, material y acceder a operaciones o defensas desde el territorio seleccionado.',
+        'El panel conserva scroll vertical y aumenta la adaptación de las cuadrículas para que no desborden en móvil o escritorio.',
+        'Se elimina el doble gestor de arrastre de Sistemas; el sistema estable original conserva la posición entre sesiones.',
+        'Se incorpora el botón Restablecer posición por si el panel queda fuera del área visible.',
+        'Sin cambios en reglas de combate, geografía, suministro o guardado de partidas.'
+      ]
+    },
+    {
       version:'0.38.5',
       date:'Octubre 2026',
       title:'Sistemas rediseñado como centro de mando',
-      current:true,
+      current:false,
       summary:'Reorganización visual de Sistemas para leer mejor la diplomacia, economía, investigación, inteligencia y naval sin perder las acciones existentes.',
       changes:[
         'Panel ampliado con cabecera identificable, navegación lateral y descripciones claras de cada sección en ordenador.',
