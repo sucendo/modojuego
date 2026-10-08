@@ -308,7 +308,26 @@
         if(value>score&&botGold3230[f]>type.cost+65){score=value;choice={cell,kind}}
       }
     }
-    if(choice&&score>.35&&build(f,choice.cell,choice.kind,true))nextAI[f]=now+70+(f%13)*6;
+    if(choice&&score>.35&&sites.size<MAX_SITES&&build(f,choice.cell,choice.kind,true)){
+      nextAI[f]=now+70+(f%13)*6;
+      return;
+    }
+    // Las economías maduras también amplían capacidad: nunca reciben
+    // una mejora gratuita y siguen usando su propia tesorería.
+    let best=null,bestScore=-1;
+    for(const site of own){
+      if(site.level>=5)continue;
+      const price=TYPES[site.kind].cost*(site.level+1);
+      if(botGold3230[f]<price+80)continue;
+      const material=TYPES[site.kind].group==='factory'?
+        (TYPES[site.kind].output===2?'energy':TYPES[site.kind].output===0?'farming':'mining'):
+        TYPES[site.kind].sector;
+      const priority=(pressure[material]||.45)*(TYPES[site.kind].group==='factory'?1.3:1)+
+        (site.potential||.5)*.25-site.level*.10;
+      if(priority>bestScore){bestScore=priority;best={site,price}}
+    }
+    if(best){botGold3230[f]-=best.price;best.site.level++;revision++;
+      nextAI[f]=now+100+(f%13)*9}
   }
   function saveState(){
     return {v:1,sites:[...sites.values()].map(s=>({cell:s.cell,f:s.f,kind:s.kind,
