@@ -599,7 +599,7 @@
       if(typeof sysTab3220==='string'&&sysTab3220==='eco')renderSystems3220();
     }else if(typeof toast==='function')toast('Terreno ocupado, límite alcanzado u oro insuficiente');
   });
-  modalActions3244?.addEventListener('click',event=>{
+  if(typeof modalActions3244!=='undefined')modalActions3244?.addEventListener('click',event=>{
     const change=event.target.closest?.('[data-industry-view0388]');
     if(!change||uiInteractionState3244?.modal?.type!=='production0388')return;
     event.preventDefault();
