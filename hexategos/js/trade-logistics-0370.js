@@ -192,10 +192,13 @@
 
   function residualTrade0370(f){
     let trade=0,allies=0;
+    const statecraft=window.HexategosStatecraft0380;
     for(const o of diplomaticTargets0370(f)){
       const rel=diplomaticRelation3300(f,o);
-      if(rel===1)trade++;
-      else if(rel===3){trade++;allies++}
+      const allowed=statecraft?.canTrade?statecraft.canTrade(f,o):(rel===1||rel===3);
+      if(!allowed)continue;
+      trade++;
+      if(statecraft?.hasAlliance?statecraft.hasAlliance(f,o):rel===3)allies++;
     }
     return Math.min(.16,trade*.011+allies*.004);
   }
