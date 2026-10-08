@@ -4,10 +4,24 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.38.18',
+      date:'Octubre 2026',
+      title:'Estabilidad del desplazamiento en los diálogos',
+      current:true,
+      summary:'El diálogo Sistemas conserva su scroll al actualizarse y cada pestaña recuerda su posición. Los avisos dejan de arrastrar continuamente el contenido hacia un mensaje anterior.',
+      changes:[
+        'El botón VER navega al aviso una única vez, sin scroll animado persistente.',
+        'El desplazamiento de Sistemas se mantiene tras actualizar inventarios, economía, diplomacia o rutas.',
+        'Cada pestaña de Sistemas recuerda su posición anterior al cambiar de sección.',
+        'Se conserva el scroll tanto del área de contenido como del contenedor principal.',
+        'La búsqueda de embajadas mantiene el foco sin desplazar el panel.'
+      ]
+    },
+    {
       version:'0.38.17',
       date:'Octubre 2026',
       title:'Ficha contextual completa de cada hexágono',
-      current:true,
+      current:false,
       summary:'Al seleccionar un hexágono aparece una ficha clara con población estimada dinámica, terreno y reservas, producción controlable, abastecimiento, gobierno y, en puertos, rutas, importaciones, exportaciones y flotas.',
       changes:[
         'Población estimada por hexágono en función de calidad del terreno, núcleo urbano, industria, suministro, estabilidad, puertos y duración de la campaña.',
