@@ -37,6 +37,7 @@
   let pathBudget0370=0;
   let seaPathUsed0370=false;
   let lastTickMs=0;
+  let tradePhases0384={roadsMs:0,routesMs:0,materialsMs:0,cacheMs:0};
   let roadBuildMs=0;
   let trafficDrawn=0;
   let routeEvals=0;
@@ -1186,6 +1187,7 @@
     const t0=performance.now();
     pathBudget0370=2;seaPathUsed0370=false;
     rebuildRoadGraph0370();rebuildPorts0370();
+    const tRoad0384=performance.now();
     repairOneLandRoute0370();
     autoLandTrade0370(0);
     const batch=activeFactionCount3230>=450?7:activeFactionCount3230>=350?9:12;
@@ -1205,9 +1207,18 @@
         tradeIncident0370(r);
       }
     }
+    const tRoutes0384=performance.now();
     resourceTick03720(false);
+    const tMaterials0384=performance.now();
     rebuildTradeCache0370(true);
-    lastTickMs=performance.now()-t0;
+    const tDone0384=performance.now();
+    tradePhases0384={
+      roadsMs:Number((tRoad0384-t0).toFixed(2)),
+      routesMs:Number((tRoutes0384-tRoad0384).toFixed(2)),
+      materialsMs:Number((tMaterials0384-tRoutes0384).toFixed(2)),
+      cacheMs:Number((tDone0384-tMaterials0384).toFixed(2))
+    };
+    lastTickMs=tDone0384-t0;
   }
 
   function seaCandidates0370(port){
@@ -2558,6 +2569,7 @@
         resourceTickMs:Number(resourceTickMs03720.toFixed(2)),
         geoRefreshMs:Number(geoRefreshMs0384.toFixed(2)),
         geoRefreshedNodes:geoRefreshedNodes0384,
+        phases:tradePhases0384,
         roadBuildMs:Number(roadBuildMs.toFixed(2)),
         routeEvals,seaSearches,trafficDrawn
       }
