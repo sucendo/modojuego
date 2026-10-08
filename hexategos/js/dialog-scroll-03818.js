@@ -10,6 +10,15 @@
   const tabPositions=new Map();
   let lastTab=typeof sysTab3220==='string'?sysTab3220:'dip';
   let lastRestore=null;
+  let restoring=false;
+  const userPositions=new Map();
+  // Registrar solamente desplazamientos reales del usuario, no los provocados
+  // por reconstrucciones del DOM ni por restauraciones programáticas.
+  panel.addEventListener('scroll',e=>{
+    if(restoring||!panel.classList.contains('open'))return;
+    if(![panel,main,content].includes(e.target))return;
+    userPositions.set(typeof sysTab3220==='string'?sysTab3220:lastTab,current());
+  },true);
   function current(){
     return {
       content:Math.max(0,content.scrollTop||0),
@@ -21,10 +30,17 @@
     if(!snapshot)return;
     // Reconstruir el HTML no debe hacer que la pantalla salte arriba.
     // También hay paneles que desplazan .sysMain, no #sysContent.
+    restoring=true;
     content.scrollTop=snapshot.content||0;
     if(main)main.scrollTop=snapshot.main||0;
     panel.scrollTop=snapshot.panel||0;
     lastRestore={...snapshot};
+    requestAnimationFrame(()=>{
+      content.scrollTop=snapshot.content||0;
+      if(main)main.scrollTop=snapshot.main||0;
+      panel.scrollTop=snapshot.panel||0;
+      restoring=false;
+    });
   }
   const baseRender=renderSystems3220;
   renderSystems3220=function(){
@@ -32,9 +48,10 @@
     const scrollBefore=current();
     const visible=panel.classList.contains('open');
     if(visible&&tab!==lastTab)tabPositions.set(lastTab,scrollBefore);
-    const target=tab===lastTab?scrollBefore:(tabPositions.get(tab)||{content:0,main:0,panel:0});
+    const target=tab===lastTab?(userPositions.get(tab)||scrollBefore):
+      (userPositions.get(tab)||tabPositions.get(tab)||{content:0,main:0,panel:0});
     const output=baseRender.apply(this,arguments);
-    if(visible)restore(target);
+    if(visible){restore(target);userPositions.set(tab,target)}
     lastTab=tab;
     return output;
   };
