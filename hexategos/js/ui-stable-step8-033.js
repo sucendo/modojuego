@@ -336,6 +336,23 @@
       }else openMessage(tab,key);
       closePopup(card)
     });
+    if(type==='offer'&&key?.startsWith('offer-')){
+      const offer=liveOffers().find(x=>x.id===Number(key.slice(6)));
+      if(offer){
+        const bar=card.querySelector('.eventActionsStable8');
+        for(const [label,accept] of [['ACEPTAR',true],['RECHAZAR',false]]){
+          const button=document.createElement('button');
+          button.type='button';button.textContent=label;button.className=accept?'good':'';
+          button.addEventListener('click',()=>{
+            if(accept&&typeof acceptDiplomaticOffer3300==='function')acceptDiplomaticOffer3300(offer.id);
+            if(!accept&&typeof rejectDiplomaticOffer3300==='function')rejectDiplomaticOffer3300(offer.id);
+            closePopup(card);updateBadges();
+            if(typeof sysTab3220!=='undefined'&&(sysTab3220==='dip'||sysTab3220==='eco'))renderSystems3220();
+          });
+          bar?.appendChild(button);
+        }
+      }
+    }
     if(meta?.requestKind==='embassy'){
       const bar=card.querySelector('.eventActionsStable8');
       for(const [label,accept] of [['ACEPTAR',true],['RECHAZAR',false]]){
