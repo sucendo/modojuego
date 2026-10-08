@@ -13,8 +13,9 @@ assert.match(html,/js\/ui-stable-step8-033\.js\?v=\d+/);
 assert.match(html,/js\/systems-hub-03851\.js\?v=\d+/);
 assert.ok(systemsCode.includes('focus({preventScroll:true})'),'embassy input focus must not scroll automatically');
 
+let notifyScroll=()=>{};
 const host={scrollTop:92},main={scrollTop:34},panel={
-  scrollTop:11,classList:{contains:c=>c==='open'},
+  scrollTop:11,addEventListener(type,fn){if(type==='scroll')notifyScroll=fn},classList:{contains:c=>c==='open'},
   querySelector:s=>s==='.sysMain0385'?main:null
 };
 const doc={getElementById:id=>id==='systemsPanel3213'?panel:
@@ -22,15 +23,17 @@ const doc={getElementById:id=>id==='systemsPanel3213'?panel:
 const apiWindow={};
 const setup="let sysTab3220='dip',renderSystems3220=function(){host.scrollTop=0;main.scrollTop=0;panel.scrollTop=0;return 'updated';};"+
   scrollCode+"return {render:renderSystems3220,tab:v=>{sysTab3220=v},api:window.HexategosDialogScroll03818};";
-const state=new Function('document','window','host','main','panel',setup)(doc,apiWindow,host,main,panel);
+const state=new Function('document','window','host','main','panel','requestAnimationFrame',setup)(doc,apiWindow,host,main,panel,cb=>cb());
 assert.equal(state.render(),'updated');
 assert.deepEqual([host.scrollTop,main.scrollTop,panel.scrollTop],[92,34,11],
   'scroll must stay still during a regular Systems rerender');
 host.scrollTop=59;main.scrollTop=20;panel.scrollTop=6;
+notifyScroll({target:host}); // simulate an actual user scroll
 state.tab('eco');state.render();
 assert.deepEqual([host.scrollTop,main.scrollTop,panel.scrollTop],[0,0,0],
   'first opening another tab must start from the top');
 host.scrollTop=110;main.scrollTop=9;panel.scrollTop=1;
+notifyScroll({target:host}); // keep independent scroll for the other tab
 state.tab('dip');state.render();
 assert.deepEqual([host.scrollTop,main.scrollTop,panel.scrollTop],[59,20,6],
   'returning to diplomacy must restore its previous scroll');

@@ -52,7 +52,7 @@ const constructions=[
  [1,'iron'],[2,'timber'],[3,'gas'],[4,'copper'],[5,'crops'],
  [6,'livestock'],[10,'oil'],[11,'refinery'],[12,'gasplant'],
  [13,'sawmill'],[14,'smelter'],[15,'foodplant'],[16,'textile'],
- [17,'machinery'],[18,'arms'],[19,'chemical'],[20,'electronics'],[9,'thermal']
+ [17,'machinery'],[18,'arms'],[19,'chemical'],[20,'electronics'],[21,'fiberworks'],[22,'tannery'],[9,'thermal']
 ];
 for(const [cell,type] of constructions)
   assert.ok(api.build(0,cell,type,false),'construction failed '+type);

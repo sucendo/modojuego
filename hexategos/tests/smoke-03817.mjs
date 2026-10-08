@@ -20,7 +20,7 @@ assert.ok(!js.includes('setInterval(')&&!js.includes('requestAnimationFrame('),
   'inspector must not add continuous simulation work');
 
 const root={scrollTop:0,classList:{add(){},remove(){}},insertBefore(){},addEventListener(){}};
-const actions={querySelectorAll:()=>[],addEventListener(){},replaceChildren(){},appendChild(){}};
+const actions={querySelector:()=>null,querySelectorAll:()=>[],addEventListener(){},replaceChildren(){},appendChild(){}};
 let contents='';
 const details={scrollTop:0};
 const panel={id:null,className:'',hidden:false,
