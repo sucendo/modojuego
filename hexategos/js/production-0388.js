@@ -422,12 +422,12 @@
             if(powerStation&&qty>0){chosen=kind;maximum=qty;break}
             if(qty>maximum){chosen=kind;maximum=qty}
           }
-          if(!chosen||maximum<=0){if(s.f===0)s.status=comp<0?'Sin conexión logística':'Falta materia prima';continue}
+          if(!chosen||maximum<=0){if(s.f===0)s.status=connect(s.cell,s.f)<0?'Sin conexión logística':'Falta materia prima';continue}
           amount=Math.min(amount,maximum);
           amount=take(g,chosen,amount);
         }else{
           for(const kind of inputs)amount=Math.min(amount,available(g,kind));
-          if(amount<=0){if(s.f===0)s.status=comp<0?'Sin conexión logística':'Falta materia prima';continue}
+          if(amount<=0){if(s.f===0)s.status=connect(s.cell,s.f)<0?'Sin conexión logística':'Falta materia prima';continue}
           for(const kind of inputs)take(g,kind,amount);
         }
         if(amount<=0){if(s.f===0)s.status='Falta materia prima';continue}
