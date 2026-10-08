@@ -961,9 +961,9 @@
     else if(a==='embassy_accept')answerEmbassy(openNation,true);
     else if(a==='embassy_reject')answerEmbassy(openNation,false);
     else if(['trade','nap','alliance','peace','war'].includes(a))proposeTreaty(a,openNation);
-    else if(a==='trade_end'){applyTreatyState(0,openNation,{trade:false},'suspensión comercial',true);notify('Comercio suspendido con '+factionName3230(openNation),'diplomacy','dip')}
-    else if(a==='nap_end'){applyTreatyState(0,openNation,{nap:false,alliance:false},'ruptura del pacto de no agresión',true);notify('Pacto de no agresión roto con '+factionName3230(openNation),'diplomacy','dip')}
-    else if(a==='alliance_end'){applyTreatyState(0,openNation,{alliance:false},'fin de la alianza',true);notify('Alianza finalizada con '+factionName3230(openNation),'diplomacy','dip')}
+    else if(a==='trade_end'){applyTreatyState(0,openNation,{trade:false},'suspensión comercial',true);notify('Comercio suspendido con '+factionName3230(openNation),'diplomacy','dip',{faction:openNation})}
+    else if(a==='nap_end'){applyTreatyState(0,openNation,{nap:false,alliance:false},'ruptura del pacto de no agresión',true);notify('Pacto de no agresión roto con '+factionName3230(openNation),'diplomacy','dip',{faction:openNation})}
+    else if(a==='alliance_end'){applyTreatyState(0,openNation,{alliance:false},'fin de la alianza',true);notify('Alianza finalizada con '+factionName3230(openNation),'diplomacy','dip',{faction:openNation})}
     else if(a==='spy_deploy')deploySpy(0,openNation,true);
     else if(a.startsWith('op_'))runSpyOperation(openNation,a.slice(3)==='industry'?'industry':a.slice(3)==='labor'?'labor':a.slice(3)==='nationalist'?'nationalist':a.slice(3));
     renderNationDossier(openNation,openTab);
