@@ -136,6 +136,12 @@
         '<div class="ctxInline03817"><span>Actividad efectiva <b>'+effective+' %</b></span>'+
         '<span>Sector <b>'+sector+' %</b></span>'+
         '<span>Producción acumulada <b>'+fmt(s.output)+'</b></span></div>'+
+        '<p class="ctxHelp03817"><b>Estado:</b> '+esc(s.status||'Pendiente de simulación')+
+        ' · Producción '+fmt(s.lastRate||0)+'/s · Eficiencia '+Math.round(s.efficiency||0)+' %</p>'+
+        ((d.electricity||d.group==='manufacture')?
+          '<p class="ctxHelp03817">⚡ Electricidad de la red: '+fmt(s.lastPower||0)+'</p>':'')+
+        (s.lastInputs?.length?'<p class="ctxHelp03817">Materias disponibles: '+esc(s.lastInputs.map(v=>
+          (prod.types[v.kind]?.name||prod.intermediates?.()[v.kind]||v.kind)+' '+fmt(v.available)).join(' · '))+'</p>':'')+
         (ctx.own?'<label class="ctxControl03817">Producción individual <b data-inspect-value03817="'+esc(identifier)+'">'+active+' %</b>'+
           '<input type="range" min="0" max="100" step="5" value="'+active+'" data-inspect-pct03817="'+esc(identifier)+'"></label>':
           '<p class="ctxHelp03817">Actividad programada: '+active+' %</p>')+
