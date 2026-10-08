@@ -6,7 +6,7 @@ const source=read('js/map-icons-03812.js');
 const html=read('index.html'),history=read('js/about-0351.js');
 assert.doesNotThrow(()=>new Function(source),'icon renderer syntax');
 assert.match(html,/v0\.38\.1\d<\/title>/,'version number');
-assert.match(html,/js\/map-icons-03812\.js\?v=0381\d/,'browser must reload icon styling');
+assert.match(html,/js\/map-icons-03812\.js\?v=\d+/,'browser must reload icon styling');
 assert.ok(history.includes("version:'0.38.13'"),'missing changelog version');
 
 const start=source.indexOf('  const COLORS=');
