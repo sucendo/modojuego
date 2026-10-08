@@ -238,6 +238,15 @@
       html+='</div>';
     }
     html+='</div>';
+    const log=window.HexategosMessagesStable8?.notices||[];
+    const governanceAlerts=log.filter(n=>(n.tab==='government'||n.type==='government')).slice(0,4);
+    if(governanceAlerts.length){
+      const unseen=governanceAlerts.filter(n=>!n.read).length;
+      html+='<div class="sysBlock3213 sysGovNotices0386"><div class="hubSectionHeading03851">'+
+        '<b>🔔 Avisos de Gobierno</b><span>'+unseen+' nuevos</span></div>'+
+        governanceAlerts.map(n=>'<div class="sysGovNotice0386">'+escape(n.message)+'</div>').join('')+
+        '<button data-hub-gov-read0386>Marcar avisos como leídos</button></div>';
+    }
     host.innerHTML=html;
   }
 
@@ -342,6 +351,11 @@
     }
   });
   host.addEventListener('click',e=>{
+    if(e.target.closest?.('[data-hub-gov-read0386]')){
+      window.HexategosMessagesStable8?.markAll?.('government');
+      governmentCard0386();decorateNew();
+      return;
+    }
     const gov=e.target.closest?.('[data-gov-action0386]');
     if(gov){
       const cell=governmentCity0386,order=gov.dataset.govAction0386;
@@ -387,9 +401,6 @@
       if(confirm('¿Cerrar esta ruta marítima? La ruta dejará de transportar mercancías.')){
         tradeApi()?.closeRoute?.(Number(b.dataset.id));
       }
-      return;
-    }
-    if(action==='gov-order'){
       return;
     }
     if(action==='military-naval'){switchTab('naval');return}
@@ -451,6 +462,23 @@
     panel.classList.add('uiMovedStable3');
     msg('Sistemas centrado');
   });
+
+  const bell0386=document.getElementById('systemsQuiet0386');
+  function updateBell0386(){
+    if(!bell0386)return;
+    const quiet=window.HexategosMessagesStable8?.quiet?.()!==false;
+    bell0386.textContent=quiet?'🔕':'🔔';
+    bell0386.setAttribute('aria-pressed',String(quiet));
+    bell0386.setAttribute('aria-label',quiet?'Avisos emergentes desactivados':'Avisos emergentes activados');
+    bell0386.title=quiet?'Avisos emergentes silenciados · pulsar para activar':
+      'Avisos emergentes activados · pulsar para silenciar';
+  }
+  bell0386?.addEventListener('click',()=>{
+    const api=window.HexategosMessagesStable8;
+    api?.setQuiet?.(!api.quiet());
+    updateBell0386();
+  });
+  updateBell0386();
 
   window.HexategosSystemsUI03851={
     version:BUILD,
