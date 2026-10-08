@@ -582,8 +582,9 @@
     applyPortableFile3275=function(file){
       const input=file?.payload?.production0388||null;
       const out=base.apply(this,arguments);
-      if(out!==false&&input&&Array.isArray(input.sites)){
-        restore(input);
+      if(out!==false){
+        // Nunca mezclar instalaciones de otra partida con un archivo antiguo.
+        restore(input&&Array.isArray(input.sites)?input:null);
         persistProduction0388();
       }
       return out;
