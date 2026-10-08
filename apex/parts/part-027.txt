@@ -1,0 +1,983 @@
+;
+ if(autoSpeedControl){throttleTarget=autoCtl?autoCtl.throttle:0;brakeTarget=autoCtl?autoCtl.brake:0;}
+ else if(player.reverse){throttleTarget=Math.max(brKey?.62:0,analogBrake*.72);brakeTarget=Math.max(gasKey?1:0,analogGas*.90);}
+ else{throttleTarget=Math.max(gasKey?1:0,analogGas);brakeTarget=Math.max(brKey?1:0,analogBrake);}
+ // El TC actúa sobre la fuerza que llega al eje trasero más abajo. No recortamos también
+ // el pedal aquí: la doble intervención de v4.16 hacía el acelerador inconsistente.
+ const analogInput=gyroFresh||gamepadActive;let throttleRise=analogInput?7.4:5.6,brakeRise=analogInput?10.2:8.6;
+ if(driveProfile.id==='simulation'){throttleRise=analogInput?7.0:5.0;brakeRise=analogInput?9.7:7.8;}
+ else if(driveProfile.id==='raw'){throttleRise=analogInput?8.2:7.0;brakeRise=analogInput?11.0:10.0;}
+ player.throttle=clamp(player.throttle+(throttleTarget-player.throttle)*Math.min(1,dt*(throttleTarget>player.throttle?throttleRise:10.0)),0,1);
+ player.brakeInput=clamp(player.brakeInput+(brakeTarget-player.brakeInput)*Math.min(1,dt*(brakeTarget>player.brakeInput?brakeRise:12.0)),0,1);
+
+ const prevVx=player.vx,prevVz=player.vz;
+ syncPlayerTrack();
+ const ps=playerSurfaceState(),env=envProfile(),axes=carAxes();
+ let u=finite(player.vx*axes.fx+player.vz*axes.fz,0);
+ let v=finite(player.vx*axes.rx+player.vz*axes.rz,0);
+ let r=finite(player.yawRate,0),sp=finite(Math.hypot(u,v),0);
+ player.speed=sp;
+
+ // Rivales / ERS / DRS siguen calculándose en el mundo.
+ let ahead=null,aheadD=999;
+ for(const rv of rivals){
+   const w=rivalWorld(rv),dx=w.x-player.x,dz=w.z-player.z,fd=dx*axes.fx+dz*axes.fz,sd=dx*axes.rx+dz*axes.rz;
+   if(fd>4&&fd<aheadD&&fd<95&&Math.abs(sd)<4){ahead=rv;aheadD=fd}
+ }
+ player.slipstream=!!ahead&&aheadD<75;
+ player.drs=currentSession==='race'&&!player.reverse&&player.lap>0&&player.trackDirDot>.65&&player.slipstream&&aheadD<58&&gas;
+ if(boost)player.ers-=apexEnergyProfile().drain*dt;else player.ers+=apexEnergyProfile().regen*dt;
+ player.ers=clamp(player.ers,0,100);
+ const camSign=(player.trackDirDot||1)>=0?1:-1;
+ const lookTarget=player.reverse?0:clamp(curvatureAt(player.s+camSign*30)*4.2+(player.steer||0)*.018+(player.slipAngle||0)*.10,-.045,.045);
+ player.cameraLook=lerp(finite(player.cameraLook,0),lookTarget,clamp(dt*4.0,0,1));
+ // v5.230.62.8.6.7 · La vista acompaña la rasante real. Tres distancias evitan que un
+ // único vértice del perfil provoque saltos y permiten anticipar bajadas/subidas fuertes.
+ const gradePitchTarget=player.reverse?0:apexRoadGradeCameraPitchTarget(player.s,camSign,player.lat);
+ const gradeRate=Math.abs(gradePitchTarget)>Math.abs(finite(player.cameraGradePitch,0))?5.2:3.8;
+ player.cameraGradePitch=lerp(finite(player.cameraGradePitch,0),gradePitchTarget,clamp(dt*gradeRate,0,1));
+ const fovTarget=clamp((inputSpeed*3.6-120)/210*4.2,0,4.2);
+ player.fovBoost=lerp(finite(player.fovBoost,0),fovTarget,clamp(dt*2.3,0,1));
+
+ // ---------- VEHICLE DYNAMICS ----------
+ const M=800,WB=3.60,A=1.90,B=WB-A,HCG=.34,IZ=1080,G=9.81;
+ const dmgF=damageFactors();
+ const wetMu=apexWeatherIsWet()?1.24:1.86;
+ const recoveryGrip=!!(player.autoRecoveryAssist&&sp<10&&ps.kind!=="ASPHALT"&&ps.kind!=="KERB");
+ const steerSurface=recoveryGrip?Math.max(finite(ps.steerGrip,ps.grip||1),.46):finite(ps.steerGrip,ps.grip||1);
+ const driveSurface=recoveryGrip?Math.max(finite(ps.driveGrip,ps.grip||1),.64):finite(ps.driveGrip,ps.grip||1);
+ const muLat=finiteClamp(wetMu*steerSurface,.05,2.4,1);
+ const muDrive=finiteClamp(wetMu*driveSurface,.05,2.4,1);
+
+ // Aerodinámica. Aproximadamente 2,2–3 g extra de carga a alta velocidad.
+ const downforce=finiteClamp(2.72*sp*sp*dmgF.aero,0,38000,0);
+ player.downforce=downforce;
+ let loadTransfer=M*finiteClamp(player.longG,-3.5,2.5,0)*G*HCG/WB;
+ let FzF=M*G*(B/WB)+downforce*.46*dmgF.frontAero-loadTransfer;
+ let FzR=M*G*(A/WB)+downforce*.54*dmgF.rearAero+loadTransfer;
+ FzF=finiteClamp(FzF,500,26000,staticSafeFront());FzR=finiteClamp(FzR,500,28000,staticSafeRear());
+ player.frontLoad=FzF;player.rearLoad=FzR;
+
+ // El volante es solo el volante: a velocidad cero NO genera yaw.
+ const maxSteer=finiteClamp(.285/(1+sp*.0105),.058,.285,.18);
+ const delta=clamp(player.steer+dmgF.steerBias,-1,1)*maxSteer;
+ player.delta=delta;
+
+ // Motor y frenos. El motor es trasero; la frenada reparte ~57/43.
+ const vmax=player.reverse?16:((98*dmgF.engine)+(boost?5:0)+(player.drs?3:0));
+ const speedRatio=finiteClamp(sp/Math.max(finite(vmax,98),1),0,1.1,0);
+ let driveAcc=player.reverse ? player.throttle*Math.max(2.4,5.0-2.0*Math.pow(clamp(sp/16,0,1),1.3)) : player.throttle*Math.max(3.2,11.6-7.4*Math.pow(speedRatio,1.55));
+ if(boost)driveAcc+=apexEnergyProfile().power;
+ if(player.slipstream&&!player.reverse)driveAcc+=.8;
+ driveAcc*=apexManualDriveFactor(sp);
+ if(player.pitLimiter&&sp>=apexPitSpeedLimitKph()/3.6)driveAcc=0;
+ let driveWanted=M*driveAcc*(player.reverse?-1:1);
+
+ const brakeAcc=(apexWeatherIsWet()?14.5:18.0)+(apexWeatherIsWet()?13:23)*Math.pow(clamp(sp/100,0,1),2);
+ const limiterBrake=player.pitLimiter?clamp((sp-apexPitSpeedLimitKph()/3.6)*2,0,brakeAcc):0;
+ let brakeWanted=Math.max(player.brakeInput*brakeAcc,limiterBrake)*M;
+ const brakeBias=apexControls.brakeBias;
+ // v5.117: a velocidad longitudinal casi nula el freno no tiene una dirección
+ // cinemática que oponer. Usar +1 aquí generaba una fuerza hacia atrás artificial y
+ // podía dejar AUT peleando contra sus propios frenos al intentar arrancar.
+ const dirU=Math.abs(u)>.25?Math.sign(u):0;
+
+ const maxLongF=finiteClamp(muDrive*FzF,50,52000,5000),maxLongR=finiteClamp(muDrive*FzR,50,56000,5500);
+ const maxLatF=finiteClamp(muLat*FzF*dmgF.frontGrip,50,52000,5000),maxLatR=finiteClamp(muLat*FzR*dmgF.rearGrip,50,56000,5500);
+ // Ayudas físicas del perfil ASISTIDO. Limitan la demanda al agarre disponible; no alteran la trayectoria.
+ player.tcAssist=false;player.absAssist=false;
+ if(driveProfile.tc&&!player.reverse&&driveWanted>0){
+   const surfaceFactor=ps.kind==='ASPHALT'?1:(ps.kind==='KERB'?.91:.78),tcCap=maxLongR*.90*surfaceFactor;
+   if(driveWanted>tcCap){driveWanted=lerp(tcCap,driveWanted,.10);player.tcAssist=true;}
+ }
+ if(driveProfile.abs&&brakeWanted>0&&Math.abs(u)>.8){
+   const capF=maxLongF*.89/Math.max(.05,brakeBias),capR=maxLongR*.89/Math.max(.05,1-brakeBias),absCap=Math.min(capF,capR);
+   if(brakeWanted>absCap){brakeWanted=lerp(absCap,brakeWanted,.08);player.absAssist=true;}
+ }
+ let FxF=-dirU*Math.min(finite(brakeWanted*brakeBias,0),maxLongF*.965);
+ let FxR=finite(driveWanted,0)-dirU*Math.min(finite(brakeWanted*(1-brakeBias),0),maxLongR*.965);
+
+ // Tracción trasera: si pedimos más fuerza que la rueda puede transmitir, patina.
+ player.wheelspin=Math.abs(FxR)>maxLongR*.94&&player.throttle>.72;
+ FxR=finiteClamp(FxR,-maxLongR*.965,maxLongR*.965,0);
+ player.lockF=brakeWanted*brakeBias>maxLongF*.96&&player.brakeInput>.75;
+ player.lockR=brakeWanted*(1-brakeBias)>maxLongR*.96&&player.brakeInput>.75;
+
+ // Círculo de fricción: acelerar/frenar roba capacidad lateral.
+ const longUseF=clamp(Math.abs(FxF)/Math.max(maxLongF,1),0,.93),longUseR=clamp(Math.abs(FxR)/Math.max(maxLongR,1),0,.93);
+ const latCapF=finite(maxLatF*Math.sqrt(Math.max(.12,1-longUseF*longUseF)),0);
+ const latCapR=finite(maxLatR*Math.sqrt(Math.max(.12,1-longUseR*longUseR)),0);
+
+ // Velocidad de cada contacto respecto a la orientación de su rueda.
+ const cD=Math.cos(delta),sD=Math.sin(delta);
+ const vfY=v+A*r;
+ const frontLong=u*cD+vfY*sD;
+ const frontLat=-u*sD+vfY*cD;
+ const rearLat=v-B*r;
+
+ const slipF=finiteClamp(Math.atan2(frontLat,Math.max(2.2,Math.abs(frontLong))),-.70,.70,0);
+ const slipR=finiteClamp(Math.atan2(rearLat,Math.max(2.2,Math.abs(u))),-.70,.70,0);
+ player.slipF=slipF;player.slipR=slipR;
+ player.slipAngle=Math.atan2(v,Math.max(1.5,Math.abs(u)));
+
+ // Rigidez de neumático dependiente de carga, con saturación progresiva.
+ const staticF=M*G*(B/WB),staticR=M*G*(A/WB);
+ const CF=finiteClamp(108000*Math.pow(Math.max(.12,FzF/staticF),.82),22000,430000,108000);
+ const CR=finiteClamp(122000*Math.pow(Math.max(.12,FzR/staticR),.82),24000,470000,122000);
+ const rawF=finite(CF*slipF,0),rawR=finite(CR*slipR,0);
+ const tireF=latCapF>1?finiteClamp(latCapF*Math.tanh(rawF/(latCapF*1.18)),-latCapF,latCapF,0):0;
+ const tireR=latCapR>1?finiteClamp(latCapR*Math.tanh(rawR/(latCapR*1.22)),-latCapR,latCapR,0):0;
+
+ // Fuerza delantera transformada desde el eje girado al chasis.
+ const FxTireF=sD*tireF;
+ const FyF=-cD*tireF;
+ const FyR=-tireR;
+
+ // Drag aerodinámico; DRS y rebufo lo reducen.
+ let dragCoeff=.36*(player.drs?.82:1)*(player.slipstream?.90:1)*(1+(1-dmgF.aero)*.28);
+ const aeroDrag=dragCoeff*u*Math.abs(u);
+ const coast=player.throttle<.05?M*(apexControls.engineBrake*.325)*Math.sign(u||1):0;
+ const Fx=FxF+FxR+FxTireF-aeroDrag-coast;
+ const Fy=FyF+FyR;
+
+ // Ecuaciones del modelo bicicleta en coordenadas del coche.
+ const du=finiteClamp(Fx/M+v*r,-75,75,0);
+ const dv=finiteClamp(Fy/M-u*r,-75,75,0);
+ const dr=finiteClamp((A*FyF-B*FyR)/IZ,-22,22,0);
+
+ const uBeforeStep=u;
+ u=finiteClamp(u+du*dt,-125,125,0);v=finiteClamp(v+dv*dt,-65,65,0);r=finiteClamp(r+dr*dt,-2.7,2.7,0);
+ // Un freno no debe hacer cruzar por sí solo el cero y convertir avance en marcha
+ // atrás (o viceversa). La inversión de sentido sólo la decide el modo R.
+ if(!player.reverse&&player.brakeInput>.08&&uBeforeStep>=0&&u<0)u=0;
+ if(player.reverse&&player.brakeInput>.08&&uBeforeStep<=0&&u>0)u=0;
+
+ // Modelo híbrido a baja velocidad: evita que el modelo dinámico se convierta en una peonza.
+ const lowBlend=clamp((10-sp)/8,0,1);
+ if(lowBlend>0){
+   const kinematicYaw=Math.abs(u)<.20?0:(u/WB)*Math.tan(delta)*finite(ps.steerGrip,1);
+   r=lerp(r,kinematicYaw,lowBlend*clamp(dt*5.5,0,1));
+   // En recuperación bloqueada el modelo dinámico de neumático pierde autoridad casi
+   // a cero km/h. Este término sólo ayuda a orientar a baja velocidad y desaparece
+   // automáticamente al volver a conducción normal.
+   if(player.autoRecoveryAssist&&Number.isFinite(player.autoRecoveryHeading)&&sp<8){
+     const hErr=angleDiff(player.autoRecoveryHeading,player.heading),assistYaw=clamp(hErr*1.05,-.82,.82);
+     r=lerp(r,assistYaw,clamp(dt*(2.2+3.0*lowBlend),0,.28));
+   }
+   v*=Math.exp(-dt*(2.0+5.0*lowBlend));
+ }
+
+ // Amortiguación de guiñada: deja salvar un sobreviraje con contravolante.
+ let yawDamp=(ps.kind==="ASPHALT"?1.82:ps.kind==="KERB"?1.48:ps.kind==="GRASS"?.70:ps.kind==="GRAVEL"?.88:ps.kind==="SAND"?.80:1.0);
+ if(driveProfile.stability){yawDamp+=ps.kind==='ASPHALT'?.18:(ps.kind==='KERB'?.34:.58);if(ps.kind!=='ASPHALT'&&sp>8)v*=Math.exp(-.25*dt);}
+ const counterSteer=((player.steer||0)*r<0)?clamp(Math.abs(player.steer)*1.15,0,1):0;
+ r*=Math.exp(-(yawDamp+counterSteer*.90)*dt);
+ if(Math.abs(u)<.25&&Math.abs(v)<.25&&player.throttle<.05){
+   r*=Math.exp(-8*dt);v*=Math.exp(-8*dt);if(player.brakeInput>.1){u*=Math.exp(-10*dt)}
+ }
+ const rearBreakaway=clamp((Math.abs(slipR)-.075)/.30,0,1);
+ const highSpeed=clamp((sp-22)/58,0,1),stableYaw=lerp(2.35,1.55,highSpeed),yawLimit=lerp(stableYaw,2.70,rearBreakaway);
+ r=clamp(r,-yawLimit,yawLimit);
+ player.yawRate=r;
+ player.heading=finite(player.heading+r*dt,player.lastGood?player.lastGood.heading:0);
+ if(player.heading>Math.PI)player.heading-=Math.PI*2;
+ if(player.heading<-Math.PI)player.heading+=Math.PI*2;
+
+ // Nuevo vector mundial a partir del estado del chasis.
+ const a2=carAxes();
+ player.vx=finite(a2.fx*u+a2.rx*v,0);
+ player.vz=finite(a2.fz*u+a2.rz*v,0);
+
+ // Resistencia de terreno dependiente de velocidad:
+ // a baja velocidad permite salir; a alta velocidad grava/arena desaceleran muchísimo.
+ sp=finite(Math.hypot(player.vx,player.vz),0);
+ let terrainDrag=terrainDragAccel(ps,sp);
+ if(player.autoRecoveryAssist&&sp<9&&(ps.kind==="GRAVEL"||ps.kind==="SAND"||ps.kind==="GRASS"))terrainDrag*=.48;
+ player.terrainDrag=terrainDrag;
+ if(sp>.001&&terrainDrag>0){
+   const dec=Math.min(sp,terrainDrag*dt),kx=player.vx/sp,kz=player.vz/sp;
+   player.vx-=kx*dec;player.vz-=kz*dec;
+ }
+ // Último seguro contra una recuperación de minutos: tras varios segundos sin progreso,
+ // impone una componente lateral SUAVE hacia la cinta (no teletransporta el coche).
+ if(player.autoRecoveryForcePull&&player.autoRecovery&&player.autoRecovery.emergency&&!env.wall){
+   const trPull=player.track||poseAt(player.s),Rpull=player.autoRecovery;
+   const edgeLane=Number.isFinite(Rpull.emergencyEdgeLane)?Rpull.emergencyEdgeLane:(Rpull.emergencyPlan&&Number.isFinite(Rpull.emergencyPlan.lane)?Rpull.emergencyPlan.lane:clamp((Rpull.emergencySide||Math.sign(player.lat)||1)*(env.half-1.1),-env.half+.8,env.half-.8));
+   const latErr=player.lat-edgeLane,lv=player.vx*trPull.nx+player.vz*trPull.nz;
+   // Empuja la VELOCIDAD hacia el borde bloqueado, no simplemente hacia el centro.
+   // Así funciona igual antes y después de un cruce accidental del eje de pista.
+   const desiredLv=-Math.sign(latErr||1)*clamp(Math.abs(latErr)*.55+1.6,1.6,5.0);
+   if(Math.sign(latErr||1)*lv>-Math.abs(desiredLv)*.82){
+     const deltaLv=desiredLv-lv,k=clamp(dt*5.8,0,.34);player.vx+=trPull.nx*deltaLv*k;player.vz+=trPull.nz*deltaLv*k;
+   }
+ }
+
+ // Límite aerodinámico/mecánico.
+ sp=finite(Math.hypot(player.vx,player.vz),0);
+ if(sp>vmax){
+   const k=vmax/sp;player.vx*=k;player.vz*=k;sp=vmax;
+ }
+
+ // Integración mundial autónoma con colisión continua contra barreras.
+ const moveDx=player.vx*dt,moveDz=player.vz*dt,preMoveX=player.x,preMoveZ=player.z,preMoveInside=apexDrivableAreaContains(player.x,player.z);
+ const wallHitThisFrame=movePlayerWithWalls(moveDx,moveDz);
+ let drivableBoundaryHitThisFrame=false;const postMoveInside=apexDrivableAreaContains(player.x,player.z);
+ if(preMoveInside===true&&postMoveInside===false){player.x=preMoveX;player.z=preMoveZ;player.vx*=.42;player.vz*=.42;player.yawRate*=.55;drivableBoundaryHitThisFrame=true;frameShake=Math.max(frameShake,3.1)}
+ if((demoMode||assistMode)&&wallHitThisFrame)player.autoLastWallHit=raceT;
+
+ // Relación con el circuito únicamente para superficies/progreso.
+ const oldS=player.s,oldTotal=player.total,L=trackData.km*1000,tr=syncPlayerTrack();
+ let ds=wrapDeltaS(player.s,oldS,L),maxProgress=Math.max(8,sp*dt*3+3);
+ if(Math.abs(ds)<=maxProgress)player.total+=ds;
+ const surf=playerSurfaceState();player.surface=drivableBoundaryHitThisFrame?'LIMIT':surf.zone;player.surfaceKind=drivableBoundaryHitThisFrame?'BOUNDARY':surf.kind;
+ player.wallCooldown=Math.max(0,(player.wallCooldown||0)-dt);
+
+ // Seguridad final. En SVG autoritativo NO existe un límite invisible paralelo a
+ // track_centerline: mandan los muros X/Z y la red PIT. Conservamos sólo una red de
+ // seguridad muy lejana para evitar perder el coche fuera del mundo por un accidente.
+ const envNow=envProfile(player.s),wallEdge=envNow.half+envNow.curb+envNow.runoff;
+ const sideWall=(player.lat>0&&envNow.leftWall)||(player.lat<0&&envNow.rightWall);
+ const limitEdge=envNow.limit||wallEdge+8,cwNow=trackData&&trackData.customWorld,exactWorld=!!(cwNow&&cwNow.authoritative);
+ const pitNow=player.pitState||nearestPitState(player.x,player.z,player.pitIndex),insidePitSafety=!!(pitNow&&pitNow.dist<=pitNow.width*.78+1.8);
+ const hasDrivableBoundary=apexDrivableAreaContains(player.x,player.z)!==null,safetyEdge=exactWorld?Math.max(90,limitEdge+72):limitEdge;
+ if((!exactWorld&&!sideWall&&Math.abs(player.lat)>limitEdge)||(exactWorld&&!hasDrivableBoundary&&!insidePitSafety&&Math.abs(player.lat)>safetyEdge)){
+   const edge=exactWorld?safetyEdge:limitEdge,sign=Math.sign(player.lat)||1,nx=tr.nx*sign,nz=tr.nz*sign;
+   player.x=tr.x+tr.nx*sign*(edge-.12);player.z=tr.z+tr.nz*sign*(edge-.12);
+   const vn=player.vx*nx+player.vz*nz;
+   if(vn>0){player.vx-=1.05*vn*nx;player.vz-=1.05*vn*nz}
+   player.vx*=.90;player.vz*=.90;frameShake=Math.max(frameShake,2.8);
+   syncPlayerTrack();player.surface="LIMIT";player.surfaceKind="BOUNDARY";
+ }
+
+ // Vibración de terreno.
+ if(player.surface==="KERB")frameShake=Math.max(frameShake,1.2+sp*.011);
+ else if(player.surfaceKind==="GRAVEL")frameShake=Math.max(frameShake,4.8);
+ else if(player.surfaceKind==="SAND")frameShake=Math.max(frameShake,4.1);
+ else if(player.surfaceKind==="GRASS")frameShake=Math.max(frameShake,2.8);
+
+ // Telemetría de dinámica.
+ const useF=latCapF>1?Math.abs(FyF)/latCapF:1;
+ const useR=latCapR>1?Math.abs(FyR)/latCapR:1;
+ player.frontUse=useF;player.rearUse=useR;
+ let balance="ESTABLE";
+ if(player.lockF||player.lockR)balance="BLOQUEO";
+ else if(player.wheelspin)balance="TRACCIÓN";
+ else if(useF>.94&&useR>.94)balance="AL LÍMITE";
+ else if(useF>.92&&useF>useR+.12)balance="SUBVIRA";
+ else if(useR>.93&&useR>useF+.14&&Math.abs(player.slipR)>.065)balance="SOBREVIRA";
+ player.balanceState=balance;
+
+ const newAxes=carAxes(),axw=(player.vx-prevVx)/Math.max(dt,.001),azw=(player.vz-prevVz)/Math.max(dt,.001);
+ player.longG=finiteClamp((axw*newAxes.fx+azw*newAxes.fz)/G,-6,4,0);
+ player.latG=finiteClamp((axw*newAxes.rx+azw*newAxes.rz)/G,-8,8,0);
+ player.speed=finite(Math.hypot(player.vx,player.vz),0);
+ if(!physicsFinite()){recoverPhysics("POST");}else{player.lastGood=snapshotPhysics();}
+ player.hp=clamp(player.hp,0,100);
+
+ // Cronometraje V4: vuelta por cruce real de FINISH/CONTROL; sectores y speed trap son controles independientes.
+ recordPracticeLapTrace(oldS);
+ if(updateLapValidation(oldS,player.s,oldTotal,player.total))return;
+
+ if(runHeavy){
+   // La física del jugador puede usar muchos subpasos, pero repetir toda la IA 10-14
+   // veces en un frame lento bloqueaba el hilo principal y retrasaba los toques.
+   // Los rivales recuperan el tiempo real en como máximo dos pasos por frame.
+   const aiDiff=Number.isFinite(sessionSettings.diff)?sessionSettings.diff:+$("diff").value;
+   const worldElapsed=Math.max(dt,finite(heavyDt,dt));
+   const aiSteps=mobilePerformanceMode()?Math.max(1,Math.min(2,Math.ceil(worldElapsed/.11))):Math.max(1,Math.min(4,Math.ceil(worldElapsed/.08)));
+   const aiDt=worldElapsed/aiSteps;telemetryPerf.aiSteps=aiSteps;
+   const aiPerf0=performance.now();
+   let collisionCost=0;
+   for(let ai=0;ai<aiSteps;ai++){
+     for(const rv of rivals)updateRivalRacecraft(rv,aiDt,L,aiDiff);
+     // v5.143: a 10-15 FPS un coche recorre 4-6 m entre frames. Resolver contactos sólo
+     // una vez al final permitía atravesar media carrocería antes de detectar el choque.
+     // Hacemos una pasada SAT tras CADA subpaso de IA (máx. 4): coste ínfimo frente al render
+     // y mucha menos penetración/tunnelling en las salidas comprimidas.
+     const col0=performance.now();
+     resolveRivalRivalCollisions();
+     for(const rv of rivals)resolvePlayerRivalCollision(rv);
+     collisionCost+=performance.now()-col0;
+     syncPlayerTrack();
+   }
+   telemetryPerf.aiMs=lerp(telemetryPerf.aiMs||0,performance.now()-aiPerf0-collisionCost,.18);
+   telemetryPerf.collisionMs=lerp(telemetryPerf.collisionMs||0,collisionCost,.18);
+   if(demoMode&&currentSession==='race'&&raceT-(player.autoLastRivalContact||-99)<.20){
+     // El AUT ya intenta evitar el contacto; esta ayuda sólo evita que un toque lateral
+     // moderado convierta instantáneamente el coche en una peonza irrecuperable.
+     player.yawRate*=.74;
+     const aC=carAxes(),uC=player.vx*aC.fx+player.vz*aC.fz,vC=player.vx*aC.rx+player.vz*aC.rz;
+     const vD=vC*.82;player.vx=aC.fx*uC+aC.rx*vD;player.vz=aC.fz*uC+aC.rz*vD;
+   }
+   syncPlayerTrack();
+   const postC=wallContactAtPose(player.x,player.z,player.heading,player.trackIndex);
+   if(postC){
+     player.x-=postC.nx*(postC.penetration+.045);player.z-=postC.nz*(postC.penetration+.045);
+     const vn=player.vx*postC.nx+player.vz*postC.nz;
+     if(vn>0){player.vx-=1.04*vn*postC.nx;player.vz-=1.04*vn*postC.nz}
+     syncPlayerTrack();
+   }
+   player.pos=1+rivals.filter(rv=>rv.finished||rv.total>player.total).length;
+   const _telT0=performance.now();captureSessionTelemetry();telemetryPerf.telemetryMs=lerp(telemetryPerf.telemetryMs||0,performance.now()-_telT0,.18);
+   const _audT0=performance.now();updateAudio(worldElapsed);telemetryPerf.audioMs=lerp(telemetryPerf.audioMs||0,performance.now()-_audT0,.18);
+   const _hudT0=performance.now();updateHud();telemetryPerf.hudMs=lerp(telemetryPerf.hudMs||0,performance.now()-_hudT0,.18);
+ }
+}
+function finishRace(){
+ mode="finish";
+ if(audio.ctx){oneShot(520,.16,"sine",.024,660);setTimeout(()=>oneShot(660,.18,"sine",.022,820),170)}
+
+ const playerTeamKey=(currentMode==='season'&&save.seasonTeam)?save.seasonTeam:selectedTeamKey();
+ const entries=[
+   {id:0,uid:'PLAYER',name:'TÚ',team:playerTeamKey,finished:true,finishTime:raceT,total:apexRaceTimingGeometry(trackData.spec,player.laps).raceDistance,laps:player.lap,bestLap:best},
+   ...rivals.map(r=>({id:r.id,uid:raceIdentity(r.id),name:raceName(r.id),team:r.team,finished:r.finished,finishTime:r.finishTime,total:r.total,laps:r.completedLaps||0,bestLap:r.bestLap}))
+ ];
+ entries.sort((a,b)=>{
+   if(a.finished&&b.finished)return a.finishTime-b.finishTime;
+   if(a.finished!==b.finished)return a.finished?-1:1;
+   return b.total-a.total;
+ });
+ finishOrder=entries.map(x=>x.id);
+ const p=finishOrder.indexOf(0)+1;
+ const winner=entries[0];
+
+ if(currentMode==="season"){
+   const prePoints={...(save.points||{})};
+   const preTeamMap={}; seasonConstructorStandings(prePoints).forEach(r=>preTeamMap[r.team]=r.points);
+   const pts=[25,18,15,12,10,8,6,4,2,1];
+   finishOrder.forEach((id,i)=>{const key=raceIdentity(id);save.points[key]=(save.points[key]||0)+(pts[i]||0)});
+   if(p===1)save.wins++;
+   const teamKey=save.seasonTeam||selectedTeamKey();
+   const postTeamMap={}; seasonConstructorStandings(save.points).forEach(r=>postTeamMap[r.team]=r.points);
+   seasonAwardContext={playerGpPoints:(save.points.PLAYER||0)-(prePoints.PLAYER||0),teamGpPoints:(postTeamMap[teamKey]||0)-(preTeamMap[teamKey]||0)};
+   save.round=Math.min(23,save.round+1);save.seasonWeekend=null;weekendContext=null;
+   persist();
+ }else seasonAwardContext=null;
+
+ const rows=entries.map((e,i)=>{
+   let gap='—';
+   if(i===0)gap=fmt(e.finishTime||raceT);
+   else if(e.finished&&winner.finished){
+     if((e.laps||0)<(winner.laps||0))gap='+'+((winner.laps||0)-(e.laps||0))+' LAP';
+     else gap='+'+((e.finishTime||0)-(winner.finishTime||0)).toFixed(3);
+   }else{
+     const winnerLaps=winner.laps||player.laps||0;
+     const selfLaps=e.laps||0;
+     gap='+'+Math.max(1,winnerLaps-selfLaps)+' LAP';
+   }
+   return {...e,_raceId:e.id,gap,laps:e.laps||player.laps||0,extra:Number.isFinite(e.bestLap)?('Best '+fmt(e.bestLap)):''};
+ });
+
+ const pages=buildRaceFinishPages(trackData.spec,rows,p);
+ const onDone=(currentMode==='season'&&save.round<F1_SEASON_COUNT)?()=>{$('finish').classList.add('hidden');beginWeekend('season',calendar[save.round]);}:()=>goMenu();
+ showFinishFlow(pages,onDone);
+ renderSchedule();
+}
+function renderStand(){
+ const roster=championshipRoster();
+ const arr=roster.map(r=>({uid:r.uid,name:r.name,p:save.points[r.uid]||0}))
+                 .sort((a,b)=>b.p-a.p);
+ $("standRows").innerHTML=arr.slice(0,12).map((r,i)=>`<div class="res ${r.uid==="PLAYER"?"you":""}"><b>${i+1}</b><span>${r.name}</span><b>${r.p} pt</b></div>`).join("");
+}
+const APEX_PLAYER_PHYSICS_HZ=100,APEX_PLAYER_PHYSICS_DT=1/APEX_PLAYER_PHYSICS_HZ,APEX_PLAYER_MAX_CATCHUP_STEPS=12;
+let apexPlayerPhysicsAccumulator=0;
+function loop(t){
+ if(mode==="menu"&&!player){last=t;apexPlayerPhysicsAccumulator=0;requestAnimationFrame(loop);return;}
+ const rawElapsed=Math.max(0,(t-last)/1000||0),elapsed=clamp(rawElapsed,0,.25);last=t;
+ if(mode==="inspection"&&apexInspectionActive()){apexPlayerPhysicsAccumulator=0;if(apexInspection.preparingClosure){requestAnimationFrame(loop);return;}if(rawElapsed>0){const fm=rawElapsed*1000;telemetryPerf.lastFrameMs=fm;telemetryPerf.frameMs=lerp(telemetryPerf.frameMs||fm,fm,.10);telemetryPerf.fps=lerp(telemetryPerf.fps||60,clamp(1/rawElapsed,1,240),.10);}apexInspectionUpdate(elapsed);const r0=performance.now();activeRenderer.renderFrame();telemetryPerf.renderMs=lerp(telemetryPerf.renderMs||0,performance.now()-r0,.12);requestAnimationFrame(loop);return;}
+ if(rawElapsed>0){const fm=rawElapsed*1000;telemetryPerf.lastFrameMs=fm;telemetryPerf.frameMs=lerp(telemetryPerf.frameMs||fm,fm,.10);telemetryPerf.fps=lerp(telemetryPerf.fps||60,clamp(1/rawElapsed,1,240),.10);}
+ // v4.17: la física del jugador deja de heredar el tiempo de cada frame.
+ // Siempre integra a 100 Hz: 60, 40 o 25 FPS cambian la fluidez visual, no el tacto del coche.
+ apexPlayerPhysicsAccumulator=Math.min(apexPlayerPhysicsAccumulator+elapsed,APEX_PLAYER_PHYSICS_DT*APEX_PLAYER_MAX_CATCHUP_STEPS);
+ let steps=Math.floor((apexPlayerPhysicsAccumulator+1e-9)/APEX_PLAYER_PHYSICS_DT);
+ steps=Math.min(APEX_PLAYER_MAX_CATCHUP_STEPS,steps);telemetryPerf.physicsSteps=steps;
+ const simElapsed=steps*APEX_PLAYER_PHYSICS_DT,_physicsT0=performance.now();
+ for(let i=0;i<steps;i++)update(APEX_PLAYER_PHYSICS_DT,i===steps-1,simElapsed);
+ apexPlayerPhysicsAccumulator=Math.max(0,apexPlayerPhysicsAccumulator-simElapsed);
+ const _physicsRaw=performance.now()-_physicsT0;telemetryPerf.physicsMs=lerp(telemetryPerf.physicsMs||0,_physicsRaw,.12);
+ const r0=performance.now();activeRenderer.renderFrame();const _renderRaw=performance.now()-r0;telemetryPerf.renderMs=lerp(telemetryPerf.renderMs||0,_renderRaw,.12);if(rawElapsed>0)apexRuntimePerfRecord(rawElapsed*1000,_physicsRaw,_renderRaw);requestAnimationFrame(loop);
+}
+function goMenu(){apexCloseControls(false);apexResetSessionControls();if(typeof apexInspection!=="undefined"){apexInspection.active=false;apexInspection.auto=false;apexInspection.drag=false}document.body.classList.remove("apex-inspection","ins-drag","ins-ui-hidden");$("circuitInspectorHud")&&$("circuitInspectorHud").classList.add("hidden");mode="menu";pendingRace=null;currentSession="race";sessionLimit=Infinity;sessionExpired=false;finishFlow=null;paused=false;countdown=0;apexWeatherReset();$("weekendPanel")&&$("weekendPanel").classList.add("hidden");$("sessionBadge")&&$("sessionBadge").classList.add("hidden");
+ // v5.230.62.4.1: recuperación defensiva del estado de todos los botones que pueden
+ // participar en carga/compilación/warmup. Ningún disabled temporal sobrevive al menú.
+ ["start","nextSeason","finishNext","gpStart","practiceStart","weekendMenu","endSession"].forEach(id=>{let b=$(id);if(b){b.dataset.audioReady="0";b.disabled=false;}});
+ if(typeof apexMirrorSceneCache!=="undefined"&&apexMirrorSceneCache&&typeof apexMirrorSceneCache.clear==="function")apexMirrorSceneCache.clear();
+ if(typeof apexMirrorPerfFrame!=="undefined")apexMirrorPerfFrame={requests:0,updates:0,reuses:0,landmarkFaces:0,carsVisible:0,carsOccluded:0,lastHz:30,lastTrackMax:0,lastBuildMs:0};
+ $("start").textContent="SALIR A PISTA";$("nextSeason").textContent="ABRIR GP";$("finishNext").textContent="SIGUIENTE";if($("finishPrev"))$("finishPrev").style.display="none";if(audio.ctx&&audio.engineGain){audio.engineGain.gain.setTargetAtTime(0,audio.ctx.currentTime,.04);if(audio.engine2Gain)audio.engine2Gain.gain.setTargetAtTime(0,audio.ctx.currentTime,.04);if(audio.windGain)audio.windGain.gain.setTargetAtTime(0,audio.ctx.currentTime,.05);if(audio.surfaceGain)audio.surfaceGain.gain.setTargetAtTime(0,audio.ctx.currentTime,.05);if(audio.rivalGain)audio.rivalGain.gain.setTargetAtTime(0,audio.ctx.currentTime,.05);if(audio.rainGain)audio.rainGain.gain.setTargetAtTime(0,audio.ctx.currentTime,.05);if(audio.tyreGain)audio.tyreGain.gain.setTargetAtTime(0,audio.ctx.currentTime,.05)}player=null;trackData=null;$("hud").classList.add("hidden");$("touch").classList.add("hidden");$("telemetryPanel").classList.add("hidden");$("telemetryBtn").classList.remove("on");$("pausePanel").classList.add("hidden");$("finish").classList.add("hidden");$("menu").classList.remove("hidden");document.body.classList.add("menu-open");$("msg").textContent="";$("raceAlert").textContent="";renderSchedule();renderPracticeRecord();renderTeamChooser();updateAllCircuitCards()}
+function togglePause(){if(!player||!["race","countdown"].includes(mode))return;apexReleaseInputs();paused=!paused;updateAudio(.016);$("pausePanel").classList.toggle("hidden",!paused);$("touch").classList.toggle("hidden",paused)}
+function screenOrientationInfo(){
+ let raw=0,type="unknown";
+ if(screen.orientation){
+   if(Number.isFinite(screen.orientation.angle))raw=screen.orientation.angle;
+   if(screen.orientation.type)type=screen.orientation.type;
+ }else if(typeof window.orientation==="number")raw=window.orientation;
+ let a=((raw%360)+360)%360;
+ a=(Math.round(a/90)*90)%360;
+ // Refuerzo para navegadores que informan el tipo pero no un angle fiable.
+ if(type.includes("landscape") && (a===0||a===180)){
+   if(typeof window.orientation==="number"){
+     const wa=((window.orientation%360)+360)%360;
+     if(wa===90||wa===270)a=wa;
+   }
+ }
+ return {angle:a,type};
+}
+function normalizedScreenAngle(){return screenOrientationInfo().angle;}
+function adaptGyroToScreenAngle(a,roll,pitch){
+ if(gyro.lastScreenAngle===null){gyro.lastScreenAngle=a;return;}
+ if(a===gyro.lastScreenAngle)return;
+ gyro.lastScreenAngle=a;
+ // Si el usuario gira el teléfono de landscape-primary a landscape-secondary durante
+ // la partida, tomamos la nueva postura como centro para evitar un volantazo/gas súbito.
+ if(gyro.enabled){
+   gyro.center=roll;gyro.pedalCenter=pitch;gyro.raw=roll;gyro.pedalRaw=pitch;
+   gyro.steer=0;gyro.pedal=0;gyro.throttle=0;gyro.brake=0;
+ }
+}
+function orientationScreenAxes(e){
+ const beta=Number.isFinite(e.beta)?e.beta:0;
+ const gamma=Number.isFinite(e.gamma)?e.gamma:0;
+ const info=screenOrientationInfo(),a=info.angle;
+ let roll=gamma,pitch=beta;
+ // DeviceOrientation entrega beta/gamma en ejes físicos del dispositivo. Convertimos
+ // siempre a ejes VISUALES de la pantalla: roll = izquierda/derecha; pitch = delante/atrás.
+ if(a===90){ roll=beta; pitch=-gamma; }
+ else if(a===270){ roll=-beta; pitch=gamma; }
+ else if(a===180){ roll=-gamma; pitch=-beta; }
+ gyro.orientationType=info.type;
+ adaptGyroToScreenAngle(a,roll,pitch);
+ return {roll,pitch,angle:a,type:info.type};
+}
+function oriValue(e){ return orientationScreenAxes(e).roll; }
+function oriPedalValue(e){ return orientationScreenAxes(e).pitch; }
+function applyGyroPedals(raw){
+ if(!Number.isFinite(raw))return;
+ gyro.pedalRaw=raw;
+ let d=raw-gyro.pedalCenter;
+ if(Math.abs(d)<gyro.pedalDead)d=0;
+ // Hacia atrás = GAS. Hacia delante = FRENO + N.
+ // En coordenadas de pantalla, el gesto hacia atrás se interpreta como d positivo.
+ const n=clamp(d/gyro.pedalRange,-1,1);
+ gyro.pedal=n;
+ gyro.throttle=n>0?Math.pow(n,1.10):0;
+ gyro.brake=n<0?Math.pow(-n,1.05):0;
+}
+
+function motionScreenAxes(e){
+ const g=e.accelerationIncludingGravity;if(!g)return null;
+ const x=Number.isFinite(g.x)?g.x:0,y=Number.isFinite(g.y)?g.y:0,info=screenOrientationInfo(),a=info.angle;
+ let roll=x,pitch=y;
+ if(a===90){ roll=y; pitch=-x; }
+ else if(a===270){ roll=-y; pitch=x; }
+ else if(a===180){ roll=-x; pitch=-y; }
+ gyro.orientationType=info.type;
+ adaptGyroToScreenAngle(a,roll,pitch);
+ return {roll,pitch,angle:a,type:info.type};
+}
+function motionAxisValue(e){const a=motionScreenAxes(e);return a?a.roll:null;}
+function motionPedalAxisValue(e){const a=motionScreenAxes(e);return a?a.pitch:null;}
+function onMotion(e){
+ const ma=motionScreenAxes(e),v=ma?ma.roll:null,pv=ma?ma.pitch:null;
+ if(!Number.isFinite(v))return;
+ gyro.motionCount++;gyro.motionLast=performance.now();
+ gyro.orientationAngle=ma.angle;
+ // m/s² -> aprox grados de inclinación. asin(g/9.81).
+ const deg=Math.asin(clamp(v/9.81,-1,1))*180/Math.PI;
+ const pdeg=Number.isFinite(pv)?Math.asin(clamp(pv/9.81,-1,1))*180/Math.PI:null;
+ gyro.motionTilt=deg;
+ if((!gyro.last || performance.now()-gyro.last>800) && gyro.enabled){
+   gyro.raw=deg;gyro.screenRoll=deg;if(Number.isFinite(pdeg))gyro.screenPitch=pdeg;gyro.last=performance.now();gyro.source="MOTION";
+   // Roll: gamma/roll negativo = izquierda; positivo = derecha.
+   let d=(deg-gyro.center)*gyro.invert;
+   if(Math.abs(d)<1.8)d=0;
+   const n=clamp(d/24,-1,1);
+   gyro.steer=Math.sign(n)*Math.pow(Math.abs(n),1.18);
+   if(Number.isFinite(pdeg))applyGyroPedals(pdeg);
+   refreshGyroReadout();updateDiag();
+ }
+}
+function screenAngle(){
+ return (screen.orientation&&Number.isFinite(screen.orientation.angle))?screen.orientation.angle:(typeof window.orientation==="number"?window.orientation:0);
+}
+function updateDiag(){
+ const secure=!!window.isSecureContext,apiOri=typeof DeviceOrientationEvent!=="undefined",apiMotion=typeof DeviceMotionEvent!=="undefined",age=gyro.last?Math.round(performance.now()-gyro.last):999999;
+ $("dProtocol").textContent=location.protocol;
+ $("dProtocol").className=location.protocol==="https:"?"ok":"warn";
+ $("dSecure").textContent=secure?"SÍ":"NO";$("dSecure").className=secure?"ok":"bad";
+ $("dApi").textContent=(apiOri?"ORI ":"")+(apiMotion?"MOTION":"")||"NO";$("dApi").className=(apiOri||apiMotion)?"ok":"bad";
+ $("dEvents").textContent=gyro.eventCount+" / "+gyro.motionCount;
+ $("dEvents").className=(gyro.eventCount+gyro.motionCount)>0?"ok":"warn";
+ $("dScreen").textContent=screenAngle()+"°";
+ $("dSource").textContent=gyro.source;
+ $("dBeta").textContent=Number.isFinite(gyro.beta)?gyro.beta.toFixed(1)+"°":"—";
+ $("dGamma").textContent=Number.isFinite(gyro.gamma)?gyro.gamma.toFixed(1)+"°":"—";
+ $("dUsed").textContent=Number.isFinite(gyro.screenRoll)?gyro.screenRoll.toFixed(1)+"°":"—";
+ const dp=$("dPitch");if(dp)dp.textContent=Number.isFinite(gyro.screenPitch)?gyro.screenPitch.toFixed(1)+"°":"—";
+ $("dSteer").textContent=(gyro.steer||0).toFixed(2);
+ $("dAudio").textContent=audio.ctx?audio.ctx.state:"NO CREADO";
+ $("dAudio").className=audio.ctx&&audio.ctx.state==="running"?"ok":"warn";
+ $("dAudioCore").textContent=audio.coreReady?"OK":"NO";
+ $("dAudioCore").className=audio.coreReady?"ok":"bad";
+ const _pf=renderProfilerSnapshot(),_ms=v=>(Number(v)||0).toFixed(2)+" ms";
+ if($("dRenderer"))$("dRenderer").textContent=String(_pf.backend||"canvas2d").toUpperCase();
+ if($("pFrame"))$("pFrame").textContent=Math.round(_pf.fps||0)+" · "+(Number(_pf.frameMs)||0).toFixed(1)+" ms";
+ if($("pRender"))$("pRender").textContent=_ms(_pf.renderMs);
+ if($("pTrack"))$("pTrack").textContent=_ms(_pf.trackMs);
+ if($("pEnvironment"))$("pEnvironment").textContent=_ms(_pf.environmentMs);
+ if($("pCars"))$("pCars").textContent=_ms(_pf.carsMs);
+ if($("pMirrors"))$("pMirrors").textContent=_ms(_pf.mirrorsMs);
+ if($("pCockpit"))$("pCockpit").textContent=_ms(_pf.cockpitMs);
+ if($("pEffects"))$("pEffects").textContent=_ms(_pf.effectsMs);
+ if($("pGpu"))$("pGpu").textContent=_ms(_pf.webglSubmitMs)+" · "+Math.round(_pf.webglTriangles||0);
+ if($("pPhysics"))$("pPhysics").textContent=_ms(_pf.physicsMs);
+ if($("pAi"))$("pAi").textContent=_ms(_pf.aiMs);
+ if($("pCollision"))$("pCollision").textContent=_ms(_pf.collisionMs);
+ if($("pAux"))$("pAux").textContent=(Number(_pf.telemetryMs)||0).toFixed(2)+" / "+(Number(_pf.hudMs)||0).toFixed(2)+" / "+(Number(_pf.audioMs)||0).toFixed(2)+" ms";
+ let advice="";
+ if(!secure)advice="El archivo está fuera de un contexto seguro. En local el sonido puede funcionar, pero los sensores de orientación/movimiento pueden estar bloqueados. Para el giroscopio, sirve este mismo HTML por HTTPS y ábrelo en Chrome.";
+ else if(!(apiOri||apiMotion))advice="Este navegador/WebView no expone APIs de orientación ni movimiento.";
+ else if((gyro.eventCount+gyro.motionCount)===0)advice="La API existe, pero no llegan eventos. Revisa permisos de sensores del navegador y pulsa GYRO desde esta página.";
+ else if(age>1800)advice="Llegaron eventos, pero han dejado de actualizarse.";
+ else if(!gyro.enabled)advice="El sensor está enviando datos. Pulsa GYRO y después CENTRAR.";
+ else advice="Sensor activo en "+normalizedScreenAngle()+"° ("+gyro.orientationType+"). ROLL de pantalla controla solo el volante; PITCH de pantalla controla solo gas/freno. Si cambias de un landscape al otro, el centro se recalibra automáticamente.";
+ if(!audio.coreReady)advice+=(advice?" ":"")+"Audio: pulsa PROBAR SONIDO; el núcleo se inicializa con ese gesto.";
+ $("dAdvice").textContent=advice;
+}
+function toggleDiag(force){
+ const open=typeof force==="boolean"?force:$("diagPanel").classList.contains("hidden");
+ $("diagPanel").classList.toggle("hidden",!open);updateDiag();
+}
+function refreshGyroReadout(){
+ const d=(gyro.raw-gyro.center)*gyro.invert;
+ const pedal=gyro.throttle>.02?(" G"+Math.round(gyro.throttle*100)):gyro.brake>.02?(" F"+Math.round(gyro.brake*100)):"";
+ $("gyroDeg").textContent=(Number.isFinite(d)?d:0).toFixed(1)+"°"+pedal;
+ $("gyroReadout").firstChild.nodeValue=gyro.enabled?("GYRO "+gyro.source+"\n"):"GYRO OFF\n";
+}
+function onOri(e){
+ const axes=orientationScreenAxes(e),v=axes.roll,pv=axes.pitch;if(!isFinite(v))return;
+ gyro.alpha=Number.isFinite(e.alpha)?e.alpha:null;gyro.beta=Number.isFinite(e.beta)?e.beta:null;gyro.gamma=Number.isFinite(e.gamma)?e.gamma:null;
+ gyro.screenRoll=v;gyro.screenPitch=pv;gyro.orientationAngle=axes.angle;
+ gyro.eventCount++;gyro.raw=v;gyro.last=performance.now();gyro.source=e.type==="deviceorientationabsolute"?"ABS":"ORI";
+ if(gyro.enabled){
+   // ROLL de pantalla: izquierda negativo, derecha positivo.
+   // PITCH de pantalla: atrás positivo (gas), delante negativo (freno + N).
+   let d=(v-gyro.center)*gyro.invert;
+   if(Math.abs(d)<1.8)d=0;
+   const n=clamp(d/24,-1,1);
+   gyro.steer=Math.sign(n)*Math.pow(Math.abs(n),1.18);
+   applyGyroPedals(pv);
+ }
+ refreshGyroReadout();updateDiag();
+}
+function attachGyroListeners(){
+ if(gyro.listening)return;
+ addEventListener("deviceorientation",onOri,true);
+ addEventListener("deviceorientationabsolute",onOri,true);
+ addEventListener("devicemotion",onMotion,true);
+ gyro.listening=true;
+}
+function setGyroUiState(){
+ document.body.classList.toggle("gyro-active",!!gyro.enabled);
+ // Evita que un dedo que estaba sobre un control táctil siga mandando al ocultarlo.
+ if(gyro.enabled){keys.left=false;keys.right=false;keys.gas=false;keys.brake=false;}
+}
+async function enableGyro(){
+ try{
+   if(!window.isSecureContext){
+     throw Error("Los sensores están bloqueados fuera de un contexto seguro (HTTPS)");
+   }
+   if(typeof DeviceOrientationEvent==="undefined"&&typeof DeviceMotionEvent==="undefined")throw Error("sensor no disponible");
+   if(typeof DeviceOrientationEvent!=="undefined"&&typeof DeviceOrientationEvent.requestPermission==="function"){
+     const p=await DeviceOrientationEvent.requestPermission();if(p!=="granted")throw Error("permiso de orientación denegado");
+   }
+   if(typeof DeviceMotionEvent!=="undefined"&&typeof DeviceMotionEvent.requestPermission==="function"){
+     const p=await DeviceMotionEvent.requestPermission();if(p!=="granted")throw Error("permiso de movimiento denegado");
+   }
+   attachGyroListeners();
+   gyro.enabled=!gyro.enabled;if(gyro.enabled)apexInputDevice='gyro';
+   if(gyro.enabled){
+     gyro.center=gyro.raw;gyro.pedalCenter=gyro.pedalRaw;gyro.steer=0;gyro.throttle=0;gyro.brake=0;gyro.pedal=0;$("gyro").classList.add("on");$("gyro").textContent="GYR";
+   }else{
+     $("gyro").classList.remove("on");$("gyro").textContent="GYR";gyro.steer=0;gyro.throttle=0;gyro.brake=0;gyro.pedal=0;
+   }
+   setGyroUiState();refreshGyroReadout();updateDiag();
+ }catch(e){
+   gyro.enabled=false;$("gyro").classList.remove("on");$("gyro").textContent="GYR";setGyroUiState();
+   $("gyroReadout").innerHTML="GYRO BLOQ.<br><span id=\"gyroDeg\">0.0°</span>";
+   $("dAdvice").textContent=String(e&&e.message||e);
+   toggleDiag(true);
+ }
+}
+function centerGyro(){
+ if(!gyro.enabled){enableGyro();return}
+ gyro.center=gyro.raw;gyro.pedalCenter=gyro.pedalRaw;gyro.steer=0;gyro.throttle=0;gyro.brake=0;gyro.pedal=0;refreshGyroReadout();if(navigator.vibrate)navigator.vibrate(20);
+}
+function invertGyro(){gyro.invert*=-1;$("invert").classList.toggle("on",gyro.invert<0);gyro.steer*=-1;refreshGyroReadout()}
+async function full(){try{if(!document.fullscreenElement){await document.documentElement.requestFullscreen();if(screen.orientation&&screen.orientation.lock)try{await screen.orientation.lock("landscape")}catch(e){}}else await document.exitFullscreen()}catch(e){}}
+function renderSchedule(){
+ const teamTxt=save.seasonTeam?(" · Equipo: "+teamInfo(save.seasonTeam).name):"";
+ const lastSim=save.lastSeasonResult&&save.lastSeasonResult.length?(" · Último GP: P"+(save.lastSeasonResult.indexOf("PLAYER")+1)):"";
+ $("seasonStatus").textContent=(save.round<F1_SEASON_COUNT?"Siguiente: R"+(save.round+1)+" · "+stripCountryEmoji(calendar[save.round].country)+" · "+calendar[save.round].name+teamTxt:"Temporada completada · "+save.wins+" victorias"+teamTxt)+lastSim;
+ $("nextSeason").disabled=save.round>=F1_SEASON_COUNT;if($("skipSeasonGP"))$("skipSeasonGP").disabled=save.round>=F1_SEASON_COUNT;
+ $("schedule").innerHTML=calendar.slice(0,F1_SEASON_COUNT).map((e,i)=>`<div class="event ${i<save.round?"done":""} ${i===save.round?"current":""}"><b>${flagMarkup(e)}R${String(e.r).padStart(2,"0")} · ${stripCountryEmoji(e.country)}</b><div class="small muted">${e.name}</div></div>`).join("");
+}
+
+
+
+// v5.230.62.8.6.7 · Auditor universal BASE JSON + BASE SVG. No carga circuitos ni altera trackData.
+const APEX_CIRCUIT_AUDIT_SCHEMA='APEX_CIRCUIT_AUDIT_V1';
+let apexCircuitAuditLast=null;
+function apexAuditFinite(v){return typeof v==='number'&&Number.isFinite(v)}
+function apexAuditEsc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function apexAuditAdd(messages,severity,code,text,detail=''){messages.push({severity,code,text,detail})}
+function apexAuditMonotonicRows(rows,xIndex=0){if(!Array.isArray(rows)||rows.length<2)return false;let prev=-Infinity;for(const row of rows){const x=Array.isArray(row)?+row[xIndex]:NaN;if(!Number.isFinite(x)||x<prev-1e-9)return false;prev=x}return true}
+function apexAuditCoverageRows(rows,start,end,xIndex=0,tol=.02){if(!Array.isArray(rows)||rows.length<2)return false;const a=+rows[0][xIndex],b=+rows[rows.length-1][xIndex];return Number.isFinite(a)&&Number.isFinite(b)&&Math.abs(a-start)<=tol&&Math.abs(b-end)<=tol}
+function apexAuditSvgRole(doc,role){return [...doc.querySelectorAll('[data-apex-role]')].filter(e=>String(e.getAttribute('data-apex-role')||'').toLowerCase()===role&&!(e.closest&&e.closest('[data-apex-library=\"1\"],#APEX_ELEMENT_LIBRARY')))}
+function apexAuditSvgNumber(el,name){if(!el)return NaN;const v=parseFloat(el.getAttribute(name));return Number.isFinite(v)?v:NaN}
+function apexAuditProfileQuality(obj){return String((obj&&obj.quality)||'').toUpperCase()}
+function apexAuditOneBaseCircuit(id){
+ const messages=[],json=APEX_BASE_CIRCUIT_JSON_BY_ID&&APEX_BASE_CIRCUIT_JSON_BY_ID[id],svgText=apexEmbeddedBaseSvgText(id),checks={};
+ const mark=(key,ok,failText,detail='',severity='error')=>{checks[key]=!!ok;if(!ok)apexAuditAdd(messages,severity,key,failText,detail);return !!ok};
+ if(!json){apexAuditAdd(messages,'error','json-missing','No existe BASE JSON.');return {id,status:'error',checks,messages,errorCount:1,warnCount:0,infoCount:0}}
+ const cj=json.circuit||{},track=json.track||{},race=json.race||{},L=+track.lengthMeters||0;
+ mark('identity',cj.id===id&&L>500&&L<20000&&+race.turns>0,'Identidad/longitud del JSON no válida.',`id=${cj.id||'—'} · longitud=${L||'—'} m · curvas=${race.turns||'—'}`);
+ mark('schema',json.schema==='APEX_CIRCUIT_JSON_V1'&&+json.schemaVersion===1,'Esquema BASE JSON inesperado.',`${json.schema||'—'} v${json.schemaVersion??'—'}`);
+ // Gran Premio 2026 contrastado (Wikipedia calendario + ficha oficial F1 para trazado/vueltas)
+ const gp=json.grandPrix||{},gpLaps=+gp.totalLaps||0;
+ mark('grand-prix-2026',+gp.season===2026&&+gp.round===+cj.round&&gpLaps>0&&gpLaps===+race.laps&&+race.totalLaps===gpLaps&&Number.isFinite(+gp.raceDistanceKm)&&+gp.raceDistanceKm>200,'Datos del Gran Premio 2026 incompletos o incoherentes.',`ronda=${gp.round??'—'} · vueltas=${gpLaps||'—'} · distancia=${gp.raceDistanceKm??'—'} km`);
+ // Perfil vertical
+ const vp=json.verticalProfile||{},vs=vp.samples||[];let maxGrade=0,verticalFinite=true;
+ if(Array.isArray(vs)&&vs.length>1){for(let i=0;i<vs.length;i++){const r=vs[i];if(!Array.isArray(r)||!Number.isFinite(+r[0])||!Number.isFinite(+r[1])){verticalFinite=false;break}if(i){const dx=(+r[0]-+vs[i-1][0])*L;if(dx>0)maxGrade=Math.max(maxGrade,Math.abs((+r[1]-+vs[i-1][1])/dx))}}}
+ mark('vertical-profile',vs.length>=16&&verticalFinite&&apexAuditMonotonicRows(vs)&&apexAuditCoverageRows(vs,0,1,0,.025),'Perfil de altimetría incompleto o no monotónico.',`${vs.length} muestras`);
+ if(maxGrade>.32)apexAuditAdd(messages,maxGrade>.50?'error':'warn','vertical-grade','Salto de pendiente excesivo en el perfil vertical.',`máximo entre muestras ${(maxGrade*100).toFixed(1)} %`);
+ if(/MODEL|DERIVED|NOT_SURVEYED/.test(apexAuditProfileQuality(vp)))apexAuditAdd(messages,'info','vertical-quality','Altimetría marcada como modelada/derivada.',vp.quality||'MODELED');
+ // Ancho
+ const wp=json.roadWidthProfile||{},ws=wp.samples||[],widths=(Array.isArray(ws)?ws:[]).map(r=>Array.isArray(r)?+r[1]:NaN).filter(Number.isFinite),wmin=widths.length?Math.min(...widths):NaN,wmax=widths.length?Math.max(...widths):NaN;
+ mark('road-width',ws.length>=8&&apexAuditMonotonicRows(ws)&&apexAuditCoverageRows(ws,0,1,0,.035)&&Number.isFinite(wmin)&&wmin>=5&&wmax<=25,'Perfil de anchura incompleto o fuera de rango.',Number.isFinite(wmin)?`${wmin.toFixed(2)}–${wmax.toFixed(2)} m · ${ws.length} muestras`:`${ws.length} muestras`);
+ if(/MODEL|DERIVED/.test(apexAuditProfileQuality(wp)))apexAuditAdd(messages,'info','width-quality','Anchura marcada como modelada/derivada.',wp.quality||'MODELED');
+ // Banking
+ const bank=json.banking||{},bankMax=Number.isFinite(+bank.maxBankDeg)?Math.abs(+bank.maxBankDeg):Math.max(0,...(Array.isArray(bank.corners)?bank.corners.map(c=>Math.abs(+c.bankDeg||0)):[]));
+ mark('banking',!!bank.mode&&bankMax<=25,'Peralte ausente o fuera del límite de validación.',`modo=${bank.mode||'—'} · máximo ${bankMax.toFixed(2)}°`);
+ if(/MODEL|DERIVED/.test(apexAuditProfileQuality(bank)))apexAuditAdd(messages,'info','bank-quality','Peralte marcado como modelado/derivado.',bank.quality||'MODELED');
+ // Curvas JSON
+ const corners=Array.isArray(json.corners)?json.corners:(Array.isArray(bank.corners)?bank.corners:[]),turns=+race.turns||0;
+ let cornerOrder=true,prevS=-Infinity;for(const c of corners){const ss=+c.s;if(!Number.isFinite(ss)||ss<0||ss>L+.5||ss<prevS){cornerOrder=false;break}prevS=ss}
+ mark('corners-json',corners.length===turns&&cornerOrder,'Las curvas JSON no coinciden con race.turns o no están ordenadas.',`${corners.length}/${turns}`);
+ // Timing
+ const timing=json.timing||{},controls=Array.isArray(timing.controls)?timing.controls:[],sectorCtrls=controls.filter(c=>c&&c.role==='sector-line'),startCtrl=controls.find(c=>c&&c.role==='start-line'),finishCtrl=controls.find(c=>c&&c.role==='finish-line');
+ const controlsInRange=controls.every(c=>!Number.isFinite(+c.s)||(+c.s>=-.5&&+c.s<=L+.5));
+ mark('timing',Array.isArray(timing.sectors)&&timing.sectors.length===3&&sectorCtrls.length===2&&!!startCtrl&&!!finishCtrl&&controlsInRange,'Controles de cronometraje incompletos.',`sectores=${(timing.sectors||[]).length} · controles S=${sectorCtrls.length} · salida=${!!startCtrl} · meta=${!!finishCtrl}`);
+ const startS=Number.isFinite(+timing.startS)?+timing.startS:(startCtrl?+startCtrl.s:NaN),finishS=Number.isFinite(+timing.finishS)?+timing.finishS:(finishCtrl?+finishCtrl.s:NaN);
+ const lineOffset=Number.isFinite(startS)&&Number.isFinite(finishS)?mod(startS-finishS,L):NaN,declaredOffset=timing.startLine&&Number.isFinite(+timing.startLine.offsetFromControlM)?mod(+timing.startLine.offsetFromControlM,L):NaN;
+ if(Number.isFinite(lineOffset)&&Number.isFinite(declaredOffset)){const dd=Math.min(Math.abs(lineOffset-declaredOffset),Math.abs((lineOffset+L)-declaredOffset),Math.abs(lineOffset-(declaredOffset+L)));mark('start-finish-offset',dd<1.25,'Offset salida/meta incoherente con timing.startLine.',`geom=${lineOffset.toFixed(3)} m · declarado=${declaredOffset.toFixed(3)} m · Δ=${dd.toFixed(3)} m`)}
+ else apexAuditAdd(messages,'warn','start-finish-offset-missing','Falta offset explícito salida/meta.');
+ if(!(timing.finishLine&&Number.isFinite(+timing.finishLine.s)))apexAuditAdd(messages,'warn','finish-source-missing','La meta no tiene metadato de posición/fuente independiente.');
+ if(timing.startLine&&String(timing.startLine.status||'').includes('PENDING'))apexAuditAdd(messages,'warn','start-offset-pending','Offset de salida pendiente de confirmación FIA.',String(timing.startLine.source||''));
+ // Pit + boxes
+ const pit=json.pitLane||{},pitL=+pit.totalLengthM||0,pvs=pit.verticalProfile&&pit.verticalProfile.samples||[],pws=pit.widthProfile&&pit.widthProfile.samples||[],boxes=Array.isArray(pit.boxSlots)?pit.boxSlots:[];
+ const pitWidths=(Array.isArray(pws)?pws:[]).map(r=>Array.isArray(r)?+(r[3]??((+r[1]||0)+(+r[2]||0))):NaN).filter(Number.isFinite);
+ const pitOk=pit.schema==='APEX_PIT_LANE_V1'&&pitL>80&&pvs.length>=2&&pws.length>=2&&apexAuditMonotonicRows(pvs)&&apexAuditMonotonicRows(pws)&&apexAuditCoverageRows(pvs,0,pitL,0,1.5)&&apexAuditCoverageRows(pws,0,pitL,0,1.5)&&pitWidths.every(v=>v>=3.5&&v<=15);
+ mark('pit-profile',pitOk,'Perfil funcional del pit lane incompleto.',`longitud=${pitL.toFixed(1)} m · alt=${pvs.length} · ancho=${pws.length}`);
+ const boxIds=new Set(),boxIdx=new Set();let boxesOk=boxes.length===11,prevBox=-Infinity;for(const b of boxes){const ss=+b.pitS,idx=+b.index,idb=String(b.id||'');if(!Number.isFinite(ss)||ss<0||ss>pitL+.5||ss<prevBox||!idb||boxIds.has(idb)||!Number.isInteger(idx)||boxIdx.has(idx))boxesOk=false;prevBox=ss;boxIds.add(idb);boxIdx.add(idx)}
+ mark('boxes',boxesOk,'Los 11 boxes no forman una secuencia funcional válida.',`${boxes.length} slots`);
+ const pitQuality=String(pit.source&&pit.source.geometryQuality||'');if(/MODEL|DERIVED/.test(pitQuality))apexAuditAdd(messages,'info','pit-quality','Geometría del pit marcada como modelada/derivada.',pitQuality);
+ // Terreno JSON
+ const terr=json.terrain||{};mark('terrain-contract',!!terr&&Number.isFinite(+terr.maxDrop)&&Number.isFinite(+terr.maxRise)&&terr.runoffFlatToWall!==undefined,'Contrato de terreno incompleto.',`maxDrop=${terr.maxDrop??'—'} · maxRise=${terr.maxRise??'—'} · runoffFlatToWall=${terr.runoffFlatToWall??'—'}`);
+ // SVG BASE
+ let doc=null,svgRoles={};
+ if(!svgText){mark('svg-base',false,'No existe BASE SVG embebido.');}
+ else{
+   doc=new DOMParser().parseFromString(svgText,'image/svg+xml');const parseErr=doc.querySelector('parsererror');
+   if(parseErr){mark('svg-base',false,'El BASE SVG no es XML válido.',parseErr.textContent.slice(0,140));}
+   else{
+     const root=doc.documentElement,rootOk=root&&root.getAttribute('data-apex-schema')==='APEX_CIRCUIT_SVG_V1'&&root.getAttribute('data-apex-circuit-id')===id;
+     const required=['track-centerline','drivable-area','pitlane-centerline','start-line','finish-line'];for(const r of required)svgRoles[r]=apexAuditSvgRole(doc,r);
+     svgRoles['sector-line']=apexAuditSvgRole(doc,'sector-line');svgRoles['corner-marker']=apexAuditSvgRole(doc,'corner-marker');
+     const semantic=[...doc.querySelectorAll('[data-apex-role]')].filter(el=>!(el.closest&&el.closest('[data-apex-library=\"1\"],#APEX_ELEMENT_LIBRARY'))),universal=semantic.every(el=>el.hasAttribute('data-apex-type')&&el.hasAttribute('data-apex-family'));
+     const coreOk=rootOk&&required.every(r=>svgRoles[r].length>=1)&&svgRoles['sector-line'].length===2&&svgRoles['corner-marker'].length===turns&&universal;
+     mark('svg-base',coreOk,'BASE SVG incompleto o fuera del esquema universal.',`roles: track=${svgRoles['track-centerline'].length||0}, drivable=${svgRoles['drivable-area'].length||0}, pit=${svgRoles['pitlane-centerline'].length||0}, S=${svgRoles['sector-line'].length||0}, curvas=${svgRoles['corner-marker'].length||0}/${turns}`);
+     const svgKm=+root.getAttribute('data-apex-km')||0,svgTurns=+root.getAttribute('data-apex-turns')||0,svgDir=String(root.getAttribute('data-apex-direction')||'');
+     mark('json-svg-consistency',Math.abs(svgKm*1000-L)<2&&svgTurns===turns&&svgDir===String(race.direction||''),'JSON y SVG no coinciden en longitud/curvas/sentido.',`SVG ${svgKm.toFixed(3)} km · ${svgTurns} curvas · ${svgDir}`);
+     // Coordenadas s de timing y curvas: no exigen identidad submilimétrica, sí coherencia métrica.
+     const svgTiming=[...doc.querySelectorAll('[data-apex-role="sector-line"],[data-apex-role="start-line"],[data-apex-role="finish-line"]')];let alignOk=true,maxTimingDelta=0;
+     for(const el of svgTiming){const role=el.getAttribute('data-apex-role'),sec=el.getAttribute('data-apex-sector');const jc=controls.find(c=>c&&c.role===role&&(role!=='sector-line'||String(c.sector)===String(sec)));const es=apexAuditSvgNumber(el,'data-apex-s');if(jc&&Number.isFinite(+jc.s)&&Number.isFinite(es)){const d=Math.abs(+jc.s-es);maxTimingDelta=Math.max(maxTimingDelta,d);if(d>2)alignOk=false}}
+     const svgCorners=svgRoles['corner-marker'];let maxCornerDelta=0;for(const el of svgCorners){const turn=+el.getAttribute('data-apex-turn'),jc=corners.find(c=>+c.turn===turn),es=apexAuditSvgNumber(el,'data-apex-s');if(jc&&Number.isFinite(+jc.s)&&Number.isFinite(es)){const d=Math.abs(+jc.s-es);maxCornerDelta=Math.max(maxCornerDelta,d);if(d>2)alignOk=false}}
+     mark('svg-json-markers',alignOk,'Marcadores SVG y posiciones JSON están desalineados.',`Δ timing máx ${maxTimingDelta.toFixed(3)} m · Δ curva máx ${maxCornerDelta.toFixed(3)} m`);
+   }
+ }
+ const errors=messages.filter(m=>m.severity==='error').length,warns=messages.filter(m=>m.severity==='warn').length,infos=messages.filter(m=>m.severity==='info').length,passed=Object.values(checks).filter(Boolean).length,total=Object.keys(checks).length;
+ if(!errors&&!warns)apexAuditAdd(messages,'ok','core-ok','Base estructural correcta.',`${passed}/${total} comprobaciones estructurales`);
+ return{id,name:cj.displayName||cj.name||id,city:cj.city||'',status:errors?'error':warns?'warn':'ok',checks,messages,errorCount:errors,warnCount:warns,infoCount:infos,passedChecks:passed,totalChecks:total,dataQuality:json.dataQuality||{}};
+}
+function apexAuditEngineUniversal(){
+ const messages=[],allSource=[...document.scripts].map(s=>s.textContent||'').join('\n');
+ const forbidden=[/\b(?:id|dir|spec\.dir)\s*={2,3}\s*["'](?:0[1-9]|1\d|2[0-3])-[^"']+["']/g,/\b(?:SUZUKA|MADRID|MONACO|SPA)_\w+/g];
+ const eqHits=allSource.match(forbidden[0])||[],namedHits=(allSource.match(forbidden[1])||[]).filter(v=>!/^MADRID_/.test(v));
+ if(eqHits.length)messages.push({severity:'warn',code:'circuit-hardcodes',text:'Se han encontrado comparaciones directas por ID de circuito.',detail:eqHits.slice(0,6).join(' · ')});
+ if(namedHits.length)messages.push({severity:'warn',code:'named-runtime-hardcodes',text:'Quedan símbolos de circuito específico en scripts.',detail:[...new Set(namedHits)].slice(0,8).join(' · ')});
+ const gradeFn=typeof apexRoadGradeCameraPitchTarget==='function'?String(apexRoadGradeCameraPitchTarget):'',gradeOk=gradeFn.includes('[[12,.50],[30,.32],[58,.18]]')&&gradeFn.includes("H*.095");
+ messages.push({severity:gradeOk?'ok':'error',code:'grade-camera',text:gradeOk?'Cámara de rasante V2 activa.':'La cámara no contiene el contrato multimuestreo de pendiente.',detail:gradeOk?'12 / 30 / 58 m · horizonte ±9,5 % H':''});
+ const terrainSrc=(typeof drawTerrainSegmentMobile==='function'?String(drawTerrainSegmentMobile):'')+(typeof webglPushTerrainSegment==='function'?String(webglPushTerrainSegment):'');const terrainOk=terrainSrc.includes('supportOnly')&&terrainSrc.includes('Nunca descartamos TODO el terreno');
+ messages.push({severity:terrainOk?'ok':'error',code:'terrain-support',text:terrainOk?'Soporte de terreno lejano activo.':'No se detecta el contrato que evita carretera visible sin terreno.',detail:terrainOk?'Canvas + WebGL conservan soporte mínimo':''});
+ return{status:messages.some(m=>m.severity==='error')?'error':messages.some(m=>m.severity==='warn')?'warn':'ok',messages};
+}
+function apexAuditAllBaseCircuits(){
+ const ids=Object.keys(APEX_BASE_CIRCUIT_JSON_BY_ID||{}).filter(id=>Object.prototype.hasOwnProperty.call(APEX_BASE_EMBEDDED_SVG_B64||{},id)).sort();
+ const results=ids.map(apexAuditOneBaseCircuit),engine=apexAuditEngineUniversal(),summary={circuits:results.length,ok:results.filter(r=>r.status==='ok').length,warn:results.filter(r=>r.status==='warn').length,error:results.filter(r=>r.status==='error').length,checks:results.reduce((n,r)=>n+r.totalChecks,0),passedChecks:results.reduce((n,r)=>n+r.passedChecks,0),errors:results.reduce((n,r)=>n+r.errorCount,0),warnings:results.reduce((n,r)=>n+r.warnCount,0),info:results.reduce((n,r)=>n+r.infoCount,0)};
+ apexCircuitAuditLast={schema:APEX_CIRCUIT_AUDIT_SCHEMA,appVersion:APP_VERSION,build:APP_BUILD,createdAt:new Date().toISOString(),scope:'23_BASE_CIRCUITS',summary,engine,results};return apexCircuitAuditLast;
+}
+function apexAuditSelectedBaseCircuit(){const sel=$('svgTrackSelect')||$('track'),idx=sel&&Number.isFinite(+sel.value)?+sel.value:-1,id=sel&&sel.options&&sel.selectedIndex>=0?(calendar[idx]&&calendar[idx].dir):null;const resolved=id||calendar[0]?.dir;if(!resolved)return null;const result=apexAuditOneBaseCircuit(resolved),engine=apexAuditEngineUniversal(),summary={circuits:1,ok:result.status==='ok'?1:0,warn:result.status==='warn'?1:0,error:result.status==='error'?1:0,checks:result.totalChecks,passedChecks:result.passedChecks,errors:result.errorCount,warnings:result.warnCount,info:result.infoCount};apexCircuitAuditLast={schema:APEX_CIRCUIT_AUDIT_SCHEMA,appVersion:APP_VERSION,build:APP_BUILD,createdAt:new Date().toISOString(),scope:'SELECTED_BASE_CIRCUIT',summary,engine,results:[result]};return apexCircuitAuditLast}
+function apexRenderCircuitAudit(report){
+ if(!report)return;const sum=report.summary||{},list=$('circuitAuditList'),eng=$('circuitAuditEngine'),inline=$('circuitAuditSummaryInline');
+ if($('auditOkCount'))$('auditOkCount').textContent=String(sum.ok??0);if($('auditWarnCount'))$('auditWarnCount').textContent=String(sum.warn??0);if($('auditErrorCount'))$('auditErrorCount').textContent=String(sum.error??0);if($('auditCheckCount'))$('auditCheckCount').textContent=`${sum.passedChecks??0}/${sum.checks??0}`;
+ if(inline)inline.textContent=`${sum.error?sum.error+' error':sum.warn?sum.warn+' con avisos':sum.ok+' correctos'} · ${sum.passedChecks||0}/${sum.checks||0} checks`;
+ if(eng){const e=report.engine||{messages:[]};eng.innerHTML='<b>MOTOR UNIVERSAL</b> · '+e.messages.map(m=>`<span style="color:${m.severity==='error'?'#ff9ead':m.severity==='warn'?'#ffe19a':'#9df5c0'}">${apexAuditEsc(m.text)}</span>${m.detail?' <small>('+apexAuditEsc(m.detail)+')</small>':''}`).join(' · ')}
+ if(list)list.innerHTML=(report.results||[]).map(r=>`<div class="circuitAuditItem ${r.status}" data-audit-id="${apexAuditEsc(r.id)}"><div class="circuitAuditHead"><i class="circuitAuditDot"></i><div class="circuitAuditName"><b>${apexAuditEsc(r.id)} · ${apexAuditEsc(r.name)}</b><small>${r.passedChecks}/${r.totalChecks} estructurales · ${r.warnCount} aviso(s) · ${r.infoCount} info</small></div><span class="circuitAuditCount">${r.errorCount?'ERR '+r.errorCount:r.warnCount?'WARN '+r.warnCount:'OK'}</span></div><div class="circuitAuditDetails">${r.messages.map(m=>`<div class="circuitAuditMsg ${m.severity}"><b>${apexAuditEsc(m.code)}</b> · ${apexAuditEsc(m.text)}${m.detail?`<br><span>${apexAuditEsc(m.detail)}</span>`:''}</div>`).join('')}</div></div>`).join('');
+ if(list)list.querySelectorAll('.circuitAuditHead').forEach(h=>h.onclick=()=>h.parentElement.classList.toggle('open'));
+ if($('exportCircuitAuditBtn'))$('exportCircuitAuditBtn').disabled=false;if($('circuitAuditStatus'))$('circuitAuditStatus').textContent=`Auditoría ${report.scope==='23_BASE_CIRCUITS'?'de las 23 bases':'del circuito seleccionado'} · ${sum.errors||0} errores · ${sum.warnings||0} avisos · ${sum.info||0} notas de calidad. No se han modificado datos.`;
+}
+function apexRunCircuitAudit(selectedOnly=false){try{const r=selectedOnly?apexAuditSelectedBaseCircuit():apexAuditAllBaseCircuits();apexRenderCircuitAudit(r);return r}catch(e){console.error('APEX circuit audit',e);if($('circuitAuditStatus'))$('circuitAuditStatus').textContent='Error al ejecutar auditoría: '+e.message;return null}}
+function apexExportCircuitAudit(){const r=apexCircuitAuditLast||apexRunCircuitAudit(false);if(!r)return;const blob=new Blob([JSON.stringify(r,null,2)],{type:'application/json'}),a=document.createElement('a'),url=URL.createObjectURL(blob);a.href=url;a.download=`APEX_AUDITORIA_${r.scope}_${APP_VERSION.replace(/[^0-9A-Za-z._-]/g,'_')}.json`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+window.apexAuditAllBaseCircuits=apexAuditAllBaseCircuits;window.apexAuditCircuitBase=apexAuditOneBaseCircuit;window.apexRunCircuitAudit=apexRunCircuitAudit;
+
+
+attachGyroListeners();$("sound").classList.add("on");
+
+function cancelPendingRace(){
+ if(!pendingRace)return;
+ pendingRace=null;
+ ["start","nextSeason","finishNext","gpStart","practiceStart"].forEach(id=>{let b=$(id);if(b)b.dataset.audioReady="0"});
+ $("start").textContent="SALIR A PISTA";
+ $("nextSeason").textContent="ABRIR GP";
+ $("finishNext").textContent="SIGUIENTE GP";
+ $("raceAlert").textContent="";
+}
+["track","laps","diff","weather","teamSelect","carColor","carAccent"].forEach(id=>$(id)&&$(id).addEventListener("change",cancelPendingRace));["track","gpTrack","practiceTrack"].forEach(id=>$(id)&&$(id).addEventListener("change",()=>updateAllCircuitCards()));["carColor","carAccent"].forEach(id=>$(id)&&$(id).addEventListener("input",()=>{renderTeamChooser();updateAllCircuitCards();}));
+
+function populateCircuitSelectors(preferredDir=null){
+ const circuitOptions=circuitOptionsHtml();
+ ["track","gpTrack","practiceTrack"].forEach(id=>{const el=$(id);if(!el)return;const oldDir=preferredDir||(calendar[+el.value]&&calendar[+el.value].dir);el.innerHTML=circuitOptions;const idx=calendar.findIndex(c=>c.dir===oldDir);if(idx>=0)el.value=String(idx)});
+ return ["track","gpTrack","practiceTrack"].every(id=>$(id)&&$(id).options.length===calendar.length);
+}
+// Restauramos el catálogo F1 2026 + pistas extra. La Temporada usa sólo F1_SEASON_COUNT.
+populateCircuitSelectors();
+syncVersionUi();populateTeams();bindSvgTrackTools();renderSchedule();renderPracticeRecord();renderTeamChooser();setDemoMode(false);
+// Las previsualizaciones de circuito arrancan después de que la portada ya esté visible.
+setTimeout(()=>{apexMenuBooting=false;updateAllCircuitCards()},900);
+setTimeout(()=>{try{apexRunCircuitAudit(false)}catch(e){console.warn("Auditoría de circuitos no disponible",e)}},1450);
+try{initRendererBackendSelection()}catch(e){console.warn("Renderer de menú aislado",e);activeRenderer=rendererRegistry.canvas2d}
+// Salvaguarda de arranque: una excepción de subsistema nunca puede vaciar los selectores.
+setTimeout(()=>{if(!["track","gpTrack","practiceTrack"].every(id=>$(id)&&$(id).options.length===calendar.length)){console.warn("Restaurando selectores de circuito");populateCircuitSelectors();updateAllCircuitCards()}},0);
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");["quick","grandprix","season","practice","help"].forEach(id=>$(id).classList.add("hidden"));$(b.dataset.t).classList.remove("hidden");currentMode=b.dataset.t==='season'?'season':b.dataset.t;const garage=$("teamGarage");if(garage)garage.classList.toggle("hidden",b.dataset.t==='help');renderTeamChooser();if(b.dataset.t==='practice')renderPracticeRecord();updateAllCircuitCards()});
+$("start").onclick=()=>{currentMode="quick";currentSession="race";sessionSettings={diff:+$("diff").value,weather:$("weather").value,noRivals:false};weekendContext=null;startRace(calendar[+$("track").value],+$("laps").value,"quick",$("start"))};
+$("gpStart").onclick=()=>{currentMode="grandprix";beginWeekend("grandprix",calendar[+$("gpTrack").value])};
+$("practiceStart").onclick=()=>{currentMode="freepractice";currentSession="freepractice";weekendContext=null;sessionSettings={diff:1,weather:$("practiceWeather").value,noRivals:$("practiceTraffic").value==='0'};startRace(calendar[+$("practiceTrack").value],999,"freepractice",$("practiceStart"))};
+$("practiceTrack").onchange=renderPracticeRecord;
+$("nextSeason").onclick=()=>{if(save.round<F1_SEASON_COUNT){currentMode="season";beginWeekend("season",calendar[save.round])}};if($("finishPrev"))$("finishPrev").onclick=retreatFinishFlow;
+$("skipSeasonGP").onclick=skipSeasonGPFromMenu;
+$("finishNext").onclick=advanceFinishFlow;
+$("weekendMenu").onclick=goMenu;
+$("reset").onclick=()=>{if(confirm("¿Reiniciar campeonato?")){const rec={...(save.practiceRecords||{})};save=defaultSave();save.practiceRecords=rec;persist();renderSchedule();syncTeamPreset(false);renderTeamChooser();renderPracticeRecord()}};
+if($("runCircuitAuditBtn"))$("runCircuitAuditBtn").onclick=()=>apexRunCircuitAudit(false);if($("auditSelectedCircuitBtn"))$("auditSelectedCircuitBtn").onclick=()=>apexRunCircuitAudit(true);if($("exportCircuitAuditBtn"))$("exportCircuitAuditBtn").onclick=apexExportCircuitAudit;$("finishMenu").onclick=goMenu;$("quit").onclick=goMenu;if($("exportTelemetry"))$("exportTelemetry").onclick=exportSessionTelemetry;if($("telemetryRecordBtn"))$("telemetryRecordBtn").onclick=cycleTelemetryRecordMode;if($("telemetryPopout"))$("telemetryPopout").onclick=openTelemetryPopout;$("endSession").onclick=()=>{paused=false;$("pausePanel").classList.add("hidden");finishNonRaceSession()};$("telemetryBtn").onclick=toggleTelemetry;updateTelemetryRecordingUI();$("sound").onclick=toggleSound;$("optionsBtn").onclick=togglePause;$("resume").onclick=togglePause;$("fs").onclick=full;$("gyro").onclick=enableGyro;$("center").onclick=centerGyro;$("invert").onclick=invertGyro;$("demo").onclick=cycleAutoDriveMode;$("box").onclick=requestPitStop;$("demoModeToggle").onchange=e=>setDemoMode(e.target.checked);$("diag").onclick=()=>toggleDiag();$("closeDiag").onclick=()=>toggleDiag(false);if($("rendererCycle"))$("rendererCycle").onclick=()=>cycleRendererBackend(true);$("testSound").onclick=()=>{initAudio();setAudioMuted(false);if(audio.ctx&&audio.ctx.state==="suspended"){try{audio.ctx.resume()}catch(e){}}soundTest();updateDiag()};
+let diagSeq="",diagLast=0;function handleDiagSequence(key){const ch=(key||"").toLowerCase();if(!/^[a-z]$/.test(ch))return;const now=performance.now();if(now-diagLast>1200)diagSeq="";diagLast=now;diagSeq=(diagSeq+ch).slice(-4);if(diagSeq==="diag"){document.body.classList.toggle("diag-unlocked");const a=$("raceAlert");if(a&&player){a.textContent=document.body.classList.contains("diag-unlocked")?"DIAG · DEV":"DIAG · OFF";setTimeout(()=>{if(a.textContent.startsWith("DIAG ·"))a.textContent=""},900)}}}
+function bt(id,k){
+ let e=$(id);
+ const on=q=>{
+   q.preventDefault();
+   if(demoMode&&(k==="left"||k==="right"||k==="gas"||k==="brake"))setAutoDriveMode(0,true);
+   try{if(q.pointerId!=null)e.setPointerCapture(q.pointerId)}catch(_e){}
+   keys[k]=true;e.classList.add("on");apexInputDevice="touch";
+   // Respuesta táctil inmediata, pero sin el volantazo del 72 % en modo asistido.
+   if(player&&mode==="race"&&(k==="left"||k==="right")){
+     const sign=k==="left"?-1:1,speedKph=finite(player.speed,0)*3.6,speedNorm=clamp((speedKph-65)/200,0,1),cfg=apexDriveSteeringConfig(speedNorm,"touch"),target=sign*cfg.authority,snap=apexControls.driveProfile==="assisted"?.16:(apexControls.driveProfile==="simulation"?.28:.62);
+     player.steer=clamp(lerp(finite(player.steer,0),target,snap),-1,1);
+   }
+ };
+ const off=q=>{q.preventDefault();keys[k]=false;e.classList.remove("on")};
+ e.onpointerdown=on;e.onpointerup=off;e.onpointercancel=off;e.onlostpointercapture=off;
+}
+bt("left","left");bt("right","right");bt("gas","gas");bt("brake","brake");
+// v4.6: one action registry for keyboard and touch. Pending actions never mutate physics.
+const APEX_DRIVE_PROFILE_KEY="apex26.driveProfile.v1";
+const apexDriveProfiles={
+ assisted:{id:'assisted',name:'ASISTIDO',tc:true,abs:true,stability:true,counterAssist:false,description:'Control clásico · TC/ABS suaves · física 100 Hz'},
+ simulation:{id:'simulation',name:'SIMULACIÓN',tc:false,abs:false,stability:false,counterAssist:false,description:'Física completa · mandos suavizados'},
+ raw:{id:'raw',name:'SIN AYUDAS',tc:false,abs:false,stability:false,counterAssist:false,description:'Respuesta directa'}
+};
+let apexInputDevice='keyboard';
+let apexGamepadState={index:null,lastSeen:0,down:false,up:false};
+const storedDriveProfile=(()=>{try{const v=appStorage.getItem(APEX_DRIVE_PROFILE_KEY);return apexDriveProfiles[v]?v:'assisted'}catch(e){return'assisted'}})();
+const apexControls={gearbox:'auto',driveProfile:storedDriveProfile,brakeBias:.57,engineBrake:2,energy:1,ersActive:false,sectors:true,display:0,panel:false,resumePanel:false,focus:null,toastTimer:null};
+function apexDriveProfile(){return apexDriveProfiles[apexControls.driveProfile]||apexDriveProfiles.assisted;}
+function apexSetDriveProfile(id,notify=true){
+ if(!apexDriveProfiles[id])id='assisted';apexControls.driveProfile=id;try{appStorage.setItem(APEX_DRIVE_PROFILE_KEY,id)}catch(e){}
+ if(notify)apexControlToast('CONDUCCIÓN · '+apexDriveProfile().name);apexSyncDriveProfileUi();
+}
+function apexSyncDriveProfileUi(){
+ const p=apexDriveProfile(),a=$('controlDriveProfile'),m=$('menuDriveProfile'),h=$('menuDriveProfileHint');if(a)a.value=p.id;if(m)m.value=p.id;
+ if(h)h.textContent=p.id==='assisted'?'Control clásico: dirección predecible, pedales directos, TC/ABS suaves y física estable aunque bajen los FPS.':p.id==='simulation'?'Física completa con dirección y pedales suavizados; sin TC, ABS ni corrección de estabilidad.':'Respuesta directa del modelo actual, sin ayudas electrónicas al jugador.';
+}
+function apexDriveSteeringConfig(speedNorm,device){
+ const p=apexDriveProfile().id,d=String(device||apexInputDevice||'keyboard');
+ // El modelo físico ya reduce el lock con la velocidad. Aquí sólo modulamos la entrada:
+ // no volvemos a recortar el volante hasta dejar al coche sin autoridad en curvas rápidas.
+ if(p==='raw')return{authority:1-.52*speedNorm,rise:mobilePerformanceMode()?lerp(11,7.4,speedNorm):lerp(5.1,2.8,speedNorm),center:mobilePerformanceMode()?13:7.2,counter:mobilePerformanceMode()?15:7.8};
+ const analog=d==='gyro'||d==='gamepad';
+ if(p==='simulation')return{authority:analog?lerp(1,.82,speedNorm):lerp(.99,.62,speedNorm),rise:analog?lerp(8.0,5.2,speedNorm):(d==='touch'?lerp(7.6,4.8,speedNorm):lerp(6.0,4.15,speedNorm)),center:analog?8.2:(d==='touch'?8.7:8.1),counter:analog?9.0:(d==='touch'?9.5:9.0)};
+ // ASISTIDO / control clásico: tecla = intención de giro, no porcentaje de volante.
+ // Mantiene bastante autoridad a alta velocidad y suaviza sólo la velocidad con que llega a ella.
+ return{authority:analog?lerp(1,.88,speedNorm):lerp(1,.64,speedNorm),rise:analog?lerp(8.2,5.6,speedNorm):(d==='touch'?lerp(7.4,4.9,speedNorm):lerp(6.4,4.35,speedNorm)),center:analog?8.4:(d==='touch'?8.8:8.2),counter:analog?9.4:(d==='touch'?9.8:9.3)};
+}
+function apexGamepadAxis(v,dead=.08){v=finite(v,0);const a=Math.abs(v);if(a<=dead)return 0;const n=clamp((a-dead)/(1-dead),0,1);return Math.sign(v)*Math.pow(n,1.25)}
+function apexPollGamepad(){
+ if(!navigator.getGamepads)return null;let pads;try{pads=navigator.getGamepads()}catch(e){return null}if(!pads)return null;let gp=null;
+ if(apexGamepadState.index!=null&&pads[apexGamepadState.index]&&pads[apexGamepadState.index].connected)gp=pads[apexGamepadState.index];
+ if(!gp)for(const p of pads){if(p&&p.connected){gp=p;apexGamepadState.index=p.index;break}}
+ if(!gp)return null;const steer=apexGamepadAxis(gp.axes&&gp.axes.length?gp.axes[0]:0),gas=clamp(gp.buttons&&gp.buttons[7]?gp.buttons[7].value:0,0,1),brake=clamp(gp.buttons&&gp.buttons[6]?gp.buttons[6].value:0,0,1),dn=!!(gp.buttons&&gp.buttons[4]&&gp.buttons[4].pressed),up=!!(gp.buttons&&gp.buttons[5]&&gp.buttons[5].pressed),engaged=Math.abs(steer)>.015||gas>.015||brake>.015||dn||up;
+ if(engaged){apexGamepadState.lastSeen=performance.now();apexInputDevice='gamepad'}
+ if(apexControls.gearbox==='manual'&&!demoMode&&!assistMode&&player&&!player.reverse){if(dn&&!apexGamepadState.down)apexShiftGear(-1);if(up&&!apexGamepadState.up)apexShiftGear(1)}apexGamepadState.down=dn;apexGamepadState.up=up;
+ return{active:engaged||performance.now()-apexGamepadState.lastSeen<1200,steer,gas,brake};
+}
+const apexEnergyModes=[{name:'AHORRO',power:1.2,drain:10,regen:4.5},{name:'EQUILIBRADO',power:2.4,drain:15,regen:3.3},{name:'ATAQUE',power:3,drain:20,regen:2.5}];
+const apexControlActions=[
+ {id:'auto',key:'KeyA',label:'Piloto automático',shortcut:'A',run:()=>setAutoDriveMode(demoMode?0:1,true)},
+ {id:'sound',key:'KeyH',label:'Sonido',shortcut:'H',run:toggleSound},
+ {id:'gyroCenter',key:null,label:'Calibrar giroscopio',shortcut:'Táctil',run:centerGyro},
+ {id:'gyroInvert',key:null,label:'Invertir giroscopio',shortcut:'Táctil',run:invertGyro},
+ {id:'telemetry',key:'KeyT',label:'Telemetría',shortcut:'T',run:toggleTelemetry},
+ {id:'ers',key:'KeyE',label:'ERS manual',shortcut:'E',run:()=>{apexControls.ersActive=!apexControls.ersActive;apexControlToast('ERS · '+(apexControls.ersActive?'ACTIVADO':'OFF'));}},
+ {id:'box',key:'KeyB',label:'Solicitar / cancelar BOX',shortcut:'B',run:requestPitStop},
+ {id:'limiter',key:'KeyL',label:'Limitador de boxes',shortcut:'L',run:()=>{player.pitLimiter=!player.pitLimiter;apexControlToast('LIM · '+(player.pitLimiter?Math.round(apexPitSpeedLimitKph())+' km/h':'OFF'));}},
+ {id:'sectors',key:'KeyP',label:'Parciales',shortcut:'P',run:()=>{apexControls.sectors=!apexControls.sectors;document.body.classList.toggle('apex-hide-sectors',!apexControls.sectors);}},
+ {id:'controls',key:'KeyM',label:'Conducción / ajustes',shortcut:'M',run:()=>apexOpenControls()},
+ {id:'camera',key:'KeyC',label:'Cambiar cámara',shortcut:'C',pending:true},
+ {id:'fullscreen',key:'KeyF',label:'Pantalla completa',shortcut:'F',run:full},
+ {id:'center',key:'KeyR',label:'Centrar vista / sensor',shortcut:'R',run:()=>{if(gyro.enabled)centerGyro();else{player.cameraLook=0;player.cameraGradePitch=0;player.fovBoost=0;}apexControlToast('VISTA CENTRADA');}},
+ {id:'pause',key:'Escape',label:'Pausa',shortcut:'Esc',run:togglePause},
+ {id:'tower',key:'Tab',label:'Mostrar / ocultar clasificación',shortcut:'Tab',run:apexToggleClassification},
+ {id:'shiftDown',key:'KeyZ',label:'Bajar marcha',shortcut:'Z',run:()=>apexShiftGear(-1)},
+ {id:'shiftUp',key:'KeyX',label:'Subir marcha',shortcut:'X',run:()=>apexShiftGear(1)},
+ {id:'biasFront',key:'Digit1',label:'Frenada: más delante',shortcut:'1',run:()=>apexAdjustBias(.005)},
+ {id:'biasRear',key:'Digit2',label:'Frenada: más detrás',shortcut:'2',run:()=>apexAdjustBias(-.005)},
+ {id:'diffDown',key:'Digit3',label:'Diferencial −',shortcut:'3',pending:true},
+ {id:'diffUp',key:'Digit4',label:'Diferencial +',shortcut:'4',pending:true},
+ {id:'engineDown',key:'Digit5',label:'Freno motor −',shortcut:'5',run:()=>apexAdjustEngineBrake(-1)},
+ {id:'engineUp',key:'Digit6',label:'Freno motor +',shortcut:'6',run:()=>apexAdjustEngineBrake(1)},
+ {id:'energy',key:'KeyG',label:'Modo de energía',shortcut:'G',run:()=>{apexControls.energy=(apexControls.energy+1)%3;apexControlToast('ENERGÍA · '+apexEnergyProfile().name);}},
+ {id:'radio',key:'KeyQ',label:'Radio / ingeniero',shortcut:'Q',pending:true},
+ {id:'display',key:'KeyV',label:'Pantalla del volante',shortcut:'V',run:()=>{apexControls.display=(apexControls.display+1)%3;}},
+ {id:'clutch',key:'Space',label:'Embrague manual',shortcut:'Espacio (mantener)',pending:true}
+];
+function apexToggleClassification(){
+ const visible=getComputedStyle($('lb')).display!=='none';
+ document.body.classList.toggle('apex-tower-hidden',visible);
+ document.body.classList.toggle('apex-tower-visible',!visible);
+}
+function apexEnergyProfile(){return apexEnergyModes[apexControls.energy];}
+function apexManualDriveFactor(sp){
+ if(!player||apexControls.gearbox!=='manual'||demoMode||assistMode||player.reverse)return 1;
+ const g=player.manualGear||1,ratio=[0,105,77,55,43,35,30,26,23][g],rpm=1000+Math.max(0,sp)*3.6*ratio*1.28;
+ if(rpm>=12100)return 0; // Rev limiter: low gear cannot accelerate past its range.
+ return clamp(105/ratio,.6,1.25)*clamp(rpm/6000,.18,1);
+}
+function apexShiftGear(delta){
+ if(apexControls.gearbox!=='manual'||demoMode||assistMode){apexControlToast('Selecciona cambio manual en CONDUCCIÓN');return;}
+ if(player.reverse){apexControlToast('Cambio no disponible en marcha atrás');return;}
+ const g=clamp((player.manualGear||1)+delta,1,8),rpm=1000+Math.max(0,player.speed)*3.6*[0,105,77,55,43,35,30,26,23][g]*1.28;
+ if(delta<0&&rpm>12100){apexControlToast('REDUCCIÓN BLOQUEADA · REVOLUCIONES');return;}
+ player.manualGear=g;apexControlToast('MARCHA '+g);
+}
+function apexAdjustBias(delta){apexControls.brakeBias=Math.round(clamp(apexControls.brakeBias+delta,.50,.65)*1000)/1000;apexControlToast('FRENADA DELANTERA · '+(apexControls.brakeBias*100).toFixed(1)+' %');}
+function apexAdjustEngineBrake(delta){apexControls.engineBrake=clamp(apexControls.engineBrake+delta,0,4);apexControlToast('FRENO MOTOR · '+apexControls.engineBrake+'/4');}
+function apexControlToast(text){const el=$('controlToast');el.textContent=text;el.classList.remove('hidden');clearTimeout(apexControls.toastTimer);apexControls.toastTimer=setTimeout(()=>el.classList.add('hidden'),1800);}
+function apexReleaseInputs(){for(const k of Object.keys(keys))keys[k]=false;for(const id of ['left','right','gas','brake'])$(id).classList.remove('on');}
+function apexResetSessionControls(){apexReleaseInputs();document.body.classList.remove('apex-tower-visible','apex-tower-hidden');clearTimeout(apexControls.toastTimer);$('controlToast').classList.add('hidden');apexControls.ersActive=false;apexControls.display=0;if(player)player.pitLimiter=false;}
+function apexRunAction(id){
+ const action=apexControlActions.find(a=>a.id===id);if(!action||!player||!['race','countdown'].includes(mode))return;
+ if(action.pending){apexControlToast(action.label+' · PRÓXIMAMENTE');return;}
+ if(paused&&!apexControls.panel&&!['pause','fullscreen','controls'].includes(id))return;
+ if(apexControls.panel&&id==='pause'){apexCloseControls(false);paused=true;$('pausePanel').classList.remove('hidden');$('touch').classList.add('hidden');return;}
+ action.run();apexSyncControls();
+}
+function apexOpenControls(){
+ if(apexControls.panel)return;
+ if(!player||!['race','countdown'].includes(mode))return;
+ apexControls.focus=document.activeElement;apexControls.resumePanel=!paused;apexControls.panel=true;paused=true;apexReleaseInputs();updateAudio(.016);$('controlPanel').classList.remove('hidden');apexSyncControls();$('controlClose').focus();
+}
+function apexCloseControls(resume=true){
+ if(!apexControls.panel)return;const shouldResume=apexControls.resumePanel;apexControls.panel=false;$('controlPanel').classList.add('hidden');apexReleaseInputs();
+ if(resume&&shouldResume){paused=false;updateAudio(.016);}
+ if(apexControls.focus&&apexControls.focus.isConnected)apexControls.focus.focus();apexControls.focus=null;
+}
+function apexActionActive(id){return id==='auto'?demoMode:id==='ers'?apexControls.ersActive:id==='limiter'?!!(player&&player.pitLimiter):id==='sectors'?apexControls.sectors:id==='box'?!!(player&&player.pitStop&&player.pitStop.active):id==='telemetry'?!$('telemetryPanel').classList.contains('hidden'):false;}
+function apexSyncControls(){
+ $('controlGearbox').value=apexControls.gearbox;$('controlInput').value=gyro.enabled?'gyro':'keyboard';$('controlAssist').value=demoMode?'1':assistMode?'2':'0';apexSyncDriveProfileUi();
+ $('shiftControls').classList.toggle('hidden',apexControls.gearbox!=='manual'||demoMode||assistMode);
+ for(const [id,action] of [['ers','ers'],['limiterBtn','limiter']]){$(id).classList.toggle('on',apexActionActive(action));$(id).setAttribute('aria-pressed',String(apexActionActive(action)));}
+ if(apexControls.panel){
+ $('controlStatus').textContent='Conducción '+apexDriveProfile().name+' · Entrada '+String(apexInputDevice||'keyboard').toUpperCase()+' · Frenada '+(apexControls.brakeBias*100).toFixed(1)+' % · Freno motor '+apexControls.engineBrake+'/4 · Energía '+apexEnergyProfile().name;
+ for(const a of apexControlActions){const b=$('control-'+a.id);b.classList.toggle('on',apexActionActive(a.id));b.setAttribute('aria-pressed',String(apexActionActive(a.id)));}
+ }
+}
+function apexUpdateControlHud(){
+ apexSyncControls();if(!player)return;
+ $('shiftHint').textContent=apexControls.gearbox==='manual'&&!demoMode&&!assistMode&&engineRPM()>10500&&gear()<8?'SUBIR · X':'';
+ const panel=$('wheelData');panel.classList.toggle('hidden',apexControls.display===0);
+ if(apexControls.display===1)panel.textContent='NEUMÁTICOS\nJuego '+(player.tyreSet||1)+' · Paradas '+(player.pitStops||0);
+ if(apexControls.display===2)panel.textContent='ENERGÍA · '+apexEnergyProfile().name+'\nERS '+Math.round(player.ers)+' % · '+(apexControls.ersActive?'ON':'OFF')+'\nBB '+(apexControls.brakeBias*100).toFixed(1)+' % · FM '+apexControls.engineBrake+'/4';
+ $('limiterBtn').textContent=player.pitLimiter?'LIM ON':'LIM';
+}
+function apexControlTypingTarget(target){return !!(target&&((target.closest&&target.closest('input,select,textarea,[contenteditable="true"]'))||target.isContentEditable));}
+function apexHandleControlKeydown(e){
+ if(e.ctrlKey||e.metaKey||e.altKey)return;
+ if(apexControls.panel&&e.code==='Escape'){e.preventDefault();if(!e.repeat)apexCloseControls();return;}
+ if(apexControlTypingTarget(e.target))return;
+ if(apexControls.panel){
+ if(e.code==='Tab'){const nodes=[...$('controlPanel').querySelectorAll('button:not(:disabled),select')],at=nodes.indexOf(document.activeElement);e.preventDefault();nodes[(at+(e.shiftKey?-1:1)+nodes.length)%nodes.length].focus();return;}
+ if(e.code==='KeyM'){e.preventDefault();if(!e.repeat)apexCloseControls();}return;
+ }
+ if(mode==='inspection'){
+ if(e.code==='Escape'){e.preventDefault();if(!e.repeat)closeCircuitInspection();return;}
+ if(e.code==='KeyF'){e.preventDefault();if(!e.repeat)full();return;}
+ if(e.code==='KeyR'){e.preventDefault();if(!e.repeat)apexInspectionResetView();return;}
+ keys[e.code]=true;if(e.code.startsWith('Arrow'))e.preventDefault();return;
+ }
+ if(!player||!['race','countdown'].includes(mode))return;
+ handleDiagSequence(e.key);
+ const action=apexControlActions.find(a=>a.key===e.code);
+ if(action){e.preventDefault();if(e.repeat)return;apexRunAction(action.id);return;}
+ if(paused)return;
+ if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyW','KeyS'].includes(e.code)){e.preventDefault();if(demoMode)setAutoDriveMode(0,true);apexInputDevice='keyboard';keys[e.code]=true;}
+}
+function apexHandleControlKeyup(e){keys[e.code]=false;}
+function apexInitControls(){
+ const root=$('controlActions');for(const a of apexControlActions){const b=document.createElement('button');b.id='control-'+a.id;b.className='controlAction';b.textContent=a.label;const small=document.createElement('small');small.textContent=a.shortcut+(a.pending?' · Próximamente':'');b.appendChild(small);b.disabled=!!a.pending;b.onclick=()=>apexRunAction(a.id);root.appendChild(b);}
+ $('quickMenuBtn').onclick=apexOpenControls;$('controlClose').onclick=()=>apexCloseControls();$('limiterBtn').onclick=()=>apexRunAction('limiter');$('ers').onclick=()=>apexRunAction('ers');$('demo').onclick=()=>apexRunAction('auto');$('shiftDownBtn').onclick=()=>apexRunAction('shiftDown');$('shiftUpBtn').onclick=()=>apexRunAction('shiftUp');
+ for(const [id,key] of [['demo','A'],['telemetryBtn','T'],['ers','E'],['box','B'],['optionsBtn','Esc'],['fs','F']])$(id).title+=' · '+key;
+ $('controlGearbox').onchange=e=>{apexControls.gearbox=e.target.value;if(player){const k=Math.max(0,player.speed)*3.6;player.manualGear=Math.min(8,Math.max(1,Math.floor((k+20)/43)));}apexSyncControls();};
+ $('controlDriveProfile').onchange=e=>{apexSetDriveProfile(e.target.value,true);apexSyncControls();};if($('menuDriveProfile'))$('menuDriveProfile').onchange=e=>{apexSetDriveProfile(e.target.value,false);apexSyncDriveProfileUi();};
+ $('controlInput').onchange=async e=>{if(e.target.value==='gyro'){if(!gyro.enabled)await enableGyro();}else if(gyro.enabled)await enableGyro();apexSyncControls();};
+ $('controlAssist').onchange=e=>{setAutoDriveMode(+e.target.value,true);apexSyncControls();};
+ const inspector=document.createElement('div');inspector.id='insTimingShortcuts';
+ for(const [label,index] of [['META',-1],['S1',0],['S2',1]]){const b=document.createElement('button');b.className='btn';b.textContent=label;b.onclick=()=>{if(!trackData)return;const ss=apexTimingSectorControls(trackData.spec),s=index<0?apexCircuitStartFinishS(trackData.spec).finish:ss[index]&&ss[index].s;if(Number.isFinite(s)){apexInspectionSetS(s);apexInspectionShowUi();}};inspector.appendChild(b);}
+ $('inspectorFitView').parentElement.appendChild(inspector);
+ addEventListener('keydown',apexHandleControlKeydown);addEventListener('keyup',apexHandleControlKeyup);addEventListener('blur',apexReleaseInputs);document.addEventListener('visibilitychange',()=>{if(document.hidden)apexReleaseInputs();});
+ apexSyncControls();apexSyncDriveProfileUi();
+}
+apexInitControls();
+
+
+setInterval(()=>{if(!$("diagPanel").classList.contains("hidden"))updateDiag()},500);
+document.body.classList.add("apex-ready");
+requestAnimationFrame(loop);
+},0));
+
+</script>
+<script>
+document.querySelectorAll('[data-menu-panel]').forEach(button=>button.addEventListener('click',()=>{
+ const panel=document.getElementById(button.dataset.menuPanel);if(!panel)return;
+ panel.classList.remove('hidden');panel.open=true;panel.scrollIntoView({block:'start'});const summary=panel.querySelector('summary');if(summary){summary.tabIndex=0;summary.focus({preventScroll:true});}
+}));
+</script>
+</body>
+</html>
