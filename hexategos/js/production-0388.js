@@ -257,6 +257,12 @@
           }
         }
         produced+=extracted;
+        if(s.f===0){
+          s.lastRate=extracted/Math.max(.1,dt);
+          s.status=comp<0?'Sin conexión logística':extracted<=.000001?
+            (s.stock>=65*s.level-.000001?'Almacén lleno':'Producción reducida'):'Produciendo';
+          s.efficiency=Math.round(100*activeFactor(s));
+        }
         if(!g.raw.has(s.kind))g.raw.set(s.kind,[]);
         g.raw.get(s.kind).push({site:s});
       }else{
@@ -359,13 +365,21 @@
         const intermediate=PROCESSED[s.kind]||null;
         const powerStation=def.group==='power';
         const electricRate=def.group==='manufacture'?.12:(def.electricity||0);
+        const rawInputs=def.inputs||[];
+        const powerBefore=availablePower(g);
+        const inputBefore=rawInputs.map(kind=>({kind,available:available(g,kind)}));
+        if(s.f===0){
+          s.lastRate=0;s.lastPower=powerBefore;s.lastInputs=inputBefore;
+          s.status='Producción reducida';s.efficiency=0;
+        }
         const room=powerStation?Infinity:Math.max(0,n.cap[out]-n.stock[out]);
         const buffer=intermediate?Math.max(0,65*s.level-s.stock):0;
-        if(room+buffer<=.000001)continue;
+        if(room+buffer<=.000001){if(s.f===0)s.status='Almacén lleno';continue}
         const sharedLevel=industries3212.has(s.cell)?Math.max(1,industryLevel3230[s.cell]||1):0;
         const industrialBonus=1+Math.min(.24,sharedLevel*.08);
         let amount=Math.min(.39*s.level*activeFactor(s)*dt*industrialBonus,(room+buffer)/.90);
-        if(amount<=0)continue;
+        if(amount<=0){if(s.f===0)s.status='Producción reducida';continue}
+        const nominal=amount;
         if(def.group==='manufacture'){
           if(!fairShares){
             const demand=new Map();
@@ -395,7 +409,10 @@
         // Reservar energía ANTES de consumir materias para no perder cargamentos
         // cuando una fábrica tenga apagones o capacidad eléctrica insuficiente.
         if(electricRate>0)amount=Math.min(amount,availablePower(g)/electricRate);
-        if(amount<=0)continue;
+        if(amount<=0){
+          if(s.f===0)s.status=electricRate>0&&availablePower(g)<=.000001?'Falta electricidad':'Producción reducida';
+          continue;
+        }
         const inputs=def.inputs||[];
         if(!inputs.length)continue;
         if(def.inputMode==='any'){
@@ -405,15 +422,21 @@
             if(powerStation&&qty>0){chosen=kind;maximum=qty;break}
             if(qty>maximum){chosen=kind;maximum=qty}
           }
-          if(!chosen||maximum<=0)continue;
+          if(!chosen||maximum<=0){if(s.f===0)s.status=comp<0?'Sin conexión logística':'Falta materia prima';continue}
           amount=Math.min(amount,maximum);
           amount=take(g,chosen,amount);
         }else{
           for(const kind of inputs)amount=Math.min(amount,available(g,kind));
-          if(amount<=0)continue;
+          if(amount<=0){if(s.f===0)s.status=comp<0?'Sin conexión logística':'Falta materia prima';continue}
           for(const kind of inputs)take(g,kind,amount);
         }
-        if(amount<=0)continue;
+        if(amount<=0){if(s.f===0)s.status='Falta materia prima';continue}
+        if(s.f===0){
+          s.status=amount<nominal*.98?'Producción reducida':'Produciendo';
+          s.lastRate=amount*.9/Math.max(.1,dt);
+          s.efficiency=Math.round(Math.min(100,amount/Math.max(.0001,nominal)*100));
+          s.lastPower=powerBefore;
+        }
         // Los bienes finales necesitan energía; las centrales son las
         // encargadas de generarla. No consumir el stock a nivel de mapa.
         if(electricRate>0)consumePower(g,amount*electricRate);
@@ -543,7 +566,7 @@
       nextAI[f]=now+100+(f%13)*9}
   }
   function saveState(){
-    return {v:1,sites:[...sites.values()].map(s=>({cell:s.cell,f:s.f,kind:s.kind,
+    return {v:2,sites:[...sites.values()].map(s=>({cell:s.cell,f:s.f,kind:s.kind,
       level:s.level,pct:s.pct,stock:s.stock,output:s.output,
       byproducts:s.byproducts||{}})),
       depots:[...depots],sectors:[...sectorPct]};
@@ -653,9 +676,15 @@
       const def=TYPES[s.kind],hasRoad=connect(s.cell,0)>=0;
       const place=typeof placeDisplayName3271==='function'?placeDisplayName3271(s.cell):'Hexágono '+s.cell;
       const id=siteKey(s.cell,s.kind);
+      const inputInfo=(s.lastInputs||[]).map(v=>(RESOURCE_PRODUCT_LABELS[v.kind]||v.kind)+': '+Number(v.available||0).toFixed(1)).join(' · ');
+      const status=s.status||'Pendiente de simulación';
       return '<div class="industrySite0388"><div><b>'+def.icon+' '+esc(def.name)+'</b>'+ 
         '<small>'+esc(place)+' · Nivel '+s.level+'/5 · '+(hasRoad?'Conectada':'Sin carretera')+
-        (def.group==='extract'?' · Yacimiento '+Math.round(s.potential*100)+'%':' · Transformación')+'</small></div>'+
+        (def.group==='extract'?' · Yacimiento '+Math.round(s.potential*100)+'%':' · Transformación')+
+        ' · '+esc(status)+' · Producción '+Number(s.lastRate||0).toFixed(2)+'/s'+
+        ' · Eficiencia '+Math.round(s.efficiency||0)+'%'+
+        (def.electricity||def.group==='manufacture'?' · Electricidad '+Number(s.lastPower||0).toFixed(2):'')+
+        (inputInfo?' · '+esc(inputInfo):'')+'</small></div>'+
         '<label>Actividad <input type="range" min="0" max="100" step="5" value="'+s.pct+'" data-industry-site0388="'+id+'"></label>'+
         '<span data-industry-site-label0388="'+id+'">'+s.pct+'%</span>'+
         '<button data-industry-upgrade0388="'+id+'" '+(s.level>=5?'disabled':'')+'>Mejorar</button></div>';
