@@ -3,7 +3,7 @@
    Ciudad centrada; puerto en borde costero real; carreteras bajo capital;
    pictogramas vectoriales homogéneos, sin emojis superpuestos. */
 (() => {
-  const VERSION='0.38.14',DETAIL_ZOOM=5.5,PRODUCTION_ZOOM=7,AI_PRODUCTION_ZOOM=13;
+  const VERSION='0.38.15',DETAIL_ZOOM=5.5,PRODUCTION_ZOOM=7,AI_PRODUCTION_ZOOM=13;
   // Paleta del estilo original: círculo sólido por categoría y dibujo oscuro.
   // Todos los tipos tienen fondo propio, evitando el azul genérico anterior.
   const COLORS={
@@ -14,7 +14,9 @@
     timber:'#78bc8f',crops:'#acd477',livestock:'#9dc995',
     refinery:'#80abc9',gasplant:'#8fc5d9',steel:'#9aafc3',
     smelter:'#c6ada1',sawmill:'#8abfa6',cement:'#b9bfba',
-    foodplant:'#a8c18a'
+    foodplant:'#a8c18a',
+    thermal:'#e2c36d',civilian:'#8aa9c5',machinery:'#a3b6c7',
+    arms:'#c67d75',textile:'#c6a1cc',chemical:'#a2c7a3',electronics:'#8dbae1'
   };
   const production=()=>window.HexategosProduction0388;
   let frame=null,rendered={city:0,port:0,capital:0,industry:0,special:0};
@@ -142,12 +144,14 @@
       line(0,-3.4,0,4.9);line(-4,-1.0,4,-1.0);
       ctx.beginPath();ctx.moveTo(-5,2.2);ctx.quadraticCurveTo(-3,6.8,0,5.8);
       ctx.quadraticCurveTo(3,6.8,5,2.2);ctx.stroke();
-    }else if(type==='industry'||['refinery','gasplant','steel','smelter','sawmill','cement','foodplant'].includes(type)){
+    }else if(type==='industry'||['refinery','gasplant','steel','smelter','sawmill','cement','foodplant',
+      'thermal','civilian','machinery','arms','textile','chemical','electronics'].includes(type)){
       line(-6,4.5,-6,-1,-2,1,1,-1,4,1,4,-4.2,6,-4.2,6,4.5,-6,4.5);
       ctx.fillRect(-3,2.5,1.8,1.3);ctx.fillRect(.3,2.5,1.8,1.3);
       if(type!=='industry'){
         const label={refinery:'R',gasplant:'G',steel:'S',smelter:'M',
-          sawmill:'W',cement:'C',foodplant:'A'}[type];
+          sawmill:'W',cement:'C',foodplant:'A',
+          thermal:'E',civilian:'B',machinery:'M',arms:'D',textile:'T',chemical:'Q',electronics:'L'}[type];
         ctx.font='bold 5.2px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
         ctx.fillText(label,1.5,-3.2);
       }
