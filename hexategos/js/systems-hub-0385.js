@@ -11,7 +11,8 @@
 
   const sections={
     dip:{name:'Diplomacia',description:'Embajadas, tratados, relaciones internacionales y propuestas recibidas.',eyebrow:'RELACIONES EXTERIORES'},
-    eco:{name:'Economía y comercio',description:'Balance nacional, suministros, rutas comerciales e intercambios de materiales.',eyebrow:'RECURSOS Y PRODUCCIÓN'},
+    eco:{name:'Economía',description:'Balance nacional, industrias, electricidad, inventarios y abastecimiento.',eyebrow:'RECURSOS Y PRODUCCIÓN'},
+    commerce:{name:'Comercio',description:'Rutas físicas, socios, mercancías e ingresos de intercambio.',eyebrow:'RUTAS Y MERCADOS'},
     research:{name:'Investigación',description:'Prioridades de desarrollo, tecnologías y alcance diplomático.',eyebrow:'DESARROLLO NACIONAL'},
     intel:{name:'Inteligencia',description:'Conocimiento exterior, redes de espionaje y protección contra agentes enemigos.',eyebrow:'SEGURIDAD E INFORMACIÓN'},
     government:{name:'Gobierno y estabilidad',description:'Administra el bienestar, el abastecimiento y la integración de tus ciudades.',eyebrow:'POLÍTICA INTERNA'},
