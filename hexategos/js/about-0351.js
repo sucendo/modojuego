@@ -4,10 +4,29 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.38.6',
+      date:'Octubre 2026',
+      title:'Gobierno urbano y avisos sin interrupciones',
+      current:true,
+      summary:'La gestión política de ciudades se convierte en una herramienta real para jugador e IA. Los avisos pasan a un registro tranquilo dentro de Sistemas en lugar de saltar constantemente sobre el mapa.',
+      changes:[
+        'Se silencian por defecto las ventanas emergentes automáticas; los eventos y ofertas permanecen accesibles desde las insignias de Sistemas.',
+        'Los mensajes repetidos se agrupan durante 60 segundos y se limita a cuatro el historial visible por apartado.',
+        'Botón de campana en la cabecera para activar o silenciar las ventanas emergentes; la preferencia se conserva.',
+        'Nuevo apartado Gobierno con estado de ciudades: estabilidad, abastecimiento, nacionalismo, escasez, huelgas y disturbios.',
+        'Seis políticas aplicables con coste y duración: ayuda de emergencia, inversión civil, autonomía, guarniciones, racionamiento y medidas coercitivas.',
+        'El racionamiento reduce el consumo real de alimentos y bienes mientras está vigente; las inversiones mejoran la producción industrial.',
+        'Autonomía e inversión reducen tensión nacionalista; guarniciones contienen disturbios mientras consumen oro y reservan tropas; medidas coercitivas tienen repercusiones.',
+        'Las IA utilizan las mismas políticas con presupuesto y límites por ciclo, sin analizar cada hexágono.',
+        'El menú contextual de una ciudad propia incorpora Gobierno local, accesible también desde Sistemas.',
+        'Las medidas, sus caducidades y enfriamientos se guardan en la estructura de ciudades existente, compatible con partidas antiguas y archivos portables.'
+      ]
+    },
+    {
       version:'0.38.5.2',
       date:'Octubre 2026',
       title:'Corregir botón de centrado y arrastre de Sistemas',
-      current:true,
+      current:false,
       summary:'Se corrige la posición del panel tras pulsar el botón ⌖: el diálogo ya no queda fuera de pantalla ni pierde la capacidad de moverse.',
       changes:[
         'Se resuelve el conflicto entre el top fijo del rediseño y el transform vertical heredado al restablecer la posición.',
