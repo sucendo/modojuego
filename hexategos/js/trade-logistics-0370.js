@@ -1593,6 +1593,8 @@
     g._patrolHomeSea03719=homeSea;
     g._patrolPort03719=g.home;
     g._patrolCycle03719=(g._patrolCycle03719||0)+1;
+    // Limitar el próximo servicio de esta flota a su misión actual.
+    // El siguiente ciclo se programará al acabar realmente el recorrido.
     // Mientras la ruta está activa no se lanza otra. Al finalizar se programa
     // una breve estancia en puerto antes de la siguiente salida.
     g.patrolNext0371=Number.POSITIVE_INFINITY;
@@ -1717,7 +1719,19 @@
         if(startInterceptExcursion0371(g,nowCampaign))return;
         g.interceptNext0371=nowCampaign+6+(g.id%6);
       }
-      if(!g.route&&nowCampaign>=(g.patrolNext0371||0))buildLocalPatrolRoute03719(g,nowCampaign);
+      // Un ciclo de patrulla deja patrolNext=Infinity mientras navega.
+      // Cuando la IA pasa de patrullar a interceptar sin encontrar blancos,
+      // ese Infinity podía quedar para siempre y la flota no volvía a moverse.
+      if(!g.route){
+        if(!Number.isFinite(g.patrolNext0371)){
+          g.patrolNext0371=nowCampaign+2+(g.id%4);
+          g._patrolAwaitingNext03719=false;
+        }
+        if(nowCampaign>=(g.patrolNext0371||0)){
+          g._patrolAwaitingNext03719=false;
+          buildLocalPatrolRoute03719(g,nowCampaign);
+        }
+      }
       return;
     }
     if(g.order==='patrol'){
