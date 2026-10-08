@@ -206,6 +206,15 @@
   function injectNoticesForCurrentTab(){
     if(typeof sysTab3220==='undefined'||sysTab3220==='settings')return;
     const tab=sysTab3220;
+    if(tab==='dip'){
+      // Recuperar solicitudes que siguen pendientes aunque el historial
+      // de avisos se haya truncado o se haya cargado otra partida.
+      for(const pending of window.HexategosStatecraft0380?.pendingEmbassies?.()||[]){
+        if(!notices.some(n=>n.requestKind==='embassy'&&Number(n.faction)===pending.f))
+          addNotice('diplomacy',factionName3230(pending.f)+' solicita establecer una embajada',
+            {tab:'dip',requestKind:'embassy',faction:pending.f});
+      }
+    }
     const all=notices.filter(n=>tabForNotice(n)===tab);
     // Las solicitudes pendientes se muestran antes que los avisos ordinarios.
     const pending=n=>n.requestKind==='embassy'&&
@@ -323,6 +332,20 @@
       }else openMessage(tab,key);
       closePopup(card)
     });
+    if(meta?.requestKind==='embassy'){
+      const bar=card.querySelector('.eventActionsStable8');
+      for(const [label,accept] of [['ACEPTAR',true],['RECHAZAR',false]]){
+        const button=document.createElement('button');
+        button.textContent=label;button.type='button';button.className=accept?'good':'';
+        button.addEventListener('click',()=>{
+          const ok=window.HexategosStatecraft0380?.answerEmbassyPlayer?.(Number(meta.faction),accept);
+          if(ok&&key?.startsWith('notice-'))dismissNotice(Number(key.slice(7)));
+          closePopup(card);updateBadges();
+          if(typeof sysTab3220!=='undefined'&&sysTab3220==='dip')renderSystems3220();
+        });
+        bar?.appendChild(button);
+      }
+    }
     card.querySelector('.closeStable8')?.addEventListener('click',()=>closePopup(card));
     stack.appendChild(card);card._timerStable8=setTimeout(()=>closePopup(card),DURATION);
   }
