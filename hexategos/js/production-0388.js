@@ -219,6 +219,11 @@
         g.raw.get(s.kind).push({site:s});
       }else{
         g.factories.push({site:s,node:n});
+        const material=PROCESSED[s.kind];
+        if(material){
+          if(!g.raw.has(material))g.raw.set(material,[]);
+          g.raw.get(material).push({site:s});
+        }
       }
     }
     // Los cargamentos de los puertos se pueden recoger únicamente desde
@@ -289,23 +294,49 @@
         }
       }
     }
-    // Transformación en instalaciones fabriles; los productos terminados
-    // entran en el inventario material original y circulan hacia las ciudades.
+    // Producción por etapas: las instalaciones primarias alimentan las
+    // transformadoras; estas crean intermedios reales (acero, gas procesado,
+    // combustible...) y la manufactura consume esos intermedios y electricidad.
     for(const g of groups.values()){
+      g.factories.sort((a,b)=>industryStage(TYPES[a.site.kind])-industryStage(TYPES[b.site.kind]));
       for(const item of g.factories){
         const s=item.site,n=item.node,def=TYPES[s.kind],out=def.output;
+        const intermediate=PROCESSED[s.kind]||null;
         const room=Math.max(0,n.cap[out]-n.stock[out]);
-        if(room<=0)continue;
-        let amount=Math.min(room/.90,.39*s.level*activeFactor(s)*dt);
-        let spent=0;
-        for(const kind of def.inputs){
-          if(amount<=0)break;
-          const part=take(g,kind,amount);
-          spent+=part;amount-=part;
+        const buffer=intermediate?Math.max(0,65*s.level-s.stock):0;
+        if(room+buffer<=.000001)continue;
+        let amount=Math.min(.39*s.level*activeFactor(s)*dt,(room+buffer)/.90);
+        if(amount<=0)continue;
+        const inputs=def.inputs||[];
+        if(!inputs.length)continue;
+        if(def.inputMode==='any'){
+          let chosen=null,maximum=0;
+          for(const kind of inputs){
+            const qty=available(g,kind);
+            if(qty>maximum){chosen=kind;maximum=qty}
+          }
+          if(!chosen||maximum<=0)continue;
+          amount=Math.min(amount,maximum);
+          amount=take(g,chosen,amount);
+        }else{
+          for(const kind of inputs)amount=Math.min(amount,available(g,kind));
+          if(amount<=0)continue;
+          for(const kind of inputs)take(g,kind,amount);
         }
-        if(spent<=0)continue;
-        const created=Math.min(room,spent*.90);
-        n.stock[out]+=created;processed+=created;s.output+=created;
+        if(amount<=0)continue;
+        // Los bienes finales necesitan energía; las centrales son las
+        // encargadas de generarla. No consumir el stock a nivel de mapa.
+        if(def.group==='manufacture'){
+          const power=Math.min(amount*.12,Math.max(0,n.stock[2]||0));
+          if(power+1e-6<amount*.12)continue;
+          n.stock[2]-=power;
+        }
+        const outputQty=amount*.90;
+        const stored=intermediate?Math.min(buffer,outputQty*.62):0;
+        const delivered=Math.min(room,outputQty-stored);
+        if(intermediate)s.stock+=stored;
+        n.stock[out]+=delivered;
+        processed+=stored+delivered;s.output+=stored+delivered;
       }
     }
     // La IA invierte escalonadamente, siempre con su presupuesto y de forma
