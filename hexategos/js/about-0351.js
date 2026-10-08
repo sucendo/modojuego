@@ -4,10 +4,28 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.38.17',
+      date:'Octubre 2026',
+      title:'Ficha contextual completa de cada hexágono',
+      current:true,
+      summary:'Al seleccionar un hexágono aparece una ficha clara con población estimada dinámica, terreno y reservas, producción controlable, abastecimiento, gobierno y, en puertos, rutas, importaciones, exportaciones y flotas.',
+      changes:[
+        'Población estimada por hexágono en función de calidad del terreno, núcleo urbano, industria, suministro, estabilidad, puertos y duración de la campaña.',
+        'Resumen de población, propietario, infraestructuras, material almacenado y suministro sin una ventana modal adicional.',
+        'Pestañas de Resumen, Industria, Gobierno y Puerto, según los edificios disponibles.',
+        'Regulación individual de la actividad de las fábricas propias con guardado de los cambios.',
+        'Estabilidad, nacionalismo, escasez, medidas de Gobierno y acceso directo a su gestión.',
+        'Cargamentos de rutas marítimas diferenciados por origen y destino, con exportaciones/importaciones según movimiento efectivo.',
+        'Flotas basadas en el puerto y acceso directo a Naval y Comercio.',
+        'Botones principales compactos y restantes acciones en desplegables sin perder el motor de construcción, diplomacia ni fuerzas.',
+        'Tipografía legible adaptable al tamaño configurado en Opciones, ventana desplazable y compatible con móvil.'
+      ]
+    },
+    {
       version:'0.38.16',
       date:'Octubre 2026',
       title:'Estabilidad diplomática al reanudar partidas',
-      current:true,
+      current:false,
       summary:'Las naciones agresivas dejan de repetir declaraciones de guerra al reabrir una partida. Las guerras y treguas se guardan inmediatamente y las IA necesitan tensiones diplomáticas reales para iniciar nuevos conflictos contra el jugador.',
       changes:[
         'Sin nuevas declaraciones automáticas de guerra contra el jugador durante los primeros 90 segundos de campaña tras cargar una partida.',
