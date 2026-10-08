@@ -26,6 +26,8 @@
   const SECTORS={energy:'Energía',mining:'Minería y madera',farming:'Agricultura y ganadería',manufacturing:'Transformación industrial'};
   const RECIPE={oil:'refinery',gas:'gasplant',iron:'steel',copper:'smelter',timber:'sawmill',quarry:'cement',crops:'foodplant',livestock:'foodplant'};
   const rawTypes=Object.keys(TYPES).filter(k=>TYPES[k].group==='extract');
+  const TYPE_SALTS=Object.fromEntries(rawTypes.map(kind=>[
+    kind,[...kind].reduce((h,c)=>Math.imul(h^c.charCodeAt(0),16777619)>>>0,2166136261)]));
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const sites=new Map(),depots=new Map(),sectorPct=new Map(),nextAI=new Float64Array(FACTIONS3230.length);
   let revision=1, aiCursor=1, lastStats={produced:0,processed:0,shipped:0,disconnected:0,sites:0};
@@ -47,7 +49,7 @@
   function terrainWeight(kind,g,cell){
     if(!g)return 0;
     const t=g.type,food=g.food||.6,raw=g.raw||.7,fuel=g.fuel||.6;
-    const hash=(Math.imul(cell+13,1103515245)^Math.imul(kind.length,2654435761))>>>0;
+    const hash=(Math.imul(cell+13,1103515245)^TYPE_SALTS[kind])>>>0;
     const variation=.76+(hash%100)/210;
     const arid=t==='desert'||t==='steppe',mountain=t==='mountain'||t==='highmountain';
     const woodland=t==='forest'||t==='jungle';
@@ -253,11 +255,13 @@
     // La IA invierte escalonadamente, siempre con su presupuesto y de forma
     // condicionada por riqueza geográfica y carencias de su economía.
     const batch=activeFactionCount3230>350?10:activeFactionCount3230>180?8:5;
+    const aiStarted=Date.now();let aiReviewed=0;
     for(let i=0;i<batch&&activeFactionCount3230>1;i++){
+      if(i>0&&Date.now()-aiStarted>=4)break;
       if(aiCursor>=activeFactionCount3230)aiCursor=1;
-      aiDevelop(aiCursor++);
+      aiDevelop(aiCursor++);aiReviewed++;
     }
-    lastStats={produced:+produced.toFixed(2),processed:+processed.toFixed(2),
+    lastStats={aiReviewed,produced:+produced.toFixed(2),processed:+processed.toFixed(2),
       shipped:+shipped.toFixed(2),disconnected,sites:sites.size};
   }
   function aiDevelop(f){
