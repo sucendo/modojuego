@@ -136,7 +136,7 @@ ctx.renderSystems3220();
 assert.ok(!content.children[2].classList.contains('isCollapsed0385'),
   'expanded state persists through content refresh');
 ctx.openSystems3220('eco');
-assert.equal(lookup.sysSectionTitle0385.textContent,'Economía y comercio',
+assert.equal(lookup.sysSectionTitle0385.textContent,'Economía',
   'section title follows existing tabs');
 ctx.openSystems3220('settings');
 assert.ok(panel.classList.contains('systemsOptions0385'),

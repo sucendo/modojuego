@@ -45,7 +45,7 @@ assert.ok(visuals.includes("g?.order==='patrol'")&&visuals.includes('navalGroupA
   'idle patrol must visually anchor to home port');
 assert.ok(visuals.includes('const patrolFinished=returningPatrol'),
   'patrol completion detection missing');
-assert.ok(visuals.includes('const pv=cellVector03719(homePort,C)'),
+assert.ok(visuals.includes('const pv=cellVector03719(realPort,C)'),
   'completed patrol must append actual port position');
 assert.ok(visuals.includes('g._patrolAwaitingNext03719=true'),
   'completed patrol must enter short port dwell');

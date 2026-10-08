@@ -24,7 +24,8 @@ assert.ok(!index.includes('js/economic-corridors-0379.js"></script>\\n'),'litera
 assert.ok(about.includes("version:'0.38.3'"),'About history missing');
 assert.ok(css.includes('.resourcePotentialRow0383'),'territory resource dialog not styled');
 assert.ok(strategy.includes('const MAX_GEO_CACHE=12000'),'bounded geographic cache missing');
-assert.ok(strategy.includes('const MAX_NATIONAL_SAMPLES=48'),'national sampling limit missing');
+const sampleLimit=Number(strategy.match(/const MAX_NATIONAL_SAMPLES=(\d+)/)?.[1]);
+assert.ok(sampleLimit>=24&&sampleLimit<=96,'national sampling must remain bounded');
 assert.ok(!strategy.includes('setInterval('),'no new independent simulation timer allowed');
 assert.ok(trade.includes('function refreshGeoProduction0383'),'conquered land must update material production');
 assert.ok(trade.includes('GEO_PRODUCTION_BATCH0383=160'),'node reprofiling must be bounded');

@@ -82,6 +82,10 @@ const context={
   selectedGameCell3230:()=>3,activeFactionCount3230:2,
   diplomaticRelation3300:()=>-1,factionName3230:f=>'Nación '+f,
   localStorage:{removeItem(){}},
+  cities3212:new Set([3]),
+  buildClassicActions3246:()=>[],classicAction3246:(id)=>({id}),
+  handleContextAction3244(){},closeContextDialog3244(){},
+  uiInteractionState3244:{contextData:null},
   sysTab3220:'dip',renderSystems3220(){},openSystems3220(){}
 };
 vm.runInNewContext(ui,context,{timeout:4000});
