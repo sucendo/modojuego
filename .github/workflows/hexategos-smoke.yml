@@ -1,4 +1,4 @@
-name: Hexategos smoke
+name: Hexategos stability checks
 
 on:
   push:
@@ -9,112 +9,41 @@ on:
     paths:
       - 'hexategos/**'
       - '.github/workflows/hexategos-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   smoke:
     runs-on: ubuntu-latest
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Run Hexategos 0.34.2 stability smoke
-        run: node hexategos/tests/smoke-0342.mjs
-      - name: Run Hexategos 0.35 geopolitical smoke
-        run: node hexategos/tests/smoke-035.mjs
-      - name: Run Hexategos 0.35.1 About smoke
-        run: node hexategos/tests/smoke-0351.mjs
-      - name: Run Hexategos 0.35.2 geopolitical map smoke
-        run: node hexategos/tests/smoke-0352.mjs
-      - name: Run Hexategos 0.35.3 movable panels smoke
-        run: node hexategos/tests/smoke-0353.mjs
-      - name: Run Hexategos 0.35.4 real cities smoke
-        run: node hexategos/tests/smoke-0354.mjs
-      - name: Run Hexategos 0.35.6 AI and infrastructure smoke
-        run: node hexategos/tests/smoke-0356.mjs
-      - name: Run Hexategos 0.36.0 native 500-nation adaptive AI smoke
-        run: node hexategos/tests/smoke-0360.mjs
-      - name: Run Hexategos 0.36.1 500-nation performance smoke
-        run: node hexategos/tests/smoke-0361.mjs
-
-      - name: Run Hexategos 0.36.2 human-like AI construction smoke
-        run: node hexategos/tests/smoke-0362.mjs
-
-      - name: Run Hexategos 0.37.0 physical trade and naval logistics smoke
-        run: node hexategos/tests/smoke-0370.mjs
-
-      - name: Run Hexategos 0.37.1 domestic traffic and visible naval movement smoke
-        run: node hexategos/tests/smoke-0371.mjs
-
-      - name: Run Hexategos 0.37.2 traffic visibility and patrol route smoke
-        run: node hexategos/tests/smoke-0372.mjs
-
-      - name: Run Hexategos 0.37.3 isolated infrastructure decay smoke
-        run: node hexategos/tests/smoke-0373.mjs
-
-      - name: Run Hexategos 0.37.4 road removal smoke
-        run: node hexategos/tests/smoke-0374.mjs
-
-      - name: Run Hexategos 0.37.5 AI commerce and civil watchdog smoke
-        run: node hexategos/tests/smoke-0375.mjs
-
-      - name: Run Hexategos 0.37.6 explicit border-road customs smoke
-        run: node hexategos/tests/smoke-0376.mjs
-
-      - name: Run Hexategos 0.37.7 geopolitical trade corridors smoke
-        run: node hexategos/tests/smoke-0377.mjs
-
-      - name: Run Hexategos 0.37.8 national traffic and naval visuals smoke
-        run: node hexategos/tests/smoke-0378.mjs
-
-
-      - name: Run Hexategos 0.37.9 consolidated economic corridors smoke
-        run: node hexategos/tests/smoke-0379.mjs
-
-
-      - name: Run Hexategos 0.37.10 traffic size and constant commercial speed smoke
-        run: node hexategos/tests/smoke-03710.mjs
-
-
-      - name: Run Hexategos 0.37.11 active trade belts and map destination smoke
-        run: node hexategos/tests/smoke-03711.mjs
-
-
-      - name: Run Hexategos 0.37.12 transport symbols smoke
-        run: node hexategos/tests/smoke-03712.mjs
-
-
-      - name: Run Hexategos 0.37.13 domestic logistics and player traffic smoke
-        run: node hexategos/tests/smoke-03713.mjs
-
-
-      - name: Run Hexategos 0.37.14 native route picker and node-to-node trucks smoke
-        run: node hexategos/tests/smoke-03714.mjs
-
-
-      - name: Run Hexategos 0.37.15 robust commercial picker smoke
-        run: node hexategos/tests/smoke-03715.mjs
-
-
-      - name: Run Hexategos 0.37.16 final commercial controller smoke
-        run: node hexategos/tests/smoke-03716.mjs
-
-
-      - name: Run Hexategos 0.37.17 trade route manager smoke
-        run: node hexategos/tests/smoke-03717.mjs
-
-
-      - name: Run Hexategos 0.37.18 route-view exit and persistence smoke
-        run: node hexategos/tests/smoke-03718.mjs
-
-
-      - name: Run Hexategos 0.37.19 closed smooth naval patrol smoke
-        run: node hexategos/tests/smoke-03719.mjs
-
-
-      - name: Run Hexategos 0.37.20 material economy and active patrols smoke
-        run: node hexategos/tests/smoke-03720.mjs
-
-
-      - name: Run Hexategos 0.37.21 material supply map smoke
-        run: node hexategos/tests/smoke-03721.mjs
+      - name: Check syntax of all Hexategos JS modules
+        shell: bash
+        run: |
+          set -euo pipefail
+          count=0
+          while IFS= read -r file; do
+            node --check "$file"
+            count=$((count+1))
+          done < <(find hexategos/js -maxdepth 1 -type f -name '*.js' | sort -V)
+          echo "Syntax checked: $count files"
+          test "$count" -ge 30
+      - name: Run every Hexategos smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          count=0
+          while IFS= read -r file; do
+            echo "::group::$(basename "$file")"
+            node "$file"
+            echo "::endgroup::"
+            count=$((count+1))
+          done < <(find hexategos/tests -maxdepth 1 -type f -name 'smoke-*.mjs' | sort -V)
+          echo "Smoke tests passed: $count"
+          test "$count" -ge 50
