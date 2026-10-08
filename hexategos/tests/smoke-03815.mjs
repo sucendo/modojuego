@@ -114,7 +114,7 @@ commerceHost.querySelector=selector=>selector==='.tradeManager03717'?
 const doc={getElementById:id=>id==='systemsPanel3213'?panel:
   id==='sysContent3213'?commerceHost:null,createElement:tag=>makeElement(tag)};
 const harness=
-  "let sysTab3220='eco';"+
+  "const document=doc;let sysTab3220='eco';"+
   "function renderSystems3220(){"+
   "const h=doc.getElementById('sysContent3213');"+
   "const summary=makeElement('summary');"+
