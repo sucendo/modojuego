@@ -32,7 +32,7 @@ const args=[
  'owner6','uiInteractionState3244','cellContext3244','canIndustry3244',
  'closeContextDialog3244','closeModal3244','modal3244','modalTitle3244',
  'modalBody3244','modalActions3244','buildClassicActions3246','classicAction3246',
- 'handleContextAction3244','sites','TYPES','gold3212','MAX_SITES',
+ 'handleContextAction3244','sites','TYPES','FUTURE_INDUSTRIES','gold3212','MAX_SITES',
  'MAX_PER_NATION','MAX_PER_CELL','MAX_PLAYER_SITES','sitesOnCell','availability','countNation','potential','esc','placeDisplayName3271',
  'build','saveGame3212','updateUI3230','sysTab3220','renderSystems3220',
  'selected','MAX_GAME_LEVEL3233','contextBuildPermit3282',
@@ -46,7 +46,7 @@ const value=[
  overlay,title,body,actionsPanel,
  ()=>[{id:'build_road',enabled:true},{id:'build_industry',enabled:true}],
  (id,label,icon,sub,enabled,cls)=>({id,label,icon,sub,enabled,cls}),()=>{},
- sites,types,1500,3200,18,3,160,cell=>[...sites.values()].filter(s=>s.cell===cell),
+ sites,types,[{name:'Central nuclear',note:'Tecnología futura'}],1500,3200,18,3,160,cell=>[...sites.values()].filter(s=>s.cell===cell),
  ()=>({ok:true,reason:'Disponible'}),()=>sites.size,()=>1,s=>s,s=>'Lugar 8',
  (f,cell,kind)=>{sites.set(cell,{f,cell,kind,level:1});buildCount++;return true},
  ()=>{},()=>{},'dip',()=>{},null,5,null,levels,industries,
@@ -65,10 +65,10 @@ assert.ok(!list.some(x=>x.id==='build_industry'),'old industry option still visi
 st.availableActions=list.filter(x=>x.enabled).map(x=>x.id);
 module.handle('production0388');
 assert.equal(module.modalState()?.type,'production0388');
-assert.ok(body.innerHTML.includes('Construir industria general'));
-assert.ok(body.innerHTML.includes('Producción especializada'));
-body.fire('click',target('[data-industry-view0388]',{dataset:{industryView0388:'specialized'}}));
-assert.ok(body.innerHTML.includes('Explotaciones primarias'),'specialized submenu did not open');
+assert.ok(body.innerHTML.includes('Industria manufacturera · área general'));
+for(const label of ['Nivel I','Nivel II','Nivel III','Nivel IV','Nivel V'])
+  assert.ok(body.innerHTML.includes(label),'catalog level '+label+' missing');
+assert.ok(!body.innerHTML.includes('data-industry-view0388'),'industry split-menu should be gone');
 body.fire('click',target('[data-industry-build0388]',{dataset:{industryBuild0388:'gas'},disabled:false}));
 assert.equal(buildCount,1);
 assert.equal(closeCount,1,'native modal close not called after productive build');
