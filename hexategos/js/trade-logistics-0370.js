@@ -501,7 +501,9 @@
       addHub(r.from);addHub(r.to);
     }
     for(const cell of hubs)mix(cell);
-    return h+':'+roadEpoch;
+    const production=window.HexategosProduction0388;
+    for(const cell of production?.cells?.()||[])mix(cell);
+    return h+':'+roadEpoch+':'+(production?.revision?.()||0);
   }
 
   function resourceRoadComp03720(cell,f){
@@ -630,6 +632,7 @@
       if(r.status==='closed')continue;
       add(r.from,r.a);add(r.to,r.b);
     }
+    for(const cell of window.HexategosProduction0388?.cells?.()||[])add(cell,owner6[cell]);
 
     const snap=ensureEconomySnapshot3261(false);
     const restoredPlayer=new Map(Array.isArray(restoredResources03720?.playerNodes)?restoredResources03720.playerNodes:[]);
@@ -798,6 +801,10 @@
     ensureResourceNodes03720(force);
     // Incremental: hasta 160 nodos por tick comercial; no hay scan global.
     refreshGeoProduction0383(economySnapshot3261||ensureEconomySnapshot3261(false));
+
+    // Producción primaria especializada y transformación usando inventarios
+    // de los mismos nodos, conectados a carreteras y rutas marítimas reales.
+    window.HexategosProduction0388?.tick?.({nodes:resourceNodes03720,routes,dt});
 
     // Producción / consumo local.
     for(const n of resourceNodes03720.values()){
