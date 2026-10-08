@@ -444,12 +444,13 @@
     const data=mine.map(s=>{
       const def=TYPES[s.kind],hasRoad=connect(s.cell,0)>=0;
       const place=typeof placeDisplayName3271==='function'?placeDisplayName3271(s.cell):'Hexágono '+s.cell;
-      return '<div class="industrySite0388"><div><b>'+def.icon+' '+esc(def.name)+'</b>'+
+      const id=siteKey(s.cell,s.kind);
+      return '<div class="industrySite0388"><div><b>'+def.icon+' '+esc(def.name)+'</b>'+ 
         '<small>'+esc(place)+' · Nivel '+s.level+'/5 · '+(hasRoad?'Conectada':'Sin carretera')+
         (def.group==='extract'?' · Yacimiento '+Math.round(s.potential*100)+'%':' · Transformación')+'</small></div>'+
-        '<label>Actividad <input type="range" min="0" max="100" step="5" value="'+s.pct+'" data-industry-site0388="'+s.cell+'"></label>'+
-        '<span data-industry-site-label0388="'+s.cell+'">'+s.pct+'%</span>'+
-        '<button data-industry-upgrade0388="'+s.cell+'" '+(s.level>=5?'disabled':'')+'>Mejorar</button></div>';
+        '<label>Actividad <input type="range" min="0" max="100" step="5" value="'+s.pct+'" data-industry-site0388="'+id+'"></label>'+
+        '<span data-industry-site-label0388="'+id+'">'+s.pct+'%</span>'+
+        '<button data-industry-upgrade0388="'+id+'" '+(s.level>=5?'disabled':'')+'>Mejorar</button></div>';
     }).join('');
     wrapper.innerHTML='<h3>🏭 Producción territorial</h3>'+
       '<p>Explotaciones de hasta siete hexágonos. La extracción se almacena localmente; las fábricas necesitan una conexión logística para recibirla. Los productos transformados abastecen ciudades mediante la red comercial.</p>'+
@@ -469,9 +470,9 @@
   systemHost?.addEventListener('input',event=>{
     const target=event.target;
     if(target.matches('[data-industry-site0388]')){
-      const cell=Number(target.dataset.industrySite0388);
-      if(setPct(cell,target.value)){
-        const label=systemHost.querySelector('[data-industry-site-label0388="'+cell+'"]');
+      const id=target.dataset.industrySite0388;
+      if(setPct(id,target.value)){
+        const label=systemHost.querySelector('[data-industry-site-label0388="'+id+'"]');
         if(label)label.textContent=target.value+'%';
       }
     }
@@ -486,7 +487,7 @@
   systemHost?.addEventListener('click',event=>{
     const button=event.target.closest('[data-industry-upgrade0388]');
     if(!button)return;
-    if(!upgrade(Number(button.dataset.industryUpgrade0388)))
+    if(!upgrade(button.dataset.industryUpgrade0388))
       {if(typeof toast==='function')toast('No se puede mejorar la instalación')}
     renderSystems3220();
   });
@@ -504,7 +505,7 @@
     if(!context){closeModal3244();return false}
     state.data.section=section;
     const place=typeof placeDisplayName3271==='function'?placeDisplayName3271(cell):'Hexágono '+cell;
-    const existing=sites.get(cell);
+    const existing=sitesOnCell(cell);
     const industryCost=context.industry?115+context.industry*55:110;
     const canGeneral=typeof canIndustry3244==='function'?canIndustry3244(context):false;
     modalTitle3244.textContent='Industria · '+place;
@@ -522,28 +523,34 @@
     if(section==='menu'){
       modalBody3244.innerHTML='<div class="industryModal0388">'+intro+
         '<div class="industryChoices0388">'+general+specialized+'</div>'+
-        (existing?'<div class="industryExisting0388"><b>Instalación en este hexágono</b>'+
-          '<p>'+esc(TYPES[existing.kind].icon+' '+TYPES[existing.kind].name)+
-          ' · Nivel '+existing.level+'/5 · Control individual en Sistemas → Economía.</p></div>':'')+
+        (existing.length?'<div class="industryExisting0388"><b>Instalaciones en este hexágono</b>'+ 
+          '<p>'+existing.map(site=>esc(TYPES[site.kind].icon+' '+TYPES[site.kind].name)+' (nivel '+site.level+'/5)').join(' · ')+
+          ' · Controles individuales en Sistemas → Economía.</p></div>':'')+
         '</div>';
       modalActions3244.innerHTML='<button type="button" data-modal-action="close">CERRAR</button>';
     }else{
       const sections=[['extract','Explotaciones primarias'],['factory','Industrias transformadoras']];
+      const spent=countNation(0);
+      const gold=Math.floor(gold3212);
+      const status='<div class="industryBudget0388">Oro disponible: <b>'+gold.toLocaleString('es-ES')+'</b> · Instalaciones: <b>'+spent+'/'+MAX_PLAYER_SITES+'</b> · En este hexágono: <b>'+existing.length+'/'+MAX_PER_CELL+'</b></div>';
       const types=sections.map(([group,title])=>
         '<section class="industryGroup0388 industryGroup-'+group+'0388"><h4>'+title+'</h4>'+
         '<div class="industryBuildGrid0388">'+Object.entries(TYPES).filter(([,def])=>def.group===group).map(([kind,def])=>{
           const strength=group==='extract'?Math.round(potential(cell,0,kind)*100):null;
-          const allowed=!existing&&gold3212>=def.cost&&sites.size<MAX_SITES&&countNation(0)<MAX_PER_NATION;
+          const test=availability(0,cell,kind,true);
+          const allowed=test.ok;
           return '<button type="button" class="industryBuildChoice0388" data-industry-build0388="'+kind+'" '+
             (allowed?'':'disabled')+'><span class="industryTypeIcon0388">'+def.icon+'</span>'+
             '<span class="industryBuildText0388"><b>'+esc(def.name)+'</b>'+
-            '<small>'+def.cost+' oro'+(strength===null?'':' · potencial '+strength+'%')+'</small></span></button>';
+            '<small>'+def.cost+' oro'+(strength===null?'':' · potencial '+strength+'%')+
+            (allowed?' · Disponible':' · '+esc(test.reason))+'</small></span></button>';
         }).join('')+'</div></section>').join('');
       modalBody3244.innerHTML='<div class="industryModal0388"><div class="industryIntro0388">'+
         '<b>Explotaciones e industria transformadora</b>'+
-        '<p>Una explotación aprovecha hasta siete hexágonos propios. Para abastecer fábricas y ciudades necesita conexiones terrestres o marítimas.</p></div>'+
-        (existing?'<div class="industryExisting0388">Ya existe '+esc(TYPES[existing.kind].name)+
-        ' aquí. Mejora su nivel desde Sistemas → Economía.</div>':'')+types+'</div>';
+        '<p>Una explotación aprovecha hasta siete hexágonos propios. Para abastecer fábricas y ciudades necesita conexiones terrestres o marítimas. Puedes combinar hasta tres instalaciones diferentes por hexágono.</p></div>'+status+
+        (existing.length?'<div class="industryExisting0388">Ya construidas: '+
+        existing.map(site=>esc(TYPES[site.kind].name)).join(' · ')+
+        '. Puedes añadir otras diferentes o mejorarlas desde Sistemas → Economía.</div>':'')+types+'</div>';
       modalActions3244.innerHTML='<button type="button" data-industry-view0388="menu">← VOLVER</button>'+
         '<button type="button" data-modal-action="close">CERRAR</button>';
     }
@@ -630,7 +637,7 @@
       needsRender=true;
       if(typeof toast==='function')toast(TYPES[kind].name+' construida');
       if(typeof sysTab3220==='string'&&sysTab3220==='eco')renderSystems3220();
-    }else if(typeof toast==='function')toast('Terreno ocupado, límite alcanzado u oro insuficiente');
+    }else if(typeof toast==='function')toast(availability(0,cell,kind,true).reason);
   });
   if(typeof modalActions3244!=='undefined')modalActions3244?.addEventListener('click',event=>{
     const change=event.target.closest?.('[data-industry-view0388]');
