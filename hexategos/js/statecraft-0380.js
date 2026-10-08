@@ -1,9 +1,9 @@
 'use strict';
 
-// HEXATEGOS 0.38.0 · Estado, embajadas, inteligencia, comercio y estabilidad.
+// HEXATEGOS 0.38.1 · tratados separados, embajadas con memoria y contrainteligencia.
 // Capa incremental: reutiliza diplomacia, comercio material, IA, guardados y reloj existentes.
 (() => {
-  const BUILD='0.38.0';
+  const BUILD='0.38.1';
   const SAVE_KEY='hexategos-statecraft-0380';
   const RESOURCE_LABELS=['Alimentos','Materias primas','Energía/combustible','Bienes industriales','Material militar'];
   const RESOURCE_ICONS=['🍞','⛏','⛽','📦','🎖'];
@@ -11,6 +11,9 @@
   const TECH_COST=[0,120,190,280,400,560];
   const STABILITY_BATCH=28;
   const SERVICE_SECONDS=5;
+  const EMBASSY_RETRY_SECONDS=90;
+  const SPY_UPKEEP_PER_SECOND=.018;
+  const COUNTERINTEL_COST=[0,65,105,155,220,300];
 
   const pairKey=(a,b)=>a<b?a+':'+b:b+':'+a;
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -18,8 +21,10 @@
   const esc=s=>typeof escapeHtml3271==='function'?escapeHtml3271(String(s??'')):String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const relationLabel=r=>({[-1]:'GUERRA',0:'NEUTRAL',1:'COMERCIO',2:'NO AGRESIÓN',3:'ALIANZA'})[r]||'NEUTRAL';
 
-  let embassies=new Map(); // pair -> {status,requestedBy,at}
+  let embassies=new Map(); // pair -> {status,requestedBy,at,rejectedUntil}
+  let treaties=new Map();  // pair -> {trade,nap,alliance,atWar,updated}
   let spies=new Map();     // "from:to" -> {level,active,detected,lastOp}
+  let counterIntel=new Uint8Array(FACTIONS3230.length);
   let cityState=new Map(); // cell -> {origin,owner,stability,nationalism,scarcity,strikeUntil,riotUntil,...}
   let operations=[];       // efectos temporales abstractos
   let dipTech=new Uint8Array(FACTIONS3230.length);
@@ -70,6 +75,50 @@
   function embassyRecord(a,b){return embassies.get(pairKey(a,b))||null}
   function hasEmbassy(a,b){return a===b||embassyRecord(a,b)?.status==='active'}
   function embassyPending(a,b){const e=embassyRecord(a,b);return e?.status==='pending'?e:null}
+  function embassyRetryRemaining(a,b){
+    const e=embassyRecord(a,b),until=Number(e?.rejectedUntil)||0;
+    return Math.max(0,until-now());
+  }
+
+  function treatyState(a,b,create=true){
+    if(a===b)return {trade:true,nap:true,alliance:true,atWar:false,updated:now()};
+    const key=pairKey(a,b);
+    let t=treaties.get(key);
+    if(!t&&create){
+      const rel=diplomaticRelation3300(a,b);
+      // Compatibilidad: en partidas anteriores NAP/Alianza implicaban comercio.
+      t={trade:rel===1||rel===2||rel===3,nap:rel===2||rel===3,alliance:rel===3,atWar:rel===-1,updated:now()};
+      treaties.set(key,t);
+    }
+    return t||null;
+  }
+
+  function treatyLegacyValue(t){
+    if(!t)return 0;
+    if(t.atWar)return -1;
+    if(t.alliance)return 3;
+    if(t.nap)return 2;
+    if(t.trade)return 1;
+    return 0;
+  }
+
+  function applyTreatyState(a,b,patch,reason='decisión diplomática',announce=true){
+    const t=treatyState(a,b,true);
+    Object.assign(t,patch||{});
+    if(t.atWar){t.trade=false;t.nap=false;t.alliance=false}
+    if(t.alliance)t.nap=true;
+    t.updated=now();
+    const rel=treatyLegacyValue(t);
+    internalRelationChange=true;
+    try{baseSetRelation0380(a,b,rel,reason,announce)}
+    finally{internalRelationChange=false}
+    save0380();
+    return rel;
+  }
+
+  function tradeTreaty(a,b){return a===b||!!treatyState(a,b,true)?.trade}
+  function napTreaty(a,b){return a===b||!!treatyState(a,b,true)?.nap}
+  function allianceTreaty(a,b){return a===b||!!treatyState(a,b,true)?.alliance}
 
   function canContact(a,b){
     if(a===b)return true;
@@ -95,8 +144,9 @@
 
   function setEmbassy(a,b,status,requestedBy=-1){
     if(a===b)return false;
-    const key=pairKey(a,b);
-    embassies.set(key,{status,requestedBy,at:now()});
+    const key=pairKey(a,b),old=embassies.get(key)||{};
+    const rejectedUntil=status==='rejected'?now()+EMBASSY_RETRY_SECONDS:(status==='active'?0:(Number(old.rejectedUntil)||0));
+    embassies.set(key,{...old,status,requestedBy,at:now(),rejectedUntil});
     save0380();
     return true;
   }
@@ -104,6 +154,11 @@
   function requestEmbassy(from,to,interactive=false){
     if(from===to||from<0||to<0)return false;
     if(hasEmbassy(from,to))return true;
+    const retry=embassyRetryRemaining(from,to);
+    if(retry>0){
+      if(interactive)notify('La última solicitud fue rechazada · reintento en '+Math.ceil(retry)+' s','diplomacy','dip');
+      return false;
+    }
     if(!canContact(from,to)){
       if(interactive)notify('Fuera del alcance diplomático actual','diplomacy','dip');
       return false;
@@ -140,12 +195,13 @@
 
   function tradeAllowedPair(a,b){
     if(a===b)return true;
-    return hasEmbassy(a,b)&&[1,2,3].includes(diplomaticRelation3300(a,b));
+    const t=treatyState(a,b,true);
+    return hasEmbassy(a,b)&&!!t?.trade&&!t.atWar;
   }
 
   function proposeTreaty(type,target){
     if(target<=0)return false;
-    if(type!=='war'&&!hasEmbassy(0,target)){
+    if(type!=='war'&&type!=='peace'&&!hasEmbassy(0,target)){
       notify('Primero debes establecer una embajada','diplomacy','dip');return false;
     }
     if(type==='war'){
@@ -158,9 +214,7 @@
     const threshold=typeof dipThreshold3300==='function'?dipThreshold3300(type):50;
     if(score>=threshold){
       const rel=type==='trade'?1:type==='nap'?2:type==='alliance'?3:type==='peace'?0:0;
-      internalRelationChange=true;
-      try{setDiplomaticRelation3300(0,target,rel,'acuerdo bilateral',true)}
-      finally{internalRelationChange=false}
+      setDiplomaticRelation3300(0,target,rel,'acuerdo bilateral',true)
       notify(factionName3230(target)+' acepta '+(type==='trade'?'el acuerdo comercial':type==='nap'?'el pacto de no agresión':type==='alliance'?'la alianza':'la paz'),'diplomacy','dip');
       renderNationDossier(target,'dip');return true;
     }
@@ -171,6 +225,26 @@
 
   function spyKey(from,to){return from+':'+to}
   function spyState(from,to){return spies.get(spyKey(from,to))||null}
+  function counterIntelLevel(f){
+    f=Number(f);
+    const natural=f===0?0:clamp(14+techLevel(f)*9+Math.sqrt(Math.max(0,typeof countFaction3230==='function'?countFaction3230(f):0))*1.4,0,72);
+    return clamp(Math.max(counterIntel[f]||0,natural),0,100);
+  }
+  function improveCounterIntel(f=0){
+    f=Number(f);const cur=Math.floor(counterIntelLevel(f)/20),next=Math.min(5,cur+1),cost=COUNTERINTEL_COST[next]||0;
+    if(next<=cur||next>5)return false;
+    if(f===0){
+      if(gold3212<cost){notify('Oro insuficiente para mejorar contrainteligencia','intel','intel');return false}
+      gold3212-=cost;
+    }else{
+      if((botGold3230[f]||0)<cost)return false;
+      botGold3230[f]-=cost;
+    }
+    counterIntel[f]=Math.max(counterIntel[f],next*20);
+    save0380();
+    if(f===0)notify('Contrainteligencia nacional mejorada a nivel '+next,'intel','intel');
+    return true;
+  }
   function intelScore(viewer,target){
     if(viewer===target)return 100;
     const spy=spyState(viewer,target);
@@ -271,15 +345,15 @@
     if(sp.level<req){notify('Infiltración insuficiente para esta operación','intel','intel');return false}
     const stab=averageStability(target);
     const vulnerability=clamp((60-stab.avg)*.45,0,22);
-    const counter=(secretPolicy(target,4)%24);
-    const chance=clamp(42+sp.level*.48+vulnerability-counter,18,88);
+    const counter=counterIntelLevel(target);
+    const chance=clamp(48+sp.level*.48+vulnerability-counter*.42,12,88);
     const success=Math.random()*100<chance;
     sp.lastOp=now();sp.level=clamp(sp.level-(success?18:26),5,100);
     if(success){
       operationEffect(target,type);
       notify('Operación de inteligencia completada en '+factionName3230(target),'intel','intel');
     }else{
-      const detected=Math.random()*100<clamp(34+counter-sp.level*.12,18,72);
+      const detected=Math.random()*100<clamp(22+counter*.55-sp.level*.12,14,82);
       if(detected){
         sp.detected=true;
         if(typeof dipSetOpinion3300==='function')dipSetOpinion3300(target,0,(dipOpinionOf3300(target,0)||0)-18);
@@ -314,12 +388,11 @@
 
   function supplyForCity(cell,f){
     const api=window.HexategosTradeLogistics0370;
-    let physical=Number(api?.combinedSupply?.(cell));
-    if(!Number.isFinite(physical))physical=typeof supplyPct3220==='function'?Number(supplyPct3220(cell))||0:60;
-    if(f===0)return clamp(physical,0,100);
-    const mat=api?.materialSupply?.(cell);
-    if(mat&&Number.isFinite(mat.material))return clamp(physical*(.25+.75*mat.material/100),0,100);
-    return clamp(physical,0,100);
+    // combinedSupply ya incorpora logística física + disponibilidad material.
+    // 0.38.0 volvía a multiplicar material en ciudades IA: doble penalización.
+    let combined=Number(api?.combinedSupply?.(cell));
+    if(!Number.isFinite(combined))combined=typeof supplyPct3220==='function'?Number(supplyPct3220(cell))||0:60;
+    return clamp(combined,0,100);
   }
 
   function ensureCityState(cell){
@@ -418,7 +491,23 @@
   function serviceSpies(dt){
     for(const [key,s] of spies){
       if(!s.active)continue;
-      s.level=clamp((Number(s.level)||0)+dt*.045,0,100);
+      const [from,to]=key.split(':').map(Number);
+      const upkeep=SPY_UPKEEP_PER_SECOND*dt;
+      let paid=true;
+      if(from===0){
+        if(gold3212>=upkeep)gold3212-=upkeep; else paid=false;
+      }else{
+        if((botGold3230[from]||0)>=upkeep)botGold3230[from]-=upkeep; else paid=false;
+      }
+      if(!paid){
+        s.level=clamp((Number(s.level)||0)-dt*.35,0,100);
+        if(s.level<=4){s.active=false;if(from===0)notify('Una red de inteligencia se ha desmantelado por falta de fondos','intel','intel')}
+        continue;
+      }
+      const counter=counterIntelLevel(to);
+      const gain=Math.max(.006,.050-counter*.00034);
+      s.level=clamp((Number(s.level)||0)+dt*gain,0,100);
+      if(counter>68&&s.level<28&&Math.random()<dt*.0015)s.detected=true;
     }
   }
 
@@ -428,6 +517,7 @@
     const f=aiCursor++;
     if(typeof countFaction3230==='function'&&countFaction3230(f)<=0)return;
     dipTech[f]=Math.max(dipTech[f],techLevel(f));
+    counterIntel[f]=Math.max(counterIntel[f],Math.min(80,12+techLevel(f)*9));
     const net=window.HexategosDiplomacyNetwork3301;
     const targets=net?.targetsRef?.(f)||net?.targets?.(f)||[];
     for(let i=0;i<Math.min(6,targets.length);i++){
@@ -440,9 +530,7 @@
         const score=typeof dipAcceptanceScore3300==='function'?dipAcceptanceScore3300(o,f,'trade'):0;
         const th=typeof dipThreshold3300==='function'?dipThreshold3300('trade'):50;
         if(score>=th+5){
-          internalRelationChange=true;
-          try{setDiplomaticRelation3300(f,o,1,'acuerdo comercial tras apertura de embajadas',false)}
-          finally{internalRelationChange=false}
+          setDiplomaticRelation3300(f,o,1,'acuerdo comercial tras apertura de embajadas',false)
           break;
         }
       }
@@ -473,8 +561,11 @@
     initialized=true;lastService=now();
     load0380();
     // Migración: tratados positivos preexistentes se consideran diplomacia ya formalizada.
+    // Además se materializan en flags separados para conservar partidas antiguas.
     for(let a=0;a<activeFactionCount3230;a++)for(let b=a+1;b<activeFactionCount3230;b++){
-      if(diplomaticRelation3300(a,b)>0&&!hasEmbassy(a,b))embassies.set(pairKey(a,b),{status:'active',requestedBy:-1,at:now()});
+      const rel=diplomaticRelation3300(a,b);
+      if(rel>0&&!hasEmbassy(a,b))embassies.set(pairKey(a,b),{status:'active',requestedBy:-1,at:now(),rejectedUntil:0});
+      treatyState(a,b,true);
     }
     for(const c of cities3212)ensureCityState(c);
     save0380();
@@ -504,19 +595,25 @@
   }
 
   function diplomacyTab(target){
-    const emb=embassyRecord(0,target),rel=diplomaticRelation3300(0,target),pending=emb?.status==='pending'&&emb.requestedBy===target;
+    const emb=embassyRecord(0,target),rel=diplomaticRelation3300(0,target),t=treatyState(0,target,true);
+    const pending=emb?.status==='pending'&&emb.requestedBy===target,retry=Math.ceil(embassyRetryRemaining(0,target));
     let acts='';
     if(pending)acts='<button data-sc0380="embassy_accept">ACEPTAR EMBAJADA</button><button data-sc0380="embassy_reject" class="warn0380">RECHAZAR</button>';
-    else if(!hasEmbassy(0,target))acts='<button data-sc0380="embassy_request" '+(!canContact(0,target)?'disabled':'')+'>ENVIAR EMBAJADA</button>';
+    else if(!hasEmbassy(0,target))acts='<button data-sc0380="embassy_request" '+(!canContact(0,target)||retry>0?'disabled':'')+'>'+(retry>0?'REINTENTO EN '+retry+' s':'ENVIAR EMBAJADA')+'</button>';
+    else if(rel===-1)acts='<button data-sc0380="peace">PROPONER PAZ</button>';
     else{
-      if(rel===0)acts+='<button data-sc0380="trade">PROPONER COMERCIO</button><button data-sc0380="nap">NO AGRESIÓN</button>';
-      if(rel===1||rel===2)acts+='<button data-sc0380="alliance">PROPONER ALIANZA</button>';
-      if(rel===-1)acts+='<button data-sc0380="peace">PROPONER PAZ</button>';
-      if(rel!==-1)acts+='<button data-sc0380="war" class="warn0380">DECLARAR GUERRA</button>';
+      if(!t.trade)acts+='<button data-sc0380="trade">PROPONER COMERCIO</button>';
+      else acts+='<button data-sc0380="trade_end" class="warn0380">SUSPENDER COMERCIO</button>';
+      if(!t.nap)acts+='<button data-sc0380="nap">NO AGRESIÓN</button>';
+      else acts+='<button data-sc0380="nap_end" class="warn0380">ROMPER NO AGRESIÓN</button>';
+      if(!t.alliance)acts+='<button data-sc0380="alliance">PROPONER ALIANZA</button>';
+      else acts+='<button data-sc0380="alliance_end" class="warn0380">ROMPER ALIANZA</button>';
+      acts+='<button data-sc0380="war" class="warn0380">DECLARAR GUERRA</button>';
     }
+    const treaty='<div class="nationTradeSummary0380"><span>Comercio <b>'+(t.trade?'ACTIVO':'NO')+'</b></span><span>No agresión <b>'+(t.nap?'ACTIVO':'NO')+'</b></span><span>Alianza <b>'+(t.alliance?'ACTIVA':'NO')+'</b></span></div>';
     return '<div class="nationSection0380"><h4>Relaciones diplomáticas</h4>'+
-      '<p>El contacto permite conocer la nación; la embajada abre la diplomacia formal. El comercio requiere además un acuerdo aceptado por ambos estados.</p>'+
-      '<div class="nationActions0380">'+acts+'</div></div>';
+      '<p>Embajada, comercio, no agresión y alianza son ahora acuerdos independientes. Puede mantenerse un pacto político aunque el comercio quede suspendido.</p>'+
+      treaty+'<div class="nationActions0380">'+acts+'</div></div>';
   }
 
   function commerceTab(target){
@@ -524,14 +621,14 @@
     return '<div class="nationSection0380"><h4>Recursos y comercio</h4>'+
       (!hasEmbassy(0,target)?'<p class="nationWarning0380">Sin embajada: la información comercial es muy limitada y no pueden abrirse acuerdos formales.</p>':'')+
       resourceRows(target)+
-      '<div class="nationTradeSummary0380"><span>Acuerdo comercial <b>'+([1,2,3].includes(rel)?'SÍ':'NO')+'</b></span><span>Rutas físicas <b>'+routes.length+'</b></span></div>'+
-      (hasEmbassy(0,target)&&rel===0?'<button data-sc0380="trade">SOLICITAR ACUERDO COMERCIAL</button>':'')+
+      '<div class="nationTradeSummary0380"><span>Acuerdo comercial <b>'+(tradeTreaty(0,target)?'SÍ':'NO')+'</b></span><span>Rutas físicas <b>'+routes.length+'</b></span></div>'+
+      (hasEmbassy(0,target)&&!tradeTreaty(0,target)&&rel!==-1?'<button data-sc0380="trade">SOLICITAR ACUERDO COMERCIAL</button>':'')+
       '<p>Las rutas automáticas solo transportan recursos que la nación exportadora esté dispuesta a vender y que tengan disponibilidad real.</p></div>';
   }
 
   function intelTab(target){
     const sp=spyState(0,target),intel=intelScore(0,target),stab=averageStability(target);
-    let html='<div class="nationSection0380"><h4>Inteligencia</h4><div class="nationTradeSummary0380"><span>Conocimiento <b>'+intel+'%</b></span><span>Red de espionaje <b>'+(sp?.active?Math.round(sp.level)+'%':'NO')+'</b></span></div>';
+    let html='<div class="nationSection0380"><h4>Inteligencia</h4><div class="nationTradeSummary0380"><span>Conocimiento <b>'+intel+'%</b></span><span>Red de espionaje <b>'+(sp?.active?Math.round(sp.level)+'%':'NO')+'</b></span>'+(intel>=45?'<span>Contrainteligencia rival <b>~'+Math.round(counterIntelLevel(target)/10)*10+'%</b></span>':'')+'</div>';
     if(!sp?.active)html+='<button data-sc0380="spy_deploy">DESPLEGAR RED DE INTELIGENCIA</button>';
     else{
       html+='<div class="nationOps0380">'+
@@ -644,6 +741,9 @@
     else if(a==='embassy_accept')answerEmbassy(openNation,true);
     else if(a==='embassy_reject')answerEmbassy(openNation,false);
     else if(['trade','nap','alliance','peace','war'].includes(a))proposeTreaty(a,openNation);
+    else if(a==='trade_end'){applyTreatyState(0,openNation,{trade:false},'suspensión comercial',true);notify('Comercio suspendido con '+factionName3230(openNation),'diplomacy','dip')}
+    else if(a==='nap_end'){applyTreatyState(0,openNation,{nap:false,alliance:false},'ruptura del pacto de no agresión',true);notify('Pacto de no agresión roto con '+factionName3230(openNation),'diplomacy','dip')}
+    else if(a==='alliance_end'){applyTreatyState(0,openNation,{alliance:false},'fin de la alianza',true);notify('Alianza finalizada con '+factionName3230(openNation),'diplomacy','dip')}
     else if(a==='spy_deploy')deploySpy(0,openNation,true);
     else if(a.startsWith('op_'))runSpyOperation(openNation,a.slice(3)==='industry'?'industry':a.slice(3)==='labor'?'labor':a.slice(3)==='nationalist'?'nationalist':a.slice(3));
     renderNationDossier(openNation,openTab);
@@ -661,12 +761,17 @@
     }
     if(sysTab3220==='intel'){
       let active=0,avg=0;for(const [k,s] of spies){if(k.startsWith('0:')&&s.active){active++;avg+=s.level||0}}
-      host.insertAdjacentHTML('beforeend','<div class="sysBlock3213"><b>🕵 Redes exteriores</b><div class="sysMeta3213">'+active+' redes activas'+(active?' · infiltración media '+Math.round(avg/active)+'%':'')+'. Abre la ficha de una nación para desplegar agentes u ordenar operaciones.</div></div>');
+      const ci=Math.floor(counterIntelLevel(0)/20),next=Math.min(5,ci+1),cost=COUNTERINTEL_COST[next]||0;
+      host.insertAdjacentHTML('beforeend','<div class="sysBlock3213"><b>🕵 Redes exteriores</b><div class="sysMeta3213">'+active+' redes activas'+(active?' · infiltración media '+Math.round(avg/active)+'%':'')+'. Mantenimiento '+(active*SPY_UPKEEP_PER_SECOND).toFixed(2)+' oro/s.</div></div>'+
+        '<div class="sysBlock3213"><b>🛡 Contrainteligencia nacional</b><div class="sysMeta3213">Nivel '+ci+' · protección '+Math.round(counterIntelLevel(0))+'%. Reduce infiltración, éxito y ocultación de operaciones extranjeras.</div>'+
+        (ci<5?'<button class="sysBtn3213" data-counterintel0381="1" '+(gold3212<cost?'disabled':'')+'>MEJORAR NIVEL '+next+' · '+cost+' ORO</button>':'<div class="sysMeta3213">Máximo nivel de contrainteligencia.</div>')+'</div>');
     }
     return out;
   };
 
   document.getElementById('sysContent3213')?.addEventListener('click',e=>{
+    const ci=e.target.closest?.('[data-counterintel0381]');
+    if(ci){if(improveCounterIntel(0))renderSystems3220();return}
     const b=e.target.closest?.('[data-sc-research0380]');if(!b)return;
     const l=techLevel(0),next=Math.min(5,l+1),cost=TECH_COST[next]||0;
     if(l>=5||gold3212<cost)return;
@@ -676,27 +781,41 @@
 
   // Tratados positivos exigen embajada. Guerra y paz siguen disponibles.
   const baseSetRelation0380=setDiplomaticRelation3300;
-  setDiplomaticRelation3300=function(a,b,v){
-    if(!internalRelationChange&&v>0&&!hasEmbassy(Number(a),Number(b))){
-      if(Number(a)===0||Number(b)===0)notify('Se necesita una embajada antes de firmar tratados','diplomacy','dip');
-      return diplomaticRelation3300(Number(a),Number(b));
+  setDiplomaticRelation3300=function(a,b,v,reason='decisión diplomática',announce=true){
+    a=Number(a);b=Number(b);v=Number(v);
+    if(!internalRelationChange&&v>0&&!hasEmbassy(a,b)){
+      if(a===0||b===0)notify('Se necesita una embajada antes de firmar tratados','diplomacy','dip');
+      return diplomaticRelation3300(a,b);
     }
-    return baseSetRelation0380.apply(this,arguments);
+    if(internalRelationChange)return baseSetRelation0380.apply(this,arguments);
+    const t=treatyState(a,b,true);
+    if(v===-1){t.atWar=true;t.trade=false;t.nap=false;t.alliance=false}
+    else if(v===0){t.atWar=false;t.trade=false;t.nap=false;t.alliance=false}
+    else if(v===1){t.atWar=false;t.trade=true}
+    else if(v===2){t.atWar=false;t.nap=true}
+    else if(v===3){t.atWar=false;t.nap=true;t.alliance=true}
+    t.updated=now();
+    const effective=treatyLegacyValue(t);
+    internalRelationChange=true;
+    try{return baseSetRelation0380(a,b,effective,reason,announce)}
+    finally{internalRelationChange=false;save0380()}
   };
 
   // Reutiliza el reloj de economía; no añade intervalos.
   const baseEconomyTick0380=economyTick3212;
   economyTick3212=function(){
     const out=baseEconomyTick0380.apply(this,arguments);
-    try{service0380()}catch(err){console.warn('[HEXATEGOS 0.38.0 statecraft]',err)}
+    try{service0380()}catch(err){console.warn('[HEXATEGOS 0.38.1 statecraft]',err)}
     return out;
   };
 
   function serialize0380(){
     return {
-      version:1,
+      version:2,
       embassies:[...embassies],
+      treaties:[...treaties],
       spies:[...spies],
+      counterIntel:Array.from(counterIntel),
       cities:[...cityState],
       operations:operations.filter(x=>x.until>now()),
       dipTech:Array.from(dipTech)
@@ -705,7 +824,11 @@
   function restore0380(s){
     if(!s||typeof s!=='object')return false;
     embassies=new Map(Array.isArray(s.embassies)?s.embassies:[]);
+    treaties=new Map(Array.isArray(s.treaties)?s.treaties:[]);
     spies=new Map(Array.isArray(s.spies)?s.spies:[]);
+    counterIntel.fill(0);
+    const ci=Array.isArray(s.counterIntel)?s.counterIntel:[];
+    for(let i=0;i<Math.min(ci.length,counterIntel.length);i++)counterIntel[i]=clamp(Number(ci[i])||0,0,100);
     cityState=new Map(Array.isArray(s.cities)?s.cities:[]);
     operations=Array.isArray(s.operations)?s.operations.filter(x=>x&&x.until>now()):[];
     const a=Array.isArray(s.dipTech)?s.dipTech:[];
@@ -725,7 +848,7 @@
   const baseReset0380=resetGame3230;
   resetGame3230=function(clearSave=true){
     const out=baseReset0380.apply(this,arguments);
-    embassies.clear();spies.clear();cityState.clear();operations=[];dipTech.fill(0);initialized=false;
+    embassies.clear();treaties.clear();spies.clear();counterIntel.fill(0);cityState.clear();operations=[];dipTech.fill(0);initialized=false;
     if(clearSave)try{localStorage.removeItem(SAVE_KEY)}catch(_){}
     return out;
   };
@@ -753,6 +876,11 @@
     hasEmbassy,
     canContact,
     canTrade:tradeAllowedPair,
+    treaties:(a,b)=>({...treatyState(Number(a),Number(b),true)}),
+    hasTrade:(a,b)=>tradeTreaty(Number(a),Number(b)),
+    hasNAP:(a,b)=>napTreaty(Number(a),Number(b)),
+    hasAlliance:(a,b)=>allianceTreaty(Number(a),Number(b)),
+    counterIntel:(f)=>counterIntelLevel(Number(f)),
     reach:(f=0)=>reachDeg(Number(f)),
     tech:(f=0)=>techLevel(Number(f)),
     intel:(viewer,target)=>intelScore(Number(viewer),Number(target)),
@@ -769,5 +897,5 @@
 
   initialize0380();
   window.HEXATEGOS_VERSION=BUILD;
-  console.info('[HEXATEGOS] 0.38.0 · embajadas, alcance diplomático, inteligencia económica, operaciones y estabilidad');
+  console.info('[HEXATEGOS] 0.38.1 · tratados separados, memoria diplomática y contrainteligencia');
 })();
