@@ -4,10 +4,24 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.38.5.2',
+      date:'Octubre 2026',
+      title:'Corregir botón de centrado y arrastre de Sistemas',
+      current:true,
+      summary:'Se corrige la posición del panel tras pulsar el botón ⌖: el diálogo ya no queda fuera de pantalla ni pierde la capacidad de moverse.',
+      changes:[
+        'Se resuelve el conflicto entre el top fijo del rediseño y el transform vertical heredado al restablecer la posición.',
+        'El botón ⌖ vuelve a centrar de forma explícita y guarda la posición mediante el único gestor de arrastre Stable3.',
+        'Las posiciones antiguas se mantienen dentro del viewport al reabrir el diálogo.',
+        'Se fuerzan nuevos recursos CSS y JavaScript para evitar cachés con los estilos anteriores.',
+        'Se conserva la posición al mover el panel, sin duplicar eventos ni cambiar las partidas guardadas.'
+      ]
+    },
+    {
       version:'0.38.5.1',
       date:'Octubre 2026',
       title:'Sistemas ajustado: embajadas, rutas marítimas, militar y desplazamiento',
-      current:true,
+      current:false,
       summary:'Corrección del centro de mando tras la primera revisión visual: se evita el desbordamiento, se unifican diplomacia e investigación y se facilitan las operaciones de embajadas, rutas marítimas y ejército.',
       changes:[
         'Solucionados los anchos mínimos rígidos y los textos sin salto de línea de listas, recursos, rutas y tarjetas.',
