@@ -3,18 +3,25 @@
    Ciudad centrada; puerto en borde costero real; carreteras bajo capital;
    pictogramas vectoriales homogéneos, sin emojis superpuestos. */
 (() => {
-  const VERSION='0.38.12',DETAIL_ZOOM=5.5,PRODUCTION_ZOOM=7,AI_PRODUCTION_ZOOM=13;
-  const COLORS={city:'#f3d487',capital:'#fae6a3',historic:'#b3c7d8',port:'#7ad4e1',
-    industry:'#ebb47b',oil:'#ddc199',gas:'#edc99a',iron:'#cfcaad',copper:'#d6aa8a',
-    timber:'#9bd8aa',quarry:'#cfccc3',crops:'#a8d69d',livestock:'#b4d7a3',
-    refinery:'#b2cddd',gasplant:'#b2cddd',steel:'#b2cddd',smelter:'#b2cddd',
-    sawmill:'#b2cddd',cement:'#b2cddd',foodplant:'#b2cddd'};
+  const VERSION='0.38.13',DETAIL_ZOOM=5.5,PRODUCTION_ZOOM=7,AI_PRODUCTION_ZOOM=13;
+  // Paleta del estilo original: círculo sólido por categoría y dibujo oscuro.
+  // Todos los tipos tienen fondo propio, evitando el azul genérico anterior.
+  const COLORS={
+    city:'#ffd76f',capital:'#f7e493',historic:'#b4becd',port:'#67d5df',
+    industry:'#f0a05b',
+    oil:'#c4a17a',gas:'#f0b959',
+    iron:'#a8b7c7',copper:'#e3a075',quarry:'#c9c5b8',
+    timber:'#78bc8f',crops:'#acd477',livestock:'#9dc995',
+    refinery:'#80abc9',gasplant:'#8fc5d9',steel:'#9aafc3',
+    smelter:'#c6ada1',sawmill:'#8abfa6',cement:'#b9bfba',
+    foodplant:'#a8c18a'
+  };
   const production=()=>window.HexategosProduction0388;
   let frame=null,rendered={city:0,port:0,capital:0,industry:0,special:0};
   const coastline=new Map();
   const entryRole=(s)=>String(s.cell)+':'+s.kind;
   const finite=x=>Number.isFinite(x);
-  function radius(){return Math.max(7.2,Math.min(9.7,globeIconScale3249()*1.08))}
+  function radius(){return Math.max(8.3,Math.min(11.2,globeIconScale3249()*1.18))}
   function centerPoint(cell){
     const c=frame?.L?.centers;if(!c||cell<0||cell>=owner6.length)return null;
     const j=3*cell;
@@ -107,15 +114,17 @@
     const r=radius()*scale;
     ctx.save();
     ctx.translate(x,y);
-    const color=COLORS[type]||'#c2d4e1';
-    ctx.fillStyle='rgba(2,12,21,.92)';
-    ctx.strokeStyle='rgba(3,10,18,.95)';
-    ctx.lineWidth=2.6;
-    ctx.beginPath();ctx.arc(0,0,r+1.65,0,Math.PI*2);ctx.fill();ctx.stroke();
-    ctx.fillStyle='#113044';ctx.strokeStyle=color;ctx.lineWidth=1.25;
+    const color=COLORS[type]||'#b4c2ce';
+    // Misma estética que ciudad/puerto/fábrica originales: base de color,
+    // pictograma oscuro, borde pálido y sombra mínima para el terreno.
+    // Sin gradientes por icono para mantener un coste estable con 500 IA.
+    ctx.fillStyle='rgba(2,10,17,.85)';
+    ctx.beginPath();ctx.arc(0,0,r+1.55,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle=color;ctx.strokeStyle='rgba(250,251,248,.9)';
+    ctx.lineWidth=1.12;
     ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fill();ctx.stroke();
     ctx.scale(r/9,r/9);
-    ctx.strokeStyle='#f1f7fa';ctx.fillStyle='#e5f1f7';
+    ctx.strokeStyle='#263440';ctx.fillStyle='#263440';
     ctx.lineWidth=1.35;ctx.lineJoin='round';ctx.lineCap='round';
     const line=(...points)=>{
       ctx.beginPath();ctx.moveTo(points[0],points[1]);
@@ -254,7 +263,7 @@
           const p=centerPoint(cell);
           if(!p||p[2]<.10||p[0]<-28||p[0]>vw+28||p[1]<-28||p[1]>vh+28)continue;
           const xy=iconPosition(cell,'historic',p[0],p[1]);
-          badge(xy[0],xy[1],'historic',.86);
+          badge(xy[0],xy[1],'historic',.9);
         }
         for(let f=0;f<activeFactionCount3230;f++){
           const cell=capitals[f];
@@ -262,7 +271,7 @@
           const p=centerPoint(cell);
           if(!p||p[2]<.10||p[0]<-28||p[0]>vw+28||p[1]<-28||p[1]>vh+28)continue;
           const xy=iconPosition(cell,'capital',p[0],p[1]);
-          badge(xy[0],xy[1],'capital',f===0?1.05:.94);rendered.capital++;
+          badge(xy[0],xy[1],'capital',f===0?1.12:1.02);rendered.capital++;
         }
       }
     frame=null;
@@ -270,6 +279,7 @@
   };
   window.HexategosMapIcons03812={
     active:true,version:VERSION,
+    palette:{...COLORS},iconRadius:radius,
     positionFor:(cell,role)=>{
       // Sin un fotograma activo, la proyección depende del giro del globo.
       const v=frame?.layouts.get(cell)?.coords.get(role);
