@@ -19,10 +19,13 @@ assert.ok(production.includes('r.productionCargoDetail03817.push'),'industrial c
 assert.ok(!js.includes('setInterval(')&&!js.includes('requestAnimationFrame('),
   'inspector must not add continuous simulation work');
 
-const root={classList:{add(){},remove(){}},insertBefore(){},addEventListener(){}};
+const root={scrollTop:0,classList:{add(){},remove(){}},insertBefore(){},addEventListener(){}};
 const actions={querySelectorAll:()=>[],addEventListener(){},replaceChildren(){},appendChild(){}};
 let contents='';
-const panel={id:null,className:'',hidden:false,set innerHTML(v){contents=v},get innerHTML(){return contents},querySelector:()=>null};
+const details={scrollTop:0};
+const panel={id:null,className:'',hidden:false,
+  set innerHTML(v){contents=v;details.scrollTop=0},get innerHTML(){return contents},
+  querySelector:s=>s==='.ctxDetails03817'?details:null};
 const doc={
   getElementById:id=>id==='contextMenu3244'?root:
     id==='ctxActions3244'?actions:null,
@@ -65,7 +68,7 @@ const args=['document','window','renderContextDialog3244','positionContextDialog
   'relations3220','campaignSeconds3230','factionName3230','supplyAt3230',
   'uiInteractionState3244','navalGroups3270','fleets3212','placeDisplayName3271','console'];
 const state={contextData:null};
-const vals=[doc,window,()=>{},()=>{},()=>{},()=>L,8,owner,cities,cityLevels,
+const vals=[doc,window,()=>{root.scrollTop=0},()=>{},()=>{},()=>L,8,owner,cities,cityLevels,
   industries,industryLevels,ports,[3],Array(18).fill(0),gameTime,
   f=>'Nación '+f,()=>supplyLevel,state,
   [{id3270:9,f:0,home:3,strength:22,order:'patrol',targetPort:-1}],[],
@@ -96,8 +99,14 @@ assert.ok(contents.includes('↓ Importa: Energía'),'inbound fuel not identifie
 assert.match(contents,/↓ Importa:[^<]*Pozo de gas/,'inbound manufactured cargo not identified');
 assert.ok(contents.includes('Flota 9'),'naval fleet based in port missing');
 assert.deepEqual(sim.api.tabsFor(city),['summary','industry','government','port']);
+root.scrollTop=29;details.scrollTop=77;
+sim.render(city);
+assert.equal(root.scrollTop,29,'inspector outer scroll jumped when same cell refreshed');
+assert.equal(details.scrollTop,77,'inspector inner scroll jumped when same cell refreshed');
 const ruralHex={kind:'cell',cell:2,owner:0,own:true,city:0,industry:0,fort:0,port:false};
 assert.deepEqual(sim.api.tabsFor(ruralHex),['summary','industry']);
 sim.render(ruralHex);
+assert.equal(root.scrollTop,0,'new hexagon must start at top');
+assert.equal(details.scrollTop,0,'new hexagon details must start at top');
 assert.ok(contents.includes('Sin administración urbana local.'));
 console.log('HEXATEGOS 0.38.17 population, resources, manufacturing controls, supply, government, port imports/exports, fleet and Options font: OK');
