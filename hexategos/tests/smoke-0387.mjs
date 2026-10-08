@@ -8,7 +8,7 @@ const css=read('css/dialog-unified-0387.css'),html=read('index.html'),about=read
 for(const [name,script] of [['core',core],['trade',trade],['visual',visual],['ui',ui],['about',about]]){
   assert.doesNotThrow(()=>new Function(script),name+' syntax');
 }
-assert.ok(/v0\.38\.(?:[789]|1[0123])<\/title>/.test(html),'version missing');
+assert.ok(/v0\.38\.(?:[789]|1[01234])<\/title>/.test(html),'version missing');
 assert.ok(html.includes('js/game.js?v=0387'),'updated economic engine may be cached');
 assert.ok(html.includes('js/national-visuals-0378.js?v=0387'),'updated fleet visuals may be cached');
 assert.ok(/js\/trade-logistics-0370\.js\?v=038[78]/.test(html),'updated fleet logic may be cached');
