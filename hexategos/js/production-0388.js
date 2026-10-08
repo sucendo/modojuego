@@ -313,6 +313,10 @@
     // combustible...) y la manufactura consume esos intermedios y electricidad.
     for(const g of groups.values()){
       g.factories.sort((a,b)=>industryStage(TYPES[a.site.kind])-industryStage(TYPES[b.site.kind]));
+      // Cuotas de materias elaboradas y electricidad calculadas una sola vez
+      // tras la etapa de transformación. Evita que una fábrica más antigua
+      // acapare todo el acero/cobre y bloquee las industrias posteriores.
+      let fairShares=null;
       for(const item of g.factories){
         const s=item.site,n=item.node,def=TYPES[s.kind],out=def.output;
         const intermediate=PROCESSED[s.kind]||null;
@@ -323,6 +327,32 @@
         const industrialBonus=1+Math.min(.24,sharedLevel*.08);
         let amount=Math.min(.39*s.level*activeFactor(s)*dt*industrialBonus,(room+buffer)/.90);
         if(amount<=0)continue;
+        if(def.group==='manufacture'){
+          if(!fairShares){
+            const demand=new Map();
+            let electricalDemand=0;
+            for(const candidate of g.factories){
+              const cd=TYPES[candidate.site.kind];
+              if(cd.group!=='manufacture')continue;
+              const cs=candidate.site,cn=candidate.node;
+              const upgrade=industries3212.has(cs.cell)?Math.max(1,industryLevel3230[cs.cell]||1):0;
+              const desired=Math.min(.39*cs.level*activeFactor(cs)*dt*(1+Math.min(.24,upgrade*.08)),
+                Math.max(0,cn.cap[cd.output]-cn.stock[cd.output])/.9);
+              if(desired<=0)continue;
+              electricalDemand+=desired*.12;
+              if(cd.inputMode!=='any')for(const key of cd.inputs)
+                demand.set(key,(demand.get(key)||0)+desired);
+            }
+            fairShares=new Map();
+            for(const [key,requested] of demand)
+              fairShares.set(key,requested?Math.min(1,available(g,key)/requested):1);
+            fairShares.set('electric',electricalDemand?
+              Math.min(1,availablePower(g)/electricalDemand):1);
+          }
+          amount*=fairShares.get('electric')??1;
+          if(def.inputMode!=='any')for(const key of def.inputs)
+            amount=Math.min(amount,.39*s.level*activeFactor(s)*dt*industrialBonus*(fairShares.get(key)??1));
+        }
         // Reservar energía ANTES de consumir materias para no perder cargamentos
         // cuando una fábrica tenga apagones o capacidad eléctrica insuficiente.
         if(def.group==='manufacture')amount=Math.min(amount,availablePower(g)/.12);
