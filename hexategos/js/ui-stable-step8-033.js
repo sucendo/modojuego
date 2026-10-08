@@ -6,7 +6,8 @@
   const DURATION=5000;
   const MAX_POPUPS=2;
   const MAX_LOG=36;
-  const REPEAT_NOTICE_MS=60000;
+  const REPEAT_NOTICE_MS=300000;
+  const dismissedSignatures=new Map();
   const POPUP_GAP_MS=45000;
   const PREF='hexategos.messages.quiet.0387';
   let quiet=true; // Por defecto todos los avisos van al registro, sin ventanas flotantes.
@@ -56,11 +57,23 @@
     return tab==='eco'?'Economía':tab==='research'?'I+D':tab==='intel'?'Inteligencia':
       tab==='naval'?'Naval':tab==='government'?'Gobierno':tab==='military'?'Militar':'Diplomacia';
   }
+  function noticeSignature(type,message,tab){return String(type)+'|'+String(tab)+'|'+String(message||'').trim().replace(/\s+/g,' ').toLocaleLowerCase('es')}
+  function dismissNotice(id){
+    const i=notices.findIndex(n=>n.id===Number(id));
+    if(i<0)return false;
+    const n=notices[i];
+    dismissedSignatures.set(noticeSignature(n.type,n.message,n.tab),Date.now());
+    notices.splice(i,1);updateBadges();return true;
+  }
   function addNotice(type,message,meta={}){
     const tab=meta.tab||tabForNotice({type});
-    const recent=notices.find(n=>n.type===type&&n.tab===tab&&n.message===String(message||'')&&Date.now()-n.created<REPEAT_NOTICE_MS);
+    const sig=noticeSignature(type,message,tab);
+    const now=Date.now();
+    if(dismissedSignatures.size>150){for(const [k,t] of dismissedSignatures)if(now-t>REPEAT_NOTICE_MS)dismissedSignatures.delete(k)}
+    if(now-(dismissedSignatures.get(sig)||0)<REPEAT_NOTICE_MS)return null;
+    const recent=notices.find(n=>noticeSignature(n.type,n.message,n.tab)===sig&&now-n.created<REPEAT_NOTICE_MS);
     if(recent){recent.repeats=(recent.repeats||1)+1;return recent;}
-    const n={id:nextNoticeId++,type:type||'info',message:String(message||''),created:Date.now(),read:false,tab,...meta};
+    const n={id:nextNoticeId++,type:type||'info',message:String(message||''),created:now,read:false,tab,...meta};
     notices.unshift(n);
     if(notices.length>MAX_LOG)notices.length=MAX_LOG;
     updateBadges();
@@ -179,8 +192,9 @@
       art.className='messageCardStable8 '+(n.read?'readStable8':'');
       art.dataset.messageKey='notice-'+n.id;
       const icon=n.type==='war'?'⚔':n.type==='attack'?'!':n.type==='naval'?'⚓':n.type==='intel'?'🕵':'•';
-      art.innerHTML=`<div class="messageIconStable8">${icon}</div><div class="messageBodyStable8"><b>${n.type==='war'?'CONFLICTO':n.type==='attack'?'ATAQUE':'AVISO'}</b><div class="messageTitleStable8">${esc(n.message)}</div><div class="messageActionsStable8"><button data-read-notice="${n.id}">${n.read?'LEÍDO':'ENTENDIDO'}</button></div></div>`;
+      art.innerHTML=`<div class="messageIconStable8">${icon}</div><div class="messageBodyStable8"><b>${n.type==='war'?'CONFLICTO':n.type==='attack'?'ATAQUE':'AVISO'}</b><div class="messageTitleStable8">${esc(n.message)}</div><div class="messageActionsStable8"><button data-read-notice="${n.id}">${n.read?'LEÍDO':'ENTENDIDO'}</button><button type="button" data-dismiss-notice="${n.id}" aria-label="Eliminar aviso" title="Eliminar aviso">×</button></div></div>`;
       art.querySelector('[data-read-notice]')?.addEventListener('click',()=>{n.read=true;updateBadges();renderSystems3220()});
+      art.querySelector('[data-dismiss-notice]')?.addEventListener('click',()=>{dismissNotice(n.id);renderSystems3220()});
       block.appendChild(art);
     }
     c.prepend(block);
@@ -293,7 +307,7 @@
         }else showPopup('offer',msg,'dip','');
       }else{
         const n=addNotice(type,msg,{tab:'dip'});
-        showPopup(type,msg,'dip','notice-'+n.id);
+        if(n)showPopup(type,msg,'dip','notice-'+n.id);
       }
     }catch(err){console.warn('[HEXATEGOS Stable8 notifications]',err)}
     return v;
@@ -309,7 +323,7 @@
       if(before!==-1&&v===-1&&a>0&&b===0){
         const msg=`${factionName3230(a)} declara la guerra`;
         const n=addNotice('war',msg,{tab:'dip'});
-        if(Date.now()-lastToastWall>350 || lastToastSignature!=='war|'+msg)showPopup('war',msg,'dip','notice-'+n.id);
+        if(n&&(Date.now()-lastToastWall>350 || lastToastSignature!=='war|'+msg))showPopup('war',msg,'dip','notice-'+n.id);
       }
       return result;
     };
@@ -320,7 +334,8 @@
     show:(message,type='info',tab='dip')=>{
       const prev=notices.length;
       const n=addNotice(type,message,{tab});
-      if(notices.length!==prev||n.repeats==null)showPopup(type,message,tab,'notice-'+n.id);
+      if(!n)return null;
+      if(notices.length!==prev&&n.repeats==null)showPopup(type,message,tab,'notice-'+n.id);
       return n.id;
     },
     open:(tab='dip')=>openSystems3220(tab),
@@ -335,6 +350,7 @@
       for(const n of notices)if(!tab||tabForNotice(n)===tab)n.read=true;
       updateBadges();
     },
+    dismiss:dismissNotice,
     notices
   };
   window.HEXATEGOS_STABLE_REBUILD=BUILD;
