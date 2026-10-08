@@ -321,3 +321,21 @@
   #systemsPanel3213{max-height:calc(100dvh - 12px)!important;max-width:calc(100dvw - 12px)!important}
   #systemsPanel3213 .sysMain0385{min-width:0;overflow-y:auto}
 }
+
+/* 0.38.8 · Escala proporcional de todos los diálogos, no solo sus fuentes. */
+:root{--hex-dialog-zoom:1}
+:where(#systemsPanel3213,#contextMenu3244,#gameMenu3306,#modalCard3244,
+  .newGameSetupCard3302,.aboutCard0351,.introCard3230,.endCard3230,
+  .landingOptionsPanel3305,#panel){zoom:var(--hex-dialog-zoom)}
+/* El menú contextual no admite desplazamiento lateral ni scrollbar inferior. */
+#contextMenu3244{
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  scrollbar-gutter:auto!important;
+}
+#contextMenu3244 :is(.ctxHead3244,.ctxBreadcrumb3244,.ctxActions3244){
+  box-sizing:border-box;min-width:0;max-width:100%;overflow-x:clip;
+}
+#contextMenu3244 .ctxActions3244 :is(button,.ctxAction3244){
+  box-sizing:border-box;width:100%;max-width:100%;min-width:0;
+}
