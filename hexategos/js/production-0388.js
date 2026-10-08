@@ -3,7 +3,7 @@
    Una instalación explota como máximo 7 hexágonos; inventario material
    concentrado en nodos, nunca un objeto de producción por celda. */
 (() => {
-  const VERSION='0.38.11';
+  const VERSION='0.38.15';
   const SAVE_KEY='hexategos.production.0388';
   const MAX_SITES=5600,AI_RESERVED_FOR_PLAYER=160,MAX_PLAYER_SITES=160,MAX_PER_CELL=3;
   const MAX_PER_NATION=18;
@@ -24,15 +24,32 @@
     smelter: {name:'Metalurgia',        icon:'🏭',sector:'manufacturing',group:'factory',inputs:['copper'],output:1,cost:135},
     sawmill: {name:'Aserradero',        icon:'🏭',sector:'manufacturing',group:'factory',inputs:['timber'],output:1,cost:105},
     cement:  {name:'Cementera',         icon:'🏭',sector:'manufacturing',group:'factory',inputs:['quarry'],output:1,cost:120},
-    foodplant:{name:'Industria alimentaria',icon:'🏭',sector:'manufacturing',group:'factory',inputs:['crops','livestock'],output:0,cost:115}
+    foodplant:{name:'Industria alimentaria',icon:'🏭',sector:'manufacturing',group:'factory',inputs:['crops','livestock'],inputMode:'any',output:0,cost:115},
+    thermal:{name:'Central termoeléctrica',icon:'⚡',sector:'energy',group:'power',inputs:['fuel','gasfuel'],inputMode:'any',output:2,cost:175},
+    civilian:{name:'Manufactura civil',icon:'📦',sector:'manufacturing',group:'manufacture',inputs:['steel','lumber'],output:3,cost:155},
+    machinery:{name:'Industria de maquinaria',icon:'⚙️',sector:'manufacturing',group:'manufacture',inputs:['steel','copperref'],output:3,cost:200},
+    arms:{name:'Industria armamentística',icon:'🛡️',sector:'manufacturing',group:'manufacture',inputs:['steel','copperref'],output:4,cost:230},
+    textile:{name:'Industria textil',icon:'🧵',sector:'manufacturing',group:'manufacture',inputs:['crops','livestock'],inputMode:'any',output:3,cost:120},
+    chemical:{name:'Industria química',icon:'⚗️',sector:'manufacturing',group:'manufacture',inputs:['fuel','gasfuel'],inputMode:'any',output:3,cost:195},
+    electronics:{name:'Industria electrónica',icon:'🔌',sector:'manufacturing',group:'manufacture',inputs:['copperref','steel'],output:3,cost:215}
   };
-  const SECTORS={energy:'Energía',mining:'Minería y madera',farming:'Agricultura y ganadería',manufacturing:'Transformación industrial'};
+  const SECTORS={energy:'Energía y electricidad',mining:'Minería y madera',farming:'Agricultura y ganadería',manufacturing:'Transformación y manufactura'};
+  const FUTURE_INDUSTRIES=[
+    {name:'Central nuclear',note:'Pendiente de tecnología nuclear y combustible enriquecido'},
+    {name:'Industria aeronáutica',note:'Pendiente de investigación aeronáutica'},
+    {name:'Industria de armamento nuclear',note:'Pendiente de tecnología nuclear y cadena estratégica'},
+    {name:'Arsenal de misiles',note:'Pendiente de investigación de misiles y sistemas de lanzamiento'}
+  ];
+  const PROCESSED={refinery:'fuel',gasplant:'gasfuel',steel:'steel',smelter:'copperref',sawmill:'lumber',cement:'cement'};
+  const RESOURCE_PRODUCT_LABELS={fuel:'Combustible refinado',gasfuel:'Gas procesado',steel:'Acero',copperref:'Cobre refinado',lumber:'Madera elaborada',cement:'Cemento'};
+  const MATERIAL_KEYS=['oil','gas','iron','copper','timber','quarry','crops','livestock',...Object.values(PROCESSED)];
+  const industryStage=t=>t.group==='extract'?1:t.group==='factory'?2:t.group==='power'?3:4;
   const RECIPE={oil:'refinery',gas:'gasplant',iron:'steel',copper:'smelter',timber:'sawmill',quarry:'cement',crops:'foodplant',livestock:'foodplant'};
   const rawTypes=Object.keys(TYPES).filter(k=>TYPES[k].group==='extract');
   const TYPE_SALTS=Object.fromEntries(rawTypes.map(kind=>[
     kind,[...kind].reduce((h,c)=>Math.imul(h^c.charCodeAt(0),16777619)>>>0,2166136261)]));
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-  const sites=new Map(),perCell=new Map(),nationCounts=new Map(),depots=new Map(),sectorPct=new Map(),nextAI=new Float64Array(FACTIONS3230.length);
+  const sites=new Map(),perCell=new Map(),nationCounts=new Map(),manufacturingCounts=new Map(),depots=new Map(),sectorPct=new Map(),nextAI=new Float64Array(FACTIONS3230.length);
   let revision=1, aiCursor=1, lastStats={produced:0,processed:0,shipped:0,disconnected:0,sites:0};
   let loadedPortable=null;
   const api=()=>window.HexategosTradeLogistics0370;
@@ -87,13 +104,20 @@
   const siteKey=(cell,kind)=>String(cell)+':'+kind;
   const sitesOnCell=cell=>perCell.get(Number(cell))||[];
   const countNation=f=>nationCounts.get(Number(f))||0;
-  function trackNation(f,change){const n=(nationCounts.get(f)||0)+change;if(n>0)nationCounts.set(f,n);else nationCounts.delete(f)}
+  function trackNation(f,change,kind){
+    const n=(nationCounts.get(f)||0)+change;
+    if(n>0)nationCounts.set(f,n);else nationCounts.delete(f);
+    if(kind&&TYPES[kind]?.group==='manufacture'){
+      const m=(manufacturingCounts.get(f)||0)+change;
+      if(m>0)manufacturingCounts.set(f,m);else manufacturingCounts.delete(f);
+    }
+  }
   function addSite(s){
     const key=siteKey(s.cell,s.kind);
     if(sites.has(key))return false;
     sites.set(key,s);
     if(!perCell.has(s.cell))perCell.set(s.cell,[]);
-    perCell.get(s.cell).push(s);trackNation(s.f,1);
+    perCell.get(s.cell).push(s);trackNation(s.f,1,s.kind);
     return true;
   }
   function siteById(id){
@@ -175,7 +199,7 @@
     // Capturas y pérdida de instalaciones: no se reconstruye el mapa entero.
     for(const s of sites.values()){
       const owner=owner6[s.cell];
-      if(owner>=0&&owner!==s.f){trackNation(s.f,-1);s.f=owner;trackNation(s.f,1);s.stock*=.5;s.pct=75;s.updated=-1e9;revision++}
+      if(owner>=0&&owner!==s.f){trackNation(s.f,-1,s.kind);s.f=owner;trackNation(s.f,1,s.kind);s.stock*=.5;s.pct=75;s.updated=-1e9;revision++}
       if(owner<0||owner!==s.f)continue;
       const n=nodes.get(s.cell);
       if(!n)continue;
@@ -204,7 +228,7 @@
       if(f<0||!ports3212.has(cell)){depots.delete(cell);continue}
       const comp=connect(cell,f);
       const g=group(f,comp,cell);
-      for(const kind of rawTypes){
+      for(const kind of MATERIAL_KEYS){
         if((d[kind]||0)<=0)continue;
         if(!g.raw.has(kind))g.raw.set(kind,[]);
         g.raw.get(kind).push({depot:d,kind});
@@ -371,7 +395,7 @@
       depots:[...depots],sectors:[...sectorPct]};
   }
   function restore(data){
-    sites.clear();perCell.clear();nationCounts.clear();depots.clear();sectorPct.clear();revision++;aiCursor=1;nextAI.fill(0);
+    sites.clear();perCell.clear();nationCounts.clear();manufacturingCounts.clear();depots.clear();sectorPct.clear();revision++;aiCursor=1;nextAI.fill(0);
     if(!data||!Array.isArray(data.sites))return;
     for(const x of data.sites.slice(0,MAX_SITES)){
       if(!x||!TYPES[x.kind]||!Number.isInteger(x.cell)||x.cell<0||x.cell>=owner6.length)continue;
@@ -385,7 +409,7 @@
     }
     if(Array.isArray(data.depots))for(const [cell,d] of data.depots.slice(0,MAX_SITES)){
       if(Number.isInteger(cell)&&ports3212.has(cell)&&d&&typeof d==='object'){
-        const clean={};for(const kind of rawTypes)clean[kind]=clamp(Number(d[kind])||0,0,65);
+        const clean={};for(const kind of MATERIAL_KEYS)clean[kind]=clamp(Number(d[kind])||0,0,65);
         depots.set(cell,clean);
       }
     }
