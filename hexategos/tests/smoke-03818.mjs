@@ -22,7 +22,7 @@ const doc={getElementById:id=>id==='systemsPanel3213'?panel:
 const apiWindow={};
 const setup="let sysTab3220='dip',renderSystems3220=function(){host.scrollTop=0;main.scrollTop=0;panel.scrollTop=0;return 'updated';};"+
   scrollCode+"return {render:renderSystems3220,tab:v=>{sysTab3220=v},api:window.HexategosDialogScroll03818};";
-const state=new Function('document','window','host','main','panel',setup)(doc,apiWindow,host,main,panel);
+const state=new Function('document','window','host','main','panel','requestAnimationFrame',setup)(doc,apiWindow,host,main,panel,cb=>cb());
 assert.equal(state.render(),'updated');
 assert.deepEqual([host.scrollTop,main.scrollTop,panel.scrollTop],[92,34,11],
   'scroll must stay still during a regular Systems rerender');
