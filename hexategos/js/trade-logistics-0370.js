@@ -1,7 +1,7 @@
 'use strict';
 
 (() => {
-  const BUILD='0.37.22';
+  const BUILD='0.37.23';
   const SAVE_KEY='hexategos-trade-logistics-0370';
   const TRADE_TICK_MS=2800;
   const ROAD_REFRESH_SECONDS=18;
@@ -846,6 +846,58 @@
       cause,recommendations:unique
     };
   }
+
+  function openSupplyDiagnosis03723(cell){
+    const diag=supplyDiagnosis03722(cell);
+    if(!diag){toast('No hay diagnóstico de suministro disponible');return false}
+    const material=materialSupplyDetail03721(cell);
+    const state=diag.combined>=75?'ABASTECIDO':diag.combined>=55?'TENSIÓN':diag.combined>=35?'BAJO':'CRÍTICO';
+    closeContextDialog3244?.();
+    if(typeof uiInteractionState3244==='object'&&uiInteractionState3244)
+      uiInteractionState3244.modal={type:'supply_diagnosis_03723',data:{cell}};
+    modal3244.classList.add('open3244');
+    modal3244.setAttribute('aria-hidden','false');
+    modalTitle3244.textContent='Suministro · '+placeDisplayName3271(cell);
+    const bal=(diag.balance>=0?'+':'')+diag.balance.toFixed(2);
+    let html='<div class="supplyModal03723">'+
+      '<div class="supplyModalHero03723"><span>'+state+'</span><b>'+diag.combined+'%</b></div>'+
+      '<div class="supplyModalTriplet03723">'+
+        '<span><small>Logística física</small><b>'+diag.logistic+'%</b></span>'+
+        '<span><small>Material</small><b>'+diag.material+'%</b></span>'+
+        '<span><small>Ámbito</small><b>'+escapeHtml3271(diag.scope)+'</b></span>'+
+      '</div>'+
+      '<div class="supplyResourceGrid03721">';
+    for(let i=0;i<5;i++){
+      const p=material.resourcePct[i];
+      html+='<span><b>'+RESOURCE_LABELS03720[i]+'</b><i><em style="width:'+p+'%"></em></i><small>'+p+'%</small></span>';
+    }
+    html+='</div>'+
+      '<div class="supplyDiagnosisGrid03722">'+
+        '<span>Producción</span><b>'+diag.production.toFixed(2)+' u/s</b>'+
+        '<span>Consumo</span><b>'+diag.consumption.toFixed(2)+' u/s</b>'+
+        '<span>Balance</span><b class="'+(diag.balance>=0?'good03722':'bad03722')+'">'+bal+' u/s</b>'+
+        '<span>Flujo comercial</span><b>'+diag.tradeFlow.toFixed(2)+' u/s</b>'+
+        '<span>Rutas activas</span><b>'+diag.activeRoutes+'</b>'+
+        '<span>Rutas bloqueadas</span><b>'+diag.blockedRoutes+'</b>'+
+      '</div>'+
+      '<div class="supplyCause03722"><small>Principal problema</small><b>'+escapeHtml3271(diag.cause)+'</b></div>'+
+      '<div class="supplyAdvice03722">'+diag.recommendations.map(x=>'<span>› '+escapeHtml3271(x)+'</span>').join('')+'</div>'+
+    '</div>';
+    modalBody3244.innerHTML=html;
+    modalActions3244.innerHTML='<button data-modal-action="close">CERRAR</button>';
+    return true;
+  }
+
+  document.getElementById('panel')?.addEventListener('click',e=>{
+    const b=e.target?.closest?.('button');
+    if(!b)return;
+    const txt=(b.textContent||'').toUpperCase();
+    if(!txt.includes('INFORMACIÓN')||!txt.includes('SUMINISTRO'))return;
+    const cell=selectedGameCell3230();
+    if(cell<0||owner6[cell]!==0)return;
+    e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+    openSupplyDiagnosis03723(cell);
+  },true);
 
   function routeCargoText03720(r){
     const a=Array.isArray(r.cargo03720)?r.cargo03720:[];
@@ -2438,5 +2490,5 @@
   window.HEXATEGOS_VERSION=BUILD;
 
   setInterval(tradeTick0370,TRADE_TICK_MS);
-  console.info('[HEXATEGOS] 0.37.22 · diagnóstico de suministro por territorio activo');
+  console.info('[HEXATEGOS] 0.37.23 · diagnóstico de suministro accesible desde INFORMACIÓN');
 })();
