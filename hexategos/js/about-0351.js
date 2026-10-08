@@ -4,10 +4,25 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.38.10',
+      date:'Octubre 2026',
+      title:'Industria unificada y selección de hexágonos desbloqueada',
+      current:true,
+      summary:'Se corrige el bloqueo del mapa tras construir una instalación productora; la industria general y las explotaciones especializadas comparten un único menú con subniveles y colores contrastados.',
+      changes:[
+        'La construcción productiva cierra el diálogo con la función normal del motor y elimina el estado que bloqueaba la selección de hexágonos.',
+        'Un único botón INDUSTRIA abre la industria general o la producción especializada según la necesidad del territorio.',
+        'La producción especializada se divide en explotaciones primarias y fábricas transformadoras, conservando controles y niveles.',
+        'La industria general conserva permisos de construcción, requisitos y costes existentes.',
+        'Revisión de contraste, colores, navegación y tamaños del diálogo industrial de acuerdo con la estética de Sistemas.',
+        'Prueba de regresión del cierre de modal y la apertura de un segundo hexágono tras construir.'
+      ]
+    },
+    {
       version:'0.38.9',
       date:'Octubre 2026',
       title:'Avisos localizables, decisiones diplomáticas y toponimia histórica',
-      current:true,
+      current:false,
       summary:'Los avisos incluyen VER con navegación al mapa para eventos geolocalizables. Las embajadas recibidas se pueden aceptar o rechazar. La geografía condiciona el nombre de países, capitales y ciudades de IA.',
       changes:[
         'Los avisos geolocalizados permiten centrar el mapa en el hexágono implicado, o en la capital de la nación que los origina.',
