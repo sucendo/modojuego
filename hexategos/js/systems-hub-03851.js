@@ -3,7 +3,7 @@
 // HEXATEGOS 0.38.5.1 · Sistemas: embajadas, rutas marítimas, Militar y UX.
 // Reutiliza los motores diplomático, logístico y bélico existentes.
 (() => {
-  const BUILD='0.38.5.2';
+  const BUILD='0.38.6';
   const panel=document.getElementById('systemsPanel3213');
   const host=document.getElementById('sysContent3213');
   if(!panel||!host)return;
@@ -14,6 +14,7 @@
   const pretty=n=>Number.isFinite(Number(n))?Math.round(Number(n)).toLocaleString('es-ES'):'—';
   let embassyOpen=false,embassyContacts=[],embassyFilter='',embassySelected=-1;
   let maritimePort=-1,showAllSeaRoutes=false,lastTab='dip';
+  let governmentCity0386=-1;
   const states={none:'Sin embajada',active:'Embajada activa',pending:'Solicitud pendiente',rejected:'Solicitud rechazada',expelled:'Embajada expulsada'};
   const routeNames={active:'Activa',risky:'Sin permiso',smuggling:'Contrabando',blocked:'Bloqueada',inspected:'En inspección',suspended:'Suspendida',broken:'Interrumpida',rebuilding:'Recalculando'};
   const msg=s=>{if(typeof toast==='function')toast(s)};
@@ -172,6 +173,74 @@
         '<p class="hubEmpty03851">Todavía no has creado rutas marítimas. Puedes comerciar también entre puertos de tu propio país.</p>')+
       (routes.length>12?'<button class="hubMore03851" data-hub-action="sea-more">'+(showAllSeaRoutes?'Ver menos':'Ver todas las '+routes.length+' rutas')+'</button>':'');
   }
+  function governmentCard0386(){
+    const api=nationApi();
+    if(!started3230||!api?.governmentCities){
+      host.innerHTML='<div class="sysBlock3213">Inicia una partida para administrar tus ciudades.</div>';
+      return;
+    }
+    const cities=api.governmentCities(0,65),policies=api.governmentPolicies?.()||{};
+    if(governmentCity0386<0||!cities.some(x=>x.cell===governmentCity0386))
+      governmentCity0386=cities[0]?.cell??-1;
+    const st=api.governmentCity(governmentCity0386);
+    const national=api.nationStability?.(0)||{avg:75,min:75,n:0};
+    const crisis=cities.filter(c=>c.stability<50).length;
+    let html='<div class="sysBlock3213 sysGovSummary0386">'+
+      '<div class="hubHeader03851"><b>🏛️ Gobierno y estabilidad nacional</b>'+
+      '<p>Las decisiones se aplican a ciudades, no a todos los hexágonos. La falta de abastecimiento y la ocupación generan tensiones; cada medida cuesta recursos y tiene consecuencias.</p></div>'+
+      '<div class="hubStats03851">'+makeHint('Estabilidad media',Math.round(national.avg)+' %')+
+      makeHint('Ciudades en crisis',crisis)+makeHint('Ciudades administradas',national.n)+
+      makeHint('Tesoro nacional',pretty(gold3212)+' oro')+'</div></div>';
+    if(!cities.length){
+      host.innerHTML=html+'<div class="sysBlock3213"><b>Sin ciudades</b><p>Funda una ciudad para poder administrarla desde Gobierno.</p></div>';
+      return;
+    }
+    const guide={
+      aid:'Reduce la escasez y aumenta la estabilidad mientras llega el abastecimiento.',
+      invest:'Mejora sostenida de la estabilidad e impulsa la producción industrial local.',
+      autonomy:'Reduce el nacionalismo en territorios ocupados. No se aplica a ciudades originarias.',
+      garrison:'Compromete 8 tropas; contiene disturbios y devuelve supervivientes al finalizar.',
+      ration:'Reduce el consumo real de alimentos y bienes, a costa de descontento.',
+      repression:'Contiene el desorden inmediato, pero eleva el nacionalismo y la tensión posterior.'
+    };
+    html+='<div class="sysBlock3213 sysGovManager0386">'+
+      '<div class="hubSectionHeading03851"><b>Administración de ciudades</b></div>'+
+      '<label class="sysGovLabel0386" for="hubCityGovernment0386">Selecciona una ciudad (prioridad a las menos estables)</label>'+
+      '<select id="hubCityGovernment0386" data-gov-city0386>'+
+      cities.map(c=>'<option value="'+c.cell+'" '+(c.cell===governmentCity0386?'selected':'')+'>'+
+        escape((typeof placeDisplayName3271==='function'?placeDisplayName3271(c.cell):'Ciudad '+c.cell))+
+        ' · '+c.stability+' % estabilidad'+(c.occupied?' · Ocupada':'')+'</option>').join('')+'</select>';
+    if(st){
+      html+='<div class="hubStats03851">'+makeHint('Estabilidad',st.stability+' %')+
+        makeHint('Abastecimiento',st.supply+' %')+makeHint('Nacionalismo',st.nationalism+' %')+
+        makeHint('Escasez',st.scarcity+' / 300')+'</div>'+
+        '<p class="hubEmpty03851">'+(st.occupied?'Ciudad ocupada: riesgo de tensión nacionalista.':
+          'Ciudad originaria de tu nación.')+
+        (st.strike?' · Hay huelgas activas.':'')+(st.riot?' · Hay disturbios.':'')+'</p>'+
+        '<div class="hubSectionHeading03851"><b>Medidas gubernamentales</b></div>'+
+        '<div class="sysGovPolicies0386">';
+      for(const [key,policy] of Object.entries(policies)){
+        const active=!!st.active?.[key],remaining=st.remaining?.[key]||0,
+              cooldown=st.cooldown?.[key]||0,occupiedRestricted=!!policy.occupied&&!st.occupied,
+              insufficient=gold3212<policy.cost,
+              noTroops=!!policy.troops&&troops3230[0]<policy.troops+5;
+        const disabled=active||cooldown>0||occupiedRestricted||insufficient||noTroops;
+        let status=active?'Activa · '+remaining+' s restantes':
+          cooldown>0?'Espera · '+cooldown+' s':
+          occupiedRestricted?'Solo en ciudad ocupada':
+          insufficient?'Falta oro':noTroops?'Faltan tropas':'Disponible';
+        html+='<div class="sysGovPolicy0386">'+
+          '<div><b>'+escape(policy.name)+'</b><p>'+escape(guide[key]||'Medida de gobierno local.')+'</p>'+
+          '<small>'+escape(status)+'</small></div>'+
+          '<button data-gov-action0386="'+escape(key)+'" '+(disabled?'disabled':'')+'>'+
+            escape('Aplicar · '+policy.cost+' oro'+(policy.troops?' + '+policy.troops+' tropas':''))+'</button></div>';
+      }
+      html+='</div>';
+    }
+    html+='</div>';
+    host.innerHTML=html;
+  }
+
   function militaryCard(){
     if(!started3230){
       host.innerHTML='<div class="sysBlock3213"><b>Militar</b><p>Inicia una partida para consultar tropas y frentes.</p></div>';
@@ -215,6 +284,10 @@
   renderSystems3220=function(){
     const tab=typeof sysTab3220==='string'?sysTab3220:'dip';
     const rememberedScroll=lastTab===tab?host.scrollTop:0;
+    if(tab==='government'){
+      governmentCard0386();decorateNew();host.scrollTop=rememberedScroll;lastTab=tab;
+      return;
+    }
     if(tab==='military'){
       militaryCard();decorateNew();host.scrollTop=rememberedScroll;lastTab=tab;
       return;
@@ -235,16 +308,18 @@
   const baseOpen=openSystems3220;
   openSystems3220=function(tab='dip'){
     const out=baseOpen.apply(this,arguments);
-    if(tab==='military'){
-      sysTab3220='military';
+    if(tab==='military'||tab==='government'){
+      sysTab3220=tab;
       renderSystems3220();
     }
     return out;
   };
-  panel.querySelector('[data-tab="military"]')?.addEventListener('click',()=>{
-    sysTab3220='military';
-    renderSystems3220();
-  });
+  for(const tab of ['military','government']){
+    panel.querySelector('[data-tab="'+tab+'"]')?.addEventListener('click',()=>{
+      sysTab3220=tab;
+      renderSystems3220();
+    });
+  }
 
   host.addEventListener('input',e=>{
     if(e.target.matches('[data-embassy-search]')){
@@ -261,8 +336,18 @@
       updateEmbassyActions();
     }
     if(e.target.matches('[data-hub-sea-port]'))maritimePort=Number(e.target.value);
+    if(e.target.matches('[data-gov-city0386]')){
+      governmentCity0386=Number(e.target.value);
+      governmentCard0386();decorateNew();
+    }
   });
   host.addEventListener('click',e=>{
+    const gov=e.target.closest?.('[data-gov-action0386]');
+    if(gov){
+      const cell=governmentCity0386,order=gov.dataset.govAction0386;
+      if(nationApi()?.governmentAction?.(cell,order,0))renderSystems3220();
+      return;
+    }
     const b=e.target.closest?.('[data-hub-action]');
     if(!b)return;
     const action=b.dataset.hubAction;
@@ -304,6 +389,9 @@
       }
       return;
     }
+    if(action==='gov-order'){
+      return;
+    }
     if(action==='military-naval'){switchTab('naval');return}
     if(action==='military-dossier'){
       nationApi()?.dossier?.(Number(b.dataset.faction),'military');return;
@@ -314,6 +402,31 @@
       closeSystems3220();button.click();
     }
   });
+
+  // Acceso contextual desde una ciudad propia: abre Gobierno ya centrado en ella.
+  const baseClassicGov0386=buildClassicActions3246;
+  buildClassicActions3246=function(ctx){
+    const actions=baseClassicGov0386.apply(this,arguments);
+    if(ctx?.kind==='cell'&&Number.isInteger(ctx.cell)&&ctx.cell>=0&&
+        ctx.own&&cities3212.has(ctx.cell)&&!actions.some(a=>a.id==='government_city_0386')){
+      actions.push(classicAction3246('government_city_0386','GOBIERNO LOCAL','🏛️',
+        'ESTABILIDAD · ABASTECIMIENTO',true,''));
+    }
+    return actions;
+  };
+  const baseCtxGov0386=handleContextAction3244;
+  handleContextAction3244=function(id){
+    if(id==='government_city_0386'){
+      const cell=uiInteractionState3244?.contextData?.cell;
+      if(Number.isInteger(cell)&&cities3212.has(cell)&&owner6[cell]===0){
+        governmentCity0386=cell;
+        closeContextDialog3244();
+        openSystems3220('government');
+      }
+      return;
+    }
+    return baseCtxGov0386.apply(this,arguments);
+  };
 
   // Stable3 es el ÚNICO gestor del movimiento del diálogo Sistemas.
   // Recentrar también actualiza su posición guardada, sin perder el anclaje
@@ -341,9 +454,9 @@
 
   window.HexategosSystemsUI03851={
     version:BUILD,
-    getState:()=>({tab:lastTab,embassyOpen,embassySelected,maritimePort}),
+    getState:()=>({tab:lastTab,embassyOpen,embassySelected,maritimePort,governmentCity:governmentCity0386}),
     refresh:()=>renderSystems3220()
   };
   window.HEXATEGOS_VERSION=BUILD;
-  console.info('[HEXATEGOS] 0.38.5.2 · posición recuperable y Sistemas movible');
+  console.info('[HEXATEGOS] 0.38.6 · Gobierno nacional y gestión silenciosa de avisos');
 })();
