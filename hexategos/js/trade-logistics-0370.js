@@ -65,7 +65,11 @@
   // ni reconstruir el grafo logístico al conquistar una casilla.
   let geoProductionIterator0383=null;
   let geoNodeCounts0383=new Uint16Array(FACTIONS3230.length);
-  const GEO_PRODUCTION_BATCH0383=160;
+  // 0.38.4: el trabajo geográfico comparte presupuesto con el render.
+  // Se procesan pocas ciudades/nodos por ciclo y se continúa en el siguiente.
+  const GEO_PRODUCTION_BATCH0383=48;
+  const GEO_REFRESH_BUDGET_MS0384=1.4;
+  let geoRefreshMs0384=0,geoRefreshedNodes0384=0;
 
   let navalPathBucket0371=-1;
   let navalPathUsed0371=0;
@@ -730,9 +734,16 @@
   }
 
   function refreshGeoProduction0383(snap){
-    if(!window.HexategosResourceStrategy0383?.nationalPotential||!resourceNodes03720.size)return;
+    const strategy=window.HexategosResourceStrategy0383;
+    if(!strategy?.nationalPotential||!resourceNodes03720.size||!snap?.territory)return;
     if(!geoProductionIterator0383)geoProductionIterator0383=resourceNodes03720.values();
-    for(let i=0;i<GEO_PRODUCTION_BATCH0383;i++){
+    const t0=performance.now(),limit=activeFactionCount3230>=350?24:
+      activeFactionCount3230>=250?32:GEO_PRODUCTION_BATCH0383;
+    let completed=0;
+    // Perfil rápido: no recrea cinco vectores, no vuelve a preguntar terreno,
+    // no inspecciona puertos/ciudades y no fuerza snapshots completos.
+    for(let i=0;i<limit;i++){
+      if(i>=8&&(i&7)===0&&performance.now()-t0>=GEO_REFRESH_BUDGET_MS0384)break;
       let item=geoProductionIterator0383.next();
       if(item.done){
         geoProductionIterator0383=resourceNodes03720.values();
@@ -742,10 +753,18 @@
       const n=item.value;
       if(n.f<0||owner6[n.cell]!==n.f)continue;
       const count=Math.max(1,geoNodeCounts0383[n.f]||1);
-      const profile=resourceNodeProfile03720(n.cell,n.f,count,snap);
-      // No tocar stock, logística, demanda ni niveles industriales.
-      n.prod[0]=profile.prod[0];n.prod[1]=profile.prod[1];n.prod[2]=profile.prod[2];
+      const regional=Math.max(1,snap.territory[n.f]||1)/count;
+      const geo=n.geo||terrainResourceProfile0382(n.cell);
+      const country=strategy.nationalPotential(n.f);
+      const blend=(v,r)=>clamp(country?.[r]!=null?country[r]*.72+v*.28:v,.18,2.2);
+      const urban=n.city?.018*(.55+(n.urbanWeight||0)*.23):0;
+      n.prod[0]=urban+regional*.00072*blend(geo.food,0);
+      n.prod[1]=regional*.00056*blend(geo.raw,1);
+      n.prod[2]=regional*.00025*blend(geo.fuel,2);
+      completed++;
     }
+    geoRefreshMs0384=performance.now()-t0;
+    geoRefreshedNodes0384=completed;
   }
 
   function resourceTick03720(force=false){
@@ -755,7 +774,7 @@
     dt=clamp(dt,.1,8);resourceLastCampaign03720=now;
     ensureResourceNodes03720(force);
     // Incremental: hasta 160 nodos por tick comercial; no hay scan global.
-    refreshGeoProduction0383(ensureEconomySnapshot3261(false));
+    refreshGeoProduction0383(economySnapshot3261||ensureEconomySnapshot3261(false));
 
     // Producción / consumo local.
     for(const n of resourceNodes03720.values()){
@@ -2536,6 +2555,9 @@
       goods:Math.round(goodsCache[0]||0),
       performance:{
         lastTickMs:Number(lastTickMs.toFixed(2)),
+        resourceTickMs:Number(resourceTickMs03720.toFixed(2)),
+        geoRefreshMs:Number(geoRefreshMs0384.toFixed(2)),
+        geoRefreshedNodes:geoRefreshedNodes0384,
         roadBuildMs:Number(roadBuildMs.toFixed(2)),
         routeEvals,seaSearches,trafficDrawn
       }
