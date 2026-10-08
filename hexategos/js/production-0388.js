@@ -3,9 +3,12 @@
    Una instalación explota como máximo 7 hexágonos; inventario material
    concentrado en nodos, nunca un objeto de producción por celda. */
 (() => {
-  const VERSION='0.38.10';
+  const VERSION='0.38.11';
   const SAVE_KEY='hexategos.production.0388';
-  const MAX_SITES=3200,MAX_PER_NATION=18;
+  const MAX_SITES=5600,AI_RESERVED_FOR_PLAYER=160,MAX_PLAYER_SITES=160,MAX_PER_CELL=3;
+  const MAX_PER_NATION=18;
+  const aiSiteLimit=()=>activeFactionCount3230>=350?9:activeFactionCount3230>=200?12:MAX_PER_NATION;
+  const nationLimit=f=>f===0?MAX_PLAYER_SITES:aiSiteLimit();
   const TYPES={
     oil:     {name:'Pozo de petróleo', icon:'🛢',sector:'energy',   group:'extract',material:'oil', cost:100},
     gas:     {name:'Pozo de gas',       icon:'🔥',sector:'energy',   group:'extract',material:'gas', cost:100},
@@ -29,7 +32,7 @@
   const TYPE_SALTS=Object.fromEntries(rawTypes.map(kind=>[
     kind,[...kind].reduce((h,c)=>Math.imul(h^c.charCodeAt(0),16777619)>>>0,2166136261)]));
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-  const sites=new Map(),depots=new Map(),sectorPct=new Map(),nextAI=new Float64Array(FACTIONS3230.length);
+  const sites=new Map(),perCell=new Map(),nationCounts=new Map(),depots=new Map(),sectorPct=new Map(),nextAI=new Float64Array(FACTIONS3230.length);
   let revision=1, aiCursor=1, lastStats={produced:0,processed:0,shipped:0,disconnected:0,sites:0};
   let loadedPortable=null;
   const api=()=>window.HexategosTradeLogistics0370;
@@ -81,7 +84,36 @@
     const strategic=role==='growth'||mind==='trader'?.12:role==='aggressive'?-.05:0;
     return f===0?1:clamp(baseline+strategic,.55,1.16);
   }
-  function countNation(f){let n=0;for(const s of sites.values())if(s.f===f)n++;return n}
+  const siteKey=(cell,kind)=>String(cell)+':'+kind;
+  const sitesOnCell=cell=>perCell.get(Number(cell))||[];
+  const countNation=f=>nationCounts.get(Number(f))||0;
+  function trackNation(f,change){const n=(nationCounts.get(f)||0)+change;if(n>0)nationCounts.set(f,n);else nationCounts.delete(f)}
+  function addSite(s){
+    const key=siteKey(s.cell,s.kind);
+    if(sites.has(key))return false;
+    sites.set(key,s);
+    if(!perCell.has(s.cell))perCell.set(s.cell,[]);
+    perCell.get(s.cell).push(s);trackNation(s.f,1);
+    return true;
+  }
+  function siteById(id){
+    const key=String(id);
+    return sites.get(key)||((Number.isInteger(Number(id))&&!key.includes(':'))?sitesOnCell(Number(id))[0]:null);
+  }
+  function availability(f,cell,kind,charge=true){
+    const def=TYPES[kind];
+    if(!def)return {ok:false,reason:'Instalación desconocida'};
+    if(!Number.isInteger(cell)||cell<0||cell>=owner6.length||owner6[cell]!==f)
+      return {ok:false,reason:'Territorio no controlado'};
+    if(sites.has(siteKey(cell,kind)))return {ok:false,reason:'Ya construida en este hexágono'};
+    if(sitesOnCell(cell).length>=MAX_PER_CELL)return {ok:false,reason:'Máximo de '+MAX_PER_CELL+' especializadas en este hexágono'};
+    if(countNation(f)>=nationLimit(f))return {ok:false,reason:'Límite nacional de '+nationLimit(f)+' instalaciones'};
+    if(sites.size>=(f===0?MAX_SITES:MAX_SITES-AI_RESERVED_FOR_PLAYER))
+      return {ok:false,reason:'Capacidad global de simulación alcanzada'};
+    const money=f===0?gold3212:botGold3230[f];
+    if(charge&&money<def.cost+(f===0?0:45))return {ok:false,reason:'Faltan '+Math.ceil(def.cost+(f===0?0:45)-money)+' de oro'};
+    return {ok:true,reason:'Disponible'};
+  }
   function connect(cell,f){
     const road=api()?.roadComponent;
     if(!road)return -1;
@@ -94,25 +126,25 @@
   }
   function build(f,cell,kind,charge=true){
     const def=TYPES[kind],isPlayer=f===0;
-    if(!def||!Number.isInteger(cell)||cell<0||cell>=owner6.length||owner6[cell]!==f||
-       sites.has(cell)||sites.size>=MAX_SITES||countNation(f)>=MAX_PER_NATION)return false;
+    if(!availability(f,cell,kind,charge).ok)return false;
     const price=def.cost;
     if(charge){
       if(isPlayer){if(gold3212<price)return false;gold3212-=price}
       else {if(botGold3230[f]<price+45)return false;botGold3230[f]-=price}
     }
     const s={cell,f,kind,level:1,pct:100,stock:0,output:0,potential:def.group==='extract'?potential(cell,f,kind):1,updated:campaignSeconds3230||0};
-    sites.set(cell,s);revision++;
+    if(!addSite(s))return false;
+    revision++;
     return true;
   }
   function upgrade(cell){
-    const s=sites.get(cell);if(!s||s.f!==0||s.level>=5)return false;
+    const s=siteById(cell);if(!s||s.f!==0||s.level>=5)return false;
     const cost=TYPES[s.kind].cost*(s.level+1);
     if(gold3212<cost)return false;
     gold3212-=cost;s.level++;revision++;return true;
   }
   function setPct(cell,pct){
-    const s=sites.get(Number(cell));
+    const s=siteById(cell);
     if(!s||s.f!==0)return false;
     s.pct=clamp(Math.round(Number(pct)||0),0,100);
     return true;
@@ -143,7 +175,7 @@
     // Capturas y pérdida de instalaciones: no se reconstruye el mapa entero.
     for(const s of sites.values()){
       const owner=owner6[s.cell];
-      if(owner>=0&&owner!==s.f){s.f=owner;s.stock*=.5;s.pct=75;s.updated=-1e9;revision++}
+      if(owner>=0&&owner!==s.f){trackNation(s.f,-1);s.f=owner;trackNation(s.f,1);s.stock*=.5;s.pct=75;s.updated=-1e9;revision++}
       if(owner<0||owner!==s.f)continue;
       const n=nodes.get(s.cell);
       if(!n)continue;
@@ -269,7 +301,7 @@
     const now=campaignSeconds3230||0;
     if(now<nextAI[f])return;
     nextAI[f]=now+44+(f%11)*6;
-    if(botGold3230[f]<150||countNation(f)>=MAX_PER_NATION)return;
+    if(botGold3230[f]<150||countNation(f)>=nationLimit(f))return;
     const own=[...sites.values()].filter(s=>s.f===f);
     const summary=api()?.resourceSummaryCached?.(f);
     const coverage=summary?.coverage||[.5,.5,.5];
@@ -296,7 +328,7 @@
     const step=Math.max(1,Math.ceil(sample.length/10));
     for(let i=0;i<sample.length&&cells.length<12;i+=step)cells.push(sample[i]);
     for(const cell of cells){
-      if(!Number.isInteger(cell)||owner6[cell]!==f||sites.has(cell))continue;
+      if(!Number.isInteger(cell)||owner6[cell]!==f||sitesOnCell(cell).length>=MAX_PER_CELL)continue;
       const road=connect(cell,f);
       // Preferimos nodos conectados, no colonizamos el mapa de iconos.
       const logistics=road>=0?1.38:.48;
@@ -304,15 +336,15 @@
         const type=TYPES[kind],p=potential(cell,f,kind);
         const need=pressure[type.sector]||.2;
         const value=p*(.72+need*1.35)*logistics;
-        if(value>score&&botGold3230[f]>type.cost+65){score=value;choice={cell,kind}}
+        if(value>score&&availability(f,cell,kind,true).ok&&botGold3230[f]>type.cost+65){score=value;choice={cell,kind}}
       }
       for(const kind of factoryNeeds){
         const type=TYPES[kind];
         const value=(road>=0?2.7:.28)*(role==='growth'?1.25:1);
-        if(value>score&&botGold3230[f]>type.cost+65){score=value;choice={cell,kind}}
+        if(value>score&&availability(f,cell,kind,true).ok&&botGold3230[f]>type.cost+65){score=value;choice={cell,kind}}
       }
     }
-    if(choice&&score>.35&&sites.size<MAX_SITES&&build(f,choice.cell,choice.kind,true)){
+    if(choice&&score>.35&&build(f,choice.cell,choice.kind,true)){
       nextAI[f]=now+70+(f%13)*6;
       return;
     }
@@ -339,13 +371,14 @@
       depots:[...depots],sectors:[...sectorPct]};
   }
   function restore(data){
-    sites.clear();depots.clear();sectorPct.clear();revision++;aiCursor=1;nextAI.fill(0);
+    sites.clear();perCell.clear();nationCounts.clear();depots.clear();sectorPct.clear();revision++;aiCursor=1;nextAI.fill(0);
     if(!data||!Array.isArray(data.sites))return;
     for(const x of data.sites.slice(0,MAX_SITES)){
       if(!x||!TYPES[x.kind]||!Number.isInteger(x.cell)||x.cell<0||x.cell>=owner6.length)continue;
       const f=owner6[x.cell];
       if(f<0)continue;
-      sites.set(x.cell,{cell:x.cell,f,kind:x.kind,level:clamp(Math.trunc(x.level||1),1,5),
+      if(sitesOnCell(x.cell).length>=MAX_PER_CELL)continue;
+      addSite({cell:x.cell,f,kind:x.kind,level:clamp(Math.trunc(x.level||1),1,5),
         pct:clamp(Number(x.pct??100),0,100),stock:clamp(Number(x.stock)||0,0,325),
         output:Math.max(0,Number(x.output)||0),potential:potential(x.cell,f,x.kind),
         updated:campaignSeconds3230||0});
@@ -632,9 +665,9 @@
     ctx.restore();return out;
   };
   window.HexategosProduction0388={
-    version:VERSION,types:TYPES,cells:()=>sites.keys(),revision:()=>revision,tick,
+    version:VERSION,types:TYPES,cells:()=>perCell.keys(),revision:()=>revision,tick,
     sites:()=>[...sites.values()].map(s=>({...s})),sector:(f,s)=>sec(f,s),
-    build,upgrade,setPct,setSector,potential,efficiency,
+    build,upgrade,setPct,setSector,potential,efficiency,availability,sitesOnCell:cell=>sitesOnCell(cell).map(s=>({...s})),
     stats:()=>({...lastStats}),validate:()=>{
       const errors=[];for(const s of sites.values())if(!TYPES[s.kind]||s.cell<0)errors.push('instalación inválida');
       return {ok:!errors.length,errors,stats:lastStats};
