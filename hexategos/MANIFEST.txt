@@ -1,3 +1,43 @@
+HEXATEGOS_0_37_21
+
+Mapa de suministro material:
+- resourceComponentCoverage03721
+- materialCoverageForCell03721
+- materialSupplyScore03721
+- materialSupplyDetail03721
+- baseSupplyPct03721
+- override supplyPct3220
+- override drawSupply3230
+- supplyClass03721
+- RESOURCE_SUPPLY_COLORS03721
+
+Leyenda:
+- abastecido >= 75
+- tensión 55..74
+- bajo 35..54
+- crítico < 35
+
+UI:
+- contexto de mapa con material + recursos críticos
+- panel Suministro seleccionado
+- supplyResourceGrid03721
+
+API:
+- HexategosTradeLogistics0370.materialSupply(cell)
+- HexategosTradeLogistics0370.combinedSupply(cell)
+
+Rendimiento:
+- cobertura por componente cacheada
+- sin nuevos timers
+- sin pathfinding por frame
+
+Pruebas:
+- tests/smoke-03721.mjs
+
+Rama de seguridad:
+- backup/hexategos-0.37.20-before-material-supply-map-03721
+
+--- MANIFEST ANTERIOR ---
 HEXATEGOS_0_37_20
 
 Economía material:
