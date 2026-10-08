@@ -4,10 +4,30 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.38.3',
+      date:'Octubre 2026',
+      title:'IA con objetivos económicos territoriales',
+      current:true,
+      summary:'El valor de la geografía deja de ser un dato pasivo: la IA busca tierras productivas cuando tiene escasez, conecta proveedores reales y evalúa sectores mineros y energéticos sin saltarse seguridad, distancias ni diplomacia.',
+      changes:[
+        'La planificación militar considera alimentos, materias primas y combustible de cada hexágono según el déficit material nacional.',
+        'En neutralidad se priorizan zonas rentables cercanas; sobre territorio extranjero el incentivo económico se aplica solo cuando ya existe guerra.',
+        'Se pondera la riqueza del terreno al consolidar y expandir corredores comerciales, manteniendo las penalizaciones de montaña y seguridad.',
+        'La IA da prioridad a industrias ubicadas en terreno con buena disponibilidad potencial de materias primas.',
+        'Los proyectos comerciales dan preferencia a proveedores efectivos de recursos que la nación necesita.',
+        'La producción territorial usa una media de muestras geográficas nacionales y se actualiza de manera incremental en los nodos económicos.',
+        'Las anomalías geológicas se agrupan por áreas contiguas, evitando recursos aleatorios incoherentes entre hexágonos vecinos.',
+        'Nueva acción RECURSOS · POTENCIAL ECONÓMICO en el contexto de cada hexágono: potencial productivo y necesidad nacional.',
+        'En territorios extranjeros la precisión geológica visible depende del nivel de inteligencia.',
+        'Cálculo limitado por cachés, muestras y lotes pequeños, sin añadir timers ni barridos mundiales nuevos.',
+        'Se corrige además una secuencia de saltos de línea literales que interfería con los recursos CSS y JS cargados desde index.html.'
+      ]
+    },
+    {
       version:'0.38.2',
       date:'Octubre 2026',
       title:'Economía geográfica, peso urbano y proveedores',
-      current:true,
+      current:false,
       summary:'Los recursos primarios dejan de depender solo del tamaño territorial: el terreno y la geología regional modifican producción, las ciudades adquieren peso urbano y Comercio incorpora un buscador de proveedores basado en conocimiento real.',
       changes:[
         'Llanuras y zonas mediterráneas favorecen alimentos; bosques y montañas favorecen materias primas; desiertos y estepas pueden favorecer combustible.',
