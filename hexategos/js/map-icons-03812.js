@@ -54,7 +54,7 @@
     const angle=Math.atan2(dy,dx);
     // Aproximación al borde común tierra/mar (mitad del tramo centro-centro).
     // El mínimo deja visibles el puerto y la ciudad en zoom intermedio.
-    const shore=Math.max(19,Math.min(125,len/count*.49));
+    const shore=Math.max(22,Math.min(125,len/count*.49));
     return {x:point[0]+Math.cos(angle)*shore,
       y:point[1]+Math.sin(angle)*shore,angle,shore};
   }
@@ -83,7 +83,7 @@
     const shore=hasPort?portPosition(cell,point):null;
     if(hasPort&&shore)coords.set('port',[shore.x,shore.y]);
     else if(hasPort)roles.push('port');
-    const central=!city&&!cap&&!hasPort&&roles.length?roles.shift():null;
+    const central=!city&&roles.length?roles.shift():null;
     if(central)coords.set(central,[point[0],point[1]]);
     const n=roles.length,hasShore=!!shore;
     const r=hasShore?Math.max(24,22+n*5.2):Math.max(21,20+n*3.6);
