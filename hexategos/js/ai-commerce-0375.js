@@ -165,8 +165,9 @@
         continue;
       }
       const pair=borderPair0375(f,o);if(!pair)continue;
-      let priority=(pair.otherRoad?42:0)+(mindset==='commercial'?15:0)+(role==='growth'?10:0)+(o===0?3:0)-pair.score*.02;
-      if(!best||priority>best.priority)best={o,pair,priority};
+      const opportunity=window.HexategosResourceStrategy0383?.tradeOpportunity?.(f,o)||0;
+      let priority=(pair.otherRoad?42:0)+(mindset==='commercial'?15:0)+(role==='growth'?10:0)+(o===0?3:0)-pair.score*.02+opportunity*4;
+      if(!best||priority>best.priority)best={o,pair,priority,opportunity};
     }
     if(!best)return false;
     if(!best.pair.otherRoad&&mindset!=='commercial'&&role!=='growth'&&best.priority<3)return false;
@@ -235,6 +236,7 @@
       const supply=aiLocalSupply3260(f,c);if(supply<25)continue;
       let sc=supply*.05+Math.min(5,d*.22)+aiRoadDegree3260(c)*2.2;
       if(tk==='plain'||tk==='mediterranean'||tk==='forest')sc+=1;
+      sc+=Math.min(2.2,(window.HexategosResourceStrategy0383?.priority?.(f,c)||0)*.28);
       if(sc>bestScore){bestScore=sc;best=c}
     }
     if(best<0)return false;
@@ -259,7 +261,8 @@
       const supply=aiLocalSupply3260(f,c);if(supply<28)continue;
       let d=999;for(const x of aiSnapshot3260?.industries?.[f]||[])d=Math.min(d,angularHeuristic3254(c,x));
       if(d<1.8)continue;
-      const sc=supply*.055+aiRoadDegree3260(c)*1.9+(cityLevel3230[c]||0)*2.2+(ports3212.has(c)?1.2:0)+Math.min(3,d*.18);
+      const raw=window.HexategosResourceStrategy0383?.geography?.(c)?.vector?.[1]||1;
+      const sc=supply*.055+aiRoadDegree3260(c)*1.9+(cityLevel3230[c]||0)*2.2+(ports3212.has(c)?1.2:0)+Math.min(3,d*.18)+Math.min(2.6,Math.max(0,raw-.6)*1.8);
       if(sc>bestScore){bestScore=sc;best=c}
     }
     if(best<0)return false;
