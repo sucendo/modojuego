@@ -606,7 +606,7 @@
     const mix=(v,r)=>clamp(nation?.[r]!=null?(nation[r]*.72+v*.28):v,.18,2.2);
     prod[0]+=regional*.00072*mix(geo.food,0);
     prod[1]+=regional*.00056*mix(geo.raw,1);
-    prod[2]+=regional*.00025*mix(geo.fuel,2);
+    prod[2]+=regional*.00105*mix(geo.fuel,2);
 
     return {cap,prod,demand,city,ind,port,capital,hub,urbanWeight,geo};
   }
@@ -783,7 +783,7 @@
       const urban=n.city?.018*(.55+(n.urbanWeight||0)*.23):0;
       n.prod[0]=urban+regional*.00072*blend(geo.food,0);
       n.prod[1]=regional*.00056*blend(geo.raw,1);
-      n.prod[2]=regional*.00025*blend(geo.fuel,2);
+      n.prod[2]=regional*.00105*blend(geo.fuel,2);
       completed++;
     }
     geoRefreshMs0384=performance.now()-t0;
