@@ -48,6 +48,19 @@ assert.equal(exp.api.inspect().routes,1);
 assert.equal(exp.api.inspect().industrySites,1);
 window.HexategosProduction0388.snapshot=()=>null;
 assert.throws(()=>exp.exportFile(),/Exportación incompleta/,'never export silent incomplete files');
+window.HexategosProduction0388.snapshot=()=>industries;
+const warned=[];
+const saveHarness=new Function(
+  'window','fnv1a3273','buildPortableFile3275','saveGame3212',
+  'started3230','SAVE_KEY3230','owner6','campaignSeconds3230',
+  'localStorage','toast','setTimeout',
+  integrityCode+';return {save:saveGame3212,diagnostic:window.HexategosSaveIntegrity03827.inspect};'
+)(window,hash,()=>({payload:{main:{owner:[0,0]}}}),()=>{},true,'missingMainKey',
+  [0,0],41,localStorage,text=>warned.push(text),cb=>cb());
+saveHarness.save();
+assert.ok(saveHarness.diagnostic().mainError,'main save failure must be detected');
+assert.ok(warned.some(x=>x.includes('NO se ha guardado')),'player should see explicit save failure');
+
 assert.match(tradeCode,/read0370\(\)/,'trade must read compact or legacy route saves');
 assert.match(tradeCode,/lastPeriodicSaveWall03827/,'automatic trade routes must be persisted');
 assert.match(tradeCode,/snapshot:serialize0370/,'trade export must read live routes');
