@@ -25,12 +25,14 @@
     smelter: {name:'Metalurgia',        icon:'🏭',sector:'manufacturing',group:'factory',inputs:['copper'],electricity:.13,output:1,cost:135},
     sawmill: {name:'Aserradero',        icon:'🏭',sector:'manufacturing',group:'factory',inputs:['timber'],output:1,cost:105},
     cement:  {name:'Cementera',         icon:'🏭',sector:'manufacturing',group:'factory',inputs:['quarry'],output:1,cost:120},
-    foodplant:{name:'Industria alimentaria',icon:'🏭',sector:'manufacturing',group:'factory',inputs:['crops','livestock'],inputMode:'any',output:0,cost:115},
+    foodplant:{name:'Industria alimentaria',icon:'🏭',sector:'manufacturing',group:'factory',inputs:['crops','livestock','dairy'],inputMode:'any',output:0,cost:115},
+    fiberworks:{name:'Hilandería',icon:'🧶',sector:'manufacturing',group:'factory',inputs:['plantfiber','wool'],inputMode:'any',output:3,cost:110},
+    tannery:{name:'Curtiduría',icon:'🟤',sector:'manufacturing',group:'factory',inputs:['hides'],output:3,cost:105},
     thermal:{name:'Central termoeléctrica',icon:'⚡',sector:'energy',group:'power',inputs:['coal','fuel','gasfuel'],inputMode:'any',output:2,cost:175},
     civilian:{name:'Manufactura civil',icon:'📦',sector:'manufacturing',group:'manufacture',inputs:['steel','lumber'],output:3,cost:155},
     machinery:{name:'Industria de maquinaria',icon:'⚙️',sector:'manufacturing',group:'manufacture',inputs:['steel','copperref'],output:3,cost:200},
-    arms:{name:'Industria armamentística',icon:'🛡️',sector:'manufacturing',group:'manufacture',inputs:['steel','copperref'],output:4,cost:230},
-    textile:{name:'Industria textil',icon:'🧵',sector:'manufacturing',group:'manufacture',inputs:['crops','livestock'],inputMode:'any',output:3,cost:120},
+    arms:{name:'Industria armamentística',icon:'🛡️',sector:'manufacturing',group:'manufacture',inputs:['steel','copperref','machinerygoods'],output:4,cost:230},
+    textile:{name:'Industria textil',icon:'🧵',sector:'manufacturing',group:'manufacture',inputs:['textilebase','leather'],inputMode:'any',output:3,cost:120},
     chemical:{name:'Industria química',icon:'⚗️',sector:'manufacturing',group:'manufacture',inputs:['fuel','gasfuel'],inputMode:'any',output:3,cost:195},
     electronics:{name:'Industria electrónica',icon:'🔌',sector:'manufacturing',group:'manufacture',inputs:['copperref','steel'],output:3,cost:215}
   };
@@ -41,11 +43,12 @@
     {name:'Industria de armamento nuclear',note:'Pendiente de tecnología nuclear y cadena estratégica'},
     {name:'Arsenal de misiles',note:'Pendiente de investigación de misiles y sistemas de lanzamiento'}
   ];
-  const PROCESSED={refinery:'fuel',gasplant:'gasfuel',steel:'steel',smelter:'copperref',sawmill:'lumber',cement:'cement'};
-  const RESOURCE_PRODUCT_LABELS={fuel:'Combustible refinado',gasfuel:'Gas procesado',steel:'Acero',copperref:'Cobre refinado',lumber:'Madera elaborada',cement:'Cemento'};
-  const MATERIAL_KEYS=['oil','gas','coal','iron','copper','timber','quarry','crops','livestock',...Object.values(PROCESSED)];
-  const industryStage=t=>t.group==='extract'?1:t.group==='power'?3:t.electricity?4:t.group==='factory'?2:5;
-  const RECIPE={oil:'refinery',gas:'gasplant',coal:'thermal',iron:'steel',copper:'smelter',timber:'sawmill',quarry:'cement',crops:'foodplant',livestock:'foodplant'};
+  const PROCESSED={refinery:'fuel',gasplant:'gasfuel',steel:'steel',smelter:'copperref',sawmill:'lumber',cement:'cement',fiberworks:'textilebase',tannery:'leather',machinery:'machinerygoods'};
+  const RESOURCE_PRODUCT_LABELS={fuel:'Combustible refinado',gasfuel:'Gas procesado',steel:'Acero',copperref:'Cobre refinado',lumber:'Madera elaborada',cement:'Cemento',plantfiber:'Fibras vegetales',dairy:'Leche y lácteos',wool:'Lana',hides:'Pieles',textilebase:'Hilos y tejidos base',leather:'Cuero',machinerygoods:'Maquinaria industrial'};
+  const MATERIAL_KEYS=['oil','gas','coal','iron','copper','timber','quarry','crops','livestock','plantfiber','wool','hides','dairy',...Object.values(PROCESSED)];
+  const DERIVATIVES={crops:{plantfiber:.30},livestock:{dairy:.22,wool:.20,hides:.13}};
+  const industryStage=t=>t.group==='extract'?1:t.group==='power'?3:t.electricity?4:t.group==='factory'?2:t.inputs?.includes('machinerygoods')?6:5;
+  const RECIPE={oil:'refinery',gas:'gasplant',coal:'thermal',iron:'steel',copper:'smelter',timber:'sawmill',quarry:'cement',crops:'foodplant',livestock:'foodplant',plantfiber:'fiberworks',wool:'fiberworks',hides:'tannery',dairy:'foodplant'};
   const rawTypes=Object.keys(TYPES).filter(k=>TYPES[k].group==='extract');
   const TYPE_SALTS=Object.fromEntries(rawTypes.map(kind=>[
     kind,[...kind].reduce((h,c)=>Math.imul(h^c.charCodeAt(0),16777619)>>>0,2166136261)]));
@@ -171,7 +174,7 @@
       if(isPlayer){if(gold3212<price)return false;gold3212-=price}
       else {if(botGold3230[f]<price+45)return false;botGold3230[f]-=price}
     }
-    const s={cell,f,kind,level:1,pct:100,stock:0,output:0,potential:def.group==='extract'?potential(cell,f,kind):1,updated:campaignSeconds3230||0};
+    const s={cell,f,kind,level:1,pct:100,stock:0,byproducts:{},output:0,potential:def.group==='extract'?potential(cell,f,kind):1,updated:campaignSeconds3230||0};
     if(!addSite(s))return false;
     revision++;
     if(isPlayer)persistProduction0388();
@@ -217,7 +220,7 @@
     // Capturas y pérdida de instalaciones: no se reconstruye el mapa entero.
     for(const s of sites.values()){
       const owner=owner6[s.cell];
-      if(owner>=0&&owner!==s.f){const previous=s.f;trackNation(previous,-1,s.kind);s.f=owner;trackNation(s.f,1,s.kind);moveNationSite(s,previous,owner);s.stock*=.5;s.pct=75;s.updated=-1e9;revision++}
+      if(owner>=0&&owner!==s.f){const previous=s.f;trackNation(previous,-1,s.kind);s.f=owner;trackNation(s.f,1,s.kind);moveNationSite(s,previous,owner);s.stock*=.5;for(const key of Object.keys(s.byproducts||{}))s.byproducts[key]*=.5;s.pct=75;s.updated=-1e9;revision++}
       if(owner<0||owner!==s.f)continue;
       const n=nodes.get(s.cell);
       if(!n)continue;
@@ -232,8 +235,28 @@
           s.potential=potential(s.cell,s.f,s.kind);s.updated=now;
         }
         const amount=clamp(s.potential,0,2.6)*.37*s.level*activeFactor(s)*dt;
-        const before=s.stock;s.stock=clamp(s.stock+amount,0,65*s.level);
-        produced+=s.stock-before;
+        const before=s.stock;
+        s.stock=clamp(s.stock+amount,0,65*s.level);
+        const extracted=s.stock-before;
+        // Derivados físicos, obtenidos del mismo volumen extraído: no crear
+        // materias primas gratis ni un inventario por hexágono.
+        if(DERIVATIVES[s.kind]){
+          s.byproducts ||= {};
+          for(const [material,ratio] of Object.entries(DERIVATIVES[s.kind])){
+            const old=Number(s.byproducts[material])||0;
+            const qty=Math.min(extracted*ratio,65*s.level-old);
+            if(qty<=0)continue;
+            s.stock-=qty;s.byproducts[material]=old+qty;
+            if(!g.raw.has(material))g.raw.set(material,[]);
+            g.raw.get(material).push({site:s,product:material});
+          }
+          for(const material of Object.keys(DERIVATIVES[s.kind])){
+            if(!g.raw.has(material))g.raw.set(material,[]);
+            if(!g.raw.get(material).some(x=>x.site===s))
+              g.raw.get(material).push({site:s,product:material});
+          }
+        }
+        produced+=extracted;
         if(!g.raw.has(s.kind))g.raw.set(s.kind,[]);
         g.raw.get(s.kind).push({site:s});
       }else{
@@ -263,16 +286,16 @@
       let remaining=amount,taken=0;
       for(const x of sources){
         if(remaining<=.000001)break;
-        const available=x.site?x.site.stock:x.depot[kind]||0;
+        const available=x.site?(x.product?(x.site.byproducts?.[x.product]||0):x.site.stock):(x.depot[kind]||0);
         const qty=Math.min(available,remaining);
         if(qty<=0)continue;
-        if(x.site)x.site.stock-=qty;else x.depot[kind]-=qty;
+        if(x.site){if(x.product)x.site.byproducts[x.product]-=qty;else x.site.stock-=qty}else x.depot[kind]-=qty;
         taken+=qty;remaining-=qty;
       }
       return taken;
     }
     function available(g,kind){
-      return (g?.raw.get(kind)||[]).reduce((total,x)=>total+(x.site?x.site.stock:x.depot[kind]||0),0);
+      return (g?.raw.get(kind)||[]).reduce((total,x)=>total+(x.site?(x.product?(x.site.byproducts?.[x.product]||0):x.site.stock):(x.depot[kind]||0)),0);
     }
     // La energía eléctrica NO es combustible en almacén. Se genera en
     // centrales durante el ciclo y se distribuye solo en la red conectada.
@@ -443,6 +466,12 @@
         factoryNeeds.add(recipe);
     }
     const ownKinds=new Set(own.map(s=>s.kind));
+    if(ownKinds.has('crops'))ownKinds.add('plantfiber');
+    if(ownKinds.has('livestock'))for(const kind of ['dairy','wool','hides'])ownKinds.add(kind);
+    for(const kind of ['plantfiber','wool','hides']){
+      const recipe=RECIPE[kind];
+      if(ownKinds.has(kind)&&recipe&&!ownKinds.has(recipe))factoryNeeds.add(recipe);
+    }
     const needsElectric=own.some(s=>TYPES[s.kind]?.electricity||TYPES[s.kind]?.group==='manufacture');
     if(needsElectric&&!ownKinds.has('thermal'))factoryNeeds.add('thermal');
     const availableOutputs=new Set(ownKinds);
@@ -515,7 +544,8 @@
   }
   function saveState(){
     return {v:1,sites:[...sites.values()].map(s=>({cell:s.cell,f:s.f,kind:s.kind,
-      level:s.level,pct:s.pct,stock:s.stock,output:s.output})),
+      level:s.level,pct:s.pct,stock:s.stock,output:s.output,
+      byproducts:s.byproducts||{}})),
       depots:[...depots],sectors:[...sectorPct]};
   }
   function restore(data){
@@ -526,7 +556,10 @@
       const f=owner6[x.cell];
       if(f<0)continue;
       if(sitesOnCell(x.cell).length>=MAX_PER_CELL)continue;
-      addSite({cell:x.cell,f,kind:x.kind,level:clamp(Math.trunc(x.level||1),1,5),
+      const byproducts={};
+      if(x.byproducts&&typeof x.byproducts==='object')for(const kind of Object.keys(DERIVATIVES[x.kind]||{}))
+        byproducts[kind]=clamp(Number(x.byproducts[kind])||0,0,325);
+      addSite({cell:x.cell,f,kind:x.kind,byproducts,level:clamp(Math.trunc(x.level||1),1,5),
         pct:clamp(Number(x.pct??100),0,100),stock:clamp(Number(x.stock)||0,0,325),
         output:Math.max(0,Number(x.output)||0),potential:potential(x.cell,f,x.kind),
         updated:campaignSeconds3230||0});
@@ -689,7 +722,7 @@
     const primary=Object.entries(TYPES);
     const groups=[
       {name:'Nivel I · Industrias primarias',tip:'Explotaciones de recursos naturales (hasta siete hexágonos)',kinds:primary.filter(([,d])=>d.group==='extract')},
-      {name:'Nivel II · Transformación y materias elaboradas',tip:'Refino, siderurgia, metalurgia, madera, cemento y alimentos',kinds:primary.filter(([,d])=>d.group==='factory')},
+      {name:'Nivel II · Transformación y materias elaboradas',tip:'Refino, siderurgia, metalurgia, madera, cemento, alimentación, hilados y cuero',kinds:primary.filter(([,d])=>d.group==='factory')},
       {name:'Nivel III · Manufactura y bienes finales',tip:'Bienes civiles, maquinaria, textiles, química y electrónica',kinds:primary.filter(([k,d])=>d.group==='manufacture'&&k!=='arms')},
       {name:'Nivel IV · Electricidad y producción militar',tip:'Centrales térmicas y fabricación de material para el ejército',kinds:primary.filter(([k,d])=>d.group==='power'||k==='arms')}
     ];
