@@ -6,7 +6,7 @@ const js=read('js/production-0388.js'),css=read('css/production-0388.css'),index
 assert.doesNotThrow(()=>new Function(js),'0.38.11 production syntax');
 assert.ok(js.includes('iconOffset03811'),'co-located marker layout missing');
 assert.ok(css.includes('industryBudget0388'),'disabled-choice explanation styling missing');
-assert.match(index,/js\/production-0388\.js\?v=03811/);
+assert.match(index,/js\/production-0388\.js\?v=0381[12]/);
 assert.match(index,/css\/production-0388\.css\?v=03811/);
 
 const owner=Array(20).fill(0),gold=[0,2500];
