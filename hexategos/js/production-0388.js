@@ -207,7 +207,7 @@
     const group=(f,comp,cell)=>{
       const key=groupKey(f,comp,cell);
       let g=groups.get(key);
-      if(!g){g={key,f,raw:new Map(),factories:[],powerNodes:new Set()};groups.set(key,g)}
+      if(!g){g={key,f,raw:new Map(),factories:[],powerNodes:new Set(),electricity:0};groups.set(key,g)}
       return g;
     };
     const conn=new Map();
@@ -272,18 +272,13 @@
     function available(g,kind){
       return (g?.raw.get(kind)||[]).reduce((total,x)=>total+(x.site?x.site.stock:x.depot[kind]||0),0);
     }
-    function availablePower(g){
-      let result=0;
-      for(const node of g.powerNodes)result+=Math.max(0,node.stock[2]||0);
-      return result;
-    }
+    // La energía eléctrica NO es combustible en almacén. Se genera en
+    // centrales durante el ciclo y se distribuye solo en la red conectada.
+    function availablePower(g){return Math.max(0,g?.electricity||0)}
     function consumePower(g,required){
-      let left=required;
-      for(const node of g.powerNodes){
-        if(left<=.000001)break;
-        const qty=Math.min(left,Math.max(0,node.stock[2]||0));
-        node.stock[2]-=qty;left-=qty;
-      }
+      const used=Math.min(availablePower(g),Math.max(0,required));
+      g.electricity-=used;
+      return used;
     }
     // Solo se mueve materia físicamente por rutas existentes entre nodos.
     // Las fábricas receptoras determinan qué mercancía debe viajar.
@@ -337,7 +332,8 @@
       for(const item of g.factories){
         const s=item.site,n=item.node,def=TYPES[s.kind],out=def.output;
         const intermediate=PROCESSED[s.kind]||null;
-        const room=Math.max(0,n.cap[out]-n.stock[out]);
+        const powerStation=def.group==='power';
+        const room=powerStation?Infinity:Math.max(0,n.cap[out]-n.stock[out]);
         const buffer=intermediate?Math.max(0,65*s.level-s.stock):0;
         if(room+buffer<=.000001)continue;
         const sharedLevel=industries3212.has(s.cell)?Math.max(1,industryLevel3230[s.cell]||1):0;
@@ -395,6 +391,13 @@
         // encargadas de generarla. No consumir el stock a nivel de mapa.
         if(def.group==='manufacture')consumePower(g,amount*.12);
         const outputQty=amount*.90;
+        if(powerStation){
+          // Combustible procesado -> electricidad, sin crear combustible extra.
+          g.electricity+=outputQty;
+          s.output+=outputQty;
+          processed+=outputQty;
+          continue;
+        }
         const stored=intermediate?Math.min(buffer,outputQty*.62):0;
         const delivered=Math.min(room,outputQty-stored);
         if(intermediate)s.stock+=stored;
