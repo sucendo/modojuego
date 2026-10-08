@@ -589,6 +589,11 @@
     return true;
   }
 
+  function contextFaction0380(ctx){
+    if(ctx?.kind!=='cell'||!Number.isInteger(ctx.cell)||ctx.cell<0)return -1;
+    return Number(owner6[ctx.cell]);
+  }
+
   function updateQuickNationButton(ctx){
     let b=document.getElementById('nationQuick0380');
     if(!b){
@@ -597,8 +602,9 @@
       sub?.insertAdjacentElement('afterend',b);
       b.addEventListener('click',()=>{const f=Number(b.dataset.faction);if(Number.isInteger(f)&&f>=0)renderNationDossier(f,'dip')});
     }
-    if(ctx?.kind==='cell'&&Number.isInteger(ctx.owner)&&ctx.owner>=0){
-      b.dataset.faction=String(ctx.owner);b.hidden=false;b.textContent='▦ '+(ctx.owner===0?'TU NACIÓN':factionName3230(ctx.owner));
+    const f=contextFaction0380(ctx);
+    if(f>=0){
+      b.dataset.faction=String(f);b.hidden=false;b.textContent='▦ '+(f===0?'TU NACIÓN':factionName3230(f));
     }else b.hidden=true;
   }
 
@@ -606,11 +612,12 @@
   buildClassicActions3246=function(ctx){
     const a=baseClassic0380.apply(this,arguments);
     updateQuickNationButton(ctx);
-    if(ctx?.kind==='cell'&&Number.isInteger(ctx.owner)&&ctx.owner>=0){
+    const f=contextFaction0380(ctx);
+    if(f>=0){
       const id='nation_dossier_0380';
       if(!a.some(x=>x.id===id)){
-        a.push(classicAction3246(id,ctx.owner===0?'TU NACIÓN':'FICHA DE NACIÓN','▦',
-          ctx.owner===0?'ESTADO NACIONAL':'DIPLOMACIA · COMERCIO · INTEL.',true,''));
+        a.push(classicAction3246(id,f===0?'TU NACIÓN':'FICHA DE NACIÓN','▦',
+          f===0?'ESTADO NACIONAL':'DIPLOMACIA · COMERCIO · INTEL.',true,''));
       }
     }
     return a;
@@ -620,8 +627,9 @@
   handleContextAction3244=function(id){
     if(id==='nation_dossier_0380'){
       const ctx=uiInteractionState3244?.contextData;
-      if(ctx?.kind==='cell'&&Number.isInteger(ctx.owner)&&ctx.owner>=0){
-        closeContextDialog3244();renderNationDossier(ctx.owner,'dip');return;
+      const f=contextFaction0380(ctx);
+      if(f>=0){
+        closeContextDialog3244();renderNationDossier(f,'dip');return;
       }
     }
     return baseContext0380.apply(this,arguments);
