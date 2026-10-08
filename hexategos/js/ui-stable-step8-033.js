@@ -158,6 +158,10 @@
     needsRender=true;
     return true;
   }
+  function viewNotice(n,tab,key){
+    if(n&&!n.requestKind){n.read=true;updateBadges()}
+    return viewLocation(n,tab,key);
+  }
   function viewOffer(o){return viewLocation({faction:o.from},tabForOffer(o),'offer-'+o.id)}
   function makeOfferCard(o){
     const art=document.createElement('article');
@@ -241,7 +245,7 @@
       const icon=n.type==='war'?'⚔':n.type==='attack'?'!':n.type==='naval'?'⚓':n.type==='intel'?'🕵':'•';
       const request=pending(n);
       art.innerHTML=`<div class="messageIconStable8">${icon}</div><div class="messageBodyStable8"><b>${request?'SOLICITUD':n.type==='war'?'CONFLICTO':n.type==='attack'?'ATAQUE':'AVISO'}</b><div class="messageTitleStable8">${esc(n.message)}</div><div class="messageActionsStable8"><button type="button" data-view-notice="${n.id}">VER</button>${request?`<button type="button" class="good" data-answer-embassy="accept">ACEPTAR</button><button type="button" data-answer-embassy="reject">RECHAZAR</button>`:`<button data-read-notice="${n.id}">${n.read?'LEÍDO':'ENTENDIDO'}</button>`}<button type="button" data-dismiss-notice="${n.id}" aria-label="Eliminar aviso" title="Eliminar aviso">×</button></div></div>`;
-      art.querySelector('[data-view-notice]')?.addEventListener('click',()=>viewLocation(n,tab,'notice-'+n.id));
+      art.querySelector('[data-view-notice]')?.addEventListener('click',()=>viewNotice(n,tab,'notice-'+n.id));
       art.querySelectorAll('[data-answer-embassy]').forEach(b=>b.addEventListener('click',()=>{
         const accept=b.dataset.answerEmbassy==='accept';
         const ok=window.HexategosStatecraft0380?.answerEmbassyPlayer?.(Number(n.faction),accept);
@@ -328,7 +332,7 @@
         if(o)viewOffer(o);else openMessage(tab,key);
       }else if(key?.startsWith('notice-')){
         const n=notices.find(x=>x.id===Number(key.slice(7)));
-        if(n)viewLocation(n,tab,key);else openMessage(tab,key);
+        if(n)viewNotice(n,tab,key);else openMessage(tab,key);
       }else openMessage(tab,key);
       closePopup(card)
     });
