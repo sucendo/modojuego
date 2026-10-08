@@ -3,7 +3,7 @@
 // HEXATEGOS 0.38.5.1 · Sistemas: embajadas, rutas marítimas, Militar y UX.
 // Reutiliza los motores diplomático, logístico y bélico existentes.
 (() => {
-  const BUILD='0.38.5.1';
+  const BUILD='0.38.5.2';
   const panel=document.getElementById('systemsPanel3213');
   const host=document.getElementById('sysContent3213');
   if(!panel||!host)return;
@@ -345,5 +345,5 @@
     refresh:()=>renderSystems3220()
   };
   window.HEXATEGOS_VERSION=BUILD;
-  console.info('[HEXATEGOS] 0.38.5.1 · Sistemas, embajadas, rutas marítimas y Militar');
+  console.info('[HEXATEGOS] 0.38.5.2 · posición recuperable y Sistemas movible');
 })();
