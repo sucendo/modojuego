@@ -119,6 +119,12 @@
       }else{
         card.dataset.messageKey='offer-'+o.id;
         card.classList.add('messageTargetStable8');
+        if(!card.querySelector('[data-view-offer]')){
+          const actions=card.querySelector('.acts,.messageActionsStable8')||card;
+          const view=document.createElement('button');view.type='button';view.textContent='VER';view.dataset.viewOffer=String(o.id);
+          view.addEventListener('click',e=>{e.preventDefault();viewOffer(o)});
+          actions.prepend(view);
+        }
       }
     }
     [...c.querySelectorAll('.sysBlock3213')].forEach(block=>{
@@ -127,6 +133,32 @@
     });
   }
 
+  // Navegación contextual: primero hexágono explícito; si no, capital de la nación.
+  function locationOf(meta){
+    const cell=Number(meta?.cell);
+    if(Number.isInteger(cell)&&cell>=0&&cell<owner6.length)return cell;
+    const f=Number(meta?.faction??meta?.from);
+    if(Number.isInteger(f)&&f>=0&&f<activeFactionCount3230){
+      const cap=capitals?.[f];
+      if(Number.isInteger(cap)&&cap>=0&&cap<owner6.length)return cap;
+    }
+    return -1;
+  }
+  function viewLocation(meta,tab='dip',key=''){
+    const cell=locationOf(meta);
+    if(cell<0){openMessage(tab,key);return false}
+    if(typeof closeSystems3220==='function')closeSystems3220();
+    if(typeof closeContextDialog3244==='function')closeContextDialog3244();
+    const geo=cellLonLat3302(cell);
+    const coarse=typeof matchMedia==='function'&&matchMedia('(pointer:coarse)').matches;
+    rotateToGeo3243(geo.lon,geo.lat,coarse?7:6);
+    selected={key:MAX_GAME_LEVEL3233,i:cell};
+    if(typeof uiInteractionState3244!=='undefined')uiInteractionState3244.selectedCell=cell;
+    if(typeof updatePanel==='function')updatePanel();
+    needsRender=true;
+    return true;
+  }
+  function viewOffer(o){return viewLocation({faction:o.from},tabForOffer(o),'offer-'+o.id)}
   function makeOfferCard(o){
     const art=document.createElement('article');
     art.className='messageCardStable8 offerStable8';
@@ -138,10 +170,12 @@
         <div class="messageTitleStable8">${esc(offerLabel(o.type))}</div>
         <div class="sysMeta3213">${esc(o.reason||'Propuesta diplomática')} · responde antes de que caduque.</div>
         <div class="messageActionsStable8">
+          <button type="button" data-view-offer="${o.id}">VER</button>
           <button class="good" data-accept-offer="${o.id}">ACEPTAR</button>
           <button data-reject-offer="${o.id}">RECHAZAR</button>
         </div>
       </div>`;
+    art.querySelector('[data-view-offer]')?.addEventListener('click',()=>viewOffer(o));
     art.querySelector('[data-accept-offer]')?.addEventListener('click',()=>{
       if(typeof acceptDiplomaticOffer3300==='function')acceptDiplomaticOffer3300(o.id);
       focusMessageKey='';updateBadges();
@@ -173,7 +207,11 @@
     if(typeof sysTab3220==='undefined'||sysTab3220==='settings')return;
     const tab=sysTab3220;
     const all=notices.filter(n=>tabForNotice(n)===tab);
-    const list=all.slice(0,4);
+    // Las solicitudes pendientes se muestran antes que los avisos ordinarios.
+    const pending=n=>n.requestKind==='embassy'&&
+      window.HexategosStatecraft0380?.embassyStatus?.(0,Number(n.faction))?.status==='pending'&&
+      window.HexategosStatecraft0380?.embassyStatus?.(0,Number(n.faction))?.requestedBy===Number(n.faction);
+    const list=[...all].sort((a,b)=>Number(pending(b))-Number(pending(a))||b.created-a.created).slice(0,4);
     if(!list.length)return;
     const c=document.getElementById('sysContent3213');if(!c)return;
     const block=document.createElement('div');
@@ -192,7 +230,15 @@
       art.className='messageCardStable8 '+(n.read?'readStable8':'');
       art.dataset.messageKey='notice-'+n.id;
       const icon=n.type==='war'?'⚔':n.type==='attack'?'!':n.type==='naval'?'⚓':n.type==='intel'?'🕵':'•';
-      art.innerHTML=`<div class="messageIconStable8">${icon}</div><div class="messageBodyStable8"><b>${n.type==='war'?'CONFLICTO':n.type==='attack'?'ATAQUE':'AVISO'}</b><div class="messageTitleStable8">${esc(n.message)}</div><div class="messageActionsStable8"><button data-read-notice="${n.id}">${n.read?'LEÍDO':'ENTENDIDO'}</button><button type="button" data-dismiss-notice="${n.id}" aria-label="Eliminar aviso" title="Eliminar aviso">×</button></div></div>`;
+      const request=pending(n);
+      art.innerHTML=`<div class="messageIconStable8">${icon}</div><div class="messageBodyStable8"><b>${request?'SOLICITUD':n.type==='war'?'CONFLICTO':n.type==='attack'?'ATAQUE':'AVISO'}</b><div class="messageTitleStable8">${esc(n.message)}</div><div class="messageActionsStable8"><button type="button" data-view-notice="${n.id}">VER</button>${request?`<button type="button" class="good" data-answer-embassy="accept">ACEPTAR</button><button type="button" data-answer-embassy="reject">RECHAZAR</button>`:`<button data-read-notice="${n.id}">${n.read?'LEÍDO':'ENTENDIDO'}</button>`}<button type="button" data-dismiss-notice="${n.id}" aria-label="Eliminar aviso" title="Eliminar aviso">×</button></div></div>`;
+      art.querySelector('[data-view-notice]')?.addEventListener('click',()=>viewLocation(n,tab,'notice-'+n.id));
+      art.querySelectorAll('[data-answer-embassy]').forEach(b=>b.addEventListener('click',()=>{
+        const accept=b.dataset.answerEmbassy==='accept';
+        const ok=window.HexategosStatecraft0380?.answerEmbassyPlayer?.(Number(n.faction),accept);
+        if(ok)dismissNotice(n.id);
+        updateBadges();renderSystems3220();
+      }));
       art.querySelector('[data-read-notice]')?.addEventListener('click',()=>{n.read=true;updateBadges();renderSystems3220()});
       art.querySelector('[data-dismiss-notice]')?.addEventListener('click',()=>{dismissNotice(n.id);renderSystems3220()});
       block.appendChild(art);
@@ -252,7 +298,7 @@
     card.dataset.closing='1';clearTimeout(card._timerStable8);card.classList.add('closingStable8');
     setTimeout(()=>card.remove(),160);
   }
-  function showPopup(type,message,tab,key=''){
+  function showPopup(type,message,tab,key='',meta=null){
     // No mostrar ventanas por cada suceso de la simulación. Las propuestas
     // permanecen en Sistemas con su contador y sus botones de aceptar.
     if(quiet)return;
@@ -266,7 +312,17 @@
     const title=type==='offer'?'PROPUESTA':type==='war'?'DECLARACIÓN DE GUERRA':type==='attack'?'ATAQUE EN CURSO':'AVISO';
     const icon=type==='offer'?'🤝':type==='war'?'⚔':type==='attack'?'!':'•';
     card.innerHTML=`<div class="eventIconStable8">${icon}</div><div class="eventBodyStable8"><b>${title}</b><div>${esc(message)}</div><small>${esc(tabLabel(tab))}</small></div><div class="eventActionsStable8"><button class="viewStable8">VER</button><button class="closeStable8">CERRAR</button></div>`;
-    card.querySelector('.viewStable8')?.addEventListener('click',()=>{openMessage(tab,key);closePopup(card)});
+    card.querySelector('.viewStable8')?.addEventListener('click',()=>{
+      if(meta&&locationOf(meta)>=0)viewLocation(meta,tab,key);
+      else if(key?.startsWith('offer-')){
+        const o=liveOffers().find(x=>x.id===Number(key.slice(6)));
+        if(o)viewOffer(o);else openMessage(tab,key);
+      }else if(key?.startsWith('notice-')){
+        const n=notices.find(x=>x.id===Number(key.slice(7)));
+        if(n)viewLocation(n,tab,key);else openMessage(tab,key);
+      }else openMessage(tab,key);
+      closePopup(card)
+    });
     card.querySelector('.closeStable8')?.addEventListener('click',()=>closePopup(card));
     stack.appendChild(card);card._timerStable8=setTimeout(()=>closePopup(card),DURATION);
   }
@@ -302,12 +358,12 @@
         const o=latestOffer();
         if(o){
           const tab=tabForOffer(o);
-          showPopup('offer',`${factionName3230(o.from)} · ${offerLabel(o.type)}`,tab,'offer-'+o.id);
+          showPopup('offer',`${factionName3230(o.from)} · ${offerLabel(o.type)}`,tab,'offer-'+o.id,{faction:o.from});
           updateBadges();
         }else showPopup('offer',msg,'dip','');
       }else{
         const n=addNotice(type,msg,{tab:'dip'});
-        if(n)showPopup(type,msg,'dip','notice-'+n.id);
+        if(n)showPopup(type,msg,'dip','notice-'+n.id,n);
       }
     }catch(err){console.warn('[HEXATEGOS Stable8 notifications]',err)}
     return v;
@@ -322,8 +378,8 @@
       const result=baseSetRelation.apply(this,arguments);
       if(before!==-1&&v===-1&&a>0&&b===0){
         const msg=`${factionName3230(a)} declara la guerra`;
-        const n=addNotice('war',msg,{tab:'dip'});
-        if(n&&(Date.now()-lastToastWall>350 || lastToastSignature!=='war|'+msg))showPopup('war',msg,'dip','notice-'+n.id);
+        const n=addNotice('war',msg,{tab:'dip',faction:a});
+        if(n&&(Date.now()-lastToastWall>350 || lastToastSignature!=='war|'+msg))showPopup('war',msg,'dip','notice-'+n.id,n);
       }
       return result;
     };
@@ -331,11 +387,11 @@
 
   updateBadges();
   window.HexategosMessagesStable8={
-    show:(message,type='info',tab='dip')=>{
+    show:(message,type='info',tab='dip',meta={})=>{
       const prev=notices.length;
-      const n=addNotice(type,message,{tab});
+      const n=addNotice(type,message,{...meta,tab});
       if(!n)return null;
-      if(notices.length!==prev&&n.repeats==null)showPopup(type,message,tab,'notice-'+n.id);
+      if(notices.length!==prev&&n.repeats==null)showPopup(type,message,tab,'notice-'+n.id,n);
       return n.id;
     },
     open:(tab='dip')=>openSystems3220(tab),
@@ -350,6 +406,7 @@
       for(const n of notices)if(!tab||tabForNotice(n)===tab)n.read=true;
       updateBadges();
     },
+    view:viewLocation,
     dismiss:dismissNotice,
     notices
   };
