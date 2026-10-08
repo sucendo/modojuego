@@ -219,6 +219,10 @@
             {tab:'dip',requestKind:'embassy',faction:pending.f});
       }
     }
+    const c=document.getElementById('sysContent3213');if(!c)return;
+    // Una renderización encadenada puede conservar la tarjeta anterior.
+    // Mantener una sola sección de avisos para la pestaña activa.
+    c.querySelectorAll(':scope > .noticesStable8').forEach(node=>node.remove());
     const all=notices.filter(n=>tabForNotice(n)===tab);
     // Las solicitudes pendientes se muestran antes que los avisos ordinarios.
     const pending=n=>n.requestKind==='embassy'&&
@@ -226,7 +230,6 @@
       window.HexategosStatecraft0380?.embassyStatus?.(0,Number(n.faction))?.requestedBy===Number(n.faction);
     const list=[...all].sort((a,b)=>Number(pending(b))-Number(pending(a))||b.created-a.created).slice(0,4);
     if(!list.length)return;
-    const c=document.getElementById('sysContent3213');if(!c)return;
     const block=document.createElement('div');
     block.className='sysBlock3213 messagesSectionStable8 noticesStable8';
     block.innerHTML=`<div class="messagesHeadStable8"><div><b>🔔 Avisos · ${tabLabel(tab)}</b><div class="sysMeta3213">Registro tranquilo · ${all.length} eventos · máximo 4 visibles</div></div><span>${all.filter(n=>!n.read).length} nuevos</span></div>`;
