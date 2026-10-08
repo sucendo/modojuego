@@ -13,7 +13,8 @@
     ['Valencia',37.8,40.8,-1.7,0.7,'Reino de Valencia'],
     ['Galicia',41.5,44,-10,-6.5,'Reino de Galicia'],
     ['Portugal',36.7,42.4,-10,-6,'Reino de Portugal'],
-    ['Andalucía',35.5,38.8,-7.8,-1.6,'Reino de Andalucía'],
+    ['Andalucía occidental',35.5,38.8,-7.8,-4.0,'Reino de Sevilla'],
+    ['Andalucía oriental',35.5,38.8,-4.0,-1.6,'Reino de Granada'],
     ['Castilla',38.4,43.4,-7.4,-1.8,'Reino de Castilla'],
     ['Escocia',54.3,59.5,-8.6,-1,'Reino de Escocia'],
     ['Gales',51.2,53.8,-5.6,-2.3,'Principado de Gales'],
@@ -51,7 +52,7 @@
   ];
   const originalFactionName=factionName3230;
   const nations=new Map(),cities=new Map(),checked=new Set(),working=new Set();
-  let cityCursor=null,capCursor=0,lastCampaign=-1e9,initialized=false,loadedPortable=null;
+  let cityCursor=null,capCursor=0,lastCampaign=-1e9,generation=0;
   let searches=0,applied=0,failures=0;
   function geo(cell){
     if(!Number.isInteger(cell)||cell<0||cell>=owner6.length)return null;
@@ -131,13 +132,14 @@
     const marker=(isCapital?'c':'t')+':'+cell+':'+f;
     if(working.has(marker)||checked.has(marker))return;
     working.add(marker);
-    const before=capitals?.[f];
+    const before=capitals?.[f],epoch=generation;
     try{
       const atlas=window.HexategosRealCities0354;
       if(!atlas?.suggest)return;
       searches++;
       const result=await atlas.suggest(cell);
-      if(!started3230||owner6[cell]!==f||(isCapital&&capitals?.[f]!==before))return;
+      if(epoch!==generation||!started3230||owner6[cell]!==f||(isCapital&&capitals?.[f]!==before))return;
+      checked.add(marker);
       // Exacta: dentro del hexágono. Cercana: solo cuando está realmente próxima.
       const option=result?.options?.[0];
       if(!option?.name)return;
@@ -177,7 +179,7 @@
     return {v:1,nations:[...nations].map(([f,n])=>[f,n]),cities:[...cities],checked:[...checked]};
   }
   function restore(s){
-    nations.clear();cities.clear();checked.clear();working.clear();
+    nations.clear();cities.clear();checked.clear();working.clear();generation++;
     capCursor=0;cityCursor=null;lastCampaign=-1e9;
     if(!s||!Array.isArray(s.nations))return;
     for(const [f,r] of s.nations.slice(0,FACTIONS3230.length))
