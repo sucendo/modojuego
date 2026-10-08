@@ -73,6 +73,28 @@
       lon>=108&&lat<0?'oceania':'other';
     return {region:'',polity:'',lat,lon,culture};
   }
+  function broadRegion(location){
+    const lat=location?.lat??0,lon=location?.lon??0;
+    if(lat>58&&lon<-55&&lon>-170)return 'Canadá septentrional';
+    if(lat>=28&&lon<-65&&lon>-125)return lon<-105?'Grandes Llanuras':lon<-90?'Misisipi':'Apalaches';
+    if(lat<12&&lat>-34&&lon<-33&&lon>-83)return lon<-70?'Cordillera de los Andes':lon<-56?'Amazonia':'Brasil atlántico';
+    if(lat<=-34&&lon>-76&&lon<-48)return 'Patagonia';
+    if(lat>15&&lat<35&&lon>-18&&lon<36)return lat>25?'Sáhara':'Sahel';
+    if(lat>-5&&lat<=15&&lon>-18&&lon<31)return 'Guinea';
+    if(lat>-8&&lat<5&&lon>10&&lon<33)return 'Cuenca del Congo';
+    if(lat<-8&&lon>10&&lon<41)return lat<-27?'África austral':'África oriental';
+    if(lat>45&&lon>39&&lon<91)return lat>60?'Siberia':'Estepa euroasiática';
+    if(lat>42&&lon>=91&&lon<135)return 'Mongolia';
+    if(lat>12&&lat<40&&lon>=60&&lon<100)return 'Asia meridional';
+    if(lat>=-12&&lat<18&&lon>=98&&lon<150)return 'Archipiélago malayo';
+    if(lat<0&&lon>110&&lon<156)return lon<130?'Australia occidental':'Australia oriental';
+    if(lat<0&&lon>=156)return 'Melanesia';
+    if(lat>35&&lon>-12&&lon<42)return 'Europa continental';
+    if(lat>18&&lon>=39&&lon<60)return 'Oriente Próximo';
+    return location?.culture==='asia'?'Asia oriental':
+      location?.culture==='africa'?'África central':
+      location?.culture==='america'?'América':location?.culture==='oceania'?'Oceanía':'región continental';
+  }
   function politicalName(place,location,f){
     if(location?.polity){
       if(location.region==='Cataluña'&&/^Barcelona$/i.test(place||''))return 'Condado de Barcelona';
@@ -81,9 +103,14 @@
       if(!used)return location.polity;
     }
     if(!place){
-      // Fallback geográfico deliberadamente neutro, hasta conocer la capital.
-      const r=location?.region||'territorio';
-      return 'Estado de '+r+' '+(f+1);
+      // Topónimo macroregional provisional, sustituido por el de la capital
+      // real cuando el atlas comprueba su situación dentro del hexágono.
+      const region=location?.region||broadRegion(location),c=location?.culture||'other';
+      const prefix=c==='europe'?'Principado de ':c==='arabia'?'Emirato de ':
+        c==='africa'?'Confederación de ':c==='america'?'Confederación de ':'Estado de ';
+      const base=prefix+region;
+      const siblings=[...nations.values()].filter(n=>n.name===base||n.name.startsWith(base+' ·')).length;
+      return siblings?base+' · '+(siblings+1):base;
     }
     const c=location?.culture||(location?.region?'europe':'other');
     const prefix=c==='europe'?'Principado de ':c==='arabia'?'Emirato de ':
