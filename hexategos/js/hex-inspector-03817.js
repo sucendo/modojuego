@@ -107,6 +107,7 @@
   }
   function government(ctx){
     const g=window.HexategosStatecraft0380?.governmentCity?.(ctx.cell);
+    const policyNames={aid:'Ayuda',invest:'Inversión',autonomy:'Autonomía',garrison:'Guarnición',ration:'Racionamiento',repression:'Coerción'};
     if(!g)return card('Gobierno y estabilidad',
       '<p class="ctxHelp03817">Sin administración urbana local. Construye una ciudad para consultar estabilidad, nacionalismo y políticas.</p>');
     return card('Gobierno y estabilidad',
@@ -116,7 +117,7 @@
       '<span>Abastecimiento <b>'+pct(g.supply)+' %</b></span>'+
       '<span>Situación <b>'+(g.riot?'Disturbios':g.strike?'Huelga':g.occupied?'Ocupada':'Normal')+'</b></span></div>'+
       (Object.entries(g.active||{}).filter(x=>x[1]).length?
-        '<p class="ctxHelp03817">Medidas activas: '+Object.entries(g.active).filter(x=>x[1]).map(x=>esc(x[0])).join(', ')+'</p>':'')+
+        '<p class="ctxHelp03817">Medidas activas: '+Object.entries(g.active).filter(x=>x[1]).map(x=>esc(policyNames[x[0]]||x[0])).join(', ')+'</p>':'')+
       (ctx.own?'<button class="ctxManage03817" type="button" data-action="government_city_0386">Gestionar gobierno local ↗</button>':'' ));
   }
   function industry(ctx){
@@ -224,8 +225,8 @@
         meter(k,(sup.diag.resourcePct?.[i]??.55),pct(sup.diag.resourcePct?.[i]??55)<40?'red':'blue')).join(''));
     }
     body+=materialsSummary(ctx);
-    if(ctx.city)body+=government(ctx);
-    if(ctx.industry||prod?.sitesOnCell?.(ctx.cell)?.length)body+=industry(ctx);
+    body+=government(ctx);
+    body+=industry(ctx);
     if(ctx.port)body+=portRoutes(ctx);
     return body;
   }
