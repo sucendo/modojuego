@@ -812,8 +812,12 @@
       const industryInput=n.ind?clamp(Math.min(rawRatio/.34,fuelRatio/.30),.12,1.08):0;
       for(let i=0;i<5;i++){
         let production=n.prod[i];
-        if(i===3&&n.ind)production+=.105*n.ind*industryInput;
-        if(i===4&&n.ind)production+=.046*n.ind*industryInput;
+        // La industria heredada mantiene una reserva transitoria para
+        // partidas antiguas; su producción genérica cede progresivamente
+        // a las fábricas que sí consumen materiales industriales reales.
+        const legacy=window.HexategosProduction0388?.legacyManufacturingFactor?.(n.f)??1;
+        if(i===3&&n.ind)production+=.105*n.ind*industryInput*legacy;
+        if(i===4&&n.ind)production+=.046*n.ind*industryInput*legacy;
         const statecraft=window.HexategosStatecraft0380;
         if(statecraft?.resourceProductionMultiplier)production*=statecraft.resourceProductionMultiplier(n.cell,i,n.f);
         n.stock[i]=clamp(n.stock[i]+production*dt,0,n.cap[i]);
