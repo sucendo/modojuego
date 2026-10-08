@@ -252,19 +252,24 @@
       extra.innerHTML='<summary>Más acciones y construcciones</summary>';
       extra.appendChild(rest);actions.appendChild(extra);
     }
-    const foreign=document.getElementById('ctxForeign3246');
-    if(foreign&&ctx.enemy){
-      const dip=document.createElement('details');dip.className='ctxExtras03817 ctxDiplomacy03817';
-      dip.innerHTML='<summary>Relaciones y acuerdos</summary>';
-      dip.appendChild(foreign);
-      actions.appendChild(dip);
-    }
-    const ranges=document.getElementById('ctxRanges3246');
-    if(ranges&&ctx.own){
-      const ctrl=document.createElement('details');ctrl.className='ctxExtras03817 ctxMilitary03817';
-      ctrl.innerHTML='<summary>Controles militares</summary>';ctrl.appendChild(ranges);
-      actions.appendChild(ctrl);
-    }
+    // Las áreas clásicas de diplomacia y sliders no pueden vivir dentro de
+    // ctxActions: el motor reconstruye ese contenedor con innerHTML en cada
+    // selección, lo que destruiría sus listeners y rompería la siguiente ficha.
+    const wrap=(id,wrapperId,title,active)=>{
+      const el=document.getElementById(id);
+      if(!el)return;
+      let w=document.getElementById(wrapperId);
+      if(!w){
+        w=document.createElement('details');w.id=wrapperId;
+        w.className='ctxExtras03817 ctxOuterExtras03817';
+        const summary=document.createElement('summary');summary.textContent=title;
+        w.appendChild(summary);
+        root.insertBefore(w,el);w.appendChild(el);
+      }
+      w.hidden=!active;
+    };
+    wrap('ctxForeign3246','ctxForeignWrapper03817','Diplomacia y tratados',!!ctx.enemy);
+    wrap('ctxRanges3246','ctxRangesWrapper03817','Fuerza y avance',!!ctx.own);
   }
   function mount(ctx){
     if(ctx?.kind!=='cell'||!Number.isInteger(ctx.cell)){
