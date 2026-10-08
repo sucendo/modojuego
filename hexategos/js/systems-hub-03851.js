@@ -316,13 +316,27 @@
   });
 
   // Stable3 es el ÚNICO gestor del movimiento del diálogo Sistemas.
-  // Restablecer posición ayuda cuando un panel ampliado queda fuera de pantalla.
+  // Recentrar también actualiza su posición guardada, sin perder el anclaje
+  // manual ni provocar el antiguo salto fuera del viewport.
   const reset=document.getElementById('systemsRecenter03851');
   reset?.addEventListener('click',()=>{
-    try{localStorage.removeItem('hexategos.stable3.systems.pos')}catch(_){}
-    for(const p of ['left','top','right','bottom','transform'])panel.style.removeProperty(p);
-    panel.classList.remove('uiMovedStable3');
-    msg('Posición de Sistemas restablecida');
+    if(window.HexategosStablePanels033?.recenter?.('systemsPanel3213')){
+      msg('Sistemas centrado · arrastra la cabecera para moverlo');
+      return;
+    }
+    // Rescate de seguridad si el gestor estable no está disponible.
+    const r=panel.getBoundingClientRect();
+    const w=window.visualViewport?.width||window.innerWidth;
+    const h=window.visualViewport?.height||window.innerHeight;
+    const ox=window.visualViewport?.offsetLeft||0;
+    const oy=window.visualViewport?.offsetTop||0;
+    panel.style.setProperty('left',Math.max(4,ox+(w-r.width)/2)+'px','important');
+    panel.style.setProperty('top',Math.max(4,oy+(h-r.height)/2)+'px','important');
+    panel.style.setProperty('right','auto','important');
+    panel.style.setProperty('bottom','auto','important');
+    panel.style.setProperty('transform','none','important');
+    panel.classList.add('uiMovedStable3');
+    msg('Sistemas centrado');
   });
 
   window.HexategosSystemsUI03851={
