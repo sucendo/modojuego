@@ -489,15 +489,16 @@
     for(let f=0;f<activeFactionCount3230;f++)
       if(Number.isInteger(capitals[f])&&capitals[f]>=0)mix(capitals[f]);
     const hubs=new Set();
+    const addHub=cell=>{
+      if(!Number.isInteger(cell)||cell<0||cell>=owner6.length)return;
+      const f=owner6[cell];
+      if(cities3212.has(cell)||industries3212.has(cell)||
+         ports3212.has(cell)||(f>=0&&capitals[f]===cell))return;
+      hubs.add(cell);
+    };
     for(const r of routes){
       if(r.status==='closed')continue;
-      for(const cell of [r.from,r.to]){
-        if(!Number.isInteger(cell)||cell<0||cell>=owner6.length)continue;
-        const f=owner6[cell];
-        if(cities3212.has(cell)||industries3212.has(cell)||
-           ports3212.has(cell)||(f>=0&&capitals[f]===cell))continue;
-        hubs.add(cell);
-      }
+      addHub(r.from);addHub(r.to);
     }
     for(const cell of hubs)mix(cell);
     return h+':'+roadEpoch;
