@@ -339,3 +339,7 @@
 #contextMenu3244 .ctxActions3244 :is(button,.ctxAction3244){
   box-sizing:border-box;width:100%;max-width:100%;min-width:0;
 }
+
+/* Avisos: aspa de descarte compacta y accesible. */
+.noticesStable8 .messageActionsStable8 [data-dismiss-notice]{min-width:34px!important;width:34px;min-height:34px!important;padding:3px 8px!important;font-size:20px!important;line-height:1!important;flex:0 0 auto}
+.noticesStable8 .messageBodyStable8{min-width:0}
