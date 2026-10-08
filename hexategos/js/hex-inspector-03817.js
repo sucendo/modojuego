@@ -158,9 +158,12 @@
     const cargo=r=>{
       const base=Array.isArray(r.cargo03720)?r.cargo03720:[];
       const generic=base.map((v,i)=>({label:MATERIALS[i],amount:Number(v)||0,direction:r.cargoDirection03720?.[i]??0}));
-      const specific=Object.entries(r.productionCargo0388||{}).map(([k,v])=>({
+      const entries=Array.isArray(r.productionCargoDetail03817)&&r.productionCargoDetail03817.length?
+        r.productionCargoDetail03817.map(v=>[v.kind,v.rate,v.direction]):
+        Object.entries(r.productionCargo0388||{}).map(([k,v])=>[k,v,0]);
+      const specific=entries.map(([k,v,direction])=>({
         label:kinds[k]?.name||intermediate[k]||k,amount:Number(v)||0,
-        direction:r.productionDirection03817?.[k]??0
+        direction:Number(direction)||0
       }));
       return [...generic,...specific].filter(x=>x.amount>.005);
     };
