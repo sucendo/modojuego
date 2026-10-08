@@ -4,10 +4,23 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.37.23',
+      date:'Octubre 2026',
+      title:'Diagnóstico desde Información',
+      current:true,
+      summary:'La ficha de suministro detallada se abre ahora directamente desde el botón INFORMACIÓN del territorio seleccionado.',
+      changes:[
+        'El botón INFORMACIÓN · TERRENO Y SUMINISTRO abre una ficha con estado, suministro combinado, logística física y material.',
+        'La ficha muestra producción, consumo, balance, flujo comercial, rutas activas y rutas bloqueadas.',
+        'Se mantiene el diagnóstico automático del cuello de botella y las recomendaciones concretas.',
+        'No se añade un segundo botón ni un nuevo temporizador.'
+      ]
+    },
+    {
       version:'0.37.22',
       date:'Octubre 2026',
       title:'Diagnóstico de suministro',
-      current:true,
+      current:false,
       summary:'Cada territorio explica ahora por qué está abastecido, en tensión, bajo o crítico y qué acción concreta puede corregir el problema.',
       changes:[
         'El suministro seleccionado muestra producción, consumo, balance y flujo comercial de su nodo o red conectada.',
