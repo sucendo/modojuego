@@ -63,4 +63,27 @@ function caseFor(countryCount){
   return changed;
 }
 const small=caseFor(150),large=caseFor(500);
+
+// Abrir nuevas rutas entre nodos existentes no debe reconstruir toda
+// la economía. Los nuevos hubs siguen obligando a crear un nodo.
+const sigStart=trade.indexOf('function resourceStructureSignature03720(');
+const sigEnd=trade.indexOf('function resourceRoadComp03720(',sigStart);
+assert.ok(sigStart>=0&&sigEnd>sigStart,'route structure signature missing');
+const makeSignature=new Function('routes','cities3212','industries3212','ports3212',
+  'capitals','owner6','roadEpoch','activeFactionCount3230',
+  trade.slice(sigStart,sigEnd)+'return resourceStructureSignature03720()');
+const ownerCells=new Int16Array(10),cityCells=new Set([1,2]),ports=new Set([3,4]);
+const signature=routes=>makeSignature(routes,cityCells,new Set(),ports,[1],ownerCells,1,500);
+const baseSig=signature([]);
+assert.equal(baseSig,signature([{status:'active',from:1,to:3,type:'sea'}]),
+  'new route between existing nodes should not trigger global rebuild');
+const hubSig=signature([{status:'active',from:1,to:7,type:'land'}]);
+assert.ok(hubSig!==baseSig,'a genuinely new route hub must trigger rebuild');
+assert.equal(hubSig,signature([
+  {status:'active',from:1,to:7,type:'land'},
+  {status:'active',from:2,to:7,type:'land'}
+]),'duplicate references to same route hub must not trigger rebuild');
+assert.equal(baseSig,signature([{status:'closed',from:1,to:7,type:'land'}]),
+  'closed routes must not keep orphan hubs alive');
+
 console.log('HEXATEGOS 0.38.4 performance smoke: OK; refreshed nodes 150=',small,'500=',large);
