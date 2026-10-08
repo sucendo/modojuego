@@ -175,6 +175,26 @@
   const systemsClose=document.getElementById('systemsClose3213');
   if(systemsClose)systemsClose.onclick=()=>closeSystems3220();
 
+  // Posición de recuperación compartida con el botón ⌖ de Sistemas.
+  // La posición se establece explícitamente y se persiste mediante el
+  // mismo gestor de arrastre, en vez de borrar estilos y dejar que varios
+  // selectores CSS resuelvan el centrado de manera distinta.
+  function recenterPanelStable3(panelId){
+    const cfg=configs.find(c=>c.panel.id===panelId);
+    if(!cfg)return false;
+    const p=cfg.panel;
+    const v=viewport(),r=p.getBoundingClientRect();
+    const w=r.width||p.offsetWidth||1,h=r.height||p.offsetHeight||1;
+    const x=v.ox+(v.w-w)/2;
+    const y=v.oy+(v.h-h)/2;
+    place(p,x,y);
+    save(cfg);
+    return true;
+  }
+  window.HexategosStablePanels033={
+    recenter:recenterPanelStable3
+  };
+
   // Reencuadre solo ante un resize real; no hay observers ni intervalos.
   function clampOpen(){
     for(const cfg of configs){
