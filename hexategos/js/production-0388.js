@@ -307,6 +307,10 @@
         if(room+buffer<=.000001)continue;
         let amount=Math.min(.39*s.level*activeFactor(s)*dt,(room+buffer)/.90);
         if(amount<=0)continue;
+        // Reservar energía ANTES de consumir materias para no perder cargamentos
+        // cuando una fábrica tenga apagones o capacidad eléctrica insuficiente.
+        if(def.group==='manufacture')amount=Math.min(amount,Math.max(0,n.stock[2]||0)/.12);
+        if(amount<=0)continue;
         const inputs=def.inputs||[];
         if(!inputs.length)continue;
         if(def.inputMode==='any'){
@@ -326,11 +330,7 @@
         if(amount<=0)continue;
         // Los bienes finales necesitan energía; las centrales son las
         // encargadas de generarla. No consumir el stock a nivel de mapa.
-        if(def.group==='manufacture'){
-          const power=Math.min(amount*.12,Math.max(0,n.stock[2]||0));
-          if(power+1e-6<amount*.12)continue;
-          n.stock[2]-=power;
-        }
+        if(def.group==='manufacture')n.stock[2]=Math.max(0,n.stock[2]-amount*.12);
         const outputQty=amount*.90;
         const stored=intermediate?Math.min(buffer,outputQty*.62):0;
         const delivered=Math.min(room,outputQty-stored);
