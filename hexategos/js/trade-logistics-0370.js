@@ -1711,10 +1711,16 @@
         return;
       }
       const hs=bestPortSea3270(g.home,g.cell);
-      if(hs>=0&&angularHeuristic3254(g.cell,hs)>12){
+      // La patrulla local solo arranca exactamente en el mar de su puerto.
+      // Antes exigíamos distancia >12: una IA a 1–11 hexágonos de la base
+      // no navegaba a casa y tampoco podía iniciar otra patrulla.
+      if(hs>=0&&g.cell!==hs){
         if(navalPathPermit0371(nowCampaign))setNavalDestination3270(g,hs);
         return;
       }
+      // No sustituir una ruta que ya está recorriendo por otra excursión.
+      // Las rutas de interceptación reactivas se resuelven más arriba.
+      if(g.route?.length)return;
       if(nowCampaign>=(g.interceptNext0371||0)){
         if(startInterceptExcursion0371(g,nowCampaign))return;
         g.interceptNext0371=nowCampaign+6+(g.id%6);
