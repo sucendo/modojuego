@@ -51,9 +51,9 @@
   let internalRelationChange=false;
   let initialized=false;
 
-  function notify(message,type='info',tab='dip'){
+  function notify(message,type='info',tab='dip',meta={}){
     const api=window.HexategosMessagesStable8;
-    if(api?.show)return api.show(message,type,tab);
+    if(api?.show)return api.show(message,type,tab,meta);
     if(typeof toast==='function')toast(message);
   }
 
@@ -179,7 +179,7 @@
     }
     if(to===0&&from>0){
       setEmbassy(from,to,'pending',from);
-      notify(factionName3230(from)+' solicita establecer una embajada','diplomacy','dip');
+      notify(factionName3230(from)+' solicita establecer una embajada','diplomacy','dip',{faction:from,requestKind:'embassy'});
       return true;
     }
     if(from===0&&to>0){
@@ -187,11 +187,11 @@
       if(score>=50){
         setEmbassy(from,to,'active',from);
         if(typeof dipSetTrust3300==='function')dipSetTrust3300(to,from,(dipTrustOf3300(to,from)||45)+4);
-        notify(factionName3230(to)+' acepta nuestra embajada','diplomacy','dip');
+        notify(factionName3230(to)+' acepta nuestra embajada','diplomacy','dip',{faction:to});
         return true;
       }
       setEmbassy(from,to,'rejected',from);
-      notify(factionName3230(to)+' rechaza por ahora nuestra embajada','diplomacy','dip');
+      notify(factionName3230(to)+' rechaza por ahora nuestra embajada','diplomacy','dip',{faction:to});
       return false;
     }
     const score=embassyAcceptance(to,from);
@@ -203,7 +203,7 @@
     const p=embassyPending(0,other);
     if(!p||p.requestedBy!==other)return false;
     setEmbassy(0,other,accept?'active':'rejected',other);
-    notify((accept?'Embajada establecida con ':'Embajada rechazada de ')+factionName3230(other),'diplomacy','dip');
+    notify((accept?'Embajada establecida con ':'Embajada rechazada de ')+factionName3230(other),'diplomacy','dip',{faction:other});
     return true;
   }
 
@@ -229,11 +229,11 @@
     if(score>=threshold){
       const rel=type==='trade'?1:type==='nap'?2:type==='alliance'?3:type==='peace'?0:0;
       setDiplomaticRelation3300(0,target,rel,'acuerdo bilateral',true)
-      notify(factionName3230(target)+' acepta '+(type==='trade'?'el acuerdo comercial':type==='nap'?'el pacto de no agresión':type==='alliance'?'la alianza':'la paz'),'diplomacy','dip');
+      notify(factionName3230(target)+' acepta '+(type==='trade'?'el acuerdo comercial':type==='nap'?'el pacto de no agresión':type==='alliance'?'la alianza':'la paz'),'diplomacy','dip',{faction:target});
       renderNationDossier(target,'dip');return true;
     }
     if(typeof dipSetOpinion3300==='function')dipSetOpinion3300(target,0,(dipOpinionOf3300(target,0)||0)-2);
-    notify(factionName3230(target)+' rechaza la propuesta','diplomacy','dip');
+    notify(factionName3230(target)+' rechaza la propuesta','diplomacy','dip',{faction:target});
     renderNationDossier(target,'dip');return false;
   }
 
@@ -427,7 +427,7 @@
       if(st.origin>=0&&owner!==st.origin)st.nationalism=Math.max(st.nationalism,68);
       else st.nationalism=Math.max(10,st.nationalism*.55);
       st.stability=clamp(st.stability-18,8,100);
-      if(previous===0||owner===0)notify('Cambio de control en '+placeDisplayName3271(cell),'war','dip');
+      if(previous===0||owner===0)notify('Cambio de control en '+placeDisplayName3271(cell),'war','dip',{cell});
     }
     return st;
   }
@@ -537,12 +537,12 @@
     if(n-st.lastEvent<22)return;
     if(st.stability<48&&st.scarcity>45&&st.strikeUntil<n){
       st.strikeUntil=n+38;st.lastEvent=n;
-      if(st.owner===0)notify('Huelgas por escasez en '+placeDisplayName3271(st.cell),'economy','eco');
+      if(st.owner===0)notify('Huelgas por escasez en '+placeDisplayName3271(st.cell),'economy','eco',{cell:st.cell});
       return;
     }
     if(st.stability<34&&st.scarcity>90&&st.riotUntil<n&&!governanceActive0386(st,'garrison')){
       st.riotUntil=n+48;st.lastEvent=n;
-      if(st.owner===0)notify('Disturbios graves en '+placeDisplayName3271(st.cell),'war','dip');
+      if(st.owner===0)notify('Disturbios graves en '+placeDisplayName3271(st.cell),'war','dip',{cell:st.cell});
       return;
     }
     if(st.stability<22&&st.scarcity>150&&st.origin>=0&&st.owner!==st.origin&&st.nationalism>70){
@@ -569,7 +569,7 @@
     if(typeof aiMarkDirty3260==='function')aiMarkDirty3260();
     if(typeof supplyDirty3220!=='undefined')supplyDirty3220=true;
     window.HexategosDiplomacyNetwork3301?.markDirty?.();
-    notify(placeDisplayName3271(cell)+' se ha rebelado y restaura '+factionName3230(origin),'war','dip');
+    notify(placeDisplayName3271(cell)+' se ha rebelado y restaura '+factionName3230(origin),'war','dip',{cell});
     return true;
   }
 
