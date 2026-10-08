@@ -40,7 +40,7 @@ assert.ok(trade.includes('zoom>32?3.20:2.70'),'larger land trade marker missing'
 assert.ok(trade.includes('zoom>32?3.20:2.60'),'larger domestic marker missing');
 
 assert.ok(visuals.includes("if(!g||g.order==='patrol')return null"),'patrol route must remain hidden');
-assert.ok(index.includes('v0.37.11</title>')||index.includes('v0.37.12</title>')||index.includes('v0.37.13</title>')||index.includes('v0.37.14</title>')||index.includes('v0.37.15</title>')||index.includes('v0.37.16</title>')||index.includes('v0.37.17</title>')||index.includes('v0.37.18</title>')||index.includes('v0.37.19</title>')||index.includes('v0.37.20</title>'),'visible version must be 0.37.11 or compatible successor');
+assert.ok(index.includes('v0.37.11</title>')||index.includes('v0.37.12</title>')||index.includes('v0.37.13</title>')||index.includes('v0.37.14</title>')||index.includes('v0.37.15</title>')||index.includes('v0.37.16</title>')||index.includes('v0.37.17</title>')||index.includes('v0.37.18</title>')||index.includes('v0.37.19</title>')||index.includes('v0.37.20</title>')||index.includes('v0.37.21</title>'),'visible version must be 0.37.11 or compatible successor');
 assert.ok(about.includes("version:'0.37.11'"),'about history must include 0.37.11');
 
 console.log('HEXATEGOS 0.37.11 active trade belts + map route destination smoke: OK');
