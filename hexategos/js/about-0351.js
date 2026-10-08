@@ -4,10 +4,26 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.38.12',
+      date:'Octubre 2026',
+      title:'Jerarquía de iconos y cartografía costera',
+      current:true,
+      summary:'Las ciudades conservan el centro del hexágono; los puertos se sitúan hacia su costa, la estrella de la capital se representa por encima de las carreteras y las instalaciones comparten pictogramas vectoriales homogéneos.',
+      changes:[
+        'Ciudad siempre en el centro y único tipo de icono de infraestructura visible al alejar el zoom.',
+        'Puerto sobre el borde de costa, calculado a partir de los hexágonos marítimos vecinos y de la proyección de cámara.',
+        'Capital dibujada después de las carreteras para impedir que la red viaria oculte la estrella.',
+        'Los símbolos de fábricas y explotaciones se reparten alrededor de la ciudad sin ocultar el puerto.',
+        'Estilo vectorial común para ciudad, puerto, capital, industria general y especializada, con tamaños uniformes y trazos accesibles.',
+        'Umbrales de zoom por tipo y cálculo de posiciones solo en instalaciones visibles.',
+        'Prueba automatizada de colocación costera, centro de ciudad, superposición de capital y niveles de zoom.'
+      ]
+    },
+    {
       version:'0.38.11',
       date:'Octubre 2026',
       title:'Instalaciones especializadas compartiendo hexágono y símbolos sin solapes',
-      current:true,
+      current:false,
       summary:'Un hexágono admite hasta tres instalaciones productivas especializadas distintas junto a ciudad, puerto e industria general. El menú explica las restricciones de construcción y reserva capacidad para el jugador.',
       changes:[
         'Hasta tres instalaciones especializadas diferentes por hexágono, con controles individuales y sin duplicados del mismo tipo.',
