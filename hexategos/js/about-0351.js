@@ -4,10 +4,29 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.38.1',
+      date:'Octubre 2026',
+      title:'Núcleo diplomático coherente y contrainteligencia',
+      current:true,
+      summary:'Se corrigen las incoherencias detectadas tras 0.38.0: los tratados dejan de ser un único estado, la IA ya no recibe doble penalización de suministro y embajadas/espionaje adquieren memoria, coste y defensa.',
+      changes:[
+        'Comercio, no agresión y alianza pasan a mantenerse como acuerdos independientes aunque el motor antiguo conserve un estado diplomático de compatibilidad.',
+        'Puede suspenderse el comercio sin romper automáticamente un pacto de no agresión o una alianza.',
+        'Las rutas comerciales y la IA comercial comprueban el acuerdo comercial explícito, no solo el estado diplomático legado.',
+        'Las ciudades IA dejan de aplicar dos veces la escasez material al calcular estabilidad.',
+        'Una embajada rechazada entra en un periodo de espera antes de poder solicitarse de nuevo.',
+        'Las redes de espionaje tienen mantenimiento económico y pueden degradarse si no se financian.',
+        'Se añade contrainteligencia nacional con niveles e inversión desde Inteligencia.',
+        'La contrainteligencia reduce la velocidad de infiltración, el éxito de operaciones y aumenta el riesgo de detección.',
+        'Las IA desarrollan también contrainteligencia y pueden añadir acuerdos comerciales aunque ya exista otro tratado político.',
+        'Guardados antiguos migran automáticamente los tratados previos a la nueva estructura separada.'
+      ]
+    },
+    {
       version:'0.38.0',
       date:'Octubre 2026',
       title:'Embajadas, inteligencia y estabilidad nacional',
-      current:true,
+      current:false,
       summary:'La diplomacia pasa a requerir contacto y embajadas, el comercio depende de consentimiento real, la inteligencia descubre recursos y la estabilidad interna reacciona a escasez, ocupación y operaciones clandestinas.',
       changes:[
         'Nueva ficha de nación contextual con Diplomacia, Comercio, Inteligencia, Militar y Rutas.',
