@@ -44,7 +44,7 @@ const source='drawInfrastructure3212=function(R,cx,cy,now){'+
   '}'+
   '};'+src+
   'return {draw:drawInfrastructure3212,oldCapital:drawGlobeCapitalIcon3249,'+
-  'setZoom:x=>zoom=x,api:window.HexategosMapIcons03812};';
+  'setZoom:x=>zoom=x,setLOD:x=>currentKey=x,api:window.HexategosMapIcons03812};';
 const start=new Function(...names,'order',source);
 const inst=start(...params,order);
 inst.oldCapital(100,100,false,8);
@@ -60,6 +60,15 @@ assert.equal(new Set(keys).size,5,'infrastructure markers overlap');
 assert.ok(order.indexOf('road')<order.lastIndexOf('icon'),'capital should be drawn after roads');
 assert.equal(inst.api.metrics().capital,1);
 assert.equal(inst.api.metrics().special,1);
+// El globo usa mallas resumidas hasta zoom 5.15 (o 6.7 en táctiles).
+// La estrella de la capital debe seguir por encima de las carreteras.
+inst.setLOD('6');
+const beforeLowLOD=ctxDraw.length;
+inst.draw(100,100,100,0);
+assert.equal(inst.api.metrics().capital,1,'capital marker hidden at lower LOD');
+assert.equal(inst.api.metrics().special,0,'specials must remain LOD-gated');
+assert.equal(ctxDraw.length-beforeLowLOD,4,'city, port, factory and capital must survive lower map mesh');
+inst.setLOD(5);
 const first=ctxDraw.length;
 inst.setZoom(3.4);
 inst.draw(100,100,100,0);
