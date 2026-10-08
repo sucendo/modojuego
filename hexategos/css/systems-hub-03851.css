@@ -195,3 +195,65 @@
   bottom:auto!important;
   transform:none!important;
 }
+
+/* Hexategos v0.38.6 · Gobierno y alertas tranquilas */
+#systemsPanel3213.systemsHub0385 #systemsQuiet0386{
+  display:grid;place-items:center;flex:none;min-width:39px;width:39px;height:39px;
+  border:1px solid rgba(176,202,220,.25);border-radius:10px;background:#153347;
+  color:#f3faff;font-size:20px;cursor:pointer;
+}
+#systemsPanel3213.systemsHub0385 #systemsQuiet0386[aria-pressed="false"]{
+  border-color:rgba(215,172,95,.55);background:#3f3228;
+}
+#systemsPanel3213.systemsHub0385 #sysContent3213 .sysGovManager0386{
+  min-width:0;
+}
+#systemsPanel3213.systemsHub0385 #sysContent3213 .sysGovLabel0386{
+  font-weight:750;color:#cce2ef;font-size:13px!important;
+}
+#systemsPanel3213.systemsHub0385 #sysContent3213 #hubCityGovernment0386{
+  display:block;width:100%;min-height:42px;
+  margin:8px 0 14px;padding:9px 12px;
+  border-radius:9px;border:1px solid rgba(116,174,209,.38);
+  background:#102c41;color:#f4faff;font-size:13px!important;
+  min-width:0;max-width:100%;
+}
+#systemsPanel3213.systemsHub0385 #sysContent3213 .sysGovPolicies0386{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;max-width:100%;min-width:0;
+}
+#systemsPanel3213.systemsHub0385 #sysContent3213 .sysGovPolicy0386{
+  min-width:0;display:flex;flex-direction:column;justify-content:space-between;
+  gap:10px;border:1px solid rgba(141,181,207,.2);background:rgba(4,22,37,.55);
+  border-radius:10px;padding:12px;
+}
+#systemsPanel3213.systemsHub0385 #sysContent3213 .sysGovPolicy0386 b{
+  display:block;font-size:15px!important;color:#f2f9fe;
+}
+#systemsPanel3213.systemsHub0385 #sysContent3213 .sysGovPolicy0386 p{
+  color:#abc3d3;font-size:12px!important;
+  line-height:1.5!important;margin:5px 0 7px;overflow-wrap:anywhere;
+}
+#systemsPanel3213.systemsHub0385 #sysContent3213 .sysGovPolicy0386 small{
+  font-size:12px!important;color:#9ed2ed!important;
+}
+#systemsPanel3213.systemsHub0385 #sysContent3213 .sysGovPolicy0386 button{
+  width:100%;min-height:42px!important;
+  background:#215879;color:#f2fbff;border:1px solid rgba(135,192,230,.32);
+  border-radius:8px;padding:9px;font-size:12px!important;font-weight:750;
+}
+#systemsPanel3213.systemsHub0385 #sysContent3213 .sysGovPolicy0386 button:disabled{
+  opacity:.48;background:#152d3d;
+}
+#systemsPanel3213.systemsHub0385 #sysContent3213 .sysGovNotice0386{
+  font-size:13px!important;line-height:1.5;padding:8px 0;
+  border-bottom:1px solid rgba(153,185,207,.12);
+}
+#systemsPanel3213.systemsHub0385 #sysContent3213 .sysGovNotices0386>button{
+  margin-top:10px;
+}
+@media(max-width:750px){
+  #systemsPanel3213.systemsHub0385 #sysContent3213 .sysGovPolicies0386{
+    grid-template-columns:minmax(0,1fr);
+  }
+}
