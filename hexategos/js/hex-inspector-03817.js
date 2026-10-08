@@ -236,6 +236,7 @@
     if(ctx.port)tabs.push(['port','Puerto']);
     return tabs;
   };
+  let extrasExpanded03819=false;
   function simplifyActions(ctx){
     const buttons=Array.from(actions.querySelectorAll(':scope > button.ctxAction3244'));
     if(!buttons.length)return;
@@ -248,12 +249,14 @@
       if(quick.includes(b.dataset.action)&&!b.disabled&&main.children.length<4)main.appendChild(b);
       else rest.appendChild(b);
     }
+    const previouslyOpen=extrasExpanded03819;
     actions.replaceChildren();
     actions.appendChild(main);
     if(rest.children.length){
       const extra=document.createElement('details');
       extra.className='ctxExtras03817';
       extra.innerHTML='<summary>Más acciones y construcciones</summary>';
+      extra.open=previouslyOpen;
       extra.appendChild(rest);actions.appendChild(extra);
     }
     // Las áreas clásicas de diplomacia y sliders no pueden vivir dentro de
@@ -280,7 +283,7 @@
       panel.hidden=true;root.classList.remove('hexInspectorActive03817');
       scrollCell=-1;return;
     }
-    if(lastCell!==ctx.cell){tab='summary';lastCell=ctx.cell}
+    if(lastCell!==ctx.cell){tab='summary';lastCell=ctx.cell;extrasExpanded03819=false}
     const permitted=tabsFor(ctx);
     if(!permitted.some(v=>v[0]===tab))tab='summary';
     // La ficha puede renovarse mientras se juega. Mantener las dos barras
@@ -304,6 +307,8 @@
     const previousOuter=sameCell?(root.scrollTop||0):0;
     const previousTab=tab;
     const previousInner=sameCell?(panel.querySelector?.('.ctxDetails03817')?.scrollTop||0):0;
+    const existingExtras=actions.querySelector('.ctxExtras03817');
+    if(existingExtras)extrasExpanded03819=existingExtras.open;
     const out=original.apply(this,arguments);
     try{mount(ctx)}catch(err){console.warn('[HEXATEGOS 0.38.17 Inspector]',err)}
     if(sameCell){
@@ -322,6 +327,9 @@
     if(ctx?.cell!==lastCell)tab='summary';
     return baseOpen.apply(this,arguments);
   };
+  root.addEventListener('toggle',event=>{
+    if(event.target.matches?.('.ctxExtras03817:not(.ctxOuterExtras03817)')) extrasExpanded03819=event.target.open;
+  },true);
   root.addEventListener('click',event=>{
     const nav=event.target.closest('[data-inspect-tab03817]');
     if(nav){
