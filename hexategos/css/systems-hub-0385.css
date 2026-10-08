@@ -285,16 +285,23 @@
     grid-template-areas:"head" "main";
   }
 }
-@media(max-width:430px){
+@media(max-width:570px) and (orientation:portrait){
   #systemsPanel3213.systemsHub0385 .sysTabs3213{
-    grid-template-columns:repeat(5,minmax(0,1fr))!important;
-    gap:3px!important;padding:6px!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:4px!important;padding:6px!important;
   }
   #systemsPanel3213.systemsHub0385 .sysTabs3213 button{
-    min-height:56px!important;padding:5px 1px!important;gap:3px!important;
+    min-height:43px!important;
+    flex-direction:row!important;
+    text-align:left!important;
+    justify-content:center!important;
+    padding:6px 5px!important;gap:6px!important;
   }
-  #systemsPanel3213 .sysNavText0385 b{font-size:10px!important}
-  #systemsPanel3213 .sysNavIcon0385{font-size:16px!important}
+  #systemsPanel3213 .sysNavText0385 b{
+    font-size:12px!important;
+    overflow-wrap:anywhere;
+  }
+  #systemsPanel3213 .sysNavIcon0385{font-size:17px!important}
   #systemsPanel3213.systemsHub0385 #sysContent3213 .sysCard0385{padding:12px!important}
 }
 @media(max-height:530px) and (orientation:landscape){
