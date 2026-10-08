@@ -26,7 +26,9 @@
       type:info.type||'plain',
       vector:[clamp(Number(info.food)||0,.08,2.3),clamp(Number(info.raw)||0,.08,2.3),clamp(Number(info.fuel)||0,.08,2.3)]
     };
-    if(geoCache.size>=MAX_GEO_CACHE)geoCache.clear();
+    // 0.38.4: expulsión incremental, nunca vaciado masivo de 12.000 entradas.
+    // Mantiene uso de memoria acotado y evita picos de GC.
+    if(geoCache.size>=MAX_GEO_CACHE)geoCache.delete(geoCache.keys().next().value);
     geoCache.set(cell,g);
     return g;
   }
