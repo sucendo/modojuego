@@ -1,0 +1,22 @@
+/* HEXATEGOS 0.38.0 · ficha nacional, embajadas, inteligencia y estabilidad */
+.nationQuick0380{display:block;width:100%;margin:5px 0 6px;padding:6px 8px;border:1px solid rgba(105,185,236,.28);border-radius:8px;background:rgba(22,78,120,.22);color:#cdeaff;font-size:8px;font-weight:850;text-align:left}
+.nationHero0380{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 8px;border-radius:9px;background:rgba(255,255,255,.035);border:1px solid rgba(151,181,201,.13)}
+.nationHero0380>div{display:grid;gap:2px}.nationHero0380 b{font-size:14px;color:#fff}.nationHero0380 small{font-size:8px;color:#8fa8ba}
+.nationColor0380{width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,.55);box-shadow:0 0 0 2px rgba(0,0,0,.25)}
+.nationStatus0380,.nationTradeSummary0380{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-top:6px}
+.nationStatus0380 span,.nationTradeSummary0380 span{display:grid;gap:2px;padding:5px 6px;border-radius:7px;background:rgba(255,255,255,.025);border:1px solid rgba(151,181,201,.1);font-size:8px;color:#8198aa}
+.nationStatus0380 b,.nationTradeSummary0380 b{color:#e6eff5;font-size:9px}
+.nationTabs0380{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;margin:8px 0}
+.nationTabs0380 button{padding:6px 2px;border-radius:7px;border:1px solid rgba(255,255,255,.12);background:#0d1d2b;color:#8fa7ba;font-size:6.6px;font-weight:900}
+.nationTabs0380 button.active{background:#185680;color:#fff;border-color:#4a9cd0}
+.nationSection0380{display:grid;gap:7px;padding-top:3px}.nationSection0380 h4{margin:0;font-size:10px;color:#f1f6fa}.nationSection0380 p{margin:0;font-size:8px;line-height:1.45;color:#91a6b7}
+.nationSection0380>button,.nationActions0380 button,.nationOps0380 button{border:1px solid rgba(102,180,229,.24);background:#113452;color:#e8f5ff;border-radius:7px;padding:6px 7px;font-size:7px;font-weight:850}
+.nationSection0380 button:disabled,.nationActions0380 button:disabled,.nationOps0380 button:disabled{opacity:.38}
+.nationActions0380,.nationOps0380{display:flex;flex-wrap:wrap;gap:4px}.nationActions0380 .warn0380{background:#5b2b31;border-color:#80414a}
+.nationIntelLevel0380{font-size:8px;color:#93aabd}.nationIntelLevel0380 b{color:#fff}
+.nationResources0380{display:grid;gap:4px}.nationResource0380{display:grid;grid-template-columns:minmax(110px,1fr) auto;gap:2px 8px;padding:6px 7px;border-radius:7px;background:rgba(255,255,255,.025);border:1px solid rgba(151,181,201,.09)}
+.nationResource0380 span{font-size:8px;color:#aec0ce}.nationResource0380 b{font-size:8px;color:#fff;text-align:right}.nationResource0380 small{grid-column:1/-1;font-size:7px;color:#7f96a8}
+.nationWarning0380{padding:6px 7px;border-radius:7px;background:rgba(197,129,64,.12);border:1px solid rgba(197,129,64,.24);color:#d8b27f!important}
+.nationRoute0380{display:grid;grid-template-columns:auto 1fr;gap:2px 7px;padding:6px 7px;border-bottom:1px solid rgba(255,255,255,.06)}.nationRoute0380 b{font-size:9px}.nationRoute0380 span{font-size:8px;color:#d5e2eb}.nationRoute0380 small{grid-column:2;font-size:7px;color:#8298a8}
+.statecraftResearch0380{display:grid;gap:6px}
+@media(max-width:720px){.nationTabs0380{grid-template-columns:repeat(3,1fr)}.nationStatus0380,.nationTradeSummary0380{grid-template-columns:repeat(2,1fr)}}
