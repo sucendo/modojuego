@@ -106,7 +106,8 @@ tabs.querySelector=selector=>selector.includes('commerce')?
   tabs.children.find(b=>b.dataset.tab==='commerce'):
   selector.includes('eco')?economyButton:null;
 const panel=makeElement('panel'),commerceHost=makeElement('host');
-panel.querySelector=selector=>selector==='.sysTabs3213'?tabs:null;
+panel.querySelector=selector=>selector==='.sysTabs3213'?tabs:
+  selector.includes('commerce')?tabs.querySelector(selector):null;
 panel.querySelectorAll=()=>tabs.children;
 commerceHost.querySelector=selector=>selector==='.tradeManager03717'?
   commerceHost.children.find(x=>x.trade===true):
