@@ -114,3 +114,7 @@ jobs:
 
       - name: Run Hexategos 0.37.20 material economy and active patrols smoke
         run: node hexategos/tests/smoke-03720.mjs
+
+
+      - name: Run Hexategos 0.37.21 material supply map smoke
+        run: node hexategos/tests/smoke-03721.mjs
