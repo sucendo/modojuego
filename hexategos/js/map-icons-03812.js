@@ -232,14 +232,18 @@
       }
       // A zoom lejano solamente quedan ciudades; las capitales sin ciudad
       // mantienen su estrella para evitar desaparecer completamente.
-      if(zoom<2.16&&zoom>=1.3){
+      if(zoom<DETAIL_ZOOM&&zoom>=1.3){
         for(let f=0;f<activeFactionCount3230;f++){
           const cell=capitals[f];
           if(cell<0||owner6[cell]!==f)continue;
           if(zoom<1.65&&f!==0)continue;
+          // Por encima de 2.15, las ciudades ya se dibujan en la pasada
+          // original; no duplicar un símbolo sobre otro.
+          const isCity=cities3212.has(cell);
+          if(isCity&&zoom>2.15)continue;
           const p=centerPoint(cell);
           if(!p||p[2]<.10||p[0]<-20||p[0]>vw+20||p[1]<-20||p[1]>vh+20)continue;
-          badge(p[0],p[1],cities3212.has(cell)?'city':'capital',f===0?1.1:1);
+          badge(p[0],p[1],isCity?'city':'capital',f===0?1.1:1);
         }
       }
       if(zoom>=DETAIL_ZOOM){
