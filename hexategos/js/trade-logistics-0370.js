@@ -486,18 +486,62 @@
     return -1;
   }
 
+  function terrainResourceProfile0382(cell){
+    let type='plain';
+    try{if(typeof terrainKey3250==='function')type=terrainKey3250(cell)||'plain'}catch(_){}
+    const base={
+      plain:[1.38,.82,.72],
+      mediterranean:[1.24,.92,.76],
+      forest:[1.08,1.22,.66],
+      jungle:[1.16,1.13,.54],
+      desert:[.34,.94,1.44],
+      steppe:[1.02,1.02,1.06],
+      mountain:[.46,1.54,.78],
+      highmountain:[.20,1.72,.56],
+      ice:[.10,.78,.62]
+    }[type]||[1,.95,.82];
+
+    // Variación geológica determinista por región: evita que todo desierto,
+    // montaña o llanura tenga exactamente el mismo valor estratégico.
+    let h=Math.imul((Number(cell)+1)^0x9e3779b9,2654435761)>>>0;
+    h^=h>>>13;h=Math.imul(h,1274126177)>>>0;h^=h>>>16;
+    const rawNoise=.78+((h&1023)/1023)*.52;
+    const fuelNoise=.56+(((h>>>10)&1023)/1023)*1.02;
+
+    let lat=0;
+    try{lat=Math.abs(Number(cellLonLat3302(cell)?.lat)||0)}catch(_){}
+    const climateFood=lat>72?.48:lat>62?.72:lat<23?1.04:1;
+    return {
+      type,
+      food:clamp(base[0]*climateFood,.08,1.7),
+      raw:clamp(base[1]*rawNoise,.35,2.0),
+      fuel:clamp(base[2]*fuelNoise,.28,2.25)
+    };
+  }
+
+  function urbanWeight0382(cell,f,cityLevel=0,ind=0,port=0,capital=0){
+    if(!cityLevel&&!capital)return 0;
+    let w=cityLevel?1.25+Math.max(1,cityLevel)*1.20:1.0;
+    if(capital)w+=2.35;
+    if(port)w+=.65;
+    if(ind)w+=Math.min(1.2,ind*.32);
+    return clamp(w,1,10);
+  }
+
   function resourceNodeProfile03720(cell,f,nodeCount,snap){
     const city=cities3212.has(cell)?Math.max(1,cityLevel3230[cell]||1):0;
     const ind=industries3212.has(cell)?Math.max(1,industryLevel3230[cell]||1):0;
     const port=ports3212.has(cell)?1:0;
     const capital=capitals[f]===cell?1:0;
     const hub=!city&&!ind&&!port&&!capital?1:0;
+    const urbanWeight=urbanWeight0382(cell,f,city,ind,port,capital);
 
     const cap=[18,18,16,16,10],prod=[0,0,0,0,0],demand=[0,0,0,0,0];
     if(city){
-      cap[0]+=20*city;cap[2]+=9*city;cap[3]+=17*city;cap[4]+=4*city;
-      prod[0]+=.025*city;
-      demand[0]+=.090*city;demand[2]+=.024*city;demand[3]+=.055*city;
+      const urbanScale=.55+urbanWeight*.23;
+      cap[0]+=20*urbanScale;cap[2]+=9*urbanScale;cap[3]+=17*urbanScale;cap[4]+=4*urbanScale;
+      prod[0]+=.018*urbanScale;
+      demand[0]+=.064*urbanScale;demand[2]+=.018*urbanScale;demand[3]+=.041*urbanScale;
     }
     if(ind){
       cap[1]+=28*ind;cap[2]+=24*ind;cap[3]+=28*ind;cap[4]+=24*ind;
@@ -521,11 +565,12 @@
     // repartida en sus nodos logísticos, evitando un scan/stock por hexágono.
     const territory=Math.max(1,snap.territory[f]||1),div=Math.max(1,nodeCount);
     const regional=territory/div;
-    prod[0]+=regional*.00072;
-    prod[1]+=regional*.00056;
-    prod[2]+=regional*.00025;
+    const geo=terrainResourceProfile0382(cell);
+    prod[0]+=regional*.00072*geo.food;
+    prod[1]+=regional*.00056*geo.raw;
+    prod[2]+=regional*.00025*geo.fuel;
 
-    return {cap,prod,demand,city,ind,port,capital,hub};
+    return {cap,prod,demand,city,ind,port,capital,hub,urbanWeight,geo};
   }
 
   function ensureResourceNodes03720(force=false){
@@ -569,6 +614,7 @@
           cell,f,kind:resourceKind03720(cell,f),stock,
           cap:profile.cap,prod:profile.prod,demand:profile.demand,
           city:profile.city,ind:profile.ind,port:profile.port,capital:profile.capital,
+          urbanWeight:profile.urbanWeight,geo:profile.geo,
           comp:resourceRoadComp03720(cell,f)
         });
       }
@@ -2477,13 +2523,18 @@
     focusRoute:(id)=>focusTradeRoute03717(Number(id)),
     resourceKeys:()=>RESOURCE_KEYS03720.slice(),
     resourceSummary:(f=0)=>resourceSummary03720(Number(f)),
+    geography:(cell)=>terrainResourceProfile0382(Number(cell)),
+    urbanWeight:(cell)=>{
+      const c=Number(cell),f=owner6[c];
+      return urbanWeight0382(c,f,cities3212.has(c)?Math.max(1,cityLevel3230[c]||1):0,industries3212.has(c)?Math.max(1,industryLevel3230[c]||1):0,ports3212.has(c)?1:0,capitals[f]===c?1:0);
+    },
     materialSupply:(cell)=>materialSupplyDetail03721(Number(cell)),
     supplyDiagnosis:(cell)=>supplyDiagnosis03722(Number(cell)),
     combinedSupply:(cell)=>supplyPct3220(Number(cell)),
     resourceNode:(cell)=>{
       ensureResourceNodes03720(false);
       const n=resourceNodes03720.get(Number(cell));
-      return n?{cell:n.cell,f:n.f,kind:n.kind,stock:n.stock.slice(),cap:n.cap.slice(),demand:n.demand.slice(),prod:n.prod.slice()}:null;
+      return n?{cell:n.cell,f:n.f,kind:n.kind,stock:n.stock.slice(),cap:n.cap.slice(),demand:n.demand.slice(),prod:n.prod.slice(),urbanWeight:n.urbanWeight||0,geo:n.geo?{...n.geo}:null}:null;
     },
     domesticSeaSupply:(f,cell)=>domesticSeaSupplyFloor03713(Number(f),Number(cell)),
     roadComponent:(cell)=>{rebuildRoadGraph0370(false);return Number.isInteger(cell)&&cell>=0&&roadComp&&cell<roadComp.length?roadComp[cell]:-1},
