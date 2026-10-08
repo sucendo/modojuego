@@ -120,26 +120,15 @@
     return out;
   };
 
-  // Registrar el panel cuando ya está visible: evita medir un diálogo
-  // oculto (rectángulo de 0×0), que podría alterar su posición guardada.
-  let movableRegistered0385=false;
-  function enableDragging0385(){
-    if(movableRegistered0385||!panel.classList.contains('open'))return;
-    const rec=window.HexategosMovablePanels0353?.register?.(
-      panel,'.sysHead3213','systems-command-center'
-    );
-    movableRegistered0385=!!rec;
-  }
-
+  // Stable3 ya proporciona arrastre y posición persistente a Sistemas.
+  // La doble inscripción de 0.38.5 capturaba los mismos eventos de puntero,
+  // originando saltos e impidiendo mover correctamente el diálogo.
   const baseOpen=openSystems3220;
   openSystems3220=function(tab='dip'){
     const out=baseOpen.apply(this,arguments);
-    // Los envoltorios antiguos pueden establecer pestaña a posteriori.
     syncHead(typeof sysTab3220==='string'?sysTab3220:tab);
-    enableDragging0385();
     return out;
   };
-  enableDragging0385();
 
   const close=document.getElementById('systemsClose3213');
   close?.setAttribute('aria-label','Cerrar panel Sistemas');
