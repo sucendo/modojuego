@@ -7,7 +7,7 @@ const index=read('index.html');
 const css=read('css/production-0388.css');
 assert.doesNotThrow(()=>new Function(moduleCode),'production syntax');
 assert.doesNotThrow(()=>new Function(logistics),'logistics syntax');
-assert.match(index,/js\/production-0388\.js\?v=038(?:8|1[01])/);
+assert.match(index,/js\/production-0388\.js\?v=038(?:8|1[012])/);
 assert.match(index,/css\/production-0388\.css\?v=038(?:8|1[01])/);
 assert.ok(logistics.includes('HexategosProduction0388?.tick?.('),'production not connected to material tick');
 assert.ok(logistics.includes('production?.cells?.()'),'extraction nodes not connected to national inventories');
