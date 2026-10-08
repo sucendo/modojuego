@@ -1,3 +1,71 @@
+HEXATEGOS 0.37.21 · MAPA DE SUMINISTRO MATERIAL
+
+INTEGRACIÓN
+Se reutiliza el mapa de suministro existente v3.25.3.
+No existe una segunda capa logística.
+
+Suministro utilizable:
+- baseSupplyPct03721 = logística física original;
+- materialCoverageForCell03721 = recursos disponibles en la red local;
+- materialSupplyScore03721 = disponibilidad material;
+- supplyPct3220 final combina ambos valores;
+- sin conexión logística el suministro sigue siendo 0;
+- los materiales solo pueden reducir la capacidad realmente utilizable.
+
+Cobertura material por zona:
+1. si la celda es un nodo logístico, usa su stock exacto;
+2. si pertenece a una red de carreteras, usa la cobertura agregada de ese componente;
+3. si no tiene componente local, usa cobertura nacional como referencia.
+
+Recursos:
+- alimentos
+- materias primas
+- energía/combustible
+- bienes industriales
+- material militar
+
+El indicador da peso especial a alimentos, combustible y bienes como cuellos de botella.
+
+ISLAS Y ENCLAVES
+Ejemplo:
+continente -> puerto -> ruta marítima -> puerto insular -> carreteras -> ciudad/industria
+
+Con ruta activa:
+- el puerto recibe mercancías reales;
+- redistributeRoadResources03720 las reparte por su componente local;
+- el mapa de suministro refleja la mejora.
+
+Si la ruta se bloquea/cierra:
+- deja de haber transferRouteResources03720;
+- el stock local sigue consumiéndose;
+- baja materialSupplyScore03721;
+- supplyPct3220 cae gradualmente;
+- el color pasa por tensión -> bajo -> crítico.
+
+COLORES
+- verde: abastecido >= 75%
+- amarillo: tensión 55–74%
+- naranja: bajo 35–54%
+- rojo: crítico < 35%
+
+SELECCIÓN
+En modo Suministro, el hexágono seleccionado muestra:
+- suministro combinado;
+- logística física;
+- disponibilidad material;
+- alimentos;
+- materias primas;
+- combustible;
+- bienes industriales;
+- material militar.
+
+RENDIMIENTO
+- resourceComponentCoverage03721 se reconstruye durante summarizeResources03720;
+- el render solo hace lookup por componente;
+- no hay pathfinding por frame;
+- no hay nuevos timers;
+- no hay textura global ni stock por hexágono.
+
 HEXATEGOS 0.37.20 · ECONOMÍA MATERIAL FÍSICA
 
 RECURSOS
