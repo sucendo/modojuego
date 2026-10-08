@@ -1129,6 +1129,17 @@
     },
     // Solo bajo acción explícita del usuario: jamás recorrer 500 naciones
     // en cada actualización de los diálogos.
+    pendingEmbassies:()=>{
+      const result=[];
+      for(const [key,e] of embassies){
+        if(!key.startsWith('0:')||e?.status!=='pending'||e.requestedBy<=0)continue;
+        const f=Number(key.slice(2));
+        if(f!==e.requestedBy||f>=activeFactionCount3230)continue;
+        result.push({f,at:e.at});
+        if(result.length>=30)break;
+      }
+      return result;
+    },
     embassyContacts:()=>{
       const result=[];
       for(let f=1;f<activeFactionCount3230;f++){
