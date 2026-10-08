@@ -457,54 +457,153 @@
       {if(typeof toast==='function')toast('No se puede mejorar la instalación')}
     renderSystems3220();
   });
-  function showBuildModal(cell){
-    if(owner6[cell]!==0)return false;
-    closeContextDialog3244();
-    uiInteractionState3244.modal={type:'production0388',data:{cell}};
-    modal3244.classList.add('open3244');modal3244.setAttribute('aria-hidden','false');
-    modalTitle3244.textContent='Industria productiva · '+(typeof placeDisplayName3271==='function'?placeDisplayName3271(cell):'Territorio');
+  // Un único acceso INDUSTRIA desde el menú del hexágono.
+  // Nunca modificar el flujo de selección global: el cierre nativo es
+  // imprescindible porque pick3244 ignora clics mientras modal !== null.
+  function industryContext0388(cell){
+    if(!Number.isInteger(cell)||owner6[cell]!==0)return null;
+    return typeof cellContext3244==='function'?cellContext3244(cell):null;
+  }
+  function renderIndustryModal0388(cell,section='menu'){
+    const state=uiInteractionState3244?.modal;
+    if(state?.type!=='production0388'||state.data?.cell!==cell)return false;
+    const context=industryContext0388(cell);
+    if(!context){closeModal3244();return false}
+    state.data.section=section;
+    const place=typeof placeDisplayName3271==='function'?placeDisplayName3271(cell):'Hexágono '+cell;
     const existing=sites.get(cell);
-    if(existing){
-      modalBody3244.innerHTML='<div class="industryModal0388"><p>Ya existe una instalación en este hexágono: '+esc(TYPES[existing.kind].name)+'. Puedes mejorarla desde Sistemas → Economía.</p></div>';
+    const industryCost=context.industry?115+context.industry*55:110;
+    const canGeneral=typeof canIndustry3244==='function'?canIndustry3244(context):false;
+    modalTitle3244.textContent='Industria · '+place;
+    const intro='<div class="industryIntro0388"><b>🏭 Gestión industrial del territorio</b>'+
+      '<p>La industria general representa el desarrollo industrial existente. Las explotaciones y fábricas especializadas utilizan recursos reales y la red logística.</p></div>';
+    const general='<button type="button" class="industryChoice0388" data-industry-general0388 '+
+       (canGeneral?'':'disabled')+'><span class="industryChoiceIcon0388">🏭</span>'+
+       '<span><b>'+(context.industry?'Mejorar industria general':'Construir industria general')+'</b>'+
+       '<small>Nivel '+(context.industry||0)+'/3 · '+industryCost+' oro · producción industrial base</small></span>'+
+       '<span class="industryChoiceArrow0388">›</span></button>';
+    const specialized='<button type="button" class="industryChoice0388" data-industry-view0388="specialized">'+
+      '<span class="industryChoiceIcon0388">⛏</span><span><b>Producción especializada</b>'+
+      '<small>Pozos, minas, cultivos, granjas y fábricas transformadoras</small></span>'+
+      '<span class="industryChoiceArrow0388">›</span></button>';
+    if(section==='menu'){
+      modalBody3244.innerHTML='<div class="industryModal0388">'+intro+
+        '<div class="industryChoices0388">'+general+specialized+'</div>'+
+        (existing?'<div class="industryExisting0388"><b>Instalación en este hexágono</b>'+
+          '<p>'+esc(TYPES[existing.kind].icon+' '+TYPES[existing.kind].name)+
+          ' · Nivel '+existing.level+'/5 · Control individual en Sistemas → Economía.</p></div>':'')+
+        '</div>';
+      modalActions3244.innerHTML='<button type="button" data-modal-action="close">CERRAR</button>';
     }else{
       const sections=[['extract','Explotaciones primarias'],['factory','Industrias transformadoras']];
-      modalBody3244.innerHTML='<div class="industryModal0388"><p>Cada explotación aprovecha el recurso de este hexágono y hasta seis vecinos propios. Solo llegará a otras industrias si existe conexión logística.</p>'+
-        sections.map(([group,title])=>'<h4>'+title+'</h4><div class="industryBuildGrid0388">'+
-          Object.entries(TYPES).filter(([k,v])=>v.group===group).map(([kind,def])=>{
-            const strength=group==='extract'?Math.round(potential(cell,0,kind)*100):null;
-            const disabled=gold3212<def.cost?'disabled':'';
-            return '<button type="button" data-industry-build0388="'+kind+'" '+disabled+'>'+
-              def.icon+' <b>'+esc(def.name)+'</b><small>'+def.cost+' oro'+(strength===null?'':' · potencial '+strength+'%')+'</small></button>';
-          }).join('')+'</div>').join('')+'</div>';
+      const types=sections.map(([group,title])=>
+        '<section class="industryGroup0388 industryGroup-'+group+'0388"><h4>'+title+'</h4>'+
+        '<div class="industryBuildGrid0388">'+Object.entries(TYPES).filter(([,def])=>def.group===group).map(([kind,def])=>{
+          const strength=group==='extract'?Math.round(potential(cell,0,kind)*100):null;
+          const allowed=!existing&&gold3212>=def.cost&&sites.size<MAX_SITES&&countNation(0)<MAX_PER_NATION;
+          return '<button type="button" class="industryBuildChoice0388" data-industry-build0388="'+kind+'" '+
+            (allowed?'':'disabled')+'><span class="industryTypeIcon0388">'+def.icon+'</span>'+
+            '<span class="industryBuildText0388"><b>'+esc(def.name)+'</b>'+
+            '<small>'+def.cost+' oro'+(strength===null?'':' · potencial '+strength+'%')+'</small></span></button>';
+        }).join('')+'</div></section>').join('');
+      modalBody3244.innerHTML='<div class="industryModal0388"><div class="industryIntro0388">'+
+        '<b>Explotaciones e industria transformadora</b>'+
+        '<p>Una explotación aprovecha hasta siete hexágonos propios. Para abastecer fábricas y ciudades necesita conexiones terrestres o marítimas.</p></div>'+
+        (existing?'<div class="industryExisting0388">Ya existe '+esc(TYPES[existing.kind].name)+
+        ' aquí. Mejora su nivel desde Sistemas → Economía.</div>':'')+types+'</div>';
+      modalActions3244.innerHTML='<button type="button" data-industry-view0388="menu">← VOLVER</button>'+
+        '<button type="button" data-modal-action="close">CERRAR</button>';
     }
-    modalActions3244.innerHTML='<button data-modal-action="close">CERRAR</button>';
     return true;
+  }
+  function showBuildModal(cell){
+    if(!Number.isInteger(cell)||owner6[cell]!==0)return false;
+    closeContextDialog3244();
+    // Rescatar por seguridad cualquier modal de producción anterior. Las
+    // acciones normales de cierre vacían la bandera modal además del overlay.
+    if(uiInteractionState3244?.modal?.type==='production0388')closeModal3244();
+    uiInteractionState3244.modal={type:'production0388',data:{cell,section:'menu'}};
+    modal3244.classList.add('open3244');
+    modal3244.setAttribute('aria-hidden','false');
+    return renderIndustryModal0388(cell,'menu');
   }
   const baseActions=buildClassicActions3246;
   buildClassicActions3246=function(ctx){
     const actions=baseActions.apply(this,arguments);
-    if(ctx?.kind==='cell'&&Number.isInteger(ctx.cell)&&owner6[ctx.cell]===0&&!actions.some(a=>a.id==='production0388'))
-      actions.push(classicAction3246('production0388','ECONOMÍA','🏭','INDUSTRIA PRODUCTIVA',true,''));
-    return actions;
+    if(ctx?.kind!=='cell'||!Number.isInteger(ctx.cell)||!ctx.own)return actions;
+    const general=actions.findIndex(a=>a.id==='build_industry');
+    const merged=classicAction3246('production0388','INDUSTRIA','🏭',
+      'GENERAL · EXTRACTIVA · TRANSFORMADORA',true,'good3244');
+    if(general>=0)actions.splice(general,1,merged);
+    else actions.push(merged);
+    return actions.filter(a=>a.id!=='industry_menu_0388');
   };
   const baseHandle=handleContextAction3244;
   handleContextAction3244=function(id){
-    if(id==='production0388'){
-      const ctx=uiInteractionState3244?.contextData;
-      if(ctx?.kind==='cell'&&Number.isInteger(ctx.cell))showBuildModal(ctx.cell);
+    if(id==='production0388'||id==='industry_menu_0388'){
+      const st=uiInteractionState3244,ctx=st?.contextData;
+      if(ctx?.kind==='cell'&&ctx.own&&Number.isInteger(ctx.cell)&&st.contextDialog&&
+         st.availableActions.includes(id))showBuildModal(ctx.cell);
       return;
     }
     return baseHandle.apply(this,arguments);
   };
+  function buildGeneralIndustry0388(cell){
+    const context=industryContext0388(cell);
+    if(!context||typeof canIndustry3244!=='function'||!canIndustry3244(context))return false;
+    // El motor exige un permiso explícito por acción; el submenú forma parte
+    // de la misma acción voluntaria del jugador, y no elude ese control.
+    selected={key:MAX_GAME_LEVEL3233,i:cell};
+    uiInteractionState3244.selectedCell=cell;
+    if(typeof contextBuildPermit3282!=='undefined')
+      contextBuildPermit3282={type:'industry',cell,until:performance.now()+900};
+    const previous=industries3212.has(cell)?Math.max(1,industryLevel3230[cell]||1):0;
+    build3212('industry');
+    const next=industries3212.has(cell)?Math.max(1,industryLevel3230[cell]||1):0;
+    return next>previous;
+  }
   modalBody3244?.addEventListener('click',event=>{
+    const state=uiInteractionState3244?.modal;
+    if(state?.type!=='production0388')return;
+    const cell=state.data?.cell;
+    const general=event.target.closest('[data-industry-general0388]');
+    if(general){
+      event.preventDefault();
+      if(general.disabled)return;
+      // Este cierre devuelve el control al globo: no basta con ocultar el CSS.
+      closeModal3244();
+      if(buildGeneralIndustry0388(cell)){
+        if(typeof updateUI3230==='function')updateUI3230();
+      }else if(typeof toast==='function')toast('No se pudo construir o mejorar la industria general');
+      return;
+    }
+    const change=event.target.closest('[data-industry-view0388]');
+    if(change){
+      event.preventDefault();
+      renderIndustryModal0388(cell,change.dataset.industryView0388);
+      return;
+    }
     const button=event.target.closest('[data-industry-build0388]');
-    if(!button||uiInteractionState3244?.modal?.type!=='production0388')return;
-    const cell=uiInteractionState3244.modal.data?.cell,kind=button.dataset.industryBuild0388;
+    if(!button)return;
+    event.preventDefault();
+    if(button.disabled)return;
+    const kind=button.dataset.industryBuild0388;
     if(build(0,cell,kind,true)){
+      // closeModal3244 limpia uiInteractionState3244.modal, imprescindible
+      // para poder volver a seleccionar otro hexágono inmediatamente.
+      closeModal3244();
+      if(typeof saveGame3212==='function')saveGame3212();
+      if(typeof updateUI3230==='function')updateUI3230();
+      needsRender=true;
       if(typeof toast==='function')toast(TYPES[kind].name+' construida');
-      modal3244.classList.remove('open3244');modal3244.setAttribute('aria-hidden','true');
       if(typeof sysTab3220==='string'&&sysTab3220==='eco')renderSystems3220();
     }else if(typeof toast==='function')toast('Terreno ocupado, límite alcanzado u oro insuficiente');
+  });
+  modalActions3244?.addEventListener('click',event=>{
+    const change=event.target.closest?.('[data-industry-view0388]');
+    if(!change||uiInteractionState3244?.modal?.type!=='production0388')return;
+    event.preventDefault();
+    renderIndustryModal0388(uiInteractionState3244.modal.data.cell,change.dataset.industryView0388);
   });
   // Un único icono discreto por instalación visible; nunca se dibujan
   // los otros seis hexágonos ni una carretera por cada recurso.
