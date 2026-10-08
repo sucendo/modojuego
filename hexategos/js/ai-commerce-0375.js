@@ -21,6 +21,8 @@
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 
   function tradeRelation0375(a,b){
+    const statecraft=window.HexategosStatecraft0380;
+    if(statecraft?.canTrade)return !!statecraft.canTrade(a,b);
     const r=diplomaticRelation3300(a,b);
     return r===1||r===2||r===3;
   }
