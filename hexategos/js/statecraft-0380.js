@@ -14,6 +14,17 @@
   const EMBASSY_RETRY_SECONDS=90;
   const SPY_UPKEEP_PER_SECOND=.018;
   const COUNTERINTEL_COST=[0,65,105,155,220,300];
+  // Una medida local, acotada a cada ciudad (no por hexágono del mapa).
+  const GOV_POLICY0386={
+    aid:{name:'Ayuda de emergencia',cost:38,duration:95,cooldown:75},
+    invest:{name:'Inversión civil',cost:70,duration:190,cooldown:145},
+    autonomy:{name:'Conceder autonomía',cost:56,duration:225,cooldown:180,occupied:true},
+    garrison:{name:'Desplegar guarnición',cost:32,duration:150,cooldown:125,troops:8},
+    ration:{name:'Racionamiento',cost:14,duration:100,cooldown:95},
+    repression:{name:'Medidas coercitivas',cost:30,duration:95,cooldown:110}
+  };
+  const GOV_FIELD0386={aid:'aidUntil',invest:'investUntil',autonomy:'autonomyUntil',
+    garrison:'garrisonUntil',ration:'rationUntil',repression:'repressionUntil'};
 
   const pairKey=(a,b)=>a<b?a+':'+b:b+':'+a;
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -32,6 +43,7 @@
   let lastService=-1e9;
   let cityCursor=0;
   let cityIterator0384=null, cityCollection0384=null;
+  let governmentAIOrders0386=0;
   let statecraftServiceMs0384=0, citiesUpdated0384=0;
   let aiCursor=1;
   let openNation=-1;
@@ -386,8 +398,9 @@
     if(st&&st.owner===f){
       if(st.strikeUntil>now())m*=.62;
       if(st.riotUntil>now())m*=.78;
+      if(governanceActive0386(st,'invest')&&(r===3||r===4))m*=1.09;
     }
-    return clamp(m,.18,1);
+    return clamp(m,.18,1.10);
   }
 
   function supplyForCity(cell,f){
@@ -408,6 +421,8 @@
     }
     if(st.owner!==owner){
       const previous=st.owner;
+      // Las medidas del ocupante anterior no sobreviven a la conquista.
+      st.gov={};
       st.owner=owner;st.occupiedSince=now();
       if(st.origin>=0&&owner!==st.origin)st.nationalism=Math.max(st.nationalism,68);
       else st.nationalism=Math.max(10,st.nationalism*.55);
@@ -415,6 +430,103 @@
       if(previous===0||owner===0)notify('Cambio de control en '+placeDisplayName3271(cell),'war','dip');
     }
     return st;
+  }
+
+  function governanceActive0386(st,type){
+    return (Number(st?.gov?.[GOV_FIELD0386[type]])||0)>now();
+  }
+  function governanceCity0386(cell){
+    cell=Number(cell);
+    if(!Number.isInteger(cell)||!cities3212.has(cell)||owner6[cell]<0)return null;
+    const st=ensureCityState(cell),f=st.owner;
+    const orders=st.gov?.orders||{};
+    return {
+      cell,owner:f,origin:st.origin,stability:Math.round(st.stability),
+      nationalism:Math.round(st.nationalism),scarcity:Math.round(st.scarcity),
+      supply:Math.round(Number(st.lastSupply)||65),
+      occupied:st.origin>=0&&st.origin!==f,
+      strike:st.strikeUntil>now(),riot:st.riotUntil>now(),
+      active:Object.fromEntries(Object.keys(GOV_POLICY0386).map(t=>[t,governanceActive0386(st,t)])),
+      remaining:Object.fromEntries(Object.keys(GOV_POLICY0386).map(t=>[t,Math.max(0,Math.ceil((Number(st.gov?.[GOV_FIELD0386[t]])||0)-now()))])),
+      cooldown:Object.fromEntries(Object.keys(GOV_POLICY0386).map(t=>[t,Math.max(0,Math.ceil((Number(orders[t])||0)-now()))]))
+    };
+  }
+  function governanceCities0386(f=0,max=65){
+    f=Number(f);max=clamp(Math.trunc(max)||65,1,100);
+    const list=[];
+    // Sólo se consulta al abrir Gobierno o actuar. El tick usa el iterador
+    // existente de 28 ciudades y no ordena todo el mapa.
+    for(const st of cityState.values()){
+      if(st.owner!==f||!cities3212.has(st.cell)||owner6[st.cell]!==f)continue;
+      list.push({cell:st.cell,stability:Math.round(st.stability),scarcity:Math.round(st.scarcity),
+        nationalism:Math.round(st.nationalism),occupied:st.origin>=0&&st.origin!==f});
+    }
+    list.sort((a,b)=>a.stability-b.stability||b.scarcity-a.scarcity);
+    return list.slice(0,max);
+  }
+  function applyGovernment0386(cell,type,f=0,interactive=true){
+    cell=Number(cell);f=Number(f);
+    const policy=GOV_POLICY0386[type];
+    if(!policy||!Number.isInteger(cell)||cell<0||!cities3212.has(cell)||owner6[cell]!==f)return false;
+    const st=ensureCityState(cell),n=now(),occupied=st.origin>=0&&st.origin!==f;
+    if(policy.occupied&&!occupied)return false;
+    const gov=st.gov||(st.gov={orders:{}});
+    const orders=gov.orders||(gov.orders={});
+    if((Number(orders[type])||0)>n||(Number(gov.lastOrder)||-1e9)+10>n)return false;
+    if(governanceActive0386(st,type))return false;
+    const treasury=f===0?gold3212:(botGold3230[f]||0);
+    // La IA no debe agotar toda su tesorería para estabilizar una sola ciudad.
+    if(treasury<policy.cost+(f===0?0:18))return false;
+    if(policy.troops&&(Number(troops3230[f])||0)<policy.troops+5)return false;
+
+    if(f===0)gold3212-=policy.cost;else botGold3230[f]-=policy.cost;
+    if(policy.troops){
+      troops3230[f]-=policy.troops;
+      gov.stationed=policy.troops;
+    }
+    gov[GOV_FIELD0386[type]]=n+policy.duration;
+    orders[type]=n+policy.cooldown;
+    gov.lastOrder=n;
+    if(type==='aid'){st.scarcity=Math.max(0,st.scarcity-55);st.stability=clamp(st.stability+12,0,100)}
+    if(type==='invest'){st.stability=clamp(st.stability+7,0,100);st.nationalism=clamp(st.nationalism-5,0,100)}
+    if(type==='autonomy'){st.nationalism=clamp(st.nationalism-22,0,100);st.stability=clamp(st.stability+7,0,100)}
+    if(type==='garrison'){st.stability=clamp(st.stability+5,0,100)}
+    if(type==='ration'){st.scarcity=Math.max(0,st.scarcity-16);st.stability=clamp(st.stability-5,0,100)}
+    if(type==='repression'){st.stability=clamp(st.stability+7,0,100);st.nationalism=clamp(st.nationalism+14,0,100)}
+    if(f===0){
+      save0380();
+      if(interactive)notify(policy.name+' en '+placeDisplayName3271(cell)+' · '+policy.cost+' oro','government','government');
+    }
+    return true;
+  }
+  function governanceAI0386(st){
+    if(st.owner<=0||governmentAIOrders0386>=2)return;
+    const n=now(),g=st.gov||{},f=st.owner;
+    if(n-(Number(g.lastOrder)||0)<78)return;
+    if(st.stability>=65&&st.scarcity<45&&st.nationalism<65)return;
+    const occupied=st.origin>=0&&st.origin!==f;
+    const role=FACTIONS3230[f]?.role||'balanced';
+    let decision='';
+    if(st.scarcity>70)decision=(botGold3230[f]||0)>=50?'aid':'ration';
+    else if(occupied&&st.nationalism>64)decision=role==='aggressive'?'garrison':'autonomy';
+    else if(st.stability<38)decision=role==='aggressive'?'repression':'invest';
+    else if(st.stability<56)decision='invest';
+    if(decision&&applyGovernment0386(st.cell,decision,f,false))governmentAIOrders0386++;
+  }
+  function governanceMaintain0386(st){
+    const gov=st.gov;if(!gov)return;
+    if(gov.stationed>0&&(Number(gov.garrisonUntil)||0)<=now()){
+      // Los hombres supervivientes regresan al ejército si la ciudad sigue
+      // bajo control propio; la pérdida de control cancela la guarnición.
+      if(owner6[st.cell]===st.owner&&st.owner>=0)
+        troops3230[st.owner]+=Math.max(0,gov.stationed-1);
+      gov.stationed=0;
+    }
+  }
+  function governmentDemandMultiplier0386(cell,r,f){
+    const st=cityState.get(Number(cell));
+    if(!st||st.owner!==f||!governanceActive0386(st,'ration'))return 1;
+    return r===0?.75:r===3?.90:1;
   }
 
   function triggerUnrest(st,supply){
@@ -425,7 +537,7 @@
       if(st.owner===0)notify('Huelgas por escasez en '+placeDisplayName3271(st.cell),'economy','eco');
       return;
     }
-    if(st.stability<34&&st.scarcity>90&&st.riotUntil<n){
+    if(st.stability<34&&st.scarcity>90&&st.riotUntil<n&&!governanceActive0386(st,'garrison')){
       st.riotUntil=n+48;st.lastEvent=n;
       if(st.owner===0)notify('Disturbios graves en '+placeDisplayName3271(st.cell),'war','dip');
       return;
@@ -461,11 +573,19 @@
   function updateOneCity(cell,dt){
     if(!cities3212.has(cell)||owner6[cell]<0)return;
     const st=ensureCityState(cell),f=st.owner,supply=supplyForCity(cell,f);
+    st.lastSupply=supply;
+    governanceMaintain0386(st);
     const occupied=st.origin>=0&&f!==st.origin;
-    if(occupied)st.nationalism=clamp(st.nationalism+dt*.018,0,100);
-    else st.nationalism=clamp(st.nationalism-dt*.012,6,100);
+    if(occupied){
+      let change=dt*.018;
+      if(governanceActive0386(st,'autonomy'))change-=dt*.075;
+      if(governanceActive0386(st,'invest'))change-=dt*.016;
+      if(governanceActive0386(st,'repression'))change+=dt*.085;
+      st.nationalism=clamp(st.nationalism+change,0,100);
+    }else st.nationalism=clamp(st.nationalism-dt*.012,6,100);
 
-    if(supply<55)st.scarcity=clamp(st.scarcity+dt,0,300);
+    if(supply<55)st.scarcity=clamp(st.scarcity+
+      dt*(governanceActive0386(st,'aid')?.20:governanceActive0386(st,'ration')?.55:1),0,300);
     else st.scarcity=clamp(st.scarcity-dt*1.6,0,300);
 
     let target=82;
@@ -476,8 +596,15 @@
     if(diplomaticRelation3300(f,0)===-1&&f!==0)target-=3;
     if(st.strikeUntil>now())target-=8;
     if(st.riotUntil>now())target-=16;
+    if(governanceActive0386(st,'aid'))target+=11;
+    if(governanceActive0386(st,'invest'))target+=13;
+    if(governanceActive0386(st,'autonomy'))target+=9;
+    if(governanceActive0386(st,'garrison'))target+=7;
+    if(governanceActive0386(st,'ration'))target-=6;
+    if(governanceActive0386(st,'repression'))target-=12;
     target=clamp(target,5,96);
     st.stability=clamp(st.stability+(target-st.stability)*clamp(dt*.012,.02,.18),0,100);
+    governanceAI0386(st);
     triggerUnrest(st,supply);
   }
 
@@ -571,6 +698,7 @@
     if(n-lastService<SERVICE_SECONDS)return;
     const dt=clamp(n-lastService,1,12);lastService=n;
     const start=performance.now();
+    governmentAIOrders0386=0;
     serviceStability(dt);serviceSpies(dt);serviceAI();
     operations=operations.filter(x=>x.until>n);
     statecraftServiceMs0384=performance.now()-start;
@@ -900,7 +1028,7 @@
 
   function serialize0380(){
     return {
-      version:2,
+      version:3,
       embassies:[...embassies],
       treaties:[...treaties],
       spies:[...spies],
@@ -919,7 +1047,7 @@
     const ci=Array.isArray(s.counterIntel)?s.counterIntel:[];
     for(let i=0;i<Math.min(ci.length,counterIntel.length);i++)counterIntel[i]=clamp(Number(ci[i])||0,0,100);
     cityState=new Map(Array.isArray(s.cities)?s.cities:[]);
-    cityIterator0384=null;cityCollection0384=null;
+    cityIterator0384=null;cityCollection0384=null;governmentAIOrders0386=0;
     operations=Array.isArray(s.operations)?s.operations.filter(x=>x&&x.until>now()):[];
     const a=Array.isArray(s.dipTech)?s.dipTech:[];
     dipTech.fill(0);for(let i=0;i<Math.min(a.length,dipTech.length);i++)dipTech[i]=clamp(Number(a[i])||0,0,5);
@@ -939,7 +1067,7 @@
   resetGame3230=function(clearSave=true){
     const out=baseReset0380.apply(this,arguments);
     embassies.clear();treaties.clear();spies.clear();counterIntel.fill(0);cityState.clear();operations=[];dipTech.fill(0);initialized=false;
-    cityIterator0384=null;cityCollection0384=null;
+    cityIterator0384=null;cityCollection0384=null;governmentAIOrders0386=0;
     if(clearSave)try{localStorage.removeItem(SAVE_KEY)}catch(_){}
     return out;
   };
@@ -981,6 +1109,11 @@
     suppliers:(resource)=>providerCandidates0382(Number(resource)).map(x=>({f:x.f,intel:x.intel,distance:x.distance,willing:x.willing.allowed,status:x.q.text,coverage:x.q.exact?x.q.pct:null,trade:x.trade,embassy:x.embassy})),
     stability:(cell)=>{const s=cityState.get(Number(cell));return s?{...s}:null},
     nationStability:(f)=>averageStability(Number(f)),
+    governmentPolicies:()=>Object.fromEntries(Object.entries(GOV_POLICY0386).map(([k,v])=>[k,{...v}])),
+    governmentCities:(f=0,max=65)=>governanceCities0386(f,max),
+    governmentCity:(cell)=>governanceCity0386(cell),
+    governmentAction:(cell,type,f=0)=>applyGovernment0386(cell,type,f,true),
+    governmentDemandMultiplier:(cell,r,f)=>governmentDemandMultiplier0386(cell,r,f),
     performance:()=>({lastServiceMs:Number(statecraftServiceMs0384.toFixed(2)),citiesUpdated:citiesUpdated0384,trackedCities:cityState.size,spyNetworks:spies.size}),
     dossier:(f,tab='dip')=>renderNationDossier(Number(f),tab),
     requestEmbassy:(a,b)=>requestEmbassy(Number(a),Number(b),false),
