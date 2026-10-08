@@ -160,7 +160,11 @@
     const cap=capitals[targetFaction];if(cap<0)return null;
     const snap=aiSnapshot3260,L=loadLevel(MAX_GAME_LEVEL3233),frontier=snap?.frontier?.[f]||[];
     let best=null,bestScore=1e9;
-    for(const src of frontier){
+    // Valorar riqueza es más caro que medir distancia: máximo 240 celdas
+    // fronterizas por servicio para que 500 IA no disparen el tiempo de CPU.
+    const stride=Math.max(1,Math.ceil(frontier.length/240));
+    for(let i=0;i<frontier.length;i+=stride){
+      const src=frontier[i];
       if(owner6[src]!==f)continue;
       const base=angularHeuristic3254(src,cap);
       for(let k=L.offsets[src];k<L.offsets[src+1];k++){
