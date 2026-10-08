@@ -176,3 +176,22 @@
     height:calc(100dvh - 10px)!important;
   }
 }
+
+
+/* SAFE RESET POSITION 0.38.5.2
+   El estilo Stable3 centra con translate(-50%,-50%); el rediseño 0385
+   forzaba top:64px pero NO sustituía el translateY(-50%), dejando la
+   cabecera por encima del viewport después de ⌖. Sin coordenadas guardadas,
+   centrar las DOS propiedades juntas para no ocultar el asa de arrastre. */
+#systemsPanel3213.systemsHub0385:not(.uiMovedStable3){
+  left:50%!important;
+  right:auto!important;
+  top:50%!important;
+  bottom:auto!important;
+  transform:translate(-50%,-50%)!important;
+}
+#systemsPanel3213.systemsHub0385.uiMovedStable3{
+  right:auto!important;
+  bottom:auto!important;
+  transform:none!important;
+}
