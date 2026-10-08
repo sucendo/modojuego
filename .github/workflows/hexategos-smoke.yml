@@ -39,11 +39,18 @@ jobs:
         run: |
           set -euo pipefail
           count=0
+          failed=0
           while IFS= read -r file; do
             echo "::group::$(basename "$file")"
-            node "$file"
+            if node "$file"; then
+              echo "PASS $file"
+            else
+              echo "::error file=$file::Regression smoke failed"
+              failed=$((failed+1))
+            fi
             echo "::endgroup::"
             count=$((count+1))
           done < <(find hexategos/tests -maxdepth 1 -type f -name 'smoke-*.mjs' | sort -V)
-          echo "Smoke tests passed: $count"
+          echo "Smoke tests executed: $count; failed: $failed"
           test "$count" -ge 50
+          test "$failed" -eq 0
