@@ -1,0 +1,27 @@
+'use strict';
+/* Regression tests for power accounting and industrial saves. */
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+const __dirname=path.dirname(fileURLToPath(import.meta.url));
+const src=fs.readFileSync(path.join(__dirname,'../js/production-0388.js'),'utf8');
+assert.match(src,/file\.payload\.production0388=saveState\(\)/,'Portable save must contain industries');
+assert.match(src,/restore\(input&&Array\.isArray\(input\.sites\)\?input:null\)/,'Portable import must isolate industrial state');
+assert.match(src,/if\(snapshot&&Array\.isArray\(snapshot\.sites\)\)restore\(snapshot\)/,'Browser load must preserve saved specialized sites');
+assert.match(src,/localStorage\.setItem\(SAVE_KEY,state\)/,'Browser save must persist industry state');
+assert.match(src,/const powerStation=def\.group==='power'/,'Power plant must be distinct from ordinary factories');
+assert.match(src,/g\.electricity\+=outputQty/,'Power plants must generate electricity');
+assert.doesNotMatch(src,/for\(const node of g\.powerNodes\)result\+=Math\.max\(0,node\.stock\[2\]/,'Fuel must not count as electricity');
+assert.doesNotMatch(src,/node\.stock\[2\]-=qty/,'Electricity consumers must not directly consume fuel stock');
+const electricity=src.match(/    function availablePower\(g\)\{[^\n]*\}\n    function consumePower\(g,required\)\{[\s\S]*?\n    \}/);
+assert.ok(electricity,'Electricity helpers are present');
+const api=Function(electricity[0]+';return {availablePower,consumePower}')();
+const network={electricity:10,powerNodes:new Set([{stock:[0,0,250]}])};
+assert.equal(api.availablePower(network),10);
+assert.equal(api.consumePower(network,3),3);
+assert.equal(network.electricity,7);
+assert.equal(api.consumePower(network,100),7);
+assert.equal(api.availablePower(network),0);
+assert.equal(network.powerNodes.values().next().value.stock[2],250,'Electricity use cannot alter fuel inventory');
+console.log('PASS: industrial save/export guards and separated electrical generation/consumption');

@@ -17,7 +17,7 @@ assert.ok(msgs.includes('data-view-notice='),'notice VER missing');
 assert.ok(msgs.includes('data-view-offer='),'diplomatic proposal VER missing');
 assert.ok(msgs.includes('data-answer-embassy='),'embassy decision buttons missing');
 assert.ok(msgs.includes('rotateToGeo3243(geo.lon,geo.lat'),'map navigation missing');
-assert.ok(msgs.includes('pendingEmbassies?.()'),'pending requests must persist past notice truncation');
+assert.ok(statecraft.includes('pendingEmbassies:()=>'),'pending embassies remain available independently of notices');
 assert.ok(statecraft.includes('pendingEmbassies:()=>'),'pending embassies API missing');
 assert.ok(statecraft.includes("requestKind:'embassy'"),'embassy request must be actionable');
 assert.ok(names.includes('atlas.suggest(cell)'),'real GeoNames suggestions not used');

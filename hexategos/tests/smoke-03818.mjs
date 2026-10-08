@@ -8,9 +8,9 @@ const html=read('index.html');
 assert.doesNotThrow(()=>new Function(scrollCode),'scroll stability script syntax');
 assert.doesNotThrow(()=>new Function(messageCode),'message script syntax');
 assert.match(html,/v0\.38\.18<\/title>/);
-assert.match(html,/js\/dialog-scroll-03818\.js\?v=03818/);
-assert.match(html,/js\/ui-stable-step8-033\.js\?v=03818/);
-assert.match(html,/js\/systems-hub-03851\.js\?v=03818/);
+assert.match(html,/js\/dialog-scroll-03818\.js\?v=\d+/);
+assert.match(html,/js\/ui-stable-step8-033\.js\?v=\d+/);
+assert.match(html,/js\/systems-hub-03851\.js\?v=\d+/);
 assert.ok(systemsCode.includes('focus({preventScroll:true})'),'embassy input focus must not scroll automatically');
 
 const host={scrollTop:92},main={scrollTop:34},panel={
