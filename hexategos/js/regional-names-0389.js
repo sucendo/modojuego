@@ -52,6 +52,7 @@
   ];
   const originalFactionName=factionName3230;
   const nations=new Map(),cities=new Map(),checked=new Set(),working=new Set();
+  const pendingCities=[],queuedCities=new Set();
   let cityCursor=null,capCursor=0,lastCampaign=-1e9,generation=0;
   let searches=0,applied=0,failures=0;
   function geo(cell){
@@ -158,8 +159,15 @@
   function service(){
     if(!started3230||paused3230||!owner6?.length)return;
     const time=Number(campaignSeconds3230)||0;
-    if(time-lastCampaign<2.5||working.size>=2)return;
+    if(time-lastCampaign<1.5||working.size>=2)return;
     lastCampaign=time;
+    // Priorizar ciudades que la IA acaba de construir sin buscar en el mapa.
+    if(pendingCities.length&&(capCursor>=activeFactionCount3230||Math.floor(time)%3===0)){
+      const cell=pendingCities.shift();queuedCities.delete(cell);
+      const f=owner6[cell];
+      if(f>0&&f<activeFactionCount3230&&cities3212.has(cell))void nameCell(cell,f,false);
+      return;
+    }
     // 500 naciones sin barrido masivo: una capital por ronda.
     if(capCursor<activeFactionCount3230){
       const f=capCursor++,cell=capitals?.[f]??-1;
@@ -180,6 +188,7 @@
   }
   function restore(s){
     nations.clear();cities.clear();checked.clear();working.clear();generation++;
+    pendingCities.length=0;queuedCities.clear();
     capCursor=0;cityCursor=null;lastCampaign=-1e9;
     if(!s||!Array.isArray(s.nations))return;
     for(const [f,r] of s.nations.slice(0,FACTIONS3230.length))
@@ -221,6 +230,15 @@
       const out=base.apply(this,arguments);restore(data);save();return out;
     };
   }
+  // Captura O(1) de nuevas ciudades de las IA, sin recuentos ni barridos.
+  const baseCityAdd=cities3212.add;
+  cities3212.add=function(cell){
+    const existed=this.has(cell),out=baseCityAdd.call(this,cell);
+    if(!existed&&started3230&&owner6[cell]>0&&!queuedCities.has(cell)){
+      pendingCities.push(cell);queuedCities.add(cell);
+    }
+    return out;
+  };
   // Sin timers nuevos: comparte el tick económico existente.
   const baseEconomy=economyTick3212;
   economyTick3212=function(){
