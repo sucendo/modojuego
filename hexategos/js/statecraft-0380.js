@@ -250,8 +250,10 @@
     const spy=spyState(viewer,target);
     let v=spy?.active?(Number(spy.level)||0):0;
     if(hasEmbassy(viewer,target))v+=18;
-    const rel=diplomaticRelation3300(viewer,target);
-    if(rel===1)v+=12; else if(rel===2)v+=8; else if(rel===3)v+=18;
+    const t=treatyState(viewer,target,true);
+    if(t?.trade)v+=12;
+    if(t?.nap)v+=8;
+    if(t?.alliance)v+=10;
     const net=window.HexategosDiplomacyNetwork3301;
     if((net?.level?.(viewer,target)||0)>=3)v+=5;
     return clamp(Math.round(v),0,100);
@@ -526,7 +528,7 @@
       if(!hasEmbassy(f,o)&&!embassyPending(f,o)&&embassyAcceptance(o,f)>=55){
         requestEmbassy(f,o,false);break;
       }
-      if(hasEmbassy(f,o)&&diplomaticRelation3300(f,o)===0){
+      if(hasEmbassy(f,o)&&diplomaticRelation3300(f,o)!==-1&&!tradeTreaty(f,o)){
         const score=typeof dipAcceptanceScore3300==='function'?dipAcceptanceScore3300(o,f,'trade'):0;
         const th=typeof dipThreshold3300==='function'?dipThreshold3300('trade'):50;
         if(score>=th+5){
