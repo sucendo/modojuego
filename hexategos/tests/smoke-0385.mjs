@@ -111,7 +111,7 @@ ctx.openSystems3220=tab=>{
 vm.runInNewContext(js,ctx,{timeout:5000});
 assert.equal(registerCalls,0,'hidden panel must not be measured');
 ctx.openSystems3220('dip');
-assert.equal(registerCalls,1,'panel registers drag once');
+assert.equal(registerCalls,0,'Stable3 alone manages Systems dragging; no duplicate listeners');
 assert.equal(baseRenders,1,'original render still executes');
 assert.ok(content.children.every((b,i)=>b===baseChildren[i]),
   'redesign must not replace any existing content block');
@@ -141,5 +141,5 @@ ctx.openSystems3220('settings');
 assert.ok(panel.classList.contains('systemsOptions0385'),
   'Options uses independent single-column layout');
 assert.equal(header.textContent,'OPCIONES','Options heading should update');
-assert.equal(registerCalls,1,'reopening must not register multiple drag handlers');
+assert.equal(registerCalls,0,'reopening must not create a second drag manager');
 console.log('HEXATEGOS 0.38.5 systems redesign smoke: OK');
