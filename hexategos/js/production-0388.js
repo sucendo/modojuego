@@ -141,7 +141,7 @@
     // Capturas y pérdida de instalaciones: no se reconstruye el mapa entero.
     for(const s of sites.values()){
       const owner=owner6[s.cell];
-      if(owner>=0&&owner!==s.f){s.f=owner;s.stock*=.5;s.pct=75;revision++}
+      if(owner>=0&&owner!==s.f){s.f=owner;s.stock*=.5;s.pct=75;s.updated=-1e9;revision++}
       if(owner<0||owner!==s.f)continue;
       const n=nodes.get(s.cell);
       if(!n)continue;
@@ -277,11 +277,18 @@
         factoryNeeds.push(recipe);
     }
     const role=FACTIONS3230[f]?.role||'balanced';
+    // Las IA ajustan autónomamente el uso sectorial según la escasez.
+    const policy={energy:clamp(Math.round(70+pressure.energy*30),0,100),
+      mining:clamp(Math.round(70+pressure.mining*30),0,100),
+      farming:clamp(Math.round(70+pressure.farming*30),0,100),
+      manufacturing:role==='growth'?100:90};
+    sectorPct.set(f,policy);
     let choice=null,score=0;
     const sample=aiNationalSamples3275?.[f]||[];
     const cells=[capitals[f]];
-    const step=Math.max(1,Math.ceil(sample.length/36));
-    for(let i=0;i<sample.length&&cells.length<40;i+=step)cells.push(sample[i]);
+    // 500 IA: búsqueda acotada a once ubicaciones por revisión.
+    const step=Math.max(1,Math.ceil(sample.length/10));
+    for(let i=0;i<sample.length&&cells.length<12;i+=step)cells.push(sample[i]);
     for(const cell of cells){
       if(!Number.isInteger(cell)||owner6[cell]!==f||sites.has(cell))continue;
       const road=connect(cell,f);
