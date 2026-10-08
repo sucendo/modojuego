@@ -4,10 +4,43 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.38.0',
+      date:'Octubre 2026',
+      title:'Embajadas, inteligencia y estabilidad nacional',
+      current:true,
+      summary:'La diplomacia pasa a requerir contacto y embajadas, el comercio depende de consentimiento real, la inteligencia descubre recursos y la estabilidad interna reacciona a escasez, ocupación y operaciones clandestinas.',
+      changes:[
+        'Nueva ficha de nación contextual con Diplomacia, Comercio, Inteligencia, Militar y Rutas.',
+        'Al seleccionar un territorio aparece acceso directo a la ficha de la nación propietaria.',
+        'Los tratados positivos requieren una embajada previa; una nación puede aceptar o rechazar la apertura diplomática.',
+        'Nuevo alcance diplomático progresivo mediante I+D, con mayor radio para establecer embajadas y relaciones formales.',
+        'Las rutas internacionales requieren embajada y acuerdo comercial, y solo mueven recursos que la nación exportadora esté realmente dispuesta a vender.',
+        'La ficha comercial muestra excedentes, déficits, restricciones y posibles reservas ocultas según la calidad de la inteligencia.',
+        'Se pueden desplegar redes de espionaje y realizar operaciones abstractas de sabotaje alimentario, energético, industrial, agitación laboral y agitación nacionalista.',
+        'Las operaciones tienen riesgo de fracaso y detección, con deterioro de opinión, confianza e incluso expulsión diplomática.',
+        'Cada ciudad mantiene estabilidad, nacionalismo y acumulación de escasez sin añadir un barrido global por frame.',
+        'La falta prolongada de suministro puede causar huelgas, disturbios y rebeliones; las ciudades conquistadas conservan un factor nacionalista más alto.',
+        'Una ciudad ocupada con nacionalismo alto y estabilidad extrema puede restaurar a su nación de origen.',
+        'Las IA usan la misma lógica de embajadas, comercio e inteligencia de forma muestreada.',
+        'El nuevo estado se conserva en guardado local y en archivos portables .hexategos.'
+      ]
+    },
+    {
+      version:'0.37.24',
+      date:'Octubre 2026',
+      title:'Información enlazada al diagnóstico completo',
+      current:false,
+      summary:'La acción INFORMACIÓN del territorio abre correctamente la ficha completa de suministro en lugar de limitarse al porcentaje final.',
+      changes:[
+        'INFORMACIÓN · TERRENO Y SUMINISTRO se enlaza directamente con el diagnóstico completo.',
+        'Se mantienen logística física, materiales, producción, consumo, balance, flujo comercial y recomendaciones.'
+      ]
+    },
+    {
       version:'0.37.23',
       date:'Octubre 2026',
       title:'Diagnóstico desde Información',
-      current:true,
+      current:false,
       summary:'La ficha de suministro detallada se abre ahora directamente desde el botón INFORMACIÓN del territorio seleccionado.',
       changes:[
         'El botón INFORMACIÓN · TERRENO Y SUMINISTRO abre una ficha con estado, suministro combinado, logística física y material.',
