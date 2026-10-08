@@ -68,8 +68,9 @@
         else if(tk==='mountain')terrainPenalty=3;
         else if(tk==='ice')terrainPenalty=5;
         const compactBonus=support.own*8.5+support.road*4.5;
-        const score=excess*2.2-compactBonus+(d>base?.8:0)+terrainPenalty+
-          ((n*29+src*11+f*7)%997)*.0001;
+        const resourceValue=window.HexategosResourceStrategy0383?.priority?.(f,n)||0;
+        const score=excess*2.2-compactBonus+(d>base?.8:0)+terrainPenalty-
+          Math.min(6,resourceValue*.85)+((n*29+src*11+f*7)%997)*.0001;
         if(score<bestScore){
           bestScore=score;
           best={src,target:n,score,progress:base-d,consolidation:true,noRoad:true,
@@ -123,8 +124,9 @@
 
         // El corredor ya existe: aquí importa compactar la franja real,
         // no seguir acercándose a la capital del socio.
-        const score=terrainPenalty-support.own*9-support.road*4+
-          ((n*31+src*17+f*13)%997)*.0001;
+        const resourceValue=window.HexategosResourceStrategy0383?.priority?.(f,n)||0;
+        const score=terrainPenalty-support.own*9-support.road*4-
+          Math.min(5,resourceValue*.8)+((n*31+src*17+f*13)%997)*.0001;
         if(score<bestScore){
           bestScore=score;
           best={src,target:n,score,progress:0,consolidation:true,activeRouteBelt:true,
@@ -168,8 +170,9 @@
       const excess=axisExcess0379(f,targetFaction,c);if(excess>3.6)continue;
       const dCity=nearestDistance0379(c,cities,cap);if(dCity<4.2)continue;
       const supply=aiLocalSupply3260(f,c);if(supply<22)continue;
+      const resourceValue=window.HexategosResourceStrategy0383?.priority?.(f,c)||0;
       const score=excess*3.4+angularHeuristic3254(c,target)*.06-Math.min(10,dCity)*.24-
-        Math.min(70,supply)*.018+((c*23+f*13)%991)*.0001;
+        Math.min(70,supply)*.018-Math.min(2.5,resourceValue*.24)+((c*23+f*13)%991)*.0001;
       if(score<bestScore){bestScore=score;best=c}
     }
     return best;
@@ -185,8 +188,9 @@
       const excess=axisExcess0379(f,targetFaction,c);if(excess>4.0)continue;
       const dInd=nearestDistance0379(c,industries,-1);if(dInd<2.1)continue;
       const supply=aiLocalSupply3260(f,c);if(supply<26)continue;
-      const score=excess*3+angularHeuristic3254(c,target)*.05-Math.min(65,supply)*.02+
-        ((c*19+f*31)%983)*.0001;
+      const raw=window.HexategosResourceStrategy0383?.geography?.(c)?.vector?.[1]||1;
+      const score=excess*3+angularHeuristic3254(c,target)*.05-Math.min(65,supply)*.02-
+        Math.min(2.4,Math.max(0,raw-.6)*1.7)+((c*19+f*31)%983)*.0001;
       if(score<bestScore){bestScore=score;best=c}
     }
     return best;
