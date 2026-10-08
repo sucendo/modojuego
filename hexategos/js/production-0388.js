@@ -3,7 +3,7 @@
    Una instalación explota como máximo 7 hexágonos; inventario material
    concentrado en nodos, nunca un objeto de producción por celda. */
 (() => {
-  const VERSION='0.38.15';
+  const VERSION='0.38.25';
   const SAVE_KEY='hexategos.production.0388';
   const MAX_SITES=5600,AI_RESERVED_FOR_PLAYER=160,MAX_PLAYER_SITES=160,MAX_PER_CELL=3;
   const MAX_PER_NATION=18;
@@ -12,6 +12,7 @@
   const TYPES={
     oil:     {name:'Pozo de petróleo', icon:'🛢',sector:'energy',   group:'extract',material:'oil', cost:100},
     gas:     {name:'Pozo de gas',       icon:'🔥',sector:'energy',   group:'extract',material:'gas', cost:100},
+    coal:    {name:'Mina de carbón',    icon:'⚒️',sector:'mining',group:'extract',material:'coal',cost:85},
     iron:    {name:'Mina de hierro',    icon:'⛏',sector:'mining',   group:'extract',material:'iron',cost:85},
     copper:  {name:'Mina de cobre',     icon:'⛏',sector:'mining',   group:'extract',material:'copper',cost:90},
     timber:  {name:'Explotación forestal',icon:'🌲',sector:'mining',group:'extract',material:'timber',cost:65},
@@ -20,12 +21,12 @@
     livestock:{name:'Granja ganadera',  icon:'🐄',sector:'farming',  group:'extract',material:'livestock',cost:65},
     refinery:{name:'Refinería',         icon:'🏭',sector:'manufacturing',group:'factory',inputs:['oil'],output:2,cost:160},
     gasplant:{name:'Planta de gas',     icon:'🏭',sector:'manufacturing',group:'factory',inputs:['gas'],output:2,cost:140},
-    steel:   {name:'Siderurgia',        icon:'🏭',sector:'manufacturing',group:'factory',inputs:['iron'],output:1,cost:155},
-    smelter: {name:'Metalurgia',        icon:'🏭',sector:'manufacturing',group:'factory',inputs:['copper'],output:1,cost:135},
+    steel:   {name:'Siderurgia',        icon:'🏭',sector:'manufacturing',group:'factory',inputs:['iron'],electricity:.16,output:1,cost:155},
+    smelter: {name:'Metalurgia',        icon:'🏭',sector:'manufacturing',group:'factory',inputs:['copper'],electricity:.13,output:1,cost:135},
     sawmill: {name:'Aserradero',        icon:'🏭',sector:'manufacturing',group:'factory',inputs:['timber'],output:1,cost:105},
     cement:  {name:'Cementera',         icon:'🏭',sector:'manufacturing',group:'factory',inputs:['quarry'],output:1,cost:120},
     foodplant:{name:'Industria alimentaria',icon:'🏭',sector:'manufacturing',group:'factory',inputs:['crops','livestock'],inputMode:'any',output:0,cost:115},
-    thermal:{name:'Central termoeléctrica',icon:'⚡',sector:'energy',group:'power',inputs:['fuel','gasfuel'],inputMode:'any',output:2,cost:175},
+    thermal:{name:'Central termoeléctrica',icon:'⚡',sector:'energy',group:'power',inputs:['coal','fuel','gasfuel'],inputMode:'any',output:2,cost:175},
     civilian:{name:'Manufactura civil',icon:'📦',sector:'manufacturing',group:'manufacture',inputs:['steel','lumber'],output:3,cost:155},
     machinery:{name:'Industria de maquinaria',icon:'⚙️',sector:'manufacturing',group:'manufacture',inputs:['steel','copperref'],output:3,cost:200},
     arms:{name:'Industria armamentística',icon:'🛡️',sector:'manufacturing',group:'manufacture',inputs:['steel','copperref'],output:4,cost:230},
@@ -42,9 +43,9 @@
   ];
   const PROCESSED={refinery:'fuel',gasplant:'gasfuel',steel:'steel',smelter:'copperref',sawmill:'lumber',cement:'cement'};
   const RESOURCE_PRODUCT_LABELS={fuel:'Combustible refinado',gasfuel:'Gas procesado',steel:'Acero',copperref:'Cobre refinado',lumber:'Madera elaborada',cement:'Cemento'};
-  const MATERIAL_KEYS=['oil','gas','iron','copper','timber','quarry','crops','livestock',...Object.values(PROCESSED)];
-  const industryStage=t=>t.group==='extract'?1:t.group==='factory'?2:t.group==='power'?3:4;
-  const RECIPE={oil:'refinery',gas:'gasplant',iron:'steel',copper:'smelter',timber:'sawmill',quarry:'cement',crops:'foodplant',livestock:'foodplant'};
+  const MATERIAL_KEYS=['oil','gas','coal','iron','copper','timber','quarry','crops','livestock',...Object.values(PROCESSED)];
+  const industryStage=t=>t.group==='extract'?1:t.group==='power'?3:t.electricity?4:t.group==='factory'?2:5;
+  const RECIPE={oil:'refinery',gas:'gasplant',coal:'thermal',iron:'steel',copper:'smelter',timber:'sawmill',quarry:'cement',crops:'foodplant',livestock:'foodplant'};
   const rawTypes=Object.keys(TYPES).filter(k=>TYPES[k].group==='extract');
   const TYPE_SALTS=Object.fromEntries(rawTypes.map(kind=>[
     kind,[...kind].reduce((h,c)=>Math.imul(h^c.charCodeAt(0),16777619)>>>0,2166136261)]));
@@ -76,6 +77,7 @@
     let v=0;
     if(kind==='oil')v=fuel*(arid?1.25:.78);
     else if(kind==='gas')v=fuel*(arid?1.13:.9)*(.75+(hash%31)/70);
+    else if(kind==='coal')v=raw*(mountain?1.45:t==='forest'||t==='plain'?1.1:.65)*(.80+(hash%47)/110);
     else if(kind==='iron')v=raw*(mountain?1.35:.85);
     else if(kind==='copper')v=raw*(mountain?1.22:.82)*(.72+(hash%43)/95);
     else if(kind==='timber')v=raw*(woodland?1.6:.12);
@@ -333,6 +335,7 @@
         const s=item.site,n=item.node,def=TYPES[s.kind],out=def.output;
         const intermediate=PROCESSED[s.kind]||null;
         const powerStation=def.group==='power';
+        const electricRate=def.group==='manufacture'?.12:(def.electricity||0);
         const room=powerStation?Infinity:Math.max(0,n.cap[out]-n.stock[out]);
         const buffer=intermediate?Math.max(0,65*s.level-s.stock):0;
         if(room+buffer<=.000001)continue;
@@ -368,7 +371,7 @@
         }
         // Reservar energía ANTES de consumir materias para no perder cargamentos
         // cuando una fábrica tenga apagones o capacidad eléctrica insuficiente.
-        if(def.group==='manufacture')amount=Math.min(amount,availablePower(g)/.12);
+        if(electricRate>0)amount=Math.min(amount,availablePower(g)/electricRate);
         if(amount<=0)continue;
         const inputs=def.inputs||[];
         if(!inputs.length)continue;
@@ -376,6 +379,7 @@
           let chosen=null,maximum=0;
           for(const kind of inputs){
             const qty=available(g,kind);
+            if(powerStation&&qty>0){chosen=kind;maximum=qty;break}
             if(qty>maximum){chosen=kind;maximum=qty}
           }
           if(!chosen||maximum<=0)continue;
@@ -389,7 +393,7 @@
         if(amount<=0)continue;
         // Los bienes finales necesitan energía; las centrales son las
         // encargadas de generarla. No consumir el stock a nivel de mapa.
-        if(def.group==='manufacture')consumePower(g,amount*.12);
+        if(electricRate>0)consumePower(g,amount*electricRate);
         const outputQty=amount*.90;
         if(powerStation){
           // Combustible procesado -> electricidad, sin crear combustible extra.
@@ -398,8 +402,9 @@
           processed+=outputQty;
           continue;
         }
-        const stored=intermediate?Math.min(buffer,outputQty*.62):0;
-        const delivered=Math.min(room,outputQty-stored);
+        // El remanente va al buffer: no descartar producción tras consumir insumos.
+        const delivered=Math.min(room,outputQty);
+        const stored=intermediate?Math.min(buffer,outputQty-delivered):0;
         if(intermediate)s.stock+=stored;
         n.stock[out]+=delivered;
         processed+=stored+delivered;s.output+=stored+delivered;
@@ -436,6 +441,8 @@
         factoryNeeds.add(recipe);
     }
     const ownKinds=new Set(own.map(s=>s.kind));
+    const needsElectric=own.some(s=>TYPES[s.kind]?.electricity||TYPES[s.kind]?.group==='manufacture');
+    if(needsElectric&&!ownKinds.has('thermal'))factoryNeeds.add('thermal');
     const availableOutputs=new Set(ownKinds);
     for(const site of own){
       const output=PROCESSED[site.kind];
