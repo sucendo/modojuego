@@ -195,6 +195,7 @@
     // Solo se mueve materia físicamente por rutas existentes entre nodos.
     // Las fábricas receptoras determinan qué mercancía debe viajar.
     for(const r of routes){
+      r.productionCargo0388={};
       if((r.type!=='sea'&&r.type!=='land')||r.status==='closed'||r.status==='blocked'||
         r.status==='broken'||r.status==='suspended'||r.status==='rebuilding')continue;
       if(r.a!==r.b&&!window.HexategosStatecraft0380?.canTrade?.(r.a,r.b))continue;
@@ -226,6 +227,7 @@
           if(!dst.raw.get(kind).some(x=>x.depot===dstStock&&x.kind===kind))
             dst.raw.get(kind).push({depot:dstStock,kind});
           budget-=cargo;shipped+=cargo;
+          r.productionCargo0388[kind]=(r.productionCargo0388[kind]||0)+cargo/Math.max(.1,dt);
         }
       }
     }
