@@ -54,7 +54,7 @@
   function connections0373(){
     const api=window.HexategosTradeLogistics0370;
     const cache=new Map();
-    const road=c=>{if(!cache.has(c))cache.set(c,api?.roadComponent?.(c)??-1);return cache.get(c)};
+    const road=c=>{if(!cache.has(c))cache.set(c,(api?.roadNetworkSize?.(c)||0)>1?(api?.roadComponent?.(c)??-1):-1);return cache.get(c)};
     const sea=activeSeaEndpoints0373();
     const direct=(c,f)=>f>=0&&owner6[c]===f&&(road(c)>=0||(ports3212.has(c)&&sea.has(c)));
     return (cell,f,level=2)=>{
@@ -181,6 +181,7 @@
       if(since==null){since=now;specializedDecay.set(id,since);dirty=true}
       if(now-since>=REMOVE_SECONDS&&prod?.removeSite?.(site.cell,site.kind)){
         specializedDecay.delete(id);removals++;dirty=true;
+        if(prod?.persist?.()===false)console.warn('[HEXATEGOS] No se pudo guardar la eliminación de una industria aislada');
       }
     }
     for(const id of specializedDecay.keys())if(!existing.has(id)){specializedDecay.delete(id);dirty=true}
