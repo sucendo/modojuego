@@ -309,13 +309,16 @@
   function simplifyActions(ctx){
     const buttons=Array.from(actions.querySelectorAll(':scope > button.ctxAction3244'));
     if(!buttons.length)return;
-    const quick=ctx.own?['send_troops','build_city','production0388','build_road']:
+    // En la ficha nueva todas las acciones disponibles están a la vista.
+    // Se conservan nodos y manejadores originales, sin recrear botones.
+    const quick=ctx.own?['send_troops','build_city','production0388','build_road',
+      'build_fort','build_port','rename','capital','inspect']:
       ctx.enemy?['attack','diplomacy','inspect']:['expand','inspect'];
     const main=document.createElement('div');
     main.className='ctxQuick03817';
     const rest=document.createElement('div');rest.className='ctxMoreGrid03817';
     for(const b of buttons){
-      if(quick.includes(b.dataset.action)&&!b.disabled&&main.children.length<4)main.appendChild(b);
+      if(quick.includes(b.dataset.action)&&!b.disabled&&main.children.length<9)main.appendChild(b);
       else rest.appendChild(b);
     }
     const previouslyOpen=extrasExpanded03819;
@@ -325,7 +328,7 @@
       const extra=document.createElement('details');
       extra.className='ctxExtras03817';
       extra.innerHTML='<summary>Más acciones y construcciones</summary>';
-      extra.open=previouslyOpen;
+      extra.open=previouslyOpen || (ctx.own && window.innerWidth>650);
       extra.appendChild(rest);actions.appendChild(extra);
     }
     // Las áreas clásicas de diplomacia y sliders no pueden vivir dentro de
