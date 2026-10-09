@@ -2,13 +2,13 @@
    !important is limited to properties owned by the legacy contextual dialog. */
 #contextMenu3244.hexInspectorActive03817{
   --panel-line:#285e7b;--panel-text:#d1e8f5;
-  width:min(790px,calc(100dvw - 20px))!important;
-  max-width:calc(100dvw - 20px);max-height:calc(100dvh - 64px)!important;
+  width:min(790px,calc((100dvw - 20px) / var(--hex-dialog-zoom,1)))!important;
+  max-width:calc((100dvw - 20px) / var(--hex-dialog-zoom,1));max-height:calc((100dvh - 64px) / var(--hex-dialog-zoom,1))!important;
   padding:0!important;overflow:auto!important;overscroll-behavior:contain;
   scrollbar-width:thin;scrollbar-color:#5795b4 #08243a;scrollbar-gutter:stable;
   background:linear-gradient(125deg,#09253b,#001a2a 70%)!important;
   border:1px solid var(--panel-line)!important;border-radius:16px!important;
-  color:var(--panel-text);font:calc(14px * var(--hex-ui-scale,1) * var(--hex-dialog-zoom,1))/1.4 system-ui;zoom:1;
+  color:var(--panel-text);font:calc(14px * var(--hex-ui-scale,1))/1.4 system-ui;zoom:var(--hex-dialog-zoom,1);
   box-shadow:0 12px 32px #0006!important;backdrop-filter:none!important;
   container-type:inline-size;overflow-anchor:none;
 }
@@ -146,7 +146,7 @@
   #contextMenu3244 .ctxSecondaryIndicators{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media(max-width:650px){
-  #contextMenu3244.hexInspectorActive03817{width:calc(100dvw - 12px)!important;max-width:calc(100dvw - 12px);max-height:calc(100dvh - 60px)!important;border-radius:11px!important}
+  #contextMenu3244.hexInspectorActive03817{width:calc((100dvw - 12px) / var(--hex-dialog-zoom,1))!important;max-width:calc((100dvw - 12px) / var(--hex-dialog-zoom,1));max-height:calc((100dvh - 60px) / var(--hex-dialog-zoom,1))!important;border-radius:11px!important}
   #contextMenu3244 .ctxInspector03817{padding:9px 10px 0}
   #contextMenu3244 .ctxDetails03817{padding:3px 10px 10px}
   #contextMenu3244.hexInspectorActive03817 .ctxActions3244{padding:3px 10px 10px!important;gap:7px!important}

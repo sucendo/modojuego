@@ -29,6 +29,25 @@
   if(typeof ensureClassicDialog3246==='function')ensureClassicDialog3246();
   const militaryStrength=document.getElementById('ctxStrength3246');
   if(militaryStrength){militaryStrength.min='0';militaryStrength.step='1';}
+  const originalPosition=positionContextDialog3244;
+  function dialogScale(){return Number.parseFloat(getComputedStyle(root).zoom)||1;}
+  // Pointer coordinates and bounding rectangles use screen pixels, while the
+  // zoomed dialog's CSS position and scroll offsets use unscaled pixels.
+  positionContextDialog3244=function(x,y){
+    if(!root.classList.contains('hexInspectorActive03817'))return originalPosition.apply(this,arguments);
+    requestAnimationFrame(()=>{
+      if(!root.classList.contains('open3244'))return;
+      const scale=dialogScale(),box=root.getBoundingClientRect();
+      const width=window.innerWidth,height=window.innerHeight,margin=6;
+      const left=Math.max(margin,Math.min(width-box.width-margin,(Number(x)||0)+14));
+      const top=Math.max(48,Math.min(height-box.height-margin,(Number(y)||48)-box.height*.35));
+      root.style.left=(left/scale)+'px';root.style.top=(top/scale)+'px';
+    });
+  };
+  document.addEventListener('hexategos:ui-scale-change',()=>{
+    if(root.classList.contains('hexInspectorActive03817')&&root.classList.contains('open3244'))
+      positionContextDialog3244(uiInteractionState3244?.clickX,uiInteractionState3244?.clickY);
+  });
   const original=renderContextDialog3244;
   function profile(cell){
     return window.HexategosTradeLogistics0370?.geography?.(cell)||null;
@@ -400,7 +419,7 @@
     const box=root.getBoundingClientRect(),rect=section.getBoundingClientRect();
     const header=root.querySelector('.ctxHead3244').getBoundingClientRect();
     if(rect.top<header.bottom||rect.bottom>box.bottom){
-      root.scrollTo({top:root.scrollTop+rect.top-header.bottom-8,behavior:'smooth'});
+      root.scrollTo({top:root.scrollTop+(rect.top-header.bottom-8)/dialogScale(),behavior:'smooth'});
     }
   }
   function render(ctx){

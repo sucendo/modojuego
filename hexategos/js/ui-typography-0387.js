@@ -35,6 +35,7 @@
     for(const select of document.querySelectorAll('[data-hex-font-select0387]')){
       if(select.value!==selected)select.value=selected;
     }
+    document.dispatchEvent(new CustomEvent('hexategos:ui-scale-change'));
     return selected;
   }
   function attachSelect(select){
