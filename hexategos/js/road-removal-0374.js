@@ -22,9 +22,9 @@
   function abandonRoadAtCell0374(cell,ask=true){
     if(!Number.isInteger(cell)||cell<0||owner6[cell]!==0||!roadTouchesCell0374(cell))return false;
 
-    if(ask&&typeof confirm==='function'){
-      const ok=confirm('¿Abandonar la carretera en este hexágono? Se eliminarán todos los tramos que llegan a él y no recuperarás oro.');
-      if(!ok)return false;
+    if(ask){
+      void window.HexategosDialogs03851.confirm('¿Abandonar la carretera en este hexágono? Se eliminarán todos los tramos que llegan a él y no recuperarás oro.',{title:'Retirar carretera',accept:'Abandonar carretera'}).then(ok=>{if(ok)abandonRoadAtCell0374(cell,false)});
+      return false;
     }
 
     const next=[];
