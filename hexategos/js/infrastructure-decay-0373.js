@@ -4,7 +4,7 @@
 // Ciudades, industrias y puertos necesitan una comunicación física útil.
 // La auditoría es deliberadamente lenta y solo recorre estructuras dispersas.
 (() => {
-  const BUILD='0.37.3';
+  const BUILD='0.38.40';
   const SAVE_KEY='hexategos-infrastructure-decay-0373';
   const AUDIT_PERIOD=10;          // segundos de campaña
   const GRACE_SECONDS=60;         // sin penalización visual
@@ -15,6 +15,7 @@
   const cityDecay=new Map();
   const industryDecay=new Map();
   const portDecay=new Map();
+  const specializedDecay=new Map();
   let lastAudit=-1e9;
   let lastAuditMs=0;
   let audits=0;
@@ -28,8 +29,7 @@
   }
 
   function routeOperational0373(r){
-    return !!r&&r.status!=='closed'&&r.status!=='broken'&&
-      r.status!=='blocked'&&r.status!=='suspended';
+    return !!r&&['active','smuggling'].includes(r.status||'active')&&!r.blocked&&!r.destroyed;
   }
 
   function tradeRoutes0373(){
@@ -51,33 +51,29 @@
   // Any real road touching the structure is already an internal land route.
   // Reuse the cached 0.37.x road components so this remains O(structures),
   // not O(world cells), even with 500 nations.
-  function roadCommunications0373(){
+  function connections0373(){
     const api=window.HexategosTradeLogistics0370;
-    if(!api||typeof api.roadComponent!=='function')return new Set();
-    const anchors=new Set();
-    for(const c of cities3212)anchors.add(c);
-    for(const c of industries3212)anchors.add(c);
-    for(const c of ports3212)anchors.add(c);
-
-    const connected=new Set();
-    for(const c of anchors){
-      if(c<0||owner6[c]<0)continue;
-      if(api.roadComponent(c)>=0)connected.add(c);
-    }
-    return connected;
-  }
-
-  function communicated0373(cell,f,roadConnected,seaEndpoints){
-    // La capital funciona como nodo nacional básico de comunicaciones.
-    if(isCapital0373(cell,f))return true;
-    if(roadConnected.has(cell))return true;
-    // Una ruta marítima activa comunica todo el complejo situado en ese puerto.
-    if(ports3212.has(cell)&&seaEndpoints.has(cell))return true;
-    return false;
+    const cache=new Map();
+    const road=c=>{if(!cache.has(c))cache.set(c,api?.roadComponent?.(c)??-1);return cache.get(c)};
+    const sea=activeSeaEndpoints0373();
+    const direct=(c,f)=>f>=0&&owner6[c]===f&&(road(c)>=0||(ports3212.has(c)&&sea.has(c)));
+    return (cell,f,level=2)=>{
+      if(direct(cell,f))return true;
+      if(level!==1||f<0)return false;
+      const L=loadLevel(MAX_GAME_LEVEL3233);
+      if(cell<0||cell>=L.n)return false;
+      for(let k=L.offsets[cell];k<L.offsets[cell+1];k++){
+        const n=L.edgeNbr[k];if(n<0)continue;
+        if(owner6[n]===f&&direct(n,f))return true;
+        if(owner6[n]>=0&&owner6[n]!==f&&road(n)>=0&&
+          window.HexategosBorderRoad0376?.hasLink?.(cell,n))return true;
+      }
+      return false;
+    };
   }
 
   function mapFor0373(kind){
-    return kind==='city'?cityDecay:kind==='industry'?industryDecay:portDecay;
+    return kind==='city'?cityDecay:kind==='industry'?industryDecay:kind==='port'?portDecay:specializedDecay;
   }
 
   function decayAge0373(kind,cell,now=Number(campaignSeconds3230)||0){
@@ -122,7 +118,7 @@
 
   function removeStructure0373(kind,cell){
     const f=owner6[cell];
-    if(isCapital0373(cell,f))return false;
+    if(kind==='city'&&isCapital0373(cell,f))return false;
     let removed=false;
     if(kind==='city'&&cities3212.delete(cell)){
       if(cityLevel3230?.length>cell)cityLevel3230[cell]=0;
@@ -143,11 +139,11 @@
     return true;
   }
 
-  function auditSet0373(kind,set,map,now,roadConnected,seaEndpoints){
+  function auditSet0373(kind,set,map,now,connected){
     let dirty=false;
     for(const cell of set){
       const f=owner6[cell];
-      if(isCapital0373(cell,f)||communicated0373(cell,f,roadConnected,seaEndpoints)){
+      if((kind==='city'&&isCapital0373(cell,f))||connected(cell,f,2)){
         if(map.delete(cell)){recoveries++;dirty=true}
         continue;
       }
@@ -168,14 +164,26 @@
     if(now<lastAudit)lastAudit=-1e9;
     if(!force&&now-lastAudit<AUDIT_PERIOD)return false;
     const t0=performance.now();
-    const routes=tradeRoutes0373();
-    const seaEndpoints=activeSeaEndpoints0373(routes);
-    const roadConnected=roadCommunications0373();
+    const connected=connections0373();
     const removalsBefore=removals;
     let dirty=false;
-    dirty=auditSet0373('city',cities3212,cityDecay,now,roadConnected,seaEndpoints)||dirty;
-    dirty=auditSet0373('industry',industries3212,industryDecay,now,roadConnected,seaEndpoints)||dirty;
-    dirty=auditSet0373('port',ports3212,portDecay,now,roadConnected,seaEndpoints)||dirty;
+    dirty=auditSet0373('city',cities3212,cityDecay,now,connected)||dirty;
+    dirty=auditSet0373('industry',industries3212,industryDecay,now,connected)||dirty;
+    dirty=auditSet0373('port',ports3212,portDecay,now,connected)||dirty;
+    const prod=window.HexategosProduction0388,existing=new Set();
+    for(const site of prod?.drawCandidates?.()||[]){
+      const id=site.cell+':'+site.kind;existing.add(id);
+      if(connected(site.cell,site.f,site.level===1?1:2)){
+        if(specializedDecay.delete(id)){recoveries++;dirty=true}
+        continue;
+      }
+      let since=specializedDecay.get(id);
+      if(since==null){since=now;specializedDecay.set(id,since);dirty=true}
+      if(now-since>=REMOVE_SECONDS&&prod?.removeSite?.(site.cell,site.kind)){
+        specializedDecay.delete(id);removals++;dirty=true;
+      }
+    }
+    for(const id of specializedDecay.keys())if(!existing.has(id)){specializedDecay.delete(id);dirty=true}
     lastAudit=now;audits++;lastAuditMs=performance.now()-t0;
     if(typeof markEconomyDirty3261==='function')markEconomyDirty3261();
     if(removals>removalsBefore&&window.HexategosTradeLogistics0370?.refresh)window.HexategosTradeLogistics0370.refresh();
@@ -194,15 +202,18 @@
     }
   }
   function serialize0373(){
-    return {version:1,city:serializeMap0373(cityDecay),industry:serializeMap0373(industryDecay),port:serializeMap0373(portDecay)};
+    return {version:2,city:serializeMap0373(cityDecay),industry:serializeMap0373(industryDecay),port:serializeMap0373(portDecay),specialized:[...specializedDecay]};
   }
   function restore0373(data){
     if(!data||typeof data!=='object'){
-      cityDecay.clear();industryDecay.clear();portDecay.clear();lastAudit=-1e9;return false;
+      cityDecay.clear();industryDecay.clear();portDecay.clear();specializedDecay.clear();lastAudit=-1e9;return false;
     }
     restoreMap0373(cityDecay,data.city,cities3212);
     restoreMap0373(industryDecay,data.industry,industries3212);
     restoreMap0373(portDecay,data.port,ports3212);
+    specializedDecay.clear();
+    const ids=new Set([...window.HexategosProduction0388?.drawCandidates?.()||[]].map(s=>s.cell+':'+s.kind));
+    for(const [id,since] of data.specialized||[])if(ids.has(id)&&Number.isFinite(Number(since)))specializedDecay.set(id,Number(since));
     lastAudit=-1e9;needsRender=true;return true;
   }
   function save0373(){
@@ -269,7 +280,7 @@
   const baseReset0373=resetGame3230;
   resetGame3230=function(clearSave=true){
     const out=baseReset0373.apply(this,arguments);
-    cityDecay.clear();industryDecay.clear();portDecay.clear();lastAudit=-1e9;
+    cityDecay.clear();industryDecay.clear();portDecay.clear();specializedDecay.clear();lastAudit=-1e9;
     if(clearSave)try{localStorage.removeItem(SAVE_KEY)}catch(_){}
     return out;
   };
@@ -299,7 +310,7 @@
   function stats0373(){
     return {
       build:BUILD,audits,removals,recoveries,
-      tracked:{city:cityDecay.size,industry:industryDecay.size,port:portDecay.size},
+      tracked:{city:cityDecay.size,industry:industryDecay.size,port:portDecay.size,specialized:specializedDecay.size},
       lastAuditMs:Number(lastAuditMs.toFixed(2)),thresholds:{grace:GRACE_SECONDS,abandoned:ABANDONED_SECONDS,fade:FADE_SECONDS,remove:REMOVE_SECONDS}
     };
   }
@@ -313,8 +324,13 @@
   }
 
   window.HexategosInfrastructureDecay0373={
-    version:BUILD,status:status0373,stats:stats0373,validate:validate0373,
-    audit:()=>audit0373(true),isCommunicated:(cell)=>{const routes=tradeRoutes0373();return communicated0373(cell,owner6[cell],roadCommunications0373(),activeSeaEndpoints0373(routes))}
+    version:BUILD,status:status0373,visual:visual0373,stats:stats0373,validate:validate0373,
+    audit:()=>audit0373(true),isCommunicated:(cell,level=2)=>connections0373()(cell,owner6[cell],level),
+    specialStatus:(cell,kind)=>status0373('special',cell+':'+kind),
+    productionFactor:(cell,kind)=>{
+      const age=decayAge0373('special',cell+':'+kind);
+      return age<GRACE_SECONDS?1:age<ABANDONED_SECONDS?1-.75*(age-GRACE_SECONDS)/120:age<FADE_SECONDS?.08:Math.max(0,.08*(1-(age-FADE_SECONDS)/60));
+    }
   };
   window.HEXATEGOS_VERSION=BUILD;
   console.info('[HEXATEGOS] 0.37.3 · degradación de infraestructuras aisladas activa');
