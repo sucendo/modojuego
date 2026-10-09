@@ -139,7 +139,6 @@
   function select(mode){
     if(!MAP_MODES3252.includes(mode))return false;
     mapMode3252=mode;
-    selectedMode=mode;
     try{localStorage.setItem('ofhex_map_mode_3252',mode)}catch(_){}
     updateMapModeUI3252(false);
     close();needsRender=true;return true;
