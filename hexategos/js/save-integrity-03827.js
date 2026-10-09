@@ -18,30 +18,39 @@
       file.checksum=fnv1a3273(JSON.stringify(file.payload));
     return file;
   };
-  // The legacy main save swallows storage exceptions. Detect a failed
-  // main snapshot rather than allowing "Partida guardada" to mislead players.
-  let mainError=null,lastMainCheck=0;
+  // A successful main save must be readable in both legacy JSON and the
+  // compact HXZ1 format. Warn once per continuous failure, not every autosave.
+  let mainError=null,lastMainCheck=0,mainAlertShown=false;
   if(typeof saveGame3212==='function'){
     const originalSave=saveGame3212;
     saveGame3212=function(){
       const out=originalSave.apply(this,arguments);
       if(!started3230)return out;
       const now=Date.now();
-      if(now-lastMainCheck<12000)return out;
+      if(out!==false&&now-lastMainCheck<12000)return out;
       lastMainCheck=now;
       try{
+        if(out===false)throw new Error('La escritura del guardado principal ha fallado');
         if(typeof SAVE_KEY3230!=='string')return out;
         const raw=localStorage.getItem(SAVE_KEY3230);
-        const data=raw?JSON.parse(raw):null;
+        const codec=window.HexategosSaveStorage03827;
+        const data=raw?(codec?.get?codec.get(SAVE_KEY3230):JSON.parse(raw)):null;
         if(!data||data.owner?.length!==owner6.length||
           Math.abs((Number(data.campaignSeconds)||0)-(Number(campaignSeconds3230)||0))>.001)
           throw new Error('El estado principal no se ha actualizado en el navegador');
-        mainError=null;
+        mainError=null;mainAlertShown=false;
       }catch(error){
         mainError={message:String(error?.message||error),at:now};
-        console.warn('[Hexategos] Guardado principal incompleto; exporta una copia.',error);
-        if(typeof setTimeout==='function'&&typeof toast==='function')
-          setTimeout(()=>toast('⚠ La partida NO se ha guardado por completo. Exporta un archivo .hexategos.'),60);
+        if(!mainAlertShown){
+          mainAlertShown=true;
+          console.warn('[Hexategos] Guardado principal incompleto; exporta una copia.',error);
+          // The compact storage module already shows one warning when the
+          // write fails. Avoid a second overlapping toast for the same error.
+          const alreadyNotified=window.HexategosSaveStorage03827?.status?.()?.keys
+            ?.includes(SAVE_KEY3230);
+          if(!alreadyNotified&&typeof toast==='function')
+            toast('⚠ La partida no se ha guardado por completo. Exporta una copia .hexategos.');
+        }
       }
       return out;
     };

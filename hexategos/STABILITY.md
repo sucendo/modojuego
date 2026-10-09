@@ -159,3 +159,42 @@ con textil + mina + carretera + dos puertos, cerrar y reabrir, exportar
 e importar; observar que una ruta entre naciones solo genera ingreso al
 transportar mercancías y que una ruta interna redistribuye sin duplicar
 los ingresos. Revisar la IA comercial a 150/250/350/500 facciones.
+
+
+## 0.38.39 · Guardado principal compacto y alertas no repetitivas
+
+**Causa corregida:** la campaña principal seguía guardando en `localStorage`
+varios arrays completos de la malla como JSON sin compresión. El error de
+cuota se capturaba silenciosamente, de modo que el botón podía confirmar
+«Partida guardada» mientras permanecía una versión antigua en el
+navegador. El comprobador de integridad detectaba después que el tiempo
+de campaña no coincidía y repetía la alerta en cada autoguardado.
+
+El estado principal ahora utiliza `HexategosSaveStorage03827`, el mismo
+codec HXZ1 usado por las rutas y las fábricas. Se **conserva la misma clave**
+`openfront-globe-v3.24.0-163k`. El lector acepta tanto el JSON histórico
+como los nuevos datos comprimidos; una partida antigua se migra al
+próximo guardado sin eliminar las copias de respaldo. La importación
+portable almacena el mapa comprimido localmente, pero el archivo
+`.hexategos` conserva su formato JSON normal y su checksum.
+
+El guardado principal devuelve `true` o `false` tras verificar escritura.
+Rutas, producción y capas físicas transmiten también el fallo a la
+operación general. Se elimina la doble escritura de industrias en cada
+guardado y la alerta por cuota se muestra **una sola vez por episodio**
+hasta que una operación posterior se complete correctamente. El botón
+no confirma éxito si se ha producido un fallo detectable.
+
+`smoke-03839.mjs` ejercita las funciones reales de guardado/carga:
+- mundo grande que supera la cuota sin comprimir y cabe con HXZ1;
+- recuperación exacta de propietarios, oro, cronología, industria y caminos;
+- lectura de JSON de partidas antiguas y conversión al guardar;
+- error de cuota que mantiene intacta la última partida válida;
+- ausencia de notificaciones repetidas y recuperación tras liberar espacio.
+
+**Precaución:** si el navegador ya descartó una escritura anterior, el
+nuevo código no puede reconstruir acciones perdidas. Conservar
+exportaciones `.hexategos` existentes hasta validar la partida en
+navegador. No se eliminan datos antiguos automáticamente y la
+compresión no garantiza espacio si el almacenamiento está agotado por
+otras aplicaciones u otras copias.

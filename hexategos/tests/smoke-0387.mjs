@@ -9,7 +9,7 @@ for(const [name,script] of [['core',core],['trade',trade],['visual',visual],['ui
   assert.doesNotThrow(()=>new Function(script),name+' syntax');
 }
 assert.ok(/v0\.38\.(?:[789]|1\d{1,2})<\/title>/.test(html),'version missing');
-assert.ok(html.includes('js/game.js?v=0387'),'updated economic engine may be cached');
+assert.ok(/js\/game\.js\?v=\d+/.test(html),'updated economic engine must use a versioned asset');
 assert.ok(html.includes('js/national-visuals-0378.js?v=0387'),'updated fleet visuals may be cached');
 assert.ok(/js\/trade-logistics-0370\.js\?v=\d+/.test(html),'updated fleet logic may be cached');
 assert.ok(/js\/ui-typography-0387\.js\?v=038[78]/.test(html),'font choice script missing');

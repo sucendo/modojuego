@@ -717,10 +717,11 @@
   }
   const baseSave=saveGame3212;
   saveGame3212=function(){
-    persistProduction0388();
     const out=baseSave.apply(this,arguments);
-    if(out!==false)persistProduction0388();
-    return out;
+    // Guardar una sola vez y comprobar su resultado; evitar duplicar la
+    // escritura de industrias en cada pulsación/guardado automático.
+    const stored=started3230?persistProduction0388():true;
+    return out===false||!stored?false:out;
   };
   const baseLoad=loadGame3212;
   loadGame3212=function(){

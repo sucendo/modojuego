@@ -188,8 +188,9 @@
     const base=saveGame3212;
     saveGame3212=function(){
       const result=base.apply(this,arguments);
-      if(result!==false&&typeof started3230!=='undefined'&&started3230)persist();
-      return result;
+      const stored=result!==false&&typeof started3230!=='undefined'&&started3230?
+        persist():true;
+      return result===false||!stored?false:result;
     };
   }
   if(typeof loadGame3212==='function'){
