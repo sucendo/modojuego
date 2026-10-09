@@ -99,6 +99,26 @@ for(const [fuel,processor] of [['oil','refinery'],['gas','gasplant']]){
   g.save();g.reset(false);g.load();
   assert.ok(g.api.sitesOnCell(4)[0].byproducts,'livestock byproducts must persist');
 }
+// The next economic balance is read from REAL factories and survives saves.
+{
+  const g=fixture();
+  construct(g,[[1,'crops'],[2,'livestock'],[3,'coal'],[4,'thermal'],[5,'iron'],[6,'steel']]);
+  g.run(4);
+  const inventory=g.api.materialBalance().get(0);
+  assert.equal(inventory.sites,6);
+  assert.ok(inventory.stock.crops>=0&&inventory.stock.coal>=0);
+  assert.ok(inventory.stock.wool>0,'wool cannot be invented by the economic balance');
+  assert.equal(inventory.stock.wool,g.api.sitesOnCell(2)[0].byproducts.wool);
+  assert.ok(inventory.demand.iron>0,'a siderurgy needs real iron inputs');
+  assert.ok(inventory.demand.coal>0,'thermals account for their physical fuel need');
+  const before=g.api.snapshot();
+  g.save();g.reset(false);g.load();
+  const after=g.api.materialBalance().get(0);
+  assert.equal(after.sites,inventory.sites);
+  assert.equal(after.stock.wool,g.api.sitesOnCell(2)[0].byproducts.wool);
+  assert.deepEqual(g.api.snapshot().sites.map(x=>[x.cell,x.kind]),
+    before.sites.map(x=>[x.cell,x.kind]),'existing industrial save schema unchanged');
+}
 // Strategic weapons require machinery goods, not just abstract national output.
 {
   const g=fixture();
