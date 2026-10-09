@@ -1111,6 +1111,12 @@
               Object.values(r.productionCargo0388||{}).reduce((sum,v)=>sum+Math.max(0,Number(v)||0),0);
       r.lastFactor=k;r.lastValue=value;routeEvals++;
       if(k<=0)continue;
+      if(r.a===r.b){
+        // Transporte interior: mejora los almacenes conectados, pero no
+        // introduce ingresos nacionales por comprar y venderse a sí mismo.
+        if(r.a<activeFactionCount3230)goodsCache[r.a]+=physical;
+        continue;
+      }
       if(r.a<activeFactionCount3230){tradeCache[r.a]+=share;goodsCache[r.a]+=physical}
       if(r.b<activeFactionCount3230){tradeCache[r.b]+=share;goodsCache[r.b]+=physical}
     }
@@ -2132,8 +2138,8 @@
       const names=window.HexategosEconomicBalance03838.labels();
       html+='<div class="sysBlock3213 resourceEconomy03720">'+
         '<div class="tradeManagerTitle03717"><b>⚖ Balance de abastecimiento</b><small>Existencias y necesidades reales</small></div>'+
-        '<div class="sysMeta3213">Los excedentes son reservas exportables en nodos; las carencias orientan importaciones. '+
-        'Los productos especializados permanecen en sus instalaciones o depósitos.</div>'+
+        '<div class="sysMeta3213">Los cinco indicadores conservan sus agregados históricos; las carencias orientan importaciones. '+
+        'Los productos específicos se cuentan aparte en instalaciones y depósitos.</div>'+
         '<div class="econGrid3261">';
       for(let i=0;i<5;i++){
         const net=econ.balance[i],press=econ.pressure[i],surplus=econ.surplus[i];
