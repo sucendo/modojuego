@@ -59,7 +59,9 @@ assert.notEqual(a.api.profile(4).food,a.api.profile(4).livestock,'livestock is n
 assert.ok(a.api.profile(3).food<a.api.profile(1).food,'desert agriculture is poorer than a nearby plain');
 assert.equal(a.api.category(1.3),'Alto');
 assert.equal(a.api.category(0),'Inexistente');
-assert.equal(a.api.cacheSize(),8,'only requested cells should be cached');
+assert.equal(a.api.cacheSize(),6,'only requested cells should be cached');
+a.api.profile(5);a.api.profile(8);
+assert.equal(a.api.cacheSize(),8,'new queries add to bounded cache on demand');
 
 const before=a.api.profile(1);
 a.registered.restore({seed:0x1e2d3c4b,generator:1});
