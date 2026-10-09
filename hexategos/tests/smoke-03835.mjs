@@ -1,0 +1,11 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const source=fs.readFileSync(new URL('../js/hex-inspector-03817.js',import.meta.url),'utf8');
+assert.doesNotThrow(()=>new Function(source));
+assert.match(source,/function naturalStudies03834\(ctx\)/);
+assert.match(source,/prospect\?\.result\?\.\(ctx\.cell\)/);
+assert.match(source,/if\(deposits\)/);
+assert.match(source,/data-natural-study03834/);
+assert.match(source,/api\?\.begin\?\.\(0,ctx\.cell\)/);
+assert.match(source,/if\(ctx\.own\)/);
+console.log('HEXATEGOS natural inspector: study actions and hidden deposits OK');
