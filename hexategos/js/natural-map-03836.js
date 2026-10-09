@@ -17,6 +17,7 @@
     ['natural-known','Yacimientos descubiertos','🔎','known']
   ];
   const FIELDS=new Map(MODES.map(([key,label,short,field])=>[key,{label,short,field}]));
+  const BASE_MAP_ICONS={political:'🌐',terrain:'🏔️',supply:'🚚',geopolitics:'🧭'};
   const MENU=[
     ['political','Político'],['terrain','Terreno'],['supply','Suministro'],
     ['geopolitics','Geopolítica'],...MODES.map(x=>[x[0],x[1]])
@@ -135,7 +136,8 @@
     const option=document.createElement('button');
     option.type='button';option.dataset.mapLayer03836=key;
     const spec=FIELDS.get(key);
-    option.textContent=(spec?spec.short+'  ':'')+label;option.setAttribute('aria-pressed','false');
+    option.textContent=(spec?.short||BASE_MAP_ICONS[key]||'🗺️')+'  '+label;
+    option.setAttribute('aria-pressed','false');
     menu.appendChild(option);
     return option;
   });
@@ -203,6 +205,14 @@
         leg.innerHTML=legend(mapMode3252);leg.style.display='';
       }
       showSupplyOverlay3230=false;
+    }else if(BASE_MAP_ICONS[mapMode3252]){
+      const b=document.getElementById('mapModeBtn3252');
+      if(b){
+        b.textContent=BASE_MAP_ICONS[mapMode3252];
+        const label=MENU.find(x=>x[0]===mapMode3252)?.[1]||'Mapa';
+        b.setAttribute('aria-label','Mapa: '+label);
+        b.title='Mapa '+label+' · pulsa para elegir otra capa';
+      }
     }
     updateMenu();
     if(showToast&&typeof toast==='function')
