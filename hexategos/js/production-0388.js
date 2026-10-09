@@ -1060,7 +1060,7 @@
     for(const s of sites.values()){
       if(s.f<0||s.f>=activeFactionCount3230)continue;
       let n=nations.get(s.f);
-      if(!n){n={stock:{},demand:{},outputs:{},sites:0};nations.set(s.f,n)}
+      if(!n){n={stock:{},demand:{},outputs:{},alternatives:[],sites:0};nations.set(s.f,n)}
       n.sites++;
       const def=TYPES[s.kind];
       const produced=def.group==='extract'?s.kind:PROCESSED[s.kind];
@@ -1074,9 +1074,7 @@
         const rate=.39*s.level*activeFactor(s);
         // Cadenas alternativas necesitan un combustible, no todos a la vez.
         if(def.inputMode==='any'){
-          const chosen=def.inputs.find(k=>(n.stock[k]||0)>0)||
-            def.inputs[0];
-          n.demand[chosen]=(n.demand[chosen]||0)+rate;
+          n.alternatives.push({inputs:def.inputs,rate});
         }else{
           for(const kind of def.inputs)
             n.demand[kind]=(n.demand[kind]||0)+rate;
@@ -1089,6 +1087,19 @@
       if(!n)continue;
       for(const kind of MATERIAL_KEYS)
         if(Number(goods[kind])>0)n.stock[kind]=(n.stock[kind]||0)+Number(goods[kind]);
+    }
+    for(const n of nations.values()){
+      for(const item of n.alternatives){
+        // Elegir insumo después de contar todos los almacenes: el orden de
+        // iteración de las fábricas no puede decidir el balance nacional.
+        let chosen=item.inputs[0],best=-1;
+        for(const kind of item.inputs){
+          const qty=Number(n.stock[kind])||0;
+          if(qty>best){best=qty;chosen=kind}
+        }
+        n.demand[chosen]=(n.demand[chosen]||0)+item.rate;
+      }
+      delete n.alternatives;
     }
     return nations;
   }
