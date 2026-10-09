@@ -1456,6 +1456,30 @@ function bindSvgTrackTools(){
  const exp=$("exportCircuitSvgBtn"),imp=$("importCircuitSvgBtn"),repoLoad=$("loadRepoCircuitBtn"),rst=$("resetCircuitSvgBtn"),file=$("importCircuitSvgFile");
  if(exp)exp.onclick=async()=>{const spec=currentSvgToolSpec();setSvgToolStatus(`Generando SVG completo de ${spec.name}…`);try{let exact=false;await withPreparedTrackSpec(spec,()=>{const stored=readStoredCustomTrackSvg(spec.dir);exact=!!(stored&&stored.authoritative===true&&typeof stored.rawSvg==='string'&&stored.rawSvg.trim());const baseSvg=buildEditableCircuitSvgForCurrentTrack(spec),svg=apexEnrichExportSvg(baseSvg,spec);triggerDownload(`apex26_${spec.dir}_circuito_completo.svg`,svg)});setSvgToolStatus(`SVG total exportado de ${spec.name}: geometría${exact?' importada preservada':''}, pit lane (SVG o fallback provisional), terreno por curvas de nivel editables (+115 m), escapatorias, salida/meta, curvas T1–Tn editables, líneas de control S1/S2/salida/meta/speed-trap, carteles de distancia autoritativos, perfil vertical/peraltes y pianos SVG activos autoritativos, biblioteca de 62 plantillas y esquema universal data-apex-style.`, 'ok')}catch(e){setSvgToolStatus(`No se pudo exportar el SVG: ${e&&e.message||e}`, 'err')}};
  if(imp)imp.onclick=()=>file&&file.click();
+ if(repoLoad)repoLoad.onclick=async()=>{
+   const spec=currentSvgToolSpec();
+   setSvgToolStatus(`Cargando versión guardada de ${spec.name}…`);
+   try{
+     const mr=await fetch("circuits/manifest.json",{cache:"no-cache"});
+     if(!mr.ok)throw Error("No se pudo cargar el manifiesto de circuitos ("+mr.status+")");
+     const manifest=await mr.json(),entry=manifest&&manifest.circuits&&manifest.circuits[spec.dir];
+     if(!entry)throw Error("No hay una versión guardada en apex/circuits para "+spec.name);
+     if(entry.json){
+       const jr=await fetch("circuits/"+entry.json,{cache:"no-cache"});
+       if(!jr.ok)throw Error("No se pudo cargar el JSON guardado ("+jr.status+")");
+       const j=validateCircuitJson(await jr.json()),jspec=registerCircuitFromJson(j);
+       if(!writeStoredCircuitJson(jspec.dir,j))throw Error("No se pudo guardar el override JSON");
+       applyStoredCircuitJsonToSpec(spec,j);
+     }
+     const sr=await fetch("circuits/"+entry.svg,{cache:"no-cache"});
+     if(!sr.ok)throw Error("No se pudo cargar el SVG guardado ("+sr.status+")");
+     const txt=await sr.text(),res=await importEditableCircuitSvgText(txt,spec);
+     updateAllCircuitCards();
+     setSvgToolStatus(`Versión guardada cargada desde apex/circuits en ${spec.name}: SVG${entry.json?' + JSON':''}${res.brakeBoards?', '+res.brakeBoards+' carteles':''}${res.timing?', '+res.timing+' marcadores timing':''}. La BASE interna no se ha modificado y RESTAURAR BASE sigue disponible.`,'ok');
+   }catch(e){
+     setSvgToolStatus(`No se pudo cargar la versión guardada: ${e&&e.message||e}`,'err');
+   }
+ };
  if(file)file.onchange=async(ev)=>{const f=ev.target.files&&ev.target.files[0];if(!f)return;const spec=currentSvgToolSpec();setSvgToolStatus(`Importando ${f.name} en ${spec.name}…`);try{const txt=await f.text();const res=await importEditableCircuitSvgText(txt,spec);updateAllCircuitCards();setSvgToolStatus(`${res.storage==='IndexedDB'?'SVG guardado en IndexedDB':'ATENCIÓN: SVG sólo disponible durante esta sesión; vuelve a importarlo la próxima vez y conserva el original'} (${(f.size/1024).toFixed(0)} KB) en ${spec.name}: trazado${res.edges?', bordes':''}${res.pit?', pit lane X/Z ('+res.pitRuns+' tramos)':''}${res.walls?', '+res.wallGroups+' grupos / '+res.walls+' segmentos de muro X/Z':''}${res.landmarks?', '+res.landmarks+' elementos SVG':''}${res.brakeBoards?', '+res.brakeBoards+' carteles de distancia':''}${res.barriers?', '+res.barriers+' segmentos de barrera física':''}${res.surfaces?', '+res.surfaces+' zonas de superficie/agua':''}${res.terrainContours?', '+res.terrainContours+' niveles de terreno':''}${res.terrainBase?', placa base 3D':''}${res.timing?', '+res.timing+' marcadores timing/DRS':''}${res.vertical?', perfil vertical/peraltes restaurado':''}.`, res.storage==='IndexedDB'?'ok':'warn')}catch(e){setSvgToolStatus(`No se pudo importar el SVG: ${e&&e.message||e}`, 'err')}finally{ev.target.value=''}};
  if(rst)rst.onclick=async()=>{const spec=currentSvgToolSpec();setSvgToolStatus(`Restaurando BASE SVG+JSON de ${spec.name}…`);try{await clearStoredCustomSvgData(spec.dir);clearStoredCircuitJson(spec.dir);applyStoredCircuitJsonToSpec(spec,apexBaseCircuitJson(spec.dir));setSvgToolStatus(`BASE restaurada de ${spec.name}: se eliminaron sólo sus overrides SVG/JSON. La base APEX permanece intacta.`, 'ok');setJsonToolStatus(`JSON BASE activo para ${spec.name}.`,'ok');updateAllCircuitCards()}catch(e){setSvgToolStatus(`No se pudo restaurar la base: ${e&&e.message||e}`, 'err')}};
  window.apexExportCircuitSvg=()=>exp&&exp.click();
