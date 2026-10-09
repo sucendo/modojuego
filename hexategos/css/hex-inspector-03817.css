@@ -348,3 +348,42 @@
 @media(max-width:355px){
  #contextMenu3244 .ctxTopStat03859{display:grid;gap:2px}
 }
+
+/* 0.38.60 — distribución final de acciones, cabecera y lectura compacta */
+#contextMenu3244.hexInspectorActive03817{
+  scrollbar-gutter:stable;
+}
+#contextMenu3244 .ctxTopStats03859{
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:7px!important;
+}
+#contextMenu3244 .ctxTopStat03859{
+  min-height:58px;flex-direction:column;align-items:stretch;justify-content:space-between;
+  border-color:rgba(90,158,195,.48);
+}
+#contextMenu3244 .ctxTopStat03859 span{font-size:calc(12px * var(--hex-ui-scale,1))!important}
+#contextMenu3244 .ctxTopStat03859 b{font-size:calc(17px * var(--hex-ui-scale,1))!important;text-align:right}
+#contextMenu3244 .ctxQuick03817,
+#contextMenu3244 .ctxMoreGrid03817{
+ grid-template-columns:repeat(3,minmax(0,1fr))!important;
+}
+#contextMenu3244 .ctxMoreGrid03817{padding:9px!important}
+#contextMenu3244 .ctxExtras03817>summary{min-height:43px}
+#contextMenu3244 .ctxDetails03817{padding:8px 0!important}
+#contextMenu3244 .ctxCard03817{border-color:rgba(93,161,201,.40)!important}
+#contextMenu3244 .ctxNav03817 button{font-size:calc(14px * var(--hex-ui-scale,1))!important}
+#contextMenu3244 .ctxQuick03817 .ctxAction3244 .txt3244,
+#contextMenu3244 .ctxMoreGrid03817 .ctxAction3244 .txt3244{min-width:0}
+#contextMenu3244 .ctxQuick03817 .ctxAction3244 .txt3244 small,
+#contextMenu3244 .ctxMoreGrid03817 .ctxAction3244 .txt3244 small{
+ overflow-wrap:anywhere;hyphens:auto;
+}
+@media(max-width:650px){
+ #contextMenu3244 .ctxTopStats03859{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ #contextMenu3244 .ctxTopStat03859{min-height:41px;gap:3px;padding:7px!important}
+ #contextMenu3244 .ctxTopStat03859 span{font-size:calc(11px * var(--hex-ui-scale,1))!important}
+ #contextMenu3244 .ctxTopStat03859 b{font-size:calc(13px * var(--hex-ui-scale,1))!important}
+ #contextMenu3244 .ctxQuick03817,
+ #contextMenu3244 .ctxMoreGrid03817{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ #contextMenu3244 .ctxNav03817{position:static}
+}
