@@ -47,7 +47,11 @@
       const c=clamp(Number(coverage[i]??.55),0,1);
       const shortage=clamp((.76-c)/.76,0,1);
       const pressure=clamp(((Number(demand[i])||0)-(Number(prod[i])||0))/Math.max(.05,Number(demand[i])||0),0,1);
-      return clamp(shortage*.78+pressure*.22,.04,1);
+      // Los saldos nacionales usan mercancías realmente existentes y
+      // consumo calculado, sin conocer ningún yacimiento no prospectado.
+      const real=window.HexategosEconomicBalance03838?.nation?.(f);
+      const base=clamp(shortage*.78+pressure*.22,.04,1);
+      return real?clamp(base*.55+(real.pressure[i]||0)*.45,.04,1):base;
     });
     needCache.set(f,{time:tick,vector:v});
     return v;
@@ -117,7 +121,8 @@
       if(!canExport)continue;
       score+=Math.max(0,supply-own)*n[r]*5;
     }
-    return clamp(score,0,6);
+    const actual=window.HexategosEconomicBalance03838?.opportunity?.(f,partner);
+    return clamp(actual==null?score:(score*.35+actual*.65),0,6);
   }
 
   // El valor económico no sustituye movimiento, defensa, suministro o
