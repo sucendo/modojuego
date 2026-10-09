@@ -712,7 +712,7 @@ function updateHud(force=false){
  else if(!alert&&player.surface==="RUNOFF")alert="ESCAPATORIA";
  $("raceAlert").textContent=alert;$("raceAlert").style.color=alert==="SENTIDO CONTRARIO"?"#ff6678":alert.startsWith("FRENA")?"#ffdf58":alert.startsWith("BOX")?"#8dffb6":alert.startsWith("PIT")?"#69f5ff":alert==="REBUFO"?"#65ffc0":"#fff";
  const isMobileHud=document.body.classList.contains("mobile-landscape");
- let all=[{id:0,s:player.total},...rivals.map(r=>({id:r.id,s:r.total}))].sort((a,b)=>b.s-a.s),pi=all.findIndex(a=>a.id===0);
+ let all=apexLiveRaceOrder(),pi=all.findIndex(a=>a.id===0);
  const tyreMark=apexWeatherIsWet()?"W":"S",leader=all[0],towerDen=Math.max(58,player.speed*3.6*.72,trackData.km*1.8),driverCode=name=>((name||"DRV").replace(/[^A-Za-zÁÉÍÓÚÜÑ]/g,"").toUpperCase().slice(0,3)||"DRV"),gapFor=entry=>entry.id===leader.id?(currentSession==="race"?"LÍDER":((best<1e8&&entry.id===0)?bestTxt:currentTxt)):"+"+((((leader.s-entry.s)/towerDen)<10)?((leader.s-entry.s)/towerDen).toFixed(1):Math.round((leader.s-entry.s)/towerDen)),lapHead=currentSession==="race"?`${Math.min(player.lap+1,player.laps)}/${player.laps}`:`${player.lap+1}`;
  const place=hudPlaceInfo(trackData.spec),gpCity=place.city,circuitName=place.circuit,countryName=stripCountryEmoji(trackData.spec.country||'Gran Premio'),gpMetaLb=`${weatherHudMarkup(raceWeather,trackData.spec)} ${temp}°C`,flag=flagMarkup(trackData.spec),lb=$("lb");
  const circuitLine=circuitName?`<div class="gpCircuit">${circuitName}</div>`:'';
