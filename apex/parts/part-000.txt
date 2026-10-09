@@ -854,7 +854,7 @@ body:has(#menu:not(.hidden)) #game{background:#05070b!important}
 .svgToolsHead b{display:block;font-size:12px;letter-spacing:.07em;color:#eef8ff}
 .svgToolsHead small{display:block;margin-top:4px;color:#8ca1b5;font-size:9px;line-height:1.4}
 .svgToolsTag{flex:0 0 auto;padding:5px 8px;border-radius:999px;border:1px solid rgba(127,231,255,.22);background:rgba(127,231,255,.08);font-size:8px;font-weight:950;letter-spacing:.08em;color:#9fefff}
-.svgToolsGrid{display:grid;grid-template-columns:minmax(190px,1.2fr) repeat(3,minmax(120px,.7fr));gap:8px;align-items:end}
+.svgToolsGrid{display:grid;grid-template-columns:minmax(190px,1.2fr) repeat(4,minmax(120px,.7fr));gap:8px;align-items:end}
 .svgToolsField label{display:block;margin-bottom:5px;color:#90a5b8;font-size:8px;font-weight:900;letter-spacing:.08em}
 .svgToolsField select,.svgToolsPanel .btn{width:100%}
 .svgToolsStatus{margin-top:9px;min-height:16px;color:#89a0b4;font-size:8px;line-height:1.45}
@@ -1228,6 +1228,7 @@ body.mobile-landscape #toolLeft #gyro,body.mobile-landscape #toolLeft #center,bo
       <div class="svgToolsField track"><label for="svgTrackSelect">Circuito SVG</label><select id="svgTrackSelect"></select></div>
       <div class="svgToolsField"><label>&nbsp;</label><button id="exportCircuitSvgBtn" class="btn primary">EXPORTAR SVG</button></div>
       <div class="svgToolsField"><label>&nbsp;</label><button id="importCircuitSvgBtn" class="btn">IMPORTAR SVG</button><input id="importCircuitSvgFile" type="file" accept=".svg,image/svg+xml" hidden></div>
+      <div class="svgToolsField"><label>&nbsp;</label><button id="loadRepoCircuitBtn" class="btn">CARGAR GUARDADO</button></div>
       <div class="svgToolsField"><label>&nbsp;</label><button id="resetCircuitSvgBtn" class="btn">RESTAURAR BASE</button></div>
     </div>
     <div id="svgToolsStatus" class="svgToolsStatus">Todos los GP tienen BASE SVG+JSON. Importar crea un override reversible; RESTAURAR BASE elimina sólo el override. Las pistas con BASE SVG embebida la cargan mediante el mismo motor genérico que cualquier override importado.</div>
