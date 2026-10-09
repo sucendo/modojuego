@@ -123,7 +123,8 @@
     }
   }
   function on(event,listener){
-    moduleId(event);
+    if(typeof event!=='string'||!/^[a-z][A-Za-z0-9]{1,63}$/.test(event))
+      throw new TypeError('Nombre de evento no válido');
     if(typeof listener!=='function')throw new TypeError('Listener no válido');
     let set=listeners.get(event);
     if(!set){set=new Set();listeners.set(event,set)}
