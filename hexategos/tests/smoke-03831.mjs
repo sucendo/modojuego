@@ -11,7 +11,7 @@ let money=400,saves=0,persists=0,campaign=0,events=[],registration=null;
 const bots=[0,400];
 const win={
   HexategosWorldCore03828:{
-    register:spec=>registration=spec,
+    register:spec=>{registration=spec;win.studySpec=spec},
     emit:(kind,data)=>events.push({kind,data}),
     persist:()=>{persists++;return true}
   },
@@ -26,14 +26,14 @@ const win={
 const boot=new Function('window','owner6','botGold3230','activeFactionCount3230',
   'terrainKey3250','saveGame3212',
   'console',source+
-  '\nreturn {api:window.HexategosProspection03831,step:(time)=>{campaignSeconds3230=time;registration.tick()},'+
-  'state:()=>registration.snapshot(),restore:(s)=>registration.restore(s),'+
+  '\nreturn {api:window.HexategosProspection03831,step:(time)=>{campaignSeconds3230=time;window.studySpec.tick()},'+
+  'state:()=>window.studySpec.snapshot(),restore:(s)=>window.studySpec.restore(s),'+
   'gold:()=>gold3212};');
 const run=new Function('window','owner6','botGold3230','activeFactionCount3230',
   'terrainKey3250','saveGame3212','console',
   'let gold3212=400,campaignSeconds3230=0;'+source+
-  '\nreturn {api:window.HexategosProspection03831,step:(time)=>{campaignSeconds3230=time;registration.tick()},'+
-  'state:()=>registration.snapshot(),restore:(s)=>registration.restore(s),'+
+  '\nreturn {api:window.HexategosProspection03831,step:(time)=>{campaignSeconds3230=time;window.studySpec.tick()},'+
+  'state:()=>window.studySpec.snapshot(),restore:(s)=>window.studySpec.restore(s),'+
   'gold:()=>gold3212};');
 const world=run(win,owner,bots,2,cell=>cell===7?'sea':'plain',()=>saves++,console);
 assert.equal(world.api.status(4).state,'unexplored');
@@ -64,9 +64,9 @@ assert.equal(world.api.status(4).state,'completed','browser/portable snapshots k
 assert.equal(world.api.result(4).iron,'Excepcional');
 assert.equal(world.api.begin(1,5).ok,true,'AI has same prospecting action and cost');
 assert.equal(bots[1],335,'AI pays for surveys too');
-world.step(100);
+world.step(95);
 assert.equal(world.api.status(5).state,'pending');
-world.step(101);
+world.step(96);
 assert.equal(world.api.status(5).state,'completed');
 assert.ok(persists>=2,'completed surveys must persist in common registry');
 assert.equal(world.state().known.length,2);
