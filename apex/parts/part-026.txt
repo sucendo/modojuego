@@ -207,6 +207,20 @@ function webglPushRivalCar3D(a,cam,pitch){
  // Grounding
  tris+=webglPushRivalShadow(basis,cam,pitch,wb+1.22,lod>=2?1.76:1.66,lod>=2?.24:.20);
 
+ // LOD 0: silueta 3D barata y estable. Mantiene el rival visible sin construir
+ // toda la suspensión, cockpit, halo y elementos aerodinámicos lejanos.
+ if(lod===0){
+   tris+=webglPushRivalFrustum3D(basis,cam,pitch,0,.25,-.10,2.25,.62,.84,.18,.28,{main:primary,top:light,left:dark,right:dark,front:accent,back:shadeColor(primary,-22)});
+   tris+=webglPushRivalFrustum3D(basis,cam,pitch,0,.16,1.25,1.05,.18,.42,.07,.16,{main:primary,top:light,front:accent,back:dark});
+   tris+=webglPushRivalLocalBox(basis,cam,pitch,0,.095,frontZ+.55,v.frontWing,.035,.18,{main:accent,top:shadeColor(accent,14)});
+   tris+=webglPushRivalLocalBox(basis,cam,pitch,0,.70,rearZ-.60,v.rearWing,.05,.20,{main:accent,top:shadeColor(accent,12),back:dark});
+   tris+=webglPushRivalWheel3D(basis,cam,pitch,-.92,.31,frontZ,.16,.33,a.r.team,spin,0);
+   tris+=webglPushRivalWheel3D(basis,cam,pitch,.92,.31,frontZ,.16,.33,a.r.team,spin,0);
+   tris+=webglPushRivalWheel3D(basis,cam,pitch,-.88,.33,rearZ,.18,.39,a.r.team,spin,0);
+   tris+=webglPushRivalWheel3D(basis,cam,pitch,.88,.33,rearZ,.18,.39,a.r.team,spin,0);
+   return tris;
+ }
+
  // Floor / plank
  tris+=webglPushRivalFrustum3D(basis,cam,pitch,0,.055,-.02,wb+1.04,1.20,1.44,.05,.055,{main:carbon,top:'#1d2329',left:'#0e1318',right:'#0e1318',front:'#161c21',back:'#05070a'});
  if(lod>=1)tris+=webglPushRivalLocalBox(basis,cam,pitch,0,.020,-.02,.22,.018,wb+1.30,{main:'#8a6336',top:'#a57942'});
