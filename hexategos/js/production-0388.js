@@ -3,7 +3,8 @@
    Una instalación explota como máximo 7 hexágonos; inventario material
    concentrado en nodos, nunca un objeto de producción por celda. */
 (() => {
-  const VERSION='0.38.25';
+  const VERSION='0.38.33';
+  const GEO_KINDS=new Set(['iron','copper','coal','quarry','oil','gas']);
   const SAVE_KEY='hexategos.production.0388';
   const MAX_SITES=5600,AI_RESERVED_FOR_PLAYER=160,MAX_PLAYER_SITES=160,MAX_PER_CELL=3;
   const MAX_PER_NATION=18;
@@ -94,6 +95,19 @@
   function potential(cell,f,kind){
     const t=TYPES[kind];
     if(!t||t.group!=='extract'||owner6[cell]!==f)return 0;
+    const natural=window.HexategosNaturalPotential03829?.profile?.(cell);
+    const geology=window.HexategosGeology03830;
+    if(natural&&(!GEO_KINDS.has(kind)||geology?.deposit)){
+      let value=0;
+      if(GEO_KINDS.has(kind))value=Number(geology.deposit(cell,kind)?.quality)||0;
+      else if(kind==='timber')value=Number(natural.forest)||0;
+      else if(kind==='crops')value=Number(natural.food)||0;
+      else if(kind==='livestock')value=Number(natural.livestock)||0;
+      // La garantía de una instalación anterior no depende de su propietario.
+      const old=sites.get(String(cell)+':'+kind);
+      return clamp(Math.max(value,Number(old?.legacyQuality)||0),0,2.6);
+    }
+    // Compatibilidad para builds y pruebas anteriores a la capa geológica.
     let sum=0;
     for(const c of adjacent(cell)){
       if(owner6[c]!==f)continue;
@@ -154,6 +168,14 @@
     if(countNation(f)>=nationLimit(f))return {ok:false,reason:'Límite nacional de '+nationLimit(f)+' instalaciones'};
     if(sites.size>=(f===0?MAX_SITES:MAX_SITES-AI_RESERVED_FOR_PLAYER))
       return {ok:false,reason:'Capacidad global de simulación alcanzada'};
+    if(def.group==='extract'&&window.HexategosNaturalPotential03829){
+      if(GEO_KINDS.has(kind)&&window.HexategosGeology03830){
+        if(!window.HexategosProspection03831?.hasKnowledge?.(cell))
+          return {ok:false,reason:'Necesita prospección geológica'};
+      }
+      if(potential(cell,f,kind)<=.000001)
+        return {ok:false,reason:'No hay recurso aprovechable en este hexágono'};
+    }
     const money=f===0?gold3212:botGold3230[f];
     if(charge&&money<def.cost+(f===0?0:45))return {ok:false,reason:'Faltan '+Math.ceil(def.cost+(f===0?0:45)-money)+' de oro'};
     return {ok:true,reason:'Disponible'};
@@ -176,7 +198,7 @@
       if(isPlayer){if(gold3212<price)return false;gold3212-=price}
       else {if(botGold3230[f]<price+45)return false;botGold3230[f]-=price}
     }
-    const s={cell,f,kind,level:1,pct:100,stock:0,byproducts:{},output:0,potential:def.group==='extract'?potential(cell,f,kind):1,updated:campaignSeconds3230||0};
+    const s={cell,f,kind,level:1,pct:100,stock:0,byproducts:{},output:0,legacyQuality:0,potential:def.group==='extract'?potential(cell,f,kind):1,updated:campaignSeconds3230||0};
     if(!addSite(s))return false;
     revision++;
     if(isPlayer)persistProduction0388();
@@ -545,6 +567,15 @@
       if(sourceAvailable)factoryNeeds.add(kind);
     }
     const role=FACTIONS3230[f]?.role||'balanced';
+    const prospection=window.HexategosProspection03831;
+    const agronomy=window.HexategosAgronomy03832;
+    const physicalGeology=!!window.HexategosGeology03830;
+    const needsOre=missing.some(k=>['iron','copper','coal','quarry'].includes(k));
+    const needsFuel=missing.some(k=>k==='oil'||k==='gas');
+    const needsFarm=!ownKinds.has('crops')||!ownKinds.has('livestock');
+    // Las IA sólo usan indicios superficiales para elegir estudios.
+    // Nunca consultan depósitos exactos de hexágonos no prospectados.
+    let surveyChoice=null,surveyScore=0;
     // Las IA ajustan autónomamente el uso sectorial según la escasez.
     const policy={energy:clamp(Math.round(70+pressure.energy*30),0,100),
       mining:clamp(Math.round(70+pressure.mining*30),0,100),
@@ -562,7 +593,23 @@
       const road=connect(cell,f);
       // Preferimos nodos conectados, no colonizamos el mapa de iconos.
       const logistics=road>=0?1.38:.48;
+      const guess=window.HexategosNaturalPotential03829?.profile?.(cell);
+      if(guess&&physicalGeology&&prospection&&
+         !prospection.hasKnowledge(cell)&&prospection.availability(f,cell).ok){
+        const estimate=Math.max(needsOre?guess.mineral:0,needsFuel?guess.energy:0);
+        const value=estimate*logistics*(.8+pressure.mining*.4);
+        if(value>surveyScore){surveyScore=value;surveyChoice={cell,kind:'geo'}}
+      }
+      if(guess&&needsFarm&&agronomy&&!agronomy.isKnown(cell)&&
+         agronomy.availability(f,cell).ok){
+        const estimate=Math.max(!ownKinds.has('crops')?guess.food:0,
+          !ownKinds.has('livestock')?guess.livestock:0);
+        const value=estimate*logistics*(.5+pressure.farming*.3);
+        if(value>surveyScore){surveyScore=value;surveyChoice={cell,kind:'agro'}}
+      }
       for(const kind of missing){
+        if(physicalGeology&&GEO_KINDS.has(kind)&&
+           !prospection?.hasKnowledge?.(cell))continue;
         const type=TYPES[kind],p=potential(cell,f,kind);
         const need=pressure[type.sector]||.2;
         const value=p*(.72+need*1.35)*logistics;
@@ -582,6 +629,15 @@
       nextAI[f]=now+70+(f%13)*6;
       return;
     }
+    if(surveyChoice&&surveyScore>.32&&botGold3230[f]>165){
+      const out=surveyChoice.kind==='geo'?
+        prospection?.begin(f,surveyChoice.cell):
+        agronomy?.begin(f,surveyChoice.cell);
+      if(out?.ok){
+        nextAI[f]=now+27+(f%11)*5;
+        return;
+      }
+    }
     // Las economías maduras también amplían capacidad: nunca reciben
     // una mejora gratuita y siguen usando su propia tesorería.
     let best=null,bestScore=-1;
@@ -600,9 +656,9 @@
       nextAI[f]=now+100+(f%13)*9}
   }
   function saveState(){
-    return {v:2,sites:[...sites.values()].map(s=>({cell:s.cell,f:s.f,kind:s.kind,
+    return {v:3,sites:[...sites.values()].map(s=>({cell:s.cell,f:s.f,kind:s.kind,
       level:s.level,pct:s.pct,stock:s.stock,output:s.output,
-      byproducts:s.byproducts||{}})),
+      legacyQuality:Number(s.legacyQuality)||0,byproducts:s.byproducts||{}})),
       depots:[...depots],sectors:[...sectorPct]};
   }
   function restore(data){
@@ -616,9 +672,15 @@
       const byproducts={};
       if(x.byproducts&&typeof x.byproducts==='object')for(const kind of Object.keys(DERIVATIVES[x.kind]||{}))
         byproducts[kind]=clamp(Number(x.byproducts[kind])||0,0,325);
-      addSite({cell:x.cell,f,kind:x.kind,byproducts,level:clamp(Math.trunc(x.level||1),1,5),
+      const legacy=TYPES[x.kind].group==='extract'?
+        ((data.v==null||Number(data.v)<3)? .85:clamp(Number(x.legacyQuality)||0,0,2.6)):0;
+      // Los yacimientos que sustentaban minas de partidas antiguas permanecen.
+      const p=legacy?Math.max(legacy,potential(x.cell,f,x.kind)):
+        potential(x.cell,f,x.kind);
+      addSite({cell:x.cell,f,kind:x.kind,byproducts,legacyQuality:legacy,
+        level:clamp(Math.trunc(x.level||1),1,5),
         pct:clamp(Number(x.pct??100),0,100),stock:clamp(Number(x.stock)||0,0,325),
-        output:Math.max(0,Number(x.output)||0),potential:potential(x.cell,f,x.kind),
+        output:Math.max(0,Number(x.output)||0),potential:p,
         updated:campaignSeconds3230||0});
     }
     if(Array.isArray(data.depots))for(const [cell,d] of data.depots.slice(0,MAX_SITES)){
@@ -998,6 +1060,7 @@
     iconOffset:iconOffset03811,
     drawCandidates:()=>sites.values(),
     snapshot:saveState,persist:persistProduction0388,
+    legacyQuality:(cell,kind)=>Number(sites.get(siteKey(cell,kind))?.legacyQuality)||0,
     stats:()=>({...lastStats}),electricDeficit:f=>nationalElectricDeficit.get(Number(f))||0,validate:()=>{
       const errors=[];for(const s of sites.values())if(!TYPES[s.kind]||s.cell<0)errors.push('instalación inválida');
       return {ok:!errors.length,errors,stats:lastStats};
