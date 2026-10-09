@@ -713,10 +713,16 @@
     load0380();
     // Migración: tratados positivos preexistentes se consideran diplomacia ya formalizada.
     // Además se materializan en flags separados para conservar partidas antiguas.
-    for(let a=0;a<activeFactionCount3230;a++)for(let b=a+1;b<activeFactionCount3230;b++){
-      const rel=diplomaticRelation3300(a,b);
-      if(rel>0&&!hasEmbassy(a,b))embassies.set(pairKey(a,b),{status:'active',requestedBy:-1,at:now(),rejectedUntil:0});
-      treatyState(a,b,true);
+    // Si el archivo ya contiene toda la matriz, no reconstruir 124.750
+    // relaciones y embajadas en cada carga de una partida de 500 naciones.
+    // Las partidas antiguas con matrices parciales siguen la migración habitual.
+    const pairs=activeFactionCount3230*(activeFactionCount3230-1)/2;
+    if(treaties.size<pairs){
+      for(let a=0;a<activeFactionCount3230;a++)for(let b=a+1;b<activeFactionCount3230;b++){
+        const rel=diplomaticRelation3300(a,b);
+        if(rel>0&&!hasEmbassy(a,b))embassies.set(pairKey(a,b),{status:'active',requestedBy:-1,at:now(),rejectedUntil:0});
+        treatyState(a,b,true);
+      }
     }
     for(const c of cities3212)ensureCityState(c);
     save0380();
