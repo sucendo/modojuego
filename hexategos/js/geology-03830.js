@@ -93,13 +93,21 @@
       terrainTendency(kind,type)-thresholds[kind];
     return surplus<=0?0:Math.min(2.6,Math.pow(surplus*3.5,1.18));
   }
+  function effectiveDeposit(cell,kind,base){
+    // Una mina histórica demuestra físicamente el yacimiento existente.
+    // La garantía se conserva con ella aunque cambie su propietario.
+    const guarantee=Number(window.HexategosProduction0388?.legacyQuality?.(cell,kind))||0;
+    if(guarantee<=base.quality)return {...base};
+    return {kind,quality:guarantee,
+      reserve:Math.max(base.reserve,Math.round(guarantee*160000))};
+  }
   function deposit(cell,kind){
     if(!materials.has(kind))return null;
     cell=Number(cell);
     if(!Number.isInteger(cell)||cell<0||!window.__openfrontBootCompleted3281)return null;
     syncSeed();
     const key=cell+':'+kind,old=cache.get(key);
-    if(old)return {...old};
+    if(old)return effectiveDeposit(cell,kind,old);
     let loc=null,type='plain';
     try{loc=cellLonLat3302(cell);type=terrainKey3250(cell)||'plain'}catch(_){return null}
     const lat=Number(loc?.lat),lon=Number(loc?.lon);
@@ -110,7 +118,7 @@
     const result=Object.freeze({kind,quality,reserve});
     if(cache.size>=CACHE_LIMIT)cache.delete(cache.keys().next().value);
     cache.set(key,result);
-    return {...result};
+    return effectiveDeposit(cell,kind,result);
   }
   function hint(cell){
     // Conocimiento superficial: no consultar el yacimiento concreto.
