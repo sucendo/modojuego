@@ -10,18 +10,32 @@
   const encoder=new TextEncoder();
   const formatDate=()=>new Date().toISOString().slice(0,16).replace(/[-:T]/g,'');
   let processing=false,lastError=null,lastBytes=null;
-  function archive(file) {
-    if(!file?.payload||!codec()?.gzip)throw new Error('Compresión HXZ2 no disponible');
-    const json=JSON.stringify(file);
-    // Level 6 improves repetitive world arrays without the long stalls
-    // associated with maximal gzip compression on the UI thread.
-    const bytes=codec().gzip(encoder.encode(json),{level:6});
+  async function gzipBytes(data) {
+    // The bundled legacy Pako build does not expose gzip/ungzip.
+    // Native streams are supported by modern Chromium and work with gzip.
+    if(typeof CompressionStream==='function'){
+      const stream=new Blob([data]).stream().pipeThrough(new CompressionStream('gzip'));
+      return new Uint8Array(await new Response(stream).arrayBuffer());
+    }
+    if(typeof codec()?.gzip==='function')return codec().gzip(data,{level:6});
+    throw new Error('Este navegador no dispone de compresión GZIP compatible');
+  }
+  async function gunzipBytes(data){
+    if(typeof DecompressionStream==='function'){
+      const stream=new Blob([data]).stream().pipeThrough(new DecompressionStream('gzip'));
+      return new Uint8Array(await new Response(stream).arrayBuffer());
+    }
+    if(typeof codec()?.ungzip==='function')return codec().ungzip(data);
+    throw new Error('Este navegador no puede descomprimir archivos HXZ2');
+  }
+  async function archive(file) {
+    if(!file?.payload)throw new Error('Datos incompletos para HXZ2');
+    const json=JSON.stringify(file),raw=encoder.encode(json);
+    const bytes=await gzipBytes(raw);
     const blob=new Blob([MAGIC,bytes],{type:'application/octet-stream'});
-    lastBytes={original:encoder.encode(json).byteLength,compressed:blob.size,
-      ratio:Number((blob.size/Math.max(1,encoder.encode(json).byteLength)).toFixed(3)),
-      format:'HXZ2 gzip'};
-    if(blob.size>=lastBytes.original)
-      throw new Error('HXZ2 no ha reducido el tamaño: exportación detenida para revisión');
+    lastBytes={original:raw.byteLength,compressed:blob.size,
+      ratio:Number((blob.size/Math.max(1,raw.byteLength)).toFixed(3)),format:'HXZ2 gzip'};
+    if(blob.size>=raw.byteLength)throw new Error('La compresión no ha reducido el tamaño de la partida');
     return blob;
   }
   function download(blob,name) {
@@ -41,7 +55,7 @@
       if(!file?.payload)throw new Error('El guardado no contiene los datos del mundo');
       showLoading('Comprimiendo la partida HXZ2…');
       await yieldFrame();
-      const blob=archive(file);
+      const blob=await archive(file);
       download(blob,'HEXATEGOS_'+formatDate()+'.hexategos');
       hideLoading();
       if(typeof toast==='function')toast('HXZ2 exportado · '+Math.round(blob.size/1024)+' KB');
@@ -106,8 +120,7 @@
         showLoading('Leyendo y descomprimiendo el archivo HXZ2…');
         await yieldFrame();
         const bytes=new Uint8Array(await selected.arrayBuffer());
-        if(!codec()?.ungzip)throw new Error('No se ha cargado el descompresor HXZ2');
-        const text=decoder.decode(codec().ungzip(bytes.subarray(MAGIC.length)));
+        const text=decoder.decode(await gunzipBytes(bytes.subarray(MAGIC.length)));
         showLoading('Verificando datos e iniciando restauración del mundo…');
         await yieldFrame();
         const parsed=JSON.parse(text);
