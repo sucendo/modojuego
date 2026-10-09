@@ -162,7 +162,7 @@
     const index=local.indexOf(s);if(index>=0)local.splice(index,1);
     if(!local.length)perCell.delete(s.cell);
     trackNation(s.f,-1,s.kind);
-    const nation=nationSites.get(s.f);if(nation)nation.delete(key);
+    const nation=nationSites.get(s.f);if(nation){nation.delete(s);if(!nation.size)nationSites.delete(s.f)};
     revision++;cacheDirty=true;supplyDirty3220=true;needsRender=true;
     if(typeof markEconomyDirty3261==='function')markEconomyDirty3261();
     return true;
@@ -1120,6 +1120,7 @@
   window.HexategosProduction0388={
     version:VERSION,types:TYPES,cells:()=>perCell.keys(),revision:()=>revision,tick,
     sites:()=>[...sites.values()].map(s=>({...s})),sector:(f,s)=>sec(f,s),
+    stage:(kind)=>TYPES[kind]?industryStage(TYPES[kind]):null,
     build,upgrade,removeSite,setPct,setSector,potential,efficiency,availability,sitesOnCell:cell=>sitesOnCell(cell).map(s=>({...s})),
     legacyManufacturingFactor:f=>Math.max(.15,1-(manufacturingCounts.get(Number(f))||0)*.22),
     intermediates:()=>({...RESOURCE_PRODUCT_LABELS}),futureIndustries:()=>FUTURE_INDUSTRIES.map(v=>({...v})),
