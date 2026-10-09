@@ -40,13 +40,10 @@
     highmountain: [.08,.24,.03],
     sea:          [0,0,0]
   };
-  function profile(cell){
-    cell=Number(cell);
-    if(!Number.isInteger(cell)||cell<0||!window.__openfrontBootCompleted3281)return null;
-    const hit=cache.get(cell);if(hit)return {...hit};
-    let loc=null,type='sea';
-    try{loc=cellLonLat3302(cell);type=terrainKey3250(cell)||'sea'}catch(_){return null}
-    const lat=Number(loc?.lat),lon=Number(loc?.lon);
+  // Reutilizable para los LOD del mapa: misma fórmula y seed que profile(),
+  // pero sin usar índices de hexágonos de una malla distinta.
+  function sampleAt(lat,lon,type='plain'){
+    lat=Number(lat);lon=Number(lon);
     if(!Number.isFinite(lat)||!Number.isFinite(lon))return null;
     const base=surface[type]||surface.plain;
     const latitude=Math.abs(lat);
@@ -59,15 +56,24 @@
     const forestDensity=.52+noise(lat,lon,11,0x4A)*.95;
     const deepMineral=.25+noise(lat,lon,22,0x60)*1.60;
     const deepEnergy=.18+noise(lat,lon,27,0x81)*1.80;
-    const value=Object.freeze({
+    return {
       type,food:clamp(base[0]*cold*climate*rain),
       livestock:clamp(base[1]*(.7+.3*cold)*climate*pastures),
       forest:clamp(base[2]*forestDensity),
       mineral:clamp(deepMineral),
       energy:clamp(deepEnergy)
-    });
+    };
+  }
+  function profile(cell){
+    cell=Number(cell);
+    if(!Number.isInteger(cell)||cell<0||!window.__openfrontBootCompleted3281)return null;
+    const hit=cache.get(cell);if(hit)return {...hit};
+    let loc=null,type='sea';
+    try{loc=cellLonLat3302(cell);type=terrainKey3250(cell)||'sea'}catch(_){return null}
+    const value=sampleAt(loc?.lat,loc?.lon,type);
+    if(!value)return null;
     if(cache.size>=CACHE_LIMIT)cache.delete(cache.keys().next().value);
-    cache.set(cell,value);
+    cache.set(cell,Object.freeze(value));
     return {...value};
   }
   function category(value){
@@ -101,7 +107,7 @@
     core.persist();
   });
   window.HexategosNaturalPotential03829=Object.freeze({
-    version:BUILD,generatorVersion:GENERATOR,profile,category,
+    version:BUILD,generatorVersion:GENERATOR,profile,sampleAt,category,
     seed:()=>seed,cacheSize:()=>cache.size,cacheLimit:CACHE_LIMIT,
     // Extensión futura: las provincias regionales pueden reutilizar
     // el mismo ruido coherente sin copiar el generador ni tocar el atlas.
