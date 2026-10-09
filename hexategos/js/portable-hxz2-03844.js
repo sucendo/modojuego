@@ -65,7 +65,7 @@
       hideLoading();
       lastError=String(error?.message||error);
       console.error('[Hexategos HXZ2] Falló la exportación',error);
-      alert('No se pudo exportar HXZ2: '+lastError+'\\nPuedes usar Exportar archivo clásico (JSON) para conservar una copia.');
+      void window.HexategosDialogs03851.notice('No se pudo exportar HXZ2: '+lastError+'\nPuedes usar Exportar archivo clásico (JSON) para conservar una copia.','Error de exportación');
       return false;
     }finally{processing=false}
   }
