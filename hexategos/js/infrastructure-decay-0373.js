@@ -173,7 +173,7 @@
     const prod=window.HexategosProduction0388,existing=new Set();
     for(const site of prod?.drawCandidates?.()||[]){
       const id=site.cell+':'+site.kind;existing.add(id);
-      if(connected(site.cell,site.f,site.level===1?1:2)){
+      if(connected(site.cell,site.f,prod.stage?.(site.kind)===1?1:2)){
         if(specializedDecay.delete(id)){recoveries++;dirty=true}
         continue;
       }
