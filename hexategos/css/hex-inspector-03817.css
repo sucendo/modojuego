@@ -287,3 +287,64 @@
  #contextMenu3244 .ctxQuick03817 .ctxAction3244,
  #contextMenu3244 .ctxMoreGrid03817 .ctxAction3244{min-height:48px!important}
 }
+
+/* Hexategos 0.38.59: disposición táctil inspirada en la ficha aprobada. */
+#contextMenu3244.hexInspectorActive03817{
+ width:min(760px,calc(100dvw - 22px))!important;
+ max-height:calc(100dvh - 22px)!important;
+ background:linear-gradient(145deg,#071b2f,#0a273d 55%,#0b2235)!important;
+ border:1px solid #40718d!important;border-radius:16px!important;
+ box-shadow:0 16px 54px #000b!important;
+ overflow-y:auto!important;overflow-x:hidden!important;
+ scrollbar-width:thin;scrollbar-color:#5b9bb8 #0a2639;
+}
+#contextMenu3244.hexInspectorActive03817 .ctxHead3244{
+ padding:15px 18px!important;background:linear-gradient(90deg,#0c2e49,#062036)!important;
+}
+#contextMenu3244.hexInspectorActive03817 .ctxTitleWrap3244 b{
+ font-size:calc(23px * var(--hex-ui-scale,1))!important;line-height:1.15!important;
+}
+#contextMenu3244 .ctxTopStats03859{
+ display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+ gap:6px;padding:12px 0 3px;
+}
+#contextMenu3244 .ctxTopStat03859{
+ min-height:47px;border:1px solid #315d76;border-radius:8px;
+ background:linear-gradient(140deg,#08253b,#0b3048);padding:8px 10px;
+ display:flex;justify-content:space-between;align-items:center;gap:6px;min-width:0;
+}
+#contextMenu3244 .ctxTopStat03859 span{font-size:calc(11px * var(--hex-ui-scale,1));color:#cce3f1;overflow-wrap:anywhere}
+#contextMenu3244 .ctxTopStat03859 b{font-size:calc(14px * var(--hex-ui-scale,1));color:#f7fcff;white-space:nowrap}
+#contextMenu3244 .ctxNav03817{position:sticky;top:0;z-index:3;background:#08273b;padding:9px 0!important}
+#contextMenu3244 .ctxNav03817 button{min-height:44px!important}
+#contextMenu3244 .ctxQuick03817{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+#contextMenu3244 .ctxMoreGrid03817{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+#contextMenu3244 .ctxQuick03817 .ctxAction3244,
+#contextMenu3244 .ctxMoreGrid03817 .ctxAction3244{
+ min-height:68px!important;padding:11px!important;gap:10px!important;
+ border-radius:10px!important;transition:border-color .15s,background .15s;
+}
+#contextMenu3244 .ctxDetails03817{
+ max-height:none!important;overflow:visible!important;gap:8px!important;
+}
+#contextMenu3244 .ctxAccordion03858>summary{font-size:calc(14px * var(--hex-ui-scale,1))!important}
+#contextMenu3244 :is(button,summary,input):focus-visible{
+ outline:2px solid #85d8fb!important;outline-offset:2px;
+}
+@media(max-width:650px){
+ #contextMenu3244.hexInspectorActive03817{
+  width:min(440px,calc(100dvw - 10px))!important;
+  max-height:calc(100dvh - 10px)!important;border-radius:11px!important;
+ }
+ #contextMenu3244.hexInspectorActive03817 .ctxTitleWrap3244 b{font-size:calc(19px * var(--hex-ui-scale,1))!important}
+ #contextMenu3244 .ctxTopStats03859{grid-template-columns:repeat(2,minmax(0,1fr));padding-top:8px;gap:5px}
+ #contextMenu3244 .ctxTopStat03859{padding:6px 8px;min-height:36px}
+ #contextMenu3244 .ctxQuick03817,
+ #contextMenu3244 .ctxMoreGrid03817{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ #contextMenu3244 .ctxQuick03817 .ctxAction3244,
+ #contextMenu3244 .ctxMoreGrid03817 .ctxAction3244{min-height:56px!important;padding:8px!important}
+ #contextMenu3244 .ctxNav03817 button{min-height:40px!important}
+}
+@media(max-width:355px){
+ #contextMenu3244 .ctxTopStat03859{display:grid;gap:2px}
+}
