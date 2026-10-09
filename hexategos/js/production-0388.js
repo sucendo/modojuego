@@ -567,6 +567,15 @@
       if(sourceAvailable)factoryNeeds.add(kind);
     }
     const role=FACTIONS3230[f]?.role||'balanced';
+    const prospection=window.HexategosProspection03831;
+    const agronomy=window.HexategosAgronomy03832;
+    const physicalGeology=!!window.HexategosGeology03830;
+    const needsOre=missing.some(k=>['iron','copper','coal','quarry'].includes(k));
+    const needsFuel=missing.some(k=>k==='oil'||k==='gas');
+    const needsFarm=!ownKinds.has('crops')||!ownKinds.has('livestock');
+    // Las IA sólo usan indicios superficiales para elegir estudios.
+    // Nunca consultan depósitos exactos de hexágonos no prospectados.
+    let surveyChoice=null,surveyScore=0;
     // Las IA ajustan autónomamente el uso sectorial según la escasez.
     const policy={energy:clamp(Math.round(70+pressure.energy*30),0,100),
       mining:clamp(Math.round(70+pressure.mining*30),0,100),
@@ -584,7 +593,23 @@
       const road=connect(cell,f);
       // Preferimos nodos conectados, no colonizamos el mapa de iconos.
       const logistics=road>=0?1.38:.48;
+      const guess=window.HexategosNaturalPotential03829?.profile?.(cell);
+      if(guess&&physicalGeology&&prospection&&
+         !prospection.hasKnowledge(cell)&&prospection.availability(f,cell).ok){
+        const estimate=Math.max(needsOre?guess.mineral:0,needsFuel?guess.energy:0);
+        const value=estimate*logistics*(.8+pressure.mining*.4);
+        if(value>surveyScore){surveyScore=value;surveyChoice={cell,kind:'geo'}}
+      }
+      if(guess&&needsFarm&&agronomy&&!agronomy.isKnown(cell)&&
+         agronomy.availability(f,cell).ok){
+        const estimate=Math.max(!ownKinds.has('crops')?guess.food:0,
+          !ownKinds.has('livestock')?guess.livestock:0);
+        const value=estimate*logistics*(.5+pressure.farming*.3);
+        if(value>surveyScore){surveyScore=value;surveyChoice={cell,kind:'agro'}}
+      }
       for(const kind of missing){
+        if(physicalGeology&&GEO_KINDS.has(kind)&&
+           !prospection?.hasKnowledge?.(cell))continue;
         const type=TYPES[kind],p=potential(cell,f,kind);
         const need=pressure[type.sector]||.2;
         const value=p*(.72+need*1.35)*logistics;
@@ -603,6 +628,15 @@
     if(choice&&score>.35&&build(f,choice.cell,choice.kind,true)){
       nextAI[f]=now+70+(f%13)*6;
       return;
+    }
+    if(surveyChoice&&surveyScore>.32&&botGold3230[f]>165){
+      const out=surveyChoice.kind==='geo'?
+        prospection?.begin(f,surveyChoice.cell):
+        agronomy?.begin(f,surveyChoice.cell);
+      if(out?.ok){
+        nextAI[f]=now+27+(f%11)*5;
+        return;
+      }
     }
     // Las economías maduras también amplían capacidad: nunca reciben
     // una mejora gratuita y siguen usando su propia tesorería.
