@@ -21,14 +21,20 @@
   // A successful main save must be readable in both legacy JSON and the
   // compact HXZ1 format. Warn once per continuous failure, not every autosave.
   let mainError=null,lastMainCheck=0,mainAlertShown=false;
+  let lastSaveMs=0,lastVerifyMs=0,totalSaves=0,checks=0;
   if(typeof saveGame3212==='function'){
     const originalSave=saveGame3212;
     saveGame3212=function(){
+      const startedAt=performance.now();
       const out=originalSave.apply(this,arguments);
+      lastSaveMs=performance.now()-startedAt;totalSaves++;
       if(!started3230)return out;
       const now=Date.now();
-      if(out!==false&&now-lastMainCheck<12000)return out;
+      // La escritura individual ya confirma su contenido; una lectura
+      // completa comprimida cada 12 s bloquearía campañas grandes.
+      if(out!==false&&now-lastMainCheck<60000)return out;
       lastMainCheck=now;
+      const verifyAt=performance.now();
       try{
         if(out===false)throw new Error('La escritura del guardado principal ha fallado');
         if(typeof SAVE_KEY3230!=='string')return out;
@@ -52,6 +58,7 @@
             toast('⚠ La partida no se ha guardado por completo. Exporta una copia .hexategos.');
         }
       }
+      finally{lastVerifyMs=performance.now()-verifyAt;checks++}
       return out;
     };
   }
@@ -62,7 +69,7 @@
       return {routes:trade?.routes?.length||0,industrySites:production?.sites?.length||0,
         tradeReady:Array.isArray(trade?.routes),industryReady:Array.isArray(production?.sites),
         storageError:window.HexategosSaveStorage03827?.status?.()||null,
-        mainError};
+        mainError,performance:{lastSaveMs:Number(lastSaveMs.toFixed(1)),lastVerifyMs:Number(lastVerifyMs.toFixed(1)),saves:totalSaves,checks}};
     }
   };
 })();
