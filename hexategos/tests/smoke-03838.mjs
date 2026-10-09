@@ -81,5 +81,5 @@ assert.equal(snapshot.nations,500);
 assert.ok(elapsed<2000,'500-nation balance must stay lightweight on CI');
 assert.equal(api.nation(499).nodes,3);
 assert.equal(api.nation(500),null);
-assert.equal(api.stats().revision,4);
+assert.equal(api.stats().revision,3,'one summary refresh per existing commerce tick');
 console.log('HEXATEGOS 0.38.38: physical cargo valuation, scarce nations, exports, AI, defensive snapshots and 500 nations PASS ('+elapsed.toFixed(2)+'ms)');
