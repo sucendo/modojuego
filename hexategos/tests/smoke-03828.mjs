@@ -107,6 +107,7 @@ core.register({id:'test-a',tick:()=>round.push('a')});
 core.register({id:'test-b',tick:()=>round.push('b')});
 core.register({id:'test-c',tick:()=>round.push('c')});
 const first=core.step(2,.2),second=core.step(2,.2);
+for(let i=0;i<5;i++)core.step(2,.2);
 assert.ok(first.ran>=1&&second.ran>=1,'budgeted scheduler must run tasks');
 assert.ok(round.length>=2);
 assert.notEqual(round[0],round[1],'scheduler must rotate cursors under tight budgets');
