@@ -59,7 +59,7 @@ const saveHarness=new Function(
   [0,0],41,localStorage,text=>warned.push(text),cb=>cb());
 saveHarness.save();
 assert.ok(saveHarness.diagnostic().mainError,'main save failure must be detected');
-assert.ok(warned.some(x=>x.includes('NO se ha guardado')),'player should see explicit save failure');
+assert.ok(warned.some(x=>x.includes('no se ha guardado por completo')),'player should see explicit save failure');
 
 assert.match(tradeCode,/read0370\(\)/,'trade must read compact or legacy route saves');
 assert.match(tradeCode,/lastPeriodicSaveWall03827/,'automatic trade routes must be persisted');
