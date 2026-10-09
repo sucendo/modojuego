@@ -2754,6 +2754,11 @@
     },
     domesticSeaSupply:(f,cell)=>domesticSeaSupplyFloor03713(Number(f),Number(cell)),
     roadComponent:(cell)=>{rebuildRoadGraph0370(false);return Number.isInteger(cell)&&cell>=0&&roadComp&&cell<roadComp.length?roadComp[cell]:-1},
+    roadNetworkSize:(cell)=>{
+      rebuildRoadGraph0370(false);
+      const id=Number.isInteger(cell)&&cell>=0&&roadComp&&cell<roadComp.length?roadComp[cell]:-1;
+      return id>=0?(components[id]?.cells.length||0):0;
+    },
     visualSpeed:(kind,faction)=>({
       cellsPerSecond:(kind==='sea'?SEA_TRADE_CELLS_PER_SECOND:LAND_TRADE_CELLS_PER_SECOND)*
         tradeSpeedMultiplier03710(kind,Number(faction)||0),
