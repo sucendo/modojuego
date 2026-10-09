@@ -48,6 +48,26 @@
   },true);
   // Old JSON files bypass this listener entirely. New HXZ2 archives are
   // converted into a synthetic legacy File for the established importer.
+  // Visibilidad durante descompresión y transición al importador existente.
+  // Se elimina tras recuperar la capacidad de respuesta del navegador.
+  let loadingOverlay=null,loadingStart=0;
+  function showLoading(message){
+    loadingStart=performance.now();
+    if(!loadingOverlay){
+      loadingOverlay=document.createElement('div');
+      loadingOverlay.id='hxz2-loading';
+      loadingOverlay.setAttribute('role','status');
+      loadingOverlay.setAttribute('aria-live','polite');
+      loadingOverlay.style.cssText='position:fixed;inset:0;z-index:2147483647;background:rgba(3,11,21,.92);display:flex;align-items:center;justify-content:center;color:#e4edf6;font:16px system-ui,sans-serif;text-align:center';
+      loadingOverlay.innerHTML='<div style="max-width:460px;padding:30px"><div style="font-size:22px;font-weight:700;margin-bottom:14px">Cargando partida Hexategos</div><div id="hxz2-loading-message"></div><div style="margin-top:16px;font-size:12px;color:#aab8c6">No cierres esta ventana durante la restauración.</div></div>';
+      document.body.appendChild(loadingOverlay);
+    }
+    loadingOverlay.querySelector('#hxz2-loading-message').textContent=message;
+  }
+  function hideLoading(){
+    if(loadingOverlay){loadingOverlay.remove();loadingOverlay=null}
+  }
+  const yieldFrame=()=>new Promise(resolve=>requestAnimationFrame(()=>setTimeout(resolve,0)));
   const translated=new WeakSet();
   document.addEventListener('change',event=>{
     const input=event.target;
@@ -64,9 +84,13 @@
           translated.add(input);input.dispatchEvent(new Event('change',{bubbles:true}));
           return;
         }
+        showLoading('Leyendo y descomprimiendo el archivo HXZ2…');
+        await yieldFrame();
         const bytes=new Uint8Array(await selected.arrayBuffer());
         if(!codec()?.ungzip)throw new Error('No se ha cargado el descompresor HXZ2');
         const text=decoder.decode(codec().ungzip(bytes.subarray(MAGIC.length)));
+        showLoading('Verificando datos e iniciando restauración del mundo…');
+        await yieldFrame();
         const parsed=JSON.parse(text);
         if(!parsed||typeof parsed!=='object'||!parsed.payload)
           throw new Error('La copia HXZ2 está incompleta');
@@ -74,7 +98,11 @@
         data.items.add(new File([text],selected.name,{type:'application/json'}));
         input.files=data.files;
         translated.add(input);input.dispatchEvent(new Event('change',{bubbles:true}));
+        // La rutina heredada de importación puede ser síncrona. Mantener el
+        // indicador hasta que termine su trabajo y el navegador repinte.
+        requestAnimationFrame(()=>setTimeout(hideLoading,250));
       }catch(error) {
+        hideLoading();
         lastError=String(error?.message||error);
         console.error('[Hexategos HXZ2] No se pudo importar',error);
         if(typeof toast==='function')toast('No se pudo abrir esta copia comprimida: '+lastError);
