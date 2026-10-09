@@ -826,7 +826,7 @@ function apexDriveSteeringConfig(speedNorm,device){
  if(p==='simulation')return{authority:analog?lerp(1,.82,speedNorm):lerp(.99,.62,speedNorm),rise:analog?lerp(8.0,5.2,speedNorm):(d==='touch'?lerp(7.6,4.8,speedNorm):lerp(6.0,4.15,speedNorm)),center:analog?8.2:(d==='touch'?8.7:8.1),counter:analog?9.0:(d==='touch'?9.5:9.0)};
  // ASISTIDO / control clásico: tecla = intención de giro, no porcentaje de volante.
  // Mantiene bastante autoridad a alta velocidad y suaviza sólo la velocidad con que llega a ella.
- return{authority:analog?lerp(1,.88,speedNorm):lerp(1,.64,speedNorm),rise:analog?lerp(8.2,5.6,speedNorm):(d==='touch'?lerp(7.4,4.9,speedNorm):lerp(6.4,4.35,speedNorm)),center:analog?8.4:(d==='touch'?8.8:8.2),counter:analog?9.4:(d==='touch'?9.8:9.3)};
+ return{authority:analog?lerp(1,.88,speedNorm):lerp(1,.64,speedNorm),rise:analog?lerp(8.2,5.5,speedNorm):(d==='touch'?lerp(7.4,4.75,speedNorm):lerp(6.4,4.15,speedNorm)),center:analog?lerp(8.4,7.2,speedNorm):(d==='touch'?lerp(8.8,7.0,speedNorm):lerp(8.2,6.6,speedNorm)),counter:analog?lerp(9.4,8.0,speedNorm):(d==='touch'?lerp(9.8,7.8,speedNorm):lerp(9.3,7.4,speedNorm))};
 }
 function apexGamepadAxis(v,dead=.08){v=finite(v,0);const a=Math.abs(v);if(a<=dead)return 0;const n=clamp((a-dead)/(1-dead),0,1);return Math.sign(v)*Math.pow(n,1.25)}
 function apexPollGamepad(){
