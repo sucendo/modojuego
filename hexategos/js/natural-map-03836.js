@@ -31,7 +31,7 @@
   };
   const MAX_CACHE=6000;
   const samples=new Map(),knownColors=new Map();
-  let currentSeed=-1,selectedMode=mapMode3252;
+  let currentSeed=-1,currentStudyRevision=-1,currentIndustryRevision=-1;
   const stats={computed:0,cached:0,hidden:0};
   const grade=value=>{
     const v=Number(value)||0;
@@ -39,7 +39,16 @@
   };
   function invalidate(){
     const seed=natural.seed?.()||0;
+    const studiedRevision=prospect?.stats?.().revision??-1;
+    const industryRevision=window.HexategosProduction0388?.revision?.()??-1;
     if(seed!==currentSeed){currentSeed=seed;samples.clear();knownColors.clear()}
+    // On import, reset or newly completed studies, no discovery grade from
+    // the previous campaign may remain in a reusable colour cache.
+    if(studiedRevision!==currentStudyRevision||industryRevision!==currentIndustryRevision){
+      currentStudyRevision=studiedRevision;
+      currentIndustryRevision=industryRevision;
+      knownColors.clear();
+    }
   }
   function remember(cache,key,value){
     if(cache.size>=MAX_CACHE)cache.delete(cache.keys().next().value);
@@ -61,6 +70,7 @@
     return value;
   }
   function discoveredGrade(cell){
+    invalidate();
     if(!prospect?.hasKnowledge?.(cell)){stats.hidden++;return 0}
     if(knownColors.has(cell))return knownColors.get(cell);
     // Only a completed prospecting report is allowed to expose grades.
