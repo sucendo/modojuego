@@ -2596,8 +2596,8 @@
   const baseSave0370=saveGame3212;
   saveGame3212=function(){
     const out=baseSave0370.apply(this,arguments);
-    if(started3230)save0370();
-    return out;
+    const stored=started3230?save0370():true;
+    return out===false||!stored?false:out;
   };
   const baseLoad0370=loadGame3212;
   loadGame3212=function(){
