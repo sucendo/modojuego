@@ -191,8 +191,13 @@
     resetGame3230=function(clearSave=true){
       const result=base.apply(this,arguments);
       restore(null);
-      if(clearSave)try{localStorage.removeItem(SAVE_KEY)}catch(error){
-        console.warn('[Hexategos mundo] No se pudo limpiar el guardado auxiliar',error);
+      if(clearSave){
+        try{localStorage.removeItem(SAVE_KEY)}catch(error){
+          console.warn('[Hexategos mundo] No se pudo limpiar el guardado auxiliar',error);
+        }
+        // Semilla nueva únicamente al comenzar otra partida; nunca al cargar
+        // ni al cambiar el dueño de un territorio.
+        emit('worldNewGame',{});
       }
       return result;
     };
