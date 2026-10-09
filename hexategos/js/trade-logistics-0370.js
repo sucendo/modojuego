@@ -842,6 +842,11 @@
     // Lo descargado en un puerto/aduana se reparte por la red local.
     redistributeRoadResources03720(.22);
     summarizeResources03720();
+    // Mismas existencias y rutas del simulador; jamás otro generador de
+    // materias ni cálculos sobre la malla global.
+    window.HexategosEconomicBalance03838?.update?.({
+      summaries:resourceNation03720,routes,campaignSeconds:now
+    });
     resourceTickMs03720=performance.now()-t0;
     markTradeDirty0370();
   }
@@ -1100,8 +1105,10 @@
     for(const r of routes){
       if(r.status==='closed')continue;
       const k=routeFactor0370(r),material=Number.isFinite(r.materialFactor03720)?r.materialFactor03720:1,
-            value=(r.baseValue||0)*k*material,share=value*.56,
-            physical=Number.isFinite(r.cargoTotal03720)?r.cargoTotal03720:value*9.5;
+            shippedFactor=window.HexategosEconomicBalance03838?.routeFactor?.(r)??1,
+            value=(r.baseValue||0)*k*material*shippedFactor,share=value*.56,
+            physical=(Number(r.cargoTotal03720)||0)+
+              Object.values(r.productionCargo0388||{}).reduce((sum,v)=>sum+Math.max(0,Number(v)||0),0);
       r.lastFactor=k;r.lastValue=value;routeEvals++;
       if(k<=0)continue;
       if(r.a<activeFactionCount3230){tradeCache[r.a]+=share;goodsCache[r.a]+=physical}
@@ -2117,6 +2124,33 @@
         '<span>Factor de reclutamiento</span><b>'+Math.round(material.recruitFactor*100)+'%</b>'+
         '<span>Cálculo material</span><b>'+resourceTickMs03720.toFixed(1)+' ms</b>'+
         '</div></div>';
+    }
+    // Balance informativo calculado únicamente con inventarios existentes.
+    // No genera bienes ni se considera un almacén nacional.
+    const econ=window.HexategosEconomicBalance03838?.nation?.(0);
+    if(econ){
+      const names=window.HexategosEconomicBalance03838.labels();
+      html+='<div class="sysBlock3213 resourceEconomy03720">'+
+        '<div class="tradeManagerTitle03717"><b>⚖ Balance de abastecimiento</b><small>Existencias y necesidades reales</small></div>'+
+        '<div class="sysMeta3213">Los excedentes son reservas exportables en nodos; las carencias orientan importaciones. '+
+        'Los productos especializados permanecen en sus instalaciones o depósitos.</div>'+
+        '<div class="econGrid3261">';
+      for(let i=0;i<5;i++){
+        const net=econ.balance[i],press=econ.pressure[i],surplus=econ.surplus[i];
+        html+='<span>'+names[i]+'</span><b>'+
+          (net>=0?'+':'')+net.toFixed(2)+'/s · '+Math.round(press*100)+'% necesidad'+
+          (surplus>.01?' · '+surplus.toFixed(1)+' excedente':'')+'</b>';
+      }
+      html+='</div>';
+      if(econ.materialNeeds?.length){
+        const needs=econ.materialNeeds.filter(x=>x.shortage>.01).slice(0,4);
+        if(needs.length)html+='<div class="sysMeta3213"><b>Insumos industriales escasos:</b> '+
+          needs.map(x=>escapeHtml3271(x.label)+' '+x.stock.toFixed(1)+' / '+(x.demand*18).toFixed(1)+
+            ' para 18 s').join(' · ')+'</div>';
+      }
+      const moved=econ.imports.reduce((a,b)=>a+b,0)+econ.exports.reduce((a,b)=>a+b,0);
+      html+='<div class="sysMeta3213">Intercambio físico reciente: '+moved.toFixed(2)+
+        ' unidades/s. Sin mercancías transportadas, las rutas no generan ingreso directo.</div></div>';
     }
     if(selectedMaterial){
       const diag=supplyDiagnosis03722(selectedSupplyCell);
