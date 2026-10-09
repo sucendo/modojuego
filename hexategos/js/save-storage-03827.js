@@ -3,7 +3,9 @@
    HXZ1 is only an on-device localStorage encoding. Portable files remain JSON. */
 (() => {
   const PREFIX='HXZ1:';
-  let lastError=null,lastErrorAt=0;
+  let lastError=null;
+  const failedKeys=new Set();
+  let failureNoticeShown=false;
   function encode(data){
     const json=JSON.stringify(data);
     const codec=window.pako;
@@ -36,13 +38,18 @@
       localStorage.setItem(key,encoded);
       if(localStorage.getItem(key)!==encoded)throw new Error('La escritura no se ha confirmado');
       if(lastError?.key===key)lastError=null;
+      failedKeys.delete(key);
+      if(!failedKeys.size)failureNoticeShown=false;
       return true;
     }catch(error){
       lastError={key,message:String(error?.message||error),at:Date.now()};
-      console.warn('[Hexategos] El navegador no ha guardado '+key+'. Exporta la partida como respaldo.',error);
-      if(typeof toast==='function'&&Date.now()-lastErrorAt>60000){
-        lastErrorAt=Date.now();
-        toast('⚠ Guardado incompleto: falta espacio o permisos. Exporta una copia .hexategos.');
+      if(!failedKeys.has(key))
+        console.warn('[Hexategos] El navegador no ha guardado '+key+'. Exporta la partida como respaldo.',error);
+      failedKeys.add(key);
+      // Un solo aviso por episodio de fallo, no uno cada 20/60 segundos.
+      if(!failureNoticeShown&&typeof toast==='function'){
+        failureNoticeShown=true;
+        toast('⚠ El navegador no ha podido guardar todos los datos. Exporta una copia .hexategos.');
       }
       return false;
     }
@@ -52,7 +59,8 @@
     return raw==null?null:decode(raw);
   }
   window.HexategosSaveStorage03827={
-    set,get,encode,decode,status:()=>lastError?{...lastError}:null,
+    set,get,encode,decode,status:()=>failedKeys.size?
+      {keys:[...failedKeys],...(lastError||{})}:null,
     prefix:PREFIX
   };
 })();
