@@ -30,19 +30,29 @@
     setTimeout(()=>URL.revokeObjectURL(url),30000);
   }
   async function exportNow() {
-    if(processing)return;
+    if(processing)return false;
     processing=true;
+    showLoading('Preparando la partida para la exportación comprimida…');
     try {
-      if(typeof buildPortableFile3275!=='function')throw new Error('Exportación de partida no disponible');
-      // Let the overlay paint before serializing a very large campaign.
-      await new Promise(resolve=>requestAnimationFrame(()=>setTimeout(resolve,0)));
-      const blob=archive(buildPortableFile3275());
+      await yieldFrame();
+      if(typeof buildPortableFile3275!=='function')
+        throw new Error('No se encuentra el generador de partidas. Prueba con exportación clásica.');
+      const file=buildPortableFile3275();
+      if(!file?.payload)throw new Error('El guardado no contiene los datos del mundo');
+      showLoading('Comprimiendo la partida HXZ2…');
+      await yieldFrame();
+      const blob=archive(file);
       download(blob,'HEXATEGOS_'+formatDate()+'.hexategos');
-      if(typeof toast==='function')toast('HXZ2 comprimido · '+Math.round(lastBytes.compressed/1024)+' KB (antes '+Math.round(lastBytes.original/1024)+' KB)');
+      hideLoading();
+      if(typeof toast==='function')toast('HXZ2 exportado · '+Math.round(blob.size/1024)+' KB');
+      lastError=null;
+      return true;
     }catch(error) {
+      hideLoading();
       lastError=String(error?.message||error);
       console.error('[Hexategos HXZ2] Falló la exportación',error);
-      if(typeof toast==='function')toast('No se pudo crear la copia HXZ2. Conserva la partida anterior.');
+      alert('No se pudo exportar HXZ2: '+lastError+'\\nPuedes usar Exportar archivo clásico (JSON) para conservar una copia.');
+      return false;
     }finally{processing=false}
   }
   // Dedicated explicit HXZ2 action. The classic JSON exporter remains available.
@@ -87,7 +97,10 @@
         const header=new Uint8Array(await selected.slice(0,MAGIC.length).arrayBuffer());
         if(!sameMagic(header)){
           // Reissue the original legacy file event without changing the file.
+          showLoading('Cargando partida antigua (JSON)…');
+          await yieldFrame();
           translated.add(input);input.dispatchEvent(new Event('change',{bubbles:true}));
+          requestAnimationFrame(()=>setTimeout(hideLoading,250));
           return;
         }
         showLoading('Leyendo y descomprimiendo el archivo HXZ2…');
