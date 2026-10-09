@@ -5,15 +5,16 @@
 (() => {
   const natural=window.HexategosNaturalPotential03829;
   const prospect=window.HexategosProspection03831;
+  const agronomy=window.HexategosAgronomy03832;
   if(!natural||typeof terrainStrategicFill3247!=='function'||!document.getElementById('mapModeBtn3252'))
     return;
   const MODES=[
-    ['natural-food','Agricultura','Agr','food'],
-    ['natural-livestock','Ganadería','Gan','livestock'],
-    ['natural-forest','Bosques','Bos','forest'],
-    ['natural-mineral','Potencial minero','Min','mineral'],
-    ['natural-energy','Potencial energético','Ene','energy'],
-    ['natural-known','Yacimientos descubiertos','Yac','known']
+    ['natural-food','Agricultura','🌾','food'],
+    ['natural-livestock','Ganadería','🐄','livestock'],
+    ['natural-forest','Bosques','🌲','forest'],
+    ['natural-mineral','Potencial minero','⛏️','mineral'],
+    ['natural-energy','Potencial energético','⚡','energy'],
+    ['natural-known','Yacimientos descubiertos','🔎','known']
   ];
   const FIELDS=new Map(MODES.map(([key,label,short,field])=>[key,{label,short,field}]));
   const MENU=[
@@ -30,6 +31,16 @@
     known:[[51,57,66],[102,105,103],[153,122,88],[160,142,89],[95,171,121],[74,200,163]]
   };
   const MAX_CACHE=6000;
+  const terrainFarming=new Map([
+    ['plain',[3,3]],['mediterranean',[3,3]],['savanna',[2,3]],
+    ['steppe',[2,3]],['forest',[2,2]],['rainforest',[2,1]],
+    ['desert',[1,1]],['tundra',[1,1]],['ice',[0,0]],['mountain',[1,2]]
+  ]);
+  const estimatedGrade=(field,key,i,L)=>{
+    const terrain=terrainType3247(key,i,L);
+    const bands=terrainFarming.get(terrain)||[2,2];
+    return bands[field==='food'?0:1];
+  };
   const samples=new Map(),knownColors=new Map();
   let currentSeed=-1,currentStudyRevision=-1,currentIndustryRevision=-1;
   const stats={computed:0,cached:0,hidden:0};
@@ -89,6 +100,12 @@
       if(key!==MAX_GAME_LEVEL3233)return PALETTES.known[0];
       return PALETTES.known[discoveredGrade(i)];
     }
+    if(field==='food'||field==='livestock'){
+      // Antes del estudio sólo se conoce una aptitud genérica por el paisaje.
+      // El valor real nunca se consulta en una parcela sin evaluar.
+      if(key!==MAX_GAME_LEVEL3233||!agronomy?.isKnown?.(i))
+        return PALETTES[field][estimatedGrade(field,key,i,L)];
+    }
     const p=sampled(key,i,L);
     return PALETTES[field][grade(p?.[field])];
   }
@@ -117,7 +134,8 @@
   const options=MENU.map(([key,label])=>{
     const option=document.createElement('button');
     option.type='button';option.dataset.mapLayer03836=key;
-    option.textContent=label;option.setAttribute('aria-pressed','false');
+    const spec=FIELDS.get(key);
+    option.textContent=(spec?spec.short+'  ':'')+label;option.setAttribute('aria-pressed','false');
     menu.appendChild(option);
     return option;
   });
@@ -165,7 +183,8 @@
       GRADES;
     return colors.map((rgb,i)=>'<span class="tl3250"><i style="background:rgb('+
       rgb.join(',')+')"></i>'+labels[i]+'</span>').join('')+
-      (field==='known'?'<small>Acércate a la malla de detalle para consultar los estudios.</small>':'');
+      (field==='known'?'<small>Acércate a la malla de detalle para consultar los estudios.</small>':
+       (field==='food'||field==='livestock')?'<small>Sin evaluación: aptitud aproximada por tipo de terreno. Tras evaluar un hexágono se muestra su potencial real.</small>':'');
   }
   updateMapModeUI3252=function(showToast=false){
     // Reuse the current map system, including the geopolitical panel cleanup.
@@ -192,7 +211,7 @@
   };
   updateMapModeUI3252(false);
   window.HexategosNaturalMap03836=Object.freeze({
-    version:'0.38.36',select,active:()=>mapMode3252,
+    version:'0.38.53',select,active:()=>mapMode3252,
     paletteColor,grade,stats:()=>({...stats,cache:samples.size,discoveredCache:knownColors.size}),
     cacheLimit:MAX_CACHE
   });
