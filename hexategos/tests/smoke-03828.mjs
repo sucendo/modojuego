@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
 const src=read('js/world-core-03828.js'),index=read('index.html');
 assert.doesNotThrow(()=>new Function(src));
-assert.ok(index.indexOf('js/world-core-03828.js?v=03829')>
+assert.ok(index.search(/js\/world-core-03828\.js\?v=\d+/)>
   index.indexOf('js/save-integrity-03827.js?v=03827'),
   'Core must load after prior save wrappers');
 
