@@ -1350,14 +1350,17 @@ function driverRacingLineTarget(s,plan,skill=.96,bravery=.90,bias=0){
 }
 function rivalSimulationLOD(rv){
  const mobile=mobilePerformanceMode(),near=mobile?120:150,mid=mobile?360:500,maxDynamic=mobile?5:8;
- const d=player?Math.abs((rv.total||0)-(player.total||0)):9999;
- if(d<=near){
-   // En una salida todos caben dentro de 150 m. Sólo los coches realmente más próximos
-   // usan el nivel dinámico completo; así el coste queda acotado incluso con 22 coches.
-   let closer=0;
-   for(const ov of rivals||[]){if(ov!==rv&&Math.abs((ov.total||0)-(player?.total||0))<d)closer++;}
-   if(closer<maxDynamic)return 2;
+ const d=player?Math.abs((rv.total||0)-(player.total||0)):9999,prev=Number.isFinite(rv&&rv.simLOD)?rv.simLOD:null;
+ let closer=0;
+ if(d<=near+32)for(const ov of rivals||[]){if(ov!==rv&&Math.abs((ov.total||0)-(player?.total||0))<d)closer++;}
+ // Histéresis: una entidad que ya está en un nivel no cambia justo en el umbral.
+ // Evita saltos de trayectoria cuando el jugador se acerca/aleja unos pocos metros.
+ if(prev===2&&d<=near+28&&closer<maxDynamic+2)return 2;
+ if(prev===1&&d<=mid+65){
+   if(d<=near-12&&closer<maxDynamic)return 2;
+   return 1;
  }
+ if(d<=near&&closer<maxDynamic)return 2;
  return d<=mid?1:0;
 }
 function rivalLODName(lod){return lod===2?"NEAR_DYNAMIC":lod===1?"MID_HYBRID":"FAR_KINEMATIC";}
@@ -1489,7 +1492,10 @@ function updateRivalRacecraft(rv,dt,L,diff){
  rv.defendCooldown=Math.max(0,(rv.defendCooldown||0)-dt);
  rv.intentTimer=Math.max(0,(rv.intentTimer||0)-dt);
  updateRivalIncidentTimers(rv,dt);
- const lod=rivalSimulationLOD(rv);rv.simLOD=lod;rv.simModel=rivalLODName(lod);
+ const prevLod=Number.isFinite(rv.simLOD)?rv.simLOD:null,lod=rivalSimulationLOD(rv);
+ if(prevLod!==null&&prevLod!==lod)rv.lodTransitionTimer=.72;
+ rv.lodTransitionTimer=Math.max(0,(rv.lodTransitionTimer||0)-dt);
+ rv.simLOD=lod;rv.simModel=rivalLODName(lod);
  const base=rivalBaseTargetSpeed(rv,diff,lod),plan=base.plan,traffic=base.traffic,ahead=traffic.ahead,behind=traffic.behind;
  // Los errores completos se evalúan cerca/medio. Lejos se conserva personalidad pero
  // con una frecuencia menor para no gastar CPU en coches que el jugador ni ve.
@@ -1645,6 +1651,11 @@ function updateRivalRacecraft(rv,dt,L,diff){
  if(raceT<rv.reaction)target=0;
  const launchFactor=raceT<3.2?rv.launch:1;
  const perf=rv.teamPerf||teamPerformance(rv.team);
+ if((rv.lodTransitionTimer||0)>0){
+   const k=clamp(dt*3.4,0,1);
+   if(Number.isFinite(rv.liveTargetSpeed))target=lerp(rv.liveTargetSpeed,target,k);
+   if(Number.isFinite(rv.liveTargetLat))line=lerp(rv.liveTargetLat,line,k);
+ }
  rv.liveTargetSpeed=target;rv.liveTargetLat=line;rv.livePlanD=plan&&Number.isFinite(plan.d)?plan.d:null;rv.livePlanK=plan&&Number.isFinite(plan.k)?plan.k:null;rv.liveDraft=!!base.draft;
  const accel=(8.45+4.05*(rv.tractionSkill||rv.skill))*launchFactor*perf.traction;
  const brake=(apexWeatherIsWet()?17.5:23.5)*(.91+.11*(rv.brakeSkill||rv.skill))*perf.brake;
