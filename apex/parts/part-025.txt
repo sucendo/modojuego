@@ -1031,6 +1031,14 @@ function rivalAtlas16AngleIndex(facing,sideToCam){
 // Nunca existe impostor 2D como LOD lejano. Si se supera el presupuesto, sólo baja
 // la complejidad de la malla 3D. Canvas sigue siendo únicamente un backend de emergencia.
 let apexRivalLodFrameStats={visible:0,near:0,mid:0,far:0,gpu3d:0,gpuFull:0,gpuMid:0,gpuLow:0,canvasFallback:0};
+let apexRivalVisibilityMaxSmoothed=0;
+let apexRivalOcclusionState=new Map();
+function apexRivalStableVisibilityMax(){
+ const mobile=mobilePerformanceMode(),profile=mobileControlProfile(),target=mobile?Math.max(300,Number(profile.rivalMax)||300):Math.max(500,Number(profile.rivalMax)||500);
+ if(!(apexRivalVisibilityMaxSmoothed>0))apexRivalVisibilityMaxSmoothed=target;
+ apexRivalVisibilityMaxSmoothed=lerp(apexRivalVisibilityMaxSmoothed,target,.08);
+ return apexRivalVisibilityMaxSmoothed;
+}
 function apexRivalLodSettings(){
  const mobile=mobilePerformanceMode(),pressure=mobile?(typeof mobileAdaptiveRenderPressure==='function'?mobileAdaptiveRenderPressure():1):(typeof desktopAdaptiveRenderPressure==='function'?desktopAdaptiveRenderPressure():1),q=clamp(Number.isFinite(pressure)?pressure:1,0,1);
  return mobile
@@ -1090,13 +1098,22 @@ function apexRivalOccludedByWorldObjectCanvas(c,p,cam,pitch){
 
 function collectRivalSprites(cam,pitch){
  const arr=[];apexRivalLodFrameStats={visible:0,near:0,mid:0,far:0,gpu3d:0,gpuFull:0,gpuMid:0,gpuLow:0,canvasFallback:0};
+ const rivalMax=apexRivalStableVisibilityMax(),isCanvas=rendererBackendId()==='canvas2d';
  for(const r of rivals){
    const q=renderRibbonFrameAt(r.s),surface=trackSurfacePoseAt(r.s,r.lat,.014),wx=surface.x,wz=surface.z,c=worldToCamera(wx,surface.y,wz,cam);
-   if(c.z<2.2||c.z>mobileControlProfile().rivalMax)continue;
+   if(c.z<2.2||c.z>rivalMax)continue;
    const p=projectLocal(c.x,c.y,c.z,pitch);if(!p)continue;
    const visualLod=apexRivalVisualLod(c.z,p.scale);
-   if(rivalLikelyOccluded(q,r.lat,c,p,cam,pitch,visualLod))continue;
-   if(apexRivalOccludedByWorldObjectCanvas(c,p,cam,pitch))continue;
+   // WebGL ya dispone de z-buffer: no repetimos una oclusión heurística CPU que podía
+   // alternar entre frames y hacer aparecer/desaparecer rivales. En Canvas se conserva
+   // la heurística, pero con histéresis de 3 frames para evitar parpadeos.
+   if(isCanvas){
+     const key=String(r.id??r.driverId??r.number??r.team??'rival'),rawOcc=rivalLikelyOccluded(q,r.lat,c,p,cam,pitch,visualLod)||apexRivalOccludedByWorldObjectCanvas(c,p,cam,pitch);
+     const st=apexRivalOcclusionState.get(key)||{occ:0,vis:0,hidden:false};
+     if(rawOcc){st.occ++;st.vis=0;if(st.occ>=3)st.hidden=true}else{st.vis++;st.occ=0;if(st.vis>=2)st.hidden=false}
+     apexRivalOcclusionState.set(key,st);
+     if(st.hidden)continue;
+   }
    const rh=Math.atan2(q.tx,q.tz)+(r.yawKick||0),rfx=Math.sin(rh),rfz=Math.cos(rh);
    const toCamX=cam.x-wx,toCamZ=cam.z-wz,dist=Math.hypot(toCamX,toCamZ)||1;
    const dirX=toCamX/dist,dirZ=toCamZ/dist;
