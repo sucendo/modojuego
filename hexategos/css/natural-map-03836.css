@@ -1,0 +1,46 @@
+/* HEXATEGOS 0.38.36 · selector del mapa actual, no un segundo menú. */
+.naturalMapMenu03836{
+  position:fixed;
+  z-index:2600;
+  width:min(220px,calc(100vw - 20px));
+  max-height:min(440px,calc(100dvh - 20px));
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  padding:8px;
+  border:1px solid rgba(151,177,194,.32);
+  border-radius:12px;
+  background:rgba(17,29,42,.97);
+  box-shadow:0 14px 35px rgba(0,0,0,.36);
+  backdrop-filter:blur(12px);
+}
+.naturalMapMenu03836[hidden]{display:none!important}
+.naturalMapMenu03836 button{
+  width:100%;
+  min-height:35px;
+  display:block;
+  padding:7px 10px;
+  margin:1px 0;
+  text-align:left;
+  font:inherit;
+  font-size:12px;
+  line-height:1.35;
+  color:#e7edf3;
+  background:transparent;
+  border:0;
+  border-radius:7px;
+  cursor:pointer;
+}
+.naturalMapMenu03836 button:hover,
+.naturalMapMenu03836 button:focus-visible{
+  outline:1px solid rgba(140,207,240,.55);
+  background:rgba(96,158,185,.20);
+}
+.naturalMapMenu03836 button[aria-pressed="true"]{
+  background:rgba(64,132,159,.32);
+  font-weight:700;
+}
+#terrainLegend3250 small{display:block;color:inherit;opacity:.85;margin-top:4px}
+@media (max-width:600px){
+  .naturalMapMenu03836{max-height:calc(100dvh - 16px)}
+  .naturalMapMenu03836 button{min-height:40px;font-size:13px}
+}
