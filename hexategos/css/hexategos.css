@@ -204,7 +204,7 @@ button{font:inherit}
    Restores the compact contextual card language used by the v3.20.x branch:
    stable button grid, unavailable actions visible in grey, force/advance
    controls inside the card and contextual foreign relations. */
-#contextMenu3244{
+#contextMenu3244:not(.hexInspectorActive03817){
   width:min(420px,calc(100vw - 16px))!important;
   max-height:min(78dvh,530px)!important;
   overflow:auto!important;
@@ -215,21 +215,21 @@ button{font:inherit}
   box-shadow:0 14px 44px rgba(0,0,0,.46)!important;
   backdrop-filter:blur(13px)!important;
 }
-#contextMenu3244 .ctxHead3244{padding:1px 28px 6px 3px!important;position:relative}
-#contextMenu3244 .ctxTitleWrap3244 b{font-size:11px!important;letter-spacing:.01em}
-#contextMenu3244 .ctxTitleWrap3244 small{font-size:7.2px!important;color:#9fb3c8!important;line-height:1.3!important}
-#contextMenu3244 .ctxClose3244{
+#contextMenu3244:not(.hexInspectorActive03817) .ctxHead3244{padding:1px 28px 6px 3px!important;position:relative}
+#contextMenu3244:not(.hexInspectorActive03817) .ctxTitleWrap3244 b{font-size:11px!important;letter-spacing:.01em}
+#contextMenu3244:not(.hexInspectorActive03817) .ctxTitleWrap3244 small{font-size:7.2px!important;color:#9fb3c8!important;line-height:1.3!important}
+#contextMenu3244:not(.hexInspectorActive03817) .ctxClose3244{
   position:absolute;right:-2px;top:-1px;width:22px;height:22px;
   background:rgba(18,34,51,.98)!important;font-size:16px!important
 }
-#contextMenu3244 .ctxBreadcrumb3244{display:none!important}
-#contextMenu3244 .ctxActions3244{
+#contextMenu3244:not(.hexInspectorActive03817) .ctxBreadcrumb3244{display:none!important}
+#contextMenu3244:not(.hexInspectorActive03817) .ctxActions3244{
   display:grid!important;
   grid-template-columns:repeat(4,minmax(0,1fr))!important;
   gap:4px!important;
   padding-top:6px!important;
 }
-#contextMenu3244 .ctxAction3244{
+#contextMenu3244:not(.hexInspectorActive03817) .ctxAction3244{
   display:block!important;
   min-width:0!important;
   min-height:39px!important;
@@ -240,40 +240,40 @@ button{font:inherit}
   color:#f2f7ff!important;text-align:center!important;
   box-shadow:inset 0 1px rgba(255,255,255,.04)!important;
 }
-#contextMenu3244 .ctxAction3244 .ico3244{display:block!important;font-size:12px!important;line-height:1!important;margin-bottom:2px}
-#contextMenu3244 .ctxAction3244 .txt3244{display:block!important;min-width:0}
-#contextMenu3244 .ctxAction3244 .txt3244 b{
+#contextMenu3244:not(.hexInspectorActive03817) .ctxAction3244 .ico3244{display:block!important;font-size:12px!important;line-height:1!important;margin-bottom:2px}
+#contextMenu3244:not(.hexInspectorActive03817) .ctxAction3244 .txt3244{display:block!important;min-width:0}
+#contextMenu3244:not(.hexInspectorActive03817) .ctxAction3244 .txt3244 b{
   display:block!important;font-size:7.7px!important;line-height:1.03!important;
   white-space:normal!important;overflow:visible!important
 }
-#contextMenu3244 .ctxAction3244 .txt3244 small{
+#contextMenu3244:not(.hexInspectorActive03817) .ctxAction3244 .txt3244 small{
   display:block!important;margin-top:2px!important;font-size:5.8px!important;
   line-height:1.05!important;color:#8fd1ff!important;
   white-space:normal!important;overflow:hidden!important;text-overflow:ellipsis!important
 }
-#contextMenu3244 .ctxAction3244 .chev3244{display:none!important}
-#contextMenu3244 .ctxAction3244:not(:disabled){
+#contextMenu3244:not(.hexInspectorActive03817) .ctxAction3244 .chev3244{display:none!important}
+#contextMenu3244:not(.hexInspectorActive03817) .ctxAction3244:not(:disabled){
   border-color:rgba(116,201,255,.65)!important;
   box-shadow:0 0 0 1px rgba(65,164,244,.13),inset 0 1px rgba(255,255,255,.04)!important
 }
-#contextMenu3244 .ctxAction3244.good3244:not(:disabled){
+#contextMenu3244:not(.hexInspectorActive03817) .ctxAction3244.good3244:not(:disabled){
   background:linear-gradient(180deg,#329862,#1d6845)!important;
   border-color:rgba(111,226,164,.64)!important
 }
-#contextMenu3244 .ctxAction3244.warn3244:not(:disabled){
+#contextMenu3244:not(.hexInspectorActive03817) .ctxAction3244.warn3244:not(:disabled){
   background:linear-gradient(180deg,#b85445,#7c302a)!important;
   border-color:rgba(255,132,119,.72)!important
 }
-#contextMenu3244 .ctxAction3244.secondary3246:not(:disabled){
+#contextMenu3244:not(.hexInspectorActive03817) .ctxAction3244.secondary3246:not(:disabled){
   background:linear-gradient(180deg,#47617c,#30455d)!important
 }
-#contextMenu3244 .ctxAction3244:disabled{
+#contextMenu3244:not(.hexInspectorActive03817) .ctxAction3244:disabled{
   opacity:1!important;filter:none!important;
   background:linear-gradient(180deg,#111b27,#0c141e)!important;
   color:#718196!important;border-color:rgba(133,151,171,.15)!important;
   box-shadow:none!important
 }
-#contextMenu3244 .ctxAction3244:disabled .txt3244 small{color:#778493!important}
+#contextMenu3244:not(.hexInspectorActive03817) .ctxAction3244:disabled .txt3244 small{color:#778493!important}
 
 .ctxForeign3246{
   display:none;margin-top:6px;border-top:1px solid rgba(255,255,255,.09);
@@ -309,19 +309,19 @@ button{font:inherit}
 .ctxRange3246 b{font-size:6.5px;text-align:right;color:#f3df8c;white-space:nowrap}
 
 @media(max-width:760px) and (orientation:landscape){
-  #contextMenu3244{width:min(300px,calc(100vw - 10px))!important;padding:5px!important;max-height:calc(100dvh - 48px)!important}
-  #contextMenu3244 .ctxActions3244{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:3px!important}
-  #contextMenu3244 .ctxAction3244{min-height:31px!important;padding:2px!important}
-  #contextMenu3244 .ctxAction3244 .ico3244{font-size:10px!important}
-  #contextMenu3244 .ctxAction3244 .txt3244 b{font-size:6.5px!important}
-  #contextMenu3244 .ctxAction3244 .txt3244 small{font-size:5.1px!important}
+  #contextMenu3244:not(.hexInspectorActive03817){width:min(300px,calc(100vw - 10px))!important;padding:5px!important;max-height:calc(100dvh - 48px)!important}
+  #contextMenu3244:not(.hexInspectorActive03817) .ctxActions3244{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:3px!important}
+  #contextMenu3244:not(.hexInspectorActive03817) .ctxAction3244{min-height:31px!important;padding:2px!important}
+  #contextMenu3244:not(.hexInspectorActive03817) .ctxAction3244 .ico3244{font-size:10px!important}
+  #contextMenu3244:not(.hexInspectorActive03817) .ctxAction3244 .txt3244 b{font-size:6.5px!important}
+  #contextMenu3244:not(.hexInspectorActive03817) .ctxAction3244 .txt3244 small{font-size:5.1px!important}
   .ctxRange3246{grid-template-columns:36px minmax(62px,1fr) 49px;min-height:21px}
   .ctxForeign3246{font-size:6.4px;padding-top:4px}
   .ctxForeignTop3246 b{font-size:7.3px}.ctxForeignActs3246 button{font-size:5.9px;padding:3px 5px}
 }
 @media(orientation:portrait) and (max-width:800px){
-  #contextMenu3244{width:min(90vw,310px)!important;max-height:58dvh!important}
-  #contextMenu3244 .ctxActions3244{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  #contextMenu3244:not(.hexInspectorActive03817){width:min(90vw,310px)!important;max-height:58dvh!important}
+  #contextMenu3244:not(.hexInspectorActive03817) .ctxActions3244{grid-template-columns:repeat(3,minmax(0,1fr))!important}
 }
 /* ================= /v3.24.6 CLASSIC CONTEXT CARD ================= */
 
@@ -637,45 +637,45 @@ button{font:inherit}
   }
 
   /* Contextual territory card */
-  #contextMenu3244{
+  #contextMenu3244:not(.hexInspectorActive03817){
     width:min(470px,42vw)!important;
     max-height:min(78vh,670px)!important;
     padding:10px!important;
   }
-  #contextMenu3244 .ctxHead3244{
+  #contextMenu3244:not(.hexInspectorActive03817) .ctxHead3244{
     padding:3px 34px 9px 4px!important;
   }
-  #contextMenu3244 .ctxTitleWrap3244 b{
+  #contextMenu3244:not(.hexInspectorActive03817) .ctxTitleWrap3244 b{
     font-size:14px!important;
     line-height:1.15!important;
   }
-  #contextMenu3244 .ctxTitleWrap3244 small{
+  #contextMenu3244:not(.hexInspectorActive03817) .ctxTitleWrap3244 small{
     font-size:9px!important;
     line-height:1.45!important;
   }
-  #contextMenu3244 .ctxClose3244{
+  #contextMenu3244:not(.hexInspectorActive03817) .ctxClose3244{
     width:27px!important;height:27px!important;
     font-size:18px!important;
   }
-  #contextMenu3244 .ctxActions3244{
+  #contextMenu3244:not(.hexInspectorActive03817) .ctxActions3244{
     grid-template-columns:repeat(4,minmax(0,1fr))!important;
     gap:6px!important;
     padding-top:8px!important;
   }
-  #contextMenu3244 .ctxAction3244{
+  #contextMenu3244:not(.hexInspectorActive03817) .ctxAction3244{
     min-height:54px!important;
     padding:7px 5px!important;
     border-radius:10px!important;
   }
-  #contextMenu3244 .ctxAction3244 .ico3244{
+  #contextMenu3244:not(.hexInspectorActive03817) .ctxAction3244 .ico3244{
     font-size:15px!important;
     margin-bottom:4px!important;
   }
-  #contextMenu3244 .ctxAction3244 .txt3244 b{
+  #contextMenu3244:not(.hexInspectorActive03817) .ctxAction3244 .txt3244 b{
     font-size:9px!important;
     line-height:1.15!important;
   }
-  #contextMenu3244 .ctxAction3244 .txt3244 small{
+  #contextMenu3244:not(.hexInspectorActive03817) .ctxAction3244 .txt3244 small{
     font-size:7.5px!important;
     line-height:1.18!important;
     margin-top:3px!important;
@@ -780,7 +780,7 @@ button{font:inherit}
     width:min(520px,34vw)!important;
     max-height:min(84vh,820px)!important;
   }
-  #contextMenu3244{
+  #contextMenu3244:not(.hexInspectorActive03817){
     width:min(500px,36vw)!important;
   }
   .sysHead3213{font-size:14px!important}
@@ -804,7 +804,7 @@ button{font:inherit}
     max-height:calc(100vh - 58px)!important;
     width:min(450px,40vw)!important;
   }
-  #contextMenu3244{
+  #contextMenu3244:not(.hexInspectorActive03817){
     max-height:calc(100vh - 24px)!important;
   }
   .sysTabs3213 button{
@@ -830,13 +830,13 @@ button{font:inherit}
   #systemsPanel3213{
     width:min(430px,58vw)!important;
   }
-  #contextMenu3244{
+  #contextMenu3244:not(.hexInspectorActive03817){
     width:min(400px,58vw)!important;
   }
   .sysTabs3213 button{font-size:7.5px!important}
   .sysMeta3213{font-size:7.5px!important}
-  #contextMenu3244 .ctxAction3244 .txt3244 b{font-size:8px!important}
-  #contextMenu3244 .ctxAction3244 .txt3244 small{font-size:6.5px!important}
+  #contextMenu3244:not(.hexInspectorActive03817) .ctxAction3244 .txt3244 b{font-size:8px!important}
+  #contextMenu3244:not(.hexInspectorActive03817) .ctxAction3244 .txt3244 small{font-size:6.5px!important}
 }
 /* ================= /v3.27.4 ================= */
 
@@ -943,12 +943,12 @@ button{font:inherit}
 
 
 /* ================= v3.28.2 · CONTROL TÁCTIL CONTEXTUAL ================= */
-#contextMenu3244,.ctxAction3244{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
-#contextMenu3244 .ctxAction3244{user-select:none;-webkit-user-select:none}
+#contextMenu3244:not(.hexInspectorActive03817),.ctxAction3244{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+#contextMenu3244:not(.hexInspectorActive03817) .ctxAction3244{user-select:none;-webkit-user-select:none}
 #interactionBar3244{touch-action:manipulation}
 @media (pointer:coarse){
- #contextMenu3244 .ctxAction3244{min-height:42px!important}
- #contextMenu3244 .ctxAction3244 .txt3244 b{line-height:1.12!important}
+ #contextMenu3244:not(.hexInspectorActive03817) .ctxAction3244{min-height:42px!important}
+ #contextMenu3244:not(.hexInspectorActive03817) .ctxAction3244 .txt3244 b{line-height:1.12!important}
 }
 /* ================= /v3.28.2 ================= */
 
@@ -1183,7 +1183,7 @@ body.bootPending3305 #zoomCtl3232,
 body.bootPending3305 #debug3230,
 body.bootPending3305 #intro3230,
 body.bootPending3305 #end3230,
-body.bootPending3305 #contextMenu3244,
+body.bootPending3305 #contextMenu3244:not(.hexInspectorActive03817),
 body.bootPending3305 #modal3244,
 body.bootPending3305 #interactionCancel3244,
 body.bootPending3305 #modeBanner3230{display:none!important}
@@ -1707,7 +1707,7 @@ body.bootPending3305 #modeBanner3230{display:none!important}
 .range3212 b{font-size:var(--ui-xs)!important}
 
 /* ---------- CONTEXTUALES / MODALES ---------- */
-#contextMenu3244{font-size:var(--ui-sm)!important}
+#contextMenu3244:not(.hexInspectorActive03817){font-size:var(--ui-sm)!important}
 .ctxHead3244 b{font-size:var(--ui-md)!important}
 .ctxHead3244 small,.ctxAction3244 small{font-size:var(--ui-xs)!important}
 .ctxAction3244 b{font-size:var(--ui-sm)!important}

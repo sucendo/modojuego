@@ -101,36 +101,36 @@
   gap:10px!important;
 }
 /* Menú de una celda, mantiene coordenadas originales del cursor. */
-#contextMenu3244{
+#contextMenu3244:not(.hexInspectorActive03817){
   width:min(338px,calc(100dvw - 18px))!important;
   max-height:min(78dvh,690px)!important;
   padding:0!important;
   overflow:auto!important;
   overscroll-behavior:contain;
 }
-#contextMenu3244 .ctxHead3244{
+#contextMenu3244:not(.hexInspectorActive03817) .ctxHead3244{
   position:sticky;top:0;z-index:1;
   padding:12px 13px!important;
   background:linear-gradient(110deg,#15384e,#0c2536)!important;
   border-bottom:1px solid rgba(165,197,219,.17)!important;
 }
-#contextMenu3244 .ctxTitleWrap3244 b{
+#contextMenu3244:not(.hexInspectorActive03817) .ctxTitleWrap3244 b{
   color:#f5fbff!important;font-size:calc(16px * var(--hex-ui-scale))!important;
   white-space:normal!important;overflow-wrap:anywhere;
 }
-#contextMenu3244 .ctxTitleWrap3244 small,
-#contextMenu3244 .ctxBreadcrumb3244{
+#contextMenu3244:not(.hexInspectorActive03817) .ctxTitleWrap3244 small,
+#contextMenu3244:not(.hexInspectorActive03817) .ctxBreadcrumb3244{
   font-size:var(--hex-dialog-small)!important;line-height:1.45!important;
   white-space:normal!important;
 }
-#contextMenu3244 .ctxActions3244{padding:10px!important;gap:7px!important}
-#contextMenu3244 .ctxActions3244 :is(button,.ctxAction3244){
+#contextMenu3244:not(.hexInspectorActive03817) .ctxActions3244{padding:10px!important;gap:7px!important}
+#contextMenu3244:not(.hexInspectorActive03817) .ctxActions3244 :is(button,.ctxAction3244){
   min-height:45px!important;padding:9px!important;
   font-size:var(--hex-dialog-button)!important;
   min-width:0;max-width:100%;
   white-space:normal;overflow-wrap:anywhere;
 }
-#contextMenu3244 .ctxActions3244 :is(b,small,span){
+#contextMenu3244:not(.hexInspectorActive03817) .ctxActions3244 :is(b,small,span){
   font-size:var(--hex-dialog-small)!important;line-height:1.35!important;
   min-width:0;overflow-wrap:anywhere;
 }
