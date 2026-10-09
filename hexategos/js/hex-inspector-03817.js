@@ -84,6 +84,58 @@
     if(!Number.isFinite(value))value=null;
     return {value,diag:api?.materialSupply?.(ctx.cell)||null};
   }
+  function naturalStudies03835(ctx){
+    const natural=window.HexategosNaturalPotential03829;
+    const p=natural?.profile?.(ctx.cell);
+    if(!p)return '';
+    const geo=window.HexategosGeology03830;
+    const pros=window.HexategosProspection03831;
+    const agr=window.HexategosAgronomy03832;
+    const terrainNames={
+      plain:'Llanura',forest:'Bosque',rainforest:'Selva',savanna:'Sabana',
+      steppe:'Estepa',desert:'Desierto',mediterranean:'Mediterráneo',
+      tundra:'Tundra',ice:'Hielo',mountain:'Montaña',highmountain:'Alta montaña'
+    };
+    const name=terrainNames[p.type]||p.type||'Terreno';
+    const indicators=[
+      ['Agricultura',p.food],['Ganadería',p.livestock],
+      ['Forestal',p.forest],['Minería (indicios)',p.mineral],
+      ['Energía (indicios)',p.energy]
+    ].map(([label,value])=>metric(label,natural.category(value))).join('');
+    let studies='';
+    for(const [kind,api,label] of [
+      ['geo',pros,'Geología'],['agro',agr,'Agronomía']
+    ]){
+      const st=api?.status?.(ctx.cell)||{state:'unexplored',remaining:0};
+      const status=st.state==='completed'?'Estudio completado':
+        st.state==='pending'?'En curso · '+Math.ceil(st.remaining)+' s restantes':'Sin estudiar';
+      let action='';
+      if(ctx.own&&st.state==='unexplored'&&api?.availability){
+        const allowed=api.availability(0,ctx.cell);
+        action=allowed.ok?
+          '<button type="button" class="ctxManage03817" data-study03835="'+kind+'">'+
+          (kind==='geo'?'⛏ Iniciar prospección':'🌱 Evaluar terreno')+
+          ' · '+api.cost+' oro</button>':
+          '<small>'+esc(allowed.reason||'No disponible')+'</small>';
+      }
+      studies+='<p class="ctxHelp03817"><b>'+label+':</b> '+esc(status)+'</p>'+action;
+    }
+    let revealed='';
+    const found=pros?.result?.(ctx.cell);
+    if(found){
+      const names={iron:'Hierro',copper:'Cobre',coal:'Carbón',quarry:'Piedra',
+        oil:'Petróleo',gas:'Gas'};
+      revealed+=card('Yacimientos descubiertos',Object.entries(found)
+        .map(([kind,value])=>metric(names[kind]||kind,value)).join(''));
+    }
+    const farm=agr?.result?.(ctx.cell);
+    if(farm)revealed+=card('Evaluación agronómica',
+      metric('Fertilidad',farm.farming)+metric('Pastos y ganado',farm.livestock));
+    return card('Terreno',metric('Superficie',name))+
+      card('Potencial natural',indicators,
+        'Estimaciones generales: los yacimientos concretos permanecen ocultos hasta prospectar.')+
+      card('Estudios geológicos y agronómicos',studies)+revealed;
+  }
   function materialsSummary(ctx){
     const geo=profile(ctx.cell);
     const stock=window.HexategosTradeLogistics0370?.resourceNode?.(ctx.cell);
@@ -100,8 +152,9 @@
     const row=stock?'<div class="ctxInline03817">'+
       MATERIALS.map((label,i)=>'<span>'+esc(label)+' <b>'+fmt(stock.stock?.[i])+'/'+fmt(stock.cap?.[i])+'</b></span>').join('')+
       '</div>':'<p class="ctxHelp03817">Sin almacén logístico en este hexágono. Las existencias pueden encontrarse en otra instalación de la red.</p>';
-    return card('Recursos del terreno',potential,
-      'Potencial estimado del entorno; no es un depósito extraíble automáticamente.')+
+    return naturalStudies03835(ctx)+
+      card('Recursos económicos agregados',potential,
+        'Indicadores logísticos heredados de alimentos, materias primas y combustible.')+
       card('Reservas y producción local',row+
         (sites.length?'<p class="ctxHelp03817">'+sites.map(s=>esc((prod.types[s.kind]?.name||s.kind)+' · nivel '+s.level)).join(' · ')+'</p>':''));
   }
@@ -337,6 +390,21 @@
     if(event.target.matches?.('.ctxExtras03817:not(.ctxOuterExtras03817)')) extrasExpanded03819=event.target.open;
   },true);
   root.addEventListener('click',event=>{
+    const study=event.target.closest('[data-study03835]');
+    if(study){
+      event.preventDefault();event.stopPropagation();
+      const ctx=uiInteractionState3244?.contextData;
+      if(ctx?.kind!=='cell'||!ctx.own)return;
+      const api=study.dataset.study03835==='geo'?
+        window.HexategosProspection03831:window.HexategosAgronomy03832;
+      const out=api?.begin?.(0,ctx.cell);
+      if(out?.ok){
+        if(typeof updateUI3230==='function')updateUI3230();
+        if(typeof toast==='function')toast('Estudio iniciado. El tiempo avanza con la partida.');
+        mount(ctx);
+      }else if(typeof toast==='function')toast(out?.reason||'No se puede iniciar el estudio');
+      return;
+    }
     const nav=event.target.closest('[data-inspect-tab03817]');
     if(nav){
       event.preventDefault();event.stopPropagation();
@@ -369,7 +437,13 @@
   root.addEventListener('change',event=>{
     if(event.target.matches('[data-inspect-pct03817]'))saveGame3212();
   });
-  // Únicamente el guardado de instalaciones existentes; no se añade un timer.
+  // Actualización puntual al completar un estudio; no se añade temporizador.
+  for(const eventName of ['resourceDiscovered','agronomyEvaluated']){
+    window.HexategosWorldCore03828?.on?.(eventName,data=>{
+      const ctx=uiInteractionState3244?.contextData;
+      if(ctx?.kind==='cell'&&ctx.cell===data?.cell)mount(ctx);
+    });
+  }
   window.HexategosHexInspector03817={
     version:BUILD,population,
     refresh:()=>{const c=uiInteractionState3244?.contextData;if(c?.kind==='cell')mount(c)},
