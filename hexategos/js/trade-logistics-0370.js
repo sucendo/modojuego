@@ -1341,9 +1341,15 @@
     let r=createSeaRoute0370(0,b,from,to,false,true);
     if(r&&r.needsRisk){
       const names=r.denied.map(factionName3230).join(', ');
-      if(!confirm('No se ha obtenido permiso de tránsito de '+names+'. ¿Abrir la ruta igualmente y exponerte a inspecciones e incidentes diplomáticos?'))return null;
-      pathBudget0370=1;seaPathUsed0370=false;
-      r=createSeaRoute0370(0,b,from,to,true,true);
+      void window.HexategosDialogs03851.confirm('No se ha obtenido permiso de tránsito de '+names+'. ¿Abrir la ruta igualmente y exponerte a inspecciones e incidentes diplomáticos?',{title:'Ruta marítima de riesgo',accept:'Abrir igualmente'}).then(ok=>{
+        if(!ok)return;
+        pathBudget0370=1;seaPathUsed0370=false;
+        const accepted=createSeaRoute0370(0,b,from,to,true,true);
+        if(accepted&&!accepted.needsRisk&&!accepted.deferred){
+          closeModal3244();saveGame3212();renderSystems3220();needsRender=true;
+        }
+      });
+      return null;
     }
     if(r&&!r.needsRisk&&!r.deferred){
       closeModal3244();saveGame3212();renderSystems3220();needsRender=true;
