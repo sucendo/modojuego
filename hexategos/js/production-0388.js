@@ -1051,6 +1051,58 @@
     }
     ctx.restore();return out;
   };
+  // Snapshot económico derivado, no persistido: lee únicamente instalaciones
+  // reales, nunca yacimientos ocultos ni inventarios ficticios por hexágono.
+  // Los valores de demanda son tasas estimadas por segundo para orientar
+  // importaciones e inversiones, no una segunda producción.
+  function materialBalance03838(){
+    const nations=new Map();
+    for(const s of sites.values()){
+      if(s.f<0||s.f>=activeFactionCount3230)continue;
+      let n=nations.get(s.f);
+      if(!n){n={stock:{},demand:{},outputs:{},alternatives:[],sites:0};nations.set(s.f,n)}
+      n.sites++;
+      const def=TYPES[s.kind];
+      const produced=def.group==='extract'?s.kind:PROCESSED[s.kind];
+      if(produced){
+        n.stock[produced]=(n.stock[produced]||0)+Math.max(0,Number(s.stock)||0);
+        n.outputs[produced]=(n.outputs[produced]||0)+Math.max(0,Number(s.lastRate)||0);
+      }
+      if(s.byproducts)for(const [kind,amount] of Object.entries(s.byproducts))
+        n.stock[kind]=(n.stock[kind]||0)+Math.max(0,Number(amount)||0);
+      if(def.inputs?.length){
+        const rate=.39*s.level*activeFactor(s);
+        // Cadenas alternativas necesitan un combustible, no todos a la vez.
+        if(def.inputMode==='any'){
+          n.alternatives.push({inputs:def.inputs,rate});
+        }else{
+          for(const kind of def.inputs)
+            n.demand[kind]=(n.demand[kind]||0)+rate;
+        }
+      }
+    }
+    // Mercancías físicamente depositadas en puertos.
+    for(const [cell,goods] of depots){
+      const f=owner6[cell],n=nations.get(f);
+      if(!n)continue;
+      for(const kind of MATERIAL_KEYS)
+        if(Number(goods[kind])>0)n.stock[kind]=(n.stock[kind]||0)+Number(goods[kind]);
+    }
+    for(const n of nations.values()){
+      for(const item of n.alternatives){
+        // Elegir insumo después de contar todos los almacenes: el orden de
+        // iteración de las fábricas no puede decidir el balance nacional.
+        let chosen=item.inputs[0],best=-1;
+        for(const kind of item.inputs){
+          const qty=Number(n.stock[kind])||0;
+          if(qty>best){best=qty;chosen=kind}
+        }
+        n.demand[chosen]=(n.demand[chosen]||0)+item.rate;
+      }
+      delete n.alternatives;
+    }
+    return nations;
+  }
   window.HexategosProduction0388={
     version:VERSION,types:TYPES,cells:()=>perCell.keys(),revision:()=>revision,tick,
     sites:()=>[...sites.values()].map(s=>({...s})),sector:(f,s)=>sec(f,s),
@@ -1059,7 +1111,7 @@
     intermediates:()=>({...RESOURCE_PRODUCT_LABELS}),futureIndustries:()=>FUTURE_INDUSTRIES.map(v=>({...v})),
     iconOffset:iconOffset03811,
     drawCandidates:()=>sites.values(),
-    snapshot:saveState,persist:persistProduction0388,
+    snapshot:saveState,persist:persistProduction0388,materialBalance:materialBalance03838,
     legacyQuality:(cell,kind)=>Number(sites.get(siteKey(cell,kind))?.legacyQuality)||0,
     stats:()=>({...lastStats}),electricDeficit:f=>nationalElectricDeficit.get(Number(f))||0,validate:()=>{
       const errors=[];for(const s of sites.values())if(!TYPES[s.kind]||s.cell<0)errors.push('instalación inválida');

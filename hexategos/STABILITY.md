@@ -116,3 +116,46 @@ acciones de IA en configuraciones de 150, 250, 350 y 500 facciones.
 
 No se ha cambiado ninguna receta, coste, rendimiento industrial ni estructura
 del terreno en este bloque.
+
+
+## 0.38.38 · Balance económico incremental y comercio físico
+
+La economía conserva los cinco inventarios agregados históricos
+(`food/raw/fuel/goods/military`), por compatibilidad. El nuevo
+`economic-balance-03838.js` deriva cada ciclo comercial el saldo
+producción-demanda, escasez, excedentes disponibles, flujos de importación
+y exportación, y necesidades de insumos específicos. Para esto consulta
+únicamente `resourceNation03720`, rutas ya calculadas y las instalaciones
+de `production-0388`; NO mantiene segundo inventario, ni introduce
+yacimientos, modificaciones en `.hexategos` ni nuevos intervalos.
+
+**Cambio económico:** el ingreso directo generado por una ruta depende
+del volumen real que ha movido (`cargo03720` y
+`productionCargo0388`). Una ruta operativa sin mercancías no obtiene
+ingresos comerciales directos; el transporte doméstico redistribuye stocks,
+pero no genera ingreso internacional ficticio. Las bonificaciones
+residuales por relaciones diplomáticas siguen limitadas por el sistema
+anterior. La planificación comercial de la IA combina los indicadores
+heredados con los excedentes y necesidades materiales nuevos, sin acceder
+a la geología oculta.
+
+**Importante:** los agregados históricos siguen siendo aproximados y
+no deben sumarse a los inventarios especializados (contabilización doble).
+Esto NO implanta todavía mercado de precios, comercio pagado por partida
+de mercancía, tiempos físicos de tránsito ni sustitución completa de
+la generación territorial agregada. Son mejoras reservadas para una
+iteración posterior, tras comprobar el equilibrio en partidas prolongadas.
+
+Validaciones: `smoke-03838.mjs` comprueba que el balance no modifica
+mercancías, que los ingresos exigen cargamento, que el excedente de un
+exportador cubre la escasez del importador, que hay contabilización de
+fletes de acero, que el acceso público es inmutable y que soporta
+500 facciones sin recorrer el mapa. `smoke-03825.mjs` valida que el
+balance industrial refleja las existencias reales de cultivos, lana,
+combustible, hierro y siderurgia y sobrevive al guardado del navegador.
+
+Prueba manual recomendada antes de calibrar precios: partida antigua
+con textil + mina + carretera + dos puertos, cerrar y reabrir, exportar
+e importar; observar que una ruta entre naciones solo genera ingreso al
+transportar mercancías y que una ruta interna redistribuye sin duplicar
+los ingresos. Revisar la IA comercial a 150/250/350/500 facciones.
