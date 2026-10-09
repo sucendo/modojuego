@@ -13,9 +13,15 @@
   function archive(file) {
     if(!file?.payload||!codec()?.gzip)throw new Error('Compresión HXZ2 no disponible');
     const json=JSON.stringify(file);
-    const bytes=codec().gzip(encoder.encode(json),{level:3});
+    // Level 6 improves repetitive world arrays without the long stalls
+    // associated with maximal gzip compression on the UI thread.
+    const bytes=codec().gzip(encoder.encode(json),{level:6});
     const blob=new Blob([MAGIC,bytes],{type:'application/octet-stream'});
-    lastBytes={original:json.length,compressed:blob.size};
+    lastBytes={original:encoder.encode(json).byteLength,compressed:blob.size,
+      ratio:Number((blob.size/Math.max(1,encoder.encode(json).byteLength)).toFixed(3)),
+      format:'HXZ2 gzip'};
+    if(blob.size>=lastBytes.original)
+      throw new Error('HXZ2 no ha reducido el tamaño: exportación detenida para revisión');
     return blob;
   }
   function download(blob,name) {
@@ -32,7 +38,7 @@
       await new Promise(resolve=>requestAnimationFrame(()=>setTimeout(resolve,0)));
       const blob=archive(buildPortableFile3275());
       download(blob,'HEXATEGOS_'+formatDate()+'.hexategos');
-      if(typeof toast==='function')toast('Partida HXZ2 comprimida exportada');
+      if(typeof toast==='function')toast('HXZ2 comprimido · '+Math.round(lastBytes.compressed/1024)+' KB (antes '+Math.round(lastBytes.original/1024)+' KB)');
     }catch(error) {
       lastError=String(error?.message||error);
       console.error('[Hexategos HXZ2] Falló la exportación',error);
