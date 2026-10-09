@@ -106,6 +106,16 @@
     const p=l?.coords.get(role);
     return p||[x,y];
   }
+  // Filtro aplicado una sola vez al icono completo, después de los dibujos
+  // antiguos y sobre todos los pictogramas vectoriales especializados.
+  function withDecay(kind,id,paint){
+    const v=window.HexategosInfrastructureDecay0373?.visual?.(kind,id);
+    if(!v||v.alpha===1&&v.filter==='none')return paint();
+    if(v.alpha<=0)return;
+    ctx.save();ctx.globalAlpha*=v.alpha;
+    if(v.filter!=='none')ctx.filter=v.filter;
+    try{return paint()}finally{ctx.restore()}
+  }
   function badge(x,y,type,scale=1){
     if(!finite(x)||!finite(y))return;
     const r=radius()*scale;
@@ -219,7 +229,7 @@
     if(!frame)return;
     if(type==='port'&&!coastNeighbours(cell).length)return;
     const [a,b]=iconPosition(cell,type,x,y);
-    badge(a,b,type,scale);rendered[type]++;
+    withDecay(type,cell,()=>badge(a,b,type,scale));rendered[type]++;
   }
   // Sustituimos los dibujantes originales sin alterar sus bucles de
   // visibilidad ni sus conjuntos de datos: el coste queda acotado.
@@ -260,7 +270,7 @@
             const role=entryRole(s),l=layout(s.cell);
             const pos=l?.coords.get(role);
             if(!pos)continue;
-            badge(pos[0],pos[1],s.kind,.96);shown++;rendered.special++;
+            withDecay('special',s.cell+':'+s.kind,()=>badge(pos[0],pos[1],s.kind,.96));shown++;rendered.special++;
           }
         }
       }
