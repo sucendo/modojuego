@@ -408,9 +408,8 @@
     }
     if(action==='sea-focus'){tradeApi()?.focusRoute?.(Number(b.dataset.id));return}
     if(action==='sea-close'){
-      if(confirm('¿Cerrar esta ruta marítima? La ruta dejará de transportar mercancías.')){
-        tradeApi()?.closeRoute?.(Number(b.dataset.id));
-      }
+      const routeId=Number(b.dataset.id);
+      void window.HexategosDialogs03851.confirm('¿Cerrar esta ruta marítima? La ruta dejará de transportar mercancías.',{title:'Cerrar ruta marítima',accept:'Cerrar ruta'}).then(ok=>{if(ok)tradeApi()?.closeRoute?.(routeId)});
       return;
     }
     if(action==='military-naval'){switchTab('naval');return}
