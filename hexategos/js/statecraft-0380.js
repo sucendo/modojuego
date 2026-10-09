@@ -717,7 +717,8 @@
     // relaciones y embajadas en cada carga de una partida de 500 naciones.
     // Las partidas antiguas con matrices parciales siguen la migración habitual.
     const pairs=activeFactionCount3230*(activeFactionCount3230-1)/2;
-    if(treaties.size<pairs){
+    const migrated03841=treaties.size<pairs;
+    if(migrated03841){
       for(let a=0;a<activeFactionCount3230;a++)for(let b=a+1;b<activeFactionCount3230;b++){
         const rel=diplomaticRelation3300(a,b);
         if(rel>0&&!hasEmbassy(a,b))embassies.set(pairKey(a,b),{status:'active',requestedBy:-1,at:now(),rejectedUntil:0});
@@ -725,7 +726,10 @@
       }
     }
     for(const c of cities3212)ensureCityState(c);
-    save0380();
+    // La carga y la importación ya tienen un snapshot persistente. Evitar
+    // serializar toda la matriz diplomática en cada inicialización.
+    // Solo escribir si hubo migración efectiva de una partida antigua.
+    if(migrated03841)save0380();
   }
 
   function resourceRows(target){
@@ -1094,7 +1098,9 @@
     applyPortableFile3275=function(file){
       restoredPortable=file?.payload?.statecraft0380||null;
       const out=basePortableApply0380.apply(this,arguments);
-      if(restoredPortable){initialized=false;initialize0380()}
+      // El snapshot portable se ha procesado en la envoltura loadGame3212.
+      // No repetir la migración ni el guardado completo tras el importador.
+      if(out!==false&&restoredPortable){initialized=false;initialize0380()}
       return out;
     };
   }
