@@ -1,0 +1,15 @@
+{
+  "schema": "APEX_CIRCUIT_LIBRARY_V1",
+  "version": 1,
+  "description": "Circuitos editados y validados que pueden cargarse como override reversible sobre la BASE interna de APEX.",
+  "circuits": {
+    "14-spain": {
+      "name": "Madrid",
+      "displayName": "MADRING",
+      "svg": "svg/apex26_14-madrid-spain.svg",
+      "json": null,
+      "status": "edited",
+      "basePreserved": true
+    }
+  }
+}
