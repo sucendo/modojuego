@@ -17,7 +17,23 @@
     ['natural-known','Yacimientos descubiertos','🔎','known']
   ];
   const FIELDS=new Map(MODES.map(([key,label,short,field])=>[key,{label,short,field}]));
-  const BASE_MAP_ICONS={political:'🌐',terrain:'🏔️',supply:'🚚',geopolitics:'🧭'};
+  // Familia vectorial propia: misma geometría, peso de trazo y marco hexagonal.
+  const ICON_PATHS={
+    political:'<circle cx="12" cy="12" r="5.7"/><path d="M6.5 12h11M12 6.3c-3 3.2-3 8.2 0 11.4M12 6.3c3 3.2 3 8.2 0 11.4"/>',
+    terrain:'<path d="m5 16 4.5-7 2.6 3.6 2.2-5 4.8 8.4H5z"/>',
+    supply:'<path d="M5.5 8.5h8v7h-8zM13.5 11h3l2 2.4v2.1h-5z"/><circle cx="8" cy="16.3" r="1"/><circle cx="16.5" cy="16.3" r="1"/>',
+    geopolitics:'<circle cx="12" cy="12" r="5.8"/><path d="m14.8 9.2-1.6 4-4 1.6 1.6-4z"/>',
+    'natural-food':'<path d="M12 18V6M12 9c-3 0-4-2-4-3 3 0 4 2 4 3zm0 4c-3 0-4-2-4-3 3 0 4 2 4 3zm0 4c-3 0-4-2-4-3 3 0 4 2 4 3zm0-8c3 0 4-2 4-3-3 0-4 2-4 3zm0 4c3 0 4-2 4-3-3 0-4 2-4 3z"/>',
+    'natural-livestock':'<path d="M8 10 6.5 7 9.5 8M16 10l1.5-3-3 1M8 10c-.7 1-.8 2.3-.8 4.1 0 2.8 2 4 4.8 4s4.8-1.2 4.8-4c0-1.8-.1-3.1-.8-4.1-2-2.2-6-2.2-8 0z"/><path d="M10 14v.4M14 14v.4M10.5 16.4q1.5 1 3 0"/>',
+    'natural-forest':'<path d="m12 5-4 5h2l-3 4h3l-2 3h8l-2-3h3l-3-4h2zM12 17v2"/>',
+    'natural-mineral':'<path d="m7 17 10-10M10 7l7 0-1 6M5 16l3 3M14 6l4 4"/>',
+    'natural-energy':'<path d="m13.8 5-6.2 8h4l-1.4 6 6.3-9h-4z"/>',
+    'natural-known':'<circle cx="11.3" cy="11" r="4.7"/><path d="m14.9 14.7 3.2 3.2M11.3 8.7v4.6M9 11h4.6"/>'
+  };
+  function mapIcon(mode){
+    const paths=ICON_PATHS[mode]||ICON_PATHS.political;
+    return '<svg class="hexMapIcon03855" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg"><path d="M12 1.8 20.8 6.9v10.2L12 22.2 3.2 17.1V6.9z" fill="none" stroke="currentColor" stroke-width="1.25" opacity=".6"/><g fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">'+paths+'</g></svg>';
+  }
   const MENU=[
     ['political','Político'],['terrain','Terreno'],['supply','Suministro'],
     ['geopolitics','Geopolítica'],...MODES.map(x=>[x[0],x[1]])
@@ -136,7 +152,7 @@
     const option=document.createElement('button');
     option.type='button';option.dataset.mapLayer03836=key;
     const spec=FIELDS.get(key);
-    option.textContent=(spec?.short||BASE_MAP_ICONS[key]||'🗺️')+'  '+label;
+    option.innerHTML=mapIcon(key)+'<span>'+label+'</span>';
     option.setAttribute('aria-pressed','false');
     menu.appendChild(option);
     return option;
@@ -195,7 +211,7 @@
     if(spec){
       const b=document.getElementById('mapModeBtn3252'),leg=document.getElementById('terrainLegend3250');
       if(b){
-        b.textContent=spec.short;
+        b.innerHTML=mapIcon(mapMode3252);
         b.classList.remove('modeTerrain3252','modeSupply3252','modeGeopolitics0352');
         b.setAttribute('aria-label','Mapa: '+spec.label);
         b.title='Mapa '+spec.label+' · pulsa para elegir otra capa';
@@ -205,10 +221,10 @@
         leg.innerHTML=legend(mapMode3252);leg.style.display='';
       }
       showSupplyOverlay3230=false;
-    }else if(BASE_MAP_ICONS[mapMode3252]){
+    }else if(ICON_PATHS[mapMode3252]){
       const b=document.getElementById('mapModeBtn3252');
       if(b){
-        b.textContent=BASE_MAP_ICONS[mapMode3252];
+        b.innerHTML=mapIcon(mapMode3252);
         const label=MENU.find(x=>x[0]===mapMode3252)?.[1]||'Mapa';
         b.setAttribute('aria-label','Mapa: '+label);
         b.title='Mapa '+label+' · pulsa para elegir otra capa';
@@ -221,7 +237,7 @@
   };
   updateMapModeUI3252(false);
   window.HexategosNaturalMap03836=Object.freeze({
-    version:'0.38.53',select,active:()=>mapMode3252,
+    version:'0.38.55',select,active:()=>mapMode3252,
     paletteColor,grade,stats:()=>({...stats,cache:samples.size,discoveredCache:knownColors.size}),
     cacheLimit:MAX_CACHE
   });
