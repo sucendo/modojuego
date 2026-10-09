@@ -361,7 +361,19 @@
     const sameView=sameCell&&scrollTab===tab;
     const oldInner=sameView?(panel.querySelector?.('.ctxDetails03817')?.scrollTop||0):0;
     root.classList.add('hexInspectorActive03817');panel.hidden=false;
-    panel.innerHTML='<nav class="ctxNav03817" aria-label="Información del hexágono">'+
+    // Los indicadores esenciales se muestran siempre, sin abrir la ficha.
+    const supplySummary=supply(ctx),govSummary=window.HexategosStatecraft0380?.governmentCity?.(ctx.cell);
+    const quickStats=[
+      ['Suministro',supplySummary.value!=null?pct(supplySummary.value)+' %':'—'],
+      ['Alimentos',supplySummary.diag?.resourcePct?.[0]!=null?pct(supplySummary.diag.resourcePct[0])+' %':'—'],
+      ['Materias primas',supplySummary.diag?.resourcePct?.[1]!=null?pct(supplySummary.diag.resourcePct[1])+' %':'—'],
+      ['Energía',supplySummary.diag?.resourcePct?.[2]!=null?pct(supplySummary.diag.resourcePct[2])+' %':'—'],
+      ['Estabilidad',govSummary?.stability!=null?pct(govSummary.stability)+' %':'—'],
+      ['Nacionalismo',govSummary?.nationalism!=null?pct(govSummary.nationalism)+' %':'—']
+    ];
+    const statsMarkup='<div class="ctxTopStats03859" aria-label="Estado del territorio">'+
+      quickStats.map(([name,value])=>'<div class="ctxTopStat03859"><span>'+esc(name)+'</span><b>'+esc(value)+'</b></div>').join('')+'</div>';
+    panel.innerHTML=statsMarkup+'<nav class="ctxNav03817" aria-label="Información del hexágono">'+
       permitted.map(([key,name])=>'<button type="button" data-inspect-tab03817="'+key+'" aria-pressed="'+(key===tab)+'">'+name+'</button>').join('')+
       '</nav><div class="ctxDetails03817">'+renderDetails(ctx)+'</div>';
     simplifyActions(ctx);
