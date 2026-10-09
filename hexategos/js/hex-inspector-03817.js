@@ -18,6 +18,7 @@
       d?.group==='power'?'Electricidad':d?.group==='manufacture'?'Manufactura':'Industria';
   };
   let tab='summary',lastCell=-1,scrollCell=-1,scrollTab='summary';
+  let openSection03858='';
   const panel=document.createElement('div');
   panel.id='ctxInspector03817';
   panel.className='ctxInspector03817';
@@ -73,6 +74,16 @@
       (detail?'<small>'+esc(detail)+'</small>':'')+'</div>';
   }
   function card(title,body,small=''){
+    const collapsible=/prospecci[oó]n|estudios|industria|producci[oó]n|gobierno|estabilidad|recursos|potencial/i.test(title);
+    if(collapsible){
+      const key=/prospecci[oó]n|estudios/i.test(title)?'studies':
+        /industria|producci[oó]n/i.test(title)?'industry':
+        /gobierno|estabilidad/i.test(title)?'government':'resources';
+      return '<details class="ctxCard03817 ctxAccordion03858" data-hex-section03858="'+key+'" '+
+        (openSection03858===key?'open':'')+'><summary>'+esc(title)+'</summary>'+
+        '<div class="ctxAccordionBody03858">'+
+        (small?'<p class="ctxHelp03817">'+esc(small)+'</p>':'')+body+'</div></details>';
+    }
     return '<section class="ctxCard03817"><h4>'+esc(title)+'</h4>'+
       (small?'<p class="ctxHelp03817">'+esc(small)+'</p>':'')+body+'</section>';
   }
@@ -341,7 +352,7 @@
       panel.hidden=true;root.classList.remove('hexInspectorActive03817');
       scrollCell=-1;return;
     }
-    if(lastCell!==ctx.cell){tab='summary';lastCell=ctx.cell;extrasExpanded03819=false}
+    if(lastCell!==ctx.cell){tab='summary';lastCell=ctx.cell;extrasExpanded03819=false;openSection03858=''}
     const permitted=tabsFor(ctx);
     if(!permitted.some(v=>v[0]===tab))tab='summary';
     // La ficha puede renovarse mientras se juega. Mantener las dos barras
@@ -438,6 +449,18 @@
     if(event.target.matches('[data-inspect-pct03817]'))saveGame3212();
   });
   // Únicamente el guardado de instalaciones existentes; no se añade un timer.
+  panel.addEventListener('toggle',event=>{
+    const target=event.target;
+    if(!target?.matches?.('details[data-hex-section03858]'))return;
+    if(!target.open){
+      if(openSection03858===target.dataset.hexSection03858)openSection03858='';
+      return;
+    }
+    openSection03858=target.dataset.hexSection03858;
+    for(const other of panel.querySelectorAll('details[data-hex-section03858]')){
+      if(other!==target)other.open=false;
+    }
+  },true);
   window.HexategosHexInspector03817={
     version:BUILD,population,
     refresh:()=>{const c=uiInteractionState3244?.contextData;if(c?.kind==='cell')mount(c)},
