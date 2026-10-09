@@ -639,7 +639,7 @@
       if(x.byproducts&&typeof x.byproducts==='object')for(const kind of Object.keys(DERIVATIVES[x.kind]||{}))
         byproducts[kind]=clamp(Number(x.byproducts[kind])||0,0,325);
       const legacy=TYPES[x.kind].group==='extract'?
-        (Number(data.v)<3||data.v==null?.85:clamp(Number(x.legacyQuality)||0,0,2.6)):0;
+        ((data.v==null||Number(data.v)<3)? .85:clamp(Number(x.legacyQuality)||0,0,2.6)):0;
       // Los yacimientos que sustentaban minas de partidas antiguas permanecen.
       const p=legacy?Math.max(legacy,potential(x.cell,f,x.kind)):
         potential(x.cell,f,x.kind);
