@@ -81,3 +81,38 @@ hasta completar su cadena. Esto es un cambio de reglas, no pérdida del edificio
 **Pendiente de certificación manual:** partidas reales prolongadas con 150/250/
 350/500 IA, prueba de ida y vuelta de archivo .hexategos en navegador y
 observación de la interfaz móvil con partidas previas.
+
+
+## Bloque I · Consolidación integral de la capa física 0.38.37
+
+Auditoría sobre `main`: los módulos `world-core-03828`, `natural-potential-03829`,
+`geology-03830`, `prospection-03831`, `agronomy-03832`, `production-0388`
+y `natural-map-03836` comparten una semilla física independiente de `owner6`.
+La capa de geología permanece determinista; las explotaciones históricas preservan
+un mínimo `legacyQuality`, y los resultados concretos permanecen ocultos hasta
+que `geological-prospection` registra el estudio.
+
+**Protección incorporada:** `HexategosWorldCore03828.restore()` conserva una
+instantánea de las capas y deshace los cambios si un módulo lanza un error
+durante su restauración. Se ejecuta únicamente al cargar, importar o reiniciar,
+no en cada tick. Continúan vigentes las versiones de esquema, las claves de
+guardado y los envoltorios de exportación existentes.
+
+**Prueba integrada:** `smoke-03837.mjs` carga juntos los módulos reales y verifica
+semilla, propiedad política, trabajo pendiente, avance del scheduler,
+resultados completados, persistencia local, exportación, importación,
+partida antigua sin módulos naturales, protección ante instantáneas corruptas y
+acciones de IA en configuraciones de 150, 250, 350 y 500 facciones.
+
+**Puertas de calidad antes de nuevas capas:**
+- Ejecutar `node --check` en los módulos JavaScript y todos los `smoke-*.mjs`.
+- Verificar manualmente una partida antigua con mina, industria textil, comercio,
+  carretera, puerto y flota; comparar tras guardar/cargar y exportar/importar.
+- Verificar en navegador que un estudio iniciado, completado y exportado mantiene
+  semilla, conocimiento y costes al regresar a la partida.
+- Probar varios minutos con 150, 250, 350 y 500 naciones en hardware real,
+  observando tiempos de renderizado y simulación. El smoke de 500 facciones no
+  sustituye esta prueba prolongada.
+
+No se ha cambiado ninguna receta, coste, rendimiento industrial ni estructura
+del terreno en este bloque.

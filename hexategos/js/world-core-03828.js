@@ -85,9 +85,29 @@
   }
   function restore(state){
     validate(state);
-    lastRestore=state??null;restoredOnce=true;
-    for(const entry of modules.values())restoreOne(entry,state?.modules?.[entry.id]||null);
-    return true;
+    // A save can contain several independent physical layers. A damaged
+    // agronomic or prospection payload must not leave half of them restored.
+    // This checkpoint happens only during load/import/reset, never per tick.
+    const before=snapshot();
+    const oldLast=lastRestore,oldRestored=restoredOnce;
+    try{
+      for(const entry of modules.values())
+        restoreOne(entry,state?.modules?.[entry.id]||null);
+      lastRestore=state??null;restoredOnce=true;
+      lastError=null;
+      return true;
+    }catch(error){
+      for(const entry of modules.values()){
+        if(!entry.persistent)continue;
+        try{restoreOne(entry,before.modules[entry.id]||null)}
+        catch(rollbackError){
+          console.warn('[Hexategos mundo] Restauración del respaldo de '+entry.id+' falló',rollbackError);
+        }
+      }
+      lastRestore=oldLast;restoredOnce=oldRestored;
+      lastError={phase:'restore',message:String(error)};
+      throw error;
+    }
   }
   function readLocal(){
     const codec=window.HexategosSaveStorage03827;
