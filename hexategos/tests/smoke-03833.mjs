@@ -54,7 +54,8 @@ const nodes=new Map(Array.from({length:50},(_,c)=>[c,{cell:c,f:0,comp:0,
   stock:[0,0,0,0,0],cap:[250,250,250,250,250]}]));
 for(let i=0;i<5;i++)api.tick({nodes,routes:[],dt:4});
 const rich=api.sitesOnCell(4)[0],poor=api.sitesOnCell(5)[0];
-assert.ok(rich.output>poor.output,'rich mine outputs more iron');
+assert.ok(rich.stock>poor.stock*3,'rich mine physically extracts more iron');
+assert.ok(rich.lastRate>poor.lastRate,'extraction rate depends on deposit quality');
 assert.equal(api.build(0,12,'timber',false),false,'wood production must require trees');
 assert.equal(api.build(0,13,'timber',false),true,'forest supports a wood concession');
 assert.equal(api.build(0,14,'crops',false),true,'agricultural value enables crops');
