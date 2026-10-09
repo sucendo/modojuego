@@ -212,8 +212,12 @@
     restoreMap0373(industryDecay,data.industry,industries3212);
     restoreMap0373(portDecay,data.port,ports3212);
     specializedDecay.clear();
-    const ids=new Set([...window.HexategosProduction0388?.drawCandidates?.()||[]].map(s=>s.cell+':'+s.kind));
-    for(const [id,since] of data.specialized||[])if(ids.has(id)&&Number.isFinite(Number(since)))specializedDecay.set(id,Number(since));
+    // La producción restaura sus registros después de la carga base;
+    // conservar las claves hasta la primera auditoría evita perder el
+    // progreso de degradación en partidas antiguas o recién importadas.
+    for(const [id,since] of data.specialized||[])
+      if(typeof id==='string'&&/^\\d+:[a-z][a-z0-9_-]*$/i.test(id)&&Number.isFinite(Number(since)))
+        specializedDecay.set(id,Number(since));
     lastAudit=-1e9;needsRender=true;return true;
   }
   function save0373(){
