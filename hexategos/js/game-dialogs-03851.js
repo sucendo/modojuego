@@ -37,5 +37,36 @@
  function notice(message,title='Aviso'){
   return confirmDialog(message,{title,accept:'Cerrar',cancel:'Cerrar'});
  }
+ // File-load approval must precede dispatch to the original import handlers.
+ // The original loader may use a native synchronous confirm after FileReader
+ // finishes; consume only load-specific confirms after explicit user approval.
+ const approvedFiles=new WeakSet();
+ let approvedUntil=0;
+ const nativeConfirm=window.confirm.bind(window);
+ window.confirm=function(message){
+   const question=String(message||'');
+   if(performance.now()<approvedUntil&&/(cargar|importar|restaurar|reemplazar|sobrescribir|sustituir)/i.test(question)
+      &&/(partida|archivo|progreso|datos guardados|partida actual)/i.test(question)){
+     approvedUntil=0;
+     return true;
+   }
+   return nativeConfirm(message);
+ };
+ document.addEventListener('change',event=>{
+   const input=event.target;
+   if(!(input instanceof HTMLInputElement)||input.type!=='file'||!input.files?.length)return;
+   if(input.id!=='landingFile3305'&&input.id!=='gameLoadFile3306')return;
+   if(approvedFiles.has(input)){approvedFiles.delete(input);return}
+   event.preventDefault();event.stopImmediatePropagation();
+   const incoming=input.files[0];
+   void confirmDialog('¿Cargar la partida seleccionada? Se sustituirá el estado actual por los datos del archivo.',{
+     title:'Cargar partida',accept:'Cargar partida'
+   }).then(ok=>{
+     if(!ok){input.value='';return}
+     approvedUntil=performance.now()+240000;
+     approvedFiles.add(input);
+     input.dispatchEvent(new Event('change',{bubbles:true}));
+   });
+ },true);
  window.HexategosDialogs03851={confirm:confirmDialog,notice};
 })();
