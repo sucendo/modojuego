@@ -138,6 +138,25 @@ function updateRivalLapTiming(rv,prevS,newS,L){
  if(rv.raceFirstLapPending){rv.raceFirstLapPending=false;rv.completedLaps=1;rv.firstLapElapsed=lt;rv.lapStartTime=raceT;apexResetDriverTimingState(rv,raceT);if(currentSession==='race'&&rv.completedLaps>=(player&&player.laps||1)){rv.finished=true;rv.finishTime=raceT;}return true;}
  rv.lapStartTime=raceT;rv.completedLaps=(rv.completedLaps||0)+1;if(Number.isFinite(lt)&&lt>=20){rv.lastLap=lt;rv.bestLap=Math.min(Number.isFinite(rv.bestLap)?rv.bestLap:Infinity,lt);registerFastestLap(rv.id,lt);}rv.lastSpeedTrapKph=Number.isFinite(rv.timingSpeedTrapKph)?rv.timingSpeedTrapKph:null;apexResetDriverTimingState(rv,raceT);if(currentSession==='race'&&rv.completedLaps>=(player&&player.laps||1)){rv.finished=true;rv.finishTime=raceT;}return true;
 }
+function apexLiveRaceOrder(){
+ if(!player)return[];
+ const entries=[{id:0,s:Number(player.total)||0,finished:false,finishTime:null},...(rivals||[]).map(r=>({id:r.id,s:Number(r.total)||0,finished:!!r.finished,finishTime:Number.isFinite(r.finishTime)?r.finishTime:null}))];
+ // Durante la carrera, el orden instantáneo depende de la distancia acumulada recorrida
+ // desde la misma referencia de parrilla. Un coche marcado finished sólo queda delante
+ // si su progreso también está delante; no usamos un OR especial que congele posiciones.
+ entries.sort((a,b)=>{
+   const ds=b.s-a.s;
+   if(Math.abs(ds)>.001)return ds;
+   if(a.finished!==b.finished)return a.finished?-1:1;
+   if(a.finished&&b.finished&&a.finishTime!==b.finishTime)return (a.finishTime??Infinity)-(b.finishTime??Infinity);
+   return a.id-b.id;
+ });
+ return entries;
+}
+function apexLivePlayerPosition(){
+ const all=apexLiveRaceOrder(),i=all.findIndex(e=>e.id===0);
+ return i>=0?i+1:1;
+}
 function selectTowerEntries(all,playerIndex,count){
  if(!all.length||count<=0)return[];
  count=Math.min(all.length,Math.max(1,Math.floor(count)));
