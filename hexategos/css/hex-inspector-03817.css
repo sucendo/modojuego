@@ -258,3 +258,32 @@
   #contextMenu3244 .ctxMetrics03817{grid-template-columns:minmax(0,1fr)}
   #contextMenu3244 .ctxQuick03817{grid-template-columns:minmax(0,1fr)!important}
 }
+
+/* 0.38.58 — scrolling integrado, tarjetas adaptables y acordeones exclusivos */
+#contextMenu3244.hexInspectorActive03817{
+ scrollbar-width:thin;scrollbar-color:#4d91ad transparent;
+ overscroll-behavior:contain;
+}
+#contextMenu3244.hexInspectorActive03817::-webkit-scrollbar,
+#contextMenu3244 .ctxDetails03817::-webkit-scrollbar{width:6px}
+#contextMenu3244.hexInspectorActive03817::-webkit-scrollbar-thumb,
+#contextMenu3244 .ctxDetails03817::-webkit-scrollbar-thumb{
+ background:#4d91ad;border-radius:10px}
+#contextMenu3244 .ctxAccordion03858{padding:0!important;overflow:hidden}
+#contextMenu3244 .ctxAccordion03858>summary{
+ display:flex;align-items:center;gap:8px;cursor:pointer;list-style:none;
+ font-weight:750;padding:12px 13px;color:#e8f6fc;min-height:44px;
+ background:rgba(25,65,88,.75)}
+#contextMenu3244 .ctxAccordion03858>summary::-webkit-details-marker{display:none}
+#contextMenu3244 .ctxAccordion03858>summary:before{content:'▸';color:#83c9e6}
+#contextMenu3244 .ctxAccordion03858[open]>summary:before{content:'▾'}
+#contextMenu3244 .ctxAccordionBody03858{padding:11px;min-width:0;overflow-wrap:anywhere}
+#contextMenu3244 .ctxAccordion03858 button,
+#contextMenu3244 .ctxAccordion03858 input{max-width:100%}
+@media(max-width:650px){
+ #contextMenu3244.hexInspectorActive03817{
+  max-height:calc(100dvh - 12px)!important;width:min(440px,calc(100dvw - 12px))!important}
+ #contextMenu3244 .ctxDetails03817{max-height:min(36dvh,270px);scrollbar-width:thin}
+ #contextMenu3244 .ctxQuick03817 .ctxAction3244,
+ #contextMenu3244 .ctxMoreGrid03817 .ctxAction3244{min-height:48px!important}
+}
