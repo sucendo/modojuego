@@ -154,6 +154,19 @@
     moveNationSite(s,null,s.f);
     return true;
   }
+  function removeSite(cell,kind){
+    const key=siteKey(Number(cell),String(kind)),s=sites.get(key);
+    if(!s)return false;
+    sites.delete(key);
+    const local=perCell.get(s.cell)||[];
+    const index=local.indexOf(s);if(index>=0)local.splice(index,1);
+    if(!local.length)perCell.delete(s.cell);
+    trackNation(s.f,-1,s.kind);
+    const nation=nationSites.get(s.f);if(nation)nation.delete(key);
+    revision++;cacheDirty=true;supplyDirty3220=true;needsRender=true;
+    if(typeof markEconomyDirty3261==='function')markEconomyDirty3261();
+    return true;
+  }
   function siteById(id){
     const key=String(id);
     return sites.get(key)||((Number.isInteger(Number(id))&&!key.includes(':'))?sitesOnCell(Number(id))[0]:null);
@@ -228,7 +241,7 @@
     return comp>=0?f+':r'+comp:f+':i'+cell;
   }
   function activeFactor(s){
-    return clamp(Math.min(s.pct,sec(s.f,TYPES[s.kind].sector))/100,0,1)*efficiency(s.f);
+    return clamp(Math.min(s.pct,sec(s.f,TYPES[s.kind].sector))/100,0,1)*efficiency(s.f)*(window.HexategosInfrastructureDecay0373?.productionFactor?.(s.cell,s.kind)??1);
   }
   function tick({nodes,routes,dt}){
     if(!started3230)return;
@@ -1107,7 +1120,7 @@
   window.HexategosProduction0388={
     version:VERSION,types:TYPES,cells:()=>perCell.keys(),revision:()=>revision,tick,
     sites:()=>[...sites.values()].map(s=>({...s})),sector:(f,s)=>sec(f,s),
-    build,upgrade,setPct,setSector,potential,efficiency,availability,sitesOnCell:cell=>sitesOnCell(cell).map(s=>({...s})),
+    build,upgrade,removeSite,setPct,setSector,potential,efficiency,availability,sitesOnCell:cell=>sitesOnCell(cell).map(s=>({...s})),
     legacyManufacturingFactor:f=>Math.max(.15,1-(manufacturingCounts.get(Number(f))||0)*.22),
     intermediates:()=>({...RESOURCE_PRODUCT_LABELS}),futureIndustries:()=>FUTURE_INDUSTRIES.map(v=>({...v})),
     iconOffset:iconOffset03811,
