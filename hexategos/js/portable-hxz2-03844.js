@@ -45,9 +45,9 @@
       if(typeof toast==='function')toast('No se pudo crear la copia HXZ2. Conserva la partida anterior.');
     }finally{processing=false}
   }
-  // Capture before the existing export click listener to prevent two downloads.
+  // Dedicated explicit HXZ2 action. The classic JSON exporter remains available.
   document.addEventListener('click',event=>{
-    const button=event.target?.closest?.('#fileSaveBtn3276');
+    const button=event.target?.closest?.('#hxz2SaveDirect03847');
     if(!button)return;
     event.preventDefault();event.stopImmediatePropagation();
     void exportNow();
