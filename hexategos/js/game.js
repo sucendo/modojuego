@@ -1042,13 +1042,26 @@ function saveGame3212(){
    capitalShockFactor:Array.from(capitalShockFactor3230),relations:Array.from(relations3220),research:research3230,spy:Array.from(spyIntel3230),
    activeFronts:activeFronts3230,nextFrontId:nextFrontId3230,activeFrontId:activeFrontId3230,fleets:fleets3212,
    campaignSeconds:campaignSeconds3230,gameSpeed:gameSpeed3212,showSupply:showSupplyOverlay3230};
-  localStorage.setItem(SAVE_KEY3230,JSON.stringify(s));
- }catch(e){}
+  // The primary campaign contains several large cell arrays. Store it with
+  // the same compact, backward-compatible codec as industries and routes.
+  const codec=window.HexategosSaveStorage03827;
+  if(codec?.set){
+   if(!codec.set(SAVE_KEY3230,s))return false;
+  }else{
+   const json=JSON.stringify(s);
+   localStorage.setItem(SAVE_KEY3230,json);
+  }
+  return true;
+ }catch(error){
+  console.warn('[Hexategos] No se pudo guardar la partida principal',error);
+  return false;
+ }
 }
 function loadGame3212(){
  try{
   const raw=localStorage.getItem(SAVE_KEY3230);if(!raw){resetGame3230(false);introHadSave3230=false;return false}
-  const s=JSON.parse(raw),L=loadLevel(MAX_GAME_LEVEL3233);if(!s||!Array.isArray(s.owner)||s.owner.length!==L.n){resetGame3230(false);return false}
+  const codec=window.HexategosSaveStorage03827;
+  const s=codec?.get?codec.get(SAVE_KEY3230):JSON.parse(raw),L=loadLevel(MAX_GAME_LEVEL3233);if(!s||!Array.isArray(s.owner)||s.owner.length!==L.n){resetGame3230(false);return false}
   activeFactionCount3230=normalizeFactionCount3230(s.factionCount??150);
   owner6.set(s.owner);gold3212=Number(s.gold)||260;
   troops3230.set((s.troops||[]).slice(0,FACTIONS3230.length));for(let f=0;f<activeFactionCount3230;f++)if(!troops3230[f])troops3230[f]=f?225:280;
@@ -8651,9 +8664,12 @@ function currentPersistentPayload3273(){
  saveGame3212();
 
  const parse=(key)=>{
-   const raw=localStorage.getItem(key);
-   if(!raw)return null;
-   try{return JSON.parse(raw)}catch(e){return null}
+   try{
+     if(key===SAVE_KEY3230&&window.HexategosSaveStorage03827?.get)
+       return window.HexategosSaveStorage03827.get(key);
+     const raw=localStorage.getItem(key);
+     return raw?JSON.parse(raw):null;
+   }catch(error){console.warn('[Hexategos] Copia local ilegible',key,error);return null}
  };
 
  return {
@@ -8741,7 +8757,11 @@ function applyPortableFile3273(file){
  const p=file.payload;
 
  // Replace only after every validation above has passed.
- localStorage.setItem(SAVE_KEY3230,JSON.stringify(p.main));
+ const primaryCodec=window.HexategosSaveStorage03827;
+ if(primaryCodec?.set){
+   if(!primaryCodec.set(SAVE_KEY3230,p.main))
+     throw new Error('No hay espacio disponible para importar esta partida. Conserva el archivo original.');
+ }else localStorage.setItem(SAVE_KEY3230,JSON.stringify(p.main));
 
  if(p.naval) localStorage.setItem(NAVAL_SAVE_KEY3270,JSON.stringify(p.naval));
  else localStorage.removeItem(NAVAL_SAVE_KEY3270);
@@ -8836,7 +8856,11 @@ function portableSaveInfo3273(){
  const raw=localStorage.getItem(SAVE_KEY3230);
  if(!raw)return 'No hay una partida guardada actualmente.';
  let campaign=campaignSeconds3230;
- try{campaign=JSON.parse(raw)?.campaignSeconds??campaign}catch(e){}
+ try{
+   const saved=window.HexategosSaveStorage03827?.get?
+     window.HexategosSaveStorage03827.get(SAVE_KEY3230):JSON.parse(raw);
+   campaign=saved?.campaignSeconds??campaign;
+ }catch(e){}
  const hours=Math.floor(campaign/3600),mins=Math.floor((campaign%3600)/60),secs=Math.floor(campaign%60);
  return `Partida local · campaña ${hours?hours+'h ':''}${mins}m ${secs}s · malla ${owner6.length.toLocaleString('es-ES')} celdas`;
 }
@@ -9199,7 +9223,11 @@ function applyPortableFile3275(file){
 
  // Best-effort local autosave. File loading itself no longer depends on quota.
  try{
-   localStorage.setItem(SAVE_KEY3230,JSON.stringify(p.main));
+   const primaryCodec=window.HexategosSaveStorage03827;
+   const saved=primaryCodec?.set?
+     primaryCodec.set(SAVE_KEY3230,p.main):
+     (localStorage.setItem(SAVE_KEY3230,JSON.stringify(p.main)),true);
+   if(!saved)throw new Error('La partida importada está en memoria, pero no se pudo guardar en el navegador');
    if(p.naval)localStorage.setItem(NAVAL_SAVE_KEY3270,JSON.stringify(p.naval));
    else localStorage.removeItem(NAVAL_SAVE_KEY3270);
    localStorage.setItem(CITY_NAMES_KEY3271,JSON.stringify([...cityNames3271.entries()]));
@@ -16260,9 +16288,13 @@ document.getElementById('gameMenuClose3306').onclick=closeGameMenu3306;
 
 document.getElementById('gameSaveLocal3306').onclick=()=>{
  if(!started3230){toast('No hay una partida activa');return}
- saveGame3212();
+ const saved=saveGame3212();
  saveDiplomacy3300?.();
  saveWorldSetup3302?.();
+ if(saved===false){
+   toast('⚠ No se pudo guardar. Conserva tu partida exportando un archivo .hexategos.');
+   return;
+ }
  toast('Partida guardada');
  closeGameMenu3306();
 };
