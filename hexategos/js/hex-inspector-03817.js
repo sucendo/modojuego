@@ -360,19 +360,34 @@
       }
     }
   }
+  function electricityIndicator(cell){
+    const sample=window.HexategosProduction0388?.electricityAt?.(cell);
+    return sample?{value:fmt(sample.availableRate)+' u/s',
+      title:'Electricidad disponible en la red, después del consumo. Último ciclo: generación '+
+        fmt(sample.generatedRate)+' u/s · consumo '+fmt(sample.consumedRate)+' u/s. Unidades del juego por segundo; no es combustible almacenado.'}:
+      {value:'Pendiente',title:'Esperando el primer ciclo de producción de la partida.'};
+  }
+  document.addEventListener('hexategos:electricity-updated',()=>{
+    if(!root.classList.contains('open3244')||!root.classList.contains('hexInspectorActive03817'))return;
+    const ctx=uiInteractionState3244?.contextData;
+    const card=panel.querySelector('[data-indicator="energy"]');
+    if(ctx?.kind!=='cell'||!card)return;
+    const current=electricityIndicator(ctx.cell);
+    card.querySelector('b').textContent=current.value;card.title=current.title;
+  });
   function quickIndicators(ctx){
     const sup=supply(ctx),g=window.HexategosStatecraft0380?.governmentCity?.(ctx.cell);
     const r=sup.diag?.resourcePct;
-    // No electrical coverage percentage exists in the engine. Do not reuse fuel.
+    const electricity=electricityIndicator(ctx.cell);
     const first=[['Alimentos',r?.[0],'green','food'],['Materias primas',r?.[1],'gold','crate'],
-      ['Petróleo y gas',r?.[2],'gold','fuel'],['Energía',null,'gold','energy']];
+      ['Petróleo y gas',r?.[2],'gold','fuel'],['Electricidad',electricity.value,'gold','energy']];
     const second=[['Bienes civiles',r?.[3],'blue','nation'],['Material militar',r?.[4],'blue','operation'],
       ['Estabilidad',g?.stability,'blue','balance'],['Nacionalismo',g?.nationalism,'red','flag'],
       ['Escasez',g?.scarcity==null?null:num(g.scarcity)+'/300','red','warning'],
       ['Situación',g?(g.riot?'Disturbios':g.strike?'Huelga':g.occupied?'Ocupada':'Normal'):null,'green','shield']];
     const row=(items,cls)=>'<div class="ctxIndicatorRow '+cls+'">'+items.map(([label,value,tone,icon])=>{
       const numeric=typeof value==='number'&&Number.isFinite(value);
-      return '<div class="ctxIndicator" data-tone="'+tone+'"><i aria-hidden="true">'+iconSvg(icon)+'</i><div><span>'+esc(label)+'</span><b>'+ (value==null?'<abbr title="No disponible" aria-label="No disponible">N/D</abbr>':numeric?pct(value)+' %':esc(value))+'</b>'+
+      return '<div class="ctxIndicator" data-indicator="'+icon+'"'+(icon==='energy'?' title="'+esc(electricity.title)+'"':'')+' data-tone="'+tone+'"><i aria-hidden="true">'+iconSvg(icon)+'</i><div><span>'+esc(label)+'</span><b>'+ (value==null?'<abbr title="No disponible" aria-label="No disponible">N/D</abbr>':numeric?pct(value)+' %':esc(value))+'</b>'+
         (numeric?'<div class="ctxTrack03817"><i style="width:'+pct(value)+'%"></i></div>':'')+'</div></div>';
     }).join('')+'</div>';
     return row(first,'ctxPrimaryIndicators')+row(second,'ctxSecondaryIndicators');

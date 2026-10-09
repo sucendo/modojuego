@@ -58,6 +58,8 @@
   let revision=1, aiCursor=1, lastStats={produced:0,processed:0,shipped:0,disconnected:0,sites:0};
   let lastPeriodicSaveWall03827=0;
   const nationalElectricDeficit=new Map();
+  const electricalNetworks=new Map();
+  let electricitySampleTime=null;
   let loadedPortable=null;
   const api=()=>window.HexategosTradeLogistics0370;
   const geography=cell=>api()?.geography?.(cell);
@@ -239,6 +241,15 @@
   }
   function groupKey(f,comp,cell){
     return comp>=0?f+':r'+comp:f+':i'+cell;
+  }
+  // Diagnostic snapshot of the real last industrial cycle, not a power stock.
+  // Uses exactly the same connection/group key as factories, including islands.
+  function electricityAt(cell){
+    if(!Number.isInteger(cell)||cell<0||cell>=owner6.length||owner6[cell]<0)return null;
+    if(electricitySampleTime===null)return null;
+    const f=owner6[cell],key=groupKey(f,connect(cell,f),cell);
+    const sample=electricalNetworks.get(key);
+    return sample?{...sample}:{availableRate:0,generatedRate:0,consumedRate:0,sampledAt:electricitySampleTime};
   }
   function activeFactor(s){
     return clamp(Math.min(s.pct,sec(s.f,TYPES[s.kind].sector))/100,0,1)*efficiency(s.f)*(window.HexategosInfrastructureDecay0373?.productionFactor?.(s.cell,s.kind)??1);
@@ -502,7 +513,12 @@
     // Planificador energético: déficit por nación, calculado sobre los grupos
     // logísticos reales, sin examinar todo el mapa ni los 500 países por turno.
     nationalElectricDeficit.clear();
+    electricalNetworks.clear();electricitySampleTime=now;
     for(const g of groups.values()){
+      const generated=Math.max(0,g.generatedElectricity||0),remaining=Math.max(0,g.electricity||0);
+      const seconds=Math.max(.1,dt);
+      electricalNetworks.set(g.key,{availableRate:remaining/seconds,
+        generatedRate:generated/seconds,consumedRate:Math.max(0,generated-remaining)/seconds,sampledAt:now});
       let demand=0;
       for(const {site} of g.factories){
         const def=TYPES[site.kind];
@@ -514,6 +530,8 @@
         nationalElectricDeficit.set(g.f,Math.max(old,clamp(1-(g.generatedElectricity||0)/demand,0,1)));
       }
     }
+    if(typeof document.dispatchEvent==='function')
+      document.dispatchEvent(new CustomEvent('hexategos:electricity-updated'));
     // La IA invierte escalonadamente, siempre con su presupuesto y de forma
     // condicionada por riqueza geográfica y carencias de su economía.
     const batch=activeFactionCount3230>350?10:activeFactionCount3230>180?8:5;
@@ -675,7 +693,7 @@
       depots:[...depots],sectors:[...sectorPct]};
   }
   function restore(data){
-    sites.clear();perCell.clear();nationSites.clear();nationCounts.clear();manufacturingCounts.clear();depots.clear();sectorPct.clear();nationalElectricDeficit.clear();revision++;aiCursor=1;nextAI.fill(0);
+    sites.clear();perCell.clear();nationSites.clear();nationCounts.clear();manufacturingCounts.clear();depots.clear();sectorPct.clear();nationalElectricDeficit.clear();electricalNetworks.clear();electricitySampleTime=null;revision++;aiCursor=1;nextAI.fill(0);
     if(!data||!Array.isArray(data.sites))return;
     for(const x of data.sites.slice(0,MAX_SITES)){
       if(!x||!TYPES[x.kind]||!Number.isInteger(x.cell)||x.cell<0||x.cell>=owner6.length)continue;
@@ -1118,7 +1136,7 @@
     return nations;
   }
   window.HexategosProduction0388={
-    version:VERSION,types:TYPES,cells:()=>perCell.keys(),revision:()=>revision,tick,
+    version:VERSION,types:TYPES,electricityAt,cells:()=>perCell.keys(),revision:()=>revision,tick,
     sites:()=>[...sites.values()].map(s=>({...s})),sector:(f,s)=>sec(f,s),
     stage:(kind)=>TYPES[kind]?industryStage(TYPES[kind]):null,
     build,upgrade,removeSite,setPct,setSector,potential,efficiency,availability,sitesOnCell:cell=>sitesOnCell(cell).map(s=>({...s})),

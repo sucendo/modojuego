@@ -17,6 +17,12 @@ const {chromium}=require(require.resolve('playwright',{paths:[process.env.CODEX_
  await page.evaluate(()=>{paused3230=true;openContextDialog3244(cellContext3244(capitals[0]),20,60);});
  const root=page.locator('#contextMenu3244');await root.waitFor({state:'visible'});await page.waitForTimeout(180);
  assert.equal(await root.locator('.ctxIndicator').count(),10);
+ // Native industrial cycle updates just the electrical card while it is open.
+ await page.evaluate(()=>HexategosProduction0388.tick({nodes:new Map(),routes:[],dt:4}));
+ assert.equal(await root.locator('[data-indicator="energy"] b').innerText(),'0,00 u/s');
+ assert.equal(await root.locator('[data-indicator="energy"] .ctxTrack03817').count(),0);
+ assert.match(await root.locator('[data-indicator="energy"]').getAttribute('title'),/generación.*consumo/);
+
  assert.equal(await root.locator('.ctxExtras03817').count(),0);
  assert(await page.evaluate(()=>document.querySelector('#ctxActions3244').compareDocumentPosition(document.querySelector('.ctxDetails03817'))&Node.DOCUMENT_POSITION_FOLLOWING));
  assert.equal(await root.locator('#ctxStrength3246').getAttribute('min'),'0');
