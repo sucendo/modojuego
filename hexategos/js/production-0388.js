@@ -880,9 +880,6 @@
     state.data.section='catalog';
     const existing=sitesOnCell(cell);
     const place=typeof placeDisplayName3271==='function'?placeDisplayName3271(cell):'Hexágono '+cell;
-    const generalLevel=context.industry||0;
-    const generalCost=generalLevel?115+generalLevel*55:110;
-    const generalEnabled=typeof canIndustry3244==='function'&&canIndustry3244(context);
     const gold=Math.floor(gold3212);
     modalTitle3244.textContent='Industria · '+place;
     const primary=Object.entries(TYPES);
@@ -892,15 +889,10 @@
       {name:'Nivel III · Manufactura y bienes finales',tip:'Bienes civiles, maquinaria, textiles, química y electrónica',kinds:primary.filter(([k,d])=>d.group==='manufacture'&&k!=='arms')},
       {name:'Nivel IV · Electricidad y producción militar',tip:'Centrales térmicas y fabricación de material para el ejército',kinds:primary.filter(([k,d])=>d.group==='power'||k==='arms')}
     ];
-    const general='<button type="button" class="industryBuildChoice0388 industryGeneric03815" data-industry-general0388 '+
-      (generalEnabled?'':'disabled')+'><span class="industryTypeIcon0388">🏭</span>'+
-      '<span class="industryBuildText0388"><b>Industria manufacturera · área general</b>'+
-      '<small>Nivel '+generalLevel+'/3 · '+generalCost+' oro · infraestructura y capacidad industrial'+
-      (generalEnabled?'':' · mejora no disponible')+'</small></span></button>';
     const cards=groups.map((group,i)=>
       '<section class="industryGroup0388 industryStage03815" data-stage03815="'+(i+1)+'">'+
       '<h4>'+group.name+'</h4><p class="industryStageHint03815">'+group.tip+'</p>'+
-      '<div class="industryBuildGrid0388">'+(i===2?general:'')+
+      '<div class="industryBuildGrid0388">'+
       group.kinds.map(([kind,def])=>{
         const strength=def.group==='extract'?Math.round(potential(cell,0,kind)*100):null;
         const test=availability(0,cell,kind,true);
@@ -959,35 +951,10 @@
     }
     return baseHandle.apply(this,arguments);
   };
-  function buildGeneralIndustry0388(cell){
-    const context=industryContext0388(cell);
-    if(!context||typeof canIndustry3244!=='function'||!canIndustry3244(context))return false;
-    // El motor exige un permiso explícito por acción; el submenú forma parte
-    // de la misma acción voluntaria del jugador, y no elude ese control.
-    selected={key:MAX_GAME_LEVEL3233,i:cell};
-    uiInteractionState3244.selectedCell=cell;
-    if(typeof contextBuildPermit3282!=='undefined')
-      contextBuildPermit3282={type:'industry',cell,until:performance.now()+900};
-    const previous=industries3212.has(cell)?Math.max(1,industryLevel3230[cell]||1):0;
-    build3212('industry');
-    const next=industries3212.has(cell)?Math.max(1,industryLevel3230[cell]||1):0;
-    return next>previous;
-  }
   modalBody3244?.addEventListener('click',event=>{
     const state=uiInteractionState3244?.modal;
     if(state?.type!=='production0388')return;
     const cell=state.data?.cell;
-    const general=event.target.closest('[data-industry-general0388]');
-    if(general){
-      event.preventDefault();
-      if(general.disabled)return;
-      // Este cierre devuelve el control al globo: no basta con ocultar el CSS.
-      closeModal3244();
-      if(buildGeneralIndustry0388(cell)){
-        if(typeof updateUI3230==='function')updateUI3230();
-      }else if(typeof toast==='function')toast('No se pudo construir o mejorar la industria general');
-      return;
-    }
     const change=event.target.closest('[data-industry-view0388]');
     if(change){
       event.preventDefault();
