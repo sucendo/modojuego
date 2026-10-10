@@ -264,8 +264,23 @@
   function activeFactor(s){
     return clamp(Math.min(s.pct,sec(s.f,TYPES[s.kind].sector))/100,0,1)*efficiency(s.f)*(window.HexategosInfrastructureDecay0373?.productionFactor?.(s.cell,s.kind)??1);
   }
+  // Legacy industry hexes remain as infrastructure anchors for old saves.
+  // Each is converted exactly once to a specialised civilian site.
+  function migrateGeneralIndustry(){
+    let migrated=0;
+    for(const cell of industries3212){
+      const f=owner6[cell];
+      if(f<0||sites.has(siteKey(cell,'civilian')))continue;
+      if(sites.size>=MAX_SITES||sitesOnCell(cell).length>=MAX_PER_CELL)continue;
+      const level=clamp(Math.trunc(industryLevel3230[cell]||1),1,3);
+      if(addSite({cell,f,kind:'civilian',level,pct:100,stock:0,byproducts:{},output:0,legacyQuality:0,potential:1,updated:campaignSeconds3230||0}))migrated++;
+    }
+    if(migrated)revision++;
+    return migrated;
+  }
   function tick({nodes,routes,dt}){
     if(!started3230)return;
+    migrateGeneralIndustry();
     const now=campaignSeconds3230||0,groups=new Map();
     const group=(f,comp,cell)=>{
       const key=groupKey(f,comp,cell);
@@ -1120,6 +1135,7 @@
     version:VERSION,types:TYPES,electricityAt,cells:()=>perCell.keys(),revision:()=>revision,tick,
     sites:()=>[...sites.values()].map(s=>({...s})),sector:(f,s)=>sec(f,s),
     maintenance:f=>maintenanceByNation.get(Number(f))||0,
+    migrateGeneralIndustry,
     stage:(kind)=>TYPES[kind]?industryStage(TYPES[kind]):null,
     build,upgrade,removeSite,setPct,setSector,potential,efficiency,availability,sitesOnCell:cell=>sitesOnCell(cell).map(s=>({...s})),
     legacyManufacturingFactor:f=>Math.max(.15,1-(manufacturingCounts.get(Number(f))||0)*.22),
