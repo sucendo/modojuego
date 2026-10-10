@@ -56,6 +56,16 @@
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const sites=new Map(),perCell=new Map(),nationSites=new Map(),nationCounts=new Map(),manufacturingCounts=new Map(),depots=new Map(),sectorPct=new Map(),nextAI=new Float64Array(FACTIONS3230.length);
   let revision=1, aiCursor=1, lastStats={produced:0,processed:0,shipped:0,disconnected:0,sites:0};
+  const maintenanceByNation=new Map();
+  const maintenanceRate=s=>TYPES[s.kind].cost*.000045*Math.max(1,s.level);
+  function chargeMaintenance(s,activity,dt){
+    const base=maintenanceRate(s),fixed=base*.2*dt,variable=base*.8*clamp(activity,0,1)*dt;
+    const amount=fixed+variable;
+    if(s.f===0)gold3212-=amount;
+    else if(Number.isFinite(botGold3230[s.f]))botGold3230[s.f]-=amount;
+    maintenanceByNation.set(s.f,(maintenanceByNation.get(s.f)||0)+amount);
+    if(s.f===0){s.maintenanceFixed=fixed/Math.max(.1,dt);s.maintenanceVariable=variable/Math.max(.1,dt)}
+  }
   let lastPeriodicSaveWall03827=0;
   const nationalElectricDeficit=new Map();
   const electricalNetworks=new Map();
@@ -265,6 +275,7 @@
     };
     const conn=new Map();
     let produced=0,processed=0,shipped=0,disconnected=0;
+    maintenanceByNation.clear();
     // Capturas y pérdida de instalaciones: no se reconstruye el mapa entero.
     for(const s of sites.values()){
       const owner=owner6[s.cell];
@@ -304,6 +315,7 @@
               g.raw.get(material).push({site:s,product:material});
           }
         }
+        chargeMaintenance(s,extracted/Math.max(.000001,.37*s.level*dt*clamp(s.potential,0,2.6)),dt);
         produced+=extracted;
         if(s.f===0){
           s.lastRate=extracted/Math.max(.1,dt);
@@ -422,11 +434,11 @@
         }
         const room=powerStation?Infinity:Math.max(0,n.cap[out]-n.stock[out]);
         const buffer=intermediate?Math.max(0,65*s.level-s.stock):0;
-        if(room+buffer<=.000001){if(s.f===0)s.status='Almacén lleno';continue}
+        if(room+buffer<=.000001){chargeMaintenance(s,0,dt);if(s.f===0)s.status='Almacén lleno';continue}
         const sharedLevel=industries3212.has(s.cell)?Math.max(1,industryLevel3230[s.cell]||1):0;
         const industrialBonus=1+Math.min(.24,sharedLevel*.08);
         let amount=Math.min(.39*s.level*activeFactor(s)*dt*industrialBonus,(room+buffer)/.90);
-        if(amount<=0){if(s.f===0)s.status='Producción reducida';continue}
+        if(amount<=0){chargeMaintenance(s,0,dt);if(s.f===0)s.status='Producción reducida';continue}
         const nominal=amount;
         if(def.group==='manufacture'){
           if(!fairShares){
@@ -458,11 +470,12 @@
         // cuando una fábrica tenga apagones o capacidad eléctrica insuficiente.
         if(electricRate>0)amount=Math.min(amount,availablePower(g)/electricRate);
         if(amount<=0){
+          chargeMaintenance(s,0,dt);
           if(s.f===0)s.status=electricRate>0&&availablePower(g)<=.000001?'Falta electricidad':'Producción reducida';
           continue;
         }
         const inputs=def.inputs||[];
-        if(!inputs.length)continue;
+        if(!inputs.length){chargeMaintenance(s,0,dt);continue;}
         if(def.inputMode==='any'){
           let chosen=null,maximum=0;
           for(const kind of inputs){
@@ -470,7 +483,7 @@
             if((powerStation||s.kind==='textile')&&qty>0){chosen=kind;maximum=qty;break}
             if(qty>maximum){chosen=kind;maximum=qty}
           }
-          if(!chosen||maximum<=0){if(s.f===0)s.status=connect(s.cell,s.f)<0?'Sin conexión logística':'Falta materia prima';continue}
+          if(!chosen||maximum<=0){chargeMaintenance(s,0,dt);if(s.f===0)s.status=connect(s.cell,s.f)<0?'Sin conexión logística':'Falta materia prima';continue}
           amount=Math.min(amount,maximum);
           // Los telares antiguos pueden seguir usando lana o fibras naturales
           // sin hilandería; los materiales elaborados rinden más por unidad.
@@ -478,10 +491,11 @@
           amount=take(g,chosen,amount);
         }else{
           for(const kind of inputs)amount=Math.min(amount,available(g,kind));
-          if(amount<=0){if(s.f===0)s.status=connect(s.cell,s.f)<0?'Sin conexión logística':'Falta materia prima';continue}
+          if(amount<=0){chargeMaintenance(s,0,dt);if(s.f===0)s.status=connect(s.cell,s.f)<0?'Sin conexión logística':'Falta materia prima';continue}
           for(const kind of inputs)take(g,kind,amount);
         }
-        if(amount<=0){if(s.f===0)s.status='Falta materia prima';continue}
+        if(amount<=0){chargeMaintenance(s,0,dt);if(s.f===0)s.status='Falta materia prima';continue}
+        chargeMaintenance(s,amount/Math.max(.000001,.39*s.level*dt*industrialBonus),dt);
         if(s.f===0){
           s.status=amount<nominal*.98?'Producción reducida':'Produciendo';
           s.lastRate=amount*.9/Math.max(.1,dt);
@@ -1105,6 +1119,7 @@
   window.HexategosProduction0388={
     version:VERSION,types:TYPES,electricityAt,cells:()=>perCell.keys(),revision:()=>revision,tick,
     sites:()=>[...sites.values()].map(s=>({...s})),sector:(f,s)=>sec(f,s),
+    maintenance:f=>maintenanceByNation.get(Number(f))||0,
     stage:(kind)=>TYPES[kind]?industryStage(TYPES[kind]):null,
     build,upgrade,removeSite,setPct,setSector,potential,efficiency,availability,sitesOnCell:cell=>sitesOnCell(cell).map(s=>({...s})),
     legacyManufacturingFactor:f=>Math.max(.15,1-(manufacturingCounts.get(Number(f))||0)*.22),
