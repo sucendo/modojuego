@@ -922,6 +922,7 @@
       {name:'Nivel III · Manufactura y bienes finales',tip:'Bienes civiles, maquinaria, textiles, química y electrónica',kinds:primary.filter(([k,d])=>d.group==='manufacture'&&k!=='arms')},
       {name:'Nivel IV · Electricidad y producción militar',tip:'Centrales térmicas y fabricación de material para el ejército',kinds:primary.filter(([k,d])=>d.group==='power'||k==='arms')}
     ];
+    const existingCosts=existing.map(site=>{const fixed=maintenanceRate(site)*.2,variable=Number(site.maintenanceVariable)||0;return '<div class="industryUpkeepLine0388">'+esc(TYPES[site.kind].name)+' · Nivel '+site.level+' · Fijo '+fixed.toFixed(4)+' + variable '+variable.toFixed(4)+' = <b>'+(fixed+variable).toFixed(4)+' oro/s</b></div>'}).join('');
     const cards=groups.map((group,i)=>
       '<section class="industryGroup0388 industryStage03815" data-stage03815="'+(i+1)+'">'+
       '<h4>'+group.name+'</h4><p class="industryStageHint03815">'+group.tip+'</p>'+
