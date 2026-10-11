@@ -296,7 +296,7 @@
     return naturalStudies03834(ctx)+industry(ctx)+government(ctx)+materialsSummary(ctx)+portRoutes(ctx);
   }
   const tabsFor=ctx=>{
-    const tabs=[['summary','Resumen'],['industry','Industria']];
+    const tabs=[['summary','Acciones'],['industry','Industria']];
     if(ctx.city)tabs.push(['government','Gobierno']);
     if(ctx.port)tabs.push(['port','Puerto']);
     return tabs;
