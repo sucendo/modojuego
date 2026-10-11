@@ -843,8 +843,6 @@
     const count=mine.length;
     const upkeepFixed=mine.reduce((sum,s)=>sum+maintenanceRate(s)*.2,0);
     const upkeepVariable=mine.reduce((sum,s)=>sum+(Number(s.maintenanceVariable)||0),0);
-    const upkeepFixed=mine.reduce((sum,site)=>sum+maintenanceRate(site)*.2,0);
-    const upkeepVariable=mine.reduce((sum,site)=>sum+(Number(site.maintenanceVariable)||0),0);
     const summary=api()?.resourceSummaryCached?.(0);
     const rows=Object.entries(SECTORS).map(([k,label])=>
       '<label class="industrySector0388"><span>'+esc(label)+'</span>'+
@@ -873,6 +871,7 @@
       '<p>Explotaciones de hasta siete hexágonos. La extracción se almacena localmente; las fábricas necesitan una conexión logística para recibirla. Los productos transformados abastecen ciudades mediante la red comercial.</p>'+
       '<div class="industryStats0388"><span>Instalaciones <b>'+count+'</b></span><span>Extracción/ciclo <b>'+lastStats.produced+'</b></span>'+
       '<span>Transformado/ciclo <b>'+lastStats.processed+'</b></span><span>Combustible nacional <b>'+Math.round((summary?.coverage?.[2]||0)*100)+'%</b></span></div>'+
+      '<div class="industryUpkeepSummary0388"><b>💰 Mantenimiento industrial: '+(upkeepFixed+upkeepVariable).toFixed(4)+' oro/s</b><small>Fijo '+upkeepFixed.toFixed(4)+' oro/s · Variable '+upkeepVariable.toFixed(4)+' oro/s (producción efectiva)</small></div>'+
       '<h4>Reguladores nacionales por sector</h4><div class="industrySectors0388">'+rows+'</div>'+
       '<h4>Instalaciones y control individual</h4>'+
       (count?'<div class="industrySites0388">'+data+'</div>':'<p>Sin instalaciones especializadas. Selecciona un hexágono propio y pulsa INDUSTRIA PRODUCTIVA para construir.</p>')+
