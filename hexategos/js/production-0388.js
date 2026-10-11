@@ -861,6 +861,8 @@
         (def.group==='extract'?' · Yacimiento '+Math.round(s.potential*100)+'%':' · Transformación')+
         ' · '+esc(status)+' · Producción '+Number(s.lastRate||0).toFixed(2)+'/s'+
         ' · Eficiencia '+Math.round(s.efficiency||0)+'%'+
+        ' · Mantenimiento fijo '+(maintenanceRate(s)*.2).toFixed(4)+' oro/s'+
+        ' · Variable '+Number(s.maintenanceVariable||0).toFixed(4)+' oro/s'+
         (def.electricity||def.group==='manufacture'?' · Electricidad '+Number(s.lastPower||0).toFixed(2):'')+
         (inputInfo?' · '+esc(inputInfo):'')+'</small></div>'+
         '<label>Actividad <input type="range" min="0" max="100" step="5" value="'+s.pct+'" data-industry-site0388="'+id+'"></label>'+
