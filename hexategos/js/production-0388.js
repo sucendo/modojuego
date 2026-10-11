@@ -561,8 +561,6 @@
         nationalElectricDeficit.set(g.f,Math.max(old,clamp(1-(g.generatedElectricity||0)/demand,0,1)));
       }
     }
-    if(typeof document.dispatchEvent==='function')
-      document.dispatchEvent(new CustomEvent('hexategos:electricity-updated'));
     // La IA invierte escalonadamente, siempre con su presupuesto y de forma
     // condicionada por riqueza geográfica y carencias de su economía.
     const batch=activeFactionCount3230>350?10:activeFactionCount3230>180?8:5;
@@ -574,6 +572,8 @@
     }
     lastStats={aiReviewed,produced:+produced.toFixed(2),processed:+processed.toFixed(2),
       shipped:+shipped.toFixed(2),disconnected,sites:sites.size};
+    if(typeof document.dispatchEvent==='function')
+      document.dispatchEvent(new CustomEvent('hexategos:electricity-updated'));
     // Physical stocks change even without player actions; checkpoint them
     // on the existing simulation tick, never with a new polling timer.
     const wall=performance.now();
@@ -832,10 +832,43 @@
       return out;
     };
   }
+
+  // Actualizar el panel sin destruir sus sliders ni alterar el scroll táctil.
+  function syncIndustryNode03864(oldNode,newNode){
+    if(oldNode.nodeType!==newNode.nodeType||
+       (oldNode.nodeType===1&&oldNode.tagName!==newNode.tagName)){
+      oldNode.replaceWith(newNode.cloneNode(true));return;
+    }
+    if(oldNode.nodeType===3){
+      if(oldNode.nodeValue!==newNode.nodeValue)oldNode.nodeValue=newNode.nodeValue;
+      return;
+    }
+    if(oldNode.nodeType!==1)return;
+    const focused=oldNode===document.activeElement;
+    for(const attr of Array.from(oldNode.attributes)){
+      if(!newNode.hasAttribute(attr.name)&&!(focused&&attr.name==='value'))
+        oldNode.removeAttribute(attr.name);
+    }
+    for(const attr of Array.from(newNode.attributes)){
+      if(focused&&oldNode.tagName==='INPUT'&&attr.name==='value')continue;
+      if(oldNode.getAttribute(attr.name)!==attr.value)
+        oldNode.setAttribute(attr.name,attr.value);
+    }
+    if(oldNode.tagName==='INPUT'){
+      if(!focused&&oldNode.value!==newNode.value)oldNode.value=newNode.value;
+      return;
+    }
+    const length=newNode.childNodes.length;
+    for(let i=0;i<length;i++){
+      if(oldNode.childNodes[i])syncIndustryNode03864(oldNode.childNodes[i],newNode.childNodes[i]);
+      else oldNode.appendChild(newNode.childNodes[i].cloneNode(true));
+    }
+    while(oldNode.childNodes.length>length)oldNode.lastChild.remove();
+  }
   function economyPanel(){
     if(sysTab3220!=='eco'||!started3230)return;
     const host=document.getElementById('sysContent3213');
-    if(!host||host.querySelector('#productionDashboard0388'))return;
+    if(!host)return;
     const wrapper=document.createElement('div');
     wrapper.className='sysBlock3213 industryDashboard0388';
     wrapper.id='productionDashboard0388';
@@ -876,8 +909,17 @@
       '<h4>Instalaciones y control individual</h4>'+
       (count?'<div class="industrySites0388">'+data+'</div>':'<p>Sin instalaciones especializadas. Selecciona un hexágono propio y pulsa INDUSTRIA PRODUCTIVA para construir.</p>')+
       '<p class="industryNote0388">Una explotación aislada puede producir y almacenar, pero no abastecerá a fábricas desconectadas. Los suministros existentes siguen activos durante la transición económica.</p>';
-    host.prepend(wrapper);
+    const previous=host.querySelector('#productionDashboard0388');
+    if(previous)syncIndustryNode03864(previous,wrapper);
+    else host.prepend(wrapper);
   }
+  // La lectura industrial está viva mientras se consulta Economía.
+  // El tick de producción existente dispara el evento, sin nuevo intervalo.
+  document.addEventListener('hexategos:electricity-updated',()=>{
+    const p=document.getElementById('systemsPanel3213');
+    if(sysTab3220!=='eco'||!p?.classList.contains('open'))return;
+    try{economyPanel()}catch(error){console.warn('[Hexategos industry live data]',error)}
+  });
   const baseRender=renderSystems3220;
   // El render general se ejecuta periódicamente y reconstruye #sysContent3213.
   // Conservar la posición de ambos contenedores desplazables evita que el
