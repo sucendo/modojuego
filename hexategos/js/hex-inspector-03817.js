@@ -1,8 +1,8 @@
 'use strict';
-// HEXATEGOS v0.38.61 · Panel de gestión territorial.
+// HEXATEGOS v0.38.65 · Vistas de gestión territorial por pestañas.
 // Sólo recopila datos al abrir/cambiar una ficha, nunca en el render del mapa.
 (() => {
-  const BUILD='0.38.61';
+  const BUILD='0.38.65';
   const root=document.getElementById('contextMenu3244');
   const actions=document.getElementById('ctxActions3244');
   if(!root||!actions||typeof renderContextDialog3244!=='function')return;
@@ -18,13 +18,13 @@
       d?.group==='power'?'Electricidad':d?.group==='manufacture'?'Manufactura':'Industria';
   };
   let tab='summary',lastCell=-1;
-  let openSection03858='';
   const panel=document.createElement('div');
   panel.id='ctxInspector03817';
   panel.className='ctxInspector03817';
   root.insertBefore(panel,actions);
   const details=document.createElement('div');
   details.className='ctxDetails03817';
+  details.id='ctxDetails03817';
   actions.after(details);
   if(typeof ensureClassicDialog3246==='function')ensureClassicDialog3246();
   const militaryStrength=document.getElementById('ctxStrength3246');
@@ -93,18 +93,9 @@
       '<div class="ctxTrack03817"><i style="width:'+v+'%"></i></div>'+
       (detail?'<small>'+esc(detail)+'</small>':'')+'</div>';
   }
+  // Las secciones son vistas independientes: nunca acordeones bajo Acciones.
   function card(title,body,small=''){
-    const collapsible=/prospecci[oó]n|estudios|industria|producci[oó]n|gobierno|estabilidad|recursos|potencial|puerto/i.test(title);
-    if(collapsible){
-      const key=/prospecci[oó]n|estudios/i.test(title)?'studies':
-        /industria|producci[oó]n/i.test(title)?'industry':
-        /gobierno|estabilidad/i.test(title)?'government':/puerto/i.test(title)?'port':'resources';
-      return '<details name="hex-territorial-management" class="ctxCard03817 ctxAccordion03858" data-hex-section03858="'+key+'" '+
-        (openSection03858===key?'open':'')+'><summary>'+esc(title)+'</summary>'+
-        '<div class="ctxAccordionBody03858">'+
-        (small?'<p class="ctxHelp03817">'+esc(small)+'</p>':'')+body+'</div></details>';
-    }
-    return '<section class="ctxCard03817"><h4>'+esc(title)+'</h4>'+
+    return '<section class="ctxCard03817 ctxTabCard03865"><h4>'+esc(title)+'</h4>'+
       (small?'<p class="ctxHelp03817">'+esc(small)+'</p>':'')+body+'</section>';
   }
   function supply(ctx){
@@ -292,13 +283,18 @@
       'Las exportaciones e importaciones se indican según el sentido efectivo de cada cargamento.');
   }
   function renderDetails(ctx){
-    // One set of sections; tabs are shortcuts, never a second manager.
-    return naturalStudies03834(ctx)+industry(ctx)+government(ctx)+materialsSummary(ctx)+portRoutes(ctx);
+    // Cada pestaña sustituye las acciones en el mismo espacio visual.
+    if(tab==='industry')return industry(ctx);
+    if(tab==='government')return government(ctx);
+    if(tab==='port')return portRoutes(ctx);
+    if(tab==='terrain')return naturalStudies03834(ctx)+materialsSummary(ctx);
+    return '';
   }
   const tabsFor=ctx=>{
     const tabs=[['summary','Acciones'],['industry','Industria']];
     if(ctx.city)tabs.push(['government','Gobierno']);
     if(ctx.port)tabs.push(['port','Puerto']);
+    tabs.push(['terrain','Terreno']);
     return tabs;
   };
   // Small vector symbols also render on devices without emoji fonts.
@@ -349,7 +345,7 @@
     const ranges=document.getElementById('ctxRanges3246');
     if(ranges){
       root.appendChild(ranges);
-      ranges.style.display='';ranges.hidden=!ctx.own;
+      ranges.style.display='';ranges.hidden=!ctx.own||tab!=='summary';
       const labels=ranges.querySelectorAll('label > span');
       if(labels[0])labels[0].textContent='Fuerza militar';
       if(labels[1])labels[1].textContent='Estrategia de avance';
@@ -375,7 +371,7 @@
     const current=electricityIndicator(ctx.cell);
     card.querySelector('b').textContent=current.value;card.title=current.title;
     // Aprovechar el tick económico ya existente: no añadir otro temporizador.
-    if(details.querySelector('details[open]'))refreshLiveDetails03864(ctx);
+    if(tab!=='summary')refreshLiveDetails03864(ctx);
   });
   function quickIndicators(ctx){
     const sup=supply(ctx),g=window.HexategosStatecraft0380?.governmentCity?.(ctx.cell);
@@ -445,14 +441,19 @@
   }
   function mount(ctx){
     if(ctx?.kind!=='cell'||!Number.isInteger(ctx.cell)){
-      panel.hidden=true;details.hidden=true;root.classList.remove('hexInspectorActive03817');
+      panel.hidden=true;details.hidden=true;actions.hidden=false;
+      root.classList.remove('hexInspectorActive03817','ctxTabContent03865');
       return;
     }
     const changed=lastCell!==ctx.cell;
-    if(changed){tab='summary';lastCell=ctx.cell;openSection03858='';}
+    if(changed){tab='summary';lastCell=ctx.cell;}
     const permitted=tabsFor(ctx),oldScroll=changed?0:root.scrollTop;
     if(!permitted.some(v=>v[0]===tab))tab='summary';
-    root.classList.add('hexInspectorActive03817');panel.hidden=false;details.hidden=false;
+    root.classList.add('hexInspectorActive03817');
+    root.classList.toggle('ctxTabContent03865',tab!=='summary');
+    panel.hidden=false;
+    actions.hidden=tab!=='summary';
+    details.hidden=tab==='summary';
     const val=population(ctx.cell),title=document.getElementById('ctxTitle3244');
     if(title){
       title.textContent=(typeof placeDisplayName3271==='function'?placeDisplayName3271(ctx.cell):ctx.geo||'Territorio')+
@@ -474,23 +475,31 @@
       }
       meta.innerHTML='<span>'+info.map(esc).join(' · ')+'</span>'+(logistics?'<span>'+esc(logistics)+'</span>':'');
     }
-    panel.innerHTML=quickIndicators(ctx)+'<nav class="ctxNav03817" aria-label="Información del hexágono">'+
-      permitted.map(([key,name])=>'<button type="button" data-inspect-tab03817="'+key+'" aria-pressed="'+(key===tab)+'">'+name+'</button>').join('')+'</nav>';
+    const panelHTML=quickIndicators(ctx)+'<nav class="ctxNav03817" role="tablist" aria-label="Secciones del hexágono">'+
+      permitted.map(([key,name])=>'<button type="button" role="tab" data-inspect-tab03817="'+key+
+        '" aria-selected="'+(key===tab)+'" aria-pressed="'+(key===tab)+
+        '" aria-controls="'+(key==='summary'?'ctxActions3244':'ctxDetails03817')+'">'+name+'</button>').join('')+'</nav>';
+    if(changed||!panel.firstElementChild){
+      panel.innerHTML=panelHTML;
+    }else if(panel._content!==panelHTML){
+      // Actualización selectiva de indicadores y botones sin sustituir nodos.
+      const template=document.createElement('template');
+      template.innerHTML=panelHTML;
+      const fresh=template.content;
+      for(let i=0;i<fresh.childNodes.length;i++){
+        if(panel.childNodes[i])syncLiveNode03864(panel.childNodes[i],fresh.childNodes[i]);
+        else panel.appendChild(fresh.childNodes[i].cloneNode(true));
+      }
+      while(panel.childNodes.length>fresh.childNodes.length)panel.lastChild.remove();
+    }
+    panel._content=panelHTML;
     const content=renderDetails(ctx);
-    // Los datos cambian, pero no se reemplazan los controles ni el nodo desplazado.
     if(changed||!details.firstElementChild){
-      details.innerHTML=content;
+      if(details._content!==content||changed)details.innerHTML=content;
       details._content=content;
-    }else refreshLiveDetails03864(ctx);
+    }else if(details._content!==content)refreshLiveDetails03864(ctx);
     simplifyActions(ctx);
     if(changed)root.scrollTo({top:oldScroll,behavior:'instant'});
-  }
-  function revealSection(section){
-    const box=root.getBoundingClientRect(),rect=section.getBoundingClientRect();
-    const header=root.querySelector('.ctxHead3244').getBoundingClientRect();
-    if(rect.top<header.bottom||rect.bottom>box.bottom){
-      root.scrollTo({top:root.scrollTop+(rect.top-header.bottom-8)/dialogScale(),behavior:'smooth'});
-    }
   }
   function render(ctx){
     // El motor original también reconstruye el menú contextual. Tomar la
@@ -542,14 +551,14 @@
     const nav=event.target.closest('[data-inspect-tab03817]');
     if(nav){
       event.preventDefault();event.stopPropagation();
-      tab=nav.dataset.inspectTab03817;
       const ctx=uiInteractionState3244?.contextData;
-      if(ctx?.kind==='cell'){
-        openSection03858=tab==='summary'?'':tab;
+      const requested=nav.dataset.inspectTab03817;
+      if(ctx?.kind==='cell'&&requested!==tab&&
+         tabsFor(ctx).some(([key])=>key===requested)){
+        tab=requested;
         mount(ctx);
-        const section=details.querySelector('[data-hex-section03858="'+tab+'"]');
-        if(section){section.open=true;revealSection(section);}
-        else root.scrollTop=0;
+        // Conservar la posición mientras cambia la vista; el navegador
+        // ajusta al límite si la nueva pestaña es más corta.
       }
       return;
     }
@@ -577,22 +586,6 @@
   root.addEventListener('change',event=>{
     if(event.target.matches('[data-inspect-pct03817]'))saveGame3212();
   });
-  // Únicamente el guardado de instalaciones existentes; no se añade un timer.
-  details.addEventListener('toggle',event=>{
-    const target=event.target;
-    if(!target?.matches?.('details[data-hex-section03858]')||!target.isConnected)return;
-    if(!target.open){
-      if(openSection03858===target.dataset.hexSection03858)openSection03858='';
-      return;
-    }
-    if(!target.isConnected)return;
-    openSection03858=target.dataset.hexSection03858;
-    const ctx=uiInteractionState3244?.contextData;
-    if(ctx?.kind==='cell')refreshLiveDetails03864(ctx);
-    for(const other of details.querySelectorAll('details[data-hex-section03858]')){
-      if(other!==target)other.open=false;
-    }
-  },true);
   window.HexategosHexInspector03817={
     version:BUILD,population,
     refresh:()=>{const c=uiInteractionState3244?.contextData;if(c?.kind==='cell')mount(c)},
