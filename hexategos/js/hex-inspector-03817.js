@@ -499,7 +499,7 @@
     const previousOuter=sameCell?(root.scrollTop||0):0;
     const out=original.apply(this,arguments);
     try{mount(ctx)}catch(err){console.warn('[HEXATEGOS 0.38.61 Inspector]',err)}
-    if(!sameCell&&previousOuter)root.scrollTo({top:previousOuter,behavior:'instant'});
+    if(sameCell)root.scrollTo({top:previousOuter,behavior:'instant'});
     return out;
   }
   renderContextDialog3244=render;
