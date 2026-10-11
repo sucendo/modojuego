@@ -61,10 +61,12 @@
   function chargeMaintenance(s,activity,dt){
     const base=maintenanceRate(s),fixed=base*.2*dt,variable=base*.8*clamp(activity,0,1)*dt;
     const amount=fixed+variable;
+    s.maintenanceFixed=fixed/Math.max(.1,dt);
+    s.maintenanceVariable=variable/Math.max(.1,dt);
     if(s.f===0)gold3212-=amount;
     else if(Number.isFinite(botGold3230[s.f]))botGold3230[s.f]-=amount;
     maintenanceByNation.set(s.f,(maintenanceByNation.get(s.f)||0)+amount);
-    if(s.f===0){s.maintenanceFixed=fixed/Math.max(.1,dt);s.maintenanceVariable=variable/Math.max(.1,dt)}
+
   }
   let lastPeriodicSaveWall03827=0;
   const nationalElectricDeficit=new Map();
@@ -833,6 +835,8 @@
     wrapper.id='productionDashboard0388';
     const mine=[...sites.values()].filter(s=>s.f===0);
     const count=mine.length;
+    const upkeepFixed=mine.reduce((sum,s)=>sum+maintenanceRate(s)*.2,0);
+    const upkeepVariable=mine.reduce((sum,s)=>sum+(Number(s.maintenanceVariable)||0),0);
     const summary=api()?.resourceSummaryCached?.(0);
     const rows=Object.entries(SECTORS).map(([k,label])=>
       '<label class="industrySector0388"><span>'+esc(label)+'</span>'+
