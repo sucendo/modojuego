@@ -6,7 +6,7 @@ const js=read('js/hex-inspector-03817.js');
 const css=read('css/hex-inspector-03817.css');
 const html=read('index.html');
 assert.doesNotThrow(()=>new Function(js),'inspector syntax');
-assert.match(html,/hex-inspector-03817\.js\?v=03869/);
+assert.match(html,/hex-inspector-03817\.js\?v=03870/);
 assert.match(html,/hex-inspector-03817\.css\?v=03865/);
 
 // Run the actual routing functions with simple, distinguishable views.
@@ -16,17 +16,26 @@ function extract(from,to){
   assert(begin>=0&&end>begin,'missing source block '+from);
   return js.slice(begin,end);
 }
-const tabsSource=extract('  const tabsFor=ctx=>{','  // Small vector');
-const tabsFor=new Function(tabsSource+'\nreturn tabsFor;')();
-assert.deepEqual(tabsFor({city:0,port:false,owner:0,own:true}).map(v=>v[1]),
-  ['Acciones','Industria','Terreno']);
-assert.deepEqual(tabsFor({city:1,port:true,owner:0,own:true}).map(v=>v[1]),
-  ['Acciones','Industria','Gobierno','Puerto','Terreno']);
-assert.deepEqual(tabsFor({city:1,port:true,owner:9,own:false}).map(v=>v[1]),
+const tabsSource=extract('  function isOwnedCity03870(ctx){','  // Small vector');
+// Mimic engine state. The clicked ctx can report city=0 for a real owned city.
+const owner6=[],cityLevel3230=[],capitals=[];
+for(const c of [7,8,9,12])owner6[c]=0;
+owner6[10]=9;owner6[11]=-1;
+cityLevel3230[8]=2;capitals[0]=9;
+const cities3212=new Set([7,10]);
+const tabsFor=new Function('owner6','cities3212','cityLevel3230','capitals',
+  tabsSource+'\nreturn tabsFor;')(owner6,cities3212,cityLevel3230,capitals);
+assert.deepEqual(tabsFor({cell:7,city:0,port:false,owner:0,own:true}).map(v=>v[1]),
+  ['Acciones','Industria','Política','Terreno'],'owned city must have Política despite stale ctx.city');
+assert.deepEqual(tabsFor({cell:8,city:0,port:true,owner:0,own:true}).map(v=>v[1]),
+  ['Acciones','Industria','Política','Puerto','Terreno'],'city level should show Política');
+assert.deepEqual(tabsFor({cell:9,city:0,port:false,owner:0,own:true}).map(v=>v[1]),
+  ['Acciones','Industria','Política','Terreno'],'capital should show Política');
+assert.deepEqual(tabsFor({cell:12,city:0,port:false,owner:0,own:true}).map(v=>v[1]),
+  ['Acciones','Industria','Terreno'],'empty owned land should not show local government');
+assert.deepEqual(tabsFor({cell:10,city:1,port:true,owner:9,own:false}).map(v=>v[1]),
   ['Acciones','Industria','Diplomacia','Puerto','Terreno']);
-assert.deepEqual(tabsFor({city:0,port:false,owner:9,own:false}).map(v=>v[1]),
-  ['Acciones','Industria','Diplomacia','Terreno']);
-assert.deepEqual(tabsFor({city:1,port:false,owner:-1,own:false}).map(v=>v[1]),
+assert.deepEqual(tabsFor({cell:11,city:0,port:false,owner:-1,own:false}).map(v=>v[1]),
   ['Acciones','Industria','Terreno']);
 
 const viewSource=extract('  function renderDetails(ctx){','  const tabsFor=ctx=>');
