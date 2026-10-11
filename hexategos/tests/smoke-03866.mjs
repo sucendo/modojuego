@@ -6,7 +6,7 @@ const js=read('js/hex-inspector-03817.js');
 const css=read('css/hex-inspector-03817.css');
 const html=read('index.html');
 assert.doesNotThrow(()=>new Function(js),'inspector syntax');
-assert.match(html,/hex-inspector-03817\.js\?v=03870/);
+assert.match(html,/hex-inspector-03817\.js\?v=03871/);
 assert.match(html,/hex-inspector-03817\.css\?v=03865/);
 
 // Run the actual routing functions with simple, distinguishable views.
@@ -16,7 +16,7 @@ function extract(from,to){
   assert(begin>=0&&end>begin,'missing source block '+from);
   return js.slice(begin,end);
 }
-const tabsSource=extract('  function isOwnedCity03870(ctx){','  // Small vector');
+const tabsSource=extract('  function isOwnedCity03871(ctx){','  // Small vector');
 // Mimic engine state. The clicked ctx can report city=0 for a real owned city.
 const owner6=[],cityLevel3230=[],capitals=[];
 for(const c of [7,8,9,12])owner6[c]=0;
