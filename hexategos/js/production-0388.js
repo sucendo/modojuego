@@ -942,7 +942,7 @@
         return '<button type="button" class="industryBuildChoice0388" data-industry-build0388="'+kind+'" '+
           (test.ok?'':'disabled')+'><span class="industryTypeIcon0388">'+def.icon+'</span>'+
           '<span class="industryBuildText0388"><b>'+esc(def.name)+'</b>'+
-          '<small>'+def.cost+' oro'+(strength===null?'':' · potencial '+strength+'%')+
+          '<small>'+def.cost+' oro · Mantenimiento fijo '+(def.cost*.000045*.2).toFixed(4)+' oro/s · Máximo '+(def.cost*.000045).toFixed(4)+' oro/s'+(strength===null?'':' · potencial '+strength+'%')+
           (test.ok?' · Disponible':' · '+esc(test.reason))+'</small></span></button>';
       }).join('')+'</div></section>').join('');
     const future='<section class="industryGroup0388 industryFuture03815"><h4>Nivel V · Tecnologías futuras</h4>'+
@@ -956,8 +956,7 @@
       '<div class="industryBudget0388">Oro: <b>'+gold.toLocaleString('es-ES')+'</b> · '+
       'Instalaciones especializadas: <b>'+countNation(0)+'/'+MAX_PLAYER_SITES+'</b> · '+
       'En este hexágono: <b>'+existing.length+'/'+MAX_PER_CELL+'</b></div>'+
-      (existing.length?'<div class="industryExisting0388"><b>Ya construidas aquí:</b> '+
-         existing.map(site=>esc(TYPES[site.kind].name)).join(' · ')+'</div>':'')+
+      (existing.length?'<div class="industryExisting0388"><b>Industrias locales · mantenimiento:</b>'+existingCosts+'</div>':'')+
       cards+future+'</div>';
     modalActions3244.innerHTML='<button type="button" data-modal-action="close">CERRAR</button>';
     return true;
