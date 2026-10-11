@@ -765,8 +765,8 @@
     const codec=window.HexategosSaveStorage03827;
     return codec?.get?codec.get(SAVE_KEY):JSON.parse(localStorage.getItem(SAVE_KEY)||'null');
   }
-  function persistProduction0388(){
-    const state=saveState(),codec=window.HexategosSaveStorage03827;
+  function persistProduction0388(state=saveState()){
+    const codec=window.HexategosSaveStorage03827;
     if(codec?.set)return codec.set(SAVE_KEY,state);
     try{
       const text=JSON.stringify(state);
@@ -779,10 +779,12 @@
   }
   const baseSave=saveGame3212;
   saveGame3212=function(){
+    // Capturar ANTES: el guardado base puede reiniciar el estado industrial.
+    const industrialSnapshot=started3230?saveState():null;
     const out=baseSave.apply(this,arguments);
     // Guardar una sola vez y comprobar su resultado; evitar duplicar la
     // escritura de industrias en cada pulsación/guardado automático.
-    const stored=started3230?persistProduction0388():true;
+    const stored=industrialSnapshot?persistProduction0388(industrialSnapshot):true;
     return out===false||!stored?false:out;
   };
   const baseLoad=loadGame3212;
@@ -796,7 +798,11 @@
     if(out!==false){
       // No borrar industrias si la partida no contiene copia industrial.
       // Las partidas antiguas siguen siendo válidas y pueden no incluirla.
-      if(snapshot&&Array.isArray(snapshot.sites))restore(snapshot);
+      if(snapshot&&Array.isArray(snapshot.sites)){
+        restore(snapshot);
+        // Evitar que un reinicio interno del cargador deje el almacén vacío.
+        persistProduction0388(snapshot);
+      }
     }
     return out;
   };
