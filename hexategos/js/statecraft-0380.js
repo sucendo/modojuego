@@ -213,7 +213,7 @@
     return hasEmbassy(a,b)&&!!t?.trade&&!t.atWar;
   }
 
-  function proposeTreaty(type,target){
+  function proposeTreaty(type,target,inline=false){
     if(target<=0)return false;
     if(type!=='war'&&type!=='peace'&&!hasEmbassy(0,target)){
       notify('Primero debes establecer una embajada','diplomacy','dip');return false;
@@ -222,7 +222,7 @@
       internalRelationChange=true;
       try{setDiplomaticRelation3300(0,target,-1,'declaración de guerra',true)}
       finally{internalRelationChange=false}
-      renderNationDossier(target,'dip');return true;
+      if(!inline)renderNationDossier(target,'dip');return true;
     }
     const score=typeof dipAcceptanceScore3300==='function'?dipAcceptanceScore3300(target,0,type):50;
     const threshold=typeof dipThreshold3300==='function'?dipThreshold3300(type):50;
@@ -230,11 +230,11 @@
       const rel=type==='trade'?1:type==='nap'?2:type==='alliance'?3:type==='peace'?0:0;
       setDiplomaticRelation3300(0,target,rel,'acuerdo bilateral',true)
       notify(factionName3230(target)+' acepta '+(type==='trade'?'el acuerdo comercial':type==='nap'?'el pacto de no agresión':type==='alliance'?'la alianza':'la paz'),'diplomacy','dip',{faction:target});
-      renderNationDossier(target,'dip');return true;
+      if(!inline)renderNationDossier(target,'dip');return true;
     }
     if(typeof dipSetOpinion3300==='function')dipSetOpinion3300(target,0,(dipOpinionOf3300(target,0)||0)-2);
     notify(factionName3230(target)+' rechaza la propuesta','diplomacy','dip',{faction:target});
-    renderNationDossier(target,'dip');return false;
+    if(!inline)renderNationDossier(target,'dip');return false;
   }
 
   function spyKey(from,to){return from+':'+to}
@@ -777,6 +777,40 @@
       treaty+'<div class="nationActions0380">'+acts+'</div></div>';
   }
 
+
+  // El inspector territorial reutiliza la MISMA representación de embajadas
+  // y tratados sin abrir el modal de nación ni duplicar reglas diplomáticas.
+  function inlineDiplomacy03868(target){
+    target=Number(target);
+    if(!Number.isInteger(target)||target<=0||target>=activeFactionCount3230)return '';
+    return dossierHeader(target)+diplomacyTab(target);
+  }
+  function inlineDiplomacyAction03868(target,action){
+    target=Number(target);
+    if(!Number.isInteger(target)||target<=0||target>=activeFactionCount3230)return false;
+    if(action==='embassy_request')return requestEmbassy(0,target,true);
+    if(action==='embassy_accept')return answerEmbassy(target,true);
+    if(action==='embassy_reject')return answerEmbassy(target,false);
+    if(['trade','nap','alliance','peace','war'].includes(action))
+      return proposeTreaty(action,target,true);
+    if(action==='trade_end'){
+      applyTreatyState(0,target,{trade:false},'suspensión comercial',true);
+      notify('Comercio suspendido con '+factionName3230(target),'diplomacy','dip',{faction:target});
+      return true;
+    }
+    if(action==='nap_end'){
+      applyTreatyState(0,target,{nap:false,alliance:false},'ruptura del pacto de no agresión',true);
+      notify('Pacto de no agresión roto con '+factionName3230(target),'diplomacy','dip',{faction:target});
+      return true;
+    }
+    if(action==='alliance_end'){
+      applyTreatyState(0,target,{alliance:false},'fin de la alianza',true);
+      notify('Alianza finalizada con '+factionName3230(target),'diplomacy','dip',{faction:target});
+      return true;
+    }
+    return false;
+  }
+
   function providerCandidates0382(resource){
     resource=clamp(Number(resource)||0,0,4);
     const out=[];
@@ -1131,6 +1165,8 @@
     governmentDemandMultiplier:(cell,r,f)=>governmentDemandMultiplier0386(cell,r,f),
     performance:()=>({lastServiceMs:Number(statecraftServiceMs0384.toFixed(2)),citiesUpdated:citiesUpdated0384,trackedCities:cityState.size,spyNetworks:spies.size}),
     dossier:(f,tab='dip')=>renderNationDossier(Number(f),tab),
+    inlineDiplomacy:inlineDiplomacy03868,
+    inlineDiplomacyAction:inlineDiplomacyAction03868,
     requestEmbassy:(a,b)=>requestEmbassy(Number(a),Number(b),false),
     requestEmbassyPlayer:(f)=>requestEmbassy(0,Number(f),true),
     answerEmbassyPlayer:(f,accept)=>answerEmbassy(Number(f),!!accept),
