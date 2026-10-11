@@ -1,8 +1,8 @@
 'use strict';
-// HEXATEGOS v0.38.67 · Diplomacia contextual para territorios extranjeros.
+// HEXATEGOS v0.38.68 · Diplomacia integrada en la pestaña territorial.
 // Sólo recopila datos al abrir/cambiar una ficha, nunca en el render del mapa.
 (() => {
-  const BUILD='0.38.67';
+  const BUILD='0.38.68';
   const root=document.getElementById('contextMenu3244');
   const actions=document.getElementById('ctxActions3244');
   if(!root||!actions||typeof renderContextDialog3244!=='function')return;
@@ -193,34 +193,15 @@
       (ctx.own?'<button class="ctxManage03817" type="button" data-action="government_city_0386">Gestionar gobierno local ↗</button>':'' ));
   }
 
+
   function diplomacy03867(ctx){
-    // Diplomacia es entre naciones, nunca administración local del rival.
+    // Renderizar la misma ficha diplomática y sus botones en este panel.
+    // No hay enlace, botón para abrir otra ficha ni cierre del inspector.
     const nation=Number(ctx.owner);
-    if(!Number.isInteger(nation)||nation<=0)return '';
-    const api=window.HexategosStatecraft0380;
-    const state=api?.embassyStatus?.(0,nation)||{status:'none'};
-    const treaties=api?.treaties?.(0,nation)||{};
-    const relation=typeof diplomaticRelation3300==='function'?
-      diplomaticRelation3300(0,nation):(Number(relations3220?.[nation])||0);
-    const relationText=({[-1]:'En guerra',0:'Neutral',1:'Acuerdo comercial',
-      2:'No agresión',3:'Alianza'})[relation]||'Neutral';
-    const embassyText=({active:'Activa',pending:'Pendiente',expelled:'Expulsada',
-      rejected:'Rechazada',none:'Sin embajada'})[state.status]||'Sin embajada';
-    const contact=api?.canContact?.(0,nation);
-    const status='<div class="ctxInline03817">'+
-      '<span>Nación <b>'+esc(factionName3230(nation))+'</b></span>'+
-      '<span>Relación <b>'+esc(relationText)+'</b></span>'+
-      '<span>Embajada <b>'+esc(embassyText)+'</b></span></div>'+
-      '<div class="ctxInline03817">'+
-      '<span>Comercio <b>'+(treaties.trade?'Activo':'No')+'</b></span>'+
-      '<span>No agresión <b>'+(treaties.nap?'Activo':'No')+'</b></span>'+
-      '<span>Alianza <b>'+(treaties.alliance?'Activa':'No')+'</b></span></div>';
-    const hint=contact===false&&state.status!=='active'?
-      '<p class="ctxHelp03817">Sin contacto diplomático directo por ahora. Puedes consultar la ficha de la nación para conocer el alcance y las condiciones.</p>':'';
-    return card('Diplomacia con '+factionName3230(nation),status+hint+
-      '<button type="button" class="ctxManage03817" data-inspect-diplomacy03867="'+nation+
-      '">Abrir ficha diplomática ↗</button>',
-      'Embajadas, tratados y propuestas se gestionan mediante la diplomacia ya existente.');
+    if(!Number.isInteger(nation)||nation<=0||ctx.own)return '';
+    const html=window.HexategosStatecraft0380?.inlineDiplomacy?.(nation);
+    return card('Diplomacia',html||
+      '<p class="ctxHelp03817">Información diplomática no disponible para este país.</p>');
   }
   function industry(ctx){
     const prod=window.HexategosProduction0388,sites=prod?.sitesOnCell?.(ctx.cell)||[];
@@ -539,7 +520,7 @@
     const sameCell=ctx?.kind==='cell'&&ctx.cell===lastCell;
     const previousOuter=sameCell?(root.scrollTop||0):0;
     const out=original.apply(this,arguments);
-    try{mount(ctx)}catch(err){console.warn('[HEXATEGOS 0.38.67 Inspector]',err)}
+    try{mount(ctx)}catch(err){console.warn('[HEXATEGOS 0.38.68 Inspector]',err)}
     if(sameCell)root.scrollTo({top:previousOuter,behavior:'instant'});
     return out;
   }
@@ -594,13 +575,17 @@
       }
       return;
     }
-    const dip=event.target.closest('[data-inspect-diplomacy03867]');
-    if(dip){
+    const dip=event.target.closest?.('[data-sc0380]');
+    if(dip&&details.contains(dip)){
       event.preventDefault();event.stopPropagation();
       const ctx=uiInteractionState3244?.contextData;
-      const nation=Number(dip.dataset.inspectDiplomacy03867);
-      if(ctx?.kind==='cell'&&nation>0&&Number(ctx.owner)===nation&&!ctx.own)
-        window.HexategosStatecraft0380?.dossier?.(nation,'dip');
+      const nation=Number(ctx?.owner);
+      if(tab==='diplomacy'&&ctx?.kind==='cell'&&!ctx.own&&
+         Number.isInteger(nation)&&nation>0&&!dip.disabled){
+        window.HexategosStatecraft0380?.inlineDiplomacyAction?.(nation,dip.dataset.sc0380);
+        // Actualizar botones y tratados in situ tras el resultado de la acción.
+        mount(ctx);
+      }
       return;
     }
     const systems=event.target.closest('[data-inspect-systems03817]');
