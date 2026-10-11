@@ -1,8 +1,8 @@
 'use strict';
-// HEXATEGOS v0.38.68 · Diplomacia integrada en la pestaña territorial.
+// HEXATEGOS v0.38.69 · Diplomacia territorial separada de relaciones nacionales.
 // Sólo recopila datos al abrir/cambiar una ficha, nunca en el render del mapa.
 (() => {
-  const BUILD='0.38.68';
+  const BUILD='0.38.69';
   const root=document.getElementById('contextMenu3244');
   const actions=document.getElementById('ctxActions3244');
   if(!root||!actions||typeof renderContextDialog3244!=='function')return;
@@ -195,13 +195,22 @@
 
 
   function diplomacy03867(ctx){
-    // Renderizar la misma ficha diplomática y sus botones en este panel.
-    // No hay enlace, botón para abrir otra ficha ni cierre del inspector.
     const nation=Number(ctx.owner);
     if(!Number.isInteger(nation)||nation<=0||ctx.own)return '';
-    const html=window.HexategosStatecraft0380?.inlineDiplomacy?.(nation);
-    return card('Diplomacia',html||
-      '<p class="ctxHelp03817">Información diplomática no disponible para este país.</p>');
+    const name=esc(factionName3230(nation));
+    const place=typeof placeDisplayName3271==='function'?
+      placeDisplayName3271(ctx.cell):(ctx.geo||'Hexágono '+ctx.cell);
+    const local=card('Acciones sobre este territorio',
+      '<div class="ctxInline03817"><span>Territorio <b>'+esc(place)+'</b></span>'+
+      '<span>Control <b>'+name+'</b></span>'+
+      (ctx.city?'<span>Ciudad <b>Nivel '+num(ctx.city)+'</b></span>':'')+
+      '</div><p class="ctxHelp03817">Aquí se incorporarán las operaciones políticas y diplomáticas dirigidas exclusivamente a este hexágono, como fomentar un movimiento local. Todavía no hay acciones territoriales disponibles.</p>',
+      'Estas actuaciones tendrán un objetivo territorial, no toda la nación.');
+    const national=card('Relaciones con '+factionName3230(nation),
+      '<p class="ctxHelp03817">Embajadas, acuerdos comerciales, alianzas y relaciones de guerra o paz se gestionan para la nación completa.</p>'+
+      '<button type="button" class="ctxManage03817" data-inspect-diplomacy03867="'+nation+
+      '">Abrir ficha de relaciones con '+name+' ↗</button>');
+    return local+national;
   }
   function industry(ctx){
     const prod=window.HexategosProduction0388,sites=prod?.sitesOnCell?.(ctx.cell)||[];
@@ -520,7 +529,7 @@
     const sameCell=ctx?.kind==='cell'&&ctx.cell===lastCell;
     const previousOuter=sameCell?(root.scrollTop||0):0;
     const out=original.apply(this,arguments);
-    try{mount(ctx)}catch(err){console.warn('[HEXATEGOS 0.38.68 Inspector]',err)}
+    try{mount(ctx)}catch(err){console.warn('[HEXATEGOS 0.38.69 Inspector]',err)}
     if(sameCell)root.scrollTo({top:previousOuter,behavior:'instant'});
     return out;
   }
@@ -575,17 +584,14 @@
       }
       return;
     }
-    const dip=event.target.closest?.('[data-sc0380]');
+    const dip=event.target.closest?.('[data-inspect-diplomacy03867]');
     if(dip&&details.contains(dip)){
       event.preventDefault();event.stopPropagation();
       const ctx=uiInteractionState3244?.contextData;
-      const nation=Number(ctx?.owner);
+      const nation=Number(dip.dataset.inspectDiplomacy03867);
       if(tab==='diplomacy'&&ctx?.kind==='cell'&&!ctx.own&&
-         Number.isInteger(nation)&&nation>0&&!dip.disabled){
-        window.HexategosStatecraft0380?.inlineDiplomacyAction?.(nation,dip.dataset.sc0380);
-        // Actualizar botones y tratados in situ tras el resultado de la acción.
-        mount(ctx);
-      }
+         nation>0&&Number(ctx.owner)===nation)
+        window.HexategosStatecraft0380?.dossier?.(nation,'dip');
       return;
     }
     const systems=event.target.closest('[data-inspect-systems03817]');
