@@ -843,6 +843,8 @@
     const count=mine.length;
     const upkeepFixed=mine.reduce((sum,s)=>sum+maintenanceRate(s)*.2,0);
     const upkeepVariable=mine.reduce((sum,s)=>sum+(Number(s.maintenanceVariable)||0),0);
+    const upkeepFixed=mine.reduce((sum,site)=>sum+maintenanceRate(site)*.2,0);
+    const upkeepVariable=mine.reduce((sum,site)=>sum+(Number(site.maintenanceVariable)||0),0);
     const summary=api()?.resourceSummaryCached?.(0);
     const rows=Object.entries(SECTORS).map(([k,label])=>
       '<label class="industrySector0388"><span>'+esc(label)+'</span>'+
