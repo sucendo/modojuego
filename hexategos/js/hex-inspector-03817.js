@@ -1,8 +1,8 @@
 'use strict';
-// HEXATEGOS v0.38.70 · Diplomacia territorial separada de relaciones nacionales.
+// HEXATEGOS v0.38.71 · Diplomacia territorial separada de relaciones nacionales.
 // Sólo recopila datos al abrir/cambiar una ficha, nunca en el render del mapa.
 (() => {
-  const BUILD='0.38.70';
+  const BUILD='0.38.71';
   const root=document.getElementById('contextMenu3244');
   const actions=document.getElementById('ctxActions3244');
   if(!root||!actions||typeof renderContextDialog3244!=='function')return;
@@ -190,7 +190,7 @@
       '<span>Situación <b>'+(g.riot?'Disturbios':g.strike?'Huelga':g.occupied?'Ocupada':'Normal')+'</b></span></div>'+
       (Object.entries(g.active||{}).filter(x=>x[1]).length?
         '<p class="ctxHelp03817">Medidas activas: '+Object.entries(g.active).filter(x=>x[1]).map(x=>esc(policyNames[x[0]]||x[0])).join(', ')+'</p>':'')+
-      (ctx.own?'<button class="ctxManage03817" type="button" data-action="government_city_0386">Gestionar gobierno local ↗</button>':'' ));
+      (isOwnedCity03870(ctx)?'<button class="ctxManage03817" type="button" data-action="government_city_0386">Gestionar gobierno local ↗</button>':'' ));
   }
 
 
@@ -544,7 +544,7 @@
     const sameCell=ctx?.kind==='cell'&&ctx.cell===lastCell;
     const previousOuter=sameCell?(root.scrollTop||0):0;
     const out=original.apply(this,arguments);
-    try{mount(ctx)}catch(err){console.warn('[HEXATEGOS 0.38.70 Inspector]',err)}
+    try{mount(ctx)}catch(err){console.warn('[HEXATEGOS 0.38.71 Inspector]',err)}
     if(sameCell)root.scrollTo({top:previousOuter,behavior:'instant'});
     return out;
   }
