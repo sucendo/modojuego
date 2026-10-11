@@ -374,6 +374,8 @@
     if(ctx?.kind!=='cell'||!card)return;
     const current=electricityIndicator(ctx.cell);
     card.querySelector('b').textContent=current.value;card.title=current.title;
+    // Aprovechar el tick económico ya existente: no añadir otro temporizador.
+    if(details.querySelector('details[open]'))refreshLiveDetails03864(ctx);
   });
   function quickIndicators(ctx){
     const sup=supply(ctx),g=window.HexategosStatecraft0380?.governmentCity?.(ctx.cell);
@@ -391,6 +393,55 @@
         (numeric?'<div class="ctxTrack03817"><i style="width:'+pct(value)+'%"></i></div>':'')+'</div></div>';
     }).join('')+'</div>';
     return row(first,'ctxPrimaryIndicators')+row(second,'ctxSecondaryIndicators');
+  }
+
+  // Actualización incremental de lecturas. Mantiene abiertos los acordeones,
+  // la posición de scroll y los nodos de los controles táctiles.
+  function syncLiveNode03864(current,fresh){
+    if(current.nodeType!==fresh.nodeType||
+       (current.nodeType===1&&current.tagName!==fresh.tagName)){
+      current.replaceWith(fresh.cloneNode(true));return;
+    }
+    if(current.nodeType===3){
+      if(current.nodeValue!==fresh.nodeValue)current.nodeValue=fresh.nodeValue;
+      return;
+    }
+    if(current.nodeType!==1)return;
+    const focused=current===document.activeElement;
+    const preserve=name=>(current.tagName==='DETAILS'&&name==='open')||
+      (focused&&current.tagName==='INPUT'&&name==='value');
+    for(const attr of Array.from(current.attributes)){
+      if(!preserve(attr.name)&&!fresh.hasAttribute(attr.name))current.removeAttribute(attr.name);
+    }
+    for(const attr of Array.from(fresh.attributes)){
+      if(!preserve(attr.name)&&current.getAttribute(attr.name)!==attr.value)
+        current.setAttribute(attr.name,attr.value);
+    }
+    if(current.tagName==='INPUT'){
+      if(!focused&&current.value!==fresh.value)current.value=fresh.value;
+      return;
+    }
+    const count=fresh.childNodes.length;
+    for(let i=0;i<count;i++){
+      if(current.childNodes[i])syncLiveNode03864(current.childNodes[i],fresh.childNodes[i]);
+      else current.appendChild(fresh.childNodes[i].cloneNode(true));
+    }
+    while(current.childNodes.length>count)current.lastChild.remove();
+  }
+  function refreshLiveDetails03864(ctx){
+    if(ctx?.kind!=='cell'||ctx.cell!==lastCell||!details.firstElementChild)return;
+    const html=renderDetails(ctx);
+    if(html===details._content)return;
+    const template=document.createElement('template');
+    template.innerHTML=html;
+    const fresh=template.content;
+    const count=fresh.childNodes.length;
+    for(let i=0;i<count;i++){
+      if(details.childNodes[i])syncLiveNode03864(details.childNodes[i],fresh.childNodes[i]);
+      else details.appendChild(fresh.childNodes[i].cloneNode(true));
+    }
+    while(details.childNodes.length>count)details.lastChild.remove();
+    details._content=html;
   }
   function mount(ctx){
     if(ctx?.kind!=='cell'||!Number.isInteger(ctx.cell)){
@@ -426,15 +477,13 @@
     panel.innerHTML=quickIndicators(ctx)+'<nav class="ctxNav03817" aria-label="Información del hexágono">'+
       permitted.map(([key,name])=>'<button type="button" data-inspect-tab03817="'+key+'" aria-pressed="'+(key===tab)+'">'+name+'</button>').join('')+'</nav>';
     const content=renderDetails(ctx);
-    // No reemplazar el árbol del inspector mientras se consulta una celda:
-    // destruye el nodo desplazado y los controles táctiles en cada tick.
-    // Se actualiza al cambiar de hexágono o al reabrir el inspector.
+    // Los datos cambian, pero no se reemplazan los controles ni el nodo desplazado.
     if(changed||!details.firstElementChild){
       details.innerHTML=content;
       details._content=content;
-    }
+    }else refreshLiveDetails03864(ctx);
     simplifyActions(ctx);
-    root.scrollTo({top:oldScroll,behavior:'instant'});
+    if(changed)root.scrollTo({top:oldScroll,behavior:'instant'});
   }
   function revealSection(section){
     const box=root.getBoundingClientRect(),rect=section.getBoundingClientRect();
@@ -450,9 +499,7 @@
     const previousOuter=sameCell?(root.scrollTop||0):0;
     const out=original.apply(this,arguments);
     try{mount(ctx)}catch(err){console.warn('[HEXATEGOS 0.38.61 Inspector]',err)}
-    if(sameCell){
-      root.scrollTo({top:previousOuter,behavior:'instant'});
-    }
+    if(!sameCell&&previousOuter)root.scrollTo({top:previousOuter,behavior:'instant'});
     return out;
   }
   renderContextDialog3244=render;
@@ -540,6 +587,8 @@
     }
     if(!target.isConnected)return;
     openSection03858=target.dataset.hexSection03858;
+    const ctx=uiInteractionState3244?.contextData;
+    if(ctx?.kind==='cell')refreshLiveDetails03864(ctx);
     for(const other of details.querySelectorAll('details[data-hex-section03858]')){
       if(other!==target)other.open=false;
     }
