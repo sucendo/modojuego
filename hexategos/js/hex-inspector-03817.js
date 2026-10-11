@@ -1,8 +1,8 @@
 'use strict';
-// HEXATEGOS v0.38.69 · Diplomacia territorial separada de relaciones nacionales.
+// HEXATEGOS v0.38.70 · Diplomacia territorial separada de relaciones nacionales.
 // Sólo recopila datos al abrir/cambiar una ficha, nunca en el render del mapa.
 (() => {
-  const BUILD='0.38.69';
+  const BUILD='0.38.70';
   const root=document.getElementById('contextMenu3244');
   const actions=document.getElementById('ctxActions3244');
   if(!root||!actions||typeof renderContextDialog3244!=='function')return;
@@ -311,9 +311,24 @@
     if(tab==='terrain')return naturalStudies03834(ctx)+materialsSummary(ctx);
     return '';
   }
+  // Usar el estado real de propiedad y urbanización; el contexto del clic
+  // puede tener city=0 aunque se haya levantado una ciudad o la capital.
+  function isOwnedCity03870(ctx){
+    const cell=Number(ctx?.cell);
+    if(!Number.isInteger(cell)||cell<0)return false;
+    const owner=typeof owner6!=='undefined'?Number(owner6[cell]):Number(ctx?.owner);
+    if(owner!==0&&!(typeof owner6==='undefined'&&ctx?.own===true))return false;
+    return !!(
+      (typeof cities3212!=='undefined'&&cities3212.has(cell))||
+      (typeof cityLevel3230!=='undefined'&&Number(cityLevel3230[cell])>0)||
+      Number(ctx?.city)>0||
+      (typeof capitals!=='undefined'&&Number(capitals?.[0])===cell)||
+      ctx?.ownCapital===true
+    );
+  }
   const tabsFor=ctx=>{
     const tabs=[['summary','Acciones'],['industry','Industria']];
-    if(ctx.own&&ctx.city)tabs.push(['government','Gobierno']);
+    if(isOwnedCity03870(ctx))tabs.push(['government','Política']);
     else if(Number(ctx.owner)>0&&!ctx.own)tabs.push(['diplomacy','Diplomacia']);
     if(ctx.port)tabs.push(['port','Puerto']);
     tabs.push(['terrain','Terreno']);
@@ -529,7 +544,7 @@
     const sameCell=ctx?.kind==='cell'&&ctx.cell===lastCell;
     const previousOuter=sameCell?(root.scrollTop||0):0;
     const out=original.apply(this,arguments);
-    try{mount(ctx)}catch(err){console.warn('[HEXATEGOS 0.38.69 Inspector]',err)}
+    try{mount(ctx)}catch(err){console.warn('[HEXATEGOS 0.38.70 Inspector]',err)}
     if(sameCell)root.scrollTo({top:previousOuter,behavior:'instant'});
     return out;
   }
