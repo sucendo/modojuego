@@ -915,7 +915,7 @@
   }
   // La lectura industrial está viva mientras se consulta Economía.
   // El tick de producción existente dispara el evento, sin nuevo intervalo.
-  document.addEventListener('hexategos:electricity-updated',()=>{
+  document.addEventListener?.('hexategos:electricity-updated',()=>{
     const p=document.getElementById('systemsPanel3213');
     if(sysTab3220!=='eco'||!p?.classList.contains('open'))return;
     try{economyPanel()}catch(error){console.warn('[Hexategos industry live data]',error)}
