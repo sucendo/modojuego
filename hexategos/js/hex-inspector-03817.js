@@ -426,7 +426,13 @@
     panel.innerHTML=quickIndicators(ctx)+'<nav class="ctxNav03817" aria-label="Información del hexágono">'+
       permitted.map(([key,name])=>'<button type="button" data-inspect-tab03817="'+key+'" aria-pressed="'+(key===tab)+'">'+name+'</button>').join('')+'</nav>';
     const content=renderDetails(ctx);
-    if(details._content!==content){details.innerHTML=content;details._content=content;}
+    // No reemplazar el árbol del inspector mientras se consulta una celda:
+    // destruye el nodo desplazado y los controles táctiles en cada tick.
+    // Se actualiza al cambiar de hexágono o al reabrir el inspector.
+    if(changed||!details.firstElementChild){
+      details.innerHTML=content;
+      details._content=content;
+    }
     simplifyActions(ctx);
     root.scrollTo({top:oldScroll,behavior:'instant'});
   }
@@ -457,6 +463,7 @@
     const changed=ctx?.cell!==lastCell;
     const position=changed?0:root.scrollTop;
     if(changed)tab='summary';
+    else if(!root.classList.contains('open3244'))details.replaceChildren();
     const out=baseOpen.apply(this,arguments);
     root.scrollTo({top:position,behavior:'instant'});
     return out;
