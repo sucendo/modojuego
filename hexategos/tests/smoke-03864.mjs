@@ -9,16 +9,16 @@ const html=read('index.html');
 assert.doesNotThrow(()=>new Function(production),'production module must remain syntactically valid');
 assert.doesNotThrow(()=>new Function(inspector),'inspector module must remain syntactically valid');
 assert.match(html,/js\/production-0388\.js\?v=03864/,'mobile must load updated production logic');
-assert.match(html,/js\/hex-inspector-03817\.js\?v=03865/,'mobile must load updated inspector logic');
+assert.match(html,/js\/hex-inspector-03817\.js\?v=03866/,'mobile must load updated inspector logic');
 assert.match(inspector,/const tabs=\[\['summary','Acciones'\],\['industry','Industria'\]\]/,
   'territorial first tab must say Acciones without changing summary key');
 
 // Both views update existing nodes rather than resetting scroll containers.
 assert.match(inspector,/function syncLiveNode03864/);
 assert.match(inspector,/function refreshLiveDetails03864/);
-assert.match(inspector,/details\.innerHTML=content;[\s\S]*?else refreshLiveDetails03864\(ctx\)/);
-assert.match(inspector,/details\.querySelector\('details\[open\]'\)\)refreshLiveDetails03864\(ctx\)/);
-assert.match(inspector,/current\.tagName==='DETAILS'&&name==='open'/,'expanded section must remain expanded');
+assert.match(inspector,/details\.innerHTML=content;[\s\S]*?else if\(details\._content!==content\)refreshLiveDetails03864\(ctx\)/);
+assert.match(inspector,/if\(tab!=='summary'\)refreshLiveDetails03864\(ctx\)/);
+assert.match(inspector,/root\.classList\.toggle\('ctxTabContent03865',tab!=='summary'\)/,'tab changes must preserve a single content view');
 assert.match(inspector,/focused&&current\.tagName==='INPUT'/,'active slider value must not be replaced');
 
 assert.match(production,/function syncIndustryNode03864/);
