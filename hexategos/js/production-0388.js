@@ -879,9 +879,32 @@
     host.prepend(wrapper);
   }
   const baseRender=renderSystems3220;
-  renderSystems3220=function(){const r=baseRender.apply(this,arguments);
+  // El render general se ejecuta periódicamente y reconstruye #sysContent3213.
+  // Conservar la posición de ambos contenedores desplazables evita que el
+  // usuario vuelva al inicio cada segundo al consultar fábricas en el móvil.
+  renderSystems3220=function(){
+    const host=document.getElementById('sysContent3213');
+    const panel=document.getElementById('systemsPanel3213');
+    const main=panel?.querySelector('.sysMain0385');
+    const list=host?.querySelector('.industrySites0388');
+    const wasEco=sysTab3220==='eco';
+    const positions=wasEco?{
+      host:host?.scrollTop||0,
+      main:main?.scrollTop||0,
+      list:list?.scrollTop||0
+    }:null;
+    const result=baseRender.apply(this,arguments);
     try{economyPanel()}catch(e){console.warn('[Hexategos Production UI]',e)}
-    return r};
+    if(positions&&sysTab3220==='eco'){
+      const newHost=document.getElementById('sysContent3213');
+      const newMain=document.getElementById('systemsPanel3213')?.querySelector('.sysMain0385');
+      const newList=newHost?.querySelector('.industrySites0388');
+      if(newHost)newHost.scrollTop=positions.host;
+      if(newMain)newMain.scrollTop=positions.main;
+      if(newList)newList.scrollTop=positions.list;
+    }
+    return result;
+  };
   const systemHost=document.getElementById('sysContent3213');
   systemHost?.addEventListener('input',event=>{
     const target=event.target;
