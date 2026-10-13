@@ -122,6 +122,39 @@
       return out;
     };
   }
+  // Informe visible desde Opciones, sin botón flotante ni sondeo continuo.
+  const optionsHost=document.getElementById('sysContent3213');
+  if(optionsHost&&typeof renderSystems3220==='function'){
+    const previousRender=renderSystems3220;
+    renderSystems3220=function(){
+      const out=previousRender.apply(this,arguments);
+      if(typeof sysTab3220!=='string'||sysTab3220!=='settings')return out;
+      if(!optionsHost.querySelector('[data-save-audit03890]')){
+        const card=document.createElement('div');
+        card.className='sysBlock3213 sysSaveAudit03890';
+        card.setAttribute('data-save-audit03890','');
+        card.innerHTML='<b>Integridad de partidas</b>'+
+          '<p>Comprueba el guardado principal, las industrias, rutas, geología, ejército, IA y nombres antes de continuar o exportar.</p>'+
+          '<button type="button" data-save-audit-run03890>Comprobar guardado del navegador</button>'+
+          '<p data-save-audit-report03890 aria-live="polite">Comprobación bajo demanda, sin ralentizar la simulación.</p>';
+        optionsHost.prepend(card);
+      }
+      return out;
+    };
+    optionsHost.addEventListener('click',event=>{
+      if(!event.target.closest?.('[data-save-audit-run03890]'))return;
+      event.preventDefault();
+      const report=optionsHost.querySelector('[data-save-audit-report03890]');
+      const status=inspectLocal(true);
+      if(report)report.textContent=status.ok?
+        'Guardado legible: '+status.present.length+' módulos y estado principal. '+
+        (status.manifestValid?'Continuidad verificada.':'Copia antigua: guarda de nuevo para confirmar la continuidad.'):
+        'ATENCIÓN: '+(!status.main?'falta el estado principal. ':'')+
+        (status.missing.length?'Faltan: '+status.missing.join(', ')+'. ':'')+
+        (status.damaged.length?'Dañados: '+status.damaged.join(', ')+'. ':'')+
+        'No sobrescribas esta copia; exporta o importa un respaldo completo.';
+    });
+  }
   window.HexategosSaveAudit03890={
     inspectLocal,inspectPortable,
     status:()=>({local:inspectLocal(true),lastError,lastSave,lastExport,lastImport}),
