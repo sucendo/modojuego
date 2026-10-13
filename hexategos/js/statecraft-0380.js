@@ -1133,6 +1133,7 @@
     applyPortableFile3275=function(file){
       restoredPortable=file?.payload?.statecraft0380||null;
       const out=basePortableApply0380.apply(this,arguments);
+      if(out===false){restoredPortable=null;return out}
       // El snapshot portable se ha procesado en la envoltura loadGame3212.
       // No repetir la migración ni el guardado completo tras el importador.
       if(out!==false&&restoredPortable){initialized=false;initialize0380()}
