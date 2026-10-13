@@ -55,6 +55,7 @@
     kind,[...kind].reduce((h,c)=>Math.imul(h^c.charCodeAt(0),16777619)>>>0,2166136261)]));
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const sites=new Map(),perCell=new Map(),nationSites=new Map(),nationCounts=new Map(),manufacturingCounts=new Map(),depots=new Map(),sectorPct=new Map(),nextAI=new Float64Array(FACTIONS3230.length);
+  const legacyReconciledCells03872=new Set();
   let revision=1, aiCursor=1, lastStats={produced:0,processed:0,shipped:0,disconnected:0,sites:0};
   const maintenanceByNation=new Map();
   const maintenanceRate=s=>TYPES[s.kind].cost*.000045*Math.max(1,s.level);
@@ -272,18 +273,20 @@
     let migrated=0;
     for(const cell of industries3212){
       const f=owner6[cell];
-      if(f<0)continue;
+      if(f<0||legacyReconciledCells03872.has(cell))continue;
       const level=clamp(Math.trunc(industryLevel3230[cell]||1),1,3);
       const existing=sites.get(siteKey(cell,'civilian'));
-      // Un guardado de la fase inicial puede tener la manufactura civil en
-      // nivel I mientras la instalación general heredada era II/III.
-      // Reconciliar al alza una vez, sin duplicar fábrica ni cobrar de nuevo.
+      // Migrar exactamente UNA VEZ por partida. Si la fábrica se degrada,
+      // nunca restaurar el nivel gratis en el próximo tick.
       if(existing){
         if(existing.level<level){existing.level=level;migrated++;}
+        legacyReconciledCells03872.add(cell);
         continue;
       }
       if(sites.size>=MAX_SITES||sitesOnCell(cell).length>=MAX_PER_CELL)continue;
-      if(addSite({cell,f,kind:'civilian',level,pct:100,stock:0,byproducts:{},output:0,legacyQuality:0,potential:1,updated:campaignSeconds3230||0}))migrated++;
+      if(addSite({cell,f,kind:'civilian',level,pct:100,stock:0,byproducts:{},output:0,legacyQuality:0,potential:1,updated:campaignSeconds3230||0})){
+        legacyReconciledCells03872.add(cell);migrated++;
+      }
     }
     if(migrated)revision++;
     return migrated;
@@ -731,10 +734,14 @@
     return {v:3,sites:[...sites.values()].map(s=>({cell:s.cell,f:s.f,kind:s.kind,
       level:s.level,pct:s.pct,stock:s.stock,output:s.output,
       legacyQuality:Number(s.legacyQuality)||0,byproducts:s.byproducts||{}})),
-      depots:[...depots],sectors:[...sectorPct]};
+      depots:[...depots],sectors:[...sectorPct],
+      legacyReconciled03872:[...legacyReconciledCells03872]};
   }
   function restore(data){
-    sites.clear();perCell.clear();nationSites.clear();nationCounts.clear();manufacturingCounts.clear();depots.clear();sectorPct.clear();nationalElectricDeficit.clear();electricalNetworks.clear();electricitySampleTime=null;revision++;aiCursor=1;nextAI.fill(0);
+    sites.clear();perCell.clear();nationSites.clear();nationCounts.clear();manufacturingCounts.clear();depots.clear();sectorPct.clear();legacyReconciledCells03872.clear();nationalElectricDeficit.clear();electricalNetworks.clear();electricitySampleTime=null;revision++;aiCursor=1;nextAI.fill(0);
+    if(Array.isArray(data?.legacyReconciled03872))for(const cell of data.legacyReconciled03872){
+      if(Number.isInteger(cell)&&cell>=0&&cell<owner6.length)legacyReconciledCells03872.add(cell);
+    }
     if(!data||!Array.isArray(data.sites))return;
     for(const x of data.sites.slice(0,MAX_SITES)){
       if(!x||!TYPES[x.kind]||!Number.isInteger(x.cell)||x.cell<0||x.cell>=owner6.length)continue;
