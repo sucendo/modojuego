@@ -70,7 +70,7 @@ const api=run.api;
 assert.equal(api.version,'0.38.74');
 assert.equal(run.sourceRate().troop,0,'legacy free recruitment must be suppressed');
 assert.ok(run.sourceRate().net<1,'deployed player troops have a real maintenance cost');
-assert.match(source,/territorialEconomy3261=function\\(f\\)/,
+assert.ok(source.includes('territorialEconomy3261=function(f)'),
  'national economy view must count deployed troops as well as the player tick');
 assert.equal(run.present().troops[0],30);
 assert.ok(api.request(0,25));
