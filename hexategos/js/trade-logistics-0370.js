@@ -828,7 +828,18 @@
         if(i===3&&n.ind)production+=.105*n.ind*industryInput*legacy;
         if(i===4&&n.ind)production+=.046*n.ind*industryInput*legacy;
         const statecraft=window.HexategosStatecraft0380;
-        if(statecraft?.resourceProductionMultiplier)production*=statecraft.resourceProductionMultiplier(n.cell,i,n.f);
+        const efficiency=statecraft?.resourceProductionMultiplier?
+          statecraft.resourceProductionMultiplier(n.cell,i,n.f):1;
+        production*=efficiency;
+        if(i===3&&n.city&&n.prod[3]>0){
+          // Artesanía de subsistencia: bienes básicos, NO manufactura genérica
+          // gratuita. Necesita materia prima física del mismo nodo.
+          const artisan=n.prod[3]*efficiency;
+          const roomRate=n.demand[3]+Math.max(0,n.cap[3]-n.stock[3])/Math.max(.1,dt);
+          const feasible=Math.max(0,Math.min(artisan,roomRate,n.stock[1]/(.25*Math.max(.1,dt))));
+          production-=artisan-feasible;
+          n.stock[1]=Math.max(0,n.stock[1]-feasible*.25*dt);
+        }
         n.stock[i]=clamp(n.stock[i]+production*dt,0,n.cap[i]);
       }
       for(let i=0;i<5;i++){
