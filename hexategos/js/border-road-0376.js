@@ -182,10 +182,16 @@
     return true;
   }
   function save0376(){
-    try{localStorage.setItem(SAVE_KEY,JSON.stringify(serialize0376()))}catch(_){}
+    const state=serialize0376(),codec=window.HexategosSaveStorage03827;
+    if(codec?.set)return codec.set(SAVE_KEY,state);
+    try{const raw=JSON.stringify(state);localStorage.setItem(SAVE_KEY,raw);
+      return localStorage.getItem(SAVE_KEY)===raw;
+    }catch(error){console.warn('[Hexategos aduanas] Error de guardado',error);return false}
   }
   function load0376(){
-    try{return restore0376(JSON.parse(localStorage.getItem(SAVE_KEY)||'null'))}catch(_){return restore0376(null)}
+    try{const codec=window.HexategosSaveStorage03827;
+      return restore0376(codec?.get?codec.get(SAVE_KEY):JSON.parse(localStorage.getItem(SAVE_KEY)||'null'))
+    }catch(error){console.warn('[Hexategos aduanas] Error de carga',error);return false}
   }
 
   const baseSave0376=saveGame3212;
