@@ -767,7 +767,8 @@
       '<p>Nombre actual: <b>'+esc(factionName3230(target))+'</b></p>'+
       '<p>Denominaciones anteriores: '+(historic.length?historic.map(esc).join(' → '):'Sin cambios registrados')+'</p>'+
       (identity?.pending?'<p>Transición política: '+esc(identity.pending.name)+'</p>':'')+
-      (target===0?'<button data-nation-rename0389="1">RENOMBRAR NACIÓN</button>':'')+'</div>';
+      '<p>Cultura administrativa: <b>'+esc(window.HexategosRegionalNames0389?.cultureLabels?.[window.HexategosRegionalNames0389?.nationCulture?.(target)]||'No determinada')+'</b></p>'+
+      (target===0?'<button data-nation-rename0389="1">RENOMBRAR NACIÓN</button><button data-nation-culture0389="1">CAMBIAR CULTURA</button>':'')+'</div>';
     return '<div class="nationHero0380"><div><b>'+esc(factionName3230(target))+'</b><small>'+relationLabel(rel)+' · '+Math.round(d)+'° · alcance '+reachDeg(0)+'°</small></div>'+
       '<span class="nationColor0380" style="background:'+(FACTIONS3230[target]?.color||'#789')+'"></span></div>'+
       '<div class="nationStatus0380"><span>Embajada <b>'+(emb?.status==='active'?'ACTIVA':emb?.status==='pending'?'PENDIENTE':emb?.status==='expelled'?'EXPULSADA':'NO')+'</b></span>'+
@@ -1126,12 +1127,14 @@
   }
 
   modalBody3244?.addEventListener('click',event=>{
-    const btn=event.target.closest?.('[data-nation-rename0389]');
-    if(!btn||uiInteractionState3244?.modal?.type!=='nation_dossier_0380')return;
+    const rename=event.target.closest?.('[data-nation-rename0389]');
+    const culture=event.target.closest?.('[data-nation-culture0389]');
+    if((!rename&&!culture)||uiInteractionState3244?.modal?.type!=='nation_dossier_0380')return;
+    if(uiInteractionState3244?.modal?.data?.target!==0)return;
     event.preventDefault();
-    window.HexategosRegionalNames0389?.renameDialog?.();
-    const active=uiInteractionState3244?.modal?.data?.target;
-    if(active===0)renderNationDossier(0,openTab);
+    if(rename)window.HexategosRegionalNames0389?.renameDialog?.();
+    if(culture)window.HexategosRegionalNames0389?.cultureDialog?.();
+    renderNationDossier(0,openTab);
   });
   window.HexategosStatecraft0380={
     version:BUILD,
