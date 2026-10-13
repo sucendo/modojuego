@@ -26,7 +26,7 @@
   loadGame3212=function(){
     const missing=validate();
     const advanced=window.HexategosSaveAudit03890?.inspectLocal?.(true);
-    const problems=advanced?.manifestValid?
+    const problems=advanced?
       [...missing,...advanced.missing,...advanced.damaged,...(!advanced.main?['estado principal']:[])]:missing;
     if(advanced?.manifest&&!advanced.manifestValid)problems.push('manifiesto de continuidad');
     if(problems.length){
