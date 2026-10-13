@@ -167,10 +167,22 @@
     };
   }
   function saveAI0360(){
-    try{localStorage.setItem(SAVE_KEY,JSON.stringify(serializeAI0360()))}catch(_){}
+    const codec=window.HexategosSaveStorage03827;
+    if(codec?.set)return codec.set(SAVE_KEY,serializeAI0360());
+    try{
+      const data=JSON.stringify(serializeAI0360());
+      localStorage.setItem(SAVE_KEY,data);
+      return localStorage.getItem(SAVE_KEY)===data;
+    }catch(error){
+      console.warn('[HEXATEGOS IA] No se ha podido guardar el estado de las IA',error);
+      return false;
+    }
   }
   function loadAI0360(){
-    try{return JSON.parse(localStorage.getItem(SAVE_KEY)||'null')}catch(_){return null}
+    try{
+      const codec=window.HexategosSaveStorage03827;
+      return codec?.get?codec.get(SAVE_KEY):JSON.parse(localStorage.getItem(SAVE_KEY)||'null');
+    }catch(error){console.warn('[HEXATEGOS IA] Estado local ilegible',error);return null}
   }
 
   // --------------------------------------------------------------------------
@@ -460,13 +472,16 @@
   const baseSave0360=saveGame3212;
   saveGame3212=function(){
     const out=baseSave0360.apply(this,arguments);
-    if(started3230)saveAI0360();
+    if(started3230&&!saveAI0360())return false;
     return out;
   };
 
-  if(typeof buildPortableFile3276==='function'){
-    const basePortableBuild0360=buildPortableFile3276;
-    buildPortableFile3276=function(){
+  // El exportador que utiliza HXZ2 es buildPortableFile3275.
+  // buildPortableFile3276 dejó de ser la entrada vigente: los perfiles
+  // diplomáticos y de IA quedaban fuera de la copia exportada.
+  if(typeof buildPortableFile3275==='function'){
+    const basePortableBuild0360=buildPortableFile3275;
+    buildPortableFile3275=function(){
       const file=basePortableBuild0360.apply(this,arguments);
       file.gameVersion='0.36.1';
       file.payload.nationAI0360=serializeAI0360();
@@ -478,11 +493,16 @@
   if(typeof applyPortableFile3275==='function'){
     const basePortableApply0360=applyPortableFile3275;
     applyPortableFile3275=function(file){
-      restoredPortable=file?.payload?.nationAI0360||null;
+      // Nunca sobrescribir los perfiles ni la diplomacia si el importador
+      // rechazó la copia (checksum, formato o versión incorrectos).
+      const next=file?.payload?.nationAI0360||null;
       const out=basePortableApply0360.apply(this,arguments);
+      if(out===false)return out;
+      restoredPortable=next;
       initAI0360(restoredPortable,false);
       if(file?.payload?.diplomacy)restoreDiplomacy3300(file.payload.diplomacy);
       saveAI0360();updateRanking3220(true);
+      restoredPortable=null;
       return out;
     };
   }
