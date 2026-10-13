@@ -2774,17 +2774,7 @@
       a=Number(a);b=Number(b);
       if(!Number.isInteger(a)||!Number.isInteger(b)||a<0||b<0||a===b)return null;
       if(!tradeRelation0370(a,b))return null;
-      // No forzar una reconstrucción del grafo por cada petición IA:
-      // cada reconstrucción invalidaba TODAS las rutas terrestres y podía
-      // dejarlas permanentemente en "rebuilding" en partidas grandes.
-      rebuildRoadGraph0370(false);
-      const existing=routes.find(r=>r.type==='land'&&r.status!=='closed'&&
-        ((r.a===a&&r.b===b)||(r.a===b&&r.b===a)));
-      if(existing){
-        // La reparación real se procesa con el presupuesto del tick comercial.
-        // Devolver la ruta evita invalidaciones y rutas duplicadas.
-        return existing;
-      }
+      rebuildRoadGraph0370(true);
       pathBudget0370=Math.max(pathBudget0370,1);
       return createLandRoute0370(a,b);
     },
