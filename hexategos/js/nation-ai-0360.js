@@ -167,10 +167,25 @@
     };
   }
   function saveAI0360(){
-    try{localStorage.setItem(SAVE_KEY,JSON.stringify(serializeAI0360()))}catch(_){}
+    try{
+      const state=serializeAI0360(),codec=window.HexategosSaveStorage03827;
+      if(codec?.set)return codec.set(SAVE_KEY,state);
+      const raw=JSON.stringify(state);
+      localStorage.setItem(SAVE_KEY,raw);
+      return localStorage.getItem(SAVE_KEY)===raw;
+    }catch(error){
+      console.warn('[Hexategos IA] Perfiles nacionales no guardados',error);
+      return false;
+    }
   }
   function loadAI0360(){
-    try{return JSON.parse(localStorage.getItem(SAVE_KEY)||'null')}catch(_){return null}
+    try{
+      const codec=window.HexategosSaveStorage03827;
+      return codec?.get?codec.get(SAVE_KEY):JSON.parse(localStorage.getItem(SAVE_KEY)||'null');
+    }catch(error){
+      console.warn('[Hexategos IA] No se pudo leer el estado de naciones',error);
+      return null;
+    }
   }
 
   // --------------------------------------------------------------------------
@@ -460,15 +475,15 @@
   const baseSave0360=saveGame3212;
   saveGame3212=function(){
     const out=baseSave0360.apply(this,arguments);
-    if(started3230)saveAI0360();
+    if(started3230&&saveAI0360()===false)return false;
     return out;
   };
 
-  if(typeof buildPortableFile3276==='function'){
-    const basePortableBuild0360=buildPortableFile3276;
-    buildPortableFile3276=function(){
+  if(typeof buildPortableFile3275==='function'){
+    const basePortableBuild0360=buildPortableFile3275;
+    buildPortableFile3275=function(){
       const file=basePortableBuild0360.apply(this,arguments);
-      file.gameVersion='0.36.1';
+      if(!file?.payload)throw new Error('No hay estado principal para exportar la IA');
       file.payload.nationAI0360=serializeAI0360();
       file.payload.diplomacy=serializeDiplomacy3300();
       if(typeof fnv1a3273==='function')file.checksum=fnv1a3273(JSON.stringify(file.payload));
@@ -478,11 +493,16 @@
   if(typeof applyPortableFile3275==='function'){
     const basePortableApply0360=applyPortableFile3275;
     applyPortableFile3275=function(file){
-      restoredPortable=file?.payload?.nationAI0360||null;
+      const next=file?.payload?.nationAI0360||null;
       const out=basePortableApply0360.apply(this,arguments);
+      if(out===false)return false; // checksum/revision: no alterar estado activo
+      restoredPortable=next;
       initAI0360(restoredPortable,false);
       if(file?.payload?.diplomacy)restoreDiplomacy3300(file.payload.diplomacy);
-      saveAI0360();updateRanking3220(true);
+      if(saveAI0360()===false&&typeof toast==='function')
+        toast('Partida importada, pero los perfiles de IA no se guardaron en el navegador.');
+      updateRanking3220(true);
+      restoredPortable=null;
       return out;
     };
   }
