@@ -7,10 +7,11 @@
   const COST_GOLD=.42,COST_TROOP=.10,RESERVE_GOLD=6,RESERVE_TROOP=8;
   const PERIOD=6,MAX_RECENT=48,MAX_PER_VISIT=20,MAX_SOURCES=12;
   const next=new Float64Array(N),recent=Array.from({length:N},()=>[]);
-  const claims=new Uint32Array(N),surface=new Uint8Array(0);
+  const claims=new Uint32Array(N);
   let terrainCache=null,coastCache=null,landTotal=0,cursor=1;
   let successes=0,blockedByBudget=0,staleCandidates=0,lastMs=0,lastCells=0;
   let visits=0,scored=0,overBudget=0,lastVisits=0;
+  const milestones=[];
   const max=Math.max,min=Math.min;
   const hash=x=>{
     x=(x|0)>>>0;
@@ -57,19 +58,13 @@
     const near=surroundings(f,t,L);
     if(!near.own)return -1e9;
     const land=terrainScore(t);
-    // Only completed agronomic evaluations allow more exact fertility.
-    const agronomy=window.HexategosAgronomy03832;
-    let knownFertility=0;
-    if(agronomy?.isKnown?.(t)){
-      const rated=agronomy.result?.(t);
-      const levels={Inexistente:0,'Muy bajo':1,Bajo:2,Medio:3,Alto:4,Excepcional:5};
-      knownFertility=((levels[rated?.farming]??2)-2)*.55;
-    }
+    // No geography, agronomy or mineral report belonging to another nation.
+    // The surface terrain type and shoreline are publicly visible.
     const coast=coastal(t);
     const mountain=typeof mountainTier3212!=='undefined'?(mountainTier3212[t]||0):0;
     // Strongly discourage exposed fingers while closing existing pockets.
     const compact=near.own===1?-1.1:near.own===2?2.2:near.own*2.15;
-    return 5.1+land*1.35+knownFertility+compact+
+    return 5.1+land*1.35+compact+
       (coast?2.1:0)-near.foreign*.85-
       (mountain>=3?2.4:mountain>=2?.65:0)+
       hash(t*31+f*79)%97*.006;
@@ -134,6 +129,15 @@
     }
     return available;
   }
+  function coverage(){
+    const territory=aiSnapshot3260?.territory;
+    if(!territory?.length||!landTotal)return null;
+    let owned=0;
+    for(let f=0;f<min(territory.length,activeFactionCount3230);f++)
+      owned+=Math.max(0,Number(territory[f])||0);
+    return {owned,land:landTotal,percentage:+(100*owned/landTotal).toFixed(2),
+      source:'Última instantánea de IA (puede llevar hasta 12 s de retraso)'};
+  }
   const baseAI=aiTick3212;
   aiTick3212=function(){
     const result=baseAI.apply(this,arguments);
@@ -159,6 +163,16 @@
       n++;visits++;
     }
     lastMs=performance.now()-start;lastCells=settled;lastVisits=n;
+    const now=campaignSeconds3230;
+    for(const [index,minute] of [5,10,20].entries()){
+      const threshold=minute*60;
+      if(!milestones[index]&&now>=threshold&&now<threshold+12){
+        const observed=coverage();
+        milestones[index]={minute,seconds:now,occupiedPct:observed?.percentage??null,
+          occupied:observed?.owned??null,settlements:successes,
+          moduleMs:+lastMs.toFixed(3)};
+      }
+    }
     if(settled)needsRender=true;
     return result;
   };
@@ -166,7 +180,7 @@
     next.fill(0);claims.fill(0);for(const tail of recent)tail.length=0;
     cursor=1;lastMs=0;lastCells=0;lastVisits=0;
     successes=0;blockedByBudget=0;staleCandidates=0;
-    visits=0;scored=0;overBudget=0;
+    visits=0;scored=0;overBudget=0;milestones.length=0;
     // Terrain remains valid across owners; clear on new seed for safety.
     terrainCache=null;coastCache=null;landTotal=0;
   }
@@ -179,12 +193,12 @@
     loadGame3212=function(){const out=base.apply(this,arguments);if(out!==false)clear();return out};
   }
   window.HexategosExpansion03876=Object.freeze({
-    version:BUILD,priority,preview:(f,snap=aiSnapshot3260)=>{
+    version:BUILD,priority,coverage,preview:(f,snap=aiSnapshot3260)=>{
       const L=loadLevel(MAX_GAME_LEVEL3233);world(L);
       return candidate(f,snap,L);
     },
     stats:()=>({lastMs,lastCells,total:successes,blockedByBudget,
       staleCandidates,visits,scored,overBudget,lastVisits,
-      landCount:landTotal,cursor})
+      landCount:landTotal,cursor,milestones:milestones.map(row=>row?{...row}:null)})
   });
 })();
