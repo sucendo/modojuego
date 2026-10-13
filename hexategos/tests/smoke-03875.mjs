@@ -9,7 +9,7 @@ const html=get('index.html');
 assert.doesNotThrow(()=>new Function(source),'military module JS syntax');
 assert.match(html,/css\/military-manpower-03875\.css\?v=03875/);
 assert.match(html,/js\/military-manpower-03874\.js\?v=03875/);
-assert.match(html,/js\/trade-logistics-0370\.js\?v=03875/);
+assert.match(html,/js\/trade-logistics-0370\.js\?v=[A-Za-z0-9_-]+/,'trade logistics requires a cache-busting version');
 assert.match(trade,/recruitEquipmentAvailable03875:\(f=0\)=>/);
 assert.match(trade,/return n&&n\.f===f\?Math\.max\(0,Number\(n\.stock\[4\]\)\|\|0\):0/);
 assert.match(source,/id="milSlider03875" data-mil-slider03875 type="range"/);

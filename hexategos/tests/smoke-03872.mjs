@@ -108,8 +108,12 @@ assert.equal(calls[0][3],24,'first road must reserve own treasury');
 assert.equal(tryRoad(1),false,'same faction must not repeat road build every tick');
 assert.doesNotMatch(ai,/setInterval\(/,'no extra AI interval');
 
-// Both mobile and desktop should load the new economic code, not old cached JS.
+// All four modules need a cache-busting query to avoid stale mobile assets.
+// Assert the presence of an actual version, not an obsolete exact release.
 for(const file of ['trade-logistics-0370.js','production-0388.js',
- 'statecraft-0380.js','ai-commerce-0375.js'])
- assert.match(html,new RegExp(file.replaceAll('.','\\.')+'\\?v='+(file==='production-0388.js'?'03873':file==='trade-logistics-0370.js'?'03875':file==='statecraft-0380.js'?'03874':'03872')));
+ 'statecraft-0380.js','ai-commerce-0375.js']){
+ const escaped=file.replaceAll('.','\\.');
+ assert.match(html,new RegExp('js/'+escaped+'\\?v=[A-Za-z0-9_-]+'),
+  file+' must be loaded with a nonempty cache-busting version');
+}
 console.log('HXZ2 food/fuel recovery, genuine zero stocks, capital supply, civilian migration and first AI road: PASS');
