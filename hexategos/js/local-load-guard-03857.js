@@ -25,10 +25,25 @@
   const base=loadGame3212;
   loadGame3212=function(){
     const missing=validate();
-    if(missing.length){
-      console.error('[Hexategos] Se ha impedido una carga local parcial. Faltan: '+missing.join(', '));
+    const advanced=window.HexategosSaveAudit03890?.inspectLocal?.(true);
+    const problems=advanced?.manifestValid?
+      [...missing,...advanced.missing,...advanced.damaged]:missing;
+    if(problems.length){
+      // Compatibilidad: guardar una partida antes de la introducción de las
+      // capas auxiliares no equivale a un guardado dañado. Solo se permite
+      // migrar cuando TODAS las claves modulares están ausentes y el jugador
+      // consiente expresamente, nunca ante una copia moderna parcial.
+      const isLegacy=advanced&&!advanced.manifest&&advanced.main&&
+        advanced.present.length===0&&advanced.damaged.length===0;
+      if(isLegacy&&typeof window.confirm==='function'&&window.confirm(
+        'Esta partida del navegador es antigua y no contiene las capas nuevas. '+
+        'Puedes continuar migrándola, pero algunos sistemas empezarán con sus valores predeterminados. '+
+        '¿Quieres continuar? Conserva antes una copia de seguridad si la tienes.')){
+        return base.apply(this,arguments);
+      }
+      console.error('[Hexategos] Carga local incompleta:',[...new Set(problems)].join(', '));
       const message='No se puede continuar con seguridad: el guardado del navegador tiene componentes ausentes o dañados ('+
-        missing.join(', ')+').\\n\\nImporta tu archivo .hexategos completo para recuperar la partida. No se ha sobrescrito el guardado existente.';
+        [...new Set(problems)].join(', ')+').\\n\\nImporta tu archivo .hexategos completo para recuperar la partida. No se ha sobrescrito el guardado existente.';
       if(window.HexategosDialogs03851?.notice)
         void window.HexategosDialogs03851.notice(message,'Partida local incompleta');
       else console.warn(message);
