@@ -51,8 +51,21 @@
       }catch(error){damaged.push(label)}
     }
     const main=typeof SAVE_KEY3230==='string'&&localStorage.getItem(SAVE_KEY3230)!==null;
-    return {ok:main&&!missing.length&&!damaged.length,main,present,missing,damaged,
-      manifest,manifestValid:manifest?.v===1&&Number(manifest.modules)>0&&Number(manifest.modules)<=MODULES.length,
+    let mainValid=main,manifestConsistent=true;
+    if(deep&&main){
+      try{
+        const saved=codec?.get?codec.get(SAVE_KEY3230):JSON.parse(localStorage.getItem(SAVE_KEY3230));
+        mainValid=Array.isArray(saved?.owner)&&Number.isFinite(Number(saved?.campaignSeconds));
+        if(!mainValid)damaged.push('Estado principal');
+        else if(manifest?.v===1&&Number.isFinite(Number(manifest.campaignSeconds))){
+          manifestConsistent=Math.abs(Number(saved.campaignSeconds)-Number(manifest.campaignSeconds))<.001;
+          if(!manifestConsistent)damaged.push('Desfase entre mapa y módulos');
+        }
+      }catch(error){mainValid=false;damaged.push('Estado principal')}
+    }
+    return {ok:mainValid&&!missing.length&&!damaged.length,main,mainValid,manifestConsistent,
+      present,missing,damaged,manifest,
+      manifestValid:manifest?.v===1&&Number(manifest.modules)>0&&Number(manifest.modules)<=MODULES.length,
       status:codec?.status?.()||null};
   }
   function inspectPortable(file,strict=false){
