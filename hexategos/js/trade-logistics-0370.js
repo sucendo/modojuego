@@ -577,8 +577,11 @@
     if(city){
       const urbanScale=.55+urbanWeight*.23;
       cap[0]+=20*urbanScale;cap[2]+=9*urbanScale;cap[3]+=17*urbanScale;cap[4]+=4*urbanScale;
-      prod[0]+=.018*urbanScale;
-      demand[0]+=.064*urbanScale;demand[2]+=.018*urbanScale;demand[3]+=.041*urbanScale;
+      // Subsistencia rural y pequeños talleres urbanos: estos NO sustituyen
+      // las explotaciones ni la manufactura especializada, y no generan
+      // productos transformados del catálogo industrial.
+      prod[0]+=.024*urbanScale;prod[3]+=.052*urbanScale;
+      demand[0]+=.050*urbanScale;demand[2]+=.018*urbanScale;demand[3]+=.029*urbanScale;
     }
     if(ind){
       cap[1]+=28*ind;cap[2]+=24*ind;cap[3]+=28*ind;cap[4]+=24*ind;
@@ -592,7 +595,9 @@
     }
     if(capital){
       cap[0]+=36;cap[1]+=20;cap[2]+=24;cap[3]+=38;cap[4]+=28;
-      demand[0]+=.125;demand[2]+=.035;demand[3]+=.082;demand[4]+=.014;
+      // La capital dispone de un mercado local básico, no de una fábrica.
+      prod[3]+=.035;
+      demand[0]+=.075;demand[2]+=.035;demand[3]+=.045;demand[4]+=.014;
     }
     if(hub){
       for(let i=0;i<5;i++)cap[i]+=8;
@@ -607,9 +612,9 @@
     // La riqueza de las casillas conquistadas forma el grueso de la producción;
     // el nodo local modula el resto. La muestra nacional es acotada.
     const mix=(v,r)=>clamp(nation?.[r]!=null?(nation[r]*.72+v*.28):v,.18,2.2);
-    prod[0]+=regional*.00072*mix(geo.food,0);
-    prod[1]+=regional*.00056*mix(geo.raw,1);
-    prod[2]+=regional*.00105*mix(geo.fuel,2);
+    prod[0]+=regional*.0075*mix(geo.food,0);
+    prod[1]+=regional*.0024*mix(geo.raw,1);
+    prod[2]+=regional*.0045*mix(geo.fuel,2);
 
     return {cap,prod,demand,city,ind,port,capital,hub,urbanWeight,geo};
   }
@@ -785,10 +790,10 @@
       const geo=n.geo||terrainResourceProfile0382(n.cell);
       const country=strategy.nationalPotential(n.f);
       const blend=(v,r)=>clamp(country?.[r]!=null?country[r]*.72+v*.28:v,.18,2.2);
-      const urban=n.city?.018*(.55+(n.urbanWeight||0)*.23):0;
-      n.prod[0]=urban+regional*.00072*blend(geo.food,0);
-      n.prod[1]=regional*.00056*blend(geo.raw,1);
-      n.prod[2]=regional*.00105*blend(geo.fuel,2);
+      const urban=n.city?.024*(.55+(n.urbanWeight||0)*.23):0;
+      n.prod[0]=urban+regional*.0075*blend(geo.food,0);
+      n.prod[1]=regional*.0024*blend(geo.raw,1);
+      n.prod[2]=regional*.0045*blend(geo.fuel,2);
       completed++;
     }
     geoRefreshMs0384=performance.now()-t0;
