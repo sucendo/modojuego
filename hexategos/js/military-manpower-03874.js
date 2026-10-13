@@ -211,15 +211,31 @@
       return out;
     };
   }
+  // Panel estable: no reconstruir sliders ni modificar scroll en cada tick.
+  // El máximo utiliza equipo del almacén de la capital, no el stock nacional.
   const host=document.getElementById('sysContent3213');
-  const controls='<div class="hubButtons03851 milOrders03874">'+
-    '<button type="button" data-mobil03874="25">Reclutar +25</button>'+
-    '<button type="button" data-mobil03874="100">Reclutar +100</button>'+
-    '<button type="button" data-mobil03874="cancel">Cancelar orden</button>'+
-    '<button type="button" data-mobil03874="-25">Desmovilizar 25</button>'+
-    '<button type="button" data-mobil03874="-100">Desmovilizar 100</button></div>';
-  function panelMarkup(){
-    const s=status(0);if(!s)return '';
+  let uiMode03875='recruit',uiAmount03875=0,uiInitialised03875=false,confirming03875=false;
+  const militaryRoot03875=()=>host?.querySelector('[data-military-manpower03874]');
+  function capitalEquipment03875(){
+    const api=window.HexategosTradeLogistics0370;
+    return Math.max(0,number(api?.recruitEquipmentAvailable03875?.(0)));
+  }
+  function militaryLimit03875(mode=uiMode03875,s=status(0)){
+    if(!s)return 0;
+    if(mode==='demob')return Math.max(0,Math.floor(s.reserve));
+    const remaining=Math.max(0,1200-s.queue);
+    const capacity=Math.max(0,Math.floor(s.room-s.queue+1e-7));
+    // La cola anterior tiene prioridad sobre los materiales/oro actuales.
+    const paid=Math.max(0,Math.floor((s.gold-s.queue*UNIT_GOLD+1e-7)/UNIT_GOLD));
+    const equipped=Math.max(0,Math.floor((capitalEquipment03875()-s.queue*UNIT_EQUIP+1e-7)/UNIT_EQUIP));
+    return Math.max(0,Math.min(remaining,capacity,paid,equipped));
+  }
+  function chooseAmount03875(v){
+    const s=status(0),max=militaryLimit03875(uiMode03875,s);
+    uiAmount03875=clamp(Math.floor(number(v)),0,max);
+    updatePanelValues03875();
+  }
+  function militaryMarkup03875(){
     const stat=(name,value)=>'<span class="hubStat03851"><small>'+name+
       '</small><strong data-mil-value03874="'+value+'"></strong></span>';
     return '<div class="hubSectionHeading03851"><b>Reclutamiento y desmovilización</b></div>'+
@@ -227,20 +243,33 @@
       stat('Tropas desplegadas','deployed')+stat('Límite militar','maximum')+
       stat('Pendientes de formación','queue')+stat('Mantenimiento existente','upkeep')+
       stat('Equipo militar nacional','equipment')+stat('Coste orden pendiente','cost')+'</div>'+
-      '<p class="hubEmpty03851">Formación gradual según población urbana y territorio. Cada tropa requiere '+
-      UNIT_GOLD+' oro y '+UNIT_EQUIP+' de equipo militar del almacén real de la capital. '+
-      'El mantenimiento ya está contabilizado en Economía; no se cobra dos veces. '+
-      'Desmovilizar solo reduce la reserva libre y no devuelve los gastos anteriores.</p>'+
-      '<p class="hubEmpty03851" data-mil-state03874></p>'+controls;
+      '<p class="hubEmpty03851" data-mil-state03874></p>'+
+      '<div class="milPlanner03875" aria-label="Gestión del personal militar">'+
+        '<div class="milModes03875" role="group" aria-label="Tipo de operación">'+
+          '<button type="button" data-mil-mode03875="recruit" aria-pressed="true">Reclutar</button>'+
+          '<button type="button" data-mil-mode03875="demob" aria-pressed="false">Desmovilizar</button>'+
+        '</div>'+
+        '<div class="milQuantityHead03875"><label for="milSlider03875">Número de soldados</label>'+
+          '<strong data-mil-selection03875>0</strong></div>'+
+        '<input id="milSlider03875" data-mil-slider03875 type="range" min="0" max="0" step="1" value="0" aria-label="Seleccionar número de soldados">'+
+        '<div class="milQuantityFoot03875"><span>0</span><span data-mil-max03875>Máximo: 0</span></div>'+
+        '<label class="milExactLabel03875" for="milExact03875">Cantidad exacta</label>'+
+        '<input id="milExact03875" data-mil-exact03875 type="number" inputmode="numeric" min="0" max="0" step="1" value="0">'+
+        '<div class="milPreview03875" aria-live="polite" data-mil-preview03875></div>'+
+        '<div class="hubButtons03851 milActions03875">'+
+          '<button type="button" data-mil-confirm03875>Confirmar reclutamiento</button>'+
+          '<button type="button" data-mil-cancel03875>Cancelar reclutamiento pendiente</button>'+
+        '</div>'+
+      '</div>';
   }
-  function updatePanelValues(){
-    if(!host||sysTab3220!=='military')return;
-    const root=host.querySelector('[data-military-manpower03874]');
+  function updatePanelValues03875(){
+    if(!host||!live()||sysTab3220!=='military')return;
+    const root=militaryRoot03875();
     if(!root)return;
     const s=status(0);if(!s)return;
     const values={reserve:fmt(s.reserve),deployed:fmt(s.deployed),maximum:fmt(s.maximum),
-      queue:fmt(s.queue),upkeep:s.upkeep.toFixed(2)+' oro/s',equipment:s.militaryStock.toFixed(2),
-      cost:(s.queue*UNIT_GOLD).toFixed(2)+' oro'};
+      queue:fmt(s.queue),upkeep:s.upkeep.toFixed(2)+' oro/s',
+      equipment:s.militaryStock.toFixed(2),cost:(s.queue*UNIT_GOLD).toFixed(2)+' oro'};
     for(const [key,val] of Object.entries(values)){
       const el=root.querySelector('[data-mil-value03874="'+key+'"]');
       if(el&&el.textContent!==val)el.textContent=val;
@@ -250,45 +279,157 @@
       const message=s.queue<=0?'Sin orden de reclutamiento activa.':
         s.room<=0?'Orden detenida: capacidad militar agotada.':
         s.gold<UNIT_GOLD?'En espera: oro insuficiente.':
-        s.militaryStock<UNIT_EQUIP?'En espera: falta material militar en la capital.':
-        'Formación en curso · mínimo aproximado '+Math.ceil(s.queue/Math.max(.001,Math.min(s.recruitRate,3)))+' s según capacidad; puede aumentar por recursos o tesorería.';
+        capitalEquipment03875()<UNIT_EQUIP?'En espera: falta material militar en la capital.':
+        'Formación en curso: '+fmt(s.queue)+' efectivos pendientes.';
       if(state.textContent!==message)state.textContent=message;
     }
-  }
-  if(typeof renderSystems3220==='function'){
-    const base=renderSystems3220;
-    renderSystems3220=function(){
-      const out=base.apply(this,arguments);
-      if(host&&live()&&sysTab3220==='military'){
-        const box=host.querySelector('[data-hub-tab="military"]');
-        if(box){
-          const el=document.createElement('section');
-          el.dataset.militaryManpower03874='';el.innerHTML=panelMarkup();
-          box.appendChild(el);updatePanelValues();
-        }
-      }
-      return out;
-    };
-  }
-  host?.addEventListener('click',event=>{
-    const button=event.target.closest?.('[data-mobil03874]');
-    if(!button||sysTab3220!=='military'||!host.contains(button))return;
-    event.preventDefault();event.stopPropagation();
-    const choice=button.dataset.mobil03874;
-    if(choice==='cancel'){
-      if(!cancel(0)&&typeof toast==='function')toast('No hay reclutas pendientes');
-    }else{
-      const amount=Number(choice);
-      if(amount>0){
-        if(!request(0,amount)&&typeof toast==='function')toast('Capacidad de reclutamiento agotada');
-      }else if(amount<0){
-        if(!demobilize(0,-amount)&&typeof toast==='function')toast('No hay tropas libres');
+    const max=militaryLimit03875(uiMode03875,s);
+    if(!uiInitialised03875){uiAmount03875=Math.min(25,max);uiInitialised03875=true}
+    if(uiAmount03875>max)uiAmount03875=max;
+    const slider=root.querySelector('[data-mil-slider03875]');
+    if(slider){
+      if(slider.max!==String(max))slider.max=String(max);
+      if(slider.value!==String(uiAmount03875))slider.value=String(uiAmount03875);
+      slider.disabled=max===0||confirming03875;
+    }
+    const exact=root.querySelector('[data-mil-exact03875]');
+    if(exact){
+      if(exact.max!==String(max))exact.max=String(max);
+      // No sobrescribir lo que el usuario está tecleando ni mover el foco.
+      if(document.activeElement!==exact&&exact.value!==String(uiAmount03875))
+        exact.value=String(uiAmount03875);
+      exact.disabled=max===0||confirming03875;
+    }
+    const shown=root.querySelector('[data-mil-selection03875]');
+    if(shown)shown.textContent=fmt(uiAmount03875);
+    const maxEl=root.querySelector('[data-mil-max03875]');
+    if(maxEl)maxEl.textContent='Máximo disponible ahora: '+fmt(max);
+    for(const button of root.querySelectorAll('[data-mil-mode03875]')){
+      const selected=button.dataset.milMode03875===uiMode03875;
+      button.setAttribute('aria-pressed',String(selected));
+      button.disabled=confirming03875;
+    }
+    const preview=root.querySelector('[data-mil-preview03875]');
+    if(preview){
+      if(uiMode03875==='recruit'){
+        const seconds=s.recruitRate>0?Math.ceil(uiAmount03875/Math.min(s.recruitRate,3)):null;
+        const capStock=capitalEquipment03875();
+        const notice=max===0?'No hay capacidad, oro o material militar suficiente ahora.':'';
+        preview.textContent='Coste: '+(uiAmount03875*UNIT_GOLD).toFixed(2)+' oro · '+
+          'Material: '+(uiAmount03875*UNIT_EQUIP).toFixed(3)+' · '+
+          'Duración mínima estimada: '+(seconds===null?'sin capacidad':seconds+' s')+
+          ' · Equipo en capital: '+capStock.toFixed(2)+
+          (notice?' · '+notice:'');
+      }else{
+        preview.textContent='Regresarán a la vida civil '+fmt(uiAmount03875)+
+          ' soldados de la reserva. Las tropas desplegadas no se retiran. No se devuelve oro.';
       }
     }
-    saveGame3212();updatePanelValues();
+    const submit=root.querySelector('[data-mil-confirm03875]');
+    if(submit){
+      submit.textContent=uiMode03875==='recruit'?'Confirmar reclutamiento':'Confirmar desmovilización';
+      submit.disabled=confirming03875||uiAmount03875<1||uiAmount03875>max;
+    }
+    const cancelButton=root.querySelector('[data-mil-cancel03875]');
+    if(cancelButton)cancelButton.disabled=confirming03875||s.queue<=0;
+  }
+  if(typeof renderSystems3220==='function'){
+    const baseRender03875=renderSystems3220;
+    renderSystems3220=function(){
+      const result=baseRender03875.apply(this,arguments);
+      if(host&&live()&&sysTab3220==='military'){
+        const box=host.querySelector('[data-hub-tab="military"]');
+        if(box&&!box.querySelector('[data-military-manpower03874]')){
+          const section=document.createElement('section');
+          section.dataset.militaryManpower03874='';
+          section.innerHTML=militaryMarkup03875();box.appendChild(section);
+        }
+        updatePanelValues03875();
+      }
+      return result;
+    };
+  }
+  // Reutilizar el ciclo económico, sin DOM polling ni render completo del panel.
+  function updatePanelValues(){updatePanelValues03875()}
+  host?.addEventListener('input',event=>{
+    const target=event.target;
+    if(target?.matches?.('[data-mil-slider03875], [data-mil-exact03875]')){
+      chooseAmount03875(target.value);
+    }
+  });
+  host?.addEventListener('change',event=>{
+    const target=event.target;
+    if(target?.matches?.('[data-mil-exact03875]')){
+      chooseAmount03875(target.value);
+      target.value=String(uiAmount03875);
+    }
+  });
+  async function confirmMilitaryAction03875(mode,amount){
+    const action=mode==='recruit'?'reclutar':'desmovilizar';
+    const amountText=fmt(amount);
+    const explanation=mode==='recruit'?
+      'Coste previsto: '+(amount*UNIT_GOLD).toFixed(2)+' oro y '+
+        (amount*UNIT_EQUIP).toFixed(3)+' de material militar. La incorporación será gradual.':
+      'Solo se retirarán efectivos de la reserva libre; no se recuperará oro.';
+    const dialog=window.HexategosDialogs03851?.confirm;
+    const message='¿Confirmar '+action+' '+amountText+' soldados?\n\n'+explanation;
+    const accepted=typeof dialog==='function'?
+      await dialog(message,{title:mode==='recruit'?'Reclutamiento':'Desmovilización',
+        accept:'Confirmar',cancel:'Volver'}):
+      (typeof window.confirm==='function'?window.confirm(message):false);
+    if(!accepted)return false;
+    // Revalidar tras el modal; el juego puede seguir avanzando.
+    const current=militaryLimit03875(mode,status(0));
+    if(!live()||amount>current){
+      if(typeof toast==='function')toast('Han cambiado los recursos o los efectivos. Revisa la cantidad.');
+      return false;
+    }
+    const ok=mode==='recruit'?request(0,amount):demobilize(0,amount)===amount;
+    if(ok){
+      uiAmount03875=0;
+      if(typeof saveGame3212==='function')saveGame3212();
+      if(typeof toast==='function')toast(mode==='recruit'?
+        'Reclutamiento encargado: '+amountText+' soldados':
+        'Desmovilizados: '+amountText+' soldados');
+    }
+    return !!ok;
+  }
+  host?.addEventListener('click',event=>{
+    const button=event.target.closest?.('[data-mil-mode03875], [data-mil-confirm03875], [data-mil-cancel03875]');
+    if(!button||!host.contains(button)||sysTab3220!=='military')return;
+    event.preventDefault();event.stopPropagation();
+    if(confirming03875)return;
+    if(button.matches('[data-mil-mode03875]')){
+      const mode=button.dataset.milMode03875;
+      if(mode!=='recruit'&&mode!=='demob')return;
+      uiMode03875=mode;
+      uiAmount03875=Math.min(25,militaryLimit03875(mode,status(0)));
+      updatePanelValues03875();return;
+    }
+    if(button.matches('[data-mil-cancel03875]')){
+      if(cancel(0)){
+        if(typeof saveGame3212==='function')saveGame3212();
+      }else if(typeof toast==='function')toast('No hay reclutas pendientes');
+      updatePanelValues03875();return;
+    }
+    const mode=uiMode03875,quantity=uiAmount03875;
+    if(quantity<1||quantity>militaryLimit03875(mode,status(0))){
+      if(typeof toast==='function')toast('Selecciona una cantidad disponible');
+      updatePanelValues03875();return;
+    }
+    confirming03875=true;updatePanelValues03875();
+    void confirmMilitaryAction03875(mode,quantity)
+      .catch(error=>console.warn('[HEXATEGOS reclutamiento] Confirmación fallida',error))
+      .finally(()=>{confirming03875=false;updatePanelValues03875()});
   });
   window.HexategosMilitaryManpower03874=Object.freeze({
-    version:'0.38.74',status,request,cancel,demobilize,snapshot,restore,
+    version:'0.38.75',status,request,cancel,demobilize,snapshot,restore,
+    recruitmentLimit:(f=0)=>{
+      if(f===0)return militaryLimit03875('recruit',status(0));
+      const s=status(f);return s?Math.max(0,Math.min(1200-s.queue,
+        Math.floor(s.room-s.queue),Math.floor((s.gold-s.queue*UNIT_GOLD)/UNIT_GOLD),
+        Math.floor((number(window.HexategosTradeLogistics0370?.recruitEquipmentAvailable03875?.(f))-s.queue*UNIT_EQUIP)/UNIT_EQUIP))):0;
+    },
     diagnostics:()=>({...cycle,activeQueues:queues.slice(0,activeFactionCount3230).filter(n=>n>0).length})
   });
 })();
