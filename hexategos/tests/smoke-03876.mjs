@@ -26,15 +26,16 @@ const scaffold = [
 ].join('\n');
 const env=new Function('window','owner6','loadLevel','MAX_GAME_LEVEL3233',
   'FACTIONS3230','activeFactionCount3230','capitals','botGold3230',
-  'troops3230','isCoastal3212','mountainTier3212','performance',
+  'troops3230','isCoastal3212','terrainKey3250','mountainTier3212','performance',
   'aiSnapshot3260','markEconomyDirty3261',scaffold)(
   window,owner,()=>L,8,[{}, {},{}],3,
   [6,1,4],new Float64Array([0,70,70]),new Float64Array([0,40,40]),
-  c=>c===3,new Uint8Array(9),
+  c=>c===3,c=>c===2?'plain':c===0?'desert':'forest',new Uint8Array(9),
   {now:()=>0},{frontier:[[],[1],[4]],territory:[1,1,1]},
   ()=>{worldDirty++}
 );
 assert.ok(env.api);
+assert.equal(env.api.version,'0.38.77','territory calibration revision');
 assert.ok(env.api.priority(1,2,L)>env.api.priority(1,0,L),
  'fertile territory gets higher priority');
 assert.equal(env.api.priority(1,4,L),-1e9,'foreign territory never selectable');
