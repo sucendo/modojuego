@@ -15,10 +15,11 @@ assert.ok(decay.includes('const GRACE_SECONDS=60'),'communication grace period m
 assert.ok(decay.includes('const ABANDONED_SECONDS=180'),'abandoned threshold missing');
 assert.ok(decay.includes('const FADE_SECONDS=300'),'fade threshold missing');
 assert.ok(decay.includes('const REMOVE_SECONDS=360'),'removal threshold missing');
-assert.ok(decay.includes('api.roadComponent(c)>=0'),'any physical road connection must count as internal land route');
+assert.ok(decay.includes('api?.roadComponent?.(c)??-1'),'real physical road component required');
+assert.ok(decay.includes('api?.roadNetworkSize?.(c)||0')&&decay.includes('>1?'),'a single isolated road endpoint must not count as an established network');
 assert.ok(trade.includes('roadComponent:(cell)=>'),'trade logistics road-component API missing');
 assert.ok(decay.includes("r.type!=='sea'"),'maritime-route connectivity missing');
-assert.ok(decay.includes('function roadCommunications0373()'),'internal road communications helper missing');
+assert.ok(decay.includes('function connections0373()'),'internal land and maritime communications helper missing');
 assert.ok(decay.includes('isCapital0373(cell,f)'), 'capital communications protection missing');
 assert.ok(decay.includes("cities3212.delete(cell)"),'city disappearance missing');
 assert.ok(decay.includes("industries3212.delete(cell)"),'industry disappearance missing');
