@@ -444,9 +444,12 @@
   function load0377(){try{return restore0377(JSON.parse(localStorage.getItem(SAVE_KEY)||'null'))}catch(_){return restore0377(null)}}
 
   const baseSave0377=saveGame3212;
-  saveGame3212=function(){const out=baseSave0377.apply(this,arguments);save0377();return out};
+  saveGame3212=function(){const out=baseSave0377.apply(this,arguments);
+    if(out===false)return false;
+    return save0377()===false?false:out};
   const baseLoad0377=loadGame3212;
-  loadGame3212=function(){const out=baseLoad0377.apply(this,arguments);load0377();return out};
+  loadGame3212=function(){const out=baseLoad0377.apply(this,arguments);
+    if(out!==false)load0377();return out};
   const baseReset0377=resetGame3230;
   resetGame3230=function(clearSave=true){
     const out=baseReset0377.apply(this,arguments);
@@ -470,7 +473,8 @@
     applyPortableFile3275=function(file){
       const data=file?.payload?.tradeGeopolitics0377||null;
       const out=basePortableApply0377.apply(this,arguments);
-      restore0377(data);save0377();return out;
+      if(out!==false){restore0377(data);save0377()}
+      return out;
     };
   }
 
