@@ -53,6 +53,60 @@
   const originalFactionName=factionName3230;
   const nations=new Map(),cities=new Map(),checked=new Set(),working=new Set();
   const pendingCities=[],queuedCities=new Set();
+  // Topónimo permanente y nombre administrativo: jamás alterar geografía.
+  const cityIdentity=new Map();
+  const historicalVariants={
+    'Córdoba':{arabic:'Qurtuba'},'Zaragoza':{arabic:'Saraqusta'},
+    'Sevilla':{arabic:'Isbiliya'},'Toledo':{arabic:'Tulaytula'},
+    'Granada':{arabic:'Garnata'},'Mérida':{arabic:'Marida'},
+    'Lérida':{catalan:'Lleida',arabic:'Larida'},'Lleida':{castilian:'Lérida',arabic:'Larida'},
+    'Gerona':{catalan:'Girona'},'Girona':{castilian:'Gerona'},
+    'Alicante':{catalan:'Alacant'},'Alacant':{castilian:'Alicante'},
+    'Castellón de la Plana':{catalan:'Castelló de la Plana'},
+    'Ibiza':{catalan:'Eivissa'},'Eivissa':{castilian:'Ibiza'}
+  };
+  function nationCulture(f){
+    const capital=capitals?.[f],loc=Number.isInteger(capital)?regionOf(capital):null;
+    const n=String(factionName3230(f)||'').toLocaleLowerCase('es');
+    if(/catalu|català|catalan|barcelona|valencia|valenciano|balear/.test(n)||
+      ['Cataluña','Valencia'].includes(loc?.region))return 'catalan';
+    if(/emirat|califat|sultan|árab|arabe|andalus|magreb|marroqu/.test(n)||
+      ['Magreb','Arabia'].includes(loc?.region))return 'arabic';
+    if(/castilla|castellan|españa/.test(n))return 'castilian';
+    return 'other';
+  }
+  function cityRecord(cell,base){
+    let rec=cityIdentity.get(cell);
+    if(!rec){
+      const official=typeof cityDisplayName3271==='function'?cityDisplayName3271(cell):base;
+      rec={geo:String(base||official||''),name:String(official||base||''),history:[],owner:owner6[cell],pending:null,manual:false};
+      cityIdentity.set(cell,rec);
+    }
+    if(base&&!rec.geo)rec.geo=String(base);
+    return rec;
+  }
+  function applyCityOfficial(cell,rec,next,reason){
+    if(!next||next===rec.name)return;
+    if(rec.name&&!rec.history.includes(rec.name))rec.history.push(rec.name);
+    rec.history=rec.history.slice(-12);
+    rec.name=next;rec.pending=null;rec.reason=reason;
+    if(typeof setCityName3271==='function')setCityName3271(cell,next);
+  }
+  function inspectCityIdentity(cell,geoName){
+    if(!cities3212.has(cell)||owner6[cell]<0)return null;
+    const rec=cityRecord(cell,geoName);
+    const now=Number(campaignSeconds3230)||0,owner=owner6[cell];
+    if(rec.owner!==owner){
+      rec.owner=owner;rec.pending=null;
+      const target=historicalVariants[rec.geo]?.[nationCulture(owner)];
+      if(!rec.manual&&target&&target!==rec.name)
+        rec.pending={name:target,since:now,reason:'adaptación cultural tras conquista'};
+    }
+    if(rec.pending&&now-rec.pending.since>=90)
+      applyCityOfficial(cell,rec,rec.pending.name,rec.pending.reason);
+    return rec;
+  }
+
   let cityCursor=null,capCursor=0,lastCampaign=-1e9,generation=0;
   let searches=0,applied=0,failures=0;
   function geo(cell){
@@ -253,6 +307,7 @@
         }
       }
       tryApplyCity(cell,option.name,f);
+      if(cities3212.has(cell)){const rec=cityRecord(cell,option.name);rec.geo=option.name;inspectCityIdentity(cell,option.name)}
       checked.add(marker);
     }catch(err){failures++;console.warn('[Hexategos topónimos]',err?.message||err)}
     finally{working.delete(job)}
@@ -282,13 +337,13 @@
     if(item.done){cityCursor=cities3212.values();item=cityCursor.next()}
     if(item.done)return;
     const cell=item.value,f=owner6[cell];
-    if(Number.isInteger(f)&&f>0&&f<activeFactionCount3230)void nameCell(cell,f,false);
+    if(Number.isInteger(f)&&f>=0&&f<activeFactionCount3230){inspectCityIdentity(cell);if(f>0)void nameCell(cell,f,false)}
   }
   function serialize(){
-    return {v:2,nations:[...nations].map(([f,n])=>[f,n]),cities:[...cities],checked:[...checked],playerName,playerHistory,changes:changes.slice(-150)};
+    return {v:2,nations:[...nations].map(([f,n])=>[f,n]),cities:[...cities],checked:[...checked],playerName,playerHistory,changes:changes.slice(-150),cityIdentity:[...cityIdentity]};
   }
   function restore(s){
-    nations.clear();cities.clear();checked.clear();working.clear();generation++;playerName='';playerHistory=[];changes.length=0;
+    nations.clear();cities.clear();cityIdentity.clear();checked.clear();working.clear();generation++;playerName='';playerHistory=[];changes.length=0;
     pendingCities.length=0;queuedCities.clear();
     capCursor=0;cityCursor=null;lastCampaign=-1e9;
     if(!s||!Array.isArray(s.nations))return;
@@ -304,6 +359,10 @@
       }
     }
     if(Array.isArray(s.checked))for(const k of s.checked.slice(0,6000))checked.add(String(k));
+    if(Array.isArray(s.cityIdentity))for(const [cell,rec] of s.cityIdentity.slice(0,6000)){
+      if(Number.isInteger(cell)&&cities3212.has(cell)&&rec?.geo){cityIdentity.set(cell,rec);
+        if(rec.name&&typeof setCityName3271==='function')setCityName3271(cell,rec.name)}
+    }
   }
   function save(){try{localStorage.setItem(KEY,JSON.stringify(serialize()))}catch(_){}}
   const originalSave=saveGame3212;
@@ -373,8 +432,28 @@
       (id?.pending?'\\nCambio gradual pendiente hacia: '+id.pending.name:''));
   });
   document.body.append(historyButton);
+  const cityButton=document.createElement('button');
+  cityButton.textContent='Renombrar ciudad';
+  cityButton.style.cssText='position:fixed;right:12px;bottom:84px;z-index:99990;background:#193a53;color:#fff;border:1px solid #84a1ba;border-radius:8px;padding:8px;cursor:pointer;font:12px system-ui';
+  cityButton.onclick=()=>{
+    const cell=selected?.key===MAX_GAME_LEVEL3233?selected.i:-1;
+    if(!Number.isInteger(cell)||!cities3212.has(cell)||owner6[cell]!==0){
+      window.alert('Selecciona una ciudad de tu nación en el mapa.');return;
+    }
+    const rec=inspectCityIdentity(cell);
+    const name=window.prompt('Nombre oficial (geográfico: '+(rec?.geo||'desconocido')+'):',rec?.name||'');
+    if(name!==null&&window.HexategosRegionalNames0389?.renameCity(cell,name)){
+      if(typeof updateUI3230==='function')updateUI3230();
+      needsRender=true;
+    }
+  };
+  document.body.append(cityButton);
   window.HexategosRegionalNames0389={
     version:VERSION,regionOf,service,serialize,ensureNation,renamePlayer,renameDialog,
+    cityIdentity:cell=>inspectCityIdentity(Number(cell)),
+    renameCity:(cell,name)=>{cell=Number(cell);if(!cities3212.has(cell)||owner6[cell]!==0)return false;
+      const clean=String(name||'').trim().slice(0,64);if(clean.length<2)return false;
+      const rec=cityRecord(cell);rec.manual=true;applyCityOfficial(cell,rec,clean,'decisión del jugador');save();return true},
     identity:f=>Number(f)===0?{name:factionName3230(0),history:playerHistory.slice()}:ensureNation(Number(f)),
     stats:()=>({namedNations:nations.size,namedCities:cities.size,atlasQueries:searches,failures,inFlight:working.size})
   };
