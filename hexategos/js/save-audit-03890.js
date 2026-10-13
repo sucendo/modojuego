@@ -88,6 +88,22 @@
       return out;
     };
   }
+  // La creación de un mundo nuevo invalida el manifiesto de la campaña
+  // anterior. Las cargas/importaciones usan clearSave=false y lo conservan
+  // hasta confirmar que la nueva instantánea se ha guardado.
+  if(typeof resetGame3230==='function'){
+    const baseReset=resetGame3230;
+    resetGame3230=function(clearSave=true){
+      const out=baseReset.apply(this,arguments);
+      if(out!==false&&clearSave){
+        try{localStorage.removeItem(KEY)}catch(error){
+          console.warn('[Hexategos] No se ha podido limpiar el manifiesto anterior',error)
+        }
+        lastSave=null;
+      }
+      return out;
+    };
+  }
   if(typeof buildPortableFile3275==='function'){
     const base=buildPortableFile3275;
     buildPortableFile3275=function(){
