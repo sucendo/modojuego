@@ -222,10 +222,16 @@
     lastAudit=-1e9;needsRender=true;return true;
   }
   function save0373(){
-    try{localStorage.setItem(SAVE_KEY,JSON.stringify(serialize0373()))}catch(_){}
+    const state=serialize0373(),codec=window.HexategosSaveStorage03827;
+    if(codec?.set)return codec.set(SAVE_KEY,state);
+    try{const raw=JSON.stringify(state);localStorage.setItem(SAVE_KEY,raw);
+      return localStorage.getItem(SAVE_KEY)===raw;
+    }catch(error){console.warn('[Hexategos deterioro] Error de guardado',error);return false}
   }
   function load0373(){
-    try{return restore0373(JSON.parse(localStorage.getItem(SAVE_KEY)||'null'))}catch(_){return restore0373(null)}
+    try{const codec=window.HexategosSaveStorage03827;
+      return restore0373(codec?.get?codec.get(SAVE_KEY):JSON.parse(localStorage.getItem(SAVE_KEY)||'null'))
+    }catch(error){console.warn('[Hexategos deterioro] Error de carga',error);return false}
   }
 
   function economyFactor0373(cell){
