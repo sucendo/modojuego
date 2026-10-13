@@ -34,11 +34,12 @@
       // capas auxiliares no equivale a un guardado dañado. Solo se permite
       // migrar cuando TODAS las claves modulares están ausentes y el jugador
       // consiente expresamente, nunca ante una copia moderna parcial.
-      const isLegacy=advanced&&advanced.main&&advanced.damaged.length===0&&
-        ((!advanced.manifest&&missing.length===0)|| // Copia modular previa sin manifiesto.
-         (!advanced.manifest&&advanced.present.length===0)|| // Guardado premodular.
-         (advanced.manifestValid&&advanced.manifest.modules<
-           window.HexategosSaveAudit03890.moduleKeys.length&&missing.length===0));
+      const isLegacy=advanced&&advanced.main&&advanced.mainValid&&
+        !advanced.manifest&&advanced.damaged.length===0&&
+        advanced.present.length===0&&missing.length===parts.length;
+      // Nunca inferir "partida antigua" por la ausencia del manifiesto
+      // cuando hay ALGUNOS módulos: también podría ser un guardado reciente
+      // interrumpido, y migrarlo sobrescribiría datos irrecuperables.
       if(isLegacy&&typeof window.confirm==='function'&&window.confirm(
         'Esta partida del navegador es antigua y no contiene las capas nuevas. '+
         'Puedes continuar migrándola, pero algunos sistemas empezarán con sus valores predeterminados. '+
