@@ -114,6 +114,12 @@
     if(!cities3212.has(cell)||owner6[cell]<0)return null;
     const rec=cityRecord(cell,geoName);
     const now=Number(campaignSeconds3230)||0,owner=owner6[cell];
+    // El nombre pudo establecerse después de la fundación: no tratar el
+    // nombre provisional de la nueva ciudad como el nombre oficial definitivo.
+    if(!rec.manual&&!rec.pending&&!rec.history?.length){
+      const current=typeof cityDisplayName3271==='function'?cityDisplayName3271(cell):'';
+      if(current)rec.name=String(current);
+    }
     if(rec.owner!==owner){
       rec.owner=owner;rec.pending=null;
       // Una decisión manual se respeta mientras dura el mandato del jugador,
@@ -344,32 +350,37 @@
   function service(){
     if(!started3230||paused3230||!owner6?.length)return;
     const time=Number(campaignSeconds3230)||0;
-    if(time-lastCampaign<1.5||working.size>=2)return;
+    if(time-lastCampaign<1.5)return;
     lastCampaign=time;
+    // El seguimiento de ciudades no puede quedar bloqueado por las búsquedas
+    // de topónimos de las 500 capitales. Revisión incremental acotada.
+    if(!cityCursor)cityCursor=cities3212.values();
+    for(let j=0;j<12;j++){
+      let entry=cityCursor.next();
+      if(entry.done){cityCursor=cities3212.values();entry=cityCursor.next()}
+      if(entry.done)break;
+      const cell=entry.value,f=owner6[cell];
+      if(f<0||f>=activeFactionCount3230)continue;
+      const rec=inspectCityIdentity(cell);
+      if(rec?.geoSource!=='atlas'&&working.size<2&&!checked.has('t:'+cell+':'+f))
+        void nameCell(cell,f,false);
+    }
     // Priorizar ciudades que la IA acaba de construir sin buscar en el mapa.
     if(pendingCities.length&&(capCursor>=activeFactionCount3230||Math.floor(time)%3===0)){
       const cell=pendingCities.shift();queuedCities.delete(cell);
       const f=owner6[cell];
-      if(f>0&&f<activeFactionCount3230&&cities3212.has(cell))void nameCell(cell,f,false);
+      if(f>=0&&f<activeFactionCount3230&&cities3212.has(cell)&&working.size<2)void nameCell(cell,f,false);
       return;
     }
     // 500 naciones sin barrido masivo: una capital por ronda.
-    if(capCursor<activeFactionCount3230){
+    if(capCursor<activeFactionCount3230&&working.size<2){
       const f=capCursor++,cell=capitals?.[f]??-1;
-      if(f>0)serviceNationalIdentity(f);
+      if(f>0){serviceNationalIdentity(f);nationCulture(f)}
       if(Number.isInteger(cell)&&cell>=0&&owner6[cell]===f)void nameCell(cell,f,true);
-      return;
     }
-    // Ciudades de IA: un paso de iterador por ronda, sin array de todas las ciudades.
-    if(!cityCursor)cityCursor=cities3212.values();
-    let item=cityCursor.next();
-    if(item.done){cityCursor=cities3212.values();item=cityCursor.next()}
-    if(item.done)return;
-    const cell=item.value,f=owner6[cell];
-    if(Number.isInteger(f)&&f>=0&&f<activeFactionCount3230){inspectCityIdentity(cell);if(f>0)void nameCell(cell,f,false)}
   }
   function serialize(){
-    return {v:2,nations:[...nations].map(([f,n])=>[f,n]),cities:[...cities],checked:[...checked],playerName,playerHistory,changes:changes.slice(-150),cityIdentity:[...cityIdentity],playerCulture,nationCultures:[...nationCultures]};
+    return {v:3,nations:[...nations].map(([f,n])=>[f,n]),cities:[...cities],checked:[...checked],playerName,playerHistory,changes:changes.slice(-150),cityIdentity:[...cityIdentity],playerCulture,nationCultures:[...nationCultures]};
   }
   function restore(s){
     nations.clear();cities.clear();cityIdentity.clear();nationCultures.clear();checked.clear();working.clear();generation++;playerName='';playerHistory=[];playerCulture='';changes.length=0;
@@ -396,6 +407,11 @@
       if(Number.isInteger(cell)&&cities3212.has(cell)&&rec?.geo){cityIdentity.set(cell,rec);
         // Las partidas v2 carecían de certificación geográfica.
         if(!rec.geoSource)rec.geoSource='legacy';
+        if(rec.geoSource!=='atlas'){
+          // Revisar topónimo sin invalidar las decisiones manuales.
+          checked.delete('t:'+cell+':'+owner6[cell]);
+          checked.delete('c:'+cell+':'+owner6[cell]);
+        }
         if(rec.name&&typeof setCityName3271==='function')setCityName3271(cell,rec.name)}
     }
   }
@@ -432,8 +448,9 @@
   const baseCityAdd=cities3212.add;
   cities3212.add=function(cell){
     const existed=this.has(cell),out=baseCityAdd.call(this,cell);
-    if(!existed&&started3230&&owner6[cell]>0&&!queuedCities.has(cell)){
-      pendingCities.push(cell);queuedCities.add(cell);
+    if(!existed&&started3230&&owner6[cell]>=0){
+      cityRecord(cell);
+      if(!queuedCities.has(cell)){pendingCities.push(cell);queuedCities.add(cell)}
     }
     return out;
   };
@@ -467,6 +484,12 @@
       (id?.pending?'\\nCambio gradual pendiente hacia: '+id.pending.name:''));
   });
   document.body.append(historyButton);
+  const cultureButton=document.createElement('button');
+  cultureButton.textContent='Cultura nacional';
+  cultureButton.title='Fijar la tradición toponímica de tu nación';
+  cultureButton.style.cssText='position:fixed;right:12px;bottom:120px;z-index:99990;background:#193a53;color:#fff;border:1px solid #84a1ba;border-radius:8px;padding:8px;cursor:pointer;font:12px system-ui';
+  cultureButton.onclick=cultureDialog;
+  document.body.append(cultureButton);
   const cityButton=document.createElement('button');
   cityButton.textContent='Renombrar ciudad';
   cityButton.style.cssText='position:fixed;right:12px;bottom:84px;z-index:99990;background:#193a53;color:#fff;border:1px solid #84a1ba;border-radius:8px;padding:8px;cursor:pointer;font:12px system-ui';
