@@ -137,25 +137,96 @@
     cities.set(cell,clean);applied++;
     return true;
   }
+  const originalPlayerName=()=>String(originalFactionName.call(null,0)||'Mi nación');
+  let playerName='',playerHistory=[];
+  const changes=[];
+  function historyAdd(record,oldName){
+    record.history ||= [];
+    if(oldName&&!record.history.includes(oldName))record.history.push(oldName);
+    if(record.history.length>12)record.history.shift();
+  }
+  // Una sustitución política no es instantánea. Se conserva su identidad
+  // durante un periodo y el nombre previo permanece en el registro histórico.
+  function proposeName(f,next,reason){
+    const record=nations.get(f);
+    if(!record||!next||next===record.name||next===record.pending?.name)return false;
+    record.pending={name:next,since:Number(campaignSeconds3230)||0,reason};
+    return true;
+  }
+  function advanceName(f){
+    const rec=nations.get(f),pending=rec?.pending;
+    if(!pending)return;
+    if((Number(campaignSeconds3230)||0)-pending.since<90)return;
+    historyAdd(rec,rec.name);
+    changes.push({f,from:rec.name,to:pending.name,reason:pending.reason,at:campaignSeconds3230||0});
+    if(changes.length>150)changes.shift();
+    rec.name=pending.name;rec.pending=null;
+  }
+  function nationCount(f){
+    const v=aiSnapshot3260?.territory?.[f];
+    return Number.isFinite(v)?v:null;
+  }
   function ensureNation(f){
     if(f<=0||f>=activeFactionCount3230)return null;
     const cell=capitals?.[f]??-1;
-    if(!Number.isInteger(cell)||cell<0||owner6[cell]!==f)return null;
     const old=nations.get(f);
-    if(old?.capital===cell)return old;
+    if(!Number.isInteger(cell)||cell<0||owner6[cell]!==f)return old||null;
+    if(old){
+      // Una capital que cambia no borra la identidad anterior.
+      if(old.capital!==cell){
+        old.capital=cell;old.atlas=false;
+        const newRegion=regionOf(cell);
+        if(newRegion)proposeName(f,politicalName('',newRegion,f),'traslado o conquista de capital');
+      }
+      advanceName(f);
+      return old;
+    }
     const location=regionOf(cell);
     if(!location)return null;
-    const name=politicalName('',location,f);
-    const record={capital:cell,name,atlas:false};
+    const record={capital:cell,name:politicalName('',location,f),atlas:false,history:[],pending:null,baseline:nationCount(f)};
     nations.set(f,record);
     return record;
   }
+  function serviceNationalIdentity(f){
+    const record=ensureNation(f);
+    if(!record)return;
+    const count=nationCount(f);
+    if(count===null||count<=0)return;
+    if(!Number.isFinite(record.baseline)||record.baseline<=0)record.baseline=count;
+    // Pérdidas mínimas de frontera nunca desencadenan renombrados.
+    // Las pérdidas pronunciadas sólo permiten proponer un nombre nuevo,
+    // manteniendo la identidad actual durante la transición.
+    if(count<=record.baseline*.65 && record.baseline-count>=8 && !record.pending){
+      const loc=regionOf(record.capital);
+      if(loc){
+        const candidate=politicalName('',loc,f);
+        proposeName(f,candidate,'transformación territorial');
+      }
+      record.baseline=count;
+    }else if(count>record.baseline)record.baseline=count;
+  }
   factionName3230=function(f){
     f=Number(f);
-    if(!Number.isInteger(f)||f<=0||!started3230)return originalFactionName.apply(this,arguments);
+    if(!Number.isInteger(f))return originalFactionName.apply(this,arguments);
+    if(f===0)return playerName||originalFactionName.apply(this,arguments);
+    if(!started3230)return originalFactionName.apply(this,arguments);
     const record=ensureNation(f);
     return record?.name||originalFactionName.apply(this,arguments);
   };
+  function renamePlayer(name){
+    const clean=String(name||'').trim().replace(/\\s+/g,' ').slice(0,64);
+    if(clean.length<3)return false;
+    const before=playerName||originalPlayerName();
+    if(before!==clean&&!playerHistory.includes(before))playerHistory.push(before);
+    playerHistory=playerHistory.slice(-12);
+    playerName=clean;save();
+    if(typeof updateUI3230==='function')updateUI3230();
+    return true;
+  }
+  function renameDialog(){
+    const proposal=window.prompt('Nuevo nombre de tu nación (3–64 caracteres):',factionName3230(0));
+    if(proposal!==null&&!renamePlayer(proposal))window.alert('Introduce un nombre de entre 3 y 64 caracteres.');
+  }
   async function nameCell(cell,f,isCapital){
     const marker=(isCapital?'c':'t')+':'+cell+':'+f;
     const epoch=generation,job=epoch+':'+marker;
@@ -176,8 +247,12 @@
       if(!exact&&(!Number.isFinite(option.distanceKm)||option.distanceKm>35))return;
       if(isCapital&&f>0){
         const location=regionOf(cell);
-        const record={capital:cell,name:politicalName(option.name,location,f),atlas:true};
-        nations.set(f,record);
+        const record=ensureNation(f);
+        if(record){
+          const target=politicalName(option.name,location,f);
+          if(!record.atlas && target!==record.name)proposeName(f,target,'identificación geográfica');
+          record.atlas=true;
+        }
       }
       tryApplyCity(cell,option.name,f);
       checked.add(marker);
@@ -199,7 +274,7 @@
     // 500 naciones sin barrido masivo: una capital por ronda.
     if(capCursor<activeFactionCount3230){
       const f=capCursor++,cell=capitals?.[f]??-1;
-      if(f>0)ensureNation(f);
+      if(f>0)serviceNationalIdentity(f);
       if(Number.isInteger(cell)&&cell>=0&&owner6[cell]===f)void nameCell(cell,f,true);
       return;
     }
@@ -212,16 +287,19 @@
     if(Number.isInteger(f)&&f>0&&f<activeFactionCount3230)void nameCell(cell,f,false);
   }
   function serialize(){
-    return {v:1,nations:[...nations].map(([f,n])=>[f,n]),cities:[...cities],checked:[...checked]};
+    return {v:2,nations:[...nations].map(([f,n])=>[f,n]),cities:[...cities],checked:[...checked],playerName,playerHistory,changes:changes.slice(-150)};
   }
   function restore(s){
-    nations.clear();cities.clear();checked.clear();working.clear();generation++;
+    nations.clear();cities.clear();checked.clear();working.clear();generation++;playerName='';playerHistory=[];changes.length=0;
     pendingCities.length=0;queuedCities.clear();
     capCursor=0;cityCursor=null;lastCampaign=-1e9;
     if(!s||!Array.isArray(s.nations))return;
+    playerName=String(s.playerName||'').slice(0,64);
+    playerHistory=Array.isArray(s.playerHistory)?s.playerHistory.slice(-12).map(String):[];
+    if(Array.isArray(s.changes))changes.push(...s.changes.slice(-150));
     for(const [f,r] of s.nations.slice(0,FACTIONS3230.length))
       if(Number.isInteger(f)&&f>0&&r?.capital===capitals?.[f]&&owner6[r.capital]===f)
-        nations.set(f,{capital:r.capital,name:String(r.name||''),atlas:!!r.atlas});
+        nations.set(f,{capital:r.capital,name:String(r.name||''),atlas:!!r.atlas,history:Array.isArray(r.history)?r.history.slice(-12):[],pending:r.pending||null,baseline:Number(r.baseline)||nationCount(f)});
     if(Array.isArray(s.cities))for(const [cell,name] of s.cities.slice(0,6000)){
       if(Number.isInteger(cell)&&owner6[cell]>=0&&typeof setCityName3271==='function'){
         setCityName3271(cell,name);cities.set(cell,name);
@@ -273,8 +351,16 @@
     const out=baseEconomy.apply(this,arguments);
     service();return out;
   };
+  // Acceso del jugador independiente de los diálogos, sin tapar el HUD.
+  const renameButton=document.createElement('button');
+  renameButton.textContent='Renombrar nación';
+  renameButton.title='Cambiar nombre político de tu nación';
+  renameButton.style.cssText='position:fixed;right:12px;bottom:12px;z-index:99990;background:#193a53;color:#fff;border:1px solid #84a1ba;border-radius:8px;padding:8px;cursor:pointer;font:12px system-ui';
+  renameButton.addEventListener('click',renameDialog);
+  document.body.append(renameButton);
   window.HexategosRegionalNames0389={
-    version:VERSION,regionOf,service,serialize,ensureNation,
+    version:VERSION,regionOf,service,serialize,ensureNation,renamePlayer,renameDialog,
+    identity:f=>Number(f)===0?{name:factionName3230(0),history:playerHistory.slice()}:ensureNation(Number(f)),
     stats:()=>({namedNations:nations.size,namedCities:cities.size,atlasQueries:searches,failures,inFlight:working.size})
   };
   console.info('[HEXATEGOS] '+VERSION+' · naciones históricas y localidades georreferenciadas');
