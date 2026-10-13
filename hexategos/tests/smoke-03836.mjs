@@ -67,7 +67,8 @@ assert.equal(modes.length,10,'all old and six new modes');
 assert.equal(menu.children.length,10,'unified map selector includes old options');
 assert.equal(api.select('natural-food'),true);
 assert.equal(runtime.mode(),'natural-food');
-assert.equal(button.textContent,'Agr');
+assert.equal(button.getAttribute('aria-label'),'Mapa: Agricultura','accessible map label must identify the real layer');
+assert.ok(button.innerHTML.includes('hexMapIcon03855'),'new SVG map icon must render');
 assert.equal(storage.getItem('ofhex_map_mode_3252'),'natural-food');
 const low={land:[1],centers:new Int16Array([0,0,32767])};
 assert.deepEqual(fill('3',0,low,0,1),[84,157,85],
