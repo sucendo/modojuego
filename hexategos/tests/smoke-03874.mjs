@@ -67,7 +67,7 @@ return {
  advance:t=>{campaignSeconds3230=t}
 };`)(w,storage,logs);
 const api=run.api;
-assert.equal(api.version,'0.38.74');
+assert.equal(api.version,'0.38.75');
 assert.equal(run.sourceRate().troop,0,'legacy free recruitment must be suppressed');
 assert.ok(run.sourceRate().net<1,'deployed player troops have a real maintenance cost');
 assert.ok(source.includes('territorialEconomy3261=function(f)'),
