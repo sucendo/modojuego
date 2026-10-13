@@ -27,7 +27,8 @@
     const missing=validate();
     const advanced=window.HexategosSaveAudit03890?.inspectLocal?.(true);
     const problems=advanced?.manifestValid?
-      [...missing,...advanced.missing,...advanced.damaged]:missing;
+      [...missing,...advanced.missing,...advanced.damaged,...(!advanced.main?['estado principal']:[])]:missing;
+    if(advanced?.manifest&&!advanced.manifestValid)problems.push('manifiesto de continuidad');
     if(problems.length){
       // Compatibilidad: guardar una partida antes de la introducción de las
       // capas auxiliares no equivale a un guardado dañado. Solo se permite
