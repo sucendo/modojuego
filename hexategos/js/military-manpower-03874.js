@@ -24,6 +24,18 @@
   }
   // Desactivar SOLO el incremento automático del juego antiguo.
   // Conservamos el potencial de reclutamiento, límites y economía originales.
+  // También ajustar las consultas directas al balance territorial
+  // utilizadas por Economía. economyRate conserva su propia envoltura
+  // sobre la referencia ORIGINAL: el coste se aplica una sola vez.
+  const baseTerritorial03874=territorialEconomy3261;
+  territorialEconomy3261=function(f){
+    const r=baseTerritorial03874.apply(this,arguments);
+    if(f!==0||!r||typeof r!=='object')return r;
+    const extra=deployed(0)*UPKEEP;
+    return extra>0?{...r,maintenance:number(r.maintenance)+extra,
+      net:number(r.net)-extra,gold:number(r.net)-extra,
+      armyDeployedMaintenance03874:extra}:r;
+  };
   const baseRate=economyRate3230;
   economyRate3230=function(f){
     const r=baseRate.apply(this,arguments);
