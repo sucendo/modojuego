@@ -126,7 +126,7 @@ assert.ok(detailsContent.includes('Gobierno local'),'local government view missi
 clickTab('port');
 assert.ok(detailsContent.includes('Puerto, comercio y flotas'),'port tab missing');
 assert.ok(detailsContent.includes('↑ Exporta: Alimentos'),'outgoing sea cargo not identified');
-assert.ok(detailsContent.includes('↓ Importa: Energía'),'incoming fuel not identified');
+assert.ok(detailsContent.includes('↓ Importa: Combustible'),'incoming fuel not identified');
 assert.match(detailsContent,/↓ Importa:[^<]*Pozo de gas/,
   'inbound manufactured cargo not identified');
 assert.ok(detailsContent.includes('Flota 9'),'naval fleet based at port missing');
