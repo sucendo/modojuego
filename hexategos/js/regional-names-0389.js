@@ -54,7 +54,8 @@
   const nations=new Map(),cities=new Map(),checked=new Set(),working=new Set();
   const pendingCities=[],queuedCities=new Set();
   // Topónimo permanente y nombre administrativo: jamás alterar geografía.
-  const cityIdentity=new Map();
+  const cityIdentity=new Map(),nationCultures=new Map();
+  let playerCulture='';
   const historicalVariants={
     'Córdoba':{arabic:'Qurtuba'},'Zaragoza':{arabic:'Saraqusta'},
     'Sevilla':{arabic:'Isbiliya'},'Toledo':{arabic:'Tulaytula'},
@@ -65,21 +66,38 @@
     'Castellón de la Plana':{catalan:'Castelló de la Plana'},
     'Ibiza':{catalan:'Eivissa'},'Eivissa':{castilian:'Ibiza'}
   };
+  const CULTURES=['castilian','catalan','arabic','other'];
+  const CULTURE_LABELS={castilian:'Castellana',catalan:'Catalana/valenciana',arabic:'Árabe/andalusí',other:'Otra / sin equivalencia'};
+  // La identidad cultural se fija en el origen de la nación y se guarda:
+  // conquistar una capital extranjera no cambia su cultura.
   function nationCulture(f){
+    if(f===0&&playerCulture)return playerCulture;
+    if(nationCultures.has(f))return nationCultures.get(f);
     const capital=capitals?.[f],loc=Number.isInteger(capital)?regionOf(capital):null;
-    const n=String(factionName3230(f)||'').toLocaleLowerCase('es');
-    if(/catalu|català|catalan|barcelona|valencia|valenciano|balear/.test(n)||
-      ['Cataluña','Valencia'].includes(loc?.region))return 'catalan';
-    if(/emirat|califat|sultan|árab|arabe|andalus|magreb|marroqu/.test(n)||
-      ['Magreb','Arabia'].includes(loc?.region))return 'arabic';
-    if(/castilla|castellan|españa/.test(n))return 'castilian';
-    return 'other';
+    const n=String(originalFactionName(f)||'').toLocaleLowerCase('es');
+    let culture='other';
+    if(/catalu|català|catalan|barcelona|valenciano|balear/.test(n)||loc?.region==='Cataluña'||loc?.region==='Valencia')culture='catalan';
+    else if(/emirat|califat|sultan|árab|arabe|andalus|magreb|marroqu/.test(n)||['Magreb','Arabia'].includes(loc?.region))culture='arabic';
+    else if(/castilla|castellan|españa|le[oó]n/.test(n)||['Castilla','Andalucía occidental','Andalucía oriental'].includes(loc?.region))culture='castilian';
+    nationCultures.set(f,culture);
+    return culture;
+  }
+  function setPlayerCulture(value){
+    if(!CULTURES.includes(value))return false;
+    playerCulture=value;nationCultures.set(0,value);save();return true;
+  }
+  function cultureDialog(){
+    const options='castilian = Castellana; catalan = Catalana/valenciana; arabic = Árabe/andalusí; other = Otra.';
+    const selection=window.prompt('Cultura administrativa de tu nación: '+options,nationCulture(0));
+    if(selection!==null&&!setPlayerCulture(String(selection).trim().toLowerCase()))
+      window.alert('Cultura no reconocida. Usa castilian, catalan, arabic u other.');
   }
   function cityRecord(cell,base){
     let rec=cityIdentity.get(cell);
     if(!rec){
       const official=typeof cityDisplayName3271==='function'?cityDisplayName3271(cell):base;
-      rec={geo:String(base||official||''),name:String(official||base||''),history:[],owner:owner6[cell],pending:null,manual:false};
+      rec={geo:String(base||official||''),geoSource:base?'atlas':'legacy',
+        name:String(official||base||''),history:[],owner:owner6[cell],pending:null,manual:false};
       cityIdentity.set(cell,rec);
     }
     if(base&&!rec.geo)rec.geo=String(base);
@@ -87,7 +105,7 @@
   }
   function applyCityOfficial(cell,rec,next,reason){
     if(!next||next===rec.name)return;
-    if(rec.name&&!rec.history.includes(rec.name))rec.history.push(rec.name);
+    if(rec.name&&rec.name!==rec.history[rec.history.length-1])rec.history.push(rec.name);
     rec.history=rec.history.slice(-12);
     rec.name=next;rec.pending=null;rec.reason=reason;
     if(typeof setCityName3271==='function')setCityName3271(cell,next);
@@ -98,8 +116,11 @@
     const now=Number(campaignSeconds3230)||0,owner=owner6[cell];
     if(rec.owner!==owner){
       rec.owner=owner;rec.pending=null;
-      const target=historicalVariants[rec.geo]?.[nationCulture(owner)];
-      if(!rec.manual&&target&&target!==rec.name)
+      // Una decisión manual se respeta mientras dura el mandato del jugador,
+      // pero no bloquea para siempre las decisiones de futuros conquistadores.
+      rec.manual=false;
+      const target=historicalVariants[rec.geo]?.[nationCulture(owner)]||rec.geo;
+      if(target&&target!==rec.name&&rec.geoSource==='atlas')
         rec.pending={name:target,since:now,reason:'adaptación cultural tras conquista'};
     }
     if(rec.pending&&now-rec.pending.since>=90)
@@ -178,6 +199,9 @@
     if(!name||!Number.isInteger(cell)||owner6[cell]!==f)return false;
     const previous=cities.get(cell);
     if(previous===name)return true;
+    // No sobrescribir una ciudad con identidad administrativa ya consolidada.
+    const identity=cityIdentity.get(cell);
+    if(identity&&(identity.manual||identity.pending||identity.history?.length))return false;
     // Jamás sobrescribir ciudades personalizadas del jugador, excepto su capital
     // con un nombre geográficamente incorrecto como Madrid en Barcelona.
     if(f===0&&cell!==capitals?.[0])return false;
@@ -307,7 +331,12 @@
         }
       }
       tryApplyCity(cell,option.name,f);
-      if(cities3212.has(cell)){const rec=cityRecord(cell,option.name);rec.geo=option.name;inspectCityIdentity(cell,option.name)}
+      if(cities3212.has(cell)){
+        const rec=cityRecord(cell,exact?option.name:null);
+        if(exact){rec.geo=option.name;rec.geoSource='atlas'}
+        // Una ciudad cercana no es necesariamente la ubicación del hexágono.
+        inspectCityIdentity(cell,exact?option.name:null);
+      }
       checked.add(marker);
     }catch(err){failures++;console.warn('[Hexategos topónimos]',err?.message||err)}
     finally{working.delete(job)}
@@ -340,14 +369,18 @@
     if(Number.isInteger(f)&&f>=0&&f<activeFactionCount3230){inspectCityIdentity(cell);if(f>0)void nameCell(cell,f,false)}
   }
   function serialize(){
-    return {v:2,nations:[...nations].map(([f,n])=>[f,n]),cities:[...cities],checked:[...checked],playerName,playerHistory,changes:changes.slice(-150),cityIdentity:[...cityIdentity]};
+    return {v:2,nations:[...nations].map(([f,n])=>[f,n]),cities:[...cities],checked:[...checked],playerName,playerHistory,changes:changes.slice(-150),cityIdentity:[...cityIdentity],playerCulture,nationCultures:[...nationCultures]};
   }
   function restore(s){
-    nations.clear();cities.clear();cityIdentity.clear();checked.clear();working.clear();generation++;playerName='';playerHistory=[];changes.length=0;
+    nations.clear();cities.clear();cityIdentity.clear();nationCultures.clear();checked.clear();working.clear();generation++;playerName='';playerHistory=[];playerCulture='';changes.length=0;
     pendingCities.length=0;queuedCities.clear();
     capCursor=0;cityCursor=null;lastCampaign=-1e9;
     if(!s||!Array.isArray(s.nations))return;
     playerName=String(s.playerName||'').slice(0,64);
+    playerCulture=CULTURES.includes(s.playerCulture)?s.playerCulture:'';
+    if(Array.isArray(s.nationCultures))for(const [f,c] of s.nationCultures){
+      if(Number.isInteger(f)&&f>=0&&f<FACTIONS3230.length&&CULTURES.includes(c))nationCultures.set(f,c)
+    }
     playerHistory=Array.isArray(s.playerHistory)?s.playerHistory.slice(-12).map(String):[];
     if(Array.isArray(s.changes))changes.push(...s.changes.slice(-150));
     for(const [f,r] of s.nations.slice(0,FACTIONS3230.length))
@@ -361,6 +394,8 @@
     if(Array.isArray(s.checked))for(const k of s.checked.slice(0,6000))checked.add(String(k));
     if(Array.isArray(s.cityIdentity))for(const [cell,rec] of s.cityIdentity.slice(0,6000)){
       if(Number.isInteger(cell)&&cities3212.has(cell)&&rec?.geo){cityIdentity.set(cell,rec);
+        // Las partidas v2 carecían de certificación geográfica.
+        if(!rec.geoSource)rec.geoSource='legacy';
         if(rec.name&&typeof setCityName3271==='function')setCityName3271(cell,rec.name)}
     }
   }
@@ -450,6 +485,7 @@
   document.body.append(cityButton);
   window.HexategosRegionalNames0389={
     version:VERSION,regionOf,service,serialize,ensureNation,renamePlayer,renameDialog,
+    nationCulture,setPlayerCulture,cultureDialog,cultureLabels:CULTURE_LABELS,
     cityIdentity:cell=>inspectCityIdentity(Number(cell)),
     renameCity:(cell,name)=>{cell=Number(cell);if(!cities3212.has(cell)||owner6[cell]!==0)return false;
       const clean=String(name||'').trim().slice(0,64);if(clean.length<2)return false;
