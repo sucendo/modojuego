@@ -41,6 +41,7 @@ const prelude=`
   const cleanCityName3271=x=>x;
   const updateUI3230=()=>{};
   let saveGame3212=()=>true;
+  let economyTick3212=()=>true;
   let resetGame3230=()=>true;
   let loadGame3212=()=>{notifyLoad();resetGame3230(false);return true};
   let buildPortableFile3275=()=>({payload:{main:{owner:[0,0,1],roads:[],cities:[1,2]}}});
