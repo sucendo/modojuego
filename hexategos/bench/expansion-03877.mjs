@@ -60,10 +60,11 @@ function simulation(factions){
     while(used.has(c)){p=(p+1009)%eligible.length;c=eligible[p]}
     used.add(c);owner[c]=f;capitals[f]=c;owned[f].push(c);
   }
-  const snap={frontier:Array.from({length:factions},()=>[])};
+  const snap={frontier:Array.from({length:factions},()=>[]),territory:new Int32Array(factions)};
   const refresh=()=>{
     for(let f=0;f<factions;f++){
       const result=snap.frontier[f];result.length=0;
+      snap.territory[f]=owned[f].length;
       for(const cell of owned[f]){
         for(let k=offsets[cell];k<offsets[cell+1];k++){
           const n=edgeNbr[k];if(n>=0&&land[n]>=0&&owner[n]===-1){
@@ -121,5 +122,13 @@ return {tick:time=>{campaignSeconds3230=time;aiTick3212()},api:window.HexategosE
 }
 for(const f of [150,250,350,500]){
   const result=simulation(f);
+  assert.ok(result.timeline[5].coveragePct>=40,
+    factions+' nations colonized too slowly during the first five campaign minutes');
+  assert.ok(result.timeline[10].coveragePct>=75,
+    factions+' nations failed midgame coverage expectation');
+  assert.ok(result.timeline[20].coveragePct>=85,
+    factions+' nations failed long-duration territorial coverage');
+  assert.equal(result.stats.milestones.length,3,'in-game measurements for 5/10/20 minutes missing');
+  assert.ok(result.stats.milestones[0].occupiedPct>0,'live AI snapshot coverage missing');
   console.log('BENCH_EXPANSION_03877 '+JSON.stringify(result));
 }
