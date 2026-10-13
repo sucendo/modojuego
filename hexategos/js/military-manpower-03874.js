@@ -68,7 +68,9 @@
     if(removed<=0)return 0;
     troops3230[f]=Math.max(0,troops3230[f]-removed);
     // La demovilización no destruye ejércitos desplegados, ni devuelve oro/equipo.
-    queues[f]=Math.min(queues[f],Math.max(0,Math.floor(status(f).room)));
+    // Una orden expresa de desmovilización anula formación pendiente para
+    // no volver a contratar inmediatamente a los mismos efectivos.
+    queues[f]=0;
     if(f===0){updateUI3230();needsRender=true}
     persist();return removed;
   }
