@@ -1,3 +1,4 @@
+import { versionAtLeast } from './version-compat.mjs';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
@@ -5,7 +6,7 @@ const src=read('js/production-0388.js'),com=read('js/systems-commerce-03815.js')
 const html=read('index.html'),css=read('css/industry-catalog-03815.css');
 assert.doesNotThrow(()=>new Function(src),'factory engine syntax');
 assert.doesNotThrow(()=>new Function(com),'Commerce tab syntax');
-assert.match(html,/v0\.38\.1\d<\/title>/);
+assert.ok(versionAtLeast(html,'0.38.15'));
 assert.match(html,/js\/systems-commerce-03815\.js\?v=03815/);
 assert.match(html,/css\/industry-catalog-03815\.css\?v=03815/);
 assert.ok(src.includes("Nivel I · Industrias primarias")&&src.includes("Nivel V · Tecnologías futuras"),
