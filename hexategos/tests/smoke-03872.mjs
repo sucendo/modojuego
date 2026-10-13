@@ -68,18 +68,25 @@ const all=new Map([['100:civilian',{cell:100,kind:'civilian',level:1}]]);
 const original=all.get('100:civilian'),owner=[];owner[100]=0;owner[101]=1;
 const migration=new Function('industries3212','owner6','sites','siteKey',
  'clamp','MAX_SITES','MAX_PER_CELL','sitesOnCell','addSite','industryLevel3230',
- 'campaignSeconds3230','revision',
+ 'campaignSeconds3230','revision','legacyReconciledCells03872',
  migrateCode+'\nreturn migrateGeneralIndustry;')(
  new Set([100,101]),owner,all,(c,k)=>c+':'+k,
  (x,a,b)=>Math.max(a,Math.min(b,x)),5000,8,
  c=>[...all.values()].filter(s=>s.cell===c),
  s=>{all.set(s.cell+':'+s.kind,s);return true},
- {[100]:3,[101]:2},1287,1);
+ {[100]:3,[101]:2},1287,1,new Set());
 assert.equal(migration(),2,'reconcile one old factory and migrate one absent');
 assert.equal(original.level,3,'old level 3 must not be downgraded to 1');
 assert.equal(all.size,2,'existing site must not be duplicated');
 assert.equal(all.get('101:civilian').level,2,'missing factory inherits old level');
-assert.equal(migration(),0,'reloading must be idempotent');
+assert.equal(migration(),0,'repeated migration must be idempotent');
+original.level=1; // Simulate disconnection/gradual degradation after migration.
+assert.equal(migration(),0,'degradation must not be reversed on each tick');
+assert.equal(original.level,1,'degraded industry must not be silently upgraded');
+assert.match(industry,/legacyReconciled03872:\[\.\.\.legacyReconciledCells03872\]/,
+ 'migration marker must persist in production save');
+assert.match(industry,/Array\.isArray\(data\?\.legacyReconciled03872\)/,
+ 'legacy migration marker must survive loading old and new saves');
 
 // A capital road is a paid, owned connection, never a free spontaneous road.
 const roadSrc=section(ai,'  const nextCapitalRoad03772=',
