@@ -409,6 +409,18 @@
     // 0.38.0 volvía a multiplicar material en ciudades IA: doble penalización.
     let combined=Number(api?.combinedSupply?.(cell));
     if(!Number.isFinite(combined))combined=typeof supplyPct3220==='function'?Number(supplyPct3220(cell))||0:60;
+    // La capital es una excepción explícita a la desaparición por falta de
+    // carretera: puede vivir de sus existencias y territorio inmediato.
+    // No regalar un porcentaje fijo: si no hay alimentos, tampoco habrá
+    // abastecimiento autónomo. Otras ciudades siguen necesitando red.
+    if(capitals?.[f]===cell&&owner6[cell]===f){
+      const stock=api?.materialSupply?.(cell)?.resourcePct;
+      if(Array.isArray(stock)&&stock.length>=4){
+        const local=.62*(Number(stock[0])||0)+.22*(Number(stock[2])||0)+
+          .16*(Number(stock[3])||0);
+        combined=Math.max(combined,Math.min(78,local*.78));
+      }
+    }
     return clamp(combined,0,100);
   }
 
@@ -443,7 +455,7 @@
     return {
       cell,owner:f,origin:st.origin,stability:Math.round(st.stability),
       nationalism:Math.round(st.nationalism),scarcity:Math.round(st.scarcity),
-      supply:Math.round(Number(st.lastSupply)||65),
+      supply:Number.isFinite(Number(st.lastSupply))?Math.round(Number(st.lastSupply)):65,
       occupied:st.origin>=0&&st.origin!==f,
       strike:st.strikeUntil>now(),riot:st.riotUntil>now(),
       active:Object.fromEntries(Object.keys(GOV_POLICY0386).map(t=>[t,governanceActive0386(st,t)])),
