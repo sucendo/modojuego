@@ -214,11 +214,12 @@
       '<div class="hubStats03851">'+stat('Reserva disponible','reserve')+
       stat('Tropas desplegadas','deployed')+stat('Límite militar','maximum')+
       stat('Pendientes de formación','queue')+stat('Mantenimiento existente','upkeep')+
-      stat('Equipo militar nacional','equipment')+'</div>'+
+      stat('Equipo militar nacional','equipment')+stat('Coste orden pendiente','cost')+'</div>'+
       '<p class="hubEmpty03851">Formación gradual según población urbana y territorio. Cada tropa requiere '+
       UNIT_GOLD+' oro y '+UNIT_EQUIP+' de equipo militar del almacén real de la capital. '+
       'El mantenimiento ya está contabilizado en Economía; no se cobra dos veces. '+
-      'Desmovilizar solo reduce la reserva libre y no devuelve los gastos anteriores.</p>'+controls;
+      'Desmovilizar solo reduce la reserva libre y no devuelve los gastos anteriores.</p>'+
+      '<p class="hubEmpty03851" data-mil-state03874></p>'+controls;
   }
   function updatePanelValues(){
     if(!host||sysTab3220!=='military')return;
@@ -226,10 +227,20 @@
     if(!root)return;
     const s=status(0);if(!s)return;
     const values={reserve:fmt(s.reserve),deployed:fmt(s.deployed),maximum:fmt(s.maximum),
-      queue:fmt(s.queue),upkeep:s.upkeep.toFixed(2)+' oro/s',equipment:s.militaryStock.toFixed(2)};
+      queue:fmt(s.queue),upkeep:s.upkeep.toFixed(2)+' oro/s',equipment:s.militaryStock.toFixed(2),
+      cost:(s.queue*UNIT_GOLD).toFixed(2)+' oro'};
     for(const [key,val] of Object.entries(values)){
       const el=root.querySelector('[data-mil-value03874="'+key+'"]');
       if(el&&el.textContent!==val)el.textContent=val;
+    }
+    const state=root.querySelector('[data-mil-state03874]');
+    if(state){
+      const message=s.queue<=0?'Sin orden de reclutamiento activa.':
+        s.room<=0?'Orden detenida: capacidad militar agotada.':
+        s.gold<UNIT_GOLD?'En espera: oro insuficiente.':
+        s.militaryStock<UNIT_EQUIP?'En espera: falta material militar en la capital.':
+        'Formación en curso · mínimo aproximado '+Math.ceil(s.queue/Math.max(.001,Math.min(s.recruitRate,3)))+' s según capacidad; puede aumentar por recursos o tesorería.';
+      if(state.textContent!==message)state.textContent=message;
     }
   }
   if(typeof renderSystems3220==='function'){
