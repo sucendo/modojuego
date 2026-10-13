@@ -52,7 +52,7 @@
     }
     const main=typeof SAVE_KEY3230==='string'&&localStorage.getItem(SAVE_KEY3230)!==null;
     return {ok:main&&!missing.length&&!damaged.length,main,present,missing,damaged,
-      manifest,manifestValid:manifest?.v===1&&manifest.modules===MODULES.length,
+      manifest,manifestValid:manifest?.v===1&&Number(manifest.modules)>0&&Number(manifest.modules)<=MODULES.length,
       status:codec?.status?.()||null};
   }
   function inspectPortable(file,strict=false){
