@@ -593,6 +593,43 @@
       persistProduction0388();
     }
   }
+  // Fase IA económica: comprobar materias accesibles en la MISMA red
+  // antes de invertir. Reutiliza el índice nacional y el identificador de
+  // componente existente; no recorre el mapa ni crea temporizadores.
+  function aiLocalChain0388(own,f,cell,comp){
+    const supplied=new Set(),power={ready:false};
+    if(comp<0)return {supplied,power};
+    for(const site of own){
+      if(owner6[site.cell]!==f||connect(site.cell,f)!==comp)continue;
+      const def=TYPES[site.kind];if(!def)continue;
+      if(def.group==='extract'){
+        supplied.add(site.kind);
+        for(const derivative of Object.keys(DERIVATIVES[site.kind]||{}))supplied.add(derivative);
+      }
+      const processed=PROCESSED[site.kind];
+      if(processed)supplied.add(processed);
+      if(site.kind==='thermal')power.ready=true;
+    }
+    return {supplied,power};
+  }
+  function aiChainViable0388(kind,chain){
+    const def=TYPES[kind];if(!def||def.group==='extract')return true;
+    if(def.group==='manufacture'&&!chain.power.ready)return false;
+    const input=def.inputs||[];
+    return def.inputMode==='any'
+      ?input.some(k=>chain.supplied.has(k))
+      :input.every(k=>chain.supplied.has(k));
+  }
+  function aiRecoveryPriority0388(own,f,comp){
+    if(comp<0)return 0;
+    let stalled=0;
+    for(const site of own){
+      const def=TYPES[site.kind];
+      if(!def||def.group==='extract'||connect(site.cell,f)!==comp)continue;
+      if((site.output||0)<=.000001)stalled++;
+    }
+    return Math.min(1.30,stalled*.15);
+  }
   function aiDevelop(f){
     if(f<=0||f>=activeFactionCount3230||!Number.isInteger(capitals[f]))return;
     const now=campaignSeconds3230||0;
@@ -690,13 +727,16 @@
         const value=p*(.72+need*1.35)*logistics;
         if(value>score&&availability(f,cell,kind,true).ok&&botGold3230[f]>type.cost+65){score=value;choice={cell,kind}}
       }
+      const chain=aiLocalChain0388(own,f,cell,road);
+      const recovery=aiRecoveryPriority0388(own,f,road);
       for(const kind of factoryNeeds){
+        if(!aiChainViable0388(kind,chain))continue;
         const type=TYPES[kind];
         const strategic=kind==='arms'?(role==='aggressive'?1.45:.77):
           kind==='thermal'?(1+pressure.energy*.5+electricShortage*1.1):
           kind==='machinery'?(role==='growth'?1.35:1):
           kind==='civilian'?1.08:1;
-        const value=(road>=0?2.7:.28)*strategic*(role==='growth'?1.12:1);
+        const value=(road>=0?2.7:.28)*strategic*(role==='growth'?1.12:1)*(1+recovery);
         if(value>score&&availability(f,cell,kind,true).ok&&botGold3230[f]>type.cost+65){score=value;choice={cell,kind}}
       }
     }
