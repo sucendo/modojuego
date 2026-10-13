@@ -59,6 +59,13 @@ assert.equal(test.label(1),'Principado de Cataluña','national identity must not
 // Identifying a geographic capital proposes a name; the political transition
 // deliberately requires 90 campaign seconds before that proposal takes effect.
 test.advance(104);test.tick();
+await Promise.resolve();await Promise.resolve();
+assert.equal(test.api.identity(1)?.pending?.name,'Condado de Barcelona',
+ 'verified geography must propose the historically grounded name');
+assert.equal(test.label(1),'Principado de Cataluña','name remains until the transition expires');
+test.advance(193);
+assert.equal(test.label(1),'Principado de Cataluña','transition must last the full 90 campaign seconds');
+test.advance(194);
 assert.equal(test.label(1),'Condado de Barcelona','historical Barcelona naming after transition');
 assert.equal(captured.get(3),'Mi pueblo','untouched player name');
 test.save();
