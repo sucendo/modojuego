@@ -595,7 +595,9 @@
     const now=campaignSeconds3230||0;
     if(now<nextAI[f])return;
     nextAI[f]=now+44+(f%11)*6;
-    if(botGold3230[f]<150||countNation(f)>=nationLimit(f))return;
+    // Permitir arrancar una explotación agrícola (55+45 oro) sin esperar
+    // a disponer de una reserva propia de una fábrica avanzada.
+    if(botGold3230[f]<125||countNation(f)>=nationLimit(f))return;
     const own=Array.from(nationSites.get(f)||[]);
     const summary=api()?.resourceSummaryCached?.(f);
     const coverage=summary?.coverage||[.5,.5,.5];
