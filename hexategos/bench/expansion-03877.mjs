@@ -123,11 +123,11 @@ return {tick:time=>{campaignSeconds3230=time;aiTick3212()},api:window.HexategosE
 for(const f of [150,250,350,500]){
   const result=simulation(f);
   assert.ok(result.timeline[5].coveragePct>=40,
-    factions+' nations colonized too slowly during the first five campaign minutes');
+    f+' nations colonized too slowly during the first five campaign minutes');
   assert.ok(result.timeline[10].coveragePct>=75,
-    factions+' nations failed midgame coverage expectation');
+    f+' nations failed midgame coverage expectation');
   assert.ok(result.timeline[20].coveragePct>=85,
-    factions+' nations failed long-duration territorial coverage');
+    f+' nations failed long-duration territorial coverage');
   assert.equal(result.stats.milestones.length,3,'in-game measurements for 5/10/20 minutes missing');
   assert.ok(result.stats.milestones[0].occupiedPct>0,'live AI snapshot coverage missing');
   console.log('BENCH_EXPANSION_03877 '+JSON.stringify(result));
