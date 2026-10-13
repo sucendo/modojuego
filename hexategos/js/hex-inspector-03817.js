@@ -18,6 +18,7 @@
       d?.group==='power'?'Electricidad':d?.group==='manufacture'?'Manufactura':'Industria';
   };
   let tab='summary',lastCell=-1;
+  let cityNameDraft0389=null,cityNameDraftCell0389=-1;
   const panel=document.createElement('div');
   panel.id='ctxInspector03817';
   panel.className='ctxInspector03817';
@@ -177,12 +178,38 @@
     return card('Prospección y estudios',html,
       'Las estimaciones superficiales no revelan recursos concretos sin prospección.');
   }
+  function cityIdentityCard0389(ctx){
+    const cell=Number(ctx.cell);
+    if(!Number.isInteger(cell)||!cities3212.has(cell))return '';
+    const identity=window.HexategosRegionalNames0389?.cityIdentity?.(cell);
+    const current=typeof cityDisplayName3271==='function'?cityDisplayName3271(cell):identity?.name||'';
+    const original=identity?.geo||'Sin topónimo geográfico verificado';
+    const source=identity?.geoSource==='atlas'?'Ubicación confirmada por el atlas':'Referencia pendiente de verificación geográfica';
+    const historic=(identity?.history||[]).slice(-12).map(esc);
+    const transition=identity?.pending?.name;
+    const own=owner6[cell]===0;
+    if(cityNameDraftCell0389!==cell){cityNameDraft0389=null;cityNameDraftCell0389=cell}
+    const name=cityNameDraft0389===null?current:cityNameDraft0389;
+    return card('Identidad histórica de la ciudad',
+      '<div class="ctxInline03817"><span>Nombre oficial <b>'+esc(current)+'</b></span>'+
+      '<span>Topónimo geográfico <b>'+esc(original)+'</b></span></div>'+
+      '<p class="ctxHelp03817">'+esc(source)+'</p>'+
+      '<p class="ctxHelp03817"><b>Nombres anteriores:</b> '+(historic.length?historic.join(' → '):'Sin cambios registrados')+'</p>'+
+      (transition?'<p class="ctxHelp03817">Transición cultural pendiente: <b>'+esc(transition)+'</b></p>':'')+
+      (own?'<label for="ctxCityRename0389">Nombre oficial de la ciudad</label>'+
+        '<div class="ctxInline03817" style="display:flex;gap:8px;flex-wrap:wrap">'+
+        '<input id="ctxCityRename0389" type="text" data-inspect-city-name0389 maxlength="64" '+
+          'value="'+esc(name)+'" style="flex:1 1 150px;min-width:0">'+
+        '<button type="button" class="ctxManage03817" data-inspect-rename-city0389="'+cell+'">Guardar nombre</button></div>':''),
+      'El nombre geográfico no cambia con la conquista; el oficial puede evolucionar.');
+  }
   function government(ctx){
     const g=window.HexategosStatecraft0380?.governmentCity?.(ctx.cell);
     const policyNames={aid:'Ayuda',invest:'Inversión',autonomy:'Autonomía',garrison:'Guarnición',ration:'Racionamiento',repression:'Coerción'};
-    if(!g)return card('Gobierno local',
+    const cityIdentity=cityIdentityCard0389(ctx);
+    if(!g)return cityIdentity+card('Gobierno local',
       '<p class="ctxHelp03817">Sin administración urbana local. Construye una ciudad para consultar estabilidad, nacionalismo y políticas.</p>');
-    return card('Gobierno local',
+    return cityIdentity+card('Gobierno local',
       meter('Estabilidad',g.stability,g.stability<40?'red':'green')+
       meter('Nacionalismo',g.nationalism,g.nationalism>70?'red':'gold')+
       '<div class="ctxInline03817"><span>Escasez <b>'+num(g.scarcity)+'/300</b></span>'+
@@ -585,6 +612,27 @@
       }
       return;
     }
+    const rename=event.target.closest?.('[data-inspect-rename-city0389]');
+    if(rename){
+      event.preventDefault();event.stopPropagation();
+      const ctx=uiInteractionState3244?.contextData;
+      const cell=Number(rename.dataset.inspectRenameCity0389);
+      if(tab!=='government'||ctx?.kind!=='cell'||ctx.cell!==cell||owner6[cell]!==0||!cities3212.has(cell))return;
+      const value=details.querySelector('[data-inspect-city-name0389]')?.value||'';
+      const clean=value.trim();
+      if(clean.length<2||clean.length>64){
+        if(typeof toast==='function')toast('El nombre de ciudad debe tener entre 2 y 64 caracteres.');
+        return;
+      }
+      if(window.HexategosRegionalNames0389?.renameCity?.(cell,clean)){
+        cityNameDraft0389=null;
+        if(typeof toast==='function')toast('Ciudad renombrada a '+clean);
+        mount(ctx);
+        if(typeof updateUI3230==='function')updateUI3230();
+        needsRender=true;
+      }else if(typeof toast==='function')toast('No se pudo renombrar la ciudad.');
+      return;
+    }
     const nav=event.target.closest('[data-inspect-tab03817]');
     if(nav){
       event.preventDefault();event.stopPropagation();
@@ -622,6 +670,10 @@
     }
   },true);
   root.addEventListener('input',event=>{
+    if(event.target.matches('[data-inspect-city-name0389]')){
+      cityNameDraft0389=event.target.value;
+      return;
+    }
     const input=event.target.closest('[data-inspect-pct03817]');
     if(!input)return;
     const id=input.dataset.inspectPct03817;
