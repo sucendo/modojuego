@@ -111,5 +111,5 @@ assert.doesNotMatch(ai,/setInterval\(/,'no extra AI interval');
 // Both mobile and desktop should load the new economic code, not old cached JS.
 for(const file of ['trade-logistics-0370.js','production-0388.js',
  'statecraft-0380.js','ai-commerce-0375.js'])
- assert.match(html,new RegExp(file.replaceAll('.','\\.')+'\\?v='+(file==='production-0388.js'?'03873':'03872')));
+ assert.match(html,new RegExp(file.replaceAll('.','\\.')+'\\?v='+(file==='production-0388.js'?'03873':['trade-logistics-0370.js','statecraft-0380.js'].includes(file)?'03874':'03872')));
 console.log('HXZ2 food/fuel recovery, genuine zero stocks, capital supply, civilian migration and first AI road: PASS');
