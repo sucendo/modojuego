@@ -386,6 +386,7 @@
     return {v:3,nations:[...nations].map(([f,n])=>[f,n]),cities:[...cities],checked:[...checked],playerName,playerHistory,changes:changes.slice(-150),cityIdentity:[...cityIdentity],playerCulture,nationCultures:[...nationCultures]};
   }
   function restore(s){
+    validateState(s);
     nations.clear();cities.clear();cityIdentity.clear();nationCultures.clear();checked.clear();working.clear();generation++;playerName='';playerHistory=[];playerCulture='';changes.length=0;
     pendingCities.length=0;queuedCities.clear();
     capCursor=0;cityCursor=null;lastCampaign=-1e9;
@@ -420,13 +421,77 @@
         if(rec.name&&typeof setCityName3271==='function')setCityName3271(cell,rec.name)}
     }
   }
-  function save(){try{localStorage.setItem(KEY,JSON.stringify(serialize()))}catch(_){}}
+  // Se comparte el códec HXZ1 de las demás capas. El guardado de hasta 500
+  // naciones y miles de nombres no debe agotar la cuota con JSON sin comprimir.
+  let persistenceError=null,persistenceAlerted=false;
+  function validateState(s){
+    if(s===null)return true; // partida anterior a la capa de nombres
+    if(!s||typeof s!=='object'||!Array.isArray(s.nations)||
+      (s.cities!=null&&!Array.isArray(s.cities))||
+      (s.cityIdentity!=null&&!Array.isArray(s.cityIdentity))||
+      (s.playerHistory!=null&&!Array.isArray(s.playerHistory))||
+      (s.nationCultures!=null&&!Array.isArray(s.nationCultures)))
+      throw new Error('Estado de nombres de naciones y ciudades inválido');
+    return true;
+  }
+  function readLocal(){
+    const codec=window.HexategosSaveStorage03827;
+    if(codec?.get)return codec.get(KEY);
+    const raw=localStorage.getItem(KEY);
+    return raw===null?null:JSON.parse(raw);
+  }
+  function save(state=serialize()){
+    try{
+      validateState(state);
+      const codec=window.HexategosSaveStorage03827;
+      let stored;
+      if(codec?.set)stored=codec.set(KEY,state);
+      else{
+        const data=JSON.stringify(state);
+        localStorage.setItem(KEY,data);
+        stored=localStorage.getItem(KEY)===data;
+      }
+      if(!stored)throw new Error('El navegador no confirmó el guardado de nombres');
+      persistenceError=null;persistenceAlerted=false;
+      return true;
+    }catch(error){
+      persistenceError=String(error?.message||error);
+      if(!persistenceAlerted){
+        persistenceAlerted=true;
+        console.warn('[Hexategos nombres] Nombres no guardados; conserva una copia .hexategos',error);
+        if(!window.HexategosSaveStorage03827?.status?.()&&typeof toast==='function')
+          toast('No se han guardado los nombres. Exporta una copia .hexategos.');
+      }
+      return false;
+    }
+  }
   const originalSave=saveGame3212;
-  saveGame3212=function(){const out=originalSave.apply(this,arguments);save();return out};
+  saveGame3212=function(){
+    // Capturar los nombres vivos antes de cualquier envoltorio de guardado.
+    const state=started3230?serialize():null;
+    const out=originalSave.apply(this,arguments);
+    if(out===false)return false;
+    return state&&!save(state)?false:out;
+  };
   const originalLoad=loadGame3212;
-  loadGame3212=function(){const out=originalLoad.apply(this,arguments);
-    try{restore(JSON.parse(localStorage.getItem(KEY)||'null'))}catch(_){restore(null)}
-    return out};
+  loadGame3212=function(){
+    let state;
+    try{state=readLocal();validateState(state)}
+    catch(error){
+      persistenceError='Copia local de nombres ilegible: '+String(error?.message||error);
+      console.warn('[Hexategos nombres] Carga bloqueada para no perder identidades',error);
+      if(window.HexategosDialogs03851?.notice)
+        void window.HexategosDialogs03851.notice(
+          'Los nombres guardados no se pueden leer. No se ha continuado la partida para evitar pérdidas. Importa una copia .hexategos si la tienes.',
+          'Guardado de nombres dañado');
+      else if(typeof toast==='function')toast('Guardado de nombres ilegible. No se ha continuado.');
+      return false;
+    }
+    const out=originalLoad.apply(this,arguments);
+    if(out===false)return false;
+    restore(state);
+    return out;
+  };
   const originalReset=resetGame3230;
   resetGame3230=function(clearSave=true){
     const out=originalReset.apply(this,arguments);restore(null);
@@ -437,7 +502,8 @@
     const base=buildPortableFile3275;
     buildPortableFile3275=function(){
       const file=base.apply(this,arguments);
-      if(file?.payload){file.payload.regionalNames0389=serialize();
+      if(!file?.payload)throw new Error('La exportación no contiene el estado principal');
+    if(file?.payload){file.payload.regionalNames0389=serialize();
         if(typeof fnv1a3273==='function')file.checksum=fnv1a3273(JSON.stringify(file.payload))}
       return file;
     };
@@ -445,8 +511,19 @@
   if(typeof applyPortableFile3275==='function'){
     const base=applyPortableFile3275;
     applyPortableFile3275=function(file){
-      const data=file?.payload?.regionalNames0389||null;
-      const out=base.apply(this,arguments);restore(data);save();return out;
+      const data=file?.payload?.regionalNames0389??null;
+      // No modificar los nombres ni su guardado si el importador rechaza
+      // formato, checksum, versión o cualquier otro componente del archivo.
+      try{validateState(data)}catch(error){
+        console.warn('[Hexategos nombres] Archivo con identidades dañadas',error);
+        return false;
+      }
+      const out=base.apply(this,arguments);
+      if(out===false)return false;
+      restore(data);
+      if(!save()&&typeof toast==='function')
+        toast('Partida importada, pero no se han podido conservar los nombres en el navegador.');
+      return out;
     };
   }
   // Captura O(1) de nuevas ciudades de las IA, sin recuentos ni barridos.
@@ -474,6 +551,7 @@
       const clean=String(name||'').trim().slice(0,64);if(clean.length<2)return false;
       const rec=cityRecord(cell);rec.manual=true;applyCityOfficial(cell,rec,clean,'decisión del jugador');save();return true},
     identity:f=>Number(f)===0?{name:factionName3230(0),history:playerHistory.slice()}:ensureNation(Number(f)),
+    persistence:()=>({error:persistenceError,storage:window.HexategosSaveStorage03827?.status?.()||null}),
     stats:()=>({namedNations:nations.size,namedCities:cities.size,atlasQueries:searches,failures,inFlight:working.size})
   };
   console.info('[HEXATEGOS] '+VERSION+' · naciones históricas y localidades georreferenciadas');
