@@ -608,7 +608,7 @@
       }
       const processed=PROCESSED[site.kind];
       if(processed)supplied.add(processed);
-      if(site.kind==='thermal')power.ready=true;
+      if(site.kind==='thermal' && (electricitySampleTime===null || (electricalNetworks.get(groupKey(f,comp,site.cell))?.generatedRate||0)>0))power.ready=true;
     }
     return {supplied,power};
   }
@@ -619,16 +619,6 @@
     return def.inputMode==='any'
       ?input.some(k=>chain.supplied.has(k))
       :input.every(k=>chain.supplied.has(k));
-  }
-  function aiRecoveryPriority0388(own,f,comp){
-    if(comp<0)return 0;
-    let stalled=0;
-    for(const site of own){
-      const def=TYPES[site.kind];
-      if(!def||def.group==='extract'||connect(site.cell,f)!==comp)continue;
-      if((site.output||0)<=.000001)stalled++;
-    }
-    return Math.min(1.30,stalled*.15);
   }
   function aiDevelop(f){
     if(f<=0||f>=activeFactionCount3230||!Number.isInteger(capitals[f]))return;
@@ -728,7 +718,6 @@
         if(value>score&&availability(f,cell,kind,true).ok&&botGold3230[f]>type.cost+65){score=value;choice={cell,kind}}
       }
       const chain=aiLocalChain0388(own,f,cell,road);
-      const recovery=aiRecoveryPriority0388(own,f,road);
       for(const kind of factoryNeeds){
         if(!aiChainViable0388(kind,chain))continue;
         const type=TYPES[kind];
@@ -736,7 +725,7 @@
           kind==='thermal'?(1+pressure.energy*.5+electricShortage*1.1):
           kind==='machinery'?(role==='growth'?1.35:1):
           kind==='civilian'?1.08:1;
-        const value=(road>=0?2.7:.28)*strategic*(role==='growth'?1.12:1)*(1+recovery);
+        const value=(road>=0?2.7:.28)*strategic*(role==='growth'?1.12:1);
         if(value>score&&availability(f,cell,kind,true).ok&&botGold3230[f]>type.cost+65){score=value;choice={cell,kind}}
       }
     }
