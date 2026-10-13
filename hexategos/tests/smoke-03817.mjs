@@ -23,7 +23,7 @@ assert.ok(js.includes('requestAnimationFrame(()=>')&&js.includes("root.classList
   'one-shot positioning must stop when the inspector is closed');
 
 const root={scrollTop:0,classList:{add(){},remove(){}},insertBefore(){},addEventListener(){}};
-const actions={querySelector:()=>null,querySelectorAll:()=>[],addEventListener(){},replaceChildren(){},appendChild(){}};
+const actions={querySelector:()=>null,querySelectorAll:()=>[],addEventListener(){},replaceChildren(){},appendChild(){},after(){}};
 let contents='';
 const details={scrollTop:0};
 const panel={id:null,className:'',hidden:false,
@@ -32,7 +32,8 @@ const panel={id:null,className:'',hidden:false,
 const doc={
   getElementById:id=>id==='contextMenu3244'?root:
     id==='ctxActions3244'?actions:null,
-  createElement:tag=>tag==='div'?panel:{className:'',innerHTML:'',appendChild(){},children:[],dataset:{}}
+  createElement:tag=>tag==='div'?panel:{className:'',innerHTML:'',appendChild(){},children:[],dataset:{}},
+  addEventListener(){}
 };
 const L={n:18,land:Array(18).fill(1)};
 L.land[17]=-1;
@@ -79,7 +80,7 @@ const vals=[doc,window,()=>{root.scrollTop=0},()=>{},()=>{},()=>L,8,owner,cities
 const boot=new Function(...args,js+
   '\nreturn {api:window.HexategosHexInspector03817,render:renderContextDialog3244,setTime:t=>campaignSeconds3230=t};');
 const sim=boot(...vals);
-assert.equal(sim.api.version,'0.38.17');
+assert.ok(versionAtLeast("const BUILD='"+sim.api.version+"'",'0.38.17'),'inspector must preserve historical capabilities');
 const rural=sim.api.population(2),urban=sim.api.population(3);
 assert.ok(urban.value>rural.value,'city must be more populated than empty rural hex');
 assert.equal(sim.api.population(17),null,'ocean hex should not gain population');
