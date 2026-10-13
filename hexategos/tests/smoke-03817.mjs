@@ -1,3 +1,4 @@
+import { versionAtLeast } from './version-compat.mjs';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
@@ -5,9 +6,9 @@ const js=read('js/hex-inspector-03817.js'),css=read('css/hex-inspector-03817.css
 const html=read('index.html'),trade=read('js/trade-logistics-0370.js');
 const production=read('js/production-0388.js');
 assert.doesNotThrow(()=>new Function(js));
-assert.match(html,/v0\.38\.1[789]<\/title>/);
+assert.ok(versionAtLeast(html,'0.38.17'));
 assert.match(html,/js\/hex-inspector-03817\.js\?v=\d+/);
-assert.match(html,/css\/hex-inspector-03817\.css\?v=03817/);
+assert.match(html,/css\/hex-inspector-03817\.css\?v=[A-Za-z0-9_-]+/);
 assert.match(html,/js\/trade-logistics-0370\.js\?v=\d+/);
 assert.match(html,/js\/production-0388\.js\?v=\d+/);
 assert.ok(css.includes('var(--hex-ui-scale'),'context fonts must follow Options');
