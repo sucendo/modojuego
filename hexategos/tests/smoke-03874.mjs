@@ -38,6 +38,7 @@ const warCount3261=()=>0;
 const aiTotalMilitary3280=f=>troops3230[f]+15;
 const aiFrontsForNation3280=()=>[];
 function economyRate3230(f){return {max:110,troop:2,net:1,gold:1,maintenance:2};}
+let territorialEconomy3261=economyRate3230;
 function economyTick3212(){
   campaignSeconds3230+=1;
   for(let f=0;f<2;f++){
@@ -69,6 +70,8 @@ const api=run.api;
 assert.equal(api.version,'0.38.74');
 assert.equal(run.sourceRate().troop,0,'legacy free recruitment must be suppressed');
 assert.ok(run.sourceRate().net<1,'deployed player troops have a real maintenance cost');
+assert.match(source,/territorialEconomy3261=function\\(f\\)/,
+ 'national economy view must count deployed troops as well as the player tick');
 assert.equal(run.present().troops[0],30);
 assert.ok(api.request(0,25));
 assert.equal(api.status(0).queue,25);
