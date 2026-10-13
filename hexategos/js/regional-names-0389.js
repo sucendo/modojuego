@@ -465,52 +465,7 @@
     const out=baseEconomy.apply(this,arguments);
     service();return out;
   };
-  // Acceso del jugador independiente de los diálogos, sin tapar el HUD.
-  const renameButton=document.createElement('button');
-  renameButton.textContent='Renombrar nación';
-  renameButton.title='Cambiar nombre político de tu nación';
-  renameButton.style.cssText='position:fixed;right:12px;bottom:12px;z-index:99990;background:#193a53;color:#fff;border:1px solid #84a1ba;border-radius:8px;padding:8px;cursor:pointer;font:12px system-ui';
-  renameButton.addEventListener('click',renameDialog);
-  document.body.append(renameButton);
-  // Consulta permanente de nombres anteriores, también tras importación.
-  const historyButton=document.createElement('button');
-  historyButton.textContent='Historia de nombres';
-  historyButton.title='Nombre actual y denominaciones anteriores de cada nación';
-  historyButton.style.cssText='position:fixed;right:12px;bottom:48px;z-index:99990;background:#193a53;color:#fff;border:1px solid #84a1ba;border-radius:8px;padding:8px;cursor:pointer;font:12px system-ui';
-  historyButton.addEventListener('click',()=>{
-    const raw=window.prompt('Número de nación (0–'+Math.max(0,activeFactionCount3230-1)+'):', '0');
-    if(raw===null)return;
-    const f=Number(raw);
-    if(!Number.isInteger(f)||f<0||f>=activeFactionCount3230)return;
-    const id=f===0?{history:playerHistory,pending:null}:ensureNation(f);
-    const prior=id?.history?.length?id.history.join(' → '):'Sin nombres anteriores registrados';
-    window.alert('Nación '+f+'\\nNombre actual: '+factionName3230(f)+
-      '\\nNombre anterior / historial: '+prior+
-      (id?.pending?'\\nCambio gradual pendiente hacia: '+id.pending.name:''));
-  });
-  document.body.append(historyButton);
-  const cultureButton=document.createElement('button');
-  cultureButton.textContent='Cultura nacional';
-  cultureButton.title='Fijar la tradición toponímica de tu nación';
-  cultureButton.style.cssText='position:fixed;right:12px;bottom:120px;z-index:99990;background:#193a53;color:#fff;border:1px solid #84a1ba;border-radius:8px;padding:8px;cursor:pointer;font:12px system-ui';
-  cultureButton.onclick=cultureDialog;
-  document.body.append(cultureButton);
-  const cityButton=document.createElement('button');
-  cityButton.textContent='Renombrar ciudad';
-  cityButton.style.cssText='position:fixed;right:12px;bottom:84px;z-index:99990;background:#193a53;color:#fff;border:1px solid #84a1ba;border-radius:8px;padding:8px;cursor:pointer;font:12px system-ui';
-  cityButton.onclick=()=>{
-    const cell=selected?.key===MAX_GAME_LEVEL3233?selected.i:-1;
-    if(!Number.isInteger(cell)||!cities3212.has(cell)||owner6[cell]!==0){
-      window.alert('Selecciona una ciudad de tu nación en el mapa.');return;
-    }
-    const rec=inspectCityIdentity(cell);
-    const name=window.prompt('Nombre oficial (geográfico: '+(rec?.geo||'desconocido')+'):',rec?.name||'');
-    if(name!==null&&window.HexategosRegionalNames0389?.renameCity(cell,name)){
-      if(typeof updateUI3230==='function')updateUI3230();
-      needsRender=true;
-    }
-  };
-  document.body.append(cityButton);
+  // Controles de identidad integrados en Sistemas → Gobierno y ficha de ciudad → Política.
   window.HexategosRegionalNames0389={
     version:VERSION,regionOf,service,serialize,ensureNation,renamePlayer,renameDialog,
     nationCulture,setPlayerCulture,cultureDialog,cultureLabels:CULTURE_LABELS,
