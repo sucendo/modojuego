@@ -581,6 +581,9 @@
       // las explotaciones ni la manufactura especializada, y no generan
       // productos transformados del catálogo industrial.
       prod[0]+=.024*urbanScale;prod[3]+=.052*urbanScale;
+      // Milicia y pequeños arsenales urbanos: escala muy inferior a armas industriales.
+      // El equipo se transforma de bienes civiles y materias reales en el tick.
+      prod[4]+=.015*urbanScale;
       demand[0]+=.050*urbanScale;demand[2]+=.018*urbanScale;demand[3]+=.029*urbanScale;
     }
     if(ind){
@@ -831,6 +834,16 @@
         const efficiency=statecraft?.resourceProductionMultiplier?
           statecraft.resourceProductionMultiplier(n.cell,i,n.f):1;
         production*=efficiency;
+        if(i===4&&n.city&&n.prod[4]>0){
+          // El material básico de reclutamiento exige materias y bienes.
+          const artisan=n.prod[4]*efficiency;
+          const roomRate=n.demand[4]+Math.max(0,n.cap[4]-n.stock[4])/Math.max(.1,dt);
+          const feasible=Math.max(0,Math.min(artisan,roomRate,
+            n.stock[1]/(.30*Math.max(.1,dt)),n.stock[3]/(.25*Math.max(.1,dt))));
+          production-=artisan-feasible;
+          n.stock[1]=Math.max(0,n.stock[1]-feasible*.30*dt);
+          n.stock[3]=Math.max(0,n.stock[3]-feasible*.25*dt);
+        }
         if(i===3&&n.city&&n.prod[3]>0){
           // Artesanía de subsistencia: bienes básicos, NO manufactura genérica
           // gratuita. Necesita materia prima física del mismo nodo.
@@ -2771,6 +2784,21 @@
     materialSupply:(cell)=>materialSupplyDetail03721(Number(cell)),
     supplyDiagnosis:(cell)=>supplyDiagnosis03722(Number(cell)),
     combinedSupply:(cell)=>supplyPct3220(Number(cell)),
+    // Equipo militar consumido en el nodo capital. No se inventa stock
+    // ni se modifica el total agregado sin afectar al inventario físico.
+    consumeRecruitEquipment03874:(f,people,perSoldier=.012)=>{
+      f=Number(f);people=Number(people);
+      if(!Number.isInteger(f)||f<0||f>=activeFactionCount3230||!Number.isFinite(people)||people<=0)return 0;
+      const n=resourceNodes03720.get(capitals[f]);
+      if(!n||n.f!==f)return 0;
+      const factor=Math.max(.0001,Number(perSoldier)||.012);
+      const trained=Math.max(0,Math.min(people,n.stock[4]/factor));
+      if(trained<=0)return 0;
+      const used=trained*factor;
+      n.stock[4]=Math.max(0,n.stock[4]-used);
+      if(resourceNation03720[f])resourceNation03720[f].stock[4]=Math.max(0,resourceNation03720[f].stock[4]-used);
+      return trained;
+    },
     resourceNode:(cell)=>{
       ensureResourceNodes03720(false);
       const n=resourceNodes03720.get(Number(cell));
