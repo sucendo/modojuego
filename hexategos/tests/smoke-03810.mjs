@@ -65,7 +65,7 @@ assert.ok(!list.some(x=>x.id==='build_industry'),'old industry option still visi
 st.availableActions=list.filter(x=>x.enabled).map(x=>x.id);
 module.handle('production0388');
 assert.equal(module.modalState()?.type,'production0388');
-assert.ok(body.innerHTML.includes('Industria manufacturera · área general'));
+assert.ok(body.innerHTML.includes('Complejo industrial'),'unified manufacturing catalog must open');
 for(const label of ['Nivel I','Nivel II','Nivel III','Nivel IV','Nivel V'])
   assert.ok(body.innerHTML.includes(label),'catalog level '+label+' missing');
 assert.ok(!body.innerHTML.includes('data-industry-view0388'),'industry split-menu should be gone');
