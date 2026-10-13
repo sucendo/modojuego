@@ -76,9 +76,12 @@
     const capital=capitals?.[f],loc=Number.isInteger(capital)?regionOf(capital):null;
     const n=String(originalFactionName(f)||'').toLocaleLowerCase('es');
     let culture='other';
-    if(/catalu|català|catalan|barcelona|valenciano|balear/.test(n)||loc?.region==='Cataluña'||loc?.region==='Valencia')culture='catalan';
-    else if(/emirat|califat|sultan|árab|arabe|andalus|magreb|marroqu/.test(n)||['Magreb','Arabia'].includes(loc?.region))culture='arabic';
-    else if(/castilla|castellan|españa|le[oó]n/.test(n)||['Castilla','Andalucía occidental','Andalucía oriental'].includes(loc?.region))culture='castilian';
+    if(/catalu|català|catalan|barcelona|valenciano|balear/.test(n))culture='catalan';
+    else if(/emirat|califat|sultan|árab|arabe|andalus|magreb|marroqu/.test(n))culture='arabic';
+    else if(/castilla|castellan|españa|le[oó]n/.test(n))culture='castilian';
+    else if(['Cataluña','Valencia'].includes(loc?.region))culture='catalan';
+    else if(['Magreb','Arabia'].includes(loc?.region))culture='arabic';
+    else if(['Castilla','Andalucía occidental','Andalucía oriental'].includes(loc?.region))culture='castilian';
     nationCultures.set(f,culture);
     return culture;
   }
