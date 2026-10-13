@@ -35,10 +35,10 @@ const env=new Function('window','owner6','loadLevel','MAX_GAME_LEVEL3233',
   ()=>{worldDirty++}
 );
 assert.ok(env.api);
-assert.ok(env.api.priority(1,2)>env.api.priority(1,0),
+assert.ok(env.api.priority(1,2,L)>env.api.priority(1,0,L),
  'fertile territory gets higher priority');
-assert.equal(env.api.priority(1,4),-1e9,'foreign territory never selectable');
-assert.equal(env.api.priority(1,8),-1e9,'noncontiguous territory cannot be claimed');
+assert.equal(env.api.priority(1,4,L),-1e9,'foreign territory never selectable');
+assert.equal(env.api.priority(1,8,L),-1e9,'noncontiguous territory cannot be claimed');
 assert.equal(env.api.preview(1),2,'sensible initial neutral target');
 env.now(8);
 env.tick();
