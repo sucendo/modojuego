@@ -89,14 +89,14 @@ function simulation(factions){
   const scope=new Function('window','FACTIONS3230','activeFactionCount3230','owner6',
   'capitals','botGold3230','troops3230','loadLevel','MAX_GAME_LEVEL3233',
   'isCoastal3212','mountainTier3212','performance','aiSnapshot3260','markEconomyDirty3261',
-  String.raw\`
+  String.raw`
 let campaignSeconds3230=0,paused3230=false,started3230=true,gameSpeed3212=1;
 let cacheDirty=false,supplyDirty3220=false,aiSnapshotDirty3260=false,needsRender=false;
 function aiTick3212(){return true}
 function resetGame3230(){return true}
-\`+moduleSrc+String.raw\`
+`+moduleSrc+String.raw`
 return {tick:time=>{campaignSeconds3230=time;aiTick3212()},api:window.HexategosExpansion03876};
-\`)(
+`)(
     window,Array.from({length:factions},()=>({role:'balanced'})),factions,
     owner,capitals,gold,troops,()=>L,'8',c=>!!coast[c],
     new Uint8Array(L.n),performance,snap,()=>{dirty++});
