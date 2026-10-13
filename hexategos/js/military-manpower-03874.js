@@ -28,8 +28,15 @@
   economyRate3230=function(f){
     const r=baseRate.apply(this,arguments);
     if(r&&typeof r==='object'){
-      if(valid(f))cachedRates[f]=r;
-      return {...r,troop:0,recruitPotential03874:Math.max(0,number(r.troop))};
+      // La base ya mantiene la reserva propia y reserva+desplegados IA.
+      // Cubrir también los soldados del jugador que están en frentes,
+      // transportes y guarniciones: no repetir el coste de la reserva.
+      const extra=f===0?deployed(0)*UPKEEP:0;
+      const corrected=extra>0?{...r,maintenance:number(r.maintenance)+extra,
+        net:number(r.net)-extra,gold:number(r.net)-extra,
+        armyDeployedMaintenance03874:extra}:r;
+      if(valid(f))cachedRates[f]=corrected;
+      return {...corrected,troop:0,recruitPotential03874:Math.max(0,number(r.troop))};
     }
     return r;
   };
