@@ -55,7 +55,11 @@ assert.equal(captured.get(1),'Barcelona','Barcelona capital must not inherit Mad
 test.advance(13);test.tick();
 await Promise.resolve();await Promise.resolve();
 assert.equal(captured.get(2),'Barcelona','AI capital must use the local city');
-assert.equal(test.label(1),'Condado de Barcelona','historical Barcelona naming');
+assert.equal(test.label(1),'Principado de Cataluña','national identity must not change instantly');
+// Identifying a geographic capital proposes a name; the political transition
+// deliberately requires 90 campaign seconds before that proposal takes effect.
+test.advance(104);test.tick();
+assert.equal(test.label(1),'Condado de Barcelona','historical Barcelona naming after transition');
 assert.equal(captured.get(3),'Mi pueblo','untouched player name');
 test.save();
 assert.ok(saved.has('hexategos.regionalNames.0389'),'naming save not persisted');
