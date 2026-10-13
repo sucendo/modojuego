@@ -2786,6 +2786,14 @@
     combinedSupply:(cell)=>supplyPct3220(Number(cell)),
     // Equipo militar consumido en el nodo capital. No se inventa stock
     // ni se modifica el total agregado sin afectar al inventario físico.
+    // Lectura O(1) del almacén usado realmente por la formación militar.
+    // No confundir el agregado nacional con el stock accesible en capital.
+    recruitEquipmentAvailable03875:(f=0)=>{
+      f=Number(f);
+      if(!Number.isInteger(f)||f<0||f>=activeFactionCount3230)return 0;
+      const n=resourceNodes03720.get(capitals[f]);
+      return n&&n.f===f?Math.max(0,Number(n.stock[4])||0):0;
+    },
     consumeRecruitEquipment03874:(f,people,perSoldier=.012)=>{
       f=Number(f);people=Number(people);
       if(!Number.isInteger(f)||f<0||f>=activeFactionCount3230||!Number.isFinite(people)||people<=0)return 0;
