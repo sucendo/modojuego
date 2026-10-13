@@ -645,6 +645,10 @@
 
     const snap=ensureEconomySnapshot3261(false);
     const restoredPlayer=new Map(Array.isArray(restoredResources03720?.playerNodes)?restoredResources03720.playerNodes:[]);
+    // v2: inventarios exactos de los nodos de TODAS las naciones.
+    // v1 (partidas previas): conservar fallback del jugador y coberturas IA.
+    const restoredAll=new Map(Array.isArray(restoredResources03720?.allNodes)?
+      restoredResources03720.allNodes.filter(x=>Array.isArray(x)&&Number.isInteger(x[0])).map(x=>[x[0],x]):[]);
     const restoredCoverage=Array.isArray(restoredResources03720?.nationCoverage)?restoredResources03720.nationCoverage:[];
 
     geoNodeCounts0383.fill(0);
@@ -656,6 +660,9 @@
         let stock;
         if(prev&&prev.f===f&&Array.isArray(prev.stock)){
           stock=profile.cap.map((mx,i)=>clamp(Number(prev.stock[i])||0,0,mx));
+        }else if(restoredAll.has(cell)&&restoredAll.get(cell)[1]===f){
+          const saved=restoredAll.get(cell)[2];
+          stock=profile.cap.map((mx,i)=>clamp(Number(saved?.[i])||0,0,mx));
         }else if(f===0&&restoredPlayer.has(cell)){
           const saved=restoredPlayer.get(cell);
           stock=profile.cap.map((mx,i)=>clamp(Number(saved?.[i])||0,0,mx));
@@ -2553,7 +2560,11 @@
     return {
       version:2,nextRouteId,permits:[...permits.entries()],
       resources03720:{
-        version:1,
+        version:2,
+        // Guardar inventario efectivo de todos los nodos, no solo la cobertura
+        // nacional agregada. Acotado a nodos económicos (no 500.000 hexágonos).
+        allNodes:[...resourceNodes03720.values()].map(n=>[n.cell,n.f,
+          n.stock.map(x=>Math.round((Number(x)||0)*1000)/1000)]),
         playerNodes:[...resourceNodes03720.values()].filter(n=>n.f===0).map(n=>[n.cell,n.stock.map(x=>Number(x.toFixed(3)))]),
         nationCoverage:resourceNation03720.map(s=>s?s.coverage.map(x=>Number(x.toFixed(4))):null)
       },
