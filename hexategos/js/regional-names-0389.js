@@ -174,9 +174,11 @@
     if(old){
       // Una capital que cambia no borra la identidad anterior.
       if(old.capital!==cell){
+        const oldRegion=regionOf(old.capital),newRegion=regionOf(cell);
         old.capital=cell;old.atlas=false;
-        const newRegion=regionOf(cell);
-        if(newRegion)proposeName(f,politicalName('',newRegion,f),'traslado o conquista de capital');
+        // No renombrar por un traslado corto dentro del mismo ámbito.
+        if(newRegion && (newRegion.region||broadRegion(newRegion))!==(oldRegion?.region||broadRegion(oldRegion)))
+          proposeName(f,politicalName('',newRegion,f),'cambio de capital y región política');
       }
       advanceName(f);
       return old;
@@ -196,14 +198,10 @@
     // Pérdidas mínimas de frontera nunca desencadenan renombrados.
     // Las pérdidas pronunciadas sólo permiten proponer un nombre nuevo,
     // manteniendo la identidad actual durante la transición.
-    if(count<=record.baseline*.65 && record.baseline-count>=8 && !record.pending){
-      const loc=regionOf(record.capital);
-      if(loc){
-        const candidate=politicalName('',loc,f);
-        proposeName(f,candidate,'transformación territorial');
-      }
-      record.baseline=count;
-    }else if(count>record.baseline)record.baseline=count;
+    // La pérdida territorial por sí sola no legitima otro nombre.
+    // Sólo la reubicación de la capital o una nueva capital identificada
+    // geográficamente pueden iniciar una transición de identidad.
+    if(count>record.baseline)record.baseline=count;
   }
   factionName3230=function(f){
     f=Number(f);
