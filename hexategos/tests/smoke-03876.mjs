@@ -3,7 +3,7 @@ import fs from 'node:fs';
 const src=fs.readFileSync(new URL('../js/ai-expansion-03876.js',import.meta.url),'utf8');
 const html=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
 assert.doesNotThrow(()=>new Function(src));
-assert.match(html,/js\/ai-expansion-03876\.js\?v=03876/);
+assert.match(html,/js\/ai-expansion-03876\.js\?v=03877/);
 assert.doesNotMatch(src,/setInterval\(|setTimeout\(/);
 assert.doesNotMatch(src,/Geology03830|deposit\(/,'no hidden mineral deposits');
 let budget=0,worldDirty=0;
