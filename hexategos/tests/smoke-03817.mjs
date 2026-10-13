@@ -17,8 +17,10 @@ assert.ok(js.includes('original.apply(this,arguments)'),'legacy context buttons 
 assert.ok(js.includes('productionCargoDetail03817'),'port manufacturing imports/exports missing');
 assert.ok(trade.includes('r.cargoDirection03720[i]=src===a?1:-1'),'route commodity direction missing');
 assert.ok(production.includes('r.productionCargoDetail03817.push'),'industrial cargo direction missing');
-assert.ok(!js.includes('setInterval(')&&!js.includes('requestAnimationFrame('),
+assert.ok(!js.includes('setInterval(')&&!js.includes('MutationObserver'),
   'inspector must not add continuous simulation work');
+assert.ok(js.includes('requestAnimationFrame(()=>')&&js.includes("root.classList.contains('open3244')"),
+  'one-shot positioning must stop when the inspector is closed');
 
 const root={scrollTop:0,classList:{add(){},remove(){}},insertBefore(){},addEventListener(){}};
 const actions={querySelector:()=>null,querySelectorAll:()=>[],addEventListener(){},replaceChildren(){},appendChild(){}};
