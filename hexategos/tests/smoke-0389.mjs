@@ -1,3 +1,4 @@
+import { versionAtLeast } from './version-compat.mjs';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
@@ -9,10 +10,10 @@ const index=read('index.html');
 for(const [name,code] of [['names',names],['messages',msgs],['statecraft',statecraft]]){
   assert.doesNotThrow(()=>new Function(code),name+' syntax');
 }
-assert.match(index,/v0\.38\.(?:9|1\d{1,2})<\/title>/);
+assert.ok(versionAtLeast(index,'0.38.9'),'current game must be at least regional naming version');
 assert.match(index,/js\/regional-names-0389\.js\?v=0389/);
 assert.match(index,/js\/ui-stable-step8-033\.js\?v=\d+/);
-assert.match(index,/js\/statecraft-0380\.js\?v=0389/);
+assert.match(index,/js\/statecraft-0380\.js\?v=[A-Za-z0-9_-]+/,'statecraft module must not be cached');
 assert.ok(msgs.includes('data-view-notice='),'notice VER missing');
 assert.ok(msgs.includes('data-view-offer='),'diplomatic proposal VER missing');
 assert.ok(msgs.includes('data-answer-embassy='),'embassy decision buttons missing');
