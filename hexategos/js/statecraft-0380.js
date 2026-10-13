@@ -761,10 +761,17 @@
 
   function dossierHeader(target){
     const rel=diplomaticRelation3300(0,target),emb=embassyRecord(0,target),d=capitalDistance(0,target);
+    const identity=window.HexategosRegionalNames0389?.identity?.(target);
+    const historic=(identity?.history||[]).slice(-5);
+    const names='<div class="nationSection0380"><h4>Identidad histórica</h4>'+
+      '<p>Nombre actual: <b>'+esc(factionName3230(target))+'</b></p>'+
+      '<p>Denominaciones anteriores: '+(historic.length?historic.map(esc).join(' → '):'Sin cambios registrados')+'</p>'+
+      (identity?.pending?'<p>Transición política: '+esc(identity.pending.name)+'</p>':'')+
+      (target===0?'<button data-nation-rename0389="1">RENOMBRAR NACIÓN</button>':'')+'</div>';
     return '<div class="nationHero0380"><div><b>'+esc(factionName3230(target))+'</b><small>'+relationLabel(rel)+' · '+Math.round(d)+'° · alcance '+reachDeg(0)+'°</small></div>'+
       '<span class="nationColor0380" style="background:'+(FACTIONS3230[target]?.color||'#789')+'"></span></div>'+
       '<div class="nationStatus0380"><span>Embajada <b>'+(emb?.status==='active'?'ACTIVA':emb?.status==='pending'?'PENDIENTE':emb?.status==='expelled'?'EXPULSADA':'NO')+'</b></span>'+
-      '<span>Opinión <b>'+Math.round(dipOpinionOf3300?.(target,0)||0)+'</b></span><span>Confianza <b>'+Math.round(dipTrustOf3300?.(target,0)||0)+'</b></span></div>';
+      '<span>Opinión <b>'+Math.round(dipOpinionOf3300?.(target,0)||0)+'</b></span><span>Confianza <b>'+Math.round(dipTrustOf3300?.(target,0)||0)+'</b></span></div>'+names;
   }
 
   function diplomacyTab(target){
@@ -1118,6 +1125,14 @@
     };
   }
 
+  modalBody3244?.addEventListener('click',event=>{
+    const btn=event.target.closest?.('[data-nation-rename0389]');
+    if(!btn||uiInteractionState3244?.modal?.type!=='nation_dossier_0380')return;
+    event.preventDefault();
+    window.HexategosRegionalNames0389?.renameDialog?.();
+    const active=uiInteractionState3244?.modal?.data?.target;
+    if(active===0)renderNationDossier(0,openTab);
+  });
   window.HexategosStatecraft0380={
     version:BUILD,
     hasEmbassy,
