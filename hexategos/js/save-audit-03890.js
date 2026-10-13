@@ -13,7 +13,8 @@
     ['hexategos.regionalNames.0389','Toponimia',x=>Array.isArray(x?.nations)],
     ['hexategos-border-road-0376','Conexiones fronterizas',x=>Array.isArray(x?.links)],
     ['hexategos-infrastructure-decay-0373','Degradación',x=>x&&typeof x==='object'],
-    ['hexategos-trade-geopolitics-0377','Geopolítica comercial',x=>x&&typeof x==='object']
+    ['hexategos-trade-geopolitics-0377','Geopolítica comercial',x=>x&&typeof x==='object'],
+    ['hexategos.diplomacy-stability.03816','Treguas y estabilidad diplomática',x=>Array.isArray(x?.peaceUntil)]
   ];
   const PORTABLE=[
     ['main',x=>Array.isArray(x?.owner)&&Array.isArray(x?.roads)&&Array.isArray(x?.cities)],
@@ -29,7 +30,8 @@
     ['militaryManpower03874',x=>Array.isArray(x?.queues)],
     ['borderRoad0376',x=>Array.isArray(x?.links)],
     ['infrastructureDecay0373',x=>x&&typeof x==='object'],
-    ['tradeGeopolitics0377',x=>x&&typeof x==='object']
+    ['tradeGeopolitics0377',x=>x&&typeof x==='object'],
+    ['diplomacyStability03816',x=>Array.isArray(x?.peaceUntil)]
   ];
   let lastError=null,lastExport=null,lastImport=null,lastSave=null;
   function inspectLocal(deep=true){
