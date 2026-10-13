@@ -197,7 +197,7 @@
       const L=loadLevel(MAX_GAME_LEVEL3233);world(L);
       return candidate(f,snap,L);
     },
-    stats:()=>({lastMs,lastCells,total:successes,blockedByBudget,
+    stats:()=>({version:BUILD,lastMs,lastCells,total:successes,blockedByBudget,
       staleCandidates,visits,scored,overBudget,lastVisits,
       landCount:landTotal,cursor,milestones:milestones.map(row=>row?{...row}:null)})
   });
