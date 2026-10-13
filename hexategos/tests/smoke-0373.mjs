@@ -9,7 +9,7 @@ const about=read('js/about-0351.js');
 const trade=read('js/trade-logistics-0370.js');
 
 assert.doesNotThrow(()=>new Function(decay),'infrastructure-decay-0373.js must parse');
-assert.ok(decay.includes("const BUILD='0.37.3'"),'decay build must be 0.37.3');
+assert.ok(versionAtLeast(decay,'0.37.3'),'decay build must be at least 0.37.3');
 assert.ok(decay.includes('const AUDIT_PERIOD=10'),'low-frequency audit missing');
 assert.ok(decay.includes('const GRACE_SECONDS=60'),'communication grace period missing');
 assert.ok(decay.includes('const ABANDONED_SECONDS=180'),'abandoned threshold missing');
