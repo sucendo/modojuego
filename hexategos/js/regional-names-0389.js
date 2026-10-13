@@ -398,8 +398,10 @@
     playerHistory=Array.isArray(s.playerHistory)?s.playerHistory.slice(-12).map(String):[];
     if(Array.isArray(s.changes))changes.push(...s.changes.slice(-150));
     for(const [f,r] of s.nations.slice(0,FACTIONS3230.length))
-      if(Number.isInteger(f)&&f>0&&r?.capital===capitals?.[f]&&owner6[r.capital]===f)
-        nations.set(f,{capital:r.capital,name:String(r.name||''),atlas:!!r.atlas,history:Array.isArray(r.history)?r.history.slice(-12):[],pending:r.pending||null,baseline:Number(r.baseline)||nationCount(f)});
+      if(Number.isInteger(f)&&f>0&&f<activeFactionCount3230&&r&&typeof r.name==='string')
+        // Si cambió la capital entre guardado y carga, conservar toda la
+        // historia y dejar que ensureNation procese la mudanza.
+        nations.set(f,{capital:r.capital,name:String(r.name||'').slice(0,100),atlas:!!r.atlas,history:Array.isArray(r.history)?r.history.slice(-12):[],pending:r.pending||null,baseline:Number(r.baseline)||nationCount(f)});
     if(Array.isArray(s.cities))for(const [cell,name] of s.cities.slice(0,6000)){
       if(Number.isInteger(cell)&&owner6[cell]>=0&&typeof setCityName3271==='function'){
         setCityName3271(cell,name);cities.set(cell,name);
