@@ -119,10 +119,10 @@ const clickTab=key=>root.events.click({
 assert.deepEqual(sim.api.tabsFor(city),['summary','industry','government','port','terrain']);
 clickTab('industry');
 assert.equal(sim.api.current().tab,'industry');
-assert.ok(detailsContent.includes('Industrias y controles de producción'),
+assert.ok(detailsContent.includes('Industria y producción'),
   'manufacturing controls are loaded only in the industry tab');
 clickTab('government');
-assert.ok(detailsContent.includes('Gobierno y estabilidad'),'local government view missing');
+assert.ok(detailsContent.includes('Gobierno local'),'local government view missing');
 clickTab('port');
 assert.ok(detailsContent.includes('Puerto, comercio y flotas'),'port tab missing');
 assert.ok(detailsContent.includes('↑ Exporta: Alimentos'),'outgoing sea cargo not identified');
@@ -131,7 +131,7 @@ assert.match(detailsContent,/↓ Importa:[^<]*Pozo de gas/,
   'inbound manufactured cargo not identified');
 assert.ok(detailsContent.includes('Flota 9'),'naval fleet based at port missing');
 clickTab('terrain');
-assert.ok(detailsContent.includes('Recursos del terreno'),'geographic tab missing natural resources');
+assert.ok(detailsContent.includes('Recursos y potencial económico'),'geographic tab missing natural resources');
 root.scrollTop=29;details.scrollTop=77;
 sim.render(city);
 assert.equal(root.scrollTop,29,'outer scroll must not jump on same-cell update');
