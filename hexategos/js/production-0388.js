@@ -620,6 +620,57 @@
       ?input.some(k=>chain.supplied.has(k))
       :input.every(k=>chain.supplied.has(k));
   }
+  // Diagnóstico acotado por nación. Evalúa infraestructura existente por red
+  // y propone reparar el primer eslabón ausente, no otra fábrica final.
+  function aiRecoveryNeeds0388(own,f){
+    const byNetwork=new Map(),producerByMaterial=new Map();
+    for(const [kind,material] of Object.entries(PROCESSED))producerByMaterial.set(material,kind);
+    const derivativeSource={plantfiber:'crops',wool:'livestock',hides:'livestock',dairy:'livestock'};
+    for(const site of own){
+      if(owner6[site.cell]!==f)continue;
+      const comp=connect(site.cell,f);
+      if(comp<0)continue;
+      let network=byNetwork.get(comp);
+      if(!network){network={comp,sites:[],materials:new Set(),power:false,depots:[]};byNetwork.set(comp,network)}
+      network.sites.push(site);
+      const def=TYPES[site.kind];
+      if(def?.group==='extract'){
+        network.materials.add(site.kind);
+        for(const k of Object.keys(DERIVATIVES[site.kind]||{}))network.materials.add(k);
+      }
+      if(PROCESSED[site.kind])network.materials.add(PROCESSED[site.kind]);
+      if(site.kind==='thermal')network.power=true;
+    }
+    const plans=new Map();
+    for(const network of byNetwork.values()){
+      let examined=0;
+      const add=(kind,reason)=>{
+        if(!TYPES[kind]||network.sites.some(s=>s.kind===kind))return;
+        const key=network.comp+':'+kind;
+        if(!plans.has(key))plans.set(key,{comp:network.comp,kind,reason});
+      };
+      for(const site of network.sites){
+        if(examined++>=18)break;
+        const def=TYPES[site.kind];
+        if(!def||def.group==='extract')continue;
+        if((def.group==='manufacture'||def.electricity)&&!network.power){
+          const fuel=['coal','fuel','gasfuel'].some(k=>network.materials.has(k));
+          if(fuel)add('thermal','restablecer electricidad');
+          else if(!network.materials.has('coal'))add('coal','abastecer central eléctrica');
+        }
+        const inputs=def.inputs||[];
+        if(!inputs.length)continue;
+        const missing=def.inputMode==='any'
+          ?(inputs.some(k=>network.materials.has(k))?[]:[inputs[0]])
+          :inputs.filter(k=>!network.materials.has(k));
+        for(const material of missing){
+          const source=producerByMaterial.get(material)||derivativeSource[material]||material;
+          add(source,'recuperar suministro de '+material);
+        }
+      }
+    }
+    return [...plans.values()].slice(0,18);
+  }
   function aiDevelop(f){
     if(f<=0||f>=activeFactionCount3230||!Number.isInteger(capitals[f]))return;
     const now=campaignSeconds3230||0;
@@ -685,11 +736,18 @@
       manufacturing:role==='growth'?100:90};
     sectorPct.set(f,policy);
     let choice=null,score=0;
+    const recoveryNeeds=aiRecoveryNeeds0388(own,f);
     const sample=aiNationalSamples3275?.[f]||[];
     const cells=[capitals[f]];
     // 500 IA: búsqueda acotada a once ubicaciones por revisión.
     const step=Math.max(1,Math.ceil(sample.length/10));
     for(let i=0;i<sample.length&&cells.length<12;i+=step)cells.push(sample[i]);
+    // Muestrear también la red que necesita repararse: elegir solo la capital
+    // o muestras dispersas dejaba sin solución los corredores secundarios.
+    for(const need of recoveryNeeds.slice(0,4)){
+      const origin=own.find(site=>connect(site.cell,f)===need.comp);
+      if(origin&&cells.length<20&&!cells.includes(origin.cell))cells.push(origin.cell);
+    }
     for(const cell of cells){
       if(!Number.isInteger(cell)||owner6[cell]!==f||sitesOnCell(cell).length>=MAX_PER_CELL)continue;
       const road=connect(cell,f);
@@ -716,6 +774,18 @@
         const need=pressure[type.sector]||.2;
         const value=p*(.72+need*1.35)*logistics;
         if(value>score&&availability(f,cell,kind,true).ok&&botGold3230[f]>type.cost+65){score=value;choice={cell,kind}}
+      }
+      // Recuperación industrial por red: dar preferencia a construir el
+      // eslabón ausente en la red afectada, respetando prospección y presupuesto.
+      for(const need of recoveryNeeds){
+        if(road<0||road!==need.comp)continue;
+        const kind=need.kind,type=TYPES[kind];
+        if(!type||!availability(f,cell,kind,true).ok||botGold3230[f]<=type.cost+85)continue;
+        if(type.group!=='extract'&&!aiChainViable0388(kind,aiLocalChain0388(own,f,cell,road)))continue;
+        const viability=type.group==='extract'?potential(cell,f,kind):1;
+        if(viability<=.000001)continue;
+        const value=4.1+Math.min(1.5,viability*.55);
+        if(value>score){score=value;choice={cell,kind}}
       }
       const chain=aiLocalChain0388(own,f,cell,road);
       for(const kind of factoryNeeds){
