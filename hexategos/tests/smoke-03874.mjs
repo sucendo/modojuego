@@ -73,6 +73,11 @@ assert.ok(run.sourceRate().net<1,'deployed player troops have a real maintenance
 assert.ok(source.includes('territorialEconomy3261=function(f)'),
  'national economy view must count deployed troops as well as the player tick');
 assert.equal(run.present().troops[0],30);
+for(let i=0;i<5;i++)run.step();
+assert.equal(run.present().troops[0],30,
+  'player reserve must not grow for free, without a recruitment order');
+assert.equal(api.status(0).queue,0,
+  'an idle player must not receive an automatic recruitment order');
 assert.ok(api.request(0,25));
 assert.equal(api.status(0).queue,25);
 const beforeEquipment=equipment[0],beforeGold=run.present().gold;
@@ -93,6 +98,16 @@ assert.equal(run.present().troops[0],32,'no soldier without military materiel');
 const initialAI=run.present().troops[1];
 run.step();
 assert.ok(run.present().troops[1]<=initialAI,'peace AI should demobilise excessive idle reserves');
+// The pending reserve can be trained gradually once the capital receives materiel.
+equipment[0]=7;
+for(let i=0;i<12;i++)run.step();
+assert.equal(run.present().troops[0],55,
+  'the remaining 23 soldiers should enter reserve once capital equipment is restored');
+assert.equal(api.status(0).queue,0,
+  'completed recruitment must empty the queue instead of recurring forever');
+for(let i=0;i<5;i++)run.step();
+assert.equal(run.present().troops[0],55,
+  'completed recruitment must not accidentally generate additional free reserves');
 const beforeDeployed=api.status(0).deployed;
 assert.equal(api.demobilize(0,20),20,'desmobilise reserve only');
 assert.equal(api.status(0).deployed,beforeDeployed,'committed soldiers cannot be demobilised');
