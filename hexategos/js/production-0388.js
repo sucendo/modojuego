@@ -272,9 +272,17 @@
     let migrated=0;
     for(const cell of industries3212){
       const f=owner6[cell];
-      if(f<0||sites.has(siteKey(cell,'civilian')))continue;
-      if(sites.size>=MAX_SITES||sitesOnCell(cell).length>=MAX_PER_CELL)continue;
+      if(f<0)continue;
       const level=clamp(Math.trunc(industryLevel3230[cell]||1),1,3);
+      const existing=sites.get(siteKey(cell,'civilian'));
+      // Un guardado de la fase inicial puede tener la manufactura civil en
+      // nivel I mientras la instalación general heredada era II/III.
+      // Reconciliar al alza una vez, sin duplicar fábrica ni cobrar de nuevo.
+      if(existing){
+        if(existing.level<level){existing.level=level;migrated++;}
+        continue;
+      }
+      if(sites.size>=MAX_SITES||sitesOnCell(cell).length>=MAX_PER_CELL)continue;
       if(addSite({cell,f,kind:'civilian',level,pct:100,stock:0,byproducts:{},output:0,legacyQuality:0,potential:1,updated:campaignSeconds3230||0}))migrated++;
     }
     if(migrated)revision++;
