@@ -93,6 +93,8 @@ assert.ok(run.present().troops[1]<=initialAI,'peace AI should demobilise excessi
 const beforeDeployed=api.status(0).deployed;
 assert.equal(api.demobilize(0,20),20,'desmobilise reserve only');
 assert.equal(api.status(0).deployed,beforeDeployed,'committed soldiers cannot be demobilised');
+assert.equal(api.status(0).queue,0,'demobilising must cancel pending recruitment');
+assert.ok(api.request(0,12),'player can launch another recruitment order after demobilising');
 const saved=run.export();
 api.cancel(0);
 assert.equal(api.status(0).queue,0);
