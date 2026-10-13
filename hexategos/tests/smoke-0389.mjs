@@ -28,7 +28,9 @@ assert.ok(!names.includes('setInterval('),'naming must share economy scheduler')
 
 const captured=new Map([[1,'Madrid'],[2,'Madrid'],[3,'Mi pueblo']]);
 const saved=new Map();
-const owner=[-1,0,1,1,-1],capitals=[1,2],citySet=new Set([1,2,3]);
+// Cell 3 belongs to the human player: a custom non-capital name must survive
+// atlas lookups. Cell 2 remains the AI capital for the historical transition.
+const owner=[-1,0,1,0,-1],capitals=[1,2],citySet=new Set([1,2,3]);
 const win={HexategosRealCities0354:{suggest:async cell=>({
   kind:'exact',options:[{name:cell===3?'Girona':'Barcelona',distanceKm:0}]
 })}};
