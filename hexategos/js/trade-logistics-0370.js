@@ -658,7 +658,9 @@
           stock=profile.cap.map((mx,i)=>clamp(Number(saved?.[i])||0,0,mx));
         }else{
           const cov=Array.isArray(restoredCoverage[f])?restoredCoverage[f]:null;
-          stock=profile.cap.map((mx,i)=>mx*clamp(Number(cov?.[i])||.56,.12,.92));
+          // Respetar el 0 auténtico. Number(0)||.56 restauraba reservas
+          // inexistentes en todas las capitales IA tras una carga.
+          stock=profile.cap.map((mx,i)=>mx*clamp(cov&&Number.isFinite(Number(cov[i]))?Number(cov[i]):.56,0,.92));
         }
         next.set(cell,{
           cell,f,kind:resourceKind03720(cell,f),stock,
