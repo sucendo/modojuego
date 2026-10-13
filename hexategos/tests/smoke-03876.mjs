@@ -3,7 +3,9 @@ import fs from 'node:fs';
 const src=fs.readFileSync(new URL('../js/ai-expansion-03876.js',import.meta.url),'utf8');
 const html=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
 assert.doesNotThrow(()=>new Function(src));
-assert.match(html,/js\/ai-expansion-03876\.js\?v=03877/);
+assert.match(html,/js\/ai-expansion-03876\.js\?v=03877-final/);
+assert.doesNotMatch(src,/HexategosNaturalPotential03829|HexategosGeology03830|HexategosProspection03831|HexategosAgronomy03832/,
+ 'AI cannot use hidden geographic or agronomic readings for unstudied territory');
 assert.doesNotMatch(src,/setInterval\(|setTimeout\(/);
 assert.doesNotMatch(src,/Geology03830|deposit\(/,'no hidden mineral deposits');
 let budget=0,worldDirty=0;
@@ -12,7 +14,7 @@ const land=new Int8Array(9).fill(1);
 const edgeNbr=[1,2,0,2,3,0,1,3,1,2,4,3,5,4,6,5,7,6,8,7,6];
 const offsets=[0,2,5,8,11,13,15,17,19,21];
 const L={n:9,land,offsets,edgeNbr};
-const window={HexategosNaturalPotential03829:{profile:c=>({food:c===2?2.3:.8,forest:c===2?1.2:.2})}};
+const window={HexategosNaturalPotential03829:{profile:()=>{throw Error('hidden data requested');}}};
 const scaffold = [
   'let campaignSeconds3230=0,paused3230=false,started3230=true,gameSpeed3212=1;',
   'let aiSnapshotDirty3260=false,cacheDirty=false,supplyDirty3220=false,needsRender=false;',
@@ -45,6 +47,9 @@ env.now(8);
 env.tick();
 assert.equal(env.owner()[2],1,'neutral settlement should change ownership');
 assert.ok(env.gold()[1]<70&&env.troops()[1]<40,'settlement spends real budget and escort reserve');
+assert.ok(env.gold()[1]>=0&&env.troops()[1]>=0,'colonies cannot create negative funds or reserves');
+assert.equal(env.api.stats().landCount,9,'calibration counts actual traversable land only');
+assert.ok(env.api.stats().scored>0,'frontier selection must score real neighboring hexes');
 assert.ok(env.dirty(),'AI snapshot must be invalidated after territory changes');
 assert.ok(worldDirty>0,'economy cache invalidated after conquest');
 assert.equal(env.owner()[4],2,'foreign sovereign territory never annexed');
