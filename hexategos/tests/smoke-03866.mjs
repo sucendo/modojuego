@@ -16,7 +16,7 @@ function extract(from,to){
   assert(begin>=0&&end>begin,'missing source block '+from);
   return js.slice(begin,end);
 }
-const tabsSource=extract('  function isOwnedCity03871(ctx){','  // Small vector');
+const tabsSource=extract('  function isOwnedCity03870(ctx){','  // Small vector');
 // Mimic engine state. The clicked ctx can report city=0 for a real owned city.
 const owner6=[],cityLevel3230=[],capitals=[];
 for(const c of [7,8,9,12])owner6[c]=0;
