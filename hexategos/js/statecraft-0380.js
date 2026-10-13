@@ -1140,6 +1140,12 @@
     governmentPolicies:()=>Object.fromEntries(Object.entries(GOV_POLICY0386).map(([k,v])=>[k,{...v}])),
     governmentCities:(f=0,max=65)=>governanceCities0386(f,max),
     governmentCity:(cell)=>governanceCity0386(cell),
+    garrisonCommitted03874:(f=0)=>{
+      let total=0;
+      for(const st of cityState.values())if(st.owner===Number(f)&&owner6[st.cell]===Number(f))
+        total+=Math.max(0,Number(st.gov?.stationed)||0);
+      return total;
+    },
     governmentAction:(cell,type,f=0)=>applyGovernment0386(cell,type,f,true),
     governmentDemandMultiplier:(cell,r,f)=>governmentDemandMultiplier0386(cell,r,f),
     performance:()=>({lastServiceMs:Number(statecraftServiceMs0384.toFixed(2)),citiesUpdated:citiesUpdated0384,trackedCities:cityState.size,spyNetworks:spies.size}),
