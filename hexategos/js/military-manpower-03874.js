@@ -115,7 +115,9 @@
       treasury(f,Math.max(0,cash(f)-spent));
       cycle.recruited+=made;cycle.gold+=spent;cycle.material+=made*UNIT_EQUIP;
     }
-    if(cycle.recruited>0||cycle.demobilized>0){updateUI3230();needsRender=true}
+    // El tick económico original ya actualiza el HUD. Evitar una segunda
+    // actualización completa por cada reclutamiento de las 500 IA.
+    if(cycle.recruited>0||cycle.demobilized>0)needsRender=true;
     const t=performance.now();
     if(t-lastSaved>=20000&&(cycle.recruited>0||cycle.demobilized>0)){
       lastSaved=t;persist();
