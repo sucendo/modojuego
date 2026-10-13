@@ -7,7 +7,7 @@ const trade=read('js/trade-logistics-0370.js');
 const statecraft=read('js/statecraft-0380.js');
 const html=read('index.html');
 assert.doesNotThrow(()=>new Function(source));
-assert.match(html,/js\/military-manpower-03874\.js\?v=03874/);
+assert.match(html,/js\/military-manpower-03874\.js\?v=03875/);
 assert.match(trade,/consumeRecruitEquipment03874:/,'military materiel must be drawn from real stock');
 assert.match(trade,/n\.stock\[4\]=Math\.max\(0,n\.stock\[4\]-used\)/);
 assert.match(statecraft,/garrisonCommitted03874/);
