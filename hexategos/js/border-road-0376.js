@@ -190,11 +190,15 @@
 
   const baseSave0376=saveGame3212;
   saveGame3212=function(){
-    const out=baseSave0376.apply(this,arguments);save0376();return out;
+    const out=baseSave0376.apply(this,arguments);
+    if(out===false)return false;
+    return save0376()===false?false:out;
   };
   const baseLoad0376=loadGame3212;
   loadGame3212=function(){
-    const out=baseLoad0376.apply(this,arguments);load0376();return out;
+    const out=baseLoad0376.apply(this,arguments);
+    if(out!==false)load0376();
+    return out;
   };
   const baseReset0376=resetGame3230;
   resetGame3230=function(clearSave=true){
@@ -219,7 +223,8 @@
     applyPortableFile3275=function(file){
       const data=file?.payload?.borderRoad0376||null;
       const out=basePortableApply0376.apply(this,arguments);
-      restore0376(data);save0376();return out;
+      if(out!==false){restore0376(data);save0376()}
+      return out;
     };
   }
 
