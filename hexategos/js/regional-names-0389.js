@@ -420,12 +420,25 @@
         if(rec.name&&typeof setCityName3271==='function')setCityName3271(cell,rec.name)}
     }
   }
-  function save(){try{localStorage.setItem(KEY,JSON.stringify(serialize()))}catch(_){}}
+  function save(){
+    const state=serialize(),codec=window.HexategosSaveStorage03827;
+    if(codec?.set)return codec.set(KEY,state);
+    try{
+      const data=JSON.stringify(state);
+      localStorage.setItem(KEY,data);
+      return localStorage.getItem(KEY)===data;
+    }catch(error){console.warn('[Hexategos nombres] No se ha podido guardar',error);return false}
+  }
   const originalSave=saveGame3212;
-  saveGame3212=function(){const out=originalSave.apply(this,arguments);save();return out};
+  saveGame3212=function(){const out=originalSave.apply(this,arguments);
+    if(out===false)return false;
+    return started3230&&save()===false?false:out};
   const originalLoad=loadGame3212;
   loadGame3212=function(){const out=originalLoad.apply(this,arguments);
-    try{restore(JSON.parse(localStorage.getItem(KEY)||'null'))}catch(_){restore(null)}
+    if(out===false)return out;
+    try{const codec=window.HexategosSaveStorage03827;
+      restore(codec?.get?codec.get(KEY):JSON.parse(localStorage.getItem(KEY)||'null'))
+    }catch(error){console.warn('[Hexategos nombres] Estado local ilegible',error);restore(null)}
     return out};
   const originalReset=resetGame3230;
   resetGame3230=function(clearSave=true){
@@ -446,7 +459,9 @@
     const base=applyPortableFile3275;
     applyPortableFile3275=function(file){
       const data=file?.payload?.regionalNames0389||null;
-      const out=base.apply(this,arguments);restore(data);save();return out;
+      const out=base.apply(this,arguments);
+      if(out!==false){restore(data);save()}
+      return out;
     };
   }
   // Captura O(1) de nuevas ciudades de las IA, sin recuentos ni barridos.
