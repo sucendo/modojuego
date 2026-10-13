@@ -18,7 +18,8 @@
   const PORTABLE=[
     ['main',x=>Array.isArray(x?.owner)&&Array.isArray(x?.roads)&&Array.isArray(x?.cities)],
     ['naval',x=>Array.isArray(x?.groups)],
-    ['tradeLogistics0370',x=>Array.isArray(x?.routes)],
+    ['tradeLogistics0370',x=>Array.isArray(x?.routes)&&
+      (!x.resources03720||x.resources03720.version<2||Array.isArray(x.resources03720.allNodes))],
     ['production0388',x=>Array.isArray(x?.sites)],
     ['worldLayers03828',x=>x&&typeof x.modules==='object'],
     ['statecraft0380',x=>Array.isArray(x?.cities)],
