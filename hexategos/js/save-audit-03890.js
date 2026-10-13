@@ -74,7 +74,8 @@
     for(const [name,valid] of PORTABLE){
       const value=p[name];
       // Un archivo anterior a 0.38.90 puede no tener los últimos módulos.
-      if(value==null){if(strict)problems.push('Falta '+name);continue}
+      // Incluso los formatos antiguos necesitan un mapa principal válido.
+      if(value==null){if(strict||name==='main')problems.push('Falta '+name);continue}
       if(!valid(value))problems.push('Sección incorrecta: '+name);
     }
     return {ok:!problems.length,problems,sections:Object.keys(p).length};
