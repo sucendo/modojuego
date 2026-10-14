@@ -12,9 +12,17 @@
   const baseNational=aiNationalCampaignEval3280;
   const BUDGET_MS=8;
   const MARKER='hexategos_pruebas_import_phase_03895';
+  const PENDING_KEY='hexategos_pruebas_ai_pending_03895';
   let importing=0,stage='idle',pendingNation=0,cycleStarted=0,cycleCount=0;
   let skippedStrategic=0,skippedNational=0,lastMs=0,lastError=null;
   let peakHeap=0;
+  try{
+    const stored=Number(localStorage.getItem(PENDING_KEY));
+    if(Number.isInteger(stored)&&stored>0&&stored<=500)pendingNation=stored;
+  }catch(_){}
+  function persistPending(){
+    try{localStorage.setItem(PENDING_KEY,String(pendingNation));}catch(_){}
+  }
   function mark(label,status='running'){
     stage=label;
     const heap=Number(performance?.memory?.usedJSHeapSize)||0;
@@ -62,6 +70,7 @@
       cycleCount++;
       pendingNation++;
       if(pendingNation>=activeFactionCount3230)pendingNation=0;
+      persistPending();
       return out;
     }
     return baseNational.apply(this,arguments);
@@ -82,6 +91,7 @@
       // Snapshot data is authoritative. Missing AI campaigns are future work,
       // not a reason to create routes, wars, and military orders during import.
       pendingNation=isLegacy?1:0;
+      persistPending();
       lastMs=performance.now()-start;
       success=true;
       mark('apply:done','ok');
@@ -95,6 +105,15 @@
       paused3230=success?true:wasPaused;
     }
   };
+  if(typeof resetGame3230==='function'){
+    const baseReset=resetGame3230;
+    resetGame3230=function(){
+      const result=baseReset.apply(this,arguments);
+      pendingNation=0;
+      if(arguments[0]!==false)try{localStorage.removeItem(PENDING_KEY);}catch(_){}
+      return result;
+    };
+  }
   window.HexategosImportScheduler03895=Object.freeze({
     version:'0.38.95',
     status:()=>({stage,importing:!!importing,pendingNation,
