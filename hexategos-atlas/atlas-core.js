@@ -338,7 +338,7 @@ function render(now=performance.now()){
    if(a[2]<-.03&&b[2]<-.03)continue;
 
    const selectedBorder=selOwn>=0&&(own===selOwn||no===selOwn)&&own!==no;
-   const playerFront=playerCountry>=0&&((own===playerCountry)!=(no===playerCountry))&&own>=0&&no>=0;
+   const playerFront=false;
 
    ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);
    // v3.24.8: borders stay screen-thin at every zoom.
