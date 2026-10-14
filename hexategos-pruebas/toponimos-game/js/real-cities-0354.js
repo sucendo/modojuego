@@ -180,9 +180,9 @@
       if(pointInsideCell0354(cell,Number(row[1]),Number(row[2])))
         exact.push(cityObject0354(row,lat,lon));
     }
-    // Prioridad geográfica: la localidad representativa más próxima al
-    // centro de ESTE hexágono, no la ciudad más poblada de la comarca.
-    exact.sort((a,b)=>a.distanceKm-b.distanceKm||b.population-a.population);
+    // La primera propuesta es la localidad MÁS POBLADA dentro de la casilla.
+    // Solo se consideran localidades que pasan la prueba geométrica del hexágono.
+    exact.sort((a,b)=>b.population-a.population||a.distanceKm-b.distanceKm||a.name.localeCompare(b.name,'es'));
     if(exact.length){
       return {cell,lat,lon,kind:'exact',primary:exact[0],options:exact.slice(0,6)};
     }
