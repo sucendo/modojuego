@@ -114,8 +114,10 @@
         }
         const bytes=new Uint8Array(await selected.arrayBuffer());
         const text=decoder.decode(await gunzipBytes(bytes.subarray(MAGIC.length)));
-        const parsed=JSON.parse(text);
-        if(!parsed||typeof parsed!=='object'||!parsed.payload)
+        // El importador clásico validará JSON, checksum y malla una sola vez.
+        // Evitar JSON.parse aquí: 510.762 celdas y múltiples capas duplicaban
+        // la memoria durante la descompresión, pudiendo cerrar Chromium.
+        if(!text.startsWith('{')||!text.includes('"payload"')||!text.includes('"main"'))
           throw new Error('La copia HXZ2 está incompleta');
         const data=new DataTransfer();
         data.items.add(new File([text],selected.name,{type:'application/json'}));
