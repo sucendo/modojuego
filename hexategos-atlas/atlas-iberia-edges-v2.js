@@ -1,4 +1,4 @@
-/* HEXATEGOS ATLAS · Iberia v3 · ríos, crestas y curvas de nivel SOBRE ARISTAS.
+/* HEXATEGOS ATLAS · Iberia v4 · ríos y crestas sobre aristas L8, sin curvas de nivel.
  * Solo dibujo: no modifica malla, geología, datos de juego ni guardados.
  * Se carga detrás de atlas-geography.js y delante de atlas-ui.js.
  */
@@ -141,82 +141,11 @@
   }
   return any;
  }
- // Curvas de nivel esquemáticas: el límite de cada banda se dibuja con
- // aristas auténticas de L8 entre una celda incluida y su vecina excluida.
- // Nunca trazamos perfiles libres ni contornos circulares en píxeles.
- let nearbyCells=null;
- const contoursCache=new Map();
- function iberianCells(){
-  if(nearbyCells)return nearbyCells;
-  const G=makeGraph(),L=G.L,C=L.centers,O=L.offsets,A=L.adj;
-  const cells=[];
-  for(let i=0;i<L.n;i++){
-   if(L.land[i]<0||!G.included.has(A[O[i]]))continue;
-   const j=i*3,lat=Math.asin(Math.max(-1,Math.min(1,C[j+1]/32767)))/rad;
-   if(lat<34.8||lat>44.8)continue;
-   const lon=Math.atan2(C[j],C[j+2])/rad;
-   if(lon<-11||lon>5)continue;
-   cells.push({id:i,x:lon*85.2,y:lat*111.2});
-  }
-  nearbyCells=cells;return cells;
- }
- function mountainContours(sys,path){
-  if(contoursCache.has(sys.name))return contoursCache.get(sys.name);
-  const G=makeGraph(),L=G.L,O=L.offsets,A=L.adj,N=L.edgeNbr;
-  const points=path.map(id=>G.position.get(id));
-  const outerRadius=Math.max(30,sys.halfWidthKm||28);
-  const innerRadius=Math.min(outerRadius-11,Math.max(16,(sys.halfWidthKm||28)*.55));
-  const outer=new Set(),inner=new Set();
-  // Cálculo perezoso por cordillera; solo recorremos las celdas ibéricas.
-  for(const cell of iberianCells()){
-   let d=Infinity;
-   for(let k=1;k<points.length;k++){
-    const a=points[k-1],b=points[k];
-    if(cell.x<Math.min(a.x,b.x)-outerRadius||cell.x>Math.max(a.x,b.x)+outerRadius||
-       cell.y<Math.min(a.y,b.y)-outerRadius||cell.y>Math.max(a.y,b.y)+outerRadius)continue;
-    d=Math.min(d,segmentDistance(cell.x,cell.y,a,b));
-    if(d<=innerRadius)break;
-   }
-   if(d<=outerRadius)outer.add(cell.id);
-   if(d<=innerRadius)inner.add(cell.id);
-  }
-  function boundary(set){
-   const edges=[];
-   for(const i of set){
-    const st=O[i],end=O[i+1];
-    for(let k=st;k<end;k++){
-     const other=N[k];
-     if(other>=0&&set.has(other))continue;
-     const u=A[k],v=A[k+1<end?k+1:st];
-     if(u!==v)edges.push([u,v]);
-    }
-   }
-   return edges;
-  }
-  const result={outer:boundary(outer),inner:boundary(inner)};
-  contoursCache.set(sys.name,result);return result;
- }
- function paintHexContour(edges,R,cx,cy,width,color){
-  if(!edges.length)return;
-  const F=makeGraph().L.faceCenters;
-  ctx.beginPath();
-  let count=0;
-  for(const [u,v] of edges){
-   const a=u*3,b=v*3;
-   const p=projectVec(F[a]/32767,F[a+1]/32767,F[a+2]/32767,R,cx,cy);
-   const q=projectVec(F[b]/32767,F[b+1]/32767,F[b+2]/32767,R,cx,cy);
-   if(p[2]<=.015||q[2]<=.015)continue;
-   ctx.moveTo(p[0],p[1]);ctx.lineTo(q[0],q[1]);count++;
-  }
-  if(count){ctx.lineCap='butt';ctx.lineWidth=width;ctx.strokeStyle=color;ctx.stroke();}
- }
+ // Las crestas se dibujan SOLAMENTE sobre aristas L8: sin bandas
+ // exteriores, halos ni curvas de nivel alrededor de la cordillera.
  function paintMountain(sys,path,R,cx,cy){
-  const contours=mountainContours(sys,path),hi=sys.rank>=3,mid=sys.rank===2;
-  // Dos curvas de nivel discretas, ambas exactamente sobre lados de hexágono.
-  paintHexContour(contours.outer,R,cx,cy,.68,hi?'rgba(171,150,113,.42)':mid?'rgba(153,136,107,.34)':'rgba(139,126,104,.28)');
-  paintHexContour(contours.inner,R,cx,cy,.86,hi?'rgba(208,185,143,.56)':mid?'rgba(191,167,128,.48)':'rgba(170,151,121,.38)');
-  // Cresta original de aristas: se conserva su definición y posición.
   if(!drawEdgePath(path,R,cx,cy))return;
+  const hi=sys.rank>=3,mid=sys.rank===2;
   const zf=Math.min(1.2,.86+Math.log2(Math.max(1,zoom))*.075);
   ctx.lineCap='round';ctx.lineJoin='round';
   ctx.lineWidth=(hi?2.8:mid?2.35:1.9)*zf;
@@ -258,5 +187,5 @@
    if(showR)for(let i=0;i<geo.rivers.length;i++)if(rPaths[i])paintRiver(geo.rivers[i],rPaths[i],R,cx,cy);
   }finally{ctx.restore()}
  };
- console.info('[Hexategos Atlas] Ríos, crestas y contornos del relieve sobre aristas L8');
+ console.info('[Hexategos Atlas] Ríos y crestas sobre aristas L8, sin curvas de nivel');
 })();
