@@ -27,13 +27,13 @@ jobs:
           node --check hexategos-pruebas/game/tests/browser-import-03895.cjs
           node hexategos-pruebas/game/tests/smoke-03895-import.cjs
           node hexategos-pruebas/game/tests/smoke-03894-import.mjs
-      - name: Install Chromium test runtime
-        working-directory: hexategos-pruebas/game
+      - name: Install Chromium test runtime outside legacy repo dependencies
         run: |
-          npm install --no-save --no-package-lock playwright@1.56.1
-          npx playwright install --with-deps chromium
+          mkdir -p /tmp/hexategos-playwright
+          npm --prefix /tmp/hexategos-playwright install --no-save --no-package-lock playwright@1.56.1
+          /tmp/hexategos-playwright/node_modules/.bin/playwright install --with-deps chromium
       - name: Browser legacy-save regression
         run: |
           python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/hexategos-http.log 2>&1 &
           sleep 3
-          node hexategos-pruebas/game/tests/browser-import-03895.cjs
+          NODE_PATH=/tmp/hexategos-playwright/node_modules node hexategos-pruebas/game/tests/browser-import-03895.cjs
