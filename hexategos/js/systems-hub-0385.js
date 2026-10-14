@@ -69,7 +69,9 @@
       const urgent=urgentBlock(block);
       // Primeras dos tarjetas visibles. La información especializada ocupa
       // apartados plegables para evitar listas interminables.
-      const collapsible=!urgent&&i>=2&&block.children.length>=2;
+      // Identidad nacional contiene el formulario de nombre: nunca ocultarlo
+      // automáticamente por la llegada de avisos o cambios de orden.
+      const collapsible=!urgent&&!block.classList.contains('sysGovIdentity0389')&&i>=2&&block.children.length>=2;
       if(!collapsible)continue;
 
       const label=headingFor(block,i);
