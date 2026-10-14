@@ -1,0 +1,39 @@
+name: Hexategos Pruebas - import regression
+
+on:
+  push:
+    branches:
+      - 'fix/hexategos-pruebas-import-03895'
+    paths:
+      - 'hexategos-pruebas/**'
+      - '.github/workflows/hexategos-pruebas-import.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  legacy-import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check production module syntax and import smoke
+        run: |
+          node --check hexategos-pruebas/game/js/import-scheduler-03895.js
+          node --check hexategos-pruebas/game/tests/browser-import-03895.cjs
+          node hexategos-pruebas/game/tests/smoke-03895-import.cjs
+          node hexategos-pruebas/game/tests/smoke-03894-import.mjs
+      - name: Install Chromium test runtime outside legacy repo dependencies
+        run: |
+          mkdir -p /tmp/hexategos-playwright
+          npm --prefix /tmp/hexategos-playwright install --no-save --no-package-lock playwright@1.56.1
+          /tmp/hexategos-playwright/node_modules/.bin/playwright install --with-deps chromium
+      - name: Browser legacy-save regression
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/hexategos-http.log 2>&1 &
+          sleep 3
+          NODE_PATH=/tmp/hexategos-playwright/node_modules node hexategos-pruebas/game/tests/browser-import-03895.cjs
