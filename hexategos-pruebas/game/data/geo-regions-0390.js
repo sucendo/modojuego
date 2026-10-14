@@ -92,24 +92,28 @@ const physicalRegions=[
     ],
     "polygon": [
       [
-        -0.99,
-        42.02
+        -0.6,
+        41.99
       ],
       [
-        0.23,
-        41.93
+        0.16,
+        42.04
+      ],
+      [
+        0.41,
+        41.63
       ],
       [
         0.37,
-        41.34
+        41.31
       ],
       [
         -0.06,
-        41.08
+        41.16
       ],
       [
-        -0.9,
-        41.27
+        -0.52,
+        41.37
       ]
     ]
   },
@@ -124,15 +128,15 @@ const physicalRegions=[
     "polygon": [
       [
         -4.77,
-        40.38
+        40.02
       ],
       [
         -3.9,
-        40.53
+        40.11
       ],
       [
         -2.11,
-        40.39
+        40.17
       ],
       [
         -1.7,
@@ -521,6 +525,30 @@ const physicalRegions=[
    }
    return null;
  }
+ // Solo presentación del Atlas: las antiguas cajas político-culturales
+ // se conservan INTACTAS para que el nombre de las naciones no cambie.
+ // La antigua caja «Portugal» abarcaba parte de Extremadura y Andalucía.
+ const portugalDisplayPolygon=[
+   [-9.56,42.16],[-8.79,42.13],[-8.12,41.92],[-7.00,41.88],
+   [-6.48,41.99],[-6.55,41.48],[-6.90,41.13],[-6.92,40.40],
+   [-6.86,40.03],[-7.00,39.68],[-7.18,39.41],[-7.14,38.88],
+   [-7.38,38.40],[-7.53,37.54],[-7.35,37.15],[-7.56,36.90],
+   [-9.26,36.90],[-9.52,38.30],[-9.53,39.50]
+ ];
+ function atlasHistoricalAt(lat,lon){
+   const original=historicalAt(lat,lon);
+   if(original?.name!=='Portugal'||inPolygon(lon,lat,portugalDisplayPolygon))
+     return original;
+   // Sigue el orden histórico existente, omitiendo la superposición
+   // de su caja rectangular únicamente en la ficha del Atlas.
+   const afterPortugal=politicalRegions.findIndex(x=>x[0]==='Portugal')+1;
+   for(let i=afterPortugal;i<politicalRegions.length;i++){
+     const row=politicalRegions[i];
+     if(lat>=row[1]&&lat<=row[2]&&lon>=row[3]&&lon<=row[4])
+       return {name:row[0],polity:row[5]};
+   }
+   return null;
+ }
  function naturalAt(lat,lon){
    if(!Number.isFinite(lat)||!Number.isFinite(lon))return [];
    const matches=[];
@@ -529,9 +557,9 @@ const physicalRegions=[
    return matches.sort((a,b)=>b.priority-a.priority);
  }
  function regionsAt(lat,lon){
-   return {natural:naturalAt(lat,lon),historical:historicalAt(lat,lon)};
+   return {natural:naturalAt(lat,lon),historical:atlasHistoricalAt(lat,lon)};
  }
  window.HexategosGeoRegions0390=Object.freeze({
-   version:'0.39.0',politicalRegions,physicalRegions,historicalAt,naturalAt,regionsAt
+   version:'0.39.0',politicalRegions,physicalRegions,historicalAt,atlasHistoricalAt,naturalAt,regionsAt
  });
 })();
