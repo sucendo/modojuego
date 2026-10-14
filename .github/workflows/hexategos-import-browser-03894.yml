@@ -1,0 +1,38 @@
+name: Hexategos HXZ2 browser import audit
+
+on:
+  push:
+    branches:
+      - fix/hexategos-import-hxz2-20261014
+    paths:
+      - 'hexategos/**'
+      - '.github/workflows/hexategos-import-browser-03894.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  imported:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chromium
+        run: |
+          mkdir -p /tmp/hx-playwright
+          npm install --prefix /tmp/hx-playwright --ignore-scripts --no-audit --no-fund playwright@1.56.1
+          /tmp/hx-playwright/node_modules/.bin/playwright install --with-deps chromium
+      - name: Serve testing branch
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/hx-import.log 2>&1 &
+          sleep 3
+          curl --fail http://127.0.0.1:8765/hexategos/index.html > /dev/null
+      - name: Verify HXZ2 inside iframe
+        env:
+          CODEX_PRIMARY_RUNTIME_NODE_MODULES: /tmp/hx-playwright/node_modules
+          HEX_TEST_URL: http://127.0.0.1:8765/hexategos/
+        run: node hexategos/tests/browser-import-03894.cjs
