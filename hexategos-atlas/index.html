@@ -350,7 +350,7 @@ async function init(){
   }
   progress('Descomprimiendo geometría hexagonal…',72);
   const D=window.DATA?.['8'];if(!D||D.n!==510762)throw Error('La malla del juego no coincide con el formato esperado.');
-  centers=unpack(D.centers,Int16Array);faceCenters=unpack(D.faceCenters,Int16Array);offsets=unpack(D.offsets,Uint32Array);adj=unpack(D.adj,Uint32Array);land=unpack(D.land,Int8Array);
+  centers=unpack(D.centers,Int16Array);faceCenters=unpack(D.faceCenters,Int16Array);offsets=unpack(D.offsets,Uint32Array);adj=unpack(D.adj,Uint32Array);land=unpack(D.land,Int16Array);
   if(centers.length!==D.n*3||faceCenters.length!==D.faces*3||offsets.length!==D.n+1||adj.length!==offsets[D.n]||land.length!==D.n)
      throw Error('No coinciden las longitudes de datos de la malla original.');
   mesh={n:D.n};
