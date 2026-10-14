@@ -88,7 +88,7 @@ function drawAtlasNames(R,cx,cy){
  // pequeñas poblaciones colindantes. La titularidad del hexágono sigue
  // requiriendo pertenencia geodésica EXACTA.
  candidates.sort((a,b)=>b.city.population-a.city.population||a.dist-b.dist||a.i-b.i);
- const occupied=[];
+ const occupied=window.HexategosAtlasRegions0390?.occupied()?.slice()||[];
  ctx.textAlign='center';ctx.textBaseline='middle';
  ctx.font='600 '+clamp(8+Math.log2(zoom)*1.4,9,13)+'px system-ui';
  for(const {x,y,city} of candidates){
@@ -107,7 +107,8 @@ function updateInfo(i){
  const host=$('detail'),L=loadLevel('8');
  if(i<0){host.innerHTML='<h2>Selecciona un hexágono</h2>';return;}
  if(L.land[i]<0){host.innerHTML='<small>Hexágono #'+i+'</small><h2>Océano</h2><p>Esta casilla es marítima.</p>';return;}
- const report=nameCache.get(i),geo=cellLatLon(i),tag='<small>Hexágono #'+i+' · '+geo.lat.toFixed(4)+'°, '+geo.lon.toFixed(4)+'°</small>';
+ const report=nameCache.get(i),geo=cellLatLon(i),tag='<small>Hexágono #'+i+' · '+geo.lat.toFixed(4)+'°, '+geo.lon.toFixed(4)+'°</small>'+
+   (window.HexategosAtlasRegions0390?.cellInfo(geo.lat,geo.lon)||'');
  if(!report){host.innerHTML=tag+'<h2>Consultando nombre…</h2>';queueName(i,true);return;}
  if(report.error){host.innerHTML=tag+'<h2>Error del atlas</h2><p>'+escapeHTML(report.error)+'</p>';return;}
  if(report.kind!=='exact'){
@@ -276,6 +277,8 @@ $('iberia').onclick=()=>rotateToGeo(-3.7,40.4,22);
 $('world').onclick=()=>rotateToGeo(-3.7,40.4,1);
 $('grid').onchange=e=>{showGrid=e.target.checked;invalidate();};
 $('names').onchange=e=>{showLabels=e.target.checked;invalidate();};
+$('regions').onchange=invalidate;
+$('regionMode').onchange=invalidate;
 $('rivers').onchange=invalidate;
 $('mountains').onchange=invalidate;
 async function search(){
