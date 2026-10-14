@@ -347,6 +347,9 @@ function render(now=performance.now()){
   }
  }
 
+ // Vegetación forestal: iconos limitados a las casillas visibles.
+ // Dibujar ANTES de ríos/cordilleras para respetar su trazado.
+ window.HexategosAtlasLandCover0391?.drawForests(R,cx,cy);
  drawTerrain3212(R,cx,cy);
 
  // Etiquetas geográficas y culturales compartidas con Hexategos Pruebas.
