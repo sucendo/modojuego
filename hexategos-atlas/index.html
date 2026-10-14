@@ -71,15 +71,33 @@ function setSource(sha){
 setSource(activeSnapshot);
 async function resolveSource(){
  try{
-  const url=new URL('../hexategos-pruebas/index.html',location.href);
-  url.searchParams.set('atlas_refresh',String(Date.now()));
-  const response=await fetch(url,{cache:'no-store'});
-  if(!response.ok)throw Error('Hexategos Pruebas HTTP '+response.status);
+  const pageUrl=new URL('../hexategos-pruebas/index.html',location.href);
+  const response=await fetch(pageUrl.href+'?atlas='+Date.now(),{cache:'no-store'});
+  if(!response.ok)throw Error('Página de pruebas: HTTP '+response.status);
   const markup=await response.text();
-  const match=markup.match(/https:\/\/raw\.githack\.com\/sucendo\/modojuego\/([a-f0-9]{40})\/hexategos\/index\.html/i);
-  if(!match)throw Error('Referencia de Pruebas desconocida');
-  setSource(match[1]);sourceMode='Pruebas actual';
- }catch(err){console.warn('[Hexategos Atlas] Se usa la última revisión de respaldo:',err);sourceMode='respaldo';}
+  // Estructura actual: iframe y botón apuntan a ./game/index.html.
+  // Al compartir origen GitHub Pages, los datos se leen DIRECTAMENTE
+  // de hexategos-pruebas/game/, sin snapshots remotos ni duplicación.
+  const local=markup.match(/(?:src|href)\s*=\s*["'](\.\/game\/index\.html(?:\?[^"']*)?)["']/i);
+  if(local){
+   const gameUrl=new URL(local[1],pageUrl);
+   if(gameUrl.origin!==location.origin||!gameUrl.pathname.includes('/hexategos-pruebas/game/'))
+    throw Error('Referencia local inesperada de Pruebas');
+   ROOT=new URL('./',gameUrl).href;
+   CITY_ROOT=new URL('data/cities-0354/',ROOT).href;
+   sourceMode='datos directos de Pruebas';
+   return;
+  }
+  // Compatibilidad con el antiguo lanzador mediante una revisión GitHub fija.
+  const external=markup.match(/https:\/\/raw\.githack\.com\/sucendo\/modojuego\/([a-f0-9]{40})\/hexategos\/index\.html/i);
+  if(external){
+   setSource(external[1]);sourceMode='revisión de Pruebas';return;
+  }
+  throw Error('No se pudo reconocer el juego abierto por la página de pruebas');
+ }catch(err){
+  console.warn('[Hexategos Atlas] Datos originales desde revisión de respaldo:',err);
+  sourceMode='respaldo compatible';
+ }
 }
 const $=id=>document.getElementById(id), canvas=$('globe'),ctx=canvas.getContext('2d',{alpha:false});
 const RAD=Math.PI/180,DEG=180/Math.PI;
