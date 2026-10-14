@@ -14,12 +14,13 @@ const {chromium}=require(require.resolve('playwright',{paths:[
  page.on('pageerror',e=>errors.push(e.message));
  try{
   const origin=process.env.HEX_TEST_URL||'http://127.0.0.1:8765/hexategos/';
-  await page.route('http://127.0.0.1:8765/hexategos-pruebas/',route=>
+  await page.route('http://127.0.0.1:8766/hexategos-pruebas/',route=>
    route.fulfill({status:200,contentType:'text/html',body:
     '<!doctype html><title>Hexategos Pruebas</title><iframe title="Hexategos Pruebas" src="'+
     origin+'" style="width:100vw;height:100vh;border:0"></iframe>'}));
-  await page.goto('http://127.0.0.1:8765/hexategos-pruebas/',{waitUntil:'load',timeout:120000});
+  await page.goto('http://127.0.0.1:8766/hexategos-pruebas/',{waitUntil:'load',timeout:120000});
   const frame=page.frameLocator('iframe');
+  assert.notEqual(new URL(origin).origin,new URL(page.url()).origin,'Test must use a cross-origin iframe');
   await frame.getByRole('button',{name:'NUEVA PARTIDA',exact:true}).click();
   await frame.getByRole('button',{name:/UBICACIÓN ALEATORIA/}).click();
   await frame.getByRole('button',{name:/COMENZAR AQUÍ/}).click();
