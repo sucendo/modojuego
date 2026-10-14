@@ -166,7 +166,12 @@ async function suggest(i){
  return {kind:'nearby',options:near.slice(0,6)};
 }
 function queueName(i,priority=false){
- if(i<0||loadLevel('8').land[i]<0||nameCache.has(i)||nameQueued.has(i))return;
+ if(i<0||loadLevel('8').land[i]<0||nameCache.has(i))return;
+ if(nameQueued.has(i)){
+  // Si el usuario pulsa una casilla ya en cola, no debe esperar a todas las etiquetas automáticas.
+  if(priority){const at=nameQueue.indexOf(i);if(at>0){nameQueue.splice(at,1);nameQueue.unshift(i);}}
+  return;
+ }
  if(!priority&&nameQueue.length>950)return;
  nameQueued.add(i);priority?nameQueue.unshift(i):nameQueue.push(i);pumpNames();
 }
