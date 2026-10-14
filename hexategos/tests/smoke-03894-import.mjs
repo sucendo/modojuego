@@ -14,7 +14,7 @@ assert.match(index,/portable-hxz2-03844\.js\?v=03894-hxz2-import/);
 assert.match(index,/game-dialogs-03851\.js\?v=03894-hxz2-import/);
 assert.match(archive,/jsonHeader=text\.slice\(0,2048\)/);
 assert.doesNotMatch(archive,/JSON\.parse\(text\)/,'HXZ2 translation must not parse large JSON');
-assert.match(dialogs,/if\(!event\.isTrusted\)return/,'synthetic HXZ2 translation must not request a second confirmation');
+assert.match(dialogs,/approvedInputs\\.get\\(input\\)===current\\.name/,'synthetic HXZ2 translation must not request a second confirmation');
 assert.doesNotMatch(archive,/setInterval\(/);
 
 function snippet(start,after){
