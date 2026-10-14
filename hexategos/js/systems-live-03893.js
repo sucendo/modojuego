@@ -239,6 +239,12 @@
   // la primera composición sigue siendo completa. Después es diferencial.
   window.HexategosSystemsLive03893=Object.freeze({
     version:BUILD,diagnostics:()=>({...stats,lastTab,focused:document.activeElement?.id||null}),
-    reset:()=>{lastTab=null}
+    reset:()=>{lastTab=null},
+    // También para vistas que se actualizan tras un change/click sin pasar
+    // por renderSystems3220 (selector de ciudad, avisos, rutas marítimas).
+    updateHTML:(element,html)=>{
+      if(!element||!(element===host||host.contains(element)))return false;
+      setLiveHTML(element,html);return true;
+    }
   });
 })();
