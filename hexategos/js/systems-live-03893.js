@@ -18,6 +18,7 @@
     'data-hub-nation-name0389','data-embassy-search','data-embassy-select',
     'data-hub-sea-port','data-gov-city0386','data-action','data-route-id',
     'data-tab','data-inspect-tab03817','data-policy','data-faction'];
+  const decorateClasses=['sysCard0385','hasCollapse0385','isCollapsed0385'];
   const blockClasses=['sysGovSummary0386','sysGovIdentity0389','sysGovManager0386',
     'sysGovNotices0386','tradeManager03717','commerceIntro03815',
     'sysHubCritical03851','statecraftResearch0380','hubManager03851'];
@@ -53,7 +54,7 @@
       const ak=identity(a),bk=identity(b);
       if(ak||bk)return ak===bk;
       if(a.classList.contains('sysBlock3213')&&b.classList.contains('sysBlock3213')){
-        const cls=n=>[...n.classList].filter(c=>c!=='sysBlock3213'&&c!=='isCollapsed0385').sort().join(' ');
+        const cls=n=>[...n.classList].filter(c=>c!=='sysBlock3213'&&!decorateClasses.includes(c)).sort().join(' ');
         return cls(a)===cls(b);
       }
     }
@@ -63,17 +64,21 @@
     const active=focused(oldNode);
     const editable=active&&(controlled(oldNode)||oldNode.isContentEditable);
     const wasCollapsed=oldNode.classList?.contains('isCollapsed0385');
+    const decorative=oldNode.classList?.contains('sysBlock3213')?
+      decorateClasses.filter(name=>oldNode.classList.contains(name)):[];
     for(const attr of [...oldNode.attributes]){
       if(!newNode.hasAttribute(attr.name)&&
         !(editable&&attr.name==='value')&&
-        !(wasCollapsed&&attr.name==='class')){
+        !(decorative.length&&attr.name==='class')){
         oldNode.removeAttribute(attr.name);stats.attributes++;
       }
     }
     for(const attr of newNode.attributes){
       if(editable&&(attr.name==='value'||attr.name==='checked'||attr.name==='selected'))continue;
-      if(oldNode.getAttribute(attr.name)!==attr.value){
-        oldNode.setAttribute(attr.name,attr.value);stats.attributes++;
+      const target=attr.name==='class'&&decorative.length?
+        [...new Set(attr.value.split(/\s+/).filter(Boolean).concat(decorative))].join(' '):attr.value;
+      if(oldNode.getAttribute(attr.name)!==target){
+        oldNode.setAttribute(attr.name,target);stats.attributes++;
       }
     }
     if(wasCollapsed&&oldNode.classList.contains('sysBlock3213'))
@@ -108,6 +113,13 @@
     if(oldNode.hasAttribute('data-message-key')&&
        !oldNode.isEqualNode(newNode)&&!nestedFocus(oldNode)){
       oldNode.replaceWith(newNode);stats.removed++;stats.inserted++;return;
+    }
+    // La capa SystemsUI0385 añade cabeceras plegables con listeners.
+    // No las destruyas por no figurar en el HTML del renderizador base.
+    if(oldNode.classList.contains('hasCollapse0385')){
+      const collapse=oldNode.querySelector(':scope > .sysCollapseHeader0385');
+      if(collapse&&!newNode.querySelector(':scope > .sysCollapseHeader0385'))
+        newNode.insertBefore(collapse.cloneNode(true),newNode.firstChild);
     }
     reconcileChildren(oldNode,newNode);
     if(oldNode.tagName==='SELECT'&&!focused(oldNode)){
