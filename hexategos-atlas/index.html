@@ -16,6 +16,7 @@ main{min-height:0;flex:1;display:grid;grid-template-columns:minmax(0,1fr) 320px}
 #viewport{position:relative;min-width:0;min-height:0;overflow:hidden;background:radial-gradient(ellipse at 50% 48%,#122536 5%,#081521 70%,#060d15 100%)}
 #globe{display:block;width:100%;height:100%;touch-action:none;cursor:grab}#globe.dragging{cursor:grabbing}
 .toolbar{position:absolute;left:13px;top:13px;z-index:2;display:flex;gap:6px;flex-wrap:wrap;max-width:calc(100% - 25px)}.toolbar button,.toolbar label{background:#101f2eea;backdrop-filter:blur(8px)}.toolbar label{border:1px solid #3e5262;border-radius:7px;padding:8px 9px;font-size:12px;display:flex;align-items:center;gap:6px;white-space:nowrap}.toolbar input{accent-color:#e5c787;margin:0}
+#hoverName{position:absolute;z-index:4;pointer-events:none;max-width:245px;padding:7px 10px;background:#0a1a28ef;color:#f7dfb3;border:1px solid #5e7b8f;border-radius:7px;box-shadow:0 5px 15px #0008;font-size:12px;font-weight:650;white-space:normal}#hoverName[hidden]{display:none}
 .stats{position:absolute;bottom:12px;left:12px;max-width:calc(100% - 24px);border:1px solid #315167;background:#0a1b29e8;border-radius:7px;padding:7px 10px;font-size:11px;color:#b5cbd9;pointer-events:none}
 .legend{position:absolute;right:13px;bottom:12px;background:#0a1b29da;border:1px solid #315167;padding:8px;border-radius:7px;font-size:11px;color:var(--muted);pointer-events:none}.legend b{color:var(--gold)}.legend i{color:var(--blue);font-style:normal}
 aside{min-height:0;overflow:auto;background:#0c1a28;border-left:1px solid #2a4454;padding:18px}
@@ -38,7 +39,7 @@ footer{font-size:10px;color:#8da7b9;line-height:1.5;margin-top:20px}
 <section id="viewport" aria-label="Globo terráqueo hexagonal de Hexategos">
 <canvas id="globe" aria-label="Esfera de Hexategos. Arrastra para girar, rueda para ampliar, pulsa un hexágono para conocer su primera ciudad propuesta."></canvas>
 <div class="toolbar"><button id="plus" title="Acercar">＋</button><button id="minus" title="Alejar">−</button><button id="iberia" title="Ir a Iberia">Iberia</button><button id="world" title="Ver esfera completa">Mundo</button><label><input id="showNames" type="checkbox" checked> Nombres por hexágono</label><label><input id="showRivers" type="checkbox" checked> Ríos</label><label><input id="showMountains" type="checkbox" checked> Cordilleras</label></div>
-<div id="stats" class="stats">Cargando la esfera original…</div>
+<div id="hoverName" role="tooltip" hidden></div><div id="stats" class="stats">Cargando la esfera original…</div>
 <div class="legend"><b>●</b> Dentro del hexágono &nbsp; <i>●</i> Localidad cercana</div>
 <div id="loading"><div class="card"><strong>HEXATEGOS · ATLAS ESFÉRICO</strong><p id="loadMsg">Preparando la geometría original del juego…</p><div class="track"><div id="bar" class="bar"></div></div></div></div>
 </section>
@@ -91,6 +92,7 @@ const pointer={active:false,moved:false,id:-1,x:0,y:0,lon:0,lat:0};
 let coarse=null,detailed=null,w=1,h=1,dpr=1,R=1,selected=-1,visible=[],projection=null;
 let framePending=false,drawCount=0,visibleLabels=0,fail=null;
 let reliefPaths={mountains:[],rivers:[]};
+let hoverTimer=0,hoverCell=-1,hoverXY=null;
 let names=new Map(),pending=new Set(),queue=[],workers=0,generation=0;
 let exclusionPromise=null,historical={},exclusions=new Set();
 const bandCache=new Map();
@@ -478,7 +480,7 @@ function enqueue(i,gen,priority=false){if(names.has(i)||pending.has(i))return;
  pending.add(i);const task={i,gen};if(priority)queue.unshift(task);else queue.push(task);pump();}
 function pump(){while(workers<4&&queue.length){const {i,gen}=queue.shift();if(gen!==generation&&i!==selected){pending.delete(i);continue;}
  workers++;suggest(i).then(r=>names.set(i,r)).catch(e=>names.set(i,{error:e.message||String(e)})).finally(()=>{
-  workers--;pending.delete(i);if(selected===i)show(i);invalidate();pump();
+  workers--;pending.delete(i);if(selected===i)show(i);if(hoverCell===i)updateHover();invalidate();pump();
  });
  }}
 function show(i){if(i!==selected)return;const r=names.get(i);if(!r)return;
@@ -511,8 +513,39 @@ function selectAt(lat,lon){
  $('detail').innerHTML=`<span class="kicker">Hexágono #${i}${approx}</span><h2>Consultando topónimos…</h2><p>Buscando la primera localidad según las reglas del juego.</p>`;
  invalidate();if(names.has(i))show(i);else enqueue(i,generation,true);
 }
+function hideHover(){
+ hoverCell=-1;hoverXY=null;$('hoverName').hidden=true;
+}
+function updateHover(){
+ const host=$('hoverName');if(hoverCell<0||!hoverXY){host.hidden=true;return;}
+ const cell=hoverCell,report=names.get(cell);
+ host.textContent=report?.options?.[0]?.name||('Hexágono #'+cell+(report?.error?' · error':' · buscando localidad…'));
+ if(report?.options?.[0])host.textContent+=(report.kind==='nearby'?' · próxima':'');
+ host.style.left=clamp(hoverXY.x+14,4,Math.max(4,w-250))+'px';
+ host.style.top=clamp(hoverXY.y-18,4,Math.max(4,h-65))+'px';host.hidden=false;
+}
+function scheduleHover(e){
+ if(pointer.active||!detailed||e.pointerType==='touch')return;
+ if(hoverTimer)clearTimeout(hoverTimer);
+ const position=point(e);
+ hoverTimer=setTimeout(()=>{
+  const geo=geoAt(position.x,position.y);
+  if(!geo){hideHover();return;}
+  let i=pickCellOnLevel(detailed,geo.lat,geo.lon);
+  if(camera.zoom<5.2){
+   const c=pickCellOnLevel(coarse,geo.lat,geo.lon);
+   if(c>=0&&coarse.land[c]>=0&&(i<0||detailed.land[i]<0))
+    i=pickCellOnLevel(detailed,geo.lat,geo.lon,true);
+  }
+  if(i<0||detailed.land[i]<0){hideHover();return;}
+  hoverCell=i;hoverXY=position;updateHover();
+  if(!names.has(i)&&!pending.has(i))enqueue(i,generation,true);
+ },140);
+}
+canvas.addEventListener('pointermove',scheduleHover);
+canvas.addEventListener('pointerleave',()=>{if(hoverTimer)clearTimeout(hoverTimer);hideHover();});
 function point(e){const b=canvas.getBoundingClientRect();return {x:e.clientX-b.left,y:e.clientY-b.top};}
-canvas.addEventListener('pointerdown',e=>{if(!detailed)return;const p=point(e);pointer.active=true;pointer.moved=false;pointer.id=e.pointerId;pointer.x=p.x;pointer.y=p.y;pointer.lon=camera.lon;pointer.lat=camera.lat;canvas.classList.add('dragging');canvas.setPointerCapture(e.pointerId);});
+canvas.addEventListener('pointerdown',e=>{if(!detailed)return;hideHover();const p=point(e);pointer.active=true;pointer.moved=false;pointer.id=e.pointerId;pointer.x=p.x;pointer.y=p.y;pointer.lon=camera.lon;pointer.lat=camera.lat;canvas.classList.add('dragging');canvas.setPointerCapture(e.pointerId);});
 canvas.addEventListener('pointermove',e=>{if(!pointer.active||pointer.id!==e.pointerId)return;
  const p=point(e),dx=p.x-pointer.x,dy=p.y-pointer.y;if(Math.abs(dx)+Math.abs(dy)>4)pointer.moved=true;
  if(pointer.moved)setView(pointer.lon-dx/R*DEG*.83,pointer.lat+dy/R*DEG*.83,camera.zoom);
