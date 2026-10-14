@@ -114,8 +114,17 @@ const {chromium}=require(require.resolve('playwright',{paths:[
    paused3230=false;
    economyTick3212();
    paused3230=true;
+   const postTick=last.isConnected&&document.activeElement===last;
+   const afterTick={tab:sysTab3220,lastTab:api.diagnostics().lastTab,
+     node:!!last.isConnected,focus:document.activeElement?.id||'',
+     value:last.value,host:host.querySelector('[data-hub-nation-name0389]')?.value||'',
+     live:api.diagnostics().liveRenders};
    renderSystems3220();
-   check(last.isConnected&&document.activeElement===last,'Economy tick destroyed edited nation input');
+   check(last.isConnected&&document.activeElement===last,
+     'Economy tick destroyed edited nation input ('+JSON.stringify({postTick,now:{
+       tab:sysTab3220,node:last.isConnected,focus:document.activeElement?.id,
+       same:host.querySelector('[data-hub-nation-name0389]')===last,
+       live:api.diagnostics().liveRenders}})+')');
    check(last.value==='Texto temporal sin guardar','Economy tick erased the unsaved draft');
    return {version:api.version,live:api.diagnostics(),tabs:stable,scroll:initial};
   });
