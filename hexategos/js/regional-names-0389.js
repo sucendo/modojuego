@@ -403,9 +403,17 @@
         // Si cambió la capital entre guardado y carga, conservar toda la
         // historia y dejar que ensureNation procese la mudanza.
         nations.set(f,{capital:r.capital,name:String(r.name||'').slice(0,100),atlas:!!r.atlas,history:Array.isArray(r.history)?r.history.slice(-12):[],pending:r.pending||null,baseline:Number(r.baseline)||nationCount(f)});
-    if(Array.isArray(s.cities))for(const [cell,name] of s.cities.slice(0,6000)){
-      if(Number.isInteger(cell)&&owner6[cell]>=0&&typeof setCityName3271==='function'){
-        setCityName3271(cell,name);cities.set(cell,name);
+    // The historical names state contains both legacy city names and v3
+    // administrative identities. Resolve the final name once per cell.
+    // In particular, avoid invoking setCityName3271 twice for the same city:
+    // its downstream listeners can be expensive during a full restore.
+    const desiredNames=new Map();
+    if(Array.isArray(s.cities))for(const entry of s.cities.slice(0,6000)){
+      if(!Array.isArray(entry))continue;
+      const [cell,name]=entry;
+      if(Number.isInteger(cell)&&cell>=0&&cell<owner6.length&&owner6[cell]>=0&&typeof name==='string'){
+        cities.set(cell,name);
+        desiredNames.set(cell,name);
       }
     }
     if(Array.isArray(s.checked))for(const k of s.checked.slice(0,6000))checked.add(String(k));
@@ -418,8 +426,26 @@
           checked.delete('t:'+cell+':'+owner6[cell]);
           checked.delete('c:'+cell+':'+owner6[cell]);
         }
-        if(rec.name&&typeof setCityName3271==='function')setCityName3271(cell,rec.name)}
+        if(typeof rec.name==='string'&&rec.name)desiredNames.set(cell,rec.name)}
     }
+    // Keep all original records. A matching name needs no setter call.
+    // Any thrown error remains observable instead of discarding identities.
+    const startedAt=performance.now();
+    let updatedNames=0,unchangedNames=0;
+    for(const [cell,name] of desiredNames){
+      if(typeof setCityName3271!=='function')break;
+      if(typeof cityDisplayName3271==='function'&&cityDisplayName3271(cell)===name){
+        unchangedNames++;
+        continue;
+      }
+      setCityName3271(cell,name);
+      updatedNames++;
+    }
+    console.info('[Hexategos nombres] Restauración v3', {
+      names:desiredNames.size,updatedNames,unchangedNames,
+      identities:cityIdentity.size,nationCultures:nationCultures.size,
+      durationMs:Math.round(performance.now()-startedAt)
+    });
   }
   // Se comparte el códec HXZ1 de las demás capas. El guardado de hasta 500
   // naciones y miles de nombres no debe agotar la cuota con JSON sin comprimir.
