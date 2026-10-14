@@ -124,7 +124,9 @@
       const b=[L.faceCenters[ib]/32767,L.faceCenters[ib+1]/32767,L.faceCenters[ib+2]/32767];
       const n=cross0354(a,b);
       const dc=dot0354(n,c),dp=dot0354(n,p);
-      if(Math.abs(dc)>1e-9&&dc*dp<-2e-7)return false;
+      // Comparar el signo del semiplano, con tolerancia RELATIVA al
+      // tamaño del polígono (antes -2e-7 validaba falsamente ciudades vecinas).
+      if(Math.abs(dc)>1e-12 && (dc>0?dp:-dp)<-Math.abs(dc)*1e-5)return false;
     }
     return true;
   }
@@ -178,7 +180,9 @@
       if(pointInsideCell0354(cell,Number(row[1]),Number(row[2])))
         exact.push(cityObject0354(row,lat,lon));
     }
-    exact.sort((a,b)=>b.population-a.population||a.distanceKm-b.distanceKm);
+    // Prioridad geográfica: la localidad representativa más próxima al
+    // centro de ESTE hexágono, no la ciudad más poblada de la comarca.
+    exact.sort((a,b)=>a.distanceKm-b.distanceKm||b.population-a.population);
     if(exact.length){
       return {cell,lat,lon,kind:'exact',options:exact.slice(0,6)};
     }
