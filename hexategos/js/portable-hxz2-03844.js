@@ -30,6 +30,13 @@
   }
   async function archive(file) {
     if(!file?.payload)throw new Error('Datos incompletos para HXZ2');
+    // The portable builder has several persistence wrappers. Some can add
+    // fields after an earlier wrapper calculated the checksum. Hash exactly
+    // the final payload that will be serialized, not an intermediate state.
+    if(typeof fnv1a3273!=='function')
+      throw new Error('No se encuentra el algoritmo de integridad del guardado');
+    const payloadJSON=JSON.stringify(file.payload);
+    file.checksum=fnv1a3273(payloadJSON);
     const json=JSON.stringify(file),raw=encoder.encode(json);
     const bytes=await gzipBytes(raw);
     const blob=new Blob([MAGIC,bytes],{type:'application/octet-stream'});
