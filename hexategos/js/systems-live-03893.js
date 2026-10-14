@@ -174,6 +174,8 @@
       // el HTML base: preservarlas hasta que su propio productor actualice.
       const external=[...host.children].filter(el=>
         el.id==='productionDashboard0388'||
+        el.getAttribute('data-hub-tab')==='naval'||
+        el.getAttribute('data-hub-tab')==='dip'||
         el.classList.contains('noticesStable8')||
         el.classList.contains('messagesSectionStable8'));
       for(let i=external.length-1;i>=0;i--){
