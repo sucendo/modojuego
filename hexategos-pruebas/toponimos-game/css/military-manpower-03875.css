@@ -1,0 +1,124 @@
+/* HEXATEGOS 0.38.75 — Control táctil de reclutamiento.
+   Respeta tipografía escalable del juego y no altera el scroll del diálogo. */
+#systemsPanel3213 #sysContent3213 .milPlanner03875{
+  display:grid;
+  gap:12px;
+  padding:14px;
+  margin-top:12px;
+  min-width:0;
+  width:100%;
+  max-width:100%;
+  box-sizing:border-box;
+  border:1px solid rgba(137,190,217,.25);
+  border-radius:12px;
+  background:rgba(8,28,44,.7);
+}
+#systemsPanel3213 #sysContent3213 .milModes03875{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:7px;
+}
+#systemsPanel3213 #sysContent3213 .milModes03875 button{
+  min-width:0;
+  min-height:43px;
+  padding:8px 10px;
+  border-radius:9px;
+  font:inherit;
+  font-weight:750;
+  color:#d3e6f5;
+  background:#152f43;
+  border:1px solid rgba(150,191,217,.30);
+  touch-action:manipulation;
+}
+#systemsPanel3213 #sysContent3213 .milModes03875 button[aria-pressed="true"]{
+  color:#f4fffc;
+  background:#166d72;
+  border-color:#73d4c6;
+  box-shadow:inset 0 0 0 1px rgba(115,212,198,.25);
+}
+#systemsPanel3213 #sysContent3213 .milQuantityHead03875,
+#systemsPanel3213 #sysContent3213 .milQuantityFoot03875{
+  display:flex;
+  gap:12px;
+  justify-content:space-between;
+  align-items:center;
+  min-width:0;
+}
+#systemsPanel3213 #sysContent3213 .milQuantityHead03875 label,
+#systemsPanel3213 #sysContent3213 .milExactLabel03875{
+  font-weight:750;
+  color:#d4e9f6;
+}
+#systemsPanel3213 #sysContent3213 .milQuantityHead03875 strong{
+  font-size:1.5em;
+  font-variant-numeric:tabular-nums;
+  color:#a6f3dc;
+}
+#systemsPanel3213 #sysContent3213 input[data-mil-slider03875]{
+  display:block;
+  width:100%;
+  min-width:0;
+  max-width:100%;
+  height:37px;
+  margin:0;
+  padding:0;
+  accent-color:#61d5bb;
+  touch-action:pan-y;
+  cursor:pointer;
+}
+#systemsPanel3213 #sysContent3213 .milQuantityFoot03875{
+  color:#bad3e3;
+  font-size:.9em;
+}
+#systemsPanel3213 #sysContent3213 input[data-mil-exact03875]{
+  width:100%;
+  min-width:0;
+  height:44px;
+  box-sizing:border-box;
+  padding:9px 11px;
+  border-radius:9px;
+  border:1px solid rgba(135,193,228,.42);
+  color:#f1f9fd;
+  background:#0f293c;
+  font:inherit;
+  font-variant-numeric:tabular-nums;
+}
+#systemsPanel3213 #sysContent3213 .milPreview03875{
+  min-height:50px;
+  padding:11px 12px;
+  border-radius:8px;
+  color:#d5e9f5;
+  background:rgba(21,53,73,.68);
+  line-height:1.5;
+  font-size:.95em;
+  overflow-wrap:anywhere;
+}
+#systemsPanel3213 #sysContent3213 .milActions03875{
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:8px;
+}
+#systemsPanel3213 #sysContent3213 .milActions03875 button{
+  min-height:43px;
+  white-space:normal;
+  touch-action:manipulation;
+}
+#systemsPanel3213 #sysContent3213 .milActions03875 button[data-mil-confirm03875]{
+  color:#f2fffc;
+  background:#146a69;
+  border:1px solid #6bc9bd;
+  font-weight:750;
+}
+#systemsPanel3213 #sysContent3213 .milPlanner03875 button:disabled,
+#systemsPanel3213 #sysContent3213 .milPlanner03875 input:disabled{
+  opacity:.5;
+  cursor:not-allowed;
+}
+#systemsPanel3213 #sysContent3213 .milPlanner03875 :focus-visible{
+  outline:2px solid #8bddec;
+  outline-offset:2px;
+}
+@media (max-width:440px){
+  #systemsPanel3213 #sysContent3213 .milPlanner03875{padding:11px;gap:10px}
+  #systemsPanel3213 #sysContent3213 .milQuantityHead03875 strong{font-size:1.25em}
+}

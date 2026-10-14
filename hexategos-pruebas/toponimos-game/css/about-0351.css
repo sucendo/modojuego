@@ -1,0 +1,125 @@
+/* HEXATEGOS 0.35.1 · Acerca de / historial de versiones */
+.aboutOverlay0351{
+  position:fixed;inset:0;z-index:180;
+  display:none;place-items:center;
+  padding:clamp(12px,2vw,28px);
+  background:rgba(1,6,11,.86);
+  backdrop-filter:blur(10px);
+}
+.aboutOverlay0351.open0351{display:grid}
+.aboutCard0351{
+  width:min(860px,94vw);
+  max-height:min(82vh,860px);
+  display:flex;flex-direction:column;
+  border:1px solid rgba(224,187,100,.30);
+  border-radius:18px;
+  overflow:hidden;
+  background:linear-gradient(180deg,rgba(10,25,38,.98),rgba(4,13,22,.985));
+  box-shadow:0 28px 90px rgba(0,0,0,.58);
+  color:#e8edf1;
+}
+.aboutHead0351{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:18px 20px 15px;
+  border-bottom:1px solid rgba(255,255,255,.09);
+  background:linear-gradient(180deg,rgba(29,59,80,.40),rgba(8,21,33,.10));
+}
+.aboutHeadText0351{min-width:0}
+.aboutHead0351 h2{
+  margin:0;
+  color:#f0cc73;
+  font-family:Georgia,'Times New Roman',serif;
+  font-size:clamp(20px,2.2vw,30px);
+  letter-spacing:.055em;
+}
+.aboutHead0351 p{
+  margin:5px 0 0;color:#9eb2c0;
+  font-size:clamp(10px,.9vw,13px);
+  line-height:1.4;
+}
+.aboutClose0351{
+  flex:0 0 auto;width:40px;height:40px;
+  border-radius:10px;border:1px solid rgba(224,187,100,.28);
+  background:#0b1d2c;color:#edf2f5;
+  font-size:22px;font-weight:800;cursor:pointer;
+}
+.aboutClose0351:hover{border-color:rgba(235,199,116,.68);background:#133149}
+.aboutBody0351{
+  overflow:auto;
+  padding:18px 20px 24px;
+  scrollbar-width:thin;
+}
+.aboutIntro0351{
+  margin:0 0 18px;padding:13px 15px;
+  border:1px solid rgba(224,187,100,.16);
+  border-radius:12px;
+  background:rgba(6,17,28,.72);
+  color:#bac9d3;
+  font-size:clamp(10px,.9vw,13px);
+  line-height:1.55;
+}
+.aboutTimeline0351{
+  position:relative;
+  display:grid;gap:12px;
+  padding-left:20px;
+}
+.aboutTimeline0351:before{
+  content:"";position:absolute;left:5px;top:7px;bottom:7px;width:1px;
+  background:linear-gradient(180deg,#d8ad55,rgba(91,124,148,.24));
+}
+.aboutVersion0351{
+  position:relative;
+  padding:13px 15px 14px;
+  border:1px solid rgba(255,255,255,.09);
+  border-radius:12px;
+  background:rgba(8,22,35,.74);
+}
+.aboutVersion0351:before{
+  content:"";position:absolute;left:-20px;top:18px;
+  width:9px;height:9px;border-radius:50%;
+  background:#d8ad55;border:2px solid #132a3b;
+  box-shadow:0 0 0 3px rgba(216,173,85,.13);
+}
+.aboutVersion0351.current0351{
+  border-color:rgba(224,187,100,.32);
+  background:linear-gradient(180deg,rgba(45,40,21,.35),rgba(8,22,35,.78));
+}
+.aboutVersionTop0351{
+  display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+  flex-wrap:wrap;
+}
+.aboutVersion0351 h3{
+  margin:0;color:#eef4f7;
+  font-size:clamp(13px,1.1vw,16px);
+}
+.aboutVersion0351 time{
+  color:#71899b;font-size:10px;font-weight:800;letter-spacing:.05em;
+}
+.aboutVersion0351 p{
+  margin:7px 0 0;color:#aebfca;
+  font-size:clamp(10px,.84vw,12.5px);line-height:1.5;
+}
+.aboutVersion0351 ul{
+  margin:8px 0 0;padding-left:18px;color:#c7d3db;
+  font-size:clamp(10px,.82vw,12px);line-height:1.48;
+}
+.aboutVersion0351 li+li{margin-top:4px}
+.aboutBadge0351{
+  display:inline-block;margin-left:7px;padding:2px 6px;
+  border-radius:999px;background:rgba(218,174,84,.15);
+  color:#edc971;font-size:8px;letter-spacing:.08em;font-weight:900;
+  vertical-align:2px;
+}
+.aboutFoot0351{
+  margin-top:17px;padding-top:13px;
+  border-top:1px solid rgba(255,255,255,.08);
+  color:#71889a;font-size:10px;line-height:1.45;text-align:center;
+}
+@media(max-width:700px){
+  .aboutOverlay0351{padding:7px}
+  .aboutCard0351{width:97vw;max-height:90vh;border-radius:14px}
+  .aboutHead0351{padding:13px 14px 11px}
+  .aboutBody0351{padding:13px 14px 18px}
+  .aboutTimeline0351{padding-left:17px}
+  .aboutVersion0351:before{left:-17px}
+}

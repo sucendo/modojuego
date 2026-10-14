@@ -1,0 +1,32 @@
+{
+  "version": 3,
+  "dataset": "GeoNames cities1000",
+  "records": 135179,
+  "bands": 12,
+  "bandDegrees": 30,
+  "tileDegrees": 1,
+  "source": "w3c/cities snapshot based on GeoNames",
+  "attribution": "GeoNames, CC BY 4.0",
+  "fields": [
+    "name",
+    "lat",
+    "lon",
+    "population",
+    "countryCode"
+  ],
+  "excludedPPLX": 5428,
+  "usableRecords": 135179,
+  "historicalNameRecords": 15,
+  "filters": {
+    "excludedFeatureCodes": [
+      "PPLX"
+    ],
+    "note": "PPLX = section of populated place; excluded from city-name proposals"
+  },
+  "supplementalFiles": [
+    "pplx-exclusions.json",
+    "historical-names.json"
+  ],
+  "sourceRecords": 140607,
+  "note": "Atlas materializado sin feature code PPLX; población conservada solo para orden interno, no se muestra en la interfaz."
+}

@@ -1,0 +1,137 @@
+/* HEXATEGOS 0.35.2 · mapa geopolítico */
+#mapModeBtn3252.modeGeopolitics0352{
+  border-color:rgba(218,174,84,.48)!important;
+  color:#f0cf7b!important;
+  background:linear-gradient(180deg,rgba(55,42,18,.94),rgba(22,31,40,.96))!important;
+}
+#terrainLegend3250.geopoliticsLegend0352{
+  display:flex!important;
+  flex-wrap:wrap;
+  gap:5px 8px;
+  max-width:min(720px,82vw);
+  padding:7px 9px!important;
+  border:1px solid rgba(218,174,84,.18);
+  border-radius:10px;
+  background:rgba(4,13,22,.84);
+  backdrop-filter:blur(8px);
+}
+#terrainLegend3250.geopoliticsLegend0352 .tl3250{
+  display:flex;align-items:center;gap:4px;
+  font-size:clamp(6.5px,.3vw + 5px,8.5px);
+  white-space:nowrap;
+}
+#terrainLegend3250.geopoliticsLegend0352 .tl3250 i{
+  width:8px;height:8px;border-radius:3px;
+  box-shadow:0 0 0 1px rgba(255,255,255,.09);
+}
+
+.geoMapPanel0352{
+  position:fixed;
+  z-index:55;
+  right:clamp(8px,1.1vw,18px);
+  bottom:clamp(42px,5.5vh,70px);
+  width:min(330px,31vw);
+  max-height:min(58vh,590px);
+  overflow:auto;
+  display:none;
+  padding:11px 12px 12px;
+  border:1px solid rgba(218,174,84,.24);
+  border-radius:13px;
+  background:linear-gradient(180deg,rgba(7,19,30,.94),rgba(4,12,20,.95));
+  box-shadow:0 16px 40px rgba(0,0,0,.34);
+  backdrop-filter:blur(10px);
+  color:#e9eef2;
+  scrollbar-width:thin;
+}
+.geoMapPanel0352.open0352{display:block}
+.geoPanelHead0352{
+  display:flex;align-items:flex-end;justify-content:space-between;gap:8px;
+  padding-bottom:8px;margin-bottom:9px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.geoPanelHead0352 span{
+  color:#d7b766;font-size:8px;letter-spacing:.12em;font-weight:900;
+}
+.geoPanelHead0352 b{
+  color:#f0f5f8;font-size:12px;text-align:right;
+}
+.geoMetaGrid0352{
+  display:grid;grid-template-columns:1fr 1fr;gap:6px;
+}
+.geoMetaGrid0352>div,
+.geoInfluence0352,
+.geoRelation0352{
+  min-width:0;padding:7px 8px;border-radius:9px;
+  background:rgba(255,255,255,.035);
+  border:1px solid rgba(255,255,255,.055);
+}
+.geoMetaGrid0352 span,
+.geoInfluence0352 span,
+.geoRelation0352 span,
+.geoObjectives0352>span{
+  display:block;color:#7f98aa;font-size:7px;font-weight:850;letter-spacing:.06em;text-transform:uppercase;
+}
+.geoMetaGrid0352 b,
+.geoInfluence0352 b,
+.geoRelation0352 b{
+  display:block;margin-top:3px;color:#e9eef2;font-size:9px;line-height:1.25;
+}
+.geoInfluence0352{margin-top:6px}
+.geoObjectives0352{
+  margin-top:8px;padding:8px;
+  border-radius:9px;background:rgba(218,174,84,.045);
+  border:1px solid rgba(218,174,84,.10);
+}
+.geoObjectives0352>div{
+  display:flex;align-items:flex-start;gap:7px;
+  margin-top:6px;color:#c7d3db;font-size:8px;line-height:1.35;
+}
+.geoObjectives0352 i{
+  flex:0 0 auto;display:grid;place-items:center;
+  width:16px;height:16px;border-radius:50%;
+  background:rgba(218,174,84,.14);color:#e6c36d;
+  font-style:normal;font-size:7px;font-weight:900;
+}
+.geoRelation0352{margin-top:8px}
+.geoRelation0352 small{
+  display:block;margin-top:4px;color:#91a8b8;font-size:7px;line-height:1.35;
+}
+.geoHint0352{
+  display:block;margin-top:8px;color:#647b8c;font-size:6.7px;line-height:1.35;
+}
+.geoDebug0352{
+  margin-top:9px;padding:7px 8px;
+  border:1px dashed rgba(219,182,92,.24);
+  border-radius:8px;background:rgba(35,25,10,.22);
+  color:#b8c6cf;font:7px/1.45 ui-monospace,SFMono-Regular,Consolas,monospace;
+}
+.geoDebug0352 summary{
+  cursor:pointer;color:#e1c26f;font-weight:800;margin-bottom:5px;
+}
+
+@media(max-width:860px){
+  .geoMapPanel0352{
+    width:min(310px,43vw);
+    right:7px;bottom:38px;
+  }
+}
+@media(max-width:700px){
+  .geoMapPanel0352{
+    width:min(290px,62vw);
+    max-height:52vh;
+    right:6px;bottom:34px;
+    padding:8px 9px 9px;
+  }
+  .geoMetaGrid0352{grid-template-columns:1fr}
+  #terrainLegend3250.geopoliticsLegend0352{
+    max-width:88vw;
+    gap:4px 6px;
+  }
+}
+@media(max-height:540px) and (orientation:landscape){
+  .geoMapPanel0352{
+    width:min(300px,35vw);
+    max-height:64vh;
+    bottom:20px;
+  }
+}

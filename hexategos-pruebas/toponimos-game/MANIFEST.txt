@@ -1,0 +1,853 @@
+HEXATEGOS_0_37_21
+
+Mapa de suministro material:
+- resourceComponentCoverage03721
+- materialCoverageForCell03721
+- materialSupplyScore03721
+- materialSupplyDetail03721
+- baseSupplyPct03721
+- override supplyPct3220
+- override drawSupply3230
+- supplyClass03721
+- RESOURCE_SUPPLY_COLORS03721
+
+Leyenda:
+- abastecido >= 75
+- tensión 55..74
+- bajo 35..54
+- crítico < 35
+
+UI:
+- contexto de mapa con material + recursos críticos
+- panel Suministro seleccionado
+- supplyResourceGrid03721
+
+API:
+- HexategosTradeLogistics0370.materialSupply(cell)
+- HexategosTradeLogistics0370.combinedSupply(cell)
+
+Rendimiento:
+- cobertura por componente cacheada
+- sin nuevos timers
+- sin pathfinding por frame
+
+Pruebas:
+- tests/smoke-03721.mjs
+
+Rama de seguridad:
+- backup/hexategos-0.37.20-before-material-supply-map-03721
+
+--- MANIFEST ANTERIOR ---
+HEXATEGOS_0_37_20
+
+Economía material:
+- RESOURCE_KEYS03720
+- resourceNodes03720
+- resourceNation03720
+- resourceNodeProfile03720
+- ensureResourceNodes03720
+- redistributeRoadResources03720
+- transferRouteResources03720
+- summarizeResources03720
+- resourceTick03720
+- resourceSummary03720
+- routeCargoText03720
+
+Recursos:
+- food
+- raw
+- fuel
+- goods
+- military
+
+Persistencia:
+- resources03720
+- playerNodes
+- nationCoverage
+- compatible con saves previos
+
+Impacto económico:
+- materialEconomyFactor
+- materialRecruitFactor
+- economyRate3230 = territorialEconomy3261 actualizado
+
+Patrullas:
+- patrolNext Infinity corregido
+- 9 pasos de ida
+- mismo regreso inverso
+- triángulo naval mayor
+
+Pruebas:
+- tests/smoke-03720.mjs
+
+Rama de seguridad:
+- backup/hexategos-0.37.19-before-resource-economy-03720
+
+--- MANIFEST ANTERIOR ---
+HEXATEGOS_0_37_19
+
+Patrulla:
+- buildLocalPatrolRoute03719
+- salida solo desde homeSea
+- outbound <= 7 pasos
+- return = outbound reverse
+- ruta cerrada homeSea -> ... -> homeSea
+- _patrolHomeSea03719
+- _patrolPort03719
+- _patrolAwaitingNext03719
+
+Visual:
+- visibleNavalRoute0378 oculta patrol para jugador + IA
+- visualVector03719
+- _visualVecPath03719
+- anclaje visual al puerto
+- continuidad entre ticks
+- NAVAL_VISUAL_STEP_MS03719 = 1400
+
+Rendimiento:
+- sin A* adicional de patrulla
+- sin timers nuevos
+
+Pruebas:
+- tests/smoke-03719.mjs
+
+Rama de seguridad:
+- backup/hexategos-0.37.18-before-patrol-cycle-03719
+
+--- MANIFEST ANTERIOR ---
+HEXATEGOS_0_37_18
+
+Vista de ruta:
+- showTradeRouteFocusBar03718
+- hideTradeRouteFocusBar03718
+- interactionCancel3244 -> Salir
+- listener capture para salir antes del cancelador genérico
+- clearTradeRouteFocus03717(notify)
+
+Persistencia:
+- rutas sí serializadas por serialize0370
+- guardado local vía save0370 / saveGame3212
+- guardado portable vía tradeLogistics0370
+- foco visual NO serializado
+
+Pruebas:
+- tests/smoke-03718.mjs
+
+Rama de seguridad:
+- backup/hexategos-0.37.17-before-route-exit-03718
+
+--- MANIFEST ANTERIOR ---
+HEXATEGOS_0_37_17
+
+Gestor comercial:
+- sortedOwnRoutes03717
+- renderTradeManagerRoute03717
+- tradeRouteGoods03717
+- tradeRouteSupplyLabel03717
+- todas las rutas del jugador
+
+Navegación:
+- focusedTradeRoute03717
+- focusTradeRoute03717
+- clearTradeRouteFocus03717
+- cellLonLat3302 + rotateToGeo3243
+
+Mapa:
+- drawFocusedTradeRoute03717
+- resaltado marítimo y terrestre
+- foco visible incluso por debajo de zoom 25
+
+API:
+- HexategosTradeActions0370.focusRoute
+- HexategosTradeActions0370.clearRouteFocus
+- HexategosTradeLogistics0370.focusedRoute
+- HexategosTradeLogistics0370.focusRoute
+
+Pruebas:
+- tests/smoke-03717.mjs
+
+Rama de seguridad:
+- backup/hexategos-0.37.16-before-trade-manager-03717
+
+--- MANIFEST ANTERIOR ---
+HEXATEGOS_0_37_16
+
+Causa raíz:
+- controlador estricto v3.28.2 exige contextTargetPermit3282
+- versiones previas armaban el modo sin beginTargetFromDialog3282
+- pick final usa handleInteractionTarget3245
+- comercio interceptaba 3244
+
+Corrección:
+- beginSeaTradeMapPick03716
+- beginTargetFromDialog3282(select_trade_route_target,...)
+- seaTradeTargetStartedAt03716
+- baseHandleInteractionTarget03716 = handleInteractionTarget3245
+- override real de handleInteractionTarget3245
+- alias handleInteractionTarget3244 actualizado
+- port snap -> handleInteractionTarget3245
+- handleSeaTradeTarget03716
+- createPlayerSeaRoute0370 sin cambios de lógica
+
+Pruebas:
+- tests/smoke-03716.mjs
+- valida también restricciones del controlador final dentro de game.js
+
+Rama de seguridad:
+- backup/hexategos-0.37.15-before-trade-controller-03716
+
+--- MANIFEST ANTERIOR ---
+HEXATEGOS_0_37_15
+
+Selector comercial:
+- beginSeaTradeMapPick03715
+- botón independiente de seaCandidates0370
+- canTrade = routeCount0370(0) < routeLimit0370(0)
+- selector nativo select_trade_route_target
+- nearestPortScreen03715
+- wrapper de pick durante modo comercial
+- diagnóstico explícito de fallos
+- API canPickSeaTarget(from,to)
+
+Rendimiento:
+- búsqueda de puerto solo en clic
+- sin coste por frame
+- sin nuevos timers
+
+Pruebas:
+- tests/smoke-03715.mjs
+
+Rama de seguridad:
+- backup/hexategos-0.37.14-before-trade-picker-03715
+
+--- MANIFEST ANTERIOR ---
+HEXATEGOS_0_37_14
+
+Selector comercial:
+- beginSeaTradeMapPick03714
+- interactionMode select_trade_route_target
+- override handleInteractionTarget3244
+- sin hook de updatePanel
+- conserva seaTradeTargetReason03711 para validación
+
+Camiones origen-destino:
+- domesticAnchorKind03714
+- domesticAnchorWeight03714
+- roadTree03714
+- pathFromRoadTree03714
+- nodos: capital / city / industry / port
+- origin + destination explícitos
+- rutas completas sobre roadComp + roadJoin0370
+- jugador prioritario
+
+Rendimiento:
+- maxGroups 96 / 54
+- maxVisits jugador 14000
+- maxVisits IA 6500
+- rutas muestreadas a 160
+- sin nuevos timers
+- maxDots sin cambios
+
+Pruebas:
+- tests/smoke-03714.mjs
+
+Rama de seguridad:
+- backup/hexategos-0.37.13-before-route-picker-domestic-03714
+
+--- MANIFEST ANTERIOR ---
+HEXATEGOS_0_37_13
+
+Rutas propias:
+- puerto propio -> puerto propio permitido
+- candidatos propios: hasta 24 puertos
+- navegación directa por mapa compatible con rutas interiores
+
+Suministro interior:
+- domesticSeaSupplyFloor03713
+- endpoint activo: mínimo 64
+- red viaria conectada al endpoint: mínimo 58
+- caché domesticSeaSupplyCache03713
+- invalidación por cambios de comercio/carreteras
+- API domesticSeaSupply(f,cell)
+
+Tráfico doméstico:
+- candidatos del jugador ordenados antes que IA
+- hasta 2 puntos en tramos propios >3 celdas
+- mismo presupuesto maxDots
+- mismo zoom mínimo 25
+
+Rendimiento:
+- reutiliza roadComp
+- sin timers nuevos
+- sin aumentar número máximo de puntos
+
+Pruebas:
+- tests/smoke-03713.mjs
+
+Rama de seguridad:
+- backup/hexategos-0.37.12-before-domestic-logistics-03713
+
+--- MANIFEST ANTERIOR ---
+HEXATEGOS_0_37_12
+
+Simbología:
+- comercio terrestre = punto
+- comercio marítimo = punto
+- transporte de tropas = rombo
+- flota militar = triángulo
+- color = identidad nacional
+
+Cambio visual:
+- barcos comerciales dejan de usar marcador triangular
+- conservan mayor tamaño que los puntos terrestres para legibilidad
+- sin cambios de simulación/rendimiento
+
+Pruebas:
+- tests/smoke-03712.mjs
+
+Rama de seguridad:
+- backup/hexategos-0.37.11-before-transport-symbols-03712
+
+--- MANIFEST ANTERIOR ---
+HEXATEGOS_0_37_11
+
+Franjas comerciales IA:
+- rutas terrestres activas siguen en mantenimiento estratégico
+- ACTIVE_BELT_EVERY=3
+- ACTIVE_DEVELOP_EVERY=6
+- MAX_ACTIVE_ROUTE_SAMPLES=96
+- revisión del path físico real de la ruta
+- ocupación de neutral adyacente con apoyo territorial >=2
+- evita contacto enemigo inmediato
+- expansión lateral con noRoad=true
+- ciudad/industria pueden aparecer en corredores ya maduros
+
+Ruta comercial en mapa:
+- RUTA COMERCIAL desde puerto propio -> modo seleccionar destino
+- destino válido = puerto propio o extranjero con derechos comerciales
+- casilla inválida mantiene el modo activo
+- barra interactionBar3244 usada para instrucciones/cancelación
+- API pickSeaOnMap disponible
+
+Marcadores:
+- barcos comerciales 4.40 / 3.70 px según zoom
+- comercio terrestre 3.20 / 2.70 px
+- tráfico interior 3.20 / 2.60 px
+
+Flotas:
+- patrulla sigue sin trayectoria visual
+- otras órdenes pueden seguir mostrando ruta
+
+Rendimiento:
+- sin setInterval nuevo
+- sin búsqueda global de territorio alrededor de rutas
+- se reutiliza route.path ya calculado
+- una expansión/construcción relevante por servicio
+
+Pruebas:
+- tests/smoke-03711.mjs
+
+Rama de seguridad:
+- backup/hexategos-0.37.10-before-active-route-belt-03711
+
+--- MANIFEST ANTERIOR ---
+HEXATEGOS_0_37_10
+
+Patrulla naval:
+- ruta visual de patrulla eliminada por completo
+- la ruta interna y el movimiento de simulación se conservan
+
+Tráfico comercial:
+- barcos comerciales más grandes
+- camiones/puntos comerciales terrestres más grandes
+- tráfico interior ligeramente más grande
+- mismo presupuesto visual y mismos umbrales de zoom
+
+Velocidad física:
+- eliminado avance por porcentaje fijo de ruta
+- DOMESTIC_TRAFFIC_CELLS_PER_SECOND=.78
+- LAND_TRADE_CELLS_PER_SECOND=.92
+- SEA_TRADE_CELLS_PER_SECOND=.72
+- fase calculada usando distancia real de la ruta
+- rutas más largas tardan proporcionalmente más
+- helper tradeSpeedMultiplier03710 preparado para tecnología futura
+- multiplicador actual: 1.0 salvo API tecnológica futura
+
+Rendimiento:
+- sin nuevas entidades
+- sin nuevas búsquedas de ruta
+- sin temporizadores adicionales
+
+Archivos modificados:
+- js/trade-logistics-0370.js
+- js/national-visuals-0378.js
+
+Pruebas:
+- tests/smoke-03710.mjs
+
+Rama de seguridad:
+- backup/hexategos-0.37.9-before-traffic-motion-03710
+
+--- MANIFEST ANTERIOR ---
+HEXATEGOS_0_37_9
+
+Corredores económicos consolidados:
+- avance comercial deja de ser un pasillo mínimo de una casilla
+- aproximadamente 2 ciclos de avance / 1 de consolidación lateral
+- consolidación prioriza apoyo territorial y carretera existente
+- eje limitado alrededor de la dirección entre capitales
+- penalización por terreno difícil
+- corredores antiguos pueden rellenar flancos progresivamente
+- cada 6 ciclos puede sustituirse expansión por desarrollo civil
+- nuevas ciudades sobre carretera, con suministro, distancia urbana y seguridad
+- industria en nodos urbanos del corredor con separación respecto a otros polos
+- el constructor IA normal continúa desarrollando después esos núcleos
+
+Rendimiento:
+- MAX_FRONTIER_SAMPLES=180
+- MAX_NODE_SAMPLES=190
+- reutiliza aiSnapshot3260 y aiNationalSamples3275
+- una sola conquista o construcción relevante por servicio
+- sin setInterval nuevo
+- sin payload persistente nuevo; compatible con partidas anteriores
+
+Módulo:
+- js/economic-corridors-0379.js
+
+Integración:
+- js/trade-geopolitics-0377.js delega planificación de consolidación/desarrollo a 0.37.9
+
+Pruebas:
+- tests/smoke-0379.mjs
+
+Rama de seguridad:
+- backup/hexategos-0.37.8-before-economic-corridors-0379
+
+--- MANIFEST ANTERIOR ---
+HEXATEGOS_0_37_8
+
+Identidad visual nacional:
+- puntitos de tráfico SOLO desde zoom 25
+- tráfico terrestre interior para todas las naciones, no solo jugador
+- cada tramo conserva faction y se dibuja con el color real del país
+- rutas terrestres internacionales alternan actividad de las naciones implicadas
+- barcos comerciales marítimos con color nacional
+- convoyes navales y flotas militares visibles desde zoom 15
+- convoyes navales con color nacional
+- flotas militares con color nacional
+- movimiento visual de flotas interpolado de forma continua entre ticks navales
+- rutas marítimas comerciales IA↔IA también visibles
+- líneas marítimas: azul claro discontinuo común
+- patrulla naval: solo tramo inmediato
+
+Rendimiento:
+- mismo recorrido de carreteras existente; ahora segmenta por propietario
+- pool visual acotado
+- puntitos ocultos por completo bajo zoom 25
+- prioridad a rutas/puntos que realmente proyectan dentro de pantalla
+- sin setInterval nuevo
+
+Módulo:
+- js/national-visuals-0378.js
+
+Pruebas:
+- tests/smoke-0378.mjs
+
+Rama de seguridad:
+- backup/hexategos-0.37.7-before-national-traffic-0378
+
+--- MANIFEST ANTERIOR ---
+HEXATEGOS_0_37_7
+
+Corredores comerciales geopolíticos IA:
+- relación comercial sin conexión física -> se genera un proyecto de corredor
+- si hay espacio neutral en dirección al socio -> expansión gradual para acercarse
+- la carretera acompaña al avance cuando la red ya llega al frente
+- si un tercer país separa a los socios -> solicitud real de permiso de tránsito
+- permiso concedido -> carretera física por el país intermedio + conexiones/aduanas fronterizas
+- corredor de varios Estados -> se procesa paso a paso y cada intermediario necesita autorización
+- negativa -> primero busca otra ruta entre Estados
+- si no hay alternativa -> personalidades oportunistas/agresivas pueden intentar contrabando
+- el contrabando solo reutiliza carreteras ya existentes; no construye una autopista ilegal completa
+- negativas repetidas -> pérdida de opinión/confianza y posible ruptura de tratados
+- escalada tardía -> posible guerra por acceso al corredor, solo entre IA y con ventaja estratégica
+- el jugador queda fuera de la guerra automática de este subsistema
+
+Rendimiento:
+- servicio por nación cada ~17 s de campaña, escalonado
+- vecinos estatales calculados desde muestras de frontera ya existentes
+- caché de vecinos ~22 s
+- profundidad máxima de búsqueda geopolítica: 5 Estados
+- máximo 5 socios evaluados por servicio
+- una sola obra/conquista/aduana relevante por ciclo
+- sin setInterval nuevo
+
+Persistencia:
+- negativas de tránsito en localStorage
+- payload tradeGeopolitics0377 en .hexategos
+
+Módulo:
+- js/trade-geopolitics-0377.js
+
+Pruebas:
+- tests/smoke-0377.mjs
+
+Rama de seguridad:
+- backup/hexategos-0.37.6-before-trade-geopolitics-0377
+
+--- MANIFEST ANTERIOR ---
+HEXATEGOS_0_37_6
+
+Conexión terrestre fronteriza:
+- dos carreteras de países distintos NO se unen automáticamente por tocarse
+- al pulsar un hexágono propio con carretera junto a una carretera extranjera compatible aparece CONEXIÓN TERRESTRE
+- subtítulo: ADUANA · 12 ORO · nombre del país
+- al activarlo se construye físicamente el tramo fronterizo entre ambos hexágonos
+- el enlace se registra como aduana/conexión internacional explícita
+- después se intenta crear la ruta comercial terrestre física
+- jugador↔IA: la IA llega hasta frontera, pero el jugador confirma/construye el enlace
+- IA↔IA: pueden construir el enlace automáticamente cuando ambas carreteras están preparadas
+- requiere relación cooperativa con derechos comerciales
+- romper la relación puede suspender el comercio, pero la carretera física permanece
+
+Persistencia:
+- localStorage independiente para enlaces fronterizos
+- payload borderRoad0376 en partidas .hexategos
+- partidas anteriores cargan sin aduanas internacionales preexistentes
+
+Rendimiento:
+- detección del botón solo mira vecinos del hexágono
+- sin setInterval nuevo
+- no recorre el mapa global
+
+Módulo:
+- js/border-road-0376.js
+
+Pruebas:
+- tests/smoke-0376.mjs
+
+Rama de seguridad:
+- backup/hexategos-0.37.5-before-border-road-0376
+
+--- MANIFEST ANTERIOR ---
+HEXATEGOS_0_37_5
+
+IA civil y comercio físico:
+- la diplomacia recibe servicio garantizado y espaciado aunque el scheduler militar agote su presupuesto
+- COMERCIO, NO AGRESIÓN y ALIANZA conservan derechos comerciales en el modelo diplomático de estado único
+- las IA con relaciones comerciales buscan un paso fronterizo común
+- si una carretera del jugador llega a la frontera, la IA comercial del otro lado intenta conectarse a ella
+- dos IA comerciales pueden construir corredores hasta encontrarse físicamente
+- al quedar unidas las redes se fuerza la creación segura de una ruta terrestre real
+- las IA intentan reconectar primero infraestructuras propias aisladas
+- watchdog civil tras ~30 s de campaña sin progreso: ciudad/industria de respaldo si existen déficit y recursos
+- el watchdog usa muestras/cachés y no cuenta toda la infraestructura en cada servicio
+
+Rendimiento:
+- sin nuevos setInterval
+- diplomacia garantizada desde economyTick3212 con su propio dipNextReview
+- corredores revisados con cadencia por nación
+- fronteras muestreadas, no se escanea el planeta
+- diagnóstico civil caro solo para IA estancadas
+
+Módulo nuevo:
+- js/ai-commerce-0375.js
+
+Pruebas:
+- tests/smoke-0375.mjs
+
+Rama de seguridad:
+- backup/hexategos-0.37.4-before-ai-commerce-0375
+
+--- MANIFEST ANTERIOR ---
+HEXATEGOS_0_37_4
+
+Retirada manual de carreteras:
+- al pulsar un hexágono propio con carretera aparece ABANDONAR CARRETERA
+- elimina todos los tramos que llegan al hexágono seleccionado
+- no devuelve oro
+- si el punto es un nudo, corta todas las conexiones incidentes y conserva los subtramos válidos
+- recalcula inmediatamente roadEdgeSet, suministro, economía, IA y comercio
+- fuerza una auditoría de degradación para detectar infraestructuras recién aisladas
+- se guarda de forma natural dentro de roads3212 y mantiene compatibilidad con partidas anteriores
+
+Rendimiento:
+- no añade temporizadores
+- no recorre las celdas del mundo
+- solo procesa roads3212 cuando el jugador ejecuta la acción
+
+Módulo nuevo:
+- js/road-removal-0374.js
+
+Pruebas:
+- tests/smoke-0374.mjs
+
+--- MANIFEST ANTERIOR ---
+HEXATEGOS_0_37_3
+
+Degradación por aislamiento:
+- ciudades, industrias y puertos necesitan comunicaciones reales
+- 0-60 s sin conexión: margen de adaptación
+- 60-180 s: degradación progresiva y pérdida de producción
+- 180-300 s: abandono, icono gris y actividad residual mínima
+- 300-360 s: desvanecimiento progresivo
+- 360 s: desaparición definitiva de la infraestructura
+- recuperar comunicaciones antes de desaparecer restaura el núcleo
+
+Qué cuenta como comunicación:
+- cualquier carretera conectada al hexágono de la ciudad/industria/puerto cuenta como ruta terrestre interna
+- no hace falta crear además una ruta comercial terrestre formal
+- puerto/complejo portuario con ruta marítima activa
+- la capital actúa como nodo básico protegido
+
+Naval:
+- si desaparece un puerto-base, la flota queda sin base
+- no se teletransporta ni se elimina
+- puede recibir después un traslado válido; la IA usa el mismo sistema naval
+
+Rendimiento:
+- auditoría cada 10 s de campaña, no por frame
+- reutiliza la caché de componentes viarios de 0.37.x
+- reutiliza economyTick3212 y no crea un setInterval adicional
+- solo recorre las colecciones dispersas de ciudades/industrias/puertos
+
+Compatibilidad:
+- partidas anteriores cargan sin estado de degradación y empiezan sanas
+- persistencia local independiente
+- estado incluido también en archivos .hexategos
+
+Módulo nuevo:
+- js/infrastructure-decay-0373.js
+
+Pruebas:
+- tests/smoke-0373.mjs
+
+Rama de seguridad:
+- backup/hexategos-0.37.2-before-infra-decay-0373
+
+--- MANIFEST ANTERIOR ---
+HEXATEGOS_0_37_2
+
+Visualización:
+- tráfico terrestre propio en color de la nación del jugador
+- puntos terrestres más visibles
+- umbral de zoom reducido
+- carreteras ligeramente más estrechas
+- patrulla naval: solo se dibuja el tramo inmediato, no la ruta completa
+
+Rendimiento:
+- la ruta completa de patrulla no se recalcula para dibujarla
+- el recorte visual se hace temporalmente durante el render
+- se mantienen los límites adaptativos de puntos y rutas
+- no se añaden entidades de tráfico reales
+
+Rama de seguridad:
+- backup/hexategos-0.37.1-before-traffic-visibility-0372
+
+--- MANIFEST ANTERIOR ---
+HEXATEGOS_0_37_1
+
+Tráfico interior:
+- circulación visible sobre carreteras propias
+- puntos suavemente interpolados entre celdas
+- umbral de zoom rebajado para que el tráfico sea visible antes
+- caché de corredores propios y límites adaptativos de dibujo
+
+Rutas marítimas interiores:
+- puerto propio <-> puerto propio
+- menor rendimiento que comercio exterior equivalente
+- IA puede crear hasta 2 rutas interiores según número de puertos
+- trazado visual puerto a puerto, incluyendo los dos extremos terrestres
+
+Movimiento naval:
+- patrulla local alrededor del puerto-base
+- intercepción hacia transporte enemigo cuando existe
+- si no hay transporte, salida controlada hacia zona enemiga y regreso
+- ruta de retorno reutilizada, sin segunda búsqueda A*
+- hostilidad naval basada en guerra real
+
+Rendimiento:
+- máximo 1 búsqueda de salida naval por intervalo
+- patrullas locales sin pathfinding global
+- tráfico interior cacheado
+- límites de puntos y corredores según dispositivo
+
+Rama de seguridad:
+- backup/hexategos-0.37.0-before-traffic-naval-0371
+
+--- MANIFEST ANTERIOR ---
+HEXATEGOS_0_37_0
+
+Comercio y logística física:
+- relaciones comerciales con ingreso residual mínimo sin infraestructura
+- rutas terrestres sobre carreteras realmente conectadas
+- rutas marítimas puerto a puerto
+- tránsito por terceras naciones con permisos
+- contrabando terrestre con riesgo diplomático
+- rutas marítimas sin permiso con inspecciones e incidentes
+- flujo de mercancías e ingreso comercial dependientes de rutas
+
+Naval:
+- cada flota pertenece a un puerto-base
+- traslado de base a otro puerto propio
+- pérdida del puerto -> flota sin base, sin teletransporte automático
+- construir flota / transportar tropas / abrir ruta comercial desde puerto
+- IA sujeta a las mismas reglas
+
+Rendimiento:
+- tick comercial: 2800 ms
+- máximo global: 720 rutas
+- IA: 4 rutas por nación; jugador: hasta 16
+- máximo 2 reconstrucciones/búsquedas de ruta costosas por tick
+- máximo 1 búsqueda marítima A* nueva por tick
+- red terrestre cacheada y reconstruida sobre celdas de carretera
+- trayectorias de comercio muestreadas para limitar memoria
+- tráfico visible solo con zoom cercano y con límites adaptativos de rutas/puntos
+
+Módulos nuevos:
+- js/trade-logistics-0370.js
+- css/trade-logistics-0370.css
+
+Pruebas:
+- tests/smoke-0370.mjs
+
+Rama de seguridad:
+- backup/hexategos-0.36.2-before-logistics-0370
+
+--- MANIFEST ANTERIOR ---
+HEXATEGOS_0_36_2
+
+Construcción IA más humana:
+- menos polos industriales por territorio
+- industria nueva concentrada en ciudades, puertos o corredores
+- al cubrir la red industrial, la IA mejora fábricas existentes en vez de sembrar otras
+- tareas regionales obsoletas se descartan antes de invertir
+- objetivos urbanos, viarios y portuarios limitados y proporcionales
+- partidas existentes compatibles y sin eliminación automática de infraestructuras
+
+Módulo nuevo:
+- js/human-build-0362.js
+
+Pruebas:
+- tests/smoke-0362.mjs
+
+Rama de seguridad:
+- backup/hexategos-0.36.1-before-human-ai-build-0362
+
+--- MANIFEST ANTERIOR ---
+HEXATEGOS_0_36_1
+
+Rendimiento 500 naciones:
+- scheduler IA con presupuesto temporal adaptativo
+- rotación justa y trabajo diferido
+- conteos territoriales desde snapshots compartidos
+- condición de victoria sin barridos por nación
+- guerra/comercio desde red diplomática activa
+- desgaste de guerra sin hot loop cuadrático repetido
+- snapshot económico coalescido
+- caché LOD sin asignaciones de contador por celda
+- refresco diplomático DOM limitado
+
+Módulo nuevo:
+- js/performance-0361.js
+
+Módulo actualizado:
+- js/nation-ai-0360.js
+
+Pruebas:
+- tests/smoke-0361.mjs
+
+Rama de seguridad:
+- backup/hexategos-0.36.0-before-performance-0361
+
+--- MANIFEST ANTERIOR ---
+HEXATEGOS_0_36_0
+
+Escala:
+- capacidad nativa: 500 facciones
+- nueva partida: 150 / 250 / 350 / 500
+- compatibilidad de carga: 16 / 25 / 35 / 50
+
+Módulo nuevo:
+- js/nation-ai-0360.js
+
+Motor:
+- todas las naciones usan owner6 y FACTIONS3230
+- capital, ciudad inicial y territorio normal
+- economía, diplomacia, infraestructura, frentes, guerra y flotas sin capa secundaria
+- nombres y colores suficientes para 500 actores
+
+IA:
+- conformista
+- comercial
+- defensiva
+- oportunista
+- localista
+- perfiles variables hasta 60 min de campaña
+- mismas capacidades para todos; solo cambia la toma de decisiones
+- scheduler escalonado para repartir CPU
+
+Rendimiento:
+- snapshots mundiales compartidos
+- ranking desde snapshot / un único conteo
+- red diplomática sin propagación N³
+- guardado diplomático de contactos compacto a gran escala
+- defensa IA sin conteo mundial por facción
+
+Rama de recuperación:
+- backup/hexategos-0.35.6-before-500-nations
+
+--- MANIFEST ANTERIOR ---
+HEXATEGOS_0_35_6
+
+Base estable:
+- HEXATEGOS 0.35.5
+- Compatibilidad directa con partidas 0.35.x
+
+Módulos nuevos:
+- js/ai-infra-0356.js
+
+Integración 0.35.6:
+- capital histórica -> lógica conservada, marcador secundario oculto
+- ciudad + industria + puerto -> composición visual por LOD
+- zoom pequeño -> prioridad visual de ciudad
+- IA -> objetivos de desarrollo escalables por territorio
+- fortificaciones IA -> límite estratégico y prioridad al desarrollo cuando existe déficit
+- partidas existentes -> invalidación de planes y recálculo inmediato
+
+Pruebas nuevas:
+- tests/smoke-0356.mjs
+- .github/workflows/hexategos-smoke.yml
+
+--- MANIFEST ANTERIOR ---
+HEXATEGOS_0_35_4
+
+Base estable:
+- HEXATEGOS 0.35.3
+- Rama de recuperación: hexategos-stable-0.35.3
+
+Módulos nuevos:
+- js/real-cities-0354.js
+- css/real-cities-0354.css
+
+Atlas:
+- data/cities-0354/manifest.json
+- data/cities-0354/ATTRIBUTION.txt
+- data/cities-0354/band-00.json ... band-11.json
+- 140.607 localidades
+- índice por 12 franjas de longitud + teselas de 1 grado
+
+Integración:
+- clasificación -> navegación a capital
+- construcción de ciudad -> propuestas reales dentro del hexágono
+- fallback honesto a localidades cercanas con distancia
+- selector integrado en modal movible
+
+Pruebas:
+- tests/smoke-0342.mjs
+- tests/smoke-035.mjs
+- tests/smoke-0351.mjs
+- tests/smoke-0352.mjs
+- tests/smoke-0353.mjs
+- tests/smoke-0354.mjs
+- .github/workflows/hexategos-smoke.yml

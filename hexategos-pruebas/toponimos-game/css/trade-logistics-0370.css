@@ -1,0 +1,94 @@
+/* HEXATEGOS 0.37.0 · logística y comercio físico */
+.tradeRouteList0370,.tradeRoutes0370{display:grid;gap:7px;margin-top:8px}
+.tradeCandidate0370,.tradeRoute0370{border:1px solid rgba(125,166,195,.24);background:rgba(10,24,35,.66);border-radius:8px;padding:8px 10px;text-align:left;color:inherit}
+.tradeCandidate0370{display:grid;width:100%;cursor:pointer;gap:2px}
+.tradeCandidate0370:hover{border-color:rgba(119,211,225,.56);background:rgba(14,34,47,.78)}
+.tradeCandidate0370 b,.tradeRoute0370 b{font-size:11px;letter-spacing:.02em}
+.tradeCandidate0370 span,.tradeRoute0370 span{display:block;font-size:10px;opacity:.88;margin-top:2px}
+.tradeCandidate0370 small,.tradeRoute0370 small{display:block;font-size:9px;opacity:.67;margin-top:3px}
+.tradeRoute0370 .acts{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+.tradeRoute0370 .acts button{font-size:9px;padding:5px 7px}
+@media (max-width:760px){
+ .tradeCandidate0370,.tradeRoute0370{padding:7px 8px}
+ .tradeRoute0370 .acts button{flex:1 1 auto}
+}
+
+
+/* HEXATEGOS 0.37.17 · gestor de rutas comerciales */
+.tradeManager03717{display:grid;gap:8px}
+.tradeManagerTitle03717{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.tradeManagerTitle03717>small{font-size:9px;opacity:.66;font-weight:700}
+.tradeManagerList03717{max-height:min(52vh,560px);overflow:auto;padding-right:3px}
+.tradeManagerRoute03717{display:grid;gap:3px;transition:border-color .15s ease,background .15s ease,box-shadow .15s ease}
+.tradeManagerRoute03717.focused03717{border-color:rgba(126,229,246,.72);background:rgba(13,39,52,.86);box-shadow:0 0 0 1px rgba(126,229,246,.12) inset}
+.tradeRouteHead03717{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.tradeRouteHead03717>b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tradeRouteHead03717>small{margin:0!important;padding:2px 6px;border-radius:999px;background:rgba(126,166,194,.14);font-size:8px!important;opacity:.8!important;white-space:nowrap}
+.tradeRouteMetrics03717{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin-top:5px!important}
+.tradeRouteMetrics03717 i{display:grid;gap:1px;padding:4px 5px;border-radius:6px;background:rgba(255,255,255,.035);font-style:normal}
+.tradeRouteMetrics03717 em{font-style:normal;font-size:7.5px;opacity:.55;white-space:nowrap}
+.tradeRouteMetrics03717 b{font-size:9px!important;white-space:nowrap}
+.tradeSupply03717{color:#9fe4c2!important;opacity:.92!important}
+.tradeEmpty03717{padding:10px 0}
+@media (max-width:760px){
+ .tradeManagerList03717{max-height:48vh}
+ .tradeRouteMetrics03717{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .tradeRouteHead03717{align-items:flex-start}
+ .tradeRouteHead03717>b{white-space:normal}
+}
+
+
+/* HEXATEGOS 0.37.20 · economía material */
+.resourceEconomy03720{display:grid;gap:8px}
+.resourceGrid03720{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}
+.resourceGrid03720>span{display:grid;gap:3px;min-width:0;padding:6px;border:1px solid rgba(142,177,202,.14);border-radius:7px;background:rgba(255,255,255,.025)}
+.resourceGrid03720 b{font-size:8.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.resourceGrid03720 i{display:block;height:5px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden}
+.resourceGrid03720 i>em{display:block;height:100%;border-radius:inherit;background:currentColor;opacity:.72}
+.resourceGrid03720 small{font-size:7.5px!important;opacity:.62!important;white-space:nowrap}
+.tradeCargo03720{color:#c7e6f3!important;opacity:.9!important}
+@media (max-width:880px){
+ .resourceGrid03720{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .resourceGrid03720>span:last-child{grid-column:1/-1}
+}
+
+
+/* HEXATEGOS 0.37.21 · suministro material integrado */
+.supplyMaterialSelected03721{display:grid;gap:7px}
+.supplyResourceGrid03721{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}
+.supplyResourceGrid03721>span{display:grid;gap:3px;padding:5px 6px;border-radius:7px;border:1px solid rgba(151,181,201,.14);background:rgba(255,255,255,.025);min-width:0}
+.supplyResourceGrid03721 b{font-size:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.supplyResourceGrid03721 i{height:5px;border-radius:999px;background:rgba(255,255,255,.075);overflow:hidden}
+.supplyResourceGrid03721 i>em{display:block;height:100%;border-radius:inherit;background:currentColor;opacity:.74}
+.supplyResourceGrid03721 small{font-size:7.5px!important;opacity:.68!important}
+@media(max-width:880px){
+ .supplyResourceGrid03721{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .supplyResourceGrid03721>span:last-child{grid-column:1/-1}
+}
+
+
+/* HEXATEGOS 0.37.22 · diagnóstico explicable de suministro */
+.supplyDiagnosis03722{display:grid;gap:7px;margin-top:3px;padding-top:7px;border-top:1px solid rgba(151,181,201,.14)}
+.supplyDiagnosisGrid03722{display:grid;grid-template-columns:1fr auto;gap:4px 10px;font-size:10px;align-items:center}
+.supplyDiagnosisGrid03722 span{color:#9eb1c1}
+.supplyDiagnosisGrid03722 b{text-align:right;font-size:10px;color:#dce8f1}
+.supplyDiagnosisGrid03722 b.good03722{color:#6fd49a}
+.supplyDiagnosisGrid03722 b.bad03722{color:#e28b72}
+.supplyCause03722{display:grid;gap:2px;padding:6px 8px;border-radius:7px;background:rgba(255,255,255,.035);border:1px solid rgba(151,181,201,.12)}
+.supplyCause03722 small{font-size:8px;text-transform:uppercase;letter-spacing:.06em;color:#8297a8}
+.supplyCause03722 b{font-size:10px;color:#f0d27d}
+.supplyAdvice03722{display:grid;gap:3px;font-size:9px;color:#b8c8d5}
+@media (max-width:720px){
+  .supplyResourceGrid03721{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+
+/* HEXATEGOS 0.37.23 · ficha de diagnóstico desde INFORMACIÓN */
+.supplyModal03723{display:grid;gap:9px}
+.supplyModalHero03723{display:flex;align-items:end;justify-content:space-between;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,.035);border:1px solid rgba(151,181,201,.13)}
+.supplyModalHero03723 span{font-size:9px;letter-spacing:.07em;color:#a9bdcb}
+.supplyModalHero03723 b{font-size:22px;line-height:1;color:#e9f1f6}
+.supplyModalTriplet03723{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.supplyModalTriplet03723 span{display:grid;gap:3px;padding:6px 7px;border-radius:7px;background:rgba(255,255,255,.025);border:1px solid rgba(151,181,201,.1)}
+.supplyModalTriplet03723 small{font-size:8px;color:#8297a8}
+.supplyModalTriplet03723 b{font-size:10px;color:#dce8f1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
