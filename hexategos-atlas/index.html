@@ -27,7 +27,18 @@ p{font-size:12.5px;line-height:1.5;color:#bdd0da}
 #detail small{color:#9bb7c7;font-size:11px}#detail h2{color:#fff;overflow-wrap:anywhere;line-height:1.2}.tag{display:inline-block;background:#2b4941;border-radius:5px;color:#e1f0e4;padding:5px;font-size:11px}
 .alternative{display:flex;gap:9px;justify-content:space-between;border-top:1px solid #304d60;padding:8px 0;font-size:12px}
 .atlasGeo0390{background:#152f3c;border-left:2px solid #bbcca7;padding:9px 11px;margin:10px 0;color:#d7e3db;font-size:12px;line-height:1.6}
-.atlasGeo0390 small{display:block;margin-top:4px;opacity:.75}.alternative span{font-size:10px;color:#a9c3d2;text-align:right}
+.atlasGeo0390 small{display:block;margin-top:4px;opacity:.75}
+.atlasCover0391{display:flex;gap:9px;align-items:flex-start;background:#142d35;
+  border-left:2px solid #80a27f;padding:9px 11px;margin:10px 0;font-size:12px;line-height:1.45}
+.atlasCover0391 small{display:block;color:#9db2b1;margin-top:3px}
+.atlasCoverChip0391{display:inline-block;flex:none;width:16px;height:16px;border:1px solid #ffffff30;border-radius:4px;margin-top:1px}
+#coverLegend[hidden]{display:none}
+#coverLegend{margin:13px 0 16px;border:1px solid #345368;border-radius:9px;background:#102938;padding:10px}
+#coverLegend summary{font-size:12px;color:#d7e6db;cursor:pointer;font-weight:700}
+#coverLegend p{margin:6px 0;font-size:11px}
+#coverLegendList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px 10px;margin-top:10px}
+.atlasCoverLegendItem0391{display:flex;align-items:center;gap:6px;font-size:10px;color:#bdd0c8}
+.atlasCoverLegendItem0391 i{flex:none;width:13px;height:13px;border:1px solid #ffffff25;border-radius:3px}.alternative span{font-size:10px;color:#a9c3d2;text-align:right}
 footer{font-size:11px;line-height:1.5;color:#93abbc;margin-top:22px}footer a{color:var(--gold)}
 #loading{position:absolute;inset:0;z-index:6;display:flex;align-items:center;justify-content:center;background:#091927f5}#loading .card{padding:27px 24px;width:min(400px,90%);text-align:center;border:1px solid #4c6a7e;border-radius:13px;background:#112c3e;box-shadow:0 14px 45px #0007}
 #loading strong{letter-spacing:.08em}#loading p{margin:15px 0}.progress{height:5px;background:#284251;border-radius:7px;overflow:hidden}.progress #bar{height:100%;width:0;background:var(--gold);transition:width .1s}#loading.error .card{border-color:#b66a6a}
@@ -43,19 +54,26 @@ footer{font-size:11px;line-height:1.5;color:#93abbc;margin-top:22px}footer a{col
 <label><input type="checkbox" id="rivers" checked>Ríos</label>
 <label><input type="checkbox" id="mountains" checked>Cordilleras</label>
 <label><input type="checkbox" id="names" checked>Topónimos</label>
+<label><input type="checkbox" id="cover" checked>Cobertura</label>
 <label><input type="checkbox" id="regions" checked>Regiones</label>
 <select id="regionMode" aria-label="Tipo de regiones"><option value="natural">Geografía física</option><option value="historical">Históricas</option><option value="both">Ambas</option></select></div>
 <div id="hover" role="tooltip" hidden></div><div id="stats">Cargando geometría original…</div>
 <div id="loading"><div class="card"><strong>HEXATEGOS · ATLAS</strong><p id="loadText">Cargando el renderizador y las mallas originales de Hexategos Pruebas…</p><div class="progress"><div id="bar"></div></div></div></div>
 </section><aside><div class="kicker">ATLAS GEOGRÁFICO</div><h1>El nombre de cada hexágono</h1>
-<p>El mismo globo geodésico y mallas L3–L8 que Hexategos Pruebas, sin naciones, economía, ejército ni simulación. Iberia incorpora ríos, cordilleras y una capa de regiones geográficas naturales e históricas, compartida con Hexategos Pruebas. Las delimitaciones naturales son aproximadas y no alteran la simulación. Pulsa una casilla para conocer su primera propuesta de topónimo.</p>
+<p>El mismo globo geodésico y mallas L3–L8 que Hexategos Pruebas, sin naciones, economía, ejército ni simulación. Iberia incorpora ríos, cordilleras, regiones naturales e históricas y una nueva cobertura del suelo para cada hexágono (bosques, prados, cultivos, dehesas, matorral y más). La cobertura es una estimación visual determinista, no cartografía satelital; no modifica la simulación. Pulsa una casilla para conocer su primera propuesta de topónimo.</p>
 <div class="search"><input type="search" id="search" placeholder="Buscar ciudad o latitud,longitud" aria-label="Buscar topónimo"><button id="searchBtn">Buscar</button></div>
 <div class="quick"><button data-place="40.4168,-3.7038">Madrid</button><button data-place="41.3874,2.1686">Barcelona</button><button data-place="37.8882,-4.7794">Córdoba</button><button data-place="38.7223,-9.1393">Lisboa</button></div>
-<div id="searchResults" hidden></div><div id="detail"><h2>Selecciona un hexágono</h2><p>Gira y amplía la esfera. Pulsa sobre tierra firme para ver la localidad prioritaria, los nombres alternativos y su posición exacta.</p></div>
+<div id="searchResults" hidden></div>
+<details id="coverLegend"><summary>Tipos de cobertura del terreno</summary>
+<p>Estimación orientativa por hexágono, basada en clima, posición y relieve. No representa un mapa satelital de vegetación o parcelas agrícolas.</p>
+<div id="coverLegendList"></div></details>
+<div id="detail"><h2>Selecciona un hexágono</h2><p>Gira y amplía la esfera. Pulsa sobre tierra firme para ver la localidad prioritaria, los nombres alternativos y su posición exacta.</p></div>
 <footer>Fuente: <b>datos originales de <a href="../hexategos-pruebas/game/" target="_blank" rel="noopener">Hexategos Pruebas</a></b> y atlas GeoNames cities1000. El mundo y la navegación no dependen de partidas guardadas. Los nombres próximos se distinguen de los que realmente están dentro de cada hexágono. Revisión ibérica contrastada con cartografía del IGN; los ejes dibujados son aproximaciones visuales, no una digitalización hidrográfica a escala catastral.</footer>
 </aside></main></div>
-<script src="./atlas-core.js?v=0390-regions"></script><script src="./atlas-geography.js?v=5"></script>
+<script src="./atlas-core.js?v=0391-landcover"></script><script src="./atlas-geography.js?v=5"></script>
 <script src="../hexategos-pruebas/game/data/iberia-physical-atlas-v1.js?v=20261014"></script>
 <script src="../hexategos-pruebas/game/data/geo-regions-0390.js?v=0390-regions"></script>
+<script src="../hexategos-pruebas/game/data/geo-landcover-0391.js?v=0391-cover"></script>
 <script src="./atlas-iberia-edges-v2.js?v=20261015-sin-contornos-v4"></script><script src="./atlas-regions-0390.js?v=0390-regions"></script>
-<script src="./atlas-ui.js?v=0390-region-inspector"></script></body></html>
+<script src="./atlas-landcover-0391.js?v=0391-cover"></script>
+<script src="./atlas-ui.js?v=0391-landcover-inspector"></script></body></html>
