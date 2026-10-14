@@ -75,6 +75,9 @@ function drawAtlasNames(R,cx,cy){
  for(const [,i,x,y] of a.slice(0,budget)){
   const report=nameCache.get(i);
   if(!report){queueName(i);continue;}
+  // Solo se rotula la localidad cuya coordenada pertenece a ESTA casilla.
+  // Las localidades de casillas vecinas son alternativas, nunca etiquetas propias.
+  if(report.kind!=='exact')continue;
   const c=report.options&&report.options[0];if(!c)continue;
   const name=c.name.length>24?c.name.slice(0,23)+'…':c.name;
   const width=ctx.measureText(name).width,box=[x-width/2-5,y-10,x+width/2+5,y+10];
@@ -91,15 +94,24 @@ function updateInfo(i){
  const host=$('detail'),L=loadLevel('8');
  if(i<0){host.innerHTML='<h2>Selecciona un hexágono</h2>';return;}
  if(L.land[i]<0){host.innerHTML='<small>Hexágono #'+i+'</small><h2>Océano</h2><p>Esta casilla es marítima.</p>';return;}
- const report=nameCache.get(i),geo=cellLatLon(i);
- if(!report){host.innerHTML='<small>Hexágono #'+i+' · '+geo.lat.toFixed(3)+'°, '+geo.lon.toFixed(3)+'°</small><h2>Consultando nombre…</h2>';queueName(i,true);return;}
- if(report.error){host.innerHTML='<h2>Error del atlas</h2><p>'+escapeHTML(report.error)+'</p>';return;}
- const main=report.options[0],exact=report.kind==='exact';
- host.innerHTML='<small>Hexágono #'+i+' · '+geo.lat.toFixed(4)+'°, '+geo.lon.toFixed(4)+'°</small><h2>'+escapeHTML(main?main.name:'Sin propuesta')+'</h2>'+
- '<span class="tag">'+(exact?'Dentro del hexágono':'Localidad cercana')+'</span>'+
- (main&&!exact?'<p>'+main.km.toFixed(1)+' km del centro</p>':'')+
+ const report=nameCache.get(i),geo=cellLatLon(i),tag='<small>Hexágono #'+i+' · '+geo.lat.toFixed(4)+'°, '+geo.lon.toFixed(4)+'°</small>';
+ if(!report){host.innerHTML=tag+'<h2>Consultando nombre…</h2>';queueName(i,true);return;}
+ if(report.error){host.innerHTML=tag+'<h2>Error del atlas</h2><p>'+escapeHTML(report.error)+'</p>';return;}
+ if(report.kind!=='exact'){
+  // Una población cercana no se transforma en nombre propio de esta casilla.
+  host.innerHTML=tag+'<h2>Sin localidad propia registrada</h2>'+
+   '<span class="tag">Sin topónimo local en GeoNames</span>'+
+   '<p>Este hexágono no contiene una localidad del atlas actual. No se le asigna automáticamente el nombre de Madrid ni de ninguna otra localidad vecina.</p>'+
+   '<h3>Localidades próximas (solo referencia)</h3>'+
+   (report.options.length?report.options.map((o,j)=>'<div class="alternative"><b>'+escapeHTML(o.name)+'</b><span>'+escapeHTML(o.country)+' · '+o.km.toFixed(1)+' km</span></div>').join(''):'<p>No se encontraron localidades cercanas.</p>');
+  return;
+ }
+ const main=report.options[0];
+ host.innerHTML=tag+'<h2>'+escapeHTML(main?main.name:'Sin localidad')+'</h2>'+
+ '<span class="tag">Localidad dentro de este hexágono</span>'+
  (main&&main.history.length?'<p>Histórico: '+escapeHTML(main.history.join(' · '))+'</p>':'')+
- '<h3>Orden de propuestas</h3>'+report.options.map((o,j)=>'<div class="alternative"><b>'+(j+1)+'. '+escapeHTML(o.name)+'</b><span>'+escapeHTML(o.country)+(exact?'':' · '+o.km.toFixed(1)+' km')+'</span></div>').join('');
+ '<h3>Localidades de este hexágono</h3>'+
+ report.options.map((o,j)=>'<div class="alternative"><b>'+(j+1)+'. '+escapeHTML(o.name)+'</b><span>'+escapeHTML(o.country)+' · '+o.km.toFixed(1)+' km del centro</span></div>').join('');
 }
 async function getJSON(path){
  const r=await fetch(atlasRoot+path,{cache:'force-cache'});if(!r.ok)throw Error('GeoNames: HTTP '+r.status+' · '+path);return r.json();
@@ -193,7 +205,10 @@ function hideHover(){hoverID=-1;$('hover').hidden=true;}
 function showHover(x,y){
  if(hoverID<0)return;
  const host=$('hover'),r=nameCache.get(hoverID);
- host.textContent=r&&r.options&&r.options[0]?r.options[0].name+(r.kind==='nearby'?' · cercana':''):'Hexágono #'+hoverID+' · buscando topónimo…';
+ host.textContent=r?.kind==='exact'&&r.options?.[0]
+  ?r.options[0].name
+  :r?(r.error?'Error de consulta':'Sin localidad registrada · hexágono #'+hoverID)
+    :'Hexágono #'+hoverID+' · buscando topónimo…';
  if(x!=null){host.style.left=clamp(x+14,4,Math.max(4,vw-245))+'px';host.style.top=clamp(y-20,4,Math.max(4,vh-68))+'px';}
  host.hidden=false;
 }
