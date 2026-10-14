@@ -184,7 +184,7 @@
     // centro de ESTE hexágono, no la ciudad más poblada de la comarca.
     exact.sort((a,b)=>a.distanceKm-b.distanceKm||b.population-a.population);
     if(exact.length){
-      return {cell,lat,lon,kind:'exact',options:exact.slice(0,6)};
+      return {cell,lat,lon,kind:'exact',primary:exact[0],options:exact.slice(0,6)};
     }
 
     // Progressive nearby search. This remains geographically honest: it is
@@ -214,7 +214,8 @@
       }
       nearby.sort((a,b)=>a.distanceKm-b.distanceKm||b.population-a.population);
     }
-    return {cell,lat,lon,kind:'nearby',options:nearby.slice(0,6)};
+    // No se atribuye una localidad de otro hexágono como propuesta propia.
+    return {cell,lat,lon,kind:'nearby',primary:null,options:nearby.slice(0,6)};
   }
 
   function ensureModalMovable0354(){
@@ -228,11 +229,11 @@
 
     cityProposalState0354=result;
     const exact=result.kind==='exact';
-    modalTitle3244.textContent=exact?'Elegir nombre real':'Localidad real cercana';
+    modalTitle3244.textContent=exact?'Elegir localidad de este hexágono':'Sin localidad propia registrada';
 
     const lead=exact
       ?'Estas localidades del atlas están realmente situadas dentro del hexágono seleccionado.'
-      :'El atlas no contiene una localidad de más de 1.000 habitantes dentro de este hexágono. Puedes usar una localidad real cercana o construir la ciudad sin asignar nombre real.';
+      :'No hay una localidad registrada dentro de este hexágono. Las poblaciones siguientes pertenecen a otros hexágonos: son referencias próximas, no propuestas propias. Puedes construir sin nombre real o elegir expresamente una de ellas.';
 
     const cards=result.options.map((c,i)=>{
       const history=Array.isArray(c.historicalNames)&&c.historicalNames.length
@@ -247,6 +248,7 @@
 
     modalBody3244.innerHTML=
       '<div class="realCityIntro0354">'+lead+'</div>'+
+      (!exact?'<div class="realCityList0354"><button class="realCityChoice0354" data-modal-action="real_city_build" data-index="-1"><b>CONSTRUIR SIN TOPÓNIMO REAL PROPIO</b><span>No reutilizar el nombre de otra casilla</span></button></div><div class="realCityIntro0354">Localidades cercanas (elección manual):</div>':'')+
       '<div class="realCityList0354">'+cards+'</div>'+
       '<div class="realCitySource0354">Datos geográficos: GeoNames · barrios/distritos PPLX excluidos · nombres históricos solo cuando están documentados.</div>';
 
@@ -405,6 +407,19 @@
     if(typeof updateRanking3220!=='function')errors.push('Clasificación no disponible');
     if(typeof pointInsideCell0354!=='function')errors.push('Prueba geométrica de celda no disponible');
     if(!document.getElementById('rankRows3213'))errors.push('Contenedor de clasificación no disponible');
+    // Regresión de la malla L8 real: Madrid y Ocaña no son la misma casilla.
+    // La comprobación antigua dc*dp<-2e-7 fallaba en los cuatro casos.
+    const detailed=loadLevel(MAX_GAME_LEVEL3233);
+    if(detailed.n===510762){
+      const cases=[
+        [281310,39.95785,-3.4982,true,'Ocaña dentro de su hexágono'],
+        [281226,39.95785,-3.4982,false,'Ocaña fuera del hexágono de Madrid'],
+        [281226,40.4168,-3.7038,true,'Madrid dentro de su hexágono'],
+        [281310,40.4168,-3.7038,false,'Madrid fuera del hexágono de Ocaña']
+      ];
+      for(const [cell,lat,lon,want,label] of cases)
+        if(pointInsideCell0354(cell,lat,lon)!==want)errors.push('Regresión geográfica: '+label);
+    }else warnings.push('Malla L8 distinta: actualizar regresión Ocaña/Madrid');
     let atlas=null;
     try{
       const b=await loadBand0354(6);
