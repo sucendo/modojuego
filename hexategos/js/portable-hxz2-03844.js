@@ -30,7 +30,21 @@
   }
   async function archive(file) {
     if(!file?.payload)throw new Error('Datos incompletos para HXZ2');
-    const json=JSON.stringify(file),raw=encoder.encode(json);
+    // A number of buildPortableFile3275 wrappers append their own sidecars.
+    // Only the fully assembled payload may be signed. Freeze it as a string
+    // before the asynchronous gzip operation: nothing can mutate the bytes
+    // after the checksum has been calculated.
+    if(typeof fnv1a3273!=='function')
+      throw new Error('Algoritmo de integridad FNV-1a no disponible');
+    const payloadText=JSON.stringify(file.payload);
+    const checksum=fnv1a3273(payloadText);
+    const stableFile={...file,checksum,payload:JSON.parse(payloadText)};
+    const json=JSON.stringify(stableFile),raw=encoder.encode(json);
+    // Verify the exact serialized file rather than trusting an intermediate
+    // object. Fail closed, before offering a corrupt download.
+    const verify=JSON.parse(json);
+    if(verify.checksum!==fnv1a3273(JSON.stringify(verify.payload)))
+      throw new Error('La comprobación final del guardado ha fallado');
     const bytes=await gzipBytes(raw);
     const blob=new Blob([MAGIC,bytes],{type:'application/octet-stream'});
     lastBytes={original:raw.byteLength,compressed:blob.size,
