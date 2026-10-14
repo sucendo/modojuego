@@ -1,0 +1,24 @@
+HEXATEGOS · Atlas de localidades reales 0.35.4
+
+Fuente primaria:
+GeoNames — https://www.geonames.org/
+Datos de ciudades basados en el extracto cities1000 (localidades con población > 1000 y determinadas sedes administrativas).
+GeoNames publica sus datos bajo Creative Commons Attribution 4.0 (CC BY 4.0).
+
+Snapshot utilizado para esta integración:
+Repositorio público w3c/cities (cities1000.txt), basado en GeoNames.
+Se transforma a un índice compacto propio de HEXATEGOS dividido por franjas de longitud y teselas de 1 grado.
+
+Campos conservados:
+- nombre
+- latitud
+- longitud
+- población
+- código de país
+
+La presencia de una localidad en el atlas no implica que cada celda del juego contenga una localidad.
+HEXATEGOS diferencia entre:
+- localidad dentro del hexágono/pentágono seleccionado;
+- localidad cercana, mostrando la distancia aproximada.
+
+Los datos geográficos se proporcionan sin garantía de exactitud o exhaustividad.
