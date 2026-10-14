@@ -11,7 +11,10 @@ function pointInsideCell(i,p){
   const bx=F[ib]/32767,by=F[ib+1]/32767,bz=F[ib+2]/32767;
   const nx=ay*bz-az*by,ny=az*bx-ax*bz,nz=ax*by-ay*bx;
   const dc=nx*cx+ny*cy+nz*cz,dp=nx*p.x+ny*p.y+nz*p.z;
-  if(Math.abs(dc)>1e-9&&dc*dp<-2e-7)return false;
+  // La tolerancia debe ser RELATIVA al área del lado geodésico.
+  // El umbral antiguo -2e-7 en dc*dp equivalía a aceptar casillas vecinas y
+  // hasta ciudades a decenas de kilómetros como si fueran interiores.
+  if(Math.abs(dc)>1e-12 && (dc>0?dp:-dp)<-Math.abs(dc)*1e-5)return false;
  }
  return true;
 }
@@ -148,7 +151,7 @@ async function suggest(i){
   const xyz=lonLatVec(Number(row[2]),Number(row[1]));
   if(pointInsideCell(i,{x:xyz[0],y:xyz[1],z:xyz[2]}))exact.push(asName(row,lat,lon));
  }
- exact.sort((a,b)=>b.population-a.population||a.km-b.km);
+ exact.sort((a,b)=>a.km-b.km||b.population-a.population);
  if(exact.length)return {kind:'exact',options:exact.slice(0,6)};
  for(const radius of [2,4,8,14]){
   const uniq=new Map();
