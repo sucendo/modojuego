@@ -108,6 +108,7 @@ function updateInfo(i){
  if(i<0){host.innerHTML='<h2>Selecciona un hexágono</h2>';return;}
  if(L.land[i]<0){host.innerHTML='<small>Hexágono #'+i+'</small><h2>Océano</h2><p>Esta casilla es marítima.</p>';return;}
  const report=nameCache.get(i),geo=cellLatLon(i),tag='<small>Hexágono #'+i+' · '+geo.lat.toFixed(4)+'°, '+geo.lon.toFixed(4)+'°</small>'+
+   (window.HexategosAtlasLandCover0391?.cellInfo(i)||'')+
    (window.HexategosAtlasRegions0390?.cellInfo(geo.lat,geo.lon)||'');
  if(!report){host.innerHTML=tag+'<h2>Consultando nombre…</h2>';queueName(i,true);return;}
  if(report.error){host.innerHTML=tag+'<h2>Error del atlas</h2><p>'+escapeHTML(report.error)+'</p>';return;}
