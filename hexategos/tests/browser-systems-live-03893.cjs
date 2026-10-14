@@ -72,13 +72,14 @@ const {chromium}=require(require.resolve('playwright',{paths:[
        tab==='military'?host.querySelector('[data-mil-slider03875]'):null;
      const rootControl=keepControl;
      if(rootControl){
-       rootControl.focus({preventScroll:true});
+       const canFocus=!rootControl.disabled;
+       if(canFocus)rootControl.focus({preventScroll:true});
        const oldValue=rootControl.value;
        for(let k=0;k<3;k++){
          renderSystems3220();
          check(rootControl.isConnected&&host.contains(rootControl),
            tab+' replaced its input/select during refresh');
-         check(document.activeElement===rootControl,
+         if(canFocus)check(document.activeElement===rootControl,
            tab+' lost focus during refresh');
          check(rootControl.value===oldValue,tab+' unexpectedly reset a control');
        }
