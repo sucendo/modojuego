@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#08131d">
+<title>HEXATEGOS PRUEBAS · Atlas de nombres por hexágono</title>
+<style>
+:root{color-scheme:dark;--ink:#e8f0f6;--muted:#9baebd;--edge:#233b49;--accent:#ddc08a;--panel:#101f2bf5}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;background:#07131c;color:var(--ink)}
+body{height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+button,input{font:inherit}button{cursor:pointer;background:#1b3140;border:1px solid #3c5360;border-radius:8px;color:var(--ink);padding:9px 12px}button:hover{background:#2c4856}button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+header{display:flex;align-items:center;gap:14px;padding:10px 16px;border-bottom:1px solid #34505b;background:#0c1b28;flex-wrap:wrap;flex-shrink:0}
+.brand{font-size:17px;font-weight:900;letter-spacing:.11em}.brand span{font-weight:400;color:var(--accent);font-size:12px;letter-spacing:.04em;margin-left:10px}
+header .sub{font-size:12px;color:var(--muted);margin-left:auto}
+header a{color:var(--accent);font-size:12px;text-decoration:none;border:1px solid #655637;padding:8px;border-radius:8px}
+main{display:grid;grid-template-columns:minmax(0,1fr) 350px;min-height:0;flex:1}.mapArea{min-height:0;position:relative;overflow:hidden;background:#0c2535}
+canvas{width:100%;height:100%;display:block;cursor:grab;touch-action:none}canvas.dragging{cursor:grabbing}
+.tools{position:absolute;top:15px;left:15px;z-index:2;max-width:calc(100% - 30px);display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.tools button{background:#0c2030eb;backdrop-filter:blur(8px);padding:9px 11px}.tools label{background:#0c2030e8;backdrop-filter:blur(6px);padding:8px;border:1px solid #3c5360;border-radius:8px;font-size:12px;white-space:nowrap}.tools input{accent-color:#ddc08a}
+.status{position:absolute;bottom:12px;left:12px;max-width:calc(100% - 24px);padding:9px 13px;background:#081722db;border:1px solid #2d4a57;border-radius:9px;font-size:12px;color:#c5d4df;pointer-events:none}
+.legend{position:absolute;right:12px;bottom:12px;display:flex;align-items:center;gap:9px;background:#081722db;padding:9px;border:1px solid #2d4a57;border-radius:9px;font-size:11px;color:var(--muted);pointer-events:none}.dot{width:10px;height:10px;border-radius:50%;display:inline-block}.exact{background:#e9c77f}.near{background:#83becd}
+aside{overflow:auto;background:#101e2a;border-left:1px solid #2f4a55;padding:18px;min-height:0}
+h2{font-size:20px;line-height:1.25;margin:3px 0 8px}h3{font-size:13px;margin:25px 0 10px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent)}p{font-size:13px;color:#b8cbd6;line-height:1.5}
+.kicker{color:var(--accent);font-size:11px;text-transform:uppercase;font-weight:800;letter-spacing:.12em}
+.search{display:flex;gap:6px;margin:14px 0 7px}.search input{min-width:0;flex:1;background:#091925;border:1px solid #425968;color:var(--ink);padding:10px;border-radius:8px}.search button{padding:8px 11px;background:#294354}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 20px}.chips button{padding:5px 7px;font-size:11px;background:#152d3b}
+.details{border:1px solid #344b57;background:#0a1924;border-radius:12px;padding:15px;min-height:170px}.details h2{margin-top:6px;color:#fff;font-size:24px}.tag{display:inline-block;background:#2c443e;color:#bfe5c7;border-radius:5px;padding:4px 7px;font-weight:750;font-size:11px}.tag.nearby{background:#293e50;color:#a8d9eb}.coord{color:#9db8c8;font-size:11px;margin:9px 0}.alts{display:grid;gap:6px;margin-top:11px}.alt{display:flex;justify-content:space-between;gap:10px;border-top:1px solid #2a4250;padding-top:7px;font-size:12px}.alt span:last-child{color:#8da9b8;text-align:right}.history{color:#c3d6e2;font-size:11px;margin-top:7px;line-height:1.4}
+.notice{padding:11px 12px;background:#182c36;border-left:2px solid var(--accent);border-radius:3px;font-size:12px;color:#b5cbd8;line-height:1.48;margin-top:16px}
+.resultSet{display:grid;gap:7px;margin:12px 0 18px}.resultSet button{text-align:left;font-size:13px;padding:10px;background:#0c2231;border:1px solid #345263}.resultSet span{display:block;color:#a7becb;font-size:11px;margin-top:4px}
+.footer{font-size:11px;color:#8ea3b2;line-height:1.5;margin-top:20px}
+.loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#0b1b29f2;z-index:5}.loadingCard{width:min(370px,90%);text-align:center;border:1px solid #4c6070;background:#112835;padding:26px;border-radius:16px}.loadingCard strong{display:block;letter-spacing:.05em}.loadingCard p{margin:12px 0}.progress{height:5px;background:#253e48;border-radius:20px;overflow:hidden;margin-top:16px}.bar{height:100%;width:0%;background:#e1c285;transition:width .2s}
+@media(max-width:850px){main{grid-template-columns:1fr;grid-template-rows:minmax(240px,57%) minmax(0,1fr)}aside{border-left:0;border-top:1px solid #2f4a55;padding:14px}.tools{top:8px;left:8px;right:8px;max-width:calc(100% - 16px)}header{padding:9px 11px}header .sub{display:none}.legend{display:none}}
+@media(max-width:460px){.brand{font-size:14px}.brand span{display:block;margin-left:0;font-size:10px}header a{font-size:10px}.tools button{padding:7px 9px}.status{font-size:10px}.tools label{font-size:10px}}
+</style>
+</head>
+<body>
+<header><div class="brand">HEXATEGOS <span>PRUEBAS · ATLAS DE TOPÓNIMOS</span></div><div class="sub">Malla L8 real · Versión de pruebas 0.38.93 · 510.762 celdas</div><a href="https://sucendo.github.io/modojuego/hexategos-pruebas/" target="_blank" rel="noopener">Abrir juego ↗</a></header>
+<main>
+<section class="mapArea" aria-label="Mapa interactivo de los hexágonos de Hexategos">
+<canvas id="map" aria-label="Mapa de Hexategos. Arrastra para mover, usa la rueda para ampliar y haz clic para consultar una localidad."></canvas>
+<div class="tools">
+<button id="zoomIn" title="Acercar">＋</button><button id="zoomOut" title="Alejar">−</button><button id="home" title="Volver a la península ibérica">Iberia</button><button id="world" title="Mostrar mundo">Mundo</button>
+<label title="Las etiquetas se muestran cuando hay suficiente zoom"><input type="checkbox" id="labels" checked> Nombres prioritarios</label>
+</div>
+<div class="status" id="mapStatus">Cargando la malla original…</div>
+<div class="legend"><span class="dot exact"></span> Dentro del hexágono <span class="dot near"></span> Ciudad cercana</div>
+<div class="loading" id="loading"><div class="loadingCard"><strong>HEXATEGOS · CARGANDO MAPA</strong><p id="loadText">Preparando los datos hexagonales originales…</p><div class="progress"><div class="bar" id="loadBar"></div></div></div></div>
+</section>
+<aside>
+<div class="kicker">Herramienta de diagnóstico</div><h2>Primera ciudad propuesta por hexágono</h2>
+<p>Selecciona una casilla terrestre para consultar el <b>primer nombre</b> que ofrece el atlas del juego, y sus alternativas ordenadas.</p>
+<div class="search"><input id="searchInput" type="search" placeholder="Buscar ciudad o latitud, longitud" autocomplete="off" aria-label="Buscar lugar o coordenadas"><button id="searchBtn">Buscar</button></div>
+<div class="chips"><button data-place="40.4168,-3.7038" data-zoom="34">Madrid</button><button data-place="41.3874,2.1686" data-zoom="34">Barcelona</button><button data-place="37.8882,-4.7794" data-zoom="34">Córdoba</button><button data-place="38.7223,-9.1393" data-zoom="34">Lisboa</button></div>
+<div id="searchResults" class="resultSet" hidden></div>
+<div class="details" id="details" aria-live="polite"><span class="kicker">Sin selección</span><h2>Selecciona un hexágono</h2><p>Usa la rueda del ratón o los botones para ampliar el mapa y pulsa sobre una casilla de tierra.</p></div>
+<div class="notice"><b>Cómo se elige el nombre:</b> si hay localidades dentro del hexágono, gana la de mayor población. Si no las hay, el atlas busca las más próximas. Una localidad cercana <b>no está dentro</b> de esa casilla.</div>
+<div class="footer">Fuente: atlas GeoNames cities1000 utilizado por Hexategos, sin barrios PPLX. Propuestas consultivas: este HTML no modifica ni carga partidas. Coincide con la malla y el algoritmo de nombres de <b>hexategos-pruebas 0.38.93</b> (revisión cd440c9).</div>
+</aside>
+</main>
+<script>
+'use strict';
+(() => {
+const SNAP='cd440c9d6ecb758283e4aadc772a832d2d38312c';
+const remoteJS=`https://raw.githack.com/sucendo/modojuego/${SNAP}/hexategos/`;
+const remoteJSON=`https://raw.githubusercontent.com/sucendo/modojuego/${SNAP}/hexategos/data/cities-0354/`;
+const localAssets=location.protocol!=='file:' && /\/(?:hexategos-pruebas|hexategos-atlas)\//.test(location.pathname);
+const assets=localAssets?new URL('../hexategos/',document.URL).href:remoteJS;
+const atlasRoot=localAssets?new URL('../hexategos/data/cities-0354/',document.URL).href:remoteJSON;
+const $=id=>document.getElementById(id), canvas=$('map'),ctx=canvas.getContext('2d',{alpha:false});
+const status=$('mapStatus'),info=$('details');
+let mesh=null,land=null,centers=null,faceCenters=null,offsets=null,adj=null;
+let names=new Map(),pending=new Set(),queue=[],workers=0,visibleCells=[],bucket=new Map();
+let latitudes=null,longitudes=null,raster=null,selected=-1,version=0;
+const camera={lon:-3.4,lat:40.6,zoom:17},pointer={down:false,x:0,y:0,lon:0,lat:0,moved:false};
+let cw=0,ch=0,dpr=1,needDraw=true,drawScheduled=false,frameScale=1;
+let exclusionPromise=null,histories={},exclusions=new Set();
+const bandCache=new Map();
+let failMessage='';
+function safe(s){return String(s??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));}
+function normalize(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();}
+function clamp(n,a,b){return Math.min(b,Math.max(a,n));}
+function wrapLon(x){return ((x+180)%360+360)%360-180;}
+function progress(t,p){$('loadText').textContent=t;$('loadBar').style.width=p+'%';}
+function script(path){return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=assets+path;s.onload=resolve;s.onerror=()=>reject(Error('No se pudo cargar '+path));document.head.appendChild(s);});}
+function unpack(s,Type){
+ if(typeof s!=='string'||!s)throw Error('Datos de malla incompletos');
+ const compressed=s[0]==='~';if(compressed)s=s.slice(1);
+ const bin=atob(s),u=new Uint8Array(bin.length);
+ for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);
+ const raw=compressed?window.pako.inflate(u):u;
+ if(raw.byteLength%Type.BYTES_PER_ELEMENT)throw Error('Formato de malla inválido');
+ return new Type(raw.buffer.slice(raw.byteOffset,raw.byteOffset+raw.byteLength));
+}
+function hashColor(i,latitude){
+ if(Math.abs(latitude)>63)return '#899c96';
+ if(Math.abs(latitude)>48)return (i%7<3)?'#4c7467':'#617c6a';
+ if(Math.abs(latitude)<30&&i%9<2)return '#8e8661';
+ return i%17<4?'#567d68':i%17<7?'#456f5e':'#46765b';
+}
+function toGeo(pX,pY){return {lon:wrapLon(camera.lon+(pX-cw/2)/frameScale),lat:clamp(camera.lat-(pY-ch/2)/frameScale,-90,90)};}
+function sc(lon,lat){const d=wrapLon(lon-camera.lon);return [cw/2+d*frameScale,ch/2+(camera.lat-lat)*frameScale];}
+function setView(lon,lat,z){camera.lon=wrapLon(lon);camera.lat=clamp(lat,-85,85);camera.zoom=clamp(z,1,125);invalidate();}
+function invalidate(){needDraw=true;if(!drawScheduled){drawScheduled=true;requestAnimationFrame(()=>{drawScheduled=false;if(needDraw)draw();});}}
+function resize(){const b=canvas.getBoundingClientRect();cw=Math.max(10,b.width);ch=Math.max(10,b.height);dpr=Math.min(2,window.devicePixelRatio||1);canvas.width=Math.round(cw*dpr);canvas.height=Math.round(ch*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);invalidate();}
+function getBins(){
+ const radiusLat=ch/2/frameScale+.7,radiusLon=cw/2/frameScale+.7;
+ const minLat=clamp(camera.lat-radiusLat,-90,90),maxLat=clamp(camera.lat+radiusLat,-90,90);
+ const top=Math.max(0,Math.floor((minLat+90)/2)),bottom=Math.min(89,Math.ceil((maxLat+90)/2));
+ const list=[],seen=new Set();
+ if(radiusLon>=180){for(let y=top;y<=bottom;y++)for(let x=0;x<180;x++){const arr=bucket.get(y*180+x);if(arr)list.push(...arr);}return list;}
+ for(let y=top;y<=bottom;y++){
+   const x0=Math.floor((camera.lon-radiusLon+180)/2),x1=Math.ceil((camera.lon+radiusLon+180)/2);
+   for(let x=x0;x<=x1;x++){const xx=((x%180)+180)%180,key=y*180+xx;if(seen.has(key))continue;seen.add(key);const a=bucket.get(key);if(a)list.push(...a);}
+ }
+ return list;
+}
+function ll(i){return {lat:latitudes[i],lon:longitudes[i]};}
+function vertices(i){
+ const s=offsets[i],e=offsets[i+1],out=[];
+ for(let k=s;k<e;k++){
+  const n=adj[k]*3,x=faceCenters[n],y=faceCenters[n+1],z=faceCenters[n+2];
+  const lon=Math.atan2(z,x)*180/Math.PI,lat=Math.asin(clamp(y/32767,-1,1))*180/Math.PI;
+  // Desenrollar la longitud relativa al centro de su propia celda.
+  const unwrapped=longitudes[i]+wrapLon(lon-longitudes[i]);
+  out.push([unwrapped,lat]);
+ }
+ return out;
+}
+function pathCell(i){
+ const pts=vertices(i);if(pts.length<3)return false;
+ const mid=longitudes[i],midX=sc(mid,latitudes[i])[0];
+ const shift=midX-cw/2 - wrapLon(mid-camera.lon)*frameScale;
+ ctx.beginPath();
+ for(let k=0;k<pts.length;k++){
+  const x=midX+wrapLon(pts[k][0]-mid)*frameScale,y=ch/2+(camera.lat-pts[k][1])*frameScale;
+  if(k===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+ }
+ ctx.closePath();return true;
+}
+function labelText(i,occupied){
+ const r=names.get(i);if(!r||!r.options?.length)return;
+ const [x,y]=sc(longitudes[i],latitudes[i]);
+ if(x<-70||x>cw+70||y<-20||y>ch+20)return;
+ let label=r.options[0].name;
+ if(label.length>21)label=label.slice(0,20)+'…';
+ ctx.font='600 10px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
+ const width=ctx.measureText(label).width;
+ const rect=[x-width/2-5,y-8,x+width/2+5,y+8];
+ if(occupied.some(r=>!(rect[2]<r[0]||rect[0]>r[2]||rect[3]<r[1]||rect[1]>r[3])))return;
+ occupied.push(rect);
+ ctx.lineWidth=3;ctx.strokeStyle='#071820';ctx.strokeText(label,x,y);ctx.fillStyle=r.kind==='exact'?'#ffdea1':'#9ed9ed';ctx.fillText(label,x,y);
+}
+function draw(){
+ needDraw=false;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle='#0c2a3b';ctx.fillRect(0,0,cw,ch);
+ if(!mesh)return;
+ frameScale=Math.min(cw/360,ch/180)*camera.zoom;
+ const lonLeft=cw/2+(-180-camera.lon)*frameScale,top=ch/2+(camera.lat-90)*frameScale;
+ if(raster&&camera.zoom<=14){
+   for(const step of [-1,0,1])ctx.drawImage(raster,lonLeft+step*360*frameScale,top,360*frameScale,180*frameScale);
+ }
+ const cellList=getBins();visibleCells=cellList;
+ const vector=camera.zoom>=8&&cellList.length<26000;
+ if(vector){
+  ctx.lineJoin='round';const gridStroke=frameScale>.9;
+  for(const i of cellList){
+   const [x,y]=sc(longitudes[i],latitudes[i]);
+   if(x<-60||x>cw+60||y<-60||y>ch+60)continue;
+   if(!pathCell(i))continue;
+   ctx.fillStyle=hashColor(i,latitudes[i]);ctx.fill();
+   if(frameScale>40){ctx.strokeStyle='#0b2a32aa';ctx.lineWidth=clamp(frameScale/260,0.35,.9);ctx.stroke();}
+  }
+ }
+ if(selected>=0&&land[selected]>=0){
+  if(pathCell(selected)){ctx.fillStyle='#edc5766a';ctx.fill();ctx.strokeStyle='#ffe1a8';ctx.lineWidth=2;ctx.stroke();}
+ }
+ const selectedVisible=camera.zoom>=24 && $('labels').checked;
+ if(selectedVisible){
+   let ids=cellList.filter(i=>{const [x,y]=sc(longitudes[i],latitudes[i]);return x>-70&&x<cw+70&&y>-24&&y<ch+24;});
+   ids.sort((a,b)=>Math.abs(longitudes[a]-camera.lon)+Math.abs(latitudes[a]-camera.lat)-Math.abs(longitudes[b]-camera.lon)-Math.abs(latitudes[b]-camera.lat));
+   const occupied=[];for(const i of ids.slice(0,190)){labelText(i,occupied);if(!names.has(i)&&!pending.has(i))enqueue(i,version);}
+ }
+ ctx.fillStyle='#d8e0d9';ctx.font='10px system-ui';ctx.textAlign='left';ctx.fillText('Malla hexagonal geodésica L8 · GeoNames',13,ch-45);
+ status.textContent=`Zoom ${camera.zoom.toFixed(1)}× · ${cellList.length.toLocaleString('es-ES')} hexágonos terrestres en región · ${names.size.toLocaleString('es-ES')} propuestas consultadas`;
+}
+function buildIndex(){
+ latitudes=new Float32Array(mesh.n);longitudes=new Float32Array(mesh.n);
+ const W=1920,H=960;const c=document.createElement('canvas');c.width=W;c.height=H;const context=c.getContext('2d');
+ context.clearRect(0,0,W,H);
+ for(let i=0;i<mesh.n;i++){
+   if(land[i]<0)continue;
+   const ix=i*3,x=centers[ix]/32767,y=centers[ix+1]/32767,z=centers[ix+2]/32767;
+   const lat=Math.asin(clamp(y,-1,1))*180/Math.PI,lon=Math.atan2(z,x)*180/Math.PI;
+   latitudes[i]=lat;longitudes[i]=lon;
+   const by=clamp(Math.floor((lat+90)/2),0,89),bx=clamp(Math.floor((lon+180)/2),0,179),key=by*180+bx;
+   if(!bucket.has(key))bucket.set(key,[]);bucket.get(key).push(i);
+   context.fillStyle=hashColor(i,lat);context.fillRect((lon+180)/360*W-1.8,(90-lat)/180*H-1.8,3.6,3.6);
+ }
+ raster=c;
+}
+function cross(a,b){return [a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2]];}
+function dot(a,b){return a[0]*b[0]+a[1]*b[1]+a[2]*b[2];}
+function inCell(i,lat,lon){
+ const r=Math.PI/180,aa=lat*r,bb=lon*r,p=[Math.cos(aa)*Math.cos(bb),Math.sin(aa),Math.cos(aa)*Math.sin(bb)];
+ const pos=i*3,center=[centers[pos]/32767,centers[pos+1]/32767,centers[pos+2]/32767];
+ const s=offsets[i],e=offsets[i+1],m=e-s;
+ if(m<3)return false;
+ for(let j=0;j<m;j++){
+  const a=adj[s+j]*3,b=adj[s+(j+1)%m]*3;
+  const va=[faceCenters[a]/32767,faceCenters[a+1]/32767,faceCenters[a+2]/32767];
+  const vb=[faceCenters[b]/32767,faceCenters[b+1]/32767,faceCenters[b+2]/32767];
+  const n=cross(va,vb),dc=dot(n,center),dp=dot(n,p);
+  if(Math.abs(dc)>1e-9&&dc*dp< -2e-7)return false;
+ }
+ return true;
+}
+function nearestCell(lat,lon){
+ const centerY=Math.floor((lat+90)/2),centerX=Math.floor((lon+180)/2);
+ let best=-1,bestScore=Infinity;
+ for(let radius=0;radius<=3;radius++){
+  for(let by=centerY-radius;by<=centerY+radius;by++){
+   if(by<0||by>89)continue;
+   for(let bx=centerX-radius;bx<=centerX+radius;bx++){
+    const k=by*180+((bx%180)+180)%180,a=bucket.get(k);if(!a)continue;
+    for(const i of a){
+     const dlat=latitudes[i]-lat,dlon=wrapLon(longitudes[i]-lon)*Math.cos(lat*Math.PI/180);
+     const score=dlat*dlat+dlon*dlon;
+     if(score<bestScore){bestScore=score;best=i;}
+     if(score<.04&&inCell(i,lat,lon))return i;
+    }
+   }
+  }
+  if(best>=0&&bestScore<radius*radius*4+.3)break;
+ }
+ return best;
+}
+function findExactCell(lat,lon){
+ let candidate=nearestCell(lat,lon);
+ if(candidate<0)return -1;
+ if(inCell(candidate,lat,lon))return candidate;
+ const near=[];const by=Math.floor((lat+90)/2),bx=Math.floor((lon+180)/2);
+ for(let y=by-1;y<=by+1;y++)for(let x=bx-1;x<=bx+1;x++){
+  const arr=bucket.get(y*180+((x%180)+180)%180);if(arr)near.push(...arr);
+ }
+ for(const i of near)if(inCell(i,lat,lon))return i;
+ return -1;
+}
+function selectAt(lat,lon){
+ if(!mesh)return;
+ const i=findExactCell(lat,lon);
+ if(i<0){info.innerHTML='<span class="kicker">Océano o fuera de tierra firme</span><h2>No hay ciudad terrestre</h2><p>La casilla seleccionada no es terrestre. Selecciona un hexágono de tierra.</p>';return;}
+ selected=i;version++;info.innerHTML=`<span class="kicker">Hexágono #${i}</span><h2>Consultando el atlas…</h2><p>Buscando la primera localidad según las reglas de Hexategos.</p>`;
+ invalidate();if(names.has(i))show(i);else enqueue(i,version,true);
+}
+function show(i){
+ if(i!==selected)return;
+ const result=names.get(i);if(!result)return;
+ if(result.error){info.innerHTML=`<span class="kicker">Error de consulta</span><h2>Atlas no disponible</h2><p>${safe(result.error)}</p>`;return;}
+ const c=result.options[0],exact=result.kind==='exact';
+ const histor=c?.historicalNames?.length?`<div class="history">Nombres históricos documentados: ${safe(c.historicalNames.join(' · '))}</div>`:'';
+ info.innerHTML=`<span class="kicker">Hexágono #${i} · ${safe(c?.country||'')}</span><h2>${safe(c?.name||'Sin localidad')}</h2><span class="tag ${exact?'':'nearby'}">${exact?'DENTRO DEL HEXÁGONO':'LOCALIDAD CERCANA'}</span>`+
+ `${c?`<div class="coord">${result.lat.toFixed(4)}°, ${result.lon.toFixed(4)}° · ${exact?'localidad incluida':(c.distanceKm.toFixed(1)+' km del centro')}</div>`:''}${histor}`+
+ `<h3>Ranking de propuestas</h3><div class="alts">${result.options.map((o,j)=>`<div class="alt"><span>${j+1}. <b>${safe(o.name)}</b></span><span>${safe(o.country)} ${exact?'· en casilla':'· '+o.distanceKm.toFixed(1)+' km'}</span></div>`).join('')||'<p>No se encontró ninguna localidad.</p>'}</div>`;
+}
+async function json(path){const response=await fetch(atlasRoot+path,{cache:'force-cache'});if(!response.ok)throw Error('El servidor respondió HTTP '+response.status+' al consultar '+path);return response.json();}
+async function metadata(){if(!exclusionPromise){exclusionPromise=Promise.all([json('pplx-exclusions.json').catch(()=>null),json('historical-names.json').catch(()=>null)]).then(([ex,hi])=>{
+ exclusions=new Set((ex?.rows||[]).map(r=>`${r[0]}\u0001${Number(r[1])}\u0001${Number(r[2])}\u0001${String(r[3]||'')}`));
+ histories=hi?.records||{};
+ });}return exclusionPromise;}
+function banned(row){return exclusions.has(`${row[0]}\u0001${Number(row[1])}\u0001${Number(row[2])}\u0001${row[4]||''}`);}
+function band(lon){return clamp(Math.floor((wrapLon(lon)+180)/30),0,11);}
+async function loadBand(b){b=(b+12)%12;if(!bandCache.has(b)){const promise=json(`band-${String(b).padStart(2,'0')}.json`).catch(e=>{bandCache.delete(b);throw e;});bandCache.set(b,promise);}return bandCache.get(b);}
+async function tile(y,x){if(y< -90||y>89)return [];x=Math.floor(wrapLon(x));const b=await loadBand(band(x+.5));return b.tiles?.[y+','+x]||[];}
+async function localRows(lat,lon,radius){
+ const cos=Math.max(.10,Math.cos(lat*Math.PI/180)),lonRadius=Math.min(42,radius/cos),jobs=[];
+ for(let y=Math.max(-90,Math.floor(lat-radius));y<=Math.min(89,Math.floor(lat+radius));y++)
+  for(let x=Math.floor(lon-lonRadius);x<=Math.floor(lon+lonRadius);x++)jobs.push(tile(y,x));
+ return (await Promise.all(jobs)).flat();
+}
+function distance(a,b,c,d){const r=Math.PI/180,lat1=a*r,lat2=c*r,h=Math.sin((c-a)*r/2)**2+Math.cos(lat1)*Math.cos(lat2)*Math.sin(wrapLon(d-b)*r/2)**2;return 6371*2*Math.asin(Math.min(1,Math.sqrt(h)));}
+function city(row,lat,lon){return {name:row[0],lat:Number(row[1]),lon:Number(row[2]),population:Number(row[3])||0,country:row[4]||'',historicalNames:histories[(row[4]||'')+'|'+row[0]]||[],distanceKm:distance(lat,lon,Number(row[1]),Number(row[2]))};}
+async function suggest(i){
+ await metadata();const lat=latitudes[i],lon=longitudes[i],exact=[],seen=new Set();
+ for(const row of await localRows(lat,lon,.9)){
+  if(banned(row))continue;const k=row[0]+'|'+row[1]+'|'+row[2];if(seen.has(k))continue;seen.add(k);
+  if(inCell(i,Number(row[1]),Number(row[2])))exact.push(city(row,lat,lon));
+ }
+ exact.sort((a,b)=>b.population-a.population||a.distanceKm-b.distanceKm);
+ if(exact.length)return {cell:i,lat,lon,kind:'exact',options:exact.slice(0,6)};
+ let nearby=[];
+ for(const radius of [2,4,8,14]){
+  const uniq=new Map();for(const row of await localRows(lat,lon,radius)){
+   if(banned(row))continue;const c=city(row,lat,lon),k=row[0]+'|'+row[1]+'|'+row[2],old=uniq.get(k);if(!old||c.distanceKm<old.distanceKm)uniq.set(k,c);
+  }
+  nearby=[...uniq.values()].sort((a,b)=>a.distanceKm-b.distanceKm||b.population-a.population);
+  if(nearby.length)break;
+ }
+ // Las zonas remotas siguen la última búsqueda global de la versión original.
+ if(!nearby.length){const all=await Promise.all(Array.from({length:12},(_,j)=>loadBand(j)));
+  for(const b of all)for(const rows of Object.values(b.tiles||{}))for(const row of rows)if(!banned(row))nearby.push(city(row,lat,lon));
+  nearby.sort((a,b)=>a.distanceKm-b.distanceKm||b.population-a.population);
+ }
+ return {cell:i,lat,lon,kind:'nearby',options:nearby.slice(0,6)};
+}
+function enqueue(i,gen,priority=false){if(names.has(i)||pending.has(i))return;pending.add(i);if(priority)queue.unshift([i,gen]);else queue.push([i,gen]);pump();}
+function pump(){while(workers<4&&queue.length){const [i,gen]=queue.shift();workers++;suggest(i).then(r=>names.set(i,r)).catch(e=>names.set(i,{error:e.message||String(e)})).finally(()=>{
+ pending.delete(i);workers--;if(i===selected)show(i);invalidate();pump();});}}
+function pointerPos(e){const rect=canvas.getBoundingClientRect();return {x:e.clientX-rect.left,y:e.clientY-rect.top};}
+canvas.addEventListener('pointerdown',e=>{if(!mesh)return;const p=pointerPos(e);pointer.down=true;pointer.moved=false;pointer.x=p.x;pointer.y=p.y;pointer.lon=camera.lon;pointer.lat=camera.lat;canvas.classList.add('dragging');canvas.setPointerCapture(e.pointerId);});
+canvas.addEventListener('pointermove',e=>{if(!pointer.down||!mesh)return;const p=pointerPos(e),dx=p.x-pointer.x,dy=p.y-pointer.y;if(Math.abs(dx)+Math.abs(dy)>5)pointer.moved=true;if(pointer.moved)setView(pointer.lon-dx/frameScale,pointer.lat+dy/frameScale,camera.zoom);});
+canvas.addEventListener('pointerup',e=>{if(!pointer.down)return;const wasMove=pointer.moved;pointer.down=false;canvas.classList.remove('dragging');if(!wasMove){const p=pointerPos(e),v=toGeo(p.x,p.y);selectAt(v.lat,v.lon);}});
+canvas.addEventListener('pointercancel',()=>{pointer.down=false;canvas.classList.remove('dragging');});
+canvas.addEventListener('wheel',e=>{e.preventDefault();if(!mesh)return;const p=pointerPos(e),before=toGeo(p.x,p.y),factor=e.deltaY>0?.82:1.22,z=clamp(camera.zoom*factor,1,125),scale=Math.min(cw/360,ch/180)*z;
+ const lon=wrapLon(before.lon-(p.x-cw/2)/scale),lat=clamp(before.lat+(p.y-ch/2)/scale,-85,85);setView(lon,lat,z);
+},{passive:false});
+$('zoomIn').onclick=()=>setView(camera.lon,camera.lat,camera.zoom*1.45);
+$('zoomOut').onclick=()=>setView(camera.lon,camera.lat,camera.zoom/1.45);
+$('home').onclick=()=>setView(-3.4,40.6,17);
+$('world').onclick=()=>setView(0,15,1);
+$('labels').onchange=invalidate;
+for(const b of document.querySelectorAll('[data-place]'))b.onclick=()=>{
+ const [lat,lon]=b.dataset.place.split(',').map(Number);setView(lon,lat,Number(b.dataset.zoom));selectAt(lat,lon);
+};
+async function runSearch(){
+ const query=$('searchInput').value.trim();if(!query)return;
+ const results=$('searchResults');results.hidden=false;results.innerHTML='';
+ const m=query.match(/^\s*(-?\d+(?:[.,]\d+)?)\s*[,;\s]\s*(-?\d+(?:[.,]\d+)?)\s*$/);
+ if(m){const lat=Number(m[1].replace(',','.')),lon=Number(m[2].replace(',','.'));if(lat>=-90&&lat<=90&&lon>=-180&&lon<=180){setView(lon,lat,35);selectAt(lat,lon);results.hidden=true;return;}}
+ results.innerHTML='<p>Buscando en el atlas completo…</p>';
+ try{
+  const all=await Promise.all(Array.from({length:12},(_,i)=>loadBand(i))),q=normalize(query),found=[];
+  for(const block of all)for(const rows of Object.values(block.tiles||{}))for(const row of rows)if(normalize(row[0]).includes(q)&&!banned(row))found.push(row);
+  found.sort((a,b)=>Number(b[3]||0)-Number(a[3]||0));
+  if(!found.length){results.innerHTML='<p>No se encontraron localidades con ese nombre.</p>';return;}
+  results.replaceChildren();for(const row of found.slice(0,12)){
+   const el=document.createElement('button');el.innerHTML=`<b>${safe(row[0])}</b><span>${safe(row[4])} · ${Number(row[1]).toFixed(3)}°, ${Number(row[2]).toFixed(3)}°</span>`;
+   el.onclick=()=>{setView(Number(row[2]),Number(row[1]),35);selectAt(Number(row[1]),Number(row[2]));results.hidden=true;};results.append(el);
+  }
+ }catch(e){results.innerHTML=`<p>Error buscando: ${safe(e.message)}</p>`;}
+}
+$('searchBtn').onclick=runSearch;$('searchInput').addEventListener('keydown',e=>{if(e.key==='Enter')runSearch();});
+async function init(){
+ try{
+  progress('Cargando datos binarios originales del mundo…',2);
+  await script('js/vendor/pako.min.js');await script('data/bootstrap.js');await script('data/mesh-8-init.js');
+  const scripts=['centers-01','centers-02','faceCenters-01','faceCenters-02','faceCenters-03','offsets-01','adj-01','adj-02','land-01'];
+  for(let i=0;i<scripts.length;i++){
+    progress('Leyendo malla L8 · '+(i+1)+' / '+scripts.length,5+65*i/scripts.length);
+    await script('data/mesh-8-'+scripts[i]+'.js');
+  }
+  progress('Descomprimiendo geometría hexagonal…',72);
+  const D=window.DATA?.['8'];if(!D||D.n!==510762)throw Error('La malla del juego no coincide con el formato esperado.');
+  centers=unpack(D.centers,Int16Array);faceCenters=unpack(D.faceCenters,Int16Array);offsets=unpack(D.offsets,Uint32Array);adj=unpack(D.adj,Uint32Array);land=unpack(D.land,Int8Array);
+  if(centers.length!==D.n*3||faceCenters.length!==D.faces*3||offsets.length!==D.n+1||adj.length!==offsets[D.n]||land.length!==D.n)
+     throw Error('No coinciden las longitudes de datos de la malla original.');
+  mesh={n:D.n};
+  progress('Indexando celdas terrestres y creando el mapa…',86);
+  await new Promise(r=>requestAnimationFrame(r));buildIndex();
+  progress('Cargando filtros de localidades y nombres históricos…',94);await metadata();
+  progress('Mapa listo',100);$('loading').remove();resize();
+ }catch(e){failMessage=e.message||String(e);$('loadText').textContent='Error: '+failMessage;$('loadBar').style.background='#cb8079';status.textContent='No se pudo cargar el visor';console.error('[Hexategos Atlas]',e);}
+}
+if('ResizeObserver'in window)new ResizeObserver(resize).observe(canvas);else window.addEventListener('resize',resize);
+resize();init();
+})();
+</script>
+</body>
+</html>
