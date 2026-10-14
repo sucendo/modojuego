@@ -114,9 +114,12 @@
         }
         const bytes=new Uint8Array(await selected.arrayBuffer());
         const text=decoder.decode(await gunzipBytes(bytes.subarray(MAGIC.length)));
-        const parsed=JSON.parse(text);
-        if(!parsed||typeof parsed!=='object'||!parsed.payload)
-          throw new Error('La copia HXZ2 está incompleta');
+        // Evitar un primer JSON.parse de medio millón de celdas: el
+        // importador principal hará la validación completa y del checksum.
+        const jsonHeader=text.slice(0,2048);
+        if(!/^\s*\{\s*"magic"\s*:\s*"OPENFRONT_SAVE"/.test(jsonHeader)||
+           !/"payload"\s*:/.test(jsonHeader))
+          throw new Error('La copia HXZ2 no contiene una cabecera válida');
         const data=new DataTransfer();
         data.items.add(new File([text],selected.name,{type:'application/json'}));
         input.files=data.files;
