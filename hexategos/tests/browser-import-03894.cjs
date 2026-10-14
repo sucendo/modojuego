@@ -22,10 +22,11 @@ const {chromium}=require(require.resolve('playwright',{paths:[
   const game=page.frames().find(f=>f.url().includes('/hexategos/')&&!f.url().includes('pruebas'));
   assert(game,'Game iframe not found');
   await game.waitForFunction(()=>typeof fnv1a3273==='function'&&typeof loadLevel==='function'&&
-    loadLevel(MAX_GAME_LEVEL3233)?.n===510762,null,{timeout:90000});
+    typeof bootCoreWorld3305==='function',null,{timeout:90000});
   // Generate a full-size portable game without a UI new-world dialog. The
   // actual user workflow starts by importing from the landing page.
   const file=await game.evaluate(async()=>{
+   bootCoreWorld3305();
    const L=loadLevel(MAX_GAME_LEVEL3233),owner=new Array(L.n).fill(-1);
    const capitals=SEED_CELLS3230.slice(0,150);
    const cities=[];
