@@ -1,4 +1,4 @@
-/* HEXATEGOS ATLAS · Iberia v2 · ríos y crestas SOBRE ARISTAS REALES.
+/* HEXATEGOS ATLAS · Iberia v3 · ríos, crestas y curvas de nivel SOBRE ARISTAS.
  * Solo dibujo: no modifica malla, geología, datos de juego ni guardados.
  * Se carga detrás de atlas-geography.js y delante de atlas-ui.js.
  */
@@ -141,16 +141,88 @@
   }
   return any;
  }
+ // Curvas de nivel esquemáticas: el límite de cada banda se dibuja con
+ // aristas auténticas de L8 entre una celda incluida y su vecina excluida.
+ // Nunca trazamos perfiles libres ni contornos circulares en píxeles.
+ let nearbyCells=null;
+ const contoursCache=new Map();
+ function iberianCells(){
+  if(nearbyCells)return nearbyCells;
+  const G=makeGraph(),L=G.L,C=L.centers,O=L.offsets,A=L.adj;
+  const cells=[];
+  for(let i=0;i<L.n;i++){
+   if(L.land[i]<0||!G.included.has(A[O[i]]))continue;
+   const j=i*3,lat=Math.asin(Math.max(-1,Math.min(1,C[j+1]/32767)))/rad;
+   if(lat<34.8||lat>44.8)continue;
+   const lon=Math.atan2(C[j],C[j+2])/rad;
+   if(lon<-11||lon>5)continue;
+   cells.push({id:i,x:lon*85.2,y:lat*111.2});
+  }
+  nearbyCells=cells;return cells;
+ }
+ function mountainContours(sys,path){
+  if(contoursCache.has(sys.name))return contoursCache.get(sys.name);
+  const G=makeGraph(),L=G.L,O=L.offsets,A=L.adj,N=L.edgeNbr;
+  const points=path.map(id=>G.position.get(id));
+  const outerRadius=Math.max(30,sys.halfWidthKm||28);
+  const innerRadius=Math.min(outerRadius-11,Math.max(16,(sys.halfWidthKm||28)*.55));
+  const outer=new Set(),inner=new Set();
+  // Cálculo perezoso por cordillera; solo recorremos las celdas ibéricas.
+  for(const cell of iberianCells()){
+   let d=Infinity;
+   for(let k=1;k<points.length;k++){
+    const a=points[k-1],b=points[k];
+    if(cell.x<Math.min(a.x,b.x)-outerRadius||cell.x>Math.max(a.x,b.x)+outerRadius||
+       cell.y<Math.min(a.y,b.y)-outerRadius||cell.y>Math.max(a.y,b.y)+outerRadius)continue;
+    d=Math.min(d,segmentDistance(cell.x,cell.y,a,b));
+    if(d<=innerRadius)break;
+   }
+   if(d<=outerRadius)outer.add(cell.id);
+   if(d<=innerRadius)inner.add(cell.id);
+  }
+  function boundary(set){
+   const edges=[];
+   for(const i of set){
+    const st=O[i],end=O[i+1];
+    for(let k=st;k<end;k++){
+     const other=N[k];
+     if(other>=0&&set.has(other))continue;
+     const u=A[k],v=A[k+1<end?k+1:st];
+     if(u!==v)edges.push([u,v]);
+    }
+   }
+   return edges;
+  }
+  const result={outer:boundary(outer),inner:boundary(inner)};
+  contoursCache.set(sys.name,result);return result;
+ }
+ function paintHexContour(edges,R,cx,cy,width,color){
+  if(!edges.length)return;
+  const F=makeGraph().L.faceCenters;
+  ctx.beginPath();
+  let count=0;
+  for(const [u,v] of edges){
+   const a=u*3,b=v*3;
+   const p=projectVec(F[a]/32767,F[a+1]/32767,F[a+2]/32767,R,cx,cy);
+   const q=projectVec(F[b]/32767,F[b+1]/32767,F[b+2]/32767,R,cx,cy);
+   if(p[2]<=.015||q[2]<=.015)continue;
+   ctx.moveTo(p[0],p[1]);ctx.lineTo(q[0],q[1]);count++;
+  }
+  if(count){ctx.lineCap='butt';ctx.lineWidth=width;ctx.strokeStyle=color;ctx.stroke();}
+ }
  function paintMountain(sys,path,R,cx,cy){
+  const contours=mountainContours(sys,path),hi=sys.rank>=3,mid=sys.rank===2;
+  // Dos curvas de nivel discretas, ambas exactamente sobre lados de hexágono.
+  paintHexContour(contours.outer,R,cx,cy,.68,hi?'rgba(171,150,113,.42)':mid?'rgba(153,136,107,.34)':'rgba(139,126,104,.28)');
+  paintHexContour(contours.inner,R,cx,cy,.86,hi?'rgba(208,185,143,.56)':mid?'rgba(191,167,128,.48)':'rgba(170,151,121,.38)');
+  // Cresta original de aristas: se conserva su definición y posición.
   if(!drawEdgePath(path,R,cx,cy))return;
-  const hi=sys.rank>=3,mid=sys.rank===2;
-  const w=2*sys.halfWidthKm*R/6371;
   const zf=Math.min(1.2,.86+Math.log2(Math.max(1,zoom))*.075);
   ctx.lineCap='round';ctx.lineJoin='round';
-  ctx.lineWidth=Math.max(.7,w*1.9);ctx.strokeStyle=hi?'rgba(88,73,61,.18)':mid?'rgba(89,78,62,.15)':'rgba(84,75,61,.12)';ctx.stroke();
-  ctx.lineWidth=Math.max(.6,w*1.14);ctx.strokeStyle=hi?'rgba(106,91,76,.27)':mid?'rgba(104,91,73,.23)':'rgba(99,88,71,.19)';ctx.stroke();
-  ctx.lineWidth=Math.max(.5,w*.59);ctx.strokeStyle=hi?'rgba(166,148,124,.39)':mid?'rgba(148,134,112,.33)':'rgba(137,126,106,.27)';ctx.stroke();
-  ctx.lineWidth=Math.max(.45,Math.min(4,w*.13*zf));ctx.strokeStyle=hi?'rgba(233,218,187,.80)':mid?'rgba(213,193,157,.66)':'rgba(185,172,144,.55)';ctx.stroke();
+  ctx.lineWidth=(hi?2.8:mid?2.35:1.9)*zf;
+  ctx.strokeStyle=hi?'rgba(80,59,42,.79)':mid?'rgba(77,57,41,.69)':'rgba(71,56,43,.59)';ctx.stroke();
+  ctx.lineWidth=(hi?1.3:mid?1.05:.82)*zf;
+  ctx.strokeStyle=hi?'rgba(233,218,187,.88)':mid?'rgba(213,193,157,.78)':'rgba(185,172,144,.67)';ctx.stroke();
  }
  function paintRiver(sys,path,R,cx,cy){
   if(!drawEdgePath(path,R,cx,cy))return;
@@ -186,5 +258,5 @@
    if(showR)for(let i=0;i<geo.rivers.length;i++)if(rPaths[i])paintRiver(geo.rivers[i],rPaths[i],R,cx,cy);
   }finally{ctx.restore()}
  };
- console.info('[Hexategos Atlas] Hidrografía y crestas ibéricas ajustadas a aristas L8');
+ console.info('[Hexategos Atlas] Ríos, crestas y contornos del relieve sobre aristas L8');
 })();
