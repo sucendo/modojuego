@@ -19,7 +19,8 @@ const {chromium}=require(require.resolve('playwright',{paths:[
   const frame=page.frameLocator('iframe');
   assert.notEqual(new URL(origin).origin,new URL(page.url()).origin,
    'The two served documents must have different origins');
-  const game=page.frames().find(f=>f.url().includes('/hexategos/')&&!f.url().includes('pruebas'));
+  const game=page.frames().find(f=>f!==page.mainFrame()&&
+   new URL(f.url()).pathname==='/hexategos/');
   assert(game,'Game iframe not found');
   await game.waitForFunction(()=>typeof fnv1a3273==='function'&&typeof loadLevel==='function'&&
     typeof bootCoreWorld3305==='function',null,{timeout:90000});
