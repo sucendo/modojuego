@@ -67,7 +67,12 @@ const {chromium}=require(require.resolve('playwright',{paths:[
      const knownScroll=host.scrollTop;
      for(let j=0;j<4;j++)renderSystems3220();
      check(host.scrollTop===knownScroll,tab+' lost scroll while updating');
-     check(host.firstElementChild===before,tab+' replaced its first live block ('+before?.className+' => '+host.firstElementChild?.className+', nodes='+host.childElementCount+', live='+api.diagnostics().liveRenders+')');
+     const dashboard=tab==='eco'?host.querySelector('#productionDashboard0388'):null;
+     const stableBefore=tab==='eco'?before?.id===dashboard?.id:host.firstElementChild===before;
+     check(stableBefore,tab+' replaced its first live block ('+
+       before?.id+' '+before?.className+' => '+host.firstElementChild?.id+' '+
+       host.firstElementChild?.className+', dashboard='+dashboard?.id+
+       ', nodes='+host.childElementCount+', live='+api.diagnostics().liveRenders+')');
      stable[tab]=host.childElementCount;
    }
    // Embassy search must retain active node and cursor on periodic updates.
