@@ -67,12 +67,22 @@ const {chromium}=require(require.resolve('playwright',{paths:[
      const knownScroll=host.scrollTop;
      for(let j=0;j<4;j++)renderSystems3220();
      check(host.scrollTop===knownScroll,tab+' lost scroll while updating');
-     const dashboard=tab==='eco'?host.querySelector('#productionDashboard0388'):null;
-     const stableBefore=tab==='eco'?before?.id===dashboard?.id:host.firstElementChild===before;
-     check(stableBefore,tab+' replaced its first live block ('+
-       before?.id+' '+before?.className+' => '+host.firstElementChild?.id+' '+
-       host.firstElementChild?.className+', dashboard='+dashboard?.id+
-       ', nodes='+host.childElementCount+', live='+api.diagnostics().liveRenders+')');
+     const keepControl=tab==='eco'?host.querySelector('[data-industry-sector0388]'):
+       tab==='naval'?host.querySelector('[data-hub-sea-port]'):
+       tab==='military'?host.querySelector('[data-mil-slider03875]'):null;
+     const rootControl=keepControl;
+     if(rootControl){
+       rootControl.focus({preventScroll:true});
+       const oldValue=rootControl.value;
+       for(let k=0;k<3;k++){
+         renderSystems3220();
+         check(rootControl.isConnected&&host.contains(rootControl),
+           tab+' replaced its input/select during refresh');
+         check(document.activeElement===rootControl,
+           tab+' lost focus during refresh');
+         check(rootControl.value===oldValue,tab+' unexpectedly reset a control');
+       }
+     }
      stable[tab]=host.childElementCount;
    }
    // Embassy search must retain active node and cursor on periodic updates.
