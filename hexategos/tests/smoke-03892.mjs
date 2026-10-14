@@ -13,6 +13,7 @@ assert.match(game,/activeFronts:activeFronts3230,/,'portable main save contains 
 assert.match(manpower,/number\(x\.mobilization03892\?\.troops\)/,'pending troops counted in total capacity');
 assert.match(manpower,/stat\('En movilización','moving'\)/,'military UI shows staging');
 
+const disk=new Map(),trace=[];
 const sandbox=new Function('window','disk','trace',`
 const owner6=new Int16Array([0,0,0,0,-1,-1,-1]);
 let capitals=[0],troops3230=new Float64Array([200,100]);
@@ -83,7 +84,6 @@ return {
  pause:p=>paused3230=p
 };
 `)(globalThis,disk,trace);
-const disk=new Map(),trace=[];
 const model=sandbox;
 assert.equal(model.api.version,'0.38.92');
 assert.equal(model.api.delayFor(0),3,'capital locally mobilizes quickly');
