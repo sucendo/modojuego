@@ -4,10 +4,86 @@
 (() => {
   const HISTORY=[
     {
+      version:'0.38.93',
+      date:'14 de octubre de 2026',
+      title:'Sistemas estable: datos en directo sin perder foco ni desplazamiento',
+      current:true,
+      summary:'Sistemas actualiza los datos que cambian sin reconstruir los controles en uso. Se corrigen las pérdidas de foco al renombrar la nación y los saltos de scroll en las principales pestañas.',
+      changes:[
+        'El nombre nacional conserva el texto sin guardar, la selección del cursor y el foco durante los ciclos económicos.',
+        'Actualización diferencial de los valores y elementos de Gobierno, Economía, Industria, Militar, Naval y Diplomacia.',
+        'Se mantienen los reguladores industriales y militares, el buscador de embajadas y el selector de puertos.',
+        'La identidad de la nación permanece accesible incluso al aparecer avisos o apartados plegables.',
+        'Los avisos solo se regeneran cuando cambia realmente su contenido.',
+        'Comprobado en Chromium con varias pestañas y actualizaciones sucesivas, sin introducir otro temporizador de simulación.'
+      ]
+    },
+    {
+      version:'0.38.92',
+      date:'14 de octubre de 2026',
+      title:'Movilización militar y refuerzos con tiempo de llegada',
+      current:false,
+      summary:'Los reservistas enviados a operaciones terrestres dejan de aparecer instantáneamente en el frente. Se movilizan y viajan durante un tiempo calculado desde la capital, con ventaja para las carreteras.',
+      changes:[
+        'Una sola reserva nacional: las tropas asignadas quedan comprometidas y no combaten hasta alcanzar el frente.',
+        'La movilización tarda más cuando el origen está lejos de la capital o no dispone de ruta terrestre directa.',
+        'Los refuerzos tienen su propia hora prevista de llegada y se incorporan progresivamente.',
+        'El panel Militar distingue reserva disponible, efectivos desplegados y soldados en movilización.',
+        'Las órdenes pendientes conservan su estado al continuar una partida o exportarla e importarla.',
+        'La cancelación de una operación devuelve a la reserva los soldados que todavía estaban en tránsito.',
+        'Los frentes de partidas anteriores y los transportes navales mantienen su funcionamiento existente.',
+        'Pendiente de futuras fases: traslado de regreso, logística marítima entre enclaves y aplicación equivalente a los frentes de la IA.'
+      ]
+    },
+    {
+      version:'0.38.91',
+      date:'13 de octubre de 2026',
+      title:'Guardado fiable de nombres nacionales, ciudades y culturas',
+      current:false,
+      summary:'Se corrige la pérdida de identidades y nombres personalizados al continuar partidas o importar archivos. La auditoría parte de la versión de referencia del 13 de octubre.',
+      changes:[
+        'Se verifica la escritura de los nombres en el almacenamiento local, con compresión cuando está disponible.',
+        'Persisten el nombre personalizado de la nación, su cultura y el historial de denominaciones anteriores.',
+        'También se conservan los topónimos de ciudades, las variantes culturales y las identidades de las naciones de la IA.',
+        'Una importación rechazada no sustituye ni borra los nombres de la partida activa.',
+        'Los perfiles nacionales de IA se incluyen en la exportación portable a través de la ruta vigente.',
+        'Se añaden pruebas de guardado, carga, importación, compatibilidad y almacenamiento dañado.'
+      ]
+    },
+    {
+      version:'0.38.77',
+      date:'Octubre de 2026',
+      title:'Expansión territorial IA calibrada según geografía y recursos',
+      current:false,
+      summary:'La expansión de la IA prioriza territorios útiles sin ocupar hexágonos indiscriminadamente y mantiene un coste calculado para partidas con cientos de naciones.',
+      changes:[
+        'Valoración territorial de fertilidad, recursos, acceso al mar y posiciones estratégicas.',
+        'Colonización de territorios neutrales con costes reales y reserva mínima de oro y soldados.',
+        'Candidatos fronterizos gestionados mediante colas incrementales, evitando recorridos completos del mundo en cada decisión.',
+        'Límites por visita y métricas para controlar rendimiento, ocupación territorial y progreso de la expansión.',
+        '«Acerca de» muestra estadísticas de expansión cuando están disponibles; las cifras son instantáneas, no promesas de rendimiento.'
+      ]
+    },
+    {
+      version:'0.38.75',
+      date:'Octubre de 2026',
+      title:'Reclutamiento, reserva instruida y desmovilización',
+      current:false,
+      summary:'La reserva disponible deja de crecer gratuitamente: los nuevos efectivos necesitan una orden de reclutamiento, recursos, equipamiento y tiempo de formación.',
+      changes:[
+        'Se diferencian la reserva instruida, los reclutas pendientes de formación y las tropas desplegadas.',
+        'El reclutamiento consume oro y material militar y crea efectivos de manera gradual.',
+        'Las órdenes quedan pendientes cuando falta material y continúan al recuperarse el suministro.',
+        'Control deslizante de reclutamiento dentro del apartado Militar.',
+        'La IA puede reclutar según sus necesidades y desmovilizar reservas sobrantes en tiempos de paz.',
+        'Se comprueba que una orden terminada no siga generando soldados y que los efectivos se contabilicen una sola vez.'
+      ]
+    },
+    {
       version:'0.38.18',
       date:'Octubre 2026',
       title:'Estabilidad del desplazamiento en los diálogos',
-      current:true,
+      current:false,
       summary:'El diálogo Sistemas conserva su scroll al actualizarse y cada pestaña recuerda su posición. Los avisos dejan de arrastrar continuamente el contenido hacia un mensaje anterior.',
       changes:[
         'El botón VER navega al aviso una única vez, sin scroll animado persistente.',
@@ -1064,12 +1140,12 @@
         '<header class="aboutHead0351">'+
           '<div class="aboutHeadText0351">'+
             '<h2 id="aboutTitle0351">ACERCA DE HEXATEGOS</h2>'+
-            '<p>Global Geopolitical Strategy · versión 0.37.3</p>'+
+            '<p>Global Geopolitical Strategy · versión '+esc0351(HISTORY[0].version)+'</p>'+
           '</div>'+
           '<button id="aboutClose0351" class="aboutClose0351" type="button" aria-label="Cerrar">×</button>'+
         '</header>'+
         '<div class="aboutBody0351">'+
-          '<p class="aboutIntro0351">HEXATEGOS es un juego de estrategia geopolítica global sobre una esfera geodésica. Este historial resume las versiones públicas y los grandes hitos que han transformado el proyecto desde su etapa OpenFront hasta la IA geopolítica actual.</p>'+
+          '<p class="aboutIntro0351">HEXATEGOS es un juego de estrategia geopolítica global sobre una esfera geodésica. Consulta las mejoras recientes en Sistemas, guardados, nombres históricos, economía, IA y movilización militar, además del historial completo del proyecto desde su etapa OpenFront.</p>'+
           '<div class="aboutTimeline0351">'+HISTORY.map(versionHTML0351).join('')+'</div>'+
           '<div class="aboutFoot0351">Historial integrado en el juego · las ramas estables del repositorio se conservan como puntos de recuperación.</div>'+
         '</div>'+
@@ -1148,5 +1224,5 @@
     history:HISTORY.map(v=>({...v,changes:v.changes.slice()}))
   };
 
-  console.info('[HEXATEGOS] historial actualizado para 0.37.3');
+  console.info('[HEXATEGOS] historial actualizado para '+HISTORY[0].version);
 })();
