@@ -1,5 +1,5 @@
 'use strict';
-/* HEXATEGOS · Cubierta del suelo 0.39.1.
+/* HEXATEGOS · Cubierta del suelo 0.39.2.
  * Modelo visual DETERMINISTA por coordenadas (no por propietario ni por ID).
  * Refiere usos/coberturas plausibles, NO observaciones de Copernicus/CLC.
  * No implica recursos explotados ni altera geología, economía o partidas.
@@ -11,9 +11,9 @@
   {id:'irrigated',name:'Cultivos de regadío',color:[96,143,82]},
   {id:'meadow',name:'Prado y pastizal húmedo',color:[103,151,87]},
   {id:'grass',name:'Pastizal y herbazal',color:[140,151,93]},
-  {id:'deciduous',name:'Bosque caducifolio',color:[54,101,73]},
-  {id:'evergreen',name:'Bosque mediterráneo',color:[66,105,66]},
-  {id:'conifers',name:'Coníferas y pinares',color:[50,91,76]},
+  {id:'deciduous',name:'Bosque caducifolio',color:[37,122,70]},
+  {id:'evergreen',name:'Bosque mediterráneo',color:[40,110,54]},
+  {id:'conifers',name:'Coníferas y pinares',color:[22,91,70]},
   {id:'dehesa',name:'Dehesa y arbolado disperso',color:[116,137,83]},
   {id:'shrub',name:'Matorral',color:[132,130,88]},
   {id:'steppe',name:'Estepa y terreno semiárido',color:[164,148,99]},
@@ -21,7 +21,7 @@
   {id:'wetland',name:'Humedal',color:[74,121,116]},
   {id:'desert',name:'Desierto',color:[180,147,99]},
   {id:'savanna',name:'Sabana',color:[153,143,88]},
-  {id:'rainforest',name:'Selva tropical',color:[41,102,69]},
+  {id:'rainforest',name:'Selva tropical',color:[25,109,60]},
   {id:'tundra',name:'Tundra',color:[121,131,114]},
   {id:'ice',name:'Hielo y nieve',color:[187,203,208]}
  ]);
@@ -80,20 +80,47 @@
     ellipse(lon,lat,-6.47,36.96,.18,.12),
     ellipse(lon,lat,.72,40.72,.11,.14),
     ellipse(lon,lat,-3.73,39.02,.11,.10));
+  // Cinturones forestales aproximados: Atlántico, Pirineos y sierras.
+  // El ruido espacial mantiene claros y prados; no es inventario forestal.
+  const woodyAtlantic=Math.max(
+    ellipse(lon,lat,-8.20,42.6,1.25,.90),
+    ellipse(lon,lat,-6.50,43.0,2.15,.56),
+    ellipse(lon,lat,-3.55,43.00,2.35,.44),
+    ellipse(lon,lat,-1.55,42.84,1.30,.55),
+    ellipse(lon,lat,-8.35,40.75,.65,1.45));
+  const woodyUplands=Math.max(
+    ellipse(lon,lat,-5.46,40.32,.88,.45),
+    ellipse(lon,lat,-4.07,40.73,.72,.38),
+    ellipse(lon,lat,-2.52,40.50,.85,.50),
+    ellipse(lon,lat,-1.94,42.50,.65,.41),
+    ellipse(lon,lat,.60,42.52,1.65,.39),
+    ellipse(lon,lat,-6.68,38.10,1.08,.38),
+    ellipse(lon,lat,-4.15,38.18,1.27,.43),
+    ellipse(lon,lat,-2.88,37.87,.68,.43),
+    ellipse(lon,lat,-5.17,36.90,.40,.31),
+    ellipse(lon,lat,-3.34,37.10,.48,.34));
+  const woodyBias=Math.max(woodyAtlantic*.88,woodyUplands*.85);
+  const canopy=clamp(vegetation*.69+moist*.32+woodyBias*.27);
   // Atajos topográficos: montañas altas conservan roquedo, sin nieve
   // permanente ficticia en Iberia; las de nivel II admiten pinares y prados.
   if(tier>=3) return C.rock;
   if(marsh>.72&&vegetation>.32)return C.wetland;
   if(tier===2){
-   if(moist>.56&&vegetation>.35)return C.conifers;
-   if(moist>.38&&vegetation>.42)return C.evergreen;
+   if(canopy>.55||woodyUplands>.54&&vegetation>.38)
+     return moist>.66&&woodyAtlantic>.48?C.deciduous:C.conifers;
+   if(moist>.39&&vegetation>.40)return C.evergreen;
    return vegetation>.55?C.shrub:C.rock;
   }
   if(tier===1){
-   if(moist>.60&&vegetation>.47)return C.deciduous;
-   if(moist>.38&&vegetation>.39)return C.evergreen;
+   if(canopy>.62&&moist>.56)return C.deciduous;
+   if(canopy>.50&&moist>.32)return woodyUplands>.50?C.conifers:C.evergreen;
    return moist>.54?C.grass:C.shrub;
   }
+  if(canopy>.69&&moist>.57)
+    return woodyUplands>.53&&pyrenees>.38?C.conifers:C.deciduous;
+  if(canopy>.60&&moist>.39&&woodyBias>.28)
+    return moist>.62&&woodyAtlantic>.34?C.deciduous:
+      woodyUplands>.55?C.conifers:C.evergreen;
   if(dehesa>.43&&field>.37&&moist>.28){
    return vegetation>.62?C.evergreen:C.dehesa;
   }
@@ -143,6 +170,6 @@
     return iberia(lon,lat,biome,tier|0);
   return generic(lon,lat,biome,tier|0);
  }
- window.HexategosLandCover0391=Object.freeze({version:'0.39.1',types:TYPES,code:C,classify,
+ window.HexategosLandCover0391=Object.freeze({version:'0.39.2',types:TYPES,code:C,classify,
    description:'Estimación visual de cubierta del suelo; no son observaciones satelitales.'});
 })();
