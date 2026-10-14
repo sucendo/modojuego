@@ -1,6 +1,6 @@
 'use strict';
 
-// HEXATEGOS 0.35.2 · Acerca de / historial de versiones.
+// HEXATEGOS 0.38.93 · Acerca de / historial completo de versiones.
 (() => {
   const HISTORY=[
     {
