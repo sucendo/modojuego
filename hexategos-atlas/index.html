@@ -256,6 +256,22 @@ function initOriginalRelief(){
  mountainTier=new Uint8Array(detailed.n);
  for(let k=0;k<MOUNTAIN_CELL_PAIRS3212.length;k+=2)
   mountainTier[MOUNTAIN_CELL_PAIRS3212[k]]=MOUNTAIN_CELL_PAIRS3212[k+1];
+ // Cada par es una arista original. Sus puntos medios consecutivos trazan el río.
+ function build(systems){
+  const F=detailed.facesXYZ,result=[];
+  for(const sys of systems){
+   const points=[];
+   for(let j=0;j<sys.e.length;j+=2){
+    const a=sys.e[j]*3,b=sys.e[j+1]*3;
+    if(a<0||b<0||a+2>=F.length||b+2>=F.length)continue;
+    const x=F[a]+F[b],y=F[a+1]+F[b+1],z=F[a+2]+F[b+2];
+    const norm=Math.hypot(x,y,z)||1;points.push([x/norm,y/norm,z/norm]);
+   }
+   if(points.length>=2)result.push({name:sys.n,tier:sys.t,points});
+  }
+  return result;
+ }
+ reliefPaths={mountains:build(MOUNTAIN_SYSTEMS3212),rivers:build(RIVER_SYSTEMS3212)};
 }
 function terrainColor(i,lat,z){
  const L=camera.zoom>=5.2?detailed:coarse;
@@ -267,32 +283,40 @@ function terrainColor(i,lat,z){
  return 'rgb('+Math.round(rgb[0]*k)+','+Math.round(rgb[1]*k)+','+Math.round(rgb[2]*k)+')';
 }
 function drawOriginalRelief(){
- if(camera.zoom<.95)return;
- const F=detailed.facesXYZ;
- function systems(list,mountain){
-  for(const sys of list){
-   const e=sys.e;ctx.beginPath();let has=false;
-   for(let j=0;j<e.length;j+=2){
-    const a=e[j]*3,b=e[j+1]*3;
-    if(a<0||b<0||a+2>=F.length||b+2>=F.length)continue;
-    const p=screenVec(F[a]/32767,F[a+1]/32767,F[a+2]/32767);
-    const q=screenVec(F[b]/32767,F[b+1]/32767,F[b+2]/32767);
-    if(p[2]<.015||q[2]<.015)continue;
-    ctx.moveTo(p[0],p[1]);ctx.lineTo(q[0],q[1]);has=true;
-   }
-   if(!has)continue;
-   if(mountain){
-    ctx.strokeStyle=sys.t>=3?'rgba(225,205,170,.54)':'rgba(199,180,153,.42)';
-    ctx.lineWidth=(sys.t>=3?1.7:1.15)*Math.min(1.7,Math.sqrt(camera.zoom));
-   }else{
-    ctx.strokeStyle=sys.t>=3?'rgba(91,190,228,.80)':'rgba(91,190,228,.60)';
-    ctx.lineWidth=(sys.t>=3?1.3:.9)*Math.min(1.6,Math.sqrt(camera.zoom));
-   }
-   ctx.stroke();
+ const rivers=$('showRivers').checked,mountains=$('showMountains').checked;
+ if(camera.zoom<.85||(!rivers&&!mountains))return;
+ ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
+ function trace(points){
+  ctx.beginPath();let prev=null,prevPt=null,active=false;
+  for(const v of points){
+   const pt=screenVec(v[0],v[1],v[2]);
+   if(pt[2]<.015){if(prevPt&&active)ctx.lineTo(prevPt[0],prevPt[1]);prev=null;prevPt=null;active=false;continue;}
+   const gap=prev?Math.acos(clamp(v[0]*prev[0]+v[1]*prev[1]+v[2]*prev[2],-1,1)):0;
+   if(!active||gap>.075){if(active&&prevPt)ctx.lineTo(prevPt[0],prevPt[1]);ctx.moveTo(pt[0],pt[1]);active=true;}
+   else ctx.quadraticCurveTo(prevPt[0],prevPt[1],(prevPt[0]+pt[0])*.5,(prevPt[1]+pt[1])*.5);
+   prev=v;prevPt=pt;
+  }
+  if(active&&prevPt)ctx.lineTo(prevPt[0],prevPt[1]);
+ }
+ if(mountains){
+  for(const sys of reliefPaths.mountains){
+   if(camera.zoom<1.5&&sys.tier<3)continue;
+   trace(sys.points);
+   const width=clamp((sys.tier>=3?2.0:1.45)*Math.sqrt(camera.zoom),1.1,5.3);
+   ctx.lineWidth=width+2;ctx.strokeStyle='rgba(31,31,30,.34)';ctx.stroke();
+   ctx.lineWidth=width;ctx.strokeStyle=sys.tier>=3?'rgba(229,206,174,.67)':'rgba(194,176,153,.56)';ctx.stroke();
   }
  }
- systems(MOUNTAIN_SYSTEMS3212,true);
- systems(RIVER_SYSTEMS3212,false);
+ if(rivers){
+  for(const sys of reliefPaths.rivers){
+   if(camera.zoom<1.48&&sys.tier<3)continue;
+   trace(sys.points);
+   const width=clamp((sys.tier>=3?1.2:.92)*Math.sqrt(camera.zoom),.8,3.25);
+   ctx.lineWidth=width+1.2;ctx.strokeStyle='rgba(6,31,50,.86)';ctx.stroke();
+   ctx.lineWidth=width;ctx.strokeStyle=sys.tier>=3?'rgba(115,204,239,.92)':'rgba(111,179,218,.78)';ctx.stroke();
+  }
+ }
+ ctx.restore();
 }
 function paintCell(L,i,fill,stroke){
  const A=L.adj,O=L.offsets,F=L.facesXYZ;const s=O[i],e=O[i+1];if(e-s<3)return;
@@ -326,9 +350,10 @@ function drawSphere(){
   paintCell(L,i,terrainColor(i,L.lat[i],p[2]),grid);
   if(high)visible.push([i,p[0],p[1],p[2]]);
  }
+ drawOriginalRelief();
  if(selected>=0){const i=selected,k=3*i,x=detailed.centers[k]/32767,y=detailed.centers[k+1]/32767,z=detailed.centers[k+2]/32767;
   if(dot(x,y,z,projection.front)>0){ctx.lineWidth=2;paintCell(detailed,i,'#e7c27b7f','#fce0a4');}}
- drawOriginalRelief();
+
  ctx.restore();
  ctx.beginPath();ctx.arc(w/2,h/2,R,0,Math.PI*2);ctx.lineWidth=clamp(1.1*camera.zoom,.9,2.2);ctx.strokeStyle='#638ba58b';ctx.stroke();
 }
