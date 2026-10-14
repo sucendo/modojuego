@@ -349,6 +349,10 @@ function render(now=performance.now()){
 
  drawTerrain3212(R,cx,cy);
 
+ // Etiquetas geográficas y culturales compartidas con Hexategos Pruebas.
+ // Se dibujan antes de ciudades para gestionar las colisiones de rótulos.
+ window.HexategosAtlasRegions0390?.draw(R,cx,cy);
+
  drawAtlasSelection(R,cx,cy);
 
  drawAtlasNames(R,cx,cy);
