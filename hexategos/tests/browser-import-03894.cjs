@@ -39,7 +39,7 @@ const {chromium}=require(require.resolve('playwright',{paths:[
    }
    const main={
      v:'3.27.5',factionCount:150,owner,
-     gold:16384,campaignSeconds:75,troops:Array(500).fill(225),
+     gold:4321,campaignSeconds:75,troops:Array(500).fill(225),
      botGold:Array(500).fill(140),forts:Array(L.n).fill(0),
      cities,cityLevels:Array(L.n).fill(0),
      industries:[],industryLevels:Array(L.n).fill(0),
@@ -65,7 +65,7 @@ const {chromium}=require(require.resolve('playwright',{paths:[
   const confirm=frame.locator('.hexUnifiedDialog03851');
   await confirm.waitFor({state:'visible',timeout:20000});
   await confirm.getByRole('button',{name:'Cargar partida'}).click();
-  await game.waitForFunction(()=>gold3212===16384,null,{timeout:120000});
+  await game.waitForFunction(()=>gold3212===4321,null,{timeout:120000});
   await confirm.waitFor({state:'detached',timeout:15000});
   assert.equal(crashed,false,'Chromium renderer must remain alive');
   assert.deepEqual(errors,[],'No uncaught browser exceptions');
@@ -73,7 +73,7 @@ const {chromium}=require(require.resolve('playwright',{paths:[
    gold:gold3212,cells:owner6.length,active:started3230,
    message:window.HexategosPortableHXZ2?.stats?.().lastError||null
   }));
-  assert.equal(check.gold,16384);
+  assert.equal(check.gold,4321);
   assert.equal(check.active,true);
   assert.equal(check.message,null);
   console.log('CHROMIUM HXZ2 PASS: 510,762 cells imported inside iframe without renderer crash',check);
