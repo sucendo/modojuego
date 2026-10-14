@@ -21,6 +21,7 @@
   const decorateClasses=['sysCard0385','hasCollapse0385','isCollapsed0385'];
   const blockClasses=['sysGovSummary0386','sysGovIdentity0389','sysGovManager0386',
     'sysGovNotices0386','tradeManager03717','commerceIntro03815',
+    'noticesStable8','messagesSectionStable8',
     'sysHubCritical03851','statecraftResearch0380','hubManager03851'];
   const stats={renders:0,liveRenders:0,untouched:0,textChanges:0,attributes:0,
     inserted:0,removed:0,keptInputs:0};
@@ -159,6 +160,20 @@
   function setLiveHTML(target,html){
     const template=document.createElement('template');
     htmlDescriptor.set.call(template,String(html));
+    if(target===host){
+      // Son secciones vivas añadidas DESPUÉS del renderizador base por
+      // Producción y Mensajes. No son obsoletas solo por no figurar en
+      // el HTML base: preservarlas hasta que su propio productor actualice.
+      const external=[...host.children].filter(el=>
+        el.id==='productionDashboard0388'||
+        el.classList.contains('noticesStable8')||
+        el.classList.contains('messagesSectionStable8'));
+      for(let i=external.length-1;i>=0;i--){
+        const el=external[i],already=el.id?
+          template.content.querySelector('#'+CSS.escape(el.id)):null;
+        if(!already)template.content.prepend(el.cloneNode(true));
+      }
+    }
     reconcileChildren(target,template.content);
   }
   const previous=renderSystems3220;
