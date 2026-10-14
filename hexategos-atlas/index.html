@@ -37,7 +37,7 @@ footer{font-size:10px;color:#8da7b9;line-height:1.5;margin-top:20px}
 <main>
 <section id="viewport" aria-label="Globo terráqueo hexagonal de Hexategos">
 <canvas id="globe" aria-label="Esfera de Hexategos. Arrastra para girar, rueda para ampliar, pulsa un hexágono para conocer su primera ciudad propuesta."></canvas>
-<div class="toolbar"><button id="plus" title="Acercar">＋</button><button id="minus" title="Alejar">−</button><button id="iberia" title="Ir a Iberia">Iberia</button><button id="world" title="Ver esfera completa">Mundo</button><label><input id="showNames" type="checkbox" checked> Nombres por hexágono</label></div>
+<div class="toolbar"><button id="plus" title="Acercar">＋</button><button id="minus" title="Alejar">−</button><button id="iberia" title="Ir a Iberia">Iberia</button><button id="world" title="Ver esfera completa">Mundo</button><label><input id="showNames" type="checkbox" checked> Nombres por hexágono</label><label><input id="showRivers" type="checkbox" checked> Ríos</label><label><input id="showMountains" type="checkbox" checked> Cordilleras</label></div>
 <div id="stats" class="stats">Cargando la esfera original…</div>
 <div class="legend"><b>●</b> Dentro del hexágono &nbsp; <i>●</i> Localidad cercana</div>
 <div id="loading"><div class="card"><strong>HEXATEGOS · ATLAS ESFÉRICO</strong><p id="loadMsg">Preparando la geometría original del juego…</p><div class="track"><div id="bar" class="bar"></div></div></div></div>
@@ -51,17 +51,35 @@ footer{font-size:10px;color:#8da7b9;line-height:1.5;margin-top:20px}
 <div id="results" hidden></div>
 <div id="detail" aria-live="polite"><span class="kicker">Sin selección</span><h2>Elige un hexágono</h2><p>Arrastra para girar la esfera, usa la rueda para ampliar y pulsa sobre tierra firme.</p></div>
 <div id="help">El nombre principal coincide con el criterio del juego: <b>la ciudad más poblada situada en el hexágono</b>. Si no hay ninguna en el atlas, se indica como <b>localidad cercana</b>, sin fingir que esté dentro.</div>
-<footer>Malla L8 y atlas GeoNames usados por Hexategos Pruebas. Los nombres no alteran partidas. Los rótulos se muestran progresivamente al acercar la cámara para evitar que cientos de miles se superpongan.</footer>
+<footer>Malla L8 y GeoNames de la versión activa de Hexategos Pruebas, con respaldo compatible. Sin simulación. Acércate o selecciona una casilla para conocer su nombre.</footer>
 </aside>
 </main>
 </div>
 <script>
 'use strict';
 (() => {
-// La misma revisión cargada por hexategos-pruebas/index.html; sus datos L8 y GeoNames son el origen único.
-const SNAP='1e6b1bbc1af2aea3f231ada64650c584a33883bf';
-const ROOT=`https://raw.githack.com/sucendo/modojuego/${SNAP}/hexategos/`;
-const CITY_ROOT=`https://raw.githubusercontent.com/sucendo/modojuego/${SNAP}/hexategos/data/cities-0354/`;
+// El visor sigue en cada recarga la revisión publicada por hexategos-pruebas.
+const FALLBACK_SNAPSHOT='1e6b1bbc1af2aea3f231ada64650c584a33883bf';
+let activeSnapshot=FALLBACK_SNAPSHOT,sourceMode='respaldo compatible';
+let ROOT='',CITY_ROOT='';
+function setSource(sha){
+ activeSnapshot=sha;
+ ROOT=`https://raw.githack.com/sucendo/modojuego/${sha}/hexategos/`;
+ CITY_ROOT=`https://raw.githubusercontent.com/sucendo/modojuego/${sha}/hexategos/data/cities-0354/`;
+}
+setSource(activeSnapshot);
+async function resolveSource(){
+ try{
+  const url=new URL('../hexategos-pruebas/index.html',location.href);
+  url.searchParams.set('atlas_refresh',String(Date.now()));
+  const response=await fetch(url,{cache:'no-store'});
+  if(!response.ok)throw Error('Hexategos Pruebas HTTP '+response.status);
+  const markup=await response.text();
+  const match=markup.match(/https:\/\/raw\.githack\.com\/sucendo\/modojuego\/([a-f0-9]{40})\/hexategos\/index\.html/i);
+  if(!match)throw Error('Referencia de Pruebas desconocida');
+  setSource(match[1]);sourceMode='Pruebas actual';
+ }catch(err){console.warn('[Hexategos Atlas] Se usa la última revisión de respaldo:',err);sourceMode='respaldo';}
+}
 const $=id=>document.getElementById(id), canvas=$('globe'),ctx=canvas.getContext('2d',{alpha:false});
 const RAD=Math.PI/180,DEG=180/Math.PI;
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
@@ -72,6 +90,7 @@ const camera={lon:-3.7,lat:40.4,zoom:1.0};
 const pointer={active:false,moved:false,id:-1,x:0,y:0,lon:0,lat:0};
 let coarse=null,detailed=null,w=1,h=1,dpr=1,R=1,selected=-1,visible=[],projection=null;
 let framePending=false,drawCount=0,visibleLabels=0,fail=null;
+let reliefPaths={mountains:[],rivers:[]};
 let names=new Map(),pending=new Set(),queue=[],workers=0,generation=0;
 let exclusionPromise=null,historical={},exclusions=new Set();
 const bandCache=new Map();
@@ -97,8 +116,8 @@ function unpackLevel(level){
   const k=3*i,x=obj.centers[k]/32767,y=obj.centers[k+1]/32767,z=obj.centers[k+2]/32767;
   const lat=Math.asin(clamp(y,-1,1))*DEG,lon=Math.atan2(x,z)*DEG;
   obj.lat[i]=lat;obj.lon[i]=lon;
-  if(level===8){const bx=clamp(Math.floor((lon+180)/2),0,179),by=clamp(Math.floor((lat+90)/2),0,89),key=by*180+bx;
-   let a=obj.buckets.get(key);if(!a)obj.buckets.set(key,a=[]);a.push(i);}
+  const bx=clamp(Math.floor((lon+180)/2),0,179),by=clamp(Math.floor((lat+90)/2),0,89),key=by*180+bx;
+  let a=obj.buckets.get(key);if(!a)obj.buckets.set(key,a=[]);a.push(i);
  }
  // Conservar los TypedArray, liberar las cadenas base64 del registro global.
  delete window.DATA[String(level)];
@@ -340,7 +359,7 @@ function draw(){
  if(!coarse||!detailed)return;
  projection=basis();R=Math.min(w,h)*.44*camera.zoom;
  drawSphere();drawLabels();
- $('stats').textContent=`Esfera real L8 · zoom ${camera.zoom.toFixed(1)}× · ${visibleLabels} nombres visibles · ${names.size} propuestas consultadas`;
+ $('stats').textContent=`Esfera L8 · zoom ${camera.zoom.toFixed(1)}× · ${visibleLabels} nombres · ${names.size} propuestas · ${sourceMode}`;
 }
 function cross(a,b){return [a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];}
 function dot3(a,b){return a[0]*b[0]+a[1]*b[1]+a[2]*b[2];}
@@ -457,6 +476,7 @@ $('minus').onclick=()=>setView(camera.lon,camera.lat,camera.zoom/1.5);
 $('iberia').onclick=()=>setView(-3.7,40.4,24);
 $('world').onclick=()=>setView(-3.7,40.4,1.0);
 $('showNames').onchange=invalidate;
+$('showRivers').onchange=invalidate;$('showMountains').onchange=invalidate;
 for(const btn of document.querySelectorAll('[data-pos]'))btn.onclick=()=>{
  const [lat,lon]=btn.dataset.pos.split(',').map(Number);setView(lon,lat,42);selectAt(lat,lon);
 };
@@ -476,6 +496,7 @@ async function runSearch(){const query=$('search').value.trim();if(!query)return
 }
 $('searchBtn').onclick=runSearch;$('search').addEventListener('keydown',e=>{if(e.key==='Enter')runSearch();});
 async function init(){try{
+  progress('Consultando la revisión de Hexategos Pruebas…',1);await resolveSource();
  progress('Cargando la malla geodésica original…',3);
  await script('js/vendor/pako.min.js');await script('data/bootstrap.js');await script('data/mesh-5.js');
  progress('Preparando el globo L5…',12);coarse=unpackLevel(5);await new Promise(r=>requestAnimationFrame(r));
