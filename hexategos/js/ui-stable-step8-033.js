@@ -199,8 +199,13 @@
     if(typeof sysTab3220==='undefined'||sysTab3220!=='eco')return;
     const c=document.getElementById('sysContent3213');if(!c)return;
     const offers=liveOffers().filter(o=>o.type==='trade');
+    const prior=c.querySelector('.messagesSectionStable8:not(.noticesStable8)');
+    const signature=JSON.stringify(offers.map(o=>[o.id,o.from,o.type,o.reason]));
+    if(prior?.dataset.liveSignature03893===signature)return;
+    prior?.remove();
     if(!offers.length)return;
     const block=document.createElement('div');
+    block.dataset.liveSignature03893=signature;
     block.className='sysBlock3213 messagesSectionStable8';
     block.innerHTML=`<div class="messagesHeadStable8"><div><b>📨 Propuestas comerciales</b><div class="sysMeta3213">Acuerdos comerciales recibidos de otras naciones.</div></div><span>${offers.length}</span></div>`;
     offers.forEach(o=>block.appendChild(makeOfferCard(o)));
@@ -215,7 +220,7 @@
     const c=document.getElementById('sysContent3213');if(!c)return;
     // Una renderización encadenada puede conservar la tarjeta anterior.
     // Mantener una sola sección de avisos para la pestaña activa.
-    c.querySelectorAll('.noticesStable8').forEach(node=>node.remove());
+    const prior=c.querySelector('.noticesStable8');
     const all=notices.filter(n=>tabForNotice(n)===tab && !(tab==='dip' && n.requestKind==='embassy'));
     // Un mismo acontecimiento diplomático puede llegar desde el motor de
     // relaciones y desde el emisor de mensajes. Mostrarlo una sola vez.
@@ -230,8 +235,13 @@
       window.HexategosStatecraft0380?.embassyStatus?.(0,Number(n.faction))?.status==='pending'&&
       window.HexategosStatecraft0380?.embassyStatus?.(0,Number(n.faction))?.requestedBy===Number(n.faction);
     const list=visibleNotices.sort((a,b)=>Number(pending(b))-Number(pending(a))||b.created-a.created).slice(0,4);
+    const signature=JSON.stringify([tab,all.length,all.filter(n=>!n.read).length,
+      list.map(n=>[n.id,n.type,n.message,n.read,n.requestKind,!!pending(n)])]);
+    if(prior?.dataset.liveSignature03893===signature)return;
+    prior?.remove();
     if(!list.length)return;
     const block=document.createElement('div');
+    block.dataset.liveSignature03893=signature;
     block.className='sysBlock3213 messagesSectionStable8 noticesStable8';
     block.innerHTML=`<div class="messagesHeadStable8"><div><b>🔔 Avisos · ${tabLabel(tab)}</b><div class="sysMeta3213">Registro tranquilo · ${all.length} eventos · máximo 4 visibles</div></div><span>${all.filter(n=>!n.read).length} nuevos</span></div>`;
     const readAll=document.createElement('button');
