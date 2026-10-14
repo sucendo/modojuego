@@ -38,8 +38,8 @@
       throw new Error('Algoritmo de integridad FNV-1a no disponible');
     const payloadText=JSON.stringify(file.payload);
     const checksum=fnv1a3273(payloadText);
-    const stableFile={...file,checksum,payload:JSON.parse(payloadText)};
-    const json=JSON.stringify(stableFile),raw=encoder.encode(json);
+    file.checksum=checksum;
+    const json=JSON.stringify(file),raw=encoder.encode(json);
     // Verify the exact serialized file rather than trusting an intermediate
     // object. Fail closed, before offering a corrupt download.
     const verify=JSON.parse(json);
