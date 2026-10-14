@@ -67,7 +67,7 @@ const {chromium}=require(require.resolve('playwright',{paths:[
      const knownScroll=host.scrollTop;
      for(let j=0;j<4;j++)renderSystems3220();
      check(host.scrollTop===knownScroll,tab+' lost scroll while updating');
-     check(host.firstElementChild===before,tab+' replaced its first live block');
+     check(host.firstElementChild===before,tab+' replaced its first live block ('+before?.className+' => '+host.firstElementChild?.className+', nodes='+host.childElementCount+', live='+api.diagnostics().liveRenders+')');
      stable[tab]=host.childElementCount;
    }
    // Embassy search must retain active node and cursor on periodic updates.
