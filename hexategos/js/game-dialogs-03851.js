@@ -40,8 +40,9 @@
  // File-load approval must precede dispatch to the original import handlers.
  // The original loader may use a native synchronous confirm after FileReader
  // finishes; consume only load-specific confirms after explicit user approval.
- // Solo el cambio original del usuario requiere aprobación. Los eventos
- // sintéticos posteriores (descompresión HXZ2) ya están autorizados.
+ // Cada selección debe autorizarse una vez. Los eventos internos de HXZ2
+ // reutilizan el nombre original y ya no abren otra confirmación.
+ const approvedInputs=new WeakMap();
  let approvedUntil=0;
  const nativeConfirm=window.confirm.bind(window);
  window.confirm=function(message){
@@ -57,7 +58,9 @@
    const input=event.target;
    if(!(input instanceof HTMLInputElement)||input.type!=='file'||!input.files?.length)return;
    if(input.id!=='landingFile3305'&&input.id!=='gameLoadFile3306')return;
-   if(!event.isTrusted)return;
+   const current=input.files[0];
+   if(event.isTrusted)approvedInputs.delete(input);
+   else if(approvedInputs.get(input)===current.name)return;
    event.preventDefault();event.stopImmediatePropagation();
    const incoming=input.files[0];
    void confirmDialog('¿Cargar la partida seleccionada? Se sustituirá el estado actual por los datos del archivo.',{
@@ -65,6 +68,7 @@
    }).then(ok=>{
      if(!ok){input.value='';return}
      approvedUntil=performance.now()+240000;
+     approvedInputs.set(input,incoming.name);
      input.dispatchEvent(new Event('change',{bubbles:true}));
    });
  },true);
