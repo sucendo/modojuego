@@ -16,7 +16,12 @@
     if(f>0)return typeof aiTotalMilitary3280==='function'?
       Math.max(0,number(aiTotalMilitary3280(f))-number(troops3230[f])):0;
     let n=0;
-    if(typeof activeFronts3230!=='undefined')for(const x of activeFronts3230)n+=Math.max(0,number(x.pool));
+    if(typeof activeFronts3230!=='undefined')for(const x of activeFronts3230){
+      n+=Math.max(0,number(x.pool));
+      n+=Math.max(0,number(x.mobilization03892?.troops));
+      if(Array.isArray(x.reinforcements03892))for(const r of x.reinforcements03892)
+        n+=Math.max(0,number(r?.troops));
+    }
     if(typeof fleets3212!=='undefined')for(const x of fleets3212)
       if(x.f===0)n+=Math.max(0,number(x.troops));
     n+=Math.max(0,number(window.HexategosStatecraft0380?.garrisonCommitted03874?.(0)));
@@ -58,7 +63,11 @@
     if(!valid(f))return null;
     const r=rate(f),reserve=Math.max(0,number(troops3230[f]));
     const maximum=Math.max(0,number(r.max)),active=total(f);
-    return {f,reserve,deployed:Math.max(0,active-reserve),total:active,maximum,
+    const moving=f===0&&typeof activeFronts3230!=='undefined'?
+      activeFronts3230.reduce((sum,front)=>sum+
+        Math.max(0,number(front.mobilization03892?.troops))+
+        (Array.isArray(front.reinforcements03892)?front.reinforcements03892.reduce((n,x)=>n+Math.max(0,number(x?.troops)),0):0),0):0;
+    return {f,reserve,deployed:Math.max(0,active-reserve-moving),moving,total:active,maximum,
       room:Math.max(0,maximum-active),queue:queues[f],gold:cash(f),
       recruitRate:Math.max(0,number(r.troop)),net:number(r.net),
       militaryStock:Math.max(0,number(window.HexategosTradeLogistics0370?.resourceSummaryCached?.(f)?.stock?.[4])),
@@ -240,7 +249,7 @@
       '</small><strong data-mil-value03874="'+value+'"></strong></span>';
     return '<div class="hubSectionHeading03851"><b>Reclutamiento y desmovilización</b></div>'+
       '<div class="hubStats03851">'+stat('Reserva disponible','reserve')+
-      stat('Tropas desplegadas','deployed')+stat('Límite militar','maximum')+
+      stat('Tropas desplegadas','deployed')+stat('En movilización','moving')+stat('Límite militar','maximum')+
       stat('Pendientes de formación','queue')+stat('Mantenimiento existente','upkeep')+
       stat('Equipo militar nacional','equipment')+stat('Coste orden pendiente','cost')+'</div>'+
       '<p class="hubEmpty03851" data-mil-state03874></p>'+
@@ -267,7 +276,7 @@
     const root=militaryRoot03875();
     if(!root)return;
     const s=status(0);if(!s)return;
-    const values={reserve:fmt(s.reserve),deployed:fmt(s.deployed),maximum:fmt(s.maximum),
+    const values={reserve:fmt(s.reserve),deployed:fmt(s.deployed),moving:fmt(s.moving),maximum:fmt(s.maximum),
       queue:fmt(s.queue),upkeep:s.upkeep.toFixed(2)+' oro/s',
       equipment:s.militaryStock.toFixed(2),cost:(s.queue*UNIT_GOLD).toFixed(2)+' oro'};
     for(const [key,val] of Object.entries(values)){
