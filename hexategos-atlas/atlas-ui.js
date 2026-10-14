@@ -62,29 +62,42 @@ function drawAtlasSelection(R,cx,cy){
 }
 function drawAtlasNames(R,cx,cy){
  labelDrawn=0;if(!showLabels||zoom<5.15||currentKey!=='8')return;
- const a=[];
+ const L=loadLevel('8'),visible=[];
  for(const cell of drawn){
   const i=cell[0],x=cell[1],y=cell[2],z=cell[3];
-  if(z<.06||x<-70||x>vw+70||y<-30||y>vh+30||loadLevel('8').land[i]<0)continue;
-  const dx=x-cx,dy=y-cy;a.push([dx*dx+dy*dy,i,x,y]);
+  if(z<.06||x<-80||x>vw+80||y<-30||y>vh+30||L.land[i]<0)continue;
+  const dx=x-cx,dy=y-cy;
+  visible.push({i,x,y,dist:dx*dx+dy*dy});
  }
- a.sort((a,b)=>a[0]-b[0]);
- const budget=zoom>=24?850:zoom>=12?410:160,occupied=[];
+ // Las consultas se escalonan por distancia en pantalla para evitar miles
+ // de peticiones simultáneas; NO se excluyen localidades importantes del
+ // dibujado por estar fuera del primer bloque de consultas.
+ const byCenter=visible.slice().sort((a,b)=>a.dist-b.dist);
+ const queryBudget=zoom>=24?1800:zoom>=12?1100:450;
+ for(const v of byCenter.slice(0,queryBudget)){
+  if(!nameCache.has(v.i))queueName(v.i);
+ }
+ const candidates=[];
+ for(const v of visible){
+  const report=nameCache.get(v.i);
+  if(report?.kind!=='exact'||!report.options?.length)continue;
+  const city=report.options[0];
+  candidates.push({...v,city});
+ }
+ // Primacía de ciudades como Santiago, Toledo o Cartagena sobre las
+ // pequeñas poblaciones colindantes. La titularidad del hexágono sigue
+ // requiriendo pertenencia geodésica EXACTA.
+ candidates.sort((a,b)=>b.city.population-a.city.population||a.dist-b.dist||a.i-b.i);
+ const occupied=[];
  ctx.textAlign='center';ctx.textBaseline='middle';
  ctx.font='600 '+clamp(8+Math.log2(zoom)*1.4,9,13)+'px system-ui';
- for(const [,i,x,y] of a.slice(0,budget)){
-  const report=nameCache.get(i);
-  if(!report){queueName(i);continue;}
-  // Solo se rotula la localidad cuya coordenada pertenece a ESTA casilla.
-  // Las localidades de casillas vecinas son alternativas, nunca etiquetas propias.
-  if(report.kind!=='exact')continue;
-  const c=report.options&&report.options[0];if(!c)continue;
-  const name=c.name.length>24?c.name.slice(0,23)+'…':c.name;
+ for(const {x,y,city} of candidates){
+  const name=city.name.length>30?city.name.slice(0,29)+'…':city.name;
   const width=ctx.measureText(name).width,box=[x-width/2-5,y-10,x+width/2+5,y+10];
   if(occupied.some(b=>!(box[2]<b[0]||box[0]>b[2]||box[3]<b[1]||box[1]>b[3])))continue;
   occupied.push(box);labelDrawn++;
   ctx.lineWidth=3.1;ctx.strokeStyle='#071521ed';ctx.strokeText(name,x,y);
-  ctx.fillStyle=report.kind==='exact'?'#ffe1a5':'#a5dceb';ctx.fillText(name,x,y);
+  ctx.fillStyle='#ffe1a5';ctx.fillText(name,x,y);
  }
 }
 function selectCell(i){
@@ -163,7 +176,7 @@ async function suggest(i){
   const xyz=lonLatVec(Number(row[2]),Number(row[1]));
   if(pointInsideCell(i,{x:xyz[0],y:xyz[1],z:xyz[2]}))exact.push(asName(row,lat,lon));
  }
- exact.sort((a,b)=>a.km-b.km||b.population-a.population);
+ exact.sort((a,b)=>b.population-a.population||a.km-b.km||a.name.localeCompare(b.name,'es'));
  if(exact.length)return {kind:'exact',options:exact.slice(0,6)};
  for(const radius of [2,4,8,14]){
   const uniq=new Map();
