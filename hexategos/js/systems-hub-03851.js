@@ -195,6 +195,10 @@
       (names.length?names.map(escape).join(' → '):'No hay cambios registrados')+'</p>'+
       '</section>';
   }
+  function setGovernmentHTML03893(markup){
+    if(!window.HexategosSystemsLive03893?.updateHTML?.(host,markup))
+      host.innerHTML=markup;
+  }
   function governmentCard0386(){
     const api=nationApi();
     if(!started3230||!api?.governmentCities){
@@ -221,7 +225,7 @@
       makeHint('Tesoro nacional',pretty(gold3212)+' oro')+'</div></div>';
     html+=nationIdentityCard0389();
     if(!cities.length){
-      host.innerHTML=html+'<div class="sysBlock3213"><b>Sin ciudades</b><p>Funda una ciudad para poder administrarla desde Gobierno.</p></div>';
+      setGovernmentHTML03893(html+'<div class="sysBlock3213"><b>Sin ciudades</b><p>Funda una ciudad para poder administrarla desde Gobierno.</p></div>');
       return;
     }
     const guide={
@@ -276,7 +280,7 @@
         governanceAlerts.map(n=>'<div class="sysGovNotice0386">'+escape(n.message)+'</div>').join('')+
         '<button data-hub-gov-read0386>Marcar avisos como leídos</button></div>';
     }
-    host.innerHTML=html;
+    setGovernmentHTML03893(html);
   }
 
   function militaryCard(){
