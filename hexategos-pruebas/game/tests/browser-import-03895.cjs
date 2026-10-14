@@ -123,9 +123,37 @@ const { chromium }=require('playwright');
   assert.equal(restored.diag.pendingNation,1);
   assert.equal(crashed,false);
   assert.deepEqual(errors,[]);
-  await game.evaluate(()=>{paused3230=false});
-  await game.waitForFunction(()=>window.HexategosImportScheduler03895?.status().pendingNation!==1,null,{timeout:120000});
-  await game.evaluate(()=>{paused3230=true});
+  // Round-trip every persisted system, then continue from actual browser storage.
+  const exportCheck=await game.evaluate(()=>{
+    const file=buildPortableFile3276();
+    return {valid:file.checksum===fnv1a3273(JSON.stringify(file.payload)),
+      cities:file.payload.main.cities?.length,sites:file.payload.production0388?.sites?.length,
+      naval:file.payload.naval?.groups?.length,roads:file.payload.main.roads?.length,
+      routes:file.payload.tradeLogistics0370?.routes?.length};
+  });
+  assert.equal(exportCheck.valid,true);
+  for(const key of ['cities','sites','naval','roads','routes'])
+    assert.equal(exportCheck[key],encoded[key],'Portable re-export mismatch: '+key);
+  await game.evaluate(()=>{paused3230=true;saveGame3212()});
+  await page.reload({waitUntil:'load',timeout:120000});
+  const continued=page.frames().find(f=>f.url().includes('/hexategos-pruebas/game/'));
+  assert(continued,'Reloaded game iframe not found');
+  await view.getByRole('button',{name:'CONTINUAR PARTIDA',exact:true}).click({timeout:120000});
+  await continued.waitForFunction(()=>started3230&&owner6.length===510762,null,{timeout:120000});
+  const continuedState=await continued.evaluate(()=>{
+    paused3230=true;
+    return {cities:cities3212.size,sites:window.HexategosProduction0388?.snapshot?.().sites?.length||0,
+      naval:navalGroups3270.length,roads:roads3212.length,ports:ports3212.size,
+      routes:window.HexategosTradeLogistics0370?.routes?.().length||0,
+      pendingNation:window.HexategosImportScheduler03895?.status().pendingNation};
+  });
+  for(const key of ['cities','sites','naval','roads','ports','routes'])
+    assert.equal(continuedState[key],encoded[key],'Browser continuation mismatch: '+key);
+  assert(continuedState.pendingNation>0&&continuedState.pendingNation<=149,
+    'Deferred AI should survive page reload');
+  await continued.evaluate(()=>{paused3230=false});
+  await continued.waitForFunction(()=>window.HexategosImportScheduler03895?.status().pendingNation!==1,null,{timeout:120000});
+  await continued.evaluate(()=>{paused3230=true});
   assert.equal(crashed,false);
   console.log('CHROMIUM 0.38.95 PASS: synthetic old HXZ2, same-origin iframe, 510762 cells, deferred AI',restored);
  }finally{await browser.close()}
