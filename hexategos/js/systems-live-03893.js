@@ -16,7 +16,7 @@
   const keys=['id','data-hub-tab','data-message-key','data-gov-action0386',
     'data-hub-action','data-mil-mode03875','data-mil-value03874',
     'data-hub-nation-name0389','data-embassy-search','data-embassy-select',
-    'data-hub-sea-port','data-gov-city0386','data-action','data-route-id',
+    'data-hub-sea-port','data-gov-city0386','data-military-manpower03874','data-action','data-route-id',
     'data-tab','data-inspect-tab03817','data-policy','data-faction'];
   const decorateClasses=['sysCard0385','hasCollapse0385','isCollapsed0385'];
   const blockClasses=['sysGovSummary0386','sysGovIdentity0389','sysGovManager0386',
@@ -121,6 +121,14 @@
       const collapse=oldNode.querySelector(':scope > .sysCollapseHeader0385');
       if(collapse&&!newNode.querySelector(':scope > .sysCollapseHeader0385'))
         newNode.insertBefore(collapse.cloneNode(true),newNode.firstChild);
+    }
+    // El control de reclutamiento (0.38.75) se inserta tras el render
+    // militar y se actualiza localmente en su propio scheduler. Mantener
+    // sus sliders/input al actualizar el resumen del ejército.
+    if(oldNode.getAttribute('data-hub-tab')==='military'){
+      const existing=oldNode.querySelector('[data-military-manpower03874]');
+      if(existing&&!newNode.querySelector('[data-military-manpower03874]'))
+        newNode.appendChild(existing.cloneNode(true));
     }
     reconcileChildren(oldNode,newNode);
     if(oldNode.tagName==='SELECT'&&!focused(oldNode)){
