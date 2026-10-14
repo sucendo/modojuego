@@ -300,8 +300,8 @@ async function init(){
   }
   progress('Inicializando terreno físico y cordilleras…',84);
   const L=loadLevel('8');owner6=L.land;mountainTier3212=new Uint8Array(L.n);
-  for(let i=0;i<MOUNTAIN_CELL_PAIRS3212.length;i+=2)
-   mountainTier3212[MOUNTAIN_CELL_PAIRS3212[i]]=MOUNTAIN_CELL_PAIRS3212[i+1];
+  for(let i=0;i<MOUNTAIN_CELL_PAIRS3242.length;i+=2)
+   mountainTier3212[MOUNTAIN_CELL_PAIRS3242[i]]=MOUNTAIN_CELL_PAIRS3242[i+1];
   await getMeta();
   progress('Preparando topónimos originales…',98);
   ready=true;resize();rotateToGeo(-3.7,40.4,1);
