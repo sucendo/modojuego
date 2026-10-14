@@ -1,5 +1,5 @@
 'use strict';
-/* HEXATEGOS ATLAS 0.39.1 · cubierta del suelo hexágono a hexágono.
+/* HEXATEGOS ATLAS 0.39.2 · cubierta del suelo hexágono a hexágono.
  * Capa visual no destructiva. Compatibilidad: sin modificar terrainType3247,
  * mountainTier3212, geología, guardados ni los datos físicos de Hexategos.
  */
@@ -48,6 +48,54 @@
     '<span><b>Cobertura estimada:</b> '+escapeHTML(type.name)+
     '<small>Modelo geográfico orientativo · no es un inventario forestal ni un dato satelital verificado.</small></span></div>';
  }
+ // Pequeñas copas de árboles dibujadas SOBRE los hexágonos forestales.
+ // El verde permite reconocer los bosques a zoom bajo y estos símbolos,
+ // reservados para zoom alto, los diferencian de prados y cultivos.
+ // Solo se recorren celdas ya visibles; sin búsquedas globales ni timers.
+ const forestCodes=new Set(['deciduous','evergreen','conifers','rainforest']
+   .map(id=>data.code[id]));
+ function drawForests(R,cx,cy){
+  if(!showCover||zoom<9||currentKey!==MAX_GAME_LEVEL3233)return 0;
+  const L=currentLevel;
+  if(!L||!drawn.length)return 0;
+  const size=Math.min(4.5,Math.max(1.9,R*.00135));
+  const stride=Math.max(1,Math.floor(drawn.length/1700));
+  const capped=zoom>=22?540:350;
+  let shown=0;
+  ctx.save();
+  try{
+   ctx.lineJoin='round';ctx.lineCap='round';
+   for(let k=0;k<drawn.length&&shown<capped;k+=stride){
+    const row=drawn[k],i=row[0];
+    if(L.land[i]<0||row[3]<.10)continue;
+    const code=coverCode(currentKey,i,L);
+    if(!forestCodes.has(code))continue;
+    const x=row[1],y=row[2];
+    if(x<2||x>vw-2||y<2||y>vh-2)continue;
+    const conifer=code===data.code.conifers;
+    if(conifer){
+     ctx.beginPath();
+     ctx.moveTo(x,y-size*.91);
+     ctx.lineTo(x-size*.72,y+size*.63);
+     ctx.lineTo(x+size*.72,y+size*.63);
+     ctx.closePath();
+    }else{
+     // Tres caras de copa forman un pequeño bosque estilizado, en lugar
+     // de un icono repetido de un solo árbol sobre todas las casillas.
+     ctx.beginPath();
+     ctx.arc(x-size*.34,y+size*.04,size*.49,0,Math.PI*2);
+     ctx.arc(x+size*.34,y+size*.04,size*.49,0,Math.PI*2);
+     ctx.arc(x,y-size*.42,size*.55,0,Math.PI*2);
+    }
+    ctx.fillStyle='rgba(4,46,31,.68)';
+    ctx.fill();
+    ctx.beginPath();ctx.moveTo(x,y+size*.36);ctx.lineTo(x,y+size*.95);
+    ctx.strokeStyle='rgba(10,39,25,.62)';ctx.lineWidth=Math.max(.5,size*.25);ctx.stroke();
+    shown++;
+   }
+  }finally{ctx.restore()}
+  return shown;
+ }
  function renderLegend(){
   const host=$('coverLegendList');
   if(!host)return;
@@ -67,7 +115,7 @@
  renderLegend();
  const control=$('cover');if(control){showCover=control.checked;control.addEventListener('change',()=>enabled(control.checked))}
  window.HexategosAtlasLandCover0391=Object.freeze({
-  version:'0.39.1',cellInfo,coverCode,enabled:()=>showCover,
+  version:'0.39.2',cellInfo,coverCode,drawForests,enabled:()=>showCover,
   cacheSize:()=>[...cache.values()].reduce((n,v)=>n+v.length,0),
   types:data.types
  });
