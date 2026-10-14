@@ -29,8 +29,10 @@ jobs:
       - name: Serve testing branch
         run: |
           python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/hx-import.log 2>&1 &
+          python3 -m http.server 8766 --bind 127.0.0.1 > /tmp/hx-wrapper.log 2>&1 &
           sleep 3
           curl --fail http://127.0.0.1:8765/hexategos/index.html > /dev/null
+          curl --fail http://127.0.0.1:8766/hexategos/tests/test-iframe-03894.html > /dev/null
       - name: Verify HXZ2 inside iframe
         env:
           CODEX_PRIMARY_RUNTIME_NODE_MODULES: /tmp/hx-playwright/node_modules
