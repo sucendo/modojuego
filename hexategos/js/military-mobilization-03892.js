@@ -117,7 +117,7 @@
   };
   const finishBase=finishFront3230;
   finishFront3230=function(front,msg,returnFactor=1){
-    if(!front)return finishBase.apply(this,arguments);
+    if(!front||!activeFronts3230.includes(front))return finishBase.apply(this,arguments);
     // Un soldado que todavía no combatió nunca puede desaparecer de la
     // reserva por cancelar, perder o completar antes un frente.
     const stranded=waiting(front);
@@ -165,12 +165,12 @@
   };
   window.HexategosMobilization03892=Object.freeze({
     version:VERSION,waiting,delayFor,
-    status:()=>activeFronts3230.map(front=>({
-      id:front.id,active:amount(front.pool),inTransit:waiting(front),
-      eta:Math.max(0,Math.ceil(Math.min(
-        ...(front.mobilization03892?[front.mobilization03892.readyAt]:[])
-          .concat((front.reinforcements03892||[]).map(x=>x.readyAt)).map(x=>x-currentTime()),
-        Infinity)))
-    }))
+    status:()=>activeFronts3230.map(front=>{
+      const deadlines=(front.mobilization03892?[front.mobilization03892.readyAt]:[])
+        .concat((front.reinforcements03892||[]).map(x=>x.readyAt))
+        .filter(Number.isFinite);
+      return {id:front.id,active:amount(front.pool),inTransit:waiting(front),
+        eta:deadlines.length?Math.max(0,Math.ceil(Math.min(...deadlines)-currentTime())):null};
+    })
   });
 })();
