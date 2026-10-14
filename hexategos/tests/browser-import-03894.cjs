@@ -14,19 +14,11 @@ const {chromium}=require(require.resolve('playwright',{paths:[
  page.on('pageerror',e=>errors.push(e.message));
  try{
   const origin=process.env.HEX_TEST_URL||'http://127.0.0.1:8765/hexategos/';
-  await page.route('http://127.0.0.1:8766/hexategos-pruebas/',route=>
-   route.fulfill({status:200,contentType:'text/html',body:
-    '<!doctype html><title>Hexategos Pruebas</title><iframe title="Hexategos Pruebas" src="'+
-    origin+'" style="width:100vw;height:100vh;border:0"></iframe>'}));
-  await page.goto('http://127.0.0.1:8766/hexategos-pruebas/',{waitUntil:'load',timeout:120000});
-  console.log('FRAME DEBUG:',page.url(),page.frames().map(f=>f.url()),errors);
+  await page.goto('http://127.0.0.1:8766/hexategos/tests/test-iframe-03894.html',
+   {waitUntil:'load',timeout:120000});
   const frame=page.frameLocator('iframe');
-  if((await frame.getByRole('button',{name:'NUEVA PARTIDA',exact:true}).count())===0){
-    console.log('FRAME MISSING NEW GAME:',page.frames().map(f=>f.url()),errors);
-    try{const nested=page.frames().find(f=>f!==page.mainFrame());
-      console.log('FRAME DOCUMENT:',(await nested?.locator('body').innerText())?.slice(0,500))}catch(e){console.log('FRAME READ ERROR',String(e))}
-  }
-  assert.notEqual(new URL(origin).origin,new URL(page.url()).origin,'Test must use a cross-origin iframe');
+  assert.notEqual(new URL(origin).origin,new URL(page.url()).origin,
+   'The two served documents must have different origins');
   await frame.getByRole('button',{name:'NUEVA PARTIDA',exact:true}).click();
   await frame.getByRole('button',{name:/UBICACIÓN ALEATORIA/}).click();
   await frame.getByRole('button',{name:/COMENZAR AQUÍ/}).click();
