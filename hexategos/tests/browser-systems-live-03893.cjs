@@ -109,6 +109,12 @@ const {chromium}=require(require.resolve('playwright',{paths:[
    openSystems3220('government');
    const last=host.querySelector('[data-hub-nation-name0389]');
    last.focus({preventScroll:true});
+   check(document.activeElement===last,'Government input initially unfocusable: '+
+     JSON.stringify({node:last.isConnected,disabled:last.disabled,
+       tab:sysTab3220,panel:panel.className,
+       hiddenBy:last.closest('.isCollapsed0385')?.className||'none',
+       rect:last.getBoundingClientRect().toJSON(),
+       prior:document.activeElement?.id}));
    last.value='Texto temporal sin guardar';
    last.dispatchEvent(new Event('input',{bubbles:true}));
    paused3230=false;
