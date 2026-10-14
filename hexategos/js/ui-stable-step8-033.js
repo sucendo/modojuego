@@ -270,7 +270,11 @@
       art.querySelector('[data-dismiss-notice]')?.addEventListener('click',()=>{dismissNotice(n.id);renderSystems3220()});
       block.appendChild(art);
     }
-    c.prepend(block);
+    // Embajadas siempre encima de avisos: no mover una tarjeta con el
+    // buscador activo durante un refresco periódico de Diplomacia.
+    const embassy=tab==='dip'?c.querySelector('[data-hub-tab="dip"]'):null;
+    if(embassy)embassy.after(block);
+    else c.prepend(block);
   }
 
   function focusCurrentMessage(){
