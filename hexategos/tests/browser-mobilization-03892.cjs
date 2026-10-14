@@ -49,23 +49,38 @@ const {chromium}=require(require.resolve('playwright',{paths:[
    if(!file.payload.main.activeFronts.some(x=>x.mobilization03892&&x.id===front.id))
      throw Error('Portable export lost staging');
    const current=loaded.mobilization03892.troops;
+   if(applyPortableFile3275(file)===false)throw Error('Portable import was rejected');
+   const imported=activeFronts3230.find(f=>f.id===front.id);
+   if(!imported?.mobilization03892||imported.pool!==0||
+      imported.mobilization03892.readyAt!==readyAt)
+     throw Error('Real portable import did not restore the pending deployment');
+   const reservePreReinforce=troops3230[0];
    campaignSeconds3230=readyAt-1;
-   frontTick3230(loaded);
-   if(loaded.pool!==0)throw Error('Early deployment during resumed game');
+   reinforceFront3230(imported.id);
+   if(!Array.isArray(imported.reinforcements03892)||!imported.reinforcements03892.length)
+     throw Error('Real reinforcement was not staged');
+   const inbound=imported.reinforcements03892[0].troops;
+   if(Math.abs(reservePreReinforce-troops3230[0]-inbound)>1e-7)
+     throw Error('Reinforcements duplicated or did not leave the reserve');
+   frontTick3230(imported);
+   if(imported.pool!==0)throw Error('Early deployment during resumed game');
    campaignSeconds3230=readyAt;
-   frontTick3230(loaded);
-   if(loaded.mobilization03892||loaded.pool<=0)throw Error('Real game did not deploy on ETA');
-   const deployed=loaded.pool;
+   frontTick3230(imported);
+   if(imported.mobilization03892||imported.pool<=0)
+     throw Error('Real game did not deploy on ETA');
+   if(window.HexategosMobilization03892.waiting(imported)!==inbound)
+     throw Error('Reinforcements landed early or were lost');
+   const deployed=imported.pool;
    // Safe retreat: reserve increases only by survivors.
    const reserveBefore=troops3230[0];
-   finishFront3230(loaded,'Prueba de retirada',1);
-   if(troops3230[0]-reserveBefore!==Math.floor(deployed))
+   finishFront3230(imported,'Prueba de retirada',1);
+   if(troops3230[0]-reserveBefore!==Math.floor(deployed)+inbound)
      throw Error('Retreat troop accounting invalid');
    if(activeFronts3230.some(f=>f.id===front.id))
      throw Error('Retired front remains active');
    return {version:window.HexategosMobilization03892.version,
      source,target,seconds:readyAt-preTime,staged:current,landed:deployed,
-     importedSection:!!file.payload.main.activeFronts};
+     importedSection:!!file.payload.main.activeFronts,reforcementsPending:inbound};
   });
   assert.equal(check.version,'0.38.92');
   assert.deepEqual(errors,[]);
