@@ -9253,7 +9253,7 @@ function applyPortableFile3275(file){
 
 importGameText3273=function(text,filename='partida.hexategos'){
  let file;
- try{file=JSON.parse(text)}
+ try{file=typeof text==='string'?JSON.parse(text):text}
  catch(e){throw new Error('El archivo no contiene JSON válido.')}
  validatePortablePayload3275(file);
 
@@ -12818,8 +12818,10 @@ function geoValidatePayload3290(file){
 }
 const _importGeoBase3290=importGameText3273;
 importGameText3273=function(text,filename='partida.hexategos'){
+ // La migración geográfica solo modifica archivos antiguos; no serializar
+ // otros 510.762 hexágonos para volver a parsearlos inmediatamente.
  const parsed=JSON.parse(text),file=geoValidatePayload3290(parsed);
- return _importGeoBase3290(JSON.stringify(file),filename);
+ return _importGeoBase3290(file,filename);
 };
 const _loadGeoBase3290=loadGame3212;
 loadGame3212=function(){
