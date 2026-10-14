@@ -6,7 +6,9 @@
   const VERSION='0.38.9',KEY='hexategos.regionalNames.0389';
   // Rectángulos culturales aproximados; las localidades concretas SIEMPRE
   // proceden del atlas geográfico con prueba exacta del hexágono.
-  const REGIONS=[
+  // Reutilizar la misma matriz política del Atlas, con fallback idéntico para
+  // pruebas independientes y partidas guardadas anteriores.
+  const REGIONS=window.HexategosGeoRegions0390?.politicalRegions||[
     ['Cataluña',40.5,43,0.6,3.7,'Principado de Cataluña'],
     ['Aragón',40.2,42.9,-2.5,0.7,'Reino de Aragón'],
     ['Navarra',41.6,43.3,-2.5,-0.6,'Reino de Navarra'],
