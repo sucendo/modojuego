@@ -385,8 +385,13 @@
   function serialize(){
     return {v:3,nations:[...nations].map(([f,n])=>[f,n]),cities:[...cities],checked:[...checked],playerName,playerHistory,changes:changes.slice(-150),cityIdentity:[...cityIdentity],playerCulture,nationCultures:[...nationCultures]};
   }
+  const restoreDiagnostics={runs:0,last:null};
   function restore(s){
+    const startedAt=performance.now(),phases=[];
+    const phase=name=>{phases.push({name,ms:Math.round(performance.now()-startedAt)});console.info('[Hexategos identidad restore]',name,Math.round(performance.now()-startedAt)+'ms')};
+    phase('begin');
     validateState(s);
+    phase('validated');
     nations.clear();cities.clear();cityIdentity.clear();nationCultures.clear();checked.clear();working.clear();generation++;playerName='';playerHistory=[];playerCulture='';changes.length=0;
     pendingCities.length=0;queuedCities.clear();
     capCursor=0;cityCursor=null;lastCampaign=-1e9;
@@ -403,11 +408,13 @@
         // Si cambió la capital entre guardado y carga, conservar toda la
         // historia y dejar que ensureNation procese la mudanza.
         nations.set(f,{capital:r.capital,name:String(r.name||'').slice(0,100),atlas:!!r.atlas,history:Array.isArray(r.history)?r.history.slice(-12):[],pending:r.pending||null,baseline:Number(r.baseline)||nationCount(f)});
+    phase('nations-and-cultures');
     if(Array.isArray(s.cities))for(const [cell,name] of s.cities.slice(0,6000)){
       if(Number.isInteger(cell)&&owner6[cell]>=0&&typeof setCityName3271==='function'){
         setCityName3271(cell,name);cities.set(cell,name);
       }
     }
+    phase('legacy-city-names');
     if(Array.isArray(s.checked))for(const k of s.checked.slice(0,6000))checked.add(String(k));
     if(Array.isArray(s.cityIdentity))for(const [cell,rec] of s.cityIdentity.slice(0,6000)){
       if(Number.isInteger(cell)&&cities3212.has(cell)&&rec?.geo){cityIdentity.set(cell,rec);
@@ -420,6 +427,11 @@
         }
         if(rec.name&&typeof setCityName3271==='function')setCityName3271(cell,rec.name)}
     }
+    phase('city-identities');
+    restoreDiagnostics.runs++;
+    restoreDiagnostics.last={totalMs:Math.round(performance.now()-startedAt),phases,
+      nations:nations.size,cities:cities.size,identities:cityIdentity.size,cultures:nationCultures.size};
+    window.HexategosRestoreDiagnostics03893=restoreDiagnostics;
   }
   // Se comparte el códec HXZ1 de las demás capas. El guardado de hasta 500
   // naciones y miles de nombres no debe agotar la cuota con JSON sin comprimir.
