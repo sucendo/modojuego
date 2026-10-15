@@ -18,6 +18,8 @@
  const central=window.HexategosCentralAsia0404;
  const himalayaData=window.HexategosHimalayaPhysical0406;
  const himalaya=window.HexategosHimalaya0406;
+ const indianHydro=window.HexategosSubcontinentHydro0407;
+ const indianRivers=window.HexategosSubcontinentRivers0407;
  const labelStyle=window.HexategosAtlasLabelStyle0399;
  if(!source){console.warn('[Atlas] No se cargaron las regiones compartidas');return}
  const historicalAnchors={
@@ -43,6 +45,7 @@
  const baseNatural=source.physicalRegions.concat(europe?.naturalRegions||[],
   detail?.naturalRegions||[],asia?.naturalRegions||[]);
  const additionalNatural=(himalayaData?.reliefRegions||[])
+  .concat(indianHydro?.basins||[])
   .filter(reg=>!baseNatural.some(x=>x.name.toLocaleLowerCase('es-ES')===
     reg.name.toLocaleLowerCase('es-ES')))
   .map(r=>({...r,kind:'land'}));
@@ -121,6 +124,27 @@
    features.push({name:body.displayName,center:body.components[0].slice(0,2),
     kind:'lake',rank:77,minZoom:body.minZoom+.45,
     himalayaBody:body.name});
+  }
+ }
+ // Indo, Ganges, Brahmaputra y Yamuna ya tienen rutas L8 canónicas.
+ // Etiquetar sin volver a generar ni sobrepintar los cauces madre.
+ if(indianHydro){
+  const trunkAnchors={
+   Indo:[70.6,29.5],Ganges:[83.2,25.5],
+   Brahmaputra:[92.2,26.3],Yamuna:[79.5,27.6]
+  };
+  for(const item of indianHydro.trunk){
+   if(typeof MAP_RIVERS3242==='undefined'||
+     !MAP_RIVERS3242.some(sys=>sys.n===item.name))continue;
+   if(features.some(x=>x.name===item.name))continue;
+   features.push({name:item.name,center:trunkAnchors[item.name],
+    kind:'river',rank:84,minZoom:7.8,indianTrunk:true});
+  }
+  for(const item of indianHydro.rivers){
+   features.push({name:item.name,
+    center:item.points[Math.floor(item.points.length*.47)],
+    kind:'river',rank:68,minZoom:item.minZoom+.65,
+    indianTributary:true});
   }
  }
  // Los grandes cauces del Oriente Próximo ya existen en la malla
@@ -204,6 +228,7 @@
    if(item.centralBody&&!central?.isBodyDrawn?.(item.centralBody))continue;
    if(item.himalayaBody&&!window.HexategosHimalayaWater0406?.isBodyDrawn?.(item.himalayaBody))continue;
    if(item.himalayaMountain&&!himalaya?.isDrawnFeature?.(item.name))continue;
+   if(item.indianTributary&&!indianRivers?.isDrawnFeature?.(item.name))continue;
    if(item.centralAsia&&!central?.isDrawnFeature?.(item.name))continue;
    if(item.westAsia&&item.kind!=='lake'&&!westAsia?.isDrawnFeature?.(item.name))continue;
    if((item.kind==='island'||item.kind==='strait'||item.kind==='archipelago'||item.kind==='marine')&&!straits?.valid(item))continue;
@@ -237,7 +262,7 @@
  function cellInfo(lat,lon){
   const result=source.regionsAt(lat,lon);
   const local=(europe?.naturalAt(lat,lon)||[]).concat(detail?.naturalAt(lat,lon)||[],asia?.naturalAt(lat,lon)||[]);
-  const naturalNames=result.natural.concat(local,centralData?.regionsNear(lon,lat)||[],himalayaData?.regionsNear(lon,lat)||[])
+  const naturalNames=result.natural.concat(local,centralData?.regionsNear(lon,lat)||[],himalayaData?.regionsNear(lon,lat)||[],indianHydro?.regionsNear(lon,lat)||[])
    .filter((v,i,a)=>a.findIndex(x=>x.name.toLocaleLowerCase('es-ES')===v.name.toLocaleLowerCase('es-ES'))===i)
    .slice(0,5).map(r=>escapeHTML(r.name)).join(' · ');
   const historicalName=result.historical?.name||europe?.historicalAt(lat,lon)?.name||'';
@@ -256,7 +281,7 @@
     const old=source.regionsAt(lat,lon);
     const areas=old.natural.concat(europe?.naturalAt(lat,lon)||[],
      detail?.naturalAt(lat,lon)||[],asia?.naturalAt(lat,lon)||[],
-     centralData?.regionsNear(lon,lat)||[],himalayaData?.regionsNear(lon,lat)||[]);
+     centralData?.regionsNear(lon,lat)||[],himalayaData?.regionsNear(lon,lat)||[],indianHydro?.regionsNear(lon,lat)||[]);
     return {natural:areas.filter((v,i,a)=>a.findIndex(x=>
       x.name.toLocaleLowerCase('es-ES')===v.name.toLocaleLowerCase('es-ES'))===i),
       historical:old.historical||europe?.historicalAt(lat,lon)||null};
