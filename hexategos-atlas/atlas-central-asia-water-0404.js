@@ -18,7 +18,11 @@
  }
  function isWater(key,i,L){
   if(!eligible(key)||i<0||i>=L.n||L.land[i]<0)return null;
-  const j=i*3,lat=Math.asin(clamp(L.centers[j+1]/32767,-1,1))*180/Math.PI;
+  const j=i*3,y=L.centers[j+1];
+  // Rechazo entero antes de trigonometría: >99% de las celdas L8 no
+  // están en las latitudes de estas cuencas.
+  if(y<21250||y>24150)return null;
+  const lat=Math.asin(clamp(y/32767,-1,1))*180/Math.PI;
   if(lat<40.5||lat>47.4)return null;
   const lon=Math.atan2(L.centers[j],L.centers[j+2])*180/Math.PI;
   if(lon<56||lon>83)return null;
@@ -27,6 +31,8 @@
  function fill(key,i,L,own,z){
   const old=base(key,i,L,own,z);
   if(!visible())return old;
+  const bridge=window.HexategosGameAtlasBridge0400;
+  if(bridge&&!bridge.visibleCentralAsia())return old;
   if(typeof $==='function'&&$('lakes')?.checked===false)return old;
   const mode=typeof mapMode3252==='undefined'?'terrain':mapMode3252;
   if(mode!=='terrain'&&mode!=='political')return old;
