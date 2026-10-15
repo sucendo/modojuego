@@ -335,8 +335,11 @@ function render(now=performance.now()){
     ctx.lineWidth=Math.min(1.00,.70+.06*Math.sqrt(Math.max(1,zoom)));
    }
    else if(coast){
-    ctx.strokeStyle='rgba(4,13,21,.60)';
-    ctx.lineWidth=Math.min(.72,.40+.06*Math.sqrt(Math.max(1,zoom)));
+    // La costa reproduce exclusivamente las aristas tierra-mar de la malla.
+    // Mejor contraste para reconocer cabos/ensenadas existentes en L8;
+    // nunca desplazar vértices ni introducir excepciones por localidad.
+    ctx.strokeStyle='rgba(125,182,191,.68)';
+    ctx.lineWidth=Math.min(1.08,.48+.09*Math.sqrt(Math.max(1,zoom)));
    }
    else if(own!==no){
     ctx.strokeStyle='rgba(237,244,249,.20)';
