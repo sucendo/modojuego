@@ -23,6 +23,10 @@
   if(!features.some(f=>f.name.toLocaleLowerCase('es-ES')===
    item.name.toLocaleLowerCase('es-ES')))features.push({...item});
  }
+ for(const x of window.HexategosMyanmarPhysical0412?.macro||[]){
+  if(!features.some(f=>f.name.toLocaleLowerCase('es-ES')===
+    x.name.toLocaleLowerCase('es-ES')))features.push({...x});
+ }
  const handoffZoom=5.55;
  const labelStyle=window.HexategosAtlasLabelStyle0399;
  let occupied=[];

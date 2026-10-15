@@ -23,6 +23,8 @@
  const sri=window.HexategosSriLankaPhysical0411;
  const sriRelief=window.HexategosSriLanka0411;
  const sriPlacement=window.HexategosSriLankaPlacement0411;
+ const myanmar=window.HexategosMyanmarPhysical0412;
+ const myanmarRender=window.HexategosMyanmarRender0412;
  const indiaHydro=window.HexategosPeninsularHydro0410;
  const indiaRivers=window.HexategosPeninsularHydroRender0410;
  const indianHydro=window.HexategosSubcontinentHydro0407;
@@ -55,7 +57,7 @@
   detail?.naturalRegions||[],asia?.naturalRegions||[]);
  const knownNatural=new Set(baseNatural.map(x=>x.name.toLocaleLowerCase('es-ES')));
  const additionalNatural=(himalayaData?.reliefRegions||[])
-  .concat(indianHydro?.basins||[],deltas?.areas||[],peninsula?.regions||[],indiaHydro?.regions||[],sri?.regions||[])
+  .concat(indianHydro?.basins||[],deltas?.areas||[],peninsula?.regions||[],indiaHydro?.regions||[],sri?.regions||[],myanmar?.regions||[])
   .filter(reg=>{
    const key=reg.name.toLocaleLowerCase('es-ES');
    if(knownNatural.has(key))return false;
@@ -206,6 +208,42 @@
    features.push({name:item.name,center:item.center,kind:'island',
     sriFeature:true,sriKind:'island',rank:item.rank,minZoom:item.minZoom});
  }
+ // Myanmar: trazados efectivos sobre la malla L8 real;
+ // padres canónicos Salween/Mekong/Arakan Yoma sin sobreimpresión.
+ if(myanmar){
+  const known=new Set(features.map(x=>x.name.toLocaleLowerCase('es-ES')));
+  for(const item of myanmar.mountains){
+   const name=item.name.toLocaleLowerCase('es-ES');
+   if(known.has(name))continue;
+   known.add(name);
+   features.push({name:item.name,
+    center:item.points[Math.floor(item.points.length*.52)],
+    kind:'mountain',rank:73,minZoom:item.minZoom+.6,
+    myanmarFeature:true});
+  }
+  for(const [items,kind] of [[myanmar.rivers,'river'],
+    [myanmar.tributaries,'tributary'],[myanmar.distributaries,'distributary']]){
+   for(const item of items){
+    const name=item.name.toLocaleLowerCase('es-ES');
+    if(known.has(name))continue;
+    known.add(name);
+    features.push({name:item.name,
+     center:item.points[Math.floor(item.points.length*.53)],
+     kind:'river',rank:kind==='river'?84:kind==='tributary'?65:56,
+     minZoom:item.minZoom+(kind==='river'?.65:.8),
+     myanmarFeature:true});
+   }
+  }
+  // Salween y Mekong están ya en la red original y sólo se etiquetan.
+  for(const x of [
+   {name:'Salween',center:[98.5,20.8],minZoom:7.2},
+   {name:'Mekong',center:[100.62,21.15],minZoom:7.5}
+  ]){
+   if(known.has(x.name.toLocaleLowerCase('es-ES')))continue;
+   if(typeof MAP_RIVERS3242!=='undefined'&&MAP_RIVERS3242.some(m=>m.n===x.name))
+    features.push({...x,kind:'river',rank:80,canonicalMyanmar:true});
+  }
+ }
  // Deltas: rotular sólo brazos que llegan a un vértice litoral L8.
  if(deltas)for(const item of deltas.channels){
   features.push({name:item.name,center:item.waypoints[Math.floor(item.waypoints.length/2)]||item.join,
@@ -294,6 +332,7 @@
    if(item.himalayaMountain&&!himalaya?.isDrawnFeature?.(item.name))continue;
    if(item.peninsulaMountain&&!peninsulaRoutes?.isDrawnFeature?.(item.name))continue;
    if(item.sriMountain&&!sriRelief?.isDrawnFeature?.(item.name))continue;
+   if(item.myanmarFeature&&!myanmarRender?.isDrawnFeature?.(item.name))continue;
    if(item.sriFeature&&!sriPlacement?.valid(item))continue;
    if(item.indiaRiver&&!indiaRivers?.isDrawnFeature?.(item.name))continue;
    if(item.indianTributary&&!indianRivers?.isDrawnFeature?.(item.name))continue;
@@ -333,7 +372,7 @@
  function cellInfo(lat,lon){
   const result=source.regionsAt(lat,lon);
   const local=(europe?.naturalAt(lat,lon)||[]).concat(detail?.naturalAt(lat,lon)||[],asia?.naturalAt(lat,lon)||[]);
-  const naturalNames=result.natural.concat(local,centralData?.regionsNear(lon,lat)||[],himalayaData?.regionsNear(lon,lat)||[],indianHydro?.regionsNear(lon,lat)||[],deltas?.regionsNear(lon,lat)||[],peninsula?.regionsNear(lon,lat)||[],indiaHydro?.regionsNear(lon,lat)||[],sri?.regionsNear(lon,lat)||[])
+  const naturalNames=result.natural.concat(local,centralData?.regionsNear(lon,lat)||[],himalayaData?.regionsNear(lon,lat)||[],indianHydro?.regionsNear(lon,lat)||[],deltas?.regionsNear(lon,lat)||[],peninsula?.regionsNear(lon,lat)||[],indiaHydro?.regionsNear(lon,lat)||[],sri?.regionsNear(lon,lat)||[],myanmar?.regionsNear(lon,lat)||[])
    .filter((v,i,a)=>a.findIndex(x=>x.name.toLocaleLowerCase('es-ES')===v.name.toLocaleLowerCase('es-ES'))===i)
    .slice(0,5).map(r=>escapeHTML(r.name)).join(' · ');
   const historicalName=result.historical?.name||europe?.historicalAt(lat,lon)?.name||'';
@@ -352,7 +391,7 @@
     const old=source.regionsAt(lat,lon);
     const areas=old.natural.concat(europe?.naturalAt(lat,lon)||[],
      detail?.naturalAt(lat,lon)||[],asia?.naturalAt(lat,lon)||[],
-     centralData?.regionsNear(lon,lat)||[],himalayaData?.regionsNear(lon,lat)||[],indianHydro?.regionsNear(lon,lat)||[],deltas?.regionsNear(lon,lat)||[],peninsula?.regionsNear(lon,lat)||[],indiaHydro?.regionsNear(lon,lat)||[],sri?.regionsNear(lon,lat)||[]);
+     centralData?.regionsNear(lon,lat)||[],himalayaData?.regionsNear(lon,lat)||[],indianHydro?.regionsNear(lon,lat)||[],deltas?.regionsNear(lon,lat)||[],peninsula?.regionsNear(lon,lat)||[],indiaHydro?.regionsNear(lon,lat)||[],sri?.regionsNear(lon,lat)||[],myanmar?.regionsNear(lon,lat)||[]);
     return {natural:areas.filter((v,i,a)=>a.findIndex(x=>
       x.name.toLocaleLowerCase('es-ES')===v.name.toLocaleLowerCase('es-ES'))===i),
       historical:old.historical||europe?.historicalAt(lat,lon)||null};
