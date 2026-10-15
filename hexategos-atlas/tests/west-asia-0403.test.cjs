@@ -50,7 +50,7 @@ test('Oriente Próximo: resolución diferida sobre vértices y aristas terrestre
   land:new Int16Array([1,1,1,-1]),
   offsets:new Uint32Array([0,3,6,9,9]),
   adj:new Uint32Array([0,1,4,1,2,4,2,3,4]),
-  edgeNbr:new Int32Array([-1,1,-1,0,2,-1,1,3,-1])
+  edgeNbr:new Int32Array([-1,1,-1,0,2,-1,3,1,-1])
  };
  const P={n:1,centers:new Int16Array(point(35,40.3))};
  const groups={offsets:new Uint32Array([0,3]),ids:new Uint32Array([0,1,2])};
