@@ -177,7 +177,7 @@ test('Atlas físico compartido de Hexategos Pruebas: entrada real y alternativa'
   assert.ok(html.includes('id="landingAtlasPhysical0400"'));
   assert.ok(pre.includes('window.__atlasOriginalTerrain0400=drawTerrain3212'));
   assert.ok(post.includes('drawGeographicLabels3243=function'));
-  assert.ok(post.includes("mapMode3252==='supply'"));
+  assert.ok(post.includes("mapMode3252!=='terrain'&&mapMode3252!=='political'"));
   assert.ok(!post.includes('owner6='));
   assert.ok(!post.includes('L.land[i]='));
   assert.ok(!post.includes('setInterval('));
