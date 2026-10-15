@@ -241,3 +241,45 @@ test('Puente jugable: compatibilidad de dibujo, apagado y suministro',()=>{
  w.drawGeographicLabels3243(1000,500,500);
  assert.equal(calls.oldLabels,2);
 });
+
+
+test('Atlas Asia 0.40.1: regiones compartidas, colores, zoom y puente jugable',()=>{
+ const dataPath=path.resolve(root,'../hexategos-pruebas/game/data/geo-asia-regions-0401.js');
+ const code=fs.readFileSync(dataPath,'utf8');
+ new vm.Script(code,{filename:'geo-asia-regions-0401.js'});
+ const box={window:{}};
+ vm.runInNewContext(code,box);
+ const asia=box.window.HexategosAsiaRegions0401;
+ assert.equal(asia.macro.length,52);
+ assert.equal(asia.naturalRegions.length,78);
+ assert.ok(asia.macro.some(r=>r.name==='Himalaya'&&r.kind==='mountain'));
+ assert.ok(asia.macro.some(r=>r.name==='Mar de Japón'&&r.kind==='water'));
+ assert.ok(asia.naturalAt(28.8,83).some(r=>r.name==='Himalaya Central'));
+ assert.ok(asia.naturalAt(36.4,116).some(r=>r.name==='Llanura del Norte de China'));
+ assert.equal(asia.naturalAt(40,-4).length,0);
+ const labels={window:{}};
+ vm.runInNewContext(read('atlas-label-style-0399.js'),labels);
+ const classify=labels.window.HexategosAtlasLabelStyle0399.category;
+ assert.equal(classify({kind:'mountain',name:'Himalaya'}),'mountain');
+ assert.equal(classify({kind:'land',name:'Meseta del Tíbet'}),'land');
+ assert.equal(classify({kind:'water',name:'Mar de Japón'}),'water');
+ const macro=read('atlas-macro-0396.js'),region=read('atlas-regions-0390.js');
+ assert.ok(macro.includes('HexategosAsiaRegions0401?.macro'));
+ assert.ok(region.includes('asia?.naturalRegions'));
+ assert.ok(region.includes('asia?.naturalAt(lat,lon)'));
+ const html=read('index.html');
+ assert.ok(html.indexOf('geo-asia-regions-0401.js')<html.indexOf('atlas-macro-0396.js'));
+ for(const dir of ['game','toponimos-game']){
+  const folder=path.resolve(root,'../hexategos-pruebas/'+dir);
+  const gameHtml=fs.readFileSync(path.join(folder,'index.html'),'utf8');
+  const bridge=fs.readFileSync(path.join(folder,'js/atlas-bridge-0400.js'),'utf8');
+  const game=fs.readFileSync(path.join(folder,'js/atlas-integration-0400.js'),'utf8');
+  new vm.Script(bridge);new vm.Script(game);
+  assert.ok(gameHtml.includes('geo-asia-regions-0401.js'));
+  assert.ok(gameHtml.indexOf('geo-asia-regions-0401.js')<gameHtml.indexOf('atlas-macro-0396.js'));
+  assert.ok(bridge.includes('visibleAsia'));
+  assert.ok(game.includes('bridge.visibleAsia()'));
+  assert.ok(!game.includes('L.land[i]='));
+  assert.ok(!game.includes('owner6='));
+ }
+});
