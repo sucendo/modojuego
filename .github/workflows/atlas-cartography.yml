@@ -4,10 +4,14 @@ on:
     branches: [main]
     paths:
       - 'hexategos-atlas/**'
+      - 'hexategos-pruebas/game/**'
+      - 'hexategos-pruebas/toponimos-game/**'
       - '.github/workflows/atlas-cartography.yml'
   pull_request:
     paths:
       - 'hexategos-atlas/**'
+      - 'hexategos-pruebas/game/**'
+      - 'hexategos-pruebas/toponimos-game/**'
       - '.github/workflows/atlas-cartography.yml'
   workflow_dispatch:
 permissions:

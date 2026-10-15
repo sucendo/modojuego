@@ -148,3 +148,39 @@ test('La pintura efectiva del canvas respeta los tres colores de macrotopónimos
   assert.equal(entry.stroke,'rgba(7,18,28,.88)');
  }
 });
+
+
+test('Atlas físico compartido de Hexategos Pruebas: entrada real y alternativa',()=>{
+ const gameRoot=path.resolve(ROOT,'../hexategos-pruebas');
+ const dataRoot=path.join(gameRoot,'game/data');
+ for(const file of ['iberia-physical-atlas-v1.js','geo-europe-regions-0395.js',
+  'geo-europe-detail-0396.js','geo-landcover-0391.js',
+  'geo-europe-landcover-0395.js','geo-europe-secondary-0396.js'])
+  assert.ok(fs.existsSync(path.join(dataRoot,file)),'Falta dato común '+file);
+ const modules=[
+  'atlas-iberia-edges-v2.js','atlas-europe-hydro-0395.js',
+  'atlas-europe-mountains-0396.js','atlas-europe-secondary-0396.js',
+  'atlas-europe-lakes-0396.js','atlas-label-style-0399.js',
+  'atlas-macro-0396.js','atlas-europe-straits-0397.js','atlas-regions-0390.js'
+ ];
+ for(const dir of ['game','toponimos-game']){
+  const folder=path.join(gameRoot,dir),html=fs.readFileSync(path.join(folder,'index.html'),'utf8');
+  const pre=fs.readFileSync(path.join(folder,'js/atlas-bridge-0400.js'),'utf8');
+  const post=fs.readFileSync(path.join(folder,'js/atlas-integration-0400.js'),'utf8');
+  new vm.Script(pre);new vm.Script(post);
+  const a=html.indexOf('js/atlas-bridge-0400.js'),b=html.indexOf('js/atlas-integration-0400.js');
+  assert.ok(a>html.indexOf('js/game.js')&&b>a,'Puente debe seguir al motor');
+  for(const name of modules){
+   const where=html.indexOf('../../hexategos-atlas/'+name);
+   assert.ok(where>a&&where<b,'Módulo compartido fuera de orden: '+name);
+  }
+  assert.ok(html.includes('id="landingAtlasPhysical0400"'));
+  assert.ok(pre.includes('window.__atlasOriginalTerrain0400=drawTerrain3212'));
+  assert.ok(post.includes('drawGeographicLabels3243=function'));
+  assert.ok(post.includes("mapMode3252==='supply'"));
+  assert.ok(!post.includes('owner6='));
+  assert.ok(!post.includes('L.land[i]='));
+  assert.ok(!post.includes('setInterval('));
+  assert.ok(!html.includes('atlas-coast-0399.js'));
+ }
+});
