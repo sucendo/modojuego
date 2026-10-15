@@ -1101,11 +1101,28 @@ function apexRivalOccludedByWorldObjectCanvas(c,p,cam,pitch){
  if(rendererBackendId()!=='canvas2d'||!c||!p)return false;for(const o of apexBuildRivalCanvasOccluders(cam,pitch)){if(o.z>=c.z-.45||p.x<o.minX||p.x>o.maxX||p.y<o.minY||p.y>o.maxY)continue;if(apexPointInScreenPoly(p.x,p.y,o.poly))return true;}return false;
 }
 
+function apexRivalRenderState(r,L){
+ const now=performance.now(),targetS=Number(r.s)||0,targetLat=Number(r.lat)||0,targetYaw=Number(r.yawKick)||0;
+ let st=r._apexRenderState;
+ if(!st||!Number.isFinite(st.s)){st={s:targetS,lat:targetLat,yaw:targetYaw,targetS,targetLat,t:now};r._apexRenderState=st;return st;}
+ const dt=clamp((now-(st.t||now))/1000,.001,.12),targetJump=Math.abs(wrapDeltaS(targetS,Number.isFinite(st.targetS)?st.targetS:targetS,L)),plausible=Math.max(2.2,(Number(r.speed)||0)*dt*2.15+1.4);
+ st.targetS=targetS;st.targetLat=targetLat;st.t=now;
+ if(targetJump>plausible){
+   const a=1-Math.exp(-dt*15);
+   st.s=mod(st.s+wrapDeltaS(targetS,st.s,L)*a,L);
+   st.lat=lerp(st.lat,targetLat,1-Math.exp(-dt*17));
+   st.yaw=lerp(st.yaw,targetYaw,1-Math.exp(-dt*18));
+ }else{
+   st.s=targetS;st.lat=targetLat;st.yaw=targetYaw;
+ }
+ return st;
+}
 function collectRivalSprites(cam,pitch){
  const arr=[];apexRivalLodFrameStats={visible:0,near:0,mid:0,far:0,gpu3d:0,gpuFull:0,gpuMid:0,gpuLow:0,canvasFallback:0};
  const rivalMax=apexRivalStableVisibilityMax(),isCanvas=rendererBackendId()==='canvas2d';
  for(const r of rivals){
-   const q=renderRibbonFrameAt(r.s),surface=trackSurfacePoseAt(r.s,r.lat,.014),wx=surface.x,wz=surface.z,c=worldToCamera(wx,surface.y,wz,cam);
+   const L=trackData.km*1000,rs=apexRivalRenderState(r,L),renderS=rs.s,renderLat=rs.lat;
+   const q=renderRibbonFrameAt(renderS),surface=trackSurfacePoseAt(renderS,renderLat,.014),wx=surface.x,wz=surface.z,c=worldToCamera(wx,surface.y,wz,cam);
    const vkey=String(r.id??r.driverId??r.number??r.team??'rival'),vst=apexRivalVisibilityState.get(vkey)||{visible:false};
    const enterMax=rivalMax,exitMax=rivalMax+55;
    if(c.z<2.2||c.z>(vst.visible?exitMax:enterMax)){vst.visible=false;apexRivalVisibilityState.set(vkey,vst);continue;}
@@ -1122,7 +1139,7 @@ function collectRivalSprites(cam,pitch){
      apexRivalOcclusionState.set(key,st);
      if(st.hidden)continue;
    }
-   const rh=Math.atan2(q.tx,q.tz)+(r.yawKick||0),rfx=Math.sin(rh),rfz=Math.cos(rh);
+   const rh=Math.atan2(q.tx,q.tz)+(Number.isFinite(rs.yaw)?rs.yaw:(r.yawKick||0)),rfx=Math.sin(rh),rfz=Math.cos(rh);
    const toCamX=cam.x-wx,toCamZ=cam.z-wz,dist=Math.hypot(toCamX,toCamZ)||1;
    const dirX=toCamX/dist,dirZ=toCamZ/dist;
    const facing=rfx*dirX+rfz*dirZ; // >0 nose towards camera
