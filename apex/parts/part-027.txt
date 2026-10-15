@@ -330,13 +330,13 @@ function finishRace(){
 
  const playerTeamKey=(currentMode==='season'&&save.seasonTeam)?save.seasonTeam:selectedTeamKey();
  const entries=[
-   {id:0,uid:'PLAYER',name:'TÚ',team:playerTeamKey,finished:true,finishTime:raceT,total:apexRaceTimingGeometry(trackData.spec,player.laps).raceDistance,laps:player.lap,bestLap:best},
-   ...rivals.map(r=>({id:r.id,uid:raceIdentity(r.id),name:raceName(r.id),team:r.team,finished:r.finished,finishTime:r.finishTime,total:r.total,laps:r.completedLaps||0,bestLap:r.bestLap}))
+   {id:0,uid:'PLAYER',name:'TÚ',team:playerTeamKey,finished:true,finishTime:raceT,total:Number(player.total)||0,finishProgress:Number(player.total)||0,laps:Number(player.lap)||0,bestLap:best},
+   ...rivals.map(r=>({id:r.id,uid:raceIdentity(r.id),name:raceName(r.id),team:r.team,finished:!!r.finished,finishTime:r.finishTime,total:Number(r.total)||0,finishProgress:Number.isFinite(r.finishProgress)?r.finishProgress:null,laps:Number(r.completedLaps)||0,bestLap:r.bestLap}))
  ];
  entries.sort((a,b)=>{
-   if(a.finished&&b.finished)return a.finishTime-b.finishTime;
+   if(a.finished&&b.finished)return (a.finishTime??Infinity)-(b.finishTime??Infinity);
    if(a.finished!==b.finished)return a.finished?-1:1;
-   return b.total-a.total;
+   return apexRaceEntryProgress(b)-apexRaceEntryProgress(a);
  });
  finishOrder=entries.map(x=>x.id);
  const p=finishOrder.indexOf(0)+1;
@@ -366,7 +366,7 @@ function finishRace(){
      const selfLaps=e.laps||0;
      gap='+'+Math.max(1,winnerLaps-selfLaps)+' LAP';
    }
-   return {...e,_raceId:e.id,gap,laps:e.laps||player.laps||0,extra:Number.isFinite(e.bestLap)?('Best '+fmt(e.bestLap)):''};
+   return {...e,_raceId:e.id,gap,laps:Number.isFinite(e.laps)?e.laps:0,extra:Number.isFinite(e.bestLap)?('Best '+fmt(e.bestLap)):''};
  });
 
  const pages=buildRaceFinishPages(trackData.spec,rows,p);
