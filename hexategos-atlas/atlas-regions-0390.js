@@ -7,6 +7,7 @@
 (function(){
  const source=window.HexategosGeoRegions0390;
  const europe=window.HexategosEuropeRegions0395;
+ const asia=window.HexategosAsiaRegions0401;
  const detail=window.HexategosEuropeDetail0396;
  const lakes=window.HexategosEuropeLakes0396;
  const supplemental=window.HexategosEuropeSecondary0396;
@@ -33,8 +34,8 @@
   name:x.name,center:x.center,kind:'historical',rank:56,minZoom:5.5
  })));
  const physical=window.HEXATEGOS_IBERIA_PHYSICAL_V1;
- const natural=source.physicalRegions.concat(europe?.naturalRegions||[],detail?.naturalRegions||[]).map(reg=>({
-   name:reg.name,center:reg.center,kind:'natural',
+ const natural=source.physicalRegions.concat(europe?.naturalRegions||[],detail?.naturalRegions||[],asia?.naturalRegions||[]).map(reg=>({
+   name:reg.name,center:reg.center,kind:reg.kind==='mountain'?'mountain':'natural',
    rank:reg.priority,
    minZoom:reg.minZoom||(europe?.naturalRegions.includes(reg)?
      (reg.priority<=75?2.8:reg.priority<=85?5.2:8):
@@ -148,7 +149,7 @@
  }
  function cellInfo(lat,lon){
   const result=source.regionsAt(lat,lon);
-  const local=(europe?.naturalAt(lat,lon)||[]).concat(detail?.naturalAt(lat,lon)||[]);
+  const local=(europe?.naturalAt(lat,lon)||[]).concat(detail?.naturalAt(lat,lon)||[],asia?.naturalAt(lat,lon)||[]);
   const naturalNames=result.natural.concat(local).slice(0,5).map(r=>escapeHTML(r.name)).join(' · ');
   const historicalName=result.historical?.name||europe?.historicalAt(lat,lon)?.name||'';
   const nearbyLakes=lakes?.nearby(lat,lon)||[];
@@ -164,7 +165,7 @@
    version:'0.39.9',draw,cellInfo,occupied:()=>lastBoxes,
    regionsAt:(lat,lon)=>{
     const old=source.regionsAt(lat,lon);
-    return {natural:old.natural.concat(europe?.naturalAt(lat,lon)||[],detail?.naturalAt(lat,lon)||[]),
+    return {natural:old.natural.concat(europe?.naturalAt(lat,lon)||[],detail?.naturalAt(lat,lon)||[],asia?.naturalAt(lat,lon)||[]),
       historical:old.historical||europe?.historicalAt(lat,lon)||null};
    }
  });
