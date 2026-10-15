@@ -117,7 +117,7 @@
    }
    const v=G.vertexMap.get(id);
    for(const u of G.neighbors.get(id)||[]){
-    if(river&&(G.coastEdges.has(key(id,u))||G.bodyEdges.has(key(id,u))))continue;
+    if(G.coastEdges.has(key(id,u))||G.bodyEdges.has(key(id,u)))continue;
     const p=G.vertexMap.get(u),length=greatCircle(v,p);
     const dev=deviation({lat:(p.lat+v.lat)/2,lon:(p.lon+v.lon)/2},origin,target);
     const next=cost+length*(1+.010*Math.min(130,dev));
@@ -208,7 +208,7 @@
   if(!reason&&all.length<2)reason='accidente menor que arista L8';
   if(!reason){
    for(let i=1;i<all.length;i++){
-    if(!G.neighbors.get(all[i-1])?.has(all[i])||(river&&(G.coastEdges.has(key(all[i-1],all[i]))||G.bodyEdges.has(key(all[i-1],all[i]))))){
+    if(!G.neighbors.get(all[i-1])?.has(all[i])||G.coastEdges.has(key(all[i-1],all[i]))||G.bodyEdges.has(key(all[i-1],all[i]))){
      reason='arista no válida';break;
     }
    }
