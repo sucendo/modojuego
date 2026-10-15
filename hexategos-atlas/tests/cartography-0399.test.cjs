@@ -151,7 +151,7 @@ test('La pintura efectiva del canvas respeta los tres colores de macrotopónimos
 
 
 test('Atlas físico compartido de Hexategos Pruebas: entrada real y alternativa',()=>{
- const gameRoot=path.resolve(ROOT,'../hexategos-pruebas');
+ const gameRoot=path.resolve(root,'../hexategos-pruebas');
  const dataRoot=path.join(gameRoot,'game/data');
  for(const file of ['iberia-physical-atlas-v1.js','geo-europe-regions-0395.js',
   'geo-europe-detail-0396.js','geo-landcover-0391.js',
