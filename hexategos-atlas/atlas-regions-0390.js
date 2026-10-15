@@ -31,7 +31,9 @@
  const natural=source.physicalRegions.concat(europe?.naturalRegions||[]).map(reg=>({
    name:reg.name,center:reg.center,kind:'natural',
    rank:reg.priority,
-   minZoom:reg.priority>=95?11:reg.priority>=80?8:reg.priority>=70?6:4.8
+   minZoom:europe?.naturalRegions.includes(reg)?
+     (reg.priority<=75?2.8:reg.priority<=85?5.2:8):
+     (reg.priority>=95?11:reg.priority>=80?8:reg.priority>=70?6:4.8)
  }));
  const features=[];
  let europeFeatures=null;
