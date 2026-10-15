@@ -283,3 +283,79 @@ test('Atlas Asia 0.40.1: regiones compartidas, colores, zoom y puente jugable',(
   assert.ok(!game.includes('owner6='));
  }
 });
+
+
+test('Ecotonos 0.40.2: se suavizan los cortes rectangulares sin alterar L8',()=>{
+ const shared=path.resolve(root,'../hexategos-pruebas/game/data/geo-landcover-transitions-0402.js');
+ const code=fs.readFileSync(shared,'utf8');
+ new vm.Script(code,{filename:'geo-landcover-transitions-0402.js'});
+ const untouched=[1,3,5,7];
+ let classifications=0;
+ const ctx={
+  window:{HexategosLandCover0391:{
+   types:[{color:[20,100,40]},{color:[215,178,108]}],
+   classify(lat,lon,biome){
+    classifications++;
+    return biome==='forest'?0:1;
+   }
+  }},
+  terrainClimateCode3247:(lat)=>lat>=40?5:3,
+  TERRAIN_CODES3247:['plain','ice','tundra','desert','rainforest','forest'],
+  COUNTRY_ISO:['ESP','CHN'],
+  MAX_GAME_LEVEL3233:'8',
+  mountainTier3212:new Uint8Array(4),
+  console
+ };
+ vm.runInNewContext(code,ctx);
+ const api=ctx.window.HexategosLandCoverTransitions0402;
+ assert.ok(api);
+ const at=(lat,lon)=>api.preview(lat,lon,'CHN',0);
+ const south=at(35,65),north=at(45,65);
+ assert.ok(south[0]>north[0]);
+ // La franja de transición no es un corte de 195 unidades entre
+ // dos casillas vecinas: se calculan colores intermedios reproducibles.
+ const samples=[];
+ for(let i=0;i<=100;i++)samples.push(at(37+i*.06,66));
+ assert.ok(samples.some(c=>c[0]>20&&c[0]<215),'Falta mezcla en el ecotono');
+ let maxDiff=0;
+ for(let i=1;i<samples.length;i++)
+  maxDiff=Math.max(maxDiff,Math.abs(samples[i][0]-samples[i-1][0]));
+ assert.ok(maxDiff<150,'Salto excesivo entre celdas próximas: '+maxDiff);
+ assert.deepEqual(at(40,66),at(40,66),'Determinismo cromático');
+ // No hay mutación de ninguna matriz del juego.
+ const scale=32767,rad=Math.PI/180,make=(lat,lon)=>[
+  Math.round(Math.cos(lat*rad)*Math.sin(lon*rad)*scale),
+  Math.round(Math.sin(lat*rad)*scale),
+  Math.round(Math.cos(lat*rad)*Math.cos(lon*rad)*scale)
+ ];
+ const L={n:4,land:new Int16Array(untouched),centers:new Int16Array([
+  ...make(39.5,65),...make(40,65),...make(40.5,65),...make(41,65)
+ ])};
+ const snapshot=[...L.land],centers=[...L.centers];
+ for(let i=0;i<4;i++)assert.ok(api.color('8',i,L)?.length===3);
+ const calls=classifications;
+ for(let i=0;i<4;i++)api.color('8',i,L);
+ assert.equal(classifications,calls,'La misma celda no debe reclasificarse');
+ assert.deepEqual([...L.land],snapshot);
+ assert.deepEqual([...L.centers],centers);
+ assert.equal(api.cacheBytes(),L.n*4);
+});
+
+test('Atlas y los dos juegos activan el suavizado sin mezclar capas estratégicas',()=>{
+ const html=read('index.html');
+ assert.ok(html.includes('geo-landcover-transitions-0402.js'));
+ assert.ok(html.indexOf('geo-landcover-transitions-0402.js')<html.indexOf('atlas-landcover-0391.js'));
+ assert.ok(read('atlas-landcover-0391.js').includes('ecotone?.color(key,i,L)'));
+ for(const dir of ['game','toponimos-game']){
+  const folder=path.resolve(root,'../hexategos-pruebas/'+dir);
+  const h=fs.readFileSync(path.join(folder,'index.html'),'utf8');
+  const src=fs.readFileSync(path.join(folder,'js/atlas-integration-0400.js'),'utf8');
+  assert.ok(h.includes('geo-landcover-transitions-0402.js'));
+  assert.ok(h.indexOf('geo-landcover-transitions-0402.js')<h.indexOf('atlas-integration-0400.js'));
+  assert.ok(src.includes('regionWeight('));
+  assert.ok(src.includes('ecotones?.color(key,i,L)'));
+  assert.ok(src.includes("mapMode3252!=='terrain'&&mapMode3252!=='political'"));
+  assert.ok(!src.includes('owner6='));
+  assert.ok(!src.includes('L.land[i]='));
+ }
+});
