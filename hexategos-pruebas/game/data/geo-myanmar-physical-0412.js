@@ -19,7 +19,7 @@
    minZoom:7.7,elevationM:2080},
   {name:'Montes Tenasserim',points:[[98.7,16.0],[98.6,14.85],[98.7,13.45],[99.0,12.2]],
    minZoom:7.1,elevationM:2072},
-  {name:'Montes Bilauktaung',points:[[98.55,13.1],[98.6,12.1],[98.9,11.0]],
+  {name:'Montes Bilauktaung',points:[[98.75,13.45],[98.70,12.70],[98.80,12.15]],
    minZoom:8.2,elevationM:1816},
   {name:'Montes Shan septentrionales',points:[[97.23,24.6],[97.6,23.55],[98.35,22.1]],
    minZoom:8.4,elevationM:2600},

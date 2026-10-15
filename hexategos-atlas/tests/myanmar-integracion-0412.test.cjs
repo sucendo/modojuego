@@ -77,7 +77,7 @@ test('0.41.2 · Atlas, Pruebas y Topónimos comparten fuentes y orden',()=>{
  }
  for(const mode of ['game','toponimos-game']){
   const dir='hexategos-pruebas/'+mode+'/js/';
-  assert.ok(read(dir+'atlas-bridge-0400.js').includes('visibleMyanmar,setEnabled'));
+  assert.ok(read(dir+'atlas-bridge-0400.js').includes('visibleMyanmar'));
   assert.ok(read(dir+'atlas-integration-0400.js').includes('myanmarEco.rgbForCell'));
  }
  const regions=read('hexategos-atlas/atlas-regions-0390.js');

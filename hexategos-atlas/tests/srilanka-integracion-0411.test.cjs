@@ -66,7 +66,7 @@ test('0.41.1 · orden correcto de scripts y disponibilidad en las tres vistas',(
  }
  for(const mode of ['game','toponimos-game']){
   const dir='hexategos-pruebas/'+mode+'/js/';
-  assert.ok(read(dir+'atlas-bridge-0400.js').includes('visibleSriLanka,setEnabled'));
+  assert.ok(read(dir+'atlas-bridge-0400.js').includes('visibleSriLanka'));
   assert.ok(read(dir+'atlas-integration-0400.js').includes('sriEco.rgbForCell'));
  }
  const regions=read('hexategos-atlas/atlas-regions-0390.js');

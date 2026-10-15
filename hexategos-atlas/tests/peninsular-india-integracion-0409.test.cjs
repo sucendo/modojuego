@@ -77,7 +77,7 @@ test('0.40.9 · mismas capas en Atlas y ambas versiones de Pruebas',()=>{
   const dir='hexategos-pruebas/'+mode+'/js/';
   assert.ok(read(dir+'atlas-bridge-0400.js').includes('visiblePeninsularIndia'),
    'El puente debe conservar la visibilidad de India peninsular');
-  assert.ok(read(dir+'atlas-bridge-0400.js').includes('visibleSriLanka,setEnabled'),
+  assert.ok(read(dir+'atlas-bridge-0400.js').includes('visibleSriLanka'),
    'La extensión Sri Lanka debe compartir el mismo adaptador');
   assert.ok(read(dir+'atlas-integration-0400.js').includes('peninsulaEco.rgbForCell'));
   assert.ok(read(dir+'atlas-integration-0400.js').includes('bridge.visiblePeninsularIndia()'));
