@@ -275,6 +275,7 @@ canvas.addEventListener('dblclick',e=>{e.preventDefault();zoom=clamp(zoom*1.8,.6
 $('plus').onclick=()=>{zoom=clamp(zoom*1.5,.62,40);invalidate();};
 $('minus').onclick=()=>{zoom=clamp(zoom/1.5,.62,40);invalidate();};
 $('iberia').onclick=()=>rotateToGeo(-3.7,40.4,22);
+$('europe').onclick=()=>rotateToGeo(13.0,50.5,3.0);
 $('world').onclick=()=>rotateToGeo(-3.7,40.4,1);
 $('grid').onchange=e=>{showGrid=e.target.checked;invalidate();};
 $('names').onchange=e=>{showLabels=e.target.checked;invalidate();};
