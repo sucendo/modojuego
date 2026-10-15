@@ -66,6 +66,14 @@
     kind:'lake',rank:68,minZoom:lake.minZoom+1,westAsia:true});
   }
  }
+ // Los grandes cauces del Oriente Próximo ya existen en la malla
+ // canónica; aquí sólo se muestra su nombre, no se duplica el trazado.
+ for(const item of [
+  {name:'Tigris',center:[44.5,35.2],kind:'river',rank:83,minZoom:7.1},
+  {name:'Éufrates',center:[42.5,35.0],kind:'river',rank:84,minZoom:7.1}
+ ]){
+  if(MAP_RIVERS3242.some(sys=>sys.n===item.name))features.push(item);
+ }
  // Los accidentes secundarios aparecen al aproximarse al territorio;
  // sus rótulos no alteran ni sustituyen las geometrías canónicas.
  if(supplemental){
