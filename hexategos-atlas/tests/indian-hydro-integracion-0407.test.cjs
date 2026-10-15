@@ -12,8 +12,10 @@ test('0.40.7: cuencas y afluentes sin duplicar los cauces madre',()=>{
  const D=getData();
  assert.equal(D.version,'0.40.7');
  assert.equal(D.trunk.length,4);
- assert.equal(D.rivers.length,20);
- assert.equal(D.rivers.find(x=>x.name==='Yarlung Tsangpo').kind,'upstreamContinuation');
+ assert.equal(D.rivers.length,23);
+ for(const n of ['Yarlung Tsangpo','Indo alto (Ladakh)','Ganges alto','Yamuna alta']){
+  assert.equal(D.rivers.find(x=>x.name===n)?.kind,'upstreamContinuation',n);
+ }
  assert.equal(D.basins.length,9);
  const uniq=arr=>assert.equal(new Set(arr.map(x=>x.name)).size,arr.length);
  for(const arr of [D.rivers,D.trunk,D.basins])uniq(arr);

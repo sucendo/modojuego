@@ -7,6 +7,13 @@
  */
 (function(){
  const rivers=[
+  // El cauce Indo nativo empieza en el Himalaya noroccidental.
+  // Prolongar la cabecera por Ladakh sólo mientras falte en la red base.
+  {name:'Indo alto (Ladakh)',basin:'Indo',parent:'Indo',
+   join:[75.28,35.4],onlyIfMissingNear:[81.2,31.2],
+   points:[[81.2,31.2],[80.05,32.05],[79.0,32.65],
+    [77.59,34.15],[76.4,34.67],[75.28,35.4]],
+   minZoom:7.2,maxWidth:137,kind:'upstreamContinuation'},
   // Indo: cinco ríos del Punjab -> Panjnad -> Indo.
   {name:'Panjnad',basin:'Indo',parent:'Indo',join:[70.97,28.93],
    points:[[71.55,29.45],[71.31,29.18],[71.08,29.00]],
@@ -40,6 +47,16 @@
     [76.05,34.97],[75.65,35.22]],
    minZoom:9,maxWidth:78},
   // Ganges: cabeceras y afluentes de la llanura gangética.
+  {name:'Ganges alto',basin:'Ganges',parent:'Ganges',
+   join:[78.09,29.86],onlyIfMissingNear:[78.94,30.91],
+   points:[[78.94,30.91],[78.72,30.54],[78.63,30.16],
+    [78.3,30.05],[78.09,29.86]],
+   minZoom:8.1,maxWidth:108,kind:'upstreamContinuation'},
+  {name:'Yamuna alta',basin:'Ganges',parent:'Yamuna',
+   join:[76.99,29.76],onlyIfMissingNear:[78.45,31.03],
+   points:[[78.45,31.03],[78.12,30.71],[77.7,30.22],[76.99,29.76]],
+   minZoom:8.4,maxWidth:93,kind:'upstreamContinuation'},
+
   {name:'Ghaghara (Karnali)',basin:'Ganges',parent:'Ganges',join:[84.00,25.72],
    points:[[81.7,30.14],[81.33,29.35],[81.23,28.7],
     [81.35,28.22],[81.8,27.43],[82.55,26.55],[84.0,25.72]],
