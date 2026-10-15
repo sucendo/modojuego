@@ -42,6 +42,19 @@
   if(visiting.has(item.name))throw Error('Confluencia cíclica: '+item.name);
   visiting.add(item.name);
   const G=graph.prepare();
+  // Si una futura revisión del motor canónico prolonga el Brahmaputra
+  // hasta el Tíbet, dejar de pintar automáticamente el tramo supletorio.
+  if(item.onlyIfMissingNear){
+   const native=canonicalNodes(item.parent,G);
+   const origin=closest(native,item.onlyIfMissingNear,G);
+   if(origin.km<90){
+    visiting.delete(item.name);
+    cache.set(item.name,null);
+    reports.set(item.name,{name:item.name,ok:false,reason:
+     'El cauce canónico ya cubre esta cabecera; no se duplica'});
+    return null;
+   }
+  }
   let parentPath=null,nodes=null,parentType='canonical';
   const internal=data.rivers.find(r=>r.name===item.parent);
   if(internal){

@@ -98,6 +98,9 @@ test('Indo, Ganges y Brahmaputra: afluentes conectados a cauces reales L8',
    [+position.lon.toFixed(2),+position.lat.toFixed(2)]};
  };
  console.log('INDIAN_RIVERS_CANONICAL_COVERAGE',JSON.stringify({
+  IndusSource:spot('Indo',[81.0,31.2]),
+  GangesSource:spot('Ganges',[78.9,30.8]),
+  YamunaSource:spot('Yamuna',[78.5,31.0]),
   YarlungSource:spot('Brahmaputra',[82.3,30.6]),
   YarlungMiddle:spot('Brahmaputra',[88.5,29.3]),
   YarlungBend:spot('Brahmaputra',[94.7,29.4]),
@@ -110,6 +113,6 @@ test('Indo, Ganges y Brahmaputra: afluentes conectados a cauces reales L8',
  }));
  assert.equal(api.graphBuilds(),1);
  assert.ok(api.graphSize()>1000);
- assert.ok(ok.length>=13,'Demasiados afluentes sin resolver: '+JSON.stringify(failed));
+ assert.equal(ok.length,data.rivers.length,'Rutas sin resolver: '+JSON.stringify(failed));
  assert.equal(Buffer.from(L.land.buffer).toString('base64'),old);
 });

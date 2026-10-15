@@ -64,8 +64,14 @@
    points:[[81.77,22.78],[81.42,23.52],[81.26,24.21],
      [82.49,24.55],[83.68,24.51],[84.73,25.55]],
    minZoom:8.1,maxWidth:105,aliases:['Sone']},
-  // Brahmaputra: Yarlung/Tsangpo es denominación del cauce canónico
-  // en el Tíbet; no se genera una segunda red troncal superpuesta.
+  // Brahmaputra: el tramo alto tibetano se prolonga SÓLO si la red
+  // canónica aún no alcanza su cabecera. Termina en un vértice nativo.
+  {name:'Yarlung Tsangpo',basin:'Brahmaputra',parent:'Brahmaputra',
+   join:[95.2,28.42],onlyIfMissingNear:[82.3,30.6],
+   points:[[82.3,30.55],[83.9,29.65],[85.65,29.55],[87.4,29.28],
+     [89.0,29.22],[90.3,29.23],[91.7,29.15],[93.4,29.4],
+     [94.7,29.75],[95.3,29.25],[95.2,28.42]],
+   minZoom:7.0,maxWidth:130,kind:'upstreamContinuation'},
   {name:'Subansiri',basin:'Brahmaputra',parent:'Brahmaputra',join:[94.21,27.08],
    points:[[92.88,28.36],[93.4,27.92],[93.85,27.50],[94.21,27.08]],
    minZoom:8.2,maxWidth:103},
