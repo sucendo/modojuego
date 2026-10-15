@@ -1,0 +1,20 @@
+/* HEXATEGOS · C4 performance monitor. Opt-in diagnostics only. */
+.hexategosPerfPanel0396 {
+  position:fixed; z-index:100100; inset:70px 12px auto auto;
+  width:min(450px,calc(100vw - 24px)); max-height:min(75dvh,680px);
+  overflow:auto; box-sizing:border-box; padding:14px; border-radius:12px;
+  background:#101e2b; color:#f4f7fa; border:1px solid #577087;
+  box-shadow:0 18px 46px #0009; font:13px/1.5 system-ui,sans-serif;
+}
+.hexategosPerfPanel0396[hidden]{display:none!important}
+.hexategosPerfPanel0396 header{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.hexategosPerfPanel0396 header b{font-size:15px}
+.hexategosPerfPanel0396 button{cursor:pointer;border:1px solid #74899b;border-radius:7px;background:#22384b;color:inherit;padding:7px 10px;font:inherit;touch-action:manipulation}
+.hexategosPerfPanel0396 button:focus-visible{outline:2px solid #b5dbff;outline-offset:2px}
+.hexategosPerfPanel0396 button:disabled{opacity:.45;cursor:default}
+.hexategosPerfPanel0396 [data-perf-status]{color:#b3d7ec;margin:8px 0}
+.hexategosPerfPanel0396 pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#08121c;border-radius:7px;padding:10px;font:12px/1.7 ui-monospace,Consolas,monospace}
+.hexategosPerfPanel0396 footer{display:flex;flex-wrap:wrap;gap:7px;margin:8px 0}
+.hexategosPerfPanel0396 small{display:block;color:#bbcbd8}
+#hexategosPerfOpen0396{display:block;margin:8px 0;max-width:100%;padding:8px 12px}
+@media (max-width:650px){.hexategosPerfPanel0396{inset:12px 10px auto 10px;width:auto;max-height:85dvh}}
