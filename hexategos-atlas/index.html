@@ -60,7 +60,7 @@ footer{font-size:11px;line-height:1.5;color:#93abbc;margin-top:22px}footer a{col
 <div id="hover" role="tooltip" hidden></div><div id="stats">Cargando geometría original…</div>
 <div id="loading"><div class="card"><strong>HEXATEGOS · ATLAS</strong><p id="loadText">Cargando el renderizador y las mallas originales de Hexategos Pruebas…</p><div class="progress"><div id="bar"></div></div></div></div>
 </section><aside><div class="kicker">ATLAS GEOGRÁFICO</div><h1>El nombre de cada hexágono</h1>
-<p>El mismo globo geodésico y mallas L3–L8 que Hexategos Pruebas, sin naciones, economía, ejército ni simulación. Iberia incorpora ríos, cordilleras, regiones naturales e históricas y una nueva cobertura del suelo para cada hexágono (bosques, prados, cultivos, dehesas, matorral y más). Los bosques se representan exclusivamente mediante el color de los hexágonos. Los ríos ibéricos llegan hasta aristas que separan tierra y mar y varían de anchura por tramos físicos estimados. La cobertura es una estimación visual determinista, no cartografía satelital; no modifica la simulación. Pulsa una casilla para conocer su primera propuesta de topónimo.</p>
+<p>El mismo globo geodésico y mallas L3–L8 que Hexategos Pruebas, sin naciones, economía, ejército ni simulación. Iberia incorpora ríos, cordilleras, regiones naturales e históricas y una nueva cobertura del suelo para cada hexágono (bosques, prados, cultivos, dehesas, matorral y más). Los bosques se representan exclusivamente mediante el color de los hexágonos. Los ríos ibéricos siguen aristas interiores y terminan donde estas confluyen con la costa, sin recorrer sus aristas; su anchura varía por tramos físicos estimados. La cobertura es una estimación visual determinista, no cartografía satelital; no modifica la simulación. Pulsa una casilla para conocer su primera propuesta de topónimo.</p>
 <div class="search"><input type="search" id="search" placeholder="Buscar ciudad o latitud,longitud" aria-label="Buscar topónimo"><button id="searchBtn">Buscar</button></div>
 <div class="quick"><button data-place="40.4168,-3.7038">Madrid</button><button data-place="41.3874,2.1686">Barcelona</button><button data-place="37.8882,-4.7794">Córdoba</button><button data-place="38.7223,-9.1393">Lisboa</button></div>
 <div id="searchResults" hidden></div>
@@ -74,6 +74,6 @@ footer{font-size:11px;line-height:1.5;color:#93abbc;margin-top:22px}footer a{col
 <script src="../hexategos-pruebas/game/data/iberia-physical-atlas-v1.js?v=20261015-anchos"></script>
 <script src="../hexategos-pruebas/game/data/geo-regions-0390.js?v=0390-regions"></script>
 <script src="../hexategos-pruebas/game/data/geo-landcover-0391.js?v=0392-forest"></script>
-<script src="./atlas-iberia-edges-v2.js?v=20261015-desembocaduras-v5"></script><script src="./atlas-regions-0390.js?v=0390-regions"></script>
+<script src="./atlas-iberia-edges-v2.js?v=20261015-bocas-interseccion-v6"></script><script src="./atlas-regions-0390.js?v=0390-regions"></script>
 <script src="./atlas-landcover-0391.js?v=20261015-sin-iconos"></script>
 <script src="./atlas-ui.js?v=0391-landcover-inspector"></script></body></html>
