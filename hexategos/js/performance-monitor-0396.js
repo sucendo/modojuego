@@ -13,6 +13,7 @@
   let panel=null;
 
   function readNumber(value){
+    if(value===null||value===undefined)return null;
     const n=Number(value);
     return Number.isFinite(n)?Math.round(n*100)/100:null;
   }
@@ -95,7 +96,7 @@
       schema:'hexategos-performance-c4-v1',
       version:VERSION,
       generatedAt:new Date().toISOString(),
-      durationMs:Math.round((capturing?clock():stoppedWall||clock())-startedWall),
+      durationMs:startedWall?Math.max(0,Math.round((capturing?clock():stoppedWall||clock())-startedWall)):0,
       running:capturing,
       wrapped:{...wrapped},
       note:'Métricas CPU incluyentes: economy puede abarcar logística y diplomacia. Memoria JS solo cuando el navegador la expone; no equivale a RAM total.',
