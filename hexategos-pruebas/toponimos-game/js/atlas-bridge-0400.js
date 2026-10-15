@@ -59,6 +59,14 @@
   const margin=zoom<5?19:zoom<9?10:5;
   return lon>=69-margin&&lon<=89+margin&&lat>=7.2-margin&&lat<=26.5+margin;
  }
+ function visibleSriLanka(){
+  if(zoom<1.15)return false;
+  const lon=(((-yaw*180/Math.PI+180)%360+360)%360)-180;
+  const lat=pitch*180/Math.PI;
+  const margin=zoom<5?17:zoom<9?9:4;
+  return lon>=77.65-margin&&lon<=82.55+margin&&
+   lat>=5.35-margin&&lat<=10.65+margin;
+ }
  function setEnabled(value){
   enabled=!!value;
   try{localStorage.setItem(KEY,String(enabled))}catch(_){}
@@ -70,9 +78,9 @@
   control.addEventListener('change',()=>setEnabled(control.checked));
  }
  window.HexategosGameAtlasBridge0400=Object.freeze({
-  version:'0.40.0',enabled:()=>enabled,visibleEurope,visibleAsia,visibleWestAsia,visibleCentralAsia,visibleHimalaya,visiblePeninsularIndia,setEnabled,
+  version:'0.40.0',enabled:()=>enabled,visibleEurope,visibleAsia,visibleWestAsia,visibleCentralAsia,visibleHimalaya,visiblePeninsularIndia,visibleSriLanka,setEnabled,
   diagnostics:()=>({
-   enabled,europe:visibleEurope(),asia:visibleAsia(),westAsia:visibleWestAsia(),centralAsia:visibleCentralAsia(),himalaya:visibleHimalaya(),peninsularIndia:visiblePeninsularIndia(),
+   enabled,europe:visibleEurope(),asia:visibleAsia(),westAsia:visibleWestAsia(),centralAsia:visibleCentralAsia(),himalaya:visibleHimalaya(),peninsularIndia:visiblePeninsularIndia(),sriLanka:visibleSriLanka(),
    lakeRoutes:window.HexategosEuropeLakes0396?.diagnostics?.()||null,
    secondaryGraph:window.HexategosEuropeSecondaryRender0396?.graphSize?.()||0
   })

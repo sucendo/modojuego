@@ -19,6 +19,10 @@
   if(!features.some(y=>y.name.toLocaleLowerCase('es-ES')===
    x.name.toLocaleLowerCase('es-ES')))features.push({...x});
  }
+ for(const item of window.HexategosSriLankaPhysical0411?.macro||[]){
+  if(!features.some(f=>f.name.toLocaleLowerCase('es-ES')===
+   item.name.toLocaleLowerCase('es-ES')))features.push({...item});
+ }
  const handoffZoom=5.55;
  const labelStyle=window.HexategosAtlasLabelStyle0399;
  let occupied=[];
