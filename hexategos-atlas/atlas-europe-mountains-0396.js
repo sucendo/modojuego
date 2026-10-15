@@ -17,7 +17,7 @@
    return tier>=3?1.06:tier===2?.98:.89;
   }
   const h=clamp((r.elevationM-900)/4400,0,1);
-  const abrupt=clamp((r.ruggedness+(1-r.accessibility))/2);
+  const abrupt=clamp((r.ruggedness+(1-r.accessibility))/2,0,1);
   // Poco grosor: montaña accesible/ondulada.
   // Mayor presencia: altura y dureza del relieve, no importancia nominal.
   return clamp(.72+.49*h+.34*abrupt,.77,1.48);
