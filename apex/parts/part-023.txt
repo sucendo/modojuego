@@ -1845,12 +1845,21 @@ window.apexExportRivalSvg=exportRivalSvg;
 window.apexExportRivalSvgSet=exportRivalSvgSet;
 
 function teamBranding(key){
- const t=teamInfo(key),b=teamBrandCatalog[key]||{};
+ const t=teamInfo(key),b=teamBrandCatalog[key]||{},c=b.cockpit||{},rear=t.rearVisual||{};
  return {
    tyreColor:b.tyreColor||t.accent||"#ffd400",
    logo:b.logo||"swoosh",
    sponsor:b.sponsor||"slashes",
-   guard:b.guard||"line"
+   guard:b.guard||"line",
+   cockpit:{
+     secondary:c.secondary||rear.secondary||shadeColor(t.color,-45),
+     accent2:c.accent2||rear.stripe||t.accent||"#fff",
+     trim:c.trim||rear.trim||"#f3f4f5",
+     halo:c.halo||t.color,
+     pattern:c.pattern||rear.pattern||"clean",
+     wheel:c.wheel||t.accent||t.color,
+     logoScale:Number.isFinite(c.logoScale)?c.logoScale:1
+   }
  };
 }
 function teamPerformance(key){
