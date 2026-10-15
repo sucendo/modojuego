@@ -125,7 +125,8 @@
  function route(item,river){
   const cache=river?riverCache:mountainCache;
   if(cache.has(item.name))return cache.get(item.name);
-  const G=makeGraph(),waypoints=item.points.map(p=>closest(p,G)),path=[];
+  const G=makeGraph(),waypoints=(river&&item.mouth?
+    item.points.slice(0,-1):item.points).map(p=>closest(p,G)),path=[];
   let error=null;
   if(waypoints.some(n=>n<0)){error='missing_waypoint'}
   else{
