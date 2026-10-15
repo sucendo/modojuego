@@ -290,10 +290,31 @@ const teamBrandCatalog={
 const teamKeys=Object.keys(teamCatalog);
 let activeDriverRoster=[];
 const carCatalog={
- A26:{name:"Type A",nose:"sharp",halo:0,wheel:0,rear:"narrow"},
- VXR:{name:"Type V",nose:"wide",halo:1,wheel:1,rear:"wide"},
- NOVA:{name:"Type N",nose:"compact",halo:-1,wheel:-1,rear:"compact"}
+ A26:{
+  name:"Type A",nose:"sharp",halo:0,wheel:0,rear:"narrow",
+  visual:{noseLen:1.00,noseWidth:.94,frontWing:1.00,rearWing:.98,sidepodWidth:.96,sidepodHeight:.98,engineHeight:1.00,cockpitWidth:.98,haloWidth:1.00,airboxWidth:.94,wheelScale:1.00,shoulderWidth:.98,mirrorSpread:.98,driverEye:0}
+ },
+ VXR:{
+  name:"Type V",nose:"wide",halo:1,wheel:1,rear:"wide",
+  visual:{noseLen:1.035,noseWidth:1.08,frontWing:1.035,rearWing:1.045,sidepodWidth:1.07,sidepodHeight:1.04,engineHeight:1.035,cockpitWidth:1.035,haloWidth:1.035,airboxWidth:1.045,wheelScale:1.018,shoulderWidth:1.055,mirrorSpread:1.04,driverEye:.006}
+ },
+ NOVA:{
+  name:"Type N",nose:"compact",halo:-1,wheel:-1,rear:"compact",
+  visual:{noseLen:.965,noseWidth:.91,frontWing:.985,rearWing:.955,sidepodWidth:.91,sidepodHeight:.95,engineHeight:.965,cockpitWidth:.95,haloWidth:.965,airboxWidth:.90,wheelScale:.985,shoulderWidth:.94,mirrorSpread:.96,driverEye:-.005}
+ }
 };
+function apexCarModelVisual(spec){
+ const v=spec&&spec.visual||{};
+ return{
+  noseLen:Number.isFinite(v.noseLen)?v.noseLen:1,noseWidth:Number.isFinite(v.noseWidth)?v.noseWidth:1,
+  frontWing:Number.isFinite(v.frontWing)?v.frontWing:1,rearWing:Number.isFinite(v.rearWing)?v.rearWing:1,
+  sidepodWidth:Number.isFinite(v.sidepodWidth)?v.sidepodWidth:1,sidepodHeight:Number.isFinite(v.sidepodHeight)?v.sidepodHeight:1,
+  engineHeight:Number.isFinite(v.engineHeight)?v.engineHeight:1,cockpitWidth:Number.isFinite(v.cockpitWidth)?v.cockpitWidth:1,
+  haloWidth:Number.isFinite(v.haloWidth)?v.haloWidth:1,airboxWidth:Number.isFinite(v.airboxWidth)?v.airboxWidth:1,
+  wheelScale:Number.isFinite(v.wheelScale)?v.wheelScale:1,shoulderWidth:Number.isFinite(v.shoulderWidth)?v.shoulderWidth:1,
+  mirrorSpread:Number.isFinite(v.mirrorSpread)?v.mirrorSpread:1,driverEye:Number.isFinite(v.driverEye)?v.driverEye:0
+ };
+}
 
 function sessionLabel(s){return s==='fp1'?'FP1':s==='fp2'?'FP2':s==='fp3'?'FP3':s==='qualifying'?'CLASIFICACIÓN OFICIAL':s==='freepractice'?'ENTRENAMIENTOS LIBRES':'CARRERA'}
 function sessionDurationSeconds(s){
