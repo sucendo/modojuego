@@ -73,17 +73,45 @@
    // El último ancla se obtiene DEL vértice del cauce receptor:
    // confluencia topológica, no sólo proximidad visual de dos líneas.
    const anchors=item.points.slice(0,-1).concat([[point.lon,point.lat]]);
-   const candidate=graph.solve(anchors);
-   if(!candidate.path)failure=candidate.reason||'Ruta sin solución';
-   else if(candidate.path.at(-1)!==snap.id)
-    failure='La ruta no termina en el vértice del receptor';
-   else{
-    const test=graph.validate(candidate.path);
-    if(test.usesCoast||test.crossesVirtualWater)
-     failure='Cruce por costa o lago virtual';
-    else plan={...candidate,
-     name:item.name,basin:item.basin,parent:item.parent,
-     junction:snap.id,joinDistanceKm:snap.km,parentType};
+   const correction=window.HexategosIndianDeltas0408?.corrections?.[item.name];
+   let candidate,geoJunction=null,geoDistanceKm=null,connectorEdges=0;
+   if(correction){
+    const nearest=closest(G.vertices,correction.at,G);
+    if(nearest.id<0||nearest.km>correction.maxErrorKm){
+     failure='Confluencia cartográfica sin vértice L8 cercano';
+    }else{
+     const pivot=G.coords.get(nearest.id);
+     const upstream=graph.solve(item.points.slice(0,-1).concat([[pivot.lon,pivot.lat]]));
+     const downstream=graph.solve([[pivot.lon,pivot.lat],[point.lon,point.lat]]);
+     if(!upstream.path||!downstream.path){
+      failure='Corrección sin conexión topológica L8';
+     }else if(upstream.path.at(-1)!==nearest.id||
+       downstream.path[0]!==nearest.id||downstream.path.at(-1)!==snap.id){
+      failure='La corrección no conserva los vértices de empalme';
+     }else{
+      const path=upstream.path.concat(downstream.path.slice(1));
+      const cum=new Float64Array(path.length);
+      for(let j=1;j<path.length;j++)
+       cum[j]=cum[j-1]+havKm(G.coords.get(path[j-1]),G.coords.get(path[j]));
+      candidate={path,cum,total:cum[path.length-1],mesh:G.L};
+      geoJunction=nearest.id;geoDistanceKm=nearest.km;
+      connectorEdges=downstream.path.length-1;
+     }
+    }
+   }else candidate=graph.solve(anchors);
+   if(!failure){
+    if(!candidate?.path)failure=candidate?.reason||'Ruta sin solución';
+    else if(candidate.path.at(-1)!==snap.id)
+     failure='La ruta no termina en el vértice del receptor';
+    else{
+     const test=graph.validate(candidate.path);
+     if(test.usesCoast||test.crossesVirtualWater)
+      failure='Cruce por costa o lago virtual';
+     else plan={...candidate,
+      name:item.name,basin:item.basin,parent:item.parent,
+      junction:snap.id,joinDistanceKm:snap.km,parentType,
+      geoJunction,geoDistanceKm,connectorEdges};
+    }
    }
   }
   cache.set(item.name,plan);
@@ -91,7 +119,10 @@
    name:item.name,ok:true,edges:plan.path.length-1,parent:item.parent,
    parentType,joinDistanceKm:Math.round(snap.km*10)/10,
    sameVertex:true,usesCoast:false,crossesVirtualWater:false,
-   approximateJoin:snap.km>85
+   approximateJoin:snap.km>85,
+   correctedHub:!!plan.geoJunction,
+   geographicJoinKm:plan.geoDistanceKm,
+   connectorEdges:plan.connectorEdges
   }:{name:item.name,ok:false,parent:item.parent,reason:failure});
   return plan;
  }
@@ -152,7 +183,11 @@
    usesCoast:geometric.usesCoast,
    crossesVirtualWater:geometric.crossesVirtualWater,
    joinDistanceKm:p.joinDistanceKm,
-   approximateJoin:p.joinDistanceKm>85};
+   approximateJoin:p.joinDistanceKm>85,
+   correctedHub:!!p.geoJunction,
+   geographicJoinKm:p.geoDistanceKm,
+   connectorEdges:p.connectorEdges,
+   hubOnPath:p.geoJunction==null||p.path.includes(p.geoJunction)};
  }
  window.HexategosSubcontinentRivers0407=Object.freeze({
   version:'0.40.7',inspect,validate,
@@ -161,6 +196,7 @@
   graphBuilds:graph.builds,graphSize:graph.size,
   prepared:()=>cache.size,
   approximateJoins:()=>[...reports.values()].filter(x=>x.ok&&x.approximateJoin),
+  correctedJoins:()=>[...reports.values()].filter(x=>x.ok&&x.correctedHub),
   canonicalNodes:name=>canonicalNodes(name,graph.prepare())
  });
 })();

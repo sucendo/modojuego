@@ -61,8 +61,10 @@ test('Indo, Ganges y Brahmaputra: afluentes conectados a cauces reales L8',
  st.physicalEdge3242=id=>({u:nodes[id*2],v:nodes[id*2+1]});
  load('geo-himalaya-physical-0406.js');
  load('geo-indus-ganges-brahmaputra-0407.js');
+ load('geo-indian-deltas-0408.js');
  load('atlas-himalaya-graph-0406.js',atlas);
  load('atlas-indian-rivers-0407.js',atlas);
+ load('atlas-indian-deltas-0408.js',atlas);
  const api=st.window.HexategosSubcontinentRivers0407,
   data=st.window.HexategosSubcontinentHydro0407;
  assert.ok(api);assert.equal(api.graphBuilds(),0);
@@ -137,5 +139,34 @@ test('Indo, Ganges y Brahmaputra: afluentes conectados a cauces reales L8',
  assert.equal(api.graphBuilds(),1);
  assert.ok(api.graphSize()>1000);
  assert.equal(ok.length,data.rivers.length,'Rutas sin resolver: '+JSON.stringify(failed));
+ const corr=st.window.HexategosIndianDeltas0408.corrections;
+ for(const name of Object.keys(corr)){
+  const c=api.validate(name);
+  assert.ok(c?.ok&&c.correctedHub,name+' sin corrección');
+  assert.ok(c.hubOnPath,name+' sin vértice de confluencia');
+  assert.ok(c.geographicJoinKm<=corr[name].maxErrorKm,name+' error geográfico');
+  assert.ok(c.sameVertex,name+' no empalma con cauce canónico');
+  assert.equal(c.usesCoast,false,name);
+  assert.equal(c.crossesVirtualWater,false,name);
+ }
+ const delta=st.window.HexategosIndianDeltaRoutes0408;
+ assert.ok(delta);
+ const groups={Indo:0,Brahmaputra:0,Ganges:0},validDeltas=[],failedDeltas=[];
+ for(const channel of st.window.HexategosIndianDeltas0408.channels){
+  const d=delta.validate(channel.name);
+  if(!d?.ok){failedDeltas.push({name:channel.name,reason:d?.reason});continue}
+  validDeltas.push({name:channel.name,edges:d.edges,shoreKm:+d.mouthKm.toFixed(1)});
+  assert.equal(d.nativeShore,true,channel.name);
+  assert.equal(d.endsAtShore,true,channel.name);
+  assert.equal(d.startsAtParent,true,channel.name);
+  assert.equal(d.usesCoast,false,channel.name);
+  assert.equal(d.crossesVirtualWater,false,channel.name);
+  groups[channel.basin]++;
+ }
+ console.log('INDIAN_DELTAS_0408',JSON.stringify({groups,validDeltas,failedDeltas,
+  graphBuilds:delta.graphBuilds(),prepared:delta.prepared()}));
+ assert.ok(validDeltas.length>=5,'Demasiados brazos sin ruta '+JSON.stringify(failedDeltas));
+ assert.ok(groups.Indo>=2&&groups.Ganges>=1&&groups.Brahmaputra>=1,
+  'Falta salida de alguna cuenca');
  assert.equal(Buffer.from(L.land.buffer).toString('base64'),old);
 });

@@ -36,6 +36,7 @@
  const ecotones=window.HexategosLandCoverTransitions0402;
  const centralEco=window.HexategosCentralAsiaLandcover0405;
  const himalayaEco=window.HexategosHimalayaLandcover0406;
+ const deltaEco=window.HexategosIndianDeltaLandcover0408;
  if(cover&&typeof terrainStrategicFill3247==='function'){
   const baseFill=terrainStrategicFill3247,cache=new Map();
   function codes(key,L){
@@ -74,6 +75,7 @@
    }
    if(rgb&&centralEco)rgb=centralEco.rgbForCell(key,i,L,rgb);
    if(rgb&&himalayaEco)rgb=himalayaEco.rgbForCell(key,i,L,rgb);
+   if(rgb&&deltaEco)rgb=deltaEco.rgbForCell(key,i,L,rgb);
    if(!rgb)return baseFill(key,i,L,own,z);
    const base=baseFill(key,i,L,own,z);
    const vals=base.match(/\d+/g);

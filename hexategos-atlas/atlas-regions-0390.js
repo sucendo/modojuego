@@ -20,6 +20,8 @@
  const himalaya=window.HexategosHimalaya0406;
  const indianHydro=window.HexategosSubcontinentHydro0407;
  const indianRivers=window.HexategosSubcontinentRivers0407;
+ const deltas=window.HexategosIndianDeltas0408;
+ const deltaRoutes=window.HexategosIndianDeltaRoutes0408;
  const labelStyle=window.HexategosAtlasLabelStyle0399;
  if(!source){console.warn('[Atlas] No se cargaron las regiones compartidas');return}
  const historicalAnchors={
@@ -44,10 +46,14 @@
  const physical=window.HEXATEGOS_IBERIA_PHYSICAL_V1;
  const baseNatural=source.physicalRegions.concat(europe?.naturalRegions||[],
   detail?.naturalRegions||[],asia?.naturalRegions||[]);
+ const knownNatural=new Set(baseNatural.map(x=>x.name.toLocaleLowerCase('es-ES')));
  const additionalNatural=(himalayaData?.reliefRegions||[])
-  .concat(indianHydro?.basins||[])
-  .filter(reg=>!baseNatural.some(x=>x.name.toLocaleLowerCase('es-ES')===
-    reg.name.toLocaleLowerCase('es-ES')))
+  .concat(indianHydro?.basins||[],deltas?.areas||[])
+  .filter(reg=>{
+   const key=reg.name.toLocaleLowerCase('es-ES');
+   if(knownNatural.has(key))return false;
+   knownNatural.add(key);return true;
+  })
   .map(r=>({...r,kind:'land'}));
  const natural=baseNatural.concat(additionalNatural).map(reg=>({
    name:reg.name,center:reg.center,kind:reg.kind==='mountain'?'mountain':'natural',
@@ -147,6 +153,11 @@
     indianTributary:true});
   }
  }
+ // Deltas: rotular sólo brazos que llegan a un vértice litoral L8.
+ if(deltas)for(const item of deltas.channels){
+  features.push({name:item.name,center:item.waypoints[Math.floor(item.waypoints.length/2)]||item.join,
+   kind:'river',rank:57,minZoom:item.minZoom+.5,deltaChannel:true});
+ }
  // Los grandes cauces del Oriente Próximo ya existen en la malla
  // canónica; aquí sólo se muestra su nombre, no se duplica el trazado.
  for(const item of [
@@ -229,6 +240,7 @@
    if(item.himalayaBody&&!window.HexategosHimalayaWater0406?.isBodyDrawn?.(item.himalayaBody))continue;
    if(item.himalayaMountain&&!himalaya?.isDrawnFeature?.(item.name))continue;
    if(item.indianTributary&&!indianRivers?.isDrawnFeature?.(item.name))continue;
+   if(item.deltaChannel&&!deltaRoutes?.isDrawnFeature?.(item.name))continue;
    if(item.centralAsia&&!central?.isDrawnFeature?.(item.name))continue;
    if(item.westAsia&&item.kind!=='lake'&&!westAsia?.isDrawnFeature?.(item.name))continue;
    if((item.kind==='island'||item.kind==='strait'||item.kind==='archipelago'||item.kind==='marine')&&!straits?.valid(item))continue;
@@ -262,7 +274,7 @@
  function cellInfo(lat,lon){
   const result=source.regionsAt(lat,lon);
   const local=(europe?.naturalAt(lat,lon)||[]).concat(detail?.naturalAt(lat,lon)||[],asia?.naturalAt(lat,lon)||[]);
-  const naturalNames=result.natural.concat(local,centralData?.regionsNear(lon,lat)||[],himalayaData?.regionsNear(lon,lat)||[],indianHydro?.regionsNear(lon,lat)||[])
+  const naturalNames=result.natural.concat(local,centralData?.regionsNear(lon,lat)||[],himalayaData?.regionsNear(lon,lat)||[],indianHydro?.regionsNear(lon,lat)||[],deltas?.regionsNear(lon,lat)||[])
    .filter((v,i,a)=>a.findIndex(x=>x.name.toLocaleLowerCase('es-ES')===v.name.toLocaleLowerCase('es-ES'))===i)
    .slice(0,5).map(r=>escapeHTML(r.name)).join(' · ');
   const historicalName=result.historical?.name||europe?.historicalAt(lat,lon)?.name||'';
@@ -281,7 +293,7 @@
     const old=source.regionsAt(lat,lon);
     const areas=old.natural.concat(europe?.naturalAt(lat,lon)||[],
      detail?.naturalAt(lat,lon)||[],asia?.naturalAt(lat,lon)||[],
-     centralData?.regionsNear(lon,lat)||[],himalayaData?.regionsNear(lon,lat)||[],indianHydro?.regionsNear(lon,lat)||[]);
+     centralData?.regionsNear(lon,lat)||[],himalayaData?.regionsNear(lon,lat)||[],indianHydro?.regionsNear(lon,lat)||[],deltas?.regionsNear(lon,lat)||[]);
     return {natural:areas.filter((v,i,a)=>a.findIndex(x=>
       x.name.toLocaleLowerCase('es-ES')===v.name.toLocaleLowerCase('es-ES'))===i),
       historical:old.historical||europe?.historicalAt(lat,lon)||null};
