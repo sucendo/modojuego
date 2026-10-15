@@ -3373,6 +3373,12 @@ function update(dt,runHeavy=true,heavyDt=dt){
  }
  const correcting=steerCmd!==0&&((player.yawRate||0)*steerCmd<0||(player.slipAngle||0)*steerCmd<0);
  const autoTech=autoSteerActive&&!!player.autoTechnicalActive;
- const steerRate=autoSteerActive?(steerCmd===0?(autoTech?13.5:10.5):(autoTech?(correcting?14.0:12.2):(correcting?10.8:lerp(8.9,5.15,speedNorm)))):(steerCmd===0?steerCfg.center:(correcting?steerCfg.counter:steerCfg.rise));
+ let steerRate=autoSteerActive?(steerCmd===0?(autoTech?13.5:10.5):(autoTech?(correcting?14.0:12.2):(correcting?10.8:lerp(8.9,5.15,speedNorm)))):(steerCmd===0?steerCfg.center:(correcting?steerCfg.counter:steerCfg.rise));
+ // Afinado clásico: durante una frenada fuerte el primer apoyo de volante entra algo
+ // más progresivo. El lock final no cambia y el contravolante conserva toda su rapidez.
+ if(!autoSteerActive&&driveProfile.stability&&steerCmd!==0&&!correcting){
+   const brakeTurnCalm=clamp((player.brakeInput||0)*speedNorm,0,1);
+   steerRate*=1-.10*brakeTurnCalm;
+ }
  player.steer+=clamp(steerCmd-player.steer,-steerRate*dt,steerRate*dt);player.steer=clamp(player.steer,-1,1);
  let throttleTarget,brakeTarget
