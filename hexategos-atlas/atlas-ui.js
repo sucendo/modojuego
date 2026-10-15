@@ -283,6 +283,7 @@ $('regions').onchange=invalidate;
 $('regionMode').onchange=invalidate;
 $('rivers').onchange=invalidate;
 $('mountains').onchange=invalidate;
+$('lakes').onchange=invalidate;
 async function search(){
  const input=$('search').value.trim();if(!input)return;
  const m=input.match(/^\s*(-?\d+(?:\.\d+)?)\s*[,;]\s*(-?\d+(?:\.\d+)?)\s*$/);
