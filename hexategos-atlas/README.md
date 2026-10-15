@@ -21,3 +21,9 @@ Ríos y lagos continúan con sus trazados sobre aristas y vértices de la malla,
 ## Regresiones
 
 Ejecutar `node --test hexategos-atlas/tests/cartography-0399.test.cjs`. La prueba verifica los colores de letreros, ausencia de la capa vectorial de costa, control del zoom y conservación de las rutas y capas existentes.
+
+## Asia · fase 1 (0.40.1)
+
+La toponimia física asiática comparte `hexategos-pruebas/game/data/geo-asia-regions-0401.js` entre el Atlas y ambas versiones jugables. Contiene 52 macrotopónimos y 78 referencias geográficas regionales desde Oriente Próximo a Siberia, Japón, India, China y el sudeste asiático. En el Atlas usa el relevo de zoom, las cajas anticolisión y la paleta semántica: agua azul, cordilleras marrón y regiones terrestres blanco.
+
+Las áreas de consulta regionales son aproximaciones rectangulares, **no fronteras ni costas**. Esta primera fase NO dibuja cauces, montañas o lagos asiáticos adicionales. Las capas físicas jugables existentes se conservan; no cambia la propiedad de ninguna casilla, las redes de rutas, los datos de recursos ni los guardados. La próxima fase será resolver cauces y cordilleras por aristas L8 y, donde la malla lo permita, lagos sin deformar la costa.
