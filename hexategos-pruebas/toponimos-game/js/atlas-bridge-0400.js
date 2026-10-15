@@ -24,6 +24,13 @@
   const margin=zoom<3?42:zoom<6?22:zoom<10?10:4;
   return lat>34-margin&&lat<73+margin&&lon>-26-margin&&lon<62+margin;
  }
+ function visibleAsia(){
+  if(zoom<1.15)return false;
+  const lon=(((-yaw*180/Math.PI+180)%360+360)%360)-180;
+  const lat=pitch*180/Math.PI;
+  const margin=zoom<3?42:zoom<6?22:zoom<10?10:4;
+  return lat> -9-margin&&lat<77+margin&&lon>25-margin&&lon<180;
+ }
  function setEnabled(value){
   enabled=!!value;
   try{localStorage.setItem(KEY,String(enabled))}catch(_){}
@@ -35,9 +42,9 @@
   control.addEventListener('change',()=>setEnabled(control.checked));
  }
  window.HexategosGameAtlasBridge0400=Object.freeze({
-  version:'0.40.0',enabled:()=>enabled,visibleEurope,setEnabled,
+  version:'0.40.0',enabled:()=>enabled,visibleEurope,visibleAsia,setEnabled,
   diagnostics:()=>({
-   enabled,europe:visibleEurope(),
+   enabled,europe:visibleEurope(),asia:visibleAsia(),
    lakeRoutes:window.HexategosEuropeLakes0396?.diagnostics?.()||null,
    secondaryGraph:window.HexategosEuropeSecondaryRender0396?.graphSize?.()||0
   })
