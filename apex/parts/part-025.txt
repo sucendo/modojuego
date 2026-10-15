@@ -1601,10 +1601,10 @@ function drawRotaryDial(x,y,r,label,phase=0){
  ctx.restore();
 }
 
-function drawModernSteeringWheel(cx,cy,scale,body,bodyLight){
+function drawModernSteeringWheel(cx,cy,scale,body,bodyLight,theme=null){
  ctx.save();ctx.translate(cx,cy);ctx.rotate((player.steer||0)*.22);
 
- const w=scale,h=scale*.60,screenW=w*.52,screenH=h*.50;
+ const w=scale,h=scale*.60,screenW=w*.52,screenH=h*.50,wheelAccent=theme&&theme.wheel?theme.wheel:body,wheelTrim=theme&&theme.trim?theme.trim:bodyLight;
 
  const wheelPath=()=>{
    ctx.beginPath();
@@ -1736,9 +1736,13 @@ function drawModernSteeringWheel(cx,cy,scale,body,bodyLight){
  drawRotaryDial(0,h*.31,w*.061,"STRAT",2);
  drawRotaryDial(w*.21,h*.31,w*.051,"ENGINE",1);
 
- // top accent
- ctx.strokeStyle=body;ctx.lineWidth=Math.max(2,w*.010);
+ // top accent + escudo ficticio propio de la escudería
+ ctx.strokeStyle=wheelAccent;ctx.lineWidth=Math.max(2,w*.010);
  ctx.beginPath();ctx.moveTo(-w*.24,-h*.445);ctx.lineTo(w*.24,-h*.445);ctx.stroke();
+ if(theme&&theme.logo){
+   const ls=w*.030*(Number.isFinite(theme.logoScale)?theme.logoScale:1);
+   drawPseudoLogoIcon(0,h*.445,ls,theme.logo,wheelAccent,wheelTrim);
+ }
 
  ctx.restore();
 }
@@ -1761,19 +1765,56 @@ const COCKPIT_EDITABLE_THEME = {
 };
 
 function cockpitEditablePalette(){
-  const visual=typeof playerCarVisualProfile==="function"?playerCarVisualProfile():null,ti=visual&&visual.team;
+  const visual=typeof playerCarVisualProfile==="function"?playerCarVisualProfile():null,ti=visual&&visual.team,
+        teamKey=(visual&&visual.teamKey)||selectedTeamKey(),brand=teamBranding(teamKey),cv=brand.cockpit||{};
   const primary=(visual&&visual.primary)||(player&&player.carColor)||(ti&&ti.color)||"#36dff1";
   const accent=(visual&&visual.accent)||(player&&player.carAccent)||(ti&&ti.accent)||shadeColor(primary,34);
   const rear=visual&&visual.rear||{};
   return {
     primary,
     accent,
-    dark:rear.secondary||shadeColor(primary,-72),
+    dark:cv.secondary||rear.secondary||shadeColor(primary,-72),
+    secondary:cv.secondary||rear.secondary||shadeColor(primary,-72),
+    accent2:cv.accent2||rear.stripe||accent,
     mid:shadeColor(primary,-34),
-    light:rear.trim||shadeColor(primary,42),
+    light:cv.trim||rear.trim||shadeColor(primary,42),
     carbon:rear.carbon||"#090c10",
+    halo:cv.halo||primary,
+    pattern:cv.pattern||"clean",
+    wheel:cv.wheel||accent,
+    logoMode:brand.logo||"swoosh",
+    logoScale:Number.isFinite(cv.logoScale)?cv.logoScale:1,
+    teamKey,
     visual
   };
+}
+
+function drawCockpitTeamLivery(cp){
+ const a=cp.accent2||cp.accent,t=cp.light||"#fff",s=cp.secondary||cp.dark,p=cp.pattern||"clean";
+ const stroke=(pts,col,w,alpha=1)=>{
+   ctx.save();ctx.globalAlpha=alpha;ctx.strokeStyle=col;ctx.lineWidth=w;ctx.lineCap="round";ctx.lineJoin="round";
+   ctx.beginPath();ctx.moveTo(W*pts[0][0],H*pts[0][1]);for(let i=1;i<pts.length;i++)ctx.lineTo(W*pts[i][0],H*pts[i][1]);ctx.stroke();ctx.restore();
+ };
+ const mirror=pts=>pts.map(([x,y])=>[1-x,y]);
+ const pair=(pts,col,w,alpha=1)=>{stroke(pts,col,w,alpha);stroke(mirror(pts),col,w,alpha);};
+ if(p==="sweep"){pair([[.02,.694],[.16,.630],[.31,.585],[.405,.602]],s,W*.018,.85);pair([[.03,.686],[.17,.624],[.31,.584],[.402,.602]],a,W*.0055,.96);}
+ else if(p==="center"){pair([[.37,.598],[.41,.548],[.455,.476]],a,W*.005,.94);pair([[.345,.608],[.395,.555],[.445,.482]],t,W*.0023,.65);}
+ else if(p==="chevron"){pair([[.02,.690],[.18,.617],[.32,.583]],a,W*.011,.95);pair([[.17,.620],[.30,.586],[.392,.602]],t,W*.004,.92);}
+ else if(p==="split"){pair([[.02,.692],[.17,.622],[.31,.584],[.397,.602]],s,W*.014,.92);pair([[.04,.682],[.18,.615],[.32,.584]],a,W*.0048,.95);}
+ else if(p==="flank"){pair([[.00,.705],[.13,.646],[.27,.590],[.385,.596]],a,W*.009,.96);pair([[.08,.676],[.21,.618],[.34,.588]],t,W*.002,.65);}
+ else if(p==="bars"){for(const off of [0,.032,.064])pair([[.08+off,.654],[.23+off,.602]],a,W*.006,.88);}
+ else if(p==="blade"){pair([[.01,.695],[.17,.628],[.34,.586]],t,W*.010,.70);pair([[.02,.692],[.18,.623],[.36,.588]],a,W*.0038,.96);}
+ else if(p==="pinstripe"){pair([[.01,.696],[.16,.632],[.31,.588],[.40,.602]],t,W*.005,.95);pair([[.04,.681],[.20,.615],[.34,.586]],a,W*.0026,.90);}
+ else if(p==="spear"){pair([[.01,.700],[.17,.630],[.35,.584],[.407,.603]],a,W*.0052,.97);pair([[.11,.655],[.25,.604],[.37,.589]],t,W*.0018,.55);}
+ else if(p==="lux"){pair([[.01,.699],[.16,.632],[.31,.586],[.40,.601]],t,W*.007,.83);pair([[.03,.690],[.18,.622],[.34,.586]],a,W*.0035,.98);}
+ else {pair([[.03,.689],[.18,.623],[.34,.586]],a,W*.0032,.82);}
+
+ // Emblemas propios de APEX en los paneles laterales, nunca logos oficiales reales.
+ const ls=Math.max(8,Math.min(W,H)*.0175)*(cp.logoScale||1);
+ ctx.save();ctx.globalAlpha=.88;
+ drawPseudoLogoIcon(W*.155,H*.748,ls,cp.logoMode,a,t);
+ drawPseudoLogoIcon(W*.845,H*.748,ls,cp.logoMode,a,t);
+ ctx.restore();
 }
 
 function drawCockpit(motion=null){
@@ -1824,6 +1865,9 @@ function drawCockpit(motion=null){
  ctx.strokeStyle=bodyLight;ctx.lineWidth=Math.max(2.2,W*.0021);
  ctx.beginPath();ctx.moveTo(0,H*.684);ctx.quadraticCurveTo(W*.176,H*.586,W*.400,H*.588);ctx.stroke();
  ctx.beginPath();ctx.moveTo(W,H*.684);ctx.quadraticCurveTo(W*.824,H*.586,W*.600,H*.588);ctx.stroke();
+
+ // Identidad visual propia de cada escudería APEX.
+ drawCockpitTeamLivery(cp);
 
  // seam/volume line on the side panels
  ctx.strokeStyle='rgba(255,255,255,.11)';ctx.lineWidth=Math.max(1.1,W*.0012);
@@ -1947,7 +1991,7 @@ function drawCockpit(motion=null){
 
  // wheel
  const wheelW=W*(compact?.322:.344)*m.wheelScale,wheelY=H*(compact?.848:.846);
- drawModernSteeringWheel(W*.5,wheelY,wheelW,body,bodyLight);
+ drawModernSteeringWheel(W*.5,wheelY,wheelW,body,bodyLight,{wheel:cp.wheel,trim:cp.light,logo:cp.logoMode,logoScale:cp.logoScale});
 
  // halo
  const haloLift=spec.halo*H*.004,
@@ -1960,17 +2004,17 @@ function drawCockpit(motion=null){
  ctx.beginPath();ctx.moveTo(-W*.03,topY);ctx.quadraticCurveTo(W*.23,joinY*.15,W*(.5-haloInner),joinY);
  ctx.quadraticCurveTo(W*.50,joinY*1.33,W*(.5+haloInner),joinY);ctx.quadraticCurveTo(W*.77,joinY*.15,W*1.03,topY);ctx.stroke();
 
- ctx.strokeStyle="#171b20";ctx.lineWidth=Math.max(7,W*(compact?.0064:.0074));
+ ctx.strokeStyle=shadeColor(cp.halo,-18);ctx.lineWidth=Math.max(7,W*(compact?.0064:.0074));
  ctx.beginPath();ctx.moveTo(-W*.03,topY);ctx.quadraticCurveTo(W*.23,joinY*.15,W*(.5-haloInner),joinY);
  ctx.quadraticCurveTo(W*.50,joinY*1.33,W*(.5+haloInner),joinY);ctx.quadraticCurveTo(W*.77,joinY*.15,W*1.03,topY);ctx.stroke();
 
  ctx.strokeStyle="#050608";ctx.lineWidth=Math.max(18,W*(compact?.015:.017));
  ctx.beginPath();ctx.moveTo(W*.5,joinY*.92);ctx.lineTo(W*.5,baseY);ctx.stroke();
 
- ctx.strokeStyle="#1b2025";ctx.lineWidth=Math.max(6,W*(compact?.0052:.006));
+ ctx.strokeStyle=shadeColor(cp.halo,-24);ctx.lineWidth=Math.max(6,W*(compact?.0052:.006));
  ctx.beginPath();ctx.moveTo(W*.5,joinY*.92);ctx.lineTo(W*.5,baseY);ctx.stroke();
 
- ctx.strokeStyle=body;ctx.lineWidth=Math.max(1.35,W*.00135);
+ ctx.strokeStyle=cp.accent2||body;ctx.lineWidth=Math.max(1.35,W*.00135);
  ctx.beginPath();ctx.moveTo(-W*.01,topY-H*.005);ctx.quadraticCurveTo(W*.23,joinY*.10,W*.44,joinY-H*.006);ctx.stroke();
  ctx.beginPath();ctx.moveTo(W*.56,joinY-H*.006);ctx.quadraticCurveTo(W*.77,joinY*.10,W*1.01,topY-H*.005);ctx.stroke();
 
