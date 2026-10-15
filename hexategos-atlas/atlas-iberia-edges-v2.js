@@ -1,4 +1,4 @@
-/* HEXATEGOS ATLAS · Iberia v5 · ríos físicos con desembocadura en arista costera L8.
+/* HEXATEGOS ATLAS · Iberia v6 · desembocadura en intersección de río y costa L8.
  * Solo dibujo: no modifica malla, geología, datos de juego ni guardados.
  * Se carga detrás de atlas-geography.js y delante de atlas-ui.js.
  */
@@ -58,22 +58,25 @@
    if(group.length>mainland.length)mainland=group;
   }
   const included=new Set(mainland);
-  const seenCoast=new Set(),coastline=[];
+  const seenCoast=new Set(),coastline=[],coastalNodes=new Set();
   for(const [u,v] of coastEdges){
    if(!included.has(u)||!included.has(v))continue;
    const key=Math.min(u,v)+','+Math.max(u,v);
    if(seenCoast.has(key))continue;seenCoast.add(key);
+   coastalNodes.add(u);coastalNodes.add(v);
    const a=getPosition(u),b=getPosition(v);
    coastline.push({u,v,x:(a.x+b.x)/2,y:(a.y+b.y)/2});
   }
-  meshGraph={L,neighbors,position,included,coastline,verts:mainland.map(getPosition)};
+  meshGraph={L,neighbors,position,included,coastline,coastalNodes,coastEdges:seenCoast,verts:mainland.map(getPosition)};
   console.info('[Hexategos Atlas] Grafo ibérico:',mainland.length,'vértices L8');
   return meshGraph;
  }
- function nearest(lonlat,G){
+ function edgeKey(a,b){return Math.min(a,b)+','+Math.max(a,b)}
+ function nearest(lonlat,G,inlandOnly=false){
   const x=lonlat[0]*85.2,y=lonlat[1]*111.2;let id=-1,d=Infinity;
   for(const v of G.verts){
-   const dx=v.x-x,dy=v.y-y,dd=dx*dx+dy*dy;
+   if(inlandOnly&&G.coastalNodes.has(v.id))continue;
+   const dx=v.x,dy=v.y-y,dd=dx*dx+dy*dy;
    if(dd<d){id=v.id;d=dd}
   }
   return id;
@@ -97,7 +100,7 @@
   }q[i]=last}
   return first;
  }
- function findSection(from,to,G){
+ function findSection(from,to,G,river=false){
   if(from===to)return [from];
   const a=G.position.get(from),b=G.position.get(to);
   const best=new Map([[from,0]]),prev=new Map(),heap=[];
@@ -113,6 +116,11 @@
    const p=G.position.get(id);
    for(const next of G.neighbors.get(id)||[]){
     if(!G.included.has(next))continue;
+    // Un río no discurre por el litoral ni atraviesa el mar.
+    if(river&&G.coastEdges.has(edgeKey(id,next)))continue;
+    // No tocar la costa hasta la desembocadura; el destino final
+    // puede ser un vértice costero, pero no un tramo costero.
+    if(river&&G.coastalNodes.has(next)&&next!==to)continue;
     const v=G.position.get(next),distance=Math.hypot(v.x-p.x,v.y-p.y);
     const deviation=segmentDistance((p.x+v.x)/2,(p.y+v.y)/2,a,b);
     const nextG=g+distance*(1+.020*Math.min(deviation,160));
@@ -124,18 +132,21 @@
   }
   return null;
  }
- // La desembocadura es un lado real compartido entre tierra y mar.
- // Nunca aproximar el final del río al centro de un hexágono costero.
- function coastalMouth(sys,G){
-  const mouth=sys.points[sys.points.length-1],x=mouth[0]*85.2,y=mouth[1]*111.2;
-  let chosen=null,best=Infinity;
-  for(const edge of G.coastline){
-   const d=Math.hypot(edge.x-x,edge.y-y);
-   if(d<best){chosen=edge;best=d}
+ // Una desembocadura se encuentra en la INTERSECCIÓN de la arista
+ // fluvial interior con la línea de costa, es decir, en un vértice de
+ // las aristas tierra-mar. No dibujar la arista costera como río.
+ function coastalMouthCandidates(sys,G){
+  const ref=sys.points[sys.points.length-1],x=ref[0]*85.2,y=ref[1]*111.2;
+  const candidates=[];
+  for(const id of G.coastalNodes){
+   // Solo vértices con al menos una arista fluvial interior de llegada.
+   if(![...(G.neighbors.get(id)||[])].some(n=>
+      G.included.has(n)&&!G.coastEdges.has(edgeKey(id,n))&&!G.coastalNodes.has(n)))continue;
+   const p=G.position.get(id);
+   candidates.push({id,distanceKm:Math.hypot(p.x-x,p.y-y)});
   }
-  if(!chosen)return null;
-  if(best>60)console.warn('[Hexategos Atlas] Desembocadura distante del punto de referencia:',sys.name,best.toFixed(0)+' km');
-  return {edge:chosen,deviationKm:best};
+  candidates.sort((a,b)=>a.distanceKm-b.distanceKm);
+  return candidates.slice(0,16);
  }
  function appendPiece(path,piece){
   if(!piece||!piece.length)return false;
@@ -150,38 +161,49 @@
   const key=type+':'+sys.name;
   if(routeCache.has(key))return routeCache.get(key);
   const G=makeGraph(),isRiver=type==='r';
-  const mouth=isRiver?coastalMouth(sys,G):null;
-  if(isRiver&&!mouth){routeCache.set(key,null);return null}
-  const waypoints=(isRiver?sys.points.slice(0,-1):sys.points).map(p=>nearest(p,G));
+  const waypoints=(isRiver?sys.points.slice(0,-1):sys.points)
+    .map(p=>nearest(p,G,isRiver));
   const path=[];
   if(!waypoints.length||waypoints.some(id=>id<0)){routeCache.set(key,null);return null}
   path.push(waypoints[0]);
   for(let i=1;i<waypoints.length;i++){
-   if(!appendPiece(path,findSection(path[path.length-1],waypoints[i],G))){
+   if(!appendPiece(path,findSection(path[path.length-1],waypoints[i],G,isRiver))){
     routeCache.set(key,null);return null;
    }
   }
   if(isRiver){
-   const edge=mouth.edge,from=path[path.length-1];
-   const a=G.position.get(edge.u),b=G.position.get(edge.v),p=G.position.get(from);
-   const useU=Math.hypot(a.x-p.x,a.y-p.y)<=Math.hypot(b.x-p.x,b.y-p.y);
-   let start=useU?edge.u:edge.v,finish=useU?edge.v:edge.u;
-   let section=findSection(from,start,G);
-   if(!section){
-    [start,finish]=[finish,start];
-    section=findSection(from,start,G);
+   const from=path[path.length-1];
+   let endpoint=null,section=null,deviationKm=0;
+   // La boca aproximada es únicamente una referencia para encontrar la
+   // intersección adecuada; no constituye una excepción por localidad.
+   for(const candidate of coastalMouthCandidates(sys,G)){
+    const part=findSection(from,candidate.id,G,true);
+    if(part&&part.length>=2){
+     endpoint=candidate.id;section=part;deviationKm=candidate.distanceKm;break;
+    }
    }
-   if(!appendPiece(path,section)){routeCache.set(key,null);return null}
-   if(path[path.length-1]!==start){routeCache.set(key,null);return null}
-   // La última arista ES la costa. No se dibuja ningún segmento mar adentro.
-   path.push(finish);
-   riverMouthDiagnostics.push({name:sys.name,deviationKm:mouth.deviationKm,
-     landCellEdge:[start,finish]});
+   if(endpoint===null||!appendPiece(path,section)){
+    routeCache.set(key,null);return null;
+   }
+   const lastFrom=path[path.length-2],lastTo=path[path.length-1];
+   if(lastTo!==endpoint||
+      !G.coastalNodes.has(lastTo)||
+      G.coastEdges.has(edgeKey(lastFrom,lastTo))||
+      G.coastalNodes.has(lastFrom)){
+    routeCache.set(key,null);return null;
+   }
+   if(deviationKm>60)console.warn(
+     '[Hexategos Atlas] Boca fluvial alejada de la referencia:',sys.name,
+     deviationKm.toFixed(0)+' km');
+   riverMouthDiagnostics.push({name:sys.name,deviationKm,
+     mouthVertex:endpoint,riverLastEdge:[lastFrom,lastTo],
+     endsAtCoastIntersection:true,lastEdgeOnCoast:false});
   }
   if(path.length<2){routeCache.set(key,null);return null}
   for(let i=1;i<path.length;i++)
-   if(!G.neighbors.get(path[i-1])?.has(path[i])){
-    console.warn('[Hexategos Atlas] Arista desconectada:',key);
+   if(!G.neighbors.get(path[i-1])?.has(path[i])||
+      isRiver&&G.coastEdges.has(edgeKey(path[i-1],path[i]))){
+    console.warn('[Hexategos Atlas] Arista de río no válida:',key);
     routeCache.set(key,null);return null;
    }
   routeCache.set(key,path);return path;
@@ -300,5 +322,5 @@
   }finally{ctx.restore()}
  };
  window.HexategosIberiaRiverDiagnostics=Object.freeze({mouths:()=>riverMouthDiagnostics.map(x=>({...x}))});
- console.info('[Hexategos Atlas] Ríos de anchura variable y desembocaduras en arista costera L8');
+ console.info('[Hexategos Atlas] Ríos con anchura variable; desembocan en vértice costero desde arista interior L8');
 })();
