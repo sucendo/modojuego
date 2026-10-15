@@ -72,4 +72,15 @@ assert.ok(html.indexOf('atlas-iberia-edges-v2.js')<html.indexOf('atlas-europe-hy
 assert.ok(html.includes('id="europe"'));
 assert.ok(fromAtlas('atlas-ui.js').includes("$('europe').onclick"));
 assert.ok(!/setInterval\s*\(/.test(hydro));
+
+// Renderizador europeo en ejecución: todos los recorridos se preparan y
+// restauran después del dibujo; el segundo fotograma debe ser idéntico.
+const live=new Function('src','systems','edgeNodes','coastFlags',"\nconst MAP_RIVERS3242=systems,window={},MAX_GAME_LEVEL3233='8';\nconst L={faceCenters:new Int16Array(1021520*3)};\nfor(const sys of systems)for(const edgeId of sys.edges)\n for(const v of [edgeNodes[edgeId*2],edgeNodes[edgeId*2+1]]){\n  const k=v*3,t=v*.000019;\n  L.faceCenters[k]=Math.round(21000*Math.cos(t));\n  L.faceCenters[k+1]=Math.round(15000*Math.sin(t*.7));\n  L.faceCenters[k+2]=Math.round(25000*Math.cos(t*.8));\n }\nconst loadLevel=()=>L,\n physicalEdge3242=id=>({u:edgeNodes[id*2],v:edgeNodes[id*2+1],coast:!!coastFlags[id]}),\n edgeTouchesSea3295=id=>!!coastFlags[id];\nfunction edgePathNodes3242(sys){\n const es=sys.edges;if(!es.length)return [];\n const a=physicalEdge3242(es[0]),b=physicalEdge3242(es[1]);\n const out=b.u===a.u||b.v===a.u?[a.v,a.u]:[a.u,a.v];\n for(let i=1;i<es.length;i++){\n  const e=physicalEdge3242(es[i]),p=out[out.length-1];\n  out.push(e.u===p?e.v:e.v===p?e.u:-1);\n }\n return out;\n}\nconst riverMinZoom3297=()=>0,riverRenderCache3296=new Map();\nlet zoom=18,passes=0,strokes=0,masked=new Set();\nlet drawTerrain3212=()=>{passes++;\n for(const sys of MAP_RIVERS3242)if(!sys.edges.length)masked.add(sys.n);\n};\nconst $=()=>({checked:true}),projectVec=(x,y,z,R,cx,cy)=>[cx+x*R,cy+y*R,1];\nconst ctx={save(){},restore(){},beginPath(){},moveTo(){},lineTo(){},\n stroke(){strokes++},set lineWidth(v){},set strokeStyle(v){},\n set lineCap(v){},set lineJoin(v){}};\nconst console={info(){},warn(...args){throw Error(args.join(' '))}};\neval(src);\ndrawTerrain3212(1000,0,0);\nconst first=strokes,diag=window.HexategosEuropeHydro0395.diagnostics();\ndrawTerrain3212(1000,0,0);\nreturn {rivers:diag.filter(x=>x.drawnEdges>0).length,\n coast:diag.filter(x=>x.skipsCoastalEdge).length,\n masked:masked.size,passes,stable:strokes===first*2,\n restored:MAP_RIVERS3242.every(x=>x.edges.length>0),strokes:first};\n")(
+ hydro,rivers.filter(x=>nameList.includes(x.n)),edges,coast);
+assert.equal(live.rivers,19,'all 19 systems must produce valid visible paths');
+assert.equal(live.coast,16,'all 16 sea-mouth rivers clip before coastline');
+assert.equal(live.masked,19,'canonical rivers must not be double-painted');
+assert.equal(live.restored,true,'canonical data must be restored every frame');
+assert.equal(live.stable,true,'cached rerender must remain deterministic');
+assert.ok(live.strokes>0);
 console.log('HEXATEGOS ATLAS Europe 0.39.5: 19 rivers, 16 coastal mouths, 48 regions, vegetation, LOD/UI: OK');
