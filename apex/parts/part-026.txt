@@ -583,7 +583,7 @@ function exportSessionTelemetry(){
 function telemetryHtml(v){return String(v??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function telemetryNearbyRivals(limit=8){
  if(!player||!trackData)return[];const L=trackData.km*1000;
- return (rivals||[]).filter(r=>!r.finished).map(rv=>{let d=(rv.total||0)-(player.total||0);if(d>L*.5)d-=L;else if(d<-L*.5)d+=L;const latDelta=(rv.lat||0)-(player.lat||0);return{rv,id:rv.id,uid:rv.uid||raceIdentity(rv.id),name:rv.driverName||raceName(rv.id),team:rv.team,teamName:rv.teamName||teamInfo(rv.team).name,d,absD:Math.abs(d),lat:rv.lat||0,latDelta,speedKph:(rv.speed||0)*3.6,relKph:((rv.speed||0)-(player.speed||0))*3.6,targetKph:Number.isFinite(rv.liveTargetSpeed)?rv.liveTargetSpeed*3.6:null,targetLat:Number.isFinite(rv.liveTargetLat)?rv.liveTargetLat:rv.targetLat,intent:rv.intent||'RACE',note:rv.racecraftNote||rv.intent||'RACE',mistake:rv.mistakeTimer>0?rv.mistakeType:'',guard:!!rv.launchGapGuard,impactMode:rv.impactMode||'NONE',impactTimer:rv.impactTimer||0,cautionTimer:rv.cautionTimer||0,contactMemory:rv.contactRiskMemory||0,damage:rv.damage??100,yawKick:rv.yawKick||0,lod:rv.simModel||rivalLODName(rv.simLOD||0),skill:rv.skill,aggression:rv.aggression,consistency:rv.consistency,defense:rv.defense,planD:rv.livePlanD,draft:!!rv.liveDraft,color:(teamInfo(rv.team).color||'#9fb4c7')}}).sort((a,b)=>a.absD-b.absD).slice(0,limit);
+ return (rivals||[]).filter(r=>!r.finished).map(rv=>{const d=apexPhysicalTrackDelta(rv.s,Number.isFinite(player.classificationS)?player.classificationS:player.s,L);const latDelta=(rv.lat||0)-(player.lat||0);return{rv,id:rv.id,uid:rv.uid||raceIdentity(rv.id),name:rv.driverName||raceName(rv.id),team:rv.team,teamName:rv.teamName||teamInfo(rv.team).name,d,absD:Math.abs(d),lat:rv.lat||0,latDelta,speedKph:(rv.speed||0)*3.6,relKph:((rv.speed||0)-(player.speed||0))*3.6,targetKph:Number.isFinite(rv.liveTargetSpeed)?rv.liveTargetSpeed*3.6:null,targetLat:Number.isFinite(rv.liveTargetLat)?rv.liveTargetLat:rv.targetLat,intent:rv.intent||'RACE',note:rv.racecraftNote||rv.intent||'RACE',mistake:rv.mistakeTimer>0?rv.mistakeType:'',guard:!!rv.launchGapGuard,impactMode:rv.impactMode||'NONE',impactTimer:rv.impactTimer||0,cautionTimer:rv.cautionTimer||0,contactMemory:rv.contactRiskMemory||0,damage:rv.damage??100,yawKick:rv.yawKick||0,lod:rv.simModel||rivalLODName(rv.simLOD||0),skill:rv.skill,aggression:rv.aggression,consistency:rv.consistency,defense:rv.defense,planD:rv.livePlanD,draft:!!rv.liveDraft,color:(teamInfo(rv.team).color||'#9fb4c7')}}).sort((a,b)=>a.absD-b.absD).slice(0,limit);
 }
 function telemetryCornerSnapshot(){
  if(!player)return null;const p=player.autoPlan||driverCornerPlan(player.s,300,10);if(!p)return null;return{distanceM:Number.isFinite(p.d)?p.d:null,curvature:Number.isFinite(p.k)?p.k:null,safeKph:Number.isFinite(p.safe)?p.safe*3.6:null,sequence:!!p.sequence,signChanges:p.signChanges||0,firstM:p.first&&Number.isFinite(p.first.d)?p.first.d:null,lastM:p.last&&Number.isFinite(p.last.d)?p.last.d:null,direction:Math.abs(p.k)<.0002?'RECTA':p.k>0?'DERECHA':'IZQUIERDA'};
@@ -1328,8 +1328,10 @@ function initRivalRacecraft(rv){
 }
 function rivalTraffic(rv){
  let ahead=null,behind=null;
+ const L=trackData&&trackData.km>0?trackData.km*1000:1;
  const consider=(id,total,lat,speed,team,obj)=>{
-   const d=total-rv.total;
+   if(obj===player&&player.driveNetwork==='PIT')return;
+   const os=Number.isFinite(obj&&obj.s)?obj.s:null,d=apexPhysicalTrackDelta(os,rv.s,L);
    if(d>0&&d<90&&(!ahead||d<ahead.d))ahead={id,d,lat,speed,team,obj};
    else if(d<0&&d>-55&&(!behind||-d<behind.d))behind={id,d:-d,lat,speed,team,obj};
  };
@@ -1390,9 +1392,9 @@ function driverRacingLineTarget(s,plan,skill=.96,bravery=.90,bias=0){
 }
 function rivalSimulationLOD(rv){
  const mobile=mobilePerformanceMode(),near=mobile?120:150,mid=mobile?360:500,maxDynamic=mobile?5:8;
- const d=player?Math.abs((rv.total||0)-(player.total||0)):9999,prev=Number.isFinite(rv&&rv.simLOD)?rv.simLOD:null;
+ const L=trackData&&trackData.km>0?trackData.km*1000:1,playerS=player?(Number.isFinite(player.classificationS)?player.classificationS:player.s):null,d=player?Math.abs(apexPhysicalTrackDelta(rv.s,playerS,L)):9999,prev=Number.isFinite(rv&&rv.simLOD)?rv.simLOD:null;
  let closer=0;
- if(d<=near+32)for(const ov of rivals||[]){if(ov!==rv&&Math.abs((ov.total||0)-(player?.total||0))<d)closer++;}
+ if(d<=near+32)for(const ov of rivals||[]){if(ov!==rv&&Math.abs(apexPhysicalTrackDelta(ov.s,playerS,L))<d)closer++;}
  // Histéresis: una entidad que ya está en un nivel no cambia justo en el umbral.
  // Evita saltos de trayectoria cuando el jugador se acerca/aleja unos pocos metros.
  if(prev===2&&d<=near+28&&closer<maxDynamic+2)return 2;
@@ -1602,7 +1604,7 @@ function updateRivalRacecraft(rv,dt,L,diff){
    line=lerp(gridLane,line,rv.launchCorridorMix);
    rv.launchCorridorHold=rv.launchCorridorMix<.985;
  }else{rv.launchCorridorMix=1;rv.launchCorridorHold=false;}
- const pds=player?player.total-rv.total:99,pLat=player?player.lat-rv.lat:99;
+ const pdsRace=player?player.total-rv.total:99,pds=player&&player.driveNetwork!=='PIT'?apexPhysicalTrackDelta(Number.isFinite(player.classificationS)?player.classificationS:player.s,rv.s,L):99,pLat=player?player.lat-rv.lat:99;
  rv.launchGapGuard=false;
  // v5.139: en parrilla, el coche de dos posiciones atrás comparte la misma calle a ~9.8 m.
  // Las telemetrías v5.137 mostraron impactos traseros a 1.18 s y 1.52 s porque un rival
@@ -1610,10 +1612,10 @@ function updateRivalRacecraft(rv,dt,L,diff){
  // Mantenemos una distancia longitudinal realista durante los primeros 10 s sin teletransportar
  // ni frenar al pelotón entero: sólo actúa cuando el rival viene por la misma calle y detrás.
  const samePlayerCorridor=player&&Math.abs((player.gridLat??player.lat)-(rv.gridLat??rv.lat))<.85;
- if(player&&currentSession==='race'&&raceT<12.5&&pds>0&&pds<11.8&&samePlayerCorridor){
-   const desiredGap=7.0,allowedClosing=clamp((pds-desiredGap)*.55,-1.8,1.8);
+ if(player&&currentSession==='race'&&raceT<12.5&&pdsRace>0&&pdsRace<11.8&&samePlayerCorridor){
+   const desiredGap=7.0,allowedClosing=clamp((pdsRace-desiredGap)*.55,-1.8,1.8);
    target=Math.min(target,Math.max(0,player.speed+allowedClosing));
-   if(pds<6.15)target=Math.min(target,Math.max(0,player.speed-1.25));
+   if(pdsRace<6.15)target=Math.min(target,Math.max(0,player.speed-1.25));
    rv.launchGapGuard=true;
  }
  if(player&&Math.abs(pds)<5.2&&Math.abs(pLat)<1.72&&(!rv.launchCorridorHold||raceT>8.5)){
@@ -1622,12 +1624,12 @@ function updateRivalRacecraft(rv,dt,L,diff){
  }
  for(const ov of rivals){
    if(ov===rv||ov.finished)continue;
-   const ds=ov.total-rv.total,lg=ov.lat-rv.lat;
+   const dsRace=ov.total-rv.total,ds=apexPhysicalTrackDelta(ov.s,rv.s,L),lg=ov.lat-rv.lat;
    const sameGridCorridor=Math.abs((ov.gridLat??ov.lat)-(rv.gridLat??rv.lat))<.85;
-   if(currentSession==='race'&&raceT<12.5&&ds>0&&ds<11.8&&sameGridCorridor){
-     const desiredGap=7.0,allowedClosing=clamp((ds-desiredGap)*.55,-1.8,1.8);
+   if(currentSession==='race'&&raceT<12.5&&dsRace>0&&dsRace<11.8&&sameGridCorridor){
+     const desiredGap=7.0,allowedClosing=clamp((dsRace-desiredGap)*.55,-1.8,1.8);
      target=Math.min(target,Math.max(0,ov.speed+allowedClosing));
-     if(ds<6.15)target=Math.min(target,Math.max(0,ov.speed-1.25));
+     if(dsRace<6.15)target=Math.min(target,Math.max(0,ov.speed-1.25));
      rv.launchGapGuard=true;
    }
    if(Math.abs(ds)<4.0&&Math.abs(lg)<1.58&&(!rv.launchCorridorHold||raceT>8.5))line+=lg>=0?-.24:.24;
@@ -1658,7 +1660,7 @@ function updateRivalRacecraft(rv,dt,L,diff){
  }
  for(const ov of rivals){
    if(ov===rv||ov.finished)continue;
-   const ds=ov.total-rv.total,latGap=Math.abs(ov.lat-rv.lat),pairD=7.0*safetyScale,pairLat=1.44+Math.max(-.08,(safetyScale-1)*.28);
+   const ds=apexPhysicalTrackDelta(ov.s,rv.s,L),latGap=Math.abs(ov.lat-rv.lat),pairD=7.0*safetyScale,pairLat=1.44+Math.max(-.08,(safetyScale-1)*.28);
    if(ds>0&&ds<pairD&&latGap<pairLat){
      target=Math.min(target,Math.max(0,ov.speed-(pairD-ds)*(1.28+.24*safetyScale)));
      line+=rv.lat>=ov.lat?.30*safetyScale:-.30*safetyScale;
@@ -1788,8 +1790,7 @@ function autoRaceTrafficSnapshot(){
  const L=trackData.km*1000;
  for(const rv of rivals){
    if(rv.finished)continue;
-   let d=rv.total-player.total;
-   if(d>L*.5)d-=L;else if(d<-L*.5)d+=L;
+   const d=apexPhysicalTrackDelta(rv.s,Number.isFinite(player.classificationS)?player.classificationS:player.s,L);
    if(d<-42||d>70)continue;
    const latDelta=rv.lat-player.lat,latAbs=Math.abs(latDelta),rel=rv.speed-player.speed;
    if(Math.abs(d)<24)out.nearCount++;
@@ -1818,7 +1819,7 @@ function autoRaceLaneClear(candidate,trafficSnap){
  const L=trackData.km*1000,from=player.lat,to=candidate,lo=Math.min(from,to)-1.35,hi=Math.max(from,to)+1.35;
  for(const rv of rivals){
    if(rv.finished)continue;
-   let d=rv.total-player.total;if(d>L*.5)d-=L;else if(d<-L*.5)d+=L;
+   const d=apexPhysicalTrackDelta(rv.s,Number.isFinite(player.classificationS)?player.classificationS:player.s,L);
    if(d<-11||d>17)continue;
    const futureD=d+(rv.speed-player.speed)*.55;
    const nearLong=Math.abs(d)<7.0||Math.abs(futureD)<7.5;
@@ -1833,7 +1834,7 @@ function playerAutoTraffic(plan){
  let ahead=null;
  for(const rv of rivals){
    if(rv.finished)continue;
-   const d=rv.total-player.total;
+   const d=apexPhysicalTrackDelta(rv.s,Number.isFinite(player.classificationS)?player.classificationS:player.s,trackData.km*1000);
    if(d>0&&d<105&&(!ahead||d<ahead.d))ahead={rv,d,lat:rv.lat,speed:rv.speed};
  }
  const env=envProfile(player.s),limit=autoSafeLaneLimit(player.s);
