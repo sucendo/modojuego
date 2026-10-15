@@ -316,6 +316,27 @@ function apexCarModelVisual(spec){
  };
 }
 
+/* v0.12.0: un mismo catálogo de carrocería para rival, coche propio y cámara de piloto.
+   No convertir la decoración en datos de física ni sustituir la geometría por PNG. */
+const APEX_CAR_VIEW_ANGLES=Object.freeze(Array.from({length:16},(_,i)=>i*22.5));
+function apexCarVisualBlueprint(teamKey,overrides=null){
+ const key=Object.prototype.hasOwnProperty.call(teamCatalog,teamKey)?teamKey:'PAPAYA';
+ const team=teamCatalog[key],brand=teamBrandCatalog[key]||{},cv=brand.cockpit||{},rear=team.rearVisual||{};
+ const spec=carCatalog[team.model]||carCatalog.A26,o=overrides||{};
+ return{
+  key,name:team.name,chassis:team.chassis,model:team.model||'A26',spec,
+  geometry:apexCarModelVisual(spec),
+  livery:{
+   primary:o.primary||team.color,accent:o.accent||team.accent,
+   secondary:rear.secondary||'#121820',stripe:rear.stripe||team.accent,
+   trim:rear.trim||'#f1f2f3',carbon:rear.carbon||'#090c10',
+   wing:rear.wing||'#111418',pattern:cv.pattern||rear.pattern||'clean',
+   halo:cv.halo||team.color,wheel:cv.wheel||team.accent,
+   symbol:brand.logo||'swoosh'
+  }
+ };
+}
+
 function sessionLabel(s){return s==='fp1'?'FP1':s==='fp2'?'FP2':s==='fp3'?'FP3':s==='qualifying'?'CLASIFICACIÓN OFICIAL':s==='freepractice'?'ENTRENAMIENTOS LIBRES':'CARRERA'}
 function sessionDurationSeconds(s){
  // FIA 2026 standard weekend: FP1/FP2/FP3 are 60 m

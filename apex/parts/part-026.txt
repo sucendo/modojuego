@@ -108,9 +108,9 @@ function webglPushRivalLocalBox(b,cam,pitch,cx,cy,cz,sx,sy,sz,cols={}){
  return tris;
 }
 function webglRivalVariant(teamKey){
- const team=teamInfo(teamKey),spec=carCatalog[team.model]||carCatalog.A26,m=apexCarModelVisual(spec);
+ const blueprint=apexCarVisualBlueprint(teamKey),m=blueprint.geometry;
  return{
-  model:team.model||'A26',
+  model:blueprint.model,
   noseLen:1.64*m.noseLen,
   noseWidth:m.noseWidth,
   frontWing:1.86*m.frontWing,
@@ -207,6 +207,62 @@ function webglPrepareRivalVisuals(items){
  }
  return items;
 }
+/* v0.12.0 · Pintura 3D APEX. El renderer sigue compartiendo una única malla
+   paramétrica por familia A26/VXR/NOVA. Sólo se añaden planos en LOD 2:
+   no hay texturas oficiales, sprites planos, intervalos ni nuevas físicas. */
+function webglPushRivalPaintwork3D(b,cam,pitch,teamKey,v,lod){
+ if(lod<2)return 0;
+ const design=apexCarVisualBlueprint(teamKey),L=design.livery,p=(x,y,z)=>webglRivalLocal(b,x,y,z);
+ const stripe=L.stripe,secondary=L.secondary,trim=L.trim,pattern=L.pattern,carbon=L.carbon;
+ const quad=(pts,color)=>webglPushRivalLocalQuad(b,cam,pitch,pts.map(x=>p(x[0],x[1],x[2])),color,.56,-.012);
+ let tris=0;
+ // Morro continuo y filete superior; los 3 modelos comparten las coordenadas maestras.
+ const frontTip=2.2*design.geometry.noseLen;
+ tris+=quad([[-.048,.316,.21],[.048,.316,.21],[.026,.231,frontTip],[-.026,.231,frontTip]],pattern==='blade'||pattern==='lux'?trim:stripe);
+ if(pattern==='center'||pattern==='pinstripe'||pattern==='sweep'){
+  tris+=quad([[-.012,.320,.25],[.012,.320,.25],[.009,.237,frontTip],[-.009,.237,frontTip]],trim);
+ }
+ // Cada pontón conserva su volumen: las bandas siguen la superficie 3D.
+ const sideScale=design.geometry.sidepodWidth;
+ for(const sg of [-1,1]){
+  const x0=sg*.35*sideScale,x1=sg*.64*sideScale;
+  const accentColor=pattern==='split'?secondary:(pattern==='blade'?trim:stripe);
+  tris+=quad([[x0,.411,-.70],[x1,.411,-.70],[sg*.54*sideScale,.371,.53],[sg*.31*sideScale,.371,.53]],
+    pattern==='center'||pattern==='bars'?secondary:L.primary);
+  if(pattern!=='clean'){
+   tris+=quad([[sg*.48*sideScale,.417,-.66],[sg*.54*sideScale,.417,-.66],[sg*.41*sideScale,.377,.48],[sg*.35*sideScale,.377,.48]],accentColor);
+  }
+  if(pattern==='chevron'||pattern==='spear'||pattern==='flank'||pattern==='lux'){
+   tris+=quad([[sg*.575*sideScale,.409,-.45],[sg*.635*sideScale,.408,-.36],[sg*.50*sideScale,.375,.44],[sg*.47*sideScale,.376,.36]],trim);
+  }
+  // Panel lateral inferior con una franja geométrica identificativa del equipo.
+  tris+=quad([[sg*.635*sideScale,.345,-.55],[sg*.646*sideScale,.345,-.25],[sg*.556*sideScale,.27,.46],[sg*.55*sideScale,.27,.31]],accentColor);
+ }
+ // Acentos en perfiles alares, siempre originales APEX.
+ tris+=quad([[-v.frontWing*.42,.116,1.99], [v.frontWing*.42,.116,1.99],
+              [v.frontWing*.39,.116,2.045],[-v.frontWing*.39,.116,2.045]],stripe);
+ tris+=quad([[-v.rearWing*.40,.754,-2.06],[v.rearWing*.40,.754,-2.06],
+              [v.rearWing*.40,.754,-2.015],[-v.rearWing*.40,.754,-2.015]],trim);
+ // Refinamientos de carrocería junto al ojo del piloto, nunca en objetos lejanos.
+ for(const sg of [-1,1]){
+  tris+=quad([[sg*.20,.53,-.36],[sg*.30,.49,-.42],[sg*.38,.42,-.76],[sg*.28,.47,-.69]],secondary);
+  tris+=quad([[sg*.33,.38,.54],[sg*.38,.39,.47],[sg*.65,.31,.32],[sg*.61,.30,.37]],carbon);
+ }
+ return tris;
+}
+function apexCarVisualPipelineSelfTest(){
+ const angles=APEX_CAR_VIEW_ANGLES,expected=teamKeys.length*angles.length;
+ const entries=teamKeys.map(key=>{
+  const b=apexCarVisualBlueprint(key),v=webglRivalVariant(key);
+  return{team:key,model:b.model,valid:!!(carCatalog[b.model]&&b.chassis&&b.livery.primary&&
+   Number.isFinite(v.wheelbase)&&Number.isFinite(v.frontWing)&&Number.isFinite(v.rearWing))};
+ });
+ const idx=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15].map(i=>rivalAtlas16AngleIndex(Math.cos(i*Math.PI/8),-Math.sin(i*Math.PI/8)));
+ return{ok:entries.every(x=>x.valid)&&angles.length===16&&new Set(idx).size===16,
+  teams:entries,viewAngles:angles.slice(),viewIndices:idx,referenceViews:expected,backend:'WebGL2 continuo; Canvas fallback 3 vistas'};
+}
+window.apexCarVisualPipelineSelfTest=apexCarVisualPipelineSelfTest;
+
 function webglPushRivalCar3D(a,cam,pitch){
  const team=teamInfo(a.r.team),primary=team.color||'#d43b42',accent=team.accent||shadeColor(primary,28),light=shadeColor(primary,18),dark=shadeColor(primary,-30),carbon='#090c10',carbon2='#161c22',metal='#7d8793',basis=webglRivalBasis(a),speed=Number(a.r.speed)||0,spin=raceT*(speed*.018+2.4),v=webglRivalVariant(a.r.team),lod=webglRivalLod(a);
  const wb=v.wheelbase,frontZ=wb*.52,rearZ=-wb*.48;
@@ -279,6 +335,18 @@ function webglPushRivalCar3D(a,cam,pitch){
    for(const sx of [-.24,-.12,0,.12,.24])tris+=webglPushRivalLocalBox(basis,cam,pitch,sx,.13,rearZ-.48,.025,.16,.42,{main:'#11171d'});
  }
 
+ // Upper air intake, sidepod shoulders and engine fin: extra geometry only near camera.
+ if(lod>=2){
+   const bcol=apexCarVisualBlueprint(a.r.team).livery;
+   tris+=webglPushRivalFrustum3D(basis,cam,pitch,0,.805,-.79,.28,.18*v.airboxWidth,.24*v.airboxWidth,.10,.12,
+      {main:carbon2,top:'#343b43',front:'#07090d',back:'#10161c'});
+   tris+=webglPushRivalLocalBox(basis,cam,pitch,0,.53,-1.13,.028,.24,.70,
+      {main:shadeColor(primary,-25),top:bcol.stripe});
+   for(const sg of [-1,1]){
+     tris+=webglPushRivalLocalBox(basis,cam,pitch,sg*.47,.405,.42,.22,.04,.10,
+       {main:bcol.secondary,top:'#06090e',front:bcol.stripe});
+   }
+ }
  // Mirrors
  if(lod>=1){
    const mirrorX=.43*v.mirrorSpread;
@@ -286,8 +354,9 @@ function webglPushRivalCar3D(a,cam,pitch){
    tris+=webglPushRivalLocalBox(basis,cam,pitch,mirrorX,.45,.49,.13,.055,.10,{main:accent,top:light});
  }
 
- // Team stripe / livery geometry (not image)
+ // Team stripe / livery geometry (not image). LOD 2 adds painted 3D panels.
  tris+=webglPushRivalLocalBox(basis,cam,pitch,0,.31,-.01,.085,.025,2.28,{main:accent,top:shadeColor(accent,18)});
+ if(lod>=2)tris+=webglPushRivalPaintwork3D(basis,cam,pitch,a.r.team,v,lod);
 
  // Wheels
  const wheelS=v.wheelScale;

@@ -1905,15 +1905,17 @@ function playerCarSpec(){
  return carCatalog[team.model]||carCatalog.A26;
 }
 function playerCarVisualProfile(){
- const teamKey=(player&&player.teamKey)||selectedTeamKey(),team=teamInfo(teamKey),spec=(player&&player.carSpec)||carCatalog[team.model]||carCatalog.A26,rear=teamRearVisual(teamKey);
- const primary=(player&&player.carColor)||team.color,accent=(player&&player.carAccent)||team.accent||shadeColor(primary,32);
- return{teamKey,team,chassis:(player&&player.carModel)||team.chassis,spec,rear,primary,accent};
+ const teamKey=(player&&player.teamKey)||selectedTeamKey(),blueprint=apexCarVisualBlueprint(teamKey),
+       team=teamInfo(teamKey),spec=(player&&player.carSpec)||blueprint.spec,rear=teamRearVisual(teamKey);
+ const primary=(player&&player.carColor)||blueprint.livery.primary,accent=(player&&player.carAccent)||blueprint.livery.accent;
+ return{teamKey,team,chassis:(player&&player.carModel)||blueprint.chassis,spec,rear,primary,accent,
+        geometry:apexCarModelVisual(spec),blueprint};
 }
 function apexCarVisualAudit(){
  const required=['noseLen','noseWidth','frontWing','rearWing','sidepodWidth','sidepodHeight','engineHeight','cockpitWidth','haloWidth','airboxWidth','wheelScale','shoulderWidth','mirrorSpread','driverEye'];
  const models=Object.entries(carCatalog).map(([id,spec])=>{const visual=apexCarModelVisual(spec),missing=required.filter(k=>!Number.isFinite(visual[k]));return{id,name:spec.name,ok:missing.length===0,missing,visual};});
  const teams=teamKeys.map(key=>{const t=teamInfo(key),spec=carCatalog[t.model]||carCatalog.A26;return{team:key,chassis:t.chassis,model:t.model||'A26',visual:apexCarModelVisual(spec)};});
- return{ok:models.every(m=>m.ok),version:APP_VERSION,models,teams,player:player?{teamKey:player.teamKey,chassis:player.carModel,model:player.carSpec&&player.carSpec.name,visual:apexCarModelVisual(player.carSpec||carCatalog.A26)}:null};
+ return{ok:models.every(m=>m.ok),version:APP_VERSION,rendering:'continuous-3d-with-16-angle-reference',viewAngles:APEX_CAR_VIEW_ANGLES.slice(),sharedBlueprint:true,models,teams,player:player?{teamKey:player.teamKey,chassis:player.carModel,model:player.carSpec&&player.carSpec.name,visual:apexCarModelVisual(player.carSpec||carCatalog.A26)}:null};
 }
 window.apexCarVisualAudit=apexCarVisualAudit;
 function playerCarColor(){

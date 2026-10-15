@@ -1021,7 +1021,7 @@ const RIVAL_ATLAS16 = {
   angles:[0,22.5,45,67.5,90,112.5,135,157.5,180,202.5,225,247.5,270,292.5,315,337.5],
   pivotX:0.5,
   pivotY:0.88,
-  source:null
+  source:'webgl-3d-continuous', // Las 16 vistas se cubren sin cuantizar el movimiento.
 };
 
 function rivalAtlas16AngleIndex(facing,sideToCam){
@@ -1152,7 +1152,7 @@ function collectRivalSprites(cam,pitch){
    const side=rfx*cam.nx+rfz*cam.nz;
    const raw=Math.atan2(side,Math.max(.55,Math.abs(rfx*cam.tx+rfz*cam.tz)));
    const relYaw=clamp(raw,-.20,.20);
-   arr.push({r,p,z:c.z,q,surface,relYaw,facing,sideToCam,view,visualLod});
+   arr.push({r,p,z:c.z,q,surface,relYaw,facing,sideToCam,view,viewIndex16:rivalAtlas16AngleIndex(facing,sideToCam),visualLod});
    apexRivalLodFrameStats.visible++;if(visualLod>=2)apexRivalLodFrameStats.near++;else if(visualLod===1)apexRivalLodFrameStats.mid++;else apexRivalLodFrameStats.far++;
  }
  arr.sort((a,b)=>b.z-a.z);return arr;
