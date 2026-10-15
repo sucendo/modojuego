@@ -66,8 +66,8 @@ test('Las rutas orientales se resuelven sobre los datos REALES L8', {timeout:150
   {filename:'atlas-west-asia-0403.js'});
  const api=sandbox.window.HexategosWestAsia0403;
  assert.equal(api.graphBuilds(),0);
- const candidates=['Orontes (Asi)','Jordán','Karún','Gran Zab','Kura',
-  'Montes Pónticos','Montes Al Hajar','Pequeño Cáucaso','Lago Urmia','Lago Tuz','Lago Seván'];
+ const west=sandbox.window.HexategosWestAsiaPhysical0403;
+ const candidates=[...west.rivers,...west.mountains,...west.lakes].map(x=>x.name);
  const resolved=[];
  for(const name of candidates){
   const route=api.inspect(name);
