@@ -1740,8 +1740,9 @@ async function apexInspectorPrepareSurfaceClosure(){
 }
 
 function syncVersionUi(){
- const vb=$("versionBadge");if(vb)vb.textContent=APP_VERSION+" · "+APP_BUILD;
- document.title="Apex Formula 26 "+APP_VERSION+" "+APP_BUILD;
+ const channel=typeof APP_CHANNEL==="string"&&APP_CHANNEL?APP_CHANNEL:"PRE-RELEASE";
+ const vb=$("versionBadge");if(vb)vb.textContent=APP_VERSION+" · "+channel;
+ document.title="Apex Formula 26 "+APP_VERSION+" · "+channel;
 }
 function populateTeams(){
  const sel=$("teamSelect"); if(!sel||sel.dataset.ready) return;
@@ -1893,6 +1894,11 @@ function playerTeamInfo(){ return teamInfo(selectedTeamKey()); }
 function playerCarSpec(){
  const team=playerTeamInfo();
  return carCatalog[team.model]||carCatalog.A26;
+}
+function playerCarVisualProfile(){
+ const teamKey=(player&&player.teamKey)||selectedTeamKey(),team=teamInfo(teamKey),spec=(player&&player.carSpec)||carCatalog[team.model]||carCatalog.A26,rear=teamRearVisual(teamKey);
+ const primary=(player&&player.carColor)||team.color,accent=(player&&player.carAccent)||team.accent||shadeColor(primary,32);
+ return{teamKey,team,chassis:(player&&player.carModel)||team.chassis,spec,rear,primary,accent};
 }
 function playerCarColor(){
  const team=playerTeamInfo();
