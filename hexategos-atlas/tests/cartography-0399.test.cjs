@@ -184,3 +184,60 @@ test('Atlas físico compartido de Hexategos Pruebas: entrada real y alternativa'
   assert.ok(!html.includes('atlas-coast-0399.js'));
  }
 });
+
+
+test('Puente jugable: compatibilidad de dibujo, apagado y suministro',()=>{
+ const folder=path.resolve(root,'../hexategos-pruebas/game/js');
+ const readGame=name=>fs.readFileSync(path.join(folder,name),'utf8');
+ const calls={base:0,enriched:0,oldLabels:0,macro:0,regions:0};
+ const element={checked:true,addEventListener(){}};
+ const L={
+  n:1,land:new Int16Array([1]),
+  centers:new Int16Array([Math.round(Math.sin(10*Math.PI/180)*Math.cos(55*Math.PI/180)*32767),
+    Math.round(Math.sin(55*Math.PI/180)*32767),
+    Math.round(Math.cos(55*Math.PI/180)*Math.cos(10*Math.PI/180)*32767)])
+ };
+ const w={
+  window:{
+   HexategosAtlasMacro0396:{draw(){calls.macro++}},
+   HexategosAtlasRegions0390:{draw(){calls.regions++}},
+   HexategosLandCover0391:{types:[{color:[38,120,67]}],classify:()=>0}
+  },
+  localStorage:{getItem(){return null},setItem(){}},
+  document:{getElementById:()=>element},
+  drawTerrain3212(){calls.base++},
+  drawGeographicLabels3243(){calls.oldLabels++},
+  terrainStrategicFill3247(){return 'rgb(60,70,80)'},
+  terrainType3247(){return 'forest'},
+  shadedRGB3247:(rgb)=>'rgb('+rgb.join(',')+')',
+  MAX_GAME_LEVEL3233:'8',mountainTier3212:new Uint8Array(1),
+  zoom:6,yaw:-10*Math.PI/180,pitch:55*Math.PI/180,
+  showLabels:true,mapMode3252:'political',needsRender:false,console
+ };
+ const context=vm.createContext(w);
+ vm.runInContext(readGame('atlas-bridge-0400.js'),context);
+ const originalTerrain=w.window.__atlasOriginalTerrain0400;
+ assert.equal(typeof originalTerrain,'function');
+ w.drawTerrain3212=()=>{calls.enriched++};
+ vm.runInContext(readGame('atlas-integration-0400.js'),context);
+ w.drawTerrain3212(1000,500,500);
+ assert.equal(calls.enriched,1);
+ w.drawGeographicLabels3243(1000,500,500);
+ assert.equal(calls.macro,1);assert.equal(calls.regions,1);
+ assert.notEqual(w.terrainStrategicFill3247('8',0,L,1,1),'rgb(60,70,80)');
+ w.mapMode3252='supply';
+ assert.equal(w.terrainStrategicFill3247('8',0,L,1,1),'rgb(60,70,80)');
+ w.mapMode3252='political';
+ w.window.HexategosGameAtlasBridge0400.setEnabled(false);
+ w.drawTerrain3212(1000,500,500);
+ assert.equal(calls.base,1);
+ w.drawGeographicLabels3243(1000,500,500);
+ assert.equal(calls.oldLabels,1);
+ assert.equal(w.terrainStrategicFill3247('8',0,L,1,1),'rgb(60,70,80)');
+ w.window.HexategosGameAtlasBridge0400.setEnabled(true);
+ w.yaw=-125*Math.PI/180;
+ w.drawTerrain3212(1000,500,500);
+ assert.equal(calls.base,2);
+ w.drawGeographicLabels3243(1000,500,500);
+ assert.equal(calls.oldLabels,2);
+});
