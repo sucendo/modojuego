@@ -18,7 +18,7 @@
   {name:'Kunlun central',points:[[83.4,36.5],[86.0,36.7],[88.8,36.5],[91.2,36.7]],minZoom:8.1,elevationM:6500,canonicalParent:'Kunlun'},
   {name:'Pir Panjal',points:[[73.9,34.0],[75.1,33.7],[76.5,33.2]],minZoom:9,elevationM:4600},
   {name:'Siwalik occidental',points:[[74.0,31.2],[76.0,30.7],[78.0,30.1],[80.2,29.5]],minZoom:9.2,elevationM:2000},
-  {name:'Nyenchen Tanglha',points:[[88.6,30.8],[90.5,30.6],[92.2,30.3]],minZoom:9,elevationM:7100}
+  {name:'Nyenchen Tanglha',points:[[88.6,30.35],[90.0,30.25],[91.4,30.15],[92.7,30.15]],minZoom:9,elevationM:7100}
  ];
  // Los grandes cauces canónicos NO se vuelven a dibujar. Estos ejes
  // contienen cabeceras para la próxima fase Indo–Ganges–Brahmaputra.
