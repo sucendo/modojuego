@@ -11,6 +11,7 @@
  const lakes=window.HexategosEuropeLakes0396;
  const supplemental=window.HexategosEuropeSecondary0396;
  const straits=window.HexategosAtlasStraits0397;
+ const labelStyle=window.HexategosAtlasLabelStyle0399;
  if(!source){console.warn('[Atlas] No se cargaron las regiones compartidas');return}
  const historicalAnchors={
   'Cataluña':[1.75,41.70],'Aragón':[-0.90,41.37],'Navarra':[-1.55,42.55],
@@ -117,7 +118,7 @@
    if((item.kind==='natural'||item.kind==='historical')&&zoom<handoffZoom)continue;
    // No rotular masas de agua que la malla no puede representar.
    if(item.kind==='lake'&&!lakes?.isDrawn?.(item.name))continue;
-   if((item.kind==='island'||item.kind==='strait'||item.kind==='archipelago')&&!straits?.valid(item))continue;
+   if((item.kind==='island'||item.kind==='strait'||item.kind==='archipelago'||item.kind==='marine')&&!straits?.valid(item))continue;
    if(item.kind==='river'&&!$('rivers')?.checked)continue;
    if(item.kind==='mountain'&&!$('mountains')?.checked)continue;
    if(item.kind==='lake'&&!$('lakes')?.checked)continue;
@@ -139,10 +140,7 @@
     if(lastBoxes.some(b=>!(rect[2]<b[0]||rect[0]>b[2]||rect[3]<b[1]||rect[1]>b[3])))continue;
     ctx.lineWidth=3;
     ctx.strokeStyle='rgba(7,18,28,.88)';ctx.strokeText(label,p.x,p.y);
-    ctx.fillStyle=item.kind==='river'||item.kind==='lake'||item.kind==='strait'?'rgba(137,215,238,.91)':
-      item.kind==='mountain'?'rgba(233,201,151,.93)':
-      item.kind==='historical'?'rgba(215,219,235,.82)':
-      'rgba(224,236,212,.93)';
+    ctx.fillStyle=labelStyle.color(item,item.kind==='historical'?.86:.94);
     ctx.fillText(label,p.x,p.y);
     lastBoxes.push(rect);
    }
@@ -163,7 +161,7 @@
    '</div>';
  }
  window.HexategosAtlasRegions0390=Object.freeze({
-   version:'0.39.8',draw,cellInfo,occupied:()=>lastBoxes,
+   version:'0.39.9',draw,cellInfo,occupied:()=>lastBoxes,
    regionsAt:(lat,lon)=>{
     const old=source.regionsAt(lat,lon);
     return {natural:old.natural.concat(europe?.naturalAt(lat,lon)||[],detail?.naturalAt(lat,lon)||[]),
