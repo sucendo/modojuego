@@ -8,7 +8,7 @@
   (window.HexategosCentralAsiaPhysical0404?.basins||[])
    .filter(x=>x.kind==='water').map(x=>({
     name:x.name,lon:x.center[0],lat:x.center[1],kind:'water',
-    priority:x.priority,minZoom:x.minZoom,maxZoom:x.maxZoom,
+    priority:x.priority,minZoom:x.minZoom,maxZoom:8.6,
     centralWater:true
    })));
  const handoffZoom=5.55;
