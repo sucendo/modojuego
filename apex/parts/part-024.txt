@@ -2594,7 +2594,15 @@ function rivalAvoidanceScale(rv){
  return clamp(1+(rv.awareness-.88)*.92+(rv.consistency-.86)*.36-(rv.aggression-.55)*.46+mem*.38,.80,1.30);
 }
 function rivalImpactRank(mode){return mode==='SPIN'?3:mode==='WOBBLE'?2:mode==='RECOVER'?1:0;}
-function rivalIncidentNearPlayer(rv,range=260){return !!(player&&Math.abs((rv.total||0)-(player.total||0))<range);}
+function apexPhysicalTrackDelta(aS,bS,L){
+ L=Number.isFinite(L)&&L>0?L:(trackData&&trackData.km>0?trackData.km*1000:1);
+ if(!Number.isFinite(aS)||!Number.isFinite(bS))return Infinity;
+ return wrapDeltaS(aS,bS,L);
+}
+function rivalIncidentNearPlayer(rv,range=260){
+ if(!player||!rv||!trackData)return false;
+ return Math.abs(apexPhysicalTrackDelta(rv.s,Number.isFinite(player.classificationS)?player.classificationS:player.s,trackData.km*1000))<range;
+}
 function triggerRivalIncident(rv,opt={}){
  if(!rv||rv.finished)return;
  const severity=clamp(Number(opt.severity)||0,0,1.8),closing=Math.max(0,Number(opt.closing)||0),pen=Math.max(0,Number(opt.penetration)||0),yawImpulse=Number(opt.yawImpulse)||0;
@@ -2663,7 +2671,7 @@ function applyRivalIncidentTargets(rv,target,line){
 function resolveRivalRivalCollision(a,b){
  if(!a||!b||a===b||a.finished||b.finished)return false;
  // Broad phase barato: 210 pares máximos; SAT sólo si realmente comparten unos pocos metros.
- if(Math.abs((a.total||0)-(b.total||0))>7.2||Math.abs((a.lat||0)-(b.lat||0))>3.0)return false;
+ if(Math.abs(apexPhysicalTrackDelta(a.s,b.s,trackData.km*1000))>7.2||Math.abs((a.lat||0)-(b.lat||0))>3.0)return false;
  const A=rivalBodyState(a),B=rivalBodyState(b);
  if(Math.hypot(A.body.x-B.body.x,A.body.z-B.body.z)>7.0)return false;
  const c=satCarCollision(A.body,B.body);if(!c)return false;
