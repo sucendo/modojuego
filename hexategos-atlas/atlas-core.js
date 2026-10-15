@@ -350,9 +350,6 @@ function render(now=performance.now()){
   }
  }
 
- // Atlas-only coastline: water and islands refined against Natural Earth,
- // clipped into existing visible L8 hexagons without touching their data.
- window.HexategosAtlasCoast0399?.draw(R,cx,cy);
  drawTerrain3212(R,cx,cy);
 
  // Grandes lagos dibujados como masas acuáticas esquemáticas, SIN modificar
