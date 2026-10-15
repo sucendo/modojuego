@@ -362,6 +362,7 @@ function telemetryRecordingEnabled(){return getTelemetryRecordMode()!=="OFF"}
 function telemetryFullRecording(){return getTelemetryRecordMode()==="FULL"}
 function telemetryEventAllowed(type,data={}){
  if(getTelemetryRecordMode()!=="EVENTS")return true;
+ if(type==="RIVAL_CONTINUITY_ANOMALY")return true;
  if(type==="RIVAL_INTENT")return false;
  if(type==="RIVAL_RIVAL_CONTACT")return (Number(data.severity)||0)>=.04||(Number(data.closingKph)||0)>=14;
  if(type==="RIVAL_INCIDENT")return data.mode==="SPIN"||(Number(data.severity)||0)>=.035;
@@ -391,7 +392,7 @@ function telemetryRound(v,n=4){return Number.isFinite(v)?+v.toFixed(n):null}
 function initSessionTelemetry(spec,gm){
  const recMode=getTelemetryRecordMode();sessionTelemetryNext=0;sessionTelemetryEventNext=0;sessionTelemetryPrev={zone:null,recovery:null,recoveryStage:null,lap:0,wallHit:-99,wallEventAt:-99,rivalContactAt:-99,recoveryEpisodeAt:null,emergency:false,targetReason:null};
  sessionTelemetry={
-   schema:"ApexFormula26.SessionTelemetry.v22",appVersion:APP_VERSION,build:APP_BUILD,
+   schema:"ApexFormula26.SessionTelemetry.v23",appVersion:APP_VERSION,build:APP_BUILD,
    createdAt:new Date().toISOString(),session:{mode:gm,type:currentSession,weather:raceWeather,weatherPreset:sessionSettings&&sessionSettings.weather||null,weatherRuntime:apexWeatherRuntimeSnapshot(),difficulty:sessionSettings?sessionSettings.diff:null,noRivals:!!(sessionSettings&&sessionSettings.noRivals),gridPosition:player?player.pos:null,rivalCount:rivals?rivals.length:0},
    circuit:{round:spec&&spec.r,country:spec&&spec.country,name:spec&&spec.name,dir:spec&&spec.dir,km:trackData&&trackData.km},
    circuitCompile:trackData&&trackData._compileStats?clonePlain(trackData._compileStats):null,
@@ -399,12 +400,50 @@ function initSessionTelemetry(spec,gm){
    trafficModel:{lookBehindM:42,lookAheadM:70,nearCountLongitudinalM:24,sideLongitudinalM:4.4,sideLateralM:2.45,followLongitudinalM:12,followLateralM:2.15,launchProtectSec:14,rearThreatEscape:true,doubleTrafficLimiter:false,rivalLaunchGapGuard:true,rivalLaunchGapGuardSec:10,rivalLaunchSameLaneGapM:7.0,packSafeGridCorridors:true,gridCorridorReleaseAfterSec:6.6,gridCorridorMaxHoldSec:14.5,substepPlayerRivalCollisions:true,rivalRivalCollisions:true,personalitySafetyMargins:true,postContactCaution:true,softRubFiltering:true,firstLapCornerPassGuard:true,firstComplexLaneLock:true,packContactContainment:true,smoothFrenetTangent:true,geometryKinkGuard:true,continuousDriverReference:true,pathCurvatureSpeedEnvelope:true,purePursuitCleanAir:false,legacyPlayerAutV5149:true,firstChicaneRelease:true,geometryCommit:true,cityLaneSwingGuard:true,rivalKinkCaution:true},
    aiModels:{playerAuto:"FULL_PHYSICS_V5149_RESTORED",rivals:"HYBRID_SHARED_FRENET_LOD_PARITY",sharedCornerPlanner:true,sharedSpeedEnvelope:true,kinematicParityGovernor:true,parityCornerReference:"legacy149CenterlineCurvature",nearDynamicM:150,midHybridM:500,farKinematic:true,mobileNearDynamicM:120,mobileMidHybridM:360,racePaceFloor:.995,racePaceCeil:1.055,incidentAwarePace:true,launchCorridorHold:true,cleanRiskDecay:true,localRiskPenaltyV3:true,riskLearningIncidentOnly:true,racePaceReleaseV2:true,raceSurvivalGovernor:true,firstLapSurvivalBias:true,postImpactLaneHold:true,playerSoftRubFiltering:true,firstComplexLaneLock:true,technicalRiskLinePrep:true,technicalDirectionGuardV2:true,cleanAirSurvivalRelease:true,packContactContainment:true,smoothFrenetTangent:true,geometryKinkGuard:true,continuousDriverReference:true,pathCurvatureSpeedEnvelope:true,purePursuitCleanAir:false,legacyPlayerAutV5149:true,firstChicaneRelease:true,geometryCommit:true,cityLaneSwingGuard:true,rivalKinkCaution:true},
    recoveryModel:{lockedEmergencyPlan:true,lockedExitSide:true,edgeHoldAlignment:true,alignmentGateDeg:15,normalRealignGateDeg:24,lowSpeedTractionAssist:true,hardPullAfterSec:6.5,lateralDivergenceGuard:true,longRecoveryLocalAssist:true},
-   renderer:{backend:rendererBackendId(),modularFacade:true,webgl2Prototype:true,hybridCanvasOverlay:true,changes:["v62.4 adaptive mirrors: cached projection, independent refresh budget, distance LOD and landmark occlusion","v62.3.1 rival LOD: 3D full near / 3D medium mid / 3D low-poly far; depth-buffer occlusion"]},telemetryFeatures:{engineerTabs:true,autDecisionChain:true,nearRivalSnapshots:true,incidentWindows:true,performanceStats:true,circuitCompiler:true,persistentCircuitCompileCache:true,rendererWarmup:true,runtimeProfilerV2:true,rivalVisualLod:true,rival3DOnly:true,rivalDepthOcclusion:true,adaptiveMirrors:true,mirrorProjectionCache:true,mirrorLandmarkOcclusion:true,terrainTunnelBreakdown:true,trafficMap:true,relativeMapDriverView:true,launchCorridorDiagnostics:true,substepCarCollisions:true,rivalRivalContacts:true,persistentRivalImpactDynamics:true,rivalImpactStates:true,raceSurvivalDiagnostics:true,racePaceReleaseDiagnostics:true,firstComplexLaneLockDiagnostics:true,packContactContainmentDiagnostics:true,technicalRiskPrepDiagnostics:true,smoothFrenetDiagnostics:true,geometryKinkDiagnostics:true,continuousDriverReference:true,pathCurvatureSpeedEnvelope:true,purePursuitCleanAir:false,legacyPlayerAutV5149:true,geometryCommitDiagnostics:true,laneSwingDiagnostics:true,rivalKinkDiagnostics:true},
+   renderer:{backend:rendererBackendId(),modularFacade:true,webgl2Prototype:true,hybridCanvasOverlay:true,changes:["v62.4 adaptive mirrors: cached projection, independent refresh budget, distance LOD and landmark occlusion","v62.3.1 rival LOD: 3D full near / 3D medium mid / 3D low-poly far; depth-buffer occlusion"]},telemetryFeatures:{engineerTabs:true,autDecisionChain:true,nearRivalSnapshots:true,incidentWindows:true,performanceStats:true,circuitCompiler:true,persistentCircuitCompileCache:true,rendererWarmup:true,runtimeProfilerV2:true,rivalVisualLod:true,rival3DOnly:true,rivalDepthOcclusion:true,adaptiveMirrors:true,mirrorProjectionCache:true,mirrorLandmarkOcclusion:true,terrainTunnelBreakdown:true,trafficMap:true,relativeMapDriverView:true,launchCorridorDiagnostics:true,substepCarCollisions:true,rivalRivalContacts:true,persistentRivalImpactDynamics:true,rivalImpactStates:true,raceSurvivalDiagnostics:true,racePaceReleaseDiagnostics:true,firstComplexLaneLockDiagnostics:true,packContactContainmentDiagnostics:true,technicalRiskPrepDiagnostics:true,smoothFrenetDiagnostics:true,geometryKinkDiagnostics:true,continuousDriverReference:true,pathCurvatureSpeedEnvelope:true,purePursuitCleanAir:false,legacyPlayerAutV5149:true,geometryCommitDiagnostics:true,laneSwingDiagnostics:true,rivalKinkDiagnostics:true,rivalContinuityWatchdog:true,rivalStateTransitionDiagnostics:true},
    rivalProfiles:(rivals||[]).map(r=>({uid:r.uid||raceIdentity(r.id),name:r.driverName||raceName(r.id),team:r.team,skill:telemetryRound(r.skill,3),aggression:telemetryRound(r.aggression,3),consistency:telemetryRound(r.consistency,3),defense:telemetryRound(r.defense,3),awareness:telemetryRound(r.awareness,3),bravery:telemetryRound(r.bravery,3),reaction:telemetryRound(r.reaction,3),brakeSkill:telemetryRound(r.brakeSkill,3),tractionSkill:telemetryRound(r.tractionSkill,3),cornerSkill:telemetryRound(r.cornerSkill,3),paceProfile:telemetryRound(r.racePaceProfile,4)})),
    recording:{modeAtStart:recMode,currentMode:recMode,adaptiveMobile:true,fullSampleHz:telemetryFullSampleHz(),eventCheckHz:telemetryEventCheckHz(),changes:[]},
-   sampleHz:telemetryFullSampleHz(),samples:[],events:[]
+   sampleHz:telemetryFullSampleHz(),samples:[],events:[],rivalContinuity:{checks:0,anomalies:0,lastAnomalyAt:null,byType:{},events:[]}
  };
  updateTelemetryRecordingUI();
+}
+function apexRivalContinuityWatch(dt){
+ if(!trackData||!player||mode!=="race"||!Array.isArray(rivals))return;
+ const L=trackData.km*1000,now=raceT||0,deg=180/Math.PI,tel=sessionTelemetry&&sessionTelemetry.rivalContinuity;
+ if(tel)tel.checks=(tel.checks||0)+1;
+ for(const rv of rivals){
+   if(!rv)continue;
+   const cur={total:Number(rv.total)||0,s:Number(rv.s)||0,lat:Number(rv.lat)||0,speed:Number(rv.speed)||0,yaw:Number(rv.yawKick)||0,lod:Number.isFinite(rv.simLOD)?rv.simLOD:null,impact:rv.impactMode||"NONE",finished:!!rv.finished};
+   const prev=rv._apexContinuityPrev;
+   rv._apexContinuityPrev={...cur,t:now};
+   if(!prev)continue;
+   const edt=clamp(Number.isFinite(dt)&&dt>0?dt:Math.max(.001,now-(prev.t||now)),.001,.25);
+   const dTotal=cur.total-prev.total,dLat=cur.lat-prev.lat,dSpeed=cur.speed-prev.speed,dYaw=angleDiff(prev.yaw,cur.yaw);
+   const expectedS=typeof apexRivalSFromTotal==="function"?apexRivalSFromTotal(rv,L):mod((Number(rv.progressOriginS)||0)+cur.total,L);
+   const sError=wrapDeltaS(cur.s,expectedS,L);
+   const maxLong=Math.max(4.5,Math.max(prev.speed,cur.speed)*edt*2.6+2.2);
+   const maxLat=Math.max(1.85,Math.abs(Number(rv.latVel)||0)*edt*2.4+.95);
+   const maxSpeed=Math.max(11.5,edt*115);
+   const maxYaw=.82;
+   let type=null,value=0,limit=0;
+   if(Math.abs(sError)>.55){type="S_TOTAL_DESYNC";value=sError;limit=.55;}
+   else if(Math.abs(dTotal)>maxLong){type="TOTAL_JUMP";value=dTotal;limit=maxLong;}
+   else if(Math.abs(dLat)>maxLat){type="LAT_JUMP";value=dLat;limit=maxLat;}
+   else if(Math.abs(dSpeed)>maxSpeed){type="SPEED_JUMP";value=dSpeed;limit=maxSpeed;}
+   else if(Math.abs(dYaw)>maxYaw){type="YAW_JUMP";value=dYaw;limit=maxYaw;}
+   const lodChanged=prev.lod!==cur.lod,impactChanged=prev.impact!==cur.impact;
+   if(type){
+     const data={kind:type,rivalId:rv.id,rivalUid:rv.uid||raceIdentity(rv.id),rivalName:rv.driverName||raceName(rv.id),team:rv.team,dt:telemetryRound(edt,4),value:telemetryRound(value,4),limit:telemetryRound(limit,4),total:telemetryRound(cur.total,3),s:telemetryRound(cur.s,3),expectedS:telemetryRound(expectedS,3),sError:telemetryRound(sError,3),lat:telemetryRound(cur.lat,3),dLat:telemetryRound(dLat,3),speedKph:telemetryRound(cur.speed*3.6,1),dSpeedKph:telemetryRound(dSpeed*3.6,1),yawDeg:telemetryRound(cur.yaw*deg,1),dYawDeg:telemetryRound(dYaw*deg,1),lodFrom:prev.lod,lodTo:cur.lod,impactFrom:prev.impact,impactTo:cur.impact,incident:cur.impact!=="NONE",finished:cur.finished};
+     if(tel){
+       tel.anomalies=(tel.anomalies||0)+1;tel.lastAnomalyAt=telemetryRound(now,3);tel.byType[type]=(tel.byType[type]||0)+1;
+       const a=tel.events||(tel.events=[]);a.push({t:telemetryRound(now,3),...data});if(a.length>240)a.splice(0,a.length-240);
+     }
+     if(telemetryRecordingEnabled())pushTelemetryEvent("RIVAL_CONTINUITY_ANOMALY",data);
+   }
+   if((lodChanged||impactChanged)&&tel){
+     const a=tel.events||(tel.events=[]);a.push({t:telemetryRound(now,3),kind:"STATE_TRANSITION",rivalId:rv.id,rivalUid:rv.uid||raceIdentity(rv.id),rivalName:rv.driverName||raceName(rv.id),lodFrom:prev.lod,lodTo:cur.lod,impactFrom:prev.impact,impactTo:cur.impact,total:telemetryRound(cur.total,2),s:telemetryRound(cur.s,2),lat:telemetryRound(cur.lat,2),speedKph:telemetryRound(cur.speed*3.6,1)});if(a.length>240)a.splice(0,a.length-240);
+   }
+ }
 }
 function pushTelemetryEvent(type,data={}){
  if(!sessionTelemetry||!telemetryRecordingEnabled()||!telemetryEventAllowed(type,data))return;
