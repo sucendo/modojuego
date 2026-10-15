@@ -11,9 +11,13 @@
  // Un solo canal físico. Todos los módulos de Atlas son renderizadores
  // de aristas L8 y reutilizan cachés, nunca reconstruyen celdas del juego.
  drawTerrain3212=function gameAtlasTerrain0400(R,cx,cy){
-  if(!bridge.enabled()||!bridge.visibleEurope()||zoom<5.15)
+  if(!bridge.enabled()||!(bridge.visibleEurope()||bridge.visibleWestAsia())||zoom<5.15)
    return original(R,cx,cy);
-  return enriched(R,cx,cy);
+  enriched(R,cx,cy);
+  // En el juego drawTerrain3212 es el único pase físico: incluir los
+  // lagos aquí, mientras que Atlas los añade desde su renderizador.
+  if(bridge.visibleEurope())window.HexategosEuropeLakes0396?.draw(R,cx,cy);
+  if(bridge.visibleWestAsia())window.HexategosWestAsia0403?.drawLakes(R,cx,cy);
  };
  drawGeographicLabels3243=function gameAtlasLabels0400(R,cx,cy){
   if(!showLabels)return;
