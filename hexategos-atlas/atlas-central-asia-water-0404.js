@@ -27,6 +27,7 @@
  function fill(key,i,L,own,z){
   const old=base(key,i,L,own,z);
   if(!visible())return old;
+  if(typeof $==='function'&&$('lakes')?.checked===false)return old;
   const mode=typeof mapMode3252==='undefined'?'terrain':mapMode3252;
   if(mode!=='terrain'&&mode!=='political')return old;
   const body=isWater(key,i,L);
