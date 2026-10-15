@@ -165,7 +165,12 @@
   for(let i=1;i<path.length;i++)cum[i]=cum[i-1]+km(G.position.get(path[i-1]),G.position.get(path[i]));
   const plan={path,cum,total:Math.max(.1,cum[cum.length-1])};
   status.set(item.name,{name:item.name,kind:river?'river':'mountain',ok:true,
-    edges:path.length-1,coastal:river&&item.mouth});
+    edges:path.length-1,coastal:river&&item.mouth,
+    mouthVertex:river&&item.mouth?path[path.length-1]:null,
+    finalEdge:river&&item.mouth?[path[path.length-2],path[path.length-1]]:null,
+    endsAtCoast:!!(river&&item.mouth&&G.coastalNodes.has(path[path.length-1])),
+    lastEdgeIsCoast:!!(river&&item.mouth&&G.coastEdges.has(
+      key(path[path.length-2],path[path.length-1])))});
   cache.set(item.name,plan);return plan;
  }
  function visible(item,R,cx,cy){
