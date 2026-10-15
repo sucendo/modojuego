@@ -12,6 +12,26 @@
  const diagnostics={version:'0.39.9',source:data.source,tiles:tiles.length,drawnTiles:0,
    landCells:0,seaCells:0,enabled:false,lastMs:0};
  const landFill='rgba(87,105,76,.98)',seaFill='rgba(22,55,76,.99)';
+ // Consulta ligera de la tierra real para validar rótulos sobre estrechos
+ // que la máscara L8 clasifica como terrestres (o islas en casillas marinas).
+ function inRing(lon,lat,ring){
+  let inside=false;
+  for(let i=0,j=ring.length-1;i<ring.length;j=i++){
+   const a=ring[i],b=ring[j];
+   if((a[1]>lat)!==(b[1]>lat)&&
+     lon<(b[0]-a[0])*(lat-a[1])/(b[1]-a[1])+a[0])inside=!inside;
+  }
+  return inside;
+ }
+ function landAt(lon,lat){
+  if(!onEurope(lon,lat))return null;
+  const tile=tiles.find(t=>lon>=t.lon&&lon<t.lon+data.tileSize&&
+    lat>=t.lat&&lat<t.lat+data.tileSize);
+  if(!tile)return false;
+  let land=false;
+  for(const ring of tile.rings)if(inRing(lon,lat,ring))land=!land;
+  return land;
+ }
  function enabled(){return zoom>=7.4&&currentKey==='8'}
  function onEurope(lon,lat){return lon>=west&&lon<east&&lat>=south&&lat<north}
  function projected(lon,lat,R,cx,cy){
@@ -145,6 +165,6 @@
   coastline(active,R,cx,cy);
   diagnostics.lastMs=performance.now()-start;
  }
- window.HexategosAtlasCoast0399=Object.freeze({draw,enabled,onEurope,
+ window.HexategosAtlasCoast0399=Object.freeze({draw,enabled,onEurope,landAt,
   diagnostics:()=>({...diagnostics})});
 })();
