@@ -9,6 +9,7 @@
  const europe=window.HexategosEuropeRegions0395;
  const detail=window.HexategosEuropeDetail0396;
  const lakes=window.HexategosEuropeLakes0396;
+ const supplemental=window.HexategosEuropeSecondary0396;
  if(!source){console.warn('[Atlas] No se cargaron las regiones compartidas');return}
  const historicalAnchors={
   'Cataluña':[1.75,41.70],'Aragón':[-0.90,41.37],'Navarra':[-1.55,42.55],
@@ -43,6 +44,18 @@
    const axis=lake.axis,mid=axis[Math.floor(axis.length*.5)];
    features.push({name:lake.name,center:mid,kind:'lake',rank:74,
     minZoom:Math.max(7,lake.minZoom+1.7)});
+  }
+ }
+ // Los accidentes secundarios aparecen al aproximarse al territorio;
+ // sus rótulos no alteran ni sustituyen las geometrías canónicas.
+ if(supplemental){
+  for(const item of supplemental.rivers){
+   features.push({name:item.name,center:item.points[Math.floor(item.points.length*.52)],
+     kind:'river',rank:52,minZoom:item.minZoom+1.5});
+  }
+  for(const item of supplemental.mountains){
+   features.push({name:item.name,center:item.points[Math.floor(item.points.length*.52)],
+     kind:'mountain',rank:54,minZoom:item.minZoom+1});
   }
  }
  let europeFeatures=null;
