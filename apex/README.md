@@ -1,6 +1,6 @@
 # APEX Formula 26
 
-Versión de desarrollo: **v0.12.0 · PRE-RELEASE**
+Versión de desarrollo: **v0.12.1 · PRE-RELEASE**
 
 Archivo fuente original:
 `Apex_Formula_26_v5_230_62_8_6_7_6_4_17_CONTROL_CLASICO_GP4.html`
@@ -15,3 +15,7 @@ La versión web se reconstruye en el navegador desde los fragmentos exactos de `
 El mismo catálogo de 3 chasis (`A26`, `VXR`, `NOVA`) y 11 identidades APEX alimenta rivales WebGL y cockpit del jugador. En WebGL se mantienen coches 3D con 360° de giro, tres niveles de detalle, paneles de livery originales y detalles aerodinámicos. Los 16 ángulos de las láminas se conservan como referencias de validación, **no** como un atlas PNG instalado. El backend Canvas sigue siendo un fallback de tres orientaciones.
 
 Pruebas de consola dentro del simulador: `apexCarVisualAudit()` y `apexCarVisualPipelineSelfTest()`.
+
+## Geometría de coches v0.12.1
+
+En el renderer WebGL2 los coches cercanos reciben morro alineado al alerón, pontones ampliados a proporciones coherentes, entradas laterales, fondo con deflectores, flaps, tirantes de suspensión inclinados, halo y difusor. Los LOD 0 y 1 siguen simplificados para móviles y parrillas de 22 vehículos. No se han modificado física, colisiones, IA ni los circuitos. Diagnóstico en consola: `apexCarGeometryV0121SelfTest()`.

@@ -27,3 +27,12 @@ Fecha: 2026-10-15. Fuente: main actual. Estado: integración técnica, no equiva
 4. Ejecutar `apexCarVisualPipelineSelfTest()` (11 equipos × 16 referencias = 176 orientaciones).
 5. Revisar móviles/WebGL2 y fallback Canvas; medir FPS con 22 coches.
 6. Verificar guardados, cronometraje y giroscopio; el sistema no altera dichos módulos.
+
+## Extensión v0.12.1: refinado del monoplaza maestro
+
+- Solucionada la punta del morro que sobresalía del alerón delantero; ahora el morro termina junto al ala.
+- Pontones ampliados para estar proporcionados a ruedas y alerones. Pintura recolocada sobre su superficie.
+- Reemplazo de barras rectangulares (AABB) por prismas realmente orientados al vector 3D de suspensión.
+- En LOD 2 solamente: admisiones, undercut, pequeños fences, flaps aerodinámicos, tirantes dobles, soportes de alerón, soporte del halo y beam wing/difusor.
+- Test automático `apexCarGeometryV0121SelfTest()` comprueba 11 escuderías, tres familias, dimensiones y números finitos.
+- Continúa pendiente una revisión visual real en navegador y las 16 capturas de referencia. El renderizador sigue siendo 3D continuo, no un atlas de fotografías.
