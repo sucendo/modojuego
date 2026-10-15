@@ -898,7 +898,7 @@ async function startPreparedRace(spec,laps,gm,btn){
    frontUse:0,rearUse:0,frontLoad:0,rearLoad:0,downforce:0,balanceState:"ESTABLE",wheelspin:false,
    lockF:false,lockR:false,throttle:0,brakeInput:0,terrainDrag:0,lastGood:null,physicsFaults:0,
    carModel:team.chassis,carColor,carAccent,carSpec:car,teamKey,teamName:team.name,
-   checkpoint:0,crossedStart:false,raceFirstLapPending:false,timingLapStart:0,timingSectorIndex:0,timingSectorSplits:[],timingSectorTimes:[],timingSpeedTrapKph:null,progressOriginS:progressOrigin,progressS:playerS,
+   checkpoint:0,crossedStart:false,raceFirstLapPending:false,timingLapStart:0,timingSectorIndex:0,timingSectorSplits:[],timingSectorTimes:[],timingSpeedTrapKph:null,progressOriginS:progressOrigin,progressS:playerS,classificationS:playerS,
    damage:freshDamage(),lastDamageZone:"",contactCooldown:0,
    reverse:false,reverseHold:0,cameraLook:0,cameraGradePitch:0,fovBoost:0,tyreSet:1,tyreAge:0,pitStops:0,pitStop:null,autoLapSeconds:0,autoUsedThisLap:false,lastLapAutoInvalid:false,
    autoPlan:null,autoPlanStamp:-99,autoLineStamp:0,autoTargetLat:playerLane,autoPassSide:0,autoPassUntil:0,autoPhase:"RECTA",
@@ -2741,6 +2741,19 @@ function apexPitRoutePlan(){
        xtx=exit.x-exitInside.x,xtz=exit.z-exitInside.z,xlen=Math.hypot(xtx,xtz)||1,exitTx=xtx/xlen,exitTz=xtz/xlen,exitNx=-exitTz,exitNz=exitTx;
  return{pn,primary,primaryStart,primaryEnd,dir,entry,exit,entryTrackS:entryTrack.s,exitTrackS:exitTrack.s,entryPitS,exitPitS,routeLength,boxPitS,boxFrac,
         entryTx,entryTz,entryNx,entryNz,entryAngle,exitTx,exitTz,exitNx,exitNz,speedKph:apexPitSpeedLimitKph(),speedMps:apexPitSpeedLimitKph()/3.6};
+}
+function apexPlayerClassificationS(){
+ if(!player||!trackData)return 0;
+ const L=trackData.km*1000;
+ if(player.driveNetwork==='PIT'&&player.pitState){
+   const plan=apexPitRoutePlan();
+   if(plan){
+     const pitSpan=Math.max(.001,Math.abs(plan.exitPitS-plan.entryPitS)),along=plan.dir*(player.pitState.pitS-plan.entryPitS),f=clamp(along/pitSpan,0,1);
+     const trackSpan=mod(plan.exitTrackS-plan.entryTrackS,L);
+     return mod(plan.entryTrackS+trackSpan*f,L);
+   }
+ }
+ return Number.isFinite(player.s)?player.s:0;
 }
 function apexPitPathControl(plan,pitS,sp,targetSpeed,phase,look=13){
  const aimS=clamp(pitS+plan.dir*look,0,plan.pn.totalLength),aim=apexPitPointAtS(aimS)||apexPitPointAtS(pitS),near=nearestPitState(player.x,player.z,player.pitIndex);if(!aim)return null;
