@@ -1122,6 +1122,14 @@ body.mobile-landscape #toolLeft #gyro,body.mobile-landscape #toolLeft #center,bo
 @media(max-width:760px){#menu{padding:14px!important}.menuShortcuts{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}#menu #menuModeTabs{grid-template-columns:repeat(2,minmax(0,1fr))!important}#menu .menuSettingsDock>summary{flex-wrap:wrap;padding:13px;gap:7px}#menu .menuSettingsDock>summary small{max-width:65%;text-align:right}#menu .tag{font-size:12px;margin-bottom:14px}#menu .renderBody{grid-template-columns:1fr!important}}
 @media(max-height:540px) and (orientation:landscape){#menu{padding:12px!important}.menuShortcuts{grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:12px}#menu #menuModeTabs{grid-template-columns:repeat(4,minmax(0,1fr))!important}#menu .logo{font-size:32px}#menu .tag{margin:6px 0 12px}#menu .menuShortcuts .btn,#menu .menuShortcuts #controlsTab{min-height:44px!important;padding:6px 9px;font-size:11px!important}}
 @media(prefers-reduced-motion:reduce){#menu{scroll-behavior:auto}}
+
+/* v0.9.0 · El control de recalibración debe permanecer visible durante conducción por giroscopio. */
+body.gyro-active #toolLeft #center,
+body.gyro-active.mobile-landscape #toolLeft #center{
+  display:inline-flex!important;
+  align-items:center;
+  justify-content:center;
+}
 </style>
 </head>
 <body class="menu-open">
@@ -1344,7 +1352,7 @@ body.mobile-landscape #toolLeft #gyro,body.mobile-landscape #toolLeft #center,bo
  <button id="left" class="tb">‹</button><button id="right" class="tb">›</button><button id="brake" class="tb">FRENO</button><button id="gas" class="tb">GAS</button>
  <div id="toolHud">
   <div id="toolLeft" class="toolBar">
-   <button id="gyro" class="tb" title="Giroscopio" aria-label="Giroscopio">GYR</button><button id="center" class="tb" title="Centrar giroscopio" aria-label="Centrar giroscopio">CEN</button><button id="invert" class="tb" title="Invertir giroscopio" aria-label="Invertir giroscopio">INV</button><button id="demo" class="tb" title="Conducción automática" aria-label="Conducción automática">AUT</button><button id="diag" class="tb" title="Diagnóstico" aria-label="Diagnóstico">DIA</button><button id="telemetryBtn" class="tb" title="Telemetría" aria-label="Telemetría">TEL</button><button id="ers" class="tb" title="ERS" aria-label="ERS">ERS</button><button id="box" class="tb" title="Solicitar parada en boxes · sólo AUT" aria-label="Parada en boxes" disabled>BOX</button>
+   <button id="gyro" class="tb" title="Giroscopio" aria-label="Giroscopio">GYR</button><button id="center" class="tb" title="Restablecer / recalibrar giroscopio" aria-label="Restablecer giroscopio">RST</button><button id="invert" class="tb" title="Invertir giroscopio" aria-label="Invertir giroscopio">INV</button><button id="demo" class="tb" title="Conducción automática" aria-label="Conducción automática">AUT</button><button id="diag" class="tb" title="Diagnóstico" aria-label="Diagnóstico">DIA</button><button id="telemetryBtn" class="tb" title="Telemetría" aria-label="Telemetría">TEL</button><button id="ers" class="tb" title="ERS" aria-label="ERS">ERS</button><button id="box" class="tb" title="Solicitar parada en boxes · sólo AUT" aria-label="Parada en boxes" disabled>BOX</button>
   <button id="limiterBtn" class="tb" title="Limitador de boxes · L">LIM</button>
   </div><div id="toolRight" class="toolBar">
    <button id="quickMenuBtn" class="tb" title="Conducción y atajos · M">⋯</button><button id="sound" class="tb">🔊</button><button id="optionsBtn" class="tb">☰</button><button id="fs" class="tb">⛶</button>
@@ -1430,7 +1438,7 @@ body.mobile-landscape #toolLeft #gyro,body.mobile-landscape #toolLeft #center,bo
 // Apex Formula 26 v5.80 · Progressive Mobile Quality
 // v5.230.36: cedemos un frame al navegador para que la portada pueda pintarse antes del arranque pesado.
 requestAnimationFrame(()=>setTimeout(()=>{
-const APP_VERSION="v5.230.62.8.6.7.6.4.17",APP_BUILD="CONTROL CLÁSICO · FÍSICA 100 HZ · DIRECCIÓN PREDECIBLE · TC/ABS · TIMING FIA · SVG AUTORITATIVO";
+const APP_VERSION="v0.9.0",APP_CHANNEL="PRE-RELEASE",APP_BUILD="2026.10.15.1";
 const $=id=>document.getElementById(id),clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),mod=(n,m)=>((n%m)+m)%m,lerp=(a,b,t)=>a+(b-a)*t;
 const appStorage=(()=>{try{return window.localStorage}catch(e){return{getItem(){return null},setItem(){},removeItem(){},clear(){}}}})();
 const finite=(v,f=0)=>Number.isFinite(v)?v:f,finiteClamp=(v,a,b,f=0)=>clamp(finite(v,f),a,b);
