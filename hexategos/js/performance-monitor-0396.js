@@ -64,9 +64,13 @@
     lastSample=now;
   }
   function wrap(name,section){
-    const fn=window[name];
-    if(typeof fn!=='function')return false;
-    window[name]=function(){
+    // Respect global lexical declarations as well as window-owned globals.
+    // Other Hexategos modules replace these same identifiers directly.
+    const fn=name==='aiTick3212'
+      ?(typeof aiTick3212==='function'?aiTick3212:null)
+      :(typeof economyTick3212==='function'?economyTick3212:null);
+    if(!fn)return false;
+    const observer=function(){
       if(!capturing)return fn.apply(this,arguments);
       const t0=clock();
       try{return fn.apply(this,arguments)}
@@ -76,6 +80,8 @@
         if(section==='economy')flushSample();
       }
     };
+    if(name==='aiTick3212')aiTick3212=observer;
+    else economyTick3212=observer;
     return true;
   }
   const wrapped={
