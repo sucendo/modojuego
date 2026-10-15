@@ -10,6 +10,7 @@
  const detail=window.HexategosEuropeDetail0396;
  const lakes=window.HexategosEuropeLakes0396;
  const supplemental=window.HexategosEuropeSecondary0396;
+ const straits=window.HexategosAtlasStraits0397;
  if(!source){console.warn('[Atlas] No se cargaron las regiones compartidas');return}
  const historicalAnchors={
   'Cataluña':[1.75,41.70],'Aragón':[-0.90,41.37],'Navarra':[-1.55,42.55],
@@ -106,7 +107,7 @@
   if(!enabled()||zoom<2.1)return;
   const displayMode=mode();
   let pool=[];
-  if(displayMode!=='historical')pool=pool.concat(natural,features,europeanFeatures());
+  if(displayMode!=='historical')pool=pool.concat(natural,features,europeanFeatures(),straits?.features||[]);
   if(displayMode!=='natural')pool=pool.concat(historical);
   const candidates=[];
   const handoffZoom=window.HexategosAtlasMacro0396?.handoffZoom||5.55;
@@ -116,6 +117,7 @@
    if((item.kind==='natural'||item.kind==='historical')&&zoom<handoffZoom)continue;
    // No rotular masas de agua que la malla no puede representar.
    if(item.kind==='lake'&&!lakes?.isDrawn?.(item.name))continue;
+   if((item.kind==='island'||item.kind==='strait'||item.kind==='archipelago')&&!straits?.valid(item))continue;
    if(item.kind==='river'&&!$('rivers')?.checked)continue;
    if(item.kind==='mountain'&&!$('mountains')?.checked)continue;
    if(item.kind==='lake'&&!$('lakes')?.checked)continue;
@@ -130,14 +132,14 @@
   ctx.textAlign='center';ctx.textBaseline='middle';
   try{
    for(const p of candidates){
-    const item=p.item,size=item.kind==='natural'?11.4:item.kind==='historical'?11.2:10.2;
-    ctx.font=(item.kind==='historical'?'italic ':'')+'600 '+size+'px system-ui';
+    const item=p.item,size=item.kind==='natural'||item.kind==='archipelago'?11.4:item.kind==='historical'?11.2:10.2;
+    ctx.font=(item.kind==='historical'||item.kind==='strait'?'italic ':'')+'600 '+size+'px system-ui';
     const label=item.name,tw=ctx.measureText(label).width;
     const rect=[p.x-tw/2-7,p.y-9,p.x+tw/2+7,p.y+9];
     if(lastBoxes.some(b=>!(rect[2]<b[0]||rect[0]>b[2]||rect[3]<b[1]||rect[1]>b[3])))continue;
     ctx.lineWidth=3;
     ctx.strokeStyle='rgba(7,18,28,.88)';ctx.strokeText(label,p.x,p.y);
-    ctx.fillStyle=item.kind==='river'||item.kind==='lake'?'rgba(137,215,238,.91)':
+    ctx.fillStyle=item.kind==='river'||item.kind==='lake'||item.kind==='strait'?'rgba(137,215,238,.91)':
       item.kind==='mountain'?'rgba(233,201,151,.93)':
       item.kind==='historical'?'rgba(215,219,235,.82)':
       'rgba(224,236,212,.93)';
@@ -161,7 +163,7 @@
    '</div>';
  }
  window.HexategosAtlasRegions0390=Object.freeze({
-   version:'0.39.7',draw,cellInfo,occupied:()=>lastBoxes,
+   version:'0.39.8',draw,cellInfo,occupied:()=>lastBoxes,
    regionsAt:(lat,lon)=>{
     const old=source.regionsAt(lat,lon);
     return {natural:old.natural.concat(europe?.naturalAt(lat,lon)||[],detail?.naturalAt(lat,lon)||[]),
