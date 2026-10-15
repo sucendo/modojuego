@@ -352,6 +352,13 @@ function render(now=performance.now()){
 
  drawTerrain3212(R,cx,cy);
 
+ // Grandes lagos dibujados como masas acuáticas esquemáticas, SIN modificar
+ // los hexágonos ni la topología. Primero agua, después nombres.
+ window.HexategosEuropeLakes0396?.draw(R,cx,cy);
+ // Macrotopónimos desde zoom lejano: penínsulas, cordilleras, mares y
+ // llanuras; reservan espacio frente a nombres locales.
+ window.HexategosAtlasMacro0396?.draw(R,cx,cy);
+
  // Etiquetas geográficas y culturales compartidas con Hexategos Pruebas.
  // Se dibujan antes de ciudades para gestionar las colisiones de rótulos.
  window.HexategosAtlasRegions0390?.draw(R,cx,cy);
