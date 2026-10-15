@@ -14,6 +14,11 @@
     priority:x.priority,minZoom:x.minZoom,maxZoom:8.6,
     centralWater:true
    })));
+ // Se comparten las mismas macroetiquetas en Atlas y ambos juegos.
+ for(const x of window.HexategosPeninsularIndiaPhysical0409?.macro||[]){
+  if(!features.some(y=>y.name.toLocaleLowerCase('es-ES')===
+   x.name.toLocaleLowerCase('es-ES')))features.push({...x});
+ }
  const handoffZoom=5.55;
  const labelStyle=window.HexategosAtlasLabelStyle0399;
  let occupied=[];

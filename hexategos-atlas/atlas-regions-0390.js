@@ -18,6 +18,8 @@
  const central=window.HexategosCentralAsia0404;
  const himalayaData=window.HexategosHimalayaPhysical0406;
  const himalaya=window.HexategosHimalaya0406;
+ const peninsula=window.HexategosPeninsularIndiaPhysical0409;
+ const peninsulaRoutes=window.HexategosPeninsularIndia0409;
  const indianHydro=window.HexategosSubcontinentHydro0407;
  const indianRivers=window.HexategosSubcontinentRivers0407;
  const deltas=window.HexategosIndianDeltas0408;
@@ -48,7 +50,7 @@
   detail?.naturalRegions||[],asia?.naturalRegions||[]);
  const knownNatural=new Set(baseNatural.map(x=>x.name.toLocaleLowerCase('es-ES')));
  const additionalNatural=(himalayaData?.reliefRegions||[])
-  .concat(indianHydro?.basins||[],deltas?.areas||[])
+  .concat(indianHydro?.basins||[],deltas?.areas||[],peninsula?.regions||[])
   .filter(reg=>{
    const key=reg.name.toLocaleLowerCase('es-ES');
    if(knownNatural.has(key))return false;
@@ -153,6 +155,16 @@
     indianTributary:true});
   }
  }
+ // India peninsular: Ghats canónicos NO se duplican. Sólo se etiqueta
+ // el relieve que está realmente en el trazado L8 o en redes canónicas.
+ if(peninsula)for(const item of peninsula.mountains){
+  if(features.some(x=>x.name.toLocaleLowerCase('es-ES')===
+      item.name.toLocaleLowerCase('es-ES')))continue;
+  features.push({name:item.name,
+   center:item.points[Math.floor(item.points.length*.5)],
+   kind:'mountain',rank:item.canonicalParent?76:71,
+   minZoom:item.minZoom+.6,peninsulaMountain:true});
+ }
  // Deltas: rotular sólo brazos que llegan a un vértice litoral L8.
  if(deltas)for(const item of deltas.channels){
   features.push({name:item.name,center:item.waypoints[Math.floor(item.waypoints.length/2)]||item.join,
@@ -239,6 +251,7 @@
    if(item.centralBody&&!central?.isBodyDrawn?.(item.centralBody))continue;
    if(item.himalayaBody&&!window.HexategosHimalayaWater0406?.isBodyDrawn?.(item.himalayaBody))continue;
    if(item.himalayaMountain&&!himalaya?.isDrawnFeature?.(item.name))continue;
+   if(item.peninsulaMountain&&!peninsulaRoutes?.isDrawnFeature?.(item.name))continue;
    if(item.indianTributary&&!indianRivers?.isDrawnFeature?.(item.name))continue;
    if(item.deltaChannel&&!deltaRoutes?.isDrawnFeature?.(item.name))continue;
    if(item.centralAsia&&!central?.isDrawnFeature?.(item.name))continue;
@@ -274,7 +287,7 @@
  function cellInfo(lat,lon){
   const result=source.regionsAt(lat,lon);
   const local=(europe?.naturalAt(lat,lon)||[]).concat(detail?.naturalAt(lat,lon)||[],asia?.naturalAt(lat,lon)||[]);
-  const naturalNames=result.natural.concat(local,centralData?.regionsNear(lon,lat)||[],himalayaData?.regionsNear(lon,lat)||[],indianHydro?.regionsNear(lon,lat)||[],deltas?.regionsNear(lon,lat)||[])
+  const naturalNames=result.natural.concat(local,centralData?.regionsNear(lon,lat)||[],himalayaData?.regionsNear(lon,lat)||[],indianHydro?.regionsNear(lon,lat)||[],deltas?.regionsNear(lon,lat)||[],peninsula?.regionsNear(lon,lat)||[])
    .filter((v,i,a)=>a.findIndex(x=>x.name.toLocaleLowerCase('es-ES')===v.name.toLocaleLowerCase('es-ES'))===i)
    .slice(0,5).map(r=>escapeHTML(r.name)).join(' · ');
   const historicalName=result.historical?.name||europe?.historicalAt(lat,lon)?.name||'';
@@ -293,7 +306,7 @@
     const old=source.regionsAt(lat,lon);
     const areas=old.natural.concat(europe?.naturalAt(lat,lon)||[],
      detail?.naturalAt(lat,lon)||[],asia?.naturalAt(lat,lon)||[],
-     centralData?.regionsNear(lon,lat)||[],himalayaData?.regionsNear(lon,lat)||[],indianHydro?.regionsNear(lon,lat)||[],deltas?.regionsNear(lon,lat)||[]);
+     centralData?.regionsNear(lon,lat)||[],himalayaData?.regionsNear(lon,lat)||[],indianHydro?.regionsNear(lon,lat)||[],deltas?.regionsNear(lon,lat)||[],peninsula?.regionsNear(lon,lat)||[]);
     return {natural:areas.filter((v,i,a)=>a.findIndex(x=>
       x.name.toLocaleLowerCase('es-ES')===v.name.toLocaleLowerCase('es-ES'))===i),
       historical:old.historical||europe?.historicalAt(lat,lon)||null};

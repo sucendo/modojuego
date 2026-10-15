@@ -52,6 +52,13 @@
   const margin=zoom<5?18:zoom<9?9:5;
   return lon>=67-margin&&lon<=100+margin&&lat>=20-margin&&lat<=41+margin;
  }
+ function visiblePeninsularIndia(){
+  if(zoom<1.15)return false;
+  const lon=(((-yaw*180/Math.PI+180)%360+360)%360)-180;
+  const lat=pitch*180/Math.PI;
+  const margin=zoom<5?19:zoom<9?10:5;
+  return lon>=69-margin&&lon<=89+margin&&lat>=7.2-margin&&lat<=26.5+margin;
+ }
  function setEnabled(value){
   enabled=!!value;
   try{localStorage.setItem(KEY,String(enabled))}catch(_){}
@@ -63,9 +70,9 @@
   control.addEventListener('change',()=>setEnabled(control.checked));
  }
  window.HexategosGameAtlasBridge0400=Object.freeze({
-  version:'0.40.0',enabled:()=>enabled,visibleEurope,visibleAsia,visibleWestAsia,visibleCentralAsia,visibleHimalaya,setEnabled,
+  version:'0.40.0',enabled:()=>enabled,visibleEurope,visibleAsia,visibleWestAsia,visibleCentralAsia,visibleHimalaya,visiblePeninsularIndia,setEnabled,
   diagnostics:()=>({
-   enabled,europe:visibleEurope(),asia:visibleAsia(),westAsia:visibleWestAsia(),centralAsia:visibleCentralAsia(),himalaya:visibleHimalaya(),
+   enabled,europe:visibleEurope(),asia:visibleAsia(),westAsia:visibleWestAsia(),centralAsia:visibleCentralAsia(),himalaya:visibleHimalaya(),peninsularIndia:visiblePeninsularIndia(),
    lakeRoutes:window.HexategosEuropeLakes0396?.diagnostics?.()||null,
    secondaryGraph:window.HexategosEuropeSecondaryRender0396?.graphSize?.()||0
   })

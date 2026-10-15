@@ -10,6 +10,7 @@
  const ecotone=window.HexategosLandCoverTransitions0402;
  const central=window.HexategosCentralAsiaLandcover0405;
  const himalaya=window.HexategosHimalayaLandcover0406;
+ const peninsularIndia=window.HexategosPeninsularIndiaLandcover0409;
  const deltas=window.HexategosIndianDeltaLandcover0408;
  let showCover=true;
  function codes(key,L){
@@ -37,7 +38,8 @@
   const code=coverCode(key,i,L),raw=ecotone?.color(key,i,L)||data.types[code]?.color;
   const centralColor=raw&&central?central.rgbForCell(key,i,L,raw):raw;
   const mountainColor=centralColor&&himalaya?himalaya.rgbForCell(key,i,L,centralColor):centralColor;
-  const base=mountainColor&&deltas?deltas.rgbForCell(key,i,L,mountainColor):mountainColor;
+  const peninsulaColor=mountainColor&&peninsularIndia?peninsularIndia.rgbForCell(key,i,L,mountainColor):mountainColor;
+  const base=peninsulaColor&&deltas?deltas.rgbForCell(key,i,L,peninsulaColor):peninsulaColor;
   if(!base)return baseFill(key,i,L,own,z);
   // Atlas no tiene propietarios. Si se reutiliza el renderizador con países,
   // preservamos de todas formas el tinte político original.
