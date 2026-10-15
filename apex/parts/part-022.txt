@@ -154,13 +154,16 @@ function apexLiveRaceOrder(){
  ];
  const previous=apexLiveRaceOrder._rank||new Map(),tieM=.35;
  entries.sort((a,b)=>{
+   // Un coche que ha completado la distancia de carrera ya tiene posición oficial.
+   // Puede seguir rodando visualmente, pero no vuelve a mezclarse con coches no clasificados.
+   if(a.finished!==b.finished)return a.finished?-1:1;
+   if(a.finished&&b.finished&&a.finishTime!==b.finishTime)return (a.finishTime??Infinity)-(b.finishTime??Infinity);
    const pa=apexRaceEntryProgress(a),pb=apexRaceEntryProgress(b),d=pb-pa;
    if(Math.abs(d)>tieM)return d;
    // En paralelo muy cerrado mantenemos el orden previo hasta que el adelantamiento
    // sea inequívoco. Evita que POS/Torre parpadeen por correcciones de centímetros.
    const ra=previous.get(a.id),rb=previous.get(b.id);
    if(Number.isFinite(ra)&&Number.isFinite(rb)&&ra!==rb)return ra-rb;
-   if(a.finished&&b.finished&&a.finishTime!==b.finishTime)return (a.finishTime??Infinity)-(b.finishTime??Infinity);
    return a.id-b.id;
  });
  apexLiveRaceOrder._rank=new Map(entries.map((e,i)=>[e.id,i]));
@@ -174,9 +177,27 @@ function apexRaceGapInfo(entry,leader){
  if(!entry||!leader||entry.id===leader.id)return{laps:0,meters:0};
  const L=trackData&&trackData.km>0?trackData.km*1000:1;
  const delta=Math.max(0,apexRaceEntryProgress(leader)-apexRaceEntryProgress(entry));
- const laps=Math.floor((delta+2)/L);
+ const laps=Math.floor(delta/L+1e-9);
  return{laps,meters:delta-laps*L};
 }
+function apexRaceOrderSelfTest(){
+ const savedPlayer=player,savedRivals=rivals,savedRank=apexLiveRaceOrder._rank;
+ const rows=[];
+ const run=(name,pTotal,rs,expected)=>{
+   player={total:pTotal,lap:0};rivals=rs.map((r,i)=>({id:i+1,total:r.total,finished:!!r.finished,finishTime:r.finishTime??null,finishProgress:r.finishProgress??null,completedLaps:r.laps||0}));
+   apexLiveRaceOrder._rank=new Map();
+   const ids=apexLiveRaceOrder().map(e=>e.id),ok=JSON.stringify(ids)===JSON.stringify(expected);rows.push({name,ok,ids,expected});
+ };
+ try{
+   run("overtake-stopped",150,[{total:100}],[0,1]);
+   run("rival-ahead",100,[{total:150}],[1,0]);
+   run("lapped-car",5200,[{total:100}],[0,1]);
+   run("finished-progress-frozen",9990,[{total:10450,finished:true,finishTime:88,finishProgress:10000}],[1,0]);
+   run("finish-time-wins",10050,[{total:11000,finished:true,finishTime:90,finishProgress:10000},{total:10800,finished:true,finishTime:89,finishProgress:10000}],[2,1,0]);
+ }finally{player=savedPlayer;rivals=savedRivals;apexLiveRaceOrder._rank=savedRank;}
+ return{ok:rows.every(r=>r.ok),rows};
+}
+window.apexRaceOrderSelfTest=apexRaceOrderSelfTest;
 function selectTowerEntries(all,playerIndex,count){
  if(!all.length||count<=0)return[];
  count=Math.min(all.length,Math.max(1,Math.floor(count)));
