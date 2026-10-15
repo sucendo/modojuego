@@ -135,27 +135,47 @@ function updateRivalLapTiming(rv,prevS,newS,L){
  if(!crossedTimingLine(prevS,newS,g.finish,L))return false;
  if(currentSession==='race'&&rv.raceFirstLapPending&&!apexFirstLapControlCrossingAccepted(rv,g))return false;
  const lt=Math.max(0,raceT-finite(rv.timingLapStart,rv.lapStartTime)),sectorTimes=apexCompletedSectorTimes(rv,lt);apexCompleteBroadcastLap(rv,sectorTimes,lt);
- if(rv.raceFirstLapPending){rv.raceFirstLapPending=false;rv.completedLaps=1;rv.firstLapElapsed=lt;rv.lapStartTime=raceT;apexResetDriverTimingState(rv,raceT);if(currentSession==='race'&&rv.completedLaps>=(player&&player.laps||1)){rv.finished=true;rv.finishTime=raceT;}return true;}
- rv.lapStartTime=raceT;rv.completedLaps=(rv.completedLaps||0)+1;if(Number.isFinite(lt)&&lt>=20){rv.lastLap=lt;rv.bestLap=Math.min(Number.isFinite(rv.bestLap)?rv.bestLap:Infinity,lt);registerFastestLap(rv.id,lt);}rv.lastSpeedTrapKph=Number.isFinite(rv.timingSpeedTrapKph)?rv.timingSpeedTrapKph:null;apexResetDriverTimingState(rv,raceT);if(currentSession==='race'&&rv.completedLaps>=(player&&player.laps||1)){rv.finished=true;rv.finishTime=raceT;}return true;
+ if(rv.raceFirstLapPending){rv.raceFirstLapPending=false;rv.completedLaps=1;rv.firstLapElapsed=lt;rv.lapStartTime=raceT;apexResetDriverTimingState(rv,raceT);if(currentSession==='race'&&rv.completedLaps>=(player&&player.laps||1)){rv.finished=true;rv.finishTime=raceT;rv.finishProgress=Number(rv.total)||0;}return true;}
+ rv.lapStartTime=raceT;rv.completedLaps=(rv.completedLaps||0)+1;if(Number.isFinite(lt)&&lt>=20){rv.lastLap=lt;rv.bestLap=Math.min(Number.isFinite(rv.bestLap)?rv.bestLap:Infinity,lt);registerFastestLap(rv.id,lt);}rv.lastSpeedTrapKph=Number.isFinite(rv.timingSpeedTrapKph)?rv.timingSpeedTrapKph:null;apexResetDriverTimingState(rv,raceT);if(currentSession==='race'&&rv.completedLaps>=(player&&player.laps||1)){rv.finished=true;rv.finishTime=raceT;rv.finishProgress=Number(rv.total)||0;}return true;
+}
+function apexRaceEntryProgress(entry){
+ if(!entry)return-Infinity;
+ if(entry.finished&&Number.isFinite(entry.finishProgress))return entry.finishProgress;
+ return Number(entry.total??entry.s)||0;
 }
 function apexLiveRaceOrder(){
  if(!player)return[];
- const entries=[{id:0,s:Number(player.total)||0,finished:false,finishTime:null},...(rivals||[]).map(r=>({id:r.id,s:Number(r.total)||0,finished:!!r.finished,finishTime:Number.isFinite(r.finishTime)?r.finishTime:null}))];
- // Durante la carrera, el orden instantáneo depende de la distancia acumulada recorrida
- // desde la misma referencia de parrilla. Un coche marcado finished sólo queda delante
- // si su progreso también está delante; no usamos un OR especial que congele posiciones.
+ const entries=[
+   {id:0,total:Number(player.total)||0,progress:Number(player.total)||0,finished:false,finishTime:null,finishProgress:null,laps:Number(player.lap)||0},
+   ...(rivals||[]).map(r=>{
+     const total=Number(r.total)||0,finishProgress=Number.isFinite(r.finishProgress)?r.finishProgress:null;
+     return{id:r.id,total,progress:r.finished&&finishProgress!==null?finishProgress:total,finished:!!r.finished,finishTime:Number.isFinite(r.finishTime)?r.finishTime:null,finishProgress,laps:Number(r.completedLaps)||0};
+   })
+ ];
+ const previous=apexLiveRaceOrder._rank||new Map(),tieM=.35;
  entries.sort((a,b)=>{
-   const ds=b.s-a.s;
-   if(Math.abs(ds)>.001)return ds;
-   if(a.finished!==b.finished)return a.finished?-1:1;
+   const pa=apexRaceEntryProgress(a),pb=apexRaceEntryProgress(b),d=pb-pa;
+   if(Math.abs(d)>tieM)return d;
+   // En paralelo muy cerrado mantenemos el orden previo hasta que el adelantamiento
+   // sea inequívoco. Evita que POS/Torre parpadeen por correcciones de centímetros.
+   const ra=previous.get(a.id),rb=previous.get(b.id);
+   if(Number.isFinite(ra)&&Number.isFinite(rb)&&ra!==rb)return ra-rb;
    if(a.finished&&b.finished&&a.finishTime!==b.finishTime)return (a.finishTime??Infinity)-(b.finishTime??Infinity);
    return a.id-b.id;
  });
+ apexLiveRaceOrder._rank=new Map(entries.map((e,i)=>[e.id,i]));
  return entries;
 }
 function apexLivePlayerPosition(){
  const all=apexLiveRaceOrder(),i=all.findIndex(e=>e.id===0);
  return i>=0?i+1:1;
+}
+function apexRaceGapInfo(entry,leader){
+ if(!entry||!leader||entry.id===leader.id)return{laps:0,meters:0};
+ const L=trackData&&trackData.km>0?trackData.km*1000:1;
+ const delta=Math.max(0,apexRaceEntryProgress(leader)-apexRaceEntryProgress(entry));
+ const laps=Math.floor((delta+2)/L);
+ return{laps,meters:delta-laps*L};
 }
 function selectTowerEntries(all,playerIndex,count){
  if(!all.length||count<=0)return[];
