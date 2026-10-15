@@ -84,7 +84,7 @@
    names.add(lake.displayName);
    const coords=lake.components[0];
    features.push({name:lake.displayName,center:coords.slice(0,2),kind:'lake',
-    rank:77,minZoom:Math.max(6,lake.minZoom+.5),centralBody:lake.name});
+    rank:77,minZoom:Math.max(8.6,lake.minZoom+1.4),centralBody:lake.name});
   }
   // Unidades de relieve y cobertura: las presentes en el catálogo
   // asiático global se conservan allí para no duplicar rótulos.
