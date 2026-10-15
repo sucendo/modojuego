@@ -34,6 +34,12 @@
    return previous.classify(lat,lon,biome,tier);
   if(biome==='sea'||biome==='ice'||biome==='desert'||biome==='highmountain'||tier>=3)
    return previous.classify(lat,lon,biome,tier);
+  // Islandia: predominan roca volcánica, praderas de altura y tundra;
+  // no transformar la isla en un bosque boreal artificial.
+  if(lon> -25.5&&lon< -12.4&&lat>=63&&lat<=67.8){
+   const g=patches(lon,lat,0x4711);
+   return tier>0||g<.42?C.rock:g>.57?C.grass:C.tundra;
+  }
   const wood=patches(lon,lat,0x4711),clear=patches(lon,lat,0x5833);
   const alpine=Math.max(patch(lon,lat,9.5,46.4,3.2,.85),
     patch(lon,lat,23.2,47.4,5.3,.80),
