@@ -1758,23 +1758,25 @@ const COCKPIT_EDITABLE_THEME = {
 };
 
 function cockpitEditablePalette(){
-  const ti=player?teamInfo(player.teamKey||selectedTeamKey()):null;
-  const primary=(player&&player.carColor)||(ti&&ti.color)||"#36dff1";
-  const accent=(player&&player.carAccent)||(ti&&ti.accent)||shadeColor(primary,34);
+  const visual=typeof playerCarVisualProfile==="function"?playerCarVisualProfile():null,ti=visual&&visual.team;
+  const primary=(visual&&visual.primary)||(player&&player.carColor)||(ti&&ti.color)||"#36dff1";
+  const accent=(visual&&visual.accent)||(player&&player.carAccent)||(ti&&ti.accent)||shadeColor(primary,34);
+  const rear=visual&&visual.rear||{};
   return {
     primary,
     accent,
-    dark:shadeColor(primary,-72),
+    dark:rear.secondary||shadeColor(primary,-72),
     mid:shadeColor(primary,-34),
-    light:shadeColor(primary,42),
-    carbon:"#090c10"
+    light:rear.trim||shadeColor(primary,42),
+    carbon:rear.carbon||"#090c10",
+    visual
   };
 }
 
 function drawCockpit(motion=null){
  const compact=compactMode(),cp=cockpitEditablePalette(),body=cp.primary,
        bodyDark=cp.dark,bodyLight=cp.light,bodyMid=cp.mid,
-       spec=(player&&player.carSpec)||carCatalog.A26;
+       spec=(cp.visual&&cp.visual.spec)||(player&&player.carSpec)||carCatalog.A26;
 
  ctx.save();applyCockpitMotion(motion||cockpitMotionState());
 
@@ -1792,8 +1794,8 @@ function drawCockpit(motion=null){
  // OUTER sidewall plane
  const leftOuter=[[0,H],[0,H*.708],[W*.086,H*.610],[W*.245,H*.572],[W*.370,H*.598],[W*.430,H],[0,H]];
  const rightOuter=[[W,H],[W,H*.708],[W*.914,H*.610],[W*.755,H*.572],[W*.630,H*.598],[W*.570,H],[W,H]];
- cockpitCarbonPanel(leftOuter,"#090c10");
- cockpitCarbonPanel(rightOuter,"#090c10");
+ cockpitCarbonPanel(leftOuter,cp.carbon);
+ cockpitCarbonPanel(rightOuter,cp.carbon);
 
  // MIDDLE sidewall plane for depth
  const sideGrad=ctx.createLinearGradient(0,H*.60,W*.43,H);
