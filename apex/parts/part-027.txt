@@ -7,8 +7,9 @@
  const analogInput=gyroFresh||gamepadActive;let throttleRise=analogInput?7.4:5.6,brakeRise=analogInput?10.2:8.6;
  if(driveProfile.id==='simulation'){throttleRise=analogInput?7.0:5.0;brakeRise=analogInput?9.7:7.8;}
  else if(driveProfile.id==='raw'){throttleRise=analogInput?8.2:7.0;brakeRise=analogInput?11.0:10.0;}
+ const turnForPedals=clamp(Math.abs(player.steer||0)*1.25,0,1),brakeRelease=driveProfile.id==='assisted'?lerp(12.0,9.35,turnForPedals):12.0;
  player.throttle=clamp(player.throttle+(throttleTarget-player.throttle)*Math.min(1,dt*(throttleTarget>player.throttle?throttleRise:10.0)),0,1);
- player.brakeInput=clamp(player.brakeInput+(brakeTarget-player.brakeInput)*Math.min(1,dt*(brakeTarget>player.brakeInput?brakeRise:12.0)),0,1);
+ player.brakeInput=clamp(player.brakeInput+(brakeTarget-player.brakeInput)*Math.min(1,dt*(brakeTarget>player.brakeInput?brakeRise:brakeRelease)),0,1);
 
  const prevVx=player.vx,prevVz=player.vz;
  syncPlayerTrack();
@@ -87,8 +88,10 @@
  // Ayudas físicas del perfil ASISTIDO. Limitan la demanda al agarre disponible; no alteran la trayectoria.
  player.tcAssist=false;player.absAssist=false;
  if(driveProfile.tc&&!player.reverse&&driveWanted>0){
-   const surfaceFactor=ps.kind==='ASPHALT'?1:(ps.kind==='KERB'?.91:.78),tcCap=maxLongR*.90*surfaceFactor;
-   if(driveWanted>tcCap){driveWanted=lerp(tcCap,driveWanted,.10);player.tcAssist=true;}
+   const surfaceFactor=ps.kind==='ASPHALT'?1:(ps.kind==='KERB'?.91:.78);
+   const cornerDemand=clamp(Math.abs(player.steer||0)*.78+Math.abs(player.yawRate||0)*.10,0,1);
+   const tcCap=maxLongR*lerp(.92,.845,cornerDemand)*surfaceFactor;
+   if(driveWanted>tcCap){driveWanted=lerp(tcCap,driveWanted,.075);player.tcAssist=true;}
  }
  if(driveProfile.abs&&brakeWanted>0&&Math.abs(u)>.8){
    const capF=maxLongF*.89/Math.max(.05,brakeBias),capR=maxLongR*.89/Math.max(.05,1-brakeBias),absCap=Math.min(capF,capR);
@@ -168,10 +171,12 @@
  }
 
  // Amortiguación de guiñada: deja salvar un sobreviraje con contravolante.
- let yawDamp=(ps.kind==="ASPHALT"?1.82:ps.kind==="KERB"?1.48:ps.kind==="GRASS"?.70:ps.kind==="GRAVEL"?.88:ps.kind==="SAND"?.80:1.0);
- if(driveProfile.stability){yawDamp+=ps.kind==='ASPHALT'?.18:(ps.kind==='KERB'?.34:.58);if(ps.kind!=='ASPHALT'&&sp>8)v*=Math.exp(-.25*dt);}
+ let yawDamp=(ps.kind==="ASPHALT"?1.82:ps.kind==="KERB"?1.58:ps.kind==="GRASS"?.70:ps.kind==="GRAVEL"?.88:ps.kind==="SAND"?.80:1.0);
+ if(driveProfile.stability){yawDamp+=ps.kind==='ASPHALT'?.18:(ps.kind==='KERB'?.38:.58);if(ps.kind!=='ASPHALT'&&sp>8)v*=Math.exp(-.25*dt);}
  const counterSteer=((player.steer||0)*r<0)?clamp(Math.abs(player.steer)*1.15,0,1):0;
- r*=Math.exp(-(yawDamp+counterSteer*.90)*dt);
+ const rearSlipRisk=clamp((Math.abs(slipR)-.045)/.22,0,1);
+ r*=Math.exp(-(yawDamp+counterSteer*(.90+.38*rearSlipRisk))*dt);
+ if(driveProfile.stability&&counterSteer>0&&rearSlipRisk>0)v*=Math.exp(-counterSteer*rearSlipRisk*.22*dt);
  if(Math.abs(u)<.25&&Math.abs(v)<.25&&player.throttle<.05){
    r*=Math.exp(-8*dt);v*=Math.exp(-8*dt);if(player.brakeInput>.1){u*=Math.exp(-10*dt)}
  }
