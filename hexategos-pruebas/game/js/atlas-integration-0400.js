@@ -11,7 +11,7 @@
  // Un solo canal físico. Todos los módulos de Atlas son renderizadores
  // de aristas L8 y reutilizan cachés, nunca reconstruyen celdas del juego.
  drawTerrain3212=function gameAtlasTerrain0400(R,cx,cy){
-  if(!bridge.enabled()||!(bridge.visibleEurope()||bridge.visibleWestAsia())||zoom<5.15)
+  if(!bridge.enabled()||!(bridge.visibleEurope()||bridge.visibleWestAsia()||bridge.visibleCentralAsia())||zoom<5.15)
    return original(R,cx,cy);
   enriched(R,cx,cy);
   // En el juego drawTerrain3212 es el único pase físico: incluir los
