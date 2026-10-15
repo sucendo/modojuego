@@ -1,0 +1,25 @@
+name: Atlas cartographic regressions
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'hexategos-atlas/**'
+      - '.github/workflows/atlas-cartography.yml'
+  pull_request:
+    paths:
+      - 'hexategos-atlas/**'
+      - '.github/workflows/atlas-cartography.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  cartography:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run Atlas regression suite
+        run: node --test hexategos-atlas/tests/cartography-0399.test.cjs
