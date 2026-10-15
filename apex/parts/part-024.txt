@@ -1433,9 +1433,10 @@ function sceneHFov(){
 // We now calibrate the visual origin to a low seated single-seater driver position.
 function driverEyeHeight(){
  if(typeof apexInspectionActive==='function'&&apexInspectionActive())return 0;
- if(mobileLandscapeMode()) return shortLandscapeMode()?.685:.695;
- if(compactMode()) return .690;
- return .700;
+ const visual=player&&player.carSpec?apexCarModelVisual(player.carSpec):null,modelEye=visual?visual.driverEye:0;
+ if(mobileLandscapeMode())return (shortLandscapeMode()?.685:.695)+modelEye;
+ if(compactMode())return .690+modelEye;
+ return .700+modelEye;
 }
 function sceneHorizon(camPitch=0){ if(apexInspectionActive())return H*.5; const mr=mobilePerformanceMode()?mobileControlProfile().horizonRatio:null;return H*(mr!==null?mr:(mobileLandscapeMode()?.385:(compactMode()?.405:.425)))+camPitch; }
 function projectLocal(x,y,z,camPitch=0){
