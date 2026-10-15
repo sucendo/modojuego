@@ -275,17 +275,17 @@ const teamCatalog={
   performance:{top:1.005,aero:1.002,brake:1.004,traction:1.006,wet:1.000}}
 };
 const teamBrandCatalog={
- PAPAYA:{tyreColor:"#ffd400",logo:"swoosh",sponsor:"slashes",guard:"line"},
- SILVERWING:{tyreColor:"#7ef5e1",logo:"star",sponsor:"bars",guard:"clean"},
- FERRATI:{tyreColor:"#ff4f4f",logo:"shield",sponsor:"flash",guard:"nose"},
- BULLHORN:{tyreColor:"#f0ce54",logo:"horns",sponsor:"chevrons",guard:"edge"},
- SUNRIDGE:{tyreColor:"#ff5d64",logo:"doubleBar",sponsor:"steps",guard:"clean"},
- ALPEN:{tyreColor:"#ff6ca7",logo:"aeroA",sponsor:"bands",guard:"line"},
- MIDNIGHT:{tyreColor:"#ff5252",logo:"hash",sponsor:"blocks",guard:"clean"},
- AUREON:{tyreColor:"#d9dce2",logo:"ring",sponsor:"blade",guard:"line"},
- OCEANIC:{tyreColor:"#f4f6f8",logo:"wave",sponsor:"ribbon",guard:"clean"},
- GREENSTONE:{tyreColor:"#c4df68",logo:"leaf",sponsor:"spear",guard:"edge"},
- CADARA:{tyreColor:"#d2b06f",logo:"crest",sponsor:"lux",guard:"nose"}
+ PAPAYA:{tyreColor:"#ffd400",logo:"swoosh",sponsor:"slashes",guard:"line",cockpit:{secondary:"#111519",accent2:"#35bdf2",trim:"#f6f8fb",halo:"#ff8700",pattern:"sweep",wheel:"#ff8700",logoScale:1.00}},
+ SILVERWING:{tyreColor:"#7ef5e1",logo:"star",sponsor:"bars",guard:"clean",cockpit:{secondary:"#171c20",accent2:"#16d7c5",trim:"#f5f7f8",halo:"#c6ced4",pattern:"center",wheel:"#16d7c5",logoScale:.96}},
+ FERRATI:{tyreColor:"#ff4f4f",logo:"shield",sponsor:"flash",guard:"nose",cockpit:{secondary:"#16181b",accent2:"#ffd44d",trim:"#f4f4f4",halo:"#d72b3f",pattern:"clean",wheel:"#d72b3f",logoScale:1.04}},
+ BULLHORN:{tyreColor:"#f0ce54",logo:"horns",sponsor:"chevrons",guard:"edge",cockpit:{secondary:"#10183f",accent2:"#ef304b",trim:"#f0ce54",halo:"#20356f",pattern:"chevron",wheel:"#ef304b",logoScale:1.05}},
+ SUNRIDGE:{tyreColor:"#ff5d64",logo:"doubleBar",sponsor:"steps",guard:"clean",cockpit:{secondary:"#3157b4",accent2:"#e24458",trim:"#f8fafc",halo:"#e8edf2",pattern:"split",wheel:"#4169d8",logoScale:.98}},
+ ALPEN:{tyreColor:"#ff6ca7",logo:"aeroA",sponsor:"bands",guard:"line",cockpit:{secondary:"#133b83",accent2:"#ff6ca7",trim:"#e7f0ff",halo:"#2369c8",pattern:"flank",wheel:"#ff6ca7",logoScale:1.00}},
+ MIDNIGHT:{tyreColor:"#ff5252",logo:"hash",sponsor:"blocks",guard:"clean",cockpit:{secondary:"#2b3036",accent2:"#d93449",trim:"#f7f7f7",halo:"#e4e5e7",pattern:"bars",wheel:"#d93449",logoScale:.96}},
+ AUREON:{tyreColor:"#d9dce2",logo:"ring",sponsor:"blade",guard:"line",cockpit:{secondary:"#20242a",accent2:"#e34852",trim:"#d9dce2",halo:"#1b1f24",pattern:"blade",wheel:"#a92539",logoScale:1.00}},
+ OCEANIC:{tyreColor:"#f4f6f8",logo:"wave",sponsor:"ribbon",guard:"clean",cockpit:{secondary:"#123d7d",accent2:"#58c7ff",trim:"#f4f6f8",halo:"#2b72cc",pattern:"pinstripe",wheel:"#2b72cc",logoScale:1.00}},
+ GREENSTONE:{tyreColor:"#c4df68",logo:"leaf",sponsor:"spear",guard:"edge",cockpit:{secondary:"#0c392d",accent2:"#c4df68",trim:"#f0f4e7",halo:"#17694e",pattern:"spear",wheel:"#17694e",logoScale:1.02}},
+ CADARA:{tyreColor:"#d2b06f",logo:"crest",sponsor:"lux",guard:"nose",cockpit:{secondary:"#172235",accent2:"#c6a45c",trim:"#eef1f3",halo:"#2a3547",pattern:"lux",wheel:"#c6a45c",logoScale:1.04}}
 };
 const teamKeys=Object.keys(teamCatalog);
 let activeDriverRoster=[];
