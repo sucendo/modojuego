@@ -34,6 +34,7 @@
  // tocar las categorías usadas por la IA, las fronteras ni los guardados.
  const cover=window.HexategosLandCover0391;
  const ecotones=window.HexategosLandCoverTransitions0402;
+ const centralEco=window.HexategosCentralAsiaLandcover0405;
  if(cover&&typeof terrainStrategicFill3247==='function'){
   const baseFill=terrainStrategicFill3247,cache=new Map();
   function codes(key,L){
@@ -70,6 +71,7 @@
     }
     rgb=cover.types[arr[i]]?.color;
    }
+   if(rgb&&centralEco)rgb=centralEco.rgbForCell(key,i,L,rgb);
    if(!rgb)return baseFill(key,i,L,own,z);
    const base=baseFill(key,i,L,own,z);
    const vals=base.match(/\d+/g);
