@@ -109,8 +109,13 @@
   if(displayMode!=='historical')pool=pool.concat(natural,features,europeanFeatures());
   if(displayMode!=='natural')pool=pool.concat(historical);
   const candidates=[];
+  const handoffZoom=window.HexategosAtlasMacro0396?.handoffZoom||5.55;
   for(const item of pool){
    if(zoom<item.minZoom)continue;
+   // Solo regiones pequeñas a partir del relevo continental.
+   if((item.kind==='natural'||item.kind==='historical')&&zoom<handoffZoom)continue;
+   // No rotular masas de agua que la malla no puede representar.
+   if(item.kind==='lake'&&!lakes?.isDrawn?.(item.name))continue;
    if(item.kind==='river'&&!$('rivers')?.checked)continue;
    if(item.kind==='mountain'&&!$('mountains')?.checked)continue;
    if(item.kind==='lake'&&!$('lakes')?.checked)continue;
@@ -156,7 +161,7 @@
    '</div>';
  }
  window.HexategosAtlasRegions0390=Object.freeze({
-   version:'0.39.6',draw,cellInfo,occupied:()=>lastBoxes,
+   version:'0.39.7',draw,cellInfo,occupied:()=>lastBoxes,
    regionsAt:(lat,lon)=>{
     const old=source.regionsAt(lat,lon);
     return {natural:old.natural.concat(europe?.naturalAt(lat,lon)||[],detail?.naturalAt(lat,lon)||[]),
