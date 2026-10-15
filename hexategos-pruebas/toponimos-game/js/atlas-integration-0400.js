@@ -17,10 +17,10 @@
  };
  drawGeographicLabels3243=function gameAtlasLabels0400(R,cx,cy){
   if(!showLabels)return;
-  if(!bridge.enabled()||!bridge.visibleEurope()||zoom<1.5)
+  if(!bridge.enabled()||!(bridge.visibleEurope()||bridge.visibleAsia())||zoom<1.5)
    return baseNames(R,cx,cy);
   const macro=window.HexategosAtlasMacro0396,regions=window.HexategosAtlasRegions0390;
-  // Evitar duplicar la toponimia europea del juego. Las demás zonas
+  // Evitar duplicar la toponimia europea y asiática del juego. Las demás zonas
   // mantienen las macroetiquetas y regiones originales de Hexategos.
   if(macro&&regions){macro.draw(R,cx,cy);regions.draw(R,cx,cy)}
   else baseNames(R,cx,cy);
