@@ -318,6 +318,7 @@
      syncPlayerTrack();
    }
    player.pos=apexLivePlayerPosition();
+   if(typeof apexRivalContinuityWatch==="function")apexRivalContinuityWatch(worldElapsed);
    const _telT0=performance.now();captureSessionTelemetry();telemetryPerf.telemetryMs=lerp(telemetryPerf.telemetryMs||0,performance.now()-_telT0,.18);
    const _audT0=performance.now();updateAudio(worldElapsed);telemetryPerf.audioMs=lerp(telemetryPerf.audioMs||0,performance.now()-_audT0,.18);
    const _hudT0=performance.now();updateHud();telemetryPerf.hudMs=lerp(telemetryPerf.hudMs||0,performance.now()-_hudT0,.18);
