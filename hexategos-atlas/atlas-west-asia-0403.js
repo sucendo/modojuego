@@ -272,6 +272,7 @@
  }
  window.HexategosWestAsia0403=Object.freeze({
   version:'0.40.3',drawLakes,nearby,isDrawn:name=>visibleLakes.has(name),
+  isDrawnFeature:name=>diagnostics.get(name)?.ok===true,
   diagnostics:()=>[...diagnostics.values()],
   graphSize:()=>graph?.vertices.length||0,graphBuilds:()=>builds,
   prepared:()=>riverRoutes.size+mountainRoutes.size+lakeRoutes.size,
