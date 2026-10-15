@@ -911,10 +911,9 @@ function drawRivalSideTyres(w,h,v,lod,teamKey=null){
  }
 }
 function drawRivalFrontSprite(a){
- const team=teamInfo(a.r.team),v=teamRearVisual(a.r.team),spec=carCatalog[team.model]||carCatalog.A26;
+ const team=teamInfo(a.r.team),v=teamRearVisual(a.r.team),spec=carCatalog[team.model]||carCatalog.A26,m=apexCarModelVisual(spec);
  const col=team.color,dark=shadeColor(col,-62),light=shadeColor(col,34);
- const shape=spec.rear||'narrow',shapeMul=shape==='wide'?1.06:shape==='compact'?.96:1;
- const w=clamp(a.p.scale*2.92*shapeMul,3.0,196),h=w*.70,x=a.p.x,y=a.p.y;
+ const w=clamp(a.p.scale*2.92*m.shoulderWidth,3.0,196),h=w*.70,x=a.p.x,y=a.p.y;
  const lod=Math.max(1,Math.min(w<10?1:w<26?1:2,Number.isFinite(a.visualLod)?Math.max(1,a.visualLod):2)),yaw=clamp(a.sideToCam*.18,-.16,.16),shift=yaw*w*.08;
  ctx.save();ctx.translate(x,y);
  ctx.fillStyle='rgba(0,0,0,.32)';ctx.beginPath();ctx.ellipse(0,h*.030,w*.56,h*.090,0,0,Math.PI*2);ctx.fill();
@@ -927,8 +926,9 @@ function drawRivalFrontSprite(a){
  // rear wing faintly visible above the halo
  if(lod===2){ctx.fillStyle=v.carbon;ctx.fillRect(-w*.16,-h*.86,w*.32,h*.055);ctx.fillStyle='#0d1115';ctx.fillRect(-w*.012,-h*.85,w*.024,h*.18);}
  // front wheels dominate
- drawRivalFrontTyre(shift-w*.36,-h*.24,w*.18,h*.38,v,lod,.03,-yaw*.7,a.r.team);
- drawRivalFrontTyre(shift+w*.36,-h*.24,w*.18,h*.38,v,lod,-.03,-yaw*.7,a.r.team);
+ const tyreX=w*.36*m.shoulderWidth,tyreW=w*.18*m.wheelScale,tyreH=h*.38*m.wheelScale;
+ drawRivalFrontTyre(shift-tyreX,-h*.24,tyreW,tyreH,v,lod,.03,-yaw*.7,a.r.team);
+ drawRivalFrontTyre(shift+tyreX,-h*.24,tyreW,tyreH,v,lod,-.03,-yaw*.7,a.r.team);
  // suspension arms
  if(lod===2){
    ctx.strokeStyle='#171b20';ctx.lineWidth=Math.max(1,w*.014);ctx.lineCap='round';
@@ -940,7 +940,8 @@ function drawRivalFrontSprite(a){
  }
  // front wing
  ctx.fillStyle=v.carbon;
- ctx.beginPath();ctx.moveTo(-w*.48,-h*.13);ctx.quadraticCurveTo(0,-h*.20,w*.48,-h*.13);ctx.lineTo(w*.45,-h*.01);ctx.quadraticCurveTo(0,-h*.06,-w*.45,-h*.01);ctx.closePath();ctx.fill();
+ const fw=.48*m.frontWing;
+ ctx.beginPath();ctx.moveTo(-w*fw,-h*.13);ctx.quadraticCurveTo(0,-h*.20,w*fw,-h*.13);ctx.lineTo(w*fw*.94,-h*.01);ctx.quadraticCurveTo(0,-h*.06,-w*fw*.94,-h*.01);ctx.closePath();ctx.fill();
  ctx.fillStyle='#171a1e';ctx.beginPath();ctx.moveTo(-w*.40,-h*.075);ctx.quadraticCurveTo(0,-h*.125,w*.40,-h*.075);ctx.lineTo(w*.38,-h*.03);ctx.quadraticCurveTo(0,-h*.06,-w*.38,-h*.03);ctx.closePath();ctx.fill();
  for(const sg of [-1,1]){ctx.fillStyle=v.carbon;ctx.fillRect(sg*w*.43-w*.025,-h*.18,w*.05,h*.18);ctx.strokeStyle=v.stripe;ctx.lineWidth=Math.max(1,w*.008);ctx.beginPath();ctx.moveTo(sg*w*.445,-h*.17);ctx.lineTo(sg*w*.445,-h*.04);ctx.stroke();}
  // body side shoulders and inlets
@@ -949,24 +950,25 @@ function drawRivalFrontSprite(a){
  ctx.beginPath();ctx.moveTo(w*.31,-h*.57);ctx.quadraticCurveTo(w*.35,-h*.44,w*.32,-h*.27);ctx.lineTo(w*.15,-h*.20);ctx.lineTo(w*.10,-h*.48);ctx.closePath();ctx.fill();
  // main nose and chassis
  ctx.fillStyle=col;
- ctx.beginPath();ctx.moveTo(shift-w*.13,-h*.70);ctx.quadraticCurveTo(shift-w*.16,-h*.58,shift-w*.095,-h*.11);ctx.lineTo(shift+w*.095,-h*.11);ctx.quadraticCurveTo(shift+w*.16,-h*.58,shift+w*.13,-h*.70);ctx.quadraticCurveTo(shift, -h*.78,shift-w*.13,-h*.70);ctx.fill();
+ const noseW=m.noseWidth;
+ ctx.beginPath();ctx.moveTo(shift-w*.13*noseW,-h*.70);ctx.quadraticCurveTo(shift-w*.16*noseW,-h*.58,shift-w*.095*noseW,-h*.11);ctx.lineTo(shift+w*.095*noseW,-h*.11);ctx.quadraticCurveTo(shift+w*.16*noseW,-h*.58,shift+w*.13*noseW,-h*.70);ctx.quadraticCurveTo(shift,-h*.78,shift-w*.13*noseW,-h*.70);ctx.fill();
  ctx.fillStyle=light;ctx.globalAlpha=.18;ctx.beginPath();ctx.moveTo(shift-w*.020,-h*.67);ctx.lineTo(shift+w*.020,-h*.67);ctx.lineTo(shift+w*.010,-h*.15);ctx.lineTo(shift-w*.010,-h*.15);ctx.closePath();ctx.fill();ctx.globalAlpha=1;
  // sidepod openings
  ctx.fillStyle='#06080c';ctx.beginPath();ctx.ellipse(shift-w*.21,-h*.45,w*.10,h*.09,-.12,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.ellipse(shift+w*.21,-h*.45,w*.10,h*.09,.12,0,Math.PI*2);ctx.fill();
  // halo and helmet
  ctx.fillStyle='#0b0f12';ctx.beginPath();ctx.ellipse(shift,-h*.63,w*.07,h*.08,0,0,Math.PI*2);ctx.fill();ctx.fillStyle=v.stripe;ctx.beginPath();ctx.arc(shift,-h*.655,w*.036,Math.PI,0);ctx.fill();
  ctx.fillStyle=v.carbon;ctx.fillRect(shift-w*.010,-h*.73,w*.020,h*.38);
- ctx.beginPath();ctx.moveTo(shift-w*.16,-h*.69);ctx.quadraticCurveTo(shift-w*.06,-h*.84,shift,-h*.84);ctx.quadraticCurveTo(shift+w*.06,-h*.84,shift+w*.16,-h*.69);ctx.lineTo(shift+w*.12,-h*.65);ctx.quadraticCurveTo(shift+w*.05,-h*.77,shift,-h*.78);ctx.quadraticCurveTo(shift-w*.05,-h*.77,shift-w*.12,-h*.65);ctx.closePath();ctx.fill();
+ const haloW=m.haloWidth;
+ ctx.beginPath();ctx.moveTo(shift-w*.16*haloW,-h*.69);ctx.quadraticCurveTo(shift-w*.06*haloW,-h*.84,shift,-h*.84);ctx.quadraticCurveTo(shift+w*.06*haloW,-h*.84,shift+w*.16*haloW,-h*.69);ctx.lineTo(shift+w*.12,-h*.65);ctx.quadraticCurveTo(shift+w*.05,-h*.77,shift,-h*.78);ctx.quadraticCurveTo(shift-w*.05,-h*.77,shift-w*.12,-h*.65);ctx.closePath();ctx.fill();
  // mirrors and livery
  if(lod===2){ctx.fillStyle=v.carbon;ctx.fillRect(shift-w*.28,-h*.56,w*.08,h*.05);ctx.fillRect(shift+w*.20,-h*.56,w*.08,h*.05);}
  rivalPseudoSponsorBlocks(a.r.team,v,w,h,'front',1,lod);
  ctx.restore();
 }
 function drawRivalSideSprite(a){
- const team=teamInfo(a.r.team),v=teamRearVisual(a.r.team),spec=carCatalog[team.model]||carCatalog.A26;
+ const team=teamInfo(a.r.team),v=teamRearVisual(a.r.team),spec=carCatalog[team.model]||carCatalog.A26,m=apexCarModelVisual(spec);
  const col=team.color,dark=shadeColor(col,-58),light=shadeColor(col,30);
- const shape=spec.rear||'narrow',shapeMul=shape==='wide'?1.07:shape==='compact'?.96:1;
- const w=clamp(a.p.scale*3.25*shapeMul,4.0,238),h=w*.63,x=a.p.x,y=a.p.y;
+ const w=clamp(a.p.scale*3.25*(.985+.015*m.noseLen),4.0,238),h=w*.63,x=a.p.x,y=a.p.y;
  const lod=Math.max(1,Math.min(w<12?1:w<28?1:2,Number.isFinite(a.visualLod)?Math.max(1,a.visualLod):2)),sg=(a.sideToCam||1)>=0?1:-1;
  ctx.save();ctx.translate(x,y);ctx.scale(sg,1);
  ctx.fillStyle='rgba(0,0,0,.32)';ctx.beginPath();ctx.ellipse(0,h*.03,w*.68,h*.11,0,0,Math.PI*2);ctx.fill();
@@ -983,7 +985,8 @@ function drawRivalSideSprite(a){
  const body=ctx.createLinearGradient(-w*.28,-h*.52,w*.45,-h*.10);
  body.addColorStop(0,dark);body.addColorStop(.32,col);body.addColorStop(.65,light);body.addColorStop(1,dark);
  ctx.fillStyle=body;
- ctx.beginPath();ctx.moveTo(-w*.20,-h*.50);ctx.quadraticCurveTo(w*.00,-h*.66,w*.19,-h*.58);ctx.quadraticCurveTo(w*.46,-h*.48,w*.54,-h*.27);ctx.lineTo(w*.32,-h*.11);ctx.quadraticCurveTo(w*.12,-h*.12,-w*.07,-h*.18);ctx.quadraticCurveTo(-w*.19,-h*.22,-w*.25,-h*.34);ctx.closePath();ctx.fill();
+ const sideW=m.sidepodWidth,engineH=m.engineHeight;
+ ctx.beginPath();ctx.moveTo(-w*.20*sideW,-h*.50*engineH);ctx.quadraticCurveTo(w*.00,-h*.66*engineH,w*.19,-h*.58*engineH);ctx.quadraticCurveTo(w*.46,-h*.48*engineH,w*.54,-h*.27);ctx.lineTo(w*.32,-h*.11);ctx.quadraticCurveTo(w*.12,-h*.12,-w*.07,-h*.18);ctx.quadraticCurveTo(-w*.19,-h*.22,-w*.25,-h*.34);ctx.closePath();ctx.fill();
  // cockpit opening and halo
  ctx.fillStyle='#050709';ctx.beginPath();ctx.ellipse(w*.19,-h*.50,w*.09,h*.08,.08,0,Math.PI*2);ctx.fill();
  ctx.fillStyle=v.carbon;ctx.fillRect(w*.17,-h*.67,w*.022,h*.33);ctx.beginPath();ctx.moveTo(w*.04,-h*.60);ctx.quadraticCurveTo(w*.15,-h*.74,w*.30,-h*.72);ctx.quadraticCurveTo(w*.38,-h*.69,w*.44,-h*.61);ctx.lineTo(w*.40,-h*.57);ctx.quadraticCurveTo(w*.34,-h*.64,w*.28,-h*.65);ctx.quadraticCurveTo(w*.17,-h*.66,w*.08,-h*.56);ctx.closePath();ctx.fill();
@@ -992,7 +995,8 @@ function drawRivalSideSprite(a){
  ctx.fillStyle='#111418';ctx.fillRect(w*.23,-h*.82,w*.12,h*.045);ctx.fillRect(w*.275,-h*.80,w*.020,h*.15);
  // front suspension/nose
  if(lod===2){ctx.strokeStyle='#171b20';ctx.lineWidth=Math.max(1,w*.009);for(const yy of [-.24,-.18,-.12]){ctx.beginPath();ctx.moveTo(w*.18,yy*h);ctx.lineTo(w*.42,yy*h);ctx.stroke();}}
- ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(w*.28,-h*.24);ctx.lineTo(w*.54,-h*.23);ctx.lineTo(w*.59,-h*.17);ctx.lineTo(w*.42,-h*.14);ctx.lineTo(w*.21,-h*.16);ctx.closePath();ctx.fill();
+ const noseTip=.59*m.noseLen;
+ ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(w*.28,-h*.24);ctx.lineTo(w*.54*m.noseLen,-h*.23);ctx.lineTo(w*noseTip,-h*.17);ctx.lineTo(w*.42,-h*.14);ctx.lineTo(w*.21,-h*.16);ctx.closePath();ctx.fill();
  // rear suspension glimpse and diffuser/lamp
  if(lod===2){ctx.strokeStyle='#171b20';ctx.lineWidth=Math.max(1,w*.010);ctx.beginPath();ctx.moveTo(-w*.10,-h*.26);ctx.lineTo(-w*.25,-h*.18);ctx.stroke();ctx.beginPath();ctx.moveTo(-w*.02,-h*.18);ctx.lineTo(-w*.22,-h*.10);ctx.stroke();}
  ctx.fillStyle=v.carbon;ctx.fillRect(-w*.31,-h*.08,w*.10,h*.05);
@@ -1154,11 +1158,10 @@ function collectRivalSprites(cam,pitch){
  arr.sort((a,b)=>b.z-a.z);return arr;
 }
 function drawRivalRearSprite(a){
- const team=teamInfo(a.r.team),v=teamRearVisual(a.r.team),spec=carCatalog[team.model]||carCatalog.A26;
+ const team=teamInfo(a.r.team),v=teamRearVisual(a.r.team),spec=carCatalog[team.model]||carCatalog.A26,m=apexCarModelVisual(spec);
  const col=team.color,secondary=v.secondary,light=shadeColor(col,30),dark=shadeColor(col,-65);
- const shape=spec.rear||'narrow',shapeMul=shape==='wide'?1.055:shape==='compact'?.965:1;
- const w=clamp(a.p.scale*2.58*shapeMul,2.5,184),h=w*.62,yaw=clamp(a.relYaw||0,-.19,.19),x=a.p.x,y=a.p.y;
- const shift=Math.sin(yaw)*w*.075,bodyMul=v.body||1,tireMul=v.tire||1,wingSpan=(v.wingSpan||1),diffMul=v.diffuser||1;
+ const w=clamp(a.p.scale*2.58*m.shoulderWidth,2.5,184),h=w*.62,yaw=clamp(a.relYaw||0,-.19,.19),x=a.p.x,y=a.p.y;
+ const shift=Math.sin(yaw)*w*.075,bodyMul=(v.body||1)*m.sidepodWidth,tireMul=(v.tire||1)*m.wheelScale,wingSpan=(v.wingSpan||1)*m.rearWing,diffMul=v.diffuser||1;
  const lod=Math.max(1,Math.min(w<10?1:w<24?1:2,Number.isFinite(a.visualLod)?Math.max(1,a.visualLod):2));
  ctx.save();ctx.translate(x,y);
  ctx.fillStyle='rgba(0,0,0,.34)';ctx.beginPath();ctx.ellipse(0,h*.035,w*.57,h*.105,0,0,Math.PI*2);ctx.fill();
@@ -1776,20 +1779,20 @@ function cockpitEditablePalette(){
 function drawCockpit(motion=null){
  const compact=compactMode(),cp=cockpitEditablePalette(),body=cp.primary,
        bodyDark=cp.dark,bodyLight=cp.light,bodyMid=cp.mid,
-       spec=(cp.visual&&cp.visual.spec)||(player&&player.carSpec)||carCatalog.A26;
+       spec=(cp.visual&&cp.visual.spec)||(player&&player.carSpec)||carCatalog.A26,m=apexCarModelVisual(spec);
 
  ctx.save();applyCockpitMotion(motion||cockpitMotionState());
 
- // front tyres
- const tyreY=H*(compact?.557:.546),tyreRX=W*.084,tyreRY=H*.128;
+ // front tyres: same chassis track/wheel family as the exterior model.
+ const tyreY=H*(compact?.557:.546),tyreRX=W*.084*m.wheelScale,tyreRY=H*.128*m.wheelScale,tyreDX=W*.302*m.shoulderWidth;
  ctx.fillStyle="#090a0c";
- ctx.beginPath();ctx.ellipse(W*.198,tyreY,tyreRX,tyreRY,-.08,0,Math.PI*2);ctx.fill();
- ctx.beginPath();ctx.ellipse(W*.802,tyreY,tyreRX,tyreRY,.08,0,Math.PI*2);ctx.fill();
+ ctx.beginPath();ctx.ellipse(W*.5-tyreDX,tyreY,tyreRX,tyreRY,-.08,0,Math.PI*2);ctx.fill();
+ ctx.beginPath();ctx.ellipse(W*.5+tyreDX,tyreY,tyreRX,tyreRY,.08,0,Math.PI*2);ctx.fill();
 
  // tyre shoulder highlights
  ctx.strokeStyle=body;ctx.lineWidth=Math.max(2.1,W*.0022);
- ctx.beginPath();ctx.arc(W*.198,tyreY,W*.060,-1.95,-.16);ctx.stroke();
- ctx.beginPath();ctx.arc(W*.802,tyreY,W*.060,Math.PI+.16,Math.PI*1.91);ctx.stroke();
+ ctx.beginPath();ctx.arc(W*.5-tyreDX,tyreY,W*.060*m.wheelScale,-1.95,-.16);ctx.stroke();
+ ctx.beginPath();ctx.arc(W*.5+tyreDX,tyreY,W*.060*m.wheelScale,Math.PI+.16,Math.PI*1.91);ctx.stroke();
 
  // OUTER sidewall plane
  const leftOuter=[[0,H],[0,H*.708],[W*.086,H*.610],[W*.245,H*.572],[W*.370,H*.598],[W*.430,H],[0,H]];
@@ -1943,23 +1946,23 @@ function drawCockpit(motion=null){
  ctx.beginPath();ctx.moveTo(W*.474,H*.608);ctx.quadraticCurveTo(W*.500,H*.590,W*.526,H*.608);ctx.stroke();
 
  // wheel
- const wheelW=W*(compact?.322:.344),wheelY=H*(compact?.848:.846);
+ const wheelW=W*(compact?.322:.344)*m.wheelScale,wheelY=H*(compact?.848:.846);
  drawModernSteeringWheel(W*.5,wheelY,wheelW,body,bodyLight);
 
  // halo
  const haloLift=spec.halo*H*.004,
        topY=H*(compact?.026:.021)+haloLift,
        joinY=H*(compact?.108:.098)+haloLift,
-       baseY=H*(compact?.492:.478)+haloLift;
+       baseY=H*(compact?.492:.478)+haloLift,haloInner=.06*m.haloWidth,haloOuter=.16*m.haloWidth;
 
  ctx.lineCap="round";ctx.lineJoin="round";
  ctx.strokeStyle="#050608";ctx.lineWidth=Math.max(20,W*(compact?.018:.020));
- ctx.beginPath();ctx.moveTo(-W*.03,topY);ctx.quadraticCurveTo(W*.23,joinY*.15,W*.44,joinY);
- ctx.quadraticCurveTo(W*.50,joinY*1.33,W*.56,joinY);ctx.quadraticCurveTo(W*.77,joinY*.15,W*1.03,topY);ctx.stroke();
+ ctx.beginPath();ctx.moveTo(-W*.03,topY);ctx.quadraticCurveTo(W*.23,joinY*.15,W*(.5-haloInner),joinY);
+ ctx.quadraticCurveTo(W*.50,joinY*1.33,W*(.5+haloInner),joinY);ctx.quadraticCurveTo(W*.77,joinY*.15,W*1.03,topY);ctx.stroke();
 
  ctx.strokeStyle="#171b20";ctx.lineWidth=Math.max(7,W*(compact?.0064:.0074));
- ctx.beginPath();ctx.moveTo(-W*.03,topY);ctx.quadraticCurveTo(W*.23,joinY*.15,W*.44,joinY);
- ctx.quadraticCurveTo(W*.50,joinY*1.33,W*.56,joinY);ctx.quadraticCurveTo(W*.77,joinY*.15,W*1.03,topY);ctx.stroke();
+ ctx.beginPath();ctx.moveTo(-W*.03,topY);ctx.quadraticCurveTo(W*.23,joinY*.15,W*(.5-haloInner),joinY);
+ ctx.quadraticCurveTo(W*.50,joinY*1.33,W*(.5+haloInner),joinY);ctx.quadraticCurveTo(W*.77,joinY*.15,W*1.03,topY);ctx.stroke();
 
  ctx.strokeStyle="#050608";ctx.lineWidth=Math.max(18,W*(compact?.015:.017));
  ctx.beginPath();ctx.moveTo(W*.5,joinY*.92);ctx.lineTo(W*.5,baseY);ctx.stroke();
@@ -2085,14 +2088,14 @@ function driverViewCalibration(){
 }
 
 function cockpitSvgModelParams(){
- const spec=(player&&player.carSpec)||carCatalog.A26,
+ const spec=(player&&player.carSpec)||carCatalog.A26,m=apexCarModelVisual(spec),
        compact=compactMode(),mobileLand=mobileLandscapeMode(),shortLand=shortLandscapeMode();
 
  const eye=driverEyeHeight();
  // 0 = former ~0.835 m camera, 1 = current ~0.70 m driver-eye calibration.
  const lowEye=clamp((.835-eye)/.135,0,1.15);
- const modelSX=spec.nose==='wide'?1.020:1.000;
- const modelSY=spec.halo>0?1.006:(spec.halo<0?.995:1);
+ const modelSX=m.shoulderWidth;
+ const modelSY=m.engineHeight;
 
  // Keep the approved classic seating position, but give the low eye a slightly stronger cockpit perspective.
  const baseSY=(mobileLand?(shortLand?.865:.885):(compact?.905:.920));
@@ -2101,7 +2104,7 @@ function cockpitSvgModelParams(){
  const baseYOffset=(mobileLand?(shortLand?H*.106:H*.098):(compact?H*.090:H*.096));
  const shellYOffset=baseYOffset+H*lowEye*.010;
 
- const wheelScale=(1+(spec.wheel||0)*.020)*1.015*(1+lowEye*.012);
+ const wheelScale=m.wheelScale*1.015*(1+lowEye*.012);
  const wheelY=(spec.wheel||0)*3.5+4+lowEye*2.0;
 
  return {shellSX,shellSY,shellYOffset,wheelScale,wheelY,lowEye};
