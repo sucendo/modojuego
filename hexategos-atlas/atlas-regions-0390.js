@@ -1,11 +1,12 @@
 'use strict';
-/* HEXATEGOS ATLAS · Etiquetas geográficas compartidas v0.39.0.
+/* HEXATEGOS ATLAS · Etiquetas geográficas compartidas v0.39.5.
  * Se utilizan los datos políticos de Hexategos Pruebas y las nuevas unidades
  * naturales ibéricas; las fronteras naturales son APROXIMADAS y nunca cambian
  * la propiedad de los hexágonos ni afectan a una partida.
  */
 (function(){
  const source=window.HexategosGeoRegions0390;
+ const europe=window.HexategosEuropeRegions0395;
  if(!source){console.warn('[Atlas] No se cargaron las regiones compartidas');return}
  const historicalAnchors={
   'Cataluña':[1.75,41.70],'Aragón':[-0.90,41.37],'Navarra':[-1.55,42.55],
@@ -23,14 +24,17 @@
       minZoom:row[0]==='Andalucía occidental'||row[0]==='Andalucía oriental'?9:4};
   });
  }
- const historical=historicalLabels();
+ const historical=historicalLabels().concat((europe?.historicalLabels||[]).map(x=>({
+  name:x.name,center:x.center,kind:'historical',rank:56,minZoom:5.5
+ })));
  const physical=window.HEXATEGOS_IBERIA_PHYSICAL_V1;
- const natural=source.physicalRegions.map(reg=>({
+ const natural=source.physicalRegions.concat(europe?.naturalRegions||[]).map(reg=>({
    name:reg.name,center:reg.center,kind:'natural',
    rank:reg.priority,
    minZoom:reg.priority>=95?11:reg.priority>=80?8:reg.priority>=70?6:4.8
  }));
  const features=[];
+ let europeFeatures=null;
  if(physical){
   for(const item of physical.mountains){
    features.push({name:item.name,center:item.points[Math.floor(item.points.length*.52)],
@@ -41,12 +45,44 @@
      kind:'river',rank:item.rank*5+9,minZoom:12});
   }
  }
+ // Añadir los nombres de los accidentes ya dibujados por la malla
+ // canónica, sin inventar segundas geometrías. Inicialización perezosa:
+ // no hay acceso a L8 antes de finalizar la carga asíncrona de Atlas.
+ function europeanFeatures(){
+  if(europeFeatures)return europeFeatures;
+  europeFeatures=[];
+  const iberian=new Set((physical?.rivers||[]).concat(physical?.mountains||[]).map(x=>x.name));
+  const L=loadLevel('8'),F=L.faceCenters;
+  function midpoint(sys){
+   const edges=sys.edges;
+   if(!edges?.length)return null;
+   const id=edges[Math.floor(edges.length*.49)],e=physicalEdge3242(id);
+   if(!e||e.u<0||e.v<0)return null;
+   const a=e.u*3,b=e.v*3;
+   const x=(F[a]+F[b])/65534,y=(F[a+1]+F[b+1])/65534,z=(F[a+2]+F[b+2])/65534;
+   const lat=Math.asin(Math.max(-1,Math.min(1,y)))*180/Math.PI;
+   const lon=Math.atan2(x,z)*180/Math.PI;
+   if(lat<35||lat>73||lon< -25||lon>61)return null;
+   return [lon,lat];
+  }
+  for(const [collection,kind] of [
+    [MAP_RIVERS3242,'river'],[MOUNTAIN_NETWORKS3242,'mountain']]){
+   for(const sys of collection){
+    if(iberian.has(sys.n)||sys.branch)continue;
+    const point=midpoint(sys);
+    if(!point)continue;
+    europeFeatures.push({name:sys.n,center:point,kind,
+      rank:kind==='mountain'?68:64,minZoom:kind==='mountain'?9.5:10.5});
+   }
+  }
+  return europeFeatures;
+ }
  function draw(R,cx,cy){
   lastBoxes=[];
   if(!enabled()||zoom<2.1)return;
   const displayMode=mode();
   let pool=[];
-  if(displayMode!=='historical')pool=pool.concat(natural,features);
+  if(displayMode!=='historical')pool=pool.concat(natural,features,europeanFeatures());
   if(displayMode!=='natural')pool=pool.concat(historical);
   const candidates=[];
   for(const item of pool){
@@ -80,8 +116,9 @@
  }
  function cellInfo(lat,lon){
   const result=source.regionsAt(lat,lon);
-  const naturalNames=result.natural.slice(0,4).map(r=>escapeHTML(r.name)).join(' · ');
-  const historicalName=result.historical?.name||'';
+  const local=europe?.naturalAt(lat,lon)||[];
+  const naturalNames=result.natural.concat(local).slice(0,5).map(r=>escapeHTML(r.name)).join(' · ');
+  const historicalName=result.historical?.name||europe?.historicalAt(lat,lon)?.name||'';
   if(!naturalNames&&!historicalName)return '';
   return '<div class="atlasGeo0390">'+
     (naturalNames?'<div><b>Zonas naturales:</b> '+naturalNames+'</div>':'')+
@@ -90,7 +127,11 @@
    '</div>';
  }
  window.HexategosAtlasRegions0390=Object.freeze({
-   version:'0.39.0',draw,cellInfo,occupied:()=>lastBoxes,
-   regionsAt:source.regionsAt
+   version:'0.39.5',draw,cellInfo,occupied:()=>lastBoxes,
+   regionsAt:(lat,lon)=>{
+    const old=source.regionsAt(lat,lon);
+    return {natural:old.natural.concat(europe?.naturalAt(lat,lon)||[]),
+      historical:old.historical||europe?.historicalAt(lat,lon)||null};
+   }
  });
 })();
