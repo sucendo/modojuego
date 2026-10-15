@@ -226,8 +226,9 @@
  if((demoMode||assistMode)&&wallHitThisFrame)player.autoLastWallHit=raceT;
 
  // Relación con el circuito únicamente para superficies/progreso.
- const oldS=player.s,oldTotal=player.total,L=trackData.km*1000,tr=syncPlayerTrack();
- let ds=wrapDeltaS(player.s,oldS,L),maxProgress=Math.max(8,sp*dt*3+3);
+ const oldS=player.s,oldClassS=Number.isFinite(player.classificationS)?player.classificationS:player.s,oldTotal=player.total,L=trackData.km*1000,tr=syncPlayerTrack(),classS=apexPlayerClassificationS();
+ player.classificationS=classS;player.progressS=classS;
+ let ds=wrapDeltaS(classS,oldClassS,L),maxProgress=Math.max(8,sp*dt*3+3);
  if(Math.abs(ds)<=maxProgress)player.total+=ds;
  const surf=playerSurfaceState();player.surface=drivableBoundaryHitThisFrame?'LIMIT':surf.zone;player.surfaceKind=drivableBoundaryHitThisFrame?'BOUNDARY':surf.kind;
  player.wallCooldown=Math.max(0,(player.wallCooldown||0)-dt);
@@ -276,7 +277,7 @@
 
  // Cronometraje V4: vuelta por cruce real de FINISH/CONTROL; sectores y speed trap son controles independientes.
  recordPracticeLapTrace(oldS);
- if(updateLapValidation(oldS,player.s,oldTotal,player.total))return;
+ if(updateLapValidation(oldClassS,classS,oldTotal,player.total))return;
 
  if(runHeavy){
    // La física del jugador puede usar muchos subpasos, pero repetir toda la IA 10-14
