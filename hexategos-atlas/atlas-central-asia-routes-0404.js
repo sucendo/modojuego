@@ -286,7 +286,13 @@
   version:'0.40.4',nearby,
   isDrawnFeature:name=>diagnostics.get(name)?.ok===true,
   isBodyDrawn:name=>zoom>=5.15&&data.waterBodies.some(x=>x.name===name)&&
-    !!window.HexategosCentralAsiaWater0404,
+    !!window.HexategosCentralAsiaWater0404&&
+    ($('lakes')?.checked??true)&&
+    (!window.HexategosGameAtlasBridge0400||
+      window.HexategosGameAtlasBridge0400.enabled()&&
+      window.HexategosGameAtlasBridge0400.visibleCentralAsia())&&
+    (typeof mapMode3252==='undefined'||
+      mapMode3252==='terrain'||mapMode3252==='political'),
   diagnostics:()=>[...diagnostics.values()],
   graphSize:()=>graph?.vertices.length||0,
   graphBuilds:()=>builds,
