@@ -2680,7 +2680,7 @@ function resolveRivalRivalCollision(a,b){
  aVx+=jt*invM*tx;aVz+=jt*invM*tz;bVx-=jt*invM*tx;bVz-=jt*invM*tz;
  const corr=Math.min(c.penetration+.025,packContainment?.30:1.25),aDx=c.nx*corr*.5,aDz=c.nz*corr*.5,bDx=-c.nx*corr*.5,bDz=-c.nz*corr*.5;
  a.total+=aDx*A.q.tx+aDz*A.q.tz;a.lat+=aDx*A.q.nx+aDz*A.q.nz;b.total+=bDx*B.q.tx+bDz*B.q.tz;b.lat+=bDx*B.q.nx+bDz*B.q.nz;
- const L=trackData.km*1000;a.s=mod(a.total,L);b.s=mod(b.total,L);
+ const L=trackData.km*1000;a.s=apexRivalSFromTotal(a,L);b.s=apexRivalSFromTotal(b,L);
  const aq=renderRibbonFrameAt(a.s),bq=renderRibbonFrameAt(b.s);
  a.speed=clamp(aVx*aq.tx+aVz*aq.tz,0,112);a.latVel=clamp(aVx*aq.nx+aVz*aq.nz,-12,12);
  b.speed=clamp(bVx*bq.tx+bVz*bq.tz,0,112);b.latVel=clamp(bVx*bq.nx+bVz*bq.nz,-12,12);
@@ -2707,6 +2707,10 @@ function resolveRivalRivalCollision(a,b){
    if(raceT-last>.55){a.pairContactAt[b.id]=raceT;pushTelemetryEvent('RIVAL_RIVAL_CONTACT',{rivalA:a.id,rivalAUid:raceIdentity(a.id),rivalAName:raceName(a.id),teamA:a.team,rivalB:b.id,rivalBUid:raceIdentity(b.id),rivalBName:raceName(b.id),teamB:b.team,zoneA,zoneB,closingKph:telemetryRound(closing*3.6,1),penetrationM:telemetryRound(c.penetration,3),severity:telemetryRound(severity,3)});}
  }
  return true;
+}
+function apexRivalSFromTotal(rv,L){
+ const origin=Number.isFinite(rv&&rv.progressOriginS)?rv.progressOriginS:0;
+ return mod(origin+(Number(rv&&rv.total)||0),L);
 }
 function resolveRivalRivalCollisions(){
  let hits=0;for(let i=0;i<rivals.length;i++)for(let j=i+1;j<rivals.length;j++)if(resolveRivalRivalCollision(rivals[i],rivals[j]))hits++;return hits;
@@ -2739,7 +2743,7 @@ function resolveRivalWallCollision(rv){
  const cx=x-c.nx*corr,cz=z-c.nz*corr;
  const rt=localTrackStateFromCenter(cx,cz,{s:rv.s});
  const L=trackData.km*1000,ds=clamp(wrapDeltaS(rt.s,rv.s,L),-4.0,4.0);
- rv.total+=ds;rv.s=mod(rv.total,L);rv.lat=rt.lat;
+ rv.total+=ds;rv.s=apexRivalSFromTotal(rv,L);rv.lat=rt.lat;
  const rq=renderRibbonFrameAt(rv.s);
  rv.speed=clamp(rvVx*rq.tx+rvVz*rq.tz,0,112);
  rv.latVel=clamp(rvVx*rq.nx+rvVz*rq.nz,-11,11);
@@ -2795,7 +2799,7 @@ function resolvePlayerRivalCollision(rv){
  const rvShare=packContainment?.52:.44,rvDx=-c.nx*corr*rvShare,rvDz=-c.nz*corr*rvShare;
  rv.total+=rvDx*rb.q.tx+rvDz*rb.q.tz;
  rv.lat+=rvDx*rb.q.nx+rvDz*rb.q.nz;
- rv.s=mod(rv.total,trackData.km*1000);
+ rv.s=apexRivalSFromTotal(rv,trackData.km*1000);
 
  const rq=poseAt(rv.s);
  rv.speed=clamp(rvVx*rq.tx+rvVz*rq.tz,-4,112);
