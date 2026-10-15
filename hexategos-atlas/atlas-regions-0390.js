@@ -14,6 +14,8 @@
  const straits=window.HexategosAtlasStraits0397;
  const westAsiaData=window.HexategosWestAsiaPhysical0403;
  const westAsia=window.HexategosWestAsia0403;
+ const centralData=window.HexategosCentralAsiaPhysical0404;
+ const central=window.HexategosCentralAsia0404;
  const labelStyle=window.HexategosAtlasLabelStyle0399;
  if(!source){console.warn('[Atlas] No se cargaron las regiones compartidas');return}
  const historicalAnchors={
@@ -64,6 +66,29 @@
   for(const lake of westAsiaData.lakes){
    features.push({name:lake.name,center:lake.axis[Math.floor(lake.axis.length*.5)],
     kind:'lake',rank:68,minZoom:lake.minZoom+1,westAsia:true});
+  }
+ }
+ // Asia Central: las etiquetas de cauces/cadenas se condicionan a que
+ // realmente exista una ruta sobre aristas terrestres L8.
+ if(centralData){
+  for(const [items,kind] of [[centralData.rivers,'river'],[centralData.mountains,'mountain']]){
+   for(const item of items){
+    if(natural.some(r=>r.name===item.name))continue;
+    features.push({name:item.name,center:item.points[Math.floor(item.points.length*.5)],
+     kind,rank:kind==='river'?61:67,minZoom:item.minZoom+.7,centralAsia:true});
+   }
+  }
+  const names=new Set();
+  for(const lake of centralData.waterBodies){
+   if(names.has(lake.displayName))continue;
+   names.add(lake.displayName);
+   const coords=lake.components[0];
+   features.push({name:lake.displayName,center:coords.slice(0,2),kind:'lake',
+    rank:77,minZoom:Math.max(6,lake.minZoom+.5),centralBody:lake.name});
+  }
+  for(const label of centralData.basins.filter(x=>x.kind==='land')){
+   features.push({name:label.name,center:label.center,kind:'natural',
+    rank:label.priority,minZoom:label.minZoom});
   }
  }
  // Los grandes cauces del Oriente Próximo ya existen en la malla
@@ -143,7 +168,9 @@
    // Solo regiones pequeñas a partir del relevo continental.
    if((item.kind==='natural'||item.kind==='historical')&&zoom<handoffZoom)continue;
    // No rotular masas de agua que la malla no puede representar.
-   if(item.kind==='lake'&&!lakes?.isDrawn?.(item.name)&&!westAsia?.isDrawn?.(item.name))continue;
+   if(item.kind==='lake'&&!item.centralBody&&!lakes?.isDrawn?.(item.name)&&!westAsia?.isDrawn?.(item.name))continue;
+   if(item.centralBody&&!central?.isBodyDrawn?.(item.centralBody))continue;
+   if(item.centralAsia&&!central?.isDrawnFeature?.(item.name))continue;
    if(item.westAsia&&item.kind!=='lake'&&!westAsia?.isDrawnFeature?.(item.name))continue;
    if((item.kind==='island'||item.kind==='strait'||item.kind==='archipelago'||item.kind==='marine')&&!straits?.valid(item))continue;
    if(item.kind==='river'&&!$('rivers')?.checked)continue;
@@ -178,7 +205,7 @@
   const local=(europe?.naturalAt(lat,lon)||[]).concat(detail?.naturalAt(lat,lon)||[],asia?.naturalAt(lat,lon)||[]);
   const naturalNames=result.natural.concat(local).slice(0,5).map(r=>escapeHTML(r.name)).join(' · ');
   const historicalName=result.historical?.name||europe?.historicalAt(lat,lon)?.name||'';
-  const nearbyLakes=(lakes?.nearby(lat,lon)||[]).concat(westAsia?.nearby(lat,lon)||[]);
+  const nearbyLakes=(lakes?.nearby(lat,lon)||[]).concat(westAsia?.nearby(lat,lon)||[],central?.nearby(lat,lon)||[]);
   if(!naturalNames&&!historicalName&&!nearbyLakes.length)return '';
   return '<div class="atlasGeo0390">'+
     (naturalNames?'<div><b>Zonas naturales:</b> '+naturalNames+'</div>':'')+
