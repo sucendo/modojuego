@@ -109,6 +109,33 @@ test('Caspio y Aral: rutas y lagos sobre la malla REAL L8', {timeout:150000},()=
  assert.ok(counts['Aral septentrional']>0);
  assert.ok(counts['Balkhash']>0);
  assert.ok(counts['Issyk-Kul']>0);
+ // Cuerpos de agua principales conexos en la misma topología L8.
+ const members=new Map(west.waterBodies.map(x=>[x.name,new Set()]));
+ for(let i=0;i<L.n;i++){
+  const body=water.isWater('8',i,L);
+  if(body)members.get(body.name).add(i);
+ }
+ const fragments={};
+ for(const [name,indices] of members){
+  const remaining=new Set(indices);
+  let parts=0;
+  while(remaining.size){
+   parts++;
+   const [first]=remaining,stack=[first];
+   remaining.delete(first);
+   while(stack.length){
+    const cell=stack.pop();
+    for(let k=L.offsets[cell],end=L.offsets[cell+1];k<end;k++){
+     const other=L.edgeNbr[k];
+     if(remaining.delete(other))stack.push(other);
+    }
+   }
+  }
+  fragments[name]=parts;
+ }
+ console.log('CENTRAL_ASIA_L8_LAKE_FRAGMENTS',JSON.stringify(fragments));
+ for(const name of ['Aral septentrional','Aral occidental','Balkhash','Issyk-Kul'])
+  assert.equal(fragments[name],1,name+' has visually disconnected cell groups');
  assert.equal(Buffer.from(L.land.buffer).toString('base64'),originalLand);
  assert.ok(water.diagnostics().nativeCaspianPreserved);
 
