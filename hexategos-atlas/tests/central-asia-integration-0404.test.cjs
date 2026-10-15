@@ -36,7 +36,7 @@ test('Asia Central: los dos juegos y Atlas cargan idéntica geografía sin tocar
  const d=context.window.HexategosCentralAsiaPhysical0404;
  assert.equal(d.waterBodies.length,6);
  assert.equal(d.rivers.length,11);
- assert.equal(d.mountains.length,7);
+ assert.equal(d.mountains.length,12);
  assert.ok(!d.rivers.some(x=>['Volga','Ural','Irtish'].includes(x.name)));
  assert.equal(d.bodyAt(60.73,46.21)?.name,'Aral septentrional');
  assert.equal(d.bodyAt(50.5,41.5),null,'El Caspio no se debe rasterizar de nuevo');
