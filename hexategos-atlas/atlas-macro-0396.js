@@ -9,10 +9,11 @@
  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
  function draw(R,cx,cy){
   occupied=[];
-  if(zoom<.85)return;
+  if(zoom<.85||!$('regions')?.checked)return;
   const candidates=[];
   for(const f of features){
    if(zoom<f.minZoom||zoom>f.maxZoom)continue;
+   if(f.kind==='mountain'&&!$('mountains')?.checked)continue;
    const xyz=lonLatVec(f.lon,f.lat),p=projectVec(xyz[0],xyz[1],xyz[2],R,cx,cy);
    if(p[2]<=.045||p[0]<-160||p[0]>vw+160||p[1]<-45||p[1]>vh+45)continue;
    const fadeIn=clamp((zoom-f.minZoom)/.55);
