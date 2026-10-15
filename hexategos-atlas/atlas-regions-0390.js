@@ -12,6 +12,8 @@
  const lakes=window.HexategosEuropeLakes0396;
  const supplemental=window.HexategosEuropeSecondary0396;
  const straits=window.HexategosAtlasStraits0397;
+ const westAsiaData=window.HexategosWestAsiaPhysical0403;
+ const westAsia=window.HexategosWestAsia0403;
  const labelStyle=window.HexategosAtlasLabelStyle0399;
  if(!source){console.warn('[Atlas] No se cargaron las regiones compartidas');return}
  const historicalAnchors={
@@ -47,6 +49,21 @@
    const axis=lake.axis,mid=axis[Math.floor(axis.length*.5)];
    features.push({name:lake.name,center:mid,kind:'lake',rank:74,
     minZoom:Math.max(7,lake.minZoom+1.7)});
+  }
+ }
+ // Oriente Próximo: un solo origen de rótulos para accidentes añadidos.
+ // Los ríos y montañas sólo se etiquetan cuando tienen ruta L8 válida.
+ if(westAsiaData){
+  for(const [items,kind] of [[westAsiaData.rivers,'river'],[westAsiaData.mountains,'mountain']]){
+   for(const item of items){
+    if(natural.some(r=>r.name===item.name))continue;
+    features.push({name:item.name,center:item.points[Math.floor(item.points.length*.5)],
+     kind,rank:kind==='river'?58:60,minZoom:item.minZoom+1,westAsia:true});
+   }
+  }
+  for(const lake of westAsiaData.lakes){
+   features.push({name:lake.name,center:lake.axis[Math.floor(lake.axis.length*.5)],
+    kind:'lake',rank:68,minZoom:lake.minZoom+1,westAsia:true});
   }
  }
  // Los accidentes secundarios aparecen al aproximarse al territorio;
@@ -118,7 +135,8 @@
    // Solo regiones pequeñas a partir del relevo continental.
    if((item.kind==='natural'||item.kind==='historical')&&zoom<handoffZoom)continue;
    // No rotular masas de agua que la malla no puede representar.
-   if(item.kind==='lake'&&!lakes?.isDrawn?.(item.name))continue;
+   if(item.kind==='lake'&&!lakes?.isDrawn?.(item.name)&&!westAsia?.isDrawn?.(item.name))continue;
+   if(item.westAsia&&item.kind!=='lake'&&!westAsia?.isDrawnFeature?.(item.name))continue;
    if((item.kind==='island'||item.kind==='strait'||item.kind==='archipelago'||item.kind==='marine')&&!straits?.valid(item))continue;
    if(item.kind==='river'&&!$('rivers')?.checked)continue;
    if(item.kind==='mountain'&&!$('mountains')?.checked)continue;
@@ -152,7 +170,7 @@
   const local=(europe?.naturalAt(lat,lon)||[]).concat(detail?.naturalAt(lat,lon)||[],asia?.naturalAt(lat,lon)||[]);
   const naturalNames=result.natural.concat(local).slice(0,5).map(r=>escapeHTML(r.name)).join(' · ');
   const historicalName=result.historical?.name||europe?.historicalAt(lat,lon)?.name||'';
-  const nearbyLakes=lakes?.nearby(lat,lon)||[];
+  const nearbyLakes=(lakes?.nearby(lat,lon)||[]).concat(westAsia?.nearby(lat,lon)||[]);
   if(!naturalNames&&!historicalName&&!nearbyLakes.length)return '';
   return '<div class="atlasGeo0390">'+
     (naturalNames?'<div><b>Zonas naturales:</b> '+naturalNames+'</div>':'')+
