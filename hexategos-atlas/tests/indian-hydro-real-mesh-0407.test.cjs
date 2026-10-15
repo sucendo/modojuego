@@ -107,6 +107,29 @@ test('Indo, Ganges y Brahmaputra: afluentes conectados a cauces reales L8',
   GangesKosi:spot('Ganges',[87.26,25.42]),
   BrahmaputraTeesta:spot('Brahmaputra',[89.66,25.49])
  }));
+ const g=st.window.HexategosHimalayaGraph0406.prepare();
+ function sampleNodes(label,lon,lat,radius,set){
+  const near={lon,lat},list=[];
+  for(const id of set){
+   const p=g.coords.get(id);if(!p)continue;
+   const km=Math.hypot((p.lon-lon)*111.2*Math.cos(lat*Math.PI/180),(p.lat-lat)*111.2);
+   if(km<radius)list.push({id,km:+km.toFixed(1),lon:+p.lon.toFixed(2),lat:+p.lat.toFixed(2)});
+  }
+  list.sort((a,b)=>a.km-b.km);return {label,total:list.length,nearest:list.slice(0,4)};
+ }
+ const shore=new Set();
+ for(const pair of g.coast){const ids=pair.split(':').map(Number);
+  for(const id of ids)shore.add(id);}
+ const picks=[
+  ['Indo delta',67.75,24.08,'Indo'],['Indo NW',67.2,24.3,'Indo'],
+  ['Ganges delta',89.2,22.4,'Ganges'],
+  ['Hooghly',88.2,22.0,'Ganges'],['Meghna',90.7,22.6,'Brahmaputra'],
+  ['Pusur',89.55,22.02,'Ganges'],['Padma',89.7,23.7,'Ganges']
+ ];
+ console.log('INDIAN_DELTA_MESH_0408',JSON.stringify(picks.map(([label,lon,lat,river])=>({
+  label,coast:sampleNodes(label,lon,lat,240,shore),
+  parent:sampleNodes(label,lon,lat,350,api.canonicalNodes(river))
+ }))));
  console.log('INDIAN_RIVERS_0407',JSON.stringify({
   graphBuilds:api.graphBuilds(),vertices:api.graphSize(),
   resolved:ok.length,total:data.rivers.length,ok,failed
