@@ -98,3 +98,46 @@ vértice-arista, no invasión de aristas costeras, enlace de Amu Daria,
 Sir Daria, Ili y Karatal a orillas hexagonales, conteos de las masas
 de agua dibujables, cachés, inmutabilidad de `L.land`, coexistencia en
 Atlas y ambas entradas de Pruebas y aislamiento del modo suministro.
+
+## Asia Central · consolidación del terreno y relieve (0.40.5)
+
+La fase complementa las cuencas de agua 0.40.4 y deja Asia Central con
+un modelo cromático local compartido entre **Atlas y ambas versiones de
+Hexategos Pruebas**.
+
+* `hexategos-pruebas/game/data/geo-central-asia-landcover-0405.js`
+  ofrece colores continuos, deterministas y cacheados para Karakum,
+  Kyzylkum, Ustyurt, Betpak-Dala, estepa kazaja, Ferganá, valle del Ili,
+  cuenca de Zungaria, Tarim/Taklamakán y los sistemas montañosos de
+  Pamir, Tian Shan, Kunlun y Altái. En los bordes con Europa y el terreno
+  genérico, un peso continuo funde la paleta; **no hay rectángulos de
+  color que formen cortes visibles**. Cambia solo el renderizador y la
+  información del inspector cartográfico.
+* `geo-central-asia-physical-0404.js` incluye cinco sierras menores
+  adicionales: Boro-Horo, Dzungarian Alatau, Tarbagatai, Kyrgyz Ala-Too
+  y Montes Saur. Junto con las siete anteriores son **12**, más los
+  **11 ríos secundarios** que ya resolvía la fase 0.40.4.
+* Los 23 recorridos se resuelven sobre el grafo original L8 y no deben
+  atravesar aristas de costa ni de agua interior dibujada. Las
+  desembocaduras del Amu Daria, Sir Daria, Ili y Karatal continúan
+  alcanzando las orillas visuales de sus cuencas. Los seis cuerpos de
+  agua que no existían en la máscara geográfica original se dibujan
+  como agrupaciones conexas de celdas hexagonales, **sin navegabilidad**.
+* Se incorporan unidades de terreno menores como Turán, Ustyurt,
+  estepa kazaja, Betpak-Dala, Ferganá y valles de Ili. Los rótulos
+  duplicados se eliminan y el nombre del Aral y de Balkhash hace
+  un relevo de macroetiqueta a etiqueta local alrededor de zoom 8,6.
+  El interruptor de lagos también suprime sus nombres.
+* La caché cromática ocupa como máximo cuatro bytes por hexágono de
+  cada nivel de detalle cargado; el grafo regional L8 se construye
+  **una sola vez bajo demanda**. Sin temporizadores independientes,
+  edición de `owner6` o `L.land`, cambios de recursos, IA o guardados.
+
+**Limitaciones explícitas:** el modelo de biomas es orientativo y no
+constituye una capa satelital. El mar de Aral ha cambiado mucho de
+superficie; su representación es una aproximación de escala L8.
+La validación automatizada comprueba geometría, continuidad de lagos,
+rutas y desembocaduras, transiciones cromáticas deterministas,
+invariancia del suelo, renderizado compartido y modo de suministro;
+la inspección visual con navegador y el FPS de una partida con 500
+naciones siguen siendo comprobaciones prácticas aparte.
