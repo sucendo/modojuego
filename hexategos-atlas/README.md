@@ -62,3 +62,39 @@ pantalla inicial.
 Pruebas: `node --test hexategos-atlas/tests/*.test.cjs` incluye
 integridad de archivos y orden de carga, grafo diferido, conexiones de
 aristas hexagonales, seguridad de costa, caché y no mutación de malla.
+
+## Asia Central: Caspio, Aral y cuencas endorreicas (0.40.4)
+
+La malla original L8 ya contiene el **mar Caspio** como agua. Sus costas
+siguen exclusivamente aristas tierra-mar originales, sin agregar polígonos
+de costa ni cambiar conectividad. Una auditoría de los datos nativos L8
+confirma que **Aral, Balkhash e Issyk-Kul** son casillas terrestres
+originales. Por eso se han añadido sólo como **cobertura cromática
+hexagonal (sin navegación, puertos ni reclasificación jugable)**.
+
+Fuente física única: `hexategos-pruebas/game/data/geo-central-asia-physical-0404.js`.
+Dos representaciones compartidas entre Atlas y Pruebas:
+- `hexategos-atlas/atlas-central-asia-routes-0404.js`: red terrestre
+  regional L8 construida bajo demanda; enrutamiento de 11 ríos, 7 cadenas
+  menores, búsqueda de orillas hexagonales de las aguas interiores. No
+  vuelve a trazar Volga, Ural, Irtish ni Pamir/Tian Shan/Altái canónicos.
+- `hexategos-atlas/atlas-central-asia-water-0404.js`: agua visual en
+  hexágonos L8 originales: Aral septentrional, remanente occidental del
+  Aral, Balkhash, Issyk-Kul, Alakol y Sarykamysh. Solo mapa físico y
+  político; no contamina mapas de suministro o potenciales naturales;
+  sigue el interruptor de lagos y el interruptor del Atlas en el juego.
+
+Las ubicaciones y contornos son **aproximaciones geométricas** destinadas
+a la escala hexagonal, no superficies hidrográficas verificadas. El mar
+de Aral fluctúa y se ha reducido mucho; el extremo del Amu Daria
+representa su cuenca/desembocadura histórica y no garantiza descarga
+permanente en el lago. Las corrientes endorreicas o intermitentes no
+se convierten en rutas marítimas. Los nombres de aguas interiores
+aparecen con el zoom suficiente, sin producir agua sin correspondencia
+con la malla visual.
+
+Las pruebas L8 con la malla de 510 762 celdas comprueban rutas
+vértice-arista, no invasión de aristas costeras, enlace de Amu Daria,
+Sir Daria, Ili y Karatal a orillas hexagonales, conteos de las masas
+de agua dibujables, cachés, inmutabilidad de `L.land`, coexistencia en
+Atlas y ambas entradas de Pruebas y aislamiento del modo suministro.
