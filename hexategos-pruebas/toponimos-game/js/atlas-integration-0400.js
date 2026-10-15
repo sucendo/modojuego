@@ -68,7 +68,7 @@
    }
    if(!rgb)return baseFill(key,i,L,own,z);
    const base=baseFill(key,i,L,own,z);
-   const vals=base.match(/\\d+/g);
+   const vals=base.match(/\d+/g);
    if(!vals||vals.length<3)return base;
    const shaded=rgb.map(c=>Math.round(c*(.72+.28*Math.max(0,z))));
    // En político prevalece el país y el terreno actúa como textura.
