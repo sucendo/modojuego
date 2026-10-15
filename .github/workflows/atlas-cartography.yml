@@ -26,4 +26,4 @@ jobs:
         with:
           node-version: '22'
       - name: Run Atlas regression suite
-        run: node --test hexategos-atlas/tests/cartography-0399.test.cjs
+        run: node --test hexategos-atlas/tests/*.test.cjs
