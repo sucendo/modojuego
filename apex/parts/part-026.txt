@@ -1501,7 +1501,7 @@ function chooseAttackSide(rv,ahead,plan){
 }
 function beginRivalIntent(rv,intent,side,duration){
  rv.intent=intent;rv.moveSide=side||0;rv.intentTimer=duration;rv.racecraftNote=intent;
- if(sessionTelemetry&&player&&Math.abs((rv.total||0)-(player.total||0))<180)pushTelemetryEvent('RIVAL_INTENT',{rivalId:rv.id,rivalUid:raceIdentity(rv.id),rivalName:raceName(rv.id),team:rv.team,intent,side:side||0,distanceM:telemetryRound((rv.total||0)-(player.total||0),1)});
+ if(sessionTelemetry&&player){const pd=apexPhysicalTrackDelta(rv.s,Number.isFinite(player.classificationS)?player.classificationS:player.s,trackData.km*1000);if(Math.abs(pd)<180)pushTelemetryEvent('RIVAL_INTENT',{rivalId:rv.id,rivalUid:raceIdentity(rv.id),rivalName:raceName(rv.id),team:rv.team,intent,side:side||0,distanceM:telemetryRound(pd,1)});}
  if(intent==="ATTACK")rv.attackCooldown=2.6+(1-rv.aggression)*2.0;
  if(intent==="DEFEND")rv.defendCooldown=3.2+(1-rv.defense)*2.0;
 }
@@ -1527,7 +1527,7 @@ function maybeRivalMistake(rv,dt,plan,traffic){
    rv.mistakeLat=sg*excursion;
  }else rv.mistakeLat=(Math.random()<.5?-1:1)*(.45+Math.random()*.65);
  if(rv.mistakeType==="SNAP")rv.yawKick=clamp((rv.yawKick||0)+(Math.random()<.5?-1:1)*(.055+.035*rv.aggression),-.48,.48);
- if(sessionTelemetry&&player&&Math.abs((rv.total||0)-(player.total||0))<260)pushTelemetryEvent('RIVAL_MISTAKE',{rivalId:rv.id,rivalUid:raceIdentity(rv.id),rivalName:raceName(rv.id),team:rv.team,mistake:rv.mistakeType,distanceM:telemetryRound((rv.total||0)-(player.total||0),1)});
+ if(sessionTelemetry&&player){const pd=apexPhysicalTrackDelta(rv.s,Number.isFinite(player.classificationS)?player.classificationS:player.s,trackData.km*1000);if(Math.abs(pd)<260)pushTelemetryEvent('RIVAL_MISTAKE',{rivalId:rv.id,rivalUid:raceIdentity(rv.id),rivalName:raceName(rv.id),team:rv.team,mistake:rv.mistakeType,distanceM:telemetryRound(pd,1)});}
 }
 function updateRivalRacecraft(rv,dt,L,diff){
  rv.attackCooldown=Math.max(0,(rv.attackCooldown||0)-dt);
@@ -2206,11 +2206,11 @@ function autoLaneAt(s,skill,bravery,trafficLane=null){
  return clamp(lat,-autoSafeLaneLimit(s),autoSafeLaneLimit(s));
 }
 function autoRecoveryTrafficRisk(targetS,targetLat,eta=1){
- const L=trackData.km*1000,d=forwardDistanceS(player.s,targetS,L),targetTotal=player.total+d;
+ const L=trackData.km*1000;
  let risk=0,blocking=false,nearestBehind=Infinity,nearestAhead=Infinity;
  for(const rv of rivals){
    if(rv.finished)continue;
-   const future=rv.total+Math.max(0,rv.speed)*Math.max(.15,eta),gap=future-targetTotal,latGap=Math.abs(rv.lat-targetLat);
+   const futureS=mod(rv.s+Math.max(0,rv.speed)*Math.max(.15,eta),L),gap=apexPhysicalTrackDelta(futureS,targetS,L),latGap=Math.abs(rv.lat-targetLat);
    if(latGap>2.75)continue;
    if(gap<0)nearestBehind=Math.min(nearestBehind,-gap);else nearestAhead=Math.min(nearestAhead,gap);
    let r=0;
