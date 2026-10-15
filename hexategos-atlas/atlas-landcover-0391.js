@@ -7,6 +7,7 @@
  const data=window.HexategosLandCover0391;
  if(!data||typeof terrainStrategicFill3247!=='function')return;
  const baseFill=terrainStrategicFill3247,cache=new Map();
+ const ecotone=window.HexategosLandCoverTransitions0402;
  let showCover=true;
  function codes(key,L){
   let result=cache.get(key);
@@ -30,7 +31,7 @@
  }
  terrainStrategicFill3247=function(key,i,L,own,z){
   if(!showCover||L.land[i]<0)return baseFill(key,i,L,own,z);
-  const code=coverCode(key,i,L),base=data.types[code]?.color;
+  const code=coverCode(key,i,L),base=ecotone?.color(key,i,L)||data.types[code]?.color;
   if(!base)return baseFill(key,i,L,own,z);
   // Atlas no tiene propietarios. Si se reutiliza el renderizador con países,
   // preservamos de todas formas el tinte político original.
