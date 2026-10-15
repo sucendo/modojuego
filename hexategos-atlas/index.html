@@ -52,6 +52,7 @@ footer{font-size:11px;line-height:1.5;color:#93abbc;margin-top:22px}footer a{col
 <div id="controls"><button id="minus" title="Alejar">−</button><button id="plus" title="Ampliar">＋</button><button id="iberia">Iberia</button><button id="europe">Europa</button><button id="world">Mundo</button>
 <label><input type="checkbox" id="grid" checked>Malla</label>
 <label><input type="checkbox" id="rivers" checked>Ríos</label>
+<label><input type="checkbox" id="lakes" checked>Lagos</label>
 <label><input type="checkbox" id="mountains" checked>Cordilleras</label>
 <label><input type="checkbox" id="names" checked>Topónimos</label>
 <label><input type="checkbox" id="cover" checked>Cobertura</label>
@@ -60,7 +61,7 @@ footer{font-size:11px;line-height:1.5;color:#93abbc;margin-top:22px}footer a{col
 <div id="hover" role="tooltip" hidden></div><div id="stats">Cargando geometría original…</div>
 <div id="loading"><div class="card"><strong>HEXATEGOS · ATLAS</strong><p id="loadText">Cargando el renderizador y las mallas originales de Hexategos Pruebas…</p><div class="progress"><div id="bar"></div></div></div></div>
 </section><aside><div class="kicker">ATLAS GEOGRÁFICO</div><h1>El nombre de cada hexágono</h1>
-<p>El mismo globo geodésico y mallas L3–L8 que Hexategos Pruebas, sin naciones, economía, ejército ni simulación. Europa incorpora los ríos y cordilleras originales del juego, anchuras fluviales por tramos, regiones naturales y nombres físicos; Iberia mantiene su revisión detallada. Ambas comparten regiones naturales e históricas y una nueva cobertura del suelo para cada hexágono (bosques, prados, cultivos, dehesas, matorral y más). Los bosques se representan exclusivamente mediante el color de los hexágonos. Los ríos revisados siguen aristas interiores y terminan donde estas confluyen con la costa, sin recorrer sus aristas; su anchura varía por tramos físicos estimados. La cobertura es una estimación visual determinista, no cartografía satelital; no modifica la simulación. Pulsa una casilla para conocer su primera propuesta de topónimo.</p>
+<p>El mismo globo geodésico y mallas L3–L8 que Hexategos Pruebas, sin naciones, economía, ejército ni simulación. Europa incorpora los ríos y cordilleras originales del juego, anchuras fluviales por tramos, regiones naturales y nombres físicos; Iberia mantiene su revisión detallada. Ambas comparten regiones naturales e históricas y una nueva cobertura del suelo para cada hexágono (bosques, prados, cultivos, dehesas, matorral y más). Los bosques se representan exclusivamente mediante el color de los hexágonos. Los ríos revisados siguen aristas interiores y terminan donde estas confluyen con la costa, sin recorrer sus aristas; su anchura varía por tramos físicos estimados. La cobertura es una estimación visual determinista, no cartografía satelital; no modifica la simulación.  Ya incorpora macroetiquetas de penínsulas, mares y grandes llanuras desde el zoom lejano, 53 lagos alpinos y europeos, referencias para 54 ríos secundarios, 27 sierras menores y 87 regiones adicionales. Los lagos y límites son representaciones orientativas, no cartografía hidrográfica precisa. Pulsa una casilla para conocer su primera propuesta de topónimo.</p>
 <div class="search"><input type="search" id="search" placeholder="Buscar ciudad o latitud,longitud" aria-label="Buscar topónimo"><button id="searchBtn">Buscar</button></div>
 <div class="quick"><button data-place="40.4168,-3.7038">Madrid</button><button data-place="41.3874,2.1686">Barcelona</button><button data-place="37.8882,-4.7794">Córdoba</button><button data-place="38.7223,-9.1393">Lisboa</button></div>
 <div id="searchResults" hidden></div>
@@ -70,13 +71,19 @@ footer{font-size:11px;line-height:1.5;color:#93abbc;margin-top:22px}footer a{col
 <div id="detail"><h2>Selecciona un hexágono</h2><p>Gira y amplía la esfera. Pulsa sobre tierra firme para ver la localidad prioritaria, los nombres alternativos y su posición exacta.</p></div>
 <footer>Fuente: <b>datos originales de <a href="../hexategos-pruebas/game/" target="_blank" rel="noopener">Hexategos Pruebas</a></b> y atlas GeoNames cities1000. El mundo y la navegación no dependen de partidas guardadas. Los nombres próximos se distinguen de los que realmente están dentro de cada hexágono. Revisión ibérica y extensión europea sobre las aristas del juego; los perfiles de anchura son estimaciones y las zonas naturales límites esquemáticos, no una digitalización hidrográfica a escala catastral.</footer>
 </aside></main></div>
-<script src="./atlas-core.js?v=20261015-costas"></script><script src="./atlas-geography.js?v=5"></script>
+<script src="./atlas-core.js?v=0396-europa-detallada"></script><script src="./atlas-geography.js?v=5"></script>
 <script src="../hexategos-pruebas/game/data/iberia-physical-atlas-v1.js?v=20261015-anchos"></script>
 <script src="../hexategos-pruebas/game/data/geo-regions-0390.js?v=0390-regions"></script>
 <script src="../hexategos-pruebas/game/data/geo-europe-regions-0395.js?v=0395-europe"></script>
+<script src="../hexategos-pruebas/game/data/geo-europe-detail-0396.js?v=0396-comarcas"></script>
 <script src="../hexategos-pruebas/game/data/geo-landcover-0391.js?v=0392-forest"></script>
 <script src="../hexategos-pruebas/game/data/geo-europe-landcover-0395.js?v=0395-europe"></script>
+<script src="../hexategos-pruebas/game/data/geo-europe-secondary-0396.js?v=0396-secundarios"></script>
 <script src="./atlas-iberia-edges-v2.js?v=20261015-rutas-estables-v72"></script>
-<script src="./atlas-europe-hydro-0395.js?v=0395-europe"></script><script src="./atlas-regions-0390.js?v=0395-europe"></script>
+<script src="./atlas-europe-hydro-0395.js?v=0395-europe"></script>
+<script src="./atlas-europe-mountains-0396.js?v=0396-altitud"></script>
+<script src="./atlas-europe-secondary-0396.js?v=0396-paths"></script>
+<script src="./atlas-europe-lakes-0396.js?v=0396-lagos"></script>
+<script src="./atlas-macro-0396.js?v=0396-macro"></script><script src="./atlas-regions-0390.js?v=0396-europa-detallada"></script>
 <script src="./atlas-landcover-0391.js?v=20261015-sin-iconos"></script>
-<script src="./atlas-ui.js?v=0395-europa-control"></script></body></html>
+<script src="./atlas-ui.js?v=0396-lagos-europa"></script></body></html>
