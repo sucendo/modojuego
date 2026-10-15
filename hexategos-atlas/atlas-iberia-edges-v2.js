@@ -1,4 +1,4 @@
-/* HEXATEGOS ATLAS · Iberia v7.1 · rutas conservadas y boca en vértice costero.
+/* HEXATEGOS ATLAS · Iberia v7.2 · rutas conservadas, bocas costeras acotadas.
  * Solo dibujo: no modifica malla, geología, datos de juego ni guardados.
  * Se carga detrás de atlas-geography.js y delante de atlas-ui.js.
  */
@@ -177,7 +177,7 @@
    const visited=new Set();
    // Probamos primero las desembocaduras más próximas. Nunca modificamos
    // el camino principal mientras buscamos: evita perder sus segmentos.
-   for(const candidate of ordered.slice(0,12)){
+   for(const candidate of ordered.slice(0,6)){
     const edge=candidate.edge;
     const a=G.position.get(edge.u),b=G.position.get(edge.v),p=G.position.get(from);
     const choices=Math.hypot(a.x-p.x,a.y-p.y)<=Math.hypot(b.x-p.x,b.y-p.y)?
