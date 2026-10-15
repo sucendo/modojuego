@@ -77,7 +77,8 @@
   reports.set(item.name,plan?{
    name:item.name,ok:true,edges:plan.path.length-1,parent:item.parent,
    parentType,joinDistanceKm:Math.round(snap.km*10)/10,
-   sameVertex:true,usesCoast:false,crossesVirtualWater:false
+   sameVertex:true,usesCoast:false,crossesVirtualWater:false,
+   approximateJoin:snap.km>85
   }:{name:item.name,ok:false,parent:item.parent,reason:failure});
   return plan;
  }
@@ -137,13 +138,16 @@
    parent:item.parent,sameVertex:!!nodes?.includes(p.junction),
    usesCoast:geometric.usesCoast,
    crossesVirtualWater:geometric.crossesVirtualWater,
-   joinDistanceKm:p.joinDistanceKm};
+   joinDistanceKm:p.joinDistanceKm,
+   approximateJoin:p.joinDistanceKm>85};
  }
  window.HexategosSubcontinentRivers0407=Object.freeze({
   version:'0.40.7',inspect,validate,
   isDrawnFeature:name=>reports.get(name)?.ok===true,
   diagnostics:()=>[...reports.values()],
   graphBuilds:graph.builds,graphSize:graph.size,
-  prepared:()=>cache.size,canonicalNodes:name=>canonicalNodes(name,graph.prepare())
+  prepared:()=>cache.size,
+  approximateJoins:()=>[...reports.values()].filter(x=>x.ok&&x.approximateJoin),
+  canonicalNodes:name=>canonicalNodes(name,graph.prepare())
  });
 })();

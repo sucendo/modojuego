@@ -8,7 +8,7 @@
 (function(){
  const rivers=[
   // Indo: cinco ríos del Punjab -> Panjnad -> Indo.
-  {name:'Panjnad',basin:'Indo',parent:'Indo',join:[71.04,28.96],
+  {name:'Panjnad',basin:'Indo',parent:'Indo',join:[70.97,28.93],
    points:[[71.55,29.45],[71.31,29.18],[71.08,29.00]],
    minZoom:7.4,maxWidth:156,kind:'confluence'},
   {name:'Chenab',basin:'Indo',parent:'Panjnad',join:[71.55,29.45],
@@ -48,9 +48,9 @@
    points:[[85.35,28.24],[84.83,27.98],[84.48,27.72],
     [84.3,27.45],[84.1,26.65],[85.18,25.68]],
    minZoom:7.8,maxWidth:122,aliases:['Gandaki']},
-  {name:'Kosi',basin:'Ganges',parent:'Ganges',join:[87.51,25.42],
+  {name:'Kosi',basin:'Ganges',parent:'Ganges',join:[87.26,25.42],
    points:[[86.92,27.72],[87.18,27.16],[87.06,26.48],
-     [86.92,25.75],[87.51,25.42]],
+     [86.92,25.75],[87.26,25.42]],
    minZoom:7.8,maxWidth:124,aliases:['Koshi']},
   {name:'Gomti',basin:'Ganges',parent:'Ganges',join:[83.24,25.50],
    points:[[80.0,28.58],[80.5,27.9],[80.94,26.85],
@@ -78,9 +78,9 @@
   {name:'Manas',basin:'Brahmaputra',parent:'Brahmaputra',join:[90.85,26.30],
    points:[[91.3,27.92],[90.85,27.22],[90.82,26.7],[90.85,26.3]],
    minZoom:8.6,maxWidth:108},
-  {name:'Teesta',basin:'Brahmaputra',parent:'Brahmaputra',join:[89.47,25.53],
+  {name:'Teesta',basin:'Brahmaputra',parent:'Brahmaputra',join:[89.66,25.49],
    points:[[88.73,27.96],[88.5,27.35],[88.55,26.71],
-     [88.75,26.31],[89.35,25.85],[89.47,25.53]],
+     [88.75,26.31],[89.35,25.85],[89.66,25.49]],
    minZoom:8.4,maxWidth:100,aliases:['Tista']}
  ];
  const basins=[

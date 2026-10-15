@@ -87,6 +87,23 @@ test('Indo, Ganges y Brahmaputra: afluentes conectados a cauces reales L8',
    km:+report.joinDistanceKm.toFixed(1)};
  }).filter(Boolean);
  console.log('INDIAN_RIVERS_FAR_JOINS',JSON.stringify(far));
+ const spot=(river,[lon,lat])=>{
+  const near={lon,lat};let km=Infinity,position=null;
+  for(const id of api.canonicalNodes(river)){
+   const p=points.get(id),c=Math.cos((p.lat+lat)*Math.PI/360);
+   const d=Math.hypot((p.lon-lon)*111.2*c,(p.lat-lat)*111.2);
+   if(d<km){km=d;position=p}
+  }
+  return {km:+km.toFixed(1),nearest:position&&
+   [+position.lon.toFixed(2),+position.lat.toFixed(2)]};
+ };
+ console.log('INDIAN_RIVERS_CANONICAL_COVERAGE',JSON.stringify({
+  YarlungSource:spot('Brahmaputra',[82.3,30.6]),
+  YarlungMiddle:spot('Brahmaputra',[88.5,29.3]),
+  YarlungBend:spot('Brahmaputra',[94.7,29.4]),
+  GangesKosi:spot('Ganges',[87.26,25.42]),
+  BrahmaputraTeesta:spot('Brahmaputra',[89.66,25.49])
+ }));
  console.log('INDIAN_RIVERS_0407',JSON.stringify({
   graphBuilds:api.graphBuilds(),vertices:api.graphSize(),
   resolved:ok.length,total:data.rivers.length,ok,failed
