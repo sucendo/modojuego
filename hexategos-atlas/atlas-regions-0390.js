@@ -7,6 +7,8 @@
 (function(){
  const source=window.HexategosGeoRegions0390;
  const europe=window.HexategosEuropeRegions0395;
+ const detail=window.HexategosEuropeDetail0396;
+ const lakes=window.HexategosEuropeLakes0396;
  if(!source){console.warn('[Atlas] No se cargaron las regiones compartidas');return}
  const historicalAnchors={
   'Cataluña':[1.75,41.70],'Aragón':[-0.90,41.37],'Navarra':[-1.55,42.55],
@@ -28,14 +30,21 @@
   name:x.name,center:x.center,kind:'historical',rank:56,minZoom:5.5
  })));
  const physical=window.HEXATEGOS_IBERIA_PHYSICAL_V1;
- const natural=source.physicalRegions.concat(europe?.naturalRegions||[]).map(reg=>({
+ const natural=source.physicalRegions.concat(europe?.naturalRegions||[],detail?.naturalRegions||[]).map(reg=>({
    name:reg.name,center:reg.center,kind:'natural',
    rank:reg.priority,
-   minZoom:europe?.naturalRegions.includes(reg)?
+   minZoom:reg.minZoom||(europe?.naturalRegions.includes(reg)?
      (reg.priority<=75?2.8:reg.priority<=85?5.2:8):
-     (reg.priority>=95?11:reg.priority>=80?8:reg.priority>=70?6:4.8)
+     (reg.priority>=95?11:reg.priority>=80?8:reg.priority>=70?6:4.8))
  }));
  const features=[];
+ if(lakes){
+  for(const lake of lakes.lakes){
+   const axis=lake.axis,mid=axis[Math.floor(axis.length*.5)];
+   features.push({name:lake.name,center:mid,kind:'lake',rank:74,
+    minZoom:Math.max(7,lake.minZoom+1.7)});
+  }
+ }
  let europeFeatures=null;
  if(physical){
   for(const item of physical.mountains){
@@ -80,7 +89,7 @@
   return europeFeatures;
  }
  function draw(R,cx,cy){
-  lastBoxes=[];
+  lastBoxes=window.HexategosAtlasMacro0396?.occupied()?.slice()||[];
   if(!enabled()||zoom<2.1)return;
   const displayMode=mode();
   let pool=[];
@@ -107,7 +116,7 @@
     if(lastBoxes.some(b=>!(rect[2]<b[0]||rect[0]>b[2]||rect[3]<b[1]||rect[1]>b[3])))continue;
     ctx.lineWidth=3;
     ctx.strokeStyle='rgba(7,18,28,.88)';ctx.strokeText(label,p.x,p.y);
-    ctx.fillStyle=item.kind==='river'?'rgba(137,215,238,.91)':
+    ctx.fillStyle=item.kind==='river'||item.kind==='lake'?'rgba(137,215,238,.91)':
       item.kind==='mountain'?'rgba(233,201,151,.93)':
       item.kind==='historical'?'rgba(215,219,235,.82)':
       'rgba(224,236,212,.93)';
@@ -118,21 +127,23 @@
  }
  function cellInfo(lat,lon){
   const result=source.regionsAt(lat,lon);
-  const local=europe?.naturalAt(lat,lon)||[];
+  const local=(europe?.naturalAt(lat,lon)||[]).concat(detail?.naturalAt(lat,lon)||[]);
   const naturalNames=result.natural.concat(local).slice(0,5).map(r=>escapeHTML(r.name)).join(' · ');
   const historicalName=result.historical?.name||europe?.historicalAt(lat,lon)?.name||'';
-  if(!naturalNames&&!historicalName)return '';
+  const nearbyLakes=lakes?.nearby(lat,lon)||[];
+  if(!naturalNames&&!historicalName&&!nearbyLakes.length)return '';
   return '<div class="atlasGeo0390">'+
     (naturalNames?'<div><b>Zonas naturales:</b> '+naturalNames+'</div>':'')+
     (historicalName?'<div><b>Ámbito histórico-cultural:</b> '+escapeHTML(historicalName)+'</div>':'')+
+    (nearbyLakes.length?'<div><b>Lagos próximos:</b> '+nearbyLakes.map(escapeHTML).join(' · ')+'</div>':'')+
     '<small>Delimitaciones aproximadas; no representan fronteras políticas.</small>'+
    '</div>';
  }
  window.HexategosAtlasRegions0390=Object.freeze({
-   version:'0.39.5',draw,cellInfo,occupied:()=>lastBoxes,
+   version:'0.39.6',draw,cellInfo,occupied:()=>lastBoxes,
    regionsAt:(lat,lon)=>{
     const old=source.regionsAt(lat,lon);
-    return {natural:old.natural.concat(europe?.naturalAt(lat,lon)||[]),
+    return {natural:old.natural.concat(europe?.naturalAt(lat,lon)||[],detail?.naturalAt(lat,lon)||[]),
       historical:old.historical||europe?.historicalAt(lat,lon)||null};
    }
  });
