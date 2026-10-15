@@ -79,6 +79,14 @@ test('Indo, Ganges y Brahmaputra: afluentes conectados a cauces reales L8',
    assert.ok(report.edges>0,item.name);
   }else failed.push({name:item.name,reason:report?.reason||'Sin ruta'});
  }
+ const points=st.window.HexategosHimalayaGraph0406.prepare().coords;
+ const far=data.rivers.map(item=>{
+  const report=api.validate(item.name);if(!report?.ok||report.joinDistanceKm<80)return null;
+  const ids=api.inspect(item.name),actual=points.get(ids.at(-1));
+  return {name:item.name,declared:item.join,snapped:[+actual.lon.toFixed(3),+actual.lat.toFixed(3)],
+   km:+report.joinDistanceKm.toFixed(1)};
+ }).filter(Boolean);
+ console.log('INDIAN_RIVERS_FAR_JOINS',JSON.stringify(far));
  console.log('INDIAN_RIVERS_0407',JSON.stringify({
   graphBuilds:api.graphBuilds(),vertices:api.graphSize(),
   resolved:ok.length,total:data.rivers.length,ok,failed
