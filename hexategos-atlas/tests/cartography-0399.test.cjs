@@ -235,7 +235,7 @@ test('Puente jugable: compatibilidad de dibujo, apagado y suministro',()=>{
  assert.equal(calls.oldLabels,1);
  assert.equal(w.terrainStrategicFill3247('8',0,L,1,1),'rgb(60,70,80)');
  w.window.HexategosGameAtlasBridge0400.setEnabled(true);
- w.yaw=-125*Math.PI/180;
+ w.yaw=125*Math.PI/180; // cámara sobre América: no activar rótulos asiáticos
  w.drawTerrain3212(1000,500,500);
  assert.equal(calls.base,2);
  w.drawGeographicLabels3243(1000,500,500);
