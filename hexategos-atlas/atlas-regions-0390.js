@@ -16,6 +16,8 @@
  const westAsia=window.HexategosWestAsia0403;
  const centralData=window.HexategosCentralAsiaPhysical0404;
  const central=window.HexategosCentralAsia0404;
+ const himalayaData=window.HexategosHimalayaPhysical0406;
+ const himalaya=window.HexategosHimalaya0406;
  const labelStyle=window.HexategosAtlasLabelStyle0399;
  if(!source){console.warn('[Atlas] No se cargaron las regiones compartidas');return}
  const historicalAnchors={
@@ -38,7 +40,13 @@
   name:x.name,center:x.center,kind:'historical',rank:56,minZoom:5.5
  })));
  const physical=window.HEXATEGOS_IBERIA_PHYSICAL_V1;
- const natural=source.physicalRegions.concat(europe?.naturalRegions||[],detail?.naturalRegions||[],asia?.naturalRegions||[]).map(reg=>({
+ const baseNatural=source.physicalRegions.concat(europe?.naturalRegions||[],
+  detail?.naturalRegions||[],asia?.naturalRegions||[]);
+ const additionalNatural=(himalayaData?.reliefRegions||[])
+  .filter(reg=>!baseNatural.some(x=>x.name.toLocaleLowerCase('es-ES')===
+    reg.name.toLocaleLowerCase('es-ES')))
+  .map(r=>({...r,kind:'land'}));
+ const natural=baseNatural.concat(additionalNatural).map(reg=>({
    name:reg.name,center:reg.center,kind:reg.kind==='mountain'?'mountain':'natural',
    rank:reg.priority,
    minZoom:reg.minZoom||(europe?.naturalRegions.includes(reg)?
@@ -97,6 +105,22 @@
   for(const label of centralData.basins.filter(x=>x.kind==='land')){
    features.push({name:label.name,center:label.center,kind:'natural',
     rank:label.priority,minZoom:label.minZoom});
+  }
+ }
+ // Himalaya: secundarios sólo si la red L8 está resuelta;
+ // los padres canónicos y topónimos ya presentes no se duplican.
+ if(himalayaData){
+  for(const item of himalayaData.mountains){
+   if(natural.some(n=>n.name.toLocaleLowerCase('es-ES')===
+       item.name.toLocaleLowerCase('es-ES')))continue;
+   features.push({name:item.name,
+    center:item.points[Math.floor(item.points.length*.5)],
+    kind:'mountain',rank:65,minZoom:item.minZoom+.7,himalayaMountain:true});
+  }
+  for(const body of himalayaData.waterBodies){
+   features.push({name:body.displayName,center:body.components[0].slice(0,2),
+    kind:'lake',rank:77,minZoom:body.minZoom+.45,
+    himalayaBody:body.name});
   }
  }
  // Los grandes cauces del Oriente Próximo ya existen en la malla
@@ -176,8 +200,10 @@
    // Solo regiones pequeñas a partir del relevo continental.
    if((item.kind==='natural'||item.kind==='historical')&&zoom<handoffZoom)continue;
    // No rotular masas de agua que la malla no puede representar.
-   if(item.kind==='lake'&&!item.centralBody&&!lakes?.isDrawn?.(item.name)&&!westAsia?.isDrawn?.(item.name))continue;
+   if(item.kind==='lake'&&!item.centralBody&&!item.himalayaBody&&!lakes?.isDrawn?.(item.name)&&!westAsia?.isDrawn?.(item.name))continue;
    if(item.centralBody&&!central?.isBodyDrawn?.(item.centralBody))continue;
+   if(item.himalayaBody&&!window.HexategosHimalayaWater0406?.isBodyDrawn?.(item.himalayaBody))continue;
+   if(item.himalayaMountain&&!himalaya?.isDrawnFeature?.(item.name))continue;
    if(item.centralAsia&&!central?.isDrawnFeature?.(item.name))continue;
    if(item.westAsia&&item.kind!=='lake'&&!westAsia?.isDrawnFeature?.(item.name))continue;
    if((item.kind==='island'||item.kind==='strait'||item.kind==='archipelago'||item.kind==='marine')&&!straits?.valid(item))continue;
@@ -211,11 +237,11 @@
  function cellInfo(lat,lon){
   const result=source.regionsAt(lat,lon);
   const local=(europe?.naturalAt(lat,lon)||[]).concat(detail?.naturalAt(lat,lon)||[],asia?.naturalAt(lat,lon)||[]);
-  const naturalNames=result.natural.concat(local,centralData?.regionsNear(lon,lat)||[])
-   .filter((v,i,a)=>a.findIndex(x=>x.name===v.name)===i)
+  const naturalNames=result.natural.concat(local,centralData?.regionsNear(lon,lat)||[],himalayaData?.regionsNear(lon,lat)||[])
+   .filter((v,i,a)=>a.findIndex(x=>x.name.toLocaleLowerCase('es-ES')===v.name.toLocaleLowerCase('es-ES'))===i)
    .slice(0,5).map(r=>escapeHTML(r.name)).join(' · ');
   const historicalName=result.historical?.name||europe?.historicalAt(lat,lon)?.name||'';
-  const nearbyLakes=(lakes?.nearby(lat,lon)||[]).concat(westAsia?.nearby(lat,lon)||[],central?.nearby(lat,lon)||[]);
+  const nearbyLakes=(lakes?.nearby(lat,lon)||[]).concat(westAsia?.nearby(lat,lon)||[],central?.nearby(lat,lon)||[],window.HexategosHimalayaWater0406?.nearby(lat,lon)||[]);
   if(!naturalNames&&!historicalName&&!nearbyLakes.length)return '';
   return '<div class="atlasGeo0390">'+
     (naturalNames?'<div><b>Zonas naturales:</b> '+naturalNames+'</div>':'')+
@@ -228,7 +254,11 @@
    version:'0.39.9',draw,cellInfo,occupied:()=>lastBoxes,
    regionsAt:(lat,lon)=>{
     const old=source.regionsAt(lat,lon);
-    return {natural:old.natural.concat(europe?.naturalAt(lat,lon)||[],detail?.naturalAt(lat,lon)||[],asia?.naturalAt(lat,lon)||[],centralData?.regionsNear(lon,lat)||[]),
+    const areas=old.natural.concat(europe?.naturalAt(lat,lon)||[],
+     detail?.naturalAt(lat,lon)||[],asia?.naturalAt(lat,lon)||[],
+     centralData?.regionsNear(lon,lat)||[],himalayaData?.regionsNear(lon,lat)||[]);
+    return {natural:areas.filter((v,i,a)=>a.findIndex(x=>
+      x.name.toLocaleLowerCase('es-ES')===v.name.toLocaleLowerCase('es-ES'))===i),
       historical:old.historical||europe?.historicalAt(lat,lon)||null};
    }
  });

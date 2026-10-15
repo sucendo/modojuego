@@ -11,7 +11,7 @@
  // Un solo canal físico. Todos los módulos de Atlas son renderizadores
  // de aristas L8 y reutilizan cachés, nunca reconstruyen celdas del juego.
  drawTerrain3212=function gameAtlasTerrain0400(R,cx,cy){
-  if(!bridge.enabled()||!(bridge.visibleEurope()||bridge.visibleWestAsia()||bridge.visibleCentralAsia())||zoom<5.15)
+  if(!bridge.enabled()||!(bridge.visibleEurope()||bridge.visibleWestAsia()||bridge.visibleCentralAsia()||bridge.visibleHimalaya())||zoom<5.15)
    return original(R,cx,cy);
   enriched(R,cx,cy);
   // En el juego drawTerrain3212 es el único pase físico: incluir los
@@ -35,6 +35,7 @@
  const cover=window.HexategosLandCover0391;
  const ecotones=window.HexategosLandCoverTransitions0402;
  const centralEco=window.HexategosCentralAsiaLandcover0405;
+ const himalayaEco=window.HexategosHimalayaLandcover0406;
  if(cover&&typeof terrainStrategicFill3247==='function'){
   const baseFill=terrainStrategicFill3247,cache=new Map();
   function codes(key,L){
@@ -72,6 +73,7 @@
     rgb=cover.types[arr[i]]?.color;
    }
    if(rgb&&centralEco)rgb=centralEco.rgbForCell(key,i,L,rgb);
+   if(rgb&&himalayaEco)rgb=himalayaEco.rgbForCell(key,i,L,rgb);
    if(!rgb)return baseFill(key,i,L,own,z);
    const base=baseFill(key,i,L,own,z);
    const vals=base.match(/\d+/g);
