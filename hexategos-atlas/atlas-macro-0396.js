@@ -25,7 +25,7 @@
    const maxZoom=f.kind==='water'?f.maxZoom:f.kind==='mountain'?
       Math.min(f.maxZoom,9.1):Math.min(f.maxZoom,handoffZoom);
    if(zoom<f.minZoom||zoom>maxZoom)continue;
-   if(f.centralWater&&!window.HexategosCentralAsiaWater0404)continue;
+   if(f.centralWater&&(!window.HexategosCentralAsiaWater0404||!$('lakes')?.checked))continue;
    if(f.kind==='mountain'&&!$('mountains')?.checked)continue;
    const xyz=lonLatVec(f.lon,f.lat),p=projectVec(xyz[0],xyz[1],xyz[2],R,cx,cy);
    if(p[2]<=.045||p[0]<-160||p[0]>vw+160||p[1]<-45||p[1]>vh+45)continue;
