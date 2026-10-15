@@ -1,5 +1,5 @@
 'use strict';
-/* HEXATEGOS ATLAS 0.39.6 · Red secundaria europea por aristas L8.
+/* HEXATEGOS ATLAS 0.39.7 · Red secundaria europea por aristas L8.
  * No modifica la malla ni las líneas canónicas. Calcula rutas bajo demanda,
  * sólo para sistemas visibles con zoom suficiente, con caché por sistema.
  * Los puntos de control son aproximados, NO cartografía hidrográfica oficial.
@@ -235,7 +235,43 @@
    for(const item of mountains){const plan=route(item,false);if(plan)strokeSegments(item,plan,R,cx,cy,false)}
   }finally{ctx.restore()}
  };
+
+ // Los lagos reutilizan el MISMO grafo de aristas que los ríos. El
+ // encaminamiento va siempre de vértice a vértice, evitando aristas
+ // costeras. Si la malla no resuelve su tamaño se omite el lago.
+ function lakeRoute(lake){
+  const G=makeGraph(),axis=lake?.axis;
+  if(!Array.isArray(axis)||axis.length<2)return null;
+  const steps=[],maxAnchorKm=Math.max(20,Math.min(78,(lake.widthKm||3)*1.9+14));
+  for(const point of axis){
+   const id=closest(point,G),v=G.position.get(id);
+   if(!v||km(v,{lon:point[0],lat:point[1]})>maxAnchorKm)return null;
+   if(steps[steps.length-1]!==id)steps.push(id);
+  }
+  // Una masa de agua menor que una arista no se fabrica ensanchando
+  // una arista arbitraria ni dibujando diagonales.
+  if(steps.length<2)return null;
+  const path=[steps[0]];
+  for(let i=1;i<steps.length;i++){
+   const from=path[path.length-1],to=steps[i];
+   const part=findPath(from,to,G,true);
+   if(!part?.length)return null;
+   const direct=km(G.position.get(from),G.position.get(to));
+   let length=0;
+   for(let j=1;j<part.length;j++)
+    length+=km(G.position.get(part[j-1]),G.position.get(part[j]));
+   if(length>Math.max(32,direct*2.05))return null;
+   join(path,part);
+  }
+  if(path.length<2)return null;
+  for(let i=1;i<path.length;i++){
+   const a=path[i-1],b=path[i];
+   if(!G.neighbors.get(a)?.has(b)||G.coastEdges.has(key(a,b)))return null;
+  }
+  return Object.freeze({path,mesh:G.L,
+   allVerticesOnMesh:true,connected:true,usesCoastalEdges:false});
+ }
  window.HexategosEuropeSecondaryRender0396=Object.freeze({
-  version:'0.39.6',diagnostics:()=>[...status.values()],graphSize:()=>graph?.verts.length||0
+  version:'0.39.7',diagnostics:()=>[...status.values()],graphSize:()=>graph?.verts.length||0, lakeRoute
  });
 })();
