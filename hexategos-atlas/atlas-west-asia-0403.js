@@ -146,9 +146,19 @@
    candidates.sort((a,b)=>a.d-b.d);
    let reached=false;
    for(const {id} of candidates.slice(0,20)){
-    const part=pathBetween(all[all.length-1],id,G,true);
+    const prev=all[all.length-1];
+    // El último punto del eje puede estar ya en el vértice litoral.
+    if(prev===id&&all.length>=2&&!G.coastEdges.has(key(all[all.length-2],id))){
+     reached=true;break;
+    }
+    const part=pathBetween(prev,id,G,true);
     if(!part||part.length<2)continue;
-    if(part.length>=2&&G.coastEdges.has(key(part[part.length-2],id)))continue;
+    if(G.coastEdges.has(key(part[part.length-2],id)))continue;
+    const direct=greatCircle(G.vertexMap.get(prev),G.vertexMap.get(id));
+    let actual=0;
+    for(let j=1;j<part.length;j++)
+     actual+=greatCircle(G.vertexMap.get(part[j-1]),G.vertexMap.get(part[j]));
+    if(actual>Math.max(140,direct*2.5))continue;
     // Sólo desembocar en un vértice litoral, nunca pintar la costa.
     extend(all,part);reached=true;break;
    }
