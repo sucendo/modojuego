@@ -46,7 +46,7 @@ test('Paleta uniforme: aguas azul, montañas marrón y tierras blanco cálido',(
   assert.equal(api.category({name,kind}),expected,name);
  assert.notEqual(api.color({kind:'water'}),api.color({kind:'mountain'}));
  assert.notEqual(api.color({kind:'mountain'}),api.color({kind:'land'}));
- assert.match(api.color({kind:'land'}),/^rgba\\(246,245,237,/);
+ assert.match(api.color({kind:'land'}),/^rgba\(246,245,237,/);
 });
 
 test('Los dos renderizadores usan una misma paleta y no pierden los halos',()=>{
