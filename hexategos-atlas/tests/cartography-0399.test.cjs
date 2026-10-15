@@ -86,3 +86,65 @@ test('Se mantienen ríos, desembocaduras, montañas y lagos con la malla previa'
  assert.ok(read('atlas-iberia-edges-v2.js').includes('riverMouthDiagnostics'));
  assert.ok(core.includes('HexategosEuropeLakes0396?.draw'));
 });
+
+
+test('La pintura efectiva del canvas respeta los tres colores de macrotopónimos y regiones',()=>{
+ function mockContext(zoom){
+  const painted=[];
+  const canvas={fillStyle:'',strokeStyle:'',lineWidth:0,
+   save(){},restore(){},strokeText(){},measureText(s){return {width:s.length*6}},
+   fillText(label){painted.push({label,color:this.fillStyle,stroke:this.strokeStyle})}};
+  const world={
+   window:{HexategosAtlasLabelStyle0399:null},
+   zoom,vw:13000,vh:6500,ctx:canvas,
+   $:()=>({checked:true,value:'natural'}),
+   lonLatVec:(lon,lat)=>[lon,lat,1],
+   projectVec:(lon,lat)=>[lon*80+4000,lat*55,1],
+   loadLevel:()=>({faceCenters:new Int16Array(0)}),
+   MAP_RIVERS3242:[],MOUNTAIN_NETWORKS3242:[],
+   escapeHTML:s=>s,console
+  };
+  const context=vm.createContext(world);
+  const run=name=>vm.runInContext(read(name),context,{filename:name,timeout:10000});
+  run('atlas-label-style-0399.js');
+  return {world,painted,run};
+ }
+ const macro=mockContext(4.65);
+ macro.run('atlas-macro-0396.js');
+ macro.world.window.HexategosAtlasMacro0396.draw(1000,4000,2500);
+ const find=(out,label)=>out.find(x=>x.label===label);
+ const iberia=find(macro.painted,'PENÍNSULA IBÉRICA');
+ const alpes=find(macro.painted,'ALPES');
+ const baltico=find(macro.painted,'Mar Báltico');
+ for(const [entry,color] of [
+  [iberia,'rgba(246,245,237,'],[alpes,'rgba(231,165,105,'],
+  [baltico,'rgba(137,215,238,']]){
+  assert.ok(entry,'No se ha dibujado el macrotopónimo esperado');
+  assert.ok(entry.color.startsWith(color),entry.label+' => '+entry.color);
+  assert.ok(entry.stroke.startsWith('rgba(7,18,28,'));
+ }
+ const regional=mockContext(8);
+ regional.world.window.HexategosGeoRegions0390={
+  politicalRegions:[],
+  physicalRegions:[
+   {name:'Submeseta Norte',center:[-5,42],priority:70,minZoom:5},
+   {name:'Sistema Central',center:[-4,40],priority:80,minZoom:5},
+   {name:'Mar de Irlanda',center:[-5.65,53.9],priority:85,minZoom:5}
+  ],
+  regionsAt:()=>({natural:[],historical:null})
+ };
+ regional.world.window.HexategosAtlasMacro0396={
+  occupied:()=>[],handoffZoom:5.55
+ };
+ regional.run('atlas-regions-0390.js');
+ regional.world.window.HexategosAtlasRegions0390.draw(1000,4000,2500);
+ for(const [name,color] of [
+  ['Submeseta Norte','rgba(246,245,237,'],
+  ['Sistema Central','rgba(231,165,105,'],
+  ['Mar de Irlanda','rgba(137,215,238,']]){
+  const entry=find(regional.painted,name);
+  assert.ok(entry,'No se ha dibujado la región '+name);
+  assert.ok(entry.color.startsWith(color),name+' => '+entry.color);
+  assert.equal(entry.stroke,'rgba(7,18,28,.88)');
+ }
+});
