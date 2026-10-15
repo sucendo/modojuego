@@ -90,6 +90,39 @@ test('Se dibujan ambas máscaras sin modificar clasificaciones ni guardados',()=
  assert.equal(sandbox.window.HexategosAtlasCoast0399.diagnostics().enabled,true);
 });
 
+test('Los golfos y estrechos siguen conectados sin abrir el istmo de Corinto',()=>{
+ const coast=sandbox.window.HexategosAtlasCoast0399;
+ function waterPath(a,b,[west,south,east,north],step){
+  const nx=Math.round((east-west)/step)+1,ny=Math.round((north-south)/step)+1;
+  const wet=new Uint8Array(nx*ny),seen=new Uint8Array(nx*ny);
+  const index=p=>Math.round((p[1]-south)/step)*nx+Math.round((p[0]-west)/step);
+  for(let y=0;y<ny;y++)for(let x=0;x<nx;x++)
+   wet[y*nx+x]=coast.landAt(west+x*step,south+y*step)===false?1:0;
+  const start=index(a),goal=index(b);
+  assert.ok(wet[start]&&wet[goal],'Las dos referencias deben ser mar real');
+  const q=new Int32Array(nx*ny);let head=0,tail=1;q[0]=start;seen[start]=1;
+  while(head<tail){
+   const k=q[head++],x=k%nx,y=Math.floor(k/nx);
+   for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
+    const X=x+dx,Y=y+dy;if(X<0||Y<0||X>=nx||Y>=ny)continue;
+    const j=Y*nx+X;
+    if(wet[j]&&!seen[j]){seen[j]=1;q[tail++]=j}
+   }
+  }
+  return !!seen[goal];
+ }
+ assert.equal(waterPath([21.58,38.22],[22.68,38.23],
+  [21.0,37.94,23.2,38.8],.024),true,'Corinto–Patras');
+ assert.equal(waterPath([12.55,56.12],[12.65,55.53],
+  [11.85,55.2,13.3,56.45],.015),true,'Øresund norte–sur');
+ assert.equal(waterPath([-8.80,42.24],[-9.17,42.13],
+  [-9.3,41.95,-8.45,42.45],.01),true,'Ría de Vigo–Atlántico');
+ assert.equal(waterPath([-8.89,42.58],[-9.25,42.59],
+  [-9.5,42.30,-8.60,42.88],.01),true,'Ría de Arousa–Atlántico');
+ assert.equal(waterPath([22.85,38.05],[23.15,37.90],
+  [22.7,37.75,23.25,38.2],.01),false,'El istmo NO puede abrirse');
+});
+
 test('Se omiten los topónimos marítimos que la escala 50m no resuelve',()=>{
  const atlas=sandbox.window.HexategosAtlasStraits0397;
  const byName=name=>atlas.features.find(f=>f.name===name);
