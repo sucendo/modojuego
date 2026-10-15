@@ -86,6 +86,14 @@
    features.push({name:lake.displayName,center:coords.slice(0,2),kind:'lake',
     rank:77,minZoom:Math.max(6,lake.minZoom+.5),centralBody:lake.name});
   }
+  // Unidades de relieve y cobertura: las presentes en el catálogo
+  // asiático global se conservan allí para no duplicar rótulos.
+  for(const label of centralData.reliefBasins||[]){
+   if(natural.some(x=>x.name===label.name)||
+      centralData.basins.some(x=>x.name===label.name))continue;
+   features.push({name:label.name,center:label.center,kind:'natural',
+    rank:label.priority,minZoom:label.minZoom,centralRegion:true});
+  }
   for(const label of centralData.basins.filter(x=>x.kind==='land')){
    features.push({name:label.name,center:label.center,kind:'natural',
     rank:label.priority,minZoom:label.minZoom});
@@ -203,7 +211,9 @@
  function cellInfo(lat,lon){
   const result=source.regionsAt(lat,lon);
   const local=(europe?.naturalAt(lat,lon)||[]).concat(detail?.naturalAt(lat,lon)||[],asia?.naturalAt(lat,lon)||[]);
-  const naturalNames=result.natural.concat(local).slice(0,5).map(r=>escapeHTML(r.name)).join(' · ');
+  const naturalNames=result.natural.concat(local,centralData?.regionsNear(lon,lat)||[])
+   .filter((v,i,a)=>a.findIndex(x=>x.name===v.name)===i)
+   .slice(0,5).map(r=>escapeHTML(r.name)).join(' · ');
   const historicalName=result.historical?.name||europe?.historicalAt(lat,lon)?.name||'';
   const nearbyLakes=(lakes?.nearby(lat,lon)||[]).concat(westAsia?.nearby(lat,lon)||[],central?.nearby(lat,lon)||[]);
   if(!naturalNames&&!historicalName&&!nearbyLakes.length)return '';
@@ -218,7 +228,7 @@
    version:'0.39.9',draw,cellInfo,occupied:()=>lastBoxes,
    regionsAt:(lat,lon)=>{
     const old=source.regionsAt(lat,lon);
-    return {natural:old.natural.concat(europe?.naturalAt(lat,lon)||[],detail?.naturalAt(lat,lon)||[],asia?.naturalAt(lat,lon)||[]),
+    return {natural:old.natural.concat(europe?.naturalAt(lat,lon)||[],detail?.naturalAt(lat,lon)||[],asia?.naturalAt(lat,lon)||[],centralData?.regionsNear(lon,lat)||[]),
       historical:old.historical||europe?.historicalAt(lat,lon)||null};
    }
  });
