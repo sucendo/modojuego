@@ -111,6 +111,9 @@
   const candidates=[];
   for(const item of pool){
    if(zoom<item.minZoom)continue;
+   if(item.kind==='river'&&!$('rivers')?.checked)continue;
+   if(item.kind==='mountain'&&!$('mountains')?.checked)continue;
+   if(item.kind==='lake'&&!$('lakes')?.checked)continue;
    const v=lonLatVec(item.center[0],item.center[1]);
    const p=projectVec(v[0],v[1],v[2],R,cx,cy);
    if(p[2]<.07||p[0]<-70||p[0]>vw+70||p[1]<-24||p[1]>vh+24)continue;
