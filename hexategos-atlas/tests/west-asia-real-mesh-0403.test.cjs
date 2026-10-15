@@ -26,7 +26,7 @@ test('Las rutas orientales se resuelven sobre los datos REALES L8', {timeout:150
  load('mesh-5.js');
  load('mesh-8-init.js');
  const chunks=fs.readdirSync(home).filter(n=>
-  /^mesh-8-(?:centers|faceCenters|offsets|adj|edgeNbr|land)-\\d+\\.js$/.test(n)).sort();
+  /^mesh-8-(?:centers|faceCenters|offsets|adj|edgeNbr|land)-\d+\.js$/.test(n)).sort();
  assert.ok(chunks.length>=10,'Faltan piezas de malla L8');
  for(const name of chunks)load(name);
  load('groups-5.js');
@@ -60,7 +60,7 @@ test('Las rutas orientales se resuelven sobre los datos REALES L8', {timeout:150
   return [Math.cos(b)*Math.sin(a),Math.sin(b),Math.cos(b)*Math.cos(a)];
  };
  sandbox.projectVec=()=>[500,400,1];
- const geo=fs.readFileSync(path.join(home,'data/geo-west-asia-physical-0403.js'.replace('data/data','data')),'utf8');
+ const geo=fs.readFileSync(path.join(home,'geo-west-asia-physical-0403.js'),'utf8');
  vm.runInContext(geo,context,{filename:'geo-west-asia-physical-0403.js'});
  vm.runInContext(fs.readFileSync(path.join(atlas,'atlas-west-asia-0403.js'),'utf8'),context,
   {filename:'atlas-west-asia-0403.js'});
