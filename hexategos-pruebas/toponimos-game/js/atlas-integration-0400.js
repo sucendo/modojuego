@@ -25,45 +25,56 @@
   if(macro&&regions){macro.draw(R,cx,cy);regions.draw(R,cx,cy)}
   else baseNames(R,cx,cy);
  };
- // La cobertura del Atlas se aplica a la capa cromática de la tierra.
- // En modo político se mezcla con el color nacional original, y en
- // suministro se conserva sin cambios el indicador estratégico.
+ // Los colores físicos se calculan una sola vez por hexágono visible.
+ // Los bordes rectangulares de cobertura se funden progresivamente, sin
+ // tocar las categorías usadas por la IA, las fronteras ni los guardados.
  const cover=window.HexategosLandCover0391;
+ const ecotones=window.HexategosLandCoverTransitions0402;
  if(cover&&typeof terrainStrategicFill3247==='function'){
-  const baseFill=terrainStrategicFill3247,cached=new Map();
+  const baseFill=terrainStrategicFill3247,cache=new Map();
   function codes(key,L){
-   let arr=cached.get(key);
-   if(!arr||arr.length!==L.n){
-    arr=new Uint8Array(L.n);arr.fill(255);cached.set(key,arr);
-   }
+   let arr=cache.get(key);
+   if(!arr||arr.length!==L.n){arr=new Uint8Array(L.n);arr.fill(255);cache.set(key,arr)}
    return arr;
   }
-  terrainStrategicFill3247=function gameAtlasLandcover0400(key,i,L,own,z){
-   if(!bridge.enabled()||L.land[i]<0||mapMode3252==='supply')
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  function regionWeight(lat,lon,w,e,s,n){
+   // Cuatro grados de transición a ambos lados del límite de cobertura.
+   const d=Math.min(lon-w,e-lon,lat-s,n-lat);
+   const t=clamp((d+2.5)/5,0,1);
+   return t*t*(3-2*t);
+  }
+  terrainStrategicFill3247=function gameAtlasLandcover0402(key,i,L,own,z){
+   if(!bridge.enabled()||L.land[i]<0||
+      (mapMode3252!=='terrain'&&mapMode3252!=='political'))
     return baseFill(key,i,L,own,z);
-   const j=i*3,cy=L.centers[j+1]/32767;
-   // El clasificador europeo de Atlas solo se aplica donde fue calibrado.
-   if(cy<.55||cy>.96)return baseFill(key,i,L,own,z);
+   const j=i*3,lat=Math.asin(clamp(L.centers[j+1]/32767,-1,1))*180/Math.PI;
    const lon=Math.atan2(L.centers[j],L.centers[j+2])*180/Math.PI;
-   if(lon< -27||lon>63)return baseFill(key,i,L,own,z);
-   const values=codes(key,L);
-   let code=values[i];
-   if(code===255){
-    const lat=Math.asin(Math.max(-1,Math.min(1,cy)))*180/Math.PI;
-    const tier=key===MAX_GAME_LEVEL3233?(mountainTier3212[i]||0):0;
-    const result=cover.classify(lat,lon,terrainType3247(key,i,L),tier);
-    code=result>=0&&result<254?result:254;
-    values[i]=code;
+   const weight=Math.max(
+    regionWeight(lat,lon,-25.3,61,35.4,72.3),
+    regionWeight(lat,lon,25,179.9,-9,77)
+   );
+   if(weight<=0)return baseFill(key,i,L,own,z);
+   let rgb=ecotones?.color(key,i,L);
+   if(!rgb){
+    const arr=codes(key,L),v=arr[i];
+    let code=v;
+    if(code===255){
+     const tier=key===MAX_GAME_LEVEL3233?(mountainTier3212[i]||0):0;
+     code=cover.classify(lat,lon,terrainType3247(key,i,L),tier);
+     arr[i]=code>=0&&code<254?code:254;
+    }
+    rgb=cover.types[arr[i]]?.color;
    }
-   const rgb=cover.types[code]?.color;
    if(!rgb)return baseFill(key,i,L,own,z);
-   if(mapMode3252==='terrain'||own<0)return shadedRGB3247(rgb,z);
-   const national=baseFill(key,i,L,own,z);
-   const matches=national.match(/\d+/g);
-   if(!matches||matches.length<3)return national;
-   const physical=rgb.map(c=>Math.round(c*(.72+.28*Math.max(0,z))));
-   const result=physical.map((v,k)=>Math.round(v*.55+Number(matches[k])*.45));
-   return 'rgb('+result.join(',')+')';
+   const base=baseFill(key,i,L,own,z);
+   const vals=base.match(/\\d+/g);
+   if(!vals||vals.length<3)return base;
+   const shaded=rgb.map(c=>Math.round(c*(.72+.28*Math.max(0,z))));
+   // En político prevalece el país y el terreno actúa como textura.
+   const intensity=(mapMode3252==='terrain'?1:.50)*weight;
+   return 'rgb('+shaded.map((c,k)=>
+    Math.round(c*intensity+Number(vals[k])*(1-intensity))).join(',')+')';
   };
  }
  window.HexategosGameAtlasIntegrated0400=Object.freeze({
