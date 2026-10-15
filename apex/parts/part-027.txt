@@ -617,7 +617,9 @@ async function enableGyro(){
 }
 function centerGyro(){
  if(!gyro.enabled){enableGyro();return}
- gyro.center=gyro.raw;gyro.pedalCenter=gyro.pedalRaw;gyro.steer=0;gyro.throttle=0;gyro.brake=0;gyro.pedal=0;refreshGyroReadout();if(navigator.vibrate)navigator.vibrate(20);
+ gyro.center=gyro.raw;gyro.pedalCenter=gyro.pedalRaw;gyro.steer=0;gyro.throttle=0;gyro.brake=0;gyro.pedal=0;refreshGyroReadout();
+ if(navigator.vibrate)navigator.vibrate(20);
+ apexControlToast('GIROSCOPIO · RESTABLECIDO');
 }
 function invertGyro(){gyro.invert*=-1;$("invert").classList.toggle("on",gyro.invert<0);gyro.steer*=-1;refreshGyroReadout()}
 async function full(){try{if(!document.fullscreenElement){await document.documentElement.requestFullscreen();if(screen.orientation&&screen.orientation.lock)try{await screen.orientation.lock("landscape")}catch(e){}}else await document.exitFullscreen()}catch(e){}}
