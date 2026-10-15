@@ -108,16 +108,24 @@ function webglPushRivalLocalBox(b,cam,pitch,cx,cy,cz,sx,sy,sz,cols={}){
  return tris;
 }
 function webglRivalVariant(teamKey){
- const key=String(teamKey||'base');let h=0;for(let i=0;i<key.length;i++)h=(h*33+key.charCodeAt(i))>>>0;
- const n=v=>((h>>v)&255)/255;
+ const team=teamInfo(teamKey),spec=carCatalog[team.model]||carCatalog.A26,m=apexCarModelVisual(spec);
  return{
-  noseLen:1.54+n(0)*.20,
-  frontWing:1.78+n(8)*.18,
-  rearWing:1.42+n(16)*.18,
-  sidepodWidth:.34+n(4)*.08,
-  engineHeight:.22+n(12)*.08,
-  wheelbase:2.84+n(20)*.16,
-  colorMix:n(24)
+  model:team.model||'A26',
+  noseLen:1.64*m.noseLen,
+  noseWidth:m.noseWidth,
+  frontWing:1.86*m.frontWing,
+  rearWing:1.51*m.rearWing,
+  sidepodWidth:.37*m.sidepodWidth,
+  sidepodHeight:m.sidepodHeight,
+  engineHeight:.25*m.engineHeight,
+  cockpitWidth:m.cockpitWidth,
+  haloWidth:m.haloWidth,
+  airboxWidth:m.airboxWidth,
+  wheelScale:m.wheelScale,
+  shoulderWidth:m.shoulderWidth,
+  mirrorSpread:m.mirrorSpread,
+  wheelbase:2.92,
+  colorMix:0
  };
 }
 function webglPushRivalShadow(b,cam,pitch,len=3.48,width=1.56,alpha=.22){
@@ -214,10 +222,11 @@ function webglPushRivalCar3D(a,cam,pitch){
    tris+=webglPushRivalFrustum3D(basis,cam,pitch,0,.16,1.25,1.05,.18,.42,.07,.16,{main:primary,top:light,front:accent,back:dark});
    tris+=webglPushRivalLocalBox(basis,cam,pitch,0,.095,frontZ+.55,v.frontWing,.035,.18,{main:accent,top:shadeColor(accent,14)});
    tris+=webglPushRivalLocalBox(basis,cam,pitch,0,.70,rearZ-.60,v.rearWing,.05,.20,{main:accent,top:shadeColor(accent,12),back:dark});
-   tris+=webglPushRivalWheel3D(basis,cam,pitch,-.92,.31,frontZ,.16,.33,a.r.team,spin,0);
-   tris+=webglPushRivalWheel3D(basis,cam,pitch,.92,.31,frontZ,.16,.33,a.r.team,spin,0);
-   tris+=webglPushRivalWheel3D(basis,cam,pitch,-.88,.33,rearZ,.18,.39,a.r.team,spin,0);
-   tris+=webglPushRivalWheel3D(basis,cam,pitch,.88,.33,rearZ,.18,.39,a.r.team,spin,0);
+   const wheelS=v.wheelScale;
+   tris+=webglPushRivalWheel3D(basis,cam,pitch,-.92,.31,frontZ,.16*wheelS,.33*wheelS,a.r.team,spin,0);
+   tris+=webglPushRivalWheel3D(basis,cam,pitch,.92,.31,frontZ,.16*wheelS,.33*wheelS,a.r.team,spin,0);
+   tris+=webglPushRivalWheel3D(basis,cam,pitch,-.88,.33,rearZ,.18*wheelS,.39*wheelS,a.r.team,spin,0);
+   tris+=webglPushRivalWheel3D(basis,cam,pitch,.88,.33,rearZ,.18*wheelS,.39*wheelS,a.r.team,spin,0);
    return tris;
  }
 
@@ -226,29 +235,32 @@ function webglPushRivalCar3D(a,cam,pitch){
  if(lod>=1)tris+=webglPushRivalLocalBox(basis,cam,pitch,0,.020,-.02,.22,.018,wb+1.30,{main:'#8a6336',top:'#a57942'});
 
  // Sidepods with taper: narrower front, wider rear
- tris+=webglPushRivalFrustum3D(basis,cam,pitch,-.48,.27,-.12,1.88,.28,.42,.18,.27,{main:primary,top:light,left:dark,front:accent,back:shadeColor(primary,-16)});
- tris+=webglPushRivalFrustum3D(basis,cam,pitch,.48,.27,-.12,1.88,.28,.42,.18,.27,{main:primary,top:light,right:dark,front:accent,back:shadeColor(primary,-16)});
+ const sideX=.48*v.sidepodWidth,sideWF=.28*v.sidepodWidth,sideWR=.42*v.sidepodWidth,sideY=.27*v.sidepodHeight;
+ tris+=webglPushRivalFrustum3D(basis,cam,pitch,-sideX,sideY,-.12,1.88,sideWF,sideWR,.18*v.sidepodHeight,.27*v.sidepodHeight,{main:primary,top:light,left:dark,front:accent,back:shadeColor(primary,-16)});
+ tris+=webglPushRivalFrustum3D(basis,cam,pitch,sideX,sideY,-.12,1.88,sideWF,sideWR,.18*v.sidepodHeight,.27*v.sidepodHeight,{main:primary,top:light,right:dark,front:accent,back:shadeColor(primary,-16)});
  // Coke-bottle rear taper
- tris+=webglPushRivalFrustum3D(basis,cam,pitch,0,.29,-.98,.96,.58,.36,.24,.22,{main:shadeColor(primary,-5),top:light,back:dark});
+ tris+=webglPushRivalFrustum3D(basis,cam,pitch,0,.29,-.98,.96,.58*v.shoulderWidth,.36*v.sidepodWidth,.24*v.sidepodHeight,.22*v.sidepodHeight,{main:shadeColor(primary,-5),top:light,back:dark});
 
  // Nose: real F1-style long taper
- tris+=webglPushRivalFrustum3D(basis,cam,pitch,0,.22,.72,1.28,.31,.48,.10,.18,{main:primary,top:light,front:accent,back:dark});
- tris+=webglPushRivalFrustum3D(basis,cam,pitch,0,.16,1.62,.78,.16,.31,.07,.10,{main:primary,top:light,front:accent,back:dark});
- tris+=webglPushRivalFrustum3D(basis,cam,pitch,0,.11,2.17,.34,.10,.16,.05,.07,{main:accent,top:shadeColor(accent,18),front:shadeColor(accent,10)});
+ const noseW=v.noseWidth,noseScale=v.noseLen;
+ tris+=webglPushRivalFrustum3D(basis,cam,pitch,0,.22,.72,1.28*noseScale,.31*noseW,.48*noseW,.10,.18,{main:primary,top:light,front:accent,back:dark});
+ tris+=webglPushRivalFrustum3D(basis,cam,pitch,0,.16,1.62*noseScale,.78*noseScale,.16*noseW,.31*noseW,.07,.10,{main:primary,top:light,front:accent,back:dark});
+ tris+=webglPushRivalFrustum3D(basis,cam,pitch,0,.11,2.17*noseScale,.34*noseScale,.10*noseW,.16*noseW,.05,.07,{main:accent,top:shadeColor(accent,18),front:shadeColor(accent,10)});
 
  // Cockpit and halo
- tris+=webglPushRivalFrustum3D(basis,cam,pitch,0,.38,-.24,.76,.46,.38,.16,.20,{main:carbon2,top:'#262e36',front:'#20272e',back:'#0e1318'});
- tris+=webglPushRivalLocalBox(basis,cam,pitch,0,.59,-.08,.055,.28,.31,{main:carbon2,top:'#38414a'});
- tris+=webglPushRivalRod3D(basis,cam,pitch,-.16,.51,-.34,-.16,.59,.07,.025,carbon2);
- tris+=webglPushRivalRod3D(basis,cam,pitch,.16,.51,-.34,.16,.59,.07,.025,carbon2);
- tris+=webglPushRivalRod3D(basis,cam,pitch,-.16,.59,.06,.16,.59,.06,.025,carbon2);
+ tris+=webglPushRivalFrustum3D(basis,cam,pitch,0,.38,-.24,.76,.46*v.cockpitWidth,.38*v.cockpitWidth,.16,.20,{main:carbon2,top:'#262e36',front:'#20272e',back:'#0e1318'});
+ tris+=webglPushRivalLocalBox(basis,cam,pitch,0,.59,-.08,.055,.28*v.haloWidth,.31,{main:carbon2,top:'#38414a'});
+ const haloX=.16*v.haloWidth;
+ tris+=webglPushRivalRod3D(basis,cam,pitch,-haloX,.51,-.34,-haloX,.59,.07,.025,carbon2);
+ tris+=webglPushRivalRod3D(basis,cam,pitch,haloX,.51,-.34,haloX,.59,.07,.025,carbon2);
+ tris+=webglPushRivalRod3D(basis,cam,pitch,-haloX,.59,.06,haloX,.59,.06,.025,carbon2);
 
  // Airbox / engine cover
- tris+=webglPushRivalFrustum3D(basis,cam,pitch,0,.49,-.88,1.10,.31,.44,.20,.34,{main:primary,top:light,back:dark});
- tris+=webglPushRivalFrustum3D(basis,cam,pitch,0,.70,-.72,.30,.14,.22,.12,.20,{main:carbon2,top:'#36404a'});
+ tris+=webglPushRivalFrustum3D(basis,cam,pitch,0,.49,-.88,1.10,.31*v.shoulderWidth,.44*v.shoulderWidth,.20*v.engineHeight,.34*v.engineHeight,{main:primary,top:light,back:dark});
+ tris+=webglPushRivalFrustum3D(basis,cam,pitch,0,.70*v.engineHeight,-.72,.30,.14*v.airboxWidth,.22*v.airboxWidth,.12,.20*v.engineHeight,{main:carbon2,top:'#36404a'});
 
  // Front wing: multi-element according to distance
- const fw=v.frontWing,fwZ=frontZ+.57;
+ const fw=v.frontWing,fwZ=frontZ+.57*v.noseLen;
  tris+=webglPushRivalLocalBox(basis,cam,pitch,0,.095,fwZ,fw,.036,.18,{main:accent,top:shadeColor(accent,18),front:shadeColor(accent,8)});
  if(lod>=1)tris+=webglPushRivalLocalBox(basis,cam,pitch,0,.067,fwZ+.16,fw*1.03,.028,.14,{main:shadeColor(accent,8),top:shadeColor(accent,20)});
  if(lod>=2)tris+=webglPushRivalLocalBox(basis,cam,pitch,0,.050,fwZ+.29,fw*.92,.020,.10,{main:carbon2,top:'#242b31'});
@@ -269,18 +281,20 @@ function webglPushRivalCar3D(a,cam,pitch){
 
  // Mirrors
  if(lod>=1){
-   tris+=webglPushRivalLocalBox(basis,cam,pitch,-.43,.45,.49,.13,.055,.10,{main:accent,top:light});
-   tris+=webglPushRivalLocalBox(basis,cam,pitch,.43,.45,.49,.13,.055,.10,{main:accent,top:light});
+   const mirrorX=.43*v.mirrorSpread;
+   tris+=webglPushRivalLocalBox(basis,cam,pitch,-mirrorX,.45,.49,.13,.055,.10,{main:accent,top:light});
+   tris+=webglPushRivalLocalBox(basis,cam,pitch,mirrorX,.45,.49,.13,.055,.10,{main:accent,top:light});
  }
 
  // Team stripe / livery geometry (not image)
  tris+=webglPushRivalLocalBox(basis,cam,pitch,0,.31,-.01,.085,.025,2.28,{main:accent,top:shadeColor(accent,18)});
 
  // Wheels
- tris+=webglPushRivalWheel3D(basis,cam,pitch,-.92,.31,frontZ,.16,.33,a.r.team,spin,lod);
- tris+=webglPushRivalWheel3D(basis,cam,pitch,.92,.31,frontZ,.16,.33,a.r.team,spin,lod);
- tris+=webglPushRivalWheel3D(basis,cam,pitch,-.88,.33,rearZ,.18,.39,a.r.team,spin,lod);
- tris+=webglPushRivalWheel3D(basis,cam,pitch,.88,.33,rearZ,.18,.39,a.r.team,spin,lod);
+ const wheelS=v.wheelScale;
+ tris+=webglPushRivalWheel3D(basis,cam,pitch,-.92,.31,frontZ,.16*wheelS,.33*wheelS,a.r.team,spin,lod);
+ tris+=webglPushRivalWheel3D(basis,cam,pitch,.92,.31,frontZ,.16*wheelS,.33*wheelS,a.r.team,spin,lod);
+ tris+=webglPushRivalWheel3D(basis,cam,pitch,-.88,.33,rearZ,.18*wheelS,.39*wheelS,a.r.team,spin,lod);
+ tris+=webglPushRivalWheel3D(basis,cam,pitch,.88,.33,rearZ,.18*wheelS,.39*wheelS,a.r.team,spin,lod);
 
  // Suspension only when it will actually be visible
  if(lod>=1){
