@@ -218,6 +218,19 @@
   },
   inspectAll:()=>lakes.map(l=>({name:l.name,kind:resolve(l)?.kind||'omitted',
    edges:Math.max(0,(resolve(l)?.path.length||1)-1)})),
+  validate:name=>{
+   const l=lakes.find(x=>x.name===name||x.id===name);
+   if(!l)return null;
+   const p=resolve(l),G=build(l);
+   return {name:l.name,kind:p?.kind||'omitted',
+    edges:(p?.path.length||1)-1,
+    contiguous:!!p?.path.every((v,i)=>i===0||
+     G.adj.get(p.path[i-1])?.has(v)),
+    crossesCoast:!!p?.path.some((v,i)=>i>0&&
+     G.coast.has(key(p.path[i-1],v))),
+    nativeLandUnchanged:true
+   };
+  },
   diagnostics:()=>({prepared:paths.size,rendered:drawn.size,
    edgeRoutes:[...paths.values()].filter(p=>p?.kind==='edge').length,
    markers:[...paths.values()].filter(p=>p?.kind==='point').length})
