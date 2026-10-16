@@ -17,3 +17,7 @@ La prueba automática no sustituye la verificación real del aspecto y FPS en na
 
 ## Sin cambios
 Conducción, telemetría, interfaces, cronometraje, boxes, 23 circuitos, SVG de circuitos, guardados, IA y colisiones.
+
+## Afinado de rendimiento
+
+Se descarta el flanco de llanta que queda oculto a la cámara en cada rueda y se usan segmentos de 16/10/6 según LOD 2/1/0. El neumático mantiene cilindro completo, anillo coloreado y tapa de buje; las caras de llanta se reducen a la mitad.

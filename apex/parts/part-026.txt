@@ -182,7 +182,7 @@ function webglRivalLod(a){
    no un abanico desde el buje. El esquema funciona desde 360° y en LOD 0/1/2. */
 function webglPushRivalWheel3D(b,cam,pitch,cx,cy,cz,halfW,radius,teamKey,spin=0,lod=1){
  const brand=teamBranding(teamKey)||{},stripe=brand.tyreColor||'#f0cf34',
-  N=lod>=2?18:(lod===1?12:8),tau=Math.PI*2;
+  N=lod>=2?16:(lod===1?10:6),tau=Math.PI*2;
  const point=(side,r,ang,offset=0)=>webglRivalLocal(b,cx+side*(halfW+offset),cy+Math.sin(ang)*radius*r,cz+Math.cos(ang)*radius*r);
  const WC=p=>worldToCamera(p.x,p.y,p.z,cam);
  const outerL=[],outerR=[];
@@ -196,7 +196,13 @@ function webglPushRivalWheel3D(b,cam,pitch,cx,cy,cz,halfW,radius,teamKey,spin=0,
   const color=top>.55?'#1b2026':top<-.45?'#090c10':'#12171c';
   tris+=webglPushRivalWorldQuad(cam,pitch,outerL[i],outerR[i],outerR[j],outerL[j],color,.56,-.004);
  }
- for(const sg of [-1,1]){
+ // La cara exterior oculta no aporta pixels. Reducir esta mitad del trabajo
+ // evita duplicar los círculos de llanta de 22 coches en móviles.
+ const cl=worldToCamera(...[point(-1,0,0).x,point(-1,0,0).y,point(-1,0,0).z],cam),
+       cr=worldToCamera(...[point(1,0,0).x,point(1,0,0).y,point(1,0,0).z],cam);
+ const leftDist=cl.x*cl.x+cl.y*cl.y+cl.z*cl.z,rightDist=cr.x*cr.x+cr.y*cr.y+cr.z*cr.z;
+ const visibleSide=leftDist<=rightDist?-1:1;
+ for(const sg of [visibleSide]){
   const face=point(sg,0,0,.004);
   // El neumático ocupa toda la cara hasta el buje; ninguna región amarilla maciza.
   for(let i=0;i<N;i++){
