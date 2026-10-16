@@ -29,6 +29,8 @@
  const indiaRivers=window.HexategosPeninsularHydroRender0410;
  const indianHydro=window.HexategosSubcontinentHydro0407;
  const indianRivers=window.HexategosSubcontinentRivers0407;
+ const bengalData=window.HexategosBengalHydro0414;
+ const bengalRivers=window.HexategosBengalRoutes0414;
  const deltas=window.HexategosIndianDeltas0408;
  const deltaRoutes=window.HexategosIndianDeltaRoutes0408;
  const labelStyle=window.HexategosAtlasLabelStyle0399;
@@ -160,6 +162,21 @@
     center:item.points[Math.floor(item.points.length*.47)],
     kind:'river',rank:68,minZoom:item.minZoom+.65,
     indianTributary:true});
+  }
+ }
+ // Continuidad visual de los tres grandes sistemas hasta Bangladesh.
+ // No etiquetar rutas que el grafo L8 rechace; evitar nombres repetidos.
+ if(bengalData){
+  const routeFor={
+   'Confluencia del Kosi':'Ganges medio y Padma',
+   'Confluencia del Panjnad':'Indo cerca de Mithankot',
+   'Jamuna':'Jamuna','Padma':'Padma','Meghna':'Meghna inferior'
+  };
+  for(const label of bengalData.labels){
+   if(features.some(f=>f.name===label.name))continue;
+   features.push({name:label.name,center:label.at,kind:'river',
+    minZoom:label.minZoom,rank:label.name==='Padma'?81:75,
+    bengalCourse:routeFor[label.name]});
   }
  }
  // India peninsular: Ghats canónicos NO se duplican. Sólo se etiqueta
@@ -336,6 +353,7 @@
    if(item.sriFeature&&!sriPlacement?.valid(item))continue;
    if(item.indiaRiver&&!indiaRivers?.isDrawnFeature?.(item.name))continue;
    if(item.indianTributary&&!indianRivers?.isDrawnFeature?.(item.name))continue;
+   if(item.bengalCourse&&!bengalRivers?.validate?.(item.bengalCourse)?.ok)continue;
    if(item.deltaChannel&&!deltaRoutes?.isDrawnFeature?.(item.name))continue;
    if(item.centralAsia&&!central?.isDrawnFeature?.(item.name))continue;
    if(item.westAsia&&item.kind!=='lake'&&!westAsia?.isDrawnFeature?.(item.name))continue;
