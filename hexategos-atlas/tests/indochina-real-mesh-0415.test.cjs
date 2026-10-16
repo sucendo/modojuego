@@ -68,6 +68,26 @@ test('Indochina 0.41.5 · Chao Phraya, Río Rojo, afluentes, delta y montes real
   old=Buffer.from(L.land.buffer).toString('base64');
  const native=api.canonicalCovered();
  console.log('INDOCHINA_MEKONG_NATIVE_0415',JSON.stringify(native));
+ const G=graph.prepare(),ids=(()=>{
+  const all=new Set();
+  for(const sys of st.MAP_RIVERS3242.filter(x=>x.n==='Mekong'))
+   for(const e of sys.edges||[]){
+    const v=st.physicalEdge3242(e);all.add(v.u);all.add(v.v);
+   }
+  return [...all].filter(id=>G.coords.has(id));
+ })();
+ const probes=[[105.14,15.32],[105.82,15.13],[105.90,14.6],
+  [106.0,13.5],[106.0,12.5],[104.93,11.55],[105.25,11.2],
+  [105.60,10.75]];
+ const km=(a,b)=>Math.hypot((a.lon-b.lon)*111.2*
+  Math.cos((a.lat+b.lat)*Math.PI/360),(a.lat-b.lat)*111.2);
+ console.log('INDOCHINA_NATIVE_MEANDER_0415',JSON.stringify(probes.map(([lon,lat])=>{
+  const p={lon,lat},list=ids.map(id=>({id,d:km(G.coords.get(id),p)}))
+   .sort((a,b)=>a.d-b.d).slice(0,2);
+  return {lon,lat,near:list.map(x=>({id:x.id,km:+x.d.toFixed(1),
+   p:G.coords.get(x.id)}))};
+ })));
+
  assert.ok(native.find(x=>x.name==='Mekong')?.vertices>0,
   'Mekong canónico ausente en malla Indochina');
  const report={};
