@@ -402,7 +402,9 @@ function loop(t){
  for(let i=0;i<steps;i++)update(APEX_PLAYER_PHYSICS_DT,i===steps-1,simElapsed);
  apexPlayerPhysicsAccumulator=Math.max(0,apexPlayerPhysicsAccumulator-simElapsed);
  const _physicsRaw=performance.now()-_physicsT0;telemetryPerf.physicsMs=lerp(telemetryPerf.physicsMs||0,_physicsRaw,.12);
- const r0=performance.now();activeRenderer.renderFrame();const _renderRaw=performance.now()-r0;telemetryPerf.renderMs=lerp(telemetryPerf.renderMs||0,_renderRaw,.12);if(rawElapsed>0)apexRuntimePerfRecord(rawElapsed*1000,_physicsRaw,_renderRaw);requestAnimationFrame(loop);
+ const r0=performance.now();activeRenderer.renderFrame();const _renderRaw=performance.now()-r0;telemetryPerf.renderMs=lerp(telemetryPerf.renderMs||0,_renderRaw,.12);
+ if(rawElapsed>0)apexRuntimePerfRecord(rawElapsed*1000,_physicsRaw,_renderRaw);
+ apexDrivePerfObserve(t);requestAnimationFrame(loop);
 }
 function goMenu(){apexCloseControls(false);apexResetSessionControls();if(typeof apexInspection!=="undefined"){apexInspection.active=false;apexInspection.auto=false;apexInspection.drag=false}document.body.classList.remove("apex-inspection","ins-drag","ins-ui-hidden");$("circuitInspectorHud")&&$("circuitInspectorHud").classList.add("hidden");mode="menu";pendingRace=null;currentSession="race";sessionLimit=Infinity;sessionExpired=false;finishFlow=null;paused=false;countdown=0;apexWeatherReset();$("weekendPanel")&&$("weekendPanel").classList.add("hidden");$("sessionBadge")&&$("sessionBadge").classList.add("hidden");
  // v5.230.62.4.1: recuperación defensiva del estado de todos los botones que pueden

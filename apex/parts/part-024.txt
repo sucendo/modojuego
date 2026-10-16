@@ -1195,10 +1195,10 @@ function mobilePerformanceMode(){ return document.body.classList.contains("mobil
 function desktopAdaptiveRenderPressure(){
  const fps=finite(telemetryPerf&&telemetryPerf.fps,60);
  if(fps<9)return 0;
- if(fps<14)return .18;
- if(fps<20)return .36;
- if(fps<28)return .58;
- if(fps<40)return .78;
+ if(fps<14)return .08;
+ if(fps<20)return .24;
+ if(fps<28)return .44;
+ if(fps<40)return .70;
  return 1;
 }
 // v5.214 · En móvil v5.213 sólo obedecía al selector de calidad y NO al FPS real.

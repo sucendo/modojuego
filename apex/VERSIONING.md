@@ -2,7 +2,7 @@
 
 ## Estado actual
 
-**v0.13.4 · PRE-RELEASE**
+**v0.13.5 · PRE-RELEASE**
 
 APEX todavía no se considera una versión pública estable. Mientras el proyecto siga en esta fase, todas las versiones permanecerán bajo la rama mayor `0.x`.
 

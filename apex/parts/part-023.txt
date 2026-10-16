@@ -1946,6 +1946,35 @@ function mobileDprCap(){const t=renderQualityT();return lerp(.68,1.28,Math.pow(t
 function renderQualityName(v=mobileRenderQuality){return v<24?"Rendimiento":v<68?"Equilibrado":"Calidad"}
 
 const cv=$("game"),ctx=cv.getContext("2d",{alpha:true}),webglCv=$("webglGame"),mini=$("mini"),mctx=mini.getContext("2d");
+
+/* APEX v0.13.5 · Escalado adaptativo, sin intervals ni cambios de física. */
+let apexDrivePerfScale=1,apexDrivePerfLastSample=0,apexDrivePerfSlow=0,apexDrivePerfFast=0,
+    apexDrivePerfChanges=0,apexDrivePerfLastFps=60,apexDrivePerfActive=false;
+function apexDrivePerfDprScale(){return apexDrivePerfScale}
+function apexDrivePerfObserve(now){
+ if(!player||!trackData||mode==='menu'||mode==='inspection'||paused)return;
+ if(!apexDrivePerfLastSample){apexDrivePerfLastSample=now;return}
+ if(now-apexDrivePerfLastSample<900)return;
+ apexDrivePerfLastSample=now;
+ const fps=finite(telemetryPerf.fps,60),cpu=finite(telemetryPerf.renderMs,0),
+   physics=finite(telemetryPerf.physicsMs,0);
+ apexDrivePerfLastFps=fps;
+ if(fps<27&&(cpu>17||physics>12)){apexDrivePerfSlow++;apexDrivePerfFast=0}
+ else if(fps>48&&cpu<12&&physics<8){apexDrivePerfFast++;apexDrivePerfSlow=0}
+ else{apexDrivePerfSlow=0;apexDrivePerfFast=0}
+ let target=apexDrivePerfScale;
+ if(apexDrivePerfSlow>=2){target=Math.max(.62,Math.round((apexDrivePerfScale-.13)*100)/100);apexDrivePerfSlow=0}
+ if(apexDrivePerfFast>=7){target=Math.min(1,Math.round((apexDrivePerfScale+.08)*100)/100);apexDrivePerfFast=0}
+ if(target!==apexDrivePerfScale){
+  apexDrivePerfScale=target;apexDrivePerfChanges++;apexDrivePerfActive=target<.995;
+  resize();
+ }
+}
+window.apexDrivePerformanceDiagnostics=()=>({scale:apexDrivePerfScale,active:apexDrivePerfActive,
+ changes:apexDrivePerfChanges,observedFps:apexDrivePerfLastFps,
+ renderMs:telemetryPerf.renderMs||0,physicsMs:telemetryPerf.physicsMs||0,
+ profile:typeof renderProfilerSnapshot==='function'?renderProfilerSnapshot():null});
+
 let W=1,H=1,DPR=1;
 function resize(){
  W=innerWidth;H=innerHeight;
@@ -1954,7 +1983,7 @@ function resize(){
  const mobileLike=touchish && Math.min(W,H)<=760;
  // En móvil, un DPR alto multiplica brutalmente los píxeles del Canvas sin aportar
  // una mejora visible equivalente durante la conducción. PC conserva hasta 2x.
- DPR=mobileLike?Math.min(devicePixelRatio||1,mobileDprCap()):Math.min(devicePixelRatio||1,2);
+ DPR=(mobileLike?Math.min(devicePixelRatio||1,mobileDprCap()):Math.min(devicePixelRatio||1,2))*apexDrivePerfDprScale();
  cv.width=Math.max(1,Math.round(W*DPR));cv.height=Math.max(1,Math.round(H*DPR));cv.style.width=W+"px";cv.style.height=H+"px";ctx.setTransform(DPR,0,0,DPR,0,0);
  if(webglCv){webglCv.width=Math.max(1,Math.round(W*DPR));webglCv.height=Math.max(1,Math.round(H*DPR));webglCv.style.width=W+"px";webglCv.style.height=H+"px";}
  const mobileLandscape=touchish && W>H && H<=620 && aspect>=1.35;

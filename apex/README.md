@@ -1,6 +1,6 @@
 # APEX Formula 26
 
-Versión de desarrollo: **v0.13.4 · PRE-RELEASE**
+Versión de desarrollo: **v0.13.5 · PRE-RELEASE**
 
 Archivo fuente original:
 `Apex_Formula_26_v5_230_62_8_6_7_6_4_17_CONTROL_CLASICO_GP4.html`
@@ -43,3 +43,7 @@ A partir de esta versión, los muros estáticos importados se indexan en celdas 
 ## v0.13.4 — Conducción fluida con circuitos cargados
 
 Culling conservador de muros antes de proyectar vallas; selección espacial más cercana; cotas volumétricas para edificios fuera de cámara; presupuesto de escena reutilizado por fotograma; retrovisores con frecuencia adaptativa; corrección de la clave de caché en terreno a varias resoluciones. Sin modificaciones a física de 100 Hz, controles, circuitos, 3 cámaras ni guardados. Diagnóstico: apexPerformanceSummary(), renderProfilerSnapshot() y apexStaticOcclusionStatsSnapshot().
+
+## v0.13.5 · Antitirones por resolución adaptativa
+
+Cuando los FPS caen de forma sostenida, APEX reduce la resolución **interna** de WebGL/Canvas hasta 62%, sin alterar el tamaño visible, la física de 100 Hz, las colisiones o los guardados. Recupera calidad gradualmente cuando vuelve a ir fluido. Se refuerza el LOD lejano en PC. Función de diagnóstico: `apexDrivePerformanceDiagnostics()`.
