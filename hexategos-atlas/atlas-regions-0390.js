@@ -27,6 +27,8 @@
  const myanmarRender=window.HexategosMyanmarRender0412;
  const indochina=window.HexategosIndochinaPhysical0415;
  const indochinaRender=window.HexategosIndochinaRender0415;
+ const otherAsia=window.HexategosAsiaCompletion0416;
+ const otherAsiaRender=window.HexategosAsiaCompletionRender0416;
  const indiaHydro=window.HexategosPeninsularHydro0410;
  const indiaRivers=window.HexategosPeninsularHydroRender0410;
  const indianHydro=window.HexategosSubcontinentHydro0407;
@@ -61,13 +63,13 @@
   detail?.naturalRegions||[],asia?.naturalRegions||[]);
  const knownNatural=new Set(baseNatural.map(x=>x.name.toLocaleLowerCase('es-ES')));
  const additionalNatural=(himalayaData?.reliefRegions||[])
-  .concat(indianHydro?.basins||[],deltas?.areas||[],peninsula?.regions||[],indiaHydro?.regions||[],sri?.regions||[],myanmar?.regions||[],indochina?.regions||[])
+  .concat(indianHydro?.basins||[],deltas?.areas||[],peninsula?.regions||[],indiaHydro?.regions||[],sri?.regions||[],myanmar?.regions||[],indochina?.regions||[],otherAsia?.regions||[])
   .filter(reg=>{
    const key=reg.name.toLocaleLowerCase('es-ES');
    if(knownNatural.has(key))return false;
    knownNatural.add(key);return true;
   })
-  .map(r=>({...r,kind:'land'}));
+  .map(r=>({...r,kind:r.kind==='mountain'?'mountain':'land'}));
  const natural=baseNatural.concat(additionalNatural).map(reg=>({
    name:reg.name,center:reg.center,kind:reg.kind==='mountain'?'mountain':'natural',
    rank:reg.priority,
@@ -199,6 +201,25 @@
   for(const lake of indochina.lakes)
    features.push({name:lake.name,center:lake.center,kind:'lake',
     minZoom:lake.minZoom+1.4,rank:79,indochinaLake:true});
+ }
+ // Ampliación asiática: etiquetas secundarias sólo si existe ruta L8.
+ if(otherAsia){
+  const seen=new Set(natural.map(x=>x.name.toLocaleLowerCase('es-ES'))
+   .concat(features.map(x=>x.name.toLocaleLowerCase('es-ES'))));
+  for(const item of otherAsia.features){
+   const name=item.name.toLocaleLowerCase('es-ES');
+   if(seen.has(name))continue;seen.add(name);
+   features.push({name:item.name,
+    center:item.points[Math.floor(item.points.length*.53)],
+    kind:item.kind,rank:item.kind==='mountain'?65:69,
+    minZoom:(item.minZoom||8)+.75,otherAsiaFeature:true});
+  }
+  for(const lake of otherAsia.lakes){
+   const name=lake.name.toLocaleLowerCase('es-ES');
+   if(seen.has(name))continue;seen.add(name);
+   features.push({name:lake.name,center:lake.center,kind:'lake',
+    rank:78,minZoom:lake.minZoom+.65,otherAsiaLake:true});
+  }
  }
  // India peninsular: Ghats canónicos NO se duplican. Sólo se etiqueta
  // el relieve que está realmente en el trazado L8 o en redes canónicas.
@@ -364,7 +385,7 @@
    // Solo regiones pequeñas a partir del relevo continental.
    if((item.kind==='natural'||item.kind==='historical')&&zoom<handoffZoom)continue;
    // No rotular masas de agua que la malla no puede representar.
-   if(item.kind==='lake'&&!item.centralBody&&!item.himalayaBody&&!lakes?.isDrawn?.(item.name)&&!westAsia?.isDrawn?.(item.name))continue;
+   if(item.kind==='lake'&&!item.centralBody&&!item.himalayaBody&&!item.indochinaLake&&!item.otherAsiaLake&&!lakes?.isDrawn?.(item.name)&&!westAsia?.isDrawn?.(item.name))continue;
    if(item.centralBody&&!central?.isBodyDrawn?.(item.centralBody))continue;
    if(item.himalayaBody&&!window.HexategosHimalayaWater0406?.isBodyDrawn?.(item.himalayaBody))continue;
    if(item.himalayaMountain&&!himalaya?.isDrawnFeature?.(item.name))continue;
@@ -373,6 +394,8 @@
    if(item.myanmarFeature&&!myanmarRender?.isDrawnFeature?.(item.name))continue;
    if(item.indochinaFeature&&!indochinaRender?.isDrawnFeature?.(item.name))continue;
    if(item.indochinaLake&&!window.HexategosIndochinaWater0415?.isBodyDrawn?.(item.name))continue;
+   if(item.otherAsiaLake&&!window.HexategosAsiaCompletionWater0416?.isBodyDrawn?.(item.name))continue;
+   if(item.otherAsiaFeature&&!otherAsiaRender?.isDrawnFeature?.(item.name))continue;
    if(item.sriFeature&&!sriPlacement?.valid(item))continue;
    if(item.indiaRiver&&!indiaRivers?.isDrawnFeature?.(item.name))continue;
    if(item.indianTributary&&!indianRivers?.isDrawnFeature?.(item.name))continue;
@@ -413,11 +436,11 @@
  function cellInfo(lat,lon){
   const result=source.regionsAt(lat,lon);
   const local=(europe?.naturalAt(lat,lon)||[]).concat(detail?.naturalAt(lat,lon)||[],asia?.naturalAt(lat,lon)||[]);
-  const naturalNames=result.natural.concat(local,centralData?.regionsNear(lon,lat)||[],himalayaData?.regionsNear(lon,lat)||[],indianHydro?.regionsNear(lon,lat)||[],deltas?.regionsNear(lon,lat)||[],peninsula?.regionsNear(lon,lat)||[],indiaHydro?.regionsNear(lon,lat)||[],sri?.regionsNear(lon,lat)||[],myanmar?.regionsNear(lon,lat)||[],indochina?.regionsNear(lon,lat)||[])
+  const naturalNames=result.natural.concat(local,centralData?.regionsNear(lon,lat)||[],himalayaData?.regionsNear(lon,lat)||[],indianHydro?.regionsNear(lon,lat)||[],deltas?.regionsNear(lon,lat)||[],peninsula?.regionsNear(lon,lat)||[],indiaHydro?.regionsNear(lon,lat)||[],sri?.regionsNear(lon,lat)||[],myanmar?.regionsNear(lon,lat)||[],indochina?.regionsNear(lon,lat)||[],otherAsia?.regionsNear(lon,lat)||[])
    .filter((v,i,a)=>a.findIndex(x=>x.name.toLocaleLowerCase('es-ES')===v.name.toLocaleLowerCase('es-ES'))===i)
    .slice(0,5).map(r=>escapeHTML(r.name)).join(' · ');
   const historicalName=result.historical?.name||europe?.historicalAt(lat,lon)?.name||'';
-  const nearbyLakes=(lakes?.nearby(lat,lon)||[]).concat(westAsia?.nearby(lat,lon)||[],central?.nearby(lat,lon)||[],window.HexategosHimalayaWater0406?.nearby(lat,lon)||[],window.HexategosIndochinaWater0415?.nearby(lat,lon)||[]);
+  const nearbyLakes=(lakes?.nearby(lat,lon)||[]).concat(westAsia?.nearby(lat,lon)||[],central?.nearby(lat,lon)||[],window.HexategosHimalayaWater0406?.nearby(lat,lon)||[],window.HexategosIndochinaWater0415?.nearby(lat,lon)||[],window.HexategosAsiaCompletionWater0416?.nearby(lat,lon)||[]);
   if(!naturalNames&&!historicalName&&!nearbyLakes.length)return '';
   return '<div class="atlasGeo0390">'+
     (naturalNames?'<div><b>Zonas naturales:</b> '+naturalNames+'</div>':'')+
@@ -432,7 +455,7 @@
     const old=source.regionsAt(lat,lon);
     const areas=old.natural.concat(europe?.naturalAt(lat,lon)||[],
      detail?.naturalAt(lat,lon)||[],asia?.naturalAt(lat,lon)||[],
-     centralData?.regionsNear(lon,lat)||[],himalayaData?.regionsNear(lon,lat)||[],indianHydro?.regionsNear(lon,lat)||[],deltas?.regionsNear(lon,lat)||[],peninsula?.regionsNear(lon,lat)||[],indiaHydro?.regionsNear(lon,lat)||[],sri?.regionsNear(lon,lat)||[],myanmar?.regionsNear(lon,lat)||[],indochina?.regionsNear(lon,lat)||[]);
+     centralData?.regionsNear(lon,lat)||[],himalayaData?.regionsNear(lon,lat)||[],indianHydro?.regionsNear(lon,lat)||[],deltas?.regionsNear(lon,lat)||[],peninsula?.regionsNear(lon,lat)||[],indiaHydro?.regionsNear(lon,lat)||[],sri?.regionsNear(lon,lat)||[],myanmar?.regionsNear(lon,lat)||[],indochina?.regionsNear(lon,lat)||[],otherAsia?.regionsNear(lon,lat)||[]);
     return {natural:areas.filter((v,i,a)=>a.findIndex(x=>
       x.name.toLocaleLowerCase('es-ES')===v.name.toLocaleLowerCase('es-ES'))===i),
       historical:old.historical||europe?.historicalAt(lat,lon)||null};
