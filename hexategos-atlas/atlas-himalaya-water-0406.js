@@ -49,7 +49,9 @@
  };
  window.HexategosHimalayaWater0406=Object.freeze({
   version:'0.40.6',isWater,allowed,
-  isBodyDrawn:name=>allowed()&&data.waterBodies.some((b,i)=>b.name===name&&counts[i]>0)&&
+  isBodyDrawn:name=>window.HexategosAsianLakes0417?.enabled?
+   window.HexategosAsianLakes0417.isDrawn(name):
+   allowed()&&data.waterBodies.some((b,i)=>b.name===name&&counts[i]>0)&&
    (typeof zoom==='undefined'||zoom>=8),
   nearby:(lat,lon)=>data.waterBodies.filter(b=>b.components.some(
    ([x,y,rx,ry])=>Math.hypot((lon-x)*Math.cos(lat*rad),(lat-y))<
