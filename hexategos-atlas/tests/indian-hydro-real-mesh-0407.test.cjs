@@ -89,6 +89,24 @@ test('Indo, Ganges y Brahmaputra: afluentes conectados a cauces reales L8',
    km:+report.joinDistanceKm.toFixed(1)};
  }).filter(Boolean);
  console.log('INDIAN_RIVERS_FAR_JOINS',JSON.stringify(far));
+ const targets={
+  subansiri:[93.91,26.88],manas:[90.82,26.25],teesta:[89.66,25.49],
+  dhubri:[89.95,26.06],goalpara:[90.62,26.17],guwahati:[91.73,26.15],
+  jorhat:[94.20,26.88]
+ };
+ const nearParent=[];
+ for(const [name,[lon,lat]] of Object.entries(targets)){
+  const p={lon,lat};let dist=Infinity,point=null,id=null;
+  const graphCoords=st.window.HexategosHimalayaGraph0406.prepare().coords;
+  for(const node of api.canonicalNodes('Brahmaputra')){
+   const q=graphCoords.get(node);if(!q)continue;
+   const km=Math.hypot((q.lon-lon)*111.2*Math.cos(lat*Math.PI/180),(q.lat-lat)*111.2);
+   if(km<dist){dist=km;point=q;id=node}
+  }
+  nearParent.push({name,km:+dist.toFixed(1),node:id,nearest:point&&
+    [+point.lon.toFixed(3),+point.lat.toFixed(3)]});
+ }
+ console.log('ASSAM_CANONICAL_AUDIT',JSON.stringify(nearParent));
  const spot=(river,[lon,lat])=>{
   const near={lon,lat};let km=Infinity,position=null;
   for(const id of api.canonicalNodes(river)){
