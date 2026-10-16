@@ -70,6 +70,12 @@
    const supplemental=assam?.nodes()||[];
    nodes=supplemental;parentType='regionalCorridor';
   }
+  // Sólo Kosi y Panjnad: usar la corrección del cauce RECEPTOR.
+  // Sus antiguos enlaces al río canónico distaban más de 100 km.
+  if(item.name==='Kosi'||item.name==='Panjnad'){
+   const local=window.HexategosBengalRoutes0414?.nodesForTributary(item.name)||[];
+   if(local.length){nodes=local;parentType='regionalRepair'}
+  }
   visiting.delete(item.name);
   const snap=closest(nodes||[],item.join,G);
   const maxKm=item.maxJoinKm||MAX_JOIN_KM;
@@ -191,7 +197,9 @@
   const nodes=parent?solve(parent,new Set())?.path:
    p.parentType==='regionalCorridor'?
     (window.HexategosAssamCorridor0413?.nodes()||[]):
-    canonicalNodes(item.parent,G);
+    p.parentType==='regionalRepair'?
+     (window.HexategosBengalRoutes0414?.nodesForTributary(item.name)||[]):
+     canonicalNodes(item.parent,G);
   const geometric=graph.validate(p.path);
   return {name,ok:true,edges:geometric.edges,
    parent:item.parent,sameVertex:!!nodes?.includes(p.junction),
@@ -200,6 +208,7 @@
    joinDistanceKm:p.joinDistanceKm,
    parentType:p.parentType,
    regionalCorridor:p.parentType==='regionalCorridor',
+   regionalRepair:p.parentType==='regionalRepair',
    approximateJoin:p.joinDistanceKm>85,
    correctedHub:!!p.geoJunction,
    geographicJoinKm:p.geoDistanceKm,
