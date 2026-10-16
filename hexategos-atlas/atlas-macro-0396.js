@@ -27,6 +27,10 @@
   if(!features.some(f=>f.name.toLocaleLowerCase('es-ES')===
     x.name.toLocaleLowerCase('es-ES')))features.push({...x});
  }
+ for(const x of window.HexategosIndochinaPhysical0415?.macro||[]){
+  if(!features.some(f=>f.name.toLocaleLowerCase('es-ES')===
+    x.name.toLocaleLowerCase('es-ES')))features.push({...x});
+ }
  const handoffZoom=5.55;
  const labelStyle=window.HexategosAtlasLabelStyle0399;
  let occupied=[];
