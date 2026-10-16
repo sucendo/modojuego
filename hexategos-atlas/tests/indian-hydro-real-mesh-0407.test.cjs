@@ -96,6 +96,40 @@ test('Indo, Ganges y Brahmaputra: afluentes conectados a cauces reales L8',
  const summary=st.window.HexategosBengalHydro0414.routes.map(x=>
   bengal.validate(x.name));
  console.log('BENGAL_FULL_L8_0414',JSON.stringify(summary));
+ assert.equal(summary.length,6,'Faltan rutas del Ganges, Jamuna, Padma y Meghna');
+ for(const item of summary){
+  assert.equal(item.ok,true,item.name+': '+(item.reason||'ruta sin resolver'));
+  assert.ok(item.edges>=2,'Tramo demasiado corto: '+item.name);
+  assert.equal(item.usesCoast,false,item.name+' pisa costa');
+  assert.equal(item.crossesVirtualWater,false,item.name+' pisa lago');
+  if(item.nativeSource!==null)assert.equal(item.nativeSource,true,
+    item.name+' no parte del sistema canónico');
+  if(item.startsAtParent!==null)assert.equal(item.startsAtParent,true,
+    item.name+' sin enlace al río superior');
+  if(item.endsAtConfluence!==null)assert.equal(item.endsAtConfluence,true,
+    item.name+' sin confluencia L8');
+  if(item.nativeShore!==null)assert.equal(item.nativeShore,true,
+    item.name+' no acaba en la orilla real L8');
+ }
+ const bengalData=st.window.HexategosBengalHydro0414;
+ const shared=(r1,r2,where)=>{
+  const a=bengal.inspect(r1),b=bengal.inspect(r2),v=bengal.confluence(where);
+  assert.ok(a&&b&&v!=null,'Faltan ríos para '+where);
+  assert.equal(a.at(-1),v,r1+' no alcanza '+where);
+  assert.equal(b[0],v,r2+' no nace en '+where);
+ };
+ shared('Jamuna','Padma','Goalundo');
+ shared('Ganges medio y Padma','Padma','Goalundo');
+ shared('Padma','Meghna inferior','Chandpur');
+ assert.equal(bengal.inspect('Alto Meghna').at(-1),
+  bengal.confluence('Chandpur'),'Meghna alto no alcanza Chandpur');
+ for(const name of ['Kosi','Panjnad']){
+  const v=api.validate(name),meta=bengalData.confluences[name];
+  assert.ok(v?.ok&&v.regionalRepair&&v.sameVertex,name+' no empalma en corrección L8');
+  assert.ok(v.joinDistanceKm<meta.maxKm,name+' sigue demasiado alejado del receptor');
+  assert.ok(bengal.nodesForTributary(name).length>=2,'Falta cauce visual '+name);
+ }
+
  for(const name of ['Kosi','Panjnad']){
   console.log('PARENT_REPAIR_0414',JSON.stringify({name,repair:bengal.nodesForTributary(name).length,
    report:api.validate(name)}));
