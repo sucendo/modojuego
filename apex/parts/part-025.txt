@@ -2480,6 +2480,32 @@ function drawSvgTeamCockpitIdentity(){
  ctx.restore();
 }
 
+/* APEX v0.13.2: capas de carbono, remaches y filetes originales de APEX. */
+function drawApexCockpitFinish(){
+ const visual=playerCarVisualProfile(),paint=visual.blueprint.livery;
+ ctx.save();
+ for(const sg of [-1,1]){
+  const root=837+sg*400,out=837+sg*780;
+  const grad=ctx.createLinearGradient(root,510,out,755);
+  grad.addColorStop(0,'rgba(2,5,8,.20)');grad.addColorStop(.55,'rgba(29,38,45,.10)');
+  grad.addColorStop(1,'rgba(0,0,0,.49)');
+  ctx.fillStyle=grad;ctx.beginPath();ctx.moveTo(root,508);
+  ctx.bezierCurveTo(837+sg*540,468,837+sg*722,511,out,574);
+  ctx.lineTo(out,790);ctx.bezierCurveTo(837+sg*610,696,837+sg*515,600,root,555);
+  ctx.closePath();ctx.fill();
+  ctx.globalAlpha=.42;ctx.strokeStyle=paint.trim||'#c1c8cf';ctx.lineWidth=3;
+  ctx.beginPath();ctx.moveTo(root,511);ctx.bezierCurveTo(837+sg*534,479,837+sg*700,512,out,579);ctx.stroke();
+  ctx.globalAlpha=1;
+  for(let j=0;j<3;j++){
+   const x=837+sg*(468+j*130),y=553+j*36;
+   ctx.fillStyle='#06090d';ctx.beginPath();ctx.arc(x,y,8,0,Math.PI*2);ctx.fill();
+   ctx.strokeStyle='#88939e';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.stroke();
+   ctx.strokeStyle='#202932';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x-2,y+2);ctx.lineTo(x+2,y-2);ctx.stroke();
+  }
+ }
+ ctx.restore();
+}
+
 function drawSvgCockpitLayer(){
  const assets=ensureCockpitSvgAssets(),motion=cockpitMotionState(),p=cockpitSvgModelParams();
 
@@ -2504,6 +2530,7 @@ function drawSvgCockpitLayer(){
  if(!apexPlayerShared3DActive())drawSvgTyreProtectorRefine();
  drawSvgMirrorGlass();
  drawSvgTeamCockpitIdentity();
+ drawApexCockpitFinish();
  ctx.restore();
 
  // Pass 2: responsive halo/protection overlay in screen space.
@@ -2581,7 +2608,8 @@ function canvas2dRenderFrame(){
  renderProfileMeasure('effectsMs',()=>{if(!mobilePerformanceMode()||impactParticles.length<18)drawImpactParticles(cam,pitch);drawRain();});
  ctx.restore();
  
- if(apexInspectionActive())renderProfileMeasure('cockpitGrossMs',()=>apexDrawInspectionOverlays(cam,pitch));else renderProfileMeasure('cockpitGrossMs',()=>drawResponsiveCockpitLayer());
+ if(apexInspectionActive())renderProfileMeasure('cockpitGrossMs',()=>apexDrawInspectionOverlays(cam,pitch));
+ else if(apexCameraIsCockpit())renderProfileMeasure('cockpitGrossMs',()=>drawResponsiveCockpitLayer());
  renderProfileCommit();
 }
 function canvas2dDrawMiniMap(){

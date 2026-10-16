@@ -1,6 +1,6 @@
 # APEX Formula 26
 
-Versión de desarrollo: **v0.13.1 · PRE-RELEASE**
+Versión de desarrollo: **v0.13.2 · PRE-RELEASE**
 
 Archivo fuente original:
 `Apex_Formula_26_v5_230_62_8_6_7_6_4_17_CONTROL_CLASICO_GP4.html`
@@ -31,3 +31,7 @@ WebGL dibuja morro, ala, ruedas y suspensiones del jugador utilizando la misma r
 ## v0.13.1 · Refinado de onboard
 
 Corregida la llanta con anillo fino del compuesto en lugar de pintar el disco; neumático cilíndrico con bandas y radios, alerón delantero multielemento menos plano, tres tirantes inclinados de suspensión, morro mejor perfilado y menos piezas superpuestas. Cámara del jugador ligeramente más retrasada, pilar del halo adelgazado e integración de sombras del monocasco. Los 11 equipos mantienen sus colores y variantes; física, IA, circuitos y guardados sin cambios. Prueba geométrica: `apexOnboardV0131Audit()`. Requiere comprobación visual y de FPS en carrera.
+
+## v0.13.2 · Cámaras
+
+C activa CAM (piloto) → TV (cámara superior) → EXT (persecución elevada). También hay botón CAM en pantalla y acción en el menú Conducción. La cámara seleccionada se guarda en `apex26.camera.mode.v1`. Las cámaras externas sólo operan en WebGL2; Canvas conserva cockpit. Las cámaras del inspector no se modifican. Diagnóstico: `apexCameraRigSelfTest()`.

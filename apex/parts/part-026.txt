@@ -450,7 +450,7 @@ function apexPlayerShared3DActive(){
  return !!(player&&trackData&&rendererBackendId()==='webgl2'&&webglState.ready&&
    !webglState.lost&&!apexInspectionActive());
 }
-function webglPlayerChassisBasis(cam){
+function webglPlayerChassisBasis(cam,baseOffset=.87){
  // v0.13.1: ampliar la separación aparente del conjunto delantero reduce el
  // tamaño excesivo de los neumáticos que aparecía en la cámara de v0.13.0.
  const a=carAxes(),surface=playerDriveSurfacePose(),pitchBank=Number(surface.bank)||0;
@@ -458,7 +458,7 @@ function webglPlayerChassisBasis(cam){
  let R=webglVecNorm({x:a.rx,y:Math.tan(pitchBank),z:a.rz});
  let U=webglVecNorm(webglVecCross(R,F));if(U.y<0)U={x:-U.x,y:-U.y,z:-U.z};
  R=webglVecNorm(webglVecCross(F,U));
- return{base:{x:player.x+F.x*.87,y:surface.y+.014,z:player.z+F.z*.87},F,R,U};
+ return{base:{x:player.x+F.x*baseOffset,y:surface.y+.014,z:player.z+F.z*baseOffset},F,R,U};
 }
 function webglPushPlayerSharedFront3D(cam,pitch){
  if(!apexPlayerShared3DActive())return 0;
@@ -468,6 +468,18 @@ function webglPushPlayerSharedFront3D(cam,pitch){
  const detail=mobilePerformanceMode()?1:2;
  return webglPushApexFrontAssembly(basis,cam,pitch,v,visual.teamKey,visual.primary,visual.accent,spin,detail);
 }
+/* v0.13.2: la tercera persona comparte el modelo completo con los rivales. */
+function webglPushPlayerCameraCar3D(cam,pitch){
+ if(!apexPlayerShared3DActive())return 0;
+ if(apexCameraMode()==='cockpit')return webglPushPlayerSharedFront3D(cam,pitch);
+ const visual=playerCarVisualProfile();
+ const a={r:{team:visual.teamKey,id:-1,speed:Math.max(0,finite(player.speed,0))},
+   playerBasis:webglPlayerChassisBasis(cam,0),playerSpec:visual.spec,
+   playerPrimary:visual.primary,playerAccent:visual.accent,
+   _webglLod:mobilePerformanceMode()?1:2};
+ return webglPushRivalCar3D(a,cam,pitch);
+}
+
 function apexOnboardV0131Audit(){
  if(!player||!trackData)return{ok:false,reason:'Inicia una sesión antes de auditar'};
  const visual=playerCarVisualProfile(),v=webglRivalVariant(visual.teamKey,visual.spec),
@@ -503,7 +515,7 @@ function apexPlayerSharedCarAudit(){
 window.apexPlayerSharedCarAudit=apexPlayerSharedCarAudit;
 
 function webglPushRivalCar3D(a,cam,pitch){
- const team=teamInfo(a.r.team),primary=team.color||'#d43b42',accent=team.accent||shadeColor(primary,28),light=shadeColor(primary,18),dark=shadeColor(primary,-30),carbon='#090c10',carbon2='#161c22',metal='#7d8793',basis=webglRivalBasis(a),speed=Number(a.r.speed)||0,spin=raceT*(speed*.018+2.4),v=webglRivalVariant(a.r.team),lod=webglRivalLod(a);
+ const team=teamInfo(a.r.team),primary=a.playerPrimary||team.color||'#d43b42',accent=a.playerAccent||team.accent||shadeColor(primary,28),light=shadeColor(primary,18),dark=shadeColor(primary,-30),carbon='#090c10',carbon2='#161c22',metal='#7d8793',basis=a.playerBasis||webglRivalBasis(a),speed=Number(a.r.speed)||0,spin=raceT*(speed*.018+2.4),v=webglRivalVariant(a.r.team,a.playerSpec||null),lod=webglRivalLod(a);
  const wb=v.wheelbase,frontZ=wb*.52,rearZ=-wb*.48,fwZ=frontZ+.57*v.noseLen;
  let tris=0;
 
@@ -746,7 +758,7 @@ function webgl2RenderFrame(){
    if(!apexInspectionActive())webglPushNearPatch(cam,cam.pitch);const roadSegments=segments.slice().sort((A,B)=>B.z-A.z);for(const seg of roadSegments)webglPushRoadSegment(seg,cam,cam.pitch);
    renderProfileMeasure("environmentMs",()=>{webglPushSurfaceMarkings(roadSegments,cam,cam.pitch);webglPushCircuitWalls(segments,cam,cam.pitch);webglPushExactWallFences(cam,cam.pitch);webglPushTunnelDetails(segments,cam,cam.pitch);apexWebglGenericPortalFaces(cam,cam.pitch);webglPushBrakeBoards(cam,cam.pitch);if(trackData.gradeCrossing)webglPushGradeCrossingOverpass(cam,cam.pitch)});
    rivalVisuals=webglPrepareRivalVisuals(collectRivalSprites(cam,cam.pitch));
-   renderProfileMeasure("carsMs",()=>{webglPushRivalField3D(rivalVisuals,cam,cam.pitch);webglPushPlayerSharedFront3D(cam,cam.pitch);});
+   renderProfileMeasure("carsMs",()=>{webglPushRivalField3D(rivalVisuals,cam,cam.pitch);webglPushPlayerCameraCar3D(cam,cam.pitch);});
    webglScreenRoll=0;
  }
  webglSubmit();
@@ -754,7 +766,9 @@ function webgl2RenderFrame(){
  if(visual){webglDrawCircuitCanvasOverlay(cam,cam.pitch,segments,rivalVisuals);renderProfileAdd("trackMs",Math.max(0,performance.now()-trackT0));}
  renderProfileMeasure("effectsMs",()=>{if(!mobilePerformanceMode()||impactParticles.length<18)drawImpactParticles(cam,cam.pitch);drawRain()});ctx.restore();
  
- if(apexInspectionActive())renderProfileMeasure("cockpitGrossMs",()=>apexDrawInspectionOverlays(cam,cam.pitch));else renderProfileMeasure("cockpitGrossMs",()=>drawResponsiveCockpitLayer());renderProfileCommit();
+ if(apexInspectionActive())renderProfileMeasure("cockpitGrossMs",()=>apexDrawInspectionOverlays(cam,cam.pitch));
+ else if(apexCameraIsCockpit())renderProfileMeasure("cockpitGrossMs",()=>drawResponsiveCockpitLayer());
+ renderProfileCommit();
 }
 function webgl2DrawMiniMap(){return canvas2dDrawMiniMap()}
 registerRenderer({id:"webgl2",label:"WebGL2 VISUAL",available:()=>webgl2Available(),activate:()=>webglActivate(),deactivate:()=>webglDeactivate(),renderFrame:()=>webgl2RenderFrame(),drawMiniMap:()=>webgl2DrawMiniMap()});

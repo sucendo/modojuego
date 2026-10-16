@@ -859,7 +859,7 @@ const apexControlActions=[
  {id:'limiter',key:'KeyL',label:'Limitador de boxes',shortcut:'L',run:()=>{player.pitLimiter=!player.pitLimiter;apexControlToast('LIM · '+(player.pitLimiter?Math.round(apexPitSpeedLimitKph())+' km/h':'OFF'));}},
  {id:'sectors',key:'KeyP',label:'Parciales',shortcut:'P',run:()=>{apexControls.sectors=!apexControls.sectors;document.body.classList.toggle('apex-hide-sectors',!apexControls.sectors);}},
  {id:'controls',key:'KeyM',label:'Conducción / ajustes',shortcut:'M',run:()=>apexOpenControls()},
- {id:'camera',key:'KeyC',label:'Cambiar cámara',shortcut:'C',pending:true},
+ {id:'camera',key:'KeyC',label:'Cambiar cámara',shortcut:'C',run:apexCycleCamera},
  {id:'fullscreen',key:'KeyF',label:'Pantalla completa',shortcut:'F',run:full},
  {id:'center',key:'KeyR',label:'Centrar vista / sensor',shortcut:'R',run:()=>{if(gyro.enabled)centerGyro();else{player.cameraLook=0;player.cameraGradePitch=0;player.fovBoost=0;}apexControlToast('VISTA CENTRADA');}},
  {id:'pause',key:'Escape',label:'Pausa',shortcut:'Esc',run:togglePause},
@@ -904,7 +904,7 @@ function apexResetSessionControls(){apexReleaseInputs();document.body.classList.
 function apexRunAction(id){
  const action=apexControlActions.find(a=>a.id===id);if(!action||!player||!['race','countdown'].includes(mode))return;
  if(action.pending){apexControlToast(action.label+' · PRÓXIMAMENTE');return;}
- if(paused&&!apexControls.panel&&!['pause','fullscreen','controls'].includes(id))return;
+ if(paused&&!apexControls.panel&&!['pause','fullscreen','controls','camera'].includes(id))return;
  if(apexControls.panel&&id==='pause'){apexCloseControls(false);paused=true;$('pausePanel').classList.remove('hidden');$('touch').classList.add('hidden');return;}
  action.run();apexSyncControls();
 }
@@ -918,7 +918,7 @@ function apexCloseControls(resume=true){
  if(resume&&shouldResume){paused=false;updateAudio(.016);}
  if(apexControls.focus&&apexControls.focus.isConnected)apexControls.focus.focus();apexControls.focus=null;
 }
-function apexActionActive(id){return id==='auto'?demoMode:id==='ers'?apexControls.ersActive:id==='limiter'?!!(player&&player.pitLimiter):id==='sectors'?apexControls.sectors:id==='box'?!!(player&&player.pitStop&&player.pitStop.active):id==='telemetry'?!$('telemetryPanel').classList.contains('hidden'):false;}
+function apexActionActive(id){return id==='camera'?apexCameraMode()!=='cockpit':id==='auto'?demoMode:id==='ers'?apexControls.ersActive:id==='limiter'?!!(player&&player.pitLimiter):id==='sectors'?apexControls.sectors:id==='box'?!!(player&&player.pitStop&&player.pitStop.active):id==='telemetry'?!$('telemetryPanel').classList.contains('hidden'):false;}
 function apexSyncControls(){
  $('controlGearbox').value=apexControls.gearbox;$('controlInput').value=gyro.enabled?'gyro':'keyboard';$('controlAssist').value=demoMode?'1':assistMode?'2':'0';apexSyncDriveProfileUi();
  $('shiftControls').classList.toggle('hidden',apexControls.gearbox!=='manual'||demoMode||assistMode);
@@ -929,7 +929,7 @@ function apexSyncControls(){
  }
 }
 function apexUpdateControlHud(){
- apexSyncControls();if(!player)return;
+ apexSyncControls();apexCameraUpdateButton();if(!player)return;
  $('shiftHint').textContent=apexControls.gearbox==='manual'&&!demoMode&&!assistMode&&engineRPM()>10500&&gear()<8?'SUBIR · X':'';
  const panel=$('wheelData');panel.classList.toggle('hidden',apexControls.display===0);
  if(apexControls.display===1)panel.textContent='NEUMÁTICOS\nJuego '+(player.tyreSet||1)+' · Paradas '+(player.pitStops||0);
@@ -961,8 +961,8 @@ function apexHandleControlKeydown(e){
 function apexHandleControlKeyup(e){keys[e.code]=false;}
 function apexInitControls(){
  const root=$('controlActions');for(const a of apexControlActions){const b=document.createElement('button');b.id='control-'+a.id;b.className='controlAction';b.textContent=a.label;const small=document.createElement('small');small.textContent=a.shortcut+(a.pending?' · Próximamente':'');b.appendChild(small);b.disabled=!!a.pending;b.onclick=()=>apexRunAction(a.id);root.appendChild(b);}
- $('quickMenuBtn').onclick=apexOpenControls;$('controlClose').onclick=()=>apexCloseControls();$('limiterBtn').onclick=()=>apexRunAction('limiter');$('ers').onclick=()=>apexRunAction('ers');$('demo').onclick=()=>apexRunAction('auto');$('shiftDownBtn').onclick=()=>apexRunAction('shiftDown');$('shiftUpBtn').onclick=()=>apexRunAction('shiftUp');
- for(const [id,key] of [['demo','A'],['telemetryBtn','T'],['ers','E'],['box','B'],['optionsBtn','Esc'],['fs','F']])$(id).title+=' · '+key;
+ $('cameraBtn').onclick=()=>apexRunAction('camera');apexCameraUpdateButton();$('quickMenuBtn').onclick=apexOpenControls;$('controlClose').onclick=()=>apexCloseControls();$('limiterBtn').onclick=()=>apexRunAction('limiter');$('ers').onclick=()=>apexRunAction('ers');$('demo').onclick=()=>apexRunAction('auto');$('shiftDownBtn').onclick=()=>apexRunAction('shiftDown');$('shiftUpBtn').onclick=()=>apexRunAction('shiftUp');
+ for(const [id,key] of [['cameraBtn','C'],['demo','A'],['telemetryBtn','T'],['ers','E'],['box','B'],['optionsBtn','Esc'],['fs','F']])$(id).title+=' · '+key;
  $('controlGearbox').onchange=e=>{apexControls.gearbox=e.target.value;if(player){const k=Math.max(0,player.speed)*3.6;player.manualGear=Math.min(8,Math.max(1,Math.floor((k+20)/43)));}apexSyncControls();};
  $('controlDriveProfile').onchange=e=>{apexSetDriveProfile(e.target.value,true);apexSyncControls();};if($('menuDriveProfile'))$('menuDriveProfile').onchange=e=>{apexSetDriveProfile(e.target.value,false);apexSyncDriveProfileUi();};
  $('controlInput').onchange=async e=>{if(e.target.value==='gyro'){if(!gyro.enabled)await enableGyro();}else if(gyro.enabled)await enableGyro();apexSyncControls();};

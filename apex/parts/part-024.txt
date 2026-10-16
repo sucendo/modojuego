@@ -1151,6 +1151,10 @@ function palette(){
 function worldToCamera(wx,wy,wz,cam){
  const dx=wx-cam.x,dz=wz-cam.z,x=dx*cam.nx+dz*cam.nz,y=wy-cam.y,z=dx*cam.tx+dz*cam.tz;
  if(cam.inspectionOrbit){const c=Math.cos(cam.pitchRad),sn=Math.sin(cam.pitchRad);return{x,y:y*c-z*sn,z:y*sn+z*c};}
+ if(Number.isFinite(cam.viewPitchRad)&&cam.viewPitchRad!==0){
+  const eye=driverEyeHeight(),yy=y-eye,c=Math.cos(cam.viewPitchRad),sn=Math.sin(cam.viewPitchRad);
+  return{x,y:yy*c-z*sn+eye,z:yy*sn+z*c};
+ }
  return{x,y,z};
 }
 function compactMode(){ return document.body.classList.contains("compact"); }
@@ -1424,8 +1428,9 @@ function sceneHFov(){
  // v5.94: ligeramente más apertura lateral para recuperar la sensación de pantalla completa.
  // El canvas ya ocupaba todo el ancho; la sensación estrecha venía de la calibración baja del ojo + FOV conservador.
  const base=mobileLandscapeMode()?84:(compactMode()?85.5:79.5);
+ const cam=apexCameraMode(),offset=cam==="chase"?-6:cam==="tcam"?-2:0;
  const boost=player?clamp(finite(player.fovBoost,0),0,4.2):0;
- return (base+boost)*Math.PI/180;
+ return (base+offset+boost)*Math.PI/180;
 }
 
 // v5.50: physical driver-eye reference.
@@ -1438,7 +1443,9 @@ function driverEyeHeight(){
  if(compactMode())return .690+modelEye;
  return .700+modelEye;
 }
-function sceneHorizon(camPitch=0){ if(apexInspectionActive())return H*.5; const mr=mobilePerformanceMode()?mobileControlProfile().horizonRatio:null;return H*(mr!==null?mr:(mobileLandscapeMode()?.385:(compactMode()?.405:.425)))+camPitch; }
+function sceneHorizon(camPitch=0){if(apexInspectionActive())return H*.5;
+ if(apexCameraMode()!=="cockpit")return H*.5+camPitch;
+ const mr=mobilePerformanceMode()?mobileControlProfile().horizonRatio:null;return H*(mr!==null?mr:(mobileLandscapeMode()?.385:(compactMode()?.405:.425)))+camPitch;}
 function projectLocal(x,y,z,camPitch=0){
  const horizon=sceneHorizon(camPitch);
  const hfov=sceneHFov();
@@ -3015,6 +3022,71 @@ function apexRoadGradeCameraPitchTarget(s,dirSign=1,lat=0){
  const f=(W*.5)/Math.tan(sceneHFov()*.5),angle=Math.atan(clamp(grade,-.24,.24));
  return clamp(Math.tan(angle)*f*.72,-H*.095,H*.095);
 }
+// APEX v0.13.2: cámaras de conducción; inspector y física independientes.
+const APEX_CAMERA_STORAGE_KEY="apex26.camera.mode.v1";
+const APEX_CAMERA_PRESETS=Object.freeze({
+ cockpit:{name:"PILOTO",button:"CAM",height:.70,behind:0,pitch:0},
+ tcam:{name:"TV SUPERIOR",button:"TV",height:1.62,behind:.35,pitch:-.125},
+ chase:{name:"TRASERA ELEVADA",button:"EXT",height:2.88,behind:5.7,pitch:-.245}
+});
+let apexRequestedCamera="cockpit",apexCameraSmooth=null;
+try{const saved=appStorage.getItem(APEX_CAMERA_STORAGE_KEY);if(saved&&Object.prototype.hasOwnProperty.call(APEX_CAMERA_PRESETS,saved))apexRequestedCamera=saved}catch(e){}
+function apexCameraMode(){
+ if(typeof apexInspectionActive==="function"&&apexInspectionActive())return "cockpit";
+ if(typeof rendererBackendId==="function"&&rendererBackendId()!=="webgl2")return "cockpit";
+ return apexRequestedCamera;
+}
+function apexCameraIsCockpit(){return apexCameraMode()==="cockpit"}
+function apexCameraUpdateButton(){
+ const mode=apexCameraMode(),el=typeof $==="function"?$("cameraBtn"):null;
+ if(el){el.textContent=APEX_CAMERA_PRESETS[mode].button;el.title="Cámara · "+APEX_CAMERA_PRESETS[mode].name+" · C";el.setAttribute("aria-label","Cambiar cámara. Actual: "+APEX_CAMERA_PRESETS[mode].name);el.setAttribute("aria-pressed",String(mode!=="cockpit"));}
+ if(typeof document!=="undefined"&&document.body)document.body.dataset.apexCamera=mode;
+}
+function apexSetCameraMode(mode,{silent=false}={}){
+ if(!Object.prototype.hasOwnProperty.call(APEX_CAMERA_PRESETS,mode))return false;
+ if(mode!=="cockpit"&&rendererBackendId()!=="webgl2"){
+  if(!setRendererBackend("webgl2",{notify:false,persist:false})){
+   if(!silent)apexControlToast("La cámara exterior necesita WebGL2");
+   apexCameraUpdateButton();return false;
+  }
+ }
+ apexRequestedCamera=mode;apexCameraSmooth=null;
+ try{appStorage.setItem(APEX_CAMERA_STORAGE_KEY,mode)}catch(e){}
+ apexCameraUpdateButton();
+ if(!silent)apexControlToast("CÁMARA · "+APEX_CAMERA_PRESETS[mode].name);
+ return true;
+}
+function apexCycleCamera(){
+ const modes=["cockpit","tcam","chase"];
+ return apexSetCameraMode(modes[(modes.indexOf(apexCameraMode())+1)%modes.length]);
+}
+function apexCameraBuildExternal(driver,surface,axes,mode){
+ const preset=APEX_CAMERA_PRESETS[mode],eye=driverEyeHeight(),px=player.x-axes.fx*preset.behind,pz=player.z-axes.fz*preset.behind,py=surface.y+preset.height-eye;
+ let x=px,z=pz,y=py;
+ if(mode==="chase"){
+  const now=performance.now();
+  if(!apexCameraSmooth||now-apexCameraSmooth.t>450||now<apexCameraSmooth.t)apexCameraSmooth={x,y,z,t:now};
+  else{
+   const alpha=1-Math.exp(-Math.min(90,now-apexCameraSmooth.t)*.015);
+   apexCameraSmooth.x+=(x-apexCameraSmooth.x)*alpha;
+   apexCameraSmooth.y+=(y-apexCameraSmooth.y)*alpha;
+   apexCameraSmooth.z+=(z-apexCameraSmooth.z)*alpha;
+   apexCameraSmooth.t=now;
+  }
+  x=apexCameraSmooth.x;y=apexCameraSmooth.y;z=apexCameraSmooth.z;
+ }
+ return{...driver,x,y,z,viewPitchRad:preset.pitch,
+  cameraMode:mode,cameraHeight:preset.height,
+  roadRoll:mode==="chase"?0:finite(driver.roadRoll,0)*.22,
+  pitch:mode==="chase"?0:finite(driver.pitch,0)*.20};
+}
+function apexCameraRigSelfTest(){
+ const modes=Object.keys(APEX_CAMERA_PRESETS);
+ return{ok:modes.length===3&&modes.every(k=>Number.isFinite(APEX_CAMERA_PRESETS[k].height)&&Number.isFinite(APEX_CAMERA_PRESETS[k].behind))&&APEX_CAMERA_PRESETS.chase.behind>4,
+ requested:apexRequestedCamera,effective:apexCameraMode(),modes};
+}
+window.apexCameraRigSelfTest=apexCameraRigSelfTest;
+
 function driverCamera(){
  if(typeof apexInspectionActive==='function'&&apexInspectionActive())return apexInspectionDriverCamera();
  const tr=player.track||syncPlayerTrack(),a=carAxes(),surface=playerDriveSurfacePose();
@@ -3032,7 +3104,9 @@ function driverCamera(){
  pitch+=clamp(-finite(player.longG,0)*H*.00135,-H*.008,H*.008);
  const roadRoll=player.driveNetwork==='PIT'?0:trackSurfaceCameraRollAt(player.s,player.lat,player.trackDirDot);
  // Datum vertical = superficie REAL bajo el coche; la altura de ojos se añade una sola vez en proyección.
- return {...tr,x:player.x,z:player.z,y:surface.y,tx,tz,nx,nz,pitch,bank:surface.bank,roadRoll,surfaceY:surface.y,centerY:surface.centerY};
+ const driver={...tr,x:player.x,z:player.z,y:surface.y,tx,tz,nx,nz,pitch,bank:surface.bank,roadRoll,surfaceY:surface.y,centerY:surface.centerY};
+ const mode=apexCameraMode();
+ return mode==="cockpit"?driver:apexCameraBuildExternal(driver,surface,a,mode);
 }
 
 
