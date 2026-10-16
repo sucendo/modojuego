@@ -285,7 +285,9 @@
  window.HexategosCentralAsia0404=Object.freeze({
   version:'0.40.4',nearby,
   isDrawnFeature:name=>diagnostics.get(name)?.ok===true,
-  isBodyDrawn:name=>zoom>=5.15&&data.waterBodies.some(x=>x.name===name)&&
+  isBodyDrawn:name=>window.HexategosAsianLakes0417?.enabled?
+    window.HexategosAsianLakes0417.isDrawn(name):
+    zoom>=5.15&&data.waterBodies.some(x=>x.name===name)&&
     !!window.HexategosCentralAsiaWater0404&&
     ($('lakes')?.checked??true)&&
     (!window.HexategosGameAtlasBridge0400||
