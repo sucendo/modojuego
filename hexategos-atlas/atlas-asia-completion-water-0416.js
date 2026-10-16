@@ -26,6 +26,7 @@
  }
  terrainStrategicFill3247=function remainingAsiaWater0416(key,i,L,own,z){
   const base=previous(key,i,L,own,z);
+  if(window.HexategosAsianLakes0417?.enabled)return base;
   if(!enabled())return base;
   const lake=isWater(key,i,L);if(!lake)return base;
   const shade=.76+.24*Math.max(0,z),water=[36,132,168].map(v=>Math.round(v*shade));
