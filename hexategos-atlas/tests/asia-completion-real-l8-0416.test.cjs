@@ -130,5 +130,17 @@ test('Asia 0.41.6 · Siberia, China, Corea/Japón y archipiélagos sobre la mall
   assert.equal(x.components,1,lake+' deja islas visuales de agua sin conectar');
  }
  assert.equal(water.diagnostics().changesLand,false);
+ load('atlas-asian-lakes-0417.js',atlas);
+ const thin=st.window.HexategosAsianLakes0417;
+ assert.ok(thin&&thin.enabled);
+ const lakeRoutes=thin.inspectAll();
+ console.log('ASIAN_LAKES_EUROPEAN_STYLE_L8_0417',JSON.stringify(lakeRoutes));
+ assert.equal(lakeRoutes.length,19);
+ for(const item of lakeRoutes){
+  const v=thin.validate(item.name);
+  assert.equal(v.crossesCoast,false,item.name+' pintaría una costa oceánica');
+  assert.equal(v.contiguous,true,item.name+' tiene recorrido no conectado');
+  assert.ok(['edge','point'].includes(v.kind),item.name+' no representado');
+ }
  assert.equal(Buffer.from(L.land.buffer).toString('base64'),original);
 });
