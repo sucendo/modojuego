@@ -61,12 +61,14 @@ test('Indo, Ganges y Brahmaputra: afluentes conectados a cauces reales L8',
  st.physicalEdge3242=id=>({u:nodes[id*2],v:nodes[id*2+1]});
  load('geo-himalaya-physical-0406.js');
  load('geo-assam-confluences-0413.js');
+ load('geo-bengal-confluences-0414.js');
  load('geo-indus-ganges-brahmaputra-0407.js');
  load('geo-indian-deltas-0408.js');
  load('atlas-himalaya-graph-0406.js',atlas);
  load('atlas-indian-rivers-0407.js',atlas);
  load('atlas-assam-corridor-0413.js',atlas);
  load('atlas-indian-deltas-0408.js',atlas);
+ load('atlas-bengal-continuity-0414.js',atlas);
  const api=st.window.HexategosSubcontinentRivers0407,
   data=st.window.HexategosSubcontinentHydro0407;
  assert.ok(api);assert.equal(api.graphBuilds(),0);
@@ -89,6 +91,14 @@ test('Indo, Ganges y Brahmaputra: afluentes conectados a cauces reales L8',
   assert.ok(check.joinDistanceKm<=38,
    name+' desplazamiento de '+check.joinDistanceKm+' km');
   assert.ok(geographic.km<=38,name+' confluencia demasiado lejos del corredor');
+ }
+ const bengal=st.window.HexategosBengalRoutes0414;
+ const summary=st.window.HexategosBengalHydro0414.routes.map(x=>
+  bengal.validate(x.name));
+ console.log('BENGAL_FULL_L8_0414',JSON.stringify(summary));
+ for(const name of ['Kosi','Panjnad']){
+  console.log('PARENT_REPAIR_0414',JSON.stringify({name,repair:bengal.nodesForTributary(name).length,
+   report:api.validate(name)}));
  }
  const L=st.loadLevel('8'),old=Buffer.from(L.land.buffer).toString('base64');
  const ok=[],failed=[];
