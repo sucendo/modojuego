@@ -355,6 +355,8 @@ function render(now=performance.now()){
  // Grandes lagos dibujados como masas acuáticas esquemáticas, SIN modificar
  // los hexágonos ni la topología. Primero agua, después nombres.
  window.HexategosEuropeLakes0396?.draw(R,cx,cy);
+ // Criterio común Europa/Asia: ejes L8 con anchura física, sin hexágonos azules enteros.
+ window.HexategosAsianLakes0417?.draw(R,cx,cy);
  // Lagos del Oriente Próximo: sólo trazas L8 validadas y visibles.
  window.HexategosWestAsia0403?.drawLakes(R,cx,cy);
  // Macrotopónimos desde zoom lejano: penínsulas, cordilleras, mares y
