@@ -30,6 +30,7 @@
  }
  function fill(key,i,L,own,z){
   const old=base(key,i,L,own,z);
+  if(window.HexategosAsianLakes0417?.enabled)return old;
   if(!visible())return old;
   const bridge=window.HexategosGameAtlasBridge0400;
   if(bridge&&!bridge.visibleCentralAsia())return old;
