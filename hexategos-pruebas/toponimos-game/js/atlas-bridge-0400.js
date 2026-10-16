@@ -82,6 +82,14 @@
   const margin=zoom<5?18:zoom<9?10:5;
   return lon>=97-margin&&lon<=111+margin&&lat>=8-margin&&lat<=25.5+margin;
  }
+ function visibleAsiaRemaining(){
+  if(zoom<1.15)return false;
+  const lon=(((-yaw*180/Math.PI+180)%360+360)%360)-180;
+  const lat=pitch*180/Math.PI;
+  const margin=zoom<5?19:zoom<9?10:5;
+  // Siberia, China, Japón y archipiélagos de Malasia a Nueva Guinea.
+  return lon>=57-margin&&lon<=180&&lat>=-13-margin&&lat<=79+margin;
+ }
  function setEnabled(value){
   enabled=!!value;
   try{localStorage.setItem(KEY,String(enabled))}catch(_){}
@@ -93,9 +101,9 @@
   control.addEventListener('change',()=>setEnabled(control.checked));
  }
  window.HexategosGameAtlasBridge0400=Object.freeze({
-  version:'0.40.0',enabled:()=>enabled,visibleEurope,visibleAsia,visibleWestAsia,visibleCentralAsia,visibleHimalaya,visiblePeninsularIndia,visibleSriLanka,visibleMyanmar,visibleIndochina,setEnabled,
+  version:'0.40.0',enabled:()=>enabled,visibleEurope,visibleAsia,visibleWestAsia,visibleCentralAsia,visibleHimalaya,visiblePeninsularIndia,visibleSriLanka,visibleMyanmar,visibleIndochina,visibleAsiaRemaining,setEnabled,
   diagnostics:()=>({
-   enabled,europe:visibleEurope(),asia:visibleAsia(),westAsia:visibleWestAsia(),centralAsia:visibleCentralAsia(),himalaya:visibleHimalaya(),peninsularIndia:visiblePeninsularIndia(),sriLanka:visibleSriLanka(),myanmar:visibleMyanmar(),indochina:visibleIndochina(),
+   enabled,europe:visibleEurope(),asia:visibleAsia(),westAsia:visibleWestAsia(),centralAsia:visibleCentralAsia(),himalaya:visibleHimalaya(),peninsularIndia:visiblePeninsularIndia(),sriLanka:visibleSriLanka(),myanmar:visibleMyanmar(),indochina:visibleIndochina(),asiaRemaining:visibleAsiaRemaining(),
    lakeRoutes:window.HexategosEuropeLakes0396?.diagnostics?.()||null,
    secondaryGraph:window.HexategosEuropeSecondaryRender0396?.graphSize?.()||0
   })
