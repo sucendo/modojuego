@@ -177,3 +177,31 @@ subcontinente indio.
 La verificación automática es una prueba de integridad y compatibilidad,
 no sustituye una inspección visual en escritorio y móvil ni la medición
 de FPS con 350–500 naciones.
+
+
+## Assam: Subansiri, Manas y Teesta (0.41.3)
+
+Se auditaron los tres afluentes del Brahmaputra en la **malla L8 real**.
+El río canónico ya pasa aproximadamente a 5,5 km de la confluencia del
+Subansiri; en cambio, no alcanzaba el Manas y el Teesta, separados
+de él unos **141 y 156 km** respectivamente, generando conectores
+visuales anormalmente largos.
+
+`geo-assam-confluences-0413.js` es la referencia geográfica compartida,
+incluidas las curvas del Subansiri, Manas y Teesta. El módulo
+`atlas-assam-corridor-0413.js` añade **solo cartografía visual** del
+Brahmaputra occidental, resuelta sobre vértices/aristas terrestres
+reales L8. Sus extremos empalman en vértices del río canónico; las
+aristas originales no se vuelven a dibujar. El corredor sirve de
+receptor geométrico solamente a esos tres afluentes, sin alterar el
+`MAP_RIVERS3242` nativo ni influir en simulación, geología, navegación,
+rutas, propietarios o guardados.
+
+Las confluencias se comprueban sobre el grafo original, con umbral de
+38 km desde su punto geográfico y sin cruces de costas o lagos. Las
+conexiones del Manas y Teesta ya no deben terminar en el tramo erróneo
+de la red canónica. El curso bajo hasta Bangladesh sigue siendo una
+aproximación visual mientras no se revise íntegramente el Brahamaputra/
+Jamuna y la red de Bangladesh. Ningún cauce representado equivale a
+una digitalización hidrológica GPS exacta. El resto de los afluentes
+y los delta-canales existentes se conservan sin cambios.
