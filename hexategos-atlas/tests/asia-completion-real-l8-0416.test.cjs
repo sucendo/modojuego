@@ -65,6 +65,27 @@ test('Asia 0.41.6 · Siberia, China, Corea/Japón y archipiélagos sobre la mall
  console.log('ASIA_COMPLETION_REAL_L8_0416',JSON.stringify({
   total:result.length,valid:succeeded.length,failed,byZone
  }));
+ const km=(a,b)=>Math.hypot((a.lon-b.lon)*111.2*
+   Math.cos((a.lat+b.lat)*Math.PI/360),(a.lat-b.lat)*111.2);
+ const failureDiagnostics=failed.map(f=>{
+  const item=data.features.find(x=>x.name===f.name),G=graph.prepare(item.region);
+  const pts=item.points,parts=pts.slice(1).map((pt,i)=>({
+   from:pts[i],to:pt,solved:!!graph.solve([pts[i],pt],item.region).path
+  }));
+  let shore=[];
+  if(item.mouth){
+   const point={lon:item.mouth[0],lat:item.mouth[1]};
+   const nodes=new Set();
+   for(const x of G.coast)for(const id of x.split(':'))nodes.add(+id);
+   shore=[...nodes].filter(id=>G.coords.has(id))
+    .map(id=>({id,km:km(point,G.coords.get(id)),coordinate:G.coords.get(id)}))
+    .sort((a,b)=>a.km-b.km).slice(0,3)
+    .map(x=>({id:x.id,km:+x.km.toFixed(1),
+      location:[+x.coordinate.lon.toFixed(2),+x.coordinate.lat.toFixed(2)]}));
+  }
+  return {name:f.name,parts,shore};
+ });
+ console.log('ASIA_FAILURE_DIAG_0416',JSON.stringify(failureDiagnostics));
  assert.equal(result.length,data.features.length);
  assert.equal(graph.builds(),data.zones.length);
  assert.ok(succeeded.length>=35,'Faltan demasiados trazados sobre L8');
