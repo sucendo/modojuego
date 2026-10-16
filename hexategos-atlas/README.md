@@ -205,3 +205,45 @@ aproximación visual mientras no se revise íntegramente el Brahamaputra/
 Jamuna y la red de Bangladesh. Ningún cauce representado equivale a
 una digitalización hidrológica GPS exacta. El resto de los afluentes
 y los delta-canales existentes se conservan sin cambios.
+
+
+## Continuidad Indo–Ganges–Brahmaputra y Bangladesh (0.41.4)
+
+La auditoría de la malla original L8 mostró desviaciones de ~132 km
+en la confluencia **Kosi–Ganges** (Kursela, Bihar) y de ~109 km en
+**Panjnad–Indo** (Mithankot). También faltaban conexiones cartográficas
+coherentes en el **Jamuna–Padma** (Goalundo) y **Padma–Meghna**
+(Chandpur), aunque los sistemas principales canónicos estaban dibujados.
+
+Archivos compartidos en Atlas y ambas entradas de Pruebas:
+
+- `hexategos-pruebas/game/data/geo-bengal-confluences-0414.js`:
+  referencias aproximadas de Kursela, Mithankot, Goalundo y Chandpur,
+  más rutas de control y nombres según el zoom.
+- `hexategos-atlas/atlas-bengal-continuity-0414.js`:
+  trazado cacheado y diferido de seis rutas sobre vértices/aristas
+  **reales** L8: Ganges medio y Padma, Indo cerca de Mithankot,
+  Jamuna, Padma, alto Meghna y Meghna inferior. El último concluye
+  en un **vértice litoral nativo** cerca del estuario, sin prolongar
+  una recta a mar abierto a través de hexágonos oceánicos.
+- `atlas-indian-rivers-0407.js` conserva los 23 afluentes, pero
+  el Kosi y el Panjnad ahora usan los vértices de la corrección local
+  como receptores geométricos. El resto de cauces y los canales
+  deltaicos ya existentes conservan sus reglas.
+- El código descarta cualquier arista costera/lacustre indebida y
+  evita volver a pintar bordes que pertenezcan a ríos canónicos.
+  Las etiquetas Jamuna, Padma y Meghna requieren ruta L8 validada.
+
+Los centros de Goalundo y Chandpur se comparten entre ramas: ambos
+terminan/inician en **el mismo identificador de vértice L8**,
+no solo en puntos cercanos proyectados en pantalla.
+
+**Importante:** se trata de una corrección **cartográfica visual**,
+no de una digitalización hidráulica precisa ni de una sustitución de
+la red de ríos de la simulación. La topología jugable, propiedad,
+geología, costas, navegación, guardados e IA no cambian. Los cauces
+reales del delta son móviles y el Himalaya/L8 limita el detalle a
+escala de hexágonos. Las pruebas de malla real requieren las seis
+rutas, confluencias compartidas, arista costera terminal y ausencia
+de mutaciones; queda pendiente la inspección visual manual y la
+prueba de rendimiento con 500 naciones.
