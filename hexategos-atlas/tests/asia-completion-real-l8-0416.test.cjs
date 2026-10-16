@@ -142,5 +142,20 @@ test('Asia 0.41.6 · Siberia, China, Corea/Japón y archipiélagos sobre la mall
   assert.equal(v.contiguous,true,item.name+' tiene recorrido no conectado');
   assert.ok(['edge','point'].includes(v.kind),item.name+' no representado');
  }
+ // Ejercitar el propio dibujado, no solamente la construcción de rutas.
+ // Así se comprueba también la capa sobre el canvas y el paso de nombres.
+ st.ctx.arc=()=>{};st.ctx.fill=()=>{};
+ const rendered=thin.draw(2400,600,450);
+ assert.equal(rendered,19,'Deben dibujarse los 19 lagos y símbolos subhexagonales');
+ assert.equal(thin.isDrawn('Lago Baikal'),true);
+ assert.equal(thin.isDrawn('Lago Balkhash'),true);
+ assert.equal(thin.isDrawn('Manasarovar'),true);
+ assert.equal(thin.isDrawn('Mar de Aral'),true);
+ // Las cuatro tintas anteriores ahora deben devolver la superficie
+ // original: ni un hexágono completo se colorea como lago asiático.
+ const firstLake=[...cells.get('Lago Baikal')][0];
+ assert.ok(Number.isInteger(firstLake));
+ assert.equal(st.terrainStrategicFill3247('8',firstLake,L,1,1),
+  'rgb(142,146,130)','Se mantiene el tinte azul de hexágono entero');
  assert.equal(Buffer.from(L.land.buffer).toString('base64'),original);
 });
