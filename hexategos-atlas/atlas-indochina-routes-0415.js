@@ -86,6 +86,20 @@
   try{
    const G=graph.prepare();
    if(item.kind==='mountain')result=graph.solve(item.points);
+   else if(item.kind==='river'&&item.nativeParent){
+    // El Mekong ya existe en la malla; completar sólo su tramo
+    // inferior faltante desde un VÉRTICE NATIVO, sin redibujar bordes.
+    const n=nativeNodes(item.nativeParent,G);
+    const origin=nearest(G,n,item.source,64);
+    if(origin.id<0)result={reason:'Sin punto inicial nativo para '+item.name};
+    else{
+     result=graph.solve([position(G,origin.id),...item.points]);
+     if(result.path&&result.path[0]===origin.id)
+      result={...result,parent:item.nativeParent,parentType:'canonical',
+       junction:origin.id,joinKm:origin.km};
+     else result={reason:result.reason||'Sin continuidad con Mekong nativo'};
+    }
+   }
    else if(item.kind==='river')
     result=pathToShore(item,G,null,item.points);
    else{
