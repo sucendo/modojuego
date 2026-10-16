@@ -188,6 +188,7 @@
     ['river',indochina.tributaries],['river',indochina.distributaries],
     ['mountain',indochina.mountains]]){
    for(const item of items){
+    if(item.nativeParent)continue; // El Mekong ya tiene etiqueta canónica
     if(features.some(f=>f.name.toLocaleLowerCase('es-ES')===
       item.name.toLocaleLowerCase('es-ES')))continue;
     features.push({name:item.name,center:item.points[Math.floor(item.points.length*.55)],
