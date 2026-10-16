@@ -96,5 +96,35 @@ test('Asia 0.41.6 · Siberia, China, Corea/Japón y archipiélagos sobre la mall
   assert.equal(v.allAdjacent,true,item.name);
   assert.equal(v.nativeMouth,true,item.name);
  }
+ st.terrainStrategicFill3247=()=> 'rgb(142,146,130)';
+ load('atlas-asia-completion-water-0416.js',atlas);
+ const water=st.window.HexategosAsiaCompletionWater0416;
+ const cells=new Map(data.lakes.map(x=>[x.name,new Set()]));
+ for(let i=0;i<L.n;i++){
+  const name=water.isWater('8',i,L)?.name;
+  if(name)cells.get(name)?.add(i);
+ }
+ const stats={};
+ for(const [name,ids] of cells){
+  let parts=0;
+  const rem=new Set(ids);
+  while(rem.size){
+   parts++;
+   const [first]=rem,stack=[first];rem.delete(first);
+   while(stack.length){
+    const k=stack.pop();
+    for(let e=L.offsets[k];e<L.offsets[k+1];e++){
+     const other=L.edgeNbr[e];
+     if(rem.delete(other))stack.push(other);
+    }
+   }
+  }
+  stats[name]={cells:ids.size,components:parts};
+ }
+ console.log('ASIA_COMPLETION_LAKES_L8_0416',JSON.stringify(stats));
+ assert.ok(stats['Lago Baikal'].cells>0,'Baikal debe estar visible');
+ assert.ok(Object.values(stats).filter(x=>x.cells>0).length>=4,
+  'La mayoría de los seis lagos debe ocupar al menos una celda L8');
+ assert.equal(water.diagnostics().changesLand,false);
  assert.equal(Buffer.from(L.land.buffer).toString('base64'),original);
 });
