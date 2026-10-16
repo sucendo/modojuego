@@ -65,7 +65,8 @@
    const lon=Math.atan2(L.centers[j],L.centers[j+2])*180/Math.PI;
    const weight=Math.max(
     regionWeight(lat,lon,-25.3,61,35.4,72.3),
-    regionWeight(lat,lon,25,179.9,-9,77)
+    regionWeight(lat,lon,25,179.9,-9,77),
+    regionWeight(lat,lon,111,154.5,-44.5,-9)
    );
    if(weight<=0)return baseFill(key,i,L,own,z);
    let rgb=ecotones?.color(key,i,L);
@@ -86,6 +87,7 @@
    if(rgb&&myanmarEco)rgb=myanmarEco.rgbForCell(key,i,L,rgb);
    if(rgb&&indochinaEco)rgb=indochinaEco.rgbForCell(key,i,L,rgb);
    if(rgb&&remainingEco)rgb=remainingEco.rgbForCell(key,i,L,rgb);
+   if(rgb&&window.HexategosAustraliaLandcover0420)rgb=window.HexategosAustraliaLandcover0420.rgbForCell(key,i,L,rgb);
    if(rgb&&deltaEco)rgb=deltaEco.rgbForCell(key,i,L,rgb);
    if(!rgb)return baseFill(key,i,L,own,z);
    const base=baseFill(key,i,L,own,z);
