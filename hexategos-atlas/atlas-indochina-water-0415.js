@@ -25,6 +25,7 @@
  }
  terrainStrategicFill3247=function indochinaLakeColor0415(key,i,L,own,z){
   const original=base(key,i,L,own,z);
+  if(window.HexategosAsianLakes0417?.enabled)return original;
   if(!available())return original;
   const lake=isWater(key,i,L);if(!lake)return original;
   const tint=[39,135,167],shaded=tint.map(v=>Math.round(v*(.75+.25*Math.max(0,z))));
