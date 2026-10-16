@@ -1,6 +1,6 @@
 # APEX Formula 26
 
-Versión de desarrollo: **v0.13.2 · PRE-RELEASE**
+Versión de desarrollo: **v0.13.3 · PRE-RELEASE**
 
 Archivo fuente original:
 `Apex_Formula_26_v5_230_62_8_6_7_6_4_17_CONTROL_CLASICO_GP4.html`
@@ -35,3 +35,7 @@ Corregida la llanta con anillo fino del compuesto en lugar de pintar el disco; n
 ## v0.13.2 · Cámaras
 
 C activa CAM (piloto) → TV (cámara superior) → EXT (persecución elevada). También hay botón CAM en pantalla y acción en el menú Conducción. La cámara seleccionada se guarda en `apex26.camera.mode.v1`. Las cámaras externas sólo operan en WebGL2; Canvas conserva cockpit. Las cámaras del inspector no se modifican. Diagnóstico: `apexCameraRigSelfTest()`.
+
+## v0.13.3 · Rendimiento de circuitos SVG complejos
+
+A partir de esta versión, los muros estáticos importados se indexan en celdas espaciales de 192 m al compilar un circuito: las cámaras solo evalúan la región potencialmente visible, sin suprimir muros. La clasificación de celdas de terreno y la influencia de bocas de túnel quedan cacheadas por malla; los árboles de masas forestales usan descarte por esfera conservadora. No se modifican geometría SVG, JSON, hitboxes, IA, controles ni las tres cámaras. Diagnósticos en consola: `apexHeavyCircuitPerfDiagnostics()` y `apexExactWallSpatialDiagnostics()`. Validar visualmente el Madrid guardado e inspección 3D, además de medir FPS antes y después.

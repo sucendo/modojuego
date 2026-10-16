@@ -1326,7 +1326,7 @@ function apexBuildLandmarkStaticBatch(it){
  if(['surfaceZone','water','marking','forestZone'].includes(it.type)&&fp&&fp.length>=3){
    b.surfacePoly3=fp.map((v,i)=>[v[0],(wy&&Number.isFinite(wy[i])?wy[i]:apexWorldGroundY(v[0],v[1]))+apexGroundPatchYOffset(it),v[1]]);b.primitiveCount++;
    if(it.type==='forestZone'&&Array.isArray(it.forestPoints)){
-     b.forest=it.forestPoints.map(fp0=>{const x=fp0[0],z=fp0[1],y=fp0[2]||0;return{trunk:[[x-.12,y,z],[x+.12,y,z],[x+.12,y+3.1,z],[x-.12,y+3.1,z]],crown:[[x-2,y+1.8,z],[x+2,y+1.8,z],[x,y+8.2,z]]}});b.primitiveCount+=b.forest.length*2;
+     b.forest=it.forestPoints.map(fp0=>{const x=fp0[0],z=fp0[1],y=fp0[2]||0;return{bound:{x,y:y+4.2,z,r:9.5},trunk:[[x-.12,y,z],[x+.12,y,z],[x+.12,y+3.1,z],[x-.12,y+3.1,z]],crown:[[x-2,y+1.8,z],[x+2,y+1.8,z],[x,y+8.2,z]]}});b.primitiveCount+=b.forest.length*2;
    }
  }
  if(it.type==='barrier'&&Array.isArray(it.worldPath)&&it.worldPath.length>=2){
@@ -1341,8 +1341,60 @@ function apexBuildLandmarkStaticBatch(it){
  }
  try{Object.defineProperty(it,'_apexStaticBatch',{value:b,writable:true,configurable:true})}catch(e){it._apexStaticBatch=b}return b;
 }
+
+/* APEX v0.13.3 · Índice espacial conservador de muros SVG importados.
+   No filtra por LOD ni simplifica la geometría: selecciona únicamente segmentos
+   que podrían entrar en el campo visual, manteniendo su orden original. */
+function apexBuildExactWallSpatialIndex(cw){
+ const src=cw&&(cw._wallRenderSegments||cw.wallSegments)||[],cell=192,buckets=new Map(),overflow=[];
+ for(let i=0;i<src.length;i++){
+  const a=src[i];if(!a)continue;
+  const coords=[a.x1,a.z1,a.x2,a.z2];
+  if(!coords.every(Number.isFinite)){overflow.push(i);continue}
+  const ix0=Math.floor(Math.min(a.x1,a.x2)/cell),ix1=Math.floor(Math.max(a.x1,a.x2)/cell),
+        iz0=Math.floor(Math.min(a.z1,a.z2)/cell),iz1=Math.floor(Math.max(a.z1,a.z2)/cell);
+  if((ix1-ix0+1)*(iz1-iz0+1)>256){overflow.push(i);continue}
+  for(let iz=iz0;iz<=iz1;iz++)for(let ix=ix0;ix<=ix1;ix++){
+   const key=ix+':'+iz;let list=buckets.get(key);
+   if(!list){list=[];buckets.set(key,list)}
+   list.push(i);
+  }
+ }
+ cw._apexExactWallSpatial={src,cell,buckets,overflow,query:null,
+  stats:{total:src.length,gridCells:buckets.size,overflow:overflow.length,queries:0,hits:0,candidates:0}};
+ return cw._apexExactWallSpatial;
+}
+function apexVisibleExactWallSegments(cw,cam,far){
+ const src=cw&&(cw._wallRenderSegments||cw.wallSegments)||[];
+ const index=cw&&cw._apexExactWallSpatial;
+ if(!index||index.src!==src||!cam||!Number.isFinite(cam.x)||!Number.isFinite(cam.z))return src;
+ const cell=index.cell,radius=Math.max(1800,far*2.20+cell),ix0=Math.floor((cam.x-radius)/cell),
+       ix1=Math.floor((cam.x+radius)/cell),iz0=Math.floor((cam.z-radius)/cell),
+       iz1=Math.floor((cam.z+radius)/cell);
+ // En el inspector orbital lejano la consulta global es más barata que millones
+ // de posiciones de cuadrícula y preserva los elementos largos del circuito.
+ if((ix1-ix0+1)*(iz1-iz0+1)>10000)return src;
+ const key=ix0+':'+ix1+':'+iz0+':'+iz1;
+ index.stats.queries++;
+ if(index.query&&index.query.key===key){index.stats.hits++;return index.query.items}
+ const selected=new Set(index.overflow);
+ for(let iz=iz0;iz<=iz1;iz++)for(let ix=ix0;ix<=ix1;ix++){
+  const list=index.buckets.get(ix+':'+iz);
+  if(list)for(let i=0;i<list.length;i++)selected.add(list[i]);
+ }
+ const idx=Array.from(selected).sort((a,b)=>a-b),out=idx.map(i=>src[i]).filter(Boolean);
+ index.query={key,items:out};
+ index.stats.candidates+=out.length;
+ return out;
+}
+window.apexExactWallSpatialDiagnostics=()=>{
+ const i=trackData&&trackData.customWorld&&trackData.customWorld._apexExactWallSpatial;
+ return i?{...i.stats,visibleCandidates:i.query?i.query.items.length:0}:null;
+};
+
 function apexBuildCircuitStaticRenderBatches(cw){
  const items=cw&&Array.isArray(cw.landmarks)?cw.landmarks:[],walls=cw&&(cw._wallRenderSegments||cw.wallSegments)||[];let compiled=0,prims=0,wallStyles=0;
+ if(cw&&cw.authoritative&&walls.length)apexBuildExactWallSpatialIndex(cw);
  for(const it of items){const b=apexBuildLandmarkStaticBatch(it);if(b){compiled++;prims+=b.primitiveCount||0}}
  for(const sg of walls){if(!sg)continue;const env=envProfile(sg.s||0),style=wallBarrierStyle(env,sg.s||0,sg.side||1);try{Object.defineProperty(sg,'_apexStaticWall',{value:{env,style},writable:true,configurable:true})}catch(e){sg._apexStaticWall={env,style}}wallStyles++;}
  apexStaticBatchPerf.compiledItems=compiled;apexStaticBatchPerf.compiledPrimitives=prims;apexStaticBatchPerf.wallStyles=wallStyles;
@@ -3208,8 +3260,9 @@ function buildWallRenderItem(seg,side,cam){
 function collectExactWallRenderItems(cam){
  const cw=trackData&&trackData.customWorld,segs=cw&&Array.isArray(cw.wallSegments)?cw.wallSegments:null;if(!cw||!cw.authoritative||!segs||!segs.length)return[];
  const out=[];
- for(const sg of (cw._wallRenderSegments||segs)){
-  const A=worldToCamera(sg.x1,sg.y1,sg.z1,cam),B=worldToCamera(sg.x2,sg.y2,sg.z2,cam);const far=(typeof apexInspectionFullScene==='function'&&apexInspectionFullScene())?apexInspectionFarDistance():780;if((A.z<.45&&B.z<.45)||(A.z>far&&B.z>far))continue;
+ const far=(typeof apexInspectionFullScene==='function'&&apexInspectionFullScene())?apexInspectionFarDistance():780;
+ for(const sg of apexVisibleExactWallSegments(cw,cam,far)){
+  const A=worldToCamera(sg.x1,sg.y1,sg.z1,cam),B=worldToCamera(sg.x2,sg.y2,sg.z2,cam);if((A.z<.45&&B.z<.45)||(A.z>far&&B.z>far))continue;
   const sb=sg._apexStaticWall,env=sb&&sb.env||envProfile(sg.s||0),baseStyle=sb&&sb.style||wallBarrierStyle(env,sg.s||0,sg.side||1),h=sg.height||baseStyle.height||1.08,
         barrier={...baseStyle,family:'WALL',style:String(sg.wallStyle||baseStyle.style||'wall_f1').toLowerCase(),kind:'WALL_F1',height:h};
   if(sg.color)barrier.base=sg.color;if(sg.fence!==null&&sg.fence!==undefined)barrier.fence=sg.fence;if(Number.isFinite(sg.fenceH)&&sg.fenceH>0)barrier.fenceH=Math.max(1.90,sg.fenceH);if(Number.isFinite(sg.fenceLeanM))barrier.fenceLeanM=sg.fenceLeanM;if(Number.isFinite(sg.postSpacingM))barrier.postSpacingM=sg.postSpacingM;
