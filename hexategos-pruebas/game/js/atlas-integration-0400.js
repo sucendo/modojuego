@@ -17,6 +17,7 @@
   // En el juego drawTerrain3212 es el único pase físico: incluir los
   // lagos aquí, mientras que Atlas los añade desde su renderizador.
   if(bridge.visibleEurope())window.HexategosEuropeLakes0396?.draw(R,cx,cy);
+  window.HexategosAsianLakes0417?.draw(R,cx,cy);
   if(bridge.visibleWestAsia())window.HexategosWestAsia0403?.drawLakes(R,cx,cy);
  };
  drawGeographicLabels3243=function gameAtlasLabels0400(R,cx,cy){
