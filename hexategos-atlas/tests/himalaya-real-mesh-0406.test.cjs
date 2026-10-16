@@ -98,11 +98,26 @@ test('Himalaya: aristas reales L8 y lagos hexagonales no navegables', {timeout:1
   parts[name]=n;
  }
  console.log('HIMALAYA_L8_LAKES',JSON.stringify({counts,parts}));
- assert.ok(Object.values(counts).filter(n=>n>0).length>=2,
-  'No aparecen al menos dos lagos en L8');
+ assert.equal(Object.values(counts).filter(n=>n>0).length,6,
+  'Los seis lagos del Himalaya deben estar representados en L8');
+ for(const [lake,count] of Object.entries(counts))
+  assert.ok(count>0,'El lago '+lake+' carece de hexágonos L8');
  for(const [name,n] of Object.entries(parts))
   assert.ok(n<=1,name+' no es conexo en L8');
  assert.equal(Buffer.from(L.land.buffer).toString('base64'),landCopy);
  assert.equal(water.isWater('6',0,L),null);
  assert.ok(water.diagnostics().virtualOnly);
+ // Verificar también que el inspector solo ofrece rótulos de aguas
+ // realmente dibujables y respeta el interruptor de la capa.
+ for(const name of members.keys())
+  assert.equal(water.isBodyDrawn(name),true,'Rótulo no disponible: '+name);
+ sandbox.$=name=>({checked:name==='lakes'?false:true});
+ for(const name of members.keys())
+  assert.equal(water.isBodyDrawn(name),false,'Rótulo activo con lagos ocultos: '+name);
+ sandbox.$=()=>({checked:true});
+ sandbox.mapMode3252='supply';
+ const testCell=[...members.values()].find(ids=>ids.size)?.values().next().value;
+ assert.equal(sandbox.terrainStrategicFill3247('8',testCell,L,1,1),
+  'rgb(150,140,110)','El modo suministro debe ignorar el agua decorativa');
+ sandbox.mapMode3252='terrain';
 });
