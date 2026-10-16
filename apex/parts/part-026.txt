@@ -107,8 +107,8 @@ function webglPushRivalLocalBox(b,cam,pitch,cx,cy,cz,sx,sy,sz,cols={}){
  tris+=webglPushRivalLocalQuad(b,cam,pitch,[p(x1,y0,z0),p(x1,y1,z0),p(x0,y1,z0),p(x0,y0,z0)],back,.56,-.010);
  return tris;
 }
-function webglRivalVariant(teamKey){
- const blueprint=apexCarVisualBlueprint(teamKey),m=blueprint.geometry;
+function webglRivalVariant(teamKey,specOverride=null){
+ const blueprint=apexCarVisualBlueprint(teamKey),m=specOverride?apexCarModelVisual(specOverride):blueprint.geometry;
  return{
   model:blueprint.model,
   noseLen:1.64*m.noseLen,
@@ -342,6 +342,81 @@ function webglPushRivalAeroDetail3D(b,cam,pitch,teamKey,v,frontZ,rearZ,fwZ){
  return tris;
 }
 
+/* v0.13.0 · Morro, ala y ruedas delanteras comparten el mismo generador
+   paramétrico WebGL para rivales y jugador. El modo interior sólo omite la
+   geometría que queda detrás de los ojos: nunca cambia la física. */
+function webglPushApexFrontAssembly(b,cam,pitch,v,teamKey,primary,accent,spin,lod){
+ const frontZ=v.wheelbase*.52,fwZ=frontZ+.57*v.noseLen;
+ const light=shadeColor(primary,18),dark=shadeColor(primary,-30),carbon='#090c10',carbon2='#161c22';
+ const noseW=v.noseWidth,noseMidEnd=fwZ-.22,noseMidStart=1.10;
+ let tris=0;
+ tris+=webglPushRivalFrustum3D(b,cam,pitch,0,.255,.46,1.34,.33*noseW,.52*noseW,.10,.23,{main:primary,top:light,front:accent,back:dark});
+ tris+=webglPushRivalFrustum3D(b,cam,pitch,0,.192,(noseMidStart+noseMidEnd)*.5,
+      noseMidEnd-noseMidStart,.19*noseW,.34*noseW,.085,.14,{main:primary,top:light,front:accent,back:dark});
+ tris+=webglPushRivalFrustum3D(b,cam,pitch,0,.130,fwZ-.095,.47,.105*noseW,.20*noseW,.055,.095,
+      {main:primary,top:light,front:accent,back:dark});
+ const fw=v.frontWing;
+ tris+=webglPushRivalLocalBox(b,cam,pitch,0,.095,fwZ,fw,.036,.18,{main:accent,top:shadeColor(accent,18),front:shadeColor(accent,8)});
+ if(lod>=1)tris+=webglPushRivalLocalBox(b,cam,pitch,0,.067,fwZ+.16,fw*1.03,.028,.14,{main:shadeColor(accent,8),top:shadeColor(accent,20)});
+ if(lod>=2)tris+=webglPushRivalLocalBox(b,cam,pitch,0,.050,fwZ+.29,fw*.92,.020,.10,{main:carbon2,top:'#242b31'});
+ for(const sg of [-1,1])tris+=webglPushRivalLocalBox(b,cam,pitch,sg*fw*.49,.16,fwZ+.04,.045,.18,.20,{main:carbon});
+ // Neumáticos, llantas y colores reales de la escudería APEX, no siluetas dibujadas aparte.
+ const wheelS=v.wheelScale;
+ for(const sg of [-1,1]){
+  tris+=webglPushRivalWheel3D(b,cam,pitch,sg*.92,.31,frontZ,.16*wheelS,.33*wheelS,teamKey,spin,lod);
+  if(lod>=1){
+   tris+=webglPushRivalRod3D(b,cam,pitch,sg*.30,.20,frontZ-.18,sg*.76,.29,frontZ,.018,'#7d8793');
+   tris+=webglPushRivalRod3D(b,cam,pitch,sg*.30,.29,frontZ+.05,sg*.76,.29,frontZ,.018,'#7d8793');
+  }
+ }
+ if(lod>=2){
+  const L=apexCarVisualBlueprint(teamKey).livery,p=(x,y,z)=>webglRivalLocal(b,x,y,z);
+  const quad=(pts,col)=>webglPushRivalLocalQuad(b,cam,pitch,pts.map(v=>p(v[0],v[1],v[2])),col,.56,-.010);
+  // Pintura del morro sigue la misma continuidad del chasis que en el exterior.
+  tris+=quad([[-.045,.328,.22],[.045,.328,.22],[.018,.16,fwZ+.04],[-.018,.16,fwZ+.04]],L.stripe);
+  for(const sg of [-1,1]){
+   tris+=quad([[sg*.14,.134,fwZ-.095],[sg*(fw*.5-.045),.128,fwZ-.045],
+          [sg*(fw*.5-.09),.169,fwZ+.145],[sg*.14,.156,fwZ+.13]],L.wing);
+   tris+=quad([[sg*(fw*.5-.035),.106,fwZ-.170],[sg*(fw*.5+.015),.13,fwZ-.155],
+          [sg*(fw*.5+.015),.223,fwZ+.075],[sg*(fw*.5-.04),.204,fwZ+.08]],carbon);
+  }
+ }
+ return tris;
+}
+function apexPlayerShared3DActive(){
+ return !!(player&&trackData&&rendererBackendId()==='webgl2'&&webglState.ready&&
+   !webglState.lost&&!apexInspectionActive());
+}
+function webglPlayerChassisBasis(cam){
+ // La posición de los ojos es 0,62 m detrás del origen visual del chasis.
+ // Esto encuadra las ruedas delanteras sin alterar la posición física del coche.
+ const a=carAxes(),surface=playerDriveSurfacePose(),pitchBank=Number(surface.bank)||0;
+ const F=webglVecNorm({x:a.fx,y:0,z:a.fz});
+ let R=webglVecNorm({x:a.rx,y:Math.tan(pitchBank),z:a.rz});
+ let U=webglVecNorm(webglVecCross(R,F));if(U.y<0)U={x:-U.x,y:-U.y,z:-U.z};
+ R=webglVecNorm(webglVecCross(F,U));
+ return{base:{x:player.x+F.x*.62,y:surface.y+.014,z:player.z+F.z*.62},F,R,U};
+}
+function webglPushPlayerSharedFront3D(cam,pitch){
+ if(!apexPlayerShared3DActive())return 0;
+ const visual=playerCarVisualProfile(),v=webglRivalVariant(visual.teamKey,visual.spec);
+ const basis=webglPlayerChassisBasis(cam),spin=raceT*((Number(player.speed)||0)*.018+2.4);
+ // No dibujamos un coche duplicado: mismo generador de morro, ruedas y ala que un rival.
+ const detail=mobilePerformanceMode()?1:2;
+ return webglPushApexFrontAssembly(basis,cam,pitch,v,visual.teamKey,visual.primary,visual.accent,spin,detail);
+}
+function apexPlayerSharedCarAudit(){
+ const visual=playerCarVisualProfile(),v=webglRivalVariant(visual.teamKey,visual.spec),
+       m=apexCarModelVisual(visual.spec),r=apexCarModelVisual(carCatalog[visual.team.model]||carCatalog.A26);
+ const expected=webglRivalVariant(visual.teamKey),sameGeometry=Object.keys(m).every(key=>
+   Math.abs(m[key]-r[key])<1e-9&&Number.isFinite(m[key]));
+ return{ok:!!(visual.blueprint&&v.model===expected.model&&sameGeometry),
+   team:visual.teamKey,chassis:visual.chassis,model:v.model,
+   playerUsesSameForward3D:apexPlayerShared3DActive(),sameGeometry,
+   steeringWheel:'SVG functional',mirrors:'SVG live',canvasFallback:'unchanged'};
+}
+window.apexPlayerSharedCarAudit=apexPlayerSharedCarAudit;
+
 function webglPushRivalCar3D(a,cam,pitch){
  const team=teamInfo(a.r.team),primary=team.color||'#d43b42',accent=team.accent||shadeColor(primary,28),light=shadeColor(primary,18),dark=shadeColor(primary,-30),carbon='#090c10',carbon2='#161c22',metal='#7d8793',basis=webglRivalBasis(a),speed=Number(a.r.speed)||0,spin=raceT*(speed*.018+2.4),v=webglRivalVariant(a.r.team),lod=webglRivalLod(a);
  const wb=v.wheelbase,frontZ=wb*.52,rearZ=-wb*.48,fwZ=frontZ+.57*v.noseLen;
@@ -376,14 +451,8 @@ function webglPushRivalCar3D(a,cam,pitch){
  // Coke-bottle rear taper
  tris+=webglPushRivalFrustum3D(basis,cam,pitch,0,.29,-.98,.96,.58*v.shoulderWidth,.36*v.sidepodWidth,.24*v.sidepodHeight,.22*v.sidepodHeight,{main:shadeColor(primary,-5),top:light,back:dark});
 
- // v0.12.1 · Los tres tramos del morro terminan en el aleron delantero,
- // no 1,4 metros por delante. Se solapan ligeramente para no dejar rendijas.
- const noseW=v.noseWidth,noseMidEnd=fwZ-.22,noseMidStart=1.10;
- tris+=webglPushRivalFrustum3D(basis,cam,pitch,0,.255,.46,1.34,.33*noseW,.52*noseW,.10,.23,{main:primary,top:light,front:accent,back:dark});
- tris+=webglPushRivalFrustum3D(basis,cam,pitch,0,.192,(noseMidStart+noseMidEnd)*.5,
-      noseMidEnd-noseMidStart,.19*noseW,.34*noseW,.085,.14,{main:primary,top:light,front:accent,back:dark});
- tris+=webglPushRivalFrustum3D(basis,cam,pitch,0,.130,fwZ-.095,.47,.105*noseW,.20*noseW,.055,.095,
-      {main:primary,top:light,front:accent,back:dark});
+ // El morro frontal se genera junto con ala, ruedas y suspensión a través de la misma función que usa el piloto.
+ tris+=webglPushApexFrontAssembly(basis,cam,pitch,v,a.r.team,primary,accent,spin,lod);
 
  // Cockpit and halo
  tris+=webglPushRivalFrustum3D(basis,cam,pitch,0,.38,-.24,.76,.46*v.cockpitWidth,.38*v.cockpitWidth,.16,.20,{main:carbon2,top:'#262e36',front:'#20272e',back:'#0e1318'});
@@ -397,13 +466,7 @@ function webglPushRivalCar3D(a,cam,pitch){
  tris+=webglPushRivalFrustum3D(basis,cam,pitch,0,.49,-.88,1.10,.31*v.shoulderWidth,.44*v.shoulderWidth,.20*v.engineHeight,.34*v.engineHeight,{main:primary,top:light,back:dark});
  tris+=webglPushRivalFrustum3D(basis,cam,pitch,0,.70*v.engineHeight,-.72,.30,.14*v.airboxWidth,.22*v.airboxWidth,.12,.20*v.engineHeight,{main:carbon2,top:'#36404a'});
 
- // Front wing: multi-element according to distance
- const fw=v.frontWing;
- tris+=webglPushRivalLocalBox(basis,cam,pitch,0,.095,fwZ,fw,.036,.18,{main:accent,top:shadeColor(accent,18),front:shadeColor(accent,8)});
- if(lod>=1)tris+=webglPushRivalLocalBox(basis,cam,pitch,0,.067,fwZ+.16,fw*1.03,.028,.14,{main:shadeColor(accent,8),top:shadeColor(accent,20)});
- if(lod>=2)tris+=webglPushRivalLocalBox(basis,cam,pitch,0,.050,fwZ+.29,fw*.92,.020,.10,{main:carbon2,top:'#242b31'});
- tris+=webglPushRivalLocalBox(basis,cam,pitch,-fw*.49,.16,fwZ+.04,.045,.18,.20,{main:carbon});
- tris+=webglPushRivalLocalBox(basis,cam,pitch,fw*.49,.16,fwZ+.04,.045,.18,.20,{main:carbon});
+ // Elementos delanteros extraídos a webglPushApexFrontAssembly(), sin render duplicado.
 
  // Rear wing / beam wing / diffuser
  const rw=v.rearWing,rwZ=rearZ-.62;
@@ -445,16 +508,14 @@ function webglPushRivalCar3D(a,cam,pitch){
 
  // Wheels
  const wheelS=v.wheelScale;
- tris+=webglPushRivalWheel3D(basis,cam,pitch,-.92,.31,frontZ,.16*wheelS,.33*wheelS,a.r.team,spin,lod);
- tris+=webglPushRivalWheel3D(basis,cam,pitch,.92,.31,frontZ,.16*wheelS,.33*wheelS,a.r.team,spin,lod);
+ // Ruedas delanteras ya renderizadas por el componente común.
  tris+=webglPushRivalWheel3D(basis,cam,pitch,-.88,.33,rearZ,.18*wheelS,.39*wheelS,a.r.team,spin,lod);
  tris+=webglPushRivalWheel3D(basis,cam,pitch,.88,.33,rearZ,.18*wheelS,.39*wheelS,a.r.team,spin,lod);
 
  // Suspension only when it will actually be visible
  if(lod>=1){
    for(const sg of [-1,1]){
-     tris+=webglPushRivalRod3D(basis,cam,pitch,sg*.30,.20,frontZ-.18,sg*.76,.29,frontZ,.018,metal);
-     tris+=webglPushRivalRod3D(basis,cam,pitch,sg*.30,.29,frontZ+.05,sg*.76,.29,frontZ,.018,metal);
+     // Tirantes de suspensión delantera compartidos con el monoplaza del jugador.
      tris+=webglPushRivalRod3D(basis,cam,pitch,sg*.34,.22,rearZ+.18,sg*.72,.31,rearZ,.020,metal);
    }
  }
@@ -600,7 +661,7 @@ function webgl2RenderFrame(){
    if(!apexInspectionActive())webglPushNearPatch(cam,cam.pitch);const roadSegments=segments.slice().sort((A,B)=>B.z-A.z);for(const seg of roadSegments)webglPushRoadSegment(seg,cam,cam.pitch);
    renderProfileMeasure("environmentMs",()=>{webglPushSurfaceMarkings(roadSegments,cam,cam.pitch);webglPushCircuitWalls(segments,cam,cam.pitch);webglPushExactWallFences(cam,cam.pitch);webglPushTunnelDetails(segments,cam,cam.pitch);apexWebglGenericPortalFaces(cam,cam.pitch);webglPushBrakeBoards(cam,cam.pitch);if(trackData.gradeCrossing)webglPushGradeCrossingOverpass(cam,cam.pitch)});
    rivalVisuals=webglPrepareRivalVisuals(collectRivalSprites(cam,cam.pitch));
-   renderProfileMeasure("carsMs",()=>webglPushRivalField3D(rivalVisuals,cam,cam.pitch));
+   renderProfileMeasure("carsMs",()=>{webglPushRivalField3D(rivalVisuals,cam,cam.pitch);webglPushPlayerSharedFront3D(cam,cam.pitch);});
    webglScreenRoll=0;
  }
  webglSubmit();

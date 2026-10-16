@@ -2070,6 +2070,14 @@ function cockpitSvgStripProtection(svg){
   .replace(/<!-- Tyre sidewall detail -->[\s\S]*?<\/g>/, '');
 }
 
+function cockpitSvgSharedChassisShell(svg,player3D){
+ if(!player3D)return svg;
+ // Se elimina sólo el morro frontal incrustado, manteniendo aristas internas,
+ // espejos, protección y cabina para la instrumentación del piloto.
+ return svg.replace(/<!-- nose \/ centre tub -->[\s\S]*?<!-- upper body left\/right shoulders -->/,'<!-- upper body left/right shoulders -->')
+           .replace(/<!-- Nose panel and red trim -->[\s\S]*?<!-- Small dashboard warning lamps -->/,'<!-- Small dashboard warning lamps -->');
+}
+
 function cockpitSvgPrepareTyres(svg){
  // Keep the uploaded tyre/guard geometry, but remove the static yellow arc; branding rotates dynamically.
  return svg.replace(/<path d="M355 389 C339 457, 338 577, 370 675"[\s\S]*?\/>/g,'');
@@ -2085,11 +2093,11 @@ function cockpitSvgRecolor(svg,body,accent){
 
 function ensureCockpitSvgAssets(){
  if(!player)return cockpitSvgAssetState;
- const body=player.carColor||'#36dff1',
-       ti=teamInfo(player.teamKey||selectedTeamKey()),
-       accent=player.carAccent||(ti&&ti.accent)||shadeColor(body,32),
-       spec=player.carSpec||carCatalog.A26;
- const key=[body,accent,spec.name||'',spec.nose||'',spec.wheel||0,'layerProtectionC'].join('|');
+ const visual=playerCarVisualProfile(),body=visual.primary,
+       ti=teamInfo(visual.teamKey),
+       accent=visual.accent,
+       spec=visual.spec,shared3D=apexPlayerShared3DActive();
+ const key=[visual.teamKey,body,accent,spec.name||'',spec.nose||'',spec.wheel||0,shared3D?'playerWebGL3D':'canvasSVG','layerProtectionD'].join('|');
  if(cockpitSvgAssetState.key===key)return cockpitSvgAssetState;
 
  cockpitSvgAssetState.key=key;
@@ -2105,7 +2113,7 @@ function ensureCockpitSvgAssets(){
  tyreOverlay.onload=()=>cockpitSvgAssetState.tyreOverlayReady=true;
  wheel.onload=()=>cockpitSvgAssetState.wheelReady=true;
 
- shell.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(cockpitSvgRecolor(cockpitSvgStripProtection(split.shell),body,accent));
+ shell.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(cockpitSvgRecolor(cockpitSvgSharedChassisShell(cockpitSvgStripProtection(split.shell),shared3D),body,accent));
  tyres.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(cockpitSvgPrepareTyres(cockpitSvgTyreReferenceBase));
  tyreOverlay.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(cockpitSvgTyreProtectorBase);
  wheel.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(cockpitSvgRecolor(cockpitSvgWheelBase,body,accent));
@@ -2440,6 +2448,28 @@ function drawSvgWheelOverlay(){
  if(player.ers<15){ctx.fillStyle='#ffb24a';ctx.fillText('ERS LOW',837,670);}
  else if(player.drs){ctx.fillStyle='#5cff84';ctx.fillText('DRS ACTIVE',837,670);}
 }
+function drawSvgTeamCockpitIdentity(){
+ const visual=playerCarVisualProfile(),L=visual.blueprint.livery,brand=teamBranding(visual.teamKey)||{},
+ pattern=L.pattern||'clean';
+ ctx.save();
+ ctx.strokeStyle=L.stripe||visual.accent;ctx.lineWidth=5.5;ctx.lineCap='round';
+ for(const side of [-1,1]){
+  ctx.beginPath();ctx.moveTo(837+side*422,548);
+  ctx.quadraticCurveTo(837+side*565,492,837+side*788,532);ctx.stroke();
+  if(pattern!=='clean'){
+   ctx.strokeStyle=L.trim||visual.accent;ctx.lineWidth=2;
+   ctx.beginPath();ctx.moveTo(837+side*439,560);ctx.quadraticCurveTo(837+side*600,515,837+side*768,548);ctx.stroke();
+   ctx.strokeStyle=L.stripe||visual.accent;ctx.lineWidth=5.5;
+  }
+ }
+ // Logo inventado por escudería sobre los reposabrazos del cockpit.
+ if(typeof drawPseudoLogoIcon==='function'){
+  drawPseudoLogoIcon(260,670,29,brand.logo||L.symbol||'swoosh',visual.accent,L.trim);
+  drawPseudoLogoIcon(1412,670,29,brand.logo||L.symbol||'swoosh',visual.accent,L.trim);
+ }
+ ctx.restore();
+}
+
 function drawSvgCockpitLayer(){
  const assets=ensureCockpitSvgAssets(),motion=cockpitMotionState(),p=cockpitSvgModelParams();
 
@@ -2454,13 +2484,16 @@ function drawSvgCockpitLayer(){
  ctx.scale(p.shellSX,p.shellSY);
  ctx.translate(-W*.5,-H);
  ctx.scale(W/1672,H/941);
- drawSvgFrontTyres3D();
- if(!mobilePerformanceMode()||mobileRenderQuality>=82)drawSvgTyreMarkings();
- drawSvgTyreProtectorOverlay();
+ if(!apexPlayerShared3DActive()){
+   drawSvgFrontTyres3D();
+   if(!mobilePerformanceMode()||mobileRenderQuality>=82)drawSvgTyreMarkings();
+   drawSvgTyreProtectorOverlay();
+ }
  ctx.drawImage(assets.shell,0,0,1672,941);
  drawSvgMirrorMountRefine();
- drawSvgTyreProtectorRefine();
+ if(!apexPlayerShared3DActive())drawSvgTyreProtectorRefine();
  drawSvgMirrorGlass();
+ drawSvgTeamCockpitIdentity();
  ctx.restore();
 
  // Pass 2: responsive halo/protection overlay in screen space.

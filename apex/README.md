@@ -1,6 +1,6 @@
 # APEX Formula 26
 
-Versión de desarrollo: **v0.12.2 · PRE-RELEASE**
+Versión de desarrollo: **v0.13.0 · PRE-RELEASE**
 
 Archivo fuente original:
 `Apex_Formula_26_v5_230_62_8_6_7_6_4_17_CONTROL_CLASICO_GP4.html`
@@ -23,3 +23,7 @@ En el renderer WebGL2 los coches cercanos reciben morro alineado al alerón, pon
 ## Referencias angulares v0.12.2
 
 Render WebGL continuo y 16 referencias por coche; metadatos `viewIndex16`, `refAngle16`, `refAngle16Label`. Validaciones: `apexCarVisualAuditV0122()`, `apexCarAngleContinuityTest()`, `apexCarPerspectiveSymmetryTest()`, `apexCarAngleReferenceTable()`. Es una auditoría geométrica; las capturas WebGL y FPS siguen pendientes de validación manual.
+
+## v0.13.0 · Chasis común jugador/rivales
+
+WebGL dibuja morro, ala, ruedas y suspensiones del jugador utilizando la misma rutina geométrica `webglPushApexFrontAssembly()` que los rivales. El cockpit SVG mantiene el habitáculo, volante, espejos y controles; la vista Canvas conserva el gráfico anterior como respaldo. Colores y chasis se leen del catálogo compartido. Diagnóstico en consola: `apexPlayerSharedCarAudit()`. No se ha añadido una cámara exterior jugable ni se han cambiado física o colisiones. Pendiente inspección visual y FPS en dispositivos reales.
