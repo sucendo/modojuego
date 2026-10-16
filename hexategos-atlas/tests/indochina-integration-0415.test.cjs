@@ -12,7 +12,7 @@ test('Indochina 0.41.5: relieve, cuencas y cauces, sin duplicar Mekong canónico
  const d=physical();
  assert.equal(d.version,'0.41.5');
  assert.equal(d.mountains.length,8);
- assert.equal(d.rivers.length,4);
+ assert.equal(d.rivers.length,5);
  assert.equal(d.tributaries.length,10);
  assert.equal(d.distributaries.length,4);
  assert.ok(d.regions.length>=18);
@@ -20,6 +20,7 @@ test('Indochina 0.41.5: relieve, cuencas y cauces, sin duplicar Mekong canónico
  const all=[...d.mountains,...d.rivers,...d.tributaries,...d.distributaries];
  assert.equal(new Set(all.map(x=>x.name.toLocaleLowerCase('es-ES'))).size,all.length);
  assert.ok(!all.some(x=>x.name==='Mekong'),'Duplicación del río principal');
+ assert.equal(d.rivers.find(x=>x.nativeParent)?.nativeParent,'Mekong');
  assert.ok(d.regionsNear(103.2,16.2).some(x=>x.name==='Meseta de Khorat'));
  assert.ok(d.regionsNear(105.95,10.45).some(x=>x.name==='Delta del Mekong'));
  assert.equal(d.bodyAt(104.02,12.67)?.name,'Tonlé Sap');
