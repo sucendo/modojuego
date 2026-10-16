@@ -2223,7 +2223,7 @@ function drawResponsiveProtectionOverlay(){
  const originalTop=31,originalBottom=371,originalHeight=originalBottom-originalTop;
  const targetTop=p.topBand+p.drop*.10;
  const targetBottom=p.pillarBottomY;
- const sx=clamp(W/1672,.58,1.35);
+ const sx=clamp(W/1672,.58,1.35)*.88; // v0.13.1: montante menos grueso desde el asiento
  const sy=Math.max(.45,(targetBottom-targetTop)/originalHeight);
 
  ctx.save();
@@ -2453,6 +2453,16 @@ function drawSvgTeamCockpitIdentity(){
  pattern=L.pattern||'clean';
  ctx.save();
  ctx.strokeStyle=L.stripe||visual.accent;ctx.lineWidth=5.5;ctx.lineCap='round';
+ // Transición suave: el borde pintado del monocasco se funde con el carbono interior.
+ for(const sg of [-1,1]){
+  const edge=sg<0?0:1672,root=837+sg*425,up=837+sg*675;
+  const g=ctx.createLinearGradient(root,514,up,676);
+  g.addColorStop(0,'rgba(9,13,18,.05)');g.addColorStop(.45,'rgba(9,13,18,.30)');
+  g.addColorStop(1,'rgba(4,6,9,.52)');
+  ctx.fillStyle=g;ctx.beginPath();ctx.moveTo(root,501);
+  ctx.quadraticCurveTo(up,500,edge,544);ctx.lineTo(edge,673);
+  ctx.quadraticCurveTo(up,587,root,540);ctx.closePath();ctx.fill();
+ }
  for(const side of [-1,1]){
   ctx.beginPath();ctx.moveTo(837+side*422,548);
   ctx.quadraticCurveTo(837+side*565,492,837+side*788,532);ctx.stroke();
