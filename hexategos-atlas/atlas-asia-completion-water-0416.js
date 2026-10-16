@@ -38,7 +38,9 @@
  };
  window.HexategosAsiaCompletionWater0416=Object.freeze({
   version:'0.41.6',isWater,
-  isBodyDrawn:name=>enabled()&&data.lakes.some(l=>l.name===name),
+  isBodyDrawn:name=>window.HexategosAsianLakes0417?.enabled?
+   window.HexategosAsianLakes0417.isDrawn(name):
+   enabled()&&data.lakes.some(l=>l.name===name),
   nearby:(lat,lon)=>data.lakes.filter(l=>Math.hypot(
    (lon-l.center[0])*Math.cos(lat*rad),lat-l.center[1])<
     Math.max(...l.radii)*1.2).map(l=>l.name).slice(0,3),
