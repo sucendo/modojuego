@@ -29,8 +29,8 @@
    points:[[90.75,23.82],[90.69,23.55],[90.6304,23.2198]],
    terminal:'Chandpur',minZoom:8.1,maxSnapKm:36},
   {name:'Meghna inferior',kind:'estuary',source:'Chandpur',
-   points:[[90.72,22.99],[90.81,22.70],[90.78,22.38]],
-   mouth:[90.86,22.03],maxShoreKm:92,minZoom:7.6,maxSnapKm:36}
+   points:[[90.72,22.99],[90.71,22.82]],
+   mouth:[90.73,22.65],maxShoreKm:58,minZoom:7.6,maxSnapKm:36}
  ]);
  const labels=Object.freeze([
   {name:'Confluencia del Kosi',at:[87.2569,25.4140],minZoom:9.4,kind:'river'},
