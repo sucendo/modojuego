@@ -61,6 +61,15 @@
    const parent=solve(internal,visiting);
    parentPath=parent?.path||null;nodes=parentPath;parentType='secondary';
   }else nodes=canonicalNodes(item.parent,G);
+  // El Brahmaputra canónico carece del meandro occidental de Assam.
+  // El corredor visual L8 es el receptor SOLO de estos tres afluentes.
+  // Evitar empalmes artificiales a 140–160 km del cauce verdadero.
+  const assam=window.HexategosAssamCorridor0413;
+  if(item.parent==='Brahmaputra'&&
+     window.HexategosAssamConfluences0413?.mouths[item.name]){
+   const supplemental=assam?.nodes()||[];
+   nodes=supplemental;parentType='regionalCorridor';
+  }
   visiting.delete(item.name);
   const snap=closest(nodes||[],item.join,G);
   const maxKm=item.maxJoinKm||MAX_JOIN_KM;
@@ -176,13 +185,17 @@
   if(!p)return {name,ok:false,reason:reports.get(name)?.reason};
   const G=graph.prepare(),parent=data.rivers.find(x=>x.name===item.parent);
   const nodes=parent?solve(parent,new Set())?.path:
-   canonicalNodes(item.parent,G);
+   p.parentType==='regionalCorridor'?
+    (window.HexategosAssamCorridor0413?.nodes()||[]):
+    canonicalNodes(item.parent,G);
   const geometric=graph.validate(p.path);
   return {name,ok:true,edges:geometric.edges,
    parent:item.parent,sameVertex:!!nodes?.includes(p.junction),
    usesCoast:geometric.usesCoast,
    crossesVirtualWater:geometric.crossesVirtualWater,
    joinDistanceKm:p.joinDistanceKm,
+   parentType:p.parentType,
+   regionalCorridor:p.parentType==='regionalCorridor',
    approximateJoin:p.joinDistanceKm>85,
    correctedHub:!!p.geoJunction,
    geographicJoinKm:p.geoDistanceKm,
