@@ -43,7 +43,7 @@ test('Assam: Atlas y juegos comparten corredor f√≠sico, sin alterar la simulaci√
  const render=read('hexategos-atlas/atlas-indian-rivers-0407.js');
  assert.ok(render.includes('regionalCorridor'));
  assert.ok(render.includes('HexategosAssamCorridor0413'));
- assert.ok(source.includes('native.has(edge(u,v))continue'));
+ assert.ok(source.includes('native.has(edge(u,v)))continue'));
  for(const text of [source,read(data),render]){
   assert.ok(!/setInterval\s*\(/.test(text));
   assert.ok(!/\b(?:owner6|L\.land)\s*\[[^\]]+\]\s*=(?!=)/.test(text));
