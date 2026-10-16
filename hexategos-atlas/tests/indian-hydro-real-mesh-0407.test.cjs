@@ -149,6 +149,18 @@ test('Indo, Ganges y Brahmaputra: afluentes conectados a cauces reales L8',
   GangesKosi:spot('Ganges',[87.26,25.42]),
   BrahmaputraTeesta:spot('Brahmaputra',[89.66,25.49])
  }));
+ const targeted=[
+  ['Panjnad nativo','Indo',[70.70,29.11]],
+  ['Kosi nativo','Ganges',[87.26,25.41]],
+  ['Goalundo Brahmaputra','Brahmaputra',[89.744,23.806]],
+  ['Goalundo Ganges','Ganges',[89.744,23.806]],
+  ['Chandpur Ganges','Ganges',[90.63,23.22]],
+  ['Chandpur Brahmaputra','Brahmaputra',[90.63,23.22]],
+  ['Ganges en Bangladesh','Ganges',[88.50,24.10]],
+  ['Meghna alto','Brahmaputra',[90.4,23.75]],
+  ['Mithankot Norte','Indo',[70.60,29.55]]
+ ].map(([label,river,coordinate])=>({label,river,...spot(river,coordinate)}));
+ console.log('BENGAL_PARENT_DIAG_0414',JSON.stringify(targeted));
  const g=st.window.HexategosHimalayaGraph0406.prepare();
  function sampleNodes(label,lon,lat,radius,set){
   const near={lon,lat},list=[];
