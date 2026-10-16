@@ -46,7 +46,7 @@ test('Indochina 0.41.5 · Chao Phraya, Río Rojo, afluentes, delta y montes real
  st.lonLatVec=(lon,lat)=>[Math.cos(lat*rad)*Math.sin(lon*rad),
   Math.sin(lat*rad),Math.cos(lat*rad)*Math.cos(lon*rad)];
  st.projectVec=()=>[500,400,1];
- load('geo-myanmar-physical-0415.js');
+ load('geo-indochina-physical-0415.js');
  const d=st.window.HexategosIndochinaPhysical0415;
  // El Mekong ya está en la malla global. Los afluentes deben
  // empalmar con sus VÉRTICES reales y no con referencias supuestas.
@@ -58,8 +58,8 @@ test('Indochina 0.41.5 · Chao Phraya, Río Rojo, afluentes, delta y montes real
  const rivers=literal('MAP_RIVERS3242'),nodes=literal('PHYS_EDGE_NODES3242');
  st.MAP_RIVERS3242=rivers;
  st.physicalEdge3242=i=>({u:nodes[i*2],v:nodes[i*2+1]});
- load('atlas-myanmar-graph-0415.js',atlas);
- load('atlas-myanmar-routes-0415.js',atlas);
+ load('atlas-indochina-graph-0415.js',atlas);
+ load('atlas-indochina-routes-0415.js',atlas);
  const api=st.window.HexategosIndochinaRender0415,
    graph=st.window.HexategosIndochinaGraph0415;
  assert.ok(api&&graph);
