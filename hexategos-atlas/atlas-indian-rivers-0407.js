@@ -91,7 +91,11 @@
     }else{
      const pivot=G.coords.get(nearest.id);
      const upstream=graph.solve(item.points.slice(0,-1).concat([[pivot.lon,pivot.lat]]));
-     const downstream=graph.solve([[pivot.lon,pivot.lat],[point.lon,point.lat]]);
+     // El corredor pasa por el vértice geográfico de desembocadura:
+     // un tramo de longitud cero es válido, no hay que forzar desvío.
+     const same=nearest.id===snap.id;
+     const downstream=same?{path:[nearest.id]}:
+      graph.solve([[pivot.lon,pivot.lat],[point.lon,point.lat]]);
      if(!upstream.path||!downstream.path){
       failure='Corrección sin conexión topológica L8';
      }else if(upstream.path.at(-1)!==nearest.id||
