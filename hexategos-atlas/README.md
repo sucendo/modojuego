@@ -247,3 +247,52 @@ escala de hexágonos. Las pruebas de malla real requieren las seis
 rutas, confluencias compartidas, arista costera terminal y ausencia
 de mutaciones; queda pendiente la inspección visual manual y la
 prueba de rendimiento con 500 naciones.
+
+## Indochina · geografía física 0.41.5
+
+Fase cartográfica para **Tailandia, Laos, Camboya y Vietnam**, integrada
+en `hexategos-atlas/`, `hexategos-pruebas/game/` y
+`hexategos-pruebas/toponimos-game/`.
+
+* `geo-indochina-physical-0415.js`: cuatro cauces regionales principales,
+  una continuación **visual** del Mekong bajo, diez afluentes,
+  cuatro brazos de delta, ocho cordilleras secundarias, diecinueve
+  unidades físicas, macroetiquetas para Indochina y ambos golfos y
+  el lago Tonlé Sap. El **Mekong y el Salween existentes NO se redibujan**.
+  La continuación del Mekong bajo parte de un vértice de su cauce
+  canónico y sirve de receptor a Tonle Sap y a los brazos Tiền y Hậu
+  (Bassac).
+* `atlas-indochina-graph-0415.js`: grafo regional creado
+  **solo cuando hace falta**, sobre vertices y aristas de la malla
+  original L8 filtrados por L5, sin cruces de aristas costeras.
+* `atlas-indochina-routes-0415.js`: resuelve confluencias en vértices
+  compartidos y brazos hasta litoral **real L8**, sin dibujar líneas
+  cartesianas libres. No pinta aristas del Mekong ya dibujadas
+  desde los sistemas canónicos.
+* `geo-indochina-landcover-0415.js`: paleta monzónica, bosque tropical,
+  meseta seca de Khorat, arrozales del Chao Phraya y delta del Mekong,
+  tierras altas de Laos y Annamita. Mezclas espaciales suaves, con
+  cache dispersa solo para celdas L8 consultadas.
+* `atlas-indochina-water-0415.js`: Tonlé Sap representado como
+  **13 hexágonos L8 de tierra nativa recoloreados**, con conexión
+  geométrica por vecindad y sin cambiar `L.land`. Es un lago
+  **cartográfico visual**; su superficie y forma son esquemáticas,
+  no se crean celdas navegables ni puertos.
+* Se han integrado zoom/topónimos y controles de la capa física
+  en Atlas y los dos juegos, y accesos rápidos a Laos, Mekong,
+  Tonlé Sap, Chao Phraya, río Rojo y delta del Mekong.
+
+Las pruebas de regresión de la **malla L8 original de 510 762 celdas**
+exigen que los 5 cauces principales/continuación, los 10 afluentes,
+los 4 brazos de delta y las 8 cordilleras sean válidos, que las
+confluencias sean vértices comunes, que sus finales costeros sean
+nativos y que Tonlé Sap tenga celdas contiguas y no navegables.
+Ninguna fuente visual modifica geología, propietarios, IA, logística,
+simulación o partidas antiguas; tampoco incorpora intervalos separados.
+
+**Advertencias:** los ejes referenciales son aproximados y no datos
+hidrológicos vectoriales oficiales; las dimensiones de las
+desembocaduras, el Tonlé Sap estacional y los cursos monzónicos
+requieren comprobación visual contra referencia cartográfica. La
+validación automatizada no prueba por sí sola el FPS de una partida
+grande con 350–500 naciones.
