@@ -36,8 +36,9 @@
   return 'rgb('+shaded.map((v,k)=>Math.round(v*.80+Number(parent[k])*.20)).join(',')+')';
  };
  window.HexategosIndochinaWater0415=Object.freeze({
-  version:'0.41.5',isWater,isBodyDrawn:name=>available()&&
-   data.lakes.some(x=>x.name===name),
+  version:'0.41.5',isWater,isBodyDrawn:name=>window.HexategosAsianLakes0417?.enabled?
+   window.HexategosAsianLakes0417.isDrawn(name):
+   available()&&data.lakes.some(x=>x.name===name),
   nearby:(lat,lon)=>data.lakes.filter(x=>
    Math.hypot((x.center[0]-lon)*Math.cos(lat*rad),x.center[1]-lat)<1.3).map(x=>x.name),
   diagnostics:()=>({visualOnly:true,navigable:false,landMutated:false})
