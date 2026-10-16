@@ -35,6 +35,7 @@
  }
  terrainStrategicFill3247=function himalayaWater0406(key,i,L,own,z){
   const old=base(key,i,L,own,z);
+  if(window.HexategosAsianLakes0417?.enabled)return old;
   const mode=typeof mapMode3252==='undefined'?'terrain':mapMode3252;
   if((mode!=='terrain'&&mode!=='political')||!allowed())return old;
   const b=isWater(key,i,L);if(!b)return old;
