@@ -14,6 +14,7 @@
  const sriEco=window.HexategosSriLankaLandcover0411;
  const myanmarEco=window.HexategosMyanmarLandcover0412;
  const indochinaEco=window.HexategosIndochinaLandcover0415;
+ const remainingEco=window.HexategosAsiaCompletionLandcover0416;
  const deltas=window.HexategosIndianDeltaLandcover0408;
  let showCover=true;
  function codes(key,L){
@@ -45,7 +46,8 @@
   const wetIsland=peninsulaColor&&sriEco?sriEco.rgbForCell(key,i,L,peninsulaColor):peninsulaColor;
   const mainland=wetIsland&&myanmarEco?myanmarEco.rgbForCell(key,i,L,wetIsland):wetIsland;
   const deltaColor=mainland&&deltas?deltas.rgbForCell(key,i,L,mainland):mainland;
-  const base=deltaColor&&indochinaEco?indochinaEco.rgbForCell(key,i,L,deltaColor):deltaColor;
+  const peninsular=deltaColor&&indochinaEco?indochinaEco.rgbForCell(key,i,L,deltaColor):deltaColor;
+  const base=peninsular&&remainingEco?remainingEco.rgbForCell(key,i,L,peninsular):peninsular;
   if(!base)return baseFill(key,i,L,own,z);
   // Atlas no tiene propietarios. Si se reutiliza el renderizador con países,
   // preservamos de todas formas el tinte político original.
