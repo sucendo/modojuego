@@ -1292,7 +1292,7 @@ function apexLandmarkFootprintClipInfo(it,cam,pitch,maxZ=6000,pad=.28){
 // del submit. Cotas de suelo, quads de carreteras/barreras, footprints y selección de
 // sectores se preparan una vez al compilar el circuito y se reutilizan durante la carrera.
 const apexStaticBatchPerf={entryCacheHits:0,entryCacheMisses:0,compiledItems:0,compiledPrimitives:0,wallStyles:0,bufferGrows:0};
-const apexStaticOcclusionPerf={frames:0,occludersBuilt:0,itemsTested:0,itemsCulled:0,primitiveTests:0,primitiveCulled:0};
+const apexStaticOcclusionPerf={frames:0,occludersBuilt:0,itemsTested:0,itemsCulled:0,primitiveTests:0,primitiveCulled:0,occludersPreculled:0,landmarksPreculled:0};
 function apexStaticWorldCam(p,cam){return worldToCamera(p[0],p[1],p[2],cam)}
 function apexStaticWorldBound(points){
  if(!Array.isArray(points)||!points.length)return null;let x=0,y=0,z=0;for(const p of points){x+=p[0];y+=p[1];z+=p[2]}x/=points.length;y/=points.length;z/=points.length;let r=.1;for(const p of points)r=Math.max(r,Math.hypot(p[0]-x,p[1]-y,p[2]-z));return{x,y,z,r};
@@ -1328,6 +1328,10 @@ function apexBuildLandmarkStaticBatch(it){
    if(it.type==='forestZone'&&Array.isArray(it.forestPoints)){
      b.forest=it.forestPoints.map(fp0=>{const x=fp0[0],z=fp0[1],y=fp0[2]||0;return{bound:{x,y:y+4.2,z,r:9.5},trunk:[[x-.12,y,z],[x+.12,y,z],[x+.12,y+3.1,z],[x-.12,y+3.1,z]],crown:[[x-2,y+1.8,z],[x+2,y+1.8,z],[x,y+8.2,z]]}});b.primitiveCount+=b.forest.length*2;
    }
+ }
+ if(b.footprintBottom&&b.footprintTop){
+  b.viewBound=apexStaticWorldBound(b.footprintBottom.concat(b.footprintTop));
+  if(b.viewBound)b.viewBound.r+=Math.max(20,Number(it.clearance)||0);
  }
  if(it.type==='barrier'&&Array.isArray(it.worldPath)&&it.worldPath.length>=2){
    const h=Math.max(.55,it.height||1.05),Y=Array.isArray(it.worldPathY)?it.worldPathY:null;b.barrierSegments=[];
@@ -1368,7 +1372,7 @@ function apexVisibleExactWallSegments(cw,cam,far){
  const src=cw&&(cw._wallRenderSegments||cw.wallSegments)||[];
  const index=cw&&cw._apexExactWallSpatial;
  if(!index||index.src!==src||!cam||!Number.isFinite(cam.x)||!Number.isFinite(cam.z))return src;
- const cell=index.cell,radius=Math.max(1800,far*2.20+cell),ix0=Math.floor((cam.x-radius)/cell),
+ const cell=index.cell,radius=Math.max(1320,far*1.65+cell),ix0=Math.floor((cam.x-radius)/cell),
        ix1=Math.floor((cam.x+radius)/cell),iz0=Math.floor((cam.z-radius)/cell),
        iz1=Math.floor((cam.z+radius)/cell);
  // En el inspector orbital lejano la consulta global es más barata que millones
@@ -1412,7 +1416,10 @@ function apexStaticOccluderType(it){const t=String(it&&it.type||'').toLowerCase(
 function apexStaticOccludeeType(it){const t=String(it&&it.type||'').toLowerCase();return ['tree','billboard','advertising','flagpole','parking'].includes(t)&&!apexIsSkylineLandmark(it);}
 function apexBuildStaticOcclusionContext(entries,cam,pitch){
  const occluders=[],infoCache=new Map();if(!Array.isArray(entries)||!entries.length||!cam)return{occluders,infoCache};
- for(const ent of entries){const it=ent.it;if(!apexStaticOccluderType(it))continue;const info=apexLandmarkFootprintClipInfo(it,cam,pitch,4200,.10);infoCache.set(it,info);if(!info||!info.visible||info.depth<1)continue;const w=Math.max(0,info.maxX-info.minX),h=Math.max(0,info.maxY-info.minY),area=w*h;if(area<Math.max(900,W*H*.0045))continue;const inset=Math.max(2,Math.min(16,Math.min(w,h)*.055));if(w<=inset*2+4||h<=inset*2+4)continue;occluders.push({depth:info.depth,minX:info.minX+inset,maxX:info.maxX-inset,minY:info.minY+inset,maxY:info.maxY-inset});}
+ for(const ent of entries){const it=ent.it;if(!apexStaticOccluderType(it))continue;
+ const bound=it._apexStaticBatch&&it._apexStaticBatch.viewBound;
+ if(bound&&!apexStaticBoundInView(bound,cam,6400,1.65)){apexStaticOcclusionPerf.occludersPreculled++;continue;}
+ const info=apexLandmarkFootprintClipInfo(it,cam,pitch,4200,.10);infoCache.set(it,info);if(!info||!info.visible||info.depth<1)continue;const w=Math.max(0,info.maxX-info.minX),h=Math.max(0,info.maxY-info.minY),area=w*h;if(area<Math.max(900,W*H*.0045))continue;const inset=Math.max(2,Math.min(16,Math.min(w,h)*.055));if(w<=inset*2+4||h<=inset*2+4)continue;occluders.push({depth:info.depth,minX:info.minX+inset,maxX:info.maxX-inset,minY:info.minY+inset,maxY:info.maxY-inset});}
  occluders.sort((a,b)=>a.depth-b.depth);if(occluders.length>18)occluders.length=18;apexStaticOcclusionPerf.frames++;apexStaticOcclusionPerf.occludersBuilt+=occluders.length;return{occluders,infoCache};
 }
 function apexStaticCandidateScreenBox(it,base,pitch,cam,ctx){
@@ -1423,7 +1430,7 @@ function apexStaticLandmarkOccluded(it,base,cam,pitch,ctx){
  if(!ctx||!ctx.occluders.length||!apexStaticOccludeeType(it))return false;const b=apexStaticCandidateScreenBox(it,base,pitch,cam,ctx);if(!b)return false;apexStaticOcclusionPerf.itemsTested++;const bw=b.maxX-b.minX,bh=b.maxY-b.minY;if(bw*bh>W*H*.075)return false;
  for(const o of ctx.occluders){if(b.depth<=o.depth+Math.max(7,o.depth*.018))continue;if(b.minX>=o.minX&&b.maxX<=o.maxX&&b.minY>=o.minY&&b.maxY<=o.maxY){apexStaticOcclusionPerf.itemsCulled++;return true;}}return false;
 }
-function apexStaticOcclusionStatsSnapshot(){return{frames:apexStaticOcclusionPerf.frames,occludersBuilt:apexStaticOcclusionPerf.occludersBuilt,itemsTested:apexStaticOcclusionPerf.itemsTested,itemsCulled:apexStaticOcclusionPerf.itemsCulled,primitiveTests:apexStaticOcclusionPerf.primitiveTests,primitiveCulled:apexStaticOcclusionPerf.primitiveCulled};}
+function apexStaticOcclusionStatsSnapshot(){return{frames:apexStaticOcclusionPerf.frames,occludersBuilt:apexStaticOcclusionPerf.occludersBuilt,itemsTested:apexStaticOcclusionPerf.itemsTested,itemsCulled:apexStaticOcclusionPerf.itemsCulled,occludersPreculled:apexStaticOcclusionPerf.occludersPreculled,landmarksPreculled:apexStaticOcclusionPerf.landmarksPreculled,primitiveTests:apexStaticOcclusionPerf.primitiveTests,primitiveCulled:apexStaticOcclusionPerf.primitiveCulled};}
 
 function apexCompiledLandmarkEntries(allItems){
  if(!Array.isArray(allItems)||!allItems.length)return[];
@@ -1723,8 +1730,11 @@ function apexGrandstandFrameXZ(frame,u,depth){
 function apexGrandstandWorldCam(frame,u,depth,y,cam){
  const p=apexGrandstandFrameXZ(frame,u,depth),yy=apexWorldGroundY(p[0],p[1])+y;return worldToCamera(p[0],yy,p[1],cam);
 }
+let apexSceneBudgetFrame=-1,apexSceneBudgetCache=null;
 function apexSceneDetailBudget(){
  if(typeof apexInspectionFullScene==='function'&&apexInspectionFullScene())return {mobile:false,q:1,fm:16.7,renderMs:0,pressure:0,density:1,detailScale:1,farScale:1};
+ const frame=typeof renderFrameId==='number'?renderFrameId:-1;
+ if(frame>=0&&apexSceneBudgetFrame===frame&&apexSceneBudgetCache)return apexSceneBudgetCache;
  const mobile=mobilePerformanceMode(),q=clamp(Number(renderQualityT())||0,0,1),fm=Math.max(0,Number(telemetryPerf&&telemetryPerf.frameMs)||16.7),rm=Math.max(0,Number(telemetryPerf&&telemetryPerf.renderMs)||0);
  let pressure=0;
  if(fm>46||rm>34)pressure=3;else if(fm>34||rm>25)pressure=2;else if(fm>25||rm>18)pressure=1;
@@ -1733,7 +1743,8 @@ function apexSceneDetailBudget(){
  if(pressure===1){density*=.82;detailScale*=.84;farScale*=.90}
  else if(pressure===2){density*=.62;detailScale*=.68;farScale*=.78}
  else if(pressure>=3){density*=.44;detailScale*=.52;farScale*=.66}
- return {mobile,q,fm,renderMs:rm,pressure,density:clamp(density,.28,1),detailScale:clamp(detailScale,.42,1),farScale:clamp(farScale,.58,1)};
+ const budget={mobile,q,fm,renderMs:rm,pressure,density:clamp(density,.28,1),detailScale:clamp(detailScale,.42,1),farScale:clamp(farScale,.58,1)};
+ apexSceneBudgetFrame=frame;apexSceneBudgetCache=budget;return budget;
 }
 function apexSceneryDensity(type='',ds=999){
  if(typeof apexInspectionFullScene==='function'&&apexInspectionFullScene())return 1;
@@ -3262,7 +3273,10 @@ function collectExactWallRenderItems(cam){
  const out=[];
  const far=(typeof apexInspectionFullScene==='function'&&apexInspectionFullScene())?apexInspectionFarDistance():780;
  for(const sg of apexVisibleExactWallSegments(cw,cam,far)){
-  const A=worldToCamera(sg.x1,sg.y1,sg.z1,cam),B=worldToCamera(sg.x2,sg.y2,sg.z2,cam);if((A.z<.45&&B.z<.45)||(A.z>far&&B.z>far))continue;
+  const A=worldToCamera(sg.x1,sg.y1,sg.z1,cam),B=worldToCamera(sg.x2,sg.y2,sg.z2,cam);
+  if((A.z<.45&&B.z<.45)||(A.z>far&&B.z>far))continue;
+  const ar=Math.max(0,A.z)*1.65+45,br=Math.max(0,B.z)*1.65+45;
+  if((A.x>ar&&B.x>br)||(A.x< -ar&&B.x< -br))continue;
   const sb=sg._apexStaticWall,env=sb&&sb.env||envProfile(sg.s||0),baseStyle=sb&&sb.style||wallBarrierStyle(env,sg.s||0,sg.side||1),h=sg.height||baseStyle.height||1.08,
         barrier={...baseStyle,family:'WALL',style:String(sg.wallStyle||baseStyle.style||'wall_f1').toLowerCase(),kind:'WALL_F1',height:h};
   if(sg.color)barrier.base=sg.color;if(sg.fence!==null&&sg.fence!==undefined)barrier.fence=sg.fence;if(Number.isFinite(sg.fenceH)&&sg.fenceH>0)barrier.fenceH=Math.max(1.90,sg.fenceH);if(Number.isFinite(sg.fenceLeanM))barrier.fenceLeanM=sg.fenceLeanM;if(Number.isFinite(sg.postSpacingM))barrier.postSpacingM=sg.postSpacingM;

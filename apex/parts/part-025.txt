@@ -173,7 +173,7 @@ function apexTerrainHeightAtWorld(x,z,fallback=null){
    Portal/Tunnel/Track/Paved are geometric properties, not camera state. */
 function apexTerrainStaticKind(g,ix,iz,x,z){
  const cache=g._apexCellKindCache||(g._apexCellKindCache=new Map());
- const key=iz*g.nx+ix;
+ const key=iz+':'+ix+':'+Math.round(x*100)+':'+Math.round(z*100);
  if(cache.has(key)){apexHeavyCircuitPerf.kindHits++;return cache.get(key)}
  const kind=apexTerrainCellNeedsDetail(g,x,z,g.cell)||null;
  cache.set(key,kind);apexHeavyCircuitPerf.kindMisses++;
@@ -181,7 +181,7 @@ function apexTerrainStaticKind(g,ix,iz,x,z){
 }
 const apexHeavyCircuitPerf={kindHits:0,kindMisses:0,portalHits:0,portalMisses:0,forestCulled:0};
 function apexPortalCellIsNear(g,ix,iz,x,z){
- const cache=g._apexPortalNearCache||(g._apexPortalNearCache=new Map()),key=iz*g.nx+ix;
+ const cache=g._apexPortalNearCache||(g._apexPortalNearCache=new Map()),key=iz+':'+ix+':'+Math.round(x*100)+':'+Math.round(z*100);
  if(cache.has(key)){apexHeavyCircuitPerf.portalHits++;return cache.get(key)}
  const near=!!apexPortalInfluenceAtWorld(x,z,g.cell*1.8);
  cache.set(key,near);apexHeavyCircuitPerf.portalMisses++;return near;
@@ -1441,7 +1441,9 @@ let apexMirrorPerfFrame={requests:0,updates:0,reuses:0,landmarkFaces:0,carsVisib
 function apexMirrorPerfSettings(){
  const mobile=mobilePerformanceMode(),raw=mobile?(typeof mobileAdaptiveRenderPressure==='function'?mobileAdaptiveRenderPressure():1):(typeof desktopAdaptiveRenderPressure==='function'?desktopAdaptiveRenderPressure():1),q=clamp(Number.isFinite(raw)?raw:1,0,1),p=mobileControlProfile();
  // q=1 = holgado. Incluso holgado, 30 Hz es suficiente para un espejo pequeño y libera CPU.
- const hz=mobile?Math.round(lerp(12,24,q)):Math.round(lerp(18,28,q));
+ const frameMs=Math.max(0,finite(telemetryPerf&&telemetryPerf.frameMs,16.7));
+ const hitch=frameMs>42?.60:frameMs>28?.78:1;
+ const hz=Math.max(9,Math.round((mobile?lerp(11,23,q):lerp(15,27,q))*hitch));
  const trackMax=Math.round(Math.min(mobile?225:280,Math.max(mobile?82:135,p.mirrorMax*(mobile?(.90+.12*q):(.94+.10*q)))));
  const carMax=Math.round(Math.max(trackMax,Math.min(mobile?235:320,p.mirrorMax*(mobile?(.96+.12*q):(1.02+.14*q)))));
  const carBudgetScale=.62+.38*q,carCount=Math.max(1,Math.min(9,Math.round((p.mirrorCars+(mobile?0:1))*carBudgetScale)));
@@ -3151,7 +3153,9 @@ function webglPushTunnelDetails(segments,cam,pitch){
 function webglPushCircuitLandmarks(cam,pitch){
  if(!webglCircuitVisualAvailable())return;const allItems=trackLandmarks(),L=trackData.km*1000;if(!allItems||!allItems.length)return;const entries=apexCompiledLandmarkEntries(allItems),staticOcclusion=apexBuildStaticOcclusionContext(entries,cam,pitch);
  for(const ent of entries){
-   const li=ent.i,it=ent.it,a=it.anchor,base=webglLandmarkCam(a,0,0,0,cam),skyline=apexIsSkylineLandmark(it),exactClip=skyline&&Array.isArray(it.worldFootprint)&&it.worldFootprint.length>=3?apexLandmarkFootprintClipInfo(it,cam,pitch,Math.max(6000,it.maxDs||0),.30):null;
+   const li=ent.i,it=ent.it,a=it.anchor,staticBound=it._apexStaticBatch&&it._apexStaticBatch.viewBound;
+   if(staticBound&&!apexStaticBoundInView(staticBound,cam,8600,1.65)){apexStaticOcclusionPerf.landmarksPreculled++;continue;}
+   const base=webglLandmarkCam(a,0,0,0,cam),skyline=apexIsSkylineLandmark(it),exactClip=skyline&&Array.isArray(it.worldFootprint)&&it.worldFootprint.length>=3?apexLandmarkFootprintClipInfo(it,cam,pitch,Math.max(6000,it.maxDs||0),.30):null;
    if(exactClip?!exactClip.visible:!webglLandmarkVisible(it,base,pitch,cam))continue;
    if(apexStaticLandmarkOccluded(it,base,cam,pitch,staticOcclusion))continue;
    const radius=webglLandmarkRadius(it),dsLm=Number.isFinite(a.s)?Math.abs(wrapDeltaS(a.s,player.s,L)):1e9,lodZ=exactClip&&exactClip.visible?exactClip.depth:(skyline?apexLandmarkEffectiveCamDepth(it,cam,base):base.z);

@@ -1,6 +1,6 @@
 # APEX Formula 26
 
-Versión de desarrollo: **v0.13.3 · PRE-RELEASE**
+Versión de desarrollo: **v0.13.4 · PRE-RELEASE**
 
 Archivo fuente original:
 `Apex_Formula_26_v5_230_62_8_6_7_6_4_17_CONTROL_CLASICO_GP4.html`
@@ -39,3 +39,7 @@ C activa CAM (piloto) → TV (cámara superior) → EXT (persecución elevada). 
 ## v0.13.3 · Rendimiento de circuitos SVG complejos
 
 A partir de esta versión, los muros estáticos importados se indexan en celdas espaciales de 192 m al compilar un circuito: las cámaras solo evalúan la región potencialmente visible, sin suprimir muros. La clasificación de celdas de terreno y la influencia de bocas de túnel quedan cacheadas por malla; los árboles de masas forestales usan descarte por esfera conservadora. No se modifican geometría SVG, JSON, hitboxes, IA, controles ni las tres cámaras. Diagnósticos en consola: `apexHeavyCircuitPerfDiagnostics()` y `apexExactWallSpatialDiagnostics()`. Validar visualmente el Madrid guardado e inspección 3D, además de medir FPS antes y después.
+
+## v0.13.4 — Conducción fluida con circuitos cargados
+
+Culling conservador de muros antes de proyectar vallas; selección espacial más cercana; cotas volumétricas para edificios fuera de cámara; presupuesto de escena reutilizado por fotograma; retrovisores con frecuencia adaptativa; corrección de la clave de caché en terreno a varias resoluciones. Sin modificaciones a física de 100 Hz, controles, circuitos, 3 cámaras ni guardados. Diagnóstico: apexPerformanceSummary(), renderProfilerSnapshot() y apexStaticOcclusionStatsSnapshot().
