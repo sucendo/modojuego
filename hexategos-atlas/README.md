@@ -296,3 +296,59 @@ desembocaduras, el Tonlé Sap estacional y los cursos monzónicos
 requieren comprobación visual contra referencia cartográfica. La
 validación automatizada no prueba por sí sola el FPS de una partida
 grande con 350–500 naciones.
+
+
+## Asia restante · ampliación conjunta física 0.41.6
+
+Esta pasada cartográfica incorpora **Siberia occidental y oriental,
+China y Mongolia, Corea y Japón, Sajalín y Kamchatka, Malasia, Indonesia
+occidental, Filipinas, Célebes y Nueva Guinea occidental**, compartida
+entre Atlas, Hexategos Pruebas y la variante de topónimos.
+
+Se conservan íntegros los sistemas canónicos existentes: Yangtsé,
+Huang He, Obi, Yeniséi, Lena, Amur, río de las Perlas, Mekong, entre
+otros. No se duplican ni se cambian los datos de propiedad, geología,
+recursos, economía, navegación, IA ni los archivos de partidas.
+
+**Arquitectura añadida**
+- `geo-asia-completion-0416.js`: 6 zonas físicas, 60 trazados
+  secundarios (27 ríos, 33 sistemas montañosos), 49 regiones naturales
+  y 6 lagos interiores de referencia, todos con datos geográficos
+  aproximados. Se reutilizan los macro-topónimos asiáticos anteriores.
+- `atlas-asia-completion-graph-0416.js`: 6 grafos terrestres
+  independientes filtrados por grupos L5, creados **bajo demanda**;
+  todas las rutas usan únicamente aristas y vértices de la malla
+  hexagonal **L8 original**.
+- `atlas-asia-completion-routes-0416.js`: rutas almacenadas en caché,
+  solo visibles a zoom regional, nunca dibujadas si no se resuelve
+  la topología L8. Los ríos han de alcanzar un vértice de litoral
+  nativo y no cruzan aristas costeras ni lagos.
+- `geo-asia-completion-landcover-0416.js`: paletas continuas,
+  con transiciones suaves y caché de celdas consultadas: tundra/taiga
+  siberiana, Gobi, estepa de Mongolia, llanuras cultivadas chinas,
+  bosque de Corea y Japón, selva y suelos volcánicos tropicales.
+- `atlas-asia-completion-water-0416.js`: representación de Baikal,
+  Khövsgöl, Hulun, Qinghai, Biwa y Toba mediante la **recoloración
+  visual de celdas L8 terrestres preexistentes**, sin crear mares,
+  puertos ni vías navegables. Las seis manchas de agua son
+  conexas sobre L8 a la escala actual.
+- `atlas-regions-0390.js` añade nombres de las zonas naturales,
+  relieves secundarios y lagos, con filtro de validación de las
+  rutas y controles de visibilidad, sin forzar etiquetas sobre
+  cauces que no están dibujados.
+
+**Limitaciones y pendientes de revisión**:
+De los 60 trazados, **58 se resuelven** sobre la malla original L8.
+Quedan sin trazo cartográfico seguro **río Taz** (la máscara nativa de
+la costa queda a cientos de kilómetros de su desembocadura
+referencial) y **río Huai** (la hidrografía actual y sus conexiones a
+canales/lagos no se deben modelar como una salida marítima directa).
+No se han dibujado atajos para ocultar esas diferencias.
+
+Esta actualización es una **primera cobertura continental amplia**
+de las regiones restantes, NO un atlas físico totalmente verificado
+a nivel local. Las costas siguen exactamente la malla anterior.
+La forma de los lagos es aproximada y algunos ocupan solamente una
+celda L8. Restan comparación visual por subregiones, ríos menores,
+precisión regional de cuencas, rutas de islas pequeñas, mejora de
+relieve y medida real de FPS bajo una partida de 500 naciones.
