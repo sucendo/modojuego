@@ -8,7 +8,7 @@
  const corrections=Object.freeze({
   Panjnad:{at:[70.97,28.93],maxErrorKm:35},
   Kosi:{at:[87.26,25.42],maxErrorKm:35},
-  Manas:{at:[90.85,26.30],maxErrorKm:35},
+  Manas:{at:[90.825,26.250],maxErrorKm:35},
   Teesta:{at:[89.66,25.49],maxErrorKm:35}
  });
  const channels=[
