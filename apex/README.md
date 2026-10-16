@@ -1,6 +1,6 @@
 # APEX Formula 26
 
-Versión de desarrollo: **v0.12.1 · PRE-RELEASE**
+Versión de desarrollo: **v0.12.2 · PRE-RELEASE**
 
 Archivo fuente original:
 `Apex_Formula_26_v5_230_62_8_6_7_6_4_17_CONTROL_CLASICO_GP4.html`
@@ -19,3 +19,7 @@ Pruebas de consola dentro del simulador: `apexCarVisualAudit()` y `apexCarVisual
 ## Geometría de coches v0.12.1
 
 En el renderer WebGL2 los coches cercanos reciben morro alineado al alerón, pontones ampliados a proporciones coherentes, entradas laterales, fondo con deflectores, flaps, tirantes de suspensión inclinados, halo y difusor. Los LOD 0 y 1 siguen simplificados para móviles y parrillas de 22 vehículos. No se han modificado física, colisiones, IA ni los circuitos. Diagnóstico en consola: `apexCarGeometryV0121SelfTest()`.
+
+## Referencias angulares v0.12.2
+
+Render WebGL continuo y 16 referencias por coche; metadatos `viewIndex16`, `refAngle16`, `refAngle16Label`. Validaciones: `apexCarVisualAuditV0122()`, `apexCarAngleContinuityTest()`, `apexCarPerspectiveSymmetryTest()`, `apexCarAngleReferenceTable()`. Es una auditoría geométrica; las capturas WebGL y FPS siguen pendientes de validación manual.

@@ -485,9 +485,87 @@ function apexCarGeometryV0121SelfTest(){
  });
  return{version:APP_VERSION,ok:rows.length===11&&rows.every(r=>r.valid),teams:rows,
   geometry:'LOD2 aero / LOD1 oriented wishbones / LOD0 original',
-  physicsModified:false};
+  physicsModified:false,viewAngles16:APEX_CAR_VIEW_ANGLES.slice(),
+  referenceMode:'16-angle-audit-on-continuous-webgl'};
 }
 window.apexCarGeometryV0121SelfTest=apexCarGeometryV0121SelfTest;
+
+/* v0.12.2: auditoria matematica de referencias y proporciones. No equivale
+   a capturas WebGL ni sustituye la inspeccion visual de los 176 casos. */
+function apexCarAngleReferenceTable(){
+ return APEX_CAR_VIEW_ANGLES.map((deg,index)=>({index,deg,label:apexCarReferenceAngleLabel(index),
+   oppositeIndex:(index+8)%16,mirrorIndex:(16-index)%16}));
+}
+function apexCarPerspectiveMetrics(teamKey){
+ const bp=apexCarVisualBlueprint(teamKey),v=webglRivalVariant(teamKey),
+ frontZ=v.wheelbase*.52,rearZ=-v.wheelbase*.48,fwZ=frontZ+.57*v.noseLen,
+ side=(.48+.21)*v.sidepodWidth;
+ return{team:bp.key,model:bp.model,chassis:bp.chassis,
+   frontWingSpan:v.frontWing,rearWingSpan:v.rearWing,frontWingZ:fwZ,
+   noseTipZ:fwZ+.14,rearWingZ:rearZ-.62,sidepodLeftX:-side,sidepodRightX:side,
+   frontWheelLeftX:-.92,frontWheelRightX:.92,rearWheelLeftX:-.88,rearWheelRightX:.88,
+   cockpitLeftX:-.23*v.cockpitWidth,cockpitRightX:.23*v.cockpitWidth,
+   haloLeftX:-.16*v.haloWidth,haloRightX:.16*v.haloWidth,
+   driverEye:Number(bp.geometry.driverEye||0)};
+}
+function apexCarPerspectiveSymmetryTest(){
+ const pairs=[['sidepodLeftX','sidepodRightX'],['frontWheelLeftX','frontWheelRightX'],
+ ['rearWheelLeftX','rearWheelRightX'],['cockpitLeftX','cockpitRightX'],
+ ['haloLeftX','haloRightX']];
+ const rows=teamKeys.map(team=>{
+  const m=apexCarPerspectiveMetrics(team),noseLead=m.noseTipZ-m.frontWingZ;
+  const symmetric=pairs.every(([l,r])=>Number.isFinite(m[l])&&Number.isFinite(m[r])&&Math.abs(m[l]+m[r])<1e-9);
+  const finiteValues=Object.values(m).every(v=>typeof v!=='number'||Number.isFinite(v));
+  const proportions=finiteValues&&m.frontWingSpan>1.5&&m.frontWingSpan<2.1&&
+   m.rearWingSpan>1.3&&m.rearWingSpan<1.8&&m.frontWingSpan>m.rearWingSpan&&
+   noseLead>.05&&noseLead<.3&&m.sidepodRightX>.5&&m.sidepodRightX<.9&&
+   m.cockpitRightX>.15&&m.cockpitRightX<.3&&m.haloRightX>.1&&m.haloRightX<.2;
+  return{team:m.team,model:m.model,chassis:m.chassis,valid:symmetric&&proportions,
+   symmetric,proportions,metrics:m};
+ });
+ return{ok:rows.length===11&&rows.every(x=>x.valid)&&new Set(rows.map(x=>x.model)).size===3,
+ checked:rows.length,rows};
+}
+function apexCarAngleContinuityTest(){
+ const angles=APEX_CAR_VIEW_ANGLES,visited=new Set(),anomalies=[];
+ let unique=true,symmetric=true,sequential=true,maxError=0,prev=null;
+ for(let i=0;i<16;i++){
+  const a=angles[i]*Math.PI/180;
+  const idx=rivalAtlas16AngleIndex(Math.cos(a),-Math.sin(a));
+  const mirror=rivalAtlas16AngleIndex(Math.cos(a),Math.sin(a));
+  if(idx!==i)unique=false;
+  if(mirror!==(16-i)%16)symmetric=false;
+  visited.add(idx);
+ }
+ for(let i=0;i<=720;i++){
+  const deg=(i%720)*.5,a=deg*Math.PI/180;
+  const idx=rivalAtlas16AngleIndex(Math.cos(a),-Math.sin(a));
+  const error=Math.abs(((deg-angles[idx]+540)%360)-180);
+  maxError=Math.max(maxError,error);
+  if(prev!==null&&idx!==prev&&idx!==(prev+1)%16){
+   sequential=false;if(anomalies.length<8)anomalies.push({angle:deg,previous:prev,current:idx});
+  }
+  prev=idx;
+ }
+ return{ok:angles.length===16&&visited.size===16&&unique&&symmetric&&sequential&&maxError<=11.25+1e-8,
+   samples:721,unique,symmetric,sequential,maxQuantizationErrorDeg:+maxError.toFixed(3),
+   anomalies,viewIndices:angles.map((a,i)=>i)};
+}
+function apexCarVisualAuditV0122(){
+ const angles=apexCarAngleContinuityTest(),symmetry=apexCarPerspectiveSymmetryTest(),
+ pipeline=apexCarVisualPipelineSelfTest(),geometry=apexCarGeometryV0121SelfTest();
+ return{version:APP_VERSION,ok:angles.ok&&symmetry.ok&&pipeline.ok&&geometry.ok,
+   rendering:'WebGL continuo / 16 orientaciones solo de referencia',
+   angles,symmetry,pipeline,geometry,referenceCount:teamKeys.length*APEX_CAR_VIEW_ANGLES.length,
+   manualVisualReviewRequired:true};
+}
+window.apexCarReferenceAngleLabel=apexCarReferenceAngleLabel;
+window.apexRivalReferenceAnglePayload=apexRivalReferenceAnglePayload;
+window.apexCarAngleReferenceTable=apexCarAngleReferenceTable;
+window.apexCarPerspectiveMetrics=apexCarPerspectiveMetrics;
+window.apexCarPerspectiveSymmetryTest=apexCarPerspectiveSymmetryTest;
+window.apexCarAngleContinuityTest=apexCarAngleContinuityTest;
+window.apexCarVisualAuditV0122=apexCarVisualAuditV0122;
 
 function webglPushRivalField3D(items,cam,pitch){
  let tris=0;for(const a of items||[]){if(a._webgl3d)tris+=webglPushRivalCar3D(a,cam,pitch);}return tris;

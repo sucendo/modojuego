@@ -1029,6 +1029,17 @@ function rivalAtlas16AngleIndex(facing,sideToCam){
   if(angle<0) angle+=360;
   return Math.round(angle/22.5)%16;
 }
+/* v0.12.2 · Metadatos de referencia: render 3D continuo, no sprites rígidos. */
+const APEX_CAR_REFERENCE_LABELS=Object.freeze(APEX_CAR_VIEW_ANGLES.map(deg=>deg+'°'));
+function apexCarReferenceAngleLabel(idx){
+ const i=Number.isFinite(idx)?((Math.round(idx)%16)+16)%16:0;
+ return APEX_CAR_REFERENCE_LABELS[i];
+}
+function apexRivalReferenceAnglePayload(facing,sideToCam){
+ const index=rivalAtlas16AngleIndex(facing,sideToCam);
+ return{index,angleDeg:APEX_CAR_VIEW_ANGLES[index],label:apexCarReferenceAngleLabel(index)};
+}
+
 
 // v5.230.62.4 · LOD VISUAL DE RIVALES EXCLUSIVAMENTE 3D EN WEBGL (heredado de v62.3.1).
 // La IA/física no cambia. Nivel 2 = 3D completo; 1 = 3D medio; 0 = 3D low-poly.
@@ -1152,7 +1163,9 @@ function collectRivalSprites(cam,pitch){
    const side=rfx*cam.nx+rfz*cam.nz;
    const raw=Math.atan2(side,Math.max(.55,Math.abs(rfx*cam.tx+rfz*cam.tz)));
    const relYaw=clamp(raw,-.20,.20);
-   arr.push({r,p,z:c.z,q,surface,relYaw,facing,sideToCam,view,viewIndex16:rivalAtlas16AngleIndex(facing,sideToCam),visualLod});
+   const ref16=apexRivalReferenceAnglePayload(facing,sideToCam);
+   arr.push({r,p,z:c.z,q,surface,relYaw,facing,sideToCam,view,
+     viewIndex16:ref16.index,refAngle16:ref16.angleDeg,refAngle16Label:ref16.label,visualLod});
    apexRivalLodFrameStats.visible++;if(visualLod>=2)apexRivalLodFrameStats.near++;else if(visualLod===1)apexRivalLodFrameStats.mid++;else apexRivalLodFrameStats.far++;
  }
  arr.sort((a,b)=>b.z-a.z);return arr;

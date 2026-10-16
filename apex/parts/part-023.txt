@@ -1915,7 +1915,9 @@ function apexCarVisualAudit(){
  const required=['noseLen','noseWidth','frontWing','rearWing','sidepodWidth','sidepodHeight','engineHeight','cockpitWidth','haloWidth','airboxWidth','wheelScale','shoulderWidth','mirrorSpread','driverEye'];
  const models=Object.entries(carCatalog).map(([id,spec])=>{const visual=apexCarModelVisual(spec),missing=required.filter(k=>!Number.isFinite(visual[k]));return{id,name:spec.name,ok:missing.length===0,missing,visual};});
  const teams=teamKeys.map(key=>{const t=teamInfo(key),spec=carCatalog[t.model]||carCatalog.A26;return{team:key,chassis:t.chassis,model:t.model||'A26',visual:apexCarModelVisual(spec)};});
- return{ok:models.every(m=>m.ok),version:APP_VERSION,rendering:'continuous-3d-with-16-angle-reference',viewAngles:APEX_CAR_VIEW_ANGLES.slice(),sharedBlueprint:true,models,teams,player:player?{teamKey:player.teamKey,chassis:player.carModel,model:player.carSpec&&player.carSpec.name,visual:apexCarModelVisual(player.carSpec||carCatalog.A26)}:null};
+ return{ok:models.every(m=>m.ok),version:APP_VERSION,rendering:'continuous-3d-with-16-angle-reference',viewAngles:APEX_CAR_VIEW_ANGLES.slice(),sharedBlueprint:true,
+  perspectiveAudit:typeof apexCarVisualAuditV0122==='function'?apexCarVisualAuditV0122():null,
+  models,teams,player:player?{teamKey:player.teamKey,chassis:player.carModel,model:player.carSpec&&player.carSpec.name,visual:apexCarModelVisual(player.carSpec||carCatalog.A26)}:null};
 }
 window.apexCarVisualAudit=apexCarVisualAudit;
 function playerCarColor(){
