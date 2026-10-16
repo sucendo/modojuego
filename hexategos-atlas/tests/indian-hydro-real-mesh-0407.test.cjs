@@ -60,14 +60,36 @@ test('Indo, Ganges y Brahmaputra: afluentes conectados a cauces reales L8',
  st.MAP_RIVERS3242=network;
  st.physicalEdge3242=id=>({u:nodes[id*2],v:nodes[id*2+1]});
  load('geo-himalaya-physical-0406.js');
+ load('geo-assam-confluences-0413.js');
  load('geo-indus-ganges-brahmaputra-0407.js');
  load('geo-indian-deltas-0408.js');
  load('atlas-himalaya-graph-0406.js',atlas);
  load('atlas-indian-rivers-0407.js',atlas);
+ load('atlas-assam-corridor-0413.js',atlas);
  load('atlas-indian-deltas-0408.js',atlas);
  const api=st.window.HexategosSubcontinentRivers0407,
   data=st.window.HexategosSubcontinentHydro0407;
  assert.ok(api);assert.equal(api.graphBuilds(),0);
+ const corrected=st.window.HexategosAssamCorridor0413;
+ const corridorReport=corrected.diagnostics();
+ console.log('ASSAM_BRAHMAPUTRA_CORRIDOR_0413',JSON.stringify(corridorReport));
+ assert.equal(corridorReport.ok,true,corridorReport.reason);
+ assert.equal(corridorReport.usesCoast,false);
+ assert.equal(corridorReport.crossesVirtualWater,false);
+ assert.ok(corridorReport.supplementalEdges>0);
+ for(const name of ['Subansiri','Manas','Teesta']){
+  const check=api.validate(name),point=data.rivers.find(x=>x.name===name).join;
+  const geographic=corrected.nearest(point);
+  console.log('ASSAM_CONFLUENCE_0413',JSON.stringify({name,check,geographic}));
+  assert.ok(check?.ok,name+' sin ruta L8');
+  assert.equal(check.regionalCorridor,true,name);
+  assert.ok(check.sameVertex,name+' termina fuera del corredor');
+  assert.equal(check.usesCoast,false,name);
+  assert.equal(check.crossesVirtualWater,false,name);
+  assert.ok(check.joinDistanceKm<=38,
+   name+' desplazamiento de '+check.joinDistanceKm+' km');
+  assert.ok(geographic.km<=38,name+' confluencia demasiado lejos del corredor');
+ }
  const L=st.loadLevel('8'),old=Buffer.from(L.land.buffer).toString('base64');
  const ok=[],failed=[];
  for(const item of data.rivers){
