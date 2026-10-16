@@ -112,7 +112,10 @@
    points:window.HexategosAssamConfluences0413?.highCourses.Teesta||
      [[88.73,27.96],[88.55,27.35],[88.55,26.75],
       [88.76,26.30],[89.2,25.90],[89.66,25.49]],
-   minZoom:8.4,maxWidth:100,aliases:['Tista']},
+   minZoom:8.4,maxWidth:100,aliases:['Tista']}
+ ];
+ const basins=[
+  {name:'Cuenca alta del Indo',center:[75.2,34.0],radii:[5.6,2.0],priority:80,minZoom:7.2},
   {name:'Cuenca del Punjab',center:[74.2,30.9],radii:[4.3,2.1],priority:79,minZoom:7.1},
   {name:'Llanura aluvial del Indo',center:[69.6,26.7],radii:[2.6,4.2],priority:78,minZoom:7.1},
   {name:'Cuenca alta del Ganges',center:[79.5,30.0],radii:[3,2.0],priority:79,minZoom:7.5},
