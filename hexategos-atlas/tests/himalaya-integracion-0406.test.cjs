@@ -52,6 +52,25 @@ test('0.40.6: Atlas y las dos entradas usan las mismas fuentes',()=>{
   assert.ok(read(prefix+'atlas-integration-0400.js').includes('himalayaEco.rgbForCell'));
  }
 });
+test('0.40.6: navegación e inventario completo de lagos de alta montaña',()=>{
+ const d=data(),html=read('hexategos-atlas/index.html');
+ assert.ok(html.includes('Europa y Asia</title>'));
+ for(const lake of d.waterBodies){
+  const [lon,lat]=lake.components[0];
+  const coords=lat+','+lon;
+  const shortcut='data-place="'+coords+'"';
+  assert.ok(html.includes(shortcut),'Sin acceso rápido al lago '+lake.name);
+  const matched=d.bodyAt(lon,lat);
+  assert.equal(matched?.name,lake.name,'Contorno desplazado para '+lake.name);
+ }
+ assert.equal(d.canonical.mountains.length,4);
+ for(const river of ['Indo','Ganges','Brahmaputra']){
+  assert.ok(d.headwaters.some(x=>x.river===river),'Falta referencia de '+river);
+ }
+ assert.ok(d.mountains.some(x=>x.name==='Cordillera de Ladakh'));
+ assert.ok(d.mountains.some(x=>x.name==='Transhimalaya'));
+});
+
 test('0.40.6: no cambia la simulación, guardados, suelo ni propietarios',()=>{
  const paths=[
   'hexategos-pruebas/game/data/geo-himalaya-physical-0406.js',
