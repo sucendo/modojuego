@@ -88,7 +88,7 @@ test('Asia 0.41.6 · Siberia, China, Corea/Japón y archipiélagos sobre la mall
  console.log('ASIA_FAILURE_DIAG_0416',JSON.stringify(failureDiagnostics));
  assert.equal(result.length,data.features.length);
  assert.equal(graph.builds(),data.zones.length);
- assert.ok(succeeded.length>=35,'Faltan demasiados trazados sobre L8');
+ assert.ok(succeeded.length>=58,'Regresión en los 58 trazados regionales L8 ya validados');
  for(const item of succeeded){
   const v=api.validate(item.name);
   assert.equal(v.usesCoast,false,item.name);
@@ -123,8 +123,12 @@ test('Asia 0.41.6 · Siberia, China, Corea/Japón y archipiélagos sobre la mall
  }
  console.log('ASIA_COMPLETION_LAKES_L8_0416',JSON.stringify(stats));
  assert.ok(stats['Lago Baikal'].cells>0,'Baikal debe estar visible');
- assert.ok(Object.values(stats).filter(x=>x.cells>0).length>=4,
-  'La mayoría de los seis lagos debe ocupar al menos una celda L8');
+ assert.equal(Object.values(stats).filter(x=>x.cells>0).length,6,
+  'Los seis lagos deben ocupar celdas L8');
+ for(const [lake,x] of Object.entries(stats)){
+  assert.ok(x.cells>=1,lake+' no ocupa celdas');
+  assert.equal(x.components,1,lake+' deja islas visuales de agua sin conectar');
+ }
  assert.equal(water.diagnostics().changesLand,false);
  assert.equal(Buffer.from(L.land.buffer).toString('base64'),original);
 });
