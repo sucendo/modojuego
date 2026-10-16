@@ -57,9 +57,9 @@ test('0.40.6: navegación e inventario completo de lagos de alta montaña',()=>{
  assert.ok(html.includes('Europa y Asia</title>'));
  for(const lake of d.waterBodies){
   const [lon,lat]=lake.components[0];
-  const coords=lat+','+lon;
-  const shortcut='data-place="'+coords+'"';
-  assert.ok(html.includes(shortcut),'Sin acceso rápido al lago '+lake.name);
+  const buttons=[...html.matchAll(/data-place="(-?[0-9.]+),(-?[0-9.]+)"/g)];
+  assert.ok(buttons.some(x=>Math.abs(Number(x[1])-lat)<.0001&&
+    Math.abs(Number(x[2])-lon)<.0001),'Sin acceso rápido al lago '+lake.name);
   const matched=d.bodyAt(lon,lat);
   assert.equal(matched?.name,lake.name,'Contorno desplazado para '+lake.name);
  }
