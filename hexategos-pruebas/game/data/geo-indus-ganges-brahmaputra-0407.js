@@ -89,8 +89,11 @@
      [89.0,29.22],[90.3,29.23],[91.7,29.15],[93.4,29.4],
      [94.7,29.75],[95.3,29.25],[95.2,28.42]],
    minZoom:7.0,maxWidth:130,kind:'upstreamContinuation'},
-  {name:'Subansiri',basin:'Brahmaputra',parent:'Brahmaputra',join:[94.21,27.08],
-   points:[[92.88,28.36],[93.4,27.92],[93.85,27.50],[94.21,27.08]],
+  {name:'Subansiri',basin:'Brahmaputra',parent:'Brahmaputra',
+   join:window.HexategosAssamConfluences0413?.mouths.Subansiri.at||[93.91,26.88],
+   points:window.HexategosAssamConfluences0413?.highCourses.Subansiri||
+     [[92.643,27.983],[94.03,28.36],[94.35,27.72],[94.21,27.60],
+      [94.27,27.24],[93.91,26.88]],
    minZoom:8.2,maxWidth:103},
   {name:'Lohit',basin:'Brahmaputra',parent:'Brahmaputra',join:[95.71,27.67],
    points:[[97.5,28.38],[96.8,28.02],[96.12,27.91],[95.71,27.67]],
@@ -98,16 +101,18 @@
   {name:'Dibang',basin:'Brahmaputra',parent:'Brahmaputra',join:[95.52,27.65],
    points:[[95.98,28.96],[95.91,28.33],[95.73,27.86],[95.52,27.65]],
    minZoom:9.1,maxWidth:78},
-  {name:'Manas',basin:'Brahmaputra',parent:'Brahmaputra',join:[90.85,26.30],
-   points:[[91.3,27.92],[90.85,27.22],[90.82,26.7],[90.85,26.3]],
+  {name:'Manas',basin:'Brahmaputra',parent:'Brahmaputra',
+   join:window.HexategosAssamConfluences0413?.mouths.Manas.at||[90.825,26.25],
+   points:window.HexategosAssamConfluences0413?.highCourses.Manas||
+     [[91.3,27.92],[91.2,27.58],[90.95,27.22],[90.95,26.84],
+      [90.87,26.52],[90.825,26.25]],
    minZoom:8.6,maxWidth:108},
-  {name:'Teesta',basin:'Brahmaputra',parent:'Brahmaputra',join:[89.66,25.49],
-   points:[[88.73,27.96],[88.5,27.35],[88.55,26.71],
-     [88.75,26.31],[89.35,25.85],[89.66,25.49]],
-   minZoom:8.4,maxWidth:100,aliases:['Tista']}
- ];
- const basins=[
-  {name:'Cuenca alta del Indo',center:[75.2,34.0],radii:[5.6,2.0],priority:80,minZoom:7.2},
+  {name:'Teesta',basin:'Brahmaputra',parent:'Brahmaputra',
+   join:window.HexategosAssamConfluences0413?.mouths.Teesta.at||[89.66,25.49],
+   points:window.HexategosAssamConfluences0413?.highCourses.Teesta||
+     [[88.73,27.96],[88.55,27.35],[88.55,26.75],
+      [88.76,26.30],[89.2,25.90],[89.66,25.49]],
+   minZoom:8.4,maxWidth:100,aliases:['Tista']},
   {name:'Cuenca del Punjab',center:[74.2,30.9],radii:[4.3,2.1],priority:79,minZoom:7.1},
   {name:'Llanura aluvial del Indo',center:[69.6,26.7],radii:[2.6,4.2],priority:78,minZoom:7.1},
   {name:'Cuenca alta del Ganges',center:[79.5,30.0],radii:[3,2.0],priority:79,minZoom:7.5},
