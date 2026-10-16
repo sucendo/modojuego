@@ -152,3 +152,30 @@
   #contextMenu3244.hexInspectorActive03817 .ctxActions3244{padding:3px 10px 10px!important;gap:7px!important}
   #contextMenu3244.hexInspectorActive03817 .ctxRanges3246{grid-template-columns:1fr;padding:0 10px 10px}
 }
+
+/* 0.38.65: un solo panel de contenido por pestaña.
+   La acción seleccionada sustituye, no expande, el bloque de construcción. */
+#contextMenu3244.hexInspectorActive03817 #ctxActions3244[hidden],
+#contextMenu3244.hexInspectorActive03817 #ctxDetails03817[hidden],
+#contextMenu3244.hexInspectorActive03817 #ctxRanges3246[hidden]{
+  display:none!important;
+}
+#contextMenu3244.hexInspectorActive03817.ctxTabContent03865 .ctxForeign3246{
+  display:none!important;
+}
+#contextMenu3244 .ctxTabCard03865 > h4{
+  padding:3px 0 9px;font-size:1.15em;
+  border-bottom:1px solid var(--panel-line);
+}
+#contextMenu3244 .ctxNav03817 button[role="tab"]{
+  white-space:normal;overflow-wrap:anywhere;
+}
+@container (max-width:600px){
+  #contextMenu3244 .ctxNav03817{
+    display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+  #contextMenu3244 .ctxNav03817 button{flex-basis:auto;min-width:0;font-size:.94em}
+}
+@container (max-width:24em){
+  #contextMenu3244 .ctxNav03817{grid-template-columns:repeat(2,minmax(0,1fr))}
+}

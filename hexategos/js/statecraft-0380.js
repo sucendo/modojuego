@@ -409,6 +409,18 @@
     // 0.38.0 volvía a multiplicar material en ciudades IA: doble penalización.
     let combined=Number(api?.combinedSupply?.(cell));
     if(!Number.isFinite(combined))combined=typeof supplyPct3220==='function'?Number(supplyPct3220(cell))||0:60;
+    // La capital es una excepción explícita a la desaparición por falta de
+    // carretera: puede vivir de sus existencias y territorio inmediato.
+    // No regalar un porcentaje fijo: si no hay alimentos, tampoco habrá
+    // abastecimiento autónomo. Otras ciudades siguen necesitando red.
+    if(capitals?.[f]===cell&&owner6[cell]===f){
+      const stock=api?.materialSupply?.(cell)?.resourcePct;
+      if(Array.isArray(stock)&&stock.length>=4){
+        const local=.62*(Number(stock[0])||0)+.22*(Number(stock[2])||0)+
+          .16*(Number(stock[3])||0);
+        combined=Math.max(combined,Math.min(78,local*.78));
+      }
+    }
     return clamp(combined,0,100);
   }
 
@@ -443,7 +455,7 @@
     return {
       cell,owner:f,origin:st.origin,stability:Math.round(st.stability),
       nationalism:Math.round(st.nationalism),scarcity:Math.round(st.scarcity),
-      supply:Math.round(Number(st.lastSupply)||65),
+      supply:Number.isFinite(Number(st.lastSupply))?Math.round(Number(st.lastSupply)):65,
       occupied:st.origin>=0&&st.origin!==f,
       strike:st.strikeUntil>now(),riot:st.riotUntil>now(),
       active:Object.fromEntries(Object.keys(GOV_POLICY0386).map(t=>[t,governanceActive0386(st,t)])),
@@ -749,10 +761,18 @@
 
   function dossierHeader(target){
     const rel=diplomaticRelation3300(0,target),emb=embassyRecord(0,target),d=capitalDistance(0,target);
+    const identity=window.HexategosRegionalNames0389?.identity?.(target);
+    const historic=(identity?.history||[]).slice(-5);
+    const names='<div class="nationSection0380"><h4>Identidad histórica</h4>'+
+      '<p>Nombre actual: <b>'+esc(factionName3230(target))+'</b></p>'+
+      '<p>Denominaciones anteriores: '+(historic.length?historic.map(esc).join(' → '):'Sin cambios registrados')+'</p>'+
+      (identity?.pending?'<p>Transición política: '+esc(identity.pending.name)+'</p>':'')+
+      '<p>Cultura administrativa: <b>'+esc(window.HexategosRegionalNames0389?.cultureLabels?.[window.HexategosRegionalNames0389?.nationCulture?.(target)]||'No determinada')+'</b></p>'+
+      (target===0?'<button data-nation-rename0389="1">RENOMBRAR NACIÓN</button><button data-nation-culture0389="1">CAMBIAR CULTURA</button>':'')+'</div>';
     return '<div class="nationHero0380"><div><b>'+esc(factionName3230(target))+'</b><small>'+relationLabel(rel)+' · '+Math.round(d)+'° · alcance '+reachDeg(0)+'°</small></div>'+
       '<span class="nationColor0380" style="background:'+(FACTIONS3230[target]?.color||'#789')+'"></span></div>'+
       '<div class="nationStatus0380"><span>Embajada <b>'+(emb?.status==='active'?'ACTIVA':emb?.status==='pending'?'PENDIENTE':emb?.status==='expelled'?'EXPULSADA':'NO')+'</b></span>'+
-      '<span>Opinión <b>'+Math.round(dipOpinionOf3300?.(target,0)||0)+'</b></span><span>Confianza <b>'+Math.round(dipTrustOf3300?.(target,0)||0)+'</b></span></div>';
+      '<span>Opinión <b>'+Math.round(dipOpinionOf3300?.(target,0)||0)+'</b></span><span>Confianza <b>'+Math.round(dipTrustOf3300?.(target,0)||0)+'</b></span></div>'+names;
   }
 
   function diplomacyTab(target){
@@ -776,6 +796,7 @@
       '<p>Embajada, comercio, no agresión y alianza son ahora acuerdos independientes. Puede mantenerse un pacto político aunque el comercio quede suspendido.</p>'+
       treaty+'<div class="nationActions0380">'+acts+'</div></div>';
   }
+
 
   function providerCandidates0382(resource){
     resource=clamp(Number(resource)||0,0,4);
@@ -1066,16 +1087,30 @@
     dipTech.fill(0);for(let i=0;i<Math.min(a.length,dipTech.length);i++)dipTech[i]=clamp(Number(a[i])||0,0,5);
     return true;
   }
-  function save0380(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(serialize0380()))}catch(_){}}
+  function save0380(){
+    const state=serialize0380(),codec=window.HexategosSaveStorage03827;
+    if(codec?.set)return codec.set(SAVE_KEY,state);
+    try{
+      const data=JSON.stringify(state);
+      localStorage.setItem(SAVE_KEY,data);
+      return localStorage.getItem(SAVE_KEY)===data;
+    }catch(error){console.warn('[Hexategos gobierno] No se ha podido guardar',error);return false}
+  }
   function load0380(){
     if(restoredPortable){const s=restoredPortable;restoredPortable=null;return restore0380(s)}
-    try{return restore0380(JSON.parse(localStorage.getItem(SAVE_KEY)||'null'))}catch(_){return false}
+    try{const codec=window.HexategosSaveStorage03827;
+      return restore0380(codec?.get?codec.get(SAVE_KEY):JSON.parse(localStorage.getItem(SAVE_KEY)||'null'))
+    }catch(error){console.warn('[Hexategos gobierno] Estado local ilegible',error);return false}
   }
 
   const baseSave0380=saveGame3212;
-  saveGame3212=function(){const out=baseSave0380.apply(this,arguments);if(started3230)save0380();return out};
+  saveGame3212=function(){const out=baseSave0380.apply(this,arguments);
+    if(out===false)return false;
+    return started3230&&save0380()===false?false:out};
   const baseLoad0380=loadGame3212;
-  loadGame3212=function(){const out=baseLoad0380.apply(this,arguments);initialized=false;initialize0380();return out};
+  loadGame3212=function(){const out=baseLoad0380.apply(this,arguments);
+    if(out!==false){initialized=false;initialize0380()}
+    return out};
   const baseReset0380=resetGame3230;
   resetGame3230=function(clearSave=true){
     const out=baseReset0380.apply(this,arguments);
@@ -1098,6 +1133,7 @@
     applyPortableFile3275=function(file){
       restoredPortable=file?.payload?.statecraft0380||null;
       const out=basePortableApply0380.apply(this,arguments);
+      if(out===false){restoredPortable=null;return out}
       // El snapshot portable se ha procesado en la envoltura loadGame3212.
       // No repetir la migración ni el guardado completo tras el importador.
       if(out!==false&&restoredPortable){initialized=false;initialize0380()}
@@ -1105,6 +1141,16 @@
     };
   }
 
+  modalBody3244?.addEventListener('click',event=>{
+    const rename=event.target.closest?.('[data-nation-rename0389]');
+    const culture=event.target.closest?.('[data-nation-culture0389]');
+    if((!rename&&!culture)||uiInteractionState3244?.modal?.type!=='nation_dossier_0380')return;
+    if(uiInteractionState3244?.modal?.data?.target!==0)return;
+    event.preventDefault();
+    if(rename)window.HexategosRegionalNames0389?.renameDialog?.();
+    if(culture)window.HexategosRegionalNames0389?.cultureDialog?.();
+    renderNationDossier(0,openTab);
+  });
   window.HexategosStatecraft0380={
     version:BUILD,
     hasEmbassy,
@@ -1127,6 +1173,12 @@
     governmentPolicies:()=>Object.fromEntries(Object.entries(GOV_POLICY0386).map(([k,v])=>[k,{...v}])),
     governmentCities:(f=0,max=65)=>governanceCities0386(f,max),
     governmentCity:(cell)=>governanceCity0386(cell),
+    garrisonCommitted03874:(f=0)=>{
+      let total=0;
+      for(const st of cityState.values())if(st.owner===Number(f)&&owner6[st.cell]===Number(f))
+        total+=Math.max(0,Number(st.gov?.stationed)||0);
+      return total;
+    },
     governmentAction:(cell,type,f=0)=>applyGovernment0386(cell,type,f,true),
     governmentDemandMultiplier:(cell,r,f)=>governmentDemandMultiplier0386(cell,r,f),
     performance:()=>({lastServiceMs:Number(statecraftServiceMs0384.toFixed(2)),citiesUpdated:citiesUpdated0384,trackedCities:cityState.size,spyNetworks:spies.size}),
