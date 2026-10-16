@@ -18,7 +18,17 @@
    west:Math.min(...xs)-margin,east:Math.max(...xs)+margin,
    south:Math.min(...ys)-margin,north:Math.max(...ys)+margin};
  });
- const cache=new WeakMap();
+ const cache=new WeakMap(),covered=new WeakMap();
+ function edgeKey(a,b){return a<b?a+':'+b:b+':'+a}
+ function edgesFor(L){let map=covered.get(L);if(!map){map=new Map();covered.set(L,map)}return map}
+ function coveredEdge(name,a,b,L){return edgesFor(L).get(edgeKey(a,b))?.has(name)===true}
+ function registerCell(name,i,L){
+  const map=edgesFor(L),start=L.offsets[i],end=L.offsets[i+1];
+  for(let k=start;k<end;k++){
+   const a=L.adj[k],b=L.adj[k+1<end?k+1:start],key=edgeKey(a,b);
+   let names=map.get(key);if(!names){names=new Set();map.set(key,names)}names.add(name);
+  }
+ }
  function coords(A,k){
   const t=k*3;return [Math.atan2(A[t],A[t+2])*deg,
    Math.asin(clamp(A[t+1]/32767))*deg];
@@ -64,6 +74,7 @@
   if(!memo){memo=new Map();cache.set(L,memo)}
   if(memo.has(i))return memo.get(i);
   const name=classify(i,L);memo.set(i,name);
+  if(name)registerCell(name,i,L);
   return name;
  }
  const previous=terrainStrategicFill3247;
@@ -83,7 +94,7 @@
   return 'rgb('+water.join(',')+')';
  };
  window.HexategosHybridLakes0418=Object.freeze({
-  version:'0.41.8',fullCell:lakeFor,diagnostics:()=>({candidateLakes:lakes.length,
+  version:'0.41.9',fullCell:lakeFor,coveredEdge,diagnostics:()=>({candidateLakes:lakes.length,
    principle:'L8 native vertices; 70% sample coverage; visual only'})
  });
 })();

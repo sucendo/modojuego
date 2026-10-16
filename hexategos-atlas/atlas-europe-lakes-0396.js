@@ -39,9 +39,18 @@
     const F=plan.mesh.faceCenters,segments=[];
     let current=[];
     const flush=()=>{if(current.length>1)segments.push(current);current=[]};
-    for(const node of plan.path){
-     const k=node*3,p=projectVec(F[k]/32767,F[k+1]/32767,F[k+2]/32767,R,cx,cy);
+    for(let t=0;t<plan.path.length;t++){
+     const node=plan.path[t],k=node*3;
+     const p=projectVec(F[k]/32767,F[k+1]/32767,F[k+2]/32767,R,cx,cy);
      if(p[2]<=.015){flush();continue}
+     if(!t)continue;
+     const previous=plan.path[t-1],pk=previous*3;
+     const q=projectVec(F[pk]/32767,F[pk+1]/32767,F[pk+2]/32767,R,cx,cy);
+     if(q[2]<=.015){flush();continue}
+     if(window.HexategosHybridLakes0418?.coveredEdge?.(lake.name,previous,node,plan.mesh)){
+      flush();continue;
+     }
+     if(!current.length)current.push(q);
      current.push(p);
     }
     flush();

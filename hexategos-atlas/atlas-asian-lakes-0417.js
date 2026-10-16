@@ -191,18 +191,24 @@
     const path=[];
     for(const v of points){
      const j=v*3,p=projectVec(F[j]/32767,F[j+1]/32767,F[j+2]/32767,R,cx,cy);
-     if(p[2]>.015)path.push(p);
+     path.push(p);
     }
-    if(!path.length)continue;
+    if(!path.some(p=>p[2]>.015))continue;
     const width=Math.max(1.15,Math.min(36,lake.widthKm*R/6371*1.07));
     if(plan.kind==='point'){
      ctx.beginPath();ctx.arc(path[0][0],path[0][1],Math.min(2.7,Math.max(1.25,width*.42)),0,Math.PI*2);
      ctx.fillStyle='rgba(47,146,180,.92)';ctx.fill();
     }else if(path.length>1){
-     ctx.beginPath();
-     path.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));
-     ctx.strokeStyle='rgba(4,34,47,.84)';ctx.lineWidth=width+2;ctx.stroke();
-     ctx.strokeStyle='rgba(50,145,178,.93)';ctx.lineWidth=width;ctx.stroke();
+     const hybrid=window.HexategosHybridLakes0418;
+     let drew=false;
+     for(let k=1;k<path.length;k++){
+      if(path[k-1][2]<=.015||path[k][2]<=.015)continue;
+      if(hybrid?.coveredEdge?.(lake.name,points[k-1],points[k],plan.mesh))continue;
+      ctx.beginPath();ctx.moveTo(path[k-1][0],path[k-1][1]);ctx.lineTo(path[k][0],path[k][1]);
+      ctx.strokeStyle='rgba(4,34,47,.84)';ctx.lineWidth=width+2;ctx.stroke();
+      ctx.strokeStyle='rgba(50,145,178,.93)';ctx.lineWidth=width;ctx.stroke();drew=true;
+     }
+     if(!drew)continue;
     }else continue;
     drawn.add(lake.id);count++;
    }
