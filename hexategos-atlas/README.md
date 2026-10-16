@@ -141,3 +141,39 @@ rutas y desembocaduras, transiciones cromáticas deterministas,
 invariancia del suelo, renderizado compartido y modo de suministro;
 la inspección visual con navegador y el FPS de una partida con 500
 naciones siguen siendo comprobaciones prácticas aparte.
+
+
+## Himalaya y Tíbet · fase 0.40.6
+
+La región Himalaya–Karakórum–Hindu Kush oriental–Tíbet occidental y
+central está **implementada** sobre el `main` actual, compartiendo
+datos entre `hexategos-atlas/`, `hexategos-pruebas/game/` y
+`hexategos-pruebas/toponimos-game/`. Su versión cartográfica es
+0.40.6, aunque el repositorio ya contiene fases posteriores del
+subcontinente indio.
+
+- `geo-himalaya-physical-0406.js` contiene 13 referencias montañosas,
+  12 áreas geográficas, siete cabeceras hidrográficas y seis lagos.
+- Las grandes cadenas canónicas no se trazan por segunda vez.
+  `atlas-himalaya-graph-0406.js` y
+  `atlas-himalaya-routes-0406.js` resuelven seis sierras secundarias
+  sobre aristas reales L8 y se cachean después de cargarse bajo demanda.
+- `atlas-himalaya-water-0406.js` representa Pangong Tso, Tso Moriri,
+  Manasarovar, Rakshastal, Yamdrok y Namtso como grupos de celdas L8
+  visuales. Todos fueron constatados en la malla original con al
+  menos un hexágono y sin fragmentación. No son navegables ni cambian
+  `L.land`, conectividad o partidas.
+- `geo-himalaya-landcover-0406.js` aporta colores deterministas
+  que distinguen llanuras agrícolas, Thar, bosque del piedemonte,
+  meseta tibetana, roca y nieve de altura, con transición gradual.
+- Las cabeceras de Indo, Ganges y Yarlung Tsangpo/Brahmaputra, más
+  Sutlej, Yamuna, Karnali y Teesta, estaban preparadas en 0.40.6.
+  La hidrografía del subcontinente ya se amplió posteriormente en
+  0.40.7 y siguientes; **no debe duplicarse** en futuras fases.
+- La pantalla de Atlas ofrece acceso a los seis lagos. La regresión
+  de la malla real exige que estén presentes, sean conexos, obedezcan
+  al interruptor de lagos y no aparezcan en el modo suministro.
+
+La verificación automática es una prueba de integridad y compatibilidad,
+no sustituye una inspección visual en escritorio y móvil ni la medición
+de FPS con 350–500 naciones.
