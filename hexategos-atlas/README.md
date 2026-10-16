@@ -352,3 +352,36 @@ La forma de los lagos es aproximada y algunos ocupan solamente una
 celda L8. Restan comparación visual por subregiones, ríos menores,
 precisión regional de cuencas, rutas de islas pequeñas, mejora de
 relieve y medida real de FPS bajo una partida de 500 naciones.
+
+
+## Criterio uniforme de lagos Europa–Asia (0.41.7)
+
+La revisión visual detectó que los lagos asiáticos 0.40.4–0.41.6
+ocupaban hexágonos completos teñidos de azul: a la escala L8,
+el lago podía parecer mayor de lo que realmente es.
+
+**Solución:** `atlas-asian-lakes-0417.js` representa **19 lagos** de
+Asia Central, Himalaya, Indochina y Siberia/China/Japón siguiendo el
+**mismo criterio cartográfico de Europa** (`atlas-europe-lakes-0396.js`):
+
+- Eje geográfico aproximado convertido en una secuencia continua de
+  **aristas y vértices terrestres originales L8**.
+- Anchura gráfica dependiente de su anchura orientativa en kilómetros,
+  del zoom, con margen y límite de píxeles. No se rellenan hexágonos
+  enteros, ni se crean polígonos libres ajenos a la malla.
+- Los lagos que no alcanzan una arista L8 se marcan con un **punto muy
+  pequeño en un vértice**, sin simular una costa que la malla no tiene.
+- Cálculo *lazy* según zoom y visibilidad. Cada lago reutiliza su grafo
+  local filtrado por agrupaciones L5 y su ruta guardada en caché.
+- Etiquetas y la casilla **Lagos** se vinculan al nuevo dibujado;
+  un lago no recibe el nombre local si no se ha dibujado.
+- Las capas anteriores 0.40.4/0.40.6/0.41.5/0.41.6 conservan su API de
+  consulta `isWater` para diagnósticos, pero al estar activa 0.41.7
+  **ya no tiñen ningún hexágono completo**.
+- El **Caspio** conserva el agua nativa L8 y no se redibuja.
+  Todo cambio es estrictamente **visual**: sin alteración de
+  `L.land`, rutas marítimas, propietarios, IA, recursos ni guardados.
+
+Los ejes y anchuras son **aproximaciones de escala**, no digitalización
+hidrográfica oficial. Una comprobación cartográfica visual en escritorio
+y móvil sigue siendo recomendable para ajustar anchuras particulares.
