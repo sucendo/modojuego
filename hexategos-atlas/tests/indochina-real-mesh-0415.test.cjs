@@ -113,7 +113,37 @@ test('Indochina 0.41.5 · Chao Phraya, Río Rojo, afluentes, delta y montes real
  }));
  assert.ok(api.graphSize()>1200,'Grafo regional vacío');
  assert.equal(api.graphBuilds(),1,'Grafo reconstruido');
- assert.ok(report.rivers.ok>=2,'Ninguno de los cauces principales conectado');
+ assert.equal(report.rivers.ok,d.rivers.length,'Cauce principal incompleto');
+ assert.equal(report.tributaries.ok,d.tributaries.length,'Afluentes incompletos');
+ assert.equal(report.distributaries.ok,d.distributaries.length,'Brazos sin desembocadura');
+ assert.equal(report.mountains.ok,d.mountains.length,'Sierras incompletas');
+ for(const name of ['Chao Phraya','Río Rojo (Sông Hồng)','Mekong bajo (continuación)',
+  'Mun','Nam Ou','Nam Ngum','Tonle Sap','Tiền (Mekong)','Hậu (Bassac)']){
+  const check=api.validate(name);
+  assert.ok(check.ok,name);
+  assert.equal(check.usesCoast,false,name);
+  assert.equal(check.crossesVirtualWater,false,name);
+  if(check.parent)assert.ok(check.parentConnected&&check.exactJoin,name);
+ }
+ st.terrainStrategicFill3247=()=> 'rgb(154,143,116)';
+ load('atlas-indochina-water-0415.js',atlas);
+ const water=st.window.HexategosIndochinaWater0415;
+ const wet=new Set();
+ for(let i=0;i<L.n;i++)if(water.isWater('8',i,L))wet.add(i);
+ console.log('INDOCHINA_TONLE_SAP_L8_CELLS',JSON.stringify({
+  cells:wet.size,originalLand:[...wet].every(i=>L.land[i]>=0)}));
+ assert.ok(wet.size>=2,'Tonlé Sap no se resuelve como lago de hexágonos');
+ const remaining=new Set(wet),stack=[remaining.values().next().value];
+ remaining.delete(stack[0]);
+ while(stack.length){
+  const i=stack.pop();
+  for(let j=L.offsets[i];j<L.offsets[i+1];j++){
+   const next=L.edgeNbr[j];
+   if(remaining.delete(next))stack.push(next);
+  }
+ }
+ assert.equal(remaining.size,0,'Tonlé Sap contiene islotes visuales desconectados');
+ assert.equal(water.diagnostics().navigable,false);
  const after=Buffer.from(L.land.buffer).toString('base64');
  assert.equal(after,old,'Se han alterado las casillas jugables L8');
 });
