@@ -26,9 +26,10 @@ function webglPushRoadSegment(seg,cam,pitch){
  const seed=Math.floor(((a.s+b.s)*.5)/2.4),leftInner0=a.curb.left?V0.lo:V0.l,leftInner1=b.curb.left?V1.lo:V1.l,rightInner0=a.curb.right?V0.ro:V0.r,rightInner1=b.curb.right?V1.ro:V1.r;
  // Escapatorias / terreno inmediato: materiales genéricos; las superficies especiales proceden del SVG.
  if(apexInspectionActive())apexInspectorDrawRunoff(seg,cam,pitch,true);else{
- webglPushCamQuad(V0.lx,leftInner0,leftInner1,V1.lx,pitch,surfaceColor(env.runoffSurface,false));
- webglPushCamQuad(rightInner0,V0.rx,V1.rx,rightInner1,pitch,surfaceColor(env.runoffSurface,true));
- webglPushRunoffDetail(seg,pitch);
+ const mask=apexDrawGenericRunoffSides(seg,cam,pitch,true);
+ // Las estrías decorativas también eran una segunda capa sobre el SVG.
+ // Sólo aplicarlas cuando ninguna zona lateral ha requerido sustitución.
+ if(!mask)webglPushRunoffDetail(seg,pitch);
  }
  // Pianos alternos: paleta genérica o definida en JSON.
  const [curbA,curbB]=circuitCurbPair(seed);
@@ -63,14 +64,24 @@ function webglPushRoadSegment(seg,cam,pitch){
 function webglPushNearPatch(cam,pitch){
  if(!player||!trackData)return;
  const q=renderRibbonFrameAt(player.s),env=envProfile(player.s),roadHalf=env.half,outerL=apexRoadFlatLimit(player.s,env,1),outerR=apexRoadFlatLimit(player.s,env,-1),bank=Number.isFinite(q.bank)?q.bank:0;
- const make=(along,lat,yOff=0)=>worldToCamera(q.x+q.tx*along+q.ox*lat,q.y+Math.tan(bank)*clamp(lat,-roadHalf,roadHalf)+yOff,q.z+q.tz*along+q.oz*lat,cam);
+ const point=(along,lat)=>({x:q.x+q.tx*along+q.ox*lat,
+  y:q.y+Math.tan(bank)*clamp(lat,-roadHalf,roadHalf),
+  z:q.z+q.tz*along+q.oz*lat});
+ const make=(along,lat)=>{const p=point(along,lat);return worldToCamera(p.x,p.y,p.z,cam)};
  // Only fills the tiny near-camera hole. It sits slightly farther in the depth buffer,
  // so the authored road/terrain segments always win wherever they overlap.
  const a=-4.5,b=7.0,bias=.42;
  const lOa=make(a,outerL),lOb=make(b,outerL),lRa=make(a,roadHalf),lRb=make(b,roadHalf);
  const rRa=make(a,-roadHalf),rRb=make(b,-roadHalf),rOa=make(a,-outerR),rOb=make(b,-outerR);
- webglPushCamQuad(lOa,lRa,lRb,lOb,pitch,surfaceColor(env.runoffSurface,false),.34,bias);
- webglPushCamQuad(rRa,rOa,rOb,rRb,pitch,surfaceColor(env.runoffSurface,true),.34,bias);
+ const paint=(corners,color,normal)=>{
+  const clipped=apexClipGenericRunoffPolygon(corners);
+  if(clipped===null){webglPushCamQuad(...normal,pitch,color,.34,bias);return;}
+  for(const poly of clipped)webglPushCamPoly(poly.map(p=>worldToCamera(p.x,p.y,p.z,cam)),pitch,color,.34,bias);
+ };
+ paint([point(a,outerL),point(a,roadHalf),point(b,roadHalf),point(b,outerL)],
+  surfaceColor(env.runoffSurface,false),[lOa,lRa,lRb,lOb]);
+ paint([point(a,-roadHalf),point(a,-outerR),point(b,-outerR),point(b,-roadHalf)],
+  surfaceColor(env.runoffSurface,true),[rRa,rOa,rOb,rRb]);
  webglPushCamQuad(lRa,rRa,rRb,lRb,pitch,shadeColor(palette().road,-2),.34,bias);
 }
 function webglCollectCircuitSegments(cam,pitch){
