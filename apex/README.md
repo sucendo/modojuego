@@ -1,6 +1,6 @@
 # APEX Formula 26
 
-Versión de desarrollo: **v0.13.12 · PRE-RELEASE**
+Versión de desarrollo: **v0.13.15 · PRE-RELEASE**
 
 Archivo fuente original:
 `Apex_Formula_26_v5_230_62_8_6_7_6_4_17_CONTROL_CLASICO_GP4.html`
@@ -140,3 +140,13 @@ En la consola, `apexVehicleSurfaceDiagnostics()` muestra `source` (`TRACK`, `PIT
 - **Triángulos enormes:** un índice secundario de celdas de 384 m evita examinar globalmente todos los triángulos descartados del índice fino de 48 m. Se comparte con el apoyo del monoplaza, sin modificar su interpolación en altura.
 - **Regresión aislada:** máscaras parciales, coincidencias ausentes, repetición de consulta negativa/positiva, triángulo gigante y consulta de altura. 30.000 consultas repetidas a tramos precalculados produjeron **cero** reconstrucciones de máscara. Esta prueba no es una medida de FPS del navegador ni garantiza por sí sola 30/60 FPS en el dispositivo.
 - Conserva la sustitución geométrica exacta del paso 1 y no altera materiales, trazado, SVG originales, modelos ni física.
+
+## v0.13.15 — Fase 2: consulta de terreno unificada
+
+- `apexUnifiedSurfaceAtWorld(x,z,opts)` resuelve de forma única **cota, pendiente, normal, fuente, material y agarre**. La prioridad es PIT activo, asfalto/piano, escapatoria SVG triangulada, explanación lateral y terreno natural. La cota SVG es la de los triángulos de `surfaceZone` que ya utiliza el renderizado de la fase 1 (sin nueva malla o decal).
+- `playerDriveSurfacePose()` comparte el resultado con `playerSurfaceState()` (física, cámaras, ruedas y telemetría); caché por posición, progreso, red PIT y referencias de los índices compilados. La simulación a 100 Hz no debe repetir el muestreo geométrico si esos datos no cambian.
+- Material `surfaceKind` conservado por triángulo en el índice visual SVG; los recintos antiguos y el agua siguen accesibles mediante un índice X/Z de 128 m con la misma prioridad inversa del importador original, sin barrido global por consulta.
+- Las reglas de agarre `TRACK`, `KERB`, `RUNOFF`, `PIT`, `WATER`, `OFF` y límites de `drivableArea` conservan sus coeficientes anteriores. No se ha modificado la conducción ni el formato de guardados.
+- Diagnóstico: `apexUnifiedSurfaceDiagnostics()` bajo el coche; `apexUnifiedSurfaceDiagnostics(x,z)` para un punto del mundo. Devuelve `source`, `material`, `y`, `normal` y `grip`.
+- Pruebas aisladas de integración: asfalto, piano, grava SVG, escapatoria de respaldo, agua, terreno, PIT y consulta repetida desde la física; 200 consultas repitieron **un único acceso** a la malla cuando la posición no cambió. **Pendiente** validación visual con Madrid y pruebas de regresión reales en los otros 22 circuitos.
+- **Alcance:** esta fase unifica la *consulta física/visual*; todavía no fusiona toda la malla longitudinal del terreno en un solo buffer. La malla renderizada y su optimización estructural corresponden a la fase siguiente.
