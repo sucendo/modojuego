@@ -455,12 +455,17 @@ function webglPlayerChassisBasis(cam,baseOffset=.87){
  // tamaño excesivo de los neumáticos que aparecía en la cámara de v0.13.0.
  const a=carAxes(),surface=playerDriveSurfacePose(),pitchBank=Number(surface.bank)||0;
  const track=renderRibbonFrameAt(player.s),bankLatDot=a.rx*track.ox+a.rz*track.oz;
- const F=webglVecNorm({x:a.fx,y:0,z:a.fz});
+ // Fuera de pista la orientación procede del plano de la escapatoria dibujada,
+ // no del peralte prolongado del asfalto. En pista se conserva el reglaje anterior.
+ const exactSurface=surface.surfaceSource==='SVG_RUNOFF';
+ const F=webglVecNorm({x:a.fx,
+   y:exactSurface?clamp((surface.slopeX||0)*a.fx+(surface.slopeZ||0)*a.fz,-.48,.48):0,z:a.fz});
  // La pendiente lateral se expresa sobre la normal de la pista, NO sobre la
  // derecha del coche (sus signos son opuestos al circular hacia delante).
  // Antiguamente se ponía siempre +tan(bank) y las ruedas atravesaban el asfalto
  // en peraltes fuertes, sobre todo con cámara EXT.
- let R=webglVecNorm({x:a.rx,y:Math.tan(pitchBank)*bankLatDot,z:a.rz});
+ let R=webglVecNorm({x:a.rx,
+   y:exactSurface?clamp((surface.slopeX||0)*a.rx+(surface.slopeZ||0)*a.rz,-.48,.48):Math.tan(pitchBank)*bankLatDot,z:a.rz});
  let U=webglVecNorm(webglVecCross(R,F));if(U.y<0)U={x:-U.x,y:-U.y,z:-U.z};
  R=webglVecNorm(webglVecCross(F,U));
  return{base:{x:player.x+F.x*baseOffset,y:surface.y+.014,z:player.z+F.z*baseOffset},F,R,U};
@@ -1438,7 +1443,8 @@ function syncPlayerTrack(){
  const t=nearestTrackState(player.x,player.z,player.trackIndex,trackOpts);
  player.trackIndex=t.index;player.track=t;player.s=t.s;player.lat=t.lat;
  const a=carAxes();player.trackDirDot=a.fx*t.tx+a.fz*t.tz;
- const pitState=syncPlayerDriveNetwork(t),surface=pitState?playerDriveSurfacePose():trackSurfacePoseAt(t.s,t.lat);
+ syncPlayerDriveNetwork(t);
+ const surface=playerDriveSurfacePose();
  player.surfaceY=surface.y;player.surfaceBank=surface.bank;
  return t;
 }
