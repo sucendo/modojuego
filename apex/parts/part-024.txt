@@ -2007,7 +2007,8 @@ function apexBuildUnifiedGroundAtlas(cw){
 function apexUnifiedGroundStrip(seg){
  const cw=trackData&&trackData.customWorld,atlas=cw&&cw._apexUnifiedGroundAtlas;
  if(!seg||!seg.a||!seg.b)return null;
- if(!atlas)return null;
+ // No guardar paquetes ni crear claves en circuitos sin escapatorias SVG.
+ if(!atlas||!atlas.svgFaces)return null;
  const key=seg.a.s.toFixed(4)+':'+seg.b.s.toFixed(4);
  const cached=atlas.strips.get(key);
  if(cached){atlas.reused++;return cached}
