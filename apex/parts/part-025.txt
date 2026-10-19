@@ -259,7 +259,10 @@ function apexTerrainCellNeedsDetail(g,x,z,span){
 function apexUnifiedTerrainCellPieces(g,ix,iz,x1,z1,poly){
  const atlas=trackData&&trackData.customWorld&&trackData.customWorld._apexUnifiedGroundAtlas;
  if(!atlas||!atlas.svg||!atlas.svg.faces.length)return null;
- const cache=g._apexUnifiedTerrainPieces||(g._apexUnifiedTerrainPieces=new Map()),
+ if(g._apexUnifiedTerrainOwner!==atlas.svg){
+  g._apexUnifiedTerrainPieces=new Map();g._apexUnifiedTerrainOwner=atlas.svg;
+ }
+ const cache=g._apexUnifiedTerrainPieces,
   key=ix+':'+iz+':'+x1+':'+z1;
  if(cache.has(key))return cache.get(key);
  const pieces=apexClipGenericRunoffPolygon(poly);
