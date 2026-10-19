@@ -1711,7 +1711,10 @@ function apexInspectorRunoffPolys(s){
  const idx=apexInspectorSurfaceIndex();if(idx.runoffs.has(s))return idx.runoffs.get(s);
  const step=idx.roads.get(s);if(!step)return[];
  const out=[];
- for(const [quad,right] of [[step.left,false],[step.right,true]])for(const tri of [[quad[0],quad[1],quad[2]],[quad[0],quad[2],quad[3]]])for(const poly of apexInspectorCutSurface(tri,'RUNOFF'))out.push({poly,color:surfaceColor(step.env.runoffSurface,right)});
+ for(const [quad,right] of [[step.left,false],[step.right,true]])for(const tri of [[quad[0],quad[1],quad[2]],[quad[0],quad[2],quad[3]]])for(const poly of apexInspectorCutSurface(tri,'RUNOFF')){
+  const clipped=apexClipGenericRunoffPolygon(poly);
+  for(const part of clipped===null?[poly]:clipped)out.push({poly:part,color:surfaceColor(step.env.runoffSurface,right)});
+ }
  idx.runoffs.set(s,out);return out;
 }
 function apexInspectorDrawRunoff(seg,cam,pitch,webgl){
