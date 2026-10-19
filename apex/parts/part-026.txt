@@ -770,7 +770,7 @@ function webgl2RenderFrame(){
    if(apexPlateTerrainGrid())webglPushTerrainPlateMesh(cam,cam.pitch);
    const terrainSegments=segments.slice().sort((A,B)=>B.z-A.z);for(const seg of terrainSegments)if(!apexInspectionActive()||!apexPlateTerrainGrid())webglPushTerrainSegment(seg,cam,cam.pitch);apexWebglFallbackStructureBanks(terrainSegments,cam,cam.pitch);
    apexRenderUnifiedAuthoredGround(cam,cam.pitch,true);
-   if(!apexInspectionActive())webglPushNearPatch(cam,cam.pitch);const roadSegments=segments.slice().sort((A,B)=>B.z-A.z);for(const seg of roadSegments)webglPushRoadSegment(seg,cam,cam.pitch);
+   if(!apexInspectionActive())webglPushNearPatch(cam,cam.pitch);const roadSegments=terrainSegments;for(const seg of roadSegments)webglPushRoadSegment(seg,cam,cam.pitch);
    renderProfileMeasure("environmentMs",()=>{webglPushSurfaceMarkings(roadSegments,cam,cam.pitch);webglPushCircuitWalls(segments,cam,cam.pitch);webglPushExactWallFences(cam,cam.pitch);webglPushTunnelDetails(segments,cam,cam.pitch);apexWebglGenericPortalFaces(cam,cam.pitch);webglPushBrakeBoards(cam,cam.pitch);if(trackData.gradeCrossing)webglPushGradeCrossingOverpass(cam,cam.pitch)});
    rivalVisuals=webglPrepareRivalVisuals(collectRivalSprites(cam,cam.pitch));
    renderProfileMeasure("carsMs",()=>{webglPushRivalField3D(rivalVisuals,cam,cam.pitch);webglPushPlayerCameraCar3D(cam,cam.pitch);});
