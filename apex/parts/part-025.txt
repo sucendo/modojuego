@@ -2901,6 +2901,170 @@ function webglInit(){
    return true;
  }catch(e){webglState.error=String(e&&e.message||e);webglState.ready=false;rendererWebglSupport=false;console.warn("WebGL2 init failed",e);return false}
 }
+/* v0.13.18 / FASE 5 — superficies SVG autoritativas residentes en GPU.
+   No cambia un solo punto del SVG: los triangulos originales ya recortados
+   se guardan UNA vez en STATIC_DRAW. El shader aplica la misma camara,
+   horizonte, pitch, roll, FOV y profundidad que projectLocal/worldToCamera.
+   La ruta CPU original sigue funcionando si no hay WebGL o falla la GPU. */
+const apexPhase5GroundGPU={
+ gl:null,atlas:null,program:null,buffer:null,uniforms:null,attrs:null,
+ chunks:[],pending:null,bytes:0,triangles:0,drawCalls:0,visibleTriangles:0,
+ culledChunks:0,compiled:0,failures:0,error:null
+};
+function apexPhase5GpuRelease(keepProgram=false){
+ const s=apexPhase5GroundGPU,g=s.gl;
+ if(g&&s.buffer){try{g.deleteBuffer(s.buffer)}catch(e){}}
+ if(!keepProgram&&g&&s.program){try{g.deleteProgram(s.program)}catch(e){}}
+ s.buffer=null;s.atlas=null;s.chunks=[];s.pending=null;s.bytes=0;s.triangles=0;
+ if(!keepProgram){s.program=null;s.attrs=null;s.uniforms=null;s.gl=null}
+}
+function apexPhase5GpuProgram(gl){
+ const vs=webglCompile(gl,gl.VERTEX_SHADER,String.raw`#version 300 es
+precision highp float;
+in vec3 aWorld;
+in vec4 aColor;
+uniform vec3 uCamera;
+uniform vec2 uRight;
+uniform vec2 uForward;
+uniform vec3 uTilt;
+uniform vec4 uView;
+uniform vec2 uRoll;
+uniform vec3 uDepth;
+out vec4 vColor;
+void main(){
+ vec3 d=aWorld-uCamera;
+ float cx=d.x*uRight.x+d.z*uRight.y;
+ float cy=d.y;
+ float cz=d.x*uForward.x+d.z*uForward.y;
+ float yy=(cy-uTilt.z)*uTilt.x-cz*uTilt.y+uTilt.z;
+ float zz=(cy-uTilt.z)*uTilt.y+cz*uTilt.x;
+ // homogeneous projection = CPU projectLocal before perspective divide
+ float px=uView.x*cx;
+ float py=uView.z*zz+uView.x*uView.y*(yy-uView.w);
+ float rx=px*uRoll.x+py*uRoll.y/uView.y;
+ float ry=py*uRoll.x-px*uRoll.y*uView.y;
+ float biased=zz+uDepth.z;
+ float stable=abs(biased)<0.0001?(biased<0.0?-0.0001:0.0001):biased;
+ float pz=uDepth.x*zz-uDepth.y*(zz/stable);
+ gl_Position=vec4(rx,ry,pz,zz);
+ vColor=aColor;
+}`);
+ const fs=webglCompile(gl,gl.FRAGMENT_SHADER,String.raw`#version 300 es
+precision mediump float;
+in vec4 vColor;
+out vec4 outColor;
+void main(){outColor=vColor;}`);
+ const program=gl.createProgram();
+ gl.attachShader(program,vs);gl.attachShader(program,fs);gl.linkProgram(program);
+ gl.deleteShader(vs);gl.deleteShader(fs);
+ if(!gl.getProgramParameter(program,gl.LINK_STATUS)){
+  const err=gl.getProgramInfoLog(program)||'static ground link error';
+  gl.deleteProgram(program);throw Error(err);
+ }
+ return{
+  program,
+  attrs:{world:gl.getAttribLocation(program,'aWorld'),color:gl.getAttribLocation(program,'aColor')},
+  uniforms:Object.fromEntries(['uCamera','uRight','uForward','uTilt','uView','uRoll','uDepth'].map(k=>[k,gl.getUniformLocation(program,k)]))
+ };
+}
+function apexPhase5PrepareGpuGround(cam,pitch){
+ const atlas=trackData&&trackData.customWorld&&trackData.customWorld._apexUnifiedGroundAtlas,
+  gl=webglState&&webglState.gl,s=apexPhase5GroundGPU;
+ if(!atlas||!atlas.svgFaces||!gl||!webglState.ready||s.error==='disabled')return false;
+ try{
+  if(s.gl!==gl){apexPhase5GpuRelease(false);s.gl=gl}
+  if(s.atlas!==atlas){
+   apexPhase5GpuRelease(true);
+   // Presupuesto acotado para WebGL móvil (evita OOM y compilaciones largas).
+   const landmarks=trackLandmarks(),zones=[],mobile=mobilePerformanceMode();
+   let triangles=0;
+   for(const it of landmarks){
+    if(!it||it.type!=='surfaceZone')continue;
+    const batch=it._apexStaticBatch,tris=batch&&batch.surfaceTriangles;
+    if(!Array.isArray(tris)||!tris.length)continue;
+    const color=webglCssColor(it.color||'#777');
+    // Semitransparencias conservan la ruta CPU para respetar blending.
+    if(color[3]<.999)return false;
+    triangles+=tris.length;zones.push({tris,color});
+   }
+   if(triangles<96||triangles*84>(mobile?16:48)*1048576)return false;
+   if(!s.program){const shader=apexPhase5GpuProgram(gl);s.program=shader.program;s.attrs=shader.attrs;s.uniforms=shader.uniforms}
+   const data=new Float32Array(triangles*21),chunks=[],maxGroup=mobile?192:256;
+   let vertex=0;
+   for(const zone of zones)for(let first=0;first<zone.tris.length;first+=maxGroup){
+    const end=Math.min(first+maxGroup,zone.tris.length),startVertex=vertex;
+    let minX=Infinity,minY=Infinity,minZ=Infinity,maxX=-Infinity,maxY=-Infinity,maxZ=-Infinity;
+    for(let j=first;j<end;j++)for(const p of zone.tris[j]){
+     const x=p[0],y=p[1],z=p[2],k=vertex*7;
+     data[k]=x;data[k+1]=y;data[k+2]=z;
+     data[k+3]=zone.color[0];data[k+4]=zone.color[1];
+     data[k+5]=zone.color[2];data[k+6]=zone.color[3];
+     minX=Math.min(minX,x);minY=Math.min(minY,y);minZ=Math.min(minZ,z);
+     maxX=Math.max(maxX,x);maxY=Math.max(maxY,y);maxZ=Math.max(maxZ,z);
+     vertex++;
+    }
+    const x=(minX+maxX)*.5,y=(minY+maxY)*.5,z=(minZ+maxZ)*.5;
+    chunks.push({first:startVertex,count:vertex-startVertex,
+      bound:{x,y,z,r:Math.hypot(maxX-x,maxY-y,maxZ-z)+.1}});
+   }
+   const buffer=gl.createBuffer();if(!buffer)throw Error('No hay buffer GPU para suelo');
+   gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
+   gl.bufferData(gl.ARRAY_BUFFER,data,gl.STATIC_DRAW);
+   s.buffer=buffer;s.atlas=atlas;s.chunks=chunks;s.bytes=data.byteLength;
+   s.triangles=triangles;s.compiled++;s.error=null;
+  }
+  if(!s.buffer||s.atlas!==atlas)return false;
+  s.pending={cam,pitch,roll:webglScreenRoll};
+  return true;
+ }catch(e){
+  s.failures++;s.error=String(e&&e.message||e);
+  console.warn('[APEX] suelo GPU: activando fallback CPU',e);
+  apexPhase5GpuRelease(false);s.error='disabled';
+  return false;
+ }
+}
+function apexPhase5DrawGpuGround(){
+ const s=apexPhase5GroundGPU,p=s.pending;
+ s.pending=null;
+ if(!p||!s.buffer||s.gl!==webglState.gl||!webglState.ready)return false;
+ const gl=s.gl,cam=p.cam,tilt=cam.inspectionOrbit?cam.pitchRad:
+   Number.isFinite(cam.viewPitchRad)?cam.viewPitchRad:0;
+ const off=cam.inspectionOrbit?0:Number.isFinite(cam.viewPitchRad)&&cam.viewPitchRad!==0?driverEyeHeight():0;
+ const n=WEBGL_DEPTH_NEAR,f=apexInspectionActive()?apexInspectionFarDistance():WEBGL_DEPTH_FAR;
+ const far=apexInspectionFullScene()?apexInspectionFarDistance():mobilePerformanceMode()?1450:2100;
+ let calls=0,visible=0,culled=0;
+ gl.useProgram(s.program);gl.bindBuffer(gl.ARRAY_BUFFER,s.buffer);
+ gl.enableVertexAttribArray(s.attrs.world);
+ gl.vertexAttribPointer(s.attrs.world,3,gl.FLOAT,false,28,0);
+ gl.enableVertexAttribArray(s.attrs.color);
+ gl.vertexAttribPointer(s.attrs.color,4,gl.FLOAT,false,28,12);
+ const u=s.uniforms;
+ gl.uniform3f(u.uCamera,cam.x,cam.y,cam.z);
+ gl.uniform2f(u.uRight,cam.nx,cam.nz);
+ gl.uniform2f(u.uForward,cam.tx,cam.tz);
+ gl.uniform3f(u.uTilt,Math.cos(tilt),Math.sin(tilt),off);
+ gl.uniform4f(u.uView,1/Math.tan(sceneHFov()*.5),W/H,
+   1-2*sceneHorizon(p.pitch)/H,driverEyeHeight());
+ gl.uniform2f(u.uRoll,Math.cos(p.roll),Math.sin(p.roll));
+ gl.uniform3f(u.uDepth,(f+n)/(f-n),2*f*n/(f-n),.045);
+ for(const chunk of s.chunks){
+  if(!apexStaticBoundInView(chunk.bound,cam,far,1.55)){culled++;continue}
+  gl.drawArrays(gl.TRIANGLES,chunk.first,chunk.count);
+  calls++;visible+=chunk.count/3;
+ }
+ s.drawCalls=calls;s.visibleTriangles=visible;s.culledChunks=culled;
+ if(s.atlas){s.atlas.lastDrawn=visible;s.atlas.lastCulled=s.triangles-visible;
+   s.atlas.authoredChunks=s.chunks.length;s.atlas.lastChunksCulled=culled}
+ return true;
+}
+window.apexPhase5GpuDiagnostics=()=>{
+ const s=apexPhase5GroundGPU;
+ return{resident:!!s.buffer,bytes:s.bytes,triangles:s.triangles,
+  chunks:s.chunks.length,visibleTriangles:s.visibleTriangles,
+  drawCalls:s.drawCalls,culledChunks:s.culledChunks,
+  compiled:s.compiled,failures:s.failures,error:s.error};
+};
+
 function webgl2Available(){return webglInit()}
 function webglActivate(){const ok=webglInit();if(ok&&webglCv)webglCv.classList.add("active");return ok}
 function webglDeactivate(){if(typeof webglCv!=="undefined"&&webglCv)webglCv.classList.remove("active")}
