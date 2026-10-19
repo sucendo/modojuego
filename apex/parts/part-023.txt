@@ -1957,6 +1957,24 @@ const cv=$("game"),ctx=cv.getContext("2d",{alpha:true}),webglCv=$("webglGame"),m
 let apexDrivePerfScale=1,apexDrivePerfLastSample=0,apexDrivePerfSlow=0,apexDrivePerfFast=0,
     apexDrivePerfChanges=0,apexDrivePerfLastFps=60,apexDrivePerfActive=false,apexDrivePerfLastResizeAt=0;
 function apexDrivePerfDprScale(){return apexDrivePerfScale}
+/* v0.13.20: diagnostico ligero para Android, visible con ?perf=1.
+   Se actualiza cada ~900ms, sin timers, repintado continuo ni panel pesado. */
+function apexPerfOverlayUpdate(){
+ if(typeof location==='undefined'||!/(?:^|[?&])perf=1(?:&|$)/.test(location.search))return;
+ let el=document.getElementById('apexPerfOverlay');
+ if(!el){
+  el=document.createElement('div');el.id='apexPerfOverlay';
+  el.style.cssText='position:fixed;z-index:10050;left:50%;top:84px;transform:translateX(-50%);pointer-events:none;background:rgba(0,0,0,.76);color:#eaffef;border:1px solid #4e9a77;border-radius:7px;padding:5px 9px;font:11px/1.4 monospace;white-space:pre;text-align:center;max-width:90vw';
+  document.body.appendChild(el);
+ }
+ const p=telemetryPerf||{},gpu=typeof apexPhase5TerrainGPU!=='undefined'?apexPhase5TerrainGPU:null,
+  svg=typeof apexPhase5GroundGPU!=='undefined'?apexPhase5GroundGPU:null,
+  fps=Number.isFinite(p.fps)?p.fps:0,ms=Number.isFinite(p.renderMs)?p.renderMs:0;
+ el.textContent='APEX FPS '+fps.toFixed(1)+'   Render '+ms.toFixed(1)+'ms   Física '+(p.physicsMs||0).toFixed(1)+'ms'+
+  '\nGPU llamadas '+((typeof webglState!=='undefined'&&webglState.drawCalls)||0)+
+  '   Terreno subidas '+(gpu?gpu.uploads:0)+'   SVG '+(svg&&svg.buffer?'GPU':'CPU');
+ el.style.borderColor=fps<15?'#d86c5c':fps<28?'#d4ab50':'#4e9a77';
+}
 function apexDrivePerfObserve(now){
  if(!player||!trackData||mode==='menu'||mode==='inspection'||paused)return;
  if(!apexDrivePerfLastSample){apexDrivePerfLastSample=now;return}
@@ -1965,6 +1983,7 @@ function apexDrivePerfObserve(now){
  const fps=finite(telemetryPerf.fps,60),cpu=finite(telemetryPerf.renderMs,0),
    physics=finite(telemetryPerf.physicsMs,0);
  apexDrivePerfLastFps=fps;
+ apexPerfOverlayUpdate();
  if(fps<27&&(cpu>17||physics>12)){apexDrivePerfSlow++;apexDrivePerfFast=0}
  else if(fps>48&&cpu<12&&physics<8){apexDrivePerfFast++;apexDrivePerfSlow=0}
  else{apexDrivePerfSlow=0;apexDrivePerfFast=0}
