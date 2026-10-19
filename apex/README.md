@@ -1,6 +1,6 @@
 # APEX Formula 26
 
-Versión de desarrollo: **v0.13.6 · PRE-RELEASE**
+Versión de desarrollo: **v0.13.7 · PRE-RELEASE**
 
 Archivo fuente original:
 `Apex_Formula_26_v5_230_62_8_6_7_6_4_17_CONTROL_CLASICO_GP4.html`
@@ -53,3 +53,11 @@ Cuando los FPS caen de forma sostenida, APEX reduce la resolución **interna** d
 La cámara está anclada al chasis: 5,7 m detrás y 2,88 m sobre la superficie. Se ha eliminado la interpolación en coordenadas del mundo que generaba una oscilación longitudinal y un salto tras fotogramas lentos. La geometría compartida del coche, física, IA, cronometraje y modos PILOTO/TV permanecen intactos. WebGL utiliza una única instantánea de cámara por fotograma.
 
 Auditoría: `apexCameraRigSelfTest()` (6 casos sintéticos de posición y altura) y `apexChaseCameraDiagnostics()` (en carrera con EXT seleccionada).
+
+## v0.13.7 — rendimiento en circuitos SVG completos
+
+- Las vallas F1 exactas se dibujan una sola vez en WebGL2: se elimina el segundo dibujo duplicado, conservando el muro y la malla detallada.
+- La malla de las vallas utiliza el índice espacial ya compilado y descarta los muros fuera del campo visual antes de proyectar todos los postes/hilos.
+- Se evita preparar geometría de vallado redundante en la colección de muros WebGL, preservando Canvas2D.
+- `apexHeavyCircuitPerfDiagnostics()` incorpora `wallPassMs`, `fencePassMs`, `fenceSourceSegments`, `fenceCandidates`, `fenceProjected`, `fenceDrawn` para medir Madrid cargado. Consultar también `apexPerformanceSummary()`.
+- No se alteran JSON/SVG, simulación 100 Hz, IA, cámaras ni cronometraje.

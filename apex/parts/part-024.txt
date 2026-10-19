@@ -1372,7 +1372,7 @@ function apexVisibleExactWallSegments(cw,cam,far){
  const src=cw&&(cw._wallRenderSegments||cw.wallSegments)||[];
  const index=cw&&cw._apexExactWallSpatial;
  if(!index||index.src!==src||!cam||!Number.isFinite(cam.x)||!Number.isFinite(cam.z))return src;
- const cell=index.cell,radius=Math.max(1320,far*1.65+cell),ix0=Math.floor((cam.x-radius)/cell),
+ const cell=index.cell,radius=Math.max(900,far*1.24+cell),ix0=Math.floor((cam.x-radius)/cell),
        ix1=Math.floor((cam.x+radius)/cell),iz0=Math.floor((cam.z-radius)/cell),
        iz1=Math.floor((cam.z+radius)/cell);
  // En el inspector orbital lejano la consulta global es más barata que millones
@@ -3308,7 +3308,11 @@ function collectExactWallRenderItems(cam){
         barrier={...baseStyle,family:'WALL',style:String(sg.wallStyle||baseStyle.style||'wall_f1').toLowerCase(),kind:'WALL_F1',height:h};
   if(sg.color)barrier.base=sg.color;if(sg.fence!==null&&sg.fence!==undefined)barrier.fence=sg.fence;if(Number.isFinite(sg.fenceH)&&sg.fenceH>0)barrier.fenceH=Math.max(1.90,sg.fenceH);if(Number.isFinite(sg.fenceLeanM))barrier.fenceLeanM=sg.fenceLeanM;if(Number.isFinite(sg.postSpacingM))barrier.postSpacingM=sg.postSpacingM;
   const T0=worldToCamera(sg.x1,sg.y1+h,sg.z1,cam),T1=worldToCamera(sg.x2,sg.y2+h,sg.z2,cam),poly3=clipPolyNear([A,T0,T1,B],.62);if(poly3.length<3)continue;
-  const z=poly3.reduce((q,p)=>q+p.z,0)/poly3.length;if(!Number.isFinite(z)||z>((typeof apexInspectionFullScene==='function'&&apexInspectionFullScene())?apexInspectionFarDistance():760))continue;const fencePoly3=apexExactWallFencePoly3(sg,barrier,cam,A,T0,T1,B),fenceGeom=apexExactWallFenceGeom(sg,barrier,cam,T0,T1);
+  const z=poly3.reduce((q,p)=>q+p.z,0)/poly3.length;if(!Number.isFinite(z)||z>((typeof apexInspectionFullScene==='function'&&apexInspectionFullScene())?apexInspectionFarDistance():760))continue;
+  // En WebGL las vallas F1 tienen su propia pasada; no repetir geometría.
+  const forCanvas=rendererBackendId()!=='webgl2';
+  const fencePoly3=forCanvas?apexExactWallFencePoly3(sg,barrier,cam,A,T0,T1,B):null,
+        fenceGeom=forCanvas?apexExactWallFenceGeom(sg,barrier,cam,T0,T1):null;
   out.push({kind:'wall',z:z-.015,data:{family:'WALL',side:sg.side||0,s:sg.s||0,z:z-.015,poly3,fencePoly3,fenceGeom,env,barrier,advertising:sg.advertising,exact:true}})
  }
  return out;
