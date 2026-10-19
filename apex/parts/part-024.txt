@@ -2086,6 +2086,9 @@ function apexUnifiedGroundDrawCorridor(seg,cam,pitch,webgl=false){
 function apexRenderUnifiedAuthoredGround(cam,pitch,webgl=false){
  const cw=trackData&&trackData.customWorld,atlas=cw&&cw._apexUnifiedGroundAtlas;
  if(!atlas||!atlas.svgFaces)return false;
+ // Fase 5: si el buffer GPU esta preparado, evitamos TODA la
+ // proyeccion de triangulos SVG en CPU y conservamos fallback Canvas/CPU.
+ if(webgl&&typeof apexPhase5PrepareGpuGround==='function'&&apexPhase5PrepareGpuGround(cam,pitch))return true;
  const all=trackLandmarks();
  if(!all||!all.length)return false;
  const entries=apexCompiledLandmarkEntries(all),
