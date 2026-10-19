@@ -3118,6 +3118,8 @@ function apexPhase5DrawGpuGround(){
 const apexPhase5TerrainGPU={
  gl:null,grid:null,atlas:null,buffer:null,program:null,attrs:null,uniforms:null,
  key:'',pending:null,bytes:0,capacityBytes:0,triangles:0,drawCalls:0,uploads:0,reuses:0,
+ gpuEntries:new Map(),gpuUsedVertices:0,gpuDrawRuns:[],gpuResets:0,
+ gpuNewCells:0,gpuUploadBytes:0,visibleTriangles:0,submittedTriangles:0,
  failures:0,failedGl:null,lastError:null,cpuCells:0,gpuCells:0,
  packetCache:new Map(),packetGrid:null,packetAtlas:null,packetHits:0,packetMisses:0
 };
@@ -3127,6 +3129,7 @@ function apexPhase5TerrainRelease(full=false){
  s.packetCache.clear();s.packetGrid=null;s.packetAtlas=null;
  s.buffer=null;s.grid=null;s.atlas=null;s.key='';s.pending=null;
  s.bytes=0;s.capacityBytes=0;s.triangles=0;s.drawCalls=0;
+ s.gpuEntries.clear();s.gpuUsedVertices=0;s.gpuDrawRuns=[];
  if(full){
   if(gl&&s.program)try{gl.deleteProgram(s.program)}catch(e){}
   s.program=null;s.attrs=null;s.uniforms=null;s.gl=null;
@@ -3150,76 +3153,121 @@ function apexPhase5PrepareGpuTerrain(items,cam,pitch){
  if(!items.length||!g||!gl||s.failedGl===gl)return false;
  try{
   if(s.gl!==gl){apexPhase5TerrainRelease(true);s.gl=gl;s.failedGl=null}
-  // La identidad incorpora tipo de LOD (1x1 / 2x2) y borde recortado.
-  // No depende del movimiento subcelda ni del giro de la cámara.
-  // apexCollectTerrainPlateCells ordena por profundidad; eso cambia con
-  // la cámara incluso si NO cambia el conjunto de celdas. La identidad
-  // y el VBO deben tener orden espacial estable para evitar reuploads.
-  const ordered=items.slice().sort((a,b)=>a.cell.iz-b.cell.iz||
-   a.cell.ix-b.cell.ix||a.cell.z1-b.cell.z1||a.cell.x1-b.cell.x1);
-  const key=ordered.map(({cell:c})=>c.ix+','+c.iz+','+c.x1+','+c.z1).join(';');
-  if(!s.buffer||s.grid!==g||s.atlas!==atlas||s.key!==key){
-   // Compilación de cada celda solo una vez: el vehículo puede cambiar
-   // de región visible muchas veces sin volver a triangular todo.
-   if(s.packetGrid!==g||s.packetAtlas!==atlas){
-    s.packetCache.clear();s.packetGrid=g;s.packetAtlas=atlas;
-   }
-   const base=g.tone==='BROWN'?'#886e51':g.tone==='SAND'?'#bc9c69':'#4e7650',
-    colors=[webglCssColor(base),webglCssColor(shadeColor(base,3))],parts=[];
-   let total=0;
-   for(const it of ordered){
-    const c=it.cell,cellKey=c.ix+':'+c.iz+':'+c.x1+':'+c.z1;
-    let packet=s.packetCache.get(cellKey);
-    if(packet){s.packetHits++}
-    else{
-     const floats=[],color=colors[(c.ix+c.iz)%5===0?1:0],
-      pushPoly=poly=>{
-       if(!poly||poly.length<3)return;
-       const a=poly[0];
-       for(let j=1;j<poly.length-1;j++)
-        for(const p of [a,poly[j],poly[j+1]]){
-         const x=Array.isArray(p)?p[0]:p.x,
-          y=Array.isArray(p)?p[1]:p.y,z=Array.isArray(p)?p[2]:p.z;
-         if(!Number.isFinite(x)||!Number.isFinite(y)||!Number.isFinite(z))
-          throw Error('Vertice de relieve no finito');
-         floats.push(x,y,z,color[0],color[1],color[2],color[3]);
-        }
-      };
-     if(it.clean===null)pushPoly(it.quad);
-     else for(const poly of it.clean)pushPoly(poly);
-     packet=new Float32Array(floats);s.packetMisses++;
-     if(s.packetCache.size>=3072){
-      const itr=s.packetCache.keys();
-      for(let n=0;n<384;n++){const k=itr.next();if(k.done)break;s.packetCache.delete(k.value)}
+  if(s.grid!==g||s.atlas!==atlas){
+   // Cambiar de GP, recorte o malla invalida tanto el VBO como las celdas CPU.
+   apexPhase5TerrainRelease(false);
+   s.grid=g;s.atlas=atlas;s.packetGrid=g;s.packetAtlas=atlas;
+  }
+  const base=g.tone==='BROWN'?'#886e51':g.tone==='SAND'?'#bc9c69':'#4e7650',
+   colors=[webglCssColor(base),webglCssColor(shadeColor(base,3))],
+   desired=[],missing=[];
+  let selectedVertices=0;
+  for(const it of items){
+   const c=it.cell,cellKey=c.ix+':'+c.iz+':'+c.x1+':'+c.z1;
+   let packet=s.packetCache.get(cellKey);
+   if(packet){s.packetHits++}
+   else{
+    const floats=[],color=colors[(c.ix+c.iz)%5===0?1:0];
+    const pushPoly=poly=>{
+     if(!poly||poly.length<3)return;
+     const a=poly[0];
+     for(let j=1;j<poly.length-1;j++){
+      for(const p of [a,poly[j],poly[j+1]]){
+       const x=Array.isArray(p)?p[0]:p.x,
+        y=Array.isArray(p)?p[1]:p.y,z=Array.isArray(p)?p[2]:p.z;
+       if(!Number.isFinite(x)||!Number.isFinite(y)||!Number.isFinite(z))
+        throw Error('Vertice de relieve no finito');
+       floats.push(x,y,z,color[0],color[1],color[2],color[3]);
+      }
      }
-     s.packetCache.set(cellKey,packet);
+    };
+    if(it.clean===null)pushPoly(it.quad);
+    else for(const poly of it.clean)pushPoly(poly);
+    packet=new Float32Array(floats);s.packetMisses++;
+    if(s.packetCache.size>=3072){
+     const iter=s.packetCache.keys();
+     for(let j=0;j<384;j++){const old=iter.next();if(old.done)break;s.packetCache.delete(old.value)}
     }
-    parts.push(packet);total+=packet.length;
+    s.packetCache.set(cellKey,packet);
    }
-   // Máximo 8MiB móviles, 24MiB PC. Bajo presupuesto se conserva CPU.
-   const bytes=total*4,max=(mobilePerformanceMode()?8:24)*1048576;
-   if(bytes>max)return false;
-   const merged=new Float32Array(total);let offset=0;
-   for(const packet of parts){merged.set(packet,offset);offset+=packet.length}
-   if(!s.program){
-    const shader=apexPhase5GpuProgram(gl);
-    s.program=shader.program;s.attrs=shader.attrs;s.uniforms=shader.uniforms;
+   const existing=s.gpuEntries.get(cellKey);
+   desired.push({key:cellKey,packet,existing});
+   selectedVertices+=packet.length/7;
+   if(!existing&&packet.length)missing.push({key:cellKey,packet});
+  }
+  const budget=(mobilePerformanceMode()?8:24)*1048576;
+  if(selectedVertices*28>budget)return false;
+  if(!s.program){
+   const shader=apexPhase5GpuProgram(gl);
+   s.program=shader.program;s.attrs=shader.attrs;s.uniforms=shader.uniforms;
+  }
+  if(!s.buffer){s.buffer=gl.createBuffer();if(!s.buffer)throw Error('No se pudo reservar VBO de relieve')}
+  gl.bindBuffer(gl.ARRAY_BUFFER,s.buffer);
+  let added=missing.reduce((sum,e)=>sum+e.packet.byteLength,0);
+  if(s.gpuUsedVertices*28+added>budget){
+   // Acotacion de VRAM: reconstruir atlas SOLO cuando se ha agotado.
+   s.gpuEntries.clear();s.gpuUsedVertices=0;s.capacityBytes=0;s.gpuResets++;
+   for(const e of desired)if(e.packet.length){missing.push(null);}
+   missing.length=0;
+   for(const e of desired)if(e.packet.length)missing.push({key:e.key,packet:e.packet});
+   added=missing.reduce((sum,e)=>sum+e.packet.byteLength,0);
+  }
+  const needBytes=s.gpuUsedVertices*28+added;
+  if(needBytes>s.capacityBytes){
+   let capacity=Math.max(65536,s.capacityBytes||0);
+   while(capacity<needBytes)capacity*=2;
+   if(capacity>budget)capacity=budget;
+   gl.bufferData(gl.ARRAY_BUFFER,capacity,gl.DYNAMIC_DRAW);
+   s.capacityBytes=capacity;
+   // bufferData invalida los datos anteriores: restaurar celdas residentes.
+   for(const e of s.gpuEntries.values()){
+    if(e.packet.length){
+     gl.bufferSubData(gl.ARRAY_BUFFER,e.first*28,e.packet);
+     s.gpuUploadBytes+=e.packet.byteLength;
+    }
    }
-   if(!s.buffer){s.buffer=gl.createBuffer();if(!s.buffer)throw Error('No se pudo reservar VBO de relieve')}
-   gl.bindBuffer(gl.ARRAY_BUFFER,s.buffer);
-   // Mantener la reserva: no realocar al avanzar una celda.
-   if(bytes>s.capacityBytes){
-    let cap=Math.max(65536,s.capacityBytes||0);
-    while(cap<bytes)cap*=2;
-    gl.bufferData(gl.ARRAY_BUFFER,cap,gl.DYNAMIC_DRAW);
-    s.capacityBytes=cap;
+  }
+  for(const e of missing){
+   const first=s.gpuUsedVertices,count=e.packet.length/7;
+   const gpuEntry={first,count,packet:e.packet};
+   s.gpuEntries.set(e.key,gpuEntry);
+   gl.bufferSubData(gl.ARRAY_BUFFER,first*28,e.packet);
+   s.gpuUsedVertices+=count;s.gpuNewCells++;
+   s.gpuUploadBytes+=e.packet.byteLength;
+  }
+  const selected=[];
+  for(const e of desired){
+   const gpu=s.gpuEntries.get(e.key);
+   if(gpu&&gpu.count)selected.push({first:gpu.first,count:gpu.count});
+  }
+  selected.sort((a,b)=>a.first-b.first);
+  const runs=[];
+  for(const entry of selected){
+   const prev=runs[runs.length-1];
+   if(prev&&prev.first+prev.count===entry.first)prev.count+=entry.count;
+   else runs.push({first:entry.first,count:entry.count});
+  }
+  // Reducir draw calls sin dibujar excesivo terreno oculto.
+  const maxRuns=mobilePerformanceMode()?12:20;
+  let extra=0;
+  while(runs.length>maxRuns){
+   let best=-1,gap=Infinity;
+   for(let i=0;i<runs.length-1;i++){
+    const d=runs[i+1].first-(runs[i].first+runs[i].count);
+    if(d<gap){best=i;gap=d}
    }
-   if(bytes)gl.bufferSubData(gl.ARRAY_BUFFER,0,merged);
-   s.key=key;s.grid=g;s.atlas=atlas;s.bytes=bytes;
-   s.triangles=total/21;s.uploads++;
-  }else s.reuses++;
+   if(best<0||extra+gap>Math.max(144,selectedVertices*.22))break;
+   const a=runs[best],b=runs[best+1];
+   a.count=b.first+b.count-a.first;runs.splice(best+1,1);extra+=gap;
+  }
+  s.gpuDrawRuns=runs;
+  s.visibleTriangles=selectedVertices/3;
+  s.submittedTriangles=(selectedVertices+extra)/3;
+  s.triangles=s.submittedTriangles;
+  s.bytes=s.gpuUsedVertices*28;
   s.pending={cam,pitch,roll:webglScreenRoll,offset:webglFloatCount};
-  s.gpuCells=items.length;
+  s.gpuCells=items.length;s.uploads+=missing.length;
+  if(!missing.length)s.reuses++;
   return true;
  }catch(e){apexPhase5TerrainError(e);return false}
 }
@@ -3244,8 +3292,11 @@ function apexPhase5DrawGpuTerrain(){
   1-2*sceneHorizon(p.pitch)/H,driverEyeHeight());
  gl.uniform2f(u.uRoll,Math.cos(p.roll),Math.sin(p.roll));
  gl.uniform3f(u.uDepth,(f+n)/(f-n),2*f*n/(f-n),0);
- if(s.triangles)gl.drawArrays(gl.TRIANGLES,0,s.triangles*3);
- s.drawCalls=s.triangles?1:0;return true;
+ let calls=0;
+ for(const run of s.gpuDrawRuns){
+  gl.drawArrays(gl.TRIANGLES,run.first,run.count);calls++;
+ }
+ s.drawCalls=calls;return true;
 }
 window.apexPhase5TerrainDiagnostics=()=>{
  const s=apexPhase5TerrainGPU;
@@ -3253,6 +3304,9 @@ window.apexPhase5TerrainDiagnostics=()=>{
   triangles:s.triangles,gpuCells:s.gpuCells,uploads:s.uploads,reuses:s.reuses,
   drawCalls:s.drawCalls,failures:s.failures,lastError:s.lastError,
   packets:s.packetCache.size,packetHits:s.packetHits,packetMisses:s.packetMisses,
+  residentCells:s.gpuEntries.size,newGpuCells:s.gpuNewCells,
+  gpuResets:s.gpuResets,gpuUploadMB:Number((s.gpuUploadBytes/1048576).toFixed(2)),
+  visibleTriangles:s.visibleTriangles,submittedTriangles:s.submittedTriangles,
   pending:!!s.pending};
 };
 
