@@ -1,6 +1,6 @@
 # APEX Formula 26
 
-Versión de desarrollo: **v0.13.19 · PRE-RELEASE**
+Versión de desarrollo: **v0.13.20 · PRE-RELEASE**
 
 Archivo fuente original:
 `Apex_Formula_26_v5_230_62_8_6_7_6_4_17_CONTROL_CLASICO_GP4.html`
@@ -213,3 +213,16 @@ En la consola, `apexVehicleSurfaceDiagnostics()` muestra `source` (`TRACK`, `PIT
 - **Pruebas aisladas:** compilación sintáctica del bloque GPU; carga única para una selección estable, cambio de orden sin nueva subida, reutilización de tres paquetes entre selecciones; comprobación del orden de pasadas dinámico → terreno GPU → dinámico → SVG GPU → dinámico y sus contadores de triángulos.
 
 **Pendiente de homologación:** verificar visualmente el Madrid SVG/JSON completo (túneles, alturas, escapatorias, bordes, cámara) y medir FPS/tirones en PC y móvil. La migración de la cinta longitudinal de asfalto/pianos y otros decorados estructurales NO está incluida en esta entrega. No se afirma un porcentaje de mejora sin perfilado real.
+
+
+## v0.13.20 — Hotfix antitirones: atlas GPU incremental y llamadas SVG agrupadas
+
+El vídeo recibido de Madrid contiene 394 fotogramas en 95,54 segundos (captura con cadencia media aproximada de 4,1 imágenes/s). Esta cifra corresponde al archivo grabado, **no equivale a una medición directa de FPS del motor**.
+
+- **Escapatorias SVG en GPU:** el dibujado `apexPhase5DrawGpuGround` ahora fusiona rangos de vértices visibles contiguos en una única llamada `gl.drawArrays`. Fusiona algunos huecos invisibles pequeños solo dentro de un presupuesto del 25 % de los vértices visibles, para limitar los envíos sin saturar la GPU. `apexPhase5GpuDiagnostics()` diferencia `visibleTriangles`, `submittedTriangles` y `drawCalls`.
+- **Relieve GPU incremental:** `apexPhase5PrepareGpuTerrain` deja de reconstruir y subir el VBO completo cada vez que cambia el frustum. Conserva entradas por celda/LOD exactos, añade únicamente las celdas nuevas mediante `bufferSubData` y reutiliza las ya residentes incluso tras cambios de orientación. La memoria sigue limitada a 8 MiB móvil / 24 MiB PC y se recicla al agotar el presupuesto; si falla el sistema, se mantiene el dibujado CPU.
+- **Cotas y propiedad del suelo:** los triángulos siguen procediendo de los recortes de la fase 3, con las alturas y materiales originales. Solo se agrupan rangos contiguos del terreno: **no se dibujan celdas GPU antiguas en huecos que ahora puedan pertenecer al detalle fino de túneles/portales**, evitando regresar a las superposiciones y z-fighting.
+- **Diagnóstico en móvil:** abrir `apex/?perf=1` muestra una pequeña superposición de FPS, tiempo de render, tiempo de física, llamadas GPU, número de subidas de terreno y estado GPU/CPU del SVG. La visualización se actualiza cada ~900 ms dentro del scheduler existente, sin añadir temporizadores de sondeo. Quitar el parámetro oculta la superposición.
+- **Pruebas aisladas:** 200 bloques SVG contiguos se resuelven en una llamada de dibujo en lugar de 200; cuatro selecciones sucesivas de 3 celdas diferentes requieren solo 1 reserva de VBO y 3 subidas iniciales en lugar de reconstruir/subir cada selección. Revisadas sintaxis de funciones modificadas.
+
+**Limitaciones y siguiente comprobación:** este hotfix reduce una fuente demostrada de trabajo gráfico repetido, pero no garantiza un valor de FPS sin probar la partida concreta de Madrid en navegador y móvil. `apexPerformanceSummary()` + la superposición de `?perf=1` ayudarán a distinguir render, físicas y otras cargas del motor. La geometría original y los formatos de partidas/circuitos no se han cambiado.
