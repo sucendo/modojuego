@@ -3207,7 +3207,6 @@ function apexPhase5PrepareGpuTerrain(items,cam,pitch){
   if(s.gpuUsedVertices*28+added>budget){
    // Acotacion de VRAM: reconstruir atlas SOLO cuando se ha agotado.
    s.gpuEntries.clear();s.gpuUsedVertices=0;s.capacityBytes=0;s.gpuResets++;
-   for(const e of desired)if(e.packet.length){missing.push(null);}
    missing.length=0;
    for(const e of desired)if(e.packet.length)missing.push({key:e.key,packet:e.packet});
    added=missing.reduce((sum,e)=>sum+e.packet.byteLength,0);
@@ -3227,6 +3226,11 @@ function apexPhase5PrepareGpuTerrain(items,cam,pitch){
     }
    }
   }
+  // Mantener grupos de celdas próximos en rangos contiguos del VBO.
+  missing.sort((a,b)=>{
+   const av=a.key.split(':').map(Number),bv=b.key.split(':').map(Number);
+   return av[1]-bv[1]||av[0]-bv[0]||av[3]-bv[3]||av[2]-bv[2];
+  });
   for(const e of missing){
    const first=s.gpuUsedVertices,count=e.packet.length/7;
    const gpuEntry={first,count,packet:e.packet};
@@ -3247,19 +3251,10 @@ function apexPhase5PrepareGpuTerrain(items,cam,pitch){
    if(prev&&prev.first+prev.count===entry.first)prev.count+=entry.count;
    else runs.push({first:entry.first,count:entry.count});
   }
-  // Reducir draw calls sin dibujar excesivo terreno oculto.
-  const maxRuns=mobilePerformanceMode()?12:20;
-  let extra=0;
-  while(runs.length>maxRuns){
-   let best=-1,gap=Infinity;
-   for(let i=0;i<runs.length-1;i++){
-    const d=runs[i+1].first-(runs[i].first+runs[i].count);
-    if(d<gap){best=i;gap=d}
-   }
-   if(best<0||extra+gap>Math.max(144,selectedVertices*.22))break;
-   const a=runs[best],b=runs[best+1];
-   a.count=b.first+b.count-a.first;runs.splice(best+1,1);extra+=gap;
-  }
+  // No fusionar huecos: esos paquetes pueden pertenecer a una celda
+  // que ahora requiere un molde fino de túnel o una escapatoria. Dibujar
+  // triángulos antiguos sobre ella volvería a crear z-fighting.
+  const extra=0;
   s.gpuDrawRuns=runs;
   s.visibleTriangles=selectedVertices/3;
   s.submittedTriangles=(selectedVertices+extra)/3;
