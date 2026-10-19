@@ -3089,6 +3089,119 @@ function apexPhase5DrawGpuGround(){
    s.atlas.authoredChunks=s.chunks.length;s.atlas.lastChunksCulled=culled}
  return true;
 }
+/* v0.13.19 — terreno de placas en GPU con fallback exacto.
+   Solo las celdas gruesas seleccionadas por el LOD original se convierten
+   a malla de mundo. El molde fino de túnel/portal/track queda en CPU.
+   Una sola subida STATIC_DRAW por selección de celdas; ninguna conversión
+   mundo -> cámara en JS para las celdas ordinarias mientras no cambie. */
+const apexPhase5TerrainGPU={
+ gl:null,grid:null,atlas:null,buffer:null,program:null,attrs:null,uniforms:null,
+ key:'',pending:null,bytes:0,triangles:0,drawCalls:0,uploads:0,reuses:0,
+ failures:0,failedGl:null,lastError:null,cpuCells:0,gpuCells:0
+};
+function apexPhase5TerrainRelease(full=false){
+ const s=apexPhase5TerrainGPU,gl=s.gl;
+ if(gl&&s.buffer)try{gl.deleteBuffer(s.buffer)}catch(e){}
+ s.buffer=null;s.grid=null;s.atlas=null;s.key='';s.pending=null;
+ s.bytes=0;s.triangles=0;s.drawCalls=0;
+ if(full){
+  if(gl&&s.program)try{gl.deleteProgram(s.program)}catch(e){}
+  s.program=null;s.attrs=null;s.uniforms=null;s.gl=null;
+ }
+}
+function apexPhase5TerrainError(err){
+ const s=apexPhase5TerrainGPU,bad=s.gl;
+ s.failures++;s.lastError=String(err&&err.message||err);
+ apexPhase5TerrainRelease(true);s.failedGl=bad;
+ console.warn('[APEX] GPU terreno: restaurada ruta original',err);
+}
+function apexPhase5TerrainCanDraw(){
+ const g=apexPlateTerrainGrid(),gl=webglState&&webglState.gl;
+ return !!(g&&g.plateMesh&&webglState.ready&&gl&&
+  apexPhase5TerrainGPU.failedGl!==gl&&!apexInspectionActive());
+}
+function apexPhase5PrepareGpuTerrain(items,cam,pitch){
+ const s=apexPhase5TerrainGPU,gl=webglState.gl,
+  g=items[0]&&items[0].g,
+  atlas=trackData&&trackData.customWorld&&trackData.customWorld._apexUnifiedGroundAtlas;
+ if(!items.length||!g||!gl||s.failedGl===gl)return false;
+ try{
+  if(s.gl!==gl){apexPhase5TerrainRelease(true);s.gl=gl;s.failedGl=null}
+  // La identidad incorpora tipo de LOD (1x1 / 2x2) y borde recortado.
+  // No depende del movimiento subcelda ni del giro de la cámara.
+  const key=items.map(({cell:c})=>c.ix+','+c.iz+','+c.x1+','+c.z1).join(';');
+  if(!s.buffer||s.grid!==g||s.atlas!==atlas||s.key!==key){
+   const triangles=[];
+   const base=g.tone==='BROWN'?'#886e51':g.tone==='SAND'?'#bc9c69':'#4e7650',
+    colors=[webglCssColor(base),webglCssColor(shadeColor(base,3))];
+   const pushPoly=(poly,c)=>{
+    if(!poly||poly.length<3)return;
+    const color=colors[(c.ix+c.iz)%5===0?1:0];
+    const a=poly[0];
+    for(let j=1;j<poly.length-1;j++){
+     for(const p of [a,poly[j],poly[j+1]]){
+      const x=Array.isArray(p)?p[0]:p.x,
+       y=Array.isArray(p)?p[1]:p.y,z=Array.isArray(p)?p[2]:p.z;
+      if(!Number.isFinite(x)||!Number.isFinite(y)||!Number.isFinite(z))
+       throw Error('Vertice de relieve no finito');
+      triangles.push(x,y,z,color[0],color[1],color[2],color[3]);
+     }
+    }
+   };
+   for(const it of items){
+    if(it.clean===null)pushPoly(it.quad,it.cell);
+    else for(const p of it.clean)pushPoly(p,it.cell);
+   }
+   // Máximo 8MiB móviles, 24MiB PC. Bajo presupuesto se conserva CPU.
+   const bytes=triangles.length*4,max=(mobilePerformanceMode()?8:24)*1048576;
+   if(bytes>max)return false;
+   if(!s.program){
+    const shader=apexPhase5GpuProgram(gl);
+    s.program=shader.program;s.attrs=shader.attrs;s.uniforms=shader.uniforms;
+   }
+   if(!s.buffer){s.buffer=gl.createBuffer();if(!s.buffer)throw Error('No se pudo reservar VBO de relieve')}
+   gl.bindBuffer(gl.ARRAY_BUFFER,s.buffer);
+   gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(triangles),gl.STATIC_DRAW);
+   s.key=key;s.grid=g;s.atlas=atlas;s.bytes=bytes;
+   s.triangles=triangles.length/21;s.uploads++;
+  }else s.reuses++;
+  s.pending={cam,pitch,roll:webglScreenRoll,offset:webglFloatCount};
+  s.gpuCells=items.length;
+  return true;
+ }catch(e){apexPhase5TerrainError(e);return false}
+}
+function apexPhase5DrawGpuTerrain(){
+ const s=apexPhase5TerrainGPU,p=s.pending;s.pending=null;
+ if(!p||!s.buffer||s.gl!==webglState.gl||!webglState.ready)return false;
+ const gl=s.gl,cam=p.cam,tilt=cam.inspectionOrbit?cam.pitchRad:
+  Number.isFinite(cam.viewPitchRad)?cam.viewPitchRad:0;
+ const off=cam.inspectionOrbit?0:Number.isFinite(cam.viewPitchRad)&&cam.viewPitchRad!==0?driverEyeHeight():0;
+ const n=WEBGL_DEPTH_NEAR,f=apexInspectionActive()?apexInspectionFarDistance():WEBGL_DEPTH_FAR;
+ gl.useProgram(s.program);gl.bindBuffer(gl.ARRAY_BUFFER,s.buffer);
+ gl.enableVertexAttribArray(s.attrs.world);
+ gl.vertexAttribPointer(s.attrs.world,3,gl.FLOAT,false,28,0);
+ gl.enableVertexAttribArray(s.attrs.color);
+ gl.vertexAttribPointer(s.attrs.color,4,gl.FLOAT,false,28,12);
+ const u=s.uniforms;
+ gl.uniform3f(u.uCamera,cam.x,cam.y,cam.z);
+ gl.uniform2f(u.uRight,cam.nx,cam.nz);
+ gl.uniform2f(u.uForward,cam.tx,cam.tz);
+ gl.uniform3f(u.uTilt,Math.cos(tilt),Math.sin(tilt),off);
+ gl.uniform4f(u.uView,1/Math.tan(sceneHFov()*.5),W/H,
+  1-2*sceneHorizon(p.pitch)/H,driverEyeHeight());
+ gl.uniform2f(u.uRoll,Math.cos(p.roll),Math.sin(p.roll));
+ gl.uniform3f(u.uDepth,(f+n)/(f-n),2*f*n/(f-n),0);
+ if(s.triangles)gl.drawArrays(gl.TRIANGLES,0,s.triangles*3);
+ s.drawCalls=s.triangles?1:0;return true;
+}
+window.apexPhase5TerrainDiagnostics=()=>{
+ const s=apexPhase5TerrainGPU;
+ return{resident:!!s.buffer,bytes:s.bytes,triangles:s.triangles,
+  gpuCells:s.gpuCells,uploads:s.uploads,reuses:s.reuses,
+  drawCalls:s.drawCalls,failures:s.failures,lastError:s.lastError,
+  pending:!!s.pending};
+};
+
 window.apexPhase5GpuDiagnostics=()=>{
  const s=apexPhase5GroundGPU;
  return{resident:!!s.buffer,bytes:s.bytes,triangles:s.triangles,
