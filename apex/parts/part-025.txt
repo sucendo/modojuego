@@ -416,7 +416,6 @@ window.apexPhase4GroundDiagnostics=()=>{
 };
 function apexForEachTerrainPlateCell(cam,fn){
  const g=apexPlateTerrainGrid(),cells=apexCollectTerrainPlateCells(cam);if(!g||!cells)return false;
- const h=(ix,iz)=>g.inside[iz*g.nx+ix]?g.vals[iz*g.nx+ix]:g.baseLevelM;
  let detailed=0;const pressure=mobileRenderPressure(),ordinaryFineM=mobilePerformanceMode()?lerp(72,118,pressure):lerp(105,165,pressure),structureFineM=mobilePerformanceMode()?230:285;
  for(const cell of cells){
   if(apexInspectionFullScene()){
@@ -2915,7 +2914,11 @@ function webglGradientRect(y0,y1,cTop,cBottom){const bg=apexInspectionActive()?1
 function webglScreenTri(a,b,c,color,camZ=null){const col=webglCssColor(color);webglVertexPx(a[0],a[1],col,camZ);webglVertexPx(b[0],b[1],col,camZ);webglVertexPx(c[0],c[1],col,camZ)}
 function webglScreenQuad(a,b,c,d,color,camZ=null){webglScreenTri(a,b,c,color,camZ);webglScreenTri(a,c,d,color,camZ)}
 function webglPushCamPoly(poly3,pitch,color,near=.58,depthBias=0){
- const clipped=clipPolyNear(poly3,near);if(clipped.length<3)return 0;const pp=projectCameraPoly(clipped,pitch);if(!pp||pp.length<3)return 0;
+ // Fase 4: geometria ya delante del plano proximo no necesita reconstruir
+ // el poligono ni ejecutar clipping por cada triangulo del suelo.
+ let clipped=poly3;
+ for(let i=0;i<poly3.length;i++){const p=poly3[i];if(!p||!(p.z>=near)){clipped=clipPolyNear(poly3,near);break;}}
+ if(clipped.length<3)return 0;const pp=projectCameraPoly(clipped,pitch);if(!pp||pp.length<3)return 0;
  const col=webglCssColor(color);let tris=0;for(let i=1;i<pp.length-1;i++){
    webglVertexPx(pp[0][0],pp[0][1],col,clipped[0].z+depthBias);
    webglVertexPx(pp[i][0],pp[i][1],col,clipped[i].z+depthBias);
