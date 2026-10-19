@@ -179,7 +179,7 @@ function apexTerrainStaticKind(g,ix,iz,x,z){
  cache.set(key,kind);apexHeavyCircuitPerf.kindMisses++;
  return kind;
 }
-const apexHeavyCircuitPerf={kindHits:0,kindMisses:0,portalHits:0,portalMisses:0,forestCulled:0,wallPassMs:0,fencePassMs:0,fenceSourceSegments:0,fenceCandidates:0,fenceProjected:0,fenceDrawn:0};
+const apexHeavyCircuitPerf={kindHits:0,kindMisses:0,portalHits:0,portalMisses:0,forestCulled:0,landmarkPassMs:0,surfacePassMs:0,surfaceTrianglesTotal:0,surfaceTrianglesCulled:0,surfaceTrianglesSubmitted:0,landmarkCandidates:0,wallPassMs:0,fencePassMs:0,fenceSourceSegments:0,fenceCandidates:0,fenceProjected:0,fenceDrawn:0};
 function apexPortalCellIsNear(g,ix,iz,x,z){
  const cache=g._apexPortalNearCache||(g._apexPortalNearCache=new Map()),key=iz+':'+ix+':'+Math.round(x*100)+':'+Math.round(z*100);
  if(cache.has(key)){apexHeavyCircuitPerf.portalHits++;return cache.get(key)}
@@ -3164,7 +3164,10 @@ function webglPushTunnelDetails(segments,cam,pitch){
  renderProfileAdd('tunnelMs',performance.now()-_tunnelT0);
 }
 function webglPushCircuitLandmarks(cam,pitch){
- if(!webglCircuitVisualAvailable())return;const allItems=trackLandmarks(),L=trackData.km*1000;if(!allItems||!allItems.length)return;const entries=apexCompiledLandmarkEntries(allItems),staticOcclusion=apexBuildStaticOcclusionContext(entries,cam,pitch);
+ if(!webglCircuitVisualAvailable())return;const _lmT0=performance.now(),allItems=trackLandmarks(),L=trackData.km*1000;if(!allItems||!allItems.length)return;const entries=apexCompiledLandmarkEntries(allItems),staticOcclusion=apexBuildStaticOcclusionContext(entries,cam,pitch);
+ const surfaceViewFar=(typeof apexInspectionFullScene==='function'&&apexInspectionFullScene())?apexInspectionFarDistance():3600;
+ apexHeavyCircuitPerf.landmarkCandidates=entries.length;
+ apexHeavyCircuitPerf.surfacePassMs=0;apexHeavyCircuitPerf.surfaceTrianglesTotal=0;apexHeavyCircuitPerf.surfaceTrianglesCulled=0;apexHeavyCircuitPerf.surfaceTrianglesSubmitted=0;
  for(const ent of entries){
    const li=ent.i,it=ent.it;
    // Defensa adicional WebGL2: curb-left/right son datos para curbInfo().
@@ -3180,17 +3183,29 @@ function webglPushCircuitLandmarks(cam,pitch){
    const P=(along=0,lat=0,y=0)=>webglLandmarkCam(a,along,lat,y,cam);
    if(it.type==='surfaceZone'||it.type==='terrainZone'||it.type==='water'||it.type==='marking'||it.type==='forestZone'){
      if(it.type==='terrainZone')continue;
+     const _surfaceT0=performance.now();
      if(it.worldFootprint&&it.worldFootprint.length>=3){const col=it.color||(it.type==='water'?'#347ca5':it.type==='forestZone'?'#245032':'#777'),sb=it._apexStaticBatch,
        depthBias=apexGroundPatchDepthBias(it);
      if(sb&&Array.isArray(sb.surfaceTriangles)){
        // Tanto WebGL como Canvas consumen el recorte compilado.
        // Si el recinto fue eliminado por estar DENTRO del asfalto no hay
        // que volver a pintar el polígono original.
-       for(const tri of sb.surfaceTriangles)webglPushCamPoly(tri.map(p=>apexStaticWorldCam(p,cam)),pitch,col,.60,depthBias);
+       // Descartar triángulos fuera de cámara antes de proyectar sus vértices.
+       // Las cotas ya se construyeron al compilar el circuito, no por frame.
+       const bounds=sb.surfaceBounds,tris=sb.surfaceTriangles;
+       apexHeavyCircuitPerf.surfaceTrianglesTotal+=tris.length;
+       for(let ti=0;ti<tris.length;ti++){
+         if(bounds&&bounds[ti]&&!apexStaticBoundInView(bounds[ti],cam,surfaceViewFar,1.55)){
+           apexHeavyCircuitPerf.surfaceTrianglesCulled++;
+           continue;
+         }
+         apexHeavyCircuitPerf.surfaceTrianglesSubmitted++;
+         webglPushCamPoly(tris[ti].map(p=>apexStaticWorldCam(p,cam)),pitch,col,.60,depthBias);
+       }
      }else if(!(sb&&sb.surfaceClipped)){
        const bp=sb&&Array.isArray(sb.surfacePoly3)?sb.surfacePoly3.map(p=>apexStaticWorldCam(p,cam)):it.worldFootprint.map((v,j)=>worldToCamera(v[0],(Array.isArray(it.worldY)&&Number.isFinite(it.worldY[j])?it.worldY[j]:apexWorldGroundY(v[0],v[1]))+apexGroundPatchYOffset(it),v[1],cam));
        webglPushCamPoly(bp,pitch,col,.60,depthBias);
-     }if(it.type==='forestZone'){if(sb&&Array.isArray(sb.forest)){for(const tree of sb.forest){if(tree.bound&&!apexStaticBoundInView(tree.bound,cam,1900,1.6)){apexHeavyCircuitPerf.forestCulled++;continue;}webglPushCamQuad(...tree.trunk.map(p=>apexStaticWorldCam(p,cam)),pitch,'#57452f',.60,-.004);webglPushCamPoly(tree.crown.map(p=>apexStaticWorldCam(p,cam)),pitch,'#285f38',.60,-.005)}}else if(Array.isArray(it.forestPoints)){for(const fp of it.forestPoints){const yy=fp[2]||0,C=worldToCamera(fp[0],yy+8.2,fp[1],cam),L0=worldToCamera(fp[0]-2,yy+1.8,fp[1],cam),R0=worldToCamera(fp[0]+2,yy+1.8,fp[1],cam);webglPushCamQuad(worldToCamera(fp[0]-.12,yy,fp[1],cam),worldToCamera(fp[0]+.12,yy,fp[1],cam),worldToCamera(fp[0]+.12,yy+3.1,fp[1],cam),worldToCamera(fp[0]-.12,yy+3.1,fp[1],cam),pitch,'#57452f',.60,-.004);webglPushCamPoly([L0,R0,C],pitch,'#285f38',.60,-.005)}}}continue;}
+     }if(it.type==='forestZone'){if(sb&&Array.isArray(sb.forest)){for(const tree of sb.forest){if(tree.bound&&!apexStaticBoundInView(tree.bound,cam,1900,1.6)){apexHeavyCircuitPerf.forestCulled++;continue;}webglPushCamQuad(...tree.trunk.map(p=>apexStaticWorldCam(p,cam)),pitch,'#57452f',.60,-.004);webglPushCamPoly(tree.crown.map(p=>apexStaticWorldCam(p,cam)),pitch,'#285f38',.60,-.005)}}else if(Array.isArray(it.forestPoints)){for(const fp of it.forestPoints){const yy=fp[2]||0,C=worldToCamera(fp[0],yy+8.2,fp[1],cam),L0=worldToCamera(fp[0]-2,yy+1.8,fp[1],cam),R0=worldToCamera(fp[0]+2,yy+1.8,fp[1],cam);webglPushCamQuad(worldToCamera(fp[0]-.12,yy,fp[1],cam),worldToCamera(fp[0]+.12,yy,fp[1],cam),worldToCamera(fp[0]+.12,yy+3.1,fp[1],cam),worldToCamera(fp[0]-.12,yy+3.1,fp[1],cam),pitch,'#57452f',.60,-.004);webglPushCamPoly([L0,R0,C],pitch,'#285f38',.60,-.005)}}}apexHeavyCircuitPerf.surfacePassMs+=performance.now()-_surfaceT0;continue;}
    }else if(it.type==='barrier'){
      if(Array.isArray(it.worldPath)&&it.worldPath.length>=2){const h=Math.max(.55,it.height||1.05),kind=it.barrierKind||'CONCRETE',ad=circuitAdvertisingStyle(a.s,{},it.side||1),col=(ad&&kind!=='TYRE')?ad.bg:apexBarrierColor(kind),sb=it._apexStaticBatch,segs=sb&&Array.isArray(sb.barrierSegments)?sb.barrierSegments:null;if(segs){for(const sg of segs){if(sg.bound&&!apexStaticBoundInView(sg.bound,cam,1250,1.28))continue;const q=sg.q,b0=apexStaticWorldCam(q[0],cam),b1=apexStaticWorldCam(q[1],cam),t1=apexStaticWorldCam(q[2],cam),t0=apexStaticWorldCam(q[3],cam);webglPushCamQuad(b0,b1,t1,t0,pitch,col,.60,-.004);if(it.fence&&lod<=1){const fh=Number(it.fenceH)||sg.fenceH||1.3,f0=worldToCamera(q[3][0],q[3][1]+fh,q[3][2],cam),f1=worldToCamera(q[2][0],q[2][1]+fh,q[2][2],cam);webglPushCamQuad(t0,t1,f1,f0,pitch,'rgba(202,215,226,.20)',.60,-.011);webglPushCamQuad(t0,camMix(t0,t1,.025),camMix(f0,f1,.025),f0,pitch,'rgba(207,217,224,.70)',.60,-.012);webglPushCamQuad(t1,camMix(t1,t0,.025),camMix(f1,f0,.025),f1,pitch,'rgba(207,217,224,.70)',.60,-.012);}}}else for(let j=0;j<it.worldPath.length-1;j++){const p0=it.worldPath[j],p1=it.worldPath[j+1],g0=Array.isArray(it.worldPathY)&&Number.isFinite(it.worldPathY[j])?it.worldPathY[j]:apexWorldGroundY(p0[0],p0[1]),g1=Array.isArray(it.worldPathY)&&Number.isFinite(it.worldPathY[j+1])?it.worldPathY[j+1]:apexWorldGroundY(p1[0],p1[1]),b0=worldToCamera(p0[0],g0,p0[1],cam),b1=worldToCamera(p1[0],g1,p1[1],cam),t0=worldToCamera(p0[0],g0+h,p0[1],cam),t1=worldToCamera(p1[0],g1+h,p1[1],cam);webglPushCamQuad(b0,b1,t1,t0,pitch,col,.60,-.004);}
      }continue;
@@ -3457,6 +3472,7 @@ function webglPushCircuitLandmarks(cam,pitch){
      }
    }
  }
+ apexHeavyCircuitPerf.landmarkPassMs=performance.now()-_lmT0;
 }
 function webglCrossingEase(x){x=clamp(x,0,1);return x*x*(3-2*x)}
 function webglPushGradeCrossingEmbankments(cam,pitch){return;
