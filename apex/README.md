@@ -124,3 +124,11 @@ En la consola, `apexVehicleSurfaceDiagnostics()` muestra `source` (`TRACK`, `PIT
 - **Vallas en móvil:** postes, pasamanos y coronaciones se mantienen, pero diagonales y alambres secundarios lejanos se omiten. Distancia de estructura de valla 650 m (820 m en PC); malla de detalle sólo visible a corta/media distancia, sin afectar colisión de muros ni seguridad física.
 - **Diagnóstico:** `apexGroundSurfaceSpatialDiagnostics()`, `apexHeavyCircuitPerfDiagnostics()`, `apexDrivePerformanceDiagnostics()`.
 - **Pruebas realizadas:** sintaxis de las rutinas modificadas y prueba aislada de una huella SVG larga con ancla en un sector distante, que ahora sigue seleccionada cuando el coche está sobre su geometría. **Sin medida real de FPS/temperatura del móvil ni prueba interactiva con la partida de Madrid del vídeo.**
+
+## v0.13.14 — Fase 1 de unificación: escapatoria SVG prioritaria
+
+- En WebGL2 y Canvas2D, las franjas de escapatoria automática sólo se pintan donde **no** existan triángulos válidos de `surfaceZone` SVG. Cuando un SVG ocupa una porción de la franja, se recorta exactamente esa porción, sin suprimir el resto ni alterar pista y pianos. Se utiliza la malla SVG triangulada **después** del recorte de asfalto existente.
+- Se aplica también al suelo de respaldo junto a la cámara y a la vista del inspector. Cuando hay recorte, se omite el detalle decorativo genérico del tramo en WebGL para evitar segundas capas sobre el SVG.
+- El recorte de las franjas utiliza el índice de triángulos de 48 m compilado junto al circuito; los recortes de segmentos de geometría estable se cachean (máximo 1024). Sin `surfaceZone` compilada se conserva la ruta de renderizado anterior.
+- No cambia la geometría de los 23 circuitos, la altura, los materiales de física, ni el guardado o la importación SVG/JSON. **Este es sólo el paso 1**, no todavía la malla continua de terreno de fases siguientes.
+- Diagnóstico de consola con circuito cargado: `apexRunoffFallbackMaskDiagnostics()`. Validadas sintaxis de las seis funciones de dibujo y recorte y pruebas geométricas aisladas: superposición parcial, total, ausencia de superposición, un lateral intacto y reutilización de caché. **Pendiente** revisión visual con el Madrid completo y medición de FPS en móvil.
