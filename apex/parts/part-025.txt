@@ -2907,7 +2907,7 @@ function webglInit(){
    horizonte, pitch, roll, FOV y profundidad que projectLocal/worldToCamera.
    La ruta CPU original sigue funcionando si no hay WebGL o falla la GPU. */
 const apexPhase5GroundGPU={
- gl:null,atlas:null,unsupportedAtlas:null,program:null,buffer:null,uniforms:null,attrs:null,
+ gl:null,atlas:null,unsupportedAtlas:null,failedGl:null,program:null,buffer:null,uniforms:null,attrs:null,
  chunks:[],pending:null,bytes:0,triangles:0,drawCalls:0,visibleTriangles:0,
  culledChunks:0,compiled:0,failures:0,error:null
 };
@@ -2968,16 +2968,17 @@ void main(){outColor=vColor;}`);
  };
 }
 function apexPhase5GpuGroundError(e){
- const s=apexPhase5GroundGPU;
+ const s=apexPhase5GroundGPU,failedGl=s.gl;
  s.failures++;const msg=String(e&&e.message||e);
- apexPhase5GpuRelease(false);s.error='disabled';s.lastError=msg;
+ apexPhase5GpuRelease(false);s.failedGl=failedGl;s.error='disabled';s.lastError=msg;
 }
 function apexPhase5PrepareGpuGround(cam,pitch){
  const atlas=trackData&&trackData.customWorld&&trackData.customWorld._apexUnifiedGroundAtlas,
   gl=webglState&&webglState.gl,s=apexPhase5GroundGPU;
  if(!atlas||!atlas.svgFaces||!gl||!webglState.ready)return false;
- if(s.gl!==gl){apexPhase5GpuRelease(false);s.gl=gl;s.error=null}
- if(s.error==='disabled'||s.unsupportedAtlas===atlas)return false;
+ if(s.failedGl===gl||s.unsupportedAtlas===atlas)return false;
+ if(s.gl!==gl){apexPhase5GpuRelease(false);s.gl=gl;s.error=null;s.failedGl=null}
+ if(s.error==='disabled')return false;
  try{
   if(s.atlas!==atlas){
    apexPhase5GpuRelease(true);
