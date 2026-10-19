@@ -1242,6 +1242,11 @@ async function apexWarmRendererBeforeStart(btn=null){
  const btnState=btn?{disabled:!!btn.disabled,text:btn.textContent}:null;
  const t0=performance.now(),saved={x:player.x,z:player.z,s:player.s,total:player.total,lat:player.lat,heading:player.heading,trackIndex:player.trackIndex,track:player.track,progressS:player.progressS},L=trackData.km*1000,samples=[];
  const add=s=>{s=mod(+s||0,L);if(!samples.some(v=>Math.abs(wrapDeltaS(v,s,L))<18))samples.push(s)};add(saved.s);add(L*.25);add(L*.5);add(L*.75);
+ // La recta de meta suele concentrar boxes, gradas y SVG grandes. Calentar
+ // dos aproximaciones a meta antes de conducir evita JIT y crecimientos de
+ // buffer WebGL cuando aparecen por primera vez esas vistas densas.
+ const sf=apexCircuitStartFinishS(trackData.spec),finishS=Number.isFinite(sf&&sf.finish)?sf.finish:0;
+ add(finishS-320);add(finishS-105);
  const cc=trackData.compiledCircuit;if(cc&&Array.isArray(cc.portals))for(const p of cc.portals)if(samples.length<10)add(p.s);
  if(btn){btn.disabled=true;btn.textContent='CALENTANDO RENDER…'}
  try{
