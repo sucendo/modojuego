@@ -253,6 +253,22 @@ function apexTerrainCellNeedsDetail(g,x,z,span){
  const sg=apexNearestGradeSegment(x,z,'PAVED',span*1.1+36);
  return sg&&sg.dist<sg.width*.5+span*1.4+12?'PAVED':null;
 }
+/* Terreno SVG y escapatoria comparten un UNICO propietario por triangulo.
+   El recorte se calcula una vez, en mundo X/Z, y se guarda en la malla;
+   nunca se recalcula por cámara, ni modifica el relieve del SVG original. */
+function apexUnifiedTerrainCellPieces(g,ix,iz,x1,z1,poly){
+ const atlas=trackData&&trackData.customWorld&&trackData.customWorld._apexUnifiedGroundAtlas;
+ if(!atlas||!atlas.svg||!atlas.svg.faces.length)return null;
+ const cache=g._apexUnifiedTerrainPieces||(g._apexUnifiedTerrainPieces=new Map()),
+  key=ix+':'+iz+':'+x1+':'+z1;
+ if(cache.has(key))return cache.get(key);
+ const pieces=apexClipGenericRunoffPolygon(poly);
+ if(cache.size>=3072){
+  const keys=cache.keys();for(let n=0;n<384;n++){const k=keys.next();if(k.done)break;cache.delete(k.value)}
+ }
+ cache.set(key,pieces);
+ return pieces;
+}
 function apexTerrainFinePatch(g,ix,iz,kind){
  const key=iz*g.nx+ix,old=g.fineCache.get(key);if(old)return old;
  const x0=g.minX+ix*g.cell,z0=g.minZ+iz*g.cell,
@@ -293,7 +309,12 @@ function apexTerrainFinePatch(g,ix,iz,kind){
   if(A.paved&&B.paved&&C.paved&&D.paved)continue;
   // El propio túnel sigue siendo el molde exacto de v61/v62. No cambiamos
   // absolutamente nada de la geometría visual para ganar rendimiento.
-  for(const poly of apexClipTerrainQuadByTunnel(A,B,C,D))if(poly&&poly.length>=3)quads.push(poly);
+  for(const poly of apexClipTerrainQuadByTunnel(A,B,C,D))if(poly&&poly.length>=3){
+   // No fabricar un suelo oculto bajo la escapatoria importada.
+   // Se almacena ya recortado en fineCache / cache persistente del GP.
+   const clean=apexClipGenericRunoffPolygon(poly);
+   if(clean===null)quads.push(poly);else for(const q of clean)if(q.length>=3)quads.push(q);
+  }
  }
  if(!g._keepCompiledFineCache&&g.fineCache.size>540){const first=g.fineCache.keys().next().value;g.fineCache.delete(first)}
  g.fineCache.set(key,quads);return quads;
@@ -320,15 +341,23 @@ function apexForEachTerrainPlateCell(cam,fn){
   // v5.230.62 · PORTAL/TUNNEL visibles siempre pasan por el molde fino. En el LOD
   // lejano conservamos literalmente la altura SVG; nunca levantamos la montaña.
   const y00=h(ix,iz),y10=h(x1,iz),y11=h(x1,z1),y01=h(ix,z1);
-  fn(worldToCamera(x0,y00,z0,cam),worldToCamera(xB,y10,z0,cam),
-    worldToCamera(xB,y11,zB,cam),worldToCamera(x0,y01,zB,cam),cell,g);
+  const A={x:x0,y:y00,z:z0},B={x:xB,y:y10,z:z0},
+   C={x:xB,y:y11,z:zB},D={x:x0,y:y01,z:zB},
+   clean=apexUnifiedTerrainCellPieces(g,ix,iz,x1,z1,[A,B,C,D]);
+  if(clean===null){
+   fn(worldToCamera(x0,y00,z0,cam),worldToCamera(xB,y10,z0,cam),
+     worldToCamera(xB,y11,zB,cam),worldToCamera(x0,y01,zB,cam),cell,g);
+  }else for(const p of clean){
+   const cp=p.map(v=>worldToCamera(v.x,v.y,v.z,cam));
+   if(cp.length>=3)fn(cp[0],cp[1],cp[2],cp[3]||cp[2],cell,g,cp);
+  }
  }
  return true;
 }
 // ---------- v5.230.62.2 · COMPILADOR ESTÁTICO + CACHE PERSISTENTE ----------
 // El objetivo es pagar el coste de interpretación/teselación ANTES de conducir y
 // reutilizarlo en posteriores aperturas del MISMO SVG/perfil. No cambia la geometría.
-const APEX_CIRCUIT_COMPILE_REV=230683;
+const APEX_CIRCUIT_COMPILE_REV=230684;
 async function apexCompilerYield(){return new Promise(resolve=>setTimeout(resolve,0));}
 function apexHash32String(str){let h=2166136261>>>0;str=String(str||'');for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)>>>0}return ('00000000'+h.toString(16)).slice(-8)}
 function apexCircuitCompileFingerprint(){
