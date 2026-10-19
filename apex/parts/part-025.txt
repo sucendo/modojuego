@@ -427,7 +427,7 @@ window.apexPhase4GroundSelfTest=()=>{
   a===b&&a.length===4&&a[0].y===0&&a[2].y===8&&a[2].x===20&&a[2].z===20;
  return{pass,coverage,cached:a===b,corners:a.length,heights:a.map(p=>p.y)};
 };
-function apexForEachTerrainPlateCell(cam,fn){
+function apexForEachTerrainPlateCell(cam,fn,skipCoarse=null){
  const g=apexPlateTerrainGrid(),cells=apexCollectTerrainPlateCells(cam);if(!g||!cells)return false;
  let detailed=0;const pressure=mobileRenderPressure(),ordinaryFineM=mobilePerformanceMode()?lerp(72,118,pressure):lerp(105,165,pressure),structureFineM=mobilePerformanceMode()?230:285;
  for(const cell of cells){
@@ -449,6 +449,9 @@ function apexForEachTerrainPlateCell(cam,fn){
   // lejano conservamos literalmente la altura SVG; nunca levantamos la montaña.
   const quad=apexPhase4TerrainPacket(g,ix,iz,x1,z1),[A,B,C,D]=quad,
    clean=apexUnifiedTerrainCellPieces(g,ix,iz,x1,z1,quad);
+  // Terreno ordinario: un shader puede dibujarlo desde un VBO persistente.
+  // El molde fino de PORTAL/TUNNEL/TRACK sigue exclusivamente en esta ruta.
+  if(skipCoarse&&skipCoarse(cell,g,quad,clean))continue;
   if(clean===null){
    fn(worldToCamera(A.x,A.y,A.z,cam),worldToCamera(B.x,B.y,B.z,cam),
      worldToCamera(C.x,C.y,C.z,cam),worldToCamera(D.x,D.y,D.z,cam),cell,g);
@@ -565,11 +568,34 @@ function drawTerrainPlateMesh(cam,pitch){
  renderProfileAdd('terrainMs',performance.now()-_terrainT0);
 }
 function webglPushTerrainPlateMesh(cam,pitch){
- const _terrainT0=performance.now();
- apexForEachTerrainPlateCell(cam,(A,B,C,D,c,g,poly)=>{
-   const col=g.tone==='BROWN'?'#886e51':g.tone==='SAND'?'#bc9c69':'#4e7650';
-   const fill=(c.ix+c.iz)%5===0?shadeColor(col,3):col;if(poly&&poly.length>=3)webglPushCamPoly(poly,pitch,fill,.58);else webglPushCamQuad(A,B,C,D,pitch,fill,.58);
- });
+ const _terrainT0=performance.now(),gpuEligible=typeof apexPhase5TerrainCanDraw==='function'&&apexPhase5TerrainCanDraw(),
+  staticCells=[];
+ const draw=(A,B,C,D,c,g,poly)=>{
+  const col=g.tone==='BROWN'?'#886e51':g.tone==='SAND'?'#bc9c69':'#4e7650',
+   fill=(c.ix+c.iz)%5===0?shadeColor(col,3):col;
+  if(poly&&poly.length>=3)webglPushCamPoly(poly,pitch,fill,.58);
+  else webglPushCamQuad(A,B,C,D,pitch,fill,.58);
+ };
+ apexForEachTerrainPlateCell(cam,draw,gpuEligible?(cell,g,quad,clean)=>{
+  // El plano cercano sigue con el recorte CPU, evitando artefactos
+  // de triangulos que cruzan el ojo de la camara.
+  if(cell.dist2<g.cell*g.cell*4)return false;
+  staticCells.push({cell,g,quad,clean});return true;
+ }:null);
+ if(staticCells.length&&!apexPhase5PrepareGpuTerrain(staticCells,cam,pitch)){
+  // Si falla el shader o el presupuesto GPU, se dibujan las mismas
+  // geometrías estáticas por la ruta anterior dentro de este frame.
+  for(const item of staticCells){
+   const {cell,g,quad,clean}=item,[A,B,C,D]=quad;
+   if(clean===null)draw(worldToCamera(A.x,A.y,A.z,cam),
+    worldToCamera(B.x,B.y,B.z,cam),worldToCamera(C.x,C.y,C.z,cam),
+    worldToCamera(D.x,D.y,D.z,cam),cell,g);
+   else for(const poly of clean){
+    const cp=poly.map(p=>worldToCamera(p.x,p.y,p.z,cam));
+    if(cp.length>=3)draw(cp[0],cp[1],cp[2],cp[3]||cp[2],cell,g,cp);
+   }
+  }
+ }
  renderProfileAdd('terrainMs',performance.now()-_terrainT0);
 }
 // Generic terrain diagnostic: query start / bridge / tunnel without editing the simulator.
