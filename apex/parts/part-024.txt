@@ -36,37 +36,104 @@ function syncPlayerDriveNetwork(trackState){
 }
 /* Superficie del monoplaza: la huella dibujada manda fuera del asfalto.
    La consulta SVG va por cuadrícula compilada (no barrido global por frame). */
+/* FASE 2 · Consulta canónica del suelo bajo una posición X/Z.
+   Altura, orientación y material se resuelven JUNTOS. La prioridad de
+   drivableArea y PIT conserva las reglas físicas anteriores. Para el jugador
+   se suministran s/lat y se cachea: ninguna búsqueda global a 100 Hz. */
+function apexUnifiedSurfaceAtWorld(x,z,opts=null){
+ if(!trackData||!Number.isFinite(x)||!Number.isFinite(z))return null;
+ const o=opts||{},ns=(Number.isFinite(o.s)&&Number.isFinite(o.lat))?
+   {s:o.s,lat:o.lat}:nearestTrackState(x,z,Number.isFinite(o.trackIndex)?o.trackIndex:null);
+ const s=ns.s,lat=ns.lat,env=envProfile(s),abs=Math.abs(lat),kerb=env.half+env.curb,
+   pit=o.pitState||null,driveNetwork=o.driveNetwork||'TRACK',
+   road=trackSurfacePoseAt(s,lat);
+ let surface={...road,x,z,s,lat,source:'TRACK',surfaceSource:'TRACK',
+  slopeX:Math.tan(road.bank||0)*road.ox,slopeZ:Math.tan(road.bank||0)*road.oz};
+ // PIT dibujado sigue siendo su propia plataforma, sin duplicar cálculo.
+ if(driveNetwork==='PIT'&&pit){
+  const rd=Math.hypot(pit.nx,0,pit.nz)||1;
+  surface={...road,...pit,x,z,s,lat,centerY:pit.y,y:pit.y,bank:0,tanBank:0,
+   slopeX:0,slopeZ:0,surfaceRx:pit.nx/rd,surfaceRy:0,surfaceRz:pit.nz/rd,
+   source:'PIT',surfaceSource:'PIT'};
+ }else if(abs>kerb+.03){
+  // Mismo triángulo que el render SVG recortado: altura y pendiente exactas.
+  const hit=apexSampleRunoffSurfaceAtWorld(x,z);
+  if(hit){
+   const q=renderRibbonFrameAt(s),cross=hit.slopeX*q.ox+hit.slopeZ*q.oz,
+    bank=Math.atan(clamp(cross,-.55,.55)),norm=Math.hypot(q.ox,cross,q.oz)||1;
+   surface={...road,x,z,s,lat,y:hit.y,centerY:q.y,bank,tanBank:cross,
+    surfaceRx:q.ox/norm,surfaceRy:cross/norm,surfaceRz:q.oz/norm,
+    slopeX:hit.slopeX,slopeZ:hit.slopeZ,svgMaterial:hit.kind||'ASPHALT',
+    source:'SVG_RUNOFF',surfaceSource:'SVG_RUNOFF'};
+  }else if(abs<=apexRoadFlatLimit(s,env,lat>=0?1:-1)+.12){
+   surface={...road,x,z,s,lat,y:apexRoadShoulderYAt(s,lat),bank:0,tanBank:0,
+    surfaceRy:0,slopeX:0,slopeZ:0,source:'ROAD_RUNOFF',surfaceSource:'ROAD_RUNOFF'};
+  }else{
+   surface={...road,x,z,s,lat,y:apexWorldGroundY(x,z),bank:0,tanBank:0,
+    surfaceRy:0,slopeX:0,slopeZ:0,source:'TERRAIN',surfaceSource:'TERRAIN'};
+  }
+ }
+ let zone='TRACK',kind='ASPHALT',grip=1,steerGrip=1,driveGrip=1;
+ const set=(z0,k,g,sg,dg)=>{zone=z0;kind=k;grip=g;steerGrip=sg;driveGrip=dg;};
+ if(driveNetwork==='PIT'&&pit&&pit.dist<=pit.width*.58+.35){
+  set('PIT','ASPHALT',.96,.96,.97);
+ }else if(abs<=env.half){
+  set('TRACK','ASPHALT',1,1,1);
+ }else{
+  const pitLane=pitLaneAtS(s);
+  if(pitLane&&Math.abs(lat-pitLane.centerLat)<=pitLane.width*.56){
+   set('PIT','ASPHALT',.96,.96,.97);
+  }else if(abs<=kerb){
+   set('KERB','KERB',.91,.88,.91);
+  }else{
+   const drivable=apexDrivableAreaContains(x,z);
+   if(drivable===false)set('OFF','BOUNDARY',.08,.06,.08);
+   else{
+    // La malla SVG autoritativa aporta su material sin recorrer todos los
+    // polígonos; fallback sólo para marcas legacy o láminas de agua.
+    const svgZone=surface.source==='SVG_RUNOFF'?
+      {kind:surface.svgMaterial}:apexIndexedSurfaceZoneAtWorld(x,z);
+    if(svgZone){
+     const k=String(svgZone.kind||'ASPHALT').toUpperCase();
+     if(k==='WATER')set('WATER','WATER',.06,.04,.05);
+     else if(k==='GRAVEL')set('RUNOFF','GRAVEL',.34,.25,.42);
+     else if(k==='SAND')set('RUNOFF','SAND',.28,.20,.36);
+     else if(k==='GRASS')set('RUNOFF','GRASS',.38,.28,.48);
+     else set('RUNOFF','ASPHALT',.78,.75,.82);
+    }else if(drivable===true)set('RUNOFF','ASPHALT',.78,.75,.82);
+    else if(abs<=env.half+env.curb+env.runoff){
+     if(env.runoffSurface==='GRAVEL')set('RUNOFF','GRAVEL',.34,.25,.42);
+     else if(env.runoffSurface==='GRASS')set('RUNOFF','GRASS',.38,.28,.48);
+     else set('RUNOFF','ASPHALT',.78,.75,.82);
+    }else if(env.wall&&!trackData.svgAuthoritative)set('WALL','WALL',.20,.18,.25);
+    else if(env.offSurface==='GRAVEL')set('OFF','GRAVEL',.31,.22,.40);
+    else if(env.offSurface==='SAND')set('OFF','SAND',.28,.20,.36);
+    else if(env.offSurface==='GRASS')set('OFF','GRASS',.35,.25,.46);
+    else set('OFF','ASPHALT',.68,.63,.72);
+   }
+  }
+ }
+ const n=Math.hypot(surface.slopeX||0,1,surface.slopeZ||0)||1;
+ return {...surface,zone,kind,material:kind,grip,steerGrip,driveGrip,
+  normal:{x:-(surface.slopeX||0)/n,y:1/n,z:-(surface.slopeZ||0)/n}};
+}
+// Entrada compatible para todo código que todavía pida sólo pose.
 function apexVehicleSurfacePoseAtWorld(x,z,s,lat){
- const road=trackSurfacePoseAt(s,lat),env=envProfile(s),edge=env.half+env.curb;
- if(Math.abs(lat)<=edge+.03)return road;
- const hit=apexSampleRunoffSurfaceAtWorld(x,z);
- if(hit){
-  const q=renderRibbonFrameAt(s),cross=hit.slopeX*q.ox+hit.slopeZ*q.oz,
-   bank=Math.atan(clamp(cross,-.55,.55)),norm=Math.hypot(q.ox,cross,q.oz)||1;
-  return {...road,x,z,y:hit.y,bank,tanBank:cross,centerY:q.y,
-   surfaceRx:q.ox/norm,surfaceRy:cross/norm,surfaceRz:q.oz/norm,
-   slopeX:hit.slopeX,slopeZ:hit.slopeZ,surfaceSource:'SVG_RUNOFF'};
- }
- // En las escapatorias de respaldo la plataforma es lateralmente horizontal
- // desde la coronación del piano. Nunca extrapolar el peralte 20-50 m.
- if(Math.abs(lat)<=apexRoadFlatLimit(s,env,lat>=0?1:-1)+.12){
-  const y=apexRoadShoulderYAt(s,lat);
-  return {...road,x,z,y,bank:0,tanBank:0,surfaceRy:0,surfaceSource:'ROAD_RUNOFF'};
- }
- const y=apexWorldGroundY(x,z);
- return {...road,x,z,y,bank:0,tanBank:0,surfaceRy:0,surfaceSource:'TERRAIN'};
+ return apexUnifiedSurfaceAtWorld(x,z,{s,lat});
 }
 function playerDriveSurfacePose(){
- if(player&&player.driveNetwork==='PIT'&&player.pitState){
-  const p=player.pitState,rd=Math.hypot(p.nx,0,p.nz)||1;
-  return {...p,x:player.x,z:player.z,centerY:p.y,bank:0,tanBank:0,
-   surfaceRx:p.nx/rd,surfaceRy:0,surfaceRz:p.nz/rd,surfaceSource:'PIT'};
- }
- if(!player||!trackData)return trackSurfacePoseAt(0,0);
- const cache=player._apexVehicleSurfaceCache,index=trackData._apexRunoffDriveSurfaceIndex;
- if(cache&&cache.index===index&&cache.x===player.x&&cache.z===player.z&&cache.s===player.s&&cache.lat===player.lat&&cache.mode===player.driveNetwork)return cache.pose;
- const pose=apexVehicleSurfacePoseAtWorld(player.x,player.z,player.s,player.lat);
- player._apexVehicleSurfaceCache={index,x:player.x,z:player.z,s:player.s,lat:player.lat,mode:player.driveNetwork,pose};
+ if(!player||!trackData)return null;
+ const cache=player._apexVehicleSurfaceCache,
+  index=trackData._apexRunoffDriveSurfaceIndex,
+  zoneIndex=trackData._apexSurfaceMaterialIndex;
+ if(cache&&cache.index===index&&cache.zoneIndex===zoneIndex&&cache.x===player.x&&
+    cache.z===player.z&&cache.s===player.s&&cache.lat===player.lat&&
+    cache.mode===player.driveNetwork&&cache.pit===player.pitState)return cache.pose;
+ const pose=apexUnifiedSurfaceAtWorld(player.x,player.z,{
+  s:player.s,lat:player.lat,driveNetwork:player.driveNetwork,pitState:player.pitState
+ });
+ player._apexVehicleSurfaceCache={index,zoneIndex,x:player.x,z:player.z,s:player.s,
+  lat:player.lat,mode:player.driveNetwork,pit:player.pitState,pose};
  return pose;
 }
 // v5.230.48 / FASE 1: un único perfil de explanación, independiente del circuito.
