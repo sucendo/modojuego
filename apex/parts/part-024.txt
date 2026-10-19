@@ -401,7 +401,7 @@ function apexSvgLandmarkExact(el,index,ctx){
    const spanX=Math.max(1,maxX-minX),spanZ=Math.max(1,maxZ-minZ);node.length=lAttr||Math.max(spanX,spanZ);node.depth=dAttr||Math.min(spanX,spanZ);node.height=node.height||(type==='pit'?19:14);if(type==='pit'){node.pitStyle=node.apexStyle||'pit_modern_f1';node.garageBays=Math.max(1,Math.round(Number.isFinite(+node.garageBays)?+node.garageBays:Math.max(8,Math.min(36,node.length/9))));node.hasGlass=node.hasGlass!==false;node.hasBalcony=node.hasBalcony!==false;node.hasPitwall=node.hasPitwall!==false;node.roofStyle=node.roofStyle||'flat';node.garageStyle=node.garageStyle||'f1';}else{node.grandstandStyle=node.apexStyle||'grandstand_open';const gs=String(node.grandstandStyle||'grandstand_open').toLowerCase();if(node.hasRoof===null||node.hasRoof===undefined)node.hasRoof=/covered|roof|arena|vip/.test(gs);node.seatRows=Math.max(3,Math.round(Number.isFinite(+node.seatRows)?+node.seatRows:(/compact/.test(gs)?6:(node.height||14)>15?11:9)));node.roofStyle=node.roofStyle||'cantilever';node.seatColor=node.seatColor||'';}
  }
  else if(type==='ferris'){node.radius=(parseFloat(el.getAttribute('data-apex-radius'))||12)*ctx.scale;node.height=node.height||0;node.grounded=true}
- else if(type==='tree'){node.width=wAttr||6;node.height=node.height||12;node.foliage=node.color||'#347342';node.treeVariant=variant||'deciduous';node.grounded=true}
+ else if(type==='tree'){node.width=wAttr||6;node.height=node.height||12;node.foliage=node.color||'#275b35';node.treeVariant=variant||'deciduous';node.grounded=true}
  else if(type==='tower'){node.width=wAttr||8;node.height=node.height||48;node.grounded=true}
  else if(type==='tunnelPortal'){node.span=wAttr||18;node.deckWidth=dAttr||26;node.height=node.height||6.2}
  else if(type==='gantry'){node.width=wAttr||20;node.span=node.width;node.height=node.height||6}
@@ -1417,10 +1417,10 @@ function apexRunoffRoadClipIndex(){
  // subdivisión por cada vértice SVG de la pista.
  const samples=[];
  for(let i=0;i<positions.length;i++)
-  if(!samples.length||positions[i]-samples[samples.length-1]>=2.2||i===positions.length-1)
+  if(!samples.length||positions[i]-samples[samples.length-1]>=1.25||i===positions.length-1)
    samples.push(positions[i]);
  const frame=(s)=>{
-  const q=renderRibbonFrameAt(s),e=envProfile(s),w=e.half+e.curb+.025,
+  const q=renderRibbonFrameAt(s),e=envProfile(s),w=e.half+e.curb+.12,
    l=ribbonWorldPoint(q,w,1),r=ribbonWorldPoint(q,w,-1);
   return{l,r};
  };
@@ -1477,12 +1477,12 @@ function apexClipRunoffSurfaceTriangles(triangles){
      const ns=nearestTrackState(v.x,v.z,null,{radius:80,allowGlobal:true,fallbackDist:75});
      if(ns&&Number.isFinite(ns.lat)&&Number.isFinite(ns.s)){
       const e=envProfile(ns.s),lat=Math.abs(ns.lat),edge=e.half+e.curb;
-      if(lat<=edge+.55){
+      if(lat<=edge+.85){
        const q=renderRibbonFrameAt(ns.s),bank=Math.tan(q.bank||0);
        const asphalt=q.y+bank*ns.lat,shoulder=apexRoadSideHeight(q,e,ns.lat>=0?1:-1);
        const w=clamp((lat-e.half)/Math.max(.05,e.curb),0,1);
        const target=lerp(asphalt,shoulder,w)-.042;
-       y=lerp(v.y,target,1-clamp((lat-edge)/.55,0,1));
+       y=lerp(v.y,target,1-clamp((lat-edge)/.85,0,1));
       }
      }
      return [v.x,y,v.z];
@@ -1526,6 +1526,8 @@ function apexCompileCrosswalkTriangles(it){
  let ax=0,az=0;
  if(ns&&Number.isFinite(ns.s)&&Number.isFinite(ns.dist)&&ns.dist<Math.max(22,envProfile(ns.s).half+20)){
   const q=renderRibbonFrameAt(ns.s);
+  // El eje de repetición sigue el avance del coche: cada franja blanca
+  // ocupa el eje normal y por tanto cruza la pista perpendicularmente.
   ax=q.tx;az=q.tz;
  }else{
   // Cebreados urbanos lejos del circuito conservan la orientación del SVG.
