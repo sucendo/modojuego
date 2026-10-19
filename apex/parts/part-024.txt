@@ -2032,9 +2032,10 @@ function apexUnifiedGroundStrip(seg){
 function apexUnifiedGroundDrawCorridor(seg,cam,pitch,webgl=false){
  const a=seg.a,b=seg.b,V0=a.v,V1=b.v;
  if(!V0||!V1)return null;
- const strip=apexUnifiedGroundStrip(seg),
-  left=strip?strip.runoffLeft:apexGenericRunoffMaskedPolys(seg,1),
-  right=strip?strip.runoffRight:apexGenericRunoffMaskedPolys(seg,-1),
+ const inspect=apexInspectionActive(),
+  strip=inspect?null:apexUnifiedGroundStrip(seg),
+  left=inspect?null:(strip?strip.runoffLeft:apexGenericRunoffMaskedPolys(seg,1)),
+  right=inspect?null:(strip?strip.runoffRight:apexGenericRunoffMaskedPolys(seg,-1)),
   cL=surfaceColor(a.env.runoffSurface,false),cR=surfaceColor(a.env.runoffSurface,true);
  const paint=(faces,col)=>{
   for(const p of faces){
@@ -2043,13 +2044,17 @@ function apexUnifiedGroundDrawCorridor(seg,cam,pitch,webgl=false){
    else drawCamPoly(cp,pitch,col,.58);
   }
  };
- if(left!==null)paint(left,cL);
- else if(webgl)webglPushCamQuad(V0.lx,a.curb.left?V0.lo:V0.l,b.curb.left?V1.lo:V1.l,V1.lx,pitch,cL);
- else drawCamQuadTriangles(V0.lx,a.curb.left?V0.lo:V0.l,b.curb.left?V1.lo:V1.l,V1.lx,pitch,cL);
- if(right!==null)paint(right,cR);
- else if(webgl)webglPushCamQuad(a.curb.right?V0.ro:V0.r,V0.rx,V1.rx,b.curb.right?V1.ro:V1.r,pitch,cR);
- else drawCamQuadTriangles(a.curb.right?V0.ro:V0.r,V0.rx,V1.rx,b.curb.right?V1.ro:V1.r,pitch,cR);
- if(webgl&&left===null&&right===null)webglPushRunoffDetail(seg,pitch);
+ if(inspect)apexInspectorDrawRunoff(seg,cam,pitch,webgl);
+ else{
+  if(left!==null)paint(left,cL);
+  else if(webgl)webglPushCamQuad(V0.lx,a.curb.left?V0.lo:V0.l,b.curb.left?V1.lo:V1.l,V1.lx,pitch,cL);
+  else drawCamQuadTriangles(V0.lx,a.curb.left?V0.lo:V0.l,b.curb.left?V1.lo:V1.l,V1.lx,pitch,cL);
+  if(right!==null)paint(right,cR);
+  else if(webgl)webglPushCamQuad(a.curb.right?V0.ro:V0.r,V0.rx,V1.rx,b.curb.right?V1.ro:V1.r,pitch,cR);
+  else drawCamQuadTriangles(a.curb.right?V0.ro:V0.r,V0.rx,V1.rx,b.curb.right?V1.ro:V1.r,pitch,cR);
+  if(webgl&&left===null&&right===null)webglPushRunoffDetail(seg,pitch);
+ 
+ }
  const seed=Math.floor(((a.s+b.s)*.5)/2.4),colors=circuitCurbPair(seed);
  if(webgl){
   const show=(typeof apexInspectionFullScene==='function'&&apexInspectionFullScene())||seg.z<mobileControlProfile().curbMax;
