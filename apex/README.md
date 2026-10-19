@@ -1,6 +1,6 @@
 # APEX Formula 26
 
-Versión de desarrollo: **v0.13.15 · PRE-RELEASE**
+Versión de desarrollo: **v0.13.16 · PRE-RELEASE**
 
 Archivo fuente original:
 `Apex_Formula_26_v5_230_62_8_6_7_6_4_17_CONTROL_CLASICO_GP4.html`
@@ -150,3 +150,18 @@ En la consola, `apexVehicleSurfaceDiagnostics()` muestra `source` (`TRACK`, `PIT
 - Diagnóstico: `apexUnifiedSurfaceDiagnostics()` bajo el coche; `apexUnifiedSurfaceDiagnostics(x,z)` para un punto del mundo. Devuelve `source`, `material`, `y`, `normal` y `grip`.
 - Pruebas aisladas de integración: asfalto, piano, grava SVG, escapatoria de respaldo, agua, terreno, PIT y consulta repetida desde la física; 200 consultas repitieron **un único acceso** a la malla cuando la posición no cambió. **Pendiente** validación visual con Madrid y pruebas de regresión reales en los otros 22 circuitos.
 - **Alcance:** esta fase unifica la *consulta física/visual*; todavía no fusiona toda la malla longitudinal del terreno en un solo buffer. La malla renderizada y su optimización estructural corresponden a la fase siguiente.
+
+## v0.13.16 — Fase 3: geometría y render de suelo unificados
+
+**Objetivo:** evitar que carretera, escapatoria SVG y terreno compitan como láminas superpuestas, y reutilizar el recorte geométrico sin empeorar el coste por fotograma.
+
+- **Atlas de propiedad del suelo** (`apexBuildUnifiedGroundAtlas`): reutiliza el índice de triángulos SVG, la placa de relieve y paquetes cacheados por tramo. La geometría SVG sigue intacta; ningún rectángulo genérico tapa una escapatoria importada.
+- **Pasada compartida Canvas/WebGL** (`apexUnifiedGroundDrawCorridor`): asfalto + pianos + escapatoria de respaldo se construyen/dibujan desde la misma referencia de bordes; conserva sombreado, pintura de frenada, agua, meteorología y marcadores posteriores. Se elimina la antigua rutina redundante de escapatoria.
+- **Propiedad del suelo importado** (`apexRenderUnifiedAuthoredGround`): las `surfaceZone` trianguladas salen del bucle de decorado y se dibujan **una sola vez** tras el terreno y antes del asfalto. Visibilidad y descarte siguen siendo por triángulo, con límites adaptados a móvil/PC.
+- **Relieve recortado realmente** (`apexUnifiedTerrainCellPieces`): tanto las zonas finas de la malla SVG como las celdas gruesas eliminan las porciones ocupadas por las escapatorias importadas; los resultados se cachean. Se aplica al inspector 3D.
+- **Optimización móvil:** compilación cooperativa de hasta 1300 celdas próximas a escapatorias SVG, incluyendo sus celdas LOD de 2×2; cede control al navegador aproximadamente cada 12 ms durante la carga. Los restantes recortes se memoizan al visitarlos. Sin `surfaceZone`, se evita almacenar paquetes adicionales.
+- **Caché persistente:** revisión del compilador elevada a `230684` para regenerar el relieve fino de los circuitos modificados, sin alterar el esquema de guardado de partidas ni el formato de circuitos.
+- **Diagnóstico:** `apexUnifiedGroundAtlasDiagnostics()`, `apexRunoffFallbackMaskDiagnostics()`, `apexUnifiedSurfaceDiagnostics()` y `apexHeavyCircuitPerfDiagnostics()`.
+- **Pruebas aisladas:** verificadas sintaxis de doce rutinas, conservación de 56 m² en una superficie de 64 m² con 8 m² de SVG, reutilización de paquetes comunes Canvas/WebGL, y precálculo de celdas con máscara total (20 celdas de prueba). **Falta** medir FPS reales con el circuito SVG completo de Madrid en móvil y validar visualmente los otros 22 circuitos.
+
+**Límite de esta fase:** unifica la propiedad/recorte y las pasadas de dibujo del corredor y las zonas de suelo, pero no transforma aún todas las superficies procedurales lejanas y el escenario completo en una única malla/buffer WebGL.
