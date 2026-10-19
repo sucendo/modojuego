@@ -1,4 +1,6 @@
 /* Injected into the assembled simulator by browser-audit.cjs only. */
+const auditLongTasks={count:0,totalMs:0,worstMs:0};
+try{new PerformanceObserver(list=>{for(const e of list.getEntries()){auditLongTasks.count++;auditLongTasks.totalMs+=e.duration;auditLongTasks.worstMs=Math.max(auditLongTasks.worstMs,e.duration);}}).observe({entryTypes:['longtask']});}catch(_e){}
 window.__apexAudit={
  async load(dir,custom=false){
   goMenu();const spec=dir==='BASE_OTHER'?(calendar.find(s=>/italy|monza/i.test(s.dir+' '+s.name))||calendar[0]):calendar.find(s=>s.dir===dir);if(!spec)throw Error('Circuit not found: '+dir);
@@ -16,14 +18,15 @@ window.__apexAudit={
  release(){apexReleaseInputs();gyro.enabled=false;window.__apexGamepad=null;},
  saveSnapshot(){persist();return{save:JSON.parse(JSON.stringify(save)),stored:JSON.parse(appStorage.getItem(SAVE_KEY))};},
  backend(id){if(id==='canvas2d')apexSetCameraMode('cockpit',{silent:true});return setRendererBackend(id,{notify:false,persist:false});},
- reset(){apexRuntimePerfReset();},
+ reset(){apexRuntimePerfReset();auditLongTasks.count=0;auditLongTasks.totalMs=0;auditLongTasks.worstMs=0;},
  camera(mode){return apexSetCameraMode(mode,{silent:true});},
  snapshot(){const gl=webglState.gl,ext=gl&&gl.getExtension('WEBGL_debug_renderer_info');return{
   version:APP_VERSION,circuit:trackData&&trackData.spec.dir,backend:rendererBackendId(),
   camera:apexCameraMode(),rivals:rivals.length,summary:apexPerformanceSummary(),profile:renderProfilerSnapshot(),
   driving:window.apexDrivingDiagnostics?apexDrivingDiagnostics():null,
   state:player?{x:player.x,z:player.z,s:player.s,speed:player.speed,heading:player.heading,yawRate:player.yawRate}:null,
-  simulationSeconds:raceT,mode,contextLost:!!webglState.lost,
+  simulationSeconds:raceT,mode,contextLost:!!webglState.lost,longTasks:{...auditLongTasks},
+  jsHeapBytes:performance.memory?performance.memory.usedJSHeapSize:null,
   road:window.apexPhase6RoadDiagnostics?apexPhase6RoadDiagnostics():null,terrain:apexPhase5TerrainDiagnostics(),ground:apexPhase5GpuDiagnostics(),glError:gl&&gl.getError(),
   renderer:ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):gl&&gl.getParameter(gl.RENDERER)};},
  stop(){goMenu();return !apexPhase5TerrainGPU.buffer&&!apexPhase5GroundGPU.buffer&&(!window.apexPhase6RoadDiagnostics||!apexPhase6RoadDiagnostics().resident);},

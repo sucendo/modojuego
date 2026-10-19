@@ -29,6 +29,7 @@ jobs:
           mkdir -p /tmp/apex-results
           node apex/tests/render-audit.cjs > /tmp/apex-results/render.txt
           node apex/tests/driving-audit.cjs --json > /tmp/apex-results/driving.json
+          node apex/tests/terrain-selection-audit.cjs > /tmp/apex-results/terrain-selection.json
           python3 apex/tests/circuit-assets-audit.py --json > /tmp/apex-results/assets.json
           node --check apex/tests/browser-audit.cjs
           node --check apex/tests/browser-hook.js

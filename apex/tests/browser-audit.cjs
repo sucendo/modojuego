@@ -9,8 +9,12 @@ const root=path.resolve(__dirname,'../..'),url=process.env.APEX_AUDIT_URL||'http
 const hook=fs.readFileSync(path.join(__dirname,'browser-hook.js'),'utf8');
 function finiteState(result){assert.ok(result.state);for(const [key,value] of Object.entries(result.state))assert.ok(Number.isFinite(value),`${key}: ${value}`);}
 function report(value){console.log(JSON.stringify(value));}
+async function bounded(label,operation,ms=180000){
+ let timer;try{return await Promise.race([operation(),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error(`Timeout during ${label} after ${ms} ms`)),ms);})]);}finally{clearTimeout(timer);}
+}
 (async()=>{
  const browser=await chromium.launch({headless:process.env.HEADED!=='1',...(process.env.CHROME_EXECUTABLE?{executablePath:process.env.CHROME_EXECUTABLE}:{}),args:['--no-sandbox',...(process.env.SOFTWARE_GL==='1'?['--use-angle=swiftshader','--enable-unsafe-swiftshader']:[])]});
+ report({test:'browser-environment',chromium:browser.version(),node:process.version,softwareGl:process.env.SOFTWARE_GL==='1'});
  try{
   const devices=process.env.APEX_AUDIT_DEVICE==='desktop'?[false]:process.env.APEX_AUDIT_DEVICE==='mobile'?[true]:[false,true];
   for(const mobile of devices){
@@ -20,7 +24,9 @@ function report(value){console.log(JSON.stringify(value));}
     Object.defineProperty(navigator,'getGamepads',{value:()=>window.__apexGamepad?[window.__apexGamepad]:[]});
    });
    const page=await context.newPage(),errors=[];page.setDefaultTimeout(120000);
-   page.on('pageerror',e=>errors.push(e.message));page.on('dialog',async d=>{errors.push(d.message());await d.dismiss();});
+   page.on('pageerror',e=>{errors.push(e.message);report({test:'page-error',message:e.message,stack:e.stack});});
+   page.on('console',m=>{if(m.type()==='error')report({test:'browser-console-error',message:m.text()});});
+   page.on('dialog',async d=>{errors.push(d.message());report({test:'unexpected-dialog',message:d.message()});await d.dismiss();});
    await page.route('**/parts/part-027.txt',async route=>{
     const body=fs.readFileSync(path.join(root,'apex/parts/part-027.txt'),'utf8'),at=body.lastIndexOf('requestAnimationFrame(loop);');assert.ok(at>=0);
     await route.fulfill({body:body.slice(0,at)+hook+body.slice(at),contentType:'text/plain'});
@@ -29,10 +35,11 @@ function report(value){console.log(JSON.stringify(value));}
    const initialSave=await page.evaluate(()=>__apexAudit.saveSnapshot());assert.equal(initialSave.save.schema,4);assert.equal(initialSave.save.round,2);assert.equal(initialSave.save.points.PLAYER,17);assert.deepEqual(initialSave.save,initialSave.stored);
    await page.reload();await page.waitForFunction(()=>window.__apexAudit);assert.deepEqual(await page.evaluate(()=>__apexAudit.saveSnapshot()),initialSave);
    report({test:'save-migration-and-reload',mobileEmulation:mobile,schema:4,oldSchema:2,ok:true});
-   const cases=process.env.ALL_CIRCUITS==='1'?(await page.evaluate(()=>__apexAudit.circuits())).map(dir=>[dir,dir==='14-spain']):[['14-spain',true],['06-monaco',false],['10-belgium',false],['BASE_OTHER',false],['03-japan',false]];
+   let cases=process.env.ALL_CIRCUITS==='1'?(await page.evaluate(()=>__apexAudit.circuits())).map(dir=>[dir,dir==='14-spain']):[['14-spain',true],['06-monaco',false],['10-belgium',false],['BASE_OTHER',false],['03-japan',false]];
+   if(process.env.APEX_AUDIT_CASES){const wanted=process.env.APEX_AUDIT_CASES.split(',');cases=cases.filter(([dir])=>wanted.includes(dir));assert.ok(cases.length,'No matching test circuit');}
    for(const [dir,custom] of cases){
     report({test:'load-start',dir,custom,mobileEmulation:mobile});
-    await page.evaluate(async({dir,custom})=>__apexAudit.load(dir,custom),{dir,custom});
+    await bounded('load '+dir,()=>page.evaluate(async({dir,custom})=>__apexAudit.load(dir,custom),{dir,custom}));
     for(const camera of ['cockpit','tcam','chase']){
      assert.equal(await page.evaluate(camera=>__apexAudit.camera(camera),camera),true);
      await page.waitForTimeout(1500);await page.evaluate(()=>__apexAudit.reset());await page.waitForTimeout(6000);
@@ -44,7 +51,7 @@ function report(value){console.log(JSON.stringify(value));}
      await page.evaluate(device=>__apexAudit.manual(device),device);
      if(device==='keyboard')await page.keyboard.down('ArrowRight');
      if(device==='touch')await page.locator('#right').dispatchEvent('pointerdown',{pointerId:7,pointerType:'touch',isPrimary:true});
-     await page.waitForTimeout(180);const input=await page.evaluate(()=>__apexAudit.snapshot());
+     await page.waitForFunction(device=>{const d=apexDrivingDiagnostics();return d&&d.device===device&&d.steer>0;},device,{timeout:10000});const input=await page.evaluate(()=>__apexAudit.snapshot());
      if(device==='keyboard')await page.keyboard.up('ArrowRight');
      if(device==='touch')await page.locator('#right').dispatchEvent('pointerup',{pointerId:7,pointerType:'touch',isPrimary:true});
      await page.evaluate(()=>__apexAudit.release());assert.equal(input.driving.device,device);assert.ok(input.driving.steer>0);finiteState(input);
@@ -56,7 +63,7 @@ function report(value){console.log(JSON.stringify(value));}
     }
     assert.equal(await page.evaluate(()=>__apexAudit.stop()),true);assert.deepEqual(errors,[]);
    }
-   const base=await page.evaluate(()=>__apexAudit.baseTests());report({test:'23-circuit-regressions',mobileEmulation:mobile,...base});assert.equal(base.runtime.ok,true);assert.equal(base.timing.ok,true);if(base.road)assert.equal(base.road.ok,true);assert.deepEqual(errors,[]);
+   const base=await bounded('23-circuit diagnostics',()=>page.evaluate(()=>__apexAudit.baseTests()),300000);report({test:'23-circuit-regressions',mobileEmulation:mobile,...base});assert.equal(base.runtime.ok,true);assert.equal(base.timing.ok,true);if(base.road)assert.equal(base.road.ok,true);assert.deepEqual(errors,[]);
    await context.close();
   }
  }finally{await browser.close();}
