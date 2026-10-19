@@ -3165,21 +3165,30 @@ function webglPushTunnelDetails(segments,cam,pitch){
 }
 function webglPushCircuitLandmarks(cam,pitch){
  if(!webglCircuitVisualAvailable())return;const _lmT0=performance.now(),allItems=trackLandmarks(),L=trackData.km*1000;if(!allItems||!allItems.length)return;const entries=apexCompiledLandmarkEntries(allItems),staticOcclusion=apexBuildStaticOcclusionContext(entries,cam,pitch);
- const surfaceViewFar=(typeof apexInspectionFullScene==='function'&&apexInspectionFullScene())?apexInspectionFarDistance():3600;
+ const surfaceViewFar=(typeof apexInspectionFullScene==='function'&&apexInspectionFullScene())?apexInspectionFarDistance():(mobilePerformanceMode()?1450:2100);
  apexHeavyCircuitPerf.landmarkCandidates=entries.length;
  apexHeavyCircuitPerf.surfacePassMs=0;apexHeavyCircuitPerf.surfaceTrianglesTotal=0;apexHeavyCircuitPerf.surfaceTrianglesCulled=0;apexHeavyCircuitPerf.surfaceTrianglesSubmitted=0;
  for(const ent of entries){
    const li=ent.i,it=ent.it;
    // Defensa adicional WebGL2: curb-left/right son datos para curbInfo().
    if(apexIsCurbAuthoringMark(it))continue;
-   const a=it.anchor,staticBound=it._apexStaticBatch&&it._apexStaticBatch.viewBound;
-   if(staticBound&&!apexStaticBoundInView(staticBound,cam,8600,1.65)){apexStaticOcclusionPerf.landmarksPreculled++;continue;}
+   const a=it.anchor,staticBound=it._apexStaticBatch&&it._apexStaticBatch.viewBound,
+    groundVisual=(it.type==='surfaceZone'||it.type==='marking'||it.type==='water'||it.type==='forestZone')&&
+     Array.isArray(it.worldFootprint)&&it.worldFootprint.length>=3;
+   if(staticBound&&!apexStaticBoundInView(staticBound,cam,groundVisual?surfaceViewFar:8600,1.65)){
+    apexStaticOcclusionPerf.landmarksPreculled++;continue;
+   }
    const base=webglLandmarkCam(a,0,0,0,cam),skyline=apexIsSkylineLandmark(it),exactClip=skyline&&Array.isArray(it.worldFootprint)&&it.worldFootprint.length>=3?apexLandmarkFootprintClipInfo(it,cam,pitch,Math.max(6000,it.maxDs||0),.30):null;
-   if(exactClip?!exactClip.visible:!webglLandmarkVisible(it,base,pitch,cam))continue;
+   // El suelo SVG cubre áreas mucho mayores que su ancla: aplicar visibilidad
+   // por malla, nunca los límites de distancia de un objeto decorativo puntual.
+   if(!groundVisual&&(exactClip?!exactClip.visible:!webglLandmarkVisible(it,base,pitch,cam)))continue;
    if(apexStaticLandmarkOccluded(it,base,cam,pitch,staticOcclusion))continue;
    const radius=webglLandmarkRadius(it),dsLm=Number.isFinite(a.s)?Math.abs(wrapDeltaS(a.s,player.s,L)):1e9,lodZ=exactClip&&exactClip.visible?exactClip.depth:(skyline?apexLandmarkEffectiveCamDepth(it,cam,base):base.z);
-   if(it.type==='surfaceZone'&&!(typeof apexInspectionFullScene==='function'&&apexInspectionFullScene())){const gb=apexSceneDetailBudget(),surfaceFar=(gb.mobile?620:1050)*gb.farScale*(gb.pressure>=2?.82:1);if(dsLm>surfaceFar&&lodZ>220)continue;}
-   let lod=it.farGeo?2:webglCircuitLod(it.type,lodZ,radius,'lm:'+li+':'+(it.type||''));if(it.type==='grandstand'){const q=renderQualityT(),m=mobilePerformanceMode(),near=(m?115:150)+90*q,mid=(m?280:360)+160*q,far=(m?720:920)+220*q;if(dsLm<near)lod=Math.min(lod,0);else if(dsLm<mid)lod=Math.min(lod,1);else if(dsLm<far)lod=Math.min(lod,2);else lod=Math.max(lod,2);}if(!apexSceneryShouldRender(it,li,dsLm,lodZ))continue;lod=apexObjectLodBudget(it.type,lod,dsLm);if(skyline&&lodZ>1)lod=Math.min(lod,2);if(lod>=3)continue;
+   // Los recintos rodables nunca se ocultan por longitud de pista ni por
+   // presión adaptativa; los triángulos invisibles sí se eliminan individualmente.
+   let lod=it.farGeo?2:webglCircuitLod(it.type,lodZ,radius,'lm:'+li+':'+(it.type||''));if(it.type==='grandstand'){const q=renderQualityT(),m=mobilePerformanceMode(),near=(m?115:150)+90*q,mid=(m?280:360)+160*q,far=(m?720:920)+220*q;if(dsLm<near)lod=Math.min(lod,0);else if(dsLm<mid)lod=Math.min(lod,1);else if(dsLm<far)lod=Math.min(lod,2);else lod=Math.max(lod,2);}if(!groundVisual&&!apexSceneryShouldRender(it,li,dsLm,lodZ))continue;lod=apexObjectLodBudget(it.type,lod,dsLm);if(skyline&&lodZ>1)lod=Math.min(lod,2);
+   if(groundVisual)lod=Math.min(2,lod); // terreno continuo incluso con ancla detrás
+   if(lod>=3)continue;
    const P=(along=0,lat=0,y=0)=>webglLandmarkCam(a,along,lat,y,cam);
    if(it.type==='surfaceZone'||it.type==='terrainZone'||it.type==='water'||it.type==='marking'||it.type==='forestZone'){
      if(it.type==='terrainZone')continue;
