@@ -454,8 +454,13 @@ function webglPlayerChassisBasis(cam,baseOffset=.87){
  // v0.13.1: ampliar la separación aparente del conjunto delantero reduce el
  // tamaño excesivo de los neumáticos que aparecía en la cámara de v0.13.0.
  const a=carAxes(),surface=playerDriveSurfacePose(),pitchBank=Number(surface.bank)||0;
+ const track=renderRibbonFrameAt(player.s),bankLatDot=a.rx*track.ox+a.rz*track.oz;
  const F=webglVecNorm({x:a.fx,y:0,z:a.fz});
- let R=webglVecNorm({x:a.rx,y:Math.tan(pitchBank),z:a.rz});
+ // La pendiente lateral se expresa sobre la normal de la pista, NO sobre la
+ // derecha del coche (sus signos son opuestos al circular hacia delante).
+ // Antiguamente se ponía siempre +tan(bank) y las ruedas atravesaban el asfalto
+ // en peraltes fuertes, sobre todo con cámara EXT.
+ let R=webglVecNorm({x:a.rx,y:Math.tan(pitchBank)*bankLatDot,z:a.rz});
  let U=webglVecNorm(webglVecCross(R,F));if(U.y<0)U={x:-U.x,y:-U.y,z:-U.z};
  R=webglVecNorm(webglVecCross(F,U));
  return{base:{x:player.x+F.x*baseOffset,y:surface.y+.014,z:player.z+F.z*baseOffset},F,R,U};
@@ -480,6 +485,19 @@ function webglPushPlayerCameraCar3D(cam,pitch){
  return webglPushRivalCar3D(a,cam,pitch);
 }
 
+// Comprobación de signo: el vector lateral 3D debe subir hacia el lado alto
+// del peralte SVG, independientemente del ángulo del monoplaza.
+window.apexPlayerBankAlignmentDiagnostics=()=>{
+ if(!player||!trackData)return{ok:false,reason:'Inicia una sesión'};
+ const q=renderRibbonFrameAt(player.s),cam=driverCamera(),basis=webglPlayerChassisBasis(cam,0),
+  slope=Math.tan(Number(playerDriveSurfacePose().bank)||0),
+  expected={x:q.ox,y:slope,z:q.oz},
+  alignment=basis.R.x*expected.x+basis.R.y*expected.y+basis.R.z*expected.z,
+  expectedRise=(basis.R.x*q.ox+basis.R.z*q.oz)*slope,
+  actualRise=basis.R.y;
+ return{ok:Math.abs(actualRise-expectedRise)<.09,bankRad:+(Number(q.bank)||0).toFixed(5),
+  expectedRise:+expectedRise.toFixed(4),actualRise:+actualRise.toFixed(4),alignment:+alignment.toFixed(4)};
+};
 function apexOnboardV0131Audit(){
  if(!player||!trackData)return{ok:false,reason:'Inicia una sesión antes de auditar'};
  const visual=playerCarVisualProfile(),v=webglRivalVariant(visual.teamKey,visual.spec),

@@ -345,7 +345,7 @@ function apexRegroundImportedWorld(){
      if(a._apexGroundCache)a._apexGroundCache.clear();
    }
    if(Array.isArray(it.worldPath)&&Array.isArray(it.worldPathY)&&it.type!=='road'&&it.type!=='tunnel'&&it.type!=='bridge')it.worldPathY=it.worldPath.map(p=>ground(p[0],p[1]));
-   if(Array.isArray(it.worldFootprint)&&Array.isArray(it.worldY))it.worldY=it.worldFootprint.map(p=>it.type==='surfaceZone'||it.type==='pit'?apexAlignedCircuitSurfaceY(p[0],p[1]):ground(p[0],p[1]));
+   if(Array.isArray(it.worldFootprint)&&Array.isArray(it.worldY))it.worldY=it.worldFootprint.map(p=>it.type==='surfaceZone'||it.type==='pit'?apexAlignedCircuitSurfaceY(p[0],p[1]):it.type==='marking'?apexSvgSurfaceMarkingY(it,p[0],p[1]):ground(p[0],p[1]));
    if(Array.isArray(it.forestPoints))for(const p of it.forestPoints)p[2]=ground(p[0],p[1]);
  }
  // Los muros detallados pueden superar los 2.000 segmentos; las colisiones conservan
@@ -375,7 +375,7 @@ function apexSvgLandmarkExact(el,index,ctx){
  const wAttr=(parseFloat(el.getAttribute('data-apex-width'))||0),dAttr=(parseFloat(el.getAttribute('data-apex-depth'))||0),lAttr=(parseFloat(el.getAttribute('data-apex-length'))||0);
  if(type==='gantry'){node.startGantry=sourceRole==='start-gantry';node.finishGantry=sourceRole==='finish-gantry';node.text=node.startGantry?'START':(node.finishGantry?'FINISH':node.name)}
  if(type==='block'||type==='parking'||type==='terrainZone'||type==='surfaceZone'||type==='water'||type==='marking'||type==='forestZone'){
-   node.width=wAttr||20;node.depth=dAttr||18;node.worldFootprint=pts;node.worldY=pts.map(p=>(type==='surfaceZone'?apexAlignedCircuitSurfaceY(p[0],p[1]):apexWorldGroundY(p[0],p[1])));node.grounded=true;
+   node.width=wAttr||20;node.depth=dAttr||18;node.worldFootprint=pts;node.worldY=pts.map(p=>(type==='surfaceZone'?apexAlignedCircuitSurfaceY(p[0],p[1]):type==='marking'?apexSvgSurfaceMarkingY(node,p[0],p[1]):apexWorldGroundY(p[0],p[1])));node.grounded=true;
    if(type==='block'){node.height=node.height||12;node.buildingStyle=node.apexStyle||'building_generic';}else node.height=node.height||.04;
    if(type==='forestZone'){node.variant='fir';node.color=node.color||'#4b7b50';node.forestPoints=apexForestScatter(pts,node.name||node.sourceId,Math.max(10,Math.min(36,Math.round(pts.length*.7))))}
    if(type==='terrainZone')node.color=node.color||'#667a4d';
@@ -1317,6 +1317,104 @@ function apexGroundPatchDepthBias(it){
  if(t==='marking')return -.020;
  return .006;
 }
+
+/* v0.13.9 — triangulación en X/Z de recintos SVG cóncavos.
+   Un abanico desde el primer vértice rellena zonas EXTERIORES en formas cóncavas
+   (escapatorias y cebreados gigantes). Se resuelve una vez por recinto estático. */
+function apexTriangulateGroundFootprint(points){
+ if(!Array.isArray(points)||points.length<3)return null;
+ const index=[];
+ for(let i=0;i<points.length;i++){
+  const p=points[i];
+  if(!Array.isArray(p)||!Number.isFinite(p[0])||!Number.isFinite(p[1]))return null;
+  const prev=index.length?points[index[index.length-1]]:null;
+  if(!prev||Math.hypot(prev[0]-p[0],prev[1]-p[1])>1e-5)index.push(i);
+ }
+ if(index.length>3){
+  const p=points[index[0]],q=points[index[index.length-1]];
+  if(Math.hypot(p[0]-q[0],p[1]-q[1])<1e-5)index.pop();
+ }
+ if(index.length<3)return null;
+ // Polígonos extraordinariamente grandes permanecen en la ruta previa:
+ // evitamos un O(n²) descontrolado al importar un SVG no validado.
+ if(index.length>480)return null;
+ const cross=(a,b,c)=>(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);
+ let area=0;for(let k=0;k<index.length;k++){const a=points[index[k]],b=points[index[(k+1)%index.length]];area+=a[0]*b[1]-b[0]*a[1]}
+ if(Math.abs(area)<1e-5)return null;
+ const sign=area>0?1:-1,ids=index.slice(),tris=[],maxPass=ids.length*ids.length;
+ const inside=(p,a,b,c)=>{
+  const x=cross(a,b,p)*sign,y=cross(b,c,p)*sign,z=cross(c,a,p)*sign;
+  return x>=-1e-8&&y>=-1e-8&&z>=-1e-8;
+ };
+ for(let pass=0;ids.length>3&&pass<maxPass;pass++){
+  let found=false;
+  for(let k=0;k<ids.length;k++){
+   const prev=ids[(k-1+ids.length)%ids.length],cur=ids[k],next=ids[(k+1)%ids.length];
+   const a=points[prev],b=points[cur],c=points[next],turn=cross(a,b,c)*sign;
+   if(turn<=1e-8)continue;
+   let blocked=false;
+   for(let j=0;j<ids.length;j++){
+    const v=ids[j];if(v===prev||v===cur||v===next)continue;
+    if(inside(points[v],a,b,c)){blocked=true;break}
+   }
+   if(blocked)continue;
+   tris.push([prev,cur,next]);ids.splice(k,1);found=true;break;
+  }
+  if(!found){
+   // Elimina vértices colineales, sin inventar triángulos fuera del recinto.
+   let flat=false;
+   for(let k=0;k<ids.length;k++){
+    const a=points[ids[(k-1+ids.length)%ids.length]],b=points[ids[k]],c=points[ids[(k+1)%ids.length]];
+    if(Math.abs(cross(a,b,c))<1e-7){ids.splice(k,1);flat=true;break}
+   }
+   if(!flat)return null;
+  }
+ }
+ if(ids.length===3)tris.push([ids[0],ids[1],ids[2]]);
+ return tris.length?tris:null;
+}
+function apexSvgSurfaceMarkingY(it,x,z){
+ // Sólo las pinturas sobre corredor rodable usan su rasante; las lejanas
+ // (viales/terreno) mantienen el relieve real de la zona donde fueron dibujadas.
+ if(it&&it.type==='marking'){
+  const st=nearestTrackState(x,z,null,{radius:48,allowGlobal:true,fallbackDist:42});
+  if(st&&Number.isFinite(st.s)){
+   const env=envProfile(st.s);
+   if(Math.abs(st.lat)<=env.half+env.curb+2)return apexAlignedCircuitSurfaceY(x,z);
+  }
+ }
+ return apexWorldGroundY(x,z);
+}
+
+/* Cebreados SVG: el recinto define la zona, no un bloque blanco sólido.
+   Las franjas se recortan y triangulan una vez al preparar el circuito. */
+function apexCompileCrosswalkTriangles(it){
+ if(!it||!['CROSSWALK','URBAN_STRIPES'].includes(String(it.markingKind||'')))return null;
+ const fp=it.worldFootprint;if(!Array.isArray(fp)||fp.length<3)return null;
+ let longest=0,ax=0,az=0;
+ for(let j=0;j<fp.length;j++){
+  const p=fp[j],q=fp[(j+1)%fp.length],dx=q[0]-p[0],dz=q[1]-p[1],d=dx*dx+dz*dz;
+  if(d>longest){longest=d;ax=-dz;az=dx}
+ }
+ const norm=Math.hypot(ax,az);if(norm<1e-6)return null;ax/=norm;az/=norm;
+ const scalar=p=>p[0]*ax+p[1]*az,values=fp.map(scalar),min=Math.min(...values),max=Math.max(...values),span=max-min;
+ if(span<2.3)return null;
+ const period=1.32,count=Math.ceil(span/period),paint=[];
+ if(count>140)return null;
+ for(let i=0;i<count;i++){
+  const a=min+i*period+.10,b=Math.min(max,a+.64);if(b-a<.18)continue;
+  const q0=apexClipWorldPolygonScalar(fp,scalar,a,true);
+  const q1=apexClipWorldPolygonScalar(q0,scalar,b,false);if(q1.length<3)continue;
+  const faces=apexTriangulateGroundFootprint(q1);if(!faces)continue;
+  for(const tri of faces){
+   paint.push(tri.map(j=>{
+    const p=q1[j];return [p[0],apexSvgSurfaceMarkingY(it,p[0],p[1])+.018,p[1]];
+   }));
+  }
+ }
+ return paint.length?paint:null;
+}
+
 function apexBuildLandmarkStaticBatch(it){
  if(!it)return null;const b={type:String(it.type||''),primitiveCount:0},a=it.anchor||{},fp=Array.isArray(it.worldFootprint)?it.worldFootprint:null,wy=Array.isArray(it.worldY)?it.worldY:null;
  if(fp&&fp.length>=3){
@@ -1325,6 +1423,14 @@ function apexBuildLandmarkStaticBatch(it){
  }
  if(['surfaceZone','water','marking','forestZone'].includes(it.type)&&fp&&fp.length>=3){
    b.surfacePoly3=fp.map((v,i)=>[v[0],(wy&&Number.isFinite(wy[i])?wy[i]:apexWorldGroundY(v[0],v[1]))+apexGroundPatchYOffset(it),v[1]]);b.primitiveCount++;
+   if(it.type==='surfaceZone'||it.type==='marking'){
+     const painted=it.type==='marking'?apexCompileCrosswalkTriangles(it):null;
+     if(painted){b.surfaceTriangles=painted;b.paintStriped=true;b.primitiveCount+=painted.length;}
+     else {
+       const indices=apexTriangulateGroundFootprint(fp);
+       if(indices){b.surfaceTriangles=indices.map(tri=>tri.map(idx=>b.surfacePoly3[idx]));b.primitiveCount+=indices.length;}
+     }
+   }
    if(it.type==='forestZone'&&Array.isArray(it.forestPoints)){
      b.forest=it.forestPoints.map(fp0=>{const x=fp0[0],z=fp0[1],y=fp0[2]||0;return{bound:{x,y:y+4.2,z,r:9.5},trunk:[[x-.12,y,z],[x+.12,y,z],[x+.12,y+3.1,z],[x-.12,y+3.1,z]],crown:[[x-2,y+1.8,z],[x+2,y+1.8,z],[x,y+8.2,z]]}});b.primitiveCount+=b.forest.length*2;
    }

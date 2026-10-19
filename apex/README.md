@@ -1,6 +1,6 @@
 # APEX Formula 26
 
-Versión de desarrollo: **v0.13.8 · PRE-RELEASE**
+Versión de desarrollo: **v0.13.9 · PRE-RELEASE**
 
 Archivo fuente original:
 `Apex_Formula_26_v5_230_62_8_6_7_6_4_17_CONTROL_CLASICO_GP4.html`
@@ -65,3 +65,12 @@ Auditoría: `apexCameraRigSelfTest()` (6 casos sintéticos de posición y altura
 ## v0.13.8 — fluidez del escenario completo de Madrid
 
 Se cachean las alturas de terreno y los recortes de bandas de gradas y edificios estáticos, sin cambiar la geometría de SVG ni la simulación. El presupuesto de LOD aplica 300 ms de persistencia para reducir detalle y 1400 ms para recuperarlo, evitando oscilaciones rápidas. Los ajustes automáticos de resolución requieren más muestras y dejan 10 s entre redimensiones para evitar tirones de reasignación del lienzo. Los diagnósticos disponibles incluyen `apexSceneryStaticCacheDiagnostics()`, `apexHeavyCircuitPerfDiagnostics()`, `apexDrivePerformanceDiagnostics()` y `apexPerformanceSummary()`. Queda pendiente medir los FPS reales con el modelo guardado de Madrid; no se cambia la física, IA, cámaras, cronometraje ni guardados.
+
+## v0.13.9 — superficies SVG y apoyo en peraltes (fase 1)
+
+- Los contornos SVG cóncavos de escapatoria y marcas se triangulan al compilar, en lugar de rellenarse como un abanico que invade el asfalto.
+- Las marcas CROSSWALK/URBAN_STRIPES dejan de dibujarse como un bloque sólido cuando su polígono tiene longitud transversal suficiente; se rellenan con franjas recortadas dentro del contorno SVG.
+- Las marcas rodables próximas a pista usan la cota de la superficie de conducción, no la del terreno natural. El resto conserva su altura original.
+- El modelo WebGL del coche del jugador orienta su pendiente lateral conforme al signo real del peralte y a la dirección del monoplaza; no altera física ni colisiones.
+- Prueba manual pendiente: los 6 puntos de las capturas de Madrid, particularmente transición pista–escapatoria, salida de túnel y pitlane. Esta fase no certifica esos tres puntos como solucionados; necesitan validación visual sobre el SVG guardado concreto y ajustes del cosido de superficies.
+- Prueba de regresión matemática de polígono cóncavo incluida en validación de despliegue. Diagnóstico: `apexPlayerBankAlignmentDiagnostics()`.
