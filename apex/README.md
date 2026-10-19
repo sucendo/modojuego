@@ -1,6 +1,6 @@
 # APEX Formula 26
 
-Versión de desarrollo: **v0.13.20 · PRE-RELEASE**
+Versión de desarrollo: **v0.13.21 · PRE-RELEASE**
 
 Archivo fuente original:
 `Apex_Formula_26_v5_230_62_8_6_7_6_4_17_CONTROL_CLASICO_GP4.html`
@@ -226,3 +226,18 @@ El vídeo recibido de Madrid contiene 394 fotogramas en 95,54 segundos (captura 
 - **Pruebas aisladas:** 200 bloques SVG contiguos se resuelven en una llamada de dibujo en lugar de 200; cuatro selecciones sucesivas de 3 celdas diferentes requieren solo 1 reserva de VBO y 3 subidas iniciales en lugar de reconstruir/subir cada selección. Revisadas sintaxis de funciones modificadas.
 
 **Limitaciones y siguiente comprobación:** este hotfix reduce una fuente demostrada de trabajo gráfico repetido, pero no garantiza un valor de FPS sin probar la partida concreta de Madrid en navegador y móvil. `apexPerformanceSummary()` + la superposición de `?perf=1` ayudarán a distinguir render, físicas y otras cargas del motor. La geometría original y los formatos de partidas/circuitos no se han cambiado.
+
+
+## v0.13.21 — auditoría CPU y terreno fino residente
+
+Primera etapa funcional de optimización sobre `6f0cfb1`, sin cambiar los 28 fragmentos, el formato SVG/JSON, los guardados ni la frecuencia física de 100 Hz.
+
+- Preparación de pista específica de WebGL: omite las nueve proyecciones Canvas y dos muros no usados por muestra; cachea geometría de nodos fijos con límites de 2048/4096 entradas. Los extremos móviles se calculan siempre.
+- Las celdas finas recortadas de terreno (incluidos portales y túneles) reutilizan el VBO de mundo existente. Admisión progresiva de 2 celdas nuevas/frame en móvil y 4 en escritorio, sin eliminar las pendientes: continúan por CPU. Cerca del ojo e inspección se conserva la ruta CPU.
+- Atlas reservado una vez dentro del límite de 8/24 MiB, evitando invalidaciones y retransmisiones por crecimientos. Caché CPU de paquetes limitada por bytes (4/12 MiB) además de entradas. Se consulta la residencia GPU antes de reconstruir un paquete CPU evictado.
+- Liberación al cambiar de circuito, incluso a uno sin placa, y al volver al menú. Se descartan los recursos estáticos invalidados por pérdida de contexto.
+- Diagnóstico: tiempos RAW de preparación/dibujo de pista, selección/preparación de terreno y preparación SVG; bytes transferidos y reservas por frame; p50/p95/p99 de los últimos 600 frames; tiempo descartado por el límite de recuperación física, sin cambiar ese límite. El contador de triángulos incluye también los huecos SVG enviados al fusionar rangos.
+
+**Pruebas ejecutadas:** `node apex/tests/render-audit.cjs` (funciones de producción aisladas, GPU simulada), incluyendo equivalencia de vértices, fallback, límites de memoria, reciclado y 900 comparaciones algebraicas de proyección. En la escena sintética de 20 celdas de portal durante 12 frames, las transformaciones CPU pasan de 384.000 a 64.000; tras residencia, cero transformaciones y cero nuevas subidas para esas celdas. **Esto no es una medición de FPS.**
+
+**Pendiente:** homologación visual y FPS del Madrid completo en navegador real, PC y Android; migración de la cinta completa de asfalto/pianos y decorado a GPU. Chrome local no pudo arrancar en el entorno de trabajo por restricción de sockets. Se incluye `tests/browser-audit.cjs` para ejecutar en un equipo con Playwright/Chrome: conduce con el scheduler real, prueba tres cámaras, Madrid importado y otro circuito, y ejecuta los autodiagnósticos de los 23 circuitos. Emulación móvil no equivale a Android físico. Véase [AUDITORIA_V01321.md](AUDITORIA_V01321.md).

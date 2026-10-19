@@ -395,7 +395,9 @@ function loop(t){
  if(rawElapsed>0){const fm=rawElapsed*1000;telemetryPerf.lastFrameMs=fm;telemetryPerf.frameMs=lerp(telemetryPerf.frameMs||fm,fm,.10);telemetryPerf.fps=lerp(telemetryPerf.fps||60,clamp(1/rawElapsed,1,240),.10);}
  // v4.17: la física del jugador deja de heredar el tiempo de cada frame.
  // Siempre integra a 100 Hz: 60, 40 o 25 FPS cambian la fluidez visual, no el tacto del coche.
- apexPlayerPhysicsAccumulator=Math.min(apexPlayerPhysicsAccumulator+elapsed,APEX_PLAYER_PHYSICS_DT*APEX_PLAYER_MAX_CATCHUP_STEPS);
+ const physicsAvailable=apexPlayerPhysicsAccumulator+elapsed,physicsLimit=APEX_PLAYER_PHYSICS_DT*APEX_PLAYER_MAX_CATCHUP_STEPS;
+ if(apexRuntimePerf)apexRuntimePerf.physicsClampedMs+=(Math.max(0,rawElapsed-elapsed)+Math.max(0,physicsAvailable-physicsLimit))*1000;
+ apexPlayerPhysicsAccumulator=Math.min(physicsAvailable,physicsLimit);
  let steps=Math.floor((apexPlayerPhysicsAccumulator+1e-9)/APEX_PLAYER_PHYSICS_DT);
  steps=Math.min(APEX_PLAYER_MAX_CATCHUP_STEPS,steps);telemetryPerf.physicsSteps=steps;
  const simElapsed=steps*APEX_PLAYER_PHYSICS_DT,_physicsT0=performance.now();
@@ -406,7 +408,7 @@ function loop(t){
  if(rawElapsed>0)apexRuntimePerfRecord(rawElapsed*1000,_physicsRaw,_renderRaw);
  apexDrivePerfObserve(t);requestAnimationFrame(loop);
 }
-function goMenu(){apexCloseControls(false);apexResetSessionControls();if(typeof apexInspection!=="undefined"){apexInspection.active=false;apexInspection.auto=false;apexInspection.drag=false}document.body.classList.remove("apex-inspection","ins-drag","ins-ui-hidden");$("circuitInspectorHud")&&$("circuitInspectorHud").classList.add("hidden");mode="menu";pendingRace=null;currentSession="race";sessionLimit=Infinity;sessionExpired=false;finishFlow=null;paused=false;countdown=0;apexWeatherReset();$("weekendPanel")&&$("weekendPanel").classList.add("hidden");$("sessionBadge")&&$("sessionBadge").classList.add("hidden");
+function goMenu(){apexReleaseGpuScene();apexCloseControls(false);apexResetSessionControls();if(typeof apexInspection!=="undefined"){apexInspection.active=false;apexInspection.auto=false;apexInspection.drag=false}document.body.classList.remove("apex-inspection","ins-drag","ins-ui-hidden");$("circuitInspectorHud")&&$("circuitInspectorHud").classList.add("hidden");mode="menu";pendingRace=null;currentSession="race";sessionLimit=Infinity;sessionExpired=false;finishFlow=null;paused=false;countdown=0;apexWeatherReset();$("weekendPanel")&&$("weekendPanel").classList.add("hidden");$("sessionBadge")&&$("sessionBadge").classList.add("hidden");
  // v5.230.62.4.1: recuperación defensiva del estado de todos los botones que pueden
  // participar en carga/compilación/warmup. Ningún disabled temporal sobrevive al menú.
  ["start","nextSeason","finishNext","gpStart","practiceStart","weekendMenu","endSession"].forEach(id=>{let b=$(id);if(b){b.dataset.audioReady="0";b.disabled=false;}});
