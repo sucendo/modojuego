@@ -1990,11 +1990,104 @@ window.apexExactWallSpatialDiagnostics=()=>{
  return i?{...i.stats,visibleCandidates:i.query?i.query.items.length:0}:null;
 };
 
+/* v0.13.16 · Atlas unico de propiedad del suelo.
+   No crea otra lamina encima del SVG: contiene referencias a las mallas
+   originales y recortes de respaldo, conservando Y/material por origen.
+   Pista+pianos+runoff comparten un paquete por tramo para ambos renderers.
+   Todo es cache acotada, sin scans globales en un frame. */
+function apexBuildUnifiedGroundAtlas(cw){
+ if(!cw)return null;
+ const svg=trackData&&trackData._apexRunoffDriveSurfaceIndex,
+  plate=cw._terrainContourGrid&&cw._terrainContourGrid.plateMesh?cw._terrainContourGrid:null;
+ const atlas={cw,svg,plate,strips:new Map(),built:0,reused:0,evicted:0,
+  svgFaces:svg&&svg.faces?svg.faces.length:0};
+ cw._apexUnifiedGroundAtlas=atlas;
+ return atlas;
+}
+function apexUnifiedGroundStrip(seg){
+ const cw=trackData&&trackData.customWorld,atlas=cw&&cw._apexUnifiedGroundAtlas;
+ if(!seg||!seg.a||!seg.b)return null;
+ if(!atlas)return null;
+ const key=seg.a.s.toFixed(4)+':'+seg.b.s.toFixed(4);
+ const cached=atlas.strips.get(key);
+ if(cached){atlas.reused++;return cached}
+ const {a,b}=seg;
+ const L=apexGenericRunoffMaskedPolys(seg,1),R=apexGenericRunoffMaskedPolys(seg,-1);
+ const strip={key,s0:a.s,s1:b.s,runoffLeft:L,runoffRight:R,
+  roadMaterial:'ASPHALT',kerbMaterial:'KERB',
+  runoffMaterial:String(a.env.runoffSurface||'ASPHALT').toUpperCase(),
+  // Las coordenadas visuales salen de roadStep; el mismo segmento define
+  // todas las aristas, evitando reconstruir vertices de pianos y carretera.
+  authoredLeft:L!==null,authoredRight:R!==null};
+ // Los dos extremos que siguen al jugador cambian constantemente. Nunca
+ // llenar la cache con los mismos segmentos relativos a poses efimeras.
+ if(Math.abs(a.sd||0)<1e-5||Math.abs(b.sd||0)<1e-5)return strip;
+ if(atlas.strips.size>=2048){
+  const it=atlas.strips.keys();
+  for(let j=0;j<256;j++){const x=it.next();if(x.done)break;atlas.strips.delete(x.value);atlas.evicted++}
+ }
+ atlas.strips.set(key,strip);atlas.built++;
+ return strip;
+}
+function apexUnifiedGroundDrawCorridor(seg,cam,pitch,webgl=false){
+ const a=seg.a,b=seg.b,V0=a.v,V1=b.v;
+ if(!V0||!V1)return null;
+ const strip=apexUnifiedGroundStrip(seg),
+  left=strip?strip.runoffLeft:apexGenericRunoffMaskedPolys(seg,1),
+  right=strip?strip.runoffRight:apexGenericRunoffMaskedPolys(seg,-1),
+  cL=surfaceColor(a.env.runoffSurface,false),cR=surfaceColor(a.env.runoffSurface,true);
+ const paint=(faces,col)=>{
+  for(const p of faces){
+   const cp=p.map(v=>worldToCamera(v.x,v.y,v.z,cam));
+   if(webgl)webglPushCamPoly(cp,pitch,col,.58);
+   else drawCamPoly(cp,pitch,col,.58);
+  }
+ };
+ if(left!==null)paint(left,cL);
+ else if(webgl)webglPushCamQuad(V0.lx,a.curb.left?V0.lo:V0.l,b.curb.left?V1.lo:V1.l,V1.lx,pitch,cL);
+ else drawCamQuadTriangles(V0.lx,a.curb.left?V0.lo:V0.l,b.curb.left?V1.lo:V1.l,V1.lx,pitch,cL);
+ if(right!==null)paint(right,cR);
+ else if(webgl)webglPushCamQuad(a.curb.right?V0.ro:V0.r,V0.rx,V1.rx,b.curb.right?V1.ro:V1.r,pitch,cR);
+ else drawCamQuadTriangles(a.curb.right?V0.ro:V0.r,V0.rx,V1.rx,b.curb.right?V1.ro:V1.r,pitch,cR);
+ if(webgl&&left===null&&right===null)webglPushRunoffDetail(seg,pitch);
+ const seed=Math.floor(((a.s+b.s)*.5)/2.4),colors=circuitCurbPair(seed);
+ if(webgl){
+  const show=(typeof apexInspectionFullScene==='function'&&apexInspectionFullScene())||seg.z<mobileControlProfile().curbMax;
+  if(show&&(a.curb.left||b.curb.left))webglPushCamQuad(V0.lo,V0.l,V1.l,V1.lo,pitch,colors[0]);
+  if(show&&(a.curb.right||b.curb.right))webglPushCamQuad(V0.r,V0.ro,V1.ro,V1.r,pitch,colors[1]);
+  const road=webglCircuitRoadColor(seg),pressure=mobileRenderPressure(),cheap=mobilePerformanceMode()&&
+    !(typeof apexInspectionFullScene==='function'&&apexInspectionFullScene())&&pressure<.34&&seg.z>42;
+  if(cheap)webglPushCamQuad(V0.l,V0.r,V1.r,V1.l,pitch,road);
+  else{
+   const lA=camMix(V0.l,V0.r,.30),lB=camMix(V1.l,V1.r,.30),
+    rA=camMix(V0.l,V0.r,.70),rB=camMix(V1.l,V1.r,.70);
+   webglPushCamQuad(V0.l,lA,lB,V1.l,pitch,shadeColor(road,-3));
+   webglPushCamQuad(lA,rA,rB,lB,pitch,shadeColor(road,2));
+   webglPushCamQuad(rA,V0.r,V1.r,rB,pitch,shadeColor(road,-4));
+  }
+  return{mask:left!==null||right!==null,renderPressure:pressure};
+ }
+ if((!mobilePerformanceMode()||seg.z<mobileControlProfile().curbMax)&&(a.curb.left||b.curb.left))
+  drawCamQuadTriangles(V0.lo,V0.l,V1.l,V1.lo,pitch,colors[0]);
+ if((!mobilePerformanceMode()||seg.z<mobileControlProfile().curbMax)&&(a.curb.right||b.curb.right))
+  drawCamQuadTriangles(V0.r,V0.ro,V1.ro,V1.r,pitch,colors[1]);
+ drawCamQuadTriangles(V0.l,V0.r,V1.r,V1.l,pitch,palette().road);
+ return{mask:left!==null||right!==null};
+}
+window.apexUnifiedGroundAtlasDiagnostics=()=>{
+ const a=trackData&&trackData.customWorld&&trackData.customWorld._apexUnifiedGroundAtlas,
+   t=a&&a.plate;
+ return a?{ready:true,svgFaces:a.svgFaces,stripPackets:a.strips.size,
+  compiled:a.built,reused:a.reused,evicted:a.evicted,
+  terrainCells:t?[(t.nx-1),(t.nz-1)]:null,
+  terrainCutCache:t&&t._apexUnifiedTerrainPieces?t._apexUnifiedTerrainPieces.size:0}: {ready:false};
+};
+
 function apexBuildCircuitStaticRenderBatches(cw){
  const items=cw&&Array.isArray(cw.landmarks)?cw.landmarks:[],walls=cw&&(cw._wallRenderSegments||cw.wallSegments)||[];let compiled=0,prims=0,wallStyles=0;
  if(cw&&cw.authoritative&&walls.length)apexBuildExactWallSpatialIndex(cw);
  for(const it of items){const b=apexBuildLandmarkStaticBatch(it);if(b){compiled++;prims+=b.primitiveCount||0}}
- if(cw){apexBuildRunoffDriveSurfaceIndex(cw);apexBuildGroundSurfaceSpatialIndex(cw);}
+ if(cw){apexBuildRunoffDriveSurfaceIndex(cw);apexBuildGroundSurfaceSpatialIndex(cw);apexBuildUnifiedGroundAtlas(cw);}
  for(const sg of walls){if(!sg)continue;const env=envProfile(sg.s||0),style=wallBarrierStyle(env,sg.s||0,sg.side||1);try{Object.defineProperty(sg,'_apexStaticWall',{value:{env,style},writable:true,configurable:true})}catch(e){sg._apexStaticWall={env,style}}wallStyles++;}
  apexStaticBatchPerf.compiledItems=compiled;apexStaticBatchPerf.compiledPrimitives=prims;apexStaticBatchPerf.wallStyles=wallStyles;
  return{items:compiled,primitives:prims,wallStyles};
