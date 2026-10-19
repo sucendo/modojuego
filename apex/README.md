@@ -1,6 +1,6 @@
 # APEX Formula 26
 
-Versión de desarrollo: **v0.13.7 · PRE-RELEASE**
+Versión de desarrollo: **v0.13.8 · PRE-RELEASE**
 
 Archivo fuente original:
 `Apex_Formula_26_v5_230_62_8_6_7_6_4_17_CONTROL_CLASICO_GP4.html`
@@ -61,3 +61,7 @@ Auditoría: `apexCameraRigSelfTest()` (6 casos sintéticos de posición y altura
 - Se evita preparar geometría de vallado redundante en la colección de muros WebGL, preservando Canvas2D.
 - `apexHeavyCircuitPerfDiagnostics()` incorpora `wallPassMs`, `fencePassMs`, `fenceSourceSegments`, `fenceCandidates`, `fenceProjected`, `fenceDrawn` para medir Madrid cargado. Consultar también `apexPerformanceSummary()`.
 - No se alteran JSON/SVG, simulación 100 Hz, IA, cámaras ni cronometraje.
+
+## v0.13.8 — fluidez del escenario completo de Madrid
+
+Se cachean las alturas de terreno y los recortes de bandas de gradas y edificios estáticos, sin cambiar la geometría de SVG ni la simulación. El presupuesto de LOD aplica 300 ms de persistencia para reducir detalle y 1400 ms para recuperarlo, evitando oscilaciones rápidas. Los ajustes automáticos de resolución requieren más muestras y dejan 10 s entre redimensiones para evitar tirones de reasignación del lienzo. Los diagnósticos disponibles incluyen `apexSceneryStaticCacheDiagnostics()`, `apexHeavyCircuitPerfDiagnostics()`, `apexDrivePerformanceDiagnostics()` y `apexPerformanceSummary()`. Queda pendiente medir los FPS reales con el modelo guardado de Madrid; no se cambia la física, IA, cámaras, cronometraje ni guardados.

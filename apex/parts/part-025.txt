@@ -188,6 +188,8 @@ function apexPortalCellIsNear(g,ix,iz,x,z){
 }
 window.apexHeavyCircuitPerfDiagnostics=()=>({
  ...apexHeavyCircuitPerf,
+ sceneryCache:typeof apexSceneryStaticCacheDiagnostics==='function'?apexSceneryStaticCacheDiagnostics():null,
+ resolution:typeof apexDrivePerformanceDiagnostics==='function'?apexDrivePerformanceDiagnostics().scale:null,
  wall:typeof apexExactWallSpatialDiagnostics==='function'?apexExactWallSpatialDiagnostics():null,
  compiler:typeof apexCircuitCompileDiagnostics==='function'?apexCircuitCompileDiagnostics():null,
  render:typeof renderProfilerSnapshot==='function'?renderProfilerSnapshot():null

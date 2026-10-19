@@ -1683,11 +1683,15 @@ function apexGrandstandFrontEdge(it){
 }
 function apexGrandstandBand(fp,anchor,side,t0,t1,it=null){
  if(!Array.isArray(fp)||fp.length<3)return[];
+ const cache=it?(it._apexGrandstandBandCache||(it._apexGrandstandBandCache=new Map())):null,key=t0+':'+t1;
+ if(cache&&cache.has(key)){apexSceneryStaticCacheStats.bandHits++;return cache.get(key)}
  const edge=it&&(it._grandstandFrontEdge||(it._grandstandFrontEdge=apexGrandstandFrontEdge(it)));
  let scalar;
  if(edge)scalar=p=>(p[0]-edge.mx)*edge.nx + (p[1]-edge.mz)*edge.nz;
  else {const q=anchor.q||poseAt(anchor.s||0),sg=side||1;scalar=p=>sg*((p[0]-anchor.x)*q.nx+(p[1]-anchor.z)*q.nz);}
- const vals=fp.map(scalar),lo=Math.min(...vals),hi=Math.max(...vals),den=Math.max(.001,hi-lo),b0=lo+den*clamp(t0,0,1),b1=lo+den*clamp(t1,0,1);let out=apexClipWorldPolygonScalar(fp,scalar,b0,true);out=apexClipWorldPolygonScalar(out,scalar,b1,false);return out;
+ const vals=fp.map(scalar),lo=Math.min(...vals),hi=Math.max(...vals),den=Math.max(.001,hi-lo),b0=lo+den*clamp(t0,0,1),b1=lo+den*clamp(t1,0,1);let out=apexClipWorldPolygonScalar(fp,scalar,b0,true);out=apexClipWorldPolygonScalar(out,scalar,b1,false);
+ if(cache){if(cache.size>=192)cache.clear();cache.set(key,out);apexSceneryStaticCacheStats.bandMisses++}
+ return out;
 }
 function apexGrandstandStyleProfile(it){
  const s=String(it&&(it.grandstandStyle||it.apexStyle||it.style)||'grandstand_open').toLowerCase();
@@ -1727,17 +1731,38 @@ function apexGrandstandFrameStats(it){
 function apexGrandstandFrameXZ(frame,u,depth){
  const e=frame.edge||frame;const x=lerp(e.a[0],e.b[0],u)+e.nx*depth,z=lerp(e.a[1],e.b[1],u)+e.nz*depth;return [x,z];
 }
-function apexGrandstandWorldCam(frame,u,depth,y,cam){
- const p=apexGrandstandFrameXZ(frame,u,depth),yy=apexWorldGroundY(p[0],p[1])+y;return worldToCamera(p[0],yy,p[1],cam);
+const apexSceneryStaticCacheStats={heightHits:0,heightMisses:0,bandHits:0,bandMisses:0};
+function apexStaticSceneryGroundY(frame,u,depth,x,z){
+ const edge=frame&&frame.edge;
+ if(!edge)return apexWorldGroundY(x,z);
+ const cache=edge._apexSceneryGroundCache||(edge._apexSceneryGroundCache=new Map()),key=u+':'+depth;
+ const hit=cache.get(key);
+ if(hit!==undefined){apexSceneryStaticCacheStats.heightHits++;return hit}
+ const y=apexWorldGroundY(x,z);
+ if(cache.size>=4096)cache.clear();
+ cache.set(key,y);apexSceneryStaticCacheStats.heightMisses++;return y;
 }
-let apexSceneBudgetFrame=-1,apexSceneBudgetCache=null;
+window.apexSceneryStaticCacheDiagnostics=()=>({...apexSceneryStaticCacheStats,
+ pressure:apexScenePressureStable,pressureChanges:apexScenePressureChanges});
+function apexGrandstandWorldCam(frame,u,depth,y,cam){
+ const p=apexGrandstandFrameXZ(frame,u,depth),yy=apexStaticSceneryGroundY(frame,u,depth,p[0],p[1])+y;return worldToCamera(p[0],yy,p[1],cam);
+}
+let apexSceneBudgetFrame=-1,apexSceneBudgetCache=null,apexScenePressureStable=0,apexScenePressureWanted=0,apexScenePressureSince=0,apexScenePressureChanges=0;
 function apexSceneDetailBudget(){
  if(typeof apexInspectionFullScene==='function'&&apexInspectionFullScene())return {mobile:false,q:1,fm:16.7,renderMs:0,pressure:0,density:1,detailScale:1,farScale:1};
  const frame=typeof renderFrameId==='number'?renderFrameId:-1;
  if(frame>=0&&apexSceneBudgetFrame===frame&&apexSceneBudgetCache)return apexSceneBudgetCache;
  const mobile=mobilePerformanceMode(),q=clamp(Number(renderQualityT())||0,0,1),fm=Math.max(0,Number(telemetryPerf&&telemetryPerf.frameMs)||16.7),rm=Math.max(0,Number(telemetryPerf&&telemetryPerf.renderMs)||0);
- let pressure=0;
- if(fm>46||rm>34)pressure=3;else if(fm>34||rm>25)pressure=2;else if(fm>25||rm>18)pressure=1;
+ let wanted=0;
+ if(fm>46||rm>34)wanted=3;else if(fm>34||rm>25)wanted=2;else if(fm>25||rm>18)wanted=1;
+ const clock=performance.now();
+ if(wanted===apexScenePressureStable){apexScenePressureWanted=wanted;apexScenePressureSince=clock}
+ else {
+  if(wanted!==apexScenePressureWanted){apexScenePressureWanted=wanted;apexScenePressureSince=clock}
+  const wait=wanted>apexScenePressureStable?300:1400;
+  if(clock-apexScenePressureSince>=wait){apexScenePressureStable=wanted;apexScenePressureChanges++;apexScenePressureSince=clock}
+ }
+ const pressure=apexScenePressureStable;
  let density=mobile?.78:1,detailScale=1,farScale=1;
  if(q<.68){density*=.86;detailScale*=.88;farScale*=.92}if(q<.42){density*=.78;detailScale*=.80;farScale*=.84}if(q<.24){density*=.70;detailScale*=.72;farScale*=.76}
  if(pressure===1){density*=.82;detailScale*=.84;farScale*=.90}
@@ -1863,7 +1888,7 @@ function apexBuildingFrameStats(it){
  return {edge,span:edge.len||Math.hypot(edge.b[0]-edge.a[0],edge.b[1]-edge.a[1])||10,depth:Math.max(4,depth)};
 }
 function apexBuildingFrameXZ(frame,u,depth){const e=frame.edge||frame;return [lerp(e.a[0],e.b[0],u)+e.nx*depth,lerp(e.a[1],e.b[1],u)+e.nz*depth]}
-function apexBuildingWorldCam(frame,u,depth,y,cam){const p=apexBuildingFrameXZ(frame,u,depth),yy=apexWorldGroundY(p[0],p[1])+y;return worldToCamera(p[0],yy,p[1],cam)}
+function apexBuildingWorldCam(frame,u,depth,y,cam){const p=apexBuildingFrameXZ(frame,u,depth),yy=apexStaticSceneryGroundY(frame,u,depth,p[0],p[1])+y;return worldToCamera(p[0],yy,p[1],cam)}
 function apexRenderBuildingExact2D(it,cam,detailAlpha,s,polyCamFn){
  const fp=it&&it.worldFootprint;if(!Array.isArray(fp)||fp.length<3)return false;
  const prof=apexBuildingStyleProfile(it),h=Math.min(Math.max(6,+it.height||14),90),clear=Math.max(0,+it.clearance||0),frame=apexBuildingFrameStats(it),budget=apexBuildingRenderBudget(detailAlpha>.58?0:(detailAlpha>.18?1:2),detailAlpha),baseY=[];

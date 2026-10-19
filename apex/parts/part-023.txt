@@ -1949,7 +1949,7 @@ const cv=$("game"),ctx=cv.getContext("2d",{alpha:true}),webglCv=$("webglGame"),m
 
 /* APEX v0.13.5 · Escalado adaptativo, sin intervals ni cambios de física. */
 let apexDrivePerfScale=1,apexDrivePerfLastSample=0,apexDrivePerfSlow=0,apexDrivePerfFast=0,
-    apexDrivePerfChanges=0,apexDrivePerfLastFps=60,apexDrivePerfActive=false;
+    apexDrivePerfChanges=0,apexDrivePerfLastFps=60,apexDrivePerfActive=false,apexDrivePerfLastResizeAt=0;
 function apexDrivePerfDprScale(){return apexDrivePerfScale}
 function apexDrivePerfObserve(now){
  if(!player||!trackData||mode==='menu'||mode==='inspection'||paused)return;
@@ -1963,15 +1963,16 @@ function apexDrivePerfObserve(now){
  else if(fps>48&&cpu<12&&physics<8){apexDrivePerfFast++;apexDrivePerfSlow=0}
  else{apexDrivePerfSlow=0;apexDrivePerfFast=0}
  let target=apexDrivePerfScale;
- if(apexDrivePerfSlow>=2){target=Math.max(.62,Math.round((apexDrivePerfScale-.13)*100)/100);apexDrivePerfSlow=0}
- if(apexDrivePerfFast>=7){target=Math.min(1,Math.round((apexDrivePerfScale+.08)*100)/100);apexDrivePerfFast=0}
- if(target!==apexDrivePerfScale){
+ if(apexDrivePerfSlow>=3){target=Math.max(.62,Math.round((apexDrivePerfScale-.13)*100)/100);apexDrivePerfSlow=0}
+ if(apexDrivePerfFast>=10){target=Math.min(1,Math.round((apexDrivePerfScale+.08)*100)/100);apexDrivePerfFast=0}
+ if(target!==apexDrivePerfScale&&(!apexDrivePerfLastResizeAt||now-apexDrivePerfLastResizeAt>=10000)){
   apexDrivePerfScale=target;apexDrivePerfChanges++;apexDrivePerfActive=target<.995;
-  resize();
+  apexDrivePerfLastResizeAt=now;resize();
  }
 }
 window.apexDrivePerformanceDiagnostics=()=>({scale:apexDrivePerfScale,active:apexDrivePerfActive,
  changes:apexDrivePerfChanges,observedFps:apexDrivePerfLastFps,
+ resizeCooldownMs:apexDrivePerfLastResizeAt?Math.max(0,10000-(performance.now()-apexDrivePerfLastResizeAt)):0,
  renderMs:telemetryPerf.renderMs||0,physicsMs:telemetryPerf.physicsMs||0,
  profile:typeof renderProfilerSnapshot==='function'?renderProfilerSnapshot():null});
 
