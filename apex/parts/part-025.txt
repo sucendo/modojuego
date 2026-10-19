@@ -277,6 +277,7 @@ async function apexPrecompileUnifiedTerrainOwners(g){
   idx=atlas&&atlas.svg;
  if(!g||!g.plateMesh||!idx||!idx.faces.length)return{cells:0,reason:'no-svg-plate'};
  const jobs=new Set(),limit=1300,cell=g.cell;
+ let scanYieldAt=performance.now();
  for(const f of idx.faces){
   const x0=clamp(Math.floor((f.minX-g.minX)/cell)-1,0,g.nx-2),
     x1=clamp(Math.ceil((f.maxX-g.minX)/cell)+1,0,g.nx-2),
@@ -287,6 +288,7 @@ async function apexPrecompileUnifiedTerrainOwners(g){
    if(g.mask[iz*(g.nx-1)+ix])jobs.add(iz*(g.nx-1)+ix);
   }
   if(jobs.size>=limit)break;
+  if(performance.now()-scanYieldAt>12){await apexCompilerYield();scanYieldAt=performance.now()}
  }
  const height=(ix,iz)=>g.inside[iz*g.nx+ix]?g.vals[iz*g.nx+ix]:g.baseLevelM;
  let count=0,last=performance.now();
