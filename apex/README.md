@@ -1,6 +1,6 @@
 # APEX Formula 26
 
-Versión de desarrollo: **v0.13.18 · PRE-RELEASE**
+Versión de desarrollo: **v0.13.19 · PRE-RELEASE**
 
 Archivo fuente original:
 `Apex_Formula_26_v5_230_62_8_6_7_6_4_17_CONTROL_CLASICO_GP4.html`
@@ -197,3 +197,19 @@ En la consola, `apexVehicleSurfaceDiagnostics()` muestra `source` (`TRACK`, `PIT
 - Validación aislada: shader/proyección contrastados algebraicamente con la ruta original (error numérico inferior a 1e-9 en NDC en muestra sintética); VBO subido una sola vez en llamadas consecutivas; render comprobado en secuencia `dinámico → estático → dinámico`, conservando los dos rangos y la telemetría de triángulos. **No se ha podido ejecutar aún una prueba visual/FPS real del circuito completo en Chrome móvil.**
 
 **Alcance pendiente de fase 5:** terreno de placas y malla longitudinal de asfalto/pianos todavía utilizan parte de la proyección por CPU. Su migración a geometría GPU estática necesita el mismo tratamiento de recortes, túneles, editor, sectores, LOD y compatibilidad. Esta entrega NO afirma que toda la escena use VBOs estáticos ni que hayan desaparecido los tirones de Madrid.
+
+
+## v0.13.19 — Fase 5, segunda migración: terreno de placas en GPU
+
+**Meta:** reducir las proyecciones en JavaScript del relieve normal de Madrid y circuitos con `terrainBase`, sin sustituir geometrías de túneles ni introducir planos superpuestos.
+
+- **Ruta WebGL estática para celdas ordinarias:** `webglPushTerrainPlateMesh` separa las celdas gruesas de las celdas estructurales. Las primeras se convierten a triángulos en coordenadas de mundo y se envían mediante un VBO `STATIC_DRAW`; las celdas detalladas de pista, portales y túneles conservan el render exacto original.
+- **Superficies conservadas:** el mismo recorte `apexUnifiedTerrainCellPieces` determina qué porciones del terreno dejan sitio a escapatorias SVG. No se cambia el relieve, los valores del grid, los JSON/SVG ni el guardado.
+- **LOD intacto:** selección original de celdas 1×1/2×2, presupuesto móvil, límites del polígono y frustum. Las celdas próximas al ojo permanecen en la ruta CPU para mantener el recorte cercano.
+- **Caché doble:** paquetes `Float32Array` por celda (hasta 3072) para evitar retriangulaciones, más un VBO por conjunto de celdas visibles. El orden de compilación es espacial y no cambia por la orientación de la cámara; un giro que conserve el conjunto reutiliza el buffer sin transferencia.
+- **Composición de profundidad:** el envío WebGL intercalado conserva el orden de escena: decorado inicial → terreno detallado → terreno GPU → resto del entorno → escapatorias SVG GPU → pista, pianos y coches. Los vértices dinámicos se transfieren una sola vez por fotograma; las dos mallas estáticas usan el mismo depth buffer.
+- **Compatibilidad y fallos:** la ruta Canvas2D, los modos de inspección y los circuitos sin placa siguen utilizando el trazado anterior. Si no hay GPU o falla la creación del buffer/shader, las celdas omitidas se proyectan por CPU en el mismo fotograma. No se intenta recompilar indefinidamente en un contexto fallido. Presupuesto de VBO por vista: 8 MiB móvil y 24 MiB escritorio.
+- **Diagnóstico:** `apexPhase5TerrainDiagnostics()` muestra `resident`, `bytes`, `triangles`, `gpuCells`, `uploads`, `reuses`, `packets`, `packetHits`, `packetMisses`, `failures`; complementarlo con `apexPerformanceSummary()` y `apexPhase5GpuDiagnostics()`.
+- **Pruebas aisladas:** compilación sintáctica del bloque GPU; carga única para una selección estable, cambio de orden sin nueva subida, reutilización de tres paquetes entre selecciones; comprobación del orden de pasadas dinámico → terreno GPU → dinámico → SVG GPU → dinámico y sus contadores de triángulos.
+
+**Pendiente de homologación:** verificar visualmente el Madrid SVG/JSON completo (túneles, alturas, escapatorias, bordes, cámara) y medir FPS/tirones en PC y móvil. La migración de la cinta longitudinal de asfalto/pianos y otros decorados estructurales NO está incluida en esta entrega. No se afirma un porcentaje de mejora sin perfilado real.
