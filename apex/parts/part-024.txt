@@ -1917,6 +1917,21 @@ function apexSampleRunoffSurfaceAtWorld(x,z){
  if(found)index.hits++;
  return found;
 }
+/* Diagnóstico bajo demanda: no añade trabajo durante el render. */
+window.apexUnifiedSurfaceDiagnostics=(x=null,z=null)=>{
+ if(!trackData)return{ready:false};
+ const pos=player&&Number.isFinite(player.x)&&Number.isFinite(player.z)?player:null;
+ if(!Number.isFinite(x))x=pos&&pos.x;
+ if(!Number.isFinite(z))z=pos&&pos.z;
+ if(!Number.isFinite(x)||!Number.isFinite(z))return{ready:false};
+ const samePlayer=!!(pos&&pos.x===x&&pos.z===z);
+ const p=samePlayer?playerDriveSurfacePose():apexUnifiedSurfaceAtWorld(x,z);
+ const ix=trackData._apexRunoffDriveSurfaceIndex;
+ return{ready:!!p,x,z,y:p&&p.y,source:p&&p.source,zone:p&&p.zone,
+  material:p&&p.material,bank:p&&p.bank,normal:p&&p.normal,
+  grip:p&&p.grip,steerGrip:p&&p.steerGrip,driveGrip:p&&p.driveGrip,
+  mesh:ix?{triangles:ix.faces.length,queries:ix.queries,hits:ix.hits}:null};
+};
 window.apexVehicleSurfaceDiagnostics=()=>{
  if(!trackData||!player)return{ready:false};
  const ix=trackData._apexRunoffDriveSurfaceIndex,pose=playerDriveSurfacePose(),road=trackSurfacePoseAt(player.s,player.lat);
