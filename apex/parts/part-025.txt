@@ -297,6 +297,19 @@ async function apexPrecompileUnifiedTerrainOwners(g){
   const poly=[{x:x0,y:height(ix,iz),z:z0},{x:x1,y:height(ix+1,iz),z:z0},
    {x:x1,y:height(ix+1,iz+1),z:z1},{x:x0,y:height(ix,iz+1),z:z1}];
   apexUnifiedTerrainCellPieces(g,ix,iz,ix+1,iz+1,poly);count++;
+  // En móviles el LOD remoto agrupa 2x2 celdas: precalcular también
+  // esos bloques para no generar triangulación al avanzar el coche.
+  const bx=ix-ix%2,bz=iz-iz%2,ex=Math.min(bx+2,g.nx-1),ez=Math.min(bz+2,g.nz-1),
+   cache=g._apexUnifiedTerrainPieces,
+   key=bx+':'+bz+':'+ex+':'+ez;
+  if(!cache||!cache.has(key)){
+   const ax=g.minX+bx*cell,az=g.minZ+bz*cell,
+    cx=Math.min(g.maxX,g.minX+ex*cell),cz=Math.min(g.maxZ,g.minZ+ez*cell);
+   apexUnifiedTerrainCellPieces(g,bx,bz,ex,ez,[
+    {x:ax,y:height(bx,bz),z:az},{x:cx,y:height(ex,bz),z:az},
+    {x:cx,y:height(ex,ez),z:cz},{x:ax,y:height(bx,ez),z:cz}
+   ]);
+  }
   if(performance.now()-last>12){await apexCompilerYield();last=performance.now()}
  }
  return{cells:count,cacheSize:g._apexUnifiedTerrainPieces?g._apexUnifiedTerrainPieces.size:0};
