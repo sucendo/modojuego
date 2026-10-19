@@ -1,6 +1,6 @@
 # APEX v0.13.23 — Fase 7, primera revisión de conducción
 
-Base: `main` en `8e71e2d0dba93cf4b6efbb97aba546f36278be6d` (v0.13.22), comprobada de nuevo antes de publicar. Se conservan los 28 fragmentos y los assets originales. Esta etapa corrige inconsistencias demostradas; no pretende reproducir fórmulas ni homologar sensaciones de GP4.
+Base: `main` en `8e71e2d0dba93cf4b6efbb97aba546f36278be6d` (v0.13.22), comprobada de nuevo antes de publicar. Se conservan los 28 fragmentos y los assets originales. Build actual: `2026.10.20.04`. Esta etapa corrige inconsistencias demostradas; no pretende reproducir fórmulas ni homologar sensaciones de GP4.
 
 ## Auditoría del modelo existente
 
@@ -56,10 +56,49 @@ El test comprueba además que el scheduler, configuración de perfiles, consulta
 
 El microbenchmark incluido calienta el núcleo, ejecuta siete rondas de 3.000 pasos y conserva escenarios de baja/alta velocidad mediante reinicios periódicos. Sus medianas y extremos quedan en `v01323-driving.json`. Es Node VM, incluye acceso a globals y no modela JIT, GPU, rAF, memoria total ni Android del simulador. Hay un pequeño aumento del coste por paso por la resolución implícita y los escalares diagnósticos; se comunica en lugar de prometer coste cero. No se cambia el renderer ni su preparación geométrica. No se puede certificar ausencia de regresión de FPS sin ejecutar el juego en navegador real.
 
-## Validación pendiente y siguiente etapa
+## Estado inicial del build 03 y validación pendiente
 
 Chrome disponible en el entorno no arranca por `socket() failed: Operation not permitted`. No se atribuyen FPS, calidad de conducción, validación WebGL/Canvas o pruebas Android a esta revisión. El runner `tests/browser-audit.cjs` añade diagnóstico físico y Suzuka a Madrid detallado, Mónaco, Spa y Monza; emula móvil y escritorio, prueba tres cámaras y autodiagnósticos. `ALL_CIRCUITS=1` amplía a las 23 bases. Sigue pendiente ejecutarlo en un equipo con Chrome/Playwright.
 
 Antes de homologar sensaciones: sesiones manuales con teclado, táctil, gyro y mando en esos cinco circuitos; comparación de frenada en apoyo y contravolante con/sin ayudas; superficies mojadas, pianos, cambios de rasante, túneles y pit lane; carreras/rivales, sectores, importaciones privadas y guardado/restauración de partidas antiguas. Los formatos y funciones se conservan, pero no se presenta esa inspección de código como prueba de ejecución. Medir física/render, FPS/p95/p99 y sesiones prolongadas en PC y Android físico.
 
 Una fase siguiente puede calibrar respuesta con esas trazas y estudiar ruedas, transferencia lateral y contacto/suspensión. No se añaden ahora parámetros de agarre, sensibilidad o ayudas para perseguir una sensación subjetiva sin validación real. La reducción de saltos táctiles y de oscilación numérica es verificable; que el tacto final satisfaga la referencia GP4 sigue requiriendo conducción humana.
+
+
+## Continuación: validación automatizada del juego completo
+
+Se incorpora `.github/workflows/apex-audit.yml` a las PR que cambian APEX y a los pushes de APEX a main. Tres jobs: regresiones aisladas y dos ejecuciones de Chromium (escritorio/emulación móvil). Instala Playwright 1.62.1 fuera del árbol del proyecto y utiliza SwiftShader para WebGL2. El workflow sólo necesita lectura del repositorio y conserva logs/JSON como artefactos de Actions. No cambia los 28 fragmentos de producción ni sus assets.
+
+El runner arranca desde `apex/apex.html`, usando el loader real. Inyecta un hook de pruebas al ensamblar el último fragmento, sin desplegarlo en el simulador. En cada contexto nuevo crea un guardado mínimo de esquema 2 con ronda/puntos conocidos: verifica migración a esquema 4, persistencia y recarga. La fixture no toca las partidas de ningún usuario.
+
+Después carga Madrid detallado importado, Mónaco, Spa, Monza y Suzuka con rivales, recorre las tres cámaras, recoge diagnóstico físico/render y comprueba estado finito, avance de tiempo simulado y errores GL. Los eventos de teclado/táctiles y muestras analógicas sintéticas atraviesan el camino real de inputs; no certifican un sensor ni un mando físico. Monza incluye ida/vuelta a Canvas. Volver al menú comprueba liberación de buffers; finalmente se ejecutan los autodiagnósticos de loader, cronometraje y mallas de las 23 entradas del catálogo. Madrid mantiene en ese recorrido su override importado; la auditoría offline valida por separado los 23 SVG/JSON base.
+
+Para repetir localmente, servir la raíz del repositorio con `python3 -m http.server 8765` y ejecutar `node apex/tests/browser-audit.cjs`. Variables opcionales: `CHROME_EXECUTABLE`, `PLAYWRIGHT_MODULE_PATH`, `APEX_AUDIT_DEVICE=desktop|mobile`, `SOFTWARE_GL=1` y `ALL_CIRCUITS=1`. La versión móvil emulada y los FPS de software en un runner compartido no representan Android físico ni una GPU de PC. Este smoke test tampoco garantiza cobertura de cada curva, túnel, colisión o vuelta completa.
+
+
+### Resultado de la primera ejecución completa
+
+[Actions 39342418521](https://github.com/sucendo/modojuego/actions/runs/39342418521), commit `3aba7cb01b9f5e55d3139c7bde8b87cadc1210e3`, build 03: los tres jobs pasan. Entre escritorio y móvil emulado: 30 muestras de render/rAF, 40 comprobaciones de inputs, dos migraciones/recargas, dos pruebas Canvas y dos recorridos de autodiagnósticos del catálogo. Estados finitos y `gl.getError()===0` en los puntos comprobados; sin errores JS capturados. Son sesiones cortas con piloto automático y muestras de controles sintéticas, no vueltas completas ni ensayos físicos de sensores.
+
+Evidencia resumida en `tests/results/v01323-browser-ci-before-terrain-fix.json`; logs completos y artefactos enlazados desde Actions. SwiftShader da FPS muy bajos y variables, especialmente a resolución de escritorio: no se trasladan a Android ni se comparan como prestaciones de una GPU física. La física agrupada por frame también se encarece al acumular hasta 12 pasos; sus tiempos no son tiempos por tick.
+
+En el Madrid móvil, una muestra contiene un frame con 3.359,3 ms atribuidos a terreno. Esa observación no demuestra por sí sola una causa única. Al revisar el camino se detecta, independientemente, una inconsistencia reproducible de caché: el compilador precalcula bloques 2×2 de origen par; `apexCollectTerrainPlateCells()` iniciaba la cuadrícula desde un mínimo relativo a cámara, que podía ser impar. Al cruzar un límite cambiaba todos los bloques de paridad y no encontraba los propietarios precalculados.
+
+### Corrección del build 04: selección móvil estable
+
+Se alinea el inicio del barrido con la misma cuadrícula fija del compilador: `min − min % step`. A paso 1 de escritorio es idéntico. Se conservan límites de radio/frustum, presupuestos, priorización cercana, subdivisión de máscaras parciales y detalle de portales. No hay cambios en el SVG, alturas de vértices ni algoritmo de recorte; se eligen los bloques ya previstos por la precarga. No se invalida la caché compilada, pues sus bloques pares existentes son precisamente los correctos.
+
+`node apex/tests/terrain-selection-audit.cjs`: las funciones de selección y caché de producción se ejecutan antes/después con una cuadrícula sintética y clipping instrumentado. Desplazamiento de 2 cm en límite X: 229 → 5 nuevas claves gruesas; límite Z: 230 → 13. En una región precargada, 230 → 0 llamadas nuevas al recorte. La prueba verifica ausencia de bloques seleccionados superpuestos, máscaras parciales, extremos de grid, portales finos, selección de escritorio idéntica y función propietaria sin cambios. Esto mide reutilización de claves, no tiempo de recorte ni FPS.
+
+La segunda ejecución CI contrasta el build 04 con el juego completo. No se promete que esta única corrección elimine todos los tirones: hay geometría dinámica de coches/decorados, recortes finos y costes de driver que siguen presentes.
+
+También aparecen velocidades casi nulas en algunas instantáneas del piloto automático de Mónaco/Spa/Monza. El smoke test comprueba estado finito e inputs y no exige completar una vuelta: ese comportamiento queda explícitamente pendiente de diagnóstico de trayectoria, tráfico/colisiones y recuperación. No se presenta la ejecución verde como homologación de la IA o de la conducción.
+
+
+### Observación posterior en Chromium móvil emulado
+
+La segunda ejecución vuelve a pasar los cinco circuitos y las comprobaciones de inputs/guardado/Canvas en el perfil móvil. En las nuevas ventanas de Madrid el terreno promedia 1,038 / 1,282 / 0,895 ms por frame (cockpit / T-cam / chase), frente a 480,886 / 23,361 / 0,922 ms en la primera ejecución. El primer promedio anterior estaba dominado por un único frame de terreno de 3.359,3 ms y sólo contenía siete frames; no es una mediana robusta. El peor render total de las nuevas ventanas es 100 / 154,7 / 165,3 ms. Hay otros bloqueos: el observador de long tasks llega a 572 ms en cockpit, y aún hay costes de coches/decorados y del driver.
+
+Son dos ejecuciones de un runner compartido con recorridos/velocidades y muestras diferentes; no se infiere una aceleración porcentual controlada ni un FPS objetivo. La regresión determinista de las claves sí demuestra que la cuadrícula ya utiliza los recortes precalculados. No se afirma que hayan desaparecido todos los picos ni que el motor alcance 30/60 FPS en hardware real.
+
+[Actions 39343172461](https://github.com/sucendo/modojuego/actions/runs/39343172461), commit `4d48b6e09c2b0ccc63c11a7e2e2207a1965be765`, build 04: también pasan los tres jobs, incluido escritorio. Chromium 151.0.7922.34 / Node 22.23.3 / SwiftShader. Se conservan las 30 muestras, 40 comprobaciones de entradas, dos migraciones/recargas, dos cambios Canvas y autodiagnósticos del catálogo; sin errores JS capturados ni GL en los puntos medidos. Resultado reproducible resumido: `tests/results/v01323-browser-ci.json`. El script añade observación de long tasks y heap y tiempos máximos de carga/autodiagnóstico para que un bloqueo falle con una etapa identificable. El JSON identifica el commit exacto probado; los cambios posteriores de documentación no se presentan como otra medición.
