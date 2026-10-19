@@ -309,8 +309,9 @@ export function updateRotation(dt, qd, aoa, state, inputs) {
 		δr_target = Cesium.Math.clamp(gyroAngles.yaw,   -maxDef, maxDef);
 	} else {
 		δa_target = (keys['ArrowLeft'] ? -maxDef : 0) + (keys['ArrowRight'] ? +maxDef : 0);
-		// Entrada invertida según prueba de vuelo: arriba baja morro, abajo lo levanta.
-		δe_target = (keys['ArrowDown'] ? +maxDef : 0) + (keys['ArrowUp'] ? -maxDef : 0);
+		// Ejes del avión: +X avance, +Y lateral, +Z arriba. Torque +Y baja la nariz.
+		// GeoFS: Arriba -> +Y (morro abajo); Abajo -> -Y (morro arriba).
+		δe_target = (keys['ArrowDown'] ? -maxDef : 0) + (keys['ArrowUp'] ? +maxDef : 0);
 		δr_target = (keys['KeyQ'] ? +maxDef : 0) + (keys['KeyE'] ? -maxDef : 0);
 	}
 	
