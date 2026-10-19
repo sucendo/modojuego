@@ -1,6 +1,6 @@
 # APEX Formula 26
 
-Versión de desarrollo: **v0.13.16 · PRE-RELEASE**
+Versión de desarrollo: **v0.13.17 · PRE-RELEASE**
 
 Archivo fuente original:
 `Apex_Formula_26_v5_230_62_8_6_7_6_4_17_CONTROL_CLASICO_GP4.html`
@@ -165,3 +165,19 @@ En la consola, `apexVehicleSurfaceDiagnostics()` muestra `source` (`TRACK`, `PIT
 - **Pruebas aisladas:** verificadas sintaxis de doce rutinas, conservación de 56 m² en una superficie de 64 m² con 8 m² de SVG, reutilización de paquetes comunes Canvas/WebGL, y precálculo de celdas con máscara total (20 celdas de prueba). **Falta** medir FPS reales con el circuito SVG completo de Madrid en móvil y validar visualmente los otros 22 circuitos.
 
 **Límite de esta fase:** unifica la propiedad/recorte y las pasadas de dibujo del corredor y las zonas de suelo, pero no transforma aún todas las superficies procedurales lejanas y el escenario completo en una única malla/buffer WebGL.
+
+
+## v0.13.17 — Fase 4: optimizacion estructural del render del suelo
+
+**Implementado sobre la fase 3, sin alterar los SVG/JSON ni las físicas:**
+
+- **LOD con ocupacion exacta:** mascara integral de la placa de relieve para descartar celdas sin terreno **antes** de llamar a `worldToCamera`. Los bloques 2x2 mixtos se desdoblan a resolucion 1x1 para no extender el suelo sobre huecos o limites de la base SVG. El recorte contra escapatorias sigue siendo el de la fase 3.
+- **Malla por paquetes reutilizables:** `apexPhase4TerrainPacket` cachea las cuatro esquinas y alturas originales de cada celda o bloque de LOD, limitado a 2048 paquetes por circuito. La camara sigue proyectando estos vertices por fotograma; no se recompone su geometria estatica.
+- **Grupos de triangulos SVG:** cada `surfaceZone` con 12 o mas triangulos genera grupos de hasta 24 triangulos y una esfera envolvente durante la compilacion. Fuera de vista, se omite el grupo completo sin proyectar ni comprobar uno a uno sus triangulos. Se mantiene el orden de las superficies y el descarte fino por triangulo.
+- **WebGL2:** ruta rapida para poligonos ya enteramente delante del plano cercano (no ejecuta clipping innecesario). Terreno y asfalto reutilizan la misma lista ordenada por profundidad en un frame. **No se introduce una segunda pasada GPU ni se multiplican los draw calls:** el backend ya realizaba un unico `gl.drawArrays` para la escena.
+- **Instrumentacion:** `apexPhase4GroundDiagnostics()`, `apexUnifiedGroundAtlasDiagnostics()`, `apexHeavyCircuitPerfDiagnostics()` y `renderProfilerSnapshot()`. Autoprueba sin circuito: `apexPhase4GroundSelfTest()`.
+- **Comprobaciones técnicas:** analisis sintactico de las funciones modificadas; prueba aislada de conservacion de mascara en 1x1 y 2x2 y reutilizacion de los vertices en cache. El render no se ha ejecutado ni medido en un movil fisico.
+
+**Validacion pendiente antes de darla por homologada:** ejecutar Madrid con su SVG/JSON completo en movil y PC, anotar FPS y `renderProfilerSnapshot()` en la recta de meta, las escapatorias y el tunel, y realizar una regresion visual en los otros 22 circuitos. No se prometen 60 FPS ni una ganancia porcentual sin mediciones reales.
+
+**Limite tecnico:** esta fase consolida paquetes CPU e indices de visibilidad y evita reconstrucciones/recortes innecesarios. La migracion de *todas* las superficies lejanas a VBOs de geometria de mundo estaticos proyectados en GPU requeriria una arquitectura de shader distinta; no se presenta como realizada.
