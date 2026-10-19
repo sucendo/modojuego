@@ -2079,13 +2079,43 @@ function apexUnifiedGroundDrawCorridor(seg,cam,pitch,webgl=false){
  drawCamQuadTriangles(V0.l,V0.r,V1.r,V1.l,pitch,palette().road);
  return{mask:left!==null||right!==null};
 }
+/* Pasada unica para las superficies SVG de rodadura: antes pertenecian al
+   bucle de 'landmarks' y se pintaban junto a edificios/vegetacion, mientras
+   el terreno/plataforma se renderizaba despues. El atlas gobierna ahora el
+   suelo, sus propietarios y el orden: terreno -> SVG -> carretera/pianos. */
+function apexRenderUnifiedAuthoredGround(cam,pitch,webgl=false){
+ const cw=trackData&&trackData.customWorld,atlas=cw&&cw._apexUnifiedGroundAtlas;
+ if(!atlas||!atlas.svgFaces)return false;
+ const all=trackLandmarks();
+ if(!all||!all.length)return false;
+ const entries=apexCompiledLandmarkEntries(all),
+  full=typeof apexInspectionFullScene==='function'&&apexInspectionFullScene(),
+  far=full?apexInspectionFarDistance():mobilePerformanceMode()?1450:2100;
+ let drawn=0,culled=0;
+ for(const ent of entries){
+  const it=ent.it;if(!it||it.type!=='surfaceZone')continue;
+  const b=it._apexStaticBatch,tris=b&&b.surfaceTriangles,bounds=b&&b.surfaceBounds;
+  if(!Array.isArray(tris)||!tris.length)continue;
+  const color=it.color||'#777',bias=apexGroundPatchDepthBias(it);
+  for(let j=0;j<tris.length;j++){
+   if(bounds&&bounds[j]&&!apexStaticBoundInView(bounds[j],cam,far,1.55)){culled++;continue;}
+   const pts=tris[j].map(v=>worldToCamera(v[0],v[1],v[2],cam));
+   if(webgl)webglPushCamPoly(pts,pitch,color,.60,bias);
+   else drawCamPoly(pts,pitch,color,.60);
+   drawn++;
+  }
+ }
+ atlas.lastDrawn=drawn;atlas.lastCulled=culled;
+ return true;
+}
 window.apexUnifiedGroundAtlasDiagnostics=()=>{
  const a=trackData&&trackData.customWorld&&trackData.customWorld._apexUnifiedGroundAtlas,
    t=a&&a.plate;
  return a?{ready:true,svgFaces:a.svgFaces,stripPackets:a.strips.size,
   compiled:a.built,reused:a.reused,evicted:a.evicted,
   terrainCells:t?[(t.nx-1),(t.nz-1)]:null,
-  terrainCutCache:t&&t._apexUnifiedTerrainPieces?t._apexUnifiedTerrainPieces.size:0}: {ready:false};
+  terrainCutCache:t&&t._apexUnifiedTerrainPieces?t._apexUnifiedTerrainPieces.size:0,
+  authoredDrawn:a.lastDrawn||0,authoredCulled:a.lastCulled||0}: {ready:false};
 };
 
 function apexBuildCircuitStaticRenderBatches(cw){
