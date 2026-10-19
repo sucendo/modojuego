@@ -1696,6 +1696,16 @@ function apexBuildLandmarkStaticBatch(it){
      b.forest=it.forestPoints.map(fp0=>{const x=fp0[0],z=fp0[1],y=fp0[2]||0;return{bound:{x,y:y+4.2,z,r:9.5},trunk:[[x-.12,y,z],[x+.12,y,z],[x+.12,y+3.1,z],[x-.12,y+3.1,z]],crown:[[x-2,y+1.8,z],[x+2,y+1.8,z],[x,y+8.2,z]]}});b.primitiveCount+=b.forest.length*2;
    }
  }
+ // Fase 4: conjuntos estaticos de triangulos consecutivos para culling
+ // jerarquico. Cada paquete conserva el orden y la cota SVG original.
+ if(it.type==='surfaceZone'&&Array.isArray(b.surfaceTriangles)&&b.surfaceTriangles.length>=12){
+  b.surfaceChunks=[];
+  for(let start=0;start<b.surfaceTriangles.length;start+=24){
+   const end=Math.min(start+24,b.surfaceTriangles.length),pts=[];
+   for(let j=start;j<end;j++)for(const p of b.surfaceTriangles[j])pts.push(p);
+   b.surfaceChunks.push({start,end,bound:apexStaticWorldBound(pts)});
+  }
+ }
  if(b.footprintBottom&&b.footprintTop){
   b.viewBound=apexStaticWorldBound(b.footprintBottom.concat(b.footprintTop));
   if(b.viewBound)b.viewBound.r+=Math.max(20,Number(it.clearance)||0);
@@ -2081,21 +2091,36 @@ function apexRenderUnifiedAuthoredGround(cam,pitch,webgl=false){
  const entries=apexCompiledLandmarkEntries(all),
   full=typeof apexInspectionFullScene==='function'&&apexInspectionFullScene(),
   far=full?apexInspectionFarDistance():mobilePerformanceMode()?1450:2100;
- let drawn=0,culled=0;
+ let drawn=0,culled=0,chunks=0,chunksCulled=0;
  for(const ent of entries){
   const it=ent.it;if(!it||it.type!=='surfaceZone')continue;
   const b=it._apexStaticBatch,tris=b&&b.surfaceTriangles,bounds=b&&b.surfaceBounds;
   if(!Array.isArray(tris)||!tris.length)continue;
-  const color=it.color||'#777',bias=apexGroundPatchDepthBias(it);
-  for(let j=0;j<tris.length;j++){
-   if(bounds&&bounds[j]&&!apexStaticBoundInView(bounds[j],cam,far,1.55)){culled++;continue;}
-   const pts=tris[j].map(v=>worldToCamera(v[0],v[1],v[2],cam));
-   if(webgl)webglPushCamPoly(pts,pitch,color,.60,bias);
-   else drawCamPoly(pts,pitch,color,.60);
-   drawn++;
+  const color=it.color||'#777',bias=apexGroundPatchDepthBias(it),
+   groups=b.surfaceChunks,groupCount=groups&&groups.length||1;
+  for(let k=0;k<groupCount;k++){
+   const group=groups&&groups[k],
+    begin=group?group.start:0,end=group?group.end:tris.length;
+   chunks++;
+   // Un grupo fuera del frustum descarta todos sus triangulos sin proyectarlos.
+   if(group&&group.bound&&!apexStaticBoundInView(group.bound,cam,far,1.55)){
+    culled+=end-begin;chunksCulled++;continue;
+   }
+   for(let j=begin;j<end;j++){
+    if(bounds&&bounds[j]&&!apexStaticBoundInView(bounds[j],cam,far,1.55)){culled++;continue;}
+    const tri=tris[j],pts=[
+     worldToCamera(tri[0][0],tri[0][1],tri[0][2],cam),
+     worldToCamera(tri[1][0],tri[1][1],tri[1][2],cam),
+     worldToCamera(tri[2][0],tri[2][1],tri[2][2],cam)
+    ];
+    if(webgl)webglPushCamPoly(pts,pitch,color,.60,bias);
+    else drawCamPoly(pts,pitch,color,.60);
+    drawn++;
+   }
   }
  }
  atlas.lastDrawn=drawn;atlas.lastCulled=culled;
+ atlas.authoredChunks=chunks;atlas.lastChunksCulled=chunksCulled;
  return true;
 }
 window.apexUnifiedGroundAtlasDiagnostics=()=>{
@@ -2105,7 +2130,8 @@ window.apexUnifiedGroundAtlasDiagnostics=()=>{
   compiled:a.built,reused:a.reused,evicted:a.evicted,
   terrainCells:t?[(t.nx-1),(t.nz-1)]:null,
   terrainCutCache:t&&t._apexUnifiedTerrainPieces?t._apexUnifiedTerrainPieces.size:0,
-  authoredDrawn:a.lastDrawn||0,authoredCulled:a.lastCulled||0}: {ready:false};
+  authoredDrawn:a.lastDrawn||0,authoredCulled:a.lastCulled||0,
+  authoredChunks:a.authoredChunks||0,authoredChunksCulled:a.lastChunksCulled||0}: {ready:false};
 };
 
 function apexBuildCircuitStaticRenderBatches(cw){
