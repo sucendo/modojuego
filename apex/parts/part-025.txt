@@ -3214,7 +3214,10 @@ function webglPushCircuitLandmarks(cam,pitch){
  apexHeavyCircuitPerf.surfacePassMs=0;apexHeavyCircuitPerf.surfaceTrianglesTotal=0;apexHeavyCircuitPerf.surfaceTrianglesCulled=0;apexHeavyCircuitPerf.surfaceTrianglesSubmitted=0;
  for(const ent of entries){
    const li=ent.i,it=ent.it;
-   // Defensa adicional WebGL2: curb-left/right son datos para curbInfo().
+   // Las zonas SVG de rodadura pertenecen a la pasada única de suelo;
+   // evitar proyectarlas dos veces (landmarks + malla unificada).
+   const groundAtlas=trackData&&trackData.customWorld&&trackData.customWorld._apexUnifiedGroundAtlas;
+   if(groundAtlas&&groundAtlas.svgFaces&&it.type==='surfaceZone')continue;
    if(apexIsCurbAuthoringMark(it))continue;
    const a=it.anchor,staticBound=it._apexStaticBatch&&it._apexStaticBatch.viewBound,
     groundVisual=(it.type==='surfaceZone'||it.type==='marking'||it.type==='water'||it.type==='forestZone')&&
