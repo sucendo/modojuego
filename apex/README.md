@@ -1,6 +1,6 @@
 # APEX Formula 26
 
-Versión de desarrollo: **v0.13.9 · PRE-RELEASE**
+Versión de desarrollo: **v0.13.10 · PRE-RELEASE**
 
 Archivo fuente original:
 `Apex_Formula_26_v5_230_62_8_6_7_6_4_17_CONTROL_CLASICO_GP4.html`
@@ -74,3 +74,12 @@ Se cachean las alturas de terreno y los recortes de bandas de gradas y edificios
 - El modelo WebGL del coche del jugador orienta su pendiente lateral conforme al signo real del peralte y a la dirección del monoplaza; no altera física ni colisiones.
 - Prueba manual pendiente: los 6 puntos de las capturas de Madrid, particularmente transición pista–escapatoria, salida de túnel y pitlane. Esta fase no certifica esos tres puntos como solucionados; necesitan validación visual sobre el SVG guardado concreto y ajustes del cosido de superficies.
 - Prueba de regresión matemática de polígono cóncavo incluida en validación de despliegue. Diagnóstico: `apexPlayerBankAlignmentDiagnostics()`.
+
+## v0.13.10 — pianos SVG autoritativos: un único render
+
+- `curb-left` y `curb-right` del SVG continúan definiendo las zonas de piano `curbZones`, pero **sus polígonos no se pintan como un parche de suelo** en Canvas2D ni WebGL2.
+- La franja visible la generan exclusivamente `drawRoadSegment` y `webglPushRoadSegment` con las mismas cotas, anchura, peralte y colores del render estándar de APEX.
+- Los datos de geometría SVG y la exportación permanecen editables; se mantiene y corrige el rol de curbs en exportaciones antiguas sin `sourceRole`.
+- Las cargas antiguas con marcadores de curb pero sin `curbZones` recuperan las zonas desde los puntos SVG al preparar el circuito.
+- Se omite la compilación de superficies visuales para los marcadores de piano y se excluyen de las colas de escenarios, eliminando la gran mancha roja duplicada y reduciendo trabajo.
+- Autoprueba de metadatos y ausencia de duplicación visible: `apexCurbAuthoringAudit()` desde la consola con un circuito cargado. No se alteran las físicas, el trazado, los muros, el cronometraje ni las escapatorias.

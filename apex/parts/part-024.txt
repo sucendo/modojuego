@@ -421,6 +421,25 @@ function apexImportedCurbZones(landmarks,L){
  return out;
 }
 function apexCurbZoneContains(s,z,L){const a=mod(z.startS,L),b=mod(z.endS,L),x=mod(s,L);return a<=b?(x>=a&&x<=b):(x>=a||x<=b)}
+// v0.13.10: los polígonos SVG curb-* son AUTORÍA, no superficies pintadas.
+// El render real del piano lo hacen drawRoadSegment/webglPushRoadSegment,
+// compartiendo banda, rasante y peralte con la pista.
+function apexIsCurbAuthoringMark(it){
+ return !!(it&&it.type==='marking'&&
+   (it.markingKind==='CURB_LEFT'||it.markingKind==='CURB_RIGHT'||
+    it.sourceRole==='curb-left'||it.sourceRole==='curb-right'));
+}
+window.apexCurbAuthoringAudit=()=>{
+ const cw=trackData&&trackData.customWorld,landmarks=cw&&cw.landmarks||[],
+  marks=landmarks.filter(apexIsCurbAuthoringMark),
+  zones=cw&&cw.curbZones||[],
+  entries=typeof apexCompiledLandmarkEntries==='function'?apexCompiledLandmarkEntries(landmarks):[],
+  leaked=entries.filter(e=>apexIsCurbAuthoringMark(e.it));
+ return{ok:leaked.length===0&&(!marks.length||zones.length>0),
+  marks:marks.length,zones:zones.length,renderedAsPolygons:leaked.length,
+  renderer:'shared track ribbon (WebGL2 / Canvas2D)',
+  originalSvgPreserved:true};
+};
 function apexImportedStructureZones(landmarks,L){
  const zones=[];
  for(const it of (landmarks||[])){
@@ -560,6 +579,13 @@ function prepareTrackModel(){
    if(newPn!==oldPn)trackData.customWorld.pitNetwork=newPn;
  }
  if(trackData.customWorld&&trackData.customWorld.authoritative&&trackData.customWorld.profileRevision<23082){trackData.customWorld.structureZones=apexImportedStructureZones(trackData.customWorld.landmarks||[],trackData.km*1000);trackData.customWorld.curbZones=apexImportedCurbZones(trackData.customWorld.landmarks||[],trackData.km*1000);trackData.customWorld.profileRevision=23082;}
+ // Las partidas importadas antiguas pueden tener curb-left/right pero no curbZones.
+ // Se reconstruye solo la metadata, conservando íntegro el SVG autoritativo.
+ if(trackData.customWorld&&trackData.customWorld.authoritative&&
+    (!Array.isArray(trackData.customWorld.curbZones)||!trackData.customWorld.curbZones.length)){
+   const authored=apexImportedCurbZones(trackData.customWorld.landmarks||[],trackData.km*1000);
+   if(authored.length)trackData.customWorld.curbZones=authored;
+ }
  trackData.svgAuthoritative=trackData.svgAuthoritative===true||!!(trackData.customWorld&&trackData.customWorld.authoritative);
  const P=trackData.pts,n=P.length,L=trackData.km*1000,step=L/n;
  const curve=new Float32Array(n),safe=new Float32Array(n);
@@ -1416,7 +1442,16 @@ function apexCompileCrosswalkTriangles(it){
 }
 
 function apexBuildLandmarkStaticBatch(it){
- if(!it)return null;const b={type:String(it.type||''),primitiveCount:0},a=it.anchor||{},fp=Array.isArray(it.worldFootprint)?it.worldFootprint:null,wy=Array.isArray(it.worldY)?it.worldY:null;
+ if(!it)return null;
+ // No compilar ni rellenar otra malla para las huellas SVG de los pianos.
+ // Las zonas del piano se mantienen en curbZones, no en el batch visual.
+ if(apexIsCurbAuthoringMark(it)){
+  const b={type:'marking',primitiveCount:0,authoringOnly:true};
+  try{Object.defineProperty(it,'_apexStaticBatch',{value:b,writable:true,configurable:true})}
+  catch(e){it._apexStaticBatch=b}
+  return b;
+ }
+ const b={type:String(it.type||''),primitiveCount:0},a=it.anchor||{},fp=Array.isArray(it.worldFootprint)?it.worldFootprint:null,wy=Array.isArray(it.worldY)?it.worldY:null;
  if(fp&&fp.length>=3){
    b.footprintBottom=fp.map((v,i)=>[v[0],wy&&Number.isFinite(wy[i])?wy[i]:(Number.isFinite(a.y)?a.y:apexWorldGroundY(v[0],v[1])),v[1]]);
    const h=Math.max(.05,Number(it.height)||.05);b.footprintTop=b.footprintBottom.map(p=>[p[0],p[1]+h,p[2]]);b.primitiveCount+=fp.length*2;
@@ -1541,7 +1576,8 @@ function apexStaticOcclusionStatsSnapshot(){return{frames:apexStaticOcclusionPer
 function apexCompiledLandmarkEntries(allItems){
  if(!Array.isArray(allItems)||!allItems.length)return[];
  const cc=trackData&&trackData.compiledCircuit,L=trackData&&trackData.km?trackData.km*1000:0;
- if(!cc||!Array.isArray(cc.sectors)||!cc.sectors.length||!player||!L)return allItems.map((it,i)=>({it,i}));
+ if(!cc||!Array.isArray(cc.sectors)||!cc.sectors.length||!player||!L)
+  return allItems.flatMap((it,i)=>apexIsCurbAuthoringMark(it)?[]:[{it,i}]);
  const n=cc.sectors.length,sectorM=Math.max(24,+cc.sectorM||96),pressure=mobileRenderPressure();
  const localM=mobilePerformanceMode()?lerp(330,700,pressure):lerp(520,1120,pressure),span=Math.min(Math.ceil(n*.48),Math.max(2,Math.ceil(localM/sectorM))),cur=Math.floor(mod(player.s,L)/sectorM)%n;
  // v62.5: la lista sólo cambia al cruzar de sector o variar el span adaptativo. En lugar
@@ -1550,7 +1586,7 @@ function apexCompiledLandmarkEntries(allItems){
  if(cache.has(key)){apexStaticBatchPerf.entryCacheHits++;return cache.get(key)}
  apexStaticBatchPerf.entryCacheMisses++;const set=new Set(cc.skylineLandmarks||[]);
  for(let d=-span;d<=span;d++){const sec=cc.sectors[mod(cur+d,n)];if(!sec)continue;for(const i of sec.landmarks||[])set.add(i)}
- const out=[];for(const i of set){const it=allItems[i];if(it)out.push({it,i})}
+ const out=[];for(const i of set){const it=allItems[i];if(it&&!apexIsCurbAuthoringMark(it))out.push({it,i})}
  if(cache.size>48)cache.clear();cache.set(key,out);return out;
 }
 function mobileControlProfile(){
@@ -2097,6 +2133,8 @@ function drawWorldLandmarks(cam,pitch){
  const labelQueue=[],visible=[];
  let sceneItemIndex=0;
  for(const it of items){
+   // Defensa adicional Canvas2D: el piano SVG nunca es un parche superpuesto.
+   if(apexIsCurbAuthoringMark(it))continue;
    const itemIndex=sceneItemIndex++;
    const skyline=apexIsSkylineLandmark(it),gy=groundedY(it.anchor);let maxZ=skyline?Math.max(6000,it.maxRenderDistance||it.anchor.maxRenderDistance||0):(it.maxRenderDistance||it.anchor.maxRenderDistance||1750);if(typeof apexInspectionFullScene==='function'&&apexInspectionFullScene())maxZ=Math.max(maxZ,apexInspectionFarDistance());
    let p=project(it.anchor.x,gy,it.anchor.z,maxZ);

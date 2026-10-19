@@ -408,7 +408,7 @@ function landmarkRoleName(it){
  if(it.type==='gantry'&&it.finishGantry)return 'finish-gantry';
  if(it.type==='surfaceZone')return 'runoff-'+String(it.surfaceKind||'ASPHALT').toLowerCase();
  if(it.type==='water')return it.waterKind==='SEA'?'sea':'lake';
- if(it.type==='marking')return it.markingKind==='START_LINE'?'start-line':(it.markingKind==='FINISH_LINE'?'finish-line':(it.markingKind==='URBAN_STRIPES'?'urban-stripes':'crosswalk'));
+ if(it.type==='marking')return it.markingKind==='CURB_LEFT'?'curb-left':(it.markingKind==='CURB_RIGHT'?'curb-right':(it.markingKind==='START_LINE'?'start-line':(it.markingKind==='FINISH_LINE'?'finish-line':(it.markingKind==='URBAN_STRIPES'?'urban-stripes':'crosswalk'))));
  if(it.type==='distanceBoard')return 'distance-board';
  if(it.type==='barrier'){const m={TECPRO:'barrier-tecpro',SAFER:'barrier-safer',TYRE:'barrier-tirewall',CONCRETE:'barrier-concrete',GUARDRAIL:'barrier-guardrail'};return m[it.barrierKind]||'barrier-concrete'}
  if(it.type==='road')return it.roadKind==='CITY'?'city-road':(it.roadKind==='SERVICE'?'service-road':'road');

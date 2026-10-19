@@ -3166,7 +3166,10 @@ function webglPushTunnelDetails(segments,cam,pitch){
 function webglPushCircuitLandmarks(cam,pitch){
  if(!webglCircuitVisualAvailable())return;const allItems=trackLandmarks(),L=trackData.km*1000;if(!allItems||!allItems.length)return;const entries=apexCompiledLandmarkEntries(allItems),staticOcclusion=apexBuildStaticOcclusionContext(entries,cam,pitch);
  for(const ent of entries){
-   const li=ent.i,it=ent.it,a=it.anchor,staticBound=it._apexStaticBatch&&it._apexStaticBatch.viewBound;
+   const li=ent.i,it=ent.it;
+   // Defensa adicional WebGL2: curb-left/right son datos para curbInfo().
+   if(apexIsCurbAuthoringMark(it))continue;
+   const a=it.anchor,staticBound=it._apexStaticBatch&&it._apexStaticBatch.viewBound;
    if(staticBound&&!apexStaticBoundInView(staticBound,cam,8600,1.65)){apexStaticOcclusionPerf.landmarksPreculled++;continue;}
    const base=webglLandmarkCam(a,0,0,0,cam),skyline=apexIsSkylineLandmark(it),exactClip=skyline&&Array.isArray(it.worldFootprint)&&it.worldFootprint.length>=3?apexLandmarkFootprintClipInfo(it,cam,pitch,Math.max(6000,it.maxDs||0),.30):null;
    if(exactClip?!exactClip.visible:!webglLandmarkVisible(it,base,pitch,cam))continue;
