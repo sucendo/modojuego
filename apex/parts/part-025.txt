@@ -195,6 +195,24 @@ window.apexHeavyCircuitPerfDiagnostics=()=>({
  render:typeof renderProfilerSnapshot==='function'?renderProfilerSnapshot():null
 });
 
+/* Fase 4: mascara integral del relieve. El filtrado de ocupacion ocurre
+   antes de proyectar a camara y el LOD 2x2 nunca invade celdas vacias. */
+function apexPhase4TerrainCoverage(g,ix,iz,x1,z1){
+ if(x1===ix+1&&z1===iz+1)return g.mask[iz*(g.nx-1)+ix]||0;
+ let p=g._apexPhase4Coverage;
+ if(!p){
+  p=new Uint32Array(g.nx*g.nz);
+  for(let z=0;z<g.nz-1;z++){
+   let row=0;
+   for(let x=0;x<g.nx-1;x++){
+    row+=g.mask[z*(g.nx-1)+x]||0;
+    p[(z+1)*g.nx+x+1]=p[z*g.nx+x+1]+row;
+   }
+  }
+  g._apexPhase4Coverage=p;
+ }
+ return p[z1*g.nx+x1]-p[iz*g.nx+x1]-p[z1*g.nx+ix]+p[iz*g.nx+ix];
+}
 function apexCollectTerrainPlateCells(cam){
  const g=apexPlateTerrainGrid();if(!g)return null;
  if(apexInspectionFullScene()){
@@ -211,19 +229,18 @@ function apexCollectTerrainPlateCells(cam){
    maxZ=clamp(Math.ceil((cam.z+radius-g.minZ)/g.cell),0,g.nz-2),
    maxCells=mobile?420:1050,cells=[];
  for(let iz=minZ;iz<=maxZ;iz+=step)for(let ix=minI;ix<=maxI;ix+=step){
+   const x1=Math.min(ix+step,g.nx-1),z1=Math.min(iz+step,g.nz-1);
+   const covered=apexPhase4TerrainCoverage(g,ix,iz,x1,z1);
+   if(!covered)continue;
    const x=g.minX+(ix+.5*step)*g.cell,z=g.minZ+(iz+.5*step)*g.cell,
      dx=x-cam.x,dz=z-cam.z,dist2=dx*dx+dz*dz;
    if(dist2>radius*radius)continue;
    const C=worldToCamera(x,g.baseLevelM,z,cam);
    if(C.z<-.5*g.cell||C.z>radius+g.cell||Math.abs(C.x)>Math.max(110,C.z*1.35+g.cell*3))continue;
-   const x1=Math.min(ix+step,g.nx-1),z1=Math.min(iz+step,g.nz-1);
-   let covered=false;
-   for(let zz=iz;zz<z1&&!covered;zz++)for(let xx=ix;xx<x1;xx++)if(g.mask[zz*(g.nx-1)+xx]){covered=true;break}
-   if(!covered)continue;
    // Cerca del coche o de cualquier boca de túnel usamos la resolución exacta.
    // Así el recorte del portal no depende del LOD móvil ni aparece como un agujero grande.
    const portalCell=mobile&&apexPortalCellIsNear(g,ix,iz,x,z),
-     useStep=mobile&&(dist2<(105*105)||portalCell)?1:step;
+     useStep=mobile&&(dist2<(105*105)||portalCell||covered<(x1-ix)*(z1-iz))?1:step;
    if(useStep===1&&step>1){
      for(let zz=iz;zz<z1;zz++)for(let xx=ix;xx<x1;xx++){
        if(g.mask[zz*(g.nx-1)+xx])cells.push({ix:xx,iz:zz,x1:xx+1,z1:zz+1,z:C.z,dist2});
@@ -369,6 +386,34 @@ function apexTerrainFinePatch(g,ix,iz,kind){
  if(!g._keepCompiledFineCache&&g.fineCache.size>540){const first=g.fineCache.keys().next().value;g.fineCache.delete(first)}
  g.fineCache.set(key,quads);return quads;
 }
+/* Fase 4: paquetes de vertices de relieve inmutables por celda/LOD.
+   Las cotas provienen de la misma malla SVG; solo se proyectan por camara. */
+const apexPhase4TerrainStats={packetsBuilt:0,packetHits:0,packetEvicted:0};
+function apexPhase4TerrainPacket(g,ix,iz,x1,z1){
+ const cache=g._apexPhase4WorldPackets||(g._apexPhase4WorldPackets=new Map());
+ const key=ix+':'+iz+':'+x1+':'+z1;
+ let packet=cache.get(key);
+ if(packet){apexPhase4TerrainStats.packetHits++;return packet}
+ const h=(x,z)=>g.inside[z*g.nx+x]?g.vals[z*g.nx+x]:g.baseLevelM,
+  x0=g.minX+ix*g.cell,z0=g.minZ+iz*g.cell,
+  xb=Math.min(g.maxX,g.minX+x1*g.cell),zb=Math.min(g.maxZ,g.minZ+z1*g.cell);
+ packet=[{x:x0,y:h(ix,iz),z:z0},{x:xb,y:h(x1,iz),z:z0},
+  {x:xb,y:h(x1,z1),z:zb},{x:x0,y:h(ix,z1),z:zb}];
+ if(cache.size>=2048){
+  const keys=cache.keys();
+  for(let n=0;n<256;n++){const next=keys.next();if(next.done)break;cache.delete(next.value);apexPhase4TerrainStats.packetEvicted++}
+ }
+ cache.set(key,packet);apexPhase4TerrainStats.packetsBuilt++;
+ return packet;
+}
+window.apexPhase4GroundDiagnostics=()=>{
+ const g=apexPlateTerrainGrid(),atlas=trackData&&trackData.customWorld&&trackData.customWorld._apexUnifiedGroundAtlas;
+ return{...apexPhase4TerrainStats,packetCache:g&&g._apexPhase4WorldPackets?g._apexPhase4WorldPackets.size:0,
+  coverageIndex:!!(g&&g._apexPhase4Coverage),svgChunks:atlas&&atlas.authoredChunks||0,
+  svgChunksCulled:atlas&&atlas.lastChunksCulled||0,svgTrianglesDrawn:atlas&&atlas.lastDrawn||0,
+  svgTrianglesCulled:atlas&&atlas.lastCulled||0,
+  webglTriangles:typeof webglState!=='undefined'?webglState.triangles:0};
+};
 function apexForEachTerrainPlateCell(cam,fn){
  const g=apexPlateTerrainGrid(),cells=apexCollectTerrainPlateCells(cam);if(!g||!cells)return false;
  const h=(ix,iz)=>g.inside[iz*g.nx+ix]?g.vals[iz*g.nx+ix]:g.baseLevelM;
@@ -390,13 +435,11 @@ function apexForEachTerrainPlateCell(cam,fn){
   }
   // v5.230.62 · PORTAL/TUNNEL visibles siempre pasan por el molde fino. En el LOD
   // lejano conservamos literalmente la altura SVG; nunca levantamos la montaña.
-  const y00=h(ix,iz),y10=h(x1,iz),y11=h(x1,z1),y01=h(ix,z1);
-  const A={x:x0,y:y00,z:z0},B={x:xB,y:y10,z:z0},
-   C={x:xB,y:y11,z:zB},D={x:x0,y:y01,z:zB},
-   clean=apexUnifiedTerrainCellPieces(g,ix,iz,x1,z1,[A,B,C,D]);
+  const quad=apexPhase4TerrainPacket(g,ix,iz,x1,z1),[A,B,C,D]=quad,
+   clean=apexUnifiedTerrainCellPieces(g,ix,iz,x1,z1,quad);
   if(clean===null){
-   fn(worldToCamera(x0,y00,z0,cam),worldToCamera(xB,y10,z0,cam),
-     worldToCamera(xB,y11,zB,cam),worldToCamera(x0,y01,zB,cam),cell,g);
+   fn(worldToCamera(A.x,A.y,A.z,cam),worldToCamera(B.x,B.y,B.z,cam),
+     worldToCamera(C.x,C.y,C.z,cam),worldToCamera(D.x,D.y,D.z,cam),cell,g);
   }else for(const p of clean){
    const cp=p.map(v=>worldToCamera(v.x,v.y,v.z,cam));
    if(cp.length>=3)fn(cp[0],cp[1],cp[2],cp[3]||cp[2],cell,g,cp);
