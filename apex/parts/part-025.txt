@@ -269,6 +269,38 @@ function apexUnifiedTerrainCellPieces(g,ix,iz,x1,z1,poly){
  cache.set(key,pieces);
  return pieces;
 }
+/* Precarga cooperativa de propietarios en celdas que realmente tocan
+   escapatorias importadas. Evita un parón de clipping al entrar en Madrid.
+   No cubre todo el planeta ni altera el LOD; el resto se memoiza al verlo. */
+async function apexPrecompileUnifiedTerrainOwners(g){
+ const atlas=trackData&&trackData.customWorld&&trackData.customWorld._apexUnifiedGroundAtlas,
+  idx=atlas&&atlas.svg;
+ if(!g||!g.plateMesh||!idx||!idx.faces.length)return{cells:0,reason:'no-svg-plate'};
+ const jobs=new Set(),limit=1300,cell=g.cell;
+ for(const f of idx.faces){
+  const x0=clamp(Math.floor((f.minX-g.minX)/cell)-1,0,g.nx-2),
+    x1=clamp(Math.ceil((f.maxX-g.minX)/cell)+1,0,g.nx-2),
+    z0=clamp(Math.floor((f.minZ-g.minZ)/cell)-1,0,g.nz-2),
+    z1=clamp(Math.ceil((f.maxZ-g.minZ)/cell)+1,0,g.nz-2);
+  if((x1-x0+1)*(z1-z0+1)>4000)continue;
+  for(let iz=z0;iz<=z1&&jobs.size<limit;iz++)for(let ix=x0;ix<=x1&&jobs.size<limit;ix++){
+   if(g.mask[iz*(g.nx-1)+ix])jobs.add(iz*(g.nx-1)+ix);
+  }
+  if(jobs.size>=limit)break;
+ }
+ const height=(ix,iz)=>g.inside[iz*g.nx+ix]?g.vals[iz*g.nx+ix]:g.baseLevelM;
+ let count=0,last=performance.now();
+ for(const id of jobs){
+  const ix=id%(g.nx-1),iz=Math.floor(id/(g.nx-1)),
+   x0=g.minX+ix*cell,x1=Math.min(g.maxX,x0+cell),
+   z0=g.minZ+iz*cell,z1=Math.min(g.maxZ,z0+cell);
+  const poly=[{x:x0,y:height(ix,iz),z:z0},{x:x1,y:height(ix+1,iz),z:z0},
+   {x:x1,y:height(ix+1,iz+1),z:z1},{x:x0,y:height(ix,iz+1),z:z1}];
+  apexUnifiedTerrainCellPieces(g,ix,iz,ix+1,iz+1,poly);count++;
+  if(performance.now()-last>12){await apexCompilerYield();last=performance.now()}
+ }
+ return{cells:count,cacheSize:g._apexUnifiedTerrainPieces?g._apexUnifiedTerrainPieces.size:0};
+}
 function apexTerrainFinePatch(g,ix,iz,kind){
  const key=iz*g.nx+ix,old=g.fineCache.get(key);if(old)return old;
  const x0=g.minX+ix*g.cell,z0=g.minZ+iz*g.cell,
@@ -438,6 +470,12 @@ async function apexCompileCircuitStatic(onProgress=null){
    }
  }else stats.stages.terrainMs=0;
 
+ // Tramos SVG precortados: desplazar este coste de la primera curva al
+ // proceso de carga y ceder control al navegador cada 12 ms.
+ if(terrain&&terrain.plateMesh){
+  apexCompilerProgress(onProgress,'UNIFICANDO SUELO',.92);
+  stats.unifiedGround=await apexPrecompileUnifiedTerrainOwners(terrain);
+ }
  apexCompilerProgress(onProgress,'FINALIZANDO',.94);await apexCompilerYield();
  t0=performance.now();try{trackLandmarks();authoredBrakeBoards();apexTunnelPortalDescriptors();if(trackData.model&&trackData.model.driver){driverModelSample(trackData.model.driver.curve||trackData.model.curve,0);}}catch(e){}
  stats.stages.finalizeMs=Number((performance.now()-t0).toFixed(2));stats.totalMs=Number((performance.now()-tAll).toFixed(2));stats.finishedAt=new Date().toISOString();stats.estimatedFineMeshMB=Number((stats.estimatedFineVertices*3*4/1048576).toFixed(2));trackData._compileStats=stats;if(trackData.compiledCircuit)trackData.compiledCircuit.stats=stats;
