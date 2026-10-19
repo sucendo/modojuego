@@ -1650,7 +1650,8 @@ function apexBuildLandmarkStaticBatch(it){
    visuales (incluye su recorte y sus Y finales). Se consulta sólo fuera de
    asfalto/piano, sin reproyectar geometría ni recorrer todos los landmarks. */
 function apexBuildRunoffDriveSurfaceIndex(cw){
- const cell=48,buckets=new Map(),overflow=[],faces=[],maxCells=256;
+ const cell=48,buckets=new Map(),overflow=[],faces=[],maxCells=256,
+  overflowCell=384,overflowBuckets=new Map(),globalOverflow=[];
  const items=cw&&Array.isArray(cw.landmarks)?cw.landmarks:[];
  for(const it of items){
   if(!it||it.type!=='surfaceZone')continue;
@@ -1668,16 +1669,42 @@ function apexBuildRunoffDriveSurfaceIndex(cw){
     foot:{poly:tri.map(v=>({x:v[0],y:v[1],z:v[2]})),bounds:{minX,maxX,minZ,maxZ}},
     ux,uz,vx,vz,inv:1/den,
     slopeX:(dy1*vz-dy2*uz)/den,slopeZ:(ux*dy2-vx*dy1)/den});
-   if((ix1-ix0+1)*(iz1-iz0+1)>maxCells){overflow.push(id);continue}
+   if((ix1-ix0+1)*(iz1-iz0+1)>maxCells){
+    overflow.push(id);
+    // Polígonos enormes no se meten en miles de celdas de 48 m,
+    // pero tampoco deben buscarse globalmente en cada fotograma.
+    const bx0=Math.floor(minX/overflowCell),bx1=Math.floor(maxX/overflowCell),
+      bz0=Math.floor(minZ/overflowCell),bz1=Math.floor(maxZ/overflowCell);
+    if((bx1-bx0+1)*(bz1-bz0+1)>256){globalOverflow.push(id);continue;}
+    for(let bz=bz0;bz<=bz1;bz++)for(let bx=bx0;bx<=bx1;bx++){
+     const key=bx+':'+bz;let list=overflowBuckets.get(key);
+     if(!list){list=[];overflowBuckets.set(key,list)}list.push(id);
+    }
+    continue;
+   }
    for(let iz=iz0;iz<=iz1;iz++)for(let ix=ix0;ix<=ix1;ix++){
     const key=ix+':'+iz;let arr=buckets.get(key);
     if(!arr){arr=[];buckets.set(key,arr)}arr.push(id);
    }
   }
  }
- const index={cell,buckets,overflow,faces,queries:0,hits:0};
+ const index={cell,buckets,overflow,faces,overflowCell,overflowBuckets,globalOverflow,queries:0,hits:0};
  if(trackData)trackData._apexRunoffDriveSurfaceIndex=index;
  return index;
+}
+/* Acceso local a triángulos muy extensos; compartido entre apoyo del
+   coche y máscara visual. Evita probar globalmente todos los overflow. */
+function apexRunoffOverflowCandidates(idx,minX,maxX,minZ,maxZ){
+ if(!idx||!idx.overflowBuckets)return idx&&idx.overflow||[];
+ const c=idx.overflowCell,ix0=Math.floor(minX/c),ix1=Math.floor(maxX/c),
+  iz0=Math.floor(minZ/c),iz1=Math.floor(maxZ/c);
+ if((ix1-ix0+1)*(iz1-iz0+1)>256)return idx.overflow;
+ const set=new Set(idx.globalOverflow);
+ for(let iz=iz0;iz<=iz1;iz++)for(let ix=ix0;ix<=ix1;ix++){
+  const a=idx.overflowBuckets.get(ix+':'+iz);
+  if(a)for(const id of a)set.add(id);
+ }
+ return set;
 }
 /* v0.13.14 · Las escapatorias SVG sustituyen a la franja automática,
    no se pintan encima de ella. El recorte es 2D en X/Z, conserva Y de la
@@ -1690,7 +1717,8 @@ function apexClipGenericRunoffPolygon(poly){
  let minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity;
  for(const p of poly){minX=Math.min(minX,p.x);maxX=Math.max(maxX,p.x);minZ=Math.min(minZ,p.z);maxZ=Math.max(maxZ,p.z)}
  const cell=idx.cell,ix0=Math.floor(minX/cell),ix1=Math.floor(maxX/cell),
-  iz0=Math.floor(minZ/cell),iz1=Math.floor(maxZ/cell),seen=new Set(idx.overflow);
+  iz0=Math.floor(minZ/cell),iz1=Math.floor(maxZ/cell),
+  seen=new Set(apexRunoffOverflowCandidates(idx,minX,maxX,minZ,maxZ));
  // Límite de seguridad para un recinto degenerado: se conserva el respaldo
  // y nunca se hace un barrido global de miles de triángulos por fotograma.
  if((ix1-ix0+1)*(iz1-iz0+1)>400)return null;
@@ -1787,7 +1815,7 @@ function apexSampleRunoffSurfaceAtWorld(x,z){
    slopeX:f.slopeX,slopeZ:f.slopeZ,triangle:id};
  };
  for(const id of local)test(id);
- for(const id of index.overflow)test(id);
+ for(const id of apexRunoffOverflowCandidates(index,x,x,z,z))test(id);
  if(found)index.hits++;
  return found;
 }
