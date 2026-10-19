@@ -317,6 +317,10 @@ export function updateRotation(dt, qd, aoa, state, inputs) {
 	
 	if (rollCmd  !== 0) δa_target = rollCmd;
 	if (pitchCmd !== 0) δe_target = pitchCmd;
+	// La entrada manual tiene prioridad sobre el piloto automático en cabeceo.
+	if (!useGyro && (keys['ArrowUp'] || keys['ArrowDown'])) {
+		δe_target = (keys['ArrowUp'] ? +maxDef : 0) - (keys['ArrowDown'] ? +maxDef : 0);
+	}
 	if (yawCmd   !== 0) δr_target = yawCmd;
 	
 	if (autoLevel) {
