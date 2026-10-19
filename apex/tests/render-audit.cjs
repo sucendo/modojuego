@@ -24,7 +24,7 @@ function road(src,optimized){
  wallGeometryAtS:(s,side)=>(stats.walls++,{top:{x:s+side*12,y:3,z:0}}),
  projectRoadLocal:(x,y,z)=>(stats.screen++,{x,y,z}),
  });
- load(c,src,['ribbonWorldPoint','apexFlatRunoffPoint','roadStep',...(optimized?['apexWebglRoadStep']:[])],optimized?['apexRoadPreparationPerf']:[]);
+ load(c,src,['ribbonWorldPoint','apexFlatRunoffPoint','roadStep',...(optimized?['apexRoadWorldNode','apexWebglRoadStep']:[])],optimized?['apexRoadPreparationPerf']:[]);
  c.run=(s,node)=>vm.runInContext(`${optimized?'apexWebglRoadStep':'roadStep'}(${s},10,{x:1,y:2,z:3},0,${node})`,c);
  c.stats=stats;return c;
 }
@@ -91,7 +91,7 @@ assert.ok(vm.runInContext('apexPhase5TerrainGPU.gpuResets>0',recycling));
 console.log('PASS: bounded GPU/CPU bytes and atlas recycling');
 // Circuit without a plate must release the previous scene too.
 const released=[];const ownership=context({trackData:{},apexGpuSceneTrack:null,
- apexPhase5GpuRelease:()=>released.push('ground'),apexPhase5TerrainRelease:()=>released.push('terrain')});
+ apexPhase6RoadRelease:()=>{},apexPhase5GpuRelease:()=>released.push('ground'),apexPhase5TerrainRelease:()=>released.push('terrain')});
 load(ownership,current,['apexReleaseGpuScene','apexSyncGpuScene']);
 vm.runInContext('apexSyncGpuScene();apexSyncGpuScene();trackData={};apexSyncGpuScene();apexReleaseGpuScene()',ownership);
 assert.equal(released.length,6);console.log('PASS: circuit ownership and release to menu/non-SVG');
@@ -121,11 +121,11 @@ const handlers={},fakeGl={DEPTH_TEST:1,LEQUAL:2,CULL_FACE:3,BLEND:4,SRC_ALPHA:5,
 const loss=context({webglState:{ready:false},rendererWebglSupport:null,
  webglCv:{dataset:{},getContext:()=>fakeGl,addEventListener:(name,fn)=>handlers[name]=fn},
  webglCompile:()=>({}),webglResizeViewport(){},rendererBackendId:()=> 'canvas2d',updateRendererBackendUi(){}});
-load(loss,current,['webglInit','apexPhase5GpuRelease','apexPhase5TerrainRelease'],['apexPhase5GroundGPU','apexPhase5TerrainGPU']);
+load(loss,current,['webglInit','apexPhase5GpuRelease','apexPhase5TerrainRelease','apexPhase6RoadRelease'],['apexPhase5GroundGPU','apexPhase5TerrainGPU','apexPhase6RoadGPU']);
 assert.equal(vm.runInContext('webglInit()',loss),true);
-vm.runInContext('apexPhase5GroundGPU.gl=webglState.gl;apexPhase5TerrainGPU.gl=webglState.gl;apexPhase5GroundGPU.buffer={};apexPhase5TerrainGPU.buffer={};apexPhase5GroundGPU.failedGl=webglState.gl;apexPhase5TerrainGPU.failedGl=webglState.gl;',loss);
-handlers.webglcontextlost({preventDefault(){}});assert.equal(vm.runInContext('!apexPhase5GroundGPU.buffer&&!apexPhase5TerrainGPU.buffer',loss),true);
-handlers.webglcontextrestored();assert.equal(vm.runInContext('webglInit()',loss),true);assert.equal(vm.runInContext('apexPhase5GroundGPU.failedGl===null&&apexPhase5TerrainGPU.failedGl===null',loss),true);
+vm.runInContext('apexPhase5GroundGPU.gl=webglState.gl;apexPhase5TerrainGPU.gl=webglState.gl;apexPhase5GroundGPU.buffer={};apexPhase5TerrainGPU.buffer={};apexPhase5GroundGPU.failedGl=webglState.gl;apexPhase5TerrainGPU.failedGl=webglState.gl;apexPhase6RoadGPU.gl=webglState.gl;apexPhase6RoadGPU.buffer={};apexPhase6RoadGPU.indexBuffer={};apexPhase6RoadGPU.failedGl=webglState.gl;',loss);
+handlers.webglcontextlost({preventDefault(){}});assert.equal(vm.runInContext('!apexPhase5GroundGPU.buffer&&!apexPhase5TerrainGPU.buffer&&!apexPhase6RoadGPU.buffer&&!apexPhase6RoadGPU.indexBuffer',loss),true);
+handlers.webglcontextrestored();assert.equal(vm.runInContext('webglInit()',loss),true);assert.equal(vm.runInContext('apexPhase5GroundGPU.failedGl===null&&apexPhase5TerrainGPU.failedGl===null&&apexPhase6RoadGPU.failedGl===null',loss),true);
 console.log('PASS: context loss and restoration with identical GL identity');
 // Interleaved static passes keep one dynamic upload and exact ordering.
 const order=[],upload=[];const submitGl={ARRAY_BUFFER:1,DYNAMIC_DRAW:2,TRIANGLES:3,FLOAT:4,COLOR_BUFFER_BIT:8,DEPTH_BUFFER_BIT:16,
@@ -137,4 +137,5 @@ const submit=context({webglState:{gl:submitGl,ready:true,program:{},buffer:{},aP
 load(submit,current,['webglSubmit']);assert.equal(vm.runInContext('webglSubmit()',submit),true);
 assert.deepEqual(order,[['dynamic',0,3],['terrain'],['dynamic',3,3],['svg'],['dynamic',6,3]]);assert.deepEqual(upload,[252]);assert.equal(submit.webglState.triangles,21);assert.equal(submit.webglState.drawCalls,5);
 console.log('PASS: dynamic/terrain/SVG submission order, single upload and submitted-triangle counters');
+cp.execFileSync(process.execPath,[path.join(__dirname,'phase6-road-audit.cjs')],{stdio:'inherit'});
 console.log('All isolated production-function regressions passed. Browser/Android validation remains separate.');

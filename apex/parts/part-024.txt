@@ -710,7 +710,7 @@ function prepareTrackModel(){
    const kk=Math.abs(sm[i]);
    safe[i]=clamp(96/Math.sqrt(1+kk*1750),34,98);
  }
- delete trackData._apexWebglRoadNodes;delete trackData._continuousAutoBank;delete trackData._continuousRoadS;delete trackData._inspectionRoadS;delete trackData._inspectionSurfaceIndex;
+ delete trackData._apexWebglRoadNodes;delete trackData._apexPhase6RoadMesh;delete trackData._continuousAutoBank;delete trackData._continuousRoadS;delete trackData._inspectionRoadS;delete trackData._inspectionSurfaceIndex;
  trackData.model={curve:sm,safe,step,mini:{mnx,mxx,mnz,mxz}};
  // v5.230.16: todas las pistas tienen referencias de curva Tn + zona geométrica inicio/fin.
  apexPrepareCornerReferenceModel();
@@ -2029,6 +2029,27 @@ function apexUnifiedGroundStrip(seg){
  atlas.strips.set(key,strip);atlas.built++;
  return strip;
 }
+function apexWebglRoadBase(seg,pitch,forceCPU=false){
+ const a=seg.a,b=seg.b,V0=a.v,V1=b.v,
+  seed=Math.floor(((a.s+b.s)*.5)/2.4),colors=circuitCurbPair(seed);
+
+  const pressure=mobileRenderPressure(),style=forceCPU&&seg._apexPhase6RoadStyle?seg._apexPhase6RoadStyle:apexPhase6RoadStyle(seg,pressure),show=style.show,cheap=style.cheap,
+   road=webglCircuitRoadColor(seg);
+  seg._apexPhase6RoadStyle=style;
+  if(!forceCPU&&apexPhase6QueueRoadBase(seg,colors,road,cheap,show))return pressure;
+  if(show&&(a.curb.left||b.curb.left))webglPushCamQuad(V0.lo,V0.l,V1.l,V1.lo,pitch,colors[0]);
+  if(show&&(a.curb.right||b.curb.right))webglPushCamQuad(V0.r,V0.ro,V1.ro,V1.r,pitch,colors[1]);
+
+  if(cheap)webglPushCamQuad(V0.l,V0.r,V1.r,V1.l,pitch,road);
+  else{
+   const lA=camMix(V0.l,V0.r,.30),lB=camMix(V1.l,V1.r,.30),
+    rA=camMix(V0.l,V0.r,.70),rB=camMix(V1.l,V1.r,.70);
+   webglPushCamQuad(V0.l,lA,lB,V1.l,pitch,shadeColor(road,-3));
+   webglPushCamQuad(lA,rA,rB,lB,pitch,shadeColor(road,2));
+   webglPushCamQuad(rA,V0.r,V1.r,rB,pitch,shadeColor(road,-4));
+  }
+  return pressure;
+}
 function apexUnifiedGroundDrawCorridor(seg,cam,pitch,webgl=false){
  const a=seg.a,b=seg.b,V0=a.v,V1=b.v;
  if(!V0||!V1)return null;
@@ -2056,22 +2077,8 @@ function apexUnifiedGroundDrawCorridor(seg,cam,pitch,webgl=false){
  
  }
  const seed=Math.floor(((a.s+b.s)*.5)/2.4),colors=circuitCurbPair(seed);
- if(webgl){
-  const show=(typeof apexInspectionFullScene==='function'&&apexInspectionFullScene())||seg.z<mobileControlProfile().curbMax;
-  if(show&&(a.curb.left||b.curb.left))webglPushCamQuad(V0.lo,V0.l,V1.l,V1.lo,pitch,colors[0]);
-  if(show&&(a.curb.right||b.curb.right))webglPushCamQuad(V0.r,V0.ro,V1.ro,V1.r,pitch,colors[1]);
-  const road=webglCircuitRoadColor(seg),pressure=mobileRenderPressure(),cheap=mobilePerformanceMode()&&
-    !(typeof apexInspectionFullScene==='function'&&apexInspectionFullScene())&&pressure<.34&&seg.z>42;
-  if(cheap)webglPushCamQuad(V0.l,V0.r,V1.r,V1.l,pitch,road);
-  else{
-   const lA=camMix(V0.l,V0.r,.30),lB=camMix(V1.l,V1.r,.30),
-    rA=camMix(V0.l,V0.r,.70),rB=camMix(V1.l,V1.r,.70);
-   webglPushCamQuad(V0.l,lA,lB,V1.l,pitch,shadeColor(road,-3));
-   webglPushCamQuad(lA,rA,rB,lB,pitch,shadeColor(road,2));
-   webglPushCamQuad(rA,V0.r,V1.r,rB,pitch,shadeColor(road,-4));
-  }
-  return{mask:left!==null||right!==null,renderPressure:pressure};
- }
+ if(webgl)return{mask:left!==null||right!==null,renderPressure:apexWebglRoadBase(seg,pitch)};
+
  if((!mobilePerformanceMode()||seg.z<mobileControlProfile().curbMax)&&(a.curb.left||b.curb.left))
   drawCamQuadTriangles(V0.lo,V0.l,V1.l,V1.lo,pitch,colors[0]);
  if((!mobilePerformanceMode()||seg.z<mobileControlProfile().curbMax)&&(a.curb.right||b.curb.right))
@@ -3303,7 +3310,7 @@ function projectRoadLocal(x,y,z,camPitch=0){
 // Perfilador de coste por subsistema. No cambia la simulación: únicamente mide y
 // suaviza tiempos para DEV/telemetría. Las medidas se reinician al inicio de frame.
 const apexGpuFrameStats={dynamicVertices:0,dynamicUploadBytes:0,staticUploadBytes:0,bufferAllocations:0,deferredFineCells:0};
-const renderProfileRaw={roadPrepareMs:0,roadDrawMs:0,groundPrepareMs:0,terrainSelectMs:0,terrainPrepareMs:0,trackMs:0,terrainMs:0,tunnelMs:0,environmentMs:0,carsMs:0,mirrorsMs:0,cockpitGrossMs:0,effectsMs:0,miniMapMs:0,webglSubmitMs:0};
+const renderProfileRaw={roadGpuPrepareMs:0,roadPrepareMs:0,roadDrawMs:0,groundPrepareMs:0,terrainSelectMs:0,terrainPrepareMs:0,trackMs:0,terrainMs:0,tunnelMs:0,environmentMs:0,carsMs:0,mirrorsMs:0,cockpitGrossMs:0,effectsMs:0,miniMapMs:0,webglSubmitMs:0};
 function renderProfileReset(){for(const k in renderProfileRaw)renderProfileRaw[k]=0;for(const k in apexGpuFrameStats)apexGpuFrameStats[k]=0;}
 function renderProfileAdd(key,ms){if(Number.isFinite(ms)&&ms>=0)renderProfileRaw[key]=(renderProfileRaw[key]||0)+ms;}
 function renderProfileMeasure(key,fn){const t0=performance.now();const out=fn();renderProfileAdd(key,performance.now()-t0);return out;}
@@ -3321,7 +3328,7 @@ function renderProfileCommit(){
  telemetryPerf.webglSubmitMs=lerp(telemetryPerf.webglSubmitMs||0,renderProfileRaw.webglSubmitMs||0,a);
 }
 function renderProfilerSnapshot(){return{
- passesRawMs:{...renderProfileRaw},gpuFrame:{...apexGpuFrameStats},roadPreparation:typeof window.apexRoadPreparationDiagnostics==='function'?window.apexRoadPreparationDiagnostics():null,
+ roadGpu:typeof window.apexPhase6RoadDiagnostics==='function'?window.apexPhase6RoadDiagnostics():null,passesRawMs:{...renderProfileRaw},gpuFrame:{...apexGpuFrameStats},roadPreparation:typeof window.apexRoadPreparationDiagnostics==='function'?window.apexRoadPreparationDiagnostics():null,
  backend:rendererBackendId?rendererBackendId():'canvas2d',fps:telemetryPerf.fps||0,frameMs:telemetryPerf.frameMs||0,renderMs:telemetryPerf.renderMs||0,
  physicsMs:telemetryPerf.physicsMs||0,aiMs:telemetryPerf.aiMs||0,collisionMs:telemetryPerf.collisionMs||0,telemetryMs:telemetryPerf.telemetryMs||0,hudMs:telemetryPerf.hudMs||0,audioMs:telemetryPerf.audioMs||0,
  trackMs:telemetryPerf.trackRenderMs||0,terrainMs:telemetryPerf.terrainRenderMs||0,tunnelMs:telemetryPerf.tunnelRenderMs||0,environmentMs:telemetryPerf.environmentRenderMs||0,carsMs:telemetryPerf.carsRenderMs||0,mirrorsMs:telemetryPerf.mirrorsRenderMs||0,cockpitMs:telemetryPerf.cockpitRenderMs||0,effectsMs:telemetryPerf.effectsRenderMs||0,miniMapMs:telemetryPerf.miniMapRenderMs||0,webglSubmitMs:telemetryPerf.webglSubmitMs||0,webglTriangles:telemetryPerf.webglTriangles||0,staticBatch:typeof apexStaticBatchStatsSnapshot==='function'?apexStaticBatchStatsSnapshot():null,staticOcclusion:typeof apexStaticOcclusionStatsSnapshot==='function'?apexStaticOcclusionStatsSnapshot():null,weather:apexWeatherRuntimeSnapshot(),rivalLod:typeof apexRivalLodStatsSnapshot==='function'?apexRivalLodStatsSnapshot():null,mirrorAdaptive:typeof apexMirrorPerfStatsSnapshot==='function'?apexMirrorPerfStatsSnapshot():null
@@ -3335,7 +3342,7 @@ function apexRuntimePerfReset(){
 function apexRuntimePerfRecord(frameMs,physicsMs,renderMs){
  const p=apexRuntimePerf;if(!p||!Number.isFinite(frameMs)||frameMs<=0)return;
  p.frameSamples[p.sampleCursor]=frameMs;p.sampleCursor=(p.sampleCursor+1)%p.frameSamples.length;p.sampleCount=Math.min(p.frameSamples.length,p.sampleCount+1);
- for(const k of ['roadPrepareMs','roadDrawMs','groundPrepareMs','terrainSelectMs','terrainPrepareMs'])p.passes[k]=(p.passes[k]||0)+(renderProfileRaw[k]||0);
+ for(const k of ['roadPrepareMs','roadDrawMs','roadGpuPrepareMs','groundPrepareMs','terrainSelectMs','terrainPrepareMs'])p.passes[k]=(p.passes[k]||0)+(renderProfileRaw[k]||0);
  for(const k in p.gpu)p.gpu[k]+=apexGpuFrameStats[k]||0;
  p.frames++;p.totalFrameMs+=frameMs;p.totalPhysicsMs+=physicsMs||0;p.totalRenderMs+=renderMs||0;
  p.totalTerrainMs+=renderProfileRaw.terrainMs||0;p.totalTunnelMs+=renderProfileRaw.tunnelMs||0;p.totalTrackMs+=renderProfileRaw.trackMs||0;p.totalEnvironmentMs+=renderProfileRaw.environmentMs||0;p.totalCarsMs+=renderProfileRaw.carsMs||0;p.totalMirrorsMs+=renderProfileRaw.mirrorsMs||0;p.totalCockpitMs+=Math.max(0,(renderProfileRaw.cockpitGrossMs||0)-(renderProfileRaw.mirrorsMs||0));p.totalEffectsMs+=renderProfileRaw.effectsMs||0;p.totalHudMs+=telemetryPerf.hudMs||0;p.totalAudioMs+=telemetryPerf.audioMs||0;

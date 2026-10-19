@@ -497,7 +497,7 @@ function apexCompileItemS(it,L){
 }
 async function apexCompileCircuitStatic(onProgress=null){
  if(!trackData||!trackData.pts||!trackData.pts.length)return null;
- delete trackData._apexWebglRoadNodes;
+ delete trackData._apexWebglRoadNodes;delete trackData._apexPhase6RoadMesh;
  const tAll=performance.now(),fingerprint=apexCircuitCompileFingerprint(),stats={revision:APEX_CIRCUIT_COMPILE_REV,appVersion:APP_VERSION,circuit:trackData.spec&&trackData.spec.dir||'',fingerprint,startedAt:new Date().toISOString(),stages:{},sectorM:96,sectors:0,terrainFineCells:0,terrainFinePolygons:0,terrainFineByKind:{PORTAL:0,TUNNEL:0,TRACK:0,PAVED:0},estimatedFineVertices:0,cache:{hit:false,persisted:false,loadMs:0,writeMs:0}};
  apexCompilerProgress(onProgress,'ÍNDICES',.02);let t0=performance.now();
  const cw=circuitWorldProfile(),grade=apexGradeSpatialIndex(),portals=apexTunnelPortalDescriptors(),terrain=apexPlateTerrainGrid()||apexPrepareTerrainContourGrid();
@@ -557,7 +557,10 @@ async function apexCompileCircuitStatic(onProgress=null){
   apexCompilerProgress(onProgress,'UNIFICANDO SUELO',.92);
   stats.unifiedGround=await apexPrecompileUnifiedTerrainOwners(terrain);
  }
- apexCompilerProgress(onProgress,'FINALIZANDO',.94);await apexCompilerYield();
+ apexCompilerProgress(onProgress,'MALLA DE PISTA',.94);t0=performance.now();
+ try{const m=await apexPhase6CompileRoadMesh();stats.roadGpu=m?{vertices:m.data.length/3,sectors:m.sectors.length,bytes:m.data.byteLength}:null;}catch(e){delete trackData._apexPhase6RoadMesh;stats.roadGpu={error:String(e&&e.message||e)};}
+ stats.stages.roadGpuMs=Number((performance.now()-t0).toFixed(2));
+ apexCompilerProgress(onProgress,'FINALIZANDO',.97);await apexCompilerYield();
  t0=performance.now();try{trackLandmarks();authoredBrakeBoards();apexTunnelPortalDescriptors();if(trackData.model&&trackData.model.driver){driverModelSample(trackData.model.driver.curve||trackData.model.curve,0);}}catch(e){}
  stats.stages.finalizeMs=Number((performance.now()-t0).toFixed(2));stats.totalMs=Number((performance.now()-tAll).toFixed(2));stats.finishedAt=new Date().toISOString();stats.estimatedFineMeshMB=Number((stats.estimatedFineVertices*3*4/1048576).toFixed(2));trackData._compileStats=stats;if(trackData.compiledCircuit)trackData.compiledCircuit.stats=stats;
  apexCompilerProgress(onProgress,'LISTO',1);return stats;
@@ -851,7 +854,7 @@ function apexRoadMeshSamples(){
    Canvas screen projections or its two unused wall tops. Fixed mesh nodes
    reuse immutable world geometry; moving branch ends are deliberately uncached. */
 const apexRoadPreparationPerf={hits:0,misses:0,evicted:0};
-function apexWebglRoadStep(s,sd,cam,pitch,node=-1){
+function apexRoadWorldNode(s,node=-1){
  const samples=apexRoadMeshSamples();
  let cache=trackData._apexWebglRoadNodes;
  if(!cache||cache.samples!==samples){cache={samples,nodes:new Map()};trackData._apexWebglRoadNodes=cache;}
@@ -872,9 +875,13 @@ function apexWebglRoadStep(s,sd,cam,pitch,node=-1){
    cache.nodes.set(node,w);
   }
  }
+ return w;
+}
+function apexWebglRoadStep(s,sd,cam,pitch,node=-1){
+ const w=apexRoadWorldNode(s,node);
  const p=w.points,c=worldToCamera(p[0].x,p[0].y,p[0].z,cam),
   cv=i=>worldToCamera(p[i].x,p[i].y,p[i].z,cam);
- return{s,sd,d:Math.abs(sd),env:w.env,curb:w.curb,q:w.q,i:w.q.i,z:c.z,
+ return{meshNode:node,s,sd,d:Math.abs(sd),env:w.env,curb:w.curb,q:w.q,i:w.q.i,z:c.z,
   v:{c,l:cv(1),r:cv(2),lo:cv(3),ro:cv(4),lx:cv(5),rx:cv(6)}};
 }
 window.apexRoadPreparationDiagnostics=()=>({...apexRoadPreparationPerf,
@@ -2968,8 +2975,8 @@ function webglInit(){
    gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);gl.depthMask(true);gl.clearDepth(1.0);gl.disable(gl.CULL_FACE);gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);webglResizeViewport();
    if(!webglCv.dataset.lossHook){
      webglCv.dataset.lossHook="1";
-     webglCv.addEventListener("webglcontextlost",e=>{e.preventDefault();apexPhase5GpuRelease(false);apexPhase5TerrainRelease(true);apexPhase5GroundGPU.failedGl=null;apexPhase5TerrainGPU.failedGl=null;webglState.lost=true;webglState.ready=false;rendererWebglSupport=false;if(rendererBackendId()==="webgl2")setRendererBackend("canvas2d",{notify:true,persist:false})});
-     webglCv.addEventListener("webglcontextrestored",()=>{apexPhase5GroundGPU.failedGl=null;apexPhase5TerrainGPU.failedGl=null;webglState={gl:null,program:null,buffer:null,aPos:-1,aColor:-1,ready:false,lost:false,error:"",triangles:0,depth:true};rendererWebglSupport=null;updateRendererBackendUi()});
+     webglCv.addEventListener("webglcontextlost",e=>{e.preventDefault();apexPhase5GpuRelease(false);apexPhase5TerrainRelease(true);apexPhase6RoadRelease(true);apexPhase6RoadGPU.failedGl=null;apexPhase5GroundGPU.failedGl=null;apexPhase5TerrainGPU.failedGl=null;webglState.lost=true;webglState.ready=false;rendererWebglSupport=false;if(rendererBackendId()==="webgl2")setRendererBackend("canvas2d",{notify:true,persist:false})});
+     webglCv.addEventListener("webglcontextrestored",()=>{apexPhase6RoadGPU.failedGl=null;apexPhase5GroundGPU.failedGl=null;apexPhase5TerrainGPU.failedGl=null;webglState={gl:null,program:null,buffer:null,aPos:-1,aColor:-1,ready:false,lost:false,error:"",triangles:0,depth:true};rendererWebglSupport=null;updateRendererBackendUi()});
    }
    return true;
  }catch(e){webglState.error=String(e&&e.message||e);webglState.ready=false;rendererWebglSupport=false;console.warn("WebGL2 init failed",e);return false}
@@ -3370,12 +3377,199 @@ window.apexPhase5GpuDiagnostics=()=>{
 // Otherwise the early return in PrepareGpu* retains the previous GP indefinitely.
 let apexGpuSceneTrack=null;
 function apexReleaseGpuScene(){
- apexPhase5GpuRelease(true);apexPhase5TerrainRelease(false);apexGpuSceneTrack=null;
+ apexPhase5GpuRelease(true);apexPhase5TerrainRelease(false);apexPhase6RoadRelease(false);apexGpuSceneTrack=null;
 }
 function apexSyncGpuScene(){
  if(apexGpuSceneTrack===trackData)return;
  apexReleaseGpuScene();apexGpuSceneTrack=trackData;
 }
+/* FASE 6 — immutable asphalt/kerb vertices, exact selected indices.
+   No full-circuit rebuild in render. Colours remain frame-dependent CPU values;
+   the existing world shader receives a constant colour per material group. */
+const apexPhase6RoadGPU={gl:null,program:null,attrs:null,uniforms:null,buffer:null,indexBuffer:null,
+ mesh:null,failedGl:null,active:false,pending:null,groups:[],groupMap:new Map(),groupCount:0,
+ queued:[],indices:null,uploadedIndices:null,indexCount:0,indexCapacity:0,bytes:0,
+ indexArrayGrows:0,groupCapacityBytes:0,frames:0,uploads:0,uploadBytes:0,drawCalls:0,triangles:0,gpuSegments:0,cpuSegments:0,
+ failures:0,lastError:null,lodTransitions:0};
+async function apexPhase6CompileRoadMesh(){
+ const owner=trackData,samples=apexRoadMeshSamples(),count=samples.length;
+ delete owner._apexPhase6RoadMesh;
+ if(count<2||count*72>(mobilePerformanceMode()?6:18)*1048576)return null;
+ const data=new Float32Array(count*18),sectors=[];let started=performance.now();
+ for(let i=0;i<count;i++){
+  // The duplicate lap endpoint uses the exact same node as the current renderer.
+  const w=apexRoadWorldNode(i===count-1?samples[0]:samples[i],i===count-1?0:i),p=w.points,
+   points=[p[1],p[2],p[3],p[4],camMix(p[1],p[2],.30),camMix(p[1],p[2],.70)];
+  for(let j=0;j<6;j++){const v=points[j],k=i*18+j*3;
+   if(!Number.isFinite(v.x)||!Number.isFinite(v.y)||!Number.isFinite(v.z))throw Error('Non-finite road vertex');
+   data[k]=v.x;data[k+1]=v.y;data[k+2]=v.z;
+  }
+  if((i&63)===63&&performance.now()-started>8){await apexCompilerYield();if(trackData!==owner)return null;started=performance.now();}
+ }
+ for(let first=0;first<count-1;first+=32){
+  const end=Math.min(first+32,count-1);let minX=Infinity,minY=Infinity,minZ=Infinity,maxX=-Infinity,maxY=-Infinity,maxZ=-Infinity;
+  for(let i=first*18;i<(end+1)*18;i+=3){minX=Math.min(minX,data[i]);maxX=Math.max(maxX,data[i]);minY=Math.min(minY,data[i+1]);maxY=Math.max(maxY,data[i+1]);minZ=Math.min(minZ,data[i+2]);maxZ=Math.max(maxZ,data[i+2]);}
+  const x=(minX+maxX)*.5,y=(minY+maxY)*.5,z=(minZ+maxZ)*.5;
+  sectors.push({first,end,bound:{x,y,z,r:Math.hypot(maxX-x,maxY-y,maxZ-z)+.01}});
+  if(performance.now()-started>8){await apexCompilerYield();if(trackData!==owner)return null;started=performance.now();}
+ }
+ const mesh={samples,data,sectors,count,lod:new Uint8Array(count),curbLod:new Uint8Array(count)};
+ if(trackData===owner)owner._apexPhase6RoadMesh=mesh;
+ return mesh;
+}
+function apexPhase6RoadRelease(full=false){
+ const s=apexPhase6RoadGPU,gl=s.gl;
+ if(gl){if(s.buffer)gl.deleteBuffer(s.buffer);if(s.indexBuffer)gl.deleteBuffer(s.indexBuffer);if(full&&s.program)gl.deleteProgram(s.program);}
+ s.buffer=null;s.indexBuffer=null;s.mesh=null;s.cam=null;s.active=false;s.pending=null;s.bytes=0;s.indexCount=0;
+ s.indices=null;s.uploadedIndices=null;s.indexCapacity=0;s.groups.length=0;s.groupMap.clear();s.queued.length=0;s.groupCount=0;s.groupCapacityBytes=0;
+ s.drawCalls=0;s.triangles=0;s.gpuSegments=0;s.cpuSegments=0;
+ if(full){s.gl=null;s.program=null;s.attrs=null;s.uniforms=null;}
+}
+function apexPhase6RoadError(e){const s=apexPhase6RoadGPU,gl=s.gl;s.failures++;s.lastError=String(e&&e.message||e);apexPhase6RoadRelease(true);s.failedGl=gl;}
+function apexPhase6BeginRoad(cam,pitch){
+ const s=apexPhase6RoadGPU,gl=webglState.gl,mesh=trackData&&trackData._apexPhase6RoadMesh;
+ s.active=false;s.pending=null;s.drawCalls=0;s.triangles=0;s.gpuSegments=0;s.cpuSegments=0;
+ if(!gl||!webglState.ready||s.failedGl===gl||apexInspectionActive()||!mesh||mesh.samples!==apexRoadMeshSamples())return false;
+ try{
+  if(s.gl!==gl){apexPhase6RoadRelease(true);s.gl=gl;s.failedGl=null;}
+  if(s.mesh!==mesh){
+   apexPhase6RoadRelease(false);s.mesh=mesh;
+   if(!s.program){const shader=apexPhase5GpuProgram(gl);s.program=shader.program;s.attrs=shader.attrs;s.uniforms=shader.uniforms;}
+   s.buffer=gl.createBuffer();s.indexBuffer=gl.createBuffer();if(!s.buffer||!s.indexBuffer)throw Error('Road GPU buffer allocation failed');
+   gl.bindBuffer(gl.ARRAY_BUFFER,s.buffer);gl.bufferData(gl.ARRAY_BUFFER,mesh.data,gl.STATIC_DRAW);
+   s.indexCapacity=Math.min(mesh.count-1,mobilePerformanceMode()?2200:4400)*36;
+   s.indices=new Uint32Array(s.indexCapacity);s.uploadedIndices=new Uint32Array(s.indexCapacity);s.indexArrayGrows+=2;
+   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,s.indexBuffer);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,s.indices.byteLength,gl.DYNAMIC_DRAW);
+   // Check allocation only during setup/warmup, never poll the GPU per frame.
+   if(typeof gl.getError==='function'){const error=gl.getError();if(error!==0)throw Error('Road GPU allocation error: '+error);}
+   s.bytes=mesh.data.byteLength+s.indices.byteLength;apexGpuFrameStats.staticUploadBytes+=mesh.data.byteLength;apexGpuFrameStats.bufferAllocations+=2;
+  }
+  s.groupMap.clear();s.groupCount=0;s.queued.length=0;
+  for(const g of s.groups)g.count=0;
+  s.cam=cam;s.pitch=pitch;s.roll=webglScreenRoll;s.active=true;s.frames++;
+  return true;
+ }catch(e){apexPhase6RoadError(e);return false;}
+}
+function apexPhase6RoadSegmentId(seg){
+ const a=seg.a.meshNode,b=seg.b.meshNode,n=apexPhase6RoadGPU.mesh&&apexPhase6RoadGPU.mesh.count-1;
+ if(!Number.isInteger(a)||!Number.isInteger(b)||a<0||b<0||!n)return -1;
+ if(Math.abs(a-b)===1)return Math.min(a,b);
+ return (a===0&&b===n-1||b===0&&a===n-1)?n-1:-1;
+}
+function apexPhase6RoadStyle(seg,pressure){
+ let cheap=mobilePerformanceMode()&&!apexInspectionFullScene()&&pressure<.34&&seg.z>42,
+  show=apexInspectionFullScene()||seg.z<mobileControlProfile().curbMax;
+ const s=apexPhase6RoadGPU,id=s.active?apexPhase6RoadSegmentId(seg):-1;
+ if(id>=0){
+  const lod=s.mesh.lod,curb=s.mesh.curbLod,old=lod[id],oldCurb=curb[id],limit=mobileControlProfile().curbMax;
+  if(old&&mobilePerformanceMode())cheap=old===2?!(pressure>.38||seg.z<36):pressure<.30&&seg.z>48;
+  if(oldCurb&&!apexInspectionFullScene())show=oldCurb===1?seg.z<limit+10:seg.z<limit-10;
+  if(old&&old!==(cheap?2:1)||oldCurb&&oldCurb!==(show?1:2))s.lodTransitions++;
+  lod[id]=cheap?2:1;curb[id]=show?1:2;
+ }
+ return{cheap,show};
+}
+function apexPhase6RoadGroup(color){
+ const s=apexPhase6RoadGPU;let g=s.groupMap.get(color);if(g)return g;
+ if(s.groupCount>=64)throw Error('Road material group budget exceeded');
+ g=s.groups[s.groupCount];if(!g){g={data:new Uint32Array(1024),count:0,color:null,rgba:null,first:0};s.groups.push(g);s.groupCapacityBytes+=4096;s.indexArrayGrows++;}
+ s.groupCount++;g.color=color;g.rgba=webglCssColor(color);g.count=0;s.groupMap.set(color,g);return g;
+}
+function apexPhase6RoadQuad(group,a,b,c,d){
+ const s=apexPhase6RoadGPU;
+ if(group.count+6>group.data.length){let size=group.data.length*2;while(size<group.count+6)size*=2;if(size>s.indexCapacity)size=s.indexCapacity;if(size<group.count+6||s.groupCapacityBytes+(size-group.data.length)*4>Math.max(262144,s.indexCapacity*8))throw Error('Road index group memory budget exceeded');s.groupCapacityBytes+=(size-group.data.length)*4;const next=new Uint32Array(size);next.set(group.data);group.data=next;s.indexArrayGrows++;}
+ const i=group.count,v=group.data;v[i]=a;v[i+1]=b;v[i+2]=c;v[i+3]=a;v[i+4]=c;v[i+5]=d;group.count+=6;
+}
+function apexPhase6QueueRoadBase(seg,colors,road,cheap,show){
+ const s=apexPhase6RoadGPU,id=s.active?apexPhase6RoadSegmentId(seg):-1;
+ // Only fixed neighbouring nodes safely in front of near use GPU. No stale
+ // sector may replace a moving endpoint, a tunnel clip or an inspector patch.
+ if(id<0||Math.min(seg.a.v.l.z,seg.a.v.r.z,seg.a.v.lo.z,seg.a.v.ro.z,seg.b.v.l.z,seg.b.v.r.z,seg.b.v.lo.z,seg.b.v.ro.z)<2){s.cpuSegments++;return false;}
+ const a=seg.a.meshNode*6,b=seg.b.meshNode*6;
+ // Validate opacity before suppressing the CPU base (custom kerb palettes).
+ const curbLeft=show&&(seg.a.curb.left||seg.b.curb.left),curbRight=show&&(seg.a.curb.right||seg.b.curb.right);
+ if(webglCssColor(road)[3]<.999||curbLeft&&webglCssColor(colors[0])[3]<.999||curbRight&&webglCssColor(colors[1])[3]<.999){s.cpuSegments++;return false;}
+ s.queued.push(seg); // Complete CPU replay is available if sealing fails.
+ try{
+  if(curbLeft)apexPhase6RoadQuad(apexPhase6RoadGroup(colors[0]),a+2,a,b,b+2);
+  if(curbRight)apexPhase6RoadQuad(apexPhase6RoadGroup(colors[1]),a+1,a+3,b+3,b+1);
+  if(cheap)apexPhase6RoadQuad(apexPhase6RoadGroup(road),a,a+1,b+1,b);
+  else{
+   apexPhase6RoadQuad(apexPhase6RoadGroup(shadeColor(road,-3)),a,a+4,b+4,b);
+   apexPhase6RoadQuad(apexPhase6RoadGroup(shadeColor(road,2)),a+4,a+5,b+5,b+4);
+   apexPhase6RoadQuad(apexPhase6RoadGroup(shadeColor(road,-4)),a+5,a+1,b+1,b+5);
+  }
+  s.gpuSegments++;return true;
+ }catch(e){s.active=false;s.lastError=String(e&&e.message||e);return true;}
+}
+function apexPhase6SealRoad(){
+ const s=apexPhase6RoadGPU;
+ try{
+  if(!s.active)throw Error(s.lastError||'Road GPU frame unavailable');
+  let count=0;for(let i=0;i<s.groupCount;i++){const g=s.groups[i];if(count+g.count>s.indexCapacity)throw Error('Road index budget exceeded');g.first=count;s.indices.set(g.data.subarray(0,g.count),count);count+=g.count;}
+  if(!count){s.indexCount=0;s.triangles=0;s.pending=null;s.active=false;return true;}
+  let changed=count!==s.indexCount;
+  if(!changed)for(let i=0;i<count;i++)if(s.indices[i]!==s.uploadedIndices[i]){changed=true;break;}
+  if(changed){s.gl.bindBuffer(s.gl.ELEMENT_ARRAY_BUFFER,s.indexBuffer);s.gl.bufferSubData(s.gl.ELEMENT_ARRAY_BUFFER,0,s.indices.subarray(0,count));s.uploadedIndices.set(s.indices.subarray(0,count));s.uploads++;s.uploadBytes+=count*4;apexGpuFrameStats.staticUploadBytes+=count*4;}
+  s.indexCount=count;s.triangles=count/3;s.pending={cam:s.cam,pitch:s.pitch,roll:s.roll,offset:webglFloatCount};s.active=false;return true;
+ }catch(e){
+  // Replay only suppressed bases, once, before all transparent road effects.
+  for(const seg of s.queued)apexWebglRoadBase(seg,s.pitch,true);
+  apexPhase6RoadError(e);return false;
+ }
+}
+function apexPhase6DrawRoad(){
+ const s=apexPhase6RoadGPU,p=s.pending;s.pending=null;
+ if(!p||!s.buffer||s.gl!==webglState.gl||!webglState.ready)return false;
+ const gl=s.gl,cam=p.cam,tilt=Number.isFinite(cam.viewPitchRad)?cam.viewPitchRad:0,
+  off=tilt?driverEyeHeight():0,n=WEBGL_DEPTH_NEAR,f=WEBGL_DEPTH_FAR,u=s.uniforms;
+ gl.useProgram(s.program);gl.bindBuffer(gl.ARRAY_BUFFER,s.buffer);gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,s.indexBuffer);
+ gl.enableVertexAttribArray(s.attrs.world);gl.vertexAttribPointer(s.attrs.world,3,gl.FLOAT,false,12,0);gl.disableVertexAttribArray(s.attrs.color);
+ gl.uniform3f(u.uCamera,cam.x,cam.y,cam.z);gl.uniform2f(u.uRight,cam.nx,cam.nz);gl.uniform2f(u.uForward,cam.tx,cam.tz);
+ gl.uniform3f(u.uTilt,Math.cos(tilt),Math.sin(tilt),off);gl.uniform4f(u.uView,1/Math.tan(sceneHFov()*.5),W/H,1-2*sceneHorizon(p.pitch)/H,driverEyeHeight());
+ gl.uniform2f(u.uRoll,Math.cos(p.roll),Math.sin(p.roll));gl.uniform3f(u.uDepth,(f+n)/(f-n),2*f*n/(f-n),0);
+ let calls=0;
+ for(let i=0;i<s.groupCount;i++){const g=s.groups[i];if(!g.count)continue;gl.vertexAttrib4f(s.attrs.color,g.rgba[0],g.rgba[1],g.rgba[2],g.rgba[3]);gl.drawElements(gl.TRIANGLES,g.count,gl.UNSIGNED_INT,g.first*4);calls++;}
+ s.drawCalls=calls;return true;
+}
+window.apexPhase6RoadDiagnostics=()=>{const s=apexPhase6RoadGPU,mesh=trackData&&trackData._apexPhase6RoadMesh;
+ return{resident:!!s.buffer,compiled:!!mesh,sectors:mesh?mesh.sectors.length:0,vertices:mesh?mesh.data.length/3:0,
+  bytes:s.bytes,cpuIndexBytes:s.indices?s.indices.byteLength*2+s.groupCapacityBytes:0,indexCapacity:s.indexCapacity,triangles:s.triangles,drawCalls:s.drawCalls,gpuSegments:s.gpuSegments,cpuSegments:s.cpuSegments,
+  indexUploads:s.uploads,indexUploadBytes:s.uploadBytes,cpuIndexGrows:s.indexArrayGrows,frames:s.frames,lodTransitions:s.lodTransitions,failures:s.failures,lastError:s.lastError};};
+
+// Run from the menu: uses the real loader/model and compiles each road mesh.
+// This is a runtime geometry audit, not a visual or GL-driver certification.
+async function apexPhase6AuditBaseCircuits(){
+ if(player||mode!=='menu')throw Error('Run apexPhase6AuditBaseCircuits() from the main menu');
+ const saved=trackData,rows=[];
+ try{
+  for(const spec of calendar.slice(0,F1_SEASON_COUNT)){
+   try{
+    const td=await loadTrack(spec);trackData={...td,spec};prepareTrackModel();
+    const mesh=await apexPhase6CompileRoadMesh(),samples=apexRoadMeshSamples(),n=samples.length;
+    if(!mesh)throw Error('Road mesh unavailable or exceeds memory budget');
+    let finite=true,curbHeights=true,maxWorldError=0;
+    for(let k=0;k<n;k++){
+     const at=k===n-1?0:k,w=apexRoadWorldNode(samples[at],at),p=w.points,
+      expected=[p[1],p[2],p[3],p[4],camMix(p[1],p[2],.30),camMix(p[1],p[2],.70)];
+     for(let j=0;j<6;j++)for(let axis=0;axis<3;axis++){
+      const value=mesh.data[k*18+j*3+axis],want=expected[j][['x','y','z'][axis]];
+      finite=finite&&Number.isFinite(value);maxWorldError=Math.max(maxWorldError,Math.abs(value-want));
+     }
+     curbHeights=curbHeights&&Math.abs(mesh.data[k*18+1]-mesh.data[k*18+7])<.001&&Math.abs(mesh.data[k*18+4]-mesh.data[k*18+10])<.001;
+     if((k&127)===127)await apexCompilerYield();
+    }
+    const sf=apexCircuitStartFinishS(spec),timing=apexTimingSectorControls(spec),cw=trackData.customWorld||{},L=trackData.km*1000;
+    rows.push({id:spec.dir,ok:finite&&curbHeights&&maxWorldError<.01&&timing.length>=2&&sf.start>=0&&sf.start<L&&sf.finish>=0&&sf.finish<L,
+     nodes:n,sectors:mesh.sectors.length,maxWorldErrorM:maxWorldError,curbHeights,
+     timingControls:timing.length,pit:!!cw.pitNetwork,curbZones:(cw.curbZones||[]).length,geometrySource:td.geometrySource});
+   }catch(e){rows.push({id:spec.dir,ok:false,error:String(e&&e.message||e)});}
+  }
+ }finally{trackData=saved;}
+ return{scope:'REAL_LOADER_ROAD_GEOMETRY_NO_GL_PIXELS',ok:rows.length===F1_SEASON_COUNT&&rows.every(r=>r.ok),count:rows.length,rows};
+}
+window.apexPhase6AuditBaseCircuits=apexPhase6AuditBaseCircuits;
+
 function webgl2Available(){return webglInit()}
 function webglActivate(){const ok=webglInit();if(ok&&webglCv)webglCv.classList.add("active");return ok}
 function webglDeactivate(){if(typeof webglCv!=="undefined"&&webglCv)webglCv.classList.remove("active")}
