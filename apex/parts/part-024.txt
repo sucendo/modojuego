@@ -34,9 +34,40 @@ function syncPlayerDriveNetwork(trackState){
  if(pit){player.pitIndex=pit.index;player.pitS=pit.pitS;player.pitLat=pit.lat;player.pitState=pit}else{player.pitState=null;player.pitLat=0}
  return mode==='PIT'?pit:null;
 }
+/* Superficie del monoplaza: la huella dibujada manda fuera del asfalto.
+   La consulta SVG va por cuadrícula compilada (no barrido global por frame). */
+function apexVehicleSurfacePoseAtWorld(x,z,s,lat){
+ const road=trackSurfacePoseAt(s,lat),env=envProfile(s),edge=env.half+env.curb;
+ if(Math.abs(lat)<=edge+.03)return road;
+ const hit=apexSampleRunoffSurfaceAtWorld(x,z);
+ if(hit){
+  const q=renderRibbonFrameAt(s),cross=hit.slopeX*q.ox+hit.slopeZ*q.oz,
+   bank=Math.atan(clamp(cross,-.55,.55)),norm=Math.hypot(q.ox,cross,q.oz)||1;
+  return {...road,x,z,y:hit.y,bank,tanBank:cross,centerY:q.y,
+   surfaceRx:q.ox/norm,surfaceRy:cross/norm,surfaceRz:q.oz/norm,
+   slopeX:hit.slopeX,slopeZ:hit.slopeZ,surfaceSource:'SVG_RUNOFF'};
+ }
+ // En las escapatorias de respaldo la plataforma es lateralmente horizontal
+ // desde la coronación del piano. Nunca extrapolar el peralte 20-50 m.
+ if(Math.abs(lat)<=apexRoadFlatLimit(s,env,lat>=0?1:-1)+.12){
+  const y=apexRoadShoulderYAt(s,lat);
+  return {...road,x,z,y,bank:0,tanBank:0,surfaceRy:0,surfaceSource:'ROAD_RUNOFF'};
+ }
+ const y=apexWorldGroundY(x,z);
+ return {...road,x,z,y,bank:0,tanBank:0,surfaceRy:0,surfaceSource:'TERRAIN'};
+}
 function playerDriveSurfacePose(){
- if(player&&player.driveNetwork==='PIT'&&player.pitState){const p=player.pitState,rd=Math.hypot(p.nx,0,p.nz)||1;return {...p,centerY:p.y,bank:0,tanBank:0,surfaceRx:p.nx/rd,surfaceRy:0,surfaceRz:p.nz/rd}}
- return trackSurfacePoseAt(player.s,player.lat);
+ if(player&&player.driveNetwork==='PIT'&&player.pitState){
+  const p=player.pitState,rd=Math.hypot(p.nx,0,p.nz)||1;
+  return {...p,x:player.x,z:player.z,centerY:p.y,bank:0,tanBank:0,
+   surfaceRx:p.nx/rd,surfaceRy:0,surfaceRz:p.nz/rd,surfaceSource:'PIT'};
+ }
+ if(!player||!trackData)return trackSurfacePoseAt(0,0);
+ const cache=player._apexVehicleSurfaceCache;
+ if(cache&&cache.x===player.x&&cache.z===player.z&&cache.s===player.s&&cache.lat===player.lat)return cache.pose;
+ const pose=apexVehicleSurfacePoseAtWorld(player.x,player.z,player.s,player.lat);
+ player._apexVehicleSurfaceCache={x:player.x,z:player.z,s:player.s,lat:player.lat,pose};
+ return pose;
 }
 // v5.230.48 / FASE 1: un único perfil de explanación, independiente del circuito.
 // El asfalto conserva su peralte; desde cada borde, la escapatoria es horizontal
@@ -331,6 +362,7 @@ function apexRegroundImportedWorld(){
  if(cw._apexGroundStamp===stamp)return;
  // Geometría o peraltes cambiados: la máscara de recorte tiene que rehacerse.
  trackData._apexRunoffRoadClipIndex=null;
+ trackData._apexRunoffDriveSurfaceIndex=null;
  // Mantener los huecos EXACTOS: no conectamos subpaths ni regeneramos la planta.
  // La misma cota corregida se comparte entre los extremos contiguos por una caché local.
  const heights=new Map(),ground=(x,z)=>{
@@ -1614,6 +1646,65 @@ function apexBuildLandmarkStaticBatch(it){
  try{Object.defineProperty(it,'_apexStaticBatch',{value:b,writable:true,configurable:true})}catch(e){it._apexStaticBatch=b}return b;
 }
 
+/* Índice de ALTURAS rodables SVG exactas compilado junto a los polígonos
+   visuales (incluye su recorte y sus Y finales). Se consulta sólo fuera de
+   asfalto/piano, sin reproyectar geometría ni recorrer todos los landmarks. */
+function apexBuildRunoffDriveSurfaceIndex(cw){
+ const cell=48,buckets=new Map(),overflow=[],faces=[],maxCells=256;
+ const items=cw&&Array.isArray(cw.landmarks)?cw.landmarks:[];
+ for(const it of items){
+  if(!it||it.type!=='surfaceZone')continue;
+  const sb=it._apexStaticBatch,triangles=sb&&sb.surfaceTriangles;
+  if(!Array.isArray(triangles))continue;
+  for(const tri of triangles){
+   if(!Array.isArray(tri)||tri.length!==3||tri.some(p=>!Array.isArray(p)||p.length<3||!p.every(Number.isFinite)))continue;
+   const A=tri[0],B=tri[1],C=tri[2],ux=B[0]-A[0],uz=B[2]-A[2],vx=C[0]-A[0],vz=C[2]-A[2],den=ux*vz-uz*vx;
+   if(Math.abs(den)<1e-8)continue;
+   const minX=Math.min(A[0],B[0],C[0]),maxX=Math.max(A[0],B[0],C[0]),
+    minZ=Math.min(A[2],B[2],C[2]),maxZ=Math.max(A[2],B[2],C[2]);
+   const ix0=Math.floor(minX/cell),ix1=Math.floor(maxX/cell),iz0=Math.floor(minZ/cell),iz1=Math.floor(maxZ/cell),id=faces.length;
+   const dy1=B[1]-A[1],dy2=C[1]-A[1];
+   faces.push({tri,minX,maxX,minZ,maxZ,ux,uz,vx,vz,inv:1/den,
+    slopeX:(dy1*vz-dy2*uz)/den,slopeZ:(ux*dy2-vx*dy1)/den});
+   if((ix1-ix0+1)*(iz1-iz0+1)>maxCells){overflow.push(id);continue}
+   for(let iz=iz0;iz<=iz1;iz++)for(let ix=ix0;ix<=ix1;ix++){
+    const key=ix+':'+iz;let arr=buckets.get(key);
+    if(!arr){arr=[];buckets.set(key,arr)}arr.push(id);
+   }
+  }
+ }
+ const index={cell,buckets,overflow,faces,queries:0,hits:0};
+ if(trackData)trackData._apexRunoffDriveSurfaceIndex=index;
+ return index;
+}
+function apexSampleRunoffSurfaceAtWorld(x,z){
+ const index=trackData&&trackData._apexRunoffDriveSurfaceIndex;
+ if(!index||!Number.isFinite(x)||!Number.isFinite(z))return null;
+ index.queries++;
+ const ix=Math.floor(x/index.cell),iz=Math.floor(z/index.cell),local=index.buckets.get(ix+':'+iz)||[];
+ let found=null,foundId=-1;
+ const test=id=>{
+  if(id<=foundId)return;
+  const f=index.faces[id];if(x<f.minX-1e-4||x>f.maxX+1e-4||z<f.minZ-1e-4||z>f.maxZ+1e-4)return;
+  const A=f.tri[0],dx=x-A[0],dz=z-A[2],u=(dx*f.vz-dz*f.vx)*f.inv,v=(f.ux*dz-f.uz*dx)*f.inv;
+  if(u<-.00001||v<-.00001||u+v>1.00001)return;
+  foundId=id;
+  found={y:A[1]+u*(f.tri[1][1]-A[1])+v*(f.tri[2][1]-A[1]),
+   slopeX:f.slopeX,slopeZ:f.slopeZ,triangle:id};
+ };
+ for(const id of local)test(id);
+ for(const id of index.overflow)test(id);
+ if(found)index.hits++;
+ return found;
+}
+window.apexVehicleSurfaceDiagnostics=()=>{
+ if(!trackData||!player)return{ready:false};
+ const ix=trackData._apexRunoffDriveSurfaceIndex,pose=playerDriveSurfacePose(),road=trackSurfacePoseAt(player.s,player.lat);
+ return{ready:!!ix,source:pose.surfaceSource||'TRACK',s:player.s,lat:player.lat,
+  playerY:pose.y,roadY:road.y,deltaM:pose.y-road.y,
+  mesh:ix?{faces:ix.faces.length,cells:ix.buckets.size,overflow:ix.overflow.length,queries:ix.queries,hits:ix.hits}:null};
+};
+
 /* APEX v0.13.3 · Índice espacial conservador de muros SVG importados.
    No filtra por LOD ni simplifica la geometría: selecciona únicamente segmentos
    que podrían entrar en el campo visual, manteniendo su orden original. */
@@ -1668,6 +1759,7 @@ function apexBuildCircuitStaticRenderBatches(cw){
  const items=cw&&Array.isArray(cw.landmarks)?cw.landmarks:[],walls=cw&&(cw._wallRenderSegments||cw.wallSegments)||[];let compiled=0,prims=0,wallStyles=0;
  if(cw&&cw.authoritative&&walls.length)apexBuildExactWallSpatialIndex(cw);
  for(const it of items){const b=apexBuildLandmarkStaticBatch(it);if(b){compiled++;prims+=b.primitiveCount||0}}
+ if(cw)apexBuildRunoffDriveSurfaceIndex(cw);
  for(const sg of walls){if(!sg)continue;const env=envProfile(sg.s||0),style=wallBarrierStyle(env,sg.s||0,sg.side||1);try{Object.defineProperty(sg,'_apexStaticWall',{value:{env,style},writable:true,configurable:true})}catch(e){sg._apexStaticWall={env,style}}wallStyles++;}
  apexStaticBatchPerf.compiledItems=compiled;apexStaticBatchPerf.compiledPrimitives=prims;apexStaticBatchPerf.wallStyles=wallStyles;
  return{items:compiled,primitives:prims,wallStyles};
