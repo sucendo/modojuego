@@ -1716,6 +1716,36 @@ function apexBuildLandmarkStaticBatch(it){
 /* Índice de ALTURAS rodables SVG exactas compilado junto a los polígonos
    visuales (incluye su recorte y sus Y finales). Se consulta sólo fuera de
    asfalto/piano, sin reproyectar geometría ni recorrer todos los landmarks. */
+/* Indice de material SVG del circuito: recintos legados y agua.
+   Se construye una vez y conserva prioridad del ultimo poligono. */
+function apexBuildSurfaceMaterialIndex(cw){
+ const zones=cw&&Array.isArray(cw.surfaceZones)?cw.surfaceZones:[],cell=128,buckets=new Map(),large=[];
+ for(let i=0;i<zones.length;i++){
+  const p=zones[i]&&zones[i].points;if(!Array.isArray(p)||p.length<3)continue;
+  let x0=Infinity,x1=-Infinity,z0=Infinity,z1=-Infinity;
+  for(const v of p){if(!v||!Number.isFinite(v[0])||!Number.isFinite(v[1]))continue;
+   x0=Math.min(x0,v[0]);x1=Math.max(x1,v[0]);z0=Math.min(z0,v[1]);z1=Math.max(z1,v[1]);
+  }
+  if(!Number.isFinite(x0)||!Number.isFinite(z0))continue;
+  const ix0=Math.floor(x0/cell),ix1=Math.floor(x1/cell),iz0=Math.floor(z0/cell),iz1=Math.floor(z1/cell);
+  if((ix1-ix0+1)*(iz1-iz0+1)>384){large.push(i);continue}
+  for(let iz=iz0;iz<=iz1;iz++)for(let ix=ix0;ix<=ix1;ix++){
+   const k=ix+':'+iz;let a=buckets.get(k);if(!a){a=[];buckets.set(k,a)}a.push(i);
+  }
+ }
+ const out={zones,cell,buckets,large};if(trackData)trackData._apexSurfaceMaterialIndex=out;return out;
+}
+function apexIndexedSurfaceZoneAtWorld(x,z){
+ const idx=trackData&&trackData._apexSurfaceMaterialIndex;
+ if(!idx)return apexSurfaceZoneAtWorld(x,z);
+ const local=idx.buckets.get(Math.floor(x/idx.cell)+':'+Math.floor(z/idx.cell))||[],large=idx.large;
+ let a=local.length-1,b=large.length-1;
+ while(a>=0||b>=0){
+  const id=b<0||(a>=0&&local[a]>large[b])?local[a--]:large[b--],it=idx.zones[id];
+  if(it&&Array.isArray(it.points)&&apexPointInPolyXZ(x,z,it.points))return it;
+ }
+ return null;
+}
 function apexBuildRunoffDriveSurfaceIndex(cw){
  const cell=48,buckets=new Map(),overflow=[],faces=[],maxCells=256,
   overflowCell=384,overflowBuckets=new Map(),globalOverflow=[];
@@ -1732,7 +1762,7 @@ function apexBuildRunoffDriveSurfaceIndex(cw){
     minZ=Math.min(A[2],B[2],C[2]),maxZ=Math.max(A[2],B[2],C[2]);
    const ix0=Math.floor(minX/cell),ix1=Math.floor(maxX/cell),iz0=Math.floor(minZ/cell),iz1=Math.floor(maxZ/cell),id=faces.length;
    const dy1=B[1]-A[1],dy2=C[1]-A[1];
-   faces.push({tri,minX,maxX,minZ,maxZ,
+   faces.push({tri,minX,maxX,minZ,maxZ,kind:String(it.surfaceKind||'ASPHALT').toUpperCase(),
     foot:{poly:tri.map(v=>({x:v[0],y:v[1],z:v[2]})),bounds:{minX,maxX,minZ,maxZ}},
     ux,uz,vx,vz,inv:1/den,
     slopeX:(dy1*vz-dy2*uz)/den,slopeZ:(ux*dy2-vx*dy1)/den});
@@ -1757,6 +1787,7 @@ function apexBuildRunoffDriveSurfaceIndex(cw){
  }
  const index={cell,buckets,overflow,faces,overflowCell,overflowBuckets,globalOverflow,queries:0,hits:0};
  if(trackData)trackData._apexRunoffDriveSurfaceIndex=index;
+ apexBuildSurfaceMaterialIndex(cw);
  return index;
 }
 /* Acceso local a triángulos muy extensos; compartido entre apoyo del
@@ -1879,7 +1910,7 @@ function apexSampleRunoffSurfaceAtWorld(x,z){
   if(u<-.00001||v<-.00001||u+v>1.00001)return;
   foundId=id;
   found={y:A[1]+u*(f.tri[1][1]-A[1])+v*(f.tri[2][1]-A[1]),
-   slopeX:f.slopeX,slopeZ:f.slopeZ,triangle:id};
+   slopeX:f.slopeX,slopeZ:f.slopeZ,kind:f.kind,triangle:id};
  };
  for(const id of local)test(id);
  for(const id of apexRunoffOverflowCandidates(index,x,x,z,z))test(id);
