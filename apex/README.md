@@ -107,3 +107,11 @@ La escapatoria recortada se une a la rasante/peralte de la pista con una transic
 - **Calentamiento de meta:** el warmup previo incluye vistas a unos 320 y 105 m antes de la línea de meta, además de los puntos del circuito existentes, para adelantar la primera reserva de buffer WebGL en áreas densas.
 - **Diagnóstico en vivo:** `apexHeavyCircuitPerfDiagnostics()` informa de `landmarkPassMs`, `surfacePassMs`, `surfaceTrianglesTotal`, `surfaceTrianglesCulled`, `surfaceTrianglesSubmitted` y `landmarkCandidates`. Comparar también `renderProfilerSnapshot()` y `apexStaticBatchStatsSnapshot().bufferGrows`.
 - **Validación:** sintaxis de las funciones modificadas y culling geométrico aislado comprobados. Sigue pendiente un perfil real de la recta final con el Madrid SVG almacenado en el navegador del usuario; no se afirma todavía que el tirón haya desaparecido.
+
+## Apoyo visual del coche sobre escapatorias SVG
+
+La cámara (piloto, T-CAM y externa), el coche 3D, los retrovisores y la telemetría ahora comparten `playerDriveSurfacePose()`. Sobre asfalto y piano mantienen `trackSurfacePoseAt()`. Fuera del piano se muestrea la altura y pendiente interpoladas del **mismo triángulo SVG** que se envía a WebGL (tras recortar la escapatoria); sin malla, se usa la explanación horizontal y, más lejos, el terreno. El pitlane exacto conserva prioridad.
+
+Al compilar el circuito, `apexBuildRunoffDriveSurfaceIndex()` agrupa triángulos de escapatoria en celdas de 48 m: no se recorren miles de polígonos por fotograma. La caché de pose se invalida al cambiar la posición, la red pista/pitlane o recompilar la malla. No se modifican trazado, colisiones, agarre, guardados ni física de conducción.
+
+En la consola, `apexVehicleSurfaceDiagnostics()` muestra `source` (`TRACK`, `PIT`, `SVG_RUNOFF`, `ROAD_RUNOFF` o `TERRAIN`), `playerY`, `roadY`, el desnivel entre ambos y las estadísticas del índice. Verificados sintaxis y casos sintéticos de triangulación, superposición, pista, explanación y terreno; **queda pendiente probar con el SVG/JSON de Madrid cargado en el navegador** para comprobar contacto visual y FPS reales.
