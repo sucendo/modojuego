@@ -753,7 +753,7 @@ function webglSubmit(){
  const gl=webglState.gl;if(!gl||!webglState.ready)return false;
  const t0=performance.now();
  gl.viewport(0,0,webglCv.width,webglCv.height);
- gl.clearColor(.02,.03,.05,1);gl.clearDepth(1.0);
+ gl.clearColor(.02,.03,.05,1);gl.clearDepth(1);
  gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
  const data=webglVertexData.subarray(0,webglFloatCount),needBytes=data.byteLength;
  gl.bindBuffer(gl.ARRAY_BUFFER,webglState.buffer);
@@ -772,31 +772,40 @@ function webglSubmit(){
   gl.enableVertexAttribArray(webglState.aColor);
   gl.vertexAttribPointer(webglState.aColor,4,gl.FLOAT,false,28,12);
  };
- bindDynamic();
- // Suelo estático intercalado EN EL MISMO ORDEN original:
- // terreno -> surfaceZone GPU -> pista/pianos/coches.
- // Solo una actualización del buffer dinámico por frame.
- const pending=typeof apexPhase5GroundGPU!=='undefined'?apexPhase5GroundGPU.pending:null;
- const cut=pending?Math.min(webglFloatCount,Math.max(0,Math.floor(pending.offset/21)*21)):null;
- let staticTriangles=0,staticDrawCalls=0,dynamicDrawCalls=0;
- if(cut===null){
-  if(webglFloatCount){gl.drawArrays(gl.TRIANGLES,0,webglFloatCount/7);dynamicDrawCalls++}
- }else{
-  if(cut>0){gl.drawArrays(gl.TRIANGLES,0,cut/7);dynamicDrawCalls++}
-  try{
-   if(apexPhase5DrawGpuGround()){
-    staticTriangles=apexPhase5GroundGPU.visibleTriangles||0;
-    staticDrawCalls=apexPhase5GroundGPU.drawCalls||0;
-   };
-  }catch(e){
-   console.warn('[APEX] GPU suelo: fallback CPU desde siguiente frame',e);
-   apexPhase5GpuGroundError(e);
-  }
-  if(cut<webglFloatCount){
-   bindDynamic();
-   gl.drawArrays(gl.TRIANGLES,cut/7,(webglFloatCount-cut)/7);
+ const stages=[];
+ if(typeof apexPhase5TerrainGPU!=='undefined'&&apexPhase5TerrainGPU.pending)
+  stages.push({offset:apexPhase5TerrainGPU.pending.offset,draw:()=>{
+   if(apexPhase5DrawGpuTerrain())return{
+    triangles:apexPhase5TerrainGPU.triangles||0,calls:apexPhase5TerrainGPU.drawCalls||0};
+   return{triangles:0,calls:0};
+  },fail:apexPhase5TerrainError});
+ if(typeof apexPhase5GroundGPU!=='undefined'&&apexPhase5GroundGPU.pending)
+  stages.push({offset:apexPhase5GroundGPU.pending.offset,draw:()=>{
+   if(apexPhase5DrawGpuGround())return{
+    triangles:apexPhase5GroundGPU.visibleTriangles||0,calls:apexPhase5GroundGPU.drawCalls||0};
+   return{triangles:0,calls:0};
+  },fail:apexPhase5GpuGroundError});
+ stages.sort((a,b)=>a.offset-b.offset);
+ let cursor=0,staticTriangles=0,staticDrawCalls=0,dynamicDrawCalls=0;
+ // Una única transferencia dinámica. Los VBOs estáticos se intercalan
+ // exactamente donde antes se dibujaban los polígonos de terreno y SVG.
+ for(const stage of stages){
+  const cut=Math.max(cursor,Math.min(webglFloatCount,Math.floor(stage.offset/21)*21));
+  if(cut>cursor){
+   bindDynamic();gl.drawArrays(gl.TRIANGLES,cursor/7,(cut-cursor)/7);
    dynamicDrawCalls++;
   }
+  try{
+   const result=stage.draw();staticTriangles+=result.triangles;staticDrawCalls+=result.calls;
+  }catch(e){
+   console.warn('[APEX] Fallo de render GPU estático, fallback siguiente frame',e);
+   stage.fail(e);
+  }
+  cursor=cut;
+ }
+ if(cursor<webglFloatCount){
+  bindDynamic();gl.drawArrays(gl.TRIANGLES,cursor/7,(webglFloatCount-cursor)/7);
+  dynamicDrawCalls++;
  }
  webglState.triangles=Math.floor(webglFloatCount/21)+staticTriangles;
  webglState.drawCalls=dynamicDrawCalls+staticDrawCalls;
@@ -808,6 +817,10 @@ function webgl2RenderFrame(){
  renderFrameId++;renderProfileReset();
  if(!webglInit()){setRendererBackend("canvas2d",{notify:false,persist:false});return canvas2dRenderFrame()}
  webglClearCanvasOverlay();webglFloatCount=0;webglScreenRoll=0;
+ // Ninguna pasada GPU anterior debe quedar pendiente al cambiar de
+ // pantalla, renderer o circuito: seguridad ante abortos de frame.
+ if(typeof apexPhase5TerrainGPU!=='undefined')apexPhase5TerrainGPU.pending=null;
+ if(typeof apexPhase5GroundGPU!=='undefined')apexPhase5GroundGPU.pending=null;
  // Una única instantánea de cámara por frame WebGL; pista y coche sincronizados.
  if(!trackData||!player){renderProfileMeasure("environmentMs",()=>webglPushBackground(null,0));webglSubmit();renderProfileCommit();return}
  const cam=driverCamera(),viewRoll=impactFX.roll+finite(cam.roadRoll,0),visual=webglCircuitVisualAvailable(),authoredBackdrop=webglUsesAuthoredWorldBackdrop(),trackT0=performance.now();
