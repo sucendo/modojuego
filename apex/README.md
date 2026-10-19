@@ -98,3 +98,12 @@ No se modifica el sistema de físicas, el coche, la IA, el cronometraje ni los 2
 ## v0.13.12 — bordes y color de vegetación
 
 La escapatoria recortada se une a la rasante/peralte de la pista con una transición lateral suave y una separación de profundidad ligeramente mayor para evitar que tape el asfalto. La orientación perpendicular de las franjas del cebreado se preserva mediante el cálculo actual de la tangente local de pista en X/Z; no se introducen rayas referidas a la pantalla. Se oscurece el verde de la zona forestal frente al de la hierba, sin alterar colores SVG explícitos. Se conservan el nivel de detalle, las cachés de terreno, el circuito, las físicas y los guardados. Validación visual con el Madrid completo pendiente.
+
+
+### Afinado de rendimiento en la llegada a meta (v0.13.12)
+
+- **Causa potencial identificada:** se reproyectaban cada fotograma todos los triángulos de una superficie SVG grande, incluso aquellos fuera del campo de visión. El índice por sectores descartaba objetos completos, pero no triángulos individuales dentro de una escapatoria extensa.
+- **Solución:** cada triángulo recortado recibe una cota esférica al compilar el circuito. WebGL descarta fuera de cámara antes de transformar/proyectar sus tres vértices, respetando la malla y cotas originales. Canvas2D no se modifica.
+- **Calentamiento de meta:** el warmup previo incluye vistas a unos 320 y 105 m antes de la línea de meta, además de los puntos del circuito existentes, para adelantar la primera reserva de buffer WebGL en áreas densas.
+- **Diagnóstico en vivo:** `apexHeavyCircuitPerfDiagnostics()` informa de `landmarkPassMs`, `surfacePassMs`, `surfaceTrianglesTotal`, `surfaceTrianglesCulled`, `surfaceTrianglesSubmitted` y `landmarkCandidates`. Comparar también `renderProfilerSnapshot()` y `apexStaticBatchStatsSnapshot().bufferGrows`.
+- **Validación:** sintaxis de las funciones modificadas y culling geométrico aislado comprobados. Sigue pendiente un perfil real de la recta final con el Madrid SVG almacenado en el navegador del usuario; no se afirma todavía que el tirón haya desaparecido.
