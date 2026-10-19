@@ -2775,7 +2775,10 @@ function drawWorldLandmarks(cam,pitch){
  const labelQueue=[],visible=[];
  let sceneItemIndex=0;
  for(const it of items){
-   // Defensa adicional Canvas2D: el piano SVG nunca es un parche superpuesto.
+   // SurfaceZone se dibuja una sola vez en la pasada unificada del suelo,
+   // despues del terreno y antes del asfalto. No es decorado de landmark.
+   const atlas=trackData&&trackData.customWorld&&trackData.customWorld._apexUnifiedGroundAtlas;
+   if(atlas&&atlas.svgFaces&&it.type==='surfaceZone')continue;
    if(apexIsCurbAuthoringMark(it))continue;
    const itemIndex=sceneItemIndex++;
    const skyline=apexIsSkylineLandmark(it),gy=groundedY(it.anchor);let maxZ=skyline?Math.max(6000,it.maxRenderDistance||it.anchor.maxRenderDistance||0):(it.maxRenderDistance||it.anchor.maxRenderDistance||1750);if(typeof apexInspectionFullScene==='function'&&apexInspectionFullScene())maxZ=Math.max(maxZ,apexInspectionFarDistance());
