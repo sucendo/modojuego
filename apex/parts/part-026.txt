@@ -3803,6 +3803,41 @@ function demoDriverControl(){
  return {steer,throttle,brake,target,boost,reverse:false,targetLat:player.autoTargetLat,phase:player.autoPhase};
 }
 
+/* FASE 7: scalar helpers; one shared scratch pair, no allocations or geometry
+   queries in the lateral solver. All drive profiles use the same equations. */
+const apexLateralStepScratch=new Float64Array(2);
+function apexEngineBrakeForce(u,throttle,mass,setting,dt,drag=0){
+ if(throttle>=.05||u===0)return 0;
+ const wanted=mass*Math.max(0,setting)*.325;
+ return Math.sign(u)*Math.min(wanted,Math.max(0,mass*Math.abs(u)/Math.max(.001,dt)-Math.abs(drag)));
+}
+function apexSolveLateralIncrement(dv,dr,u,kF,kR,weight,dt,mass,a,b,inertia,out){
+ // Linearly implicit Euler of the CURRENT bicycle model: solve (I-dt·weight·J) Δ=dt·f.
+ // Tyre stiffness makes explicit Euler alternate at parking speeds (100 Hz).
+ // Blending the Jacobian out above 6–12 m/s preserves the previous fast model;
+ // a force-balanced steady state remains a steady state, without steering aids.
+ const h=dt*weight,coupling=a*kF-b*kR,
+  aa=1+h*(kF+kR)/mass,ab=h*(coupling/mass+u),
+  ba=h*coupling/inertia,bb=1+h*(a*a*kF+b*b*kR)/inertia,
+  det=aa*bb-ab*ba;
+ if(!(det>1e-8)||!Number.isFinite(det)){out[0]=dv*dt;out[1]=dr*dt;return;}
+ out[0]=(dv*dt*bb-ab*dr*dt)/det;out[1]=(aa*dr*dt-ba*dv*dt)/det;
+}
+function apexSteeringInputDevice(left,right,gamepadActive,gyroFresh){
+ if(left||right)return keys.left||keys.right?'touch':'keyboard';
+ return gamepadActive?'gamepad':gyroFresh?'gyro':apexInputDevice;
+}
+window.apexDrivingDiagnostics=()=>player?{
+ profile:apexDriveProfile().id,device:player.steerDevice||apexInputDevice,
+ steer:player.steer,deltaRad:player.delta,yawRateRadSec:player.yawRate,
+ speedMps:player.speed,slipFrontRad:player.slipF,slipRearRad:player.slipR,
+ frontCombinedUse:Math.hypot(player.frontLongUse||0,player.frontLateralUse||0),
+ rearCombinedUse:Math.hypot(player.rearLongUse||0,player.rearLateralUse||0),
+ lowSpeedImplicit:player.lowSpeedImplicit||0,
+ tc:!!player.tcAssist,abs:!!player.absAssist,
+ physicsHz:APEX_PLAYER_PHYSICS_HZ
+}:null;
+
 function update(dt,runHeavy=true,heavyDt=dt){
  if(paused||!player)return;
  dt=finiteClamp(dt,.001,.04,.016);
@@ -3862,7 +3897,8 @@ function update(dt,runHeavy=true,heavyDt=dt){
  // En modo naranja el jugador conserva el volante. Sólo una recuperación extrema
  // puede tomar temporalmente la dirección para liberar el coche.
  if(assistRecovery&&autoCtl)steer=autoCtl.steer;
- const speedKph=inputSpeed*3.6,speedNorm=clamp((speedKph-65)/200,0,1),autoSteerActive=demoMode||assistRecovery,inputDevice=gamepadActive?'gamepad':(gyroFresh?'gyro':apexInputDevice),driveProfile=apexDriveProfile();
+ const speedKph=inputSpeed*3.6,speedNorm=clamp((speedKph-65)/200,0,1),autoSteerActive=demoMode||assistRecovery,inputDevice=apexSteeringInputDevice(left,right,gamepadActive,gyroFresh),driveProfile=apexDriveProfile();
+ player.steerDevice=autoSteerActive?'auto':inputDevice;
  const steerCfg=autoSteerActive?null:apexDriveSteeringConfig(speedNorm,inputDevice),steerAuthority=autoSteerActive?1:steerCfg.authority;
  let steerCmd=clamp(steer,-1,1)*steerAuthority;
  // Contravolante de estabilidad: corrige sólo el inicio de un sobreviraje. No busca la trazada.

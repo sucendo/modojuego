@@ -22,6 +22,7 @@ window.__apexAudit={
  snapshot(){const gl=webglState.gl,ext=gl&&gl.getExtension('WEBGL_debug_renderer_info');return{
   version:APP_VERSION,circuit:trackData&&trackData.spec.dir,backend:rendererBackendId(),
   camera:apexCameraMode(),rivals:rivals.length,summary:apexPerformanceSummary(),profile:renderProfilerSnapshot(),
+  driving:window.apexDrivingDiagnostics?apexDrivingDiagnostics():null,
   road:window.apexPhase6RoadDiagnostics?apexPhase6RoadDiagnostics():null,terrain:apexPhase5TerrainDiagnostics(),ground:apexPhase5GpuDiagnostics(),glError:gl&&gl.getError(),
   renderer:ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):gl&&gl.getParameter(gl.RENDERER)};},
  stop(){goMenu();return !apexPhase5TerrainGPU.buffer&&!apexPhase5GroundGPU.buffer&&(!window.apexPhase6RoadDiagnostics||!apexPhase6RoadDiagnostics().resident);},
@@ -37,7 +38,7 @@ window.__apexAudit={
    const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('dialog',async d=>{errors.push(d.message());await d.dismiss();});
    await page.route('**/parts/part-027.txt',async route=>{const body=fs.readFileSync(path.join(root,'apex/parts/part-027.txt'),'utf8'),at=body.lastIndexOf('requestAnimationFrame(loop);');assert.ok(at>=0);await route.fulfill({body:body.slice(0,at)+hook+body.slice(at),contentType:'text/plain'});});
    await page.goto(url);await page.waitForFunction(()=>window.__apexAudit,null,{timeout:60000});
-   const cases=process.env.ALL_CIRCUITS==='1'?(await page.evaluate(()=>__apexAudit.circuits())).map(dir=>[dir,dir==='14-spain']):[['14-spain',true],['06-monaco',false],['10-belgium',false],['BASE_OTHER',false]];
+   const cases=process.env.ALL_CIRCUITS==='1'?(await page.evaluate(()=>__apexAudit.circuits())).map(dir=>[dir,dir==='14-spain']):[['14-spain',true],['06-monaco',false],['10-belgium',false],['BASE_OTHER',false],['03-japan',false]];
    for(const [dir,custom] of cases){
     await page.evaluate(async({dir,custom})=>__apexAudit.load(dir,custom),{dir,custom});
     for(const camera of ['cockpit','tcam','chase']){

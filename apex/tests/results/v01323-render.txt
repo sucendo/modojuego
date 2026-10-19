@@ -1,0 +1,19 @@
+PASS: syntax of assembled 28 fragments (4 scripts)
+PASS: 1000 banked/elevated road nodes; fixed-node cache and moving ends {"before":{"world":90000,"screen":90000,"walls":20000,"env":10000,"frames":0},"after":{"world":70014,"screen":0,"walls":0,"env":1002,"frames":0}}
+PASS: exact 20-cell portal mesh; incremental admission, stable uploads, cache eviction, mobile, near clipping, CPU fallback {"before":{"world":384000,"polys":96000,"uploadedBytes":0,"uploads":0,"allocations":0},"after":{"world":64000,"polys":16000,"uploadedBytes":1344000,"uploads":20,"allocations":1}}
+PASS: 1x1/2x2 coverage and terrain heights
+PASS: bounded frame percentiles and transfer counters
+PASS: bounded GPU/CPU bytes and atlas recycling
+PASS: circuit ownership and release to menu/non-SVG
+PASS: 900 projection comparisons (pitch, roll, perspective, depth), max error 4.440892098500626e-16
+PASS: context loss and restoration with identical GL identity
+PASS: dynamic/terrain/SVG submission order, single upload and submitted-triangle counters
+PASS phase6: 128 banked/elevated segments, sector seams, curb/asphalt continuity and exact legacy triangle recipes {"legacyDynamicBytes":107520,"indexBytes":15360,"staticVertexBytes":9288,"drawCalls":8}
+PASS phase6: reverse direction and lap seam use original triangulation
+PASS phase6: 1000-frame synthetic session; zero new geometry/index transfers or buffer allocations for stable selection/camera changes
+PASS phase6: weather palette, moving endpoints, near clipping, same-frame failure replay, complete buffer release
+PASS phase6: mobile single-quad asphalt and transparent custom kerbs
+PASS phase6: existing clipped SVG runoff emitted once with unchanged heights
+PASS phase6: mobile LOD hysteresis with unchanged essential geometry
+PASS phase6: terrain/SVG/road/effects ordering, depth and one dynamic upload
+All isolated production-function regressions passed. Browser/Android validation remains separate.
