@@ -1422,7 +1422,7 @@ function drawMirrorPoly(poly3,x,y,w,h,fill){
  ctx.fillStyle=fill;ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i][0],pts[i][1]);ctx.closePath();ctx.fill();return true;
 }
 function mirrorCamera(side){
- const tr=player.track||syncPlayerTrack(),a=carAxes(),surface=trackSurfacePoseAt(player.s,player.lat),yaw=side*.09,c=Math.cos(yaw),sn=Math.sin(yaw);
+ const tr=player.track||syncPlayerTrack(),a=carAxes(),surface=playerDriveSurfacePose(),yaw=side*.09,c=Math.cos(yaw),sn=Math.sin(yaw);
  // Slightly outward but still looking mostly to the rear so the reflected track remains legible.
  const tx=a.fx*c+a.rx*sn,tz=a.fz*c+a.rz*sn;
  const nx=a.rx*c-a.fx*sn,nz=a.rz*c-a.fz*sn;
