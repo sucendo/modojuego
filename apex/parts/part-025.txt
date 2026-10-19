@@ -3097,11 +3097,13 @@ function apexPhase5DrawGpuGround(){
 const apexPhase5TerrainGPU={
  gl:null,grid:null,atlas:null,buffer:null,program:null,attrs:null,uniforms:null,
  key:'',pending:null,bytes:0,triangles:0,drawCalls:0,uploads:0,reuses:0,
- failures:0,failedGl:null,lastError:null,cpuCells:0,gpuCells:0
+ failures:0,failedGl:null,lastError:null,cpuCells:0,gpuCells:0,
+ packetCache:new Map(),packetGrid:null,packetAtlas:null,packetHits:0,packetMisses:0
 };
 function apexPhase5TerrainRelease(full=false){
  const s=apexPhase5TerrainGPU,gl=s.gl;
  if(gl&&s.buffer)try{gl.deleteBuffer(s.buffer)}catch(e){}
+ s.packetCache.clear();s.packetGrid=null;s.packetAtlas=null;
  s.buffer=null;s.grid=null;s.atlas=null;s.key='';s.pending=null;
  s.bytes=0;s.triangles=0;s.drawCalls=0;
  if(full){
@@ -3136,39 +3138,57 @@ function apexPhase5PrepareGpuTerrain(items,cam,pitch){
    a.cell.ix-b.cell.ix||a.cell.z1-b.cell.z1||a.cell.x1-b.cell.x1);
   const key=ordered.map(({cell:c})=>c.ix+','+c.iz+','+c.x1+','+c.z1).join(';');
   if(!s.buffer||s.grid!==g||s.atlas!==atlas||s.key!==key){
-   const triangles=[];
+   // Compilación de cada celda solo una vez: el vehículo puede cambiar
+   // de región visible muchas veces sin volver a triangular todo.
+   if(s.packetGrid!==g||s.packetAtlas!==atlas){
+    s.packetCache.clear();s.packetGrid=g;s.packetAtlas=atlas;
+   }
    const base=g.tone==='BROWN'?'#886e51':g.tone==='SAND'?'#bc9c69':'#4e7650',
-    colors=[webglCssColor(base),webglCssColor(shadeColor(base,3))];
-   const pushPoly=(poly,c)=>{
-    if(!poly||poly.length<3)return;
-    const color=colors[(c.ix+c.iz)%5===0?1:0];
-    const a=poly[0];
-    for(let j=1;j<poly.length-1;j++){
-     for(const p of [a,poly[j],poly[j+1]]){
-      const x=Array.isArray(p)?p[0]:p.x,
-       y=Array.isArray(p)?p[1]:p.y,z=Array.isArray(p)?p[2]:p.z;
-      if(!Number.isFinite(x)||!Number.isFinite(y)||!Number.isFinite(z))
-       throw Error('Vertice de relieve no finito');
-      triangles.push(x,y,z,color[0],color[1],color[2],color[3]);
-     }
-    }
-   };
+    colors=[webglCssColor(base),webglCssColor(shadeColor(base,3))],parts=[];
+   let total=0;
    for(const it of ordered){
-    if(it.clean===null)pushPoly(it.quad,it.cell);
-    else for(const p of it.clean)pushPoly(p,it.cell);
+    const c=it.cell,cellKey=c.ix+':'+c.iz+':'+c.x1+':'+c.z1;
+    let packet=s.packetCache.get(cellKey);
+    if(packet){s.packetHits++}
+    else{
+     const floats=[],color=colors[(c.ix+c.iz)%5===0?1:0],
+      pushPoly=poly=>{
+       if(!poly||poly.length<3)return;
+       const a=poly[0];
+       for(let j=1;j<poly.length-1;j++)
+        for(const p of [a,poly[j],poly[j+1]]){
+         const x=Array.isArray(p)?p[0]:p.x,
+          y=Array.isArray(p)?p[1]:p.y,z=Array.isArray(p)?p[2]:p.z;
+         if(!Number.isFinite(x)||!Number.isFinite(y)||!Number.isFinite(z))
+          throw Error('Vertice de relieve no finito');
+         floats.push(x,y,z,color[0],color[1],color[2],color[3]);
+        }
+      };
+     if(it.clean===null)pushPoly(it.quad);
+     else for(const poly of it.clean)pushPoly(poly);
+     packet=new Float32Array(floats);s.packetMisses++;
+     if(s.packetCache.size>=3072){
+      const itr=s.packetCache.keys();
+      for(let n=0;n<384;n++){const k=itr.next();if(k.done)break;s.packetCache.delete(k.value)}
+     }
+     s.packetCache.set(cellKey,packet);
+    }
+    parts.push(packet);total+=packet.length;
    }
    // Máximo 8MiB móviles, 24MiB PC. Bajo presupuesto se conserva CPU.
-   const bytes=triangles.length*4,max=(mobilePerformanceMode()?8:24)*1048576;
+   const bytes=total*4,max=(mobilePerformanceMode()?8:24)*1048576;
    if(bytes>max)return false;
+   const merged=new Float32Array(total);let offset=0;
+   for(const packet of parts){merged.set(packet,offset);offset+=packet.length}
    if(!s.program){
     const shader=apexPhase5GpuProgram(gl);
     s.program=shader.program;s.attrs=shader.attrs;s.uniforms=shader.uniforms;
    }
    if(!s.buffer){s.buffer=gl.createBuffer();if(!s.buffer)throw Error('No se pudo reservar VBO de relieve')}
    gl.bindBuffer(gl.ARRAY_BUFFER,s.buffer);
-   gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(triangles),gl.STATIC_DRAW);
+   gl.bufferData(gl.ARRAY_BUFFER,merged,gl.STATIC_DRAW);
    s.key=key;s.grid=g;s.atlas=atlas;s.bytes=bytes;
-   s.triangles=triangles.length/21;s.uploads++;
+   s.triangles=total/21;s.uploads++;
   }else s.reuses++;
   s.pending={cam,pitch,roll:webglScreenRoll,offset:webglFloatCount};
   s.gpuCells=items.length;
@@ -3204,6 +3224,7 @@ window.apexPhase5TerrainDiagnostics=()=>{
  return{resident:!!s.buffer,bytes:s.bytes,triangles:s.triangles,
   gpuCells:s.gpuCells,uploads:s.uploads,reuses:s.reuses,
   drawCalls:s.drawCalls,failures:s.failures,lastError:s.lastError,
+  packets:s.packetCache.size,packetHits:s.packetHits,packetMisses:s.packetMisses,
   pending:!!s.pending};
 };
 
