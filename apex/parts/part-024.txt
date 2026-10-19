@@ -1876,19 +1876,8 @@ function apexGenericRunoffMaskedPolys(seg,side){
  cache.set(key,out);
  return out;
 }
-function apexDrawGenericRunoffSides(seg,cam,pitch,webgl=false){
- const a=seg.a,b=seg.b,V0=a.v,V1=b.v,colL=surfaceColor(a.env.runoffSurface,false),colR=surfaceColor(a.env.runoffSurface,true);
- const emit=(p,col)=>{const pts=p.map(v=>worldToCamera(v.x,v.y,v.z,cam));
-  if(webgl)webglPushCamPoly(pts,pitch,col,.58);else drawCamPoly(pts,pitch,col,.58)};
- const left=apexGenericRunoffMaskedPolys(seg,1),right=apexGenericRunoffMaskedPolys(seg,-1);
- if(left!==null){for(const p of left)emit(p,colL);}
- else if(webgl)webglPushCamQuad(V0.lx,a.curb.left?V0.lo:V0.l,b.curb.left?V1.lo:V1.l,V1.lx,pitch,colL);
- else drawCamQuadTriangles(V0.lx,a.curb.left?V0.lo:V0.l,b.curb.left?V1.lo:V1.l,V1.lx,pitch,colL);
- if(right!==null){for(const p of right)emit(p,colR);}
- else if(webgl)webglPushCamQuad(a.curb.right?V0.ro:V0.r,V0.rx,V1.rx,b.curb.right?V1.ro:V1.r,pitch,colR);
- else drawCamQuadTriangles(a.curb.right?V0.ro:V0.r,V0.rx,V1.rx,b.curb.right?V1.ro:V1.r,pitch,colR);
- return left!==null||right!==null;
-}
+// La antigua rutina separada de escapatorias se sustituyó por
+// apexUnifiedGroundDrawCorridor(): un solo dueño para asfalto, piano y runoff.
 window.apexRunoffFallbackMaskDiagnostics=()=>{
  const i=trackData&&trackData._apexRunoffDriveSurfaceIndex;
  return i?{authoredTriangles:i.faces.length,gridCells:i.buckets.size,
