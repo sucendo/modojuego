@@ -744,7 +744,7 @@ function webgl2RenderFrame(){
  renderFrameId++;renderProfileReset();
  if(!webglInit()){setRendererBackend("canvas2d",{notify:false,persist:false});return canvas2dRenderFrame()}
  webglClearCanvasOverlay();webglFloatCount=0;webglScreenRoll=0;
- const pitch=trackData&&player?driverCamera().pitch:0;
+ // Una única instantánea de cámara por frame WebGL; pista y coche sincronizados.
  if(!trackData||!player){renderProfileMeasure("environmentMs",()=>webglPushBackground(null,0));webglSubmit();renderProfileCommit();return}
  const cam=driverCamera(),viewRoll=impactFX.roll+finite(cam.roadRoll,0),visual=webglCircuitVisualAvailable(),authoredBackdrop=webglUsesAuthoredWorldBackdrop(),trackT0=performance.now();
  renderProfileMeasure("environmentMs",()=>apexInspectionActive()?webglPushBackground(cam,cam.pitch):authoredBackdrop?webglPushCircuitBackground(cam,cam.pitch):webglPushBackground(cam,cam.pitch));

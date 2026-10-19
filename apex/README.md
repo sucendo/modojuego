@@ -1,6 +1,6 @@
 # APEX Formula 26
 
-Versión de desarrollo: **v0.13.5 · PRE-RELEASE**
+Versión de desarrollo: **v0.13.6 · PRE-RELEASE**
 
 Archivo fuente original:
 `Apex_Formula_26_v5_230_62_8_6_7_6_4_17_CONTROL_CLASICO_GP4.html`
@@ -47,3 +47,9 @@ Culling conservador de muros antes de proyectar vallas; selección espacial más
 ## v0.13.5 · Antitirones por resolución adaptativa
 
 Cuando los FPS caen de forma sostenida, APEX reduce la resolución **interna** de WebGL/Canvas hasta 62%, sin alterar el tamaño visible, la física de 100 Hz, las colisiones o los guardados. Recupera calidad gradualmente cuando vuelve a ir fluido. Se refuerza el LOD lejano en PC. Función de diagnóstico: `apexDrivePerformanceDiagnostics()`.
+
+## Cámara trasera EXT v0.13.6
+
+La cámara está anclada al chasis: 5,7 m detrás y 2,88 m sobre la superficie. Se ha eliminado la interpolación en coordenadas del mundo que generaba una oscilación longitudinal y un salto tras fotogramas lentos. La geometría compartida del coche, física, IA, cronometraje y modos PILOTO/TV permanecen intactos. WebGL utiliza una única instantánea de cámara por fotograma.
+
+Auditoría: `apexCameraRigSelfTest()` (6 casos sintéticos de posición y altura) y `apexChaseCameraDiagnostics()` (en carrera con EXT seleccionada).
