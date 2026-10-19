@@ -1463,35 +1463,12 @@ function rivalWorld(r){
  const q=renderRibbonFrameAt(r.s),surface=trackSurfacePoseAt(r.s,r.lat,.014);
  return {x:surface.x,z:surface.z,y:surface.y,q,surface};
 }
+/* FASE 2: la física usa exactamente el mismo material que la altura,
+   la cámara y las ruedas. El muestreo y la clasificación se calculan una
+   sola vez por posición, compartidos con playerDriveSurfacePose(). */
 function playerSurfaceState(){
- const env=envProfile(player&&Number.isFinite(player.s)?player.s:0),a=Math.abs(player.lat),track=env.half,kerb=track+env.curb,run=kerb+env.runoff;
- if(player&&player.driveNetwork==='PIT'&&player.pitState&&player.pitState.dist<=player.pitState.width*.58+.35)return {zone:"PIT",kind:"ASPHALT",grip:.96,steerGrip:.96,driveGrip:.97};
- const pit=pitLaneAtS(player&&Number.isFinite(player.s)?player.s:0);
- // La pista principal manda en la zona de mezcla salvo cuando el coche YA está en la red PIT exacta.
- if(a<=track)return {zone:"TRACK",kind:"ASPHALT",grip:1.00,steerGrip:1.00,driveGrip:1.00};
- if(pit&&Math.abs(player.lat-pit.centerLat)<=pit.width*.56)return {zone:"PIT",kind:"ASPHALT",grip:.96,steerGrip:.96,driveGrip:.97};
- if(a<=kerb)return {zone:"KERB",kind:"KERB",grip:.91,steerGrip:.88,driveGrip:.91};
- const drivable=apexDrivableAreaContains(player.x,player.z);if(drivable===false)return {zone:'OFF',kind:'BOUNDARY',grip:.08,steerGrip:.06,driveGrip:.08};
- const svgZone=apexSurfaceZoneAtWorld(player.x,player.z);
- if(svgZone){
-   const k=String(svgZone.kind||'ASPHALT').toUpperCase();
-   if(k==='WATER')return {zone:'WATER',kind:'WATER',grip:.06,steerGrip:.04,driveGrip:.05};
-   if(k==='GRAVEL')return {zone:'RUNOFF',kind:'GRAVEL',grip:.34,steerGrip:.25,driveGrip:.42};
-   if(k==='SAND')return {zone:'RUNOFF',kind:'SAND',grip:.28,steerGrip:.20,driveGrip:.36};
-   if(k==='GRASS')return {zone:'RUNOFF',kind:'GRASS',grip:.38,steerGrip:.28,driveGrip:.48};
-   return {zone:'RUNOFF',kind:'ASPHALT',grip:.78,steerGrip:.75,driveGrip:.82};
- }
- if(drivable===true)return {zone:'RUNOFF',kind:'ASPHALT',grip:.78,steerGrip:.75,driveGrip:.82};
- if(a<=run){
-   if(env.runoffSurface==="ASPHALT")return {zone:"RUNOFF",kind:"ASPHALT",grip:.78,steerGrip:.75,driveGrip:.82};
-   if(env.runoffSurface==="GRAVEL")return {zone:"RUNOFF",kind:"GRAVEL",grip:.34,steerGrip:.25,driveGrip:.42};
-   if(env.runoffSurface==="GRASS")return {zone:"RUNOFF",kind:"GRASS",grip:.38,steerGrip:.28,driveGrip:.48};
- }
- if(env.wall&&!(trackData&&trackData.svgAuthoritative))return {zone:"WALL",kind:"WALL",grip:.20,steerGrip:.18,driveGrip:.25};
- if(env.offSurface==="GRAVEL")return {zone:"OFF",kind:"GRAVEL",grip:.31,steerGrip:.22,driveGrip:.40};
- if(env.offSurface==="SAND")return {zone:"OFF",kind:"SAND",grip:.28,steerGrip:.20,driveGrip:.36};
- if(env.offSurface==="GRASS")return {zone:"OFF",kind:"GRASS",grip:.35,steerGrip:.25,driveGrip:.46};
- return {zone:"OFF",kind:"ASPHALT",grip:.68,steerGrip:.63,driveGrip:.72};
+ const unified=playerDriveSurfacePose();
+ return unified||{zone:'TRACK',kind:'ASPHALT',grip:1,steerGrip:1,driveGrip:1};
 }
 
 function terrainDragAccel(ps,speed){
