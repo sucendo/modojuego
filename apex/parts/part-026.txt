@@ -752,7 +752,19 @@ function webglDrawCircuitCanvasOverlay(cam,pitch,segments,rivalItems=null){
 function webglSubmit(){
  const gl=webglState.gl;if(!gl||!webglState.ready)return false;const t0=performance.now();gl.viewport(0,0,webglCv.width,webglCv.height);gl.clearColor(.02,.03,.05,1);gl.clearDepth(1.0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.useProgram(webglState.program);gl.bindBuffer(gl.ARRAY_BUFFER,webglState.buffer);
  const data=webglVertexData.subarray(0,webglFloatCount),needBytes=data.byteLength;if(!webglState.bufferBytes||needBytes>webglState.bufferBytes){let cap=Math.max(65536,webglState.bufferBytes||0);while(cap<needBytes)cap*=2;gl.bufferData(gl.ARRAY_BUFFER,cap,gl.DYNAMIC_DRAW);webglState.bufferBytes=cap;apexStaticBatchPerf.bufferGrows++;}if(needBytes)gl.bufferSubData(gl.ARRAY_BUFFER,0,data);const stride=28;gl.enableVertexAttribArray(webglState.aPos);gl.vertexAttribPointer(webglState.aPos,3,gl.FLOAT,false,stride,0);gl.enableVertexAttribArray(webglState.aColor);gl.vertexAttribPointer(webglState.aColor,4,gl.FLOAT,false,stride,12);if(webglFloatCount)gl.drawArrays(gl.TRIANGLES,0,webglFloatCount/7);
- webglState.triangles=Math.floor(webglFloatCount/21);telemetryPerf.webglTriangles=webglState.triangles;renderProfileAdd("webglSubmitMs",performance.now()-t0);return true;
+ // Fase 5: segunda pasada solo para malla ESTATICA ya residente.
+ // Usa el mismo depth-buffer, sin subir de nuevo sus vertices.
+ let staticTriangles=0;
+ if(typeof apexPhase5DrawGpuGround==='function'){
+  try{if(apexPhase5DrawGpuGround())staticTriangles=apexPhase5GroundGPU.visibleTriangles||0}
+  catch(e){
+   console.warn('[APEX] fallback GPU de suelo en siguiente frame',e);
+   apexPhase5GpuGroundError(e);
+  }
+ }
+ webglState.triangles=Math.floor(webglFloatCount/21)+staticTriangles;
+ telemetryPerf.webglTriangles=webglState.triangles;
+ renderProfileAdd("webglSubmitMs",performance.now()-t0);return true;
 }
 function webgl2RenderFrame(){
  renderFrameId++;renderProfileReset();
