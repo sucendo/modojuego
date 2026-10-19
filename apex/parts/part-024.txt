@@ -1534,7 +1534,7 @@ function apexCompileCrosswalkTriangles(it){
   let longest=0;
   for(let j=0;j<fp.length;j++){
    const p=fp[j],q=fp[(j+1)%fp.length],dx=q[0]-p[0],dz=q[1]-p[1],d=dx*dx+dz*dz;
-   if(d>longest){longest=d;ax=-dz;az=dx}
+   if(d>longest){longest=d;ax=dx;az=dz}
   }
  }
  const norm=Math.hypot(ax,az);if(norm<1e-6)return null;ax/=norm;az/=norm;
