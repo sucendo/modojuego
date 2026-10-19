@@ -414,6 +414,19 @@ window.apexPhase4GroundDiagnostics=()=>{
   svgTrianglesCulled:atlas&&atlas.lastCulled||0,
   webglTriangles:typeof webglState!=='undefined'?webglState.triangles:0};
 };
+window.apexPhase4GroundSelfTest=()=>{
+ // Test sintetico y aislado: conserva ocupacion, alturas y paquete 2x2.
+ const g={nx:3,nz:3,cell:10,minX:0,minZ:0,maxX:20,maxZ:20,baseLevelM:0,
+  mask:Uint8Array.from([1,0,0,1]),inside:new Uint8Array(9).fill(1),
+  vals:Float32Array.from([0,1,2,3,4,5,6,7,8])};
+ const coverage=[apexPhase4TerrainCoverage(g,0,0,1,1),
+  apexPhase4TerrainCoverage(g,1,0,2,1),
+  apexPhase4TerrainCoverage(g,0,0,2,2)];
+ const a=apexPhase4TerrainPacket(g,0,0,2,2),b=apexPhase4TerrainPacket(g,0,0,2,2);
+ const pass=coverage[0]===1&&coverage[1]===0&&coverage[2]===2&&
+  a===b&&a.length===4&&a[0].y===0&&a[2].y===8&&a[2].x===20&&a[2].z===20;
+ return{pass,coverage,cached:a===b,corners:a.length,heights:a.map(p=>p.y)};
+};
 function apexForEachTerrainPlateCell(cam,fn){
  const g=apexPlateTerrainGrid(),cells=apexCollectTerrainPlateCells(cam);if(!g||!cells)return false;
  let detailed=0;const pressure=mobileRenderPressure(),ordinaryFineM=mobilePerformanceMode()?lerp(72,118,pressure):lerp(105,165,pressure),structureFineM=mobilePerformanceMode()?230:285;
