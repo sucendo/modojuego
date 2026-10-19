@@ -3180,7 +3180,7 @@ function webglPushCircuitLandmarks(cam,pitch){
    const P=(along=0,lat=0,y=0)=>webglLandmarkCam(a,along,lat,y,cam);
    if(it.type==='surfaceZone'||it.type==='terrainZone'||it.type==='water'||it.type==='marking'||it.type==='forestZone'){
      if(it.type==='terrainZone')continue;
-     if(it.worldFootprint&&it.worldFootprint.length>=3){const col=it.color||(it.type==='water'?'#347ca5':it.type==='forestZone'?'#315c3b':'#777'),sb=it._apexStaticBatch,
+     if(it.worldFootprint&&it.worldFootprint.length>=3){const col=it.color||(it.type==='water'?'#347ca5':it.type==='forestZone'?'#245032':'#777'),sb=it._apexStaticBatch,
        depthBias=apexGroundPatchDepthBias(it);
      if(sb&&Array.isArray(sb.surfaceTriangles)){
        // Tanto WebGL como Canvas consumen el recorte compilado.

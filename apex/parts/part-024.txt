@@ -379,7 +379,7 @@ function apexSvgLandmarkExact(el,index,ctx){
  if(type==='block'||type==='parking'||type==='terrainZone'||type==='surfaceZone'||type==='water'||type==='marking'||type==='forestZone'){
    node.width=wAttr||20;node.depth=dAttr||18;node.worldFootprint=pts;node.worldY=pts.map(p=>(type==='surfaceZone'?apexAlignedCircuitSurfaceY(p[0],p[1]):type==='marking'?apexSvgSurfaceMarkingY(node,p[0],p[1]):apexWorldGroundY(p[0],p[1])));node.grounded=true;
    if(type==='block'){node.height=node.height||12;node.buildingStyle=node.apexStyle||'building_generic';}else node.height=node.height||.04;
-   if(type==='forestZone'){node.variant='fir';node.color=node.color||'#315c3b';node.forestPoints=apexForestScatter(pts,node.name||node.sourceId,Math.max(10,Math.min(36,Math.round(pts.length*.7))))}
+   if(type==='forestZone'){node.variant='fir';node.color=node.color||'#245032';node.forestPoints=apexForestScatter(pts,node.name||node.sourceId,Math.max(10,Math.min(36,Math.round(pts.length*.7))))}
    if(type==='terrainZone')node.color=node.color||'#667a4d';
    if(type==='surfaceZone'){node.surfaceKind=String(el.getAttribute('data-apex-surface')||sourceRole.replace(/^surface-/,'').replace(/^runoff-/,'')||'ASPHALT').toUpperCase();const cm={ASPHALT:'#676d72',GRAVEL:'#ad9068',SAND:'#bea166',GRASS:'#2e6737'};node.color=node.color||cm[node.surfaceKind]||cm.ASPHALT;}
    if(type==='water'){node.waterKind=sourceRole==='sea'?'SEA':'LAKE';node.color=node.color||(node.waterKind==='SEA'?'#2b739d':'#347ca5');}
@@ -1333,14 +1333,14 @@ function apexStaticBoundInView(bound,cam,far=1900,margin=1.22){
 // marking = pintura: queda ligeramente por encima para evitar z-fighting.
 function apexGroundPatchYOffset(it){
  const t=String(it&&it.type||'').toLowerCase();
- if(t==='surfacezone')return -.035;
+ if(t==='surfacezone')return -.055;
  if(t==='water')return -.010;
  if(t==='marking')return .025;
  return .002;
 }
 function apexGroundPatchDepthBias(it){
  const t=String(it&&it.type||'').toLowerCase();
- if(t==='surfacezone')return .030;
+ if(t==='surfacezone')return .045;
  if(t==='water')return .012;
  if(t==='marking')return -.020;
  return .006;
@@ -1476,10 +1476,13 @@ function apexClipRunoffSurfaceTriangles(triangles){
      let y=v.y;
      const ns=nearestTrackState(v.x,v.z,null,{radius:80,allowGlobal:true,fallbackDist:75});
      if(ns&&Number.isFinite(ns.lat)&&Number.isFinite(ns.s)){
-      const e=envProfile(ns.s),edge=e.half+e.curb;
-      if(Math.abs(Math.abs(ns.lat)-edge)<.18){
-       const road=renderRibbonFrameAt(ns.s);
-       y=apexRoadSideHeight(road,e,ns.lat>=0?1:-1)-.042;
+      const e=envProfile(ns.s),lat=Math.abs(ns.lat),edge=e.half+e.curb;
+      if(lat<=edge+.55){
+       const q=renderRibbonFrameAt(ns.s),bank=Math.tan(q.bank||0);
+       const asphalt=q.y+bank*ns.lat,shoulder=apexRoadSideHeight(q,e,ns.lat>=0?1:-1);
+       const w=clamp((lat-e.half)/Math.max(.05,e.curb),0,1);
+       const target=lerp(asphalt,shoulder,w)-.042;
+       y=lerp(v.y,target,1-clamp((lat-edge)/.55,0,1));
       }
      }
      return [v.x,y,v.z];
@@ -2326,7 +2329,7 @@ function drawWorldLandmarks(cam,pitch){
      // mediante la malla longitudinal y sus taludes.
      if(it.type==='terrainZone')continue;
      if(it.worldFootprint&&it.worldFootprint.length>=3){
-      const col=it.color||(it.type==='water'?'#347ca5':it.type==='forestZone'?'#315c3b':'#777'),
+      const col=it.color||(it.type==='water'?'#347ca5':it.type==='forestZone'?'#245032':'#777'),
        sb=it._apexStaticBatch;
       // Canvas utiliza los recortes y las franjas de cebra compiladas para WebGL.
       if((it.type==='surfaceZone'||it.type==='marking')&&sb&&Array.isArray(sb.surfaceTriangles)){

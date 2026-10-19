@@ -1,6 +1,6 @@
 # APEX Formula 26
 
-Versión de desarrollo: **v0.13.11 · PRE-RELEASE**
+Versión de desarrollo: **v0.13.12 · PRE-RELEASE**
 
 Archivo fuente original:
 `Apex_Formula_26_v5_230_62_8_6_7_6_4_17_CONTROL_CLASICO_GP4.html`
@@ -94,3 +94,7 @@ Se cachean las alturas de terreno y los recortes de bandas de gradas y edificios
 - **Auditoría:** `apexRunoffClipDiagnostics()` informa del tamaño de la geometría recortada. Se han probado sintaxis de funciones y casos geométricos aislados; queda inspección visual con el SVG/JSON completo de Madrid y verificación de FPS.
 
 No se modifica el sistema de físicas, el coche, la IA, el cronometraje ni los 23 circuitos de origen.
+
+## v0.13.12 — bordes y color de vegetación
+
+La escapatoria recortada se une a la rasante/peralte de la pista con una transición lateral suave y una separación de profundidad ligeramente mayor para evitar que tape el asfalto. La orientación perpendicular de las franjas del cebreado se preserva mediante el cálculo actual de la tangente local de pista en X/Z; no se introducen rayas referidas a la pantalla. Se oscurece el verde de la zona forestal frente al de la hierba, sin alterar colores SVG explícitos. Se conservan el nivel de detalle, las cachés de terreno, el circuito, las físicas y los guardados. Validación visual con el Madrid completo pendiente.
