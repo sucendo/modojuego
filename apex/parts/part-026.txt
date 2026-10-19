@@ -778,13 +778,16 @@ function webglSubmit(){
  // Solo una actualización del buffer dinámico por frame.
  const pending=typeof apexPhase5GroundGPU!=='undefined'?apexPhase5GroundGPU.pending:null;
  const cut=pending?Math.min(webglFloatCount,Math.max(0,Math.floor(pending.offset/21)*21)):null;
- let staticTriangles=0;
+ let staticTriangles=0,staticDrawCalls=0,dynamicDrawCalls=0;
  if(cut===null){
-  if(webglFloatCount)gl.drawArrays(gl.TRIANGLES,0,webglFloatCount/7);
+  if(webglFloatCount){gl.drawArrays(gl.TRIANGLES,0,webglFloatCount/7);dynamicDrawCalls++}
  }else{
-  if(cut>0)gl.drawArrays(gl.TRIANGLES,0,cut/7);
+  if(cut>0){gl.drawArrays(gl.TRIANGLES,0,cut/7);dynamicDrawCalls++}
   try{
-   if(apexPhase5DrawGpuGround())staticTriangles=apexPhase5GroundGPU.visibleTriangles||0;
+   if(apexPhase5DrawGpuGround()){
+    staticTriangles=apexPhase5GroundGPU.visibleTriangles||0;
+    staticDrawCalls=apexPhase5GroundGPU.drawCalls||0;
+   };
   }catch(e){
    console.warn('[APEX] GPU suelo: fallback CPU desde siguiente frame',e);
    apexPhase5GpuGroundError(e);
@@ -792,9 +795,11 @@ function webglSubmit(){
   if(cut<webglFloatCount){
    bindDynamic();
    gl.drawArrays(gl.TRIANGLES,cut/7,(webglFloatCount-cut)/7);
+   dynamicDrawCalls++;
   }
  }
  webglState.triangles=Math.floor(webglFloatCount/21)+staticTriangles;
+ webglState.drawCalls=dynamicDrawCalls+staticDrawCalls;
  telemetryPerf.webglTriangles=webglState.triangles;
  renderProfileAdd('webglSubmitMs',performance.now()-t0);
  return true;
