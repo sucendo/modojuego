@@ -3096,7 +3096,7 @@ function apexPhase5DrawGpuGround(){
    mundo -> cámara en JS para las celdas ordinarias mientras no cambie. */
 const apexPhase5TerrainGPU={
  gl:null,grid:null,atlas:null,buffer:null,program:null,attrs:null,uniforms:null,
- key:'',pending:null,bytes:0,triangles:0,drawCalls:0,uploads:0,reuses:0,
+ key:'',pending:null,bytes:0,capacityBytes:0,triangles:0,drawCalls:0,uploads:0,reuses:0,
  failures:0,failedGl:null,lastError:null,cpuCells:0,gpuCells:0,
  packetCache:new Map(),packetGrid:null,packetAtlas:null,packetHits:0,packetMisses:0
 };
@@ -3105,7 +3105,7 @@ function apexPhase5TerrainRelease(full=false){
  if(gl&&s.buffer)try{gl.deleteBuffer(s.buffer)}catch(e){}
  s.packetCache.clear();s.packetGrid=null;s.packetAtlas=null;
  s.buffer=null;s.grid=null;s.atlas=null;s.key='';s.pending=null;
- s.bytes=0;s.triangles=0;s.drawCalls=0;
+ s.bytes=0;s.capacityBytes=0;s.triangles=0;s.drawCalls=0;
  if(full){
   if(gl&&s.program)try{gl.deleteProgram(s.program)}catch(e){}
   s.program=null;s.attrs=null;s.uniforms=null;s.gl=null;
@@ -3186,7 +3186,14 @@ function apexPhase5PrepareGpuTerrain(items,cam,pitch){
    }
    if(!s.buffer){s.buffer=gl.createBuffer();if(!s.buffer)throw Error('No se pudo reservar VBO de relieve')}
    gl.bindBuffer(gl.ARRAY_BUFFER,s.buffer);
-   gl.bufferData(gl.ARRAY_BUFFER,merged,gl.STATIC_DRAW);
+   // Mantener la reserva: no realocar al avanzar una celda.
+   if(bytes>s.capacityBytes){
+    let cap=Math.max(65536,s.capacityBytes||0);
+    while(cap<bytes)cap*=2;
+    gl.bufferData(gl.ARRAY_BUFFER,cap,gl.DYNAMIC_DRAW);
+    s.capacityBytes=cap;
+   }
+   if(bytes)gl.bufferSubData(gl.ARRAY_BUFFER,0,merged);
    s.key=key;s.grid=g;s.atlas=atlas;s.bytes=bytes;
    s.triangles=total/21;s.uploads++;
   }else s.reuses++;
@@ -3221,8 +3228,8 @@ function apexPhase5DrawGpuTerrain(){
 }
 window.apexPhase5TerrainDiagnostics=()=>{
  const s=apexPhase5TerrainGPU;
- return{resident:!!s.buffer,bytes:s.bytes,triangles:s.triangles,
-  gpuCells:s.gpuCells,uploads:s.uploads,reuses:s.reuses,
+ return{resident:!!s.buffer,bytes:s.bytes,capacityBytes:s.capacityBytes,
+  triangles:s.triangles,gpuCells:s.gpuCells,uploads:s.uploads,reuses:s.reuses,
   drawCalls:s.drawCalls,failures:s.failures,lastError:s.lastError,
   packets:s.packetCache.size,packetHits:s.packetHits,packetMisses:s.packetMisses,
   pending:!!s.pending};
