@@ -1575,13 +1575,16 @@ function apexBuildLandmarkStaticBatch(it){
    b.surfacePoly3=fp.map((v,i)=>[v[0],(wy&&Number.isFinite(wy[i])?wy[i]:apexWorldGroundY(v[0],v[1]))+apexGroundPatchYOffset(it),v[1]]);b.primitiveCount++;
    if(it.type==='surfaceZone'||it.type==='marking'){
      const painted=it.type==='marking'?apexCompileCrosswalkTriangles(it):null;
-     if(painted){b.surfaceTriangles=painted;b.paintStriped=true;b.primitiveCount+=painted.length;}
+     if(painted){b.surfaceTriangles=painted;b.surfaceBounds=painted.map(tri=>apexStaticWorldBound(tri));b.paintStriped=true;b.primitiveCount+=painted.length;}
      else {
        const indices=apexTriangulateGroundFootprint(fp);
        if(indices){
         const mesh=indices.map(tri=>tri.map(idx=>b.surfacePoly3[idx]));
         b.surfaceTriangles=it.type==='surfaceZone'?apexClipRunoffSurfaceTriangles(mesh):mesh;
         b.surfaceClipped=it.type==='surfaceZone';
+        // AABB esféricas compiladas una única vez: no reproyectar cada
+        // triángulo de una escapatoria SVG enorme en todos los fotogramas.
+        b.surfaceBounds=b.surfaceTriangles.map(tri=>apexStaticWorldBound(tri));
         b.primitiveCount+=b.surfaceTriangles.length;
        }else if(it.type==='surfaceZone'){
         // Recinto degenerado: nunca caer en el antiguo relleno en abanico,
