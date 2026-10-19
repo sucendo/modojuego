@@ -1721,22 +1721,33 @@ function apexGenericRunoffSideGeometry(st,side){
 function apexGenericRunoffMaskedPolys(seg,side){
  const idx=trackData&&trackData._apexRunoffDriveSurfaceIndex;
  if(!idx||!idx.faces.length)return null;
- // La mayoría de tramos usa nodos estables de apexRoadMeshSamples():
- // reutilizar los recortes y no repartir de nuevo cada fotograma.
+ // Cachear TANTO la presencia COMO la ausencia de SVG. En circuitos grandes
+ // la mayoría de tramos está libre: reexaminar esos triángulos 60 veces/s
+ // consumía más CPU que la geometría dibujada.
  const cache=idx._genericMaskCache||(idx._genericMaskCache=new Map()),
   key=side+':'+seg.a.s.toFixed(4)+':'+seg.b.s.toFixed(4);
- if(cache.has(key))return cache.get(key);
+ if(cache.has(key)){
+  idx._genericMaskCacheHits=(idx._genericMaskCacheHits||0)+1;
+  return cache.get(key);
+ }
+ idx._genericMaskQueries=(idx._genericMaskQueries||0)+1;
  const a=apexGenericRunoffSideGeometry(seg.a,side),
   b=apexGenericRunoffSideGeometry(seg.b,side),
   quad=side>0?[a.outer,a.inner,b.inner,b.outer]:[a.inner,a.outer,b.outer,b.inner],
   toPoly=(v)=>v.map(p=>({x:p.x,y:p.y,z:p.z}));
  const tris=[toPoly([quad[0],quad[1],quad[2]]),toPoly([quad[0],quad[2],quad[3]])];
  const cuts=tris.map(t=>apexClipGenericRunoffPolygon(t));
- if(!cuts[0]&&!cuts[1])return null;
- const out=[...(cuts[0]===null?[tris[0]]:cuts[0]),...(cuts[1]===null?[tris[1]]:cuts[1])];
- if(cache.size>=1024)cache.clear();
+ const out=(!cuts[0]&&!cuts[1])?null:[
+  ...(cuts[0]===null?[tris[0]]:cuts[0]),
+  ...(cuts[1]===null?[tris[1]]:cuts[1])
+ ];
+ // Mantener una ventana suficiente para los tramos de pista por delante y
+ // detrás; la poda progresiva evita el borrado masivo de 1024 entradas.
+ if(cache.size>=2048){
+  const it=cache.keys();
+  for(let j=0;j<256;j++){const key0=it.next();if(key0.done)break;cache.delete(key0.value)}
+ }
  cache.set(key,out);
- idx._genericMaskQueries=(idx._genericMaskQueries||0)+1;
  return out;
 }
 function apexDrawGenericRunoffSides(seg,cam,pitch,webgl=false){
@@ -1756,7 +1767,9 @@ window.apexRunoffFallbackMaskDiagnostics=()=>{
  const i=trackData&&trackData._apexRunoffDriveSurfaceIndex;
  return i?{authoredTriangles:i.faces.length,gridCells:i.buckets.size,
   cachedMaskedSegments:i._genericMaskCache?i._genericMaskCache.size:0,
-  masksComputed:i._genericMaskQueries||0}:null;
+  masksComputed:i._genericMaskQueries||0,
+  cacheHits:i._genericMaskCacheHits||0,
+  unmaskedCached:i._genericMaskCache?Array.from(i._genericMaskCache.values()).filter(v=>v===null).length:0}:null;
 };
 function apexSampleRunoffSurfaceAtWorld(x,z){
  const index=trackData&&trackData._apexRunoffDriveSurfaceIndex;
