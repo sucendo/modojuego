@@ -63,10 +63,10 @@ function playerDriveSurfacePose(){
    surfaceRx:p.nx/rd,surfaceRy:0,surfaceRz:p.nz/rd,surfaceSource:'PIT'};
  }
  if(!player||!trackData)return trackSurfacePoseAt(0,0);
- const cache=player._apexVehicleSurfaceCache;
- if(cache&&cache.x===player.x&&cache.z===player.z&&cache.s===player.s&&cache.lat===player.lat&&cache.mode===player.driveNetwork)return cache.pose;
+ const cache=player._apexVehicleSurfaceCache,index=trackData._apexRunoffDriveSurfaceIndex;
+ if(cache&&cache.index===index&&cache.x===player.x&&cache.z===player.z&&cache.s===player.s&&cache.lat===player.lat&&cache.mode===player.driveNetwork)return cache.pose;
  const pose=apexVehicleSurfacePoseAtWorld(player.x,player.z,player.s,player.lat);
- player._apexVehicleSurfaceCache={x:player.x,z:player.z,s:player.s,lat:player.lat,mode:player.driveNetwork,pose};
+ player._apexVehicleSurfaceCache={index,x:player.x,z:player.z,s:player.s,lat:player.lat,mode:player.driveNetwork,pose};
  return pose;
 }
 // v5.230.48 / FASE 1: un único perfil de explanación, independiente del circuito.
