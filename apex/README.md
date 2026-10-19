@@ -1,6 +1,6 @@
 # APEX Formula 26
 
-Versión de desarrollo: **v0.13.17 · PRE-RELEASE**
+Versión de desarrollo: **v0.13.18 · PRE-RELEASE**
 
 Archivo fuente original:
 `Apex_Formula_26_v5_230_62_8_6_7_6_4_17_CONTROL_CLASICO_GP4.html`
@@ -182,3 +182,18 @@ En la consola, `apexVehicleSurfaceDiagnostics()` muestra `source` (`TRACK`, `PIT
 **Validacion pendiente antes de darla por homologada:** ejecutar Madrid con su SVG/JSON completo en movil y PC, anotar FPS y `renderProfilerSnapshot()` en la recta de meta, las escapatorias y el tunel, y realizar una regresion visual en los otros 22 circuitos. No se prometen 60 FPS ni una ganancia porcentual sin mediciones reales.
 
 **Limite tecnico:** esta fase consolida paquetes CPU e indices de visibilidad y evita reconstrucciones/recortes innecesarios. La migracion de *todas* las superficies lejanas a VBOs de geometria de mundo estaticos proyectados en GPU requeriria una arquitectura de shader distinta; no se presenta como realizada.
+
+
+## v0.13.18 — Fase 5, primera migración GPU del suelo SVG
+
+**Implementación real, aún pendiente de validación de FPS con Madrid en navegador móvil.**
+
+- Las superficies `surfaceZone` SVG trianguladas se empaquetan UNA VEZ en `Float32Array` y se cargan en un VBO `STATIC_DRAW` independiente. La compilación se realiza al primer render WebGL (el calentamiento de carrera lo ejecuta antes de empezar). El índice y las alturas del SVG no se modifican.
+- Un shader WebGL2 transforma coordenadas de mundo utilizando la cámara, FOV, altura del ojo, horizonte, inclinación, balanceo y profundidad de APEX. La proyección deja de reconstruirse por triángulo y fotograma en JavaScript para estas superficies.
+- Se agrupa la geometría por lotes de 192 triángulos (móvil) / 256 (PC) y se descartan lotes no visibles por cota esférica. No se suben de nuevo al GPU en cada frame.
+- El dibujo WebGL dinámico se separa en dos rangos de **un mismo buffer y una única actualización**: antes del suelo SVG y después. El VBO estático se intercala en su lugar original, compartiendo z-buffer y preservando el orden de transparencia/escapatorias/pista/pianos/coches.
+- Fallback completo al dibujado CPU anterior para Canvas2D, WebGL no disponible, superficies con alfa, escenas pequeñas, límite de VRAM (16 MiB móvil / 48 MiB PC para estos triángulos) o error de shader. Si falla la GPU, se evita reintentar indefinidamente en ese contexto. La memoria del VBO se libera al cambiar de atlas.
+- Diagnóstico de consola: `apexPhase5GpuDiagnostics()` proporciona `resident`, `bytes`, `triangles`, `chunks`, `visibleTriangles`, `drawCalls`, `culledChunks`, `compiled`, `failures`.
+- Validación aislada: shader/proyección contrastados algebraicamente con la ruta original (error numérico inferior a 1e-9 en NDC en muestra sintética); VBO subido una sola vez en llamadas consecutivas; render comprobado en secuencia `dinámico → estático → dinámico`, conservando los dos rangos y la telemetría de triángulos. **No se ha podido ejecutar aún una prueba visual/FPS real del circuito completo en Chrome móvil.**
+
+**Alcance pendiente de fase 5:** terreno de placas y malla longitudinal de asfalto/pianos todavía utilizan parte de la proyección por CPU. Su migración a geometría GPU estática necesita el mismo tratamiento de recortes, túneles, editor, sectores, LOD y compatibilidad. Esta entrega NO afirma que toda la escena use VBOs estáticos ni que hayan desaparecido los tirones de Madrid.
