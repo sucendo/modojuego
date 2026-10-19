@@ -15,15 +15,23 @@ small{display:block;color:#91a0af;margin-top:10px}
 <script type="module">
 const count=28;
 try{
-  let html="";
-  for(let i=0;i<count;i++){
-    const n=String(i).padStart(3,"0");
-    const r=await fetch("parts/part-"+n+".txt",{cache:"no-cache"});
-    if(!r.ok) throw new Error("No se pudo cargar part-"+n+" ("+r.status+")");
-    html+=await r.text();
+  // Fase 4: descarga concurrente acotada, ensamblado en orden estable.
+  // Evita 28 esperas HTTP secuenciales y concatenaciones crecientes.
+  const parts=new Array(count);
+  let cursor=0;
+  async function loadPartWorker(){
+    for(;;){
+      const i=cursor++;
+      if(i>=count)return;
+      const n=String(i).padStart(3,"0");
+      const r=await fetch("parts/part-"+n+".txt",{cache:"no-cache"});
+      if(!r.ok)throw new Error("No se pudo cargar part-"+n+" ("+r.status+")");
+      parts[i]=await r.text();
+    }
   }
+  await Promise.all(Array.from({length:Math.min(4,count)},()=>loadPartWorker()));
   document.open();
-  document.write(html);
+  document.write(parts.join(""));
   document.close();
 }catch(err){
   document.getElementById("status").innerHTML="<div><strong>No se pudo cargar APEX.</strong><small>"+String(err.message||err)+"</small></div>";
