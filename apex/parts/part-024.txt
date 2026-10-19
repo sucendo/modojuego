@@ -1850,8 +1850,9 @@ function apexCompiledLandmarkEntries(allItems){
  // v62.5: la lista sólo cambia al cruzar de sector o variar el span adaptativo. En lugar
  // de reconstruir Set + arrays 60 veces/s, reutilizamos el batch de índices ya resuelto.
  const ground=trackData.customWorld&&trackData.customWorld._apexGroundSurfaceSpatial,
+  whole=typeof apexInspectionFullScene==='function'&&apexInspectionFullScene(),
   gx=ground?Math.floor(player.x/ground.cell):0,gz=ground?Math.floor(player.z/ground.cell):0,
-  key=cur+':'+span+':'+allItems.length+':'+gx+':'+gz+':'+(mobilePerformanceMode()?1:0),
+  key=cur+':'+span+':'+allItems.length+':'+gx+':'+gz+':'+(mobilePerformanceMode()?1:0)+':'+(whole?1:0),
   cache=cc._landmarkEntryCache||(cc._landmarkEntryCache=new Map());
  if(cache.has(key)){apexStaticBatchPerf.entryCacheHits++;return cache.get(key)}
  apexStaticBatchPerf.entryCacheMisses++;const set=new Set(cc.skylineLandmarks||[]);
@@ -1861,7 +1862,7 @@ function apexCompiledLandmarkEntries(allItems){
  }
  // Geometría del suelo por ubicación real, no por la posición arbitraria
  // del primer vértice/anchor del SVG: elimina cortes y pop-in en Madrid.
- if(ground)for(const i of apexNearbyGroundSurfaceIds(player.x,player.z))set.add(i);
+ if(ground)for(const i of whole?ground.ids:apexNearbyGroundSurfaceIds(player.x,player.z))set.add(i);
  const out=[];for(const i of Array.from(set).sort((a,b)=>a-b)){
   const it=allItems[i];if(it&&!apexIsCurbAuthoringMark(it))out.push({it,i});
  }
