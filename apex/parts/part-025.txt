@@ -3079,12 +3079,33 @@ function apexPhase5DrawGpuGround(){
    1-2*sceneHorizon(p.pitch)/H,driverEyeHeight());
  gl.uniform2f(u.uRoll,Math.cos(p.roll),Math.sin(p.roll));
  gl.uniform3f(u.uDepth,(f+n)/(f-n),2*f*n/(f-n),.045);
+ // Fast path móvil: las secciones SVG contiguas comparten una única
+ // draw call. Evita cientos de comandos WebGL por frame con el Madrid SVG.
+ // Los saltos invisibles pequeños se absorben sin gastar demasiada GPU.
+ const runs=[];
  for(const chunk of s.chunks){
   if(!apexStaticBoundInView(chunk.bound,cam,far,1.55)){culled++;continue}
-  gl.drawArrays(gl.TRIANGLES,chunk.first,chunk.count);
-  calls++;visible+=chunk.count/3;
+  visible+=chunk.count/3;
+  const prev=runs[runs.length-1];
+  if(prev&&prev.first+prev.count===chunk.first)prev.count+=chunk.count;
+  else runs.push({first:chunk.first,count:chunk.count});
  }
- s.drawCalls=calls;s.visibleTriangles=visible;s.culledChunks=culled;
+ const limit=mobilePerformanceMode()?8:16,visibleVertices=visible*3;
+ let extraVertices=0;
+ while(runs.length>limit){
+  let best=-1,gap=Infinity;
+  for(let i=0;i<runs.length-1;i++){
+   const d=runs[i+1].first-(runs[i].first+runs[i].count);
+   if(d<gap){gap=d;best=i}
+  }
+  if(best<0||extraVertices+gap>Math.max(576,visibleVertices*.25))break;
+  const a=runs[best],b=runs[best+1];
+  a.count=b.first+b.count-a.first;runs.splice(best+1,1);
+  extraVertices+=gap;
+ }
+ for(const run of runs){gl.drawArrays(gl.TRIANGLES,run.first,run.count);calls++}
+ s.drawCalls=calls;s.visibleTriangles=visible;
+ s.submittedTriangles=(visibleVertices+extraVertices)/3;s.culledChunks=culled;
  if(s.atlas){s.atlas.lastDrawn=visible;s.atlas.lastCulled=s.triangles-visible;
    s.atlas.authoredChunks=s.chunks.length;s.atlas.lastChunksCulled=culled}
  return true;
@@ -3239,6 +3260,7 @@ window.apexPhase5GpuDiagnostics=()=>{
  const s=apexPhase5GroundGPU;
  return{resident:!!s.buffer,bytes:s.bytes,triangles:s.triangles,
   chunks:s.chunks.length,visibleTriangles:s.visibleTriangles,
+  submittedTriangles:s.submittedTriangles||0,
   drawCalls:s.drawCalls,culledChunks:s.culledChunks,
   compiled:s.compiled,failures:s.failures,error:s.lastError||s.error,
   skipped:!!s.unsupportedAtlas};
