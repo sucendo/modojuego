@@ -4350,23 +4350,10 @@ function circuitCurbPair(seed){
  const a=cc&&cc[0]||'#f3f4f5',b=cc&&cc[1]||'#d93a48';return (seed&1)?[a,b]:[b,a];
 }
 function drawRoadSegment(seg,cam,pitch){
- const a=seg.a,b=seg.b,env=a.env,seed=Math.floor(((a.s+b.s)*.5)/2.4),V0=a.v,V1=b.v;
+ const a=seg.a,b=seg.b,env=a.env,V0=a.v,V1=b.v;
  if(!V0||!V1)return;
- const roadCol=palette().road;
- const leftInner0=a.curb.left?V0.lo:V0.l,leftInner1=b.curb.left?V1.lo:V1.l;
- const rightInner0=a.curb.right?V0.ro:V0.r,rightInner1=b.curb.right?V1.ro:V1.r;
-
- // 1) Terreno inmediato / escapatorias. Las zonas SVG adicionales se dibujan como elementos de mundo.
- if(apexInspectionActive())apexInspectorDrawRunoff(seg,cam,pitch,false);
- else apexDrawGenericRunoffSides(seg,cam,pitch,false);
-
- // 2) Pianos: colores definidos por la paleta interna del circuito.
- const [curbA,curbB]=circuitCurbPair(seed);
- if((!mobilePerformanceMode()||seg.z<mobileControlProfile().curbMax)&&(a.curb.left||b.curb.left))drawCamQuadTriangles(V0.lo,V0.l,V1.l,V1.lo,pitch,curbA);
- if((!mobilePerformanceMode()||seg.z<mobileControlProfile().curbMax)&&(a.curb.right||b.curb.right))drawCamQuadTriangles(V0.r,V0.ro,V1.ro,V1.r,pitch,curbB);
-
- // 3) Asfalto principal triangulado.
- drawCamQuadTriangles(V0.l,V0.r,V1.r,V1.l,pitch,roadCol);
+ // Materiales y geometría base proceden del mismo atlas que WebGL.
+ apexUnifiedGroundDrawCorridor(seg,cam,pitch,false);
  const _wetRoad=apexWeatherWetFactor();if(_wetRoad>.06&&seg.z>6&&seg.z<210){const wa=camMix(V0.l,V0.r,.16),wb=camMix(V0.l,V0.r,.23),wc=camMix(V1.l,V1.r,.23),wd=camMix(V1.l,V1.r,.16);drawCamQuadTriangles(wa,wb,wc,wd,pitch,`rgba(205,225,238,${(.012+.050*_wetRoad).toFixed(3)})`);}
  if(env.tunnel)renderProfileMeasure('tunnelMs',()=>drawTunnelSegment(seg,cam,pitch));
 
