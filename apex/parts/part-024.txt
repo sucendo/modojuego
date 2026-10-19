@@ -1664,7 +1664,9 @@ function apexBuildRunoffDriveSurfaceIndex(cw){
     minZ=Math.min(A[2],B[2],C[2]),maxZ=Math.max(A[2],B[2],C[2]);
    const ix0=Math.floor(minX/cell),ix1=Math.floor(maxX/cell),iz0=Math.floor(minZ/cell),iz1=Math.floor(maxZ/cell),id=faces.length;
    const dy1=B[1]-A[1],dy2=C[1]-A[1];
-   faces.push({tri,minX,maxX,minZ,maxZ,ux,uz,vx,vz,inv:1/den,
+   faces.push({tri,minX,maxX,minZ,maxZ,
+    foot:{poly:tri.map(v=>({x:v[0],y:v[1],z:v[2]})),bounds:{minX,maxX,minZ,maxZ}},
+    ux,uz,vx,vz,inv:1/den,
     slopeX:(dy1*vz-dy2*uz)/den,slopeZ:(ux*dy2-vx*dy1)/den});
    if((ix1-ix0+1)*(iz1-iz0+1)>maxCells){overflow.push(id);continue}
    for(let iz=iz0;iz<=iz1;iz++)for(let ix=ix0;ix<=ix1;ix++){
@@ -1677,6 +1679,85 @@ function apexBuildRunoffDriveSurfaceIndex(cw){
  if(trackData)trackData._apexRunoffDriveSurfaceIndex=index;
  return index;
 }
+/* v0.13.14 · Las escapatorias SVG sustituyen a la franja automática,
+   no se pintan encima de ella. El recorte es 2D en X/Z, conserva Y de la
+   franja original y se aplica sobre los triángulos SVG YA recortados de pista.
+   Índice de 48 m compilado al cargar; las partes normales no se triangulan
+   ni pasan por clipping. Sólo geometría: la física permanece intacta. */
+function apexClipGenericRunoffPolygon(poly){
+ const idx=trackData&&trackData._apexRunoffDriveSurfaceIndex;
+ if(!idx||!idx.faces.length||!Array.isArray(poly)||poly.length<3)return null;
+ let minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity;
+ for(const p of poly){minX=Math.min(minX,p.x);maxX=Math.max(maxX,p.x);minZ=Math.min(minZ,p.z);maxZ=Math.max(maxZ,p.z)}
+ const cell=idx.cell,ix0=Math.floor(minX/cell),ix1=Math.floor(maxX/cell),
+  iz0=Math.floor(minZ/cell),iz1=Math.floor(maxZ/cell),seen=new Set(idx.overflow);
+ // Límite de seguridad para un recinto degenerado: se conserva el respaldo
+ // y nunca se hace un barrido global de miles de triángulos por fotograma.
+ if((ix1-ix0+1)*(iz1-iz0+1)>400)return null;
+ for(let iz=iz0;iz<=iz1;iz++)for(let ix=ix0;ix<=ix1;ix++){
+  const ids=idx.buckets.get(ix+':'+iz);if(ids)for(const id of ids)seen.add(id);
+ }
+ if(!seen.size)return null;
+ const bounds={minX,maxX,minZ,maxZ},origArea=Math.abs(apexInspectorPolyArea(poly));
+ let parts=[poly];
+ for(const id of seen){
+  const f=idx.faces[id];
+  if(!f||f.maxX<=bounds.minX||f.minX>=bounds.maxX||f.maxZ<=bounds.minZ||f.minZ>=bounds.maxZ)continue;
+  const next=[];
+  for(const part of parts)next.push(...apexInspectorSubtractFoot(part,f.foot,false));
+  parts=next;if(!parts.length)break;
+ }
+ const area=parts.reduce((v,p)=>v+Math.abs(apexInspectorPolyArea(p)),0);
+ // Evita reproyectar piezas idénticas cuando las cajas coinciden, pero
+ // los polígonos no se pisan realmente.
+ return origArea-area>Math.max(.00005,origArea*1e-7)?parts:null;
+}
+function apexGenericRunoffSideGeometry(st,side){
+ const e=st.env,q=st.q,w=e.half+(st.curb&&(side>0?st.curb.left:st.curb.right)?e.curb:0),
+  inner=w>e.half?apexFlatRunoffPoint(q,e,w,side):ribbonWorldPoint(q,e.half,side),
+  outer=apexFlatRunoffPoint(q,e,apexRoadFlatLimit(st.s,e,side),side);
+ return{inner,outer};
+}
+function apexGenericRunoffMaskedPolys(seg,side){
+ const idx=trackData&&trackData._apexRunoffDriveSurfaceIndex;
+ if(!idx||!idx.faces.length)return null;
+ // La mayoría de tramos usa nodos estables de apexRoadMeshSamples():
+ // reutilizar los recortes y no repartir de nuevo cada fotograma.
+ const cache=idx._genericMaskCache||(idx._genericMaskCache=new Map()),
+  key=side+':'+seg.a.s.toFixed(4)+':'+seg.b.s.toFixed(4);
+ if(cache.has(key))return cache.get(key);
+ const a=apexGenericRunoffSideGeometry(seg.a,side),
+  b=apexGenericRunoffSideGeometry(seg.b,side),
+  quad=side>0?[a.outer,a.inner,b.inner,b.outer]:[a.inner,a.outer,b.outer,b.inner],
+  toPoly=(v)=>v.map(p=>({x:p.x,y:p.y,z:p.z}));
+ const tris=[toPoly([quad[0],quad[1],quad[2]]),toPoly([quad[0],quad[2],quad[3]])];
+ const cuts=tris.map(t=>apexClipGenericRunoffPolygon(t));
+ if(!cuts[0]&&!cuts[1])return null;
+ const out=[...(cuts[0]===null?[tris[0]]:cuts[0]),...(cuts[1]===null?[tris[1]]:cuts[1])];
+ if(cache.size>=1024)cache.clear();
+ cache.set(key,out);
+ idx._genericMaskQueries=(idx._genericMaskQueries||0)+1;
+ return out;
+}
+function apexDrawGenericRunoffSides(seg,cam,pitch,webgl=false){
+ const a=seg.a,b=seg.b,V0=a.v,V1=b.v,colL=surfaceColor(a.env.runoffSurface,false),colR=surfaceColor(a.env.runoffSurface,true);
+ const emit=(p,col)=>{const pts=p.map(v=>worldToCamera(v.x,v.y,v.z,cam));
+  if(webgl)webglPushCamPoly(pts,pitch,col,.58);else drawCamPoly(pts,pitch,col,.58)};
+ const left=apexGenericRunoffMaskedPolys(seg,1),right=apexGenericRunoffMaskedPolys(seg,-1);
+ if(left!==null){for(const p of left)emit(p,colL);}
+ else if(webgl)webglPushCamQuad(V0.lx,a.curb.left?V0.lo:V0.l,b.curb.left?V1.lo:V1.l,V1.lx,pitch,colL);
+ else drawCamQuadTriangles(V0.lx,a.curb.left?V0.lo:V0.l,b.curb.left?V1.lo:V1.l,V1.lx,pitch,colL);
+ if(right!==null){for(const p of right)emit(p,colR);}
+ else if(webgl)webglPushCamQuad(a.curb.right?V0.ro:V0.r,V0.rx,V1.rx,b.curb.right?V1.ro:V1.r,pitch,colR);
+ else drawCamQuadTriangles(a.curb.right?V0.ro:V0.r,V0.rx,V1.rx,b.curb.right?V1.ro:V1.r,pitch,colR);
+ return left!==null||right!==null;
+}
+window.apexRunoffFallbackMaskDiagnostics=()=>{
+ const i=trackData&&trackData._apexRunoffDriveSurfaceIndex;
+ return i?{authoredTriangles:i.faces.length,gridCells:i.buckets.size,
+  cachedMaskedSegments:i._genericMaskCache?i._genericMaskCache.size:0,
+  masksComputed:i._genericMaskQueries||0}:null;
+};
 function apexSampleRunoffSurfaceAtWorld(x,z){
  const index=trackData&&trackData._apexRunoffDriveSurfaceIndex;
  if(!index||!Number.isFinite(x)||!Number.isFinite(z))return null;
