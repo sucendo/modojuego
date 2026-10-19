@@ -1728,7 +1728,10 @@ function apexInspectorTerrainCellPolys(g,ix,iz){
  const kind=apexTerrainCellNeedsDetail(g,(A.x+C.x)*.5,(A.z+C.z)*.5,g.cell);
  const structural=kind==='PORTAL'||kind==='TUNNEL';
  const source=structural?apexTerrainFinePatch(g,ix,iz,kind):[[A,B,C],[A,C,D]],out=[];
- for(const poly of source)out.push(...apexInspectorCutSurface(poly,'TERRAIN'));
+ for(const poly of source)for(const part of apexInspectorCutSurface(poly,'TERRAIN')){
+  const clean=apexClipGenericRunoffPolygon(part);
+  if(clean===null)out.push(part);else for(const q of clean)if(q.length>=3)out.push(q);
+ }
  g._inspectionClosedCells.set(key,out);return out;
 }
 async function apexInspectorPrepareSurfaceClosure(){
