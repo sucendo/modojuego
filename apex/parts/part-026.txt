@@ -23,30 +23,10 @@
 
 function webglPushRoadSegment(seg,cam,pitch){
  const a=seg.a,b=seg.b,env=a.env,V0=a.v,V1=b.v;if(!V0||!V1)return;
- const seed=Math.floor(((a.s+b.s)*.5)/2.4),leftInner0=a.curb.left?V0.lo:V0.l,leftInner1=b.curb.left?V1.lo:V1.l,rightInner0=a.curb.right?V0.ro:V0.r,rightInner1=b.curb.right?V1.ro:V1.r;
- // Escapatorias / terreno inmediato: materiales genéricos; las superficies especiales proceden del SVG.
- if(apexInspectionActive())apexInspectorDrawRunoff(seg,cam,pitch,true);else{
- const mask=apexDrawGenericRunoffSides(seg,cam,pitch,true);
- // Las estrías decorativas también eran una segunda capa sobre el SVG.
- // Sólo aplicarlas cuando ninguna zona lateral ha requerido sustitución.
- if(!mask)webglPushRunoffDetail(seg,pitch);
- }
- // Pianos alternos: paleta genérica o definida en JSON.
- const [curbA,curbB]=circuitCurbPair(seed);
- if(((typeof apexInspectionFullScene==='function'&&apexInspectionFullScene())||seg.z<mobileControlProfile().curbMax)&&(a.curb.left||b.curb.left))webglPushCamQuad(V0.lo,V0.l,V1.l,V1.lo,pitch,curbA);
- if(((typeof apexInspectionFullScene==='function'&&apexInspectionFullScene())||seg.z<mobileControlProfile().curbMax)&&(a.curb.right||b.curb.right))webglPushCamQuad(V0.r,V0.ro,V1.ro,V1.r,pitch,curbB);
- // Asfalto: a FPS normal conservamos las tres bandas. En móvil por debajo de ~14 FPS
- // el coste estaba en CONSTRUIR geometría JS, no en enviarla a WebGL; usamos un solo
- // quad en distancia media/lejana y mantenemos detalle completo junto al coche.
- const road=webglCircuitRoadColor(seg),renderP=mobileRenderPressure(),cheapRoad=mobilePerformanceMode()&&!(typeof apexInspectionFullScene==='function'&&apexInspectionFullScene())&&renderP<.34&&seg.z>42;
- if(cheapRoad){
-   webglPushCamQuad(V0.l,V0.r,V1.r,V1.l,pitch,road);
- }else{
-   const l30a=camMix(V0.l,V0.r,.30),l30b=camMix(V1.l,V1.r,.30),r30a=camMix(V0.l,V0.r,.70),r30b=camMix(V1.l,V1.r,.70);
-   webglPushCamQuad(V0.l,l30a,l30b,V1.l,pitch,shadeColor(road,-3));
-   webglPushCamQuad(l30a,r30a,r30b,l30b,pitch,shadeColor(road,2));
-   webglPushCamQuad(r30a,V0.r,V1.r,r30b,pitch,shadeColor(road,-4));
- }
+ // Una sola pasada de geometría base, igual a Canvas; sombras,
+ // pintura, lluvia y cronometraje conservan sus pasadas posteriores.
+ const base=apexUnifiedGroundDrawCorridor(seg,cam,pitch,true),
+  renderP=base?base.renderPressure:mobileRenderPressure();
  const _wetRoad=apexWeatherWetFactor();if(_wetRoad>.06&&seg.z>5&&seg.z<220&&(!mobilePerformanceMode()||renderP>.22||seg.z<46)){const wa=camMix(V0.l,V0.r,.16),wb=camMix(V0.l,V0.r,.23),wc=camMix(V1.l,V1.r,.23),wd=camMix(V1.l,V1.r,.16);webglPushCamQuad(wa,wb,wc,wd,pitch,`rgba(205,225,238,${(.012+.052*_wetRoad).toFixed(3)})`,.56,-.012);}
  // Huella central y brillo lateral sólo cuando el presupuesto lo permite.
  if(seg.z>5&&seg.z<260&&(!mobilePerformanceMode()||renderP>.30||seg.z<38)){
