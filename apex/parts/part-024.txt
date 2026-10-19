@@ -1759,7 +1759,7 @@ function apexBuildCircuitStaticRenderBatches(cw){
  const items=cw&&Array.isArray(cw.landmarks)?cw.landmarks:[],walls=cw&&(cw._wallRenderSegments||cw.wallSegments)||[];let compiled=0,prims=0,wallStyles=0;
  if(cw&&cw.authoritative&&walls.length)apexBuildExactWallSpatialIndex(cw);
  for(const it of items){const b=apexBuildLandmarkStaticBatch(it);if(b){compiled++;prims+=b.primitiveCount||0}}
- if(cw)apexBuildRunoffDriveSurfaceIndex(cw);
+ if(cw){apexBuildRunoffDriveSurfaceIndex(cw);apexBuildGroundSurfaceSpatialIndex(cw);}
  for(const sg of walls){if(!sg)continue;const env=envProfile(sg.s||0),style=wallBarrierStyle(env,sg.s||0,sg.side||1);try{Object.defineProperty(sg,'_apexStaticWall',{value:{env,style},writable:true,configurable:true})}catch(e){sg._apexStaticWall={env,style}}wallStyles++;}
  apexStaticBatchPerf.compiledItems=compiled;apexStaticBatchPerf.compiledPrimitives=prims;apexStaticBatchPerf.wallStyles=wallStyles;
  return{items:compiled,primitives:prims,wallStyles};
@@ -1792,6 +1792,54 @@ function apexStaticLandmarkOccluded(it,base,cam,pitch,ctx){
 }
 function apexStaticOcclusionStatsSnapshot(){return{frames:apexStaticOcclusionPerf.frames,occludersBuilt:apexStaticOcclusionPerf.occludersBuilt,itemsTested:apexStaticOcclusionPerf.itemsTested,itemsCulled:apexStaticOcclusionPerf.itemsCulled,occludersPreculled:apexStaticOcclusionPerf.occludersPreculled,landmarksPreculled:apexStaticOcclusionPerf.landmarksPreculled,primitiveTests:apexStaticOcclusionPerf.primitiveTests,primitiveCulled:apexStaticOcclusionPerf.primitiveCulled};}
 
+/* Índice espacial de SUELO SVG. Las huellas largas no deben desaparecer
+   cuando su ANCLA sale de la ventana de sectores del jugador.
+   Indexado por la caja real del contorno, compilado una sola vez. */
+function apexBuildGroundSurfaceSpatialIndex(cw){
+ const items=cw&&cw.landmarks||[],cell=256,buckets=new Map(),overflow=[],ids=new Set();
+ const indexedType=t=>t==='surfaceZone'||t==='marking'||t==='water'||t==='forestZone';
+ for(let i=0;i<items.length;i++){
+  const it=items[i],fp=it&&it.worldFootprint;
+  if(!it||!indexedType(it.type)||!Array.isArray(fp)||fp.length<3||apexIsCurbAuthoringMark(it))continue;
+  let minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity;
+  for(const p of fp){if(!p||!Number.isFinite(p[0])||!Number.isFinite(p[1]))continue;
+   minX=Math.min(minX,p[0]);maxX=Math.max(maxX,p[0]);
+   minZ=Math.min(minZ,p[1]);maxZ=Math.max(maxZ,p[1]);
+  }
+  if(!Number.isFinite(minX)||!Number.isFinite(minZ))continue;
+  ids.add(i);const x0=Math.floor(minX/cell),x1=Math.floor(maxX/cell),
+   z0=Math.floor(minZ/cell),z1=Math.floor(maxZ/cell);
+  // Un recinto de suelo gigantesco se comprueba como entidad global, pero
+  // sus triángulos visibles siguen recortados por cámara y distancia.
+  if((x1-x0+1)*(z1-z0+1)>320){overflow.push(i);continue}
+  for(let iz=z0;iz<=z1;iz++)for(let ix=x0;ix<=x1;ix++){
+   const key=ix+':'+iz;let a=buckets.get(key);
+   if(!a){a=[];buckets.set(key,a)}a.push(i);
+  }
+ }
+ return cw._apexGroundSurfaceSpatial={cell,buckets,overflow,ids,cacheKey:'',cacheIds:[],queries:0,hits:0};
+}
+function apexNearbyGroundSurfaceIds(x,z){
+ const idx=trackData&&trackData.customWorld&&trackData.customWorld._apexGroundSurfaceSpatial;
+ if(!idx||!Number.isFinite(x)||!Number.isFinite(z))return[];
+ // Sobrecobertura de una celda respecto a la distancia máxima visible.
+ // FOV/LOD se resuelven después por triángulo, no en la selección espacial.
+ const gx=Math.floor(x/idx.cell),gz=Math.floor(z/idx.cell),radius=mobilePerformanceMode()?6:9,
+  key=gx+':'+gz+':'+radius;
+ if(idx.cacheKey===key){idx.hits++;return idx.cacheIds}
+ idx.queries++;const seen=new Set(idx.overflow);
+ for(let iz=gz-radius;iz<=gz+radius;iz++)for(let ix=gx-radius;ix<=gx+radius;ix++){
+  const a=idx.buckets.get(ix+':'+iz);
+  if(a)for(const i of a)seen.add(i);
+ }
+ idx.cacheKey=key;idx.cacheIds=Array.from(seen);
+ return idx.cacheIds;
+}
+window.apexGroundSurfaceSpatialDiagnostics=()=>{
+ const idx=trackData&&trackData.customWorld&&trackData.customWorld._apexGroundSurfaceSpatial;
+ return idx?{items:idx.ids.size,cells:idx.buckets.size,overflow:idx.overflow.length,
+  nearby:idx.cacheIds.length,queries:idx.queries,hits:idx.hits}:null;
+};
 function apexCompiledLandmarkEntries(allItems){
  if(!Array.isArray(allItems)||!allItems.length)return[];
  const cc=trackData&&trackData.compiledCircuit,L=trackData&&trackData.km?trackData.km*1000:0;
@@ -1801,11 +1849,22 @@ function apexCompiledLandmarkEntries(allItems){
  const localM=mobilePerformanceMode()?lerp(330,700,pressure):lerp(520,1120,pressure),span=Math.min(Math.ceil(n*.48),Math.max(2,Math.ceil(localM/sectorM))),cur=Math.floor(mod(player.s,L)/sectorM)%n;
  // v62.5: la lista sólo cambia al cruzar de sector o variar el span adaptativo. En lugar
  // de reconstruir Set + arrays 60 veces/s, reutilizamos el batch de índices ya resuelto.
- const cache=cc._landmarkEntryCache||(cc._landmarkEntryCache=new Map()),key=cur+':'+span+':'+allItems.length;
+ const ground=trackData.customWorld&&trackData.customWorld._apexGroundSurfaceSpatial,
+  gx=ground?Math.floor(player.x/ground.cell):0,gz=ground?Math.floor(player.z/ground.cell):0,
+  key=cur+':'+span+':'+allItems.length+':'+gx+':'+gz+':'+(mobilePerformanceMode()?1:0),
+  cache=cc._landmarkEntryCache||(cc._landmarkEntryCache=new Map());
  if(cache.has(key)){apexStaticBatchPerf.entryCacheHits++;return cache.get(key)}
  apexStaticBatchPerf.entryCacheMisses++;const set=new Set(cc.skylineLandmarks||[]);
- for(let d=-span;d<=span;d++){const sec=cc.sectors[mod(cur+d,n)];if(!sec)continue;for(const i of sec.landmarks||[])set.add(i)}
- const out=[];for(const i of set){const it=allItems[i];if(it&&!apexIsCurbAuthoringMark(it))out.push({it,i})}
+ for(let d=-span;d<=span;d++){
+  const sec=cc.sectors[mod(cur+d,n)];if(!sec)continue;
+  for(const i of sec.landmarks||[]){if(!ground||!ground.ids.has(i))set.add(i)}
+ }
+ // Geometría del suelo por ubicación real, no por la posición arbitraria
+ // del primer vértice/anchor del SVG: elimina cortes y pop-in en Madrid.
+ if(ground)for(const i of apexNearbyGroundSurfaceIds(player.x,player.z))set.add(i);
+ const out=[];for(const i of Array.from(set).sort((a,b)=>a-b)){
+  const it=allItems[i];if(it&&!apexIsCurbAuthoringMark(it))out.push({it,i});
+ }
  if(cache.size>48)cache.clear();cache.set(key,out);return out;
 }
 function mobileControlProfile(){
