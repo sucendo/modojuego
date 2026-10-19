@@ -3020,7 +3020,7 @@ function apexPhase5PrepareGpuGround(cam,pitch){
    s.triangles=triangles;s.compiled++;s.error=null;
   }
   if(!s.buffer||s.atlas!==atlas)return false;
-  s.pending={cam,pitch,roll:webglScreenRoll};
+  s.pending={cam,pitch,roll:webglScreenRoll,offset:webglFloatCount};
   return true;
  }catch(e){
   console.warn('[APEX] suelo GPU: activando fallback CPU',e);
