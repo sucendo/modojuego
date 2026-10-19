@@ -4105,10 +4105,8 @@ function drawRoadSegment(seg,cam,pitch){
  const rightInner0=a.curb.right?V0.ro:V0.r,rightInner1=b.curb.right?V1.ro:V1.r;
 
  // 1) Terreno inmediato / escapatorias. Las zonas SVG adicionales se dibujan como elementos de mundo.
- if(apexInspectionActive())apexInspectorDrawRunoff(seg,cam,pitch,false);else{
- drawCamQuadTriangles(V0.lx,leftInner0,leftInner1,V1.lx,pitch,surfaceColor(env.runoffSurface,false));
- drawCamQuadTriangles(rightInner0,V0.rx,V1.rx,rightInner1,pitch,surfaceColor(env.runoffSurface,true));
- }
+ if(apexInspectionActive())apexInspectorDrawRunoff(seg,cam,pitch,false);
+ else apexDrawGenericRunoffSides(seg,cam,pitch,false);
 
  // 2) Pianos: colores definidos por la paleta interna del circuito.
  const [curbA,curbB]=circuitCurbPair(seed);
