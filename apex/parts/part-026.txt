@@ -21,11 +21,11 @@
  }
 }
 
-function webglPushRoadSegment(seg,cam,pitch){
+function webglPushRoadSegment(seg,cam,pitch,baseReady=false){
  const a=seg.a,b=seg.b,env=a.env,V0=a.v,V1=b.v;if(!V0||!V1)return;
  // Una sola pasada de geometría base, igual a Canvas; sombras,
  // pintura, lluvia y cronometraje conservan sus pasadas posteriores.
- const base=apexUnifiedGroundDrawCorridor(seg,cam,pitch,true),
+ const base=baseReady?null:apexUnifiedGroundDrawCorridor(seg,cam,pitch,true),
   renderP=base?base.renderPressure:mobileRenderPressure();
  const _wetRoad=apexWeatherWetFactor();if(_wetRoad>.06&&seg.z>5&&seg.z<220&&(!mobilePerformanceMode()||renderP>.22||seg.z<46)){const wa=camMix(V0.l,V0.r,.16),wb=camMix(V0.l,V0.r,.23),wc=camMix(V1.l,V1.r,.23),wd=camMix(V1.l,V1.r,.16);webglPushCamQuad(wa,wb,wc,wd,pitch,`rgba(205,225,238,${(.012+.052*_wetRoad).toFixed(3)})`,.56,-.012);}
  // Huella central y brillo lateral sólo cuando el presupuesto lo permite.
@@ -786,6 +786,10 @@ function webglSubmit(){
     triangles:apexPhase5GroundGPU.submittedTriangles||0,calls:apexPhase5GroundGPU.drawCalls||0};
    return{triangles:0,calls:0};
   },fail:apexPhase5GpuGroundError});
+ if(typeof apexPhase6RoadGPU!=='undefined'&&apexPhase6RoadGPU.pending)
+  stages.push({offset:apexPhase6RoadGPU.pending.offset,draw:()=>{
+   if(apexPhase6DrawRoad())return{triangles:apexPhase6RoadGPU.triangles,calls:apexPhase6RoadGPU.drawCalls};
+   return{triangles:0,calls:0};},fail:apexPhase6RoadError});
  stages.sort((a,b)=>a.offset-b.offset);
  let cursor=0,staticTriangles=0,staticDrawCalls=0,dynamicDrawCalls=0;
  // Una única transferencia dinámica. Los VBOs estáticos se intercalan
@@ -823,6 +827,7 @@ function webgl2RenderFrame(){
  // pantalla, renderer o circuito: seguridad ante abortos de frame.
  if(typeof apexPhase5TerrainGPU!=='undefined')apexPhase5TerrainGPU.pending=null;
  if(typeof apexPhase5GroundGPU!=='undefined')apexPhase5GroundGPU.pending=null;
+ apexPhase6RoadGPU.pending=null;
  // Una única instantánea de cámara por frame WebGL; pista y coche sincronizados.
  if(!trackData||!player){renderProfileMeasure("environmentMs",()=>webglPushBackground(null,0));webglSubmit();renderProfileCommit();return}
  const cam=driverCamera(),viewRoll=impactFX.roll+finite(cam.roadRoll,0),visual=webglCircuitVisualAvailable(),authoredBackdrop=webglUsesAuthoredWorldBackdrop(),trackT0=performance.now();
@@ -835,7 +840,13 @@ function webgl2RenderFrame(){
    if(apexPlateTerrainGrid())webglPushTerrainPlateMesh(cam,cam.pitch);
    const terrainSegments=segments.slice().sort((A,B)=>B.z-A.z);for(const seg of terrainSegments)if(!apexInspectionActive()||!apexPlateTerrainGrid())webglPushTerrainSegment(seg,cam,cam.pitch);apexWebglFallbackStructureBanks(terrainSegments,cam,cam.pitch);
    renderProfileMeasure("groundPrepareMs",()=>apexRenderUnifiedAuthoredGround(cam,cam.pitch,true));
-   if(!apexInspectionActive())webglPushNearPatch(cam,cam.pitch);const roadSegments=terrainSegments;renderProfileMeasure("roadDrawMs",()=>{for(const seg of roadSegments)webglPushRoadSegment(seg,cam,cam.pitch)});
+   if(!apexInspectionActive())webglPushNearPatch(cam,cam.pitch);const roadSegments=terrainSegments;renderProfileMeasure("roadDrawMs",()=>{
+    if(renderProfileMeasure("roadGpuPrepareMs",()=>apexPhase6BeginRoad(cam,cam.pitch))){
+     for(const seg of roadSegments)apexUnifiedGroundDrawCorridor(seg,cam,cam.pitch,true);
+     renderProfileMeasure("roadGpuPrepareMs",()=>apexPhase6SealRoad());
+     for(const seg of roadSegments)webglPushRoadSegment(seg,cam,cam.pitch,true);
+    }else for(const seg of roadSegments)webglPushRoadSegment(seg,cam,cam.pitch);
+   });
    renderProfileMeasure("environmentMs",()=>{webglPushSurfaceMarkings(roadSegments,cam,cam.pitch);webglPushCircuitWalls(segments,cam,cam.pitch);webglPushExactWallFences(cam,cam.pitch);webglPushTunnelDetails(segments,cam,cam.pitch);apexWebglGenericPortalFaces(cam,cam.pitch);webglPushBrakeBoards(cam,cam.pitch);if(trackData.gradeCrossing)webglPushGradeCrossingOverpass(cam,cam.pitch)});
    rivalVisuals=webglPrepareRivalVisuals(collectRivalSprites(cam,cam.pitch));
    renderProfileMeasure("carsMs",()=>{webglPushRivalField3D(rivalVisuals,cam,cam.pitch);webglPushPlayerCameraCar3D(cam,cam.pitch);});

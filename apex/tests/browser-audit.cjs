@@ -22,10 +22,11 @@ window.__apexAudit={
  snapshot(){const gl=webglState.gl,ext=gl&&gl.getExtension('WEBGL_debug_renderer_info');return{
   version:APP_VERSION,circuit:trackData&&trackData.spec.dir,backend:rendererBackendId(),
   camera:apexCameraMode(),rivals:rivals.length,summary:apexPerformanceSummary(),profile:renderProfilerSnapshot(),
-  terrain:apexPhase5TerrainDiagnostics(),ground:apexPhase5GpuDiagnostics(),glError:gl&&gl.getError(),
+  road:window.apexPhase6RoadDiagnostics?apexPhase6RoadDiagnostics():null,terrain:apexPhase5TerrainDiagnostics(),ground:apexPhase5GpuDiagnostics(),glError:gl&&gl.getError(),
   renderer:ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):gl&&gl.getParameter(gl.RENDERER)};},
- stop(){goMenu();return !apexPhase5TerrainGPU.buffer&&!apexPhase5GroundGPU.buffer;},
- async baseTests(){return{runtime:await apexCircuitRuntimeSelfTest(),timing:await apexLapEngineSelfTest()};}
+ stop(){goMenu();return !apexPhase5TerrainGPU.buffer&&!apexPhase5GroundGPU.buffer&&(!window.apexPhase6RoadDiagnostics||!apexPhase6RoadDiagnostics().resident);},
+ circuits(){return calendar.slice(0,F1_SEASON_COUNT).map(s=>s.dir);},
+ async baseTests(){return{runtime:await apexCircuitRuntimeSelfTest(),timing:await apexLapEngineSelfTest(),road:window.apexPhase6AuditBaseCircuits?await apexPhase6AuditBaseCircuits():null};}
 };
 `;
 (async()=>{
@@ -35,8 +36,9 @@ window.__apexAudit={
    const context=await browser.newContext(mobile?{viewport:{width:844,height:390},deviceScaleFactor:2,isMobile:true,hasTouch:true,userAgent:'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/130.0.0.0 Mobile Safari/537.36'}:{viewport:{width:1280,height:720}});
    const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('dialog',async d=>{errors.push(d.message());await d.dismiss();});
    await page.route('**/parts/part-027.txt',async route=>{const body=fs.readFileSync(path.join(root,'apex/parts/part-027.txt'),'utf8'),at=body.lastIndexOf('requestAnimationFrame(loop);');assert.ok(at>=0);await route.fulfill({body:body.slice(0,at)+hook+body.slice(at),contentType:'text/plain'});});
-   await page.goto(url);await page.waitForFunction(()=>window.__apexAudit,{timeout:60000});
-   for(const [dir,custom] of [['14-spain',true],['BASE_OTHER',false]]){
+   await page.goto(url);await page.waitForFunction(()=>window.__apexAudit,null,{timeout:60000});
+   const cases=process.env.ALL_CIRCUITS==='1'?(await page.evaluate(()=>__apexAudit.circuits())).map(dir=>[dir,dir==='14-spain']):[['14-spain',true],['06-monaco',false],['10-belgium',false],['BASE_OTHER',false]];
+   for(const [dir,custom] of cases){
     await page.evaluate(async({dir,custom})=>__apexAudit.load(dir,custom),{dir,custom});
     for(const camera of ['cockpit','tcam','chase']){
      assert.equal(await page.evaluate(camera=>__apexAudit.camera(camera),camera),true);
@@ -47,7 +49,7 @@ window.__apexAudit={
     }
     assert.equal(await page.evaluate(()=>__apexAudit.stop()),true);
    }
-   const base=await page.evaluate(()=>__apexAudit.baseTests());console.log(JSON.stringify({test:'23-circuit-regressions',mobileEmulation:mobile,...base}));assert.equal(base.runtime.ok,true);assert.equal(base.timing.ok,true);assert.deepEqual(errors,[]);
+   const base=await page.evaluate(()=>__apexAudit.baseTests());console.log(JSON.stringify({test:'23-circuit-regressions',mobileEmulation:mobile,...base}));assert.equal(base.runtime.ok,true);assert.equal(base.timing.ok,true);if(base.road)assert.equal(base.road.ok,true);assert.deepEqual(errors,[]);
    await context.close();
   }
  }finally{await browser.close();}

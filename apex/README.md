@@ -1,6 +1,6 @@
 # APEX Formula 26
 
-Versión de desarrollo: **v0.13.21 · PRE-RELEASE**
+Versión de desarrollo: **v0.13.22 · PRE-RELEASE**
 
 Archivo fuente original:
 `Apex_Formula_26_v5_230_62_8_6_7_6_4_17_CONTROL_CLASICO_GP4.html`
@@ -241,3 +241,19 @@ Primera etapa funcional de optimización sobre `6f0cfb1`, sin cambiar los 28 fra
 **Pruebas ejecutadas:** `node apex/tests/render-audit.cjs` (funciones de producción aisladas, GPU simulada), incluyendo equivalencia de vértices, fallback, límites de memoria, reciclado y 900 comparaciones algebraicas de proyección. En la escena sintética de 20 celdas de portal durante 12 frames, las transformaciones CPU pasan de 384.000 a 64.000; tras residencia, cero transformaciones y cero nuevas subidas para esas celdas. **Esto no es una medición de FPS.**
 
 **Pendiente:** homologación visual y FPS del Madrid completo en navegador real, PC y Android; migración de la cinta completa de asfalto/pianos y decorado a GPU. Chrome local no pudo arrancar en el entorno de trabajo por restricción de sockets. Se incluye `tests/browser-audit.cjs` para ejecutar en un equipo con Playwright/Chrome: conduce con el scheduler real, prueba tres cámaras, Madrid importado y otro circuito, y ejecuta los autodiagnósticos de los 23 circuitos. Emulación móvil no equivale a Android físico. Véase [AUDITORIA_V01321.md](AUDITORIA_V01321.md).
+
+
+## v0.13.22 — Fase 6: asfalto y pianos residentes, estabilización
+
+- La carga prepara cooperativamente seis vértices compartidos por nodo de pista, organizados en sectores de 32 segmentos con cotas espaciales. Se mantienen elevación, peralte, anchura, bordes y las dos triangulaciones de los sentidos de marcha; no se cambia ningún SVG/JSON ni la física.
+- Un VBO de posiciones inmutable y un EBO de selección sustituyen la reproyección/emisión CPU de las bases de asfalto y piano. Se reutiliza el shader de mundo ya existente. Colores de distancia/clima y pianos personalizados siguen calculándose con las funciones anteriores; se agrupan por material opaco, sin subir colores por vértice.
+- Los extremos móviles, segmentos que cruzan el plano cercano, inspección y materiales con alfa mantienen CPU. El piano sólo aporta sus dos franjas; nunca otro asfalto debajo. Marcas, brillo y lluvia se dibujan después de las bases, en el mismo depth buffer. Las escapatorias y pit lane conservan sus rutas y recortes.
+- Selección por los nodos visibles existentes, sin barrido completo ni dibujo de sectores antiguos. No se envían los índices de nuevo si la selección no cambia. Hay presupuestos de posiciones, índices y grupos, fallback por presupuesto/error y liberación de ambos buffers al cambiar de GP, recompilar, volver al menú o perder contexto.
+- Histéresis de detalle móvil (36/48 m y presión .30/.38) y de visibilidad lejana de pianos (±10 m), sin cambios de altura ni desplazamientos entre niveles.
+- `apexPhase6RoadDiagnostics()` informa de residencia, sectores, bytes CPU/GPU, segmentos CPU/GPU, triángulos, llamadas, subidas y crecimientos de arrays. `renderProfilerSnapshot()` incluye `roadGpu` y `roadGpuPrepareMs`. `apexPhase6AuditBaseCircuits()` permite auditar desde el menú el loader/modelo y mallas reales de las 23 bases, separado de una inspección visual.
+
+**Ejecutado:** `node apex/tests/render-audit.cjs` (incluye `phase6-road-audit.cjs`), `python apex/tests/circuit-assets-audit.py`, sintaxis del runner y `git diff --check`. Auditoría offline aprobada de los 23 SVG/JSON base y el SVG Madrid del repositorio, sin afirmar que eso valide su render en un driver real. Resultados reproducibles en `tests/results/v01322-*`.
+
+**Comparación sintética:** 128 segmentos de asfalto/pianos: 107.520 bytes dinámicos anteriores frente a 15.360 bytes de índices en una selección nueva, más 9.288 bytes de posiciones subidas una sola vez. Selección estable durante 1.000 frames: cero nuevas transferencias o reservas de buffers/arrays de índices. Se mantienen colores y recetas de triángulos tras conversión Float32. La agrupación utiliza ocho llamadas para esas bases frente al lote dinámico anterior: intercambio explícito de algunas llamadas por menos trabajo CPU y tráfico. **No son FPS medidos.**
+
+**Pendiente real:** Chrome vuelve a fallar al arrancar por `socket() failed: Operation not permitted`. No se certifican la inspección visual de los 23 circuitos, los FPS/p95/p99 en navegador/Android ni sesiones prolongadas físicas. El runner ahora incluye Madrid, Mónaco y Spa; `ALL_CIRCUITS=1` amplía el render a las 23 bases y ejecuta los autodiagnósticos de mallas/cronometraje. Sigue siendo un smoke test y no sustituye revisar pit lane, guardados, giroscopio, modos de carrera y escenarios privados del usuario. Detalles en [AUDITORIA_V01322.md](AUDITORIA_V01322.md).
