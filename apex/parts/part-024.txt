@@ -2147,7 +2147,7 @@ function apexBuildCircuitStaticRenderBatches(cw){
  return{items:compiled,primitives:prims,wallStyles};
 }
 function apexStaticBatchStatsSnapshot(){
- const cc=trackData&&trackData.compiledCircuit||{},b=cc.staticBatchStats||{};return{compiledItems:b.items||0,compiledPrimitives:b.primitives||0,wallStyles:b.wallStyles||0,entryCacheHits:apexStaticBatchPerf.entryCacheHits,entryCacheMisses:apexStaticBatchPerf.entryCacheMisses,bufferGrows:apexStaticBatchPerf.bufferGrows,webglBufferMB:Number((((webglState&&webglState.bufferBytes)||0)/1048576).toFixed(2)),drawCalls:(webglState&&webglState.triangles>0)?1:0};
+ const cc=trackData&&trackData.compiledCircuit||{},b=cc.staticBatchStats||{};return{compiledItems:b.items||0,compiledPrimitives:b.primitives||0,wallStyles:b.wallStyles||0,entryCacheHits:apexStaticBatchPerf.entryCacheHits,entryCacheMisses:apexStaticBatchPerf.entryCacheMisses,bufferGrows:apexStaticBatchPerf.bufferGrows,webglBufferMB:Number((((webglState&&webglState.bufferBytes)||0)/1048576).toFixed(2)),drawCalls:(webglState&&Number.isFinite(webglState.drawCalls)?webglState.drawCalls:(webglState&&webglState.triangles>0?1:0))};
 }
 
 // v5.230.62.6 · OCCLUSION CULLING CONSERVADOR.
