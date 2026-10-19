@@ -309,8 +309,8 @@ export function updateRotation(dt, qd, aoa, state, inputs) {
 		δr_target = Cesium.Math.clamp(gyroAngles.yaw,   -maxDef, maxDef);
 	} else {
 		δa_target = (keys['ArrowLeft'] ? -maxDef : 0) + (keys['ArrowRight'] ? +maxDef : 0);
-		// Control de pitch solicitado: flecha arriba eleva el morro, flecha abajo lo baja.
-		δe_target = (keys['ArrowDown'] ? +maxDef : 0) + (keys['ArrowUp'] ? -maxDef : 0);
+		// Controles tipo GeoFS: arriba baja el morro; abajo lo levanta.
+		δe_target = (keys['ArrowDown'] ? -maxDef : 0) + (keys['ArrowUp'] ? +maxDef : 0);
 		δr_target = (keys['KeyQ'] ? +maxDef : 0) + (keys['KeyE'] ? -maxDef : 0);
 	}
 	
