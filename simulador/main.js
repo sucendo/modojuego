@@ -24,7 +24,7 @@ import * as Config from './config.js';
 import { HUD } from './hud.js';
 import { Aircraft } from './aircraft.js';
 import { Controls } from './controls.js';
-import * as Physics from './physics.js';
+import * as Physics from './physics.js?v=pitch-axis-20261019';
 import * as Autopilot from './autopilot.js';
 import { Effects } from './effects.js';
 
