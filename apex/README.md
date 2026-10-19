@@ -1,6 +1,6 @@
 # APEX Formula 26
 
-Versión de desarrollo: **v0.13.10 · PRE-RELEASE**
+Versión de desarrollo: **v0.13.11 · PRE-RELEASE**
 
 Archivo fuente original:
 `Apex_Formula_26_v5_230_62_8_6_7_6_4_17_CONTROL_CLASICO_GP4.html`
@@ -83,3 +83,14 @@ Se cachean las alturas de terreno y los recortes de bandas de gradas y edificios
 - Las cargas antiguas con marcadores de curb pero sin `curbZones` recuperan las zonas desde los puntos SVG al preparar el circuito.
 - Se omite la compilación de superficies visuales para los marcadores de piano y se excluyen de las colas de escenarios, eliminando la gran mancha roja duplicada y reduciendo trabajo.
 - Autoprueba de metadatos y ausencia de duplicación visible: `apexCurbAuthoringAudit()` desde la consola con un circuito cargado. No se alteran las físicas, el trazado, los muros, el cronometraje ni las escapatorias.
+
+## v0.13.11 — Escapatorias, cebreados y bordes de pista
+
+- **Escapatorias SVG:** triangulación de superficies cóncavas y recorte geométrico, compilado una sola vez, contra la banda real de asfalto + pianos mediante un índice espacial de triángulos. Evita que el relleno independiente invada o tape la pista. Incluso los polígonos degenerados ya no vuelven al relleno en abanico sobre la calzada. Canvas2D y WebGL2 utilizan las mismas mallas visibles; se conservan los datos SVG originales. El recorrido y los muros no se modifican.
+- **Pasos de cebra:** las franjas se distribuyen sobre el eje longitudinal local de la pista, de modo que cada franja cruza perpendicularmente el asfalto, no según la orientación del contorno SVG. Los cebreados urbanos lejanos conservan orientación propia. Eliminadas las rayas dibujadas en coordenadas de pantalla en Canvas2D.
+- **Bordes:** se elimina el desnivel artificial de 0,02 m entre borde de pista y comienzo del piano/escapatoria. Los triángulos de escapatoria recortados próximos al límite de la cinta heredan la altura del borde físico con 0,042 m de separación para evitar z-fighting.
+- **Vegetación:** follaje de árboles oscurecido respecto al césped en WebGL2 y Canvas2D, incluidas importaciones SVG, con tonalidad de bosque base más profunda.
+- **Caché:** revisión de compilación 230683, que impide reutilizar superficies estáticas de geometría previa. El coste de recorte es durante la carga, no por fotograma.
+- **Auditoría:** `apexRunoffClipDiagnostics()` informa del tamaño de la geometría recortada. Se han probado sintaxis de funciones y casos geométricos aislados; queda inspección visual con el SVG/JSON completo de Madrid y verificación de FPS.
+
+No se modifica el sistema de físicas, el coche, la IA, el cronometraje ni los 23 circuitos de origen.

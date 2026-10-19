@@ -329,6 +329,8 @@ function apexRegroundImportedWorld(){
  const cw=trackData&&trackData.customWorld;if(!cw||!cw.authoritative)return;
  const vp=trackData.verticalProfile,vs=vp&&vp.samples||[],json=readStoredCircuitJson(trackData.spec&&trackData.spec.dir)||{},tc=json.terrain||{},stamp=[trackData.layout,trackData.pts.length,vs.length,vs.length?vs[0][1]:0,vs.length?vs[Math.floor(vs.length*.5)][1]:0,vs.length?vs[vs.length-1][1]:0,tc.contourReference||'',tc.contourScale||1,tc.embankmentBlendM||'',tc.maxCutFillSlopeDeg||'',tc.runoffFlatToWall!==false].join('|');
  if(cw._apexGroundStamp===stamp)return;
+ // Geometría o peraltes cambiados: la máscara de recorte tiene que rehacerse.
+ trackData._apexRunoffRoadClipIndex=null;
  // Mantener los huecos EXACTOS: no conectamos subpaths ni regeneramos la planta.
  // La misma cota corregida se comparte entre los extremos contiguos por una caché local.
  const heights=new Map(),ground=(x,z)=>{
@@ -377,7 +379,7 @@ function apexSvgLandmarkExact(el,index,ctx){
  if(type==='block'||type==='parking'||type==='terrainZone'||type==='surfaceZone'||type==='water'||type==='marking'||type==='forestZone'){
    node.width=wAttr||20;node.depth=dAttr||18;node.worldFootprint=pts;node.worldY=pts.map(p=>(type==='surfaceZone'?apexAlignedCircuitSurfaceY(p[0],p[1]):type==='marking'?apexSvgSurfaceMarkingY(node,p[0],p[1]):apexWorldGroundY(p[0],p[1])));node.grounded=true;
    if(type==='block'){node.height=node.height||12;node.buildingStyle=node.apexStyle||'building_generic';}else node.height=node.height||.04;
-   if(type==='forestZone'){node.variant='fir';node.color=node.color||'#4b7b50';node.forestPoints=apexForestScatter(pts,node.name||node.sourceId,Math.max(10,Math.min(36,Math.round(pts.length*.7))))}
+   if(type==='forestZone'){node.variant='fir';node.color=node.color||'#315c3b';node.forestPoints=apexForestScatter(pts,node.name||node.sourceId,Math.max(10,Math.min(36,Math.round(pts.length*.7))))}
    if(type==='terrainZone')node.color=node.color||'#667a4d';
    if(type==='surfaceZone'){node.surfaceKind=String(el.getAttribute('data-apex-surface')||sourceRole.replace(/^surface-/,'').replace(/^runoff-/,'')||'ASPHALT').toUpperCase();const cm={ASPHALT:'#676d72',GRAVEL:'#ad9068',SAND:'#bea166',GRASS:'#2e6737'};node.color=node.color||cm[node.surfaceKind]||cm.ASPHALT;}
    if(type==='water'){node.waterKind=sourceRole==='sea'?'SEA':'LAKE';node.color=node.color||(node.waterKind==='SEA'?'#2b739d':'#347ca5');}
@@ -399,7 +401,7 @@ function apexSvgLandmarkExact(el,index,ctx){
    const spanX=Math.max(1,maxX-minX),spanZ=Math.max(1,maxZ-minZ);node.length=lAttr||Math.max(spanX,spanZ);node.depth=dAttr||Math.min(spanX,spanZ);node.height=node.height||(type==='pit'?19:14);if(type==='pit'){node.pitStyle=node.apexStyle||'pit_modern_f1';node.garageBays=Math.max(1,Math.round(Number.isFinite(+node.garageBays)?+node.garageBays:Math.max(8,Math.min(36,node.length/9))));node.hasGlass=node.hasGlass!==false;node.hasBalcony=node.hasBalcony!==false;node.hasPitwall=node.hasPitwall!==false;node.roofStyle=node.roofStyle||'flat';node.garageStyle=node.garageStyle||'f1';}else{node.grandstandStyle=node.apexStyle||'grandstand_open';const gs=String(node.grandstandStyle||'grandstand_open').toLowerCase();if(node.hasRoof===null||node.hasRoof===undefined)node.hasRoof=/covered|roof|arena|vip/.test(gs);node.seatRows=Math.max(3,Math.round(Number.isFinite(+node.seatRows)?+node.seatRows:(/compact/.test(gs)?6:(node.height||14)>15?11:9)));node.roofStyle=node.roofStyle||'cantilever';node.seatColor=node.seatColor||'';}
  }
  else if(type==='ferris'){node.radius=(parseFloat(el.getAttribute('data-apex-radius'))||12)*ctx.scale;node.height=node.height||0;node.grounded=true}
- else if(type==='tree'){node.width=wAttr||6;node.height=node.height||12;node.foliage=node.color||'#3f7f4e';node.treeVariant=variant||'deciduous';node.grounded=true}
+ else if(type==='tree'){node.width=wAttr||6;node.height=node.height||12;node.foliage=node.color||'#347342';node.treeVariant=variant||'deciduous';node.grounded=true}
  else if(type==='tower'){node.width=wAttr||8;node.height=node.height||48;node.grounded=true}
  else if(type==='tunnelPortal'){node.span=wAttr||18;node.deckWidth=dAttr||26;node.height=node.height||6.2}
  else if(type==='gantry'){node.width=wAttr||20;node.span=node.width;node.height=node.height||6}
@@ -1361,9 +1363,14 @@ function apexTriangulateGroundFootprint(points){
   if(Math.hypot(p[0]-q[0],p[1]-q[1])<1e-5)index.pop();
  }
  if(index.length<3)return null;
- // Polígonos extraordinariamente grandes permanecen en la ruta previa:
- // evitamos un O(n²) descontrolado al importar un SVG no validado.
- if(index.length>480)return null;
+ // Contornos SVG muy densos: reducir muestreo únicamente en el render.
+ // Los vértices autoritativos importados se mantienen intactos.
+ // Evitamos tanto un O(n²) excesivo como volver a dibujar un abanico inválido.
+ if(index.length>480){
+  const original=index.slice(),stride=Math.ceil(original.length/420);
+  index.length=0;
+  for(let k=0;k<original.length;k+=stride)index.push(original[k]);
+ }
  const cross=(a,b,c)=>(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);
  let area=0;for(let k=0;k<index.length;k++){const a=points[index[k]],b=points[index[(k+1)%index.length]];area+=a[0]*b[1]-b[0]*a[1]}
  if(Math.abs(area)<1e-5)return null;
@@ -1399,6 +1406,96 @@ function apexTriangulateGroundFootprint(points){
  if(ids.length===3)tris.push([ids[0],ids[1],ids[2]]);
  return tris.length?tris:null;
 }
+/* v0.13.11 — recorte topológico de escapatorias contra la CINTA REAL de
+   asfalto+pianos. Índice espacial compilado una vez por circuito; no depende
+   de la cámara ni del nivel de detalle y no modifica el SVG del usuario. */
+function apexRunoffRoadClipIndex(){
+ if(!trackData)return null;
+ if(trackData._apexRunoffRoadClipIndex)return trackData._apexRunoffRoadClipIndex;
+ const positions=apexRoadMeshSamples(),cell=48,buckets=new Map(),bounds=[];
+ // 2.2 m entre muestras para seguir curvas y bordes sin coste de una
+ // subdivisión por cada vértice SVG de la pista.
+ const samples=[];
+ for(let i=0;i<positions.length;i++)
+  if(!samples.length||positions[i]-samples[samples.length-1]>=2.2||i===positions.length-1)
+   samples.push(positions[i]);
+ const frame=(s)=>{
+  const q=renderRibbonFrameAt(s),e=envProfile(s),w=e.half+e.curb+.025,
+   l=ribbonWorldPoint(q,w,1),r=ribbonWorldPoint(q,w,-1);
+  return{l,r};
+ };
+ const add=(poly)=>{
+  const bound=apexInspectorPolyBounds(poly),foot={poly,bounds:bound},id=bounds.length;
+  bounds.push(foot);
+  for(let ix=Math.floor(bound.minX/cell);ix<=Math.floor(bound.maxX/cell);ix++)
+   for(let iz=Math.floor(bound.minZ/cell);iz<=Math.floor(bound.maxZ/cell);iz++){
+    const key=ix+':'+iz;let arr=buckets.get(key);
+    if(!arr){arr=[];buckets.set(key,arr)}arr.push(id);
+   }
+ };
+ let prev=null;
+ for(const ss of samples){
+  const cur=frame(ss);
+  if(prev){
+   const toObj=p=>({x:p.x,y:p.y,z:p.z});
+   const a=toObj(prev.l),b=toObj(prev.r),c=toObj(cur.r),d=toObj(cur.l);
+   add([a,b,c]);add([a,c,d]);
+  }
+  prev=cur;
+ }
+ return trackData._apexRunoffRoadClipIndex={cell,buckets,faces:bounds,clipped:0,generated:0};
+}
+function apexClipRunoffSurfaceTriangles(triangles){
+ const idx=apexRunoffRoadClipIndex();if(!idx||!Array.isArray(triangles))return triangles;
+ const out=[];
+ for(const tri of triangles){
+  if(!Array.isArray(tri)||tri.length!==3)continue;
+  const poly=tri.map(p=>({x:p[0],y:p[1],z:p[2]}));
+  const bb=apexInspectorPolyBounds(poly),seen=new Set();
+  for(let ix=Math.floor(bb.minX/idx.cell);ix<=Math.floor(bb.maxX/idx.cell);ix++)
+   for(let iz=Math.floor(bb.minZ/idx.cell);iz<=Math.floor(bb.maxZ/idx.cell);iz++)
+    for(const k of idx.buckets.get(ix+':'+iz)||[])seen.add(k);
+  let pieces=[poly];
+  for(const k of seen){
+   const foot=idx.faces[k],b=foot.bounds;
+   if(bb.maxX<=b.minX||bb.minX>=b.maxX||bb.maxZ<=b.minZ||bb.minZ>=b.maxZ)continue;
+   const next=[];
+   for(const p of pieces)next.push(...apexInspectorSubtractFoot(p,foot,false));
+   pieces=next;
+   if(!pieces.length)break;
+  }
+  for(const p of pieces){
+   if(p.length<3||Math.abs(apexInspectorPolyArea(p))<.002)continue;
+   const from=p[0];
+   for(let j=1;j<p.length-1;j++){
+    const q=[from,p[j],p[j+1]];
+    if(Math.abs(apexInspectorPolyArea(q))<.002)continue;
+    out.push(q.map(v=>{
+     // En el borde de la carretera compartimos cota con el límite del
+     // asfalto/piano y situamos la escapatoria sólo 4 cm por debajo.
+     let y=v.y;
+     const ns=nearestTrackState(v.x,v.z,null,{radius:80,allowGlobal:true,fallbackDist:75});
+     if(ns&&Number.isFinite(ns.lat)&&Number.isFinite(ns.s)){
+      const e=envProfile(ns.s),edge=e.half+e.curb;
+      if(Math.abs(Math.abs(ns.lat)-edge)<.18){
+       const road=renderRibbonFrameAt(ns.s);
+       y=apexRoadSideHeight(road,e,ns.lat>=0?1:-1)-.042;
+      }
+     }
+     return [v.x,y,v.z];
+    }));
+   }
+  }
+ }
+ idx.clipped+=triangles.length;idx.generated+=out.length;
+ return out;
+}
+window.apexRunoffClipDiagnostics=()=>{
+ const i=trackData&&trackData._apexRunoffRoadClipIndex;
+ return i?{roadTriangles:i.faces.length,gridCells:i.buckets.size,
+  sourceTriangles:i.clipped,resultTriangles:i.generated}:null;
+};
+
 function apexSvgSurfaceMarkingY(it,x,z){
  // Sólo las pinturas sobre corredor rodable usan su rasante; las lejanas
  // (viales/terreno) mantienen el relieve real de la zona donde fueron dibujadas.
@@ -1417,10 +1514,23 @@ function apexSvgSurfaceMarkingY(it,x,z){
 function apexCompileCrosswalkTriangles(it){
  if(!it||!['CROSSWALK','URBAN_STRIPES'].includes(String(it.markingKind||'')))return null;
  const fp=it.worldFootprint;if(!Array.isArray(fp)||fp.length<3)return null;
- let longest=0,ax=0,az=0;
- for(let j=0;j<fp.length;j++){
-  const p=fp[j],q=fp[(j+1)%fp.length],dx=q[0]-p[0],dz=q[1]-p[1],d=dx*dx+dz*dz;
-  if(d>longest){longest=d;ax=-dz;az=dx}
+ // Las rayas deben atravesar la pista, no seguir su longitud: las franjas
+ // se distribuyen sobre la tangente LOCAL de la pista. El contorno SVG sólo
+ // delimita el cebreado y puede estar girado arbitrariamente.
+ const center=fp.reduce((v,p)=>({x:v.x+p[0],z:v.z+p[1]}),{x:0,z:0});
+ center.x/=fp.length;center.z/=fp.length;
+ const ns=nearestTrackState(center.x,center.z,null,{radius:130,allowGlobal:true,fallbackDist:115});
+ let ax=0,az=0;
+ if(ns&&Number.isFinite(ns.s)&&Number.isFinite(ns.dist)&&ns.dist<Math.max(22,envProfile(ns.s).half+20)){
+  const q=renderRibbonFrameAt(ns.s);
+  ax=q.tx;az=q.tz;
+ }else{
+  // Cebreados urbanos lejos del circuito conservan la orientación del SVG.
+  let longest=0;
+  for(let j=0;j<fp.length;j++){
+   const p=fp[j],q=fp[(j+1)%fp.length],dx=q[0]-p[0],dz=q[1]-p[1],d=dx*dx+dz*dz;
+   if(d>longest){longest=d;ax=-dz;az=dx}
+  }
  }
  const norm=Math.hypot(ax,az);if(norm<1e-6)return null;ax/=norm;az/=norm;
  const scalar=p=>p[0]*ax+p[1]*az,values=fp.map(scalar),min=Math.min(...values),max=Math.max(...values),span=max-min;
@@ -1463,7 +1573,16 @@ function apexBuildLandmarkStaticBatch(it){
      if(painted){b.surfaceTriangles=painted;b.paintStriped=true;b.primitiveCount+=painted.length;}
      else {
        const indices=apexTriangulateGroundFootprint(fp);
-       if(indices){b.surfaceTriangles=indices.map(tri=>tri.map(idx=>b.surfacePoly3[idx]));b.primitiveCount+=indices.length;}
+       if(indices){
+        const mesh=indices.map(tri=>tri.map(idx=>b.surfacePoly3[idx]));
+        b.surfaceTriangles=it.type==='surfaceZone'?apexClipRunoffSurfaceTriangles(mesh):mesh;
+        b.surfaceClipped=it.type==='surfaceZone';
+        b.primitiveCount+=b.surfaceTriangles.length;
+       }else if(it.type==='surfaceZone'){
+        // Recinto degenerado: nunca caer en el antiguo relleno en abanico,
+        // que podía tapar una recta completa. Se conserva en SVG para editarlo.
+        b.surfaceTriangles=[];b.surfaceClipped=true;
+       }
      }
    }
    if(it.type==='forestZone'&&Array.isArray(it.forestPoints)){
@@ -2206,7 +2325,16 @@ function drawWorldLandmarks(cam,pitch){
      // eso atravesaba el asfalto en zonas de desnivel. El terreno 3D lo genera APEX
      // mediante la malla longitudinal y sus taludes.
      if(it.type==='terrainZone')continue;
-     if(it.worldFootprint&&it.worldFootprint.length>=3){const bp=it.worldFootprint.map((v,j)=>project(v[0],(Array.isArray(it.worldY)&&Number.isFinite(it.worldY[j])?it.worldY[j]:apexWorldGroundY(v[0],v[1]))+apexGroundPatchYOffset(it),v[1],it.maxDs||1700)),col=it.color||(it.type==='water'?'#347ca5':it.type==='forestZone'?'#4b7b50':'#777');poly(bp,col,it.type==='marking'?'rgba(255,255,255,.58)':null,1,.94);if(it.type==='forestZone'&&Array.isArray(it.forestPoints)){for(const fp of it.forestPoints){const b=project(fp[0],fp[2]||0,fp[1],it.maxDs||1500),t=project(fp[0],(fp[2]||0)+8.5,fp[1],it.maxDs||1500),l=project(fp[0]-1.9,(fp[2]||0)+2.0,fp[1],it.maxDs||1500),r=project(fp[0]+1.9,(fp[2]||0)+2.0,fp[1],it.maxDs||1500);if(b&&t&&l&&r){line(b,t,'#57452f',1,1);poly([l,r,t],'#285f38',null,1,.94)}}}if(it.type==='marking'&&it.markingKind==='CROSSWALK'&&bp.filter(Boolean).length>=4){const B=bp.filter(Boolean),minX=Math.min(...B.map(p=>p.x)),maxX=Math.max(...B.map(p=>p.x)),minY=Math.min(...B.map(p=>p.y)),maxY=Math.max(...B.map(p=>p.y));ctx.save();ctx.globalAlpha=.85;for(let k=0;k<7;k++){ctx.fillStyle=k%2?'#202428':'#f4f5f5';const x=minX+(maxX-minX)*k/7;ctx.fillRect(x,minY,(maxX-minX)/9,Math.max(2,maxY-minY));}ctx.restore();}continue;}
+     if(it.worldFootprint&&it.worldFootprint.length>=3){
+      const col=it.color||(it.type==='water'?'#347ca5':it.type==='forestZone'?'#315c3b':'#777'),
+       sb=it._apexStaticBatch;
+      // Canvas utiliza los recortes y las franjas de cebra compiladas para WebGL.
+      if((it.type==='surfaceZone'||it.type==='marking')&&sb&&Array.isArray(sb.surfaceTriangles)){
+       for(const tri of sb.surfaceTriangles)polyCam(tri.map(v=>worldToCamera(v[0],v[1],v[2],cam)),col,null,1,.94);
+       continue;
+      }
+      if(it.type==='surfaceZone'&&sb&&sb.surfaceClipped)continue;
+      const bp=it.worldFootprint.map((v,j)=>project(v[0],(Array.isArray(it.worldY)&&Number.isFinite(it.worldY[j])?it.worldY[j]:apexWorldGroundY(v[0],v[1]))+apexGroundPatchYOffset(it),v[1],it.maxDs||1700));poly(bp,col,it.type==='marking'?'rgba(255,255,255,.58)':null,1,.94);if(it.type==='forestZone'&&Array.isArray(it.forestPoints)){for(const fp of it.forestPoints){const b=project(fp[0],fp[2]||0,fp[1],it.maxDs||1500),t=project(fp[0],(fp[2]||0)+8.5,fp[1],it.maxDs||1500),l=project(fp[0]-1.9,(fp[2]||0)+2.0,fp[1],it.maxDs||1500),r=project(fp[0]+1.9,(fp[2]||0)+2.0,fp[1],it.maxDs||1500);if(b&&t&&l&&r){line(b,t,'#57452f',1,1);poly([l,r,t],'#285f38',null,1,.94)}}}/* Cebreados compilados en coordenadas 3D, nunca en ejes de pantalla. */continue;}
    }else if(it.type==="barrier"){
      if(Array.isArray(it.worldPath)&&it.worldPath.length>=2){const h=Math.max(.55,it.height||1.05),kind=it.barrierKind||'CONCRETE',baseCol=apexBarrierColor(kind),ad=circuitAdvertisingStyle(a.s,{},it.side||1);for(let j=0;j<it.worldPath.length-1;j++){const p0=it.worldPath[j],p1=it.worldPath[j+1],g0=Array.isArray(it.worldPathY)&&Number.isFinite(it.worldPathY[j])?it.worldPathY[j]:apexWorldGroundY(p0[0],p0[1]),g1=Array.isArray(it.worldPathY)&&Number.isFinite(it.worldPathY[j+1])?it.worldPathY[j+1]:apexWorldGroundY(p1[0],p1[1]),b0=project(p0[0],g0,p0[1],it.maxDs||1700),b1=project(p1[0],g1,p1[1],it.maxDs||1700),t0=project(p0[0],g0+h,p0[1],it.maxDs||1700),t1=project(p1[0],g1+h,p1[1],it.maxDs||1700);poly([b0,b1,t1,t0],(ad&&kind!=='TYRE')?ad.bg:baseCol,null,1,1);}continue;}
    }else if(it.type==="tunnel"){
@@ -2420,12 +2548,12 @@ function drawWorldLandmarks(cam,pitch){
      const v=it.treeVariant||it.variant||'deciduous',seed=apexStringHash((it.sourceId||it.name||'tree')+'|'+v),r0=((seed>>>0)&1023)/1023,r1=((seed>>>10)&1023)/1023,r2=((seed>>>20)&1023)/1023,wMul=.88+r0*.34,hMul=.92+r1*.22,crossTilt=(r2-.5)*.22,treeW=it.width*wMul,treeH=it.height*hMul,trunkFrac=v==='palm'?(0.48+r0*.07):(v==='fir'?(0.24+r0*.05):(0.37+r0*.06)),trunkB=anchorPoint(a,0,0,0),trunkT=anchorPoint(a,0,0,treeH*trunkFrac),crown=anchorPoint(a,0,0,treeH),crownLow=anchorPoint(a,0,0,treeH*(trunkFrac+.06));
      if(trunkB&&trunkT&&crown){ctx.save();ctx.strokeStyle=v==='palm'?'#6b5737':'#5a432d';ctx.lineWidth=Math.max(1,v==='palm'?2.3*s:2.15*s);ctx.beginPath();ctx.moveTo(trunkB.x,trunkB.y);ctx.lineTo(trunkT.x,trunkT.y);ctx.stroke();
        if(v==='fir'){
-         const fc=it.foliage||'#285f38',tier0=treeH*(.24+.03*r1),tier1=treeH*(.46+.05*r2),tier2=treeH*(.67+.03*r0),l0=anchorPoint(a,0,-treeW*.62,tier0),r0p=anchorPoint(a,0,treeW*.62,tier0),l1=anchorPoint(a,0,-treeW*.50,tier1),r1p=anchorPoint(a,0,treeW*.50,tier1),l2=anchorPoint(a,0,-treeW*.36,tier2),r2p=anchorPoint(a,0,treeW*.36,tier2);
+         const fc=shadeColor(it.foliage||'#285f38',-10),tier0=treeH*(.24+.03*r1),tier1=treeH*(.46+.05*r2),tier2=treeH*(.67+.03*r0),l0=anchorPoint(a,0,-treeW*.62,tier0),r0p=anchorPoint(a,0,treeW*.62,tier0),l1=anchorPoint(a,0,-treeW*.50,tier1),r1p=anchorPoint(a,0,treeW*.50,tier1),l2=anchorPoint(a,0,-treeW*.36,tier2),r2p=anchorPoint(a,0,treeW*.36,tier2);
          poly([l0,r0p,crown],fc,null,1,1);poly([l1,r1p,anchorPoint(a,0,0,treeH*.92)],shadeColor(fc,6),null,1,.97);poly([l2,r2p,anchorPoint(a,0,0,treeH*1.01)],shadeColor(fc,12),null,1,.94);
          const crossL=anchorPoint(a,0,-treeW*.20,treeH*.56),crossR=anchorPoint(a,0,treeW*.20,treeH*.56),crossTop=anchorPoint(a,0,crossTilt*treeW*.25,treeH*.76);poly([crossL,crossR,crossTop],shadeColor(fc,18),null,1,.86);
        }
        else if(v==='palm'){
-         const fc=it.foliage||'#4e8b45';
+         const fc=shadeColor(it.foliage||'#4e8b45',-18);
          for(let k=0;k<8;k++){
            const aa=-1.26+k*(2.52/7),lat=Math.sin(aa)*treeW*(.88-.08*(k%2)),tipY=treeH*(.80-.06*(Math.abs(k-3.5)/3.5)),leaf=anchorPoint(a,0,lat,tipY),col=shadeColor(fc,k%2?8:-5);
            line(crownLow,leaf,col,Math.max(1,1.9*s),1);
@@ -2434,7 +2562,7 @@ function drawWorldLandmarks(cam,pitch){
          poly([frontL,frontR,frontTop],shadeColor(fc,12),null,1,.92);poly([frontL2,frontR2,anchorPoint(a,0,crossTilt*treeW*.12,treeH*.80)],shadeColor(fc,5),null,1,.86);
        }
        else{
-         const fc=it.foliage||'#4b8447',l=anchorPoint(a,0,-treeW*(.62+.04*r0),treeH*.34),r=anchorPoint(a,0,treeW*(.64-.02*r1),treeH*.35),ll=anchorPoint(a,0,-treeW*.56,treeH*.72),rr=anchorPoint(a,0,treeW*.52,treeH*.74),top=anchorPoint(a,0,crossTilt*treeW*.14,treeH*1.01);
+         const fc=shadeColor(it.foliage||'#4b8447',-18),l=anchorPoint(a,0,-treeW*(.62+.04*r0),treeH*.34),r=anchorPoint(a,0,treeW*(.64-.02*r1),treeH*.35),ll=anchorPoint(a,0,-treeW*.56,treeH*.72),rr=anchorPoint(a,0,treeW*.52,treeH*.74),top=anchorPoint(a,0,crossTilt*treeW*.14,treeH*1.01);
          poly([l,r,rr,top,ll],fc,null,1,1);
          const l2=anchorPoint(a,0,-treeW*.48,treeH*.46),r2=anchorPoint(a,0,treeW*.46,treeH*.48),ll2=anchorPoint(a,0,-treeW*.34,treeH*.84),rr2=anchorPoint(a,0,treeW*.32,treeH*.86),top2=anchorPoint(a,0,crossTilt*treeW*.10,treeH*.96);poly([l2,r2,rr2,top2,ll2],shadeColor(fc,8),null,1,.90);
          const crossL=anchorPoint(a,0,-treeW*.24,treeH*.54),crossR=anchorPoint(a,0,treeW*.22,treeH*.56),crossTop=anchorPoint(a,0,crossTilt*treeW*.18,treeH*.74);poly([crossL,crossR,crossTop],shadeColor(fc,16),null,1,.86);
@@ -3386,7 +3514,7 @@ function roadStep(s,sd,cam,pitch){
        wc=P=>worldToCamera(P.x,P.y,P.z,cam);
  const C=worldToCamera(q.x,q.y,q.z,cam),
        L=wc(WP(half,1)),R=wc(WP(half,-1)),
-       LO=wc(apexFlatRunoffPoint(q,env,half+env.curb,1,.02)),RO=wc(apexFlatRunoffPoint(q,env,half+env.curb,-1,.02)),
+       LO=wc(apexFlatRunoffPoint(q,env,half+env.curb,1,0)),RO=wc(apexFlatRunoffPoint(q,env,half+env.curb,-1,0)),
        LX=wc(apexFlatRunoffPoint(q,env,apexRoadFlatLimit(s,env,1),1)),RX=wc(apexFlatRunoffPoint(q,env,apexRoadFlatLimit(s,env,-1),-1));
  // Los muros físicos siguen usando la geometría original; en la base actual no se renderizan.
  const wl=wallGeometryAtS(s,1),wr=wallGeometryAtS(s,-1);

@@ -328,7 +328,7 @@ function apexForEachTerrainPlateCell(cam,fn){
 // ---------- v5.230.62.2 · COMPILADOR ESTÁTICO + CACHE PERSISTENTE ----------
 // El objetivo es pagar el coste de interpretación/teselación ANTES de conducir y
 // reutilizarlo en posteriores aperturas del MISMO SVG/perfil. No cambia la geometría.
-const APEX_CIRCUIT_COMPILE_REV=230682;
+const APEX_CIRCUIT_COMPILE_REV=230683;
 async function apexCompilerYield(){return new Promise(resolve=>setTimeout(resolve,0));}
 function apexHash32String(str){let h=2166136261>>>0;str=String(str||'');for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)>>>0}return ('00000000'+h.toString(16)).slice(-8)}
 function apexCircuitCompileFingerprint(){
@@ -3180,12 +3180,14 @@ function webglPushCircuitLandmarks(cam,pitch){
    const P=(along=0,lat=0,y=0)=>webglLandmarkCam(a,along,lat,y,cam);
    if(it.type==='surfaceZone'||it.type==='terrainZone'||it.type==='water'||it.type==='marking'||it.type==='forestZone'){
      if(it.type==='terrainZone')continue;
-     if(it.worldFootprint&&it.worldFootprint.length>=3){const col=it.color||(it.type==='water'?'#347ca5':it.type==='forestZone'?'#4b7b50':'#777'),sb=it._apexStaticBatch,
+     if(it.worldFootprint&&it.worldFootprint.length>=3){const col=it.color||(it.type==='water'?'#347ca5':it.type==='forestZone'?'#315c3b':'#777'),sb=it._apexStaticBatch,
        depthBias=apexGroundPatchDepthBias(it);
-     if(sb&&Array.isArray(sb.surfaceTriangles)&&sb.surfaceTriangles.length){
-       // Cada triángulo pertenece al recinto SVG (no al abanico convexo ficticio).
+     if(sb&&Array.isArray(sb.surfaceTriangles)){
+       // Tanto WebGL como Canvas consumen el recorte compilado.
+       // Si el recinto fue eliminado por estar DENTRO del asfalto no hay
+       // que volver a pintar el polígono original.
        for(const tri of sb.surfaceTriangles)webglPushCamPoly(tri.map(p=>apexStaticWorldCam(p,cam)),pitch,col,.60,depthBias);
-     }else{
+     }else if(!(sb&&sb.surfaceClipped)){
        const bp=sb&&Array.isArray(sb.surfacePoly3)?sb.surfacePoly3.map(p=>apexStaticWorldCam(p,cam)):it.worldFootprint.map((v,j)=>worldToCamera(v[0],(Array.isArray(it.worldY)&&Number.isFinite(it.worldY[j])?it.worldY[j]:apexWorldGroundY(v[0],v[1]))+apexGroundPatchYOffset(it),v[1],cam));
        webglPushCamPoly(bp,pitch,col,.60,depthBias);
      }if(it.type==='forestZone'){if(sb&&Array.isArray(sb.forest)){for(const tree of sb.forest){if(tree.bound&&!apexStaticBoundInView(tree.bound,cam,1900,1.6)){apexHeavyCircuitPerf.forestCulled++;continue;}webglPushCamQuad(...tree.trunk.map(p=>apexStaticWorldCam(p,cam)),pitch,'#57452f',.60,-.004);webglPushCamPoly(tree.crown.map(p=>apexStaticWorldCam(p,cam)),pitch,'#285f38',.60,-.005)}}else if(Array.isArray(it.forestPoints)){for(const fp of it.forestPoints){const yy=fp[2]||0,C=worldToCamera(fp[0],yy+8.2,fp[1],cam),L0=worldToCamera(fp[0]-2,yy+1.8,fp[1],cam),R0=worldToCamera(fp[0]+2,yy+1.8,fp[1],cam);webglPushCamQuad(worldToCamera(fp[0]-.12,yy,fp[1],cam),worldToCamera(fp[0]+.12,yy,fp[1],cam),worldToCamera(fp[0]+.12,yy+3.1,fp[1],cam),worldToCamera(fp[0]-.12,yy+3.1,fp[1],cam),pitch,'#57452f',.60,-.004);webglPushCamPoly([L0,R0,C],pitch,'#285f38',.60,-.005)}}}continue;}
@@ -3436,19 +3438,19 @@ function webglPushCircuitLandmarks(cam,pitch){
      const v=it.treeVariant||it.variant||'deciduous',seed=apexStringHash((it.sourceId||it.name||'tree')+'|'+v),r0=((seed>>>0)&1023)/1023,r1=((seed>>>10)&1023)/1023,r2=((seed>>>20)&1023)/1023,wMul=.88+r0*.34,hMul=.92+r1*.22,crossTilt=(r2-.5)*.22,treeW=it.width*wMul,treeH=it.height*hMul,th=treeH*(v==='palm'?(0.48+r0*.07):(v==='fir'?(0.24+r0*.05):(0.37+r0*.06)));
      webglPushCamQuad(P(-.20,0,0),P(.20,0,0),P(.20,0,th),P(-.20,0,th),pitch,v==='palm'?'#6b5737':'#5a432d',.60,-.004);
      if(v==='fir'){
-       const fc=it.foliage||'#285f38';
+       const fc=shadeColor(it.foliage||'#285f38',-10);
        webglPushCamPoly([P(0,-treeW*.62,treeH*(.24+.03*r1)),P(0,treeW*.62,treeH*(.24+.03*r1)),P(0,0,treeH)],pitch,fc,.60,-.005);
        webglPushCamPoly([P(0,-treeW*.50,treeH*(.46+.05*r2)),P(0,treeW*.50,treeH*(.46+.05*r2)),P(0,0,treeH*.92)],pitch,shadeColor(fc,6),.60,-.006);
        webglPushCamPoly([P(0,-treeW*.36,treeH*(.67+.03*r0)),P(0,treeW*.36,treeH*(.67+.03*r0)),P(0,crossTilt*treeW*.10,treeH*1.01)],pitch,shadeColor(fc,12),.60,-.007);
        if(lod<=1)webglPushCamPoly([P(0,-treeW*.20,treeH*.56),P(0,treeW*.20,treeH*.56),P(0,crossTilt*treeW*.18,treeH*.76)],pitch,shadeColor(fc,18),.60,-.008);
      }
      else if(v==='palm'){
-       const fc=it.foliage||'#4e8b45',C=P(0,0,treeH*(th/treeH+.06));
+       const fc=shadeColor(it.foliage||'#4e8b45',-18),C=P(0,0,treeH*(th/treeH+.06));
        for(let k=0;k<8;k++){const aa=-1.26+k*(2.52/7),lat=Math.sin(aa)*treeW*(.88-.08*(k%2)),tip=P(0,lat,treeH*(.80-.06*(Math.abs(k-3.5)/3.5))),mid=P(0,lat*.58,treeH*.86);webglPushCamPoly([C,tip,mid],pitch,shadeColor(fc,k%2?8:-5),.60,-.006);}
        if(lod<=1){webglPushCamPoly([P(0,-treeW*.38,treeH*.73),P(0,treeW*.42,treeH*.75),P(0,crossTilt*treeW*.18,treeH*.86)],pitch,shadeColor(fc,12),.60,-.008);webglPushCamPoly([P(0,-treeW*.18,treeH*.66),P(0,treeW*.16,treeH*.68),P(0,crossTilt*treeW*.12,treeH*.80)],pitch,shadeColor(fc,5),.60,-.009);}
      }
      else{
-       const fc=it.foliage||'#4b8447';
+       const fc=shadeColor(it.foliage||'#4b8447',-18);
        webglPushCamPoly([P(0,-treeW*(.62+.04*r0),treeH*.34),P(0,treeW*(.64-.02*r1),treeH*.35),P(0,treeW*.52,treeH*.74),P(0,crossTilt*treeW*.14,treeH*1.01),P(0,-treeW*.56,treeH*.72)],pitch,fc,.60,-.005);
        webglPushCamPoly([P(0,-treeW*.48,treeH*.46),P(0,treeW*.46,treeH*.48),P(0,treeW*.32,treeH*.86),P(0,crossTilt*treeW*.10,treeH*.96),P(0,-treeW*.34,treeH*.84)],pitch,shadeColor(fc,8),.60,-.007);
        if(lod<=1)webglPushCamPoly([P(0,-treeW*.24,treeH*.54),P(0,treeW*.22,treeH*.56),P(0,crossTilt*treeW*.18,treeH*.74)],pitch,shadeColor(fc,16),.60,-.008);

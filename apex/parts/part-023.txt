@@ -1142,7 +1142,7 @@ function parseImportedLandmarkNode(el,index){
  else if(type==='block'){node.width=wAttr||parseFloat(el.getAttribute('width'))||20;node.depth=dAttr||parseFloat(el.getAttribute('height'))||18;node.height=node.height||12;if(foot&&foot.length>=3)node.worldFootprint=foot;node.grounded=true}
  else if(type==='tower'){node.width=wAttr||parseFloat(el.getAttribute('width'))||8;node.height=node.height||48;node.grounded=true}
  else if(type==='ferris'){node.radius=parseFloat(el.getAttribute('data-apex-radius'))||parseFloat(el.getAttribute('r'))||18;node.color=node.color||'#eef3f6';node.grounded=true}
- else if(type==='tree'){node.width=wAttr||((parseFloat(el.getAttribute('r'))||5)*1.2);node.height=node.height||12;node.foliage=node.color||'#3f7f4e';node.grounded=true}
+ else if(type==='tree'){node.width=wAttr||((parseFloat(el.getAttribute('r'))||5)*1.2);node.height=node.height||12;node.foliage=node.color||'#347342';node.grounded=true}
  else if(type==='gantry'||type==='billboard'){node.width=wAttr||lAttr||parseFloat(el.getAttribute('width'))||16;node.span=node.width;node.height=node.height||4.5}
  else if(type==='tunnelPortal'){node.span=wAttr||parseFloat(el.getAttribute('width'))||18;node.height=node.height||6.2;node.deckWidth=dAttr||parseFloat(el.getAttribute('height'))||26}
  else if(type==='road'||type==='bridge'||type==='tunnel'){node.width=Math.max(6,wAttr||10);node.depth=dAttr||node.width;node.height=node.height||(type==='bridge'?1.6:(type==='tunnel'?1.0:.15));node.worldPath=pathPts.length>=2?pathPts:null;node.worldFootprint=(foot&&foot.length>=3)?foot:polyFootprintFromWorldPath(pathPts,node.width);node.color=node.color||(type==='bridge'?'#98a1a8':(type==='tunnel'?'#7f878f':'#7c848c'))}
