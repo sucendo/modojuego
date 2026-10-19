@@ -926,7 +926,7 @@ function captureSessionTelemetry(){
  captureTelemetryEventState();
  if(!telemetryFullRecording()||raceT+1e-6<sessionTelemetryNext)return;
  sessionTelemetryNext=raceT+1/telemetryFullSampleHz();
- const tr=player.track||poseAt(player.s),env=envProfile(player.s),wallCtx=apexWallContextAtS(player.s,env),ps=playerSurfaceState(),deg=180/Math.PI,surface=trackSurfacePoseAt(player.s,player.lat);
+ const tr=player.track||poseAt(player.s),env=envProfile(player.s),wallCtx=apexWallContextAtS(player.s,env),ps=playerSurfaceState(),deg=180/Math.PI,surface=playerDriveSurfacePose();
  const trackHeading=Math.atan2(tr.tx,tr.tz),headingErr=angleDiff(trackHeading,player.heading);
  const autoCtlMode=demoMode?"FULL":assistMode?"SPEED_ASSIST":"OFF";
  const rec=player.autoRecovery?player.autoRecovery.mode:null;
