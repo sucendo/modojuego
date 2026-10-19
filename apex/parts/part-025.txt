@@ -769,6 +769,9 @@ function drawRoad(camArg=null){
  if(apexPlateTerrainGrid())drawTerrainPlateMesh(cam,pitch);
  for(const seg of terrainSegments){if(inspectionFull&&apexPlateTerrainGrid())continue;if(mobilePerformanceMode()&&!inspectionFull)drawTerrainSegmentMobile(seg,cam,pitch);else drawTerrainSegment(seg,cam,pitch);}
  apexDrawFallbackStructureBanks(terrainSegments,cam,pitch);
+ // La escapatoria SVG se dibuja DESPUES de la malla natural y antes
+ // de cualquier superficie generica o cinta, sin segunda pasada oculta.
+ apexRenderUnifiedAuthoredGround(cam,pitch,false);
  drawNearRoadSafetyPatch(cam,pitch);
 
  // PASADA 2 — pista y rivales en profundidad global.
