@@ -65,7 +65,7 @@ function webglPushNearPatch(cam,pitch){
  webglPushCamQuad(lRa,rRa,rRb,lRb,pitch,shadeColor(palette().road,-2),.34,bias);
 }
 function webglCollectCircuitSegments(cam,pitch){
- const near=.64,mp=mobileControlProfile(),mainSign=(player&&player.reverse)?-1:1,inspectionFull=(typeof apexInspectionFullScene==='function'&&apexInspectionFullScene()),fullD=inspectionFull&&trackData?trackData.km*1000*.515:0,branches=inspectionFull?[collectRoadBranch(1,cam,pitch,fullD,near),collectRoadBranch(-1,cam,pitch,fullD,near)]:mobilePerformanceMode()?[collectRoadBranch(mainSign,cam,pitch,mp.roadForward,near),collectRoadBranch(-mainSign,cam,pitch,mp.roadRear,near)]:[collectRoadBranch(1,cam,pitch,mp.roadForward,near),collectRoadBranch(-1,cam,pitch,mp.roadRear,near)],segments=[];
+ const near=.64,mp=mobileControlProfile(),mainSign=(player&&player.reverse)?-1:1,inspectionFull=(typeof apexInspectionFullScene==='function'&&apexInspectionFullScene()),fullD=inspectionFull&&trackData?trackData.km*1000*.515:0,branches=inspectionFull?[collectRoadBranch(1,cam,pitch,fullD,near,apexWebglRoadStep),collectRoadBranch(-1,cam,pitch,fullD,near,apexWebglRoadStep)]:mobilePerformanceMode()?[collectRoadBranch(mainSign,cam,pitch,mp.roadForward,near,apexWebglRoadStep),collectRoadBranch(-mainSign,cam,pitch,mp.roadRear,near,apexWebglRoadStep)]:[collectRoadBranch(1,cam,pitch,mp.roadForward,near,apexWebglRoadStep),collectRoadBranch(-1,cam,pitch,mp.roadRear,near,apexWebglRoadStep)],segments=[];
  for(let bi=0;bi<branches.length;bi++){const steps=branches[bi];for(let i=0;i<steps.length-1;i++){const a=steps[i],b=steps[i+1];if(!roadSegmentIsSane(a,b))continue;segments.push({a,b,z:roadSegmentDepth(a,b,near),branch:bi})}}
  return segments;
 }
@@ -756,11 +756,12 @@ function webglSubmit(){
  gl.clearColor(.02,.03,.05,1);gl.clearDepth(1);
  gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
  const data=webglVertexData.subarray(0,webglFloatCount),needBytes=data.byteLength;
+ apexGpuFrameStats.dynamicUploadBytes=needBytes;apexGpuFrameStats.dynamicVertices=webglFloatCount/7;
  gl.bindBuffer(gl.ARRAY_BUFFER,webglState.buffer);
  if(!webglState.bufferBytes||needBytes>webglState.bufferBytes){
   let cap=Math.max(65536,webglState.bufferBytes||0);
   while(cap<needBytes)cap*=2;
-  gl.bufferData(gl.ARRAY_BUFFER,cap,gl.DYNAMIC_DRAW);
+  gl.bufferData(gl.ARRAY_BUFFER,cap,gl.DYNAMIC_DRAW);apexGpuFrameStats.bufferAllocations++;
   webglState.bufferBytes=cap;apexStaticBatchPerf.bufferGrows++;
  }
  if(needBytes)gl.bufferSubData(gl.ARRAY_BUFFER,0,data);
@@ -782,7 +783,7 @@ function webglSubmit(){
  if(typeof apexPhase5GroundGPU!=='undefined'&&apexPhase5GroundGPU.pending)
   stages.push({offset:apexPhase5GroundGPU.pending.offset,draw:()=>{
    if(apexPhase5DrawGpuGround())return{
-    triangles:apexPhase5GroundGPU.visibleTriangles||0,calls:apexPhase5GroundGPU.drawCalls||0};
+    triangles:apexPhase5GroundGPU.submittedTriangles||0,calls:apexPhase5GroundGPU.drawCalls||0};
    return{triangles:0,calls:0};
   },fail:apexPhase5GpuGroundError});
  stages.sort((a,b)=>a.offset-b.offset);
@@ -816,6 +817,7 @@ function webglSubmit(){
 function webgl2RenderFrame(){
  renderFrameId++;renderProfileReset();
  if(!webglInit()){setRendererBackend("canvas2d",{notify:false,persist:false});return canvas2dRenderFrame()}
+ apexSyncGpuScene();
  webglClearCanvasOverlay();webglFloatCount=0;webglScreenRoll=0;
  // Ninguna pasada GPU anterior debe quedar pendiente al cambiar de
  // pantalla, renderer o circuito: seguridad ante abortos de frame.
@@ -828,12 +830,12 @@ function webgl2RenderFrame(){
  let segments=null,rivalVisuals=null;
  if(visual){
    webglScreenRoll=viewRoll;
-   segments=webglCollectCircuitSegments(cam,cam.pitch);
+   segments=renderProfileMeasure("roadPrepareMs",()=>webglCollectCircuitSegments(cam,cam.pitch));
    renderProfileMeasure("environmentMs",()=>{webglPushCircuitLandmarks(cam,cam.pitch);if(trackData.gradeCrossing)webglPushGradeCrossingEmbankments(cam,cam.pitch)});
    if(apexPlateTerrainGrid())webglPushTerrainPlateMesh(cam,cam.pitch);
    const terrainSegments=segments.slice().sort((A,B)=>B.z-A.z);for(const seg of terrainSegments)if(!apexInspectionActive()||!apexPlateTerrainGrid())webglPushTerrainSegment(seg,cam,cam.pitch);apexWebglFallbackStructureBanks(terrainSegments,cam,cam.pitch);
-   apexRenderUnifiedAuthoredGround(cam,cam.pitch,true);
-   if(!apexInspectionActive())webglPushNearPatch(cam,cam.pitch);const roadSegments=terrainSegments;for(const seg of roadSegments)webglPushRoadSegment(seg,cam,cam.pitch);
+   renderProfileMeasure("groundPrepareMs",()=>apexRenderUnifiedAuthoredGround(cam,cam.pitch,true));
+   if(!apexInspectionActive())webglPushNearPatch(cam,cam.pitch);const roadSegments=terrainSegments;renderProfileMeasure("roadDrawMs",()=>{for(const seg of roadSegments)webglPushRoadSegment(seg,cam,cam.pitch)});
    renderProfileMeasure("environmentMs",()=>{webglPushSurfaceMarkings(roadSegments,cam,cam.pitch);webglPushCircuitWalls(segments,cam,cam.pitch);webglPushExactWallFences(cam,cam.pitch);webglPushTunnelDetails(segments,cam,cam.pitch);apexWebglGenericPortalFaces(cam,cam.pitch);webglPushBrakeBoards(cam,cam.pitch);if(trackData.gradeCrossing)webglPushGradeCrossingOverpass(cam,cam.pitch)});
    rivalVisuals=webglPrepareRivalVisuals(collectRivalSprites(cam,cam.pitch));
    renderProfileMeasure("carsMs",()=>{webglPushRivalField3D(rivalVisuals,cam,cam.pitch);webglPushPlayerCameraCar3D(cam,cam.pitch);});

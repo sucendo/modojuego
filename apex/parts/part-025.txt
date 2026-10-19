@@ -427,8 +427,9 @@ window.apexPhase4GroundSelfTest=()=>{
   a===b&&a.length===4&&a[0].y===0&&a[2].y===8&&a[2].x===20&&a[2].z===20;
  return{pass,coverage,cached:a===b,corners:a.length,heights:a.map(p=>p.y)};
 };
-function apexForEachTerrainPlateCell(cam,fn,skipCoarse=null){
- const g=apexPlateTerrainGrid(),cells=apexCollectTerrainPlateCells(cam);if(!g||!cells)return false;
+function apexForEachTerrainPlateCell(cam,fn,skipCoarse=null,skipFine=null){
+ const selectionT0=performance.now(),g=apexPlateTerrainGrid(),cells=apexCollectTerrainPlateCells(cam);
+ renderProfileAdd("terrainSelectMs",performance.now()-selectionT0);if(!g||!cells)return false;
  let detailed=0;const pressure=mobileRenderPressure(),ordinaryFineM=mobilePerformanceMode()?lerp(72,118,pressure):lerp(105,165,pressure),structureFineM=mobilePerformanceMode()?230:285;
  for(const cell of cells){
   if(apexInspectionFullScene()){
@@ -440,7 +441,10 @@ function apexForEachTerrainPlateCell(cam,fn,skipCoarse=null){
     unitCell=x1===ix+1&&z1===iz+1,probe=cell.dist2<structureFineM*structureFineM&&unitCell,dKind=apexInspectionFullScene()?cell.kind:probe?apexTerrainStaticKind(g,ix,iz,(x0+xB)*.5,(z0+zB)*.5):null,
     structural=dKind==='PORTAL'||dKind==='TUNNEL',allowDetail=dKind&&(apexInspectionFullScene()||structural||cell.dist2<ordinaryFineM*ordinaryFineM&&detailed<220);
   if(allowDetail){
-   if(dKind!=='PORTAL')detailed++;for(const poly of apexTerrainFinePatch(g,ix,iz,dKind)){
+   if(dKind!=='PORTAL')detailed++;
+   const polys=apexTerrainFinePatch(g,ix,iz,dKind);
+   if(skipFine&&skipFine(cell,g,polys,dKind))continue;
+   for(const poly of polys){
     const cp=poly.map(p=>worldToCamera(p.x,p.y,p.z,cam));if(cp.length>=3)fn(cp[0],cp[1],cp[2],cp[3]||cp[2],cell,g,cp);
    }
    continue;
@@ -493,6 +497,7 @@ function apexCompileItemS(it,L){
 }
 async function apexCompileCircuitStatic(onProgress=null){
  if(!trackData||!trackData.pts||!trackData.pts.length)return null;
+ delete trackData._apexWebglRoadNodes;
  const tAll=performance.now(),fingerprint=apexCircuitCompileFingerprint(),stats={revision:APEX_CIRCUIT_COMPILE_REV,appVersion:APP_VERSION,circuit:trackData.spec&&trackData.spec.dir||'',fingerprint,startedAt:new Date().toISOString(),stages:{},sectorM:96,sectors:0,terrainFineCells:0,terrainFinePolygons:0,terrainFineByKind:{PORTAL:0,TUNNEL:0,TRACK:0,PAVED:0},estimatedFineVertices:0,cache:{hit:false,persisted:false,loadMs:0,writeMs:0}};
  apexCompilerProgress(onProgress,'ÍNDICES',.02);let t0=performance.now();
  const cw=circuitWorldProfile(),grade=apexGradeSpatialIndex(),portals=apexTunnelPortalDescriptors(),terrain=apexPlateTerrainGrid()||apexPrepareTerrainContourGrid();
@@ -569,7 +574,7 @@ function drawTerrainPlateMesh(cam,pitch){
 }
 function webglPushTerrainPlateMesh(cam,pitch){
  const _terrainT0=performance.now(),gpuEligible=typeof apexPhase5TerrainCanDraw==='function'&&apexPhase5TerrainCanDraw(),
-  staticCells=[];
+  staticCells=[];let newFine=0;apexGpuFrameStats.deferredFineCells=0;
  const draw=(A,B,C,D,c,g,poly)=>{
   const col=g.tone==='BROWN'?'#886e51':g.tone==='SAND'?'#bc9c69':'#4e7650',
    fill=(c.ix+c.iz)%5===0?shadeColor(col,3):col;
@@ -581,12 +586,22 @@ function webglPushTerrainPlateMesh(cam,pitch){
   // de triangulos que cruzan el ojo de la camara.
   if(cell.dist2<g.cell*g.cell*4)return false;
   staticCells.push({cell,g,quad,clean});return true;
+ }:null,gpuEligible?(cell,g,polys,kind)=>{
+  // Exact same cached, clipped polygons, including tunnel openings. Near-eye
+  // cells retain CPU clipping; only their world transform moves to the shader.
+  if(cell.dist2<g.cell*g.cell*4)return false;
+  const gpu=apexPhase5TerrainGPU,atlas=trackData.customWorld&&trackData.customWorld._apexUnifiedGroundAtlas,
+   resident=gpu.grid===g&&gpu.atlas===atlas&&gpu.gpuEntries.has(apexTerrainGpuCellKey(cell,kind));
+  if(!resident&&newFine>=(mobilePerformanceMode()?2:4)){apexGpuFrameStats.deferredFineCells++;return false;}
+  if(!resident)newFine++;
+  staticCells.push({cell,g,polys,kind,clean:polys,quad:null});return true;
  }:null);
- if(staticCells.length&&!apexPhase5PrepareGpuTerrain(staticCells,cam,pitch)){
+ if(staticCells.length&&!renderProfileMeasure("terrainPrepareMs",()=>apexPhase5PrepareGpuTerrain(staticCells,cam,pitch))){
   // Si falla el shader o el presupuesto GPU, se dibujan las mismas
   // geometrías estáticas por la ruta anterior dentro de este frame.
   for(const item of staticCells){
-   const {cell,g,quad,clean}=item,[A,B,C,D]=quad;
+   const {cell,g,quad,clean}=item;
+   const [A,B,C,D]=quad||[];
    if(clean===null)draw(worldToCamera(A.x,A.y,A.z,cam),
     worldToCamera(B.x,B.y,B.z,cam),worldToCamera(C.x,C.y,C.z,cam),
     worldToCamera(D.x,D.y,D.z,cam),cell,g);
@@ -832,15 +847,47 @@ function apexRoadMeshSamples(){
  for(const p of trackData.verticalProfile&&trackData.verticalProfile.samples||[])list.push(clamp(p[0],0,1)*L);
  list.sort((a,b)=>a-b);return trackData._continuousRoadS=list.filter((v,i)=>!i||v-list[i-1]>.0001);
 }
-function collectRoadBranch(sign,cam,pitch,maxD=540,near=.64){
+/* v0.13.21: WebGL consumes camera-space vertices, never roadStep's nine
+   Canvas screen projections or its two unused wall tops. Fixed mesh nodes
+   reuse immutable world geometry; moving branch ends are deliberately uncached. */
+const apexRoadPreparationPerf={hits:0,misses:0,evicted:0};
+function apexWebglRoadStep(s,sd,cam,pitch,node=-1){
+ const samples=apexRoadMeshSamples();
+ let cache=trackData._apexWebglRoadNodes;
+ if(!cache||cache.samples!==samples){cache={samples,nodes:new Map()};trackData._apexWebglRoadNodes=cache;}
+ let w=node>=0?cache.nodes.get(node):null;
+ if(w){apexRoadPreparationPerf.hits++;}
+ else{
+  const at=node>=0?samples[node]:s,env=envProfile(at),curb=curbInfo(at),q=renderRibbonFrameAt(at),half=env.half;
+  w={env,curb,q,points:[{x:q.x,y:q.y,z:q.z},
+   ribbonWorldPoint(q,half,1),ribbonWorldPoint(q,half,-1),
+   apexFlatRunoffPoint(q,env,half+env.curb,1),apexFlatRunoffPoint(q,env,half+env.curb,-1),
+   apexFlatRunoffPoint(q,env,apexRoadFlatLimit(at,env,1),1),
+   apexFlatRunoffPoint(q,env,apexRoadFlatLimit(at,env,-1),-1)]};
+  apexRoadPreparationPerf.misses++;
+  if(node>=0){
+   if(cache.nodes.size>=(mobilePerformanceMode()?2048:4096)){
+    cache.nodes.delete(cache.nodes.keys().next().value);apexRoadPreparationPerf.evicted++;
+   }
+   cache.nodes.set(node,w);
+  }
+ }
+ const p=w.points,c=worldToCamera(p[0].x,p[0].y,p[0].z,cam),
+  cv=i=>worldToCamera(p[i].x,p[i].y,p[i].z,cam);
+ return{s,sd,d:Math.abs(sd),env:w.env,curb:w.curb,q:w.q,i:w.q.i,z:c.z,
+  v:{c,l:cv(1),r:cv(2),lo:cv(3),ro:cv(4),lx:cv(5),rx:cv(6)}};
+}
+window.apexRoadPreparationDiagnostics=()=>({...apexRoadPreparationPerf,
+ cachedNodes:trackData&&trackData._apexWebglRoadNodes?trackData._apexWebglRoadNodes.nodes.size:0});
+function collectRoadBranch(sign,cam,pitch,maxD=540,near=.64,makeStep=roadStep){
  const samples=apexRoadMeshSamples(),L=trackData.km*1000;
- if(apexInspectionFullScene()){if(sign<0)return[];return samples.map(p=>roadStep(p,p,cam,pitch));}
- const center=mod(player.s,L),raw=[roadStep(center,0,cam,pitch)];let lo=0,hi=samples.length;
+ if(apexInspectionFullScene()){if(sign<0)return[];return samples.map((p,i)=>makeStep(p,p,cam,pitch,i));}
+ const center=mod(player.s,L),raw=[makeStep(center,0,cam,pitch)];let lo=0,hi=samples.length;
  while(lo<hi){const m=(lo+hi)>>1;if(samples[m]<=center)lo=m+1;else hi=m;}
  // Exclude duplicate seam sample; walk fixed nodes around the lap in either direction.
  const count=samples.length-1;let index=sign>0?lo:lo-1;
- for(let walked=0;walked<count;walked++,index+=sign){const ss=samples[mod(index,count)],d=sign>0?mod(ss-center,L):mod(center-ss,L);if(d<.0001)continue;if(d>maxD)break;const st=roadStep(center+sign*d,sign*d,cam,pitch);if(st&&Number.isFinite(roadStepFrontExtent(st)))raw.push(st);}
- const end=roadStep(center+sign*Math.min(maxD,L-.001),sign*Math.min(maxD,L-.001),cam,pitch);if(end&&Number.isFinite(roadStepFrontExtent(end)))raw.push(end);
+ for(let walked=0;walked<count;walked++,index+=sign){const ss=samples[mod(index,count)],d=sign>0?mod(ss-center,L):mod(center-ss,L);if(d<.0001)continue;if(d>maxD)break;const st=makeStep(center+sign*d,sign*d,cam,pitch,mod(index,count));if(st&&Number.isFinite(roadStepFrontExtent(st)))raw.push(st);}
+ const end=makeStep(center+sign*Math.min(maxD,L-.001),sign*Math.min(maxD,L-.001),cam,pitch);if(end&&Number.isFinite(roadStepFrontExtent(end)))raw.push(end);
  return raw;
 }
 
@@ -2921,8 +2968,8 @@ function webglInit(){
    gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);gl.depthMask(true);gl.clearDepth(1.0);gl.disable(gl.CULL_FACE);gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);webglResizeViewport();
    if(!webglCv.dataset.lossHook){
      webglCv.dataset.lossHook="1";
-     webglCv.addEventListener("webglcontextlost",e=>{e.preventDefault();webglState.lost=true;webglState.ready=false;rendererWebglSupport=false;if(rendererBackendId()==="webgl2")setRendererBackend("canvas2d",{notify:true,persist:false})});
-     webglCv.addEventListener("webglcontextrestored",()=>{webglState={gl:null,program:null,buffer:null,aPos:-1,aColor:-1,ready:false,lost:false,error:"",triangles:0,depth:true};rendererWebglSupport=null;updateRendererBackendUi()});
+     webglCv.addEventListener("webglcontextlost",e=>{e.preventDefault();apexPhase5GpuRelease(false);apexPhase5TerrainRelease(true);apexPhase5GroundGPU.failedGl=null;apexPhase5TerrainGPU.failedGl=null;webglState.lost=true;webglState.ready=false;rendererWebglSupport=false;if(rendererBackendId()==="webgl2")setRendererBackend("canvas2d",{notify:true,persist:false})});
+     webglCv.addEventListener("webglcontextrestored",()=>{apexPhase5GroundGPU.failedGl=null;apexPhase5TerrainGPU.failedGl=null;webglState={gl:null,program:null,buffer:null,aPos:-1,aColor:-1,ready:false,lost:false,error:"",triangles:0,depth:true};rendererWebglSupport=null;updateRendererBackendUi()});
    }
    return true;
  }catch(e){webglState.error=String(e&&e.message||e);webglState.ready=false;rendererWebglSupport=false;console.warn("WebGL2 init failed",e);return false}
@@ -3043,6 +3090,7 @@ function apexPhase5PrepareGpuGround(cam,pitch){
    const buffer=gl.createBuffer();if(!buffer)throw Error('No hay buffer GPU para suelo');
    gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
    gl.bufferData(gl.ARRAY_BUFFER,data,gl.STATIC_DRAW);
+   apexGpuFrameStats.staticUploadBytes+=data.byteLength;apexGpuFrameStats.bufferAllocations++;
    s.buffer=buffer;s.atlas=atlas;s.chunks=chunks;s.bytes=data.byteLength;
    s.triangles=triangles;s.compiled++;s.error=null;
   }
@@ -3115,18 +3163,19 @@ function apexPhase5DrawGpuGround(){
    a malla de mundo. El molde fino de túnel/portal/track queda en CPU.
    Una sola subida STATIC_DRAW por selección de celdas; ninguna conversión
    mundo -> cámara en JS para las celdas ordinarias mientras no cambie. */
+function apexTerrainGpuCellKey(c,kind){return (kind?'F'+kind+':':'C:')+c.ix+':'+c.iz+':'+c.x1+':'+c.z1;}
 const apexPhase5TerrainGPU={
  gl:null,grid:null,atlas:null,buffer:null,program:null,attrs:null,uniforms:null,
  key:'',pending:null,bytes:0,capacityBytes:0,triangles:0,drawCalls:0,uploads:0,reuses:0,
  gpuEntries:new Map(),gpuUsedVertices:0,gpuDrawRuns:[],gpuResets:0,
  gpuNewCells:0,gpuUploadBytes:0,visibleTriangles:0,submittedTriangles:0,
  failures:0,failedGl:null,lastError:null,cpuCells:0,gpuCells:0,
- packetCache:new Map(),packetGrid:null,packetAtlas:null,packetHits:0,packetMisses:0
+ packetCache:new Map(),packetCacheBytes:0,packetGrid:null,packetAtlas:null,packetHits:0,packetMisses:0
 };
 function apexPhase5TerrainRelease(full=false){
  const s=apexPhase5TerrainGPU,gl=s.gl;
  if(gl&&s.buffer)try{gl.deleteBuffer(s.buffer)}catch(e){}
- s.packetCache.clear();s.packetGrid=null;s.packetAtlas=null;
+ s.packetCache.clear();s.packetCacheBytes=0;s.packetGrid=null;s.packetAtlas=null;
  s.buffer=null;s.grid=null;s.atlas=null;s.key='';s.pending=null;
  s.bytes=0;s.capacityBytes=0;s.triangles=0;s.drawCalls=0;
  s.gpuEntries.clear();s.gpuUsedVertices=0;s.gpuDrawRuns=[];
@@ -3163,8 +3212,9 @@ function apexPhase5PrepareGpuTerrain(items,cam,pitch){
    desired=[],missing=[];
   let selectedVertices=0;
   for(const it of items){
-   const c=it.cell,cellKey=c.ix+':'+c.iz+':'+c.x1+':'+c.z1;
-   let packet=s.packetCache.get(cellKey);
+   const c=it.cell,cellKey=apexTerrainGpuCellKey(c,it.kind);
+   const existing=s.gpuEntries.get(cellKey);
+   let packet=existing?existing.packet:s.packetCache.get(cellKey);
    if(packet){s.packetHits++}
    else{
     const floats=[],color=colors[(c.ix+c.iz)%5===0?1:0];
@@ -3184,16 +3234,20 @@ function apexPhase5PrepareGpuTerrain(items,cam,pitch){
     if(it.clean===null)pushPoly(it.quad);
     else for(const poly of it.clean)pushPoly(poly);
     packet=new Float32Array(floats);s.packetMisses++;
-    if(s.packetCache.size>=3072){
-     const iter=s.packetCache.keys();
-     for(let j=0;j<384;j++){const old=iter.next();if(old.done)break;s.packetCache.delete(old.value)}
+    // Fine portal cells can be orders of magnitude larger than coarse cells.
+    // Bound CPU packets by bytes too, not just the number of Map entries.
+    const packetBudget=(mobilePerformanceMode()?4:12)*1048576;
+    if(packet.byteLength<=packetBudget){
+     while(s.packetCache.size&&(s.packetCache.size>=3072||s.packetCacheBytes+packet.byteLength>packetBudget)){
+      const old=s.packetCache.keys().next().value;
+      s.packetCacheBytes-=s.packetCache.get(old).byteLength;s.packetCache.delete(old);
+     }
+     s.packetCache.set(cellKey,packet);s.packetCacheBytes+=packet.byteLength;
     }
-    s.packetCache.set(cellKey,packet);
    }
-   const existing=s.gpuEntries.get(cellKey);
-   desired.push({key:cellKey,packet,existing});
+   desired.push({key:cellKey,packet,existing,ix:c.ix,iz:c.iz,x1:c.x1,z1:c.z1});
    selectedVertices+=packet.length/7;
-   if(!existing&&packet.length)missing.push({key:cellKey,packet});
+   if(!existing&&packet.length)missing.push({key:cellKey,packet,ix:c.ix,iz:c.iz,x1:c.x1,z1:c.z1});
   }
   const budget=(mobilePerformanceMode()?8:24)*1048576;
   if(selectedVertices*28>budget)return false;
@@ -3208,34 +3262,31 @@ function apexPhase5PrepareGpuTerrain(items,cam,pitch){
    // Acotacion de VRAM: reconstruir atlas SOLO cuando se ha agotado.
    s.gpuEntries.clear();s.gpuUsedVertices=0;s.capacityBytes=0;s.gpuResets++;
    missing.length=0;
-   for(const e of desired)if(e.packet.length)missing.push({key:e.key,packet:e.packet});
+   for(const e of desired)if(e.packet.length)missing.push(e);
    added=missing.reduce((sum,e)=>sum+e.packet.byteLength,0);
   }
   const needBytes=s.gpuUsedVertices*28+added;
   if(needBytes>s.capacityBytes){
-   let capacity=Math.max(65536,s.capacityBytes||0);
-   while(capacity<needBytes)capacity*=2;
-   if(capacity>budget)capacity=budget;
-   gl.bufferData(gl.ARRAY_BUFFER,capacity,gl.DYNAMIC_DRAW);
+   // Reserve the bounded atlas once. Geometric growth invalidated every
+   // resident cell, causing full reuploads repeatedly as fine cells arrived.
+   const capacity=budget;
+   gl.bufferData(gl.ARRAY_BUFFER,capacity,gl.DYNAMIC_DRAW);apexGpuFrameStats.bufferAllocations++;
    s.capacityBytes=capacity;
    // bufferData invalida los datos anteriores: restaurar celdas residentes.
    for(const e of s.gpuEntries.values()){
     if(e.packet.length){
-     gl.bufferSubData(gl.ARRAY_BUFFER,e.first*28,e.packet);
+     gl.bufferSubData(gl.ARRAY_BUFFER,e.first*28,e.packet);apexGpuFrameStats.staticUploadBytes+=e.packet.byteLength;
      s.gpuUploadBytes+=e.packet.byteLength;
     }
    }
   }
   // Mantener grupos de celdas próximos en rangos contiguos del VBO.
-  missing.sort((a,b)=>{
-   const av=a.key.split(':').map(Number),bv=b.key.split(':').map(Number);
-   return av[1]-bv[1]||av[0]-bv[0]||av[3]-bv[3]||av[2]-bv[2];
-  });
+  missing.sort((a,b)=>a.iz-b.iz||a.ix-b.ix||a.z1-b.z1||a.x1-b.x1);
   for(const e of missing){
    const first=s.gpuUsedVertices,count=e.packet.length/7;
    const gpuEntry={first,count,packet:e.packet};
    s.gpuEntries.set(e.key,gpuEntry);
-   gl.bufferSubData(gl.ARRAY_BUFFER,first*28,e.packet);
+   gl.bufferSubData(gl.ARRAY_BUFFER,first*28,e.packet);apexGpuFrameStats.staticUploadBytes+=e.packet.byteLength;
    s.gpuUsedVertices+=count;s.gpuNewCells++;
    s.gpuUploadBytes+=e.packet.byteLength;
   }
@@ -3298,7 +3349,7 @@ window.apexPhase5TerrainDiagnostics=()=>{
  return{resident:!!s.buffer,bytes:s.bytes,capacityBytes:s.capacityBytes,
   triangles:s.triangles,gpuCells:s.gpuCells,uploads:s.uploads,reuses:s.reuses,
   drawCalls:s.drawCalls,failures:s.failures,lastError:s.lastError,
-  packets:s.packetCache.size,packetHits:s.packetHits,packetMisses:s.packetMisses,
+  packets:s.packetCache.size,packetBytes:s.packetCacheBytes,packetHits:s.packetHits,packetMisses:s.packetMisses,
   residentCells:s.gpuEntries.size,newGpuCells:s.gpuNewCells,
   gpuResets:s.gpuResets,gpuUploadMB:Number((s.gpuUploadBytes/1048576).toFixed(2)),
   visibleTriangles:s.visibleTriangles,submittedTriangles:s.submittedTriangles,
@@ -3315,6 +3366,16 @@ window.apexPhase5GpuDiagnostics=()=>{
   skipped:!!s.unsupportedAtlas};
 };
 
+// Circuit ownership is independent of whether the next circuit has a plate/SVG.
+// Otherwise the early return in PrepareGpu* retains the previous GP indefinitely.
+let apexGpuSceneTrack=null;
+function apexReleaseGpuScene(){
+ apexPhase5GpuRelease(true);apexPhase5TerrainRelease(false);apexGpuSceneTrack=null;
+}
+function apexSyncGpuScene(){
+ if(apexGpuSceneTrack===trackData)return;
+ apexReleaseGpuScene();apexGpuSceneTrack=trackData;
+}
 function webgl2Available(){return webglInit()}
 function webglActivate(){const ok=webglInit();if(ok&&webglCv)webglCv.classList.add("active");return ok}
 function webglDeactivate(){if(typeof webglCv!=="undefined"&&webglCv)webglCv.classList.remove("active")}
