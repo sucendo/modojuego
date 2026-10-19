@@ -3129,7 +3129,12 @@ function apexPhase5PrepareGpuTerrain(items,cam,pitch){
   if(s.gl!==gl){apexPhase5TerrainRelease(true);s.gl=gl;s.failedGl=null}
   // La identidad incorpora tipo de LOD (1x1 / 2x2) y borde recortado.
   // No depende del movimiento subcelda ni del giro de la cámara.
-  const key=items.map(({cell:c})=>c.ix+','+c.iz+','+c.x1+','+c.z1).join(';');
+  // apexCollectTerrainPlateCells ordena por profundidad; eso cambia con
+  // la cámara incluso si NO cambia el conjunto de celdas. La identidad
+  // y el VBO deben tener orden espacial estable para evitar reuploads.
+  const ordered=items.slice().sort((a,b)=>a.cell.iz-b.cell.iz||
+   a.cell.ix-b.cell.ix||a.cell.z1-b.cell.z1||a.cell.x1-b.cell.x1);
+  const key=ordered.map(({cell:c})=>c.ix+','+c.iz+','+c.x1+','+c.z1).join(';');
   if(!s.buffer||s.grid!==g||s.atlas!==atlas||s.key!==key){
    const triangles=[];
    const base=g.tone==='BROWN'?'#886e51':g.tone==='SAND'?'#bc9c69':'#4e7650',
@@ -3148,7 +3153,7 @@ function apexPhase5PrepareGpuTerrain(items,cam,pitch){
      }
     }
    };
-   for(const it of items){
+   for(const it of ordered){
     if(it.clean===null)pushPoly(it.quad,it.cell);
     else for(const p of it.clean)pushPoly(p,it.cell);
    }
