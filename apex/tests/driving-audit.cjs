@@ -6,10 +6,10 @@ const fs=require('fs'),vm=require('vm'),path=require('path');const cp=require('n
 const source=Array.from({length:28},(_,i)=>fs.readFileSync(path.join(root,`apex/parts/part-${String(i).padStart(3,'0')}.txt`),'utf8')).join('');
 function func(src,n){const start=src.indexOf(`function ${n}(`);for(let end=src.indexOf('}',start);end>=0;end=src.indexOf('}',end+1)){const code=src.slice(start,end+1);try{new vm.Script(`(${code})`);return code;}catch{}}throw Error(n);}
 function make(src){const start=src.indexOf(' const M=800,WB=3.60'),end=src.indexOf(' // Integración mundial autónoma',start),body=src.slice(start,end);
-const c=vm.createContext({console,Math,Number,dt:.01,player:null,driveProfile:{id:'raw',tc:false,abs:false,stability:false},ps:{kind:'ASPHALT',grip:1,steerGrip:1,driveGrip:1},env:{wall:false},boost:false,apexControls:{brakeBias:.57,engineBrake:2},out:{},apexLateralStepScratch:new Float64Array(2),
+const c=vm.createContext({pitTakeover:false,console,Math,Number,dt:.01,player:null,driveProfile:{id:'raw',tc:false,abs:false,stability:false},ps:{kind:'ASPHALT',grip:1,steerGrip:1,driveGrip:1},env:{wall:false},boost:false,apexControls:{brakeBias:.57,engineBrake:2},out:{},apexLateralStepScratch:new Float64Array(2),
  clamp:(v,a,b)=>Math.max(a,Math.min(b,v)),lerp:(a,b,t)=>a+(b-a)*t,finite:(v,d=0)=>Number.isFinite(v)?v:d,finiteClamp:(v,a,b,d=0)=>Math.max(a,Math.min(b,Number.isFinite(v)?v:d)),
  damageFactors:()=>({aero:1,frontAero:1,rearAero:1,frontGrip:1,rearGrip:1,steerBias:0,engine:1}),apexWeatherIsWet:()=>false,apexManualDriveFactor:()=>1,apexPitSpeedLimitKph:()=>80,terrainDragAccel:()=>0});
-vm.runInContext(['carAxes','staticSafeFront','staticSafeRear','apexTyreLateralCapacity','apexEngineBrakeForce','apexSolveLateralIncrement'].filter(n=>src.includes(`function ${n}(`)).map(n=>func(src,n)).join('\n')+`\nfunction step(dt){const beforeX=player.vx,beforeZ=player.vz,axes=carAxes();let u=player.vx*axes.fx+player.vz*axes.fz,v=player.vx*axes.rx+player.vz*axes.rz,r=player.yawRate,sp=Math.hypot(u,v);\n${body}\nplayer.speed=Math.hypot(player.vx,player.vz);player.x+=player.vx*dt;player.z+=player.vz*dt;const ax=carAxes();player.longG=((player.vx-beforeX)*ax.fx+(player.vz-beforeZ)*ax.fz)/(dt*9.81);out.frontCombined=Math.hypot(FxF/maxLongF,tireF/maxLatF);out.rearCombined=Math.hypot(FxR/maxLongR,tireR/maxLatR);out.FyF=FyF;out.FxF=FxF;out.delta=delta;return out;}`,c);
+vm.runInContext(['carAxes','staticSafeFront','staticSafeRear','apexTyreLateralCapacity','apexEngineBrakeForce','apexSolveLateralIncrement','apexPitLimitedVmax'].filter(n=>src.includes(`function ${n}(`)).map(n=>func(src,n)).join('\n')+`\nfunction step(dt){const beforeX=player.vx,beforeZ=player.vz,axes=carAxes();let u=player.vx*axes.fx+player.vz*axes.fz,v=player.vx*axes.rx+player.vz*axes.rz,r=player.yawRate,sp=Math.hypot(u,v);\n${body}\nplayer.speed=Math.hypot(player.vx,player.vz);player.x+=player.vx*dt;player.z+=player.vz*dt;const ax=carAxes();player.longG=((player.vx-beforeX)*ax.fx+(player.vz-beforeZ)*ax.fz)/(dt*9.81);out.frontCombined=Math.hypot(FxF/maxLongF,tireF/maxLatF);out.rearCombined=Math.hypot(FxR/maxLongR,tireR/maxLatR);out.FyF=FyF;out.FxF=FxF;out.delta=delta;return out;}`,c);
  c.reset=(speed=0,v=0,r=0,steer=0,brake=0,throttle=0)=>c.player={x:0,z:0,heading:0,speed:Math.hypot(v,speed),vx:v,vz:speed,yawRate:r,steer,throttle,brakeInput:brake,longG:0,reverse:false,pitLimiter:false,drs:false,slipstream:false};return c;}
 const ref='8e71e2d0dba93cf4b6efbb97aba546f36278be6d';
 const baseline=[26,27].map(i=>cp.execFileSync('git',['show',`${ref}:apex/parts/part-${String(i).padStart(3,'0')}.txt`],{cwd:root,encoding:'utf8',maxBuffer:20000000})).join('');
@@ -84,7 +84,7 @@ test('Energía pasiva y estados finitos, marcha atrás y agarres bajos',()=>{
 test('Scheduler real agrupado a 15/30/60/144 FPS: reproducibilidad y límite tras pausa',()=>{
  const results=[15,30,60,144].map(fps=>{
   now.reset(25);let tick=0;
-  const c=vm.createContext({Math,performance,mode:'race',player:now.player,last:0,clamp:now.clamp,lerp:now.lerp,telemetryPerf:{},apexRuntimePerf:{physicsClampedMs:0},
+  const c=vm.createContext({pitTakeover:false,Math,performance,mode:'race',player:now.player,last:0,clamp:now.clamp,lerp:now.lerp,telemetryPerf:{},apexRuntimePerf:{physicsClampedMs:0},
    requestAnimationFrame(){},activeRenderer:{renderFrame(){}},apexRuntimePerfRecord(){},apexDrivePerfObserve(){},
    update(dt){assert.equal(dt,.01);now.player.steer=.2*Math.sin(tick*.01);now.player.throttle=.3;now.player.brakeInput=tick>400&&tick<470?.5:0;now.step(dt);tick++;}});
   const constants=source.slice(source.indexOf('const APEX_PLAYER_PHYSICS_HZ='),source.indexOf('function loop(t)'));
@@ -97,10 +97,11 @@ test('Scheduler real agrupado a 15/30/60/144 FPS: reproducibilidad y límite tra
 });
 function controls(){
  const element={classList:{add(){},remove(){}},setPointerCapture(){}};
- const c=vm.createContext({Math,Number,player:{steer:0,speed:0},keys:{},apexControls:{driveProfile:'assisted'},apexInputDevice:'keyboard',mobilePerformanceMode:()=>false,clamp:now.clamp,lerp:now.lerp,
+ const c=vm.createContext({pitTakeover:false,Math,Number,player:{steer:0,speed:0},keys:{},apexControls:{driveProfile:'assisted'},apexInputDevice:'keyboard',mobilePerformanceMode:()=>false,clamp:now.clamp,lerp:now.lerp,
   demoMode:false,assistRecovery:false,autoCtl:null,inputSpeed:0,left:false,right:false,gamepadActive:false,gyroFresh:false,gamepad:{steer:0},gyro:{steer:0},$:()=>element,setAutoDriveMode(){}});
  const profiles=source.slice(source.indexOf('const apexDriveProfiles='),source.indexOf("let apexInputDevice='keyboard'"));
- const start=source.indexOf(' let steer=demoMode?'),end=source.indexOf(' let throttleTarget,brakeTarget',start);
+ const start=source.indexOf(' let steer=(demoMode||pitTakeover)?'),end=source.indexOf(' let throttleTarget,brakeTarget',start);
+ assert.ok(start>=0&&end>start);
  vm.runInContext(profiles+['apexDriveProfile','apexDriveSteeringConfig','apexSteeringInputDevice','bt'].map(n=>func(source,n)).join('\n')+`\nfunction tick(dt){${source.slice(start,end)}}`,c);
  return {c,element};
 }
@@ -122,7 +123,7 @@ test('Controles reales: digital/analógico, centrado, corrección pequeña y sel
 });
 test('Pedales reales: progresión, suelta y perfiles sin cambios de transmisión/ERS',()=>{
  const start=source.indexOf(' let throttleTarget,brakeTarget'),end=source.indexOf(' const prevVx=player.vx',start);
- const c=vm.createContext({Math,player:{throttle:0,brakeInput:0,steer:.3},autoSpeedControl:false,autoCtl:null,gasKey:true,brKey:false,analogGas:0,analogBrake:0,gyroFresh:false,gamepadActive:false,driveProfile:{id:'assisted'},clamp:now.clamp,lerp:now.lerp});
+ const c=vm.createContext({pitTakeover:false,Math,player:{throttle:0,brakeInput:0,steer:.3},autoSpeedControl:false,autoCtl:null,gasKey:true,brKey:false,analogGas:0,analogBrake:0,gyroFresh:false,gamepadActive:false,driveProfile:{id:'assisted'},clamp:now.clamp,lerp:now.lerp});
  vm.runInContext(`function tick(dt){${source.slice(start,end)}}`,c);
  for(const profile of ['assisted','simulation','raw'])for(const analog of [false,true]){
   c.driveProfile.id=profile;c.gyroFresh=analog;c.player.throttle=c.player.brakeInput=0;c.gasKey=!analog;c.analogGas=analog?.4:0;c.brKey=false;c.analogBrake=0;c.tick(.01);assert.ok(c.player.throttle>0&&c.player.throttle<.1);

@@ -78,7 +78,7 @@ function webglRivalBasis(a){
  let U=webglVecNorm(webglVecCross(R,F));
  if(U.y<0)U={x:-U.x,y:-U.y,z:-U.z};
  R=webglVecNorm(webglVecCross(F,U));
- return{base,F,R,U};
+ return{base,F,R,U,tyreColor:APEX_TYRE_COMPOUNDS[a.r.tyres?.compound]?.color};
 }
 function webglRivalLocal(b,lx,ly,lz){return{x:b.base.x+b.R.x*lx+b.U.x*ly+b.F.x*lz,y:b.base.y+b.R.y*lx+b.U.y*ly+b.F.y*lz,z:b.base.z+b.R.z*lx+b.U.z*ly+b.F.z*lz};}
 function webglPushRivalWorldQuad(cam,pitch,A,B,C,D,color,near=.56,depthBias=0){
@@ -172,7 +172,7 @@ function webglRivalLod(a){
 /* v0.13.1: flanco circular estratificado. La franja de compuesto es un ANILLO,
    no un abanico desde el buje. El esquema funciona desde 360° y en LOD 0/1/2. */
 function webglPushRivalWheel3D(b,cam,pitch,cx,cy,cz,halfW,radius,teamKey,spin=0,lod=1){
- const brand=teamBranding(teamKey)||{},stripe=brand.tyreColor||'#f0cf34',
+ const brand=teamBranding(teamKey)||{},stripe=b.tyreColor||brand.tyreColor||'#f0cf34',
   N=lod>=2?16:(lod===1?10:6),tau=Math.PI*2;
  const point=(side,r,ang,offset=0)=>webglRivalLocal(b,cx+side*(halfW+offset),cy+Math.sin(ang)*radius*r,cz+Math.cos(ang)*radius*r);
  const WC=p=>worldToCamera(p.x,p.y,p.z,cam);
@@ -459,7 +459,7 @@ function webglPlayerChassisBasis(cam,baseOffset=.87){
    y:exactSurface?clamp((surface.slopeX||0)*a.rx+(surface.slopeZ||0)*a.rz,-.48,.48):Math.tan(pitchBank)*bankLatDot,z:a.rz});
  let U=webglVecNorm(webglVecCross(R,F));if(U.y<0)U={x:-U.x,y:-U.y,z:-U.z};
  R=webglVecNorm(webglVecCross(F,U));
- return{base:{x:player.x+F.x*baseOffset,y:surface.y+.014,z:player.z+F.z*baseOffset},F,R,U};
+ return{base:{x:player.x+F.x*baseOffset,y:surface.y+.014,z:player.z+F.z*baseOffset},F,R,U,tyreColor:APEX_TYRE_COMPOUNDS[player.tyres?.compound]?.color};
 }
 function webglPushPlayerSharedFront3D(cam,pitch){
  if(!apexPlayerShared3DActive())return 0;
@@ -972,7 +972,7 @@ function apexTyreStep(car,dt,distance,speed,lat,brake,traction,slideF,slideR,loc
   apexTyreEvolveAxle(t.front,c,step,ds,speed,lat,brake,0,slideF,lockF,p.trackTyreStressFront,p,e,surface);
   apexTyreEvolveAxle(t.rear,c,step,ds,speed,lat,brake*.75,traction,slideR,lockR,p.trackTyreStressRear,p,e,surface);
  }
- t.distance+=distance;apexTyreRefreshGrip(t,e.wetness);
+ t.distance+=distance;car.tyreAge=t.distance/1000;apexTyreRefreshGrip(t,e.wetness);
 }
 const apexTyreDefaultTrack={trackAbrasion:1,trackTyreStressFront:1,trackTyreStressRear:1,trackBrakeStress:1,trackTractionStress:1,trackLateralStress:1};
 function apexTyreInitialRivalCompound(rv){const w=apexTyreEnvironment.wetness;return w>.7?'WET':w>.16?'INTERMEDIATE':currentSession==='qualifying'?'SOFT':['SOFT','MEDIUM','HARD'][Math.floor(stableTrait(rv.uid,88)*3)%3]}
@@ -987,7 +987,7 @@ function apexTyreInitMenu(){
 }
 function apexTyrePersistSession(){
  if(!player||!player.tyres)return;
- save.lastTyreSession={schema:1,circuit:trackData&&trackData.spec.dir,session:currentSession,player:apexTyreSnapshot(player),rivals:rivals.map(rv=>({id:rv.id,...apexTyreSnapshot(rv)})),environment:{...apexTyreEnvironment}};persist();
+ save.lastTyreSession={schema:1,pits:{player:apexPitSnapshot(player),rivals:rivals.map(rv=>({id:rv.id,...apexPitSnapshot(rv)}))},circuit:trackData&&trackData.spec.dir,session:currentSession,player:apexTyreSnapshot(player),rivals:rivals.map(rv=>({id:rv.id,...apexTyreSnapshot(rv)})),environment:{...apexTyreEnvironment}};persist();
 }
 // END FASE8A TYRE MODEL
 
@@ -1101,7 +1101,7 @@ function captureSessionTelemetry(){
  const trackHeading=Math.atan2(tr.tx,tr.tz),headingErr=angleDiff(trackHeading,player.heading);
  const autoCtlMode=demoMode?"FULL":assistMode?"SPEED_ASSIST":"OFF";
  const rec=player.autoRecovery?player.autoRecovery.mode:null;
- const sample={tyres:apexTyreSnapshot(player),
+ const sample={pit:apexPitSnapshot(player),tyres:apexTyreSnapshot(player),
   t:telemetryRound(raceT,3),lap:player.lap+1,lapTime:telemetryRound(Math.max(0,raceT-lapStart),3),
   s:telemetryRound(player.s,2),lapFrac:telemetryRound(mod(player.s,trackData.km*1000)/(trackData.km*1000),5),x:telemetryRound(player.x,3),z:telemetryRound(player.z,3),lat:telemetryRound(player.lat,3),
   timingSector:null,centerElevationM:telemetryRound(surface.centerY,3),surfaceElevationM:telemetryRound(surface.y,3),bankDeg:telemetryRound(surface.bank*deg,3),bankCrossfallPct:telemetryRound(Math.tan(surface.bank)*100,2),
@@ -1190,7 +1190,7 @@ function exportSessionTelemetry(){
  const perfRows=ss.map(s=>s.performance).filter(Boolean),avg=(key)=>perfRows.length?perfRows.reduce((a,p)=>a+(Number(p[key])||0),0)/perfRows.length:null,maxv=(key)=>perfRows.length?Math.max(...perfRows.map(p=>Number(p[key])||0)):null;
  const performanceStats={avgFps:telemetryRound(avg('fps'),1),avgFrameMs:telemetryRound(avg('frameMs'),2),maxFrameMs:telemetryRound(maxv('lastFrameMs'),2),avgRenderMs:telemetryRound(avg('renderMs'),2),avgPhysicsMs:telemetryRound(avg('physicsMs'),2),avgAiMs:telemetryRound(avg('aiMs'),2),maxAiMs:telemetryRound(maxv('aiMs'),2),avgCollisionMs:telemetryRound(avg('collisionMs'),2),avgTelemetryMs:telemetryRound(avg('telemetryMs'),2),avgHudMs:telemetryRound(avg('hudMs'),2),avgTrackRenderMs:telemetryRound(avg('trackRenderMs'),2),avgTerrainRenderMs:telemetryRound(avg('terrainRenderMs'),2),avgTunnelRenderMs:telemetryRound(avg('tunnelRenderMs'),2),avgEnvironmentRenderMs:telemetryRound(avg('environmentRenderMs'),2),avgCarsRenderMs:telemetryRound(avg('carsRenderMs'),2),avgMirrorsRenderMs:telemetryRound(avg('mirrorsRenderMs'),2),avgCockpitRenderMs:telemetryRound(avg('cockpitRenderMs'),2),avgEffectsRenderMs:telemetryRound(avg('effectsRenderMs'),2),avgWebglSubmitMs:telemetryRound(avg('webglSubmitMs'),2)};
  if(sessionTelemetry.recording){sessionTelemetry.recording.currentMode=getTelemetryRecordMode();sessionTelemetry.recording.fullSampleHz=telemetryFullSampleHz();sessionTelemetry.recording.eventCheckHz=telemetryEventCheckHz();}
- const payload={...sessionTelemetry,tyreState:{player:apexTyreSnapshot(player),rivals:rivals.map(rv=>({id:rv.id,...apexTyreSnapshot(rv)})),environment:{...apexTyreEnvironment}},incidentWindows,exportedAt:new Date().toISOString(),summary:{recordingMode:getTelemetryRecordMode(),fullSampleHz:telemetryFullSampleHz(),eventCheckHz:telemetryEventCheckHz(),duration:telemetryRound(raceT,3),completedLaps:player?player.lap:null,bestLap:best<1e8?telemetryRound(best,3):null,sampleCount:ss.length,eventCount:ev.length,rivalContacts:contacts.length,containedRivalContacts:containedContacts.length,rivalContactEpisodes:contactEpisodes.length,earlyRivalContacts:earlyContacts.length,earlySevereRivalContacts:earlySevereContacts.length,rivalRivalContacts:rivalRivalContacts.length,rivalRivalContactEpisodes:rrContactEpisodes.length,rivalIncidents:rivalIncidents.length,rivalSpinIncidents:rivalSpinIncidents.length,rivalOfftracksFromImpact:rivalOfftracks.length,rivalRecovers:rivalRecovers.length,launchGapGuardSamples:launchGuardSamples,maxLaunchGapGuards,contactEpisodes,performanceStats,runtimeProfiler:apexRuntimePerfSummary(),circuitCompile:trackData&&trackData._compileStats?clonePlain(trackData._compileStats):null,wallHits:ev.filter(e=>e.type==='WALL_HIT').length,spins:ev.filter(e=>e.type==='SPIN').length,recoveryEpisodes:ev.filter(e=>e.type==='RECOVERY_START').length,emergencyRecoveries:ev.filter(e=>e.type==='RECOVERY_EMERGENCY').length,hardRecoveryAssists:hardPullEvents,recoveryActiveAtExport:ongoingRecoverySec>0,recoveryTimeSec:recoveryTime,maxRecoverySec:recoveryDurations.length?telemetryRound(Math.max(...recoveryDurations),2):null,lateralRecoveryGuardTrips:ev.filter(e=>e.type==='RECOVERY_LATERAL_GUARD').length,rivalSimulation:{model:"HYBRID_SHARED_FRENET_LOD_PARITY",lodAtExport:rivalLODCounts(),nearDynamicM:mobilePerformanceMode()?120:150,midHybridM:mobilePerformanceMode()?360:500},rivalContinuity:sessionTelemetry&&sessionTelemetry.rivalContinuity?{checks:sessionTelemetry.rivalContinuity.checks||0,anomalies:sessionTelemetry.rivalContinuity.anomalies||0,lastAnomalyAt:sessionTelemetry.rivalContinuity.lastAnomalyAt||null,byType:{...(sessionTelemetry.rivalContinuity.byType||{})}}:null,rivalBestLaps,rivalPaceStats,targetSpeedReasonSamples:reasonCounts,targetLimiterImpact:impact}};
+ const payload={...sessionTelemetry,pitState:{player:apexPitSnapshot(player),rivals:rivals.map(rv=>({id:rv.id,...apexPitSnapshot(rv)}))},tyreState:{player:apexTyreSnapshot(player),rivals:rivals.map(rv=>({id:rv.id,...apexTyreSnapshot(rv)})),environment:{...apexTyreEnvironment}},incidentWindows,exportedAt:new Date().toISOString(),summary:{recordingMode:getTelemetryRecordMode(),fullSampleHz:telemetryFullSampleHz(),eventCheckHz:telemetryEventCheckHz(),duration:telemetryRound(raceT,3),completedLaps:player?player.lap:null,bestLap:best<1e8?telemetryRound(best,3):null,sampleCount:ss.length,eventCount:ev.length,rivalContacts:contacts.length,containedRivalContacts:containedContacts.length,rivalContactEpisodes:contactEpisodes.length,earlyRivalContacts:earlyContacts.length,earlySevereRivalContacts:earlySevereContacts.length,rivalRivalContacts:rivalRivalContacts.length,rivalRivalContactEpisodes:rrContactEpisodes.length,rivalIncidents:rivalIncidents.length,rivalSpinIncidents:rivalSpinIncidents.length,rivalOfftracksFromImpact:rivalOfftracks.length,rivalRecovers:rivalRecovers.length,launchGapGuardSamples:launchGuardSamples,maxLaunchGapGuards,contactEpisodes,performanceStats,runtimeProfiler:apexRuntimePerfSummary(),circuitCompile:trackData&&trackData._compileStats?clonePlain(trackData._compileStats):null,wallHits:ev.filter(e=>e.type==='WALL_HIT').length,spins:ev.filter(e=>e.type==='SPIN').length,recoveryEpisodes:ev.filter(e=>e.type==='RECOVERY_START').length,emergencyRecoveries:ev.filter(e=>e.type==='RECOVERY_EMERGENCY').length,hardRecoveryAssists:hardPullEvents,recoveryActiveAtExport:ongoingRecoverySec>0,recoveryTimeSec:recoveryTime,maxRecoverySec:recoveryDurations.length?telemetryRound(Math.max(...recoveryDurations),2):null,lateralRecoveryGuardTrips:ev.filter(e=>e.type==='RECOVERY_LATERAL_GUARD').length,rivalSimulation:{model:"HYBRID_SHARED_FRENET_LOD_PARITY",lodAtExport:rivalLODCounts(),nearDynamicM:mobilePerformanceMode()?120:150,midHybridM:mobilePerformanceMode()?360:500},rivalContinuity:sessionTelemetry&&sessionTelemetry.rivalContinuity?{checks:sessionTelemetry.rivalContinuity.checks||0,anomalies:sessionTelemetry.rivalContinuity.anomalies||0,lastAnomalyAt:sessionTelemetry.rivalContinuity.lastAnomalyAt||null,byType:{...(sessionTelemetry.rivalContinuity.byType||{})}}:null,rivalBestLaps,rivalPaceStats,targetSpeedReasonSamples:reasonCounts,targetLimiterImpact:impact}};
  const safe=(trackData&&trackData.spec?trackData.spec.dir:"circuito").replace(/[^a-z0-9_-]+/gi,'-');
  const stamp=new Date().toISOString().replace(/[:.]/g,'-');
  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
@@ -1332,7 +1332,7 @@ function updateHud(force=false){
  apexUpdateControlHud();
  const now=performance.now(),minGap=mobileControlProfile().hudGap;
  if(!force&&now-hudLastUpdate<minGap)return;
- hudLastUpdate=now;
+ hudLastUpdate=now;apexPitStrategyUpdate();
  const tb=$("tyreBadge"),tt=player.tyres;if(tb&&tt){const c=APEX_TYRE_COMPOUNDS[tt.compound];tb.textContent=`${c.code} · ${Math.round((tt.front.wear+tt.rear.wear)*50)}% · ${Math.round((tt.front.surfaceTemperature+tt.rear.surfaceTemperature)/2)}°C`;tb.title=apexTyreLabel(player);tb.style.color=c.color;}
  $("speed").textContent=Math.round(finite(player.speed,0)*3.6);$("gear").textContent=gear();if($("rpm"))$("rpm").textContent=Math.round(engineRPM()/100)*100+" RPM";
  const temp=ambientTemp(trackData.spec,raceWeather),weather=weatherHudLabel(raceWeather,trackData.spec),gpLabel=(trackData.spec.country||'GP')+' · '+trackData.spec.name,gpAbbr=(roundFlagCode[(trackData.spec.r||1)-1]||'GP');
@@ -1539,7 +1539,7 @@ async function startPreparedRace(spec,laps,gm,btn){
  };
 
  trackData.tyreProfile=apexTyreTrackProfile(spec,readStoredCircuitJson(spec.dir));
- apexTyreUpdateEnvironment(true);apexTyreInstall(player,$("menuTyreCompound")?.value);
+ apexTyreUpdateEnvironment(true);apexTyreInstall(player,$("menuTyreCompound")?.value);apexPitInitCar(player);
  rivals=[];
  const diff=Number.isFinite(sessionSettings.diff)?sessionSettings.diff:+$("diff").value;
  if(!sessionSettings.noRivals)for(let i=1;i<=activeDriverRoster.length;i++){
@@ -1551,7 +1551,7 @@ async function startPreparedRace(spec,laps,gm,btn){
      color:ti.color,accent:ti.accent,chassis:ti.chassis,model:ti.model,teamPerf:teamPerformance(teamKeyR),finished:false,finishTime:null,
      latVel:0,yawKick:0,damage:100,contactCooldown:0,wallCooldown:0,crossedStart:false,raceFirstLapPending:false,timingLapStart:0,timingSectorIndex:0,timingSectorSplits:[],timingSectorTimes:[],timingSpeedTrapKph:null,progressOriginS:progressOrigin,lapStartTime:0,completedLaps:0,lastLap:Infinity,bestLap:Infinity
    };
-   initRivalRacecraft(rv);apexTyreInstall(rv,apexTyreInitialRivalCompound(rv));
+   initRivalRacecraft(rv);apexTyreInstall(rv,apexTyreInitialRivalCompound(rv));apexPitInitCar(rv);
    rivals.push(rv);
  }
  // Preload the definitive SVG cockpit before revealing the track: no legacy cockpit flash.
@@ -3334,6 +3334,68 @@ function updateAutoAdaptivePace(stability,sp,env){
 // v5.230.13 · BOX AUT. Entrada por la puerta exacta del pitline y soporte de subpaths que cruzan s=0.
 // La geometría del pit sigue siendo la red PIT real (SVG o fallback); el controlador no
 // inventa una segunda trayectoria ni mueve el coche de forma artificial.
+// FASE 8B: shared service transaction. No timers, no strategy planner.
+function apexPitInitCar(car){
+ car.nextTyreCompound=car.tyres?car.tyres.compound:'MEDIUM';
+ if(car===player)try{const next=appStorage.getItem('apex26.tyre.next.v1');if(Object.hasOwn(APEX_TYRE_COMPOUNDS,next))car.nextTyreCompound=next}catch(e){}
+ car.lastInstalledCompound=car.tyres?car.tyres.compound:'MEDIUM';car.pitHistory=[];car.tyreSet=1;car.tyreAge=0;car.pitStops=0;
+}
+function apexPitSelectCompound(car,key){
+ if(!car||!Object.hasOwn(APEX_TYRE_COMPOUNDS,key))return false;
+ const st=car.pitStop;if(st&&st.active&&['SERVICE','EXITING','MERGE_OUT','DONE'].includes(st.phase))return false;
+ car.nextTyreCompound=key;if(st&&st.active)st.compound=key;
+ if(car===player)try{appStorage.setItem('apex26.tyre.next.v1',key)}catch(e){}
+ return true;
+}
+function apexPitServiceBegin(car,st,now,duration){
+ if(!car||!st||!Number.isFinite(now)||st.serviced||Number.isFinite(st.serviceStarted))return false;
+ st.lockedCompound=apexTyreKey(st.compound||car.nextTyreCompound||car.tyres?.compound);
+ st.phase='SERVICE';st.stoppedAt=now;st.serviceStarted=now;st.serviceDuration=finiteClamp(duration,2,4,2.8);st.serviceUntil=now+st.serviceDuration;
+ return true;
+}
+function apexPitServiceComplete(car,st,now){
+ if(!car||!st||!Number.isFinite(now)||st.phase!=='SERVICE'||st.serviced||!Number.isFinite(st.serviceUntil)||now<st.serviceUntil)return false;
+ // Claim once BEFORE the install: repeated physical ticks cannot install another set.
+ st.serviced=true;const previous=car.tyres?.compound||'MEDIUM';
+ apexTyreInstall(car,st.lockedCompound);car.lastInstalledCompound=car.tyres.compound;
+ car.tyreSet=(car.tyreSet||1)+1;car.tyreAge=0;car.pitStops=(car.pitStops||0)+1;
+ st.phase='EXITING';st.serviceCompletedAt=now;st.exitStartedAt=now;st.exitGateCrossed=false;
+ const entry={stop:car.pitStops,from:previous,to:car.tyres.compound,requestedAt:st.requestedAt??null,enteredAt:st.enteredAt??null,serviceStarted:st.serviceStarted,serviceCompletedAt:now,serviceSeconds:now-st.serviceStarted,waitingSeconds:Math.max(0,st.serviceStarted-(st.stoppedAt??st.serviceStarted)),exitedAt:null,laneSeconds:null,estimatedLossSeconds:null};
+ if(!Array.isArray(car.pitHistory))car.pitHistory=[];car.pitHistory.push(entry);if(car.pitHistory.length>64)car.pitHistory.shift();st.historyEntry=entry;
+ return true;
+}
+function apexPitServiceExit(car,st,now,plan){
+ if(st.exitedAt!=null)return;st.exitedAt=now;
+ if(st.historyEntry){const h=st.historyEntry;h.exitedAt=now;h.laneSeconds=Math.max(0,now-(st.enteredAt??now));h.movingLaneSeconds=Math.max(0,h.laneSeconds-h.serviceSeconds-h.waitingSeconds);
+ const span=mod(plan.exitTrackS-plan.entryTrackS,trackData.km*1000);h.referenceSpeedMps=finiteClamp(st.referenceSpeed,5,100,30);h.estimatedLossSeconds=h.laneSeconds-span/h.referenceSpeedMps;}
+}
+function apexPitSnapshot(car){return car?{schema:1,nextCompound:apexTyreKey(car.nextTyreCompound),lastInstalledCompound:apexTyreKey(car.lastInstalledCompound||car.tyres?.compound),tyreSet:car.tyreSet||1,tyreAgeKm:car.tyres?car.tyres.distance/1000:0,pitStops:car.pitStops||0,history:Array.isArray(car.pitHistory)?car.pitHistory.map(h=>({...h})):[],phase:car.pitStop?.phase||null}:null}
+function apexPitBoxForCar(plan,car){
+ const slots=plan&&plan.pn&&plan.pn.boxSlots;if(!Array.isArray(slots)||!slots.length)return null;
+ const team=car.teamKey||car.team,index=Math.max(0,teamKeys.indexOf(team)),slot=slots.find(s=>s.teamAssignment===team)||slots[index%slots.length];
+ const pitS=slot&&slot.runtimePitS;
+ if(!Number.isFinite(pitS)||plan.dir*(pitS-plan.entryPitS)<8||plan.dir*(plan.exitPitS-pitS)<8)return null;
+ return {pitS,slotId:slot.id||String(index+1),quality:slot.status||'AUTHORED'};
+}
+function apexPitLimitedVmax(vmax,car){return car&&(car.pitLimiter||car.driveNetwork==='PIT')?Math.min(vmax,apexPitSpeedLimitKph()/3.6):vmax}
+function apexPitStrategyToggle(){const p=$('pitStrategyPanel');if(!player||!p)return;p.classList.toggle('hidden');$('pitStrategyBtn').setAttribute('aria-expanded',String(!p.classList.contains('hidden')));apexPitStrategyUpdate()}
+function apexPitStrategyInit(){
+ const select=$('pitNextCompound');if(!select)return;
+ for(const [key,c] of Object.entries(APEX_TYRE_COMPOUNDS)){const option=document.createElement('option');option.value=key;option.textContent=c.code+' · '+c.name;select.appendChild(option)}
+ select.onchange=()=>{if(player)apexPitSelectCompound(player,select.value);apexPitStrategyUpdate()};
+ $('pitStrategyBtn').onclick=apexPitStrategyToggle;$('pitStrategyClose').onclick=apexPitStrategyToggle;
+}
+function apexPitStrategyUpdate(){
+ if(!player||$('pitStrategyPanel').classList.contains('hidden'))return;
+ const st=player.pitStop,select=$('pitNextCompound'),e=apexTyreEnvironment;
+ select.value=player.nextTyreCompound||player.tyres.compound;select.disabled=!!(st&&st.active&&['SERVICE','EXITING','MERGE_OUT','DONE'].includes(st.phase));
+ $('pitCurrentTyres').textContent=apexTyreLabel(player);select.style.color=APEX_TYRE_COMPOUNDS[select.value].color;
+ $('pitWeatherInfo').textContent=`Asfalto ${Math.round(e.trackTemperature)}°C · aire ${Math.round(e.airTemperature)}°C · agua ${Math.round(e.wetness*100)}%`;
+ const recommended=e.wetness>.7?'WET':e.wetness>.16?'INTERMEDIATE':'MEDIUM';
+ $('pitRecommendation').textContent='Orientación: '+APEX_TYRE_COMPOUNDS[recommended].name+' · '+(st&&st.active?st.hud:'Sin parada solicitada');
+}
+// END FASE8B SERVICE
+
 function apexPitSpeedLimitKph(){
  const pn=trackData&&trackData.customWorld&&trackData.customWorld.pitNetwork;
  if(pn&&Number.isFinite(+pn.speedKph)&&+pn.speedKph>0)return clamp(+pn.speedKph,30,120);
@@ -3370,14 +3432,14 @@ function apexPitRoutePlan(){
    dir=costPlus<=costMinus?1:-1;
  }else dir=mod(bTrack.s-aTrack.s,L)<=L*.5?1:-1;
  const entry=dir>0?A:B,exit=dir>0?B:A,entryTrack=dir>0?aTrack:bTrack,exitTrack=dir>0?bTrack:aTrack,
-       entryPitS=dir>0?primaryStart:primaryEnd,exitPitS=dir>0?primaryEnd:primaryStart,boxFrac=.57,boxPitS=entryPitS+dir*routeLength*boxFrac,
+       entryPitS=dir>0?primaryStart:primaryEnd,exitPitS=dir>0?primaryEnd:primaryStart,
        entryInsideS=clamp(entryPitS+dir*Math.min(8,routeLength*.03),primaryStart,primaryEnd),entryInside=apexPitPointAtS(entryInsideS)||entry;
  const etx=entryInside.x-entry.x,etz=entryInside.z-entry.z,elen=Math.hypot(etx,etz)||1,entryTx=etx/elen,entryTz=etz/elen,
        entryNx=-entryTz,entryNz=entryTx,entryAngle=Math.abs(angleDiff(Math.atan2(entryTx,entryTz),Math.atan2(entryTrack.tx,entryTrack.tz))),
        exitInsideS=clamp(exitPitS-dir*Math.min(8,routeLength*.03),primaryStart,primaryEnd),exitInside=apexPitPointAtS(exitInsideS)||exit,
        xtx=exit.x-exitInside.x,xtz=exit.z-exitInside.z,xlen=Math.hypot(xtx,xtz)||1,exitTx=xtx/xlen,exitTz=xtz/xlen,exitNx=-exitTz,exitNz=exitTx;
- const plan={pn,primary,primaryStart,primaryEnd,dir,entry,exit,entryTrackS:entryTrack.s,exitTrackS:exitTrack.s,entryPitS,exitPitS,routeLength,boxPitS,boxFrac,
-        entryTx,entryTz,entryNx,entryNz,entryAngle,exitTx,exitTz,exitNx,exitNz,speedKph:apexPitSpeedLimitKph(),speedMps:apexPitSpeedLimitKph()/3.6};
+ const plan={pn,primary,primaryStart,primaryEnd,dir,entry,exit,entryTrackS:entryTrack.s,exitTrackS:exitTrack.s,entryPitS,exitPitS,routeLength,
+        entryTx,entryTz,entryNx,entryNz,entryAngle,exitTx,exitTz,exitNx,exitNz,speedKph:apexPitSpeedLimitKph(),speedMps:apexPitSpeedLimitKph()/3.6,serviceSeconds:finiteClamp(apexPitLaneJsonProfile()?.service?.tyreChangeSeconds,2,4,2.8)};
  trackData._apexPitRoutePlan=plan;return plan;
 }
 function apexPlayerClassificationS(){
@@ -3403,8 +3465,9 @@ function apexPitPathControl(plan,pitS,sp,targetSpeed,phase,look=13){
  return{steer,throttle,brake,target:targetSpeed,boost:false,reverse:false,targetLat:player.lat,phase};
 }
 function apexPitStopController(sp){
- if(!demoMode)return null; // Manual/assisted requests do not take over steering or service.
  const st=player&&player.pitStop;if(!st||!st.active)return null;const plan=apexPitRoutePlan();if(!plan){st.active=false;st.phase='FAILED';st.hud='BOX · PIT NO DISPONIBLE';updatePitButtonUI();return null}
+ const box=apexPitBoxForCar(plan,player);if(!box){st.active=false;st.phase='FAILED';st.hud='BOX · FALTA POSICIÓN DE SERVICIO';updatePitButtonUI();return null}
+ st.boxPitS=box.pitS;st.boxSlotId=box.slotId;
  st.speedKph=plan.speedKph;const L=trackData.km*1000,near=nearestPitState(player.x,player.z,player.pitIndex),entryD=mod(plan.entryTrackS-player.s,L),worldEntry=Math.hypot(player.x-plan.entry.x,player.z-plan.entry.z);
  const along=(player.x-plan.entry.x)*plan.entryTx+(player.z-plan.entry.z)*plan.entryTz,across=Math.abs((player.x-plan.entry.x)*plan.entryNx+(player.z-plan.entry.z)*plan.entryNz),gatePassed=along>.45&&across<Math.max(5.5,(near?near.width:5.9)*.95);
  st.entryDistance=entryD;st.entryWorldDistance=worldEntry;st.entryAlong=along;st.entryAcross=across;st.pitSpeedKph=plan.speedKph;
@@ -3427,33 +3490,36 @@ function apexPitStopController(sp){
    st.hud=st.entryGateCrossed?`BOX · ENTRANDO EN PIT`:`BOX · PUERTA PIT · ${Math.max(0,Math.round(worldEntry))} m`;
    // No consideramos que ya está "dentro" por proximidad lateral: primero hay que
    // atravesar el extremo inicial del pitline. Después sí puede tomar el control pitS.
-   if(st.entryGateCrossed&&near&&near.dist<=near.width*.66+.65){st.phase='IN_LANE';st.enteredAt=raceT;player.driveNetwork='PIT';}
+   if(st.entryGateCrossed&&near&&near.dist<=near.width*.66+.65){st.phase='IN_LANE';st.enteredAt=raceT;st.referenceSpeed=Math.max(sp,5);st.previousLimiter=!!player.pitLimiter;player.pitLimiter=true;player.driveNetwork='PIT';}
    else{
      const passedTrack=wrapDeltaS(player.s,plan.entryTrackS,L)>18;
      if(passedTrack&&raceT-(st.approachAt||raceT)>8.0&&!st.entryGateCrossed&&worldEntry>38){st.phase='REQUESTED';st.hud='BOX · ENTRADA PERDIDA · PRÓXIMA VUELTA';return null}
    }
    player.autoTargetSpeed=target;player.autoTargetSpeedReason='PIT';player.autoTargetSpeedReasonDetail='PIT_ENTRY_GATE';player.autoPhase='BOX ENTRADA';
-   return{steer,throttle,brake,target,boost:false,reverse:false,targetLat:player.lat,phase:'BOX ENTRADA'};
+   return (demoMode||assistMode)?{steer,throttle,brake,target,boost:false,reverse:false,targetLat:player.lat,phase:'BOX ENTRADA'}:null;
  }
  const pit=near||player.pitState;if(!pit){st.hud='BOX · BUSCANDO PIT';return null}
  player.pitIndex=pit.index;player.pitS=pit.pitS;player.pitState=pit;
- const progress=plan.dir*(pit.pitS-plan.entryPitS),boxAhead=plan.dir*(plan.boxPitS-pit.pitS),exitAhead=plan.dir*(plan.exitPitS-pit.pitS);
+ const progress=plan.dir*(pit.pitS-plan.entryPitS),boxAhead=plan.dir*(st.boxPitS-pit.pitS),exitAhead=plan.dir*(plan.exitPitS-pit.pitS);
  st.progress=progress;st.boxAhead=boxAhead;st.exitAhead=exitAhead;
- if(!st.serviced){
+ if(['IN_LANE','SERVICE','EXITING'].includes(st.phase))player.pitLimiter=true;
+ if(!st.serviced&&!st.missed&&st.phase!=='SERVICE'){
    if(st.phase!=='SERVICE')st.phase='IN_LANE';
    let target=plan.speedMps;
    if(boxAhead<70){target=Math.min(target,Math.sqrt(Math.max(0,2*5.4*Math.max(0,boxAhead-.8))));if(boxAhead<2.0)target=0;}
    st.hud=target<3?`BOX · DETENIÉNDOSE`:`PIT · ${Math.round(plan.speedKph)} km/h · BOX ${Math.max(0,Math.round(boxAhead))} m`;
    const ctl=apexPitPathControl(plan,pit.pitS,sp,target,'PIT BOX',Math.min(12,Math.max(4,sp*.42)));
-   if((boxAhead<=1.8||boxAhead<0)&&sp<.65){st.phase='SERVICE';st.serviceStarted=raceT;st.serviceUntil=raceT+2.8;player.vx*=.25;player.vz*=.25;}
-   if(st.phase!=='SERVICE')return ctl;
+   if(boxAhead<=1.8&&boxAhead>=-2.5&&Math.abs(pit.lat)<pit.width*.4&&sp<.35){apexPitServiceBegin(player,st,raceT,plan.serviceSeconds);player.vx=0;player.vz=0;player.yawRate=0;player.speed=0;}
+   if(boxAhead< -6){st.missed=true;st.phase='EXITING';st.exitStartedAt=raceT;st.hud='BOX · POSICIÓN SUPERADA · SIN CAMBIO';}
+   if(st.phase!=='SERVICE')return (demoMode||assistMode)?ctl:boxAhead<18&&boxAhead>=-2.5&&sp<6?{...ctl,takeover:true}:null;
  }
  if(st.phase==='SERVICE'){
    player.vx*=.35;player.vz*=.35;if(Math.hypot(player.vx,player.vz)<.16){player.vx=0;player.vz=0;player.speed=0}
-   const remain=Math.max(0,(st.serviceUntil||raceT)-raceT);st.hud=`BOX · CAMBIO DE NEUMÁTICOS · ${remain.toFixed(1)} s`;
+   const remain=Math.max(0,(st.serviceUntil||raceT)-raceT);st.hud=`BOX · ${APEX_TYRE_COMPOUNDS[st.lockedCompound].name.toUpperCase()} · ${remain.toFixed(1)} s`;
    player.autoTargetSpeed=0;player.autoTargetSpeedReason='PIT';player.autoTargetSpeedReasonDetail='TYRE_CHANGE';player.autoPhase='BOX PARADA';
-   if(remain<=0){st.serviced=true;st.phase='EXITING';st.serviceCompletedAt=raceT;st.exitStartedAt=raceT;st.exitGateCrossed=false;player.driveNetwork='PIT';player.brakeInput=0;player.throttle=0;player.tyreSet=(player.tyreSet||1)+1;player.tyreAge=0;player.pitStops=(player.pitStops||0)+1;st.hud=`BOX · SERVICIO COMPLETADO`;const a=$('raceAlert');if(a){a.textContent=st.hud;a.style.color='#8dffb6'}}
-   return{steer:0,throttle:0,brake:1,target:0,boost:false,reverse:false,targetLat:player.lat,phase:'BOX PARADA'};
+   if(apexPitServiceComplete(player,st,raceT)){player.driveNetwork='PIT';player.brakeInput=0;player.throttle=0;st.hud='BOX · '+APEX_TYRE_COMPOUNDS[player.tyres.compound].name.toUpperCase()+' NUEVOS';pushTelemetryEvent('PIT_TYRES_INSTALLED',{...apexPitSnapshot(player)});}
+
+   return{steer:0,throttle:0,brake:1,target:0,boost:false,reverse:false,targetLat:player.lat,phase:'BOX PARADA',takeover:true};
  }
  if(st.phase==='EXITING'){
    const worldExit=Math.hypot(player.x-plan.exit.x,player.z-plan.exit.z),exitAlong=(player.x-plan.exit.x)*plan.exitTx+(player.z-plan.exit.z)*plan.exitTz,
@@ -3466,15 +3532,15 @@ function apexPitStopController(sp){
      ctl={steer:clamp(hErr*2.0-(player.yawRate||0)*.18,-.90,.90),throttle:err>1.0?clamp(.30+err*.08,.30,.72):err>.2?.18:0,brake:err<-.3?clamp((-err)/8,.06,.75):0,target,boost:false,reverse:false,targetLat:player.lat,phase:'PIT SALIDA'};
    }
    st.exitWorldDistance=worldExit;st.exitAlong=exitAlong;st.exitAcross=exitAcross;st.hud=`PIT · SALIDA · ${Math.max(0,Math.round(Math.max(exitAhead,worldExit)))} m`;
-   if(exitGatePassed||(worldExit<1.6&&exitAhead<=1.8)){st.exitGateCrossed=true;st.phase='MERGE_OUT';st.mergeStartedAt=raceT;player.driveNetwork='TRACK';}
-   return ctl;
+   if(exitGatePassed||(worldExit<1.6&&exitAhead<=1.8)){st.exitGateCrossed=true;st.phase='MERGE_OUT';st.mergeStartedAt=raceT;apexPitServiceExit(player,st,raceT,plan);player.pitLimiter=!!st.previousLimiter;player.driveNetwork='TRACK';}
+   return (demoMode||assistMode)?ctl:null;
  }
  if(st.phase==='MERGE_OUT'){
    player.driveNetwork='TRACK';const elapsed=Math.max(0,raceT-(st.mergeStartedAt||raceT)),ahead=clamp(24+elapsed*8,24,48),tq=poseAt(plan.exitTrackS+ahead),desired=Math.atan2(tq.x-player.x,tq.z-player.z),hErr=angleDiff(desired,player.heading),target=Math.min(36,plan.speedMps+elapsed*4.2),err=target-sp,
          ctl={steer:clamp(hErr*1.85-(player.yawRate||0)*.17,-.86,.86),throttle:err>1?.62:err>.2?.20:0,brake:err<-.35?clamp((-err)/9,.06,.70):0,target,boost:false,reverse:false,targetLat:player.lat,phase:'PIT REINCORPORACIÓN'};
    const tr=nearestTrackState(player.x,player.z,player.trackIndex),e=envProfile(tr.s);st.hud='PIT · REINCORPORACIÓN';
-   if((Math.abs(tr.lat)<Math.max(2.2,e.half*.68)&&elapsed>.8)||elapsed>4.5){st.phase='DONE';st.doneUntil=raceT+2.0;st.hud=`BOX · PARADA COMPLETADA · JUEGO ${player.tyreSet||2}`;}
-   return ctl;
+   if(Math.abs(tr.lat)<Math.max(2.2,e.half*.68)&&elapsed>.8){st.phase='DONE';st.doneUntil=raceT+2.0;st.hud=`BOX · PARADA COMPLETADA · JUEGO ${player.tyreSet||2}`;}
+   return (demoMode||assistMode)?ctl:null;
  }
  if(st.phase==='DONE'){
    st.hud=`BOX · PARADA COMPLETADA · JUEGO ${player.tyreSet||2}`;
@@ -3485,16 +3551,17 @@ function apexPitStopController(sp){
 }
 function pitStopHudStatus(){return player&&player.pitStop&&player.pitStop.active?player.pitStop.hud||'BOX · PARADA SOLICITADA':''}
 function updatePitButtonUI(){
- const b=$('box');if(!b)return;const hasPit=!!apexPitRoutePlan(),st=player&&player.pitStop&&player.pitStop.active?player.pitStop:null,usable=!!(player&&hasPit);
+ const b=$('box');if(!b)return;const plan=apexPitRoutePlan(),hasPit=!!(plan&&apexPitBoxForCar(plan,player||{})),st=player&&player.pitStop&&player.pitStop.active?player.pitStop:null,usable=!!(player&&hasPit);
  b.disabled=!usable;b.classList.toggle('on',!!st&&st.phase!=='SERVICE');b.classList.toggle('service',!!st&&st.phase==='SERVICE');b.textContent='BOX';
  b.title=!player?'Parada en boxes':!hasPit?'Este circuito no tiene pit lane':'Solicitar parada en boxes · límite '+Math.round(apexPitSpeedLimitKph())+' km/h';
 }
 function requestPitStop(){
  if(!player)return;const plan=apexPitRoutePlan();if(!plan){const a=$('raceAlert');if(a){a.textContent='BOX · PIT NO DISPONIBLE';a.style.color='#ff8b8b'}return}
  const st=player.pitStop;
- if(st&&st.active&&(st.phase==='REQUESTED'||st.phase==='APPROACH')){player.pitStop=null;const a=$('raceAlert');if(a){a.textContent='BOX · SOLICITUD CANCELADA';a.style.color='#d8e2ed'}updatePitButtonUI();return}
+ if(st&&st.active&&!st.entryGateCrossed&&(st.phase==='REQUESTED'||st.phase==='APPROACH')){player.pitStop=null;const a=$('raceAlert');if(a){a.textContent='BOX · SOLICITUD CANCELADA';a.style.color='#d8e2ed'}updatePitButtonUI();return}
  if(st&&st.active)return;
- player.pitStop={active:true,phase:player.driveNetwork==='PIT'?'IN_LANE':'REQUESTED',requestedAt:raceT,serviced:false,hud:`BOX · SOLICITADO · LÍMITE ${Math.round(plan.speedKph)} km/h`};
+ const box=apexPitBoxForCar(plan,player);if(!box){const a=$('raceAlert');if(a)a.textContent='BOX · FALTA POSICIÓN DE SERVICIO';return;}
+ player.pitStop={active:true,phase:player.driveNetwork==='PIT'?'IN_LANE':'REQUESTED',compound:player.nextTyreCompound||player.tyres.compound,requestedAt:raceT,enteredAt:player.driveNetwork==='PIT'?raceT:null,referenceSpeed:Math.max(5,player.speed),previousLimiter:!!player.pitLimiter,serviced:false,hud:`BOX · SOLICITADO · LÍMITE ${Math.round(plan.speedKph)} km/h`};
  const a=$('raceAlert');if(a){a.textContent=player.pitStop.hud;a.style.color='#8dffb6'}updatePitButtonUI();
 }
 
@@ -3502,7 +3569,6 @@ function demoDriverControl(){
  if(!player||!trackData)return {steer:0,throttle:0,brake:0,target:0,boost:false,reverse:false};
  const sp=Math.max(0,finite(player.speed,0)),env=envProfile(player.s),diff=Number.isFinite(sessionSettings.diff)?sessionSettings.diff:1;
  autoEnsureRiskMemory();
- const pitCtl=apexPitStopController(sp);if(pitCtl)return pitCtl;
  const skill=clamp(.982+(diff-1)*.10,.965,.995),bravery=clamp(.952+(diff-1)*.10,.925,.985);
  const recovery=autoRecoveryController(sp,env);
  if(recovery){
@@ -3998,7 +4064,8 @@ function update(dt,runHeavy=true,heavyDt=dt){
  const rawGasKey=keys.ArrowUp||keys.KeyW||keys.gas,rawBrKey=keys.ArrowDown||keys.KeyS||keys.brake,
        rawLeft=keys.ArrowLeft||keys.left,rawRight=keys.ArrowRight||keys.right;
  const gamepad=!demoMode?apexPollGamepad():null,gamepadActive=!!(gamepad&&gamepad.active);
- const autoSpeedControl=demoMode||assistMode,autoCtl=autoSpeedControl?demoDriverControl():null;
+ const pitCtl=apexPitStopController(Math.max(0,finite(player.speed,0))),pitTakeover=!!(pitCtl&&pitCtl.takeover);
+ const autoSpeedControl=demoMode||assistMode||pitTakeover,autoCtl=pitCtl||((demoMode||assistMode)?demoDriverControl():null);
  player.autoRecoveryAssist=!!(autoCtl&&autoCtl.recoveryAssist);player.autoRecoveryForcePull=!!(autoCtl&&autoCtl.recoveryForcePull);player.autoRecoveryHeading=autoCtl&&Number.isFinite(autoCtl.recoveryHeading)?autoCtl.recoveryHeading:null;
  const gasKey=autoSpeedControl?false:rawGasKey,brKey=autoSpeedControl?false:rawBrKey,left=demoMode?false:rawLeft,right=demoMode?false:rawRight;
  const gyroFresh=!demoMode&&gyro.enabled&&performance.now()-gyro.last<1200;if(gyroFresh)apexInputDevice='gyro';
@@ -4007,7 +4074,7 @@ function update(dt,runHeavy=true,heavyDt=dt){
  const gas=autoSpeedControl?(autoCtl&&autoCtl.throttle>.02):(!!gasKey||analogGas>.02),br=autoSpeedControl?(autoCtl&&autoCtl.brake>.02):(!!brKey||analogBrake>.02);
  const inputSpeed=finite(player.speed,0),assistRecovery=!!(assistMode&&player.autoRecovery);
 
- if(demoMode||assistRecovery){
+ if(demoMode||assistRecovery||pitTakeover){
    player.reverse=!!(autoCtl&&autoCtl.reverse);player.reverseHold=0;player.gyroNeutral=false;
  }else if(assistMode){
    player.reverse=false;player.reverseHold=0;player.gyroNeutral=false;
@@ -4026,13 +4093,13 @@ function update(dt,runHeavy=true,heavyDt=dt){
    }else if(gasKey&&inputSpeed<1.15){player.reverse=false;player.reverseHold=0;}
  }
  const boost=(demoMode?!!(autoCtl&&autoCtl.boost):(apexControls.ersActive||keys.ers))&&player.ers>0&&!player.reverse;
- let steer=demoMode?(autoCtl?autoCtl.steer:0):((left?-1:0)+(right?1:0));
+ let steer=(demoMode||pitTakeover)?(autoCtl?autoCtl.steer:0):((left?-1:0)+(right?1:0));
  if(!demoMode&&!left&&!right&&gamepadActive)steer=gamepad.steer;
  else if(!demoMode&&!left&&!right&&gyroFresh)steer=gyro.steer;
  // En modo naranja el jugador conserva el volante. Sólo una recuperación extrema
  // puede tomar temporalmente la dirección para liberar el coche.
  if(assistRecovery&&autoCtl)steer=autoCtl.steer;
- const speedKph=inputSpeed*3.6,speedNorm=clamp((speedKph-65)/200,0,1),autoSteerActive=demoMode||assistRecovery,inputDevice=apexSteeringInputDevice(left,right,gamepadActive,gyroFresh),driveProfile=apexDriveProfile();
+ const speedKph=inputSpeed*3.6,speedNorm=clamp((speedKph-65)/200,0,1),autoSteerActive=demoMode||assistRecovery||pitTakeover,inputDevice=apexSteeringInputDevice(left,right,gamepadActive,gyroFresh),driveProfile=apexDriveProfile();
  player.steerDevice=autoSteerActive?'auto':inputDevice;
  const steerCfg=autoSteerActive?null:apexDriveSteeringConfig(speedNorm,inputDevice),steerAuthority=autoSteerActive?1:steerCfg.authority;
  let steerCmd=clamp(steer,-1,1)*steerAuthority;

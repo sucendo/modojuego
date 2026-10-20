@@ -230,8 +230,9 @@
 
  // Límite aerodinámico/mecánico.
  sp=finite(Math.hypot(player.vx,player.vz),0);
- if(sp>vmax){
-   const k=vmax/sp;player.vx*=k;player.vz*=k;sp=vmax;
+ const limitedVmax=apexPitLimitedVmax(vmax,player);
+ if(sp>limitedVmax){
+   const k=limitedVmax/sp;player.vx*=k;player.vz*=k;sp=limitedVmax;
  }
 
  // Integración mundial autónoma con colisión continua contra barreras.
@@ -867,6 +868,7 @@ function apexPollGamepad(){
 }
 const apexEnergyModes=[{name:'AHORRO',power:1.2,drain:10,regen:4.5},{name:'EQUILIBRADO',power:2.4,drain:15,regen:3.3},{name:'ATAQUE',power:3,drain:20,regen:2.5}];
 const apexControlActions=[
+ {id:'strategy',key:'KeyY',label:'Estrategia de boxes',shortcut:'Y',run:apexPitStrategyToggle},
  {id:'auto',key:'KeyA',label:'Piloto automático',shortcut:'A',run:()=>setAutoDriveMode(demoMode?0:1,true)},
  {id:'sound',key:'KeyH',label:'Sonido',shortcut:'H',run:toggleSound},
  {id:'gyroCenter',key:null,label:'Calibrar giroscopio',shortcut:'Táctil',run:centerGyro},
@@ -918,7 +920,7 @@ function apexAdjustBias(delta){apexControls.brakeBias=Math.round(clamp(apexContr
 function apexAdjustEngineBrake(delta){apexControls.engineBrake=clamp(apexControls.engineBrake+delta,0,4);apexControlToast('FRENO MOTOR · '+apexControls.engineBrake+'/4');}
 function apexControlToast(text){const el=$('controlToast');el.textContent=text;el.classList.remove('hidden');clearTimeout(apexControls.toastTimer);apexControls.toastTimer=setTimeout(()=>el.classList.add('hidden'),1800);}
 function apexReleaseInputs(){for(const k of Object.keys(keys))keys[k]=false;for(const id of ['left','right','gas','brake'])$(id).classList.remove('on');}
-function apexResetSessionControls(){apexReleaseInputs();document.body.classList.remove('apex-tower-visible','apex-tower-hidden');clearTimeout(apexControls.toastTimer);$('controlToast').classList.add('hidden');apexControls.ersActive=false;apexControls.display=0;if(player)player.pitLimiter=false;}
+function apexResetSessionControls(){$('pitStrategyPanel').classList.add('hidden');$('pitStrategyBtn').setAttribute('aria-expanded','false');apexReleaseInputs();document.body.classList.remove('apex-tower-visible','apex-tower-hidden');clearTimeout(apexControls.toastTimer);$('controlToast').classList.add('hidden');apexControls.ersActive=false;apexControls.display=0;if(player)player.pitLimiter=false;}
 function apexRunAction(id){
  const action=apexControlActions.find(a=>a.id===id);if(!action||!player||!['race','countdown'].includes(mode))return;
  if(action.pending){apexControlToast(action.label+' · PRÓXIMAMENTE');return;}
@@ -991,7 +993,7 @@ function apexInitControls(){
  addEventListener('keydown',apexHandleControlKeydown);addEventListener('keyup',apexHandleControlKeyup);addEventListener('blur',apexReleaseInputs);document.addEventListener('visibilitychange',()=>{if(document.hidden)apexReleaseInputs();});
  apexSyncControls();apexSyncDriveProfileUi();
 }
-apexInitControls();apexTyreInitMenu();
+apexInitControls();apexTyreInitMenu();apexPitStrategyInit();
 // Seleccionamos el sensor por defecto en móvil. En iOS el permiso se solicita
 // exclusivamente desde el botón GYR o el selector, por exigencia del navegador.
 if(apexMobileGyroPreferred){
