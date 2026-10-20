@@ -3372,6 +3372,7 @@ function apexPitServiceExit(car,st,now,plan){
 function apexPitSnapshot(car){return car?{schema:1,nextCompound:apexTyreKey(car.nextTyreCompound),lastInstalledCompound:apexTyreKey(car.lastInstalledCompound||car.tyres?.compound),tyreSet:car.tyreSet||1,tyreAgeKm:car.tyres?car.tyres.distance/1000:0,pitStops:car.pitStops||0,history:Array.isArray(car.pitHistory)?car.pitHistory.map(h=>({...h})):[],phase:car.pitStop?.phase||null}:null}
 function apexPitTelemetry(car){const st=car&&car.pitStop;return car?{nextCompound:car.nextTyreCompound,phase:st?.phase||null,tyreSet:car.tyreSet||1,pitStops:car.pitStops||0,remaining:st?.phase==='SERVICE'?Math.max(0,st.serviceUntil-raceT):null}:null}
 function apexPitBoxForCar(plan,car){
+ if(plan&&plan.serviceSafe===false)return null;
  const slots=plan&&plan.pn&&plan.pn.boxSlots;if(!Array.isArray(slots)||!slots.length)return null;
  const team=car.teamKey||car.team;if(plan._boxCacheSlots!==slots){plan._boxCacheSlots=slots;plan._boxCache=Object.create(null)}if(plan._boxCache[team])return plan._boxCache[team];
  const index=Math.max(0,teamKeys.indexOf(team)),slot=slots.find(s=>s.teamAssignment===team)||slots[index%slots.length];
@@ -3384,6 +3385,24 @@ function apexPlayerDriveBoundaryContains(x,z){
  // The authored PIT ribbon is driveable even where the main-area polygon omits it.
  // This unions only its actual lane width; movePlayerWithWalls still resolves barriers.
  const pit=nearestPitState(x,z,player.pitIndex);return !!(pit&&pit.dist<=pit.width*.5);
+}
+function apexPitPolylineIssue(points,scale=1){
+ for(let i=1;i<points.length-1;i++){
+  const a=points[i-1],b=points[i],c=points[i+1],ux=b[0]-a[0],uz=b[1]-a[1],vx=c[0]-b[0],vz=c[1]-b[1],u=Math.hypot(ux,uz),v=Math.hypot(vx,vz);
+  if(u*v<1e-8)continue;const dot=(ux*vx+uz*vz)/(u*v),lengthM=(u+v)*scale;
+  if(dot<-.5&&lengthM<6)return {code:'REVERSED_SHORT_PIT_SEGMENT',angleDeg:Math.acos(clamp(dot,-1,1))*180/Math.PI,lengthM,atVertex:i,source:'AUTHORED_SVG'};
+ }
+ return null;
+}
+function apexPitSourceSafety(plan){
+ // Inspect original vertices before 2.6 m resampling can hide short reversals.
+ const svg=readEffectiveTrackSvg(trackData.spec.dir);if(!svg)return null;
+ const doc=new DOMParser().parseFromString(svg,'image/svg+xml'),el=doc.getElementById('pitlane_centerline')||doc.querySelector('[data-apex-role="pitlane-centerline"]');
+ if(!el||el.tagName.toLowerCase()!=='path')return null;const d=el.getAttribute('d')||'';
+ if((d.match(/[A-Za-z]/g)||[]).some(c=>!['M','L','E','e'].includes(c)))return null;
+ const nums=(d.match(/[-+]?(?:\d*\.\d+|\d+\.?\d*)(?:[eE][-+]?\d+)?/g)||[]).map(Number),points=[];let length=0;
+ for(let i=0;i+1<nums.length;i+=2){const p=[nums[i],nums[i+1]];if(points.length){const q=points[points.length-1];length+=Math.hypot(p[0]-q[0],p[1]-q[1])}points.push(p)}
+ return length>0?apexPitPolylineIssue(points,plan.routeLength/length):null;
 }
 function apexPitBuildSpeedProfile(plan){
  const step=4,n=Math.ceil(plan.routeLength/step)+1,values=new Float32Array(n);
@@ -3467,7 +3486,7 @@ function apexPitRoutePlan(){
        xtx=exit.x-exitInside.x,xtz=exit.z-exitInside.z,xlen=Math.hypot(xtx,xtz)||1,exitTx=xtx/xlen,exitTz=xtz/xlen,exitNx=-exitTz,exitNz=exitTx;
  const plan={pn,primary,primaryStart,primaryEnd,dir,entry,exit,entryTrackS:entryTrack.s,exitTrackS:exitTrack.s,entryPitS,exitPitS,routeLength,
         entryTx,entryTz,entryNx,entryNz,entryAngle,exitTx,exitTz,exitNx,exitNz,speedKph:apexPitSpeedLimitKph(),speedMps:apexPitSpeedLimitKph()/3.6,serviceSeconds:finiteClamp(apexPitLaneJsonProfile()?.service?.tyreChangeSeconds,2,4,2.8)};
- apexPitBuildSpeedProfile(plan);trackData._apexPitRoutePlan=plan;return plan;
+ plan.serviceIssue=apexPitSourceSafety(plan);plan.serviceSafe=!plan.serviceIssue;apexPitBuildSpeedProfile(plan);trackData._apexPitRoutePlan=plan;return plan;
 }
 function apexPlayerClassificationS(){
  if(!player||!trackData)return 0;
@@ -3581,14 +3600,14 @@ function pitStopHudStatus(){return player&&player.pitStop&&player.pitStop.active
 function updatePitButtonUI(){
  const b=$('box');if(!b)return;const plan=apexPitRoutePlan(),hasPit=!!(plan&&apexPitBoxForCar(plan,player||{})),st=player&&player.pitStop&&player.pitStop.active?player.pitStop:null,usable=!!(player&&hasPit);
  b.disabled=!usable;b.classList.toggle('on',!!st&&st.phase!=='SERVICE');b.classList.toggle('service',!!st&&st.phase==='SERVICE');b.textContent='BOX';
- b.title=!player?'Parada en boxes':!hasPit?'Este circuito no tiene pit lane':'Solicitar parada en boxes · límite '+Math.round(apexPitSpeedLimitKph())+' km/h';
+ b.title=!player?'Parada en boxes':!hasPit?(plan?.serviceIssue?'Trazado de boxes pendiente de revisión geométrica':'Este circuito no tiene pit lane o posición de box válida'):'Solicitar parada en boxes · límite '+Math.round(apexPitSpeedLimitKph())+' km/h';
 }
 function requestPitStop(){
  if(!player)return;const plan=apexPitRoutePlan();if(!plan){const a=$('raceAlert');if(a){a.textContent='BOX · PIT NO DISPONIBLE';a.style.color='#ff8b8b'}return}
  const st=player.pitStop;
  if(st&&st.active&&!st.entryGateCrossed&&(st.phase==='REQUESTED'||st.phase==='APPROACH')){player.pitStop=null;const a=$('raceAlert');if(a){a.textContent='BOX · SOLICITUD CANCELADA';a.style.color='#d8e2ed'}updatePitButtonUI();return}
  if(st&&st.active)return;
- const box=apexPitBoxForCar(plan,player);if(!box){const a=$('raceAlert');if(a)a.textContent='BOX · FALTA POSICIÓN DE SERVICIO';return;}
+ const box=apexPitBoxForCar(plan,player);if(!box){const a=$('raceAlert');if(a)a.textContent=plan.serviceIssue?'BOX · TRAZADO PIT NO SEGURO · REVISIÓN PENDIENTE':'BOX · FALTA POSICIÓN DE SERVICIO';return;}
  player.pitStop={active:true,phase:player.driveNetwork==='PIT'?'IN_LANE':'REQUESTED',compound:player.nextTyreCompound||player.tyres.compound,requestedAt:raceT,enteredAt:player.driveNetwork==='PIT'?raceT:null,referenceSpeed:Math.max(5,player.speed),previousLimiter:!!player.pitLimiter,serviced:false,hud:`BOX · SOLICITADO · LÍMITE ${Math.round(plan.speedKph)} km/h`};
  const a=$('raceAlert');if(a){a.textContent=player.pitStop.hud;a.style.color='#8dffb6'}updatePitButtonUI();
 }

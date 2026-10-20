@@ -1,0 +1,5 @@
+PASS: pinned emergency ALIGN backs out; outside-to-inside rescue remains legal
+PASS: blocked SVG boundary enters existing reverse recovery without moving/rotating the car
+PASS: boundary signal expires; wider modeled road does not override authoritative polygon
+PASS: recovery gates/chords respect SVG holes, absent boundaries and physical walls
+PASS: reached asphalt enters alignment in its actual lane; crossed/outside cars do not

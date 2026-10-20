@@ -1,0 +1,2198 @@
+{
+  "scope": "OFFLINE_SVG_JSON_ASSETS_ONLY",
+  "baseCircuits": 23,
+  "assetsUnchangedSince": "ef8ce60249ccfef28d97d16650bf6e94eaa62b01",
+  "assets": 24,
+  "ok": true,
+  "notTested": [
+    "DOM/runtime loading",
+    "rendered geometry/pixels",
+    "WebGL errors",
+    "grid placement",
+    "physics/timing execution",
+    "save/restore",
+    "Android"
+  ],
+  "rows": [
+    {
+      "id": "01-australia",
+      "kind": "embedded-base",
+      "ok": true,
+      "checks": [
+        {
+          "check": "JSON numbers finite",
+          "ok": true
+        },
+        {
+          "check": "XML SVG root",
+          "ok": true
+        },
+        {
+          "check": "Authoritative centerline",
+          "ok": true
+        },
+        {
+          "check": "Supported exact source polyline",
+          "ok": true
+        },
+        {
+          "check": "Finite centerline vertices",
+          "ok": true
+        },
+        {
+          "check": "Nondegenerate source track",
+          "ok": true
+        },
+        {
+          "check": "Closed lap continuity",
+          "ok": true
+        },
+        {
+          "check": "Positive track length",
+          "ok": true
+        },
+        {
+          "check": "Elevation samples finite and ordered",
+          "ok": true
+        },
+        {
+          "check": "Elevation covers periodic lap",
+          "ok": true
+        },
+        {
+          "check": "Banking data finite",
+          "ok": true
+        },
+        {
+          "check": "Start/finish within lap",
+          "ok": true
+        },
+        {
+          "check": "SVG start/finish",
+          "ok": true
+        },
+        {
+          "check": "Three JSON sectors",
+          "ok": true
+        },
+        {
+          "check": "Continuous sector intervals",
+          "ok": true
+        },
+        {
+          "check": "Authored kerbs",
+          "ok": true
+        },
+        {
+          "check": "Authored pit lane",
+          "ok": true
+        }
+      ],
+      "warnings": [
+        "No explicit runoff: procedural/runtime geometry requires browser validation.",
+        "No explicit walls: procedural/runtime geometry requires browser validation.",
+        "No explicit pit building: procedural/runtime representation requires browser validation."
+      ],
+      "details": {
+        "sourceVertices": 1000,
+        "elevationSamples": 65,
+        "bankingCorners": 0,
+        "kerbRuns": 28,
+        "runoffObjects": 0,
+        "pitObjects": 0,
+        "tunnels": 0,
+        "bridges": 0,
+        "activeSvgObjects": 211
+      }
+    },
+    {
+      "id": "02-china",
+      "kind": "embedded-base",
+      "ok": true,
+      "checks": [
+        {
+          "check": "JSON numbers finite",
+          "ok": true
+        },
+        {
+          "check": "XML SVG root",
+          "ok": true
+        },
+        {
+          "check": "Authoritative centerline",
+          "ok": true
+        },
+        {
+          "check": "Supported exact source polyline",
+          "ok": true
+        },
+        {
+          "check": "Finite centerline vertices",
+          "ok": true
+        },
+        {
+          "check": "Nondegenerate source track",
+          "ok": true
+        },
+        {
+          "check": "Closed lap continuity",
+          "ok": true
+        },
+        {
+          "check": "Positive track length",
+          "ok": true
+        },
+        {
+          "check": "Elevation samples finite and ordered",
+          "ok": true
+        },
+        {
+          "check": "Elevation covers periodic lap",
+          "ok": true
+        },
+        {
+          "check": "Banking data finite",
+          "ok": true
+        },
+        {
+          "check": "Start/finish within lap",
+          "ok": true
+        },
+        {
+          "check": "SVG start/finish",
+          "ok": true
+        },
+        {
+          "check": "Three JSON sectors",
+          "ok": true
+        },
+        {
+          "check": "Continuous sector intervals",
+          "ok": true
+        },
+        {
+          "check": "Authored kerbs",
+          "ok": true
+        },
+        {
+          "check": "Authored pit lane",
+          "ok": true
+        }
+      ],
+      "warnings": [
+        "No explicit runoff: procedural/runtime geometry requires browser validation.",
+        "No explicit walls: procedural/runtime geometry requires browser validation.",
+        "No explicit pit building: procedural/runtime representation requires browser validation."
+      ],
+      "details": {
+        "sourceVertices": 1000,
+        "elevationSamples": 65,
+        "bankingCorners": 0,
+        "kerbRuns": 29,
+        "runoffObjects": 0,
+        "pitObjects": 0,
+        "tunnels": 0,
+        "bridges": 0,
+        "activeSvgObjects": 229
+      }
+    },
+    {
+      "id": "03-japan",
+      "kind": "embedded-base",
+      "ok": true,
+      "checks": [
+        {
+          "check": "JSON numbers finite",
+          "ok": true
+        },
+        {
+          "check": "XML SVG root",
+          "ok": true
+        },
+        {
+          "check": "Authoritative centerline",
+          "ok": true
+        },
+        {
+          "check": "Supported exact source polyline",
+          "ok": true
+        },
+        {
+          "check": "Finite centerline vertices",
+          "ok": true
+        },
+        {
+          "check": "Nondegenerate source track",
+          "ok": true
+        },
+        {
+          "check": "Closed lap continuity",
+          "ok": true
+        },
+        {
+          "check": "Positive track length",
+          "ok": true
+        },
+        {
+          "check": "Elevation samples finite and ordered",
+          "ok": true
+        },
+        {
+          "check": "Elevation covers periodic lap",
+          "ok": true
+        },
+        {
+          "check": "Banking data finite",
+          "ok": true
+        },
+        {
+          "check": "Start/finish within lap",
+          "ok": true
+        },
+        {
+          "check": "SVG start/finish",
+          "ok": true
+        },
+        {
+          "check": "Three JSON sectors",
+          "ok": true
+        },
+        {
+          "check": "Continuous sector intervals",
+          "ok": true
+        },
+        {
+          "check": "Authored kerbs",
+          "ok": true
+        },
+        {
+          "check": "Authored pit lane",
+          "ok": true
+        }
+      ],
+      "warnings": [
+        "No explicit runoff: procedural/runtime geometry requires browser validation.",
+        "No explicit walls: procedural/runtime geometry requires browser validation.",
+        "No explicit pit building: procedural/runtime representation requires browser validation."
+      ],
+      "details": {
+        "sourceVertices": 1000,
+        "elevationSamples": 65,
+        "bankingCorners": 0,
+        "kerbRuns": 35,
+        "runoffObjects": 0,
+        "pitObjects": 0,
+        "tunnels": 0,
+        "bridges": 0,
+        "activeSvgObjects": 264
+      }
+    },
+    {
+      "id": "04-miami",
+      "kind": "embedded-base",
+      "ok": true,
+      "checks": [
+        {
+          "check": "JSON numbers finite",
+          "ok": true
+        },
+        {
+          "check": "XML SVG root",
+          "ok": true
+        },
+        {
+          "check": "Authoritative centerline",
+          "ok": true
+        },
+        {
+          "check": "Supported exact source polyline",
+          "ok": true
+        },
+        {
+          "check": "Finite centerline vertices",
+          "ok": true
+        },
+        {
+          "check": "Nondegenerate source track",
+          "ok": true
+        },
+        {
+          "check": "Closed lap continuity",
+          "ok": true
+        },
+        {
+          "check": "Positive track length",
+          "ok": true
+        },
+        {
+          "check": "Elevation samples finite and ordered",
+          "ok": true
+        },
+        {
+          "check": "Elevation covers periodic lap",
+          "ok": true
+        },
+        {
+          "check": "Banking data finite",
+          "ok": true
+        },
+        {
+          "check": "Start/finish within lap",
+          "ok": true
+        },
+        {
+          "check": "SVG start/finish",
+          "ok": true
+        },
+        {
+          "check": "Three JSON sectors",
+          "ok": true
+        },
+        {
+          "check": "Continuous sector intervals",
+          "ok": true
+        },
+        {
+          "check": "Authored kerbs",
+          "ok": true
+        },
+        {
+          "check": "Authored pit lane",
+          "ok": true
+        }
+      ],
+      "warnings": [
+        "No explicit runoff: procedural/runtime geometry requires browser validation.",
+        "No explicit walls: procedural/runtime geometry requires browser validation.",
+        "No explicit pit building: procedural/runtime representation requires browser validation."
+      ],
+      "details": {
+        "sourceVertices": 1000,
+        "elevationSamples": 65,
+        "bankingCorners": 0,
+        "kerbRuns": 34,
+        "runoffObjects": 0,
+        "pitObjects": 0,
+        "tunnels": 0,
+        "bridges": 0,
+        "activeSvgObjects": 238
+      }
+    },
+    {
+      "id": "05-canada",
+      "kind": "embedded-base",
+      "ok": true,
+      "checks": [
+        {
+          "check": "JSON numbers finite",
+          "ok": true
+        },
+        {
+          "check": "XML SVG root",
+          "ok": true
+        },
+        {
+          "check": "Authoritative centerline",
+          "ok": true
+        },
+        {
+          "check": "Supported exact source polyline",
+          "ok": true
+        },
+        {
+          "check": "Finite centerline vertices",
+          "ok": true
+        },
+        {
+          "check": "Nondegenerate source track",
+          "ok": true
+        },
+        {
+          "check": "Closed lap continuity",
+          "ok": true
+        },
+        {
+          "check": "Positive track length",
+          "ok": true
+        },
+        {
+          "check": "Elevation samples finite and ordered",
+          "ok": true
+        },
+        {
+          "check": "Elevation covers periodic lap",
+          "ok": true
+        },
+        {
+          "check": "Banking data finite",
+          "ok": true
+        },
+        {
+          "check": "Start/finish within lap",
+          "ok": true
+        },
+        {
+          "check": "SVG start/finish",
+          "ok": true
+        },
+        {
+          "check": "Three JSON sectors",
+          "ok": true
+        },
+        {
+          "check": "Continuous sector intervals",
+          "ok": true
+        },
+        {
+          "check": "Authored kerbs",
+          "ok": true
+        },
+        {
+          "check": "Authored pit lane",
+          "ok": true
+        }
+      ],
+      "warnings": [
+        "No explicit runoff: procedural/runtime geometry requires browser validation.",
+        "No explicit walls: procedural/runtime geometry requires browser validation.",
+        "No explicit pit building: procedural/runtime representation requires browser validation."
+      ],
+      "details": {
+        "sourceVertices": 1000,
+        "elevationSamples": 65,
+        "bankingCorners": 0,
+        "kerbRuns": 19,
+        "runoffObjects": 0,
+        "pitObjects": 0,
+        "tunnels": 0,
+        "bridges": 0,
+        "activeSvgObjects": 194
+      }
+    },
+    {
+      "id": "06-monaco",
+      "kind": "embedded-base",
+      "ok": true,
+      "checks": [
+        {
+          "check": "JSON numbers finite",
+          "ok": true
+        },
+        {
+          "check": "XML SVG root",
+          "ok": true
+        },
+        {
+          "check": "Authoritative centerline",
+          "ok": true
+        },
+        {
+          "check": "Supported exact source polyline",
+          "ok": true
+        },
+        {
+          "check": "Finite centerline vertices",
+          "ok": true
+        },
+        {
+          "check": "Nondegenerate source track",
+          "ok": true
+        },
+        {
+          "check": "Closed lap continuity",
+          "ok": true
+        },
+        {
+          "check": "Positive track length",
+          "ok": true
+        },
+        {
+          "check": "Elevation samples finite and ordered",
+          "ok": true
+        },
+        {
+          "check": "Elevation covers periodic lap",
+          "ok": true
+        },
+        {
+          "check": "Banking data finite",
+          "ok": true
+        },
+        {
+          "check": "Start/finish within lap",
+          "ok": true
+        },
+        {
+          "check": "SVG start/finish",
+          "ok": true
+        },
+        {
+          "check": "Three JSON sectors",
+          "ok": true
+        },
+        {
+          "check": "Continuous sector intervals",
+          "ok": true
+        },
+        {
+          "check": "Authored kerbs",
+          "ok": true
+        },
+        {
+          "check": "Authored pit lane",
+          "ok": true
+        }
+      ],
+      "warnings": [
+        "No explicit runoff: procedural/runtime geometry requires browser validation.",
+        "No explicit walls: procedural/runtime geometry requires browser validation.",
+        "No explicit pit building: procedural/runtime representation requires browser validation."
+      ],
+      "details": {
+        "sourceVertices": 1000,
+        "elevationSamples": 65,
+        "bankingCorners": 0,
+        "kerbRuns": 23,
+        "runoffObjects": 0,
+        "pitObjects": 0,
+        "tunnels": 0,
+        "bridges": 0,
+        "activeSvgObjects": 218
+      }
+    },
+    {
+      "id": "07-barcelona-catalunya",
+      "kind": "embedded-base",
+      "ok": true,
+      "checks": [
+        {
+          "check": "JSON numbers finite",
+          "ok": true
+        },
+        {
+          "check": "XML SVG root",
+          "ok": true
+        },
+        {
+          "check": "Authoritative centerline",
+          "ok": true
+        },
+        {
+          "check": "Supported exact source polyline",
+          "ok": true
+        },
+        {
+          "check": "Finite centerline vertices",
+          "ok": true
+        },
+        {
+          "check": "Nondegenerate source track",
+          "ok": true
+        },
+        {
+          "check": "Closed lap continuity",
+          "ok": true
+        },
+        {
+          "check": "Positive track length",
+          "ok": true
+        },
+        {
+          "check": "Elevation samples finite and ordered",
+          "ok": true
+        },
+        {
+          "check": "Elevation covers periodic lap",
+          "ok": true
+        },
+        {
+          "check": "Banking data finite",
+          "ok": true
+        },
+        {
+          "check": "Start/finish within lap",
+          "ok": true
+        },
+        {
+          "check": "SVG start/finish",
+          "ok": true
+        },
+        {
+          "check": "Three JSON sectors",
+          "ok": true
+        },
+        {
+          "check": "Continuous sector intervals",
+          "ok": true
+        },
+        {
+          "check": "Authored kerbs",
+          "ok": true
+        },
+        {
+          "check": "Authored pit lane",
+          "ok": true
+        }
+      ],
+      "warnings": [
+        "No explicit runoff: procedural/runtime geometry requires browser validation.",
+        "No explicit walls: procedural/runtime geometry requires browser validation.",
+        "No explicit pit building: procedural/runtime representation requires browser validation."
+      ],
+      "details": {
+        "sourceVertices": 1000,
+        "elevationSamples": 65,
+        "bankingCorners": 0,
+        "kerbRuns": 27,
+        "runoffObjects": 0,
+        "pitObjects": 0,
+        "tunnels": 0,
+        "bridges": 0,
+        "activeSvgObjects": 214
+      }
+    },
+    {
+      "id": "08-austria",
+      "kind": "embedded-base",
+      "ok": true,
+      "checks": [
+        {
+          "check": "JSON numbers finite",
+          "ok": true
+        },
+        {
+          "check": "XML SVG root",
+          "ok": true
+        },
+        {
+          "check": "Authoritative centerline",
+          "ok": true
+        },
+        {
+          "check": "Supported exact source polyline",
+          "ok": true
+        },
+        {
+          "check": "Finite centerline vertices",
+          "ok": true
+        },
+        {
+          "check": "Nondegenerate source track",
+          "ok": true
+        },
+        {
+          "check": "Closed lap continuity",
+          "ok": true
+        },
+        {
+          "check": "Positive track length",
+          "ok": true
+        },
+        {
+          "check": "Elevation samples finite and ordered",
+          "ok": true
+        },
+        {
+          "check": "Elevation covers periodic lap",
+          "ok": true
+        },
+        {
+          "check": "Banking data finite",
+          "ok": true
+        },
+        {
+          "check": "Start/finish within lap",
+          "ok": true
+        },
+        {
+          "check": "SVG start/finish",
+          "ok": true
+        },
+        {
+          "check": "Three JSON sectors",
+          "ok": true
+        },
+        {
+          "check": "Continuous sector intervals",
+          "ok": true
+        },
+        {
+          "check": "Authored kerbs",
+          "ok": true
+        },
+        {
+          "check": "Authored pit lane",
+          "ok": true
+        }
+      ],
+      "warnings": [
+        "No explicit runoff: procedural/runtime geometry requires browser validation.",
+        "No explicit walls: procedural/runtime geometry requires browser validation.",
+        "No explicit pit building: procedural/runtime representation requires browser validation."
+      ],
+      "details": {
+        "sourceVertices": 1000,
+        "elevationSamples": 65,
+        "bankingCorners": 0,
+        "kerbRuns": 19,
+        "runoffObjects": 0,
+        "pitObjects": 0,
+        "tunnels": 0,
+        "bridges": 0,
+        "activeSvgObjects": 182
+      }
+    },
+    {
+      "id": "09-great-britain",
+      "kind": "embedded-base",
+      "ok": true,
+      "checks": [
+        {
+          "check": "JSON numbers finite",
+          "ok": true
+        },
+        {
+          "check": "XML SVG root",
+          "ok": true
+        },
+        {
+          "check": "Authoritative centerline",
+          "ok": true
+        },
+        {
+          "check": "Supported exact source polyline",
+          "ok": true
+        },
+        {
+          "check": "Finite centerline vertices",
+          "ok": true
+        },
+        {
+          "check": "Nondegenerate source track",
+          "ok": true
+        },
+        {
+          "check": "Closed lap continuity",
+          "ok": true
+        },
+        {
+          "check": "Positive track length",
+          "ok": true
+        },
+        {
+          "check": "Elevation samples finite and ordered",
+          "ok": true
+        },
+        {
+          "check": "Elevation covers periodic lap",
+          "ok": true
+        },
+        {
+          "check": "Banking data finite",
+          "ok": true
+        },
+        {
+          "check": "Start/finish within lap",
+          "ok": true
+        },
+        {
+          "check": "SVG start/finish",
+          "ok": true
+        },
+        {
+          "check": "Three JSON sectors",
+          "ok": true
+        },
+        {
+          "check": "Continuous sector intervals",
+          "ok": true
+        },
+        {
+          "check": "Authored kerbs",
+          "ok": true
+        },
+        {
+          "check": "Authored pit lane",
+          "ok": true
+        }
+      ],
+      "warnings": [
+        "No explicit runoff: procedural/runtime geometry requires browser validation.",
+        "No explicit walls: procedural/runtime geometry requires browser validation.",
+        "No explicit pit building: procedural/runtime representation requires browser validation."
+      ],
+      "details": {
+        "sourceVertices": 1000,
+        "elevationSamples": 65,
+        "bankingCorners": 0,
+        "kerbRuns": 35,
+        "runoffObjects": 0,
+        "pitObjects": 0,
+        "tunnels": 0,
+        "bridges": 0,
+        "activeSvgObjects": 226
+      }
+    },
+    {
+      "id": "10-belgium",
+      "kind": "embedded-base",
+      "ok": true,
+      "checks": [
+        {
+          "check": "JSON numbers finite",
+          "ok": true
+        },
+        {
+          "check": "XML SVG root",
+          "ok": true
+        },
+        {
+          "check": "Authoritative centerline",
+          "ok": true
+        },
+        {
+          "check": "Supported exact source polyline",
+          "ok": true
+        },
+        {
+          "check": "Finite centerline vertices",
+          "ok": true
+        },
+        {
+          "check": "Nondegenerate source track",
+          "ok": true
+        },
+        {
+          "check": "Closed lap continuity",
+          "ok": true
+        },
+        {
+          "check": "Positive track length",
+          "ok": true
+        },
+        {
+          "check": "Elevation samples finite and ordered",
+          "ok": true
+        },
+        {
+          "check": "Elevation covers periodic lap",
+          "ok": true
+        },
+        {
+          "check": "Banking data finite",
+          "ok": true
+        },
+        {
+          "check": "Start/finish within lap",
+          "ok": true
+        },
+        {
+          "check": "SVG start/finish",
+          "ok": true
+        },
+        {
+          "check": "Three JSON sectors",
+          "ok": true
+        },
+        {
+          "check": "Continuous sector intervals",
+          "ok": true
+        },
+        {
+          "check": "Authored kerbs",
+          "ok": true
+        },
+        {
+          "check": "Authored pit lane",
+          "ok": true
+        }
+      ],
+      "warnings": [
+        "No explicit runoff: procedural/runtime geometry requires browser validation.",
+        "No explicit walls: procedural/runtime geometry requires browser validation.",
+        "No explicit pit building: procedural/runtime representation requires browser validation."
+      ],
+      "details": {
+        "sourceVertices": 1000,
+        "elevationSamples": 65,
+        "bankingCorners": 0,
+        "kerbRuns": 35,
+        "runoffObjects": 0,
+        "pitObjects": 0,
+        "tunnels": 0,
+        "bridges": 0,
+        "activeSvgObjects": 268
+      }
+    },
+    {
+      "id": "11-hungary",
+      "kind": "embedded-base",
+      "ok": true,
+      "checks": [
+        {
+          "check": "JSON numbers finite",
+          "ok": true
+        },
+        {
+          "check": "XML SVG root",
+          "ok": true
+        },
+        {
+          "check": "Authoritative centerline",
+          "ok": true
+        },
+        {
+          "check": "Supported exact source polyline",
+          "ok": true
+        },
+        {
+          "check": "Finite centerline vertices",
+          "ok": true
+        },
+        {
+          "check": "Nondegenerate source track",
+          "ok": true
+        },
+        {
+          "check": "Closed lap continuity",
+          "ok": true
+        },
+        {
+          "check": "Positive track length",
+          "ok": true
+        },
+        {
+          "check": "Elevation samples finite and ordered",
+          "ok": true
+        },
+        {
+          "check": "Elevation covers periodic lap",
+          "ok": true
+        },
+        {
+          "check": "Banking data finite",
+          "ok": true
+        },
+        {
+          "check": "Start/finish within lap",
+          "ok": true
+        },
+        {
+          "check": "SVG start/finish",
+          "ok": true
+        },
+        {
+          "check": "Three JSON sectors",
+          "ok": true
+        },
+        {
+          "check": "Continuous sector intervals",
+          "ok": true
+        },
+        {
+          "check": "Authored kerbs",
+          "ok": true
+        },
+        {
+          "check": "Authored pit lane",
+          "ok": true
+        }
+      ],
+      "warnings": [
+        "No explicit runoff: procedural/runtime geometry requires browser validation.",
+        "No explicit walls: procedural/runtime geometry requires browser validation.",
+        "No explicit pit building: procedural/runtime representation requires browser validation."
+      ],
+      "details": {
+        "sourceVertices": 1000,
+        "elevationSamples": 65,
+        "bankingCorners": 0,
+        "kerbRuns": 28,
+        "runoffObjects": 0,
+        "pitObjects": 0,
+        "tunnels": 0,
+        "bridges": 0,
+        "activeSvgObjects": 225
+      }
+    },
+    {
+      "id": "12-netherlands",
+      "kind": "embedded-base",
+      "ok": true,
+      "checks": [
+        {
+          "check": "JSON numbers finite",
+          "ok": true
+        },
+        {
+          "check": "XML SVG root",
+          "ok": true
+        },
+        {
+          "check": "Authoritative centerline",
+          "ok": true
+        },
+        {
+          "check": "Supported exact source polyline",
+          "ok": true
+        },
+        {
+          "check": "Finite centerline vertices",
+          "ok": true
+        },
+        {
+          "check": "Nondegenerate source track",
+          "ok": true
+        },
+        {
+          "check": "Closed lap continuity",
+          "ok": true
+        },
+        {
+          "check": "Positive track length",
+          "ok": true
+        },
+        {
+          "check": "Elevation samples finite and ordered",
+          "ok": true
+        },
+        {
+          "check": "Elevation covers periodic lap",
+          "ok": true
+        },
+        {
+          "check": "Banking data finite",
+          "ok": true
+        },
+        {
+          "check": "Start/finish within lap",
+          "ok": true
+        },
+        {
+          "check": "SVG start/finish",
+          "ok": true
+        },
+        {
+          "check": "Three JSON sectors",
+          "ok": true
+        },
+        {
+          "check": "Continuous sector intervals",
+          "ok": true
+        },
+        {
+          "check": "Authored kerbs",
+          "ok": true
+        },
+        {
+          "check": "Authored pit lane",
+          "ok": true
+        }
+      ],
+      "warnings": [
+        "No explicit runoff: procedural/runtime geometry requires browser validation.",
+        "No explicit walls: procedural/runtime geometry requires browser validation.",
+        "No explicit pit building: procedural/runtime representation requires browser validation."
+      ],
+      "details": {
+        "sourceVertices": 1000,
+        "elevationSamples": 65,
+        "bankingCorners": 0,
+        "kerbRuns": 26,
+        "runoffObjects": 0,
+        "pitObjects": 0,
+        "tunnels": 0,
+        "bridges": 0,
+        "activeSvgObjects": 215
+      }
+    },
+    {
+      "id": "13-italy",
+      "kind": "embedded-base",
+      "ok": true,
+      "checks": [
+        {
+          "check": "JSON numbers finite",
+          "ok": true
+        },
+        {
+          "check": "XML SVG root",
+          "ok": true
+        },
+        {
+          "check": "Authoritative centerline",
+          "ok": true
+        },
+        {
+          "check": "Supported exact source polyline",
+          "ok": true
+        },
+        {
+          "check": "Finite centerline vertices",
+          "ok": true
+        },
+        {
+          "check": "Nondegenerate source track",
+          "ok": true
+        },
+        {
+          "check": "Closed lap continuity",
+          "ok": true
+        },
+        {
+          "check": "Positive track length",
+          "ok": true
+        },
+        {
+          "check": "Elevation samples finite and ordered",
+          "ok": true
+        },
+        {
+          "check": "Elevation covers periodic lap",
+          "ok": true
+        },
+        {
+          "check": "Banking data finite",
+          "ok": true
+        },
+        {
+          "check": "Start/finish within lap",
+          "ok": true
+        },
+        {
+          "check": "SVG start/finish",
+          "ok": true
+        },
+        {
+          "check": "Three JSON sectors",
+          "ok": true
+        },
+        {
+          "check": "Continuous sector intervals",
+          "ok": true
+        },
+        {
+          "check": "Authored kerbs",
+          "ok": true
+        },
+        {
+          "check": "Authored pit lane",
+          "ok": true
+        }
+      ],
+      "warnings": [
+        "No explicit runoff: procedural/runtime geometry requires browser validation.",
+        "No explicit walls: procedural/runtime geometry requires browser validation.",
+        "No explicit pit building: procedural/runtime representation requires browser validation."
+      ],
+      "details": {
+        "sourceVertices": 1000,
+        "elevationSamples": 65,
+        "bankingCorners": 0,
+        "kerbRuns": 16,
+        "runoffObjects": 0,
+        "pitObjects": 0,
+        "tunnels": 0,
+        "bridges": 0,
+        "activeSvgObjects": 178
+      }
+    },
+    {
+      "id": "14-spain",
+      "kind": "embedded-base",
+      "ok": true,
+      "checks": [
+        {
+          "check": "JSON numbers finite",
+          "ok": true
+        },
+        {
+          "check": "XML SVG root",
+          "ok": true
+        },
+        {
+          "check": "Authoritative centerline",
+          "ok": true
+        },
+        {
+          "check": "Supported exact source polyline",
+          "ok": true
+        },
+        {
+          "check": "Finite centerline vertices",
+          "ok": true
+        },
+        {
+          "check": "Nondegenerate source track",
+          "ok": true
+        },
+        {
+          "check": "Closed lap continuity",
+          "ok": true
+        },
+        {
+          "check": "Positive track length",
+          "ok": true
+        },
+        {
+          "check": "Elevation samples finite and ordered",
+          "ok": true
+        },
+        {
+          "check": "Elevation covers periodic lap",
+          "ok": true
+        },
+        {
+          "check": "Banking data finite",
+          "ok": true
+        },
+        {
+          "check": "Start/finish within lap",
+          "ok": true
+        },
+        {
+          "check": "SVG start/finish",
+          "ok": true
+        },
+        {
+          "check": "Three JSON sectors",
+          "ok": true
+        },
+        {
+          "check": "Continuous sector intervals",
+          "ok": true
+        },
+        {
+          "check": "Authored kerbs",
+          "ok": true
+        },
+        {
+          "check": "Authored pit lane",
+          "ok": true
+        }
+      ],
+      "warnings": [
+        "No explicit runoff: procedural/runtime geometry requires browser validation.",
+        "No explicit walls: procedural/runtime geometry requires browser validation.",
+        "No explicit pit building: procedural/runtime representation requires browser validation."
+      ],
+      "details": {
+        "sourceVertices": 1000,
+        "elevationSamples": 542,
+        "bankingCorners": 22,
+        "kerbRuns": 35,
+        "runoffObjects": 0,
+        "pitObjects": 0,
+        "tunnels": 0,
+        "bridges": 0,
+        "activeSvgObjects": 286
+      }
+    },
+    {
+      "id": "15-azerbaijan",
+      "kind": "embedded-base",
+      "ok": true,
+      "checks": [
+        {
+          "check": "JSON numbers finite",
+          "ok": true
+        },
+        {
+          "check": "XML SVG root",
+          "ok": true
+        },
+        {
+          "check": "Authoritative centerline",
+          "ok": true
+        },
+        {
+          "check": "Supported exact source polyline",
+          "ok": true
+        },
+        {
+          "check": "Finite centerline vertices",
+          "ok": true
+        },
+        {
+          "check": "Nondegenerate source track",
+          "ok": true
+        },
+        {
+          "check": "Closed lap continuity",
+          "ok": true
+        },
+        {
+          "check": "Positive track length",
+          "ok": true
+        },
+        {
+          "check": "Elevation samples finite and ordered",
+          "ok": true
+        },
+        {
+          "check": "Elevation covers periodic lap",
+          "ok": true
+        },
+        {
+          "check": "Banking data finite",
+          "ok": true
+        },
+        {
+          "check": "Start/finish within lap",
+          "ok": true
+        },
+        {
+          "check": "SVG start/finish",
+          "ok": true
+        },
+        {
+          "check": "Three JSON sectors",
+          "ok": true
+        },
+        {
+          "check": "Continuous sector intervals",
+          "ok": true
+        },
+        {
+          "check": "Authored kerbs",
+          "ok": true
+        },
+        {
+          "check": "Authored pit lane",
+          "ok": true
+        }
+      ],
+      "warnings": [
+        "No explicit runoff: procedural/runtime geometry requires browser validation.",
+        "No explicit walls: procedural/runtime geometry requires browser validation.",
+        "No explicit pit building: procedural/runtime representation requires browser validation."
+      ],
+      "details": {
+        "sourceVertices": 1000,
+        "elevationSamples": 65,
+        "bankingCorners": 0,
+        "kerbRuns": 31,
+        "runoffObjects": 0,
+        "pitObjects": 0,
+        "tunnels": 0,
+        "bridges": 0,
+        "activeSvgObjects": 272
+      }
+    },
+    {
+      "id": "16-bahrain",
+      "kind": "embedded-base",
+      "ok": true,
+      "checks": [
+        {
+          "check": "JSON numbers finite",
+          "ok": true
+        },
+        {
+          "check": "XML SVG root",
+          "ok": true
+        },
+        {
+          "check": "Authoritative centerline",
+          "ok": true
+        },
+        {
+          "check": "Supported exact source polyline",
+          "ok": true
+        },
+        {
+          "check": "Finite centerline vertices",
+          "ok": true
+        },
+        {
+          "check": "Nondegenerate source track",
+          "ok": true
+        },
+        {
+          "check": "Closed lap continuity",
+          "ok": true
+        },
+        {
+          "check": "Positive track length",
+          "ok": true
+        },
+        {
+          "check": "Elevation samples finite and ordered",
+          "ok": true
+        },
+        {
+          "check": "Elevation covers periodic lap",
+          "ok": true
+        },
+        {
+          "check": "Banking data finite",
+          "ok": true
+        },
+        {
+          "check": "Start/finish within lap",
+          "ok": true
+        },
+        {
+          "check": "SVG start/finish",
+          "ok": true
+        },
+        {
+          "check": "Three JSON sectors",
+          "ok": true
+        },
+        {
+          "check": "Continuous sector intervals",
+          "ok": true
+        },
+        {
+          "check": "Authored kerbs",
+          "ok": true
+        },
+        {
+          "check": "Authored pit lane",
+          "ok": true
+        }
+      ],
+      "warnings": [
+        "No explicit runoff: procedural/runtime geometry requires browser validation.",
+        "No explicit walls: procedural/runtime geometry requires browser validation.",
+        "No explicit pit building: procedural/runtime representation requires browser validation."
+      ],
+      "details": {
+        "sourceVertices": 1000,
+        "elevationSamples": 65,
+        "bankingCorners": 0,
+        "kerbRuns": 29,
+        "runoffObjects": 0,
+        "pitObjects": 0,
+        "tunnels": 0,
+        "bridges": 0,
+        "activeSvgObjects": 234
+      }
+    },
+    {
+      "id": "17-singapore",
+      "kind": "embedded-base",
+      "ok": true,
+      "checks": [
+        {
+          "check": "JSON numbers finite",
+          "ok": true
+        },
+        {
+          "check": "XML SVG root",
+          "ok": true
+        },
+        {
+          "check": "Authoritative centerline",
+          "ok": true
+        },
+        {
+          "check": "Supported exact source polyline",
+          "ok": true
+        },
+        {
+          "check": "Finite centerline vertices",
+          "ok": true
+        },
+        {
+          "check": "Nondegenerate source track",
+          "ok": true
+        },
+        {
+          "check": "Closed lap continuity",
+          "ok": true
+        },
+        {
+          "check": "Positive track length",
+          "ok": true
+        },
+        {
+          "check": "Elevation samples finite and ordered",
+          "ok": true
+        },
+        {
+          "check": "Elevation covers periodic lap",
+          "ok": true
+        },
+        {
+          "check": "Banking data finite",
+          "ok": true
+        },
+        {
+          "check": "Start/finish within lap",
+          "ok": true
+        },
+        {
+          "check": "SVG start/finish",
+          "ok": true
+        },
+        {
+          "check": "Three JSON sectors",
+          "ok": true
+        },
+        {
+          "check": "Continuous sector intervals",
+          "ok": true
+        },
+        {
+          "check": "Authored kerbs",
+          "ok": true
+        },
+        {
+          "check": "Authored pit lane",
+          "ok": true
+        }
+      ],
+      "warnings": [
+        "No explicit runoff: procedural/runtime geometry requires browser validation.",
+        "No explicit walls: procedural/runtime geometry requires browser validation.",
+        "No explicit pit building: procedural/runtime representation requires browser validation."
+      ],
+      "details": {
+        "sourceVertices": 1000,
+        "elevationSamples": 65,
+        "bankingCorners": 0,
+        "kerbRuns": 33,
+        "runoffObjects": 0,
+        "pitObjects": 0,
+        "tunnels": 0,
+        "bridges": 0,
+        "activeSvgObjects": 279
+      }
+    },
+    {
+      "id": "18-united-states",
+      "kind": "embedded-base",
+      "ok": true,
+      "checks": [
+        {
+          "check": "JSON numbers finite",
+          "ok": true
+        },
+        {
+          "check": "XML SVG root",
+          "ok": true
+        },
+        {
+          "check": "Authoritative centerline",
+          "ok": true
+        },
+        {
+          "check": "Supported exact source polyline",
+          "ok": true
+        },
+        {
+          "check": "Finite centerline vertices",
+          "ok": true
+        },
+        {
+          "check": "Nondegenerate source track",
+          "ok": true
+        },
+        {
+          "check": "Closed lap continuity",
+          "ok": true
+        },
+        {
+          "check": "Positive track length",
+          "ok": true
+        },
+        {
+          "check": "Elevation samples finite and ordered",
+          "ok": true
+        },
+        {
+          "check": "Elevation covers periodic lap",
+          "ok": true
+        },
+        {
+          "check": "Banking data finite",
+          "ok": true
+        },
+        {
+          "check": "Start/finish within lap",
+          "ok": true
+        },
+        {
+          "check": "SVG start/finish",
+          "ok": true
+        },
+        {
+          "check": "Three JSON sectors",
+          "ok": true
+        },
+        {
+          "check": "Continuous sector intervals",
+          "ok": true
+        },
+        {
+          "check": "Authored kerbs",
+          "ok": true
+        },
+        {
+          "check": "Authored pit lane",
+          "ok": true
+        }
+      ],
+      "warnings": [
+        "No explicit runoff: procedural/runtime geometry requires browser validation.",
+        "No explicit walls: procedural/runtime geometry requires browser validation.",
+        "No explicit pit building: procedural/runtime representation requires browser validation."
+      ],
+      "details": {
+        "sourceVertices": 1000,
+        "elevationSamples": 65,
+        "bankingCorners": 0,
+        "kerbRuns": 38,
+        "runoffObjects": 0,
+        "pitObjects": 0,
+        "tunnels": 0,
+        "bridges": 0,
+        "activeSvgObjects": 281
+      }
+    },
+    {
+      "id": "19-mexico",
+      "kind": "embedded-base",
+      "ok": true,
+      "checks": [
+        {
+          "check": "JSON numbers finite",
+          "ok": true
+        },
+        {
+          "check": "XML SVG root",
+          "ok": true
+        },
+        {
+          "check": "Authoritative centerline",
+          "ok": true
+        },
+        {
+          "check": "Supported exact source polyline",
+          "ok": true
+        },
+        {
+          "check": "Finite centerline vertices",
+          "ok": true
+        },
+        {
+          "check": "Nondegenerate source track",
+          "ok": true
+        },
+        {
+          "check": "Closed lap continuity",
+          "ok": true
+        },
+        {
+          "check": "Positive track length",
+          "ok": true
+        },
+        {
+          "check": "Elevation samples finite and ordered",
+          "ok": true
+        },
+        {
+          "check": "Elevation covers periodic lap",
+          "ok": true
+        },
+        {
+          "check": "Banking data finite",
+          "ok": true
+        },
+        {
+          "check": "Start/finish within lap",
+          "ok": true
+        },
+        {
+          "check": "SVG start/finish",
+          "ok": true
+        },
+        {
+          "check": "Three JSON sectors",
+          "ok": true
+        },
+        {
+          "check": "Continuous sector intervals",
+          "ok": true
+        },
+        {
+          "check": "Authored kerbs",
+          "ok": true
+        },
+        {
+          "check": "Authored pit lane",
+          "ok": true
+        }
+      ],
+      "warnings": [
+        "No explicit runoff: procedural/runtime geometry requires browser validation.",
+        "No explicit walls: procedural/runtime geometry requires browser validation.",
+        "No explicit pit building: procedural/runtime representation requires browser validation."
+      ],
+      "details": {
+        "sourceVertices": 1000,
+        "elevationSamples": 65,
+        "bankingCorners": 0,
+        "kerbRuns": 28,
+        "runoffObjects": 0,
+        "pitObjects": 0,
+        "tunnels": 0,
+        "bridges": 0,
+        "activeSvgObjects": 220
+      }
+    },
+    {
+      "id": "20-sao-paulo",
+      "kind": "embedded-base",
+      "ok": true,
+      "checks": [
+        {
+          "check": "JSON numbers finite",
+          "ok": true
+        },
+        {
+          "check": "XML SVG root",
+          "ok": true
+        },
+        {
+          "check": "Authoritative centerline",
+          "ok": true
+        },
+        {
+          "check": "Supported exact source polyline",
+          "ok": true
+        },
+        {
+          "check": "Finite centerline vertices",
+          "ok": true
+        },
+        {
+          "check": "Nondegenerate source track",
+          "ok": true
+        },
+        {
+          "check": "Closed lap continuity",
+          "ok": true
+        },
+        {
+          "check": "Positive track length",
+          "ok": true
+        },
+        {
+          "check": "Elevation samples finite and ordered",
+          "ok": true
+        },
+        {
+          "check": "Elevation covers periodic lap",
+          "ok": true
+        },
+        {
+          "check": "Banking data finite",
+          "ok": true
+        },
+        {
+          "check": "Start/finish within lap",
+          "ok": true
+        },
+        {
+          "check": "SVG start/finish",
+          "ok": true
+        },
+        {
+          "check": "Three JSON sectors",
+          "ok": true
+        },
+        {
+          "check": "Continuous sector intervals",
+          "ok": true
+        },
+        {
+          "check": "Authored kerbs",
+          "ok": true
+        },
+        {
+          "check": "Authored pit lane",
+          "ok": true
+        }
+      ],
+      "warnings": [
+        "No explicit runoff: procedural/runtime geometry requires browser validation.",
+        "No explicit walls: procedural/runtime geometry requires browser validation.",
+        "No explicit pit building: procedural/runtime representation requires browser validation."
+      ],
+      "details": {
+        "sourceVertices": 1000,
+        "elevationSamples": 65,
+        "bankingCorners": 0,
+        "kerbRuns": 30,
+        "runoffObjects": 0,
+        "pitObjects": 0,
+        "tunnels": 0,
+        "bridges": 0,
+        "activeSvgObjects": 256
+      }
+    },
+    {
+      "id": "21-las-vegas",
+      "kind": "embedded-base",
+      "ok": true,
+      "checks": [
+        {
+          "check": "JSON numbers finite",
+          "ok": true
+        },
+        {
+          "check": "XML SVG root",
+          "ok": true
+        },
+        {
+          "check": "Authoritative centerline",
+          "ok": true
+        },
+        {
+          "check": "Supported exact source polyline",
+          "ok": true
+        },
+        {
+          "check": "Finite centerline vertices",
+          "ok": true
+        },
+        {
+          "check": "Nondegenerate source track",
+          "ok": true
+        },
+        {
+          "check": "Closed lap continuity",
+          "ok": true
+        },
+        {
+          "check": "Positive track length",
+          "ok": true
+        },
+        {
+          "check": "Elevation samples finite and ordered",
+          "ok": true
+        },
+        {
+          "check": "Elevation covers periodic lap",
+          "ok": true
+        },
+        {
+          "check": "Banking data finite",
+          "ok": true
+        },
+        {
+          "check": "Start/finish within lap",
+          "ok": true
+        },
+        {
+          "check": "SVG start/finish",
+          "ok": true
+        },
+        {
+          "check": "Three JSON sectors",
+          "ok": true
+        },
+        {
+          "check": "Continuous sector intervals",
+          "ok": true
+        },
+        {
+          "check": "Authored kerbs",
+          "ok": true
+        },
+        {
+          "check": "Authored pit lane",
+          "ok": true
+        }
+      ],
+      "warnings": [
+        "No explicit runoff: procedural/runtime geometry requires browser validation.",
+        "No explicit walls: procedural/runtime geometry requires browser validation.",
+        "No explicit pit building: procedural/runtime representation requires browser validation."
+      ],
+      "details": {
+        "sourceVertices": 1000,
+        "elevationSamples": 65,
+        "bankingCorners": 0,
+        "kerbRuns": 26,
+        "runoffObjects": 0,
+        "pitObjects": 0,
+        "tunnels": 0,
+        "bridges": 0,
+        "activeSvgObjects": 249
+      }
+    },
+    {
+      "id": "22-qatar",
+      "kind": "embedded-base",
+      "ok": true,
+      "checks": [
+        {
+          "check": "JSON numbers finite",
+          "ok": true
+        },
+        {
+          "check": "XML SVG root",
+          "ok": true
+        },
+        {
+          "check": "Authoritative centerline",
+          "ok": true
+        },
+        {
+          "check": "Supported exact source polyline",
+          "ok": true
+        },
+        {
+          "check": "Finite centerline vertices",
+          "ok": true
+        },
+        {
+          "check": "Nondegenerate source track",
+          "ok": true
+        },
+        {
+          "check": "Closed lap continuity",
+          "ok": true
+        },
+        {
+          "check": "Positive track length",
+          "ok": true
+        },
+        {
+          "check": "Elevation samples finite and ordered",
+          "ok": true
+        },
+        {
+          "check": "Elevation covers periodic lap",
+          "ok": true
+        },
+        {
+          "check": "Banking data finite",
+          "ok": true
+        },
+        {
+          "check": "Start/finish within lap",
+          "ok": true
+        },
+        {
+          "check": "SVG start/finish",
+          "ok": true
+        },
+        {
+          "check": "Three JSON sectors",
+          "ok": true
+        },
+        {
+          "check": "Continuous sector intervals",
+          "ok": true
+        },
+        {
+          "check": "Authored kerbs",
+          "ok": true
+        },
+        {
+          "check": "Authored pit lane",
+          "ok": true
+        }
+      ],
+      "warnings": [
+        "No explicit runoff: procedural/runtime geometry requires browser validation.",
+        "No explicit walls: procedural/runtime geometry requires browser validation.",
+        "No explicit pit building: procedural/runtime representation requires browser validation."
+      ],
+      "details": {
+        "sourceVertices": 1000,
+        "elevationSamples": 65,
+        "bankingCorners": 0,
+        "kerbRuns": 30,
+        "runoffObjects": 0,
+        "pitObjects": 0,
+        "tunnels": 0,
+        "bridges": 0,
+        "activeSvgObjects": 248
+      }
+    },
+    {
+      "id": "23-abu-dhabi",
+      "kind": "embedded-base",
+      "ok": true,
+      "checks": [
+        {
+          "check": "JSON numbers finite",
+          "ok": true
+        },
+        {
+          "check": "XML SVG root",
+          "ok": true
+        },
+        {
+          "check": "Authoritative centerline",
+          "ok": true
+        },
+        {
+          "check": "Supported exact source polyline",
+          "ok": true
+        },
+        {
+          "check": "Finite centerline vertices",
+          "ok": true
+        },
+        {
+          "check": "Nondegenerate source track",
+          "ok": true
+        },
+        {
+          "check": "Closed lap continuity",
+          "ok": true
+        },
+        {
+          "check": "Positive track length",
+          "ok": true
+        },
+        {
+          "check": "Elevation samples finite and ordered",
+          "ok": true
+        },
+        {
+          "check": "Elevation covers periodic lap",
+          "ok": true
+        },
+        {
+          "check": "Banking data finite",
+          "ok": true
+        },
+        {
+          "check": "Start/finish within lap",
+          "ok": true
+        },
+        {
+          "check": "SVG start/finish",
+          "ok": true
+        },
+        {
+          "check": "Three JSON sectors",
+          "ok": true
+        },
+        {
+          "check": "Continuous sector intervals",
+          "ok": true
+        },
+        {
+          "check": "Authored kerbs",
+          "ok": true
+        },
+        {
+          "check": "Authored pit lane",
+          "ok": true
+        }
+      ],
+      "warnings": [
+        "No explicit runoff: procedural/runtime geometry requires browser validation.",
+        "No explicit walls: procedural/runtime geometry requires browser validation.",
+        "No explicit pit building: procedural/runtime representation requires browser validation."
+      ],
+      "details": {
+        "sourceVertices": 1000,
+        "elevationSamples": 65,
+        "bankingCorners": 0,
+        "kerbRuns": 30,
+        "runoffObjects": 0,
+        "pitObjects": 0,
+        "tunnels": 0,
+        "bridges": 0,
+        "activeSvgObjects": 249
+      }
+    },
+    {
+      "id": "14-spain",
+      "kind": "repository-override",
+      "ok": true,
+      "checks": [
+        {
+          "check": "JSON numbers finite",
+          "ok": true
+        },
+        {
+          "check": "XML SVG root",
+          "ok": true
+        },
+        {
+          "check": "Authoritative centerline",
+          "ok": true
+        },
+        {
+          "check": "Supported exact source polyline",
+          "ok": true
+        },
+        {
+          "check": "Finite centerline vertices",
+          "ok": true
+        },
+        {
+          "check": "Nondegenerate source track",
+          "ok": true
+        },
+        {
+          "check": "Closed lap continuity",
+          "ok": true
+        },
+        {
+          "check": "Positive track length",
+          "ok": true
+        },
+        {
+          "check": "Elevation samples finite and ordered",
+          "ok": true
+        },
+        {
+          "check": "Elevation covers periodic lap",
+          "ok": true
+        },
+        {
+          "check": "Banking data finite",
+          "ok": true
+        },
+        {
+          "check": "Start/finish within lap",
+          "ok": true
+        },
+        {
+          "check": "SVG start/finish",
+          "ok": true
+        },
+        {
+          "check": "Three JSON sectors",
+          "ok": true
+        },
+        {
+          "check": "Continuous sector intervals",
+          "ok": true
+        },
+        {
+          "check": "Authored kerbs",
+          "ok": true
+        },
+        {
+          "check": "Authored pit lane",
+          "ok": true
+        }
+      ],
+      "warnings": [],
+      "details": {
+        "sourceVertices": 984,
+        "elevationSamples": 542,
+        "bankingCorners": 22,
+        "kerbRuns": 37,
+        "runoffObjects": 6,
+        "pitObjects": 2,
+        "tunnels": 3,
+        "bridges": 1,
+        "activeSvgObjects": 742
+      }
+    }
+  ]
+}

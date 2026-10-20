@@ -15,11 +15,11 @@ const variants={};for(const variant of ['baseline','candidate'])variants[variant
   const url=process.env.APEX_AUDIT_URL||'http://127.0.0.1:8765/apex/apex.html?perf=1',perf=[];
   for(variant of ['baseline','candidate']){await page.goto(url);await page.waitForFunction(()=>window.__apexPitAudit);await page.evaluate(()=>__apexPitAudit.load('14-spain','CLEAR',true));await page.waitForTimeout(8000);const row=await page.evaluate(()=>__apexPitAudit.perf());perf.push({variant,mobileEmulation:mobile,...row});console.log(JSON.stringify({test:'pit-render-perf',...perf.at(-1)}));assert.equal(row.rivals,21);assert.ok(row.summary.frames>0);await page.evaluate(()=>__apexPitAudit.stop())}
   console.log(JSON.stringify({test:'pit-render-comparison',baseline:ref,mobileEmulation:mobile,rows:perf,limitation:'Software renderer and short rolling windows; not a hardware FPS certification'}));
-  const failures=[];
+  const failures=[],restrictions=[];
   const dirs=(process.env.APEX_PIT_CIRCUITS||'14-spain,06-monaco,10-belgium,13-italy,03-japan').split(',');variant='candidate';
   for(const dir of dirs){try{
    console.log(JSON.stringify({test:'pit-case-start',dir,mobileEmulation:mobile}));
-   const loaded=await page.evaluate(dir=>__apexPitAudit.load(dir),dir);assert.equal(loaded.available,true,JSON.stringify(loaded));assert.equal(loaded.rivals,21);
+   const loaded=await page.evaluate(dir=>__apexPitAudit.load(dir),dir);if(!loaded.available){assert.equal(dir,'10-belgium');assert.equal(loaded.reason,'UNSAFE_PIT_GEOMETRY');assert.equal(loaded.issue.code,'REVERSED_SHORT_PIT_SEGMENT');restrictions.push(loaded);const denied=await page.evaluate(()=>__apexPitAudit.request());assert.equal(denied.pit.pitStops,0);assert.equal(denied.phase,null);console.log(JSON.stringify({test:'pit-geometry-limitation',...loaded}));continue;}assert.equal(loaded.rivals,21);
    await page.keyboard.press('KeyY');assert.equal((await page.evaluate(()=>__apexPitAudit.status())).paused,false);await page.locator('#pitNextCompound').selectOption('HARD');
    const request=await page.evaluate(()=>__apexPitAudit.request());assert.equal(request.pit.nextCompound,'HARD');
    const result=await page.evaluate(()=>__apexPitAudit.run(180));
@@ -42,6 +42,6 @@ const variants={};for(const variant of ['baseline','candidate'])variants[variant
    assert.ok(result.installed,device+': service did not finish');assert.equal(result.after.tyres.compound,'HARD');assert.equal(result.after.driving,'MANUAL');assert.equal(result.after.pit.pitStops,1);assert.equal(result.after.faults,0);assert.ok(result.after.speed>0,device+': inputs not restored');
   }catch(e){failures.push({dir:device,error:e.message});console.log(JSON.stringify({test:'pit-case-failure',dir:device,error:e.message}))}}
   assert.deepEqual(failures,[]);
-  console.log(JSON.stringify({test:'pit-browser-success',mobileEmulation:mobile,circuits:dirs.length,rain:true}));await context.close();
+  console.log(JSON.stringify({test:'pit-browser-success',mobileEmulation:mobile,completedCircuits:dirs.length-restrictions.length,restrictedCircuits:restrictions.map(x=>x.dir),rain:true}));await context.close();
  }finally{await browser.close()}
 })().catch(e=>{console.error(e);process.exitCode=1});

@@ -12,7 +12,7 @@ window.__apexPitAudit={
   countdown=0;mode='race';paused=false;apexArmRaceGridTiming();apexReleaseInputs();gyro.enabled=false;setAutoDriveMode(1,false);
   if(benchmark){pitAuditStepping=false;apexRuntimePerfReset();return {benchmark:true,rivals:rivals.length,version:APP_VERSION}}
   const plan=apexPitRoutePlan();if(!plan)return {available:false,reason:'NO_PIT_NETWORK'};
-  const box=apexPitBoxForCar(plan,player);if(!box)return {available:false,reason:'NO_AUTHORED_BOX'};
+  const box=apexPitBoxForCar(plan,player);if(!box)return {available:false,dir,rivals:rivals.length,reason:plan.serviceIssue?'UNSAFE_PIT_GEOMETRY':'NO_AUTHORED_BOX',issue:plan.serviceIssue};
   const L=trackData.km*1000,s=mod(plan.entryTrackS-55,L),q=poseAt(s);
   player.x=q.x;player.z=q.z;player.heading=Math.atan2(q.tx,q.tz);player.vx=q.tx*14;player.vz=q.tz*14;player.speed=14;player.yawRate=0;
   player.s=s;player.total=0;player.progressOriginS=s;player.progressS=s;player.classificationS=s;player.trackIndex=q.i;player.driveNetwork='TRACK';player.pitIndex=null;player.pitState=null;

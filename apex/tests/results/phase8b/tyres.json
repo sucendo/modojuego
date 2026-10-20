@@ -1,0 +1,89 @@
+{
+  "ok": true,
+  "tests": [
+    "Five compounds: dry grip, ordered life",
+    "Long stint progressive wear and stationary no wear",
+    "Abrasion and front/rear track stresses",
+    "Overheat reduces grip and raises wear",
+    "Cold tyres warm progressively under load",
+    "Damp favours intermediates; standing water favours wets",
+    "Wets on dry overheat and wear faster",
+    "Locking and sliding cost wear",
+    "Player and AI receive identical model for identical inputs",
+    "Determinism and equivalent physics substeps",
+    "Legacy/malformed migration; snapshot roundtrip",
+    "No NaN/Infinity at adverse inputs",
+    "All 23 circuit profiles, custom fallback and author overrides",
+    "Wear has no cliff at a threshold",
+    "Installing a fresh set preserves race, damage and timing",
+    "Production save migration preserves schema 2/3/4 standings"
+  ],
+  "metrics": {
+    "stint": [
+      {
+        "schema": 1,
+        "compound": "SOFT",
+        "distance": 32999.99999997063,
+        "front": {
+          "wear": 0.5134077460920516,
+          "surfaceTemperature": 121.14290967056117,
+          "coreTemperature": 120.69188995996556
+        },
+        "rear": {
+          "wear": 0.5961368014749483,
+          "surfaceTemperature": 128.52509516007572,
+          "coreTemperature": 127.96716472089801
+        }
+      },
+      {
+        "schema": 1,
+        "compound": "MEDIUM",
+        "distance": 32999.99999997063,
+        "front": {
+          "wear": 0.2962377786774838,
+          "surfaceTemperature": 113.00899846945522,
+          "coreTemperature": 112.7481874738311
+        },
+        "rear": {
+          "wear": 0.3373503691118775,
+          "surfaceTemperature": 119.72007618719583,
+          "coreTemperature": 119.36207362013376
+        }
+      },
+      {
+        "schema": 1,
+        "compound": "HARD",
+        "distance": 32999.99999997063,
+        "front": {
+          "wear": 0.2301951219511119,
+          "surfaceTemperature": 103.21329659538485,
+          "coreTemperature": 103.16676079908854
+        },
+        "rear": {
+          "wear": 0.24033658536607908,
+          "surfaceTemperature": 109.11904498699701,
+          "coreTemperature": 108.9869806078351
+        }
+      }
+    ],
+    "warmup": {
+      "schema": 1,
+      "compound": "MEDIUM",
+      "distance": 6600.000000001386,
+      "front": {
+        "wear": 0.07152750000000406,
+        "surfaceTemperature": 97.27731959499866,
+        "coreTemperature": 77.34295501936901
+      },
+      "rear": {
+        "wear": 0.0895535491107924,
+        "surfaceTemperature": 129.7948475181715,
+        "coreTemperature": 120.06365701154452
+      }
+    },
+    "cpu22Cars100SimSecondsMs": 835.1615999999999
+  },
+  "limits": [
+    "Synthetic model tests; real browser, FPS and driving require separate validation"
+  ]
+}

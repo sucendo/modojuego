@@ -45,7 +45,7 @@ La elección siguiente se guarda en `apex26.tyre.next.v1`. `save.lastTyreSession
 
 ## Geometría y limitaciones
 
-Se auditó el pit lane y los slots existentes en los 23 pares JSON/SVG. No se añadieron coordenadas ni se sustituyeron las geometrías. Se eliminó el uso del antiguo box genérico al 57%: sin slot autorado válido no se habilita la parada. Los perfiles antiguos o personalizados sin slots pueden seguir conduciéndose, pero no ofrecen cambio de neumáticos hasta completar su JSON.
+Se auditó el pit lane y los slots existentes en los 23 pares JSON/SVG. No se añadieron coordenadas ni se sustituyeron las geometrías. Se eliminó el uso del antiguo box genérico al 57%: sin slot autorado válido no se habilita la parada. Los perfiles antiguos o personalizados sin slots pueden seguir conduciéndose, pero no ofrecen cambio de neumáticos hasta completar su JSON. Se rechaza también una inversión de dirección superior a 120° en menos de 6 m en los vértices originales del pit SVG. Spa presenta un retorno de unos 147° en unos 3 m: la prueba real no pudo completarlo, así que **su servicio queda deshabilitado de forma segura, pendiente de corregir su geometría**. No se modifica ni se inventa el recorrido para ocultar ese fallo. Madrid, Mónaco, Monza y Suzuka sí completaron el ciclo completo en las pruebas reales.
 
 Los slots heredados están modelados/provisionales, no medidos oficialmente. Se utiliza su estación longitudinal sobre el centro del carril PIT; no se fuerza el desplazamiento lateral hacia la fachada del garaje, que podría atravesar barreras/superficies. No se simula aún un carril de servicio separado ni ocupación de un box por compañeros. La geometría física y sus colisiones siguen mandando. La prueba real detectó que el polígono general de Spa omitía un tramo del carril PIT: para el jugador ya en PIT se une únicamente la anchura real de esa cinta autorada al área transitable, conservando las colisiones de barreras y el rechazo de puntos fuera del carril. No se añadieron coordenadas. Un perfil de velocidad PIT precalculado cada 4 m deriva la curvatura del trazado existente y anticipa frenadas en sus curvas estrechas; se mantiene el controlador y la física del coche. La clasificación se ancla al progreso aceptado al cruzar la entrada para evitar el salto de proyección entre pista y pit.
 
@@ -83,18 +83,18 @@ Los 21 rivales mantienen el modelo híbrido existente, sin una ruta de entrada a
 
 Pruebas numéricas locales aprobadas:
 
-- `pit-tyres-audit.cjs`: 18 grupos, cinco compuestos, retención/cambio de selección, cancelación/compromiso, S→H, reinicio térmico/desgaste/agarre, idempotencia, contadores, estados de carrera, manual, limitador, box superado, salida y proyección por meta, 22 coches, lluvia y datos antiguos/incompletos.
+- `pit-tyres-audit.cjs`: 19 grupos, cinco compuestos, retención/cambio de selección, cancelación/compromiso, S→H, reinicio térmico/desgaste/agarre, idempotencia, contadores, estados de carrera, manual, limitador, box superado, salida y proyección por meta, 22 coches, lluvia y datos antiguos/incompletos.
 - `pit-geometry-audit.py`: 23 perfiles con SVG de pit y 11 slots válidos cada uno. No sustituye prueba de trayectoria/colisiones.
 - `tyres-audit.cjs`: 16 grupos del motor de 8A y migración de guardado.
 - `driving-audit.cjs`: 14 grupos de fuerzas, controles, scheduler y estabilidad. Se cargó el nuevo limitador real en el fixture, sin sustituirlo por una copia.
 - `render-audit.cjs`, `terrain-selection-audit.cjs`, `auto-boundary-audit.cjs`, `circuit-assets-audit.py`: aprobados; sin cambios de JSON/SVG base.
 - Sintaxis de los runners/hooks y `git diff --check`: aprobados.
 
-Benchmark local del controlador sin parada: un millón de llamadas, mediana de cinco rondas. Referencia v0.14.0: 371.44 ms; candidato: 280.14 ms. Es microbenchmark de Node/VM, no un resultado de FPS.
+Benchmark local del controlador sin parada: un millón de llamadas, mediana de cinco rondas. Referencia v0.14.0: 378.73 ms; candidato: 277.36 ms. Es microbenchmark de Node/VM, no un resultado de FPS.
 
 ### Validación Chromium de trayectoria y render
 
-PENDIENTE DE RESULTADOS DEL CI DE ESTA REVISIÓN. `pit-tyres-browser.cjs` utiliza los 28 fragmentos reales, circuitos cargados, paredes, superficies y `update()` a 100 Hz. La posición se fija sólo como condición inicial antes de pedir la parada; después se prohíben saltos y se comprueban servicio, pit speed, cronometraje y salida real. Madrid, Mónaco, Spa, Monza y Suzuka con 22 coches; Monza con lluvia. Añade servicios manuales con entradas sintéticas de teclado/táctil/giroscopio y compara frames de v0.14.0 frente al candidato en el mismo runner.
+PENDIENTE DE RESULTADOS DEL CI DE ESTA REVISIÓN. `pit-tyres-browser.cjs` utiliza los 28 fragmentos reales, circuitos cargados, paredes, superficies y `update()` a 100 Hz. La posición se fija sólo como condición inicial antes de pedir la parada; después se prohíben saltos y se comprueban servicio, pit speed, cronometraje y salida real. Madrid, Mónaco, Monza y Suzuka con 22 coches; Spa comprueba la negativa segura por geometría defectuosa; Monza con lluvia. Añade servicios manuales con entradas sintéticas de teclado/táctil/giroscopio y compara frames de v0.14.0 frente al candidato en el mismo runner.
 
 Las capturas y logs se guardan como artefactos de CI. Un fallo de trayectoria bloquea la integración y el cierre de 8B; no se considera superado con los tests de transacción.
 
