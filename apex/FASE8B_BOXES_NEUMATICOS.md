@@ -39,7 +39,7 @@ Historial: entrada, inicio/fin del servicio, salida, tiempo parado/servicio, esp
 
 ## Interfaz y persistencia
 
-EST / Y abre un panel compacto dentro del HUD sin pausar. Selector nativo accesible con teclado/ratón/táctil; cinco compuestos, color, juego actual/desgaste/temperatura, asfalto/aire/agua y recomendación orientativa. La recomendación no cambia automáticamente la elección. El selector se bloquea durante el servicio/salida y el panel se reinicia al entrar en una sesión nueva.
+EST / Y abre un panel compacto dentro del HUD sin pausar. Selector nativo accesible con teclado/ratón/táctil: Y enfoca el selector, las flechas eligen y Escape cierra el panel devolviendo el foco al botón; cinco compuestos, color, juego actual/desgaste/temperatura, asfalto/aire/agua y recomendación orientativa. La recomendación no cambia automáticamente la elección. El selector se bloquea durante el servicio/salida y el panel se reinicia al entrar en una sesión nueva.
 
 La elección siguiente se guarda en `apex26.tyre.next.v1`. `save.lastTyreSession.pits` conserva selección, último compuesto, juegos, contadores e historial del jugador y rivales al terminar/salir. Exportación de telemetría incluye `pitState`; muestras incluyen estado compacto y el evento de instalación registra la operación. El esquema principal 4 y sus migraciones 2/3/4 se conservan; campos nuevos opcionales con valores seguros. **Recargar no reanuda carreras en curso**, igual que antes.
 

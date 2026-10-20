@@ -3424,11 +3424,12 @@ function apexPitClampSpeed(car){
  if(v2>limit*limit){const k=limit/Math.sqrt(v2);car.vx*=k;car.vz*=k;car.speed=limit;}
 }
 function apexPitLimitedVmax(vmax,car){return car&&(car.pitLimiter||car.driveNetwork==='PIT')?Math.min(vmax,apexPitSpeedLimitKph()/3.6):vmax}
-function apexPitStrategyToggle(){const p=$('pitStrategyPanel');if(!player||!p)return;p.classList.toggle('hidden');$('pitStrategyBtn').setAttribute('aria-expanded',String(!p.classList.contains('hidden')));apexPitStrategyUpdate()}
+function apexPitStrategyToggle(){const p=$('pitStrategyPanel');if(!player||!p)return;p.classList.toggle('hidden');const open=!p.classList.contains('hidden');$('pitStrategyBtn').setAttribute('aria-expanded',String(open));apexPitStrategyUpdate();$(open?'pitNextCompound':'pitStrategyBtn').focus()}
 function apexPitStrategyInit(){
  const select=$('pitNextCompound');if(!select)return;
  for(const [key,c] of Object.entries(APEX_TYRE_COMPOUNDS)){const option=document.createElement('option');option.value=key;option.textContent=c.code+' · '+c.name;select.appendChild(option)}
  select.onchange=()=>{if(player)apexPitSelectCompound(player,select.value);apexPitStrategyUpdate()};
+ select.onkeydown=e=>{if(e.code==='Escape'){e.preventDefault();e.stopPropagation();apexPitStrategyToggle()}};
  $('pitStrategyBtn').onclick=apexPitStrategyToggle;$('pitStrategyClose').onclick=apexPitStrategyToggle;
 }
 function apexPitStrategyUpdate(){

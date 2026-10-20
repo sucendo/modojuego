@@ -20,7 +20,7 @@ const variants={};for(const variant of ['baseline','candidate'])variants[variant
   for(const dir of dirs){try{
    console.log(JSON.stringify({test:'pit-case-start',dir,mobileEmulation:mobile}));
    const loaded=await page.evaluate(dir=>__apexPitAudit.load(dir),dir);if(!loaded.available){assert.equal(dir,'10-belgium');assert.equal(loaded.reason,'UNSAFE_PIT_GEOMETRY');assert.equal(loaded.issue.code,'REVERSED_SHORT_PIT_SEGMENT');restrictions.push(loaded);const denied=await page.evaluate(()=>__apexPitAudit.request());assert.equal(denied.pit.pitStops,0);assert.equal(denied.phase,null);console.log(JSON.stringify({test:'pit-geometry-limitation',...loaded}));continue;}assert.equal(loaded.rivals,21);
-   await page.keyboard.press('KeyY');assert.equal((await page.evaluate(()=>__apexPitAudit.status())).paused,false);await page.locator('#pitNextCompound').selectOption('HARD');
+   await page.keyboard.press('KeyY');assert.equal((await page.evaluate(()=>__apexPitAudit.status())).paused,false);assert.equal(await page.locator('#pitNextCompound').evaluate(el=>el===document.activeElement),true);await page.keyboard.press('ArrowDown');await page.keyboard.press('Escape');assert.equal(await page.locator('#pitStrategyPanel').evaluate(el=>el.classList.contains('hidden')),true);await page.keyboard.press('KeyY');await page.locator('#pitNextCompound').selectOption('HARD');
    const request=await page.evaluate(()=>__apexPitAudit.request());assert.equal(request.pit.nextCompound,'HARD');
    const result=await page.evaluate(()=>__apexPitAudit.run(180));
    fs.writeFileSync(path.join(output,`${mobile?'mobile':'desktop'}-${dir}.json`),JSON.stringify({loaded,...result},null,2));await page.screenshot({path:path.join(output,`${mobile?'mobile':'desktop'}-${dir}.png`)});
