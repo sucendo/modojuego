@@ -1,6 +1,6 @@
 # APEX v0.13.23 — Fase 7, primera revisión de conducción
 
-Base: `main` en `8e71e2d0dba93cf4b6efbb97aba546f36278be6d` (v0.13.22), comprobada de nuevo antes de publicar. Se conservan los 28 fragmentos y los assets originales. Build actual: `2026.10.20.04`. Esta etapa corrige inconsistencias demostradas; no pretende reproducir fórmulas ni homologar sensaciones de GP4.
+Base: `main` en `8e71e2d0dba93cf4b6efbb97aba546f36278be6d` (v0.13.22), comprobada de nuevo antes de publicar. Se conservan los 28 fragmentos y los assets originales. Build actual: `2026.10.20.07`. Esta etapa corrige inconsistencias demostradas; no pretende reproducir fórmulas ni homologar sensaciones de GP4.
 
 ## Auditoría del modelo existente
 
@@ -92,7 +92,7 @@ Se alinea el inicio del barrido con la misma cuadrícula fija del compilador: `m
 
 La segunda ejecución CI contrasta el build 04 con el juego completo. No se promete que esta única corrección elimine todos los tirones: hay geometría dinámica de coches/decorados, recortes finos y costes de driver que siguen presentes.
 
-También aparecen velocidades casi nulas en algunas instantáneas del piloto automático de Mónaco/Spa/Monza. El smoke test comprueba estado finito e inputs y no exige completar una vuelta: ese comportamiento queda explícitamente pendiente de diagnóstico de trayectoria, tráfico/colisiones y recuperación. No se presenta la ejecución verde como homologación de la IA o de la conducción.
+También aparecen velocidades casi nulas en algunas instantáneas del piloto automático de Mónaco/Spa/Monza. El smoke test comprueba estado finito e inputs y no exige completar una vuelta: ese comportamiento quedó pendiente en el build 04 y se investiga y corrige en los builds 05–07, documentados en [CIERRE_FASE7_V01323.md](CIERRE_FASE7_V01323.md). No se presenta la ejecución verde como homologación de la IA o de la conducción.
 
 
 ### Observación posterior en Chromium móvil emulado
@@ -102,3 +102,7 @@ La segunda ejecución vuelve a pasar los cinco circuitos y las comprobaciones de
 Son dos ejecuciones de un runner compartido con recorridos/velocidades y muestras diferentes; no se infiere una aceleración porcentual controlada ni un FPS objetivo. La regresión determinista de las claves sí demuestra que la cuadrícula ya utiliza los recortes precalculados. No se afirma que hayan desaparecido todos los picos ni que el motor alcance 30/60 FPS en hardware real.
 
 [Actions 39343172461](https://github.com/sucendo/modojuego/actions/runs/39343172461), commit `4d48b6e09c2b0ccc63c11a7e2e2207a1965be765`, build 04: también pasan los tres jobs, incluido escritorio. Chromium 151.0.7922.34 / Node 22.23.3 / SwiftShader. Se conservan las 30 muestras, 40 comprobaciones de entradas, dos migraciones/recargas, dos cambios Canvas y autodiagnósticos del catálogo; sin errores JS capturados ni GL en los puntos medidos. Resultado reproducible resumido: `tests/results/v01323-browser-ci.json`. El script añade observación de long tasks y heap y tiempos máximos de carga/autodiagnóstico para que un bloqueo falle con una etapa identificable. El JSON identifica el commit exacto probado; los cambios posteriores de documentación no se presentan como otra medición.
+
+## Cierre de la primera etapa
+
+El diagnóstico comparativo, la corrección de bloqueos del límite SVG, las transiciones de recuperación, las pruebas adicionales y las limitaciones restantes se registran en [CIERRE_FASE7_V01323.md](CIERRE_FASE7_V01323.md). Los resultados anteriores se conservan con su build y commit originales; no se atribuyen a la compilación final.
