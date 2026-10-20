@@ -825,6 +825,9 @@ const apexDriveProfiles={
  simulation:{id:'simulation',name:'SIMULACIÓN',tc:false,abs:false,stability:false,counterAssist:false,description:'Física completa · mandos suavizados'},
  raw:{id:'raw',name:'SIN AYUDAS',tc:false,abs:false,stability:false,counterAssist:false,description:'Respuesta directa'}
 };
+// En móviles el modo predeterminado es giroscopio; iOS requiere activación con gesto.
+const apexIsMobile=(()=>{try{return navigator.userAgentData?.mobile===true||/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)||((navigator.maxTouchPoints||0)>1&&matchMedia('(pointer:coarse)').matches&&Math.min(screen.width,screen.height)<900)}catch(e){return false}})();
+let apexMobileGyroPreferred=apexIsMobile;
 let apexInputDevice='keyboard';
 let apexGamepadState={index:null,lastSeen:0,down:false,up:false};
 const storedDriveProfile=(()=>{try{const v=appStorage.getItem(APEX_DRIVE_PROFILE_KEY);return apexDriveProfiles[v]?v:'assisted'}catch(e){return'assisted'}})();
@@ -932,7 +935,7 @@ function apexCloseControls(resume=true){
 }
 function apexActionActive(id){return id==='camera'?apexCameraMode()!=='cockpit':id==='auto'?demoMode:id==='ers'?apexControls.ersActive:id==='limiter'?!!(player&&player.pitLimiter):id==='sectors'?apexControls.sectors:id==='box'?!!(player&&player.pitStop&&player.pitStop.active):id==='telemetry'?!$('telemetryPanel').classList.contains('hidden'):false;}
 function apexSyncControls(){
- $('controlGearbox').value=apexControls.gearbox;$('controlInput').value=gyro.enabled?'gyro':'keyboard';$('controlAssist').value=demoMode?'1':assistMode?'2':'0';apexSyncDriveProfileUi();
+ $('controlGearbox').value=apexControls.gearbox;$('controlInput').value=(gyro.enabled||apexMobileGyroPreferred)?'gyro':'keyboard';$('controlAssist').value=demoMode?'1':assistMode?'2':'0';apexSyncDriveProfileUi();
  $('shiftControls').classList.toggle('hidden',apexControls.gearbox!=='manual'||demoMode||assistMode);
  for(const [id,action] of [['ers','ers'],['limiterBtn','limiter']]){$(id).classList.toggle('on',apexActionActive(action));$(id).setAttribute('aria-pressed',String(apexActionActive(action)));}
  if(apexControls.panel){
@@ -977,7 +980,7 @@ function apexInitControls(){
  for(const [id,key] of [['cameraBtn','C'],['demo','A'],['telemetryBtn','T'],['ers','E'],['box','B'],['optionsBtn','Esc'],['fs','F']])$(id).title+=' · '+key;
  $('controlGearbox').onchange=e=>{apexControls.gearbox=e.target.value;if(player){const k=Math.max(0,player.speed)*3.6;player.manualGear=Math.min(8,Math.max(1,Math.floor((k+20)/43)));}apexSyncControls();};
  $('controlDriveProfile').onchange=e=>{apexSetDriveProfile(e.target.value,true);apexSyncControls();};if($('menuDriveProfile'))$('menuDriveProfile').onchange=e=>{apexSetDriveProfile(e.target.value,false);apexSyncDriveProfileUi();};
- $('controlInput').onchange=async e=>{if(e.target.value==='gyro'){if(!gyro.enabled)await enableGyro();}else if(gyro.enabled)await enableGyro();apexSyncControls();};
+ $('controlInput').onchange=async e=>{apexMobileGyroPreferred=e.target.value==='gyro';if(apexMobileGyroPreferred){if(!gyro.enabled)await enableGyro();}else if(gyro.enabled)await enableGyro();apexSyncControls();};
  $('controlAssist').onchange=e=>{setAutoDriveMode(+e.target.value,true);apexSyncControls();};
  const inspector=document.createElement('div');inspector.id='insTimingShortcuts';
  for(const [label,index] of [['META',-1],['S1',0],['S2',1]]){const b=document.createElement('button');b.className='btn';b.textContent=label;b.onclick=()=>{if(!trackData)return;const ss=apexTimingSectorControls(trackData.spec),s=index<0?apexCircuitStartFinishS(trackData.spec).finish:ss[index]&&ss[index].s;if(Number.isFinite(s)){apexInspectionSetS(s);apexInspectionShowUi();}};inspector.appendChild(b);}
@@ -986,7 +989,16 @@ function apexInitControls(){
  apexSyncControls();apexSyncDriveProfileUi();
 }
 apexInitControls();
-
+// Seleccionamos el sensor por defecto en móvil. En iOS el permiso se solicita
+// exclusivamente desde el botón GYR o el selector, por exigencia del navegador.
+if(apexMobileGyroPreferred){
+  $('controlInput').value='gyro';
+  if(typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission!=='function'&&typeof DeviceMotionEvent!=='undefined'&&typeof DeviceMotionEvent.requestPermission!=='function'){
+    enableGyro();
+  }else{
+    $('gyro').title='Giroscopio predeterminado · toca para activar y autorizar';
+  }
+}
 
 setInterval(()=>{if(!$("diagPanel").classList.contains("hidden"))updateDiag()},500);
 document.body.classList.add("apex-ready");
