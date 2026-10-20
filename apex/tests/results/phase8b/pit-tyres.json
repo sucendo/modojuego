@@ -15,6 +15,7 @@
     "Pit curvature speed envelope is compiled once and anticipates tight bends",
     "Physical network transition seeds pit progress before the entry gate tick",
     "Reversal over 120 degrees in less than 6 m rejects unsafe authored pit service",
+    "Source safety reads rawSvg from stored geometry payloads",
     "Wrong longitudinal box cannot trigger hidden service",
     "Exit records lane/service times and restores limiter without teleport",
     "Pit progress projects continuously across the finish seam",
@@ -24,8 +25,8 @@
   "performance": {
     "scope": "NODE_VM_INACTIVE_CONTROLLER_NOT_FPS",
     "iterations": 1000000,
-    "baselineMs": 345.64474700000005,
-    "candidateMs": 267.8710879999999
+    "baselineMs": 393.55247900000006,
+    "candidateMs": 308.0994169999999
   },
   "limits": [
     "Synthetic lane fixture, not complete circuit driving",

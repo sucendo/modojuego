@@ -81,7 +81,7 @@
         "coreTemperature": 120.06365701154452
       }
     },
-    "cpu22Cars100SimSecondsMs": 835.1615999999999
+    "cpu22Cars100SimSecondsMs": 823.445972
   },
   "limits": [
     "Synthetic model tests; real browser, FPS and driving require separate validation"

@@ -3396,7 +3396,7 @@ function apexPitPolylineIssue(points,scale=1){
 }
 function apexPitSourceSafety(plan){
  // Inspect original vertices before 2.6 m resampling can hide short reversals.
- const svg=readEffectiveTrackSvg(trackData.spec.dir);if(!svg)return null;
+ const geometry=readEffectiveTrackSvg(trackData.spec.dir),svg=typeof geometry==='string'?geometry:geometry?.rawSvg;if(!svg)return null;
  const doc=new DOMParser().parseFromString(svg,'image/svg+xml'),el=doc.getElementById('pitlane_centerline')||doc.querySelector('[data-apex-role="pitlane-centerline"]');
  if(!el||el.tagName.toLowerCase()!=='path')return null;const d=el.getAttribute('d')||'';
  if((d.match(/[A-Za-z]/g)||[]).some(c=>!['M','L','E','e'].includes(c)))return null;

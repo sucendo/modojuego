@@ -83,7 +83,7 @@ Los 21 rivales mantienen el modelo híbrido existente, sin una ruta de entrada a
 
 Pruebas numéricas locales aprobadas:
 
-- `pit-tyres-audit.cjs`: 19 grupos, cinco compuestos, retención/cambio de selección, cancelación/compromiso, S→H, reinicio térmico/desgaste/agarre, idempotencia, contadores, estados de carrera, manual, limitador, box superado, salida y proyección por meta, 22 coches, lluvia y datos antiguos/incompletos.
+- `pit-tyres-audit.cjs`: 20 grupos, cinco compuestos, retención/cambio de selección, cancelación/compromiso, S→H, reinicio térmico/desgaste/agarre, idempotencia, contadores, estados de carrera, manual, limitador, box superado, salida y proyección por meta, 22 coches, lluvia y datos antiguos/incompletos.
 - `pit-geometry-audit.py`: 23 perfiles con SVG de pit y 11 slots válidos cada uno. No sustituye prueba de trayectoria/colisiones.
 - `tyres-audit.cjs`: 16 grupos del motor de 8A y migración de guardado.
 - `driving-audit.cjs`: 14 grupos de fuerzas, controles, scheduler y estabilidad. Se cargó el nuevo limitador real en el fixture, sin sustituirlo por una copia.
