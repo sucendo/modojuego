@@ -26,8 +26,20 @@ const source={};for(const variant of ['baseline','candidate'])source[variant]=Ar
   }
   const comparisons=rows.filter(r=>r.variant==='candidate').map(after=>{const before=rows.find(r=>r.variant==='baseline'&&r.dir===after.dir&&r.traffic===after.traffic);return {dir:after.dir,traffic:after.traffic,before:{progressM:before.progressM,maxStoppedSec:before.maxStoppedSec,maxNoProgressSec:before.maxNoProgressSec},after:{progressM:after.progressM,maxStoppedSec:after.maxStoppedSec,maxNoProgressSec:after.maxNoProgressSec}};});
   console.log(JSON.stringify({test:'autopilot-comparison',baseline:ref,seconds,comparisons}));
-  // Initial diagnostic run records both models without inventing thresholds for
-  // an uncalibrated full-circuit controller. Regression gates follow the findings.
+  // Behavioral watchdogs for the fixed 60 s fixture, not lap-time or FPS goals.
+  // Allow a short recovery, but fail prolonged immobility/no net forward progress.
+  // Keep comparative distances visible: traffic contacts may diverge between models.
+  if(seconds===60){
+   const candidates=rows.filter(r=>r.variant==='candidate');
+   for(const r of candidates){
+    const label=`${r.dir}, traffic=${r.traffic}`;
+    assert.ok(r.maxStoppedSec<8,`${label}: stopped for ${r.maxStoppedSec}s`);
+    assert.ok(r.maxNoProgressSec<15,`${label}: no progress for ${r.maxNoProgressSec}s`);
+    assert.ok(r.progressM>0,`${label}: no positive net progress`);
+    assert.equal(r.end.physicsFaults||0,0,`${label}: physics faults`);
+   }
+   console.log(JSON.stringify({test:'autopilot-watchdogs',cases:candidates.length,seconds,maxStoppedSec:8,maxNoProgressSec:15,passed:true}));
+  }
   await context.close();
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
