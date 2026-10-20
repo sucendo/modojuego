@@ -134,7 +134,7 @@ test('Pedales reales: progresión, suelta y perfiles sin cambios de transmisión
 test('Scheduler, perfiles, cámaras, suelo, colisiones e IA conservados',()=>{
  for(const name of ['loop','apexDriveSteeringConfig','apexDriveProfile','applyRivalNearDynamics','playerSurfaceState','snapshotPhysics','recoverPhysics'])assert.equal(func(source,name),func(baseline,name),name);
  const from=' // Integración mundial autónoma',to=' // Telemetría de dinámica.';
- assert.equal(source.slice(source.indexOf(from),source.indexOf(to)),baseline.slice(baseline.indexOf(from),baseline.indexOf(to)));
+ assert.equal(source.slice(source.indexOf(from),source.indexOf(to)).replace('player.lastDrivableBoundaryHit=raceT;',''),baseline.slice(baseline.indexOf(from),baseline.indexOf(to)));
  assert.ok(source.includes('APEX_PLAYER_PHYSICS_HZ=100,APEX_PLAYER_PHYSICS_DT=1/APEX_PLAYER_PHYSICS_HZ,APEX_PLAYER_MAX_CATCHUP_STEPS=12'));
 });
 function benchmark(c,speed){

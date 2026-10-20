@@ -43,7 +43,7 @@ async function bounded(label,operation,ms=180000){
     for(const camera of ['cockpit','tcam','chase']){
      assert.equal(await page.evaluate(camera=>__apexAudit.camera(camera),camera),true);
      await page.waitForTimeout(1500);await page.evaluate(()=>__apexAudit.reset());await page.waitForTimeout(6000);
-     const result=await page.evaluate(()=>__apexAudit.snapshot());finiteState(result);assert.equal(result.glError,0);assert.equal(result.backend,'webgl2');assert.ok(result.rivals>0);assert.ok(result.summary&&result.summary.frames>0);assert.equal(result.mode,'race');assert.ok(result.simulationSeconds>0);assert.equal(result.contextLost,false);
+     const result=await page.evaluate(()=>__apexAudit.snapshot());finiteState(result);assert.equal(result.glError,0);assert.equal(result.backend,'webgl2');assert.equal(result.camera,camera);assert.ok(result.rivals>0);assert.ok(result.summary&&result.summary.frames>0);assert.equal(result.mode,'race');assert.ok(result.simulationSeconds>0);assert.equal(result.contextLost,false);
      report({test:'browser-rAF',mobileEmulation:mobile,...result});
     }
     // Real production input/update path; synthetic browser events and analog samples.
@@ -60,6 +60,18 @@ async function bounded(label,operation,ms=180000){
     if(dir==='BASE_OTHER'||dir==='13-italy'){
      assert.equal(await page.evaluate(()=>__apexAudit.backend('canvas2d')),true);await page.waitForTimeout(700);const canvas=await page.evaluate(()=>__apexAudit.snapshot());assert.equal(canvas.backend,'canvas2d');finiteState(canvas);
      report({test:'canvas-fallback',mobileEmulation:mobile,ok:true,circuit:canvas.circuit});assert.equal(await page.evaluate(()=>__apexAudit.backend('webgl2')),true);
+     assert.equal(await page.evaluate(()=>__apexAudit.loseContext()),true);
+     await page.waitForFunction(()=>{const c=__apexAudit.contextStatus();return c.lost&&c.backend==='canvas2d';});
+     assert.equal(await page.evaluate(()=>__apexAudit.restoreContext()),true);
+     await page.waitForFunction(()=>!__apexAudit.contextStatus().lost);
+     assert.equal(await page.evaluate(()=>__apexAudit.backend('webgl2')),true);await page.waitForTimeout(700);
+     const restored=await page.evaluate(()=>__apexAudit.snapshot());finiteState(restored);assert.equal(restored.glError,0);assert.equal(restored.backend,'webgl2');
+     report({test:'webgl-context-loss-restore',mobileEmulation:mobile,ok:true,circuit:restored.circuit});
+     for(const session of ['fp1','qualifying']){
+      await bounded('session '+session,()=>page.evaluate(async session=>__apexAudit.load('13-italy',false,session),session));
+      await page.waitForTimeout(1200);const modeResult=await page.evaluate(()=>__apexAudit.snapshot());finiteState(modeResult);assert.equal(modeResult.session,session);assert.equal(modeResult.mode,'race');assert.ok(modeResult.simulationSeconds>0);assert.ok(modeResult.rivals>0);assert.equal(modeResult.glError,0);
+      report({test:'practice-and-qualifying',mobileEmulation:mobile,session,ok:true});assert.equal(await page.evaluate(()=>__apexAudit.stop()),true);
+     }
     }
     assert.equal(await page.evaluate(()=>__apexAudit.stop()),true);assert.deepEqual(errors,[]);
    }

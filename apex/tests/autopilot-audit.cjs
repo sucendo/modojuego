@@ -4,7 +4,7 @@
 const fs=require('node:fs'),path=require('node:path'),cp=require('node:child_process'),assert=require('node:assert/strict');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?path.join(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES,'playwright'):'playwright'));
 const root=path.resolve(__dirname,'../..'),ref=process.env.BASELINE_REF||'8e71e2d0dba93cf4b6efbb97aba546f36278be6d',hook=fs.readFileSync(path.join(__dirname,'autopilot-hook.js'),'utf8');
-const dirs=(process.env.APEX_AUTO_CIRCUITS||'06-monaco,10-belgium,13-italy').split(','),seconds=Number(process.env.APEX_AUTO_SECONDS||60);
+const dirs=(process.env.APEX_AUTO_CIRCUITS||'14-spain,06-monaco,10-belgium,13-italy,03-japan').split(','),seconds=Number(process.env.APEX_AUTO_SECONDS||60);
 const source={};for(const variant of ['baseline','candidate'])source[variant]=Array.from({length:28},(_,i)=>{const p=`apex/parts/part-${String(i).padStart(3,'0')}.txt`;return variant==='baseline'?cp.execFileSync('git',['show',`${ref}:${p}`],{cwd:root,encoding:'utf8',maxBuffer:15e6}):fs.readFileSync(path.join(root,p),'utf8');});
 (async()=>{
  const browser=await chromium.launch({headless:true,...(process.env.CHROME_EXECUTABLE?{executablePath:process.env.CHROME_EXECUTABLE}:{}),args:['--no-sandbox','--use-angle=swiftshader','--enable-unsafe-swiftshader']});

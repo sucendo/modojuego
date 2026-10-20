@@ -19,8 +19,8 @@ window.__apexAuto={
   target:player.autoTargetSpeed,reason:player.autoTargetSpeedReason,detail:player.autoTargetSpeedReasonDetail,
   baseTarget:player.autoBaseTrackTargetSpeed,trafficLimit:player.autoTrafficSpeedLimit,phase:player.autoPhase,
   stability:player.autoStabilityRisk,rearRisk:player.autoRearCritical,brakeRelease:player.autoBrakeRelease,
-  recovery:player.autoRecovery?{phase:player.autoRecovery.phase,emergency:player.autoRecovery.emergency}:null,
-  lastWall:player.autoLastWallHit,lastRival:player.autoLastRivalContact,physicsFaults:player.physicsFaults,
+  recovery:player.autoRecovery?{mode:player.autoRecovery.mode,stage:player.autoRecovery.emergencyStage,emergency:player.autoRecovery.emergency}:null,
+  lastBoundary:player.lastDrivableBoundaryHit,lastWall:player.autoLastWallHit,lastRival:player.autoLastRivalContact,physicsFaults:player.physicsFaults,
   heading:player.heading,trackHeading:Math.atan2(player.track.tx,player.track.tz),trackDot:player.trackDirDot,
   surface:player.surfaceKind,network:player.driveNetwork,lap:player.lap,
   rivals:rivals.length,finite:physicsFinite(),mode
