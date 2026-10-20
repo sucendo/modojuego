@@ -60,7 +60,7 @@ Los slots heredados están modelados/provisionales, no medidos oficialmente. Se 
 | 07-barcelona-catalunya | 530.979 | 11 | MODELED_POSITION |
 | 08-austria | 421.032 | 11 | MODELED_POSITION |
 | 09-great-britain | 652.698 | 11 | MODELED_POSITION |
-| 10-belgium | 581.878 | 11 | MODELED_POSITION |
+| 10-belgium | 581.878 | 11 | MODELED_POSITION · SERVICIO DESHABILITADO |
 | 11-hungary | 466.257 | 11 | MODELED_POSITION |
 | 12-netherlands | 451.005 | 11 | MODELED_POSITION |
 | 13-italy | 524.875 | 11 | MODELED_POSITION |
@@ -90,14 +90,27 @@ Pruebas numéricas locales aprobadas:
 - `render-audit.cjs`, `terrain-selection-audit.cjs`, `auto-boundary-audit.cjs`, `circuit-assets-audit.py`: aprobados; sin cambios de JSON/SVG base.
 - Sintaxis de los runners/hooks y `git diff --check`: aprobados.
 
-Benchmark local del controlador sin parada: un millón de llamadas, mediana de cinco rondas. Referencia v0.14.0: 378.73 ms; candidato: 277.36 ms. Es microbenchmark de Node/VM, no un resultado de FPS.
+Benchmark local del controlador sin parada: un millón de llamadas, mediana de cinco rondas. Referencia v0.14.0: 393.55 ms; candidato: 308.10 ms. Es microbenchmark de Node/VM, no un resultado de FPS.
 
 ### Validación Chromium de trayectoria y render
 
-PENDIENTE DE RESULTADOS DEL CI DE ESTA REVISIÓN. `pit-tyres-browser.cjs` utiliza los 28 fragmentos reales, circuitos cargados, paredes, superficies y `update()` a 100 Hz. La posición se fija sólo como condición inicial antes de pedir la parada; después se prohíben saltos y se comprueban servicio, pit speed, cronometraje y salida real. Madrid, Mónaco, Monza y Suzuka con 22 coches; Spa comprueba la negativa segura por geometría defectuosa; Monza con lluvia. Añade servicios manuales con entradas sintéticas de teclado/táctil/giroscopio y compara frames de v0.14.0 frente al candidato en el mismo runner.
+CI [39408098505](https://github.com/sucendo/modojuego/actions/runs/39408098505) sobre `84148f69dfc69c73ff1faa41f9e8692c0962e605`: **isolated, autopilot, chromium (desktop) y chromium (mobile): success**. Los cambios posteriores de cierre sólo añaden este recibo y documentación; el código funcional conserva esos mismos blobs.
 
-Las capturas y logs se guardan como artefactos de CI. Un fallo de trayectoria bloquea la integración y el cierre de 8B; no se considera superado con los tests de transacción.
+S→H completo y reincorporación en Madrid, Mónaco, Monza y Suzuka en ambos entornos, con 22 coches. Desgaste cero e inicialización térmica coherente en el instante de instalación; una sola parada/juego añadido; ningún fallo físico, salto de posición ni exceso de pit speed. El incremento de vueltas coincide con el cruce real de meta: una vuelta, no una vuelta adicional creada por el cambio de red. Lluvia con instalación de INTERMEDIATE aprobada. Teclado, táctil y giroscopio sintéticos conservan modo MANUAL y recuperan aceleración tras SERVICE. Y/flechas/Escape verifican selección sin pausa y devolución del foco.
+
+Spa comprueba **negativa segura** (146,613° en 2,998 m), no se contabiliza como parada completa superada. Los 18 circuitos restantes tienen auditoría estructural/metadata y pruebas runtime de base, pero no se ha conducido una parada completa en cada uno.
+
+| Entorno | Código | Frames ventana | FPS medios software | Física media ms | Render medio ms | p95 frame ms |
+|---|---|---:|---:|---:|---:|---:|
+| Móvil emulado | baseline | 30 | 3.7 | 20.4 | 98.05 | 733.2 |
+| Móvil emulado | candidate | 42 | 5.3 | 21.405 | 109.693 | 350 |
+| Escritorio | baseline | 17 | 2.1 | 32.435 | 164.871 | 1283.2 |
+| Escritorio | candidate | 19 | 2.5 | 37.153 | 178.616 | 1216.5 |
+
+Comparación en el mismo runner con el main v0.14.0, 22 coches y ventanas de 8 s. Las ventanas cortas, SwiftShader, JIT y resolución/LOD adaptativos impiden atribuir las diferencias sólo a boxes. Estos datos **no certifican FPS o conducción en un dispositivo físico**. La matriz completa y la comparación de conducción automática no detectaron una regresión bloqueante. Se requiere todavía revisión de tacto y rendimiento en hardware real.
+
+Resultados compactos reproducibles en `tests/results/phase8b/chromium-summary.json`; logs y capturas en los artefactos del CI enlazado. No se da por superada una parada de Spa ni una prueba física de Android a partir de simulaciones sintéticas.
 
 ## Próximos pasos
 
-8C puede añadir duración de carrera sin tocar la transacción de servicio: definir vueltas del 25/50/75/100%, redondeo mínimo y política explícita de escalado de desgaste/temperatura. No se han introducido porcentajes, safety car, penalizaciones, inventario limitado ni nuevo motor meteorológico. Cerrar antes los resultados de trayectoria/CI de este documento.
+8C puede añadir duración de carrera sin tocar la transacción de servicio: definir vueltas del 25/50/75/100%, redondeo mínimo y política explícita de escalado de desgaste/temperatura. No se han introducido porcentajes, safety car, penalizaciones, inventario limitado ni nuevo motor meteorológico. La base permite abordar 8C. Corregir el SVG de Spa con una fuente válida antes de habilitar sus paradas y estrategias largas; completar la navegación de IA en 8D.
