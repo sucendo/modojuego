@@ -2976,8 +2976,12 @@ function autoRecoveryController(sp,env){
      const aerr=Math.abs(err),target=aerr>1.20?5.5:aerr>.70?9.5:hardPull?14:12;
      let throttle=sp<target-1?clamp(.42+(target-sp)/18,.38,.82):.10,brake=sp>target+1.5?clamp((sp-target)/8,.10,.48):0;
      if(aerr>1.35&&sp>6.5){throttle=.10;brake=Math.max(brake,.18);}
-     const nearRibbon=R.boundaryEpisode?(dist<2.0||absLat<1.1):(absLat<env.half+env.curb+.85||dist<2.6);
-     if(nearRibbon){R.emergencyStage='ALIGN';R.emergencySince=raceT;R.emergencyReverse=false;R.alignStableSince=0;R.startX=player.x;R.startZ=player.z;R.emergencyEdgeLane=R.emergencyPlan.lane;}
+     // A reached ribbon with a modest heading error needs alignment, not a chase
+     // back to the locked point. Keep the lane actually reached; SVG containment
+     // and the existing alignment gate still apply before normal driving resumes.
+     const boundaryRibbon=R.boundaryEpisode&&!boundaryBlocked&&ps.zone==='TRACK'&&absLat<env.half-.7&&Math.abs(angleDiff(trackHeading,player.heading))<.70&&apexDrivableAreaContains(player.x,player.z)!==false;
+     const nearRibbon=R.boundaryEpisode?(dist<2.0||absLat<1.1||boundaryRibbon):(absLat<env.half+env.curb+.85||dist<2.6);
+     if(nearRibbon){R.emergencyStage='ALIGN';R.emergencySince=raceT;R.emergencyReverse=false;R.alignStableSince=0;R.startX=player.x;R.startZ=player.z;R.emergencyEdgeLane=boundaryRibbon?clamp(player.lat,-eLimit,eLimit):R.emergencyPlan.lane;}
      return{steer,throttle,brake,target,boost:false,reverse:rev,phase:'RECUP · VUELVE A PISTA',recoveryAssist:true,recoveryHeading:vehicleTarget,recoveryForcePull:hardPull};
    }
 
