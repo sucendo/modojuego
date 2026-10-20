@@ -43,7 +43,7 @@
  // ---------- VEHICLE DYNAMICS ----------
  const M=800,WB=3.60,A=1.90,B=WB-A,HCG=.34,IZ=1080,G=9.81;
  const dmgF=damageFactors();
- const wetMu=apexWeatherIsWet()?1.24:1.86;
+ const wetMu=1.86,tyreFront=player.tyres?.gripFront??1,tyreRear=player.tyres?.gripRear??1;
  const recoveryGrip=!!(player.autoRecoveryAssist&&sp<10&&ps.kind!=="ASPHALT"&&ps.kind!=="KERB");
  const steerSurface=recoveryGrip?Math.max(finite(ps.steerGrip,ps.grip||1),.46):finite(ps.steerGrip,ps.grip||1);
  const driveSurface=recoveryGrip?Math.max(finite(ps.driveGrip,ps.grip||1),.64):finite(ps.driveGrip,ps.grip||1);
@@ -87,8 +87,8 @@
   frontLong=u*cD+vfY*sD,frontLat=-u*sD+vfY*cD,rearLat=v-B*r,
   dirFront=Math.abs(frontLong)>.25?Math.sign(frontLong):0;
 
- const maxLongF=finiteClamp(muDrive*FzF,50,52000,5000),maxLongR=finiteClamp(muDrive*FzR,50,56000,5500);
- const maxLatF=finiteClamp(muLat*FzF*dmgF.frontGrip,50,52000,5000),maxLatR=finiteClamp(muLat*FzR*dmgF.rearGrip,50,56000,5500);
+ const maxLongF=finiteClamp(muDrive*tyreFront*FzF,50,52000,5000),maxLongR=finiteClamp(muDrive*tyreRear*FzR,50,56000,5500);
+ const maxLatF=finiteClamp(muLat*tyreFront*FzF*dmgF.frontGrip,50,52000,5000),maxLatR=finiteClamp(muLat*tyreRear*FzR*dmgF.rearGrip,50,56000,5500);
  // Ayudas físicas del perfil ASISTIDO. Limitan la demanda al agarre disponible; no alteran la trayectoria.
  player.tcAssist=false;player.absAssist=false;
  if(driveProfile.tc&&!player.reverse&&driveWanted>0){
@@ -289,6 +289,7 @@
  player.latG=finiteClamp((axw*newAxes.rx+azw*newAxes.rz)/G,-8,8,0);
  player.speed=finite(Math.hypot(player.vx,player.vz),0);
  if(!physicsFinite()){recoverPhysics("POST");}else{player.lastGood=snapshotPhysics();}
+ apexTyreStep(player,dt,Math.hypot(player.x-preMoveX,player.z-preMoveZ),player.speed,Math.abs(player.latG),Math.abs(player.longG<0?player.longG:0)/1.84,Math.max(0,player.longG)/1.22,Math.max(0,Math.abs(player.slipF)-.04)*5,Math.max(0,Math.abs(player.slipR)-.04)*5,player.lockF,player.lockR,ps.kind==="ASPHALT"?1:ps.kind==="KERB"?1.1:1.3);
  player.hp=clamp(player.hp,0,100);
 
  // Cronometraje V4: vuelta por cruce real de FINISH/CONTROL; sectores y speed trap son controles independientes.
@@ -342,6 +343,7 @@
  }
 }
 function finishRace(){
+ apexTyrePersistSession();
  mode="finish";
  if(audio.ctx){oneShot(520,.16,"sine",.024,660);setTimeout(()=>oneShot(660,.18,"sine",.022,820),170)}
 
@@ -419,7 +421,8 @@ function loop(t){
  if(rawElapsed>0)apexRuntimePerfRecord(rawElapsed*1000,_physicsRaw,_renderRaw);
  apexDrivePerfObserve(t);requestAnimationFrame(loop);
 }
-function goMenu(){apexReleaseGpuScene();apexCloseControls(false);apexResetSessionControls();if(typeof apexInspection!=="undefined"){apexInspection.active=false;apexInspection.auto=false;apexInspection.drag=false}document.body.classList.remove("apex-inspection","ins-drag","ins-ui-hidden");$("circuitInspectorHud")&&$("circuitInspectorHud").classList.add("hidden");mode="menu";pendingRace=null;currentSession="race";sessionLimit=Infinity;sessionExpired=false;finishFlow=null;paused=false;countdown=0;apexWeatherReset();$("weekendPanel")&&$("weekendPanel").classList.add("hidden");$("sessionBadge")&&$("sessionBadge").classList.add("hidden");
+function goMenu(){
+ apexTyrePersistSession();apexReleaseGpuScene();apexCloseControls(false);apexResetSessionControls();if(typeof apexInspection!=="undefined"){apexInspection.active=false;apexInspection.auto=false;apexInspection.drag=false}document.body.classList.remove("apex-inspection","ins-drag","ins-ui-hidden");$("circuitInspectorHud")&&$("circuitInspectorHud").classList.add("hidden");mode="menu";pendingRace=null;currentSession="race";sessionLimit=Infinity;sessionExpired=false;finishFlow=null;paused=false;countdown=0;apexWeatherReset();$("weekendPanel")&&$("weekendPanel").classList.add("hidden");$("sessionBadge")&&$("sessionBadge").classList.add("hidden");
  // v5.230.62.4.1: recuperación defensiva del estado de todos los botones que pueden
  // participar en carga/compilación/warmup. Ningún disabled temporal sobrevive al menú.
  ["start","nextSeason","finishNext","gpStart","practiceStart","weekendMenu","endSession"].forEach(id=>{let b=$(id);if(b){b.dataset.audioReady="0";b.disabled=false;}});
@@ -947,7 +950,7 @@ function apexUpdateControlHud(){
  apexSyncControls();apexCameraUpdateButton();if(!player)return;
  $('shiftHint').textContent=apexControls.gearbox==='manual'&&!demoMode&&!assistMode&&engineRPM()>10500&&gear()<8?'SUBIR · X':'';
  const panel=$('wheelData');panel.classList.toggle('hidden',apexControls.display===0);
- if(apexControls.display===1)panel.textContent='NEUMÁTICOS\nJuego '+(player.tyreSet||1)+' · Paradas '+(player.pitStops||0);
+ if(apexControls.display===1)panel.textContent='NEUMÁTICOS\n'+apexTyreLabel(player);
  if(apexControls.display===2)panel.textContent='ENERGÍA · '+apexEnergyProfile().name+'\nERS '+Math.round(player.ers)+' % · '+(apexControls.ersActive?'ON':'OFF')+'\nBB '+(apexControls.brakeBias*100).toFixed(1)+' % · FM '+apexControls.engineBrake+'/4';
  $('limiterBtn').textContent=player.pitLimiter?'LIM ON':'LIM';
 }
@@ -988,7 +991,7 @@ function apexInitControls(){
  addEventListener('keydown',apexHandleControlKeydown);addEventListener('keyup',apexHandleControlKeyup);addEventListener('blur',apexReleaseInputs);document.addEventListener('visibilitychange',()=>{if(document.hidden)apexReleaseInputs();});
  apexSyncControls();apexSyncDriveProfileUi();
 }
-apexInitControls();
+apexInitControls();apexTyreInitMenu();
 // Seleccionamos el sensor por defecto en móvil. En iOS el permiso se solicita
 // exclusivamente desde el botón GYR o el selector, por exigencia del navegador.
 if(apexMobileGyroPreferred){

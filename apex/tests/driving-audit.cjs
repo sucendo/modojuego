@@ -131,11 +131,22 @@ test('Pedales reales: progresión, suelta y perfiles sin cambios de transmisión
   c.brKey=false;c.analogBrake=0;for(let i=0;i<200;i++)c.tick(.01);assert.ok(c.player.brakeInput<1e-8);
  }
 });
-test('Scheduler, perfiles, cámaras, suelo, colisiones e IA conservados',()=>{
- for(const name of ['loop','apexDriveSteeringConfig','apexDriveProfile','applyRivalNearDynamics','playerSurfaceState','snapshotPhysics','recoverPhysics'])assert.equal(func(source,name),func(baseline,name),name);
+test('Scheduler, perfiles, cámaras, suelo y colisiones conservados; IA sólo adapta agarre',()=>{
+ for(const name of ['loop','apexDriveSteeringConfig','apexDriveProfile','playerSurfaceState','snapshotPhysics','recoverPhysics'])assert.equal(func(source,name),func(baseline,name),name);
+ assert.equal(func(source,'applyRivalNearDynamics').replace('mu=1.86*apexTyreGripScale(rv)','mu=wet?1.24:1.84'),func(baseline,'applyRivalNearDynamics'));
  const from=' // Integración mundial autónoma',to=' // Telemetría de dinámica.';
- assert.equal(source.slice(source.indexOf(from),source.indexOf(to)).replace('player.lastDrivableBoundaryHit=raceT;',''),baseline.slice(baseline.indexOf(from),baseline.indexOf(to)));
+ assert.equal(source.slice(source.indexOf(from),source.indexOf(to)).replace('player.lastDrivableBoundaryHit=raceT;','').replace(/ apexTyreStep\(player,[^\n]+\n/,''),baseline.slice(baseline.indexOf(from),baseline.indexOf(to)));
  assert.ok(source.includes('APEX_PLAYER_PHYSICS_HZ=100,APEX_PLAYER_PHYSICS_DT=1/APEX_PLAYER_PHYSICS_HZ,APEX_PLAYER_MAX_CATCHUP_STEPS=12'));
+});
+test('Neumáticos: el estado altera fuerzas reales de frenada y apoyo',()=>{
+ const low=make(source),high=make(source);
+ for(const c of [low,high])c.reset(55,1,.1,.2,1,0);
+ low.player.tyres={gripFront:.65,gripRear:.65};high.player.tyres={gripFront:1.035,gripRear:1.035};
+ low.step(.01);high.step(.01);
+ assert.ok(Math.abs(high.out.FxF)>Math.abs(low.out.FxF));
+ assert.ok(high.player.speed<low.player.speed);
+ for(const c of [low,high]){c.reset(55,4,.1,.2,0,0);c.player.tyres={gripFront:c===low?.65:1.035,gripRear:c===low?.65:1.035};c.step(.01)}
+ assert.ok(Math.abs(high.out.FyF)>Math.abs(low.out.FyF));
 });
 function benchmark(c,speed){
  // Each round resets every second to retain the chosen speed region. VM/global

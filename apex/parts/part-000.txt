@@ -1199,6 +1199,7 @@ body.gyro-active.mobile-landscape #toolLeft #center{
       <div class="teamChoiceField teamChoiceApply"><label>&nbsp;</label><button id="applyTeam" class="btn">RESTABLECER</button></div>
     </div>
   <div class="driveProfileControl"><label for="menuDriveProfile"><span>AYUDAS DE CONDUCCIÓN</span><select id="menuDriveProfile"><option value="assisted" selected>ASISTIDO · control clásico</option><option value="simulation">SIMULACIÓN</option><option value="raw">SIN AYUDAS</option></select></label><small id="menuDriveProfileHint">Control clásico: respuesta directa y predecible, TC/ABS suaves y física estable aunque bajen los FPS.</small></div>
+  <div class="driveProfileControl"><label for="menuTyreCompound"><span>NEUMÁTICO INICIAL · TODAS LAS SESIONES</span><select id="menuTyreCompound"></select></label><small id="menuTyreHint"></small></div>
   <div class="demoModeControl"><label for="demoModeToggle"><input id="demoModeToggle" type="checkbox"><span><b>MODO DEMO · CONDUCCIÓN AUTOMÁTICA</b><small>El monoplaza acelera, frena y gira solo usando la física normal. Ideal para revisar circuitos, barreras, terreno y señalización.</small></span></label></div>
     </div>
   </details>
@@ -1345,7 +1346,7 @@ body.gyro-active.mobile-landscape #toolLeft #center{
   </div>
 </div>
  <div id="wheelData" class="hidden"></div><div id="lb"></div><canvas id="mini"></canvas>
- <div id="bars"><div>ERS <span id="ersPct">100%</span></div><div class="bar"><i id="ersFill"></i></div><div id="drsState" style="margin-top:6px;color:#9aa6b5">DRS —</div><div id="surfaceState" style="margin-top:4px;color:#9aa6b5">PISTA</div><div style="margin-top:6px">COCHE <span id="hpPct">100%</span></div><div class="bar"><i id="hpFill" style="background:linear-gradient(90deg,#55f18b,#ffe55b,#ff405d)"></i></div></div>
+ <div id="bars"><div id="tyreBadge" title="Compuesto · desgaste · temperatura" style="font-variant-numeric:tabular-nums">M · 0% · 75°C</div><div>ERS <span id="ersPct">100%</span></div><div class="bar"><i id="ersFill"></i></div><div id="drsState" style="margin-top:6px;color:#9aa6b5">DRS —</div><div id="surfaceState" style="margin-top:4px;color:#9aa6b5">PISTA</div><div style="margin-top:6px">COCHE <span id="hpPct">100%</span></div><div class="bar"><i id="hpFill" style="background:linear-gradient(90deg,#55f18b,#ffe55b,#ff405d)"></i></div></div>
 </section>
 
 <section id="touch" class="hidden">
@@ -1380,6 +1381,7 @@ body.gyro-active.mobile-landscape #toolLeft #center{
  <div class="tr"><span>DOWNFORCE</span><span id="telDownforce" class="tv">0 kg</span></div>
  <div class="tr"><span>CARGA DEL./TRAS.</span><span id="telLoads" class="tv">0 / 0 kg</span></div>
  <div class="tr"><span>SUPERFICIE</span><span id="telSurface" class="tv">ASFALTO</span></div><div class="tr"><span>RESIST. TERRENO</span><span id="telTerrainDrag" class="tv">0.0 m/s²</span></div><div class="tr"><span>PEDAL GAS / FRENO</span><span id="telPedals" class="tv">0 / 0%</span></div><div class="tr"><span>RECUP. NUM.</span><span id="telFaults" class="tv">0</span></div>
+ <div class="stat"><span>Neumáticos</span><b id="telTyres" style="white-space:normal;text-align:right;max-width:65%">—</b></div><div class="stat"><span>Superficie / carcasa · D / T</span><b id="telTyreThermal">—</b></div>
  <div id="telState" class="state">ESTABLE</div>
  <div class="telemetryRecordRow"><span>GRABACIÓN</span><button id="telemetryRecordBtn" class="telemetryRecordBtn">EVENTOS</button></div>
  <div class="telemetryActions"><button id="exportTelemetry" class="telemetryExportBtn">EXPORTAR SESIÓN · JSON</button><button id="telemetryPopout" class="telemetryExportBtn telemetryPopBtn" title="Abrir telemetría en una ventana independiente" aria-label="Abrir telemetría en una ventana independiente"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 13v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h6"/></svg></button></div>
@@ -1438,7 +1440,7 @@ body.gyro-active.mobile-landscape #toolLeft #center{
 // Apex Formula 26 v5.80 · Progressive Mobile Quality
 // v5.230.36: cedemos un frame al navegador para que la portada pueda pintarse antes del arranque pesado.
 requestAnimationFrame(()=>setTimeout(()=>{
-const APP_VERSION="v0.13.23",APP_CHANNEL="PRE-RELEASE",APP_BUILD="2026.10.20.07";
+const APP_VERSION="v0.14.0",APP_CHANNEL="PRE-RELEASE",APP_BUILD="2026.10.20.08A";
 const $=id=>document.getElementById(id),clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),mod=(n,m)=>((n%m)+m)%m,lerp=(a,b,t)=>a+(b-a)*t;
 const appStorage=(()=>{try{return window.localStorage}catch(e){return{getItem(){return null},setItem(){},removeItem(){},clear(){}}}})();
 const finite=(v,f=0)=>Number.isFinite(v)?v:f,finiteClamp=(v,a,b,f=0)=>clamp(finite(v,f),a,b);

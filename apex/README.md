@@ -1,6 +1,6 @@
 # APEX Formula 26
 
-Versión de desarrollo: **v0.13.23 · PRE-RELEASE**
+Versión de desarrollo: **v0.14.0 · PRE-RELEASE**
 
 Archivo fuente original:
 `Apex_Formula_26_v5_230_62_8_6_7_6_4_17_CONTROL_CLASICO_GP4.html`
@@ -269,3 +269,7 @@ La continuación añade CI con Chromium: pasan sesiones cortas en Madrid detalla
 El build `2026.10.20.04` corrige además la selección móvil de terreno: sus bloques 2×2 mantienen el origen par utilizado por la precarga. Antes podían cambiar de paridad al desplazar la cámara y perder sus recortes cacheados. Prueba reproducible: 229/230 → 5/13 claves nuevas al cruzar un límite 2 cm; 230 → 0 recortes nuevos en la región precargada. No cambia el algoritmo de recorte ni la selección de escritorio. `node apex/tests/terrain-selection-audit.cjs` comprueba esa regresión, máscaras parciales y portales.
 
 Los builds 05–07 diagnostican el bloqueo del automático contra el límite SVG autoritativo y reutilizan la recuperación existente con puertas/cuerdas comprobadas, reversa corta y alineación al alcanzar asfalto válido. No alteran la contención manual ni añaden fuerzas de rescate. CI compara main con esta versión en cinco circuitos con/sin rivales y vigila paradas prolongadas. También prueba pérdida/restauración WebGL, FP1 y clasificación. Los logs se guardan como artefactos de Actions. Las sensaciones, Android/GPU físicos y sesiones largas requieren validación humana. Modelo y resultados en [AUDITORIA_V01323.md](AUDITORIA_V01323.md); cierre y comparación en [CIERRE_FASE7_V01323.md](CIERRE_FASE7_V01323.md).
+
+## v0.14.0 · Fase 8A · Neumáticos
+
+Cinco compuestos, dos ejes térmicos, desgaste por distancia/esfuerzo y agarre efectivo. Selección en Coche y conducción; indicador compacto, telemetría y perfiles estimados de 23 circuitos. Conserva 28 fragmentos, meteorología gradual, controles y cámaras. No cambia neumáticos en boxes. Validación numérica local superada; navegador, conducción y FPS pendientes. Véase `FASE8A_NEUMATICOS.md`.

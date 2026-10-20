@@ -28,6 +28,7 @@ jobs:
         run: |
           mkdir -p /tmp/apex-results
           node apex/tests/render-audit.cjs > /tmp/apex-results/render.txt
+          node apex/tests/tyres-audit.cjs > /tmp/apex-results/tyres.json
           node apex/tests/driving-audit.cjs --json > /tmp/apex-results/driving.json
           node apex/tests/terrain-selection-audit.cjs > /tmp/apex-results/terrain-selection.json
           node apex/tests/auto-boundary-audit.cjs > /tmp/apex-results/auto-boundary.txt

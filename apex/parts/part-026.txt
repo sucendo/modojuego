@@ -888,6 +888,109 @@ function telemetryEventAllowed(type,data={}){
 function telemetryRecordLabel(mode=getTelemetryRecordMode()){
  return mode==="FULL"?`COMPLETA · ${telemetryFullSampleHz()} Hz`:mode==="EVENTS"?"EVENTOS":"OFF";
 }
+// FASE 8A: design estimates, NOT official tyre manufacturer data.
+// Grip is relative to the existing dry bicycle model (mu=1.86).
+const APEX_TYRE_COMPOUNDS=Object.freeze({
+ SOFT:{name:'Blando',code:'S',color:'#ff4050',peak:1.035,cold:.86,opt:90,band:15,hot:.0025,life:115000,heat:1.10,cool:1,water:0,lock:1.15,slide:1.15,description:'Seco · agarre alto, menor duración'},
+ MEDIUM:{name:'Medio',code:'M',color:'#ffd640',peak:1,cold:.84,opt:95,band:17,hot:.0023,life:160000,heat:1,cool:1,water:0,lock:1,slide:1,description:'Seco · equilibrio entre agarre y duración'},
+ HARD:{name:'Duro',code:'H',color:'#f5f5f5',peak:.975,cold:.81,opt:100,band:18,hot:.0021,life:205000,heat:.88,cool:1,water:0,lock:.95,slide:.95,description:'Seco · mayor duración, calentamiento más lento'},
+ INTERMEDIATE:{name:'Intermedio',code:'I',color:'#46d879',peak:.94,cold:.89,opt:70,band:15,hot:.003,life:135000,heat:1.05,cool:1.12,water:.42,lock:1.1,slide:1.1,description:'Húmedo · se sobrecalienta en seco'},
+ WET:{name:'Lluvia extrema',code:'W',color:'#4ba7ff',peak:.88,cold:.91,opt:60,band:14,hot:.0033,life:115000,heat:1.08,cool:1.2,water:1,lock:1.15,slide:1.2,description:'Lluvia intensa · desgaste rápido en seco'}
+});
+// Six configurable estimates per circuit: abrasion, front/rear, brake, traction, lateral.
+const APEX_TYRE_TRACK_ESTIMATES=[
+ [1,1,1,1.05,1.05,1],[1.12,1.12,1,1.05,1,1.12],[1.2,1.15,1, .95,1,1.2],
+ [.9,1,1.05,1.1,1.1,.95],[.85,.95,1.1,1.2,1.18,.9],[.72,1,1.05,1.1,1.12,.85],
+ [1.22,1.15,1.05,1,1,1.2],[1.02,1,1.12,1.15,1.15,.95],[1.25,1.12,1.05,.9,.95,1.25],
+ [1.15,1.08,1.05,1.05,1,1.18],[1.08,1.12,1.05,.95,1.05,1.15],[1.18,1.12,1.08,.95,1.05,1.2],
+ [.82,.95,1,1.2,1.05,.85],[1.02,1.08,1,1.12,1.1,1],[.78,.95,1.05,1.15,1.12,.82],
+ [1.18,1.08,1.12,1.08,1.12,1.15],[.95,1.05,1.12,1.15,1.18,1],
+ [1.2,1.12,1.08,1.08,1.05,1.18],[.85,1,1.08,1.15,1.12,.95],
+ [1.12,1.05,1.12,1.05,1.12,1.08],[.75,.95,1.08,1.15,1.15,.85],
+ [1.3,1.15,1.08,.9,1,1.3],[.95,1.02,1.08,1.08,1.12,1]
+];
+const APEX_TYRE_TRACK_KEYS=['trackAbrasion','trackTyreStressFront','trackTyreStressRear','trackBrakeStress','trackTractionStress','trackLateralStress'];
+function apexTyreTrackProfile(spec,json){
+ const index=calendar.slice(0,F1_SEASON_COUNT).findIndex(s=>s.dir===spec.dir),row=APEX_TYRE_TRACK_ESTIMATES[index]||[1,1,1,1,1,1];
+ const authored=json&&((json.track||{}).tyres||json.tyres||json.track)||{},p={source:index>=0?'DESIGN_ESTIMATE':'SAFE_DEFAULT'};
+ for(let i=0;i<6;i++)p[APEX_TYRE_TRACK_KEYS[i]]=finiteClamp(authored[APEX_TYRE_TRACK_KEYS[i]],.4,2,row[i]);
+ return p;
+}
+const apexTyreEnvironment={airTemperature:26,trackTemperature:38,rainIntensity:0,wetness:0};
+let apexTyreEnvironmentNext=-1;
+function apexTyreUpdateEnvironment(force=false){
+ if(!force&&raceT<apexTyreEnvironmentNext)return;
+ apexTyreEnvironmentNext=force?.2:raceT+.2;
+ const sm=apexWeatherSample(),air=ambientTemp(trackData&&trackData.spec,raceWeather),e=apexTyreEnvironment;
+ e.airTemperature=air;e.rainIntensity=clamp(sm.rain||0,0,1);e.wetness=apexWeatherWetFactor();
+ const target=air+14*(1-(sm.cloud||0)*.65)*(1-e.wetness*.8);
+ e.trackTemperature=force?target:e.trackTemperature+(target-e.trackTemperature)*.01;
+}
+function apexTyreKey(key){return Object.hasOwn(APEX_TYRE_COMPOUNDS,key)?key:'MEDIUM'}
+function apexTyreAxle(data,temp){return {wear:finiteClamp(data&&data.wear,0,1,0),surfaceTemperature:finiteClamp(data&&data.surfaceTemperature,-20,180,temp),coreTemperature:finiteClamp(data&&data.coreTemperature,-20,170,temp)}}
+function apexTyreRestore(car,data){
+ const key=apexTyreKey(data&&data.compound),c=APEX_TYRE_COMPOUNDS[key],temp=c.opt-20;
+ car.tyres={schema:1,compound:key,front:apexTyreAxle(data&&data.front,temp),rear:apexTyreAxle(data&&data.rear,temp),distance:finiteClamp(data&&data.distance,0,1e9,0),gripFront:1,gripRear:1};
+ apexTyreRefreshGrip(car.tyres,apexTyreEnvironment.wetness);return car.tyres;
+}
+// A future pit service may call this without resetting race, damage or timing.
+function apexTyreInstall(car,compound='MEDIUM'){return apexTyreRestore(car,{compound:apexTyreKey(compound)})}
+function apexTyreSnapshot(car){const t=car&&car.tyres;if(!t)return null;return {schema:1,compound:t.compound,distance:t.distance,front:{...t.front},rear:{...t.rear}}}
+function apexTyreGrip(axle,c,wet){
+ const temp=axle.surfaceTemperature*.65+axle.coreTemperature*.35;
+ const cold=clamp((c.opt-c.band-temp)/55,0,1),hot=Math.max(0,temp-c.opt-c.band);
+ const thermal=clamp(1-cold*(1-c.cold)-hot*c.hot,.65,1);
+ // Continuous wet curves: intermediates win on damp tarmac, wets in standing water.
+ const water=c.water===0?1-.56*wet-.10*wet*wet:c.water<1?1-.10*Math.abs(wet-.42)-.30*Math.max(0,wet-.55):1-.13*(1-wet);
+ return clamp(c.peak*thermal*water*(1-.20*axle.wear-.15*axle.wear*axle.wear),.25,1.06);
+}
+function apexTyreRefreshGrip(t,wet){const c=APEX_TYRE_COMPOUNDS[t.compound];t.gripFront=apexTyreGrip(t.front,c,wet);t.gripRear=apexTyreGrip(t.rear,c,wet)}
+function apexTyreGripScale(car){return car&&car.tyres?Math.min(car.tyres.gripFront,car.tyres.gripRear):1}
+function apexTyreEvolveAxle(a,c,dt,distance,speed,lat,brake,traction,slide,lock,stress,p,e,surface){
+ const effort=.34+lat*.38*p.trackLateralStress+brake*.30*p.trackBrakeStress+traction*.26*p.trackTractionStress;
+ const dryWetHeat=c.water>0?(1-e.wetness)*(c.water===1?1.2:.65):0;
+ const heat=speed>.1?(effort*c.heat*1.7*(1+dryWetHeat)+slide*2+lock*1.8)*Math.min(speed/30,1.5):0;
+ const cooling=(.008+speed*.00022+e.wetness*.035)*c.cool;
+ const trackExchange=(e.trackTemperature-a.surfaceTemperature)*.003;
+ const coreExchange=(a.coreTemperature-a.surfaceTemperature)*.045;
+ a.surfaceTemperature=clamp(a.surfaceTemperature+(heat-cooling*(a.surfaceTemperature-e.airTemperature)+trackExchange+coreExchange)*dt,-20,180);
+ a.coreTemperature=clamp(a.coreTemperature+(a.surfaceTemperature-a.coreTemperature)*.018*dt,-20,170);
+ const thermalWear=1+Math.max(0,a.surfaceTemperature-c.opt-c.band)*.025+Math.max(0,e.trackTemperature-40)*.012;
+ const dryWear=1+(c.water>0?(1-e.wetness)*(c.water===1?3:1.4):0);
+ const abuse=1+slide*2.6*c.slide+lock*2.4*c.lock;
+ a.wear=clamp(a.wear+distance/c.life*p.trackAbrasion*stress*(.65+effort)*thermalWear*dryWear*abuse*surface,0,1);
+}
+// Shared model for every car. Inputs are physical demand; no render/LOD/driver bonuses.
+function apexTyreStep(car,dt,distance,speed,lat,brake,traction,slideF,slideR,lockF,lockR,surface=1){
+ if(!car.tyres)apexTyreRestore(car,null);
+ const t=car.tyres,c=APEX_TYRE_COMPOUNDS[t.compound],p=trackData&&trackData.tyreProfile||apexTyreDefaultTrack,e=apexTyreEnvironment;
+ dt=finiteClamp(dt,0,1,0);distance=finiteClamp(distance,0,150*dt,0);speed=finiteClamp(speed,0,150,0);
+ lat=finiteClamp(lat,0,3,0);brake=finiteClamp(brake,0,2,0);traction=finiteClamp(traction,0,2,0);
+ slideF=finiteClamp(slideF,0,2,0);slideR=finiteClamp(slideR,0,2,0);lockF=finiteClamp(+lockF,0,1,0);lockR=finiteClamp(+lockR,0,1,0);surface=finiteClamp(surface,.7,2,1);
+ const n=Math.max(1,Math.ceil(dt/.01)),step=dt/n,ds=distance/n;
+ for(let i=0;i<n;i++){
+  apexTyreEvolveAxle(t.front,c,step,ds,speed,lat,brake,0,slideF,lockF,p.trackTyreStressFront,p,e,surface);
+  apexTyreEvolveAxle(t.rear,c,step,ds,speed,lat,brake*.75,traction,slideR,lockR,p.trackTyreStressRear,p,e,surface);
+ }
+ t.distance+=distance;apexTyreRefreshGrip(t,e.wetness);
+}
+const apexTyreDefaultTrack={trackAbrasion:1,trackTyreStressFront:1,trackTyreStressRear:1,trackBrakeStress:1,trackTractionStress:1,trackLateralStress:1};
+function apexTyreInitialRivalCompound(rv){const w=apexTyreEnvironment.wetness;return w>.7?'WET':w>.16?'INTERMEDIATE':currentSession==='qualifying'?'SOFT':['SOFT','MEDIUM','HARD'][Math.floor(stableTrait(rv.uid,88)*3)%3]}
+function apexTyreStatus(t){const c=APEX_TYRE_COMPOUNDS[t.compound],temp=(t.front.surfaceTemperature+t.rear.surfaceTemperature)/2;return Math.max(t.front.wear,t.rear.wear)>.8?'GASTADOS':temp>c.opt+c.band?'CALIENTES':temp<c.opt-c.band?'FRÍOS':'EN VENTANA'}
+function apexTyreLabel(car){const t=car&&car.tyres;if(!t)return '—';return `${APEX_TYRE_COMPOUNDS[t.compound].name} · desgaste ${Math.round((t.front.wear+t.rear.wear)*50)}% · ${Math.round((t.front.surfaceTemperature+t.rear.surfaceTemperature)/2)}°C · ${apexTyreStatus(t)}`}
+function apexTyreInitMenu(){
+ const select=$('menuTyreCompound'),hint=$('menuTyreHint');if(!select)return;
+ for(const [key,c] of Object.entries(APEX_TYRE_COMPOUNDS)){const o=document.createElement('option');o.value=key;o.textContent=`${c.code} · ${c.name}`;select.appendChild(o)}
+ try{select.value=apexTyreKey(appStorage.getItem('apex26.tyre.initial.v1'))}catch(e){select.value='MEDIUM'}
+ const sync=()=>{const c=APEX_TYRE_COMPOUNDS[select.value];hint.textContent=c.description;hint.style.color=c.color;try{appStorage.setItem('apex26.tyre.initial.v1',select.value)}catch(e){}};
+ select.onchange=sync;sync();
+}
+function apexTyrePersistSession(){
+ if(!player||!player.tyres)return;
+ save.lastTyreSession={schema:1,circuit:trackData&&trackData.spec.dir,session:currentSession,player:apexTyreSnapshot(player),rivals:rivals.map(rv=>({id:rv.id,...apexTyreSnapshot(rv)})),environment:{...apexTyreEnvironment}};persist();
+}
+// END FASE8A TYRE MODEL
+
 function updateTelemetryRecordingUI(){
  const mode=getTelemetryRecordMode(),b=$("telemetryRecordBtn"),hint=$("telemetryHint"),tel=$("telemetryBtn");
  if(b){b.textContent="GRABAR · "+telemetryRecordLabel(mode);b.classList.remove("off","events","full");b.classList.add(mode.toLowerCase());b.title=mode==="FULL"?"Graba muestras completas y eventos":mode==="EVENTS"?"Graba sólo eventos importantes, con menor consumo":"No guarda telemetría";}
@@ -908,7 +1011,7 @@ function telemetryRound(v,n=4){return Number.isFinite(v)?+v.toFixed(n):null}
 function initSessionTelemetry(spec,gm){
  const recMode=getTelemetryRecordMode();sessionTelemetryNext=0;sessionTelemetryEventNext=0;sessionTelemetryPrev={zone:null,recovery:null,recoveryStage:null,lap:0,wallHit:-99,wallEventAt:-99,rivalContactAt:-99,recoveryEpisodeAt:null,emergency:false,targetReason:null};
  sessionTelemetry={
-   schema:"ApexFormula26.SessionTelemetry.v23",appVersion:APP_VERSION,build:APP_BUILD,
+   schema:"ApexFormula26.SessionTelemetry.v24",tyres:{player:apexTyreSnapshot(player),rivals:rivals.map(rv=>({id:rv.id,...apexTyreSnapshot(rv)})),track:trackData&&trackData.tyreProfile,environment:{...apexTyreEnvironment}},appVersion:APP_VERSION,build:APP_BUILD,
    createdAt:new Date().toISOString(),session:{mode:gm,type:currentSession,weather:raceWeather,weatherPreset:sessionSettings&&sessionSettings.weather||null,weatherRuntime:apexWeatherRuntimeSnapshot(),difficulty:sessionSettings?sessionSettings.diff:null,noRivals:!!(sessionSettings&&sessionSettings.noRivals),gridPosition:player?player.pos:null,rivalCount:rivals?rivals.length:0},
    circuit:{round:spec&&spec.r,country:spec&&spec.country,name:spec&&spec.name,dir:spec&&spec.dir,km:trackData&&trackData.km},
    circuitCompile:trackData&&trackData._compileStats?clonePlain(trackData._compileStats):null,
@@ -998,7 +1101,7 @@ function captureSessionTelemetry(){
  const trackHeading=Math.atan2(tr.tx,tr.tz),headingErr=angleDiff(trackHeading,player.heading);
  const autoCtlMode=demoMode?"FULL":assistMode?"SPEED_ASSIST":"OFF";
  const rec=player.autoRecovery?player.autoRecovery.mode:null;
- const sample={
+ const sample={tyres:apexTyreSnapshot(player),
   t:telemetryRound(raceT,3),lap:player.lap+1,lapTime:telemetryRound(Math.max(0,raceT-lapStart),3),
   s:telemetryRound(player.s,2),lapFrac:telemetryRound(mod(player.s,trackData.km*1000)/(trackData.km*1000),5),x:telemetryRound(player.x,3),z:telemetryRound(player.z,3),lat:telemetryRound(player.lat,3),
   timingSector:null,centerElevationM:telemetryRound(surface.centerY,3),surfaceElevationM:telemetryRound(surface.y,3),bankDeg:telemetryRound(surface.bank*deg,3),bankCrossfallPct:telemetryRound(Math.tan(surface.bank)*100,2),
@@ -1087,7 +1190,7 @@ function exportSessionTelemetry(){
  const perfRows=ss.map(s=>s.performance).filter(Boolean),avg=(key)=>perfRows.length?perfRows.reduce((a,p)=>a+(Number(p[key])||0),0)/perfRows.length:null,maxv=(key)=>perfRows.length?Math.max(...perfRows.map(p=>Number(p[key])||0)):null;
  const performanceStats={avgFps:telemetryRound(avg('fps'),1),avgFrameMs:telemetryRound(avg('frameMs'),2),maxFrameMs:telemetryRound(maxv('lastFrameMs'),2),avgRenderMs:telemetryRound(avg('renderMs'),2),avgPhysicsMs:telemetryRound(avg('physicsMs'),2),avgAiMs:telemetryRound(avg('aiMs'),2),maxAiMs:telemetryRound(maxv('aiMs'),2),avgCollisionMs:telemetryRound(avg('collisionMs'),2),avgTelemetryMs:telemetryRound(avg('telemetryMs'),2),avgHudMs:telemetryRound(avg('hudMs'),2),avgTrackRenderMs:telemetryRound(avg('trackRenderMs'),2),avgTerrainRenderMs:telemetryRound(avg('terrainRenderMs'),2),avgTunnelRenderMs:telemetryRound(avg('tunnelRenderMs'),2),avgEnvironmentRenderMs:telemetryRound(avg('environmentRenderMs'),2),avgCarsRenderMs:telemetryRound(avg('carsRenderMs'),2),avgMirrorsRenderMs:telemetryRound(avg('mirrorsRenderMs'),2),avgCockpitRenderMs:telemetryRound(avg('cockpitRenderMs'),2),avgEffectsRenderMs:telemetryRound(avg('effectsRenderMs'),2),avgWebglSubmitMs:telemetryRound(avg('webglSubmitMs'),2)};
  if(sessionTelemetry.recording){sessionTelemetry.recording.currentMode=getTelemetryRecordMode();sessionTelemetry.recording.fullSampleHz=telemetryFullSampleHz();sessionTelemetry.recording.eventCheckHz=telemetryEventCheckHz();}
- const payload={...sessionTelemetry,incidentWindows,exportedAt:new Date().toISOString(),summary:{recordingMode:getTelemetryRecordMode(),fullSampleHz:telemetryFullSampleHz(),eventCheckHz:telemetryEventCheckHz(),duration:telemetryRound(raceT,3),completedLaps:player?player.lap:null,bestLap:best<1e8?telemetryRound(best,3):null,sampleCount:ss.length,eventCount:ev.length,rivalContacts:contacts.length,containedRivalContacts:containedContacts.length,rivalContactEpisodes:contactEpisodes.length,earlyRivalContacts:earlyContacts.length,earlySevereRivalContacts:earlySevereContacts.length,rivalRivalContacts:rivalRivalContacts.length,rivalRivalContactEpisodes:rrContactEpisodes.length,rivalIncidents:rivalIncidents.length,rivalSpinIncidents:rivalSpinIncidents.length,rivalOfftracksFromImpact:rivalOfftracks.length,rivalRecovers:rivalRecovers.length,launchGapGuardSamples:launchGuardSamples,maxLaunchGapGuards,contactEpisodes,performanceStats,runtimeProfiler:apexRuntimePerfSummary(),circuitCompile:trackData&&trackData._compileStats?clonePlain(trackData._compileStats):null,wallHits:ev.filter(e=>e.type==='WALL_HIT').length,spins:ev.filter(e=>e.type==='SPIN').length,recoveryEpisodes:ev.filter(e=>e.type==='RECOVERY_START').length,emergencyRecoveries:ev.filter(e=>e.type==='RECOVERY_EMERGENCY').length,hardRecoveryAssists:hardPullEvents,recoveryActiveAtExport:ongoingRecoverySec>0,recoveryTimeSec:recoveryTime,maxRecoverySec:recoveryDurations.length?telemetryRound(Math.max(...recoveryDurations),2):null,lateralRecoveryGuardTrips:ev.filter(e=>e.type==='RECOVERY_LATERAL_GUARD').length,rivalSimulation:{model:"HYBRID_SHARED_FRENET_LOD_PARITY",lodAtExport:rivalLODCounts(),nearDynamicM:mobilePerformanceMode()?120:150,midHybridM:mobilePerformanceMode()?360:500},rivalContinuity:sessionTelemetry&&sessionTelemetry.rivalContinuity?{checks:sessionTelemetry.rivalContinuity.checks||0,anomalies:sessionTelemetry.rivalContinuity.anomalies||0,lastAnomalyAt:sessionTelemetry.rivalContinuity.lastAnomalyAt||null,byType:{...(sessionTelemetry.rivalContinuity.byType||{})}}:null,rivalBestLaps,rivalPaceStats,targetSpeedReasonSamples:reasonCounts,targetLimiterImpact:impact}};
+ const payload={...sessionTelemetry,tyreState:{player:apexTyreSnapshot(player),rivals:rivals.map(rv=>({id:rv.id,...apexTyreSnapshot(rv)})),environment:{...apexTyreEnvironment}},incidentWindows,exportedAt:new Date().toISOString(),summary:{recordingMode:getTelemetryRecordMode(),fullSampleHz:telemetryFullSampleHz(),eventCheckHz:telemetryEventCheckHz(),duration:telemetryRound(raceT,3),completedLaps:player?player.lap:null,bestLap:best<1e8?telemetryRound(best,3):null,sampleCount:ss.length,eventCount:ev.length,rivalContacts:contacts.length,containedRivalContacts:containedContacts.length,rivalContactEpisodes:contactEpisodes.length,earlyRivalContacts:earlyContacts.length,earlySevereRivalContacts:earlySevereContacts.length,rivalRivalContacts:rivalRivalContacts.length,rivalRivalContactEpisodes:rrContactEpisodes.length,rivalIncidents:rivalIncidents.length,rivalSpinIncidents:rivalSpinIncidents.length,rivalOfftracksFromImpact:rivalOfftracks.length,rivalRecovers:rivalRecovers.length,launchGapGuardSamples:launchGuardSamples,maxLaunchGapGuards,contactEpisodes,performanceStats,runtimeProfiler:apexRuntimePerfSummary(),circuitCompile:trackData&&trackData._compileStats?clonePlain(trackData._compileStats):null,wallHits:ev.filter(e=>e.type==='WALL_HIT').length,spins:ev.filter(e=>e.type==='SPIN').length,recoveryEpisodes:ev.filter(e=>e.type==='RECOVERY_START').length,emergencyRecoveries:ev.filter(e=>e.type==='RECOVERY_EMERGENCY').length,hardRecoveryAssists:hardPullEvents,recoveryActiveAtExport:ongoingRecoverySec>0,recoveryTimeSec:recoveryTime,maxRecoverySec:recoveryDurations.length?telemetryRound(Math.max(...recoveryDurations),2):null,lateralRecoveryGuardTrips:ev.filter(e=>e.type==='RECOVERY_LATERAL_GUARD').length,rivalSimulation:{model:"HYBRID_SHARED_FRENET_LOD_PARITY",lodAtExport:rivalLODCounts(),nearDynamicM:mobilePerformanceMode()?120:150,midHybridM:mobilePerformanceMode()?360:500},rivalContinuity:sessionTelemetry&&sessionTelemetry.rivalContinuity?{checks:sessionTelemetry.rivalContinuity.checks||0,anomalies:sessionTelemetry.rivalContinuity.anomalies||0,lastAnomalyAt:sessionTelemetry.rivalContinuity.lastAnomalyAt||null,byType:{...(sessionTelemetry.rivalContinuity.byType||{})}}:null,rivalBestLaps,rivalPaceStats,targetSpeedReasonSamples:reasonCounts,targetLimiterImpact:impact}};
  const safe=(trackData&&trackData.spec?trackData.spec.dir:"circuito").replace(/[^a-z0-9_-]+/gi,'-');
  const stamp=new Date().toISOString().replace(/[:.]/g,'-');
  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
@@ -1219,6 +1322,8 @@ function updateTelemetry(){
  $("telDownforce").textContent=Math.round((player.downforce||0)/9.81)+" kg";
  $("telLoads").textContent=Math.round((player.frontLoad||0)/9.81)+" / "+Math.round((player.rearLoad||0)/9.81)+" kg";
  $("telSurface").textContent=terrainName(player.surfaceKind,player.surface);$("telTerrainDrag").textContent=(player.terrainDrag||0).toFixed(1)+" m/s²";$("telPedals").textContent=Math.round((player.throttle||0)*100)+" / "+Math.round((player.brakeInput||0)*100)+"%";$("telFaults").textContent=player.physicsFaults||0;
+ $("telTyres").textContent=apexTyreLabel(player);
+ const tt=player.tyres;if(tt)$("telTyreThermal").textContent=`${Math.round(tt.front.surfaceTemperature)} / ${Math.round(tt.front.coreTemperature)}°C · ${Math.round(tt.rear.surfaceTemperature)} / ${Math.round(tt.rear.coreTemperature)}°C`;
  const st=player.balanceState||"ESTABLE";$("telState").textContent=st;
  $("telState").style.color=st==="SUBVIRA"?"#ffd66b":st==="SOBREVIRA"?"#ff7988":st==="AL LÍMITE"?"#ffad66":st==="BLOQUEO"?"#ff6678":st==="TRACCIÓN"?"#73dfff":"#7dffc1";
 }
@@ -1228,6 +1333,7 @@ function updateHud(force=false){
  const now=performance.now(),minGap=mobileControlProfile().hudGap;
  if(!force&&now-hudLastUpdate<minGap)return;
  hudLastUpdate=now;
+ const tb=$("tyreBadge"),tt=player.tyres;if(tb&&tt){const c=APEX_TYRE_COMPOUNDS[tt.compound];tb.textContent=`${c.code} · ${Math.round((tt.front.wear+tt.rear.wear)*50)}% · ${Math.round((tt.front.surfaceTemperature+tt.rear.surfaceTemperature)/2)}°C`;tb.title=apexTyreLabel(player);tb.style.color=c.color;}
  $("speed").textContent=Math.round(finite(player.speed,0)*3.6);$("gear").textContent=gear();if($("rpm"))$("rpm").textContent=Math.round(engineRPM()/100)*100+" RPM";
  const temp=ambientTemp(trackData.spec,raceWeather),weather=weatherHudLabel(raceWeather,trackData.spec),gpLabel=(trackData.spec.country||'GP')+' · '+trackData.spec.name,gpAbbr=(roundFlagCode[(trackData.spec.r||1)-1]||'GP');
  $("gpName").textContent=gpLabel;
@@ -1301,7 +1407,7 @@ function updateHud(force=false){
  const towerCount=Math.max(1,Math.min(all.length,Math.floor(rowsHeight/minRowH)));
  const visible=selectTowerEntries(all,pi,towerCount),fastId=currentSession==='race'?sessionFastestLap.id:null,fastFresh=fastId!==null&&raceT<sessionFastestLap.flashUntil;
  const toast=fastFresh?`<div class="fastLapToast"><span>VUELTA RÁPIDA · ${driverCode(raceName(fastId))}</span><b>${fmt(sessionFastestLap.time)}</b></div>`:'';
- if(rowsBox)rowsBox.innerHTML=toast+visible.map((a)=>{const me=a.id===0,teamKey=me?(player.teamKey||selectedTeamKey()):rivalTeamById(a.id),code=driverCode(raceName(a.id)),pos=all.findIndex(x=>x.id===a.id)+1,isFast=a.id===fastId;return `<div class="lbr ${me?"you ":""}${isFast?"fastestLap ":""}${isFast&&fastFresh?"freshFastest":""}">${apexSectorBars(apexTimingCar(a.id))}<span class="lpos">${pos}</span><span class="ldriver"><span class="ldc">${code}</span></span><span class="tvlogo">${teamLogoMarkup(teamKey,"tvLogoSvg")}</span><span class="tvtyre" title="${tyreMark==='S'?'Neumático blando':'Neumático de lluvia'}">${tyreMark}</span><span class="tvgap ${me?"self":""}">${apexTowerTimingValue(apexTimingCar(a.id),gapFor(a))}</span>${fastestLapIconMarkup()}</div>`;}).join("");
+ if(rowsBox)rowsBox.innerHTML=toast+visible.map((a)=>{const me=a.id===0,tc=APEX_TYRE_COMPOUNDS[(apexTimingCar(a.id)?.tyres||{}).compound]||APEX_TYRE_COMPOUNDS.MEDIUM,teamKey=me?(player.teamKey||selectedTeamKey()):rivalTeamById(a.id),code=driverCode(raceName(a.id)),pos=all.findIndex(x=>x.id===a.id)+1,isFast=a.id===fastId;return `<div class="lbr ${me?"you ":""}${isFast?"fastestLap ":""}${isFast&&fastFresh?"freshFastest":""}">${apexSectorBars(apexTimingCar(a.id))}<span class="lpos">${pos}</span><span class="ldriver"><span class="ldc">${code}</span></span><span class="tvlogo">${teamLogoMarkup(teamKey,"tvLogoSvg")}</span><span class="tvtyre" style="border-color:${tc.color}" title="${tc.name}">${tc.code}</span><span class="tvgap ${me?"self":""}">${apexTowerTimingValue(apexTimingCar(a.id),gapFor(a))}</span>${fastestLapIconMarkup()}</div>`;}).join("");
  activeRenderer.drawMiniMap();updateTelemetry();
 }
 
@@ -1432,6 +1538,8 @@ async function startPreparedRace(spec,laps,gm,btn){
    lastLapTime:Infinity,lastCompletedLap:0
  };
 
+ trackData.tyreProfile=apexTyreTrackProfile(spec,readStoredCircuitJson(spec.dir));
+ apexTyreUpdateEnvironment(true);apexTyreInstall(player,$("menuTyreCompound")?.value);
  rivals=[];
  const diff=Number.isFinite(sessionSettings.diff)?sessionSettings.diff:+$("diff").value;
  if(!sessionSettings.noRivals)for(let i=1;i<=activeDriverRoster.length;i++){
@@ -1443,7 +1551,7 @@ async function startPreparedRace(spec,laps,gm,btn){
      color:ti.color,accent:ti.accent,chassis:ti.chassis,model:ti.model,teamPerf:teamPerformance(teamKeyR),finished:false,finishTime:null,
      latVel:0,yawKick:0,damage:100,contactCooldown:0,wallCooldown:0,crossedStart:false,raceFirstLapPending:false,timingLapStart:0,timingSectorIndex:0,timingSectorSplits:[],timingSectorTimes:[],timingSpeedTrapKph:null,progressOriginS:progressOrigin,lapStartTime:0,completedLaps:0,lastLap:Infinity,bestLap:Infinity
    };
-   initRivalRacecraft(rv);
+   initRivalRacecraft(rv);apexTyreInstall(rv,apexTyreInitialRivalCompound(rv));
    rivals.push(rv);
  }
  // Preload the definitive SVG cockpit before revealing the track: no legacy cockpit flash.
@@ -1916,7 +2024,8 @@ function rivalLODCounts(){
 function sharedDriverTrackTargetSpeed(s,opt={}){
  const perf=opt.perf||teamPerformance(opt.teamKey||player?.teamKey),skill=clamp(opt.skill??.96,.75,1),diff=Number.isFinite(opt.diff)?opt.diff:1;
  const wet=apexWeatherIsWet(),pace=Number.isFinite(opt.pace)?opt.pace:1,riskWeight=Number.isFinite(opt.riskWeight)?opt.riskWeight:.14;
- const baseDecel=(wet?9.8:14.0)*(.96+.08*skill)*perf.brake*(Number.isFinite(opt.decelScale)?opt.decelScale:1);
+ const tyreGrip=apexTyreGripScale(opt.car||player);
+ const baseDecel=tyreGrip*(wet?9.8:14.0)*(.96+.08*skill)*perf.brake*(Number.isFinite(opt.decelScale)?opt.decelScale:1);
  let target=(wet?88:98)*perf.top;
  if(Number.isFinite(opt.topCap))target=Math.min(target,opt.topCap);
  const horizon=Number.isFinite(opt.horizon)?opt.horizon:(wet?330:370),step=Math.max(6,Number.isFinite(opt.step)?opt.step:8),safeScale=Number.isFinite(opt.safeScale)?opt.safeScale:1;
@@ -1924,7 +2033,7 @@ function sharedDriverTrackTargetSpeed(s,opt={}){
    const ss=s+d,e=envProfile(ss),wallish=apexWallishAtS(ss,e),k=Math.abs(curvatureAt(ss));
    const diffTrim=clamp(1+(diff-1)*.32,.98,1.018),wallTrim=wallish?.972:1.000;
    const learned=typeof opt.riskFn==="function"?clamp(opt.riskFn(ss)||0,0,1):0;
-   let safe=autoPhysicalCornerSpeed(ss)*pace*diffTrim*perf.aero*wallTrim*safeScale*(1-learned*riskWeight);
+   let safe=autoPhysicalCornerSpeed(ss,opt.car||player)*pace*diffTrim*perf.aero*wallTrim*safeScale*(1-learned*riskWeight);
    if(wet)safe*=.90*perf.wet;
    const turnShare=clamp((k-.0025)/.0105,0,1),planDecel=baseDecel*(1-turnShare*.18),settle=d>18?8:3;
    const allowed=Math.sqrt(Math.max(0,safe*safe+2*planDecel*Math.max(0,d-settle)));
@@ -1945,11 +2054,11 @@ function rivalKinematicParityTarget(rv,diff,lod=1){
  const driverPace=.988+paceN*.020;
  let top=(88*diffEq+stableTrait(rv.uid,16)*1.35+(rv.paceOffset||0)*.65)*perf.top*driverPace;
  if(apexWeatherIsWet())top*=.955*perf.wet;
- const decel=(apexWeatherIsWet()?11.2:15.8)*(.91+.13*(rv.brakeSkill||rv.skill))*perf.brake;
+ const decel=apexTyreGripScale(rv)*(apexWeatherIsWet()?11.2:15.8)*(.91+.13*(rv.brakeSkill||rv.skill))*perf.brake;
  let target=top;
  const horizon=lod===2?250:lod===1?238:222,step=lod===2?12:lod===1?14:18;
  for(let d=step;d<=horizon;d+=step){
-   let cs=cornerSafeSpeed(rv.s+d)*diffEq*(.915+.050*(rv.bravery||.9)+.035*(rv.cornerSkill||rv.skill))*perf.aero*driverPace;
+   let cs=cornerSafeSpeed(rv.s+d)*Math.sqrt(apexTyreGripScale(rv))*diffEq*(.915+.050*(rv.bravery||.9)+.035*(rv.cornerSkill||rv.skill))*perf.aero*driverPace;
    if(apexWeatherIsWet())cs*=.845;
    const allowed=Math.sqrt(Math.max(0,cs*cs+2*decel*d));
    if(allowed<target)target=allowed;
@@ -1968,7 +2077,7 @@ function rivalBaseTargetSpeed(rv,diff,lod=1,plan=null){
    const topCap=(rv.baseSpeed+rv.paceOffset)*perf.top*(apexWeatherIsWet()?.955*perf.wet:1);
    const safeScale=.982+.018*(rv.cornerSkill||rv.skill);
    const decelScale=.94+.08*(rv.brakeSkill||rv.skill);
-   rv.aiTargetCache=sharedDriverTrackTargetSpeed(rv.s,{perf,skill:rv.brakeSkill||rv.skill,diff,pace:rv.racePaceProfile||1,safeScale,decelScale,topCap,horizon:lod===2?(mobile?330:350):lod===1?(mobile?280:310):250,step:lod===2?(mobile?10:8):lod===1?(mobile?14:11):18});
+   rv.aiTargetCache=sharedDriverTrackTargetSpeed(rv.s,{car:rv,perf,skill:rv.brakeSkill||rv.skill,diff,pace:rv.racePaceProfile||1,safeScale,decelScale,topCap,horizon:lod===2?(mobile?330:350):lod===1?(mobile?280:310):250,step:lod===2?(mobile?10:8):lod===1?(mobile?14:11):18});
    rv.parityTargetCache=rivalKinematicParityTarget(rv,diff,lod);
    rv.aiTargetLOD=lod;rv.aiTargetNext=now+targetGap+(lod===2?0:stableTrait(rv.uid,32)*.03);
  }
@@ -1982,7 +2091,7 @@ function rivalBaseTargetSpeed(rv,diff,lod=1,plan=null){
 function applyRivalNearDynamics(rv,target,plan,dt,lod){
  if(rv.impactMode&&rv.impactMode!=='NONE')return target;
  if(lod!==2){rv.hybridGripUse=(rv.hybridGripUse||0)*Math.exp(-3*dt);return target;}
- const wet=apexWeatherIsWet(),k=Math.abs(curvatureAt(rv.s+clamp(rv.speed*.18,4,13))),M=800,G=9.81,mu=wet?1.24:1.84;
+ const wet=apexWeatherIsWet(),k=Math.abs(curvatureAt(rv.s+clamp(rv.speed*.18,4,13))),M=800,G=9.81,mu=1.86*apexTyreGripScale(rv);
  const down=Math.min(38000,2.72*rv.speed*rv.speed),latCap=mu*(M*G+down)/M,latNeed=rv.speed*rv.speed*k,use=latCap>0?latNeed/latCap:0;
  rv.hybridGripUse=lerp(rv.hybridGripUse||0,use,clamp(dt*7,0,1));
  const threshold=.91+.055*(rv.cornerSkill||rv.skill);
@@ -2198,8 +2307,9 @@ function updateRivalRacecraft(rv,dt,L,diff){
    if(Number.isFinite(rv.liveTargetLat))line=lerp(rv.liveTargetLat,line,k);
  }
  rv.liveTargetSpeed=target;rv.liveTargetLat=line;rv.livePlanD=plan&&Number.isFinite(plan.d)?plan.d:null;rv.livePlanK=plan&&Number.isFinite(plan.k)?plan.k:null;rv.liveDraft=!!base.draft;
- const accel=(8.45+4.05*(rv.tractionSkill||rv.skill))*launchFactor*perf.traction;
- const brake=(apexWeatherIsWet()?17.5:23.5)*(.91+.11*(rv.brakeSkill||rv.skill))*perf.brake;
+ const tyreGrip=apexTyreGripScale(rv),prevTyreSpeed=rv.speed;
+ const accel=Math.min((8.45+4.05*(rv.tractionSkill||rv.skill))*launchFactor*perf.traction,1.86*tyreGrip*(9.81+Math.min(38000,2.72*rv.speed*rv.speed)/800)*.54);
+ const brake=tyreGrip*(apexWeatherIsWet()?17.5:23.5)*(.91+.11*(rv.brakeSkill||rv.skill))*perf.brake;
  rv.speed+=clamp(target-rv.speed,-brake*dt,accel*dt);
  rv.speed=Math.max(0,rv.speed);
 
@@ -2238,6 +2348,8 @@ function updateRivalRacecraft(rv,dt,L,diff){
  rv.lat=clamp(rv.lat,-excursionLimit,excursionLimit);rv.lastRaceLine=rv.lat;
  rv.contactCooldown=Math.max(0,(rv.contactCooldown||0)-dt);rv.wallCooldown=Math.max(0,(rv.wallCooldown||0)-dt);
  const prevRivalS=rv.s;rv.total+=rv.speed*dt;rv.s=mod((Number.isFinite(rv.progressOriginS)?rv.progressOriginS:0)+rv.total,L);
+ const tyreAccel=(rv.speed-prevTyreSpeed)/Math.max(dt,.001),tyreLat=rv.speed*rv.speed*Math.abs(curvatureAt(rv.s))/9.81,tyreSlide=Math.abs(rv.yawKick||0)+Math.abs(rv.latVel||0)/Math.max(5,rv.speed);
+ apexTyreStep(rv,dt,rv.speed*dt,rv.speed,tyreLat,Math.max(0,-tyreAccel)/18,Math.max(0,tyreAccel)/12,tyreSlide,tyreSlide,rv.mistakeType==="LOCK"&&rv.mistakeTimer>0,false,rivalAbsLat>rivalEnv.half+rivalEnv.curb?1.3:1);
  updateRivalLapTiming(rv,prevRivalS,rv.s,L);
  resolveRivalWallCollision(rv);
  const postEnv=envProfile(rv.s),nowIncidentOff=Math.abs(rv.lat)>postEnv.half+Math.min(postEnv.curb*.45,.35);
@@ -2393,10 +2505,10 @@ function autoCurvatureEnvelope(s){
  // percentil alto: ignora un único pico de geometría/GPX pero no una curva sostenida.
  return Math.max(a[3]||0,(a[2]||0)*1.04);
 }
-function autoPhysicalCornerSpeed(s){
+function autoPhysicalCornerSpeed(s,car=player){
  const k=autoCurvatureEnvelope(s);
  if(k<.00055)return 99;
- const wet=apexWeatherIsWet(),mu=wet?1.24:1.86,M=800,G=9.81;
+ const wet=apexWeatherIsWet(),mu=1.86*apexTyreGripScale(car),M=800,G=9.81;
  const safety=wet?.90:.960;
  let lo=12,hi=99;
  for(let i=0;i<12;i++){
@@ -3340,7 +3452,7 @@ function apexPitStopController(sp){
    player.vx*=.35;player.vz*=.35;if(Math.hypot(player.vx,player.vz)<.16){player.vx=0;player.vz=0;player.speed=0}
    const remain=Math.max(0,(st.serviceUntil||raceT)-raceT);st.hud=`BOX · CAMBIO DE NEUMÁTICOS · ${remain.toFixed(1)} s`;
    player.autoTargetSpeed=0;player.autoTargetSpeedReason='PIT';player.autoTargetSpeedReasonDetail='TYRE_CHANGE';player.autoPhase='BOX PARADA';
-   if(remain<=0){st.serviced=true;st.phase='EXITING';st.serviceCompletedAt=raceT;st.exitStartedAt=raceT;st.exitGateCrossed=false;player.driveNetwork='PIT';player.brakeInput=0;player.throttle=0;player.tyreSet=(player.tyreSet||1)+1;player.tyreAge=0;player.pitStops=(player.pitStops||0)+1;st.hud=`BOX · NEUMÁTICOS NUEVOS · JUEGO ${player.tyreSet}`;const a=$('raceAlert');if(a){a.textContent=st.hud;a.style.color='#8dffb6'}}
+   if(remain<=0){st.serviced=true;st.phase='EXITING';st.serviceCompletedAt=raceT;st.exitStartedAt=raceT;st.exitGateCrossed=false;player.driveNetwork='PIT';player.brakeInput=0;player.throttle=0;player.tyreSet=(player.tyreSet||1)+1;player.tyreAge=0;player.pitStops=(player.pitStops||0)+1;st.hud=`BOX · SERVICIO COMPLETADO`;const a=$('raceAlert');if(a){a.textContent=st.hud;a.style.color='#8dffb6'}}
    return{steer:0,throttle:0,brake:1,target:0,boost:false,reverse:false,targetLat:player.lat,phase:'BOX PARADA'};
  }
  if(st.phase==='EXITING'){
@@ -3875,7 +3987,7 @@ function update(dt,runHeavy=true,heavyDt=dt){
    updateAudio(dt);if(countdown<=0){mode="race";if(currentSession==='race')apexArmRaceGridTiming();}return;
  }
  if(mode!=="race")return;
- raceT+=dt;apexWeatherUpdate(dt);
+ raceT+=dt;apexWeatherUpdate(dt);apexTyreUpdateEnvironment();
  if(player.crossedStart&&(demoMode||assistMode)){player.autoLapSeconds=(player.autoLapSeconds||0)+dt;player.autoUsedThisLap=true;}
  if(currentSession!=='race'&&Number.isFinite(sessionLimit)&&!sessionExpired&&raceT>=sessionLimit){
    sessionExpired=true;

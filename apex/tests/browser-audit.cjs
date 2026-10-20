@@ -40,10 +40,14 @@ async function bounded(label,operation,ms=180000){
    for(const [dir,custom] of cases){
     report({test:'load-start',dir,custom,mobileEmulation:mobile});
     await bounded('load '+dir,()=>page.evaluate(async({dir,custom})=>__apexAudit.load(dir,custom),{dir,custom}));
+    const initialTyres=await page.evaluate(()=>__apexAudit.tyres());assert.equal(initialTyres.rivals.length,21);assert.ok(initialTyres.player.compound);assert.ok(initialTyres.profile.trackAbrasion>0);
     for(const camera of ['cockpit','tcam','chase']){
      assert.equal(await page.evaluate(camera=>__apexAudit.camera(camera),camera),true);
      await page.waitForTimeout(1500);await page.evaluate(()=>__apexAudit.reset());await page.waitForTimeout(6000);
      const result=await page.evaluate(()=>__apexAudit.snapshot());finiteState(result);assert.equal(result.glError,0);assert.equal(result.backend,'webgl2');assert.equal(result.camera,camera);assert.ok(result.rivals>0);assert.ok(result.summary&&result.summary.frames>0);assert.equal(result.mode,'race');assert.ok(result.simulationSeconds>0);assert.equal(result.contextLost,false);
+     const tyres=await page.evaluate(()=>__apexAudit.tyres());
+     for(const t of [tyres.player,...tyres.rivals]){assert.ok(Number.isFinite(t.distance));for(const axle of [t.front,t.rear])for(const v of Object.values(axle))assert.ok(Number.isFinite(v));}
+     assert.ok(tyres.rivals.some(t=>t.distance>0));assert.ok(tyres.label.includes('°C'));
      report({test:'browser-rAF',mobileEmulation:mobile,...result});
     }
     // Real production input/update path; synthetic browser events and analog samples.
