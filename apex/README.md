@@ -1,6 +1,6 @@
 # APEX Formula 26
 
-Versión de desarrollo: **v0.13.22 · PRE-RELEASE**
+Versión de desarrollo: **v0.13.23 · PRE-RELEASE**
 
 Archivo fuente original:
 `Apex_Formula_26_v5_230_62_8_6_7_6_4_17_CONTROL_CLASICO_GP4.html`
@@ -257,3 +257,15 @@ Primera etapa funcional de optimización sobre `6f0cfb1`, sin cambiar los 28 fra
 **Comparación sintética:** 128 segmentos de asfalto/pianos: 107.520 bytes dinámicos anteriores frente a 15.360 bytes de índices en una selección nueva, más 9.288 bytes de posiciones subidas una sola vez. Selección estable durante 1.000 frames: cero nuevas transferencias o reservas de buffers/arrays de índices. Se mantienen colores y recetas de triángulos tras conversión Float32. La agrupación utiliza ocho llamadas para esas bases frente al lote dinámico anterior: intercambio explícito de algunas llamadas por menos trabajo CPU y tráfico. **No son FPS medidos.**
 
 **Pendiente real:** Chrome vuelve a fallar al arrancar por `socket() failed: Operation not permitted`. No se certifican la inspección visual de los 23 circuitos, los FPS/p95/p99 en navegador/Android ni sesiones prolongadas físicas. El runner ahora incluye Madrid, Mónaco y Spa; `ALL_CIRCUITS=1` amplía el render a las 23 bases y ejecuta los autodiagnósticos de mallas/cronometraje. Sigue siendo un smoke test y no sustituye revisar pit lane, guardados, giroscopio, modos de carrera y escenarios privados del usuario. Detalles en [AUDITORIA_V01322.md](AUDITORIA_V01322.md).
+
+## v0.13.23 — Fase 7: primera revisión de conducción
+
+Corrección de la oscilación numérica de baja velocidad mediante un paso lateral/guiñada linealmente implícito, común a los perfiles y limitado a menos de 12 m/s. Dirección táctil por la rampa de 100 Hz, selección del dispositivo que gira, elipse de agarre coherente, transformación completa del freno delantero y freno motor sin deriva desde reposo. Se conservan coeficientes de prestaciones, perfiles, contacto con el suelo, circuitos y formatos guardados.
+
+`apexDrivingDiagnostics()` ofrece el estado físico y de ayudas. `node apex/tests/driving-audit.cjs --json` pasa 13 grupos reproducibles: 499 → 0 alternancias de guiñada en el caso lento, 1,03263 → 1,00000 de uso combinado máximo, frenada recta y giro rápido de referencia conservados; estados idénticos con el scheduler de producción a 15/30/60/144 FPS simulados. Son pruebas aisladas Node, no sesiones reales. El microbenchmark registra un pequeño coste adicional por paso; no certifica FPS ni ausencia de regresión en Android. Las regresiones gráficas y los 23 SVG/JSON base más Madrid detallado pasan sin cambios de assets.
+
+La continuación añade CI con Chromium: pasan sesiones cortas en Madrid detallado, Mónaco, Spa, Monza y Suzuka, tres cámaras, cuatro entradas sintéticas, migración/recarga de guardado esquema 2, ida/vuelta Canvas y autodiagnósticos de loader/cronometraje/mallas de las 23 entradas del catálogo (Madrid conserva el override importado). Ejecutado en escritorio y emulación móvil con WebGL por software; no certifica sensaciones, vueltas completas, píxeles ni FPS en hardware real.
+
+El build `2026.10.20.04` corrige además la selección móvil de terreno: sus bloques 2×2 mantienen el origen par utilizado por la precarga. Antes podían cambiar de paridad al desplazar la cámara y perder sus recortes cacheados. Prueba reproducible: 229/230 → 5/13 claves nuevas al cruzar un límite 2 cm; 230 → 0 recortes nuevos en la región precargada. No cambia el algoritmo de recorte ni la selección de escritorio. `node apex/tests/terrain-selection-audit.cjs` comprueba esa regresión, máscaras parciales y portales.
+
+Los builds 05–07 diagnostican el bloqueo del automático contra el límite SVG autoritativo y reutilizan la recuperación existente con puertas/cuerdas comprobadas, reversa corta y alineación al alcanzar asfalto válido. No alteran la contención manual ni añaden fuerzas de rescate. CI compara main con esta versión en cinco circuitos con/sin rivales y vigila paradas prolongadas. También prueba pérdida/restauración WebGL, FP1 y clasificación. Los logs se guardan como artefactos de Actions. Las sensaciones, Android/GPU físicos y sesiones largas requieren validación humana. Modelo y resultados en [AUDITORIA_V01323.md](AUDITORIA_V01323.md); cierre y comparación en [CIERRE_FASE7_V01323.md](CIERRE_FASE7_V01323.md).

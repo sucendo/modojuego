@@ -228,7 +228,10 @@ function apexCollectTerrainPlateCells(cam){
    minZ=clamp(Math.floor((cam.z-radius-g.minZ)/g.cell),0,g.nz-2),
    maxZ=clamp(Math.ceil((cam.z+radius-g.minZ)/g.cell),0,g.nz-2),
    maxCells=mobile?420:1050,cells=[];
- for(let iz=minZ;iz<=maxZ;iz+=step)for(let ix=minI;ix<=maxI;ix+=step){
+ // Match the immutable 2x2 lattice used by owner precompilation and GPU keys.
+ // Camera-relative odd origins used to shift every coarse block at a cell
+ // boundary, missing the precompiled even-origin clips and rebuilding them.
+ for(let iz=minZ-minZ%step;iz<=maxZ;iz+=step)for(let ix=minI-minI%step;ix<=maxI;ix+=step){
    const x1=Math.min(ix+step,g.nx-1),z1=Math.min(iz+step,g.nz-1);
    const covered=apexPhase4TerrainCoverage(g,ix,iz,x1,z1);
    if(!covered)continue;

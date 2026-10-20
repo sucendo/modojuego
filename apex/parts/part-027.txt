@@ -82,6 +82,10 @@
  // cinemática que oponer. Usar +1 aquí generaba una fuerza hacia atrás artificial y
  // podía dejar AUT peleando contra sus propios frenos al intentar arrancar.
  const dirU=Math.abs(u)>.25?Math.sign(u):0;
+ // Contact velocity in each wheel frame, shared by braking and lateral slip.
+ const cD=Math.cos(delta),sD=Math.sin(delta),vfY=v+A*r,
+  frontLong=u*cD+vfY*sD,frontLat=-u*sD+vfY*cD,rearLat=v-B*r,
+  dirFront=Math.abs(frontLong)>.25?Math.sign(frontLong):0;
 
  const maxLongF=finiteClamp(muDrive*FzF,50,52000,5000),maxLongR=finiteClamp(muDrive*FzR,50,56000,5500);
  const maxLatF=finiteClamp(muLat*FzF*dmgF.frontGrip,50,52000,5000),maxLatR=finiteClamp(muLat*FzR*dmgF.rearGrip,50,56000,5500);
@@ -97,7 +101,7 @@
    const capF=maxLongF*.89/Math.max(.05,brakeBias),capR=maxLongR*.89/Math.max(.05,1-brakeBias),absCap=Math.min(capF,capR);
    if(brakeWanted>absCap){brakeWanted=lerp(absCap,brakeWanted,.08);player.absAssist=true;}
  }
- let FxF=-dirU*Math.min(finite(brakeWanted*brakeBias,0),maxLongF*.965);
+ let FxF=-dirFront*Math.min(finite(brakeWanted*brakeBias,0),maxLongF*.965);
  let FxR=finite(driveWanted,0)-dirU*Math.min(finite(brakeWanted*(1-brakeBias),0),maxLongR*.965);
 
  // Tracción trasera: si pedimos más fuerza que la rueda puede transmitir, patina.
@@ -107,16 +111,9 @@
  player.lockR=brakeWanted*(1-brakeBias)>maxLongR*.96&&player.brakeInput>.75;
 
  // Círculo de fricción: acelerar/frenar roba capacidad lateral.
- const longUseF=clamp(Math.abs(FxF)/Math.max(maxLongF,1),0,.93),longUseR=clamp(Math.abs(FxR)/Math.max(maxLongR,1),0,.93);
- const latCapF=finite(maxLatF*Math.sqrt(Math.max(.12,1-longUseF*longUseF)),0);
- const latCapR=finite(maxLatR*Math.sqrt(Math.max(.12,1-longUseR*longUseR)),0);
-
- // Velocidad de cada contacto respecto a la orientación de su rueda.
- const cD=Math.cos(delta),sD=Math.sin(delta);
- const vfY=v+A*r;
- const frontLong=u*cD+vfY*sD;
- const frontLat=-u*sD+vfY*cD;
- const rearLat=v-B*r;
+ const longUseF=clamp(Math.abs(FxF)/Math.max(maxLongF,1),0,1),longUseR=clamp(Math.abs(FxR)/Math.max(maxLongR,1),0,1);
+ const latCapF=finite(maxLatF*Math.sqrt(Math.max(0,1-longUseF*longUseF)),0);
+ const latCapR=finite(maxLatR*Math.sqrt(Math.max(0,1-longUseR*longUseR)),0);
 
  const slipF=finiteClamp(Math.atan2(frontLat,Math.max(2.2,Math.abs(frontLong))),-.70,.70,0);
  const slipR=finiteClamp(Math.atan2(rearLat,Math.max(2.2,Math.abs(u))),-.70,.70,0);
@@ -132,15 +129,15 @@
  const tireR=latCapR>1?finiteClamp(latCapR*Math.tanh(rawR/(latCapR*1.22)),-latCapR,latCapR,0):0;
 
  // Fuerza delantera transformada desde el eje girado al chasis.
- const FxTireF=sD*tireF;
- const FyF=-cD*tireF;
+ const FxTireF=cD*FxF+sD*tireF;
+ const FyF=sD*FxF-cD*tireF;
  const FyR=-tireR;
 
  // Drag aerodinámico; DRS y rebufo lo reducen.
  let dragCoeff=.36*(player.drs?.82:1)*(player.slipstream?.90:1)*(1+(1-dmgF.aero)*.28);
  const aeroDrag=dragCoeff*u*Math.abs(u);
- const coast=player.throttle<.05?M*(apexControls.engineBrake*.325)*Math.sign(u||1):0;
- const Fx=FxF+FxR+FxTireF-aeroDrag-coast;
+ const coast=apexEngineBrakeForce(u,player.throttle,M,apexControls.engineBrake,dt,aeroDrag);
+ const Fx=FxR+FxTireF-aeroDrag-coast;
  const Fy=FyF+FyR;
 
  // Ecuaciones del modelo bicicleta en coordenadas del coche.
@@ -149,7 +146,21 @@
  const dr=finiteClamp((A*FyF-B*FyR)/IZ,-22,22,0);
 
  const uBeforeStep=u;
- u=finiteClamp(u+du*dt,-125,125,0);v=finiteClamp(v+dv*dt,-65,65,0);r=finiteClamp(r+dr*dt,-2.7,2.7,0);
+ u=finiteClamp(u+du*dt,-125,125,0);
+ const implicitWeight=clamp((12-sp)/6,0,1);player.lowSpeedImplicit=implicitWeight;
+ if(implicitWeight>0){
+  // Jacobian of the existing smooth, saturated tyre forces. No new tyre model.
+  const fDen=Math.max(2.2,Math.abs(frontLong)),rDen=Math.max(2.2,Math.abs(uBeforeStep)),
+   dAlphaF=(cD*fDen-(Math.abs(frontLong)>2.2?frontLat*Math.sign(frontLong)*sD:0))/(fDen*fDen+frontLat*frontLat),
+   dAlphaR=rDen/(rDen*rDen+rearLat*rearLat),
+   kF=Math.abs(slipF)<.70&&latCapF>1?Math.max(0,cD*CF/1.18*(1-(tireF/latCapF)**2)*dAlphaF):0,
+   kR=Math.abs(slipR)<.70&&latCapR>1?Math.max(0,CR/1.22*(1-(tireR/latCapR)**2)*dAlphaR):0;
+  apexSolveLateralIncrement(dv,dr,uBeforeStep,kF,kR,implicitWeight,dt,M,A,B,IZ,apexLateralStepScratch);
+  v=finiteClamp(v+apexLateralStepScratch[0],-65,65,0);r=finiteClamp(r+apexLateralStepScratch[1],-2.7,2.7,0);
+ }else{v=finiteClamp(v+dv*dt,-65,65,0);r=finiteClamp(r+dr*dt,-2.7,2.7,0);}
+ // Save scalar force ratios; diagnostic hypot runs only when requested.
+ player.frontLongUse=longUseF;player.rearLongUse=longUseR;
+ player.frontLateralUse=tireF/maxLatF;player.rearLateralUse=tireR/maxLatR;
  // Un freno no debe hacer cruzar por sí solo el cero y convertir avance en marcha
  // atrás (o viceversa). La inversión de sentido sólo la decide el modo R.
  if(!player.reverse&&player.brakeInput>.08&&uBeforeStep>=0&&u<0)u=0;
@@ -227,7 +238,7 @@
  const moveDx=player.vx*dt,moveDz=player.vz*dt,preMoveX=player.x,preMoveZ=player.z,preMoveInside=apexDrivableAreaContains(player.x,player.z);
  const wallHitThisFrame=movePlayerWithWalls(moveDx,moveDz);
  let drivableBoundaryHitThisFrame=false;const postMoveInside=apexDrivableAreaContains(player.x,player.z);
- if(preMoveInside===true&&postMoveInside===false){player.x=preMoveX;player.z=preMoveZ;player.vx*=.42;player.vz*=.42;player.yawRate*=.55;drivableBoundaryHitThisFrame=true;frameShake=Math.max(frameShake,3.1)}
+ if(preMoveInside===true&&postMoveInside===false){player.lastDrivableBoundaryHit=raceT;player.x=preMoveX;player.z=preMoveZ;player.vx*=.42;player.vz*=.42;player.yawRate*=.55;drivableBoundaryHitThisFrame=true;frameShake=Math.max(frameShake,3.1)}
  if((demoMode||assistMode)&&wallHitThisFrame)player.autoLastWallHit=raceT;
 
  // Relación con el circuito únicamente para superficies/progreso.
@@ -262,8 +273,8 @@
  else if(player.surfaceKind==="GRASS")frameShake=Math.max(frameShake,2.8);
 
  // Telemetría de dinámica.
- const useF=latCapF>1?Math.abs(FyF)/latCapF:1;
- const useR=latCapR>1?Math.abs(FyR)/latCapR:1;
+ const useF=latCapF>1?Math.abs(tireF)/latCapF:1;
+ const useR=latCapR>1?Math.abs(tireR)/latCapR:1;
  player.frontUse=useF;player.rearUse=useR;
  let balance="ESTABLE";
  if(player.lockF||player.lockR)balance="BLOQUEO";
@@ -800,11 +811,8 @@ function bt(id,k){
    if(demoMode&&(k==="left"||k==="right"||k==="gas"||k==="brake"))setAutoDriveMode(0,true);
    try{if(q.pointerId!=null)e.setPointerCapture(q.pointerId)}catch(_e){}
    keys[k]=true;e.classList.add("on");apexInputDevice="touch";
-   // Respuesta táctil inmediata, pero sin el volantazo del 72 % en modo asistido.
-   if(player&&mode==="race"&&(k==="left"||k==="right")){
-     const sign=k==="left"?-1:1,speedKph=finite(player.speed,0)*3.6,speedNorm=clamp((speedKph-65)/200,0,1),cfg=apexDriveSteeringConfig(speedNorm,"touch"),target=sign*cfg.authority,snap=apexControls.driveProfile==="assisted"?.16:(apexControls.driveProfile==="simulation"?.28:.62);
-     player.steer=clamp(lerp(finite(player.steer,0),target,snap),-1,1);
-   }
+   // Inputs are sampled by the common 100 Hz steering ramp. Pointer events
+   // never modify the physical steering state outside that scheduler.
  };
  const off=q=>{q.preventDefault();keys[k]=false;e.classList.remove("on")};
  e.onpointerdown=on;e.onpointerup=off;e.onpointercancel=off;e.onlostpointercapture=off;

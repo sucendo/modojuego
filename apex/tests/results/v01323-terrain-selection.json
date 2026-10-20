@@ -1,0 +1,27 @@
+{
+  "scope": "SYNTHETIC_PRODUCTION_SELECTION_AND_CACHE_KEYS_NOT_RENDER_TIME",
+  "baseline": "5af6e534d4fe4de5aa13f14f3b4f5a524c45cc64",
+  "scenarios": [
+    {
+      "axis": "x",
+      "cameraMoveM": 0.02,
+      "newCoarseCacheKeysBefore": 229,
+      "newCoarseCacheKeysAfter": 5,
+      "selectedAfter": 420
+    },
+    {
+      "axis": "z",
+      "cameraMoveM": 0.02,
+      "newCoarseCacheKeysBefore": 230,
+      "newCoarseCacheKeysAfter": 13,
+      "selectedAfter": 389
+    }
+  ],
+  "precompiledCache": {
+    "beforeNewClips": 230,
+    "afterNewClips": 0
+  },
+  "desktopIdentical": true,
+  "ownerClippingUnchanged": true,
+  "partialMaskAndPortals": true
+}
