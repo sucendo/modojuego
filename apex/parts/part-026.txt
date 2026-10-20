@@ -2728,11 +2728,12 @@ function autoRecoveryGateClear(targetLat){
  // hasta un punto lejano (eso volvería a penalizar horquillas y curvas cerradas).
  const q=poseAt(player.s+2.5),tx=q.x+q.nx*targetLat,tz=q.z+q.nz*targetLat,dx=tx-player.x,dz=tz-player.z;
  const dist=Math.hypot(dx,dz);if(apexDrivableAreaContains(tx,tz)===false)return false;if(dist<1.0)return true;
- const h=Math.atan2(dx,dz),steps=Math.max(3,Math.min(8,Math.ceil(dist/1.25)));let hint=player.trackIndex;
+ const h=Math.atan2(dx,dz),steps=Math.max(3,Math.min(8,Math.ceil(dist/1.25)));let hint=player.trackIndex,entered=apexDrivableAreaContains(player.x,player.z)!==false;
  for(let i=2;i<=steps;i++){
    const t=i/steps,x=player.x+dx*t,z=player.z+dz*t;
    const st=nearestTrackState(x,z,hint,{radius:28,allowGlobal:false});hint=st.index;
-   const c=wallContactAtPose(x,z,h,hint);if(c||apexDrivableAreaContains(x,z)===false)return false;
+   const inside=apexDrivableAreaContains(x,z);if(inside===true)entered=true;
+   const c=wallContactAtPose(x,z,h,hint);if(c||(inside===false&&entered))return false;
  }
  return true;
 }
@@ -2741,14 +2742,15 @@ function autoStraightRecoveryCorridor(tx,tz){
  // escapatoria/cesped por una emergencia, pero jamás atravesar una barrera o el
  // límite físico de contención del escenario.
  const dx=tx-player.x,dz=tz-player.z,dist=Math.hypot(dx,dz);if(apexDrivableAreaContains(tx,tz)===false)return{clear:false,dist,minMargin:0};if(dist<2)return{clear:true,dist,minMargin:99};
- const heading=Math.atan2(dx,dz),steps=Math.max(7,Math.min(70,Math.ceil(dist/1.15)));let hint=player.trackIndex,minMargin=99;
+ const heading=Math.atan2(dx,dz),steps=Math.max(7,Math.min(70,Math.ceil(dist/1.15)));let hint=player.trackIndex,minMargin=99,entered=apexDrivableAreaContains(player.x,player.z)!==false;
  for(let i=1;i<=steps;i++){
    const t=i/steps,x=player.x+dx*t,z=player.z+dz*t;
    const st=nearestTrackState(x,z,hint,{radius:28,allowGlobal:false});hint=st.index;
    const e=envProfile(st.s),wgL=wallGeometryAtS(st.s,1),wgR=wallGeometryAtS(st.s,-1);
    const margin=st.lat>=0?(wgL.edge-st.lat):(wgR.edge+st.lat);minMargin=Math.min(minMargin,margin);
    // Margen para el ancho del F1; no esperamos al contacto matemático de la carrocería.
-   if(margin<1.18||wallContactAtPose(x,z,heading,hint)||apexDrivableAreaContains(x,z)===false)return{clear:false,dist,minMargin,blockedS:st.s};
+   const inside=apexDrivableAreaContains(x,z);if(inside===true)entered=true;
+   if(margin<1.18||wallContactAtPose(x,z,heading,hint)||(inside===false&&entered))return{clear:false,dist,minMargin,blockedS:st.s};
  }
  return{clear:true,dist,minMargin};
 }
@@ -2847,6 +2849,18 @@ function autoRecoverySteerToLane(targetLat,sp,mode){
  if(Math.abs(player.lat)>guard){const inward=Math.sign(player.lat)||1;steer=lerp(steer,inward*(wallish?.96:.84),.58)}
  return{steer,err,crossErr};
 }
+function autoBoundaryRejoinPoint(){
+ // A short reachable point ahead provides turning room; aiming laterally at the
+ // same s can trap ALIGN at zero speed. All candidate chords use real boundaries.
+ let best=null,bestScore=Infinity;
+ for(const d of [4,8,12,18]){
+  const s=mod(player.s+d,trackData.km*1000),q=poseAt(s);
+  if(!autoStraightRecoveryCorridor(q.x,q.z).clear)continue;
+  const dx=q.x-player.x,dz=q.z-player.z,turn=Math.abs(angleDiff(Math.atan2(dx,dz),player.heading)),score=turn*6+Math.hypot(dx,dz)*.12;
+  if(score<bestScore){bestScore=score;best={s,lane:0,x:q.x,z:q.z,created:raceT};}
+ }
+ return best;
+}
 function autoRecoveryController(sp,env){
  const tr=player.track||nearestTrackState(player.x,player.z,player.trackIndex,{radius:28,allowGlobal:false});
  const ps=playerSurfaceState(),trackHeading=Math.atan2(tr.tx,tr.tz),headingErr=angleDiff(trackHeading,player.heading),align=Math.cos(headingErr);
@@ -2888,6 +2902,7 @@ function autoRecoveryController(sp,env){
    player.autoPassSide=0;player.autoPassUntil=0;
  }
  const R=player.autoRecovery;if(!R)return null;
+ if(boundaryBlocked&&!R.boundaryEpisode){R.boundaryEpisode=true;if(R.emergency){R.emergencyPlan=null;R.emergencyEdgeLane=0;R.emergencyReverse=null;}}
  let elapsed=raceT-R.since,moved=Math.hypot(player.x-R.startX,player.z-R.startZ);
  const episodeElapsed=raceT-(R.episodeStart||R.since);
  const state={outsideTrack,deepOff,align,badlyCrossed};
@@ -2914,8 +2929,8 @@ function autoRecoveryController(sp,env){
    // Objetivo de rescate BLOQUEADO: primero vuelve al borde del mismo lado por el que
    // salió. No persigue puntos 10-60 m por delante mientras está enterrado en grava.
    if(!R.emergencyPlan){
-     const q0=poseAt(player.s),edgeLane=boundaryBlocked?0:clamp(eSide*Math.min(eLimit,Math.max(.75,env.half-1.15)),-eLimit,eLimit);
-     R.emergencyPlan={s:player.s,lane:edgeLane,x:q0.x+q0.nx*edgeLane,z:q0.z+q0.nz*edgeLane,created:raceT};
+     const q0=poseAt(player.s),edgeLane=R.boundaryEpisode?0:clamp(eSide*Math.min(eLimit,Math.max(.75,env.half-1.15)),-eLimit,eLimit);
+     R.emergencyPlan=(R.boundaryEpisode&&autoBoundaryRejoinPoint())||{s:player.s,lane:edgeLane,x:q0.x+q0.nx*edgeLane,z:q0.z+q0.nz*edgeLane,created:raceT};
      R.emergencyEdgeLane=edgeLane;R.emergencyBestLat=absLat;R.emergencyLastImprove=raceT;R.emergencyAssistAnnounced=false;
    }
    if(absLat<(R.emergencyBestLat??absLat)-.18){R.emergencyBestLat=absLat;R.emergencyLastImprove=raceT;}
@@ -2939,12 +2954,13 @@ function autoRecoveryController(sp,env){
 
    // Sólo se hace BACKOUT si existe contacto físico con barrera. En grava libre, dar
    // marcha atrás por sistema podía alejarnos aún más de la pista durante minutos.
-   if(contact&&R.emergencyStage!=='BACKOUT'&&stageElapsed>.12){R.emergencyStage='BACKOUT';R.emergencySince=raceT;R.startX=player.x;R.startZ=player.z;}
+   const boundaryPinned=R.boundaryEpisode&&sp<1&&stageElapsed>.7&&(boundaryBlocked||R.emergencyStage==='ALIGN');
+   if((contact||boundaryPinned)&&R.emergencyStage!=='BACKOUT'&&stageElapsed>.12){R.emergencyStage='BACKOUT';R.emergencySince=raceT;R.startX=player.x;R.startZ=player.z;R.boundaryBackoutHeading=player.heading;}
    if(R.emergencyStage==='BACKOUT'){
      const nx=contact?contact.nx:(player.autoLastWallNx||0),nz=contact?contact.nz:(player.autoLastWallNz||0);
-     const escapeH=Math.atan2(-nx,-nz),vehicleTarget=escapeH+Math.PI,err=angleDiff(vehicleTarget,player.heading);
+     const escapeH=Math.atan2(-nx,-nz),vehicleTarget=!contact&&R.boundaryEpisode?finite(R.boundaryBackoutHeading,player.heading):escapeH+Math.PI,err=angleDiff(vehicleTarget,player.heading);
      const steer=clamp(-err*1.55,-.92,.92),movedE=Math.hypot(player.x-R.startX,player.z-R.startZ);
-     if((!contact&&movedE>1.0)||movedE>2.6||stageElapsed>1.55){R.emergencyStage='PULL_IN';R.emergencySince=raceT;R.startX=player.x;R.startZ=player.z;}
+     if((!contact&&movedE>1.0)||movedE>2.6||stageElapsed>1.55){R.emergencyStage='PULL_IN';R.emergencySince=raceT;R.startX=player.x;R.startZ=player.z;if(R.boundaryEpisode){R.emergencyPlan=null;R.emergencyReverse=null;}}
      return{steer,throttle:.62,brake:0,target:6.5,boost:false,reverse:true,phase:'RECUP · LIBERA MURO',recoveryAssist:true,recoveryHeading:vehicleTarget,recoveryForcePull:false};
    }
 
@@ -2960,7 +2976,7 @@ function autoRecoveryController(sp,env){
      const aerr=Math.abs(err),target=aerr>1.20?5.5:aerr>.70?9.5:hardPull?14:12;
      let throttle=sp<target-1?clamp(.42+(target-sp)/18,.38,.82):.10,brake=sp>target+1.5?clamp((sp-target)/8,.10,.48):0;
      if(aerr>1.35&&sp>6.5){throttle=.10;brake=Math.max(brake,.18);}
-     const nearRibbon=absLat<env.half+env.curb+.85||dist<2.6;
+     const nearRibbon=R.boundaryEpisode?(dist<2.0||absLat<1.1):(absLat<env.half+env.curb+.85||dist<2.6);
      if(nearRibbon){R.emergencyStage='ALIGN';R.emergencySince=raceT;R.emergencyReverse=false;R.alignStableSince=0;R.startX=player.x;R.startZ=player.z;R.emergencyEdgeLane=R.emergencyPlan.lane;}
      return{steer,throttle,brake,target,boost:false,reverse:rev,phase:'RECUP · VUELVE A PISTA',recoveryAssist:true,recoveryHeading:vehicleTarget,recoveryForcePull:hardPull};
    }
@@ -3377,7 +3393,7 @@ function demoDriverControl(){
    const recoveryTarget=Math.max(0,finite(recovery.target,0));
    player.autoBaseTrackTargetSpeed=Math.max(recoveryTarget,autoPhysicalCornerSpeed(player.s)*.97);
    player.autoPreTrafficTargetSpeed=recoveryTarget;player.autoTrafficSpeedLimit=null;
-   player.autoTargetSpeedReason="RECOVERY";player.autoTargetSpeedReasonDetail=recovery.phase||"RECOVERY";
+   player.autoTargetSpeedReason="RECOVERY";player.autoTargetSpeedReasonDetail=recovery.phase||"RECOVERY";player.autoPhase=recovery.phase||"RECUP";
    player.autoTargetSpeed=recoveryTarget;player.autoLimiterReduction=Math.max(0,player.autoBaseTrackTargetSpeed-recoveryTarget);
    player.autoDecisionAfterGeometry=recoveryTarget;player.autoDecisionBeforeStability=recoveryTarget;player.autoDecisionAfterStability=recoveryTarget;player.autoRawTargetLat=player.autoTargetLat;player.autoDesiredHeading=player.heading;player.autoLaneRate=0;
    player.autoRecoveryAssist=!!recovery.recoveryAssist;player.autoRecoveryForcePull=!!recovery.recoveryForcePull;
