@@ -79,3 +79,40 @@ jobs:
         with:
           name: apex-chromium-${{ matrix.device }}
           path: /tmp/apex-results/
+
+  autopilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          filter: blob:none
+          sparse-checkout: apex
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser runner
+        run: |
+          npm install --prefix "$RUNNER_TEMP/apex-browser" --no-package-lock --no-save playwright@1.62.1
+          node "$RUNNER_TEMP/apex-browser/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Compare automatic driving with main
+        env:
+          PLAYWRIGHT_MODULE_PATH: ${{ runner.temp }}/apex-browser/node_modules/playwright
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/apex-auto-results
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/apex-auto-results/server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid"' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8765/apex/apex.html > /dev/null; then break; fi
+            sleep 1
+          done
+          node apex/tests/autopilot-audit.cjs 2>&1 | tee /tmp/apex-auto-results/autopilot.jsonl
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: apex-autopilot-comparison
+          path: /tmp/apex-auto-results/
