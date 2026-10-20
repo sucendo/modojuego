@@ -1345,6 +1345,7 @@ body.gyro-active.mobile-landscape #toolLeft #center{
     <div class="timeRow currentRow"><span class="timeCap">ACTUAL</span><span class="timeVal" id="raceTime">00:00.000</span></div>
   </div>
 </div>
+ <section id="pitStrategyPanel" class="hidden" aria-label="Estrategia de boxes" style="position:absolute;right:max(8px,env(safe-area-inset-right));bottom:76px;width:min(280px,65vw);padding:10px;background:#0a1422ee;border:1px solid #38536f;border-radius:10px;z-index:30;font-size:11px;pointer-events:auto"><div style="display:flex;justify-content:space-between;align-items:center"><b>BOXES · NEUMÁTICOS</b><button id="pitStrategyClose" class="btn" aria-label="Cerrar estrategia">×</button></div><p id="pitCurrentTyres"></p><label for="pitNextCompound">Próxima parada</label><select id="pitNextCompound" style="width:100%;margin:6px 0"></select><div id="pitWeatherInfo"></div><p id="pitRecommendation" style="margin-bottom:0"></p></section>
  <div id="wheelData" class="hidden"></div><div id="lb"></div><canvas id="mini"></canvas>
  <div id="bars"><div id="tyreBadge" title="Compuesto · desgaste · temperatura" style="font-variant-numeric:tabular-nums">M · 0% · 75°C</div><div>ERS <span id="ersPct">100%</span></div><div class="bar"><i id="ersFill"></i></div><div id="drsState" style="margin-top:6px;color:#9aa6b5">DRS —</div><div id="surfaceState" style="margin-top:4px;color:#9aa6b5">PISTA</div><div style="margin-top:6px">COCHE <span id="hpPct">100%</span></div><div class="bar"><i id="hpFill" style="background:linear-gradient(90deg,#55f18b,#ffe55b,#ff405d)"></i></div></div>
 </section>
@@ -1352,7 +1353,7 @@ body.gyro-active.mobile-landscape #toolLeft #center{
 <section id="touch" class="hidden">
  <button id="left" class="tb">‹</button><button id="right" class="tb">›</button><button id="brake" class="tb">FRENO</button><button id="gas" class="tb">GAS</button>
  <div id="toolHud">
-  <div id="toolLeft" class="toolBar">
+  <div id="toolLeft" class="toolBar"><button id="pitStrategyBtn" class="tb" title="Estrategia de boxes · Y" aria-controls="pitStrategyPanel" aria-expanded="false">EST</button>
    <button id="gyro" class="tb" title="Giroscopio" aria-label="Giroscopio">GYR</button><button id="center" class="tb" title="Restablecer / recalibrar giroscopio" aria-label="Restablecer giroscopio">RST</button><button id="invert" class="tb" title="Invertir giroscopio" aria-label="Invertir giroscopio">INV</button><button id="demo" class="tb" title="Conducción automática" aria-label="Conducción automática">AUT</button><button id="diag" class="tb" title="Diagnóstico" aria-label="Diagnóstico">DIA</button><button id="telemetryBtn" class="tb" title="Telemetría" aria-label="Telemetría">TEL</button><button id="ers" class="tb" title="ERS" aria-label="ERS">ERS</button><button id="box" class="tb" title="Solicitar parada en boxes · sólo AUT" aria-label="Parada en boxes" disabled>BOX</button>
   <button id="limiterBtn" class="tb" title="Limitador de boxes · L">LIM</button>
   </div><div id="toolRight" class="toolBar">
@@ -1440,7 +1441,7 @@ body.gyro-active.mobile-landscape #toolLeft #center{
 // Apex Formula 26 v5.80 · Progressive Mobile Quality
 // v5.230.36: cedemos un frame al navegador para que la portada pueda pintarse antes del arranque pesado.
 requestAnimationFrame(()=>setTimeout(()=>{
-const APP_VERSION="v0.14.0",APP_CHANNEL="PRE-RELEASE",APP_BUILD="2026.10.20.08A";
+const APP_VERSION="v0.14.1",APP_CHANNEL="PRE-RELEASE",APP_BUILD="2026.10.20.08B";
 const $=id=>document.getElementById(id),clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),mod=(n,m)=>((n%m)+m)%m,lerp=(a,b,t)=>a+(b-a)*t;
 const appStorage=(()=>{try{return window.localStorage}catch(e){return{getItem(){return null},setItem(){},removeItem(){},clear(){}}}})();
 const finite=(v,f=0)=>Number.isFinite(v)?v:f,finiteClamp=(v,a,b,f=0)=>clamp(finite(v,f),a,b);

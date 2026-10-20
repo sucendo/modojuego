@@ -28,6 +28,8 @@ jobs:
         run: |
           mkdir -p /tmp/apex-results
           node apex/tests/render-audit.cjs > /tmp/apex-results/render.txt
+          python3 apex/tests/pit-geometry-audit.py > /tmp/apex-results/pit-geometry.json
+          node apex/tests/pit-tyres-audit.cjs > /tmp/apex-results/pit-tyres.json
           node apex/tests/tyres-audit.cjs > /tmp/apex-results/tyres.json
           node apex/tests/driving-audit.cjs --json > /tmp/apex-results/driving.json
           node apex/tests/terrain-selection-audit.cjs > /tmp/apex-results/terrain-selection.json
@@ -51,6 +53,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          fetch-depth: 0
+          filter: blob:none
           sparse-checkout: apex
       - uses: actions/setup-node@v4
         with:
@@ -75,6 +79,7 @@ jobs:
             if curl --fail --silent http://127.0.0.1:8765/apex/apex.html > /dev/null; then break; fi
             sleep 1
           done
+          APEX_PIT_RESULTS=/tmp/apex-results/pits node apex/tests/pit-tyres-browser.cjs 2>&1 | tee /tmp/apex-results/pit-browser.jsonl
           node apex/tests/browser-audit.cjs 2>&1 | tee /tmp/apex-results/browser.jsonl
       - uses: actions/upload-artifact@v4
         if: always()

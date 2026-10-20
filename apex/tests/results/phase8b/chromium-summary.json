@@ -1,0 +1,296 @@
+{
+  "sourceCommit": "84148f69dfc69c73ff1faa41f9e8692c0962e605",
+  "runId": 39408098505,
+  "runUrl": "https://github.com/sucendo/modojuego/actions/runs/39408098505",
+  "jobs": [
+    {
+      "name": "isolated",
+      "conclusion": "success"
+    },
+    {
+      "name": "autopilot",
+      "conclusion": "success"
+    },
+    {
+      "name": "chromium (desktop)",
+      "conclusion": "success"
+    },
+    {
+      "name": "chromium (mobile)",
+      "conclusion": "success"
+    }
+  ],
+  "devices": [
+    {
+      "mobileEmulation": true,
+      "passed": true,
+      "dry": [
+        {
+          "circuit": "14-spain",
+          "completed": true,
+          "compound": "HARD",
+          "pitStops": 1,
+          "tyreSet": 2,
+          "serviceSeconds": 2.8000000000014325,
+          "maxPitKph": 79.67873939919996,
+          "limitKph": 80,
+          "maxStepM": 0.23005401618372792,
+          "maxProgressStepM": 3.777716075648641,
+          "lapDelta": 1,
+          "finishCrossings": 1,
+          "physicsFaults": 0
+        },
+        {
+          "circuit": "06-monaco",
+          "completed": true,
+          "compound": "HARD",
+          "pitStops": 1,
+          "tyreSet": 2,
+          "serviceSeconds": 2.809999999999441,
+          "maxPitKph": 59.953601002163445,
+          "limitKph": 60,
+          "maxStepM": 0.19060093418698848,
+          "maxProgressStepM": 2.2466769798484165,
+          "lapDelta": 1,
+          "finishCrossings": 1,
+          "physicsFaults": 0
+        },
+        {
+          "circuit": "13-italy",
+          "completed": true,
+          "compound": "HARD",
+          "pitStops": 1,
+          "tyreSet": 2,
+          "serviceSeconds": 2.809999999999782,
+          "maxPitKph": 79.45596572887206,
+          "limitKph": 80,
+          "maxStepM": 0.24614371642769425,
+          "maxProgressStepM": 3.313090833316892,
+          "lapDelta": 1,
+          "finishCrossings": 1,
+          "physicsFaults": 0
+        },
+        {
+          "circuit": "03-japan",
+          "completed": true,
+          "compound": "HARD",
+          "pitStops": 1,
+          "tyreSet": 2,
+          "serviceSeconds": 2.8000000000006295,
+          "maxPitKph": 79.44631098027173,
+          "limitKph": 80,
+          "maxStepM": 0.24630226205819603,
+          "maxProgressStepM": 3.6892300022745985,
+          "lapDelta": 1,
+          "finishCrossings": 1,
+          "physicsFaults": 0
+        }
+      ],
+      "restricted": [
+        {
+          "circuit": "10-belgium",
+          "reason": "UNSAFE_PIT_GEOMETRY",
+          "issue": {
+            "code": "REVERSED_SHORT_PIT_SEGMENT",
+            "angleDeg": 146.61299664574355,
+            "lengthM": 2.9979426643720704,
+            "atVertex": 21,
+            "source": "AUTHORED_SVG"
+          }
+        }
+      ],
+      "wet": [
+        {
+          "completed": true,
+          "compound": "INTERMEDIATE",
+          "pitStops": 1,
+          "physicsFaults": 0
+        }
+      ],
+      "manual": [
+        {
+          "device": "keyboard",
+          "compound": "HARD",
+          "mode": "MANUAL",
+          "pitStops": 1,
+          "speedAfterRelease": 0.2682741274303247,
+          "physicsFaults": 0
+        },
+        {
+          "device": "touch",
+          "compound": "HARD",
+          "mode": "MANUAL",
+          "pitStops": 1,
+          "speedAfterRelease": 0.2682741274303247,
+          "physicsFaults": 0
+        },
+        {
+          "device": "gyro",
+          "compound": "HARD",
+          "mode": "MANUAL",
+          "pitStops": 1,
+          "speedAfterRelease": 0.34093953232176233,
+          "physicsFaults": 0
+        }
+      ],
+      "performance": [
+        {
+          "variant": "baseline",
+          "frames": 30,
+          "avgFps": 3.7,
+          "p50FrameMs": 233.3,
+          "p95FrameMs": 733.2,
+          "avgPhysicsMs": 20.4,
+          "avgRenderMs": 98.05
+        },
+        {
+          "variant": "candidate",
+          "frames": 42,
+          "avgFps": 5.3,
+          "p50FrameMs": 150,
+          "p95FrameMs": 350,
+          "avgPhysicsMs": 21.405,
+          "avgRenderMs": 109.693
+        }
+      ]
+    },
+    {
+      "mobileEmulation": false,
+      "passed": true,
+      "dry": [
+        {
+          "circuit": "14-spain",
+          "completed": true,
+          "compound": "HARD",
+          "pitStops": 1,
+          "tyreSet": 2,
+          "serviceSeconds": 2.8000000000014325,
+          "maxPitKph": 79.67873939919996,
+          "limitKph": 80,
+          "maxStepM": 0.23005401618372792,
+          "maxProgressStepM": 3.777716075648641,
+          "lapDelta": 1,
+          "finishCrossings": 1,
+          "physicsFaults": 0
+        },
+        {
+          "circuit": "06-monaco",
+          "completed": true,
+          "compound": "HARD",
+          "pitStops": 1,
+          "tyreSet": 2,
+          "serviceSeconds": 2.809999999999441,
+          "maxPitKph": 59.85748591189825,
+          "limitKph": 60,
+          "maxStepM": 0.19054717701644172,
+          "maxProgressStepM": 2.23346335237693,
+          "lapDelta": 1,
+          "finishCrossings": 1,
+          "physicsFaults": 0
+        },
+        {
+          "circuit": "13-italy",
+          "completed": true,
+          "compound": "HARD",
+          "pitStops": 1,
+          "tyreSet": 2,
+          "serviceSeconds": 2.809999999999782,
+          "maxPitKph": 79.45596572887206,
+          "limitKph": 80,
+          "maxStepM": 0.24614371642769425,
+          "maxProgressStepM": 3.313090833316892,
+          "lapDelta": 1,
+          "finishCrossings": 1,
+          "physicsFaults": 0
+        },
+        {
+          "circuit": "03-japan",
+          "completed": true,
+          "compound": "HARD",
+          "pitStops": 1,
+          "tyreSet": 2,
+          "serviceSeconds": 2.8000000000006295,
+          "maxPitKph": 79.44631098027173,
+          "limitKph": 80,
+          "maxStepM": 0.24630226205819603,
+          "maxProgressStepM": 3.6892300022745985,
+          "lapDelta": 1,
+          "finishCrossings": 1,
+          "physicsFaults": 0
+        }
+      ],
+      "restricted": [
+        {
+          "circuit": "10-belgium",
+          "reason": "UNSAFE_PIT_GEOMETRY",
+          "issue": {
+            "code": "REVERSED_SHORT_PIT_SEGMENT",
+            "angleDeg": 146.61299664574355,
+            "lengthM": 2.9979426643720704,
+            "atVertex": 21,
+            "source": "AUTHORED_SVG"
+          }
+        }
+      ],
+      "wet": [
+        {
+          "completed": true,
+          "compound": "INTERMEDIATE",
+          "pitStops": 1,
+          "physicsFaults": 0
+        }
+      ],
+      "manual": [
+        {
+          "device": "keyboard",
+          "compound": "HARD",
+          "mode": "MANUAL",
+          "pitStops": 1,
+          "speedAfterRelease": 0.2682741274303247,
+          "physicsFaults": 0
+        },
+        {
+          "device": "touch",
+          "compound": "HARD",
+          "mode": "MANUAL",
+          "pitStops": 1,
+          "speedAfterRelease": 0.2682741274303247,
+          "physicsFaults": 0
+        },
+        {
+          "device": "gyro",
+          "compound": "HARD",
+          "mode": "MANUAL",
+          "pitStops": 1,
+          "speedAfterRelease": 0.34093953232176233,
+          "physicsFaults": 0
+        }
+      ],
+      "performance": [
+        {
+          "variant": "baseline",
+          "frames": 17,
+          "avgFps": 2.1,
+          "p50FrameMs": 300,
+          "p95FrameMs": 1283.2,
+          "avgPhysicsMs": 32.435,
+          "avgRenderMs": 164.871
+        },
+        {
+          "variant": "candidate",
+          "frames": 19,
+          "avgFps": 2.5,
+          "p50FrameMs": 233.4,
+          "p95FrameMs": 1216.5,
+          "avgPhysicsMs": 37.153,
+          "avgRenderMs": 178.616
+        }
+      ]
+    }
+  ],
+  "limits": [
+    "Chromium with software WebGL and mobile emulation, not physical-device FPS",
+    "Spa service safely unavailable pending authored geometry repair",
+    "AI pit navigation remains for phase 8D"
+  ]
+}

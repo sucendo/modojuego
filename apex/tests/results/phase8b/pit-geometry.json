@@ -1,0 +1,401 @@
+{
+  "ok": true,
+  "rows": [
+    {
+      "id": "01-australia",
+      "ok": true,
+      "checks": {
+        "SVG_lane": true,
+        "profile": true,
+        "finite_length": true,
+        "eleven_slots": true,
+        "slots_inside_lane": true,
+        "speed_limit": true,
+        "connection": true
+      },
+      "laneLengthM": 490.982,
+      "slots": 11,
+      "geometryQuality": "MODELED_FROM_TRACK_AND_PIT_METADATA",
+      "boxQuality": "MODELED_POSITION"
+    },
+    {
+      "id": "02-china",
+      "ok": true,
+      "checks": {
+        "SVG_lane": true,
+        "profile": true,
+        "finite_length": true,
+        "eleven_slots": true,
+        "slots_inside_lane": true,
+        "speed_limit": true,
+        "connection": true
+      },
+      "laneLengthM": 581.073,
+      "slots": 11,
+      "geometryQuality": "MODELED_FROM_TRACK_AND_PIT_METADATA",
+      "boxQuality": "MODELED_POSITION"
+    },
+    {
+      "id": "03-japan",
+      "ok": true,
+      "checks": {
+        "SVG_lane": true,
+        "profile": true,
+        "finite_length": true,
+        "eleven_slots": true,
+        "slots_inside_lane": true,
+        "speed_limit": true,
+        "connection": true
+      },
+      "laneLengthM": 459.286,
+      "slots": 11,
+      "geometryQuality": "MODELED_FROM_TRACK_AND_PIT_METADATA",
+      "boxQuality": "MODELED_POSITION"
+    },
+    {
+      "id": "04-miami",
+      "ok": true,
+      "checks": {
+        "SVG_lane": true,
+        "profile": true,
+        "finite_length": true,
+        "eleven_slots": true,
+        "slots_inside_lane": true,
+        "speed_limit": true,
+        "connection": true
+      },
+      "laneLengthM": 537.088,
+      "slots": 11,
+      "geometryQuality": "MODELED_FROM_TRACK_AND_PIT_METADATA",
+      "boxQuality": "MODELED_POSITION"
+    },
+    {
+      "id": "05-canada",
+      "ok": true,
+      "checks": {
+        "SVG_lane": true,
+        "profile": true,
+        "finite_length": true,
+        "eleven_slots": true,
+        "slots_inside_lane": true,
+        "speed_limit": true,
+        "connection": true
+      },
+      "laneLengthM": 424.411,
+      "slots": 11,
+      "geometryQuality": "MODELED_FROM_TRACK_AND_PIT_METADATA",
+      "boxQuality": "MODELED_POSITION"
+    },
+    {
+      "id": "06-monaco",
+      "ok": true,
+      "checks": {
+        "SVG_lane": true,
+        "profile": true,
+        "finite_length": true,
+        "eleven_slots": true,
+        "slots_inside_lane": true,
+        "speed_limit": true,
+        "connection": true
+      },
+      "laneLengthM": 326.462,
+      "slots": 11,
+      "geometryQuality": "MODELED_FROM_TRACK_AND_PIT_METADATA",
+      "boxQuality": "MODELED_POSITION"
+    },
+    {
+      "id": "07-barcelona-catalunya",
+      "ok": true,
+      "checks": {
+        "SVG_lane": true,
+        "profile": true,
+        "finite_length": true,
+        "eleven_slots": true,
+        "slots_inside_lane": true,
+        "speed_limit": true,
+        "connection": true
+      },
+      "laneLengthM": 530.979,
+      "slots": 11,
+      "geometryQuality": "MODELED_FROM_TRACK_AND_PIT_METADATA",
+      "boxQuality": "MODELED_POSITION"
+    },
+    {
+      "id": "08-austria",
+      "ok": true,
+      "checks": {
+        "SVG_lane": true,
+        "profile": true,
+        "finite_length": true,
+        "eleven_slots": true,
+        "slots_inside_lane": true,
+        "speed_limit": true,
+        "connection": true
+      },
+      "laneLengthM": 421.032,
+      "slots": 11,
+      "geometryQuality": "MODELED_FROM_TRACK_AND_PIT_METADATA",
+      "boxQuality": "MODELED_POSITION"
+    },
+    {
+      "id": "09-great-britain",
+      "ok": true,
+      "checks": {
+        "SVG_lane": true,
+        "profile": true,
+        "finite_length": true,
+        "eleven_slots": true,
+        "slots_inside_lane": true,
+        "speed_limit": true,
+        "connection": true
+      },
+      "laneLengthM": 652.698,
+      "slots": 11,
+      "geometryQuality": "MODELED_FROM_TRACK_AND_PIT_METADATA",
+      "boxQuality": "MODELED_POSITION"
+    },
+    {
+      "id": "10-belgium",
+      "ok": true,
+      "checks": {
+        "SVG_lane": true,
+        "profile": true,
+        "finite_length": true,
+        "eleven_slots": true,
+        "slots_inside_lane": true,
+        "speed_limit": true,
+        "connection": true
+      },
+      "laneLengthM": 581.878,
+      "slots": 11,
+      "geometryQuality": "MODELED_FROM_TRACK_AND_PIT_METADATA",
+      "boxQuality": "MODELED_POSITION"
+    },
+    {
+      "id": "11-hungary",
+      "ok": true,
+      "checks": {
+        "SVG_lane": true,
+        "profile": true,
+        "finite_length": true,
+        "eleven_slots": true,
+        "slots_inside_lane": true,
+        "speed_limit": true,
+        "connection": true
+      },
+      "laneLengthM": 466.257,
+      "slots": 11,
+      "geometryQuality": "MODELED_FROM_TRACK_AND_PIT_METADATA",
+      "boxQuality": "MODELED_POSITION"
+    },
+    {
+      "id": "12-netherlands",
+      "ok": true,
+      "checks": {
+        "SVG_lane": true,
+        "profile": true,
+        "finite_length": true,
+        "eleven_slots": true,
+        "slots_inside_lane": true,
+        "speed_limit": true,
+        "connection": true
+      },
+      "laneLengthM": 451.005,
+      "slots": 11,
+      "geometryQuality": "MODELED_FROM_TRACK_AND_PIT_METADATA",
+      "boxQuality": "MODELED_POSITION"
+    },
+    {
+      "id": "13-italy",
+      "ok": true,
+      "checks": {
+        "SVG_lane": true,
+        "profile": true,
+        "finite_length": true,
+        "eleven_slots": true,
+        "slots_inside_lane": true,
+        "speed_limit": true,
+        "connection": true
+      },
+      "laneLengthM": 524.875,
+      "slots": 11,
+      "geometryQuality": "MODELED_FROM_TRACK_AND_PIT_METADATA",
+      "boxQuality": "MODELED_POSITION"
+    },
+    {
+      "id": "14-spain",
+      "ok": true,
+      "checks": {
+        "SVG_lane": true,
+        "profile": true,
+        "finite_length": true,
+        "eleven_slots": true,
+        "slots_inside_lane": true,
+        "speed_limit": true,
+        "connection": true
+      },
+      "laneLengthM": 915.624,
+      "slots": 11,
+      "geometryQuality": "AUTHORED",
+      "boxQuality": "PROVISIONAL_POSITION"
+    },
+    {
+      "id": "15-azerbaijan",
+      "ok": true,
+      "checks": {
+        "SVG_lane": true,
+        "profile": true,
+        "finite_length": true,
+        "eleven_slots": true,
+        "slots_inside_lane": true,
+        "speed_limit": true,
+        "connection": true
+      },
+      "laneLengthM": 554.056,
+      "slots": 11,
+      "geometryQuality": "MODELED_FROM_TRACK_AND_PIT_METADATA",
+      "boxQuality": "MODELED_POSITION"
+    },
+    {
+      "id": "16-bahrain",
+      "ok": true,
+      "checks": {
+        "SVG_lane": true,
+        "profile": true,
+        "finite_length": true,
+        "eleven_slots": true,
+        "slots_inside_lane": true,
+        "speed_limit": true,
+        "connection": true
+      },
+      "laneLengthM": 575.979,
+      "slots": 11,
+      "geometryQuality": "MODELED_FROM_TRACK_AND_PIT_METADATA",
+      "boxQuality": "MODELED_POSITION"
+    },
+    {
+      "id": "17-singapore",
+      "ok": true,
+      "checks": {
+        "SVG_lane": true,
+        "profile": true,
+        "finite_length": true,
+        "eleven_slots": true,
+        "slots_inside_lane": true,
+        "speed_limit": true,
+        "connection": true
+      },
+      "laneLengthM": 464.188,
+      "slots": 11,
+      "geometryQuality": "MODELED_FROM_TRACK_AND_PIT_METADATA",
+      "boxQuality": "MODELED_POSITION"
+    },
+    {
+      "id": "18-united-states",
+      "ok": true,
+      "checks": {
+        "SVG_lane": true,
+        "profile": true,
+        "finite_length": true,
+        "eleven_slots": true,
+        "slots_inside_lane": true,
+        "speed_limit": true,
+        "connection": true
+      },
+      "laneLengthM": 536.902,
+      "slots": 11,
+      "geometryQuality": "MODELED_FROM_TRACK_AND_PIT_METADATA",
+      "boxQuality": "MODELED_POSITION"
+    },
+    {
+      "id": "19-mexico",
+      "ok": true,
+      "checks": {
+        "SVG_lane": true,
+        "profile": true,
+        "finite_length": true,
+        "eleven_slots": true,
+        "slots_inside_lane": true,
+        "speed_limit": true,
+        "connection": true
+      },
+      "laneLengthM": 482.091,
+      "slots": 11,
+      "geometryQuality": "MODELED_FROM_TRACK_AND_PIT_METADATA",
+      "boxQuality": "MODELED_POSITION"
+    },
+    {
+      "id": "20-sao-paulo",
+      "ok": true,
+      "checks": {
+        "SVG_lane": true,
+        "profile": true,
+        "finite_length": true,
+        "eleven_slots": true,
+        "slots_inside_lane": true,
+        "speed_limit": true,
+        "connection": true
+      },
+      "laneLengthM": 479.847,
+      "slots": 11,
+      "geometryQuality": "MODELED_FROM_TRACK_AND_PIT_METADATA",
+      "boxQuality": "MODELED_POSITION"
+    },
+    {
+      "id": "21-las-vegas",
+      "ok": true,
+      "checks": {
+        "SVG_lane": true,
+        "profile": true,
+        "finite_length": true,
+        "eleven_slots": true,
+        "slots_inside_lane": true,
+        "speed_limit": true,
+        "connection": true
+      },
+      "laneLengthM": 566.873,
+      "slots": 11,
+      "geometryQuality": "MODELED_FROM_TRACK_AND_PIT_METADATA",
+      "boxQuality": "MODELED_POSITION"
+    },
+    {
+      "id": "22-qatar",
+      "ok": true,
+      "checks": {
+        "SVG_lane": true,
+        "profile": true,
+        "finite_length": true,
+        "eleven_slots": true,
+        "slots_inside_lane": true,
+        "speed_limit": true,
+        "connection": true
+      },
+      "laneLengthM": 550.971,
+      "slots": 11,
+      "geometryQuality": "MODELED_FROM_TRACK_AND_PIT_METADATA",
+      "boxQuality": "MODELED_POSITION"
+    },
+    {
+      "id": "23-abu-dhabi",
+      "ok": true,
+      "checks": {
+        "SVG_lane": true,
+        "profile": true,
+        "finite_length": true,
+        "eleven_slots": true,
+        "slots_inside_lane": true,
+        "speed_limit": true,
+        "connection": true
+      },
+      "laneLengthM": 532.491,
+      "slots": 11,
+      "geometryQuality": "MODELED_FROM_TRACK_AND_PIT_METADATA",
+      "boxQuality": "MODELED_POSITION"
+    }
+  ],
+  "limits": [
+    "Coordinates and box slots are inherited authored/model data, not surveyed measurements",
+    "No new geometry created",
+    "Runtime wall/building/drivable-area clearance and complete trajectories require browser tests"
+  ]
+}

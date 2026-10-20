@@ -1,0 +1,530 @@
+{
+  "scope": "SYNTHETIC_PRODUCTION_BLOCKS_FLAT_ASPHALT",
+  "version": "v0.13.23",
+  "baseline": "8e71e2d0dba93cf4b6efbb97aba546f36278be6d",
+  "physicsHz": 100,
+  "checks": [
+    "Reposo sin deriva ni giro; freno motor no cruza cero",
+    "Baja velocidad: desaparece la alternancia de guiñada de Euler explícito",
+    "Alta velocidad: respuesta sin freno idéntica al modelo anterior",
+    "Elipse longitudinal/lateral: barrido de demanda, agarre, reparto y carga",
+    "Frenada intensa/parcial/en curva y ABS: parada finita, control recuperable",
+    "Tracción: arranque, curva lenta, TC diferenciado y liberación del pedal",
+    "Simetría izquierda/derecha, contravolante y cambios de dirección",
+    "Energía pasiva y estados finitos, marcha atrás y agarres bajos",
+    "Scheduler real agrupado a 15/30/60/144 FPS: reproducibilidad y límite tras pausa",
+    "Controles reales: digital/analógico, centrado, corrección pequeña y selección de dispositivo",
+    "Pedales reales: progresión, suelta y perfiles sin cambios de transmisión/ERS",
+    "Scheduler, perfiles, cámaras, suelo y colisiones conservados; IA sólo adapta agarre",
+    "Neumáticos: el estado altera fuerzas reales de frenada y apoyo",
+    "Convergencia del integrador con subpasos de referencia"
+  ],
+  "metrics": {
+    "rest": {
+      "before": {
+        "state": [
+          0,
+          -0.006499980987536561,
+          0,
+          0,
+          1.9012444900552705e-8,
+          0
+        ],
+        "speed": 1.9012444900552705e-8,
+        "yaw": 0,
+        "signChanges": 0,
+        "peakYaw": 0,
+        "peakCombinedUse": 0,
+        "maxStepEnergyRiseJ": 0.016900000000000005
+      },
+      "after": {
+        "state": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "speed": 0,
+        "yaw": 0,
+        "signChanges": 0,
+        "peakYaw": 0,
+        "peakCombinedUse": 0,
+        "maxStepEnergyRiseJ": 0
+      }
+    },
+    "lowSpeed": {
+      "before": {
+        "state": [
+          0.19686150801602875,
+          2.98675009731103,
+          0.06816464897032476,
+          -0.0012855642464273678,
+          0.009555946065376002,
+          -0.07290660405662319
+        ],
+        "speed": 0.009642031976511353,
+        "yaw": -0.07290660405662319,
+        "signChanges": 499,
+        "peakYaw": 0.12645243066409373,
+        "peakCombinedUse": 0.7709821164831047,
+        "maxStepEnergyRiseJ": 0.046775032353138624
+      },
+      "after": {
+        "state": [
+          0.19845906916741513,
+          2.8954279247269876,
+          0.06687883693230837,
+          3.2807613815454116e-82,
+          1.27218566241171e-83,
+          5.576920389318073e-85
+        ],
+        "speed": 3.2832270415303624e-82,
+        "yaw": 5.576920389318073e-85,
+        "signChanges": 0,
+        "peakYaw": 0.0449326368767813,
+        "peakCombinedUse": 0.764704699929593,
+        "maxStepEnergyRiseJ": 0
+      }
+    },
+    "highSpeed": [
+      {
+        "initialMps": 20,
+        "before": {
+          "state": [
+            57.675355314438775,
+            51.68229222611211,
+            1.6807607266314981,
+            15.123981940059021,
+            -1.9212365052640954,
+            0.30157036666715203
+          ],
+          "speed": 15.24552325872716,
+          "yaw": 0.30157036666715203,
+          "signChanges": 0,
+          "peakYaw": 0.37251613440020903,
+          "peakCombinedUse": 0.7245075906117829,
+          "maxStepEnergyRiseJ": 0
+        },
+        "after": {
+          "state": [
+            57.675355314438775,
+            51.68229222611211,
+            1.6807607266314981,
+            15.123981940059021,
+            -1.9212365052640954,
+            0.30157036666715203
+          ],
+          "speed": 15.24552325872716,
+          "yaw": 0.30157036666715203,
+          "signChanges": 0,
+          "peakYaw": 0.37251613440020903,
+          "peakCombinedUse": 0.7245075906117829,
+          "maxStepEnergyRiseJ": 0
+        }
+      },
+      {
+        "initialMps": 70,
+        "before": {
+          "state": [
+            160.87156929684883,
+            41.37619996857433,
+            3.1250894105111158,
+            3.2336119495293634,
+            -37.808700994383464,
+            0.5756070351332676
+          ],
+          "speed": 37.94672735721531,
+          "yaw": 0.5756070351332676,
+          "signChanges": 0,
+          "peakYaw": 0.8389679519014228,
+          "peakCombinedUse": 0.9763994196175968,
+          "maxStepEnergyRiseJ": 0
+        },
+        "after": {
+          "state": [
+            160.87156929684883,
+            41.37619996857433,
+            3.1250894105111158,
+            3.2336119495293634,
+            -37.808700994383464,
+            0.5756070351332676
+          ],
+          "speed": 37.94672735721531,
+          "yaw": 0.5756070351332676,
+          "signChanges": 0,
+          "peakYaw": 0.8389679519014228,
+          "peakCombinedUse": 0.9763994196175968,
+          "maxStepEnergyRiseJ": 0
+        }
+      }
+    ],
+    "friction": {
+      "cases": 216,
+      "beforePeak": 1.0326301370771627,
+      "afterPeak": 1
+    },
+    "braking": {
+      "before": {
+        "distanceM": 99.23233557237661,
+        "seconds": 3.16,
+        "lock": true,
+        "abs": false,
+        "lateralM": 0
+      },
+      "after": {
+        "distanceM": 99.23233557237661,
+        "seconds": 3.16,
+        "lock": true,
+        "abs": false,
+        "lateralM": 0
+      },
+      "partial": {
+        "distanceM": 185.34456259347814,
+        "seconds": 5.85,
+        "lock": false,
+        "abs": false,
+        "lateralM": 0
+      },
+      "corner": {
+        "distanceM": 108.63856984944069,
+        "seconds": 3.52,
+        "lock": true,
+        "abs": false,
+        "lateralM": 17.73767803415817
+      },
+      "assisted": {
+        "distanceM": 101.51815277867266,
+        "seconds": 3.33,
+        "lock": true,
+        "abs": true,
+        "lateralM": 0
+      },
+      "lowGrip": {
+        "distanceM": 202.58933318619222,
+        "seconds": 6.99,
+        "lock": true,
+        "abs": false,
+        "lateralM": 0
+      },
+      "lowGripAssisted": {
+        "distanceM": 211.67260654373166,
+        "seconds": 7.24,
+        "lock": true,
+        "abs": true,
+        "lateralM": 0
+      }
+    },
+    "traction": {
+      "straight": {
+        "state": [
+          0,
+          133.37218288082917,
+          0,
+          0,
+          50.14967364550548,
+          0
+        ],
+        "speed": 50.14967364550548,
+        "yaw": 0,
+        "signChanges": 0,
+        "peakYaw": 0,
+        "peakCombinedUse": 0.9650000000000001,
+        "maxStepEnergyRiseJ": 3150.3342615711736
+      },
+      "corner": {
+        "state": [
+          93.63275199059414,
+          69.69799803236828,
+          1.7041424654108757,
+          47.39921672165597,
+          -4.066744306483127,
+          0.48177524170449026
+        ],
+        "speed": 47.5733555163058,
+        "yaw": 0.48177524170449026,
+        "signChanges": 0,
+        "peakYaw": 0.48177524170449026,
+        "peakCombinedUse": 0.968899364168366,
+        "maxStepEnergyRiseJ": 2538.907573488774
+      },
+      "aids": [
+        {
+          "tc": false,
+          "spin": true,
+          "force": 0.965
+        },
+        {
+          "tc": true,
+          "spin": true,
+          "force": 0.965
+        }
+      ]
+    },
+    "slalom": {
+      "state": [
+        89.82621677074319,
+        253.2276574126693,
+        0.726494282251824,
+        25.60309287058698,
+        28.907033264971446,
+        -0.060477044013477976
+      ],
+      "speed": 38.6152163883885,
+      "yaw": -0.060477044013477976,
+      "signChanges": 3,
+      "peakYaw": 0.45322379661504303,
+      "peakCombinedUse": 0.6509460498660479,
+      "maxStepEnergyRiseJ": 411.2581882227678
+    },
+    "passive": [
+      {
+        "initialMps": 0,
+        "state": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "speed": 0,
+        "yaw": 0,
+        "signChanges": 0,
+        "peakYaw": 0,
+        "peakCombinedUse": 0,
+        "maxStepEnergyRiseJ": 0
+      },
+      {
+        "initialMps": 2,
+        "state": [
+          0.0007304220096416416,
+          3.062659418881278,
+          -0.000008039299609528102,
+          -1.7373524022050912e-98,
+          -1.3967096488961e-103,
+          1.8555326056780457e-100
+        ],
+        "speed": 1.737352402261234e-98,
+        "yaw": 1.8555326056780457e-100,
+        "signChanges": 0,
+        "peakYaw": 0.00030417506082593295,
+        "peakCombinedUse": 0.5391599830415383,
+        "maxStepEnergyRiseJ": 0
+      },
+      {
+        "initialMps": 6,
+        "state": [
+          0.005128746951892306,
+          21.72006347495972,
+          -0.00006455819042263351,
+          -0.00017465397835851357,
+          2.705372888745699,
+          -1.3497284237516972e-24
+        ],
+        "speed": 2.7053728943833715,
+        "yaw": -1.3497284237516972e-24,
+        "signChanges": 0,
+        "peakYaw": 0.0011939667051843164,
+        "peakCombinedUse": 0.5796191259308273,
+        "maxStepEnergyRiseJ": 0
+      },
+      {
+        "initialMps": 20,
+        "state": [
+          0.0022072683239744138,
+          89.89233067912289,
+          -0.0007700862003656011,
+          -0.012335907348199095,
+          16.018862438789455,
+          2.4298490627509503e-20
+        ],
+        "speed": 16.0188671886457,
+        "yaw": 2.4298490627509503e-20,
+        "signChanges": 0,
+        "peakYaw": 0.0059337704831980715,
+        "peakCombinedUse": 0.5705548207392431,
+        "maxStepEnergyRiseJ": 0
+      },
+      {
+        "initialMps": 70,
+        "state": [
+          -0.5922750418843205,
+          317.54313016362755,
+          -0.003480388861354414,
+          -0.200592605322971,
+          57.63488029066116,
+          -1.0046354678309678e-17
+        ],
+        "speed": 57.63522936114814,
+        "yaw": -1.0046354678309678e-17,
+        "signChanges": 1,
+        "peakYaw": 0.01432657947830684,
+        "peakCombinedUse": 0.5052172506948195,
+        "maxStepEnergyRiseJ": 0
+      }
+    ],
+    "frameGrouping": {
+      "fps": [
+        15,
+        30,
+        60,
+        144
+      ],
+      "ticks": 800,
+      "identical": true,
+      "productionLoop": true,
+      "stallCatchupSteps": 12
+    },
+    "controls": [
+      {
+        "profile": "assisted",
+        "device": "keyboard",
+        "steadySteer": 0.9226,
+        "centered": true
+      },
+      {
+        "profile": "assisted",
+        "device": "touch",
+        "steadySteer": 0.9226,
+        "centered": true
+      },
+      {
+        "profile": "assisted",
+        "device": "gamepad",
+        "steadySteer": 0.14612999999999998,
+        "centered": true
+      },
+      {
+        "profile": "assisted",
+        "device": "gyro",
+        "steadySteer": 0.14612999999999998,
+        "centered": true
+      },
+      {
+        "profile": "simulation",
+        "device": "keyboard",
+        "steadySteer": 0.91045,
+        "centered": true
+      },
+      {
+        "profile": "simulation",
+        "device": "touch",
+        "steadySteer": 0.91045,
+        "centered": true
+      },
+      {
+        "profile": "simulation",
+        "device": "gamepad",
+        "steadySteer": 0.144195,
+        "centered": true
+      },
+      {
+        "profile": "simulation",
+        "device": "gyro",
+        "steadySteer": 0.144195,
+        "centered": true
+      },
+      {
+        "profile": "raw",
+        "device": "keyboard",
+        "steadySteer": 0.8882,
+        "centered": true
+      },
+      {
+        "profile": "raw",
+        "device": "touch",
+        "steadySteer": 0.8882,
+        "centered": true
+      },
+      {
+        "profile": "raw",
+        "device": "gamepad",
+        "steadySteer": 0.13323,
+        "centered": true
+      },
+      {
+        "profile": "raw",
+        "device": "gyro",
+        "steadySteer": 0.13323,
+        "centered": true
+      }
+    ],
+    "convergence": {
+      "dtSeconds": [
+        0.01,
+        0.005,
+        0.001
+      ],
+      "states": [
+        [
+          0.2940217960755596,
+          5.13041467058886,
+          0.07352509421642879,
+          0.5820099447673109,
+          6.2310251059442345,
+          0.08879656924007971
+        ],
+        [
+          0.2971297416929272,
+          5.1282006735539145,
+          0.07420472610877776,
+          0.5894320515086207,
+          6.236413735133348,
+          0.08975016336564459
+        ],
+        [
+          0.2997448667213159,
+          5.126550208071479,
+          0.07476942202611886,
+          0.5955482167367672,
+          6.240887871986604,
+          0.0905226088280904
+        ]
+      ],
+      "error100Hz": 0.018242097863112716,
+      "error200Hz": 0.00824037901883049
+    },
+    "timing": {
+      "scope": "NODE_VM_ISOLATED_CORE_NOT_BROWSER_OR_FPS",
+      "node": "v24.19.0",
+      "stepsPerRound": 3000,
+      "rounds": 7,
+      "low": {
+        "before": {
+          "medianUsPerTick": 19.931024666666644,
+          "minUsPerTick": 19.32980100000001,
+          "maxUsPerTick": 20.772293999999953
+        },
+        "after": {
+          "medianUsPerTick": 23.724248333333282,
+          "minUsPerTick": 23.265318666666644,
+          "maxUsPerTick": 27.332069333333344
+        }
+      },
+      "high": {
+        "before": {
+          "medianUsPerTick": 19.972987666666693,
+          "minUsPerTick": 19.359546333333277,
+          "maxUsPerTick": 23.454631000000063
+        },
+        "after": {
+          "medianUsPerTick": 20.817609000000022,
+          "minUsPerTick": 20.283835333333325,
+          "maxUsPerTick": 21.941456666666607
+        }
+      }
+    }
+  },
+  "notTested": [
+    "Real browser/Android",
+    "Circuit driving/feel",
+    "DOM input event timing",
+    "Actual rAF backlog under stalls",
+    "Ground/suspension contact",
+    "Race/AI runtime",
+    "Save/restore runtime",
+    "FPS/render cost"
+  ]
+}

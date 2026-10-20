@@ -1,6 +1,6 @@
 # APEX Formula 26
 
-Versión de desarrollo: **v0.14.0 · PRE-RELEASE**
+Versión de desarrollo: **v0.14.1 · PRE-RELEASE**
 
 Archivo fuente original:
 `Apex_Formula_26_v5_230_62_8_6_7_6_4_17_CONTROL_CLASICO_GP4.html`
@@ -273,3 +273,7 @@ Los builds 05–07 diagnostican el bloqueo del automático contra el límite SVG
 ## v0.14.0 · Fase 8A · Neumáticos
 
 Cinco compuestos, dos ejes térmicos, desgaste por distancia/esfuerzo y agarre efectivo. Selección en Coche y conducción; indicador compacto, telemetría y perfiles estimados de 23 circuitos. Conserva 28 fragmentos, meteorología gradual, controles y cámaras. No cambia neumáticos en boxes. Validación numérica local superada; navegador, conducción y FPS pendientes. Véase `FASE8A_NEUMATICOS.md`.
+
+## v0.14.1 · Fase 8B · Cambio real en boxes
+
+EST / Y abre la estrategia sin pausar. Se elige el próximo compuesto hasta SERVICE. El servicio de 2–4 s utiliza `apexTyreInstall` una sola vez, conserva estados de carrera y registra historial/tiempos. Se corrige la cuenta atrás que se reiniciaba. Manual conserva entrada/salida y recibe ayuda sólo en la detención final; AUTO utiliza el controlador existente. JSON de slots autoritativos para el servicio; sin datos suficientes no se habilita la solicitud. Detalles y validación: `FASE8B_BOXES_NEUMATICOS.md`.
