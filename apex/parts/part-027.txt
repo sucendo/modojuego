@@ -236,9 +236,9 @@
  }
 
  // Integración mundial autónoma con colisión continua contra barreras.
- const moveDx=player.vx*dt,moveDz=player.vz*dt,preMoveX=player.x,preMoveZ=player.z,preMoveInside=apexDrivableAreaContains(player.x,player.z);
+ const moveDx=player.vx*dt,moveDz=player.vz*dt,preMoveX=player.x,preMoveZ=player.z,preMoveInside=apexPlayerDriveBoundaryContains(player.x,player.z);
  const wallHitThisFrame=movePlayerWithWalls(moveDx,moveDz);
- let drivableBoundaryHitThisFrame=false;const postMoveInside=apexDrivableAreaContains(player.x,player.z);
+ let drivableBoundaryHitThisFrame=false;const postMoveInside=apexPlayerDriveBoundaryContains(player.x,player.z);
  if(preMoveInside===true&&postMoveInside===false){player.lastDrivableBoundaryHit=raceT;player.x=preMoveX;player.z=preMoveZ;player.vx*=.42;player.vz*=.42;player.yawRate*=.55;drivableBoundaryHitThisFrame=true;frameShake=Math.max(frameShake,3.1)}
  if((demoMode||assistMode)&&wallHitThisFrame)player.autoLastWallHit=raceT;
 

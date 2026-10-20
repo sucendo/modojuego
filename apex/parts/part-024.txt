@@ -30,6 +30,7 @@ function syncPlayerDriveNetwork(trackState){
    // físicamente el eje PIT mejor que el eje TRACK, la red cambia sin esperar varios metros.
    if(mainDist>env.half*.52||pit.dist+.12<mainDist)mode='PIT';
  }
+ if(mode==='PIT'&&prev!=='PIT'&&pit&&player.pitStop?.active){const st=player.pitStop;st.entryClassificationS=Number.isFinite(player.classificationS)?player.classificationS:trackState.s;st.entryMappingPitS=pit.pitS;}
  player.driveNetwork=mode;
  if(mode==='PIT')apexPitClampSpeed(player); // Entry can switch network after the pre-move limiter check.
  if(pit){player.pitIndex=pit.index;player.pitS=pit.pitS;player.pitLat=pit.lat;player.pitState=pit}else{player.pitState=null;player.pitLat=0}

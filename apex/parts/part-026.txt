@@ -3379,6 +3379,26 @@ function apexPitBoxForCar(plan,car){
  if(!Number.isFinite(pitS)||plan.dir*(pitS-plan.entryPitS)<8||plan.dir*(plan.exitPitS-pitS)<8)return null;
  return plan._boxCache[team]={pitS,slotId:slot.id||String(index+1),quality:slot.status||'AUTHORED'};
 }
+function apexPlayerDriveBoundaryContains(x,z){
+ const main=apexDrivableAreaContains(x,z);if(main!==false||!player||player.driveNetwork!=='PIT')return main;
+ // The authored PIT ribbon is driveable even where the main-area polygon omits it.
+ // This unions only its actual lane width; movePlayerWithWalls still resolves barriers.
+ const pit=nearestPitState(x,z,player.pitIndex);return !!(pit&&pit.dist<=pit.width*.5);
+}
+function apexPitBuildSpeedProfile(plan){
+ const step=4,n=Math.ceil(plan.routeLength/step)+1,values=new Float32Array(n);
+ for(let i=0;i<n;i++){
+  const ps=plan.entryPitS+plan.dir*Math.min(plan.routeLength,i*step),a=apexPitPointAtS(clamp(ps-plan.dir*3,plan.primaryStart,plan.primaryEnd)),b=apexPitPointAtS(clamp(ps+plan.dir*3,plan.primaryStart,plan.primaryEnd));
+  const k=a&&b?Math.abs(angleDiff(Math.atan2(a.tx,a.tz),Math.atan2(b.tx,b.tz)))/6:0;
+  values[i]=Math.min(plan.speedMps,Math.sqrt(4.5/Math.max(.0001,k)));
+ }
+ for(let i=n-2;i>=0;i--)values[i]=Math.min(values[i],Math.sqrt(values[i+1]*values[i+1]+2*4*step));
+ plan.speedProfile=values;plan.speedProfileStep=step;return values;
+}
+function apexPitSafeSpeed(plan,pitS){
+ const p=plan.speedProfile;if(!p)return plan.speedMps;
+ const i=clamp(Math.floor(plan.dir*(pitS-plan.entryPitS)/plan.speedProfileStep),0,p.length-1);return Math.min(p[i],p[Math.min(i+1,p.length-1)]);
+}
 function apexPitClampSpeed(car){
  if(!car||(car.driveNetwork!=='PIT'&&!car.pitLimiter))return;
  const limit=apexPitSpeedLimitKph()/3.6,v2=car.vx*car.vx+car.vz*car.vz;
@@ -3447,7 +3467,7 @@ function apexPitRoutePlan(){
        xtx=exit.x-exitInside.x,xtz=exit.z-exitInside.z,xlen=Math.hypot(xtx,xtz)||1,exitTx=xtx/xlen,exitTz=xtz/xlen,exitNx=-exitTz,exitNz=exitTx;
  const plan={pn,primary,primaryStart,primaryEnd,dir,entry,exit,entryTrackS:entryTrack.s,exitTrackS:exitTrack.s,entryPitS,exitPitS,routeLength,
         entryTx,entryTz,entryNx,entryNz,entryAngle,exitTx,exitTz,exitNx,exitNz,speedKph:apexPitSpeedLimitKph(),speedMps:apexPitSpeedLimitKph()/3.6,serviceSeconds:finiteClamp(apexPitLaneJsonProfile()?.service?.tyreChangeSeconds,2,4,2.8)};
- trackData._apexPitRoutePlan=plan;return plan;
+ apexPitBuildSpeedProfile(plan);trackData._apexPitRoutePlan=plan;return plan;
 }
 function apexPlayerClassificationS(){
  if(!player||!trackData)return 0;
@@ -3455,9 +3475,10 @@ function apexPlayerClassificationS(){
  if(player.driveNetwork==='PIT'&&player.pitState){
    const plan=apexPitRoutePlan();
    if(plan){
-     const pitSpan=Math.max(.001,Math.abs(plan.exitPitS-plan.entryPitS)),along=plan.dir*(player.pitState.pitS-plan.entryPitS),f=clamp(along/pitSpan,0,1);
-     const trackSpan=mod(plan.exitTrackS-plan.entryTrackS,L);
-     return mod(plan.entryTrackS+trackSpan*f,L);
+     const st=player.pitStop,entryPitS=Number.isFinite(st?.entryMappingPitS)?st.entryMappingPitS:plan.entryPitS,entryTrackS=Number.isFinite(st?.entryClassificationS)?st.entryClassificationS:plan.entryTrackS,
+           pitSpan=Math.max(.001,Math.abs(plan.exitPitS-entryPitS)),along=plan.dir*(player.pitState.pitS-entryPitS),f=clamp(along/pitSpan,0,1);
+     const trackSpan=mod(plan.exitTrackS-entryTrackS,L);
+     return mod(entryTrackS+trackSpan*f,L);
    }
  }
  return Number.isFinite(player.s)?player.s:0;
@@ -3490,14 +3511,14 @@ function apexPitStopController(sp){
    const insideDist=st.entryGateCrossed?Math.min(11,Math.max(5,sp*.22)):Math.min(1.2,Math.max(.15,worldEntry*.05)),
          aim=apexPitPointAtS(clamp(plan.entryPitS+plan.dir*insideDist,plan.primaryStart,plan.primaryEnd))||plan.entry,
          desired=Math.atan2(aim.x-player.x,aim.z-player.z),hErr=angleDiff(desired,player.heading),turnFactor=clamp(plan.entryAngle/.75,0,1),
-         gateSpeed=Math.min(plan.speedMps,lerp(29,22,turnFactor)),farSpeed=gateSpeed+clamp(entryD,0,130)*.055,
+         gateSpeed=Math.min(apexPitSafeSpeed(plan,plan.entryPitS),lerp(29,22,turnFactor)),farSpeed=gateSpeed+clamp(entryD,0,130)*.055,
          target=Math.min(31,farSpeed),steer=clamp(hErr*2.15-(player.yawRate||0)*.20,-.94,.94),err=target-sp;
    let throttle=err>2?.62:err>.3?.18:0,brake=err<-.2?clamp((-err)/7.4,.08,1):0;
    if(worldEntry<24&&!st.entryGateCrossed){throttle*=.72;if(sp>gateSpeed)brake=Math.max(brake,clamp((sp-gateSpeed)/6,.12,.82))}
    st.hud=st.entryGateCrossed?`BOX · ENTRANDO EN PIT`:`BOX · PUERTA PIT · ${Math.max(0,Math.round(worldEntry))} m`;
    // No consideramos que ya está "dentro" por proximidad lateral: primero hay que
    // atravesar el extremo inicial del pitline. Después sí puede tomar el control pitS.
-   if(st.entryGateCrossed&&near&&near.dist<=near.width*.66+.65){st.phase='IN_LANE';st.enteredAt=raceT;st.referenceSpeed=Math.max(sp,5);st.previousLimiter=!!player.pitLimiter;player.pitLimiter=true;player.driveNetwork='PIT';}
+   if(st.entryGateCrossed&&near&&near.dist<=near.width*.66+.65){st.phase='IN_LANE';st.enteredAt=raceT;if(!Number.isFinite(st.entryClassificationS)){st.entryClassificationS=Number.isFinite(player.classificationS)?player.classificationS:player.s;st.entryMappingPitS=near.pitS;}st.referenceSpeed=Math.max(sp,5);st.previousLimiter=!!player.pitLimiter;player.pitLimiter=true;player.driveNetwork='PIT';}
    else{
      const passedTrack=wrapDeltaS(player.s,plan.entryTrackS,L)>18;
      if(passedTrack&&raceT-(st.approachAt||raceT)>8.0&&!st.entryGateCrossed&&worldEntry>38){st.phase='REQUESTED';st.hud='BOX · ENTRADA PERDIDA · PRÓXIMA VUELTA';return null}
@@ -3512,7 +3533,7 @@ function apexPitStopController(sp){
  if(['IN_LANE','SERVICE','EXITING'].includes(st.phase))player.pitLimiter=true;
  if(!st.serviced&&!st.missed&&st.phase!=='SERVICE'){
    if(st.phase!=='SERVICE')st.phase='IN_LANE';
-   let target=plan.speedMps;
+   let target=apexPitSafeSpeed(plan,pit.pitS);
    if(boxAhead<70){target=Math.min(target,Math.sqrt(Math.max(0,2*5.4*Math.max(0,boxAhead-.8))));if(boxAhead<2.0)target=0;}
    st.hud=target<3?`BOX · DETENIÉNDOSE`:`PIT · ${Math.round(plan.speedKph)} km/h · BOX ${Math.max(0,Math.round(boxAhead))} m`;
    const ctl=apexPitPathControl(plan,pit.pitS,sp,target,'PIT BOX',Math.min(12,Math.max(4,sp*.42)));
@@ -3532,7 +3553,7 @@ function apexPitStopController(sp){
    const worldExit=Math.hypot(player.x-plan.exit.x,player.z-plan.exit.z),exitAlong=(player.x-plan.exit.x)*plan.exitTx+(player.z-plan.exit.z)*plan.exitTz,
          exitAcross=Math.abs((player.x-plan.exit.x)*plan.exitNx+(player.z-plan.exit.z)*plan.exitNz),exitGatePassed=exitAlong>.35&&exitAcross<Math.max(5.5,(pit.width||5.9)*.98),elapsed=Math.max(0,raceT-(st.exitStartedAt||raceT));
    // Salida progresiva: libera freno y sube desde ~14 km/h hasta el límite de pit.
-   const target=Math.min(plan.speedMps,3.8+elapsed*5.0);let ctl;
+   const target=Math.min(apexPitSafeSpeed(plan,pit.pitS),3.8+elapsed*5.0);let ctl;
    if(exitAhead>5.0&&!exitGatePassed){ctl=apexPitPathControl(plan,pit.pitS,sp,target,'PIT SALIDA',Math.min(15,Math.max(5,sp*.50)))}
    else{
      const aim={x:plan.exit.x+plan.exitTx*9,z:plan.exit.z+plan.exitTz*9},desired=Math.atan2(aim.x-player.x,aim.z-player.z),hErr=angleDiff(desired,player.heading),err=target-sp;

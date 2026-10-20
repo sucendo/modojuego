@@ -47,7 +47,7 @@ La elección siguiente se guarda en `apex26.tyre.next.v1`. `save.lastTyreSession
 
 Se auditó el pit lane y los slots existentes en los 23 pares JSON/SVG. No se añadieron coordenadas ni se sustituyeron las geometrías. Se eliminó el uso del antiguo box genérico al 57%: sin slot autorado válido no se habilita la parada. Los perfiles antiguos o personalizados sin slots pueden seguir conduciéndose, pero no ofrecen cambio de neumáticos hasta completar su JSON.
 
-Los slots heredados están modelados/provisionales, no medidos oficialmente. Se utiliza su estación longitudinal sobre el centro del carril PIT; no se fuerza el desplazamiento lateral hacia la fachada del garaje, que podría atravesar barreras/superficies. No se simula aún un carril de servicio separado ni ocupación de un box por compañeros. La geometría física y sus colisiones siguen mandando.
+Los slots heredados están modelados/provisionales, no medidos oficialmente. Se utiliza su estación longitudinal sobre el centro del carril PIT; no se fuerza el desplazamiento lateral hacia la fachada del garaje, que podría atravesar barreras/superficies. No se simula aún un carril de servicio separado ni ocupación de un box por compañeros. La geometría física y sus colisiones siguen mandando. La prueba real detectó que el polígono general de Spa omitía un tramo del carril PIT: para el jugador ya en PIT se une únicamente la anchura real de esa cinta autorada al área transitable, conservando las colisiones de barreras y el rechazo de puntos fuera del carril. No se añadieron coordenadas. Un perfil de velocidad PIT precalculado cada 4 m deriva la curvatura del trazado existente y anticipa frenadas en sus curvas estrechas; se mantiene el controlador y la física del coche. La clasificación se ancla al progreso aceptado al cruzar la entrada para evitar el salto de proyección entre pista y pit.
 
 | Circuito | Longitud pit modelada m | Slots | Calidad de box heredada |
 |---|---:|---:|---|
@@ -83,7 +83,7 @@ Los 21 rivales mantienen el modelo híbrido existente, sin una ruta de entrada a
 
 Pruebas numéricas locales aprobadas:
 
-- `pit-tyres-audit.cjs`: 14 grupos, cinco compuestos, retención/cambio de selección, cancelación/compromiso, S→H, reinicio térmico/desgaste/agarre, idempotencia, contadores, estados de carrera, manual, limitador, box superado, salida y proyección por meta, 22 coches, lluvia y datos antiguos/incompletos.
+- `pit-tyres-audit.cjs`: 18 grupos, cinco compuestos, retención/cambio de selección, cancelación/compromiso, S→H, reinicio térmico/desgaste/agarre, idempotencia, contadores, estados de carrera, manual, limitador, box superado, salida y proyección por meta, 22 coches, lluvia y datos antiguos/incompletos.
 - `pit-geometry-audit.py`: 23 perfiles con SVG de pit y 11 slots válidos cada uno. No sustituye prueba de trayectoria/colisiones.
 - `tyres-audit.cjs`: 16 grupos del motor de 8A y migración de guardado.
 - `driving-audit.cjs`: 14 grupos de fuerzas, controles, scheduler y estabilidad. Se cargó el nuevo limitador real en el fixture, sin sustituirlo por una copia.
