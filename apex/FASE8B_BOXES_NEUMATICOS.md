@@ -12,6 +12,7 @@ GitHub Actions `39399959167`: isolated, autopilot, chromium (desktop) y chromium
 - Se corrige el fallo preexistente que reiniciaba `serviceUntil` cada tick detenido: `apexPitServiceBegin` reclama el inicio una vez; `apexPitServiceComplete` valida el plazo y reclama la instalación una vez antes de llamar `apexTyreInstall`.
 - El controlador se consulta desde el paso físico común también en manual. Ya no depende de entrar por `demoDriverControl`. En manual no dirige entrada/circulación/salida; ofrece ayuda de frenada y alineación sólo a baja velocidad junto al box, y retiene el coche durante SERVICE. No cambia `demoMode`, perfil, giroscopio, cámara ni el modo de ayuda seleccionado.
 - AUTO recorre los mismos segmentos PIT, puertas y reincorporación con el controlador anterior. ASISTIDO conserva volante manual y aprovecha el control longitudinal de PIT.
+- `part-024`: al detectar la entrada física a PIT, `apexPitClampSpeed` aplica el límite también en la transición posterior al movimiento, cerrando el pico de 86 km/h observado en la primera prueba real de Madrid.
 - `part-027`: `apexPitLimitedVmax` limita la velocidad resultante con limitador o dentro de la red PIT, además del recorte previo de aceleración/frenado existente. No se fuerza una posición ni se omiten colisiones.
 - La franja identificativa de las ruedas WebGL toma el color del compuesto del coche mediante su basis ya creado. Sin nuevas mallas, objetos de mecánicos, pases de render o consultas de coches fuera de cámara. HUD/torre también reflejan el cambio.
 - La lógica sin solicitud activa retorna antes de consultar geometría. Slots/perfil/configuración se cachean en la ruta cargada. Telemetría por muestra usa un resumen compacto, no vuelve a clonar todo el historial a 5–10 Hz.
@@ -82,7 +83,7 @@ Los 21 rivales mantienen el modelo híbrido existente, sin una ruta de entrada a
 
 Pruebas numéricas locales aprobadas:
 
-- `pit-tyres-audit.cjs`: 13 grupos, cinco compuestos, retención/cambio de selección, cancelación/compromiso, S→H, reinicio térmico/desgaste/agarre, idempotencia, contadores, estados de carrera, manual, limitador, box superado, salida y proyección por meta, 22 coches, lluvia y datos antiguos/incompletos.
+- `pit-tyres-audit.cjs`: 14 grupos, cinco compuestos, retención/cambio de selección, cancelación/compromiso, S→H, reinicio térmico/desgaste/agarre, idempotencia, contadores, estados de carrera, manual, limitador, box superado, salida y proyección por meta, 22 coches, lluvia y datos antiguos/incompletos.
 - `pit-geometry-audit.py`: 23 perfiles con SVG de pit y 11 slots válidos cada uno. No sustituye prueba de trayectoria/colisiones.
 - `tyres-audit.cjs`: 16 grupos del motor de 8A y migración de guardado.
 - `driving-audit.cjs`: 14 grupos de fuerzas, controles, scheduler y estabilidad. Se cargó el nuevo limitador real en el fixture, sin sustituirlo por una copia.

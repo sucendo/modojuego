@@ -31,6 +31,7 @@ function syncPlayerDriveNetwork(trackState){
    if(mainDist>env.half*.52||pit.dist+.12<mainDist)mode='PIT';
  }
  player.driveNetwork=mode;
+ if(mode==='PIT')apexPitClampSpeed(player); // Entry can switch network after the pre-move limiter check.
  if(pit){player.pitIndex=pit.index;player.pitS=pit.pitS;player.pitLat=pit.lat;player.pitState=pit}else{player.pitState=null;player.pitLat=0}
  return mode==='PIT'?pit:null;
 }

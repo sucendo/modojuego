@@ -15,8 +15,9 @@ const variants={};for(const variant of ['baseline','candidate'])variants[variant
   const url=process.env.APEX_AUDIT_URL||'http://127.0.0.1:8765/apex/apex.html?perf=1',perf=[];
   for(variant of ['baseline','candidate']){await page.goto(url);await page.waitForFunction(()=>window.__apexPitAudit);await page.evaluate(()=>__apexPitAudit.load('14-spain','CLEAR',true));await page.waitForTimeout(8000);const row=await page.evaluate(()=>__apexPitAudit.perf());perf.push({variant,mobileEmulation:mobile,...row});console.log(JSON.stringify({test:'pit-render-perf',...perf.at(-1)}));assert.equal(row.rivals,21);assert.ok(row.summary.frames>0);await page.evaluate(()=>__apexPitAudit.stop())}
   console.log(JSON.stringify({test:'pit-render-comparison',baseline:ref,mobileEmulation:mobile,rows:perf,limitation:'Software renderer and short rolling windows; not a hardware FPS certification'}));
+  const failures=[];
   const dirs=(process.env.APEX_PIT_CIRCUITS||'14-spain,06-monaco,10-belgium,13-italy,03-japan').split(',');variant='candidate';
-  for(const dir of dirs){
+  for(const dir of dirs){try{
    console.log(JSON.stringify({test:'pit-case-start',dir,mobileEmulation:mobile}));
    const loaded=await page.evaluate(dir=>__apexPitAudit.load(dir),dir);assert.equal(loaded.available,true,JSON.stringify(loaded));assert.equal(loaded.rivals,21);
    await page.keyboard.press('KeyY');assert.equal((await page.evaluate(()=>__apexPitAudit.status())).paused,false);await page.locator('#pitNextCompound').selectOption('HARD');
@@ -28,10 +29,10 @@ const variants={};for(const variant of ['baseline','candidate'])variants[variant
    assert.equal(result.service.tyres.front.wear,0);assert.equal(result.service.tyres.rear.wear,0);assert.ok(result.service.tyres.distance<.01);assert.ok(Math.abs(result.service.tyres.front.surfaceTemperature-80)<.1);
    assert.equal(result.end.network,'TRACK');assert.equal(result.end.faults,0);assert.ok(result.maxMove<1.2);assert.ok(result.maxProgressJump<5);assert.ok(result.maxLaneKph<=loaded.plan.speedKph+.05);
    assert.equal(result.end.lap-result.start.lap,result.finishCrossings);assert.ok(result.end.total>result.start.total);assert.ok(result.phases.some(p=>p.phase==='SERVICE'));assert.ok(result.phases.some(p=>p.phase==='EXITING'));assert.deepEqual(errors,[]);
-  }
+  }catch(e){failures.push({dir,error:e.message});console.log(JSON.stringify({test:'pit-case-failure',dir,error:e.message}))}}
   // Rain recommendation and real wet installation are covered separately from dry S->H.
-  await page.evaluate(()=>__apexPitAudit.load('13-italy','RAIN'));await page.keyboard.press('KeyY');await page.locator('#pitNextCompound').selectOption('INTERMEDIATE');await page.evaluate(()=>__apexPitAudit.request());const wet=await page.evaluate(()=>__apexPitAudit.run(180));console.log(JSON.stringify({test:'pit-wet-cycle',mobileEmulation:mobile,completed:wet.completed,end:wet.end}));assert.equal(wet.completed,true);assert.equal(wet.end.tyres.compound,'INTERMEDIATE');assert.deepEqual(errors,[]);
-  for(const device of ['keyboard','touch','gyro']){
+  try{await page.evaluate(()=>__apexPitAudit.load('13-italy','RAIN'));await page.keyboard.press('KeyY');await page.locator('#pitNextCompound').selectOption('INTERMEDIATE');await page.evaluate(()=>__apexPitAudit.request());const wet=await page.evaluate(()=>__apexPitAudit.run(180));console.log(JSON.stringify({test:'pit-wet-cycle',mobileEmulation:mobile,completed:wet.completed,end:wet.end}));assert.equal(wet.completed,true);assert.equal(wet.end.tyres.compound,'INTERMEDIATE');assert.deepEqual(errors,[]);}catch(e){failures.push({dir:'RAIN',error:e.message});console.log(JSON.stringify({test:'pit-case-failure',dir:'RAIN',error:e.message}))}
+  for(const device of ['keyboard','touch','gyro']){try{
    await page.evaluate(()=>__apexPitAudit.load('13-italy'));await page.evaluate(device=>__apexPitAudit.manualFixture(device),device);
    if(device==='keyboard'){await page.locator('body').click({position:{x:5,y:5}});await page.keyboard.down('ArrowUp')}
    if(device==='touch')await page.locator('#gas').dispatchEvent('pointerdown',{pointerId:8,pointerType:'touch',isPrimary:true});
@@ -39,7 +40,8 @@ const variants={};for(const variant of ['baseline','candidate'])variants[variant
    if(device==='keyboard')await page.keyboard.up('ArrowUp');if(device==='touch')await page.locator('#gas').dispatchEvent('pointerup',{pointerId:8,pointerType:'touch',isPrimary:true});
    console.log(JSON.stringify({test:'pit-manual-service',mobileEmulation:mobile,device,...result}));
    assert.ok(result.installed,device+': service did not finish');assert.equal(result.after.tyres.compound,'HARD');assert.equal(result.after.driving,'MANUAL');assert.equal(result.after.pit.pitStops,1);assert.equal(result.after.faults,0);assert.ok(result.after.speed>0,device+': inputs not restored');
-  }
+  }catch(e){failures.push({dir:device,error:e.message});console.log(JSON.stringify({test:'pit-case-failure',dir:device,error:e.message}))}}
+  assert.deepEqual(failures,[]);
   console.log(JSON.stringify({test:'pit-browser-success',mobileEmulation:mobile,circuits:dirs.length,rain:true}));await context.close();
  }finally{await browser.close()}
 })().catch(e=>{console.error(e);process.exitCode=1});
