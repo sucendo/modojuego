@@ -1101,7 +1101,7 @@ function captureSessionTelemetry(){
  const trackHeading=Math.atan2(tr.tx,tr.tz),headingErr=angleDiff(trackHeading,player.heading);
  const autoCtlMode=demoMode?"FULL":assistMode?"SPEED_ASSIST":"OFF";
  const rec=player.autoRecovery?player.autoRecovery.mode:null;
- const sample={pit:apexPitSnapshot(player),tyres:apexTyreSnapshot(player),
+ const sample={pit:apexPitTelemetry(player),tyres:apexTyreSnapshot(player),
   t:telemetryRound(raceT,3),lap:player.lap+1,lapTime:telemetryRound(Math.max(0,raceT-lapStart),3),
   s:telemetryRound(player.s,2),lapFrac:telemetryRound(mod(player.s,trackData.km*1000)/(trackData.km*1000),5),x:telemetryRound(player.x,3),z:telemetryRound(player.z,3),lat:telemetryRound(player.lat,3),
   timingSector:null,centerElevationM:telemetryRound(surface.centerY,3),surfaceElevationM:telemetryRound(surface.y,3),bankDeg:telemetryRound(surface.bank*deg,3),bankCrossfallPct:telemetryRound(Math.tan(surface.bank)*100,2),
@@ -3370,12 +3370,14 @@ function apexPitServiceExit(car,st,now,plan){
  const span=mod(plan.exitTrackS-plan.entryTrackS,trackData.km*1000);h.referenceSpeedMps=finiteClamp(st.referenceSpeed,5,100,30);h.estimatedLossSeconds=h.laneSeconds-span/h.referenceSpeedMps;}
 }
 function apexPitSnapshot(car){return car?{schema:1,nextCompound:apexTyreKey(car.nextTyreCompound),lastInstalledCompound:apexTyreKey(car.lastInstalledCompound||car.tyres?.compound),tyreSet:car.tyreSet||1,tyreAgeKm:car.tyres?car.tyres.distance/1000:0,pitStops:car.pitStops||0,history:Array.isArray(car.pitHistory)?car.pitHistory.map(h=>({...h})):[],phase:car.pitStop?.phase||null}:null}
+function apexPitTelemetry(car){const st=car&&car.pitStop;return car?{nextCompound:car.nextTyreCompound,phase:st?.phase||null,tyreSet:car.tyreSet||1,pitStops:car.pitStops||0,remaining:st?.phase==='SERVICE'?Math.max(0,st.serviceUntil-raceT):null}:null}
 function apexPitBoxForCar(plan,car){
  const slots=plan&&plan.pn&&plan.pn.boxSlots;if(!Array.isArray(slots)||!slots.length)return null;
- const team=car.teamKey||car.team,index=Math.max(0,teamKeys.indexOf(team)),slot=slots.find(s=>s.teamAssignment===team)||slots[index%slots.length];
+ const team=car.teamKey||car.team;if(plan._boxCacheSlots!==slots){plan._boxCacheSlots=slots;plan._boxCache=Object.create(null)}if(plan._boxCache[team])return plan._boxCache[team];
+ const index=Math.max(0,teamKeys.indexOf(team)),slot=slots.find(s=>s.teamAssignment===team)||slots[index%slots.length];
  const pitS=slot&&slot.runtimePitS;
  if(!Number.isFinite(pitS)||plan.dir*(pitS-plan.entryPitS)<8||plan.dir*(plan.exitPitS-pitS)<8)return null;
- return {pitS,slotId:slot.id||String(index+1),quality:slot.status||'AUTHORED'};
+ return plan._boxCache[team]={pitS,slotId:slot.id||String(index+1),quality:slot.status||'AUTHORED'};
 }
 function apexPitLimitedVmax(vmax,car){return car&&(car.pitLimiter||car.driveNetwork==='PIT')?Math.min(vmax,apexPitSpeedLimitKph()/3.6):vmax}
 function apexPitStrategyToggle(){const p=$('pitStrategyPanel');if(!player||!p)return;p.classList.toggle('hidden');$('pitStrategyBtn').setAttribute('aria-expanded',String(!p.classList.contains('hidden')));apexPitStrategyUpdate()}

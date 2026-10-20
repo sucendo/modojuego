@@ -31,6 +31,15 @@ const variants={};for(const variant of ['baseline','candidate'])variants[variant
   }
   // Rain recommendation and real wet installation are covered separately from dry S->H.
   await page.evaluate(()=>__apexPitAudit.load('13-italy','RAIN'));await page.keyboard.press('KeyY');await page.locator('#pitNextCompound').selectOption('INTERMEDIATE');await page.evaluate(()=>__apexPitAudit.request());const wet=await page.evaluate(()=>__apexPitAudit.run(180));console.log(JSON.stringify({test:'pit-wet-cycle',mobileEmulation:mobile,completed:wet.completed,end:wet.end}));assert.equal(wet.completed,true);assert.equal(wet.end.tyres.compound,'INTERMEDIATE');assert.deepEqual(errors,[]);
+  for(const device of ['keyboard','touch','gyro']){
+   await page.evaluate(()=>__apexPitAudit.load('13-italy'));await page.evaluate(device=>__apexPitAudit.manualFixture(device),device);
+   if(device==='keyboard'){await page.locator('body').click({position:{x:5,y:5}});await page.keyboard.down('ArrowUp')}
+   if(device==='touch')await page.locator('#gas').dispatchEvent('pointerdown',{pointerId:8,pointerType:'touch',isPrimary:true});
+   const result=await page.evaluate(()=>__apexPitAudit.manualService());
+   if(device==='keyboard')await page.keyboard.up('ArrowUp');if(device==='touch')await page.locator('#gas').dispatchEvent('pointerup',{pointerId:8,pointerType:'touch',isPrimary:true});
+   console.log(JSON.stringify({test:'pit-manual-service',mobileEmulation:mobile,device,...result}));
+   assert.ok(result.installed,device+': service did not finish');assert.equal(result.after.tyres.compound,'HARD');assert.equal(result.after.driving,'MANUAL');assert.equal(result.after.pit.pitStops,1);assert.equal(result.after.faults,0);assert.ok(result.after.speed>0,device+': inputs not restored');
+  }
   console.log(JSON.stringify({test:'pit-browser-success',mobileEmulation:mobile,circuits:dirs.length,rain:true}));await context.close();
  }finally{await browser.close()}
 })().catch(e=>{console.error(e);process.exitCode=1});

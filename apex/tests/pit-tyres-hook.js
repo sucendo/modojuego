@@ -42,6 +42,18 @@ window.__apexPitAudit={
   updateHud(true);activeRenderer.renderFrame();
   return {completed,start,end:this.status(),phases,samples,maxMove,maxProgressJump,maxLaneKph,finishCrossings,service,cpuMs:performance.now()-t0};
  },
+ manualFixture(device){
+  const plan=apexPitRoutePlan(),box=apexPitBoxForCar(plan,player),q=apexPitPointAtS(box.pitS-plan.dir);
+  setAutoDriveMode(0,false);apexReleaseInputs();gyro.enabled=device==='gyro';gyro.steer=0;gyro.throttle=1;gyro.brake=0;gyro.last=performance.now();
+  player.x=q.x;player.z=q.z;player.heading=Math.atan2(q.tx*plan.dir,q.tz*plan.dir);player.vx=0;player.vz=0;player.speed=0;player.yawRate=0;player.driveNetwork='PIT';player.pitIndex=null;
+  syncPlayerTrack();player.classificationS=apexPlayerClassificationS();player.progressS=player.classificationS;player.lastGood=snapshotPhysics();
+  apexPitSelectCompound(player,'HARD');requestPitStop();return this.status();
+ },
+ async manualService(){
+  const before=this.status();let installed=null;
+  for(let i=0;i<400;i++){if(gyro.enabled)gyro.last=performance.now();update(.01,i%5===4,.05);if(player.pitStops===1){installed=this.status();for(let k=0;k<10;k++)update(.01,k%5===4,.05);break}if(i%100===99)await new Promise(r=>setTimeout(r,0))}
+  return {before,installed,after:this.status()};
+ },
  perf(){return {version:APP_VERSION,rivals:rivals.length,summary:apexPerformanceSummary(),profile:renderProfilerSnapshot()}},
  stop(){pitAuditStepping=true;goMenu()}
 };
