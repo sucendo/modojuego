@@ -104,15 +104,21 @@ linear-gradient(0deg,#02060cdf 0%,transparent 37%,#07101a66 100%)}
 #home .apexMenuDialogClose{position:absolute;right:10px;top:8px;border:0;background:#96253b;color:white;padding:5px 11px;cursor:pointer}
 @media (min-width:1200px){#home .apexWordmark{font-size:min(7.8vw,127px)}}
 @media (max-width:720px){#home{height:100svh;min-height:600px}#home .apexCover{background-position:62% center}#home .apexCoverShade{background:linear-gradient(90deg,#01060eef,#04101d85 58%,#01060c11),linear-gradient(0deg,#02050af5,transparent 70%)}#home .apexHomeBrand{left:5%;top:9%;width:87%}#home .apexWordmark{font-size:clamp(45px,10.8vw,78px)}#home .apexLogoSubtitle{font-size:clamp(8px,1.8vw,13px);letter-spacing:.5em}#home .apexHomeMotto{left:6%;top:31%;font-size:13px}#home .apexHomeActions{left:6%;right:6%;top:51%;width:88%;gap:15px}#home .apexHomeAction{font-size:16px;height:61px}#home .apexHomeFooter{height:109px;min-height:109px;padding:6px 4%}#home .apexFooterActions{width:100%;justify-content:space-around}#home .apexFooterItem{flex:1;display:flex;flex-direction:column;justify-content:center;gap:3px;font-size:9px;padding:0 4px;white-space:normal;text-align:center}#home .apexFooterItem svg{width:18px;height:18px}#home .apexFooterProfile span{text-align:center}#home .apexHomeSlogan{display:none}}
+#home button.apexLogoArtwork{background:transparent;border:0;text-align:left;padding:0;color:inherit;display:block;cursor:pointer}
+#home .apexLogoArtwork:focus-visible{outline:2px solid #e1f6ff;outline-offset:6px}
+#home .apexLogoArtwork.withLogo{transform:none}
+#home .apexLogoArtwork.withLogo .apexWordmark,#home .apexLogoArtwork.withLogo .apexLogoSubtitle{display:none}
+#home .apexLogoImage:not([hidden]){display:block;width:100%;height:auto;object-fit:contain;filter:drop-shadow(2px 4px 3px #0009)}
 </style><body class="menuIsHome"><main><div class="top"><div class="brand">APEX <span>26</span><em>FORMULA RACING</em></div><aside>FASE 9A · PROTOTIPO DE NAVEGACIÓN</aside></div>
 <section id="home" class="screen active" aria-label="Menú principal de APEX Formula 26">
   <div class="apexCover" aria-hidden="true"></div>
   <div class="apexCoverShade" aria-hidden="true"></div>
   <header class="apexHomeBrand">
-    <div class="apexLogoArtwork" role="img" aria-label="APEX 26 Formula Racing">
-      <span class="apexWordmark"><span class="apexChrome">APEX</span><span class="apexNumber">26</span></span>
-      <span class="apexLogoSubtitle">FORMULA <span>RACING</span></span>
-    </div>
+    <button class="apexLogoArtwork" type="button" aria-label="Utilizar tu logotipo PNG de APEX 26" title="Pulsa para utilizar tu logotipo PNG transparente">
+      <img id="apexHomeLogoImage" class="apexLogoImage" alt="APEX 26 Formula Racing" hidden>
+      <span class="apexWordmark" aria-hidden="true"><span class="apexChrome">APEX</span><span class="apexNumber">26</span></span>
+      <span class="apexLogoSubtitle" aria-hidden="true">FORMULA <span>RACING</span></span>
+    </button><input id="apexLogoFile" type="file" accept="image/png,image/webp" hidden>
   </header>
   <div class="apexHomeMotto">AUTÉNTICA<br>COMPETICIÓN.<br>SIN LÍMITES<span class="apexMottoStroke"></span></div>
   <nav class="apexHomeActions" aria-label="Menú principal">
@@ -154,4 +160,15 @@ function apexMenuCloseDialog(){document.getElementById('apexMenuDialog').hidden=
 function apexMenuToggleAudio(){const music=document.getElementById('music');if(!music)return;music.click();const label=document.getElementById('menuAudioLabel');if(label){label.textContent='AUDIO';document.getElementById('menuAudioBtn').setAttribute('aria-pressed',String(playing))}}
 document.getElementById('apexMenuDialog').addEventListener('click',e=>{if(e.target.id==='apexMenuDialog')apexMenuCloseDialog()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')apexMenuCloseDialog()});
+
+(function(){
+ const logoBtn=document.querySelector('#home .apexLogoArtwork'),picker=document.getElementById('apexLogoFile'),image=document.getElementById('apexHomeLogoImage');
+ function useLogo(data){image.src=data;image.hidden=false;logoBtn.classList.add('withLogo')}
+ try{const saved=localStorage.getItem('APEX26_9A_MENU_LOGO');if(saved&&saved.startsWith('data:image/'))useLogo(saved)}catch(_){}
+ logoBtn.addEventListener('click',()=>picker.click());
+ picker.addEventListener('change',()=>{const file=picker.files&&picker.files[0];if(!file)return;
+  if(!/^image\/(png|webp)$/.test(file.type)||file.size>3000000){alert('Elige un PNG o WebP de menos de 3 MB.');return}
+  const reader=new FileReader();reader.onload=()=>{const data=String(reader.result);useLogo(data);try{localStorage.setItem('APEX26_9A_MENU_LOGO',data)}catch(_){}};reader.readAsDataURL(file);
+ });
+})();
 </script></body></html>
