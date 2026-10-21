@@ -57,5 +57,30 @@ window.__apexPitAudit={
   return {before,installed,after:this.status()};
  },
  perf(){return {version:APP_VERSION,rivals:rivals.length,summary:apexPerformanceSummary(),profile:renderProfilerSnapshot()}},
+ async rivalCycle(dir){
+  const loaded=await this.load(dir,'CLEAR',false,true),plan=apexPitRoutePlan(),rv=rivals[0];
+  if(!plan||!rv)return {available:false,reason:'NO_RIVAL_OR_PIT'};
+  const eligibility=apexRivalPitEligibility(rv,plan);
+  if(!eligibility.ok)return {available:false,reason:eligibility.reason,issue:plan.serviceIssue};
+  // One fixture placement before the test, then production rival PIT controller only.
+  const q=renderRibbonFrameAt(plan.entryTrackS);
+  rv.s=plan.entryTrackS;rv.lat=0;rv.speed=4;rv.total=0;rv.progressOriginS=rv.s;
+  const request=apexRivalPitRequest(rv,'HARD');
+  if(!request.ok)return {available:false,reason:request.reason};
+  const phases=[],samples=[];let phase='',maxJump=0,maxWorldJump=0,maxSpeed=0,prevWorld=rivalWorld(rv),prevTotal=rv.total,done=false;
+  for(let i=0;i<18000;i++){
+   raceT+=.05;
+   const handled=apexRivalPitDrive(rv,.05,trackData.km*1000);
+   const world=rivalWorld(rv),distance=Math.hypot(world.x-prevWorld.x,world.z-prevWorld.z);
+   maxWorldJump=Math.max(maxWorldJump,distance);maxJump=Math.max(maxJump,Math.abs(rv.total-prevTotal));
+   maxSpeed=Math.max(maxSpeed,rv.driveNetwork==='PIT'?rv.speed*3.6:0);
+   if(rv.pitStop.phase!==phase){phase=rv.pitStop.phase;phases.push({phase,t:raceT,pitS:rv.pitS,total:rv.total});}
+   if(i%200===0)samples.push({t:raceT,phase,s:rv.s,pitS:rv.pitS,network:rv.driveNetwork,speed:rv.speed});
+   prevWorld=world;prevTotal=rv.total;
+   if(rv.pitStop.phase==='DONE'){done=true;break;}
+   if(!handled&&rv.pitStop.phase==='APPROACH')break;
+  }
+  return {available:true,dir,done,phases,samples,maxJump,maxWorldJump,maxSpeed,pitStops:rv.pitStops||0,compound:rv.tyres?.compound,network:rv.driveNetwork,final:rv.pitStop.phase,box:eligibility.box,limit:plan.speedKph,request};
+ },
  stop(){pitAuditStepping=true;goMenu()}
 };
