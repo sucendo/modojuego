@@ -3353,6 +3353,26 @@ function apexPitSelectCompound(car,key){
  if(car===player)try{appStorage.setItem('apex26.tyre.next.v1',key)}catch(e){}
  return true;
 }
+// 8D.1: explicit, side-effect-free eligibility gate for rival pit requests.
+// Rival navigation is separate from the player's physical pit controller.
+function apexRivalPitEligibility(car,plan=apexPitRoutePlan()){
+ if(!car||car===player)return {ok:false,reason:'INVALID_RIVAL'};
+ if(currentSession!=='race'||car.finished)return {ok:false,reason:'NOT_RACING'};
+ if(!plan||plan.serviceSafe===false)return {ok:false,reason:'UNSAFE_PIT_ROUTE'};
+ const box=apexPitBoxForCar(plan,car);
+ if(!box)return {ok:false,reason:'NO_VALID_BOX'};
+ if(car.pitStop&&car.pitStop.active)return {ok:false,reason:'ALREADY_REQUESTED'};
+ return {ok:true,box};
+}
+function apexRivalPitRequest(car,compound){
+ const check=apexRivalPitEligibility(car);
+ if(!check.ok)return check;
+ // Request only: never install tyres, shift position or advance laps here.
+ car.nextTyreCompound=apexTyreKey(compound||car.nextTyreCompound||car.tyres?.compound);
+ car.pitStop={active:true,phase:'REQUESTED',compound:car.nextTyreCompound,
+   requestedAt:raceT,boxSlotId:check.box.slotId,boxPitS:check.box.pitS,serviced:false};
+ return {ok:true,box:check.box};
+}
 function apexPitServiceBegin(car,st,now,duration){
  if(!car||!st||!Number.isFinite(now)||st.serviced||Number.isFinite(st.serviceStarted))return false;
  st.lockedCompound=apexTyreKey(st.compound||car.nextTyreCompound||car.tyres?.compound);
