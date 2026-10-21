@@ -2150,6 +2150,28 @@ function maybeRivalMistake(rv,dt,plan,traffic){
 }
 // 8D.1: travel strictly on the authored PIT ribbon, not on the racing spline.
 // Requests remain explicit until the later strategy phase.
+// Share pit-lane space without allowing cars to overlap or service the same box.
+function apexRivalPitLeadGap(rv,plan){
+ if(!rv||rv.driveNetwork!=='PIT'||!Number.isFinite(rv.pitS))return Infinity;
+ let gap=Infinity;
+ const others=[...(Array.isArray(rivals)?rivals:[]),player];
+ for(const other of others){
+  if(!other||other===rv||other.driveNetwork!=='PIT')continue;
+  const os=Number.isFinite(other.pitS)?other.pitS:other.pitState?.pitS;
+  if(!Number.isFinite(os))continue;
+  const forward=plan.dir*(os-rv.pitS);
+  if(forward>=-.05)gap=Math.min(gap,Math.max(0,forward));
+ }
+ return gap;
+}
+function apexRivalPitBoxOccupied(rv,plan,box){
+ const cars=[...(Array.isArray(rivals)?rivals:[]),player];
+ return cars.some(other=>{
+  if(!other||other===rv||other.driveNetwork!=='PIT')return false;
+  const os=Number.isFinite(other.pitS)?other.pitS:other.pitState?.pitS;
+  return Number.isFinite(os)&&Math.abs(os-box.pitS)<5.5;
+ });
+}
 function apexRivalPitDrive(rv,dt,L){
  const st=rv&&rv.pitStop;if(!st||!st.active)return false;
  const plan=apexPitRoutePlan(),box=plan&&apexPitBoxForCar(plan,rv);
@@ -2202,6 +2224,8 @@ function apexRivalPitDrive(rv,dt,L){
  if(rv.driveNetwork!=='PIT')return false;
  const remaining=plan.dir*(plan.exitPitS-rv.pitS);
  let target=apexPitSafeSpeed(plan,rv.pitS);
+ const leadGap=apexRivalPitLeadGap(rv,plan);
+ if(leadGap<18)target=Math.min(target,Math.max(0,(leadGap-6)*.65));
  const boxD=plan.dir*(box.pitS-rv.pitS);
  if(st.phase==='IN_LANE'&&boxD>=-1.2){
   target=Math.min(target,Math.sqrt(Math.max(0,2*3.8*Math.max(0,boxD))));
@@ -2212,9 +2236,10 @@ function apexRivalPitDrive(rv,dt,L){
  }else{
   rv.speed=clamp(rv.speed+clamp(target-rv.speed,-6*dt,3.5*dt),0,plan.speedMps);
   let travel=rv.speed*dt;
-  if(st.phase==='IN_LANE'&&boxD>=0)travel=Math.min(travel,boxD);
+  if(Number.isFinite(leadGap))travel=Math.min(travel,Math.max(0,leadGap-5.5));
+  if(st.phase==='IN_LANE'&&boxD>=0)travel=Math.min(travel,Math.max(0,boxD-(apexRivalPitBoxOccupied(rv,plan,box)?7:0)));
   rv.pitS=clamp(rv.pitS+plan.dir*travel,plan.primaryStart,plan.primaryEnd);
-  if(st.phase==='IN_LANE'&&Math.abs(rv.pitS-box.pitS)<.08&&rv.speed<.8){
+  if(st.phase==='IN_LANE'&&Math.abs(rv.pitS-box.pitS)<.08&&rv.speed<.8&&!apexRivalPitBoxOccupied(rv,plan,box)){
    rv.speed=0;
    apexPitServiceBegin(rv,st,raceT,plan.serviceSeconds);
   }
