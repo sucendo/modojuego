@@ -36,6 +36,28 @@ body{background:linear-gradient(90deg,#030a12ec,#091727d4),var(--f1-night) cente
 .f1PhotoCredits{margin:18px 0 0;color:#9db0c2;font-size:11px;line-height:1.8;background:#05101ade;border-top:1px solid #2c4357;padding:12px 15px}
 .f1PhotoCredits a{color:#a7d9fb;text-decoration:underline;text-underline-offset:3px}
 @media(max-width:750px){#home .heroStage{background-position:center,center,64% center}#home .hero{min-height:290px}.typeButtons button{min-height:165px}}
+
+/* 9A.5: la misma escena nocturna de boxes del concepto que eligió el usuario.
+   El recorte evita los rótulos y botones de la maqueta original. */
+#home .heroStage{
+ inset:0;
+ width:100%;
+ height:100%;
+ opacity:1;
+ background-image:
+ linear-gradient(90deg,#020913 0%,#03101bea 20%,#04101abb 36%,#07131a20 74%),
+ linear-gradient(0deg,#010509e8 0%,#01050928 40%,transparent 72%),
+ url("./assets/menu-9a-f1-night.jpg");
+ background-position:center,center,right 56%;
+ background-size:cover;
+ background-repeat:no-repeat;
+}
+#home .heroStage .formulaCar{display:none}
+#home .hero{isolation:isolate}
+#home .hero h1{max-width:700px;text-shadow:0 3px 18px #02060b,0 0 3px #000}
+@media(max-width:750px){
+ #home .heroStage{background-position:center,center,65% 55%;background-image:linear-gradient(90deg,#020811ed,#05111ac6 42%,#07111b56),linear-gradient(0deg,#02070de8,transparent 70%),url("./assets/menu-9a-f1-night.jpg")}
+}
 </style><main><div class="top"><div class="brand">APEX <span>26</span><em>FORMULA RACING</em></div><aside>FASE 9A · PROTOTIPO DE NAVEGACIÓN</aside></div>
 <section id="home" class="screen active"><div class="heroStage" aria-hidden="true"><svg viewBox="0 0 620 240" class="formulaCar" aria-hidden="true"><defs><linearGradient id="carRed" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#ff4955"/><stop offset="1" stop-color="#7d0619"/></linearGradient><linearGradient id="rubber" x1="0" x2="1"><stop stop-color="#343b44"/><stop offset=".5" stop-color="#030508"/><stop offset="1" stop-color="#45474c"/></linearGradient></defs><ellipse cx="315" cy="207" rx="263" ry="18" fill="#000" opacity=".75"/><g transform="translate(0 8)"><ellipse cx="126" cy="168" rx="45" ry="58" fill="url(#rubber)" stroke="#2f343b" stroke-width="6"/><ellipse cx="484" cy="168" rx="47" ry="60" fill="url(#rubber)" stroke="#323941" stroke-width="6"/><ellipse cx="126" cy="168" rx="23" ry="34" fill="#131a21" stroke="#ce343c" stroke-width="5"/><ellipse cx="484" cy="168" rx="23" ry="35" fill="#131a21" stroke="#ce343c" stroke-width="5"/><path d="M76 163 L172 147 230 113 371 113 426 149 549 161 554 183 428 184 370 172 222 174 168 187 68 187Z" fill="url(#carRed)" stroke="#ff7d83" stroke-width="2"/><path d="M188 146 L264 110 357 110 425 147 360 151 246 151Z" fill="#090f17"/><path d="M261 110 L287 83 340 83 361 111Z" fill="#c92034"/><path d="M288 92 Q312 67 337 91 L338 110 286 110Z" fill="#0a1525" stroke="#aaa" stroke-width="2"/><path d="M29 145 L132 145 174 153 158 173 27 173Z" fill="#141b27" stroke="#e8f1fd" stroke-width="2"/><path d="M433 141 L598 141 598 155 438 158Z" fill="#1a2230" stroke="#e7e8e9" stroke-width="2"/><path d="M459 105 L571 105 571 147 459 144Z" fill="#1a2230" stroke="#889aaf" stroke-width="2"/><path d="M470 116 L562 116" stroke="#ee2337" stroke-width="8"/><path d="M223 157 L376 156" stroke="#ffffff" stroke-width="4"/><text x="293" y="145" text-anchor="middle" fill="#f3f5f8" font-family="Arial" font-size="19" font-weight="900">APEX 26</text></g></svg></div><div class="hero"><small class="previewTag">APEX FORMULA 26 · PRE-RELEASE</small><h1>EL GRAN PREMIO<br>EMPIEZA AQUÍ</h1><p>Elige cómo quieres competir.</p></div><div class="choiceGrid"><button class="choice" onclick="show('modes')"><strong>🏁 TIPO DE CARRERA</strong><small>Carrera rápida, Gran Premio, temporada o entrenamientos</small></button><button class="choice" onclick="show('options')"><strong>⚙ OPCIONES</strong><small>Editor de circuitos, gráficos, controles, sonido y herramientas</small></button></div></section>
 <section id="options" class="screen"><button class="goBack" onclick="show('home')">← Menú principal</button><h1>Opciones</h1><p class="lede">Herramientas y ajustes del simulador, separados de la preparación de carrera.</p><div class="cols"><section class="card"><h2>Gráficos y rendimiento</h2><label>Calidad de renderizado</label><select><option>Automático</option><option>Bajo</option><option>Medio</option><option>Alto</option></select><label>Resolución</label><select><option>Automática / nativa</option><option>720p</option><option>1080p</option></select><p class="fine">El ajuste real de APEX se conectará en la integración.</p></section><section class="card"><h2>Controles</h2><label>Dispositivo</label><select><option>Teclado</option><option>Volante / gamepad</option><option>Giroscopio móvil</option></select><label>Ayudas</label><select><option>Asistido</option><option>Simulación</option><option>Sin ayudas</option></select></section><section class="card"><h2>Circuitos y herramientas</h2><div class="menuOption">Editor de circuitos SVG/JSON</div><div class="menuOption">Inspector 3D y puntos de cronometraje</div><div class="menuOption">Biblioteca e importación de circuitos</div><p class="fine">Accesos ilustrativos: todavía no modifican circuitos reales.</p></section><section class="card"><h2>Sonido y sistema</h2><label>Música del menú</label><select><option>Activada</option><option>Desactivada</option></select><label>Volumen</label><input type="range" min="0" max="100" value="65"><p class="fine">Diagnóstico, datos guardados y preferencias estarán aquí.</p></section></div></section>
