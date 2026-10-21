@@ -13,3 +13,10 @@ No iniciar automáticamente solicitudes rivales ni conectar el servicio hasta qu
 
 ## Cierre obligatorio
 Probar ciclos completos de rivales en Madrid, Mónaco, Monza y Suzuka; Spa rechaza. Verificar 22 coches, el cronometraje y colisiones, paradas sin salto, 8A/8B/8C, desktop/móvil. No fusionar sin verde CI.
+
+## Prototipo de navegación en commit 92c4d625
+- `apexRivalPitDrive` avanza por la cinta PIT autorada, limita velocidad, frena ante el box y reutiliza `apexPitServiceBegin` / `apexPitServiceComplete`.
+- `rivalWorld` resuelve posición del rival por centro de PIT sólo en la fase activa. El progreso clasificatorio se proyecta de entrada a salida y conserva el cronometraje de vuelta existente.
+- Protección contra salto al entrar: no se inicia la red PIT si el coche no está a menos de 2,4 metros del extremo de entrada. La salida exige una unión de menos de 2,5 metros con pista. Con geometrías que no cumplan, puede quedar bloqueado: es un prototipo, NO una validación de recorrido.
+- Las solicitudes siguen siendo explícitas; sin automatismo de estrategia ni recorrido completo probado. Se requiere simulación de integración con prueba real antes de habilitarlo para toda la parrilla.
+- Resta revisar contacto lateral, render y colisiones de rivales sobre PIT en todos los LOD. No cerrar ni fusionar hasta superar tests específicos.
