@@ -2179,17 +2179,19 @@ function apexRivalPitDrive(rv,dt,L){
  }
  if(st.phase==='MERGE_OUT'&&rv.driveNetwork==='PIT_MERGE'){
   const m=rv.pitMerge;if(!m){st.phase='FAILED';st.active=false;return false;}
-  const prevMergeS=rv.s,limit=Math.max(2,rv.speed*dt);
-  // Real displacement along the world-space connector, never a classification snap.
-  const ahead=renderRibbonFrameAt(mod(rv.s+Math.max(4,rv.speed*.7),L));
+  const prevMergeS=rv.s,limit=rv.speed*dt;
+  // Fixed physical merge destination. Chasing a point moving at equal speed
+  // could otherwise keep the car in MERGE_OUT indefinitely.
+  const ahead=renderRibbonFrameAt(m.targetS);
   if(!ahead||!Number.isFinite(ahead.x)||!Number.isFinite(ahead.z))return true;
   const dx=ahead.x-m.x,dz=ahead.z-m.z,dist=Math.hypot(dx,dz);
   const step=Math.min(limit,dist),fraction=dist>1e-6?step/dist:0;
   m.x+=dx*fraction;m.z+=dz*fraction;
-  const nextS=mod(rv.s+rv.speed*dt,L),pose=renderRibbonFrameAt(nextS);
-  const trackNear=pose&&Math.hypot(pose.x-m.x,pose.z-m.z);
-  rv.total+=rv.speed*dt;rv.s=nextS;
-  if(trackNear!=null&&trackNear<1.5){
+  const progress=clamp(1-Math.max(0,dist-step)/Math.max(.001,m.totalDistance),0,1);
+  const newTotal=m.startTotal+m.trackDistance*progress;
+  rv.total=newTotal;rv.s=mod(m.startS+m.trackDistance*progress,L);
+  const trackNear=Math.hypot(ahead.x-m.x,ahead.z-m.z);
+  if(trackNear<1.5){
    rv.driveNetwork='TRACK';rv.pitMerge=null;rv.lat=0;st.active=false;st.phase='DONE';
    apexPitServiceExit(rv,st,raceT,plan);
   }
@@ -2232,7 +2234,11 @@ function apexRivalPitDrive(rv,dt,L){
    }else{
     // An authored PIT exit need not coincide with the track centreline.
     // Continue through world space until the car physically reaches the track.
-    rv.pitMerge={x:point.x,z:point.z,y:point.y+.014,q:{tx:point.tx*plan.dir,tz:point.tz*plan.dir,nx:point.nx,nz:point.nz}};
+    const mergeDistance=12,mergeTarget=renderRibbonFrameAt(mod(rv.s+mergeDistance,L));
+    if(!mergeTarget)return true;
+    rv.pitMerge={x:point.x,z:point.z,y:point.y+.014,q:{tx:point.tx*plan.dir,tz:point.tz*plan.dir,nx:point.nx,nz:point.nz},
+      startS:rv.s,startTotal:rv.total,trackDistance:mergeDistance,targetS:mod(rv.s+mergeDistance,L),
+      totalDistance:Math.hypot(mergeTarget.x-point.x,mergeTarget.z-point.z)};
     rv.driveNetwork='PIT_MERGE';rv.pitS=null;st.phase='MERGE_OUT';
    }
   }
