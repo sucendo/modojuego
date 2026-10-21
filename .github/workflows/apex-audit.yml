@@ -85,6 +85,7 @@ jobs:
           done
           APEX_PIT_RESULTS=/tmp/apex-results/pits node apex/tests/pit-tyres-browser.cjs 2>&1 | tee /tmp/apex-results/pit-browser.jsonl
           APEX_RACE_RESULTS=/tmp/apex-results/races node apex/tests/race-distance-browser.cjs 2>&1 | tee /tmp/apex-results/race-browser.jsonl
+          node apex/tests/rival-pit-browser.cjs 2>&1 | tee /tmp/apex-results/rival-pit-browser.jsonl
           node apex/tests/browser-audit.cjs 2>&1 | tee /tmp/apex-results/browser.jsonl
       - uses: actions/upload-artifact@v4
         if: always()
