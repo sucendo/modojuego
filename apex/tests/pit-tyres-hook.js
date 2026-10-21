@@ -82,7 +82,8 @@ window.__apexPitAudit={
    if(rv.pitStop.phase==='FAILED')break;
    if(i>1200&&!handled&&rv.pitStop.phase==='APPROACH')break;
   }
-  return {available:true,dir,done,phases,samples,maxJump,maxWorldJump,maxSpeed,pitStops:rv.pitStops||0,compound:rv.tyres?.compound,network:rv.driveNetwork,final:rv.pitStop.phase,box:eligibility.box,limit:plan.speedKph,request};
+  const endWorld=rivalWorld(rv),entryGap=mod(plan.entryTrackS-rv.s,trackData.km*1000),entryWorldGap=Math.hypot(endWorld.x-plan.entry.x,endWorld.z-plan.entry.z);
+  return {available:true,dir,done,phases,samples,maxJump,maxWorldJump,maxSpeed,pitStops:rv.pitStops||0,compound:rv.tyres?.compound,network:rv.driveNetwork,final:rv.pitStop.phase,entryGap,entryWorldGap,finalLat:rv.lat,box:eligibility.box,limit:plan.speedKph,request};
  },
  stop(){pitAuditStepping=true;goMenu()}
 };
