@@ -2158,9 +2158,20 @@ function apexRivalPitDrive(rv,dt,L){
   // No teleport: the world-space centre of the rival must meet the first PIT vertex.
   st.phase='APPROACH';
   const world=rivalWorld(rv),d=Math.hypot(world.x-plan.entry.x,world.z-plan.entry.z);
+  // Approach the authored entrance progressively on the track surface.
+  // Do not snap the rival directly from the racing spline to the PIT ribbon.
+  if(delta<85&&delta<L-8){
+   const frame=renderRibbonFrameAt(rv.s);
+   if(frame&&Number.isFinite(frame.x)&&Number.isFinite(frame.z)&&Number.isFinite(frame.nx)&&Number.isFinite(frame.nz)){
+    const projected=(plan.entry.x-frame.x)*frame.nx+(plan.entry.z-frame.z)*frame.nz;
+    const desired=clamp(projected,-Math.min(3.4,envProfile(rv.s).half-.65),Math.min(3.4,envProfile(rv.s).half-.65));
+    rv.lat+=clamp(desired-rv.lat,-1.25*dt,1.25*dt);
+   }
+  }
   if(delta>Math.max(20,rv.speed*1.5)&&delta<L-8)return false;
   rv.speed=Math.min(rv.speed,Math.max(3,Math.sqrt(Math.max(0,2*5*delta))));
-  if(d>2.4)return false;
+  const arrival=rivalWorld(rv),arrivalD=Math.hypot(arrival.x-plan.entry.x,arrival.z-plan.entry.z);
+  if(arrivalD>2.4)return false;
   rv.driveNetwork='PIT';rv.pitS=plan.entryPitS;rv.pitLat=0;st.phase='IN_LANE';
   st.enteredAt=raceT;st.entryTotal=rv.total;st.entryClassificationS=rv.s;
   st.referenceSpeed=rv.speed;
