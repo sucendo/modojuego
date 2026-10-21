@@ -2,7 +2,7 @@
 
 ## Estado actual
 
-**v0.14.1 · PRE-RELEASE**
+**v0.14.2 · PRE-RELEASE**
 
 APEX todavía no se considera una versión pública estable. Mientras el proyecto siga en esta fase, todas las versiones permanecerán bajo la rama mayor `0.x`.
 
@@ -31,3 +31,7 @@ Build `2026.10.20.08A`: modelo de neumáticos integrado. Se mantienen esquema de
 ## v0.14.1
 
 Build `2026.10.20.08B`: cambio efectivo de neumáticos en boxes, estrategia sin pausa y servicio único. Conserva esquema de guardado 4 y subesquema térmico 1; añade datos opcionales de boxes e historial en la instantánea final de sesión. Las carreras en curso no se reanudan al recargar.
+
+## v0.14.2 · 21/10/2026
+
+Fase 8C: distancias 25/50/75/100 %, meta del líder y llegada progresiva, resultados persistentes y desgaste común moderado (límite ×1,25 hasta 8D; ×1 al 100 %). Conserva 8B y el bloqueo geométrico de Spa.

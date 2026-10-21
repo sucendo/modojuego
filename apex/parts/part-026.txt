@@ -958,10 +958,11 @@ function apexTyreEvolveAxle(a,c,dt,distance,speed,lat,brake,traction,slide,lock,
  const thermalWear=1+Math.max(0,a.surfaceTemperature-c.opt-c.band)*.025+Math.max(0,e.trackTemperature-40)*.012;
  const dryWear=1+(c.water>0?(1-e.wetness)*(c.water===1?3:1.4):0);
  const abuse=1+slide*2.6*c.slide+lock*2.4*c.lock;
- a.wear=clamp(a.wear+distance/c.life*p.trackAbrasion*stress*(.65+effort)*thermalWear*dryWear*abuse*surface,0,1);
+ a.wear=clamp(a.wear+distance/c.life*p.trackAbrasion*stress*(.65+effort)*thermalWear*dryWear*abuse*surface*(currentSession==='race'&&trackData&&trackData.raceConfig?trackData.raceConfig.wearMultiplier:1),0,1);
 }
 // Shared model for every car. Inputs are physical demand; no render/LOD/driver bonuses.
 function apexTyreStep(car,dt,distance,speed,lat,brake,traction,slideF,slideR,lockF,lockR,surface=1){
+ if(car.finished)return;
  if(!car.tyres)apexTyreRestore(car,null);
  const t=car.tyres,c=APEX_TYRE_COMPOUNDS[t.compound],p=trackData&&trackData.tyreProfile||apexTyreDefaultTrack,e=apexTyreEnvironment;
  dt=finiteClamp(dt,0,1,0);distance=finiteClamp(distance,0,150*dt,0);speed=finiteClamp(speed,0,150,0);
@@ -986,6 +987,7 @@ function apexTyreInitMenu(){
  select.onchange=sync;sync();
 }
 function apexTyrePersistSession(){
+ apexRacePersistSession();
  if(!player||!player.tyres)return;
  save.lastTyreSession={schema:1,pits:{player:apexPitSnapshot(player),rivals:rivals.map(rv=>({id:rv.id,...apexPitSnapshot(rv)}))},circuit:trackData&&trackData.spec.dir,session:currentSession,player:apexTyreSnapshot(player),rivals:rivals.map(rv=>({id:rv.id,...apexTyreSnapshot(rv)})),environment:{...apexTyreEnvironment}};persist();
 }
@@ -1506,6 +1508,9 @@ async function startPreparedRace(spec,laps,gm,btn){
  const seatUid=gm==="season"?save.seasonSeatUid:null;
  activeDriverRoster=buildRaceRoster(teamKey,seatUid);
 
+ const raceConfig=currentSession==='race'?apexRaceConfig(spec,sessionSettings.racePercentage??apexRacePercentage,readStoredCircuitJson(spec.dir),trackData):null;
+ if(raceConfig&&!raceConfig.totalLaps){apexRaceLoadingRestore();alert('Faltan las vueltas completas en el JSON del circuito.');goMenu();return;}
+ if(raceConfig)laps=raceConfig.totalLaps;apexRaceStartSession(raceConfig);
  const L=trackData.km*1000,isRace=currentSession==='race',timingGeom=apexRaceTimingGeometry(spec,+laps),progressOrigin=isRace?timingGeom.start:timingGeom.finish,grid=(isRace&&weekendContext&&weekendContext.gridOrder&&weekendContext.gridOrder.length)?weekendContext.gridOrder:null;
  let quickGridSlot=null;
  if(isRace&&gm==='quick'&&!grid){
@@ -1876,6 +1881,7 @@ function practiceDeltaMarkup(delta){
 }
 
 function updateLapValidation(prevS,newS,prevTotal,newTotal){
+ if(player.finished)return false;
  const L=trackData.km*1000,g=apexRaceTimingGeometry(trackData.spec,player.laps),finishS=g.finish,forwardOk=player.trackDirDot>.08;
  // En salida de parrilla FIA el crono empieza con la señal de salida, no al cruzar START LINE.
  // En sesiones no-race se conserva el armado por cruce de CONTROL/META.
@@ -1890,9 +1896,9 @@ function updateLapValidation(prevS,newS,prevTotal,newTotal){
  const elapsed=Math.max(0,raceT-finite(player.timingLapStart,lapStart)),sectorTimes=apexCompletedSectorTimes(player,elapsed),sectorSplits=Array.isArray(player.timingSectorSplits)?player.timingSectorSplits.slice():[];
  apexCompleteBroadcastLap(player,sectorTimes,elapsed);
  if(currentSession==='race'&&player.raceFirstLapPending){
-   player.raceFirstLapPending=false;player.lastCompletedLap=1;player.firstLapElapsed=elapsed;player.lap=1;sessionLapLog.push({lap:1,time:null,firstLap:true,elapsed,shortenedByM:Number(Math.max(0,L-g.firstFinishDistance).toFixed(3)),extendedByM:Number(Math.max(0,g.firstFinishDistance-L).toFixed(3)),controlRelation:g.controlRelation,controlCrossings:g.firstLapControlCrossings,sectors:sectorTimes,sectorSplits,timingGate:'FIA_GRID_START_TO_CONTROL_LINE'});lapStart=raceT;apexResetDriverTimingState(player,raceT);player.autoLapSeconds=0;player.autoUsedThisLap=false;player.currentLapTrace=[];player.lapTraceLastBin=-1;player.lapTraceLastTime=0;if(player.lap>=player.laps){finishRace();return true}return false;
+   player.raceFirstLapPending=false;player.lastCompletedLap=1;player.firstLapElapsed=elapsed;player.lap=1;sessionLapLog.push({lap:1,time:null,firstLap:true,elapsed,shortenedByM:Number(Math.max(0,L-g.firstFinishDistance).toFixed(3)),extendedByM:Number(Math.max(0,g.firstFinishDistance-L).toFixed(3)),controlRelation:g.controlRelation,controlCrossings:g.firstLapControlCrossings,sectors:sectorTimes,sectorSplits,timingGate:'FIA_GRID_START_TO_CONTROL_LINE'});lapStart=raceT;apexResetDriverTimingState(player,raceT);player.autoLapSeconds=0;player.autoUsedThisLap=false;player.currentLapTrace=[];player.lapTraceLastBin=-1;player.lapTraceLastTime=0;apexRaceQueueFinish(player,true,prevS,newS,L);return false;
  }
- const lt=elapsed,autoInvalid=!!player.autoUsedThisLap,improved=lt<best,completedTrace=Array.isArray(player.currentLapTrace)?player.currentLapTrace.slice():[];player.lastLapTime=lt;player.lastCompletedLap=player.lap+1;player.lastLapAutoInvalid=autoInvalid;sessionLapLog.push({lap:player.lap+1,time:lt,auto:autoInvalid,sectors:sectorTimes,sectorSplits,speedTrapKph:Number.isFinite(player.timingSpeedTrapKph)?player.timingSpeedTrapKph:null,timingGate:'FINISH_S_LINE_CROSSING'});best=Math.min(best,lt);if(currentSession==='freepractice'&&improved&&completedTrace.length){player.bestLapTrace=completedTrace;player.bestLapTraceTime=lt;}registerFastestLap(0,lt);if(!autoInvalid)recordSessionLap(lt);else{const a=$("raceAlert");if(a){a.textContent=improved?"VUELTA AUTO · MEJOR DE SESIÓN · NO GUARDADA":"VUELTA AUTO · NO GUARDADA";a.style.color="#ffd66b";}}lapStart=raceT;apexResetDriverTimingState(player,raceT);player.autoLapSeconds=0;player.autoUsedThisLap=false;player.lap++;player.currentLapTrace=[];player.lapTraceLastBin=-1;player.lapTraceLastTime=0;if(currentSession==='race'&&player.lap>=player.laps){finishRace();return true}if(sessionExpired&&currentSession!=='race'&&currentSession!=='freepractice'){finishNonRaceSession();return true}if(currentSession!=='race'&&currentSession!=='freepractice'&&player.lap>=player.laps){finishNonRaceSession();return true}return false;
+ const lt=elapsed,autoInvalid=!!player.autoUsedThisLap,improved=lt<best,completedTrace=Array.isArray(player.currentLapTrace)?player.currentLapTrace.slice():[];player.lastLapTime=lt;player.lastCompletedLap=player.lap+1;player.lastLapAutoInvalid=autoInvalid;sessionLapLog.push({lap:player.lap+1,time:lt,auto:autoInvalid,sectors:sectorTimes,sectorSplits,speedTrapKph:Number.isFinite(player.timingSpeedTrapKph)?player.timingSpeedTrapKph:null,timingGate:'FINISH_S_LINE_CROSSING'});best=Math.min(best,lt);if(currentSession==='freepractice'&&improved&&completedTrace.length){player.bestLapTrace=completedTrace;player.bestLapTraceTime=lt;}registerFastestLap(0,lt);if(!autoInvalid)recordSessionLap(lt);else{const a=$("raceAlert");if(a){a.textContent=improved?"VUELTA AUTO · MEJOR DE SESIÓN · NO GUARDADA":"VUELTA AUTO · NO GUARDADA";a.style.color="#ffd66b";}}lapStart=raceT;apexResetDriverTimingState(player,raceT);player.autoLapSeconds=0;player.autoUsedThisLap=false;player.lap++;player.currentLapTrace=[];player.lapTraceLastBin=-1;player.lapTraceLastTime=0;if(currentSession==='race')apexRaceQueueFinish(player,true,prevS,newS,L);if(sessionExpired&&currentSession!=='race'&&currentSession!=='freepractice'){finishNonRaceSession();return true}if(currentSession!=='race'&&currentSession!=='freepractice'&&player.lap>=player.laps){finishNonRaceSession();return true}return false;
 }
 
 // ---------- v4.9 RACECRAFT ----------
@@ -1959,7 +1965,7 @@ function driverCornerPlan(s,horizon=300,step=10){
    const pt={d,k,safe,score};
    if(score>best.score)best=pt;
    if(!first){first=pt;last=pt;prevSig=pt;samples=1;continue;}
-   // Sólo agrupamos la primera secuencia de curvas que viene por delante.
+   // Sólo agrupamos la primera secuencia de curvas que viene por elante.
    if(d-last.d>groupGap)continue;
    if(prevSig&&Math.sign(k)!==Math.sign(prevSig.k)&&Math.abs(k)>.00165&&Math.abs(prevSig.k)>.00165)signChanges++;
    last=pt;prevSig=pt;samples++;
@@ -4101,7 +4107,7 @@ function update(dt,runHeavy=true,heavyDt=dt){
    updateAudio(dt);if(countdown<=0){mode="race";if(currentSession==='race')apexArmRaceGridTiming();}return;
  }
  if(mode!=="race")return;
- raceT+=dt;apexWeatherUpdate(dt);apexTyreUpdateEnvironment();
+ player.raceStepStart=raceT;raceT+=dt;player.raceStepEnd=raceT;apexWeatherUpdate(dt);apexTyreUpdateEnvironment();
  if(player.crossedStart&&(demoMode||assistMode)){player.autoLapSeconds=(player.autoLapSeconds||0)+dt;player.autoUsedThisLap=true;}
  if(currentSession!=='race'&&Number.isFinite(sessionLimit)&&!sessionExpired&&raceT>=sessionLimit){
    sessionExpired=true;
