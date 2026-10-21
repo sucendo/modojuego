@@ -64,13 +64,14 @@ window.__apexPitAudit={
   if(!eligibility.ok)return {available:false,reason:eligibility.reason,issue:plan.serviceIssue};
   // One fixture placement before the test, then production rival PIT controller only.
   const q=renderRibbonFrameAt(plan.entryTrackS);
-  rv.s=plan.entryTrackS;rv.lat=0;rv.speed=4;rv.total=0;rv.progressOriginS=rv.s;
+  rv.s=mod(plan.entryTrackS-55,trackData.km*1000);rv.lat=0;rv.speed=12;rv.total=0;rv.progressOriginS=rv.s;
   const request=apexRivalPitRequest(rv,'HARD');
   if(!request.ok)return {available:false,reason:request.reason};
   const phases=[],samples=[];let phase='',maxJump=0,maxWorldJump=0,maxSpeed=0,prevWorld=rivalWorld(rv),prevTotal=rv.total,done=false;
   for(let i=0;i<18000;i++){
    raceT+=.05;
-   const handled=apexRivalPitDrive(rv,.05,trackData.km*1000);
+   updateRivalRacecraft(rv,.05,trackData.km*1000,1);
+   const handled=rv.driveNetwork==='PIT'||rv.pitStop.phase==='DONE';
    const world=rivalWorld(rv),distance=Math.hypot(world.x-prevWorld.x,world.z-prevWorld.z);
    maxWorldJump=Math.max(maxWorldJump,distance);maxJump=Math.max(maxJump,Math.abs(rv.total-prevTotal));
    maxSpeed=Math.max(maxSpeed,rv.driveNetwork==='PIT'?rv.speed*3.6:0);
@@ -78,7 +79,8 @@ window.__apexPitAudit={
    if(i%200===0)samples.push({t:raceT,phase,s:rv.s,pitS:rv.pitS,network:rv.driveNetwork,speed:rv.speed});
    prevWorld=world;prevTotal=rv.total;
    if(rv.pitStop.phase==='DONE'){done=true;break;}
-   if(!handled&&rv.pitStop.phase==='APPROACH')break;
+   if(rv.pitStop.phase==='FAILED')break;
+   if(i>1200&&!handled&&rv.pitStop.phase==='APPROACH')break;
   }
   return {available:true,dir,done,phases,samples,maxJump,maxWorldJump,maxSpeed,pitStops:rv.pitStops||0,compound:rv.tyres?.compound,network:rv.driveNetwork,final:rv.pitStop.phase,box:eligibility.box,limit:plan.speedKph,request};
  },
