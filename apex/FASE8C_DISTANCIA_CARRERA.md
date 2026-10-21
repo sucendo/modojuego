@@ -12,7 +12,7 @@ Comprobación adicional de las referencias representativas: [Madrid (57)](https:
 
 ## Vueltas y configuración
 
-Fórmula única: `max(1, ceil(vueltasCompletas * porcentaje / 100))`. Siempre se redondea hacia arriba. El porcentaje se guarda en `apex26.race.percent.v1`; selección inicial 25 %. Carrera rápida, GP y Temporada comparten preferencia. El menú muestra porcentaje, vueltas y multiplicador. La opción se congela al iniciar la carrera en `trackData.raceConfig` y en el registro de sesión; cambiar después la preferencia sólo afecta a futuras sesiones. El fin de semana de Temporada conserva también la selección.
+Fórmula única: `max(1, ceil(vueltasCompletas * porcentaje / 100))`. Siempre se redondea hacia arriba. El porcentaje se guarda en `apex26.race.percent.v1`; selección inicial 25 %. Carrera rápida, GP y Temporada comparten preferencia. El menú muestra porcentaje, vueltas y multiplicador. La opción se congela al iniciar la carrera en `trackData.raceConfig` y en el registro de sesión; cambiar después la preferencia sólo afecta a futuras sesiones. El fin de semana conserva una referencia a la selección; al reabrirlo antes de correr se toma la preferencia vigente del menú y se muestran las vueltas en su nota. No queda fijada una distancia antigua al recuperar un fin de semana previo.
 
 Prioridad de vueltas: JSON efectivo `race.totalLaps`, `race.laps`, `grandPrix.totalLaps`; después metadatos base del mismo ID y, al preparar sesión, `loaded.laps` heredado. Sólo enteros positivos finitos hasta 10000. Circuitos personalizados sin vueltas declaradas conservan FP y necesitan completar su JSON para Carrera: se informa y se deshabilita el inicio desde el menú, sin inventar una distancia oficial. FP y Qualy mantienen su duración y reglas anteriores.
 
