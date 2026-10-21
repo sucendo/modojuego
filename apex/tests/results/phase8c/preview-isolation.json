@@ -1,0 +1,10 @@
+{
+  "ok": true,
+  "tests": [
+    "Delayed preview preserves race loaded while awaiting geometry",
+    "Prepare failure restores active context",
+    "Callback failure restores active context",
+    "Concurrent preview completions restore before the next callback",
+    "Queued menu cards do no work after race loading hides the menu"
+  ]
+}

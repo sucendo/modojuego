@@ -398,7 +398,7 @@ async function updateCircuitCard(selectId,targetId,opts={}){
  const bestTxt=opts.showPracticeBest? (Number.isFinite(practiceRecordTime(save.practiceRecords[spec.dir]))?fmt(practiceRecordTime(save.practiceRecords[spec.dir])):'—') : null;
  box.innerHTML=`<div class="circuitHero"><div class="circuitHeroText"><div class="small muted">${flagMarkup(spec)} ${stripCountryEmoji(spec.country)}</div><b>${spec.name}</b><div class="muted small">Cargando trazado y ficha del circuito…</div></div></div><div class="trackPreviewBox"><div class="muted">Preparando vista del trazado…</div></div>`;
  try{
-   const card=await withPreparedTrackSpec(spec,async(td)=>{
+   const card=await withPreparedTrackSpec(spec,(td)=>{
      apexEnsurePitFallback();
      const km=Number.isFinite(td.km)?td.km.toFixed(3)+' km':'—',laps=td.laps||raceMetaFor(spec)?.laps||'—',turns=td.turns||raceMetaFor(spec)?.turns||'—';
      const geo=trackGeometryProfileSpec(spec.dir),geoElev=geo?`${Number(geo.elevRange).toFixed(1)} m`:'—',geoWidth=geo?(Math.abs(geo.widthMin-geo.widthMax)<.01?`${geo.widthMin.toFixed(1)} m`:`${geo.widthMin.toFixed(1)}–${geo.widthMax.toFixed(1)} m`):'—',geoBank=geo?`${Number(geo.bankMax).toFixed(1)}°`:'—',geoNote=geo&&geo.note?geo.note:'';
@@ -418,6 +418,7 @@ function updateAllCircuitCards(){
  apexRaceUpdateMenu();
  clearTimeout(apexMenuCardTimer);
  const run=()=>{
+   if(mode!=='menu'||$('menu')?.classList.contains('hidden'))return;
    const active=document.querySelector('#menuModeTabs .tab.active');
    const tab=active&&active.dataset?active.dataset.t:'quick';
    // En móvil sólo construimos la ficha visible. En escritorio se mantienen las tres.
@@ -440,10 +441,12 @@ function escapeXml(s){return String(s??'').replace(/&/g,'&amp;').replace(/"/g,'&
 function currentSvgToolSpec(){const sel=$("svgTrackSelect");return calendar[sel?+sel.value:13]||calendar[13]}
 function setSvgToolStatus(msg,kind=''){const el=$("svgToolsStatus");if(!el)return;el.className='svgToolsStatus'+(kind?(' '+kind):'');el.textContent=msg}
 async function withPreparedTrackSpec(spec,fn){
- const prevTrackData=trackData,prevPlayer=player;
  const td=await loadTrack(spec);
- trackData={...td,spec};prepareTrackModel();
- try{return await fn(trackData)}finally{trackData=prevTrackData;player=prevPlayer}
+ // Preview/export callbacks are synchronous. Capture the live context AFTER loading
+ // and restore it before yielding, so a pending preview cannot erase a new session.
+ const prevTrackData=trackData,prevPlayer=player;
+ try{trackData={...td,spec};prepareTrackModel();return fn(trackData)}
+ finally{trackData=prevTrackData;player=prevPlayer}
 }
 function editableTrackPathFromPoints(pts){if(!pts||!pts.length)return'';return pts.map((p,i)=>`${i?'L':'M'} ${svgNum(p[0])} ${svgNum(-p[1])}`).join(' ')+' Z'}
 function editableTrackOffsetPath(side=1,sampleStep=1){

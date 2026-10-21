@@ -96,3 +96,11 @@ Comparación local de Madrid completo, 22 coches, 100 %, mismo host y ajustes, v
 Son muestras pequeñas y ruidosas: resolución y LOD adaptativos, JIT y backend software impiden atribuir diferencias sólo a 8C. Los FPS/p95 no empeoran en esta ventana, pero los tiempos medios por paso/pase suben; NO se declara una mejora de rendimiento ni se certifica ausencia de regresiones en hardware real con estos números. Se conservan los recibos y la comparación de conducción automatizada con 8B en CI. No se ha probado un teléfono físico.
 
 La revisión de capturas detectó y corrigió el contraste de la fila del jugador. La bandera tiene prioridad en el HUD durante la llegada, y los diagnósticos/telemetría incluyen configuración fijada y resultados; el auditor de vueltas aísla su registro temporal para no alterar una carrera activa.
+
+## Corrección de interferencia al cargar sesiones
+
+La validación extendida expuso una llegada con 21 rivales y un jugador automático sin primera vuelta; la carrera permaneció correctamente `CHEQUERED`, sin inventarle una llegada. El GP P11 completo en un documento limpio sí terminó con 22 coches. Se aisló ese caso completo de los fixtures artificiales anteriores y se añadieron diagnósticos de conducción/recuperación.
+
+Se reprodujo también un defecto heredado de `withPreparedTrackSpec`: capturaba `trackData` antes de esperar la carga de una previsualización. Si una nueva sesión cargaba durante esa espera, el `finally` restauraba una referencia vieja o nula sobre ella. Además, el callback asíncrono del preview permitía intercalar contextos globales. La corrección captura el contexto vigente después de cargar, ejecuta los callbacks síncronos existentes y restaura antes de ceder el hilo, también si falla preparar/exportar. Las tarjetas programadas no arrancan cuando el menú está oculto. Esto evita que una preview cambie el circuito mientras se prepara o conduce una carrera, sin modificar geometrías ni navegación automática.
+
+`track-preview-isolation.cjs` prueba la carga diferida frente a una carrera nueva, las excepciones, tres completados concurrentes y la cancelación de trabajo oculto: cinco grupos aprobados. No se utiliza una recolocación ni un abandono ficticio para cerrar el GP. La validación final se repite con el código corregido.

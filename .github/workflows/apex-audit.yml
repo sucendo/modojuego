@@ -29,6 +29,7 @@ jobs:
           mkdir -p /tmp/apex-results
           node apex/tests/render-audit.cjs > /tmp/apex-results/render.txt
           python3 apex/tests/pit-geometry-audit.py > /tmp/apex-results/pit-geometry.json
+          node apex/tests/track-preview-isolation.cjs > /tmp/apex-results/preview-isolation.json
           node apex/tests/race-distance-audit.cjs > /tmp/apex-results/race-distance.json
           node apex/tests/pit-tyres-audit.cjs > /tmp/apex-results/pit-tyres.json
           node apex/tests/tyres-audit.cjs > /tmp/apex-results/tyres.json
