@@ -1,6 +1,10 @@
 # APEX Formula 26
 
-Versión de desarrollo: **v0.14.2 · PRE-RELEASE**
+Versión de desarrollo: **v0.15.0 · PRE-RELEASE**
+
+## v0.15.0 · Estrategia de boxes de los rivales (8D.1–8D.2)
+
+Los rivales disponen de recorrido físico por el pit lane, servicio de neumáticos, reincorporación a pista, separación entre coches y decisiones automáticas según desgaste, humedad y vueltas restantes. Integrado mediante PR #34 y #35. Spa mantiene el servicio bloqueado por geometría insegura. Véanse `FASE8D1_RIVALES_BOXES.md` y `FASE8D2_ESTRATEGIA_IA.md`.
 
 ## v0.14.2 · Distancia y llegada de carrera (8C)
 
