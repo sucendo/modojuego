@@ -1630,6 +1630,10 @@ function syncPlayerTrack(){
  return t;
 }
 function rivalWorld(r){
+ if(r&&r.driveNetwork==='PIT'&&Number.isFinite(r.pitS)){
+  const p=apexPitPointAtS(r.pitS);
+  if(p)return {x:p.x,z:p.z,y:p.y+.014,q:{tx:p.tx,tz:p.tz,nx:p.nx,nz:p.nz},surface:{x:p.x,z:p.z,y:p.y+.014,zone:'PIT',kind:'ASPHALT'}};
+ }
  const q=renderRibbonFrameAt(r.s),surface=trackSurfacePoseAt(r.s,r.lat,.014);
  return {x:surface.x,z:surface.z,y:surface.y,q,surface};
 }
@@ -2143,7 +2147,63 @@ function maybeRivalMistake(rv,dt,plan,traffic){
  if(rv.mistakeType==="SNAP")rv.yawKick=clamp((rv.yawKick||0)+(Math.random()<.5?-1:1)*(.055+.035*rv.aggression),-.48,.48);
  if(sessionTelemetry&&player){const pd=apexPhysicalTrackDelta(rv.s,Number.isFinite(player.classificationS)?player.classificationS:player.s,trackData.km*1000);if(Math.abs(pd)<260)pushTelemetryEvent('RIVAL_MISTAKE',{rivalId:rv.id,rivalUid:raceIdentity(rv.id),rivalName:raceName(rv.id),team:rv.team,mistake:rv.mistakeType,distanceM:telemetryRound(pd,1)});}
 }
+// 8D.1: travel strictly on the authored PIT ribbon, not on the racing spline.
+// Requests remain explicit until the later strategy phase.
+function apexRivalPitDrive(rv,dt,L){
+ const st=rv&&rv.pitStop;if(!st||!st.active)return false;
+ const plan=apexPitRoutePlan(),box=plan&&apexPitBoxForCar(plan,rv);
+ if(!plan||plan.serviceSafe===false||!box){st.active=false;st.phase='FAILED';return false;}
+ const prevS=rv.s,delta=mod(plan.entryTrackS-rv.s,L);
+ if(st.phase==='REQUESTED'||st.phase==='APPROACH'){
+  // No teleport: the world-space centre of the rival must meet the first PIT vertex.
+  st.phase='APPROACH';
+  const world=rivalWorld(rv),d=Math.hypot(world.x-plan.entry.x,world.z-plan.entry.z);
+  if(delta>Math.max(20,rv.speed*1.5)&&delta<L-8)return false;
+  rv.speed=Math.min(rv.speed,Math.max(3,Math.sqrt(Math.max(0,2*5*delta))));
+  if(d>2.4)return false;
+  rv.driveNetwork='PIT';rv.pitS=plan.entryPitS;rv.pitLat=0;st.phase='IN_LANE';
+  st.enteredAt=raceT;st.entryTotal=rv.total;st.entryClassificationS=rv.s;
+  st.referenceSpeed=rv.speed;
+ }
+ if(rv.driveNetwork!=='PIT')return false;
+ const remaining=plan.dir*(plan.exitPitS-rv.pitS);
+ let target=apexPitSafeSpeed(plan,rv.pitS);
+ const boxD=plan.dir*(box.pitS-rv.pitS);
+ if(st.phase==='IN_LANE'&&boxD>=-1.2){
+  target=Math.min(target,Math.sqrt(Math.max(0,2*3.8*Math.max(0,boxD))));
+ }
+ if(st.phase==='SERVICE'){
+  rv.speed=0;
+  if(apexPitServiceComplete(rv,st,raceT))st.phase='EXITING';
+ }else{
+  rv.speed=clamp(rv.speed+clamp(target-rv.speed,-6*dt,3.5*dt),0,plan.speedMps);
+  let travel=rv.speed*dt;
+  if(st.phase==='IN_LANE'&&boxD>=0)travel=Math.min(travel,boxD);
+  rv.pitS=clamp(rv.pitS+plan.dir*travel,plan.primaryStart,plan.primaryEnd);
+  if(st.phase==='IN_LANE'&&Math.abs(rv.pitS-box.pitS)<.08&&rv.speed<.8){
+   rv.speed=0;
+   apexPitServiceBegin(rv,st,raceT,plan.serviceSeconds);
+  }
+ }
+ const progress=clamp(plan.dir*(rv.pitS-plan.entryPitS)/Math.max(.001,plan.routeLength),0,1);
+ const trackSpan=mod(plan.exitTrackS-st.entryClassificationS,L);
+ const desiredS=mod(st.entryClassificationS+trackSpan*progress,L);
+ rv.total=st.entryTotal+trackSpan*progress;
+ rv.s=desiredS;
+ if(st.phase==='EXITING'&&remaining<=Math.max(.5,rv.speed*dt+1)){
+  const point=apexPitPointAtS(rv.pitS),track=renderRibbonFrameAt(rv.s);
+  if(point&&track&&Math.hypot(point.x-track.x,point.z-track.z)<2.5){
+   rv.driveNetwork='TRACK';rv.pitS=null;st.phase='DONE';st.active=false;
+   apexPitServiceExit(rv,st,raceT,plan);
+  }
+ }
+ // Timing uses the same accepted passage detector as normal rival driving.
+ updateRivalLapTiming(rv,prevS,rv.s,L);
+ apexTyreStep(rv,dt,rv.speed*dt,rv.speed,0,0,0,0,0,false,false,1);
+ return true;
+}
 function updateRivalRacecraft(rv,dt,L,diff){
+ if(apexRivalPitDrive(rv,dt,L))return;
  rv.attackCooldown=Math.max(0,(rv.attackCooldown||0)-dt);
  rv.defendCooldown=Math.max(0,(rv.defendCooldown||0)-dt);
  rv.intentTimer=Math.max(0,(rv.intentTimer||0)-dt);
