@@ -1630,6 +1630,7 @@ function syncPlayerTrack(){
  return t;
 }
 function rivalWorld(r){
+ if(r&&r.driveNetwork==='PIT_MERGE'&&r.pitMerge)return {x:r.pitMerge.x,z:r.pitMerge.z,y:r.pitMerge.y,q:r.pitMerge.q,surface:{x:r.pitMerge.x,z:r.pitMerge.z,y:r.pitMerge.y,zone:'PIT',kind:'ASPHALT'}};
  if(r&&r.driveNetwork==='PIT'&&Number.isFinite(r.pitS)){
   const p=apexPitPointAtS(r.pitS);
   if(p)return {x:p.x,z:p.z,y:p.y+.014,q:{tx:p.tx,tz:p.tz,nx:p.nx,nz:p.nz},surface:{x:p.x,z:p.z,y:p.y+.014,zone:'PIT',kind:'ASPHALT'}};
@@ -2176,6 +2177,26 @@ function apexRivalPitDrive(rv,dt,L){
   st.enteredAt=raceT;st.entryTotal=rv.total;st.entryClassificationS=rv.s;
   st.referenceSpeed=rv.speed;
  }
+ if(st.phase==='MERGE_OUT'&&rv.driveNetwork==='PIT_MERGE'){
+  const m=rv.pitMerge;if(!m){st.phase='FAILED';st.active=false;return false;}
+  const prevMergeS=rv.s,limit=Math.max(2,rv.speed*dt);
+  // Real displacement along the world-space connector, never a classification snap.
+  const ahead=renderRibbonFrameAt(mod(rv.s+Math.max(4,rv.speed*.7),L));
+  if(!ahead||!Number.isFinite(ahead.x)||!Number.isFinite(ahead.z))return true;
+  const dx=ahead.x-m.x,dz=ahead.z-m.z,dist=Math.hypot(dx,dz);
+  const step=Math.min(limit,dist),fraction=dist>1e-6?step/dist:0;
+  m.x+=dx*fraction;m.z+=dz*fraction;
+  const nextS=mod(rv.s+rv.speed*dt,L),pose=renderRibbonFrameAt(nextS);
+  const trackNear=pose&&Math.hypot(pose.x-m.x,pose.z-m.z);
+  rv.total+=rv.speed*dt;rv.s=nextS;
+  if(trackNear!=null&&trackNear<1.5){
+   rv.driveNetwork='TRACK';rv.pitMerge=null;rv.lat=0;st.active=false;st.phase='DONE';
+   apexPitServiceExit(rv,st,raceT,plan);
+  }
+  updateRivalLapTiming(rv,prevMergeS,rv.s,L);
+  apexTyreStep(rv,dt,step,rv.speed,0,0,0,0,0,false,false,1);
+  return true;
+ }
  if(rv.driveNetwork!=='PIT')return false;
  const remaining=plan.dir*(plan.exitPitS-rv.pitS);
  let target=apexPitSafeSpeed(plan,rv.pitS);
@@ -2201,11 +2222,19 @@ function apexRivalPitDrive(rv,dt,L){
  const desiredS=mod(st.entryClassificationS+trackSpan*progress,L);
  rv.total=st.entryTotal+trackSpan*progress;
  rv.s=desiredS;
- if(st.phase==='EXITING'&&remaining<=Math.max(.5,rv.speed*dt+1)){
+ if(st.phase==='EXITING'&&plan.dir*(plan.exitPitS-rv.pitS)<=.01){
   const point=apexPitPointAtS(rv.pitS),track=renderRibbonFrameAt(rv.s);
-  if(point&&track&&Math.hypot(point.x-track.x,point.z-track.z)<2.5){
-   rv.driveNetwork='TRACK';rv.pitS=null;st.phase='DONE';st.active=false;
-   apexPitServiceExit(rv,st,raceT,plan);
+  if(point&&track){
+   const gap=Math.hypot(point.x-track.x,point.z-track.z);
+   if(gap<1.5){
+    rv.driveNetwork='TRACK';rv.pitS=null;st.phase='DONE';st.active=false;
+    apexPitServiceExit(rv,st,raceT,plan);
+   }else{
+    // An authored PIT exit need not coincide with the track centreline.
+    // Continue through world space until the car physically reaches the track.
+    rv.pitMerge={x:point.x,z:point.z,y:point.y+.014,q:{tx:point.tx*plan.dir,tz:point.tz*plan.dir,nx:point.nx,nz:point.nz}};
+    rv.driveNetwork='PIT_MERGE';rv.pitS=null;st.phase='MERGE_OUT';
+   }
   }
  }
  // Timing uses the same accepted passage detector as normal rival driving.
