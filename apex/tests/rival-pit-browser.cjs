@@ -27,6 +27,17 @@ const root=path.resolve(__dirname,'../..'),hook=fs.readFileSync(path.join(__dirn
    assert.ok(x.maxSpeed<=x.limit+.05);assert.ok(x.maxWorldJump<3,dir+' world jump '+x.maxWorldJump);
   }catch(e){failures.push({dir,error:e.message});console.log(JSON.stringify({test:'rival-pit-failure',dir,error:e.message}));}
  }
+ for(const dir of ['13-italy','06-monaco']){
+  try{
+   const x=await page.evaluate(dir=>__apexPitAudit.rivalsConcurrent(dir),dir);
+   console.log(JSON.stringify({test:'rival-pit-concurrent',mobile,dir,...x}));
+   assert.equal(x.available,true);assert.deepEqual(x.done,['DONE','DONE']);
+   assert.deepEqual(x.stops,[1,1]);assert.deepEqual(x.compounds,['HARD','MEDIUM']);
+   assert.deepEqual(x.networks,['TRACK','TRACK']);
+   assert.ok(x.mins.pitGap>=5.4,'overlapping PIT cars: '+x.mins.pitGap);
+   assert.ok(x.logs.filter(e=>e.phase==='SERVICE').length===2);
+  }catch(e){failures.push({dir:dir+'-concurrent',error:e.message});}
+ }
  assert.deepEqual(errors,[]);assert.deepEqual(failures,[]);
  await page.close();
  }finally{await browser.close()}
