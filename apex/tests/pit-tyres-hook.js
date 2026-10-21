@@ -121,7 +121,7 @@ window.__apexPitAudit={
   // Set up a racing scenario once, then leave the decisions, navigation and service to production code.
   trackData.raceConfig={...trackData.raceConfig,totalLaps:40};
   for(let i=0;i<cars.length;i++){
-   const car=cars[i];car.s=mod(begin-13*i,L);car.progressOriginS=car.s;car.total=8000;car.speed=13;
+   const car=cars[i];car.s=mod(begin-13*i,L);car.total=8000;car.progressOriginS=mod(car.s-car.total,L);car.speed=13;
    car.driveNetwork='TRACK';car.pitStop=null;car.pitStops=0;car.aiPitNextCheck=0;car.aiPitLastLap=null;
    apexTyreInstall(car,'SOFT');car.tyres.front.wear=.88;car.tyres.rear.wear=.86;
   }
