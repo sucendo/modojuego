@@ -38,6 +38,14 @@ const root=path.resolve(__dirname,'../..'),hook=fs.readFileSync(path.join(__dirn
    assert.ok(x.logs.filter(e=>e.phase==='SERVICE').length===2);
   }catch(e){failures.push({dir:dir+'-concurrent',error:e.message});}
  }
+ try{
+  const x=await page.evaluate(()=>__apexPitAudit.autonomousStrategyRace('13-italy'));
+  console.log(JSON.stringify({test:'rival-strategy-autonomous-race',mobile,...x}));
+  assert.equal(x.available,true);assert.deepEqual(x.states,Array(5).fill('DONE'));
+  assert.deepEqual(x.stops,Array(5).fill(1));
+  assert.ok(x.reasons.every(x=>x==='WEAR'));
+  assert.ok(x.minGap>=5.4,'pit vehicles overlapping: '+x.minGap);
+ }catch(e){failures.push({dir:'autonomous-strategy-race',error:e.message});}
  assert.deepEqual(errors,[]);assert.deepEqual(failures,[]);
  await page.close();
  }finally{await browser.close()}
