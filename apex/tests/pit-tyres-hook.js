@@ -57,5 +57,61 @@ window.__apexPitAudit={
   return {before,installed,after:this.status()};
  },
  perf(){return {version:APP_VERSION,rivals:rivals.length,summary:apexPerformanceSummary(),profile:renderProfilerSnapshot()}},
+ async rivalCycle(dir){
+  const loaded=await this.load(dir,'CLEAR',false,true),plan=apexPitRoutePlan(),rv=rivals[0];
+  if(!plan||!rv)return {available:false,reason:'NO_RIVAL_OR_PIT'};
+  const eligibility=apexRivalPitEligibility(rv,plan);
+  if(!eligibility.ok)return {available:false,reason:eligibility.reason,issue:plan.serviceIssue};
+  // One fixture placement before the test, then production rival PIT controller only.
+  const q=renderRibbonFrameAt(plan.entryTrackS);
+  rv.s=mod(plan.entryTrackS-55,trackData.km*1000);rv.lat=0;rv.speed=12;rv.total=0;rv.progressOriginS=rv.s;
+  const request=apexRivalPitRequest(rv,'HARD');
+  if(!request.ok)return {available:false,reason:request.reason};
+  const phases=[],samples=[];let phase='',maxJump=0,maxWorldJump=0,maxSpeed=0,prevWorld=rivalWorld(rv),prevTotal=rv.total,done=false;
+  for(let i=0;i<18000;i++){
+   raceT+=.05;
+   updateRivalRacecraft(rv,.05,trackData.km*1000,1);
+   const handled=rv.driveNetwork==='PIT'||rv.pitStop.phase==='DONE';
+   const world=rivalWorld(rv),distance=Math.hypot(world.x-prevWorld.x,world.z-prevWorld.z);
+   maxWorldJump=Math.max(maxWorldJump,distance);maxJump=Math.max(maxJump,Math.abs(rv.total-prevTotal));
+   maxSpeed=Math.max(maxSpeed,rv.driveNetwork==='PIT'?rv.speed*3.6:0);
+   if(rv.pitStop.phase!==phase){phase=rv.pitStop.phase;phases.push({phase,t:raceT,pitS:rv.pitS,total:rv.total});}
+   if(i%200===0)samples.push({t:raceT,phase,s:rv.s,pitS:rv.pitS,network:rv.driveNetwork,speed:rv.speed});
+   prevWorld=world;prevTotal=rv.total;
+   if(rv.pitStop.phase==='DONE'){done=true;break;}
+   if(rv.pitStop.phase==='FAILED')break;
+   if(i>1200&&!handled&&rv.pitStop.phase==='APPROACH')break;
+  }
+  const endWorld=rivalWorld(rv),entryGap=mod(plan.entryTrackS-rv.s,trackData.km*1000),entryWorldGap=Math.hypot(endWorld.x-plan.entry.x,endWorld.z-plan.entry.z);
+  return {available:true,dir,done,phases,samples,maxJump,maxWorldJump,maxSpeed,pitStops:rv.pitStops||0,compound:rv.tyres?.compound,network:rv.driveNetwork,final:rv.pitStop.phase,entryGap,entryWorldGap,finalLat:rv.lat,box:eligibility.box,limit:plan.speedKph,request};
+ },
+ async rivalsConcurrent(dir='13-italy'){
+  await this.load(dir,'CLEAR',false,true);
+  const plan=apexPitRoutePlan(),a=rivals[0],b=rivals[1],L=trackData.km*1000;
+  if(!plan||!plan.serviceSafe)return {available:false};
+  const start=mod(plan.entryTrackS-62,L);
+  for(const [car,offset] of [[a,0],[b,-12]]){
+   car.s=mod(start+offset,L);car.lat=0;car.speed=12;car.total=0;car.progressOriginS=car.s;
+   car.driveNetwork='TRACK';car.pitStop=null;
+  }
+  const qa=apexRivalPitRequest(a,'HARD'),qb=apexRivalPitRequest(b,'MEDIUM');
+  if(!qa.ok||!qb.ok)return {available:false,qa,qb};
+  const logs=[],last=[null,null],cars=[a,b],mins={pitGap:Infinity,worldGap:Infinity},startStops=cars.map(c=>c.pitStops||0);
+  for(let i=0;i<18000;i++){
+   raceT+=.05;
+   for(const car of cars)if(car.pitStop?.active)updateRivalRacecraft(car,.05,L,1);
+   for(let k=0;k<2;k++)if(cars[k].pitStop.phase!==last[k]){
+    last[k]=cars[k].pitStop.phase;logs.push({car:k,phase:last[k],t:raceT});
+   }
+   const pa=a.driveNetwork==='PIT',pb=b.driveNetwork==='PIT';
+   if(pa&&pb)mins.pitGap=Math.min(mins.pitGap,Math.abs(a.pitS-b.pitS));
+   if(pa&&pb){const aw=rivalWorld(a),bw=rivalWorld(b);mins.worldGap=Math.min(mins.worldGap,Math.hypot(aw.x-bw.x,aw.z-bw.z));}
+   if(cars.every(c=>c.pitStop?.phase==='DONE'))break;
+   if(i%800===799)await new Promise(resolve=>setTimeout(resolve,0));
+  }
+  return {available:true,dir,logs,mins,done:cars.map(c=>c.pitStop?.phase),
+    stops:cars.map((c,k)=>(c.pitStops||0)-startStops[k]),compounds:cars.map(c=>c.tyres?.compound),
+    networks:cars.map(c=>c.driveNetwork),slots:[qa.box.slotId,qb.box.slotId]};
+ },
  stop(){pitAuditStepping=true;goMenu()}
 };

@@ -32,6 +32,8 @@ jobs:
           node apex/tests/track-preview-isolation.cjs > /tmp/apex-results/preview-isolation.json
           node apex/tests/race-distance-audit.cjs > /tmp/apex-results/race-distance.json
           node apex/tests/pit-tyres-audit.cjs > /tmp/apex-results/pit-tyres.json
+          node apex/tests/rival-pit-request-audit.cjs > /tmp/apex-results/rival-pit-request.txt
+          node apex/tests/rival-pit-traversal-audit.cjs > /tmp/apex-results/rival-pit-traversal.txt
           node apex/tests/tyres-audit.cjs > /tmp/apex-results/tyres.json
           node apex/tests/driving-audit.cjs --json > /tmp/apex-results/driving.json
           node apex/tests/terrain-selection-audit.cjs > /tmp/apex-results/terrain-selection.json
@@ -83,6 +85,7 @@ jobs:
           done
           APEX_PIT_RESULTS=/tmp/apex-results/pits node apex/tests/pit-tyres-browser.cjs 2>&1 | tee /tmp/apex-results/pit-browser.jsonl
           APEX_RACE_RESULTS=/tmp/apex-results/races node apex/tests/race-distance-browser.cjs 2>&1 | tee /tmp/apex-results/race-browser.jsonl
+          node apex/tests/rival-pit-browser.cjs 2>&1 | tee /tmp/apex-results/rival-pit-browser.jsonl
           node apex/tests/browser-audit.cjs 2>&1 | tee /tmp/apex-results/browser.jsonl
       - uses: actions/upload-artifact@v4
         if: always()
