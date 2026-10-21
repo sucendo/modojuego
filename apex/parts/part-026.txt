@@ -2273,7 +2273,46 @@ function apexRivalPitDrive(rv,dt,L){
  apexTyreStep(rv,dt,rv.speed*dt,rv.speed,0,0,0,0,0,false,false,1);
  return true;
 }
+// 8D.2: bounded and deterministic tyre strategy. Only a request; 8D.1
+// handles physical navigation, garage access and the actual tyre installation.
+function apexRivalTyreDecision(rv,L){
+ if(!rv||rv.finished||currentSession!=='race'||!trackData?.raceConfig)return null;
+ if(rv.pitStop?.active||rv.driveNetwork==='PIT'||rv.driveNetwork==='PIT_MERGE')return null;
+ const totalLaps=Number(trackData.raceConfig.totalLaps);
+ if(!Number.isFinite(totalLaps)||totalLaps<3||!Number.isFinite(L)||L<=0)return null;
+ const doneLaps=Math.max(0,Math.floor(Math.max(0,Number(rv.total)||0)/L));
+ const remaining=Math.max(0,totalLaps-doneLaps);
+ if(remaining<2||doneLaps<1)return null;
+ const t=rv.tyres;if(!t?.front||!t?.rear)return null;
+ const wet=Number(apexTyreEnvironment.wetness)||0,now=raceT;
+ const desiredWet=wet>.68?'WET':wet>.19?'INTERMEDIATE':null;
+ const current=t.compound||'MEDIUM';
+ const wear=Math.max(Number(t.front.wear)||0,Number(t.rear.wear)||0);
+ const lastRequest=Number(rv.aiPitDecisionAt)||-1000;
+ if(now-lastRequest<8)return null;
+ // One stop per lap at most, and never repeat an abandoned request immediately.
+ if(rv.aiPitLastLap===doneLaps)return null;
+ let compound=null,reason=null;
+ if(desiredWet&&current!==desiredWet){compound=desiredWet;reason='WEATHER';}
+ else if(!desiredWet&&(current==='INTERMEDIATE'||current==='WET')){
+  compound=remaining>12?'MEDIUM':'SOFT';reason='DRY_TRACK';
+ }else if(!desiredWet&&wear>.82){
+  compound=remaining>20?'HARD':remaining>9?'MEDIUM':'SOFT';reason='WEAR';
+ }
+ if(!compound)return null;
+ return {compound,reason,wear,remaining,doneLaps};
+}
+function apexRivalTyreStrategyTick(rv,L){
+ if(!rv||raceT<(rv.aiPitNextCheck||0))return;
+ rv.aiPitNextCheck=raceT+2+(stableTrait(rv.uid||rv.id||'RIVAL',91)*.8);
+ const choice=apexRivalTyreDecision(rv,L);
+ if(!choice)return;
+ rv.aiPitDecisionAt=raceT;
+ const result=apexRivalPitRequest(rv,choice.compound);
+ if(result.ok){rv.aiPitLastLap=choice.doneLaps;rv.aiPitReason=choice.reason;}
+}
 function updateRivalRacecraft(rv,dt,L,diff){
+ apexRivalTyreStrategyTick(rv,L);
  if(apexRivalPitDrive(rv,dt,L))return;
  rv.attackCooldown=Math.max(0,(rv.attackCooldown||0)-dt);
  rv.defendCooldown=Math.max(0,(rv.defendCooldown||0)-dt);
