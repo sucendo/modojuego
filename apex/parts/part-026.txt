@@ -1014,7 +1014,7 @@ function initSessionTelemetry(spec,gm){
  const recMode=getTelemetryRecordMode();sessionTelemetryNext=0;sessionTelemetryEventNext=0;sessionTelemetryPrev={zone:null,recovery:null,recoveryStage:null,lap:0,wallHit:-99,wallEventAt:-99,rivalContactAt:-99,recoveryEpisodeAt:null,emergency:false,targetReason:null};
  sessionTelemetry={
    schema:"ApexFormula26.SessionTelemetry.v24",tyres:{player:apexTyreSnapshot(player),rivals:rivals.map(rv=>({id:rv.id,...apexTyreSnapshot(rv)})),track:trackData&&trackData.tyreProfile,environment:{...apexTyreEnvironment}},appVersion:APP_VERSION,build:APP_BUILD,
-   createdAt:new Date().toISOString(),session:{mode:gm,type:currentSession,weather:raceWeather,weatherPreset:sessionSettings&&sessionSettings.weather||null,weatherRuntime:apexWeatherRuntimeSnapshot(),difficulty:sessionSettings?sessionSettings.diff:null,noRivals:!!(sessionSettings&&sessionSettings.noRivals),gridPosition:player?player.pos:null,rivalCount:rivals?rivals.length:0},
+   createdAt:new Date().toISOString(),session:{raceConfiguration:apexRaceSession?{...apexRaceSession.config,distanceM:apexRaceSession.distanceM}:null,mode:gm,type:currentSession,weather:raceWeather,weatherPreset:sessionSettings&&sessionSettings.weather||null,weatherRuntime:apexWeatherRuntimeSnapshot(),difficulty:sessionSettings?sessionSettings.diff:null,noRivals:!!(sessionSettings&&sessionSettings.noRivals),gridPosition:player?player.pos:null,rivalCount:rivals?rivals.length:0},
    circuit:{round:spec&&spec.r,country:spec&&spec.country,name:spec&&spec.name,dir:spec&&spec.dir,km:trackData&&trackData.km},
    circuitCompile:trackData&&trackData._compileStats?clonePlain(trackData._compileStats):null,
    car:{team:player&&player.teamName,teamKey:player&&player.teamKey,chassis:player&&player.carModel},
@@ -1364,7 +1364,7 @@ function updateHud(force=false){
  $("surfaceState").style.color=surf==="TRACK"?"#aab6c5":surf==="KERB"?"#ffffff":surf==="RUNOFF"?"#ffd36b":"#ff7b7b";
  const corner=upcomingCorner(),kmh=player.speed*3.6,safe=corner.safe*3.6;
  updatePitButtonUI();
- let alert=pitStopHudStatus()||(player.trackDirDot<-.25?"SENTIDO CONTRARIO":"");
+ let alert=(currentSession==='race'&&apexRaceSession?.status==='CHEQUERED'?(player.finished?"🏁 FINALIZADO · ESPERANDO LLEGADAS":"🏁 BANDERA A CUADROS · TERMINA ESTA VUELTA"):"")||pitStopHudStatus()||(player.trackDirDot<-.25?"SENTIDO CONTRARIO":"");
  if(!alert&&player.trackDirDot>.25&&corner.d<170&&kmh>safe+28)alert="FRENA · "+Math.round(corner.d)+" m";
  else if(!alert&&player.slipstream)alert="REBUFO";
  else if(!alert&&player.surface==="KERB")alert="PIANO";
@@ -1837,7 +1837,7 @@ function apexCompletedSectorTimes(car,lapElapsed){
 }
 window.crossedTimingLine=crossedTimingLine;
 function apexTimingDiagnostics(){
- if(!trackData||!player)return null;const g=apexRaceTimingGeometry(trackData.spec,player.laps);return {circuit:trackData.spec&&trackData.spec.dir,startS:g.start,finishS:g.finish,offsetM:g.offset,playerS:player.s,playerTotalForClassification:player.total,crossedStart:player.crossedStart,firstLapPending:player.raceFirstLapPending,firstLapControlCrossings:player.raceFirstLapControlCrossings||0,firstLapControlCrossingsRequired:player.raceFirstLapControlCrossingsRequired||g.firstLapControlCrossings,controlRelation:g.controlRelation,lap:player.lap,sectorIndex:player.timingSectorIndex||0,sectorSplits:player.timingSectorSplits||[],speedTrapKph:player.timingSpeedTrapKph,gateEvents:player.timingGateEvents||[],controls:apexTimingPointControls(trackData.spec).map(c=>({id:c.id||c.role,role:c.role,sector:c.sector??null,s:Number(c.s.toFixed(3)),quality:c.quality||c.status||null})),timingGate:'AUTHORED_POINT_LINE_CROSSING_ONLY',straightMode:trackData.straightMode||null,operationalControls:trackData.operationalControls||[]};
+ if(!trackData||!player)return null;const g=apexRaceTimingGeometry(trackData.spec,player.laps);return {raceConfiguration:trackData.raceConfig||null,raceState:apexRaceSession?.status||null,finishedCount:apexRaceSession?.finishedCount||0,circuit:trackData.spec&&trackData.spec.dir,startS:g.start,finishS:g.finish,offsetM:g.offset,playerS:player.s,playerTotalForClassification:player.total,crossedStart:player.crossedStart,firstLapPending:player.raceFirstLapPending,firstLapControlCrossings:player.raceFirstLapControlCrossings||0,firstLapControlCrossingsRequired:player.raceFirstLapControlCrossingsRequired||g.firstLapControlCrossings,controlRelation:g.controlRelation,lap:player.lap,sectorIndex:player.timingSectorIndex||0,sectorSplits:player.timingSectorSplits||[],speedTrapKph:player.timingSpeedTrapKph,gateEvents:player.timingGateEvents||[],controls:apexTimingPointControls(trackData.spec).map(c=>({id:c.id||c.role,role:c.role,sector:c.sector??null,s:Number(c.s.toFixed(3)),quality:c.quality||c.status||null})),timingGate:'AUTHORED_POINT_LINE_CROSSING_ONLY',straightMode:trackData.straightMode||null,operationalControls:trackData.operationalControls||[]};
 }
 window.apexTimingDiagnostics=apexTimingDiagnostics;
 function apexTimingSelfTest(){

@@ -3,7 +3,7 @@
 window.__apexRaceAudit={
  async load(dir,p=25){apexRaceSelectPercentage(p);await __apexPitAudit.load(dir,'CLEAR',false,true);countdown=0;mode='race';paused=false;apexArmRaceGridTiming();apexReleaseInputs();gyro.enabled=false;setAutoDriveMode(1,false);return this.status()},
  select(p){apexRaceSelectPercentage(p)},
- status(){return {version:APP_VERSION,mode,time:raceT,percentage:apexRaceSession?.config.percentage,laps:player?.lap,totalLaps:player?.laps,state:apexRaceSession?.status,finished:apexRaceSession?.finishedCount,rivals:rivals.length,faults:player.physicsFaults||0,config:trackData.raceConfig,rows:apexRaceSession?apexRaceResultRows():[],finite:physicsFinite()};},
+ status(){return {version:APP_VERSION,flagText:$('raceAlert').textContent,mode,time:raceT,percentage:apexRaceSession?.config.percentage,laps:player?.lap,totalLaps:player?.laps,state:apexRaceSession?.status,finished:apexRaceSession?.finishedCount,rivals:rivals.length,faults:player.physicsFaults||0,config:trackData.raceConfig,rows:apexRaceSession?apexRaceResultRows():[],finite:physicsFinite()};},
  boundaryFixture(){
   const L=trackData.km*1000,g=apexRaceTimingGeometry(trackData.spec,player.laps),target=player.laps;raceT=target*70;lapStart=raceT-60;best=Infinity;sessionLapLog=[];
   const all=[player,...rivals];for(let i=0;i<all.length;i++){

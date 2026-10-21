@@ -81,7 +81,7 @@ jobs:
             sleep 1
           done
           APEX_PIT_RESULTS=/tmp/apex-results/pits node apex/tests/pit-tyres-browser.cjs 2>&1 | tee /tmp/apex-results/pit-browser.jsonl
-          node apex/tests/race-distance-browser.cjs 2>&1 | tee /tmp/apex-results/race-browser.jsonl
+          APEX_RACE_RESULTS=/tmp/apex-results/races node apex/tests/race-distance-browser.cjs 2>&1 | tee /tmp/apex-results/race-browser.jsonl
           node apex/tests/browser-audit.cjs 2>&1 | tee /tmp/apex-results/browser.jsonl
       - uses: actions/upload-artifact@v4
         if: always()
@@ -107,6 +107,7 @@ jobs:
           node "$RUNNER_TEMP/apex-browser/node_modules/playwright/cli.js" install --with-deps chromium
       - name: Compare automatic driving with main
         env:
+          BASELINE_REF: 36fd9f591f6c2c26d7946a551e45d7108369678a
           PLAYWRIGHT_MODULE_PATH: ${{ runner.temp }}/apex-browser/node_modules/playwright
         shell: bash
         run: |

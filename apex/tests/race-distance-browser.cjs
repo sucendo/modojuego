@@ -1,6 +1,7 @@
 /* Real Chromium and production update() runs. Emulated mobile is not a phone. */
 const fs=require('fs'),path=require('path'),assert=require('assert/strict');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||path.join(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES,'playwright'));
+const output=process.env.APEX_RACE_RESULTS||'/tmp/apex-race-results';fs.mkdirSync(output,{recursive:true});
 const root=path.resolve(__dirname,'../..'),pitHook=fs.readFileSync(path.join(__dirname,'pit-tyres-hook.js'),'utf8'),raceHook=fs.readFileSync(path.join(__dirname,'race-distance-hook.js'),'utf8');
 (async()=>{
  const browser=await chromium.launch({headless:true,...(process.env.CHROME_EXECUTABLE?{executablePath:process.env.CHROME_EXECUTABLE}:{}),args:['--no-sandbox','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
@@ -15,8 +16,9 @@ const root=path.resolve(__dirname,'../..'),pitHook=fs.readFileSync(path.join(__d
   const start=await page.evaluate(dir=>__apexRaceAudit.load(dir,25),dir);assert.equal(start.laps,0);assert.equal(start.rivals,21);assert.equal(start.totalLaps,Math.ceil(start.config.officialLaps/4));
   // Changing a hidden configuration cannot mutate the current race.
   await page.evaluate(()=>__apexRaceAudit.select(100));assert.equal((await page.evaluate(()=>__apexRaceAudit.status())).percentage,25);
-  await page.evaluate(()=>__apexRaceAudit.boundaryFixture());const result=await page.evaluate(()=>__apexRaceAudit.drive(45));console.log(JSON.stringify({test:'race-final-gates',dir,mobileEmulation:mobile,...result}));
+  await page.evaluate(()=>__apexRaceAudit.boundaryFixture());const early=await page.evaluate(()=>__apexRaceAudit.drive(1));assert.equal(early.end.state,'CHEQUERED');assert.match(early.end.flagText,/CUADROS|FINALIZADO/);const result=await page.evaluate(()=>__apexRaceAudit.drive(45));console.log(JSON.stringify({test:'race-final-gates',dir,mobileEmulation:mobile,...result}));
   assert.equal(result.end.state,'FINISHED');assert.equal(result.end.finished,22);assert.equal(result.end.mode,'finish');assert.equal(result.end.faults,0);assert.equal(result.end.rows[0].laps,start.totalLaps);assert.equal(result.end.rows.at(-1).laps,start.totalLaps-1);assert.ok(result.end.rows.every(r=>r.finished&&Number.isFinite(r.finishTime)&&r.pitStops===0));
+  await page.screenshot({path:path.join(output,`${mobile?'mobile':'desktop'}-${dir}.png`)});
   const persisted=await page.evaluate(()=>__apexRaceAudit.persisted());assert.equal(persisted.result.results.length,22);assert.equal(persisted.result.config.percentage,25);
   await page.locator('#finishMenu').click();await page.locator('#lastRaceResults').click();assert.match(await page.locator('#finishBoardWrap').innerText(),/paradas/i);await page.locator('#finishMenu').click();assert.deepEqual(errors,[]);
  }

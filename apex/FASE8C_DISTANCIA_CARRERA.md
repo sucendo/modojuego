@@ -74,8 +74,25 @@ Sin timers nuevos, sin cambios de frecuencia física (100 Hz), geometría, cáma
 - `pit-tyres-browser.cjs`: paradas reales de 8B al 25 %, lluvia y controles, bloqueo seguro de Spa; benchmark comparable al 100 % frente al commit base de 8B.
 - CI mantiene las auditorías de conducción automática, escritorio y móvil; añade las comprobaciones 8C.
 
-Los fixtures de llegada NO equivalen a conducir un GP completo en cada circuito. Chromium móvil emulado y SwiftShader NO son un teléfono físico ni certifican FPS en GPU real. Los recibos finales, métricas y limitaciones se incorporan tras ejecutar la candidata.
+Los fixtures de llegada NO equivalen a conducir un GP completo en cada circuito. Chromium móvil emulado y SwiftShader NO son un teléfono físico ni certifican FPS en GPU real. Recibos numéricos y de navegador locales en `tests/results/phase8c/`. La CI del [PR #33](https://github.com/sucendo/modojuego/pull/33) ejecuta el código publicado; su estado es la referencia para integración.
 
 ## Pendientes y 8D
 
 Implementar decisiones y navegación real de los rivales a boxes, ocupación compartida y estrategia antes de activar el factor inverso completo. Reparar el SVG de Spa con una fuente válida antes de habilitar su servicio. Verificar tacto de conducción y rendimiento en Android físico. Reanudación de carreras, nuevos abandonos deportivos, penalizaciones y safety car quedan fuera de 8C.
+
+## Resultados locales y comparación
+
+Aprobados: 14 grupos 8C (incluidas 92 secuencias completas de vueltas sobre los 23 metadatos), 16 grupos de neumáticos y 20 grupos de boxes, además de conducción/render/superficies/activos. Chromium de escritorio y móvil emulado completaron la matriz de llegadas en los cinco circuitos. El GP completo de Monza al 25 % salió de parrilla y terminó con 22 participantes, 14 vueltas del ganador y cero fallos físicos: 182925 pasos, 1829,25 s simulados; aproximadamente 204,9 s de CPU/esperas del runner, sin renderizar cada paso. Eso no es un benchmark de FPS. Se comprobó también persistencia y reapertura de resultados.
+
+El runner de 8B completó cambios S→H en Madrid, Mónaco, Monza y Suzuka, cambio a intermedios con lluvia y servicio manual mediante teclado/táctil/giroscopio sintético. Spa confirmó su negativa segura. No se convierte esa negativa en una parada aprobada.
+
+Comparación local de Madrid completo, 22 coches, 100 %, mismo host y ajustes, ventanas de 8 s con SwiftShader:
+
+| Variante | Frames | FPS medios software | Física media ms | Render medio ms | p95 frame ms |
+|---|---:|---:|---:|---:|---:|
+| Base 8B | 12 | 1,8 | 29,600 | 153,942 | 1500,0 |
+| Candidata 8C | 19 | 2,5 | 33,521 | 193,616 | 1333,2 |
+
+Son muestras pequeñas y ruidosas: resolución y LOD adaptativos, JIT y backend software impiden atribuir diferencias sólo a 8C. Los FPS/p95 no empeoran en esta ventana, pero los tiempos medios por paso/pase suben; NO se declara una mejora de rendimiento ni se certifica ausencia de regresiones en hardware real con estos números. Se conservan los recibos y la comparación de conducción automatizada con 8B en CI. No se ha probado un teléfono físico.
+
+La revisión de capturas detectó y corrigió el contraste de la fila del jugador. La bandera tiene prioridad en el HUD durante la llegada, y los diagnósticos/telemetría incluyen configuración fijada y resultados; el auditor de vueltas aísla su registro temporal para no alterar una carrera activa.

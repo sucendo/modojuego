@@ -9,6 +9,7 @@ window.__apexAuto={
   if(dir==='14-spain'&&!readStoredCustomTrackSvg(dir))await importEditableCircuitSvgText(await(await fetch('circuits/svg/apex26_14-madrid-spain.svg')).text(),spec);
   sessionSettings={diff:1,weather:'CLEAR',noRivals:!traffic};currentSession='race';
   $('gridPos').value='11';apexSetDriveProfile('assisted',false);
+  if(typeof apexRaceSelectPercentage==='function')apexRaceSelectPercentage(100);
   await startRace(spec,99,'quick',$('start'));if(!player||!trackData)throw Error('Load failed: '+dir);
   countdown=0;mode='race';paused=false;apexArmRaceGridTiming();apexReleaseInputs();gyro.enabled=false;setAutoDriveMode(1,true);
   return {version:APP_VERSION,build:APP_BUILD,circuit:dir,rivals:rivals.length,startTotal:player.total};
@@ -26,7 +27,7 @@ window.__apexAuto={
   rivals:rivals.length,finite:physicsFinite(),mode
  };},
  async run(seconds,stepsPerFrame=5){
-  const samples=[],start=player.total;let stopped=0,maxStopped=0,noProgress=0,maxNoProgress=0,best=player.total;
+  const cpuStart=performance.now(),samples=[],start=player.total;let stopped=0,maxStopped=0,noProgress=0,maxNoProgress=0,best=player.total;
   const count=Math.round(seconds*100);for(let tick=0;tick<count;tick++){
    update(.01,tick%stepsPerFrame===stepsPerFrame-1,stepsPerFrame*.01);
    if(player.speed<.7&&(player.autoTargetSpeed||0)>2){stopped+=.01;maxStopped=Math.max(maxStopped,stopped);}else stopped=0;
@@ -35,6 +36,6 @@ window.__apexAuto={
    if(tick%50===49)samples.push(this.sample());
    if(tick%200===199)await new Promise(resolve=>setTimeout(resolve,0));
   }
-  return {seconds,physicsHz:100,stepsPerFrame,progressM:player.total-start,maxStoppedSec:maxStopped,maxNoProgressSec:maxNoProgress,end:this.sample(),samples};
+  return {cpuMs:performance.now()-cpuStart,seconds,physicsHz:100,stepsPerFrame,progressM:player.total-start,maxStoppedSec:maxStopped,maxNoProgressSec:maxNoProgress,end:this.sample(),samples};
  }
 };
