@@ -20,7 +20,7 @@ let nInstall=0,nLap=0,clock=0;
 const ctx={
  raceT:0,player:{},trackData:{km:1},currentSession:'race',
  apexPitRoutePlan:()=>plan,apexPitBoxForCar:()=>({pitS:55,slotId:'A'}),
- apexPitSafeSpeed:()=>18,apexPitPointAtS:p=>({x:p,z:0,y:0,tx:1,tz:0,nx:0,nz:1,pitS:p}),
+ envProfile:()=>({half:5}),apexPitSafeSpeed:()=>18,apexPitPointAtS:p=>({x:p,z:0,y:0,tx:1,tz:0,nx:0,nz:1,pitS:p}),
  renderRibbonFrameAt:s=>({x:s*(100/120),z:0,tx:1,tz:0,nx:0,nz:1}),
  trackSurfacePoseAt:(s)=>({x:s*(100/120),z:0,y:0}),
  clamp:(x,a,b)=>Math.max(a,Math.min(b,x)),mod:(x,m)=>(x%m+m)%m,
