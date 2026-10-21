@@ -1,0 +1,288 @@
+{
+  "ok": true,
+  "tests": [
+    "All 23 authored GP distances: ceiling identical at all four percentages",
+    "23 by 4 complete lap sequences end exactly at the selected target",
+    "Custom and old JSON: explicit laps; no invented 305 km fallback",
+    "Session configuration frozen; changing saved choice affects only next race",
+    "Grid start is lap zero, sectors do not finish, exact lap activates chequered",
+    "Reverse and large projection jumps never award laps",
+    "Same-batch crossing order is chronological, independent of car update order",
+    "Lapped cars finish on next real gate; fuller-lap car stays ahead",
+    "All 22 participants progressively finish; recorded stops/compounds and save roundtrip",
+    "After-start and coincident control retain their two-crossing first-lap rule",
+    "FP and qualifying untouched by race finishing and wear scaling",
+    "Wear scales once at 25/50/75/100, real metres and temperatures identical",
+    "100 percent tyre model is bit-identical to 8B for five compounds",
+    "Provisional scaling never exceeds inverse factor; no distance fiction or AI advantage"
+  ],
+  "metrics": {
+    "matrix": [
+      {
+        "id": "01-australia",
+        "official": 58,
+        "laps": [
+          15,
+          29,
+          44,
+          58
+        ]
+      },
+      {
+        "id": "02-china",
+        "official": 56,
+        "laps": [
+          14,
+          28,
+          42,
+          56
+        ]
+      },
+      {
+        "id": "03-japan",
+        "official": 53,
+        "laps": [
+          14,
+          27,
+          40,
+          53
+        ]
+      },
+      {
+        "id": "04-miami",
+        "official": 57,
+        "laps": [
+          15,
+          29,
+          43,
+          57
+        ]
+      },
+      {
+        "id": "05-canada",
+        "official": 70,
+        "laps": [
+          18,
+          35,
+          53,
+          70
+        ]
+      },
+      {
+        "id": "06-monaco",
+        "official": 78,
+        "laps": [
+          20,
+          39,
+          59,
+          78
+        ]
+      },
+      {
+        "id": "07-barcelona-catalunya",
+        "official": 66,
+        "laps": [
+          17,
+          33,
+          50,
+          66
+        ]
+      },
+      {
+        "id": "08-austria",
+        "official": 71,
+        "laps": [
+          18,
+          36,
+          54,
+          71
+        ]
+      },
+      {
+        "id": "09-great-britain",
+        "official": 52,
+        "laps": [
+          13,
+          26,
+          39,
+          52
+        ]
+      },
+      {
+        "id": "10-belgium",
+        "official": 44,
+        "laps": [
+          11,
+          22,
+          33,
+          44
+        ]
+      },
+      {
+        "id": "11-hungary",
+        "official": 70,
+        "laps": [
+          18,
+          35,
+          53,
+          70
+        ]
+      },
+      {
+        "id": "12-netherlands",
+        "official": 72,
+        "laps": [
+          18,
+          36,
+          54,
+          72
+        ]
+      },
+      {
+        "id": "13-italy",
+        "official": 53,
+        "laps": [
+          14,
+          27,
+          40,
+          53
+        ]
+      },
+      {
+        "id": "14-spain",
+        "official": 57,
+        "laps": [
+          15,
+          29,
+          43,
+          57
+        ]
+      },
+      {
+        "id": "15-azerbaijan",
+        "official": 51,
+        "laps": [
+          13,
+          26,
+          39,
+          51
+        ]
+      },
+      {
+        "id": "16-bahrain",
+        "official": 56,
+        "laps": [
+          14,
+          28,
+          42,
+          56
+        ]
+      },
+      {
+        "id": "17-singapore",
+        "official": 62,
+        "laps": [
+          16,
+          31,
+          47,
+          62
+        ]
+      },
+      {
+        "id": "18-united-states",
+        "official": 56,
+        "laps": [
+          14,
+          28,
+          42,
+          56
+        ]
+      },
+      {
+        "id": "19-mexico",
+        "official": 71,
+        "laps": [
+          18,
+          36,
+          54,
+          71
+        ]
+      },
+      {
+        "id": "20-sao-paulo",
+        "official": 71,
+        "laps": [
+          18,
+          36,
+          54,
+          71
+        ]
+      },
+      {
+        "id": "21-las-vegas",
+        "official": 50,
+        "laps": [
+          13,
+          25,
+          38,
+          50
+        ]
+      },
+      {
+        "id": "22-qatar",
+        "official": 57,
+        "laps": [
+          15,
+          29,
+          43,
+          57
+        ]
+      },
+      {
+        "id": "23-abu-dhabi",
+        "official": 58,
+        "laps": [
+          15,
+          29,
+          44,
+          58
+        ]
+      }
+    ],
+    "tyres": [
+      {
+        "percentage": 25,
+        "multiplier": 1.25,
+        "wear": 0.07373437500000969,
+        "distance": 6600.000000001386,
+        "temperature": 97.73329552542465
+      },
+      {
+        "percentage": 50,
+        "multiplier": 1.25,
+        "wear": 0.07373437500000969,
+        "distance": 6600.000000001386,
+        "temperature": 97.73329552542465
+      },
+      {
+        "percentage": 75,
+        "multiplier": 1.25,
+        "wear": 0.07373437500000969,
+        "distance": 6600.000000001386,
+        "temperature": 97.73329552542465
+      },
+      {
+        "percentage": 100,
+        "multiplier": 1,
+        "wear": 0.058987499999989125,
+        "distance": 6600.000000001386,
+        "temperature": 97.73329552542465
+      }
+    ]
+  },
+  "limitations": [
+    "Timing fixtures cross real production gates; full physics/browser tested separately",
+    "Wear cap 1.25 until AI pit navigation in 8D; 100% unmodified",
+    "No invented DNF or mid-race reload"
+  ]
+}

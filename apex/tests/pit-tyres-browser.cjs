@@ -2,7 +2,7 @@
    Software Chromium/mobile emulation are NOT physical GPU/phone benchmarks. */
 const fs=require('fs'),path=require('path'),cp=require('child_process'),assert=require('assert/strict');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?path.join(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES,'playwright'):'playwright'));
-const root=path.resolve(__dirname,'../..'),hook=fs.readFileSync(path.join(__dirname,'pit-tyres-hook.js'),'utf8'),ref='e5c5578f470bbf7ee77bf703058e8d781f888dfe';
+const root=path.resolve(__dirname,'../..'),hook=fs.readFileSync(path.join(__dirname,'pit-tyres-hook.js'),'utf8'),ref=process.env.APEX_PIT_BASELINE_REF||'36fd9f591f6c2c26d7946a551e45d7108369678a';
 const output=process.env.APEX_PIT_RESULTS||'/tmp/apex-pit-results';fs.mkdirSync(output,{recursive:true});
 const variants={};for(const variant of ['baseline','candidate'])variants[variant]=Array.from({length:28},(_,i)=>{const p=`apex/parts/part-${String(i).padStart(3,'0')}.txt`;return variant==='baseline'?cp.execFileSync('git',['show',`${ref}:${p}`],{cwd:root,encoding:'utf8',maxBuffer:15e6}):fs.readFileSync(path.join(root,p),'utf8')});
 (async()=>{
@@ -13,8 +13,9 @@ const variants={};for(const variant of ['baseline','candidate'])variants[variant
   const page=await context.newPage(),errors=[];page.setDefaultTimeout(120000);page.on('pageerror',e=>{errors.push(e.message);console.log(JSON.stringify({test:'pit-page-error',message:e.message}))});page.on('dialog',async d=>{errors.push(d.message());await d.dismiss()});
   let variant='baseline';await page.route('**/parts/part-*.txt',async route=>{const i=Number(new URL(route.request().url()).pathname.match(/part-(\d+)\.txt$/)[1]);let body=variants[variant][i];if(i===27){const at=body.lastIndexOf('requestAnimationFrame(loop);');assert.ok(at>=0);body=body.slice(0,at)+hook+body.slice(at)}await route.fulfill({body,contentType:'text/plain'})});
   const url=process.env.APEX_AUDIT_URL||'http://127.0.0.1:8765/apex/apex.html?perf=1',perf=[];
-  for(variant of ['baseline','candidate']){await page.goto(url);await page.waitForFunction(()=>window.__apexPitAudit);await page.evaluate(()=>__apexPitAudit.load('14-spain','CLEAR',true));await page.waitForTimeout(8000);const row=await page.evaluate(()=>__apexPitAudit.perf());perf.push({variant,mobileEmulation:mobile,...row});console.log(JSON.stringify({test:'pit-render-perf',...perf.at(-1)}));assert.equal(row.rivals,21);assert.ok(row.summary.frames>0);await page.evaluate(()=>__apexPitAudit.stop())}
+  for(variant of ['baseline','candidate']){await page.goto(url);await page.waitForFunction(()=>window.__apexPitAudit);await page.evaluate(()=>__apexPitAudit.setDistance(100));await page.evaluate(()=>__apexPitAudit.load('14-spain','CLEAR',true));await page.waitForTimeout(8000);const row=await page.evaluate(()=>__apexPitAudit.perf());perf.push({variant,mobileEmulation:mobile,...row});console.log(JSON.stringify({test:'pit-render-perf',...perf.at(-1)}));assert.equal(row.rivals,21);assert.ok(row.summary.frames>0);await page.evaluate(()=>__apexPitAudit.stop())}
   console.log(JSON.stringify({test:'pit-render-comparison',baseline:ref,mobileEmulation:mobile,rows:perf,limitation:'Software renderer and short rolling windows; not a hardware FPS certification'}));
+  await page.evaluate(()=>__apexPitAudit.setDistance(25));
   const failures=[],restrictions=[];
   const dirs=(process.env.APEX_PIT_CIRCUITS||'14-spain,06-monaco,10-belgium,13-italy,03-japan').split(',');variant='candidate';
   for(const dir of dirs){try{

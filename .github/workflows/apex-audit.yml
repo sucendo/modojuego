@@ -29,6 +29,8 @@ jobs:
           mkdir -p /tmp/apex-results
           node apex/tests/render-audit.cjs > /tmp/apex-results/render.txt
           python3 apex/tests/pit-geometry-audit.py > /tmp/apex-results/pit-geometry.json
+          node apex/tests/track-preview-isolation.cjs > /tmp/apex-results/preview-isolation.json
+          node apex/tests/race-distance-audit.cjs > /tmp/apex-results/race-distance.json
           node apex/tests/pit-tyres-audit.cjs > /tmp/apex-results/pit-tyres.json
           node apex/tests/tyres-audit.cjs > /tmp/apex-results/tyres.json
           node apex/tests/driving-audit.cjs --json > /tmp/apex-results/driving.json
@@ -45,7 +47,7 @@ jobs:
 
   chromium:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 40
     strategy:
       fail-fast: false
       matrix:
@@ -80,6 +82,7 @@ jobs:
             sleep 1
           done
           APEX_PIT_RESULTS=/tmp/apex-results/pits node apex/tests/pit-tyres-browser.cjs 2>&1 | tee /tmp/apex-results/pit-browser.jsonl
+          APEX_RACE_RESULTS=/tmp/apex-results/races node apex/tests/race-distance-browser.cjs 2>&1 | tee /tmp/apex-results/race-browser.jsonl
           node apex/tests/browser-audit.cjs 2>&1 | tee /tmp/apex-results/browser.jsonl
       - uses: actions/upload-artifact@v4
         if: always()
@@ -89,7 +92,7 @@ jobs:
 
   autopilot:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
         with:
@@ -105,6 +108,7 @@ jobs:
           node "$RUNNER_TEMP/apex-browser/node_modules/playwright/cli.js" install --with-deps chromium
       - name: Compare automatic driving with main
         env:
+          BASELINE_REF: 36fd9f591f6c2c26d7946a551e45d7108369678a
           PLAYWRIGHT_MODULE_PATH: ${{ runner.temp }}/apex-browser/node_modules/playwright
         shell: bash
         run: |

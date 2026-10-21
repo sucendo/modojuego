@@ -308,7 +308,7 @@
    const aiPerf0=performance.now();
    let collisionCost=0;
    for(let ai=0;ai<aiSteps;ai++){
-     for(const rv of rivals)updateRivalRacecraft(rv,aiDt,L,aiDiff);
+     for(const rv of rivals){rv.raceStepStart=raceT-worldElapsed+ai*aiDt;rv.raceStepEnd=rv.raceStepStart+aiDt;updateRivalRacecraft(rv,aiDt,L,aiDiff);}
      // v5.143: a 10-15 FPS un coche recorre 4-6 m entre frames. Resolver contactos sólo
      // una vez al final permitía atravesar media carrocería antes de detectar el choque.
      // Hacemos una pasada SAT tras CADA subpaso de IA (máx. 4): coste ínfimo frente al render
@@ -336,6 +336,7 @@
      if(vn>0){player.vx-=1.04*vn*postC.nx;player.vz-=1.04*vn*postC.nz}
      syncPlayerTrack();
    }
+   if(apexRaceFlushFinishCrossings())return;
    player.pos=apexLivePlayerPosition();
    if(typeof apexRivalContinuityWatch==="function")apexRivalContinuityWatch(worldElapsed);
    const _telT0=performance.now();captureSessionTelemetry();telemetryPerf.telemetryMs=lerp(telemetryPerf.telemetryMs||0,performance.now()-_telT0,.18);
@@ -344,20 +345,12 @@
  }
 }
 function finishRace(){
- apexTyrePersistSession();
+ if(!apexRaceSession||apexRaceSession.status!=='FINISHED'||apexRaceSession.published)return;
+ apexRaceSession.published=true;apexTyrePersistSession();
  mode="finish";
  if(audio.ctx){oneShot(520,.16,"sine",.024,660);setTimeout(()=>oneShot(660,.18,"sine",.022,820),170)}
 
- const playerTeamKey=(currentMode==='season'&&save.seasonTeam)?save.seasonTeam:selectedTeamKey();
- const entries=[
-   {id:0,uid:'PLAYER',name:'TÚ',team:playerTeamKey,finished:true,finishTime:raceT,total:Number(player.total)||0,finishProgress:Number(player.total)||0,laps:Number(player.lap)||0,bestLap:best},
-   ...rivals.map(r=>({id:r.id,uid:raceIdentity(r.id),name:raceName(r.id),team:r.team,finished:!!r.finished,finishTime:r.finishTime,total:Number(r.total)||0,finishProgress:Number.isFinite(r.finishProgress)?r.finishProgress:null,laps:Number(r.completedLaps)||0,bestLap:r.bestLap}))
- ];
- entries.sort((a,b)=>{
-   if(a.finished&&b.finished)return (a.finishTime??Infinity)-(b.finishTime??Infinity);
-   if(a.finished!==b.finished)return a.finished?-1:1;
-   return apexRaceEntryProgress(b)-apexRaceEntryProgress(a);
- });
+ const entries=apexRaceResultEntries();
  finishOrder=entries.map(x=>x.id);
  const p=finishOrder.indexOf(0)+1;
  const winner=entries[0];
@@ -375,19 +368,7 @@ function finishRace(){
    persist();
  }else seasonAwardContext=null;
 
- const rows=entries.map((e,i)=>{
-   let gap='—';
-   if(i===0)gap=fmt(e.finishTime||raceT);
-   else if(e.finished&&winner.finished){
-     if((e.laps||0)<(winner.laps||0))gap='+'+((winner.laps||0)-(e.laps||0))+' LAP';
-     else gap='+'+((e.finishTime||0)-(winner.finishTime||0)).toFixed(3);
-   }else{
-     const winnerLaps=winner.laps||player.laps||0;
-     const selfLaps=e.laps||0;
-     gap='+'+Math.max(1,winnerLaps-selfLaps)+' LAP';
-   }
-   return {...e,_raceId:e.id,gap,laps:Number.isFinite(e.laps)?e.laps:0,extra:Number.isFinite(e.bestLap)?('Best '+fmt(e.bestLap)):''};
- });
+ const rows=apexRaceResultRows();
 
  const pages=buildRaceFinishPages(trackData.spec,rows,p);
  const onDone=(currentMode==='season'&&save.round<F1_SEASON_COUNT)?()=>{$('finish').classList.add('hidden');beginWeekend('season',calendar[save.round]);}:()=>goMenu();
@@ -788,7 +769,7 @@ function populateCircuitSelectors(preferredDir=null){
  return ["track","gpTrack","practiceTrack"].every(id=>$(id)&&$(id).options.length===calendar.length);
 }
 // Restauramos el catálogo F1 2026 + pistas extra. La Temporada usa sólo F1_SEASON_COUNT.
-populateCircuitSelectors();
+populateCircuitSelectors();apexRaceInitMenu();
 syncVersionUi();populateTeams();bindSvgTrackTools();renderSchedule();renderPracticeRecord();renderTeamChooser();setDemoMode(false);
 // Las previsualizaciones de circuito arrancan después de que la portada ya esté visible.
 setTimeout(()=>{apexMenuBooting=false;updateAllCircuitCards()},900);

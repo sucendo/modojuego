@@ -1,6 +1,12 @@
 # APEX Formula 26
 
-Versión de desarrollo: **v0.14.1 · PRE-RELEASE**
+Versión de desarrollo: **v0.14.2 · PRE-RELEASE**
+
+## v0.14.2 · Distancia y llegada de carrera (8C)
+
+Carreras al 25/50/75/100 % de las vueltas declaradas de cada circuito, con redondeo hacia arriba y configuración fijada al comenzar. Bandera a cuadros del ganador, llegada progresiva de los 22 coches y resultados persistentes consultables desde el menú. Boxes 8B y Spa deshabilitado se conservan.
+
+Desgaste común provisional `min(100/porcentaje, 1.25)` hasta que la IA pueda parar en 8D; al 100 % permanece exactamente ×1. No se multiplican kilómetros ni tiempo térmico. No se reanudan carreras al recargar. Véase [FASE8C_DISTANCIA_CARRERA.md](FASE8C_DISTANCIA_CARRERA.md) para decisiones, matriz de vueltas, pruebas y límites.
 
 Archivo fuente original:
 `Apex_Formula_26_v5_230_62_8_6_7_6_4_17_CONTROL_CLASICO_GP4.html`

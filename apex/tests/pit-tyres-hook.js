@@ -4,12 +4,13 @@ let pitAuditStepping=true;
 const pitAuditLoop=loop;
 loop=function(t){if(!pitAuditStepping)return pitAuditLoop(t);last=t;requestAnimationFrame(loop)};
 window.__apexPitAudit={
- async load(dir,weather='CLEAR',benchmark=false){
+ async load(dir,weather='CLEAR',benchmark=false,grid=false){
   pitAuditStepping=true;goMenu();const spec=calendar.find(s=>s.dir===dir);if(!spec)throw Error(dir);
   if(dir==='14-spain'&&!readStoredCustomTrackSvg(dir))await importEditableCircuitSvgText(await(await fetch('circuits/svg/apex26_14-madrid-spain.svg')).text(),spec);
   sessionSettings={diff:1,weather,noRivals:false};currentSession='race';$('gridPos').value='11';
   await startRace(spec,99,'quick',$('start'));if(!player||!trackData)throw Error('Load failed');
   countdown=0;mode='race';paused=false;apexArmRaceGridTiming();apexReleaseInputs();gyro.enabled=false;setAutoDriveMode(1,false);
+  if(grid)return {grid:true,rivals:rivals.length,version:APP_VERSION};
   if(benchmark){pitAuditStepping=false;apexRuntimePerfReset();return {benchmark:true,rivals:rivals.length,version:APP_VERSION}}
   const plan=apexPitRoutePlan();if(!plan)return {available:false,reason:'NO_PIT_NETWORK'};
   const box=apexPitBoxForCar(plan,player);if(!box)return {available:false,dir,rivals:rivals.length,reason:plan.serviceIssue?'UNSAFE_PIT_GEOMETRY':'NO_AUTHORED_BOX',issue:plan.serviceIssue};
@@ -21,6 +22,7 @@ window.__apexPitAudit={
   player.nextTyreCompound='SOFT';player.pitHistory=[];player.pitStops=0;player.tyreSet=1;syncPlayerTrack();updateHud(true);
   return {available:true,version:APP_VERSION,dir,rivals:rivals.length,plan:{entryTrackS:plan.entryTrackS,exitTrackS:plan.exitTrackS,routeLength:plan.routeLength,speedKph:plan.speedKph,box},start:{x:player.x,z:player.z,total:player.total,lap:player.lap},weather};
  },
+ setDistance(p){if(typeof apexRaceSelectPercentage==='function')apexRaceSelectPercentage(p)},
  status(){return {paused,mode,t:raceT,phase:player.pitStop?.phase||null,pit:apexPitSnapshot(player),tyres:apexTyreSnapshot(player),x:player.x,z:player.z,total:player.total,lap:player.lap,speed:player.speed,network:player.driveNetwork,finite:physicsFinite(),faults:player.physicsFaults||0,driving:demoMode?'AUTO':assistMode?'ASSISTED':'MANUAL',hud:pitStopHudStatus(),boxAhead:player.pitStop?.boxAhead,pitDistance:player.pitState?.dist,lastBoundary:player.lastDrivableBoundaryHit,lastWall:player.autoLastWallHit,profile:renderProfilerSnapshot(),performance:apexPerformanceSummary()};},
  request(){requestPitStop();return this.status()},
  async run(seconds=180){

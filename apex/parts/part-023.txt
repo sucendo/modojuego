@@ -86,7 +86,8 @@ function finishSessionCaption(session){return session==='freepractice'?'ENTRENAM
 function finishChip(label,value){return `<div class="finishChip"><span>${label}</span><b>${value}</b></div>`}
 function teamLogoFinishMarkup(team){return `<span class="finishTeamLogoWrap">${teamLogoMarkup(team,'finishTeamLogo')}</span>`}
 function buildSessionResultsTable(results,mode='time'){if(!results||!results.length)return `<div class="finishMuted">Sin datos.</div>`;const lead=results[0].time;return `<div class="sectorTableScroll"><table class="finishTable"><thead><tr><th style="width:44px">Pos</th><th>Driver</th><th style="width:90px">Team</th><th style="text-align:right">${mode==='race'?'Gap to winner':'Gap to fastest'}</th><th>S1*</th><th>S2*</th><th>S3*</th><th style="width:74px;text-align:right">Laps</th></tr></thead><tbody>${results.map((r,i)=>{const isBest=sessionFastestLap&&sessionFastestLap.id===r._raceId;return `<tr class="${r.uid==='PLAYER'?'you':''} ${i===0?'best':''}"><td class="pos">${i+1}</td><td class="driver">${String(r.name||'').toUpperCase()}${isBest?'<span class="finishBestFlag">◴</span>':''}<small>${r.extra||''}</small></td><td class="team center">${teamLogoFinishMarkup(r.team)}</td><td class="metric">${i?fmtDeltaSigned(r.time-lead):fmt(r.time)}</td>${apexResultSectorCells(r)}<td class="metric2">${Number.isFinite(r.laps)?r.laps:'—'}</td></tr>`}).join('')}</tbody></table></div><div class="finishMuted">* Sectores de la mejor vuelta medida de cada piloto. —: sin lectura.</div>`}
-function buildRaceResultsTable(results){if(!results||!results.length)return `<div class="finishMuted">Sin datos.</div>`;return `<div class="sectorTableScroll"><table class="finishTable"><thead><tr><th style="width:44px">Pos</th><th>Driver</th><th style="width:90px">Team</th><th style="text-align:right">Gap to winner</th><th>S1*</th><th>S2*</th><th>S3*</th><th style="width:74px;text-align:right">Laps</th></tr></thead><tbody>${results.map((r,i)=>{const isBest=sessionFastestLap&&sessionFastestLap.id===r._raceId;return `<tr class="${r.uid==='PLAYER'?'you':''} ${i===0?'best':''}"><td class="pos">${i+1}</td><td class="driver">${String(r.name||'').toUpperCase()}${isBest?'<span class="finishBestFlag">◴</span>':''}<small>${r.extra||''}</small></td><td class="team center">${teamLogoFinishMarkup(r.team)}</td><td class="metric">${r.gap}</td>${apexResultSectorCells(r)}<td class="metric2">${r.laps}</td></tr>`}).join('')}</tbody></table></div><div class="finishMuted">* Sectores de la mejor vuelta medida de cada piloto. —: sin lectura.</div>`}
+function buildRaceResultsTable(results){if(!results||!results.length)return '<div class="finishMuted">Sin datos.</div>';return `<div class="sectorTableScroll"><table class="finishTable"><thead><tr><th>Pos</th><th>Piloto</th><th>Escudería</th><th>Vueltas</th><th>Tiempo / diferencia</th><th>Paradas</th><th>Compuesto</th><th>Mejor vuelta</th></tr></thead><tbody>${results.map((r,i)=>`<tr class="${r.uid==='PLAYER'?'you':''} "><td class="pos">${i+1}</td><td class="driver">${escapeXml(r.name||'')}</td><td>${teamLogoFinishMarkup(r.team)} ${escapeXml(teamInfo(r.team).name||r.team)}</td><td class="metric2">${r.laps}</td><td class="metric">${r.gap||'—'}</td><td class="metric2">${r.pitStops??'—'}</td><td>${escapeXml(r.compound||'—')}</td><td class="metric2">${Number.isFinite(r.bestLap)?fmt(r.bestLap):'—'}</td></tr>`).join('')}</tbody></table></div>`}
+
 function buildLapLogBoard(title,lapRows){
  const rows=lapRows||[],bestLap=rows.reduce((m,r)=>Number.isFinite(r.time)?Math.min(m,r.time):m,Infinity),mins=[0,1,2].map(i=>rows.reduce((m,r)=>Number.isFinite((r.sectors||[])[i])?Math.min(m,r.sectors[i]):m,Infinity));
  return `<div class="finishPageTitle">${title}</div><div class="sectorTableScroll"><table class="finishTable sectorLapTable"><thead><tr><th>Vuelta</th><th>S1</th><th>S2</th><th>S3</th><th>Tiempo</th><th>Dif.</th></tr></thead><tbody>${rows.length?rows.map(r=>`<tr class="you"><td>V${r.lap}${r.auto?' · AUTO':''}${r.firstLap?' · SALIDA':''}</td>${[0,1,2].map(i=>{const t=(r.sectors||[])[i];return `<td class="${Number.isFinite(t)&&t<=mins[i]+.0005?'sectorPersonalBest':''}">${apexSectorText(t)}</td>`}).join('')}<td>${Number.isFinite(r.time)?fmt(r.time):Number.isFinite(r.elapsed)?fmt(r.elapsed):'—'}</td><td>${Number.isFinite(r.time)&&Number.isFinite(bestLap)?fmtDeltaSigned(r.time-bestLap):'—'}</td></tr>`).join(''):'<tr><td colspan="6">Todavía no hay vueltas completas registradas.</td></tr>'}</tbody></table></div>`;
@@ -102,14 +103,104 @@ function retreatFinishFlow(){if(!finishFlow)return; if(finishFlow.index>0){finis
 function prepareSimulatedSessionResults(session,res){return (res||[]).map(r=>{let laps=r.laps; if(!Number.isFinite(laps)){ if(r.uid==='PLAYER')laps=Math.max(1,sessionLapLog.length); else { const base=session==='qualifying'?4:14; const spread=session==='qualifying'?5:12; laps=base+Math.floor(stableTrait(r.uid,91)*spread);} } return {...r,laps};})}
 function buildPracticeSoloPages(spec){const rows=sessionLapLog.slice();const bestLap=rows.reduce((m,r)=>Number.isFinite(r.time)&&r.time<m?r.time:m,Infinity);const summary=[finishChip('Circuito',(spec.name||'').toUpperCase()),finishChip('Vueltas',String(rows.length)),finishChip('Mejor',Number.isFinite(bestLap)?fmt(bestLap):'—'),finishChip('Sesión',fmt(Math.max(0,raceT||0)))];const side=`<div class="finishSideCard"><div class="finishPageTitle">Resumen</div><div class="finishSummaryLine"><span>Piloto</span><b>TÚ</b></div><div class="finishSummaryLine"><span>Tiempo de sesión</span><b>${fmt(Math.max(0,raceT||0))}</b></div><div class="finishSummaryLine"><span>Vueltas completas</span><b>${rows.length}</b></div><div class="finishSummaryLine"><span>Mejor vuelta</span><b>${Number.isFinite(bestLap)?fmt(bestLap):'—'}</b></div></div>`;const page0={gpTitle:finishTitleCountry(spec),sessionTitle:finishSessionCaption('freepractice'),summaryChips:summary,body:`<div class="finishTwoCol"><div>${buildLapLogBoard('Tiempos de todas las vueltas',rows)}</div>${side}</div>`};return [page0]}
 function buildTimedSessionPages(spec,session,res){const results=prepareSimulatedSessionResults(session,res);const you=results.findIndex(r=>r.uid==='PLAYER');const ytxt=you>=0?('P'+(you+1)):'—';const leader=results[0];const chips=[finishChip('Circuito',(spec.name||'').toUpperCase()),finishChip('Sesión',sessionLabel(session)),finishChip('Posición',ytxt),finishChip('Mejor',leader?fmt(leader.time):'—')];const page0={gpTitle:finishTitleCountry(spec),sessionTitle:finishSessionCaption(session),summaryChips:chips,body:buildSessionResultsTable(results,'time')};const pages=[page0];if(sessionLapLog.length){pages.push({gpTitle:finishTitleCountry(spec),sessionTitle:sessionLabel(session)+' · TUS VUELTAS',summaryChips:[finishChip('Vueltas',String(sessionLapLog.length)),finishChip('Tu mejor',best<1e8?fmt(best):'—')],body:buildLapLogBoard('Tus vueltas',sessionLapLog)})}return pages}
-function buildRaceFinishPages(spec,results,position){const fastestName=sessionFastestLap&&Number.isFinite(sessionFastestLap.time)?(sessionFastestLap.id===0?'TÚ':(raceName(sessionFastestLap.id)||'Rival')):'—';const fastestTxt=Number.isFinite(sessionFastestLap.time)?fmt(sessionFastestLap.time):'—';const chips=[finishChip('Posición',position?('P'+position):'—'),finishChip('Tiempo',fmt(Math.max(0,raceT||0))),finishChip('Tu mejor',best<1e8?fmt(best):'—'),finishChip('V. rápida',fastestName+' · '+fastestTxt)];if(seasonAwardContext&&seasonAwardContext.playerGpPoints!=null)chips.push(finishChip('Puntos',String(seasonAwardContext.playerGpPoints)));const pages=[{gpTitle:finishTitleCountry(spec),sessionTitle:finishSessionCaption('race'),summaryChips:chips,body:buildRaceResultsTable(results)}];if(sessionLapLog.length){pages.push({gpTitle:finishTitleCountry(spec),sessionTitle:'RACE · TUS VUELTAS',summaryChips:[finishChip('Vueltas',String(sessionLapLog.length)),finishChip('Tu mejor',best<1e8?fmt(best):'—')],body:buildLapLogBoard('Tus vueltas',sessionLapLog)})}if(currentMode==='season'){pages.push({gpTitle:'TEMPORADA 2026',sessionTitle:'CHAMPIONSHIP DE PILOTOS',summaryChips:[finishChip('Ronda',String(Math.max(1,save.round))),finishChip('Victorias',String(save.wins||0)),finishChip('Tus puntos',String(save.points.PLAYER||0))],body:buildStandingsTable('drivers')});pages.push({gpTitle:'TEMPORADA 2026',sessionTitle:'CHAMPIONSHIP DE CONSTRUCTORES',summaryChips:[finishChip('Equipo',(teamInfo(save.seasonTeam||selectedTeamKey()).name||'').toUpperCase()),finishChip('Puntos equipo',String((seasonConstructorStandings().find(x=>x.team===(save.seasonTeam||selectedTeamKey()))||{}).points||0)),finishChip('Puntos GP',String(seasonAwardContext&&seasonAwardContext.teamGpPoints!=null?seasonAwardContext.teamGpPoints:0))],body:buildStandingsTable('constructors')})}
+function buildRaceFinishPages(spec,results,position){const fastestName=sessionFastestLap&&Number.isFinite(sessionFastestLap.time)?(sessionFastestLap.id===0?'TÚ':(raceName(sessionFastestLap.id)||'Rival')):'—';const fastestTxt=Number.isFinite(sessionFastestLap.time)?fmt(sessionFastestLap.time):'—';const chips=[finishChip('Posición',position?('P'+position):'—'),finishChip('Tiempo',fmt(Math.max(0,player?.finishTime??raceT??0))),finishChip('Distancia',`${apexRaceSession?.config.percentage??100} % · ${player.laps} vueltas`),finishChip('Tu mejor',best<1e8?fmt(best):'—'),finishChip('V. rápida',fastestName+' · '+fastestTxt)];if(seasonAwardContext&&seasonAwardContext.playerGpPoints!=null)chips.push(finishChip('Puntos',String(seasonAwardContext.playerGpPoints)));const pages=[{gpTitle:finishTitleCountry(spec),sessionTitle:finishSessionCaption('race'),summaryChips:chips,body:buildRaceResultsTable(results)}];if(sessionLapLog.length){pages.push({gpTitle:finishTitleCountry(spec),sessionTitle:'RACE · TUS VUELTAS',summaryChips:[finishChip('Vueltas',String(sessionLapLog.length)),finishChip('Tu mejor',best<1e8?fmt(best):'—')],body:buildLapLogBoard('Tus vueltas',sessionLapLog)})}if(currentMode==='season'){pages.push({gpTitle:'TEMPORADA 2026',sessionTitle:'CHAMPIONSHIP DE PILOTOS',summaryChips:[finishChip('Ronda',String(Math.max(1,save.round))),finishChip('Victorias',String(save.wins||0)),finishChip('Tus puntos',String(save.points.PLAYER||0))],body:buildStandingsTable('drivers')});pages.push({gpTitle:'TEMPORADA 2026',sessionTitle:'CHAMPIONSHIP DE CONSTRUCTORES',summaryChips:[finishChip('Equipo',(teamInfo(save.seasonTeam||selectedTeamKey()).name||'').toUpperCase()),finishChip('Puntos equipo',String((seasonConstructorStandings().find(x=>x.team===(save.seasonTeam||selectedTeamKey()))||{}).points||0)),finishChip('Puntos GP',String(seasonAwardContext&&seasonAwardContext.teamGpPoints!=null?seasonAwardContext.teamGpPoints:0))],body:buildStandingsTable('constructors')})}
  return pages}
 
-function saveWeekendProgress(){if(!weekendContext||weekendContext.mode!=='season')return;save.seasonWeekend={round:save.round,sessionIndex:weekendContext.sessionIndex,states:weekendContext.states,gridOrder:weekendContext.gridOrder,sessionResults:weekendContext.sessionResults};persist()}
+function saveWeekendProgress(){if(!weekendContext||weekendContext.mode!=='season')return;save.seasonWeekend={round:save.round,sessionIndex:weekendContext.sessionIndex,states:weekendContext.states,gridOrder:weekendContext.gridOrder,sessionResults:weekendContext.sessionResults,racePercentage:weekendContext.racePercentage};persist()}
+// FASE 8C: configuration is resolved once; timing still uses the existing finish gate.
+const APEX_RACE_PERCENTAGES=Object.freeze([25,50,75,100]);
+let apexRacePercentage=(()=>{try{const p=+appStorage.getItem('apex26.race.percent.v1');return APEX_RACE_PERCENTAGES.includes(p)?p:25}catch(e){return 25}})();
+let apexRaceSession=null;
+function apexRaceValidLaps(v){return Number.isInteger(+v)&&+v>0&&+v<=10000?+v:null}
+function apexRaceConfig(spec,percentage=apexRacePercentage,json=readStoredCircuitJson(spec.dir),loaded=null){
+ const p=APEX_RACE_PERCENTAGES.includes(+percentage)?+percentage:25,j=json||{},r=j.race||{};
+ // Custom/old JSON may author race.totalLaps or race.laps. Never infer a GP from 305 km.
+ const base=APEX_BASE_CIRCUIT_JSON_BY_ID[spec.dir],baseRace=base&&base.race||{};
+ const officialLaps=apexRaceValidLaps(r.totalLaps)||apexRaceValidLaps(r.laps)||apexRaceValidLaps(j.grandPrix&&j.grandPrix.totalLaps)||apexRaceValidLaps(baseRace.totalLaps)||apexRaceValidLaps(baseRace.laps)||apexRaceValidLaps(loaded&&loaded.laps);
+ const laps=officialLaps?Math.max(1,Math.ceil(officialLaps*p/100)):null;
+ const length=loaded&&loaded.km>0?loaded.km*1000:(+((j.track||{}).lengthMeters)||+((base&&base.track||{}).lengthMeters)||null);
+ return Object.freeze({percentage:p,officialLaps,totalLaps:laps,lapLengthM:length,nominalDistanceM:laps&&length?laps*length:null,
+  requestedWearMultiplier:100/p,wearMultiplier:Math.min(100/p,1.25),wearPolicy:'COMMON_CAP_1_25_PENDING_AI_PITS',
+  source:apexRaceValidLaps(r.totalLaps)||apexRaceValidLaps(r.laps)?'CIRCUIT_RACE_METADATA':officialLaps?'LEGACY_CIRCUIT_METADATA':'MISSING_RACE_METADATA'});
+}
+function apexRaceSelectPercentage(value){
+ if(!APEX_RACE_PERCENTAGES.includes(+value))return;
+ apexRacePercentage=+value;try{appStorage.setItem('apex26.race.percent.v1',String(apexRacePercentage))}catch(e){}
+ apexRaceUpdateMenu();
+}
+function apexRaceUpdateMenu(){
+ for(const [id,trackId] of [['laps','track'],['gpLaps','gpTrack'],['seasonDistance',null]]){
+  const el=$(id);if(!el)continue;el.value=String(apexRacePercentage);
+  const spec=trackId?calendar[+$(trackId).value]:calendar[Math.min(save.round,F1_SEASON_COUNT-1)];if(!spec)continue;
+  const c=apexRaceConfig(spec),hint=$(id+'DistanceHint');if(hint)hint.textContent=c.totalLaps?`Distancia: ${c.percentage} % — ${c.totalLaps} vueltas · desgaste ×${c.wearMultiplier.toFixed(2)}`:'Define las vueltas completas en el JSON del circuito para iniciar una carrera.';
+  if(trackId){const start=$(trackId==='track'?'start':'gpStart');if(start)start.disabled=!c.totalLaps;}
+ }
+}
+function apexRaceInitMenu(){
+ for(const id of ['laps','gpLaps','seasonDistance']){const el=$(id);if(!el)continue;el.innerHTML=APEX_RACE_PERCENTAGES.map(p=>`<option value="${p}">${p} %</option>`).join('');el.onchange=e=>apexRaceSelectPercentage(e.target.value);}
+ for(const id of ['track','gpTrack'])$(id)?.addEventListener('change',apexRaceUpdateMenu);
+ const recent=$('lastRaceResults');if(recent){recent.onclick=()=>apexRaceShowSavedResults();recent.classList.toggle('hidden',!save.lastRaceResult);}
+ const live=$('raceResults');if(live)live.onclick=()=>{if(!apexRaceSession||!apexRaceSession.winnerId&&apexRaceSession.winnerId!==0)return;const previous=mode;showFinishFlow(buildRaceFinishPages(trackData.spec,apexRaceResultRows(),player.pos),()=>{mode=previous;$('finish').classList.add('hidden');$('hud').classList.remove('hidden');$('touch').classList.remove('hidden');$('sessionBadge').classList.remove('hidden');last=performance.now()});};
+ apexRaceUpdateMenu();
+}
+function apexRaceStartSession(config){
+ trackData.raceConfig=currentSession==='race'?config:null;
+ apexRaceSession=currentSession==='race'?{config,status:'RUNNING',winnerId:null,winnerTime:null,finishedCount:0,crossings:[],published:false}:null;
+ if(apexRaceSession)apexRaceSession.distanceM=apexRaceTimingGeometry(trackData.spec,config.totalLaps).raceDistance;
+ const b=$('raceResults');if(b)b.classList.add('hidden');
+}
+function apexRaceQueueFinish(car,isPlayer,prevS,newS,L){
+ const session=apexRaceSession;if(!session||currentSession!=='race'||car.finished)return;
+ const advance=mod(newS-prevS,L),toLine=mod(apexRaceTimingGeometry(trackData.spec,session.config.totalLaps).finish-prevS,L);
+ const end=Number.isFinite(car.raceStepEnd)?car.raceStepEnd:raceT,start=Number.isFinite(car.raceStepStart)?car.raceStepStart:end;
+ const time=start+(end-start)*(advance>0?clamp(toLine/advance,0,1):1);
+ session.crossings.push({car,id:isPlayer?0:car.id,laps:isPlayer?car.lap:car.completedLaps,time,progress:Number(car.total)||0});
+}
+function apexRaceFlushFinishCrossings(){
+ const s=apexRaceSession;if(!s||currentSession!=='race'||!s.crossings.length)return false;
+ s.crossings.sort((a,b)=>a.time-b.time||b.laps-a.laps||a.id-b.id);
+ for(const e of s.crossings){
+  if(e.car.finished)continue;
+  if(s.winnerId===null){if(e.laps<s.config.totalLaps)continue;s.winnerId=e.id;s.winnerTime=e.time;s.status='CHEQUERED';const a=$('raceAlert');if(a){a.textContent='🏁 BANDERA A CUADROS · TERMINA ESTA VUELTA';a.style.color='#f4f5f6';}const b=$('raceResults');if(b)b.classList.remove('hidden');}
+  if(e.time+1e-9<s.winnerTime)continue;
+  e.car.finished=true;e.car.finishTime=e.time;e.car.finishProgress=e.progress;e.car.raceFinishLaps=e.laps;e.car.raceFinishPitStops=e.car.pitStops||0;e.car.raceFinishCompound=e.car.tyres?.compound||null;
+  s.finishedCount++;
+ }
+ s.crossings.length=0;
+ // No timeout DNFs or simulated finishes: each participant must cross the actual gate.
+ if(s.finishedCount===rivals.length+1){s.status='FINISHED';finishRace();return true;}
+ return false;
+}
+function apexRaceResultEntries(){
+ const team=(currentMode==='season'&&save.seasonTeam)?save.seasonTeam:selectedTeamKey();
+ return [{id:0,uid:'PLAYER',name:'TÚ',team,car:player,bestLap:best},...rivals.map(r=>({id:r.id,uid:raceIdentity(r.id),name:raceName(r.id),team:r.team,car:r,bestLap:r.bestLap}))].map(e=>{
+  const c=e.car;return {id:e.id,uid:e.uid,name:e.name,team:e.team,finished:!!c.finished,finishTime:Number.isFinite(c.finishTime)?c.finishTime:null,total:Number(c.total)||0,finishProgress:Number.isFinite(c.finishProgress)?c.finishProgress:null,laps:c.raceFinishLaps??(e.id===0?c.lap:c.completedLaps)??0,bestLap:Number.isFinite(e.bestLap)&&e.bestLap<1e8?e.bestLap:null,pitStops:c.raceFinishPitStops??(c.pitStops||0),compound:c.raceFinishCompound??(c.tyres?.compound||null)};
+ }).sort(apexRaceCompareResults);
+}
+function apexRaceCompareResults(a,b){return b.laps-a.laps||(a.finished!==b.finished?(a.finished?-1:1):a.finished?(a.finishTime??Infinity)-(b.finishTime??Infinity):apexRaceEntryProgress(b)-apexRaceEntryProgress(a))||a.id-b.id}
+function apexRaceResultRows(){
+ const entries=apexRaceResultEntries(),winner=entries.find(e=>e.id===apexRaceSession?.winnerId)||entries[0];
+ return entries.map((e,i)=>({...e,position:i+1,_raceId:e.id,gap:!e.finished?'EN PISTA':!winner?.finished?'—':e.id===winner.id?fmt(e.finishTime):e.laps<winner.laps?'+'+(winner.laps-e.laps)+' VUELTA(S)':'+'+(e.finishTime-winner.finishTime).toFixed(3),extra:Number.isFinite(e.bestLap)?'Best '+fmt(e.bestLap):''}));
+}
+function apexRacePersistSession(){
+ if(!apexRaceSession||!player||currentSession!=='race')return;
+ const s=apexRaceSession,rows=apexRaceResultRows();
+ save.lastRaceSession={schema:1,circuit:trackData.spec.dir,config:{...s.config},distanceM:s.distanceM,status:s.status,winnerId:s.winnerId,winnerTime:s.winnerTime,elapsed:raceT,results:rows};
+ if(s.status==='FINISHED'){save.lastRaceResult=JSON.parse(JSON.stringify(save.lastRaceSession));for(const r of rows){const c=r.id===0?player:rivals.find(c=>c.id===r.id);if(c)c.finalPosition=r.position;}}
+ if(typeof sessionTelemetry!=='undefined'&&sessionTelemetry)sessionTelemetry.raceResult=save.lastRaceSession;
+ persist();const recent=$('lastRaceResults');if(recent)recent.classList.toggle('hidden',!save.lastRaceResult);
+}
+function apexRaceShowSavedResults(){
+ const r=save.lastRaceResult;if(!r||!Array.isArray(r.results))return;
+ const spec=calendar.find(c=>c.dir===r.circuit)||{name:r.circuit};
+ showFinishFlow([{gpTitle:finishTitleCountry(spec),sessionTitle:'RESULTADOS FINALES',summaryChips:[finishChip('Distancia',`${r.config.percentage} % · ${r.config.totalLaps} vueltas`)],body:buildRaceResultsTable(r.results)}],goMenu);
+}
+// END FASE8C RACE CONFIGURATION
+
 function beginWeekend(kind,spec){
  currentMode=kind;if(kind==='season'){if(!save.seasonTeam){save.seasonTeam=selectedTeamKey();const seat=driverRoster.find(d=>d.team===save.seasonTeam);save.seasonSeatUid=seat?seat.uid:null;persist()}if($('teamSelect')){$('teamSelect').value=save.seasonTeam;syncTeamPreset(false)}}
  const restored=kind==='season'&&save.seasonWeekend&&save.seasonWeekend.round===save.round?save.seasonWeekend:null;
- weekendContext={mode:kind,spec,sessionIndex:restored?restored.sessionIndex:0,states:restored?restored.states:{},gridOrder:restored?restored.gridOrder:null,sessionResults:restored?restored.sessionResults:{},raceLaps:kind==='grandprix'?+$('gpLaps').value:3,diff:kind==='grandprix'?+$('gpDiff').value:+$('diff').value,weather:kind==='grandprix'?$('gpWeather').value:'VARIABLE'};
+ weekendContext={mode:kind,spec,sessionIndex:restored?restored.sessionIndex:0,states:restored?restored.states:{},gridOrder:restored?restored.gridOrder:null,sessionResults:restored?restored.sessionResults:{},racePercentage:apexRacePercentage,raceLaps:apexRaceConfig(spec).totalLaps,diff:kind==='grandprix'?+$('gpDiff').value:+$('diff').value,weather:kind==='grandprix'?$('gpWeather').value:'VARIABLE'};
  $('menu').classList.add('hidden');$('finish').classList.add('hidden');$('weekendPanel').classList.remove('hidden');renderWeekendHub();renderTeamChooser();saveWeekendProgress();
 }
 function renderWeekendHub(){
@@ -124,9 +215,9 @@ function renderWeekendHub(){
  const play=document.createElement('button');play.className='btn primary';play.textContent='DISPUTAR '+sessionLabel(s);play.onclick=playWeekendSession;actions.appendChild(play);
  if(!(s==='race'&&w.mode==='grandprix')){const skip=document.createElement('button');skip.className='btn';skip.textContent='SALTAR '+sessionLabel(s);skip.onclick=skipWeekendSession;actions.appendChild(skip)}
  if(w.mode==='season'){const all=document.createElement('button');all.className='btn';all.textContent='SALTAR GP COMPLETO';all.onclick=skipWholeSeasonGP;actions.appendChild(all)}
- $('weekendNote').textContent=s==='race'?(w.mode==='season'?'En Temporada la carrera también se puede simular/saltar.':'En Gran Premio la carrera es obligatoria.'):'Las sesiones previas son opcionales. Si saltas la Clasificación, la parrilla se simula.';
+ $('weekendNote').textContent=s==='race'?(`Distancia: ${w.racePercentage} % — ${w.raceLaps} vueltas. `)+(w.mode==='season'?'En Temporada la carrera también se puede simular/saltar.':'En Gran Premio la carrera es obligatoria.'):'Las sesiones previas son opcionales. Si saltas la Clasificación, la parrilla se simula.';
 }
-function playWeekendSession(){if(!weekendContext)return;const s=WEEKEND_SESSIONS[weekendContext.sessionIndex],laps=s==='race'?weekendContext.raceLaps:999;currentSession=s;sessionSettings={diff:weekendContext.diff,weather:weekendContext.weather,noRivals:false};$('weekendPanel').classList.add('hidden');startRace(weekendContext.spec,laps,weekendContext.mode,$('weekendMenu'))}
+function playWeekendSession(){if(!weekendContext)return;const s=WEEKEND_SESSIONS[weekendContext.sessionIndex],laps=s==='race'?weekendContext.raceLaps:999;currentSession=s;sessionSettings={diff:weekendContext.diff,weather:weekendContext.weather,noRivals:false,racePercentage:weekendContext.racePercentage};$('weekendPanel').classList.add('hidden');startRace(weekendContext.spec,laps,weekendContext.mode,$('weekendMenu'))}
 function skipWeekendSession(){if(!weekendContext)return;const s=WEEKEND_SESSIONS[weekendContext.sessionIndex];if(s==='race'&&weekendContext.mode==='grandprix')return;if(s==='race'){const order=simulateRaceOrder(weekendContext.gridOrder);weekendContext.sessionResults.race=order.map((d,i)=>({uid:d.uid,name:d.name,team:d.team,time:estimateLapBase(weekendContext.spec)*(1.8+i*.015)}));weekendContext.states.race='skipped';awardSeasonOrder(order);weekendContext=null;goMenu();renderSchedule();return}const res=simulateTiming(s);weekendContext.sessionResults[s]=res;weekendContext.states[s]='skipped';if(s==='qualifying')weekendContext.gridOrder=res.map(x=>x.uid);weekendContext.sessionIndex++;saveWeekendProgress();renderWeekendHub()}
 function skipWholeSeasonGP(){if(!weekendContext||weekendContext.mode!=='season')return;if(!confirm('¿Simular y saltar completamente este Gran Premio?'))return;const q=simulateTiming('qualifying'),order=simulateRaceOrder(q.map(x=>x.uid));awardSeasonOrder(order);weekendContext=null;goMenu();renderSchedule()}
 function skipSeasonGPFromMenu(){if(save.round>=F1_SEASON_COUNT)return;currentMode='season';beginWeekend('season',calendar[save.round]);skipWholeSeasonGP()}
@@ -307,7 +398,7 @@ async function updateCircuitCard(selectId,targetId,opts={}){
  const bestTxt=opts.showPracticeBest? (Number.isFinite(practiceRecordTime(save.practiceRecords[spec.dir]))?fmt(practiceRecordTime(save.practiceRecords[spec.dir])):'—') : null;
  box.innerHTML=`<div class="circuitHero"><div class="circuitHeroText"><div class="small muted">${flagMarkup(spec)} ${stripCountryEmoji(spec.country)}</div><b>${spec.name}</b><div class="muted small">Cargando trazado y ficha del circuito…</div></div></div><div class="trackPreviewBox"><div class="muted">Preparando vista del trazado…</div></div>`;
  try{
-   const card=await withPreparedTrackSpec(spec,async(td)=>{
+   const card=await withPreparedTrackSpec(spec,(td)=>{
      apexEnsurePitFallback();
      const km=Number.isFinite(td.km)?td.km.toFixed(3)+' km':'—',laps=td.laps||raceMetaFor(spec)?.laps||'—',turns=td.turns||raceMetaFor(spec)?.turns||'—';
      const geo=trackGeometryProfileSpec(spec.dir),geoElev=geo?`${Number(geo.elevRange).toFixed(1)} m`:'—',geoWidth=geo?(Math.abs(geo.widthMin-geo.widthMax)<.01?`${geo.widthMin.toFixed(1)} m`:`${geo.widthMin.toFixed(1)}–${geo.widthMax.toFixed(1)} m`):'—',geoBank=geo?`${Number(geo.bankMax).toFixed(1)}°`:'—',geoNote=geo&&geo.note?geo.note:'';
@@ -324,8 +415,10 @@ async function updateCircuitCard(selectId,targetId,opts={}){
  }
 }
 function updateAllCircuitCards(){
+ apexRaceUpdateMenu();
  clearTimeout(apexMenuCardTimer);
  const run=()=>{
+   if(mode!=='menu'||$('menu')?.classList.contains('hidden'))return;
    const active=document.querySelector('#menuModeTabs .tab.active');
    const tab=active&&active.dataset?active.dataset.t:'quick';
    // En móvil sólo construimos la ficha visible. En escritorio se mantienen las tres.
@@ -348,10 +441,12 @@ function escapeXml(s){return String(s??'').replace(/&/g,'&amp;').replace(/"/g,'&
 function currentSvgToolSpec(){const sel=$("svgTrackSelect");return calendar[sel?+sel.value:13]||calendar[13]}
 function setSvgToolStatus(msg,kind=''){const el=$("svgToolsStatus");if(!el)return;el.className='svgToolsStatus'+(kind?(' '+kind):'');el.textContent=msg}
 async function withPreparedTrackSpec(spec,fn){
- const prevTrackData=trackData,prevPlayer=player;
  const td=await loadTrack(spec);
- trackData={...td,spec};prepareTrackModel();
- try{return await fn(trackData)}finally{trackData=prevTrackData;player=prevPlayer}
+ // Preview/export callbacks are synchronous. Capture the live context AFTER loading
+ // and restore it before yielding, so a pending preview cannot erase a new session.
+ const prevTrackData=trackData,prevPlayer=player;
+ try{trackData={...td,spec};prepareTrackModel();return fn(trackData)}
+ finally{trackData=prevTrackData;player=prevPlayer}
 }
 function editableTrackPathFromPoints(pts){if(!pts||!pts.length)return'';return pts.map((p,i)=>`${i?'L':'M'} ${svgNum(p[0])} ${svgNum(-p[1])}`).join(' ')+' Z'}
 function editableTrackOffsetPath(side=1,sampleStep=1){
@@ -1435,7 +1530,7 @@ function setJsonToolStatus(msg,kind=''){const el=$("jsonToolsStatus");if(!el)ret
 function apexCircuitJsonForCurrentTrack(spec){
  if(!trackData)return null;const meta=raceMetaFor(spec)||{},env=circuitEnvironmentProfile(spec.dir),previous=readStoredCircuitJson(spec.dir)||{},priorBank=previous.banking&&Array.isArray(previous.banking.corners)?previous.banking.corners:[],priorByTurn=new Map(priorBank.map(c=>[+c.turn,c])),corners=apexDetectedCornerMarkersForExport().map(c=>{const prior=priorByTurn.get(+c.turn)||{},turn=+c.turn||0;return{...prior,turn,name:String(apexJsonCornerNameMap(spec.dir).get(turn)||c.name||`T${turn}`),direction:String(c.direction||prior.direction||''),s:Number(mod(+c.s||0,trackData.km*1000).toFixed(3)),bankDeg:Number.isFinite(+prior.bankDeg)?+prior.bankDeg:Number((bankAt(+c.s||0)*180/Math.PI).toFixed(4))}}),pitNet=trackData.customWorld&&trackData.customWorld.pitNetwork;
  const prev=readStoredCircuitJson(spec.dir)||{},sf=apexCircuitStartFinishS(spec),baseTiming=trackData.timingData||prev.timing||{},td={...baseTiming,controlSchema:'APEX_TIMING_CONTROLS_V5_POINT_CROSSING',startS:Number(sf.start.toFixed(3)),finishS:Number(sf.finish.toFixed(3)),sectors:apexTimingSectorsFromControls(spec),controls:(trackData.timingControls&&trackData.timingControls.length?trackData.timingControls:(Array.isArray(baseTiming.controls)?baseTiming.controls:[])).map(c=>({...c,s:Number((+c.s||0).toFixed(3))}))};
- return {schema:'APEX_CIRCUIT_JSON_V1',schemaVersion:1,appVersion:APP_VERSION,circuit:{id:spec.dir,name:spec.name,country:spec.country,city:spec.themeCity||spec.name,layout:trackData.layout||meta.layout||spec.dir,calendar:spec.nonCalendar?'EXTRA':'F1_2026',round:spec.nonCalendar?null:spec.r},track:{...(prev.track||{}),tyres:apexTyreTrackProfile(spec,prev),lengthMeters:Number((trackData.km*1000).toFixed(3)),surface:'ASPHALT',circuitType:trackData.circuitType||meta.circuitType||'RACE'},race:{direction:trackData.direction||meta.direction||'CLOCKWISE',turns:trackData.turns||meta.turns||0,laps:trackData.laps||meta.laps||0,pit:{...(meta.pit||{}),speedKph:(pitNet&&Number.isFinite(pitNet.speedKph)?pitNet.speedKph:((meta.pit||{}).speedKph||80))}},environment:{...(prev.environment||{}),theme:spec.theme||'park',family:env.family||environmentFamilyFromTheme(spec.theme),terrainTone:apexTerrainContourPalette().tone},visual:{...(prev.visual||{})},activeAero:prev.activeAero?clonePlain(prev.activeAero):(trackData&&trackData.straightMode?clonePlain(trackData.straightMode):null),terrain:{contourReference:'LOCAL_ABSOLUTE',contourScale:1,contourOffsetM:0,...(prev.terrain||{})},walls:{style:'wall_f1',heightM:1.04,catchFence:true,fenceHeightM:2.35,fenceLeanM:.55,postSpacingM:2.8,advertising:{enabled:true,panelLengthM:72},...(prev.walls||{})},pitLane:prev.pitLane?clonePlain(prev.pitLane):null,timing:td?clonePlain(td):null,verticalProfile:apexVerticalProfileForExport(),banking:{mode:'CORNER_MARKERS',corners},gameplay:{...(prev.gameplay||{}),aiGripScale:1,difficultyScale:1},notes:'BASE APEX + override usuario. SVG = geometría física. JSON = ficha, carrera, entorno visual, altitud longitudinal, timing y peraltes.'};
+ return {schema:'APEX_CIRCUIT_JSON_V1',schemaVersion:1,appVersion:APP_VERSION,circuit:{id:spec.dir,name:spec.name,country:spec.country,city:spec.themeCity||spec.name,layout:trackData.layout||meta.layout||spec.dir,calendar:spec.nonCalendar?'EXTRA':'F1_2026',round:spec.nonCalendar?null:spec.r},track:{...(prev.track||{}),tyres:apexTyreTrackProfile(spec,prev),lengthMeters:Number((trackData.km*1000).toFixed(3)),surface:'ASPHALT',circuitType:trackData.circuitType||meta.circuitType||'RACE'},race:{...(prev.race||{}),direction:trackData.direction||meta.direction||'CLOCKWISE',turns:trackData.turns||meta.turns||0,laps:trackData.laps||meta.laps||0,pit:{...(meta.pit||{}),speedKph:(pitNet&&Number.isFinite(pitNet.speedKph)?pitNet.speedKph:((meta.pit||{}).speedKph||80))}},environment:{...(prev.environment||{}),theme:spec.theme||'park',family:env.family||environmentFamilyFromTheme(spec.theme),terrainTone:apexTerrainContourPalette().tone},visual:{...(prev.visual||{})},activeAero:prev.activeAero?clonePlain(prev.activeAero):(trackData&&trackData.straightMode?clonePlain(trackData.straightMode):null),terrain:{contourReference:'LOCAL_ABSOLUTE',contourScale:1,contourOffsetM:0,...(prev.terrain||{})},walls:{style:'wall_f1',heightM:1.04,catchFence:true,fenceHeightM:2.35,fenceLeanM:.55,postSpacingM:2.8,advertising:{enabled:true,panelLengthM:72},...(prev.walls||{})},pitLane:prev.pitLane?clonePlain(prev.pitLane):null,timing:td?clonePlain(td):null,verticalProfile:apexVerticalProfileForExport(),banking:{mode:'CORNER_MARKERS',corners},gameplay:{...(prev.gameplay||{}),aiGripScale:1,difficultyScale:1},notes:'BASE APEX + override usuario. SVG = geometría física. JSON = ficha, carrera, entorno visual, altitud longitudinal, timing y peraltes.'};
 }
 function registerCircuitFromJson(j){
  const c=j&&j.circuit||{},env=j&&j.environment||{},id=String(c.id||'').trim();if(!id)throw Error('El JSON necesita circuit.id');let spec=calendar.find(s=>s.dir===id);

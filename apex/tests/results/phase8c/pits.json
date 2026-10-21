@@ -1,0 +1,35 @@
+{
+  "ok": true,
+  "tests": [
+    "All five compounds can be prepared without pausing",
+    "Request preserves selection and permits change before service",
+    "Cancel before gate, never after commitment or during service",
+    "SOFT worn to HARD new with thermal/grip reset; race state unchanged",
+    "SERVICE deadline never restarts; duplicate ticks install exactly once",
+    "Configurable 2–4 seconds and bad time guards",
+    "Manual, touch/gyro inputs stay manual outside final assistance",
+    "Limiter bounds ordinary and PIT driving without speed-up",
+    "Post-move PIT transition caps actual velocity even with stale speed scalar",
+    "Authored PIT width joins main driveable polygon without opening off-lane ground",
+    "Entry classification anchors to previous accepted progress, without a lane-switch jump",
+    "Pit curvature speed envelope is compiled once and anticipates tight bends",
+    "Physical network transition seeds pit progress before the entry gate tick",
+    "Reversal over 120 degrees in less than 6 m rejects unsafe authored pit service",
+    "Source safety reads rawSvg from stored geometry payloads",
+    "Wrong longitudinal box cannot trigger hidden service",
+    "Exit records lane/service times and restores limiter without teleport",
+    "Pit progress projects continuously across the finish seam",
+    "Same installation rules for 22 cars; intermediates in rain",
+    "Absent authored box safely disables requests; old snapshots get defaults"
+  ],
+  "performance": {
+    "scope": "NODE_VM_INACTIVE_CONTROLLER_NOT_FPS",
+    "iterations": 1000000,
+    "baselineMs": 609.1472980000003,
+    "candidateMs": 429.2624139999998
+  },
+  "limits": [
+    "Synthetic lane fixture, not complete circuit driving",
+    "Real-browser circuit completion and FPS are separate"
+  ]
+}
