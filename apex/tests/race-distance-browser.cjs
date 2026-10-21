@@ -23,7 +23,7 @@ const root=path.resolve(__dirname,'../..'),pitHook=fs.readFileSync(path.join(__d
   await page.locator('#finishMenu').click();await page.locator('#lastRaceResults').click();assert.match(await page.locator('#finishBoardWrap').innerText(),/paradas/i);await page.locator('#finishMenu').click();assert.deepEqual(errors,[]);
  }
  // One complete reduced GP from real grid, no teleports or forced laps.
- if(process.env.APEX_RACE_SKIP_FULL!=='1'){const full=await page.evaluate(()=>__apexRaceAudit.fullRace('13-italy',25,2400));console.log(JSON.stringify({test:'race-full-gp',mobileEmulation:mobile,...full}));assert.equal(full.start.laps,0);assert.equal(full.end.state,'FINISHED');assert.equal(full.end.finished,22);assert.equal(full.end.rows[0].laps,14);assert.equal(full.end.faults,0);assert.deepEqual(errors,[])}
+ if(process.env.APEX_RACE_SKIP_FULL!=='1'){await page.reload();await page.waitForFunction(()=>window.__apexRaceAudit);const full=await page.evaluate(()=>__apexRaceAudit.fullRace('13-italy',25,2400));console.log(JSON.stringify({test:'race-full-gp',mobileEmulation:mobile,...full}));assert.equal(full.start.laps,0);assert.equal(full.end.state,'FINISHED');assert.equal(full.end.finished,22);assert.equal(full.end.rows[0].laps,14);assert.equal(full.end.faults,0);assert.deepEqual(errors,[])}
  await context.close();console.log(JSON.stringify({test:'race-browser-success',mobileEmulation:mobile}));
  }finally{await browser.close()}
 })().catch(e=>{console.error(e);process.exitCode=1});
