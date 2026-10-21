@@ -2398,6 +2398,20 @@ function updateRivalRacecraft(rv,dt,L,diff){
  const impactMode=rv.impactMode||'NONE';
  const incidentExcursion=impactMode!=='NONE';
  const targetLaneLimit=((rv.mistakeTimer>0&&rv.mistakeType==="WIDE")||incidentExcursion)?excursionLimit:normalLaneLimit;
+ // An explicitly requested pit stop takes priority over normal racing/defending line.
+ // This still uses ordinary lateral steering dynamics (no lateral teleport).
+ if(rv.pitStop?.active&&rv.pitStop.phase==='APPROACH'){
+  const pitPlan=apexPitRoutePlan(),entryGap=pitPlan?mod(pitPlan.entryTrackS-rv.s,L):Infinity;
+  if(pitPlan&&entryGap<90&&entryGap<L-8){
+   const frame=renderRibbonFrameAt(rv.s);
+   if(frame&&Number.isFinite(frame.nx)&&Number.isFinite(frame.nz)){
+    const approachLat=(pitPlan.entry.x-frame.x)*frame.nx+(pitPlan.entry.z-frame.z)*frame.nz;
+    line=clamp(approachLat,-targetLaneLimit,targetLaneLimit);
+    rv.intent='RACE';rv.moveSide=0;
+    target=Math.min(target,Math.max(3,Math.sqrt(2*4.5*Math.max(entryGap,0))));
+   }
+  }
+ }
  line=clamp(line,-targetLaneLimit,targetLaneLimit);
  rv.targetLat=line;
  const baseLineRate=(rv.intent==="ATTACK"?1.55:rv.intent==="DEFEND"?1.30:1.05)*(.90+.18*rv.awareness);
