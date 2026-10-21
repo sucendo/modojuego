@@ -1965,7 +1965,7 @@ function driverCornerPlan(s,horizon=300,step=10){
    const pt={d,k,safe,score};
    if(score>best.score)best=pt;
    if(!first){first=pt;last=pt;prevSig=pt;samples=1;continue;}
-   // Sólo agrupamos la primera secuencia de curvas que viene por elante.
+   // Sólo agrupamos la primera secuencia de curvas que viene por delante.
    if(d-last.d>groupGap)continue;
    if(prevSig&&Math.sign(k)!==Math.sign(prevSig.k)&&Math.abs(k)>.00165&&Math.abs(prevSig.k)>.00165)signChanges++;
    last=pt;prevSig=pt;samples++;

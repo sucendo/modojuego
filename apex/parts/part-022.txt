@@ -256,7 +256,7 @@ const teamCatalog={
  SUNRIDGE:{name:"Racing Bisons",color:"#e8edf2",accent:"#4169d8",model:"NOVA",chassis:"RBJ26",inspiredBy:"Racing Bulls",
   rearVisual:{secondary:"#3157b4",stripe:"#e24458",trim:"#f8fafc",pattern:"split",wing:"#20242a",carbon:"#0a0c0f",wingSpan:.985,body:1.01,tire:.99,diffuser:.98},
   performance:{top:.996,aero:1.006,brake:1.004,traction:1.010,wet:1.005}},
- ALPEN:{name:"Alpinor F1 Team",color:"#2369c8",accent:"#ff6ca7",model:"VXR",chassis:"AL26",inspiredBy:"Alpne",
+ ALPEN:{name:"Alpinor F1 Team",color:"#2369c8",accent:"#ff6ca7",model:"VXR",chassis:"AL26",inspiredBy:"Alpine",
   rearVisual:{secondary:"#133b83",stripe:"#ff6ca7",trim:"#e7f0ff",pattern:"flank",wing:"#10151d",carbon:"#080a0d",wingSpan:1.015,body:.97,tire:1.00,diffuser:1.03},
   performance:{top:.997,aero:.998,brake:1.000,traction:.995,wet:.990}},
  MIDNIGHT:{name:"Hassler Motorsport",color:"#e4e5e7",accent:"#d93449",model:"NOVA",chassis:"HS26",inspiredBy:"Haas",

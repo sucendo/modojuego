@@ -382,7 +382,7 @@ function trackPreviewSvgFromPoints(pts,color='#59f3ff',dir='',markers=null,km=0,
  const previewMarkers=hasMarkers?apexPreviewCompactMarkers(apexPreviewCornerNames(markers,dir,L),L,sample,sc,ox,oy):'';
  const pitPath=apexPreviewPathFromRuns(pitRuns,sc,ox,oy,presentation);
  const pitSvg=pitPath?`<path d="${pitPath}" fill="none" stroke="rgba(0,0,0,.42)" stroke-width="7.8" stroke-linecap="round" stroke-linejoin="round"/><path d="${pitPath}" fill="none" stroke="#eef3f7" stroke-width="4.7" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 5" opacity=".98"/><path d="${pitPath}" fill="none" stroke="#7b8792" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 5" opacity=".95"/>`:'';
- const fSvg=apexPreviewStartFinishSvg(sample,L,startFinish,sc,ox,oy);
+ const sfSvg=apexPreviewStartFinishSvg(sample,L,startFinish,sc,ox,oy);
  return `<svg viewBox="0 0 ${vw} ${vh}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="tg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${color}"/><stop offset="1" stop-color="#9d86ff"/></linearGradient><filter id="gl"><feGaussianBlur stdDeviation="2.7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><rect x="0" y="0" width="${vw}" height="${vh}" rx="18" fill="rgba(0,0,0,.0)"/>${pitSvg}<path d="${d}" fill="none" stroke="rgba(255,255,255,.10)" stroke-width="12.2" stroke-linecap="round" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="url(#tg)" stroke-width="7.2" stroke-linecap="round" stroke-linejoin="round" filter="url(#gl)"/>${sfSvg}${labels}${previewMarkers}<circle cx="${sx}" cy="${sy}" r="6.1" fill="#ffffff"/><circle cx="${sx}" cy="${sy}" r="3.0" fill="${color}"/></svg>`;
 }
 let apexMenuBooting=true,apexMenuCardTimer=0;
@@ -1586,7 +1586,7 @@ const apexInspection={active:false,s:0,lat:0,height:55,fov:80,yaw:0,pitchDeg:-30
 function apexInspectionCancelUiTimer(){clearTimeout(apexInspection._uiTimer);apexInspection._uiTimer=null;}
 function apexInspectionScheduleUiHide(delay=3200){if(matchMedia('(pointer:fine)').matches)return;apexInspectionCancelUiTimer();if(!apexInspection.active)return;const ctl=$('inspectorControls');if(ctl&&!ctl.classList.contains('insCollapsed'))return;apexInspection._uiTimer=setTimeout(()=>{if(!apexInspection.active||apexInspection.pointers.size)return;const c=$('inspectorControls');if(c&&!c.classList.contains('insCollapsed'))return;document.body.classList.add('ins-ui-hidden');},delay);}
 function apexInspectionShowUi(delay=3200){if(!apexInspection.active)return;document.body.classList.remove('ins-ui-hidden');apexInspectionScheduleUiHide(delay);}
-function apexInspectionHideUi(){if(!apexInspection.active)return;const ctl=$('inspectorControls');if(ctl)ctl.classList.add('insCollapsed');apexInspectionCancelUiTimer();document.body.lassList.add('ins-ui-hidden');}
+function apexInspectionHideUi(){if(!apexInspection.active)return;const ctl=$('inspectorControls');if(ctl)ctl.classList.add('insCollapsed');apexInspectionCancelUiTimer();document.body.classList.add('ins-ui-hidden');}
 
 function apexInspectionActive(){return !!apexInspection.active}
 function apexInspectionFullScene(){return !!(apexInspection.active&&apexInspection.fullScene)}
@@ -2792,7 +2792,7 @@ function apexSvgMidPoint(root,el){const p=apexSvgSampleMounted(root,el,{count:2,
 function apexSvgTrackContext(doc,spec){
  const root=apexSvgMountDocument(doc),meta=raceMetaFor(spec)||{},km=parseFloat(doc.documentElement.getAttribute('data-apex-km'))||meta.km||5.0,direction=doc.documentElement.getAttribute('data-apex-direction')||meta.direction||'CLOCKWISE';
  const trackEl=apexSvgFindAll(root,['track_centerline','track-centerline'])[0]||root.querySelector('#track_centerline')||root.querySelector('path');if(!trackEl){root.remove();throw Error('El SVG no contiene track_centerline')}
- const count=Math.round(clamp(km*1000/5.2,600,1400));letaw=apexSvgSampleMounted(root,trackEl,{count});if(raw.length<20){root.remove();throw Error('No se pudo leer la geometría de track_centerline')}
+ const count=Math.round(clamp(km*1000/5.2,600,1400));let raw=apexSvgSampleMounted(root,trackEl,{count});if(raw.length<20){root.remove();throw Error('No se pudo leer la geometría de track_centerline')}
  const first=raw[0],last=raw[raw.length-1];if(Math.hypot(first[0]-last[0],first[1]-last[1])<.001)raw.pop();
  const startEl=apexSvgFindAll(root,['start_finish','start-finish','start_marker','start-marker'])[0]||root.querySelector('#start_finish')||root.querySelector('#start_marker'),start=startEl?apexSvgMidPoint(root,startEl):null;
  if(start){let bi=0,bd=Infinity;for(let i=0;i<raw.length;i++){const dx=raw[i][0]-start.x,dy=raw[i][1]-start.y,d=dx*dx+dy*dy;if(d<bd){bd=d;bi=i}}if(bi)raw=raw.slice(bi).concat(raw.slice(0,bi))}
