@@ -113,5 +113,35 @@ window.__apexPitAudit={
     stops:cars.map((c,k)=>(c.pitStops||0)-startStops[k]),compounds:cars.map(c=>c.tyres?.compound),
     networks:cars.map(c=>c.driveNetwork),slots:[qa.box.slotId,qb.box.slotId]};
  },
+ async autonomousStrategyRace(dir='13-italy',weather='CLEAR'){
+  await this.load(dir,weather,false,true);
+  const plan=apexPitRoutePlan(),L=trackData.km*1000;
+  if(!plan||!plan.serviceSafe)return {available:false};
+  const cars=rivals.slice(0,5),begin=mod(plan.entryTrackS-100,L);
+  // Set up a racing scenario once, then leave the decisions, navigation and service to production code.
+  trackData.raceConfig={...trackData.raceConfig,totalLaps:40};
+  for(let i=0;i<cars.length;i++){
+   const car=cars[i];car.s=mod(begin-13*i,L);car.total=8000;car.progressOriginS=mod(car.s-car.total,L);car.speed=13;
+   car.driveNetwork='TRACK';car.pitStop=null;car.pitStops=0;car.aiPitNextCheck=0;car.aiPitLastLap=null;
+   apexTyreInstall(car,'SOFT');car.tyres.front.wear=.88;car.tyres.rear.wear=.86;
+  }
+  raceT=80;const phases=[],last=cars.map(()=>null);let minGap=Infinity;
+  for(let i=0;i<22000;i++){
+   raceT+=.05;
+   for(const car of cars)updateRivalRacecraft(car,.05,L,1);
+   for(let k=0;k<cars.length;k++){
+    const phase=cars[k].pitStop?.phase||null;
+    if(phase!==last[k]){last[k]=phase;phases.push({car:k,phase,t:raceT});}
+   }
+   const inPit=cars.filter(c=>c.driveNetwork==='PIT');
+   for(let a=0;a<inPit.length;a++)for(let b=a+1;b<inPit.length;b++)
+    minGap=Math.min(minGap,Math.abs(inPit[a].pitS-inPit[b].pitS));
+   if(cars.every(c=>c.pitStop?.phase==='DONE'))break;
+   if(i%600===599)await new Promise(resolve=>setTimeout(resolve,0));
+  }
+  return {available:true,dir,phases,minGap,stops:cars.map(c=>c.pitStops),
+   compounds:cars.map(c=>c.tyres?.compound),states:cars.map(c=>c.pitStop?.phase),
+   reasons:cars.map(c=>c.aiPitReason),networks:cars.map(c=>c.driveNetwork)};
+ },
  stop(){pitAuditStepping=true;goMenu()}
 };

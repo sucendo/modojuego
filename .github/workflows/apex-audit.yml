@@ -33,6 +33,7 @@ jobs:
           node apex/tests/race-distance-audit.cjs > /tmp/apex-results/race-distance.json
           node apex/tests/pit-tyres-audit.cjs > /tmp/apex-results/pit-tyres.json
           node apex/tests/rival-pit-request-audit.cjs > /tmp/apex-results/rival-pit-request.txt
+          node apex/tests/rival-tyre-strategy-audit.cjs > /tmp/apex-results/rival-tyre-strategy.txt
           node apex/tests/rival-pit-traversal-audit.cjs > /tmp/apex-results/rival-pit-traversal.txt
           node apex/tests/tyres-audit.cjs > /tmp/apex-results/tyres.json
           node apex/tests/driving-audit.cjs --json > /tmp/apex-results/driving.json
