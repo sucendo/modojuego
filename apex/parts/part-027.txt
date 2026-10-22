@@ -364,7 +364,7 @@ function finishRace(){
    const teamKey=save.seasonTeam||selectedTeamKey();
    const postTeamMap={}; seasonConstructorStandings(save.points).forEach(r=>postTeamMap[r.team]=r.points);
    seasonAwardContext={playerGpPoints:(save.points.PLAYER||0)-(prePoints.PLAYER||0),teamGpPoints:(postTeamMap[teamKey]||0)-(preTeamMap[teamKey]||0)};
-   save.round=Math.min(23,save.round+1);save.seasonWeekend=null;weekendContext=null;
+   if(!Array.isArray(save.seasonHistory9A))save.seasonHistory9A=[];save.seasonHistory9A.push({round:save.round,circuitId:trackData?.spec?.dir||null,source:'race',classification:entries.map((d,i)=>({position:i+1,driverId:d.uid,teamId:d.team||null,name:d.name||d.uid,finished:d.finished,finishTime:d.finishTime??null,pitStops:d.pitStops??0}))});save.round=Math.min(23,save.round+1);save.seasonWeekend=null;weekendContext=null;
    persist();
  }else seasonAwardContext=null;
 
