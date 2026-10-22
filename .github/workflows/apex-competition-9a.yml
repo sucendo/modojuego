@@ -10,7 +10,9 @@ on:
   pull_request:
     paths:
       - 'apex/js/competition-9a.js'
+      - 'apex/js/menu-9a.js'
       - 'apex/tests/competition-9a-state.cjs'
+      - 'apex/tests/menu-9a-lifecycle.cjs'
       - '.github/workflows/apex-competition-9a.yml'
 permissions:
   contents: read
