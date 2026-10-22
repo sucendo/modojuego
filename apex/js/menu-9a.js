@@ -7,7 +7,7 @@
     if(!menu||!tabs||document.getElementById('apex9aLanding'))return;
     const landing=document.createElement('section');
     landing.id='apex9aLanding';landing.setAttribute('aria-label','Menú principal APEX Formula 26');
-    landing.innerHTML='<h1>APEX <span>26</span></h1><p>COMPETICIÓN SIN LÍMITES</p><button class="apex9aAction" id="apex9aRace" type="button">TIPO DE CARRERA ❯❯</button><button class="apex9aAction secondary" id="apex9aOptions" type="button">OPCIONES ❯❯</button><div class="apex9aFooter"><button id="apex9aHelp" type="button">AYUDA</button><button id="apex9aAudio" type="button">AUDIO</button><button id="apex9aCredits" type="button">CRÉDITOS</button></div>';
+    landing.innerHTML='<h1 class="apex9aBrandTitle"><img src="assets/9a/logo-apex26.webp" alt="APEX FORMULA 26"></h1><p>COMPETICIÓN SIN LÍMITES</p><button class="apex9aAction" id="apex9aRace" type="button">TIPO DE CARRERA ❯❯</button><button class="apex9aAction secondary" id="apex9aOptions" type="button">OPCIONES ❯❯</button><div class="apex9aFooter"><button id="apex9aHelp" type="button">AYUDA</button><button id="apex9aAudio" type="button">AUDIO</button><button id="apex9aCredits" type="button">CRÉDITOS</button></div>';
     menu.prepend(landing);
     const back=document.createElement('button');back.id='apex9aBack';back.textContent='← MENÚ PRINCIPAL';back.type='button';back.hidden=true;
     menu.insertBefore(back,landing.nextSibling);
