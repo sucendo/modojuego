@@ -31,7 +31,10 @@ try{
   }
   await Promise.all(Array.from({length:Math.min(4,count)},()=>loadPartWorker()));
   document.open();
-  document.write(parts.join(""));
+  const assembled=parts.join("");
+  // 9A.1: núcleo aislado de competición; no altera los flujos anteriores.
+  const bridge='<script src="js/competition-9a.js"><\\/script>'.replace("<\\/script>","</script>");
+  document.write(assembled.includes("</body>")?assembled.replace("</body>",bridge+"</body>"):assembled+bridge);
   document.close();
 }catch(err){
   document.getElementById("status").innerHTML="<div><strong>No se pudo cargar APEX.</strong><small>"+String(err.message||err)+"</small></div>";
