@@ -134,7 +134,7 @@ function refresh(){
  $('apex9aStrategyNote').hidden=kind==='practice';
  updateState();
 }
-function close(){const restore=overlay&&!overlay.hidden&&overlay.contains(document.activeElement);if(overlay)overlay.hidden=true;kind=null;if(restore&&returnFocus?.isConnected)returnFocus.focus({preventScroll:true});}
+function close(){const restore=overlay&&!overlay.hidden&&overlay.contains(document.activeElement);if(overlay)overlay.hidden=true;kind=null;if(restore){const target=returnFocus?.isConnected&&!returnFocus.disabled?returnFocus:$('apex9aBack');target?.focus({preventScroll:true});}}
 function open(which){
  if(!MODES[which])return;
  if(!overlay)build();
@@ -174,7 +174,7 @@ function build(){
   try{button.click();}finally{launchBypass=false;}
  };
  overlay.addEventListener('click',e=>{if(e.target===overlay)close();});
- document.addEventListener('keydown',e=>{if(!overlay.hidden&&e.key==='Escape'){e.stopPropagation();close();}},true);
+ document.addEventListener('keydown',e=>{if(!overlay.hidden&&e.key==='Escape'){e.preventDefault();e.stopPropagation();close();}},true);
  const menu=$('menu');
  if(menu)new MutationObserver(()=>{if(menu.classList.contains('hidden'))close();}).observe(menu,{attributes:true,attributeFilter:['class']});
 }
