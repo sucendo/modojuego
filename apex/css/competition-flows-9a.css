@@ -1,0 +1,27 @@
+/* APEX 9A.3-9A.5 · Se reutiliza el lenguaje visual del panel de preparación. */
+#apex9aCompetitionSetup[hidden]{display:none!important}
+#apex9aCompetitionSetup{position:fixed;inset:0;z-index:955;background:rgba(2,6,12,.93);backdrop-filter:blur(12px);display:grid;place-items:center;padding:clamp(8px,2vw,26px);overflow:auto;color:#f2f5fb;font-family:Inter,Arial,sans-serif}
+.apex9aCompetitionShell{max-width:1420px}
+.apex9aStages{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;margin:0 0 15px}
+.apex9aStages span{padding:9px 3px;border-top:3px solid #ee3951;background:#112137;text-align:center;font-size:clamp(9px,1vw,12px);font-weight:900;letter-spacing:.03em}
+#apex9aCompetitionSetup label{display:block;font-size:12px;font-weight:750;margin:12px 0 7px}
+#apex9aCompetitionSetup select{width:100%;padding:9px 10px;background:#071526;border:1px solid #4b6580;color:#eff7ff;font:inherit}
+#apex9aCompWeatherResult{display:block;margin:13px 0 4px}
+#apex9aCompForecast{color:#d2e2ef}
+.apex9aFootnote{color:#9eb4c8;font-size:11px;line-height:1.5}
+.apex9aChampInfo{margin:14px 0;border:1px solid #38536f;padding:10px;background:#0a1624b5}
+.apex9aChampInfo>p{margin:7px 0;font-size:12px;line-height:1.4}
+.apex9aChampInfo table{border-collapse:collapse;width:100%;font-size:11px;margin-top:10px}
+.apex9aChampInfo th,.apex9aChampInfo td{padding:5px 4px;border-bottom:1px solid #33485e;text-align:left}
+.apex9aChampInfo td:last-child,.apex9aChampInfo th:last-child{text-align:right}
+.apex9aProgress{height:8px;margin:8px 0;background:#314358}
+.apex9aProgress i{display:block;height:100%;background:#ef344f}
+#apex9aCompTyres .apex9aTyre{min-width:0}
+#apex9aCompTyres .apex9aTyreVisual{border:0;background:transparent;box-shadow:none}
+#apex9aCompTyres .apex9aTyreVisual img{object-fit:contain;max-width:100%;height:70px}
+#apex9aCompAdvice{font-size:12px;line-height:1.4}
+#apex9aCompLaunch{background:linear-gradient(90deg,#bb1931,#ef344c);border-color:#ff6576}
+#apex9aCompLaunch:disabled{opacity:.5;cursor:not-allowed}
+#apex9aSeasonStandings{display:block;margin-bottom:12px}
+@media(max-width:1020px){.apex9aCompetitionShell .apex9aPrepColumns{grid-template-columns:repeat(2,minmax(0,1fr))}.apex9aCompetitionShell .apex9aPrepCard:last-child{grid-column:1/-1}}
+@media(max-width:670px){.apex9aCompetitionShell .apex9aPrepColumns{grid-template-columns:1fr}.apex9aCompetitionShell .apex9aPrepCard:last-child{grid-column:auto}.apex9aCompetitionShell .apex9aPrepHead h2{font-size:21px}.apex9aStages span{padding:5px 1px;font-size:8px}.apex9aCompetitionShell .apex9aPrepShell{max-height:none}}
