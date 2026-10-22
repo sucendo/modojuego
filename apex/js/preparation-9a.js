@@ -11,7 +11,7 @@ const MODES=Object.freeze({
 const WX={CLEAR:'Despejado',PARTLY:'Parcialmente nublado',OVERCAST:'Nublado',DRIZZLE:'Llovizna',RAIN:'Lluvia',STORM:'Tormenta',VARIABLE:'Variable'};
 const TYRE_ART=Object.freeze(Object.fromEntries(['SOFT','MEDIUM','HARD','INTERMEDIATE','WET'].map(t=>[t,'assets/9a/tyre-'+t.toLowerCase()+'.webp'])));
 const COMPOUNDS={SOFT:['Blando','#df3044'],MEDIUM:['Medio','#f3d43f'],HARD:['Duro','#f5f5f5'],INTERMEDIATE:['Intermedio','#3dcc73'],WET:['Lluvia extrema','#3d9ef5']};
-let overlay=null,kind=null,launchBypass=false,manualStrategy='balanced';
+let overlay=null,kind=null,launchBypass=false,manualStrategy='balanced',returnFocus=null;
 function pick(id){const el=$(id);return el?.selectedOptions?.[0]?.textContent?.trim()||el?.value||'—';}
 function asCompound(nativeValue){return String(nativeValue||'MEDIUM').toUpperCase().replace(/^C[1-5]$/,'MEDIUM');}
 function nativeTyres(){return $('menuTyreCompound');}
@@ -42,8 +42,43 @@ function updateState(){
   strategy:manualStrategy
  });}catch(e){console.warn('[APEX 9A] No se pudo guardar selección',e);}
 }
+// Refleja los <select> originales sin crear un segundo estado ni duplicar el motor.
+function mirrorSelect(sourceId,targetId,locked=false){
+ const source=$(sourceId),target=$(targetId);
+ if(!target)return;
+ if(!source){target.replaceChildren();target.disabled=true;return;}
+ const options=Array.from(source.options);
+ const different=target.options.length!==options.length||options.some((o,i)=>
+  target.options[i]?.value!==o.value||target.options[i]?.textContent!==o.textContent||
+  target.options[i]?.disabled!==o.disabled);
+ if(different)target.replaceChildren(...options.map(o=>o.cloneNode(true)));
+ target.value=source.value;
+ target.disabled=!!(source.disabled||locked||!options.length);
+ target.title=source.title||'';
+}
+function syncPreparationSelectors(){
+ if(!kind)return;
+ const spec=MODES[kind];
+ mirrorSelect(spec.track,'apex9aPrepCircuit');
+ mirrorSelect('teamSelect','apex9aPrepTeam');
+ $('apex9aPrepDistanceRow').hidden=!spec.distance;
+ if(spec.distance)mirrorSelect(spec.distance,'apex9aPrepDistance');
+}
+function bindSelector(targetId,sourceId){
+ $(targetId).addEventListener('change',e=>{
+  if(!kind)return;
+  const native=$(typeof sourceId==='function'?sourceId():sourceId),mirror=e.currentTarget;
+  if(!native||native.disabled||!Array.from(native.options).some(o=>o.value===mirror.value)){
+   syncPreparationSelectors();return;
+  }
+  native.value=mirror.value;
+  native.dispatchEvent(new Event('change',{bubbles:true}));
+  refresh();
+ });
+}
 function refresh(){
  if(!overlay||!kind)return;
+ syncPreparationSelectors();
  const spec=MODES[kind],weather=resolvedWeather(),
   current=asCompound(nativeTyres()?.value),recommended=recommend(weather);
  const wet=['DRIZZLE','RAIN','STORM'].includes(weather);
@@ -90,7 +125,7 @@ function refresh(){
  $('apex9aTyreNotice').textContent=types.length?
   'El compuesto elegido se aplica al selector de neumáticos original del simulador.':
   'No se ha inicializado todavía el selector de neumáticos original.';
- $('apex9aLaunch').disabled=types.length===0;
+ $('apex9aLaunch').disabled=types.length===0||!$(spec.launch)||!!$(spec.launch).disabled;
  const human=COMPOUNDS[recommended]?.[0]||'Medio';
  $('apex9aAdvice').textContent=kind==='practice'?
   'Entrenamiento sin estrategia de carrera obligatoria. Recomendación inicial: '+human+'.':
@@ -99,11 +134,11 @@ function refresh(){
  $('apex9aStrategyNote').hidden=kind==='practice';
  updateState();
 }
-function close(){if(overlay)overlay.hidden=true;kind=null;}
+function close(restoreFocus=false){const shown=overlay&&!overlay.hidden;if(overlay)overlay.hidden=true;kind=null;if(shown&&restoreFocus){const target=returnFocus?.isConnected&&!returnFocus.disabled?returnFocus:$('apex9aBack');if(target?.isConnected&&!target.disabled)target.focus({preventScroll:true});}}
 function open(which){
  if(!MODES[which])return;
  if(!overlay)build();
- kind=which;overlay.hidden=false;
+ returnFocus=$(MODES[which].launch)||document.activeElement;kind=which;overlay.hidden=false;
  const old=window.ApexCompetition9A?.get?.();
  const preferred=old?.mode===which&&old.weather==='auto'?'auto':$(MODES[kind].weather)?.value||'VARIABLE';
  if($('apex9aPrepWeather'))$('apex9aPrepWeather').value=preferred;
@@ -115,12 +150,15 @@ function build(){
  overlay.innerHTML=`<div class="apex9aPrepShell">
   <header class="apex9aPrepHead"><div><small>APEX FORMULA 26 · PREPARACIÓN</small><h2 id="apex9aPrepTitle">PREPARACIÓN DE CARRERA</h2></div><button id="apex9aClose" type="button" aria-label="Volver a la configuración">×</button></header>
   <div class="apex9aPrepColumns">
-   <div class="apex9aPrepCard"><h3>01 · CIRCUITO Y VEHÍCULO</h3><strong id="apex9aTrackName"></strong><div id="apex9aTrackDetails"></div><p>Escudería: <b id="apex9aTeam"></b></p><div class="apex9aVehicleVisual"><img src="assets/9a/race-vehicle.webp" alt="Monoplaza de presentación APEX"></div><p>Distancia: <b id="apex9aDistance"></b></p><p id="apex9aRaceLaps" class="apex9aInfo"></p></div>
+   <div class="apex9aPrepCard"><h3>01 · CIRCUITO Y VEHÍCULO</h3><label class="apex9aMirrorLabel" for="apex9aPrepCircuit">CIRCUITO</label><select class="apex9aNativeMirror" id="apex9aPrepCircuit"></select><label class="apex9aMirrorLabel" for="apex9aPrepTeam">ESCUDERÍA</label><select class="apex9aNativeMirror" id="apex9aPrepTeam"></select><div id="apex9aPrepDistanceRow"><label class="apex9aMirrorLabel" for="apex9aPrepDistance">DISTANCIA DE CARRERA</label><select class="apex9aNativeMirror" id="apex9aPrepDistance"></select></div><strong id="apex9aTrackName"></strong><div id="apex9aTrackDetails"></div><p>Escudería: <b id="apex9aTeam"></b></p><div class="apex9aVehicleVisual"><img src="assets/9a/race-vehicle.webp" alt="Monoplaza de presentación APEX"></div><p>Distancia: <b id="apex9aDistance"></b></p><p id="apex9aRaceLaps" class="apex9aInfo"></p></div>
    <div class="apex9aPrepCard apex9aWeatherCard"><h3>02 · METEOROLOGÍA</h3><label for="apex9aPrepWeather">CONDICIÓN DE LA SESIÓN</label><select id="apex9aPrepWeather"><option value="auto">Automática · estacional simulada</option><option value="CLEAR">Despejado</option><option value="PARTLY">Sol y nubes</option><option value="OVERCAST">Nublado</option><option value="DRIZZLE">Llovizna</option><option value="RAIN">Lluvia</option><option value="STORM">Tormenta</option><option value="VARIABLE">Variable</option></select><strong id="apex9aWeatherName"></strong><div class="apex9aTrackStateArt"><img src="assets/9a/track-state-thumb.webp" alt="Fotografía ilustrativa de la superficie de asfalto"></div><p>Estado previsto del asfalto: <b id="apex9aSurface"></b></p><p id="apex9aWeatherHonesty"></p><div class="apex9aInfo">La previsión no sustituye ni simula el motor meteorológico.</div></div>
    <div class="apex9aPrepCard"><h3>03 · NEUMÁTICOS Y ESTRATEGIA</h3><div class="apex9aTyreGrid" id="apex9aTyres"></div><p id="apex9aTyreNotice"></p><div id="apex9aStrategyRow"><label for="apex9aStrategy">PLAN DE SALIDA</label><select id="apex9aStrategy"><option value="aggressive">Agresiva</option><option value="balanced">Equilibrada</option><option value="conservative">Conservadora</option></select></div><p id="apex9aStrategyNote" class="apex9aInfo">La selección guarda la preferencia; no automatiza las paradas. Los ajustes de boxes durante la carrera siguen en el panel real.</p><p class="apex9aAdvice" id="apex9aAdvice"></p></div>
   </div><footer class="apex9aPrepActions"><button id="apex9aCancel" type="button">VOLVER</button><button id="apex9aLaunch" type="button">INICIAR SESIÓN ›</button></footer></div>`;
  document.body.appendChild(overlay);
- $('apex9aClose').onclick=close;$('apex9aCancel').onclick=close;
+ $('apex9aClose').onclick=()=>close(true);$('apex9aCancel').onclick=()=>close(true);
+ bindSelector('apex9aPrepCircuit',()=>MODES[kind]?.track);
+ bindSelector('apex9aPrepTeam','teamSelect');
+ bindSelector('apex9aPrepDistance',()=>MODES[kind]?.distance);
  $('apex9aStrategy').value=manualStrategy;
  $('apex9aPrepWeather').onchange=refresh;
  $('apex9aStrategy').onchange=()=>{manualStrategy=$('apex9aStrategy').value;refresh();};
@@ -135,8 +173,8 @@ function build(){
   launchBypass=true;
   try{button.click();}finally{launchBypass=false;}
  };
- overlay.addEventListener('click',e=>{if(e.target===overlay)close();});
- document.addEventListener('keydown',e=>{if(!overlay.hidden&&e.key==='Escape'){e.stopPropagation();close();}},true);
+ overlay.addEventListener('click',e=>{if(e.target===overlay)close(true);});
+ document.addEventListener('keydown',e=>{if(!overlay.hidden&&e.key==='Escape'){e.preventDefault();e.stopPropagation();close(true);}},true);
  const menu=$('menu');
  if(menu)new MutationObserver(()=>{if(menu.classList.contains('hidden'))close();}).observe(menu,{attributes:true,attributeFilter:['class']});
 }

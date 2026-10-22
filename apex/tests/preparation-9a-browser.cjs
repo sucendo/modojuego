@@ -21,6 +21,25 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||(process.env.CODEX_
   await page.waitForFunction(()=>ApexPreparation9A.isOpen());
   await page.screenshot({path:'/tmp/apex-results/9a-'+(mobile?'mobile':'desktop')+'-preparation.png'});
   assert.match(await page.locator('#apex9aPrepTitle').textContent(),/CARRERA/);
+
+  assert.equal(await page.locator('#apex9aPrepCircuit').inputValue(),await page.locator('#track').inputValue(),
+   'La preparación debe reflejar el circuito nativo');
+  assert.equal(await page.locator('#apex9aPrepTeam').inputValue(),await page.locator('#teamSelect').inputValue(),
+   'La preparación debe reflejar la escudería real');
+  assert.equal(await page.locator('#apex9aPrepDistance').inputValue(),await page.locator('#laps').inputValue(),
+   'La preparación debe reflejar la distancia nativa');
+  await page.locator('#apex9aPrepDistance').selectOption('50');
+  assert.equal(await page.locator('#laps').inputValue(),'50','Distancia debe cambiar el control real');
+  const originalCircuit=await page.locator('#track').inputValue();
+  const alternativeCircuit=await page.locator('#apex9aPrepCircuit').evaluate(sel=>
+   Array.from(sel.options).find(o=>!o.disabled&&o.value!==sel.value)?.value||null);
+  if(alternativeCircuit!==null){
+   await page.locator('#apex9aPrepCircuit').selectOption(alternativeCircuit);
+   assert.equal(await page.locator('#track').inputValue(),alternativeCircuit,
+    'Circuito del nuevo menú debe escribir en el original');
+   await page.locator('#apex9aPrepCircuit').selectOption(originalCircuit);
+   assert.equal(await page.locator('#track').inputValue(),originalCircuit);
+  }
   const tyres=page.locator('#apex9aTyres .apex9aTyre');
   assert.ok(await tyres.count()>=3,'Real compound choices must be available');
   const logo=page.locator('#apex9aLanding img[src*="logo-apex26"]');
@@ -33,12 +52,20 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||(process.env.CODEX_
   await first.click();
   assert.equal(await page.locator('#menuTyreCompound').inputValue(),key);
   assert.notEqual(await page.locator('#apex9aStrategyRow').getAttribute('hidden'),'');
+  await page.keyboard.press('Escape');
+  assert.equal(await page.evaluate(()=>ApexPreparation9A.isOpen()),false);
+  assert.equal(await page.evaluate(()=>document.activeElement?.id),'start',
+   'Volver a la preparación debe restaurar foco en el lanzador original');
+  await page.locator('#start').click();
+  await page.waitForFunction(()=>ApexPreparation9A.isOpen());
   await page.locator('#apex9aCancel').click();
   assert.equal(await page.evaluate(()=>ApexPreparation9A.isOpen()),false);
   await page.locator('#menuModeTabs [data-t="practice"]').click();
   await page.locator('#practiceStart').click();
   await page.waitForFunction(()=>ApexPreparation9A.isOpen());
   assert.match(await page.locator('#apex9aPrepTitle').textContent(),/ENTRENAMIENTO/);
+  assert.equal(await page.locator('#apex9aPrepDistanceRow').getAttribute('hidden'),'');
+  assert.equal(await page.locator('#apex9aPrepCircuit').inputValue(),await page.locator('#practiceTrack').inputValue());
   assert.equal(await page.locator('#apex9aStrategyRow').getAttribute('hidden'),'');
   await page.locator('#apex9aCancel').click();
   assert.equal(await page.evaluate(()=>ApexPreparation9A.isOpen()),false);

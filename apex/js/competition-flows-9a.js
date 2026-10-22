@@ -9,7 +9,7 @@ const WEATHER=[['auto','Automática · simulación estacional'],['CLEAR','Despej
 const LABELS={CLEAR:'Despejado',PARTLY:'Sol y nubes',OVERCAST:'Nublado',DRIZZLE:'Llovizna',RAIN:'Lluvia',STORM:'Tormenta',VARIABLE:'Variable'};
 const TYRES=[['SOFT','Blando'],['MEDIUM','Medio'],['HARD','Duro'],['INTERMEDIATE','Intermedio'],['WET','Lluvia extrema']];
 const STAGES=['FP1','FP2','FP3','CLASIFICACIÓN','CARRERA'];
-let panel=null,mode=null,bypass=false,seasonObserver=null;
+let panel=null,mode=null,bypass=false,seasonObserver=null,returnFocus=null,panelReadOnly=false;
 let musicChoice=null;
 function saved(){
  try{const v=JSON.parse(global.localStorage.getItem(NATIVE_SAVE));return v&&v.schema===4?v:null}catch(_){return null}
@@ -75,6 +75,66 @@ function escapeHtml(v){
  const chars={'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
  return String(v??'').replace(/[&<>"']/g,c=>chars[c]);
 }
+// Selector de presentación: siempre modifica el control NATIVO, nunca un campeonato paralelo.
+function mirrorSelect(sourceId,targetId,locked=false){
+ const source=$(sourceId),target=$(targetId);
+ if(!target)return;
+ if(!source){target.replaceChildren();target.disabled=true;return;}
+ const options=Array.from(source.options);
+ const different=options.length!==target.options.length||options.some((o,i)=>
+  o.value!==target.options[i]?.value||o.textContent!==target.options[i]?.textContent||
+  o.disabled!==target.options[i]?.disabled);
+ if(different)target.replaceChildren(...options.map(o=>o.cloneNode(true)));
+ target.value=source.value;
+ target.disabled=!!(source.disabled||locked||!options.length);
+ target.title=source.title||'';
+}
+function lockedSeasonTeam(){
+ return String(nativeSnapshot()?.seasonTeam||saved()?.seasonTeam||'');
+}
+function syncCompetitionSelectors(){
+ if(!mode)return;
+ const gp=mode==='grandprix';
+ $('apex9aCompCircuitPickerRow').hidden=!gp;
+ if(gp)mirrorSelect('gpTrack','apex9aCompCircuitSelect');
+ mirrorSelect('teamSelect','apex9aCompTeamSelect',!gp&&!!lockedSeasonTeam());
+ if(!gp&&lockedSeasonTeam()){
+  const field=$('apex9aCompTeamSelect');
+  if(Array.from(field.options).some(o=>o.value===lockedSeasonTeam()))field.value=lockedSeasonTeam();
+ }
+ mirrorSelect(gp?'gpLaps':'seasonDistance','apex9aCompDistanceSelect');
+}
+function updateLaunchAvailability(){
+ const button=$('apex9aCompLaunch');
+ if(!button||!mode)return;
+ const native=$(mode==='season'?'nextSeason':'gpStart');
+ const tyres=$('apex9aCompTyres');
+ button.disabled=panelReadOnly||(mode==='season'&&seasonRound()>=23)||
+  !native||native.disabled||!tyres||tyres.children.length===0;
+}
+function refreshCompetitionDetails(){
+ if(!panel||panel.hidden||!mode)return;
+ syncCompetitionSelectors();
+ $('apex9aCompCircuit').textContent=currentCircuit().name;
+ const team=$('apex9aCompTeamSelect');
+ $('apex9aCompTeam').textContent=team?.selectedOptions?.[0]?.textContent?.trim()||selected('teamSelect');
+ $('apex9aCompDistance').textContent=selected(mode==='season'?'seasonDistance':'gpLaps');
+ updateLaunchAvailability();
+ renderWeather();
+}
+function bindCompetitionSelector(targetId,sourceId){
+ $(targetId).addEventListener('change',e=>{
+  if(!mode)return;
+  const original=$(typeof sourceId==='function'?sourceId():sourceId);
+  const locked=mode==='season'&&targetId==='apex9aCompTeamSelect'&&!!lockedSeasonTeam();
+  if(!original||original.disabled||locked||!Array.from(original.options).some(o=>o.value===e.currentTarget.value)){
+   syncCompetitionSelectors();return;
+  }
+  original.value=e.currentTarget.value;
+  original.dispatchEvent(new Event('change',{bubbles:true}));
+  refreshCompetitionDetails();
+ });
+}
 function build(){
  panel=document.createElement('section');panel.id='apex9aCompetitionSetup';panel.hidden=true;
  panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');
@@ -83,26 +143,29 @@ function build(){
   '<header class="apex9aPrepHead"><div><small>APEX FORMULA 26 · COMPETICIÓN</small><h2 id="apex9aCompTitle"></h2></div><button id="apex9aCompClose" type="button" aria-label="Volver">×</button></header>'+
   '<div class="apex9aStages">'+STAGES.map(s=>'<span>'+s+'</span>').join('')+'</div>'+
   '<div class="apex9aPrepColumns">'+
-  '<section class="apex9aPrepCard"><h3>01 · CIRCUITO Y CAMPEONATO</h3><strong id="apex9aCompCircuit"></strong><div id="apex9aCompProgress"></div><p>Escudería: <b id="apex9aCompTeam"></b></p><p>Distancia: <b id="apex9aCompDistance"></b></p><div class="apex9aVehicleVisual"><img src="assets/9a/race-vehicle.webp" alt="Monoplaza APEX 26"></div></section>'+
+  '<section class="apex9aPrepCard"><h3>01 · CIRCUITO Y CAMPEONATO</h3><div id="apex9aCompCircuitPickerRow"><label for="apex9aCompCircuitSelect">CIRCUITO</label><select id="apex9aCompCircuitSelect"></select></div><label for="apex9aCompTeamSelect">ESCUDERÍA</label><select id="apex9aCompTeamSelect"></select><label for="apex9aCompDistanceSelect">DISTANCIA</label><select id="apex9aCompDistanceSelect"></select><strong id="apex9aCompCircuit"></strong><div id="apex9aCompProgress"></div><p>Escudería: <b id="apex9aCompTeam"></b></p><p>Distancia: <b id="apex9aCompDistance"></b></p><div class="apex9aVehicleVisual"><img src="assets/9a/race-vehicle.webp" alt="Monoplaza APEX 26"></div></section>'+
   '<section class="apex9aPrepCard apex9aWeatherCard"><h3>02 · METEOROLOGÍA</h3><label for="apex9aCompWeather">Condición al comenzar el fin de semana</label><select id="apex9aCompWeather"></select><strong id="apex9aCompWeatherResult"></strong><p id="apex9aCompForecast"></p><div class="apex9aTrackStateArt"><img src="assets/9a/track-state-thumb.webp" alt="Superficie de pista"></div><p class="apex9aFootnote">Previsión simulada, no servicio meteorológico en tiempo real. El preset elegido se transmite al motor de APEX.</p></section>'+
   '<section class="apex9aPrepCard"><h3>03 · NEUMÁTICOS Y ESTRATEGIA</h3><div id="apex9aCompTyres" class="apex9aTyreGrid"></div><label for="apex9aCompStrategy">Estilo de estrategia</label><select id="apex9aCompStrategy"><option value="aggressive">Agresiva</option><option value="balanced">Equilibrada</option><option value="conservative">Conservadora</option></select><label for="apex9aCompStops">Paradas previstas</label><select id="apex9aCompStops"><option value="0">0 (solo previsión)</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select><p id="apex9aCompAdvice" class="apex9aAdvice"></p><p class="apex9aFootnote">Se configura el compuesto inicial real. El plan de paradas es orientativo; la solicitud y servicio de boxes siguen en el motor de carrera.</p></section>'+
   '</div><footer class="apex9aPrepActions"><button id="apex9aCompCancel" type="button">VOLVER</button><button id="apex9aCompLaunch" type="button">CONTINUAR AL GP ›</button></footer></div>';
  document.body.appendChild(panel);
- $('apex9aCompClose').onclick=close;$('apex9aCompCancel').onclick=close;
+ $('apex9aCompClose').onclick=()=>close(true);$('apex9aCompCancel').onclick=()=>close(true);
+ bindCompetitionSelector('apex9aCompCircuitSelect','gpTrack');
+ bindCompetitionSelector('apex9aCompTeamSelect','teamSelect');
+ bindCompetitionSelector('apex9aCompDistanceSelect',()=>mode==='season'?'seasonDistance':'gpLaps');
  $('apex9aCompWeather').innerHTML=WEATHER.map(([value,label])=>'<option value="'+value+'">'+label+'</option>').join('');
  $('apex9aCompWeather').onchange=renderWeather;
  $('apex9aCompStrategy').onchange=renderAdvice;
  $('apex9aCompStops').onchange=renderAdvice;
  $('apex9aCompLaunch').onclick=launch;
- panel.addEventListener('click',e=>{if(e.target===panel)close();});
- document.addEventListener('keydown',e=>{if(!panel.hidden&&e.key==='Escape'){e.stopPropagation();close();}},true);
+ panel.addEventListener('click',e=>{if(e.target===panel)close(true);});
+ document.addEventListener('keydown',e=>{if(!panel.hidden&&e.key==='Escape'){e.preventDefault();e.stopPropagation();close(true);}},true);
  const menu=$('menu');
  if(menu)new MutationObserver(()=>{if(menu.classList.contains('hidden'))close();}).observe(menu,{attributes:true,attributeFilter:['class']});
 }
 function open(which,viewOnly=false){
  if(which!=='grandprix'&&which!=='season')return;
  if(!panel)build();
- mode=which;panel.hidden=false;
+ returnFocus=$(which==='grandprix'?'gpStart':'nextSeason')||document.activeElement;mode=which;panelReadOnly=!!viewOnly;panel.hidden=false;
  const state=global.ApexCompetition9A?.get?.(),p=plan();
  const nativeWeather=which==='grandprix'?$('gpWeather')?.value:null;
  $('apex9aCompWeather').value=state?.mode===(which==='grandprix'?'grand-prix':'season')&&state.weather?
@@ -112,11 +175,12 @@ function open(which,viewOnly=false){
  $('apex9aCompTitle').textContent=which==='grandprix'?'GRAN PREMIO · FIN DE SEMANA':'TEMPORADA 2026';
  $('apex9aCompProgress').innerHTML=which==='season'?seasonMarkup():
   '<p>Entrenamientos FP1–FP3, clasificación oficial, parrilla y carrera se gestionan mediante el sistema original de fin de semana.</p>';
+ syncCompetitionSelectors();
  $('apex9aCompCircuit').textContent=currentCircuit().name;
- $('apex9aCompTeam').textContent=selected('teamSelect');
+ $('apex9aCompTeam').textContent=$('apex9aCompTeamSelect')?.selectedOptions?.[0]?.textContent?.trim()||selected('teamSelect');
  $('apex9aCompDistance').textContent=selected(which==='season'?'seasonDistance':'gpLaps');
  const launch=$('apex9aCompLaunch');
- launch.disabled=!!viewOnly||(which==='season'&&seasonRound()>=23);
+ launch.disabled=!!viewOnly||(which==='season'&&seasonRound()>=23)||!$(which==='grandprix'?'gpStart':'nextSeason')||!!$(which==='grandprix'?'gpStart':'nextSeason').disabled;
  launch.textContent=viewOnly?'VER CLASIFICACIÓN':'ABRIR FIN DE SEMANA ›';
  drawTyres();renderWeather();renderAdvice();
  $('apex9aCompClose').focus();
@@ -135,7 +199,7 @@ function drawTyres(){
   const name=document.createElement('b');name.textContent=label;b.append(span,name);target.appendChild(b);
   b.onclick=()=>{native.value=opt.value;native.dispatchEvent(new Event('change',{bubbles:true}));drawTyres();renderAdvice();};
  }
- $('apex9aCompLaunch').disabled=$('apex9aCompLaunch').disabled||target.children.length===0;
+ updateLaunchAvailability();
 }
 function forecast(){
  const s=currentCircuit();
@@ -181,7 +245,7 @@ function launch(){
  close();bypass=true;
  try{native.click()}finally{bypass=false}
 }
-function close(){if(panel)panel.hidden=true;mode=null;}
+function close(restoreFocus=false){const shown=panel&&!panel.hidden;if(panel)panel.hidden=true;mode=null;panelReadOnly=false;if(shown&&restoreFocus){const target=returnFocus?.isConnected&&!returnFocus.disabled?returnFocus:$('apex9aBack');if(target?.isConnected&&!target.disabled)target.focus({preventScroll:true});}}
 function init(){
  for(const [name,id] of [['grandprix','gpStart'],['season','nextSeason']]){
   const btn=$(id);if(!btn)continue;

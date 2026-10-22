@@ -25,6 +25,13 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
   assert.equal(await page.locator('#apex9aCompetitionSetup').isVisible(),true);
   assert.match(await page.locator('#apex9aCompTitle').textContent(),/GRAN PREMIO/);
   assert.equal(await page.locator('#apex9aCompTyres button').count(),5);
+  assert.equal(await page.locator('#apex9aCompCircuitSelect').inputValue(),await page.locator('#gpTrack').inputValue());
+  assert.equal(await page.locator('#apex9aCompTeamSelect').inputValue(),await page.locator('#teamSelect').inputValue());
+  assert.equal(await page.locator('#apex9aCompDistanceSelect').inputValue(),await page.locator('#gpLaps').inputValue());
+  await page.locator('#apex9aCompDistanceSelect').selectOption('50');
+  assert.equal(await page.locator('#gpLaps').inputValue(),'50',
+   'El nuevo selector de GP debe usar la distancia original de carrera');
+
   await page.locator('#apex9aCompWeather').selectOption('auto');
   assert.match(await page.locator('#apex9aCompForecast').textContent(),/simulad/i);
   const roundBefore=await page.evaluate(()=>JSON.parse(localStorage.getItem('apex26canvas-v2')||'{}').round||0);
@@ -36,6 +43,13 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
   await page.locator('#nextSeason').click();
   assert.match(await page.locator('#apex9aCompTitle').textContent(),/TEMPORADA/);
   assert.match(await page.locator('#apex9aCompProgress').textContent(),/CAMPEONATO NATIVO/);
+  assert.equal(await page.locator('#apex9aCompCircuitPickerRow').getAttribute('hidden'),'',
+   'El calendario nativo debe fijar el circuito de temporada');
+  assert.equal(await page.locator('#apex9aCompDistanceSelect').inputValue(),await page.locator('#seasonDistance').inputValue());
+  await page.locator('#apex9aCompDistanceSelect').selectOption('75');
+  assert.equal(await page.locator('#seasonDistance').inputValue(),'75',
+   'La temporada usa el mismo control nativo de distancia');
+
   assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('apex26canvas-v2')||'{}').round||0),roundBefore,
    'Opening setup must never advance the native championship');
   await page.locator('#apex9aCompCancel').click();
@@ -44,6 +58,12 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
   await page.locator('#apex9aCompLaunch').click();
   await page.waitForFunction(()=>!document.getElementById('weekendPanel').classList.contains('hidden'),null,{timeout:15000});
   assert.match(await page.locator('#weekendSubtitle').textContent(),/TEMPORADA/);
+  await page.locator('#weekendMenu').click();
+  await page.locator('#nextSeason').click();
+  assert.equal(await page.locator('#apex9aCompTeamSelect').isDisabled(),true,
+   'Una temporada iniciada conserva la escudería bloqueada en el nuevo menú');
+  await page.locator('#apex9aCompCancel').click();
+
   assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('apex26canvas-v2')||'{}').round||0),roundBefore,
    'Starting a weekend without racing must not award points');
   assert.deepEqual(errors.filter(s=>/SyntaxError|Unexpected end of input|Cannot read properties/.test(s)),[]);
