@@ -11,7 +11,7 @@ const MODES=Object.freeze({
 const WX={CLEAR:'Despejado',PARTLY:'Parcialmente nublado',OVERCAST:'Nublado',DRIZZLE:'Llovizna',RAIN:'Lluvia',STORM:'Tormenta',VARIABLE:'Variable'};
 const TYRE_ART=Object.freeze(Object.fromEntries(['SOFT','MEDIUM','HARD','INTERMEDIATE','WET'].map(t=>[t,'assets/9a/tyre-'+t.toLowerCase()+'.webp'])));
 const COMPOUNDS={SOFT:['Blando','#df3044'],MEDIUM:['Medio','#f3d43f'],HARD:['Duro','#f5f5f5'],INTERMEDIATE:['Intermedio','#3dcc73'],WET:['Lluvia extrema','#3d9ef5']};
-let overlay=null,kind=null,launchBypass=false,manualStrategy='balanced';
+let overlay=null,kind=null,launchBypass=false,manualStrategy='balanced',returnFocus=null;
 function pick(id){const el=$(id);return el?.selectedOptions?.[0]?.textContent?.trim()||el?.value||'—';}
 function asCompound(nativeValue){return String(nativeValue||'MEDIUM').toUpperCase().replace(/^C[1-5]$/,'MEDIUM');}
 function nativeTyres(){return $('menuTyreCompound');}
@@ -134,11 +134,11 @@ function refresh(){
  $('apex9aStrategyNote').hidden=kind==='practice';
  updateState();
 }
-function close(){if(overlay)overlay.hidden=true;kind=null;}
+function close(){const restore=overlay&&!overlay.hidden&&overlay.contains(document.activeElement);if(overlay)overlay.hidden=true;kind=null;if(restore&&returnFocus?.isConnected)returnFocus.focus({preventScroll:true});}
 function open(which){
  if(!MODES[which])return;
  if(!overlay)build();
- kind=which;overlay.hidden=false;
+ returnFocus=document.activeElement;kind=which;overlay.hidden=false;
  const old=window.ApexCompetition9A?.get?.();
  const preferred=old?.mode===which&&old.weather==='auto'?'auto':$(MODES[kind].weather)?.value||'VARIABLE';
  if($('apex9aPrepWeather'))$('apex9aPrepWeather').value=preferred;
