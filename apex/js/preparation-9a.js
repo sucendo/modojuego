@@ -134,7 +134,7 @@ function refresh(){
  $('apex9aStrategyNote').hidden=kind==='practice';
  updateState();
 }
-function close(){const restore=overlay&&!overlay.hidden&&overlay.contains(document.activeElement);if(overlay)overlay.hidden=true;kind=null;if(restore){const target=returnFocus?.isConnected&&!returnFocus.disabled?returnFocus:$('apex9aBack');target?.focus({preventScroll:true});}}
+function close(restoreFocus=false){const shown=overlay&&!overlay.hidden;if(overlay)overlay.hidden=true;kind=null;if(shown&&restoreFocus){const target=returnFocus?.isConnected&&!returnFocus.disabled?returnFocus:$('apex9aBack');if(target?.isConnected&&!target.disabled)target.focus({preventScroll:true});}}
 function open(which){
  if(!MODES[which])return;
  if(!overlay)build();
@@ -155,7 +155,7 @@ function build(){
    <div class="apex9aPrepCard"><h3>03 · NEUMÁTICOS Y ESTRATEGIA</h3><div class="apex9aTyreGrid" id="apex9aTyres"></div><p id="apex9aTyreNotice"></p><div id="apex9aStrategyRow"><label for="apex9aStrategy">PLAN DE SALIDA</label><select id="apex9aStrategy"><option value="aggressive">Agresiva</option><option value="balanced">Equilibrada</option><option value="conservative">Conservadora</option></select></div><p id="apex9aStrategyNote" class="apex9aInfo">La selección guarda la preferencia; no automatiza las paradas. Los ajustes de boxes durante la carrera siguen en el panel real.</p><p class="apex9aAdvice" id="apex9aAdvice"></p></div>
   </div><footer class="apex9aPrepActions"><button id="apex9aCancel" type="button">VOLVER</button><button id="apex9aLaunch" type="button">INICIAR SESIÓN ›</button></footer></div>`;
  document.body.appendChild(overlay);
- $('apex9aClose').onclick=close;$('apex9aCancel').onclick=close;
+ $('apex9aClose').onclick=()=>close(true);$('apex9aCancel').onclick=()=>close(true);
  bindSelector('apex9aPrepCircuit',()=>MODES[kind]?.track);
  bindSelector('apex9aPrepTeam','teamSelect');
  bindSelector('apex9aPrepDistance',()=>MODES[kind]?.distance);
@@ -173,8 +173,8 @@ function build(){
   launchBypass=true;
   try{button.click();}finally{launchBypass=false;}
  };
- overlay.addEventListener('click',e=>{if(e.target===overlay)close();});
- document.addEventListener('keydown',e=>{if(!overlay.hidden&&e.key==='Escape'){e.preventDefault();e.stopPropagation();close();}},true);
+ overlay.addEventListener('click',e=>{if(e.target===overlay)close(true);});
+ document.addEventListener('keydown',e=>{if(!overlay.hidden&&e.key==='Escape'){e.preventDefault();e.stopPropagation();close(true);}},true);
  const menu=$('menu');
  if(menu)new MutationObserver(()=>{if(menu.classList.contains('hidden'))close();}).observe(menu,{attributes:true,attributeFilter:['class']});
 }
