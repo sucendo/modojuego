@@ -10,6 +10,8 @@ on:
       - 'apex/js/menu-9a.js'
       - 'apex/js/climate-9a.js'
       - 'apex/js/competition-flows-9a.js'
+      - 'apex/js/championship-9a.js'
+      - 'apex/tests/championship-9a-audit.cjs'
       - 'apex/js/menu-music-9a.js'
       - 'apex/tests/climate-9a-audit.cjs'
       - 'apex/tests/competition-flows-9a-browser.cjs'
@@ -22,6 +24,8 @@ on:
       - 'apex/js/menu-9a.js'
       - 'apex/js/climate-9a.js'
       - 'apex/js/competition-flows-9a.js'
+      - 'apex/js/championship-9a.js'
+      - 'apex/tests/championship-9a-audit.cjs'
       - 'apex/js/menu-music-9a.js'
       - 'apex/tests/climate-9a-audit.cjs'
       - 'apex/tests/competition-flows-9a-browser.cjs'
@@ -50,9 +54,12 @@ jobs:
         run: node apex/tests/menu-9a-lifecycle.cjs
       - name: Verify approved artwork and offline WebP assets
         run: node apex/tests/menu-9a-assets.cjs
+      - name: Verify native championship standings and legacy save compatibility
+        run: node apex/tests/championship-9a-audit.cjs
       - name: Verify seasonal weather and new module syntax
         run: |
           node apex/tests/climate-9a-audit.cjs
           node --check apex/js/competition-flows-9a.js
+          node --check apex/js/championship-9a.js
           node --check apex/js/menu-music-9a.js
           node --check apex/js/climate-9a.js
