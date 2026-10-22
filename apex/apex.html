@@ -33,7 +33,7 @@ try{
   document.open();
   const assembled=parts.join("");
   // 9A.1: núcleo aislado de competición; no altera los flujos anteriores.
-  const bridge='<script src="js/competition-9a.js"><\\/script>'.replace("<\\/script>","</script>");
+  const bridge='<script src="js/competition-9a.js"></scr'+'ipt>';
   document.write(assembled.includes("</body>")?assembled.replace("</body>",bridge+"</body>"):assembled+bridge);
   document.close();
 }catch(err){
