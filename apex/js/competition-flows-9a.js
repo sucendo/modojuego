@@ -156,7 +156,7 @@ function build(){
 function open(which,viewOnly=false){
  if(which!=='grandprix'&&which!=='season')return;
  if(!panel)build();
- returnFocus=document.activeElement;mode=which;panel.hidden=false;
+ returnFocus=$(which==='grandprix'?'gpStart':'nextSeason')||document.activeElement;mode=which;panel.hidden=false;
  const state=global.ApexCompetition9A?.get?.(),p=plan();
  const nativeWeather=which==='grandprix'?$('gpWeather')?.value:null;
  $('apex9aCompWeather').value=state?.mode===(which==='grandprix'?'grand-prix':'season')&&state.weather?
