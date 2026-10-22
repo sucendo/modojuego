@@ -148,7 +148,7 @@ function build(){
   '<section class="apex9aPrepCard"><h3>03 · NEUMÁTICOS Y ESTRATEGIA</h3><div id="apex9aCompTyres" class="apex9aTyreGrid"></div><label for="apex9aCompStrategy">Estilo de estrategia</label><select id="apex9aCompStrategy"><option value="aggressive">Agresiva</option><option value="balanced">Equilibrada</option><option value="conservative">Conservadora</option></select><label for="apex9aCompStops">Paradas previstas</label><select id="apex9aCompStops"><option value="0">0 (solo previsión)</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select><p id="apex9aCompAdvice" class="apex9aAdvice"></p><p class="apex9aFootnote">Se configura el compuesto inicial real. El plan de paradas es orientativo; la solicitud y servicio de boxes siguen en el motor de carrera.</p></section>'+
   '</div><footer class="apex9aPrepActions"><button id="apex9aCompCancel" type="button">VOLVER</button><button id="apex9aCompLaunch" type="button">CONTINUAR AL GP ›</button></footer></div>';
  document.body.appendChild(panel);
- $('apex9aCompClose').onclick=close;$('apex9aCompCancel').onclick=close;
+ $('apex9aCompClose').onclick=()=>close(true);$('apex9aCompCancel').onclick=()=>close(true);
  bindCompetitionSelector('apex9aCompCircuitSelect','gpTrack');
  bindCompetitionSelector('apex9aCompTeamSelect','teamSelect');
  bindCompetitionSelector('apex9aCompDistanceSelect',()=>mode==='season'?'seasonDistance':'gpLaps');
@@ -157,8 +157,8 @@ function build(){
  $('apex9aCompStrategy').onchange=renderAdvice;
  $('apex9aCompStops').onchange=renderAdvice;
  $('apex9aCompLaunch').onclick=launch;
- panel.addEventListener('click',e=>{if(e.target===panel)close();});
- document.addEventListener('keydown',e=>{if(!panel.hidden&&e.key==='Escape'){e.preventDefault();e.stopPropagation();close();}},true);
+ panel.addEventListener('click',e=>{if(e.target===panel)close(true);});
+ document.addEventListener('keydown',e=>{if(!panel.hidden&&e.key==='Escape'){e.preventDefault();e.stopPropagation();close(true);}},true);
  const menu=$('menu');
  if(menu)new MutationObserver(()=>{if(menu.classList.contains('hidden'))close();}).observe(menu,{attributes:true,attributeFilter:['class']});
 }
@@ -245,7 +245,7 @@ function launch(){
  close();bypass=true;
  try{native.click()}finally{bypass=false}
 }
-function close(){const restore=panel&&!panel.hidden&&panel.contains(document.activeElement);if(panel)panel.hidden=true;mode=null;panelReadOnly=false;if(restore){const target=returnFocus?.isConnected&&!returnFocus.disabled?returnFocus:$('apex9aBack');target?.focus({preventScroll:true});}}
+function close(restoreFocus=false){const shown=panel&&!panel.hidden;if(panel)panel.hidden=true;mode=null;panelReadOnly=false;if(shown&&restoreFocus){const target=returnFocus?.isConnected&&!returnFocus.disabled?returnFocus:$('apex9aBack');if(target?.isConnected&&!target.disabled)target.focus({preventScroll:true});}}
 function init(){
  for(const [name,id] of [['grandprix','gpStart'],['season','nextSeason']]){
   const btn=$(id);if(!btn)continue;
