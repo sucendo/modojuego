@@ -34,3 +34,10 @@
 .apex9aChampInfo .apex9aHistoryScroll{max-height:220px;overflow:auto;scrollbar-width:thin}
 .apex9aChampInfo .apex9aHistoryScroll table{min-width:360px;margin-top:0}
 .apex9aChampInfo .apex9aHistoryScroll thead{position:sticky;top:0;background:#0a1624}
+
+
+/* Sin truncar los 22 pilotos del campeonato, mantener visible el resto del menú. */
+.apex9aChampInfo .apex9aDriversScroll{max-height:280px;overflow:auto;scrollbar-width:thin;overscroll-behavior:contain}
+.apex9aChampInfo .apex9aDriversScroll table{margin-top:0;min-width:245px}
+.apex9aChampInfo .apex9aDriversScroll thead{position:sticky;top:0;background:#0a1624}
+@media(max-width:670px){.apex9aChampInfo .apex9aDriversScroll{max-height:205px}}
