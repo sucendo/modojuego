@@ -7,7 +7,7 @@
     if(!menu||!tabs||document.getElementById('apex9aLanding'))return;
     const landing=document.createElement('section');
     landing.id='apex9aLanding';landing.setAttribute('aria-label','Menú principal APEX Formula 26');
-    landing.innerHTML='<h1 class="apex9aBrandTitle"><img src="assets/9a/logo-apex26.webp" alt="APEX FORMULA 26"></h1><p>COMPETICIÓN SIN LÍMITES</p><button class="apex9aAction" id="apex9aRace" type="button">TIPO DE CARRERA ❯❯</button><button class="apex9aAction secondary" id="apex9aOptions" type="button">OPCIONES ❯❯</button><div class="apex9aFooter"><button id="apex9aHelp" type="button">AYUDA</button><button id="apex9aAudio" type="button">AUDIO</button><button id="apex9aCredits" type="button">CRÉDITOS</button></div>';
+    landing.innerHTML='<h1 class="apex9aBrandTitle"><img src="assets/9a/logo-apex26.webp" alt="APEX FORMULA 26"></h1><p>COMPETICIÓN SIN LÍMITES</p><button class="apex9aAction" id="apex9aRace" type="button">TIPO DE CARRERA ❯❯</button><button class="apex9aAction secondary" id="apex9aOptions" type="button">OPCIONES ❯❯</button><div class="apex9aFooter"><button id="apex9aProfile" type="button">PERFIL</button><button id="apex9aHelp" type="button">AYUDA</button><button id="apex9aAudio" type="button">AUDIO</button><button id="apex9aCredits" type="button">CRÉDITOS</button></div>';
     menu.prepend(landing);
     const back=document.createElement('button');back.id='apex9aBack';back.textContent='← MENÚ PRINCIPAL';back.type='button';back.hidden=true;
     menu.insertBefore(back,landing.nextSibling);
@@ -16,6 +16,7 @@
     const selectTab=tab=>{if(!tab)return;tab.click();display(false)};
     document.getElementById('apex9aRace').onclick=()=>{display(false);selectTab(tabs.querySelector('[data-t="quick"]'))};
     document.getElementById('apex9aOptions').onclick=()=>{display(false);document.getElementById('menuGraphics')?.setAttribute('open','');document.getElementById('menuGraphics')?.scrollIntoView({block:'start'});};
+    document.getElementById('apex9aProfile').onclick=()=>{display(false);const dock=document.getElementById('teamGarage');if(dock){dock.open=true;dock.scrollIntoView({block:'start'});}};
     document.getElementById('apex9aHelp').onclick=()=>selectTab(document.querySelector('#controlsTab'));
     document.getElementById('apex9aAudio').onclick=()=>{const b=document.getElementById('sound');if(b)b.click();else alert('El audio se configura dentro del simulador.');};
     document.getElementById('apex9aCredits').onclick=()=>alert('APEX Formula 26 · Sucendo.');
