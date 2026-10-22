@@ -18,7 +18,7 @@
     document.getElementById('apex9aOptions').onclick=()=>{display(false);document.getElementById('menuGraphics')?.setAttribute('open','');document.getElementById('menuGraphics')?.scrollIntoView({block:'start'});};
     document.getElementById('apex9aProfile').onclick=()=>{display(false);const dock=document.getElementById('teamGarage');if(dock){dock.open=true;dock.scrollIntoView({block:'start'});}};
     document.getElementById('apex9aHelp').onclick=()=>selectTab(document.querySelector('#controlsTab'));
-    document.getElementById('apex9aAudio').onclick=()=>{const b=document.getElementById('sound');if(b)b.click();else alert('El audio se configura dentro del simulador.');};
+    document.getElementById('apex9aAudio').onclick=()=>{if(window.ApexMenuMusic9A)window.ApexMenuMusic9A.toggle();else alert('La música del menú aún no está disponible.');};
     document.getElementById('apex9aCredits').onclick=()=>alert('APEX Formula 26 · Sucendo.');
     back.onclick=()=>display(true);
     // Al comenzar cualquier sesión, APEX oculta #menu.
