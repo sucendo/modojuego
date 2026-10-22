@@ -9,6 +9,7 @@ const MODES=Object.freeze({
   practice:{track:'practiceTrack',weather:'practiceWeather',distance:null,launch:'practiceStart',info:'practiceCircuitInfo',label:'ENTRENAMIENTO LIBRE'}
 });
 const WX={CLEAR:'Despejado',PARTLY:'Parcialmente nublado',OVERCAST:'Nublado',DRIZZLE:'Llovizna',RAIN:'Lluvia',STORM:'Tormenta',VARIABLE:'Variable'};
+const TYRE_ART=Object.freeze(Object.fromEntries(['SOFT','MEDIUM','HARD','INTERMEDIATE','WET'].map(t=>[t,'assets/9a/tyre-'+t.toLowerCase()+'.webp'])));
 const COMPOUNDS={SOFT:['Blando','#df3044'],MEDIUM:['Medio','#f3d43f'],HARD:['Duro','#f5f5f5'],INTERMEDIATE:['Intermedio','#3dcc73'],WET:['Lluvia extrema','#3d9ef5']};
 let overlay=null,kind=null,launchBypass=false,manualStrategy='balanced';
 function pick(id){const el=$(id);return el?.selectedOptions?.[0]?.textContent?.trim()||el?.value||'—';}
@@ -61,7 +62,7 @@ function refresh(){
   // Imagen transparente auténtica, cuando está instalada, con fallback CSS sin recursos perdidos.
   // Carga sólo imágenes confirmadas por el manifiesto de recursos.
   // Mientras no estén en GitHub, el anillo CSS evita peticiones 404.
-  const src=window.APEX9A_TYRE_ART?.[key];
+  const src=TYRE_ART[key];
   if(typeof src==='string'&&src){
     const art=document.createElement('img');art.alt='';art.loading='lazy';
     art.src=src;art.onerror=()=>art.remove();visual.appendChild(art);
