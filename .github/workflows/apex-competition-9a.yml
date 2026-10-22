@@ -14,6 +14,10 @@ on:
       - 'apex/tests/competition-9a-state.cjs'
       - 'apex/tests/menu-9a-lifecycle.cjs'
       - '.github/workflows/apex-competition-9a.yml'
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 permissions:
   contents: read
 jobs:
