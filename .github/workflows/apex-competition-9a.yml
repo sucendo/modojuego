@@ -1,0 +1,24 @@
+name: APEX 9A competition state
+on:
+  push:
+    paths:
+      - 'apex/js/competition-9a.js'
+      - 'apex/tests/competition-9a-state.cjs'
+      - '.github/workflows/apex-competition-9a.yml'
+  pull_request:
+    paths:
+      - 'apex/js/competition-9a.js'
+      - 'apex/tests/competition-9a-state.cjs'
+      - '.github/workflows/apex-competition-9a.yml'
+permissions:
+  contents: read
+jobs:
+  state-and-championship:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify APEX weekend and championship invariants
+        run: node apex/tests/competition-9a-state.cjs
