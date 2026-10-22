@@ -34,3 +34,21 @@
 #menu.apex9aModes #menuModeTabs .tab:nth-child(3){background-position:77% center}
 #menu.apex9aModes #menuModeTabs .tab:nth-child(4){background-position:94% center}
 #menu.apex9aModes #menuModeTabs .tab.active{background-color:#6e1922}
+
+/* 9A.1 definitivo: imágenes individuales del ZIP suministrado, sin capturas de interfaz. */
+#apex9aLanding{
+ background-image:linear-gradient(90deg,#020710f2 0%,#061320cc 31%,#08132138 78%),
+ linear-gradient(0deg,#02060ddd,transparent 48%),
+ url('../assets/9a/fondo-apex26.webp');
+ background-position:center,center,center;
+ background-size:cover;
+}
+#apex9aLanding .apex9aBrandTitle{margin:0 0 20px;max-width:min(670px,88%);line-height:1}
+#apex9aLanding .apex9aBrandTitle img{display:block;width:100%;height:auto;max-height:250px;object-fit:contain;object-position:left center;filter:drop-shadow(0 3px 8px #0009)}
+#menu.apex9aModes #menuModeTabs .tab{background-image:linear-gradient(0deg,#030914f5 0%,#07152342 69%,transparent);background-size:cover}
+#menu.apex9aModes #menuModeTabs .tab:nth-child(1){background-image:linear-gradient(0deg,#030914ed,transparent 75%),url('../assets/9a/race-fast.webp');background-position:center 58%}
+#menu.apex9aModes #menuModeTabs .tab:nth-child(2){background-image:linear-gradient(0deg,#030914ed,transparent 75%),url('../assets/9a/race-gp.webp');background-position:center 58%}
+#menu.apex9aModes #menuModeTabs .tab:nth-child(3){background-image:linear-gradient(0deg,#030914ed,transparent 75%),url('../assets/9a/race-season.webp');background-position:center 58%}
+#menu.apex9aModes #menuModeTabs .tab:nth-child(4){background-image:linear-gradient(0deg,#030914ed,transparent 75%),url('../assets/9a/race-practice.webp');background-position:center 58%}
+#menu.apex9aModes #menuModeTabs .tab.active{background-blend-mode:normal;border-color:#ff3f58}
+@media(max-width:680px){#apex9aLanding .apex9aBrandTitle{max-width:94%}}
