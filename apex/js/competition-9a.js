@@ -45,7 +45,10 @@
     state=normalize({...state,...picked});return emit();
   }
   function beginWeekend(config={}){
-    if(state.weekend&&config.resume)return clone(state.weekend);
+    if(state.weekend&&config.resume){
+      if(config.circuitId&&config.circuitId!==state.weekend.circuitId)throw Error('El GP guardado pertenece a otro circuito');
+      return clone(state.weekend);
+    }
     const circuitId=config.circuitId||state.circuitId;
     if(!validId(circuitId)||!circuitId)throw Error('Selecciona un circuito real antes del GP');
     state.weekend={circuitId,stage:'fp1',sessions:{},grid:null,result:null,finished:false};
@@ -80,9 +83,43 @@
     if(!result||result.verified!==true||!Array.isArray(result.classification)||!result.classification.length)
       throw Error('No se pueden anotar puntos sin resultado final verificado');
     if(result.circuitId!==s.calendar[s.round])throw Error('La ronda no coincide con el calendario');
+    const entries=result.classification;
+    if(entries.some(e=>!e||typeof e.driverId!=='string'||!e.driverId||typeof e.teamId!=='string'||!e.teamId)||new Set(entries.map(e=>e.driverId)).size!==entries.length)
+      throw Error('Clasificación inválida: faltan identificadores o hay pilotos duplicados');
     if(s.results.some(r=>r.circuitId===result.circuitId))throw Error('Resultado ya registrado');
     s.results.push(clone(result));s.round+=1;s.finished=s.round===s.calendar.length;
     return emit();
+  }
+
+  // Clasificación determinista, derivada exclusivamente de resultados completos.
+  // Sistema de puntos 25-18-15-12-10-8-6-4-2-1 (sin bonus automático).
+  const POINTS=Object.freeze([25,18,15,12,10,8,6,4,2,1]);
+  function standings(){
+    const season=state.season;
+    if(!season)return {drivers:[],constructors:[],rounds:0};
+    const drivers=new Map(),constructors=new Map();
+    for(const round of season.results){
+      if(!round||!Array.isArray(round.classification))continue;
+      const seen=new Set();
+      round.classification.forEach((entry,index)=>{
+        if(!entry||typeof entry.driverId!=='string'||!entry.driverId||
+           typeof entry.teamId!=='string'||!entry.teamId||seen.has(entry.driverId))return;
+        seen.add(entry.driverId);
+        const earned=POINTS[index]||0;
+        const d=drivers.get(entry.driverId)||{id:entry.driverId,teamId:entry.teamId,points:0,wins:0,results:[]};
+        d.points+=earned;d.wins+=index===0?1:0;
+        d.results.push({circuitId:round.circuitId,position:index+1,points:earned});
+        drivers.set(entry.driverId,d);
+        const c=constructors.get(entry.teamId)||{id:entry.teamId,points:0,wins:0,results:[]};
+        c.points+=earned;c.wins+=index===0?1:0;
+        c.results.push({circuitId:round.circuitId,driverId:entry.driverId,position:index+1,points:earned});
+        constructors.set(entry.teamId,c);
+      });
+    }
+    const sort=(a,b)=>b.points-a.points||b.wins-a.wins||a.id.localeCompare(b.id);
+    return {drivers:clone(Array.from(drivers.values()).sort(sort)),
+      constructors:clone(Array.from(constructors.values()).sort(sort)),
+      rounds:season.results.length,pointsTable:POINTS.slice()};
   }
   function reset(scope='all'){
     if(scope==='weekend')state.weekend=null;
@@ -92,7 +129,7 @@
     return emit();
   }
   Object.defineProperty(global,'ApexCompetition9A',{
-    value:Object.freeze({get:()=>clone(state),select,beginWeekend,completeSession,beginSeason,completeRound,reset,
+    value:Object.freeze({get:()=>clone(state),select,beginWeekend,completeSession,beginSeason,completeRound,standings,reset,
       constants:Object.freeze({modes:MODES.slice(),stages:STAGES.slice(),distances:DISTANCES.slice(),tyres:TYRES.slice()})}),
     configurable:false,writable:false
   });
