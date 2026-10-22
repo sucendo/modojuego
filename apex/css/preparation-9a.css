@@ -31,3 +31,13 @@
 #apex9aLaunch:disabled{opacity:.4;cursor:not-allowed}
 @media(max-width:1020px){.apex9aPrepColumns{grid-template-columns:1fr 1fr}.apex9aPrepColumns>.apex9aPrepCard:last-child{grid-column:1/-1}}
 @media(max-width:650px){.apex9aPrepColumns{grid-template-columns:1fr}.apex9aPrepColumns>.apex9aPrepCard:last-child{grid-column:auto}.apex9aPrepCard{min-height:0}.apex9aTyreVisual{width:45px;height:45px;border-width:8px}.apex9aTyreVisual img{width:50px;height:50px}.apex9aTyre{min-height:83px;padding:5px 2px}.apex9aTyre b{font-size:8px}.apex9aPrepActions{position:sticky;bottom:-12px;background:#09131ef0;padding:10px 0}}
+
+/* Recursos exactos aprobados: nubosidad / estado del asfalto / neumáticos RGBA. */
+.apex9aWeatherCard{
+ background:linear-gradient(150deg,#183850df,#0a1422de),
+ url('../assets/9a/weather-clouds.webp') center/cover no-repeat;
+}
+#apex9aTrackDetails .circuitInfoCard{background:none}
+.apex9aTyreVisual:has(img){border:0;background:transparent;box-shadow:none}
+.apex9aTyreVisual img{position:static;width:76px;height:86px;object-fit:contain;filter:drop-shadow(0 5px 5px #000b)}
+@media(max-width:650px){.apex9aTyreVisual img{width:50px;height:60px}}
