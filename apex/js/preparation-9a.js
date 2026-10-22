@@ -125,7 +125,7 @@ function refresh(){
  $('apex9aTyreNotice').textContent=types.length?
   'El compuesto elegido se aplica al selector de neumáticos original del simulador.':
   'No se ha inicializado todavía el selector de neumáticos original.';
- $('apex9aLaunch').disabled=types.length===0;
+ $('apex9aLaunch').disabled=types.length===0||!$(spec.launch)||!!$(spec.launch).disabled;
  const human=COMPOUNDS[recommended]?.[0]||'Medio';
  $('apex9aAdvice').textContent=kind==='practice'?
   'Entrenamiento sin estrategia de carrera obligatoria. Recomendación inicial: '+human+'.':
