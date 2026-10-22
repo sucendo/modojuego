@@ -63,6 +63,10 @@ try{
   competitionStyles.rel="stylesheet";
   competitionStyles.href="css/competition-flows-9a.css";
   (document.head||document.body).appendChild(competitionStyles);
+  const standingsScript=document.createElement("script");
+  standingsScript.src="js/championship-9a.js";
+  standingsScript.async=false;
+  (document.body||document.head).appendChild(standingsScript);
   const competitionScript=document.createElement("script");
   competitionScript.src="js/competition-flows-9a.js";
   competitionScript.async=false;
