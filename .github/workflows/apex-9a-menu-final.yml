@@ -1,0 +1,86 @@
+name: APEX 9A menus final validation
+
+on:
+  push:
+    branches:
+      - apex/fase-9a-menu-competicion
+    paths:
+      - 'apex/**'
+      - '.github/workflows/apex-9a-menu-final.yml'
+  pull_request:
+    paths:
+      - 'apex/**'
+      - '.github/workflows/apex-9a-menu-final.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  native-state-and-assets:
+    name: Native state and approved assets
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify menu, compatibility and artwork
+        run: |
+          set -euo pipefail
+          node apex/tests/competition-9a-state.cjs
+          node apex/tests/menu-9a-lifecycle.cjs
+          node apex/tests/menu-9a-assets.cjs
+          node apex/tests/season-history-9a-audit.cjs
+          node apex/tests/climate-9a-audit.cjs
+          for file in apex/js/{menu-9a,preparation-9a,competition-9a,competition-flows-9a,climate-9a,menu-music-9a}.js; do node --check "$file"; done
+
+  menu-browser:
+    name: Menu navigation / ${{ matrix.device }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        device: [desktop, mobile]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chromium browser runner
+        run: |
+          npm install --prefix "$RUNNER_TEMP/apex-browser" --no-package-lock --no-save playwright@1.62.1
+          node "$RUNNER_TEMP/apex-browser/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Verify four modes with original session controls
+        env:
+          PLAYWRIGHT_MODULE_PATH: ${{ runner.temp }}/apex-browser/node_modules/playwright
+          APEX_AUDIT_DEVICE: ${{ matrix.device }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/apex-menu-9a
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/apex-menu-9a/server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid"' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8765/apex/apex.html > /dev/null; then break; fi
+            sleep 1
+          done
+          mkdir -p /tmp/apex-results
+          node apex/tests/preparation-9a-browser.cjs 2>&1 | tee /tmp/apex-menu-9a/preparation.log
+          node apex/tests/competition-flows-9a-browser.cjs 2>&1 | tee /tmp/apex-menu-9a/gp-season.log
+      - name: Save screenshots and logs
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: apex-9a-menu-${{ matrix.device }}
+          path: |
+            /tmp/apex-menu-9a/
+            /tmp/apex-results/9a-*.png
+          if-no-files-found: warn
