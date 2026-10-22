@@ -36,6 +36,14 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
   await page.locator('#nextSeason').click();
   assert.match(await page.locator('#apex9aCompTitle').textContent(),/TEMPORADA/);
   assert.match(await page.locator('#apex9aCompProgress').textContent(),/CAMPEONATO NATIVO/);
+
+  assert.equal(await page.locator('#apex9aCompProgress .apex9aStandingsSection').count(),2,
+   'Native constructor standings and GP history must be accessible in the season panel');
+  assert.ok(await page.locator('#apex9aCompProgress .apex9aStandingsScroll').first().locator('tbody tr').count()>0,
+   'Driver standings must use the actual saved season roster');
+  await page.locator('#apex9aCompProgress .apex9aStandingsSection').first().locator('summary').click();
+  assert.match(await page.locator('#apex9aCompProgress .apex9aStandingsSection').first().textContent(),
+   /CONSTRUCTORES/);
   assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('apex26canvas-v2')||'{}').round||0),roundBefore,
    'Opening setup must never advance the native championship');
   await page.locator('#apex9aCompCancel').click();
