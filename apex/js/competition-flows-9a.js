@@ -9,7 +9,7 @@ const WEATHER=[['auto','Automática · simulación estacional'],['CLEAR','Despej
 const LABELS={CLEAR:'Despejado',PARTLY:'Sol y nubes',OVERCAST:'Nublado',DRIZZLE:'Llovizna',RAIN:'Lluvia',STORM:'Tormenta',VARIABLE:'Variable'};
 const TYRES=[['SOFT','Blando'],['MEDIUM','Medio'],['HARD','Duro'],['INTERMEDIATE','Intermedio'],['WET','Lluvia extrema']];
 const STAGES=['FP1','FP2','FP3','CLASIFICACIÓN','CARRERA'];
-let panel=null,mode=null,bypass=false,seasonObserver=null,returnFocus=null;
+let panel=null,mode=null,bypass=false,seasonObserver=null,returnFocus=null,panelReadOnly=false;
 let musicChoice=null;
 function saved(){
  try{const v=JSON.parse(global.localStorage.getItem(NATIVE_SAVE));return v&&v.schema===4?v:null}catch(_){return null}
@@ -104,6 +104,14 @@ function syncCompetitionSelectors(){
  }
  mirrorSelect(gp?'gpLaps':'seasonDistance','apex9aCompDistanceSelect');
 }
+function updateLaunchAvailability(){
+ const button=$('apex9aCompLaunch');
+ if(!button||!mode)return;
+ const native=$(mode==='season'?'nextSeason':'gpStart');
+ const tyres=$('apex9aCompTyres');
+ button.disabled=panelReadOnly||(mode==='season'&&seasonRound()>=23)||
+  !native||native.disabled||!tyres||tyres.children.length===0;
+}
 function refreshCompetitionDetails(){
  if(!panel||panel.hidden||!mode)return;
  syncCompetitionSelectors();
@@ -111,6 +119,7 @@ function refreshCompetitionDetails(){
  const team=$('apex9aCompTeamSelect');
  $('apex9aCompTeam').textContent=team?.selectedOptions?.[0]?.textContent?.trim()||selected('teamSelect');
  $('apex9aCompDistance').textContent=selected(mode==='season'?'seasonDistance':'gpLaps');
+ updateLaunchAvailability();
  renderWeather();
 }
 function bindCompetitionSelector(targetId,sourceId){
@@ -156,7 +165,7 @@ function build(){
 function open(which,viewOnly=false){
  if(which!=='grandprix'&&which!=='season')return;
  if(!panel)build();
- returnFocus=$(which==='grandprix'?'gpStart':'nextSeason')||document.activeElement;mode=which;panel.hidden=false;
+ returnFocus=$(which==='grandprix'?'gpStart':'nextSeason')||document.activeElement;mode=which;panelReadOnly=!!viewOnly;panel.hidden=false;
  const state=global.ApexCompetition9A?.get?.(),p=plan();
  const nativeWeather=which==='grandprix'?$('gpWeather')?.value:null;
  $('apex9aCompWeather').value=state?.mode===(which==='grandprix'?'grand-prix':'season')&&state.weather?
@@ -190,7 +199,7 @@ function drawTyres(){
   const name=document.createElement('b');name.textContent=label;b.append(span,name);target.appendChild(b);
   b.onclick=()=>{native.value=opt.value;native.dispatchEvent(new Event('change',{bubbles:true}));drawTyres();renderAdvice();};
  }
- $('apex9aCompLaunch').disabled=$('apex9aCompLaunch').disabled||target.children.length===0;
+ updateLaunchAvailability();
 }
 function forecast(){
  const s=currentCircuit();
@@ -236,7 +245,7 @@ function launch(){
  close();bypass=true;
  try{native.click()}finally{bypass=false}
 }
-function close(){const restore=panel&&!panel.hidden&&panel.contains(document.activeElement);if(panel)panel.hidden=true;mode=null;if(restore){const target=returnFocus?.isConnected&&!returnFocus.disabled?returnFocus:$('apex9aBack');target?.focus({preventScroll:true});}}
+function close(){const restore=panel&&!panel.hidden&&panel.contains(document.activeElement);if(panel)panel.hidden=true;mode=null;panelReadOnly=false;if(restore){const target=returnFocus?.isConnected&&!returnFocus.disabled?returnFocus:$('apex9aBack');target?.focus({preventScroll:true});}}
 function init(){
  for(const [name,id] of [['grandprix','gpStart'],['season','nextSeason']]){
   const btn=$(id);if(!btn)continue;
