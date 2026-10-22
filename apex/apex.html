@@ -39,6 +39,13 @@ try{
   moduleScript.src="js/competition-9a.js";
   moduleScript.defer=true;
   (document.body||document.head).appendChild(moduleScript);
+  const menuStyles=document.createElement("link");
+  menuStyles.rel="stylesheet";
+  menuStyles.href="css/menu-9a.css";
+  (document.head||document.body).appendChild(menuStyles);
+  const menuScript=document.createElement("script");
+  menuScript.src="js/menu-9a.js";
+  (document.body||document.head).appendChild(menuScript);
 }catch(err){
   document.getElementById("status").innerHTML="<div><strong>No se pudo cargar APEX.</strong><small>"+String(err.message||err)+"</small></div>";
   console.error(err);
