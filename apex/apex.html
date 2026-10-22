@@ -46,6 +46,13 @@ try{
   const menuScript=document.createElement("script");
   menuScript.src="js/menu-9a.js";
   (document.body||document.head).appendChild(menuScript);
+  const preparationStyles=document.createElement("link");
+  preparationStyles.rel="stylesheet";
+  preparationStyles.href="css/preparation-9a.css";
+  (document.head||document.body).appendChild(preparationStyles);
+  const preparationScript=document.createElement("script");
+  preparationScript.src="js/preparation-9a.js";
+  (document.body||document.head).appendChild(preparationScript);
 }catch(err){
   document.getElementById("status").innerHTML="<div><strong>No se pudo cargar APEX.</strong><small>"+String(err.message||err)+"</small></div>";
   console.error(err);
