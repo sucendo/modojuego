@@ -20,6 +20,16 @@
     document.getElementById('apex9aAudio').onclick=()=>{const b=document.getElementById('sound');if(b)b.click();else alert('El audio se configura dentro del simulador.');};
     document.getElementById('apex9aCredits').onclick=()=>alert('APEX Formula 26 · Sucendo.');
     back.onclick=()=>display(true);
+    // Al comenzar cualquier sesión, APEX oculta #menu.
+    // Cuando regresa de resultados, debe aparecer la selección de modalidades,
+    // no una portada superpuesta que bloquee botones como #lastRaceResults.
+    let previousHidden=menu.classList.contains('hidden');
+    const menuLifecycle=new MutationObserver(()=>{
+      const isHidden=menu.classList.contains('hidden');
+      if(isHidden&&!previousHidden)display(false);
+      previousHidden=isHidden;
+    });
+    menuLifecycle.observe(menu,{attributes:true,attributeFilter:['class']});
     // Mantener las mismas acciones nativas de entrada en pista y progreso de fin de semana.
     // No crear sesiones ficticias ni alterar los sistemas antiguos.
   }
