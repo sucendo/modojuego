@@ -130,7 +130,7 @@ function renderAdvice(){
  const proposed=['RAIN','STORM'].includes(resolved)?'WET':resolved==='DRIZZLE'?'INTERMEDIATE':'MEDIUM';
  $('apex9aCompAdvice').textContent='Recomendación inicial: '+fmtTyre(proposed)+
   '. Plan '+({aggressive:'agresivo',balanced:'equilibrado',conservative:'conservador'}[p]||'equilibrado')+
-  ' · '+stops+' parada'+(stops===1?'':'s')+' previstas. Se adaptará manualmente en boxes según el desgaste y el tiempo.';
+  ' · '+stops+' parada'+(stops===1?'':'s')+' previstas. El siguiente compuesto se prepara en el servicio de boxes real; la solicitud de entrada sigue siendo manual o AUT.';
 }
 function launch(){
  if(!mode)return;
@@ -141,7 +141,12 @@ function launch(){
    (weather==='auto'?'VARIABLE':weather);
  if(mode==='grandprix'&&$('gpWeather')){$('gpWeather').value=resolved;$('gpWeather').dispatchEvent(new Event('change',{bubbles:true}));}
  const t=tyreValue(),strategy=$('apex9aCompStrategy').value,stops=+$('apex9aCompStops').value;
- persistPlan({strategy,stops,weather,compound:t,mode});
+ const next=stops===0?t:
+  ['RAIN','STORM'].includes(resolved)?'WET':resolved==='DRIZZLE'?'INTERMEDIATE':
+  strategy==='aggressive'?'SOFT':strategy==='conservative'?'HARD':t==='SOFT'?'MEDIUM':'HARD';
+ // 8B lee esta misma preferencia al crear al jugador; el servicio físico sigue siendo nativo.
+ try{global.localStorage.setItem('apex26.tyre.next.v1',next)}catch(_){}
+ persistPlan({strategy,stops,weather,compound:t,nextCompound:next,mode});
  global.ApexCompetition9A?.select?.({mode:mode==='grandprix'?'grand-prix':'season',
   circuitId:mode==='grandprix'?String($('gpTrack')?.value||'')||null:null,
   teamId:String($('teamSelect')?.value||'')||null,
