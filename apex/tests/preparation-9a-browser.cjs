@@ -24,9 +24,9 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||(process.env.CODEX_
   const tyres=page.locator('#apex9aTyres .apex9aTyre');
   assert.ok(await tyres.count()>=3,'Real compound choices must be available');
   const logo=page.locator('#apex9aLanding img[src*="logo-apex26"]');
-  const logoOk=await logo.evaluate(img=>img.complete&&img.naturalWidth>0);
+  const logoOk=await logo.evaluate(async img=>{await img.decode().catch(()=>{});return img.complete&&img.naturalWidth>0;});
   assert.equal(logoOk,true,'Approved logo must load');
-  const imagesLoaded=await page.locator('#apex9aTyres img').evaluateAll(imgs=>imgs.length>=3&&imgs.every(x=>x.complete&&x.naturalWidth>0));
+  const imagesLoaded=await page.locator('#apex9aTyres img').evaluateAll(async imgs=>{await Promise.all(imgs.map(i=>i.decode().catch(()=>{})));return imgs.length>=3&&imgs.every(x=>x.complete&&x.naturalWidth>0);});
   assert.equal(imagesLoaded,true,'Transparent approved tyre images must load without 404');
   const first=tyres.first();
   const key=await first.getAttribute('data-compound');
