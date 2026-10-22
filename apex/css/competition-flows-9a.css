@@ -25,3 +25,13 @@
 #apex9aSeasonStandings{display:block;margin-bottom:12px}
 @media(max-width:1020px){.apex9aCompetitionShell .apex9aPrepColumns{grid-template-columns:repeat(2,minmax(0,1fr))}.apex9aCompetitionShell .apex9aPrepCard:last-child{grid-column:1/-1}}
 @media(max-width:670px){.apex9aCompetitionShell .apex9aPrepColumns{grid-template-columns:1fr}.apex9aCompetitionShell .apex9aPrepCard:last-child{grid-column:auto}.apex9aCompetitionShell .apex9aPrepHead h2{font-size:21px}.apex9aStages span{padding:5px 1px;font-size:8px}.apex9aCompetitionShell .apex9aPrepShell{max-height:none}}
+
+
+/* 9A.4: standings completos sin desbordar la preparación en móvil. */
+.apex9aChampInfo .apex9aStandingsScroll{max-height:215px;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin}
+.apex9aChampInfo .apex9aStandingsScroll table{margin-top:0;min-width:260px}
+.apex9aChampInfo .apex9aStandingsScroll thead{position:sticky;top:0;background:#0a1624;z-index:1}
+.apex9aChampInfo .apex9aStandingsSection{margin-top:10px;border-top:1px solid #38536f}
+.apex9aChampInfo .apex9aStandingsSection>summary{padding:9px 2px;cursor:pointer;font-size:11px;font-weight:800;letter-spacing:.03em;color:#e0ebf6}
+.apex9aChampInfo .apex9aStandingsSection>summary:focus-visible{outline:2px solid #ef344f;outline-offset:2px}
+@media(max-width:670px){.apex9aChampInfo .apex9aStandingsScroll{max-height:180px}}
