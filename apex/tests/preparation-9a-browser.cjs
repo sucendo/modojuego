@@ -13,13 +13,18 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||(process.env.CODEX_
   page.on('pageerror',error=>errors.push(error.message));
   await page.goto('http://127.0.0.1:8765/apex/apex.html',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>window.ApexPreparation9A&&document.getElementById('apex9aRace')&&
-    document.getElementById('menuTyreCompound')?.options.length>0,{timeout:90000});
+    document.getElementById('menuTyreCompound')?.options.length>0,null,{timeout:90000});
   await page.locator('#apex9aRace').click();
   await page.locator('#start').click();
   await page.waitForFunction(()=>ApexPreparation9A.isOpen());
   assert.match(await page.locator('#apex9aPrepTitle').textContent(),/CARRERA/);
   const tyres=page.locator('#apex9aTyres .apex9aTyre');
   assert.ok(await tyres.count()>=3,'Real compound choices must be available');
+  const logo=page.locator('#apex9aLanding img[src*="logo-apex26"]');
+  const logoOk=await logo.evaluate(img=>img.complete&&img.naturalWidth>0);
+  assert.equal(logoOk,true,'Approved logo must load');
+  const imagesLoaded=await page.locator('#apex9aTyres img').evaluateAll(imgs=>imgs.length>=3&&imgs.every(x=>x.complete&&x.naturalWidth>0));
+  assert.equal(imagesLoaded,true,'Transparent approved tyre images must load without 404');
   const first=tyres.first();
   const key=await first.getAttribute('data-compound');
   await first.click();
