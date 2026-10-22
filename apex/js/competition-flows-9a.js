@@ -19,11 +19,14 @@ function plan(){
 }
 function persistPlan(v){try{global.localStorage.setItem(PLAN_KEY,JSON.stringify(v))}catch(_){}}
 function selected(id){const el=$(id);return el?.selectedOptions?.[0]?.textContent?.trim()||el?.value||'—'}
-function seasonRound(){return Math.min(23,Math.max(0,Number(saved()?.round)||0))}
+function nativeSnapshot(){try{return global.ApexNativeSeason9A?.snapshot?.()||null}catch(_){return null}}
+function seasonRound(){return Math.min(23,Math.max(0,Number(nativeSnapshot()?.round??saved()?.round)||0))}
 function currentCircuit(){
  if(mode==='grandprix'){
   const el=$('gpTrack');return {dir:el?.value||'',name:selected('gpTrack'),r:0};
  }
+ const direct=nativeSnapshot()?.nextCircuit;
+ if(direct)return direct;
  const event=document.querySelector('#schedule .event.current');
  return {dir:'',name:event?.querySelector('.small')?.textContent?.trim()||$('seasonStatus')?.textContent||'Próximo GP',r:seasonRound()+1};
 }
@@ -38,14 +41,19 @@ function classification(saveData){
  return scores;
 }
 function seasonMarkup(){
- const native=saved(),round=seasonRound(),score=classification(native),history=Array.isArray(native?.seasonHistory9A)?native.seasonHistory9A:[];
- const rows=score.slice(0,10).map((d,i)=>'<tr><td>'+(i+1)+'</td><td>'+escapeHtml(d.id==='PLAYER'?'TÚ':d.id)+'</td><td>'+d.points+'</td></tr>').join('');
+ const native=saved(),official=nativeSnapshot(),round=seasonRound();
+ const score=official?.drivers?.length?official.drivers:
+  classification(native).map(d=>({driverId:d.id,name:d.id==='PLAYER'?'TÚ':d.id,points:d.points}));
+ const history=Array.isArray(official?.history)?official.history:Array.isArray(native?.seasonHistory9A)?native.seasonHistory9A:[];
+ const rows=score.slice(0,12).map((d,i)=>'<tr><td>'+(i+1)+'</td><td>'+escapeHtml(d.name||d.driverId)+'</td><td>'+d.points+'</td></tr>').join('');
+ const teams=(official?.constructors||[]).slice(0,12).map((d,i)=>'<tr><td>'+(i+1)+'</td><td>'+escapeHtml(d.name||d.teamId)+'</td><td>'+d.points+'</td></tr>').join('');
  const last=history[history.length-1];
  const lastText=last?'Último GP registrado: '+(last.source==='simulated'?'simulado':'disputado')+
   ' · '+(last.classification||[]).length+' clasificados.':'El historial detallado comienza con las próximas carreras; se conservan los puntos anteriores.';
  return '<div class="apex9aChampInfo"><b>CAMPEONATO NATIVO · '+round+'/23 GP</b><p>'+
   escapeHtml($('seasonStatus')?.textContent||'')+'</p><div class="apex9aProgress"><i style="width:'+(100*round/23).toFixed(1)+'%"></i></div>'+
-  '<table><thead><tr><th>POS.</th><th>PILOTO</th><th>PTS</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+  '<h4>PILOTOS</h4><table><thead><tr><th>POS.</th><th>PILOTO</th><th>PTS</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+  (teams?'<h4>CONSTRUCTORES</h4><table><thead><tr><th>POS.</th><th>EQUIPO</th><th>PTS</th></tr></thead><tbody>'+teams+'</tbody></table>':'')+
   '<p class="apex9aFootnote">'+escapeHtml(lastText)+'</p></div>';
 }
 function escapeHtml(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','"':'&quot;'}[c]));}
