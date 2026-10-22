@@ -51,6 +51,9 @@ function refresh(){
   'El motor gestiona condiciones variables. No se muestra una previsión numérica que no haya calculado APEX.':
   'Condición seleccionada para esta sesión en el sistema meteorológico original de APEX.';
  $('apex9aDistance').textContent=spec.distance?pick(spec.distance):'Sesión libre · sin distancia de GP';
+ const nativeDistanceHint=spec.distance?$('lapsDistanceHint')?.textContent||'':'';
+ $('apex9aRaceLaps').textContent=nativeDistanceHint;
+ $('apex9aRaceLaps').hidden=!nativeDistanceHint||kind==='practice';
  $('apex9aTeam').textContent=pick('teamSelect');
  $('apex9aTyres').innerHTML='';
  const types=availableTyres();
@@ -102,8 +105,8 @@ function build(){
  overlay.innerHTML=`<div class="apex9aPrepShell">
   <header class="apex9aPrepHead"><div><small>APEX FORMULA 26 · PREPARACIÓN</small><h2 id="apex9aPrepTitle">PREPARACIÓN DE CARRERA</h2></div><button id="apex9aClose" type="button" aria-label="Volver a la configuración">×</button></header>
   <div class="apex9aPrepColumns">
-   <div class="apex9aPrepCard"><h3>01 · CIRCUITO Y VEHÍCULO</h3><strong id="apex9aTrackName"></strong><div id="apex9aTrackDetails"></div><p>Escudería: <b id="apex9aTeam"></b></p><p>Distancia: <b id="apex9aDistance"></b></p></div>
-   <div class="apex9aPrepCard apex9aWeatherCard"><h3>02 · METEOROLOGÍA</h3><strong id="apex9aWeatherName"></strong><p>Estado previsto del asfalto: <b id="apex9aSurface"></b></p><p id="apex9aWeatherHonesty"></p><div class="apex9aInfo">La previsión no sustituye ni simula el motor meteorológico.</div></div>
+   <div class="apex9aPrepCard"><h3>01 · CIRCUITO Y VEHÍCULO</h3><strong id="apex9aTrackName"></strong><div id="apex9aTrackDetails"></div><p>Escudería: <b id="apex9aTeam"></b></p><div class="apex9aVehicleVisual"><img src="assets/9a/race-vehicle.webp" alt="Monoplaza de presentación APEX"></div><p>Distancia: <b id="apex9aDistance"></b></p><p id="apex9aRaceLaps" class="apex9aInfo"></p></div>
+   <div class="apex9aPrepCard apex9aWeatherCard"><h3>02 · METEOROLOGÍA</h3><strong id="apex9aWeatherName"></strong><div class="apex9aTrackStateArt"><img src="assets/9a/track-state-thumb.webp" alt="Fotografía ilustrativa de la superficie de asfalto"></div><p>Estado previsto del asfalto: <b id="apex9aSurface"></b></p><p id="apex9aWeatherHonesty"></p><div class="apex9aInfo">La previsión no sustituye ni simula el motor meteorológico.</div></div>
    <div class="apex9aPrepCard"><h3>03 · NEUMÁTICOS Y ESTRATEGIA</h3><div class="apex9aTyreGrid" id="apex9aTyres"></div><p id="apex9aTyreNotice"></p><div id="apex9aStrategyRow"><label for="apex9aStrategy">PLAN DE SALIDA</label><select id="apex9aStrategy"><option value="aggressive">Agresiva</option><option value="balanced">Equilibrada</option><option value="conservative">Conservadora</option></select></div><p id="apex9aStrategyNote" class="apex9aInfo">La selección guarda la preferencia; no automatiza las paradas. Los ajustes de boxes durante la carrera siguen en el panel real.</p><p class="apex9aAdvice" id="apex9aAdvice"></p></div>
   </div><footer class="apex9aPrepActions"><button id="apex9aCancel" type="button">VOLVER</button><button id="apex9aLaunch" type="button">INICIAR SESIÓN ›</button></footer></div>`;
  document.body.appendChild(overlay);
