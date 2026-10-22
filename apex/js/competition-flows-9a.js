@@ -38,15 +38,34 @@ function classification(saveData){
  return scores;
 }
 function seasonMarkup(){
- const native=saved(),round=seasonRound(),score=classification(native),history=Array.isArray(native?.seasonHistory9A)?native.seasonHistory9A:[];
- const rows=score.slice(0,10).map((d,i)=>'<tr><td>'+(i+1)+'</td><td>'+escapeHtml(d.id==='PLAYER'?'TÚ':d.id)+'</td><td>'+d.points+'</td></tr>').join('');
- const last=history[history.length-1];
- const lastText=last?'Último GP registrado: '+(last.source==='simulated'?'simulado':'disputado')+
-  ' · '+(last.classification||[]).length+' clasificados.':'El historial detallado comienza con las próximas carreras; se conservan los puntos anteriores.';
+ // Las tablas se calculan desde el guardado y el roster NATIVOS. Esta pantalla
+ // nunca concede puntos, cambia de ronda ni reescribe resultados.
+ const view=global.ApexChampionship9A?.read?.();
+ const native=saved(),round=view?.round??seasonRound();
+ const fallback=classification(native);
+ const drivers=view?.drivers||fallback.map(d=>({name:d.id==='PLAYER'?'TÚ':d.id,team:'',points:d.points}));
+ const teams=view?.teams||[];
+ const recent=view?.recent||[];
+ const driverRows=drivers.map((d,i)=>'<tr><td>'+(i+1)+'</td><td>'+escapeHtml(d.name)+
+  '</td><td>'+escapeHtml(d.team||'—')+'</td><td>'+Number(d.points||0)+'</td></tr>').join('');
+ const teamRows=teams.map((t,i)=>'<tr><td>'+(i+1)+'</td><td>'+escapeHtml(t.name)+
+  '</td><td>'+Number(t.points||0)+'</td></tr>').join('');
+ const historyRows=recent.map(h=>'<tr><td>'+escapeHtml(h.round?'R'+h.round:'—')+'</td><td>'+
+  escapeHtml(h.circuit)+'</td><td>'+escapeHtml(h.winner)+'</td><td>'+
+  escapeHtml(h.playerPosition?'P'+h.playerPosition:'—')+'</td><td>'+
+  escapeHtml(h.kind)+'</td></tr>').join('');
+ const constructors=teams.length?
+  '<div class="apex9aStandingsScroll"><table><thead><tr><th>POS.</th><th>ESCUDERÍA</th><th>PTS</th></tr></thead><tbody>'+teamRows+'</tbody></table></div>':
+  '<p class="apex9aFootnote">La clasificación de constructores requiere el roster nativo; no se calculan puntos inventados.</p>';
+ const history=recent.length?
+  '<div class="apex9aStandingsScroll"><table><thead><tr><th>GP</th><th>CIRCUITO</th><th>GANADOR</th><th>TÚ</th><th>TIPO</th></tr></thead><tbody>'+historyRows+'</tbody></table></div>':
+  '<p class="apex9aFootnote">Este guardado no contiene todavía resultados detallados de carreras anteriores. Se conservan sus puntos.</p>';
  return '<div class="apex9aChampInfo"><b>CAMPEONATO NATIVO · '+round+'/23 GP</b><p>'+
   escapeHtml($('seasonStatus')?.textContent||'')+'</p><div class="apex9aProgress"><i style="width:'+(100*round/23).toFixed(1)+'%"></i></div>'+
-  '<table><thead><tr><th>POS.</th><th>PILOTO</th><th>PTS</th></tr></thead><tbody>'+rows+'</tbody></table>'+
-  '<p class="apex9aFootnote">'+escapeHtml(lastText)+'</p></div>';
+  '<div class="apex9aStandingsScroll"><table><thead><tr><th>POS.</th><th>PILOTO</th><th>EQUIPO</th><th>PTS</th></tr></thead><tbody>'+driverRows+'</tbody></table></div>'+
+  '<details class="apex9aStandingsSection"><summary>CAMPEONATO DE CONSTRUCTORES</summary>'+constructors+'</details>'+
+  '<details class="apex9aStandingsSection"><summary>HISTORIAL DE GRANDES PREMIOS</summary>'+history+'</details>'+
+  '<p class="apex9aFootnote">Resultados y puntuaciones del sistema original de APEX; solo lectura.</p></div>';
 }
 function escapeHtml(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','"':'&quot;'}[c]));}
 function build(){
