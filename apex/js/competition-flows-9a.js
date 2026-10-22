@@ -71,7 +71,10 @@ function seasonMarkup(){
   (teams?'<h4>CONSTRUCTORES</h4><table><thead><tr><th>POS.</th><th>EQUIPO</th><th>PTS</th></tr></thead><tbody>'+teams+'</tbody></table>':'')+
   historyTable+'<p class="apex9aFootnote">'+escapeHtml(lastText)+'</p></div>';
 }
-function escapeHtml(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','"':'&quot;'}[c]));}
+function escapeHtml(v){
+ const chars={'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
+ return String(v??'').replace(/[&<>"']/g,c=>chars[c]);
+}
 function build(){
  panel=document.createElement('section');panel.id='apex9aCompetitionSetup';panel.hidden=true;
  panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');
