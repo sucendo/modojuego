@@ -149,7 +149,7 @@ function build(){
  $('apex9aCompStops').onchange=renderAdvice;
  $('apex9aCompLaunch').onclick=launch;
  panel.addEventListener('click',e=>{if(e.target===panel)close();});
- document.addEventListener('keydown',e=>{if(!panel.hidden&&e.key==='Escape'){e.stopPropagation();close();}},true);
+ document.addEventListener('keydown',e=>{if(!panel.hidden&&e.key==='Escape'){e.preventDefault();e.stopPropagation();close();}},true);
  const menu=$('menu');
  if(menu)new MutationObserver(()=>{if(menu.classList.contains('hidden'))close();}).observe(menu,{attributes:true,attributeFilter:['class']});
 }
@@ -236,7 +236,7 @@ function launch(){
  close();bypass=true;
  try{native.click()}finally{bypass=false}
 }
-function close(){const restore=panel&&!panel.hidden&&panel.contains(document.activeElement);if(panel)panel.hidden=true;mode=null;if(restore&&returnFocus?.isConnected)returnFocus.focus({preventScroll:true});}
+function close(){const restore=panel&&!panel.hidden&&panel.contains(document.activeElement);if(panel)panel.hidden=true;mode=null;if(restore){const target=returnFocus?.isConnected&&!returnFocus.disabled?returnFocus:$('apex9aBack');target?.focus({preventScroll:true});}}
 function init(){
  for(const [name,id] of [['grandprix','gpStart'],['season','nextSeason']]){
   const btn=$(id);if(!btn)continue;
