@@ -4,6 +4,8 @@ on:
     paths:
       - 'apex/js/competition-9a.js'
       - 'apex/tests/competition-9a-state.cjs'
+      - 'apex/tests/menu-9a-lifecycle.cjs'
+      - 'apex/js/menu-9a.js'
       - '.github/workflows/apex-competition-9a.yml'
   pull_request:
     paths:
@@ -22,3 +24,5 @@ jobs:
           node-version: '22'
       - name: Verify APEX weekend and championship invariants
         run: node apex/tests/competition-9a-state.cjs
+      - name: Verify welcome-menu lifecycle and race-results navigation
+        run: node apex/tests/menu-9a-lifecycle.cjs
