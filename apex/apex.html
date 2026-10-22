@@ -31,11 +31,14 @@ try{
   }
   await Promise.all(Array.from({length:Math.min(4,count)},()=>loadPartWorker()));
   document.open();
-  const assembled=parts.join("");
-  // 9A.1: núcleo aislado de competición; no altera los flujos anteriores.
-  const bridge='<script src="js/competition-9a.js"></scr'+'ipt>';
-  document.write(assembled.includes("</body>")?assembled.replace("</body>",bridge+"</body>"):assembled+bridge);
+  document.write(parts.join(""));
   document.close();
+  // Cargar el estado 9A después de reconstruir el documento completo.
+  // No insertar etiquetas de script en el HTML ensamblado durante document.write.
+  const moduleScript=document.createElement("script");
+  moduleScript.src="js/competition-9a.js";
+  moduleScript.defer=true;
+  (document.body||document.head).appendChild(moduleScript);
 }catch(err){
   document.getElementById("status").innerHTML="<div><strong>No se pudo cargar APEX.</strong><small>"+String(err.message||err)+"</small></div>";
   console.error(err);
