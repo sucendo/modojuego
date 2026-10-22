@@ -15,3 +15,22 @@
 #menu.apex9aModes .btn.primary{background:#c91d37}
 #apex9aBack{margin:0 0 15px;background:none;border:0;color:white;font-weight:900;cursor:pointer;text-align:left}
 @media(max-width:680px){#menu.apex9aModes #menuModeTabs{grid-template-columns:repeat(2,minmax(0,1fr))}#menu.apex9aModes #menuModeTabs .tab{min-height:76px}#apex9aLanding{padding:22px}}
+
+/* Escena aprobada que ya existe en APEX: se integra sin capturar pantallas enteras. */
+#apex9aLanding{
+  background:linear-gradient(90deg,#020710fa 0%,#061320d9 32%,#0813213f 76%),
+  linear-gradient(0deg,#02060df0,transparent 45%),
+  url('../assets/menu-9a-f1-night.jpg') 70% center / cover no-repeat;
+}
+#apex9aLanding::after{content:"";position:absolute;inset:0;border:1px solid #34465c;pointer-events:none;}
+#apex9aLanding>*{position:relative;z-index:1}
+#menu.apex9aModes #menuModeTabs .tab{
+ background-image:linear-gradient(0deg,#030914fb 0%,#07152397 63%,transparent),
+ url('../assets/menu-9a-f1-night.jpg');
+ background-size:cover;background-position:center;
+}
+#menu.apex9aModes #menuModeTabs .tab:nth-child(1){background-position:29% center}
+#menu.apex9aModes #menuModeTabs .tab:nth-child(2){background-position:59% center}
+#menu.apex9aModes #menuModeTabs .tab:nth-child(3){background-position:77% center}
+#menu.apex9aModes #menuModeTabs .tab:nth-child(4){background-position:94% center}
+#menu.apex9aModes #menuModeTabs .tab.active{background-color:#6e1922}
