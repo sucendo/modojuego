@@ -9,7 +9,7 @@ const WEATHER=[['auto','Automática · simulación estacional'],['CLEAR','Despej
 const LABELS={CLEAR:'Despejado',PARTLY:'Sol y nubes',OVERCAST:'Nublado',DRIZZLE:'Llovizna',RAIN:'Lluvia',STORM:'Tormenta',VARIABLE:'Variable'};
 const TYRES=[['SOFT','Blando'],['MEDIUM','Medio'],['HARD','Duro'],['INTERMEDIATE','Intermedio'],['WET','Lluvia extrema']];
 const STAGES=['FP1','FP2','FP3','CLASIFICACIÓN','CARRERA'];
-let panel=null,mode=null,bypass=false,seasonObserver=null;
+let panel=null,mode=null,bypass=false,seasonObserver=null,returnFocus=null;
 let musicChoice=null;
 function saved(){
  try{const v=JSON.parse(global.localStorage.getItem(NATIVE_SAVE));return v&&v.schema===4?v:null}catch(_){return null}
@@ -156,7 +156,7 @@ function build(){
 function open(which,viewOnly=false){
  if(which!=='grandprix'&&which!=='season')return;
  if(!panel)build();
- mode=which;panel.hidden=false;
+ returnFocus=document.activeElement;mode=which;panel.hidden=false;
  const state=global.ApexCompetition9A?.get?.(),p=plan();
  const nativeWeather=which==='grandprix'?$('gpWeather')?.value:null;
  $('apex9aCompWeather').value=state?.mode===(which==='grandprix'?'grand-prix':'season')&&state.weather?
@@ -236,7 +236,7 @@ function launch(){
  close();bypass=true;
  try{native.click()}finally{bypass=false}
 }
-function close(){if(panel)panel.hidden=true;mode=null;}
+function close(){const restore=panel&&!panel.hidden&&panel.contains(document.activeElement);if(panel)panel.hidden=true;mode=null;if(restore&&returnFocus?.isConnected)returnFocus.focus({preventScroll:true});}
 function init(){
  for(const [name,id] of [['grandprix','gpStart'],['season','nextSeason']]){
   const btn=$(id);if(!btn)continue;
