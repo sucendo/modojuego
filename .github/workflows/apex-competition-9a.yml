@@ -1,0 +1,62 @@
+name: APEX 9A competition state
+on:
+  push:
+    paths:
+      - 'apex/js/competition-9a.js'
+      - 'apex/tests/competition-9a-state.cjs'
+      - 'apex/tests/menu-9a-lifecycle.cjs'
+      - 'apex/tests/menu-9a-assets.cjs'
+      - 'apex/assets/9a/**'
+      - 'apex/js/menu-9a.js'
+      - 'apex/js/climate-9a.js'
+      - 'apex/js/competition-flows-9a.js'
+      - 'apex/js/menu-music-9a.js'
+      - 'apex/tests/climate-9a-audit.cjs'
+      - 'apex/tests/competition-flows-9a-browser.cjs'
+      - 'apex/tests/season-history-9a-audit.cjs'
+      - 'apex/parts/part-023.txt'
+      - 'apex/parts/part-027.txt'
+      - '.github/workflows/apex-competition-9a.yml'
+  pull_request:
+    paths:
+      - 'apex/js/competition-9a.js'
+      - 'apex/js/menu-9a.js'
+      - 'apex/js/climate-9a.js'
+      - 'apex/js/competition-flows-9a.js'
+      - 'apex/js/menu-music-9a.js'
+      - 'apex/tests/climate-9a-audit.cjs'
+      - 'apex/tests/competition-flows-9a-browser.cjs'
+      - 'apex/tests/season-history-9a-audit.cjs'
+      - 'apex/parts/part-023.txt'
+      - 'apex/parts/part-027.txt'
+      - 'apex/tests/competition-9a-state.cjs'
+      - 'apex/tests/menu-9a-lifecycle.cjs'
+      - '.github/workflows/apex-competition-9a.yml'
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+jobs:
+  state-and-championship:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify APEX weekend and championship invariants
+        run: node apex/tests/competition-9a-state.cjs
+      - name: Verify welcome-menu lifecycle and race-results navigation
+        run: node apex/tests/menu-9a-lifecycle.cjs
+      - name: Verify approved artwork and offline WebP assets
+        run: node apex/tests/menu-9a-assets.cjs
+      - name: Verify native season history and legacy save compatibility
+        run: node apex/tests/season-history-9a-audit.cjs
+      - name: Verify seasonal weather and new module syntax
+        run: |
+          node apex/tests/climate-9a-audit.cjs
+          node --check apex/js/competition-flows-9a.js
+          node --check apex/js/menu-music-9a.js
+          node --check apex/js/climate-9a.js

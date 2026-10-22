@@ -33,6 +33,44 @@ try{
   document.open();
   document.write(parts.join(""));
   document.close();
+  // Cargar el estado 9A después de reconstruir el documento completo.
+  // No insertar etiquetas de script en el HTML ensamblado durante document.write.
+  const moduleScript=document.createElement("script");
+  moduleScript.src="js/competition-9a.js";
+  moduleScript.async=false; // Mantener orden de módulos 9A tras document.write.
+  (document.body||document.head).appendChild(moduleScript);
+  const menuStyles=document.createElement("link");
+  menuStyles.rel="stylesheet";
+  menuStyles.href="css/menu-9a.css";
+  (document.head||document.body).appendChild(menuStyles);
+  const menuScript=document.createElement("script");
+  menuScript.src="js/menu-9a.js";
+  menuScript.async=false;
+  (document.body||document.head).appendChild(menuScript);
+  const preparationStyles=document.createElement("link");
+  preparationStyles.rel="stylesheet";
+  preparationStyles.href="css/preparation-9a.css";
+  (document.head||document.body).appendChild(preparationStyles);
+  const preparationScript=document.createElement("script");
+  preparationScript.src="js/preparation-9a.js";
+  preparationScript.async=false;
+  (document.body||document.head).appendChild(preparationScript);
+  const climateScript=document.createElement("script");
+  climateScript.src="js/climate-9a.js";
+  climateScript.async=false;
+  (document.body||document.head).appendChild(climateScript);
+  const competitionStyles=document.createElement("link");
+  competitionStyles.rel="stylesheet";
+  competitionStyles.href="css/competition-flows-9a.css";
+  (document.head||document.body).appendChild(competitionStyles);
+  const competitionScript=document.createElement("script");
+  competitionScript.src="js/competition-flows-9a.js";
+  competitionScript.async=false;
+  (document.body||document.head).appendChild(competitionScript);
+  const musicScript=document.createElement("script");
+  musicScript.src="js/menu-music-9a.js";
+  musicScript.async=false;
+  (document.body||document.head).appendChild(musicScript);
 }catch(err){
   document.getElementById("status").innerHTML="<div><strong>No se pudo cargar APEX.</strong><small>"+String(err.message||err)+"</small></div>";
   console.error(err);

@@ -8,6 +8,10 @@ on:
     paths: ['apex/**', '.github/workflows/apex-audit.yml']
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 permissions:
   contents: read
 
@@ -40,6 +44,12 @@ jobs:
           node apex/tests/terrain-selection-audit.cjs > /tmp/apex-results/terrain-selection.json
           node apex/tests/auto-boundary-audit.cjs > /tmp/apex-results/auto-boundary.txt
           python3 apex/tests/circuit-assets-audit.py --json > /tmp/apex-results/assets.json
+          node --check apex/js/preparation-9a.js
+          node apex/tests/climate-9a-audit.cjs
+          node --check apex/js/competition-flows-9a.js
+          node --check apex/js/menu-music-9a.js
+          node --check apex/tests/competition-flows-9a-browser.cjs
+          node --check apex/tests/preparation-9a-browser.cjs
           node --check apex/tests/browser-audit.cjs
           node --check apex/tests/browser-hook.js
       - uses: actions/upload-artifact@v4
@@ -84,6 +94,8 @@ jobs:
             if curl --fail --silent http://127.0.0.1:8765/apex/apex.html > /dev/null; then break; fi
             sleep 1
           done
+          node apex/tests/preparation-9a-browser.cjs 2>&1 | tee /tmp/apex-results/preparation-9a.jsonl
+          node apex/tests/competition-flows-9a-browser.cjs 2>&1 | tee /tmp/apex-results/competition-flows-9a.jsonl
           APEX_PIT_RESULTS=/tmp/apex-results/pits node apex/tests/pit-tyres-browser.cjs 2>&1 | tee /tmp/apex-results/pit-browser.jsonl
           APEX_RACE_RESULTS=/tmp/apex-results/races node apex/tests/race-distance-browser.cjs 2>&1 | tee /tmp/apex-results/race-browser.jsonl
           node apex/tests/rival-pit-browser.cjs 2>&1 | tee /tmp/apex-results/rival-pit-browser.jsonl

@@ -1,0 +1,27 @@
+/* APEX 9A.5: the seasonal estimator is deterministic and never presents live data. */
+'use strict';
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const vm=require('node:vm');
+const path=require('node:path');
+const source=fs.readFileSync(path.join(__dirname,'..','js','climate-9a.js'),'utf8');
+const context={};
+context.window=context;
+vm.runInNewContext(source,context);
+const api=context.ApexClimate9A;
+const sample={dir:'melbourne',name:'Australian Grand Prix',r:1};
+const a=api.forecast(sample,0),b=api.forecast(sample,0);
+assert.equal(a.preset,b.preset);
+assert.equal(a.kind,'SIMULATED_SEASONAL_ESTIMATE');
+assert.match(a.disclaimer,/simulada/i);
+assert.ok(api.validPresets.includes(a.preset));
+assert.equal(a.latitudeEstimated,-38);
+assert.equal(api.resolvePreset(sample,0,'RAIN'),'RAIN');
+assert.equal(api.resolvePreset(sample,0,'auto'),a.preset);
+assert.equal(api.resolvePreset(sample,0,'NOT_REAL'),'VARIABLE');
+const unknown=api.forecast({name:'Circuito personalizado'},12);
+assert.equal(unknown.latitudeEstimated,null);
+assert.ok(api.validPresets.includes(unknown.preset));
+context.ApexCompetition9A={get:()=>({weather:'DRIZZLE'})};
+assert.equal(api.resolvePreset(sample,0),'DRIZZLE');
+console.log('APEX 9A seasonal weather: PASS');
