@@ -32,6 +32,13 @@ assert.match(context.result,/L&#39;Algarve &lt;svg onload=alert\(1\)&gt;/);
 assert.doesNotMatch(context.result,/<svg onload/);
 assert.equal(save.round,3,'Rendering must not change native rounds');
 assert.equal(save.points.PLAYER,43,'Rendering must not grant points');
+
+native.drivers=Array.from({length:22},(_,i)=>({driverId:'D'+i,name:'Piloto '+(i+1),points:44-i}));
+vm.runInNewContext('result=seasonMarkup()',context);
+const fullDrivers=context.result.match(/class="apex9aDriversScroll">([\s\S]*?)<\/div>/)?.[1]||'';
+assert.equal((fullDrivers.match(/<tbody><tr>/g)||[]).length,1);
+assert.equal((fullDrivers.match(/<tr>/g)||[]).length,23,'All 22 drivers, plus header, must be rendered');
+assert.match(fullDrivers,/Piloto 22/,'The final championship positions must not be hidden by a 12-driver limit');
 native.history=[];
 vm.runInNewContext('result=seasonMarkup()',context);
 assert.match(context.result,/no contiene carreras con historial detallado/);
