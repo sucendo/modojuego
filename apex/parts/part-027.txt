@@ -633,6 +633,23 @@ function renderSchedule(){
 
 
 
+// 9A.4 · Adaptador de LECTURA: clasificación y calendario auténticos del campeonato.
+// No permite puntuar, guardar ni avanzar rondas desde un menú externo.
+Object.defineProperty(window,'ApexNativeSeason9A',{value:Object.freeze({
+ snapshot:()=>{
+  const next=save.round<F1_SEASON_COUNT?calendar[save.round]:null;
+  return {
+   schema:1,round:save.round,finished:save.round>=F1_SEASON_COUNT,
+   nextCircuit:next?{dir:next.dir,name:next.name,country:next.country,r:next.r}:null,
+   seasonTeam:save.seasonTeam,
+   drivers:seasonDriverStandings().map(r=>({driverId:r.uid,name:r.name,teamId:r.team,points:r.p})),
+   constructors:seasonConstructorStandings().map(r=>({teamId:r.team,name:r.name,points:r.points})),
+   history:JSON.parse(JSON.stringify(Array.isArray(save.seasonHistory9A)?save.seasonHistory9A:[])),
+   weekend:save.seasonWeekend?{round:save.seasonWeekend.round,sessionIndex:save.seasonWeekend.sessionIndex}:null
+  };
+ }
+}),configurable:false,writable:false});
+
 // v5.230.62.8.6.7 · Auditor universal BASE JSON + BASE SVG. No carga circuitos ni altera trackData.
 const APEX_CIRCUIT_AUDIT_SCHEMA='APEX_CIRCUIT_AUDIT_V1';
 let apexCircuitAuditLast=null;
