@@ -138,7 +138,7 @@ function close(){const restore=overlay&&!overlay.hidden&&overlay.contains(docume
 function open(which){
  if(!MODES[which])return;
  if(!overlay)build();
- returnFocus=document.activeElement;kind=which;overlay.hidden=false;
+ returnFocus=$(MODES[which].launch)||document.activeElement;kind=which;overlay.hidden=false;
  const old=window.ApexCompetition9A?.get?.();
  const preferred=old?.mode===which&&old.weather==='auto'?'auto':$(MODES[kind].weather)?.value||'VARIABLE';
  if($('apex9aPrepWeather'))$('apex9aPrepWeather').value=preferred;
