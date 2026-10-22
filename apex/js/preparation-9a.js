@@ -59,9 +59,13 @@ function refresh(){
   button.dataset.compound=opt.value;button.setAttribute('aria-pressed',String(key===current));
   const visual=document.createElement('span');visual.className='apex9aTyreVisual';visual.style.setProperty('--apex-compound-color',meta[1]);
   // Imagen transparente auténtica, cuando está instalada, con fallback CSS sin recursos perdidos.
-  const art=document.createElement('img');art.alt='';art.loading='lazy';
-  art.src='assets/9a/tyre-'+key.toLowerCase()+'.webp';
-  art.onerror=()=>art.remove();visual.appendChild(art);
+  // Carga sólo imágenes confirmadas por el manifiesto de recursos.
+  // Mientras no estén en GitHub, el anillo CSS evita peticiones 404.
+  const src=window.APEX9A_TYRE_ART?.[key];
+  if(typeof src==='string'&&src){
+    const art=document.createElement('img');art.alt='';art.loading='lazy';
+    art.src=src;art.onerror=()=>art.remove();visual.appendChild(art);
+  }
   const label=document.createElement('b');label.textContent=meta[0];
   button.append(visual,label);
   button.addEventListener('click',()=>{
