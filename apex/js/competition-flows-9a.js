@@ -45,8 +45,8 @@ function seasonMarkup(){
  const score=official?.drivers?.length?official.drivers:
   classification(native).map(d=>({driverId:d.id,name:d.id==='PLAYER'?'TÚ':d.id,points:d.points}));
  const history=Array.isArray(official?.history)?official.history:Array.isArray(native?.seasonHistory9A)?native.seasonHistory9A:[];
- const rows=score.slice(0,12).map((d,i)=>'<tr><td>'+(i+1)+'</td><td>'+escapeHtml(d.name||d.driverId)+'</td><td>'+d.points+'</td></tr>').join('');
- const teams=(official?.constructors||[]).slice(0,12).map((d,i)=>'<tr><td>'+(i+1)+'</td><td>'+escapeHtml(d.name||d.teamId)+'</td><td>'+d.points+'</td></tr>').join('');
+ const rows=score.map((d,i)=>'<tr><td>'+(i+1)+'</td><td>'+escapeHtml(d.name||d.driverId)+'</td><td>'+d.points+'</td></tr>').join('');
+ const teams=(official?.constructors||[]).map((d,i)=>'<tr><td>'+(i+1)+'</td><td>'+escapeHtml(d.name||d.teamId)+'</td><td>'+d.points+'</td></tr>').join('');
  const recent=history.filter(x=>x&&typeof x==='object').slice(-6).reverse();
  const historyRows=recent.map(event=>{
   const cls=Array.isArray(event.classification)?event.classification:[];
@@ -67,7 +67,7 @@ function seasonMarkup(){
   ' · '+(last.classification||[]).length+' clasificados.':'El historial detallado comienza con las próximas carreras; se conservan los puntos anteriores.';
  return '<div class="apex9aChampInfo"><b>CAMPEONATO NATIVO · '+round+'/23 GP</b><p>'+
   escapeHtml($('seasonStatus')?.textContent||'')+'</p><div class="apex9aProgress"><i style="width:'+(100*round/23).toFixed(1)+'%"></i></div>'+
-  '<h4>PILOTOS</h4><table><thead><tr><th>POS.</th><th>PILOTO</th><th>PTS</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+  '<h4>PILOTOS</h4><div class="apex9aDriversScroll"><table><thead><tr><th>POS.</th><th>PILOTO</th><th>PTS</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
   (teams?'<h4>CONSTRUCTORES</h4><table><thead><tr><th>POS.</th><th>EQUIPO</th><th>PTS</th></tr></thead><tbody>'+teams+'</tbody></table>':'')+
   historyTable+'<p class="apex9aFootnote">'+escapeHtml(lastText)+'</p></div>';
 }
