@@ -25,3 +25,19 @@
 #apex9aSeasonStandings{display:block;margin-bottom:12px}
 @media(max-width:1020px){.apex9aCompetitionShell .apex9aPrepColumns{grid-template-columns:repeat(2,minmax(0,1fr))}.apex9aCompetitionShell .apex9aPrepCard:last-child{grid-column:1/-1}}
 @media(max-width:670px){.apex9aCompetitionShell .apex9aPrepColumns{grid-template-columns:1fr}.apex9aCompetitionShell .apex9aPrepCard:last-child{grid-column:auto}.apex9aCompetitionShell .apex9aPrepHead h2{font-size:21px}.apex9aStages span{padding:5px 1px;font-size:8px}.apex9aCompetitionShell .apex9aPrepShell{max-height:none}}
+
+
+/* 9A.4: historial de GP desplegable, legible en escritorio y móvil. */
+.apex9aChampInfo .apex9aSeasonHistory{margin-top:12px;border-top:1px solid #38536f}
+.apex9aChampInfo .apex9aSeasonHistory summary{padding:10px 2px;cursor:pointer;font-size:11px;font-weight:800;letter-spacing:.04em}
+.apex9aChampInfo .apex9aSeasonHistory summary:focus-visible{outline:2px solid #ef344f;outline-offset:2px}
+.apex9aChampInfo .apex9aHistoryScroll{max-height:220px;overflow:auto;scrollbar-width:thin}
+.apex9aChampInfo .apex9aHistoryScroll table{min-width:360px;margin-top:0}
+.apex9aChampInfo .apex9aHistoryScroll thead{position:sticky;top:0;background:#0a1624}
+
+
+/* Sin truncar los 22 pilotos del campeonato, mantener visible el resto del menú. */
+.apex9aChampInfo .apex9aDriversScroll{max-height:280px;overflow:auto;scrollbar-width:thin;overscroll-behavior:contain}
+.apex9aChampInfo .apex9aDriversScroll table{margin-top:0;min-width:245px}
+.apex9aChampInfo .apex9aDriversScroll thead{position:sticky;top:0;background:#0a1624}
+@media(max-width:670px){.apex9aChampInfo .apex9aDriversScroll{max-height:205px}}

@@ -45,18 +45,36 @@ function seasonMarkup(){
  const score=official?.drivers?.length?official.drivers:
   classification(native).map(d=>({driverId:d.id,name:d.id==='PLAYER'?'TÚ':d.id,points:d.points}));
  const history=Array.isArray(official?.history)?official.history:Array.isArray(native?.seasonHistory9A)?native.seasonHistory9A:[];
- const rows=score.slice(0,12).map((d,i)=>'<tr><td>'+(i+1)+'</td><td>'+escapeHtml(d.name||d.driverId)+'</td><td>'+d.points+'</td></tr>').join('');
- const teams=(official?.constructors||[]).slice(0,12).map((d,i)=>'<tr><td>'+(i+1)+'</td><td>'+escapeHtml(d.name||d.teamId)+'</td><td>'+d.points+'</td></tr>').join('');
+ const rows=score.map((d,i)=>'<tr><td>'+(i+1)+'</td><td>'+escapeHtml(d.name||d.driverId)+'</td><td>'+d.points+'</td></tr>').join('');
+ const teams=(official?.constructors||[]).map((d,i)=>'<tr><td>'+(i+1)+'</td><td>'+escapeHtml(d.name||d.teamId)+'</td><td>'+d.points+'</td></tr>').join('');
+ const recent=history.filter(x=>x&&typeof x==='object').slice(-6).reverse();
+ const historyRows=recent.map(event=>{
+  const cls=Array.isArray(event.classification)?event.classification:[];
+  const winner=cls[0],player=cls.findIndex(x=>x?.driverId==='PLAYER');
+  const roundNo=Number.isInteger(event.round)&&event.round>=0?'R'+(event.round+1):'—';
+  const source=event.source==='simulated'?'Simulado':'Disputado';
+  return '<tr><td>'+escapeHtml(roundNo)+'</td><td>'+escapeHtml(event.circuitId||'—')+
+   '</td><td>'+escapeHtml(winner?.name||winner?.driverId||'—')+'</td><td>'+
+   escapeHtml(player<0?'—':'P'+(player+1))+'</td><td>'+escapeHtml(source)+'</td></tr>';
+ }).join('');
+ const historyTable=historyRows?
+  '<details class="apex9aSeasonHistory"><summary>HISTORIAL DE GRANDES PREMIOS</summary>'+
+  '<div class="apex9aHistoryScroll"><table><thead><tr><th>GP</th><th>CIRCUITO</th><th>GANADOR</th><th>TÚ</th><th>TIPO</th></tr></thead><tbody>'+
+  historyRows+'</tbody></table></div></details>':
+  '<p class="apex9aFootnote">Este guardado no contiene carreras con historial detallado; conserva los puntos acumulados.</p>';
  const last=history[history.length-1];
  const lastText=last?'Último GP registrado: '+(last.source==='simulated'?'simulado':'disputado')+
   ' · '+(last.classification||[]).length+' clasificados.':'El historial detallado comienza con las próximas carreras; se conservan los puntos anteriores.';
  return '<div class="apex9aChampInfo"><b>CAMPEONATO NATIVO · '+round+'/23 GP</b><p>'+
   escapeHtml($('seasonStatus')?.textContent||'')+'</p><div class="apex9aProgress"><i style="width:'+(100*round/23).toFixed(1)+'%"></i></div>'+
-  '<h4>PILOTOS</h4><table><thead><tr><th>POS.</th><th>PILOTO</th><th>PTS</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+  '<h4>PILOTOS</h4><div class="apex9aDriversScroll"><table><thead><tr><th>POS.</th><th>PILOTO</th><th>PTS</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
   (teams?'<h4>CONSTRUCTORES</h4><table><thead><tr><th>POS.</th><th>EQUIPO</th><th>PTS</th></tr></thead><tbody>'+teams+'</tbody></table>':'')+
-  '<p class="apex9aFootnote">'+escapeHtml(lastText)+'</p></div>';
+  historyTable+'<p class="apex9aFootnote">'+escapeHtml(lastText)+'</p></div>';
 }
-function escapeHtml(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','"':'&quot;'}[c]));}
+function escapeHtml(v){
+ const chars={'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
+ return String(v??'').replace(/[&<>"']/g,c=>chars[c]);
+}
 function build(){
  panel=document.createElement('section');panel.id='apex9aCompetitionSetup';panel.hidden=true;
  panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');
