@@ -12,7 +12,7 @@ assert.ok(start>=0&&end>start,'Native season markup must be extractable for safe
 const native={
  schema:1,round:3,drivers:[{driverId:'PLAYER',name:'TÚ',points:43}],
  constructors:[{teamId:'a',name:'Escudería A',points:58}],
- history:[{round:1,circuitId:'<svg onload=alert(1)>',source:'simulated',classification:[
+ history:[{round:1,circuitId:"L'Algarve <svg onload=alert(1)>",source:'simulated',classification:[
    {driverId:'R1',name:'Rival uno'},{driverId:'PLAYER',name:'TÚ'}
  ]}]
 };
@@ -28,7 +28,7 @@ assert.match(context.result,/HISTORIAL DE GRANDES PREMIOS/);
 assert.match(context.result,/R2/);
 assert.match(context.result,/P2/);
 assert.match(context.result,/Simulado/);
-assert.match(context.result,/&lt;svg onload=alert\(1\)&gt;/);
+assert.match(context.result,/L&#39;Algarve &lt;svg onload=alert\(1\)&gt;/);
 assert.doesNotMatch(context.result,/<svg onload/);
 assert.equal(save.round,3,'Rendering must not change native rounds');
 assert.equal(save.points.PLAYER,43,'Rendering must not grant points');
