@@ -14,9 +14,12 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||(process.env.CODEX_
   await page.goto('http://127.0.0.1:8765/apex/apex.html',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>window.ApexPreparation9A&&document.getElementById('apex9aRace')&&
     document.getElementById('menuTyreCompound')?.options.length>0,null,{timeout:90000});
+  await page.screenshot({path:'/tmp/apex-results/9a-'+(mobile?'mobile':'desktop')+'-home.png'});
   await page.locator('#apex9aRace').click();
+  await page.screenshot({path:'/tmp/apex-results/9a-'+(mobile?'mobile':'desktop')+'-modes.png'});
   await page.locator('#start').click();
   await page.waitForFunction(()=>ApexPreparation9A.isOpen());
+  await page.screenshot({path:'/tmp/apex-results/9a-'+(mobile?'mobile':'desktop')+'-preparation.png'});
   assert.match(await page.locator('#apex9aPrepTitle').textContent(),/CARRERA/);
   const tyres=page.locator('#apex9aTyres .apex9aTyre');
   assert.ok(await tyres.count()>=3,'Real compound choices must be available');
