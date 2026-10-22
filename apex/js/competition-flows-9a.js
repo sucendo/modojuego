@@ -171,7 +171,7 @@ function open(which,viewOnly=false){
  $('apex9aCompTeam').textContent=$('apex9aCompTeamSelect')?.selectedOptions?.[0]?.textContent?.trim()||selected('teamSelect');
  $('apex9aCompDistance').textContent=selected(which==='season'?'seasonDistance':'gpLaps');
  const launch=$('apex9aCompLaunch');
- launch.disabled=!!viewOnly||(which==='season'&&seasonRound()>=23);
+ launch.disabled=!!viewOnly||(which==='season'&&seasonRound()>=23)||!$(which==='grandprix'?'gpStart':'nextSeason')||!!$(which==='grandprix'?'gpStart':'nextSeason').disabled;
  launch.textContent=viewOnly?'VER CLASIFICACIÓN':'ABRIR FIN DE SEMANA ›';
  drawTyres();renderWeather();renderAdvice();
  $('apex9aCompClose').focus();
