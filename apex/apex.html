@@ -89,6 +89,14 @@ try{
   briefingScript.src="js/briefing-prototype-9a.js";
   briefingScript.async=false;
   (document.body||document.head).appendChild(briefingScript);
+  // 9B: módulos de preparación por sesión, una vez instalados los menús 9A.9.
+  for(const src of ["js/session-plans-9b.js","js/session-preparation-9b.js"]){
+    const script=document.createElement("script");script.src=src;script.async=false;
+    (document.body||document.head).appendChild(script);
+  }
+  const sessionStyle=document.createElement("link");
+  sessionStyle.rel="stylesheet";sessionStyle.href="css/session-preparation-9b.css";
+  (document.head||document.body).appendChild(sessionStyle);
 }catch(err){
   document.getElementById("status").innerHTML="<div><strong>No se pudo cargar APEX.</strong><small>"+String(err.message||err)+"</small></div>";
   console.error(err);
