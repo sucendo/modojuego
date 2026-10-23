@@ -3,7 +3,7 @@
 window.__apexRaceAudit={
  async load(dir,p=25){apexSetDriveProfile('assisted',false);apexRaceSelectPercentage(p);await __apexPitAudit.load(dir,'CLEAR',false,true);countdown=0;mode='race';paused=false;apexArmRaceGridTiming();apexReleaseInputs();gyro.enabled=false;setAutoDriveMode(1,false);return this.status()},
  select(p){apexRaceSelectPercentage(p)},
- status(){return {version:APP_VERSION,flagText:$('raceAlert').textContent,driving:demoMode?'AUTO':assistMode?'ASSISTED':'MANUAL',driveProfile:apexDriveProfile().id,playerState:{s:player.s,total:player.total,speed:player.speed,lat:player.lat,hp:player.hp,phase:player.autoPhase,recovery:player.autoRecovery?{mode:player.autoRecovery.mode,attempts:player.autoRecovery.attempts}:null},mode,time:raceT,percentage:apexRaceSession?.config.percentage,laps:player?.lap,totalLaps:player?.laps,state:apexRaceSession?.status,finished:apexRaceSession?.finishedCount,rivals:rivals.length,faults:player.physicsFaults||0,config:trackData.raceConfig,rows:apexRaceSession?apexRaceResultRows():[],finite:physicsFinite()};},
+ status(){return {version:APP_VERSION,flagText:$('raceAlert').textContent,driving:demoMode?'AUTO':assistMode?'ASSISTED':'MANUAL',driveProfile:apexDriveProfile().id,playerState:{s:player.s,total:player.total,speed:player.speed,lat:player.lat,hp:player.hp,phase:player.autoPhase,recovery:player.autoRecovery?{mode:player.autoRecovery.mode,stage:player.autoRecovery.emergencyStage||null,attempts:player.autoRecovery.attempts,emergency:!!player.autoRecovery.emergency}:null},mode,time:raceT,percentage:apexRaceSession?.config.percentage,laps:player?.lap,totalLaps:player?.laps,state:apexRaceSession?.status,finished:apexRaceSession?.finishedCount,rivals:rivals.length,faults:player.physicsFaults||0,config:trackData.raceConfig,rows:apexRaceSession?apexRaceResultRows():[],finite:physicsFinite()};},
  boundaryFixture(){
   const L=trackData.km*1000,g=apexRaceTimingGeometry(trackData.spec,player.laps),target=player.laps;raceT=target*70;lapStart=raceT-60;best=Infinity;sessionLapLog=[];
   const all=[player,...rivals];for(let i=0;i<all.length;i++){
@@ -29,7 +29,7 @@ window.__apexRaceAudit={
   // observable native FINISHED state instead, bounded by race distance.
   await this.load(dir,p);
   const start=this.status(),t0=performance.now(),budget=Math.max(seconds,
-   Math.ceil(start.totalLaps*360));let steps=0,observations=[],lastCheckpoint=0;
+   Math.ceil(start.totalLaps*360));let steps=0,observations=[],lastProgressAt=0,previousTotal=start.playerState.total;
   for(;steps<budget*100&&mode==='race';steps++){
    update(.01,steps%5===4,.05);
    if(!physicsFinite()||(player.physicsFaults||0))throw Error('Full GP physical state invalid');
@@ -39,7 +39,13 @@ window.__apexRaceAudit={
      finished:state.finished,lap:state.laps,progress:Math.round(state.playerState.total),
      speed:Math.round(state.playerState.speed*10)/10,
      recovery:state.playerState.recovery?.mode||null});
-    lastCheckpoint=steps;
+    if(state.playerState.total>previousTotal+3){
+      previousTotal=state.playerState.total;lastProgressAt=state.time;
+    }
+    if(state.state==='CHEQUERED'&&state.time-lastProgressAt>220){
+      throw Error('Pilot AUTO stalled after chequered flag: '+JSON.stringify(
+        {lastProgressAt,now:state,history:observations.slice(-8)}));
+    }
    }
    if(steps%500===499)await new Promise(r=>setTimeout(r,0));
   }
