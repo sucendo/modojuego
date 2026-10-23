@@ -17,7 +17,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||(process.env.CODEX_
  await page.waitForFunction(()=>!!window.ApexSessionPlans9B&&document.getElementById('gpTrack')?.options.length>0,null,{timeout:90000});
  await page.locator('#apex9aRace').click();
  const firstRound=await page.evaluate(()=>window.ApexNativeSeason9A.snapshot());
- const baseline=JSON.stringify(firstRound.drivers.map(d=>d.points));
+ const baseline=await page.evaluate(()=>JSON.stringify(JSON.parse(localStorage.getItem('apex26canvas-v2')||'{}').points||{}));
  await enter();
  let w=await page.evaluate(()=>window.ApexNativeWeekend9B.snapshot());
  assert.equal(w.mode,'season');assert.equal(w.round,firstRound.round);
@@ -31,7 +31,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||(process.env.CODEX_
  });
  assert.equal(first.plan.compound,'SOFT');
  await page.locator('#apex9bCancel').click();
- assert.equal(JSON.stringify((await page.evaluate(()=>window.ApexNativeSeason9A.snapshot())).drivers.map(d=>d.points)),baseline);
+ assert.equal(await page.evaluate(()=>JSON.stringify(JSON.parse(localStorage.getItem('apex26canvas-v2')||'{}').points||{})),baseline);
  await page.locator('#weekendMenu').click();
  await enter();
  assert.equal((await page.evaluate(()=>window.ApexNativeWeekend9B.snapshot())).spec.dir,circuit);
@@ -48,7 +48,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||(process.env.CODEX_
  await page.locator('#apex9bCancel').click();
  const resumed=await page.evaluate(()=>window.ApexNativeSeason9A.snapshot());
  assert.equal(resumed.round,firstRound.round);
- assert.equal(JSON.stringify(resumed.drivers.map(d=>d.points)),baseline,'No points for menus or reload');
+ assert.equal(await page.evaluate(()=>JSON.stringify(JSON.parse(localStorage.getItem('apex26canvas-v2')||'{}').points||{})),baseline,'No points for menus or reload');
  const team=resumed.seasonTeam;
  await page.getByRole('button',{name:'SALTAR GP COMPLETO'}).click();
  const after=await page.evaluate(()=>window.ApexNativeSeason9A.snapshot());
