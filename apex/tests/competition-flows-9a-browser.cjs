@@ -20,8 +20,8 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
    !!window.ApexMenuMusic9A&&document.getElementById('gpTrack')?.options.length>0&&
    document.getElementById('menuTyreCompound')?.options.length>0,null,{timeout:90000});
   await page.locator('#apex9aRace').click();
-  await page.locator('#menuModeTabs [data-t="grandprix"]').click();
-  await page.locator('#gpStart').click();
+  await page.locator('#apex9aModesScreen [data-apex-mode="grandprix"]').click();
+  await page.locator('#apexProtoNext').click();
   assert.equal(await page.locator('#apex9aCompetitionSetup').isVisible(),true);
   assert.match(await page.locator('#apex9aCompTitle').textContent(),/GRAN PREMIO/);
   assert.equal(await page.locator('#apex9aCompTyres button').count(),5);
@@ -39,8 +39,8 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
   await page.waitForFunction(()=>!document.getElementById('weekendPanel').classList.contains('hidden'),null,{timeout:15000});
   assert.equal(await page.locator('#weekendStages .sessionStage').count(),5);
   await page.locator('#weekendMenu').click();
-  await page.locator('#menuModeTabs [data-t="season"]').click();
-  await page.locator('#nextSeason').click();
+  await page.locator('#apex9aModesScreen [data-apex-mode="season"]').click();
+  await page.locator('#apexProtoNext').click();
   assert.match(await page.locator('#apex9aCompTitle').textContent(),/TEMPORADA/);
   assert.match(await page.locator('#apex9aCompProgress').textContent(),/CAMPEONATO NATIVO/);
   assert.equal(await page.locator('#apex9aCompCircuitPickerRow').getAttribute('hidden'),'',
@@ -54,12 +54,12 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
    'Opening setup must never advance the native championship');
   await page.locator('#apex9aCompCancel').click();
   assert.equal(await page.locator('#apex9aCompetitionSetup').isVisible(),false);
-  await page.locator('#nextSeason').click();
+  await page.locator('#apexProtoNext').click();
   await page.locator('#apex9aCompLaunch').click();
   await page.waitForFunction(()=>!document.getElementById('weekendPanel').classList.contains('hidden'),null,{timeout:15000});
   assert.match(await page.locator('#weekendSubtitle').textContent(),/TEMPORADA/);
   await page.locator('#weekendMenu').click();
-  await page.locator('#nextSeason').click();
+  await page.locator('#apexProtoNext').click();
   assert.equal(await page.locator('#apex9aCompTeamSelect').isDisabled(),true,
    'Una temporada iniciada conserva la escudería bloqueada en el nuevo menú');
   await page.locator('#apex9aCompCancel').click();
