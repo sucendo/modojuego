@@ -84,6 +84,9 @@ function updateModeVisual(){
   const active=val==='auto'?saved?.mode===(selectedMode==='grandprix'?'grand-prix':selectedMode)&&saved?.weather==='auto':weather?.value===val&&!(saved?.mode===(selectedMode==='grandprix'?'grand-prix':selectedMode)&&saved?.weather==='auto');
   b.classList.toggle('selected',!!active);b.setAttribute('aria-pressed',String(!!active));
  });
+ const past=$('lastRaceResults');
+ const pastAction=$('apexProtoLastResults');
+ if(pastAction)pastAction.hidden=!past||past.hidden||past.classList.contains('hidden');
  $('apexProtoNext').textContent=selectedMode==='practice'?'PREPARAR ENTRENAMIENTO  ❯❯':
   selectedMode==='season'?'CONTINUAR TEMPORADA  ❯❯':'METEOROLOGÍA Y ESTRATEGIA  ❯❯';
 }
@@ -179,7 +182,7 @@ function makeModes(){
  '<img class="apexProtoTeamArt" id="apexProtoTeamImage" alt="">'+
  '<div class="apexProtoTeamPicker"><button id="apexProtoPrevTeam" type="button" aria-label="Escudería anterior">‹</button><select id="apexProtoTeam" aria-label="Escudería"></select><button id="apexProtoNextTeam" type="button" aria-label="Escudería siguiente">›</button></div>'+
  '<p>MONOPLAZAS DEL SIMULADOR · TEMPORADA 2026</p></article></div>'+
- '<div class="apexProtoRaceFooter"><button id="apexProtoAdvancedModes" type="button">AJUSTES AVANZADOS</button>'+
+ '<div class="apexProtoRaceFooter"><button id="apexProtoLastResults" type="button" hidden>ÚLTIMOS RESULTADOS</button><button id="apexProtoAdvancedModes" type="button">AJUSTES AVANZADOS</button>'+ 
  '<button id="apexProtoNext" type="button">METEOROLOGÍA Y ESTRATEGIA  ❯❯</button></div></div>';
  menu.appendChild(modes);
  $('apexProtoModeBack').onclick=()=>show('home');
@@ -199,6 +202,7 @@ function makeModes(){
   global.ApexCompetition9A?.select?.({mode:selectedMode==='grandprix'?'grand-prix':selectedMode,weather:value});
   updateModeVisual();
  });
+ $('apexProtoLastResults').onclick=()=>{$('lastRaceResults')?.click();};
  $('apexProtoAdvancedModes').onclick=()=>advanced(null,'modes');
  $('apexProtoNext').onclick=next;
 }
