@@ -32,6 +32,7 @@ function build(){
  $('apex9bWeatherSelect').onchange=()=>{save();refreshWeather();};
  $('apex9bTyres').onclick=e=>{const button=e.target.closest('[data-tyre]');if(!button)return;save({compound:button.dataset.tyre});updateTyres();renderAdvice();};
  $('apex9bStrategyFields').addEventListener('change',()=>{save();renderAdvice();});
+ $('apex9bStrategyFields').addEventListener('input',e=>{if(e.target.matches('input'))save();});
  $('apex9bLaunch').onclick=launch;
  overlay.addEventListener('click',e=>{if(e.target===overlay)close(true)});
  document.addEventListener('keydown',e=>{if(!overlay.hidden&&e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();close(true)}},true);
