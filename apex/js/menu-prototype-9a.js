@@ -81,7 +81,7 @@ function updateModeVisual(){
   const val=b.dataset.apexWeather;
   b.disabled=val!=='auto'&&(!weather||!Array.from(weather.options).some(o=>o.value===val));
   const saved=global.ApexCompetition9A?.get?.();
-  const active=val==='auto'?saved?.mode===selectedMode&&saved?.weather==='auto':weather?.value===val&&!(saved?.mode===selectedMode&&saved?.weather==='auto');
+  const active=val==='auto'?saved?.mode===(selectedMode==='grandprix'?'grand-prix':selectedMode)&&saved?.weather==='auto':weather?.value===val&&!(saved?.mode===(selectedMode==='grandprix'?'grand-prix':selectedMode)&&saved?.weather==='auto');
   b.classList.toggle('selected',!!active);b.setAttribute('aria-pressed',String(!!active));
  });
  $('apexProtoNext').textContent=selectedMode==='practice'?'PREPARAR ENTRENAMIENTO  ❯❯':
@@ -196,7 +196,7 @@ function makeModes(){
  modes.querySelectorAll('[data-apex-weather]').forEach(b=>b.onclick=()=>{
   const value=b.dataset.apexWeather;
   if(value!=='auto')setNativeValue($(mode().nativeWeather),value);
-  global.ApexCompetition9A?.select?.({mode:selectedMode,weather:value});
+  global.ApexCompetition9A?.select?.({mode:selectedMode==='grandprix'?'grand-prix':selectedMode,weather:value});
   updateModeVisual();
  });
  $('apexProtoAdvancedModes').onclick=()=>advanced(null,'modes');
