@@ -35,7 +35,7 @@ assert.equal(stored.events['season:6:madrid'].sessions.fp1.results,undefined);
 assert.equal(store.get('apex26canvas-v2'),JSON.stringify({schema:4,round:6,points:{PLAYER:72}}));
 a=boot();
 assert.equal(a.getPlan(event,'fp1').targetLaps,7);
-assert.deepEqual(a.sessions.map(s=>a.forecast(event,s).preset),forecasts.map(f=>f.preset));
+assert.equal(JSON.stringify(a.sessions.map(s=>a.forecast(event,s).preset)),JSON.stringify(forecasts.map(f=>f.preset)));
 const second={...event,round:7};
 assert.notEqual(a.forecast(second,'fp1').eventId,forecasts[0].eventId);
 assert.equal(a.getPlan(second,'fp1').compound,'MEDIUM');
