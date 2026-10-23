@@ -80,6 +80,15 @@ try{
   prototypeScript.src="js/menu-prototype-9a.js";
   prototypeScript.async=false;
   (document.body||document.head).appendChild(prototypeScript);
+  // Tarjeta broadcast de Circuito: información nativa, trazado SVG real y controles intactos.
+  const circuitBroadcastStyles=document.createElement("link");
+  circuitBroadcastStyles.rel="stylesheet";
+  circuitBroadcastStyles.href="css/circuit-broadcast-9a.css";
+  (document.head||document.body).appendChild(circuitBroadcastStyles);
+  const circuitBroadcastScript=document.createElement("script");
+  circuitBroadcastScript.src="js/circuit-broadcast-9a.js";
+  circuitBroadcastScript.async=false;
+  (document.body||document.head).appendChild(circuitBroadcastScript);
   // 9A.9 · Preparación fiel al prototipo; se carga sobre ambos flujos 9A existentes.
   const briefingStyles=document.createElement("link");
   briefingStyles.rel="stylesheet";
