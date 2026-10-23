@@ -108,8 +108,6 @@ async function finishResults(page){
    await finishResults(page);
    assert.equal((await page.evaluate(()=>window.ApexNativeWeekend9B.snapshot())).session,stages[i+1]);
   }
-  const fp1=await page.evaluate(()=>window.ApexSessionPlans9B.getPlan({mode:'grandprix',spec:{dir:'01-australia',name:'x'},round:0},'fp1'));
-  // The context above can use a differently named authored circuit; verify with actual stored event below.
   const plans=await page.evaluate(()=>{
    const saved=JSON.parse(localStorage.getItem(window.ApexSessionPlans9B.storageKey));
    return Object.values(saved.events).filter(e=>e.mode==='grandprix');
