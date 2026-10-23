@@ -165,3 +165,11 @@
 #menu.apex9aPrototype .apexProtoCircuitPanel .apexProtoChips[hidden]{
  display:none !important;
 }
+
+/* La regla original «.apexProtoDetails article» fija 330px y recortaba los
+   controles al crecer la ficha. Los dos paneles deben estirarse con el contenido. */
+#menu.apex9aPrototype .apexProtoDetails article.apexProtoCircuitPanel,
+#menu.apex9aPrototype .apexProtoDetails article.apexProtoVehiclePanel{
+ height:auto;
+ box-sizing:border-box;
+}
