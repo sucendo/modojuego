@@ -38,6 +38,12 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
    const tyres=root.locator(m.tyres+' button.apex9aTyre');
    assert.equal(await tyres.count(),5,'Cinco compuestos reales '+m.key);
    assert.ok((await root.locator('.apex9aBriefTyres img').count())>=5,'Imágenes de neumáticos '+m.key);
+   const tyreGeometry=await tyres.evaluateAll(buttons=>buttons.map(button=>{
+    const img=button.querySelector('img'),label=button.querySelector('b');
+    return {imageBottom:img?.getBoundingClientRect().bottom??0,labelTop:label?.getBoundingClientRect().top??0};
+   }));
+   assert.ok(tyreGeometry.every(g=>g.imageBottom<=g.labelTop+2),
+    'Imágenes y nombres de neumáticos no se superponen '+m.key+': '+JSON.stringify(tyreGeometry));
    const strategy=root.locator('.apexBriefStrategies button');
    assert.equal(await strategy.count(),3,'Tres estrategias visuales '+m.key);
    const original=await page.locator(m.strategy).inputValue();
