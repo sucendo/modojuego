@@ -99,8 +99,8 @@ function refreshWeather(){
  const f=api().forecast(ctx(current),stage),p=getPlan();
  const preset=p.weatherSelection==='auto'?f.preset:p.weatherSelection;
  $('apex9bWeatherLabel').textContent=WEATHER[preset]||preset;
- $('apex9bTrackState').textContent=f.surface;
- $('apex9bTrend').textContent=f.trend;
+ $('apex9bTrackState').textContent=['RAIN','STORM'].includes(preset)?'Mojada':preset==='DRIZZLE'?'Húmeda':preset==='VARIABLE'?'Variable':'Probablemente seca';
+ $('apex9bTrend').textContent=p.weatherSelection==='auto'?f.trend:'Condición manual seleccionada (sin evolución prevista calculada).';
  $('apex9bWeatherSelect').value=p.weatherSelection;
  renderAdvice();
 }
