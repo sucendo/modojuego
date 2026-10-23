@@ -1,0 +1,159 @@
+/* APEX 26 · Circuito broadcast en Tipo de carrera.
+   Mantiene los controles 9A/9B fuera de la tarjeta visual. */
+#menu.apex9aPrototype .apexProtoCircuitPanel{
+ height:auto;
+ min-height:365px;
+ padding-bottom:7px;
+ background:#061320;
+}
+#menu.apex9aPrototype .apexProtoCircuitPanel>.apexProtoCircuitScene,
+#menu.apex9aPrototype .apexProtoCircuitPanel>.apexProtoCircuitText,
+#menu.apex9aPrototype .apexProtoCircuitPanel>.apexProtoCircuitInfo{display:none}
+#menu.apex9aPrototype .apexCircuitBroadcast{
+ position:relative;
+ isolation:isolate;
+ margin:9px 11px 8px;
+ height:clamp(143px,18vh,172px);
+ min-width:0;
+ overflow:hidden;
+ border:1px solid rgba(144,176,197,.48);
+ background:#061522;
+ box-shadow:inset 0 0 25px #071724;
+}
+#menu.apex9aPrototype .apexCircuitBroadcastPhoto{
+ position:absolute;
+ inset:0;
+ background-size:cover;
+ background-position:center 48%;
+ z-index:-2;
+}
+#menu.apex9aPrototype .apexCircuitBroadcast::after{
+ content:'';
+ position:absolute;
+ inset:0;
+ z-index:-1;
+ pointer-events:none;
+ background:linear-gradient(0deg,rgba(2,11,20,.94),rgba(2,11,20,.10) 67%),linear-gradient(90deg,rgba(3,13,23,.48),rgba(3,13,23,.04) 60%,rgba(3,13,23,.48));
+}
+#menu.apex9aPrototype .apexCircuitBroadcastGrid{
+ position:relative;
+ height:100%;
+ box-sizing:border-box;
+ display:grid;
+ grid-template-columns:minmax(0,1.12fr) minmax(0,1fr) minmax(83px,.72fr);
+ align-items:end;
+ gap:clamp(6px,1vw,16px);
+ padding:12px clamp(10px,1.05vw,18px);
+}
+#menu.apex9aPrototype .apexCircuitBroadcastIdentity{
+ min-width:0;
+ display:grid;
+ gap:5px;
+ text-shadow:0 2px 7px #000;
+}
+#menu.apex9aPrototype .apexCircuitBroadcastIdentity strong{
+ font-size:clamp(16px,1.55vw,25px);
+ font-weight:1000;
+ line-height:1.08;
+ overflow-wrap:anywhere;
+ color:#fff;
+}
+#menu.apex9aPrototype .apexCircuitBroadcastIdentity small{
+ font-size:clamp(10px,.86vw,13px);
+ line-height:1.25;
+ color:#e1edf7;
+}
+#menu.apex9aPrototype .apexCircuitBroadcastLayout{
+ min-width:0;
+ align-self:center;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ padding-top:6px;
+}
+#menu.apex9aPrototype .apexCircuitBroadcastLayout svg{
+ display:block;
+ width:100%;
+ max-width:205px;
+ height:clamp(75px,11vh,132px);
+ filter:drop-shadow(0 2px 4px #000c);
+}
+#menu.apex9aPrototype .apexBroadcastNoLayout{
+ display:block;
+ font-size:9px;
+ line-height:1.35;
+ letter-spacing:.09em;
+ color:#bfd3e2;
+ text-align:center;
+}
+#menu.apex9aPrototype .apexCircuitBroadcastStats{
+ align-self:center;
+ min-width:0;
+ display:grid;
+ gap:7px;
+ text-shadow:0 1px 5px #000;
+}
+#menu.apex9aPrototype .apexCircuitBroadcastStats div{min-width:0}
+#menu.apex9aPrototype .apexCircuitBroadcastStats span{
+ display:block;
+ font-size:clamp(8px,.68vw,10px);
+ font-weight:800;
+ line-height:1.16;
+ letter-spacing:.075em;
+ color:#b6d3e5;
+}
+#menu.apex9aPrototype .apexCircuitBroadcastStats b{
+ display:block;
+ margin-top:2px;
+ font-size:clamp(11px,.95vw,14px);
+ line-height:1.2;
+ color:#fff;
+ white-space:nowrap;
+ font-variant-numeric:tabular-nums;
+}
+#menu.apex9aPrototype .apexProtoCircuitPanel .apexProtoCircuitPicker{
+ margin:9px 12px 7px;
+}
+#menu.apex9aPrototype .apexProtoCircuitPanel .apexProtoLocked{
+ margin:8px 13px;
+ min-height:30px;
+}
+#menu.apex9aPrototype .apexProtoCircuitPanel .apexProtoChips{
+ margin:7px 12px;
+ padding:6px 9px;
+}
+#menu.apex9aPrototype .apexProtoCircuitPanel .apexProtoChips button{
+ padding:6px 5px;
+}
+#menu.apex9aPrototype .apexProtoDetails .apexProtoVehiclePanel{
+ min-height:365px;
+}
+@media(max-width:960px){
+ #menu.apex9aPrototype .apexProtoCircuitPanel{
+  height:auto;
+  min-height:365px;
+ }
+ #menu.apex9aPrototype .apexCircuitBroadcastGrid{
+  grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr) minmax(78px,.75fr);
+  gap:6px;
+  padding:10px;
+ }
+}
+@media(max-width:620px){
+ #menu.apex9aPrototype .apexProtoDetails .apexProtoCircuitPanel{
+  height:auto;
+  min-height:348px;
+ }
+ #menu.apex9aPrototype .apexProtoDetails .apexProtoVehiclePanel{
+  min-height:360px;
+ }
+ #menu.apex9aPrototype .apexCircuitBroadcast{
+  height:152px;
+  margin:8px 9px 7px;
+ }
+ #menu.apex9aPrototype .apexCircuitBroadcastIdentity strong{font-size:clamp(14px,4.1vw,20px)}
+ #menu.apex9aPrototype .apexCircuitBroadcastStats{gap:6px}
+ #menu.apex9aPrototype .apexCircuitBroadcastStats b{font-size:11px}
+ #menu.apex9aPrototype .apexCircuitBroadcastLayout svg{height:99px}
+ #menu.apex9aPrototype .apexProtoCircuitPanel .apexProtoChips{margin:6px 9px;padding:6px}
+}
