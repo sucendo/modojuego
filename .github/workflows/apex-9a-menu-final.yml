@@ -6,6 +6,7 @@ on:
       - apex/fase-9a-menu-competicion
       - apex/9a8-fidelidad-menus
       - apex/9a9-preparacion-prototipo
+      - apex/9b-session-preparation
     paths:
       - 'apex/**'
       - '.github/workflows/apex-9a-menu-final.yml'
@@ -44,6 +45,10 @@ jobs:
           node --check apex/tests/briefing-9a9-browser.cjs
           node apex/tests/season-history-9a-audit.cjs
           node apex/tests/climate-9a-audit.cjs
+          node apex/tests/session-plans-9b-audit.cjs
+          node --check apex/js/session-plans-9b.js
+          node --check apex/js/session-preparation-9b.js
+          node --check apex/tests/session-9b-browser.cjs
           for file in apex/js/{menu-9a,preparation-9a,competition-9a,competition-flows-9a,climate-9a,menu-music-9a}.js; do node --check "$file"; done
 
   menu-browser:
@@ -83,6 +88,7 @@ jobs:
           node apex/tests/briefing-9a9-browser.cjs 2>&1 | tee /tmp/apex-menu-9a/briefing.log
           node apex/tests/preparation-9a-browser.cjs 2>&1 | tee /tmp/apex-menu-9a/preparation.log
           node apex/tests/competition-flows-9a-browser.cjs 2>&1 | tee /tmp/apex-menu-9a/gp-season.log
+          node apex/tests/session-9b-browser.cjs 2>&1 | tee /tmp/apex-menu-9a/session-9b.log
       - name: Save screenshots and logs
         uses: actions/upload-artifact@v4
         if: always()
@@ -93,4 +99,5 @@ jobs:
             /tmp/apex-results/9a-*.png
             /tmp/apex-results/9a8-*.png
             /tmp/apex-results/9a9-*.png
+            /tmp/apex-results/9b-*.png
           if-no-files-found: warn
