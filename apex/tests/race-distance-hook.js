@@ -22,5 +22,28 @@ window.__apexRaceAudit={
  },
  matrix(){return calendar.slice(0,F1_SEASON_COUNT).map(s=>({id:s.dir,rows:[25,50,75,100].map(p=>apexRaceConfig(s,p))}))},
  persisted(){return {session:save.lastRaceSession,result:save.lastRaceResult,pits:save.lastTyreSession?.pits}},
- async fullRace(dir='13-italy',p=25,seconds=2400){await this.load(dir,p);return this.drive(seconds)}
+ async fullRace(dir='13-italy',p=25,seconds=2400){
+  // Full circuit, no teleports or artificial finishes. The fixed 2400 s budget
+  // sometimes ends during a genuine auto-recovery on mobile, with all 21
+  // rivals finished but the player still one crossing short. Wait for the
+  // observable native FINISHED state instead, bounded by race distance.
+  await this.load(dir,p);
+  const start=this.status(),t0=performance.now(),budget=Math.max(seconds,
+   Math.ceil(start.totalLaps*360));let steps=0,observations=[],lastCheckpoint=0;
+  for(;steps<budget*100&&mode==='race';steps++){
+   update(.01,steps%5===4,.05);
+   if(!physicsFinite()||(player.physicsFaults||0))throw Error('Full GP physical state invalid');
+   if(steps%10000===9999){
+    const state=this.status();
+    observations.push({elapsed:Math.round(state.time),state:state.state,
+     finished:state.finished,lap:state.laps,progress:Math.round(state.playerState.total),
+     speed:Math.round(state.playerState.speed*10)/10,
+     recovery:state.playerState.recovery?.mode||null});
+    lastCheckpoint=steps;
+   }
+   if(steps%500===499)await new Promise(r=>setTimeout(r,0));
+  }
+  return {start,end:this.status(),cpuMs:performance.now()-t0,steps,
+   budgetSeconds:budget,observations:observations.slice(-12)};
+ }
 };
