@@ -38,6 +38,12 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
    const tyres=root.locator(m.tyres+' button.apex9aTyre');
    assert.equal(await tyres.count(),5,'Cinco compuestos reales '+m.key);
    assert.ok((await root.locator('.apex9aBriefTyres img').count())>=5,'Imágenes de neumáticos '+m.key);
+   const tyreGeometry=await tyres.evaluateAll(buttons=>buttons.map(button=>{
+    const img=button.querySelector('img'),label=button.querySelector('b');
+    return {imageBottom:img?.getBoundingClientRect().bottom??0,labelTop:label?.getBoundingClientRect().top??0};
+   }));
+   assert.ok(tyreGeometry.every(g=>g.imageBottom<=g.labelTop+2),
+    'Imágenes y nombres de neumáticos no se superponen '+m.key+': '+JSON.stringify(tyreGeometry));
    const strategy=root.locator('.apexBriefStrategies button');
    assert.equal(await strategy.count(),3,'Tres estrategias visuales '+m.key);
    const original=await page.locator(m.strategy).inputValue();
@@ -63,7 +69,24 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
     return imgs.length===5&&imgs.every(x=>x.complete&&x.naturalWidth>0);
    });
    assert.equal(tyreImages,true,'PNG/WebP RGBA cargados '+m.key);
-   await root.screenshot({path:'/tmp/apex-results/9a9-'+(mobile?'mobile':'desktop')+'-'+m.key+'.png',fullPage:true});
+   // Registrar parte superior e inferior porque el modal usa scroll interno.
+   await root.evaluate(node=>node.scrollTop=0);
+   const dimensions=await root.evaluate(node=>{
+    const btn=node.querySelector('.apex9aBriefHeader>button');
+    const rect=btn.getBoundingClientRect();
+    return {overflow:node.scrollWidth-node.clientWidth,buttonWidth:rect.width,buttonHeight:rect.height,buttonOverflow:btn.scrollWidth-btn.clientWidth};
+   });
+   assert.ok(dimensions.overflow<=2,'Sin desbordamiento horizontal '+m.key+': '+JSON.stringify(dimensions));
+   assert.ok(dimensions.buttonWidth>=140,'Botón de regreso legible '+m.key);
+   assert.ok(dimensions.buttonHeight<=65,'Texto regreso no vertical '+m.key);
+   assert.ok(dimensions.buttonOverflow<=2,'El botón no desborda su propia etiqueta '+m.key);
+   await page.screenshot({path:'/tmp/apex-results/9a9-'+(mobile?'mobile':'desktop')+'-'+m.key+'.png'});
+   const hasOverflow=await root.evaluate(node=>node.scrollHeight>node.clientHeight+12);
+   if(hasOverflow){
+    await root.evaluate(node=>node.scrollTop=node.scrollHeight);
+    await page.screenshot({path:'/tmp/apex-results/9a9-'+(mobile?'mobile':'desktop')+'-'+m.key+'-bottom.png'});
+    assert.equal(await root.locator('.apex9aPrepActions').isVisible(),true);
+   }
    await page.locator(m.cancel).click();
    assert.equal(await root.isVisible(),false);
   }

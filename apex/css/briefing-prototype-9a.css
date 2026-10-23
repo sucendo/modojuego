@@ -306,3 +306,31 @@
  .apex9aBriefingProto .apexBriefStrategies button{min-height:67px}
  .apex9aBriefingProto .apex9aStages span{font-size:9px}
 }
+
+/* Cierre 9A.9: control de retorno sin texto fragmentado en vertical. */
+.apex9aBriefingProto .apex9aBriefHeader>div{flex:1 1 auto;min-width:0}
+.apex9aBriefingProto .apex9aBriefHeader>button{
+ display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;
+ font:800 13px/1.2 Arial,Helvetica,sans-serif!important;
+ letter-spacing:.05em;min-width:190px;width:max-content;max-width:100%;
+ padding:13px 16px;white-space:nowrap;overflow:hidden;
+}
+@media(max-width:980px){
+ .apex9aBriefingProto .apex9aBriefHeader{flex-direction:column-reverse;align-items:stretch;gap:10px}
+ .apex9aBriefingProto .apex9aBriefHeader>button{align-self:flex-start}
+ .apex9aBriefingProto .apex9aBriefHeader small{text-align:left}
+ .apex9aBriefingProto .apex9aBriefHeader h2{font-size:clamp(26px,4.3vw,40px);overflow-wrap:break-word}
+}
+
+/* Cierre 9A.9: reservar altura independiente para arte y nombre del neumático. */
+@media(min-width:701px){
+ .apex9aBriefingProto .apex9aBriefTyres .apex9aTyreVisual{
+   flex:0 0 148px;height:148px!important;max-height:none;
+ }
+}
+.apex9aBriefingProto .apex9aBriefTyres .apex9aTyreVisual img{
+ max-height:100%;max-width:100%;object-fit:contain;
+}
+.apex9aBriefingProto .apex9aBriefTyres .apex9aTyre b{
+ display:block;position:relative;z-index:1;margin-top:34px!important;
+}
