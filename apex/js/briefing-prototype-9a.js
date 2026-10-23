@@ -89,7 +89,7 @@ function getDistance(data){
  return label?.textContent?.trim()||'—';
 }
 function circuitArt(data,name){
- const mode=getMode(data),track=mode==='grandprix'?$('gpTrack'):mode==='practice'?$('practiceTrack'):$('track');
+ const mode=getMode(data),track=mode==='grandprix'?$('gpTrack'):mode==='practice'?$('practiceTrack'):mode==='quick'?$('track'):null;
  const isMonaco=/m[oó]naco|monaco|monte.carlo/i.test(name+' '+(track?.value||''));
  return isMonaco?'assets/9a/prep-monaco.webp':
    mode==='practice'?'assets/9a/race-practice.webp':
