@@ -124,6 +124,7 @@ function sync(data){
    button.append(el('small','apexBriefTyreDescription',item[2]));
   }
  });
+ if(data.strategySection)data.strategySection.hidden=getMode(data)==='practice';
  data.recommendLabel.textContent=getMode(data)==='practice'?'RECOMENDACIÓN DE ENTRENAMIENTO':'RECOMENDACIÓN DE ESTRATEGIA';
 }
 function decorate(root){
@@ -188,7 +189,7 @@ function decorate(root){
  const tyreGrid=by(setup,'.apex9aTyreGrid');tyreGrid.classList.add('apex9aBriefTyres');
  const strategy=by(setup,comp?'#apex9aCompStrategy':'#apex9aStrategy');
  if(strategy){
-  const section=el('div','apexBriefStrategySection');
+  const section=el('div','apexBriefStrategySection');data.strategySection=section;
   section.append(el('h3','','ESTRATEGIA DE CARRERA'));
   data.strategyChips=makeChoiceChips(STRATEGIES,'Strategies');
   section.append(data.strategyChips);
