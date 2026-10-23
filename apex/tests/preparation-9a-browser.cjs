@@ -17,7 +17,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||(process.env.CODEX_
   await page.screenshot({path:'/tmp/apex-results/9a-'+(mobile?'mobile':'desktop')+'-home.png'});
   await page.locator('#apex9aRace').click();
   await page.screenshot({path:'/tmp/apex-results/9a-'+(mobile?'mobile':'desktop')+'-modes.png'});
-  await page.locator('#start').click();
+  await page.locator('#apexProtoNext').click();
   await page.waitForFunction(()=>ApexPreparation9A.isOpen());
   await page.screenshot({path:'/tmp/apex-results/9a-'+(mobile?'mobile':'desktop')+'-preparation.png'});
   assert.match(await page.locator('#apex9aPrepTitle').textContent(),/CARRERA/);
@@ -54,14 +54,14 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||(process.env.CODEX_
   assert.notEqual(await page.locator('#apex9aStrategyRow').getAttribute('hidden'),'');
   await page.keyboard.press('Escape');
   assert.equal(await page.evaluate(()=>ApexPreparation9A.isOpen()),false);
-  assert.equal(await page.evaluate(()=>document.activeElement?.id),'start',
-   'Volver a la preparación debe restaurar foco en el lanzador original');
-  await page.locator('#start').click();
+  assert.equal(await page.locator('#apexProtoNext').isVisible(),true,
+   'Cerrar preparación devuelve a la selección visual de carrera');
+  await page.locator('#apexProtoNext').click();
   await page.waitForFunction(()=>ApexPreparation9A.isOpen());
   await page.locator('#apex9aCancel').click();
   assert.equal(await page.evaluate(()=>ApexPreparation9A.isOpen()),false);
-  await page.locator('#menuModeTabs [data-t="practice"]').click();
-  await page.locator('#practiceStart').click();
+  await page.locator('#apex9aModesScreen [data-apex-mode="practice"]').click();
+  await page.locator('#apexProtoNext').click();
   await page.waitForFunction(()=>ApexPreparation9A.isOpen());
   assert.match(await page.locator('#apex9aPrepTitle').textContent(),/ENTRENAMIENTO/);
   assert.equal(await page.locator('#apex9aPrepDistanceRow').getAttribute('hidden'),'');

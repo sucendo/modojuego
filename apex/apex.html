@@ -71,6 +71,15 @@ try{
   musicScript.src="js/menu-music-9a.js";
   musicScript.async=false;
   (document.body||document.head).appendChild(musicScript);
+  // 9A.8 · Fachada aprobada del ZIP: navegación separada de carreras y opciones.
+  const prototypeStyles=document.createElement("link");
+  prototypeStyles.rel="stylesheet";
+  prototypeStyles.href="css/menu-prototype-9a.css";
+  (document.head||document.body).appendChild(prototypeStyles);
+  const prototypeScript=document.createElement("script");
+  prototypeScript.src="js/menu-prototype-9a.js";
+  prototypeScript.async=false;
+  (document.body||document.head).appendChild(prototypeScript);
 }catch(err){
   document.getElementById("status").innerHTML="<div><strong>No se pudo cargar APEX.</strong><small>"+String(err.message||err)+"</small></div>";
   console.error(err);

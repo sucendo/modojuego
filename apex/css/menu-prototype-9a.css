@@ -1,0 +1,138 @@
+/* APEX Formula 26 · 9A.8 · Restaura la composición del prototipo aprobado.
+   Aislado bajo #menu.apex9aPrototype; no afecta al motor ni al HUD. */
+#menu.apex9aPrototype {
+ position:fixed!important;left:50%!important;top:50%!important;
+ transform:translate(-50%,-50%)!important; width:100vw!important;
+ height:100dvh!important;max-height:100dvh!important;
+ padding:0!important;border:0!important;border-radius:0!important;
+ background:#030b15!important;color:#f3f8ff!important;
+ overflow-x:hidden!important;overflow-y:auto!important;
+ font-family:Arial,Helvetica,sans-serif!important;box-sizing:border-box!important;
+}
+#menu.apex9aPrototype *,#menu.apex9aPrototype *::before,#menu.apex9aPrototype *::after{box-sizing:border-box}
+#menu.apex9aPrototype > :not(#apex9aLanding):not(#apex9aModesScreen):not(#apex9aOptionsScreen){display:none!important}
+#menu.apex9aPrototype :is(#apex9aLanding,#apex9aModesScreen,#apex9aOptionsScreen)[hidden]{display:none!important}
+#menu.apex9aPrototype button{cursor:pointer;font-family:inherit}
+#menu.apex9aPrototype :is(button,select,input):focus-visible{outline:2px solid #f0f9ff;outline-offset:3px}
+#menu.apex9aPrototype #apex9aLanding{
+ position:relative;inset:auto;display:block;width:100%;height:100%;min-height:680px;
+ background:linear-gradient(90deg,#00060d75 0%,#01081038 35%,transparent 72%),
+ linear-gradient(0deg,#00060c6b,transparent 28%),
+ url('../assets/9a/fondo-apex26.webp') center/cover no-repeat!important;
+ padding:0;overflow:hidden;isolation:isolate;
+}
+#menu.apex9aPrototype #apex9aLanding::after{border:0}
+#menu.apex9aPrototype .apexProtoHomeLogo{position:absolute;left:4.6%;top:4.5%;width:min(48.5%,820px);height:auto;max-height:35%;object-fit:contain;object-position:left top;filter:drop-shadow(0 5px 6px #0009)}
+#menu.apex9aPrototype .apexProtoMotto{position:absolute;top:32.9%;left:4.15%;font-size:clamp(13px,1.27vw,22px);line-height:1.53;letter-spacing:.195em;color:#c8ddeb;text-shadow:0 1px 4px #030a15}
+#menu.apex9aPrototype .apexProtoMotto::after{content:'';display:block;background:#fa2141;width:54px;height:3px;margin-top:13px;box-shadow:0 0 11px #fa2141}
+#menu.apex9aPrototype .apexProtoHomeActions{position:absolute;top:52.3%;left:3.48%;width:36.8%;display:grid;gap:clamp(10px,1.35vw,21px)}
+#menu.apex9aPrototype .apexProtoMainAction{display:flex;align-items:center;gap:clamp(13px,1.75vw,29px);width:100%;height:clamp(64px,9.15vh,93px);padding:0 4.1%;color:#f3f8fc;font-size:clamp(16px,1.7vw,30px);font-weight:900;letter-spacing:.07em;text-shadow:0 2px 3px #06101d;text-align:left;border:0;clip-path:polygon(2.4% 0,100% 0,97.6% 100%,0 100%);transition:filter .16s,transform .16s}
+#menu.apex9aPrototype .apexProtoMainAction>span:first-child{font-size:clamp(24px,2.9vw,45px)}
+#menu.apex9aPrototype .apexProtoMainAction strong{font-size:inherit;white-space:nowrap}
+#menu.apex9aPrototype .apexProtoMainAction>span:last-child{margin-left:auto}
+#menu.apex9aPrototype .apexProtoMainAction.primary{background:linear-gradient(110deg,#6c0718e8,#cc142be3 47%,#6f0c18e1);box-shadow:inset 0 0 0 2px #ff6b78,inset 0 0 15px #ff566e,0 0 16px #e32a43}
+#menu.apex9aPrototype .apexProtoMainAction.secondary{background:linear-gradient(106deg,#08131fe8,#142535d8 49%,#0a1827ed);box-shadow:inset 0 0 0 2px #889aa7bd,inset 0 0 10px #abcee62b}
+#menu.apex9aPrototype .apexProtoMainAction:hover{filter:brightness(1.27);transform:translateX(5px)}
+#menu.apex9aPrototype .apexProtoBottomBar{position:absolute;left:0;right:0;bottom:0;height:12%;min-height:87px;display:flex;align-items:center;justify-content:space-between;padding:0 4.2%;background:linear-gradient(90deg,#020710eb,#07111ad5,#040c14bc);border-top:1px solid #7b9aaf83;box-shadow:0 -12px 30px #01060b43}
+#menu.apex9aPrototype .apexProtoBottomLinks{display:flex;align-items:center;max-width:80%}
+#menu.apex9aPrototype .apexProtoBottomLinks button{display:flex;gap:11px;align-items:center;padding:0 clamp(10px,2vw,35px);border:0;border-right:1px solid #a3bac9a1;background:transparent;color:white;font-size:clamp(10px,1.05vw,17px);font-weight:900;text-align:left;letter-spacing:.04em}
+#menu.apex9aPrototype .apexProtoBottomLinks button:first-child{padding-left:0}
+#menu.apex9aPrototype .apexProtoBottomLinks button:last-child{border:0}
+#menu.apex9aPrototype .apexProtoBottomLinks small{display:block;color:#92c6e2;font-size:.75em;font-weight:normal}
+#menu.apex9aPrototype .apexProtoSlogan{font-weight:900;font-style:italic;letter-spacing:.29em;text-align:right;font-size:clamp(10px,1.2vw,19px)}
+#menu.apex9aPrototype .apexProtoSlogan::after{content:'';display:block;width:110px;height:2px;background:linear-gradient(90deg,transparent,#e11935);margin:7px 0 0 auto}
+
+/* Tipo de carrera: 4 tarjetas fotográficas y dos paneles del prototipo */
+#menu.apex9aPrototype #apex9aModesScreen,#menu.apex9aPrototype #apex9aOptionsScreen{
+ display:block;position:relative;min-height:100%;width:100%;
+ background:linear-gradient(180deg,#061320,#020914 70%,#07111d);
+}
+#menu.apex9aPrototype #apex9aModesScreen::before,#menu.apex9aPrototype #apex9aOptionsScreen::before{
+ content:'';position:absolute;inset:0;pointer-events:none;
+ background:linear-gradient(105deg,#04101ee5,#03111be8 52%,#071523d5),
+ url('../assets/9a/fondo-apex26.webp') center/cover fixed;opacity:.43;
+}
+#menu.apex9aPrototype .apexProtoRaceShell,#menu.apex9aPrototype .apexProtoOptionsShell{position:relative;max-width:1610px;margin:auto;padding:16px clamp(12px,2vw,32px) 26px}
+#menu.apex9aPrototype .apexProtoTop{display:flex;align-items:center;gap:18px;border-bottom:1px solid #4b667c;padding-bottom:8px}
+#menu.apex9aPrototype .apexProtoTop button{border:1px solid #526e83;color:#e9f5fc;background:#0a1c2e;padding:9px 16px;font-size:13px;font-weight:900}
+#menu.apex9aPrototype .apexProtoTop>span:nth-child(2){margin-left:auto;color:#8daec3;font-size:22px;font-weight:900}
+#menu.apex9aPrototype .apexProtoTop small{color:#9cc0d7;letter-spacing:.18em;font-size:10px}
+#menu.apex9aPrototype .apexProtoTitle{margin:12px 0 14px}
+#menu.apex9aPrototype .apexProtoTitle h1{margin:0;font-style:italic;font-size:clamp(28px,3vw,51px);line-height:1.1;letter-spacing:.09em;font-weight:1000;color:#f4f8fe}
+#menu.apex9aPrototype .apexProtoTitle p{margin:4px 0 0;color:#a9cadf;font-size:clamp(10px,1vw,16px);letter-spacing:.2em}
+#menu.apex9aPrototype .apexProtoModeCards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(7px,.9vw,16px)}
+#menu.apex9aPrototype .apexProtoModeCard{display:flex;flex-direction:column;justify-content:flex-end;position:relative;isolation:isolate;overflow:hidden;aspect-ratio:1.55/1;min-height:150px;padding:0;text-align:left;background:#081423;color:#fff;border:2px solid #405b71}
+#menu.apex9aPrototype .apexProtoModePicture{position:absolute;z-index:-2;inset:0;background-position:center;background-size:cover;transition:transform .18s}
+#menu.apex9aPrototype .apexProtoModeCard::after{content:'';position:absolute;z-index:-1;inset:0;background:linear-gradient(0deg,#020913 0%,#04111de8 35%,#02081228 80%);pointer-events:none}
+#menu.apex9aPrototype .apexProtoModeCard:hover .apexProtoModePicture{transform:scale(1.05)}
+#menu.apex9aPrototype .apexProtoModeCard.selected{border-color:#ff5968;box-shadow:0 0 0 1px #d9213d,inset 0 0 18px #ff273b44,0 0 20px #ff2c4670}
+#menu.apex9aPrototype .apexProtoModeCopy{display:grid;gap:6px;padding:clamp(10px,1.3vw,23px)}
+#menu.apex9aPrototype .apexProtoModeCopy strong{font-size:clamp(15px,1.45vw,25px);line-height:1.06;font-weight:1000}
+#menu.apex9aPrototype .apexProtoModeCopy small{font-size:clamp(10px,.85vw,14px);color:#cbdde9;line-height:1.25}
+#menu.apex9aPrototype .apexProtoDetails{display:grid;grid-template-columns:1fr 1fr;gap:clamp(9px,1vw,19px);margin:12px 0 0}
+#menu.apex9aPrototype .apexProtoDetails article{position:relative;height:clamp(330px,42vh,440px);min-width:0;overflow:hidden;border:1px solid #4f6d80;background:#071421;isolation:isolate}
+#menu.apex9aPrototype .apexProtoDetails h2{position:relative;z-index:2;margin:0;padding:10px 16px;height:37px;background:linear-gradient(100deg,#142a3bf0,#0a1a2aaf);font-size:clamp(13px,1.2vw,19px);letter-spacing:.06em;border-bottom:1px solid #506d7e}
+#menu.apex9aPrototype .apexProtoCircuitScene,#menu.apex9aPrototype .apexProtoVehicleScene{position:absolute;inset:37px 0 0;z-index:-2;background-position:center;background-size:cover}
+#menu.apex9aPrototype .apexProtoCircuitScene{background-image:linear-gradient(0deg,#020b14f8,#0515229e 36%,#030c163d),url('../assets/9a/track-state-bg.webp')}
+#menu.apex9aPrototype .apexProtoVehicleScene{background-image:linear-gradient(0deg,#020b14e8,#05152291 43%,#030c1630),url('../assets/9a/race-vehicle.webp')}
+#menu.apex9aPrototype .apexProtoCircuitText{position:relative;z-index:2;margin:13px 20px;text-shadow:0 2px 7px #000}
+#menu.apex9aPrototype .apexProtoCircuitText strong{display:block;font-size:clamp(18px,1.9vw,30px)}
+#menu.apex9aPrototype .apexProtoCircuitText small{display:block;font-size:11px;color:#bed7e8}
+#menu.apex9aPrototype .apexProtoCircuitInfo{position:absolute;top:117px;left:20px;right:20px;max-height:44px;overflow:hidden;font-size:11px;line-height:1.4;color:#dce9f1;text-shadow:0 2px 5px #000}
+#menu.apex9aPrototype .apexProtoCircuitPicker,#menu.apex9aPrototype .apexProtoTeamPicker{position:relative;z-index:4;display:flex;align-items:center;gap:5px;justify-content:center;margin:68px 12px 6px}
+#menu.apex9aPrototype .apexProtoCircuitPicker select,#menu.apex9aPrototype .apexProtoTeamPicker select{
+ flex:1;min-width:0;max-width:80%;padding:9px 10px;border:1px solid #68859c;background:#071a2ae6;color:#f4f9fd;font-size:13px}
+#menu.apex9aPrototype .apexProtoCircuitPicker button,#menu.apex9aPrototype .apexProtoTeamPicker button{background:#11283bc9;color:#f4f9fd;border:1px solid #68859c;font-size:22px;min-width:33px;height:34px}
+#menu.apex9aPrototype .apexProtoLocked{position:relative;z-index:3;color:#d2e1ed;font-size:12px;margin:75px 14px 8px}
+#menu.apex9aPrototype .apexProtoChips{position:relative;z-index:3;margin:7px 12px;background:#061626cf;padding:7px 10px;border:1px solid #59748a6e}
+#menu.apex9aPrototype .apexProtoChips label{font-size:10px;font-weight:900;letter-spacing:.12em;color:#a8c7dc;display:block;margin-bottom:6px}
+#menu.apex9aPrototype .apexProtoChips>div{display:flex;flex-wrap:wrap;gap:7px}
+#menu.apex9aPrototype .apexProtoChips button{flex:1;min-width:45px;padding:7px;border:1px solid #536d80;background:#061320df;color:white;font-size:11px;font-weight:850}
+#menu.apex9aPrototype .apexProtoChips button.selected{border-color:#ff6275;background:#651327}
+#menu.apex9aPrototype .apexProtoChips button:disabled{opacity:.3;cursor:not-allowed}
+#menu.apex9aPrototype .apexProtoTeamIdent{position:relative;z-index:2;margin:13px 20px;text-shadow:0 2px 7px #000}
+#menu.apex9aPrototype .apexProtoTeamIdent strong{display:block;font-size:clamp(18px,1.9vw,29px)}
+#menu.apex9aPrototype .apexProtoTeamIdent small{display:block;color:#b4d4e7;font-size:12px}
+#menu.apex9aPrototype .apexProtoTeamArt{position:absolute;top:28%;left:15%;width:70%;height:43%;object-fit:contain;filter:drop-shadow(0 8px 13px #000);z-index:1}
+#menu.apex9aPrototype .apexProtoVehiclePanel .apexProtoTeamPicker{position:absolute;bottom:32px;left:10px;right:10px;margin:0}
+#menu.apex9aPrototype .apexProtoVehiclePanel>p{position:absolute;bottom:5px;left:12px;right:12px;color:#a6c6d6;letter-spacing:.1em;font-size:10px;text-align:center}
+#menu.apex9aPrototype .apexProtoRaceFooter{display:flex;justify-content:flex-end;align-items:center;gap:12px;margin-top:12px}
+#menu.apex9aPrototype .apexProtoRaceFooter button{background:#132a3d;border:1px solid #6b8699;padding:12px 20px;color:#f2f7ff;font-size:13px;font-weight:900;letter-spacing:.04em}
+#menu.apex9aPrototype .apexProtoRaceFooter #apexProtoNext{background:linear-gradient(110deg,#a20c22,#ed3046);border-color:#f75b70;box-shadow:0 0 15px #ef2d4559}
+
+/* Opciones: cuadrícula propia, separada de cualquier pestaña de carrera */
+#menu.apex9aPrototype .apexProtoOptionsGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+#menu.apex9aPrototype .apexProtoOptionsGrid section{min-width:0;padding:19px;background:linear-gradient(150deg,#1a3249ed,#071320ed);border:1px solid #65839a;box-shadow:0 12px 35px #0009}
+#menu.apex9aPrototype .apexProtoOptionsGrid h2{font-size:15px;letter-spacing:.11em;margin:-19px -19px 18px;padding:13px;border-bottom:1px solid #648297;background:#21405696}
+#menu.apex9aPrototype .apexProtoOptionsGrid label{display:block;color:#c6d8e9;font-size:11px;letter-spacing:.1em;font-weight:900;margin:16px 0 7px}
+#menu.apex9aPrototype .apexProtoOptionsGrid select,#menu.apex9aPrototype .apexProtoOptionsGrid input{display:block;width:100%;padding:11px;color:#f7fbff;background:#091727;border:1px solid #536e83}
+#menu.apex9aPrototype .apexProtoOptionsGrid input[type=range]{padding:10px 0}
+#menu.apex9aPrototype .apexProtoOptionsGrid p{color:#c0d0df;line-height:1.55;font-size:13px;margin:12px 0}
+#menu.apex9aPrototype .apexProtoOptionsGrid button{margin-top:8px;background:linear-gradient(110deg,#ae0c24,#ed3046,#670e20);border:1px solid #ff6379;color:white;padding:12px 18px;font-weight:900;letter-spacing:.06em}
+@media(max-width:960px){
+ #menu.apex9aPrototype .apexProtoModeCards{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #menu.apex9aPrototype .apexProtoModeCard{aspect-ratio:2/1}
+ #menu.apex9aPrototype .apexProtoDetails article{height:380px}
+ #menu.apex9aPrototype .apexProtoHomeActions{width:52%}
+}
+@media(max-width:620px){
+ #menu.apex9aPrototype #apex9aLanding{min-height:620px;background-position:61% center!important}
+ #menu.apex9aPrototype .apexProtoHomeLogo{top:6%;left:5%;width:77%}
+ #menu.apex9aPrototype .apexProtoMotto{top:30%;left:6%}
+ #menu.apex9aPrototype .apexProtoHomeActions{left:5%;width:88%;top:52%}
+ #menu.apex9aPrototype .apexProtoMainAction{height:69px;font-size:17px}
+ #menu.apex9aPrototype .apexProtoBottomBar{height:75px;min-height:75px}
+ #menu.apex9aPrototype .apexProtoBottomLinks{width:100%;max-width:100%;justify-content:space-between}
+ #menu.apex9aPrototype .apexProtoBottomLinks button{font-size:10px;padding:0 7px;gap:5px}
+ #menu.apex9aPrototype .apexProtoSlogan{display:none}
+ #menu.apex9aPrototype .apexProtoRaceShell,#menu.apex9aPrototype .apexProtoOptionsShell{padding:12px}
+ #menu.apex9aPrototype .apexProtoTop small{display:none}
+ #menu.apex9aPrototype .apexProtoModeCard{aspect-ratio:1.16/1}
+ #menu.apex9aPrototype .apexProtoModeCopy strong{font-size:16px}
+ #menu.apex9aPrototype .apexProtoModeCopy small{font-size:10px}
+ #menu.apex9aPrototype .apexProtoDetails{grid-template-columns:1fr}
+ #menu.apex9aPrototype .apexProtoDetails article{height:360px}
+ #menu.apex9aPrototype .apexProtoOptionsGrid{grid-template-columns:1fr}
+ #menu.apex9aPrototype .apexProtoRaceFooter{flex-direction:column;align-items:stretch}
+ #menu.apex9aPrototype .apexProtoRaceFooter button{width:100%}
+}
