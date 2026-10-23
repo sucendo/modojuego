@@ -321,3 +321,16 @@
  .apex9aBriefingProto .apex9aBriefHeader small{text-align:left}
  .apex9aBriefingProto .apex9aBriefHeader h2{font-size:clamp(26px,4.3vw,40px);overflow-wrap:break-word}
 }
+
+/* Cierre 9A.9: reservar altura independiente para arte y nombre del neumático. */
+@media(min-width:701px){
+ .apex9aBriefingProto .apex9aBriefTyres .apex9aTyreVisual{
+   flex:0 0 148px;height:148px!important;max-height:none;
+ }
+}
+.apex9aBriefingProto .apex9aBriefTyres .apex9aTyreVisual img{
+ max-height:100%;max-width:100%;object-fit:contain;
+}
+.apex9aBriefingProto .apex9aBriefTyres .apex9aTyre b{
+ display:block;position:relative;z-index:1;margin-top:3px;
+}
