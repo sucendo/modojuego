@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - apex/fase-9a-menu-competicion
+      - apex/9a8-fidelidad-menus
     paths:
       - 'apex/**'
       - '.github/workflows/apex-9a-menu-final.yml'
@@ -36,6 +37,8 @@ jobs:
           node apex/tests/competition-9a-state.cjs
           node apex/tests/menu-9a-lifecycle.cjs
           node apex/tests/menu-9a-assets.cjs
+          node --check apex/js/menu-prototype-9a.js
+          node --check apex/tests/menu-9a8-prototype-browser.cjs
           node apex/tests/season-history-9a-audit.cjs
           node apex/tests/climate-9a-audit.cjs
           for file in apex/js/{menu-9a,preparation-9a,competition-9a,competition-flows-9a,climate-9a,menu-music-9a}.js; do node --check "$file"; done
@@ -73,6 +76,7 @@ jobs:
             sleep 1
           done
           mkdir -p /tmp/apex-results
+          node apex/tests/menu-9a8-prototype-browser.cjs 2>&1 | tee /tmp/apex-menu-9a/prototype.log
           node apex/tests/preparation-9a-browser.cjs 2>&1 | tee /tmp/apex-menu-9a/preparation.log
           node apex/tests/competition-flows-9a-browser.cjs 2>&1 | tee /tmp/apex-menu-9a/gp-season.log
       - name: Save screenshots and logs
@@ -83,4 +87,5 @@ jobs:
           path: |
             /tmp/apex-menu-9a/
             /tmp/apex-results/9a-*.png
+            /tmp/apex-results/9a8-*.png
           if-no-files-found: warn
