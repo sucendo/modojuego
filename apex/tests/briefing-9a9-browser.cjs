@@ -43,14 +43,14 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
    const original=await page.locator(m.strategy).inputValue();
    if(m.key!=='practice'){
     const choice=original==='aggressive'?'balanced':'aggressive';
-    await strategy.locator('[data-value="'+choice+'"]').click();
+    await root.locator('.apexBriefStrategies button[data-value="'+choice+'"]').click();
     assert.equal(await page.locator(m.strategy).inputValue(),choice,'Estrategia visual modifica control real '+m.key);
     await page.locator(m.strategy).selectOption(original);
    }
    const distanceChips=root.locator('.apexBriefDistance button');
    if(m.distance){
     assert.equal(await distanceChips.count(),4,'Cuatro distancias '+m.key);
-    await distanceChips.locator('[data-value="50"]').click();
+    await root.locator('.apexBriefDistance button[data-value="50"]').click();
     assert.equal(await page.locator(m.native).inputValue(),'50','Distancia sincronizada '+m.key);
    }else{
     assert.equal(await root.locator('.apexBriefDistanceSection').isVisible(),false,'Entrenamiento sin distancia GP');
