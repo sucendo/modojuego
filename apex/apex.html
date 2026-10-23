@@ -80,6 +80,15 @@ try{
   prototypeScript.src="js/menu-prototype-9a.js";
   prototypeScript.async=false;
   (document.body||document.head).appendChild(prototypeScript);
+  // 9A.9 · Preparación fiel al prototipo; se carga sobre ambos flujos 9A existentes.
+  const briefingStyles=document.createElement("link");
+  briefingStyles.rel="stylesheet";
+  briefingStyles.href="css/briefing-prototype-9a.css";
+  (document.head||document.body).appendChild(briefingStyles);
+  const briefingScript=document.createElement("script");
+  briefingScript.src="js/briefing-prototype-9a.js";
+  briefingScript.async=false;
+  (document.body||document.head).appendChild(briefingScript);
 }catch(err){
   document.getElementById("status").innerHTML="<div><strong>No se pudo cargar APEX.</strong><small>"+String(err.message||err)+"</small></div>";
   console.error(err);
