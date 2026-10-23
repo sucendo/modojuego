@@ -306,3 +306,15 @@
  .apex9aBriefingProto .apexBriefStrategies button{min-height:67px}
  .apex9aBriefingProto .apex9aStages span{font-size:9px}
 }
+
+/* Cierre 9A.9: control de retorno sin texto fragmentado en vertical. */
+.apex9aBriefingProto .apex9aBriefHeader>div{flex:1 1 auto;min-width:0}
+.apex9aBriefingProto .apex9aBriefHeader>button{
+ flex:0 0 auto;min-width:142px;max-width:none;white-space:nowrap;
+}
+@media(max-width:980px){
+ .apex9aBriefingProto .apex9aBriefHeader{flex-direction:column-reverse;align-items:stretch;gap:10px}
+ .apex9aBriefingProto .apex9aBriefHeader>button{align-self:flex-start}
+ .apex9aBriefingProto .apex9aBriefHeader small{text-align:left}
+ .apex9aBriefingProto .apex9aBriefHeader h2{font-size:clamp(26px,4.3vw,40px);overflow-wrap:break-word}
+}
