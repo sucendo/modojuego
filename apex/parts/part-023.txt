@@ -241,7 +241,9 @@ function playWeekendSession(){
  if(setup&&compound&&Array.from(compound.options).some(o=>o.value===setup.compound&&!o.disabled)){
   compound.value=setup.compound;compound.dispatchEvent(new Event('change',{bubbles:true}));
  }
- if(setup?.nextCompound)try{appStorage.setItem('apex26.tyre.next.v1',setup.nextCompound)}catch(e){}
+ // Sin un segundo stint planificado, restablecer el siguiente juego al inicial:
+ // así no se hereda una selección de boxes de otro GP o sesión.
+ if(setup)try{appStorage.setItem('apex26.tyre.next.v1',setup.nextCompound||setup.compound)}catch(e){}
  currentSession=s;
  sessionSettings={diff:weekendContext.diff,weather:setup?.weatherPreset||weekendContext.weather,
   noRivals:false,racePercentage:weekendContext.racePercentage};
