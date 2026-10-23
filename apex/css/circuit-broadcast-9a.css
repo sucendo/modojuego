@@ -157,3 +157,11 @@
  #menu.apex9aPrototype .apexCircuitBroadcastLayout svg{height:99px}
  #menu.apex9aPrototype .apexProtoCircuitPanel .apexProtoChips{margin:6px 9px;padding:6px}
 }
+
+/* El selector original tiene display:flex declarado y anula el atributo hidden.
+   Temporada debe mostrar el calendario bloqueado, no otro circuito editable. */
+#menu.apex9aPrototype .apexProtoCircuitPanel .apexProtoCircuitPicker[hidden],
+#menu.apex9aPrototype .apexProtoCircuitPanel .apexProtoLocked[hidden],
+#menu.apex9aPrototype .apexProtoCircuitPanel .apexProtoChips[hidden]{
+ display:none !important;
+}
