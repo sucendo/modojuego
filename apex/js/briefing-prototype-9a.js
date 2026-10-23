@@ -45,7 +45,7 @@ function syncStrategy(data){
 }
 function syncDistance(data){
  const select=by(data.root,data.comp?'#apex9aCompDistanceSelect':'#apex9aPrepDistance');
- const visible=!!select&&!select.disabled;
+ const visible=!!select&&!select.disabled&&!select.closest('[hidden]')&&getMode(data)!=='practice';
  data.distanceBlock.hidden=!visible;
  if(!visible)return;
  const available=Array.from(select.options).filter(o=>!o.disabled);
