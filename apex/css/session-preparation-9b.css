@@ -1,6 +1,6 @@
 /* APEX 9B: preparación por sesión, sin alterar motor ni HUD. */
 #apex9bPreparation[hidden]{display:none!important}
-#apex9bPreparation{position:fixed;inset:0;z-index:3100;overflow:auto;background:linear-gradient(120deg,#07101afa,#142137f7);color:#f1f5fb;font-family:system-ui,sans-serif}
+#apex9bPreparation{position:fixed;inset:0;z-index:3100;overflow:auto;background:linear-gradient(120deg,#07101a,#142137);color:#f1f5fb;font-family:system-ui,sans-serif}
 #apex9bPreparation *{box-sizing:border-box}
 .apex9bShell{max-width:1540px;min-height:100%;margin:auto;padding:clamp(14px,3vw,36px);display:flex;flex-direction:column;gap:22px}
 .apex9bHeader{display:flex;justify-content:space-between;gap:15px;border-bottom:2px solid #d62c39;padding-bottom:16px}
