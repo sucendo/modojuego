@@ -310,7 +310,10 @@
 /* Cierre 9A.9: control de retorno sin texto fragmentado en vertical. */
 .apex9aBriefingProto .apex9aBriefHeader>div{flex:1 1 auto;min-width:0}
 .apex9aBriefingProto .apex9aBriefHeader>button{
- flex:0 0 auto;min-width:142px;max-width:none;white-space:nowrap;
+ display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;
+ font:800 13px/1.2 Arial,Helvetica,sans-serif!important;
+ letter-spacing:.05em;min-width:190px;width:max-content;max-width:100%;
+ padding:13px 16px;white-space:nowrap;overflow:hidden;
 }
 @media(max-width:980px){
  .apex9aBriefingProto .apex9aBriefHeader{flex-direction:column-reverse;align-items:stretch;gap:10px}
