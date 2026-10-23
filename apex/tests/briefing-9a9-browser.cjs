@@ -68,11 +68,12 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
    const dimensions=await root.evaluate(node=>{
     const btn=node.querySelector('.apex9aBriefHeader>button');
     const rect=btn.getBoundingClientRect();
-    return {overflow:node.scrollWidth-node.clientWidth,buttonWidth:rect.width,buttonHeight:rect.height};
+    return {overflow:node.scrollWidth-node.clientWidth,buttonWidth:rect.width,buttonHeight:rect.height,buttonOverflow:btn.scrollWidth-btn.clientWidth};
    });
    assert.ok(dimensions.overflow<=2,'Sin desbordamiento horizontal '+m.key+': '+JSON.stringify(dimensions));
    assert.ok(dimensions.buttonWidth>=140,'Botón de regreso legible '+m.key);
    assert.ok(dimensions.buttonHeight<=65,'Texto regreso no vertical '+m.key);
+   assert.ok(dimensions.buttonOverflow<=2,'El botón no desborda su propia etiqueta '+m.key);
    await page.screenshot({path:'/tmp/apex-results/9a9-'+(mobile?'mobile':'desktop')+'-'+m.key+'.png'});
    const hasOverflow=await root.evaluate(node=>node.scrollHeight>node.clientHeight+12);
    if(hasOverflow){
