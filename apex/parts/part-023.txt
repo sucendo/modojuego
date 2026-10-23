@@ -107,6 +107,20 @@ function buildRaceFinishPages(spec,results,position){const fastestName=sessionFa
  return pages}
 
 function saveWeekendProgress(){if(!weekendContext||weekendContext.mode!=='season')return;save.seasonWeekend={round:save.round,sessionIndex:weekendContext.sessionIndex,states:weekendContext.states,gridOrder:weekendContext.gridOrder,sessionResults:weekendContext.sessionResults,racePercentage:weekendContext.racePercentage};persist()}
+
+/* 9B: adaptador exclusivamente de lectura. No altera progreso ni resultados. */
+Object.defineProperty(window,'ApexNativeWeekend9B',{value:Object.freeze({
+ snapshot:()=>{
+  const w=weekendContext;if(!w)return null;
+  return {mode:w.mode,spec:{dir:w.spec.dir,name:w.spec.name,country:w.spec.country,r:w.spec.r},
+   round:w.mode==='season'?save.round:0,sessionIndex:w.sessionIndex,
+   session:WEEKEND_SESSIONS[w.sessionIndex]||null,
+   states:{...w.states},gridOrder:Array.isArray(w.gridOrder)?w.gridOrder.slice():null,
+   results:Object.fromEntries(Object.entries(w.sessionResults||{}).map(([key,rows])=>[key,
+    Array.isArray(rows)?rows.map(r=>({uid:r.uid,name:r.name,time:r.time})):[]])),
+   racePercentage:w.racePercentage,raceLaps:w.raceLaps,weather:w.weather};
+ }
+}),configurable:false,writable:false});
 // FASE 8C: configuration is resolved once; timing still uses the existing finish gate.
 const APEX_RACE_PERCENTAGES=Object.freeze([25,50,75,100]);
 let apexRacePercentage=(()=>{try{const p=+appStorage.getItem('apex26.race.percent.v1');return APEX_RACE_PERCENTAGES.includes(p)?p:25}catch(e){return 25}})();
@@ -217,7 +231,23 @@ function renderWeekendHub(){
  if(w.mode==='season'){const all=document.createElement('button');all.className='btn';all.textContent='SALTAR GP COMPLETO';all.onclick=skipWholeSeasonGP;actions.appendChild(all)}
  $('weekendNote').textContent=s==='race'?(`Distancia: ${w.racePercentage} % — ${w.raceLaps} vueltas. `)+(w.mode==='season'?'En Temporada la carrera también se puede simular/saltar.':'En Gran Premio la carrera es obligatoria.'):'Las sesiones previas son opcionales. Si saltas la Clasificación, la parrilla se simula.';
 }
-function playWeekendSession(){if(!weekendContext)return;const s=WEEKEND_SESSIONS[weekendContext.sessionIndex],laps=s==='race'?weekendContext.raceLaps:999;currentSession=s;sessionSettings={diff:weekendContext.diff,weather:weekendContext.weather,noRivals:false,racePercentage:weekendContext.racePercentage};$('weekendPanel').classList.add('hidden');startRace(weekendContext.spec,laps,weekendContext.mode,$('weekendMenu'))}
+function playWeekendSession(){
+ if(!weekendContext)return;
+ const s=WEEKEND_SESSIONS[weekendContext.sessionIndex],laps=s==='race'?weekendContext.raceLaps:999;
+ // 9B: resolución sobre el MISMO lanzador de sesión, no un motor paralelo.
+ const setup=window.ApexSessionPlans9B?.resolveForStart?.({mode:weekendContext.mode,
+  spec:weekendContext.spec,round:weekendContext.mode==='season'?save.round:0,session:s});
+ const compound=$('menuTyreCompound');
+ if(setup&&compound&&Array.from(compound.options).some(o=>o.value===setup.compound&&!o.disabled)){
+  compound.value=setup.compound;compound.dispatchEvent(new Event('change',{bubbles:true}));
+ }
+ if(setup?.nextCompound)try{appStorage.setItem('apex26.tyre.next.v1',setup.nextCompound)}catch(e){}
+ currentSession=s;
+ sessionSettings={diff:weekendContext.diff,weather:setup?.weatherPreset||weekendContext.weather,
+  noRivals:false,racePercentage:weekendContext.racePercentage};
+ $('weekendPanel').classList.add('hidden');
+ startRace(weekendContext.spec,laps,weekendContext.mode,$('weekendMenu'));
+}
 function skipWeekendSession(){if(!weekendContext)return;const s=WEEKEND_SESSIONS[weekendContext.sessionIndex];if(s==='race'&&weekendContext.mode==='grandprix')return;if(s==='race'){const order=simulateRaceOrder(weekendContext.gridOrder);weekendContext.sessionResults.race=order.map((d,i)=>({uid:d.uid,name:d.name,team:d.team,time:estimateLapBase(weekendContext.spec)*(1.8+i*.015)}));weekendContext.states.race='skipped';awardSeasonOrder(order);weekendContext=null;goMenu();renderSchedule();return}const res=simulateTiming(s);weekendContext.sessionResults[s]=res;weekendContext.states[s]='skipped';if(s==='qualifying')weekendContext.gridOrder=res.map(x=>x.uid);weekendContext.sessionIndex++;saveWeekendProgress();renderWeekendHub()}
 function skipWholeSeasonGP(){if(!weekendContext||weekendContext.mode!=='season')return;if(!confirm('¿Simular y saltar completamente este Gran Premio?'))return;const q=simulateTiming('qualifying'),order=simulateRaceOrder(q.map(x=>x.uid));awardSeasonOrder(order);weekendContext=null;goMenu();renderSchedule()}
 function skipSeasonGPFromMenu(){if(save.round>=F1_SEASON_COUNT)return;currentMode='season';beginWeekend('season',calendar[save.round]);skipWholeSeasonGP()}
