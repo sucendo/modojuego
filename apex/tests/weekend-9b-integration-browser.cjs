@@ -10,6 +10,14 @@ const pit=fs.readFileSync(path.join(__dirname,'pit-tyres-hook.js'),'utf8');
 const race=fs.readFileSync(path.join(__dirname,'race-distance-hook.js'),'utf8');
 const extra=`
  window.__apex9BIntegration=Object.freeze({
+  armRace:()=>{
+   // Real launcher created the session. Advance only the start countdown and enable
+   // the already-existing production autopilot, as the race-distance audit does.
+   if(currentSession!=='race'||!player||!apexRaceSession)throw Error('Race not initialized');
+   countdown=0;mode='race';paused=false;apexArmRaceGridTiming();
+   apexSetDriveProfile('assisted',false);apexReleaseInputs();gyro.enabled=false;setAutoDriveMode(1,false);
+   return {mode,session:currentSession,config:apexRaceSession.config};
+  },
   check:()=>({
    session:currentSession,mode:mode,currentMode,weather:sessionSettings.weather,
    tyre:player?.tyres?.compound||null,round:save.round,
@@ -94,6 +102,8 @@ async function finishResults(page){
     assert.equal(live.raceLaps,snap.raceLaps);
     assert.ok(Array.isArray(live.raceGrid)&&live.raceGrid.length>0,'Native qualification grid');
     const result=await page.evaluate(async()=>{
+     const started=window.__apex9BIntegration.armRace();
+     if(started.mode!=='race')throw Error('Race did not leave countdown');
      await window.__apexRaceAudit.boundaryFixture();
      return window.__apexRaceAudit.drive(45);
     });
