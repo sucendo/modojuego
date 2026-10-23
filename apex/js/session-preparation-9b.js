@@ -120,7 +120,8 @@ function show(){
  $('apex9bSubtitle').textContent=w.mode==='season'?'TEMPORADA · RONDA '+(w.round+1):'GRAN PREMIO · FIN DE SEMANA';
  $('apex9bCircuit').textContent=w.spec.name;
  $('apex9bEventInfo').textContent=w.mode==='season'?'Campeonato · Ronda '+(w.round+1):'Gran Premio independiente';
- $('apex9bStageInfo').textContent='Sesión '+(w.sessionIndex+1)+' de 5'+(stage==='race'?' · '+w.racePercentage+' % · '+w.raceLaps+' vueltas':'');
+ const gridPos=Array.isArray(w.gridOrder)?w.gridOrder.indexOf('PLAYER')+1:0;
+ $('apex9bStageInfo').textContent='Sesión '+(w.sessionIndex+1)+' de 5'+(stage==='race'?' · '+w.racePercentage+' % · '+w.raceLaps+' vueltas'+(gridPos>0?' · Parrilla P'+gridPos:''):'');
  const svg=$('apex9bTrackSvg');svg.replaceChildren();
  const available=$('gpCircuitInfo')?.querySelector('svg')||$('seasonCircuitInfo')?.querySelector('svg');
  if(available)svg.appendChild(available.cloneNode(true));
@@ -148,8 +149,9 @@ function renderHub(){
   if(!f||!p)return;
   const old=card.querySelector('.apex9bHubInfo');if(old)old.remove();
   const line=document.createElement('div');line.className='apex9bHubInfo';
+  const rows=w.results?.[s],pos=w.states[s]==='done'&&Array.isArray(rows)?rows.findIndex(r=>r.uid==='PLAYER')+1:0;
   line.textContent=(WEATHER[p.weatherSelection==='auto'?f.preset:p.weatherSelection]||'Variable')+' · '+(COMPS[p.compound]||'Medio')+
-   (i===w.sessionIndex?' · PREPARAR':'');
+   (pos>0?' · Resultado P'+pos:'')+(i===w.sessionIndex?' · PREPARAR':'');
   card.appendChild(line);
  });
  const button=$('weekendActions')?.querySelector('.btn.primary');
