@@ -3282,7 +3282,12 @@ function autoRecoveryController(sp,env){
      // back to the locked point. Keep the lane actually reached; SVG containment
      // and the existing alignment gate still apply before normal driving resumes.
      const boundaryRibbon=R.boundaryEpisode&&!boundaryBlocked&&ps.zone==='TRACK'&&absLat<env.half-.7&&Math.abs(angleDiff(trackHeading,player.heading))<.70&&apexDrivableAreaContains(player.x,player.z)!==false;
-     const nearRibbon=R.boundaryEpisode?(dist<2.0||absLat<1.1||boundaryRibbon):(absLat<env.half+env.curb+.85||dist<2.6);
+     // No pasar a ALIGN sólo por estar cerca de la anchura nominal. En un
+     // trazado estrecho eso dejaba el coche detenido a >1 m del carril objetivo,
+     // con el neumático contra el borde y sin poder girar.
+     const edgeGap=Math.abs(player.lat-R.emergencyPlan.lane);
+     const nearRibbon=R.boundaryEpisode?(dist<2.0||absLat<1.1||boundaryRibbon):
+       ((absLat<env.half+env.curb+.85&&edgeGap<.82)||(dist<2.6&&edgeGap<1.1));
      if(nearRibbon){R.emergencyStage='ALIGN';R.emergencySince=raceT;R.emergencyReverse=false;R.alignStableSince=0;R.startX=player.x;R.startZ=player.z;R.emergencyEdgeLane=boundaryRibbon?clamp(player.lat,-eLimit,eLimit):R.emergencyPlan.lane;}
      return{steer,throttle,brake,target,boost:false,reverse:rev,phase:'RECUP · VUELVE A PISTA',recoveryAssist:true,recoveryHeading:vehicleTarget,recoveryForcePull:hardPull};
    }
@@ -3292,6 +3297,17 @@ function autoRecoveryController(sp,env){
    // ya el timeout de 2.2 s que podía mandar un coche a 90° a REJOIN_LOCK.
    if(R.emergencyStage==='ALIGN'){
      const edgeLane=R.emergencyEdgeLane??R.emergencyPlan.lane,edgeErr=player.lat-edgeLane;
+     // ALIGN sólo resuelve rumbo a baja velocidad. Si el coche está quieto y
+     // sigue separado del borde de alineación, regresar a tracción/recolocación
+     // en vez de esperar indefinidamente una condición imposible.
+     if(sp<.35&&Math.abs(edgeErr)>1.1&&stageElapsed>2.7){
+       R.emergencyStage=contact?'BACKOUT':'PULL_IN';R.emergencySince=raceT;
+       R.emergencyPlan=null;R.emergencyReverse=null;R.alignStableSince=0;
+       R.startX=player.x;R.startZ=player.z;
+       pushTelemetryEvent('RECOVERY_ALIGN_STALL_RETRY',{gap:telemetryRound(edgeErr,2),contact:!!contact});
+       return{steer:0,throttle:0,brake:0,target:0,boost:false,reverse:false,
+         phase:'RECUP · RETOMA TRACCIÓN',recoveryAssist:true,recoveryHeading:trackHeading,recoveryForcePull:false};
+     }
      const rawTrackErr=angleDiff(trackHeading,player.heading),rawAbs=Math.abs(rawTrackErr);
      // Sólo añadimos corrección de carril cuando la orientación ya es razonable; con
      // >50° el único objetivo es apuntar paralelo a la pista sin cruzarla.
