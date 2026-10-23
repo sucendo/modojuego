@@ -67,6 +67,15 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
     card:card.scrollWidth-card.clientWidth};
   });
   assert.ok(overflow.scroll<=3&&overflow.panel<=3&&overflow.card<=3,'Tarjeta sin desbordamiento horizontal '+JSON.stringify(overflow));
+
+  const bottom=await page.locator('.apexProtoCircuitPanel').evaluate(panel=>{
+   const last=panel.querySelector('#apexProtoDistanceControl');
+   return {container:panel.getBoundingClientRect().bottom,
+    controls:last.getBoundingClientRect().bottom,
+    h:panel.getBoundingClientRect().height};
+  });
+  assert.ok(bottom.controls<=bottom.container+2,'Distancia y clima no quedan cortados '+JSON.stringify(bottom));
+
   await page.screenshot({path:'/tmp/apex-results/9a-circuit-broadcast-'+(mobile?'mobile':'desktop')+'.png',fullPage:true});
   assert.deepEqual(errors.filter(e=>/SyntaxError|Unexpected end|Cannot read properties/.test(e)),[]);
   console.log(JSON.stringify({test:'apex-circuit-broadcast',mobile,sourceGeometry:true,overflow,ok:true}));
