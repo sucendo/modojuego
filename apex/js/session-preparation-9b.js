@@ -124,8 +124,12 @@ function show(){
  const gridPos=Array.isArray(w.gridOrder)?w.gridOrder.indexOf('PLAYER')+1:0;
  $('apex9bStageInfo').textContent='Sesión '+(w.sessionIndex+1)+' de 5'+(stage==='race'?' · '+w.racePercentage+' % · '+w.raceLaps+' vueltas'+(gridPos>0?' · Parrilla P'+gridPos:''):'');
  const svg=$('apex9bTrackSvg');svg.replaceChildren();
- const available=$('gpCircuitInfo')?.querySelector('svg')||$('seasonCircuitInfo')?.querySelector('svg');
- if(available)svg.appendChild(available.cloneNode(true));
+ // El primer SVG del resumen nativo es la BANDERA, no el trazado: no ampliarla
+ // como si fuese el mapa. La geometría SVG del circuito sigue en su inspector.
+ const detail=document.createElement('p');
+ detail.className='apex9bCircuitMetadata';
+ detail.textContent=[w.spec.country,w.spec.name].filter(Boolean).join(' · ');
+ svg.appendChild(detail);
  updateTyres();renderStrategy();refreshWeather();
  $('apex9bClose').focus();
 }
