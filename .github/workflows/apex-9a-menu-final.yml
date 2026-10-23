@@ -50,6 +50,7 @@ jobs:
           node --check apex/js/session-preparation-9b.js
           node --check apex/tests/session-9b-browser.cjs
           node --check apex/tests/weekend-9b-integration-browser.cjs
+          node --check apex/tests/season-9b-persistence-browser.cjs
           for file in apex/js/{menu-9a,preparation-9a,competition-9a,competition-flows-9a,climate-9a,menu-music-9a}.js; do node --check "$file"; done
 
   menu-browser:
@@ -91,6 +92,7 @@ jobs:
           node apex/tests/competition-flows-9a-browser.cjs 2>&1 | tee /tmp/apex-menu-9a/gp-season.log
           node apex/tests/session-9b-browser.cjs 2>&1 | tee /tmp/apex-menu-9a/session-9b.log
           node apex/tests/weekend-9b-integration-browser.cjs 2>&1 | tee /tmp/apex-menu-9a/weekend-9b-integration.log
+          node apex/tests/season-9b-persistence-browser.cjs 2>&1 | tee /tmp/apex-menu-9a/season-9b-persistence.log
       - name: Save screenshots and logs
         uses: actions/upload-artifact@v4
         if: always()
