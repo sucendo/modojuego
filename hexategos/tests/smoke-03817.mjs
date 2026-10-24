@@ -1,3 +1,4 @@
+import { versionAtLeast } from './version-compat.mjs';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
@@ -5,9 +6,9 @@ const js=read('js/hex-inspector-03817.js'),css=read('css/hex-inspector-03817.css
 const html=read('index.html'),trade=read('js/trade-logistics-0370.js');
 const production=read('js/production-0388.js');
 assert.doesNotThrow(()=>new Function(js));
-assert.match(html,/v0\.38\.1[789]<\/title>/);
+assert.ok(versionAtLeast(html,'0.38.17'));
 assert.match(html,/js\/hex-inspector-03817\.js\?v=\d+/);
-assert.match(html,/css\/hex-inspector-03817\.css\?v=03817/);
+assert.match(html,/css\/hex-inspector-03817\.css\?v=[A-Za-z0-9_-]+/);
 assert.match(html,/js\/trade-logistics-0370\.js\?v=\d+/);
 assert.match(html,/js\/production-0388\.js\?v=\d+/);
 assert.ok(css.includes('var(--hex-ui-scale'),'context fonts must follow Options');
@@ -16,20 +17,36 @@ assert.ok(js.includes('original.apply(this,arguments)'),'legacy context buttons 
 assert.ok(js.includes('productionCargoDetail03817'),'port manufacturing imports/exports missing');
 assert.ok(trade.includes('r.cargoDirection03720[i]=src===a?1:-1'),'route commodity direction missing');
 assert.ok(production.includes('r.productionCargoDetail03817.push'),'industrial cargo direction missing');
-assert.ok(!js.includes('setInterval(')&&!js.includes('requestAnimationFrame('),
+assert.ok(!js.includes('setInterval(')&&!js.includes('MutationObserver'),
   'inspector must not add continuous simulation work');
+assert.ok(js.includes('requestAnimationFrame(()=>')&&js.includes("root.classList.contains('open3244')"),
+  'one-shot positioning must stop when the inspector is closed');
 
-const root={scrollTop:0,classList:{add(){},remove(){}},insertBefore(){},addEventListener(){}};
-const actions={querySelector:()=>null,querySelectorAll:()=>[],addEventListener(){},replaceChildren(){},appendChild(){}};
-let contents='';
-const details={scrollTop:0};
+const root={
+  scrollTop:0,events:{},
+  classList:{add(){},remove(){},toggle(){},contains(){return true}},
+  insertBefore(){},addEventListener(name,fn){this.events[name]=fn},
+  scrollTo({top}){this.scrollTop=top},
+};
+const actions={querySelector:()=>null,querySelectorAll:()=>[],addEventListener(){},
+  replaceChildren(){},appendChild(){},after(){},hidden:false};
+let panelContent='',detailsContent='',populationHeader='';
 const panel={id:null,className:'',hidden:false,
-  set innerHTML(v){contents=v;details.scrollTop=0},get innerHTML(){return contents},
-  querySelector:s=>s==='.ctxDetails03817'?details:null};
+  set innerHTML(v){panelContent=v},get innerHTML(){return panelContent},
+  querySelector:()=>null};
+const details={scrollTop:0,hidden:false,firstElementChild:null,
+  set innerHTML(v){detailsContent=v;this.scrollTop=0},get innerHTML(){return detailsContent},
+  querySelector:()=>null,contains:()=>false};
+const title={children:[],set textContent(v){populationHeader=v;this.children=[]},
+  get textContent(){return populationHeader},
+  appendChild(node){this.children.push(node)}};
+let madeDiv=0;
 const doc={
   getElementById:id=>id==='contextMenu3244'?root:
-    id==='ctxActions3244'?actions:null,
-  createElement:tag=>tag==='div'?panel:{className:'',innerHTML:'',appendChild(){},children:[],dataset:{}}
+    id==='ctxActions3244'?actions:id==='ctxTitle3244'?title:null,
+  createElement:tag=>tag==='div'?(++madeDiv===1?panel:details):
+    {className:'',innerHTML:'',appendChild(){},children:[],dataset:{}},
+  addEventListener(){}
 };
 const L={n:18,land:Array(18).fill(1)};
 L.land[17]=-1;
@@ -76,7 +93,7 @@ const vals=[doc,window,()=>{root.scrollTop=0},()=>{},()=>{},()=>L,8,owner,cities
 const boot=new Function(...args,js+
   '\nreturn {api:window.HexategosHexInspector03817,render:renderContextDialog3244,setTime:t=>campaignSeconds3230=t};');
 const sim=boot(...vals);
-assert.equal(sim.api.version,'0.38.17');
+assert.ok(versionAtLeast("const BUILD='"+sim.api.version+"'",'0.38.17'),'inspector must preserve historical capabilities');
 const rural=sim.api.population(2),urban=sim.api.population(3);
 assert.ok(urban.value>rural.value,'city must be more populated than empty rural hex');
 assert.equal(sim.api.population(17),null,'ocean hex should not gain population');
@@ -89,24 +106,42 @@ const city={kind:'cell',cell:3,owner:0,own:true,neutral:false,enemy:false,
   port:true,city:2,industry:2,fort:0,capital:true,geo:'Hex 3'};
 state.contextData=city;
 sim.render(city);
-assert.ok(contents.includes('Población estimada'),'missing demographic summary');
-assert.ok(contents.includes('Recursos del terreno'),'resource potential missing');
-assert.ok(contents.includes('Gobierno y estabilidad'),'government values missing');
-assert.ok(contents.includes('Industrias y controles de producción'),'industry summary missing');
-assert.ok(contents.includes('Puerto, comercio y flotas'),'port section missing');
-assert.ok(contents.includes('↑ Exporta: Alimentos'),'outbound sea cargo not identified');
-assert.ok(contents.includes('↓ Importa: Energía'),'inbound fuel not identified');
-assert.match(contents,/↓ Importa:[^<]*Pozo de gas/,'inbound manufactured cargo not identified');
-assert.ok(contents.includes('Flota 9'),'naval fleet based in port missing');
-assert.deepEqual(sim.api.tabsFor(city),['summary','industry','government','port']);
+assert.ok(panelContent.includes('Alimentos'),'summary must show food supply');
+assert.ok(panelContent.includes('Electricidad'),'summary must show electricity');
+assert.ok(title.children.some(x=>x.title?.includes('no es un censo')),
+  'population is visible in the header and correctly marked as an estimate');
+assert.ok(title.children.some(x=>x.textContent.includes('hab.')),'estimated inhabitants missing');
+const clickTab=key=>root.events.click({
+  target:{closest:selector=>selector==='[data-inspect-tab03817]'?
+    {dataset:{inspectTab03817:key}}:null},
+  preventDefault(){},stopPropagation(){}
+});
+assert.deepEqual(sim.api.tabsFor(city),['summary','industry','government','port','terrain']);
+clickTab('industry');
+assert.equal(sim.api.current().tab,'industry');
+assert.ok(detailsContent.includes('Industria y producción'),
+  'manufacturing controls are loaded only in the industry tab');
+clickTab('government');
+assert.ok(detailsContent.includes('Gobierno local'),'local government view missing');
+clickTab('port');
+assert.ok(detailsContent.includes('Puerto, comercio y flotas'),'port tab missing');
+assert.ok(detailsContent.includes('↑ Exporta: Alimentos'),'outgoing sea cargo not identified');
+assert.ok(detailsContent.includes('↓ Importa: Combustible'),'incoming fuel not identified');
+assert.match(detailsContent,/↓ Importa:[^<]*Pozo de gas/,
+  'inbound manufactured cargo not identified');
+assert.ok(detailsContent.includes('Flota 9'),'naval fleet based at port missing');
+clickTab('terrain');
+assert.ok(detailsContent.includes('Recursos y potencial económico'),'geographic tab missing natural resources');
 root.scrollTop=29;details.scrollTop=77;
 sim.render(city);
-assert.equal(root.scrollTop,29,'inspector outer scroll jumped when same cell refreshed');
-assert.equal(details.scrollTop,77,'inspector inner scroll jumped when same cell refreshed');
+assert.equal(root.scrollTop,29,'outer scroll must not jump on same-cell update');
+assert.equal(details.scrollTop,77,'inner details scroll must not jump on same-cell update');
 const ruralHex={kind:'cell',cell:2,owner:0,own:true,city:0,industry:0,fort:0,port:false};
-assert.deepEqual(sim.api.tabsFor(ruralHex),['summary','industry']);
+assert.deepEqual(sim.api.tabsFor(ruralHex),['summary','industry','terrain']);
 sim.render(ruralHex);
+assert.equal(sim.api.current().tab,'summary','new cell must return to summary');
 assert.equal(root.scrollTop,0,'new hexagon must start at top');
 assert.equal(details.scrollTop,0,'new hexagon details must start at top');
-assert.ok(contents.includes('Sin administración urbana local.'));
+clickTab('government');
+assert.equal(sim.api.current().tab,'summary','unavailable government tab must be rejected');
 console.log('HEXATEGOS 0.38.17 population, resources, manufacturing controls, supply, government, port imports/exports, fleet and Options font: OK');

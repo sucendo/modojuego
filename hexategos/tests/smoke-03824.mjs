@@ -8,7 +8,7 @@ const __dirname=path.dirname(fileURLToPath(import.meta.url));
 const src=fs.readFileSync(path.join(__dirname,'../js/production-0388.js'),'utf8');
 assert.match(src,/file\.payload\.production0388=saveState\(\)/,'Portable save must contain industries');
 assert.match(src,/restore\(input&&Array\.isArray\(input\.sites\)\?input:null\)/,'Portable import must isolate industrial state');
-assert.match(src,/if\(snapshot&&Array\.isArray\(snapshot\.sites\)\)restore\(snapshot\)/,'Browser load must preserve saved specialized sites');
+assert.match(src,/if\(snapshot&&Array\.isArray\(snapshot\.sites\)\)\s*\{\s*restore\(snapshot\)/,'Browser load must preserve saved specialized sites');
 assert.match(src,/codec\?\.set\)return codec\.set\(SAVE_KEY,state\)/,'Browser save must use compact validated storage');
 assert.match(src,/localStorage\.setItem\(SAVE_KEY,text\)/,'Browser save must keep an uncompressed compatibility fallback');
 assert.match(src,/const powerStation=def\.group==='power'/,'Power plant must be distinct from ordinary factories');
