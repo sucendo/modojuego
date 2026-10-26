@@ -8,14 +8,18 @@ const KEY='apex26.driverProfile.v1';
 const $=id=>document.getElementById(id);
 const PATTERNS=['racing','chevron','bands','split','clean'];
 const GENDERS=['unspecified','male','female','other'];
+const SUIT_PATTERNS=['racing','chevron','diagonal','classic'];
+const SUIT_SOURCES=['helmet','team','custom'];
 const DEFAULT=()=>({version:1,name:'',age:null,gender:'unspecified',nationality:'',number:null,
- helmet:{primary:'#10263b',secondary:'#e32842',trim:'#f4f7fb',visor:'#162536',pattern:'racing'}});
+ helmet:{primary:'#10263b',secondary:'#e32842',trim:'#f4f7fb',visor:'#162536',pattern:'racing'},
+ suit:{primary:'#10263b',secondary:'#e32842',trim:'#f4f7fb',pattern:'racing',source:'helmet'}});
 const validColor=(v,fallback)=>/^#[0-9a-f]{6}$/i.test(String(v||''))?String(v).toLowerCase():fallback;
 const bounded=(v,n)=>String(v??'').replace(/[\u0000-\u001f\u007f<>]/g,'').replace(/\s+/g,' ').trim().slice(0,n);
 const digit=(v,min,max)=>v===''||v==null?null:(Number.isInteger(Number(v))&&+v>=min&&+v<=max?+v:null);
 const copy=o=>JSON.parse(JSON.stringify(o));
 function normalize(value){
- const d=DEFAULT(),v=value&&typeof value==='object'?value:{},h=v.helmet&&typeof v.helmet==='object'?v.helmet:{};
+ const d=DEFAULT(),v=value&&typeof value==='object'?value:{},h=v.helmet&&typeof v.helmet==='object'?v.helmet:{},
+ suit=v.suit&&typeof v.suit==='object'?v.suit:{};
  return {
   version:1,name:bounded(v.name,26),age:digit(v.age,1,120),
   gender:GENDERS.includes(v.gender)?v.gender:'unspecified',
@@ -26,6 +30,13 @@ function normalize(value){
    trim:validColor(h.trim,d.helmet.trim),
    visor:validColor(h.visor,d.helmet.visor),
    pattern:PATTERNS.includes(h.pattern)?h.pattern:d.helmet.pattern
+  },
+  suit:{
+   primary:validColor(suit.primary,d.suit.primary),
+   secondary:validColor(suit.secondary,d.suit.secondary),
+   trim:validColor(suit.trim,d.suit.trim),
+   pattern:SUIT_PATTERNS.includes(suit.pattern)?suit.pattern:d.suit.pattern,
+   source:SUIT_SOURCES.includes(suit.source)?suit.source:d.suit.source
   }
  };
 }
@@ -45,6 +56,13 @@ function profilePatch(form){
    trim:form.elements.helmetTrim.value,
    visor:form.elements.helmetVisor.value,
    pattern:form.elements.helmetPattern.value
+  },
+  suit:{
+   primary:form.elements.suitPrimary?.value||state.suit.primary,
+   secondary:form.elements.suitSecondary?.value||state.suit.secondary,
+   trim:form.elements.suitTrim?.value||state.suit.trim,
+   pattern:form.elements.suitPattern?.value||state.suit.pattern,
+   source:form.elements.suitSource?.value||state.suit.source
   }
  });
 }
@@ -88,6 +106,7 @@ function render(){
   racing:'Franja de competición',chevron:'Chevron',bands:'Bandas',
   split:'Dos tonos',clean:'Minimalista'
  })[current.helmet.pattern]:'';
+ global.ApexDriverAppearance9F?.render?.(current);
  $('apexProfileStatus').textContent='CAMBIOS SIN GUARDAR';
  $('apexProfileStatus').dataset.saved='false';
 }
@@ -102,6 +121,10 @@ function fill(){
  for(const [control,key] of [['helmetPrimary','primary'],['helmetSecondary','secondary'],
   ['helmetTrim','trim'],['helmetVisor','visor'],['helmetPattern','pattern']]){
   form.elements[control].value=p.helmet[key];
+ }
+ for(const [control,key] of [['suitPrimary','primary'],['suitSecondary','secondary'],
+  ['suitTrim','trim'],['suitPattern','pattern'],['suitSource','source']]){
+  if(form.elements[control])form.elements[control].value=p.suit[key];
  }
  render();
  $('apexProfileStatus').textContent=p.name?'PERFIL GUARDADO':'PERFIL SIN CONFIGURAR';
