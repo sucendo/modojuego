@@ -10,8 +10,8 @@
  font-family:Arial,Helvetica,sans-serif!important;box-sizing:border-box!important;
 }
 #menu.apex9aPrototype *,#menu.apex9aPrototype *::before,#menu.apex9aPrototype *::after{box-sizing:border-box}
-#menu.apex9aPrototype > :not(#apex9aLanding):not(#apex9aModesScreen):not(#apex9aOptionsScreen){display:none!important}
-#menu.apex9aPrototype :is(#apex9aLanding,#apex9aModesScreen,#apex9aOptionsScreen)[hidden]{display:none!important}
+#menu.apex9aPrototype > :not(#apex9aLanding):not(#apex9aModesScreen):not(#apex9aOptionsScreen):not(#apex9fProfileScreen){display:none!important}
+#menu.apex9aPrototype :is(#apex9aLanding,#apex9aModesScreen,#apex9aOptionsScreen,#apex9fProfileScreen)[hidden]{display:none!important}
 #menu.apex9aPrototype button{cursor:pointer;font-family:inherit}
 #menu.apex9aPrototype :is(button,select,input):focus-visible{outline:2px solid #f0f9ff;outline-offset:3px}
 #menu.apex9aPrototype #apex9aLanding{
