@@ -151,7 +151,7 @@ function makeHome(){
  '</nav><div class="apexProtoSlogan">DRIVE<br>BEYOND</div></footer>';
  $('apex9aRace').addEventListener('click',()=>show('modes'));
  $('apex9aOptions').addEventListener('click',()=>show('options'));
- $('apex9aProfile').addEventListener('click',()=>advanced('teamGarage','home'));
+ $('apex9aProfile').addEventListener('click',()=>{if(!global.ApexDriverProfile9F?.open?.())advanced('teamGarage','home');});
  $('apex9aAudio').addEventListener('click',()=>global.ApexMenuMusic9A?.toggle());
  $('apex9aHelp').addEventListener('click',()=>advanced('help','home'));
  $('apex9aCredits').addEventListener('click',()=>global.alert('APEX Formula 26 · Sucendo'));
