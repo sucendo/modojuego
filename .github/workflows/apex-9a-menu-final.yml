@@ -41,6 +41,7 @@ jobs:
           node apex/tests/menu-9a-assets.cjs
           node --check apex/js/menu-prototype-9a.js
           node --check apex/js/driver-profile-9f.js
+          node --check apex/js/driver-appearance-9f.js
           node --check apex/tests/driver-profile-9f-browser.cjs
           node --check apex/js/circuit-broadcast-9a.js
           node --check apex/tests/circuit-broadcast-9a-browser.cjs
