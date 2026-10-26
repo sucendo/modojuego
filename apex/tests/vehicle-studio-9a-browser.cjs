@@ -30,6 +30,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
   assert.ok((await panel.locator('#apexProtoTeamTitle').innerText()).length>3);
   const options=await page.locator('#teamSelect').evaluate(el=>Array.from(el.options).filter(o=>o.value&&!o.disabled).map(o=>o.value));
   assert.ok(options.length>=10,'El catálogo original continúa ofreciendo escuderías');
+  const images=new Map();
   for(let i=0;i<options.length;i++){
    const value=options[i];
    await page.locator('#apexProtoTeam').selectOption(value);
@@ -38,7 +39,11 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
     const selected=document.getElementById('teamSelect');
     const img=document.getElementById('apexProtoTeamImage');
     return {index:selected.selectedIndex,
-     source:img.getAttribute('src'),
+     source:img.getAttribute('src'),key:selected.value,
+     renderedTeam:img.dataset.apexTeamKey,renderedModel:img.dataset.apexModel,
+     renderedChassis:img.dataset.apexChassis,previewMode:img.dataset.apexPreview,
+     native:window.ApexNativeTeamStudio9A.get(selected.value),
+     svg:window.ApexTeamCarPreview9A.build(selected.value)?.svg,
      teamName:document.getElementById('apexProtoTeamTitle').textContent,
      teamLabel:selected.selectedOptions[0].textContent,
      chassis:document.getElementById('apexStudioChassis').textContent,
@@ -46,17 +51,28 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
      ordinal:document.getElementById('apexStudioOrder').textContent,
      count:selected.options.length};
    });
-   assert.equal(state.source,'assets/9a/team-'+String(state.index+1).padStart(2,'0')+'.webp',
-     'La imagen corresponde a la selección nativa');
+   assert.equal(state.previewMode,'native-blueprint','No utilizar fotos estáticas del prototipo');
+   assert.equal(state.renderedTeam,state.key,'Imagen basada en la clave deportiva real');
+   assert.equal(state.renderedModel,state.native.model,'Modelo 3D y vista del menú coinciden');
+   assert.equal(state.renderedChassis,state.native.chassis,'Chasis real del equipo');
+   assert.ok(state.source.startsWith('data:image/svg+xml;charset=utf-8,'),'Vista SVG derivada de blueprint real');
+   assert.ok(state.svg.includes('data-apex-team="'+state.key+'"'));
+   assert.ok(state.svg.includes('data-apex-model="'+state.native.model+'"'));
+   assert.ok(state.svg.includes(state.native.preview.livery.primary.toLowerCase()));
+   assert.ok(state.svg.includes(state.native.preview.livery.stripe.toLowerCase()));
    assert.equal(state.teamName,state.teamLabel.trim().toUpperCase());
    assert.ok(state.chassis&&state.chassis!=='—','El chasis procede del catálogo original');
    assert.ok(state.model&&state.model!=='—','El modelo procede del catálogo original');
    assert.equal(state.ordinal,
     String(state.index+1).padStart(2,'0')+' / '+String(state.count).padStart(2,'0'));
+   assert.ok(!images.has(state.key),'Cada escudería debe validarse una vez');
+   assert.ok(![...images.values()].includes(state.source),'No reutilizar imagen de otra escudería');
+   images.set(state.key,state.source);
    await page.locator('#apexProtoTeamImage').evaluate(img=>img.decode());
    assert.ok(await page.locator('#apexProtoTeamImage').evaluate(img=>img.complete&&img.naturalWidth>0),
     'Asset del coche cargado: '+value);
   }
+  assert.equal(images.size,options.length,'Todas las imágenes del catálogo comprobadas');
   await page.locator('#apexProtoTeam').selectOption(options[0]);
   const geometry=await panel.evaluate(el=>{
    const rect=el.getBoundingClientRect();
