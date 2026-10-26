@@ -88,3 +88,11 @@
  #menu.apex9aPrototype .apexSuitColors{grid-template-columns:repeat(3,minmax(0,1fr))}
  #menu.apex9aPrototype .apexDriverProfileHomeIcon{width:26px;height:26px}
 }
+
+#menu.apex9aPrototype .apexSuitEffectiveColors{
+ display:flex;align-items:center;justify-content:center;gap:8px;padding:0 0 3px;
+}
+#menu.apex9aPrototype .apexSuitEffectiveColors span{
+ width:34px;height:10px;display:block;border-radius:2px;
+ border:1px solid #8ba7bd;box-shadow:0 2px 5px #0007;
+}
