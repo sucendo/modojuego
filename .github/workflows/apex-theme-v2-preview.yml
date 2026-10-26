@@ -1,0 +1,58 @@
+name: APEX 26 - musical preview V2
+
+on:
+  push:
+    branches:
+      - apex/theme-v2-cinematic-20261026
+    paths:
+      - apex/scripts/remaster-apex-theme-v2.cjs
+      - .github/workflows/apex-theme-v2-preview.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-v2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Install FFmpeg if absent
+        run: |
+          if ! command -v ffmpeg >/dev/null 2>&1 || ! command -v ffprobe >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq ffmpeg
+          fi
+      - name: Validate mastering tool
+        run: |
+          node --check apex/scripts/remaster-apex-theme-v2.cjs
+          test -s apex/assets/music/apex-theme.mp3
+      - name: Build two musical preview variants
+        run: node --max-old-space-size=700 apex/scripts/remaster-apex-theme-v2.cjs
+      - name: Validate audio tracks, durations and unchanged original
+        run: |
+          node - <<'NODE'
+          const {execFileSync}=require('node:child_process');
+          const fs=require('node:fs');
+          const dir='apex/assets/music/';
+          for(const name of ['apex-theme.mp3','apex-theme-v2-master.mp3','apex-theme-v2-cinematic.mp3']){
+            const file=dir+name;
+            const duration=Number(execFileSync('ffprobe',['-v','error','-show_entries','format=duration','-of','default=nw=1:nk=1',file],{encoding:'utf8'}).trim());
+            const size=fs.statSync(file).size;
+            if(duration<251||duration>254||size<1000000) throw Error('Audio invalid '+name+': '+duration+'s / '+size+' bytes');
+            console.log(name+' : '+duration.toFixed(2)+'s / '+size+' bytes');
+          }
+          NODE
+          test -z "$(git status --porcelain -- apex/assets/music/apex-theme.mp3)"
+      - name: Commit preview files to branch (not main)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apex/assets/music/apex-theme-v2-master.mp3 apex/assets/music/apex-theme-v2-cinematic.mp3
+          if ! git diff --cached --quiet; then
+            git commit -m "APEX: dos maquetas V2 para escuchar y comparar"
+            git push origin "HEAD:$GITHUB_REF_NAME"
+          fi
