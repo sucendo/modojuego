@@ -54,6 +54,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
   assert.equal(await page.locator('#apexProtoCircuitControl').isVisible(),false,'Circuito de Temporada bloqueado');
   assert.equal(await page.locator('#apexProtoCircuitLocked').isVisible(),true);
   // Un trazado de otro GP nunca debe permanecer como representación de Temporada.
+  await page.waitForFunction(()=>document.querySelector('.apexCircuitBroadcast')?.dataset.mode==='season',null,{timeout:15000});
   assert.equal(await hero.getAttribute('data-mode'),'season');
   const layoutState=await page.locator('#apexBroadcastLayout').evaluate(el=>({
    hasSvg:!!el.querySelector('svg'),hasPlaceholder:!!el.querySelector('.apexBroadcastNoLayout')

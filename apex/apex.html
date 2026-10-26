@@ -89,6 +89,15 @@ try{
   circuitBroadcastScript.src="js/circuit-broadcast-9a.js";
   circuitBroadcastScript.async=false;
   (document.body||document.head).appendChild(circuitBroadcastScript);
+  // Presentación de escudería: una sola imagen y metadatos del equipo nativo.
+  const vehicleStudioStyles=document.createElement("link");
+  vehicleStudioStyles.rel="stylesheet";
+  vehicleStudioStyles.href="css/vehicle-studio-9a.css";
+  (document.head||document.body).appendChild(vehicleStudioStyles);
+  const vehicleStudioScript=document.createElement("script");
+  vehicleStudioScript.src="js/vehicle-studio-9a.js";
+  vehicleStudioScript.async=false;
+  (document.body||document.head).appendChild(vehicleStudioScript);
   // 9A.9 · Preparación fiel al prototipo; se carga sobre ambos flujos 9A existentes.
   const briefingStyles=document.createElement("link");
   briefingStyles.rel="stylesheet";

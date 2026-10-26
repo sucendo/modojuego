@@ -633,6 +633,19 @@ function renderSchedule(){
 
 
 
+// 9A · Adaptador de SOLO LECTURA: identidad visual del equipo seleccionado.
+// No expone el catálogo mutable ni interviene en la física o el campeonato.
+Object.defineProperty(window,'ApexNativeTeamStudio9A',{value:Object.freeze({
+ get:key=>{
+  const id=String(key||'');
+  const t=Object.prototype.hasOwnProperty.call(teamCatalog,id)?teamCatalog[id]:null;
+  return t?Object.freeze({
+   name:String(t.name||id),color:String(t.color||''),accent:String(t.accent||''),
+   model:String(t.model||''),chassis:String(t.chassis||'')
+  }):null;
+ }
+}),configurable:false,writable:false});
+
 // 9A.4 · Adaptador de LECTURA: clasificación y calendario auténticos del campeonato.
 // No permite puntuar, guardar ni avanzar rondas desde un menú externo.
 Object.defineProperty(window,'ApexNativeSeason9A',{value:Object.freeze({
