@@ -42,11 +42,6 @@ function mirrorSelect(destination,original,emptyLabel){
  if(Array.from(destination.options).some(o=>o.value===original.value))destination.value=original.value;
  else if(Array.from(destination.options).some(o=>o.value===old))destination.value=old;
 }
-function teamNumber(){
- const n=$('teamSelect');
- const i=n?.selectedIndex??0;
- return String(Math.max(1,Math.min(12,i+1))).padStart(2,'0');
-}
 function updateModeVisual(){
  const m=mode();
  modes.querySelectorAll('[data-apex-mode]').forEach(button=>{
@@ -59,8 +54,9 @@ function updateModeVisual(){
  const teamName=team?.selectedOptions?.[0]?.textContent?.trim()||'APEX Racing';
  $('apexProtoTeamTitle').textContent=teamName.toUpperCase();
  $('apexProtoTeamSub').textContent='MONOPLAZA · APEX 26';
- $('apexProtoTeamImage').src='assets/9a/team-'+teamNumber()+'.webp';
- $('apexProtoTeamImage').alt='Monoplaza de '+teamName;
+ // Misma identidad, chasis y librea que el motor de carrera:
+ // prohibido inferir imagen desde selectedIndex / fotos del prototipo.
+ global.ApexTeamCarPreview9A?.setCar?.(team?.value||'');
  $('apexProtoCircuitName').textContent=chosenCircuitName().toUpperCase();
  $('apexProtoCircuitSubtitle').textContent=selectedMode==='season'?'CALENDARIO OFICIAL 2026':'CIRCUITO SELECCIONADO';
  // Nunca mostrar datos o un trazado de Mónaco para otros circuitos.

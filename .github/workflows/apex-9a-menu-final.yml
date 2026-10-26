@@ -45,6 +45,7 @@ jobs:
           node --check apex/tests/driver-profile-9f-browser.cjs
           node --check apex/js/circuit-broadcast-9a.js
           node --check apex/js/vehicle-studio-9a.js
+          node --check apex/js/team-car-preview-9a.js
           node --check apex/tests/vehicle-studio-9a-browser.cjs
           node --check apex/tests/circuit-broadcast-9a-browser.cjs
           node --check apex/tests/menu-9a8-prototype-browser.cjs
