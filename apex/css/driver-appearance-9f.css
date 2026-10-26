@@ -1,0 +1,98 @@
+/* APEX 9F.2 — Equipación y avatar del piloto, responsive. */
+#menu.apex9aPrototype .apexProfileSuit,
+#menu.apex9aPrototype .apexProfileAvatar{
+ position:relative;min-width:0;border:1px solid #58768a;
+ background:linear-gradient(145deg,#0e2336ee,#061321f2);
+ box-shadow:0 12px 35px #010b1570;
+}
+#menu.apex9aPrototype .apexSuitStage{
+ display:flex;align-items:center;justify-content:center;
+ height:clamp(225px,27vh,325px);overflow:hidden;position:relative;
+ background:radial-gradient(ellipse 55% 58% at 50% 45%,#23465b7d,transparent),#071423;
+ border-bottom:1px solid #38536b;
+}
+#menu.apex9aPrototype .apexSuitStage svg{
+ width:min(100%,330px);height:100%;display:block;
+ filter:drop-shadow(0 10px 13px #000a)
+}
+#menu.apex9aPrototype .apexSuitControls{padding:14px 16px;display:grid;gap:10px}
+#menu.apex9aPrototype .apexSuitControls>label{
+ display:block;font-size:11px;color:#b8d6e8;font-weight:900;letter-spacing:.09em;
+}
+#menu.apex9aPrototype .apexSuitControls select{
+ display:block;width:100%;min-width:0;max-width:100%;
+ border:1px solid #5a8099;border-radius:3px;background:#071625;
+ color:#f4f9fc;font:700 14px Arial,sans-serif;padding:10px
+}
+#menu.apex9aPrototype .apexSuitColors{
+ display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px
+}
+#menu.apex9aPrototype .apexSuitColors label{
+ min-width:0;display:grid;gap:6px;text-align:center;
+ font-size:9px;color:#b8d6e8;font-weight:850;letter-spacing:.05em
+}
+#menu.apex9aPrototype .apexSuitColors input[type=color]{
+ padding:3px;height:37px;width:100%;min-width:0;border-radius:4px;
+ border:1px solid #54768a;background:#061421;cursor:pointer
+}
+#menu.apex9aPrototype .apexSuitColors input[type=color]:disabled{
+ opacity:.65;cursor:not-allowed
+}
+#menu.apex9aPrototype #apexSuitHint{
+ color:#99bbcf;font-size:11px;line-height:1.35;min-height:1.4em
+}
+#menu.apex9aPrototype .apexAvatarStage{
+ margin:14px auto 4px;width:min(calc(100% - 28px),330px);
+ aspect-ratio:360/380;border:1px solid #54758a;
+ overflow:hidden;
+ background:radial-gradient(circle at 50% 38%,#294b5f,#0b1b2a 76%);
+ box-shadow:inset 0 0 24px #08121c
+}
+#menu.apex9aPrototype .apexAvatarStage svg{width:100%;height:100%;display:block}
+#menu.apex9aPrototype .apexAvatarDetails{
+ margin:0 15px;display:grid;gap:4px;text-align:center
+}
+#menu.apex9aPrototype .apexAvatarDetails strong{
+ color:#f3faff;font-size:clamp(15px,1.55vw,22px);
+ font-weight:1000;overflow-wrap:anywhere
+}
+#menu.apex9aPrototype .apexAvatarDetails small{
+ color:#a4c5d9;font-size:10px;font-weight:900;letter-spacing:.1em
+}
+#menu.apex9aPrototype .apexProfileAvatar>p{
+ margin:12px 18px;color:#97bbd2;font-size:12px;line-height:1.5;text-align:center
+}
+#menu.apex9aPrototype #apexProfileExportAvatar{
+ display:block;max-width:calc(100% - 30px);
+ margin:10px auto 17px;padding:11px 13px;border:1px solid #8caabc;
+ background:#10273c;color:#fff;font-weight:900;letter-spacing:.04em
+}
+#menu.apex9aPrototype #apex9fProfileScreen .apexProfileGrid{
+ grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch;
+}
+#menu.apex9aPrototype .apexDriverProfileHomeIcon{
+ display:block;flex:none;width:31px;height:31px;border:1px solid #54758c;
+ border-radius:50%;overflow:hidden;background:#0a1b2a;
+}
+#menu.apex9aPrototype .apexDriverProfileHomeIcon svg{
+ width:100%;height:100%;display:block
+}
+@media(max-width:760px){
+ #menu.apex9aPrototype #apex9fProfileScreen .apexProfileGrid{
+  grid-template-columns:1fr;
+ }
+ #menu.apex9aPrototype .apexSuitStage{height:280px}
+ #menu.apex9aPrototype .apexAvatarStage{width:min(calc(100% - 28px),330px)}
+}
+@media(max-width:420px){
+ #menu.apex9aPrototype .apexSuitColors{grid-template-columns:repeat(3,minmax(0,1fr))}
+ #menu.apex9aPrototype .apexDriverProfileHomeIcon{width:26px;height:26px}
+}
+
+#menu.apex9aPrototype .apexSuitEffectiveColors{
+ display:flex;align-items:center;justify-content:center;gap:8px;padding:0 0 3px;
+}
+#menu.apex9aPrototype .apexSuitEffectiveColors span{
+ width:34px;height:10px;display:block;border-radius:2px;
+ border:1px solid #8ba7bd;box-shadow:0 2px 5px #0007;
+}

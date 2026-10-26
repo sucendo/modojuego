@@ -98,6 +98,24 @@ try{
   vehicleStudioScript.src="js/vehicle-studio-9a.js";
   vehicleStudioScript.async=false;
   (document.body||document.head).appendChild(vehicleStudioScript);
+
+  // 9F · Perfil, casco, mono y avatar personalizables.
+  const driverProfileStyles=document.createElement("link");
+  driverProfileStyles.rel="stylesheet";
+  driverProfileStyles.href="css/driver-profile-9f.css";
+  (document.head||document.body).appendChild(driverProfileStyles);
+  const driverProfileScript=document.createElement("script");
+  driverProfileScript.src="js/driver-profile-9f.js";
+  driverProfileScript.async=false;
+  (document.body||document.head).appendChild(driverProfileScript);
+  const driverAppearanceStyles=document.createElement("link");
+  driverAppearanceStyles.rel="stylesheet";
+  driverAppearanceStyles.href="css/driver-appearance-9f.css";
+  (document.head||document.body).appendChild(driverAppearanceStyles);
+  const driverAppearanceScript=document.createElement("script");
+  driverAppearanceScript.src="js/driver-appearance-9f.js";
+  driverAppearanceScript.async=false;
+  (document.body||document.head).appendChild(driverAppearanceScript);
   // 9A.9 · Preparación fiel al prototipo; se carga sobre ambos flujos 9A existentes.
   const briefingStyles=document.createElement("link");
   briefingStyles.rel="stylesheet";
