@@ -1,52 +1,92 @@
-/* APEX 9A.6 · Música sintética opcional del menú, sin archivos ni reproducción automática. */
+/* APEX Formula 26 · Tema principal SoundBox elegido por el usuario.
+ * La canción completa se sintetiza OFFLINE en CI y se sirve como MP3 local.
+ * Sin red externa, sintetizadores en el hilo del juego ni autoplay invasivo.
+ */
 (function(global){
 'use strict';
-const KEY='apex26.menu-music.v1';
-let ctx=null,timer=null,enabled=false,step=0,lastDisplay='';
-const notes=[110,164.81,220,261.63,146.83,196,246.94,293.66];
+const KEY='apex26.menu-music.v1'; // Conserva la preferencia de APEX 9A.
+const FILE='assets/music/apex-theme.mp3';
+const VOLUME=0.33;
 const $=id=>document.getElementById(id);
-function visible(){const menu=$('menu');return !!menu&&!menu.classList.contains('hidden')&&!!$('apex9aLanding')&&!$('apex9aLanding').hidden;}
-function updateButton(){const b=$('apex9aAudio');if(b){b.textContent=enabled?'MÚSICA: ACTIVADA':'MÚSICA: DESACTIVADA';b.setAttribute('aria-pressed',String(enabled));}}
-function playNote(){
- if(!ctx||ctx.state!=='running'||!visible())return;
- const now=ctx.currentTime,f=notes[step%notes.length];
- const osc=ctx.createOscillator(),gain=ctx.createGain();
- osc.type='sine';osc.frequency.setValueAtTime(f,now);
- gain.gain.setValueAtTime(0.0001,now);
- gain.gain.exponentialRampToValueAtTime(0.017,now+.035);
- gain.gain.exponentialRampToValueAtTime(.0001,now+.42);
- osc.connect(gain);gain.connect(ctx.destination);osc.start(now);osc.stop(now+.44);
- step++;
+let enabled=false,unlocked=false,audio=null,starting=false;
+function menuVisible(){
+ const el=$('menu');
+ return !!el&&!el.classList.contains('hidden')&&!document.hidden;
 }
-function stop(){if(timer){clearInterval(timer);timer=null;}if(ctx&&ctx.state==='running')ctx.suspend().catch(()=>{});}
-async function start(){
- if(!enabled||!visible())return;
- const C=global.AudioContext||global.webkitAudioContext;
- if(!C){enabled=false;updateButton();return;}
+function updateButton(){
+ const b=$('apex9aAudio');
+ if(b){
+  const span=b.querySelector('span');
+  if(span)span.textContent=enabled?'MÚSICA ✓':'MÚSICA';
+  else b.textContent=enabled?'MÚSICA: ACTIVADA':'MÚSICA: DESACTIVADA';
+  b.setAttribute('aria-label',enabled?'Desactivar música de APEX 26':'Activar música de APEX 26');
+  b.setAttribute('aria-pressed',String(enabled));
+  b.title=enabled?'Tema APEX 26 · detener':'Tema APEX 26 · reproducir';
+ }
+ const option=$('apexProtoAudioText');
+ if(option){
+  option.textContent=enabled?'MÚSICA ACTIVADA':'ACTIVAR MÚSICA';
+  option.setAttribute('aria-pressed',String(enabled));
+ }
+}
+function getAudio(){
+ if(audio)return audio;
+ const a=new Audio();
+ a.src=FILE;
+ a.loop=true;
+ a.preload='none';
+ a.volume=VOLUME;
+ a.addEventListener('error',()=>{
+  console.warn('[APEX] No se puede reproducir la banda sonora local:',FILE);
+  enabled=false;
+  save();updateButton();
+ });
+ audio=a;return a;
+}
+function save(){
+ try{global.localStorage.setItem(KEY,String(enabled))}catch(_){}
+}
+function stop(){if(audio&&!audio.paused)audio.pause();}
+function start(){
+ if(!enabled||!unlocked||!menuVisible()||starting)return;
+ const a=getAudio();
+ if(!a.paused)return;
+ starting=true;
  try{
-  if(!ctx)ctx=new C();
-  if(ctx.state==='suspended')await ctx.resume();
-  if(!enabled||!visible()){stop();return;}
-  if(!timer){playNote();timer=setInterval(playNote,510);}
- }catch(e){console.warn('[APEX 9A] No se pudo iniciar música',e);stop();}
+  const promise=a.play();
+  if(promise&&typeof promise.then==='function'){
+   promise.catch(e=>{
+    // Algunos dispositivos necesitan un gesto explícito para desbloquear audio.
+    if(e?.name!=='AbortError')console.warn('[APEX] Reproducción aplazada:',e?.name||e);
+   }).finally(()=>{starting=false;});
+  }else starting=false;
+ }catch(e){starting=false;console.warn('[APEX] Reproducción no disponible:',e);}
 }
 function toggle(){
  enabled=!enabled;
- try{global.localStorage.setItem(KEY,String(enabled))}catch(_){}
+ unlocked=true; // Solo se llama desde botones de interacción del usuario.
+ save();
  updateButton();
  if(enabled)start();else stop();
  return enabled;
 }
+function refresh(){if(!menuVisible())stop();else if(enabled)start();}
+function unlock(){unlocked=true;refresh();}
 function init(){
- // El consentimiento previo nunca inicia audio sin un gesto de usuario.
  try{enabled=global.localStorage.getItem(KEY)==='true'}catch(_){}
  updateButton();
  const menu=$('menu');
- if(menu)new MutationObserver(()=>{if(!visible())stop();else if(enabled&&ctx)start();}).observe(menu,{attributes:true,attributeFilter:['class']});
- const landing=$('apex9aLanding');
- if(landing)new MutationObserver(()=>{if(!visible())stop();else if(enabled&&ctx)start();}).observe(landing,{attributes:true,attributeFilter:['hidden']});
- document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();else if(enabled&&ctx)start();});
+ if(menu)new MutationObserver(refresh).observe(menu,{attributes:true,attributeFilter:['class','hidden']});
+ document.addEventListener('visibilitychange',refresh);
+ // Respeta el bloqueo de autoplay: después de recargar, esperar al primer gesto.
+ document.addEventListener('pointerdown',unlock,{once:true,passive:true});
+ document.addEventListener('keydown',unlock,{once:true});
+ global.addEventListener('pagehide',stop);
 }
-global.ApexMenuMusic9A=Object.freeze({toggle,get:()=>enabled,stop});
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+global.ApexMenuMusic9A=Object.freeze({
+ toggle,get:()=>enabled,stop,refresh,
+ state:()=>({enabled,playing:!!audio&&!audio.paused,src:FILE,unlocked,volume:VOLUME})
+});
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});
+else init();
 })(window);
