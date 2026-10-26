@@ -76,6 +76,11 @@ try{
   prototypeStyles.rel="stylesheet";
   prototypeStyles.href="css/menu-prototype-9a.css";
   (document.head||document.body).appendChild(prototypeStyles);
+  // Sustituye las fotos genéricas de equipo por la vista del modelo nativo de APEX.
+  const nativeCarPreviewScript=document.createElement("script");
+  nativeCarPreviewScript.src="js/team-car-preview-9a.js";
+  nativeCarPreviewScript.async=false;
+  (document.body||document.head).appendChild(nativeCarPreviewScript);
   const prototypeScript=document.createElement("script");
   prototypeScript.src="js/menu-prototype-9a.js";
   prototypeScript.async=false;
