@@ -35,7 +35,14 @@ assert.ok(fs.statSync(path.join(apex,'assets/music/apex-theme.mp3')).size>100000
   await page.locator('#apex9aAudio').click();
   await page.waitForFunction(()=>window.ApexMenuMusic9A.state().playing,null,{timeout:30000});
   assert.equal(await page.evaluate(()=>window.ApexMenuMusic9A.get()),true);
-  assert.ok(fetched,'La canción del repositorio fue solicitada y cargada correctamente');
+  await page.waitForFunction(()=>{
+   const p=window.ApexMenuMusic9A.state();
+   return p.readyState>=2&&p.duration>250&&p.duration<255;
+  },null,{timeout:30000});
+  // La duración decodificada prueba que se cargó la pista completa, aunque
+  // Chromium sirva la petición MP3 por caché o por Range (206).
+  assert.ok((await page.evaluate(()=>window.ApexMenuMusic9A.state().duration))>250,
+    'Audio completo SoundBox cargado, no la melodía provisional');
   const state=await page.evaluate(()=>window.ApexMenuMusic9A.state());
   assert.equal(state.src,'assets/music/apex-theme.mp3');
   assert.ok(state.volume<=.4,'Volumen de menú prudente');
@@ -53,7 +60,14 @@ assert.ok(fs.statSync(path.join(apex,'assets/music/apex-theme.mp3')).size>100000
   await page.evaluate(()=>document.getElementById('menu').classList.add('hidden'));
   await page.waitForFunction(()=>!window.ApexMenuMusic9A.state().playing,null,{timeout:10000});
   await page.evaluate(()=>document.getElementById('menu').classList.remove('hidden'));
-  await page.waitForFunction(()=>window.ApexMenuMusic9A.state().playing,null,{timeout:10000});
+  // Algunos navegadores móviles requieren un gesto para volver a reproducir
+  // tras salir de carrera. Debe poder reanudarse sin recrear el audio.
+  if(!(await page.evaluate(()=>window.ApexMenuMusic9A.state().playing))){
+   const back=page.locator('#apexProtoModeBack');
+   if(await back.isVisible())await back.click();
+   else await page.keyboard.press('Shift');
+  }
+  await page.waitForFunction(()=>window.ApexMenuMusic9A.state().playing,null,{timeout:30000});
   // Reingresar en el documento no debe arrancar música sin un gesto previo.
   await page.reload({waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>window.ApexMenuMusic9A&&document.getElementById('apex9aAudio'),null,{timeout:90000});
