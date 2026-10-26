@@ -111,8 +111,18 @@ function render(p){
   const input=document.forms.apexDriverProfileForm?.elements[inputs[i]];
   if(input){
    input.disabled=p.suit.source!=='custom';
-   if(p.suit.source!=='custom')input.value=effective[key];
+   input.title=p.suit.source==='custom'?'Color personalizado: '+p.suit[key]:
+    'Color efectivo del mono: '+effective[key]+' (se conserva el color personalizado)';
   }
+ }
+ const activeSwatches=$('apexSuitEffectiveColors');
+ if(activeSwatches){
+  ['primary','secondary','trim'].forEach((key,i)=>{
+   const swatch=activeSwatches.children[i];if(swatch){
+    swatch.style.backgroundColor=effective[key];
+    swatch.title=key+': '+effective[key];
+   }
+  });
  }
  const avatarHome=$('apexDriverProfileHomeIcon');
  if(avatarHome)avatarHome.innerHTML=avatarSvg(p);
@@ -170,6 +180,8 @@ function init(){
  '<select id="apexSuitPattern" name="suitPattern"><option value="racing">Franjas deportivas</option>'+
  '<option value="chevron">Chevron</option><option value="diagonal">Diagonal</option>'+
  '<option value="classic">Clásico</option></select>'+
+ '<div id="apexSuitEffectiveColors" class="apexSuitEffectiveColors" aria-label="Colores efectivos del mono">'+
+ '<span></span><span></span><span></span></div>'+
  '<small id="apexSuitHint">El mono sigue automáticamente los colores del casco.</small></div>';
  const portrait=document.createElement('section');
  portrait.className='apexProfileAvatar';
