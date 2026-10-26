@@ -58,7 +58,8 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
   assert.equal(saved.helmet.pattern,'chevron');
   assert.ok(await page.evaluate(()=>window.localStorage.getItem('apex26.driverProfile.v1')),'Persistencia local versionada');
   const after=await page.evaluate(()=>window.ApexNativeSeason9A?.snapshot?.()||null);
-  assert.deepEqual(after,before,'Abrir/guardar Perfil no modifica calendario ni puntos');
+  const stable=x=>x?{...x,drivers:x.drivers?.map(({name,...rest})=>rest)}:x;
+  assert.deepEqual(stable(after),stable(before),'Cambiar nombre no altera UID, calendario, puntos ni escuderías');
   const playerName=await page.evaluate(()=>typeof window.raceName==='function'?window.raceName(0):null);
   if(playerName!==null)assert.equal(playerName,'Lucía Martín','Nombre visible del piloto en motor');
   await page.locator('#apex9fBack').click();
