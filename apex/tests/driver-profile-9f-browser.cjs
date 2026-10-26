@@ -45,7 +45,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
   await page.waitForFunction(()=>!!window.ApexDriverAppearance9F&&
    !!document.querySelector('#apexSuitPreview svg')&&
    !!document.querySelector('#apexDriverAvatarImage svg'),null,{timeout:30000});
-  const suit=page.locator('#apexSuitPreview svg'),avatar=page.locator('#apexDriverAvatarImage svg');
+  const suit=page.locator('#apexSuitPreview > svg'),avatar=page.locator('#apexDriverAvatarImage > svg');
   const initialSuit=await suit.evaluate(el=>el.outerHTML),initialAvatar=await avatar.evaluate(el=>el.outerHTML);
   assert.ok(initialSuit.includes('#114477')&&initialAvatar.includes('#ff3366'),
    'Mono y avatar emplean la paleta del casco en modo combinado');
