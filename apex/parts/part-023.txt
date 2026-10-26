@@ -1899,6 +1899,12 @@ function syncTeamPreset(forceColor=true){
 function selectedTeamKey(){
  return $("teamSelect")&&$("teamSelect").value ? $("teamSelect").value : teamKeys[0];
 }
+// Adaptador del color de equipo para Perfil 9F: solo lectura y sin cambiar equipo.
+window.ApexDriverTeamPalette9F=Object.freeze({get:key=>{
+ const id=String(key||'');
+ const t=Object.prototype.hasOwnProperty.call(teamCatalog,id)?teamCatalog[id]:null;
+ return t?Object.freeze({name:String(t.name||id),color:String(t.color||''),accent:String(t.accent||'')}):null;
+}});
 function teamInfo(key){
  return teamCatalog[key]||teamCatalog.PAPAYA;
 }
