@@ -40,6 +40,8 @@ jobs:
           node apex/tests/menu-9a-lifecycle.cjs
           node apex/tests/menu-9a-assets.cjs
           node --check apex/js/menu-prototype-9a.js
+          node --check apex/js/driver-profile-9f.js
+          node --check apex/tests/driver-profile-9f-browser.cjs
           node --check apex/js/circuit-broadcast-9a.js
           node --check apex/tests/circuit-broadcast-9a-browser.cjs
           node --check apex/tests/menu-9a8-prototype-browser.cjs
@@ -90,6 +92,7 @@ jobs:
           mkdir -p /tmp/apex-results
           node apex/tests/menu-9a8-prototype-browser.cjs 2>&1 | tee /tmp/apex-menu-9a/prototype.log
           node apex/tests/circuit-broadcast-9a-browser.cjs 2>&1 | tee /tmp/apex-menu-9a/circuit-broadcast.log
+          node apex/tests/driver-profile-9f-browser.cjs 2>&1 | tee /tmp/apex-menu-9a/driver-profile-9f.log
           node apex/tests/briefing-9a9-browser.cjs 2>&1 | tee /tmp/apex-menu-9a/briefing.log
           node apex/tests/preparation-9a-browser.cjs 2>&1 | tee /tmp/apex-menu-9a/preparation.log
           node apex/tests/competition-flows-9a-browser.cjs 2>&1 | tee /tmp/apex-menu-9a/gp-season.log
