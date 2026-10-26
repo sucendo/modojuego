@@ -98,6 +98,15 @@ try{
   driverProfileScript.src="js/driver-profile-9f.js";
   driverProfileScript.async=false;
   (document.body||document.head).appendChild(driverProfileScript);
+  // 9F.2 · Personalización SVG del mono y avatar, coordinada con el casco.
+  const driverAppearanceStyles=document.createElement("link");
+  driverAppearanceStyles.rel="stylesheet";
+  driverAppearanceStyles.href="css/driver-appearance-9f.css";
+  (document.head||document.body).appendChild(driverAppearanceStyles);
+  const driverAppearanceScript=document.createElement("script");
+  driverAppearanceScript.src="js/driver-appearance-9f.js";
+  driverAppearanceScript.async=false;
+  (document.body||document.head).appendChild(driverAppearanceScript);
   // 9A.9 · Preparación fiel al prototipo; se carga sobre ambos flujos 9A existentes.
   const briefingStyles=document.createElement("link");
   briefingStyles.rel="stylesheet";
