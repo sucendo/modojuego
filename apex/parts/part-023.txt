@@ -189,7 +189,7 @@ function apexRaceFlushFinishCrossings(){
 }
 function apexRaceResultEntries(){
  const team=(currentMode==='season'&&save.seasonTeam)?save.seasonTeam:selectedTeamKey();
- return [{id:0,uid:'PLAYER',name:apexPlayerDisplayName(),team,car:player,bestLap:best},...rivals.map(r=>({id:r.id,uid:raceIdentity(r.id),name:raceName(r.id),team:r.team,car:r,bestLap:r.bestLap}))].map(e=>{
+ return [{id:0,uid:'PLAYER',name:((typeof window!=='undefined'&&window.ApexDriverProfile9F?.get?.()?.displayName)||'TÚ'),team,car:player,bestLap:best},...rivals.map(r=>({id:r.id,uid:raceIdentity(r.id),name:raceName(r.id),team:r.team,car:r,bestLap:r.bestLap}))].map(e=>{
   const c=e.car;return {id:e.id,uid:e.uid,name:e.name,team:e.team,finished:!!c.finished,finishTime:Number.isFinite(c.finishTime)?c.finishTime:null,total:Number(c.total)||0,finishProgress:Number.isFinite(c.finishProgress)?c.finishProgress:null,laps:c.raceFinishLaps??(e.id===0?c.lap:c.completedLaps)??0,bestLap:Number.isFinite(e.bestLap)&&e.bestLap<1e8?e.bestLap:null,pitStops:c.raceFinishPitStops??(c.pitStops||0),compound:c.raceFinishCompound??(c.tyres?.compound||null)};
  }).sort(apexRaceCompareResults);
 }
