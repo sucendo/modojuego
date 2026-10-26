@@ -89,6 +89,15 @@ try{
   circuitBroadcastScript.src="js/circuit-broadcast-9a.js";
   circuitBroadcastScript.async=false;
   (document.body||document.head).appendChild(circuitBroadcastScript);
+  // 9F.1 · Perfil de piloto: identidad propia y casco SVG personalizable.
+  const driverProfileStyles=document.createElement("link");
+  driverProfileStyles.rel="stylesheet";
+  driverProfileStyles.href="css/driver-profile-9f.css";
+  (document.head||document.body).appendChild(driverProfileStyles);
+  const driverProfileScript=document.createElement("script");
+  driverProfileScript.src="js/driver-profile-9f.js";
+  driverProfileScript.async=false;
+  (document.body||document.head).appendChild(driverProfileScript);
   // 9A.9 · Preparación fiel al prototipo; se carga sobre ambos flujos 9A existentes.
   const briefingStyles=document.createElement("link");
   briefingStyles.rel="stylesheet";
