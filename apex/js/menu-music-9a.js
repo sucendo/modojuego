@@ -46,7 +46,7 @@ function getAudio(){
 function save(){
  try{global.localStorage.setItem(KEY,String(enabled))}catch(_){}
 }
-function stop(){if(audio&&!audio.paused)audio.pause();}
+function stop(){if(audio)audio.pause();starting=false;}
 function start(){
  if(!enabled||!unlocked||!menuVisible()||starting)return;
  const a=getAudio();
@@ -79,13 +79,17 @@ function init(){
  if(menu)new MutationObserver(refresh).observe(menu,{attributes:true,attributeFilter:['class','hidden']});
  document.addEventListener('visibilitychange',refresh);
  // Respeta el bloqueo de autoplay: después de recargar, esperar al primer gesto.
- document.addEventListener('pointerdown',unlock,{once:true,passive:true});
- document.addEventListener('keydown',unlock,{once:true});
+ // Los navegadores móviles pueden bloquear una reanudación automática tras
+ // volver de carrera. Cualquier nuevo gesto ofrece otra oportunidad segura.
+ document.addEventListener('pointerdown',unlock,{passive:true});
+ document.addEventListener('keydown',unlock);
  global.addEventListener('pagehide',stop);
 }
 global.ApexMenuMusic9A=Object.freeze({
  toggle,get:()=>enabled,stop,refresh,
- state:()=>({enabled,playing:!!audio&&!audio.paused,src:FILE,unlocked,volume:VOLUME})
+ state:()=>({enabled,playing:!!audio&&!audio.paused,src:FILE,unlocked,volume:VOLUME,
+  duration:audio&&Number.isFinite(audio.duration)?audio.duration:null,
+  readyState:audio?.readyState||0})
 });
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});
 else init();
