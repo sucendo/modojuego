@@ -11,8 +11,7 @@ function meta(){
  const index=Math.max(0,select?.selectedIndex??0);
  const teamKey=select?.value||'';
  // Catálogo original del simulador: no mantener otra lista de equipos.
- const catalog=typeof teamCatalog!=='undefined'&&teamCatalog&&typeof teamCatalog==='object'?teamCatalog:null;
- const team=catalog?.[teamKey]||null;
+ const team=global.ApexNativeTeamStudio9A?.get?.(teamKey)||null;
  return {team,index,count:select?.options?.length||0,locked:!!select?.disabled};
 }
 function color(value,backup){
