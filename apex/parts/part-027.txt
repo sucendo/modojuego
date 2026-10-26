@@ -641,7 +641,17 @@ Object.defineProperty(window,'ApexNativeTeamStudio9A',{value:Object.freeze({
   const t=Object.prototype.hasOwnProperty.call(teamCatalog,id)?teamCatalog[id]:null;
   return t?Object.freeze({
    name:String(t.name||id),color:String(t.color||''),accent:String(t.accent||''),
-   model:String(t.model||''),chassis:String(t.chassis||'')
+   model:String(t.model||''),chassis:String(t.chassis||''),
+   // Vista del coche desde la misma definición geométrica/cromática de la pista.
+   // Copias inmutables: la interfaz no puede mutar el catálogo deportivo.
+   preview:(()=>{
+    const b=apexCarVisualBlueprint(id);
+    return Object.freeze({
+     teamKey:id,model:b.model,chassis:b.chassis,
+     geometry:Object.freeze({...b.geometry}),
+     livery:Object.freeze({...b.livery})
+    });
+   })()
   }):null;
  }
 }),configurable:false,writable:false});
