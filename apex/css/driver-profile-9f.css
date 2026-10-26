@@ -1,0 +1,133 @@
+/* APEX Formula 26 · Fase 9F.1 · Perfil de piloto a pantalla completa. */
+#menu.apex9aPrototype #apex9fProfileScreen{
+ display:block;
+ position:relative;
+ min-height:100%;
+ width:100%;
+ background:linear-gradient(135deg,#071626 0%,#030b15 67%,#071829);
+ isolation:isolate;
+}
+#menu.apex9aPrototype #apex9fProfileScreen::before{
+ content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;
+ background:linear-gradient(90deg,#03101ee8,#061421cc),
+ url('../assets/9a/fondo-apex26.webp') center/cover fixed;
+ opacity:.38;
+}
+#menu.apex9aPrototype #apex9fProfileScreen[hidden]{display:none!important}
+#menu.apex9aPrototype .apexProfileShell{
+ position:relative;width:min(1420px,100%);
+ margin:auto;padding:18px clamp(12px,2.5vw,36px) 32px;
+}
+#menu.apex9aPrototype .apexProfileGrid{
+ display:grid;grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr);
+ gap:clamp(12px,2vw,26px);
+}
+#menu.apex9aPrototype .apexProfileIdentity,
+#menu.apex9aPrototype .apexProfileHelmet{
+ min-width:0;border:1px solid #58768a;
+ background:linear-gradient(145deg,#0e2336ee,#061321f2);
+ box-shadow:0 12px 35px #010b1570;
+}
+#menu.apex9aPrototype #apex9fProfileScreen h2{
+ margin:0;padding:12px 17px;font-size:clamp(13px,1.1vw,17px);
+ background:linear-gradient(100deg,#1a3448,#0a1a29);
+ border-bottom:1px solid #59798f;font-weight:950;letter-spacing:.07em;
+}
+#menu.apex9aPrototype .apexProfileFields{
+ display:grid;gap:10px;padding:20px 19px 12px;
+}
+#menu.apex9aPrototype .apexProfileFields label,
+#menu.apex9aPrototype .apexProfilePatternLabel{
+ display:block;font-size:11px;font-weight:900;
+ letter-spacing:.08em;color:#bcd8e9;margin:0 0 7px;
+}
+#menu.apex9aPrototype .apexProfileFields label em{
+ font-size:10px;color:#86a9bf;font-weight:400;letter-spacing:0;font-style:normal;
+}
+#menu.apex9aPrototype .apexProfileFields input,
+#menu.apex9aPrototype .apexProfileFields select,
+#menu.apex9aPrototype #apexHelmetPattern{
+ width:100%;max-width:100%;min-width:0;
+ border:1px solid #5a8099;background:#071625;
+ border-radius:3px;color:#f4f9fc;
+ padding:12px 13px;font:700 14px Arial,sans-serif;
+}
+#menu.apex9aPrototype .apexProfileFields input[type=number]{font-variant-numeric:tabular-nums}
+#menu.apex9aPrototype .apexProfileRow{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;
+}
+#menu.apex9aPrototype .apexProfileRow>div{min-width:0}
+#menu.apex9aPrototype .apexProfilePrivacy{
+ margin:8px 19px 17px;color:#91b3c8;
+ font-size:12px;line-height:1.5;border-top:1px solid #355369;padding-top:13px;
+}
+#menu.apex9aPrototype .apexProfileHelmetStage{
+ position:relative;min-height:272px;
+ background:
+ radial-gradient(ellipse 50% 45% at 52% 45%,#294254a0,transparent),
+ linear-gradient(180deg,#0a1b29,#09131f);
+ border-bottom:1px solid #38536b;overflow:hidden;
+}
+#menu.apex9aPrototype #apexProfileHelmetImage{
+ position:relative;width:min(100%,520px);height:259px;
+ display:flex;align-items:center;justify-content:center;margin:0 auto;
+}
+#menu.apex9aPrototype #apexProfileHelmetImage svg{
+ display:block;height:100%;width:100%;filter:drop-shadow(0 12px 13px #000a);
+}
+#menu.apex9aPrototype .apexProfileHelmetCaption{
+ position:absolute;bottom:8px;left:16px;right:16px;display:flex;
+ justify-content:space-between;gap:15px;align-items:center;
+ text-shadow:0 2px 6px #000;
+}
+#menu.apex9aPrototype .apexProfileHelmetCaption strong{
+ font-size:clamp(12px,1.35vw,20px);font-weight:950;letter-spacing:.07em;
+ overflow-wrap:anywhere;
+}
+#menu.apex9aPrototype .apexProfileHelmetCaption span{
+ font-style:italic;font-weight:900;color:#e5f3fe;font-size:21px;
+}
+#menu.apex9aPrototype .apexProfileColors{
+ display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;
+ padding:14px 15px 10px;
+}
+#menu.apex9aPrototype .apexProfileColors label{
+ display:grid;gap:7px;color:#b0cfe2;font-weight:900;
+ text-align:center;font-size:9px;letter-spacing:.06em;
+}
+#menu.apex9aPrototype .apexProfileColors input[type=color]{
+ appearance:none;-webkit-appearance:none;
+ padding:3px;border:1px solid #537489;border-radius:4px;
+ width:100%;height:35px;background:#07121d;cursor:pointer;
+}
+#menu.apex9aPrototype .apexProfilePatternLabel{margin:5px 15px}
+#menu.apex9aPrototype #apexHelmetPattern{display:block;width:calc(100% - 30px);margin:0 15px}
+#menu.apex9aPrototype #apexProfilePreviewHelp{display:block;padding:10px 15px 14px;color:#94b7c9;font-size:11px}
+#menu.apex9aPrototype .apexProfileActions{
+ margin:14px 0 0;display:flex;gap:12px;justify-content:flex-end;align-items:center;
+ flex-wrap:wrap;
+}
+#menu.apex9aPrototype #apexProfileStatus{
+ margin-right:auto;color:#b6d7e7;font-size:12px;letter-spacing:.08em;font-weight:900;
+}
+#menu.apex9aPrototype #apexProfileStatus[data-saved=true]{color:#6fe8b3}
+#menu.apex9aPrototype .apexProfileActions button{
+ min-height:43px;padding:11px 18px;border:1px solid #7894a7;
+ background:#122a3d;color:#fff;font-weight:900;letter-spacing:.06em;
+}
+#menu.apex9aPrototype .apexProfileActions #apexProfileSave{
+ border-color:#fa6275;background:linear-gradient(95deg,#96142b,#e62745);
+ box-shadow:0 0 14px #e02a4740;
+}
+@media(max-width:760px){
+ #menu.apex9aPrototype .apexProfileGrid{grid-template-columns:1fr}
+ #menu.apex9aPrototype .apexProfileShell{padding:12px 12px 25px}
+ #menu.apex9aPrototype .apexProfileHelmetStage{min-height:230px}
+ #menu.apex9aPrototype #apexProfileHelmetImage{height:229px}
+}
+@media(max-width:420px){
+ #menu.apex9aPrototype .apexProfileRow{grid-template-columns:1fr}
+ #menu.apex9aPrototype .apexProfileColors{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #menu.apex9aPrototype .apexProfileActions button{flex:1}
+ #menu.apex9aPrototype #apexProfileStatus{width:100%;margin:0}
+}
