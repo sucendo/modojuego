@@ -1,0 +1,58 @@
+name: APEX SoundBox theme — render official music
+
+on:
+  push:
+    branches: ["apex/soundbox-official-theme"]
+    paths:
+      - "apex/assets/soundbox/apex-song01.js"
+      - "apex/vendor/soundbox-player-small.js"
+      - "apex/scripts/render-soundbox-theme.cjs"
+      - ".github/workflows/apex-soundbox-theme.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  encode-theme:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout APEX branch
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Check offline renderer
+        run: |
+          node --check apex/assets/soundbox/apex-song01.js
+          node --check apex/vendor/soundbox-player-small.js
+          node --check apex/scripts/render-soundbox-theme.cjs
+          command -v ffmpeg
+          command -v ffprobe
+      - name: Synthesize original song offline
+        run: node --max-old-space-size=1024 apex/scripts/render-soundbox-theme.cjs "$RUNNER_TEMP/apex-song01.wav"
+      - name: Encode compact MP3 for offline web playback
+        run: |
+          mkdir -p apex/assets/music
+          ffmpeg -hide_banner -loglevel error -y \
+            -i "$RUNNER_TEMP/apex-song01.wav" \
+            -codec:a libmp3lame -qscale:a 5 -ar 44100 -ac 2 \
+            -metadata title="APEX Formula 26 - Tema principal" \
+            apex/assets/music/apex-theme.mp3
+          DURATION="$(ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 apex/assets/music/apex-theme.mp3)"
+          node -e "const n=Number(process.argv[1]); if(n<250||n>255)process.exit(1);" "$DURATION"
+          test "$(wc -c < apex/assets/music/apex-theme.mp3)" -gt 100000
+          echo "Music compiled successfully: $DURATION seconds."
+      - name: Commit compiled song to the same PR branch
+        # Run only from the explicitly selected integration branch.
+        if: github.ref == 'refs/heads/apex/soundbox-official-theme'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apex/assets/music/apex-theme.mp3
+          if git diff --cached --quiet; then
+            echo "No changes in compiled song."
+          else
+            git commit -m "APEX: compilar tema principal SoundBox a MP3"
+            git push origin "HEAD:$GITHUB_REF_NAME"
+          fi
