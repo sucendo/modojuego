@@ -42,6 +42,46 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
   assert.ok((await svg.evaluate(el=>el.outerHTML)).includes('#ff3366'),'Color real aplicado al casco');
   assert.equal(await page.locator('#apexProfileNamePreview').innerText(),'Lucía Martín');
   assert.equal(await page.locator('#apexProfileNumberPreview').innerText(),'#07');
+  await page.waitForFunction(()=>!!window.ApexDriverAppearance9F&&
+   !!document.querySelector('#apexSuitPreview svg')&&
+   !!document.querySelector('#apexDriverAvatarImage svg'),null,{timeout:30000});
+  const suit=page.locator('#apexSuitPreview svg'),avatar=page.locator('#apexDriverAvatarImage svg');
+  const initialSuit=await suit.evaluate(el=>el.outerHTML),initialAvatar=await avatar.evaluate(el=>el.outerHTML);
+  assert.ok(initialSuit.includes('#114477')&&initialAvatar.includes('#ff3366'),
+   'Mono y avatar emplean la paleta del casco en modo combinado');
+  await page.locator('#apexSuitSource').selectOption('custom');
+  await page.locator('[name="suitPrimary"]').evaluate(el=>{
+   el.value='#107a51';el.dispatchEvent(new Event('input',{bubbles:true}));
+  });
+  await page.locator('[name="suitSecondary"]').evaluate(el=>{
+   el.value='#e7a334';el.dispatchEvent(new Event('input',{bubbles:true}));
+  });
+  await page.locator('[name="suitTrim"]').evaluate(el=>{
+   el.value='#f1f2f3';el.dispatchEvent(new Event('input',{bubbles:true}));
+  });
+  await page.locator('#apexSuitPattern').selectOption('diagonal');
+  assert.notEqual(await suit.evaluate(el=>el.outerHTML),initialSuit);
+  assert.notEqual(await avatar.evaluate(el=>el.outerHTML),initialAvatar);
+  assert.ok((await suit.evaluate(el=>el.outerHTML)).includes('#107a51'));
+  assert.ok((await avatar.evaluate(el=>el.outerHTML)).includes('#e7a334'));
+  const customSnapshot=await page.locator('[name="suitPrimary"]').inputValue();
+  await page.locator('#apexSuitSource').selectOption('helmet');
+  assert.ok((await suit.evaluate(el=>el.outerHTML)).includes('#114477'),
+   'Vincular mono con casco actualiza la apariencia');
+  await page.locator('#apexSuitSource').selectOption('team');
+  const teamPalette=await page.evaluate(()=>window.ApexDriverAppearance9F.selectedTeamPalette());
+  assert.ok(teamPalette&&/^#[0-9a-f]{6}$/i.test(teamPalette.primary),
+   'Escudería real disponible para combinar colores');
+  assert.ok((await suit.evaluate(el=>el.outerHTML)).includes(teamPalette.primary),
+   'Mono usa el color auténtico de la escudería');
+  await page.locator('#apexSuitSource').selectOption('custom');
+  assert.equal(await page.locator('[name="suitPrimary"]').inputValue(),customSnapshot,
+   'Cambiar de paleta no destruye el diseño personalizado');
+  const downloadPromise=page.waitForEvent('download');
+  await page.locator('#apexProfileExportAvatar').click();
+  const avatarDownload=await downloadPromise;
+  assert.equal(avatarDownload.suggestedFilename(),'APEX26-perfil-piloto.svg');
+
   const geometry=await screen.evaluate(el=>({scroll:el.scrollWidth-el.clientWidth,forms:el.querySelectorAll('form').length}));
   assert.ok(geometry.scroll<=2,'Perfil sin desbordamientos horizontales '+JSON.stringify(geometry));
   await page.screenshot({path:'/tmp/apex-results/9f-profile-'+(mobile?'mobile-landscape':'desktop')+'.png',fullPage:true});
@@ -56,6 +96,11 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
   assert.equal(saved.number,7);
   assert.equal(saved.helmet.secondary,'#ff3366');
   assert.equal(saved.helmet.pattern,'chevron');
+  assert.equal(saved.suit.source,'custom');
+  assert.equal(saved.suit.primary,'#107a51');
+  assert.equal(saved.suit.secondary,'#e7a334');
+  assert.equal(saved.suit.trim,'#f1f2f3');
+  assert.equal(saved.suit.pattern,'diagonal');
   assert.ok(await page.evaluate(()=>window.localStorage.getItem('apex26.driverProfile.v1')),'Persistencia local versionada');
   const after=await page.evaluate(()=>window.ApexNativeSeason9A?.snapshot?.()||null);
   const stable=x=>x?{...x,drivers:x.drivers?.map(({name,...rest})=>rest)}:x;
@@ -77,6 +122,11 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
   await page.locator('#apex9aProfile').click();
   assert.equal(await page.locator('#apexDriverGender').inputValue(),'female');
   assert.equal(await page.locator('#apexHelmetPattern').inputValue(),'chevron');
+  assert.equal(await page.locator('#apexSuitSource').inputValue(),'custom');
+  assert.equal(await page.locator('#apexSuitPattern').inputValue(),'diagonal');
+  assert.equal(await page.locator('[name="suitPrimary"]').inputValue(),'#107a51');
+  assert.ok((await page.locator('#apexDriverAvatarImage svg').evaluate(el=>el.outerHTML)).includes('#107a51'),
+   'Avatar restaurado con la personalización guardada');
   await page.locator('#apex9fBack').click();
   await page.locator('#apex9aRace').click();
   assert.equal(await page.locator('#apex9aModesScreen').isVisible(),true,'Tipo de carrera sigue funcionando');
