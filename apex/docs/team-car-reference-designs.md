@@ -70,3 +70,9 @@ The cockpit has a shaded well, padded bucket and bolsters, restrained stitching,
 Slick tyres now use curved envelopes with rounded shoulders rather than nested rounded rectangles. Front footprints are longer and slimmer across the car than the rear footprints; upright contact positions derive from those same dimensions at each native wheel scale. The finish uses restrained mould seams, fine scuff marks and broad matte highlights.
 
 The front wishbones form a diagonal/near-transverse pair with a clearer V layout. Wider carbon arms carry separate fine pushrods and steering links; the rear retains its halfshafts. Dark upright fairings and inner wheel faces replace bright exposed hub blocks. All links expose their actual construction anchors for browser checks: every body attachment must lie inside the body path and each outer joint inside an upright, including mirrored parts on all 11 models. Paint invariants and wheel-edge contact checks remain in place.
+
+## McRaven integrated body revision
+
+McRaven now has explicit upper/lower shell curves, a curved engine spine and a rounded rectangular cockpit with a painted surround. Its pods use a secondary-colour base with flowing primary panels rather than a primary border around a dark inset. The original accent is a single continuous curve on each side, drawn above the body and clipped to the union of the body and both pods. Direct transformed paths in the clip preserve the lower mirrored curve. Custom paint patterns still replace the original decoration without replacing any geometry.
+
+These shell/cockpit overrides belong only to PAPAYA; other team definitions and the wheel/suspension revision are retained. The neutral browser render samples both accent curves at five stations to catch missing pixels caused by clipping, in addition to the 121 paint/geometry invariants, attachment and responsive/persistence tests.

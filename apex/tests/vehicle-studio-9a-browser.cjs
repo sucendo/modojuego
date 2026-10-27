@@ -116,6 +116,23 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
     // Validate every neutral design, not only the last selected team.
     const host=document.createElement('div');host.style.cssText='position:fixed;left:-2000px';
     host.innerHTML=source;document.body.append(host);
+    if(key==='PAPAYA'){
+     const curves=[...host.querySelectorAll('.apex-car-flowing-accent path')];
+     if(curves.length!==2)throw new Error('Falta una de las dos curvas continuas de McRaven');
+     // Sample rendered pixels, not just path attributes: a mirrored clip can
+     // silently hide the lower stripe even though its SVG path still exists.
+     for(const curve of curves)for(const fraction of [.15,.35,.55,.75,.9]){
+      const point=curve.getPointAtLength(curve.getTotalLength()*fraction);
+      const local=new DOMPoint(point.x,point.y).matrixTransform(curve.getCTM());
+      const x=Math.round(local.x/2),y=Math.round(local.y/2);
+      const bright=[];
+      for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
+       const offset=((y+dy)*500+x+dx)*4;
+       bright.push(Math.min(pixels[offset],pixels[offset+1],pixels[offset+2]));
+      }
+      if(Math.max(...bright)<210)throw new Error('Curva de pintura interrumpida: '+fraction+' / '+local.y);
+     }
+    }
     const bounds=host.firstElementChild.getBBox();host.remove();
     result.push({key,geometry,gray,bounds:{x:bounds.x,y:bounds.y,
      right:bounds.x+bounds.width,bottom:bounds.y+bounds.height}});
