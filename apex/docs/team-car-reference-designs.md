@@ -48,3 +48,9 @@ Paint preferences are independent per team under `apex26.vehicle-studio.paint.v1
 The browser regression verifies all 121 team/style combinations have exactly the same structural path/transform signatures as that team's original car, including when supplied a legacy foreign `designKey`. It also verifies independent paint choices on two teams after reload, old body-swap preferences cannot alter the car, and both restore actions preserve the other preference.
 
 The SVG marks in the studio retain the catalogue's symbol identities (swoosh, star, shield, horns, bars, A, hash, ring, wave, leaf and crest) with original redrawn paths and negative space for small-card legibility. They do not replace in-race branding assets.
+
+## Mechanical studio detail
+
+The overhead preview uses tapered carbon wishbone arms, pushrods, front steering links and rear halfshafts rather than unconnected strokes. Four inboard uprights and short axle stubs are computed from the same native tyre dimensions, with small brake-duct openings. The top view intentionally does not show a complete side-on rim. Rubber grain, wing hardware and service-panel seams are shared finishing details; team body profiles and paint choices remain independent.
+
+Browser checks verify all four mounts touch the inner tyre edges on every native team/model, along with suspension-component counts and the 121 paint/geometry invariants including the new mechanical paths.

@@ -130,6 +130,8 @@ function markup(profile){
   return '<g class="apex-car-tyre">'+
    '<rect x="'+(cx-w/2)+'" y="'+(cy-h/2)+'" width="'+w+'" height="'+h+'" rx="22" fill="url(#tyre)" stroke="#030507" stroke-width="4"/>'+
    '<rect x="'+(cx-w/2+5)+'" y="'+(cy-h/2+5)+'" width="'+(w-10)+'" height="'+(h-10)+'" rx="18" fill="url(#rubberLight)"/>'+
+   '<rect x="'+(cx-w/2+4)+'" y="'+(cy-h/2+4)+'" width="'+(w-8)+'" height="'+(h-8)+'" rx="18" fill="url(#rubberGrain)"/>'+
+   P('M'+(cx-w/2+16)+' '+(cy-h/2+8)+'Q'+cx+' '+(cy-h/2+3)+' '+(cx+w/2-16)+' '+(cy-h/2+8),'none','stroke="#d2d7da" stroke-opacity=".14" stroke-width="1.3"')+
    P('M'+(cx-w/2+10)+' '+(cy-h/2+13)+'Q'+(cx-w/2+3)+' '+cy+' '+(cx-w/2+10)+' '+(cy+h/2-13)+'M'+(cx+w/2-10)+' '+(cy-h/2+13)+'Q'+(cx+w/2-3)+' '+cy+' '+(cx+w/2-10)+' '+(cy+h/2-13),'none','stroke="#b9c1c5" stroke-opacity=".16" stroke-width="1.6"')+
    P('M'+(cx-w/2+14)+' '+(cy-h/2+5)+'H'+(cx+w/2-14)+'M'+(cx-w/2+14)+' '+(cy+h/2-5)+'H'+(cx+w/2-14),'none','stroke="#a5afb8" stroke-opacity=".19" stroke-width="2"')+
    P('M'+(cx-31)+' '+(cy-h/2+3)+'h62M'+(cx-31)+' '+(cy+h/2-3)+'h62','none','stroke="#ca3438" stroke-opacity=".7" stroke-width="1.8"')+'</g>';
@@ -137,11 +139,13 @@ function markup(profile){
  const defs='<defs>'+[
   ['tyre','#06080a','#34383b','#07090b'],
   ['paint',p,p,s],['panel',surface,surface,s],
-  ['carbon','#182128',carbon,'#080c10'],['wing',wing,'#30383e',wing]
+  ['carbon','#182128',carbon,'#080c10'],['wing',wing,'#30383e',wing],
+  ['suspension','#68757d','#18232a','#04090d'],['machined','#84919a','#303c44','#10171d']
  ].map(([id,c1,c2,c3])=>'<linearGradient id="'+id+'" x1="0" y1="0" x2="0" y2="1"><stop stop-color="'+c1+'"/><stop offset=".45" stop-color="'+c2+'"/><stop offset="1" stop-color="'+c3+'"/></linearGradient>').join('')+
  '<linearGradient id="light"><stop stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".32"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>'+
  '<linearGradient id="volume" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#000" stop-opacity=".66"/><stop offset=".16" stop-color="#fff" stop-opacity=".1"/><stop offset=".34" stop-color="#fff" stop-opacity=".32"/><stop offset=".48" stop-color="#fff" stop-opacity=".03"/><stop offset=".75" stop-color="#000" stop-opacity=".16"/><stop offset="1" stop-color="#000" stop-opacity=".72"/></linearGradient>'+
  '<radialGradient id="rubberLight" cx=".38" cy=".44" r=".7"><stop stop-color="#899299" stop-opacity=".25"/><stop offset=".65" stop-color="#20282c" stop-opacity=".03"/><stop offset="1" stop-color="#000" stop-opacity=".6"/></radialGradient>'+
+ '<pattern id="rubberGrain" width="13" height="11" patternUnits="userSpaceOnUse"><path d="M2 3l2 -1M8 8l3 1M11 2l1 -1" stroke="#c3c9cc" stroke-width=".7" stroke-opacity=".065"/></pattern>'+
  '<pattern id="weave" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><path d="M0 0H3V2H0ZM3 2H5V5H3Z" fill="#c2ced5" fill-opacity=".055"/></pattern>'+
  '</defs>';
  // Restrained carbon floor, stepped edge and small rear diffuser vanes.
@@ -151,9 +155,44 @@ function markup(profile){
   M(P('M301 122Q479 124 650 104L654 115Q477 139 305 134Z','#11191e','stroke="#7c8a92" stroke-opacity=".4" stroke-width="1"')+
    P('M314 138Q460 140 623 119','none','stroke="#bccad2" stroke-opacity=".16" stroke-width="1.4"')+
    P('M272 217L291 167L304 148M259 219L278 178M245 223L258 193','none','stroke="#63717a" stroke-opacity=".5" stroke-width="2"'));
+ // Suspension joints are computed from the same tyre footprints: all four
+ // inboard mounts stay attached for each native model's wheelScale.
+ const frontInner=101+77*ws/2,rearInner=104+85*ws/2;
+ const number=n=>Number(n.toFixed(3));
+ function arm(ax,ay,bx,by,width=6,kind='wishbone'){
+  const length=Math.hypot(bx-ax,by-ay),nx=-(by-ay)/length,ny=(bx-ax)/length;
+  const point=(x,y,offset)=>number(x+nx*offset)+' '+number(y+ny*offset);
+  const path='M'+point(ax,ay,width/2)+'L'+point(bx,by,width*.32)+
+   'L'+point(bx,by,-width*.32)+'L'+point(ax,ay,-width/2)+'Z';
+  return '<g class="apex-car-suspension-arm" data-link="'+kind+'">'+
+   P(path,kind==='halfshaft'?'url(#machined)':'url(#suspension)','stroke="#070e13" stroke-width="1"')+
+   P('M'+point(ax,ay,width*.16)+'L'+point(bx,by,width*.1),'none',
+    'stroke="#a7b5be" stroke-opacity=".33" stroke-width=".85"')+'</g>';
+ }
  const suspension=M(
-  P('M695 221L777 117M748 224L805 117M704 225L787 134M274 220L220 128M343 216L233 129M302 228L213 141','none','stroke="#060a0d" stroke-width="7" stroke-linejoin="round"')+
-  P('M695 220L777 117M748 223L805 117M274 219L220 128M343 215L233 129','none','stroke="#71808b" stroke-opacity=".55" stroke-width="1.6"'));
+  '<g class="apex-car-suspension" data-axle="front">'+
+   arm(674,221,783,frontInner+11,9)+arm(756,219,788,frontInner+9,8)+
+   arm(711,227,776,frontInner+14,4,'pushrod')+
+   arm(747,231,795,frontInner+13,3,'steering')+'</g>'+
+  '<g class="apex-car-suspension" data-axle="rear">'+
+   arm(274,218,215,rearInner+10,8)+arm(340,220,229,rearInner+10,8)+
+   arm(306,226,224,rearInner+14,4,'pushrod')+
+   arm(269,233,221,rearInner+11,5,'halfshaft')+'</g>'
+ );
+ function wheelMount(cx,inner,rear=false){
+  const duct=rear?18:25;
+  return '<g class="apex-car-wheel-mount" data-axle="'+(rear?'rear':'front')+'">'+
+   // Upright, short exposed axle stub and inner wheel face. A true top view
+   // does not show a full side-on alloy rim or an axle crossing the nose.
+   P('M'+(cx-12)+' '+(inner-1)+'L'+(cx+12)+' '+(inner-1)+'L'+(cx+11)+' '+(inner+11)+'L'+(cx+4)+' '+(inner+17)+'L'+(cx-10)+' '+(inner+13)+'Z','url(#machined)','stroke="#070d12" stroke-width="1.3"')+
+   P('M'+(cx-4)+' '+(inner+2)+'H'+(cx+4)+'V'+(inner+18)+'H'+(cx-4)+'Z','url(#suspension)')+
+   '<ellipse cx="'+cx+'" cy="'+(inner+2)+'" rx="10" ry="3.5" fill="#131c23" stroke="#7b8c97" stroke-opacity=".6" stroke-width="1"/>'+
+   '<circle cx="'+cx+'" cy="'+(inner+8)+'" r="2.4" fill="#9baab3" stroke="#0b1217" stroke-width=".8"/>'+
+   '<g class="apex-car-brake-duct">'+
+    P('M'+(cx+9)+' '+(inner+3)+'L'+(cx+duct)+' '+(inner-2)+'Q'+(cx+duct+5)+' '+(inner+5)+' '+(cx+duct+1)+' '+(inner+12)+'L'+(cx+9)+' '+(inner+15)+'Z','url(#carbon)','stroke="#37454e" stroke-width="1"')+
+    P('M'+(cx+duct)+' '+(inner+1)+'L'+(cx+duct+1)+' '+(inner+9)+'L'+(cx+duct-4)+' '+(inner+10)+'L'+(cx+duct-4)+' '+(inner+2)+'Z','#010508','stroke="#687d89" stroke-opacity=".5" stroke-width=".6"')+'</g></g>';
+ }
+ const mounts=M(wheelMount(785,frontInner)+wheelMount(221,rearInner,true));
  const rearWing='<g class="apex-car-rear-wing" transform="translate(110 235) scale('+(1+d.rear[1]/100)+' '+(1+d.rear[0]/120)+') translate(-110 -235)">'+
   P('M79 '+ry+'Q106 '+(ry-3)+' 145 '+(ry+4)+'L145 '+(466-ry)+'Q106 '+(473-ry)+' 79 '+(470-ry)+'Z','url(#wing)','stroke="#04080c" stroke-width="3"')+
   P('M87 '+(ry+8)+'V'+(462-ry)+'H117V'+(ry+8)+'Z','url(#panel)')+
@@ -161,6 +200,8 @@ function markup(profile){
   P('M106 '+(ry+6)+'V'+(464-ry)+'M136 '+(ry+8)+'V'+(462-ry),'none','stroke="#a4b1b9" stroke-opacity=".45" stroke-width="1.3"')+
   P('M143 220H191M143 250H191','none','stroke="#10191e" stroke-width="5"')+
   deco('M79 '+ry+'Q106 '+(ry-3)+' 145 '+(ry+4)+'L145 '+(466-ry)+'Q106 '+(473-ry)+' 79 '+(470-ry)+'Z')+
+  P('M98 231H150L165 235L150 239H98Z','url(#suspension)','stroke="#0a1118" stroke-width="1"')+
+  P('M104 233H147','none','stroke="#9cabb4" stroke-opacity=".5" stroke-width="1"')+
   '<text transform="translate(109 235) rotate(-90)" font-family="Arial,sans-serif" font-size="'+(brand.length>10?14:19)+'" font-weight="800" text-anchor="middle" fill="'+trim+'">'+brand+'</text>'+
   M(P('M77 '+(ry-3)+'H149V'+(ry+4)+'H77Z',carbon,'stroke="'+stripe+'" stroke-width="1.5"'))+'</g>';
  // Distinct transverse wing elements, swept back at the centre.
@@ -172,7 +213,9 @@ function markup(profile){
   (d.wing[2]===4?P('M922 227Q941 162 925 '+(fy+9)+'L936 '+(fy+12)+'Q954 166 961 231Z','url(#paint)','stroke="#080d11" stroke-width="2"'):'')+
   P('M860 213Q890 153 878 '+(fy+12)+'M888 216Q911 154 898 '+(fy+10)+'M911 220Q933 161 919 '+(fy+13),'none','stroke="#cad7de" stroke-opacity=".32" stroke-width="1.4"')+
   P('M861 '+(fy-3)+'L938 '+(fy+2)+'L943 '+(fy+10)+'L862 '+(fy+5)+'Z',wing,'stroke="'+p+'" stroke-width="2"')+
-  P('M892 157L909 191','none','stroke="'+stripe+'" stroke-width="2.2"')+'</g>';
+  P('M892 157L909 191','none','stroke="'+stripe+'" stroke-width="2.2"')+
+  P('M894 178L901 178L913 211L907 212Z','url(#suspension)')+
+  '<circle cx="898" cy="180" r="2" fill="#9cabb4" stroke="#10191f" stroke-width=".7"/></g>';
  // Independent pod outlines, inlet cuts and paint masks per reference.
  const podSkin=d.pod;
  const podTone=customPaint?p:d.podBase==='secondary'?surface:p;
@@ -225,10 +268,16 @@ function markup(profile){
   P(engineShape,d.livery==='double'?p:'url(#panel)','class="apex-car-engine-cover"')+
   '<g clip-path="url(#bodyMask)" class="apex-car-livery">'+(customPaint?deco(bodyShape):blocks[d.livery])+'</g>'+
   P(bodyShape,'url(#volume)')+
+  P(engineShape,'none','stroke="#e1edf4" stroke-opacity=".13" stroke-width="1"')+
   P(noseShape,'url(#light)','class="apex-car-nose"')+
   P('M664 '+(234-half)+'L'+(tip-28)+' '+(234-nw),'none','stroke="#fff" stroke-opacity=".32" stroke-width="1.4"')+
   P('M845 220L872 222L874 248L845 250Z',stripe,'opacity=".9"')+
   '<text x="860" y="241" font-family="Arial,sans-serif" font-size="17" font-weight="900" text-anchor="middle" fill="'+trim+'">26</text>';
+ const serviceDetails='<g class="apex-car-service-details">'+
+  P('M668 224Q668 222 671 222H695Q698 222 698 225V245Q698 248 695 248H671Q668 248 668 245Z','none','stroke="#dae5eb" stroke-opacity=".28" stroke-width=".9"')+
+  P('M676 229H688V241H676Z','#0b141a','opacity=".8"')+
+  '<circle cx="673" cy="225" r="1.1" fill="#c5d0d7" opacity=".6"/><circle cx="693" cy="245" r="1.1" fill="#c5d0d7" opacity=".6"/>'+
+  P('M792 232H799V238H792Z','#071017','stroke="#8798a3" stroke-opacity=".5" stroke-width=".7"')+'</g>';
  const bodyMasks='<defs><clipPath id="bodyMask">'+P(bodyShape,'#fff')+'</clipPath><clipPath id="upperHalf"><rect x="0" y="0" width="1000" height="235"/></clipPath></defs>';
 
  // Empty showroom cockpit: seat, belts and steering wheel. The halo sits
@@ -248,8 +297,8 @@ function markup(profile){
   P('M620 235H649','none','stroke="#0a1117" stroke-width="8"')+
   P('M620 232H647','none','stroke="#a3afb6" stroke-opacity=".5" stroke-width="1.5"')+'</g>';
  const mirrors=M(P('M621 205L623 167','none','stroke="#0c141a" stroke-width="4"')+P('M609 157L632 154Q639 154 637 162L611 166Z','url(#panel)','stroke="'+p+'" stroke-width="2"'));
- return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 470" width="1000" height="470" role="img" data-apex-silhouette="f1-team-paint-v9" data-apex-design-key="'+id+'" data-apex-paint-style="'+paintStyle+'" data-apex-design="'+safe(d.reference)+'" data-apex-team="'+id+'" data-apex-model="'+model+'" data-apex-chassis="'+chassis+'" aria-label="Vista cenital de monoplaza '+id+' '+model+'">'+defs+paintDefs+bodyMasks+
-  floor+rearWing+M(frontHalf)+suspension+sidepods+body+
+ return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 470" width="1000" height="470" role="img" data-apex-silhouette="f1-mechanical-v10" data-apex-design-key="'+id+'" data-apex-paint-style="'+paintStyle+'" data-apex-design="'+safe(d.reference)+'" data-apex-team="'+id+'" data-apex-model="'+model+'" data-apex-chassis="'+chassis+'" aria-label="Vista cenital de monoplaza '+id+' '+model+'">'+defs+paintDefs+bodyMasks+
+  floor+rearWing+M(frontHalf)+suspension+mounts+sidepods+body+serviceDetails+
   tire(221,104,true)+tire(221,366,true)+tire(785,101)+tire(785,369)+cockpit+mirrors+
   P('M464 214H485Q489 214 489 219V251Q489 256 485 256H464Z','url(#carbon)','stroke="#61717b" stroke-width="1.2"')+
   P('M469 223H480V247H469Z','#03080b','stroke="#303e48" stroke-width="1"')+
