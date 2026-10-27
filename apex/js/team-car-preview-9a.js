@@ -8,9 +8,81 @@ const cache=new Map();
 const hex=(s,f)=>/^#[0-9a-f]{6}$/i.test(String(s||''))?String(s).toLowerCase():f;
 const safe=s=>String(s||'').replace(/[^a-zA-Z0-9_-]/g,'').slice(0,36);
 const clamp=(n,min,max)=>Math.min(max,Math.max(min,Number(n)||1));
+// Showroom interpretations of the catalogue's inspiredBy references, not CAD
+// replicas or changes to the racing physics/mesh. Each has its own shoulder,
+// undercut, inlet, engine-cover, nose and wing curves; colours remain swappable.
+const designs=Object.freeze({
+ PAPAYA:{reference:'McLaren',nose:[16,27,0],wing:[0,0,4],rear:[0,0],cover:[22,47,58,25],podBase:'primary',
+  pod:'M264 216C330 205 346 167 415 134C484 111 573 110 620 129Q646 139 648 160L640 195L618 219Q536 213 462 211Q366 223 264 224Z',
+  panel:'M285 216C369 192 381 138 458 127Q563 112 620 135L636 166L620 199Q554 173 495 183Q389 218 285 220Z',
+  stripe:'M305 211C392 182 416 134 490 131Q566 125 613 143',
+  inlet:'M596 150Q620 145 638 157L641 172Q616 164 594 168Z',
+  livery:'sweep'},
+ SILVERWING:{reference:'Mercedes',nose:[20,24,-8],wing:[-12,14,3],rear:[10,-4],cover:[16,34,49,18],podBase:'secondary',
+  pod:'M274 220L348 203Q397 153 460 137L589 128Q626 128 641 145L641 181L617 203L552 211L427 211Z',
+  panel:'M324 211L400 164Q445 149 494 147L609 141L628 153L614 182L548 193L425 207Z',
+  stripe:'M323 216L415 191L518 182L621 165',
+  inlet:'M600 145L638 144L638 155L601 159Z',
+  livery:'center'},
+ FERRATI:{reference:'Ferrari',nose:[21,37,-14],wing:[10,-12,3],rear:[-6,5],cover:[30,61,65,30],podBase:'primary',
+  pod:'M267 215Q337 198 367 156C403 126 468 113 549 116Q612 118 641 142Q652 160 644 180L622 205Q527 221 452 214L338 224Z',
+  panel:'M309 214Q365 197 400 161Q478 123 558 131Q602 132 628 151L625 176Q561 152 509 167Q415 202 309 219Z',
+  stripe:'M342 204Q433 143 531 140L610 153',
+  inlet:'M601 149Q619 142 638 154L633 174L600 170Z',
+  livery:'double'},
+ BULLHORN:{reference:'Red Bull Racing',nose:[13,22,4],wing:[-17,23,4],rear:[7,-7],cover:[14,31,57,17],podBase:'primary',
+  pod:'M258 220C342 218 366 180 399 146Q441 113 522 112L609 111Q644 112 655 136L641 183L615 208Q541 211 472 209L370 220Z',
+  panel:'M293 217Q384 199 414 153Q455 126 526 124L619 124L638 140L619 178L554 181L467 202Z',
+  stripe:'M323 215L424 170L487 134L568 133L619 146',
+  inlet:'M606 128L646 126L641 146L606 153Z',
+  livery:'chevron'},
+ SUNRIDGE:{reference:'Racing Bulls',nose:[18,31,-4],wing:[4,8,3],rear:[-1,-9],cover:[23,46,53,27],podBase:'primary',
+  pod:'M271 218Q344 206 391 159C425 138 475 125 544 125Q616 126 645 147L646 176L621 202Q556 217 483 211Q374 227 271 225Z',
+  panel:'M316 214Q406 178 443 148Q522 129 602 146L629 160L614 185Q548 162 488 187Q414 211 316 219Z',
+  stripe:'M330 213Q447 150 515 145L616 161',
+  inlet:'M610 149L639 150L640 165L605 169Z',
+  livery:'split'},
+ ALPEN:{reference:'Alpine',nose:[15,33,-10],wing:[-6,-16,4],rear:[-8,8],cover:[20,40,62,24],podBase:'primary',
+  pod:'M269 220L347 204L404 148Q441 126 498 119L608 121L649 140L648 180L621 210L530 214L405 217Z',
+  panel:'M319 215L399 182L441 146L517 135L612 137L631 151L611 184L529 190L412 211Z',
+  stripe:'M337 212L412 177L449 145L524 133L616 145',
+  inlet:'M603 143L641 149L632 173L602 166Z',
+  livery:'flank'},
+ MIDNIGHT:{reference:'Haas',nose:[23,35,-18],wing:[14,-5,3],rear:[-4,12],cover:[27,55,59,32],podBase:'primary',
+  pod:'M275 218L354 199L398 147L456 129L601 129L643 144L646 182L616 211L480 215L359 225Z',
+  panel:'M331 214L405 169L467 145L602 144L628 157L612 186L492 191L397 216Z',
+  stripe:'M352 210L419 174L477 153H610',
+  inlet:'M607 149H638V170H607Z',
+  livery:'bars'},
+ AUREON:{reference:'Audi',nose:[19,29,-6],wing:[6,18,3],rear:[5,3],cover:[21,39,54,23],podBase:'secondary',
+  pod:'M266 220L353 203L408 155L466 125L590 122L642 143L647 181L620 207L531 211L410 215Z',
+  panel:'M313 216L397 183L454 140L577 134L622 151L624 174L557 179L463 203Z',
+  stripe:'M329 215L430 185L480 148L593 145L620 159',
+  inlet:'M606 145L640 155L635 174L604 165Z',
+  livery:'blade'},
+ OCEANIC:{reference:'Williams',nose:[17,26,6],wing:[-10,-7,4],rear:[2,10],cover:[19,43,51,22],podBase:'primary',
+  pod:'M262 221C343 216 365 175 419 146Q470 127 547 130Q615 133 642 154L638 183L614 208Q542 214 473 212Q369 225 262 226Z',
+  panel:'M310 216C388 202 413 160 467 148Q541 139 604 153L625 166L609 186Q541 170 482 190Q407 215 310 220Z',
+  stripe:'M328 215Q415 176 469 159Q541 149 607 164',
+  inlet:'M604 156Q621 148 635 160L631 176L602 173Z',
+  livery:'pinstripe'},
+ GREENSTONE:{reference:'Aston Martin',nose:[14,28,-1],wing:[-19,5,4],rear:[12,-3],cover:[13,30,56,19],podBase:'primary',
+  pod:'M255 223C343 223 372 199 407 165C430 133 466 110 525 109Q595 102 641 131L648 163L624 203Q566 216 484 212Q378 223 255 228Z',
+  panel:'M306 219Q395 210 436 156Q475 121 530 122Q587 119 624 143L630 160L611 186Q557 161 506 184Q410 218 306 223Z',
+  stripe:'M324 219Q412 208 451 157Q510 116 608 148',
+  inlet:'M608 137L640 141L635 151L605 155Z',
+  livery:'spear'},
+ CADARA:{reference:'Cadillac',nose:[22,32,-12],wing:[12,4,3],rear:[-10,0],cover:[28,52,61,28],podBase:'primary',
+  pod:'M273 219L348 202Q389 159 434 141Q490 118 560 122L618 134L645 152L641 185L616 209Q536 220 459 215L350 224Z',
+  panel:'M320 216Q406 173 452 153Q522 133 602 148L628 163L610 188Q537 165 478 194L383 216Z',
+  stripe:'M338 213Q439 156 511 147L615 163',
+  inlet:'M606 155L636 155L636 174L606 171Z',
+  livery:'lux'}
+});
 function markup(profile){
  if(!profile?.geometry||!profile?.livery)return null;
  const g=profile.geometry,l=profile.livery;
+ const d=designs[profile.teamKey]||designs.PAPAYA;
  const p=hex(l.primary,'#f58a00'),s=hex(l.secondary,'#161a20'),
   a=hex(l.accent,'#3ccef8'),stripe=hex(l.stripe,a),
   carbon=hex(l.carbon,'#080d13'),wing=hex(l.wing,'#10161e'),trim=hex(l.trim,'#f5f8fb');
@@ -18,8 +90,8 @@ function markup(profile){
  const surface=finish==='silver'?'#b4c1cc':finish==='white'?'#f2f6fa':finish==='carbon'?'#101920':s;
  // Coordinate frame: nose points right; all mirrored parts share y=235.
  // Wheel footprints are longer along the chassis than across it.
- const nw=16*clamp(g.noseWidth,.9,1.1),tip=927+(clamp(g.noseLen,.9,1.1)-1)*20,
-  pod=clamp(g.sidepodWidth,.9,1.1),fy=75-(clamp(g.frontWing,.94,1.06)-1)*60,
+ const nw=d.nose[0]*clamp(g.noseWidth,.94,1.06),tip=927+d.nose[2]+(clamp(g.noseLen,.94,1.06)-1)*20,
+  fy=75-(clamp(g.frontWing,.94,1.06)-1)*60,
   ry=116-(clamp(g.rearWing,.94,1.06)-1)*60,
   ws=clamp(g.wheelScale,.94,1.06),cw=clamp(g.cockpitWidth,.94,1.06);
  const id=safe(profile.teamKey),model=safe(profile.model),chassis=safe(profile.chassis);
@@ -55,7 +127,7 @@ function markup(profile){
  const suspension=M(
   P('M695 221L777 117M748 224L805 117M704 225L787 134M274 220L220 128M343 216L233 129M302 228L213 141','none','stroke="#060a0d" stroke-width="7" stroke-linejoin="round"')+
   P('M695 220L777 117M748 223L805 117M274 219L220 128M343 215L233 129','none','stroke="#71808b" stroke-opacity=".55" stroke-width="1.6"'));
- const rearWing='<g class="apex-car-rear-wing">'+
+ const rearWing='<g class="apex-car-rear-wing" transform="translate(110 235) scale('+(1+d.rear[1]/100)+' '+(1+d.rear[0]/120)+') translate(-110 -235)">'+
   P('M79 '+ry+'Q106 '+(ry-3)+' 145 '+(ry+4)+'L145 '+(466-ry)+'Q106 '+(473-ry)+' 79 '+(470-ry)+'Z','url(#wing)','stroke="#04080c" stroke-width="3"')+
   P('M87 '+(ry+8)+'V'+(462-ry)+'H117V'+(ry+8)+'Z','url(#panel)')+
   P('M122 '+(ry+8)+'V'+(462-ry),'none','stroke="'+p+'" stroke-width="8"')+
@@ -64,43 +136,70 @@ function markup(profile){
   '<text transform="translate(109 235) rotate(-90)" font-family="Arial,sans-serif" font-size="19" font-weight="800" text-anchor="middle" fill="'+trim+'">'+brand+'</text>'+
   M(P('M77 '+(ry-3)+'H149V'+(ry+4)+'H77Z',carbon,'stroke="'+stripe+'" stroke-width="1.5"'))+'</g>';
  // Distinct transverse wing elements, swept back at the centre.
- const frontHalf='<g class="apex-car-front-wing">'+
-  P('M850 218Q878 160 862 '+(fy+8)+'L886 '+fy+'Q900 155 934 225Z','url(#wing)','stroke="#080d11" stroke-width="2"')+
-  P('M869 220Q897 157 883 '+(fy+6)+'L902 '+(fy+3)+'Q914 158 944 226Z','url(#panel)','stroke="#080d11" stroke-width="2"')+
-  P('M895 222Q917 156 906 '+(fy+5)+'L921 '+(fy+7)+'Q936 166 952 230Z','url(#carbon)','stroke="#080d11" stroke-width="2"')+
-  P('M922 227Q941 162 925 '+(fy+9)+'L936 '+(fy+12)+'Q954 166 961 231Z','url(#paint)','stroke="#080d11" stroke-width="2"')+
+ const frontHalf='<g class="apex-car-front-wing" transform="translate(930 235) scale('+(1+d.wing[0]/65)+' 1) translate(-930 -235)">'+
+  P('M850 218Q'+(878+d.wing[1])+' 160 862 '+(fy+8)+'L886 '+fy+'Q900 155 934 225Z','url(#wing)','stroke="#080d11" stroke-width="2"')+
+  P('M869 220Q'+(897+d.wing[1]*.8)+' 157 883 '+(fy+6)+'L902 '+(fy+3)+'Q914 158 944 226Z','url(#panel)','stroke="#080d11" stroke-width="2"')+
+  P('M895 222Q'+(917+d.wing[1]*.6)+' 156 906 '+(fy+5)+'L921 '+(fy+7)+'Q936 166 952 230Z','url(#carbon)','stroke="#080d11" stroke-width="2"')+
+  (d.wing[2]===4?P('M922 227Q941 162 925 '+(fy+9)+'L936 '+(fy+12)+'Q954 166 961 231Z','url(#paint)','stroke="#080d11" stroke-width="2"'):'')+
   P('M860 213Q890 153 878 '+(fy+12)+'M888 216Q911 154 898 '+(fy+10)+'M911 220Q933 161 919 '+(fy+13),'none','stroke="#cad7de" stroke-opacity=".32" stroke-width="1.4"')+
   P('M861 '+(fy-3)+'L938 '+(fy+2)+'L943 '+(fy+10)+'L862 '+(fy+5)+'Z',wing,'stroke="'+p+'" stroke-width="2"')+
   P('M892 157L909 191','none','stroke="'+stripe+'" stroke-width="2.2"')+'</g>';
- // Broad, continuous sidepod skins measured against the supplied overhead
- // references. Their outer shoulder wraps the cockpit, with an undercut below;
- // no detached decorative rings around a thin central fuselage.
- const edge=119-(pod-1)*25;
- const podSkin='M264 216C330 205 346 167 415 '+(edge+15)+'C484 '+(edge-8)+' 573 '+(edge-9)+' 620 '+(edge+10)+'Q646 '+(edge+20)+' 648 160L640 195L618 219Q536 213 462 211Q366 223 264 224Z';
+ // Independent pod outlines, inlet cuts and paint masks per reference.
+ const podSkin=d.pod;
+ const podTone=d.podBase==='secondary'?surface:p;
+ const podPanel=d.livery==='double'?p:d.livery==='pinstripe'?stripe:surface;
+ const podDetail=P(d.panel,podPanel)+P(d.stripe,'none','stroke="'+stripe+'" stroke-width="'+(d.livery==='flank'?12:d.livery==='split'?7:3.5)+'" stroke-linecap="round"');
  const sidepods=M('<g class="apex-car-sidepod">'+
-  P(podSkin,'url(#paint)','stroke="#0a1015" stroke-width="2"')+
-  P('M285 216C369 192 381 '+(edge+19)+' 458 '+(edge+8)+'Q563 '+(edge-7)+' 620 '+(edge+16)+'L636 166L620 199Q554 173 495 183Q389 218 285 220Z','url(#panel)')+
-  P(podSkin,'url(#volume)')+
-  P('M305 211C392 182 416 '+(edge+15)+' 490 '+(edge+12)+'Q566 '+(edge+6)+' 613 '+(edge+24),'none','stroke="'+stripe+'" stroke-width="4" stroke-linecap="round"')+
-  P('M296 216C386 192 413 164 480 155Q552 145 607 167L621 188Q551 166 498 177Q401 204 296 219Z','#020609','opacity=".64"')+
-  P('M332 196C414 157 449 144 503 139Q567 133 610 152','none','stroke="#fff" stroke-opacity=".23" stroke-width="1.6"')+
-  // Inlet lip and horizontal dark opening at the forward end of each pod.
-  P('M596 150Q620 145 638 157L641 172Q616 164 594 168Z','#020609','stroke="#60717c" stroke-width="1"')+
-  P('M596 148Q620 143 638 156','none','stroke="'+p+'" stroke-width="4"')+
-  P('M523 132L532 137M533 131L542 136M543 131L552 136M553 132L562 137','none','stroke="#020609" stroke-width="2"')+'</g>');
- const bodyShape='M173 217L272 214C329 211 362 194 402 182Q448 169 487 177L531 181Q588 184 635 202Q664 207 710 210L'+(tip-8)+' '+(235-nw)+'Q'+(tip+8)+' 235 '+(tip-8)+' '+(235+nw)+'L710 260Q664 263 635 268Q588 286 531 289L487 293Q448 301 402 288C362 276 329 259 272 256L173 253Z';
- const body=P(bodyShape,'url(#paint)','stroke="#111820" stroke-width="2"')+
+  P(podSkin,podTone,'stroke="#0a1015" stroke-width="2"')+
+  podDetail+P(podSkin,'url(#volume)')+
+  P(d.inlet,'#020609','class="apex-car-inlet" stroke="#60717c" stroke-width="1"')+
+  P('M523 132L532 137M533 131L542 136M543 131L552 136M553 132L562 137','none','stroke="#020609" stroke-width="2"')+'</g>')+
+  (d.livery==='lux'?P(podSkin,surface):'');
+ const [tail,waist,shoulder,root]=d.cover;
+ const half=d.nose[1];
+ // Absolute stations give independently shaped engine-cover shoulders, waist,
+ // nose root and nose tip. Mirrored on the centreline, never scaled as one car.
+ const bodyShape='M173 '+(235-tail)+'L272 '+(235-tail-3)+
+  'C329 '+(235-waist+13)+' 362 '+(235-waist)+' 402 '+(235-shoulder)+
+  'Q448 '+(230-shoulder)+' 487 '+(235-shoulder+5)+
+  'L531 '+(239-shoulder)+'Q588 '+(235-root-16)+' 635 '+(235-root)+
+  'Q664 '+(235-half-2)+' 710 '+(235-half)+
+  'L'+(tip-8)+' '+(235-nw)+'Q'+(tip+8)+' 235 '+(tip-8)+' '+(235+nw)+
+  'L710 '+(235+half)+'Q664 '+(235+half+2)+' 635 '+(235+root)+
+  'Q588 '+(235+root+16)+' 531 '+(231+shoulder)+'L487 '+(235+shoulder-5)+
+  'Q448 '+(240+shoulder)+' 402 '+(235+shoulder)+
+  'C362 '+(235+waist)+' 329 '+(235+waist-13)+' 272 '+(235+tail+3)+'L173 '+(235+tail)+'Z';
+ const engineShape='M192 '+(235-tail+5)+'L302 '+(235-waist+10)+
+  'Q370 '+(235-shoulder+14)+' 421 '+(235-shoulder+8)+
+  'Q454 '+(235-shoulder)+' 479 '+(235-shoulder+10)+
+  'L498 212L488 258L479 '+(235+shoulder-10)+
+  'Q454 '+(235+shoulder)+' 421 '+(235+shoulder-8)+
+  'Q370 '+(235+shoulder-14)+' 302 '+(235+waist-10)+'L192 '+(235+tail-5)+'Z';
+ const noseShape='M635 '+(235-root)+'Q664 '+(235-half-2)+' 710 '+(235-half)+
+  'L'+(tip-8)+' '+(235-nw)+'Q'+(tip+8)+' 235 '+(tip-8)+' '+(235+nw)+
+  'L710 '+(235+half)+'Q664 '+(235+half+2)+' 635 '+(235+root)+'Z';
+ const blocks={
+  sweep:M(P('M205 231L444 203L467 217L445 230L205 237Z',surface)),
+  center:P('M194 224L455 207L479 218V252L455 263L194 246Z',surface)+P('M194 231H476V239H194Z',stripe),
+  double:P('M190 224H470V230H190ZM190 240H470V246H190Z',stripe)+M(P('M637 216L900 225L900 228L637 224Z',surface)),
+  chevron:M(P('M215 232L375 207L455 224L412 215L375 218L215 237Z',stripe))+M(P('M640 220L702 214L817 229L757 231L695 224Z',surface)),
+  split:M(P('M207 221L393 202L470 218L441 224L207 234Z',surface))+P('M638 222L900 226V244L638 248Z',surface),
+  flank:M(P('M206 222L402 196L466 215L449 225L206 236Z',stripe))+P('M676 216L718 220V250L676 254Z',stripe),
+  bars:M(P('M276 220L305 214L328 255L299 252ZM333 205L361 194L383 274L355 266Z',surface))+P('M670 217L701 218L735 254L704 253Z',stripe),
+  blade:P('M191 222L434 191L478 219L344 241L191 247Z',surface)+P('M654 219L710 213L840 223L813 247L655 251Z',surface),
+  pinstripe:M(P('M203 224L430 191L468 209L461 216L430 201L203 229Z',stripe))+P('M643 222L889 225V229L643 227Z',stripe),
+  spear:M(P('M199 232L441 190L463 204L441 202L199 237Z',stripe))+P('M642 230L899 234L642 240L693 235Z',surface),
+  lux:P(bodyShape,surface,'clip-path="url(#upperHalf)"')+P('M193 234H470V236H193ZM643 234H909V236H643Z',stripe)
+ };
+ const body=P(bodyShape,'url(#paint)','class="apex-car-body" stroke="#111820" stroke-width="2"')+
+  P(engineShape,d.livery==='double'?p:'url(#panel)','class="apex-car-engine-cover"')+
+  '<g clip-path="url(#bodyMask)" class="apex-car-livery">'+blocks[d.livery]+'</g>'+
   P(bodyShape,'url(#volume)')+
-  // Central engine cover grows out of the rear bodywork instead of a thin spine.
-  P('M192 224L302 220Q370 204 421 190Q454 181 479 190L498 212L488 258L479 280Q454 289 421 280Q370 266 302 250L192 246Z','url(#panel)')+
-  P('M213 226L306 222Q392 199 445 197L474 209L478 261L445 273Q392 271 306 248L213 244Z','url(#carbon)')+
-  P('M218 227Q331 227 442 204L468 213','none','stroke="#c0cbd1" stroke-opacity=".34" stroke-width="2"')+
-  P('M250 219Q337 210 419 184M250 251Q337 260 419 286','none','stroke="'+stripe+'" stroke-width="2.5"')+
-  // Smooth, tapering monocoque shoulders continue all the way to the nose tip.
-  P('M643 215Q739 218 '+(tip-10)+' 228Q'+(tip+1)+' 235 '+(tip-10)+' 242Q739 252 643 255Z','url(#light)')+
-  P('M664 213L'+(tip-28)+' 225','none','stroke="#fff" stroke-opacity=".32" stroke-width="1.4"')+
+  P(noseShape,'url(#light)','class="apex-car-nose"')+
+  P('M664 '+(234-half)+'L'+(tip-28)+' '+(234-nw),'none','stroke="#fff" stroke-opacity=".32" stroke-width="1.4"')+
   P('M845 220L872 222L874 248L845 250Z',stripe,'opacity=".9"')+
   '<text x="860" y="241" font-family="Arial,sans-serif" font-size="17" font-weight="900" text-anchor="middle" fill="'+trim+'">26</text>';
+ const bodyMasks='<defs><clipPath id="bodyMask">'+P(bodyShape,'#fff')+'</clipPath><clipPath id="upperHalf"><rect x="0" y="0" width="1000" height="235"/></clipPath></defs>';
 
  // Empty showroom cockpit: seat, belts and steering wheel. The halo sits
  // above the cockpit rim and converges into its single forward support.
@@ -119,7 +218,7 @@ function markup(profile){
   P('M620 235H649','none','stroke="#0a1117" stroke-width="8"')+
   P('M620 232H647','none','stroke="#a3afb6" stroke-opacity=".5" stroke-width="1.5"')+'</g>';
  const mirrors=M(P('M621 205L623 167','none','stroke="#0c141a" stroke-width="4"')+P('M609 156H636V166H609Z','url(#panel)','stroke="'+p+'" stroke-width="2"'));
- return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 470" width="1000" height="470" role="img" data-apex-silhouette="f1-overhead-v6" data-apex-team="'+id+'" data-apex-model="'+model+'" data-apex-chassis="'+chassis+'" aria-label="Vista cenital de monoplaza '+id+' '+model+'">'+defs+
+ return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 470" width="1000" height="470" role="img" data-apex-silhouette="f1-team-bodywork-v7" data-apex-design="'+safe(d.reference)+'" data-apex-team="'+id+'" data-apex-model="'+model+'" data-apex-chassis="'+chassis+'" aria-label="Vista cenital de monoplaza '+id+' '+model+'">'+defs+bodyMasks+
   floor+rearWing+M(frontHalf)+suspension+sidepods+body+
   tire(221,104,true)+tire(221,366,true)+tire(785,101)+tire(785,369)+cockpit+mirrors+
   P('M461 219L483 210L491 218V252L483 260L461 251Z','url(#carbon)','stroke="'+p+'" stroke-width="2"')+
