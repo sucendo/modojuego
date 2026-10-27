@@ -128,3 +128,32 @@ McRaven is calibrated specifically against the supplied `image(20261027-150309).
 | Rear-wing trailing edge to rear axle / wheelbase | 0.110 | 0.110 |
 
 Browser checks use intervals around these relationships and verify the nose lies ahead of the front-wing centre on every team. This is a visual proportion correction to the showroom, not a claim of an exact replica.
+
+## Superficies y volumen del estudio (v19)
+
+La comparación aportada por Samuel (`image(20261027-212518).png`, referencia
+arriba y SVG anterior abajo) mostraba hombros demasiado anchos, pontones con
+aspecto de óvalo plano y un halo sobredimensionado.
+
+- McRaven tiene nuevos hombros y una franja exterior elevada más estrecha.
+- Las otras diez carrocerías conservan sus estaciones propias. Cada una aplica
+  su ajuste de hombros antes de reflejar las curvas, sin escalar el coche entero.
+- Los once modelos tienen un canal longitudinal por pontón, con estaciones
+  derivadas de su cintura y hombro, recortado al contorno de su propio pontón.
+- Las superficies de los canales, los hombros y las láminas de los alerones
+  usan luces y sombras transparentes independientes de la decoración.
+- El cockpit es más compacto y el halo más fino; se separan las tres carcasas
+  del conjunto de admisión/cámaras. Los slick tienen marcas de hombro y
+  reflejos menos uniformes, conservando las proporciones y sus anclajes.
+- El carbono utiliza una trama más fina. No hay imágenes raster, filtros,
+  animaciones ni peticiones de red nuevas en el SVG.
+
+La prueba del estudio comprueba las once geometrías también con paleta neutra,
+los dos canales por coche, los perfiles de ambos alerones y las 121 combinaciones
+escudería/decoración. Incluye las superficies nuevas en la firma que debe
+permanecer igual al cambiar de pintura. La personalización y el guardado siguen
+siendo los del panel existente. Esto modifica exclusivamente el estudio de
+Vehículo / Escudería; no sustituye la malla de carrera ni sus físicas.
+
+El resultado sigue siendo una interpretación vectorial cenital: las pruebas de
+geometría y funcionamiento no acreditan equivalencia fotográfica con la imagen.

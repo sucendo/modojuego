@@ -103,7 +103,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
     doc.querySelectorAll('text').forEach(el=>el.remove());
     const path=selector=>doc.querySelector(selector)?.getAttribute('d');
     const geometry={body:path('.apex-car-body'),cockpit:path('.apex-car-cockpit>path:first-child'),pod:path('.apex-car-sidepod path'),
-     inlet:path('.apex-car-inlet'),engine:path('.apex-car-engine-cover'),
+     inlet:path('.apex-car-inlet'),engine:path('.apex-car-engine-cover'),channel:path('.apex-car-pod-channel'),
      nose:path('.apex-car-nose'),front:path('.apex-car-front-wing path')};
     const canvas=document.createElement('canvas');canvas.width=500;canvas.height=235;
     const ctx=canvas.getContext('2d');
@@ -139,7 +139,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
    }
    return result;
   },options);
-  for(const component of ['body','cockpit','pod','inlet','engine','nose','front']){
+  for(const component of ['body','cockpit','pod','inlet','engine','channel','nose','front']){
    assert.ok(neutral.every(row=>row.geometry[component]),'Componente presente: '+component);
    assert.equal(new Set(neutral.map(row=>row.geometry[component])).size,11,
     'Once geometrías diferentes con tamaños y paleta idénticos: '+component);
@@ -247,10 +247,21 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
     cockpit:((hole.left+hole.right)/2-rearAxle.x)/wheelbase};
    const tailPoint=body.getAttribute('d').match(/^M[\d.]+ ([\d.]+)/);
    proportions.tailWidth=2*(235-Number(tailPoint[1]))/wheelbase;
+   const surfaces={channels:svg.querySelectorAll('.apex-car-pod-channel').length,
+    ridges:svg.querySelectorAll('.apex-car-channel-ridge').length,
+    frontRelief:svg.querySelectorAll('.apex-car-front-wing .apex-car-foil-relief').length,
+    rearRelief:svg.querySelectorAll('.apex-car-rear-plane-relief').length,
+    haloWidth:Number(svg.querySelector('.apex-car-cockpit path[stroke="url(#halo)"]').getAttribute('stroke-width')),
+    // McRaven's old shoulder filled this point and hid the carbon channel.
+    shoulderClear:key!=='PAPAYA'||!body.isPointInFill(new DOMPoint(510,166)),
+    vectorOnly:!svg.querySelector('image,filter,animate')};
    const bounds=svg.getBBox();host.remove();
-   return {key,parts,mechanics,wing,rearLayout,proportions,bounds:{x:bounds.x,y:bounds.y,right:bounds.x+bounds.width,bottom:bounds.y+bounds.height}};
+   return {key,parts,mechanics,wing,rearLayout,proportions,surfaces,bounds:{x:bounds.x,y:bounds.y,right:bounds.x+bounds.width,bottom:bounds.y+bounds.height}};
   }),options);
   for(const drawing of drawings){
+   assert.deepEqual(drawing.surfaces,{channels:2,ridges:2,frontRelief:drawing.wing.elements*2,
+    rearRelief:1,haloWidth:5.5,shoulderClear:true,vectorOnly:true},
+    'Canales visibles, halo fino y perfiles vectoriales en ambas mitades: '+drawing.key);
    assert.equal(drawing.parts.length,4,'Cuatro neumáticos slick: '+drawing.key);
    assert.ok(drawing.parts.every(b=>b.width>b.height*1.25),'Neumáticos alargados en el eje longitudinal');
    assert.deepEqual(drawing.mechanics,{mounts:4,suspensions:4,ducts:4,wishbones:8,pushrods:4,steering:2,halfshafts:2,connected:true,linksAttached:true},
@@ -316,7 +327,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
    const signature=source=>{
     const doc=new DOMParser().parseFromString(source,'image/svg+xml');
     if(doc.querySelector('parsererror'))throw new Error('SVG inválido');
-    return JSON.stringify(Array.from(doc.querySelectorAll('.apex-car-body,.apex-car-engine-cover,.apex-car-nose,.apex-car-inlet,.apex-car-sidepod>path:first-child,.apex-car-front-bridge,.apex-car-wing-join,.apex-car-front-wing,.apex-car-front-wing .apex-car-wing-element,.apex-car-rear-wing,.apex-car-cockpit,.apex-car-cockpit path,.apex-car-cockpit circle,.apex-car-inlet-depth path,.apex-car-pod-reflection,.apex-car-tyre,.apex-car-suspension-arm path,.apex-car-wheel-mount path,.apex-car-wheel-mount ellipse,.apex-car-wheel-mount circle,.apex-car-floor,.apex-car-rear-assembly g,.apex-car-rear-assembly path,.apex-car-airbox,.apex-car-service-details path')).map(el=>({
+    return JSON.stringify(Array.from(doc.querySelectorAll('.apex-car-body,.apex-car-engine-cover,.apex-car-nose,.apex-car-inlet,.apex-car-sidepod>path:first-child,.apex-car-front-bridge,.apex-car-wing-join,.apex-car-front-wing,.apex-car-front-wing .apex-car-wing-element,.apex-car-rear-wing,.apex-car-cockpit,.apex-car-cockpit path,.apex-car-cockpit circle,.apex-car-inlet-depth path,.apex-car-pod-reflection,.apex-car-pod-channel,.apex-car-channel-ridge,.apex-car-pod-shoulder,.apex-car-foil-relief,.apex-car-rear-plane-relief,.apex-car-tyre,.apex-car-suspension-arm path,.apex-car-wheel-mount path,.apex-car-wheel-mount ellipse,.apex-car-wheel-mount circle,.apex-car-floor,.apex-car-rear-assembly g,.apex-car-rear-assembly path,.apex-car-airbox,.apex-car-service-details path')).map(el=>({
      tag:el.tagName,shape:el.getAttribute('d'),transform:el.getAttribute('transform'),
      size:['cx','cy','rx','ry','r','x','y','width','height'].map(name=>el.getAttribute(name)),
      child:el.querySelector('path,rect')?.getAttribute('d')||el.querySelector('rect')?.outerHTML
