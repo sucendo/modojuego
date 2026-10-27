@@ -76,3 +76,24 @@ The front wishbones form a diagonal/near-transverse pair with a clearer V layout
 McRaven now has explicit upper/lower shell curves, a curved engine spine and a rounded rectangular cockpit with a painted surround. Its pods use a secondary-colour base with flowing primary panels rather than a primary border around a dark inset. The original accent is a single continuous curve on each side, drawn above the body and clipped to the union of the body and both pods. Direct transformed paths in the clip preserve the lower mirrored curve. Custom paint patterns still replace the original decoration without replacing any geometry.
 
 These shell/cockpit overrides belong only to PAPAYA; other team definitions and the wheel/suspension revision are retained. The neutral browser render samples both accent curves at five stations to catch missing pixels caused by clipping, in addition to the 121 paint/geometry invariants, attachment and responsive/persistence tests.
+
+## Full-grid shell review and McRaven wings
+
+The other ten teams now have explicit, independently authored centre-body Bezier stations, curved engine-spine profiles and cockpit proportions. The shared assembler only reflects those stations across the centreline; it never substitutes another team's shape. Each pod outline has also been reviewed individually.
+
+| APEX team | Refinement in this review |
+| --- | --- |
+| Meridian | Slimmer centre shoulders, longer shelf-like pod transition and compact cockpit. |
+| Ferrazzi | Fuller rounded shoulders reaching rearward, broad central shell and a wider cockpit surround. |
+| Red Bison | Pinched tail, forward shoulder volume, narrow engine spine and compact opening. |
+| Racing Bisons | Smoother oval pod transition, intermediate engine waist and more rounded cockpit. |
+| Alpinor | Faceted shoulder stations and stepped pod channels with an elongated spine. |
+| Hassler | Straighter broad shoulders and smaller dark pod channel, avoiding a hollow white rim. |
+| Auron | Squarer pod shelf, compact waist and tighter cockpit proportions. |
+| Willmont | Progressive curved pod taper and long, narrow central surfaces. |
+| Aston Marlow | Stronger rear pinch and high forward shoulder volume with a compact cockpit. |
+| Cadara | Full conventional shoulders, rounded shell and retained asymmetric paint treatment. |
+
+These remain original showroom interpretations: supplied reference photos and launch galleries do not all show the same year, angle or aerodynamic specification. Ferrari/Red Bull overhead references were supplied by the user. Mercedes, Audi, Williams and Haas official car/launch galleries were consulted again; the supplied multi-team image and the Alpine/Racing Bulls/Aston Martin launch pages guide the remaining visual interpretation. The Cadillac team article was unavailable (403), so its [official F1 launch gallery](https://www.formula1.com/en/latest/article/gallery-see-all-the-angles-of-cadillacs-2026-livery.7oVj9gp6OSXescXdqEQVCt.7oVj9gp6OSXescXdqEQVCt) is retained as the alternative reference. No source photos are embedded in the application.
+
+McRaven has four separately drawn front-wing profiles with changing chord, compound curves, open slots and shaped endplates. Rear-wing tips are curved and the primary highlight is narrower. Every blade is part of the paint/geometry invariant. Cockpit padding and controls are clipped inside each team's own opening. Neutral render checks now require eleven unique centre-body and cockpit paths as well as pods, inlets, spines, noses and wings.
