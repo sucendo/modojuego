@@ -16,7 +16,9 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
   await context.addInitScript(()=>{
    try{
     if(!localStorage.getItem('apex26.vehicle-studio.design.v1'))
-     localStorage.setItem('apex26.vehicle-studio.design.v1',JSON.stringify({CADARA:'UNKNOWN',NOT_A_TEAM:'PAPAYA'}));
+     localStorage.setItem('apex26.vehicle-studio.design.v1',JSON.stringify({PAPAYA:'FERRATI',CADARA:'SILVERWING'}));
+    if(!localStorage.getItem('apex26.vehicle-studio.paint.v1'))
+     localStorage.setItem('apex26.vehicle-studio.paint.v1',JSON.stringify({CADARA:'UNKNOWN',NOT_A_TEAM:'stripes'}));
    }catch(_){}
   });
   const page=await context.newPage(),errors=[];
@@ -193,28 +195,55 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
   assert.ok(decodeURIComponent(personalized).includes('#ee8822'));
   assert.ok(decodeURIComponent(personalized).includes('#172f46'));
   assert.equal(await page.locator('#apexStudioSave').innerText(),'COLORES PERSONALIZADOS');
-  assert.equal(await page.locator('#apexStudioDesign option').count(),11,'Once carrocerías seleccionables');
+  assert.equal(await page.locator('#apexStudioPaintStyle option').count(),11,'Once decoraciones seleccionables');
+  const paintOptions=await page.locator('#apexStudioPaintStyle').evaluate(el=>Array.from(el.options).map(o=>o.value));
+  const shapeChecks=await page.evaluate(keys=>{
+   const signatures=[];
+   const signature=source=>{
+    const doc=new DOMParser().parseFromString(source,'image/svg+xml');
+    if(doc.querySelector('parsererror'))throw new Error('SVG inválido');
+    return JSON.stringify(Array.from(doc.querySelectorAll('.apex-car-body,.apex-car-engine-cover,.apex-car-nose,.apex-car-inlet,.apex-car-sidepod>path:first-child,.apex-car-front-wing,.apex-car-rear-wing,.apex-car-cockpit,.apex-car-tyre')).map(el=>({
+     tag:el.tagName,shape:el.getAttribute('d'),transform:el.getAttribute('transform'),
+     child:el.querySelector('path,rect')?.getAttribute('d')||el.querySelector('rect')?.outerHTML
+    })));
+   };
+   for(const key of keys){
+    const profile=window.ApexNativeTeamStudio9A.get(key).preview;
+    const original=signature(window.ApexTeamCarPreview9A.markup(profile));
+    let paints=0;
+    for(const {key:paintStyle} of window.ApexTeamCarPreview9A.paintStyles){
+     const source=window.ApexTeamCarPreview9A.markup({...profile,paintStyle,
+      designKey:keys[(keys.indexOf(key)+1)%keys.length]});
+     if(signature(source)!==original)throw new Error('La pintura modifica la geometría: '+key+' / '+paintStyle);
+     paints++;
+    }
+    signatures.push({key,paints});
+   }
+   return signatures;
+  },options);
+  assert.equal(shapeChecks.reduce((sum,x)=>sum+x.paints,0),121,'Las 121 combinaciones conservan la carrocería de la escudería');
   const originalLogo=await panel.locator('#apexStudioLogo svg').evaluate(el=>el.outerHTML);
   const alternateSources=new Set();
-  for(const design of options){
-   await page.locator('#apexStudioDesign').selectOption(design);
-   await page.waitForFunction(value=>document.getElementById('apexProtoTeamImage').dataset.apexDesignKey===value,design);
+  for(const paint of paintOptions){
+   await page.locator('#apexStudioPaintStyle').selectOption(paint);
+   await page.waitForFunction(value=>document.getElementById('apexProtoTeamImage').dataset.apexPaintStyle===value,paint);
    const image=await page.locator('#apexProtoTeamImage').getAttribute('src');
-   assert.equal(await page.locator('#teamSelect').inputValue(),options[0],'Cambiar carrocería conserva la escudería deportiva');
-   assert.equal(await panel.locator('#apexStudioLogo svg').evaluate(el=>el.outerHTML),originalLogo,'El logo conserva su identidad al cambiar carrocería');
+   assert.equal(await page.locator('#apexProtoTeamImage').getAttribute('data-apex-design-key'),options[0],'La carrocería permanece ligada a la escudería');
+   assert.equal(await page.locator('#teamSelect').inputValue(),options[0],'Cambiar decoración conserva la escudería deportiva');
+   assert.equal(await panel.locator('#apexStudioLogo svg').evaluate(el=>el.outerHTML),originalLogo,'El logo conserva su identidad al cambiar decoración');
    for(const color of ['#34acde','#ee8822','#172f46'])
     assert.ok(decodeURIComponent(image).includes(color),'Se conserva el color personalizado '+color);
    await page.locator('#apexProtoTeamImage').evaluate(img=>img.decode());
    alternateSources.add(image);
   }
   assert.equal(alternateSources.size,11,'Las once elecciones cambian la vista');
-  await page.locator('#apexStudioDesign').selectOption(options[2]);
+  await page.locator('#apexStudioPaintStyle').selectOption('spots');
   // A second team stores its own independent design preference.
   await page.locator('#apexProtoTeam').selectOption(options[1]);
-  assert.equal(await page.locator('#apexStudioDesign').inputValue(),options[1]);
-  await page.locator('#apexStudioDesign').selectOption(options[3]);
+  assert.equal(await page.locator('#apexStudioPaintStyle').inputValue(),'original');
+  await page.locator('#apexStudioPaintStyle').selectOption('stripes');
   await page.locator('#apexProtoTeam').selectOption(options[0]);
-  assert.equal(await page.locator('#apexStudioDesign').inputValue(),options[2]);
+  assert.equal(await page.locator('#apexStudioPaintStyle').inputValue(),'spots');
   for(const [name,finish,secondary] of [
    ['Acabado plata','silver','#b4c1cc'],
    ['Acabado carbono','carbon','#101920'],
@@ -246,23 +275,23 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
    'El color personalizado persiste tras recarga');
   assert.equal(await page.locator('#apexStudioColor-secondary').inputValue(),'#172f46');
   assert.equal(await page.locator('#apexStudioColor-accent').inputValue(),'#ee8822');
-  assert.equal(await page.locator('#apexStudioDesign').inputValue(),options[2],'La carrocería persiste tras recarga');
+  assert.equal(await page.locator('#apexStudioPaintStyle').inputValue(),'spots','La decoración persiste tras recarga');
   assert.equal(await page.locator('#apexProtoTeamImage').getAttribute('data-apex-team-key'),options[0]);
   await page.locator('#apexProtoTeam').selectOption(options[1]);
-  assert.equal(await page.locator('#apexStudioDesign').inputValue(),options[3],'La segunda escudería recupera su propia elección');
-  await page.locator('#apexStudioDesignReset').click();
-  assert.equal(await page.locator('#apexStudioDesign').inputValue(),options[1]);
+  assert.equal(await page.locator('#apexStudioPaintStyle').inputValue(),'stripes','La segunda escudería recupera su propia elección');
+  await page.locator('#apexStudioPaintReset').click();
+  assert.equal(await page.locator('#apexStudioPaintStyle').inputValue(),'original');
   await page.locator('#apexProtoTeam').selectOption(options[0]);
-  assert.equal(await page.locator('#apexStudioDesign').inputValue(),options[2]);
+  assert.equal(await page.locator('#apexStudioPaintStyle').inputValue(),'spots');
   await page.locator('#apexStudioReset').click();
   assert.notEqual(await page.locator('#apexStudioColor-primary').inputValue(),'#34acde',
    'Restaurar recupera la pintura original de la escudería');
-  assert.equal(await page.locator('#apexStudioDesign').inputValue(),options[2],'Restaurar colores conserva el diseño');
+  assert.equal(await page.locator('#apexStudioPaintStyle').inputValue(),'spots','Restaurar colores conserva la decoración');
   const restoredColor=await page.locator('#apexStudioColor-primary').inputValue();
-  await page.locator('#apexStudioDesignReset').click();
-  assert.equal(await page.locator('#apexStudioDesign').inputValue(),options[0]);
-  assert.equal(await page.locator('#apexStudioColor-primary').inputValue(),restoredColor,'Restaurar diseño conserva los colores');
-  assert.equal(await page.locator('#apexStudioDesignReset').isDisabled(),true);
+  await page.locator('#apexStudioPaintReset').click();
+  assert.equal(await page.locator('#apexStudioPaintStyle').inputValue(),'original');
+  assert.equal(await page.locator('#apexStudioColor-primary').inputValue(),restoredColor,'Restaurar decoración conserva los colores');
+  assert.equal(await page.locator('#apexStudioPaintReset').isDisabled(),true);
   // Layout contract: on desktop Circuito and Vehículo share one 50/50 row;
   // on a narrow/mobile viewport they stack rather than clipping the car.
   const split=await page.evaluate(()=>{
