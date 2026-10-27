@@ -24,3 +24,20 @@ en el código. La canción `apex-song01.js` es el archivo proporcionado por el
 usuario para este proyecto.
 
 En GitHub se ha renderizado la canción con una duración final de 252,26 s.
+
+## Endless Horizon V4 (8:10)
+
+La versión activa del menú pasa a ser `apex-theme-v4-endless-horizon.mp3`,
+mezclada offline a partir del tema original. Conservamos `apex-theme.mp3`
+como copia exacta de la música SoundBox aprobada anteriormente.
+
+El nuevo arreglo añade piano propio, atmósferas y base rítmica dream trance.
+El render repite dos ciclos de 70 patrones originales y solapa los dos
+últimos patrones de la fuente con sus dos primeros; así el comienzo y el
+final se enlazan musicalmente en el mismo pulso. El fichero MP3 incluye
+metadatos LAME/Xing para reproducción sin huecos en navegadores compatibles.
+
+`node apex/scripts/create-endless-horizon-v4.cjs` regenera la composición
+solo fuera del juego. Durante la partida se reproduce el MP3 comprimido,
+sin cargas de síntesis ni descargar bibliotecas de terceros. Se mantiene
+el botón Música, la preferencia guardada y el apagado al comenzar una carrera.

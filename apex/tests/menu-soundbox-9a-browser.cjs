@@ -15,7 +15,9 @@ assert.equal(songctx.song.songData.length,42);
 assert.equal(songctx.song.rowLen,4828);
 assert.equal(songctx.song.endPattern,71);
 assert.ok(fs.statSync(path.join(apex,'assets/music/apex-theme.mp3')).size>100000,
- 'Debe existir la composición completa MP3 renderizada, no los osciladores provisionales');
+ 'La composición SoundBox original debe conservarse');
+assert.ok(fs.statSync(path.join(apex,'assets/music/apex-theme-v4-endless-horizon.mp3')).size>4000000,
+ 'Debe existir Endless Horizon V4 de 8 minutos');
 
 (async()=>{
  const mobile=process.env.APEX_AUDIT_DEVICE==='mobile';
@@ -28,7 +30,7 @@ assert.ok(fs.statSync(path.join(apex,'assets/music/apex-theme.mp3')).size>100000
   page.setDefaultTimeout(30000);
   page.on('pageerror',err=>errors.push(err.message));
   let fetched=false;
-  page.on('response',r=>{if(r.url().includes('assets/music/apex-theme.mp3')&&r.ok())fetched=true;});
+  page.on('response',r=>{if(r.url().includes('assets/music/apex-theme-v4-endless-horizon.mp3')&&r.ok())fetched=true;});
   await page.goto('http://127.0.0.1:8765/apex/apex.html',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>window.ApexMenuMusic9A&&document.getElementById('apex9aAudio'),null,{timeout:90000});
   assert.equal(await page.evaluate(()=>window.ApexMenuMusic9A.state().playing),false,'Sin autoplay');
@@ -37,14 +39,21 @@ assert.ok(fs.statSync(path.join(apex,'assets/music/apex-theme.mp3')).size>100000
   assert.equal(await page.evaluate(()=>window.ApexMenuMusic9A.get()),true);
   await page.waitForFunction(()=>{
    const p=window.ApexMenuMusic9A.state();
-   return p.readyState>=2&&p.duration>250&&p.duration<255;
+   return p.readyState>=2&&p.duration>489&&p.duration<492;
   },null,{timeout:30000});
   // La duración decodificada prueba que se cargó la pista completa, aunque
   // Chromium sirva la petición MP3 por caché o por Range (206).
-  assert.ok((await page.evaluate(()=>window.ApexMenuMusic9A.state().duration))>250,
+  assert.ok((await page.evaluate(()=>window.ApexMenuMusic9A.state().duration))>489,
     'Audio completo SoundBox cargado, no la melodía provisional');
   const state=await page.evaluate(()=>window.ApexMenuMusic9A.state());
-  assert.equal(state.src,'assets/music/apex-theme.mp3');
+  assert.equal(state.src,'assets/music/apex-theme-v4-endless-horizon.mp3');
+  assert.equal(state.loop,true,'La música debe permanecer en bucle');
+  // Forzar el cursor al final para verificar la transición sin esperar 8 minutos.
+  await page.evaluate(()=>window.ApexMenuMusic9A.seekToEndForTest(0.6));
+  await page.waitForFunction(()=>{
+    const s=window.ApexMenuMusic9A.state();
+    return s.playing&&s.currentTime<2&&s.currentTime>=0;
+  },null,{timeout:15000});
   assert.ok(state.volume<=.4,'Volumen de menú prudente');
   await page.locator('#apex9aRace').click();
   assert.equal(await page.evaluate(()=>window.ApexMenuMusic9A.state().playing),true,
