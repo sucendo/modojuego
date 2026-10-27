@@ -82,7 +82,7 @@ const designs=Object.freeze({
 function markup(profile){
  if(!profile?.geometry||!profile?.livery)return null;
  const g=profile.geometry,l=profile.livery;
- const d=designs[profile.teamKey]||designs.PAPAYA;
+ const d=designs[profile.designKey]||designs[profile.teamKey]||designs.PAPAYA;
  const p=hex(l.primary,'#f58a00'),s=hex(l.secondary,'#161a20'),
   a=hex(l.accent,'#3ccef8'),stripe=hex(l.stripe,a),
   carbon=hex(l.carbon,'#080d13'),wing=hex(l.wing,'#10161e'),trim=hex(l.trim,'#f5f8fb');
@@ -95,7 +95,8 @@ function markup(profile){
   ry=116-(clamp(g.rearWing,.94,1.06)-1)*60,
   ws=clamp(g.wheelScale,.94,1.06),cw=clamp(g.cockpitWidth,.94,1.06);
  const id=safe(profile.teamKey),model=safe(profile.model),chassis=safe(profile.chassis);
- const brand=safe(String(profile.teamName||id).split(/\s+/)[0]).toUpperCase();
+ const words=String(profile.teamName||id).trim().split(/\s+/);
+ const brand=words.slice(0,['Red','Racing','Aston'].includes(words[0])?2:1).map(safe).join(' ').toUpperCase();
  const P=(d,fill,extra='')=>'<path d="'+d+'" fill="'+fill+'" '+extra+'/>';
  const M=d=>d+'<g transform="translate(0 470) scale(1 -1)">'+d+'</g>';
  const tire=(cx,cy,rear=false)=>{
@@ -133,7 +134,7 @@ function markup(profile){
   P('M122 '+(ry+8)+'V'+(462-ry),'none','stroke="'+p+'" stroke-width="8"')+
   P('M106 '+(ry+6)+'V'+(464-ry)+'M136 '+(ry+8)+'V'+(462-ry),'none','stroke="#a4b1b9" stroke-opacity=".45" stroke-width="1.3"')+
   P('M143 220H191M143 250H191','none','stroke="#10191e" stroke-width="5"')+
-  '<text transform="translate(109 235) rotate(-90)" font-family="Arial,sans-serif" font-size="19" font-weight="800" text-anchor="middle" fill="'+trim+'">'+brand+'</text>'+
+  '<text transform="translate(109 235) rotate(-90)" font-family="Arial,sans-serif" font-size="'+(brand.length>10?14:19)+'" font-weight="800" text-anchor="middle" fill="'+trim+'">'+brand+'</text>'+
   M(P('M77 '+(ry-3)+'H149V'+(ry+4)+'H77Z',carbon,'stroke="'+stripe+'" stroke-width="1.5"'))+'</g>';
  // Distinct transverse wing elements, swept back at the centre.
  const frontHalf='<g class="apex-car-front-wing" transform="translate(930 235) scale('+(1+d.wing[0]/65)+' 1) translate(-930 -235)">'+
@@ -151,7 +152,8 @@ function markup(profile){
  const podDetail=P(d.panel,podPanel)+P(d.stripe,'none','stroke="'+stripe+'" stroke-width="'+(d.livery==='flank'?12:d.livery==='split'?7:3.5)+'" stroke-linecap="round"');
  const sidepods=M('<g class="apex-car-sidepod">'+
   P(podSkin,podTone,'stroke="#0a1015" stroke-width="2"')+
-  podDetail+P(podSkin,'url(#volume)')+
+  podDetail+P(d.panel,'url(#weave)','opacity=".35"')+P(podSkin,'url(#volume)')+
+  P(d.panel,'none','stroke="#b7c6cf" stroke-opacity=".18" stroke-width="1.1"')+
   P(d.inlet,'#020609','class="apex-car-inlet" stroke="#60717c" stroke-width="1"')+
   P('M523 132L532 137M533 131L542 136M543 131L552 136M553 132L562 137','none','stroke="#020609" stroke-width="2"')+'</g>')+
   (d.livery==='lux'?P(podSkin,surface):'');
@@ -212,16 +214,17 @@ function markup(profile){
   P('M537 231H545V239H537Z','#697780','stroke="#0c141a" stroke-width="1"')+
   P('M572 216L583 219L589 228V242L583 251L572 254L566 244V226Z','#03080c','stroke="#60717e" stroke-width="2"')+
   P('M574 224H581M575 229H582M575 235H582M574 241H581','none','stroke="'+stripe+'" stroke-width="1.5"')+
-  P('M490 199Q571 177 626 235Q571 293 490 271','none','stroke="#050a0d" stroke-width="11" stroke-linecap="round"')+
+  P('M490 199Q571 177 626 235Q571 293 490 271','none','stroke="#050a0d" stroke-width="9" stroke-linecap="round"')+
   P('M493 197Q568 181 619 227','none','stroke="#c2cdd4" stroke-opacity=".57" stroke-width="2"')+
   P('M496 272Q568 286 619 243','none','stroke="#4c5a63" stroke-opacity=".6" stroke-width="1.6"')+
   P('M620 235H649','none','stroke="#0a1117" stroke-width="8"')+
   P('M620 232H647','none','stroke="#a3afb6" stroke-opacity=".5" stroke-width="1.5"')+'</g>';
- const mirrors=M(P('M621 205L623 167','none','stroke="#0c141a" stroke-width="4"')+P('M609 156H636V166H609Z','url(#panel)','stroke="'+p+'" stroke-width="2"'));
- return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 470" width="1000" height="470" role="img" data-apex-silhouette="f1-team-bodywork-v7" data-apex-design="'+safe(d.reference)+'" data-apex-team="'+id+'" data-apex-model="'+model+'" data-apex-chassis="'+chassis+'" aria-label="Vista cenital de monoplaza '+id+' '+model+'">'+defs+bodyMasks+
+ const mirrors=M(P('M621 205L623 167','none','stroke="#0c141a" stroke-width="4"')+P('M609 157L632 154Q639 154 637 162L611 166Z','url(#panel)','stroke="'+p+'" stroke-width="2"'));
+ return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 470" width="1000" height="470" role="img" data-apex-silhouette="f1-team-bodywork-v8" data-apex-design-key="'+safe(profile.designKey||profile.teamKey)+'" data-apex-design="'+safe(d.reference)+'" data-apex-team="'+id+'" data-apex-model="'+model+'" data-apex-chassis="'+chassis+'" aria-label="Vista cenital de monoplaza '+id+' '+model+'">'+defs+bodyMasks+
   floor+rearWing+M(frontHalf)+suspension+sidepods+body+
   tire(221,104,true)+tire(221,366,true)+tire(785,101)+tire(785,369)+cockpit+mirrors+
-  P('M461 219L483 210L491 218V252L483 260L461 251Z','url(#carbon)','stroke="'+p+'" stroke-width="2"')+
+  P('M464 214H485Q489 214 489 219V251Q489 256 485 256H464Z','url(#carbon)','stroke="#61717b" stroke-width="1.2"')+
+  P('M469 223H480V247H469Z','#03080b','stroke="#303e48" stroke-width="1"')+
   '<text x="735" y="238" font-family="Arial,sans-serif" font-size="12" font-weight="700" text-anchor="middle" fill="'+trim+'">'+brand+'</text>'+
   '<text x="358" y="239" font-family="Arial,sans-serif" font-size="10" letter-spacing="1" text-anchor="middle" fill="'+trim+'">'+chassis+'</text></svg>';
 }
@@ -232,12 +235,14 @@ function build(teamKey){
  if(!blueprint||blueprint.teamKey!==key)return null;
  const override=global.ApexVehicleStudio9A?.colorsFor?.(key)||null;
  const l=override?{...blueprint.livery,...override}:blueprint.livery;
- const input={...blueprint,teamName:t.name,livery:l};
+ const selected=global.ApexVehicleStudio9A?.designFor?.(key);
+ const designKey=Object.prototype.hasOwnProperty.call(designs,selected)?selected:key;
+ const input={...blueprint,teamName:t.name,designKey,livery:l};
  const cacheKey=JSON.stringify(input);
  if(cache.has(cacheKey))return cache.get(cacheKey);
  const svg=markup(input);
  if(!svg)return null;
- const result=Object.freeze({key,model:blueprint.model,chassis:blueprint.chassis,
+ const result=Object.freeze({key,designKey,model:blueprint.model,chassis:blueprint.chassis,
   svg,src:'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg)});
  if(cache.size>48)cache.clear(); // Avoid retaining every intermediate picker colour.
  cache.set(cacheKey,result);return result;
@@ -253,6 +258,7 @@ function setCar(teamKey){
  img.hidden=false;
  img.alt='Vista cenital F1 2026 del monoplaza '+(t?.name||'')+' ('+render.model+' · '+render.chassis+')';
  img.dataset.apexTeamKey=render.key;
+ img.dataset.apexDesignKey=render.designKey;
  img.dataset.apexModel=render.model;
  img.dataset.apexChassis=render.chassis;
  img.dataset.apexPreview='native-blueprint';

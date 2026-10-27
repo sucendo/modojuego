@@ -7,10 +7,13 @@
 'use strict';
 const $=id=>document.getElementById(id);
 const STORE='apex26.vehicle-studio.palette.v1';
+const DESIGN_STORE='apex26.vehicle-studio.design.v1';
+const TEAM_KEYS=['PAPAYA','SILVERWING','FERRATI','BULLHORN','SUNRIDGE','ALPEN','MIDNIGHT','AUREON','OCEANIC','GREENSTONE','CADARA'];
+const validTeam=key=>TEAM_KEYS.includes(key);
 const HEX=/^#[0-9a-f]{6}$/i;
 const hex=(x,f)=>HEX.test(String(x||''))?String(x).toLowerCase():f;
 const safe=x=>String(x||'').replace(/[^a-zA-Z0-9_-]/g,'').slice(0,32);
-let panel,hero,car,queued=false,saveNotice='',colors={},knownOptions='';
+let panel,hero,car,queued=false,saveNotice='',colors={},designs={},knownOptions='',knownDesigns='';
 try{
  const saved=JSON.parse(global.localStorage.getItem(STORE)||'{}');
  if(saved&&typeof saved==='object'&&!Array.isArray(saved)){
@@ -26,6 +29,38 @@ try{
   }
  }
 }catch(_){}
+try{
+ const saved=JSON.parse(global.localStorage.getItem(DESIGN_STORE)||'{}');
+ if(saved&&typeof saved==='object'&&!Array.isArray(saved))
+  for(const [key,value] of Object.entries(saved))
+   if(validTeam(key)&&validTeam(value)&&key!==value)designs[key]=value;
+}catch(_){}
+function designFor(key){return validTeam(designs[key])?designs[key]:key;}
+function persistDesigns(){
+ try{global.localStorage.setItem(DESIGN_STORE,JSON.stringify(designs));return true;}
+ catch(_){return false;}
+}
+function designOptions(key){
+ const select=$('apexStudioDesign');if(!select)return;
+ const options=TEAM_KEYS.map(value=>({value,team:global.ApexNativeTeamStudio9A?.get?.(value)})).filter(o=>o.team);
+ const signature=key+':'+options.map(o=>o.value+o.team.chassis).join('|');
+ if(signature!==knownDesigns){
+  knownDesigns=signature;select.replaceChildren();
+  options.forEach(({value,team})=>{
+   const option=document.createElement('option');option.value=value;
+   option.textContent=team.chassis+' · '+team.name+(value===key?' · ORIGINAL':'');
+   select.append(option);
+  });
+ }
+ select.value=designFor(key);
+ $('apexStudioDesignReset').disabled=designFor(key)===key;
+}
+function chooseDesign(value){
+ const {key,team}=info();if(!team||!validTeam(value))return;
+ saveNotice='';
+ if(value===key)delete designs[key];else designs[key]=value;
+ persistDesigns();refresh();
+}
 function info(){
  const native=$('teamSelect'),key=native?.value||'';
  return {native,key,team:global.ApexNativeTeamStudio9A?.get?.(key)||null,
@@ -66,17 +101,18 @@ function applyNative(key){
 // swoosh/star/shield/horns/etc. Se pulen como marcas vectoriales de competición.
 function emblem(symbol){
  const d={
-  swoosh:'<path d="M4 42C19 9 31 30 61 11 49 40 25 55 4 42Z"/><path d="M17 42L47 22" fill="none" stroke="var(--logo-line)" stroke-width="3"/>',
-  star:'<path d="M32 4l7.5 19 20.5-2-16 13 6 20-18-12-18 12 6-20L4 21l20.5 2Z"/>',
-  shield:'<path d="M32 4 53 12v21c0 12-9 20-21 27C20 53 11 45 11 33V12Z"/><path d="M32 14v33" stroke="var(--logo-line)" stroke-width="5"/>',
-  horns:'<path d="M7 50L19 13 32 24 45 13 57 50 42 43 32 55 22 43Z"/><path d="M22 26l10 9 10-9" fill="none" stroke="var(--logo-line)" stroke-width="3"/>',
-  doubleBar:'<path d="M6 12h52v15H6ZM13 37h38v15H13Z"/><path d="M11 19h42M19 44h26" stroke="var(--logo-line)" stroke-width="3" />',
-  aeroA:'<path d="M32 4 61 57H47l-6-12H23l-6 12H3Z"/><path d="M28 34h8l-4-11Z" fill="#08111b"/>',
-  hash:'<path d="M9 6h10v51H9Zm18 0h10v51H27Zm18 0h10v51H45Z"/><path d="M7 25h50M7 42h50" fill="none" stroke="var(--logo-line)" stroke-width="2"/>',
-  ring:'<path d="M32 6a26 26 0 1 0 0 52 26 26 0 0 0 0-52Zm0 11a15 15 0 1 1 0 30 15 15 0 0 1 0-30Z" fill-rule="evenodd"/>',
-  wave:'<path d="M4 39C15 8 26 49 37 23 46 5 55 20 60 18" fill="none" stroke="url(#LOGO_GRAD)" stroke-width="10" stroke-linecap="round"/><path d="M9 49c11-10 18-1 29-10" fill="none" stroke="var(--logo-line)" stroke-width="3"/>',
-  leaf:'<path d="M32 4C56 17 56 39 32 60 8 40 8 16 32 4Z"/><path d="M32 15v36M32 34l-12-9M32 40l12-10" fill="none" stroke="var(--logo-line)" stroke-width="3"/>',
-  crest:'<path d="M9 8h46v26L32 60 9 34Z"/><path d="M32 14 44 31 32 46 20 31Z" fill="var(--logo-line)"/>'
+  // Original APEX marks, sharing the catalogue's symbol vocabulary.
+  swoosh:'<path d="M3 17 29 24 61 9 43 34 29 53 21 39 8 33 27 35 35 25 25 30Z"/><path d="m8 22 17 7-4 4-8-5Z" fill="var(--logo-line)"/><path d="m30 48 10-18 14-14-13 22Z" fill="var(--logo-line)"/>',
+  star:'<path d="m32 4 8 18 20-2-15 14 5 23-18-12-18 12 5-23L4 20l20 2Z"/><path d="m32 14 1 19 13 17-14-10-14 10 13-17Z" fill="#07111b"/><path d="m32 9 5 16 15-1-16 7Z" fill="var(--logo-line)"/>',
+  shield:'<path d="M32 4 54 12v19c0 13-11 23-22 30C21 54 10 44 10 31V12Z"/><path d="m32 10 16 6v15c0 9-7 18-16 24-9-6-16-15-16-24V16Z" fill="#07111b"/><path d="M24 17h20l-3 6H30v7h12l-3 6h-9v10l-6-4Z" fill="var(--logo-line)"/>',
+  horns:'<path d="M5 9 20 21 32 18 44 21 59 9 54 30 45 36 42 49 32 58 22 49 19 36 10 30Z"/><path d="m15 19 8 11-8-4Zm34 0-8 11 8-4ZM24 34l8 4 8-4-3 12-5 4-5-4Z" fill="#07111b"/><path d="m24 29 5 2-4 3Zm16 0-5 2 4 3Z" fill="var(--logo-line)"/>',
+  doubleBar:'<path d="M10 12h48l-7 13H3Zm5 24h40l-8 14H7Z"/><path d="M13 16h34l-3 5H10Zm7 24h22l-3 5H17Z" fill="var(--logo-line)"/>',
+  aeroA:'<path d="M32 4 60 55H47L32 26 17 55H4Z"/><path d="m22 40 21-7 5 9-31 8Z" fill="var(--logo-line)"/><path d="m32 10 12 23-7-3-5-10-9 15Z" fill="#07111b"/>',
+  hash:'<path d="M12 8h12L14 56H2Zm20 0h12L34 56H22Zm20 0h10L52 56H42Z"/><path d="M8 25h49l-2 7H6Zm-3 16h49l-2 7H3Z" fill="var(--logo-line)"/>',
+  ring:'<path d="M32 5a27 27 0 1 0 27 27H47a15 15 0 1 1-15-15c5 0 9 2 12 5l8-9A27 27 0 0 0 32 5Z"/><path d="m31 22 29 2-9 9H31Z" fill="var(--logo-line)"/><path d="M11 35a21 21 0 0 0 34 14" fill="none" stroke="#07111b" stroke-width="2"/>',
+  wave:'<path d="m3 17 10 4 6 22 13-21 7 18 15-26 8 4-23 37-9-18-14 20Z"/><path d="m10 20 8 26 13-18 8 18 16-27" fill="none" stroke="var(--logo-line)" stroke-width="2"/>',
+  leaf:'<path d="M8 43C9 21 31 7 59 6 56 34 38 55 14 57L30 32Z"/><path d="M14 52 47 18M26 39l-2-14M33 32l14-2M22 43l15-1" fill="none" stroke="#07111b" stroke-width="3"/><path d="M14 45C24 23 40 14 54 11" fill="none" stroke="var(--logo-line)" stroke-width="2"/>',
+  crest:'<path d="M32 5 56 11v22L46 48 32 60 18 48 8 33V11Z"/><path d="m32 10 18 5v17L40 47l-8 7-8-7-10-15V15Z" fill="#07111b"/><path d="M19 18h12v9H19Zm15 0h11v9H34ZM19 30h26v6H19Zm5 9h16l-8 10Z" fill="var(--logo-line)"/>'
  };
  return d[symbol]||d.swoosh;
 }
@@ -91,7 +127,7 @@ function badgeSvg(teamKey,compact=false){
  return '<svg class="apexStudioBrandMark" viewBox="0 0 64 64" role="img" aria-label="Logo de '+safe(teamKey)+'" style="--logo-line:'+accent+'">'+
  '<defs><linearGradient id="'+grad+'" x1="0" y1="0" x2=".9" y2="1">'+
  '<stop offset="0" stop-color="'+accent+'"/><stop offset=".3" stop-color="'+primary+'"/><stop offset="1" stop-color="'+primary+'"/></linearGradient></defs>'+
- '<g fill="url(#'+grad+')" stroke="#000" stroke-width=".5" stroke-linejoin="round">'+path+'</g></svg>';
+ '<g fill="url(#'+grad+')" stroke="#02080e" stroke-width=".65" stroke-linejoin="round">'+path+'</g></svg>';
 }
 function badgeAndWordmark(key,team){
  const target=$('apexStudioLogo');if(!target)return;
@@ -146,6 +182,7 @@ function paint(){
  if(!team){setTimeout(refresh,120);return;}
  applyNative(key);
  teamCards();
+ designOptions(key);
  const c=current(key,team),name=team.name||'Escudería';
  panel.style.setProperty('--apex-team-color',c.primary);
  panel.style.setProperty('--apex-team-secondary',c.secondary);
@@ -189,7 +226,7 @@ function paint(){
    strip.scrollLeft=right-strip.clientWidth+6;
  }
  $('apexStudioReset').disabled=!colors[key];
- $('apexStudioSave').textContent=saveNotice|| (colors[key]?'COLORES PERSONALIZADOS':'COLORES DE ESCUDERÍA');
+ $('apexStudioSave').textContent=saveNotice|| (colors[key]?'COLORES PERSONALIZADOS':designs[key]?'DISEÑO PERSONALIZADO':'COLORES DE ESCUDERÍA');
  global.ApexTeamCarPreview9A?.setCar?.(key);
  if(car?.complete&&car.naturalWidth===0)hero.classList.add('apexStudioAssetMissing');
 }
@@ -224,7 +261,8 @@ function reset(){
 }
 function confirmSave(){
  const {key}=info();
- saveNotice=persist()?'GUARDADO ✓':'NO SE PUDO GUARDAR';
+ const paletteSaved=persist(),designSaved=persistDesigns();
+ saveNotice=paletteSaved&&designSaved?'GUARDADO ✓':'NO SE PUDO GUARDAR';
  refresh();
 }
 function setup(){
@@ -285,7 +323,14 @@ function setup(){
  '<button type="button" id="apexStudioSaveButton">▣ GUARDAR</button>',
  '<small id="apexStudioSave" aria-live="polite">COLORES DE ESCUDERÍA</small></div>'
  ].join('');
- panel.append(palette);
+ const designPicker=document.createElement('section');designPicker.className='apexStudioDesignPicker';
+ designPicker.innerHTML='<div><label for="apexStudioDesign">DISEÑO DEL COCHE</label>'+
+  '<small>Vista del menú · conserva tus colores</small></div>'+
+  '<select id="apexStudioDesign" aria-label="Diseño del coche"></select>'+
+  '<button type="button" id="apexStudioDesignReset" aria-label="Restaurar diseño original">ORIGINAL</button>';
+ panel.append(designPicker,palette);
+ $('apexStudioDesign').addEventListener('change',e=>chooseDesign(e.target.value));
+ $('apexStudioDesignReset').addEventListener('click',()=>chooseDesign(info().key));
  const nativeSelect=$('teamSelect');
  nativeSelect?.addEventListener('change',()=>{saveNotice='';refresh();});
  if(nativeSelect)new MutationObserver(refresh).observe(nativeSelect,{childList:true,attributes:true,attributeFilter:['disabled']});
@@ -306,6 +351,6 @@ function setup(){
  // Releer tras completar la carga del menú y recuperar la preferencia local.
  setTimeout(refresh,250);
 }
-global.ApexVehicleStudio9A=Object.freeze({refresh,colorsFor,reset});
+global.ApexVehicleStudio9A=Object.freeze({refresh,colorsFor,designFor,reset});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup,{once:true});else setup();
 })(window);
