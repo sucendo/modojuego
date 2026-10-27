@@ -568,8 +568,11 @@
  }
  #menu.apex9aPrototype .apexTeamStudio .apexStudioStage .apexProtoTeamArt {
   width:100%;
-  max-height:242px;
+  max-height:180px;
+  height:auto;
   object-fit:contain;
+  object-position:center;
+  align-self:center;
   filter:drop-shadow(0 9px 10px #000b);
  }
  #menu.apex9aPrototype .apexTeamStudio .apexStudioControls {
