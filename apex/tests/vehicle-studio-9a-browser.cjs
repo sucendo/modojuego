@@ -63,6 +63,10 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
    assert.equal(state.teamName,state.teamLabel.trim().toUpperCase());
    assert.ok(state.chassis&&state.chassis!=='—','El chasis procede del catálogo original');
    assert.ok(state.model&&state.model!=='—','El modelo procede del catálogo original');
+   assert.equal(await panel.locator('#apexStudioLogo svg').count(),1,
+    'Logo SVG original visible para la escudería '+value);
+   assert.ok((await panel.locator('#apexStudioLogo svg').getAttribute('viewBox'))==='0 0 64 64',
+    'Se reutiliza el logo original y no un logotipo inventado');
    assert.equal(state.ordinal,
     String(state.index+1).padStart(2,'0')+' / '+String(state.count).padStart(2,'0'));
    assert.ok(!images.has(state.key),'Cada escudería debe validarse una vez');
@@ -74,6 +78,33 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
   }
   assert.equal(images.size,options.length,'Todas las imágenes del catálogo comprobadas');
   await page.locator('#apexProtoTeam').selectOption(options[0]);
+  // Colores persistentes por equipo. Principal y acento también deben llegar
+  // a los controles deportivos nativos, no ser una pintura ficticia.
+  const initial=await page.locator('#apexProtoTeamImage').getAttribute('src');
+  await page.locator('#apexStudioColor-primary').fill('#34acde');
+  await page.locator('#apexStudioColor-accent').fill('#ee8822');
+  await page.locator('#apexStudioColor-secondary').fill('#172f46');
+  await page.waitForFunction(()=>document.getElementById('carColor').value.toLowerCase()==='#34acde' &&
+    document.getElementById('carAccent').value.toLowerCase()==='#ee8822');
+  const personalized=await page.locator('#apexProtoTeamImage').getAttribute('src');
+  assert.notEqual(personalized,initial,'La carrocería cambia al escoger otro color');
+  assert.ok(decodeURIComponent(personalized).includes('#34acde'));
+  assert.ok(decodeURIComponent(personalized).includes('#ee8822'));
+  assert.ok(decodeURIComponent(personalized).includes('#172f46'));
+  assert.equal(await page.locator('#apexStudioSave').innerText(),'COLORES GUARDADOS');
+  await page.locator('#apexProtoTeam').selectOption(options[1]);
+  await page.locator('#apexProtoTeam').selectOption(options[0]);
+  await page.waitForFunction(()=>document.getElementById('carColor').value.toLowerCase()==='#34acde');
+  // La selección de equipo debe seguir siendo la nativa.
+  assert.equal(await page.locator('#teamSelect').inputValue(),options[0]);
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.waitForFunction(()=>window.ApexVehicleStudio9A && document.getElementById('apexStudioColor-primary'),null,{timeout:90000});
+  await page.locator('#apex9aRace').click();
+  assert.equal(await page.locator('#apexStudioColor-primary').inputValue(),'#34acde',
+   'El color personalizado persiste tras recarga');
+  await page.locator('#apexStudioReset').click();
+  assert.notEqual(await page.locator('#apexStudioColor-primary').inputValue(),'#34acde',
+   'Restaurar recupera la pintura original de la escudería');
   const geometry=await panel.evaluate(el=>{
    const rect=el.getBoundingClientRect();
    const hero=el.querySelector('.apexStudioHero').getBoundingClientRect();
