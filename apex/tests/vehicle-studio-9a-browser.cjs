@@ -44,6 +44,17 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
      renderedChassis:img.dataset.apexChassis,previewMode:img.dataset.apexPreview,
      native:window.ApexNativeTeamStudio9A.get(selected.value),
      svg:window.ApexTeamCarPreview9A.build(selected.value)?.svg,
+     silhouette:(()=>{
+       const source=window.ApexTeamCarPreview9A.build(selected.value)?.svg||'';
+       const parsed=new DOMParser().parseFromString(source,'image/svg+xml');
+       const count=selector=>parsed.querySelectorAll(selector).length;
+       return {parserError:count('parsererror'),
+        tyres:count('.apex-car-tyre'),sidepods:count('.apex-car-sidepod'),
+        frontWings:count('.apex-car-front-wing'),
+        rearWings:count('.apex-car-rear-wing'),cockpit:count('.apex-car-cockpit'),
+        version:parsed.documentElement.getAttribute('data-apex-silhouette'),
+        viewBox:parsed.documentElement.getAttribute('viewBox')};
+     })(),
      teamName:document.getElementById('apexProtoTeamTitle').textContent,
      teamLabel:selected.selectedOptions[0].textContent,
      chassis:document.getElementById('apexStudioChassis').textContent,
@@ -60,6 +71,10 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
    assert.ok(state.svg.includes('data-apex-model="'+state.native.model+'"'));
    assert.ok(state.svg.includes(state.native.preview.livery.primary.toLowerCase()));
    assert.ok(state.svg.includes(state.native.preview.livery.stripe.toLowerCase()));
+   assert.deepEqual(state.silhouette,{
+    parserError:0,tyres:4,sidepods:2,frontWings:2,rearWings:1,cockpit:1,
+    version:'f1-2026-v3',viewBox:'0 0 1000 470'
+   },'Vista F1 2026 con cuatro ruedas y aerodinámica completa: '+value);
    assert.equal(state.teamName,state.teamLabel.trim().toUpperCase());
    assert.ok(state.chassis&&state.chassis!=='—','El chasis procede del catálogo original');
    assert.ok(state.model&&state.model!=='—','El modelo procede del catálogo original');
