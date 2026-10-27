@@ -130,6 +130,10 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
   await page.reload({waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>window.ApexVehicleStudio9A && document.getElementById('apexStudioColor-primary'),null,{timeout:90000});
   await page.locator('#apex9aRace').click();
+  await page.waitForFunction(()=>{
+   const team=document.getElementById('teamSelect'),input=document.getElementById('apexStudioColor-primary');
+   return team?.value&&input?.value.toLowerCase()==='#34acde';
+  },null,{timeout:30000});
   assert.equal(await page.locator('#apexStudioColor-primary').inputValue(),'#34acde',
    'El color personalizado persiste tras recarga');
   await page.locator('#apexStudioReset').click();
