@@ -78,7 +78,7 @@ try{
   (document.head||document.body).appendChild(prototypeStyles);
   // Sustituye las fotos genéricas de equipo por la vista del modelo nativo de APEX.
   const nativeCarPreviewScript=document.createElement("script");
-  nativeCarPreviewScript.src="js/team-car-preview-9a.js?v=team-bodywork-v8";
+  nativeCarPreviewScript.src="js/team-car-preview-9a.js?v=team-paint-v9";
   nativeCarPreviewScript.async=false;
   (document.body||document.head).appendChild(nativeCarPreviewScript);
   const prototypeScript=document.createElement("script");
@@ -97,10 +97,10 @@ try{
   // Presentación de escudería: una sola imagen y metadatos del equipo nativo.
   const vehicleStudioStyles=document.createElement("link");
   vehicleStudioStyles.rel="stylesheet";
-  vehicleStudioStyles.href="css/vehicle-studio-9a.css?v=design-picker-v3";
+  vehicleStudioStyles.href="css/vehicle-studio-9a.css?v=paint-picker-v4";
   (document.head||document.body).appendChild(vehicleStudioStyles);
   const vehicleStudioScript=document.createElement("script");
-  vehicleStudioScript.src="js/vehicle-studio-9a.js?v=design-picker-v3";
+  vehicleStudioScript.src="js/vehicle-studio-9a.js?v=paint-picker-v4";
   vehicleStudioScript.async=false;
   (document.body||document.head).appendChild(vehicleStudioScript);
 

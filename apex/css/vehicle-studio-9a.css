@@ -700,7 +700,7 @@
   grid-column:1;
  }
 }
-/* Body selection is independent from the sporting team and its palette. */
+/* Paint patterns never change the sporting team or its bodywork. */
 #menu.apex9aPrototype .apexTeamStudio .apexStudioDesignPicker {
  display:grid;grid-template-columns:minmax(120px,.8fr) minmax(0,1.8fr) auto;
  align-items:center;gap:7px;flex:none;min-width:0;

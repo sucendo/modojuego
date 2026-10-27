@@ -7,13 +7,16 @@
 'use strict';
 const $=id=>document.getElementById(id);
 const STORE='apex26.vehicle-studio.palette.v1';
-const DESIGN_STORE='apex26.vehicle-studio.design.v1';
+// Old design.v1 choices are intentionally ignored: a team keeps its own body.
+const PAINT_STORE='apex26.vehicle-studio.paint.v1';
+const PAINT_STYLES=global.ApexTeamCarPreview9A?.paintStyles||[{key:'original',name:'Original de escudería'}];
+const validPaint=value=>PAINT_STYLES.some(style=>style.key===value);
 const TEAM_KEYS=['PAPAYA','SILVERWING','FERRATI','BULLHORN','SUNRIDGE','ALPEN','MIDNIGHT','AUREON','OCEANIC','GREENSTONE','CADARA'];
 const validTeam=key=>TEAM_KEYS.includes(key);
 const HEX=/^#[0-9a-f]{6}$/i;
 const hex=(x,f)=>HEX.test(String(x||''))?String(x).toLowerCase():f;
 const safe=x=>String(x||'').replace(/[^a-zA-Z0-9_-]/g,'').slice(0,32);
-let panel,hero,car,queued=false,saveNotice='',colors={},designs={},knownOptions='',knownDesigns='';
+let panel,hero,car,queued=false,saveNotice='',colors={},paintChoices={},knownOptions='',knownPaints='';
 try{
  const saved=JSON.parse(global.localStorage.getItem(STORE)||'{}');
  if(saved&&typeof saved==='object'&&!Array.isArray(saved)){
@@ -30,36 +33,33 @@ try{
  }
 }catch(_){}
 try{
- const saved=JSON.parse(global.localStorage.getItem(DESIGN_STORE)||'{}');
+ const saved=JSON.parse(global.localStorage.getItem(PAINT_STORE)||'{}');
  if(saved&&typeof saved==='object'&&!Array.isArray(saved))
   for(const [key,value] of Object.entries(saved))
-   if(validTeam(key)&&validTeam(value)&&key!==value)designs[key]=value;
+   if(validTeam(key)&&validPaint(value)&&value!=='original')paintChoices[key]=value;
 }catch(_){}
-function designFor(key){return validTeam(designs[key])?designs[key]:key;}
-function persistDesigns(){
- try{global.localStorage.setItem(DESIGN_STORE,JSON.stringify(designs));return true;}
+function paintStyleFor(key){return validPaint(paintChoices[key])?paintChoices[key]:'original';}
+function persistPaint(){
+ try{global.localStorage.setItem(PAINT_STORE,JSON.stringify(paintChoices));return true;}
  catch(_){return false;}
 }
-function designOptions(key){
- const select=$('apexStudioDesign');if(!select)return;
- const options=TEAM_KEYS.map(value=>({value,team:global.ApexNativeTeamStudio9A?.get?.(value)})).filter(o=>o.team);
- const signature=key+':'+options.map(o=>o.value+o.team.chassis).join('|');
- if(signature!==knownDesigns){
-  knownDesigns=signature;select.replaceChildren();
-  options.forEach(({value,team})=>{
-   const option=document.createElement('option');option.value=value;
-   option.textContent=team.chassis+' · '+team.name+(value===key?' · ORIGINAL':'');
+function updatePaintPicker(key){
+ const select=$('apexStudioPaintStyle');if(!select)return;
+ if(knownPaints!==String(PAINT_STYLES.length)){
+  knownPaints=String(PAINT_STYLES.length);select.replaceChildren();
+  PAINT_STYLES.forEach(({key:value,name})=>{
+   const option=document.createElement('option');option.value=value;option.textContent=name;
    select.append(option);
   });
  }
- select.value=designFor(key);
- $('apexStudioDesignReset').disabled=designFor(key)===key;
+ select.value=paintStyleFor(key);
+ $('apexStudioPaintReset').disabled=paintStyleFor(key)==='original';
 }
-function chooseDesign(value){
- const {key,team}=info();if(!team||!validTeam(value))return;
+function choosePaint(value){
+ const {key,team}=info();if(!team||!validPaint(value))return;
  saveNotice='';
- if(value===key)delete designs[key];else designs[key]=value;
- persistDesigns();refresh();
+ if(value==='original')delete paintChoices[key];else paintChoices[key]=value;
+ persistPaint();refresh();
 }
 function info(){
  const native=$('teamSelect'),key=native?.value||'';
@@ -182,7 +182,7 @@ function paint(){
  if(!team){setTimeout(refresh,120);return;}
  applyNative(key);
  teamCards();
- designOptions(key);
+ updatePaintPicker(key);
  const c=current(key,team),name=team.name||'Escudería';
  panel.style.setProperty('--apex-team-color',c.primary);
  panel.style.setProperty('--apex-team-secondary',c.secondary);
@@ -226,7 +226,7 @@ function paint(){
    strip.scrollLeft=right-strip.clientWidth+6;
  }
  $('apexStudioReset').disabled=!colors[key];
- $('apexStudioSave').textContent=saveNotice|| (colors[key]?'COLORES PERSONALIZADOS':designs[key]?'DISEÑO PERSONALIZADO':'COLORES DE ESCUDERÍA');
+ $('apexStudioSave').textContent=saveNotice|| (colors[key]?'COLORES PERSONALIZADOS':paintChoices[key]?'DECORACIÓN PERSONALIZADA':'COLORES DE ESCUDERÍA');
  global.ApexTeamCarPreview9A?.setCar?.(key);
  if(car?.complete&&car.naturalWidth===0)hero.classList.add('apexStudioAssetMissing');
 }
@@ -261,8 +261,8 @@ function reset(){
 }
 function confirmSave(){
  const {key}=info();
- const paletteSaved=persist(),designSaved=persistDesigns();
- saveNotice=paletteSaved&&designSaved?'GUARDADO ✓':'NO SE PUDO GUARDAR';
+ const paletteSaved=persist(),paintSaved=persistPaint();
+ saveNotice=paletteSaved&&paintSaved?'GUARDADO ✓':'NO SE PUDO GUARDAR';
  refresh();
 }
 function setup(){
@@ -324,13 +324,13 @@ function setup(){
  '<small id="apexStudioSave" aria-live="polite">COLORES DE ESCUDERÍA</small></div>'
  ].join('');
  const designPicker=document.createElement('section');designPicker.className='apexStudioDesignPicker';
- designPicker.innerHTML='<div><label for="apexStudioDesign">DISEÑO DEL COCHE</label>'+
-  '<small>Vista del menú · conserva tus colores</small></div>'+
-  '<select id="apexStudioDesign" aria-label="Diseño del coche"></select>'+
-  '<button type="button" id="apexStudioDesignReset" aria-label="Restaurar diseño original">ORIGINAL</button>';
+ designPicker.innerHTML='<div><label for="apexStudioPaintStyle">DECORACIÓN DEL COCHE</label>'+
+  '<small>Cambia la pintura · misma carrocería</small></div>'+
+  '<select id="apexStudioPaintStyle" aria-label="Decoración del coche"></select>'+
+  '<button type="button" id="apexStudioPaintReset" aria-label="Restaurar decoración original">ORIGINAL</button>';
  panel.append(designPicker,palette);
- $('apexStudioDesign').addEventListener('change',e=>chooseDesign(e.target.value));
- $('apexStudioDesignReset').addEventListener('click',()=>chooseDesign(info().key));
+ $('apexStudioPaintStyle').addEventListener('change',e=>choosePaint(e.target.value));
+ $('apexStudioPaintReset').addEventListener('click',()=>choosePaint('original'));
  const nativeSelect=$('teamSelect');
  nativeSelect?.addEventListener('change',()=>{saveNotice='';refresh();});
  if(nativeSelect)new MutationObserver(refresh).observe(nativeSelect,{childList:true,attributes:true,attributeFilter:['disabled']});
@@ -351,6 +351,6 @@ function setup(){
  // Releer tras completar la carga del menú y recuperar la preferencia local.
  setTimeout(refresh,250);
 }
-global.ApexVehicleStudio9A=Object.freeze({refresh,colorsFor,designFor,reset});
+global.ApexVehicleStudio9A=Object.freeze({refresh,colorsFor,paintStyleFor,reset});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup,{once:true});else setup();
 })(window);
