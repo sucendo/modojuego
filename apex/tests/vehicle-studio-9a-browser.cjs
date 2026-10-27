@@ -219,14 +219,36 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
    const rearTyre=svg.querySelector('.apex-car-tyre[data-axle="rear"]');
    const rearAxle=new DOMPoint(0,0).matrixTransform(rearTyre.getCTM());
    const shafts=[...svg.querySelectorAll('[data-link="halfshaft"]')];
-   const rearLayout={tailAheadOfAxle:body.getBBox().x>rearAxle.x,
+   const rearLayout={tailNearAxle:Math.abs(body.getBBox().x-rearAxle.x)<8,
     gearboxAtAxle:svg.querySelector('.apex-car-gearbox')?.isPointInFill(new DOMPoint(rearAxle.x,235)),
     shaftsTransverse:shafts.every(el=>{
      const [ax,,bx]=el.dataset.anchors.split(' ').map(Number);return Math.abs(ax-bx)<1;
     }),pylons:svg.querySelectorAll('.apex-car-rear-pylon').length,
     beamWings:svg.querySelectorAll('.apex-car-beam-wing').length};
+   const svgBounds=el=>{
+    const b=el.getBBox(),m=el.getCTM();
+    const points=[[b.x,b.y],[b.x+b.width,b.y],[b.x,b.y+b.height],[b.x+b.width,b.y+b.height]]
+     .map(([x,y])=>new DOMPoint(x,y).matrixTransform(m));
+    const left=Math.min(...points.map(p=>p.x)),right=Math.max(...points.map(p=>p.x));
+    return {left,right,width:right-left};
+   };
+   const frontTyre=svg.querySelector('.apex-car-tyre[data-axle="front"]');
+   const frontAxle=new DOMPoint(0,0).matrixTransform(frontTyre.getCTM());
+   const wheelbase=frontAxle.x-rearAxle.x;
+   const nose=svgBounds(svg.querySelector('.apex-car-nose'));
+   const rearPlane=svgBounds(svg.querySelector('.apex-car-rear-wing>path'));
+   const hole=svgBounds(svg.querySelector('.apex-car-cockpit>path:nth-child(2)'));
+   const proportions={noseAheadOfWing:nose.right>svgBounds(svg.querySelector('.apex-car-front-bridge')).right,
+    noseOverhang:(nose.right-frontAxle.x)/wheelbase,
+    rearTrack:(470-2*rearAxle.y)/wheelbase,
+    rearTyre:svgBounds(rearTyre).width/wheelbase,frontTyre:svgBounds(frontTyre).width/wheelbase,
+    tailWidth:0,
+    rearGap:(rearAxle.x-rearPlane.right)/wheelbase,
+    cockpit:((hole.left+hole.right)/2-rearAxle.x)/wheelbase};
+   const tailPoint=body.getAttribute('d').match(/^M[\d.]+ ([\d.]+)/);
+   proportions.tailWidth=2*(235-Number(tailPoint[1]))/wheelbase;
    const bounds=svg.getBBox();host.remove();
-   return {key,parts,mechanics,wing,rearLayout,bounds:{x:bounds.x,y:bounds.y,right:bounds.x+bounds.width,bottom:bounds.y+bounds.height}};
+   return {key,parts,mechanics,wing,rearLayout,proportions,bounds:{x:bounds.x,y:bounds.y,right:bounds.x+bounds.width,bottom:bounds.y+bounds.height}};
   }),options);
   for(const drawing of drawings){
    assert.equal(drawing.parts.length,4,'Cuatro neumáticos slick: '+drawing.key);
@@ -235,8 +257,19 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
     'Suspensión completa y cuatro bujes unidos a la cara interior de los neumáticos: '+drawing.key);
    assert.ok(drawing.wing.elements>=3&&drawing.wing.joins===drawing.wing.elements&&drawing.wing.connected,
     'Cada lámina tiene unión central con ambas mitades del alerón: '+JSON.stringify(drawing.wing)+' / '+drawing.key);
-   assert.deepEqual(drawing.rearLayout,{tailAheadOfAxle:true,gearboxAtAxle:true,shaftsTransverse:true,pylons:2,beamWings:1},
-    'Cola estrecha adelantada, transmisión en el eje y soportes traseros: '+drawing.key);
+   assert.deepEqual(drawing.rearLayout,{tailNearAxle:true,gearboxAtAxle:true,shaftsTransverse:true,pylons:2,beamWings:1},
+    'Cola junto al eje, transmisión y soportes traseros: '+drawing.key);
+   assert.ok(drawing.proportions.noseAheadOfWing,'El morro llega por delante de la unión central del alerón: '+drawing.key);
+   if(drawing.key==='PAPAYA'){
+    console.log(JSON.stringify({test:'mcraven-reference-proportions',...drawing.proportions}));
+    // Ratios from the supplied overhead reference, normalised by wheelbase.
+    // These broad intervals allow native blueprint scaling, not the old short
+    // nose, pencil-thin tail or overly elongated tyres.
+    for(const [name,min,max] of [['noseOverhang',.32,.36],['rearTrack',.41,.45],['rearTyre',.195,.235],['frontTyre',.19,.22],
+     ['tailWidth',.085,.105],['rearGap',.10,.12],['cockpit',.60,.65]])
+     assert.ok(drawing.proportions[name]>=min&&drawing.proportions[name]<=max,
+      'Proporción de referencia '+name+': '+drawing.proportions[name]);
+   }
    assert.ok(drawing.bounds.x>0&&drawing.bounds.y>0&&drawing.bounds.right<1000&&drawing.bounds.bottom<470,
     'Toda la silueta dentro del viewBox '+JSON.stringify(drawing));
   }
@@ -283,7 +316,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
    const signature=source=>{
     const doc=new DOMParser().parseFromString(source,'image/svg+xml');
     if(doc.querySelector('parsererror'))throw new Error('SVG inválido');
-    return JSON.stringify(Array.from(doc.querySelectorAll('.apex-car-body,.apex-car-engine-cover,.apex-car-nose,.apex-car-inlet,.apex-car-sidepod>path:first-child,.apex-car-front-bridge,.apex-car-wing-join,.apex-car-front-wing,.apex-car-front-wing .apex-car-wing-element,.apex-car-rear-wing,.apex-car-cockpit,.apex-car-cockpit path,.apex-car-cockpit circle,.apex-car-inlet-depth path,.apex-car-pod-reflection,.apex-car-tyre,.apex-car-suspension-arm path,.apex-car-wheel-mount path,.apex-car-wheel-mount ellipse,.apex-car-wheel-mount circle,.apex-car-floor,.apex-car-rear-assembly path,.apex-car-service-details path')).map(el=>({
+    return JSON.stringify(Array.from(doc.querySelectorAll('.apex-car-body,.apex-car-engine-cover,.apex-car-nose,.apex-car-inlet,.apex-car-sidepod>path:first-child,.apex-car-front-bridge,.apex-car-wing-join,.apex-car-front-wing,.apex-car-front-wing .apex-car-wing-element,.apex-car-rear-wing,.apex-car-cockpit,.apex-car-cockpit path,.apex-car-cockpit circle,.apex-car-inlet-depth path,.apex-car-pod-reflection,.apex-car-tyre,.apex-car-suspension-arm path,.apex-car-wheel-mount path,.apex-car-wheel-mount ellipse,.apex-car-wheel-mount circle,.apex-car-floor,.apex-car-rear-assembly g,.apex-car-rear-assembly path,.apex-car-airbox,.apex-car-service-details path')).map(el=>({
      tag:el.tagName,shape:el.getAttribute('d'),transform:el.getAttribute('transform'),
      size:['cx','cy','rx','ry','r','x','y','width','height'].map(name=>el.getAttribute(name)),
      child:el.querySelector('path,rect')?.getAttribute('d')||el.querySelector('rect')?.outerHTML

@@ -13,6 +13,7 @@ const clamp=(n,min,max)=>Math.min(max,Math.max(min,Number(n)||1));
 // undercut, inlet, engine-cover, nose and wing curves; colours remain swappable.
 const designs=Object.freeze({
  PAPAYA:{reference:'McLaren',nose:[16,27,0],wing:[0,0,4],rear:[0,0],cover:[22,47,58,25],podBase:'secondary',
+  proportions:{tailX:222,tailHalf:26,rearChord:1.26,rearShift:5,cockpitShift:20,cockpitScale:.98,airboxShift:16},
   frontBlades:[
    'M877 225C889 200 879 163 855 126Q844 106 847 @10L869 @7C865 113 894 148 905 181L918 227Z',
    'M921 228C912 197 905 165 881 128Q868 106 872 @8L891 @8Q890 105 906 132Q931 172 939 229Z',
@@ -161,7 +162,7 @@ function markup(profile){
  const surface=finish==='silver'?'#b4c1cc':finish==='white'?'#f2f6fa':finish==='carbon'?'#101920':s;
  // Coordinate frame: nose points right; all mirrored parts share y=235.
  // Wheel footprints are longer along the chassis than across it.
- const nw=d.nose[0]*.65*clamp(g.noseWidth,.94,1.06),tip=927+d.nose[2]+(clamp(g.noseLen,.94,1.06)-1)*20,
+ const nw=d.nose[0]*.65*clamp(g.noseWidth,.94,1.06),tip=975+d.nose[2]+(clamp(g.noseLen,.94,1.06)-1)*20,
   fy=75-(clamp(g.frontWing,.94,1.06)-1)*60,
   ry=116-(clamp(g.rearWing,.94,1.06)-1)*60,
   ws=clamp(g.wheelScale,.94,1.06),cw=clamp(g.cockpitWidth,.94,1.06);
@@ -189,7 +190,8 @@ function markup(profile){
  const deco=shape=>customPaint?P(shape,'url(#customPaint)','class="apex-car-paint-layer"'):'';
  // Shared dimensions drive both the slick envelope and its upright contact.
  // Front tyres are slimmer across the car; rears carry a wider tread.
- const wheelDimensions={front:{width:132,height:70},rear:{width:138,height:82}};
+ const wheelDimensions={front:{width:116,height:78},rear:{width:122,height:82}};
+ const rearWheelY=115;
  const tire=(cx,cy,rear=false)=>{
   const size=wheelDimensions[rear?'rear':'front'];
   const shape='M-48 -34C-33 -39 -11 -39 0 -39C20 -39 39 -39 49 -34Q59 -29 59 0Q59 29 49 34C32 39 11 39 0 39C-20 39 -39 39 -49 34Q-59 29 -59 0Q-59 -29 -48 -34Z';
@@ -237,7 +239,7 @@ function markup(profile){
    P('M264 207L281 201L292 183M254 217L273 214L285 203','none','stroke="#63717a" stroke-opacity=".28" stroke-width="1.2"'));
  // Suspension joints are computed from the same tyre footprints: all four
  // inboard mounts stay attached for each native model's wheelScale.
- const frontInner=101+wheelDimensions.front.height*ws/2,rearInner=104+wheelDimensions.rear.height*ws/2;
+ const frontInner=101+wheelDimensions.front.height*ws/2,rearInner=rearWheelY+wheelDimensions.rear.height*ws/2;
  const number=n=>Number(n.toFixed(3));
  function arm(ax,ay,bx,by,width=6,kind='wishbone'){
   const length=Math.hypot(bx-ax,by-ay),nx=-(by-ay)/length,ny=(bx-ax)/length;
@@ -262,18 +264,21 @@ function markup(profile){
  );
  // The painted tail ends ahead of the rear axle. The exposed gearbox, near-
  // transverse shafts and low wing form the open mechanical space behind it.
- const rearWingExit=110+35*(1+d.rear[1]/100);
+ const rearChord=d.proportions?.rearChord??(1+d.rear[1]/100);
+ const rearShift=d.proportions?.rearShift||0;
+ const rearWingExit=110+35*rearChord+rearShift;
  const beamTop=rearInner+12;
- const gearboxShape='M155 224L184 220Q211 211 238 219L255 225V245L238 251Q211 259 184 250L155 246Z';
+ const gearboxShape='M174 225L195 222Q213 215 235 219L250 225V245L235 251Q213 255 195 248L174 245Z';
  const rearAssembly='<g class="apex-car-rear-assembly">'+
+  '<g transform="translate(18 0)">'+
   P('M162 '+beamTop+'Q176 '+(beamTop-3)+' 190 '+(beamTop+2)+'L187 223L181 235L187 247L190 '+(468-beamTop)+'Q176 '+(473-beamTop)+' 162 '+(470-beamTop)+'L166 247L171 235L166 223Z','url(#wing)','class="apex-car-beam-wing" stroke="#080e13" stroke-width="1.2"')+
-  M(P('M164 '+(beamTop+4)+'Q177 '+beamTop+' 188 '+(beamTop+5),'none','stroke="#acbac4" stroke-opacity=".3" stroke-width=".9"'))+
+  M(P('M164 '+(beamTop+4)+'Q177 '+beamTop+' 188 '+(beamTop+5),'none','stroke="#acbac4" stroke-opacity=".3" stroke-width=".9"'))+'</g>'+
   M(P('M'+(rearWingExit-2)+' 216L199 224V230L'+(rearWingExit-2)+' 223Z','url(#suspension)','class="apex-car-rear-pylon" stroke="#080e13" stroke-width=".8"'))+
   P(gearboxShape,'url(#carbon)','class="apex-car-gearbox" stroke="#23313a" stroke-width="1"')+
   P(gearboxShape,'url(#weave)','opacity=".65"')+
-  P('M161 228L184 226Q211 219 237 224M161 242L184 244Q211 251 237 246','none','stroke="#8596a1" stroke-opacity=".27" stroke-width="1"')+
-  P('M151 231H191L200 235L191 239H151Z','#070e13','class="apex-car-tail-outlet" stroke="#43545f" stroke-width=".8"')+
-  P('M153 233H181V237H153Z','#010406')+'</g>';
+  P('M178 229L195 227Q213 220 237 224M178 241L195 243Q213 250 237 246','none','stroke="#8596a1" stroke-opacity=".27" stroke-width="1"')+
+  P('M171 231H197L206 235L197 239H171Z','#070e13','class="apex-car-tail-outlet" stroke="#43545f" stroke-width=".8"')+
+  P('M173 233H191V237H173Z','#010406')+'</g>';
  function wheelMount(cx,inner,rear=false){
   const duct=rear?18:25;
   return '<g class="apex-car-wheel-mount" data-axle="'+(rear?'rear':'front')+'">'+
@@ -288,7 +293,7 @@ function markup(profile){
     P('M'+(cx+duct)+' '+(inner+1)+'L'+(cx+duct+1)+' '+(inner+9)+'L'+(cx+duct-4)+' '+(inner+10)+'L'+(cx+duct-4)+' '+(inner+2)+'Z','#010508','stroke="#687d89" stroke-opacity=".5" stroke-width=".6"')+'</g></g>';
  }
  const mounts=M(wheelMount(785,frontInner)+wheelMount(221,rearInner,true));
- const rearWing='<g class="apex-car-rear-wing" transform="translate(110 235) scale('+(1+d.rear[1]/100)+' '+(1+d.rear[0]/120)+') translate(-110 -235)">'+
+ const rearWing='<g class="apex-car-rear-wing" transform="translate('+rearShift+' 0) translate(110 235) scale('+rearChord+' '+(1+d.rear[0]/120)+') translate(-110 -235)">'+
   P('M79 '+ry+'Q106 '+(ry-3)+' 145 '+(ry+4)+'L145 '+(466-ry)+'Q106 '+(473-ry)+' 79 '+(470-ry)+'Z','url(#wing)','stroke="#04080c" stroke-width="3"')+
   P('M87 '+(ry+8)+'V'+(462-ry)+'H117V'+(ry+8)+'Z','url(#panel)')+
   P('M122 '+(ry+8)+'V'+(462-ry),'none','stroke="'+p+'" stroke-width="'+(d.frontBlades?3:8)+'"')+
@@ -356,7 +361,7 @@ function markup(profile){
  const [tail,waist,shoulder,root]=d.cover;
  const half=d.nose[1]*1.12;
  const noseRoot=root+15;
- const tailX=230+d.rear[1]*.35,tailHalf=Math.max(10,tail*.62);
+ const tailX=d.proportions?.tailX??(221+d.rear[1]*.12),tailHalf=d.proportions?.tailHalf??Math.max(16,tail*1.05);
  const rearUpper=d.bodyUpper?.replace(/^M173 [\d.]+/,'M'+tailX+' '+(235-tailHalf));
  const rearLower=d.bodyLower?.replace(/173 [\d.]+Z$/,tailX+' '+(235+tailHalf)+'Z');
  const rearSpine=d.spine?.replace(/^M191 [\d.]+/,'M'+(tailX+6)+' '+(235-Math.min(9,tailHalf*.6)))
@@ -404,7 +409,7 @@ function markup(profile){
   P(engineShape,'none','stroke="#e1edf4" stroke-opacity=".13" stroke-width="1"')+
   P(noseShape,'url(#light)','class="apex-car-nose"')+
   P('M664 '+(234-half)+'L'+(tip-28)+' '+(234-nw),'none','stroke="#fff" stroke-opacity=".32" stroke-width="1.4"')+
-  P('M845 220L872 222L874 248L845 250Z',stripe,'opacity=".9"')+
+  P(d.proportions?'M'+(tip-58)+' 218L'+(tip-16)+' 224V246L'+(tip-58)+' 252Z':'M845 220L872 222L874 248L845 250Z',stripe,'opacity=".9" clip-path="url(#bodyMask)"')+
   '<text x="860" y="241" font-family="Arial,sans-serif" font-size="17" font-weight="900" text-anchor="middle" fill="'+trim+'">26</text>';
  const serviceDetails='<g class="apex-car-service-details">'+
   P('M668 224Q668 222 671 222H695Q698 222 698 225V245Q698 248 695 248H671Q668 248 668 245Z','none','stroke="#dae5eb" stroke-opacity=".28" stroke-width=".9"')+
@@ -420,7 +425,7 @@ function markup(profile){
 
  // Empty showroom cockpit: seat, belts and steering wheel. The halo sits
  // above the cockpit rim and converges into its single forward support.
- const cockpit='<g class="apex-car-cockpit" transform="translate(554 235) scale(1.12 '+(cw*1.18)+') translate(-554 -235)">'+
+ const cockpit='<g class="apex-car-cockpit" transform="translate('+(d.proportions?.cockpitShift||0)+' 0) translate(554 235) scale('+(d.proportions?.cockpitScale||1.12)+' '+(cw*1.18)+') translate(-554 -235)">'+
   P(d.cockpit?.rim||'M482 211Q482 200 493 199L544 197Q594 197 626 235Q594 273 544 273L493 271Q482 270 482 259Z',d.cockpit?'url(#paint)':'url(#carbon)','stroke="'+p+'" stroke-width="5"')+
   P(cockpitWellShape,'url(#cockpitWell)','stroke="#76838b" stroke-opacity=".24" stroke-width=".8"')+
   '<g clip-path="url(#cockpitMask)">'+
@@ -451,11 +456,12 @@ function markup(profile){
  const mirrors=M(P('M630 205L651 146','none','stroke="#0c141a" stroke-width="3.5"')+
   P('M638 136L661 133Q668 133 666 141L640 145Z','url(#carbon)','stroke="'+p+'" stroke-width="1.4"')+
   P('M641 137L661 135','none','stroke="#c1cfd8" stroke-opacity=".4" stroke-width=".8"'));
- return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 470" width="1000" height="470" role="img" data-apex-silhouette="f1-rear-assembly-v17" data-apex-design-key="'+id+'" data-apex-paint-style="'+paintStyle+'" data-apex-design="'+safe(d.reference)+'" data-apex-team="'+id+'" data-apex-model="'+model+'" data-apex-chassis="'+chassis+'" aria-label="Vista cenital de monoplaza '+id+' '+model+'">'+defs+paintDefs+bodyMasks+
+ return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 470" width="1000" height="470" role="img" data-apex-silhouette="f1-reference-ratios-v18" data-apex-design-key="'+id+'" data-apex-paint-style="'+paintStyle+'" data-apex-design="'+safe(d.reference)+'" data-apex-team="'+id+'" data-apex-model="'+model+'" data-apex-chassis="'+chassis+'" aria-label="Vista cenital de monoplaza '+id+' '+model+'">'+defs+paintDefs+bodyMasks+
   floor+rearWing+rearAssembly+frontBridge+M(frontHalf)+suspension+mounts+sidepods+body+flowingAccent+serviceDetails+
-  tire(221,104,true)+tire(221,366,true)+tire(785,101)+tire(785,369)+cockpit+mirrors+
+  tire(221,rearWheelY,true)+tire(221,470-rearWheelY,true)+tire(785,101)+tire(785,369)+cockpit+mirrors+
+  '<g class="apex-car-airbox" transform="translate('+(d.proportions?.airboxShift||0)+' 0)">'+
   P('M464 214H485Q489 214 489 219V251Q489 256 485 256H464Z','url(#carbon)','stroke="#61717b" stroke-width="1.2"')+
-  P('M469 223H480V247H469Z','#03080b','stroke="#303e48" stroke-width="1"')+
+  P('M469 223H480V247H469Z','#03080b','stroke="#303e48" stroke-width="1"')+'</g>'+
   '<text x="735" y="238" font-family="Arial,sans-serif" font-size="12" font-weight="700" text-anchor="middle" fill="'+trim+'">'+brand+'</text>'+
   '<text x="358" y="239" font-family="Arial,sans-serif" font-size="10" letter-spacing="1" text-anchor="middle" fill="'+trim+'">'+chassis+'</text></svg>';
 }
