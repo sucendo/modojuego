@@ -573,6 +573,7 @@
   object-fit:contain;
   object-position:center;
   align-self:center;
+  transform:translateY(-14px); /* hero bounds: keep entire car above controls */
   filter:drop-shadow(0 9px 10px #000b);
  }
  #menu.apex9aPrototype .apexTeamStudio .apexStudioControls {
