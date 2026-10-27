@@ -20,6 +20,9 @@ function markup(profile){
  const pod=clamp(g.sidepodWidth,.8,1.22),front=clamp(g.frontWing,.8,1.22);
  const rear=clamp(g.rearWing,.8,1.22),wheel=clamp(g.wheelScale,.8,1.22);
  const cockpit=clamp(g.cockpitWidth,.8,1.22);
+ const finish=['silver','carbon','white'].includes(l.finish)?l.finish:'paint';
+ const surface=finish==='silver'?'#adb9c5':finish==='white'?'#edf2f4':finish==='carbon'?carbon:s;
+ const surfLine=finish==='silver'?'#e7f1f8':finish==='white'?'#ffffff':finish==='carbon'?'#293741':trim;
  const xFront=773+(noseL-1)*28,frontHalf=183*front,rearHalf=118*rear;
  const nWidth=26*nose, podWidth=82*pod;
  const id=safe(profile.teamKey),model=safe(profile.model),chassis=safe(profile.chassis);
@@ -47,6 +50,10 @@ function markup(profile){
  '<linearGradient id="tire" x1="0" y1="0" x2=".9" y2="0"><stop stop-color="#06080a"/><stop offset=".2" stop-color="#292c2f"/><stop offset=".42" stop-color="#14191d"/><stop offset=".67" stop-color="#24282c"/><stop offset="1" stop-color="#050609"/></linearGradient>'+
  '<pattern id="weave" width="8" height="8" patternUnits="userSpaceOnUse"><path d="M0 0l8 8M-2 2l8 8M2-2l8 8" stroke="#cce0ea" opacity=".12" stroke-width=".55"/></pattern>'+
  '<linearGradient id="wingShine" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#4c5359"/><stop offset=".2" stop-color="'+wing+'"/><stop offset=".55" stop-color="#020406"/><stop offset="1" stop-color="#343941"/></linearGradient>'+
+ '<linearGradient id="finish" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+surfLine+'" stop-opacity=".84"/><stop offset=".15" stop-color="'+surface+'"/><stop offset=".49" stop-color="'+surface+'" stop-opacity=".48"/><stop offset=".91" stop-color="'+surface+'"/><stop offset="1" stop-color="#03070a"/></linearGradient>'+
+ '<linearGradient id="gloss" x1=".1" y1="0" x2=".85" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".38"/><stop offset=".23" stop-color="#cbd7e5" stop-opacity=".09"/><stop offset=".55" stop-color="#ffffff" stop-opacity="0"/><stop offset="1" stop-color="#070c13" stop-opacity=".3"/></linearGradient>'+
+ '<pattern id="carbonTwist" width="9" height="9" patternUnits="userSpaceOnUse"><path d="M0 0L9 9M-2 2L7 11M2 -2L11 7" stroke="#dbe6ec" stroke-opacity=".19" stroke-width=".8"/></pattern>'+
+ '<radialGradient id="rim" cx=".4" cy=".5" r=".8"><stop stop-color="#68727a"/><stop offset=".33" stop-color="#0d131a"/><stop offset=".69" stop-color="#02070a"/><stop offset="1" stop-color="#4c565d"/></radialGradient>'+
  '<filter id="drop" x="-20%" y="-40%" width="140%" height="190%"><feGaussianBlur stdDeviation="8"/></filter>'+
  '</defs>'+
  '<ellipse cx="500" cy="253" rx="445" ry="123" fill="#000" opacity=".43" filter="url(#drop)"/>'+
@@ -98,6 +105,36 @@ function markup(profile){
  '<path d="M'+f(xFront+77)+' '+f(235-frontHalf+25)+'Q896 188 947 208M'+f(xFront+77)+' '+f(235+frontHalf-25)+'Q896 282 947 262" stroke="'+p+'" stroke-width="18" fill="none" opacity=".9"/>'+
  '<path d="M890 '+f(235-frontHalf+8)+'V'+f(235+frontHalf-8)+'M926 '+f(235-frontHalf+12)+'V'+f(235+frontHalf-12)+'" stroke="#e2ebf6" stroke-opacity=".27" stroke-width="2.5"/>'+
  '<path d="M868 222H969V248H868Z" fill="'+wing+'"/>'+
+ // Convincing aero surfaces: sculpted sidepod shoulders / floor-edge vortices
+ '<path d="M280 169Q420 133 570 184L633 225L552 197Q415 159 290 198Z" fill="url(#finish)" opacity=".96" stroke="#03070b" stroke-width="3"/>'+
+ '<path d="M280 301Q420 337 570 286L633 245L552 273Q415 311 290 272Z" fill="url(#finish)" opacity=".96" stroke="#03070b" stroke-width="3"/>'+
+ '<path d="M295 178Q403 156 542 191M295 292Q403 314 542 279" stroke="url(#gloss)" stroke-width="13" fill="none"/>'+
+ '<path d="M267 172Q383 141 552 171L620 207M267 298Q383 329 552 299L620 263" stroke="'+a+'" opacity=".56" stroke-width="2.4" fill="none"/>'+
+ // Sculpted inlets and precisely segmented carbon fibre guides.
+ '<path d="M377 188Q424 179 463 196L440 210L384 206Z M377 282Q424 291 463 274L440 260L384 264Z" fill="#02080d" stroke="#657580" stroke-width="1.7" opacity=".92"/>'+
+ '<path d="M382 194L445 201M382 276L445 269" stroke="#b7cedf" opacity=".18" stroke-width="4"/>'+
+ '<path d="M227 171Q360 134 510 164L555 179M227 299Q360 336 510 306L555 291" fill="none" stroke="url(#gloss)" stroke-width="12"/>'+
+ // Glossy cross-vents with carbon texture on the engine cover.
+ '<path d="M191 213Q279 200 348 200Q397 187 425 198L402 219Q295 222 191 226Z" fill="url(#carbonTwist)" opacity=".76"/>'+
+ '<path d="M191 257Q279 270 348 270Q397 283 425 272L402 251Q295 248 191 244Z" fill="url(#carbonTwist)" opacity=".76"/>'+
+ // Side floor channels and bodywork fasteners (subtle at mobile resolution)
+ '<path d="M236 178Q310 150 368 154M236 292Q310 320 368 316" stroke="#bac4cc" opacity=".36" stroke-width="2" fill="none"/>'+
+ '<path d="M245 192L295 184M245 278L295 286" stroke="'+p+'" stroke-width="6" opacity=".89"/>'+
+ '<g fill="#bac8d4" opacity=".55"><circle cx="293" cy="167" r="2"/><circle cx="293" cy="303" r="2"/><circle cx="326" cy="165" r="2"/><circle cx="326" cy="305" r="2"/><circle cx="598" cy="218" r="2"/><circle cx="598" cy="252" r="2"/><circle cx="740" cy="233" r="2"/></g>'+
+ // F1 2026 halo attachment, steering wheel and instrument display.
+ '<path d="M446 202Q484 196 524 206M446 268Q484 274 524 264" stroke="'+p+'" stroke-width="2.5" fill="none" opacity=".87"/>'+
+ '<path d="M466 226h21v17h-21z" rx="3" fill="#171e2a" stroke="#728ca0" stroke-width="1.5"/>'+
+ '<path d="M470 231h13M470 235h13M470 239h9" stroke="'+a+'" stroke-width="1.5"/>'+
+ '<path d="M529 234h28" stroke="#17232d" stroke-width="6"/>'+
+ // Multi-element front-wing flaps and small winglet supports.
+ '<path d="M866 '+f(235-frontHalf+39)+'Q908 '+f(235-frontHalf+30)+' 954 '+f(235-frontHalf+44)+
+ 'M866 '+f(235+frontHalf-39)+'Q908 '+f(235+frontHalf-30)+' 954 '+f(235+frontHalf-44)+'" stroke="'+p+'" stroke-width="12" fill="none"/>'+
+ '<path d="M874 '+f(235-frontHalf+63)+'Q917 '+f(235-frontHalf+49)+' 957 '+f(235-frontHalf+61)+
+ 'M874 '+f(235+frontHalf-63)+'Q917 '+f(235+frontHalf-49)+' 957 '+f(235+frontHalf-61)+'" stroke="'+surfLine+'" stroke-width="3.1" stroke-opacity=".53" fill="none"/>'+
+ '<path d="M948 '+f(235-frontHalf+10)+'l15 -6v36l-15 -6M948 '+f(235+frontHalf-10)+'l15 6v-36l-15 6" fill="'+wing+'" stroke="'+a+'" stroke-width="3"/>'+
+ // Carbon-surface roof reflections and segment separators on rear wing.
+ '<path d="M76 '+f(235-rearHalf+40)+'H132M76 '+f(235+rearHalf-40)+'H132" stroke="'+surfLine+'" stroke-opacity=".42" stroke-width="3"/>'+
+ '<path d="M84 '+f(235-rearHalf+14)+'V'+f(235+rearHalf-14)+'M91 '+f(235-rearHalf+14)+'V'+f(235+rearHalf-14)+'" stroke="#bcc7cc" stroke-opacity=".21" stroke-width="2"/>'+
  // Fine vehicle graphics; no brand/trademark reproductions
  '<path d="M307 196L371 184M307 274L371 286" stroke="'+a+'" stroke-width="4" opacity=".9"/>'+
  '<text x="653" y="227" font-family="Arial,sans-serif" font-size="18" font-weight="900" fill="'+trim+'" text-anchor="middle">'+model+'</text>'+

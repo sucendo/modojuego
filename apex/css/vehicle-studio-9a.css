@@ -187,3 +187,286 @@
 @media(prefers-reduced-motion:reduce){
  #menu.apex9aPrototype .apexTeamStudio .apexStudioStage .apexProtoTeamArt{transition:none}
 }
+
+
+/* ---------------------------------------------------------------------------
+   9A Showroom V2 · diseño aprobado, presentación de paddock a ancho completo.
+   No cambia la pantalla Circuitos ni controles deportivos originales.
+   --------------------------------------------------------------------------- */
+#menu.apex9aPrototype .apexProtoDetails{
+ grid-template-columns:minmax(0,1fr);
+}
+#menu.apex9aPrototype .apexProtoDetails article.apexTeamStudio{
+ grid-column:1/-1;
+ min-height:650px;
+ border-color:#466982;
+ box-shadow:inset 0 1px 0 rgba(199,228,248,.12),0 12px 28px rgba(0,0,0,.35);
+ --apex-team-color:#ff8700;
+}
+#menu.apex9aPrototype .apexProtoDetails article.apexTeamStudio>h2{
+ height:54px;min-height:54px;padding:13px 20px;
+ font-size:clamp(15px,1.65vw,24px);font-weight:950;
+ letter-spacing:.085em;
+ background:linear-gradient(110deg,#0d2b40,#061525 72%,#0e2234);
+ border-bottom:1px solid #597d92;
+}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioHero{
+ margin:12px 15px 0;min-height:360px;
+ background:
+  radial-gradient(ellipse 54% 75% at 67% 49%,color-mix(in srgb,var(--apex-team-color) 12%,#0d1a2a),transparent 88%),
+  repeating-linear-gradient(0deg,transparent 0 118px,#96a7b40d 119px,transparent 120px 238px),
+  repeating-linear-gradient(90deg,transparent 0 158px,#96a7b40d 159px,transparent 160px 318px),
+  linear-gradient(145deg,#0a1c2b,#081522 66%,#0c1c2a);
+ border:1px solid #335772;
+}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioHero:before{
+ height:4px;inset:0 72% auto 0;
+}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioIdentity{
+ padding:16px 18px 0;
+}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioText{
+ border-left:4px solid var(--apex-team-color);padding-left:12px;
+}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioTeamName{
+ font-size:clamp(20px,2.6vw,36px);
+ max-width:64%;letter-spacing:-.02em;
+}
+#menu.apex9aPrototype .apexStudioHeaderControls{
+ display:flex;gap:0;align-items:stretch;
+ border:1px solid #5c849a;
+ background:#071829d9;
+ height:46px;flex:none;
+}
+#menu.apex9aPrototype .apexStudioHeaderControls button{
+ border:0;background:#0b2032d9;color:#d9effc;
+ font-size:30px;line-height:1;padding:0 14px;
+ min-width:40px;
+}
+#menu.apex9aPrototype .apexStudioHeaderControls button:hover:not(:disabled){
+ background:#244157;
+}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioOrdinal{
+ padding:9px 12px;margin:0;
+ background:transparent;border:0;
+ border-left:1px solid #30516b;border-right:1px solid #30516b;
+ display:grid;place-items:center;font-size:15px;
+ min-width:79px;
+}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioLayout{
+ grid-template-columns:minmax(180px,25%) minmax(0,1fr);
+ min-height:300px;
+ height:calc(100% - 86px);
+}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioDetails{
+ padding:6px 4px 13px 17px;
+}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioLogo{
+ height:136px;min-height:105px;max-width:215px;width:100%;
+ padding:6px;margin:0;
+ display:grid;grid-template-rows:minmax(0,1fr) auto;gap:0;
+ background:linear-gradient(180deg,#07121da8,#030d18da);
+ border:1px solid #34516a;
+ border-radius:5px 5px 0 0;
+}
+#menu.apex9aPrototype .apexStudioLogoMark{
+ min-height:0;display:grid;place-items:center;
+ filter:drop-shadow(0 1px 9px color-mix(in srgb,var(--apex-team-color) 34%,transparent));
+}
+#menu.apex9aPrototype .apexStudioLogoMark svg{
+ width:90%;height:75px;max-height:90px;
+}
+#menu.apex9aPrototype .apexStudioLogoName{
+ display:grid;gap:1px;justify-items:center;min-width:0;
+ border-top:1px solid #52708469;padding:6px 3px 4px;color:#f3f8ff;
+}
+#menu.apex9aPrototype .apexStudioLogoName strong{
+ text-align:center;font-size:clamp(12px,1.45vw,22px);line-height:1.08;
+ font-weight:950;text-transform:uppercase;letter-spacing:.02em;
+ overflow-wrap:anywhere;
+}
+#menu.apex9aPrototype .apexStudioLogoName small{
+ font-size:9px;font-weight:800;letter-spacing:.28em;
+ color:var(--apex-team-color);text-align:center;
+}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioSpecs{
+ margin:0;max-width:215px;background:#030c17ce;
+ padding:4px 9px;border:1px solid #34516a;
+ border-top:0;border-radius:0 0 5px 5px;
+}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioSpecs>div{
+ display:grid;grid-template-columns:minmax(0,.86fr) minmax(0,1.14fr);
+ min-height:25px;gap:4px;border-left:0;padding:4px 0;
+}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioSpecs dt{
+ font-size:clamp(9px,.9vw,11px);color:#b5d5e9;
+}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioSpecs dd{
+ font-size:clamp(9px,1vw,12px);font-weight:900;color:#f1f9ff;
+}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioStage{
+ min-height:302px;overflow:hidden;
+}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioStage .apexProtoTeamArt{
+ width:99%;max-width:1200px;max-height:405px;
+ filter:drop-shadow(0 16px 18px #000d);
+}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioHalo{
+ background:radial-gradient(ellipse 52% 56% at 48% 61%,
+  color-mix(in srgb,var(--apex-team-color) 16%,transparent),transparent 84%);
+}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioControls{
+ padding:11px 15px 7px;gap:7px;
+}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioControlsLabel{
+ font-size:13px;color:#e4f5ff;letter-spacing:.08em;
+ padding-left:8px;border-left:4px solid var(--apex-team-color);
+}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioTeamCards{
+ display:grid;grid-auto-flow:column;grid-auto-columns:minmax(82px,1fr);
+ gap:5px;min-width:0;overflow-x:auto;overflow-y:hidden;
+ scrollbar-color:#46677d #0b1d2d;padding:2px 2px 6px;
+}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioTeamCard{
+ display:grid;grid-template-rows:56px auto;justify-items:center;align-items:center;
+ gap:3px;min-width:82px;max-width:none;
+ min-height:99px;padding:6px 4px 5px;
+ color:#ecf6ff;background:linear-gradient(145deg,#0b1a28,#061421);
+ border:1px solid #355771;border-radius:5px;
+ transition:border-color .12s ease,background .12s ease,box-shadow .12s ease;
+}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioTeamCard:hover:not(:disabled){
+ border-color:#8baeca;background:#142a3c;
+}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioTeamCard.active{
+ border:2px solid var(--apex-team-color);
+ background:linear-gradient(160deg,#162c3f,#081523);
+ box-shadow:0 0 13px color-mix(in srgb,var(--apex-team-color) 38%,transparent),
+ inset 0 1px 0 #ffffff12;
+}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioTeamCard:disabled{opacity:.48}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioTeamCard.active:disabled{opacity:1}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioCardLogo{
+ display:grid;place-items:center;width:100%;height:56px;
+}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioCardLogo svg{
+ display:block;height:51px;max-width:60px;width:92%;
+ filter:drop-shadow(0 1px 5px #000d);
+}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioCardText{
+ display:grid;justify-items:center;gap:2px;min-width:0;max-width:100%;
+ line-height:1.09;text-align:center;
+}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioCardText strong{
+ font-size:clamp(9px,.9vw,13px);font-weight:900;
+ text-transform:uppercase;max-width:100%;overflow:hidden;text-overflow:ellipsis;
+}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioCardText small{
+ font-size:8px;letter-spacing:.05em;color:#97b7cc;
+ max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioControls .apexProtoTeamPicker{
+ position:absolute!important;width:1px!important;height:1px!important;
+ overflow:hidden!important;clip-path:inset(50%)!important;
+ padding:0!important;margin:0!important;
+}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioPalette{
+ grid-template-columns:minmax(155px,1.03fr) minmax(0,3.5fr) auto;
+ gap:12px;min-height:100px;margin:8px 15px 13px;padding:11px 14px;
+ background:linear-gradient(115deg,#081a29,#081c2d 65%,#071420);
+}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioPaletteTitle strong{font-size:13px}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioPaletteTitle small{font-size:11px}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioColorOptions{
+ grid-template-columns:repeat(6,minmax(0,1fr));gap:7px;
+}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioColorOptions label{
+ font-size:9px;min-width:0;gap:6px;
+}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioColorOptions input[type=color]{
+ height:42px;border:1px solid #7798aa;border-radius:5px;padding:3px;
+ box-shadow:inset 0 2px 3px #000b;
+}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioFinish{
+ display:grid;grid-template-rows:auto 42px;gap:6px;justify-items:stretch;
+ align-items:center;color:#b7d8ee;font-size:9px;font-weight:900;
+ border:0;background:transparent;padding:0;min-width:0;
+}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioFinishSwatch{
+ display:block;border:1px solid #698ba0;border-radius:6px;
+ box-shadow:inset 0 1px 5px #0004;width:100%;height:42px;
+}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioFinishSwatch.silver{
+ background:linear-gradient(140deg,#506271 3%,#fff 42%,#9dadb9 72%,#e4ebf0);
+}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioFinishSwatch.carbon{
+ background:repeating-linear-gradient(145deg,#111920 0 2px,#36424d 3px,#0b1015 4px 6px);
+}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioFinishSwatch.white{
+ background:linear-gradient(132deg,#fff,#bbc4ca,#f8fafb 80%);
+}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioFinish.active .apexStudioFinishSwatch{
+ outline:2px solid var(--apex-team-color);outline-offset:2px;
+}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioPaletteActions{
+ display:grid;grid-template-columns:1fr 1fr;gap:6px;min-width:170px;
+}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioPaletteActions button{
+ min-height:43px;background:#0e2538;border:1px solid #52758f;
+ font-size:11px;white-space:nowrap;
+}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioPaletteActions #apexStudioSaveButton{
+ background:linear-gradient(150deg,#0e67b0,#08436b);border-color:#20a4ef;
+ box-shadow:0 0 10px #137bc04d;
+}
+#menu.apex9aPrototype .apexTeamStudio .apexStudioPaletteActions small{
+ grid-column:1/-1;white-space:normal;
+}
+@media(max-width:980px){
+ #menu.apex9aPrototype .apexTeamStudio .apexStudioHero{min-height:310px}
+ #menu.apex9aPrototype .apexTeamStudio .apexStudioLayout{
+  grid-template-columns:minmax(152px,27%) minmax(0,1fr);height:auto;
+ }
+ #menu.apex9aPrototype .apexTeamStudio .apexStudioDetails{padding:6px 5px 10px 12px}
+ #menu.apex9aPrototype .apexTeamStudio .apexStudioLogo{height:112px;min-height:98px}
+ #menu.apex9aPrototype .apexTeamStudio .apexStudioLogoMark svg{height:59px}
+ #menu.apex9aPrototype .apexTeamStudio .apexStudioLogoName strong{font-size:13px}
+ #menu.apex9aPrototype .apexTeamStudio .apexStudioPalette{grid-template-columns:1fr}
+ #menu.apex9aPrototype .apexTeamStudio .apexStudioPaletteActions{display:flex;justify-content:flex-end}
+ #menu.apex9aPrototype .apexTeamStudio .apexStudioPaletteActions small{align-self:center}
+ #menu.apex9aPrototype .apexTeamStudio .apexStudioStage .apexProtoTeamArt{max-height:345px}
+}
+@media(max-width:620px){
+ #menu.apex9aPrototype .apexProtoDetails article.apexTeamStudio{min-height:630px}
+ #menu.apex9aPrototype .apexProtoDetails article.apexTeamStudio>h2{height:45px;min-height:45px;font-size:15px}
+ #menu.apex9aPrototype .apexTeamStudio .apexStudioHero{margin:8px 7px 0;min-height:305px}
+ #menu.apex9aPrototype .apexTeamStudio .apexStudioIdentity{padding:8px}
+ #menu.apex9aPrototype .apexTeamStudio .apexStudioTeamName{font-size:clamp(15px,4.2vw,21px);max-width:100%}
+ #menu.apex9aPrototype .apexTeamStudio .apexStudioText{padding-left:8px}
+ #menu.apex9aPrototype .apexTeamStudio .apexStudioHeaderControls{height:31px}
+ #menu.apex9aPrototype .apexTeamStudio .apexStudioHeaderControls button{min-width:26px;font-size:20px;padding:0 5px}
+ #menu.apex9aPrototype .apexTeamStudio .apexStudioOrdinal{min-width:61px;font-size:11px;padding:4px}
+ #menu.apex9aPrototype .apexTeamStudio .apexStudioLayout{grid-template-columns:minmax(104px,31%) minmax(0,1fr);min-height:233px}
+ #menu.apex9aPrototype .apexTeamStudio .apexStudioDetails{padding:4px 2px 7px 7px}
+ #menu.apex9aPrototype .apexTeamStudio .apexStudioLogo{height:77px;min-height:66px}
+ #menu.apex9aPrototype .apexTeamStudio .apexStudioLogoMark svg{height:39px}
+ #menu.apex9aPrototype .apexTeamStudio .apexStudioLogoName{padding:3px 1px}
+ #menu.apex9aPrototype .apexTeamStudio .apexStudioLogoName strong{font-size:10px}
+ #menu.apex9aPrototype .apexTeamStudio .apexStudioLogoName small{font-size:7px}
+ #menu.apex9aPrototype .apexTeamStudio .apexStudioSpecs{padding:3px 4px}
+ #menu.apex9aPrototype .apexTeamStudio .apexStudioSpecs>div{grid-template-columns:1fr;min-height:22px;padding:2px 0;gap:0}
+ #menu.apex9aPrototype .apexTeamStudio .apexStudioSpecs dt{font-size:7px}
+ #menu.apex9aPrototype .apexTeamStudio .apexStudioSpecs dd{font-size:8px}
+ #menu.apex9aPrototype .apexTeamStudio .apexStudioStage{min-height:232px}
+ #menu.apex9aPrototype .apexTeamStudio .apexStudioStage .apexProtoTeamArt{max-height:233px;width:113%}
+ #menu.apex9aPrototype .apexTeamStudio .apexStudioTeamCards{grid-auto-columns:85px}
+ #menu.apex9aPrototype .apexTeamStudio .apexStudioControls{padding:8px 7px 5px}
+ #menu.apex9aPrototype .apexTeamStudio .apexStudioTeamCard{min-height:90px;grid-template-rows:48px auto}
+ #menu.apex9aPrototype .apexTeamStudio .apexStudioCardLogo{height:48px}
+ #menu.apex9aPrototype .apexTeamStudio .apexStudioCardLogo svg{height:44px}
+ #menu.apex9aPrototype .apexTeamStudio .apexStudioColorOptions{grid-template-columns:repeat(3,minmax(0,1fr));row-gap:10px}
+ #menu.apex9aPrototype .apexTeamStudio .apexStudioPalette{margin:6px 7px 9px;padding:9px;gap:9px}
+}
+@media(prefers-reduced-motion:reduce){
+ #menu.apex9aPrototype .apexTeamStudio .apexStudioTeamCard{transition:none}
+}

@@ -77,6 +77,21 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
     'Asset del coche cargado: '+value);
   }
   assert.equal(images.size,options.length,'Todas las imágenes del catálogo comprobadas');
+  assert.equal(await panel.locator('.apexStudioTeamCard').count(),options.length,
+   'Tarjeta y logotipo propio para cada una de las 11 escuderías');
+  const logos=await panel.locator('.apexStudioCardLogo svg').evaluateAll(els=>els.map(el=>el.outerHTML));
+  assert.equal(new Set(logos).size,options.length,'Identidad vectorial diferenciada por equipo');
+  await panel.locator('.apexStudioTeamCard').filter({hasText:'Meridian'}).click();
+  assert.equal(await page.locator('#teamSelect').inputValue(),options[1],
+   'El mosaico debe activar el selector deportivo nativo');
+  await page.locator('#apexProtoTeam').selectOption(options[0]);
+  assert.equal(await panel.locator('.apexStudioTeamCard.active').count(),1,
+   'Sólo la escudería activa debe resaltarse');
+  await panel.locator('#apexStudioHeaderNext').click();
+  assert.equal(await page.locator('#teamSelect').inputValue(),options[1],
+   'Las flechas superiores reutilizan los controles nativos');
+  await panel.locator('#apexStudioHeaderPrev').click();
+  assert.equal(await page.locator('#teamSelect').inputValue(),options[0]);
   await page.locator('#apexProtoTeam').selectOption(options[0]);
   // Colores persistentes por equipo. Principal y acento también deben llegar
   // a los controles deportivos nativos, no ser una pintura ficticia.
@@ -91,7 +106,22 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
   assert.ok(decodeURIComponent(personalized).includes('#34acde'));
   assert.ok(decodeURIComponent(personalized).includes('#ee8822'));
   assert.ok(decodeURIComponent(personalized).includes('#172f46'));
-  assert.equal(await page.locator('#apexStudioSave').innerText(),'COLORES GUARDADOS');
+  assert.equal(await page.locator('#apexStudioSave').innerText(),'COLORES PERSONALIZADOS');
+  for(const [name,finish,secondary] of [
+   ['Acabado plata','silver','#b4c1cc'],
+   ['Acabado carbono','carbon','#101920'],
+   ['Acabado blanco','white','#f2f6fa']
+  ]){
+   await panel.getByRole('button',{name}).click();
+   assert.equal(await panel.locator('.apexStudioFinish[aria-pressed="true"]').count(),1,
+    'Acabado seleccionado con botón accesible');
+   assert.equal(await page.locator('#apexStudioColor-secondary').inputValue(),secondary);
+   assert.ok((await page.locator('#apexProtoTeamImage').getAttribute('src')).includes(encodeURIComponent(secondary)),
+    'El acabado cambia la librea cenital '+finish);
+  }
+  await page.locator('#apexStudioColor-secondary').fill('#172f46');
+  await panel.locator('#apexStudioSaveButton').click();
+  assert.equal(await page.locator('#apexStudioSave').innerText(),'GUARDADO ✓');
   await page.locator('#apexProtoTeam').selectOption(options[1]);
   await page.locator('#apexProtoTeam').selectOption(options[0]);
   await page.waitForFunction(()=>document.getElementById('carColor').value.toLowerCase()==='#34acde');
@@ -100,6 +130,10 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
   await page.reload({waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>window.ApexVehicleStudio9A && document.getElementById('apexStudioColor-primary'),null,{timeout:90000});
   await page.locator('#apex9aRace').click();
+  await page.waitForFunction(()=>{
+   const team=document.getElementById('teamSelect'),input=document.getElementById('apexStudioColor-primary');
+   return team?.value&&input?.value.toLowerCase()==='#34acde';
+  },null,{timeout:30000});
   assert.equal(await page.locator('#apexStudioColor-primary').inputValue(),'#34acde',
    'El color personalizado persiste tras recarga');
   await page.locator('#apexStudioReset').click();
