@@ -53,7 +53,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
    });
    assert.equal(state.previewMode,'native-blueprint','No utilizar fotos estáticas del prototipo');
    assert.equal(state.renderedTeam,state.key,'Imagen basada en la clave deportiva real');
-   assert.equal(state.renderedModel,state.native.model,'Modelo 3D y vista del menú coinciden');
+   assert.equal(state.renderedModel,state.native.model,'Se conserva el identificador de modelo del catálogo');
    assert.equal(state.renderedChassis,state.native.chassis,'Chasis real del equipo');
    assert.ok(state.source.startsWith('data:image/svg+xml;charset=utf-8,'),'Vista SVG derivada de blueprint real');
    assert.equal(await page.evaluate(svg=>{
@@ -80,6 +80,61 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
    assert.ok(await page.locator('#apexProtoTeamImage').evaluate(img=>img.complete&&img.naturalWidth>0),
     'Asset del coche cargado: '+value);
   }
+  // Remove colour, team lettering and blueprint-size differences: a new name
+  // or a recolour of one common SVG must not pass the team-design regression.
+  const neutral=await page.evaluate(async keys=>{
+   const result=[];
+   for(const key of keys){
+    const original=window.ApexNativeTeamStudio9A.get(key).preview;
+    const source=window.ApexTeamCarPreview9A.markup({...original,
+     teamName:'',model:'',chassis:'',geometry:{},
+     livery:{primary:'#b0b0b0',secondary:'#242424',accent:'#eeeeee',
+      stripe:'#eeeeee',carbon:'#080808',wing:'#181818',trim:'#eeeeee'}});
+    const doc=new DOMParser().parseFromString(source,'image/svg+xml');
+    doc.querySelectorAll('text').forEach(el=>el.remove());
+    const path=selector=>doc.querySelector(selector)?.getAttribute('d');
+    const geometry={pod:path('.apex-car-sidepod path'),
+     inlet:path('.apex-car-inlet'),engine:path('.apex-car-engine-cover'),
+     nose:path('.apex-car-nose'),front:path('.apex-car-front-wing path')};
+    const canvas=document.createElement('canvas');canvas.width=500;canvas.height=235;
+    const ctx=canvas.getContext('2d');
+    const img=new Image();img.src='data:image/svg+xml;charset=utf-8,'+
+     encodeURIComponent(new XMLSerializer().serializeToString(doc));
+    await img.decode();ctx.drawImage(img,0,0,500,235);
+    const pixels=ctx.getImageData(0,0,500,235).data;
+    const gray=Array.from({length:500*235},(_,i)=>
+     Math.round((pixels[i*4]+pixels[i*4+1]+pixels[i*4+2])/3));
+    // Validate every neutral design, not only the last selected team.
+    const host=document.createElement('div');host.style.cssText='position:fixed;left:-2000px';
+    host.innerHTML=source;document.body.append(host);
+    const bounds=host.firstElementChild.getBBox();host.remove();
+    result.push({key,geometry,gray,bounds:{x:bounds.x,y:bounds.y,
+     right:bounds.x+bounds.width,bottom:bounds.y+bounds.height}});
+   }
+   return result;
+  },options);
+  for(const component of ['pod','inlet','engine','nose','front']){
+   assert.ok(neutral.every(row=>row.geometry[component]),'Componente presente: '+component);
+   assert.equal(new Set(neutral.map(row=>row.geometry[component])).size,11,
+    'Once geometrías diferentes con tamaños y paleta idénticos: '+component);
+  }
+  let minimumDifference=1;
+  for(let i=0;i<neutral.length;i++){
+   const bounds=neutral[i].bounds;
+   assert.ok(bounds.x>0&&bounds.y>0&&bounds.right<1000&&bounds.bottom<470,
+    'Diseño completo dentro del viewBox: '+neutral[i].key);
+   for(let j=i+1;j<neutral.length;j++){
+    let changed=0;
+    for(let k=0;k<neutral[i].gray.length;k++)
+     if(Math.abs(neutral[i].gray[k]-neutral[j].gray[k])>15)changed++;
+    const fraction=changed/neutral[i].gray.length;
+    minimumDifference=Math.min(minimumDifference,fraction);
+    assert.ok(fraction>.01,'Diferencia visual sin colores ni letras: '+
+     neutral[i].key+' / '+neutral[j].key+' = '+fraction);
+   }
+  }
+  console.log(JSON.stringify({test:'team-designs-neutral',teams:neutral.length,
+   pairs:55,minimumPixelDifference:minimumDifference,ok:true}));
   const drawing=await page.evaluate(()=>{
    const source=window.ApexTeamCarPreview9A.build(document.getElementById('teamSelect').value).svg;
    const host=document.createElement('div');host.style.cssText='position:fixed;left:-2000px;top:0';
