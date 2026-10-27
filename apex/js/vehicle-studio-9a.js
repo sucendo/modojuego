@@ -178,17 +178,18 @@ function paint(){
  }
  $('apexStudioReset').disabled=!colors[key];
  $('apexStudioSave').textContent=saveNotice|| (colors[key]?'COLORES PERSONALIZADOS':'COLORES DE ESCUDERÍA');
- saveNotice='';
  global.ApexTeamCarPreview9A?.setCar?.(key);
  if(car?.complete&&car.naturalWidth===0)hero.classList.add('apexStudioAssetMissing');
 }
 function refresh(){if(queued)return;queued=true;queueMicrotask(paint);}
 function change(role,value){
+ saveNotice='';
  const {key,team}=info();if(!team||!HEX.test(value))return;
  colors[key]={...current(key,team),[role]:hex(value),finish:'paint'};
  persist();applyNative(key);refresh();
 }
 function finish(kind){
+ saveNotice='';
  const {key,team}=info();if(!team)return;
  const presets={silver:'#b4c1cc',carbon:'#101920',white:'#f2f6fa'};
  if(!presets[kind])return;
@@ -196,6 +197,7 @@ function finish(kind){
  persist();applyNative(key);refresh();
 }
 function reset(){
+ saveNotice='';
  const {key,team}=info();if(!team)return;
  delete colors[key];persist();
  for(const [id,value] of [['carColor',team.color],['carAccent',team.accent]]){
