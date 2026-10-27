@@ -187,11 +187,12 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
    // Check each actual link's attachment points in screen coordinates, including
    // the mirrored axle. A complete component count alone can hide floating arms.
    const body=svg.querySelector('.apex-car-body');
+   const chassis=[body,svg.querySelector('.apex-car-gearbox')];
    const linksAttached=[...svg.querySelectorAll('.apex-car-suspension-arm')].every(el=>{
     const [ax,ay,bx,by]=el.dataset.anchors.split(' ').map(Number);
     const root=new DOMPoint(ax,ay).matrixTransform(el.getScreenCTM()).matrixTransform(body.getScreenCTM().inverse());
     const end=new DOMPoint(bx,by).matrixTransform(el.getScreenCTM());
-    return body.isPointInFill(root)&&mounts.some(mount=>{
+    return chassis.some(part=>part?.isPointInFill(root))&&mounts.some(mount=>{
      const b=mount.getBoundingClientRect();
      return end.x>=b.left&&end.x<=b.right&&end.y>=b.top&&end.y<=b.bottom;
     });
@@ -215,8 +216,17 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
      joins[index].isPointInFill(new DOMPoint(x,470-y+.5));
    });
    const wing={elements:elements.length,joins:joins.length,connected:wingJoined};
+   const rearTyre=svg.querySelector('.apex-car-tyre[data-axle="rear"]');
+   const rearAxle=new DOMPoint(0,0).matrixTransform(rearTyre.getCTM());
+   const shafts=[...svg.querySelectorAll('[data-link="halfshaft"]')];
+   const rearLayout={tailAheadOfAxle:body.getBBox().x>rearAxle.x,
+    gearboxAtAxle:svg.querySelector('.apex-car-gearbox')?.isPointInFill(new DOMPoint(rearAxle.x,235)),
+    shaftsTransverse:shafts.every(el=>{
+     const [ax,,bx]=el.dataset.anchors.split(' ').map(Number);return Math.abs(ax-bx)<1;
+    }),pylons:svg.querySelectorAll('.apex-car-rear-pylon').length,
+    beamWings:svg.querySelectorAll('.apex-car-beam-wing').length};
    const bounds=svg.getBBox();host.remove();
-   return {key,parts,mechanics,wing,bounds:{x:bounds.x,y:bounds.y,right:bounds.x+bounds.width,bottom:bounds.y+bounds.height}};
+   return {key,parts,mechanics,wing,rearLayout,bounds:{x:bounds.x,y:bounds.y,right:bounds.x+bounds.width,bottom:bounds.y+bounds.height}};
   }),options);
   for(const drawing of drawings){
    assert.equal(drawing.parts.length,4,'Cuatro neumáticos slick: '+drawing.key);
@@ -225,6 +235,8 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
     'Suspensión completa y cuatro bujes unidos a la cara interior de los neumáticos: '+drawing.key);
    assert.ok(drawing.wing.elements>=3&&drawing.wing.joins===drawing.wing.elements&&drawing.wing.connected,
     'Cada lámina tiene unión central con ambas mitades del alerón: '+JSON.stringify(drawing.wing)+' / '+drawing.key);
+   assert.deepEqual(drawing.rearLayout,{tailAheadOfAxle:true,gearboxAtAxle:true,shaftsTransverse:true,pylons:2,beamWings:1},
+    'Cola estrecha adelantada, transmisión en el eje y soportes traseros: '+drawing.key);
    assert.ok(drawing.bounds.x>0&&drawing.bounds.y>0&&drawing.bounds.right<1000&&drawing.bounds.bottom<470,
     'Toda la silueta dentro del viewBox '+JSON.stringify(drawing));
   }
@@ -271,7 +283,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
    const signature=source=>{
     const doc=new DOMParser().parseFromString(source,'image/svg+xml');
     if(doc.querySelector('parsererror'))throw new Error('SVG inválido');
-    return JSON.stringify(Array.from(doc.querySelectorAll('.apex-car-body,.apex-car-engine-cover,.apex-car-nose,.apex-car-inlet,.apex-car-sidepod>path:first-child,.apex-car-front-bridge,.apex-car-wing-join,.apex-car-front-wing,.apex-car-front-wing .apex-car-wing-element,.apex-car-rear-wing,.apex-car-cockpit,.apex-car-cockpit path,.apex-car-cockpit circle,.apex-car-inlet-depth path,.apex-car-pod-reflection,.apex-car-tyre,.apex-car-suspension-arm path,.apex-car-wheel-mount path,.apex-car-wheel-mount ellipse,.apex-car-wheel-mount circle,.apex-car-service-details path')).map(el=>({
+    return JSON.stringify(Array.from(doc.querySelectorAll('.apex-car-body,.apex-car-engine-cover,.apex-car-nose,.apex-car-inlet,.apex-car-sidepod>path:first-child,.apex-car-front-bridge,.apex-car-wing-join,.apex-car-front-wing,.apex-car-front-wing .apex-car-wing-element,.apex-car-rear-wing,.apex-car-cockpit,.apex-car-cockpit path,.apex-car-cockpit circle,.apex-car-inlet-depth path,.apex-car-pod-reflection,.apex-car-tyre,.apex-car-suspension-arm path,.apex-car-wheel-mount path,.apex-car-wheel-mount ellipse,.apex-car-wheel-mount circle,.apex-car-floor,.apex-car-rear-assembly path,.apex-car-service-details path')).map(el=>({
      tag:el.tagName,shape:el.getAttribute('d'),transform:el.getAttribute('transform'),
      size:['cx','cy','rx','ry','r','x','y','width','height'].map(name=>el.getAttribute(name)),
      child:el.querySelector('path,rect')?.getAttribute('d')||el.querySelector('rect')?.outerHTML

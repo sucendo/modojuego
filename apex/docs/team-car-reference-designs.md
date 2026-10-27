@@ -103,3 +103,11 @@ McRaven has four separately drawn front-wing profiles with changing chord, compo
 Each wing element now has a central joining section derived from its own upper-half root coordinates, using the same team-specific wing transform. It overlaps the mirrored halves by one SVG unit to avoid a visible antialiasing crack. The nose is drawn above the joints. Original materials and custom-paint masks follow the corresponding blade. This closes the formerly open centre without replacing a team's wing contours.
 
 Browser checks require one joining section per element and sample fill membership at the upper attachment, centreline and mirrored lower attachment on all eleven native models. The joints are also included in all 121 paint/geometry invariants.
+
+## Rear axle, tail and diffuser integration
+
+The supplied crop highlights the open mechanical space between the rear wing and the narrowing painted tail. The painted shell now ends just ahead of the rear axle, with a narrower team-dependent root; the engine spine tapers into it. A dark gearbox housing occupies the axle centre and carries two near-transverse halfshafts. Rear wishbones and pushrods connect to the housing or painted chassis rather than converging into a long painted block.
+
+A low carbon wing, paired rear-wing pylons and a restrained central outlet complete that space. The floor recedes around the suspension, with only the upper rear ledges and small diffuser-edge details visible. The underside reference informs those connections; the wooden plank and hidden underside tunnels are not shown through the top-view body. This does not add an underside camera or change the racing mesh.
+
+Attachment checks now accept the visible gearbox as a chassis attachment. Browser regressions verify the painted tail sits ahead of the rear axle, the housing spans the axle centre, halfshafts run transversely, pylons/low wing are present, and the floor/rear assembly remain identical across all 121 paint choices.
