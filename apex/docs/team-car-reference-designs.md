@@ -106,8 +106,25 @@ Browser checks require one joining section per element and sample fill membershi
 
 ## Rear axle, tail and diffuser integration
 
-The supplied crop highlights the open mechanical space between the rear wing and the narrowing painted tail. The painted shell now ends just ahead of the rear axle, with a narrower team-dependent root; the engine spine tapers into it. A dark gearbox housing occupies the axle centre and carries two near-transverse halfshafts. Rear wishbones and pushrods connect to the housing or painted chassis rather than converging into a long painted block.
+The supplied crop highlights the open mechanical space between the rear wing and the narrowing painted tail. The painted shell ends close to the rear axle, with a team-dependent root; the engine spine tapers into it. A dark gearbox housing occupies the axle centre and carries two near-transverse halfshafts. Rear wishbones and pushrods connect to the housing or painted chassis rather than converging into a long painted block.
 
 A low carbon wing, paired rear-wing pylons and a restrained central outlet complete that space. The floor recedes around the suspension, with only the upper rear ledges and small diffuser-edge details visible. The underside reference informs those connections; the wooden plank and hidden underside tunnels are not shown through the top-view body. This does not add an underside camera or change the racing mesh.
 
-Attachment checks now accept the visible gearbox as a chassis attachment. Browser regressions verify the painted tail sits ahead of the rear axle, the housing spans the axle centre, halfshafts run transversely, pylons/low wing are present, and the floor/rear assembly remain identical across all 121 paint choices.
+Attachment checks now accept the visible gearbox as a chassis attachment. Browser regressions verify the painted tail sits close to the rear axle, the housing spans the axle centre, halfshafts run transversely, pylons/low wing are present, and the floor/rear assembly remain identical across all 121 paint choices.
+
+## Proportion correction against the supplied overhead image
+
+The earlier rear revision over-narrowed the painted root, and earlier tyre/front-wing work left elongated tyres and a nose that ended behind the wing centre. This revision corrects the common tyre footprints, narrower rear track and nose reach while retaining team nose-width/length differences. Tail roots sit near the rear axle with fuller widths, rather than being required to start strictly ahead of it. The low rear wing moves towards that axle and the gearbox/outlet occupy less of the wing-to-tail gap.
+
+McRaven is calibrated specifically against the supplied `image(20261027-150309).png`, using approximate pixel landmarks rather than engineering dimensions: rear/front axle centres at x≈188/870 (wheelbase≈682 px), nose tip x≈1099, rear-wing trailing edge x≈113, tyre lengths≈145/139 px and painted rear-root width≈66 px. Ratios are normalised by wheelbase so image size does not determine the result. Its rear wing receives a corrected chord/position, the cockpit opening becomes shorter and moves forward, and the airbox follows its rear edge. The accent patch moves towards the tip while the number remains behind it.
+
+| Landmark ratio | Reference, approximately | McRaven SVG, unscaled blueprint |
+| --- | --- | --- |
+| Nose beyond front axle / wheelbase | 0.336 | 0.337 |
+| Rear track / wheelbase | 0.43 | 0.426 |
+| Rear tyre length / wheelbase | 0.213 | 0.216 |
+| Front tyre length / wheelbase | 0.204 | 0.206 |
+| Painted tail-root width / wheelbase | 0.097 | 0.092 |
+| Rear-wing trailing edge to rear axle / wheelbase | 0.110 | 0.110 |
+
+Browser checks use intervals around these relationships and verify the nose lies ahead of the front-wing centre on every team. This is a visual proportion correction to the showroom, not a claim of an exact replica.
