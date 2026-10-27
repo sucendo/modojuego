@@ -228,12 +228,13 @@ function markup(profile){
  '<pattern id="weave" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><path d="M0 0H3V2H0ZM3 2H5V5H3Z" fill="#c2ced5" fill-opacity=".055"/></pattern>'+
  '</defs>';
  // Restrained carbon floor, stepped edge and small rear diffuser vanes.
- const floorShape='M160 219L283 207L299 118Q445 119 570 111L653 98L665 145L659 196L673 209L807 223V247L673 261L659 274L665 325L653 372L570 359Q445 351 299 352L283 263L160 251Z';
- const floor=P(floorShape,'url(#carbon)','stroke="#080d11" stroke-width="3"')+
+ const floorShape='M160 220L216 211L257 195L287 184L299 118Q445 119 570 111L653 98L665 145L659 196L673 209L807 223V247L673 261L659 274L665 325L653 372L570 359Q445 351 299 352L287 286L257 275L216 259L160 250Z';
+ const floor=P(floorShape,'url(#carbon)','class="apex-car-floor" stroke="#080d11" stroke-width="3"')+
   P(floorShape,'url(#weave)')+
   M(P('M301 122Q479 124 650 104L654 115Q477 139 305 134Z','#11191e','stroke="#7c8a92" stroke-opacity=".4" stroke-width="1"')+
    P('M314 138Q460 140 623 119','none','stroke="#bccad2" stroke-opacity=".16" stroke-width="1.4"')+
-   P('M272 217L291 167L304 148M259 219L278 178M245 223L258 193','none','stroke="#63717a" stroke-opacity=".5" stroke-width="2"'));
+   P('M258 199L282 190L294 157L297 167L285 197L261 205Z','#0a1218','stroke="#53636e" stroke-opacity=".35" stroke-width=".8"')+
+   P('M264 207L281 201L292 183M254 217L273 214L285 203','none','stroke="#63717a" stroke-opacity=".28" stroke-width="1.2"'));
  // Suspension joints are computed from the same tyre footprints: all four
  // inboard mounts stay attached for each native model's wheelScale.
  const frontInner=101+wheelDimensions.front.height*ws/2,rearInner=104+wheelDimensions.rear.height*ws/2;
@@ -255,10 +256,24 @@ function markup(profile){
    arm(708,227,776,frontInner+11,4.6,'pushrod')+
    arm(767,230,795,frontInner+9,3.2,'steering')+'</g>'+
   '<g class="apex-car-suspension" data-axle="rear">'+
-   arm(281,223,215,rearInner+8,15)+arm(350,220,229,rearInner+10,12)+
-   arm(306,226,224,rearInner+14,4,'pushrod')+
-   arm(269,233,221,rearInner+11,5,'halfshaft')+'</g>'
+   arm(229,219,215,rearInner+8,13)+arm(322,220,229,rearInner+10,12)+
+   arm(281,228,224,rearInner+14,4,'pushrod')+
+   arm(221,235,221,rearInner+11,4.5,'halfshaft')+'</g>'
  );
+ // The painted tail ends ahead of the rear axle. The exposed gearbox, near-
+ // transverse shafts and low wing form the open mechanical space behind it.
+ const rearWingExit=110+35*(1+d.rear[1]/100);
+ const beamTop=rearInner+12;
+ const gearboxShape='M155 224L184 220Q211 211 238 219L255 225V245L238 251Q211 259 184 250L155 246Z';
+ const rearAssembly='<g class="apex-car-rear-assembly">'+
+  P('M162 '+beamTop+'Q176 '+(beamTop-3)+' 190 '+(beamTop+2)+'L187 223L181 235L187 247L190 '+(468-beamTop)+'Q176 '+(473-beamTop)+' 162 '+(470-beamTop)+'L166 247L171 235L166 223Z','url(#wing)','class="apex-car-beam-wing" stroke="#080e13" stroke-width="1.2"')+
+  M(P('M164 '+(beamTop+4)+'Q177 '+beamTop+' 188 '+(beamTop+5),'none','stroke="#acbac4" stroke-opacity=".3" stroke-width=".9"'))+
+  M(P('M'+(rearWingExit-2)+' 216L199 224V230L'+(rearWingExit-2)+' 223Z','url(#suspension)','class="apex-car-rear-pylon" stroke="#080e13" stroke-width=".8"'))+
+  P(gearboxShape,'url(#carbon)','class="apex-car-gearbox" stroke="#23313a" stroke-width="1"')+
+  P(gearboxShape,'url(#weave)','opacity=".65"')+
+  P('M161 228L184 226Q211 219 237 224M161 242L184 244Q211 251 237 246','none','stroke="#8596a1" stroke-opacity=".27" stroke-width="1"')+
+  P('M151 231H191L200 235L191 239H151Z','#070e13','class="apex-car-tail-outlet" stroke="#43545f" stroke-width=".8"')+
+  P('M153 233H181V237H153Z','#010406')+'</g>';
  function wheelMount(cx,inner,rear=false){
   const duct=rear?18:25;
   return '<g class="apex-car-wheel-mount" data-axle="'+(rear?'rear':'front')+'">'+
@@ -278,7 +293,6 @@ function markup(profile){
   P('M87 '+(ry+8)+'V'+(462-ry)+'H117V'+(ry+8)+'Z','url(#panel)')+
   P('M122 '+(ry+8)+'V'+(462-ry),'none','stroke="'+p+'" stroke-width="'+(d.frontBlades?3:8)+'"')+
   P('M106 '+(ry+6)+'V'+(464-ry)+'M136 '+(ry+8)+'V'+(462-ry),'none','stroke="#a4b1b9" stroke-opacity=".45" stroke-width="1.3"')+
-  P('M143 220H191M143 250H191','none','stroke="#10191e" stroke-width="5"')+
   deco('M79 '+ry+'Q106 '+(ry-3)+' 145 '+(ry+4)+'L145 '+(466-ry)+'Q106 '+(473-ry)+' 79 '+(470-ry)+'Z')+
   P('M98 231H150L165 235L150 239H98Z','url(#suspension)','stroke="#0a1118" stroke-width="1"')+
   P('M104 233H147','none','stroke="#9cabb4" stroke-opacity=".5" stroke-width="1"')+
@@ -342,21 +356,26 @@ function markup(profile){
  const [tail,waist,shoulder,root]=d.cover;
  const half=d.nose[1]*1.12;
  const noseRoot=root+15;
+ const tailX=230+d.rear[1]*.35,tailHalf=Math.max(10,tail*.62);
+ const rearUpper=d.bodyUpper?.replace(/^M173 [\d.]+/,'M'+tailX+' '+(235-tailHalf));
+ const rearLower=d.bodyLower?.replace(/173 [\d.]+Z$/,tailX+' '+(235+tailHalf)+'Z');
+ const rearSpine=d.spine?.replace(/^M191 [\d.]+/,'M'+(tailX+6)+' '+(235-Math.min(9,tailHalf*.6)))
+  .replace(/191 [\d.]+Z$/,(tailX+6)+' '+(235+Math.min(9,tailHalf*.6))+'Z');
  // Absolute stations give independently shaped engine-cover shoulders, waist,
  // nose root and nose tip. Mirrored on the centreline, never scaled as one car.
- const bodyShape=(d.bodyUpper||'M173 '+(235-tail)+'L272 '+(235-tail-3)+
+ const bodyShape=(rearUpper||'M173 '+(235-tail)+'L272 '+(235-tail-3)+
   'C329 '+(235-waist+3)+' 362 '+(235-waist-8)+' 402 '+(235-shoulder-9)+
   'Q448 '+(220-shoulder)+' 487 '+(225-shoulder+5)+
   'L531 '+(229-shoulder)+'Q595 '+(235-root-22)+' 635 '+(235-noseRoot))+
   'Q677 '+(235-half-2)+' 744 '+(235-half*.76)+
   'L'+(tip-8)+' '+(235-nw)+'Q'+(tip+8)+' 235 '+(tip-8)+' '+(235+nw)+
   'L744 '+(235+half*.76)+'Q677 '+(235+half+2)+' 635 '+(235+noseRoot)+
-  (d.bodyLower||'Q595 '+(235+root+22)+' 531 '+(241+shoulder)+'L487 '+(245+shoulder-5)+
+  (rearLower||'Q595 '+(235+root+22)+' 531 '+(241+shoulder)+'L487 '+(245+shoulder-5)+
   'Q448 '+(250+shoulder)+' 402 '+(235+shoulder+9)+
   'C362 '+(235+waist+8)+' 329 '+(235+waist-3)+' 272 '+(235+tail+3)+'L173 '+(235+tail)+'Z');
  // The engine cover is a tapered spine, surrounded by painted shoulders.
  const spine=waist*.30,spineRoot=shoulder*.34;
- const engineShape=d.spine||'M183 '+(235-tail*.47)+'L293 '+(235-spine)+
+ const engineShape=rearSpine||'M183 '+(235-tail*.47)+'L293 '+(235-spine)+
   'Q375 '+(235-spineRoot)+' 442 '+(235-spineRoot)+
   'Q465 '+(235-spineRoot+1)+' 485 217L485 253Q465 '+(235+spineRoot-1)+' 442 '+(235+spineRoot)+
   'Q375 '+(235+spineRoot)+' 293 '+(235+spine)+'L183 '+(235+tail*.47)+'Z';
@@ -432,8 +451,8 @@ function markup(profile){
  const mirrors=M(P('M630 205L651 146','none','stroke="#0c141a" stroke-width="3.5"')+
   P('M638 136L661 133Q668 133 666 141L640 145Z','url(#carbon)','stroke="'+p+'" stroke-width="1.4"')+
   P('M641 137L661 135','none','stroke="#c1cfd8" stroke-opacity=".4" stroke-width=".8"'));
- return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 470" width="1000" height="470" role="img" data-apex-silhouette="f1-wing-joins-v16" data-apex-design-key="'+id+'" data-apex-paint-style="'+paintStyle+'" data-apex-design="'+safe(d.reference)+'" data-apex-team="'+id+'" data-apex-model="'+model+'" data-apex-chassis="'+chassis+'" aria-label="Vista cenital de monoplaza '+id+' '+model+'">'+defs+paintDefs+bodyMasks+
-  floor+rearWing+frontBridge+M(frontHalf)+suspension+mounts+sidepods+body+flowingAccent+serviceDetails+
+ return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 470" width="1000" height="470" role="img" data-apex-silhouette="f1-rear-assembly-v17" data-apex-design-key="'+id+'" data-apex-paint-style="'+paintStyle+'" data-apex-design="'+safe(d.reference)+'" data-apex-team="'+id+'" data-apex-model="'+model+'" data-apex-chassis="'+chassis+'" aria-label="Vista cenital de monoplaza '+id+' '+model+'">'+defs+paintDefs+bodyMasks+
+  floor+rearWing+rearAssembly+frontBridge+M(frontHalf)+suspension+mounts+sidepods+body+flowingAccent+serviceDetails+
   tire(221,104,true)+tire(221,366,true)+tire(785,101)+tire(785,369)+cockpit+mirrors+
   P('M464 214H485Q489 214 489 219V251Q489 256 485 256H464Z','url(#carbon)','stroke="#61717b" stroke-width="1.2"')+
   P('M469 223H480V247H469Z','#03080b','stroke="#303e48" stroke-width="1"')+
