@@ -167,19 +167,31 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
      (up?b.top<=tyre.bottom+3&&b.bottom>tyre.bottom:
       b.bottom>=tyre.top-3&&b.top<tyre.top);
    });
+   // Check each actual link's attachment points in screen coordinates, including
+   // the mirrored axle. A complete component count alone can hide floating arms.
+   const body=svg.querySelector('.apex-car-body');
+   const linksAttached=[...svg.querySelectorAll('.apex-car-suspension-arm')].every(el=>{
+    const [ax,ay,bx,by]=el.dataset.anchors.split(' ').map(Number);
+    const root=new DOMPoint(ax,ay).matrixTransform(el.getScreenCTM()).matrixTransform(body.getScreenCTM().inverse());
+    const end=new DOMPoint(bx,by).matrixTransform(el.getScreenCTM());
+    return body.isPointInFill(root)&&mounts.some(mount=>{
+     const b=mount.getBoundingClientRect();
+     return end.x>=b.left&&end.x<=b.right&&end.y>=b.top&&end.y<=b.bottom;
+    });
+   });
    const mechanics={mounts:mounts.length,suspensions:svg.querySelectorAll('.apex-car-suspension').length,
     ducts:svg.querySelectorAll('.apex-car-brake-duct').length,
     wishbones:svg.querySelectorAll('[data-link="wishbone"]').length,
     pushrods:svg.querySelectorAll('[data-link="pushrod"]').length,
     steering:svg.querySelectorAll('[data-link="steering"]').length,
-    halfshafts:svg.querySelectorAll('[data-link="halfshaft"]').length,connected};
+    halfshafts:svg.querySelectorAll('[data-link="halfshaft"]').length,connected,linksAttached};
    const bounds=svg.getBBox();host.remove();
    return {key,parts,mechanics,bounds:{x:bounds.x,y:bounds.y,right:bounds.x+bounds.width,bottom:bounds.y+bounds.height}};
   }),options);
   for(const drawing of drawings){
    assert.equal(drawing.parts.length,4,'Cuatro neumáticos slick: '+drawing.key);
    assert.ok(drawing.parts.every(b=>b.width>b.height*1.25),'Neumáticos alargados en el eje longitudinal');
-   assert.deepEqual(drawing.mechanics,{mounts:4,suspensions:4,ducts:4,wishbones:8,pushrods:4,steering:2,halfshafts:2,connected:true},
+   assert.deepEqual(drawing.mechanics,{mounts:4,suspensions:4,ducts:4,wishbones:8,pushrods:4,steering:2,halfshafts:2,connected:true,linksAttached:true},
     'Suspensión completa y cuatro bujes unidos a la cara interior de los neumáticos: '+drawing.key);
    assert.ok(drawing.bounds.x>0&&drawing.bounds.y>0&&drawing.bounds.right<1000&&drawing.bounds.bottom<470,
     'Toda la silueta dentro del viewBox '+JSON.stringify(drawing));

@@ -64,3 +64,9 @@ The central painted shoulders now surround a narrow tapered engine spine, with a
 Transparent local reflections and undercut shading model the pods without changing their team-specific outlines or the paint underneath. The inlet mouths have a dark cavity, a rim and clipped internal ribs. Mirrors now sit ahead of the openings so they no longer cover the recesses. Cadara's upper secondary panel retains its original asymmetry and receives the same material layers as the other surfaces.
 
 The cockpit has a shaded well, padded bucket and bolsters, restrained stitching, harnesses, a recessed steering display and switch caps. A short offset shadow lifts the carbon halo off the rim. The engine spine combines subtle weave and directional reflection. These are SVG paths, patterns and gradients; no raster assets, blur filters, animation or additional requests are introduced. Browser geometry invariants include the cockpit internals and inlet ribs across all paint styles.
+
+## Wheel and suspension proportions
+
+Slick tyres now use curved envelopes with rounded shoulders rather than nested rounded rectangles. Front footprints are longer and slimmer across the car than the rear footprints; upright contact positions derive from those same dimensions at each native wheel scale. The finish uses restrained mould seams, fine scuff marks and broad matte highlights.
+
+The front wishbones form a diagonal/near-transverse pair with a clearer V layout. Wider carbon arms carry separate fine pushrods and steering links; the rear retains its halfshafts. Dark upright fairings and inner wheel faces replace bright exposed hub blocks. All links expose their actual construction anchors for browser checks: every body attachment must lie inside the body path and each outer joint inside an upright, including mirrored parts on all 11 models. Paint invariants and wheel-edge contact checks remain in place.
