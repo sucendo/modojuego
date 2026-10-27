@@ -700,3 +700,60 @@
   grid-column:1;
  }
 }
+/* Body selection is independent from the sporting team and its palette. */
+#menu.apex9aPrototype .apexTeamStudio .apexStudioDesignPicker {
+ display:grid;grid-template-columns:minmax(120px,.8fr) minmax(0,1.8fr) auto;
+ align-items:center;gap:7px;flex:none;min-width:0;
+ margin:5px 9px 0;padding:7px;border:1px solid #34516a;
+ background:linear-gradient(120deg,#0b2030,#071522);
+ box-sizing:border-box;
+}
+#menu.apex9aPrototype .apexStudioDesignPicker>div {min-width:0}
+#menu.apex9aPrototype .apexStudioDesignPicker label {
+ display:block;font-size:10px;letter-spacing:.06em;font-weight:850;color:#e9f5ff;
+}
+#menu.apex9aPrototype .apexStudioDesignPicker small {
+ display:block;font-size:8px;color:#9ec4dd;margin-top:3px;line-height:1.25;
+}
+#menu.apex9aPrototype .apexStudioDesignPicker select {
+ min-width:0;width:100%;box-sizing:border-box;min-height:32px;
+ padding:5px 6px;border:1px solid #48657a;border-radius:3px;
+ font:600 10px system-ui,sans-serif;background:#071420;color:#ecf6ff;
+}
+#menu.apex9aPrototype .apexStudioDesignPicker button {
+ min-height:32px;padding:5px 7px;border:1px solid #48657a;border-radius:3px;
+ font:750 9px system-ui,sans-serif;background:#102a3e;color:#e1f2ff;
+}
+#menu.apex9aPrototype .apexStudioDesignPicker button:disabled {opacity:.42}
+#menu.apex9aPrototype .apexStudioDesignPicker :is(button,select):focus-visible {
+ outline:2px solid var(--apex-team-accent);outline-offset:2px;
+}
+#menu.apex9aPrototype .apexStudioLogoMark {
+ background:radial-gradient(ellipse at center,color-mix(in srgb,var(--apex-team-color) 13%,transparent),transparent 72%);
+}
+#menu.apex9aPrototype .apexStudioLogoMark svg,
+#menu.apex9aPrototype .apexStudioCardLogo svg {
+ shape-rendering:geometricPrecision;
+ filter:drop-shadow(0 2px 2px #0009);
+}
+#menu.apex9aPrototype .apexStudioLogoName strong {
+ font-style:italic;letter-spacing:.065em;
+}
+@media(max-width:620px) {
+ #menu.apex9aPrototype .apexTeamStudio .apexStudioDesignPicker {
+  grid-template-columns:minmax(0,1fr) auto;row-gap:6px;
+ }
+ #menu.apex9aPrototype .apexStudioDesignPicker>div {
+  grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:6px;
+ }
+ #menu.apex9aPrototype .apexStudioDesignPicker small {margin:0;font-size:8px}
+ #menu.apex9aPrototype .apexStudioDesignPicker select {font-size:11px;min-height:36px}
+ #menu.apex9aPrototype .apexStudioDesignPicker button {min-height:36px}
+}
+@media(min-width:921px) {
+ /* Fit the complete logo and six specification rows without clipping. */
+ #menu.apex9aPrototype .apexTeamStudio .apexStudioHero {
+  min-height:300px;flex-basis:300px;
+ }
+ #menu.apex9aPrototype .apexTeamStudio .apexStudioLayout {height:auto}
+}

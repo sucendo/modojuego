@@ -36,3 +36,11 @@ The user supplied overhead McLaren, Ferrari, Red Bull and proposed McRaven showr
 ## Regression check
 
 `tests/vehicle-studio-9a-browser.cjs` renders all 11 designs with an identical neutral palette and identical input dimensions, removes text, and compares all 55 image pairs. It also checks independently different pod, inlet, engine-cover, nose and front-wing path geometry, validates SVG parsing and bounds, and runs the existing selection, palette, finish, persistence and responsive-layout checks.
+
+## Saved design choice
+
+The studio's “Diseño del coche” selector can apply any of the 11 body/livery layouts to the selected team while preserving that team's sporting identity, logo, palette and chassis/model identifiers. It changes the menu image, not the racing mesh. “Original” restores only the body choice; “Restaurar” in the colour controls restores only the palette. “Guardar” saves both.
+
+Choices are saved independently per team under `apex26.vehicle-studio.design.v1`. The existing palette key is unchanged. Unknown team/design keys are ignored; old preferences therefore default to the team's own design. Browser checks cover all 11 choices on one team, preservation of colours/logos/team identity, independent choices on two teams, reload, and both restore actions.
+
+The SVG marks in the studio retain the catalogue's symbol identities (swoosh, star, shield, horns, bars, A, hash, ring, wave, leaf and crest) with original redrawn paths and negative space for small-card legibility. They do not replace in-race branding assets.
