@@ -46,7 +46,7 @@
 }
 #menu.apex9aPrototype .apexProfileFields input,
 #menu.apex9aPrototype .apexProfileFields select,
-#menu.apex9aPrototype #apexHelmetPattern{
+#menu.apex9aPrototype :is(#apexHelmetPattern,#apexHelmetVisorFinish){
  width:100%;max-width:100%;min-width:0;
  border:1px solid #5a8099;background:#071625;
  border-radius:3px;color:#f4f9fc;
@@ -101,7 +101,7 @@
  width:100%;height:35px;background:#07121d;cursor:pointer;
 }
 #menu.apex9aPrototype .apexProfilePatternLabel{margin:5px 15px}
-#menu.apex9aPrototype #apexHelmetPattern{display:block;width:calc(100% - 30px);margin:0 15px}
+#menu.apex9aPrototype :is(#apexHelmetPattern,#apexHelmetVisorFinish){display:block;width:calc(100% - 30px);margin:0 15px}
 #menu.apex9aPrototype #apexProfilePreviewHelp{display:block;padding:10px 15px 14px;color:#94b7c9;font-size:11px}
 #menu.apex9aPrototype .apexProfileActions{
  margin:14px 0 0;display:flex;gap:12px;justify-content:flex-end;align-items:center;
@@ -130,4 +130,27 @@
  #menu.apex9aPrototype .apexProfileColors{grid-template-columns:repeat(2,minmax(0,1fr))}
  #menu.apex9aPrototype .apexProfileActions button{flex:1}
  #menu.apex9aPrototype #apexProfileStatus{width:100%;margin:0}
+}
+
+/* Helmet studio: shared shell in the editor, avatar and exported SVG. */
+#menu.apex9aPrototype .apexProfileHelmetStage {
+ background:radial-gradient(ellipse at 45% 38%,#58657155,transparent 65%),
+  linear-gradient(145deg,#25313b,#101a23 75%);
+}
+#menu.apex9aPrototype #apexProfileHelmetImage svg {filter:none}
+#menu.apex9aPrototype #apexHelmetVisorFinish {
+ width:calc(100% - 30px);margin:0 15px;min-height:40px;
+ border:1px solid #5a8099;border-radius:3px;background:#071625;
+ padding:8px 12px;color:#f4f9fc;font:700 13px Arial,sans-serif;
+}
+#menu.apex9aPrototype .apexHelmetRestore {
+ display:flex;flex-wrap:wrap;gap:8px;padding:12px 15px 0;
+}
+#menu.apex9aPrototype .apexHelmetRestore button {
+ flex:1;min-height:40px;padding:8px;border:1px solid #58788e;
+ border-radius:3px;background:#112838;color:#d8eaf5;
+ font:700 10px Arial,sans-serif;cursor:pointer;
+}
+#menu.apex9aPrototype .apexProfileHelmet :is(button,select,input):focus-visible {
+ outline:2px solid #6ce2ff;outline-offset:2px;
 }
