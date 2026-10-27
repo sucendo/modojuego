@@ -46,6 +46,19 @@ assert.ok(fs.statSync(path.join(apex,'assets/music/apex-theme.mp3')).size>100000
   const state=await page.evaluate(()=>window.ApexMenuMusic9A.state());
   assert.equal(state.src,'assets/music/apex-theme.mp3');
   assert.ok(state.volume<=.4,'Volumen de menú prudente');
+
+  // Cambiar de pestaña NO pausa ni desactiva la preferencia musical.
+  const otherTab=await context.newPage();
+  await otherTab.goto('about:blank');
+  await otherTab.bringToFront();
+  await page.waitForTimeout(250);
+  assert.equal(await page.evaluate(()=>window.ApexMenuMusic9A.state().playing),true,
+   'Debe seguir sonando al pasar a otra pestaña');
+  await otherTab.close();
+  await page.bringToFront();
+  assert.equal(await page.evaluate(()=>window.ApexMenuMusic9A.get()),true,
+   'Cambiar de pestaña no debe modificar la preferencia');
+
   await page.locator('#apex9aRace').click();
   assert.equal(await page.evaluate(()=>window.ApexMenuMusic9A.state().playing),true,
    'Música continúa entre pantallas de menú');
@@ -57,7 +70,22 @@ assert.ok(fs.statSync(path.join(apex,'assets/music/apex-theme.mp3')).size>100000
   assert.equal(await page.evaluate(()=>window.ApexMenuMusic9A.get()),false,'Pausar desde Opciones');
   await page.locator('#apexProtoAudioText').click();
   await page.waitForFunction(()=>window.ApexMenuMusic9A.state().playing);
-  await page.evaluate(()=>document.getElementById('menu').classList.add('hidden'));
+  // La pantalla de carga real cubre el menú mientras APEX compila pista
+  // y prepara cabina. La música debe sobrevivir a todo ese intervalo.
+  const beforeLoading=await page.evaluate(()=>window.ApexMenuMusic9A.state().currentTime);
+  await page.evaluate(()=>{
+    document.getElementById('menu').classList.add('hidden');
+    document.getElementById('apexRaceLoading').classList.remove('hidden','fadeOut');
+  });
+  await page.waitForTimeout(450);
+  assert.equal(await page.evaluate(()=>window.ApexMenuMusic9A.state().playing),true,
+   'No debe pausarse durante la carga del circuito');
+  assert.equal(await page.evaluate(()=>window.ApexMenuMusic9A.get()),true,
+   'La preferencia debe permanecer activada durante la carga');
+  assert.ok((await page.evaluate(()=>window.ApexMenuMusic9A.state().currentTime))>=beforeLoading,
+   'Durante la carga no debe reiniciarse la pista');
+  // Carga terminada: desaparece el overlay, comienza el simulador.
+  await page.evaluate(()=>document.getElementById('apexRaceLoading').classList.add('hidden'));
   await page.waitForFunction(()=>!window.ApexMenuMusic9A.state().playing,null,{timeout:10000});
   await page.evaluate(()=>document.getElementById('menu').classList.remove('hidden'));
   // Algunos navegadores móviles requieren un gesto para volver a reproducir

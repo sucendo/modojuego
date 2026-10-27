@@ -9,9 +9,13 @@ const FILE='assets/music/apex-theme.mp3';
 const VOLUME=0.33;
 const $=id=>document.getElementById(id);
 let enabled=false,unlocked=false,audio=null,starting=false;
-function menuVisible(){
- const el=$('menu');
- return !!el&&!el.classList.contains('hidden')&&!document.hidden;
+// El navegador puede seguir reproduciendo HTMLAudio en una pestaña inactiva.
+// APEX oculta #menu mientras muestra #apexRaceLoading: ese intervalo sigue
+// siendo parte de la preparación, NO de la conducción.
+function musicAllowed(){
+ const menu=$('menu'),loading=$('apexRaceLoading');
+ return !!(menu&&!menu.classList.contains('hidden'))||
+   !!(loading&&!loading.classList.contains('hidden'));
 }
 function updateButton(){
  const b=$('apex9aAudio');
@@ -48,7 +52,7 @@ function save(){
 }
 function stop(){if(audio)audio.pause();starting=false;}
 function start(){
- if(!enabled||!unlocked||!menuVisible()||starting)return;
+ if(!enabled||!unlocked||!musicAllowed()||starting)return;
  const a=getAudio();
  if(!a.paused)return;
  starting=true;
@@ -70,14 +74,18 @@ function toggle(){
  if(enabled)start();else stop();
  return enabled;
 }
-function refresh(){if(!menuVisible())stop();else if(enabled)start();}
+function refresh(){if(!musicAllowed())stop();else if(enabled)start();}
 function unlock(){unlocked=true;refresh();}
 function init(){
  try{enabled=global.localStorage.getItem(KEY)==='true'}catch(_){}
  updateButton();
  const menu=$('menu');
- if(menu)new MutationObserver(refresh).observe(menu,{attributes:true,attributeFilter:['class','hidden']});
- document.addEventListener('visibilitychange',refresh);
+ const watcher=new MutationObserver(refresh);
+ if(menu)watcher.observe(menu,{attributes:true,attributeFilter:['class','hidden']});
+ const loading=$('apexRaceLoading');
+ if(loading)watcher.observe(loading,{attributes:true,attributeFilter:['class','hidden']});
+ // No pausar en visibilitychange: el usuario quiere música en otras pestañas.
+ // pagehide sí libera el audio al abandonar realmente la página.
  // Respeta el bloqueo de autoplay: después de recargar, esperar al primer gesto.
  // Los navegadores móviles pueden bloquear una reanudación automática tras
  // volver de carrera. Cualquier nuevo gesto ofrece otra oportunidad segura.
@@ -89,6 +97,7 @@ global.ApexMenuMusic9A=Object.freeze({
  toggle,get:()=>enabled,stop,refresh,
  state:()=>({enabled,playing:!!audio&&!audio.paused,src:FILE,unlocked,volume:VOLUME,
   duration:audio&&Number.isFinite(audio.duration)?audio.duration:null,
+  currentTime:audio?.currentTime||0,
   readyState:audio?.readyState||0})
 });
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});
