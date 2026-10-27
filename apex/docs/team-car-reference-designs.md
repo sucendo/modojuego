@@ -58,3 +58,9 @@ Browser checks verify all four mounts touch the inner tyre edges on every native
 ## Sculpted body refinement
 
 The central painted shoulders now surround a narrow tapered engine spine, with a larger rounded cockpit opening and halo. Nose stations taper progressively from the cockpit to a rounded narrow tip. McRaven's pod inset and curved accent follow the supplied overhead reference more closely. Wing blades use separate curved leading/trailing edges with open gaps and restrained edge highlights. Carbon wishbones have wider roots; paint shadows derive from the primary hue instead of turning every lower body edge into secondary paint. All geometry remains selected by team and invariant across paint patterns.
+
+## Local surface lighting and cockpit depth
+
+Transparent local reflections and undercut shading model the pods without changing their team-specific outlines or the paint underneath. The inlet mouths have a dark cavity, a rim and clipped internal ribs. Mirrors now sit ahead of the openings so they no longer cover the recesses. Cadara's upper secondary panel retains its original asymmetry and receives the same material layers as the other surfaces.
+
+The cockpit has a shaded well, padded bucket and bolsters, restrained stitching, harnesses, a recessed steering display and switch caps. A short offset shadow lifts the carbon halo off the rim. The engine spine combines subtle weave and directional reflection. These are SVG paths, patterns and gradients; no raster assets, blur filters, animation or additional requests are introduced. Browser geometry invariants include the cockpit internals and inlet ribs across all paint styles.
