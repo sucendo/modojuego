@@ -144,21 +144,46 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
   }
   console.log(JSON.stringify({test:'team-designs-neutral',teams:neutral.length,
    pairs:55,minimumPixelDifference:minimumDifference,ok:true}));
-  const drawing=await page.evaluate(()=>{
-   const source=window.ApexTeamCarPreview9A.build(document.getElementById('teamSelect').value).svg;
+  const drawings=await page.evaluate(keys=>keys.map(key=>{
+   const source=window.ApexTeamCarPreview9A.build(key).svg;
    const host=document.createElement('div');host.style.cssText='position:fixed;left:-2000px;top:0';
    host.innerHTML=source;document.body.append(host);
    const svg=host.firstElementChild;
-   const parts=[...svg.querySelectorAll('.apex-car-tyre')].map(el=>{
+   const tyres=[...svg.querySelectorAll('.apex-car-tyre')];
+   const parts=tyres.map(el=>{
     const b=el.getBBox();return {x:b.x,y:b.y,width:b.width,height:b.height};
    });
+   const tyreRects=tyres.map(el=>el.getBoundingClientRect());
+   const mounts=[...svg.querySelectorAll('.apex-car-wheel-mount')];
+   const centre=rect=>({x:(rect.left+rect.right)/2,y:(rect.top+rect.bottom)/2});
+   const connected=mounts.every(el=>{
+    const b=el.getBoundingClientRect(),c=centre(b);
+    const tyre=tyreRects.slice().sort((a,b)=>{
+     const ca=centre(a),cb=centre(b);
+     return Math.hypot(c.x-ca.x,c.y-ca.y)-Math.hypot(c.x-cb.x,c.y-cb.y);
+    })[0];
+    const t=centre(tyre),up=t.y<svg.getBoundingClientRect().top+svg.getBoundingClientRect().height/2;
+    return b.left>=tyre.left&&b.right<=tyre.right&&
+     (up?b.top<=tyre.bottom+3&&b.bottom>tyre.bottom:
+      b.bottom>=tyre.top-3&&b.top<tyre.top);
+   });
+   const mechanics={mounts:mounts.length,suspensions:svg.querySelectorAll('.apex-car-suspension').length,
+    ducts:svg.querySelectorAll('.apex-car-brake-duct').length,
+    wishbones:svg.querySelectorAll('[data-link="wishbone"]').length,
+    pushrods:svg.querySelectorAll('[data-link="pushrod"]').length,
+    steering:svg.querySelectorAll('[data-link="steering"]').length,
+    halfshafts:svg.querySelectorAll('[data-link="halfshaft"]').length,connected};
    const bounds=svg.getBBox();host.remove();
-   return {parts,bounds:{x:bounds.x,y:bounds.y,right:bounds.x+bounds.width,bottom:bounds.y+bounds.height}};
-  });
-  assert.equal(drawing.parts.length,4,'Cuatro neumáticos slick');
-  assert.ok(drawing.parts.every(b=>b.width>b.height*1.25),'Neumáticos alargados en el eje longitudinal');
-  assert.ok(drawing.bounds.x>0&&drawing.bounds.y>0&&drawing.bounds.right<1000&&drawing.bounds.bottom<470,
-   'Toda la silueta dentro del viewBox '+JSON.stringify(drawing));
+   return {key,parts,mechanics,bounds:{x:bounds.x,y:bounds.y,right:bounds.x+bounds.width,bottom:bounds.y+bounds.height}};
+  }),options);
+  for(const drawing of drawings){
+   assert.equal(drawing.parts.length,4,'Cuatro neumáticos slick: '+drawing.key);
+   assert.ok(drawing.parts.every(b=>b.width>b.height*1.25),'Neumáticos alargados en el eje longitudinal');
+   assert.deepEqual(drawing.mechanics,{mounts:4,suspensions:4,ducts:4,wishbones:8,pushrods:4,steering:2,halfshafts:2,connected:true},
+    'Suspensión completa y cuatro bujes unidos a la cara interior de los neumáticos: '+drawing.key);
+   assert.ok(drawing.bounds.x>0&&drawing.bounds.y>0&&drawing.bounds.right<1000&&drawing.bounds.bottom<470,
+    'Toda la silueta dentro del viewBox '+JSON.stringify(drawing));
+  }
   assert.equal(images.size,options.length,'Todas las imágenes del catálogo comprobadas');
   assert.equal(await panel.locator('.apexStudioTeamCard').count(),options.length,
    'Tarjeta y logotipo propio para cada una de las 11 escuderías');
@@ -202,8 +227,9 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
    const signature=source=>{
     const doc=new DOMParser().parseFromString(source,'image/svg+xml');
     if(doc.querySelector('parsererror'))throw new Error('SVG inválido');
-    return JSON.stringify(Array.from(doc.querySelectorAll('.apex-car-body,.apex-car-engine-cover,.apex-car-nose,.apex-car-inlet,.apex-car-sidepod>path:first-child,.apex-car-front-wing,.apex-car-rear-wing,.apex-car-cockpit,.apex-car-tyre')).map(el=>({
+    return JSON.stringify(Array.from(doc.querySelectorAll('.apex-car-body,.apex-car-engine-cover,.apex-car-nose,.apex-car-inlet,.apex-car-sidepod>path:first-child,.apex-car-front-wing,.apex-car-rear-wing,.apex-car-cockpit,.apex-car-tyre,.apex-car-suspension-arm path,.apex-car-wheel-mount path,.apex-car-wheel-mount ellipse,.apex-car-wheel-mount circle,.apex-car-service-details path')).map(el=>({
      tag:el.tagName,shape:el.getAttribute('d'),transform:el.getAttribute('transform'),
+     size:['cx','cy','rx','ry','r','x','y','width','height'].map(name=>el.getAttribute(name)),
      child:el.querySelector('path,rect')?.getAttribute('d')||el.querySelector('rect')?.outerHTML
     })));
    };
