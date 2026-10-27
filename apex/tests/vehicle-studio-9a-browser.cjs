@@ -139,6 +139,29 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
   await page.locator('#apexStudioReset').click();
   assert.notEqual(await page.locator('#apexStudioColor-primary').inputValue(),'#34acde',
    'Restaurar recupera la pintura original de la escudería');
+  // Layout contract: on desktop Circuito and Vehículo share one 50/50 row;
+  // on a narrow/mobile viewport they stack rather than clipping the car.
+  const split=await page.evaluate(()=>{
+    const c=document.querySelector('.apexProtoCircuitPanel')?.getBoundingClientRect();
+    const v=document.querySelector('.apexProtoVehiclePanel')?.getBoundingClientRect();
+    const d=document.querySelector('.apexProtoDetails')?.getBoundingClientRect();
+    return {circuit:c&&{x:c.x,y:c.y,width:c.width,height:c.height,bottom:c.bottom},
+     vehicle:v&&{x:v.x,y:v.y,width:v.width,height:v.height,bottom:v.bottom},
+     details:d&&{width:d.width},viewport:innerWidth};
+  });
+  assert.ok(split.circuit&&split.vehicle&&split.details,'Ambos paneles permanecen visibles');
+  if(!mobile){
+    assert.ok(Math.abs(split.circuit.y-split.vehicle.y)<4,
+     'Circuito y Vehículo en una misma fila en escritorio '+JSON.stringify(split));
+    const fraction=split.vehicle.width/split.details.width;
+    assert.ok(fraction>.44&&fraction<.52,
+     'El vehículo debe ocupar aproximadamente la mitad de la pantalla '+JSON.stringify(split));
+    assert.ok(split.circuit.height>=500&&split.vehicle.height>=500,
+     'Ambos paneles deben tener espacio suficiente para el contenido');
+  }else{
+    assert.ok(split.vehicle.y>=split.circuit.bottom-3,
+     'En pantallas estrechas deben apilarse sin montarse '+JSON.stringify(split));
+  }
   const geometry=await panel.evaluate(el=>{
    const rect=el.getBoundingClientRect();
    const hero=el.querySelector('.apexStudioHero').getBoundingClientRect();
@@ -161,7 +184,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
   await page.locator('[data-apex-mode="practice"]').click();
   assert.equal(await panel.isVisible(),true,'La ficha existe en Entrenamiento');
   assert.deepEqual(errors.filter(e=>/SyntaxError|Cannot read properties|Unexpected end/.test(e)),[]);
-  console.log(JSON.stringify({test:'apex-vehicle-team-studio',mobile,teams:options.length,geometry,ok:true}));
+  console.log(JSON.stringify({test:'apex-vehicle-team-studio',mobile,teams:options.length,geometry,split,ok:true}));
   await context.close();
  }finally{await browser.close();}
 })().catch(err=>{console.error(err);process.exitCode=1;});
