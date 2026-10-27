@@ -34,7 +34,7 @@ function markup(profile){
  const M=upper=>'<g>'+upper+'</g><g transform="translate(0 470) scale(1 -1)">'+upper+'</g>';
  const tire=(x,y)=>{
   const w=wheelW,h=wheelH;
-  return '<g>'+
+  return '<g class="apex-car-tyre">'+
    '<rect x="'+f(x-3)+'" y="'+f(y-3)+'" width="'+f(w+6)+'" height="'+f(h+6)+'" rx="22" fill="#010306"/>'+
    '<rect x="'+f(x)+'" y="'+f(y)+'" width="'+f(w)+'" height="'+f(h)+'" rx="19" fill="url(#tyre)" stroke="#242b31" stroke-width="3"/>'+
    '<rect x="'+f(x+7)+'" y="'+f(y+8)+'" width="'+f(w-14)+'" height="'+f(h-16)+'" rx="15" fill="none" stroke="#838c95" opacity=".17" stroke-width="2"/>'+
@@ -51,7 +51,7 @@ function markup(profile){
    ' L561 184 Q617 194 664 217 L648 230 L483 221 Q369 204 280 211Z';
  const upper=M(
   P('M264 190 Q345 144 456 145 L576 168 Q641 180 697 217 L670 232 L454 225 L299 225Z','url(#floorGlow)','stroke="#060b10" stroke-width="3"')+
-  P(sideP,'url(#podPaint)','stroke="#060a10" stroke-width="4"')+
+  P(sideP,'url(#podPaint)','class="apex-car-sidepod" stroke="#060a10" stroke-width="4"')+
   P('M297 191 Q368 171 464 176 L549 190 Q589 198 618 219 L521 214 Q405 199 297 209Z','url(#darkCarbon)','opacity=".92"')+
   P('M327 177 Q390 157 474 174 L559 200 Q492 186 417 183 Q365 181 327 192Z','url(#reflection)','opacity=".68"')+
   P('M322 195 Q406 176 532 206 L594 221','none','stroke="'+stripe+'" stroke-width="7" stroke-linecap="round" opacity=".93"')+
@@ -99,7 +99,7 @@ function markup(profile){
  );
  const cockpitTop=207-(cockpit-1)*14;
  const cockpitBottom=470-cockpitTop;
- const cockpitShape=
+ const cockpitShape='<g class="apex-car-cockpit">'+
    P('M437 '+f(cockpitTop)+'Q470 '+f(cockpitTop-30)+' 506 '+f(cockpitTop-23)+
     'Q561 '+f(cockpitTop-18)+' 587 235 Q561 '+f(cockpitBottom+18)+
     ' 506 '+f(cockpitBottom+23)+' Q470 '+f(cockpitBottom+30)+' 437 '+f(cockpitBottom)+'Z',
@@ -117,14 +117,14 @@ function markup(profile){
    P('M463 226L479 225L479 245L463 246Z','#17202b','stroke="#596876" stroke-width="1.4"')+
    P('M468 230H474M468 234H475M468 238H474','none','stroke="'+a+'" stroke-width="1.4"')+
    M(P('M449 210 L421 177 L396 174','none','stroke="#121b22" stroke-width="6"')+
-     P('M394 166h28v10h-28Z','#050b11','stroke="'+p+'" stroke-width="2"'));
+     P('M394 166h28v10h-28Z','#050b11','stroke="'+p+'" stroke-width="2"'))+'</g>';
  const decor={chevron:'M329 202 L399 236 L329 268',center:'M226 235H690',
    split:'M255 231H685M255 239H685',double:'M302 216L695 225M302 254L695 245',
    bars:'M344 181L360 278M378 177L395 288',flank:'M291 191Q409 163 556 205M291 279Q409 307 556 265'};
  const dec=P(decor[l.pattern]||'M315 193Q477 159 614 219M315 277Q477 311 614 251','none',
     'stroke="'+stripe+'" stroke-width="5" stroke-opacity=".83"');
  const svg=['<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 470" width="1000" height="470"',
-  ' role="img" data-apex-team="'+id+'" data-apex-model="'+model+'" data-apex-chassis="'+chassis+'"',
+  ' role="img" data-apex-silhouette="f1-2026-v3" data-apex-team="'+id+'" data-apex-model="'+model+'" data-apex-chassis="'+chassis+'"',
   ' aria-label="Monoplaza de Fórmula 1 2026, '+id+' '+model+'">',
   '<defs>',
   '<linearGradient id="tyre" x1="0" y1="0" x2="1" y2=".24"><stop stop-color="#050709"/><stop offset=".2" stop-color="#303337"/><stop offset=".47" stop-color="#171b1f"/><stop offset=".76" stop-color="#252a2f"/><stop offset="1" stop-color="#030506"/></linearGradient>',
@@ -140,12 +140,12 @@ function markup(profile){
   '</defs>',
   // The actual outline is a sequence of aerodynamic surfaces, NOT a rectangle.
   '<ellipse cx="510" cy="253" rx="440" ry="124" fill="#000" opacity=".42" filter="url(#shadow)"/>',
-  rearWing,
+  '<g class="apex-car-rear-wing">'+rearWing+'</g>',
   P('M150 221 Q232 204 286 168 Q328 146 432 151 L570 166 Q656 188 724 213 L819 225 L819 245 L724 257 Q656 282 570 304 L432 319 Q328 324 286 302 Q232 266 150 249Z',
     'url(#floorGlow)','stroke="#03090e" stroke-width="7"'),
   P('M287 172 Q355 141 428 152 L575 169 Q651 189 708 219 L646 220 L541 191 L398 171Z','url(#weave)','opacity=".62"'),
   M(P('M281 180 Q390 142 539 172 L663 214 L690 231 L572 210 Q394 185 281 204Z','url(#carbon)','opacity=".9"')),
-  '<g>'+wingTop+'</g><g transform="translate(0 470) scale(1 -1)">'+wingTop+'</g>',
+  '<g class="apex-car-front-wing">'+wingTop+'</g><g class="apex-car-front-wing" transform="translate(0 470) scale(1 -1)">'+wingTop+'</g>',
   suspRear,suspFront,upper,
   // Head-heavy conventional car shape: tapering nose, pronounced rear engine.
   mainBody,dec,
