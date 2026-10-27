@@ -46,3 +46,20 @@ Se valida escritorio y móvil horizontal/vertical, sin desbordamiento lateral.
 Esta mejora se aplica al editor de Perfil y sus imágenes SVG; no sustituye
 el casco del piloto en el render de carrera. El resultado es una ilustración
 vectorial con volumen, no una reproducción fotográfica de la referencia.
+
+## Afinado de forma y materiales (v3)
+
+Se rebaja la cúpula de la calota y se perfila el saliente de la mentonera.
+La zona de ventilación frontal tiene un rebaje sombreado, labios de entrada
+y una rejilla inferior discreta; se recolocan las entradas superiores dentro
+del nuevo contorno. El cuello incorpora un borde de goma separado.
+
+La visera añade curvatura óptica con sombreado lateral y reflejos de estudio
+más contenidos, junta más fina y fijaciones de las láminas protectoras.
+El deflector trasero pasa a un acabado translúcido. Los reflejos y contornos
+siguen siendo capas transparentes sobre las pinturas, sin filtros ni imágenes.
+
+No se cambia el formato del perfil, las once decoraciones, los cuatro acabados
+ni los controles. El renderer compartido actualiza también avatar, icono y
+exportación. Se repite la validación de los 44 pares, guardado/recuperación y
+escritorio/móvil sobre esta nueva geometría.
