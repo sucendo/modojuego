@@ -8,10 +8,10 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
  (process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?path.join(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES,'playwright'):'playwright'));
 (async()=>{
  const mobile=process.env.APEX_AUDIT_DEVICE==='mobile';
- const browser=await chromium.launch({headless:true,args:['--no-sandbox','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+ const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_EXECUTABLE_PATH||undefined,args:['--no-sandbox','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
  try{
   const context=await browser.newContext(mobile?
-   {viewport:{width:844,height:390},isMobile:true,hasTouch:true}:
+   {viewport:{width:Number(process.env.APEX_AUDIT_WIDTH)||844,height:Number(process.env.APEX_AUDIT_HEIGHT)||390},isMobile:true,hasTouch:true}:
    {viewport:{width:1440,height:900}});
   const page=await context.newPage(),errors=[];
   page.setDefaultTimeout(30000);
@@ -29,7 +29,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
     'No se muestra un segundo coche en el fondo');
   assert.ok((await panel.locator('#apexProtoTeamTitle').innerText()).length>3);
   const options=await page.locator('#teamSelect').evaluate(el=>Array.from(el.options).filter(o=>o.value&&!o.disabled).map(o=>o.value));
-  assert.ok(options.length>=10,'El catálogo original continúa ofreciendo escuderías');
+  assert.equal(options.length,11,'Se conservan las once escuderías');
   const images=new Map();
   for(let i=0;i<options.length;i++){
    const value=options[i];
@@ -44,17 +44,6 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
      renderedChassis:img.dataset.apexChassis,previewMode:img.dataset.apexPreview,
      native:window.ApexNativeTeamStudio9A.get(selected.value),
      svg:window.ApexTeamCarPreview9A.build(selected.value)?.svg,
-     silhouette:(()=>{
-       const source=window.ApexTeamCarPreview9A.build(selected.value)?.svg||'';
-       const parsed=new DOMParser().parseFromString(source,'image/svg+xml');
-       const count=selector=>parsed.querySelectorAll(selector).length;
-       return {parserError:count('parsererror'),
-        tyres:count('.apex-car-tyre'),sidepods:count('.apex-car-sidepod'),
-        frontWings:count('.apex-car-front-wing'),
-        rearWings:count('.apex-car-rear-wing'),cockpit:count('.apex-car-cockpit'),
-        version:parsed.documentElement.getAttribute('data-apex-silhouette'),
-        viewBox:parsed.documentElement.getAttribute('viewBox')};
-     })(),
      teamName:document.getElementById('apexProtoTeamTitle').textContent,
      teamLabel:selected.selectedOptions[0].textContent,
      chassis:document.getElementById('apexStudioChassis').textContent,
@@ -67,14 +56,14 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
    assert.equal(state.renderedModel,state.native.model,'Modelo 3D y vista del menú coinciden');
    assert.equal(state.renderedChassis,state.native.chassis,'Chasis real del equipo');
    assert.ok(state.source.startsWith('data:image/svg+xml;charset=utf-8,'),'Vista SVG derivada de blueprint real');
+   assert.equal(await page.evaluate(svg=>{
+    const doc=new DOMParser().parseFromString(svg,'image/svg+xml');
+    return doc.querySelectorAll('parsererror').length;
+   },state.svg),0,'SVG válido para '+value);
    assert.ok(state.svg.includes('data-apex-team="'+state.key+'"'));
    assert.ok(state.svg.includes('data-apex-model="'+state.native.model+'"'));
    assert.ok(state.svg.includes(state.native.preview.livery.primary.toLowerCase()));
    assert.ok(state.svg.includes(state.native.preview.livery.stripe.toLowerCase()));
-   assert.deepEqual(state.silhouette,{
-    parserError:0,tyres:4,sidepods:2,frontWings:2,rearWings:1,cockpit:1,
-    version:'f1-2026-v3',viewBox:'0 0 1000 470'
-   },'Vista F1 2026 con cuatro ruedas y aerodinámica completa: '+value);
    assert.equal(state.teamName,state.teamLabel.trim().toUpperCase());
    assert.ok(state.chassis&&state.chassis!=='—','El chasis procede del catálogo original');
    assert.ok(state.model&&state.model!=='—','El modelo procede del catálogo original');
@@ -91,6 +80,21 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
    assert.ok(await page.locator('#apexProtoTeamImage').evaluate(img=>img.complete&&img.naturalWidth>0),
     'Asset del coche cargado: '+value);
   }
+  const drawing=await page.evaluate(()=>{
+   const source=window.ApexTeamCarPreview9A.build(document.getElementById('teamSelect').value).svg;
+   const host=document.createElement('div');host.style.cssText='position:fixed;left:-2000px;top:0';
+   host.innerHTML=source;document.body.append(host);
+   const svg=host.firstElementChild;
+   const parts=[...svg.querySelectorAll('.apex-car-tyre')].map(el=>{
+    const b=el.getBBox();return {x:b.x,y:b.y,width:b.width,height:b.height};
+   });
+   const bounds=svg.getBBox();host.remove();
+   return {parts,bounds:{x:bounds.x,y:bounds.y,right:bounds.x+bounds.width,bottom:bounds.y+bounds.height}};
+  });
+  assert.equal(drawing.parts.length,4,'Cuatro neumáticos slick');
+  assert.ok(drawing.parts.every(b=>b.width>b.height*1.25),'Neumáticos alargados en el eje longitudinal');
+  assert.ok(drawing.bounds.x>0&&drawing.bounds.y>0&&drawing.bounds.right<1000&&drawing.bounds.bottom<470,
+   'Toda la silueta dentro del viewBox '+JSON.stringify(drawing));
   assert.equal(images.size,options.length,'Todas las imágenes del catálogo comprobadas');
   assert.equal(await panel.locator('.apexStudioTeamCard').count(),options.length,
    'Tarjeta y logotipo propio para cada una de las 11 escuderías');
@@ -151,6 +155,8 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
   },null,{timeout:30000});
   assert.equal(await page.locator('#apexStudioColor-primary').inputValue(),'#34acde',
    'El color personalizado persiste tras recarga');
+  assert.equal(await page.locator('#apexStudioColor-secondary').inputValue(),'#172f46');
+  assert.equal(await page.locator('#apexStudioColor-accent').inputValue(),'#ee8822');
   await page.locator('#apexStudioReset').click();
   assert.notEqual(await page.locator('#apexStudioColor-primary').inputValue(),'#34acde',
    'Restaurar recupera la pintura original de la escudería');
@@ -184,7 +190,8 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
    const image=el.querySelector('.apexStudioStage img').getBoundingClientRect();
    return {overflow:el.scrollWidth-el.clientWidth,
     heroBelowHeader:hero.top>=el.querySelector('h2').getBoundingClientRect().bottom-1,
-    imageInsideHero:image.top>=hero.top-1&&image.bottom<=hero.bottom+1,
+    imageInsideHero:image.top>=hero.top-1&&image.bottom<=hero.bottom+1&&
+     image.left>=hero.left-1&&image.right<=hero.right+1,
     controlsBelowHero:controls.top>=hero.bottom-1,
     controlsInside:controls.bottom<=rect.bottom+2,
     bounds:{heroTop:Math.round(hero.top),heroBottom:Math.round(hero.bottom),
