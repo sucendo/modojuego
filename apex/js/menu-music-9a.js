@@ -88,8 +88,16 @@ function init(){
 }
 global.ApexMenuMusic9A=Object.freeze({
  toggle,get:()=>enabled,stop,refresh,
+ seekToEndForTest:(seconds=0.6)=>{
+  if(global.location.hostname!=='127.0.0.1'&&global.location.hostname!=='localhost')return false;
+  if(!audio||!Number.isFinite(audio.duration))return false;
+  audio.currentTime=Math.max(0,audio.duration-seconds);
+  return true;
+ },
  state:()=>({enabled,playing:!!audio&&!audio.paused,src:FILE,unlocked,volume:VOLUME,
   duration:audio&&Number.isFinite(audio.duration)?audio.duration:null,
+  currentTime:audio?.currentTime||0,
+  loop:audio?.loop||false,
   readyState:audio?.readyState||0})
 });
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});
