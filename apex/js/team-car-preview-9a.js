@@ -294,7 +294,18 @@ function markup(profile){
   blade(872,850,896,873),blade(899,878,917,899),blade(920,904,937,924),
   ...(d.wing[2]===4?[blade(940,929,951,943)]:[])];
  const foilPaint=['url(#wing)','url(#panel)','url(#carbon)','url(#paint)'];
- const frontHalf='<g class="apex-car-front-wing" transform="translate(930 235) scale('+(1+d.wing[0]/85)+' 1) translate(-930 -235)">'+
+ const frontWingTransform='translate(930 235) scale('+(1+d.wing[0]/85)+' 1) translate(-930 -235)';
+ // Join each element's actual centre roots, including the custom McRaven
+ // curves. A slight overlap avoids an antialiased crack between mirrored halves.
+ const frontBridge='<g class="apex-car-front-bridge" transform="'+frontWingTransform+'">'+foils.map((shape,index)=>{
+  const points=shape.match(/-?\d+(?:\.\d+)?/g).map(Number);
+  const [ax,ay]=points,[bx,by]=points.slice(-2);
+  const join='M'+ax+' '+(ay-1)+'L'+bx+' '+(by-1)+'Q'+(bx+2)+' 235 '+bx+' '+(471-by)+
+   'L'+ax+' '+(471-ay)+'Q'+(ax+1)+' 235 '+ax+' '+(ay-1)+'Z';
+  return P(join,foilPaint[index],'class="apex-car-wing-join" data-element="'+index+'" stroke="#060b10" stroke-width=".7"')+
+   (index===1?deco(join):'');
+ }).join('')+'</g>';
+ const frontHalf='<g class="apex-car-front-wing" transform="'+frontWingTransform+'">'+
   foils.map((shape,index)=>P(shape,foilPaint[index],'class="apex-car-wing-element" data-element="'+index+'" stroke="#060b10" stroke-width="1.5"')+(index===1?deco(shape):'')).join('')+
   P(d.frontRidges?wingPath(d.frontRidges):'M877 225Q860 165 855 '+(fy+14)+'M904 226Q889 164 883 '+(fy+14)+'M925 227Q913 167 909 '+(fy+14),'none','stroke="#d9e5ec" stroke-opacity=".4" stroke-width="1.2"')+
   P(d.frontBlades?'M846 '+(fy+1)+'Q889 '+(fy-10)+' 944 '+(fy+4)+'L950 '+(fy+16)+'Q918 '+(fy+8)+' 892 '+(fy+10)+'L848 '+(fy+12)+'Z':
@@ -421,8 +432,8 @@ function markup(profile){
  const mirrors=M(P('M630 205L651 146','none','stroke="#0c141a" stroke-width="3.5"')+
   P('M638 136L661 133Q668 133 666 141L640 145Z','url(#carbon)','stroke="'+p+'" stroke-width="1.4"')+
   P('M641 137L661 135','none','stroke="#c1cfd8" stroke-opacity=".4" stroke-width=".8"'));
- return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 470" width="1000" height="470" role="img" data-apex-silhouette="f1-team-shells-v15" data-apex-design-key="'+id+'" data-apex-paint-style="'+paintStyle+'" data-apex-design="'+safe(d.reference)+'" data-apex-team="'+id+'" data-apex-model="'+model+'" data-apex-chassis="'+chassis+'" aria-label="Vista cenital de monoplaza '+id+' '+model+'">'+defs+paintDefs+bodyMasks+
-  floor+rearWing+M(frontHalf)+suspension+mounts+sidepods+body+flowingAccent+serviceDetails+
+ return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 470" width="1000" height="470" role="img" data-apex-silhouette="f1-wing-joins-v16" data-apex-design-key="'+id+'" data-apex-paint-style="'+paintStyle+'" data-apex-design="'+safe(d.reference)+'" data-apex-team="'+id+'" data-apex-model="'+model+'" data-apex-chassis="'+chassis+'" aria-label="Vista cenital de monoplaza '+id+' '+model+'">'+defs+paintDefs+bodyMasks+
+  floor+rearWing+frontBridge+M(frontHalf)+suspension+mounts+sidepods+body+flowingAccent+serviceDetails+
   tire(221,104,true)+tire(221,366,true)+tire(785,101)+tire(785,369)+cockpit+mirrors+
   P('M464 214H485Q489 214 489 219V251Q489 256 485 256H464Z','url(#carbon)','stroke="#61717b" stroke-width="1.2"')+
   P('M469 223H480V247H469Z','#03080b','stroke="#303e48" stroke-width="1"')+

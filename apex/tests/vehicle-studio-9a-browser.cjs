@@ -202,14 +202,29 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
     pushrods:svg.querySelectorAll('[data-link="pushrod"]').length,
     steering:svg.querySelectorAll('[data-link="steering"]').length,
     halfshafts:svg.querySelectorAll('[data-link="halfshaft"]').length,connected,linksAttached};
+   const upper=svg.querySelector('.apex-car-front-wing');
+   const elements=[...upper.querySelectorAll('.apex-car-wing-element')];
+   const joins=[...svg.querySelectorAll('.apex-car-wing-join')];
+   const wingJoined=elements.every((element,index)=>{
+    const numbers=element.getAttribute('d').match(/-?\d+(?:\.\d+)?/g).map(Number);
+    const [ax,ay]=numbers,[bx,by]=numbers.slice(-2);
+    const x=(ax+bx)/2,y=(ay+by)/2;
+    return element.isPointInFill(new DOMPoint(x,y-.5))&&
+     joins[index]?.isPointInFill(new DOMPoint(x,y-.5))&&
+     joins[index].isPointInFill(new DOMPoint(x,235))&&
+     joins[index].isPointInFill(new DOMPoint(x,470-y+.5));
+   });
+   const wing={elements:elements.length,joins:joins.length,connected:wingJoined};
    const bounds=svg.getBBox();host.remove();
-   return {key,parts,mechanics,bounds:{x:bounds.x,y:bounds.y,right:bounds.x+bounds.width,bottom:bounds.y+bounds.height}};
+   return {key,parts,mechanics,wing,bounds:{x:bounds.x,y:bounds.y,right:bounds.x+bounds.width,bottom:bounds.y+bounds.height}};
   }),options);
   for(const drawing of drawings){
    assert.equal(drawing.parts.length,4,'Cuatro neumáticos slick: '+drawing.key);
    assert.ok(drawing.parts.every(b=>b.width>b.height*1.25),'Neumáticos alargados en el eje longitudinal');
    assert.deepEqual(drawing.mechanics,{mounts:4,suspensions:4,ducts:4,wishbones:8,pushrods:4,steering:2,halfshafts:2,connected:true,linksAttached:true},
     'Suspensión completa y cuatro bujes unidos a la cara interior de los neumáticos: '+drawing.key);
+   assert.ok(drawing.wing.elements>=3&&drawing.wing.joins===drawing.wing.elements&&drawing.wing.connected,
+    'Cada lámina tiene unión central con ambas mitades del alerón: '+JSON.stringify(drawing.wing)+' / '+drawing.key);
    assert.ok(drawing.bounds.x>0&&drawing.bounds.y>0&&drawing.bounds.right<1000&&drawing.bounds.bottom<470,
     'Toda la silueta dentro del viewBox '+JSON.stringify(drawing));
   }
@@ -256,7 +271,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
    const signature=source=>{
     const doc=new DOMParser().parseFromString(source,'image/svg+xml');
     if(doc.querySelector('parsererror'))throw new Error('SVG inválido');
-    return JSON.stringify(Array.from(doc.querySelectorAll('.apex-car-body,.apex-car-engine-cover,.apex-car-nose,.apex-car-inlet,.apex-car-sidepod>path:first-child,.apex-car-front-wing,.apex-car-front-wing .apex-car-wing-element,.apex-car-rear-wing,.apex-car-cockpit,.apex-car-cockpit path,.apex-car-cockpit circle,.apex-car-inlet-depth path,.apex-car-pod-reflection,.apex-car-tyre,.apex-car-suspension-arm path,.apex-car-wheel-mount path,.apex-car-wheel-mount ellipse,.apex-car-wheel-mount circle,.apex-car-service-details path')).map(el=>({
+    return JSON.stringify(Array.from(doc.querySelectorAll('.apex-car-body,.apex-car-engine-cover,.apex-car-nose,.apex-car-inlet,.apex-car-sidepod>path:first-child,.apex-car-front-bridge,.apex-car-wing-join,.apex-car-front-wing,.apex-car-front-wing .apex-car-wing-element,.apex-car-rear-wing,.apex-car-cockpit,.apex-car-cockpit path,.apex-car-cockpit circle,.apex-car-inlet-depth path,.apex-car-pod-reflection,.apex-car-tyre,.apex-car-suspension-arm path,.apex-car-wheel-mount path,.apex-car-wheel-mount ellipse,.apex-car-wheel-mount circle,.apex-car-service-details path')).map(el=>({
      tag:el.tagName,shape:el.getAttribute('d'),transform:el.getAttribute('transform'),
      size:['cx','cy','rx','ry','r','x','y','width','height'].map(name=>el.getAttribute(name)),
      child:el.querySelector('path,rect')?.getAttribute('d')||el.querySelector('rect')?.outerHTML
