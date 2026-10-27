@@ -142,7 +142,8 @@ function teamCards(){
 function paint(){
  queued=false;
  if(!panel?.isConnected)return;
- const {key,team,index,count,locked}=info();if(!team)return;
+ const {key,team,index,count,locked}=info();
+ if(!team){setTimeout(refresh,120);return;}
  applyNative(key);
  teamCards();
  const c=current(key,team),name=team.name||'Escudería';
@@ -274,7 +275,9 @@ function setup(){
  '<small id="apexStudioSave" aria-live="polite">COLORES DE ESCUDERÍA</small></div>'
  ].join('');
  panel.append(palette);
- $('teamSelect')?.addEventListener('change',refresh);
+ const nativeSelect=$('teamSelect');
+ nativeSelect?.addEventListener('change',()=>{saveNotice='';refresh();});
+ if(nativeSelect)new MutationObserver(refresh).observe(nativeSelect,{childList:true,attributes:true,attributeFilter:['disabled']});
  $('apexProtoTeam')?.addEventListener('change',refresh);
  $('carColor')?.addEventListener('input',refresh);
  $('carAccent')?.addEventListener('input',refresh);
@@ -288,6 +291,9 @@ function setup(){
  car.addEventListener('error',()=>hero.classList.add('apexStudioAssetMissing'));
  modes.addEventListener('click',refresh);
  refresh();
+ // El motor inicializa las opciones nativas en otro ciclo de tareas.
+ // Releer tras completar la carga del menú y recuperar la preferencia local.
+ setTimeout(refresh,250);
 }
 global.ApexVehicleStudio9A=Object.freeze({refresh,colorsFor,reset});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup,{once:true});else setup();
