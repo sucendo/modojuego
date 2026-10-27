@@ -78,8 +78,8 @@ function helmetSvg(value,scope='studio'){
  const path=(d,fill,extra='')=>'<path d="'+d+'" fill="'+fill+'" '+extra+'/>';
  const line=(d,color,width,extra='')=>path(d,'none','stroke="'+color+'" stroke-width="'+width+'" '+extra);
  const escape=text=>String(text).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
- const shell='M73 128C72 76 105 37 157 27C219 13 276 39 298 85Q314 116 307 154L314 187Q319 211 296 232Q268 252 225 254L106 247Q79 243 69 222L58 204Q52 192 62 180L70 164Z';
- const visor='M73 126Q151 109 238 120Q260 122 275 138L264 168Q170 183 69 162L66 145Z';
+ const shell='M73 128C73 79 106 46 157 36C217 23 273 46 296 89Q313 118 306 154L313 186Q315 210 294 231Q267 250 225 253L107 247Q82 243 70 224L60 209Q55 198 60 186L70 164Z';
+ const visor='M73 127Q151 110 236 120Q259 123 274 138L263 169Q170 186 70 164L67 146Z';
  const no=profile.number==null?'26':String(profile.number).padStart(2,'0');
  const patterns={
   racing:path('M137 22Q167 17 189 22L225 116L197 189L171 253L132 251L165 181L177 123Z',s)+
@@ -112,43 +112,62 @@ function helmetSvg(value,scope='studio'){
   silver:'<stop stop-color="#e4edf3" stop-opacity=".85"/><stop offset=".25" stop-color="#8595a1" stop-opacity=".55"/><stop offset=".57" stop-color="#142330" stop-opacity=".5"/><stop offset="1" stop-color="#cad9e1" stop-opacity=".75"/>',
   gold:'<stop stop-color="#ffeab1" stop-opacity=".85"/><stop offset=".24" stop-color="#c6943d" stop-opacity=".8"/><stop offset=".57" stop-color="#301b10" stop-opacity=".75"/><stop offset="1" stop-color="#e5bd65" stop-opacity=".8"/>'
  };
- const vent=(d)=>path(d,'#03080c','class="apex-helmet-vent" stroke="#40525d" stroke-width=".65"');
- return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 300" role="img" data-apex-helmet="competition-v2" data-paint="'+h.pattern+'" data-visor-finish="'+h.visorFinish+'" aria-label="Casco de competición personalizado, vista de tres cuartos">'+
+ const vent=(d,lip='')=>'<g class="apex-helmet-vent-assembly">'+path(d,'#02070a','class="apex-helmet-vent" stroke="#334550" stroke-width=".7"')+
+  (lip?line(lip,'#d1e0e7',.75,'stroke-opacity=".38"'):'')+'</g>';
+ return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 300" role="img" data-apex-helmet="competition-v3" data-paint="'+h.pattern+'" data-visor-finish="'+h.visorFinish+'" aria-label="Casco de competición personalizado, vista de tres cuartos">'+
   '<defs><clipPath id="'+prefix+'-shell">'+path(shell,'#fff')+'</clipPath><clipPath id="'+prefix+'-visor">'+path(visor,'#fff')+'</clipPath>'+
   '<linearGradient id="'+prefix+'-shellLight" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#fff" stop-opacity=".3"/><stop offset=".3" stop-color="#fff" stop-opacity=".05"/><stop offset=".62" stop-color="#000" stop-opacity=".04"/><stop offset="1" stop-color="#01050a" stop-opacity=".72"/></linearGradient>'+
   '<radialGradient id="'+prefix+'-crown" cx=".32" cy=".18" r=".85"><stop stop-color="#fff" stop-opacity=".33"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".26"/></radialGradient>'+
+  '<linearGradient id="'+prefix+'-lensCurve"><stop stop-color="#010710" stop-opacity=".55"/><stop offset=".23" stop-color="#fff" stop-opacity=".02"/><stop offset=".6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#010710" stop-opacity=".65"/></linearGradient>'+
+  '<linearGradient id="'+prefix+'-chinRelief" x1="0" y1="0" x2=".15" y2="1"><stop stop-color="#000" stop-opacity=".46"/><stop offset=".22" stop-color="#000" stop-opacity=".18"/><stop offset=".8" stop-color="#fff" stop-opacity=".06"/><stop offset="1" stop-color="#fff" stop-opacity=".18"/></linearGradient>'+
   '<linearGradient id="'+prefix+'-glass" x1="0" y1="0" x2="0" y2="1">'+glassStops[h.visorFinish]+'</linearGradient>'+
-  '<linearGradient id="'+prefix+'-reflection"><stop stop-color="#fff" stop-opacity="0"/><stop offset=".45" stop-color="#e0f8ff" stop-opacity=".64"/><stop offset=".6" stop-color="#fff" stop-opacity=".85"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>'+
+  '<linearGradient id="'+prefix+'-reflection"><stop stop-color="#fff" stop-opacity="0"/><stop offset=".45" stop-color="#e0f8ff" stop-opacity=".4"/><stop offset=".6" stop-color="#fff" stop-opacity=".65"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>'+
   '<linearGradient id="'+prefix+'-metal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#d2dde2"/><stop offset=".3" stop-color="#4e626e"/><stop offset=".6" stop-color="#15242d"/><stop offset="1" stop-color="#758994"/></linearGradient>'+
   '<pattern id="'+prefix+'-checker" width="24" height="20" patternUnits="userSpaceOnUse" patternTransform="rotate(-9)"><rect width="24" height="20" fill="'+s+'"/><path d="M0 0H12V10H0ZM12 10H24V20H12Z" fill="'+p+'"/></pattern></defs>'+
   (scope==='studio'?'<ellipse cx="192" cy="265" rx="116" ry="8" fill="#010508" opacity=".5"/>':'')+
-  path('M278 75L318 89L328 103L301 102Z',t,'class="apex-helmet-spoiler" stroke="#14232c" stroke-width="1.5"')+
-  path(shell,p,'class="apex-helmet-shell" stroke="#091219" stroke-width="2.5"')+
+  path('M284 83L315 93L323 103L299 101Z',url('metal'),'class="apex-helmet-spoiler" fill-opacity=".55" stroke="#71838e" stroke-opacity=".6" stroke-width=".8"')+
+  path(shell,p,'class="apex-helmet-shell" stroke="#091219" stroke-width="1.6"')+
   '<g class="apex-helmet-paint" clip-path="'+url('shell')+'">'+patterns[h.pattern]+'</g>'+
   path(shell,url('shellLight'))+path(shell,url('crown'))+
-  line('M92 82Q126 35 181 33Q231 29 266 57','#e5f1f6',2,'stroke-opacity=".36" stroke-linecap="round"')+
+  line('M96 84Q127 45 180 42Q229 38 266 64','#e5f1f6',1.4,'stroke-opacity=".3" stroke-linecap="round"')+
+  '<g clip-path="'+url('shell')+'" class="apex-helmet-shell-contours">'+
+   path('M260 63Q307 108 290 160L283 210Q281 229 265 239Q297 230 304 205L310 155Q316 104 284 76Z','#01070d','opacity=".18"')+
+   line('M276 78Q298 112 294 148M280 179L279 209Q278 221 269 228','#d2e1e8',.8,'stroke-opacity=".18"')+'</g>'+
   line('M288 96Q309 159 298 206','#01070b',2,'stroke-opacity=".4"')+
   // Rubber eyeport seal, moulded brow and separate curved glass.
-  path(visor,'#02070b','class="apex-helmet-eyeport" stroke="#020609" stroke-width="8" stroke-linejoin="round"')+
+  path(visor,'#02070b','class="apex-helmet-eyeport" stroke="#020609" stroke-width="6" stroke-linejoin="round"')+
   path(visor,v,'class="apex-helmet-visor" stroke="#60717c" stroke-width="1"')+
-  path(visor,url('glass'))+
-  '<g clip-path="'+url('visor')+'">'+path('M112 114L136 111L118 174L97 170Z',url('reflection'),'class="apex-helmet-visor-reflection"')+
-   path('M235 119L246 122L225 174L216 177Z','#d6f3ff','opacity=".15"')+
+  path(visor,url('glass'))+path(visor,url('lensCurve'),'class="apex-helmet-lens-curvature"')+
+  '<g clip-path="'+url('visor')+'">'+path('M113 118Q126 115 138 117L120 174Q108 174 98 170Z',url('reflection'),'class="apex-helmet-visor-reflection"')+
+   path('M235 119L244 122L225 176L217 177Z','#d6f3ff','opacity=".13"')+
+   line('M77 158Q167 179 256 165','#b7dae8',.75,'stroke-opacity=".42"')+
    line('M65 144Q160 126 275 142','#dceff8',.8,'stroke-opacity=".22"')+'</g>'+
-  path('M72 119Q159 102 242 116L269 126L267 133Q158 112 70 132Z',t,'class="apex-helmet-brow"')+
+  path('M73 121Q159 105 241 118L268 128L267 133Q158 115 71 132Z',t,'class="apex-helmet-brow"')+
   line('M71 164Q166 184 264 169','#899da7',1,'stroke-opacity=".5"')+
   // Chin recess, rubber base and small machined visor attachments.
-  path('M68 172Q106 181 147 183L143 194L65 188Z',s,'clip-path="'+url('shell')+'"')+
-  vent('M75 183L99 187L97 193L73 189Z')+vent('M109 189L137 191L134 197L107 195Z')+
-  vent('M77 202Q100 207 124 207L122 213Q98 214 79 208Z')+
-  vent('M247 63L266 74L264 78L245 68Z')+vent('M151 37L176 34L177 38L152 42Z')+
+  '<g clip-path="'+url('shell')+'" class="apex-helmet-chin-recess">'+
+   path('M68 174Q104 184 143 184L150 193L136 201L73 195L64 187Z',url('chinRelief'))+
+   line('M73 177Q106 187 139 186L144 192',t,.85,'stroke-opacity=".3"')+
+   vent('M76 185L100 189L98 193L74 189Z','M76 185L100 189')+
+   vent('M110 191L136 192L134 196L108 195Z','M110 191L136 192')+
+   vent('M79 205L98 209L124 209L122 214L101 214L81 210Z','M81 205L98 209H123')+
+   line('M98 210L98 213M106 210V213M114 210V213','#687b87',.6,'stroke-opacity=".5"')+
+   vent('M248 70L264 78L262 82L246 74Z','M248 70L264 78')+
+   vent('M151 46L175 43L176 47L152 51Z','M151 46L175 43')+'</g>'+
   path('M67 218Q103 241 158 241L225 246Q269 244 298 224L290 237Q266 255 222 258L108 250Q80 246 70 230Z','#080f14','class="apex-helmet-base"')+
-  line('M80 226Q168 255 267 235',t,2,'stroke-opacity=".7"')+
+  line('M80 227Q168 253 267 235',t,1.2,'stroke-opacity=".6"')+
+  path('M88 238Q173 258 240 250L232 256L111 250Z','#17252d','class="apex-helmet-neck-roll"')+
+  line('M110 248Q172 261 226 254','#8296a1',.7,'stroke-opacity=".25"')+
   path('M261 130Q277 129 281 139L275 160L258 169L251 160Z','#16242d','class="apex-helmet-hinge" stroke="#70848e" stroke-width="1"')+
   '<circle cx="267" cy="143" r="7" fill="'+url('metal')+'"/><circle cx="267" cy="143" r="2.8" fill="#0a151d"/>'+
   line('M265 141L269 145','#a5b6be',.9)+
   path('M248 162L264 155L267 161L253 172Z',url('metal'))+
   '<circle cx="256" cy="164" r="2" fill="#07131a"/>'+
+  '<g class="apex-helmet-tearoff">'+
+   path('M247 145L254 142L256 146L250 151Z','#c9e0eb','fill-opacity=".3" stroke="#cbe5ef" stroke-opacity=".4" stroke-width=".6"')+
+   '<circle cx="250" cy="147" r="1.8" fill="#081722" stroke="#708a99" stroke-width=".6"/>'+
+   '<circle cx="85" cy="143" r="1.7" fill="#17313e" stroke="#9cb5c2" stroke-width=".6"/>'+
+  '</g>'+
   '<text x="150" y="91" text-anchor="middle" transform="rotate(-7 150 91)" font-size="27" font-family="Arial,sans-serif" font-weight="900" fill="'+t+'" stroke="#030911" stroke-opacity=".4" stroke-width=".6">'+no+'</text>'+
   '<text x="183" y="127" text-anchor="middle" font-size="7" letter-spacing="2.5" font-family="Arial,sans-serif" font-weight="900" fill="#13232c">APEX 26</text>'+
   '<text x="205" y="218" text-anchor="middle" transform="rotate(-5 205 218)" font-size="8" letter-spacing=".6" font-family="Arial,sans-serif" font-weight="700" fill="'+t+'">'+escape(profile.name||'APEX RACING')+'</text></svg>';
