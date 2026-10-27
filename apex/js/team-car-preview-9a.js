@@ -27,11 +27,28 @@ function markup(profile){
  const nWidth=26*nose, podWidth=82*pod;
  const id=safe(profile.teamKey),model=safe(profile.model),chassis=safe(profile.chassis);
  const marks=(y,side)=>Array.from({length:6},(_,i)=>'<path d="M'+(348+i*8)+' '+(y+side*i*2)+' l18 '+(side*9)+'" stroke="'+trim+'" opacity=".14" stroke-width="2"/>').join('');
- const tire=(x,y,w,h)=>'<g><rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="19" fill="url(#tire)" stroke="#030509" stroke-width="6"/>'+
- '<path d="M'+(x+9)+' '+(y+12)+'v'+(h-24)+'M'+(x+w-10)+' '+(y+13)+'v'+(h-26)+'" stroke="#42464a" opacity=".5" stroke-width="2"/>'+
- '<path d="M'+(x+23)+' '+(y+13)+'v'+(h-26)+'M'+(x+w-24)+' '+(y+13)+'v'+(h-26)+'" stroke="#06090c" stroke-width="4" opacity=".7"/>'+
- '<rect x="'+(x+w*.47)+'" y="'+(y+7)+'" width="3" height="'+(h-14)+'" fill="'+a+'" opacity=".7"/>'+
- '<path d="M'+(x+5)+' '+(y+9)+'Q'+(x+w/2)+' '+(y-1)+' '+(x+w-5)+' '+(y+9)+'" stroke="#838a90" opacity=".24" stroke-width="2" fill="none"/></g>';
+ const tire=(x,y,w,h)=>{
+  // Slick 2026 tyres: restrained scuffing, rounded shoulder, sidewall
+  // ring and a narrow red sidewall identification line. No tread grooves.
+  const shoulder=Math.max(8,Math.min(16,w*.16));
+  const marks=Array.from({length:7},(_,i)=>{
+   const yy=y+14+i*(h-28)/6;
+   return '<path d="M'+(x+6)+' '+yy+'l'+(shoulder*.65)+' -2M'+(x+w-6)+' '+yy+'l-'+(shoulder*.65)+' -2"'+
+    ' stroke="#8a8e90" stroke-opacity="'+(.085+i%3*.027)+'" stroke-width="2"/>';
+  }).join('');
+  return '<g>'+
+   '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="'+(shoulder+3)+'" fill="#030609" opacity=".95" stroke="#010204" stroke-width="6"/>'+
+   '<rect x="'+(x+3)+'" y="'+(y+3)+'" width="'+(w-6)+'" height="'+(h-6)+'" rx="'+shoulder+'" fill="url(#tire)" stroke="#34383c" stroke-opacity=".45" stroke-width="2"/>'+
+   '<path d="M'+(x+9)+' '+(y+13)+'Q'+(x+shoulder)+' '+(y+h*.5)+' '+(x+9)+' '+(y+h-13)+
+   'M'+(x+w-9)+' '+(y+13)+'Q'+(x+w-shoulder)+' '+(y+h*.5)+' '+(x+w-9)+' '+(y+h-13)+'"'+
+   ' fill="none" stroke="#838a90" stroke-opacity=".24" stroke-width="3"/>'+
+   '<path d="M'+(x+25)+' '+(y+9)+'V'+(y+h-9)+
+   'M'+(x+w-25)+' '+(y+9)+'V'+(y+h-9)+'" fill="none" stroke="#06090c" stroke-opacity=".68" stroke-width="4"/>'+
+   '<rect x="'+(x+w*.48)+'" y="'+(y+6)+'" width="2.4" height="'+(h-12)+'" rx="1.2" fill="#d92330" opacity=".7"/>'+
+   '<path d="M'+(x+shoulder+2)+' '+(y+6)+'Q'+(x+w*.5)+' '+(y-1)+' '+(x+w-shoulder-2)+' '+(y+6)+
+   'M'+(x+shoulder+2)+' '+(y+h-6)+'Q'+(x+w*.5)+' '+(y+h+1)+' '+(x+w-shoulder-2)+' '+(y+h-6)+'"'+
+   ' fill="none" stroke="#9fa7ab" stroke-opacity=".25" stroke-width="2"/>'+marks+'</g>';
+ };
  const f=(v)=>Number(v).toFixed(1);
  const pattern= l.pattern==='chevron'?'<path d="M330 175L425 235L330 296" fill="none" stroke="'+stripe+'" stroke-width="25" opacity=".8"/>':
  l.pattern==='center'?'<path d="M226 235H745" stroke="'+stripe+'" stroke-width="16" opacity=".8"/>':
@@ -135,6 +152,29 @@ function markup(profile){
  // Carbon-surface roof reflections and segment separators on rear wing.
  '<path d="M76 '+f(235-rearHalf+40)+'H132M76 '+f(235+rearHalf-40)+'H132" stroke="'+surfLine+'" stroke-opacity=".42" stroke-width="3"/>'+
  '<path d="M84 '+f(235-rearHalf+14)+'V'+f(235+rearHalf-14)+'M91 '+f(235-rearHalf+14)+'V'+f(235+rearHalf-14)+'" stroke="#bcc7cc" stroke-opacity=".21" stroke-width="2"/>'+
+ // Half-panel clarity: large recognisable flowing 2026 aero shapes
+ // remain legible even when the 1000px drawing is displayed at ~370px.
+ '<path d="M310 160Q446 120 576 162L612 201Q547 181 476 167Q389 153 310 182Z" fill="url(#carbon)" opacity=".61"/>'+
+ '<path d="M310 310Q446 350 576 308L612 269Q547 289 476 303Q389 317 310 288Z" fill="url(#carbon)" opacity=".61"/>'+
+ '<path d="M296 174Q438 137 561 186M296 296Q438 333 561 284" stroke="'+p+'" opacity=".84" stroke-width="7" fill="none"/>'+
+ '<path d="M325 185Q440 168 539 205M325 285Q440 302 539 265" stroke="'+a+'" opacity=".95" stroke-width="4.5" fill="none"/>'+
+ // A thin engine-cover spine, authentic radiator inlet silhouettes.
+ '<path d="M198 231Q298 223 365 221L404 234L365 249Q298 247 198 239" fill="'+carbon+'" stroke="'+trim+'" stroke-opacity=".3" stroke-width="2"/>'+
+ '<path d="M333 200Q394 190 423 204M333 270Q394 280 423 266" stroke="#060d14" opacity=".9" stroke-width="8" fill="none"/>'+
+ // Two cockpit headrest lobes and a clearly visible carbon halo arch.
+ '<path d="M445 213Q484 192 529 213M445 257Q484 278 529 257" fill="none" stroke="#dce6eb" stroke-opacity=".28" stroke-width="2"/>'+
+ '<path d="M459 209Q488 194 522 208M459 261Q488 276 522 262" fill="none" stroke="'+carbon+'" stroke-width="6"/>'+
+ // Airbox intake behind the helmet, slim central stabilizer and bolts.
+ '<path d="M415 212L438 224L438 246L415 258L405 244L405 226Z" fill="#03080e" stroke="'+p+'" stroke-width="4"/>'+
+ '<path d="M411 227h15v16h-15z" fill="url(#carbonTwist)" stroke="#5c6973" stroke-width="1"/>'+
+ // Realistic front-wing flap segmentation with raised endplate lips.
+ '<path d="M853 '+f(235-frontHalf+23)+'Q893 '+f(235-frontHalf+8)+' 946 '+f(235-frontHalf+20)+
+ 'M853 '+f(235+frontHalf-23)+'Q893 '+f(235+frontHalf-8)+' 946 '+f(235+frontHalf-20)+'" fill="none" stroke="'+p+'" stroke-width="8"/>'+
+ '<path d="M878 '+f(235-frontHalf+46)+'Q910 '+f(235-frontHalf+39)+' 944 '+f(235-frontHalf+48)+
+ 'M878 '+f(235+frontHalf-46)+'Q910 '+f(235+frontHalf-39)+' 944 '+f(235+frontHalf-48)+'" fill="none" stroke="'+a+'" stroke-width="3.5"/>'+
+ '<path d="M944 '+f(235-frontHalf+10)+'h13v29M944 '+f(235+frontHalf-10)+'h13v-29" fill="none" stroke="'+surfLine+'" stroke-opacity=".8" stroke-width="3"/>'+
+ // Clear suspension pickup points and real-world structural diagonals.
+ '<g fill="#778995" opacity=".86"><circle cx="752" cy="145" r="4"/><circle cx="752" cy="325" r="4"/><circle cx="698" cy="234" r="3"/><circle cx="258" cy="148" r="4"/><circle cx="258" cy="322" r="4"/></g>'+
  // Fine vehicle graphics; no brand/trademark reproductions
  '<path d="M307 196L371 184M307 274L371 286" stroke="'+a+'" stroke-width="4" opacity=".9"/>'+
  '<text x="653" y="227" font-family="Arial,sans-serif" font-size="18" font-weight="900" fill="'+trim+'" text-anchor="middle">'+model+'</text>'+
@@ -158,6 +198,7 @@ function build(teamKey){
  if(!svg)return null;
  const result=Object.freeze({key,model:blueprint.model,chassis:blueprint.chassis,
   svg,src:'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg)});
+ if(cache.size>48)cache.clear(); // Avoid retaining every intermediate picker colour.
  cache.set(cacheKey,result);return result;
 }
 function setCar(teamKey){
