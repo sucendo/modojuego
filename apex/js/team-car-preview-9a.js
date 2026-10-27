@@ -12,11 +12,20 @@ const clamp=(n,min,max)=>Math.min(max,Math.max(min,Number(n)||1));
 // replicas or changes to the racing physics/mesh. Each has its own shoulder,
 // undercut, inlet, engine-cover, nose and wing curves; colours remain swappable.
 const designs=Object.freeze({
- PAPAYA:{reference:'McLaren',nose:[16,27,0],wing:[0,0,4],rear:[0,0],cover:[22,47,58,25],podBase:'primary',
-  pod:'M264 216C330 205 346 167 415 134C484 111 573 110 620 129Q646 139 648 160L640 195L618 219Q536 213 462 211Q366 223 264 224Z',
-  panel:'M289 216C369 199 392 159 458 143Q550 125 608 146L627 167L612 185Q552 166 493 183Q394 215 289 220Z',
-  stripe:'M292 216C378 206 414 178 451 151Q480 129 516 131Q572 131 611 151',
-  inlet:'M596 150Q620 145 638 157L641 172Q616 164 594 168Z',
+ PAPAYA:{reference:'McLaren',nose:[16,27,0],wing:[0,0,4],rear:[0,0],cover:[22,47,58,25],podBase:'secondary',
+  pod:'M266 218C310 203 327 162 369 138C418 110 483 108 544 112Q611 111 643 135Q656 149 649 177L633 207Q564 209 490 204Q373 218 266 226Z',
+  panel:'M287 215C355 201 381 171 426 154Q491 132 548 139Q598 143 638 166L634 185Q580 162 532 178Q430 210 287 223Z',
+  stripe:'M273 219C350 213 393 203 421 184C446 166 443 146 473 132C509 114 561 118 594 136L630 159',
+  inlet:'M609 157Q626 151 644 160L642 178Q624 165 608 170Z',
+  bodyUpper:'M173 211C275 211 354 195 416 175C455 160 483 154 518 157C565 158 599 173 635 195',
+  bodyLower:'C599 297 565 312 518 313C483 316 455 310 416 295C354 275 275 259 173 259Z',
+  spine:'M191 224C280 224 356 210 420 212Q456 211 480 220V250Q456 259 420 258C356 260 280 246 191 246Z',
+  cockpit:{rim:'M486 208Q486 194 500 194H556Q597 194 613 211Q628 225 628 235Q628 245 613 259Q597 276 556 276H500Q486 276 486 262Z',
+   well:'M497 215Q497 205 507 205H553Q579 205 591 216Q601 226 601 235Q601 244 591 254Q579 265 553 265H507Q497 265 497 255Z',
+   halo:'M503 194H556C591 194 616 209 626 235C616 261 591 276 556 276H503',
+   shadow:'M503 197H556C591 197 616 212 626 238C616 264 591 279 556 279H503',
+   upper:'M505 192H556C588 192 612 207 621 227',
+   lower:'M505 278H556C588 278 612 263 621 243'},
   livery:'sweep'},
  SILVERWING:{reference:'Mercedes',nose:[20,24,-8],wing:[-12,14,3],rear:[10,-4],cover:[16,34,49,18],podBase:'secondary',
   pod:'M274 220L348 203Q397 153 460 137L589 128Q626 128 641 145L641 181L617 203L552 211L427 211Z',
@@ -240,16 +249,19 @@ function markup(profile){
  // Independent pod outlines, inlet cuts and paint masks per reference.
  const podSkin=d.pod;
  const podTone=customPaint?p:d.podBase==='secondary'?surface:p;
- const podPanel=d.livery==='double'?p:d.livery==='pinstripe'?stripe:surface;
- const podDetail=customPaint?deco(podSkin):P(d.panel,podPanel)+P(d.stripe,'none','stroke="'+stripe+'" stroke-width="'+(d.livery==='flank'?12:d.livery==='split'?7:d.livery==='sweep'?5:3.5)+'" stroke-linecap="round"');
+ const podPanel=d.livery==='double'||d.livery==='sweep'?p:d.livery==='pinstripe'?stripe:surface;
+ const podDetail=customPaint?deco(podSkin):P(d.panel,podPanel)+
+  (d.livery==='sweep'?'':P(d.stripe,'none','stroke="'+stripe+'" stroke-width="'+(d.livery==='flank'?12:d.livery==='split'?7:3.5)+'" stroke-linecap="round"'));
  const inletRibs=[605,614,623,632,641].map(x=>P('M'+x+' 120L'+(x-5)+' 180','none','stroke="#586975" stroke-opacity=".23" stroke-width="1.4"')).join('');
  const pod=upper=>'<g class="apex-car-sidepod">'+
   P(podSkin,podTone,'stroke="#0a1015" stroke-width="2"')+
+  (d.livery==='sweep'?P(podSkin,'url(#weave)'):'')+
   podDetail+
   // Cadara's upper secondary panel sits below the same material layers.
   (upper&&!customPaint&&d.livery==='lux'?P(podSkin,surface):'')+
-  P(d.panel,'url(#weave)','opacity=".45"')+P(podSkin,'url(#volume)')+
-  P(podSkin,'url(#podReflection)','class="apex-car-pod-reflection"')+
+  (d.livery==='sweep'?'':P(d.panel,'url(#weave)','opacity=".45"'))+
+  P(podSkin,'url(#volume)','opacity="'+(d.livery==='sweep'?0.55:1)+'"')+
+  P(podSkin,'url(#podReflection)','class="apex-car-pod-reflection" opacity="'+(d.livery==='sweep'?0.55:1)+'"')+
   P(podSkin,'url(#podUndercut)')+
   '<g clip-path="url(#podMask)">'+
    P(d.stripe,'none','stroke="#e3edf2" stroke-opacity=".18" stroke-width="3.5"')+
@@ -265,19 +277,19 @@ function markup(profile){
  const noseRoot=root+15;
  // Absolute stations give independently shaped engine-cover shoulders, waist,
  // nose root and nose tip. Mirrored on the centreline, never scaled as one car.
- const bodyShape='M173 '+(235-tail)+'L272 '+(235-tail-3)+
+ const bodyShape=(d.bodyUpper||'M173 '+(235-tail)+'L272 '+(235-tail-3)+
   'C329 '+(235-waist+3)+' 362 '+(235-waist-8)+' 402 '+(235-shoulder-9)+
   'Q448 '+(220-shoulder)+' 487 '+(225-shoulder+5)+
-  'L531 '+(229-shoulder)+'Q595 '+(235-root-22)+' 635 '+(235-noseRoot)+
+  'L531 '+(229-shoulder)+'Q595 '+(235-root-22)+' 635 '+(235-noseRoot))+
   'Q677 '+(235-half-2)+' 744 '+(235-half*.76)+
   'L'+(tip-8)+' '+(235-nw)+'Q'+(tip+8)+' 235 '+(tip-8)+' '+(235+nw)+
   'L744 '+(235+half*.76)+'Q677 '+(235+half+2)+' 635 '+(235+noseRoot)+
-  'Q595 '+(235+root+22)+' 531 '+(241+shoulder)+'L487 '+(245+shoulder-5)+
+  (d.bodyLower||'Q595 '+(235+root+22)+' 531 '+(241+shoulder)+'L487 '+(245+shoulder-5)+
   'Q448 '+(250+shoulder)+' 402 '+(235+shoulder+9)+
-  'C362 '+(235+waist+8)+' 329 '+(235+waist-3)+' 272 '+(235+tail+3)+'L173 '+(235+tail)+'Z';
+  'C362 '+(235+waist+8)+' 329 '+(235+waist-3)+' 272 '+(235+tail+3)+'L173 '+(235+tail)+'Z');
  // The engine cover is a tapered spine, surrounded by painted shoulders.
  const spine=waist*.30,spineRoot=shoulder*.34;
- const engineShape='M183 '+(235-tail*.47)+'L293 '+(235-spine)+
+ const engineShape=d.spine||'M183 '+(235-tail*.47)+'L293 '+(235-spine)+
   'Q375 '+(235-spineRoot)+' 442 '+(235-spineRoot)+
   'Q465 '+(235-spineRoot+1)+' 485 217L485 253Q465 '+(235+spineRoot-1)+' 442 '+(235+spineRoot)+
   'Q375 '+(235+spineRoot)+' 293 '+(235+spine)+'L183 '+(235+tail*.47)+'Z';
@@ -285,7 +297,7 @@ function markup(profile){
   'L'+(tip-8)+' '+(235-nw)+'Q'+(tip+8)+' 235 '+(tip-8)+' '+(235+nw)+
   'L744 '+(235+half*.76)+'Q677 '+(235+half+2)+' 635 '+(235+noseRoot)+'Z';
  const blocks={
-  sweep:M(P('M225 217Q355 201 445 187L457 191Q353 205 225 220Z',stripe)),
+  sweep:'',
   center:P('M194 224L455 207L479 218V252L455 263L194 246Z',surface)+P('M194 231H476V239H194Z',stripe),
   double:P('M190 224H470V230H190ZM190 240H470V246H190Z',stripe)+M(P('M637 216L900 225L900 228L637 224Z',surface)),
   chevron:M(P('M215 232L375 207L455 224L412 215L375 218L215 237Z',stripe))+M(P('M640 220L702 214L817 229L757 231L695 224Z',surface)),
@@ -297,10 +309,10 @@ function markup(profile){
   spear:M(P('M199 232L441 190L463 204L441 202L199 237Z',stripe))+P('M642 230L899 234L642 240L693 235Z',surface),
   lux:P(bodyShape,surface,'clip-path="url(#upperHalf)"')+P('M193 234H470V236H193ZM643 234H909V236H643Z',stripe)
  };
- const body=P(bodyShape,'url(#paint)','class="apex-car-body" stroke="#111820" stroke-width="2"')+
+ const body=P(bodyShape,'url(#paint)','class="apex-car-body" stroke="'+(d.bodyUpper?shade(p,.45):'#111820')+'" stroke-width="'+(d.bodyUpper?0.8:2)+'"')+
   P(engineShape,d.livery==='double'?p:'url(#panel)','class="apex-car-engine-cover"')+
   '<g clip-path="url(#bodyMask)" class="apex-car-livery">'+(customPaint?deco(bodyShape):blocks[d.livery])+'</g>'+
-  P(bodyShape,'url(#volume)')+
+  P(bodyShape,'url(#volume)','opacity="'+(d.bodyUpper?0.65:1)+'"')+
   P(engineShape,'url(#weave)','opacity=".55"')+
   P(engineShape,'url(#spineReflection)')+
   P(engineShape,'none','stroke="#e1edf4" stroke-opacity=".13" stroke-width="1"')+
@@ -313,13 +325,17 @@ function markup(profile){
   P('M676 229H688V241H676Z','#0b141a','opacity=".8"')+
   '<circle cx="673" cy="225" r="1.1" fill="#c5d0d7" opacity=".6"/><circle cx="693" cy="245" r="1.1" fill="#c5d0d7" opacity=".6"/>'+
   P('M792 232H799V238H792Z','#071017','stroke="#8798a3" stroke-opacity=".5" stroke-width=".7"')+'</g>';
- const bodyMasks='<defs><clipPath id="bodyMask">'+P(bodyShape,'#fff')+'</clipPath><clipPath id="podMask">'+P(podSkin,'#fff')+'</clipPath><clipPath id="inletMask">'+P(d.inlet,'#fff')+'</clipPath><clipPath id="upperHalf"><rect x="0" y="0" width="1000" height="235"/></clipPath></defs>';
+ const bodyMasks='<defs><clipPath id="bodyMask">'+P(bodyShape,'#fff')+'</clipPath><clipPath id="shellMask">'+P(bodyShape,'#fff')+P(podSkin,'#fff')+P(podSkin,'#fff','transform="translate(0 470) scale(1 -1)"')+'</clipPath><clipPath id="podMask">'+P(podSkin,'#fff')+'</clipPath><clipPath id="inletMask">'+P(d.inlet,'#fff')+'</clipPath><clipPath id="upperHalf"><rect x="0" y="0" width="1000" height="235"/></clipPath></defs>';
+ // One uninterrupted paint curve spans both surfaces; it cannot be hidden by
+ // the body/pod drawing order or appear as separate straight arrows.
+ const flowingAccent=!customPaint&&d.livery==='sweep'?'<g class="apex-car-flowing-accent" clip-path="url(#shellMask)">'+
+  M(P(d.stripe,'none','stroke="'+stripe+'" stroke-width="5" stroke-linecap="round"'))+'</g>':'';
 
  // Empty showroom cockpit: seat, belts and steering wheel. The halo sits
  // above the cockpit rim and converges into its single forward support.
  const cockpit='<g class="apex-car-cockpit" transform="translate(554 235) scale(1.12 '+(cw*1.18)+') translate(-554 -235)">'+
-  P('M482 211Q482 200 493 199L544 197Q594 197 626 235Q594 273 544 273L493 271Q482 270 482 259Z','url(#carbon)','stroke="'+p+'" stroke-width="5"')+
-  P('M492 215Q492 208 501 208L546 207Q578 209 600 235Q578 261 546 263L501 262Q492 262 492 255Z','url(#cockpitWell)','stroke="#76838b" stroke-opacity=".24" stroke-width=".8"')+
+  P(d.cockpit?.rim||'M482 211Q482 200 493 199L544 197Q594 197 626 235Q594 273 544 273L493 271Q482 270 482 259Z',d.cockpit?'url(#paint)':'url(#carbon)','stroke="'+p+'" stroke-width="5"')+
+  P(d.cockpit?.well||'M492 215Q492 208 501 208L546 207Q578 209 600 235Q578 261 546 263L501 262Q492 262 492 255Z','url(#cockpitWell)','stroke="#76838b" stroke-opacity=".24" stroke-width=".8"')+
   // Padded bucket and side bolsters: broad dark surfaces, fine stitching.
   P('M497 219Q497 216 502 216H519Q531 219 536 225V245Q531 251 519 254H502Q497 254 497 251Z','url(#seat)','class="apex-car-seat" stroke="#344149" stroke-opacity=".45" stroke-width=".8"')+
   P('M500 220L509 219Q514 235 509 251L500 250ZM523 221L531 226V244L523 249Q529 235 523 221Z','#070d12')+
@@ -335,19 +351,19 @@ function markup(profile){
   P('M574 232H580M574 235H578','none','stroke="'+stripe+'" stroke-opacity=".75" stroke-width=".8"')+
   '<circle cx="576" cy="222" r="1.3" fill="#a33c37"/><circle cx="582" cy="225" r="1" fill="#8da39a"/><circle cx="576" cy="248" r="1.3" fill="#b6a15c"/>'+
   // A short offset shadow seats the halo above the rim, without blur filters.
-  P('M494 202C544 190 589 201 621 238C589 275 544 286 494 274','none','stroke="#010406" stroke-opacity=".55" stroke-width="12" stroke-linecap="round"')+
-  P('M494 199C544 187 589 198 621 235C589 272 544 283 494 271','none','stroke="url(#halo)" stroke-width="8" stroke-linecap="round"')+
-  P('M496 197C543 188 586 199 615 227','none','stroke="#d5dfe5" stroke-opacity=".38" stroke-width=".9"')+
-  P('M496 273C543 282 586 271 615 243','none','stroke="#4c5a63" stroke-opacity=".4" stroke-width=".8"')+
+  P(d.cockpit?.shadow||'M494 202C544 190 589 201 621 238C589 275 544 286 494 274','none','stroke="#010406" stroke-opacity=".55" stroke-width="12" stroke-linecap="round"')+
+  P(d.cockpit?.halo||'M494 199C544 187 589 198 621 235C589 272 544 283 494 271','none','stroke="url(#halo)" stroke-width="8" stroke-linecap="round"')+
+  P(d.cockpit?.upper||'M496 197C543 188 586 199 615 227','none','stroke="#d5dfe5" stroke-opacity=".38" stroke-width=".9"')+
+  P(d.cockpit?.lower||'M496 273C543 282 586 271 615 243','none','stroke="#4c5a63" stroke-opacity=".4" stroke-width=".8"')+
   P('M618 235H649','none','stroke="url(#halo)" stroke-width="7" stroke-linecap="round"')+
   P('M620 232H647','none','stroke="#a3afb6" stroke-opacity=".4" stroke-width=".8"')+
-  '<circle cx="495" cy="199" r="1.8" fill="#7b8a93"/><circle cx="495" cy="271" r="1.8" fill="#47565f"/></g>';
+  '<circle cx="'+(d.cockpit?503:495)+'" cy="'+(d.cockpit?194:199)+'" r="1.8" fill="#7b8a93"/><circle cx="'+(d.cockpit?503:495)+'" cy="'+(d.cockpit?276:271)+'" r="1.8" fill="#47565f"/></g>';
  // Place the mirrors ahead of the inlet mouths, leaving the recess visible.
  const mirrors=M(P('M630 205L651 146','none','stroke="#0c141a" stroke-width="3.5"')+
   P('M638 136L661 133Q668 133 666 141L640 145Z','url(#carbon)','stroke="'+p+'" stroke-width="1.4"')+
   P('M641 137L661 135','none','stroke="#c1cfd8" stroke-opacity=".4" stroke-width=".8"'));
- return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 470" width="1000" height="470" role="img" data-apex-silhouette="f1-running-gear-v13" data-apex-design-key="'+id+'" data-apex-paint-style="'+paintStyle+'" data-apex-design="'+safe(d.reference)+'" data-apex-team="'+id+'" data-apex-model="'+model+'" data-apex-chassis="'+chassis+'" aria-label="Vista cenital de monoplaza '+id+' '+model+'">'+defs+paintDefs+bodyMasks+
-  floor+rearWing+M(frontHalf)+suspension+mounts+sidepods+body+serviceDetails+
+ return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 470" width="1000" height="470" role="img" data-apex-silhouette="f1-integrated-shell-v14" data-apex-design-key="'+id+'" data-apex-paint-style="'+paintStyle+'" data-apex-design="'+safe(d.reference)+'" data-apex-team="'+id+'" data-apex-model="'+model+'" data-apex-chassis="'+chassis+'" aria-label="Vista cenital de monoplaza '+id+' '+model+'">'+defs+paintDefs+bodyMasks+
+  floor+rearWing+M(frontHalf)+suspension+mounts+sidepods+body+flowingAccent+serviceDetails+
   tire(221,104,true)+tire(221,366,true)+tire(785,101)+tire(785,369)+cockpit+mirrors+
   P('M464 214H485Q489 214 489 219V251Q489 256 485 256H464Z','url(#carbon)','stroke="#61717b" stroke-width="1.2"')+
   P('M469 223H480V247H469Z','#03080b','stroke="#303e48" stroke-width="1"')+
