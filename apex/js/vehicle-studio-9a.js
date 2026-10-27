@@ -177,6 +177,17 @@ function paint(){
   button.setAttribute('aria-pressed',String(active));
   button.disabled=locked&&!active;
  }
+ // Keep the highlighted team in view within the compact horizontal strip.
+ // Do not scroll the page or move keyboard focus while changing teams.
+ const strip=$('apexStudioTeamCards');
+ const selected=strip?.querySelector('.apexStudioTeamCard.active');
+ if(strip&&selected){
+  const left=selected.offsetLeft-strip.offsetLeft;
+  const right=left+selected.offsetWidth;
+  if(left<strip.scrollLeft)strip.scrollLeft=Math.max(0,left-6);
+  else if(right>strip.scrollLeft+strip.clientWidth)
+   strip.scrollLeft=right-strip.clientWidth+6;
+ }
  $('apexStudioReset').disabled=!colors[key];
  $('apexStudioSave').textContent=saveNotice|| (colors[key]?'COLORES PERSONALIZADOS':'COLORES DE ESCUDERÍA');
  global.ApexTeamCarPreview9A?.setCar?.(key);
