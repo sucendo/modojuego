@@ -157,3 +157,26 @@ Vehículo / Escudería; no sustituye la malla de carrera ni sus físicas.
 
 El resultado sigue siendo una interpretación vectorial cenital: las pruebas de
 geometría y funcionamiento no acreditan equivalencia fotográfica con la imagen.
+
+## Conjunto trasero y suelo del estudio (v20)
+
+La zona entre la cola y el alerón se organiza ahora alrededor de la caja de
+cambios: carcasa perfilada, hombros y bridas, soportes de suspensión, escape
+axial hueco, dos pilones del alerón y plano inferior separado. Solo se muestra
+el labio superior visible de la salida del difusor, sin dibujar el fondo del
+coche a través de la carrocería.
+
+Los anclajes delanteros de los brazos traseros, su sección y la anchura de la
+carcasa se derivan de las estaciones de cada escudería. El alerón inferior y
+los pilones se sitúan respecto al borde real de su alerón trasero. Se conservan
+la batalla, las huellas de los slick, los semiejes transversales y la cola junto
+al eje. Las geometrías siguen siendo invariantes entre decoraciones.
+
+El suelo solicitado se aplica únicamente a `.apexStudioStage`: losas gris
+oscuro, juntas, textura estática muy fina y luz neutra. Una pequeña textura SVG
+embebida y gradientes CSS evitan descargas de imágenes, ruido animado o filtros
+de textura. Se reduce la sombra del coche para acercarlo al suelo. No se
+modifica el suelo de los circuitos ni el layout Circuito/Vehículo.
+
+La validación del estudio incluye las once carcasas distintas, los nuevos
+soportes, la salida del difusor, el suelo, las 121 decoraciones y la persistencia.

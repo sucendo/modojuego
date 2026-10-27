@@ -259,14 +259,19 @@ function markup(profile){
    P('M'+point(ax,ay,width*.16)+'L'+point(bx,by,width*.1),'none',
     'stroke="#b7c6ce" stroke-opacity=".28" stroke-width=".8"')+'</g>';
  }
+ // Native rear stations keep the mechanical opening coherent with each
+ // engine cover. Axle centres and tyre footprints remain the shared anchors.
+ const rearForward=Number((294+d.cover[1]*.4).toFixed(2));
+ const rearArmWidth=Number((8+d.cover[0]*.12).toFixed(2));
+ const rearCaseHalf=Number((14+d.cover[0]*.18).toFixed(2));
  const suspension=M(
   '<g class="apex-car-suspension" data-axle="front">'+
    arm(670,215,780,frontInner+8,17)+arm(799,222,789,frontInner+9,14)+
    arm(708,227,776,frontInner+11,4.6,'pushrod')+
    arm(767,230,795,frontInner+9,3.2,'steering')+'</g>'+
   '<g class="apex-car-suspension" data-axle="rear">'+
-   arm(229,219,215,rearInner+8,13)+arm(322,220,229,rearInner+10,12)+
-   arm(281,228,224,rearInner+14,4,'pushrod')+
+   arm(231,220,215,rearInner+8,rearArmWidth)+arm(rearForward,221,229,rearInner+10,rearArmWidth*.85)+
+   arm(rearForward-38,229,224,rearInner+14,3.4,'pushrod')+
    arm(221,235,221,rearInner+11,4.5,'halfshaft')+'</g>'
  );
  // The painted tail ends beside the rear axle. The exposed gearbox, near-
@@ -274,18 +279,36 @@ function markup(profile){
  const rearChord=d.proportions?.rearChord??(1+d.rear[1]/100);
  const rearShift=d.proportions?.rearShift||0;
  const rearWingExit=110+35*rearChord+rearShift;
- const beamTop=rearInner+12;
- const gearboxShape='M174 225L195 222Q213 215 235 219L250 225V245L235 251Q213 255 195 248L174 245Z';
- const rearAssembly='<g class="apex-car-rear-assembly">'+
-  '<g transform="translate(18 0)">'+
-  P('M162 '+beamTop+'Q176 '+(beamTop-3)+' 190 '+(beamTop+2)+'L187 223L181 235L187 247L190 '+(468-beamTop)+'Q176 '+(473-beamTop)+' 162 '+(470-beamTop)+'L166 247L171 235L166 223Z','url(#wing)','class="apex-car-beam-wing" stroke="#080e13" stroke-width="1.2"')+
-  M(P('M164 '+(beamTop+4)+'Q177 '+beamTop+' 188 '+(beamTop+5),'none','stroke="#acbac4" stroke-opacity=".3" stroke-width=".9"'))+'</g>'+
-  M(P('M'+(rearWingExit-2)+' 216L199 224V230L'+(rearWingExit-2)+' 223Z','url(#suspension)','class="apex-car-rear-pylon" stroke="#080e13" stroke-width=".8"'))+
-  P(gearboxShape,'url(#carbon)','class="apex-car-gearbox" stroke="#23313a" stroke-width="1"')+
+ const beamTop=rearInner+9;
+ const caseRear=rearWingExit+15,beamX=rearWingExit+25;
+ const beamChord=18+d.rear[0]*.18;
+ const gearboxShape='M'+caseRear+' 228L'+(caseRear+14)+' 224Q211 '+(235-rearCaseHalf)+' 230 '+(235-rearCaseHalf)+
+  'L258 223L267 230V240L258 247L230 '+(235+rearCaseHalf)+'Q211 '+(235+rearCaseHalf)+' '+(caseRear+14)+' 246L'+caseRear+' 242Z';
+ const beamShape='M'+beamX+' '+beamTop+'Q'+(beamX+9)+' '+(beamTop-3)+' '+(beamX+beamChord)+' '+(beamTop+2)+
+  'L'+(beamX+beamChord-3)+' 224L'+(beamX+beamChord-6)+' 235L'+(beamX+beamChord-3)+' 246L'+(beamX+beamChord)+' '+(468-beamTop)+
+  'Q'+(beamX+9)+' '+(473-beamTop)+' '+beamX+' '+(470-beamTop)+'L'+(beamX+3)+' 246L'+(beamX+4)+' 235L'+(beamX+3)+' 224Z';
+ const diffuserShape='M'+(caseRear-7)+' 202L'+(caseRear+7)+' 198L'+(beamX+13)+' 210V260L'+(caseRear+7)+' 272L'+(caseRear-7)+' 268Z';
+ const pylonShape='M'+(rearWingExit-2)+' 222Q'+(rearWingExit+17)+' 222 211 225L232 227V232L210 230Q'+(rearWingExit+15)+' 227 '+(rearWingExit-2)+' 228Z';
+ const rearAssembly='<g class="apex-car-rear-assembly" data-rear-stations="'+[caseRear,rearCaseHalf,rearForward,beamChord].join(' ')+'">'+
+  // Only the upper diffuser lip is exposed from overhead, behind the gearbox.
+  P(diffuserShape,'url(#carbon)','class="apex-car-diffuser-exit" stroke="#080d12" stroke-width="1"')+
+  P(diffuserShape,'url(#weave)')+
+  M(P('M'+(caseRear-6)+' 206L'+(caseRear+5)+' 203L'+(beamX+12)+' 213','none','stroke="#697984" stroke-opacity=".28" stroke-width="1"'))+
+  P(beamShape,'url(#wing)','class="apex-car-beam-wing" stroke="#080e13" stroke-width="1"')+
+  P(beamShape,'url(#foilRelief)')+
+  M(P('M'+(beamX+3)+' '+(beamTop+4)+'Q'+(beamX+10)+' '+beamTop+' '+(beamX+beamChord-2)+' '+(beamTop+5)+'L'+(beamX+beamChord-5)+' 216','none','stroke="#a7b8c1" stroke-opacity=".28" stroke-width=".8"'))+
+  P(gearboxShape,'url(#carbon)','class="apex-car-gearbox" stroke="#31404a" stroke-width=".8"')+
   P(gearboxShape,'url(#weave)','opacity=".65"')+
-  P('M178 229L195 227Q213 220 237 224M178 241L195 243Q213 250 237 246','none','stroke="#8596a1" stroke-opacity=".27" stroke-width="1"')+
-  P('M171 231H197L206 235L197 239H171Z','#070e13','class="apex-car-tail-outlet" stroke="#43545f" stroke-width=".8"')+
-  P('M173 233H191V237H173Z','#010406')+'</g>';
+  // Cast casing shoulders, flange and two visible mounting brackets.
+  M(P('M'+(caseRear+6)+' 226L202 222L218 '+(238-rearCaseHalf)+'L235 '+(238-rearCaseHalf)+'L249 226','none','stroke="#7b8b95" stroke-opacity=".35" stroke-width="1"')+
+   P('M226 216L238 216L243 224L232 226Z','url(#machined)','class="apex-car-rear-bracket" stroke="#0a1116" stroke-width="1"')+
+   '<circle cx="233" cy="220" r="1.4" fill="#a7b3ba"/>')+
+  P('M209 220Q215 218 220 218V252Q215 252 209 250Z','url(#machined)','opacity=".55"')+
+  M(P(pylonShape,'url(#carbon)','class="apex-car-rear-pylon" stroke="#0a1116" stroke-width=".8"')+
+   P('M'+(rearWingExit+1)+' 223Q'+(rearWingExit+18)+' 223 211 226L229 228','none','stroke="#a6b5bf" stroke-opacity=".32" stroke-width=".8"'))+
+  // Small axial exhaust above the case, visibly hollow at the rear edge.
+  P('M'+(caseRear-2)+' 231H209L217 235L209 239H'+(caseRear-2)+'Z','url(#machined)','class="apex-car-tail-outlet" stroke="#16232b" stroke-width=".8"')+
+  '<ellipse cx="'+(caseRear-2)+'" cy="235" rx="2.8" ry="4" fill="#010406" stroke="#7b8b94" stroke-width=".8"/></g>';
  function wheelMount(cx,inner,rear=false){
   const duct=rear?18:25;
   return '<g class="apex-car-wheel-mount" data-axle="'+(rear?'rear':'front')+'">'+
@@ -299,7 +322,11 @@ function markup(profile){
     P('M'+(cx+9)+' '+(inner+3)+'L'+(cx+duct)+' '+(inner-2)+'Q'+(cx+duct+5)+' '+(inner+5)+' '+(cx+duct+1)+' '+(inner+12)+'L'+(cx+9)+' '+(inner+15)+'Z','url(#carbon)','stroke="#37454e" stroke-width="1"')+
     P('M'+(cx+duct)+' '+(inner+1)+'L'+(cx+duct+1)+' '+(inner+9)+'L'+(cx+duct-4)+' '+(inner+10)+'L'+(cx+duct-4)+' '+(inner+2)+'Z','#010508','stroke="#687d89" stroke-opacity=".5" stroke-width=".6"')+'</g></g>';
  }
- const mounts=M(wheelMount(785,frontInner)+wheelMount(221,rearInner,true));
+ const rearJoints=M('<g class="apex-car-rear-joints">'+
+  '<ellipse cx="231" cy="220" rx="3.6" ry="2.4" fill="#0b141b" stroke="#687b86" stroke-width=".8"/>'+
+  '<ellipse cx="'+rearForward+'" cy="221" rx="3.6" ry="2.4" fill="#0b141b" stroke="#687b86" stroke-width=".8"/>'+
+  '<circle cx="221" cy="'+(rearInner+8)+'" r="2.7" fill="#283640" stroke="#86959d" stroke-width=".8"/></g>');
+ const mounts=M(wheelMount(785,frontInner)+wheelMount(221,rearInner,true))+rearJoints;
  const rearWing='<g class="apex-car-rear-wing" transform="translate('+rearShift+' 0) translate(110 235) scale('+rearChord+' '+(1+d.rear[0]/120)+') translate(-110 -235)">'+
   P('M79 '+ry+'Q106 '+(ry-3)+' 145 '+(ry+4)+'L145 '+(466-ry)+'Q106 '+(473-ry)+' 79 '+(470-ry)+'Z','url(#wing)','stroke="#04080c" stroke-width="3"')+
   P('M84 '+(ry+5)+'Q100 '+(ry+1)+' 119 '+(ry+5)+'V'+(465-ry)+'Q100 '+(469-ry)+' 84 '+(465-ry)+'Z','url(#panel)')+
@@ -481,7 +508,7 @@ function markup(profile){
  const mirrors=M(P('M630 205L651 146','none','stroke="#0c141a" stroke-width="3.5"')+
   P('M638 136L661 133Q668 133 666 141L640 145Z','url(#carbon)','stroke="'+p+'" stroke-width="1.4"')+
   P('M641 137L661 135','none','stroke="#c1cfd8" stroke-opacity=".4" stroke-width=".8"'));
- return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 470" width="1000" height="470" role="img" data-apex-silhouette="f1-sculpted-surfaces-v19" data-apex-design-key="'+id+'" data-apex-paint-style="'+paintStyle+'" data-apex-design="'+safe(d.reference)+'" data-apex-team="'+id+'" data-apex-model="'+model+'" data-apex-chassis="'+chassis+'" aria-label="Vista cenital de monoplaza '+id+' '+model+'">'+defs+paintDefs+bodyMasks+
+ return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 470" width="1000" height="470" role="img" data-apex-silhouette="f1-rear-assembly-v20" data-apex-design-key="'+id+'" data-apex-paint-style="'+paintStyle+'" data-apex-design="'+safe(d.reference)+'" data-apex-team="'+id+'" data-apex-model="'+model+'" data-apex-chassis="'+chassis+'" aria-label="Vista cenital de monoplaza '+id+' '+model+'">'+defs+paintDefs+bodyMasks+
   floor+rearWing+rearAssembly+frontBridge+M(frontHalf)+suspension+mounts+sidepods+body+flowingAccent+serviceDetails+
   tire(221,rearWheelY,true)+tire(221,470-rearWheelY,true)+tire(785,101)+tire(785,369)+cockpit+mirrors+
   '<g class="apex-car-airbox" transform="translate('+(d.proportions?.airboxShift||0)+' 0)">'+

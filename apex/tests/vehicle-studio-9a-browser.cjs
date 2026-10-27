@@ -103,7 +103,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
     doc.querySelectorAll('text').forEach(el=>el.remove());
     const path=selector=>doc.querySelector(selector)?.getAttribute('d');
     const geometry={body:path('.apex-car-body'),cockpit:path('.apex-car-cockpit>path:first-child'),pod:path('.apex-car-sidepod path'),
-     inlet:path('.apex-car-inlet'),engine:path('.apex-car-engine-cover'),channel:path('.apex-car-pod-channel'),
+     inlet:path('.apex-car-inlet'),engine:path('.apex-car-engine-cover'),rearCase:path('.apex-car-gearbox'),channel:path('.apex-car-pod-channel'),
      nose:path('.apex-car-nose'),front:path('.apex-car-front-wing path')};
     const canvas=document.createElement('canvas');canvas.width=500;canvas.height=235;
     const ctx=canvas.getContext('2d');
@@ -139,7 +139,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
    }
    return result;
   },options);
-  for(const component of ['body','cockpit','pod','inlet','engine','channel','nose','front']){
+  for(const component of ['body','cockpit','pod','inlet','engine','rearCase','channel','nose','front']){
    assert.ok(neutral.every(row=>row.geometry[component]),'Componente presente: '+component);
    assert.equal(new Set(neutral.map(row=>row.geometry[component])).size,11,
     'Once geometrías diferentes con tamaños y paleta idénticos: '+component);
@@ -224,7 +224,10 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
     shaftsTransverse:shafts.every(el=>{
      const [ax,,bx]=el.dataset.anchors.split(' ').map(Number);return Math.abs(ax-bx)<1;
     }),pylons:svg.querySelectorAll('.apex-car-rear-pylon').length,
-    beamWings:svg.querySelectorAll('.apex-car-beam-wing').length};
+    beamWings:svg.querySelectorAll('.apex-car-beam-wing').length,
+    diffuserExits:svg.querySelectorAll('.apex-car-diffuser-exit').length,
+    brackets:svg.querySelectorAll('.apex-car-rear-bracket').length,
+    joints:svg.querySelectorAll('.apex-car-rear-joints').length};
    const svgBounds=el=>{
     const b=el.getBBox(),m=el.getCTM();
     const points=[[b.x,b.y],[b.x+b.width,b.y],[b.x,b.y+b.height],[b.x+b.width,b.y+b.height]]
@@ -268,7 +271,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
     'Suspensión completa y cuatro bujes unidos a la cara interior de los neumáticos: '+drawing.key);
    assert.ok(drawing.wing.elements>=3&&drawing.wing.joins===drawing.wing.elements&&drawing.wing.connected,
     'Cada lámina tiene unión central con ambas mitades del alerón: '+JSON.stringify(drawing.wing)+' / '+drawing.key);
-   assert.deepEqual(drawing.rearLayout,{tailNearAxle:true,gearboxAtAxle:true,shaftsTransverse:true,pylons:2,beamWings:1},
+   assert.deepEqual(drawing.rearLayout,{tailNearAxle:true,gearboxAtAxle:true,shaftsTransverse:true,pylons:2,beamWings:1,diffuserExits:1,brackets:2,joints:2},
     'Cola junto al eje, transmisión y soportes traseros: '+drawing.key);
    assert.ok(drawing.proportions.noseAheadOfWing,'El morro llega por delante de la unión central del alerón: '+drawing.key);
    if(drawing.key==='PAPAYA'){
@@ -327,7 +330,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
    const signature=source=>{
     const doc=new DOMParser().parseFromString(source,'image/svg+xml');
     if(doc.querySelector('parsererror'))throw new Error('SVG inválido');
-    return JSON.stringify(Array.from(doc.querySelectorAll('.apex-car-body,.apex-car-engine-cover,.apex-car-nose,.apex-car-inlet,.apex-car-sidepod>path:first-child,.apex-car-front-bridge,.apex-car-wing-join,.apex-car-front-wing,.apex-car-front-wing .apex-car-wing-element,.apex-car-rear-wing,.apex-car-cockpit,.apex-car-cockpit path,.apex-car-cockpit circle,.apex-car-inlet-depth path,.apex-car-pod-reflection,.apex-car-pod-channel,.apex-car-channel-ridge,.apex-car-pod-shoulder,.apex-car-foil-relief,.apex-car-rear-plane-relief,.apex-car-tyre,.apex-car-suspension-arm path,.apex-car-wheel-mount path,.apex-car-wheel-mount ellipse,.apex-car-wheel-mount circle,.apex-car-floor,.apex-car-rear-assembly g,.apex-car-rear-assembly path,.apex-car-airbox,.apex-car-service-details path')).map(el=>({
+    return JSON.stringify(Array.from(doc.querySelectorAll('.apex-car-body,.apex-car-engine-cover,.apex-car-nose,.apex-car-inlet,.apex-car-sidepod>path:first-child,.apex-car-front-bridge,.apex-car-wing-join,.apex-car-front-wing,.apex-car-front-wing .apex-car-wing-element,.apex-car-rear-wing,.apex-car-cockpit,.apex-car-cockpit path,.apex-car-cockpit circle,.apex-car-inlet-depth path,.apex-car-pod-reflection,.apex-car-pod-channel,.apex-car-channel-ridge,.apex-car-pod-shoulder,.apex-car-foil-relief,.apex-car-rear-plane-relief,.apex-car-tyre,.apex-car-suspension-arm path,.apex-car-wheel-mount path,.apex-car-wheel-mount ellipse,.apex-car-wheel-mount circle,.apex-car-floor,.apex-car-rear-assembly g,.apex-car-rear-assembly path,.apex-car-rear-assembly ellipse,.apex-car-rear-assembly circle,.apex-car-rear-joints,.apex-car-rear-joints ellipse,.apex-car-rear-joints circle,.apex-car-airbox,.apex-car-service-details path')).map(el=>({
      tag:el.tagName,shape:el.getAttribute('d'),transform:el.getAttribute('transform'),
      size:['cx','cy','rx','ry','r','x','y','width','height'].map(name=>el.getAttribute(name)),
      child:el.querySelector('path,rect')?.getAttribute('d')||el.querySelector('rect')?.outerHTML
@@ -441,6 +444,12 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
     assert.ok(split.vehicle.y>=split.circuit.bottom-3,
      'En pantallas estrechas deben apilarse sin montarse '+JSON.stringify(split));
   }
+  const ground=await panel.locator('.apexStudioStage').evaluate(el=>{
+   const style=getComputedStyle(el);return {image:style.backgroundImage,color:style.backgroundColor};
+  });
+  assert.equal(ground.color,'rgb(38, 49, 57)','Suelo neutro de losas, independiente del color de escudería');
+  assert.ok(ground.image.includes('data:image/svg+xml')&&ground.image.includes('repeating-linear-gradient'),
+   'Textura vectorial estática y juntas de losas en el visor');
   const geometry=await panel.evaluate(el=>{
    const rect=el.getBoundingClientRect();
    const hero=el.querySelector('.apexStudioHero').getBoundingClientRect();
