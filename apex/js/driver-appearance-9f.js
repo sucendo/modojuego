@@ -56,8 +56,8 @@ function svgSuite(p){
  '<text x="160" y="131" text-anchor="middle" fill="'+c+'" stroke="#07101b" stroke-width="1.2" font-family="Arial,sans-serif" font-weight="900" font-size="32">'+(p.number==null?'26':String(p.number).padStart(2,'0'))+'</text>'+
  '</svg>';
 }
-function avatarSvg(p){
- const suit=palette(p),h=p.helmet;
+function avatarSvg(p,scope='avatar'){
+ const suit=palette(p);
  const a=suit.primary,b=suit.secondary,c=suit.trim;
  const pattern=p.suit.pattern==='chevron'?
   '<path d="M58 272 180 348 302 272" stroke="'+b+'" stroke-width="25" fill="none"/>':
@@ -66,16 +66,6 @@ function avatarSvg(p){
   p.suit.pattern==='classic'?
   '<path d="M166 225V383" stroke="'+b+'" stroke-width="22"/>':
   '<path d="M127 228 143 373M233 228 216 373" stroke="'+b+'" stroke-width="20" fill="none"/>';
- const helmetAccent=h.pattern==='bands'?
-  '<path d="M109 103 Q176 71 246 105" stroke="'+h.secondary+'" stroke-width="19" fill="none"/>':
-  h.pattern==='split'?
-  '<path d="M185 53 Q252 76 248 166 L185 174Z" fill="'+h.secondary+'"/>':
-  h.pattern==='chevron'?
-  '<path d="M115 95 182 153 246 95" fill="none" stroke="'+h.secondary+'" stroke-width="17"/>':
-  h.pattern==='clean'?
-  '<path d="M105 144 252 151" stroke="'+h.secondary+'" stroke-width="8"/>':
-  '<path d="M174 55H194L214 158H154Z" fill="'+h.secondary+'"/>';
- const num=p.number==null?'26':String(p.number).padStart(2,'0');
  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 380" role="img" aria-label="Imagen de perfil del piloto con casco y mono personalizados">'+
  '<defs><linearGradient id="driverShine" x1="0" y1="0" x2=".9" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".23"/><stop offset=".6" stop-color="#ffffff" stop-opacity=".02"/><stop offset="1" stop-color="#020810" stop-opacity=".65"/></linearGradient></defs>'+
  '<circle cx="180" cy="175" r="160" fill="none" stroke="'+b+'" stroke-opacity=".28" stroke-width="2"/>'+
@@ -86,14 +76,7 @@ function avatarSvg(p){
  pattern+
  '<path d="M144 200 180 257 217 199" stroke="'+c+'" stroke-width="9" fill="#0c1824"/>'+
  '<path d="M101 367H257" stroke="'+c+'" stroke-width="3" stroke-opacity=".45"/>'+
- '<path d="M104 130Q105 60 153 45Q179 33 210 43Q258 62 258 132L264 182Q250 212 182 221Q118 216 105 185Z" fill="'+h.primary+'" stroke="#020711" stroke-width="8"/>'+
- '<path d="M104 130Q105 60 153 45Q179 33 210 43Q258 62 258 132L264 182Q250 212 182 221Q118 216 105 185Z" fill="url(#driverShine)"/>'+
- helmetAccent+
- '<path d="M103 141Q172 126 259 147L252 183Q179 202 114 185Z" fill="'+h.visor+'" stroke="'+h.trim+'" stroke-width="6"/>'+
- '<path d="M117 149Q167 134 224 145" stroke="#d9f6ff" stroke-opacity=".43" stroke-width="5" fill="none"/>'+
- '<path d="M117 194Q176 216 248 193L235 210Q179 232 134 207Z" fill="'+h.primary+'" stroke="'+h.trim+'" stroke-width="4"/>'+
- '<path d="M147 204Q180 213 220 204" stroke="'+h.secondary+'" stroke-width="8" fill="none"/>'+
- '<text x="181" y="97" text-anchor="middle" font-size="20" font-family="Arial,sans-serif" font-weight="900" fill="'+h.trim+'">'+num+'</text>'+
+ global.ApexDriverProfile9F.helmetSvg(p,scope+'-helmet').replace('<svg ', '<svg x="40" y="15" width="280" height="242" ')+
  '</svg>';
 }
 function render(p){
@@ -125,7 +108,7 @@ function render(p){
   });
  }
  const avatarHome=$('apexDriverProfileHomeIcon');
- if(avatarHome)avatarHome.innerHTML=avatarSvg(p);
+ if(avatarHome)avatarHome.innerHTML=avatarSvg(p,'home');
 }
 function applySource(){
  const form=$('apexDriverProfileForm');if(!form)return;
@@ -139,7 +122,7 @@ function applySource(){
  const p=global.ApexDriverProfile9F.get();
  // Reproducir el estado actual del formulario, no el último guardado.
  const h={primary:form.elements.helmetPrimary.value,secondary:form.elements.helmetSecondary.value,
-  trim:form.elements.helmetTrim.value,visor:form.elements.helmetVisor.value,
+  trim:form.elements.helmetTrim.value,visor:form.elements.helmetVisor.value,visorFinish:form.elements.helmetVisorFinish.value,
   pattern:form.elements.helmetPattern.value};
  const s={primary:form.elements.suitPrimary.value,secondary:form.elements.suitSecondary.value,
   trim:form.elements.suitTrim.value,pattern:form.elements.suitPattern.value,source:form.elements.suitSource.value};
@@ -151,12 +134,12 @@ function downloadSvg(){
  if(!form)return;
  const data=global.ApexDriverProfile9F.get(),h={
   primary:form.elements.helmetPrimary.value,secondary:form.elements.helmetSecondary.value,
-  trim:form.elements.helmetTrim.value,visor:form.elements.helmetVisor.value,
+  trim:form.elements.helmetTrim.value,visor:form.elements.helmetVisor.value,visorFinish:form.elements.helmetVisorFinish.value,
   pattern:form.elements.helmetPattern.value};
  const p={...data,name:form.elements.driverName.value,number:form.elements.driverNumber.value===''?null:+form.elements.driverNumber.value,
   helmet:h,suit:{primary:form.elements.suitPrimary.value,secondary:form.elements.suitSecondary.value,
   trim:form.elements.suitTrim.value,pattern:form.elements.suitPattern.value,source:form.elements.suitSource.value}};
- const blob=new Blob([avatarSvg(p)],{type:'image/svg+xml;charset=utf-8'});
+ const blob=new Blob([avatarSvg(p,'export')],{type:'image/svg+xml;charset=utf-8'});
  const url=URL.createObjectURL(blob),a=document.createElement('a');
  a.href=url;a.download='APEX26-perfil-piloto.svg';a.click();
  setTimeout(()=>URL.revokeObjectURL(url),1000);
