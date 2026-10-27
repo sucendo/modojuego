@@ -1,12 +1,11 @@
-/* APEX Formula 26 · Endless Horizon V4, banda sonora circular de 8:10.
- * Piano y nuevos arreglos sobre la canción original del usuario.
- * Preparada OFFLINE como MP3 LAME gapless, sin síntesis durante el juego.
- * Audio activado voluntariamente, en bucle y suspendido al iniciar carrera.
+/* APEX Formula 26 · Tema principal SoundBox elegido por el usuario.
+ * La canción completa se sintetiza OFFLINE en CI y se sirve como MP3 local.
+ * Sin red externa, sintetizadores en el hilo del juego ni autoplay invasivo.
  */
 (function(global){
 'use strict';
 const KEY='apex26.menu-music.v1'; // Conserva la preferencia de APEX 9A.
-const FILE='assets/music/apex-theme-v4-endless-horizon.mp3';
+const FILE='assets/music/apex-theme.mp3';
 const VOLUME=0.33;
 const $=id=>document.getElementById(id);
 let enabled=false,unlocked=false,audio=null,starting=false;
@@ -22,7 +21,7 @@ function updateButton(){
   else b.textContent=enabled?'MÚSICA: ACTIVADA':'MÚSICA: DESACTIVADA';
   b.setAttribute('aria-label',enabled?'Desactivar música de APEX 26':'Activar música de APEX 26');
   b.setAttribute('aria-pressed',String(enabled));
-  b.title=enabled?'Endless Horizon · detener':'Endless Horizon · reproducir';
+  b.title=enabled?'Tema APEX 26 · detener':'Tema APEX 26 · reproducir';
  }
  const option=$('apexProtoAudioText');
  if(option){
@@ -88,16 +87,8 @@ function init(){
 }
 global.ApexMenuMusic9A=Object.freeze({
  toggle,get:()=>enabled,stop,refresh,
- seekToEndForTest:(seconds=0.6)=>{
-  if(global.location.hostname!=='127.0.0.1'&&global.location.hostname!=='localhost')return false;
-  if(!audio||!Number.isFinite(audio.duration))return false;
-  audio.currentTime=Math.max(0,audio.duration-seconds);
-  return true;
- },
  state:()=>({enabled,playing:!!audio&&!audio.paused,src:FILE,unlocked,volume:VOLUME,
   duration:audio&&Number.isFinite(audio.duration)?audio.duration:null,
-  currentTime:audio?.currentTime||0,
-  loop:audio?.loop||false,
   readyState:audio?.readyState||0})
 });
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});
