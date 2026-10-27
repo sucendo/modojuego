@@ -1,144 +1,138 @@
-/* APEX 26 · 9A · Vista del monoplaza derivada del blueprint real.
- * Sustituye las fotografías genéricas del prototipo por una vista técnica SVG.
- * Misma clave de equipo, modelo A26/VXR/NOVA, dimensiones y librea que el motor.
- * No crea modelos deportivos paralelos, no necesita WebGL ni carga binarios extra.
+/* APEX 26 · Vista de estudio F1 2026. Sólo SVG/CPU ligero, sin WebGL extra.
+ * La geometría y la decoración se derivan del blueprint nativo de cada equipo.
+ * Los tonos de personalización proceden de los controles carColor/carAccent.
  */
 (function(global){
 'use strict';
-const get=id=>document.getElementById(id);
+const $=id=>document.getElementById(id);
 const cache=new Map();
-const color=(s,f)=>/^#[0-9a-f]{6}$/i.test(String(s||''))?String(s).toLowerCase():f;
-const safeId=(s)=>String(s||'').replace(/[^a-zA-Z0-9_-]/g,'').slice(0,32);
-const size=(n,f=1)=>Number.isFinite(Number(n))?Math.max(.78,Math.min(1.25,Number(n))):f;
-const fmt=n=>Number(n).toFixed(2);
+const hex=(s,f)=>/^#[0-9a-f]{6}$/i.test(String(s||''))?String(s).toLowerCase():f;
+const safe=s=>String(s||'').replace(/[^a-zA-Z0-9_-]/g,'').slice(0,36);
+const clamp=(n,min,max)=>Math.min(max,Math.max(min,Number(n)||1));
 function markup(profile){
- if(!profile||!profile.geometry||!profile.livery)return null;
- const l=profile.livery,g=profile.geometry;
- const primary=color(l.primary,'#526578'),accent=color(l.accent,'#d5eafa');
- const side=color(l.secondary,'#17212c'),stripe=color(l.stripe,accent),trim=color(l.trim,'#e2e9ef');
- const carbon=color(l.carbon,'#0b1017'),wing=color(l.wing,'#10151b');
- const halo=color(l.halo,primary),wheel=color(l.wheel,accent);
- const nose=size(g.noseWidth),noseL=size(g.noseLen),sidepods=size(g.sidepodWidth),wingFront=size(g.frontWing),wingRear=size(g.rearWing);
- const tire=size(g.wheelScale),engine=size(g.engineHeight),haloWidth=size(g.haloWidth);
- const frontWingHalf=fmt(89*wingFront),rearWingHalf=fmt(75*wingRear);
- const frontTyreHalf=fmt(30*tire),rearTyreHalf=fmt(35*tire);
- const podUpper=fmt(140-47*sidepods),podLower=fmt(140+47*sidepods);
- const frontNose=fmt(555+19*(noseL-1)*10), noseHalf=fmt(14*nose), tip=fmt(556+25*(noseL-1)*10);
- const cockpitHalf=fmt(30*haloWidth),centerY=140;
- const team=safeId(profile.teamKey),model=safeId(profile.model),chassis=safeId(profile.chassis);
- // El dibujo es una vista cenital simplificada y legible del MISMO blueprint,
- // no una fotografía de otro monoplaza ni una promesa de render 3D literal.
- return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 280" width="680" height="280" role="img"'+
- ' data-apex-team="'+team+'" data-apex-model="'+model+'" data-apex-chassis="'+chassis+'"'+
- ' aria-label="Vista técnica del monoplaza '+team+' '+model+'">'+
+ if(!profile?.geometry||!profile?.livery)return null;
+ const g=profile.geometry,l=profile.livery;
+ const p=hex(l.primary,'#f58a00'),s=hex(l.secondary,'#161a20'),
+       a=hex(l.accent,'#3ccef8'),stripe=hex(l.stripe,a),
+       carbon=hex(l.carbon,'#080d13'),wing=hex(l.wing,'#10161e'),
+       trim=hex(l.trim,'#f5f8fb'),halo=hex(l.halo,p);
+ const nose=clamp(g.noseWidth,.8,1.22),noseL=clamp(g.noseLen,.8,1.22);
+ const pod=clamp(g.sidepodWidth,.8,1.22),front=clamp(g.frontWing,.8,1.22);
+ const rear=clamp(g.rearWing,.8,1.22),wheel=clamp(g.wheelScale,.8,1.22);
+ const cockpit=clamp(g.cockpitWidth,.8,1.22);
+ const xFront=773+(noseL-1)*28,frontHalf=183*front,rearHalf=118*rear;
+ const nWidth=26*nose, podWidth=82*pod;
+ const id=safe(profile.teamKey),model=safe(profile.model),chassis=safe(profile.chassis);
+ const marks=(y,side)=>Array.from({length:6},(_,i)=>'<path d="M'+(348+i*8)+' '+(y+side*i*2)+' l18 '+(side*9)+'" stroke="'+trim+'" opacity=".14" stroke-width="2"/>').join('');
+ const tire=(x,y,w,h)=>'<g><rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="19" fill="url(#tire)" stroke="#030509" stroke-width="6"/>'+
+ '<path d="M'+(x+9)+' '+(y+12)+'v'+(h-24)+'M'+(x+w-10)+' '+(y+13)+'v'+(h-26)+'" stroke="#42464a" opacity=".5" stroke-width="2"/>'+
+ '<path d="M'+(x+23)+' '+(y+13)+'v'+(h-26)+'M'+(x+w-24)+' '+(y+13)+'v'+(h-26)+'" stroke="#06090c" stroke-width="4" opacity=".7"/>'+
+ '<rect x="'+(x+w*.47)+'" y="'+(y+7)+'" width="3" height="'+(h-14)+'" fill="'+a+'" opacity=".7"/>'+
+ '<path d="M'+(x+5)+' '+(y+9)+'Q'+(x+w/2)+' '+(y-1)+' '+(x+w-5)+' '+(y+9)+'" stroke="#838a90" opacity=".24" stroke-width="2" fill="none"/></g>';
+ const f=(v)=>Number(v).toFixed(1);
+ const pattern= l.pattern==='chevron'?'<path d="M330 175L425 235L330 296" fill="none" stroke="'+stripe+'" stroke-width="25" opacity=".8"/>':
+ l.pattern==='center'?'<path d="M226 235H745" stroke="'+stripe+'" stroke-width="16" opacity=".8"/>':
+ l.pattern==='split'?'<path d="M245 235H732" stroke="'+stripe+'" stroke-width="24" opacity=".75"/>':
+ l.pattern==='double'?'<path d="M270 200L701 209M270 270L701 261" fill="none" stroke="'+stripe+'" stroke-width="10"/>':
+ l.pattern==='bars'?'<path d="M373 159L397 311M419 155L449 310" stroke="'+stripe+'" stroke-width="13"/>':
+ l.pattern==='flank'?'<path d="M246 169Q435 133 584 189M246 301Q435 337 584 281" stroke="'+stripe+'" stroke-width="12" fill="none"/>':
+ '<path d="M265 181Q450 132 642 218M265 289Q450 338 642 252" fill="none" stroke="'+stripe+'" stroke-width="12" opacity=".82"/>';
+ return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 470" width="1000" height="470" role="img"'+
+ ' data-apex-team="'+id+'" data-apex-model="'+model+'" data-apex-chassis="'+chassis+'"'+
+ ' aria-label="Monoplaza F1 2026 de '+id+' '+model+'">'+
  '<defs>'+
- '<linearGradient id="apexCarMain" x1="0" y1=".12" x2=".8" y2="1">'+
- '<stop offset="0" stop-color="'+trim+'" stop-opacity=".46"/>'+
- '<stop offset=".24" stop-color="'+primary+'"/>'+
- '<stop offset=".75" stop-color="'+primary+'"/>'+
- '<stop offset="1" stop-color="'+side+'"/></linearGradient>'+
- '<linearGradient id="apexCarFibre" x1="0" y1="0" x2="0" y2="1">'+
- '<stop offset="0" stop-color="'+wing+'"/>'+
- '<stop offset=".48" stop-color="'+carbon+'"/>'+
- '<stop offset="1" stop-color="#03060a"/></linearGradient>'+
- '<linearGradient id="apexWheel" x1="0" y1="0" x2="1" y2="0">'+
- '<stop offset="0" stop-color="#040608"/><stop offset=".5" stop-color="#262b30"/>'+
- '<stop offset="1" stop-color="#040608"/></linearGradient>'+
+ '<linearGradient id="body" x1="0" y1="0" x2=".38" y2="1"><stop stop-color="'+trim+'" stop-opacity=".33"/><stop offset=".22" stop-color="'+p+'"/><stop offset=".62" stop-color="'+p+'"/><stop offset="1" stop-color="'+s+'"/></linearGradient>'+
+ '<linearGradient id="pod" x1="0" y1="0" x2="0" y2="1"><stop stop-color="'+p+'"/><stop offset=".25" stop-color="'+s+'"/><stop offset=".6" stop-color="'+p+'"/><stop offset="1" stop-color="'+s+'"/></linearGradient>'+
+ '<linearGradient id="carbon" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#29323a"/><stop offset=".5" stop-color="'+carbon+'"/><stop offset="1" stop-color="#020406"/></linearGradient>'+
+ '<linearGradient id="tire" x1="0" y1="0" x2=".9" y2="0"><stop stop-color="#06080a"/><stop offset=".2" stop-color="#292c2f"/><stop offset=".42" stop-color="#14191d"/><stop offset=".67" stop-color="#24282c"/><stop offset="1" stop-color="#050609"/></linearGradient>'+
+ '<pattern id="weave" width="8" height="8" patternUnits="userSpaceOnUse"><path d="M0 0l8 8M-2 2l8 8M2-2l8 8" stroke="#cce0ea" opacity=".12" stroke-width=".55"/></pattern>'+
+ '<linearGradient id="wingShine" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#4c5359"/><stop offset=".2" stop-color="'+wing+'"/><stop offset=".55" stop-color="#020406"/><stop offset="1" stop-color="#343941"/></linearGradient>'+
+ '<filter id="drop" x="-20%" y="-40%" width="140%" height="190%"><feGaussianBlur stdDeviation="8"/></filter>'+
  '</defs>'+
- // Suelo/sombra suave, no una segunda fotografía de coche.
- '<ellipse cx="337" cy="157" rx="268" ry="94" fill="#02070d" opacity=".30"/>'+
- // Alerón trasero, geometría proporcional a rearWing.
- '<rect x="76" y="'+fmt(centerY-Number(rearWingHalf))+'" width="66" height="'+fmt(2*Number(rearWingHalf))+'" rx="7" fill="url(#apexCarFibre)" stroke="'+trim+'" stroke-opacity=".27" stroke-width="2"/>'+
- '<path d="M86 '+fmt(140-Number(rearWingHalf)+10)+'V'+fmt(140+Number(rearWingHalf)-10)+
- ' M134 '+fmt(140-Number(rearWingHalf)+10)+'V'+fmt(140+Number(rearWingHalf)-10)+'" stroke="'+accent+'" stroke-width="5" opacity=".83"/>'+
- // Neumáticos traseros: guardan escala del modelo.
- '<rect x="154" y="'+fmt(140-65*tire-Number(rearTyreHalf))+'" width="77" height="'+fmt(2*Number(rearTyreHalf))+'" rx="14" fill="url(#apexWheel)" stroke="#050a0e" stroke-width="5"/>'+
- '<rect x="154" y="'+fmt(140+65*tire-Number(rearTyreHalf))+'" width="77" height="'+fmt(2*Number(rearTyreHalf))+'" rx="14" fill="url(#apexWheel)" stroke="#050a0e" stroke-width="5"/>'+
- '<path d="M180 '+fmt(140-65*tire)+'h32M180 '+fmt(140+65*tire)+'h32" stroke="'+wheel+'" stroke-width="4" opacity=".65"/>'+
- // Suspensión y difusor.
- '<path d="M121 115L199 90M121 165L199 190M206 140L176 80M206 140L176 200" stroke="'+wing+'" stroke-width="9"/>'+
- '<path d="M127 115H196V165H127Z" fill="'+carbon+'"/>'+
- // Monocasco, cubierta y tapa motor: distintas proporciones de motor y carrocería.
- '<path d="M122 116Q152 106 208 103L267 '+podUpper+
- ' Q332 '+fmt(140-50*engine)+' 402 109 L'+frontNose+' '+fmt(140-Number(noseHalf))+
- 'L'+tip+' 140L'+frontNose+' '+fmt(140+Number(noseHalf))+
- ' L402 171Q332 '+fmt(140+50*engine)+' 267 '+podLower+
- ' L208 177Q152 174 122 164Z" fill="url(#apexCarMain)" stroke="'+carbon+'" stroke-width="5" stroke-linejoin="round"/>'+
- // Sidepods y tomas: proceden de sidepodWidth.
- '<path d="M260 '+podUpper+' Q322 '+fmt(140-58*sidepods)+' 366 '+fmt(140-46*sidepods)+
- ' L390 112L355 123L300 130L260 140Z" fill="'+side+'" stroke="'+trim+'" stroke-opacity=".21" stroke-width="2"/>'+
- '<path d="M260 '+podLower+' Q322 '+fmt(140+58*sidepods)+' 366 '+fmt(140+46*sidepods)+
- ' L390 168L355 157L300 150L260 140Z" fill="'+side+'" stroke="'+trim+'" stroke-opacity=".21" stroke-width="2"/>'+
- // Librea: colores y motivo salen del mismo teamCarVisualBlueprint.
- (l.pattern==='chevron'?
- '<path d="M249 103L315 140L249 177" stroke="'+stripe+'" stroke-width="16" fill="none" stroke-linejoin="round"/>':
- l.pattern==='split'?
- '<path d="M250 141L461 141" stroke="'+stripe+'" stroke-width="23" fill="none"/>':
- l.pattern==='center'?
- '<path d="M193 140H526" stroke="'+stripe+'" stroke-width="14" fill="none"/>':
- l.pattern==='bars'?
- '<path d="M275 102L305 178M311 100L343 174" stroke="'+stripe+'" stroke-width="11"/>':
- l.pattern==='double'?
- '<path d="M200 122L534 130M200 158L534 150" stroke="'+stripe+'" stroke-width="8" fill="none"/>':
- l.pattern==='sweep'?
- '<path d="M185 124Q282 90 433 132" stroke="'+stripe+'" stroke-width="12" fill="none"/>':
- l.pattern==='flank'?
- '<path d="M224 108Q315 85 397 114M224 172Q315 195 397 166" stroke="'+stripe+'" stroke-width="9" fill="none"/>':
- '<path d="M226 140Q365 127 493 140" stroke="'+stripe+'" stroke-width="10" fill="none"/>')+
- // Cockpit/halo y airbox.
- '<path d="M286 '+fmt(140-Number(cockpitHalf))+'Q306 '+fmt(140-42*haloWidth)+
- ' 337 '+fmt(140-Number(cockpitHalf))+'Q368 119 381 140Q368 161 337 '+fmt(140+Number(cockpitHalf))+
- 'Q306 '+fmt(140+42*haloWidth)+' 286 '+fmt(140+Number(cockpitHalf))+'Z" fill="#080e15" stroke="'+trim+'" stroke-opacity=".50" stroke-width="4"/>'+
- '<ellipse cx="328" cy="140" rx="22" ry="25" fill="'+halo+'" stroke="'+carbon+'" stroke-width="5"/>'+
- '<path d="M301 115Q342 105 373 133M301 165Q342 175 373 147" stroke="'+carbon+'" stroke-width="8" fill="none"/>'+
- '<path d="M336 123V157" stroke="'+carbon+'" stroke-width="8"/>'+
- '<path d="M405 131L535 '+fmt(140-Number(noseHalf))+'L'+tip+' 140L535 '+fmt(140+Number(noseHalf))+'L405 149Z" fill="'+primary+'" stroke="'+trim+'" stroke-opacity=".32" stroke-width="2"/>'+
- '<path d="M413 140H'+frontNose+'" stroke="'+stripe+'" stroke-width="6" stroke-linecap="round"/>'+
- // Suspensiones delanteras / neumáticos / alerón ancho real.
- '<path d="M484 140L513 69M484 140L513 211M545 140L510 67M545 140L510 213" stroke="'+carbon+'" stroke-width="8" fill="none"/>'+
- '<rect x="484" y="'+fmt(140-66*tire-Number(frontTyreHalf))+'" width="72" height="'+fmt(2*Number(frontTyreHalf))+'" rx="12" fill="url(#apexWheel)" stroke="#050a0e" stroke-width="5"/>'+
- '<rect x="484" y="'+fmt(140+66*tire-Number(frontTyreHalf))+'" width="72" height="'+fmt(2*Number(frontTyreHalf))+'" rx="12" fill="url(#apexWheel)" stroke="#050a0e" stroke-width="5"/>'+
- '<path d="M508 '+fmt(140-66*tire)+'h32M508 '+fmt(140+66*tire)+'h32" stroke="'+wheel+'" stroke-width="4" opacity=".65"/>'+
- '<path d="M552 '+fmt(140-Number(frontWingHalf))+' H605V'+fmt(140+Number(frontWingHalf))+
- ' H552Z" fill="url(#apexCarFibre)" stroke="'+trim+'" stroke-opacity=".28" stroke-width="2"/>'+
- '<path d="M565 '+fmt(140-Number(frontWingHalf)+7)+'V'+fmt(140+Number(frontWingHalf)-7)+
- ' M595 '+fmt(140-Number(frontWingHalf)+9)+'V'+fmt(140+Number(frontWingHalf)-9)+
- '" stroke="'+accent+'" stroke-width="6" stroke-linecap="round"/>'+
- '<path d="M548 132H616V148H548Z" fill="'+wing+'"/>'+
- // Identidad del modelo/carrocería y número de chasis.
- '<text x="267" y="146" fill="'+trim+'" font-family="Arial,sans-serif" font-size="10" font-weight="900" text-anchor="middle">'+model+'</text>'+
- '<text x="395" y="107" fill="'+trim+'" opacity=".86" font-family="Arial,sans-serif" font-size="10" font-weight="bold">'+chassis+'</text>'+
+ '<ellipse cx="500" cy="253" rx="445" ry="123" fill="#000" opacity=".43" filter="url(#drop)"/>'+
+ // Rear wing assembly and underfloor
+ '<path d="M130 139H343L585 114L794 169L812 301L589 356L343 331H130Z" fill="url(#carbon)" stroke="#090e12" stroke-width="7"/>'+
+ '<path d="M133 155H334L576 130H720L594 340L337 316H133Z" fill="url(#weave)" opacity=".35"/>'+
+ '<path d="M62 '+f(235-rearHalf)+'H143L155 '+f(235-rearHalf+10)+'V'+f(235+rearHalf-10)+'L143 '+f(235+rearHalf)+'H62Z" fill="url(#wingShine)" stroke="#06090c" stroke-width="4"/>'+
+ '<path d="M69 '+f(235-rearHalf+9)+'H138M69 '+f(235+rearHalf-9)+'H138" stroke="'+p+'" stroke-width="10"/>'+
+ '<path d="M83 '+f(235-rearHalf+25)+'V'+f(235+rearHalf-25)+'M109 '+f(235-rearHalf+27)+'V'+f(235+rearHalf-27)+'" stroke="'+a+'" stroke-width="3" opacity=".72"/>'+
+ '<path d="M143 191L234 155M143 279L234 315M145 183L230 235M145 287L230 235" stroke="#111920" stroke-width="13"/>'+
+ // Rear wheels
+ tire(169,38,92,96*wheel)+tire(169,336,92,96*wheel)+
+ '<path d="M195 140L271 184M195 330L271 286M201 145L272 239M201 325L272 231" stroke="#39434b" stroke-width="9" opacity=".8"/>'+
+ // Sidepods, venturi tunnels: layered organic aerodynamic sweeps
+ '<path d="M228 188Q302 131 '+f(390+podWidth*.7)+' 143L556 161Q609 183 652 216L637 232H330Z" fill="url(#pod)" stroke="#070b0f" stroke-width="6"/>'+
+ '<path d="M228 282Q302 339 '+f(390+podWidth*.7)+' 327L556 309Q609 287 652 254L637 238H330Z" fill="url(#pod)" stroke="#070b0f" stroke-width="6"/>'+
+ '<path d="M235 181Q380 154 523 175L602 211L345 220Z" fill="'+s+'" opacity=".88"/>'+
+ '<path d="M235 289Q380 316 523 295L602 259L345 250Z" fill="'+s+'" opacity=".88"/>'+
+ '<path d="M270 169Q394 148 541 173M270 301Q394 322 541 297" stroke="'+trim+'" stroke-width="3.4" opacity=".32" fill="none"/>'+
+ '<path d="M263 188Q380 180 541 201M263 282Q380 290 541 269" stroke="'+a+'" stroke-width="9" opacity=".85" fill="none"/>'+
+ marks(182,1)+marks(288,-1)+
+ // Engine cover and upper central body
+ '<path d="M155 209Q222 204 304 191Q383 176 444 195L556 204Q650 212 763 '+f(235-32*nose)+'L'+f(xFront+30)+' 235L763 '+f(235+32*nose)+'Q650 258 556 266L444 275Q383 294 304 279Q222 266 155 261Z" fill="url(#body)" stroke="#080b11" stroke-width="7"/>'+
+ '<path d="M174 222Q282 214 357 208L427 230M174 248Q282 256 357 262L427 240" fill="none" stroke="'+s+'" stroke-width="19" opacity=".86"/>'+
+ '<path d="M187 231Q296 227 410 226M187 239Q296 243 410 244" fill="none" stroke="'+trim+'" stroke-width="2" opacity=".37"/>'+
+ pattern+
+ // Airbox, mirrors and driver cockpit
+ '<path d="M391 212L415 193L444 212V258L415 277L391 258Z" fill="#080d12" stroke="'+p+'" stroke-width="9"/>'+
+ '<path d="M430 '+f(235-37*cockpit)+'Q462 '+f(235-56*cockpit)+' 500 '+f(235-46*cockpit)+
+ 'Q544 204 576 235Q544 266 500 '+f(235+46*cockpit)+'Q462 '+f(235+56*cockpit)+' 430 '+f(235+37*cockpit)+'Z" fill="#060a11" stroke="'+trim+'" stroke-width="3.2" stroke-opacity=".61"/>'+
+ '<path d="M455 216Q496 204 527 231Q504 245 465 250Z" fill="#121923" stroke="#536171" stroke-width="2"/>'+
+ '<ellipse cx="497" cy="236" rx="17" ry="20" fill="'+halo+'" stroke="#030507" stroke-width="5"/>'+
+ '<path d="M434 207Q488 180 562 228M434 263Q488 290 562 242" fill="none" stroke="#070d12" stroke-width="13"/>'+
+ '<path d="M483 209V261" stroke="#11161b" stroke-width="12"/>'+
+ '<path d="M518 214V257" stroke="'+p+'" stroke-width="3" opacity=".83"/>'+
+ '<path d="M436 201L418 179M436 269L418 291M418 179L397 177M418 291L397 293" stroke="#141a20" stroke-width="6" fill="none"/>'+
+ '<rect x="386" y="168" width="29" height="10" rx="2" fill="#080b11" stroke="'+trim+'" stroke-opacity=".2"/>'+
+ '<rect x="386" y="292" width="29" height="10" rx="2" fill="#080b11" stroke="'+trim+'" stroke-opacity=".2"/>'+
+ // Continuous narrow nose, wheel suspension triangulation
+ '<path d="M553 223L'+f(xFront+43)+' '+f(235-9*nose)+'L'+f(xFront+77)+' 235L'+f(xFront+43)+' '+f(235+9*nose)+'L553 247Z" fill="'+p+'" stroke="'+carbon+'" stroke-width="4"/>'+
+ '<path d="M569 235H'+f(xFront+64)+'" stroke="'+stripe+'" stroke-width="7" opacity=".78"/>'+
+ '<path d="M685 233L791 115M685 237L791 355M747 231L784 123M747 239L784 347" fill="none" stroke="#090f13" stroke-width="13"/>'+
+ '<path d="M687 230L790 112M687 240L790 358M745 230L783 120M745 240L783 350" fill="none" stroke="#65707a" stroke-width="2.3" opacity=".62"/>'+
+ tire(747,38,82,89*wheel)+tire(747,342,82,89*wheel)+
+ // Modern 2026 active-aero front wing, separate mainplane + multiple flaps
+ '<path d="M'+f(xFront+63)+' '+f(235-frontHalf)+'H949V'+f(235+frontHalf)+'H'+f(xFront+63)+'Z" fill="url(#wingShine)" stroke="#070a0e" stroke-width="5"/>'+
+ '<path d="M'+f(xFront+69)+' '+f(235-frontHalf+15)+'Q903 '+f(235-frontHalf+26)+' 946 '+f(235-frontHalf+9)+
+ 'M'+f(xFront+69)+' '+f(235+frontHalf-15)+'Q903 '+f(235+frontHalf-26)+' 946 '+f(235+frontHalf-9)+'" stroke="'+a+'" stroke-width="6" fill="none"/>'+
+ '<path d="M'+f(xFront+77)+' '+f(235-frontHalf+25)+'Q896 188 947 208M'+f(xFront+77)+' '+f(235+frontHalf-25)+'Q896 282 947 262" stroke="'+p+'" stroke-width="18" fill="none" opacity=".9"/>'+
+ '<path d="M890 '+f(235-frontHalf+8)+'V'+f(235+frontHalf-8)+'M926 '+f(235-frontHalf+12)+'V'+f(235+frontHalf-12)+'" stroke="#e2ebf6" stroke-opacity=".27" stroke-width="2.5"/>'+
+ '<path d="M868 222H969V248H868Z" fill="'+wing+'"/>'+
+ // Fine vehicle graphics; no brand/trademark reproductions
+ '<path d="M307 196L371 184M307 274L371 286" stroke="'+a+'" stroke-width="4" opacity=".9"/>'+
+ '<text x="653" y="227" font-family="Arial,sans-serif" font-size="18" font-weight="900" fill="'+trim+'" text-anchor="middle">'+model+'</text>'+
+ '<text x="345" y="239" font-family="Arial,sans-serif" font-size="16" letter-spacing="2" font-weight="900" fill="'+trim+'" opacity=".75" text-anchor="middle">'+chassis+'</text>'+
+ '<path d="M585 215l5 7 8-1-7 6 2 8-8-5-6 5 1-9-8-4 9-2z" fill="'+a+'" opacity=".78"/>'+
+ // Opposite side lighting adds curvature; no second car image.
+ '<path d="M278 157Q460 122 586 190M278 313Q460 348 586 280" stroke="'+trim+'" stroke-width="1.8" opacity=".12" fill="none"/>'+
  '</svg>';
 }
 function build(teamKey){
  const key=String(teamKey||'');
- const native=global.ApexNativeTeamStudio9A?.get?.(key);
- const blueprint=native?.preview;
+ const t=global.ApexNativeTeamStudio9A?.get?.(key);
+ const blueprint=t?.preview;
  if(!blueprint||blueprint.teamKey!==key)return null;
- const cacheKey=JSON.stringify(blueprint);
+ const override=global.ApexVehicleStudio9A?.colorsFor?.(key)||null;
+ const l=override?{...blueprint.livery,...override}:blueprint.livery;
+ const input={...blueprint,livery:l};
+ const cacheKey=JSON.stringify(input);
  if(cache.has(cacheKey))return cache.get(cacheKey);
- const svg=markup(blueprint);
+ const svg=markup(input);
  if(!svg)return null;
  const result=Object.freeze({key,model:blueprint.model,chassis:blueprint.chassis,
   svg,src:'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg)});
- cache.set(cacheKey,result);
- return result;
+ cache.set(cacheKey,result);return result;
 }
 function setCar(teamKey){
- const img=get('apexProtoTeamImage');
- if(!img)return false;
+ const img=$('apexProtoTeamImage');if(!img)return false;
+ const t=global.ApexNativeTeamStudio9A?.get?.(teamKey);
  const render=build(teamKey);
- const name=global.ApexNativeTeamStudio9A?.get?.(teamKey)?.name||'Escudería';
  if(!render){
   img.removeAttribute('src');
-  img.alt='Vista del monoplaza no disponible para '+name;
-  img.dataset.apexTeamKey='';
-  img.dataset.apexModel='';
-  img.dataset.apexPreview='unavailable';
-  img.hidden=true;return false;
+  img.dataset.apexPreview='unavailable';img.hidden=true;return false;
  }
  img.hidden=false;
- img.alt='Vista técnica del monoplaza de '+name+' ('+render.model+' · '+render.chassis+')';
+ img.alt='Vista cenital F1 2026 del monoplaza '+(t?.name||'')+' ('+render.model+' · '+render.chassis+')';
  img.dataset.apexTeamKey=render.key;
  img.dataset.apexModel=render.model;
  img.dataset.apexChassis=render.chassis;
