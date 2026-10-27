@@ -171,7 +171,10 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
     heroBelowHeader:hero.top>=el.querySelector('h2').getBoundingClientRect().bottom-1,
     imageInsideHero:image.top>=hero.top-1&&image.bottom<=hero.bottom+1,
     controlsBelowHero:controls.top>=hero.bottom-1,
-    controlsInside:controls.bottom<=rect.bottom+2};
+    controlsInside:controls.bottom<=rect.bottom+2,
+    bounds:{heroTop:Math.round(hero.top),heroBottom:Math.round(hero.bottom),
+      imageTop:Math.round(image.top),imageBottom:Math.round(image.bottom),
+      imageHeight:Math.round(image.height),controlsTop:Math.round(controls.top)}};
   });
   assert.ok(geometry.overflow<=2,'Sin desbordamiento horizontal '+JSON.stringify(geometry));
   assert.ok(geometry.heroBelowHeader&&geometry.imageInsideHero&&geometry.controlsBelowHero&&geometry.controlsInside,
