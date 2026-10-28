@@ -5,7 +5,7 @@
 const data=global.ApexSponsorVectorData||{};
 for(const logo of Object.values(data))for(const layer of logo.layers)layer.triangles=new Float32Array(layer.triangles);
 const styles=Object.freeze([
- Object.freeze({brand:'TEAM EQUIPALIA',bg:'#53aa66',fg:'#090909',logo:'team-equipalia'}),
+ Object.freeze({brand:'TEAM EQUIPALIA',bg:'#00673e',fg:'#ffffff',logo:'team-equipalia'}),
  Object.freeze({brand:'SCT TELECOM',bg:'#175da5',fg:'#ffffff',logo:'sct'}),
  Object.freeze({brand:'MDTEL',bg:'#f4f6f8',fg:'#050505',logo:'mdtel'})
 ]);
@@ -32,5 +32,5 @@ function claim(id,key,height,mobile){
  stats.maxLogos=Math.max(stats.maxLogos,stats.logos);stats.maxTriangles=Math.max(stats.maxTriangles,stats.triangles);
  return layers;
 }
-global.ApexTrackSponsors=Object.freeze({styles,data,colorKey,beginFrame,claim,stats,spacingM:24});
+global.ApexTrackSponsors=Object.freeze({styles,data,colorKey,beginFrame,claim,stats,spacingM:24,equipaliaSpacingM:8});
 })(window);
