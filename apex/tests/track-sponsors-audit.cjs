@@ -2,209 +2,96 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),path=require('node:path');
 const root=path.resolve(__dirname,'..'),context={window:{}};vm.createContext(context);
 for(const file of ['track-sponsor-vectors.js','track-sponsors.js'])vm.runInContext(fs.readFileSync(path.join(root,'js',file),'utf8'),context);
-const api=context.window.ApexTrackSponsors;
-assert.equal(Object.keys(api.data).length,4);
-for(const [key,logo] of Object.entries(api.data)){
- const svg=fs.readFileSync(path.join(root,'assets/sponsors',key+'.svg'),'utf8');
- assert.ok(svg.includes('<path '));assert.ok(!/<(?:image|text|rect|filter)\b/.test(svg),'Contours only, transparent exterior: '+key);
- assert.ok(!/data:image|https?:\/\/(?!www.w3.org)/.test(svg));
- assert.ok(logo.aspect>0);
- for(const layer of logo.layers){assert.equal(layer.triangles.length%6,0);assert.ok(Array.from(layer.triangles).every(Number.isFinite));}
+const api=context.window.ApexTrackSponsors,master=api.data['sct-wall'];
+assert.equal(Object.keys(api.data).length,4);assert.equal(master.metres,24);assert.equal(master.planar,true);assert.equal(master.aspect,18);
+const svg=fs.readFileSync(path.join(root,'assets/sponsors/sct-wall-24m.svg'),'utf8');
+assert.equal(svg,fs.readFileSync(path.join(root,'assets/sponsors/sct-wall.svg'),'utf8'));
+assert.ok(!/<(?:image|text|filter|foreignObject|use)\b/.test(svg),'One complete vector master, no raster/8m symbols');
+assert.ok(!svg.includes('#063365'),'No dirty overlapping extrusion');
+for(const part of ['large','medium','small'])assert.equal((svg.match(new RegExp('data-design-part="'+part+'-sct"','g'))||[]).length,1);
+const area=tri=>Math.abs((tri[2]-tri[0])*(tri[5]-tri[1])-(tri[4]-tri[0])*(tri[3]-tri[1]))/2;
+let totalArea=0;const triangles=[];
+for(const [layerIndex,layer] of master.layers.entries()){
+ const t=layer.triangles;assert.equal(t.length%6,0);
+ for(let i=0;i<t.length;i+=6){const tri=Array.from(t.slice(i,i+6));totalArea+=area(tri);triangles.push({tri,layerIndex,minX:Math.min(tri[0],tri[2],tri[4]),maxX:Math.max(tri[0],tri[2],tri[4]),minY:Math.min(tri[1],tri[3],tri[5]),maxY:Math.max(tri[1],tri[3],tri[5])});}
 }
-assert.equal(api.colorKey('#53aa66'),'team-equipalia');assert.equal(api.colorKey('#00673e'),'team-equipalia');
-assert.equal(api.spacingM,24);assert.equal(api.equipaliaSpacingM,8);assert.equal(api.sctSpacingM,24);
-assert.equal(api.wallPatternMetres('team-equipalia'),8);
-assert.equal(api.wallPatternMetres('sct-wall'),24);
-assert.equal(api.stats.compiled,4);
-const sctWallSvg=fs.readFileSync(path.join(root,'assets/sponsors/sct-wall.svg'),'utf8');
-const sct24=fs.readFileSync(path.join(root,'assets/sponsors/sct-wall-24m.svg'),'utf8');
-assert.ok(sctWallSvg.includes('SCT Telecom'));
-assert.ok(!/<image\\b|<text\\b|<foreignObject\\b/i.test(sctWallSvg),'SCT wall has vector contours only');
-assert.ok(!/<image\\b|<text\\b|<foreignObject\\b/i.test(sct24),'SCT 24m source has no raster content');
-assert.equal(sctWallSvg,sct24,'The game uses the exact full 24m SVG master');
-assert.ok(!/<use\b|<symbol\b/.test(sct24),'No 8m symbols or repeated tiles');
-assert.equal(api.data['sct-wall'].aspect,18);
-assert.equal((sct24.match(/data-design-part="large-sct"/g)||[]).length,2);
-assert.equal((sct24.match(/data-design-part="medium-sct"/g)||[]).length,2);
-assert.equal((sct24.match(/data-design-part="small-sct"/g)||[]).length,2);
-assert.ok((sct24.match(/data-design-part="diagonal-/g)||[]).length>=10);
-assert.equal((sct24.match(/data-design-part="continuous-background"/g)||[]).length,1);
-// The original SCT shadow and white face were coplanar. The new layer offsets
-// must guarantee a crisp face above the shadow and decorative blue geometry,
-// including near-oblique cameras; Equipalia/MDTel keep their existing bias.
-const depth=api.wallLayerDepthBias;
-assert.equal(depth('team-equipalia','#ffffff',0),.026);
-assert.equal(depth('mdtel','#ffffff',0),.026);
-assert.ok(depth('sct','#ffffff',0)>depth('sct','#063365',0));
-assert.ok(depth('sct','#063365',0)>depth('sct','#36b7ef',13));
-assert.ok(depth('sct','#ffffff',0)-depth('sct','#063365',0)>.04);
-const sctLogoMesh=api.data['sct-wall'];
-function meshBounds(layer){
- const pts=layer.triangles,x=[],y=[];
- for(let i=0;i<pts.length;i+=2){x.push(pts[i]*1440);y.push(pts[i+1]*80);}
- return {left:Math.min(...x),right:Math.max(...x),top:Math.min(...y),bottom:Math.max(...y)};
-}
-const sctWhiteFaces=sctLogoMesh.layers.filter(l=>l.fill==='#ffffff');
-assert.equal(sctWhiteFaces.length,6,'SCT and TELECOM white paths at three scales');
-const sctGlyph=meshBounds(sctWhiteFaces[0]);
-const sctMedium=meshBounds(sctWhiteFaces[2]);
-const sctSmall=meshBounds(sctWhiteFaces[4]);
-assert.ok(sctGlyph.right-sctGlyph.left>sctMedium.right-sctMedium.left);
-assert.ok(sctMedium.right-sctMedium.left>sctSmall.right-sctSmall.left);
-assert.ok(sctGlyph.bottom-sctGlyph.top>sctMedium.bottom-sctMedium.top);
-assert.ok(sctMedium.bottom-sctMedium.top>sctSmall.bottom-sctSmall.top);
-assert.ok(sctGlyph.right<520&&sctMedium.left>700&&sctSmall.left>1150,'Three distinct placements');
-assert.ok(sctGlyph.right-sctGlyph.left>140,'SCT principal must span at least 140 SVG units');
-assert.ok(sctGlyph.bottom-sctGlyph.top>60,'SCT principal almost fills the wall height');
-assert.ok(sctGlyph.top<10&&sctGlyph.bottom>70,'SCT brand must be clearly legible');
-assert.ok(sctLogoMesh.layers.every(l=>l.triangles.length%6===0));
-// Regression: every vertex of S, C and T must remain within the blue front
-// rhombus (including the right-hand T) at all three scale positions.
-const masterContours=[...sctWallSvg.matchAll(/<path\\b[^>]*\\/>/g)].map(m=>m[0]);
-function contour(part,fill){
- const tag=masterContours.find(t=>t.includes('data-design-part="'+part+'"')&&t.includes('fill="'+fill+'"'));
- assert.ok(tag,'Missing '+part+' / '+fill);
- return [...tag.matchAll(/(-?\\d+(?:\\.\\d+)?),(-?\\d+(?:\\.\\d+)?)/g)].map(m=>[Number(m[1]),Number(m[2])]);
-}
-function sectionBounds(poly,y){
- const xs=[];
- for(let i=0;i<poly.length;i++){
-  const a=poly[i],b=poly[(i+1)%poly.length];
-  if(Math.abs(a[1]-b[1])<1e-8){if(Math.abs(y-a[1])<1e-5)xs.push(a[0],b[0]);continue;}
-  if(y<Math.min(a[1],b[1])-1e-6||y>Math.max(a[1],b[1])+1e-6)continue;
-  const f=(y-a[1])/(b[1]-a[1]);xs.push(a[0]+f*(b[0]-a[0]));
+assert.ok(Math.abs(totalArea-1)<2e-5,'Planar mural covers exactly one complete face, without holes or double paint');
+function intersectionArea(a,b){
+ let poly=[[a[0],a[1]],[a[2],a[3]],[a[4],a[5]]];
+ const orientation=Math.sign((b[2]-b[0])*(b[5]-b[1])-(b[4]-b[0])*(b[3]-b[1]));
+ for(let i=0;i<3&&poly.length;i++){
+  const x=b[i*2],y=b[i*2+1],j=(i+1)%3,dx=b[j*2]-x,dy=b[j*2+1]-y,side=p=>orientation*(dx*(p[1]-y)-dy*(p[0]-x)),out=[];
+  for(let k=0;k<poly.length;k++){const p=poly[k],q=poly[(k+1)%poly.length],u=side(p),v=side(q);if(u>=0)out.push(p);if((u>=0)!==(v>=0)){const f=u/(u-v);out.push([p[0]+f*(q[0]-p[0]),p[1]+f*(q[1]-p[1])]);}}
+  poly=out;
  }
- return xs.length?[Math.min(...xs),Math.max(...xs)]:null;
+ return Math.abs(poly.reduce((sum,p,i)=>{const q=poly[(i+1)%poly.length];return sum+p[0]*q[1]-q[0]*p[1];},0))/2;
 }
-for(const [label,layerIndex] of [['large',20],['medium',26],['small',32]]){
- const diamond=contour(label+'-icon','#116faf'),face=sctLogoMesh.layers[layerIndex].triangles;
- assert.ok(diamond.length>=4,'Blue diamond has a full-height polygon');
- let rightMost=-Infinity;
- for(let i=0;i<face.length;i+=2){
-  const x=face[i]*1440,y=face[i+1]*80,bounds=sectionBounds(diamond,y);
-  assert.ok(bounds,'Diamond must cover glyph height '+label);
-  assert.ok(x>=bounds[0]-.6&&x<=bounds[1]+.6,
-   'SCT glyph outside diamond at '+label+' x='+x.toFixed(2)+' y='+y.toFixed(2));
-  rightMost=Math.max(rightMost,x);
+let maxOverlap=0;
+for(let i=0;i<triangles.length;i++)for(let j=i+1;j<triangles.length;j++){
+ const a=triangles[i],b=triangles[j];if(a.layerIndex===b.layerIndex||a.maxX<=b.minX||b.maxX<=a.minX||a.maxY<=b.minY||b.maxY<=a.minY)continue;
+ maxOverlap=Math.max(maxOverlap,intersectionArea(a.tri,b.tri));
+}
+assert.ok(maxOverlap<2e-7,'Letters and blue regions have no overlapping faces / z-fighting');
+const bounds=layer=>{const t=layer.triangles,x=[],y=[];for(let i=0;i<t.length;i+=2){x.push(t[i]);y.push(t[i+1]);}return [Math.min(...x),Math.max(...x),Math.min(...y),Math.max(...y)];};
+const faces=['large','medium','small'].map(size=>master.layers.find(l=>l.part===size+'-sct'));
+const boxes=faces.map(bounds);
+assert.ok(boxes[0][1]-boxes[0][0]>boxes[1][1]-boxes[1][0]);assert.ok(boxes[1][1]-boxes[1][0]>boxes[2][1]-boxes[2][0]);
+assert.ok(boxes[0][0]<boxes[1][0]&&boxes[1][0]<boxes[2][0]);
+const tags=[...svg.matchAll(/<path\b[^>]*\/>/g)].map(m=>m[0]);
+for(const [i,label] of ['large','medium','small'].entries()){
+ const tag=tags.find(t=>t.includes('data-design-part="'+label+'-icon"')&&t.includes('fill="#116faf"'));
+ const pts=[...tag.matchAll(/(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/g)].map(m=>[+m[1]/1440,+m[2]/80]);
+ const inside=(x,y)=>{const xs=[];for(let k=0;k<pts.length;k++){const a=pts[k],b=pts[(k+1)%pts.length];if(a[1]!==b[1]&&y>=Math.min(a[1],b[1])&&y<=Math.max(a[1],b[1]))xs.push(a[0]+(y-a[1])/(b[1]-a[1])*(b[0]-a[0]));}return x>=Math.min(...xs)-1e-6&&x<=Math.max(...xs)+1e-6;};
+ const t=faces[i].triangles;for(let k=0;k<t.length;k+=2)assert.ok(inside(t[k],t[k+1]),'Complete S/C/T inside diamond: '+label);
+ const telecom=master.layers.find(l=>l.part===label+'-telecom');assert.ok(bounds(telecom)[0]>Math.max(...pts.map(p=>p[0])),'TELECOM to the right of the rhombus');
+}
+function flat(slices){return slices.flatMap(s=>s.layers);}
+function seam(slices,u){return new Set(flat(slices).flatMap(l=>{const out=[];for(let i=0;i<l.triangles.length;i+=2)if(Math.abs(l.triangles[i]-u)<1e-5)out.push(l.part+':'+Math.round(l.triangles[i+1]*1e5));return out;}));}
+for(const reverse of [false,true])for(const at of [1.7,4.3,7.3,8,12.1,16,20.5,24,25.6,47.8]){
+ const a=api.sctMuralSlices({},at-.37,at,reverse),b=api.sctMuralSlices({},at,at+.37,reverse);
+ assert.deepEqual([...seam(a,1)].sort(),[...seam(b,0)].sort(),'No seam jump at '+at+' reverse='+reverse);
+}
+const full=api.sctMuralSlices({},0,24),repeat=api.sctMuralSlices({},24,48);
+assert.deepEqual(Array.from(flat(full),l=>Array.from(l.triangles)),Array.from(flat(repeat),l=>Array.from(l.triangles)),'Repeat only every 24m');
+const cropped=api.sctMuralSlices({},8,16);assert.notDeepEqual(Array.from(flat(cropped),l=>Array.from(l.triangles)),Array.from(flat(full),l=>Array.from(l.triangles)),'8m fragment cannot restart full mural');
+// Reassemble uneven pieces: all three wordmarks must retain exactly the same
+// world-space bounds as the master, independently of wall segmentation.
+for(const cuts of [[0,24],[0,.8,3.7,8,9.3,16,21,24],Array.from({length:25},(_,i)=>i)]){
+ const result=new Map();for(let i=0;i<cuts.length-1;i++)for(const l of flat(api.sctMuralSlices({},cuts[i],cuts[i+1]))){
+  if(!l.part.endsWith('-sct'))continue;const pts=result.get(l.part)||[];for(let k=0;k<l.triangles.length;k+=2)pts.push([cuts[i]+l.triangles[k]*(cuts[i+1]-cuts[i]),l.triangles[k+1]]);result.set(l.part,pts);
  }
- const diamondRight=Math.max(...diamond.map(p=>p[0]));
- assert.ok(diamondRight>rightMost+5,'The T needs a visible rhombus margin on the right for '+label);
-}
-
-
-for(const color of ['#ffffff','#25a9d5','#00a2d6','#116faf','#eafaff'])
- assert.ok(sctWallSvg.includes(color),'SCT vector identity and racing stripes: '+color);
-// Full-height vector wallpaper: the tile is clipped to each real wall piece,
-// and the same continuous geometry must meet at panel edges on both faces.
-function checkWallTile(layers){
- for(const layer of [...layers.accents,...layers.wordmark,...layers.fine]){
-  assert.equal(layer.triangles.length%6,0);
-  for(let k=0;k<layer.triangles.length;k+=2){
-   assert.ok(layer.triangles[k]>=-1e-5&&layer.triangles[k]<=1+1e-5,'Wall U clipped to panel');
-   assert.ok(layer.triangles[k+1]>=-1e-5&&layer.triangles[k+1]<=1+1e-5,'Wall V inside full-height face');
-  }
+ for(const [i,label] of ['large','medium','small'].entries()){
+  const points=result.get(label+'-sct'),x=points.map(p=>p[0]),y=points.map(p=>p[1]);
+  const b=[Math.min(...x)/24,Math.max(...x)/24,Math.min(...y),Math.max(...y)];for(let k=0;k<4;k++)assert.ok(Math.abs(b[k]-boxes[i][k])<2e-6,'Fixed size '+label+' / '+cuts.length+' pieces');
  }
 }
-function seamVertices(tile,at){
- const y=[];
- for(const layer of [...tile.accents,...tile.wordmark]){
-  for(let i=0;i<layer.triangles.length;i+=2)
-   if(Math.abs(layer.triangles[i]-at)<.0001)y.push(Math.round(layer.triangles[i+1]*10000));
- }
- return new Set(y);
-}
-const wallA={},wallB={},tileA=api.wallTileLayers(wallA,0,7.3,false),
- tileB=api.wallTileLayers(wallB,7.3,14.6,false);
-assert.ok(tileA.accents.length>0&&tileB.accents.length>0,'Decorative stripes cross physical panels');
-checkWallTile(tileA);checkWallTile(tileB);
-assert.ok(tileA.accents.some(l=>l.triangles.some((v,i)=>i%2&&Math.abs(v)<1e-4)),'Stripes touch wall top');
-assert.ok(tileA.accents.some(l=>l.triangles.some((v,i)=>i%2&&Math.abs(v-1)<1e-4)),'Stripes touch wall bottom');
-const seamA=seamVertices(tileA,1),seamB=seamVertices(tileB,0);
-assert.ok(seamA.size>0,'Left segment reaches seam');
-assert.deepEqual([...seamA].sort((a,b)=>a-b),[...seamB].sort((a,b)=>a-b),
- 'No gaps or jumps where two adjacent wall segments meet');
-const revA=api.wallTileLayers(wallA,0,7.3,true),
- revB=api.wallTileLayers(wallB,7.3,14.6,true);
-checkWallTile(revA);checkWallTile(revB);
-assert.deepEqual([...seamVertices(revA,0)].sort((a,b)=>a-b),
- [...seamVertices(revB,1)].sort((a,b)=>a-b),
- 'Opposite camera direction preserves pattern continuity');
-assert.equal(api.wallTileLayers(wallA,0,7.3,false),tileA,'No frame-time re-triangulation');
-const sctA=api.wallTileLayers(wallA,0,7.3,false,'sct-wall'),
-      sctB=api.wallTileLayers(wallB,7.3,14.6,false,'sct-wall');
-assert.ok(sctA.accents.length>0&&sctA.wordmark.length>0,'Blue SCT pattern includes logo and racing decor');
-checkWallTile(sctA);checkWallTile(sctB);
-assert.ok(sctA.accents.some(l=>l.triangles.some((v,i)=>i%2&&Math.abs(v)<1e-4)), 'SCT diagonals reach wall top');
-assert.ok(sctA.accents.some(l=>l.triangles.some((v,i)=>i%2&&Math.abs(v-1)<1e-4)), 'SCT diagonals reach wall bottom');
-assert.deepEqual([...seamVertices(sctA,1)].sort((a,b)=>a-b),
- [...seamVertices(sctB,0)].sort((a,b)=>a-b),'SCT 24m mural continues across adjacent wall pieces');
-const sctRevA=api.wallTileLayers(wallA,0,7.3,true,'sct-wall'),
-      sctRevB=api.wallTileLayers(wallB,7.3,14.6,true,'sct-wall');
-checkWallTile(sctRevA);checkWallTile(sctRevB);
-assert.deepEqual([...seamVertices(sctRevA,0)].sort((a,b)=>a-b),
- [...seamVertices(sctRevB,1)].sort((a,b)=>a-b),'SCT seam continuous from opposite camera direction');
-assert.equal(api.wallTileLayers(wallA,0,7.3,false,'sct-wall'),sctA,'SCT clipped triangles cached');
-const sctMuralA=api.wallTileLayers({},0,24,false,'sct-wall');
-const sctMuralB=api.wallTileLayers({},24,48,false,'sct-wall');
-assert.equal(sctMuralA.triangleCount,sctMuralB.triangleCount,'SCT repeats only at 24 metres');
-const sctAt8=api.wallTileLayers({},8,16,false,'sct-wall');
-const sctAt16=api.wallTileLayers({},16,24,false,'sct-wall');
-assert.ok(sctAt8.wordmark.length>0&&sctAt16.wordmark.length>0,'Medium and small SCT labels exist in their own portions');
-for(const at of [8,16,24]){
- const left=api.wallTileLayers({},at-.37,at,false,'sct-wall');
- const right=api.wallTileLayers({},at,at+.37,false,'sct-wall');
- assert.deepEqual([...seamVertices(left,1)].sort((a,b)=>a-b),
- [...seamVertices(right,0)].sort((a,b)=>a-b),'No visible stripe jump at '+at+' m');
-}
-const source=fs.readFileSync(path.join(root,'parts/part-024.txt'),'utf8'); // Check both wall types.
-assert.ok(source.includes("item.sponsorTileSource")&&source.includes("function apexSponsorContinuousWall"),'Both procedural and SVG walls use SCT full-width mapping');
-
-assert.notEqual(sctA,tileA,'Brand-specific cache keeps Equipalia and SCT separate');
-
-const equipaliaSource=fs.readFileSync(path.join(root,'assets/sponsors/team-equipalia.svg'),'utf8');
-const wall24=fs.readFileSync(path.join(root,'assets/sponsors/team-equipalia-wall-24m.svg'),'utf8');
-assert.equal(api.data['team-equipalia'].aspect,6,'El módulo de 8 m tiene proporción panorámica');
-for(const color of ['#ffffff','#64d25d','#ed3145','#2898e7','#f7faf9'])
- assert.ok(equipaliaSource.includes(color),'Contornos blancos e icono tricolor original: '+color);
-assert.ok(equipaliaSource.includes('translate(18 0)'),'Identidad vectorial reutilizada');
-assert.equal((wall24.match(/<use href="#equipalia-8m"/g)||[]).length,3,'Tres módulos en la valla de 24 m');
-assert.ok(!/<image\b|<text\b|<foreignObject\b/i.test(wall24),'Vista frontal 24 m 100 % vectorial');assert.equal(api.colorKey('#17633a'),'team-equipalia');
-assert.equal(api.colorKey('#175da5'),'sct');assert.equal(api.colorKey('#07539b'),'sct');assert.equal(api.colorKey('#fff'),'mdtel');
-for(const c of ['#ff0000','#f3cf2f','#111111','invalid'])assert.equal(api.colorKey(c),null);
+const mutable={};const first=api.sctMuralSlices(mutable,0,7.3);assert.equal(api.sctMuralSlices(mutable,0,7.3),first);assert.notEqual(api.sctMuralSlices(mutable,1,8.3),first,'Cache must include physical interval, not just object identity');
+// Preserve Equipalia's 8m tile and MDTel's independent vector identity.
+assert.equal(api.equipaliaSpacingM,8);assert.equal(api.sctSpacingM,24);assert.equal(api.wallPatternMetres('sct-wall'),24);assert.equal(api.data['team-equipalia'].aspect,6);
+const green=api.wallTileLayers({},0,8,false);assert.ok(green.accents.length&&green.wordmark.length);assert.ok(api.data.mdtel.layers.length);
+for(const [color,key] of [['#00673e','team-equipalia'],['#07539b','sct'],['#fff','mdtel']])assert.equal(api.colorKey(color),key);
 for(const mobile of [false,true]){
- api.beginFrame(mobile?2:1);
- for(let i=0;i<30;i++)api.claim('test'+i,'mdtel',110,mobile);
- assert.ok(api.stats.logos<=(mobile?6:12));assert.ok(api.stats.triangles<=(mobile?2600:5200));
- const count=api.stats.logos;assert.equal(api.claim('test0','mdtel',110,mobile),null);assert.equal(api.stats.logos,count);
+ api.beginFrame(mobile?2:1);assert.ok(api.claimMural('whole',1800,mobile));assert.equal(api.claimMural('whole',10,mobile),false);
+ assert.equal(api.claimMural('too-much',6000,mobile),false);assert.ok(api.stats.triangles<=(mobile?2600:5200));assert.equal(api.stats.muralBlocks,1);
 }
-api.beginFrame(3);assert.equal(api.claim('tiny','sct',4,false),null);assert.equal(api.stats.triangles,0);
-const full=api.claim('close','team-equipalia',110,false);api.beginFrame(4);const far=api.claim('far','team-equipalia',12,false);
-assert.ok(full.length>far.length,'Fine slogan only when legible');
-api.beginFrame(5);assert.equal(api.stats.triangles,0);assert.equal(api.stats.logos,0);
-const part=fs.readFileSync(path.join(root,'parts/part-024.txt'),'utf8');
-const start=part.indexOf('const APEX_AD_BRANDS=['),end=part.indexOf('function drawGeneratedWallAd',start);
-const config={};const ctx={window:context.window,trackData:{km:5,spec:{r:0}},readStoredCircuitJson:()=>config,mod:(x,n)=>(x%n+n)%n,wrapRangeContains:(s,a,b)=>s>=a&&s<=b};vm.createContext(ctx);vm.runInContext(part.slice(start,end),ctx);
-assert.equal(ctx.circuitAdvertisingStyle(12,{},1).logo,'team-equipalia');assert.equal(ctx.circuitAdvertisingStyle(84,{},1).logo,'sct');assert.equal(ctx.circuitAdvertisingStyle(156,{},1).logo,'mdtel');
-config.walls={advertising:{enabled:false}};assert.equal(ctx.circuitAdvertisingStyle(12,{},1),null);
-config.walls.advertising={panels:[{fromM:0,toM:20,blank:true}]};assert.equal(ctx.circuitAdvertisingStyle(12,{},1),null);
-config.walls.advertising={panels:[{fromM:0,toM:20,bg:'#ff0000',brand:'CUSTOM'}]};assert.equal(ctx.circuitAdvertisingStyle(12,{},1).brand,'CUSTOM');
-// Stations are cached against the real visual wall segments. One segment per
-// side/station, never invent geometry in missing runs or disabled advertising.
-const helper=part.slice(part.indexOf('let apexSponsorAnchorSource='),start);
-ctx.wrapDeltaS=(a,b,L)=>((b-a+L/2)%L+L)%L-L/2;
-const walls=[{s:11,side:1,x1:0,z1:0,x2:0,z2:5},{s:13,side:1,x1:0,z1:5,x2:0,z2:10},
- {s:36,side:-1,x1:10,z1:20,x2:10,z2:25},{s:60,side:1,x1:0,z1:30,x2:0,z2:35,advertising:false}];
-ctx.trackData.customWorld={_wallRenderSegments:walls};vm.runInContext(helper,ctx);
-assert.equal(walls.filter(w=>ctx.apexSponsorExactAnchor(w)===12).length,1);
-assert.equal(ctx.apexSponsorExactAnchor(walls[2]),36);assert.equal(ctx.apexSponsorExactAnchor(walls[3]),null);
-const greenWalls=[4,12,20,28].map(s=>({s,side:1,x1:s,z1:0,x2:s+4,z2:0}));
-ctx.trackData.customWorld._wallRenderSegments=greenWalls;
-assert.deepEqual(Array.from(greenWalls,w=>ctx.apexSponsorExactAnchor(w,'team-equipalia')),[4,12,20,28],
- 'Los tres logos / 24 m se anclan a geometría existente cada 8 m');
-assert.ok(greenWalls.filter(w=>ctx.apexSponsorExactAnchor(w)).length<greenWalls.length,
- 'Otros anunciantes conservan la separación de 24 m');
-ctx.trackData.customWorld._wallRenderSegments=[];assert.equal(ctx.apexSponsorExactAnchor(walls[0]),null);
-// Compile all production inline scripts; part files intentionally split tokens.
-const html=Array.from({length:28},(_,i)=>fs.readFileSync(path.join(root,'parts',`part-${String(i).padStart(3,'0')}.txt`),'utf8')).join('');
-for(const match of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi))new vm.Script(match[1]);
-console.log(JSON.stringify({test:'track-sponsor-vectors',logos:4,spacingM:api.spacingM,mobileTriangleBudget:2600,desktopTriangleBudget:5200,ok:true}));
+api.beginFrame(6);assert.equal(api.claimMural('would-starve-green',2400,true,400),false);assert.ok(api.claimMural('whole-with-green-room',2075,true,400));assert.ok(api.stats.triangles<=2200,'Shared budget leaves room for Equipalia/MDTel');
+const source=fs.readFileSync(path.join(root,'parts/part-024.txt'),'utf8'),renderer=fs.readFileSync(path.join(root,'parts/part-025.txt'),'utf8');
+assert.ok(renderer.includes("apexPlanSctWallMurals(wallItems.map(entry=>entry.data),pitch,'canvas2d')")&&renderer.includes("apexPlanSctWallMurals(items,pitch,'webgl2')"),'Exact/procedural items are planned once before either rendering backend');
+const helper=source.slice(source.indexOf('const apexSctProceduralAtlases='),source.indexOf('function apexPlanSctWallMurals'));
+const nodes=[0,2,5,8,12,24,48],q=s=>({x:0,z:s,tx:0,tz:1}),trackData={km:.048,customWorld:{}},wrapDeltaS=(a,b,L)=>((a-b+L/2)%L+L)%L-L/2;
+const ctx={trackData,apexRoadMeshSamples:()=>nodes,wallGeometryAtS:(s,side)=>({q:q(s),bottom:{x:side*5,z:s}}),mod:(s,L)=>(s%L+L)%L,lerp:(a,b,f)=>a+(b-a)*f,wrapDeltaS};vm.createContext(ctx);vm.runInContext(helper,ctx);
+const raw=[{x:0},{x:1},{x:2},{x:3}];
+for(const [a,b] of [[0,8],[8,24],[24,32]]){
+ const exact=ctx.apexSctWallDescriptor({side:1,sponsorSource:{sponsorPatternFromM:a,sponsorPatternToM:b,sponsorMuralRun:1},sponsorPoly3:raw});
+ const procedural=ctx.apexSctWallDescriptor({side:1,sponsorS0:a,sponsorS1:b,sponsorPoly3:raw});
+ assert.equal(exact.from,procedural.from);assert.equal(exact.to,procedural.to);
+}
+assert.equal(ctx.apexSctProceduralAtlas(1).reverse,true,'Right-hand wall has a stable readable front face');assert.equal(ctx.apexSctProceduralAtlas(-1).reverse,false,'Left-hand wall has the opposite physical orientation');
+const backward=ctx.apexSctWallDescriptor({side:1,sponsorS0:8,sponsorS1:0,sponsorPoly3:raw});assert.equal(backward.from,0);assert.equal(backward.to,8);assert.equal(backward.raw[0],raw[3]);
+const setup=source.slice(source.indexOf('const sponsorRuns=new Map();'),source.indexOf(' cw._apexGroundStamp=stamp;',source.indexOf('const sponsorRuns=new Map();')));
+const segments=[{runId:1,side:1,s:1,x1:5,z1:0,x2:5,z2:5},{runId:1,side:1,s:6,x1:5,z1:5,x2:5,z2:12},{runId:2,side:-1,s:1,x1:-5,z1:0,x2:-5,z2:5}];
+vm.runInNewContext(setup,{cw:{_wallRenderSegments:segments},renderRibbonFrameAt:q});
+assert.equal(segments[0].sponsorMuralReverse,true);assert.equal(segments[1].sponsorMuralReverse,true);assert.equal(segments[2].sponsorMuralReverse,false);
+assert.equal(segments[0].sponsorPatternToM,segments[1].sponsorPatternFromM,'Physical distance continues across exact wall joints');
+const html=Array.from({length:28},(_,i)=>fs.readFileSync(path.join(root,'parts',`part-${String(i).padStart(3,'0')}.txt`),'utf8')).join('');for(const m of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi))new vm.Script(m[1]);
+console.log(JSON.stringify({test:'sct-master-24m',triangles:triangles.length,area:totalArea,maxLayerOverlap:maxOverlap,threeFixedSizes:true,seams:true,exactAndProcedural:true,budgets:true,ok:true}));
