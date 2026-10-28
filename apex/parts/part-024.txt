@@ -4522,19 +4522,22 @@ function apexSponsorDraw(raw,key,pitch,backend,id,heightFraction=.80,fullBleed=f
  const ux=tr.x-tl.x,uy=tr.y-tl.y,uz=tr.z-tl.z,vx=bl.x-tl.x,vy=bl.y-tl.y,vz=bl.z-tl.z,
        wx=br.x-tr.x-bl.x+tl.x,wy=br.y-tr.y-bl.y+tl.y,wz=br.z-tr.z-bl.z+tl.z,
        halfW=W*.5,f=halfW/Math.tan(sceneHFov()*.5),horizon=sceneHorizon(pitch),eye=driverEyeHeight();
- const px=(u,v)=>{const uv=u*v,z=tl.z+uz*u+vz*v+wz*uv,inv=f/z;
-  return [halfW+inv*(tl.x+ux*u+vx*v+wx*uv),
-          horizon+inv*(eye-tl.y-uy*u-vy*v-wy*uv),z-.026];
- };
  if(backend==='canvas2d')ctx.save();
  for(const layer of layers){
   const t=layer.triangles,col=backend==='webgl2'?webglCssColor(layer.fill):null;
   if(backend==='canvas2d'){ctx.fillStyle=layer.fill;ctx.beginPath();}
   for(let i=0;i<t.length;i+=6){
-   const a=px(t[i],t[i+1]),b=px(t[i+2],t[i+3]),c=px(t[i+4],t[i+5]);
-   if(backend==='webgl2'){
-    webglVertexPx(a[0],a[1],col,a[2]);webglVertexPx(b[0],b[1],col,b[2]);webglVertexPx(c[0],c[1],col,c[2]);
-   }else{ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.lineTo(c[0],c[1]);ctx.closePath();}
+   // No temporary arrays/objects per vertex: feed the shared WebGL batch
+   // (or Canvas path) directly with the scalar projected coordinates.
+   for(let k=0;k<6;k+=2){
+    const u=t[i+k],v=t[i+k+1],uv=u*v,z=tl.z+uz*u+vz*v+wz*uv,inv=f/z,
+          x=halfW+inv*(tl.x+ux*u+vx*v+wx*uv),
+          y=horizon+inv*(eye-tl.y-uy*u-vy*v-wy*uv);
+    if(backend==='webgl2')webglVertexPx(x,y,col,z-.026);
+    else if(k===0)ctx.moveTo(x,y);
+    else ctx.lineTo(x,y);
+   }
+   if(backend==='canvas2d')ctx.closePath();
   }
   if(backend==='canvas2d')ctx.fill();
  }
