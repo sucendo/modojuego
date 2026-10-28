@@ -2927,7 +2927,8 @@ function drawWorldLandmarks(cam,pitch){
      for(let i=0;i<tiles;i++){const c0=anchorPoint(a,0,lerp(-span*.36,span*.36,i/tiles),csY0),c1=anchorPoint(a,0,lerp(-span*.36,span*.36,(i+1)/tiles),csY0),c2=anchorPoint(a,0,lerp(-span*.36,span*.36,(i+1)/tiles),csY1),c3=anchorPoint(a,0,lerp(-span*.36,span*.36,i/tiles),csY1);poly([c0,c1,c2,c3],i%2?"#d8dde0":"#21262b",null,1,1);}
      // lamps
      for(let i=0;i<5;i++){const lamp=anchorPoint(a,0,lerp(-span*.16,span*.16,(i+.5)/5),h*.44),lamp2=anchorPoint(a,0,lerp(-span*.16,span*.16,(i+.5)/5),h*.50); if(lamp&&lamp2){const rr=Math.max(2,Math.abs(lamp2.y-lamp.y)*.85); ctx.save(); ctx.fillStyle=i<4?"#d62834":"#1d3c22"; ctx.shadowColor=i<4?"rgba(255,50,60,.30)":"rgba(110,255,120,.18)"; ctx.shadowBlur=rr*1.8; ctx.beginPath(); ctx.arc(lamp.x,lamp.y,rr,0,Math.PI*2); ctx.fill(); ctx.restore();}}
-     const mid=anchorPoint(a,0,0,h*.68),ad=circuitAdvertisingStyle(a.s,{},it.side||1); if(mid&&mid.scale>.80&&base.z<360)labelQueue.push({x:mid.x,y:mid.y,text:(it.startGantry?"START · " :(it.finishGantry?"FINISH · ":""))+(ad?ad.brand:(it.text||"APEX")),scale:mid.scale,z:base.z,color:ad?ad.fg:'#ffffff'});
+     const featured=(it.startGantry||it.finishGantry)&&apexFeatureTrackBanner(a.s,span,h+.18,h+.18+clamp(span/7.5,1.65,3.0),cam,pitch,'canvas2d','apex-gantry:'+String(it.sourceId||a.s));
+     const mid=anchorPoint(a,0,0,h*.68),ad=circuitAdvertisingStyle(a.s,{},it.side||1); if(!featured&&mid&&mid.scale>.80&&base.z<360)labelQueue.push({x:mid.x,y:mid.y,text:(it.startGantry?"START · " :(it.finishGantry?"FINISH · ":""))+(ad?ad.brand:(it.text||"APEX")),scale:mid.scale,z:base.z,color:ad?ad.fg:'#ffffff'});
    }else if(it.type==="surfaceZone"||it.type==="terrainZone"||it.type==="water"||it.type==="marking"||it.type==="forestZone"){
      // terrain-zone delimita el terreno en planta. No se dibuja como una lámina plana:
      // eso atravesaba el asfalto en zonas de desnivel. El terreno 3D lo genera APEX
@@ -2946,6 +2947,7 @@ function drawWorldLandmarks(cam,pitch){
    }else if(it.type==="barrier"){
      if(Array.isArray(it.worldPath)&&it.worldPath.length>=2){const h=Math.max(.55,it.height||1.05),kind=it.barrierKind||'CONCRETE',baseCol=apexBarrierColor(kind),ad=circuitAdvertisingStyle(a.s,{},it.side||1);for(let j=0;j<it.worldPath.length-1;j++){const p0=it.worldPath[j],p1=it.worldPath[j+1],g0=Array.isArray(it.worldPathY)&&Number.isFinite(it.worldPathY[j])?it.worldPathY[j]:apexWorldGroundY(p0[0],p0[1]),g1=Array.isArray(it.worldPathY)&&Number.isFinite(it.worldPathY[j+1])?it.worldPathY[j+1]:apexWorldGroundY(p1[0],p1[1]),b0=project(p0[0],g0,p0[1],it.maxDs||1700),b1=project(p1[0],g1,p1[1],it.maxDs||1700),t0=project(p0[0],g0+h,p0[1],it.maxDs||1700),t1=project(p1[0],g1+h,p1[1],it.maxDs||1700);poly([b0,b1,t1,t0],(ad&&kind!=='TYRE')?ad.bg:baseCol,null,1,1);}continue;}
    }else if(it.type==="tunnel"){
+     apexFeatureTunnelBanner(it,cam,pitch,"canvas2d");
      // El path tunnel define un corredor hueco. La geometría visible la construye
      // drawTunnelSegment; nunca se convierte en un prisma sólido que cierre la boca.
      continue;
@@ -2972,6 +2974,7 @@ function drawWorldLandmarks(cam,pitch){
            for(let j=0;j<posts;j++){const ix=Math.round(j*(it.worldPath.length-1)/Math.max(1,posts-1)),v=it.worldPath[ix],rb=project(v[0],gy+totalH,v[1],it.maxDs||1700),rt=project(v[0],railY,v[1],it.maxDs||1700);line(rb,rt,"rgba(205,215,222,.62)",Math.max(1,.9*s),1);}
          }
        }
+       apexFeatureBridgeBanner(it,cam,pitch,"canvas2d");
        continue;     }
    }else if(it.type==="road"&&Array.isArray(it.worldPath)&&it.worldPath.length>=2){
      // v5.230.56 · Vial como cinta 3D segmentada. El código anterior convertía toda
@@ -3135,6 +3138,7 @@ function drawWorldLandmarks(cam,pitch){
        }
        line(oLT,oRT,"rgba(238,242,244,.72)",Math.max(1,1.1*s),1);
      }
+     apexFeatureTunnelBanner(it,cam,pitch,"canvas2d");
    }else if(it.type==="flagPole"){
      const h=it.height||18;
      const b=anchorPoint(a,0,0,0),t=anchorPoint(a,0,0,h);
@@ -4279,7 +4283,7 @@ function apexSponsorContinuousWall(item,pitch,backend,key){
  // the opposite end. This keeps lettering readable without breaking seams.
  const reversed=projected[0].x>projected[1].x,
        quad=reversed?[top1,top0,bottom0,bottom1]:[top0,top1,bottom1,bottom0],
-       cached=api.wallTileLayers(source,from,to,reversed,'team-equipalia');
+       cached=api.wallTileLayers(source,from,to,reversed,key);
  if(!cached)return false;
  api.beginFrame(renderFrameId);
  const triangleCount=layers=>layers.reduce((n,l)=>n+l.triangles.length/6,0),
@@ -4439,6 +4443,7 @@ function apexSponsorWallLogo(item,ad,pitch,backend){
  const api=window.ApexTrackSponsors,key=api&&(ad&&(ad.logo||api.colorKey(ad.bg)));
  if(!key||item.advertising===false||item.barrier?.kind==='TYRE')return false;
  if(key==='sct')return apexDrawSctWallMural(item,pitch,backend);
+ if(key==='mdtel')return apexSponsorContinuousWall(item,pitch,backend,'mdtel-white-24m');
  const raw=item.sponsorPoly3;if(!raw||raw.length!==4)return false;
  if(key==='team-equipalia'&&item.sponsorSource&&Number.isFinite(item.sponsorSource.sponsorPatternFromM))
   return apexSponsorContinuousWall(item,pitch,backend,key);
@@ -4452,13 +4457,54 @@ function apexSponsorWallLogo(item,ad,pitch,backend){
  if(station===null||station===undefined)return false;
  return apexSponsorDraw(raw,key,pitch,backend,'wall:'+item.side+':'+station,key==='team-equipalia'?.88:.68);
 }
-function apexSponsorDraw(raw,key,pitch,backend,id,heightFraction=.80){
+
+/* Authoritative vector sponsor panels. Every vertex remains in the 3D world;
+ * both WebGL and Canvas2D use the same precalculated triangle data.
+ * These panels are visual only: pit, walls, tunnel apertures and collisions
+ * remain governed by their existing physical/SVG geometry. */
+function apexFeatureTrackBanner(s,span,bottom,top,cam,pitch,backend,id){
+ if(!trackData||!Number.isFinite(s)||!Number.isFinite(span)||span<5)return false;
+ const q=renderRibbonFrameAt(s),hw=span*.5;
+ const wp=(side,y)=>{const p=ribbonWorldPoint(q,hw,side,y);return worldToCamera(p.x,p.y,p.z,cam)};
+ const panel=[wp(-1,bottom),wp(-1,top),wp(1,top),wp(1,bottom)];
+ return apexSponsorDraw(panel,'apex26-start-finish',pitch,backend,id,1,true);
+}
+function apexFeatureBridgeBanner(it,cam,pitch,backend){
+ if(!it||it.pedestrianBridge!==true||!Array.isArray(it.worldFootprint)||it.worldFootprint.length<3)return false;
+ const ring=it.worldFootprint,edges=[];
+ for(let i=0;i<ring.length;i++){
+  const a=ring[i],b=ring[(i+1)%ring.length],length=Math.hypot(b[0]-a[0],b[1]-a[1]);
+  if(length>4&&length<100)edges.push({a,b,length,d:Math.hypot((a[0]+b[0])*.5-cam.x,(a[1]+b[1])*.5-cam.z)});
+ }
+ if(!edges.length)return false;
+ const longest=Math.max(...edges.map(e=>e.length)),choices=edges.filter(e=>e.length>=longest*.72).sort((a,b)=>a.d-b.d);
+ const edge=choices[0];if(!edge)return false;
+ const totalH=Math.max(6.1,Math.min(8.6,Number(it.height)||7)),deckT=clamp(totalH*.16,.88,1.24),
+       bottom=(Number(it.anchor?.y)||0)+totalH-deckT+.06,
+       top=bottom+clamp(edge.length/7.2,1.5,3.1);
+ const wp=(p,y)=>worldToCamera(p[0],y,p[1],cam);
+ const panel=[wp(edge.a,bottom),wp(edge.a,top),wp(edge.b,top),wp(edge.b,bottom)];
+ return apexSponsorDraw(panel,'radiquero-pedestrian-bridge',pitch,backend,'radiquero-bridge:'+String(it.sourceId||it.anchor?.s),1,true);
+}
+function apexFeatureTunnelBanner(it,cam,pitch,backend){
+ if(!it||it.advertisingBanner!==true||!trackData)return false;
+ const zones=trackData.customWorld?.structureZones||[],
+       zone=zones.find(z=>z&&z.kind==='UNDER'&&z.sourceId&&z.sourceId===it.sourceId),
+       s=zone&&Number.isFinite(zone.s0)?zone.s0:it.anchor?.s;
+ if(!Number.isFinite(s))return false;
+ const span=clamp(Number(it.width)||Number(zone?.width)||20,12,34),
+       roofH=clamp(Number(it.height)||Number(zone?.height)||5.6,3.2,8),
+       top=roofH+.22+clamp(span/7.6,1.7,3.35);
+ return apexFeatureTrackBanner(s,span,roofH+.22,top,cam,pitch,backend,'apex-tunnel:'+String(it.sourceId||s));
+}
+
+function apexSponsorDraw(raw,key,pitch,backend,id,heightFraction=.80,fullBleed=false){
  const api=window.ApexTrackSponsors,logo=api&&api.data[key],mobile=mobilePerformanceMode();
  if(!logo||raw.some(p=>!p||p.z<.65)||raw.every(p=>p.z>(mobile?180:260)))return false;
  const [a,t0,t1,b]=raw,span=Math.hypot(b.x-a.x,b.y-a.y,b.z-a.z),height=Math.hypot(t0.x-a.x,t0.y-a.y,t0.z-a.z);
  if(span<.25||height<.15)return false;
- const logoH=Math.min(height*heightFraction,span*.84/logo.aspect),logoW=logoH*logo.aspect;
- const u0=.5-logoW/span/2,u1=1-u0,v0=.51-logoH/height/2,v1=v0+logoH/height;
+ const logoH=fullBleed?height:Math.min(height*heightFraction,span*.84/logo.aspect),logoW=fullBleed?span:logoH*logo.aspect;
+ const u0=fullBleed?0:.5-logoW/span/2,u1=fullBleed?1:1-u0,v0=fullBleed?0:.51-logoH/height/2,v1=fullBleed?1:v0+logoH/height;
  const map=(u,v)=>camMix(camMix(a,b,u),camMix(t0,t1,u),v);
  let quad=[map(u0,v1),map(u1,v1),map(u1,v0),map(u0,v0)];
  const pp=quad.map(p=>projectLocal(p.x,p.y,p.z,pitch));if(pp.some(p=>!p))return false;
