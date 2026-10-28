@@ -34,7 +34,7 @@ const designs=Object.freeze({
    upper:'M505 192H556C588 192 612 207 621 227',
    lower:'M505 278H556C588 278 612 263 621 243'},
   livery:'sweep'},
- SILVERWING:{shoulderRelief:0.8,reference:'Mercedes',nose:[20,24,-8],wing:[-12,14,3],rear:[10,-4],cover:[16,34,49,18],podBase:'secondary',
+ SILVERWING:{shoulderRelief:0.8,reference:'Mercedes',nose:[20,24,-8],wing:[-12,14,4],rear:[10,-4],cover:[16,34,49,18],podBase:'secondary',
   bodySegments:[[173,217],[290,217,350,200,410,181],[450,171,480,169,518,171],[566,174,601,189,635,202]],
   spineProfile:[9,423,17,18],cockpitProfile:[488,554,624,38],
   pod:'M274 221C336 212 366 183 411 158Q449 139 494 137L587 132Q624 132 641 147L639 180L618 202Q551 212 476 209L366 219Z',
@@ -42,7 +42,7 @@ const designs=Object.freeze({
   stripe:'M323 216L415 191L518 182L621 165',
   inlet:'M600 145L638 144L638 155L601 159Z',
   livery:'center'},
- FERRATI:{shoulderRelief:0.84,reference:'Ferrari',nose:[21,37,-14],wing:[10,-12,3],rear:[-6,5],cover:[30,61,65,30],podBase:'primary',
+ FERRATI:{shoulderRelief:0.84,reference:'Ferrari',nose:[21,37,-14],wing:[10,-12,4],rear:[-6,5],cover:[30,61,65,30],podBase:'primary',
   bodySegments:[[173,205],[282,205,332,192,386,170],[438,148,483,146,531,156],[580,166,611,181,635,190]],
   spineProfile:[16,420,29,23],cockpitProfile:[482,558,633,43],
   pod:'M264 219C310 207 333 168 371 143C414 115 472 110 548 114Q610 116 640 139Q652 155 645 180L624 208Q543 218 453 212L337 225Z',
@@ -58,7 +58,7 @@ const designs=Object.freeze({
   stripe:'M323 215L424 170L487 134L568 133L619 146',
   inlet:'M606 128L646 126L641 146L606 153Z',
   livery:'chevron'},
- SUNRIDGE:{shoulderRelief:0.83,reference:'Racing Bulls',nose:[18,31,-4],wing:[4,8,3],rear:[-1,-9],cover:[23,46,53,27],podBase:'primary',
+ SUNRIDGE:{shoulderRelief:0.83,reference:'Racing Bulls',nose:[18,31,-4],wing:[4,8,4],rear:[-1,-9],cover:[23,46,53,27],podBase:'primary',
   bodySegments:[[173,212],[282,212,342,200,402,181],[450,163,486,157,528,162],[577,169,610,185,635,193]],
   spineProfile:[12,419,25,20],cockpitProfile:[486,560,629,40],
   pod:'M270 222C341 213 367 179 408 155Q461 128 537 126Q609 127 644 148L643 179L620 205Q549 218 482 211Q377 224 270 228Z',
@@ -74,7 +74,7 @@ const designs=Object.freeze({
   stripe:'M337 212L412 177L449 145L524 133L616 145',
   inlet:'M603 143L641 149L632 173L602 166Z',
   livery:'flank'},
- MIDNIGHT:{shoulderRelief:0.87,reference:'Haas',nose:[23,35,-18],wing:[14,-5,3],rear:[-4,12],cover:[27,55,59,32],podBase:'primary',
+ MIDNIGHT:{shoulderRelief:0.87,reference:'Haas',nose:[23,35,-18],wing:[14,-5,4],rear:[-4,12],cover:[27,55,59,32],podBase:'primary',
   bodySegments:[[173,208],[284,208,343,194,401,174],[446,157,485,155,526,158],[574,165,610,180,635,188]],
   spineProfile:[15,416,27,24],cockpitProfile:[484,553,630,42],
   pod:'M275 218L354 199L398 147L456 129L601 129L643 144L646 182L616 211L480 215L359 225Z',
@@ -82,7 +82,7 @@ const designs=Object.freeze({
   stripe:'M352 210L419 174L477 153H610',
   inlet:'M607 149H638V170H607Z',
   livery:'bars'},
- AUREON:{shoulderRelief:0.82,reference:'Audi',nose:[19,29,-6],wing:[6,18,3],rear:[5,3],cover:[21,39,54,23],podBase:'secondary',
+ AUREON:{shoulderRelief:0.82,reference:'Audi',nose:[19,29,-6],wing:[6,18,4],rear:[5,3],cover:[21,39,54,23],podBase:'secondary',
   bodySegments:[[173,214],[281,214,345,199,397,181],[442,165,484,159,526,162],[575,165,610,187,635,197]],
   spineProfile:[10,431,22,19],cockpitProfile:[489,551,623,39],
   pod:'M268 220L355 201Q395 166 430 143Q455 129 491 128L600 129Q632 130 644 149L646 180L622 207L534 214L412 215Z',
@@ -106,7 +106,7 @@ const designs=Object.freeze({
   stripe:'M324 219Q412 208 451 157Q510 116 608 148',
   inlet:'M608 137L640 141L635 151L605 155Z',
   livery:'spear'},
- CADARA:{shoulderRelief:0.86,reference:'Cadillac',nose:[22,32,-12],wing:[12,4,3],rear:[-10,0],cover:[28,52,61,28],podBase:'primary',
+ CADARA:{shoulderRelief:0.86,reference:'Cadillac',nose:[22,32,-12],wing:[12,4,4],rear:[-10,0],cover:[28,52,61,28],podBase:'primary',
   bodySegments:[[173,207],[283,207,340,192,396,173],[443,155,484,152,529,159],[574,168,611,181,635,192]],
   spineProfile:[14,417,28,22],cockpitProfile:[483,561,632,41],
   pod:'M272 222C334 212 368 174 413 151Q466 125 522 126L565 128L617 140Q638 147 644 157L638 187L616 211Q533 221 460 214L351 226Z',
@@ -508,7 +508,7 @@ function markup(profile){
  const mirrors=M(P('M630 205L651 146','none','stroke="#0c141a" stroke-width="3.5"')+
   P('M638 136L661 133Q668 133 666 141L640 145Z','url(#carbon)','stroke="'+p+'" stroke-width="1.4"')+
   P('M641 137L661 135','none','stroke="#c1cfd8" stroke-opacity=".4" stroke-width=".8"'));
- return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 470" width="1000" height="470" role="img" data-apex-silhouette="f1-rear-assembly-v20" data-apex-design-key="'+id+'" data-apex-paint-style="'+paintStyle+'" data-apex-design="'+safe(d.reference)+'" data-apex-team="'+id+'" data-apex-model="'+model+'" data-apex-chassis="'+chassis+'" aria-label="Vista cenital de monoplaza '+id+' '+model+'">'+defs+paintDefs+bodyMasks+
+ return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 470" width="1000" height="470" role="img" data-apex-silhouette="f1-four-front-elements-v21" data-apex-design-key="'+id+'" data-apex-paint-style="'+paintStyle+'" data-apex-design="'+safe(d.reference)+'" data-apex-team="'+id+'" data-apex-model="'+model+'" data-apex-chassis="'+chassis+'" aria-label="Vista cenital de monoplaza '+id+' '+model+'">'+defs+paintDefs+bodyMasks+
   floor+rearWing+rearAssembly+frontBridge+M(frontHalf)+suspension+mounts+sidepods+body+flowingAccent+serviceDetails+
   tire(221,rearWheelY,true)+tire(221,470-rearWheelY,true)+tire(785,101)+tire(785,369)+cockpit+mirrors+
   '<g class="apex-car-airbox" transform="translate('+(d.proportions?.airboxShift||0)+' 0)">'+

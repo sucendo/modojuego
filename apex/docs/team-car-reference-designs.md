@@ -180,3 +180,17 @@ modifica el suelo de los circuitos ni el layout Circuito/Vehículo.
 
 La validación del estudio incluye las once carcasas distintas, los nuevos
 soportes, la salida del difusor, el suelo, las 121 decoraciones y la persistencia.
+
+## Cuatro láminas delanteras en todo el catálogo (v21)
+
+Meridian, Ferrazzi, Racing Bisons, Hassler, Auron y Cadara conservaban el valor
+`3` en el número de láminas de su alerón delantero: el elemento más adelantado
+no se generaba. No se trataba de una cuarta pieza coincidente. Se corrigen las
+seis configuraciones a cuatro; se mantienen sus barridos, anchuras y escalas.
+La lámina añadida reutiliza la unión central, el sombreado y el acabado de borde.
+
+La regresión exige cuatro láminas por mitad y cuatro uniones centrales para
+los once modelos. Además del recuento, mide la cuerda exclusiva de cada lámina
+en tres estaciones del semialerón, para detectar elementos superpuestos aunque
+existan cuatro nodos SVG. Se mantienen las comprobaciones de pintura, formas,
+proporciones, persistencia y layout en escritorio/móvil.
