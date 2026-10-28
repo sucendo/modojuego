@@ -4288,7 +4288,7 @@ function apexSponsorContinuousWall(item,pitch,backend,key){
  api.beginFrame(renderFrameId);
  const triangleCount=layers=>layers.reduce((n,l)=>n+l.triangles.length/6,0),
        accentTriangles=triangleCount(cached.accents),
-       accentVisible=api.claimWallAccents(accentTriangles,mobile);
+       accentVisible=api.claimWallAccents(accentTriangles,mobile,key);
  const includeFine=maxY-minY>=100&&!mobile,
        wordmarkTriangles=triangleCount(cached.wordmark)+(includeFine?triangleCount(cached.fine):0),
        id=key+'-wall:'+String(source.runId||'')+':'+String(item.side||source.side||0)+':'+from,
@@ -4504,7 +4504,7 @@ function apexFeatureTunnelBanner(it,cam,pitch,backend){
 
 function apexSponsorDraw(raw,key,pitch,backend,id,heightFraction=.80,fullBleed=false){
  const api=window.ApexTrackSponsors,logo=api&&api.data[key],mobile=mobilePerformanceMode();
- if(!logo||raw.some(p=>!p||p.z<.65)||raw.every(p=>p.z>(mobile?180:260)))return false;
+ if(!api||!api.enabled||(api.featureEnabled===false&&(key==='apex26-start-finish'||key==='radiquero-pedestrian-bridge'||key==='mdtel-white-24m'))||!logo||raw.some(p=>!p||p.z<.65)||raw.every(p=>p.z>(mobile?180:260)))return false;
  const [a,t0,t1,b]=raw,span=Math.hypot(b.x-a.x,b.y-a.y,b.z-a.z),height=Math.hypot(t0.x-a.x,t0.y-a.y,t0.z-a.z);
  if(span<.25||height<.15)return false;
  const logoH=fullBleed?height:Math.min(height*heightFraction,span*.84/logo.aspect),logoW=fullBleed?span:logoH*logo.aspect;
@@ -4513,27 +4513,28 @@ function apexSponsorDraw(raw,key,pitch,backend,id,heightFraction=.80,fullBleed=f
  let quad=[map(u0,v1),map(u1,v1),map(u1,v0),map(u0,v0)];
  const pp=quad.map(p=>projectLocal(p.x,p.y,p.z,pitch));if(pp.some(p=>!p))return false;
  const minX=Math.min(...pp.map(p=>p.x)),maxX=Math.max(...pp.map(p=>p.x)),minY=Math.min(...pp.map(p=>p.y)),maxY=Math.max(...pp.map(p=>p.y));
- if(maxX<0||minX>W||maxY<0||minY>H||maxX-minX<12)return false;
- // Reverse the UVs on a panel viewed from its other end; lettering stays legible.
+ if(maxX<0||minX>W||maxY<0||minY>H||maxX-minX<12||maxY-minY<4)return false;
  if((pp[0].x+pp[3].x)>(pp[1].x+pp[2].x))quad=[quad[1],quad[0],quad[3],quad[2]];
  api.beginFrame(renderFrameId);const layers=api.claim(id,key,maxY-minY,mobile);if(!layers)return false;
  const start=performance.now(),[tl,tr,br,bl]=quad;
- // Precompute the bilinear basis once per logo, avoiding temporary camera
- // vectors for each of the thousands of mesh vertices.
+ // Bilinear perspective basis, computed once. Unlike the old renderer, no
+ // trigonometry, camera-mode lookup, vector objects or projectLocal per vertex.
  const ux=tr.x-tl.x,uy=tr.y-tl.y,uz=tr.z-tl.z,vx=bl.x-tl.x,vy=bl.y-tl.y,vz=bl.z-tl.z,
-  wx=br.x-tr.x-bl.x+tl.x,wy=br.y-tr.y-bl.y+tl.y,wz=br.z-tr.z-bl.z+tl.z;
- const vertex=(u,v)=>{
-  const uv=u*v,z=tl.z+uz*u+vz*v+wz*uv,p=projectLocal(tl.x+ux*u+vx*v+wx*uv,tl.y+uy*u+vy*v+wy*uv,z,pitch);
-  p.z=z-.026;return p;
+       wx=br.x-tr.x-bl.x+tl.x,wy=br.y-tr.y-bl.y+tl.y,wz=br.z-tr.z-bl.z+tl.z,
+       halfW=W*.5,f=halfW/Math.tan(sceneHFov()*.5),horizon=sceneHorizon(pitch),eye=driverEyeHeight();
+ const px=(u,v)=>{const uv=u*v,z=tl.z+uz*u+vz*v+wz*uv,inv=f/z;
+  return [halfW+inv*(tl.x+ux*u+vx*v+wx*uv),
+          horizon+inv*(eye-tl.y-uy*u-vy*v-wy*uv),z-.026];
  };
  if(backend==='canvas2d')ctx.save();
  for(const layer of layers){
-  const points=layer.triangles,col=backend==='webgl2'?webglCssColor(layer.fill):null;
+  const t=layer.triangles,col=backend==='webgl2'?webglCssColor(layer.fill):null;
   if(backend==='canvas2d'){ctx.fillStyle=layer.fill;ctx.beginPath();}
-  for(let i=0;i<points.length;i+=6){
-   const p=vertex(points[i],points[i+1]),q=vertex(points[i+2],points[i+3]),r=vertex(points[i+4],points[i+5]);
-   if(backend==='webgl2'){webglVertexPx(p.x,p.y,col,p.z);webglVertexPx(q.x,q.y,col,q.z);webglVertexPx(r.x,r.y,col,r.z);}
-   else{ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.lineTo(r.x,r.y);ctx.closePath();}
+  for(let i=0;i<t.length;i+=6){
+   const a=px(t[i],t[i+1]),b=px(t[i+2],t[i+3]),c=px(t[i+4],t[i+5]);
+   if(backend==='webgl2'){
+    webglVertexPx(a[0],a[1],col,a[2]);webglVertexPx(b[0],b[1],col,b[2]);webglVertexPx(c[0],c[1],col,c[2]);
+   }else{ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.lineTo(c[0],c[1]);ctx.closePath();}
   }
   if(backend==='canvas2d')ctx.fill();
  }
