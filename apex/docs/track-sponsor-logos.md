@@ -6,7 +6,7 @@
 - Azul: SCT Telecom. La publicidad usa **un único mural maestro SVG de 24 m**,
   no tres logos repetidos cada 8 m. De izquierda a derecha: marca SCT grande,
   franja diagonal a altura completa, SCT mediano, segunda banda diagonal y
-  SCT pequeño; se conservan rombos azules y letras vectoriales originales.
+  SCT pequeño; se conservan rombos azules y letras vectoriales originales. Los rombos, de tres capas azules, envuelven completamente las letras SCT (incluida la T) en los tres tamaños, sin tocar TELECOM ni las bandas diagonales.
   [Ver el mural real de 24 metros](../assets/sponsors/sct-wall-24m.svg).
 - Blanco: MDTel.
 
