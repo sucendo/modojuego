@@ -4482,9 +4482,9 @@ function apexFeatureBridgeBanner(it,cam,pitch,backend){
        offset=facing*(Number(it.width)||5)*.5+facing*.08,
        p0=[a[0]+nx*offset,a[1]+nz*offset],p1=[b[0]+nx*offset,b[1]+nz*offset];
  const totalH=Math.max(6.1,Math.min(8.6,Number(it.height)||7)),
-       deckT=clamp(totalH*.16,.88,1.24),
-       bottom=(Number(it.anchor?.y)||0)+totalH-deckT+.06,
-       top=bottom+clamp(length/7.2,1.7,3.15);
+       // Side fascia of the existing walkway, not a billboard floating above it.
+       top=(Number(it.anchor?.y)||0)+totalH+.03,
+       bottom=top-clamp(length/20,1.55,2.65);
  const wp=(p,y)=>worldToCamera(p[0],y,p[1],cam),
        panel=[wp(p0,bottom),wp(p0,top),wp(p1,top),wp(p1,bottom)];
  return apexSponsorDraw(panel,'radiquero-pedestrian-bridge',pitch,backend,'radiquero-bridge:'+String(it.sourceId||it.anchor?.s),1,true);
