@@ -21,6 +21,27 @@ assert.ok(!/<image\\b|<text\\b|<foreignObject\\b/i.test(sctWallSvg),'SCT wall ha
 assert.ok(!/<image\\b|<text\\b|<foreignObject\\b/i.test(sct24),'SCT 24m source has no raster content');
 assert.equal((sct24.match(/<use href="#sct-eight-metres"/g)||[]).length,3,'24m contains exactly 3 x 8m SVG modules');
 assert.equal(api.data['sct-wall'].aspect,6);
+// The original SCT shadow and white face were coplanar. The new layer offsets
+// must guarantee a crisp face above the shadow and decorative blue geometry,
+// including near-oblique cameras; Equipalia/MDTel keep their existing bias.
+const depth=api.wallLayerDepthBias;
+assert.equal(depth('team-equipalia','#ffffff',0),.026);
+assert.equal(depth('mdtel','#ffffff',0),.026);
+assert.ok(depth('sct','#ffffff',0)>depth('sct','#063365',0));
+assert.ok(depth('sct','#063365',0)>depth('sct','#36b7ef',13));
+assert.ok(depth('sct','#ffffff',0)-depth('sct','#063365',0)>.04);
+const sctLogoMesh=api.data['sct-wall'];
+function meshBounds(layer){
+ const pts=layer.triangles,x=[],y=[];
+ for(let i=0;i<pts.length;i+=2){x.push(pts[i]*480);y.push(pts[i+1]*80);}
+ return {left:Math.min(...x),right:Math.max(...x),top:Math.min(...y),bottom:Math.max(...y)};
+}
+const sctGlyph=meshBounds(sctLogoMesh.layers.find(l=>l.fill==='#ffffff'));
+assert.ok(sctGlyph.right-sctGlyph.left>140,'SCT principal must span at least 140 SVG units');
+assert.ok(sctGlyph.bottom-sctGlyph.top>60,'SCT principal almost fills the wall height');
+assert.ok(sctGlyph.top<10&&sctGlyph.bottom>70,'SCT brand must be clearly legible');
+assert.ok(sctLogoMesh.layers.every(l=>l.triangles.length%6===0));
+
 for(const color of ['#ffffff','#25a9d5','#00a2d6','#116faf','#eafaff'])
  assert.ok(sctWallSvg.includes(color),'SCT vector identity and racing stripes: '+color);
 // Full-height vector wallpaper: the tile is clipped to each real wall piece,
