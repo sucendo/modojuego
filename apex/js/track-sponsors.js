@@ -70,7 +70,10 @@ function wallPatternMetres(key){return key==='sct-wall'?SCT_MURAL_METRES:EQUIPAL
 const wallStripeFills=new Set([
  '#71d650','#64bf48','#06472e','#f7faf9','#8ddc77',
  '#25a9d5','#00a2d6','#116faf','#0874bf','#0086cb','#0056a5',
- '#078fe0','#36b7ef','#eafaff','#007acb','#42c9f5'
+ '#078fe0','#36b7ef','#eafaff','#007acb','#42c9f5',
+ // MDTel white mural: background and blue diagonal accents remain visible
+ // even when the wordmark is culled for distance/frame budget.
+ '#f8fafc','#d4e7fb','#2a6db3','#75bce5','#d7e5f3','#e4eaf2','#d6dee9'
 ]);
 function wallClipEdge(points,limit,keepGreater){
  const out=[];
