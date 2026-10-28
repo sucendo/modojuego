@@ -3868,8 +3868,9 @@ function webglPushCircuitWalls(segments,cam,pitch){
   const barrier=item.barrier||wallBarrierStyle(item.env||{},item.s||0,item.side||1),kind=barrier.kind||'WALL_F1',adStyle=item.advertising===false?null:circuitAdvertisingStyle(item.s,item.env,item.side),col=adStyle?adStyle.bg:(barrier.base||'#bfc4c8'),A=item.poly3[0],T0=item.poly3[1],T1=item.poly3[2],B=item.poly3[3];
   webglPushCamPoly(item.poly3,pitch,col,.62);
   const top0=camMix(A,T0,.86),top1=camMix(B,T1,.86),band0=camMix(A,T0,.42),band1=camMix(B,T1,.42),band2=camMix(A,T0,.78),band3=camMix(B,T1,.78);
-  if(adStyle){const fg=adStyle.fg||'#ffffff';webglPushCamQuad(band0,band1,band3,band2,pitch,adStyle.bg,.62,-.008);if(lod<=1)webglPushCamQuad(camMix(band0,band2,.42),camMix(band1,band3,.42),camMix(band1,band3,.58),camMix(band0,band2,.58),pitch,fg,.62,-.010)}
+  if(adStyle){const fg=adStyle.fg||'#ffffff';webglPushCamQuad(band0,band1,band3,band2,pitch,adStyle.bg,.62,-.008);if(!(adStyle.logo||window.ApexTrackSponsors?.colorKey(adStyle.bg))&&lod<=1)webglPushCamQuad(camMix(band0,band2,.42),camMix(band1,band3,.42),camMix(band1,band3,.58),camMix(band0,band2,.58),pitch,fg,.62,-.010)}
   else if(lod<=1)webglPushCamQuad(top0,T0,T1,top1,pitch,barrier.stripe||'#eceff1',.62,-.008);
+  if(adStyle&&lod<=1)apexSponsorWallLogo(item,adStyle,pitch,'webgl2');
   const fp=item.fencePoly3,fg=item.fenceGeom;
   if(!exact&&barrier.fence&&fp&&fp.length>=3&&lod<=2){
    // v62.8.0.3: la base de la catch-fence se ancla EXPLÍCITAMENTE a T0/T1,
@@ -4244,6 +4245,8 @@ function webglPushCircuitLandmarks(cam,pitch){
      const w=it.width||14,h=it.height||4.2,side=it.side||1,lat=side*8;
      const p0=P(0,lat,0),p1=P(0,lat,h*1.16),l=P(0,lat-w*.5,h*.20),r=P(0,lat+w*.5,h*.20),lt=P(0,lat-w*.5,h*1.24),rt=P(0,lat+w*.5,h*1.24);
      const ad=circuitAdvertisingStyle(a.s,{},side);webglPushCamQuad(l,r,rt,lt,pitch,ad?ad.bg:'#1e2429',.60,-.004);
+     const sponsorKey=ad&&(ad.logo||window.ApexTrackSponsors?.colorKey(ad.bg));
+     if(sponsorKey&&lod<=1)apexSponsorDraw([l,lt,rt,r],sponsorKey,pitch,'webgl2','board:'+a.s+':'+side);
      webglPushCamQuad(P(-.08,lat,0),P(.08,lat,0),P(.08,lat,h*1.16),P(-.08,lat,h*1.16),pitch,'#aeb7bd',.60);
    }else if(it.type==='tunnelPortal'){
      const span=it.span||18,h=it.height||7.5,t=.72,mad=false,deckW=it.deckWidth||span*2.05,deckH=h+.55;

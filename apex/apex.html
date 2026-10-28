@@ -33,6 +33,11 @@ try{
   document.open();
   document.write(parts.join(""));
   document.close();
+  // Shared SVG meshes load once; no per-frame image decode or GPU textures.
+  for(const src of ['js/track-sponsor-vectors.js?v=1','js/track-sponsors.js?v=1']){
+    const script=document.createElement('script');script.src=src;script.async=false;
+    (document.body||document.head).appendChild(script);
+  }
   // Cargar el estado 9A después de reconstruir el documento completo.
   // No insertar etiquetas de script en el HTML ensamblado durante document.write.
   const moduleScript=document.createElement("script");
