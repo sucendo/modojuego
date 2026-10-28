@@ -58,6 +58,39 @@ assert.ok(sctGlyph.right-sctGlyph.left>140,'SCT principal must span at least 140
 assert.ok(sctGlyph.bottom-sctGlyph.top>60,'SCT principal almost fills the wall height');
 assert.ok(sctGlyph.top<10&&sctGlyph.bottom>70,'SCT brand must be clearly legible');
 assert.ok(sctLogoMesh.layers.every(l=>l.triangles.length%6===0));
+// Regression: every vertex of S, C and T must remain within the blue front
+// rhombus (including the right-hand T) at all three scale positions.
+const masterContours=[...sctWallSvg.matchAll(/<path\\b[^>]*\\/>/g)].map(m=>m[0]);
+function contour(part,fill){
+ const tag=masterContours.find(t=>t.includes('data-design-part="'+part+'"')&&t.includes('fill="'+fill+'"'));
+ assert.ok(tag,'Missing '+part+' / '+fill);
+ return [...tag.matchAll(/(-?\\d+(?:\\.\\d+)?),(-?\\d+(?:\\.\\d+)?)/g)].map(m=>[Number(m[1]),Number(m[2])]);
+}
+function sectionBounds(poly,y){
+ const xs=[];
+ for(let i=0;i<poly.length;i++){
+  const a=poly[i],b=poly[(i+1)%poly.length];
+  if(Math.abs(a[1]-b[1])<1e-8){if(Math.abs(y-a[1])<1e-5)xs.push(a[0],b[0]);continue;}
+  if(y<Math.min(a[1],b[1])-1e-6||y>Math.max(a[1],b[1])+1e-6)continue;
+  const f=(y-a[1])/(b[1]-a[1]);xs.push(a[0]+f*(b[0]-a[0]));
+ }
+ return xs.length?[Math.min(...xs),Math.max(...xs)]:null;
+}
+for(const [label,layerIndex] of [['large',20],['medium',26],['small',32]]){
+ const diamond=contour(label+'-icon','#116faf'),face=sctLogoMesh.layers[layerIndex].triangles;
+ assert.ok(diamond.length>=4,'Blue diamond has a full-height polygon');
+ let rightMost=-Infinity;
+ for(let i=0;i<face.length;i+=2){
+  const x=face[i]*1440,y=face[i+1]*80,bounds=sectionBounds(diamond,y);
+  assert.ok(bounds,'Diamond must cover glyph height '+label);
+  assert.ok(x>=bounds[0]-.6&&x<=bounds[1]+.6,
+   'SCT glyph outside diamond at '+label+' x='+x.toFixed(2)+' y='+y.toFixed(2));
+  rightMost=Math.max(rightMost,x);
+ }
+ const diamondRight=Math.max(...diamond.map(p=>p[0]));
+ assert.ok(diamondRight>rightMost+5,'The T needs a visible rhombus margin on the right for '+label);
+}
+
 
 for(const color of ['#ffffff','#25a9d5','#00a2d6','#116faf','#eafaff'])
  assert.ok(sctWallSvg.includes(color),'SCT vector identity and racing stripes: '+color);
