@@ -250,3 +250,24 @@ La prueba mide las diez cotas en cada uno de los once SVG con tolerancia de
 1 mm, comprueba tres perfiles delanteros/traseros, ausencia de beam wing,
 contactos mecánicos y las 121 decoraciones sin cambiar la geometría. Mantiene
 las pruebas de guardado/restauración, paleta, escritorio 50/50 y móvil.
+
+## Retrovisores, entradas y cockpit (v23)
+
+Se conservan todas las cotas métricas de v22. Cada escudería tiene ahora sus
+propias estaciones de retrovisor: carcasa alargada transversalmente, cara
+reflectante estrecha orientada hacia atrás y dos soportes perfilados con placas
+de anclaje visibles. Sustituyen la carcasa común longitudinal, que parecía una
+aleta, y su única barra. No se dibuja un espejo frontal completo en vista cenital.
+
+Cada entrada mantiene su boca propia. Se añade una garganta reducida dentro
+del contorno, borde de retorno y rejilla fina recortada al hueco interior. La
+geometría física es independiente del patrón de pintura. El cockpit incorpora
+acolchados laterales y una trama discreta de tejido en el asiento; un reflejo
+local transparente diferencia la pintura de los elementos de carbono y goma.
+No hay filtros, animaciones, recursos raster ni peticiones de red nuevas.
+
+La regresión comprueba once carcasas distintas con la misma paleta, dos espejos,
+cuatro soportes cuyos extremos tocan carrocería/pontón y carcasa, dos gargantas
+y ambos acolchados. Las piezas nuevas se incluyen en la firma geométrica de las
+121 decoraciones. Continúan midiéndose las diez cotas de los once modelos con
+la tolerancia de 1 mm, además de layout, selección, colores y persistencia.
