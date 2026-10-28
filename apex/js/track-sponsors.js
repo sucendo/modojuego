@@ -38,6 +38,10 @@ const styles=Object.freeze([
  Object.freeze({brand:'SCT TELECOM',bg:'#07539b',fg:'#ffffff',logo:'sct'}),
  Object.freeze({brand:'MDTEL',bg:'#f4f6f8',fg:'#050505',logo:'mdtel'})
 ]);
+const options=new URLSearchParams(global.location&&global.location.search||'');
+const enabled=options.get('sponsors')!=='0';
+const featureEnabled=enabled&&options.get('featureads')!=='0';
+const featureKeys=new Set(['apex26-start-finish','radiquero-pedestrian-bridge','mdtel-white-24m']);
 const colors=new Map();
 function colorKey(color){
  const key=String(color||'').toLowerCase();if(colors.has(key))return colors.get(key);
@@ -51,13 +55,14 @@ function colorKey(color){
  if(colors.size<64)colors.set(key,result);return result;
 }
 let frame=-1;const seen=new Set();
-const stats={frames:0,logos:0,triangles:0,accentTriangles:0,muralBlocks:0,sctTriangles:0,culled:0,cpuMs:0,maxLogos:0,maxTriangles:0,compiled:Object.keys(data).length};
-function beginFrame(id){if(id===frame)return;frame=id;seen.clear();stats.frames++;stats.logos=0;stats.triangles=0;stats.accentTriangles=0;stats.muralBlocks=0;stats.sctTriangles=0;stats.culled=0;stats.cpuMs=0;}
+const stats={frames:0,logos:0,triangles:0,accentTriangles:0,muralBlocks:0,sctTriangles:0,culled:0,cpuMs:0,maxLogos:0,maxTriangles:0,featureTriangles:0,featurePanels:0,legacyTriangles:0,compiled:Object.keys(data).length};
+function beginFrame(id){if(id===frame)return;frame=id;seen.clear();stats.frames++;stats.logos=0;stats.triangles=0;stats.accentTriangles=0;stats.featureTriangles=0;stats.featurePanels=0;stats.legacyTriangles=0;stats.muralBlocks=0;stats.sctTriangles=0;stats.culled=0;stats.cpuMs=0;}
 function claim(id,key,height,mobile){
- const logo=data[key];if(!logo||height<7||seen.has(id)){stats.culled++;return null;}
- const fine=height>=100&&!mobile,layers=logo.layers.filter(l=>!l.fine||fine),triangles=layers.reduce((sum,l)=>sum+l.triangles.length/6,0);
+ const logo=data[key];if(!enabled||(featureKeys.has(key)&&!featureEnabled)||!logo||height<7||seen.has(id)){stats.culled++;return null;}
+ const fine=featureKeys.has(key)?height>=(mobile?92:82):height>=100&&!mobile,layers=logo.layers.filter(l=>!l.fine||fine),triangles=layers.reduce((sum,l)=>sum+l.triangles.length/6,0);
  if(stats.logos>=(mobile?6:12)||stats.triangles+triangles>(mobile?2600:5200)){stats.culled++;return null;}
  seen.add(id);stats.logos++;stats.triangles+=triangles;
+ if(featureKeys.has(key)){stats.featurePanels++;stats.featureTriangles+=triangles;}else stats.legacyTriangles+=triangles;
  stats.maxLogos=Math.max(stats.maxLogos,stats.logos);stats.maxTriangles=Math.max(stats.maxTriangles,stats.triangles);
  return layers;
 }
@@ -93,7 +98,7 @@ function wallClipEdge(points,limit,keepGreater){
 // by the transient camera segment object; never fit or scale a logo locally.
 const sctSliceCache=new WeakMap();
 function sctMuralSlices(source,fromM,toM,reverse=false){
- if(!source||!Number.isFinite(fromM)||!Number.isFinite(toM)||toM<=fromM)return [];
+ if(!enabled||!source||!Number.isFinite(fromM)||!Number.isFinite(toM)||toM<=fromM)return [];
  let cache=sctSliceCache.get(source);if(!cache){cache=new Map();sctSliceCache.set(source,cache);}
  const stamp=fromM.toFixed(6)+':'+toM.toFixed(6)+':'+reverse;
  if(cache.has(stamp))return cache.get(stamp);
@@ -126,7 +131,7 @@ function claimMural(id,triangles,mobile,reserve=0){
 }
 
 function wallTileLayers(source,fromM,toM,reverse,brand='team-equipalia'){
- if(!source||!Number.isFinite(fromM)||!Number.isFinite(toM)||toM-fromM<.02)return null;
+ if(!enabled||(brand==='mdtel-white-24m'&&!featureEnabled)||!source||!Number.isFinite(fromM)||!Number.isFinite(toM)||toM-fromM<.02)return null;
  let cached=wallPatternCache.get(source);
  if(!cached){cached=new Map();wallPatternCache.set(source,cached);}
  const id=brand+':'+fromM+':'+toM+':'+(reverse?'reverse':'forward');
@@ -161,21 +166,23 @@ function wallTileLayers(source,fromM,toM,reverse,brand='team-equipalia'){
 // master uses disjoint planar regions and a common .06 world-face bias.
 function wallLayerDepthBias(){return .026;}
 function claimWallText(id,triangles,mobile){
- if(seen.has(id)||stats.logos>=(mobile?6:12)||stats.triangles+triangles>(mobile?2600:5200)){
+ if(!enabled||(String(id).startsWith('mdtel-white-24m-wall:')&&!featureEnabled)||seen.has(id)||stats.logos>=(mobile?6:12)||stats.triangles+triangles>(mobile?2600:5200)){
   stats.culled++;return false;
  }
  seen.add(id);stats.logos++;stats.triangles+=triangles;
+ if(String(id).startsWith('mdtel-white-24m-wall:')){stats.featurePanels++;stats.featureTriangles+=triangles;}else stats.legacyTriangles+=triangles;
  stats.maxLogos=Math.max(stats.maxLogos,stats.logos);
  stats.maxTriangles=Math.max(stats.maxTriangles,stats.triangles);
  return true;
 }
-function claimWallAccents(triangles,mobile){
- if(stats.triangles+triangles>(mobile?2600:5200))return false;
+function claimWallAccents(triangles,mobile,brand){
+ if(!enabled||(brand==='mdtel-white-24m'&&!featureEnabled)||stats.triangles+triangles>(mobile?2600:5200))return false;
  stats.triangles+=triangles;
  stats.accentTriangles+=triangles;
+ if(brand==='mdtel-white-24m')stats.featureTriangles+=triangles;else stats.legacyTriangles+=triangles;
  stats.maxTriangles=Math.max(stats.maxTriangles,stats.triangles);
  return true;
 }
-global.ApexTrackSponsors=Object.freeze({styles,data,colorKey,beginFrame,claim,stats,spacingM:24,equipaliaSpacingM:8,sctSpacingM:24,wallPatternMetres,
+global.ApexTrackSponsors=Object.freeze({enabled,featureEnabled,styles,data,colorKey,beginFrame,claim,stats,spacingM:24,equipaliaSpacingM:8,sctSpacingM:24,wallPatternMetres,
  wallTileLayers,claimWallAccents,claimWallText,wallLayerDepthBias,sctMuralSlices,claimMural});
 })(window);
