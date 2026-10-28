@@ -4338,7 +4338,7 @@ function apexSponsorDraw(raw,key,pitch,backend,id,heightFraction=.80){
 
 const APEX_AD_BRANDS=[
  {brand:'TEAM EQUIPALIA',bg:'#00673e',fg:'#ffffff',logo:'team-equipalia'},
- {brand:'SCT TELECOM',bg:'#175da5',fg:'#ffffff',logo:'sct'},
+ {brand:'SCT TELECOM',bg:'#09539e',fg:'#ffffff',logo:'sct'},
  {brand:'MDTEL',bg:'#f4f6f8',fg:'#050505',logo:'mdtel'}
 ];
 function circuitAdvertisingStyle(s,env,side){
