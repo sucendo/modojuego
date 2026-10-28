@@ -6,7 +6,7 @@ const data=global.ApexSponsorVectorData||{};
 for(const logo of Object.values(data))for(const layer of logo.layers)layer.triangles=new Float32Array(layer.triangles);
 const styles=Object.freeze([
  Object.freeze({brand:'TEAM EQUIPALIA',bg:'#00673e',fg:'#ffffff',logo:'team-equipalia'}),
- Object.freeze({brand:'SCT TELECOM',bg:'#175da5',fg:'#ffffff',logo:'sct'}),
+ Object.freeze({brand:'SCT TELECOM',bg:'#09539e',fg:'#ffffff',logo:'sct'}),
  Object.freeze({brand:'MDTEL',bg:'#f4f6f8',fg:'#050505',logo:'mdtel'})
 ]);
 const colors=new Map();
