@@ -13,6 +13,15 @@ for(const [key,logo] of Object.entries(api.data)){
 }
 assert.equal(api.colorKey('#53aa66'),'team-equipalia');assert.equal(api.colorKey('#00673e'),'team-equipalia');
 assert.equal(api.spacingM,24);assert.equal(api.equipaliaSpacingM,8);
+assert.equal(api.sctSpacingM,8,'SCT blue walls use seamless 8m tiles');
+assert.equal(api.data.sct.aspect,6,'SCT artwork is panoramic, not a square sticker');
+const sctSvg=fs.readFileSync(path.join(root,'assets/sponsors/sct.svg'),'utf8');
+const sctWall24=fs.readFileSync(path.join(root,'assets/sponsors/sct-wall-24m.svg'),'utf8');
+for(const color of ['#ffffff','#25a9d5','#00a2d6','#116faf','#10a2e8','#d9f2ff'])
+ assert.ok(sctSvg.includes(color),'Original SCT blue diamonds and white lettering plus racing stripes: '+color);
+assert.equal((sctWall24.match(/<use href="#sct-blue-8m"/g)||[]).length,3,'24m SCT reference has three full-width 8m modules');
+assert.ok(!/<image\b|<text\b|<foreignObject\b/i.test(sctSvg+sctWall24),'SCT mural is 100% vectorial');
+
 // Full-height vector wallpaper: the tile is clipped to each real wall piece,
 // and the same continuous geometry must meet at panel edges on both faces.
 function checkWallTile(layers){
@@ -49,6 +58,28 @@ assert.deepEqual([...seamVertices(revA,0)].sort((a,b)=>a-b),
  [...seamVertices(revB,1)].sort((a,b)=>a-b),
  'Opposite camera direction preserves pattern continuity');
 assert.equal(api.wallTileLayers(wallA,0,7.3,false),tileA,'No frame-time re-triangulation');
+// SCT shares the same seam-safe clipping implementation but must keep its
+// OWN cached brand entry even when a physical wall swaps brand at sector edges.
+const sctA=api.wallTileLayers(wallA,0,7.3,false,'sct');
+const sctB=api.wallTileLayers(wallB,7.3,14.6,false,'sct');
+checkWallTile(sctA);checkWallTile(sctB);
+assert.ok(sctA.accents.length>=5 && sctA.wordmark.length>=1,'SCT diamond/diagonals and original white letters are separated');
+assert.ok(sctA.accents.some(l=>l.triangles.some((v,i)=>i%2&&Math.abs(v)<1e-4)),'SCT stripes reach top');
+assert.ok(sctA.accents.some(l=>l.triangles.some((v,i)=>i%2&&Math.abs(v-1)<1e-4)),'SCT stripes reach bottom');
+assert.deepEqual([...seamVertices(sctA,1)].sort((a,b)=>a-b),
+ [...seamVertices(sctB,0)].sort((a,b)=>a-b),'SCT diagonal seams match exactly');
+const sctReverseA=api.wallTileLayers(wallA,0,7.3,true,'sct'),
+ sctReverseB=api.wallTileLayers(wallB,7.3,14.6,true,'sct');
+checkWallTile(sctReverseA);checkWallTile(sctReverseB);
+assert.deepEqual([...seamVertices(sctReverseA,0)].sort((a,b)=>a-b),
+ [...seamVertices(sctReverseB,1)].sort((a,b)=>a-b),'SCT reversed wall has no phase jump');
+assert.equal(api.wallTileLayers(wallA,0,7.3,false,'sct'),sctA,'SCT triangle clipping is cached');
+assert.notEqual(api.wallTileLayers(wallA,0,7.3,false,'sct'),tileA,'Shared wall source does not mix sponsors');
+api.beginFrame(71);
+const accentN=sctA.accents.reduce((n,l)=>n+l.triangles.length/6,0);
+assert.equal(api.claimWallAccents(accentN,true),true,'SCT accents render within mobile budget');
+assert.ok(api.stats.accentTriangles>0&&api.stats.triangles<=2600,'Mobile triangle budget respected');
+
 
 const equipaliaSource=fs.readFileSync(path.join(root,'assets/sponsors/team-equipalia.svg'),'utf8');
 const wall24=fs.readFileSync(path.join(root,'assets/sponsors/team-equipalia-wall-24m.svg'),'utf8');
