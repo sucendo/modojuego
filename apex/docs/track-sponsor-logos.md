@@ -161,3 +161,55 @@ Los pasos de cebra ya traían la corrección de orientación en main. Se conserv
 esa implementación y se amplía `crosswalk-orientation.cjs`: barras paralelas a
 la marcha, repetidas transversalmente, en calles giradas, sentido inverso y
 fallback geométrico lejos de la pista. `URBAN_STRIPES` no cambia.
+
+
+## Carteles especiales 2026 — pórticos, pasarelas, túneles y muros blancos
+
+Los tres SVG vectoriales facilitados se almacenan íntegros, sin imágenes raster ni
+fuentes dependientes del navegador:
+
+- `assets/sponsors/apex26-start-finish.svg`: diseño negro y rojo de **APEX 26**
+  en los pórticos de salida y meta; también se puede mostrar **encima** de las
+  bocas de túnel que lo permitan.
+- `assets/sponsors/radiquero-pedestrian-bridge.svg`: diseño burdeos de
+  **Quesos de Radiquero** sobre las pasarelas peatonales importadas del SVG.
+  El panel se dimensiona a partir del eje real de la pasarela, no de las pequeñas
+  aristas muestreadas de su huella.
+- `assets/sponsors/mdtel-white-24m.svg`: propuesta blanca y azul de **MDTel**
+  para las paredes publicitarias blancas. Se repite en módulos de 8 m: tres
+  logos visibles por cada 24 m, usando el wordmark vectorial original.
+
+`js/feature-sponsor-vectors.js` guarda triángulos precompilados a partir de
+estos contornos SVG: no se rasterizan imágenes, no se necesita instalar fuentes
+ni se procesan paths en el bucle de la carrera. La integración comparte el
+mismo proyector de perspectiva con WebGL y Canvas2D y reutiliza el culling y
+presupuesto de triángulos del sistema de patrocinadores previo.
+
+### Túneles con y sin cartel
+
+La marca se decide por **elemento de túnel**, no por tipo de circuito, mediante:
+
+```xml
+<path id="tunnel_madrid_01" data-apex-type="tunnel" data-apex-role="tunnel"
+      class="infrastructure tunnel apex-tunnel-ad-enabled"
+      data-apex-ad-banner="true" ... />
+```
+
+- `data-apex-ad-banner="true"` o la clase `apex-tunnel-ad-enabled` activa
+  el cartel APEX sobre la entrada.
+- `data-apex-ad-banner="false"` y ausencia de la clase lo desactiva. Por
+  defecto, los túneles sin marca no muestran el cartel.
+- La propiedad `advertisingBanner` se conserva al importar la geometría de
+  un SVG y al exportarla de nuevo.
+
+En el SVG guardado de Madrid del **28 de octubre de 2026** los túneles reales
+`tunnel_madrid_01` y `tunnel_madrid_02` llevan la clase habilitada. Sus
+plantas, cotas, colisiones, gálibos y huecos físicos **no se modifican**.
+
+### Pruebas
+
+`node apex/tests/feature-sponsor-audit.cjs` cubre los tres diseños SVG,
+los patrocinadores anteriores, el patrón de pared blanca, la selección
+explícita de los túneles y las ubicaciones de pórticos y pasarelas para
+ambos renderizadores. Las inspecciones visuales con el circuito cargado deben
+comprobar tamaño, perspectiva, superposiciones y presupuesto en móvil.
