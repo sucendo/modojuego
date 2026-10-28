@@ -158,7 +158,7 @@ function wallTileLayers(source,fromM,toM,reverse,brand='team-equipalia'){
      verts.push(Math.max(0,Math.min(1,(tile*tileMetres+p[0]*tileMetres-from)/span)),p[1]);
     }
    }
-   if(verts.length){target.push({fill:layer.fill,triangles:new Float32Array(verts)});out.triangleCount+=verts.length/6;}
+   if(verts.length){target.push({fill:layer.fill,tile,triangles:new Float32Array(verts)});out.triangleCount+=verts.length/6;}
   }
  }
  cached.set(id,out);return out;
