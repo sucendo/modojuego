@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 80" width="1440" height="80" role="img" aria-label="Valla azul SCT Telecom continua de 24 metros con tres tamaños de marca">
 <title>SCT Telecom — mural vectorial único de 24 metros, logotipo grande, mediano y pequeño</title>
 <path fill="#07539b" d="M0,0L1440,0L1440,80L0,80Z" data-design-part="continuous-background"/>
-<path fill="#0056a5" d="M0,0L185,0L60,80L0,80Z" data-design-part="left-sweep"/>
-<path fill="#0874bf" d="M0,0L92,0L0,69Z" data-design-part="left-edge-blue"/>
+<path fill="#0056a5" d="M18,0L185,0L60,80L18,80Z" data-design-part="left-sweep"/>
+<path fill="#0874bf" d="M18,0L92,0L18,69Z" data-design-part="left-edge-blue"/>
 <path fill="#0056a5" d="M655,0L770,0L710,80L600,80Z" data-design-part="central-sweep"/>
 <path fill="#0874bf" d="M1072,0L1170,0L1110,80L1011,80Z" data-design-part="second-sweep"/>
 <path fill="#078fe0" d="M441,80L516,0L539,0L464,80Z" data-design-part="diagonal-0"/>
