@@ -200,12 +200,12 @@
     <bx:title>Túneles Madrid</bx:title>
     <g>
       <bx:title>Túnel Madrid 1</bx:title>
-      <path id="tunnel_madrid_01" data-apex-type="tunnel" data-apex-role="tunnel" data-apex-width="28" data-apex-height="4" data-apex-name="Túnel Madrid 1" class="infrastructure race-infra tunnel" d="M 51.705 -1672.993 L 105.263 -1688.518" style="fill: none; stroke: rgb(220, 229, 237); stroke-linecap: round; stroke-width: 20;" data-apex-family="structure" data-apex-style="tunnel_concrete" data-apex-tunnel-style="tunnel_concrete"></path>
+      <path id="tunnel_madrid_01" data-apex-type="tunnel" data-apex-role="tunnel" data-apex-ad-banner="true" data-apex-width="28" data-apex-height="4" data-apex-name="Túnel Madrid 1" class="infrastructure race-infra tunnel apex-tunnel-ad-enabled" d="M 51.705 -1672.993 L 105.263 -1688.518" style="fill: none; stroke: rgb(220, 229, 237); stroke-linecap: round; stroke-width: 20;" data-apex-family="structure" data-apex-style="tunnel_concrete" data-apex-tunnel-style="tunnel_concrete"></path>
       <path class="tunnel-axis" d="M 51.318 -1672.188 C 111.318 -1689.188 104.876 -1688.486 104.876 -1688.486" style="fill: none; stroke: rgb(255, 183, 77); stroke-dasharray: 10px, 7px; stroke-width: 3;"></path>
     </g>
     <g transform="matrix(1, 0, 0, 1, 14.497475, -8.753192)">
       <bx:title>Túnel Madrid 2</bx:title>
-      <path id="tunnel_madrid_02" data-apex-type="tunnel" data-apex-role="tunnel" data-apex-width="28" data-apex-height="5" data-apex-name="Túnel Madrid 2" class="infrastructure race-infra tunnel" d="M -5.5 -1157.77 L 74.462 -1202.751" style="fill: none; stroke: rgb(220, 229, 237); stroke-linecap: round; stroke-width: 20px;" data-apex-family="structure" data-apex-style="tunnel_concrete" data-apex-tunnel-style="tunnel_concrete"></path>
+      <path id="tunnel_madrid_02" data-apex-type="tunnel" data-apex-role="tunnel" data-apex-ad-banner="true" data-apex-width="28" data-apex-height="5" data-apex-name="Túnel Madrid 2" class="infrastructure race-infra tunnel apex-tunnel-ad-enabled" d="M -5.5 -1157.77 L 74.462 -1202.751" style="fill: none; stroke: rgb(220, 229, 237); stroke-linecap: round; stroke-width: 20px;" data-apex-family="structure" data-apex-style="tunnel_concrete" data-apex-tunnel-style="tunnel_concrete"></path>
       <path class="tunnel-axis" d="M -4.406 -1157.223 L 74.16 -1202.609" style="fill: none; stroke: rgb(255, 183, 77); stroke-dasharray: 10px, 7px; stroke-width: 3px;"></path>
     </g>
   </g>
