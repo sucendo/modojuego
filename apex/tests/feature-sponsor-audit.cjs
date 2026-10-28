@@ -51,6 +51,7 @@ assert.equal(manifest.circuits['14-spain'].svg,'svg/apex26_14-madrid-spain_2026-
 const start=body2.indexOf('function apexFeatureTrackBanner('),end=body2.indexOf('function apexSponsorDraw(',start);
 assert.ok(start>0&&end>start);
 const drawn=[],testContext={
+ window:{ApexTrackSponsors:{enabled:true,featureEnabled:true}},
  trackData:{km:5,customWorld:{structureZones:[{kind:'UNDER',sourceId:'t0',s0:800,width:24,height:5}]}},
  renderRibbonFrameAt:s=>({x:0,z:s,y:0}),ribbonWorldPoint:(q,h,side,y)=>({x:h*side,y,z:q.z}),
  worldToCamera:(x,y,z)=>({x,y,z:z+10}),
