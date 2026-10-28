@@ -83,6 +83,15 @@ function wallTileLayers(source,fromM,toM,reverse){
  }
  cached.set(id,out);return out;
 }
+function claimWallText(id,triangles,mobile){
+ if(seen.has(id)||stats.logos>=(mobile?6:12)||stats.triangles+triangles>(mobile?2600:5200)){
+  stats.culled++;return false;
+ }
+ seen.add(id);stats.logos++;stats.triangles+=triangles;
+ stats.maxLogos=Math.max(stats.maxLogos,stats.logos);
+ stats.maxTriangles=Math.max(stats.maxTriangles,stats.triangles);
+ return true;
+}
 function claimWallAccents(triangles,mobile){
  if(stats.triangles+triangles>(mobile?2600:5200))return false;
  stats.triangles+=triangles;
@@ -91,5 +100,5 @@ function claimWallAccents(triangles,mobile){
  return true;
 }
 global.ApexTrackSponsors=Object.freeze({styles,data,colorKey,beginFrame,claim,stats,spacingM:24,equipaliaSpacingM:8,
- wallTileLayers,claimWallAccents});
+ wallTileLayers,claimWallAccents,claimWallText});
 })(window);
