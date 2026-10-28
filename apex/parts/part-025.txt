@@ -1497,8 +1497,60 @@ function drawRivals(cam,pitch){
  for(const a of collectRivalSprites(cam,pitch)) drawRivalSprite(a);
 }
 
+// Urban braking boards: cached wall anchors, vector paint shared by both renderers.
+function apexUrbanBoardMount(board){
+ if(!trackData)return null;
+ if(trackData._urbanDistanceBoards===undefined){
+  const id=trackData.spec.dir,cfg=readStoredCircuitJson(id)||{},override=String(cfg.walls?.distanceBoardMount||'').toUpperCase(),profile=circuitEnvironmentProfile(id),streetIds=['01-australia','04-miami','05-canada','06-monaco','14-spain','15-azerbaijan','17-singapore','21-las-vegas'];
+  // City/night scenery alone does not turn Shanghai, Lusail or Yas Marina into street tracks.
+  trackData._urbanDistanceBoards=override==='FENCE'||(override!=='POSTS'&&(streetIds.includes(id)||(!/^\d{2}-/.test(id)&&['URBAN','NIGHT'].includes(profile.family))));
+ }
+ if(!trackData._urbanDistanceBoards)return null;
+ const cache=trackData._distanceBoardMounts||(trackData._distanceBoardMounts=new Map()),key=[board.s,board.side,board.authoredLat].join(':');
+ if(cache.has(key))return cache.get(key);
+ const q=renderRibbonFrameAt(board.s),env=envProfile(board.s),side=board.side||1,on=Math.hypot(q.ox,q.oz)||1,ix=-side*q.ox/on,iz=-side*q.oz/on,
+       L=trackData.km*1000,cw=trackData.customWorld,style=wallBarrierStyle(env,board.s,side);
+ let mount=null,best=Infinity;
+ const lat=board.authored&&Number.isFinite(board.authoredLat)?board.authoredLat:env.half+env.curb+env.runoff,
+       target={x:q.x+q.ox*lat*side,z:q.z+q.oz*lat*side};
+ for(const sg of cw?.wallSegments||[]){
+  if(sg.side!==side||sg.fence===false||(!Number.isFinite(sg.s))||Math.abs(wrapDeltaS(sg.s,board.s,L))>45)continue;
+  const dx=sg.x2-sg.x1,dz=sg.z2-sg.z1,len=Math.hypot(dx,dz);if(len<.01)continue;
+  const t=clamp(((target.x-sg.x1)*dx+(target.z-sg.z1)*dz)/(len*len),0,1),x=sg.x1+dx*t,z=sg.z1+dz*t,d=Math.hypot(x-target.x,z-target.z);
+  if(d>=best||d>60)continue;best=d;
+  const fh=Math.max(2.05,+sg.fenceH||style.fenceH),wallH=+sg.height||style.height,ground=(Number(sg.y1)||0)*(1-t)+(Number(sg.y2)||0)*t;
+  mount={x:x+ix*.10,z:z+iz*.10,bottom:ground+wallH+.10,height:Math.min(1.7,Math.max(1.45,fh*.74)-.20),width:.58,tx:dx/len,tz:dz/len,ix,iz,source:'SVG_FENCE'};
+ }
+ if(!mount){const wg=wallGeometryAtS(board.s,side);if(wg.enabled&&wg.barrier.fence!==false)mount={x:wg.top.x+ix*.10,z:wg.top.z+iz*.10,bottom:wg.top.y+.10,height:Math.min(1.7,Math.max(1.45,wg.barrier.fenceH*.74)-.20),width:.58,tx:q.tx,tz:q.tz,ix,iz,source:'RIBBON_FENCE'};}
+ // No invented hanging sign where the authored SVG has no fence.
+ cache.set(key,mount);return mount;
+}
+function apexUrbanBoardPaint(mark){
+ const key=String(mark),cache=apexUrbanBoardPaint.cache||(apexUrbanBoardPaint.cache=new Map());if(cache.has(key))return cache.get(key);
+ const rect=(x0,y0,x1,y1,color)=>({color,points:[[x0,y0],[x1,y0],[x1,y1],[x0,y1]]}),out=[rect(0,0,1,1,'#171c21'),rect(.025,.012,.975,.988,key==='100'?'#19a8b8':'#fafbf8')],digits=key.split('').filter(ch=>/^[0-9]$/.test(ch)),gap=.035,cell=(.84-gap*(digits.length-1))/Math.max(1,digits.length);
+ for(let i=0;i<digits.length;i++){const y=.08+i*(cell+gap),polys=sevenSegPolys(.20,y,.60,cell,.065),segs=SEVEN_SEG_DIGITS[digits[i]];for(const seg of segs)out.push({color:key==='100'?'#f8ffff':'#101519',points:digits[i]==='1'?polys[seg].map(([u,v])=>[u-.25,v]):polys[seg]});}
+ // Four small metal clips hold the plate to the fence; no ground posts.
+ for(const v of [.12,.86]){out.push(rect(0,v,.13,v+.025,'#879298'));out.push(rect(.87,v,1,v+.025,'#879298'));}
+ cache.set(key,out);return out;
+}
+function apexUrbanBoardCameraPoly(item,points){
+ const [a,b,c,d]=item.camPts;
+ return points.map(([u,v])=>({x:(a.x+(b.x-a.x)*u)*(1-v)+(d.x+(c.x-d.x)*u)*v,y:(a.y+(b.y-a.y)*u)*(1-v)+(d.y+(c.y-d.y)*u)*v,z:(a.z+(b.z-a.z)*u)*(1-v)+(d.z+(c.z-d.z)*u)*v}));
+}
 function boardGeometry(board,cam,pitch){
- const q=renderRibbonFrameAt(board.s),env=envProfile(board.s),side=board.side||1;
+ const q=renderRibbonFrameAt(board.s),env=envProfile(board.s),side=board.side||1,mount=apexUrbanBoardMount(board);
+ if(mount){
+  let tx=mount.tx,tz=mount.tz;if(tx*q.tx+tz*q.tz<0){tx=-tx;tz=-tz;}
+  // u runs in driving direction on the right wall and reverses on the left.
+  tx*=side;tz*=side;
+  const w=mount.width*.5,y0=mount.bottom,y1=y0+mount.height,
+        world=[{x:mount.x-tx*w,y:y1,z:mount.z-tz*w},{x:mount.x+tx*w,y:y1,z:mount.z+tz*w},{x:mount.x+tx*w,y:y0,z:mount.z+tz*w},{x:mount.x-tx*w,y:y0,z:mount.z-tz*w}],
+        camPts=world.map(p=>worldToCamera(p.x,p.y,p.z,cam));
+  if(camPts.some(p=>p.z<.65))return null;
+  const pts=camPts.map(p=>projectLocal(p.x,p.y,p.z,pitch));if(pts.some(p=>!p))return null;
+  const screenW=Math.max(Math.hypot(pts[1].x-pts[0].x,pts[1].y-pts[0].y),Math.hypot(pts[2].x-pts[3].x,pts[2].y-pts[3].y)),screenH=Math.max(Math.hypot(pts[3].x-pts[0].x,pts[3].y-pts[0].y),Math.hypot(pts[2].x-pts[1].x,pts[2].y-pts[1].y)),z=camPts.reduce((sum,p)=>sum+p.z,0)/4;
+  return {board,q,mount,z,alpha:1,pts,camPts,screenW,screenH,poles:[],urban:true};
+ }
  const latMag=board.authored&&Number.isFinite(board.authoredLat)?Math.max(env.half+.4,board.authoredLat):(env.half+env.curb+env.runoff+(board.latExtra||1.15));
  // v5.159: el cartel se apoya en el terreno peraltado del lado correcto.
  const G=ribbonWorldPoint(q,latMag,side,0),cx=G.x,cz=G.z,groundY=G.y,halfW=(board.width||2.65)*.5,h=Math.min(board.height||2.85,3.15),postH=1.08;
@@ -1565,7 +1617,7 @@ function collectBrakeBoardSprites(cam,pitch){
    const g=boardGeometry(b,cam,pitch),inspectionFull=(typeof apexInspectionFullScene==='function'&&apexInspectionFullScene());if(!g||g.z<=2||(!inspectionFull&&g.z>=485)||g.alpha<=.015)continue;
    const cx=(g.pts[0].x+g.pts[1].x+g.pts[2].x+g.pts[3].x)*.25,cy=(g.pts[0].y+g.pts[1].y+g.pts[2].y+g.pts[3].y)*.25;
    if(cx<-W*.10||cx>W*1.10||cy<-H*.18||cy>H*1.16)continue;
-   if(!inspectionFull&&(g.screenW<4.5||g.screenH<5.5))continue;
+   if(!inspectionFull&&(g.screenW<(g.urban?1.1:4.5)||g.screenH<5.5))continue;
    out.push(g);
  }
  out.sort((a,b)=>b.z-a.z);
@@ -1609,6 +1661,7 @@ function drawBrakeBoardSprite(item){
  if(alpha<=.001)return;
  ctx.save();
  ctx.globalAlpha*=alpha;
+ if(item.urban){for(const face of apexUrbanBoardPaint(item.board.mark))drawQuadPoly(tl,tr,br,bl,face.points,face.color);ctx.restore();return;}
  if(poleL0&&poleL1){ctx.strokeStyle="#6c727a";ctx.lineWidth=Math.max(1,(tl.scale||1)*.06);ctx.beginPath();ctx.moveTo(poleL0.x,poleL0.y);ctx.lineTo(poleL1.x,poleL1.y);ctx.stroke();}
  if(poleR0&&poleR1){ctx.strokeStyle="#6c727a";ctx.lineWidth=Math.max(1,(tr.scale||1)*.06);ctx.beginPath();ctx.moveTo(poleR0.x,poleR0.y);ctx.lineTo(poleR1.x,poleR1.y);ctx.stroke();}
  poly([[tl.x,tl.y],[tr.x,tr.y],[br.x,br.y],[bl.x,bl.y]],"#ffffff");
@@ -3849,6 +3902,7 @@ function webglPushMappedBoardPoly(tl,tr,br,bl,uvPts,color,z){
 function webglPushBrakeBoards(cam,pitch){
  if(!webglCircuitVisualAvailable())return;for(const item of collectBrakeBoardSprites(cam,pitch)){
    const [tl,tr,br,bl]=item.pts,[poleL0,poleL1,poleR0,poleR1]=item.poles,z=item.z;
+   if(item.urban){for(const face of apexUrbanBoardPaint(item.board.mark)){const bias=(face.color==='#101519'||face.color==='#f8ffff')?-.022:(face.color==='#879298'?-.026:((face.color==='#fafbf8'||face.color==='#19a8b8')?-.010:0));webglPushCamPoly(apexUrbanBoardCameraPoly(item,face.points),pitch,face.color,.62,bias);}continue;}
    // Panel y postes participan del Z-buffer: ya no pueden verse a través de taludes/pista.
    if(poleL0&&poleL1)webglPushScreenLineDepth([poleL0.x,poleL0.y],[poleL1.x,poleL1.y],Math.max(1,tl.scale*.055),"#6c727a",z+.015);
    if(poleR0&&poleR1)webglPushScreenLineDepth([poleR0.x,poleR0.y],[poleR1.x,poleR1.y],Math.max(1,tr.scale*.055),"#6c727a",z+.015);
