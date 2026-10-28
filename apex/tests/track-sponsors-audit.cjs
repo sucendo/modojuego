@@ -11,7 +11,16 @@ for(const [key,logo] of Object.entries(api.data)){
  assert.ok(logo.aspect>0);
  for(const layer of logo.layers){assert.equal(layer.triangles.length%6,0);assert.ok(Array.from(layer.triangles).every(Number.isFinite));}
 }
-assert.equal(api.colorKey('#53aa66'),'team-equipalia');assert.equal(api.colorKey('#17633a'),'team-equipalia');
+assert.equal(api.colorKey('#53aa66'),'team-equipalia');assert.equal(api.colorKey('#00673e'),'team-equipalia');
+assert.equal(api.spacingM,24);assert.equal(api.equipaliaSpacingM,8);
+const equipaliaSource=fs.readFileSync(path.join(root,'assets/sponsors/team-equipalia.svg'),'utf8');
+const wall24=fs.readFileSync(path.join(root,'assets/sponsors/team-equipalia-wall-24m.svg'),'utf8');
+assert.equal(api.data['team-equipalia'].aspect,6,'El módulo de 8 m tiene proporción panorámica');
+for(const color of ['#ffffff','#64d25d','#ed3145','#2898e7','#f7faf9'])
+ assert.ok(equipaliaSource.includes(color),'Contornos blancos e icono tricolor original: '+color);
+assert.ok(equipaliaSource.includes('translate(18 0)'),'Identidad vectorial reutilizada');
+assert.equal((wall24.match(/<use href="#equipalia-8m"/g)||[]).length,3,'Tres módulos en la valla de 24 m');
+assert.ok(!/<image\b|<text\b|<foreignObject\b/i.test(wall24),'Vista frontal 24 m 100 % vectorial');assert.equal(api.colorKey('#17633a'),'team-equipalia');
 assert.equal(api.colorKey('#175da5'),'sct');assert.equal(api.colorKey('#fff'),'mdtel');
 for(const c of ['#ff0000','#f3cf2f','#111111','invalid'])assert.equal(api.colorKey(c),null);
 for(const mobile of [false,true]){
@@ -40,6 +49,12 @@ const walls=[{s:11,side:1,x1:0,z1:0,x2:0,z2:5},{s:13,side:1,x1:0,z1:5,x2:0,z2:10
 ctx.trackData.customWorld={_wallRenderSegments:walls};vm.runInContext(helper,ctx);
 assert.equal(walls.filter(w=>ctx.apexSponsorExactAnchor(w)===12).length,1);
 assert.equal(ctx.apexSponsorExactAnchor(walls[2]),36);assert.equal(ctx.apexSponsorExactAnchor(walls[3]),null);
+const greenWalls=[4,12,20,28].map(s=>({s,side:1,x1:s,z1:0,x2:s+4,z2:0}));
+ctx.trackData.customWorld._wallRenderSegments=greenWalls;
+assert.deepEqual(Array.from(greenWalls,w=>ctx.apexSponsorExactAnchor(w,'team-equipalia')),[4,12,20,28],
+ 'Los tres logos / 24 m se anclan a geometría existente cada 8 m');
+assert.ok(greenWalls.filter(w=>ctx.apexSponsorExactAnchor(w)).length<greenWalls.length,
+ 'Otros anunciantes conservan la separación de 24 m');
 ctx.trackData.customWorld._wallRenderSegments=[];assert.equal(ctx.apexSponsorExactAnchor(walls[0]),null);
 // Compile all production inline scripts; part files intentionally split tokens.
 const html=Array.from({length:28},(_,i)=>fs.readFileSync(path.join(root,'parts',`part-${String(i).padStart(3,'0')}.txt`),'utf8')).join('');

@@ -4180,35 +4180,44 @@ function collectExactWallRenderItems(cam){
 
 // Sponsor stations belong to the existing wall mesh; never add barriers or
 // floating advertising planes across SVG gaps. Cached per visual wall array.
-let apexSponsorAnchorSource=null,apexSponsorAnchors=new Map();
-function apexSponsorExactAnchor(source){
+let apexSponsorAnchorSource=null,apexSponsorAnchors=new Map(),apexEquipaliaAnchors=new Map();
+function apexSponsorExactAnchor(source,brandKey){
  const list=trackData&&trackData.customWorld&&(trackData.customWorld._wallRenderSegments||trackData.customWorld.wallSegments);
  if(!list)return null;
  if(list!==apexSponsorAnchorSource){
-  apexSponsorAnchorSource=list;apexSponsorAnchors=new Map();const slots=new Map(),L=trackData.km*1000;
+  apexSponsorAnchorSource=list;apexSponsorAnchors=new Map();apexEquipaliaAnchors=new Map();
+  const regularSlots=new Map(),equipaliaSlots=new Map(),L=trackData.km*1000;
   for(const sg of list){
    if(sg.advertising===false)continue;
-   const station=12+24*Math.round(((sg.s||0)-12)/24),delta=wrapDeltaS(sg.s||0,station,L),span=Math.hypot(sg.x2-sg.x1,sg.z2-sg.z1);
-   if(Math.abs(delta)>Math.max(3.5,span*.65))continue;
-   const key=(sg.side||0)+':'+station,prev=slots.get(key);
-   if(!prev||Math.abs(delta)<prev.gap)slots.set(key,{sg,station,gap:Math.abs(delta)});
+   const span=Math.hypot(sg.x2-sg.x1,sg.z2-sg.z1);
+   // La fachada verde se repite 3 veces por cada 24 m (módulos de 8 m).
+   // Las otras marcas mantienen su paso de 24 m. Se cachea una vez por muro.
+   for(const [step,slots] of [[24,regularSlots],[8,equipaliaSlots]]){
+    const offset=step/2,station=offset+step*Math.round(((sg.s||0)-offset)/step),
+          delta=wrapDeltaS(sg.s||0,station,L);
+    if(Math.abs(delta)>Math.max(3.5,span*.65))continue;
+    const slotKey=(sg.side||0)+':'+station,prev=slots.get(slotKey);
+    if(!prev||Math.abs(delta)<prev.gap)slots.set(slotKey,{sg,station,gap:Math.abs(delta)});
+   }
   }
-  for(const entry of slots.values())apexSponsorAnchors.set(entry.sg,entry.station);
+  for(const entry of regularSlots.values())apexSponsorAnchors.set(entry.sg,entry.station);
+  for(const entry of equipaliaSlots.values())apexEquipaliaAnchors.set(entry.sg,entry.station);
  }
- return apexSponsorAnchors.get(source)??null;
+ return (brandKey==='team-equipalia'?apexEquipaliaAnchors:apexSponsorAnchors).get(source)??null;
 }
 function apexSponsorWallLogo(item,ad,pitch,backend){
  const api=window.ApexTrackSponsors,key=api&&(ad&&(ad.logo||api.colorKey(ad.bg)));
  if(!key||item.advertising===false||item.barrier?.kind==='TYRE')return false;
  const raw=item.sponsorPoly3;if(!raw||raw.length!==4)return false;
  let station;
- if(item.sponsorSource)station=apexSponsorExactAnchor(item.sponsorSource);
+ if(item.sponsorSource)station=apexSponsorExactAnchor(item.sponsorSource,key);
  else{
   const L=trackData.km*1000,a=item.sponsorS0,b=a+wrapDeltaS(a,item.sponsorS1,L);
-  station=12+24*Math.ceil((a-12)/24);if(!(station>=a&&station<b))station=null;
+  const step=key==='team-equipalia'?8:24,offset=step/2;
+  station=offset+step*Math.ceil((a-offset)/step);if(!(station>=a&&station<b))station=null;
  }
  if(station===null||station===undefined)return false;
- return apexSponsorDraw(raw,key,pitch,backend,'wall:'+item.side+':'+station,.68);
+ return apexSponsorDraw(raw,key,pitch,backend,'wall:'+item.side+':'+station,key==='team-equipalia'?.88:.68);
 }
 function apexSponsorDraw(raw,key,pitch,backend,id,heightFraction=.80){
  const api=window.ApexTrackSponsors,logo=api&&api.data[key],mobile=mobilePerformanceMode();
@@ -4249,7 +4258,7 @@ function apexSponsorDraw(raw,key,pitch,backend,id,heightFraction=.80){
 }
 
 const APEX_AD_BRANDS=[
- {brand:'TEAM EQUIPALIA',bg:'#53aa66',fg:'#090909',logo:'team-equipalia'},
+ {brand:'TEAM EQUIPALIA',bg:'#00673e',fg:'#ffffff',logo:'team-equipalia'},
  {brand:'SCT TELECOM',bg:'#175da5',fg:'#ffffff',logo:'sct'},
  {brand:'MDTEL',bg:'#f4f6f8',fg:'#050505',logo:'mdtel'}
 ];
