@@ -3060,7 +3060,8 @@ function drawWorldLandmarks(cam,pitch){
      const w=it.width||14,h=it.height||4.2,side=it.side||1,lat=side*8;
      const p1=anchorPoint(a,0,lat,0),p2=anchorPoint(a,0,lat,h*1.12),l=anchorPoint(a,0,lat-w*.5,h*.22),r=anchorPoint(a,0,lat+w*.5,h*.22),lt=anchorPoint(a,0,lat-w*.5,h*1.22),rt=anchorPoint(a,0,lat+w*.5,h*1.22);
      line(p1,p2,"#bfc8cd",Math.max(1,2.0*s),1); line(anchorPoint(a,0,lat+w*.26,0),anchorPoint(a,0,lat+w*.26,h*1.12),"#bfc8cd",Math.max(1,2.0*s),1); const ad=circuitAdvertisingStyle(a.s,{},side);poly([l,r,rt,lt],ad?ad.bg:'#1e2429',ad?ad.fg:'rgba(255,255,255,.18)',1,1);
-     const mid=anchorPoint(a,0,lat,h*.74); if(mid&&mid.scale>.70&&base.z<420)labelQueue.push({x:mid.x,y:mid.y,text:ad?ad.brand:(it.label||'APEX'),scale:mid.scale,z:base.z,color:ad?ad.fg:'#ffffff'});
+     const sponsorKey=ad&&(ad.logo||window.ApexTrackSponsors?.colorKey(ad.bg));const hasLogo=sponsorKey&&apexSponsorDraw([l,lt,rt,r],sponsorKey,pitch,'canvas2d','board:'+a.s+':'+side);
+     const mid=anchorPoint(a,0,lat,h*.74); if(!hasLogo&&mid&&mid.scale>.70&&base.z<420)labelQueue.push({x:mid.x,y:mid.y,text:ad?ad.brand:(it.label||'APEX'),scale:mid.scale,z:base.z,color:ad?ad.fg:'#ffffff'});
    }else if(it.type==="tunnelPortal"){
      // v5.230.31 · El portal SVG define sólo la boca. No generamos taludes ni losas artificiales.
      const span=Math.max(8,it.span||18),h=Math.max(3.6,it.height||6),frameW=clamp(span*.075,.72,1.35),lintelH=clamp(h*.13,.55,.95),depth=.72;
@@ -3313,7 +3314,7 @@ function projectRoadLocal(x,y,z,camPitch=0){
 // suaviza tiempos para DEV/telemetría. Las medidas se reinician al inicio de frame.
 const apexGpuFrameStats={dynamicVertices:0,dynamicUploadBytes:0,staticUploadBytes:0,bufferAllocations:0,deferredFineCells:0};
 const renderProfileRaw={roadGpuPrepareMs:0,roadPrepareMs:0,roadDrawMs:0,groundPrepareMs:0,terrainSelectMs:0,terrainPrepareMs:0,trackMs:0,terrainMs:0,tunnelMs:0,environmentMs:0,carsMs:0,mirrorsMs:0,cockpitGrossMs:0,effectsMs:0,miniMapMs:0,webglSubmitMs:0};
-function renderProfileReset(){for(const k in renderProfileRaw)renderProfileRaw[k]=0;for(const k in apexGpuFrameStats)apexGpuFrameStats[k]=0;}
+function renderProfileReset(){window.ApexTrackSponsors?.beginFrame(renderFrameId);for(const k in renderProfileRaw)renderProfileRaw[k]=0;for(const k in apexGpuFrameStats)apexGpuFrameStats[k]=0;}
 function renderProfileAdd(key,ms){if(Number.isFinite(ms)&&ms>=0)renderProfileRaw[key]=(renderProfileRaw[key]||0)+ms;}
 function renderProfileMeasure(key,fn){const t0=performance.now();const out=fn();renderProfileAdd(key,performance.now()-t0);return out;}
 function renderProfileCommit(){
@@ -4148,7 +4149,7 @@ function buildWallRenderItem(seg,side,cam){
  if(!Number.isFinite(z)||z>((typeof apexInspectionFullScene==='function'&&apexInspectionFullScene())?apexInspectionFarDistance():760))return null;
 
  const fencePoly3=mid.barrier&&mid.barrier.fence?clipPolyNear([wallPointCamera(A,true,cam),apexWallFenceTopCameraFromWG(A,cam),apexWallFenceTopCameraFromWG(B,cam),wallPointCamera(B,true,cam)],.62):null;
- return {family:'WALL',side,s:smid,z:z-.015,poly3:clipped,fencePoly3:fencePoly3&&fencePoly3.length>=3?fencePoly3:null,env:mid.env,barrier:mid.barrier};
+ return {family:'WALL',side,s:smid,sponsorS0:seg.a.s,sponsorS1:seg.b.s,sponsorPoly3:poly3,z:z-.015,poly3:clipped,fencePoly3:fencePoly3&&fencePoly3.length>=3?fencePoly3:null,env:mid.env,barrier:mid.barrier};
 }
 
 
@@ -4170,15 +4171,85 @@ function collectExactWallRenderItems(cam){
   const forCanvas=rendererBackendId()!=='webgl2';
   const fencePoly3=forCanvas?apexExactWallFencePoly3(sg,barrier,cam,A,T0,T1,B):null,
         fenceGeom=forCanvas?apexExactWallFenceGeom(sg,barrier,cam,T0,T1):null;
-  out.push({kind:'wall',z:z-.015,data:{family:'WALL',side:sg.side||0,s:sg.s||0,z:z-.015,poly3,fencePoly3,fenceGeom,env,barrier,advertising:sg.advertising,exact:true}})
+  out.push({kind:'wall',z:z-.015,data:{family:'WALL',side:sg.side||0,s:sg.s||0,sponsorSource:sg,sponsorPoly3:[A,T0,T1,B],z:z-.015,poly3,fencePoly3,fenceGeom,env,barrier,advertising:sg.advertising,exact:true}})
  }
  return out;
 }
 
+// Sponsor stations belong to the existing wall mesh; never add barriers or
+// floating advertising planes across SVG gaps. Cached per visual wall array.
+let apexSponsorAnchorSource=null,apexSponsorAnchors=new Map();
+function apexSponsorExactAnchor(source){
+ const list=trackData&&trackData.customWorld&&(trackData.customWorld._wallRenderSegments||trackData.customWorld.wallSegments);
+ if(!list)return null;
+ if(list!==apexSponsorAnchorSource){
+  apexSponsorAnchorSource=list;apexSponsorAnchors=new Map();const slots=new Map(),L=trackData.km*1000;
+  for(const sg of list){
+   if(sg.advertising===false)continue;
+   const station=12+24*Math.round(((sg.s||0)-12)/24),delta=wrapDeltaS(sg.s||0,station,L),span=Math.hypot(sg.x2-sg.x1,sg.z2-sg.z1);
+   if(Math.abs(delta)>Math.max(3.5,span*.65))continue;
+   const key=(sg.side||0)+':'+station,prev=slots.get(key);
+   if(!prev||Math.abs(delta)<prev.gap)slots.set(key,{sg,station,gap:Math.abs(delta)});
+  }
+  for(const entry of slots.values())apexSponsorAnchors.set(entry.sg,entry.station);
+ }
+ return apexSponsorAnchors.get(source)??null;
+}
+function apexSponsorWallLogo(item,ad,pitch,backend){
+ const api=window.ApexTrackSponsors,key=api&&(ad&&(ad.logo||api.colorKey(ad.bg)));
+ if(!key||item.advertising===false||item.barrier?.kind==='TYRE')return false;
+ const raw=item.sponsorPoly3;if(!raw||raw.length!==4)return false;
+ let station;
+ if(item.sponsorSource)station=apexSponsorExactAnchor(item.sponsorSource);
+ else{
+  const L=trackData.km*1000,a=item.sponsorS0,b=a+wrapDeltaS(a,item.sponsorS1,L);
+  station=12+24*Math.ceil((a-12)/24);if(!(station>=a&&station<b))station=null;
+ }
+ if(station===null||station===undefined)return false;
+ return apexSponsorDraw(raw,key,pitch,backend,'wall:'+item.side+':'+station,.68);
+}
+function apexSponsorDraw(raw,key,pitch,backend,id,heightFraction=.80){
+ const api=window.ApexTrackSponsors,logo=api&&api.data[key],mobile=mobilePerformanceMode();
+ if(!logo||raw.some(p=>!p||p.z<.65)||raw.every(p=>p.z>(mobile?180:260)))return false;
+ const [a,t0,t1,b]=raw,span=Math.hypot(b.x-a.x,b.y-a.y,b.z-a.z),height=Math.hypot(t0.x-a.x,t0.y-a.y,t0.z-a.z);
+ if(span<.25||height<.15)return false;
+ const logoH=Math.min(height*heightFraction,span*.84/logo.aspect),logoW=logoH*logo.aspect;
+ const u0=.5-logoW/span/2,u1=1-u0,v0=.51-logoH/height/2,v1=v0+logoH/height;
+ const map=(u,v)=>camMix(camMix(a,b,u),camMix(t0,t1,u),v);
+ let quad=[map(u0,v1),map(u1,v1),map(u1,v0),map(u0,v0)];
+ const pp=quad.map(p=>projectLocal(p.x,p.y,p.z,pitch));if(pp.some(p=>!p))return false;
+ const minX=Math.min(...pp.map(p=>p.x)),maxX=Math.max(...pp.map(p=>p.x)),minY=Math.min(...pp.map(p=>p.y)),maxY=Math.max(...pp.map(p=>p.y));
+ if(maxX<0||minX>W||maxY<0||minY>H||maxX-minX<12)return false;
+ // Reverse the UVs on a panel viewed from its other end; lettering stays legible.
+ if((pp[0].x+pp[3].x)>(pp[1].x+pp[2].x))quad=[quad[1],quad[0],quad[3],quad[2]];
+ api.beginFrame(renderFrameId);const layers=api.claim(id,key,maxY-minY,mobile);if(!layers)return false;
+ const start=performance.now(),[tl,tr,br,bl]=quad;
+ // Precompute the bilinear basis once per logo, avoiding temporary camera
+ // vectors for each of the thousands of mesh vertices.
+ const ux=tr.x-tl.x,uy=tr.y-tl.y,uz=tr.z-tl.z,vx=bl.x-tl.x,vy=bl.y-tl.y,vz=bl.z-tl.z,
+  wx=br.x-tr.x-bl.x+tl.x,wy=br.y-tr.y-bl.y+tl.y,wz=br.z-tr.z-bl.z+tl.z;
+ const vertex=(u,v)=>{
+  const uv=u*v,z=tl.z+uz*u+vz*v+wz*uv,p=projectLocal(tl.x+ux*u+vx*v+wx*uv,tl.y+uy*u+vy*v+wy*uv,z,pitch);
+  p.z=z-.026;return p;
+ };
+ if(backend==='canvas2d')ctx.save();
+ for(const layer of layers){
+  const points=layer.triangles,col=backend==='webgl2'?webglCssColor(layer.fill):null;
+  if(backend==='canvas2d'){ctx.fillStyle=layer.fill;ctx.beginPath();}
+  for(let i=0;i<points.length;i+=6){
+   const p=vertex(points[i],points[i+1]),q=vertex(points[i+2],points[i+3]),r=vertex(points[i+4],points[i+5]);
+   if(backend==='webgl2'){webglVertexPx(p.x,p.y,col,p.z);webglVertexPx(q.x,q.y,col,q.z);webglVertexPx(r.x,r.y,col,r.z);}
+   else{ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.lineTo(r.x,r.y);ctx.closePath();}
+  }
+  if(backend==='canvas2d')ctx.fill();
+ }
+ if(backend==='canvas2d')ctx.restore();api.stats.cpuMs+=performance.now()-start;return true;
+}
+
 const APEX_AD_BRANDS=[
- {brand:'PIRELLI',bg:'#f2cb25',fg:'#b51f28'},{brand:'ARAMCO',bg:'#2f9da6',fg:'#ffffff'},{brand:'QATAR AIRWAYS',bg:'#6b3f75',fg:'#ffffff'},
- {brand:'SANTANDER',bg:'#cf2028',fg:'#ffffff'},{brand:'TAG HEUER',bg:'#15191d',fg:'#ffffff'},{brand:'ROLEX',bg:'#17633a',fg:'#f2d866'},
- {brand:'AWS',bg:'#232f3e',fg:'#ffffff'},{brand:'DHL',bg:'#f3cf2f',fg:'#c51d29'}
+ {brand:'TEAM EQUIPALIA',bg:'#53aa66',fg:'#090909',logo:'team-equipalia'},
+ {brand:'SCT TELECOM',bg:'#175da5',fg:'#ffffff',logo:'sct'},
+ {brand:'MDTEL',bg:'#f4f6f8',fg:'#050505',logo:'mdtel'}
 ];
 function circuitAdvertisingStyle(s,env,side){
  if(!trackData)return null;
@@ -4191,12 +4262,12 @@ function circuitAdvertisingStyle(s,env,side){
      return {brand:String(p.brand||''),bg:p.bg||'#26323c',fg:p.fg||'#ffffff'};
    }
  }
- const step=Math.max(32,Math.min(200,Number(cfg.panelLengthM)||72)),slot=Math.floor(pos/step),salt=(trackData.spec&&trackData.spec.r)||0,defs=Array.isArray(cfg.brands)&&cfg.brands.length?cfg.brands:APEX_AD_BRANDS,idx=mod(slot*3+(side>0?1:4)+salt,defs.length);
+ const step=Math.max(32,Math.min(200,Number(cfg.panelLengthM)||72)),slot=Math.floor(pos/step),salt=(trackData.spec&&trackData.spec.r)||0,defs=Array.isArray(cfg.brands)&&cfg.brands.length?cfg.brands:APEX_AD_BRANDS,idx=mod(slot+(side>0?0:1)+salt,defs.length);
  if(mod(slot+salt+(side>0?0:2),5)===4)return null;return defs[idx];
 }
 function drawGeneratedWallAd(item,topL,topR,botL,botR,kind){
  if(kind==='TYRE'||item.advertising===false)return;const ad=circuitAdvertisingStyle(item.s,item.env,item.side);if(!ad)return;const a0=mixPt(botL,topL,.42),a1=mixPt(botR,topR,.42),b1=mixPt(botR,topR,.78),b0=mixPt(botL,topL,.78),P=[a0,a1,b1,b0];
- ctx.save();ctx.globalAlpha=.96;ctx.fillStyle=ad.bg;ctx.beginPath();ctx.moveTo(P[0].x,P[0].y);for(let i=1;i<P.length;i++)ctx.lineTo(P[i].x,P[i].y);ctx.closePath();ctx.fill();const cx=(a0.x+a1.x+b1.x+b0.x)*.25,cy=(a0.y+a1.y+b1.y+b0.y)*.25,w=Math.hypot(a1.x-a0.x,a1.y-a0.y);if(w>46){ctx.fillStyle=ad.fg;ctx.font=`700 ${Math.max(7,Math.min(15,w*.12))}px system-ui,sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(ad.brand,cx,cy);}ctx.restore();
+ ctx.save();ctx.globalAlpha=.96;ctx.fillStyle=ad.bg;ctx.beginPath();ctx.moveTo(P[0].x,P[0].y);for(let i=1;i<P.length;i++)ctx.lineTo(P[i].x,P[i].y);ctx.closePath();ctx.fill();const cx=(a0.x+a1.x+b1.x+b0.x)*.25,cy=(a0.y+a1.y+b1.y+b0.y)*.25,w=Math.hypot(a1.x-a0.x,a1.y-a0.y);if(w>46&&!(ad.logo||window.ApexTrackSponsors?.colorKey(ad.bg))){ctx.fillStyle=ad.fg;ctx.font=`700 ${Math.max(7,Math.min(15,w*.12))}px system-ui,sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(ad.brand,cx,cy);}ctx.restore();
 }
 
 function drawWallRenderItem(item,pitch){
@@ -4205,13 +4276,15 @@ function drawWallRenderItem(item,pitch){
  const pts=pp.map(p=>({x:p[0],y:p[1]})),minX=Math.min(...pts.map(p=>p.x)),maxX=Math.max(...pts.map(p=>p.x)),minY=Math.min(...pts.map(p=>p.y)),maxY=Math.max(...pts.map(p=>p.y));
  const topPts=pts.slice().sort((A,B)=>A.y-B.y).slice(0,2).sort((A,B)=>A.x-B.x),botPts=pts.slice().sort((A,B)=>B.y-A.y).slice(0,2).sort((A,B)=>A.x-B.x),topL=topPts[0]||{x:minX,y:minY},topR=topPts[1]||{x:maxX,y:minY},botL=botPts[0]||{x:minX,y:maxY},botR=botPts[1]||{x:maxX,y:maxY};
  const wallH=Math.max(4,((botL.y-topL.y)+(botR.y-topR.y))*.5),scaleHint=Math.max(1.2,Math.min(4.2,wallH*.06)),f1=(barrier.family==='WALL'||kind==='WALL_F1'||style==='wall_f1');
- poly(pp,barrier.base||'#bfc4c8');
+ const sponsorAd=item.advertising===false?null:circuitAdvertisingStyle(item.s,item.env,item.side);
+ poly(pp,sponsorAd?sponsorAd.bg:(barrier.base||'#bfc4c8'));
  ctx.save();tracePolyPath(pp);ctx.clip();
  // Hormigón F1: juntas horizontales suaves, coronación clara y zócalo más oscuro.
  ctx.strokeStyle='rgba(75,82,88,.34)';ctx.lineWidth=1;for(let y=minY+4;y<maxY;y+=Math.max(5,wallH*.34)){ctx.beginPath();ctx.moveTo(minX-2,y);ctx.lineTo(maxX+2,y);ctx.stroke();}
  ctx.fillStyle='rgba(255,255,255,.16)';ctx.fillRect(minX,minY,Math.max(2,maxX-minX),Math.max(2,wallH*.13));ctx.fillStyle='rgba(20,24,28,.13)';ctx.fillRect(minX,maxY-wallH*.14,Math.max(2,maxX-minX),Math.max(2,wallH*.14));
  ctx.restore();
  drawGeneratedWallAd(item,topL,topR,botL,botR,kind);
+ apexSponsorWallLogo(item,sponsorAd,pitch,'canvas2d');
  ctx.strokeStyle=barrier.accent||'#737b82';ctx.lineWidth=Math.max(1,Math.min(3,scaleHint));ctx.beginPath();ctx.moveTo(topL.x,topL.y);ctx.lineTo(topR.x,topR.y);ctx.stroke();
  if(!barrier.fence)return;
  const fp=item.fencePoly3?projectCameraPoly(item.fencePoly3,pitch):null;if(!fp||fp.length<3)return;
