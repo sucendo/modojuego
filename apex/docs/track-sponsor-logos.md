@@ -3,7 +3,11 @@
 - Verde: Team Equipalia (diseño racing con icono tricolor real, letras blancas
   y diagonales lima/blancas sobre verde oscuro).
   Vista frontal de 24 m: [team-equipalia-wall-24m.svg](../assets/sponsors/team-equipalia-wall-24m.svg).
-- Azul: SCT Telecom.
+- Azul: SCT Telecom. La publicidad de los muros usa **SCT-wall**: rombos azules
+  y logotipo SCT originales en contornos SVG, TELECOM en blanco horizontal,
+  franjas oblicuas cian/blanco a toda la altura del muro y repetición continua
+  de 3 módulos de 8 m por cada 24 m.
+  Vista frontal: [sct-wall-24m.svg](../assets/sponsors/sct-wall-24m.svg).
 - Blanco: MDTel.
 
 Los SVG de `assets/sponsors/` tienen contornos vectoriales, letras trazadas y
@@ -18,7 +22,8 @@ Los paneles publicitarios predeterminados alternan los tres colores en sectores
 de 72 m. Team Equipalia utiliza un módulo SVG transparente de **8 m**, que
 se repite **tres veces por cada 24 m** de valla verde; la referencia completa
 de 24 m contiene exactamente ese módulo repetido tres veces, con fondo
-verde oscuro. SCT y MDTel mantienen una estación cada 24 m.
+verde oscuro. SCT utiliza también módulos continuos de 8 m, como Equipalia; MDTel
+mantiene una estación independiente cada 24 m.
 
 Los logos de Team Equipalia y sus bandas diagonales cubren el 100 % de la altura
 publicitaria del muro verde, como en la referencia. El patrón se mide en metros
@@ -29,7 +34,7 @@ desiguales comparten la misma fase gráfica y mantienen la continuidad.
 El vector SVG incluye la marca en blanco, icono tricolor y diagonales que van
 desde el pie hasta la coronación, todas recortadas en la geometría original.
 
-El módulo se pretriangula en build y el recorte de cada muro se cachea en
+Los módulos SCT y Equipalia se pretriangulan en build y el recorte de cada muro se cachea en
 WeakMap por tramo, con versiones normal e invertida para respetar lectura
 del logotipo cuando se mira desde el otro sentido. Canvas2D y WebGL reutilizan
 el mismo resultado; solo se proyectan los triángulos realmente visibles.
@@ -56,6 +61,9 @@ utiliza los mismos triángulos, agrupados por color.
 - Se omiten logos de menos de 7 px de alto o 12 px de ancho y los que están
   fuera de pantalla o cruzan el plano cercano.
 - Distancia máxima: 260 m en escritorio, 180 m en móvil.
+- Los módulos completos de SCT ocupan cada panel físico con fase continua,
+  sin logotipos flotantes ni márgenes; los carteles independientes reutilizan
+  el SCT clásico. Se respeta el presupuesto compartido de triángulos.
 - Máximo por fotograma: 12 logos / 5200 triángulos en escritorio;
   6 logos / 2600 triángulos en móvil.
 - El texto fino sólo aparece a partir de 100 px de alto en escritorio.
