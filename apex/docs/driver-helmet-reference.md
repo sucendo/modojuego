@@ -63,3 +63,30 @@ No se cambia el formato del perfil, las once decoraciones, los cuatro acabados
 ni los controles. El renderer compartido actualiza también avatar, icono y
 exportación. Se repite la validación de los 44 pares, guardado/recuperación y
 escritorio/móvil sobre esta nueva geometría.
+
+## Silueta Sainz/Lawson y rotulación en trazados (v4)
+
+La referencia muestra cascos más verticales, con mentonera recogida bajo la
+visera y una parte lateral visible detrás de la bisagra. Se reconstruyen el
+contorno frontal y trasero, el cierre de la base y el hueco de visera; se
+adelantan bisagra y fijaciones, y se adapta el rebaje de ventilación frontal.
+La proyección horizontal se estrecha manteniendo registrados pintura y piezas.
+Se comprueba la proporción del contorno y el alcance de la visera en el test.
+
+Dorsal, nombre y marca APEX se generan ahora como contornos `<path>`, con una
+marca original APEX en el lateral. El nombre del casco se presenta en mayúsculas;
+los datos y el nombre visible del perfil conservan su escritura original.
+Los símbolos geométricos de las decoraciones ya eran trazados SVG.
+
+`helmet-lettering-9f.js` contiene un repertorio de contornos derivado de DejaVu
+Sans Bold: latín básico y extendido, cifras y signos habituales. Incluye tildes,
+ñ, diéresis y otras letras europeas. Para caracteres fuera del repertorio se
+intenta su descomposición latina y, si no existe, se utiliza un signo de
+interrogación; la etiqueta accesible y los datos del perfil conservan el nombre
+completo. La licencia y atribución están en `licenses/helmet-lettering.txt`.
+
+El recurso se carga una vez antes del perfil. El render y el SVG descargado no
+necesitan fuentes instaladas, canvas, servicios externos ni fuentes incrustadas:
+la descarga contiene directamente los contornos. Se mantiene el formato de
+perfil y las 44 combinaciones de decoración/acabado. Las pruebas verifican
+rotulación sin `<text>` en el casco y nombre/dorsal vectoriales en la exportación.

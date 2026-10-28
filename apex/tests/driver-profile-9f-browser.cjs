@@ -38,6 +38,17 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
   assert.equal(await page.locator('#apex9aModesScreen').isVisible(),false);
   const svg=page.locator('#apexProfileHelmetImage svg');
   assert.equal(await svg.count(),1,'Casco SVG real');
+  assert.equal(await svg.locator('text').count(),0,'Nombre, dorsal y marcas son trazados, no texto dependiente de fuentes');
+  assert.ok(await svg.locator('.apex-helmet-number path').count()>0);
+  assert.ok(await svg.locator('.apex-helmet-name path').count()>0);
+  assert.ok(await svg.locator('.apex-helmet-emblem').count()===1);
+  const shapeRatios=await svg.evaluate(el=>{
+   const shell=el.querySelector('.apex-helmet-shell'),lens=el.querySelector('.apex-helmet-visor');
+   const b=shell.getBBox(),m=shell.getCTM();
+   return {aspect:b.width*Math.hypot(m.a,m.b)/(b.height*Math.hypot(m.c,m.d)),lens:lens.getBBox().width/b.width};
+  });
+  assert.ok(shapeRatios.aspect>.90&&shapeRatios.aspect<1.05,'Calota más vertical, cercana a las referencias Sainz/Lawson');
+  assert.ok(shapeRatios.lens>.65&&shapeRatios.lens<.78,'La visera deja visible la parte lateral de la calota');
   const original=await svg.evaluate(el=>el.outerHTML);
   const variations=await page.evaluate(async()=>{
    const profile=window.ApexDriverProfile9F.get();
@@ -133,6 +144,13 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
   const exportSvg=fs.readFileSync(await avatarDownload.path(),'utf8');
   assert.ok(exportSvg.includes('data-paint="organic"')&&exportSvg.includes('data-visor-finish="gold"'),
    'El avatar descargado contiene el mismo casco y acabado que el editor');
+  const letteringExport=await page.evaluate(source=>{
+   const doc=new DOMParser().parseFromString(source,'image/svg+xml'),helmet=doc.querySelector('[data-apex-helmet]');
+   return {texts:helmet.querySelectorAll('text').length,name:helmet.querySelector('.apex-helmet-name').getAttribute('aria-label'),
+    number:helmet.querySelector('.apex-helmet-number').getAttribute('aria-label'),paths:helmet.querySelectorAll('.apex-helmet-lettering path').length};
+  },exportSvg);
+  assert.equal(letteringExport.texts,0);assert.equal(letteringExport.name,'LUCÍA MARTÍN');assert.equal(letteringExport.number,'07');
+  assert.ok(letteringExport.paths>12,'El SVG exportado lleva los contornos de las letras y cifras');
 
   const geometry=await screen.evaluate(el=>({scroll:el.scrollWidth-el.clientWidth,forms:el.querySelectorAll('form').length}));
   assert.ok(geometry.scroll<=2,'Perfil sin desbordamientos horizontales '+JSON.stringify(geometry));
