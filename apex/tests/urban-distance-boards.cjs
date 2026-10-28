@@ -15,6 +15,7 @@ c.trackData={spec:{dir:'06-monaco'},km:5};c.readStoredCircuitJson=()=>({walls:{d
 const geometryStart=source.indexOf('function boardGeometry('),geometryEnd=source.indexOf('const APEX_FIA_2026_CORNER_AUDIT_LOTE1',geometryStart);
 assert.ok(geometryStart>0&&geometryEnd>geometryStart,'Geometry function found');
 vm.runInNewContext(source.slice(geometryStart,geometryEnd),c);
+c.readStoredCircuitJson=()=>({}); // Previous Monaco POSTS override must not leak into these cases.
 c.worldToCamera=(x,y,z)=>({x,y,z:z+20});
 c.projectLocal=(x,y,z)=>({x,y,scale:1});
 for(const side of [1,-1]){
