@@ -4256,20 +4256,21 @@ function apexSponsorContinuousWall(item,pitch,backend,key){
  const ux=tr.x-tl.x,uy=tr.y-tl.y,uz=tr.z-tl.z,
        vx=bl.x-tl.x,vy=bl.y-tl.y,vz=bl.z-tl.z,
        wx=br.x-tr.x-bl.x+tl.x,wy=br.y-tr.y-bl.y+tl.y,wz=br.z-tr.z-bl.z+tl.z;
- const vertex=(u,v)=>{
+ const vertex=(u,v,depthBias)=>{
   const uv=u*v,z=tl.z+uz*u+vz*v+wz*uv,
         p=projectLocal(tl.x+ux*u+vx*v+wx*uv,tl.y+uy*u+vy*v+wy*uv,z,pitch);
-  p.z=z-.026;return p;
+  p.z=z-depthBias;return p;
  };
  const layers=[];
  if(accentVisible)layers.push(...cached.accents);
  if(wordmarkVisible){layers.push(...cached.wordmark);if(includeFine)layers.push(...cached.fine);}
  if(backend==='canvas2d')ctx.save();
- for(const layer of layers){
+ for(let layerIndex=0;layerIndex<layers.length;layerIndex++){
+  const layer=layers[layerIndex],depthBias=api.wallLayerDepthBias(key,layer.fill,layerIndex);
   const points=layer.triangles,col=backend==='webgl2'?webglCssColor(layer.fill):null;
   if(backend==='canvas2d'){ctx.fillStyle=layer.fill;ctx.beginPath();}
   for(let i=0;i<points.length;i+=6){
-   const p=vertex(points[i],points[i+1]),q=vertex(points[i+2],points[i+3]),r=vertex(points[i+4],points[i+5]);
+   const p=vertex(points[i],points[i+1],depthBias),q=vertex(points[i+2],points[i+3],depthBias),r=vertex(points[i+4],points[i+5],depthBias);
    if(backend==='webgl2'){webglVertexPx(p.x,p.y,col,p.z);webglVertexPx(q.x,q.y,col,q.z);webglVertexPx(r.x,r.y,col,r.z);}
    else{ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.lineTo(r.x,r.y);ctx.closePath();}
   }

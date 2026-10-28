@@ -87,6 +87,16 @@ function wallTileLayers(source,fromM,toM,reverse,brand='team-equipalia'){
  }
  cached.set(id,out);return out;
 }
+// SCT's blue diamonds, dark extrusion and white letters occupy overlapping
+// contours. Give each colour group a stable camera-space depth precedence to
+// prevent WebGL z-fighting (mottled/eroded letter faces) on angled walls.
+// This is only a depth offset, with no extra geometry, buffers or draw calls.
+function wallLayerDepthBias(brand,fill,index){
+ if(brand!=='sct')return .026;
+ if(fill==='#ffffff')return .190;
+ if(fill==='#063365')return .135;
+ return .042+Math.min(index,22)*.004;
+}
 function claimWallText(id,triangles,mobile){
  if(seen.has(id)||stats.logos>=(mobile?6:12)||stats.triangles+triangles>(mobile?2600:5200)){
   stats.culled++;return false;
@@ -104,5 +114,5 @@ function claimWallAccents(triangles,mobile){
  return true;
 }
 global.ApexTrackSponsors=Object.freeze({styles,data,colorKey,beginFrame,claim,stats,spacingM:24,equipaliaSpacingM:8,sctSpacingM:8,
- wallTileLayers,claimWallAccents,claimWallText});
+ wallTileLayers,claimWallAccents,claimWallText,wallLayerDepthBias});
 })(window);
