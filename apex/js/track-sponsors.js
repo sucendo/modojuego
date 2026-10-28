@@ -32,12 +32,16 @@ function claim(id,key,height,mobile){
  stats.maxLogos=Math.max(stats.maxLogos,stats.logos);stats.maxTriangles=Math.max(stats.maxTriangles,stats.triangles);
  return layers;
 }
-/* The green wall is one repeated 8m SVG design, not independent stickers.
- * Crop the pre-triangulated artwork to physical wall-segment boundaries once.
- * All clipped vertices are reused by Canvas2D and WebGL on every frame. */
+/* Blue SCT and green Equipalia walls use continuous 8m vector tiles.
+ * Clip the shared triangulated SVG per physical segment only once,
+ * and reuse the result in Canvas2D and WebGL without any textures. */
 const wallPatternCache=new WeakMap();
-const EQUIPALIA_TILE_METRES=8;
-const wallStripeFills=new Set(['#71d650','#64bf48','#06472e','#f7faf9','#8ddc77']);
+const WALL_TILE_METRES=8;
+const wallStripeFills=Object.freeze({
+ 'team-equipalia':new Set(['#71d650','#64bf48','#06472e','#f7faf9','#8ddc77']),
+ sct:new Set(['#07549f','#0e64ae','#0b5ca7','#25a9d5','#00a2d6','#116faf',
+              '#0875c5','#10a2e8','#d9f2ff','#2caff1','#0877c7'])
+});
 function wallClipEdge(points,limit,keepGreater){
  const out=[];
  for(let i=0;i<points.length;i++){
@@ -52,21 +56,21 @@ function wallClipEdge(points,limit,keepGreater){
  }
  return out;
 }
-function wallTileLayers(source,fromM,toM,reverse){
- if(!source||!Number.isFinite(fromM)||!Number.isFinite(toM)||toM-fromM<.02)return null;
+function wallTileLayers(source,fromM,toM,reverse,key='team-equipalia'){
+ if(!source||!wallStripeFills[key]||!Number.isFinite(fromM)||!Number.isFinite(toM)||toM-fromM<.02)return null;
  let cached=wallPatternCache.get(source);
  if(!cached){cached=new Map();wallPatternCache.set(source,cached);}
- const id=reverse?'reverse':'forward';
+ const id=key+':'+(reverse?'reverse':'forward');
  if(cached.has(id))return cached.get(id);
  const from=reverse?-toM:fromM,to=reverse?-fromM:toM,span=to-from;
  const out={accents:[],wordmark:[],fine:[],triangleCount:0};
- const logo=data['team-equipalia'];
- for(let tile=Math.floor(from/EQUIPALIA_TILE_METRES);tile<=Math.floor((to-1e-8)/EQUIPALIA_TILE_METRES);tile++){
-  const low=Math.max(0,(from-tile*EQUIPALIA_TILE_METRES)/EQUIPALIA_TILE_METRES),
-        high=Math.min(1,(to-tile*EQUIPALIA_TILE_METRES)/EQUIPALIA_TILE_METRES);
+ const logo=data[key],decor=wallStripeFills[key];
+ for(let tile=Math.floor(from/WALL_TILE_METRES);tile<=Math.floor((to-1e-8)/WALL_TILE_METRES);tile++){
+  const low=Math.max(0,(from-tile*WALL_TILE_METRES)/WALL_TILE_METRES),
+        high=Math.min(1,(to-tile*WALL_TILE_METRES)/WALL_TILE_METRES);
   if(high-low<1e-7)continue;
   for(const layer of logo.layers){
-   const target=layer.fine?out.fine:(wallStripeFills.has(layer.fill)?out.accents:out.wordmark);
+   const target=layer.fine?out.fine:(decor.has(layer.fill)?out.accents:out.wordmark);
    const triangles=layer.triangles,verts=[];
    for(let j=0;j<triangles.length;j+=6){
     let polygon=[[triangles[j],triangles[j+1]],[triangles[j+2],triangles[j+3]],[triangles[j+4],triangles[j+5]]];
@@ -75,7 +79,7 @@ function wallTileLayers(source,fromM,toM,reverse){
     polygon=wallClipEdge(polygon,high,false);
     if(polygon.length<3)continue;
     for(let k=1;k<polygon.length-1;k++)for(const p of [polygon[0],polygon[k],polygon[k+1]]){
-     verts.push(Math.max(0,Math.min(1,(tile*EQUIPALIA_TILE_METRES+p[0]*EQUIPALIA_TILE_METRES-from)/span)),p[1]);
+     verts.push(Math.max(0,Math.min(1,(tile*WALL_TILE_METRES+p[0]*WALL_TILE_METRES-from)/span)),p[1]);
     }
    }
    if(verts.length){target.push({fill:layer.fill,triangles:new Float32Array(verts)});out.triangleCount+=verts.length/6;}
@@ -99,6 +103,6 @@ function claimWallAccents(triangles,mobile){
  stats.maxTriangles=Math.max(stats.maxTriangles,stats.triangles);
  return true;
 }
-global.ApexTrackSponsors=Object.freeze({styles,data,colorKey,beginFrame,claim,stats,spacingM:24,equipaliaSpacingM:8,
+global.ApexTrackSponsors=Object.freeze({styles,data,colorKey,beginFrame,claim,stats,spacingM:24,equipaliaSpacingM:8,sctSpacingM:8,
  wallTileLayers,claimWallAccents,claimWallText});
 })(window);
