@@ -2,7 +2,7 @@
  * texture upload in the race loop. Render through the existing world batch. */
 (function(global){
 'use strict';
-const data=global.ApexSponsorVectorData||{};
+const data=Object.assign({},global.ApexSponsorVectorData||{},global.ApexFeatureSponsorData||{});
 for(const logo of Object.values(data))for(const layer of logo.layers)layer.triangles=new Float32Array(layer.triangles);
 const styles=Object.freeze([
  Object.freeze({brand:'TEAM EQUIPALIA',bg:'#00673e',fg:'#ffffff',logo:'team-equipalia'}),
@@ -22,7 +22,7 @@ function colorKey(color){
  if(colors.size<64)colors.set(key,result);return result;
 }
 let frame=-1;const seen=new Set();
-const stats={frames:0,logos:0,triangles:0,accentTriangles:0,muralBlocks:0,sctTriangles:0,culled:0,cpuMs:0,maxLogos:0,maxTriangles:0,compiled:4};
+const stats={frames:0,logos:0,triangles:0,accentTriangles:0,muralBlocks:0,sctTriangles:0,culled:0,cpuMs:0,maxLogos:0,maxTriangles:0,compiled:Object.keys(data).length};
 function beginFrame(id){if(id===frame)return;frame=id;seen.clear();stats.frames++;stats.logos=0;stats.triangles=0;stats.accentTriangles=0;stats.muralBlocks=0;stats.sctTriangles=0;stats.culled=0;stats.cpuMs=0;}
 function claim(id,key,height,mobile){
  const logo=data[key];if(!logo||height<7||seen.has(id)){stats.culled++;return null;}
@@ -37,7 +37,7 @@ function claim(id,key,height,mobile){
  * All clipped vertices are reused by Canvas2D and WebGL on every frame. */
 const wallPatternCache=new WeakMap();
 const EQUIPALIA_TILE_METRES=8, SCT_MURAL_METRES=24;
-function wallPatternMetres(key){return key==='sct-wall'?SCT_MURAL_METRES:EQUIPALIA_TILE_METRES;}
+function wallPatternMetres(key){return key==='sct-wall'||key==='mdtel-white-24m'?SCT_MURAL_METRES:EQUIPALIA_TILE_METRES;}
 const wallStripeFills=new Set([
  '#71d650','#64bf48','#06472e','#f7faf9','#8ddc77',
  '#25a9d5','#00a2d6','#116faf','#0874bf','#0086cb','#0056a5',
