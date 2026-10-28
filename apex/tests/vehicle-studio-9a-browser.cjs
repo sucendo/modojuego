@@ -215,7 +215,17 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
      joins[index].isPointInFill(new DOMPoint(x,235))&&
      joins[index].isPointInFill(new DOMPoint(x,470-y+.5));
    });
-   const wing={elements:elements.length,joins:joins.length,connected:wingJoined};
+   // A DOM count alone misses coincident blades. Each must retain its own
+   // exposed chord at three span stations, after all other foils are painted.
+   const exposed=elements.map(element=>[120,155,190].map(y=>{
+    let chord=0;
+    for(let x=830;x<980;x+=.25){
+     const point=new DOMPoint(x,y);
+     if(element.isPointInFill(point)&&!elements.some(other=>other!==element&&other.isPointInFill(point)))chord+=.25;
+    }
+    return chord;
+   }));
+   const wing={elements:elements.length,joins:joins.length,connected:wingJoined,exposed};
    const rearTyre=svg.querySelector('.apex-car-tyre[data-axle="rear"]');
    const rearAxle=new DOMPoint(0,0).matrixTransform(rearTyre.getCTM());
    const shafts=[...svg.querySelectorAll('[data-link="halfshaft"]')];
@@ -269,8 +279,10 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
    assert.ok(drawing.parts.every(b=>b.width>b.height*1.25),'Neumáticos alargados en el eje longitudinal');
    assert.deepEqual(drawing.mechanics,{mounts:4,suspensions:4,ducts:4,wishbones:8,pushrods:4,steering:2,halfshafts:2,connected:true,linksAttached:true},
     'Suspensión completa y cuatro bujes unidos a la cara interior de los neumáticos: '+drawing.key);
-   assert.ok(drawing.wing.elements>=3&&drawing.wing.joins===drawing.wing.elements&&drawing.wing.connected,
+   assert.ok(drawing.wing.elements===4&&drawing.wing.joins===4&&drawing.wing.connected,
     'Cada lámina tiene unión central con ambas mitades del alerón: '+JSON.stringify(drawing.wing)+' / '+drawing.key);
+   assert.ok(drawing.wing.exposed.every(chords=>chords.every(width=>width>=3)),
+    'Las cuatro láminas tienen cuerda visible propia, sin coincidir entre sí: '+drawing.key+' / '+JSON.stringify(drawing.wing.exposed));
    assert.deepEqual(drawing.rearLayout,{tailNearAxle:true,gearboxAtAxle:true,shaftsTransverse:true,pylons:2,beamWings:1,diffuserExits:1,brackets:2,joints:2},
     'Cola junto al eje, transmisión y soportes traseros: '+drawing.key);
    assert.ok(drawing.proportions.noseAheadOfWing,'El morro llega por delante de la unión central del alerón: '+drawing.key);
