@@ -271,3 +271,30 @@ cuatro soportes cuyos extremos tocan carrocería/pontón y carcasa, dos garganta
 y ambos acolchados. Las piezas nuevas se incluyen en la firma geométrica de las
 121 decoraciones. Continúan midiéndose las diez cotas de los once modelos con
 la tolerancia de 1 mm, además de layout, selección, colores y persistencia.
+
+
+## Trasera y revisión de retrovisores (v24)
+
+Se corrige el aspecto rectangular de los retrovisores: carcasa perfilada con
+frente redondeado, borde reflectante estrecho hacia atrás y dos soportes curvos
+más cortos. Se recolocan las once parejas junto al borde delantero de los
+pontones, conservando sus diferencias. La cara reflectante permanece dentro
+de la carcasa; los anclajes se verifican contra la superficie real de cada SVG.
+
+La cola se estrecha alrededor de la transmisión y enlaza de forma más suave
+con las estaciones propias de cada escudería. Se conservan esas estaciones,
+los ejes y las diez cotas métricas. El pequeño cambio local del ancho de la
+cola de McRaven pasa del 9,2 % al 7,6 % de la batalla; no escala el coche entero.
+Se añaden los fuelles y abrazaderas de los palieres, retornos superiores del
+suelo, labios del difusor y bases de los pilones del alerón. Las superficies
+quedan debajo de la carrocería para respetar las oclusiones de la vista cenital;
+no se dibuja la parte inferior como si fuera visible ni se añade un beam wing.
+Los neumáticos mantienen diámetro y anchuras, con reflejos más redondeados y
+marcas discretas de uso sobre la goma slick.
+
+La regresión amplía la verificación de retrovisores (anclajes, longitud de
+soportes y cristal dentro de carcasa), comprueba cuatro fuelles expuestos fuera
+de la carrocería y conserva las mediciones de las once escuderías. Las nuevas
+piezas se incluyen en las firmas de las 121 combinaciones de pintura. Los cambios
+son exclusivamente del visor Vehículo / Escudería; no modifican el modelo 3D
+de carrera, la física, los menús, la música ni el guardado.
