@@ -20,7 +20,7 @@ for(const [key,file,aspect] of panels){
  for(const layer of data.layers){
    assert.match(layer.fill,/^#[a-f0-9]{6}$/i);
    assert.equal(layer.triangles.length%6,0);
-   assert.ok(layer.triangles instanceof Float32Array);
+   assert.ok(ArrayBuffer.isView(layer.triangles),'Vector buffer must be typed array');
    for(const v of layer.triangles)assert.ok(Number.isFinite(v)&&v>=-.03&&v<=1.03,'Art outside normalized canvas '+key);
    count+=layer.triangles.length/6;
  }
@@ -55,7 +55,9 @@ const drawn=[],testContext={
  renderRibbonFrameAt:s=>({x:0,z:s,y:0}),ribbonWorldPoint:(q,h,side,y)=>({x:h*side,y,z:q.z}),
  worldToCamera:(x,y,z)=>({x,y,z:z+10}),
  apexSponsorDraw:(quad,key,pitch,backend,id,fraction,fullBleed)=>{drawn.push({quad,key,backend,id,fullBleed});return true},
- clamp:(v,a,b)=>Math.max(a,Math.min(b,v))
+ clamp:(v,a,b)=>Math.max(a,Math.min(b,v)),
+ webglPushCamQuad:(...args)=>{drawn.push({kind:'band',args});},
+ polyCam:(...args)=>{drawn.push({kind:'canvas-band',args});}
 };
 vm.runInNewContext(body2.slice(start,end),testContext);
 assert.equal(testContext.apexFeatureTunnelBanner({sourceId:'t0',width:24,height:5,anchor:{s:808},advertisingBanner:false}, {},0,'webgl2'),false);
@@ -68,7 +70,11 @@ assert.equal(drawn[0].quad[0].z,810);
 assert.equal(drawn[0].quad[3].x,12);
 const bridge={sourceId:'ped-1',pedestrianBridge:true,width:5,height:7,anchor:{y:0,s:1100},worldPath:[[-24,1200],[0,1200],[24,1200]]};
 assert.equal(testContext.apexFeatureBridgeBanner(bridge,{x:0,z:1180},0,'webgl2'),true);
-assert.equal(drawn[1].key,'radiquero-pedestrian-bridge');
-assert.equal(drawn[1].fullBleed,true);
-assert.ok(Math.abs(drawn[1].quad[3].x-drawn[1].quad[0].x)>47,'Banner must span the entire footbridge, not a short footprint segment');
+const radiquero=drawn.find(v=>v.key==='radiquero-pedestrian-bridge');
+assert.ok(radiquero&&radiquero.fullBleed);
+const width=Math.abs(radiquero.quad[3].x-radiquero.quad[0].x),
+      height=Math.abs(radiquero.quad[1].y-radiquero.quad[0].y);
+assert.ok(width>14&&width<28,'Centre artwork must keep physical proportions');
+assert.ok(Math.abs(width/height-7.2*1.12)<.1,'Radiquero lettering must not be stretched across the full footbridge');
+assert.ok(drawn.filter(v=>v.kind==='band').length>=2,'Burgundy fascia continues to bridge ends');
 console.log(JSON.stringify({test:'feature-sponsor-audit',panels:3,legacy:4,tunnelOptIn:true,canvasWebgl:true,ok:true}));
