@@ -22,8 +22,8 @@ function colorKey(color){
  if(colors.size<64)colors.set(key,result);return result;
 }
 let frame=-1;const seen=new Set();
-const stats={frames:0,logos:0,triangles:0,culled:0,cpuMs:0,maxLogos:0,maxTriangles:0,compiled:3};
-function beginFrame(id){if(id===frame)return;frame=id;seen.clear();stats.frames++;stats.logos=0;stats.triangles=0;stats.culled=0;stats.cpuMs=0;}
+const stats={frames:0,logos:0,triangles:0,accentTriangles:0,culled:0,cpuMs:0,maxLogos:0,maxTriangles:0,compiled:3};
+function beginFrame(id){if(id===frame)return;frame=id;seen.clear();stats.frames++;stats.logos=0;stats.triangles=0;stats.accentTriangles=0;stats.culled=0;stats.cpuMs=0;}
 function claim(id,key,height,mobile){
  const logo=data[key];if(!logo||height<7||seen.has(id)){stats.culled++;return null;}
  const fine=height>=100&&!mobile,layers=logo.layers.filter(l=>!l.fine||fine),triangles=layers.reduce((sum,l)=>sum+l.triangles.length/6,0);
@@ -32,5 +32,64 @@ function claim(id,key,height,mobile){
  stats.maxLogos=Math.max(stats.maxLogos,stats.logos);stats.maxTriangles=Math.max(stats.maxTriangles,stats.triangles);
  return layers;
 }
-global.ApexTrackSponsors=Object.freeze({styles,data,colorKey,beginFrame,claim,stats,spacingM:24,equipaliaSpacingM:8});
+/* The green wall is one repeated 8m SVG design, not independent stickers.
+ * Crop the pre-triangulated artwork to physical wall-segment boundaries once.
+ * All clipped vertices are reused by Canvas2D and WebGL on every frame. */
+const wallPatternCache=new WeakMap();
+const EQUIPALIA_TILE_METRES=8;
+const wallStripeFills=new Set(['#71d650','#64bf48','#06472e','#f7faf9','#8ddc77']);
+function wallClipEdge(points,limit,keepGreater){
+ const out=[];
+ for(let i=0;i<points.length;i++){
+  const a=points[i],b=points[(i+1)%points.length];
+  const ai=keepGreater?a[0]>=limit-1e-7:a[0]<=limit+1e-7,
+        bi=keepGreater?b[0]>=limit-1e-7:b[0]<=limit+1e-7;
+  if(ai)out.push(a);
+  if(ai!==bi){
+   const f=(limit-a[0])/(b[0]-a[0]);
+   out.push([limit,a[1]+f*(b[1]-a[1])]);
+  }
+ }
+ return out;
+}
+function wallTileLayers(source,fromM,toM,reverse){
+ if(!source||!Number.isFinite(fromM)||!Number.isFinite(toM)||toM-fromM<.02)return null;
+ let cached=wallPatternCache.get(source);
+ if(!cached){cached=new Map();wallPatternCache.set(source,cached);}
+ const id=reverse?'reverse':'forward';
+ if(cached.has(id))return cached.get(id);
+ const from=reverse?-toM:fromM,to=reverse?-fromM:toM,span=to-from;
+ const out={accents:[],wordmark:[],fine:[],triangleCount:0};
+ const logo=data['team-equipalia'];
+ for(let tile=Math.floor(from/EQUIPALIA_TILE_METRES);tile<=Math.floor((to-1e-8)/EQUIPALIA_TILE_METRES);tile++){
+  const low=Math.max(0,(from-tile*EQUIPALIA_TILE_METRES)/EQUIPALIA_TILE_METRES),
+        high=Math.min(1,(to-tile*EQUIPALIA_TILE_METRES)/EQUIPALIA_TILE_METRES);
+  if(high-low<1e-7)continue;
+  for(const layer of logo.layers){
+   const target=layer.fine?out.fine:(wallStripeFills.has(layer.fill)?out.accents:out.wordmark);
+   const triangles=layer.triangles,verts=[];
+   for(let j=0;j<triangles.length;j+=6){
+    let polygon=[[triangles[j],triangles[j+1]],[triangles[j+2],triangles[j+3]],[triangles[j+4],triangles[j+5]]];
+    polygon=wallClipEdge(polygon,low,true);
+    if(polygon.length<3)continue;
+    polygon=wallClipEdge(polygon,high,false);
+    if(polygon.length<3)continue;
+    for(let k=1;k<polygon.length-1;k++)for(const p of [polygon[0],polygon[k],polygon[k+1]]){
+     verts.push(Math.max(0,Math.min(1,(tile*EQUIPALIA_TILE_METRES+p[0]*EQUIPALIA_TILE_METRES-from)/span)),p[1]);
+    }
+   }
+   if(verts.length){target.push({fill:layer.fill,triangles:new Float32Array(verts)});out.triangleCount+=verts.length/6;}
+  }
+ }
+ cached.set(id,out);return out;
+}
+function claimWallAccents(triangles,mobile){
+ if(stats.triangles+triangles>(mobile?2600:5200))return false;
+ stats.triangles+=triangles;
+ stats.accentTriangles+=triangles;
+ stats.maxTriangles=Math.max(stats.maxTriangles,stats.triangles);
+ return true;
+}
+global.ApexTrackSponsors=Object.freeze({styles,data,colorKey,beginFrame,claim,stats,spacingM:24,equipaliaSpacingM:8,
+ wallTileLayers,claimWallAccents});
 })(window);
