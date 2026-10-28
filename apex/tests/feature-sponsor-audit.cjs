@@ -29,6 +29,24 @@ for(const [key,file,aspect] of panels){
 for(const key of ['team-equipalia','sct','mdtel','sct-wall'])assert.ok(api.data[key],'Legacy sponsor lost: '+key);
 assert.equal(api.wallPatternMetres('mdtel-white-24m'),8);
 assert.equal(api.wallPatternMetres('sct-wall'),24);
+// All three MDTel white modules survive nearby, but only one wordmark
+// remains per 24m at distances where the small letters are not legible.
+const white24=api.wallTileLayers({},0,24,false,'mdtel-white-24m'),
+      triangleCount=arr=>arr.reduce((n,l)=>n+l.triangles.length/6,0),
+      sparseWordmark=white24.wordmark.filter(l=>((l.tile%3)+3)%3===1);
+assert.equal(new Set(white24.wordmark.map(l=>l.tile)).size,3);
+assert.equal(triangleCount(sparseWordmark)*3,triangleCount(white24.wordmark));
+assert.ok(triangleCount(white24.accents)>0,'Colored ribbons remain in every tile');
+// Fine lettering LOD and hard triangle limits must work on mobile too.
+api.beginFrame(400);
+const near=api.claim('radiquero-near','radiquero-pedestrian-bridge',130,true);
+assert.ok(near&&near.some(l=>l.fine));
+assert.ok(api.stats.triangles<=2600);
+api.beginFrame(401);
+const far=api.claim('radiquero-far','radiquero-pedestrian-bridge',34,true);
+assert.ok(far&&!far.some(l=>l.fine));
+assert.ok(api.stats.featureTriangles>0&&api.stats.featurePanels===1);
+
 const body2=read('parts/part-024.txt'),body3=read('parts/part-025.txt'),editor=read('parts/part-023.txt');
 for(const fn of ['apexFeatureTrackBanner','apexFeatureBridgeBanner','apexFeatureTunnelBanner'])
  assert.ok(body2.includes('function '+fn+'('),'Missing common feature placement: '+fn);
@@ -62,6 +80,10 @@ const drawn=[],testContext={
 };
 vm.runInNewContext(body2.slice(start,end),testContext);
 assert.equal(testContext.apexFeatureTunnelBanner({sourceId:'t0',width:24,height:5,anchor:{s:808},advertisingBanner:false}, {},0,'webgl2'),false);
+// A/B feature-disabled mode must remove the entire structure overlay.
+testContext.window.ApexTrackSponsors.featureEnabled=false;
+assert.equal(testContext.apexFeatureTrackBanner(800,24,5.2,7.5,{},0,'webgl2','disabled'),false);
+testContext.window.ApexTrackSponsors.featureEnabled=true;
 assert.equal(drawn.length,0);
 assert.equal(testContext.apexFeatureTunnelBanner({sourceId:'t0',width:24,height:5,anchor:{s:808},advertisingBanner:true}, {},0,'webgl2'),true);
 assert.equal(drawn.length,1);
