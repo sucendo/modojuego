@@ -3,7 +3,7 @@
 - Verde: Team Equipalia (diseño racing con icono tricolor real, letras blancas
   y diagonales lima/blancas sobre verde oscuro).
   Vista frontal de 24 m: [team-equipalia-wall-24m.svg](../assets/sponsors/team-equipalia-wall-24m.svg).
-- Azul: SCT Telecom.
+- Azul: SCT Telecom, con rombos vectoriales superpuestos, logotipo SCT y TELÉCOM (TELECOM) en blanco, bandas diagonales azul/cian/blanco desde el borde superior hasta la base. El patrón es un módulo SVG de 8 m, repetido tres veces por cada 24 m. [Diseño frontal completo de 24 m](../assets/sponsors/sct-wall-24m.svg).
 - Blanco: MDTel.
 
 Los SVG de `assets/sponsors/` tienen contornos vectoriales, letras trazadas y
@@ -36,6 +36,15 @@ el mismo resultado; solo se proyectan los triángulos realmente visibles.
 Los diagonales ligeros conservan preferencia incluso si el presupuesto de
 logotipos limita los textos lejanos. Se mantienen los límites de triángulos
 por fotograma y se siguen respetando cortes, accesos y tramos sin publicidad.
+SCT reutiliza el renderizador de muros completos de Equipalia: la geometría del
+rombo, la palabra SCT y TELECOM se dibuja con contornos del logotipo original,
+transformados a formato panorámico, y las franjas van de arriba abajo. Todos
+los triángulos del módulo se compilan antes de ejecutar el juego; en cada tramo
+se reutiliza la región que corresponde según su longitud física. La caché del
+recorte es independiente por patrocinador y dirección de cámara: un cambio de
+marca en un sector no contamina el siguiente. Se aplica también a vallas
+generadas, sin necesidad de crear geometría nueva.
+
 Los carteles independientes mantienen un logo centrado de su patrocinador.
 
 Se respetan `advertising.enabled=false`, paneles `blank`, muros con
