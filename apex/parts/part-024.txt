@@ -4248,7 +4248,7 @@ function apexSponsorEquipaliaWall(item,pitch,backend){
  const includeFine=maxY-minY>=100&&!mobile,
        wordmarkTriangles=triangleCount(cached.wordmark)+(includeFine?triangleCount(cached.fine):0),
        id='equipalia-wall:'+String(source.runId||'')+':'+String(source.side||0)+':'+from,
-       wordmarkVisible=maxX-minX>=12&&maxY-minY>=7&&api.claimWallText(id,wordmarkTriangles,mobile);
+       wordmarkVisible=wordmarkTriangles>0&&maxX-minX>=12&&maxY-minY>=7&&api.claimWallText(id,wordmarkTriangles,mobile);
  if(!accentVisible&&!wordmarkVisible)return false;
  const start=performance.now(),[tl,tr,br,bl]=quad;
  // Reuse the production bilinear perspective mapping; only the clipped
