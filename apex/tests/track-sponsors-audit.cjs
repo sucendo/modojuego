@@ -22,7 +22,7 @@ assert.ok(sctWallSvg.includes('SCT Telecom'));
 assert.ok(!/<image\\b|<text\\b|<foreignObject\\b/i.test(sctWallSvg),'SCT wall has vector contours only');
 assert.ok(!/<image\\b|<text\\b|<foreignObject\\b/i.test(sct24),'SCT 24m source has no raster content');
 assert.equal(sctWallSvg,sct24,'The game uses the exact full 24m SVG master');
-assert.ok(!/<use\\b|<symbol\\b/.test(sct24),'No 8m symbols or repeated tiles');
+assert.ok(!/<use\b|<symbol\b/.test(sct24),'No 8m symbols or repeated tiles');
 assert.equal(api.data['sct-wall'].aspect,18);
 assert.equal((sct24.match(/data-design-part="large-sct"/g)||[]).length,2);
 assert.equal((sct24.match(/data-design-part="medium-sct"/g)||[]).length,2);
@@ -123,7 +123,7 @@ for(const at of [8,16,24]){
  assert.deepEqual([...seamVertices(left,1)].sort((a,b)=>a-b),
  [...seamVertices(right,0)].sort((a,b)=>a-b),'No visible stripe jump at '+at+' m');
 }
-const source=part; // The renderer must use the real 24m mural on both wall types.
+const source=fs.readFileSync(path.join(root,'parts/part-024.txt'),'utf8'); // Check both wall types.
 assert.ok(source.includes("item.sponsorTileSource")&&source.includes("function apexSponsorContinuousWall"),'Both procedural and SVG walls use SCT full-width mapping');
 
 assert.notEqual(sctA,tileA,'Brand-specific cache keeps Equipalia and SCT separate');
