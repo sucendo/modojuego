@@ -194,3 +194,59 @@ los once modelos. Además del recuento, mide la cuerda exclusiva de cada lámina
 en tres estaciones del semialerón, para detectar elementos superpuestos aunque
 existan cuatro nodos SVG. Se mantienen las comprobaciones de pintura, formas,
 proporciones, persistencia y layout en escritorio/móvil.
+
+## Escala métrica y adaptación 2026 (v22, sustituye las cotas visuales anteriores)
+
+Se utiliza la imagen acotada de Giorgio Piola aportada por Samuel
+(`f1-fia-medidas.webp`), su comparación de alerones y neumáticos, el render FIA y
+los ejemplos de McLaren, Mercedes, Ferrari, Red Bull, Audi y el concepto rojo.
+Las fotos sirven para conservar identidad de formas/materiales por escudería;
+no se copian sus patrocinadores. Algunas imágenes son de generaciones distintas.
+
+Cotas nominales de esta interpretación, comunes a las once escuderías:
+
+| Cota | mm | Origen |
+| --- | ---: | --- |
+| Batalla | 3400 | Imagen acotada / máximo C2.3.3 |
+| Voladizo delantero | 1300 | Imagen acotada |
+| Voladizo trasero | 750 | Imagen acotada |
+| Longitud geométrica total | 5450 | Suma de batalla y voladizos |
+| Anchura exterior con neumáticos | 1900 | Imagen acotada |
+| Alerón delantero | 1800 | Comparación frontal aportada |
+| Alerón trasero | 1150 | Imagen acotada |
+| Diámetro nominal de slick | 710 | Lámina de neumáticos aportada |
+| Anchura de slick delantero / trasero | 275 / 375 | Lámina de neumáticos aportada |
+
+La escala es `3400 / 564` mm por unidad SVG. Las ruedas se construyen con esas
+huellas y sus centros se calculan desde la anchura exterior. Sus caras internas
+siguen alimentando las suspensiones y bujes; no se desplazan ruedas aisladas
+sin adaptar las conexiones. Las pequeñas variaciones nativas de escala de ruedas
+no se aplican al estudio calibrado. Las siluetas propias de carrocería, morro,
+pontones, cockpit y barridos de alerón siguen diferenciadas.
+
+Los alerones se normalizan por sus extremos geométricos completos, incluidos
+los endplates. La posición trasera se calcula desde el eje, y la punta del morro
+desde el delantero. El viewBox pasa a 1040×470 para alojar el voladizo sin recorte.
+`ApexTeamCarPreview9A.dimensions`, el resultado de `build` y `data-mm-per-unit`
+permiten auditar la conversión. No se cambia el panel ni la física de carrera.
+
+Se contrastó la edición 21 de la sección C del reglamento FIA (19/10/2026):
+https://www.fia.com/system/files/documents/fia_2026_f1_regulations_-_section_c_technical_-_iss_21_-_2026-10-19.pdf
+C3.10.1 admite hasta tres perfiles delanteros; C3.11.1, hasta tres traseros.
+Se sustituyen los cuatro perfiles del dibujo anterior por tres, manteniendo
+uniones centrales y cuerda visible. También se retira el beam wing, de acuerdo
+con la explicación FIA del cambio de generación:
+https://www.fia.com/news/f1s-new-era-everything-you-need-know-about-how-fia-making-formula-1-more-competitive-more
+Se conservan transmisión, suspensiones, pilones y labio visible de difusor.
+
+Esta es una calibración dimensional y visual del estudio, no una homologación
+FIA: no valida volúmenes 3D, alturas, radios ni todos los artículos del reglamento.
+Las cotas de la infografía se identifican como referencias de diseño, no como
+límites reglamentarios universales; 1900 mm de carrocería tampoco sustituye las
+reglas específicas de ruedas y neumáticos. Las mediciones del test son de
+geometría SVG, sin sumar el espesor de los trazos gráficos.
+
+La prueba mide las diez cotas en cada uno de los once SVG con tolerancia de
+1 mm, comprueba tres perfiles delanteros/traseros, ausencia de beam wing,
+contactos mecánicos y las 121 decoraciones sin cambiar la geometría. Mantiene
+las pruebas de guardado/restauración, paleta, escritorio 50/50 y móvil.

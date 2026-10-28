@@ -124,7 +124,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
      for(const curve of curves)for(const fraction of [.15,.35,.55,.75,.9]){
       const point=curve.getPointAtLength(curve.getTotalLength()*fraction);
       const local=new DOMPoint(point.x,point.y).matrixTransform(curve.getCTM());
-      const x=Math.round(local.x/2),y=Math.round(local.y/2);
+      const x=Math.round(local.x*500/1040),y=Math.round(local.y/2);
       const bright=[];
       for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
        const offset=((y+dy)*500+x+dx)*4;
@@ -147,7 +147,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
   let minimumDifference=1;
   for(let i=0;i<neutral.length;i++){
    const bounds=neutral[i].bounds;
-   assert.ok(bounds.x>0&&bounds.y>0&&bounds.right<1000&&bounds.bottom<470,
+   assert.ok(bounds.x>0&&bounds.y>0&&bounds.right<1040&&bounds.bottom<470,
     'Diseño completo dentro del viewBox: '+neutral[i].key);
    for(let j=i+1;j<neutral.length;j++){
     let changed=0;
@@ -243,7 +243,8 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
     const points=[[b.x,b.y],[b.x+b.width,b.y],[b.x,b.y+b.height],[b.x+b.width,b.y+b.height]]
      .map(([x,y])=>new DOMPoint(x,y).matrixTransform(m));
     const left=Math.min(...points.map(p=>p.x)),right=Math.max(...points.map(p=>p.x));
-    return {left,right,width:right-left};
+    const top=Math.min(...points.map(p=>p.y)),bottom=Math.max(...points.map(p=>p.y));
+    return {left,right,width:right-left,top,bottom,height:bottom-top};
    };
    const frontTyre=svg.querySelector('.apex-car-tyre[data-axle="front"]');
    const frontAxle=new DOMPoint(0,0).matrixTransform(frontTyre.getCTM());
@@ -268,37 +269,49 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
     // McRaven's old shoulder filled this point and hid the carbon channel.
     shoulderClear:key!=='PAPAYA'||!body.isPointInFill(new DOMPoint(510,166)),
     vectorOnly:!svg.querySelector('image,filter,animate')};
+   const factor=Number(svg.dataset.mmPerUnit),full=svgBounds(svg),frontUpper=svgBounds(upper);
+   const rearWing=svgBounds(svg.querySelector('.apex-car-rear-wing'));
+   const dimensions={wheelbase:wheelbase*factor,length:full.width*factor,width:full.height*factor,
+    frontOverhang:(nose.right-frontAxle.x)*factor,rearOverhang:(rearAxle.x-rearWing.left)*factor,
+    frontWing:(470-2*frontUpper.top)*factor,rearWing:rearWing.height*factor,
+    frontTyre:svgBounds(frontTyre).height*factor,rearTyre:svgBounds(rearTyre).height*factor,
+    diameter:svgBounds(frontTyre).width*factor,rearProfiles:svg.querySelectorAll('.apex-car-rear-wing-element').length};
    const bounds=svg.getBBox();host.remove();
-   return {key,parts,mechanics,wing,rearLayout,proportions,surfaces,bounds:{x:bounds.x,y:bounds.y,right:bounds.x+bounds.width,bottom:bounds.y+bounds.height}};
+   return {key,parts,mechanics,wing,rearLayout,proportions,surfaces,dimensions,bounds:{x:bounds.x,y:bounds.y,right:bounds.x+bounds.width,bottom:bounds.y+bounds.height}};
   }),options);
   for(const drawing of drawings){
    assert.deepEqual(drawing.surfaces,{channels:2,ridges:2,frontRelief:drawing.wing.elements*2,
     rearRelief:1,haloWidth:5.5,shoulderClear:true,vectorOnly:true},
     'Canales visibles, halo fino y perfiles vectoriales en ambas mitades: '+drawing.key);
+   for(const [field,target] of Object.entries({wheelbase:3400,length:5450,width:1900,frontOverhang:1300,rearOverhang:750,
+    frontWing:1800,rearWing:1150,frontTyre:275,rearTyre:375,diameter:710}))
+    assert.ok(Math.abs(drawing.dimensions[field]-target)<1,'Cota en mm '+field+' / '+drawing.key+': '+JSON.stringify(drawing.dimensions));
+   assert.equal(drawing.dimensions.rearProfiles,3,'Tres perfiles del alerón trasero 2026');
    assert.equal(drawing.parts.length,4,'Cuatro neumáticos slick: '+drawing.key);
    assert.ok(drawing.parts.every(b=>b.width>b.height*1.25),'Neumáticos alargados en el eje longitudinal');
    assert.deepEqual(drawing.mechanics,{mounts:4,suspensions:4,ducts:4,wishbones:8,pushrods:4,steering:2,halfshafts:2,connected:true,linksAttached:true},
     'Suspensión completa y cuatro bujes unidos a la cara interior de los neumáticos: '+drawing.key);
-   assert.ok(drawing.wing.elements===4&&drawing.wing.joins===4&&drawing.wing.connected,
+   assert.ok(drawing.wing.elements===3&&drawing.wing.joins===3&&drawing.wing.connected,
     'Cada lámina tiene unión central con ambas mitades del alerón: '+JSON.stringify(drawing.wing)+' / '+drawing.key);
    assert.ok(drawing.wing.exposed.every(chords=>chords.every(width=>width>=3)),
-    'Las cuatro láminas tienen cuerda visible propia, sin coincidir entre sí: '+drawing.key+' / '+JSON.stringify(drawing.wing.exposed));
-   assert.deepEqual(drawing.rearLayout,{tailNearAxle:true,gearboxAtAxle:true,shaftsTransverse:true,pylons:2,beamWings:1,diffuserExits:1,brackets:2,joints:2},
+    'Los tres perfiles 2026 tienen cuerda visible propia, sin coincidir entre sí: '+drawing.key+' / '+JSON.stringify(drawing.wing.exposed));
+   assert.deepEqual(drawing.rearLayout,{tailNearAxle:true,gearboxAtAxle:true,shaftsTransverse:true,pylons:2,beamWings:0,diffuserExits:1,brackets:2,joints:2},
     'Cola junto al eje, transmisión y soportes traseros: '+drawing.key);
    assert.ok(drawing.proportions.noseAheadOfWing,'El morro llega por delante de la unión central del alerón: '+drawing.key);
    if(drawing.key==='PAPAYA'){
     console.log(JSON.stringify({test:'mcraven-reference-proportions',...drawing.proportions}));
-    // Ratios from the supplied overhead reference, normalised by wheelbase.
+    // Ratios calibrated from the supplied 2026 dimensioned reference.
     // These broad intervals allow native blueprint scaling, not the old short
     // nose, pencil-thin tail or overly elongated tyres.
-    for(const [name,min,max] of [['noseOverhang',.32,.36],['rearTrack',.41,.45],['rearTyre',.195,.235],['frontTyre',.19,.22],
-     ['tailWidth',.085,.105],['rearGap',.10,.12],['cockpit',.60,.65]])
+    for(const [name,min,max] of [['noseOverhang',.38,.39],['rearTrack',.44,.46],['rearTyre',.195,.235],['frontTyre',.19,.22],
+     ['tailWidth',.085,.105],['rearGap',.06,.08],['cockpit',.60,.65]])
      assert.ok(drawing.proportions[name]>=min&&drawing.proportions[name]<=max,
       'Proporción de referencia '+name+': '+drawing.proportions[name]);
    }
-   assert.ok(drawing.bounds.x>0&&drawing.bounds.y>0&&drawing.bounds.right<1000&&drawing.bounds.bottom<470,
+   assert.ok(drawing.bounds.x>0&&drawing.bounds.y>0&&drawing.bounds.right<1040&&drawing.bounds.bottom<470,
     'Toda la silueta dentro del viewBox '+JSON.stringify(drawing));
   }
+  console.log(JSON.stringify({test:'studio-2026-dimensions-mm',teams:drawings.length,measured:drawings.map(d=>({key:d.key,...d.dimensions})),ok:true}));
   assert.equal(images.size,options.length,'Todas las imágenes del catálogo comprobadas');
   assert.equal(await panel.locator('.apexStudioTeamCard').count(),options.length,
    'Tarjeta y logotipo propio para cada una de las 11 escuderías');
@@ -342,7 +355,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
    const signature=source=>{
     const doc=new DOMParser().parseFromString(source,'image/svg+xml');
     if(doc.querySelector('parsererror'))throw new Error('SVG inválido');
-    return JSON.stringify(Array.from(doc.querySelectorAll('.apex-car-body,.apex-car-engine-cover,.apex-car-nose,.apex-car-inlet,.apex-car-sidepod>path:first-child,.apex-car-front-bridge,.apex-car-wing-join,.apex-car-front-wing,.apex-car-front-wing .apex-car-wing-element,.apex-car-rear-wing,.apex-car-cockpit,.apex-car-cockpit path,.apex-car-cockpit circle,.apex-car-inlet-depth path,.apex-car-pod-reflection,.apex-car-pod-channel,.apex-car-channel-ridge,.apex-car-pod-shoulder,.apex-car-foil-relief,.apex-car-rear-plane-relief,.apex-car-tyre,.apex-car-suspension-arm path,.apex-car-wheel-mount path,.apex-car-wheel-mount ellipse,.apex-car-wheel-mount circle,.apex-car-floor,.apex-car-rear-assembly g,.apex-car-rear-assembly path,.apex-car-rear-assembly ellipse,.apex-car-rear-assembly circle,.apex-car-rear-joints,.apex-car-rear-joints ellipse,.apex-car-rear-joints circle,.apex-car-airbox,.apex-car-service-details path')).map(el=>({
+    return JSON.stringify(Array.from(doc.querySelectorAll('.apex-car-body,.apex-car-engine-cover,.apex-car-nose,.apex-car-inlet,.apex-car-sidepod>path:first-child,.apex-car-front-bridge,.apex-car-wing-join,.apex-car-front-wing,.apex-car-front-wing .apex-car-wing-element,.apex-car-rear-wing,.apex-car-rear-wing-element,.apex-car-cockpit,.apex-car-cockpit path,.apex-car-cockpit circle,.apex-car-inlet-depth path,.apex-car-pod-reflection,.apex-car-pod-channel,.apex-car-channel-ridge,.apex-car-pod-shoulder,.apex-car-foil-relief,.apex-car-rear-plane-relief,.apex-car-tyre,.apex-car-suspension-arm path,.apex-car-wheel-mount path,.apex-car-wheel-mount ellipse,.apex-car-wheel-mount circle,.apex-car-floor,.apex-car-rear-assembly g,.apex-car-rear-assembly path,.apex-car-rear-assembly ellipse,.apex-car-rear-assembly circle,.apex-car-rear-joints,.apex-car-rear-joints ellipse,.apex-car-rear-joints circle,.apex-car-airbox,.apex-car-service-details path')).map(el=>({
      tag:el.tagName,shape:el.getAttribute('d'),transform:el.getAttribute('transform'),
      size:['cx','cy','rx','ry','r','x','y','width','height'].map(name=>el.getAttribute(name)),
      child:el.querySelector('path,rect')?.getAttribute('d')||el.querySelector('rect')?.outerHTML
