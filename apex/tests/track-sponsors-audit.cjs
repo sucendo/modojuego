@@ -13,6 +13,43 @@ for(const [key,logo] of Object.entries(api.data)){
 }
 assert.equal(api.colorKey('#53aa66'),'team-equipalia');assert.equal(api.colorKey('#00673e'),'team-equipalia');
 assert.equal(api.spacingM,24);assert.equal(api.equipaliaSpacingM,8);
+// Full-height vector wallpaper: the tile is clipped to each real wall piece,
+// and the same continuous geometry must meet at panel edges on both faces.
+function checkWallTile(layers){
+ for(const layer of [...layers.accents,...layers.wordmark,...layers.fine]){
+  assert.equal(layer.triangles.length%6,0);
+  for(let k=0;k<layer.triangles.length;k+=2){
+   assert.ok(layer.triangles[k]>=-1e-5&&layer.triangles[k]<=1+1e-5,'Wall U clipped to panel');
+   assert.ok(layer.triangles[k+1]>=-1e-5&&layer.triangles[k+1]<=1+1e-5,'Wall V inside full-height face');
+  }
+ }
+}
+function seamVertices(tile,at){
+ const y=[];
+ for(const layer of [...tile.accents,...tile.wordmark]){
+  for(let i=0;i<layer.triangles.length;i+=2)
+   if(Math.abs(layer.triangles[i]-at)<.0001)y.push(Math.round(layer.triangles[i+1]*10000));
+ }
+ return new Set(y);
+}
+const wallA={},wallB={},tileA=api.wallTileLayers(wallA,0,7.3,false),
+ tileB=api.wallTileLayers(wallB,7.3,14.6,false);
+assert.ok(tileA.accents.length>0&&tileB.accents.length>0,'Decorative stripes cross physical panels');
+checkWallTile(tileA);checkWallTile(tileB);
+assert.ok(tileA.accents.some(l=>l.triangles.some((v,i)=>i%2&&Math.abs(v)<1e-4)),'Stripes touch wall top');
+assert.ok(tileA.accents.some(l=>l.triangles.some((v,i)=>i%2&&Math.abs(v-1)<1e-4)),'Stripes touch wall bottom');
+const seamA=seamVertices(tileA,1),seamB=seamVertices(tileB,0);
+assert.ok(seamA.size>0,'Left segment reaches seam');
+assert.deepEqual([...seamA].sort((a,b)=>a-b),[...seamB].sort((a,b)=>a-b),
+ 'No gaps or jumps where two adjacent wall segments meet');
+const revA=api.wallTileLayers(wallA,0,7.3,true),
+ revB=api.wallTileLayers(wallB,7.3,14.6,true);
+checkWallTile(revA);checkWallTile(revB);
+assert.deepEqual([...seamVertices(revA,0)].sort((a,b)=>a-b),
+ [...seamVertices(revB,1)].sort((a,b)=>a-b),
+ 'Opposite camera direction preserves pattern continuity');
+assert.equal(api.wallTileLayers(wallA,0,7.3,false),tileA,'No frame-time re-triangulation');
+
 const equipaliaSource=fs.readFileSync(path.join(root,'assets/sponsors/team-equipalia.svg'),'utf8');
 const wall24=fs.readFileSync(path.join(root,'assets/sponsors/team-equipalia-wall-24m.svg'),'utf8');
 assert.equal(api.data['team-equipalia'].aspect,6,'El módulo de 8 m tiene proporción panorámica');

@@ -462,6 +462,20 @@ function apexRegroundImportedWorld(){
    if(same){cur.x2=s.x2;cur.z2=s.z2;cur.y2=s.y2;total+=span;}
    else{cur={...s};cw._wallRenderSegments.push(cur);total=span;}
  }
+ // Track each wall run's physical distance, not the camera-facing fragments.
+ // This stable coordinate makes every 8m Equipalia SVG tile continue across
+ // adjacent wall panels, including curves. Gaps reset the pattern.
+ const sponsorRuns=new Map();
+ for(const sg of cw._wallRenderSegments){
+  const key=String(sg.runId||'wall')+':'+String(sg.side||0),
+        last=sponsorRuns.get(key),
+        connected=last&&Math.hypot(last.x2-sg.x1,last.z2-sg.z1)<.12,
+        from=connected?last.to:0,
+        to=from+Math.hypot(sg.x2-sg.x1,sg.z2-sg.z1);
+  sg.sponsorPatternFromM=from;
+  sg.sponsorPatternToM=to;
+  sponsorRuns.set(key,{x2:sg.x2,z2:sg.z2,to});
+ }
  cw._apexGroundStamp=stamp;
 }
 function apexStringHash(s){let h=2166136261>>>0;for(const ch of String(s||'')){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
@@ -4205,10 +4219,73 @@ function apexSponsorExactAnchor(source,brandKey){
  }
  return (brandKey==='team-equipalia'?apexEquipaliaAnchors:apexSponsorAnchors).get(source)??null;
 }
+// Paint the complete green wall face: one seamless 8m SVG tile every 8m,
+// with diagonals from the ground to the top of the barrier. Each panel gets
+// only its section of the original triangle mesh (cached at track setup).
+function apexSponsorEquipaliaWall(item,pitch,backend){
+ const api=window.ApexTrackSponsors,source=item.sponsorSource,raw=item.sponsorPoly3,
+       mobile=mobilePerformanceMode();
+ if(!api||!source||!raw||raw.length!==4)return false;
+ const from=source.sponsorPatternFromM,to=source.sponsorPatternToM;
+ if(!Number.isFinite(from)||!Number.isFinite(to)||to-from<.02)return false;
+ if(raw.some(p=>!p||p.z<.65)||raw.every(p=>p.z>(mobile?180:260)))return false;
+ const [bottom0,top0,top1,bottom1]=raw;
+ const projected=[top0,top1,bottom1,bottom0].map(p=>projectLocal(p.x,p.y,p.z,pitch));
+ if(projected.some(p=>!p))return false;
+ const minX=Math.min(...projected.map(p=>p.x)),maxX=Math.max(...projected.map(p=>p.x)),
+       minY=Math.min(...projected.map(p=>p.y)),maxY=Math.max(...projected.map(p=>p.y));
+ if(maxX<0||minX>W||maxY<0||minY>H||maxX-minX<4||maxY-minY<2)return false;
+ // Reverse BOTH the world phase and the 3D quad when the camera looks from
+ // the opposite end. This keeps lettering readable without breaking seams.
+ const reversed=projected[0].x>projected[1].x,
+       quad=reversed?[top1,top0,bottom0,bottom1]:[top0,top1,bottom1,bottom0],
+       cached=api.wallTileLayers(source,from,to,reversed);
+ if(!cached)return false;
+ api.beginFrame(renderFrameId);
+ const triangleCount=layers=>layers.reduce((n,l)=>n+l.triangles.length/6,0),
+       accentTriangles=triangleCount(cached.accents),
+       accentVisible=api.claimWallAccents(accentTriangles,mobile);
+ const includeFine=maxY-minY>=100&&!mobile,
+       wordmarkTriangles=triangleCount(cached.wordmark)+(includeFine?triangleCount(cached.fine):0),
+       id='equipalia-wall:'+String(source.runId||'')+':'+String(source.side||0)+':'+from,
+       wordmarkVisible=wordmarkTriangles>0&&maxX-minX>=12&&maxY-minY>=7&&api.claimWallText(id,wordmarkTriangles,mobile);
+ if(!accentVisible&&!wordmarkVisible)return false;
+ const start=performance.now(),[tl,tr,br,bl]=quad;
+ // Reuse the production bilinear perspective mapping; only the clipped
+ // UV triangles vary, and those are computed once per physical wall segment.
+ const ux=tr.x-tl.x,uy=tr.y-tl.y,uz=tr.z-tl.z,
+       vx=bl.x-tl.x,vy=bl.y-tl.y,vz=bl.z-tl.z,
+       wx=br.x-tr.x-bl.x+tl.x,wy=br.y-tr.y-bl.y+tl.y,wz=br.z-tr.z-bl.z+tl.z;
+ const vertex=(u,v)=>{
+  const uv=u*v,z=tl.z+uz*u+vz*v+wz*uv,
+        p=projectLocal(tl.x+ux*u+vx*v+wx*uv,tl.y+uy*u+vy*v+wy*uv,z,pitch);
+  p.z=z-.026;return p;
+ };
+ const layers=[];
+ if(accentVisible)layers.push(...cached.accents);
+ if(wordmarkVisible){layers.push(...cached.wordmark);if(includeFine)layers.push(...cached.fine);}
+ if(backend==='canvas2d')ctx.save();
+ for(const layer of layers){
+  const points=layer.triangles,col=backend==='webgl2'?webglCssColor(layer.fill):null;
+  if(backend==='canvas2d'){ctx.fillStyle=layer.fill;ctx.beginPath();}
+  for(let i=0;i<points.length;i+=6){
+   const p=vertex(points[i],points[i+1]),q=vertex(points[i+2],points[i+3]),r=vertex(points[i+4],points[i+5]);
+   if(backend==='webgl2'){webglVertexPx(p.x,p.y,col,p.z);webglVertexPx(q.x,q.y,col,q.z);webglVertexPx(r.x,r.y,col,r.z);}
+   else{ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.lineTo(r.x,r.y);ctx.closePath();}
+  }
+  if(backend==='canvas2d')ctx.fill();
+ }
+ if(backend==='canvas2d')ctx.restore();
+ api.stats.cpuMs+=performance.now()-start;
+ return true;
+}
+
 function apexSponsorWallLogo(item,ad,pitch,backend){
  const api=window.ApexTrackSponsors,key=api&&(ad&&(ad.logo||api.colorKey(ad.bg)));
  if(!key||item.advertising===false||item.barrier?.kind==='TYRE')return false;
  const raw=item.sponsorPoly3;if(!raw||raw.length!==4)return false;
+ if(key==='team-equipalia'&&item.sponsorSource&&Number.isFinite(item.sponsorSource.sponsorPatternFromM))
+  return apexSponsorEquipaliaWall(item,pitch,backend);
  let station;
  if(item.sponsorSource)station=apexSponsorExactAnchor(item.sponsorSource,key);
  else{

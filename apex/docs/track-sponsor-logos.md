@@ -20,10 +20,22 @@ se repite **tres veces por cada 24 m** de valla verde; la referencia completa
 de 24 m contiene exactamente ese módulo repetido tres veces, con fondo
 verde oscuro. SCT y MDTel mantienen una estación cada 24 m.
 
-Los logos de Team Equipalia se fijan a los segmentos visuales reales disponibles:
-en las curvas, huecos o extremos no se crean vallas ni planos publicitarios
-flotantes. El diseño de referencia muestra la composición completa ideal;
-la implementación respeta los tramos de muro existentes y sus accesos.
+Los logos de Team Equipalia y sus bandas diagonales cubren el 100 % de la altura
+publicitaria del muro verde, como en la referencia. El patrón se mide en metros
+físicos acumulados por tramo continuo de valla SVG (no en el tamaño de cada
+triángulo/proyección). El segmento de muro sólo muestra su recorte del módulo
+8 m, sin márgenes ni pegatinas centradas; las juntas, curvas y segmentos
+desiguales comparten la misma fase gráfica y mantienen la continuidad.
+El vector SVG incluye la marca en blanco, icono tricolor y diagonales que van
+desde el pie hasta la coronación, todas recortadas en la geometría original.
+
+El módulo se pretriangula en build y el recorte de cada muro se cachea en
+WeakMap por tramo, con versiones normal e invertida para respetar lectura
+del logotipo cuando se mira desde el otro sentido. Canvas2D y WebGL reutilizan
+el mismo resultado; solo se proyectan los triángulos realmente visibles.
+Los diagonales ligeros conservan preferencia incluso si el presupuesto de
+logotipos limita los textos lejanos. Se mantienen los límites de triángulos
+por fotograma y se siguen respetando cortes, accesos y tramos sin publicidad.
 Los carteles independientes mantienen un logo centrado de su patrocinador.
 
 Se respetan `advertising.enabled=false`, paneles `blank`, muros con
