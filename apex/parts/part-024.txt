@@ -4497,8 +4497,9 @@ function apexFeatureTunnelBanner(it,cam,pitch,backend){
  if(!Number.isFinite(s))return false;
  const span=clamp(Number(it.width)||Number(zone?.width)||20,12,34),
        roofH=clamp(Number(it.height)||Number(zone?.height)||5.6,3.2,8),
-       top=roofH+.22+clamp(span/7.6,1.7,3.35);
- return apexFeatureTrackBanner(s,span,roofH+.22,top,cam,pitch,backend,'apex-tunnel:'+String(it.sourceId||s));
+       top=roofH+.06+clamp(span/7.6,1.7,3.35);
+ // The base touches the tunnel lintel rather than floating above the portal.
+ return apexFeatureTrackBanner(s,span,roofH+.06,top,cam,pitch,backend,'apex-tunnel:'+String(it.sourceId||s));
 }
 
 function apexSponsorDraw(raw,key,pitch,backend,id,heightFraction=.80,fullBleed=false){
