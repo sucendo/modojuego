@@ -4165,7 +4165,7 @@ function buildWallRenderItem(seg,side,cam){
  if(!Number.isFinite(z)||z>((typeof apexInspectionFullScene==='function'&&apexInspectionFullScene())?apexInspectionFarDistance():760))return null;
 
  const fencePoly3=mid.barrier&&mid.barrier.fence?clipPolyNear([wallPointCamera(A,true,cam),apexWallFenceTopCameraFromWG(A,cam),apexWallFenceTopCameraFromWG(B,cam),wallPointCamera(B,true,cam)],.62):null;
- return {family:'WALL',side,s:smid,sponsorS0:seg.a.s,sponsorS1:seg.b.s,sponsorPoly3:poly3,z:z-.015,poly3:clipped,fencePoly3:fencePoly3&&fencePoly3.length>=3?fencePoly3:null,env:mid.env,barrier:mid.barrier};
+ return {family:'WALL',side,s:smid,sponsorS0:seg.a.s,sponsorS1:seg.b.s,sponsorTileSource:seg,sponsorPoly3:poly3,z:z-.015,poly3:clipped,fencePoly3:fencePoly3&&fencePoly3.length>=3?fencePoly3:null,env:mid.env,barrier:mid.barrier};
 }
 
 
@@ -4223,10 +4223,12 @@ function apexSponsorExactAnchor(source,brandKey){
 // with diagonals from the ground to the top of the barrier. Each panel gets
 // only its section of the original triangle mesh (cached at track setup).
 function apexSponsorContinuousWall(item,pitch,backend,key){
- const api=window.ApexTrackSponsors,source=item.sponsorSource,raw=item.sponsorPoly3,
-       mobile=mobilePerformanceMode();
+ const api=window.ApexTrackSponsors,source=item.sponsorSource||item.sponsorTileSource,
+       raw=item.sponsorPoly3,mobile=mobilePerformanceMode();
  if(!api||!source||!raw||raw.length!==4)return false;
- const from=source.sponsorPatternFromM,to=source.sponsorPatternToM;
+ const exact=Number.isFinite(source.sponsorPatternFromM)&&Number.isFinite(source.sponsorPatternToM),
+       from=exact?source.sponsorPatternFromM:item.sponsorS0,
+       to=exact?source.sponsorPatternToM:from+wrapDeltaS(item.sponsorS0,item.sponsorS1,trackData.km*1000);
  if(!Number.isFinite(from)||!Number.isFinite(to)||to-from<.02)return false;
  if(raw.some(p=>!p||p.z<.65)||raw.every(p=>p.z>(mobile?180:260)))return false;
  const [bottom0,top0,top1,bottom1]=raw;
@@ -4247,7 +4249,7 @@ function apexSponsorContinuousWall(item,pitch,backend,key){
        accentVisible=api.claimWallAccents(accentTriangles,mobile);
  const includeFine=maxY-minY>=100&&!mobile,
        wordmarkTriangles=triangleCount(cached.wordmark)+(includeFine?triangleCount(cached.fine):0),
-       id=key+'-wall:'+String(source.runId||'')+':'+String(source.side||0)+':'+from,
+       id=key+'-wall:'+String(source.runId||'')+':'+String(item.side||source.side||0)+':'+from,
        wordmarkVisible=wordmarkTriangles>0&&maxX-minX>=12&&maxY-minY>=7&&api.claimWallText(id,wordmarkTriangles,mobile);
  if(!accentVisible&&!wordmarkVisible)return false;
  const start=performance.now(),[tl,tr,br,bl]=quad;
@@ -4285,7 +4287,8 @@ function apexSponsorWallLogo(item,ad,pitch,backend){
  const api=window.ApexTrackSponsors,key=api&&(ad&&(ad.logo||api.colorKey(ad.bg)));
  if(!key||item.advertising===false||item.barrier?.kind==='TYRE')return false;
  const raw=item.sponsorPoly3;if(!raw||raw.length!==4)return false;
- if((key==='team-equipalia'||key==='sct')&&item.sponsorSource&&Number.isFinite(item.sponsorSource.sponsorPatternFromM))
+ if(((key==='team-equipalia'||key==='sct')&&item.sponsorSource&&Number.isFinite(item.sponsorSource.sponsorPatternFromM))||
+    (key==='sct'&&item.sponsorTileSource))
   return apexSponsorContinuousWall(item,pitch,backend,key);
  let station;
  if(item.sponsorSource)station=apexSponsorExactAnchor(item.sponsorSource,key);
