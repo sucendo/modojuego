@@ -37,7 +37,7 @@ function claim(id,key,height,mobile){
  * All clipped vertices are reused by Canvas2D and WebGL on every frame. */
 const wallPatternCache=new WeakMap();
 const EQUIPALIA_TILE_METRES=8, SCT_MURAL_METRES=24;
-function wallPatternMetres(key){return key==='sct-wall'||key==='mdtel-white-24m'?SCT_MURAL_METRES:EQUIPALIA_TILE_METRES;}
+function wallPatternMetres(key){return key==='sct-wall'?SCT_MURAL_METRES:EQUIPALIA_TILE_METRES;}
 const wallStripeFills=new Set([
  '#71d650','#64bf48','#06472e','#f7faf9','#8ddc77',
  '#25a9d5','#00a2d6','#116faf','#0874bf','#0086cb','#0056a5',
