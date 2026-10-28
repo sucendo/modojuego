@@ -4292,8 +4292,13 @@ function apexSponsorContinuousWall(item,pitch,backend,key){
  const triangleCount=layers=>layers.reduce((n,l)=>n+l.triangles.length/6,0),
        accentTriangles=triangleCount(cached.accents),
        accentVisible=api.claimWallAccents(accentTriangles,mobile,key);
+ // At a small projected height, three MDTel labels in 24 m are illegible and
+ // cost 3x the old independent logo. Keep the blue ribbon on every 8m tile
+ // but display only the central wordmark of each 24m block until close.
+ const distantWhite=key==='mdtel-white-24m'&&maxY-minY<(mobile?30:24),
+       wordmark=distantWhite?cached.wordmark.filter(l=>((l.tile%3)+3)%3===1):cached.wordmark;
  const includeFine=maxY-minY>=100&&!mobile,
-       wordmarkTriangles=triangleCount(cached.wordmark)+(includeFine?triangleCount(cached.fine):0),
+       wordmarkTriangles=triangleCount(wordmark)+(includeFine?triangleCount(cached.fine):0),
        id=key+'-wall:'+String(source.runId||'')+':'+String(item.side||source.side||0)+':'+from,
        wordmarkVisible=wordmarkTriangles>0&&maxX-minX>=12&&maxY-minY>=7&&api.claimWallText(id,wordmarkTriangles,mobile);
  if(!accentVisible&&!wordmarkVisible)return false;
@@ -4310,7 +4315,7 @@ function apexSponsorContinuousWall(item,pitch,backend,key){
  };
  const layers=[];
  if(accentVisible)layers.push(...cached.accents);
- if(wordmarkVisible){layers.push(...cached.wordmark);if(includeFine)layers.push(...cached.fine);}
+ if(wordmarkVisible){layers.push(...wordmark);if(includeFine)layers.push(...cached.fine);}
  if(backend==='canvas2d')ctx.save();
  for(let layerIndex=0;layerIndex<layers.length;layerIndex++){
   const layer=layers[layerIndex],depthBias=api.wallLayerDepthBias(key,layer.fill,layerIndex);
