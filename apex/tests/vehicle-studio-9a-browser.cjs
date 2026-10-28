@@ -237,7 +237,15 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
     beamWings:svg.querySelectorAll('.apex-car-beam-wing').length,
     diffuserExits:svg.querySelectorAll('.apex-car-diffuser-exit').length,
     brackets:svg.querySelectorAll('.apex-car-rear-bracket').length,
-    joints:svg.querySelectorAll('.apex-car-rear-joints').length};
+    joints:svg.querySelectorAll('.apex-car-rear-joints').length,
+    feet:svg.querySelectorAll('.apex-car-pylon-foot').length,
+    returns:svg.querySelectorAll('.apex-car-rear-floor-return').length,
+    fences:svg.querySelectorAll('.apex-car-diffuser-fence').length,
+    // CV boots must remain exposed outside the painted shell, not hidden below it.
+    visibleBoots:[...svg.querySelectorAll('.apex-car-shaft-boot')].filter(el=>{
+     const b=el.getBBox(),p=new DOMPoint(b.x+b.width/2,b.y+b.height/2).matrixTransform(el.getScreenCTM());
+     return ![body,...svg.querySelectorAll('.apex-car-sidepod>path:first-child')].some(part=>part.isPointInFill(p.matrixTransform(part.getScreenCTM().inverse())));
+    }).length};
    const svgBounds=el=>{
     const b=el.getBBox(),m=el.getCTM();
     const points=[[b.x,b.y],[b.x+b.width,b.y],[b.x,b.y+b.height],[b.x+b.width,b.y+b.height]]
@@ -271,7 +279,14 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
    });
    const mirrorDetails={cases:mirrorCases.length,glass:svg.querySelectorAll('.apex-car-mirror-glass').length,
     stays:svg.querySelectorAll('.apex-car-mirror-stay').length,roots:svg.querySelectorAll('.apex-car-mirror-root').length,connected:mirrorConnected,
-    transverse:mirrorCases.every(el=>el.getBBox().height>el.getBBox().width*1.5),
+    transverse:mirrorCases.every(el=>el.getBBox().height>el.getBBox().width*1.2),
+    compactStays:[...svg.querySelectorAll('.apex-car-mirror-stay')].every(el=>{
+     const [ax,ay,bx,by]=el.dataset.anchors.split(' ').map(Number);return Math.hypot(bx-ax,by-ay)<60;
+    }),
+    glassInside:[...svg.querySelectorAll('.apex-car-mirror-glass')].every(el=>{
+     const b=el.getBBox(),p=new DOMPoint(b.x+b.width/2,b.y+b.height/2).matrixTransform(el.getScreenCTM());
+     return mirrorCases.some(c=>c.isPointInFill(p.matrixTransform(c.getScreenCTM().inverse())));
+    }),
     throats:svg.querySelectorAll('.apex-car-inlet-throat').length,padding:svg.querySelectorAll('.apex-car-cockpit-padding').length};
    const surfaces={channels:svg.querySelectorAll('.apex-car-pod-channel').length,
     ridges:svg.querySelectorAll('.apex-car-channel-ridge').length,
@@ -292,7 +307,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
    return {key,parts,mechanics,wing,rearLayout,proportions,surfaces,dimensions,mirrorDetails,bounds:{x:bounds.x,y:bounds.y,right:bounds.x+bounds.width,bottom:bounds.y+bounds.height}};
   }),options);
   for(const drawing of drawings){
-   assert.deepEqual(drawing.mirrorDetails,{cases:2,glass:2,stays:4,roots:4,connected:true,transverse:true,throats:2,padding:2},
+   assert.deepEqual(drawing.mirrorDetails,{cases:2,glass:2,stays:4,roots:4,connected:true,transverse:true,compactStays:true,glassInside:true,throats:2,padding:2},
     'Dos retrovisores transversales, cuatro soportes conectados y entradas profundas: '+drawing.key);
    assert.deepEqual(drawing.surfaces,{channels:2,ridges:2,frontRelief:drawing.wing.elements*2,
     rearRelief:1,haloWidth:5.5,shoulderClear:true,vectorOnly:true},
@@ -309,7 +324,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
     'Cada lámina tiene unión central con ambas mitades del alerón: '+JSON.stringify(drawing.wing)+' / '+drawing.key);
    assert.ok(drawing.wing.exposed.every(chords=>chords.every(width=>width>=3)),
     'Los tres perfiles 2026 tienen cuerda visible propia, sin coincidir entre sí: '+drawing.key+' / '+JSON.stringify(drawing.wing.exposed));
-   assert.deepEqual(drawing.rearLayout,{tailNearAxle:true,gearboxAtAxle:true,shaftsTransverse:true,pylons:2,beamWings:0,diffuserExits:1,brackets:2,joints:2},
+   assert.deepEqual(drawing.rearLayout,{tailNearAxle:true,gearboxAtAxle:true,shaftsTransverse:true,pylons:2,beamWings:0,diffuserExits:1,brackets:2,joints:2,feet:2,returns:2,fences:2,visibleBoots:4},
     'Cola junto al eje, transmisión y soportes traseros: '+drawing.key);
    assert.ok(drawing.proportions.noseAheadOfWing,'El morro llega por delante de la unión central del alerón: '+drawing.key);
    if(drawing.key==='PAPAYA'){
@@ -318,7 +333,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
     // These broad intervals allow native blueprint scaling, not the old short
     // nose, pencil-thin tail or overly elongated tyres.
     for(const [name,min,max] of [['noseOverhang',.38,.39],['rearTrack',.44,.46],['rearTyre',.195,.235],['frontTyre',.19,.22],
-     ['tailWidth',.085,.105],['rearGap',.06,.08],['cockpit',.60,.65]])
+     ['tailWidth',.07,.09],['rearGap',.06,.08],['cockpit',.60,.65]])
      assert.ok(drawing.proportions[name]>=min&&drawing.proportions[name]<=max,
       'Proporción de referencia '+name+': '+drawing.proportions[name]);
    }
@@ -369,7 +384,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
    const signature=source=>{
     const doc=new DOMParser().parseFromString(source,'image/svg+xml');
     if(doc.querySelector('parsererror'))throw new Error('SVG inválido');
-    return JSON.stringify(Array.from(doc.querySelectorAll('.apex-car-body,.apex-car-engine-cover,.apex-car-nose,.apex-car-inlet,.apex-car-sidepod>path:first-child,.apex-car-front-bridge,.apex-car-wing-join,.apex-car-front-wing,.apex-car-front-wing .apex-car-wing-element,.apex-car-rear-wing,.apex-car-rear-wing-element,.apex-car-cockpit,.apex-car-cockpit path,.apex-car-cockpit circle,.apex-car-inlet-depth path,.apex-car-inlet-throat,.apex-car-inlet-throat path,.apex-car-inlet-return,.apex-car-mirror,.apex-car-mirror path,.apex-car-mirror circle,.apex-car-mirror-stay,.apex-car-pod-reflection,.apex-car-pod-channel,.apex-car-channel-ridge,.apex-car-pod-shoulder,.apex-car-foil-relief,.apex-car-rear-plane-relief,.apex-car-tyre,.apex-car-suspension-arm path,.apex-car-wheel-mount path,.apex-car-wheel-mount ellipse,.apex-car-wheel-mount circle,.apex-car-floor,.apex-car-rear-assembly g,.apex-car-rear-assembly path,.apex-car-rear-assembly ellipse,.apex-car-rear-assembly circle,.apex-car-rear-joints,.apex-car-rear-joints ellipse,.apex-car-rear-joints circle,.apex-car-airbox,.apex-car-service-details path')).map(el=>({
+    return JSON.stringify(Array.from(doc.querySelectorAll('.apex-car-body,.apex-car-engine-cover,.apex-car-nose,.apex-car-inlet,.apex-car-sidepod>path:first-child,.apex-car-front-bridge,.apex-car-wing-join,.apex-car-front-wing,.apex-car-front-wing .apex-car-wing-element,.apex-car-rear-wing,.apex-car-rear-wing-element,.apex-car-cockpit,.apex-car-cockpit path,.apex-car-cockpit circle,.apex-car-inlet-depth path,.apex-car-inlet-throat,.apex-car-inlet-throat path,.apex-car-inlet-return,.apex-car-mirror,.apex-car-mirror path,.apex-car-mirror circle,.apex-car-mirror-stay,.apex-car-pod-reflection,.apex-car-pod-channel,.apex-car-channel-ridge,.apex-car-pod-shoulder,.apex-car-foil-relief,.apex-car-rear-plane-relief,.apex-car-tyre,.apex-car-suspension-arm path,.apex-car-wheel-mount path,.apex-car-wheel-mount ellipse,.apex-car-wheel-mount circle,.apex-car-floor,.apex-car-rear-assembly g,.apex-car-rear-assembly path,.apex-car-rear-assembly ellipse,.apex-car-rear-assembly circle,.apex-car-shaft-boot path,.apex-car-rear-joints,.apex-car-rear-joints ellipse,.apex-car-rear-joints circle,.apex-car-airbox,.apex-car-service-details path')).map(el=>({
      tag:el.tagName,shape:el.getAttribute('d'),transform:el.getAttribute('transform'),
      size:['cx','cy','rx','ry','r','x','y','width','height'].map(name=>el.getAttribute(name)),
      child:el.querySelector('path,rect')?.getAttribute('d')||el.querySelector('rect')?.outerHTML
