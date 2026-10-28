@@ -10,9 +10,10 @@
   [Ver el mural real de 24 metros](../assets/sponsors/sct-wall-24m.svg).
 - Blanco: MDTel.
 
-Los SVG de `assets/sponsors/` tienen contornos vectoriales, letras trazadas y
-exterior transparente: no contienen fotografías incrustadas, rectángulo de
-fondo, tipografías externas ni filtros. Las curvas grises de MDTel y los rombos
+Los logos aislados de `assets/sponsors/` tienen contornos vectoriales, letras
+trazadas y exterior transparente. Los murales incluyen su propio fondo de
+color como geometría vectorial. No contienen fotografías incrustadas,
+tipografías externas ni filtros. Las curvas grises de MDTel y los rombos
 azules de SCT forman parte del logo y se conservan. Se han limpiado las sombras
 y se ha reconstruido la rotulación pequeña para que pueda escalarse. Las
 rotulaciones reconstruidas emplean contornos de DejaVu Sans Bold; licencia en
@@ -36,11 +37,11 @@ El vector SVG incluye la marca en blanco, icono tricolor y diagonales que van
 desde el pie hasta la coronación, todas recortadas en la geometría original.
 
 Los diseños SCT (24 m) y Equipalia (8 m) se pretriangulan en build y el recorte de cada muro se cachea en
-WeakMap por tramo, con versiones normal e invertida para respetar lectura
-del logotipo cuando se mira desde el otro sentido. Canvas2D y WebGL reutilizan
+WeakMap por tramo, con orientación física estable por cada recorrido de muro. SCT no cambia su fase
+ni su composición al mover o girar la cámara; Equipalia conserva sus dos versiones. Canvas2D y WebGL reutilizan
 el mismo resultado; solo se proyectan los triángulos realmente visibles.
-Los diagonales ligeros conservan preferencia incluso si el presupuesto de
-logotipos limita los textos lejanos. Se mantienen los límites de triángulos
+Equipalia mantiene su política de diagonales y texto. SCT reserva el presupuesto
+para bloques visibles completos de 24 m, sin descartar letras por segmento. Se mantienen los límites de triángulos
 por fotograma y se siguen respetando cortes, accesos y tramos sin publicidad.
 Los carteles independientes mantienen un logo centrado de su patrocinador.
 
@@ -53,9 +54,10 @@ cronometraje, semáforos, colisiones, trazados ni física.
 ## Rendimiento y renderizado
 
 `track-sponsor-vectors.js` contiene la triangulación precalculada de los tres
-SVG. Se carga una vez y comparte arrays de vértices entre todas las apariciones.
-No hay trazado de imágenes, lectura de SVG, triangulación ni subida de texturas
-por fotograma. WebGL utiliza el lote de geometría existente y su profundidad por
+logos y del mural SCT. Se carga una vez y comparte arrays de vértices entre todas las apariciones.
+No hay trazado de imágenes, lectura de SVG, triangulación de contornos ni subida
+de texturas por fotograma. Los recortes de intervalos físicos se cachean; los
+intervalos nuevos sólo necesitan clipping de triángulos ya compilados. WebGL utiliza el lote de geometría existente y su profundidad por
 vértice: los logos siguen la perspectiva y la oclusión de los muros. Canvas 2D
 utiliza los mismos triángulos, agrupados por color.
 
@@ -92,3 +94,70 @@ Con el repositorio servido en el puerto 8765:
 `node apex/tests/track-sponsors-browser.cjs` comprueba WebGL en las tres cámaras,
 fallback Canvas, límites, llamadas de dibujo y concordancia visual SVG/malla.
 `APEX_AUDIT_DEVICE=mobile` ejecuta la variante móvil.
+
+
+## Corrección final: recorte estable y regiones planas
+
+Base revisada: `e59b232` de main. Se conserva el maestro completo `1440 × 80`
+para los **24 metros** de SCT, con posiciones y escalas grande / mediana /
+pequeña ya fijadas en él. `sct-wall.svg` y `sct-wall-24m.svg` contienen exactamente
+la misma composición. No se ajusta ningún logo a la longitud de un panel.
+TELECOM se separa del extremo derecho de cada rombo y las tres sombras se eliminan.
+
+Los fallos tenían varias causas independientes:
+
+1. La separación por colores convertía el fondo azul en una capa de texto:
+   podía volver a cubrir diagonales y rombos. Además, las capas solapadas se
+   disputaban muestras del depth buffer.
+2. El presupuesto se consumía por **segmento**. Una palabra que atravesaba
+   varias juntas podía perder fragmentos, aunque su escala SVG fuera correcta.
+3. Los segmentos procedurales se recrean por frame: cachear sólo por objeto no
+   aprovecha los nodos fijos. El cálculo anterior usaba además el signo inverso
+   de `wrapDeltaS`, por lo que podía rechazar intervalos procedurales válidos.
+4. La orientación basada en la proyección de cada segmento podía invertir la
+   fase al girar la cámara. SCT utiliza ahora la orientación física del recorrido.
+
+El compilador resta de cada región las superficies que se pintan después en
+el SVG. El resultado son **1749 triángulos con regiones interiores disjuntas**, frente
+a los 2590 del maestro anterior (un 32,5 % menos):
+la superficie total es una cara completa, sin huecos ni doble pintura. La
+simplificación geométrica previa tiene tolerancia de 0,12 unidades SVG (2 mm
+horizontales en el mural de 24 m). No afecta a Equipalia, MDTel ni al SCT aislado.
+Todas las regiones del mural usan la misma cara, con bias de cámara de 0,06 m
+respecto al muro. Al no existir superficies superpuestas entre letras, rombos
+y diagonales, no necesitan competir con offsets distintos. El orden de envío
+de los colores puede invertirse sin alterar las letras.
+
+Las vallas exactas conservan sus metros acumulados y reciben orientación e
+identidad estables por recorrido continuo. Las procedurales obtienen metros
+de pared a partir de los nodos fijos de la cinta, con distancias acumuladas de
+sus posiciones físicas; no utilizan el ancho proyectado ni el fragmento visible
+para escalar el mural. Ambos caminos usan `sctMuralSlices`, que sólo recorta el
+maestro. La clave de caché incluye intervalo y sentido, con un máximo de 2048
+intervalos por fuente; no se reutiliza un recorte de otra longitud.
+
+Antes de dibujar, ambos renderizadores agrupan los recortes visibles por bloque
+de 24 m y calculan su coste completo. Priorizan los bloques cercanos y reservan
+su coste dentro de los límites existentes de 2600/5200 triángulos. Cuando
+hay otras marcas, deja al menos 400/800 triángulos disponibles para sus
+rótulos existentes; SCT no monopoliza el presupuesto compartido. Si no cabe,
+se omite el bloque distante entero: no se mutilan letras en una junta. El
+recorte contra el plano cercano también opera sobre la geometría existente.
+La proyección reutiliza constantes de cámara por segmento y envía coordenadas
+escalares, evitando consultas de FOV y vectores temporales por vértice. La
+publicidad de cada muro se resuelve una sola vez por frame y se comparte entre
+planificación y dibujo. No añade llamadas de dibujo ni recursos GPU. Los presupuestos publicados son
+límites compartidos, no un incremento añadido a los anteriores.
+
+Las pruebas comprueban cobertura y ausencia de solapamiento entre regiones,
+T dentro de cada rombo, TELECOM separado, escalas y posiciones fijas al dividir
+el muro en segmentos desiguales, juntas normales/invertidas y repetición a
+24 m. El navegador compara un mural entero con sus recortes exactos y
+procedurales en varios ángulos y distancias, alterando el orden de colores para
+detectar interferencias. Se validan ambas interfaces de render, las tres
+cámaras y la emulación móvil.
+
+Los pasos de cebra ya traían la corrección de orientación en main. Se conserva
+esa implementación y se amplía `crosswalk-orientation.cjs`: barras paralelas a
+la marcha, repetidas transversalmente, en calles giradas, sentido inverso y
+fallback geométrico lejos de la pista. `URBAN_STRIPES` no cambia.

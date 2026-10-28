@@ -64,3 +64,16 @@ verify('CROSSWALK',[1,0],eastWest,2,0);
 // Los cebreados urbanos no son pasos de cebra y mantienen la orientación antigua.
 verify('URBAN_STRIPES',[0,1],northSouth,2,0);
 console.log('OK: CROSSWALK longitudinal en ambos sentidos; URBAN_STRIPES sin cambios.');
+
+// The same normal/tangent relationship must survive rotated and reverse lanes.
+for(const angle of [Math.PI/6,Math.PI/4,Math.PI*2/3,Math.PI,Math.PI*1.5]){
+ const tangent=[Math.cos(angle),Math.sin(angle)],normal=[-tangent[1],tangent[0]],
+  polygon=[[-10,-2],[10,-2],[10,2],[-10,2]].map(([n,t])=>[normal[0]*n+tangent[0]*t,normal[1]*n+tangent[1]*t]);
+ for(const dist of [0,200]){
+  const triangles=makeCompile(tangent,dist)({type:'marking',markingKind:'CROSSWALK',worldFootprint:polygon});
+  const spread=(tri,axis)=>{const values=tri.map(p=>p[0]*axis[0]+p[2]*axis[1]);return Math.max(...values)-Math.min(...values);};
+  assert.ok(triangles.every(tri=>spread(tri,normal)<=.641),'Bar width follows road normal at '+angle);
+  assert.ok(triangles.some(tri=>spread(tri,tangent)>=3.95),'Long axis follows traffic, including SVG fallback '+angle);
+ }
+}
+console.log('OK: rotated/reverse lanes and off-track SVG fallback preserve longitudinal bars.');

@@ -975,6 +975,7 @@ function drawRoad(camArg=null){
    const wl=buildWallRenderItem(seg,1,cam);if(wl)wallItems.push({kind:'wall',z:wl.z,data:wl});
    const wr=buildWallRenderItem(seg,-1,cam);if(wr)wallItems.push({kind:'wall',z:wr.z,data:wr});
  }
+ apexPlanSctWallMurals(wallItems.map(entry=>entry.data),pitch,'canvas2d');
  const pitItems=collectExactPitRenderItems(cam),boardItems=collectBrakeBoardSprites(cam,pitch).map(v=>({kind:'board',z:v.z,data:v}));
  const items=[
    ...segments.map(seg=>({kind:'road',z:seg.z,data:seg})),
@@ -3863,14 +3864,16 @@ function webglPushCircuitWalls(segments,cam,pitch){
  if(!webglCircuitVisualAvailable())return;const tWall0=performance.now(),mp=mobileControlProfile(),cw=trackData&&trackData.customWorld,exact=!!(cw&&cw.authoritative&&Array.isArray(cw.wallSegments)&&cw.wallSegments.length),items=[];
  if(exact){for(const entry of collectExactWallRenderItems(cam))items.push(entry.data)}
  else if(segments)for(const seg of segments){if(seg.z>mp.barrierMax)continue;for(const side of [1,-1]){const item=buildWallRenderItem(seg,side,cam);if(item)items.push(item)}}
+ apexPlanSctWallMurals(items,pitch,'webgl2');
  for(const item of items){
-  if(!item||item.z>620)continue;const lod=webglCircuitLod('barrier',item.z,2.2);if(lod>=3||item.poly3.length<4)continue;
-  const barrier=item.barrier||wallBarrierStyle(item.env||{},item.s||0,item.side||1),kind=barrier.kind||'WALL_F1',adStyle=item.advertising===false?null:circuitAdvertisingStyle(item.s,item.env,item.side),col=adStyle?adStyle.bg:(barrier.base||'#bfc4c8'),A=item.poly3[0],T0=item.poly3[1],T1=item.poly3[2],B=item.poly3[3];
+  if(!item||item.z>620)continue;const lod=webglCircuitLod('barrier',item.z,2.2);if(lod>=3)continue;
+  const barrier=item.barrier||wallBarrierStyle(item.env||{},item.s||0,item.side||1),kind=barrier.kind||'WALL_F1',adStyle=item.sponsorAd!==undefined?item.sponsorAd:(item.advertising===false?null:circuitAdvertisingStyle(item.s,item.env,item.side)),col=adStyle?adStyle.bg:(barrier.base||'#bfc4c8'),A=item.poly3[0],T0=item.poly3[1],T1=item.poly3[2],B=item.poly3[3];
   webglPushCamPoly(item.poly3,pitch,col,.62);
+  if(!B){if(adStyle)apexSponsorWallLogo(item,adStyle,pitch,'webgl2');continue;}
   const top0=camMix(A,T0,.86),top1=camMix(B,T1,.86),band0=camMix(A,T0,.42),band1=camMix(B,T1,.42),band2=camMix(A,T0,.78),band3=camMix(B,T1,.78);
   if(adStyle){const fg=adStyle.fg||'#ffffff';webglPushCamQuad(band0,band1,band3,band2,pitch,adStyle.bg,.62,-.008);if(!(adStyle.logo||window.ApexTrackSponsors?.colorKey(adStyle.bg))&&lod<=1)webglPushCamQuad(camMix(band0,band2,.42),camMix(band1,band3,.42),camMix(band1,band3,.58),camMix(band0,band2,.58),pitch,fg,.62,-.010)}
   else if(lod<=1)webglPushCamQuad(top0,T0,T1,top1,pitch,barrier.stripe||'#eceff1',.62,-.008);
-  if(adStyle&&lod<=1)apexSponsorWallLogo(item,adStyle,pitch,'webgl2');
+  if(adStyle&&(lod<=1||adStyle.logo==='sct'||window.ApexTrackSponsors?.colorKey(adStyle.bg)==='sct'))apexSponsorWallLogo(item,adStyle,pitch,'webgl2');
   const fp=item.fencePoly3,fg=item.fenceGeom;
   if(!exact&&barrier.fence&&fp&&fp.length>=3&&lod<=2){
    // v62.8.0.3: la base de la catch-fence se ancla EXPLÍCITAMENTE a T0/T1,

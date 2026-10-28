@@ -7,12 +7,43 @@ const root=path.resolve(__dirname,'../..'),mobile=process.env.APEX_AUDIT_DEVICE=
 const hook=fs.readFileSync(path.join(__dirname,'browser-hook.js'),'utf8')+`
 let sponsorTestEnabled=true;const sponsorTestDraw=apexSponsorDraw;
 apexSponsorDraw=function(...args){return sponsorTestEnabled?sponsorTestDraw(...args):false;};
+const sponsorTestMural=apexDrawSctWallMural,sponsorTestPlan=apexPlanSctWallMurals;
+apexDrawSctWallMural=function(...args){return sponsorTestEnabled?sponsorTestMural(...args):false;};
+apexPlanSctWallMurals=function(...args){return sponsorTestEnabled?sponsorTestPlan(...args):undefined;};
 window.__sponsorAudit={
  freeze(s){setAutoDriveMode(0,false);paused=true;rivals.length=0;const q=poseAt(s);player.s=s;player.x=q.x;player.z=q.z;player.heading=Math.atan2(q.tx,q.tz);player.speed=0;},
  stats:()=>({...window.ApexTrackSponsors.stats,anchors:apexSponsorAnchors.size,glError:webglState.gl?.getError()}),
  bench(){const gl=webglState.gl,original=gl.drawArrays;let calls=0;gl.drawArrays=function(...args){calls++;return original.apply(this,args);};const results=[];
   try{for(const enabled of [false,true]){sponsorTestEnabled=enabled;for(let i=0;i<3;i++)activeRenderer.renderFrame();calls=0;const t=performance.now();for(let i=0;i<12;i++)activeRenderer.renderFrame();results.push({enabled,calls,cpuFrameMs:(performance.now()-t)/12,stats:{...window.ApexTrackSponsors.stats}});}}
   finally{sponsorTestEnabled=true;gl.drawArrays=original;}return results;
+ },
+ procedural(){const cw=trackData.customWorld,old=cw.authoritative;try{cw.authoritative=false;activeRenderer.renderFrame();return {...window.ApexTrackSponsors.stats,error:webglState.gl.getError()};}finally{cw.authoritative=old;}},
+ muralCompare(){
+  mode='menu';player=null;const previousStyle=circuitAdvertisingStyle,previousAtlas=apexSctProceduralAtlas;
+  circuitAdvertisingStyle=()=>window.ApexTrackSponsors.styles[1];
+  const L=trackData.km*1000;apexSctProceduralAtlas=()=>({samples:[0,L],stations:[0,L],reverse:false});
+  const gl=webglState.gl;apexPhase5TerrainGPU.pending=null;apexPhase5GroundGPU.pending=null;apexPhase6RoadGPU.pending=null;
+  const cuts=[0,1.7,3.4,4.9,7.3,8,10.2,13,16,18.6,21,24],out=[];
+  function render(nodes,procedural,angle,distance,shuffle=false){
+   renderFrameId++;window.ApexTrackSponsors.beginFrame(renderFrameId);webglFloatCount=0;webglScreenRoll=0;
+   const P=(m,y)=>({x:Math.cos(angle)*(m-12),y,z:distance+Math.sin(angle)*(m-12)}),items=[];
+   for(let i=0;i<nodes.length-1;i++){
+    const a=nodes[i],b=nodes[i+1],raw=[P(a,0),P(a,4/3),P(b,4/3),P(b,0)],source={sponsorPatternFromM:a,sponsorPatternToM:b,sponsorMuralRun:999,sponsorMuralReverse:false};
+    items.push({side:1,s:100,barrier:{kind:'WALL_F1'},sponsorSource:procedural?undefined:source,sponsorS0:a,sponsorS1:b,sponsorPoly3:raw,poly3:raw});
+   }
+   apexPlanSctWallMurals(items,0,'webgl2');
+   for(const it of items){webglPushCamPoly(it.poly3,0,'#07539b',.62);if(shuffle)it.sctMuralPlan?.pieces.forEach(p=>p.slice.layers.reverse());apexSponsorWallLogo(it,window.ApexTrackSponsors.styles[1],0,'webgl2');}
+   webglSubmit();const pixels=new Uint8Array(webglCv.width*webglCv.height*4);gl.readPixels(0,0,webglCv.width,webglCv.height,gl.RGBA,gl.UNSIGNED_BYTE,pixels);
+   return {pixels,stats:{...window.ApexTrackSponsors.stats},error:gl.getError()};
+  }
+  try{for(const [angle,distance] of [[0,15],[.45,15],[.9,15],[.45,70]]){
+   const full=render([0,24],false,angle,distance);
+   for(const procedural of [false,true]){
+    const split=render(cuts,procedural,angle,distance,true);let changed=0,white=0,whiteChanged=0;
+    for(let i=0;i<full.pixels.length;i+=4){const a=full.pixels,b=split.pixels,d=Math.max(Math.abs(a[i]-b[i]),Math.abs(a[i+1]-b[i+1]),Math.abs(a[i+2]-b[i+2]));if(d>40)changed++;if(a[i]>210&&a[i+1]>210&&a[i+2]>210){white++;if(d>40)whiteChanged++;}}
+    out.push({angle,distance,procedural,mismatch:changed/(full.pixels.length/4),white,whiteMismatch:whiteChanged/Math.max(1,white),stats:split.stats,error:split.error});
+   }
+  }}finally{circuitAdvertisingStyle=previousStyle;apexSctProceduralAtlas=previousAtlas;}return out;
  },
  async pixels(sources){
   mode='menu';player=null;const results=[];for(const [i,key] of ['team-equipalia','sct','mdtel'].entries()){
@@ -42,12 +73,14 @@ window.__sponsorAudit={
  await page.goto('http://127.0.0.1:8765/apex/apex.html');await page.waitForFunction(()=>window.__sponsorAudit&&window.ApexTrackSponsors);
  await page.evaluate(()=>__apexAudit.load('14-spain',true));await page.evaluate(()=>__sponsorAudit.freeze(120));
  const scenes=[];for(const camera of ['cockpit','tcam','chase']){await page.evaluate(c=>__apexAudit.camera(c),camera);await page.waitForTimeout(400);const stats=await page.evaluate(()=>__sponsorAudit.stats());assert.equal(stats.glError,0);assert.ok(stats.maxLogos>0);assert.ok(stats.maxLogos<=(mobile?6:12));assert.ok(stats.maxTriangles<=(mobile?2600:5200));scenes.push({camera,...stats});}
+ const procedural=await page.evaluate(()=>__sponsorAudit.procedural());assert.equal(procedural.error,0);
  const bench=await page.evaluate(()=>__sponsorAudit.bench());assert.equal(bench[0].calls,bench[1].calls,'Vector logos reuse the same WebGL batch, no extra draw calls');
  await page.screenshot({path:process.env.APEX_SPONSOR_SCREENSHOT||'/tmp/apex-sponsors-'+(mobile?'mobile':'desktop')+'.png'});
  assert.equal(await page.evaluate(()=>__apexAudit.backend('canvas2d')),true);await page.waitForTimeout(500);const canvas=await page.evaluate(()=>__sponsorAudit.stats());assert.ok(canvas.maxLogos>0);
  // Same SVG geometry rendered by production triangle code; includes counters,
  // transparent holes and original logo colours, not merely a DOM component count.
  const sources=Object.fromEntries(['team-equipalia','sct','mdtel'].map(k=>[k,fs.readFileSync(path.join(root,'apex/assets/sponsors',k+'.svg'),'utf8')]));
+ const murals=await page.evaluate(()=>__sponsorAudit.muralCompare());for(const m of murals){assert.equal(m.error,0);assert.ok(m.white>10);assert.ok(m.mismatch<.015&&m.whiteMismatch<.16,'Stable mural fragments: '+JSON.stringify(m));assert.ok(m.stats.triangles<=(mobile?2600:5200));}
  const pixels=await page.evaluate(src=>__sponsorAudit.pixels(src),sources);for(const p of pixels){assert.ok(p.painted>50,p.key+' is visibly drawn');assert.ok(p.mismatch<.065,'SVG/mesh pixel mismatch '+JSON.stringify(p));}
- assert.deepEqual(errors,[]);console.log(JSON.stringify({test:'track-sponsors-browser',mobile,scenes,canvas,bench,pixels,ok:true}));
+ assert.deepEqual(errors,[]);console.log(JSON.stringify({test:'track-sponsors-browser',mobile,scenes,procedural,canvas,bench,murals,pixels,ok:true}));
  }finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1;});

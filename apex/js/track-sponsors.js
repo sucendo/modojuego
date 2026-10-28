@@ -22,8 +22,8 @@ function colorKey(color){
  if(colors.size<64)colors.set(key,result);return result;
 }
 let frame=-1;const seen=new Set();
-const stats={frames:0,logos:0,triangles:0,accentTriangles:0,culled:0,cpuMs:0,maxLogos:0,maxTriangles:0,compiled:4};
-function beginFrame(id){if(id===frame)return;frame=id;seen.clear();stats.frames++;stats.logos=0;stats.triangles=0;stats.accentTriangles=0;stats.culled=0;stats.cpuMs=0;}
+const stats={frames:0,logos:0,triangles:0,accentTriangles:0,muralBlocks:0,sctTriangles:0,culled:0,cpuMs:0,maxLogos:0,maxTriangles:0,compiled:4};
+function beginFrame(id){if(id===frame)return;frame=id;seen.clear();stats.frames++;stats.logos=0;stats.triangles=0;stats.accentTriangles=0;stats.muralBlocks=0;stats.sctTriangles=0;stats.culled=0;stats.cpuMs=0;}
 function claim(id,key,height,mobile){
  const logo=data[key];if(!logo||height<7||seen.has(id)){stats.culled++;return null;}
  const fine=height>=100&&!mobile,layers=logo.layers.filter(l=>!l.fine||fine),triangles=layers.reduce((sum,l)=>sum+l.triangles.length/6,0);
@@ -57,11 +57,47 @@ function wallClipEdge(points,limit,keepGreater){
  }
  return out;
 }
+// SCT is a single planar 24m master. Cache its crops by physical range, not
+// by the transient camera segment object; never fit or scale a logo locally.
+const sctSliceCache=new WeakMap();
+function sctMuralSlices(source,fromM,toM,reverse=false){
+ if(!source||!Number.isFinite(fromM)||!Number.isFinite(toM)||toM<=fromM)return [];
+ let cache=sctSliceCache.get(source);if(!cache){cache=new Map();sctSliceCache.set(source,cache);}
+ const stamp=fromM.toFixed(6)+':'+toM.toFixed(6)+':'+reverse;
+ if(cache.has(stamp))return cache.get(stamp);
+ const from=reverse?-toM:fromM,to=reverse?-fromM:toM,span=to-from,out=[],master=data['sct-wall'];
+ for(let tile=Math.floor(from/24);tile<=Math.floor((to-1e-8)/24);tile++){
+  const low=Math.max(0,(from-tile*24)/24),high=Math.min(1,(to-tile*24)/24),layers=[];
+  let triangles=0;
+  for(const layer of master.layers){
+   const vertices=[],src=layer.triangles;
+   for(let i=0;i<src.length;i+=6){
+    let polygon=[[src[i],src[i+1]],[src[i+2],src[i+3]],[src[i+4],src[i+5]]];
+    polygon=wallClipEdge(polygon,low,true);if(polygon.length<3)continue;
+    polygon=wallClipEdge(polygon,high,false);if(polygon.length<3)continue;
+    for(let k=1;k<polygon.length-1;k++)for(const p of [polygon[0],polygon[k],polygon[k+1]]){
+     const u=Math.max(0,Math.min(1,(tile*24+p[0]*24-from)/span));
+     vertices.push(reverse?1-u:u,p[1]);
+    }
+   }
+   if(vertices.length){layers.push({fill:layer.fill,part:layer.part,triangles:new Float32Array(vertices)});triangles+=vertices.length/6;}
+  }
+  out.push({tile,layers,triangles});
+ }
+ if(cache.size>=2048)cache.delete(cache.keys().next().value);
+ cache.set(stamp,out);return out;
+}
+function claimMural(id,triangles,mobile,reserve=0){
+ if(stats.triangles+triangles>(mobile?2600:5200)-reserve){stats.culled++;return false;}
+ if(!claimWallText(id,triangles,mobile))return false;
+ stats.muralBlocks++;stats.sctTriangles+=triangles;return true;
+}
+
 function wallTileLayers(source,fromM,toM,reverse,brand='team-equipalia'){
  if(!source||!Number.isFinite(fromM)||!Number.isFinite(toM)||toM-fromM<.02)return null;
  let cached=wallPatternCache.get(source);
  if(!cached){cached=new Map();wallPatternCache.set(source,cached);}
- const id=brand+':'+(reverse?'reverse':'forward');
+ const id=brand+':'+fromM+':'+toM+':'+(reverse?'reverse':'forward');
  if(cached.has(id))return cached.get(id);
  const from=reverse?-toM:fromM,to=reverse?-fromM:toM,span=to-from;
  const out={accents:[],wordmark:[],fine:[],triangleCount:0};
@@ -89,16 +125,9 @@ function wallTileLayers(source,fromM,toM,reverse,brand='team-equipalia'){
  }
  cached.set(id,out);return out;
 }
-// SCT's blue diamonds, dark extrusion and white letters occupy overlapping
-// contours. Give each colour group a stable camera-space depth precedence to
-// prevent WebGL z-fighting (mottled/eroded letter faces) on angled walls.
-// This is only a depth offset, with no extra geometry, buffers or draw calls.
-function wallLayerDepthBias(brand,fill,index){
- if(brand!=='sct')return .026;
- if(fill==='#ffffff')return .190;
- if(fill==='#063365')return .135;
- return .042+Math.min(index,22)*.004;
-}
+// Legacy independent/Equipalia surfaces retain their original bias. The SCT
+// master uses disjoint planar regions and a common .06 world-face bias.
+function wallLayerDepthBias(){return .026;}
 function claimWallText(id,triangles,mobile){
  if(seen.has(id)||stats.logos>=(mobile?6:12)||stats.triangles+triangles>(mobile?2600:5200)){
   stats.culled++;return false;
@@ -116,5 +145,5 @@ function claimWallAccents(triangles,mobile){
  return true;
 }
 global.ApexTrackSponsors=Object.freeze({styles,data,colorKey,beginFrame,claim,stats,spacingM:24,equipaliaSpacingM:8,sctSpacingM:24,wallPatternMetres,
- wallTileLayers,claimWallAccents,claimWallText,wallLayerDepthBias});
+ wallTileLayers,claimWallAccents,claimWallText,wallLayerDepthBias,sctMuralSlices,claimMural});
 })(window);
