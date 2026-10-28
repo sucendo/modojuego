@@ -3,11 +3,11 @@
 - Verde: Team Equipalia (diseño racing con icono tricolor real, letras blancas
   y diagonales lima/blancas sobre verde oscuro).
   Vista frontal de 24 m: [team-equipalia-wall-24m.svg](../assets/sponsors/team-equipalia-wall-24m.svg).
-- Azul: SCT Telecom. La publicidad de los muros usa **SCT-wall**: rombos azules
-  y logotipo SCT originales en contornos SVG, TELECOM en blanco horizontal,
-  franjas oblicuas cian/blanco a toda la altura del muro y repetición continua
-  de 3 módulos de 8 m por cada 24 m.
-  Vista frontal: [sct-wall-24m.svg](../assets/sponsors/sct-wall-24m.svg).
+- Azul: SCT Telecom. La publicidad usa **un único mural maestro SVG de 24 m**,
+  no tres logos repetidos cada 8 m. De izquierda a derecha: marca SCT grande,
+  franja diagonal a altura completa, SCT mediano, segunda banda diagonal y
+  SCT pequeño; se conservan rombos azules y letras vectoriales originales.
+  [Ver el mural real de 24 metros](../assets/sponsors/sct-wall-24m.svg).
 - Blanco: MDTel.
 
 Los SVG de `assets/sponsors/` tienen contornos vectoriales, letras trazadas y
@@ -22,8 +22,9 @@ Los paneles publicitarios predeterminados alternan los tres colores en sectores
 de 72 m. Team Equipalia utiliza un módulo SVG transparente de **8 m**, que
 se repite **tres veces por cada 24 m** de valla verde; la referencia completa
 de 24 m contiene exactamente ese módulo repetido tres veces, con fondo
-verde oscuro. SCT utiliza también módulos continuos de 8 m, como Equipalia; MDTel
-mantiene una estación independiente cada 24 m.
+verde oscuro. SCT usa un mural completo de 24 m que se repite a partir de
+la distancia longitudinal acumulada en cada muro continuo, respetando
+las uniones entre segmentos. MDTel mantiene su logo independiente cada 24 m.
 
 Los logos de Team Equipalia y sus bandas diagonales cubren el 100 % de la altura
 publicitaria del muro verde, como en la referencia. El patrón se mide en metros
@@ -34,7 +35,7 @@ desiguales comparten la misma fase gráfica y mantienen la continuidad.
 El vector SVG incluye la marca en blanco, icono tricolor y diagonales que van
 desde el pie hasta la coronación, todas recortadas en la geometría original.
 
-Los módulos SCT y Equipalia se pretriangulan en build y el recorte de cada muro se cachea en
+Los diseños SCT (24 m) y Equipalia (8 m) se pretriangulan en build y el recorte de cada muro se cachea en
 WeakMap por tramo, con versiones normal e invertida para respetar lectura
 del logotipo cuando se mira desde el otro sentido. Canvas2D y WebGL reutilizan
 el mismo resultado; solo se proyectan los triángulos realmente visibles.

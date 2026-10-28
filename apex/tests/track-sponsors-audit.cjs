@@ -12,15 +12,23 @@ for(const [key,logo] of Object.entries(api.data)){
  for(const layer of logo.layers){assert.equal(layer.triangles.length%6,0);assert.ok(Array.from(layer.triangles).every(Number.isFinite));}
 }
 assert.equal(api.colorKey('#53aa66'),'team-equipalia');assert.equal(api.colorKey('#00673e'),'team-equipalia');
-assert.equal(api.spacingM,24);assert.equal(api.equipaliaSpacingM,8);assert.equal(api.sctSpacingM,8);
+assert.equal(api.spacingM,24);assert.equal(api.equipaliaSpacingM,8);assert.equal(api.sctSpacingM,24);
+assert.equal(api.wallPatternMetres('team-equipalia'),8);
+assert.equal(api.wallPatternMetres('sct-wall'),24);
 assert.equal(api.stats.compiled,4);
 const sctWallSvg=fs.readFileSync(path.join(root,'assets/sponsors/sct-wall.svg'),'utf8');
 const sct24=fs.readFileSync(path.join(root,'assets/sponsors/sct-wall-24m.svg'),'utf8');
 assert.ok(sctWallSvg.includes('SCT Telecom'));
 assert.ok(!/<image\\b|<text\\b|<foreignObject\\b/i.test(sctWallSvg),'SCT wall has vector contours only');
 assert.ok(!/<image\\b|<text\\b|<foreignObject\\b/i.test(sct24),'SCT 24m source has no raster content');
-assert.equal((sct24.match(/<use href="#sct-eight-metres"/g)||[]).length,3,'24m contains exactly 3 x 8m SVG modules');
-assert.equal(api.data['sct-wall'].aspect,6);
+assert.equal(sctWallSvg,sct24,'The game uses the exact full 24m SVG master');
+assert.ok(!/<use\b|<symbol\b/.test(sct24),'No 8m symbols or repeated tiles');
+assert.equal(api.data['sct-wall'].aspect,18);
+assert.equal((sct24.match(/data-design-part="large-sct"/g)||[]).length,2);
+assert.equal((sct24.match(/data-design-part="medium-sct"/g)||[]).length,2);
+assert.equal((sct24.match(/data-design-part="small-sct"/g)||[]).length,2);
+assert.ok((sct24.match(/data-design-part="diagonal-/g)||[]).length>=10);
+assert.equal((sct24.match(/data-design-part="continuous-background"/g)||[]).length,1);
 // The original SCT shadow and white face were coplanar. The new layer offsets
 // must guarantee a crisp face above the shadow and decorative blue geometry,
 // including near-oblique cameras; Equipalia/MDTel keep their existing bias.
@@ -33,10 +41,19 @@ assert.ok(depth('sct','#ffffff',0)-depth('sct','#063365',0)>.04);
 const sctLogoMesh=api.data['sct-wall'];
 function meshBounds(layer){
  const pts=layer.triangles,x=[],y=[];
- for(let i=0;i<pts.length;i+=2){x.push(pts[i]*480);y.push(pts[i+1]*80);}
+ for(let i=0;i<pts.length;i+=2){x.push(pts[i]*1440);y.push(pts[i+1]*80);}
  return {left:Math.min(...x),right:Math.max(...x),top:Math.min(...y),bottom:Math.max(...y)};
 }
-const sctGlyph=meshBounds(sctLogoMesh.layers.find(l=>l.fill==='#ffffff'));
+const sctWhiteFaces=sctLogoMesh.layers.filter(l=>l.fill==='#ffffff');
+assert.equal(sctWhiteFaces.length,6,'SCT and TELECOM white paths at three scales');
+const sctGlyph=meshBounds(sctWhiteFaces[0]);
+const sctMedium=meshBounds(sctWhiteFaces[2]);
+const sctSmall=meshBounds(sctWhiteFaces[4]);
+assert.ok(sctGlyph.right-sctGlyph.left>sctMedium.right-sctMedium.left);
+assert.ok(sctMedium.right-sctMedium.left>sctSmall.right-sctSmall.left);
+assert.ok(sctGlyph.bottom-sctGlyph.top>sctMedium.bottom-sctMedium.top);
+assert.ok(sctMedium.bottom-sctMedium.top>sctSmall.bottom-sctSmall.top);
+assert.ok(sctGlyph.right<520&&sctMedium.left>700&&sctSmall.left>1150,'Three distinct placements');
 assert.ok(sctGlyph.right-sctGlyph.left>140,'SCT principal must span at least 140 SVG units');
 assert.ok(sctGlyph.bottom-sctGlyph.top>60,'SCT principal almost fills the wall height');
 assert.ok(sctGlyph.top<10&&sctGlyph.bottom>70,'SCT brand must be clearly legible');
@@ -87,13 +104,28 @@ checkWallTile(sctA);checkWallTile(sctB);
 assert.ok(sctA.accents.some(l=>l.triangles.some((v,i)=>i%2&&Math.abs(v)<1e-4)), 'SCT diagonals reach wall top');
 assert.ok(sctA.accents.some(l=>l.triangles.some((v,i)=>i%2&&Math.abs(v-1)<1e-4)), 'SCT diagonals reach wall bottom');
 assert.deepEqual([...seamVertices(sctA,1)].sort((a,b)=>a-b),
- [...seamVertices(sctB,0)].sort((a,b)=>a-b),'SCT 8m art continues across adjacent wall pieces');
+ [...seamVertices(sctB,0)].sort((a,b)=>a-b),'SCT 24m mural continues across adjacent wall pieces');
 const sctRevA=api.wallTileLayers(wallA,0,7.3,true,'sct-wall'),
       sctRevB=api.wallTileLayers(wallB,7.3,14.6,true,'sct-wall');
 checkWallTile(sctRevA);checkWallTile(sctRevB);
 assert.deepEqual([...seamVertices(sctRevA,0)].sort((a,b)=>a-b),
  [...seamVertices(sctRevB,1)].sort((a,b)=>a-b),'SCT seam continuous from opposite camera direction');
 assert.equal(api.wallTileLayers(wallA,0,7.3,false,'sct-wall'),sctA,'SCT clipped triangles cached');
+const sctMuralA=api.wallTileLayers({},0,24,false,'sct-wall');
+const sctMuralB=api.wallTileLayers({},24,48,false,'sct-wall');
+assert.equal(sctMuralA.triangleCount,sctMuralB.triangleCount,'SCT repeats only at 24 metres');
+const sctAt8=api.wallTileLayers({},8,16,false,'sct-wall');
+const sctAt16=api.wallTileLayers({},16,24,false,'sct-wall');
+assert.ok(sctAt8.wordmark.length>0&&sctAt16.wordmark.length>0,'Medium and small SCT labels exist in their own portions');
+for(const at of [8,16,24]){
+ const left=api.wallTileLayers({},at-.37,at,false,'sct-wall');
+ const right=api.wallTileLayers({},at,at+.37,false,'sct-wall');
+ assert.deepEqual([...seamVertices(left,1)].sort((a,b)=>a-b),
+ [...seamVertices(right,0)].sort((a,b)=>a-b),'No visible stripe jump at '+at+' m');
+}
+const source=fs.readFileSync(path.join(root,'parts/part-024.txt'),'utf8'); // Check both wall types.
+assert.ok(source.includes("item.sponsorTileSource")&&source.includes("function apexSponsorContinuousWall"),'Both procedural and SVG walls use SCT full-width mapping');
+
 assert.notEqual(sctA,tileA,'Brand-specific cache keeps Equipalia and SCT separate');
 
 const equipaliaSource=fs.readFileSync(path.join(root,'assets/sponsors/team-equipalia.svg'),'utf8');

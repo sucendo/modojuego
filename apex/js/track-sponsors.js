@@ -32,11 +32,12 @@ function claim(id,key,height,mobile){
  stats.maxLogos=Math.max(stats.maxLogos,stats.logos);stats.maxTriangles=Math.max(stats.maxTriangles,stats.triangles);
  return layers;
 }
-/* Brand walls reuse 8m SVG pattern geometry, not independent stickers.
+/* Brand walls use a real 24m SCT mural and independent 8m Equipalia tiles.
  * Crop the pre-triangulated artwork to physical wall-segment boundaries once.
  * All clipped vertices are reused by Canvas2D and WebGL on every frame. */
 const wallPatternCache=new WeakMap();
-const WALL_TILE_METRES=8;
+const EQUIPALIA_TILE_METRES=8, SCT_MURAL_METRES=24;
+function wallPatternMetres(key){return key==='sct-wall'?SCT_MURAL_METRES:EQUIPALIA_TILE_METRES;}
 const wallStripeFills=new Set([
  '#71d650','#64bf48','#06472e','#f7faf9','#8ddc77',
  '#25a9d5','#00a2d6','#116faf','#0874bf','#0086cb','#0056a5',
@@ -65,9 +66,10 @@ function wallTileLayers(source,fromM,toM,reverse,brand='team-equipalia'){
  const from=reverse?-toM:fromM,to=reverse?-fromM:toM,span=to-from;
  const out={accents:[],wordmark:[],fine:[],triangleCount:0};
  const logo=data[brand];if(!logo)return null;
- for(let tile=Math.floor(from/WALL_TILE_METRES);tile<=Math.floor((to-1e-8)/WALL_TILE_METRES);tile++){
-  const low=Math.max(0,(from-tile*WALL_TILE_METRES)/WALL_TILE_METRES),
-        high=Math.min(1,(to-tile*WALL_TILE_METRES)/WALL_TILE_METRES);
+ const tileMetres=wallPatternMetres(brand);
+ for(let tile=Math.floor(from/tileMetres);tile<=Math.floor((to-1e-8)/tileMetres);tile++){
+  const low=Math.max(0,(from-tile*tileMetres)/tileMetres),
+        high=Math.min(1,(to-tile*tileMetres)/tileMetres);
   if(high-low<1e-7)continue;
   for(const layer of logo.layers){
    const target=layer.fine?out.fine:(wallStripeFills.has(layer.fill)?out.accents:out.wordmark);
@@ -79,7 +81,7 @@ function wallTileLayers(source,fromM,toM,reverse,brand='team-equipalia'){
     polygon=wallClipEdge(polygon,high,false);
     if(polygon.length<3)continue;
     for(let k=1;k<polygon.length-1;k++)for(const p of [polygon[0],polygon[k],polygon[k+1]]){
-     verts.push(Math.max(0,Math.min(1,(tile*WALL_TILE_METRES+p[0]*WALL_TILE_METRES-from)/span)),p[1]);
+     verts.push(Math.max(0,Math.min(1,(tile*tileMetres+p[0]*tileMetres-from)/span)),p[1]);
     }
    }
    if(verts.length){target.push({fill:layer.fill,triangles:new Float32Array(verts)});out.triangleCount+=verts.length/6;}
@@ -113,6 +115,6 @@ function claimWallAccents(triangles,mobile){
  stats.maxTriangles=Math.max(stats.maxTriangles,stats.triangles);
  return true;
 }
-global.ApexTrackSponsors=Object.freeze({styles,data,colorKey,beginFrame,claim,stats,spacingM:24,equipaliaSpacingM:8,sctSpacingM:8,
+global.ApexTrackSponsors=Object.freeze({styles,data,colorKey,beginFrame,claim,stats,spacingM:24,equipaliaSpacingM:8,sctSpacingM:24,wallPatternMetres,
  wallTileLayers,claimWallAccents,claimWallText,wallLayerDepthBias});
 })(window);
