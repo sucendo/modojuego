@@ -4470,20 +4470,23 @@ function apexFeatureTrackBanner(s,span,bottom,top,cam,pitch,backend,id){
  return apexSponsorDraw(panel,'apex26-start-finish',pitch,backend,id,1,true);
 }
 function apexFeatureBridgeBanner(it,cam,pitch,backend){
- if(!it||it.pedestrianBridge!==true||!Array.isArray(it.worldFootprint)||it.worldFootprint.length<3)return false;
- const ring=it.worldFootprint,edges=[];
- for(let i=0;i<ring.length;i++){
-  const a=ring[i],b=ring[(i+1)%ring.length],length=Math.hypot(b[0]-a[0],b[1]-a[1]);
-  if(length>4&&length<100)edges.push({a,b,length,d:Math.hypot((a[0]+b[0])*.5-cam.x,(a[1]+b[1])*.5-cam.z)});
- }
- if(!edges.length)return false;
- const longest=Math.max(...edges.map(e=>e.length)),choices=edges.filter(e=>e.length>=longest*.72).sort((a,b)=>a.d-b.d);
- const edge=choices[0];if(!edge)return false;
- const totalH=Math.max(6.1,Math.min(8.6,Number(it.height)||7)),deckT=clamp(totalH*.16,.88,1.24),
+ if(!it||it.pedestrianBridge!==true||!Array.isArray(it.worldPath)||it.worldPath.length<2)return false;
+ // A pedestrian bridge is authored as a line across the track. Its footprint
+ // has short sampled edges: use the FIRST and LAST centreline points to span
+ // the actual bridge instead of painting an accidental 2-5 m fragment.
+ const path=it.worldPath,a=path[0],b=path[path.length-1],
+       dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz);
+ if(length<8||length>130)return false;
+ const nx=-dz/length,nz=dx/length,midX=(a[0]+b[0])*.5,midZ=(a[1]+b[1])*.5,
+       facing=((cam.x-midX)*nx+(cam.z-midZ)*nz)>=0?1:-1,
+       offset=facing*(Number(it.width)||5)*.5+facing*.08,
+       p0=[a[0]+nx*offset,a[1]+nz*offset],p1=[b[0]+nx*offset,b[1]+nz*offset];
+ const totalH=Math.max(6.1,Math.min(8.6,Number(it.height)||7)),
+       deckT=clamp(totalH*.16,.88,1.24),
        bottom=(Number(it.anchor?.y)||0)+totalH-deckT+.06,
-       top=bottom+clamp(edge.length/7.2,1.5,3.1);
- const wp=(p,y)=>worldToCamera(p[0],y,p[1],cam);
- const panel=[wp(edge.a,bottom),wp(edge.a,top),wp(edge.b,top),wp(edge.b,bottom)];
+       top=bottom+clamp(length/7.2,1.7,3.15);
+ const wp=(p,y)=>worldToCamera(p[0],y,p[1],cam),
+       panel=[wp(p0,bottom),wp(p0,top),wp(p1,top),wp(p1,bottom)];
  return apexSponsorDraw(panel,'radiquero-pedestrian-bridge',pitch,backend,'radiquero-bridge:'+String(it.sourceId||it.anchor?.s),1,true);
 }
 function apexFeatureTunnelBanner(it,cam,pitch,backend){
