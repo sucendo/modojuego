@@ -4222,7 +4222,7 @@ function apexSponsorExactAnchor(source,brandKey){
 // Paint the complete green wall face: one seamless 8m SVG tile every 8m,
 // with diagonals from the ground to the top of the barrier. Each panel gets
 // only its section of the original triangle mesh (cached at track setup).
-function apexSponsorEquipaliaWall(item,pitch,backend){
+function apexSponsorContinuousWall(item,pitch,backend,key){
  const api=window.ApexTrackSponsors,source=item.sponsorSource,raw=item.sponsorPoly3,
        mobile=mobilePerformanceMode();
  if(!api||!source||!raw||raw.length!==4)return false;
@@ -4239,7 +4239,7 @@ function apexSponsorEquipaliaWall(item,pitch,backend){
  // the opposite end. This keeps lettering readable without breaking seams.
  const reversed=projected[0].x>projected[1].x,
        quad=reversed?[top1,top0,bottom0,bottom1]:[top0,top1,bottom1,bottom0],
-       cached=api.wallTileLayers(source,from,to,reversed);
+       cached=api.wallTileLayers(source,from,to,reversed,key==='sct'?'sct-wall':'team-equipalia');
  if(!cached)return false;
  api.beginFrame(renderFrameId);
  const triangleCount=layers=>layers.reduce((n,l)=>n+l.triangles.length/6,0),
@@ -4247,7 +4247,7 @@ function apexSponsorEquipaliaWall(item,pitch,backend){
        accentVisible=api.claimWallAccents(accentTriangles,mobile);
  const includeFine=maxY-minY>=100&&!mobile,
        wordmarkTriangles=triangleCount(cached.wordmark)+(includeFine?triangleCount(cached.fine):0),
-       id='equipalia-wall:'+String(source.runId||'')+':'+String(source.side||0)+':'+from,
+       id=key+'-wall:'+String(source.runId||'')+':'+String(source.side||0)+':'+from,
        wordmarkVisible=wordmarkTriangles>0&&maxX-minX>=12&&maxY-minY>=7&&api.claimWallText(id,wordmarkTriangles,mobile);
  if(!accentVisible&&!wordmarkVisible)return false;
  const start=performance.now(),[tl,tr,br,bl]=quad;
@@ -4284,17 +4284,17 @@ function apexSponsorWallLogo(item,ad,pitch,backend){
  const api=window.ApexTrackSponsors,key=api&&(ad&&(ad.logo||api.colorKey(ad.bg)));
  if(!key||item.advertising===false||item.barrier?.kind==='TYRE')return false;
  const raw=item.sponsorPoly3;if(!raw||raw.length!==4)return false;
- if(key==='team-equipalia'&&item.sponsorSource&&Number.isFinite(item.sponsorSource.sponsorPatternFromM))
-  return apexSponsorEquipaliaWall(item,pitch,backend);
+ if((key==='team-equipalia'||key==='sct')&&item.sponsorSource&&Number.isFinite(item.sponsorSource.sponsorPatternFromM))
+  return apexSponsorContinuousWall(item,pitch,backend,key);
  let station;
  if(item.sponsorSource)station=apexSponsorExactAnchor(item.sponsorSource,key);
  else{
   const L=trackData.km*1000,a=item.sponsorS0,b=a+wrapDeltaS(a,item.sponsorS1,L);
-  const step=key==='team-equipalia'?8:24,offset=step/2;
+  const step=(key==='team-equipalia'||key==='sct')?8:24,offset=step/2;
   station=offset+step*Math.ceil((a-offset)/step);if(!(station>=a&&station<b))station=null;
  }
  if(station===null||station===undefined)return false;
- return apexSponsorDraw(raw,key,pitch,backend,'wall:'+item.side+':'+station,key==='team-equipalia'?.88:.68);
+ return apexSponsorDraw(raw,key,pitch,backend,'wall:'+item.side+':'+station,(key==='team-equipalia'||key==='sct')?.88:.68);
 }
 function apexSponsorDraw(raw,key,pitch,backend,id,heightFraction=.80){
  const api=window.ApexTrackSponsors,logo=api&&api.data[key],mobile=mobilePerformanceMode();
@@ -4336,7 +4336,7 @@ function apexSponsorDraw(raw,key,pitch,backend,id,heightFraction=.80){
 
 const APEX_AD_BRANDS=[
  {brand:'TEAM EQUIPALIA',bg:'#00673e',fg:'#ffffff',logo:'team-equipalia'},
- {brand:'SCT TELECOM',bg:'#175da5',fg:'#ffffff',logo:'sct'},
+ {brand:'SCT TELECOM',bg:'#07539b',fg:'#ffffff',logo:'sct'},
  {brand:'MDTEL',bg:'#f4f6f8',fg:'#050505',logo:'mdtel'}
 ];
 function circuitAdvertisingStyle(s,env,side){

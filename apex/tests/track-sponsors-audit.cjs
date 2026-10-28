@@ -3,7 +3,7 @@ const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/st
 const root=path.resolve(__dirname,'..'),context={window:{}};vm.createContext(context);
 for(const file of ['track-sponsor-vectors.js','track-sponsors.js'])vm.runInContext(fs.readFileSync(path.join(root,'js',file),'utf8'),context);
 const api=context.window.ApexTrackSponsors;
-assert.equal(Object.keys(api.data).length,3);
+assert.equal(Object.keys(api.data).length,4);
 for(const [key,logo] of Object.entries(api.data)){
  const svg=fs.readFileSync(path.join(root,'assets/sponsors',key+'.svg'),'utf8');
  assert.ok(svg.includes('<path '));assert.ok(!/<(?:image|text|rect|filter)\b/.test(svg),'Contours only, transparent exterior: '+key);
@@ -12,7 +12,17 @@ for(const [key,logo] of Object.entries(api.data)){
  for(const layer of logo.layers){assert.equal(layer.triangles.length%6,0);assert.ok(Array.from(layer.triangles).every(Number.isFinite));}
 }
 assert.equal(api.colorKey('#53aa66'),'team-equipalia');assert.equal(api.colorKey('#00673e'),'team-equipalia');
-assert.equal(api.spacingM,24);assert.equal(api.equipaliaSpacingM,8);
+assert.equal(api.spacingM,24);assert.equal(api.equipaliaSpacingM,8);assert.equal(api.sctSpacingM,8);
+assert.equal(api.stats.compiled,4);
+const sctWallSvg=fs.readFileSync(path.join(root,'assets/sponsors/sct-wall.svg'),'utf8');
+const sct24=fs.readFileSync(path.join(root,'assets/sponsors/sct-wall-24m.svg'),'utf8');
+assert.ok(sctWallSvg.includes('SCT Telecom'));
+assert.ok(!/<image\\b|<text\\b|<foreignObject\\b/i.test(sctWallSvg),'SCT wall has vector contours only');
+assert.ok(!/<image\\b|<text\\b|<foreignObject\\b/i.test(sct24),'SCT 24m source has no raster content');
+assert.equal((sct24.match(/<use href="#sct-eight-metres"/g)||[]).length,3,'24m contains exactly 3 x 8m SVG modules');
+assert.equal(api.data['sct-wall'].aspect,6);
+for(const color of ['#ffffff','#25a9d5','#00a2d6','#116faf','#eafaff'])
+ assert.ok(sctWallSvg.includes(color),'SCT vector identity and racing stripes: '+color);
 // Full-height vector wallpaper: the tile is clipped to each real wall piece,
 // and the same continuous geometry must meet at panel edges on both faces.
 function checkWallTile(layers){
@@ -49,6 +59,21 @@ assert.deepEqual([...seamVertices(revA,0)].sort((a,b)=>a-b),
  [...seamVertices(revB,1)].sort((a,b)=>a-b),
  'Opposite camera direction preserves pattern continuity');
 assert.equal(api.wallTileLayers(wallA,0,7.3,false),tileA,'No frame-time re-triangulation');
+const sctA=api.wallTileLayers(wallA,0,7.3,false,'sct-wall'),
+      sctB=api.wallTileLayers(wallB,7.3,14.6,false,'sct-wall');
+assert.ok(sctA.accents.length>0&&sctA.wordmark.length>0,'Blue SCT pattern includes logo and racing decor');
+checkWallTile(sctA);checkWallTile(sctB);
+assert.ok(sctA.accents.some(l=>l.triangles.some((v,i)=>i%2&&Math.abs(v)<1e-4)), 'SCT diagonals reach wall top');
+assert.ok(sctA.accents.some(l=>l.triangles.some((v,i)=>i%2&&Math.abs(v-1)<1e-4)), 'SCT diagonals reach wall bottom');
+assert.deepEqual([...seamVertices(sctA,1)].sort((a,b)=>a-b),
+ [...seamVertices(sctB,0)].sort((a,b)=>a-b),'SCT 8m art continues across adjacent wall pieces');
+const sctRevA=api.wallTileLayers(wallA,0,7.3,true,'sct-wall'),
+      sctRevB=api.wallTileLayers(wallB,7.3,14.6,true,'sct-wall');
+checkWallTile(sctRevA);checkWallTile(sctRevB);
+assert.deepEqual([...seamVertices(sctRevA,0)].sort((a,b)=>a-b),
+ [...seamVertices(sctRevB,1)].sort((a,b)=>a-b),'SCT seam continuous from opposite camera direction');
+assert.equal(api.wallTileLayers(wallA,0,7.3,false,'sct-wall'),sctA,'SCT clipped triangles cached');
+assert.notEqual(sctA,tileA,'Brand-specific cache keeps Equipalia and SCT separate');
 
 const equipaliaSource=fs.readFileSync(path.join(root,'assets/sponsors/team-equipalia.svg'),'utf8');
 const wall24=fs.readFileSync(path.join(root,'assets/sponsors/team-equipalia-wall-24m.svg'),'utf8');
@@ -58,7 +83,7 @@ for(const color of ['#ffffff','#64d25d','#ed3145','#2898e7','#f7faf9'])
 assert.ok(equipaliaSource.includes('translate(18 0)'),'Identidad vectorial reutilizada');
 assert.equal((wall24.match(/<use href="#equipalia-8m"/g)||[]).length,3,'Tres módulos en la valla de 24 m');
 assert.ok(!/<image\b|<text\b|<foreignObject\b/i.test(wall24),'Vista frontal 24 m 100 % vectorial');assert.equal(api.colorKey('#17633a'),'team-equipalia');
-assert.equal(api.colorKey('#175da5'),'sct');assert.equal(api.colorKey('#fff'),'mdtel');
+assert.equal(api.colorKey('#175da5'),'sct');assert.equal(api.colorKey('#07539b'),'sct');assert.equal(api.colorKey('#fff'),'mdtel');
 for(const c of ['#ff0000','#f3cf2f','#111111','invalid'])assert.equal(api.colorKey(c),null);
 for(const mobile of [false,true]){
  api.beginFrame(mobile?2:1);
@@ -96,4 +121,4 @@ ctx.trackData.customWorld._wallRenderSegments=[];assert.equal(ctx.apexSponsorExa
 // Compile all production inline scripts; part files intentionally split tokens.
 const html=Array.from({length:28},(_,i)=>fs.readFileSync(path.join(root,'parts',`part-${String(i).padStart(3,'0')}.txt`),'utf8')).join('');
 for(const match of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi))new vm.Script(match[1]);
-console.log(JSON.stringify({test:'track-sponsor-vectors',logos:3,spacingM:api.spacingM,mobileTriangleBudget:2600,desktopTriangleBudget:5200,ok:true}));
+console.log(JSON.stringify({test:'track-sponsor-vectors',logos:4,spacingM:api.spacingM,mobileTriangleBudget:2600,desktopTriangleBudget:5200,ok:true}));

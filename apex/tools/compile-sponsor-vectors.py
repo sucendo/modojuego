@@ -8,7 +8,7 @@ from shapely import constrained_delaunay_triangles
 from shapely.geometry import Polygon
 root=Path(__file__).resolve().parents[1]
 out={}
-for name in ('team-equipalia','sct','mdtel'):
+for name in ('team-equipalia','sct','mdtel','sct-wall'):
  tree=ET.parse(root/'assets/sponsors'/f'{name}.svg').getroot()
  w,h=map(float,(tree.get('width'),tree.get('height')));groups={}
  def walk(el,tx=0,ty=0):
