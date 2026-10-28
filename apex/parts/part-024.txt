@@ -4266,7 +4266,9 @@ function apexSponsorExactAnchor(source,brandKey){
 // with diagonals from the ground to the top of the barrier. Each panel gets
 // only its section of the original triangle mesh (cached at track setup).
 function apexSponsorContinuousWall(item,pitch,backend,key){
- const api=window.ApexTrackSponsors,source=item.sponsorSource||item.sponsorTileSource,
+ const api=window.ApexTrackSponsors;
+ if(!api||!api.enabled||(key==='mdtel-white-24m'&&!api.featureEnabled))return false;
+ const source=item.sponsorSource||item.sponsorTileSource,
        raw=item.sponsorPoly3,mobile=mobilePerformanceMode();
  if(!api||!source||!raw||raw.length!==4)return false;
  const exact=Number.isFinite(source.sponsorPatternFromM)&&Number.isFinite(source.sponsorPatternToM),
@@ -4464,6 +4466,7 @@ function apexSponsorWallLogo(item,ad,pitch,backend){
  * These panels are visual only: pit, walls, tunnel apertures and collisions
  * remain governed by their existing physical/SVG geometry. */
 function apexFeatureTrackBanner(s,span,bottom,top,cam,pitch,backend,id){
+ if(window.ApexTrackSponsors?.featureEnabled===false)return false;
  if(!trackData||!Number.isFinite(s)||!Number.isFinite(span)||span<5)return false;
  const q=renderRibbonFrameAt(s),hw=span*.5;
  const wp=(side,y)=>{const p=ribbonWorldPoint(q,hw,side,y);return worldToCamera(p.x,p.y,p.z,cam)};
@@ -4471,6 +4474,7 @@ function apexFeatureTrackBanner(s,span,bottom,top,cam,pitch,backend,id){
  return apexSponsorDraw(panel,'apex26-start-finish',pitch,backend,id,1,true);
 }
 function apexFeatureBridgeBanner(it,cam,pitch,backend){
+ if(window.ApexTrackSponsors?.featureEnabled===false)return false;
  if(!it||it.pedestrianBridge!==true||!Array.isArray(it.worldPath)||it.worldPath.length<2)return false;
  // Place the artwork on the actual visible side of the pedestrian walkway,
  // keeping the original brand aspect ratio instead of stretching the logo
@@ -4502,6 +4506,7 @@ function apexFeatureBridgeBanner(it,cam,pitch,backend){
    'radiquero-bridge:'+String(it.sourceId||it.anchor?.s),1,true);
 }
 function apexFeatureTunnelBanner(it,cam,pitch,backend){
+ if(window.ApexTrackSponsors?.featureEnabled===false)return false;
  if(!it||it.advertisingBanner!==true||!trackData)return false;
  const zones=trackData.customWorld?.structureZones||[],
        zone=zones.find(z=>z&&z.kind==='UNDER'&&z.sourceId&&z.sourceId===it.sourceId),
