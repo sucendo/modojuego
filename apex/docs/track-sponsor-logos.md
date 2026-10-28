@@ -213,3 +213,53 @@ los patrocinadores anteriores, el patrón de pared blanca, la selección
 explícita de los túneles y las ubicaciones de pórticos y pasarelas para
 ambos renderizadores. Las inspecciones visuales con el circuito cargado deben
 comprobar tamaño, perspectiva, superposiciones y presupuesto en móvil.
+
+
+## Optimización de carteles y comparación A/B (28-10-2026)
+
+**Importante:** los tiempos siguientes son micropruebas aisladas de proyección
+vectorial sobre una cámara simulada, **no FPS del juego** ni mediciones de GPU
+real. La auditoría de código/verificación de geometría es independiente de la
+inspección visual pendiente en un navegador con carrera completa.
+
+- La malla nueva de APEX baja de **1804 a 1098 triángulos** manteniendo el SVG
+  fuente. A distancia, al retirar sólo el texto fino ilegible, usa **562**.
+- La malla de Radiquero baja de **2568 a 2046 triángulos**; a distancia dibuja
+  sólo **1246**, conservando el nombre principal y el emblema. Los textos
+  secundarios reaparecen al acercarse.
+- La biblioteca de mallas de los tres carteles pasa de **282688 a 151332
+  caracteres** (46,5 % menos) porque se fusionan franjas vectoriales
+  colineales y el logotipo original de MDTel se reutiliza.
+- El mural blanco MDTel dibuja **tres logos por 24 m cerca** (1566 triángulos
+  de letras); de lejos sólo el central (522 triángulos de letras: **66,7 %
+  menos**), manteniendo los tres conjuntos de franjas azules.
+- La proyección de los carteles especiales precalcula parámetros de cámara y
+  emite vértices sin calcular tangentes, FOV ni asignar arrays por vértice.
+- El cartel de Radiquero conserva la proporción original de sus letras,
+  añade una fachada burdeos continua y remates marfil y no modifica
+  colisiones ni gálibos de pasarelas.
+
+La microcomparación de 180 llamadas por caso sobre el código anterior y
+el actual dio reducciones de CPU de **64 % y 83 %** en APEX (28 y 65 m), y
+**57 % y 73 %** en Radiquero (28 y 65 m). Esas cifras no deben trasladarse
+al coste del fotograma completo, que también incluye carretera, terreno,
+vehículos, sombras y otros sistemas.
+
+### Medición de FPS en navegador, mismas condiciones
+
+1. `/apex/?perf=1`: render normal (toda la publicidad).
+2. `/apex/?perf=1&featureads=0`: sin **los tres diseños nuevos**,
+   conservando Equipalia/SCT y el resto de la escena.
+3. `/apex/?perf=1&sponsors=0`: sin geometría vectorial de ninguna marca;
+   la pista, paredes y sus colores de base siguen presentes.
+
+Usar siempre el mismo circuito, guardado, condiciones, cámara y presencia de
+rivales. Comparar FPS medios, picos de fotograma y el campo `sponsors` de
+`renderProfilerSnapshot()` (estadísticas del fotograma) o
+`window.ApexTrackSponsors.stats`, con `cpuMs`, `triangles`,
+`featureTriangles` y `featurePanels`. El profiler continuo agrega el coste
+vectorial en `passes.sponsorsMs`. Los flags son reversibles y no alteran
+el SVG, las físicas ni la partida guardada.
+
+Las pruebas offline realizadas **no comprueban una carrera con WebGL real**:
+la mejora de FPS global queda pendiente de medir en escritorio y móvil.
