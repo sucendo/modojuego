@@ -472,7 +472,7 @@ function apexForEachTerrainPlateCell(cam,fn,skipCoarse=null,skipFine=null){
 // ---------- v5.230.62.2 · COMPILADOR ESTÁTICO + CACHE PERSISTENTE ----------
 // El objetivo es pagar el coste de interpretación/teselación ANTES de conducir y
 // reutilizarlo en posteriores aperturas del MISMO SVG/perfil. No cambia la geometría.
-const APEX_CIRCUIT_COMPILE_REV=230684;
+const APEX_CIRCUIT_COMPILE_REV=230685;
 async function apexCompilerYield(){return new Promise(resolve=>setTimeout(resolve,0));}
 function apexHash32String(str){let h=2166136261>>>0;str=String(str||'');for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)>>>0}return ('00000000'+h.toString(16)).slice(-8)}
 function apexCircuitCompileFingerprint(){
@@ -519,7 +519,7 @@ async function apexCompileCircuitStatic(onProgress=null){
  for(let i=0;i<(cw.brakeBoards||[]).length;i++)sectors[sid(apexCompileItemS(cw.brakeBoards[i],L))].brakeBoards.push(i);
  for(let i=0;i<(grade&&grade.tunnels||[]).length;i++){const t=grade.tunnels[i],a=sid(t.s0),b=sid(t.s1);sectors[a].tunnels.push(i);if(b!==a)sectors[b].tunnels.push(i)}
  const skylineLandmarks=[];for(let i=0;i<(cw.landmarks||[]).length;i++)if(apexIsSkylineLandmark(cw.landmarks[i]))skylineLandmarks.push(i);
- trackData.compiledCircuit={revision:APEX_CIRCUIT_COMPILE_REV,sectorM,sectors,gradeIndex:grade,portals,skylineLandmarks};stats.sectors=nSec;stats.skylineLandmarks=skylineLandmarks.length;stats.staticBatches=apexBuildCircuitStaticRenderBatches(cw);trackData.compiledCircuit.staticBatchStats=stats.staticBatches;stats.stages.sectorsMs=Number((performance.now()-t0).toFixed(2));
+ trackData.compiledCircuit={revision:APEX_CIRCUIT_COMPILE_REV,sectorM,sectors,gradeIndex:grade,portals,skylineLandmarks};stats.sectors=nSec;stats.skylineLandmarks=skylineLandmarks.length;stats.staticBatches=apexBuildCircuitStaticRenderBatches(cw);apexAuthoredCurbMesh();trackData.compiledCircuit.staticBatchStats=stats.staticBatches;stats.stages.sectorsMs=Number((performance.now()-t0).toFixed(2));
  await apexCompilerYield();
 
  // Antes de teselar de nuevo, intenta restaurar la malla fina ya compilada para esta huella exacta.
@@ -980,6 +980,7 @@ function drawRoad(camArg=null){
  const items=[
    ...segments.map(seg=>({kind:'road',z:seg.z,data:seg})),
    ...pitItems,
+   ...apexCollectAuthoredCurbs(cam),
    ...wallItems,
    ...boardItems,
    ...collectRivalSprites(cam,pitch).map(v=>({kind:'rival',z:v.z,data:v}))
@@ -987,6 +988,7 @@ function drawRoad(camArg=null){
  for(const it of items){
    if(it.kind==='road')drawRoadSegment(it.data,cam,pitch);
    else if(it.kind==='pitExact')drawExactPitRenderItem(it.data,pitch);
+   else if(it.kind==='svgCurb')apexDrawAuthoredCurb(it.data,cam,pitch,false);
    else if(it.kind==='wall')drawWallRenderItem(it.data,pitch);
    else if(it.kind==='board')drawBrakeBoardSprite(it.data);
    else {const _carT0=performance.now();drawRivalSprite(it.data);_roadCarsMs+=performance.now()-_carT0;}

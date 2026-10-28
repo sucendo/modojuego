@@ -79,13 +79,15 @@ function apexUnifiedSurfaceAtWorld(x,z,opts=null){
  const set=(z0,k,g,sg,dg)=>{zone=z0;kind=k;grip=g;steerGrip=sg;driveGrip=dg;};
  if(driveNetwork==='PIT'&&pit&&pit.dist<=pit.width*.58+.35){
   set('PIT','ASPHALT',.96,.96,.97);
+ }else if(apexAuthoredCurbMesh()&&window.ApexSvgCurbs.contains(apexAuthoredCurbMesh(),x,z)){
+  set('KERB','KERB',.91,.88,.91);
  }else if(abs<=env.half){
   set('TRACK','ASPHALT',1,1,1);
  }else{
   const pitLane=pitLaneAtS(s);
   if(pitLane&&Math.abs(lat-pitLane.centerLat)<=pitLane.width*.56){
    set('PIT','ASPHALT',.96,.96,.97);
-  }else if(abs<=kerb){
+  }else if(abs<=kerb&&!trackData.customWorld?.curbGeometryAuthoritative){
    set('KERB','KERB',.91,.88,.91);
   }else{
    const drivable=apexDrivableAreaContains(x,z);
@@ -499,9 +501,14 @@ function apexSvgLandmarkExact(el,index,ctx){
    if(type==='block'){node.height=node.height||12;node.buildingStyle=node.apexStyle||'building_generic';}else node.height=node.height||.04;
    if(type==='forestZone'){node.variant='fir';node.color=node.color||'#245032';node.forestPoints=apexForestScatter(pts,node.name||node.sourceId,Math.max(10,Math.min(36,Math.round(pts.length*.7))))}
    if(type==='terrainZone')node.color=node.color||'#667a4d';
-   if(type==='surfaceZone'){node.surfaceKind=String(el.getAttribute('data-apex-surface')||sourceRole.replace(/^surface-/,'').replace(/^runoff-/,'')||'ASPHALT').toUpperCase();const cm={ASPHALT:'#676d72',GRAVEL:'#ad9068',SAND:'#bea166',GRASS:'#2e6737'};node.color=node.color||cm[node.surfaceKind]||cm.ASPHALT;}
+   if(type==='surfaceZone'){node.surfaceKind=String(el.getAttribute('data-apex-surface')||sourceRole.replace(/^surface-/,'').replace(/^runoff-/,'')||'ASPHALT').toUpperCase();const cm={ASPHALT:'#676d72',GRAVEL:'#ad9068',SAND:'#bea166',GRASS:'#2e6737'};node.color=node.color||apexSvgSurfaceColor(el)||cm[node.surfaceKind]||cm.ASPHALT;}
    if(type==='water'){node.waterKind=sourceRole==='sea'?'SEA':'LAKE';node.color=node.color||(node.waterKind==='SEA'?'#2b739d':'#347ca5');}
    if(type==='marking'){node.markingKind=sourceRole==='start-line'?'START_LINE':(sourceRole==='finish-line'?'FINISH_LINE':(sourceRole==='urban-stripes'?'URBAN_STRIPES':(sourceRole==='curb-left'?'CURB_LEFT':(sourceRole==='curb-right'?'CURB_RIGHT':'CROSSWALK'))));node.color=node.color||((sourceRole==='curb-left'||sourceRole==='curb-right')?'#d92b36':'#f2f3f4');}
+  if(apexIsCurbAuthoringMark(node)){
+   node.width=wAttr||1.25;node.curbRuns=apexSvgElementWorldRunsExact(ctx,el,1.5);node.worldPath=node.curbRuns[0]||[];
+   const dash=parseFloat(getComputedStyle(el).strokeDasharray),m=apexSvgRelativeMatrix(ctx.root,el),scale=m?Math.hypot(m.a,m.b):1;
+   node.curbStripeM=Number.isFinite(dash)?Math.max(.25,Math.min(12,dash*ctx.scale*scale)):2;
+  }
  }else if(type==='road'||type==='bridge'||type==='tunnel'){
    node.width=Math.max(4,wAttr||10);node.depth=dAttr||node.width;node.height=node.height||(type==='bridge'?1.6:(type==='tunnel'?1:.15));node.worldPath=pts;node.worldPathY=pts.map(p=>apexWorldGroundY(p[0],p[1]));node.worldFootprint=polyFootprintFromWorldPath(pts,node.width);node.roofRiseM=Number.isFinite(parseFloat(el.getAttribute('data-apex-roof-rise-m')))?parseFloat(el.getAttribute('data-apex-roof-rise-m')):null;node.clearance=Math.max(0,parseFloat(el.getAttribute('data-apex-clearance'))||0);
    node.roadKind=sourceRole.startsWith('city-road')?'CITY':(sourceRole==='service-road'?'SERVICE':'ROAD');node.pedestrianBridge=sourceRole==='pedestrian-bridge';
@@ -530,20 +537,46 @@ function apexSvgLandmarkExact(el,index,ctx){
  return node;
 }
 
+function apexAuthoredCurbMesh(){
+ const cw=trackData&&trackData.customWorld,api=window.ApexSvgCurbs;
+ if(!cw?.curbGeometryAuthoritative||!api)return null;
+ if(!trackData._apexAuthoredCurbMesh)trackData._apexAuthoredCurbMesh=api.compile((cw.landmarks||[]).filter(apexIsCurbAuthoringMark),apexSvgSurfaceMarkingY);
+ return trackData._apexAuthoredCurbMesh;
+}
+function apexCollectAuthoredCurbs(cam){
+ const mesh=apexAuthoredCurbMesh();if(!mesh)return [];
+ const out=[],far=mobilePerformanceMode()?180:300;
+ for(const face of mesh.quads){
+  const center=worldToCamera(face.x,face.points[0][1],face.z,cam);
+  if(center.z+face.r<.62||center.z-face.r>far||Math.abs(center.x)>Math.max(2,center.z)*1.8+face.r)continue;
+  out.push({kind:'svgCurb',z:center.z-.03,data:face});
+ }
+ return out;
+}
+function apexDrawAuthoredCurb(face,cam,pitch,webgl=false){
+ const pts=face.points.map(p=>worldToCamera(p[0],p[1],p[2],cam));
+ if(webgl)webglPushCamPoly(pts,pitch,face.color,.62,-.004);
+ else drawCamPoly(pts,pitch,face.color,.62);
+}
+
 function apexImportedCurbZones(landmarks,L){
  const out=[];if(!(L>0))return out;
- for(const it of landmarks||[]){const path=it&&(Array.isArray(it.worldPath)&&it.worldPath.length>=2?it.worldPath:(Array.isArray(it.worldFootprint)&&it.worldFootprint.length>=2?it.worldFootprint:null));if(!it||it.type!=='marking'||!['CURB_LEFT','CURB_RIGHT'].includes(it.markingKind)||!path)continue;
-   let hint=null,unwrapped=[],last=null,acc=0;
-   for(const p of path){const ns=nearestTrackState(p[0],p[1],hint,{radius:120,allowGlobal:true,fallbackDist:90});hint=ns.index;let ss=mod(ns.s,L);if(last!==null){let ds=ss-last;if(ds>L*.5)ds-=L;if(ds<-L*.5)ds+=L;acc+=ds}else acc=ss;unwrapped.push(acc);last=ss;}
-   if(unwrapped.length<2)continue;let a=Math.min(...unwrapped),b=Math.max(...unwrapped);if(b-a<1.2)continue;
+ for(const it of landmarks||[]){
+  if(!apexIsCurbAuthoringMark(it))continue;
+  const runs=it.curbRuns?.length?it.curbRuns:[it.worldPath||it.worldFootprint||[]];
+  for(const path of runs){
+   if(path.length<2)continue;let hint=null,unwrapped=[],last=null,acc=0;
+   for(const p of path){const ns=nearestTrackState(p[0],p[1],hint,{radius:120,allowGlobal:true,fallbackDist:90});hint=ns.index;const ss=mod(ns.s,L);if(last!==null){let ds=ss-last;if(ds>L*.5)ds-=L;if(ds<-L*.5)ds+=L;acc+=ds;}else acc=ss;unwrapped.push(acc);last=ss;}
+   const a=Math.min(...unwrapped),b=Math.max(...unwrapped);if(b-a<1.2)continue;
    out.push({side:it.markingKind==='CURB_LEFT'?'left':'right',startS:mod(a,L),endS:mod(b,L),lengthM:b-a,sourceId:it.sourceId||'',status:'SVG_AUTHORITATIVE'});
+  }
  }
  return out;
 }
 function apexCurbZoneContains(s,z,L){const a=mod(z.startS,L),b=mod(z.endS,L),x=mod(s,L);return a<=b?(x>=a&&x<=b):(x>=a||x<=b)}
 // v0.13.10: los polígonos SVG curb-* son AUTORÍA, no superficies pintadas.
-// El render real del piano lo hacen drawRoadSegment/webglPushRoadSegment,
-// compartiendo banda, rasante y peralte con la pista.
+// Los SVG editados se dibujan como franjas exactas (apexDrawAuthoredCurb).
+// El ribbon automático se conserva sólo para circuitos sin pianos de autoría.
 function apexIsCurbAuthoringMark(it){
  return !!(it&&it.type==='marking'&&
    (it.markingKind==='CURB_LEFT'||it.markingKind==='CURB_RIGHT'||
@@ -557,7 +590,8 @@ window.apexCurbAuthoringAudit=()=>{
   leaked=entries.filter(e=>apexIsCurbAuthoringMark(e.it));
  return{ok:leaked.length===0&&(!marks.length||zones.length>0),
   marks:marks.length,zones:zones.length,renderedAsPolygons:leaked.length,
-  renderer:'shared track ribbon (WebGL2 / Canvas2D)',
+  renderer:cw?.curbGeometryAuthoritative?'exact SVG strips (WebGL2 / Canvas2D)':'shared track ribbon (WebGL2 / Canvas2D)',
+  exactStrips:apexAuthoredCurbMesh()?.quads.length||0,
   originalSvgPreserved:true};
 };
 function apexImportedStructureZones(landmarks,L){
@@ -605,7 +639,7 @@ async function loadTrack(spec){
    // usuario a volver a importar manualmente el mismo archivo.
    if(customSvg.authoritative===true&&typeof customSvg.rawSvg==='string'&&customSvg.rawSvg.trim()){
      const wp=readStoredCustomWorldProfile(spec.dir);
-     if(!wp||wp.profileRevision<23045){try{await importEditableCircuitSvgText(customSvg.rawSvg,spec)}catch(e){console.warn('APEX: no se pudo migrar geometría SVG exacta',e)}}
+     if(!wp||wp.profileRevision<23091){try{await importEditableCircuitSvgText(customSvg.rawSvg,spec)}catch(e){console.warn('APEX: no se pudo migrar geometría SVG exacta',e)}}
    }
    const km=parseFloat(customSvg.km)||fallback.km||5.0,direction=String(customSvg.direction||fallback.direction||"CLOCKWISE").trim(),layoutId=String(customSvg.layoutId||fallback.layout||spec.dir||"custom-track").trim();
    if(Array.isArray(customSvg.points)&&customSvg.points.length>20){
@@ -1236,6 +1270,7 @@ function envProfile(s=(player&&Number.isFinite(player.s)?player.s:0)){
 function finalizeEnvForTrack(s,env){return env;}
 function curbInfo(s){
  const env=envProfile(s),L=trackData&&trackData.km?trackData.km*1000:0,cw=trackData&&trackData.customWorld,zones=cw&&Array.isArray(cw.curbZones)?cw.curbZones:[];
+ if(cw?.curbGeometryAuthoritative)return {left:false,right:false,source:'SVG_EXACT_STRIPS'};
  if(L>0&&zones.length){let left=false,right=false;for(const z of zones){if(!z||!apexCurbZoneContains(s,z,L))continue;if(z.side==='left')left=true;else if(z.side==='right')right=true;}return {left,right,source:'SVG_AUTHORITATIVE'};}
  const k=0.66*curvatureAt(s)+0.34*curvatureAt(s+10),a=Math.abs(k);let left=false,right=false;
  if(a>.0018){if(k>0){right=true;if(a>.0065)left=true;}else{left=true;if(a>.0065)right=true;}}
