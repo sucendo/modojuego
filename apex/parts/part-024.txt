@@ -1618,18 +1618,20 @@ function apexSvgSurfaceMarkingY(it,x,z){
 function apexCompileCrosswalkTriangles(it){
  if(!it||!['CROSSWALK','URBAN_STRIPES'].includes(String(it.markingKind||'')))return null;
  const fp=it.worldFootprint;if(!Array.isArray(fp)||fp.length<3)return null;
- // Las rayas deben atravesar la pista, no seguir su longitud: las franjas
- // se distribuyen sobre la tangente LOCAL de la pista. El contorno SVG sólo
- // delimita el cebreado y puede estar girado arbitrariamente.
+ // El paso de cebra (CROSSWALK) tiene barras longitudinales al tráfico:
+ // se repiten sobre la NORMAL local de la pista, no sobre su tangente.
+ // URBAN_STRIPES mantiene su cebreado transversal anterior.
+ // El polígono SVG sólo limita la zona pintada.
  const center=fp.reduce((v,p)=>({x:v.x+p[0],z:v.z+p[1]}),{x:0,z:0});
  center.x/=fp.length;center.z/=fp.length;
  const ns=nearestTrackState(center.x,center.z,null,{radius:130,allowGlobal:true,fallbackDist:115});
  let ax=0,az=0;
  if(ns&&Number.isFinite(ns.s)&&Number.isFinite(ns.dist)&&ns.dist<Math.max(22,envProfile(ns.s).half+20)){
   const q=renderRibbonFrameAt(ns.s);
-  // El eje de repetición sigue el avance del coche: cada franja blanca
-  // ocupa el eje normal y por tanto cruza la pista perpendicularmente.
-  ax=q.tx;az=q.tz;
+  // La dirección de cada barra es perpendicular a su eje de repetición.
+  // CROSSWALK: barra paralela al coche; URBAN_STRIPES: patrón anterior.
+  if(it.markingKind==='CROSSWALK'){ax=-q.tz;az=q.tx;}
+  else {ax=q.tx;az=q.tz;}
  }else{
   // Cebreados urbanos lejos del circuito conservan la orientación del SVG.
   let longest=0;
