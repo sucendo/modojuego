@@ -34,7 +34,7 @@ try{
   document.write(parts.join(""));
   document.close();
   // Shared SVG meshes load once; no per-frame image decode or GPU textures.
-  for(const src of ['js/track-sponsor-vectors.js?v=sct-planar-24m-v2','js/track-sponsors.js?v=sct-planar-24m-v2']){
+  for(const src of ['js/svg-curbs.js?v=svg-import-v1','js/track-sponsor-vectors.js?v=sct-planar-24m-v2','js/track-sponsors.js?v=sct-planar-24m-v2']){
     const script=document.createElement('script');script.src=src;script.async=false;
     (document.body||document.head).appendChild(script);
   }
