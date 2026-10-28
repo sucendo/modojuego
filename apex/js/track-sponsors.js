@@ -3,6 +3,35 @@
 (function(global){
 'use strict';
 const data=Object.assign({},global.ApexSponsorVectorData||{},global.ApexFeatureSponsorData||{});
+// The official MDTel lettering already has a compact, faithful 522-triangle
+// vector. Reuse it on the full-width white race mural instead of tracing the
+// same glyphs a second time (>1,600 triangles per 8 m tile).
+function apexMdtelWhiteMural(){
+ const legacy=data.mdtel,source=data['mdtel-white-24m'];
+ if(!legacy||!source)return;
+ const w=1800,h=210;
+ const poly=(fill,points)=>{
+  const v=[];
+  for(let k=1;k<points.length-1;k++)for(const p of [points[0],points[k],points[k+1]])v.push(p[0]/w,p[1]/h);
+  return {fill,triangles:v};
+ };
+ const backdrop=[
+  poly('#f8fafc',[[0,0],[w,0],[w,h],[0,h]]),
+  poly('#d4e7fb',[[0,175],[240,0],[315,0],[75,210],[0,210]]),
+  poly('#2a6db3',[[1260,210],[1505,0],[1560,0],[1315,210]]),
+  poly('#75bce5',[[1322,210],[1570,0],[1598,0],[1350,210]]),
+  poly('#d7e5f3',[[1630,210],[1800,45],[1800,115],[1735,210]]),
+  poly('#e4eaf2',[[0,0],[1800,0],[1800,9],[0,9]]),
+  poly('#d6dee9',[[0,195],[1800,195],[1800,210],[0,210]])
+ ];
+ const wordmark=legacy.layers.map(layer=>{
+  const v=layer.triangles,triangles=[];
+  for(let i=0;i<v.length;i+=2)triangles.push(.168+v[i]*.225,.055+v[i+1]*.87);
+  return {fill:layer.fill,fine:layer.fine,triangles};
+ });
+ data['mdtel-white-24m']={aspect:source.aspect,layers:backdrop.concat(wordmark)};
+}
+apexMdtelWhiteMural();
 for(const logo of Object.values(data))for(const layer of logo.layers)layer.triangles=new Float32Array(layer.triangles);
 const styles=Object.freeze([
  Object.freeze({brand:'TEAM EQUIPALIA',bg:'#00673e',fg:'#ffffff',logo:'team-equipalia'}),
