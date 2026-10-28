@@ -38,9 +38,10 @@ const styles=Object.freeze([
  Object.freeze({brand:'SCT TELECOM',bg:'#07539b',fg:'#ffffff',logo:'sct'}),
  Object.freeze({brand:'MDTEL',bg:'#f4f6f8',fg:'#050505',logo:'mdtel'})
 ]);
-const options=new URLSearchParams(global.location&&global.location.search||'');
-const enabled=options.get('sponsors')!=='0';
-const featureEnabled=enabled&&options.get('featureads')!=='0';
+const query=String(global.location&&global.location.search||'');
+const flagDisabled=name=>new RegExp('(?:^|[?&])'+name+'=0(?:&|$)').test(query);
+const enabled=!flagDisabled('sponsors');
+const featureEnabled=enabled&&!flagDisabled('featureads');
 const featureKeys=new Set(['apex26-start-finish','radiquero-pedestrian-bridge','mdtel-white-24m']);
 const colors=new Map();
 function colorKey(color){
