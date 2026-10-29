@@ -2701,8 +2701,10 @@ function autoPhysicalCornerSpeed(s,car=player){
  if(k<.00055)return 99;
  const wet=apexWeatherIsWet(),mu=1.86*apexTyreGripScale(car),M=800,G=9.81;
  const safety=wet?.90:.960;
- // Very tight turns with worn / wrong compound tyres can require <14 m/s.
- let lo=3.5,hi=99;
+ // The low-speed grip limit belongs to the player's AUT controller.
+ // Keep the previously tuned rival speed floor/handling unchanged.
+ const autPlayer=car===player&&(demoMode||assistMode);
+ let lo=autPlayer?3.5:12,hi=99;
  for(let i=0;i<12;i++){
    const v=(lo+hi)*.5;
    const down=Math.min(38000,2.72*v*v);
@@ -2712,7 +2714,7 @@ function autoPhysicalCornerSpeed(s,car=player){
    const safe=(v*v*k<=latAccel)&&(needSteer<=maxSteer*.96);
    if(safe)lo=v;else hi=v;
  }
- return clamp(lo,3.5,99);
+ return clamp(lo,autPlayer?3.5:14,99);
 }
 function autoEnsureRiskMemory(){
  if(!player||!trackData)return null;
