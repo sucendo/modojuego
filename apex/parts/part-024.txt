@@ -4374,6 +4374,16 @@ function apexSctWallDescriptor(item){
 }
 // Reserve an entire visible 24m block, including all its wall fragments.
 // A budget may omit a distant block, but never half a letter at a joint.
+// Art on a distant physical 24m block is too small to resolve in full.
+// Preserve its base and diagonals at all distances, then reveal the
+// large / medium / small lettering only when it has enough pixels.
+function apexSctMuralPartLod(part){
+ if(typeof part!=='string')return 0;
+ if(part.startsWith('large-'))return 1;
+ if(part.startsWith('medium-'))return 2;
+ if(part.startsWith('small-'))return 3;
+ return 0;
+}
 function apexPlanSctWallMurals(items,pitch,backend){
  const api=window.ApexTrackSponsors;if(!api)return;
  api.beginFrame(renderFrameId);const mobile=mobilePerformanceMode(),blocks=new Map();let otherBrands=false;
@@ -4399,17 +4409,29 @@ function apexPlanSctWallMurals(items,pitch,backend){
   for(const slice of slices){
    const id='sct-mural:'+desc.run+':'+slice.tile;
    let block=blocks.get(id);
-   if(!block){block={id,triangles:0,near:Infinity,height:0,accepted:false};blocks.set(id,block);}
-   block.triangles+=slice.triangles*(plan.nearClip?2:1);
+   if(!block){block={id,triangles:0,baseTriangles:0,near:Infinity,height:0,lod:0,fragments:[],accepted:false};blocks.set(id,block);}
+   block.fragments.push({slice,nearClip:plan.nearClip});
    block.near=Math.min(block.near,...raw.map(p=>Math.max(.62,p.z)));block.height=Math.max(block.height,height);
    plan.pieces.push({slice,block});
   }
  }
  // Keep room for existing Equipalia/MDTel labels instead of allowing SCT
  // to consume their complete shared budget before the wall drawing pass.
+ const sorted=[...blocks.values()].sort((a,b)=>a.near-b.near||a.id.localeCompare(b.id));
+ // All visible block backdrops keep their stripes, even when logo detail
+ // exceeds the per-frame budget. No complete 24m wall gaps or flashing.
+ for(const block of sorted){
+  block.lod=block.height>=24?3:block.height>=14?2:block.height>=7?1:0;
+  for(const {slice,nearClip} of block.fragments)for(const layer of slice.layers){
+   const tris=layer.triangles.length/6*(nearClip?2:1);
+   if(apexSctMuralPartLod(layer.part)===0)block.baseTriangles+=tris;
+   else if(apexSctMuralPartLod(layer.part)<=block.lod)block.triangles+=tris;
+  }
+  api.claimMuralBackdrop(block.baseTriangles);
+ }
  const reserve=otherBrands?Math.max(0,(mobile?400:800)-api.stats.triangles):0;
- for(const block of [...blocks.values()].sort((a,b)=>a.near-b.near||a.id.localeCompare(b.id)))
-  if(block.height>=7)block.accepted=api.claimMural(block.id,block.triangles,mobile,reserve);
+ for(const block of sorted)
+  if(block.triangles>0)block.accepted=api.claimMural(block.id,block.triangles,mobile,reserve);
 }
 function apexDrawSctWallMural(item,pitch,backend){
  const plan=item.sctMuralPlan;if(!plan)return false;
@@ -4421,8 +4443,10 @@ function apexDrawSctWallMural(item,pitch,backend){
  let drawn=false;
  if(backend==='canvas2d')ctx.save();
  for(const {slice,block} of plan.pieces){
-  if(!block.accepted)continue;drawn=true;
   for(const layer of slice.layers){
+   if(apexSctMuralPartLod(layer.part)>(block.accepted?block.lod:0))continue;
+   drawn=true;
+   const depthBias=layer.part==='continuous-background'?.035:.06;
    const col=backend==='webgl2'?webglCssColor(layer.fill):null,vertices=layer.triangles;
    if(backend==='canvas2d'){ctx.fillStyle=layer.fill;ctx.beginPath();}
    if(!plan.nearClip){
@@ -4431,14 +4455,14 @@ function apexDrawSctWallMural(item,pitch,backend){
     for(let i=0;i<vertices.length;i+=2){
      const u=vertices[i],v=vertices[i+1],uv=u*v,z=t0.z+uz*u+vz*v+wz*uv,
       x=halfW+f*(t0.x+ux*u+vx*v+wx*uv)/z,y=horizon+f*(eye-t0.y-uy*u-vy*v-wy*uv)/z;
-     if(backend==='webgl2')webglVertexPx(x,y,col,z-.06);
+     if(backend==='webgl2')webglVertexPx(x,y,col,z-depthBias);
      else{if(i%6===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);if(i%6===4)ctx.closePath();}
     }
    }else for(let i=0;i<vertices.length;i+=6){
     const poly=clipPolyNear([point(vertices[i],vertices[i+1]),point(vertices[i+2],vertices[i+3]),point(vertices[i+4],vertices[i+5])],.62);
     if(poly.length<3)continue;const pp=poly.map(p=>({x:halfW+f*p.x/p.z,y:horizon+f*(eye-p.y)/p.z}));
     if(backend==='webgl2'){
-     for(let k=1;k<poly.length-1;k++)for(const j of [0,k,k+1])webglVertexPx(pp[j].x,pp[j].y,col,poly[j].z-.06);
+     for(let k=1;k<poly.length-1;k++)for(const j of [0,k,k+1])webglVertexPx(pp[j].x,pp[j].y,col,poly[j].z-depthBias);
     }else{ctx.moveTo(pp[0].x,pp[0].y);for(let k=1;k<pp.length;k++)ctx.lineTo(pp[k].x,pp[k].y);ctx.closePath();}
    }
    if(backend==='canvas2d')ctx.fill();
