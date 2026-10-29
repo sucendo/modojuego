@@ -540,7 +540,13 @@ function apexSvgLandmarkExact(el,index,ctx){
 function apexAuthoredCurbMesh(){
  const cw=trackData&&trackData.customWorld,api=window.ApexSvgCurbs;
  if(!cw?.curbGeometryAuthoritative||!api)return null;
- if(!trackData._apexAuthoredCurbMesh)trackData._apexAuthoredCurbMesh=api.compile((cw.landmarks||[]).filter(apexIsCurbAuthoringMark),apexSvgSurfaceMarkingY);
+ if(!trackData._apexAuthoredCurbMesh){
+  // The JSON palette also applies to SVG-authored strips, not just the
+  // procedural road ribbon. Both renderers consume the same compiled colors.
+  const colors=circuitCurbPair(0);
+  trackData._apexAuthoredCurbMesh=api.compile(
+   (cw.landmarks||[]).filter(apexIsCurbAuthoringMark),apexSvgSurfaceMarkingY,colors);
+ }
  return trackData._apexAuthoredCurbMesh;
 }
 function apexCollectAuthoredCurbs(cam){
