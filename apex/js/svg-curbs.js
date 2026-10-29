@@ -1,7 +1,11 @@
 /* Authored SVG kerbs: compile once, spatial queries and shared world quads. */
 (function(global){
 'use strict';
-function compile(marks,height){
+function compile(marks,height,colors){
+ // The circuit JSON is authoritative for painted curb stripes. Keep defaults
+ // only for legacy circuits whose JSON has no explicit visual.curbs.colors.
+ const palette=Array.isArray(colors)&&colors.length>=2&&colors.slice(0,2).every(c=>typeof c==='string'&&/^#[0-9a-f]{6}$/i.test(c))
+  ?colors:['#d92b36','#f4f5f6'];
  const quads=[],segments=[],cells=new Map(),cellSize=32;
  for(const mark of marks){
   const width=Math.min(8,Math.max(.15,Number(mark.width)||1.25)),stripe=Math.min(12,Math.max(.25,Number(mark.curbStripeM)||2));
@@ -19,7 +23,7 @@ function compile(marks,height){
      const end=Math.min(length,(Math.floor((distance+at+1e-7)/stripe)+1)*stripe-distance),lo=at/length,hi=end/length;
      const x0=a[0]+dx*lo,z0=a[1]+dz*lo,x1=a[0]+dx*hi,z1=a[1]+dz*hi;
      const points=[[x0+nx,z0+nz],[x1+nx,z1+nz],[x1-nx,z1-nz],[x0-nx,z0-nz]].map(p=>[p[0],height(mark,p[0],p[1])+.018,p[1]]);
-     quads.push({points,color:Math.floor((distance+at+1e-7)/stripe)%2?'#f4f5f6':'#d92b36',x:(x0+x1)/2,z:(z0+z1)/2,r:Math.hypot(x1-x0,z1-z0)/2+width,sourceId:mark.sourceId});
+     quads.push({points,color:palette[Math.floor((distance+at+1e-7)/stripe)%2],x:(x0+x1)/2,z:(z0+z1)/2,r:Math.hypot(x1-x0,z1-z0)/2+width,sourceId:mark.sourceId});
      at=end;
     }
     distance+=length;
