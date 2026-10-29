@@ -812,8 +812,9 @@ function webglSubmit(){
   bindDynamic();gl.drawArrays(gl.TRIANGLES,cursor/7,(webglFloatCount-cursor)/7);
   dynamicDrawCalls++;
  }
- webglState.triangles=Math.floor(webglFloatCount/21)+staticTriangles;
- webglState.drawCalls=dynamicDrawCalls+staticDrawCalls;
+ const sponsorDrawCalls=apexSponsorTextureSubmitGl();
+ webglState.triangles=Math.floor(webglFloatCount/21)+staticTriangles+apexSponsorTextureGpu.triangles;
+ webglState.drawCalls=dynamicDrawCalls+staticDrawCalls+sponsorDrawCalls;
  telemetryPerf.webglTriangles=webglState.triangles;
  renderProfileAdd('webglSubmitMs',performance.now()-t0);
  return true;
@@ -822,7 +823,7 @@ function webgl2RenderFrame(){
  renderFrameId++;renderProfileReset();
  if(!webglInit()){setRendererBackend("canvas2d",{notify:false,persist:false});return canvas2dRenderFrame()}
  apexSyncGpuScene();
- webglClearCanvasOverlay();webglFloatCount=0;webglScreenRoll=0;
+ webglClearCanvasOverlay();webglFloatCount=0;webglScreenRoll=0;apexSponsorTextureBeginFrame();
  // Ninguna pasada GPU anterior debe quedar pendiente al cambiar de
  // pantalla, renderer o circuito: seguridad ante abortos de frame.
  if(typeof apexPhase5TerrainGPU!=='undefined')apexPhase5TerrainGPU.pending=null;
