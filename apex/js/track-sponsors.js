@@ -56,8 +56,8 @@ function colorKey(color){
  if(colors.size<64)colors.set(key,result);return result;
 }
 let frame=-1;const seen=new Set();
-const stats={frames:0,logos:0,triangles:0,accentTriangles:0,muralBlocks:0,sctTriangles:0,culled:0,cpuMs:0,maxLogos:0,maxTriangles:0,featureTriangles:0,featurePanels:0,legacyTriangles:0,compiled:Object.keys(data).length};
-function beginFrame(id){if(id===frame)return;frame=id;seen.clear();stats.frames++;stats.logos=0;stats.triangles=0;stats.accentTriangles=0;stats.featureTriangles=0;stats.featurePanels=0;stats.legacyTriangles=0;stats.muralBlocks=0;stats.sctTriangles=0;stats.culled=0;stats.cpuMs=0;}
+const stats={frames:0,logos:0,triangles:0,accentTriangles:0,muralBlocks:0,sctTriangles:0,sctBaseTriangles:0,culled:0,cpuMs:0,maxLogos:0,maxTriangles:0,featureTriangles:0,featurePanels:0,legacyTriangles:0,compiled:Object.keys(data).length};
+function beginFrame(id){if(id===frame)return;frame=id;seen.clear();stats.frames++;stats.logos=0;stats.triangles=0;stats.accentTriangles=0;stats.featureTriangles=0;stats.featurePanels=0;stats.legacyTriangles=0;stats.muralBlocks=0;stats.sctTriangles=0;stats.sctBaseTriangles=0;stats.culled=0;stats.cpuMs=0;}
 function claim(id,key,height,mobile){
  const logo=data[key];if(!enabled||(featureKeys.has(key)&&!featureEnabled)||!logo||height<7||seen.has(id)){stats.culled++;return null;}
  const fine=featureKeys.has(key)?height>=(mobile?92:82):height>=100&&!mobile,layers=logo.layers.filter(l=>!l.fine||fine),triangles=layers.reduce((sum,l)=>sum+l.triangles.length/6,0);
@@ -109,7 +109,15 @@ function sctMuralSlices(source,fromM,toM,reverse=false){
   let triangles=0;
   for(const layer of master.layers){
    const vertices=[],src=layer.triangles;
-   for(let i=0;i<src.length;i+=6){
+   // The 457 coplanar blue triangles only cut holes for the colored artwork.
+   // Draw that blue ground as TWO triangles, slightly behind the decorations.
+   // The source master/SVG stays unchanged for geometry and design audits.
+   if(layer.part==='continuous-background'){
+    const u0=Math.max(0,Math.min(1,(tile*24+low*24-from)/span));
+    const u1=Math.max(0,Math.min(1,(tile*24+high*24-from)/span));
+    const a=reverse?1-u0:u0,b=reverse?1-u1:u1;
+    vertices.push(a,0,b,0,b,1,a,0,b,1,a,1);
+   }else for(let i=0;i<src.length;i+=6){
     let polygon=[[src[i],src[i+1]],[src[i+2],src[i+3]],[src[i+4],src[i+5]]];
     polygon=wallClipEdge(polygon,low,true);if(polygon.length<3)continue;
     polygon=wallClipEdge(polygon,high,false);if(polygon.length<3)continue;
@@ -124,6 +132,16 @@ function sctMuralSlices(source,fromM,toM,reverse=false){
  }
  if(cache.size>=2048)cache.delete(cache.keys().next().value);
  cache.set(stamp,out);return out;
+}
+// Base-colored murals and diagonal accents never vanish because another
+// sponsor exhausted the logo budget. This small, bounded cost is still
+// included in the frame's real triangle counters.
+function claimMuralBackdrop(triangles){
+ if(!enabled||!Number.isFinite(triangles)||triangles<=0)return false;
+ stats.triangles+=triangles;stats.sctTriangles+=triangles;
+ stats.sctBaseTriangles+=triangles;stats.accentTriangles+=triangles;stats.legacyTriangles+=triangles;
+ stats.maxTriangles=Math.max(stats.maxTriangles,stats.triangles);
+ return true;
 }
 function claimMural(id,triangles,mobile,reserve=0){
  if(stats.triangles+triangles>(mobile?2600:5200)-reserve){stats.culled++;return false;}
@@ -185,5 +203,5 @@ function claimWallAccents(triangles,mobile,brand){
  return true;
 }
 global.ApexTrackSponsors=Object.freeze({enabled,featureEnabled,styles,data,colorKey,beginFrame,claim,stats,spacingM:24,equipaliaSpacingM:8,sctSpacingM:24,wallPatternMetres,
- wallTileLayers,claimWallAccents,claimWallText,wallLayerDepthBias,sctMuralSlices,claimMural});
+ wallTileLayers,claimWallAccents,claimWallText,wallLayerDepthBias,sctMuralSlices,claimMural,claimMuralBackdrop});
 })(window);
