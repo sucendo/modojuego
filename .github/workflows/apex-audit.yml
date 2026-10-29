@@ -50,6 +50,7 @@ jobs:
           node apex/tests/driving-audit.cjs --json > /tmp/apex-results/driving.json
           node apex/tests/terrain-selection-audit.cjs > /tmp/apex-results/terrain-selection.json
           node apex/tests/auto-boundary-audit.cjs > /tmp/apex-results/auto-boundary.txt
+          node apex/tests/autopilot-grip-audit.cjs > /tmp/apex-results/autopilot-grip.json
           python3 apex/tests/circuit-assets-audit.py --json > /tmp/apex-results/assets.json
           node --check apex/js/preparation-9a.js
           node apex/tests/climate-9a-audit.cjs
