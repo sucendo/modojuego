@@ -34,6 +34,7 @@ jobs:
           node apex/tests/render-audit.cjs > /tmp/apex-results/render.txt
           node apex/tests/track-sponsors-audit.cjs > /tmp/apex-results/sponsor-master.json
           node apex/tests/feature-sponsor-audit.cjs > /tmp/apex-results/sponsor-feature.json
+          node apex/tests/madrid-saved-svg.cjs > /tmp/apex-results/madrid-saved-svg.json
           node apex/tests/sponsor-render-stability.cjs > /tmp/apex-results/sponsor-stability.json
           node apex/tests/urban-distance-boards.cjs > /tmp/apex-results/distance-boards.json
           python3 apex/tests/pit-geometry-audit.py > /tmp/apex-results/pit-geometry.json
@@ -98,6 +99,7 @@ jobs:
             if curl --fail --silent http://127.0.0.1:8765/apex/apex.html > /dev/null; then break; fi
             sleep 1
           done
+          node apex/tests/madrid-saved-svg-browser.cjs 2>&1 | tee /tmp/apex-results/madrid-saved-svg-browser.jsonl
           node apex/tests/sponsor-textures-browser.cjs 2>&1 | tee /tmp/apex-results/sponsor-textures-browser.jsonl
           APEX_AUDIT_CITY_ONLY=1 node apex/tests/urban-distance-boards-browser.cjs 2>&1 | tee /tmp/apex-results/urban-distance-boards-browser.jsonl
           node apex/tests/preparation-9a-browser.cjs 2>&1 | tee /tmp/apex-results/preparation-9a.jsonl

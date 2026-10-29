@@ -6,14 +6,15 @@
     "14-spain": {
       "name": "Madrid",
       "displayName": "MADRING",
-      "svg": "svg/apex26_14-madrid-spain_2026-10-28.svg",
+      "svg": "svg/apex26_14-madrid-spain_2026-10-29.svg",
       "json": null,
       "status": "edited",
       "basePreserved": true,
       "previousSvg": "svg/apex26_14-madrid-spain.svg",
-      "sourceFileName": "apex26_14-spain_circuito_completo (14).svg",
-      "editionDate": "2026-10-28",
-      "notes": "La opción Cargar versión guardada importa esta edición del usuario. Se conservan pianos y zonas de superficie dibujados en el SVG, y RESTAURAR BASE permite revertirla."
+      "sourceFileName": "apex26_14-spain_circuito_completo (15).svg",
+      "editionDate": "2026-10-29",
+      "notes": "La opción Cargar versión guardada importa íntegramente la edición (15) aportada por el usuario, incluidos pianos, escapatorias y otros objetos del SVG. La edición (14) y la BASE interna continúan disponibles por separado; RESTAURAR BASE no se modifica.",
+      "previousEditionSvg": "svg/apex26_14-madrid-spain_2026-10-28.svg"
     }
   }
 }
