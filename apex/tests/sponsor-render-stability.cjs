@@ -76,7 +76,7 @@ ctx.apexDrawSctWallMural({sctMuralPlan:{raw:quad,from:0,to:24,reverse:true}},0,'
 assert.equal(drawn[3].key,'sct-wall');assert.equal(drawn[3].u1,1);
 
 assert.equal(ctx.apexSponsorContinuousWall({side:1,sponsorSource:{sponsorPatternFromM:0,sponsorPatternToM:8,sponsorMuralReverse:false},sponsorPoly3:quad},0,'webgl2','team-equipalia'),true);
-assert.deepEqual([drawn[4].u0,drawn[4].u1],[0,-1],'Right-hand wall must face the asphalt, not mirror the logo');
+assert.deepEqual([drawn[4].u0||0,drawn[4].u1],[0,-1],'Right-hand wall must face the asphalt, not mirror the logo');
 assert.equal(ctx.apexSponsorContinuousWall({side:1,sponsorSource:{sponsorPatternFromM:8,sponsorPatternToM:16,sponsorMuralReverse:false},sponsorPoly3:quad},0,'webgl2','team-equipalia'),true);
 assert.deepEqual([drawn[5].u0,drawn[5].u1],[-1,-2],'Flipped texture must be seamless on adjacent segments');
 assert.equal(ctx.apexSponsorContinuousWall({side:1,sponsorS0:0,sponsorS1:8,sponsorPoly3:quad},0,'webgl2','mdtel-white-24m'),true);
@@ -90,7 +90,7 @@ assert.equal(drawn[8].u1,drawn[9].u0,'SCT seam must not jump when reversed');
 ctx.apexSponsorDraw(quad,'mdtel',0,'webgl2','right-wall',1,true,true);
 assert.deepEqual([drawn[10].u0,drawn[10].u1],[1,0],'Individual wall logo faces asphalt');
 ctx.apexSponsorDraw([{x:12,y:0,z:12},{x:12,y:2,z:12},{x:-12,y:2,z:12},{x:-12,y:0,z:12}], 'mdtel',0,'webgl2','gantry',1,true,false);
-assert.deepEqual([drawn[11].u0,drawn[11].u1],[0,1],'Gantry orientation is fixed, not inferred from camera X');
+assert.deepEqual([drawn[11].u0||0,drawn[11].u1],[0,1],'Gantry orientation is fixed, not inferred from camera X');
 assert.ok(!panelTexture.includes('quad[0].x>quad[1].x'),'Camera-dependent texture flipping must not return');
 // The bridge must face ONCOMING cars and keep its artwork readable even if
 // the camera moves to the back of the bridge.
