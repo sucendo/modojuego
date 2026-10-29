@@ -4501,7 +4501,7 @@ function apexFeatureBridgeBanner(it,cam,pitch,backend){
         if(u1-u0<.002)return;
         const q=part(u0,u1);
         if(backend==='webgl2')webglPushCamQuad(q[0],q[1],q[2],q[3],pitch,color,.60,-.026);
-        else polyCam(q,color,null,1,1);
+        else drawCamQuadTriangles(q[0],q[1],q[2],q[3],pitch,color,.62);
        };
  // Continuous burgundy fascia extends across the whole footbridge; two slim
  // ivory accents frame the exact-ratio center billboard, matching the original.
