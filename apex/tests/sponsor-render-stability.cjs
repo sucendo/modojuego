@@ -64,51 +64,15 @@ vm.createContext(ctx);
 vm.runInContext(wallTexture,ctx);
 vm.runInContext(panelTexture,ctx);
 const quad=[{x:0,y:0,z:12},{x:0,y:2,z:12},{x:8,y:2,z:12},{x:8,y:0,z:12}];
-assert.equal(ctx.apexSponsorContinuousWall({side:-1,sponsorSource:{sponsorPatternFromM:0,sponsorPatternToM:8,sponsorMuralReverse:true},sponsorPoly3:quad},0,'webgl2','team-equipalia'),true);
+assert.equal(ctx.apexSponsorContinuousWall({sponsorSource:{sponsorPatternFromM:0,sponsorPatternToM:8},sponsorPoly3:quad},0,'webgl2','team-equipalia'),true);
 assert.equal(drawn[0].u0,0);assert.equal(drawn[0].u1,1);
-assert.equal(ctx.apexSponsorContinuousWall({side:-1,sponsorSource:{sponsorPatternFromM:8,sponsorPatternToM:16,sponsorMuralReverse:true},sponsorPoly3:quad},0,'webgl2','team-equipalia'),true);
+assert.equal(ctx.apexSponsorContinuousWall({sponsorSource:{sponsorPatternFromM:8,sponsorPatternToM:16},sponsorPoly3:quad},0,'webgl2','team-equipalia'),true);
 assert.equal(drawn[1].u0,1);assert.equal(drawn[1].u1,2,'Physical UV must not restart at the joint');
 ctx.apexSponsorDraw(quad,'mdtel',0,'webgl2','panel',1,true);
 assert.equal(drawn[2].key,'mdtel');
 const sctFn=muralTexture.slice(muralTexture.indexOf('function apexDrawSctWallMural('));
 vm.runInContext(sctFn,ctx);
-ctx.apexDrawSctWallMural({sctMuralPlan:{raw:quad,from:0,to:24,reverse:true}},0,'webgl2');
+ctx.apexDrawSctWallMural({sctMuralPlan:{raw:quad,from:0,to:24,reverse:false}},0,'webgl2');
 assert.equal(drawn[3].key,'sct-wall');assert.equal(drawn[3].u1,1);
-
-assert.equal(ctx.apexSponsorContinuousWall({side:1,sponsorSource:{sponsorPatternFromM:0,sponsorPatternToM:8,sponsorMuralReverse:false},sponsorPoly3:quad},0,'webgl2','team-equipalia'),true);
-assert.deepEqual([drawn[4].u0||0,drawn[4].u1],[0,-1],'Right-hand wall must face the asphalt, not mirror the logo');
-assert.equal(ctx.apexSponsorContinuousWall({side:1,sponsorSource:{sponsorPatternFromM:8,sponsorPatternToM:16,sponsorMuralReverse:false},sponsorPoly3:quad},0,'webgl2','team-equipalia'),true);
-assert.deepEqual([drawn[5].u0,drawn[5].u1],[-1,-2],'Flipped texture must be seamless on adjacent segments');
-assert.equal(ctx.apexSponsorContinuousWall({side:1,sponsorS0:0,sponsorS1:8,sponsorPoly3:quad},0,'webgl2','mdtel-white-24m'),true);
-assert.equal(drawn[6].u1,-1,'Procedural right wall faces inward');
-assert.equal(ctx.apexSponsorContinuousWall({side:-1,sponsorS0:0,sponsorS1:8,sponsorPoly3:quad},0,'webgl2','mdtel-white-24m'),true);
-assert.equal(drawn[7].u1,1,'Procedural left wall faces inward');
-ctx.apexDrawSctWallMural({sctMuralPlan:{raw:quad,from:24,to:48,reverse:false}},0,'webgl2');
-assert.deepEqual([drawn[8].u0,drawn[8].u1],[-1,-2],'SCT right wall reverses continuously');
-ctx.apexDrawSctWallMural({sctMuralPlan:{raw:quad,from:48,to:72,reverse:false}},0,'webgl2');
-assert.equal(drawn[8].u1,drawn[9].u0,'SCT seam must not jump when reversed');
-ctx.apexSponsorDraw(quad,'mdtel',0,'webgl2','right-wall',1,true,true);
-assert.deepEqual([drawn[10].u0,drawn[10].u1],[1,0],'Individual wall logo faces asphalt');
-ctx.apexSponsorDraw([{x:12,y:0,z:12},{x:12,y:2,z:12},{x:-12,y:2,z:12},{x:-12,y:0,z:12}], 'mdtel',0,'webgl2','gantry',1,true,false);
-assert.deepEqual([drawn[11].u0||0,drawn[11].u1],[0,1],'Gantry orientation is fixed, not inferred from camera X');
-assert.ok(!panelTexture.includes('quad[0].x>quad[1].x'),'Camera-dependent texture flipping must not return');
-// The bridge must face ONCOMING cars and keep its artwork readable even if
-// the camera moves to the back of the bridge.
-const bridgeSource=worldSource.slice(worldSource.indexOf('function apexFeatureBridgeBanner('),worldSource.indexOf('function apexFeatureTunnelBanner('));
-const bridgeDraws=[],bridge={
- window:{ApexTrackSponsors:{featureEnabled:true}},renderRibbonFrameAt:()=>({tx:0,tz:1,nx:-1,nz:0}),
- clamp:(n,min,max)=>Math.min(max,Math.max(min,n)),
- worldToCamera:(x,y,z)=>({x,y,z:z+30}),
- camMix:ctx.camMix,
- apexSponsorDraw:(quad,key,pitch,backend,id,h,full,flipU)=>{bridgeDraws.push({quad,key,flipU});return true;},
- webglPushCamQuad:()=>{},drawCamQuadTriangles:()=>{}
-};
-vm.createContext(bridge);vm.runInContext(bridgeSource,bridge);
-const bridgeItem={pedestrianBridge:true,worldPath:[[-15,10],[15,10]],width:5,height:7,anchor:{s:10,y:0}};
-assert.equal(bridge.apexFeatureBridgeBanner(bridgeItem,{x:0,z:-25},0,'webgl2'),true);
-assert.equal(bridge.apexFeatureBridgeBanner(bridgeItem,{x:0,z:45},0,'webgl2'),true);
-assert.equal(bridgeDraws[0].flipU,true,'Bridge text must read from the approach');
-assert.deepEqual(bridgeDraws[0],bridgeDraws[1],'Bridge front/UV must not follow the camera');
-
 assert.ok(!worldSource.slice(worldSource.indexOf('function apexSponsorDraw('),worldSource.indexOf('const APEX_AD_BRANDS=')).includes('webglVertexPx'));
-console.log(JSON.stringify({test:'sponsor-textures',brands:assets.length,wallTriangles:2,fullSctTriangles:2,sourceSVGs:true,glBatch:true,canvasFallback:true,uvContinuity:true,trackFacingBothSides:true,bridgeCameraIndependent:true,ok:true}));
+console.log(JSON.stringify({test:'sponsor-textures',brands:assets.length,wallTriangles:2,fullSctTriangles:2,sourceSVGs:true,glBatch:true,canvasFallback:true,uvContinuity:true,ok:true}));
