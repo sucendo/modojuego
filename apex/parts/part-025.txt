@@ -1506,7 +1506,10 @@ function apexUrbanBoardMount(board){
   trackData._urbanDistanceBoards=override==='FENCE'||(override!=='POSTS'&&(streetIds.includes(id)||(!/^\d{2}-/.test(id)&&['URBAN','NIGHT'].includes(profile.family))));
  }
  if(!trackData._urbanDistanceBoards)return null;
- const boardWidth=.58,edgeClearance=.01; // Hang by one edge instead of laying flat against the fence.
+ // Real track-distance panels are LANDSCAPE boards: their numbers run across
+ // the plate. One narrow side touches the catch fence; the other side points
+ // inward, perpendicular to the barrier, toward the asphalt.
+ const boardWidth=1.20,boardHeight=.82,edgeClearance=.01;
  const cache=trackData._distanceBoardMounts||(trackData._distanceBoardMounts=new Map()),key=[board.s,board.side,board.authoredLat].join(':');
  if(cache.has(key))return cache.get(key);
  const q=renderRibbonFrameAt(board.s),env=envProfile(board.s),side=board.side||1,on=Math.hypot(q.ox,q.oz)||1,ix=-side*q.ox/on,iz=-side*q.oz/on,
@@ -1522,18 +1525,33 @@ function apexUrbanBoardMount(board){
   const fh=Math.max(2.05,+sg.fenceH||style.fenceH),wallH=+sg.height||style.height,ground=(Number(sg.y1)||0)*(1-t)+(Number(sg.y2)||0)*t;
   // Use the SVG wall normal: the mounting edge stays against angled fence segments.
   const fnx=-dz/len,fnz=dx/len,ns=fnx*ix+fnz*iz<0?-1:1,inX=fnx*ns,inZ=fnz*ns;
-  mount={x:x+inX*(boardWidth*.5+edgeClearance),z:z+inZ*(boardWidth*.5+edgeClearance),bottom:ground+wallH+.10,height:Math.min(1.7,Math.max(1.45,fh*.74)-.20),width:boardWidth,tx:dx/len,tz:dz/len,ix:inX,iz:inZ,source:'SVG_FENCE'};
+  mount={x:x+inX*(boardWidth*.5+edgeClearance),z:z+inZ*(boardWidth*.5+edgeClearance),
+   bottom:ground+wallH+Math.min(.55,Math.max(.24,(fh-boardHeight)*.45)),
+   height:boardHeight,width:boardWidth,tx:dx/len,tz:dz/len,ix:inX,iz:inZ,source:'SVG_FENCE'};
  }
- if(!mount){const wg=wallGeometryAtS(board.s,side);if(wg.enabled&&wg.barrier.fence!==false)mount={x:wg.top.x+ix*(boardWidth*.5+edgeClearance),z:wg.top.z+iz*(boardWidth*.5+edgeClearance),bottom:wg.top.y+.10,height:Math.min(1.7,Math.max(1.45,wg.barrier.fenceH*.74)-.20),width:boardWidth,tx:q.tx,tz:q.tz,ix,iz,source:'RIBBON_FENCE'};}
+ if(!mount){const wg=wallGeometryAtS(board.s,side);if(wg.enabled&&wg.barrier.fence!==false){
+  const fh=Math.max(2.05,+wg.barrier.fenceH||2.35);
+  mount={x:wg.top.x+ix*(boardWidth*.5+edgeClearance),z:wg.top.z+iz*(boardWidth*.5+edgeClearance),
+   bottom:wg.top.y+Math.min(.55,Math.max(.24,(fh-boardHeight)*.45)),
+   height:boardHeight,width:boardWidth,tx:q.tx,tz:q.tz,ix,iz,source:'RIBBON_FENCE'};
+ }}
  // No invented hanging sign where the authored SVG has no fence.
  cache.set(key,mount);return mount;
 }
 function apexUrbanBoardPaint(mark){
  const key=String(mark),cache=apexUrbanBoardPaint.cache||(apexUrbanBoardPaint.cache=new Map());if(cache.has(key))return cache.get(key);
- const rect=(x0,y0,x1,y1,color)=>({color,points:[[x0,y0],[x1,y0],[x1,y1],[x0,y1]]}),out=[rect(0,0,1,1,'#171c21'),rect(.025,.012,.975,.988,key==='100'?'#19a8b8':'#fafbf8')],digits=key.split('').filter(ch=>/^[0-9]$/.test(ch)),gap=.035,cell=(.84-gap*(digits.length-1))/Math.max(1,digits.length);
- for(let i=0;i<digits.length;i++){const y=.08+i*(cell+gap),polys=sevenSegPolys(.20,y,.60,cell,.065),segs=SEVEN_SEG_DIGITS[digits[i]];for(const seg of segs)out.push({color:key==='100'?'#f8ffff':'#101519',points:digits[i]==='1'?polys[seg].map(([u,v])=>[u-.25,v]):polys[seg]});}
- // Four small metal clips hold the plate to the fence; no ground posts.
- for(const v of [.12,.86]){out.push(rect(0,v,.13,v+.025,'#879298'));out.push(rect(.87,v,1,v+.025,'#879298'));}
+ const rect=(x0,y0,x1,y1,color)=>({color,points:[[x0,y0],[x1,y0],[x1,y1],[x0,y1]]});
+ // Black, slim frame and clean white panel as on real FIA braking-distance
+ // references. Horizontal lettering eliminates the old stacked digits.
+ const out=[rect(0,0,1,1,'#171c21'),rect(.025,.035,.975,.965,'#fafbf8')],
+       digits=key.split('').filter(ch=>/^[0-9]$/.test(ch)),gap=.025,
+       pad=.095,usable=1-pad*2,cell=(usable-gap*(digits.length-1))/Math.max(1,digits.length);
+ for(let i=0;i<digits.length;i++){
+  const x=pad+i*(cell+gap),polys=sevenSegPolys(x,.145,cell,.71,Math.min(cell*.16,.050)),segs=SEVEN_SEG_DIGITS[digits[i]];
+  for(const seg of segs)out.push({color:'#101519',points:polys[seg]});
+ }
+ // Small catches at the fence-side corners; these are not ground posts.
+ for(const v of [.13,.84]){out.push(rect(0,v,.065,v+.03,'#879298'));out.push(rect(.935,v,1,v+.03,'#879298'));}
  cache.set(key,out);return out;
 }
 function apexUrbanBoardCameraPoly(item,points){
@@ -1543,8 +1561,9 @@ function apexUrbanBoardCameraPoly(item,points){
 function boardGeometry(board,cam,pitch){
  const q=renderRibbonFrameAt(board.s),env=envProfile(board.s),side=board.side||1,mount=apexUrbanBoardMount(board);
  if(mount){
-  // Extend perpendicular to the fence, with the painted face looking upstream.
-  // Segment endpoint order must never reverse the digits for approaching cars.
+  // The panel grows perpendicular to the wall, from an edge attached to the
+  // fence. Its front normal faces ONCOMING traffic even when the SVG segment
+  // runs backwards; never rotate the lettering with the camera.
   const tx=-side*mount.ix,tz=-side*mount.iz;
   const w=mount.width*.5,y0=mount.bottom,y1=y0+mount.height,
         world=[{x:mount.x-tx*w,y:y1,z:mount.z-tz*w},{x:mount.x+tx*w,y:y1,z:mount.z+tz*w},{x:mount.x+tx*w,y:y0,z:mount.z+tz*w},{x:mount.x-tx*w,y:y0,z:mount.z-tz*w}],
