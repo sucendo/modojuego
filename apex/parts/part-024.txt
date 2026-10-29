@@ -4318,7 +4318,7 @@ function apexSponsorContinuousWall(item,pitch,backend,key){
  if(!raw||raw.length!==4)return false;
  const exact=src&&Number.isFinite(src.sponsorPatternFromM)&&Number.isFinite(src.sponsorPatternToM);
  const from=exact?src.sponsorPatternFromM:item.sponsorS0;
- const to=exact?src.sponsorPatternToM:from+wrapDeltaS(item.sponsorS0,item.sponsorS1,trackData.km*1000);
+ const to=exact?src.sponsorPatternToM:from+wrapDeltaS(item.sponsorS1,item.sponsorS0,trackData.km*1000);
  if(!Number.isFinite(from)||!Number.isFinite(to)||to-from<.02)return false;
  const tileM=8,flip=apexSponsorWallFlipU(item);
  // The same signed physical coordinate on both sides of a seam: flipping
