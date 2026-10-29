@@ -4280,78 +4280,27 @@ function apexSponsorClipTriangle(a,b,c,pitch,backend,color,depthBias){
  }
  return true;
 }
-function apexSponsorContinuousWall(item,pitch,backend,key){
- const api=window.ApexTrackSponsors;
- if(!api||!api.enabled||(key==='mdtel-white-24m'&&!api.featureEnabled))return false;
- const source=item.sponsorSource||item.sponsorTileSource,
-       raw=item.sponsorPoly3,mobile=mobilePerformanceMode();
- if(!api||!source||!raw||raw.length!==4)return false;
- const exact=Number.isFinite(source.sponsorPatternFromM)&&Number.isFinite(source.sponsorPatternToM),
-       from=exact?source.sponsorPatternFromM:item.sponsorS0,
-       to=exact?source.sponsorPatternToM:from+wrapDeltaS(item.sponsorS0,item.sponsorS1,trackData.km*1000);
- if(!Number.isFinite(from)||!Number.isFinite(to)||to-from<.02)return false;
- if(raw.some(p=>!p)||raw.every(p=>p.z<.65)||raw.every(p=>p.z>(mobile?180:260)))return false;
- const [bottom0,top0,top1,bottom1]=raw,nearClip=raw.some(p=>p.z<.65);
- const projected=projectCameraPoly(clipPolyNear([top0,top1,bottom1,bottom0],.65),pitch);
- if(!projected||projected.length<3)return false;
- const minX=Math.min(...projected.map(p=>p[0])),maxX=Math.max(...projected.map(p=>p[0])),
-       minY=Math.min(...projected.map(p=>p[1])),maxY=Math.max(...projected.map(p=>p[1]));
- if(maxX<0||minX>W||maxY<0||minY>H||maxX-minX<4||maxY-minY<2)return false;
- // Reverse BOTH the world phase and the 3D quad when the camera looks from
- // the opposite end. This keeps lettering readable without breaking seams.
- const reversed=nearClip?top0.x>top1.x:projected[0][0]>projected[1][0],
-       quad=reversed?[top1,top0,bottom0,bottom1]:[top0,top1,bottom1,bottom0],
-       cached=api.wallTileLayers(source,from,to,reversed,key);
- if(!cached)return false;
- api.beginFrame(renderFrameId);
- const triangleCount=layers=>layers.reduce((n,l)=>n+l.triangles.length/6,0),
-       accentTriangles=triangleCount(cached.accents),
-       accentVisible=api.claimWallAccents(accentTriangles,mobile,key);
- // At a small projected height, three MDTel labels in 24 m are illegible and
- // cost 3x the old independent logo. Keep the blue ribbon on every 8m tile
- // but display only the central wordmark of each 24m block until close.
- const distantWhite=key==='mdtel-white-24m'&&maxY-minY<(mobile?30:24),
-       wordmark=distantWhite?cached.wordmark.filter(l=>((l.tile%3)+3)%3===1):cached.wordmark;
- const includeFine=maxY-minY>=100&&!mobile,
-       wordmarkTriangles=triangleCount(wordmark)+(includeFine?triangleCount(cached.fine):0),
-       id=key+'-wall:'+String(source.runId||'')+':'+String(item.side||source.side||0)+':'+from,
-       wordmarkVisible=wordmarkTriangles>0&&maxX-minX>=12&&maxY-minY>=7&&api.claimWallText(id,wordmarkTriangles,mobile);
- if(!accentVisible&&!wordmarkVisible)return false;
- const start=performance.now(),[tl,tr,br,bl]=quad;
- // Reuse the production bilinear perspective mapping; only the clipped
- // UV triangles vary, and those are computed once per physical wall segment.
- const ux=tr.x-tl.x,uy=tr.y-tl.y,uz=tr.z-tl.z,
-       vx=bl.x-tl.x,vy=bl.y-tl.y,vz=bl.z-tl.z,
-       wx=br.x-tr.x-bl.x+tl.x,wy=br.y-tr.y-bl.y+tl.y,wz=br.z-tr.z-bl.z+tl.z;
- const vertex=(u,v,depthBias)=>{
-  const uv=u*v,z=tl.z+uz*u+vz*v+wz*uv,
-        x=tl.x+ux*u+vx*v+wx*uv,y=tl.y+uy*u+vy*v+wy*uv;
-  if(nearClip)return {x,y,z};
-  const p=projectLocal(x,y,z,pitch);p.z=z-depthBias;return p;
- };
- const layers=[];
- if(accentVisible)layers.push(...cached.accents);
- if(wordmarkVisible){layers.push(...wordmark);if(includeFine)layers.push(...cached.fine);}
- if(backend==='canvas2d')ctx.save();
- for(let layerIndex=0;layerIndex<layers.length;layerIndex++){
-  const layer=layers[layerIndex],depthBias=api.wallLayerDepthBias(key,layer.fill,layerIndex);
-  const points=layer.triangles,col=backend==='webgl2'?webglCssColor(layer.fill):null;
-  if(backend==='canvas2d'){ctx.fillStyle=layer.fill;ctx.beginPath();}
-  for(let i=0;i<points.length;i+=6){
-   const p=vertex(points[i],points[i+1],depthBias),q=vertex(points[i+2],points[i+3],depthBias),r=vertex(points[i+4],points[i+5],depthBias);
-   if(nearClip)apexSponsorClipTriangle(p,q,r,pitch,backend,col,depthBias);
-   else if(backend==='webgl2'){webglVertexPx(p.x,p.y,col,p.z);webglVertexPx(q.x,q.y,col,q.z);webglVertexPx(r.x,r.y,col,r.z);}
-   else{ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.lineTo(r.x,r.y);ctx.closePath();}
-  }
-  if(backend==='canvas2d')ctx.fill();
- }
- if(backend==='canvas2d')ctx.restore();
- api.stats.cpuMs+=performance.now()-start;
- return true;
+/* One material tile is exactly two triangles on the original wall geometry.
+   UV coordinates measured in metres don't restart at barrier segment joins. */
+function apexSponsorTexturePaint(quad,key,pitch,backend,u0=0,u1=1,v0=0,v1=1){
+ const tx=window.ApexSponsorTextures,enabled=window.ApexTrackSponsors;
+ if(!tx||!tx.assets[key]||enabled?.enabled===false||
+    (enabled?.featureEnabled===false&&['apex26-start-finish','radiquero-pedestrian-bridge','mdtel-white-24m'].includes(key)))return false;
+ if(!quad||quad.length!==4||quad.some(p=>!p)||quad.every(p=>p.z<.65))return false;
+ if(backend==='webgl2')return apexSponsorTextureQueueGl(quad,key,pitch,u0,u1,v0,v1);
+ return apexSponsorTextureDrawCanvas(quad,key,pitch,u0,u1,v0,v1);
 }
-
-// A single physical coordinate system per wall run, fixed before projection.
-// Procedural samples are the fixed road nodes, not camera-clipped segments.
+function apexSponsorContinuousWall(item,pitch,backend,key){
+ const raw=item.sponsorPoly3,src=item.sponsorSource||item.sponsorTileSource;
+ if(!raw||raw.length!==4)return false;
+ const exact=src&&Number.isFinite(src.sponsorPatternFromM)&&Number.isFinite(src.sponsorPatternToM);
+ const from=exact?src.sponsorPatternFromM:item.sponsorS0;
+ const to=exact?src.sponsorPatternToM:from+wrapDeltaS(item.sponsorS0,item.sponsorS1,trackData.km*1000);
+ if(!Number.isFinite(from)||!Number.isFinite(to)||to-from<.02)return false;
+ const tileM=8,reversed=src?.sponsorMuralReverse===true;
+ const u0=(reversed?-to:from)/tileM,u1=(reversed?-from:to)/tileM;
+ return apexSponsorTexturePaint([raw[1],raw[2],raw[3],raw[0]],key,pitch,backend,u0,u1);
+}
 const apexSctProceduralAtlases=new WeakMap();
 function apexSctProceduralAtlas(side){
  const samples=apexRoadMeshSamples(),cw=trackData.customWorld;
@@ -4401,93 +4350,25 @@ function apexSctMuralPartLod(part){
  if(part.startsWith('small-'))return 3;
  return 0;
 }
+/* SCT master 24 m repeats in continuous physical UV coordinates. No
+   triangle-budget allocation, per-letter clipping or frame-order popping. */
 function apexPlanSctWallMurals(items,pitch,backend){
- const api=window.ApexTrackSponsors;if(!api)return;
- api.beginFrame(renderFrameId);const mobile=mobilePerformanceMode(),blocks=new Map();let otherBrands=false;
+ const api=window.ApexTrackSponsors;
  for(const item of items){
   item.sctMuralPlan=null;
   item.sponsorAd=item.advertising===false?null:circuitAdvertisingStyle(item.s,item.env,item.side);
-  if(item.advertising===false||item.barrier?.kind==='TYRE')continue;
-  const ad=item.sponsorAd;
-  if(!ad)continue;
-  if((ad.logo||api.colorKey(ad.bg))!=='sct'){
-   const raw=item.sponsorPoly3;
-   if(raw&&raw.some(p=>p.z>=.62)&&raw.some(p=>p.z<(mobile?180:260)))otherBrands=true;
-   continue;
-  }
-  const desc=apexSctWallDescriptor(item),raw=desc&&desc.raw;
-  if(!raw||desc.to-desc.from<.02||raw.every(p=>p.z<.62)||raw.every(p=>p.z>(mobile?180:260)))continue;
-  const clipped=clipPolyNear([raw[1],raw[2],raw[3],raw[0]],.62),pp=projectCameraPoly(clipped,pitch);
-  if(!pp||pp.length<3)continue;
-  const xs=pp.map(p=>p[0]),ys=pp.map(p=>p[1]),height=Math.max(...ys)-Math.min(...ys);
-  if(Math.max(...xs)<0||Math.min(...xs)>W||Math.max(...ys)<0||Math.min(...ys)>H||height<2)continue;
-  const slices=api.sctMuralSlices(desc.source,desc.from,desc.to,desc.reverse);
-  const plan={raw,pieces:[],nearClip:raw.some(p=>p.z<.62)};item.sctMuralPlan=plan;
-  for(const slice of slices){
-   const id='sct-mural:'+desc.run+':'+slice.tile;
-   let block=blocks.get(id);
-   if(!block){block={id,triangles:0,baseTriangles:0,near:Infinity,height:0,lod:0,fragments:[],accepted:false};blocks.set(id,block);}
-   block.fragments.push({slice,nearClip:plan.nearClip});
-   block.near=Math.min(block.near,...raw.map(p=>Math.max(.62,p.z)));block.height=Math.max(block.height,height);
-   plan.pieces.push({slice,block});
-  }
+  if(!item.sponsorAd||item.barrier?.kind==='TYRE'||!api||api.enabled===false)continue;
+  if((item.sponsorAd.logo||api.colorKey(item.sponsorAd.bg))!=='sct')continue;
+  const desc=apexSctWallDescriptor(item),raw=desc?.raw;
+  if(!raw||desc.to-desc.from<.02||raw.every(p=>p.z<.65)||raw.every(p=>p.z>(mobilePerformanceMode()?180:260)))continue;
+  item.sctMuralPlan=desc;
  }
- // Keep room for existing Equipalia/MDTel labels instead of allowing SCT
- // to consume their complete shared budget before the wall drawing pass.
- const sorted=[...blocks.values()].sort((a,b)=>a.near-b.near||a.id.localeCompare(b.id));
- // All visible block backdrops keep their stripes, even when logo detail
- // exceeds the per-frame budget. No complete 24m wall gaps or flashing.
- for(const block of sorted){
-  block.lod=block.height>=24?3:block.height>=14?2:block.height>=7?1:0;
-  for(const {slice,nearClip} of block.fragments)for(const layer of slice.layers){
-   const tris=layer.triangles.length/6*(nearClip?2:1);
-   if(apexSctMuralPartLod(layer.part)===0)block.baseTriangles+=tris;
-   else if(apexSctMuralPartLod(layer.part)<=block.lod)block.triangles+=tris;
-  }
-  api.claimMuralBackdrop(block.baseTriangles);
- }
- const reserve=otherBrands?Math.max(0,(mobile?400:800)-api.stats.triangles):0;
- for(const block of sorted)
-  if(block.triangles>0)block.accepted=api.claimMural(block.id,block.triangles,mobile,reserve);
 }
 function apexDrawSctWallMural(item,pitch,backend){
- const plan=item.sctMuralPlan;if(!plan)return false;
- const api=window.ApexTrackSponsors,start=performance.now(),[a,t0,t1,b]=plan.raw;
- const ux=t1.x-t0.x,uy=t1.y-t0.y,uz=t1.z-t0.z,vx=a.x-t0.x,vy=a.y-t0.y,vz=a.z-t0.z,
-  wx=b.x-t1.x-a.x+t0.x,wy=b.y-t1.y-a.y+t0.y,wz=b.z-t1.z-a.z+t0.z;
- const f=(W*.5)/Math.tan(sceneHFov()*.5),eye=driverEyeHeight(),horizon=sceneHorizon(pitch),halfW=W*.5;
- const point=(u,v)=>{const uv=u*v;return{x:t0.x+ux*u+vx*v+wx*uv,y:t0.y+uy*u+vy*v+wy*uv,z:t0.z+uz*u+vz*v+wz*uv};};
- let drawn=false;
- if(backend==='canvas2d')ctx.save();
- for(const {slice,block} of plan.pieces){
-  for(const layer of slice.layers){
-   if(apexSctMuralPartLod(layer.part)>(block.accepted?block.lod:0))continue;
-   drawn=true;
-   const depthBias=layer.part==='continuous-background'?.035:.06;
-   const col=backend==='webgl2'?webglCssColor(layer.fill):null,vertices=layer.triangles;
-   if(backend==='canvas2d'){ctx.fillStyle=layer.fill;ctx.beginPath();}
-   if(!plan.nearClip){
-    // Cache the projection constants, then stream scalars directly. No
-    // temporary camera vectors or repeated camera/FOV queries per vertex.
-    for(let i=0;i<vertices.length;i+=2){
-     const u=vertices[i],v=vertices[i+1],uv=u*v,z=t0.z+uz*u+vz*v+wz*uv,
-      x=halfW+f*(t0.x+ux*u+vx*v+wx*uv)/z,y=horizon+f*(eye-t0.y-uy*u-vy*v-wy*uv)/z;
-     if(backend==='webgl2')webglVertexPx(x,y,col,z-depthBias);
-     else{if(i%6===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);if(i%6===4)ctx.closePath();}
-    }
-   }else for(let i=0;i<vertices.length;i+=6){
-    const poly=clipPolyNear([point(vertices[i],vertices[i+1]),point(vertices[i+2],vertices[i+3]),point(vertices[i+4],vertices[i+5])],.62);
-    if(poly.length<3)continue;const pp=poly.map(p=>({x:halfW+f*p.x/p.z,y:horizon+f*(eye-p.y)/p.z}));
-    if(backend==='webgl2'){
-     for(let k=1;k<poly.length-1;k++)for(const j of [0,k,k+1])webglVertexPx(pp[j].x,pp[j].y,col,poly[j].z-depthBias);
-    }else{ctx.moveTo(pp[0].x,pp[0].y);for(let k=1;k<pp.length;k++)ctx.lineTo(pp[k].x,pp[k].y);ctx.closePath();}
-   }
-   if(backend==='canvas2d')ctx.fill();
-  }
- }
- if(backend==='canvas2d')ctx.restore();api.stats.cpuMs+=performance.now()-start;return drawn;
+ const desc=item.sctMuralPlan,raw=desc?.raw;if(!raw)return false;
+ const from=desc.reverse?-desc.to:desc.from,to=desc.reverse?-desc.from:desc.to;
+ return apexSponsorTexturePaint([raw[1],raw[2],raw[3],raw[0]],'sct-wall',pitch,backend,from/24,to/24);
 }
-
 function apexSponsorWallLogo(item,ad,pitch,backend){
  const api=window.ApexTrackSponsors,key=api&&(ad&&(ad.logo||api.colorKey(ad.bg)));
  if(!key||item.advertising===false||item.barrier?.kind==='TYRE')return false;
@@ -4565,58 +4446,27 @@ function apexFeatureTunnelBanner(it,cam,pitch,backend){
  return apexFeatureTrackBanner(s,span,roofH+.06,top,cam,pitch,backend,'apex-tunnel:'+String(it.sourceId||s));
 }
 
+/* Individual signs: same 2-triangle textured surface as repeating murals. */
 function apexSponsorDraw(raw,key,pitch,backend,id,heightFraction=.80,fullBleed=false){
- const api=window.ApexTrackSponsors,logo=api&&api.data[key],mobile=mobilePerformanceMode();
- if(!api||!api.enabled||(api.featureEnabled===false&&(key==='apex26-start-finish'||key==='radiquero-pedestrian-bridge'||key==='mdtel-white-24m'))||!logo||raw.some(p=>!p)||raw.every(p=>p.z<.65)||raw.every(p=>p.z>(mobile?180:260)))return false;
- const [a,t0,t1,b]=raw,span=Math.hypot(b.x-a.x,b.y-a.y,b.z-a.z),height=Math.hypot(t0.x-a.x,t0.y-a.y,t0.z-a.z);
+ const api=window.ApexTrackSponsors,aspect=api?.data[key]?.aspect;
+ if(!aspect||!raw||raw.length!==4)return false;
+ const [a,t0,t1,b]=raw,span=Math.hypot(b.x-a.x,b.y-a.y,b.z-a.z),
+  height=Math.hypot(t0.x-a.x,t0.y-a.y,t0.z-a.z);
  if(span<.25||height<.15)return false;
- const logoH=fullBleed?height:Math.min(height*heightFraction,span*.84/logo.aspect),logoW=fullBleed?span:logoH*logo.aspect;
- const u0=fullBleed?0:.5-logoW/span/2,u1=fullBleed?1:1-u0,v0=fullBleed?0:.51-logoH/height/2,v1=fullBleed?1:v0+logoH/height;
+ const logoH=fullBleed?height:Math.min(height*heightFraction,span*.84/aspect),
+  logoW=fullBleed?span:logoH*aspect,
+  u0=fullBleed?0:.5-logoW/span/2,u1=fullBleed?1:1-u0,
+  v0=fullBleed?0:.51-logoH/height/2,v1=fullBleed?1:v0+logoH/height;
  const map=(u,v)=>camMix(camMix(a,b,u),camMix(t0,t1,u),v);
- let quad=[map(u0,v1),map(u1,v1),map(u1,v0),map(u0,v0)];
- const nearClip=quad.some(p=>p.z<.65),pp=projectCameraPoly(clipPolyNear(quad,.65),pitch);
- if(!pp||pp.length<3)return false;
- const minX=Math.min(...pp.map(p=>p[0])),maxX=Math.max(...pp.map(p=>p[0])),minY=Math.min(...pp.map(p=>p[1])),maxY=Math.max(...pp.map(p=>p[1]));
- if(maxX<0||minX>W||maxY<0||minY>H||maxX-minX<12||maxY-minY<4)return false;
- if(nearClip?(quad[0].x+quad[3].x>quad[1].x+quad[2].x):((pp[0][0]+pp[3][0])>(pp[1][0]+pp[2][0])))
-  quad=[quad[1],quad[0],quad[3],quad[2]];
- api.beginFrame(renderFrameId);const layers=api.claim(id,key,maxY-minY,mobile);if(!layers)return false;
- const start=performance.now(),[tl,tr,br,bl]=quad;
- // Bilinear perspective basis, computed once. Unlike the old renderer, no
- // trigonometry, camera-mode lookup, vector objects or projectLocal per vertex.
- const ux=tr.x-tl.x,uy=tr.y-tl.y,uz=tr.z-tl.z,vx=bl.x-tl.x,vy=bl.y-tl.y,vz=bl.z-tl.z,
-       wx=br.x-tr.x-bl.x+tl.x,wy=br.y-tr.y-bl.y+tl.y,wz=br.z-tr.z-bl.z+tl.z,
-       halfW=W*.5,f=halfW/Math.tan(sceneHFov()*.5),horizon=sceneHorizon(pitch),eye=driverEyeHeight();
- if(backend==='canvas2d')ctx.save();
- for(const layer of layers){
-  const t=layer.triangles,col=backend==='webgl2'?webglCssColor(layer.fill):null;
-  if(backend==='canvas2d'){ctx.fillStyle=layer.fill;ctx.beginPath();}
-  for(let i=0;i<t.length;i+=6){
-   // Keep the allocation-free path except for the few triangles at z=.65.
-   if(nearClip){
-    const verts=[];
-    for(let k=0;k<6;k+=2){
-     const u=t[i+k],v=t[i+k+1],uv=u*v;
-     verts.push({x:tl.x+ux*u+vx*v+wx*uv,y:tl.y+uy*u+vy*v+wy*uv,z:tl.z+uz*u+vz*v+wz*uv});
-    }
-    apexSponsorClipTriangle(verts[0],verts[1],verts[2],pitch,backend,col,.026);
-   }else{
-    for(let k=0;k<6;k+=2){
-     const u=t[i+k],v=t[i+k+1],uv=u*v,z=tl.z+uz*u+vz*v+wz*uv,inv=f/z,
-           x=halfW+inv*(tl.x+ux*u+vx*v+wx*uv),
-           y=horizon+inv*(eye-tl.y-uy*u-vy*v-wy*uv);
-     if(backend==='webgl2')webglVertexPx(x,y,col,z-.026);
-     else if(k===0)ctx.moveTo(x,y);
-     else ctx.lineTo(x,y);
-    }
-    if(backend==='canvas2d')ctx.closePath();
-   }
-  }
-  if(backend==='canvas2d')ctx.fill();
- }
- if(backend==='canvas2d')ctx.restore();api.stats.cpuMs+=performance.now()-start;return true;
+ const quad=[map(u0,v1),map(u1,v1),map(u1,v0),map(u0,v0)];
+ if(quad.every(p=>p.z<.65)||quad.every(p=>p.z>(mobilePerformanceMode()?180:260)))return false;
+ const projected=projectCameraPoly(clipPolyNear(quad,.65),pitch);
+ if(!projected||projected.length<3)return false;
+ const xs=projected.map(p=>p[0]),ys=projected.map(p=>p[1]);
+ if(Math.max(...xs)<0||Math.min(...xs)>W||Math.max(...ys)<0||Math.min(...ys)>H)return false;
+ const reversed=quad[0].x>quad[1].x;
+ return apexSponsorTexturePaint(quad,key,pitch,backend,reversed?1:0,reversed?0:1);
 }
-
 const APEX_AD_BRANDS=[
  {brand:'TEAM EQUIPALIA',bg:'#00673e',fg:'#ffffff',logo:'team-equipalia'},
  {brand:'SCT TELECOM',bg:'#07539b',fg:'#ffffff',logo:'sct'},
