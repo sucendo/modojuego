@@ -4376,9 +4376,31 @@ function apexPlanSctWallMurals(items,pitch,backend){
   item.sctMuralPlan=desc;
  }
 }
+// Madrid's right-hand wall along the pit lane faces the main straight.
+// Its UVs must run in the opposite horizontal direction: exchanging the
+// endpoints of each individual segment would restart the mural at every joint.
+// Cache the authored pit entry/exit, including the lap-zero wraparound.
+const apexMadridPitWallSponsorRange=new WeakMap();
+function apexMadridPitWallSponsorFlip(item){
+ if(trackData?.spec?.dir!=='14-spain'||item.side!==1||!Number.isFinite(item.s))return false;
+ let range=apexMadridPitWallSponsorRange.get(trackData);
+ if(!range){
+  const pit=readStoredCircuitJson('14-spain')?.pitLane?.trackConnection,L=trackData.km*1000;
+  const valid=L>0&&Number.isFinite(pit?.entryTrackS)&&Number.isFinite(pit?.exitTrackS);
+  range={valid,start:valid?mod(pit.entryTrackS,L):0,end:valid?mod(pit.exitTrackS,L):0};
+  apexMadridPitWallSponsorRange.set(trackData,range);
+ }
+ if(!range.valid)return false;
+ const s=mod(item.s,trackData.km*1000);
+ return range.start>range.end?(s>=range.start||s<=range.end):(s>=range.start&&s<=range.end);
+}
 function apexDrawSctWallMural(item,pitch,backend){
  const desc=item.sctMuralPlan,raw=desc?.raw;if(!raw)return false;
- const from=desc.reverse?-desc.to:desc.from,to=desc.reverse?-desc.from:desc.to;
+ const flip=apexMadridPitWallSponsorFlip(item);
+ // Negate the physical station for the pit-wall face (descending U), not
+ // the per-panel 0..1 position: both sides of a joint then share the same U.
+ const from=flip?-desc.from:(desc.reverse?-desc.to:desc.from);
+ const to=flip?-desc.to:(desc.reverse?-desc.from:desc.to);
  return apexSponsorTexturePaint([raw[1],raw[2],raw[3],raw[0]],'sct-wall',pitch,backend,from/24,to/24);
 }
 function apexSponsorWallLogo(item,ad,pitch,backend){

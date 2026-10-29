@@ -55,8 +55,10 @@ const drawn=[],ctx={
  clipPolyNear:v=>v,
  projectCameraPoly:v=>v.map(p=>[640+p.x*20,360-p.y*20]),
  apexSponsorTextureQueueGl:(quad,key,pitch,u0,u1)=>{drawn.push({quad,key,u0,u1});return true;},
- apexSponsorTextureDrawCanvas:()=>true,
+ apexSponsorTextureDrawCanvas:(quad,key,pitch,u0,u1)=>{drawn.push({quad,key,u0,u1});return true;},
  wrapDeltaS:(a,b)=>a-b,
+ mod:(s,L)=>(s%L+L)%L,
+ readStoredCircuitJson:id=>id==='14-spain'?{pitLane:{trackConnection:{entryTrackS:-264,exitTrackS:763}}}:null,
  trackData:{km:5},
  camMix:(a,b,t)=>({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t,z:a.z+(b.z-a.z)*t})
 };
@@ -70,9 +72,30 @@ assert.equal(ctx.apexSponsorContinuousWall({sponsorSource:{sponsorPatternFromM:8
 assert.equal(drawn[1].u0,1);assert.equal(drawn[1].u1,2,'Physical UV must not restart at the joint');
 ctx.apexSponsorDraw(quad,'mdtel',0,'webgl2','panel',1,true);
 assert.equal(drawn[2].key,'mdtel');
-const sctFn=muralTexture.slice(muralTexture.indexOf('function apexDrawSctWallMural('));
+const sctFn=muralTexture.slice(muralTexture.indexOf('const apexMadridPitWallSponsorRange='));
 vm.runInContext(sctFn,ctx);
 ctx.apexDrawSctWallMural({sctMuralPlan:{raw:quad,from:0,to:24,reverse:false}},0,'webgl2');
 assert.equal(drawn[3].key,'sct-wall');assert.equal(drawn[3].u1,1);
+// Madrid's SCT wall between the pit lane and main straight is mirrored,
+// with continuous physical UVs across neighbouring 24m mural fragments.
+ctx.trackData.spec={dir:'14-spain'};ctx.trackData.km=5.414;
+const drawSct=(side,s,from,to,reverse,backend='webgl2')=>{
+ ctx.apexDrawSctWallMural({side,s,sctMuralPlan:{raw:quad,from,to,reverse}},0,backend);
+ return drawn.at(-1);
+};
+const rightA=drawSct(1,120,48,56,true);
+const rightB=drawSct(1,128,56,64,true);
+assert.equal(rightA.u0,-48/24);assert.equal(rightA.u1,-56/24);
+assert.equal(rightB.u0,rightA.u1,'Pit-wall artwork must not jump at joins');
+assert.equal(rightB.u1,-64/24);
+const beforeFinish=drawSct(1,5250,72,80,true,'canvas2d');
+assert.equal(beforeFinish.u0,-72/24);assert.equal(beforeFinish.u1,-80/24);
+const otherWall=drawSct(1,1400,48,56,true);
+assert.equal(otherWall.u0,-56/24);assert.equal(otherWall.u1,-48/24,'Other right walls unchanged');
+const opposite=drawSct(-1,120,48,56,false);
+assert.equal(opposite.u0,48/24);assert.equal(opposite.u1,56/24,'Opposite wall unchanged');
+ctx.trackData.spec.dir='13-other';
+const otherCircuit=drawSct(1,120,48,56,true);
+assert.equal(otherCircuit.u0,-56/24);assert.equal(otherCircuit.u1,-48/24,'Other circuits unchanged');
 assert.ok(!worldSource.slice(worldSource.indexOf('function apexSponsorDraw('),worldSource.indexOf('const APEX_AD_BRANDS=')).includes('webglVertexPx'));
 console.log(JSON.stringify({test:'sponsor-textures',brands:assets.length,wallTriangles:2,fullSctTriangles:2,sourceSVGs:true,glBatch:true,canvasFallback:true,uvContinuity:true,ok:true}));
