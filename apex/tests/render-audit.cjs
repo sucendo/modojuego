@@ -131,7 +131,7 @@ console.log('PASS: context loss and restoration with identical GL identity');
 const order=[],upload=[];const submitGl={ARRAY_BUFFER:1,DYNAMIC_DRAW:2,TRIANGLES:3,FLOAT:4,COLOR_BUFFER_BIT:8,DEPTH_BUFFER_BIT:16,
  viewport(){},clearColor(){},clearDepth(){},clear(){},bindBuffer(){},bufferData(){},bufferSubData:(t,offset,a)=>upload.push(a.byteLength),useProgram(){},enableVertexAttribArray(){},vertexAttribPointer(){},drawArrays:(t,first,count)=>order.push(['dynamic',first,count])};
 const submit=context({webglState:{gl:submitGl,ready:true,program:{},buffer:{},aPos:0,aColor:1},webglCv:{width:1280,height:720},
- webglVertexData:new Float32Array(63),webglFloatCount:63,apexGpuFrameStats:{},apexStaticBatchPerf:{bufferGrows:0},telemetryPerf:{},renderProfileAdd(){},
+ webglVertexData:new Float32Array(63),webglFloatCount:63,apexSponsorTextureGpu:{triangles:0},apexSponsorTextureSubmitGl:()=>0,apexGpuFrameStats:{},apexStaticBatchPerf:{bufferGrows:0},telemetryPerf:{},renderProfileAdd(){},
  apexPhase5TerrainGPU:{pending:{offset:21},triangles:8,drawCalls:1},apexPhase5GroundGPU:{pending:{offset:42},visibleTriangles:7,submittedTriangles:10,drawCalls:1},
  apexPhase5DrawGpuTerrain:()=>{order.push(['terrain']);return true;},apexPhase5DrawGpuGround:()=>{order.push(['svg']);return true;},apexPhase5TerrainError:e=>{throw e},apexPhase5GpuGroundError:e=>{throw e}});
 load(submit,current,['webglSubmit']);assert.equal(vm.runInContext('webglSubmit()',submit),true);

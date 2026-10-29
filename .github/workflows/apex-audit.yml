@@ -97,6 +97,7 @@ jobs:
             if curl --fail --silent http://127.0.0.1:8765/apex/apex.html > /dev/null; then break; fi
             sleep 1
           done
+          node apex/tests/sponsor-textures-browser.cjs 2>&1 | tee /tmp/apex-results/sponsor-textures-browser.jsonl
           node apex/tests/preparation-9a-browser.cjs 2>&1 | tee /tmp/apex-results/preparation-9a.jsonl
           node apex/tests/competition-flows-9a-browser.cjs 2>&1 | tee /tmp/apex-results/competition-flows-9a.jsonl
           APEX_PIT_RESULTS=/tmp/apex-results/pits node apex/tests/pit-tyres-browser.cjs 2>&1 | tee /tmp/apex-results/pit-browser.jsonl

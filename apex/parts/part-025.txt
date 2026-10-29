@@ -3037,7 +3037,7 @@ function webglInit(){
    gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);gl.depthMask(true);gl.clearDepth(1.0);gl.disable(gl.CULL_FACE);gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);webglResizeViewport();
    if(!webglCv.dataset.lossHook){
      webglCv.dataset.lossHook="1";
-     webglCv.addEventListener("webglcontextlost",e=>{e.preventDefault();apexPhase5GpuRelease(false);apexPhase5TerrainRelease(true);apexPhase6RoadRelease(true);apexPhase6RoadGPU.failedGl=null;apexPhase5GroundGPU.failedGl=null;apexPhase5TerrainGPU.failedGl=null;webglState.lost=true;webglState.ready=false;rendererWebglSupport=false;if(rendererBackendId()==="webgl2")setRendererBackend("canvas2d",{notify:true,persist:false})});
+     webglCv.addEventListener("webglcontextlost",e=>{e.preventDefault();apexPhase5GpuRelease(false);apexPhase5TerrainRelease(true);apexPhase6RoadRelease(true);apexPhase6RoadGPU.failedGl=null;apexPhase5GroundGPU.failedGl=null;apexPhase5TerrainGPU.failedGl=null;if(typeof apexSponsorTextureGpu!=='undefined'){if(typeof window!=='undefined')window.ApexSponsorTextures?.resetGl(webglState.gl);apexSponsorTextureGpu.gl=null;apexSponsorTextureGpu.program=null;apexSponsorTextureGpu.buffer=null;apexSponsorTextureGpu.capacity=0;}webglState.lost=true;webglState.ready=false;rendererWebglSupport=false;if(rendererBackendId()==="webgl2")setRendererBackend("canvas2d",{notify:true,persist:false})});
      webglCv.addEventListener("webglcontextrestored",()=>{apexPhase6RoadGPU.failedGl=null;apexPhase5GroundGPU.failedGl=null;apexPhase5TerrainGPU.failedGl=null;webglState={gl:null,program:null,buffer:null,aPos:-1,aColor:-1,ready:false,lost:false,error:"",triangles:0,depth:true};rendererWebglSupport=null;updateRendererBackendUi()});
    }
    return true;
@@ -3654,6 +3654,143 @@ function webglVertexPx(x,y,c,camZ=null){
  if(webglScreenRoll){const cx=W*.5,cy=H*.5,dx=x-cx,dy=y-cy,cs=Math.cos(webglScreenRoll),sn=Math.sin(webglScreenRoll);x=cx+dx*cs-dy*sn;y=cy+dx*sn+dy*cs}
  webglVertex(x/W*2-1,1-y/H*2,camZ==null?WEBGL_BG_NDC:webglDepthNdc(camZ),c);
 }
+/* APEX sponsor texture pass. Text and branding are no longer 3D meshes.
+   Shared screen/depth projection, depth-tested against the real scene, 2 tris
+   per quad, per-brand batches: <= 7 binds/calls regardless of wall length. */
+const apexSponsorTextureGpu={
+ gl:null,program:null,buffer:null,capacity:0,attrPos:-1,attrUv:-1,sampler:null,
+ groups:new Map(),triangles:0,calls:0,failures:0,error:null,uploadBytes:0
+};
+function apexSponsorTextureQueueGl(quad,key,pitch,u0=0,u1=1,v0=0,v1=1,bias=.042){
+ const api=window.ApexSponsorTextures;if(!api||!api.assets[key])return false;
+ let group=apexSponsorTextureGpu.groups.get(key);
+ if(!group){group=[];apexSponsorTextureGpu.groups.set(key,group);}
+ const corners=[
+  {...quad[0],u:u0,v:v0},{...quad[1],u:u1,v:v0},
+  {...quad[2],u:u1,v:v1},{...quad[3],u:u0,v:v1}
+ ];
+ const countBefore=group.length;
+ const vertices=[0,1,2,0,2,3],near=.65;
+ for(let t=0;t<6;t+=3){
+  const tri=vertices.slice(t,t+3).map(i=>corners[i]),clipped=[];
+  for(let j=0;j<3;j++){
+   const a=tri[j],b=tri[(j+1)%3],inside=a.z>=near,nextInside=b.z>=near;
+   if(inside)clipped.push(a);
+   if(inside!==nextInside){
+    const f=(near-a.z)/(b.z-a.z);
+    clipped.push({x:a.x+(b.x-a.x)*f,y:a.y+(b.y-a.y)*f,z:near,
+     u:a.u+(b.u-a.u)*f,v:a.v+(b.v-a.v)*f});
+   }
+  }
+  if(clipped.length<3)continue;
+  for(let j=1;j<clipped.length-1;j++)for(const v of [clipped[0],clipped[j],clipped[j+1]]){
+   const p=projectLocal(v.x,v.y,v.z,pitch);if(!p)continue;
+   let x=p.x,y=p.y;
+   if(webglScreenRoll){const cx=W*.5,cy=H*.5,dx=x-cx,dy=y-cy,
+    cs=Math.cos(webglScreenRoll),sn=Math.sin(webglScreenRoll);
+    x=cx+dx*cs-dy*sn;y=cy+dx*sn+dy*cs;}
+   group.push(x/W*2-1,1-y/H*2,webglDepthNdc(Math.max(WEBGL_DEPTH_NEAR,v.z-bias)),
+    v.z,v.u,v.v);
+  }
+ }
+ const tris=(group.length-countBefore)/18;
+ apexSponsorTextureGpu.triangles+=tris;api.accounting(tris,1);
+ return tris>0;
+}
+function apexSponsorTextureInitGl(gl){
+ const state=apexSponsorTextureGpu;if(state.gl===gl&&state.program)return true;
+ if(state.gl&&state.gl!==gl){state.program=null;state.buffer=null;state.capacity=0;}
+ try{
+  const vs=webglCompile(gl,gl.VERTEX_SHADER,String.raw`#version 300 es
+precision highp float;
+in vec4 aPosDepth;
+in vec2 aUv;
+out vec2 vUv;
+void main(){
+ gl_Position=vec4(aPosDepth.xyz*aPosDepth.w,aPosDepth.w);
+ vUv=aUv;
+}`);
+  const fs=webglCompile(gl,gl.FRAGMENT_SHADER,String.raw`#version 300 es
+precision highp float;
+in vec2 vUv;
+uniform sampler2D uSponsor;
+out vec4 outColor;
+void main(){outColor=texture(uSponsor,vUv);}`);
+  const program=gl.createProgram();gl.attachShader(program,vs);gl.attachShader(program,fs);
+  gl.linkProgram(program);gl.deleteShader(vs);gl.deleteShader(fs);
+  if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw Error(gl.getProgramInfoLog(program)||'Sponsor shader link');
+  state.gl=gl;state.program=program;state.buffer=gl.createBuffer();
+  state.attrPos=gl.getAttribLocation(program,'aPosDepth');state.attrUv=gl.getAttribLocation(program,'aUv');
+  state.sampler=gl.getUniformLocation(program,'uSponsor');
+  return true;
+ }catch(e){state.failures++;state.error=String(e);return false;}
+}
+function apexSponsorTextureBeginFrame(){
+ const s=apexSponsorTextureGpu;s.groups.clear();s.triangles=0;s.calls=0;s.uploadBytes=0;
+ window.ApexSponsorTextures?.beginFrame();
+}
+function apexSponsorTextureSubmitGl(){
+ const s=apexSponsorTextureGpu,gl=webglState.gl,api=window.ApexSponsorTextures;
+ if(!gl||!api||!s.groups.size||!apexSponsorTextureInitGl(gl))return 0;
+ try{
+  gl.useProgram(s.program);gl.bindBuffer(gl.ARRAY_BUFFER,s.buffer);
+  gl.enableVertexAttribArray(s.attrPos);gl.vertexAttribPointer(s.attrPos,4,gl.FLOAT,false,24,0);
+  gl.enableVertexAttribArray(s.attrUv);gl.vertexAttribPointer(s.attrUv,2,gl.FLOAT,false,24,16);
+  gl.uniform1i(s.sampler,0);gl.activeTexture(gl.TEXTURE0);
+  gl.depthMask(false);
+  for(const [key,values] of s.groups){
+   const tx=api.ensureTexture(gl,key);
+   if(!tx||!values.length)continue;
+   const data=new Float32Array(values),bytes=data.byteLength;
+   if(bytes>s.capacity){s.capacity=Math.max(4096,s.capacity*2,bytes);gl.bufferData(gl.ARRAY_BUFFER,s.capacity,gl.DYNAMIC_DRAW);}
+   gl.bufferSubData(gl.ARRAY_BUFFER,0,data);
+   gl.bindTexture(gl.TEXTURE_2D,tx);
+   gl.drawArrays(gl.TRIANGLES,0,data.length/6);
+   s.calls++;s.uploadBytes+=bytes;
+  }
+  gl.depthMask(true);gl.bindTexture(gl.TEXTURE_2D,null);
+  api.state.drawCalls=s.calls;
+  return s.calls;
+ }catch(e){gl.depthMask(true);s.failures++;s.error=String(e);console.warn('[APEX] Sponsor texture pass',e);return 0;}
+}
+/* Same textured quad on the Canvas2D fallback. Clip per triangle and use a
+   repeating affine texture transform; no drawing SVG contours into the scene. */
+function apexSponsorTextureDrawCanvas(quad,key,pitch,u0=0,u1=1,v0=0,v1=1){
+ const api=window.ApexSponsorTextures,item=api&&api.load(key);
+ if(!item||item.status!=='ready')return false;
+ const vertices=quad.map((p,i)=>({...p,
+  u:(i===0||i===3)?u0:u1,v:i<2?v0:v1}));
+ const img=item.canvas,src=[0,1,2,0,2,3],pattern=ctx.createPattern(img,'repeat');
+ if(!pattern)return false;
+ let tris=0;
+ for(let k=0;k<6;k+=3){
+  const tri=[vertices[src[k]],vertices[src[k+1]],vertices[src[k+2]]],clip=[],near=.65;
+  for(let i=0;i<3;i++){const p=tri[i],q=tri[(i+1)%3],a=p.z>=near,b=q.z>=near;
+   if(a)clip.push(p);
+   if(a!==b){const f=(near-p.z)/(q.z-p.z);clip.push({x:p.x+(q.x-p.x)*f,y:p.y+(q.y-p.y)*f,z:near,u:p.u+(q.u-p.u)*f,v:p.v+(q.v-p.v)*f});}
+  }
+  for(let i=1;i<clip.length-1;i++){
+   const pts=[clip[0],clip[i],clip[i+1]],p=pts.map(q=>projectLocal(q.x,q.y,q.z,pitch));
+   if(p.some(q=>!q))continue;
+   const S=pts.map(q=>({x:q.u*img.width,y:q.v*img.height}));
+   const du1=S[1].x-S[0].x,dv1=S[1].y-S[0].y,
+    du2=S[2].x-S[0].x,dv2=S[2].y-S[0].y,det=du1*dv2-du2*dv1;
+   if(Math.abs(det)<1e-7)continue;
+   const dx1=p[1].x-p[0].x,dy1=p[1].y-p[0].y,dx2=p[2].x-p[0].x,dy2=p[2].y-p[0].y;
+   const a=(dx1*dv2-dx2*dv1)/det,b=(dy1*dv2-dy2*dv1)/det,
+    c=(dx2*du1-dx1*du2)/det,d=(dy2*du1-dy1*du2)/det,
+    e=p[0].x-a*S[0].x-c*S[0].y,f=p[0].y-b*S[0].x-d*S[0].y;
+   ctx.save();ctx.beginPath();ctx.moveTo(p[0].x,p[0].y);
+   ctx.lineTo(p[1].x,p[1].y);ctx.lineTo(p[2].x,p[2].y);ctx.closePath();ctx.clip();
+   ctx.transform(a,b,c,d,e,f);ctx.fillStyle=pattern;
+   const minX=Math.min(...S.map(q=>q.x))-2,minY=Math.min(...S.map(q=>q.y))-2;
+   ctx.fillRect(minX,minY,Math.max(...S.map(q=>q.x))-minX+2,
+    Math.max(...S.map(q=>q.y))-minY+2);ctx.restore();tris++;
+  }
+ }
+ api.accounting(tris,1);return tris>0;
+}
+
 function webglGradientRect(y0,y1,cTop,cBottom){const bg=apexInspectionActive()?1:WEBGL_BG_NDC;const a=webglCssColor(cTop),b=webglCssColor(cBottom),ny0=1-y0/H*2,ny1=1-y1/H*2;webglVertex(-1,ny0,bg,a);webglVertex(1,ny0,bg,a);webglVertex(1,ny1,bg,b);webglVertex(-1,ny0,bg,a);webglVertex(1,ny1,bg,b);webglVertex(-1,ny1,bg,b)}
 function webglScreenTri(a,b,c,color,camZ=null){const col=webglCssColor(color);webglVertexPx(a[0],a[1],col,camZ);webglVertexPx(b[0],b[1],col,camZ);webglVertexPx(c[0],c[1],col,camZ)}
 function webglScreenQuad(a,b,c,d,color,camZ=null){webglScreenTri(a,b,c,color,camZ);webglScreenTri(a,c,d,color,camZ)}
