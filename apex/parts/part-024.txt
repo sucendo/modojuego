@@ -4286,7 +4286,13 @@ function apexSponsorTexturePaint(quad,key,pitch,backend,u0=0,u1=1,v0=0,v1=1){
  const tx=window.ApexSponsorTextures,enabled=window.ApexTrackSponsors;
  if(!tx||!tx.assets[key]||enabled?.enabled===false||
     (enabled?.featureEnabled===false&&['apex26-start-finish','radiquero-pedestrian-bridge','mdtel-white-24m'].includes(key)))return false;
- if(!quad||quad.length!==4||quad.some(p=>!p)||quad.every(p=>p.z<.65))return false;
+ if(!quad||quad.length!==4||quad.some(p=>!p)||quad.every(p=>p.z<.65)||
+    quad.every(p=>p.z>(mobilePerformanceMode()?180:260)))return false;
+ const clipped=clipPolyNear(quad,.65),projected=projectCameraPoly(clipped,pitch);
+ if(!projected||projected.length<3)return false;
+ const xs=projected.map(p=>p[0]),ys=projected.map(p=>p[1]);
+ if(Math.max(...xs)<-10||Math.min(...xs)>W+10||
+    Math.max(...ys)<-10||Math.min(...ys)>H+10)return false;
  if(backend==='webgl2')return apexSponsorTextureQueueGl(quad,key,pitch,u0,u1,v0,v1);
  return apexSponsorTextureDrawCanvas(quad,key,pitch,u0,u1,v0,v1);
 }
