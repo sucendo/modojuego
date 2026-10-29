@@ -76,7 +76,7 @@ const drawn=[],testContext={
  apexSponsorDraw:(quad,key,pitch,backend,id,fraction,fullBleed)=>{drawn.push({quad,key,backend,id,fullBleed});return true},
  clamp:(v,a,b)=>Math.max(a,Math.min(b,v)),
  webglPushCamQuad:(...args)=>{drawn.push({kind:'band',args});},
- polyCam:(...args)=>{drawn.push({kind:'canvas-band',args});}
+ drawCamQuadTriangles:(...args)=>{drawn.push({kind:'canvas-band',args});}
 };
 vm.runInNewContext(body2.slice(start,end),testContext);
 assert.equal(testContext.apexFeatureTunnelBanner({sourceId:'t0',width:24,height:5,anchor:{s:808},advertisingBanner:false}, {},0,'webgl2'),false);
@@ -100,4 +100,6 @@ const width=Math.abs(radiquero.quad[3].x-radiquero.quad[0].x),
 assert.ok(width>14&&width<28,'Centre artwork must keep physical proportions');
 assert.ok(Math.abs(width/height-7.2*1.12)<.1,'Radiquero lettering must not be stretched across the full footbridge');
 assert.ok(drawn.filter(v=>v.kind==='band').length>=2,'Burgundy fascia continues to bridge ends');
+assert.equal(testContext.apexFeatureBridgeBanner(bridge,{x:0,z:1180},0,'canvas2d'),true);
+assert.ok(drawn.some(v=>v.kind==='canvas-band'),'Canvas facade must use shared global drawCamQuadTriangles, not undefined polyCam');
 console.log(JSON.stringify({test:'feature-sponsor-audit',panels:3,legacy:4,tunnelOptIn:true,canvasWebgl:true,ok:true}));
