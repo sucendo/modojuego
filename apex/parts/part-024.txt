@@ -4265,6 +4265,21 @@ function apexSponsorExactAnchor(source,brandKey){
 // Paint the complete green wall face: one seamless 8m SVG tile every 8m,
 // with diagonals from the ground to the top of the barrier. Each panel gets
 // only its section of the original triangle mesh (cached at track setup).
+// Clip only triangles crossing the near plane; do not discard entire
+// advertising artwork when one corner passes behind the moving camera.
+function apexSponsorClipTriangle(a,b,c,pitch,backend,color,depthBias){
+ const poly=clipPolyNear([a,b,c],.65);if(poly.length<3)return false;
+ const pp=projectCameraPoly(poly,pitch);if(!pp||pp.length<3)return false;
+ if(backend==='webgl2'){
+  for(let i=1;i<poly.length-1;i++)for(const j of [0,i,i+1])
+   webglVertexPx(pp[j][0],pp[j][1],color,poly[j].z-depthBias);
+ }else{
+  ctx.moveTo(pp[0][0],pp[0][1]);
+  for(let i=1;i<pp.length;i++)ctx.lineTo(pp[i][0],pp[i][1]);
+  ctx.closePath();
+ }
+ return true;
+}
 function apexSponsorContinuousWall(item,pitch,backend,key){
  const api=window.ApexTrackSponsors;
  if(!api||!api.enabled||(key==='mdtel-white-24m'&&!api.featureEnabled))return false;
@@ -4275,16 +4290,16 @@ function apexSponsorContinuousWall(item,pitch,backend,key){
        from=exact?source.sponsorPatternFromM:item.sponsorS0,
        to=exact?source.sponsorPatternToM:from+wrapDeltaS(item.sponsorS0,item.sponsorS1,trackData.km*1000);
  if(!Number.isFinite(from)||!Number.isFinite(to)||to-from<.02)return false;
- if(raw.some(p=>!p||p.z<.65)||raw.every(p=>p.z>(mobile?180:260)))return false;
- const [bottom0,top0,top1,bottom1]=raw;
- const projected=[top0,top1,bottom1,bottom0].map(p=>projectLocal(p.x,p.y,p.z,pitch));
- if(projected.some(p=>!p))return false;
- const minX=Math.min(...projected.map(p=>p.x)),maxX=Math.max(...projected.map(p=>p.x)),
-       minY=Math.min(...projected.map(p=>p.y)),maxY=Math.max(...projected.map(p=>p.y));
+ if(raw.some(p=>!p)||raw.every(p=>p.z<.65)||raw.every(p=>p.z>(mobile?180:260)))return false;
+ const [bottom0,top0,top1,bottom1]=raw,nearClip=raw.some(p=>p.z<.65);
+ const projected=projectCameraPoly(clipPolyNear([top0,top1,bottom1,bottom0],.65),pitch);
+ if(!projected||projected.length<3)return false;
+ const minX=Math.min(...projected.map(p=>p[0])),maxX=Math.max(...projected.map(p=>p[0])),
+       minY=Math.min(...projected.map(p=>p[1])),maxY=Math.max(...projected.map(p=>p[1]));
  if(maxX<0||minX>W||maxY<0||minY>H||maxX-minX<4||maxY-minY<2)return false;
  // Reverse BOTH the world phase and the 3D quad when the camera looks from
  // the opposite end. This keeps lettering readable without breaking seams.
- const reversed=projected[0].x>projected[1].x,
+ const reversed=nearClip?top0.x>top1.x:projected[0][0]>projected[1][0],
        quad=reversed?[top1,top0,bottom0,bottom1]:[top0,top1,bottom1,bottom0],
        cached=api.wallTileLayers(source,from,to,reversed,key);
  if(!cached)return false;
@@ -4310,8 +4325,9 @@ function apexSponsorContinuousWall(item,pitch,backend,key){
        wx=br.x-tr.x-bl.x+tl.x,wy=br.y-tr.y-bl.y+tl.y,wz=br.z-tr.z-bl.z+tl.z;
  const vertex=(u,v,depthBias)=>{
   const uv=u*v,z=tl.z+uz*u+vz*v+wz*uv,
-        p=projectLocal(tl.x+ux*u+vx*v+wx*uv,tl.y+uy*u+vy*v+wy*uv,z,pitch);
-  p.z=z-depthBias;return p;
+        x=tl.x+ux*u+vx*v+wx*uv,y=tl.y+uy*u+vy*v+wy*uv;
+  if(nearClip)return {x,y,z};
+  const p=projectLocal(x,y,z,pitch);p.z=z-depthBias;return p;
  };
  const layers=[];
  if(accentVisible)layers.push(...cached.accents);
@@ -4323,7 +4339,8 @@ function apexSponsorContinuousWall(item,pitch,backend,key){
   if(backend==='canvas2d'){ctx.fillStyle=layer.fill;ctx.beginPath();}
   for(let i=0;i<points.length;i+=6){
    const p=vertex(points[i],points[i+1],depthBias),q=vertex(points[i+2],points[i+3],depthBias),r=vertex(points[i+4],points[i+5],depthBias);
-   if(backend==='webgl2'){webglVertexPx(p.x,p.y,col,p.z);webglVertexPx(q.x,q.y,col,q.z);webglVertexPx(r.x,r.y,col,r.z);}
+   if(nearClip)apexSponsorClipTriangle(p,q,r,pitch,backend,col,depthBias);
+   else if(backend==='webgl2'){webglVertexPx(p.x,p.y,col,p.z);webglVertexPx(q.x,q.y,col,q.z);webglVertexPx(r.x,r.y,col,r.z);}
    else{ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.lineTo(r.x,r.y);ctx.closePath();}
   }
   if(backend==='canvas2d')ctx.fill();
@@ -4550,17 +4567,19 @@ function apexFeatureTunnelBanner(it,cam,pitch,backend){
 
 function apexSponsorDraw(raw,key,pitch,backend,id,heightFraction=.80,fullBleed=false){
  const api=window.ApexTrackSponsors,logo=api&&api.data[key],mobile=mobilePerformanceMode();
- if(!api||!api.enabled||(api.featureEnabled===false&&(key==='apex26-start-finish'||key==='radiquero-pedestrian-bridge'||key==='mdtel-white-24m'))||!logo||raw.some(p=>!p||p.z<.65)||raw.every(p=>p.z>(mobile?180:260)))return false;
+ if(!api||!api.enabled||(api.featureEnabled===false&&(key==='apex26-start-finish'||key==='radiquero-pedestrian-bridge'||key==='mdtel-white-24m'))||!logo||raw.some(p=>!p)||raw.every(p=>p.z<.65)||raw.every(p=>p.z>(mobile?180:260)))return false;
  const [a,t0,t1,b]=raw,span=Math.hypot(b.x-a.x,b.y-a.y,b.z-a.z),height=Math.hypot(t0.x-a.x,t0.y-a.y,t0.z-a.z);
  if(span<.25||height<.15)return false;
  const logoH=fullBleed?height:Math.min(height*heightFraction,span*.84/logo.aspect),logoW=fullBleed?span:logoH*logo.aspect;
  const u0=fullBleed?0:.5-logoW/span/2,u1=fullBleed?1:1-u0,v0=fullBleed?0:.51-logoH/height/2,v1=fullBleed?1:v0+logoH/height;
  const map=(u,v)=>camMix(camMix(a,b,u),camMix(t0,t1,u),v);
  let quad=[map(u0,v1),map(u1,v1),map(u1,v0),map(u0,v0)];
- const pp=quad.map(p=>projectLocal(p.x,p.y,p.z,pitch));if(pp.some(p=>!p))return false;
- const minX=Math.min(...pp.map(p=>p.x)),maxX=Math.max(...pp.map(p=>p.x)),minY=Math.min(...pp.map(p=>p.y)),maxY=Math.max(...pp.map(p=>p.y));
+ const nearClip=quad.some(p=>p.z<.65),pp=projectCameraPoly(clipPolyNear(quad,.65),pitch);
+ if(!pp||pp.length<3)return false;
+ const minX=Math.min(...pp.map(p=>p[0])),maxX=Math.max(...pp.map(p=>p[0])),minY=Math.min(...pp.map(p=>p[1])),maxY=Math.max(...pp.map(p=>p[1]));
  if(maxX<0||minX>W||maxY<0||minY>H||maxX-minX<12||maxY-minY<4)return false;
- if((pp[0].x+pp[3].x)>(pp[1].x+pp[2].x))quad=[quad[1],quad[0],quad[3],quad[2]];
+ if(nearClip?(quad[0].x+quad[3].x>quad[1].x+quad[2].x):((pp[0][0]+pp[3][0])>(pp[1][0]+pp[2][0])))
+  quad=[quad[1],quad[0],quad[3],quad[2]];
  api.beginFrame(renderFrameId);const layers=api.claim(id,key,maxY-minY,mobile);if(!layers)return false;
  const start=performance.now(),[tl,tr,br,bl]=quad;
  // Bilinear perspective basis, computed once. Unlike the old renderer, no
@@ -4573,17 +4592,25 @@ function apexSponsorDraw(raw,key,pitch,backend,id,heightFraction=.80,fullBleed=f
   const t=layer.triangles,col=backend==='webgl2'?webglCssColor(layer.fill):null;
   if(backend==='canvas2d'){ctx.fillStyle=layer.fill;ctx.beginPath();}
   for(let i=0;i<t.length;i+=6){
-   // No temporary arrays/objects per vertex: feed the shared WebGL batch
-   // (or Canvas path) directly with the scalar projected coordinates.
-   for(let k=0;k<6;k+=2){
-    const u=t[i+k],v=t[i+k+1],uv=u*v,z=tl.z+uz*u+vz*v+wz*uv,inv=f/z,
-          x=halfW+inv*(tl.x+ux*u+vx*v+wx*uv),
-          y=horizon+inv*(eye-tl.y-uy*u-vy*v-wy*uv);
-    if(backend==='webgl2')webglVertexPx(x,y,col,z-.026);
-    else if(k===0)ctx.moveTo(x,y);
-    else ctx.lineTo(x,y);
+   // Keep the allocation-free path except for the few triangles at z=.65.
+   if(nearClip){
+    const verts=[];
+    for(let k=0;k<6;k+=2){
+     const u=t[i+k],v=t[i+k+1],uv=u*v;
+     verts.push({x:tl.x+ux*u+vx*v+wx*uv,y:tl.y+uy*u+vy*v+wy*uv,z:tl.z+uz*u+vz*v+wz*uv});
+    }
+    apexSponsorClipTriangle(verts[0],verts[1],verts[2],pitch,backend,col,.026);
+   }else{
+    for(let k=0;k<6;k+=2){
+     const u=t[i+k],v=t[i+k+1],uv=u*v,z=tl.z+uz*u+vz*v+wz*uv,inv=f/z,
+           x=halfW+inv*(tl.x+ux*u+vx*v+wx*uv),
+           y=horizon+inv*(eye-tl.y-uy*u-vy*v-wy*uv);
+     if(backend==='webgl2')webglVertexPx(x,y,col,z-.026);
+     else if(k===0)ctx.moveTo(x,y);
+     else ctx.lineTo(x,y);
+    }
+    if(backend==='canvas2d')ctx.closePath();
    }
-   if(backend==='canvas2d')ctx.closePath();
   }
   if(backend==='canvas2d')ctx.fill();
  }
