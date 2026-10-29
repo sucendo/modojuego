@@ -9,16 +9,29 @@ window.__madridSavedSvgAudit={
  async importSaved(){
   const m=await fetch('circuits/manifest.json',{cache:'no-cache'}).then(r=>{if(!r.ok)throw Error('Missing Madrid manifest');return r.json()});
   const entry=m.circuits['14-spain'];
+  // Match the real "Cargar versión guardada" order: JSON first, SVG second.
+  if(!entry.json)throw Error('Madrid saved JSON not configured');
+  const cfg=validateCircuitJson(await fetch('circuits/'+entry.json,{cache:'no-cache'}).then(r=>{
+   if(!r.ok)throw Error('Missing Madrid JSON');return r.json();
+  }));
+  const spec=registerCircuitFromJson(cfg);
+  if(!writeStoredCircuitJson(spec.dir,cfg))throw Error('Madrid JSON could not be persisted');
   const svg=await fetch('circuits/'+entry.svg,{cache:'no-cache'}).then(r=>{if(!r.ok)throw Error('Missing Madrid SVG');return r.text()});
-  const spec=calendar.find(s=>s.dir==='14-spain');
   const imported=await importEditableCircuitSvgText(svg,spec);
   const world=imported.worldPayload;
   const landmarks=world.landmarks||[];
   const count=t=>landmarks.filter(x=>x.type===t).length;
-  return {file:entry.svg,source:entry.sourceFileName,bytes:new TextEncoder().encode(svg).length,
+  const colors=readStoredCircuitJson(spec.dir)?.visual?.curbs?.colors;
+  const marks=landmarks.filter(apexIsCurbAuthoringMark);
+  const palette=[colors[1],colors[0]];
+  const mesh=window.ApexSvgCurbs.compile(marks,()=>0,palette);
+  const monumental=readStoredCircuitJson(spec.dir)?.banking?.corners?.find(c=>+c.turn===12);
+  return {file:entry.svg,json:entry.json,source:entry.sourceFileName,bytes:new TextEncoder().encode(svg).length,
    geometry:!!imported.geometry,revision:world.profileRevision,
    boards:imported.brakeBoards||0,stored:!!readStoredCustomTrackSvg('14-spain'),
-   surfaceZones:count('surfaceZone'),curbs:landmarks.filter(x=>String(x.sourceRole||'').startsWith('curb-')).length,
+   surfaceZones:count('surfaceZone'),curbs:marks.length,
+   colors,meshColors:[...new Set(mesh.quads.map(q=>q.color))],bankProfile:monumental?.profile||[],
+   bankMax:monumental?.bankDeg,bankS:monumental?.s,
    tunnelCount:count('tunnel'),landmarks:landmarks.length};
  }
 };`;
@@ -41,6 +54,12 @@ window.__madridSavedSvgAudit={
   assert.equal(result.source,'apex26_14-spain_circuito_completo (15).svg');
   assert.equal(result.bytes,788725);
   assert.equal(result.geometry,true);
+  assert.equal(result.json,'json/apex26_14-madrid-spain_2026-10-29.json');
+  assert.deepEqual(result.colors,['#f2c500','#d51f27']);
+  assert.ok(result.meshColors.includes('#d51f27')&&result.meshColors.includes('#f2c500'),
+   'SVG-authored curbs should be painted red/yellow from JSON');
+  assert.equal(result.bankMax,13.4957);
+  assert.ok(result.bankProfile.some(([u,deg])=>u<=.08&&deg>=5),'The Monumental has no early banking');
   assert.equal(result.stored,true);
   assert.ok(result.landmarks>=80,'Imported landmarks lost');
   assert.ok(result.surfaceZones>=10,'Runoffs missing in import');
