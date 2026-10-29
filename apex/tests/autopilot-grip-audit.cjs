@@ -12,7 +12,7 @@ const physical=section('function autoCurvatureEnvelope(','function autoEnsureRis
 const envelope=section('function autoGripTrajectoryEnvelope(','// v5.145: segundo cinturón');
 const ctx={
  Math,Number,player:{teamKey:'test',tyres:{gripFront:1,gripRear:1}},trackData:{km:5.414},
- raceT:1,wet:false,nowCurvature:s=>(s>=150&&s<=240?.012:0),
+ raceT:1,wet:false,demoMode:true,assistMode:false,nowCurvature:s=>(s>=150&&s<=240?.012:0),
  clamp:(v,a,b)=>Math.max(a,Math.min(b,v)),
  curvatureAt:s=>ctx.nowCurvature(s),
  apexTyreGripScale:car=>Math.min(car.tyres.gripFront,car.tyres.gripRear),
@@ -34,6 +34,9 @@ assert.ok(rain.target<worn.target,'Rain must further reduce approach speed');
 ctx.nowCurvature=()=>.15;ctx.raceT+=.1;
 const hairpin=ctx.autoPhysicalCornerSpeed(0);
 assert.ok(hairpin<14,'Physical corner speed must not be floored to 14 m/s');
+ctx.demoMode=false;ctx.assistMode=false;
+assert.ok(ctx.autoPhysicalCornerSpeed(0)>=14,'Manual/rival tuning must stay unchanged');
+ctx.demoMode=true;
 ctx.nowCurvature=()=>0;ctx.raceT+=.1;
 const straight=ctx.autoGripTrajectoryEnvelope(0);
 assert.equal(straight.target,Infinity,'A truly straight section must not get an arbitrary cap');
