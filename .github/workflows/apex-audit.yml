@@ -32,6 +32,9 @@ jobs:
         run: |
           mkdir -p /tmp/apex-results
           node apex/tests/render-audit.cjs > /tmp/apex-results/render.txt
+          node apex/tests/track-sponsors-audit.cjs > /tmp/apex-results/sponsor-master.json
+          node apex/tests/feature-sponsor-audit.cjs > /tmp/apex-results/sponsor-feature.json
+          node apex/tests/sponsor-render-stability.cjs > /tmp/apex-results/sponsor-stability.json
           python3 apex/tests/pit-geometry-audit.py > /tmp/apex-results/pit-geometry.json
           node apex/tests/track-preview-isolation.cjs > /tmp/apex-results/preview-isolation.json
           node apex/tests/race-distance-audit.cjs > /tmp/apex-results/race-distance.json
