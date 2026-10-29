@@ -33,8 +33,8 @@ try{
   document.open();
   document.write(parts.join(""));
   document.close();
-  // Shared SVG meshes load once; no per-frame image decode or GPU textures.
-  for(const src of ['js/svg-curbs.js?v=svg-import-v1','js/track-sponsor-vectors.js?v=sct-planar-24m-v2','js/feature-sponsor-vectors.js?v=vector-perf-v2','js/track-sponsors.js?v=vector-perf-v2']){
+  // SVG masters remain editable; sponsor artwork is rasterized once into GPU textures.
+  for(const src of ['js/svg-curbs.js?v=svg-import-v1','js/track-sponsor-vectors.js?v=sct-planar-24m-v2','js/feature-sponsor-vectors.js?v=vector-perf-v2','js/track-sponsors.js?v=texture-v1','js/sponsor-textures.js?v=texture-v1']){
     const script=document.createElement('script');script.src=src;script.async=false;
     (document.body||document.head).appendChild(script);
   }
