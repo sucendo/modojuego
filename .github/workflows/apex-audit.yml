@@ -99,6 +99,7 @@ jobs:
             if curl --fail --silent http://127.0.0.1:8765/apex/apex.html > /dev/null; then break; fi
             sleep 1
           done
+          node apex/tests/madrid-saved-svg-browser.cjs 2>&1 | tee /tmp/apex-results/madrid-saved-svg-browser.jsonl
           node apex/tests/sponsor-textures-browser.cjs 2>&1 | tee /tmp/apex-results/sponsor-textures-browser.jsonl
           APEX_AUDIT_CITY_ONLY=1 node apex/tests/urban-distance-boards-browser.cjs 2>&1 | tee /tmp/apex-results/urban-distance-boards-browser.jsonl
           node apex/tests/preparation-9a-browser.cjs 2>&1 | tee /tmp/apex-results/preparation-9a.jsonl
