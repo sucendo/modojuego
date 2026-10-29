@@ -97,13 +97,13 @@ jobs:
             if curl --fail --silent http://127.0.0.1:8765/apex/apex.html > /dev/null; then break; fi
             sleep 1
           done
+          node apex/tests/sponsor-textures-browser.cjs 2>&1 | tee /tmp/apex-results/sponsor-textures-browser.jsonl
           node apex/tests/preparation-9a-browser.cjs 2>&1 | tee /tmp/apex-results/preparation-9a.jsonl
           node apex/tests/competition-flows-9a-browser.cjs 2>&1 | tee /tmp/apex-results/competition-flows-9a.jsonl
           APEX_PIT_RESULTS=/tmp/apex-results/pits node apex/tests/pit-tyres-browser.cjs 2>&1 | tee /tmp/apex-results/pit-browser.jsonl
           APEX_RACE_RESULTS=/tmp/apex-results/races node apex/tests/race-distance-browser.cjs 2>&1 | tee /tmp/apex-results/race-browser.jsonl
           node apex/tests/rival-pit-browser.cjs 2>&1 | tee /tmp/apex-results/rival-pit-browser.jsonl
           node apex/tests/browser-audit.cjs 2>&1 | tee /tmp/apex-results/browser.jsonl
-          node apex/tests/sponsor-textures-browser.cjs 2>&1 | tee /tmp/apex-results/sponsor-textures-browser.jsonl
       - uses: actions/upload-artifact@v4
         if: always()
         with:
