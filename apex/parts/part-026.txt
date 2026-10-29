@@ -812,8 +812,8 @@ function webglSubmit(){
   bindDynamic();gl.drawArrays(gl.TRIANGLES,cursor/7,(webglFloatCount-cursor)/7);
   dynamicDrawCalls++;
  }
- const sponsorDrawCalls=apexSponsorTextureSubmitGl();
- webglState.triangles=Math.floor(webglFloatCount/21)+staticTriangles+apexSponsorTextureGpu.triangles;
+ const sponsorDrawCalls=typeof apexSponsorTextureSubmitGl==='function'?apexSponsorTextureSubmitGl():0;
+ webglState.triangles=Math.floor(webglFloatCount/21)+staticTriangles+(typeof apexSponsorTextureGpu!=='undefined'?apexSponsorTextureGpu.triangles:0);
  webglState.drawCalls=dynamicDrawCalls+staticDrawCalls+sponsorDrawCalls;
  telemetryPerf.webglTriangles=webglState.triangles;
  renderProfileAdd('webglSubmitMs',performance.now()-t0);
@@ -823,7 +823,7 @@ function webgl2RenderFrame(){
  renderFrameId++;renderProfileReset();
  if(!webglInit()){setRendererBackend("canvas2d",{notify:false,persist:false});return canvas2dRenderFrame()}
  apexSyncGpuScene();
- webglClearCanvasOverlay();webglFloatCount=0;webglScreenRoll=0;apexSponsorTextureBeginFrame();
+ webglClearCanvasOverlay();webglFloatCount=0;webglScreenRoll=0;if(typeof apexSponsorTextureBeginFrame==='function')apexSponsorTextureBeginFrame();
  // Ninguna pasada GPU anterior debe quedar pendiente al cambiar de
  // pantalla, renderer o circuito: seguridad ante abortos de frame.
  if(typeof apexPhase5TerrainGPU!=='undefined')apexPhase5TerrainGPU.pending=null;
