@@ -1564,14 +1564,22 @@ function boardGeometry(board,cam,pitch){
   // The panel grows perpendicular to the wall, from an edge attached to the
   // fence. Its front normal faces ONCOMING traffic even when the SVG segment
   // runs backwards; never rotate the lettering with the camera.
-  const tx=-side*mount.ix,tz=-side*mount.iz;
+  const initialTx=-side*mount.ix,initialTz=-side*mount.iz;
+  // Look at the ACTUAL road tangent at this marker. Exact SVG walls can
+  // reverse their point order and curve past the road; the inward normal
+  // alone does not identify the face visible to approaching drivers.
+  const rawFacing=initialTz*q.tx-initialTx*q.tz,
+        orientation=rawFacing>0?-1:1,
+        tx=initialTx*orientation,tz=initialTz*orientation,
+        frontDot=tz*q.tx-tx*q.tz;
   const w=mount.width*.5,y0=mount.bottom,y1=y0+mount.height,
         world=[{x:mount.x-tx*w,y:y1,z:mount.z-tz*w},{x:mount.x+tx*w,y:y1,z:mount.z+tz*w},{x:mount.x+tx*w,y:y0,z:mount.z+tz*w},{x:mount.x-tx*w,y:y0,z:mount.z-tz*w}],
         camPts=world.map(p=>worldToCamera(p.x,p.y,p.z,cam));
   if(camPts.some(p=>p.z<.65))return null;
   const pts=camPts.map(p=>projectLocal(p.x,p.y,p.z,pitch));if(pts.some(p=>!p))return null;
   const screenW=Math.max(Math.hypot(pts[1].x-pts[0].x,pts[1].y-pts[0].y),Math.hypot(pts[2].x-pts[3].x,pts[2].y-pts[3].y)),screenH=Math.max(Math.hypot(pts[3].x-pts[0].x,pts[3].y-pts[0].y),Math.hypot(pts[2].x-pts[1].x,pts[2].y-pts[1].y)),z=camPts.reduce((sum,p)=>sum+p.z,0)/4;
-  return {board,q,mount,z,alpha:1,pts,camPts,screenW,screenH,poles:[],urban:true};
+  return {board,q,mount,z,alpha:1,pts,camPts,screenW,screenH,poles:[],urban:true,
+    faceTx:tx,faceTz:tz,frontDot};
  }
  const latMag=board.authored&&Number.isFinite(board.authoredLat)?Math.max(env.half+.4,board.authoredLat):(env.half+env.curb+env.runoff+(board.latExtra||1.15));
  // v5.159: el cartel se apoya en el terreno peraltado del lado correcto.
