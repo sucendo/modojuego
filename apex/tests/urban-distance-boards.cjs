@@ -38,4 +38,16 @@ for(const side of [1,-1]){
   assert.ok(Math.abs(wallGap-.01)<1e-8,'One vertical side fixed 1 cm from fence');
 }
 
+// Independent check: if the track tangent reverses relative to the wall
+// normal, flip the plate (not the number glyphs) and keep either edge attached.
+c.renderRibbonFrameAt=()=>({x:0,z:100,ox:1,oz:0,tx:0,tz:-1});
+for(const side of [1,-1]){
+ const sg={side,s:100,x1:side*10,z1:90,x2:side*10,z2:110,y1:2,y2:2,height:1.1,fence:true,fenceH:2.35};
+ c.trackData={spec:{dir:'14-spain'},km:5,customWorld:{wallSegments:[sg]}};
+ const g=c.boardGeometry({s:100,side,mark:200},{},0);
+ assert.ok(g&&g.urban,'Board visible with reversed road tangent');
+ assert.ok(g.frontDot<-.95,'Front must still face arriving traffic after reversing tangent');
+ const gaps=[g.camPts[0],g.camPts[1]].map(p=>Math.abs(p.x-sg.x1));
+ assert.ok(Math.abs(Math.min(...gaps)-.01)<1e-8,'Nearest plate edge stays fixed to the fence');
+}
 console.log(JSON.stringify({test:'urban-distance-boards',svg:true,procedural:true,cache:true,horizontalDigits:true,permanentUnchanged:true,facesOncoming:true,sideAttached:true,ok:true}));
