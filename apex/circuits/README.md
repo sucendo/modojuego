@@ -25,6 +25,16 @@ una copia exacta del SVG `apex26_14-spain_circuito_completo (15).svg`
 entregado por el usuario. Es la versión que utiliza **Cargar versión guardada**
 desde el editor SVG de Madrid.
 
+Además, el manifiesto selecciona `json/apex26_14-madrid-spain_2026-10-29.json`:
+la carga guardada aplica **primero el JSON y después el SVG (15)**.
+El JSON conserva el par de colores oficial de esta configuración,
+amarillo `#f2c500` y rojo `#d51f27`, tanto para pianos del ribbon
+como para los pianos autorados mediante trazados SVG. El peralte de
+**La Monumental (T12)** comienza a aumentar casi desde el principio del
+arco (2,5 %) y alcanza el máximo **13,4957°** al 23 % del giro. Son
+fracciones del tramo de curva inferido desde el marcador T12, no del
+recorrido completo. Solo cambia esa progresión; el ángulo máximo se conserva.
+
 La edición (14) sigue disponible como `svg/apex26_14-madrid-spain_2026-10-28.svg`
 y la BASE interna original permanece intacta en `svg/apex26_14-madrid-spain.svg`.
 No se han reconstruido ni sustituido los elementos del nuevo SVG por datos de

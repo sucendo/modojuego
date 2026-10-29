@@ -10,6 +10,22 @@ const manifest=JSON.parse(fs.readFileSync(p.join(base,'circuits/manifest.json'),
 const entry=manifest.circuits['14-spain'];
 assert.equal(entry.svg,'svg/apex26_14-madrid-spain_2026-10-29.svg');
 assert.equal(entry.sourceFileName,'apex26_14-spain_circuito_completo (15).svg');
+assert.equal(entry.json,'json/apex26_14-madrid-spain_2026-10-29.json');
+const cfg=JSON.parse(fs.readFileSync(p.join(base,'circuits',entry.json),'utf8'));
+assert.equal(cfg.schema,'APEX_CIRCUIT_JSON_V1');
+assert.equal(cfg.circuit.id,'14-spain');
+assert.deepEqual(cfg.visual.curbs.colors,['#f2c500','#d51f27']);
+const monumental=cfg.banking.corners.find(c=>+c.turn===12);
+assert.equal(monumental.name,'La Monumental');
+assert.equal(monumental.bankDeg,13.4957);
+assert.ok(Array.isArray(monumental.profile)&&monumental.profile.length>=6);
+assert.deepEqual(monumental.profile[0],[0,0]);
+assert.ok(monumental.profile[1][0]<=.03&&monumental.profile[1][1]>=1);
+assert.ok(monumental.profile.find(([u,d])=>u<=.25&&d===13.4957),'Full Monumental banking is too late');
+for(let i=1;i<monumental.profile.length;i++)assert.ok(monumental.profile[i][0]>monumental.profile[i-1][0],'Banking control points must increase');
+const old=fs.readFileSync(p.join(base,'parts/part-023.txt'),'utf8');
+assert.ok(old.includes('function apexAuthoredBankAt(s)'),'Banking engine missing');
+
 assert.equal(entry.previousEditionSvg,'svg/apex26_14-madrid-spain_2026-10-28.svg');
 assert.equal(entry.editionDate,'2026-10-29');
 assert.ok(fs.existsSync(p.join(base,'circuits',entry.previousEditionSvg)),'Previous (14) edition must be kept');

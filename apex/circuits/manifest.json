@@ -7,13 +7,13 @@
       "name": "Madrid",
       "displayName": "MADRING",
       "svg": "svg/apex26_14-madrid-spain_2026-10-29.svg",
-      "json": null,
+      "json": "json/apex26_14-madrid-spain_2026-10-29.json",
       "status": "edited",
       "basePreserved": true,
       "previousSvg": "svg/apex26_14-madrid-spain.svg",
       "sourceFileName": "apex26_14-spain_circuito_completo (15).svg",
       "editionDate": "2026-10-29",
-      "notes": "La opción Cargar versión guardada importa íntegramente la edición (15) aportada por el usuario, incluidos pianos, escapatorias y otros objetos del SVG. La edición (14) y la BASE interna continúan disponibles por separado; RESTAURAR BASE no se modifica.",
+      "notes": "Cargar versión guardada importa SVG edición (15) y JSON Madrid del 29/10/2026. JSON define el amarillo #f2c500 / rojo #d51f27 de los pianos y adelanta el peralte progresivo de La Monumental desde casi la entrada; máximo 13,4957°. La BASE interna y las ediciones SVG anteriores siguen intactas.",
       "previousEditionSvg": "svg/apex26_14-madrid-spain_2026-10-28.svg"
     }
   }
