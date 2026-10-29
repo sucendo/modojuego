@@ -57,13 +57,19 @@ for(const x of [body2,body3]){
 }
 assert.ok(editor.includes('data-apex-ad-banner'));
 assert.ok(body2.includes("advertisingBanner:el.getAttribute('data-apex-ad-banner')==='true'"));
-const madrid=read('circuits/svg/apex26_14-madrid-spain_2026-10-28.svg');
+// The user's (15) SVG is authoritative: unlike (14), it does not opt
+// Madrid tunnel roofs into ads. Never silently re-add those opt-ins.
+const madrid=read('circuits/svg/apex26_14-madrid-spain_2026-10-29.svg');
+const previous=read('circuits/svg/apex26_14-madrid-spain_2026-10-28.svg');
 for(const id of ['tunnel_madrid_01','tunnel_madrid_02']){
  const match=madrid.match(new RegExp('<path id="'+id+'"[^>]*>'));
- assert.ok(match&&match[0].includes('data-apex-ad-banner="true"')&&match[0].includes('apex-tunnel-ad-enabled'),id+' opt-in missing');
+ const prev=previous.match(new RegExp('<path id="'+id+'"[^>]*>'));
+ assert.ok(match&&match[0].includes('data-apex-type="tunnel"'),id+' missing from saved (15) edition');
+ assert.ok(!match[0].includes('data-apex-ad-banner="true"'),id+' must retain its user-authored (15) opt-out');
+ assert.ok(prev&&prev[0].includes('data-apex-ad-banner="true"'),'Previous (14) ad opt-in should remain preserved');
 }
 const manifest=JSON.parse(read('circuits/manifest.json'));
-assert.equal(manifest.circuits['14-spain'].svg,'svg/apex26_14-madrid-spain_2026-10-28.svg');
+assert.equal(manifest.circuits['14-spain'].svg,'svg/apex26_14-madrid-spain_2026-10-29.svg');
 // Exercise the geometry helper without starting WebGL, ensuring physical locations
 // and the explicit false/true tunnel flag are independent of the renderer.
 const start=body2.indexOf('function apexFeatureTrackBanner('),end=body2.indexOf('function apexSponsorDraw(',start);
