@@ -11,8 +11,8 @@ const assets=['team-equipalia','sct','mdtel','sct-wall',
 assert.ok(html.includes('js/sponsor-textures.js'),'Texture loader is missing');
 assert.ok(submitSource.includes('apexSponsorTextureBeginFrame()'));
 assert.ok(submitSource.includes('apexSponsorTextureSubmitGl()'));
-assert.ok(renderSource.includes('gl.LINEAR_MIPMAP_LINEAR'));
-assert.ok(renderSource.includes('gl.generateMipmap'));
+assert.ok(textureSource.includes('gl.LINEAR_MIPMAP_LINEAR'));
+assert.ok(textureSource.includes('gl.generateMipmap'));
 assert.ok(renderSource.includes('gl.DEPTH_TEST'));
 const canvases=[];
 class MockImage{
