@@ -3037,7 +3037,7 @@ function webglInit(){
    gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);gl.depthMask(true);gl.clearDepth(1.0);gl.disable(gl.CULL_FACE);gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);webglResizeViewport();
    if(!webglCv.dataset.lossHook){
      webglCv.dataset.lossHook="1";
-     webglCv.addEventListener("webglcontextlost",e=>{e.preventDefault();apexPhase5GpuRelease(false);apexPhase5TerrainRelease(true);apexPhase6RoadRelease(true);apexPhase6RoadGPU.failedGl=null;apexPhase5GroundGPU.failedGl=null;apexPhase5TerrainGPU.failedGl=null;webglState.lost=true;webglState.ready=false;rendererWebglSupport=false;if(rendererBackendId()==="webgl2")setRendererBackend("canvas2d",{notify:true,persist:false})});
+     webglCv.addEventListener("webglcontextlost",e=>{e.preventDefault();apexPhase5GpuRelease(false);apexPhase5TerrainRelease(true);apexPhase6RoadRelease(true);apexPhase6RoadGPU.failedGl=null;apexPhase5GroundGPU.failedGl=null;apexPhase5TerrainGPU.failedGl=null;if(typeof apexSponsorTextureGpu!=='undefined'){if(typeof window!=='undefined')window.ApexSponsorTextures?.resetGl(webglState.gl);apexSponsorTextureGpu.gl=null;apexSponsorTextureGpu.program=null;apexSponsorTextureGpu.buffer=null;apexSponsorTextureGpu.capacity=0;}webglState.lost=true;webglState.ready=false;rendererWebglSupport=false;if(rendererBackendId()==="webgl2")setRendererBackend("canvas2d",{notify:true,persist:false})});
      webglCv.addEventListener("webglcontextrestored",()=>{apexPhase6RoadGPU.failedGl=null;apexPhase5GroundGPU.failedGl=null;apexPhase5TerrainGPU.failedGl=null;webglState={gl:null,program:null,buffer:null,aPos:-1,aColor:-1,ready:false,lost:false,error:"",triangles:0,depth:true};rendererWebglSupport=null;updateRendererBackendUi()});
    }
    return true;
