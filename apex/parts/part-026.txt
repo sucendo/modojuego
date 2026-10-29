@@ -2554,7 +2554,7 @@ function resetAutoDriveState(){
  player.autoPlan=null;player.autoPlanStamp=-99;player.autoLineStamp=raceT;player.autoTargetLat=player.lat;player.autoPassSide=0;player.autoPassUntil=0;
  player.autoRecovery=null;player.autoStuckSince=0;player.lastDrivableBoundaryHit=-99;player.autoLastWallHit=-99;player.autoLastWallSide=0;player.autoRecoveryProbe=null;
  player.autoPace=currentSession==='race'?1.00:1.000;player.autoStableTime=0;player.autoRiskTime=0;player.autoLastRisk=0;player.autoLowSpeedSince=0;player.autoLaunchAssistUntil=0;player.autoTechnicalActive=false;
- player.autoLastRivalContact=-99;player.autoLastRivalContactId=null;player.autoLastRivalContactClosing=0;player.autoRaceTraffic=null;player.autoRacePackRisk=0;player.autoRaceStartProtect=false;player.autoLaunchCorridorHold=false;player.autoFirstComplexLaneLock=false;player.autoTechnicalRiskPrep=0;player.autoKinkCommitUntil=-99;player.autoKinkCommitHeading=null;player.autoKinkCommitAngle=0;player.autoKinkCommitActive=false;player.autoKinkCommitRemaining=0;player.autoKinkCommitBlend=0;player.autoLaneSwingGuard=false;player.autoLaneSwingLimit=null;player.autoContactGuardUntil=-99;player.autoContactHoldLat=player.lat;player.autoRaceSurvivalActive=false;player.autoRaceSurvivalTarget=Infinity;player.autoRaceSurvivalCornerD=null;player.autoRaceSurvivalSafe=null;player.autoRaceSurvivalCleanRelease=false;player.autoRaceSurvivalRiskAhead=0;player.telemetryLastContainedContact=-99;player.autoBaseTrackTargetSpeed=0;player.autoPreTrafficTargetSpeed=0;player.autoTrafficSpeedLimit=null;player.autoTargetSpeedReason="TRACK";player.autoTargetSpeedReasonDetail=null;player.autoCommittedTargetSpeed=null;player.autoCommittedTargetStamp=raceT;player.autoEmergencyUnstickAt=-99;player.autoRecoveryAssist=false;player.autoRecoveryForcePull=false;player.autoRearThreat=0;player.autoTrafficEscapeLane=false;player.autoLimiterReduction=0;
+ player.autoLastRivalContact=-99;player.autoLastRivalContactId=null;player.autoLastRivalContactClosing=0;player.autoRaceTraffic=null;player.autoRacePackRisk=0;player.autoRaceStartProtect=false;player.autoLaunchCorridorHold=false;player.autoFirstComplexLaneLock=false;player.autoTechnicalRiskPrep=0;player.autoKinkCommitUntil=-99;player.autoKinkCommitHeading=null;player.autoKinkCommitAngle=0;player.autoKinkCommitActive=false;player.autoKinkCommitRemaining=0;player.autoKinkCommitBlend=0;player.autoLaneSwingGuard=false;player.autoLaneSwingLimit=null;player.autoContactGuardUntil=-99;player.autoContactHoldLat=player.lat;player.autoRaceSurvivalActive=false;player.autoRaceSurvivalTarget=Infinity;player.autoRaceSurvivalCornerD=null;player.autoRaceSurvivalSafe=null;player.autoRaceSurvivalCleanRelease=false;player.autoRaceSurvivalRiskAhead=0;player.telemetryLastContainedContact=-99;player.autoBaseTrackTargetSpeed=0;player.autoPreTrafficTargetSpeed=0;player.autoTrafficSpeedLimit=null;player.autoTargetSpeedReason="TRACK";player.autoTargetSpeedReasonDetail=null;player.autoCommittedTargetSpeed=null;player.autoCommittedTargetStamp=raceT;player.autoEmergencyUnstickAt=-99;player.autoRecoveryAssist=false;player.autoRecoveryForcePull=false;player.autoRearThreat=0;player.autoTrafficEscapeLane=false;player.autoLimiterReduction=0;player.autoGripEnvelopeCache=null;
  if(!player.autoRiskBins)autoEnsureRiskMemory();
 }
 function applyAutoDriveUI(){
@@ -2701,7 +2701,8 @@ function autoPhysicalCornerSpeed(s,car=player){
  if(k<.00055)return 99;
  const wet=apexWeatherIsWet(),mu=1.86*apexTyreGripScale(car),M=800,G=9.81;
  const safety=wet?.90:.960;
- let lo=12,hi=99;
+ // Very tight turns with worn / wrong compound tyres can require <14 m/s.
+ let lo=3.5,hi=99;
  for(let i=0;i<12;i++){
    const v=(lo+hi)*.5;
    const down=Math.min(38000,2.72*v*v);
@@ -2711,7 +2712,7 @@ function autoPhysicalCornerSpeed(s,car=player){
    const safe=(v*v*k<=latAccel)&&(needSteer<=maxSteer*.96);
    if(safe)lo=v;else hi=v;
  }
- return clamp(lo,14,99);
+ return clamp(lo,3.5,99);
 }
 function autoEnsureRiskMemory(){
  if(!player||!trackData)return null;
@@ -2892,6 +2893,34 @@ function autoTargetSpeed(plan,traffic,skill,bravery,diff=1){
  // v5.136: exactamente el mismo envelope geométrico/físico que usan los rivales.
  // El jugador añade su memoria de riesgo local porque su coche sí integra la física completa.
  return sharedDriverTrackTargetSpeed(player.s,{perf,skill,bravery,diff,pace,riskFn:autoRiskAt,riskWeight:.095,horizon:wet?330:370,step:8,safeScale:1,decelScale:1});
+}
+
+// Grip-constrained anticipatory braking for AUT, independent of manual
+// physics and rival AI. The existing tyre model supplies the compound,
+// temperature, wear and rain-adjusted grip. Cache for ~75 ms on mobile.
+function autoGripTrajectoryEnvelope(s){
+ if(!player||!trackData)return{target:Infinity,d:999,grip:1};
+ const grip=clamp(apexTyreGripScale(player),.25,1.06),wet=apexWeatherIsWet(),
+       cache=player.autoGripEnvelopeCache;
+ if(cache&&raceT-cache.t>=0&&raceT-cache.t<.075&&Math.abs(s-cache.s)<9&&
+    Math.abs(cache.grip-grip)<.015&&cache.wet===wet)return cache;
+ const perf=teamPerformance(player.teamKey),
+       // Reserve longitudinal grip while turning, with additional braking
+       // distance for standing water and a worn tyre contact patch.
+       decel=Math.max(2.6,grip*(wet?8.5:12.3)*perf.brake),
+       horizon=420,step=12;
+ let best=Infinity,bestD=999,bestCorner=Infinity;
+ for(let d=0;d<=horizon;d+=step){
+  const ss=s+d,k=autoCurvatureEnvelope(ss);
+  if(k<.0008)continue;
+  const e=envProfile(ss),wallish=apexWallishAtS(ss,e),
+        corner=autoPhysicalCornerSpeed(ss)*(wet?.955:.975)*(wallish?.965:1),
+        settle=d<18?0:(wet?18:13),
+        allowed=Math.sqrt(corner*corner+2*decel*Math.max(0,d-settle));
+  if(allowed<best){best=allowed;bestD=d;bestCorner=corner;}
+ }
+ const out={target:best,d:bestD,corner:bestCorner,grip,wet,s,t:raceT,decel};
+ player.autoGripEnvelopeCache=out;return out;
 }
 
 // v5.145: segundo cinturón de seguridad para AUT de carrera. El envelope físico puro
@@ -3893,6 +3922,12 @@ function demoDriverControl(){
  player.autoLaneSwingLimit=null;
 
  let rawTarget=techDrive?autoTechnicalLane(player.s,technical,skill):autoLaneAt(player.s,skill,bravery,traffic.lane);
+ // On cold, worn or wet tyres, avoid a last-moment outside/apex sweep.
+ // Traffic lanes, launch corridors and recovery still take precedence.
+ if(!techDrive&&!Number.isFinite(traffic.lane)){
+  const grip=clamp(apexTyreGripScale(player),.25,1.06);
+  rawTarget*=clamp(.78+.22*grip-(apexWeatherIsWet()?.045:0),.72,1);
+ }
  const launchLaneLock=currentSession==='race'&&!!player.autoLaunchCorridorHold&&Number.isFinite(traffic.lane);
  player.autoFirstComplexLaneLock=!!launchLaneLock;
  player.autoTechnicalRiskPrep=0;
@@ -3990,7 +4025,13 @@ function demoDriverControl(){
  // Puerta secuencial: en una chicane miramos sólo al siguiente pequeño tramo de pista.
  // Así no existe una cuerda geométrica que pueda atravesar el segundo vértice.
  const q=poseAt(player.s+look),futureTrafficLane=(!techDrive&&traffic.ahead&&traffic.ahead.d<55&&Number.isFinite(traffic.lane))?traffic.lane:null;
- const futureLat=offTrack?0:(techDrive?(autoTechnicalLane(player.s+look,autoTechnicalProfile(player.s+look,70,5),skill)||0):autoLaneAt(player.s+look,skill,bravery,futureTrafficLane));
+ const futureRaw=offTrack?0:(techDrive?(autoTechnicalLane(player.s+look,autoTechnicalProfile(player.s+look,70,5),skill)||0):autoLaneAt(player.s+look,skill,bravery,futureTrafficLane));
+ // The steering lookahead must use a physically reachable lateral target.
+ // Otherwise it suddenly aims at a distant apex while the actual line is
+ // still speed/rate limited, causing an overshoot into the barrier.
+ const futureTravel=look/Math.max(8,sp),futureReach=Math.max(.18,laneRate*futureTravel),
+       futureLimit=autoSafeLaneLimit(player.s+look),
+       futureLat=clamp(player.autoTargetLat+clamp(futureRaw-player.autoTargetLat,-futureReach,futureReach),-futureLimit,futureLimit);
  const laneSlope=clamp((futureLat-player.autoTargetLat)/Math.max(look,1),techDrive?-.075:-.16,techDrive?.075:.16);
  let tangentHeading=Math.atan2(q.tx,q.tz);
  // Un nodo bruto no puede pedir 60-100° de cambio de dirección en un único instante.
@@ -4124,6 +4165,11 @@ function demoDriverControl(){
  player.autoRaceSurvivalActive=!!survival.active;player.autoRaceSurvivalTarget=survival.target;player.autoRaceSurvivalCornerD=survival.active?survival.d:null;player.autoRaceSurvivalSafe=survival.active?survival.safe:null;player.autoRaceSurvivalCleanRelease=!!survival.cleanRelease;player.autoRaceSurvivalRiskAhead=survival.riskAhead||0;
  if(survival.active&&survival.target<target-.20){
    target=survival.target;targetReason="RACE_SURVIVAL";targetReasonDetail=survival.firstLap?"FIRST_LAP_CORNER":"CORNER_MARGIN";
+ }
+ const gripEnvelope=autoGripTrajectoryEnvelope(player.s);
+ if(Number.isFinite(gripEnvelope.target)&&gripEnvelope.target<target-.20){
+  target=gripEnvelope.target;targetReason='GRIP_ENVELOPE';
+  targetReasonDetail=gripEnvelope.wet?'WET_TYRE_BRAKING':'TYRE_CORNER_BRAKING';
  }
  const raceLearningSuppressed=currentSession==='race'&&(raceT<12||raceT-(player.autoLastRivalContact||-99)<3.0||(raceTraffic.packRisk||0)>.55);
  const targetBeforeLearning=target;
