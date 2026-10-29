@@ -4296,6 +4296,23 @@ function apexSponsorTexturePaint(quad,key,pitch,backend,u0=0,u1=1,v0=0,v1=1){
  if(backend==='webgl2')return apexSponsorTextureQueueGl(quad,key,pitch,u0,u1,v0,v1);
  return apexSponsorTextureDrawCanvas(quad,key,pitch,u0,u1,v0,v1);
 }
+// Sponsor UV orientation is fixed by the physical track, never by the camera.
+// The wall run's +U must point to the viewer's right when seen from the
+// asphalt. A sign on the opposite bank needs the opposite U direction.
+function apexSponsorWallFlipU(item){
+ const source=item.sponsorSource||item.sponsorTileSource;
+ // Authoritative SVG walls store the inward-facing winding when the run
+ // is compiled. Reusing it makes every fragment of a long wall agree.
+ if(source&&typeof source.sponsorMuralReverse==='boolean')
+  return !source.sponsorMuralReverse;
+ // Non-authored walls follow the track tangent (or its reverse).
+ // side>0 is camera-right, where distance increasing runs screen-left.
+ const side=Number(item.side)||1;
+ const L=trackData&&trackData.km*1000;
+ const ds=Number.isFinite(item.sponsorS0)&&Number.isFinite(item.sponsorS1)&&L>0?
+  wrapDeltaS(item.sponsorS1,item.sponsorS0,L):1;
+ return ds<0?side<0:side>0;
+}
 function apexSponsorContinuousWall(item,pitch,backend,key){
  const raw=item.sponsorPoly3,src=item.sponsorSource||item.sponsorTileSource;
  if(!raw||raw.length!==4)return false;
@@ -4303,8 +4320,10 @@ function apexSponsorContinuousWall(item,pitch,backend,key){
  const from=exact?src.sponsorPatternFromM:item.sponsorS0;
  const to=exact?src.sponsorPatternToM:from+wrapDeltaS(item.sponsorS0,item.sponsorS1,trackData.km*1000);
  if(!Number.isFinite(from)||!Number.isFinite(to)||to-from<.02)return false;
- const tileM=8,reversed=src?.sponsorMuralReverse===true;
- const u0=(reversed?-to:from)/tileM,u1=(reversed?-from:to)/tileM;
+ const tileM=8,flip=apexSponsorWallFlipU(item);
+ // The same signed physical coordinate on both sides of a seam: flipping
+ // [to,from] per segment causes reversed murals to jump at every join.
+ const u0=(flip?-from:from)/tileM,u1=(flip?-to:to)/tileM;
  return apexSponsorTexturePaint([raw[1],raw[2],raw[3],raw[0]],key,pitch,backend,u0,u1);
 }
 const apexSctProceduralAtlases=new WeakMap();
@@ -4340,9 +4359,9 @@ function apexSctWallDescriptor(item){
  };
  let from=at(item.sponsorS0),to=at(item.sponsorS1);const ds=wrapDeltaS(item.sponsorS1,item.sponsorS0,L),total=atlas.stations.at(-1);
  if(ds>0&&to<from)to+=total;if(ds<0&&to>from)from+=total;
- let raw=item.sponsorPoly3;
- if(to<from){[from,to]=[to,from];raw=[raw[3],raw[2],raw[1],raw[0]];}
- return {source:atlas,from,to,reverse:atlas.reverse,run:'procedural:'+item.side,raw};
+ let raw=item.sponsorPoly3,flippedRaw=false;
+ if(to<from){[from,to]=[to,from];raw=[raw[3],raw[2],raw[1],raw[0]];flippedRaw=true;}
+ return {source:atlas,from,to,reverse:atlas.reverse,flippedRaw,run:'procedural:'+item.side,raw};
 }
 // Reserve an entire visible 24m block, including all its wall fragments.
 // A budget may omit a distant block, but never half a letter at a joint.
@@ -4372,8 +4391,9 @@ function apexPlanSctWallMurals(items,pitch,backend){
 }
 function apexDrawSctWallMural(item,pitch,backend){
  const desc=item.sctMuralPlan,raw=desc?.raw;if(!raw)return false;
- const from=desc.reverse?-desc.to:desc.from,to=desc.reverse?-desc.from:desc.to;
- return apexSponsorTexturePaint([raw[1],raw[2],raw[3],raw[0]],'sct-wall',pitch,backend,from/24,to/24);
+ const flip=(!desc.reverse)!==!!desc.flippedRaw;
+ const from=(flip?-desc.from:desc.from)/24,to=(flip?-desc.to:desc.to)/24;
+ return apexSponsorTexturePaint([raw[1],raw[2],raw[3],raw[0]],'sct-wall',pitch,backend,from,to);
 }
 function apexSponsorWallLogo(item,ad,pitch,backend){
  const api=window.ApexTrackSponsors,key=api&&(ad&&(ad.logo||api.colorKey(ad.bg)));
@@ -4391,7 +4411,8 @@ function apexSponsorWallLogo(item,ad,pitch,backend){
   station=offset+step*Math.ceil((a-offset)/step);if(!(station>=a&&station<b))station=null;
  }
  if(station===null||station===undefined)return false;
- return apexSponsorDraw(raw,key,pitch,backend,'wall:'+item.side+':'+station,key==='team-equipalia'?.88:.68);
+ return apexSponsorDraw(raw,key,pitch,backend,'wall:'+item.side+':'+station,
+  key==='team-equipalia'?.88:.68,false,apexSponsorWallFlipU(item));
 }
 
 /* Authoritative vector sponsor panels. Every vertex remains in the 3D world;
@@ -4403,8 +4424,10 @@ function apexFeatureTrackBanner(s,span,bottom,top,cam,pitch,backend,id){
  if(!trackData||!Number.isFinite(s)||!Number.isFinite(span)||span<5)return false;
  const q=renderRibbonFrameAt(s),hw=span*.5;
  const wp=(side,y)=>{const p=ribbonWorldPoint(q,hw,side,y);return worldToCamera(p.x,p.y,p.z,cam)};
+ // Ribbon -1 is track-left and +1 track-right for arriving drivers:
+ // the APEX brand must always read left-to-right from the starting grid.
  const panel=[wp(-1,bottom),wp(-1,top),wp(1,top),wp(1,bottom)];
- return apexSponsorDraw(panel,'apex26-start-finish',pitch,backend,id,1,true);
+ return apexSponsorDraw(panel,'apex26-start-finish',pitch,backend,id,1,true,false);
 }
 function apexFeatureBridgeBanner(it,cam,pitch,backend){
  if(window.ApexTrackSponsors?.featureEnabled===false)return false;
@@ -4415,8 +4438,12 @@ function apexFeatureBridgeBanner(it,cam,pitch,backend){
  const path=it.worldPath,a=path[0],b=path[path.length-1],
        dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz);
  if(length<8||length>130)return false;
- const nx=-dz/length,nz=dx/length,midX=(a[0]+b[0])*.5,midZ=(a[1]+b[1])*.5,
-       facing=((cam.x-midX)*nx+(cam.z-midZ)*nz)>=0?1:-1,
+ const nx=-dz/length,nz=dx/length,
+       road=renderRibbonFrameAt(Number.isFinite(it.anchor?.s)?it.anchor.s:0),
+       // Fix the fascia on the side facing arriving race traffic, not
+       // whichever side a free camera happens to occupy.
+       facing=(-road.tx*nx-road.tz*nz)>=0?1:-1,
+       flipU=dx*road.nx+dz*road.nz<0,
        offset=facing*(Number(it.width)||5)*.5+facing*.12,
        totalH=Math.max(6.1,Math.min(8.6,Number(it.height)||7)),
        top=(Number(it.anchor?.y)||0)+totalH+.03,
@@ -4436,7 +4463,7 @@ function apexFeatureBridgeBanner(it,cam,pitch,backend){
  band(0,1,'#641c2d'); // Continuous fascia even when fine logo triangles are LOD-culled.
  if(f0>.02){band(Math.max(0,f0-.022),Math.max(0,f0-.009),'#e9d3ab');band(Math.min(1,f1+.009),Math.min(1,f1+.022),'#e9d3ab');}
  return apexSponsorDraw(part(f0,f1),'radiquero-pedestrian-bridge',pitch,backend,
-   'radiquero-bridge:'+String(it.sourceId||it.anchor?.s),1,true);
+   'radiquero-bridge:'+String(it.sourceId||it.anchor?.s),1,true,flipU);
 }
 function apexFeatureTunnelBanner(it,cam,pitch,backend){
  if(window.ApexTrackSponsors?.featureEnabled===false)return false;
@@ -4453,7 +4480,7 @@ function apexFeatureTunnelBanner(it,cam,pitch,backend){
 }
 
 /* Individual signs: same 2-triangle textured surface as repeating murals. */
-function apexSponsorDraw(raw,key,pitch,backend,id,heightFraction=.80,fullBleed=false){
+function apexSponsorDraw(raw,key,pitch,backend,id,heightFraction=.80,fullBleed=false,flipU=false){
  const api=window.ApexTrackSponsors,aspect=api?.data[key]?.aspect;
  if(!aspect||!raw||raw.length!==4)return false;
  const [a,t0,t1,b]=raw,span=Math.hypot(b.x-a.x,b.y-a.y,b.z-a.z),
@@ -4470,8 +4497,9 @@ function apexSponsorDraw(raw,key,pitch,backend,id,heightFraction=.80,fullBleed=f
  if(!projected||projected.length<3)return false;
  const xs=projected.map(p=>p[0]),ys=projected.map(p=>p[1]);
  if(Math.max(...xs)<0||Math.min(...xs)>W||Math.max(...ys)<0||Math.min(...ys)>H)return false;
- const reversed=quad[0].x>quad[1].x;
- return apexSponsorTexturePaint(quad,key,pitch,backend,reversed?1:0,reversed?0:1);
+ // Never infer orientation from the current screen X: camera angle and
+ // perspective must not make the artwork reverse during a straight.
+ return apexSponsorTexturePaint(quad,key,pitch,backend,flipU?1:0,flipU?0:1);
 }
 const APEX_AD_BRANDS=[
  {brand:'TEAM EQUIPALIA',bg:'#00673e',fg:'#ffffff',logo:'team-equipalia'},
