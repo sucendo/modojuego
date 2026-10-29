@@ -20,11 +20,15 @@ Cuando trabajemos sobre una revisión intermedia, podremos conservar temporalmen
 
 ## Madrid: versión guardada seleccionada
 
-El manifiesto `manifest.json` apunta a `svg/apex26_14-madrid-spain_2026-10-28.svg`,
-importada del original del usuario `apex26_14-spain_circuito_completo (14).svg`.
-Es la versión que utiliza **Cargar versión guardada** desde el editor SVG
-de Madrid. No sustituye ni modifica la BASE interna de APEX; la versión
-anterior `svg/apex26_14-madrid-spain.svg` se conserva.
+El manifiesto `manifest.json` apunta a `svg/apex26_14-madrid-spain_2026-10-29.svg`,
+una copia exacta del SVG `apex26_14-spain_circuito_completo (15).svg`
+entregado por el usuario. Es la versión que utiliza **Cargar versión guardada**
+desde el editor SVG de Madrid.
+
+La edición (14) sigue disponible como `svg/apex26_14-madrid-spain_2026-10-28.svg`
+y la BASE interna original permanece intacta en `svg/apex26_14-madrid-spain.svg`.
+No se han reconstruido ni sustituido los elementos del nuevo SVG por datos de
+la edición anterior.
 
 Para probarla, elige **Madrid** en el editor SVG y pulsa
 **Cargar versión guardada**. La importación guarda el override del
@@ -33,6 +37,6 @@ superficies del SVG (incluidos los asfaltos coloreados). Si fuese necesario,
 **Restaurar BASE** retira el override de Madrid.
 
 Pruebas: `node apex/tests/madrid-saved-svg.cjs` valida la referencia del
-manifiesto, ambos lados de pianos y las superficies asfaltadas coloreadas.
+manifiesto, los pianos, escapatorias, carteles de frenada y el hash exacto del SVG del usuario.
 `node apex/tests/svg-import-materials-browser.cjs` utiliza, por defecto,
 el SVG apuntado por el manifiesto y comprueba el importador en el navegador.
