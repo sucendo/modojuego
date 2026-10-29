@@ -28,7 +28,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||(process.env.CODEX_
   for(const item of result.list){assert.equal(item.status,'ready',item.name);assert.equal(item.texture,true,item.name);}
   const scene=await page.evaluate(()=>{
    if(!webglInit())return{error:webglState.error||'webglInit failed'};
-   const gl=webglState.gl;while(gl.getError()!==0){}
+   const gl=webglState.gl;for(let i=0;i<8&&gl.getError()!==0;i++){}
    webglFloatCount=0;webglScreenRoll=0;apexSponsorTextureBeginFrame();
    const quad=[{x:-4,y:2,z:12},{x:4,y:2,z:12},{x:4,y:0,z:12},{x:-4,y:0,z:12}];
    apexSponsorTextureQueueGl(quad,'sct-wall',0,0,1);
