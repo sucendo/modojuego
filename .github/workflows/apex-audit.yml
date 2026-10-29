@@ -35,6 +35,7 @@ jobs:
           node apex/tests/track-sponsors-audit.cjs > /tmp/apex-results/sponsor-master.json
           node apex/tests/feature-sponsor-audit.cjs > /tmp/apex-results/sponsor-feature.json
           node apex/tests/madrid-saved-svg.cjs > /tmp/apex-results/madrid-saved-svg.json
+          node apex/tests/svg-curbs-audit.cjs > /tmp/apex-results/svg-curbs-palette.json
           node apex/tests/sponsor-render-stability.cjs > /tmp/apex-results/sponsor-stability.json
           node apex/tests/urban-distance-boards.cjs > /tmp/apex-results/distance-boards.json
           python3 apex/tests/pit-geometry-audit.py > /tmp/apex-results/pit-geometry.json
