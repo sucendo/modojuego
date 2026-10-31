@@ -73,3 +73,43 @@ repeated.autoRecoveryController(1,env);
 assert.equal(repeated.player.autoRecovery.emergencyStage,'PULL_IN',
   'Lateral-worsening fallback must not bounce back to ALIGN near the wall');
 console.log('PASS: outward boundary creep is interrupted; inward alignment and recovery remain possible');
+
+
+// Madrid second-lap regression: a car crossing the safe asphalt at 70–90°
+// must capture its CURRENT lane and keep heading-only ALIGN even when its
+// previously recorded minimum lateral offset is smaller. The old controller
+// repeatedly toggled PULL_IN/ALIGN for ~20 seconds at s≈1188.
+function crossedSafeContext(stage='PULL_IN'){
+ const c=context(source);c.raceT=20;c.telemetryRound=n=>n;
+ c.lerp=(a,b,t)=>a+(b-a)*t;
+ Object.assign(c.player,{s:1188,x:-3.4,z:1188,lat:-3.4,heading:-1.35,vx:-1.1,vz:.4,
+   autoLastWallHit:-99,lastDrivableBoundaryHit:18,autoRecoveryProbe:null});
+ c.player.autoRecovery={since:19,episodeStart:10,startX:-3.4,startZ:1188,
+   startLat:-3.4,startS:1188,attempts:3,
+   plan:{s:1193,lane:-4,x:-4,z:1193,heading:0},
+   emergency:true,emergencyStage:stage,emergencySince:19,
+   emergencyPlan:{s:1192,lane:-3.9,x:-3.9,z:1192},
+   emergencyEdgeLane:-3.9,emergencySide:-1,
+   emergencyBestLat:1.2,emergencyLastImprove:19};
+ return c;
+}
+const captured=crossedSafeContext();
+captured.autoRecoveryController(1.2,env);
+assert.equal(captured.player.autoRecovery.emergencyStage,'ALIGN',
+ 'Inside protected asphalt a crossed car must stop chasing PULL_IN points');
+assert.ok(Math.abs(captured.player.autoRecovery.emergencyEdgeLane+3.4)<.01,
+ 'The recovered car must align from its captured lane, not the old edge');
+const stableAlign=crossedSafeContext('ALIGN');
+for(const [t,lat] of [[20,-3.4],[20.5,-2.8],[21,-3.6],[21.5,-2.7]]){
+ stableAlign.raceT=t;stableAlign.player.lat=lat;stableAlign.player.x=lat;
+ const ctl=stableAlign.autoRecoveryController(1.2,env);
+ assert.equal(stableAlign.player.autoRecovery.emergencyStage,'ALIGN',
+  'Safe lateral oscillation must not restart the pull-in sequence');
+ assert.equal(ctl.reverse,false,'Keep heading-only forward alignment until safe');
+}
+const unsafe=crossedSafeContext();
+unsafe.player.lat=-7.1;unsafe.player.x=-7.1;
+unsafe.autoRecoveryController(1.2,env);
+assert.notEqual(unsafe.player.autoRecovery.emergencyStage,'ALIGN',
+ 'Never capture ALIGN against the real outside barrier');
+console.log('PASS: protected-lane recovery latches ALIGN without oscillation; outside wall remains guarded');
