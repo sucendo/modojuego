@@ -3500,16 +3500,32 @@ function autoRecoveryController(sp,env){
          phase:'RECUP · RETOMA TRACCIÓN',recoveryAssist:true,recoveryHeading:trackHeading,recoveryForcePull:false};
      }
      const rawTrackErr=angleDiff(trackHeading,player.heading),rawAbs=Math.abs(rawTrackErr);
+     // A crossed car on the inner asphalt can run out of lateral space
+     // before its heading catches up. A short reverse three-point manoeuvre
+     // moves it toward the centre without switching back to PULL_IN.
+     // Steering is inverted in reverse so yaw still converges on trackHeading.
+     const forwardLateral=Math.sin(player.heading)*edgePose.nx+Math.cos(player.heading)*edgePose.nz;
+     const forwardOutward=sideNow*forwardLateral;
+     if(safeAlignCorridor&&rawAbs>.56&&
+        raceT-(R.alignGearStamp??-99)>.85){
+       const nextReverse=absLat>.65&&forwardOutward>.28;
+       if(!!R.alignGearReverse!==nextReverse){
+         R.alignGearReverse=nextReverse;R.alignGearStamp=raceT;
+         pushTelemetryEvent('RECOVERY_ALIGN_GEAR',{reverse:nextReverse,
+           lat:telemetryRound(player.lat,2),headingErrDeg:telemetryRound(rawTrackErr*180/Math.PI,1)});
+       }
+     }
+     const reverseAlign=safeAlignCorridor&&rawAbs>.43&&!!R.alignGearReverse;
      // Sólo añadimos corrección de carril cuando la orientación ya es razonable; con
      // >50° el único objetivo es apuntar paralelo a la pista sin cruzarla.
      // While crossed, prioritise heading. The lane captured on asphalt is
      // not an obligation to travel sideways across the road.
      const laneHeading=rawAbs<.88&&!safeAlignCorridor?clamp(edgeErr*.085,-.18,.18):0;
      const desiredHeading=trackHeading+laneHeading,err=angleDiff(desiredHeading,player.heading),aerr=Math.abs(err);
-     let steer=clamp(err*2.05-(player.yawRate||0)*.28,-.88,.88);
-     let target=aerr>.78?1.6:aerr>.48?2.6:aerr>.28?4.0:5.2;
+     let steer=clamp((reverseAlign?-1:1)*(err*2.05-(player.yawRate||0)*.28),-.88,.88);
+     let target=reverseAlign?2.5:aerr>.78?1.6:aerr>.48?2.6:aerr>.28?4.0:5.2;
      let throttle=sp<target-.45?clamp(.20+(target-sp)/14,.16,.52):0,brake=sp>target+.45?clamp((sp-target)/5.5,.16,.68):0;
-     if(aerr>.78&&sp>2.2){throttle=0;brake=Math.max(brake,.34);}
+     if(aerr>.78&&sp>2.2&&!reverseAlign){throttle=0;brake=Math.max(brake,.34);}
      if(Math.abs(edgeErr)>.80&&rawAbs<.70&&!safeAlignCorridor)
        steer=lerp(steer,clamp(edgeErr*.22,-.55,.55),.28);
      // A recovered car can arrive on the asphalt well away from its original
@@ -3535,7 +3551,7 @@ function autoRecoveryController(sp,env){
        R.emergencyPlan={s:mod(player.s+10,trackData.km*1000),lane:ln,x:q1.x+q1.nx*ln,z:q1.z+q1.nz*ln,created:raceT};
        pushTelemetryEvent('RECOVERY_ALIGN_LOCKED',{headingErrDeg:telemetryRound(rawTrackErr*180/Math.PI,1),edgeErrM:telemetryRound(edgeErr,2),speedKph:telemetryRound(sp*3.6,1),safeRibbon:!!safeRibbon});
      }
-     return{steer,throttle,brake,target,boost:false,reverse:false,phase:'RECUP · ALINEA EN BORDE',recoveryAssist:true,recoveryHeading:trackHeading,recoveryForcePull:false};
+     return{steer,throttle,brake,target,boost:false,reverse:reverseAlign,phase:reverseAlign?'RECUP · PIVOTA EN REVERSA':'RECUP · ALINEA EN BORDE',recoveryAssist:true,recoveryHeading:trackHeading,recoveryForcePull:false};
    }
 
    // REJOIN_LOCK v5.133: sólo puede existir tras la compuerta de alineación. Si por
