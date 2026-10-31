@@ -135,7 +135,8 @@ jobs:
           node "$RUNNER_TEMP/apex-browser/node_modules/playwright/cli.js" install --with-deps chromium
       - name: Compare automatic driving with main
         env:
-          BASELINE_REF: 36fd9f591f6c2c26d7946a551e45d7108369678a
+          # Compare against the current PR base, not the old phase-7 snapshot.
+          BASELINE_REF: ${{ github.event.pull_request.base.sha || '917a262228299b0fb4b3db6c488cbc32a0f8e3cb' }}
           PLAYWRIGHT_MODULE_PATH: ${{ runner.temp }}/apex-browser/node_modules/playwright
         shell: bash
         run: |
