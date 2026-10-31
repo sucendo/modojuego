@@ -2888,6 +2888,25 @@ function playerAutoLaneAt149(s,skill,bravery,trafficLane=null){
  return clamp(lat,-autoSafeLaneLimit(s),autoSafeLaneLimit(s));
 }
 
+// An overtaking opportunity is not a free pass to ignore the car ahead.
+// Only the car's ACTUAL lateral clearance, not a future requested lane,
+// releases the braking envelope. This prevents high-speed rear impacts
+// before a committed overtake has physically created room.
+function autoPredictiveTrafficSpeed(ahead){
+ if(!player||!ahead||!(ahead.d>0)||ahead.d>108||!Number.isFinite(ahead.speed))return Infinity;
+ const lateralGap=Math.abs(player.lat-ahead.lat);
+ if(lateralGap>2.75)return Infinity;
+ const grip=clamp(apexTyreGripScale(player),.25,1.06),wet=apexWeatherIsWet(),
+       decel=clamp(grip*(wet?7.0:9.0)*teamPerformance(player.teamKey).brake,2.8,10.0),
+       speed=Math.max(0,player.speed),other=Math.max(0,ahead.speed);
+ // Leave at least a few metres for two cars plus pedal/steering latency.
+ const reserve=5.8+speed*(wet?.19:.14),
+       brakingDistance=Math.max(0,ahead.d-reserve);
+ const target=Math.sqrt(Math.max(0,Math.max(0,other-.45)**2+2*decel*brakingDistance));
+ // At overlap, do not drive through a stationary/slower car.
+ return Math.max(0,target);
+}
+
 function autoTargetSpeed(plan,traffic,skill,bravery,diff=1){
  const perf=teamPerformance(player.teamKey),wet=apexWeatherIsWet();
  const paceFloor=currentSession==='race'?.995:.955,paceCeil=currentSession==='race'?1.055:1.05;
@@ -4245,6 +4264,17 @@ function demoDriverControl(){
        if(sideCap<target-.28){targetReason="TRAFFIC";targetReasonDetail="SIDE_BY_SIDE";}
        target=Math.min(target,sideCap);
      }
+   }
+ }
+
+ // The following-ahead limiter used to wake up only inside 12m,
+ // where braking from high speed is already physically impossible.
+ // Look at the same nearest car that playerAutoTraffic() tracks up to 105m.
+ if(raceTraffic.active){
+   const follow=autoPredictiveTrafficSpeed(traffic.ahead);
+   if(follow<target-.15){
+     target=follow;trafficSpeedLimit=Math.min(trafficSpeedLimit,follow);
+     targetReason='TRAFFIC';targetReasonDetail='PREDICTIVE_FOLLOW';
    }
  }
 
