@@ -26,6 +26,19 @@ const source={};for(const variant of ['baseline','candidate'])source[variant]=Ar
   }
   const comparisons=rows.filter(r=>r.variant==='candidate').map(after=>{const before=rows.find(r=>r.variant==='baseline'&&r.dir===after.dir&&r.traffic===after.traffic);return {dir:after.dir,traffic:after.traffic,before:{progressM:before.progressM,maxStoppedSec:before.maxStoppedSec,maxNoProgressSec:before.maxNoProgressSec},after:{progressM:after.progressM,maxStoppedSec:after.maxStoppedSec,maxNoProgressSec:after.maxNoProgressSec}};});
   console.log(JSON.stringify({test:'autopilot-comparison',baseline:ref,seconds,comparisons}));
+  // A passing watchdog is not proof of racing stability. Also reject material
+  // regressions in driven distance and accumulated damage against the CURRENT
+  // main branch on the same seeded circuit/traffic setup.
+  for(const after of rows.filter(r=>r.variant==='candidate')){
+   const before=rows.find(r=>r.variant==='baseline'&&r.dir===after.dir&&r.traffic===after.traffic);
+   assert.ok(before,'Missing main baseline: '+after.dir+' traffic='+after.traffic);
+   const label=after.dir+', traffic='+after.traffic;
+   assert.ok(after.progressM>=before.progressM*.85,
+     label+': progress regressed '+after.progressM.toFixed(1)+'m vs main '+before.progressM.toFixed(1)+'m');
+   assert.ok(after.end.hp>=before.end.hp-2.0,
+     label+': excess impact damage, HP '+after.end.hp.toFixed(2)+' vs main '+before.end.hp.toFixed(2));
+  }
+  console.log(JSON.stringify({test:'autopilot-main-regression',cases:10,minProgressRatio:.85,maxExtraHpLoss:2,passed:true}));
   // Behavioral watchdogs for the fixed 60 s fixture, not lap-time or FPS goals.
   // Allow a short recovery, but fail prolonged immobility/no net forward progress.
   // Keep comparative distances visible: traffic contacts may diverge between models.
