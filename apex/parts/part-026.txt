@@ -4032,8 +4032,15 @@ function demoDriverControl(){
  // Otherwise it suddenly aims at a distant apex while the actual line is
  // still speed/rate limited, causing an overshoot into the barrier.
  const futureTravel=look/Math.max(8,sp),futureReach=Math.max(.18,laneRate*futureTravel),
-       futureLimit=autoSafeLaneLimit(player.s+look),
-       futureLat=clamp(player.autoTargetLat+clamp(futureRaw-player.autoTargetLat,-futureReach,futureReach),-futureLimit,futureLimit);
+       futureLimit=autoSafeLaneLimit(player.s+look);
+ // Avoid changing the established overtaking/pack controller during a race.
+ // It must steer into the *committed* passing corridor early, not a future
+ // position clipped to the current line-rate (which misses the braking gate).
+ // When there is no traffic, the reachability filter still prevents violent
+ // steering across the whole racing surface at maximum speed.
+ const trafficRacing=currentSession==='race'&&rivals&&rivals.length>0;
+ const futureLat=trafficRacing?futureRaw:
+       clamp(player.autoTargetLat+clamp(futureRaw-player.autoTargetLat,-futureReach,futureReach),-futureLimit,futureLimit);
  const laneSlope=clamp((futureLat-player.autoTargetLat)/Math.max(look,1),techDrive?-.075:-.16,techDrive?.075:.16);
  let tangentHeading=Math.atan2(q.tx,q.tz);
  // Un nodo bruto no puede pedir 60-100° de cambio de dirección en un único instante.
