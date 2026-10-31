@@ -3452,15 +3452,28 @@ function autoRecoveryController(sp,env){
      let throttle=sp<target-.45?clamp(.20+(target-sp)/14,.16,.52):0,brake=sp>target+.45?clamp((sp-target)/5.5,.16,.68):0;
      if(aerr>.78&&sp>2.2){throttle=0;brake=Math.max(brake,.34);}
      if(Math.abs(edgeErr)>.80&&rawAbs<.70)steer=lerp(steer,clamp(edgeErr*.22,-.55,.55),.28);
-     // Debe estar realmente alineado (<15°), junto al borde bloqueado y estable durante
-     // 0.45 s. Mientras no se cumpla, permanece en ALIGN indefinidamente.
-     const alignedGate=rawAbs<.26&&Math.abs(edgeErr)<.82&&sp<6.2;
+     // A recovered car can arrive on the asphalt well away from its original
+     // exit-side lane. Keeping that old lane as an absolute gate makes it crawl
+     // across the entire track in ALIGN, even after it is already pointing
+     // safely down the circuit (Madrid lap 2 s≈1200). Accept a stable, centered
+     // ribbon instead of forcing it back to the side of the initial incident.
+     // Never use this shortcut while crossed, on runoff or beside traffic.
+     const safeRibbon=!boundaryBlocked&&ps.zone==='TRACK'&&
+       Math.abs(player.lat)<Math.min(eLimit-.40,Math.max(1.1,env.half-1.25))&&
+       rawAbs<.22&&sp<6.2&&
+       autoRecoveryTrafficRisk(player.s+8,player.lat,1).risk<.62;
+     const alignedGate=rawAbs<.26&&sp<6.2&&(Math.abs(edgeErr)<.82||safeRibbon);
      if(alignedGate){R.alignStableSince=R.alignStableSince||raceT;}else R.alignStableSince=0;
      if(R.alignStableSince&&raceT-R.alignStableSince>.45){
        R.emergencyStage='REJOIN_LOCK';R.emergencySince=raceT;R.alignStableSince=0;
-       const q1=poseAt(player.s+10),ln=clamp(eSide*Math.min(eLimit*.68,Math.max(.65,env.half-1.65)),-eLimit,eLimit);
+       const q1=poseAt(player.s+10),
+             ln=safeRibbon?clamp(player.lat,-eLimit,eLimit):
+               clamp(eSide*Math.min(eLimit*.68,Math.max(.65,env.half-1.65)),-eLimit,eLimit);
+       // Lock to the SAFE lane actually reached; do not make the recovered
+       // driver chase the far-side verge a second time.
+       R.emergencyEdgeLane=ln;
        R.emergencyPlan={s:mod(player.s+10,trackData.km*1000),lane:ln,x:q1.x+q1.nx*ln,z:q1.z+q1.nz*ln,created:raceT};
-       pushTelemetryEvent('RECOVERY_ALIGN_LOCKED',{headingErrDeg:telemetryRound(rawTrackErr*180/Math.PI,1),edgeErrM:telemetryRound(edgeErr,2),speedKph:telemetryRound(sp*3.6,1)});
+       pushTelemetryEvent('RECOVERY_ALIGN_LOCKED',{headingErrDeg:telemetryRound(rawTrackErr*180/Math.PI,1),edgeErrM:telemetryRound(edgeErr,2),speedKph:telemetryRound(sp*3.6,1),safeRibbon:!!safeRibbon});
      }
      return{steer,throttle,brake,target,boost:false,reverse:false,phase:'RECUP · ALINEA EN BORDE',recoveryAssist:true,recoveryHeading:trackHeading,recoveryForcePull:false};
    }
