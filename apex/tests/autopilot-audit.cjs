@@ -18,7 +18,7 @@ const source={};for(const variant of ['baseline','candidate'])source[variant]=Ar
   await page.route('**/parts/part-*.txt',async route=>{const i=Number(new URL(route.request().url()).pathname.match(/part-(\d+)\.txt$/)[1]);let body=source[variant][i];if(i===27){const at=body.lastIndexOf('requestAnimationFrame(loop);');assert.ok(at>=0);body=body.slice(0,at)+hook+body.slice(at);}await route.fulfill({body,contentType:'text/plain'});});
   for(variant of ['baseline','candidate']){
    await page.goto(process.env.APEX_AUDIT_URL||'http://127.0.0.1:8765/apex/apex.html?perf=1');await page.waitForFunction(()=>window.__apexAuto);
-   for(const dir of dirs)for(const traffic of [false,true]){
+   for(const dir of dirs)for(const traffic of (process.env.APEX_AUTO_TRAFFIC==='solo'?[false]:[false,true])){
     console.log(JSON.stringify({test:'auto-case-start',variant,dir,traffic}));
     const loaded=await page.evaluate(async({dir,traffic})=>__apexAuto.load(dir,traffic),{dir,traffic});
     const result=await page.evaluate(seconds=>__apexAuto.run(seconds),seconds),row={test:'autopilot-differential',variant,dir,traffic,...loaded,...result};rows.push(row);console.log(JSON.stringify(row));assert.deepEqual(errors,[]);
@@ -39,6 +39,23 @@ const source={};for(const variant of ['baseline','candidate'])source[variant]=Ar
      label+': excess impact damage, HP '+after.end.hp.toFixed(2)+' vs main '+before.end.hp.toFixed(2));
   }
   console.log(JSON.stringify({test:'autopilot-main-regression',cases:10,minProgressRatio:.85,maxExtraHpLoss:2,passed:true}));
+  // Extended Madrid replay: independently fails a repeating solo wall or
+  // recovery incident. The usual 60-second checks cannot reach the second
+  // crash seen at s≈2780m in the user's two-lap telemetry.
+  if(seconds>=150&&dirs.length===1&&dirs[0]==='14-spain'){
+   const madrid=rows.find(r=>r.variant==='candidate'&&!r.traffic);
+   assert.ok(madrid,'Missing Madrid solo replay');
+   let recoveries=0,wallContacts=0,wasRecovering=false,lastHit=-99;
+   for(const p of madrid.samples){
+    if(!!p.recovery&&!wasRecovering)recoveries++;
+    wasRecovering=!!p.recovery;
+    if(Number.isFinite(p.lastWall)&&p.lastWall>lastHit+.2&&p.lastWall>=0){wallContacts++;lastHit=p.lastWall}
+   }
+   console.log(JSON.stringify({test:'aut-madrid-endurance',seconds,recoveries,wallContacts,progressM:madrid.progressM,finalHp:madrid.end.hp}));
+   assert.ok(madrid.progressM>2200,'AUT must reach the second technical complex of Madrid');
+   assert.equal(recoveries,0,'Madrid should not require recovery with no rivals in a full-lap replay');
+   assert.equal(wallContacts,0,'Madrid should not hit any wall with no rivals');
+  }
   // Behavioral watchdogs for the fixed 60 s fixture, not lap-time or FPS goals.
   // Allow a short recovery, but fail prolonged immobility/no net forward progress.
   // Keep comparative distances visible: traffic contacts may diverge between models.
