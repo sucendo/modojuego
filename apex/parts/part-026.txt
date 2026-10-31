@@ -3945,7 +3945,9 @@ function requestPitStop(){
 // before the instantaneous centreline heading rotates under the front axle.
 // Never force this guide over an overtake lane, pitlane or committed SVG kink.
 function autoSoloTrajectoryPreview(s,sp,technical,trafficActive,kinkCommitted){
- if(!player||!trackData||trafficActive||kinkCommitted||!technical?.active||!technical.hairpin)
+ // Keep this new solo guide scoped to the Madrid telemetry defect. Other
+ // circuits retain their proven techDrive lookahead and steering response.
+ if(!player||!trackData||trackData.spec?.dir!=='14-spain'||trafficActive||kinkCommitted||!technical?.active||!technical.hairpin)
   return{active:false,heading:0,turn:0,d:0};
  const look=clamp(10+sp*.30,11,20),near=poseAt(s+6),aim=poseAt(s+look),far=poseAt(s+look+6),exit=poseAt(s+look+12);
  const nearH=Math.atan2(near.tx,near.tz),aimH=Math.atan2(aim.tx,aim.tz),
