@@ -7,7 +7,7 @@ const a=src.indexOf('function autoSoloTrajectoryPreview('),b=src.indexOf('\nfunc
 assert.ok(a>=0&&b>a,'Production AUT trajectory helper is required');
 const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
 let kind='left',width=6,lat=0;
-const ctx={Math,player:{lat},trackData:{km:5.414},clamp,
+const ctx={Math,player:{lat},trackData:{km:5.414,spec:{dir:'14-spain'}},clamp,
  envProfile:()=>({half:width}),
  angleDiff:(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b)),
  poseAt:(s)=>{
@@ -21,6 +21,9 @@ assert.ok(ctx.angleDiff(left.heading,0)<-.20,'Anticipation turns ahead of curren
 const repeat=p();assert.deepEqual(repeat,left);
 assert.equal(ctx.autoSoloTrajectoryPreview(0,12,{active:true,hairpin:true},true,false).active,false,'Racing traffic uses proven passing controller');
 assert.equal(ctx.autoSoloTrajectoryPreview(0,12,{active:true,hairpin:true},false,true).active,false,'Kink commit wins');
+ctx.trackData.spec.dir='10-belgium';
+assert.equal(p().active,false,'The Madrid-only preview must not alter Spa driving');
+ctx.trackData.spec.dir='14-spain';
 ctx.kind='chicane';kind='chicane';
 assert.equal(p().active,false,'Chicane direction reversal must not be bridged');
 ctx.kind='straight';kind='straight';
