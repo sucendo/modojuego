@@ -2554,7 +2554,7 @@ function resetAutoDriveState(){
  player.autoPlan=null;player.autoPlanStamp=-99;player.autoLineStamp=raceT;player.autoTargetLat=player.lat;player.autoPassSide=0;player.autoPassUntil=0;
  player.autoRecovery=null;player.autoStuckSince=0;player.lastDrivableBoundaryHit=-99;player.autoLastWallHit=-99;player.autoLastWallSide=0;player.autoRecoveryProbe=null;
  player.autoPace=currentSession==='race'?1.00:1.000;player.autoStableTime=0;player.autoRiskTime=0;player.autoLastRisk=0;player.autoLowSpeedSince=0;player.autoLaunchAssistUntil=0;player.autoTechnicalActive=false;
- player.autoLastRivalContact=-99;player.autoLastRivalContactId=null;player.autoLastRivalContactClosing=0;player.autoRaceTraffic=null;player.autoRacePackRisk=0;player.autoRaceStartProtect=false;player.autoLaunchCorridorHold=false;player.autoFirstComplexLaneLock=false;player.autoTechnicalRiskPrep=0;player.autoKinkCommitUntil=-99;player.autoKinkCommitHeading=null;player.autoKinkCommitAngle=0;player.autoKinkCommitActive=false;player.autoKinkCommitRemaining=0;player.autoKinkCommitBlend=0;player.autoLaneSwingGuard=false;player.autoLaneSwingLimit=null;player.autoContactGuardUntil=-99;player.autoContactHoldLat=player.lat;player.autoRaceSurvivalActive=false;player.autoRaceSurvivalTarget=Infinity;player.autoRaceSurvivalCornerD=null;player.autoRaceSurvivalSafe=null;player.autoRaceSurvivalCleanRelease=false;player.autoRaceSurvivalRiskAhead=0;player.telemetryLastContainedContact=-99;player.autoBaseTrackTargetSpeed=0;player.autoPreTrafficTargetSpeed=0;player.autoTrafficSpeedLimit=null;player.autoTargetSpeedReason="TRACK";player.autoTargetSpeedReasonDetail=null;player.autoCommittedTargetSpeed=null;player.autoCommittedTargetStamp=raceT;player.autoEmergencyUnstickAt=-99;player.autoRecoveryAssist=false;player.autoRecoveryForcePull=false;player.autoRearThreat=0;player.autoTrafficEscapeLane=false;player.autoLimiterReduction=0;player.autoGripEnvelopeCache=null;
+ player.autoLastRivalContact=-99;player.autoLastRivalContactId=null;player.autoLastRivalContactClosing=0;player.autoRaceTraffic=null;player.autoRacePackRisk=0;player.autoRaceStartProtect=false;player.autoLaunchCorridorHold=false;player.autoFirstComplexLaneLock=false;player.autoTechnicalRiskPrep=0;player.autoKinkCommitUntil=-99;player.autoKinkCommitHeading=null;player.autoKinkCommitAngle=0;player.autoKinkCommitActive=false;player.autoKinkCommitRemaining=0;player.autoKinkCommitBlend=0;player.autoLaneSwingGuard=false;player.autoLaneSwingLimit=null;player.autoContactGuardUntil=-99;player.autoContactHoldLat=player.lat;player.autoRaceSurvivalActive=false;player.autoRaceSurvivalTarget=Infinity;player.autoRaceSurvivalCornerD=null;player.autoRaceSurvivalSafe=null;player.autoRaceSurvivalCleanRelease=false;player.autoRaceSurvivalRiskAhead=0;player.telemetryLastContainedContact=-99;player.autoBaseTrackTargetSpeed=0;player.autoPreTrafficTargetSpeed=0;player.autoTrafficSpeedLimit=null;player.autoTargetSpeedReason="TRACK";player.autoTargetSpeedReasonDetail=null;player.autoCommittedTargetSpeed=null;player.autoCommittedTargetStamp=raceT;player.autoEmergencyUnstickAt=-99;player.autoRecoveryAssist=false;player.autoRecoveryForcePull=false;player.autoRearThreat=0;player.autoTrafficEscapeLane=false;player.autoLimiterReduction=0;player.autoGripEnvelopeCache=null;player.autoFarKinkCache=null;
  if(!player.autoRiskBins)autoEnsureRiskMemory();
 }
 function applyAutoDriveUI(){
@@ -2942,6 +2942,26 @@ function autoGripTrajectoryEnvelope(s){
  }
  const out={target:best,d:bestD,corner:bestCorner,grip,wet,s,t:raceT,decel};
  player.autoGripEnvelopeCache=out;return out;
+}
+
+// Raw SVG polyline corners can change heading much faster than smooth
+// curvatureAt() predicts. In that case the existing 112m kink guard brakes
+// too late: the first opportunity to leave 200+ km/h must start farther away.
+// Cache the far horizon, and apply ONLY when an actual discontinuity exists.
+function autoFarKinkBrakingEnvelope(s){
+ if(!player||!trackData)return{target:Infinity,d:999};
+ const c=player.autoFarKinkCache,grip=clamp(apexTyreGripScale(player),.25,1.06),wet=apexWeatherIsWet();
+ if(c&&raceT-c.t>=0&&raceT-c.t<.12&&Math.abs(s-c.s)<12&&
+    Math.abs(c.grip-grip)<.015&&c.wet===wet)return c;
+ const kink=geometricKinkAhead(s,230,5),a=kink.angle||0;
+ let target=Infinity;
+ if(kink.active&&a>Math.PI*.10){
+   const low=a>Math.PI*.47?7.5:a>Math.PI*.31?10:a>Math.PI*.20?13.5:19;
+   const decel=clamp(grip*(wet?4.7:7.2)*teamPerformance(player.teamKey).brake,2.5,8.0);
+   target=Math.sqrt(low*low+2*decel*Math.max(0,kink.d-(wet?20:15)));
+ }
+ const result={target,d:kink.d,angle:a,s,t:raceT,grip,wet};
+ player.autoFarKinkCache=result;return result;
 }
 
 // v5.145: segundo cinturón de seguridad para AUT de carrera. El envelope físico puro
@@ -4198,6 +4218,11 @@ function demoDriverControl(){
  if(Number.isFinite(gripEnvelope.target)&&gripEnvelope.target<target-.20){
   target=gripEnvelope.target;targetReason='GRIP_ENVELOPE';
   targetReasonDetail=gripEnvelope.wet?'WET_TYRE_BRAKING':'TYRE_CORNER_BRAKING';
+ }
+ const kinkLong=autoFarKinkBrakingEnvelope(player.s);
+ if(Number.isFinite(kinkLong.target)&&kinkLong.target<target-.20){
+   target=kinkLong.target;targetReason='GEOMETRY_KINK';
+   targetReasonDetail='EARLY_BRAKE';
  }
  const raceLearningSuppressed=currentSession==='race'&&(raceT<12||raceT-(player.autoLastRivalContact||-99)<3.0||(raceTraffic.packRisk||0)>.55);
  const targetBeforeLearning=target;
