@@ -3387,8 +3387,7 @@ function autoRecoveryController(sp,env){
    // telemetría: tocar TRACK con ~90° de error y atravesar la cinta hasta el runoff
    // contrario. Mientras está sobre/asomado al asfalto vuelve a ALIGN; fuera, PULL_IN.
    const lateralWorsening=absLat>(R.emergencyBestLat??absLat)+.55&&raceT-(R.emergencyLastImprove||raceT)>.45;
-   if(lateralWorsening&&R.emergencyStage!=='BACKOUT'&&
-      !(safeAlignCorridor&&R.emergencyStage==='ALIGN')){
+   if(lateralWorsening&&R.emergencyStage!=='BACKOUT'&&!safeAlignCorridor){
      // A car safely inside the corridor may slide laterally while turning.
      // That is NOT a reason to switch back to PULL_IN. Only the outer edge
      // requires a new lateral manoeuvre.
