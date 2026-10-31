@@ -41,6 +41,7 @@ console.log('PASS: reached asphalt enters alignment in its actual lane; crossed/
 // Check the actual production recovery state machine, not a replica.
 function outerEdgeContext(vx=.9){
  const c=context(source);c.raceT=20;c.telemetryRound=n=>n;
+ c.lerp=(a,b,t)=>a+(b-a)*t;
  Object.assign(c.player,{s:1205,x:7.2,lat:7.2,heading:0,vx,vz:0,
    lastDrivableBoundaryHit:18,autoLastWallHit:-99});
  c.player.autoRecovery={since:19,episodeStart:18,startX:7.2,startZ:0,
