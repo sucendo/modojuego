@@ -58,10 +58,11 @@ const wetFollow=ctx.autoPredictiveTrafficSpeed({d:80,speed:30,lat:.2});
 assert.ok(wetFollow<wornFollow,'Rain must lengthen following-distance braking');
 assert.equal(ctx.autoPredictiveTrafficSpeed({d:25,speed:30,lat:3.1}),Infinity,'Clear lateral passing lane allows unrestricted target');
 assert.equal(ctx.autoPredictiveTrafficSpeed(null),Infinity);
-// Narrow Monaco street pack relies on its already tuned close-range controller.
+// Monaco retains normal car-following braking but skips only the
+// over-eager long raw-polyline kink scan in its tightly linked bends.
 ctx.trackData.spec={dir:'06-monaco'};
-assert.equal(ctx.autoPredictiveTrafficSpeed({d:32,speed:20,lat:0}),Infinity);
-assert.ok(Number.isFinite(ctx.autoPredictiveTrafficSpeed({d:8,speed:20,lat:0})));
+assert.ok(Number.isFinite(ctx.autoPredictiveTrafficSpeed({d:32,speed:20,lat:0})));
+assert.equal(ctx.autoFarKinkBrakingEnvelope(0).target,Infinity);
 ctx.trackData.spec={dir:'14-spain'};
 ctx.player.autoFarKinkCache=null;ctx.wet=false;ctx.raceT+=.2;
 ctx.player.tyres.gripFront=ctx.player.tyres.gripRear=1;
