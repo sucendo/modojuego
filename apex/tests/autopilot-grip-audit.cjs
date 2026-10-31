@@ -100,6 +100,10 @@ const early=ctx.autoMadridSoloCriticalBendEnvelope(2690,false);
 const entry=ctx.autoMadridSoloCriticalBendEnvelope(2795,false);
 assert.ok(early.active&&early.target>entry.target&&entry.target<19,
  'The Madrid complex must impose early physically reachable braking');
+ctx.currentSession='freepractice';
+assert.ok(ctx.autoMadridSoloCriticalBendEnvelope(2795,false).active,
+ 'The user-reported incident occurred in free practice, not a race');
+ctx.currentSession='race';
 assert.ok(ctx.autoMadridSoloCriticalBendEnvelope(2840,false).target<19,
  'Hold a safe speed through the sustained corner, not just at turn-in');
 assert.equal(ctx.autoMadridSoloCriticalBendEnvelope(2650,true).active,false,
