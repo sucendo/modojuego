@@ -2973,6 +2973,39 @@ function autoGripTrajectoryEnvelope(s){
 // curvatureAt() predicts. In that case the existing 112m kink guard brakes
 // too late: the first opportunity to leave 200+ km/h must start farther away.
 // Cache the far horizon, and apply ONLY when an actual discontinuity exists.
+// Saved Madrid SVG edition 15: the tight decreasing-radius complex near
+// s=2.80 km requires braking BEFORE steering loads the rear tyres. The
+// regular 12m curvature scans react after the first yaw impulse there.
+// This race-solo guard is isolated to the verified circuit length/geometry
+// so imported or edited Madrid SVGs are not silently assigned fixed markers.
+// The cap is a friction-based stopping envelope, never a teleport or physics
+// override; worn/wet tyres receive a slower apex and a longer approach.
+function autoMadridSoloCriticalBendEnvelope(s,trafficActive){
+ if(!player||!trackData||trackData.spec?.dir!=='14-spain'||trafficActive||
+    currentSession!=='race'||!demoMode||Math.abs(trackData.km-5.414)>.025)
+   return{active:false,target:Infinity};
+ const lapS=mod(s,trackData.km*1000);
+ // Verify the authored complex is still a real bend. Avoid a speed restriction
+ // if the user replaces Madrid with a different SVG of similar overall length.
+ const authoredK=Math.max(Math.abs(curvatureAt(2807)),Math.abs(curvatureAt(2820)),Math.abs(curvatureAt(2830)));
+ if(authoredK<.003)return{active:false,target:Infinity};
+ const grip=clamp(apexTyreGripScale(player),.25,1.06),wet=apexWeatherIsWet(),
+       safe=clamp((wet?14.0:17.5)*Math.sqrt(grip),7.5,19),
+       brake=clamp(grip*(wet?3.2:4.9)*teamPerformance(player.teamKey).brake,2.0,5.2),
+       entry=2795,d=entry-lapS;
+ if(d>=0&&d<=220){
+  const target=Math.sqrt(safe*safe+2*brake*Math.max(0,d-(wet?18:14)));
+  return{active:true,target,phase:'APPROACH',d,grip,wet};
+ }
+ if(d<0&&lapS<=2863){
+  // Hold safe entry speed until past the exit where rear instability occurred.
+  // Release progressively instead of accelerating mid-corner.
+  const target=safe+clamp((lapS-entry-42)/26,0,1)*12;
+  return{active:true,target,phase:'APEX_EXIT',d,grip,wet};
+ }
+ return{active:false,target:Infinity};
+}
+
 function autoFarKinkBrakingEnvelope(s){
  if(!player||!trackData)return{target:Infinity,d:999};
  // Monaco's short urban corners are already protected by the technical
@@ -4289,6 +4322,11 @@ function demoDriverControl(){
  if(Number.isFinite(kinkLong.target)&&kinkLong.target<target-.20){
    target=kinkLong.target;targetReason='GEOMETRY_KINK';
    targetReasonDetail='EARLY_BRAKE';
+ }
+ const madridCritical=autoMadridSoloCriticalBendEnvelope(player.s,!!raceTraffic.active);
+ if(madridCritical.active&&madridCritical.target<target-.20){
+   target=madridCritical.target;targetReason='MADRID_COMPLEX';
+   targetReasonDetail=madridCritical.phase;
  }
  const raceLearningSuppressed=currentSession==='race'&&(raceT<12||raceT-(player.autoLastRivalContact||-99)<3.0||(raceTraffic.packRisk||0)>.55);
  const targetBeforeLearning=target;
