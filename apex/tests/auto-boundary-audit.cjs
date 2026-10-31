@@ -106,8 +106,13 @@ for(const [t,lat] of [[20,-3.4],[20.5,-2.8],[21,-3.6],[21.5,-2.7]]){
  const ctl=stableAlign.autoRecoveryController(1.2,env);
  assert.equal(stableAlign.player.autoRecovery.emergencyStage,'ALIGN',
   'Safe lateral oscillation must not restart the pull-in sequence');
- assert.equal(ctl.reverse,false,'Keep heading-only forward alignment until safe');
+ assert.equal(ctl.reverse,true,'A crossed outward-facing car must pivot inward in reverse');
 }
+const inwardHeading=crossedSafeContext('ALIGN');
+inwardHeading.player.heading=1.35;
+const forwardPivot=inwardHeading.autoRecoveryController(1.2,env);
+assert.equal(forwardPivot.reverse,false,
+ 'A crossed car facing toward the middle should not reverse toward the wall');
 const unsafe=crossedSafeContext();
 unsafe.player.lat=-7.1;unsafe.player.x=-7.1;
 unsafe.autoRecoveryController(1.2,env);
