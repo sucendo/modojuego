@@ -2930,16 +2930,23 @@ function autoGripTrajectoryEnvelope(s){
        // distance for standing water and a worn tyre contact patch.
        decel=Math.max(2.6,grip*(wet?8.5:12.3)*perf.brake),
        horizon=420,step=12;
+ // The raw SVG vertex governor is experimental and exists to correct the
+ // repeated Madrid solo incidents. On other tracks it can over-brake (Spa)
+ // and disturb established traffic/technical driving. Keep their main
+ // curvature envelope unchanged until a per-circuit differential passes.
+ const madridSvgVertex=trackData.spec?.dir==='14-spain';
  let best=Infinity,bestD=999,bestCorner=Infinity,source='SMOOTH_CURVATURE';
  for(let d=0;d<=horizon;d+=step){
   const ss=s+d,k=autoCurvatureEnvelope(ss);
-  // Authored SVG tangents can turn abruptly across a node while smoothed
-  // curvatureAt() still looks almost straight. Estimate the real direction
-  // change over an 8m chord using the exact compiled track centreline.
-  const p0=poseAt(ss-4),p1=poseAt(ss+4);
-  const h0=Math.atan2(p0.tx,p0.tz),h1=Math.atan2(p1.tx,p1.tz),
-        rawK=Math.abs(angleDiff(h1,h0))/8;
-  const abrupt=rawK>Math.max(.024,k*1.48);
+  let rawK=0,abrupt=false;
+  if(madridSvgVertex){
+   // The authored Madrid centreline may turn abruptly at an SVG node even
+   // where smoothed curvatureAt() still appears almost straight.
+   const p0=poseAt(ss-4),p1=poseAt(ss+4);
+   const h0=Math.atan2(p0.tx,p0.tz),h1=Math.atan2(p1.tx,p1.tz);
+   rawK=Math.abs(angleDiff(h1,h0))/8;
+   abrupt=rawK>Math.max(.024,k*1.48);
+  }
   if(k<.0008&&!abrupt)continue;
   const e=envProfile(ss),wallish=apexWallishAtS(ss,e),
         corner=autoPhysicalCornerSpeed(ss)*(wet?.955:.975)*(wallish?.965:1),
