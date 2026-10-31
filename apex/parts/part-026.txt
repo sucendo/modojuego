@@ -2982,7 +2982,8 @@ function autoGripTrajectoryEnvelope(s){
 // override; worn/wet tyres receive a slower apex and a longer approach.
 function autoMadridSoloCriticalBendEnvelope(s,trafficActive){
  if(!player||!trackData||trackData.spec?.dir!=='14-spain'||trafficActive||
-    currentSession!=='race'||!demoMode||Math.abs(trackData.km-5.414)>.025)
+    !(currentSession==='race'||currentSession==='freepractice')||!(demoMode||assistMode)||
+    Math.abs(trackData.km-5.414)>.025)
    return{active:false,target:Infinity};
  const lapS=mod(s,trackData.km*1000);
  // Verify the authored complex is still a real bend. Avoid a speed restriction
