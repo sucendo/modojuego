@@ -151,6 +151,7 @@ jobs:
             sleep 1
           done
           node apex/tests/autopilot-audit.cjs 2>&1 | tee /tmp/apex-auto-results/autopilot.jsonl
+          APEX_AUTO_CIRCUITS=14-spain APEX_AUTO_TRAFFIC=solo APEX_AUTO_SECONDS=170 node apex/tests/autopilot-audit.cjs 2>&1 | tee /tmp/apex-auto-results/madrid-solo-170s.jsonl
       - uses: actions/upload-artifact@v4
         if: always()
         with:
