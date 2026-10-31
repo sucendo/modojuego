@@ -2930,17 +2930,35 @@ function autoGripTrajectoryEnvelope(s){
        // distance for standing water and a worn tyre contact patch.
        decel=Math.max(2.6,grip*(wet?8.5:12.3)*perf.brake),
        horizon=420,step=12;
- let best=Infinity,bestD=999,bestCorner=Infinity;
+ let best=Infinity,bestD=999,bestCorner=Infinity,source='SMOOTH_CURVATURE';
  for(let d=0;d<=horizon;d+=step){
   const ss=s+d,k=autoCurvatureEnvelope(ss);
-  if(k<.0008)continue;
+  // Authored SVG tangents can turn abruptly across a node while smoothed
+  // curvatureAt() still looks almost straight. Estimate the real direction
+  // change over an 8m chord using the exact compiled track centreline.
+  const p0=poseAt(ss-4),p1=poseAt(ss+4);
+  const h0=Math.atan2(p0.tx,p0.tz),h1=Math.atan2(p1.tx,p1.tz),
+        rawK=Math.abs(angleDiff(h1,h0))/8;
+  const abrupt=rawK>Math.max(.024,k*1.48);
+  if(k<.0008&&!abrupt)continue;
   const e=envProfile(ss),wallish=apexWallishAtS(ss,e),
         corner=autoPhysicalCornerSpeed(ss)*(wet?.955:.975)*(wallish?.965:1),
-        settle=d<18?0:(wet?18:13),
-        allowed=Math.sqrt(corner*corner+2*decel*Math.max(0,d-settle));
-  if(allowed<best){best=allowed;bestD=d;bestCorner=corner;}
+        settle=d<18?0:(wet?18:13);
+  let allowed=Math.sqrt(corner*corner+2*decel*Math.max(0,d-settle));
+  let winning='SMOOTH_CURVATURE',winningCorner=corner;
+  if(abrupt){
+   // Low-speed tyre force only: no artificial aerodynamic credit through a
+   // very short vertex where the car has no time to build downforce.
+   const mu=1.86*grip*(wet?.86:.92),
+         vertexSpeed=clamp(Math.sqrt(mu*9.81/Math.max(rawK,.001)),4.5,72),
+         safeDecel=clamp(grip*(wet?4.4:6.6)*perf.brake,2.5,7.8),
+         vertexAllowed=Math.sqrt(vertexSpeed*vertexSpeed+
+                     2*safeDecel*Math.max(0,d-(wet?26:21)));
+   if(vertexAllowed<allowed){allowed=vertexAllowed;winning='SVG_VERTEX';winningCorner=vertexSpeed;}
+  }
+  if(allowed<best){best=allowed;bestD=d;bestCorner=winningCorner;source=winning;}
  }
- const out={target:best,d:bestD,corner:bestCorner,grip,wet,s,t:raceT,decel};
+ const out={target:best,d:bestD,corner:bestCorner,source,grip,wet,s,t:raceT,decel};
  player.autoGripEnvelopeCache=out;return out;
 }
 
@@ -4256,7 +4274,7 @@ function demoDriverControl(){
  const gripEnvelope=autoGripTrajectoryEnvelope(player.s);
  if(Number.isFinite(gripEnvelope.target)&&gripEnvelope.target<target-.20){
   target=gripEnvelope.target;targetReason='GRIP_ENVELOPE';
-  targetReasonDetail=gripEnvelope.wet?'WET_TYRE_BRAKING':'TYRE_CORNER_BRAKING';
+  targetReasonDetail=gripEnvelope.source==='SVG_VERTEX'?'SVG_VERTEX_BRAKING':(gripEnvelope.wet?'WET_TYRE_BRAKING':'TYRE_CORNER_BRAKING');
  }
  const kinkLong=autoFarKinkBrakingEnvelope(player.s);
  if(Number.isFinite(kinkLong.target)&&kinkLong.target<target-.20){
