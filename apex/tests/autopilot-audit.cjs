@@ -52,7 +52,11 @@ const source={};for(const variant of ['baseline','candidate'])source[variant]=Ar
     if(Number.isFinite(p.lastWall)&&p.lastWall>lastHit+.2&&p.lastWall>=0){wallContacts++;lastHit=p.lastWall}
    }
    console.log(JSON.stringify({test:'aut-madrid-endurance',seconds,recoveries,wallContacts,progressM:madrid.progressM,finalHp:madrid.end.hp}));
-   assert.ok(madrid.progressM>2200,'AUT must reach the second technical complex of Madrid');
+   // The earlier 170s replay stopped before a complete 5.414 km lap.
+   // A nominally green technical-sector run is not sufficient evidence.
+   const fullLapM=5414;
+   assert.ok(madrid.progressM>=fullLapM,
+     'Madrid AUT must complete at least one full 5.414 km lap; got '+madrid.progressM.toFixed(1)+' m');
    assert.equal(recoveries,0,'Madrid should not require recovery with no rivals in a full-lap replay');
    assert.equal(wallContacts,0,'Madrid should not hit any wall with no rivals');
   }
