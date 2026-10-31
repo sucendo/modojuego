@@ -3371,6 +3371,14 @@ function autoRecoveryController(sp,env){
    }
    if(absLat<(R.emergencyBestLat??absLat)-.18){R.emergencyBestLat=absLat;R.emergencyLastImprove=raceT;}
    const noLatProgress=raceT-(R.emergencyLastImprove||raceT)>2.2;
+   // Once an off-track car reaches protected asphalt, prefer a sustained
+   // orientation manoeuvre to chasing an obsolete lateral target. This inner
+   // corridor is deliberately tighter than the real wall boundary.
+   const protectedAlignLimit=Math.min(eLimit-.40,Math.max(1.10,env.half-2.05));
+   const safeAlignCorridor=!boundaryBlocked&&ps.zone==='TRACK'&&
+     apexDrivableAreaContains(player.x,player.z)!==false&&
+     absLat<protectedAlignLimit&&!contact&&
+     autoRecoveryTrafficRisk(player.s+8,player.lat,1).risk<.62;
    const hardPull=((episodeElapsed>6.5&&noLatProgress)||episodeElapsed>11.5)&&!contact;
    if(hardPull&&!R.emergencyAssistAnnounced){R.emergencyAssistAnnounced=true;pushTelemetryEvent('RECOVERY_TRACTION_ASSIST',{stage:R.emergencyStage||'PULL_IN',absLat:telemetryRound(absLat,2)});}
 
@@ -3379,7 +3387,11 @@ function autoRecoveryController(sp,env){
    // telemetría: tocar TRACK con ~90° de error y atravesar la cinta hasta el runoff
    // contrario. Mientras está sobre/asomado al asfalto vuelve a ALIGN; fuera, PULL_IN.
    const lateralWorsening=absLat>(R.emergencyBestLat??absLat)+.55&&raceT-(R.emergencyLastImprove||raceT)>.45;
-   if(lateralWorsening&&R.emergencyStage!=='BACKOUT'){
+   if(lateralWorsening&&R.emergencyStage!=='BACKOUT'&&
+      !(safeAlignCorridor&&R.emergencyStage==='ALIGN')){
+     // A car safely inside the corridor may slide laterally while turning.
+     // That is NOT a reason to switch back to PULL_IN. Only the outer edge
+     // requires a new lateral manoeuvre.
      // "TRACK" also includes the outermost asphalt beside a real barrier.
      // ALIGN is unsafe while the car is still outside its protected lane:
      // it can advance sideways into the wall for many consecutive ticks.
@@ -3405,6 +3417,19 @@ function autoRecoveryController(sp,env){
    }
 
    if(R.emergencyStage==='TURN_IN')R.emergencyStage='PULL_IN';
+   if(R.emergencyStage==='PULL_IN'&&safeAlignCorridor&&sp<5.8){
+     // Latch the existing lane and keep ALIGN in charge of the steering.
+     // A highly crossed car may reach the centre before it is pointing along
+     // the road; chasing another lateral PULL_IN point repeats the same loop.
+     R.emergencyStage='ALIGN';R.emergencySince=raceT;
+     R.emergencyEdgeLane=clamp(player.lat,-eLimit,eLimit);
+     R.emergencyReverse=false;R.alignStableSince=0;
+     R.emergencyBestLat=absLat;R.emergencyLastImprove=raceT;
+     R.emergencyPlan={s:mod(player.s,trackData.km*1000),lane:R.emergencyEdgeLane,
+       x:player.x,z:player.z,created:raceT};
+     pushTelemetryEvent('RECOVERY_SAFE_ALIGN_CAPTURE',{
+       lat:telemetryRound(player.lat,2),headingErrDeg:telemetryRound(headingErr*180/Math.PI,1)});
+   }
    if(R.emergencyStage==='PULL_IN'){
      const p=R.emergencyPlan,dx=p.x-player.x,dz=p.z-player.z,dist=Math.hypot(dx,dz),travelH=Math.atan2(dx,dz);
      const fErr=angleDiff(travelH,player.heading),rTarget=travelH+Math.PI,rErr=angleDiff(rTarget,player.heading);
@@ -3478,13 +3503,16 @@ function autoRecoveryController(sp,env){
      const rawTrackErr=angleDiff(trackHeading,player.heading),rawAbs=Math.abs(rawTrackErr);
      // Sólo añadimos corrección de carril cuando la orientación ya es razonable; con
      // >50° el único objetivo es apuntar paralelo a la pista sin cruzarla.
-     const laneHeading=rawAbs<.88?clamp(edgeErr*.085,-.18,.18):0;
+     // While crossed, prioritise heading. The lane captured on asphalt is
+     // not an obligation to travel sideways across the road.
+     const laneHeading=rawAbs<.88&&!safeAlignCorridor?clamp(edgeErr*.085,-.18,.18):0;
      const desiredHeading=trackHeading+laneHeading,err=angleDiff(desiredHeading,player.heading),aerr=Math.abs(err);
      let steer=clamp(err*2.05-(player.yawRate||0)*.28,-.88,.88);
      let target=aerr>.78?1.6:aerr>.48?2.6:aerr>.28?4.0:5.2;
      let throttle=sp<target-.45?clamp(.20+(target-sp)/14,.16,.52):0,brake=sp>target+.45?clamp((sp-target)/5.5,.16,.68):0;
      if(aerr>.78&&sp>2.2){throttle=0;brake=Math.max(brake,.34);}
-     if(Math.abs(edgeErr)>.80&&rawAbs<.70)steer=lerp(steer,clamp(edgeErr*.22,-.55,.55),.28);
+     if(Math.abs(edgeErr)>.80&&rawAbs<.70&&!safeAlignCorridor)
+       steer=lerp(steer,clamp(edgeErr*.22,-.55,.55),.28);
      // A recovered car can arrive on the asphalt well away from its original
      // exit-side lane. Keeping that old lane as an absolute gate makes it crawl
      // across the entire track in ALIGN, even after it is already pointing
