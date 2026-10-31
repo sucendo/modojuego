@@ -1577,7 +1577,7 @@ function bindCircuitJsonTools(){
  if(exp)exp.onclick=async()=>{const spec=currentSvgToolSpec();setJsonToolStatus(`Generando JSON de ${spec.name}…`);try{await withPreparedTrackSpec(spec,()=>{const j=apexCircuitJsonForCurrentTrack(spec);triggerDownload(`apex26_${spec.dir}_datos.json`,JSON.stringify(j,null,2),'application/json')});setJsonToolStatus(`JSON exportado de ${spec.name}. Puedes editar ficha, carrera, entorno y perfil vertical/peralte y volver a importarlo.`,'ok')}catch(e){setJsonToolStatus(`No se pudo exportar JSON: ${e&&e.message||e}`,'err')}};
  if(imp)imp.onclick=()=>file&&file.click();
 
- if(file)file.onchange=async ev=>{const f=ev.target.files&&ev.target.files[0];if(!f)return;setJsonToolStatus(`Importando ${f.name}…`);try{const j=validateCircuitJson(JSON.parse(await f.text())),spec=registerCircuitFromJson(j);if(!writeStoredCircuitJson(spec.dir,j))throw Error('No se pudo guardar el JSON');populateCircuitSelectors(spec.dir);populateSvgTrackSelector(spec.dir);const idx=calendar.findIndex(c=>c.dir===spec.dir);if($("svgTrackSelect"))$("svgTrackSelect").value=String(idx);updateAllCircuitCards();setJsonToolStatus(`JSON importado en ${spec.name}${spec.externalSource==='user-json'?' · nuevo circuito añadido a la biblioteca; importa ahora su SVG para poder rodar.':''}`,'ok')}catch(e){setJsonToolStatus(`No se pudo importar JSON: ${e&&e.message||e}`,'err')}finally{ev.target.value=''}};
+ if(file)file.onchange=async ev=>{const f=ev.target.files&&ev.target.files[0];if(!f)return;setJsonToolStatus(`Importando ${f.name}…`);try{const j=validateCircuitJson(JSON.parse(await f.text())),spec=registerCircuitFromJson(j);const backend=await apexStoreCircuitJsonOverride(spec.dir,j);populateCircuitSelectors(spec.dir);populateSvgTrackSelector(spec.dir);const idx=calendar.findIndex(c=>c.dir===spec.dir);if($("svgTrackSelect"))$("svgTrackSelect").value=String(idx);updateAllCircuitCards();setJsonToolStatus(`JSON importado en ${spec.name}${spec.externalSource==='user-json'?' · nuevo circuito añadido a la biblioteca; importa ahora su SVG para poder rodar.':''}${backend==='MEMORY_ONLY'?' · ATENCIÓN: guardado temporal; vuelve a importar el JSON cuando reinicies.':' · guardado en '+backend}`,backend==='MEMORY_ONLY'?'warn':'ok')}catch(e){setJsonToolStatus(`No se pudo importar JSON: ${e&&e.message||e}`,'err')}finally{ev.target.value=''}};
  if(pair)pair.onclick=async()=>{const spec=currentSvgToolSpec();try{await withPreparedTrackSpec(spec,()=>{const stored=readStoredCustomTrackSvg(spec.dir),baseSvg=buildEditableCircuitSvgForCurrentTrack(spec),svg=apexEnrichExportSvg(baseSvg,spec),j=apexCircuitJsonForCurrentTrack(spec);triggerDownload(`apex26_${spec.dir}_circuito.svg`,svg);setTimeout(()=>triggerDownload(`apex26_${spec.dir}_datos.json`,JSON.stringify(j,null,2),'application/json'),180)});setJsonToolStatus(`SVG + JSON exportados de ${spec.name}.`,'ok')}catch(e){setJsonToolStatus(`No se pudo exportar el par: ${e&&e.message||e}`,'err')}};
 }
 function bindSvgTrackTools(){
@@ -1586,7 +1586,7 @@ function bindSvgTrackTools(){
  if(exp)exp.onclick=async()=>{const spec=currentSvgToolSpec();setSvgToolStatus(`Generando SVG completo de ${spec.name}…`);try{let exact=false;await withPreparedTrackSpec(spec,()=>{const stored=readStoredCustomTrackSvg(spec.dir);exact=!!(stored&&stored.authoritative===true&&typeof stored.rawSvg==='string'&&stored.rawSvg.trim());const baseSvg=buildEditableCircuitSvgForCurrentTrack(spec),svg=apexEnrichExportSvg(baseSvg,spec);triggerDownload(`apex26_${spec.dir}_circuito_completo.svg`,svg)});setSvgToolStatus(`SVG total exportado de ${spec.name}: geometría${exact?' importada preservada':''}, pit lane (SVG o fallback provisional), terreno por curvas de nivel editables (+115 m), escapatorias, salida/meta, curvas T1–Tn editables, líneas de control S1/S2/salida/meta/speed-trap, carteles de distancia autoritativos, perfil vertical/peraltes y pianos SVG activos autoritativos, biblioteca de 62 plantillas y esquema universal data-apex-style.`, 'ok')}catch(e){setSvgToolStatus(`No se pudo exportar el SVG: ${e&&e.message||e}`, 'err')}};
  if(imp)imp.onclick=()=>file&&file.click();
  if(repoLoad)repoLoad.onclick=async()=>{
-   const spec=currentSvgToolSpec();
+   const spec=currentSvgToolSpec();let jsonBackend=null;
    setSvgToolStatus(`Cargando versión guardada de ${spec.name}…`);
    try{
      const mr=await fetch("circuits/manifest.json",{cache:"no-cache"});
@@ -1597,20 +1597,21 @@ function bindSvgTrackTools(){
        const jr=await fetch("circuits/"+entry.json,{cache:"no-cache"});
        if(!jr.ok)throw Error("No se pudo cargar el JSON guardado ("+jr.status+")");
        const j=validateCircuitJson(await jr.json()),jspec=registerCircuitFromJson(j);
-       if(!writeStoredCircuitJson(jspec.dir,j))throw Error("No se pudo guardar el override JSON");
+       jsonBackend=await apexStoreCircuitJsonOverride(jspec.dir,j);
        applyStoredCircuitJsonToSpec(spec,j);
      }
      const sr=await fetch("circuits/"+entry.svg,{cache:"no-cache"});
      if(!sr.ok)throw Error("No se pudo cargar el SVG guardado ("+sr.status+")");
      const txt=await sr.text(),res=await importEditableCircuitSvgText(txt,spec);
      updateAllCircuitCards();
-     setSvgToolStatus(`Versión guardada cargada desde apex/circuits en ${spec.name}: SVG${entry.json?' + JSON':''}${res.brakeBoards?', '+res.brakeBoards+' carteles':''}${res.timing?', '+res.timing+' marcadores timing':''}. La BASE interna no se ha modificado y RESTAURAR BASE sigue disponible.`,'ok');
+     const temporary=jsonBackend==='MEMORY_ONLY'||res.storage!=='IndexedDB';
+     setSvgToolStatus(`Versión guardada cargada desde apex/circuits en ${spec.name}: SVG${entry.json?' + JSON':''}${res.brakeBoards?', '+res.brakeBoards+' carteles':''}${res.timing?', '+res.timing+' marcadores timing':''}.${temporary?' ATENCIÓN: almacenamiento limitado, parte de esta importación sólo estará disponible durante esta sesión.':' Datos guardados en el navegador.'} La BASE interna no se ha modificado y RESTAURAR BASE sigue disponible.`,temporary?'warn':'ok');
    }catch(e){
      setSvgToolStatus(`No se pudo cargar la versión guardada: ${e&&e.message||e}`,'err');
    }
  };
  if(file)file.onchange=async(ev)=>{const f=ev.target.files&&ev.target.files[0];if(!f)return;const spec=currentSvgToolSpec();setSvgToolStatus(`Importando ${f.name} en ${spec.name}…`);try{const txt=await f.text();const res=await importEditableCircuitSvgText(txt,spec);updateAllCircuitCards();setSvgToolStatus(`${res.storage==='IndexedDB'?'SVG guardado en IndexedDB':'ATENCIÓN: SVG sólo disponible durante esta sesión; vuelve a importarlo la próxima vez y conserva el original'} (${(f.size/1024).toFixed(0)} KB) en ${spec.name}: trazado${res.edges?', bordes':''}${res.pit?', pit lane X/Z ('+res.pitRuns+' tramos)':''}${res.walls?', '+res.wallGroups+' grupos / '+res.walls+' segmentos de muro X/Z':''}${res.landmarks?', '+res.landmarks+' elementos SVG':''}${res.brakeBoards?', '+res.brakeBoards+' carteles de distancia':''}${res.barriers?', '+res.barriers+' segmentos de barrera física':''}${res.surfaces?', '+res.surfaces+' zonas de superficie/agua':''}${res.terrainContours?', '+res.terrainContours+' niveles de terreno':''}${res.terrainBase?', placa base 3D':''}${res.timing?', '+res.timing+' marcadores timing/DRS':''}${res.vertical?', perfil vertical/peraltes restaurado':''}.`, res.storage==='IndexedDB'?'ok':'warn')}catch(e){setSvgToolStatus(`No se pudo importar el SVG: ${e&&e.message||e}`, 'err')}finally{ev.target.value=''}};
- if(rst)rst.onclick=async()=>{const spec=currentSvgToolSpec();setSvgToolStatus(`Restaurando BASE SVG+JSON de ${spec.name}…`);try{await clearStoredCustomSvgData(spec.dir);clearStoredCircuitJson(spec.dir);applyStoredCircuitJsonToSpec(spec,apexBaseCircuitJson(spec.dir));setSvgToolStatus(`BASE restaurada de ${spec.name}: se eliminaron sólo sus overrides SVG/JSON. La base APEX permanece intacta.`, 'ok');setJsonToolStatus(`JSON BASE activo para ${spec.name}.`,'ok');updateAllCircuitCards()}catch(e){setSvgToolStatus(`No se pudo restaurar la base: ${e&&e.message||e}`, 'err')}};
+ if(rst)rst.onclick=async()=>{const spec=currentSvgToolSpec();setSvgToolStatus(`Restaurando BASE SVG+JSON de ${spec.name}…`);try{await clearStoredCustomSvgData(spec.dir);await apexClearPersistedCircuitJson(spec.dir);applyStoredCircuitJsonToSpec(spec,apexBaseCircuitJson(spec.dir));setSvgToolStatus(`BASE restaurada de ${spec.name}: se eliminaron sólo sus overrides SVG/JSON. La base APEX permanece intacta.`, 'ok');setJsonToolStatus(`JSON BASE activo para ${spec.name}.`,'ok');updateAllCircuitCards()}catch(e){setSvgToolStatus(`No se pudo restaurar la base: ${e&&e.message||e}`, 'err')}};
  window.apexExportCircuitSvg=()=>exp&&exp.click();
  window.apexGetStoredRawSvg=dir=>{const s=readEffectiveTrackSvg(dir||currentSvgToolSpec().dir);return s&&s.rawSvg||null};
  window.apexResetCircuitSvgImports=dir=>clearStoredCustomSvgData(dir||currentSvgToolSpec().dir);
@@ -2538,7 +2539,8 @@ function readBaseTrackSvg(dir){return apexBaseTrackSvgCache.get(String(dir||''))
 function readBaseWorldProfile(dir){return apexBaseWorldProfileCache.get(String(dir||''))||null}
 function readEffectiveTrackSvg(dir){return readStoredCustomTrackSvg(dir)||readBaseTrackSvg(dir)}
 function readEffectiveWorldProfile(dir){return readStoredCustomWorldProfile(dir)||readBaseWorldProfile(dir)}
-const APEX_LARGE_DB_NAME="apex-formula-circuit-files",APEX_LARGE_DB_STORE="circuits",APEX_COMPILED_DB_STORE="compiled";
+const APEX_LARGE_DB_NAME="apex-formula-circuit-files",APEX_LARGE_DB_STORE="circuits",APEX_COMPILED_DB_STORE="compiled",APEX_CIRCUIT_JSON_DB_STORE="json-overrides";
+const apexCircuitJsonDbHydrated=new Set();
 let apexLargeDbPromise=null;
 function customTrackSvgKey(dir){return CUSTOM_TRACK_SVG_KEY_PREFIX+String(dir||"")}
 function customWorldSvgKey(dir){return CUSTOM_WORLD_SVG_KEY_PREFIX+String(dir||"")}
@@ -2552,13 +2554,89 @@ function apexLargeDbOpen(){
  if(apexLargeDbPromise)return apexLargeDbPromise;
  apexLargeDbPromise=new Promise((resolve,reject)=>{
    if(typeof indexedDB==='undefined')return reject(Error('IndexedDB no está disponible en este navegador'));
-   let req;try{req=indexedDB.open(APEX_LARGE_DB_NAME,2)}catch(e){reject(e);return}
-   req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains(APEX_LARGE_DB_STORE))db.createObjectStore(APEX_LARGE_DB_STORE,{keyPath:'dir'});if(!db.objectStoreNames.contains(APEX_COMPILED_DB_STORE))db.createObjectStore(APEX_COMPILED_DB_STORE,{keyPath:'dir'})};
+   let req;try{req=indexedDB.open(APEX_LARGE_DB_NAME,3)}catch(e){reject(e);return}
+   req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains(APEX_LARGE_DB_STORE))db.createObjectStore(APEX_LARGE_DB_STORE,{keyPath:'dir'});if(!db.objectStoreNames.contains(APEX_COMPILED_DB_STORE))db.createObjectStore(APEX_COMPILED_DB_STORE,{keyPath:'dir'});if(!db.objectStoreNames.contains(APEX_CIRCUIT_JSON_DB_STORE))db.createObjectStore(APEX_CIRCUIT_JSON_DB_STORE,{keyPath:'dir'})};
    req.onsuccess=()=>{const db=req.result;db.onversionchange=()=>{db.close();apexLargeDbPromise=null};resolve(db)};
    req.onerror=()=>reject(req.error||Error('Error al abrir IndexedDB'));
    req.onblocked=()=>reject(Error('IndexedDB bloqueado por otra pestaña de APEX'));
  }).catch(e=>{apexLargeDbPromise=null;throw e});
  return apexLargeDbPromise;
+}
+// JSON and heavy SVG use independent IndexedDB stores. LocalStorage has a
+// small shared quota and may be completely full even for a valid 70 KB JSON.
+// Keep the synchronous readStoredCircuitJson() cache but hydrate before loadTrack.
+async function apexCircuitJsonDbRead(dir){
+ const db=await apexLargeDbOpen();return new Promise((resolve,reject)=>{
+  let tx;try{tx=db.transaction(APEX_CIRCUIT_JSON_DB_STORE,'readonly')}catch(e){reject(e);return}
+  const req=tx.objectStore(APEX_CIRCUIT_JSON_DB_STORE).get(String(dir||''));
+  req.onsuccess=()=>resolve(req.result?.payload||null);
+  req.onerror=()=>reject(req.error||Error('No se pudo leer el override JSON'));
+  tx.onabort=()=>reject(tx.error||Error('Lectura JSON IndexedDB interrumpida'));
+ });
+}
+async function apexCircuitJsonDbWrite(dir,payload){
+ const db=await apexLargeDbOpen();return new Promise((resolve,reject)=>{
+  let tx;try{tx=db.transaction(APEX_CIRCUIT_JSON_DB_STORE,'readwrite');tx.objectStore(APEX_CIRCUIT_JSON_DB_STORE).put({dir:String(dir||''),payload})}
+  catch(e){try{tx&&tx.abort()}catch(_){}reject(e);return}
+  tx.oncomplete=()=>resolve(true);tx.onerror=()=>reject(tx.error||Error('No se pudo guardar el JSON en IndexedDB'));
+  tx.onabort=()=>reject(tx.error||Error('No hay espacio o permiso para guardar el JSON'));
+ });
+}
+async function apexCircuitJsonDbDelete(dir){
+ const db=await apexLargeDbOpen();return new Promise((resolve,reject)=>{
+  let tx;try{tx=db.transaction(APEX_CIRCUIT_JSON_DB_STORE,'readwrite');tx.objectStore(APEX_CIRCUIT_JSON_DB_STORE).delete(String(dir||''))}
+  catch(e){reject(e);return}
+  tx.oncomplete=()=>resolve(true);tx.onerror=()=>reject(tx.error||Error('No se pudo borrar el override JSON'));
+  tx.onabort=()=>reject(tx.error||Error('Borrado JSON interrumpido'));
+ });
+}
+async function apexHydrateStoredCircuitJson(dir){
+ const key=String(dir||'');if(apexCircuitJsonDbHydrated.has(key))return;
+ try{
+  const j=await apexCircuitJsonDbRead(key);
+  if(j&&j.schema==='APEX_CIRCUIT_JSON_V1')APEX_CIRCUIT_JSON_RUNTIME_CACHE.set(key,j);
+ }catch(e){console.warn('APEX: override JSON de IndexedDB no disponible',e)}
+ apexCircuitJsonDbHydrated.add(key);
+}
+// Returns the actual persistence backend; MEMORY_ONLY is not advertised as saved.
+// Prefer IndexedDB for large JSON to leave localStorage space for user settings.
+async function apexStoreCircuitJsonOverride(dir,payload){
+ const key=String(dir||''),raw=JSON.stringify(payload);
+ const storeLocal=()=>{
+  try{
+   appStorage.setItem(circuitJsonKey(key),raw);
+   return appStorage.getItem(circuitJsonKey(key))===raw;
+  }catch(e){console.warn('APEX: localStorage no pudo guardar el JSON',e);return false}
+ };
+ let backend=null;
+ if(raw.length<48000&&storeLocal())backend='localStorage';
+ if(!backend){
+  try{
+   await apexCircuitJsonDbWrite(key,payload);
+   const persisted=await apexCircuitJsonDbRead(key);
+   if(!persisted||JSON.stringify(persisted)!==raw)throw Error('La lectura de verificación del JSON no coincide');
+   backend='IndexedDB';
+   // Avoid stale localStorage copies of THIS circuit; preserve other saves.
+   try{appStorage.removeItem(circuitJsonKey(key))}catch(e){}
+  }catch(e){
+   console.warn('APEX: IndexedDB no pudo guardar el JSON',e);
+   if(storeLocal())backend='localStorage';
+  }
+ }
+ if(backend==='localStorage'){
+  try{await apexCircuitJsonDbDelete(key)}catch(e){console.warn('APEX: no se pudo limpiar la copia JSON anterior',e)}
+ }
+ // The user can still drive the imported pair in the current tab if both
+ // stores are blocked. The UI must tell them to re-import next session.
+ APEX_CIRCUIT_JSON_RUNTIME_CACHE.set(key,payload);apexCircuitJsonDbHydrated.add(key);
+ return backend||'MEMORY_ONLY';
+}
+async function apexClearPersistedCircuitJson(dir){
+ const key=String(dir||'');
+ // Don't erase a live override if the persistent deletion fails.
+ await apexCircuitJsonDbDelete(key);
+ try{appStorage.removeItem(circuitJsonKey(key))}catch(e){}
+ APEX_CIRCUIT_JSON_RUNTIME_CACHE.delete(key);apexCircuitJsonDbHydrated.delete(key);
 }
 async function apexLargeDbRead(dir){
  const db=await apexLargeDbOpen();return new Promise((resolve,reject)=>{
@@ -2594,7 +2672,9 @@ async function apexCompiledDbDelete(dir){
 // Hydration occurs before loadTrack(), not during render. Older versions stored the same
 // payloads in localStorage and remain readable until the user reimports that circuit.
 async function apexHydrateLargeCircuit(dir){
- const key=String(dir||'');if(apexLargeSvgHydrated.has(key))return;
+ const key=String(dir||'');
+ await apexHydrateStoredCircuitJson(key);
+ if(apexLargeSvgHydrated.has(key))return;
  let saved=null;try{saved=await apexLargeDbRead(key)}catch(e){
    // A browser may disallow IndexedDB on some file:// viewers. Preserve legacy
    // localStorage imports, but never silently claim that a NEW large import was saved.
