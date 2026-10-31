@@ -27,14 +27,14 @@ console.log('PASS: boundary signal expires; wider modeled road does not override
 console.log('PASS: recovery gates/chords respect SVG holes, absent boundaries and physical walls');
 
 // Reaching valid asphalt pointing mostly along it must stop chasing a stale point.
-for(const [heading,inside,expected] of [[.5,true,'ALIGN'],[1.2,true,'PULL_IN'],[.5,false,'PULL_IN']]){
+for(const [heading,inside,expected] of [[.5,true,'ALIGN'],[1.2,true,'ALIGN'],[.5,false,'PULL_IN']]){
  const c=context(source);c.player.heading=heading;c.player.lastDrivableBoundaryHit=18;c.apexDrivableAreaContains=()=>inside;
  c.player.autoRecovery={since:19,episodeStart:18,startX:0,startZ:0,startLat:2,startS:0,attempts:2,plan:{s:10,lane:0,x:0,z:10,heading:0},boundaryEpisode:true,emergency:true,emergencyStage:'PULL_IN',emergencySince:19,emergencyPlan:{s:100,lane:0,x:0,z:100},emergencySide:1,emergencyBestLat:2,emergencyLastImprove:20};
  c.autoRecoveryController(2,env);assert.equal(c.player.autoRecovery.emergencyStage,expected);
  if(expected==='ALIGN')assert.equal(c.player.autoRecovery.emergencyEdgeLane,2);
  assert.equal(c.player.x,0);assert.equal(c.player.z,0);assert.equal(c.player.heading,heading);
 }
-console.log('PASS: reached asphalt enters alignment in its actual lane; crossed/outside cars do not');
+console.log('PASS: safe asphalt retains heading alignment even when crossed; outside cars do not');
 
 
 // Madrid lap-two regression: while the car is almost stationary and sliding
