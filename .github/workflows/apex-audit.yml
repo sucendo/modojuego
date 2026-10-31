@@ -155,7 +155,8 @@ jobs:
           overall_status=0
           node apex/tests/autopilot-audit.cjs 2>&1 | tee /tmp/apex-auto-results/autopilot.jsonl || overall_status=1
           madrid_status=0
-          APEX_AUTO_CIRCUITS=14-spain APEX_AUTO_TRAFFIC=solo APEX_AUTO_SECONDS=170 node apex/tests/autopilot-audit.cjs 2>&1 | tee /tmp/apex-auto-results/madrid-solo-170s.jsonl || madrid_status=1
+          # Cover at least one complete Madrid lap (5.414 km), not just 170s.
+          APEX_AUTO_CIRCUITS=14-spain APEX_AUTO_TRAFFIC=solo APEX_AUTO_SECONDS=250 node apex/tests/autopilot-audit.cjs 2>&1 | tee /tmp/apex-auto-results/madrid-solo-250s.jsonl || madrid_status=1
           echo "AUT comparison status: $overall_status · Madrid endurance status: $madrid_status"
           if (( overall_status != 0 || madrid_status != 0 )); then exit 1; fi
       - uses: actions/upload-artifact@v4
