@@ -11,7 +11,7 @@ const source={};for(const variant of ['baseline','candidate'])source[variant]=Ar
  const rows=[];
  try{
   const context=await browser.newContext({viewport:{width:844,height:390},deviceScaleFactor:1,isMobile:true,hasTouch:true});
-  await context.addInitScript(()=>{let seed=261007;Math.random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296);Object.defineProperty(navigator,'getGamepads',{value:()=>[]});});
+  await context.addInitScript(()=>{let seed=261007;window.__apexAutoSeed=(value=261007)=>{seed=value>>>0};Math.random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296);Object.defineProperty(navigator,'getGamepads',{value:()=>[]});});
   let variant='baseline';const page=await context.newPage(),errors=[];page.setDefaultTimeout(120000);
   page.on('pageerror',e=>{errors.push(e.message);console.log(JSON.stringify({test:'auto-page-error',message:e.message}));});
   page.on('dialog',async d=>{errors.push(d.message());console.log(JSON.stringify({test:'auto-dialog',message:d.message()}));await d.dismiss();});
@@ -26,6 +26,19 @@ const source={};for(const variant of ['baseline','candidate'])source[variant]=Ar
   }
   const comparisons=rows.filter(r=>r.variant==='candidate').map(after=>{const before=rows.find(r=>r.variant==='baseline'&&r.dir===after.dir&&r.traffic===after.traffic);return {dir:after.dir,traffic:after.traffic,before:{progressM:before.progressM,maxStoppedSec:before.maxStoppedSec,maxNoProgressSec:before.maxNoProgressSec},after:{progressM:after.progressM,maxStoppedSec:after.maxStoppedSec,maxNoProgressSec:after.maxNoProgressSec}};});
   console.log(JSON.stringify({test:'autopilot-comparison',baseline:ref,seconds,comparisons}));
+  // A passing watchdog is not proof of racing stability. Also reject material
+  // regressions in driven distance and accumulated damage against the CURRENT
+  // main branch on the same seeded circuit/traffic setup.
+  for(const after of rows.filter(r=>r.variant==='candidate')){
+   const before=rows.find(r=>r.variant==='baseline'&&r.dir===after.dir&&r.traffic===after.traffic);
+   assert.ok(before,'Missing main baseline: '+after.dir+' traffic='+after.traffic);
+   const label=after.dir+', traffic='+after.traffic;
+   assert.ok(after.progressM>=before.progressM*.85,
+     label+': progress regressed '+after.progressM.toFixed(1)+'m vs main '+before.progressM.toFixed(1)+'m');
+   assert.ok(after.end.hp>=before.end.hp-2.0,
+     label+': excess impact damage, HP '+after.end.hp.toFixed(2)+' vs main '+before.end.hp.toFixed(2));
+  }
+  console.log(JSON.stringify({test:'autopilot-main-regression',cases:10,minProgressRatio:.85,maxExtraHpLoss:2,passed:true}));
   // Behavioral watchdogs for the fixed 60 s fixture, not lap-time or FPS goals.
   // Allow a short recovery, but fail prolonged immobility/no net forward progress.
   // Keep comparative distances visible: traffic contacts may diverge between models.

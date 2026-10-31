@@ -6,6 +6,10 @@ loop=function(t){if(!auditStepping)return auditProductionLoop(t);last=t;requestA
 window.__apexAuto={
  async load(dir,traffic){
   auditStepping=true;goMenu();const spec=calendar.find(s=>s.dir===dir);if(!spec)throw Error(dir);
+  // Both baseline and candidate must run with the EXACT same traffic, grid
+  // and random incidents. A single global seed across 20 scenarios biases
+  // comparisons because the preceding run consumes different RNG amounts.
+  if(window.__apexAutoSeed)window.__apexAutoSeed(261007+calendar.indexOf(spec)*17+(traffic?1:0));
   if(dir==='14-spain'&&!readStoredCustomTrackSvg(dir))await importEditableCircuitSvgText(await(await fetch('circuits/svg/apex26_14-madrid-spain.svg')).text(),spec);
   sessionSettings={diff:1,weather:'CLEAR',noRivals:!traffic};currentSession='race';
   $('gridPos').value='11';apexSetDriveProfile('assisted',false);
