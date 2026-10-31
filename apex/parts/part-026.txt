@@ -3380,7 +3380,11 @@ function autoRecoveryController(sp,env){
    // contrario. Mientras está sobre/asomado al asfalto vuelve a ALIGN; fuera, PULL_IN.
    const lateralWorsening=absLat>(R.emergencyBestLat??absLat)+.55&&raceT-(R.emergencyLastImprove||raceT)>.45;
    if(lateralWorsening&&R.emergencyStage!=='BACKOUT'){
-     const nextStage=(ps.zone==='TRACK'||absLat<env.half+env.curb+.65)?'ALIGN':'PULL_IN';
+     // "TRACK" also includes the outermost asphalt beside a real barrier.
+     // ALIGN is unsafe while the car is still outside its protected lane:
+     // it can advance sideways into the wall for many consecutive ticks.
+     const outerLane=absLat>Math.min(env.half-.45,eLimit+1.15);
+     const nextStage=outerLane?'PULL_IN':(ps.zone==='TRACK'||absLat<env.half+env.curb+.65)?'ALIGN':'PULL_IN';
      if(R.emergencyStage!==nextStage){pushTelemetryEvent('RECOVERY_LATERAL_GUARD',{from:R.emergencyStage,to:nextStage,absLat:telemetryRound(absLat,2),bestAbsLat:telemetryRound(R.emergencyBestLat,2)});}
      R.emergencyStage=nextStage;R.emergencySince=raceT;R.emergencyReverse=false;R.alignStableSince=0;R.lateralGuardTrips=(R.lateralGuardTrips||0)+1;
      R.emergencyBestLat=absLat;R.emergencyLastImprove=raceT;
@@ -3431,6 +3435,35 @@ function autoRecoveryController(sp,env){
    // ya el timeout de 2.2 s que podía mandar un coche a 90° a REJOIN_LOCK.
    if(R.emergencyStage==='ALIGN'){
      const edgeLane=R.emergencyEdgeLane??R.emergencyPlan.lane,edgeErr=player.lat-edgeLane;
+     // During an emergency the car sometimes points almost along the circuit
+     // while STILL drifting outward at 0.5–2 m/s. Steering for heading alone
+     // then grinds its side against the wall (Madrid second lap s≈1205).
+     // Project actual world velocity onto the local lane normal. Never infer
+     // the outward direction from heading alone: a sliding car need not travel
+     // in the direction its nose points.
+     const edgePose=poseAt(player.s),sideNow=Math.sign(player.lat)||eSide,
+           outwardV=sideNow*(finite(player.vx,0)*edgePose.nx+finite(player.vz,0)*edgePose.nz),
+           tooNearEdge=absLat>Math.min(env.half-.45,eLimit+1.15);
+     if(tooNearEdge&&(outwardV>.18||(recentHit&&sp<2.2))&&stageElapsed>.15){
+       // Aim inside the CURRENT side of the road, rather than chasing the
+       // original incident-side ribbon after a spin across the track.
+       const innerLane=clamp(sideNow*Math.min(eLimit*.52,Math.max(.55,env.half-2.7)),-eLimit,eLimit),
+             innerS=player.s+4,innerPose=poseAt(innerS),traffic=autoRecoveryTrafficRisk(innerS,innerLane,1.5);
+       if(traffic.risk>.90){
+         return{steer:0,throttle:0,brake:clamp(.35+sp/12,.35,.80),target:0,boost:false,reverse:false,
+           phase:'RECUP · ESPERA HUECO INTERIOR',recoveryAssist:true,recoveryHeading:trackHeading,recoveryForcePull:false};
+       }
+       R.emergencyStage='PULL_IN';R.emergencySince=raceT;
+       R.emergencyReverse=null;R.alignStableSince=0;
+       R.emergencyEdgeLane=innerLane;
+       R.emergencyPlan={s:mod(innerS,trackData.km*1000),lane:innerLane,
+         x:innerPose.x+innerPose.nx*innerLane,z:innerPose.z+innerPose.nz*innerLane,created:raceT};
+       R.emergencyBestLat=absLat;R.emergencyLastImprove=raceT;
+       pushTelemetryEvent('RECOVERY_OUTER_EDGE_ABORT',{lat:telemetryRound(player.lat,2),
+         outwardSpeed:telemetryRound(outwardV,2),lane:telemetryRound(innerLane,2)});
+       return{steer:0,throttle:0,brake:sp>1.5?.42:.12,target:0,boost:false,reverse:false,
+         phase:'RECUP · SEPARA DEL MURO',recoveryAssist:true,recoveryHeading:trackHeading,recoveryForcePull:false};
+     }
      // ALIGN sólo resuelve rumbo a baja velocidad. Si el coche está quieto y
      // sigue separado del borde de alineación, regresar a tracción/recolocación
      // en vez de esperar indefinidamente una condición imposible.
