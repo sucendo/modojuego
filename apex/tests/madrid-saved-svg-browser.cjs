@@ -34,6 +34,12 @@ window.__madridSavedSvgAudit={
    colors,meshColors:[...new Set(mesh.quads.map(q=>q.color))],bankProfile:monumental?.profile||[],
    bankMax:monumental?.bankDeg,bankS:monumental?.s,
    tunnelCount:count('tunnel'),landmarks:landmarks.length};
+ },
+ async hydrateStatus(){
+   await apexHydrateLargeCircuit('14-spain');
+   const j=readStoredCircuitJson('14-spain');
+   return {colors:j?.visual?.curbs?.colors,bank:j?.banking?.corners?.find(c=>+c.turn===12)?.bankDeg,
+    svg:!!readStoredCustomTrackSvg('14-spain')};
  }
 };`;
 (async()=>{
@@ -66,12 +72,7 @@ window.__madridSavedSvgAudit={
   // before loadTrack must recover the actual JSON from IndexedDB.
   await page.reload();
   await page.waitForFunction(()=>window.__madridSavedSvgAudit);
-  const rehydrated=await page.evaluate(async()=>{
-   await apexHydrateLargeCircuit('14-spain');
-   const j=readStoredCircuitJson('14-spain');
-   return {colors:j?.visual?.curbs?.colors,bank:j?.banking?.corners?.find(c=>+c.turn===12)?.bankDeg,
-    svg:!!readStoredCustomTrackSvg('14-spain')};
-  });
+  const rehydrated=await page.evaluate(()=>window.__madridSavedSvgAudit.hydrateStatus());
   assert.deepEqual(rehydrated.colors,['#f2c500','#d51f27']);
   assert.equal(rehydrated.bank,13.4957);
   assert.equal(rehydrated.svg,true,'The saved SVG must survive alongside JSON');
