@@ -34,3 +34,41 @@ for(const [heading,inside,expected] of [[.5,true,'ALIGN'],[1.2,true,'PULL_IN'],[
  assert.equal(c.player.x,0);assert.equal(c.player.z,0);assert.equal(c.player.heading,heading);
 }
 console.log('PASS: reached asphalt enters alignment in its actual lane; crossed/outside cars do not');
+
+
+// Madrid lap-two regression: while the car is almost stationary and sliding
+// OUTWARD beside a barrier, ALIGN must stop pushing ahead along the wall.
+// Check the actual production recovery state machine, not a replica.
+function outerEdgeContext(vx=.9){
+ const c=context(source);c.raceT=20;c.telemetryRound=n=>n;
+ Object.assign(c.player,{s:1205,x:7.2,lat:7.2,heading:0,vx,vz:0,
+   lastDrivableBoundaryHit:18,autoLastWallHit:-99});
+ c.player.autoRecovery={since:19,episodeStart:18,startX:7.2,startZ:0,
+   startLat:7.2,startS:1205,attempts:2,
+   plan:{s:1215,lane:4,x:4,z:1215,heading:0},
+   emergency:true,emergencyStage:'ALIGN',emergencySince:19,
+   emergencyPlan:{s:1205,lane:4,x:4,z:1205},
+   emergencyEdgeLane:4,emergencySide:1,
+   emergencyBestLat:7.2,emergencyLastImprove:20};
+ return c;
+}
+const edge=outerEdgeContext();
+const outwardAbort=edge.autoRecoveryController(1,env);
+assert.equal(edge.player.autoRecovery.emergencyStage,'PULL_IN',
+  'Outward drift near a barrier must abort heading-only ALIGN');
+assert.ok(edge.player.autoRecovery.emergencyPlan.lane<3,
+  'Recovery must aim inside the lane, not toward the dangerous verge');
+assert.equal(outwardAbort.throttle,0,'Do not accelerate into the barrier');
+assert.equal(outwardAbort.brake>0,true);
+const inward=outerEdgeContext(-.9);
+const inwardResult=inward.autoRecoveryController(1,env);
+assert.equal(inward.player.autoRecovery.emergencyStage,'ALIGN',
+  'Already moving inward should not be sent into a second pull-in cycle');
+assert.ok(inwardResult.target>0,'Normal alignment must remain available');
+const repeated=outerEdgeContext(0);
+repeated.player.autoRecovery.emergencyBestLat=4;
+repeated.player.autoRecovery.emergencyLastImprove=19;
+repeated.autoRecoveryController(1,env);
+assert.equal(repeated.player.autoRecovery.emergencyStage,'PULL_IN',
+  'Lateral-worsening fallback must not bounce back to ALIGN near the wall');
+console.log('PASS: outward boundary creep is interrupted; inward alignment and recovery remain possible');
