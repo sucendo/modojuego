@@ -44,6 +44,12 @@ ctx.demoMode=true;
 ctx.nowCurvature=()=>0;ctx.raceT+=.1;
 const straight=ctx.autoGripTrajectoryEnvelope(0);
 assert.equal(straight.target,Infinity,'A truly straight section must not get an arbitrary cap');
+ctx.poseAt=s=>({tx:s>=118?-.6:0,tz:s>=118?.8:1});ctx.raceT+=.2;
+const vertex=ctx.autoGripTrajectoryEnvelope(0);
+assert.equal(vertex.source,'SVG_VERTEX','Raw authored geometry must be checked');
+assert.ok(vertex.target<50,'An abrupt bend requires braking before arrival');
+ctx.poseAt=()=>({tx:0,tz:1});ctx.raceT+=.2;
+assert.equal(ctx.autoGripTrajectoryEnvelope(0).target,Infinity);
 // Following speed must be physically reachable, without forcing a brake
 // after the car has already achieved a safe lateral gap.
 ctx.wet=false;ctx.player.speed=65;ctx.player.lat=0;
