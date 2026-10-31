@@ -17,6 +17,7 @@ const ctx={
  raceT:1,wet:false,demoMode:true,assistMode:false,nowCurvature:s=>(s>=150&&s<=240?.012:0),
  farKink:{active:true,d:200,angle:1.1},geometricKinkAhead:()=>ctx.farKink,
  clamp:(v,a,b)=>Math.max(a,Math.min(b,v)),
+ angleDiff:(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b)),
  curvatureAt:s=>ctx.nowCurvature(s),
  apexTyreGripScale:car=>Math.min(car.tyres.gripFront,car.tyres.gripRear),
  apexWeatherIsWet:()=>ctx.wet,
