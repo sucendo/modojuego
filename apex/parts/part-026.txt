@@ -3914,6 +3914,29 @@ function requestPitStop(){
  const a=$('raceAlert');if(a){a.textContent=player.pitStop.hud;a.style.color='#8dffb6'}updatePitButtonUI();
 }
 
+// AUT v2: a single continuous direction preview for genuinely tight, solo
+// bends. The existing tyre/track brake envelope remains the safety ceiling.
+// Use world-space Frenet tangents over a 6-22 m window to anticipate the turn
+// before the instantaneous centreline heading rotates under the front axle.
+// Never force this guide over an overtake lane, pitlane or committed SVG kink.
+function autoSoloTrajectoryPreview(s,sp,technical,trafficActive,kinkCommitted){
+ if(!player||!trackData||trafficActive||kinkCommitted||!technical?.active||!technical.hairpin)
+  return{active:false,heading:0,turn:0,d:0};
+ const look=clamp(10+sp*.30,11,20),near=poseAt(s+6),aim=poseAt(s+look),far=poseAt(s+look+6);
+ const nearH=Math.atan2(near.tx,near.tz),aimH=Math.atan2(aim.tx,aim.tz),
+       farH=Math.atan2(far.tx,far.tz);
+ const first=angleDiff(aimH,nearH),second=angleDiff(farH,aimH);
+ // Chicanes / S bends must retain their sequential local-gate controller.
+ if(Math.abs(first)<.16||Math.sign(first)!==Math.sign(second)&&Math.abs(second)>.12)
+  return{active:false,heading:aimH,turn:first,d:look};
+ // Never feed a large heading step from an unsmoothed SVG vertex straight
+ // into the steering system. Predict smoothly and retain an inside-edge margin.
+ const half=Math.max(3,envProfile(s).half),margin=Math.max(0,half-Math.abs(player.lat));
+ const authority=clamp(margin/2.3,0,1);
+ const preview=clamp(first*.28,-.18,.18)*authority;
+ return{active:authority>.08,heading:nearH+preview,turn:first,d:look,correction:preview};
+}
+
 function demoDriverControl(){
  if(!player||!trackData)return {steer:0,throttle:0,brake:0,target:0,boost:false,reverse:false};
  const sp=Math.max(0,finite(player.speed,0)),env=envProfile(player.s),diff=Number.isFinite(sessionSettings.diff)?sessionSettings.diff:1;
@@ -4063,7 +4086,10 @@ function demoDriverControl(){
  // Controlador basado en geometría del monoplaza. El término feed-forward calcula el
  // ángulo de volante que necesita aproximadamente la batalla de 3,60 m para seguir la
  // curvatura, en lugar del antiguo multiplicador empírico ffK*64.
- let look=techDrive?clamp(5.8+sp*.13,6.5,13):clamp(8+sp*.26,10,34);
+ // Short chicane gates stay unchanged; sustained hairpins need a longer,
+ // continuous view to start steering before heading error becomes >20 deg.
+ const soloGuide=autoSoloTrajectoryPreview(player.s,sp,technical,!!raceTraffic.active,kinkCommitActive);
+ let look=techDrive?(soloGuide.active?clamp(9+sp*.29,10,19):clamp(5.8+sp*.13,6.5,13)):clamp(8+sp*.26,10,34);
  if(!techDrive&&compound.active)look=Math.min(38,Math.max(look,clamp(16+compound.firstD*.18,17,31)));
  if(!techDrive&&plan&&plan.d<80)look=Math.min(look,clamp(9+plan.d*.24,10,25));
  if(offTrack)look=Math.min(look,techDrive?7.5:13);
@@ -4106,6 +4132,13 @@ function demoDriverControl(){
    const postBlend=kinkExtreme?.78:(kinkHard?.70:.60);
    tangentHeading+=angleDiff(player.autoKinkCommitHeading,tangentHeading)*postBlend;
    player.autoKinkCommitBlend=Math.max(player.autoKinkCommitBlend||0,postBlend);
+ }
+ // One bounded anticipatory heading, instead of adding another speed
+ // limiter after STABILITY. Reference follows the continuous track ahead.
+ if(soloGuide.active){
+   const gain=clamp((Math.abs(soloGuide.turn)-.12)/.38,0,1);
+   const correction=clamp(angleDiff(soloGuide.heading,tangentHeading)*.42*gain,-.16,.16);
+   tangentHeading+=correction;
  }
  const desiredHeading=tangentHeading+Math.atan(-laneSlope);
  player.autoDesiredHeading=desiredHeading;
