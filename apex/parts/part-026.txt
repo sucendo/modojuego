@@ -3934,7 +3934,7 @@ function autoSoloTrajectoryPreview(s,sp,technical,trafficActive,kinkCommitted){
  const half=Math.max(3,envProfile(s).half),margin=Math.max(0,half-Math.abs(player.lat));
  const authority=clamp(margin/2.3,0,1);
  const preview=clamp(first*.28,-.18,.18)*authority;
- return{active:authority>.08,heading:nearH+preview,turn:first,d:look,correction:preview};
+ return{active:authority>.08,heading:aimH+preview,turn:first,d:look,correction:preview};
 }
 
 function demoDriverControl(){
