@@ -11,7 +11,7 @@ const source={};for(const variant of ['baseline','candidate'])source[variant]=Ar
  const rows=[];
  try{
   const context=await browser.newContext({viewport:{width:844,height:390},deviceScaleFactor:1,isMobile:true,hasTouch:true});
-  await context.addInitScript(()=>{let seed=261007;Math.random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296);Object.defineProperty(navigator,'getGamepads',{value:()=>[]});});
+  await context.addInitScript(()=>{let seed=261007;window.__apexAutoSeed=(value=261007)=>{seed=value>>>0};Math.random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296);Object.defineProperty(navigator,'getGamepads',{value:()=>[]});});
   let variant='baseline';const page=await context.newPage(),errors=[];page.setDefaultTimeout(120000);
   page.on('pageerror',e=>{errors.push(e.message);console.log(JSON.stringify({test:'auto-page-error',message:e.message}));});
   page.on('dialog',async d=>{errors.push(d.message());console.log(JSON.stringify({test:'auto-dialog',message:d.message()}));await d.dismiss();});
