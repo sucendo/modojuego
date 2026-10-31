@@ -11,9 +11,11 @@ function section(from,to){
 const physical=section('function autoCurvatureEnvelope(','function autoEnsureRiskMemory(');
 const envelope=section('function autoGripTrajectoryEnvelope(','// v5.145: segundo cinturón');
 const follow=section('function autoPredictiveTrafficSpeed(','function autoTargetSpeed(');
+const farKink=section('function autoFarKinkBrakingEnvelope(','// v5.145: segundo cinturón');
 const ctx={
  Math,Number,player:{teamKey:'test',tyres:{gripFront:1,gripRear:1}},trackData:{km:5.414},
  raceT:1,wet:false,demoMode:true,assistMode:false,nowCurvature:s=>(s>=150&&s<=240?.012:0),
+ farKink:{active:true,d:200,angle:1.1},geometricKinkAhead:()=>ctx.farKink,
  clamp:(v,a,b)=>Math.max(a,Math.min(b,v)),
  curvatureAt:s=>ctx.nowCurvature(s),
  apexTyreGripScale:car=>Math.min(car.tyres.gripFront,car.tyres.gripRear),
@@ -22,7 +24,7 @@ const ctx={
  envProfile:()=>({half:7}),
  apexWallishAtS:()=>false
 };
-vm.createContext(ctx);vm.runInContext(physical+'\n'+envelope+'\n'+follow,ctx);
+vm.createContext(ctx);vm.runInContext(physical+'\n'+envelope+'\n'+farKink+'\n'+follow,ctx);
 const dry=ctx.autoGripTrajectoryEnvelope(0);
 assert.ok(Number.isFinite(dry.target)&&dry.target>35,'Dry approach must be quick but finite');
 assert.equal(ctx.autoGripTrajectoryEnvelope(0),dry,'No repeated scan during 75 ms cache period');
@@ -56,6 +58,19 @@ const wetFollow=ctx.autoPredictiveTrafficSpeed({d:80,speed:30,lat:.2});
 assert.ok(wetFollow<wornFollow,'Rain must lengthen following-distance braking');
 assert.equal(ctx.autoPredictiveTrafficSpeed({d:25,speed:30,lat:3.1}),Infinity,'Clear lateral passing lane allows unrestricted target');
 assert.equal(ctx.autoPredictiveTrafficSpeed(null),Infinity);
+ctx.player.autoFarKinkCache=null;ctx.wet=false;ctx.raceT+=.2;
+ctx.player.tyres.gripFront=ctx.player.tyres.gripRear=1;
+const kink200=ctx.autoFarKinkBrakingEnvelope(0);
+assert.ok(Number.isFinite(kink200.target),'Long-range authored kink must be detected');
+assert.equal(ctx.autoFarKinkBrakingEnvelope(0),kink200,'Far-kink scan cached between frames');
+ctx.farKink={active:true,d:45,angle:1.1};ctx.raceT+=.2;
+const kink45=ctx.autoFarKinkBrakingEnvelope(155);
+assert.ok(kink45.target<kink200.target,'A nearby sharp bend requires a lower target speed');
+ctx.wet=true;ctx.raceT+=.2;
+const wetKink=ctx.autoFarKinkBrakingEnvelope(155);
+assert.ok(wetKink.target<kink45.target,'Wet raw SVG turns need more early braking');
+ctx.farKink={active:false,d:999,angle:0};ctx.raceT+=.2;
+assert.equal(ctx.autoFarKinkBrakingEnvelope(0).target,Infinity,'Smooth straight must remain unrestricted');
 assert.ok(src.includes('futureReach=Math.max(.18,laneRate*futureTravel)'),'Lookahead must follow reachable lateral motion');
 assert.ok(src.includes("targetReason='GRIP_ENVELOPE'"),'Grip envelope not connected to AUT');
 console.log(JSON.stringify({test:'autopilot-grip',dry:dry.target,worn:worn.target,rain:rain.target,hairpin,straight:'unrestricted',cache:true,passed:true}));
