@@ -3922,12 +3922,14 @@ function requestPitStop(){
 function autoSoloTrajectoryPreview(s,sp,technical,trafficActive,kinkCommitted){
  if(!player||!trackData||trafficActive||kinkCommitted||!technical?.active||!technical.hairpin)
   return{active:false,heading:0,turn:0,d:0};
- const look=clamp(10+sp*.30,11,20),near=poseAt(s+6),aim=poseAt(s+look),far=poseAt(s+look+6);
+ const look=clamp(10+sp*.30,11,20),near=poseAt(s+6),aim=poseAt(s+look),far=poseAt(s+look+6),exit=poseAt(s+look+12);
  const nearH=Math.atan2(near.tx,near.tz),aimH=Math.atan2(aim.tx,aim.tz),
-       farH=Math.atan2(far.tx,far.tz);
- const first=angleDiff(aimH,nearH),second=angleDiff(farH,aimH);
- // Chicanes / S bends must retain their sequential local-gate controller.
- if(Math.abs(first)<.16||Math.sign(first)!==Math.sign(second)&&Math.abs(second)>.12)
+       farH=Math.atan2(far.tx,far.tz),exitH=Math.atan2(exit.tx,exit.tz);
+ const first=angleDiff(aimH,nearH),second=angleDiff(farH,aimH),third=angleDiff(exitH,farH);
+ // A chicane may briefly flatten just before changing direction: test both
+ // forward segments rather than assuming an immediate opposing curvature.
+ const reversal=[second,third].some(turn=>Math.sign(turn)!==Math.sign(first)&&Math.abs(turn)>.08);
+ if(Math.abs(first)<.16||reversal)
   return{active:false,heading:aimH,turn:first,d:look};
  // Never feed a large heading step from an unsmoothed SVG vertex straight
  // into the steering system. Predict smoothly and retain an inside-edge margin.
