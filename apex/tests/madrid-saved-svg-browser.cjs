@@ -15,7 +15,8 @@ window.__madridSavedSvgAudit={
    if(!r.ok)throw Error('Missing Madrid JSON');return r.json();
   }));
   const spec=registerCircuitFromJson(cfg);
-  if(!writeStoredCircuitJson(spec.dir,cfg))throw Error('Madrid JSON could not be persisted');
+  const backend=await apexStoreCircuitJsonOverride(spec.dir,cfg);
+  if(backend==='MEMORY_ONLY')throw Error('Madrid JSON unexpectedly lost persistence');
   const svg=await fetch('circuits/'+entry.svg,{cache:'no-cache'}).then(r=>{if(!r.ok)throw Error('Missing Madrid SVG');return r.text()});
   const imported=await importEditableCircuitSvgText(svg,spec);
   const world=imported.worldPayload;
@@ -26,7 +27,7 @@ window.__madridSavedSvgAudit={
   const palette=[colors[1],colors[0]];
   const mesh=window.ApexSvgCurbs.compile(marks,()=>0,palette);
   const monumental=readStoredCircuitJson(spec.dir)?.banking?.corners?.find(c=>+c.turn===12);
-  return {file:entry.svg,json:entry.json,source:entry.sourceFileName,bytes:new TextEncoder().encode(svg).length,
+  return {file:entry.svg,json:entry.json,backend,source:entry.sourceFileName,bytes:new TextEncoder().encode(svg).length,
    geometry:!!imported.geometry,revision:world.profileRevision,
    boards:imported.brakeBoards||0,stored:!!readStoredCustomTrackSvg('14-spain'),
    surfaceZones:count('surfaceZone'),curbs:marks.length,
@@ -49,7 +50,31 @@ window.__madridSavedSvgAudit={
   });
   await page.goto('http://127.0.0.1:8765/apex/apex.html');
   await page.waitForFunction(()=>window.__madridSavedSvgAudit);
+  // Simulate full localStorage quota, which previously aborted the Madrid
+  // saved-version button before the SVG could be imported.
+  await page.evaluate(()=>{
+   const native=Storage.prototype.setItem;
+   Storage.prototype.setItem=function(k,v){
+    if(String(k).startsWith('apex-v523022-circuit-json-'))
+     throw new DOMException('Simulated full localStorage','QuotaExceededError');
+    return native.call(this,k,v);
+   };
+  });
   const result=await page.evaluate(()=>window.__madridSavedSvgAudit.importSaved());
+  assert.equal(result.backend,'IndexedDB','Full localStorage must use durable IndexedDB JSON');
+  // Hard reload: the in-memory JSON cache is gone, so the production hydration
+  // before loadTrack must recover the actual JSON from IndexedDB.
+  await page.reload();
+  await page.waitForFunction(()=>window.__madridSavedSvgAudit);
+  const rehydrated=await page.evaluate(async()=>{
+   await apexHydrateLargeCircuit('14-spain');
+   const j=readStoredCircuitJson('14-spain');
+   return {colors:j?.visual?.curbs?.colors,bank:j?.banking?.corners?.find(c=>+c.turn===12)?.bankDeg,
+    svg:!!readStoredCustomTrackSvg('14-spain')};
+  });
+  assert.deepEqual(rehydrated.colors,['#f2c500','#d51f27']);
+  assert.equal(rehydrated.bank,13.4957);
+  assert.equal(rehydrated.svg,true,'The saved SVG must survive alongside JSON');
   assert.equal(result.file,'svg/apex26_14-madrid-spain_2026-10-29.svg');
   assert.equal(result.source,'apex26_14-spain_circuito_completo (15).svg');
   assert.equal(result.bytes,788725);
