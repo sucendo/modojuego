@@ -2894,11 +2894,6 @@ function playerAutoLaneAt149(s,skill,bravery,trafficLane=null){
 // before a committed overtake has physically created room.
 function autoPredictiveTrafficSpeed(ahead){
  if(!player||!ahead||!(ahead.d>0)||ahead.d>108||!Number.isFinite(ahead.speed))return Infinity;
- // Monaco's very narrow opening complex: an early, strong following brake
- // while the rear pack is still close caused a rear tap and long off-track
- // recovery. Keep the existing close-range racing controller here, rather
- // than adding a second competing long-distance braking decision.
- if(trackData?.spec?.dir==='06-monaco'&&ahead.d>12)return Infinity;
  const lateralGap=Math.abs(player.lat-ahead.lat);
  if(lateralGap>2.75)return Infinity;
  const grip=clamp(apexTyreGripScale(player),.25,1.06),wet=apexWeatherIsWet(),
@@ -2955,6 +2950,10 @@ function autoGripTrajectoryEnvelope(s){
 // Cache the far horizon, and apply ONLY when an actual discontinuity exists.
 function autoFarKinkBrakingEnvelope(s){
  if(!player||!trackData)return{target:Infinity,d:999};
+ // Monaco's short urban corners are already protected by the technical
+ // planner; long raw-polyline scanning mistakes consecutive bends for a
+ // single hairpin and delays the car into recovery. Preserve tuned handling.
+ if(trackData.spec?.dir==='06-monaco')return{target:Infinity,d:999};
  const c=player.autoFarKinkCache,grip=clamp(apexTyreGripScale(player),.25,1.06),wet=apexWeatherIsWet();
  if(c&&raceT-c.t>=0&&raceT-c.t<.12&&Math.abs(s-c.s)<12&&
     Math.abs(c.grip-grip)<.015&&c.wet===wet)return c;
