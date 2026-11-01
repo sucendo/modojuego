@@ -18,7 +18,7 @@ const source={};for(const variant of ['baseline','candidate'])source[variant]=Ar
   await page.route('**/parts/part-*.txt',async route=>{const i=Number(new URL(route.request().url()).pathname.match(/part-(\d+)\.txt$/)[1]);let body=source[variant][i];if(i===27){const at=body.lastIndexOf('requestAnimationFrame(loop);');assert.ok(at>=0);body=body.slice(0,at)+hook+body.slice(at);}await route.fulfill({body,contentType:'text/plain'});});
   for(variant of ['baseline','candidate']){
    await page.goto(process.env.APEX_AUDIT_URL||'http://127.0.0.1:8765/apex/apex.html?perf=1');await page.waitForFunction(()=>window.__apexAuto);
-   for(const dir of dirs)for(const traffic of [false,true]){
+   for(const dir of dirs)for(const traffic of (process.env.APEX_AUTO_TRAFFIC==='solo'?[false]:[false,true])){
     console.log(JSON.stringify({test:'auto-case-start',variant,dir,traffic}));
     const loaded=await page.evaluate(async({dir,traffic})=>__apexAuto.load(dir,traffic),{dir,traffic});
     const result=await page.evaluate(seconds=>__apexAuto.run(seconds),seconds),row={test:'autopilot-differential',variant,dir,traffic,...loaded,...result};rows.push(row);console.log(JSON.stringify(row));assert.deepEqual(errors,[]);
@@ -39,6 +39,38 @@ const source={};for(const variant of ['baseline','candidate'])source[variant]=Ar
      label+': excess impact damage, HP '+after.end.hp.toFixed(2)+' vs main '+before.end.hp.toFixed(2));
   }
   console.log(JSON.stringify({test:'autopilot-main-regression',cases:10,minProgressRatio:.85,maxExtraHpLoss:2,passed:true}));
+  // Extended Madrid replay: realistic racing permits an occasional mistake,
+  // but not recurring barrier hits, persistent immobilization, or an unresolved
+  // recovery. A physically credible solo AUT is ambitious, not infallible.
+  if(seconds>=150&&dirs.length===1&&dirs[0]==='14-spain'){
+   const madrid=rows.find(r=>r.variant==='candidate'&&!r.traffic);
+   assert.ok(madrid,'Missing Madrid solo replay');
+   let recoveries=0,wallContacts=0,wasRecovering=false,lastHit=-99,episodeStart=null,maxRecoverySec=0;
+   for(const p of madrid.samples){
+    const recovering=!!p.recovery;
+    if(recovering&&!wasRecovering){recoveries++;episodeStart=p.t;}
+    if(!recovering&&wasRecovering&&episodeStart!==null){
+     maxRecoverySec=Math.max(maxRecoverySec,p.t-episodeStart);
+     episodeStart=null;
+    }
+    wasRecovering=recovering;
+    if(Number.isFinite(p.lastWall)&&p.lastWall>lastHit+.2&&p.lastWall>=0){wallContacts++;lastHit=p.lastWall}
+   }
+   const stillRecovering=!!madrid.end.recovery;
+   if(episodeStart!==null)maxRecoverySec=Math.max(maxRecoverySec,madrid.end.t-episodeStart);
+   console.log(JSON.stringify({test:'aut-madrid-endurance',seconds,recoveries,wallContacts,
+     maxRecoverySec,stillRecovering,progressM:madrid.progressM,finalHp:madrid.end.hp}));
+   // A complete lap is required. Risk-taking may produce one recoverable
+   // incident, but a 20+ second crawl across the circuit is not good race AI.
+   const fullLapM=5414;
+   assert.ok(madrid.progressM>=fullLapM,
+     'Madrid AUT must complete at least one full 5.414 km lap; got '+madrid.progressM.toFixed(1)+' m');
+   assert.ok(recoveries<=1,'An occasional error is realistic; repeated recovery episodes are not: '+recoveries);
+   assert.ok(wallContacts<=1,'Repeated wall contacts are not acceptable racecraft: '+wallContacts);
+   assert.equal(stillRecovering,false,'An incident must end with a safe return to normal driving');
+   assert.ok(maxRecoverySec<=20,'AUT recovery took too long: '+maxRecoverySec.toFixed(1)+' s');
+   assert.ok(madrid.end.hp>=95,'Allow a scrape, not major damage or repeated crashes');
+  }
   // Behavioral watchdogs for the fixed 60 s fixture, not lap-time or FPS goals.
   // Allow a short recovery, but fail prolonged immobility/no net forward progress.
   // Keep comparative distances visible: traffic contacts may diverge between models.

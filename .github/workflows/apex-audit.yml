@@ -51,6 +51,7 @@ jobs:
           node apex/tests/terrain-selection-audit.cjs > /tmp/apex-results/terrain-selection.json
           node apex/tests/auto-boundary-audit.cjs > /tmp/apex-results/auto-boundary.txt
           node apex/tests/autopilot-grip-audit.cjs > /tmp/apex-results/autopilot-grip.json
+          node apex/tests/autopilot-trajectory-preview.cjs > /tmp/apex-results/autopilot-trajectory-preview.json
           python3 apex/tests/circuit-assets-audit.py --json > /tmp/apex-results/assets.json
           node --check apex/js/preparation-9a.js
           node apex/tests/climate-9a-audit.cjs
@@ -149,7 +150,15 @@ jobs:
             if curl --fail --silent http://127.0.0.1:8765/apex/apex.html > /dev/null; then break; fi
             sleep 1
           done
-          node apex/tests/autopilot-audit.cjs 2>&1 | tee /tmp/apex-auto-results/autopilot.jsonl
+          # Run both diagnostics even when one fails. The Madrid endurance
+          # report must not be hidden behind a regression on another circuit.
+          overall_status=0
+          node apex/tests/autopilot-audit.cjs 2>&1 | tee /tmp/apex-auto-results/autopilot.jsonl || overall_status=1
+          madrid_status=0
+          # Cover at least one complete Madrid lap (5.414 km), not just 170s.
+          APEX_AUTO_CIRCUITS=14-spain APEX_AUTO_TRAFFIC=solo APEX_AUTO_SECONDS=250 node apex/tests/autopilot-audit.cjs 2>&1 | tee /tmp/apex-auto-results/madrid-solo-250s.jsonl || madrid_status=1
+          echo "AUT comparison status: $overall_status · Madrid endurance status: $madrid_status"
+          if (( overall_status != 0 || madrid_status != 0 )); then exit 1; fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:

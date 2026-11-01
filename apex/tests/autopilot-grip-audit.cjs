@@ -17,11 +17,13 @@ const ctx={
  raceT:1,wet:false,demoMode:true,assistMode:false,nowCurvature:s=>(s>=150&&s<=240?.012:0),
  farKink:{active:true,d:200,angle:1.1},geometricKinkAhead:()=>ctx.farKink,
  clamp:(v,a,b)=>Math.max(a,Math.min(b,v)),
+ angleDiff:(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b)),
  curvatureAt:s=>ctx.nowCurvature(s),
  apexTyreGripScale:car=>Math.min(car.tyres.gripFront,car.tyres.gripRear),
  apexWeatherIsWet:()=>ctx.wet,
  teamPerformance:()=>({brake:1}),
  envProfile:()=>({half:7}),
+ poseAt:()=>({tx:0,tz:1}),
  apexWallishAtS:()=>false
 };
 vm.createContext(ctx);vm.runInContext(physical+'\n'+envelope+'\n'+farKink+'\n'+follow,ctx);
@@ -43,6 +45,17 @@ ctx.demoMode=true;
 ctx.nowCurvature=()=>0;ctx.raceT+=.1;
 const straight=ctx.autoGripTrajectoryEnvelope(0);
 assert.equal(straight.target,Infinity,'A truly straight section must not get an arbitrary cap');
+ctx.poseAt=s=>({tx:s>=118?-.6:0,tz:s>=118?.8:1});ctx.raceT+=.2;
+ctx.trackData.spec={dir:'14-spain'};
+const vertex=ctx.autoGripTrajectoryEnvelope(0);
+assert.equal(vertex.source,'SVG_VERTEX','Madrid authored geometry must be checked');
+assert.ok(vertex.target<50,'An abrupt Madrid bend requires early braking');
+ctx.trackData.spec={dir:'10-belgium'};ctx.raceT+=.2;
+const belgium=ctx.autoGripTrajectoryEnvelope(0);
+assert.equal(belgium.target,Infinity,'Raw SVG Madrid safeguard must not impose a speed cap at Spa');
+assert.equal(belgium.source,'SMOOTH_CURVATURE','Spa retains the existing smooth curvature envelope');
+ctx.poseAt=()=>({tx:0,tz:1});ctx.trackData.spec={dir:'14-spain'};ctx.raceT+=.2;
+assert.equal(ctx.autoGripTrajectoryEnvelope(0).target,Infinity);
 // Following speed must be physically reachable, without forcing a brake
 // after the car has already achieved a safe lateral gap.
 ctx.wet=false;ctx.player.speed=65;ctx.player.lat=0;
@@ -77,6 +90,37 @@ const wetKink=ctx.autoFarKinkBrakingEnvelope(155);
 assert.ok(wetKink.target<kink45.target,'Wet raw SVG turns need more early braking');
 ctx.farKink={active:false,d:999,angle:0};ctx.raceT+=.2;
 assert.equal(ctx.autoFarKinkBrakingEnvelope(0).target,Infinity,'Smooth straight must remain unrestricted');
+const madridGuard=section('function autoMadridSoloCriticalBendEnvelope(','function autoFarKinkBrakingEnvelope(');
+ctx.mod=(x,n)=>((x%n)+n)%n;
+ctx.currentSession='race';ctx.demoMode=true;ctx.trackData={km:5.414,spec:{dir:'14-spain'}};
+ctx.curvatureAt=s=>s>=2800&&s<=2840?.015:0;
+ctx.wet=false;ctx.player.tyres.gripFront=ctx.player.tyres.gripRear=1;
+vm.runInContext(madridGuard,ctx);
+const early=ctx.autoMadridSoloCriticalBendEnvelope(2690,false);
+const entry=ctx.autoMadridSoloCriticalBendEnvelope(2795,false);
+assert.ok(early.active&&early.target>entry.target&&entry.target<19,
+ 'The Madrid complex must impose early physically reachable braking');
+ctx.currentSession='freepractice';
+assert.ok(ctx.autoMadridSoloCriticalBendEnvelope(2795,false).active,
+ 'The user-reported incident occurred in free practice, not a race');
+ctx.currentSession='race';
+assert.ok(ctx.autoMadridSoloCriticalBendEnvelope(2840,false).target<19,
+ 'Hold a safe speed through the sustained corner, not just at turn-in');
+assert.equal(ctx.autoMadridSoloCriticalBendEnvelope(2650,true).active,false,
+ 'No isolated speed governor during racing traffic');
+ctx.trackData.spec.dir='10-belgium';
+assert.equal(ctx.autoMadridSoloCriticalBendEnvelope(2795,false).active,false,
+ 'The Madrid-specific control must never change Spa');
+ctx.trackData.spec.dir='14-spain';ctx.curvatureAt=()=>0;
+assert.equal(ctx.autoMadridSoloCriticalBendEnvelope(2795,false).active,false,
+ 'Different user-imported SVG geometry must not inherit fixed corner markers');
+ctx.curvatureAt=s=>s>=2800&&s<=2840?.015:0;
+ctx.player.tyres.gripFront=ctx.player.tyres.gripRear=.55;
+const wornMadrid=ctx.autoMadridSoloCriticalBendEnvelope(2795,false);
+ctx.wet=true;
+const wetMadrid=ctx.autoMadridSoloCriticalBendEnvelope(2795,false);
+assert.ok(wetMadrid.target<wornMadrid.target&&wornMadrid.target<entry.target,
+ 'Worn tyres and wet conditions must reduce achievable entry speed');
 assert.ok(src.includes('futureReach=Math.max(.18,laneRate*futureTravel)'),'Lookahead must follow reachable lateral motion');
 assert.ok(src.includes("targetReason='GRIP_ENVELOPE'"),'Grip envelope not connected to AUT');
 console.log(JSON.stringify({test:'autopilot-grip',dry:dry.target,worn:worn.target,rain:rain.target,hairpin,straight:'unrestricted',cache:true,passed:true}));

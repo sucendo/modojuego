@@ -2930,17 +2930,42 @@ function autoGripTrajectoryEnvelope(s){
        // distance for standing water and a worn tyre contact patch.
        decel=Math.max(2.6,grip*(wet?8.5:12.3)*perf.brake),
        horizon=420,step=12;
- let best=Infinity,bestD=999,bestCorner=Infinity;
+ // The raw SVG vertex governor is experimental and exists to correct the
+ // repeated Madrid solo incidents. On other tracks it can over-brake (Spa)
+ // and disturb established traffic/technical driving. Keep their main
+ // curvature envelope unchanged until a per-circuit differential passes.
+ const madridSvgVertex=trackData.spec?.dir==='14-spain';
+ let best=Infinity,bestD=999,bestCorner=Infinity,source='SMOOTH_CURVATURE';
  for(let d=0;d<=horizon;d+=step){
   const ss=s+d,k=autoCurvatureEnvelope(ss);
-  if(k<.0008)continue;
+  let rawK=0,abrupt=false;
+  if(madridSvgVertex){
+   // The authored Madrid centreline may turn abruptly at an SVG node even
+   // where smoothed curvatureAt() still appears almost straight.
+   const p0=poseAt(ss-4),p1=poseAt(ss+4);
+   const h0=Math.atan2(p0.tx,p0.tz),h1=Math.atan2(p1.tx,p1.tz);
+   rawK=Math.abs(angleDiff(h1,h0))/8;
+   abrupt=rawK>Math.max(.024,k*1.48);
+  }
+  if(k<.0008&&!abrupt)continue;
   const e=envProfile(ss),wallish=apexWallishAtS(ss,e),
         corner=autoPhysicalCornerSpeed(ss)*(wet?.955:.975)*(wallish?.965:1),
-        settle=d<18?0:(wet?18:13),
-        allowed=Math.sqrt(corner*corner+2*decel*Math.max(0,d-settle));
-  if(allowed<best){best=allowed;bestD=d;bestCorner=corner;}
+        settle=d<18?0:(wet?18:13);
+  let allowed=Math.sqrt(corner*corner+2*decel*Math.max(0,d-settle));
+  let winning='SMOOTH_CURVATURE',winningCorner=corner;
+  if(abrupt){
+   // Low-speed tyre force only: no artificial aerodynamic credit through a
+   // very short vertex where the car has no time to build downforce.
+   const mu=1.86*grip*(wet?.86:.92),
+         vertexSpeed=clamp(Math.sqrt(mu*9.81/Math.max(rawK,.001)),4.5,72),
+         safeDecel=clamp(grip*(wet?4.4:6.6)*perf.brake,2.5,7.8),
+         vertexAllowed=Math.sqrt(vertexSpeed*vertexSpeed+
+                     2*safeDecel*Math.max(0,d-(wet?26:21)));
+   if(vertexAllowed<allowed){allowed=vertexAllowed;winning='SVG_VERTEX';winningCorner=vertexSpeed;}
+  }
+  if(allowed<best){best=allowed;bestD=d;bestCorner=winningCorner;source=winning;}
  }
- const out={target:best,d:bestD,corner:bestCorner,grip,wet,s,t:raceT,decel};
+ const out={target:best,d:bestD,corner:bestCorner,source,grip,wet,s,t:raceT,decel};
  player.autoGripEnvelopeCache=out;return out;
 }
 
@@ -2948,6 +2973,40 @@ function autoGripTrajectoryEnvelope(s){
 // curvatureAt() predicts. In that case the existing 112m kink guard brakes
 // too late: the first opportunity to leave 200+ km/h must start farther away.
 // Cache the far horizon, and apply ONLY when an actual discontinuity exists.
+// Saved Madrid SVG edition 15: the tight decreasing-radius complex near
+// s=2.80 km requires braking BEFORE steering loads the rear tyres. The
+// regular 12m curvature scans react after the first yaw impulse there.
+// This race-solo guard is isolated to the verified circuit length/geometry
+// so imported or edited Madrid SVGs are not silently assigned fixed markers.
+// The cap is a friction-based stopping envelope, never a teleport or physics
+// override; worn/wet tyres receive a slower apex and a longer approach.
+function autoMadridSoloCriticalBendEnvelope(s,trafficActive){
+ if(!player||!trackData||trackData.spec?.dir!=='14-spain'||trafficActive||
+    !(currentSession==='race'||currentSession==='freepractice')||!(demoMode||assistMode)||
+    Math.abs(trackData.km-5.414)>.025)
+   return{active:false,target:Infinity};
+ const lapS=mod(s,trackData.km*1000);
+ // Verify the authored complex is still a real bend. Avoid a speed restriction
+ // if the user replaces Madrid with a different SVG of similar overall length.
+ const authoredK=Math.max(Math.abs(curvatureAt(2807)),Math.abs(curvatureAt(2820)),Math.abs(curvatureAt(2830)));
+ if(authoredK<.003)return{active:false,target:Infinity};
+ const grip=clamp(apexTyreGripScale(player),.25,1.06),wet=apexWeatherIsWet(),
+       safe=clamp((wet?14.0:17.5)*Math.sqrt(grip),7.5,19),
+       brake=clamp(grip*(wet?3.2:4.9)*teamPerformance(player.teamKey).brake,2.0,5.2),
+       entry=2795,d=entry-lapS;
+ if(d>=0&&d<=220){
+  const target=Math.sqrt(safe*safe+2*brake*Math.max(0,d-(wet?18:14)));
+  return{active:true,target,phase:'APPROACH',d,grip,wet};
+ }
+ if(d<0&&lapS<=2863){
+  // Hold safe entry speed until past the exit where rear instability occurred.
+  // Release progressively instead of accelerating mid-corner.
+  const target=safe+clamp((lapS-entry-42)/26,0,1)*12;
+  return{active:true,target,phase:'APEX_EXIT',d,grip,wet};
+ }
+ return{active:false,target:Infinity};
+}
+
 function autoFarKinkBrakingEnvelope(s){
  if(!player||!trackData)return{target:Infinity,d:999};
  // Monaco's short urban corners are already protected by the technical
@@ -3312,6 +3371,14 @@ function autoRecoveryController(sp,env){
    }
    if(absLat<(R.emergencyBestLat??absLat)-.18){R.emergencyBestLat=absLat;R.emergencyLastImprove=raceT;}
    const noLatProgress=raceT-(R.emergencyLastImprove||raceT)>2.2;
+   // Once an off-track car reaches protected asphalt, prefer a sustained
+   // orientation manoeuvre to chasing an obsolete lateral target. This inner
+   // corridor is deliberately tighter than the real wall boundary.
+   const protectedAlignLimit=Math.min(eLimit-.40,Math.max(1.10,env.half-2.05));
+   const safeAlignCorridor=!boundaryBlocked&&ps.zone==='TRACK'&&
+     apexDrivableAreaContains(player.x,player.z)!==false&&
+     absLat<protectedAlignLimit&&!contact&&
+     autoRecoveryTrafficRisk(player.s+8,player.lat,1).risk<.62;
    const hardPull=((episodeElapsed>6.5&&noLatProgress)||episodeElapsed>11.5)&&!contact;
    if(hardPull&&!R.emergencyAssistAnnounced){R.emergencyAssistAnnounced=true;pushTelemetryEvent('RECOVERY_TRACTION_ASSIST',{stage:R.emergencyStage||'PULL_IN',absLat:telemetryRound(absLat,2)});}
 
@@ -3320,8 +3387,15 @@ function autoRecoveryController(sp,env){
    // telemetría: tocar TRACK con ~90° de error y atravesar la cinta hasta el runoff
    // contrario. Mientras está sobre/asomado al asfalto vuelve a ALIGN; fuera, PULL_IN.
    const lateralWorsening=absLat>(R.emergencyBestLat??absLat)+.55&&raceT-(R.emergencyLastImprove||raceT)>.45;
-   if(lateralWorsening&&R.emergencyStage!=='BACKOUT'){
-     const nextStage=(ps.zone==='TRACK'||absLat<env.half+env.curb+.65)?'ALIGN':'PULL_IN';
+   if(lateralWorsening&&R.emergencyStage!=='BACKOUT'&&!safeAlignCorridor){
+     // A car safely inside the corridor may slide laterally while turning.
+     // That is NOT a reason to switch back to PULL_IN. Only the outer edge
+     // requires a new lateral manoeuvre.
+     // "TRACK" also includes the outermost asphalt beside a real barrier.
+     // ALIGN is unsafe while the car is still outside its protected lane:
+     // it can advance sideways into the wall for many consecutive ticks.
+     const outerLane=absLat>Math.min(env.half-.45,eLimit+1.15);
+     const nextStage=outerLane?'PULL_IN':(ps.zone==='TRACK'||absLat<env.half+env.curb+.65)?'ALIGN':'PULL_IN';
      if(R.emergencyStage!==nextStage){pushTelemetryEvent('RECOVERY_LATERAL_GUARD',{from:R.emergencyStage,to:nextStage,absLat:telemetryRound(absLat,2),bestAbsLat:telemetryRound(R.emergencyBestLat,2)});}
      R.emergencyStage=nextStage;R.emergencySince=raceT;R.emergencyReverse=false;R.alignStableSince=0;R.lateralGuardTrips=(R.lateralGuardTrips||0)+1;
      R.emergencyBestLat=absLat;R.emergencyLastImprove=raceT;
@@ -3342,6 +3416,19 @@ function autoRecoveryController(sp,env){
    }
 
    if(R.emergencyStage==='TURN_IN')R.emergencyStage='PULL_IN';
+   if(R.emergencyStage==='PULL_IN'&&safeAlignCorridor&&sp<5.8){
+     // Latch the existing lane and keep ALIGN in charge of the steering.
+     // A highly crossed car may reach the centre before it is pointing along
+     // the road; chasing another lateral PULL_IN point repeats the same loop.
+     R.emergencyStage='ALIGN';R.emergencySince=raceT;
+     R.emergencyEdgeLane=clamp(player.lat,-eLimit,eLimit);
+     R.emergencyReverse=false;R.alignStableSince=0;
+     R.emergencyBestLat=absLat;R.emergencyLastImprove=raceT;
+     R.emergencyPlan={s:mod(player.s,trackData.km*1000),lane:R.emergencyEdgeLane,
+       x:player.x,z:player.z,created:raceT};
+     pushTelemetryEvent('RECOVERY_SAFE_ALIGN_CAPTURE',{
+       lat:telemetryRound(player.lat,2),headingErrDeg:telemetryRound(headingErr*180/Math.PI,1)});
+   }
    if(R.emergencyStage==='PULL_IN'){
      const p=R.emergencyPlan,dx=p.x-player.x,dz=p.z-player.z,dist=Math.hypot(dx,dz),travelH=Math.atan2(dx,dz);
      const fErr=angleDiff(travelH,player.heading),rTarget=travelH+Math.PI,rErr=angleDiff(rTarget,player.heading);
@@ -3372,6 +3459,35 @@ function autoRecoveryController(sp,env){
    // ya el timeout de 2.2 s que podía mandar un coche a 90° a REJOIN_LOCK.
    if(R.emergencyStage==='ALIGN'){
      const edgeLane=R.emergencyEdgeLane??R.emergencyPlan.lane,edgeErr=player.lat-edgeLane;
+     // During an emergency the car sometimes points almost along the circuit
+     // while STILL drifting outward at 0.5–2 m/s. Steering for heading alone
+     // then grinds its side against the wall (Madrid second lap s≈1205).
+     // Project actual world velocity onto the local lane normal. Never infer
+     // the outward direction from heading alone: a sliding car need not travel
+     // in the direction its nose points.
+     const edgePose=poseAt(player.s),sideNow=Math.sign(player.lat)||eSide,
+           outwardV=sideNow*(finite(player.vx,0)*edgePose.nx+finite(player.vz,0)*edgePose.nz),
+           tooNearEdge=absLat>Math.min(env.half-.45,eLimit+1.15);
+     if(tooNearEdge&&(outwardV>.18||(recentHit&&sp<2.2))&&stageElapsed>.15){
+       // Aim inside the CURRENT side of the road, rather than chasing the
+       // original incident-side ribbon after a spin across the track.
+       const innerLane=clamp(sideNow*Math.min(eLimit*.52,Math.max(.55,env.half-2.7)),-eLimit,eLimit),
+             innerS=player.s+4,innerPose=poseAt(innerS),traffic=autoRecoveryTrafficRisk(innerS,innerLane,1.5);
+       if(traffic.risk>.90){
+         return{steer:0,throttle:0,brake:clamp(.35+sp/12,.35,.80),target:0,boost:false,reverse:false,
+           phase:'RECUP · ESPERA HUECO INTERIOR',recoveryAssist:true,recoveryHeading:trackHeading,recoveryForcePull:false};
+       }
+       R.emergencyStage='PULL_IN';R.emergencySince=raceT;
+       R.emergencyReverse=null;R.alignStableSince=0;
+       R.emergencyEdgeLane=innerLane;
+       R.emergencyPlan={s:mod(innerS,trackData.km*1000),lane:innerLane,
+         x:innerPose.x+innerPose.nx*innerLane,z:innerPose.z+innerPose.nz*innerLane,created:raceT};
+       R.emergencyBestLat=absLat;R.emergencyLastImprove=raceT;
+       pushTelemetryEvent('RECOVERY_OUTER_EDGE_ABORT',{lat:telemetryRound(player.lat,2),
+         outwardSpeed:telemetryRound(outwardV,2),lane:telemetryRound(innerLane,2)});
+       return{steer:0,throttle:0,brake:sp>1.5?.42:.12,target:0,boost:false,reverse:false,
+         phase:'RECUP · SEPARA DEL MURO',recoveryAssist:true,recoveryHeading:trackHeading,recoveryForcePull:false};
+     }
      // ALIGN sólo resuelve rumbo a baja velocidad. Si el coche está quieto y
      // sigue separado del borde de alineación, regresar a tracción/recolocación
      // en vez de esperar indefinidamente una condición imposible.
@@ -3384,26 +3500,58 @@ function autoRecoveryController(sp,env){
          phase:'RECUP · RETOMA TRACCIÓN',recoveryAssist:true,recoveryHeading:trackHeading,recoveryForcePull:false};
      }
      const rawTrackErr=angleDiff(trackHeading,player.heading),rawAbs=Math.abs(rawTrackErr);
+     // A crossed car on the inner asphalt can run out of lateral space
+     // before its heading catches up. A short reverse three-point manoeuvre
+     // moves it toward the centre without switching back to PULL_IN.
+     // Steering is inverted in reverse so yaw still converges on trackHeading.
+     const forwardLateral=Math.sin(player.heading)*edgePose.nx+Math.cos(player.heading)*edgePose.nz;
+     const forwardOutward=sideNow*forwardLateral;
+     if(safeAlignCorridor&&rawAbs>.56&&
+        raceT-(R.alignGearStamp??-99)>.85){
+       const nextReverse=absLat>.65&&forwardOutward>.28;
+       if(!!R.alignGearReverse!==nextReverse){
+         R.alignGearReverse=nextReverse;R.alignGearStamp=raceT;
+         pushTelemetryEvent('RECOVERY_ALIGN_GEAR',{reverse:nextReverse,
+           lat:telemetryRound(player.lat,2),headingErrDeg:telemetryRound(rawTrackErr*180/Math.PI,1)});
+       }
+     }
+     const reverseAlign=safeAlignCorridor&&rawAbs>.43&&!!R.alignGearReverse;
      // Sólo añadimos corrección de carril cuando la orientación ya es razonable; con
      // >50° el único objetivo es apuntar paralelo a la pista sin cruzarla.
-     const laneHeading=rawAbs<.88?clamp(edgeErr*.085,-.18,.18):0;
+     // While crossed, prioritise heading. The lane captured on asphalt is
+     // not an obligation to travel sideways across the road.
+     const laneHeading=rawAbs<.88&&!safeAlignCorridor?clamp(edgeErr*.085,-.18,.18):0;
      const desiredHeading=trackHeading+laneHeading,err=angleDiff(desiredHeading,player.heading),aerr=Math.abs(err);
-     let steer=clamp(err*2.05-(player.yawRate||0)*.28,-.88,.88);
-     let target=aerr>.78?1.6:aerr>.48?2.6:aerr>.28?4.0:5.2;
+     let steer=clamp((reverseAlign?-1:1)*(err*2.05-(player.yawRate||0)*.28),-.88,.88);
+     let target=reverseAlign?2.5:aerr>.78?1.6:aerr>.48?2.6:aerr>.28?4.0:5.2;
      let throttle=sp<target-.45?clamp(.20+(target-sp)/14,.16,.52):0,brake=sp>target+.45?clamp((sp-target)/5.5,.16,.68):0;
-     if(aerr>.78&&sp>2.2){throttle=0;brake=Math.max(brake,.34);}
-     if(Math.abs(edgeErr)>.80&&rawAbs<.70)steer=lerp(steer,clamp(edgeErr*.22,-.55,.55),.28);
-     // Debe estar realmente alineado (<15°), junto al borde bloqueado y estable durante
-     // 0.45 s. Mientras no se cumpla, permanece en ALIGN indefinidamente.
-     const alignedGate=rawAbs<.26&&Math.abs(edgeErr)<.82&&sp<6.2;
+     if(aerr>.78&&sp>2.2&&!reverseAlign){throttle=0;brake=Math.max(brake,.34);}
+     if(Math.abs(edgeErr)>.80&&rawAbs<.70&&!safeAlignCorridor)
+       steer=lerp(steer,clamp(edgeErr*.22,-.55,.55),.28);
+     // A recovered car can arrive on the asphalt well away from its original
+     // exit-side lane. Keeping that old lane as an absolute gate makes it crawl
+     // across the entire track in ALIGN, even after it is already pointing
+     // safely down the circuit (Madrid lap 2 s≈1200). Accept a stable, centered
+     // ribbon instead of forcing it back to the side of the initial incident.
+     // Never use this shortcut while crossed, on runoff or beside traffic.
+     const safeRibbon=!boundaryBlocked&&ps.zone==='TRACK'&&
+       Math.abs(player.lat)<Math.min(eLimit-.40,Math.max(1.1,env.half-1.25))&&
+       rawAbs<.22&&sp<6.2&&
+       autoRecoveryTrafficRisk(player.s+8,player.lat,1).risk<.62;
+     const alignedGate=rawAbs<.26&&sp<6.2&&(Math.abs(edgeErr)<.82||safeRibbon);
      if(alignedGate){R.alignStableSince=R.alignStableSince||raceT;}else R.alignStableSince=0;
      if(R.alignStableSince&&raceT-R.alignStableSince>.45){
        R.emergencyStage='REJOIN_LOCK';R.emergencySince=raceT;R.alignStableSince=0;
-       const q1=poseAt(player.s+10),ln=clamp(eSide*Math.min(eLimit*.68,Math.max(.65,env.half-1.65)),-eLimit,eLimit);
+       const q1=poseAt(player.s+10),
+             ln=safeRibbon?clamp(player.lat,-eLimit,eLimit):
+               clamp(eSide*Math.min(eLimit*.68,Math.max(.65,env.half-1.65)),-eLimit,eLimit);
+       // Lock to the SAFE lane actually reached; do not make the recovered
+       // driver chase the far-side verge a second time.
+       R.emergencyEdgeLane=ln;
        R.emergencyPlan={s:mod(player.s+10,trackData.km*1000),lane:ln,x:q1.x+q1.nx*ln,z:q1.z+q1.nz*ln,created:raceT};
-       pushTelemetryEvent('RECOVERY_ALIGN_LOCKED',{headingErrDeg:telemetryRound(rawTrackErr*180/Math.PI,1),edgeErrM:telemetryRound(edgeErr,2),speedKph:telemetryRound(sp*3.6,1)});
+       pushTelemetryEvent('RECOVERY_ALIGN_LOCKED',{headingErrDeg:telemetryRound(rawTrackErr*180/Math.PI,1),edgeErrM:telemetryRound(edgeErr,2),speedKph:telemetryRound(sp*3.6,1),safeRibbon:!!safeRibbon});
      }
-     return{steer,throttle,brake,target,boost:false,reverse:false,phase:'RECUP · ALINEA EN BORDE',recoveryAssist:true,recoveryHeading:trackHeading,recoveryForcePull:false};
+     return{steer,throttle,brake,target,boost:false,reverse:reverseAlign,phase:reverseAlign?'RECUP · PIVOTA EN REVERSA':'RECUP · ALINEA EN BORDE',recoveryAssist:true,recoveryHeading:trackHeading,recoveryForcePull:false};
    }
 
    // REJOIN_LOCK v5.133: sólo puede existir tras la compuerta de alineación. Si por
@@ -3914,6 +4062,33 @@ function requestPitStop(){
  const a=$('raceAlert');if(a){a.textContent=player.pitStop.hud;a.style.color='#8dffb6'}updatePitButtonUI();
 }
 
+// AUT v2: a single continuous direction preview for genuinely tight, solo
+// bends. The existing tyre/track brake envelope remains the safety ceiling.
+// Use world-space Frenet tangents over a 6-22 m window to anticipate the turn
+// before the instantaneous centreline heading rotates under the front axle.
+// Never force this guide over an overtake lane, pitlane or committed SVG kink.
+function autoSoloTrajectoryPreview(s,sp,technical,trafficActive,kinkCommitted){
+ // Keep this new solo guide scoped to the Madrid telemetry defect. Other
+ // circuits retain their proven techDrive lookahead and steering response.
+ if(!player||!trackData||trackData.spec?.dir!=='14-spain'||trafficActive||kinkCommitted||!technical?.active||!technical.hairpin)
+  return{active:false,heading:0,turn:0,d:0};
+ const look=clamp(10+sp*.30,11,20),near=poseAt(s+6),aim=poseAt(s+look),far=poseAt(s+look+6),exit=poseAt(s+look+12);
+ const nearH=Math.atan2(near.tx,near.tz),aimH=Math.atan2(aim.tx,aim.tz),
+       farH=Math.atan2(far.tx,far.tz),exitH=Math.atan2(exit.tx,exit.tz);
+ const first=angleDiff(aimH,nearH),second=angleDiff(farH,aimH),third=angleDiff(exitH,farH);
+ // A chicane may briefly flatten just before changing direction: test both
+ // forward segments rather than assuming an immediate opposing curvature.
+ const reversal=[second,third].some(turn=>Math.sign(turn)!==Math.sign(first)&&Math.abs(turn)>.08);
+ if(Math.abs(first)<.16||reversal)
+  return{active:false,heading:aimH,turn:first,d:look};
+ // Never feed a large heading step from an unsmoothed SVG vertex straight
+ // into the steering system. Predict smoothly and retain an inside-edge margin.
+ const half=Math.max(3,envProfile(s).half),margin=Math.max(0,half-Math.abs(player.lat));
+ const authority=clamp(margin/2.3,0,1);
+ const preview=clamp(first*.28,-.18,.18)*authority;
+ return{active:authority>.08,heading:aimH+preview,turn:first,d:look,correction:preview};
+}
+
 function demoDriverControl(){
  if(!player||!trackData)return {steer:0,throttle:0,brake:0,target:0,boost:false,reverse:false};
  const sp=Math.max(0,finite(player.speed,0)),env=envProfile(player.s),diff=Number.isFinite(sessionSettings.diff)?sessionSettings.diff:1;
@@ -4063,7 +4238,10 @@ function demoDriverControl(){
  // Controlador basado en geometría del monoplaza. El término feed-forward calcula el
  // ángulo de volante que necesita aproximadamente la batalla de 3,60 m para seguir la
  // curvatura, en lugar del antiguo multiplicador empírico ffK*64.
- let look=techDrive?clamp(5.8+sp*.13,6.5,13):clamp(8+sp*.26,10,34);
+ // Short chicane gates stay unchanged; sustained hairpins need a longer,
+ // continuous view to start steering before heading error becomes >20 deg.
+ const soloGuide=autoSoloTrajectoryPreview(player.s,sp,technical,!!raceTraffic.active,kinkCommitActive);
+ let look=techDrive?(soloGuide.active?clamp(9+sp*.29,10,19):clamp(5.8+sp*.13,6.5,13)):clamp(8+sp*.26,10,34);
  if(!techDrive&&compound.active)look=Math.min(38,Math.max(look,clamp(16+compound.firstD*.18,17,31)));
  if(!techDrive&&plan&&plan.d<80)look=Math.min(look,clamp(9+plan.d*.24,10,25));
  if(offTrack)look=Math.min(look,techDrive?7.5:13);
@@ -4106,6 +4284,13 @@ function demoDriverControl(){
    const postBlend=kinkExtreme?.78:(kinkHard?.70:.60);
    tangentHeading+=angleDiff(player.autoKinkCommitHeading,tangentHeading)*postBlend;
    player.autoKinkCommitBlend=Math.max(player.autoKinkCommitBlend||0,postBlend);
+ }
+ // One bounded anticipatory heading, instead of adding another speed
+ // limiter after STABILITY. Reference follows the continuous track ahead.
+ if(soloGuide.active){
+   const gain=clamp((Math.abs(soloGuide.turn)-.12)/.38,0,1);
+   const correction=clamp(angleDiff(soloGuide.heading,tangentHeading)*.42*gain,-.16,.16);
+   tangentHeading+=correction;
  }
  const desiredHeading=tangentHeading+Math.atan(-laneSlope);
  player.autoDesiredHeading=desiredHeading;
@@ -4221,12 +4406,17 @@ function demoDriverControl(){
  const gripEnvelope=autoGripTrajectoryEnvelope(player.s);
  if(Number.isFinite(gripEnvelope.target)&&gripEnvelope.target<target-.20){
   target=gripEnvelope.target;targetReason='GRIP_ENVELOPE';
-  targetReasonDetail=gripEnvelope.wet?'WET_TYRE_BRAKING':'TYRE_CORNER_BRAKING';
+  targetReasonDetail=gripEnvelope.source==='SVG_VERTEX'?'SVG_VERTEX_BRAKING':(gripEnvelope.wet?'WET_TYRE_BRAKING':'TYRE_CORNER_BRAKING');
  }
  const kinkLong=autoFarKinkBrakingEnvelope(player.s);
  if(Number.isFinite(kinkLong.target)&&kinkLong.target<target-.20){
    target=kinkLong.target;targetReason='GEOMETRY_KINK';
    targetReasonDetail='EARLY_BRAKE';
+ }
+ const madridCritical=autoMadridSoloCriticalBendEnvelope(player.s,!!raceTraffic.active);
+ if(madridCritical.active&&madridCritical.target<target-.20){
+   target=madridCritical.target;targetReason='MADRID_COMPLEX';
+   targetReasonDetail=madridCritical.phase;
  }
  const raceLearningSuppressed=currentSession==='race'&&(raceT<12||raceT-(player.autoLastRivalContact||-99)<3.0||(raceTraffic.packRisk||0)>.55);
  const targetBeforeLearning=target;
