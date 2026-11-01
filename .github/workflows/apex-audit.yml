@@ -52,6 +52,7 @@ jobs:
           node apex/tests/auto-boundary-audit.cjs > /tmp/apex-results/auto-boundary.txt
           node apex/tests/autopilot-grip-audit.cjs > /tmp/apex-results/autopilot-grip.json
           node apex/tests/autopilot-trajectory-preview.cjs > /tmp/apex-results/autopilot-trajectory-preview.json
+          node apex/tests/madrid-auto-telemetry-20261101.cjs > /tmp/apex-results/madrid-auto-telemetry.json
           python3 apex/tests/circuit-assets-audit.py --json > /tmp/apex-results/assets.json
           node --check apex/js/preparation-9a.js
           node apex/tests/climate-9a-audit.cjs

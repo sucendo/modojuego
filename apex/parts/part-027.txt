@@ -240,6 +240,9 @@
  const wallHitThisFrame=movePlayerWithWalls(moveDx,moveDz);
  let drivableBoundaryHitThisFrame=false;const postMoveInside=apexPlayerDriveBoundaryContains(player.x,player.z);
  if(preMoveInside===true&&postMoveInside===false){player.lastDrivableBoundaryHit=raceT;player.x=preMoveX;player.z=preMoveZ;player.vx*=.42;player.vz*=.42;player.yawRate*=.55;drivableBoundaryHitThisFrame=true;frameShake=Math.max(frameShake,3.1)}
+ // No dependemos de FULL/EVENTS para saber si hubo contactos (incluye límite SVG).
+ if(wallHitThisFrame)apexRecordPlayerBarrierContact("WALL");
+ if(drivableBoundaryHitThisFrame)apexRecordPlayerBarrierContact("BOUNDARY");
  if((demoMode||assistMode)&&wallHitThisFrame)player.autoLastWallHit=raceT;
 
  // Relación con el circuito únicamente para superficies/progreso.
