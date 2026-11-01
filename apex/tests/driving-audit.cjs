@@ -136,7 +136,14 @@ test('Scheduler, perfiles, cámaras, suelo y colisiones conservados; IA sólo ad
  for(const name of ['loop','apexDriveSteeringConfig','apexDriveProfile','playerSurfaceState','snapshotPhysics','recoverPhysics'])assert.equal(func(source,name),func(baseline,name),name);
  assert.equal(func(source,'applyRivalNearDynamics').replace('mu=1.86*apexTyreGripScale(rv)','mu=wet?1.24:1.84'),func(baseline,'applyRivalNearDynamics'));
  const from=' // Integración mundial autónoma',to=' // Telemetría de dinámica.';
- assert.equal(source.slice(source.indexOf(from),source.indexOf(to)).replace('player.lastDrivableBoundaryHit=raceT;','').replaceAll('apexPlayerDriveBoundaryContains','apexDrivableAreaContains').replace(/ apexTyreStep\(player,[^\n]+\n/,''),baseline.slice(baseline.indexOf(from),baseline.indexOf(to)));
+ assert.equal(source.slice(source.indexOf(from),source.indexOf(to))
+  // Auditoría de integridad física: sólo se ignora el registro pasivo de contactos.
+  .replace(' // No dependemos de FULL/EVENTS para saber si hubo contactos (incluye límite SVG).\\n','')
+  .replace(' if(wallHitThisFrame)apexRecordPlayerBarrierContact("WALL");\\n','')
+  .replace(' if(drivableBoundaryHitThisFrame)apexRecordPlayerBarrierContact("BOUNDARY");\\n','')
+  .replace('player.lastDrivableBoundaryHit=raceT;','')
+  .replaceAll('apexPlayerDriveBoundaryContains','apexDrivableAreaContains')
+  .replace(/ apexTyreStep\(player,[^\n]+\n/,''),baseline.slice(baseline.indexOf(from),baseline.indexOf(to)));
  assert.ok(source.includes('APEX_PLAYER_PHYSICS_HZ=100,APEX_PLAYER_PHYSICS_DT=1/APEX_PLAYER_PHYSICS_HZ,APEX_PLAYER_MAX_CATCHUP_STEPS=12'));
 });
 test('Neumáticos: el estado altera fuerzas reales de frenada y apoyo',()=>{
