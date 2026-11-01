@@ -20,7 +20,6 @@ const ctx={Math,Number,Infinity,clamp,sessionTelemetry:{events:[],incidentCounte
 vm.createContext(ctx);
 vm.runInContext(slice('function pushTelemetryEvent(','function captureTelemetryEventState('),ctx);
 vm.runInContext(slice('function apexRecordPlayerBarrierContact(','function pushTelemetryEvent('),ctx);
-vm.runInContext(slice('function autoMadridBarrierApproachLimit(','function demoDriverControl('),ctx);
 ctx.apexRecordPlayerBarrierContact('WALL');
 ctx.raceT=10.03;ctx.apexRecordPlayerBarrierContact('BOUNDARY');
 assert.equal(ctx.sessionTelemetry.incidentCounters.wallHits,1,'100Hz contacts are one wall incident');
@@ -30,13 +29,8 @@ assert.equal(ctx.sessionTelemetry.incidentCounters.wallHits,2,'separate incident
 assert.equal(ctx.sessionTelemetry.incidentCounters.boundaryHits,1);
 assert.equal(ctx.sessionTelemetry.incidentCounters.recent.length,2);
 assert.equal(ctx.sessionTelemetry.events.length,0,'OFF must not allocate detailed events');
-const env={half:5.5};
-const risky=ctx.autoMadridBarrierApproachLimit(1200,42,env,6,false);
-assert.ok(risky<42&&risky>=12,'outward slide receives achievable brake target');
-assert.equal(ctx.autoMadridBarrierApproachLimit(1200,42,env,-6,false),Infinity,'inward velocity not slowed');
-assert.equal(ctx.autoMadridBarrierApproachLimit(1200,42,env,6,true),Infinity,'traffic driving left unchanged');
-ctx.trackData.spec.dir='10-belgium';
-assert.equal(ctx.autoMadridBarrierApproachLimit(1200,42,env,6,false),Infinity,'other circuits unchanged');
+// No speculative steering or braking governor may be applied by this patch.
+assert.ok(!p26.includes('function autoMadridBarrierApproachLimit('));
 // Static linkage: the physics must emit the counter independent of the recorder.
 assert.match(p27,/if\(wallHitThisFrame\)apexRecordPlayerBarrierContact\("WALL"\)/);
 assert.match(p27,/if\(drivableBoundaryHitThisFrame\)apexRecordPlayerBarrierContact\("BOUNDARY"\)/);
@@ -49,4 +43,4 @@ assert.ok(Number.isFinite(fast)&&fast>0);
 assert.equal(curvatureCalls,0,'precomputed k must not be rescanned');
 ctx.autoPhysicalCornerSpeed(1000,ctx.player);
 assert.ok(curvatureCalls>0,'default standalone call still measures curvature');
-console.log(JSON.stringify({test:'madrid-auto-telemetry',barrierLimitKph:+(risky*3.6).toFixed(1),episodes:2,passed:true}));
+console.log(JSON.stringify({test:'madrid-auto-telemetry',episodes:2,passed:true}));
