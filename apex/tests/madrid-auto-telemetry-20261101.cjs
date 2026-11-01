@@ -11,13 +11,14 @@ function slice(from,to){
  return p26.slice(a,b);
 }
 const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
-const ctx={Math,Number,Infinity,clamp,sessionTelemetry:{incidentCounters:{wallHits:0,physicalWallHits:0,boundaryHits:0,lastContactT:-99,recent:[]}},
+const ctx={Math,Number,Infinity,clamp,sessionTelemetry:{events:[],incidentCounters:{wallHits:0,physicalWallHits:0,boundaryHits:0,lastContactT:-99,recent:[]}},
  player:{s:1200,lat:2.5,speed:30,autoTargetSpeed:35,autoTargetSpeedReason:'TRACK'},mode:'race',
  raceT:10,demoMode:true,assistMode:false,trackData:{spec:{dir:'14-spain'}},apexWallishAtS:()=>true,
  telemetryRound:(v,n=4)=>Number.isFinite(v)?+v.toFixed(n):null,
- pushTelemetryEvent:()=>{throw Error('OFF recording should not produce a telemetry event')},
+ telemetryRecordingEnabled:()=>false,telemetryEventAllowed:()=>true,
  apexWeatherIsWet:()=>false,apexTyreGripScale:()=>1,curvatureAt:()=>.008};
 vm.createContext(ctx);
+vm.runInContext(slice('function pushTelemetryEvent(','function captureTelemetryEventState('),ctx);
 vm.runInContext(slice('function apexRecordPlayerBarrierContact(','function pushTelemetryEvent('),ctx);
 vm.runInContext(slice('function autoMadridBarrierApproachLimit(','function demoDriverControl('),ctx);
 ctx.apexRecordPlayerBarrierContact('WALL');
@@ -28,6 +29,7 @@ ctx.raceT=10.80;ctx.apexRecordPlayerBarrierContact('BOUNDARY');
 assert.equal(ctx.sessionTelemetry.incidentCounters.wallHits,2,'separate incident counted with recording OFF');
 assert.equal(ctx.sessionTelemetry.incidentCounters.boundaryHits,1);
 assert.equal(ctx.sessionTelemetry.incidentCounters.recent.length,2);
+assert.equal(ctx.sessionTelemetry.events.length,0,'OFF must not allocate detailed events');
 const env={half:5.5};
 const risky=ctx.autoMadridBarrierApproachLimit(1200,42,env,6,false);
 assert.ok(risky<42&&risky>=12,'outward slide receives achievable brake target');
