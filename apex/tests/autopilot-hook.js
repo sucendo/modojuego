@@ -4,19 +4,20 @@ let auditStepping=false;
 const auditProductionLoop=loop;
 loop=function(t){if(!auditStepping)return auditProductionLoop(t);last=t;requestAnimationFrame(loop);};
 window.__apexAuto={
- async load(dir,traffic){
+ async load(dir,traffic,session='race'){
   auditStepping=true;goMenu();const spec=calendar.find(s=>s.dir===dir);if(!spec)throw Error(dir);
   // Both baseline and candidate must run with the EXACT same traffic, grid
   // and random incidents. A single global seed across 20 scenarios biases
   // comparisons because the preceding run consumes different RNG amounts.
   if(window.__apexAutoSeed)window.__apexAutoSeed(261007+calendar.indexOf(spec)*17+(traffic?1:0));
   if(dir==='14-spain'&&!readStoredCustomTrackSvg(dir))await importEditableCircuitSvgText(await(await fetch('circuits/svg/apex26_14-madrid-spain.svg')).text(),spec);
-  sessionSettings={diff:1,weather:'CLEAR',noRivals:!traffic};currentSession='race';
+  const practice=session==='freepractice';
+  sessionSettings={diff:1,weather:'CLEAR',noRivals:!traffic};currentSession=practice?'freepractice':'race';
   $('gridPos').value='11';apexSetDriveProfile('assisted',false);
   if(typeof apexRaceSelectPercentage==='function')apexRaceSelectPercentage(100);
-  await startRace(spec,99,'quick',$('start'));if(!player||!trackData)throw Error('Load failed: '+dir);
-  countdown=0;mode='race';paused=false;apexArmRaceGridTiming();apexReleaseInputs();gyro.enabled=false;setAutoDriveMode(1,true);
-  return {version:APP_VERSION,build:APP_BUILD,circuit:dir,rivals:rivals.length,startTotal:player.total};
+  await startRace(spec,practice?999:99,practice?'freepractice':'quick',practice?$('practiceStart'):$('start'));if(!player||!trackData)throw Error('Load failed: '+dir);
+  countdown=0;mode='race';paused=false;if(!practice)apexArmRaceGridTiming();apexReleaseInputs();gyro.enabled=false;setAutoDriveMode(1,true);
+  return {version:APP_VERSION,build:APP_BUILD,circuit:dir,session,rivals:rivals.length,startTotal:player.total};
  },
  sample(){return{
   t:raceT,s:player.s,total:player.total,x:player.x,z:player.z,lat:player.lat,speed:player.speed,yaw:player.yawRate,
