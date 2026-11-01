@@ -12,7 +12,7 @@ const clamp=(x,lo,hi)=>Math.min(hi,Math.max(lo,x));
 const pathLat=s=>1.15+.25*Math.sin((s-1000)/85);
 const ctx={
  Math,Number,trackData:{km:5.4085,spec:{dir:'14-spain'},model:{driver:{}}},
- clamp,mod:(x,n)=>(x%n+n)%n,
+ clamp,lerp:(a,b,t)=>a+(b-a)*t,mod:(x,n)=>(x%n+n)%n,
  poseAt:s=>({x:0,z:s,nx:-1,nz:0}),
  driverReferencePoseAt:s=>({x:-pathLat(s),z:s}),
  autoSafeLaneLimit:()=>3.1,
