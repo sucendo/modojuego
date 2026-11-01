@@ -3694,7 +3694,7 @@ function autoRecoveryController(sp,env){
  return {steer:ctl.steer,throttle,brake,target,boost:false,reverse:false,targetLat,phase:'REINCORPORA'};
 }
 
-function autoDynamicStability(sp,env,steer,target){
+function autoDynamicStability(sp,env,steer,target,guardPredictedSide=false){
  // v5.116: supervisor predictivo. La prioridad es detectar una salida ANTES de que
  // llegue el coche al piano, no cuando ya estamos intentando salvarla.
  const tr=player.track||poseAt(player.s),wallish=apexWallishAtS(player.s,env);
@@ -3727,7 +3727,7 @@ function autoDynamicStability(sp,env,steer,target){
      outSteer=lerp(outSteer,hold,clamp(.18+rearCritical*.52,0,.68));
    }
    if(edgeRisk>.08){
-     const inward=Math.sign(player.lat)||1;
+     const inward=guardPredictedSide?autoMadridPk1150DangerSide(player.lat,predicted):(Math.sign(player.lat)||1);
      outSteer=lerp(outSteer,inward*(wallish?.98:.88),clamp(.20+edgeRisk*.65,0,.86));
    }
  }
@@ -4111,6 +4111,14 @@ function autoMadridPk1150Reference(s){
 
 // PK1150: a large yaw-rate error means the vehicle is rotating faster
 // than the track demands. Dampen actual yaw instead of chasing the next apex.
+// At +0.2 m the car may already move toward the opposite (-) boundary.
+// When the predicted excursion dominates, protect THAT side, not the side
+// occupied a fraction of a second ago (cause of the PK1150 oscillation).
+function autoMadridPk1150DangerSide(lat,predicted){
+ const current=Math.sign(lat)||1;
+ return Math.abs(predicted)>Math.abs(lat)+.35?(Math.sign(predicted)||current):current;
+}
+
 function autoMadridPk1150YawGuard(sp,steer,ff,k,enabled){
  const yaw=finite(player&&player.yawRate,0),slip=finite(player&&player.slipAngle,0);
  const excess=yaw-sp*k;
@@ -4366,7 +4374,7 @@ function demoDriverControl(){
  if(outward>.05)edgeRisk=Math.max(edgeRisk,clamp(outward/(wallish?4.8:6.0),0,1));
  if(offTrack)edgeRisk=1;
  if(edgeRisk>0){
-   const inward=Math.sign(player.lat)||Math.sign(crossErr)||1;
+   const inward=lineGuide?autoMadridPk1150DangerSide(player.lat,predictedLat):(Math.sign(player.lat)||Math.sign(crossErr)||1);
    steer=lerp(steer,inward*(wallish?.98:.88),clamp(.22+edgeRisk*.68,0,.92));
  }
  // Dentro y justo después de un vértice poligonal, la prioridad es terminar el giro.
@@ -4476,7 +4484,7 @@ function demoDriverControl(){
  if(align<.62){if(14<target-.02){targetReason="ALIGN";targetReasonDetail="TRACK_HEADING";}target=Math.min(target,14);}
  if(Math.abs(headingErr)>.48){if(22<target-.02){targetReason="ALIGN";targetReasonDetail="DESIRED_HEADING";}target=Math.min(target,22);}
  const targetBeforeStability=target;
- const stability=autoDynamicStability(sp,env,steer,target);
+ const stability=autoDynamicStability(sp,env,steer,target,!!lineGuide);
  player.autoStabilityRisk=stability.risk;player.autoRearCritical=stability.rearCritical;player.autoBrakeRelease=stability.brakeRelease||0;
  steer=stability.steer;target=stability.target;
  const dirStart=techDrive?.11:.16,dirSpan=techDrive?.31:.42;
