@@ -4109,6 +4109,18 @@ function autoMadridPk1150Reference(s){
  return{lat:clamp(offset,-autoSafeLaneLimit(s),autoSafeLaneLimit(s)),weight};
 }
 
+// PK1150: a large yaw-rate error means the vehicle is rotating faster
+// than the track demands. Dampen actual yaw instead of chasing the next apex.
+function autoMadridPk1150YawGuard(sp,steer,ff,k,enabled){
+ const yaw=finite(player&&player.yawRate,0),slip=finite(player&&player.slipAngle,0);
+ const excess=yaw-sp*k;
+ if(!enabled||sp<28||Math.abs(excess)<.23)return{steer,active:false,excess,blend:0};
+ const risk=clamp((Math.abs(excess)-.23)/.45,0,1);
+ const counter=clamp(ff-excess*.90-slip*.65,-.72,.72);
+ const blend=clamp(.28+risk*.65,0,.93);
+ return{steer:lerp(steer,counter,blend),active:true,excess,blend};
+}
+
 function demoDriverControl(){
  if(!player||!trackData)return {steer:0,throttle:0,brake:0,target:0,boost:false,reverse:false};
  const sp=Math.max(0,finite(player.speed,0)),env=envProfile(player.s),diff=Number.isFinite(sessionSettings.diff)?sessionSettings.diff:1;
@@ -4477,6 +4489,15 @@ function demoDriverControl(){
    if(dirLoss>(techDrive?.25:.34)){targetReason="STABILITY";targetReasonDetail="DIRECTION_GUARD";}
  }
  if(target<targetBeforeStability-.42&&targetReason!=="STABILITY"){targetReason="STABILITY";targetReasonDetail=stability.rearCritical>.25?"REAR_CRITICAL":"DYNAMIC_STABILITY";}
+ // Madrid's second-lap replay reached ±1.7 rad/s yaw against a gentle
+ // ~0.1 rad/s bend. The heading/edge controls chased the spin, so the
+ // corrective counter-yaw must win BEFORE the ordinary steering rate limiter.
+ const yawGuard=autoMadridPk1150YawGuard(sp,steer,ff,kRef,!!lineGuide&&!offTrack);
+ steer=yawGuard.steer;
+ player.autoYawGuardActive=yawGuard.active;
+ player.autoYawExcess=yawGuard.excess;
+ player.autoYawGuardBlend=yawGuard.blend;
+ if(yawGuard.active&&targetReason!=="STABILITY"){targetReason="STABILITY";targetReasonDetail="YAW_EXCESS";}
  // La telemetría de una primera salida de referencia mostró alternancias rápidas de signo
  // en TÉCNICA. Limitamos la velocidad del comando, no el ángulo final disponible.
  const steerStamp=Number.isFinite(player.autoSteerStamp)?player.autoSteerStamp:raceT;
