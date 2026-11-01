@@ -4113,17 +4113,6 @@ function autoSoloTrajectoryPreview(s,sp,technical,trafficActive,kinkCommitted){
  return{active:authority>.08,heading:aimH+preview,turn:first,d:look,correction:preview};
 }
 
-// Guardia reactiva local: sólo ante un deslizamiento lateral que está a menos
-// de un segundo de alcanzar el límite. No ralentiza rectas ni curvas sanas.
-function autoMadridBarrierApproachLimit(s,sp,env,latVel,trafficActive){
- if(!player||!trackData||trackData.spec?.dir!=="14-spain"||trafficActive||!apexWallishAtS(s,env)||sp<16)return Infinity;
- const outward=(Math.sign(player.lat)||Math.sign(latVel)||1)*latVel;
- if(outward<1.4)return Infinity;
- const margin=Math.max(0,env.half-1.5-Math.abs(player.lat));
- const contactEta=margin/outward;
- if(contactEta>1)return Infinity;
- return Math.max(12,sp*clamp(.40+.42*contactEta,.40,.82));
-}
 function demoDriverControl(){
  if(!player||!trackData)return {steer:0,throttle:0,brake:0,target:0,boost:false,reverse:false};
  const sp=Math.max(0,finite(player.speed,0)),env=envProfile(player.s),diff=Number.isFinite(sessionSettings.diff)?sessionSettings.diff:1;
@@ -4458,9 +4447,6 @@ function demoDriverControl(){
  if(!raceLearningSuppressed&&learnedLong.risk>.28)target*=1-clamp((learnedLong.risk-.22)*.045,0,.032);
  if(!raceLearningSuppressed&&learnedZone.risk>.16)target*=1-clamp(learnedZone.risk*.046,0,.044);
  if(target<targetBeforeLearning-.02){targetReason="LOCAL_RISK";targetReasonDetail="LEARNED_ZONE";}
- // Control de margen físico: frena sólo cuando existe velocidad lateral hacia la barrera.
- const barrierApproach=autoMadridBarrierApproachLimit(player.s,sp,env,latVel,!!raceTraffic.active);
- if(barrierApproach<target-.02){target=barrierApproach;targetReason="EDGE";targetReasonDetail="MADRID_OUTWARD_SLIP";}
  if(edgeRisk>.16){const er=clamp((edgeRisk-.16)/.84,0,1),cap=lerp(56,18,er);if(cap<target-.02){targetReason="EDGE";targetReasonDetail="TRACK_EDGE";}target=Math.min(target,cap);}
  if(offTrack){if(18<target-.02){targetReason="OFF_TRACK";targetReasonDetail="SURFACE";}target=Math.min(target,18);}
  if(align<.62){if(14<target-.02){targetReason="ALIGN";targetReasonDetail="TRACK_HEADING";}target=Math.min(target,14);}
