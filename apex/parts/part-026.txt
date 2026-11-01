@@ -4089,6 +4089,26 @@ function autoSoloTrajectoryPreview(s,sp,technical,trafficActive,kinkCommitted){
  return{active:authority>.08,heading:aimH+preview,turn:first,d:look,correction:preview};
 }
 
+// Madrid PK 1150: the legacy 220 m corner winner can jump between bends while
+// the car is committed to a fast line. Use the precomputed continuous WORLD
+// reference instead of switching lateral targets every few metres.
+// This change is scoped to the reproducible Madrid crash corridor: vehicle
+// physics, braking, barriers, pit and racing traffic remain untouched.
+function autoMadridPk1150Reference(s){
+ if(!trackData||trackData.spec?.dir!=='14-spain'||!trackData.model?.driver)return null;
+ const L=trackData.km*1000,at=mod(s,L);
+ if(at<=880||at>=1390)return null;
+ const smooth=x=>{x=clamp(x,0,1);return x*x*(3-2*x)};
+ const weight=smooth((at-880)/95)*smooth((1390-at)/110);
+ if(weight<.0001)return null;
+ const center=poseAt(s),reference=driverReferencePoseAt(s);
+ if(!Number.isFinite(reference.x)||!Number.isFinite(reference.z)||!Number.isFinite(center.nx)||!Number.isFinite(center.nz))return null;
+ // The world reference is relative to a smoothed centre. Project it onto the
+ // ACTUAL Frenet frame used by the player and its collision/edge controller.
+ const offset=(reference.x-center.x)*center.nx+(reference.z-center.z)*center.nz;
+ return{lat:clamp(offset,-autoSafeLaneLimit(s),autoSafeLaneLimit(s)),weight};
+}
+
 function demoDriverControl(){
  if(!player||!trackData)return {steer:0,throttle:0,brake:0,target:0,boost:false,reverse:false};
  const sp=Math.max(0,finite(player.speed,0)),env=envProfile(player.s),diff=Number.isFinite(sessionSettings.diff)?sessionSettings.diff:1;
@@ -4196,6 +4216,15 @@ function demoDriverControl(){
    if(kinkCommitActive)rawTarget=lerp(rawTarget,0,kinkExtreme?.96:(kinkHard?.90:.82));
  }
  if(offTrack)rawTarget=0;
+ // Only the solo clean-air line is replaced. Overtaking, launch, recovery
+ // and recently-contacted traffic keep their original paths and priorities.
+ const lineGuide=(!offTrack&&!raceTraffic.active&&!Number.isFinite(traffic.lane)&&!launchLaneLock&&
+   !(currentSession==='race'&&(player.autoContactGuardUntil||-99)>raceT))
+   ?autoMadridPk1150Reference(player.s):null;
+ if(lineGuide){
+   const riskTrim=1-clamp(learnedLong.risk*.38,0,.30);
+   rawTarget=lerp(rawTarget,lineGuide.lat*riskTrim,lineGuide.weight);
+ }
  const safeLimit=autoSafeLaneLimit(player.s),contactGuardActive=currentSession==='race'&&(player.autoContactGuardUntil||-99)>raceT;
  // v5.149: en circuitos urbanos el AUT no debe pedir de golpe una trazada de ±3 m a
  // 110-150 km/h. La telemetría del circuito importado libre pasó de lat -0.85 a un objetivo +2.95 m
@@ -4248,7 +4277,11 @@ function demoDriverControl(){
  // Puerta secuencial: en una chicane miramos sólo al siguiente pequeño tramo de pista.
  // Así no existe una cuerda geométrica que pueda atravesar el segundo vértice.
  const q=poseAt(player.s+look),futureTrafficLane=(!techDrive&&traffic.ahead&&traffic.ahead.d<55&&Number.isFinite(traffic.lane))?traffic.lane:null;
- const futureRaw=offTrack?0:(techDrive?(autoTechnicalLane(player.s+look,autoTechnicalProfile(player.s+look,70,5),skill)||0):autoLaneAt(player.s+look,skill,bravery,futureTrafficLane));
+ const futureLegacyRaw=offTrack?0:(techDrive?(autoTechnicalLane(player.s+look,autoTechnicalProfile(player.s+look,70,5),skill)||0):autoLaneAt(player.s+look,skill,bravery,futureTrafficLane));
+ // Current and look-ahead lane must come from the same continuous path.
+ const futureGuide=lineGuide?autoMadridPk1150Reference(player.s+look):null;
+ const futureRaw=futureGuide?lerp(futureLegacyRaw,
+   futureGuide.lat*(1-clamp(learnedLong.risk*.38,0,.30)),futureGuide.weight):futureLegacyRaw;
  // The steering lookahead must use a physically reachable lateral target.
  // Otherwise it suddenly aims at a distant apex while the actual line is
  // still speed/rate limited, causing an overshoot into the barrier.
@@ -4295,7 +4328,10 @@ function demoDriverControl(){
  const desiredHeading=tangentHeading+Math.atan(-laneSlope);
  player.autoDesiredHeading=desiredHeading;
  const headingErr=angleDiff(desiredHeading,player.heading),crossErr=player.lat-player.autoTargetLat;
- const kRef=curvatureAt(player.s+(techDrive?clamp(5+sp*.06,5.5,10):clamp(7+sp*.09,8,17)));
+ const kSampleS=player.s+(techDrive?clamp(5+sp*.06,5.5,10):clamp(7+sp*.09,8,17));
+ // Feed-forward uses the same continuous reference as the desired lane.
+ const rawKRef=curvatureAt(kSampleS);
+ const kRef=lineGuide?lerp(rawKRef,driverReferencePathCurvatureAt(kSampleS),lineGuide.weight):rawKRef;
  const maxSteerModel=finiteClamp(.285/(1+sp*.0105),.058,.285,.18);
  const deltaFF=Math.atan(3.60*kRef),ff=clamp(deltaFF/Math.max(.055,maxSteerModel),-1,1);
  const crossGain=techDrive?clamp(.175-sp*.0009,.090,.175):clamp(.145-sp*.0008,.072,.145);
