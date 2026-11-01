@@ -4241,7 +4241,9 @@ function demoDriverControl(){
  if(offTrack)rawTarget=0;
  // Only the solo clean-air line is replaced. Overtaking, launch, recovery
  // and recently-contacted traffic keep their original paths and priorities.
- const lineGuide=(!offTrack&&!raceTraffic.active&&!Number.isFinite(traffic.lane)&&!launchLaneLock&&
+ const lineGuide=(!offTrack&&!techDrive&&!technical.active&&!kinkCommitActive&&
+   !(geometryKink.active&&kinkMedium&&geometryKink.d<90)&&
+   !raceTraffic.active&&!Number.isFinite(traffic.lane)&&!launchLaneLock&&
    !(currentSession==='race'&&(player.autoContactGuardUntil||-99)>raceT))
    ?autoUniversalRacingReference(player.s):null;
  if(lineGuide){
@@ -4575,7 +4577,7 @@ function demoDriverControl(){
  const brakeComplex=technical.active||compound.active||curvePressure>.00115||(plan&&plan.d<135&&Math.abs(plan.k)>.00125);
  if(!Number.isFinite(player.autoCommittedTargetSpeed))player.autoCommittedTargetSpeed=target;
  if(target<=player.autoCommittedTargetSpeed){player.autoCommittedTargetSpeed=target;}
- else{const rise=autoUniversalTargetReleaseRate(brakeComplex,curvePressure,stability.risk,apexTyreGripScale(player),apexWeatherIsWet());player.autoCommittedTargetSpeed=Math.min(target,player.autoCommittedTargetSpeed+rise*commitDt);}
+ else{const rise=lineGuide?autoUniversalTargetReleaseRate(brakeComplex,curvePressure,stability.risk,apexTyreGripScale(player),apexWeatherIsWet()):(brakeComplex?1.75:8.5);player.autoCommittedTargetSpeed=Math.min(target,player.autoCommittedTargetSpeed+rise*commitDt);}
  if(brakeComplex&&player.autoCommittedTargetSpeed<target-.04){target=player.autoCommittedTargetSpeed;if(targetReason==='TRACK'){targetReason='BRAKE_COMMIT';targetReasonDetail='CONTINUOUS_CORNER';}}
  else if(!brakeComplex&&target-player.autoCommittedTargetSpeed>7)player.autoCommittedTargetSpeed=target-7;
 
