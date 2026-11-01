@@ -4,7 +4,7 @@
 const fs=require('node:fs'),path=require('node:path'),cp=require('node:child_process'),assert=require('node:assert/strict');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?path.join(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES,'playwright'):'playwright'));
 const root=path.resolve(__dirname,'../..'),ref=process.env.BASELINE_REF||'8e71e2d0dba93cf4b6efbb97aba546f36278be6d',hook=fs.readFileSync(path.join(__dirname,'autopilot-hook.js'),'utf8');
-const dirs=(process.env.APEX_AUTO_CIRCUITS||'14-spain,06-monaco,10-belgium,13-italy,03-japan').split(','),seconds=Number(process.env.APEX_AUTO_SECONDS||60);
+const dirs=(process.env.APEX_AUTO_CIRCUITS||'14-spain,06-monaco,10-belgium,13-italy,03-japan').split(','),seconds=Number(process.env.APEX_AUTO_SECONDS||60),session=process.env.APEX_AUTO_SESSION==='freepractice'?'freepractice':'race',stepsPerFrame=Number(process.env.APEX_AUTO_STEPS_PER_FRAME||5);
 const source={};for(const variant of ['baseline','candidate'])source[variant]=Array.from({length:28},(_,i)=>{const p=`apex/parts/part-${String(i).padStart(3,'0')}.txt`;return variant==='baseline'?cp.execFileSync('git',['show',`${ref}:${p}`],{cwd:root,encoding:'utf8',maxBuffer:15e6}):fs.readFileSync(path.join(root,p),'utf8');});
 (async()=>{
  const browser=await chromium.launch({headless:true,...(process.env.CHROME_EXECUTABLE?{executablePath:process.env.CHROME_EXECUTABLE}:{}),args:['--no-sandbox','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
@@ -20,8 +20,8 @@ const source={};for(const variant of ['baseline','candidate'])source[variant]=Ar
    await page.goto(process.env.APEX_AUDIT_URL||'http://127.0.0.1:8765/apex/apex.html?perf=1');await page.waitForFunction(()=>window.__apexAuto);
    for(const dir of dirs)for(const traffic of (process.env.APEX_AUTO_TRAFFIC==='solo'?[false]:[false,true])){
     console.log(JSON.stringify({test:'auto-case-start',variant,dir,traffic}));
-    const loaded=await page.evaluate(async({dir,traffic})=>__apexAuto.load(dir,traffic),{dir,traffic});
-    const result=await page.evaluate(seconds=>__apexAuto.run(seconds),seconds),row={test:'autopilot-differential',variant,dir,traffic,...loaded,...result};rows.push(row);console.log(JSON.stringify(row));assert.deepEqual(errors,[]);
+    const loaded=await page.evaluate(async({dir,traffic,session})=>__apexAuto.load(dir,traffic,session),{dir,traffic,session});
+    const result=await page.evaluate(({seconds,stepsPerFrame})=>__apexAuto.run(seconds,stepsPerFrame),{seconds,stepsPerFrame}),row={test:'autopilot-differential',variant,dir,traffic,...loaded,...result};rows.push(row);console.log(JSON.stringify(row));assert.deepEqual(errors,[]);
    }
   }
   const comparisons=rows.filter(r=>r.variant==='candidate').map(after=>{const before=rows.find(r=>r.variant==='baseline'&&r.dir===after.dir&&r.traffic===after.traffic);return {dir:after.dir,traffic:after.traffic,before:{progressM:before.progressM,maxStoppedSec:before.maxStoppedSec,maxNoProgressSec:before.maxNoProgressSec},after:{progressM:after.progressM,maxStoppedSec:after.maxStoppedSec,maxNoProgressSec:after.maxNoProgressSec}};});
@@ -39,6 +39,23 @@ const source={};for(const variant of ['baseline','candidate'])source[variant]=Ar
      label+': excess impact damage, HP '+after.end.hp.toFixed(2)+' vs main '+before.end.hp.toFixed(2));
   }
   console.log(JSON.stringify({test:'autopilot-main-regression',cases:10,minProgressRatio:.85,maxExtraHpLoss:2,passed:true}));
+  // Reproduce the user's dry, solo free practice, not just a race-grid replay.
+  // Group the 100 Hz production physics into 12-tick heavy frames (8.3 FPS)
+  // to cover the low-performance path seen in the exported telemetry.
+  if(session==='freepractice'&&dirs.length===1&&dirs[0]==='14-spain'){
+   const practice=rows.find(r=>r.variant==='candidate'&&!r.traffic);
+   assert.ok(practice,'Missing Madrid practice candidate');
+   const corridor=practice.samples.filter(p=>p.t<120&&p.s>=970&&p.s<=1310);
+   const passed= corridor.some(p=>p.s>=1140&&p.s<=1200);
+   const recovered=corridor.filter(p=>!!p.recovery||Number.isFinite(p.lastWall)&&p.lastWall>=0&&p.t-p.lastWall<1);
+   const maxErr=corridor.reduce((m,p)=>Math.max(m,Math.abs(Math.atan2(Math.sin(p.trackHeading-p.heading),Math.cos(p.trackHeading-p.heading)))),0);
+   console.log(JSON.stringify({test:'aut-madrid-freepractice-pk1150',seconds,stepsPerFrame,passed,
+      samples:corridor.length,recoverySamples:recovered.length,maxHeadingErrorDeg:maxErr*180/Math.PI,
+      progressM:practice.progressM,finalHp:practice.end.hp}));
+   assert.ok(passed,'Free practice must physically reach Madrid PK1150');
+   assert.equal(recovered.length,0,'No wall contact or recovery at Madrid PK1150');
+   assert.ok(maxErr<.62,'Unstable yaw before Madrid PK1150: '+(maxErr*180/Math.PI).toFixed(1)+' degrees');
+  }
   // Extended Madrid replay: realistic racing permits an occasional mistake,
   // but not recurring barrier hits, persistent immobilization, or an unresolved
   // recovery. A physically credible solo AUT is ambitious, not infallible.
