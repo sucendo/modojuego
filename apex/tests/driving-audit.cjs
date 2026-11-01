@@ -138,9 +138,9 @@ test('Scheduler, perfiles, cámaras, suelo y colisiones conservados; IA sólo ad
  const from=' // Integración mundial autónoma',to=' // Telemetría de dinámica.';
  assert.equal(source.slice(source.indexOf(from),source.indexOf(to))
   // Auditoría de integridad física: sólo se ignora el registro pasivo de contactos.
-  .replace(' // No dependemos de FULL/EVENTS para saber si hubo contactos (incluye límite SVG).\\n','')
-  .replace(' if(wallHitThisFrame)apexRecordPlayerBarrierContact("WALL");\\n','')
-  .replace(' if(drivableBoundaryHitThisFrame)apexRecordPlayerBarrierContact("BOUNDARY");\\n','')
+  .replace(' // No dependemos de FULL/EVENTS para saber si hubo contactos (incluye límite SVG).\n','')
+  .replace(' if(wallHitThisFrame)apexRecordPlayerBarrierContact("WALL");\n','')
+  .replace(' if(drivableBoundaryHitThisFrame)apexRecordPlayerBarrierContact("BOUNDARY");\n','')
   .replace('player.lastDrivableBoundaryHit=raceT;','')
   .replaceAll('apexPlayerDriveBoundaryContains','apexDrivableAreaContains')
   .replace(/ apexTyreStep\(player,[^\n]+\n/,''),baseline.slice(baseline.indexOf(from),baseline.indexOf(to)));
