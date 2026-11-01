@@ -15,7 +15,9 @@ const ctx={
  clamp,mod:(x,n)=>(x%n+n)%n,
  poseAt:s=>({x:0,z:s,nx:-1,nz:0}),
  driverReferencePoseAt:s=>({x:-pathLat(s),z:s}),
- autoSafeLaneLimit:()=>3.1
+ autoSafeLaneLimit:()=>3.1,
+ finite:(v,otherwise)=>Number.isFinite(v)?v:otherwise,
+ player:{yawRate:0,slipAngle:0}
 };
 vm.createContext(ctx);vm.runInContext(source.slice(a,b),ctx);
 const ref=s=>ctx.autoMadridPk1150Reference(s);
@@ -35,6 +37,16 @@ for(let s=900;s<=1380;s++){
   assert.ok(Math.abs(r1.lat-r2.lat)<.008,'Continuous lateral trajectory at s='+s);
  }
 }
+// Real production yaw guard: counter the rate of rotation, not just lateral drift.
+ctx.player.yawRate=1.20;ctx.player.slipAngle=.04;
+const rightYaw=ctx.autoMadridPk1150YawGuard(55,.35,-.025,-.002,true);
+assert.ok(rightYaw.active&&rightYaw.steer<-.25,'High positive yaw must produce counter-yaw steering');
+ctx.player.yawRate=-1.15;ctx.player.slipAngle=-.04;
+const leftYaw=ctx.autoMadridPk1150YawGuard(55,-.35,-.025,-.002,true);
+assert.ok(leftYaw.active&&leftYaw.steer>.25,'High negative yaw must produce counter-yaw steering');
+ctx.player.yawRate=-.11;
+assert.equal(ctx.autoMadridPk1150YawGuard(55,.20,-.025,-.002,true).steer,.20,'No intervention at expected corner yaw');
+assert.equal(ctx.autoMadridPk1150YawGuard(55,.20,-.025,-.002,false).active,false,'No changes outside the clean-air corridor');
 ctx.trackData.spec.dir='10-belgium';assert.equal(ref(1150),null,'No changes to Spa');
 ctx.trackData.spec.dir='14-spain';ctx.trackData.model.driver=null;
 assert.equal(ref(1150),null,'No reference fallback if model is unavailable');
