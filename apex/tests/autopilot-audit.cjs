@@ -75,6 +75,23 @@ const source={};for(const variant of ['baseline','candidate'])source[variant]=Ar
    }
    const stillRecovering=!!madrid.end.recovery;
    if(episodeStart!==null)maxRecoverySec=Math.max(maxRecoverySec,madrid.end.t-episodeStart);
+   // Report an actual checkpoint crossing instead of deriving a supposed
+   // racing lap from total distance / wall-clock time. The first crossing is
+   // from a standing start; only subsequent crossings are flying laps.
+   const checkpoints=madrid.samples.filter(p=>Number.isFinite(p.total)&&Number.isFinite(p.t));
+   function crossingTime(distance){
+    for(let i=1;i<checkpoints.length;i++){
+     const a=checkpoints[i-1],b=checkpoints[i];
+     if(a.total<=distance&&b.total>=distance&&b.total>a.total)
+      return a.t+(b.t-a.t)*(distance-a.total)/(b.total-a.total);
+    }
+    return null;
+   }
+   const firstLapCrossing=crossingTime(5414),secondLapCrossing=crossingTime(10828);
+   const flyingLap=firstLapCrossing!==null&&secondLapCrossing!==null?secondLapCrossing-firstLapCrossing:null;
+   console.log(JSON.stringify({test:'aut-madrid-lap-pace',startType:'standing',
+     firstLapSeconds:firstLapCrossing,flyingLapSeconds:flyingLap,
+     goalFlyingLapSeconds:120,goalReached:flyingLap!==null&&flyingLap<=120}));
    console.log(JSON.stringify({test:'aut-madrid-endurance',seconds,recoveries,wallContacts,
      maxRecoverySec,stillRecovering,progressM:madrid.progressM,finalHp:madrid.end.hp}));
    // A complete lap is required. Risk-taking may produce one recoverable
