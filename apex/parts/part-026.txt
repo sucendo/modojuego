@@ -4245,8 +4245,10 @@ function demoDriverControl(){
  // for any session with rivals until a persistent passing handoff exists.
  // This decision depends on the roster, never on instantaneous traffic range.
  const soloSession=!(rivals&&rivals.length);
- const lineGuide=(soloSession&&!offTrack&&!techDrive&&!technical.active&&!kinkCommitActive&&
-   !(geometryKink.active&&kinkMedium&&geometryKink.d<90)&&
+ // On an empty track, one continuous guide MUST remain authoritative
+ // through hairpins/chicanes as well. Disabling it in a technical gate caused
+ // an inconsistent switch back to the legacy planner (Spa & Madrid replays).
+ const lineGuide=(soloSession&&!offTrack&&
    !raceTraffic.active&&!Number.isFinite(traffic.lane)&&!launchLaneLock&&
    !(currentSession==='race'&&(player.autoContactGuardUntil||-99)>raceT))
    ?autoUniversalRacingReference(player.s):null;
