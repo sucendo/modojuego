@@ -53,4 +53,5 @@ assert.match(source,/driverReferencePathCurvatureAt\(kSampleS\)/,'Feed-forward f
 assert.match(source,/!raceTraffic\.active&&!Number\.isFinite\(traffic\.lane\)/,'Racing traffic still wins');
 assert.match(source,/const soloSession=!\(rivals&&rivals\.length\)/,'Universal guide must not flicker in a populated race');
 assert.match(source,/const lineGuide=\(soloSession&&!offTrack/,'Passing controller holds authority whenever rivals exist');
+assert.match(source,/const lineGuide=\(soloSession&&!offTrack&&\s*!raceTraffic\.active/,'A solo technical corner must never switch away from the continuous guide');
 console.log(JSON.stringify({test:'autopilot-universal-reference-and-speed',passed:true,circuits:5}));
