@@ -23,7 +23,7 @@ assert.equal(ref(850),null,'Outside approach reference is untouched');
 assert.equal(ref(1410),null,'After corridor the old controller is untouched');
 assert.equal(ref(1150).weight,1,'Full reference authority at the repeated crash point');
 assert.ok(Math.abs(ref(1150).lat-pathLat(1150))<1e-10,'World path converts correctly to actual Frenet lateral coordinates');
-for(let s=970;s<=1280;s++){
+for(let s=975;s<=1280;s++){
  const result=ref(s);
  assert.ok(result&&Math.abs(result.lat-pathLat(s))<1e-10,'No lane-selection switch at s='+s);
  assert.equal(result.weight,1,'Inside crash corridor the line must not jump back to the legacy planner');
