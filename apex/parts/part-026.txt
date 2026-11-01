@@ -1025,7 +1025,9 @@ function initSessionTelemetry(spec,gm){
    renderer:{backend:rendererBackendId(),modularFacade:true,webgl2Prototype:true,hybridCanvasOverlay:true,changes:["v62.4 adaptive mirrors: cached projection, independent refresh budget, distance LOD and landmark occlusion","v62.3.1 rival LOD: 3D full near / 3D medium mid / 3D low-poly far; depth-buffer occlusion"]},telemetryFeatures:{engineerTabs:true,autDecisionChain:true,nearRivalSnapshots:true,incidentWindows:true,performanceStats:true,circuitCompiler:true,persistentCircuitCompileCache:true,rendererWarmup:true,runtimeProfilerV2:true,rivalVisualLod:true,rival3DOnly:true,rivalDepthOcclusion:true,adaptiveMirrors:true,mirrorProjectionCache:true,mirrorLandmarkOcclusion:true,terrainTunnelBreakdown:true,trafficMap:true,relativeMapDriverView:true,launchCorridorDiagnostics:true,substepCarCollisions:true,rivalRivalContacts:true,persistentRivalImpactDynamics:true,rivalImpactStates:true,raceSurvivalDiagnostics:true,racePaceReleaseDiagnostics:true,firstComplexLaneLockDiagnostics:true,packContactContainmentDiagnostics:true,technicalRiskPrepDiagnostics:true,smoothFrenetDiagnostics:true,geometryKinkDiagnostics:true,continuousDriverReference:true,pathCurvatureSpeedEnvelope:true,purePursuitCleanAir:false,legacyPlayerAutV5149:true,geometryCommitDiagnostics:true,laneSwingDiagnostics:true,rivalKinkDiagnostics:true,rivalContinuityWatchdog:true,rivalStateTransitionDiagnostics:true},
    rivalProfiles:(rivals||[]).map(r=>({uid:r.uid||raceIdentity(r.id),name:r.driverName||raceName(r.id),team:r.team,skill:telemetryRound(r.skill,3),aggression:telemetryRound(r.aggression,3),consistency:telemetryRound(r.consistency,3),defense:telemetryRound(r.defense,3),awareness:telemetryRound(r.awareness,3),bravery:telemetryRound(r.bravery,3),reaction:telemetryRound(r.reaction,3),brakeSkill:telemetryRound(r.brakeSkill,3),tractionSkill:telemetryRound(r.tractionSkill,3),cornerSkill:telemetryRound(r.cornerSkill,3),paceProfile:telemetryRound(r.racePaceProfile,4)})),
    recording:{modeAtStart:recMode,currentMode:recMode,adaptiveMobile:true,fullSampleHz:telemetryFullSampleHz(),eventCheckHz:telemetryEventCheckHz(),changes:[]},
-   sampleHz:telemetryFullSampleHz(),samples:[],events:[],rivalContinuity:{checks:0,anomalies:0,lastAnomalyAt:null,byType:{},events:[]}
+   sampleHz:telemetryFullSampleHz(),samples:[],events:[],
+   // Contadores independientes de OFF/EVENTS/FULL: nunca inferir choques de un registro vacío.
+   incidentCounters:{wallHits:0,physicalWallHits:0,boundaryHits:0,lastContactT:-99,recent:[]},rivalContinuity:{checks:0,anomalies:0,lastAnomalyAt:null,byType:{},events:[]}
  };
  updateTelemetryRecordingUI();
 }
@@ -1066,6 +1068,22 @@ function apexRivalContinuityWatch(dt){
      const a=tel.events||(tel.events=[]);a.push({t:telemetryRound(now,3),kind:"STATE_TRANSITION",rivalId:rv.id,rivalUid:rv.uid||raceIdentity(rv.id),rivalName:rv.driverName||raceName(rv.id),lodFrom:prev.lod,lodTo:cur.lod,impactFrom:prev.impact,impactTo:cur.impact,total:telemetryRound(cur.total,2),s:telemetryRound(cur.s,2),lat:telemetryRound(cur.lat,2),speedKph:telemetryRound(cur.speed*3.6,1)});if(a.length>240)a.splice(0,a.length-240);
    }
  }
+}
+// Contactos físicos y límites de rodadura: se cuentan incluso con GRABAR=OFF.
+// Agrupar una sucesión de subpasos contra la misma barrera como un único episodio.
+function apexRecordPlayerBarrierContact(kind){
+ if(!sessionTelemetry||!player||mode!=="race")return;
+ const c=sessionTelemetry.incidentCounters||(sessionTelemetry.incidentCounters={wallHits:0,physicalWallHits:0,boundaryHits:0,lastContactT:-99,recent:[]});
+ const now=Number.isFinite(raceT)?raceT:0,previous=Number.isFinite(c.lastContactT)?c.lastContactT:-99;
+ if(now-previous>.65){
+  c.wallHits++;
+  if(kind==="BOUNDARY")c.boundaryHits++;else c.physicalWallHits++;
+  const incidents=c.recent||(c.recent=[]);
+  incidents.push({t:telemetryRound(now,2),type:kind,s:telemetryRound(player.s,1),lat:telemetryRound(player.lat,2),speedKph:telemetryRound((player.speed||0)*3.6,1),auto:!!(demoMode||assistMode),targetKph:Number.isFinite(player.autoTargetSpeed)?telemetryRound(player.autoTargetSpeed*3.6,1):null,limiter:player.autoTargetSpeedReason||null});
+  if(incidents.length>24)incidents.splice(0,incidents.length-24);
+  if(kind==="BOUNDARY")pushTelemetryEvent("BOUNDARY_HIT",{reason:"DRIVABLE_LIMIT"});
+ }
+ c.lastContactT=now;
 }
 function pushTelemetryEvent(type,data={}){
  if(!sessionTelemetry||!telemetryRecordingEnabled()||!telemetryEventAllowed(type,data))return;
@@ -1193,7 +1211,7 @@ function exportSessionTelemetry(){
  const perfRows=ss.map(s=>s.performance).filter(Boolean),avg=(key)=>perfRows.length?perfRows.reduce((a,p)=>a+(Number(p[key])||0),0)/perfRows.length:null,maxv=(key)=>perfRows.length?Math.max(...perfRows.map(p=>Number(p[key])||0)):null;
  const performanceStats={avgFps:telemetryRound(avg('fps'),1),avgFrameMs:telemetryRound(avg('frameMs'),2),maxFrameMs:telemetryRound(maxv('lastFrameMs'),2),avgRenderMs:telemetryRound(avg('renderMs'),2),avgPhysicsMs:telemetryRound(avg('physicsMs'),2),avgAiMs:telemetryRound(avg('aiMs'),2),maxAiMs:telemetryRound(maxv('aiMs'),2),avgCollisionMs:telemetryRound(avg('collisionMs'),2),avgTelemetryMs:telemetryRound(avg('telemetryMs'),2),avgHudMs:telemetryRound(avg('hudMs'),2),avgTrackRenderMs:telemetryRound(avg('trackRenderMs'),2),avgTerrainRenderMs:telemetryRound(avg('terrainRenderMs'),2),avgTunnelRenderMs:telemetryRound(avg('tunnelRenderMs'),2),avgEnvironmentRenderMs:telemetryRound(avg('environmentRenderMs'),2),avgCarsRenderMs:telemetryRound(avg('carsRenderMs'),2),avgMirrorsRenderMs:telemetryRound(avg('mirrorsRenderMs'),2),avgCockpitRenderMs:telemetryRound(avg('cockpitRenderMs'),2),avgEffectsRenderMs:telemetryRound(avg('effectsRenderMs'),2),avgWebglSubmitMs:telemetryRound(avg('webglSubmitMs'),2)};
  if(sessionTelemetry.recording){sessionTelemetry.recording.currentMode=getTelemetryRecordMode();sessionTelemetry.recording.fullSampleHz=telemetryFullSampleHz();sessionTelemetry.recording.eventCheckHz=telemetryEventCheckHz();}
- const payload={...sessionTelemetry,pitState:{player:apexPitSnapshot(player),rivals:rivals.map(rv=>({id:rv.id,...apexPitSnapshot(rv)}))},tyreState:{player:apexTyreSnapshot(player),rivals:rivals.map(rv=>({id:rv.id,...apexTyreSnapshot(rv)})),environment:{...apexTyreEnvironment}},incidentWindows,exportedAt:new Date().toISOString(),summary:{recordingMode:getTelemetryRecordMode(),fullSampleHz:telemetryFullSampleHz(),eventCheckHz:telemetryEventCheckHz(),duration:telemetryRound(raceT,3),completedLaps:player?player.lap:null,bestLap:best<1e8?telemetryRound(best,3):null,sampleCount:ss.length,eventCount:ev.length,rivalContacts:contacts.length,containedRivalContacts:containedContacts.length,rivalContactEpisodes:contactEpisodes.length,earlyRivalContacts:earlyContacts.length,earlySevereRivalContacts:earlySevereContacts.length,rivalRivalContacts:rivalRivalContacts.length,rivalRivalContactEpisodes:rrContactEpisodes.length,rivalIncidents:rivalIncidents.length,rivalSpinIncidents:rivalSpinIncidents.length,rivalOfftracksFromImpact:rivalOfftracks.length,rivalRecovers:rivalRecovers.length,launchGapGuardSamples:launchGuardSamples,maxLaunchGapGuards,contactEpisodes,performanceStats,runtimeProfiler:apexRuntimePerfSummary(),circuitCompile:trackData&&trackData._compileStats?clonePlain(trackData._compileStats):null,wallHits:ev.filter(e=>e.type==='WALL_HIT').length,spins:ev.filter(e=>e.type==='SPIN').length,recoveryEpisodes:ev.filter(e=>e.type==='RECOVERY_START').length,emergencyRecoveries:ev.filter(e=>e.type==='RECOVERY_EMERGENCY').length,hardRecoveryAssists:hardPullEvents,recoveryActiveAtExport:ongoingRecoverySec>0,recoveryTimeSec:recoveryTime,maxRecoverySec:recoveryDurations.length?telemetryRound(Math.max(...recoveryDurations),2):null,lateralRecoveryGuardTrips:ev.filter(e=>e.type==='RECOVERY_LATERAL_GUARD').length,rivalSimulation:{model:"HYBRID_SHARED_FRENET_LOD_PARITY",lodAtExport:rivalLODCounts(),nearDynamicM:mobilePerformanceMode()?120:150,midHybridM:mobilePerformanceMode()?360:500},rivalContinuity:sessionTelemetry&&sessionTelemetry.rivalContinuity?{checks:sessionTelemetry.rivalContinuity.checks||0,anomalies:sessionTelemetry.rivalContinuity.anomalies||0,lastAnomalyAt:sessionTelemetry.rivalContinuity.lastAnomalyAt||null,byType:{...(sessionTelemetry.rivalContinuity.byType||{})}}:null,rivalBestLaps,rivalPaceStats,targetSpeedReasonSamples:reasonCounts,targetLimiterImpact:impact}};
+ const payload={...sessionTelemetry,pitState:{player:apexPitSnapshot(player),rivals:rivals.map(rv=>({id:rv.id,...apexPitSnapshot(rv)}))},tyreState:{player:apexTyreSnapshot(player),rivals:rivals.map(rv=>({id:rv.id,...apexTyreSnapshot(rv)})),environment:{...apexTyreEnvironment}},incidentWindows,exportedAt:new Date().toISOString(),summary:{recordingMode:getTelemetryRecordMode(),fullSampleHz:telemetryFullSampleHz(),eventCheckHz:telemetryEventCheckHz(),duration:telemetryRound(raceT,3),completedLaps:player?player.lap:null,bestLap:best<1e8?telemetryRound(best,3):null,sampleCount:ss.length,eventCount:ev.length,rivalContacts:contacts.length,containedRivalContacts:containedContacts.length,rivalContactEpisodes:contactEpisodes.length,earlyRivalContacts:earlyContacts.length,earlySevereRivalContacts:earlySevereContacts.length,rivalRivalContacts:rivalRivalContacts.length,rivalRivalContactEpisodes:rrContactEpisodes.length,rivalIncidents:rivalIncidents.length,rivalSpinIncidents:rivalSpinIncidents.length,rivalOfftracksFromImpact:rivalOfftracks.length,rivalRecovers:rivalRecovers.length,launchGapGuardSamples:launchGuardSamples,maxLaunchGapGuards,contactEpisodes,performanceStats,runtimeProfiler:apexRuntimePerfSummary(),circuitCompile:trackData&&trackData._compileStats?clonePlain(trackData._compileStats):null,wallHits:sessionTelemetry.incidentCounters?.wallHits||0,physicalWallHits:sessionTelemetry.incidentCounters?.physicalWallHits||0,boundaryHits:sessionTelemetry.incidentCounters?.boundaryHits||0,recentBarrierIncidents:(sessionTelemetry.incidentCounters?.recent||[]).slice(),spins:ev.filter(e=>e.type==='SPIN').length,recoveryEpisodes:ev.filter(e=>e.type==='RECOVERY_START').length,emergencyRecoveries:ev.filter(e=>e.type==='RECOVERY_EMERGENCY').length,hardRecoveryAssists:hardPullEvents,recoveryActiveAtExport:ongoingRecoverySec>0,recoveryTimeSec:recoveryTime,maxRecoverySec:recoveryDurations.length?telemetryRound(Math.max(...recoveryDurations),2):null,lateralRecoveryGuardTrips:ev.filter(e=>e.type==='RECOVERY_LATERAL_GUARD').length,rivalSimulation:{model:"HYBRID_SHARED_FRENET_LOD_PARITY",lodAtExport:rivalLODCounts(),nearDynamicM:mobilePerformanceMode()?120:150,midHybridM:mobilePerformanceMode()?360:500},rivalContinuity:sessionTelemetry&&sessionTelemetry.rivalContinuity?{checks:sessionTelemetry.rivalContinuity.checks||0,anomalies:sessionTelemetry.rivalContinuity.anomalies||0,lastAnomalyAt:sessionTelemetry.rivalContinuity.lastAnomalyAt||null,byType:{...(sessionTelemetry.rivalContinuity.byType||{})}}:null,rivalBestLaps,rivalPaceStats,targetSpeedReasonSamples:reasonCounts,targetLimiterImpact:impact}};
  const safe=(trackData&&trackData.spec?trackData.spec.dir:"circuito").replace(/[^a-z0-9_-]+/gi,'-');
  const stamp=new Date().toISOString().replace(/[:.]/g,'-');
  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
@@ -2696,8 +2714,9 @@ function autoCurvatureEnvelope(s){
  // percentil alto: ignora un único pico de geometría/GPX pero no una curva sostenida.
  return Math.max(a[3]||0,(a[2]||0)*1.04);
 }
-function autoPhysicalCornerSpeed(s,car=player){
- const k=autoCurvatureEnvelope(s);
+function autoPhysicalCornerSpeed(s,car=player,knownCurvature=null){
+ // Reutiliza la curvatura ya calculada en el barrido anticipatorio (35+ muestras).
+ const k=Number.isFinite(knownCurvature)?knownCurvature:autoCurvatureEnvelope(s);
  if(k<.00055)return 99;
  const wet=apexWeatherIsWet(),mu=1.86*apexTyreGripScale(car),M=800,G=9.81;
  const safety=wet?.90:.960;
@@ -2949,7 +2968,7 @@ function autoGripTrajectoryEnvelope(s){
   }
   if(k<.0008&&!abrupt)continue;
   const e=envProfile(ss),wallish=apexWallishAtS(ss,e),
-        corner=autoPhysicalCornerSpeed(ss)*(wet?.955:.975)*(wallish?.965:1),
+        corner=autoPhysicalCornerSpeed(ss,player,k)*(wet?.955:.975)*(wallish?.965:1),
         settle=d<18?0:(wet?18:13);
   let allowed=Math.sqrt(corner*corner+2*decel*Math.max(0,d-settle));
   let winning='SMOOTH_CURVATURE',winningCorner=corner;
@@ -4089,6 +4108,17 @@ function autoSoloTrajectoryPreview(s,sp,technical,trafficActive,kinkCommitted){
  return{active:authority>.08,heading:aimH+preview,turn:first,d:look,correction:preview};
 }
 
+// Guardia reactiva local: sólo ante un deslizamiento lateral que está a menos
+// de un segundo de alcanzar el límite. No ralentiza rectas ni curvas sanas.
+function autoMadridBarrierApproachLimit(s,sp,env,latVel,trafficActive){
+ if(!player||!trackData||trackData.spec?.dir!=="14-spain"||trafficActive||!apexWallishAtS(s,env)||sp<16)return Infinity;
+ const outward=(Math.sign(player.lat)||Math.sign(latVel)||1)*latVel;
+ if(outward<1.4)return Infinity;
+ const margin=Math.max(0,env.half-1.5-Math.abs(player.lat));
+ const contactEta=margin/outward;
+ if(contactEta>1)return Infinity;
+ return Math.max(12,sp*clamp(.40+.42*contactEta,.40,.82));
+}
 function demoDriverControl(){
  if(!player||!trackData)return {steer:0,throttle:0,brake:0,target:0,boost:false,reverse:false};
  const sp=Math.max(0,finite(player.speed,0)),env=envProfile(player.s),diff=Number.isFinite(sessionSettings.diff)?sessionSettings.diff:1;
@@ -4423,6 +4453,9 @@ function demoDriverControl(){
  if(!raceLearningSuppressed&&learnedLong.risk>.28)target*=1-clamp((learnedLong.risk-.22)*.045,0,.032);
  if(!raceLearningSuppressed&&learnedZone.risk>.16)target*=1-clamp(learnedZone.risk*.046,0,.044);
  if(target<targetBeforeLearning-.02){targetReason="LOCAL_RISK";targetReasonDetail="LEARNED_ZONE";}
+ // Control de margen físico: frena sólo cuando existe velocidad lateral hacia la barrera.
+ const barrierApproach=autoMadridBarrierApproachLimit(player.s,sp,env,latVel,!!raceTraffic.active);
+ if(barrierApproach<target-.02){target=barrierApproach;targetReason="EDGE";targetReasonDetail="MADRID_OUTWARD_SLIP";}
  if(edgeRisk>.16){const er=clamp((edgeRisk-.16)/.84,0,1),cap=lerp(56,18,er);if(cap<target-.02){targetReason="EDGE";targetReasonDetail="TRACK_EDGE";}target=Math.min(target,cap);}
  if(offTrack){if(18<target-.02){targetReason="OFF_TRACK";targetReasonDetail="SURFACE";}target=Math.min(target,18);}
  if(align<.62){if(14<target-.02){targetReason="ALIGN";targetReasonDetail="TRACK_HEADING";}target=Math.min(target,14);}
