@@ -37,6 +37,13 @@ for(let s=900;s<=1380;s++){
   assert.ok(Math.abs(r1.lat-r2.lat)<.008,'Continuous lateral trajectory at s='+s);
  }
 }
+// A vehicle close to the centre can already be flying toward the opposite wall.
+assert.equal(ctx.autoMadridPk1150DangerSide(.20,-4.2),-1,'Predict opposite/right danger while still left of centre');
+assert.equal(ctx.autoMadridPk1150DangerSide(-.20,4.2),1,'Predict opposite/left danger while still right of centre');
+assert.equal(ctx.autoMadridPk1150DangerSide(4.2,-.30),1,'Keep current-left protection when moving inward');
+assert.equal(ctx.autoMadridPk1150DangerSide(-4.2,.30),-1,'Keep current-right protection when moving inward');
+assert.match(source,/autoDynamicStability\(sp,env,steer,target,!!lineGuide\)/,'Predicted side passed to stability supervisor');
+assert.match(source,/lineGuide\?autoMadridPk1150DangerSide\(player\.lat,predictedLat\)/,'Edge protection uses future danger side');
 // Real production yaw guard: counter the rate of rotation, not just lateral drift.
 ctx.player.yawRate=1.20;ctx.player.slipAngle=.04;
 const rightYaw=ctx.autoMadridPk1150YawGuard(55,.35,-.025,-.002,true);
