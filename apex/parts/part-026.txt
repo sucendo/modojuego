@@ -3526,8 +3526,13 @@ function autoRecoveryController(sp,env){
      const forwardLateral=Math.sin(player.heading)*edgePose.nx+Math.cos(player.heading)*edgePose.nz;
      const forwardOutward=sideNow*forwardLateral;
      if(safeAlignCorridor&&rawAbs>.56&&
-        raceT-(R.alignGearStamp??-99)>.85){
-       const nextReverse=absLat>.65&&forwardOutward>.28;
+        raceT-(R.alignGearStamp??-99)>(trackData.spec?.dir==='14-spain'?1.6:.85)){
+       // Madrid: while safely crossed on asphalt, do not switch gears every
+       // time the centreline is crossed. The ORIGINAL exit side stays fixed
+       // until alignment or until the outer-wall abort above takes priority.
+       // Otherwise the car oscillates around lat=0 and wastes 20+ seconds.
+       const reverseSide=trackData.spec?.dir==='14-spain'?eSide:sideNow;
+       const nextReverse=absLat>.65&&reverseSide*forwardLateral>.28;
        if(!!R.alignGearReverse!==nextReverse){
          R.alignGearReverse=nextReverse;R.alignGearStamp=raceT;
          pushTelemetryEvent('RECOVERY_ALIGN_GEAR',{reverse:nextReverse,
