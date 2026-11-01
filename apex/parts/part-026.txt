@@ -4239,9 +4239,13 @@ function demoDriverControl(){
    if(kinkCommitActive)rawTarget=lerp(rawTarget,0,kinkExtreme?.96:(kinkHard?.90:.82));
  }
  if(offTrack)rawTarget=0;
- // Only the solo clean-air line is replaced. Overtaking, launch, recovery
- // and recently-contacted traffic keep their original paths and priorities.
- const lineGuide=(!offTrack&&!techDrive&&!technical.active&&!kinkCommitActive&&
+ // The world reference works in solo running. In populated races,
+ // switching between passing corridors and this path as near-rival detection
+ // flickers can cause a sudden lane switch. Preserve the existing racecraft
+ // for any session with rivals until a persistent passing handoff exists.
+ // This decision depends on the roster, never on instantaneous traffic range.
+ const soloSession=!(rivals&&rivals.length);
+ const lineGuide=(soloSession&&!offTrack&&!techDrive&&!technical.active&&!kinkCommitActive&&
    !(geometryKink.active&&kinkMedium&&geometryKink.d<90)&&
    !raceTraffic.active&&!Number.isFinite(traffic.lane)&&!launchLaneLock&&
    !(currentSession==='race'&&(player.autoContactGuardUntil||-99)>raceT))
