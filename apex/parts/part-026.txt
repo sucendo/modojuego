@@ -3727,7 +3727,7 @@ function autoDynamicStability(sp,env,steer,target,guardPredictedSide=false){
      outSteer=lerp(outSteer,hold,clamp(.18+rearCritical*.52,0,.68));
    }
    if(edgeRisk>.08){
-     const inward=guardPredictedSide?autoMadridPk1150DangerSide(player.lat,predicted):(Math.sign(player.lat)||1);
+     const inward=guardPredictedSide?autoUniversalDangerSide(player.lat,predicted):(Math.sign(player.lat)||1);
      outSteer=lerp(outSteer,inward*(wallish?.98:.88),clamp(.20+edgeRisk*.65,0,.86));
    }
  }
@@ -4089,37 +4089,31 @@ function autoSoloTrajectoryPreview(s,sp,technical,trafficActive,kinkCommitted){
  return{active:authority>.08,heading:aimH+preview,turn:first,d:look,correction:preview};
 }
 
-// Madrid PK 1150: the legacy 220 m corner winner can jump between bends while
-// the car is committed to a fast line. Use the precomputed continuous WORLD
-// reference instead of switching lateral targets every few metres.
-// This change is scoped to the reproducible Madrid crash corridor: vehicle
-// physics, braking, barriers, pit and racing traffic remain untouched.
-function autoMadridPk1150Reference(s){
- if(!trackData||trackData.spec?.dir!=='14-spain'||!trackData.model?.driver)return null;
- const L=trackData.km*1000,at=mod(s,L);
- if(at<=880||at>=1390)return null;
- const smooth=x=>{x=clamp(x,0,1);return x*x*(3-2*x)};
- const weight=smooth((at-880)/95)*smooth((1390-at)/110);
- if(weight<.0001)return null;
+// UNIVERSAL clean-air AUT controller. Each circuit supplies one continuous
+// world-space racing reference, computed once from its actual authored geometry.
+// No kilometre markers and no circuit-specific steering thresholds are needed.
+function autoUniversalRacingReference(s){
+ const d=trackData&&trackData.model&&trackData.model.driver;
+ if(!d||!Number.isFinite(d.step)||!Number.isFinite(trackData.km)||trackData.km<=0)return null;
  const center=poseAt(s),reference=driverReferencePoseAt(s);
- if(!Number.isFinite(reference.x)||!Number.isFinite(reference.z)||!Number.isFinite(center.nx)||!Number.isFinite(center.nz))return null;
- // The world reference is relative to a smoothed centre. Project it onto the
- // ACTUAL Frenet frame used by the player and its collision/edge controller.
+ if(!Number.isFinite(reference.x)||!Number.isFinite(reference.z)||
+    !Number.isFinite(center.x)||!Number.isFinite(center.z)||
+    !Number.isFinite(center.nx)||!Number.isFinite(center.nz))return null;
+ // Both target and preview are projected onto the SAME physical Frenet
+ // coordinates used for the car's wall and track-edge calculations.
  const offset=(reference.x-center.x)*center.nx+(reference.z-center.z)*center.nz;
- return{lat:clamp(offset,-autoSafeLaneLimit(s),autoSafeLaneLimit(s)),weight};
+ const limit=autoSafeLaneLimit(s);
+ return{lat:clamp(offset,-limit,limit),weight:1};
 }
-
-// PK1150: a large yaw-rate error means the vehicle is rotating faster
-// than the track demands. Dampen actual yaw instead of chasing the next apex.
-// At +0.2 m the car may already move toward the opposite (-) boundary.
-// When the predicted excursion dominates, protect THAT side, not the side
-// occupied a fraction of a second ago (cause of the PK1150 oscillation).
-function autoMadridPk1150DangerSide(lat,predicted){
+// The side toward which the vehicle will travel has priority over its
+// instantaneous lateral sign. This handles track-centre crossings on any GP.
+function autoUniversalDangerSide(lat,predicted){
  const current=Math.sign(lat)||1;
  return Math.abs(predicted)>Math.abs(lat)+.35?(Math.sign(predicted)||current):current;
 }
-
-function autoMadridPk1150YawGuard(sp,steer,ff,k,enabled){
+// A real yaw excess deserves steering counteraction before another apex
+// correction. This is wheel steering only, not a fake physical yaw impulse.
+function autoUniversalYawGuard(sp,steer,ff,k,enabled){
  const yaw=finite(player&&player.yawRate,0),slip=finite(player&&player.slipAngle,0);
  const excess=yaw-sp*k;
  if(!enabled||sp<28||Math.abs(excess)<.23)return{steer,active:false,excess,blend:0};
@@ -4127,6 +4121,15 @@ function autoMadridPk1150YawGuard(sp,steer,ff,k,enabled){
  const counter=clamp(ff-excess*.90-slip*.65,-.72,.72);
  const blend=clamp(.28+risk*.65,0,.93);
  return{steer:lerp(steer,counter,blend),active:true,excess,blend};
+}
+// Slow release of a speed TARGET used to starve exit acceleration even when
+// the car had grip to accelerate. This target slew is derived from tyre grip,
+// curvature and risk; braking limits and physical acceleration remain intact.
+function autoUniversalTargetReleaseRate(brakeComplex,curvePressure,risk,grip,wet){
+ if(!brakeComplex)return wet?7.0:11.0;
+ const bend=clamp(curvePressure/.008,0,1),confidence=1-clamp(risk,0,1);
+ return clamp((wet?5.0:9.0)*(1-.60*bend)*lerp(.25,1,confidence)*
+   clamp(grip,.50,1.06),1.5,wet?5.0:9.0);
 }
 
 function demoDriverControl(){
@@ -4236,11 +4239,19 @@ function demoDriverControl(){
    if(kinkCommitActive)rawTarget=lerp(rawTarget,0,kinkExtreme?.96:(kinkHard?.90:.82));
  }
  if(offTrack)rawTarget=0;
- // Only the solo clean-air line is replaced. Overtaking, launch, recovery
- // and recently-contacted traffic keep their original paths and priorities.
- const lineGuide=(!offTrack&&!raceTraffic.active&&!Number.isFinite(traffic.lane)&&!launchLaneLock&&
+ // The world reference works in solo running. In populated races,
+ // switching between passing corridors and this path as near-rival detection
+ // flickers can cause a sudden lane switch. Preserve the existing racecraft
+ // for any session with rivals until a persistent passing handoff exists.
+ // This decision depends on the roster, never on instantaneous traffic range.
+ const soloSession=!(rivals&&rivals.length);
+ // On an empty track, one continuous guide MUST remain authoritative
+ // through hairpins/chicanes as well. Disabling it in a technical gate caused
+ // an inconsistent switch back to the legacy planner (Spa & Madrid replays).
+ const lineGuide=(soloSession&&!offTrack&&
+   !raceTraffic.active&&!Number.isFinite(traffic.lane)&&!launchLaneLock&&
    !(currentSession==='race'&&(player.autoContactGuardUntil||-99)>raceT))
-   ?autoMadridPk1150Reference(player.s):null;
+   ?autoUniversalRacingReference(player.s):null;
  if(lineGuide){
    const riskTrim=1-clamp(learnedLong.risk*.38,0,.30);
    rawTarget=lerp(rawTarget,lineGuide.lat*riskTrim,lineGuide.weight);
@@ -4299,7 +4310,7 @@ function demoDriverControl(){
  const q=poseAt(player.s+look),futureTrafficLane=(!techDrive&&traffic.ahead&&traffic.ahead.d<55&&Number.isFinite(traffic.lane))?traffic.lane:null;
  const futureLegacyRaw=offTrack?0:(techDrive?(autoTechnicalLane(player.s+look,autoTechnicalProfile(player.s+look,70,5),skill)||0):autoLaneAt(player.s+look,skill,bravery,futureTrafficLane));
  // Current and look-ahead lane must come from the same continuous path.
- const futureGuide=lineGuide?autoMadridPk1150Reference(player.s+look):null;
+ const futureGuide=lineGuide?autoUniversalRacingReference(player.s+look):null;
  const futureRaw=futureGuide?lerp(futureLegacyRaw,
    futureGuide.lat*(1-clamp(learnedLong.risk*.38,0,.30)),futureGuide.weight):futureLegacyRaw;
  // The steering lookahead must use a physically reachable lateral target.
@@ -4374,7 +4385,7 @@ function demoDriverControl(){
  if(outward>.05)edgeRisk=Math.max(edgeRisk,clamp(outward/(wallish?4.8:6.0),0,1));
  if(offTrack)edgeRisk=1;
  if(edgeRisk>0){
-   const inward=lineGuide?autoMadridPk1150DangerSide(player.lat,predictedLat):(Math.sign(player.lat)||Math.sign(crossErr)||1);
+   const inward=lineGuide?autoUniversalDangerSide(player.lat,predictedLat):(Math.sign(player.lat)||Math.sign(crossErr)||1);
    steer=lerp(steer,inward*(wallish?.98:.88),clamp(.22+edgeRisk*.68,0,.92));
  }
  // Dentro y justo después de un vértice poligonal, la prioridad es terminar el giro.
@@ -4497,10 +4508,10 @@ function demoDriverControl(){
    if(dirLoss>(techDrive?.25:.34)){targetReason="STABILITY";targetReasonDetail="DIRECTION_GUARD";}
  }
  if(target<targetBeforeStability-.42&&targetReason!=="STABILITY"){targetReason="STABILITY";targetReasonDetail=stability.rearCritical>.25?"REAR_CRITICAL":"DYNAMIC_STABILITY";}
- // Madrid's second-lap replay reached ±1.7 rad/s yaw against a gentle
+ // An earlier replay reached ±1.7 rad/s yaw against a gentle
  // ~0.1 rad/s bend. The heading/edge controls chased the spin, so the
  // corrective counter-yaw must win BEFORE the ordinary steering rate limiter.
- const yawGuard=autoMadridPk1150YawGuard(sp,steer,ff,kRef,!!lineGuide&&!offTrack);
+ const yawGuard=autoUniversalYawGuard(sp,steer,ff,kRef,!!lineGuide&&!offTrack);
  steer=yawGuard.steer;
  player.autoYawGuardActive=yawGuard.active;
  player.autoYawExcess=yawGuard.excess;
@@ -4572,7 +4583,7 @@ function demoDriverControl(){
  const brakeComplex=technical.active||compound.active||curvePressure>.00115||(plan&&plan.d<135&&Math.abs(plan.k)>.00125);
  if(!Number.isFinite(player.autoCommittedTargetSpeed))player.autoCommittedTargetSpeed=target;
  if(target<=player.autoCommittedTargetSpeed){player.autoCommittedTargetSpeed=target;}
- else{const rise=brakeComplex?1.75:8.5;player.autoCommittedTargetSpeed=Math.min(target,player.autoCommittedTargetSpeed+rise*commitDt);}
+ else{const rise=lineGuide?autoUniversalTargetReleaseRate(brakeComplex,curvePressure,stability.risk,apexTyreGripScale(player),apexWeatherIsWet()):(brakeComplex?1.75:8.5);player.autoCommittedTargetSpeed=Math.min(target,player.autoCommittedTargetSpeed+rise*commitDt);}
  if(brakeComplex&&player.autoCommittedTargetSpeed<target-.04){target=player.autoCommittedTargetSpeed;if(targetReason==='TRACK'){targetReason='BRAKE_COMMIT';targetReasonDetail='CONTINUOUS_CORNER';}}
  else if(!brakeComplex&&target-player.autoCommittedTargetSpeed>7)player.autoCommittedTargetSpeed=target-7;
 
