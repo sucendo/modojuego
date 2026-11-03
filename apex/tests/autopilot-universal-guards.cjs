@@ -35,6 +35,14 @@ for(const dir of ['14-spain','06-monaco','10-belgium','13-italy','03-japan']){
  assert.equal(preview.active,true,dir+' should have bounded hairpin preview');
  assert.ok(Math.abs(preview.correction)<=.18,'Preview stays bounded');
 }
+// Even with rivals, an authored SVG heading discontinuity needs its brake guard.
+ctx.trackData.detailedSvg=true;ctx.rivals=[{id:1}];ctx.player.autoGripEnvelopeCache=null;
+ctx.poseAt=s=>{const h=s*.06;return{tx:Math.sin(h),tz:Math.cos(h)};};
+const populatedVertex=ctx.autoGripTrajectoryEnvelope(0);
+assert.ok(Number.isFinite(populatedVertex.target)&&populatedVertex.source==='SVG_VERTEX',
+ 'Traffic keeps the authored vertex guard independent of circuit name');
+ctx.rivals=[];ctx.trackData.detailedSvg=false;
+ctx.poseAt=s=>{const h=s*.017;return{tx:Math.sin(h),tz:Math.cos(h)};};
 assert.equal(ctx.autoCriticalBendEnvelope(0,true).active,false,'Traffic racecraft retains priority');
 ctx.curvatureAt=()=>.002;ctx.player.autoCriticalBendCache=null;
 assert.equal(ctx.autoCriticalBendEnvelope(0,false).active,false,'Do not brake for an ordinary constant-radius corner');
