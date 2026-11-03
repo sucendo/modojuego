@@ -2939,7 +2939,9 @@ function autoGripTrajectoryEnvelope(s){
  // raw-node warning has not been validated against traffic lanes and can
  // trigger a recovery on otherwise safe racing lines (e.g. successive bends).
  const populated=typeof rivals!=='undefined'&&rivals&&rivals.length>0;
- const inspectRawVertices=!!(trackData.detailedSvg&&trackData.model&&trackData.model.driver)&&!populated;
+ // Preserve real authored SVG vertex braking in traffic too. Racecraft
+ // decides the passing lane, while this guard protects geometric entry speed.
+ const inspectRawVertices=!!(trackData.detailedSvg&&trackData.model&&trackData.model.driver);
  let best=Infinity,bestD=999,bestCorner=Infinity,source='SMOOTH_CURVATURE';
  for(let d=0;d<=horizon;d+=step){
   const ss=s+d,k=autoCurvatureEnvelope(ss);
@@ -2951,7 +2953,7 @@ function autoGripTrajectoryEnvelope(s){
    const referenceK=Math.abs(driverReferencePathCurvatureAt(ss));
    // The raw authored kink must also be present on the continuous
    // world-space driving reference: do not brake for tessellation artifacts.
-   abrupt=rawK>Math.max(.024,k*1.48,referenceK*1.48);
+   abrupt=rawK>Math.max(.024,k*1.48,populated?0:referenceK*1.48);
   }
   if(k<.0008&&!abrupt)continue;
   const e=envProfile(ss),wallish=apexWallishAtS(ss,e),
