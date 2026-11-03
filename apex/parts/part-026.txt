@@ -2935,7 +2935,11 @@ function autoGripTrajectoryEnvelope(s){
  // the established overtaking controller already plans the corner approach.
  // Authored SVGs can contain sharp literal vertices not present in the
  // smoothed reference. This distinction is about geometry provenance, not GP.
- const inspectRawVertices=!!(trackData.detailedSvg&&trackData.model&&trackData.model.driver);
+ // Preserve established overtaking control when a race is populated: the
+ // raw-node warning has not been validated against traffic lanes and can
+ // trigger a recovery on otherwise safe racing lines (e.g. successive bends).
+ const populated=typeof rivals!=='undefined'&&rivals&&rivals.length>0;
+ const inspectRawVertices=!!(trackData.detailedSvg&&trackData.model&&trackData.model.driver)&&!populated;
  let best=Infinity,bestD=999,bestCorner=Infinity,source='SMOOTH_CURVATURE';
  for(let d=0;d<=horizon;d+=step){
   const ss=s+d,k=autoCurvatureEnvelope(ss);
@@ -2945,12 +2949,9 @@ function autoGripTrajectoryEnvelope(s){
    const h0=Math.atan2(p0.tx,p0.tz),h1=Math.atan2(p1.tx,p1.tz);
    rawK=Math.abs(angleDiff(h1,h0))/8;
    const referenceK=Math.abs(driverReferencePathCurvatureAt(ss));
-   // During a populated race keep the conservative authored-vertex gate.
-   // A smoothed reference can hide a real wall-side kink, and the cars need
-   // the braking warning even while holding a dedicated passing corridor.
-   // Clean air may instead reject raw vertices absent from the driven path.
-   const populated=typeof rivals!=='undefined'&&rivals&&rivals.length>0;
-   abrupt=rawK>Math.max(.024,k*1.48,...(populated?[]:[referenceK*1.48]));
+   // The raw authored kink must also be present on the continuous
+   // world-space driving reference: do not brake for tessellation artifacts.
+   abrupt=rawK>Math.max(.024,k*1.48,referenceK*1.48);
   }
   if(k<.0008&&!abrupt)continue;
   const e=envProfile(ss),wallish=apexWallishAtS(ss,e),
@@ -3017,11 +3018,17 @@ function autoCriticalBendEnvelope(s,trafficActive){
 // would misinterpret tightly sampled smooth bends as a polygonal hairpin.
 function autoFarKinkBrakingEnvelope(s){
  if(!player||!trackData)return{target:Infinity,d:999};
- // In populated races on generated/smooth layouts the existing race survival
- // governor owns approach braking. Extra long-distance raw-vertex scans are
- // reserved for genuine authored SVG geometry, across any circuit.
- if(typeof rivals!=='undefined'&&rivals&&rivals.length&&!trackData.detailedSvg)
-  return{target:Infinity,d:999};
+ // The populated-race planner already brakes for close technical bends.
+ // A 230m raw-kink scan can combine several distinct tight corners into one
+ // fictitious hairpin. Use local *geometry density*, not a circuit/PK name,
+ // to prevent double braking in any dense urban or chicane sequence.
+ const populated=typeof rivals!=='undefined'&&rivals&&rivals.length>0;
+ if(populated){
+  let closeBends=0;
+  for(const d of [22,45,68,91,114])
+   if(Math.abs(curvatureAt(s+d))>.0045)closeBends++;
+  if(!trackData.detailedSvg||closeBends>=3)return{target:Infinity,d:999};
+ }
  const c=player.autoFarKinkCache,grip=clamp(apexTyreGripScale(player),.25,1.06),wet=apexWeatherIsWet();
  if(c&&raceT-c.t>=0&&raceT-c.t<.12&&Math.abs(s-c.s)<12&&
     Math.abs(c.grip-grip)<.015&&c.wet===wet)return c;
