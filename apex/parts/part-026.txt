@@ -2989,7 +2989,10 @@ function autoCriticalBendEnvelope(s,trafficActive){
  for(let d=0;d<=220;d+=8){
    const ss=s+d,k=Math.abs(curvatureAt(ss)),before=Math.abs(curvatureAt(ss-24)),
          after=Math.abs(curvatureAt(ss+8)),growth=k/Math.max(.0015,before);
-   const nearApex=d<=24&&k>.006;
+   // Do not apply a second hard brake simply because a constant-radius
+   // corner has moderate curvature. The tyre/grip envelope already covers
+   // it; the critical guard is for severe apexes or real tightening.
+   const nearApex=d<=24&&k>.012;
    if(!nearApex&&(k<.0048||after<k*.78||growth<1.42))continue;
    const referenceK=Math.abs(driverReferencePathCurvatureAt(ss));
    const roadSafe=autoPhysicalCornerSpeed(ss);
@@ -2998,7 +3001,10 @@ function autoCriticalBendEnvelope(s,trafficActive){
    if(!nearApex&&severity<.28)continue;
    // Corner speed comes from the car's actual tyre/aero physics. An old
    // fixed 19 m/s cap would needlessly slow medium-radius bends in every GP.
-   const safe=roadSafe*(wet?.90:.96)*(1-.18*severity);
+   // Keep a modest additional reserve for actual radius tightening.
+   // A redundant 18% speed cut on top of the tyre/grip envelope slowed
+   // otherwise safe medium-radius bends on all circuits.
+   const safe=roadSafe*(wet?.93:.98)*(1-.10*severity);
    const allowed=Math.sqrt(safe*safe+2*decel*Math.max(0,d-(wet?18:14)));
    if(allowed<best){best=allowed;bestD=d;bestK=k;bestSafe=safe;}
  }
