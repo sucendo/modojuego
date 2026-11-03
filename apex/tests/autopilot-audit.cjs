@@ -21,9 +21,20 @@ const source={};for(const variant of ['baseline','candidate'])source[variant]=Ar
    for(const dir of dirs)for(const traffic of (process.env.APEX_AUTO_TRAFFIC==='solo'?[false]:[false,true])){
     console.log(JSON.stringify({test:'auto-case-start',variant,dir,traffic}));
     const loaded=await page.evaluate(async({dir,traffic,session})=>__apexAuto.load(dir,traffic,session),{dir,traffic,session});
+    if(dir==='14-spain'){assert.equal(loaded.svgBoards,34,'Audit must load Madrid SVG (16), not BASE');assert.equal(loaded.svgBoardAuthority,true,'Madrid edited boards must be authoritative');}
     const result=await page.evaluate(({seconds,stepsPerFrame})=>__apexAuto.run(seconds,stepsPerFrame),{seconds,stepsPerFrame}),row={test:'autopilot-differential',variant,dir,traffic,...loaded,...result};rows.push(row);console.log(JSON.stringify(row));assert.deepEqual(errors,[]);
    }
   }
+  // Report the current and prior pace under exactly the same authored SVG.
+  // A faster target is not a valid improvement if it causes damage or recovery.
+  const cleanExit=rows.filter(r=>r.variant==='candidate'&&!r.traffic).map(row=>{
+   const frames=row.samples.filter(p=>Number.isFinite(p.exitClearance)&&p.exitClearance>.25);
+   const reduction=frames.reduce((v,p)=>v+Math.max(0,(p.preCommitTarget||0)-(p.target||0)),0);
+   return {dir:row.dir,session,frames:frames.length,meanExitClearance:frames.length?frames.reduce((v,p)=>v+p.exitClearance,0)/frames.length:0,
+    meanReleaseRate:frames.length?frames.reduce((v,p)=>v+(p.releaseRate||0),0)/frames.length:0,
+    meanHoldMps:frames.length?reduction/frames.length:0};
+  });
+  console.log(JSON.stringify({test:'aut-clean-exit-release-metrics',cleanExit}));
   const comparisons=rows.filter(r=>r.variant==='candidate').map(after=>{const before=rows.find(r=>r.variant==='baseline'&&r.dir===after.dir&&r.traffic===after.traffic);return {dir:after.dir,traffic:after.traffic,before:{progressM:before.progressM,maxStoppedSec:before.maxStoppedSec,maxNoProgressSec:before.maxNoProgressSec},after:{progressM:after.progressM,maxStoppedSec:after.maxStoppedSec,maxNoProgressSec:after.maxNoProgressSec}};});
   console.log(JSON.stringify({test:'autopilot-comparison',baseline:ref,seconds,comparisons}));
   // A passing watchdog is not proof of racing stability. Also reject material
