@@ -2990,7 +2990,9 @@ function autoCriticalBendEnvelope(s,trafficActive){
    if(referenceK<.0035&&roadSafe>33)continue;
    const severity=clamp((growth-1.42)/1.50+(k-.0048)*38,0,1);
    if(!nearApex&&severity<.28)continue;
-   const safe=Math.min(roadSafe*(wet?.90:.94),Math.max(10,(wet?15:19)*Math.sqrt(grip)));
+   // Corner speed comes from the car's actual tyre/aero physics. An old
+   // fixed 19 m/s cap would needlessly slow medium-radius bends in every GP.
+   const safe=roadSafe*(wet?.90:.96)*(1-.18*severity);
    const allowed=Math.sqrt(safe*safe+2*decel*Math.max(0,d-(wet?18:14)));
    if(allowed<best){best=allowed;bestD=d;bestK=k;bestSafe=safe;}
  }
