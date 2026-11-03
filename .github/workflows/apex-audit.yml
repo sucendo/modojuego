@@ -55,6 +55,7 @@ jobs:
           node apex/tests/autopilot-madrid-pk1150-reference.cjs > /tmp/apex-results/autopilot-madrid-pk1150-reference.json
           node apex/tests/autopilot-pace-analysis.cjs > /tmp/apex-results/autopilot-pace-analysis.json
           node apex/tests/autopilot-clean-exit.cjs > /tmp/apex-results/autopilot-clean-exit.json
+          node apex/tests/autopilot-time-optimal-line.cjs > /tmp/apex-results/autopilot-time-optimal-line.json
           python3 apex/tests/circuit-assets-audit.py --json > /tmp/apex-results/assets.json
           node --check apex/js/preparation-9a.js
           node apex/tests/climate-9a-audit.cjs
