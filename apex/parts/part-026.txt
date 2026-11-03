@@ -2671,12 +2671,15 @@ function setAutoDriveMode(mode,reset=true){
 }
 function setDemoMode(on){setAutoDriveMode(on?1:0,true)}
 function cycleAutoDriveMode(){setAutoDriveMode(demoMode?2:assistMode?0:1,true)}
-function autoSafeLaneLimit(s){
+function autoSafeLaneLimit(s,allowRacingCurb=false){
  const e=envProfile(s),wc=apexWallContextAtS(s,e),wallish=wc.wallish;
  // Si el SVG tiene un muro real junto a la pista dejamos una reserva adicional.
  // El límite sigue siendo simétrico para no alterar la convención histórica de lat,
  // pero ahora nace de la misma geometría que puede golpear físicamente al coche.
  let margin=wallish?2.45:1.72;
+ // Only a solo, already verified world-space racing reference may exploit the
+ // extra painted/kerbed asphalt; passing lanes and recovery retain old margins.
+ if(allowRacingCurb&&!wallish&&Number.isFinite(e.curb)&&e.curb>=.38)margin=1.22;
  if(wc.exact&&Number.isFinite(wc.nearest)){const clearance=wc.nearest-e.half;margin=Math.max(margin,2.65-clamp(clearance,0,2.2)*.18)}
  return clamp(e.half-margin,1.10,4.15);
 }
@@ -3795,7 +3798,8 @@ function autoDynamicStability(sp,env,steer,target,guardPredictedSide=false){
  const tr=player.track||poseAt(player.s),wallish=apexWallishAtS(player.s,env);
  const latVel=(player.vx||0)*tr.nx+(player.vz||0)*tr.nz;
  const side=Math.sign(player.lat)||1,outward=side*latVel;
- const guard=wallish?Math.max(1.00,env.half-2.30):Math.max(1.35,env.half-1.55);
+ const curbGuide=guardPredictedSide&&!wallish&&Number.isFinite(env.curb)&&env.curb>=.38;
+  const guard=wallish?Math.max(1.00,env.half-2.30):Math.max(1.35,env.half-(curbGuide?1.22:1.55));
  const predictT=wallish?.95:.78,predicted=player.lat+latVel*predictT;
  const edgeNow=clamp((Math.abs(player.lat)-guard)/(wallish?1.25:1.65),0,1);
  const edgeFuture=clamp((Math.abs(predicted)-guard)/(wallish?1.15:1.55),0,1);
@@ -4197,7 +4201,7 @@ function autoUniversalRacingReference(s){
  // Both target and preview are projected onto the SAME physical Frenet
  // coordinates used for the car's wall and track-edge calculations.
  const offset=(reference.x-center.x)*center.nx+(reference.z-center.z)*center.nz;
- const limit=autoSafeLaneLimit(s);
+ const limit=autoSafeLaneLimit(s,true);
  return{lat:clamp(offset,-limit,limit),weight:1};
 }
 // The side toward which the vehicle will travel has priority over its
@@ -4370,7 +4374,7 @@ function demoDriverControl(){
    const riskTrim=1-clamp(learnedLong.risk*.38,0,.30);
    rawTarget=lerp(rawTarget,lineGuide.lat*riskTrim,lineGuide.weight);
  }
- const safeLimit=autoSafeLaneLimit(player.s),contactGuardActive=currentSession==='race'&&(player.autoContactGuardUntil||-99)>raceT;
+ const safeLimit=autoSafeLaneLimit(player.s,!!lineGuide),contactGuardActive=currentSession==='race'&&(player.autoContactGuardUntil||-99)>raceT;
  // v5.149: en circuitos urbanos el AUT no debe pedir de golpe una trazada de ±3 m a
  // 110-150 km/h. La telemetría del circuito importado libre pasó de lat -0.85 a un objetivo +2.95 m
  // antes de s≈1560 y provocó un giro de 63°. Limitamos sólo la magnitud de la trazada
@@ -4431,7 +4435,7 @@ function demoDriverControl(){
  // Otherwise it suddenly aims at a distant apex while the actual line is
  // still speed/rate limited, causing an overshoot into the barrier.
  const futureTravel=look/Math.max(8,sp),futureReach=Math.max(.18,laneRate*futureTravel),
-       futureLimit=autoSafeLaneLimit(player.s+look);
+       futureLimit=autoSafeLaneLimit(player.s+look,!!lineGuide);
  // Avoid changing the established overtaking/pack controller during a race.
  // It must steer into the *committed* passing corridor early, not a future
  // position clipped to the current line-rate (which misses the braking gate).
@@ -4491,7 +4495,8 @@ function demoDriverControl(){
 
  const trNow=player.track||poseAt(player.s),latVel=(player.vx||0)*trNow.nx+(player.vz||0)*trNow.nz;
  const outward=(Math.sign(player.lat)||1)*latVel;
- const edgeGuard=wallish?Math.max(1.05,trackEdge-2.45):Math.max(1.40,trackEdge-1.70);
+ const curbGuide=!!lineGuide&&Number.isFinite(env.curb)&&env.curb>=.38;
+ const edgeGuard=wallish?Math.max(1.05,trackEdge-2.45):Math.max(1.40,trackEdge-(curbGuide?1.22:1.70));
  const predictedLat=player.lat+latVel*(wallish?.92:.72);
  let edgeRisk=0;
  if(Math.abs(player.lat)>edgeGuard)edgeRisk=Math.max(edgeRisk,clamp((Math.abs(player.lat)-edgeGuard)/1.35,0,1));
