@@ -17,13 +17,14 @@ window.__apexAuto={
   if(typeof apexRaceSelectPercentage==='function')apexRaceSelectPercentage(100);
   await startRace(spec,practice?999:99,practice?'freepractice':'quick',practice?$('practiceStart'):$('start'));if(!player||!trackData)throw Error('Load failed: '+dir);
   countdown=0;mode='race';paused=false;if(!practice)apexArmRaceGridTiming();apexReleaseInputs();gyro.enabled=false;setAutoDriveMode(1,true);
-  return {version:APP_VERSION,build:APP_BUILD,circuit:dir,session,rivals:rivals.length,startTotal:player.total};
+  return {version:APP_VERSION,build:APP_BUILD,circuit:dir,session,rivals:rivals.length,lapLengthM:trackData.km*1000,startTotal:player.total};
  },
  sample(){return{
   t:raceT,s:player.s,total:player.total,x:player.x,z:player.z,lat:player.lat,speed:player.speed,yaw:player.yawRate,
   steer:player.steer,gas:player.throttle,brake:player.brakeInput,hp:player.hp,damage:{...player.damage},
   target:player.autoTargetSpeed,reason:player.autoTargetSpeedReason,detail:player.autoTargetSpeedReasonDetail,
   baseTarget:player.autoBaseTrackTargetSpeed,trafficLimit:player.autoTrafficSpeedLimit,phase:player.autoPhase,
+  grip:apexTyreGripScale(player),pathCurvature:driverReferencePathCurvatureAt(player.s),rawCurvature:curvatureAt(player.s),
   stability:player.autoStabilityRisk,rearRisk:player.autoRearCritical,brakeRelease:player.autoBrakeRelease,
   recovery:player.autoRecovery?{mode:player.autoRecovery.mode,stage:player.autoRecovery.emergencyStage,emergency:player.autoRecovery.emergency}:null,
   lastBoundary:player.lastDrivableBoundaryHit,lastWall:player.autoLastWallHit,lastRival:player.autoLastRivalContact,physicsFaults:player.physicsFaults,
