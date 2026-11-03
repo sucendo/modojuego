@@ -35,6 +35,21 @@ window.__madridSavedSvgAudit={
    bankMax:monumental?.bankDeg,bankS:monumental?.s,
    tunnelCount:count('tunnel'),landmarks:landmarks.length};
  },
+ async importBoardDeletionCases(){
+   // Simulate Boxy removing the root metadata, and then deleting every
+   // active sign. The authored layer still makes the empty set definitive.
+   const svg=await fetch('circuits/svg/apex26_14-madrid-spain_2026-11-03.svg',{cache:'no-cache'}).then(r=>r.text());
+   const spec=calendar.find(c=>c.dir==='14-spain');
+   const withoutFlag=svg.replace(' data-apex-brake-boards-authoritative="true"','');
+   const authored=await importEditableCircuitSvgText(withoutFlag,spec,{persist:false});
+   const doc=new DOMParser().parseFromString(withoutFlag,'image/svg+xml');
+   const layer=doc.querySelector('#APEX_BRAKING_MARKERS');
+   if(!layer)throw Error('Missing braking marker authoring layer');
+   for(const el of [...layer.querySelectorAll('[data-apex-role="distance-board"]')])el.remove();
+   const removed=await importEditableCircuitSvgText(new XMLSerializer().serializeToString(doc),spec,{persist:false});
+   return {withoutFlag:{boards:authored.brakeBoards,authoritative:authored.worldPayload.brakeBoardsAuthoritative},
+     allRemoved:{boards:removed.brakeBoards,authoritative:removed.worldPayload.brakeBoardsAuthoritative}};
+ },
  async hydrateStatus(){
    await apexHydrateLargeCircuit('14-spain');
    const j=readStoredCircuitJson('14-spain');
@@ -94,6 +109,11 @@ window.__madridSavedSvgAudit={
   assert.equal(result.stored,true);
   assert.ok(result.landmarks>=80,'Imported landmarks lost');
   assert.ok(result.surfaceZones>=10,'Runoffs missing in import');
+  const deletionCases=await page.evaluate(()=>window.__madridSavedSvgAudit.importBoardDeletionCases());
+  assert.deepEqual(deletionCases.withoutFlag,{boards:34,authoritative:true},
+    'Boxy may drop the root attribute, but authored boards still override automatic signs');
+  assert.deepEqual(deletionCases.allRemoved,{boards:0,authoritative:true},
+    'Deleting ALL active board shapes must not resurrect procedural signs');
   assert.deepEqual(errors,[],'Uncaught browser script errors');
   console.log(JSON.stringify({test:'madrid-saved-svg-browser',mobile,ok:true,...result}));
  }finally{await browser.close();}
