@@ -1232,7 +1232,7 @@ function apexAutPaceAnalysis(samples,lapLengthM){
  const completed=Object.values(laps).filter(x=>x.lap>1&&x.coveredM>=L*.85)
   .map(x=>({lap:x.lap,coveragePct:round(x.coveredM/L*100,1),sampledTimeSec:round(x.sampledTimeSec,3),
    byInterval:x.byInterval.map(v=>round(v,3))}));
- const fastest=completed.length?completed.reduce((a,b)=>a.sampledTimeSec<b.sampledTimeSec?a:b):null;
+ const fastest=completed.length?completed.reduce((a,b)=>a.sampledTimeSec<=b.sampledTimeSec?a:b):null;
  const intervals=buckets.map(x=>{
   const names=Object.entries(x.reasonSeconds).sort((a,b)=>b[1]-a[1]);
   return {startM:round(x.startM,1),endM:round(x.endM,1),samples:x.samples,
