@@ -98,7 +98,7 @@ body.mobile-landscape .diagPanel{bottom:max(39px,calc(env(safe-area-inset-bottom
 body.mobile-landscape #schedule{max-height:48vh}
 body.mobile-landscape.short-landscape #mini{width:116px;height:78px;top:44px}
 body.mobile-landscape.short-landscape #bars{width:72px;top:108px;bottom:auto}
-body.mobile-landscape.short-landscape #lb{width:110px;bottom:max(84px,calc(env(safe-area-inset-bottom) + 80px));max-height:calc(100dvh - 48px - max(84px,calc(env(safe-area-inset-bottom) + 80px)))}body.mobile-landscape.short-landscape #toolLeft #diag,body.mobile-landscape.short-landscape #toolLeft #telemetryBtn{display:none}body.mobile-landscape.short-landscape #gyroReadout{display:none}body.mobile-landscape.short-landscape .toolBar .tb{min-width:29px;padding:0 3px}
+body.mobile-landscape.short-landscape #lb{width:110px;bottom:max(84px,calc(env(safe-area-inset-bottom) + 80px));max-height:calc(100dvh - 48px - max(84px,calc(env(safe-area-inset-bottom) + 80px)))}body.mobile-landscape.short-landscape #toolLeft #diag{display:none}body.mobile-landscape.short-landscape #gyroReadout{display:none}body.mobile-landscape.short-landscape .toolBar .tb{min-width:29px;padding:0 3px}
 body.mobile-landscape.short-landscape #left,body.mobile-landscape.short-landscape #right,body.mobile-landscape.short-landscape #gas,body.mobile-landscape.short-landscape #brake{width:46px;height:46px}
 body.mobile-landscape.short-landscape #right{left:max(56px,calc(env(safe-area-inset-left) + 54px));bottom:max(84px,calc(env(safe-area-inset-bottom) + 80px))}
 body.mobile-landscape.short-landscape #left{bottom:max(84px,calc(env(safe-area-inset-bottom) + 80px))}
@@ -1079,8 +1079,8 @@ body.mobile-landscape .sectorPanel{padding:4px}body.mobile-landscape .sectorCell
 /* v4.6: shared keyboard / touch action registry */
 body.apex-hide-sectors .sectorPanel,body.apex-hide-sectors .sectorBars,body.apex-hide-sectors .towerSectorTime{display:none!important}
 body.apex-tower-visible #lb{display:block!important}body.apex-tower-hidden #lb{display:none!important}
-#toolLeft #gyro,#toolLeft #center,#toolLeft #invert,#toolLeft #telemetryBtn{display:none!important}
-body.mobile-landscape #toolLeft #gyro,body.mobile-landscape #toolLeft #center,body.mobile-landscape #toolLeft #telemetryBtn{display:none!important}
+#toolLeft #gyro,#toolLeft #center,#toolLeft #invert{display:none!important}
+body.mobile-landscape #toolLeft #gyro,body.mobile-landscape #toolLeft #center{display:none!important}
 #toolLeft{max-width:calc(100vw - 168px);overflow-x:auto;scrollbar-width:none}
 #toolRight #sound{display:none}
 #toolRight #quickMenuBtn{font-size:17px}
