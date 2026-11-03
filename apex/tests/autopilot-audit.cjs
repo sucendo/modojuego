@@ -100,9 +100,24 @@ const source={};for(const variant of ['baseline','candidate'])source[variant]=Ar
    }
    const firstLapCrossing=crossingTime(5414),secondLapCrossing=crossingTime(10828);
    const flyingLap=firstLapCrossing!==null&&secondLapCrossing!==null?secondLapCrossing-firstLapCrossing:null;
+   const baseline=rows.find(r=>r.variant==='baseline'&&!r.traffic);
+   function baselineCrossing(distance){
+    const q=baseline?.samples||[];
+    for(let i=1;i<q.length;i++){
+     const a=q[i-1],b=q[i];if(a.total<=distance&&b.total>=distance&&b.total>a.total)
+      return a.t+(b.t-a.t)*(distance-a.total)/(b.total-a.total);
+    }
+    return null;
+   }
+   const baseFirst=baselineCrossing(5414),baseSecond=baselineCrossing(10828);
+   const baseFlying=baseFirst!==null&&baseSecond!==null?baseSecond-baseFirst:null;
+   const delta=baseFlying!==null&&flyingLap!==null?+(baseFlying-flyingLap).toFixed(3):null;
    console.log(JSON.stringify({test:'aut-madrid-lap-pace',startType:'standing',
      firstLapSeconds:firstLapCrossing,flyingLapSeconds:flyingLap,
+     baselineFlyingLapSeconds:baseFlying,savedSeconds:delta,
      goalFlyingLapSeconds:120,goalReached:flyingLap!==null&&flyingLap<=120}));
+   if(seconds>=390&&flyingLap!==null&&baseFlying!==null)
+    assert.ok(flyingLap<baseFlying-.20,'Geometry optimization must save measurable lap time; baseline '+baseFlying.toFixed(2)+' vs candidate '+flyingLap.toFixed(2));
    console.log(JSON.stringify({test:'aut-madrid-endurance',seconds,recoveries,wallContacts,
      maxRecoverySec,stillRecovering,progressM:madrid.progressM,finalHp:madrid.end.hp}));
    // A complete lap is required. Risk-taking may produce one recoverable

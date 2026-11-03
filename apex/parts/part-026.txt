@@ -1119,7 +1119,7 @@ function captureSessionTelemetry(){
   curvature0:telemetryRound(curvatureAt(player.s),6),curvature15:telemetryRound(curvatureAt(player.s+15),6),curvature30:telemetryRound(curvatureAt(player.s+30),6),pathCurvature:telemetryRound(driverReferencePathCurvatureAt(player.s),6),pathLaneM:telemetryRound(driverReferenceLaneAt(player.s),3),pathLocalSafeKph:telemetryRound(driverReferenceSafeSpeedAt(player.s)*3.6,1),pathBrakeTargetKph:telemetryRound(driverReferenceTargetSpeedAt(player.s)*3.6,1),safeSpeedKph:telemetryRound(cornerSafeSpeed(player.s)*3.6,1),autoPhysicalSpeedKph:telemetryRound((player.autoPhysicalNow||autoPhysicalCornerSpeed(player.s))*3.6,1),
   baseTrackTargetKph:telemetryRound((player.autoBaseTrackTargetSpeed||0)*3.6,1),preCommitTargetKph:Number.isFinite(player.autoPreCommitTargetSpeed)?telemetryRound(player.autoPreCommitTargetSpeed*3.6,1):null,preTrafficTargetKph:telemetryRound((player.autoPreTrafficTargetSpeed||player.autoTargetSpeed||0)*3.6,1),trafficSpeedLimitKph:Number.isFinite(player.autoTrafficSpeedLimit)?telemetryRound(player.autoTrafficSpeedLimit*3.6,1):null,targetSpeedKph:telemetryRound((player.autoTargetSpeed||0)*3.6,1),committedTargetKph:Number.isFinite(player.autoCommittedTargetSpeed)?telemetryRound(player.autoCommittedTargetSpeed*3.6,1):null,targetSpeedReason:player.autoTargetSpeedReason||"TRACK",targetSpeedReasonDetail:player.autoTargetSpeedReasonDetail||null,
   preTrafficReductionKph:telemetryRound(Math.max(0,(player.autoBaseTrackTargetSpeed||0)-(player.autoPreTrafficTargetSpeed||player.autoTargetSpeed||0))*3.6,1),trafficReductionKph:telemetryRound(Math.max(0,(player.autoPreTrafficTargetSpeed||player.autoTargetSpeed||0)-(player.autoTargetSpeed||0))*3.6,1),totalTargetReductionKph:telemetryRound(Math.max(0,(player.autoBaseTrackTargetSpeed||0)-(player.autoTargetSpeed||0))*3.6,1),
-  autoMode:autoCtlMode,autoPhase:player.autoPhase||null,autoPace:telemetryRound(player.autoPace,4),autoTargetLat:telemetryRound(player.autoTargetLat,3),autoTechnical:!!player.autoTechnicalActive,autoTechnicalAhead:!!player.autoTechnicalAhead,stabilityRisk:telemetryRound(player.autoStabilityRisk,3),rearCritical:telemetryRound(player.autoRearCritical,3),autoExitClearance:telemetryRound(player.autoExitClearance,3),autoTargetReleaseRateMps2:telemetryRound(player.autoTargetReleaseRate,2),brakeRelease:telemetryRound(player.autoBrakeRelease,3),counterSteerActive:!!player.autoCounterSteerActive,counterSteerRequest:!!player.autoCounterSteerRequest,renderPressure:telemetryRound(mobileRenderPressure(),3),recovery:rec,
+  autoMode:autoCtlMode,autoPhase:player.autoPhase||null,autoPace:telemetryRound(player.autoPace,4),autoTargetLat:telemetryRound(player.autoTargetLat,3),autoTechnical:!!player.autoTechnicalActive,autoTechnicalAhead:!!player.autoTechnicalAhead,stabilityRisk:telemetryRound(player.autoStabilityRisk,3),rearCritical:telemetryRound(player.autoRearCritical,3),autoExitClearance:telemetryRound(player.autoExitClearance,3),autoReferenceHeadingBlend:telemetryRound(player.autoReferenceHeadingBlend,3),autoReferenceHeadingCorrectionDeg:telemetryRound((player.autoReferenceHeadingCorrection||0)*180/Math.PI,1),autoTargetReleaseRateMps2:telemetryRound(player.autoTargetReleaseRate,2),brakeRelease:telemetryRound(player.autoBrakeRelease,3),counterSteerActive:!!player.autoCounterSteerActive,counterSteerRequest:!!player.autoCounterSteerRequest,renderPressure:telemetryRound(mobileRenderPressure(),3),recovery:rec,
   recoveryTargetS:player.autoRecovery&&player.autoRecovery.plan?telemetryRound(player.autoRecovery.plan.s,2):null,recoveryTargetLat:player.autoRecovery&&player.autoRecovery.plan?telemetryRound(player.autoRecovery.plan.lane,3):null,recoveryAttempts:player.autoRecovery?player.autoRecovery.attempts||0:0,recoveryEpisodeSec:player.autoRecovery?telemetryRound(raceT-(player.autoRecovery.episodeStart||player.autoRecovery.since),2):0,
   recoveryEmergency:!!(player.autoRecovery&&player.autoRecovery.emergency),recoveryStage:player.autoRecovery?(player.autoRecovery.emergencyStage||player.autoRecovery.mode):null,
   position:player.pos||null,racePackRisk:telemetryRound(player.autoRacePackRisk||0,3),raceStartProtect:!!player.autoRaceStartProtect,rearThreat:telemetryRound(player.autoRearThreat||0,3),trafficEscapeLane:!!player.autoTrafficEscapeLane,
@@ -4220,6 +4220,39 @@ function autoUniversalYawGuard(sp,steer,ff,k,enabled){
 // Slow release of a speed TARGET used to starve exit acceleration even when
 // the car had grip to accelerate. This target slew is derived from tyre grip,
 // curvature and risk; braking limits and physical acceleration remain intact.
+// Phase 2B: stopping-distance envelope for a sharp authored vertex.
+// Preserve the conservative apex cap but avoid an arbitrary early speed ramp.
+// Solo AUT: the lateral target uses the optimized world-space reference.
+// Blend its true tangent into steering too; otherwise the steering feed-forward
+// follows the path but the heading controller chases the jagged SVG centreline.
+// Blend is bounded by vehicle/path agreement, upcoming kinks and wall proximity.
+function autoUniversalReferenceHeadingBlend(laneError,headingGap,speed,wallish,kinkRisk,risk){
+ const tracking=clamp((1.30-Math.abs(laneError))/.95,0,1);
+ const compatible=clamp((.70-Math.abs(headingGap))/.55,0,1);
+ const moving=clamp((speed-12)/18,0,1);
+ // Steering the SVG-referenced car directly at the smoothed tangent can
+ // create excess rear yaw in linked bends. Keep the continuous-path hint
+ // subdominant to the actual tracked heading, especially near walls.
+ return clamp(tracking*compatible*moving*(wallish?.16:.28)*
+   (kinkRisk?.28:1)*(1-.70*clamp(risk,0,1)),0,.28);
+}
+function autoUniversalKinkApproachTarget(angle,d,grip,wet,brakePerformance=1){
+ const extreme=angle>Math.PI*.47,hard=angle>Math.PI*.31;
+ const apex=extreme?7.2:(hard?9.8:12.0);
+ const decel=clamp(grip*(wet?3.8:5.8)*brakePerformance,2.3,6.3);
+ const physical=Math.sqrt(apex*apex+2*decel*Math.max(0,d-(wet?13:9)));
+ // No use the entire theoretical friction budget on approach: a sharp
+ // polygon can still require real steering/yaw recovery before its apex.
+ const oldSafe=apex+clamp((d-3)*(extreme?.17:(hard?.19:.20)),0,extreme?16:(hard?14:12));
+ return Math.min(physical,lerp(oldSafe,physical,.45));
+}
+// Never release the timed post-kink speed ceiling unless the physical car
+// has finished rotating, the rear axle is settled and no fresh kink is near.
+function autoUniversalKinkExitSettled(err,yaw,slip,rearUse,risk,edgeRisk,nearKink){
+ return !nearKink&&Number.isFinite(err)&&Math.abs(err)<.10&&
+   Math.abs(yaw)<.28&&Math.abs(slip)<.040&&rearUse<.86&&
+   risk<.26&&edgeRisk<.16;
+}
 function autoUniversalTargetReleaseRate(brakeComplex,curvePressure,risk,grip,wet,exitClearance=0){
  if(!brakeComplex)return wet?7.0:11.0;
  const bend=clamp(curvePressure/.008,0,1),confidence=1-clamp(risk,0,1);
@@ -4294,7 +4327,7 @@ function demoDriverControl(){
  const kinkCommitActive=Number.isFinite(player.autoKinkCommitUntil)&&raceT<player.autoKinkCommitUntil&&Number.isFinite(player.autoKinkCommitHeading);
  player.autoKinkCommitActive=!!kinkCommitActive;
  player.autoKinkCommitRemaining=kinkCommitActive?Math.max(0,player.autoKinkCommitUntil-raceT):0;
- player.autoKinkCommitBlend=0;
+ player.autoKinkCommitBlend=0;player.autoKinkExitReopen=false;
  player.autoLaneSwingGuard=false;
  player.autoLaneSwingLimit=null;
 
@@ -4470,7 +4503,20 @@ function demoDriverControl(){
    const correction=clamp(angleDiff(soloGuide.heading,tangentHeading)*.42*gain,-.16,.16);
    tangentHeading+=correction;
  }
- const desiredHeading=tangentHeading+Math.atan(-laneSlope);
+ let desiredHeading=tangentHeading+Math.atan(-laneSlope);
+ player.autoReferenceHeadingBlend=0;player.autoReferenceHeadingCorrection=0;
+ if(lineGuide&&!offTrack&&!kinkCommitActive){
+   const referenceHeading=driverReferencePoseAt(player.s+look).heading;
+   if(Number.isFinite(referenceHeading)){
+     const gap=angleDiff(referenceHeading,desiredHeading);
+     const blend=autoUniversalReferenceHeadingBlend(
+       player.autoTargetLat-lineGuide.lat,gap,sp,wallish,
+       geometryKink.active&&kinkMedium,player.autoStabilityRisk||0);
+     desiredHeading+=gap*blend;
+     player.autoReferenceHeadingBlend=blend;
+     player.autoReferenceHeadingCorrection=gap*blend;
+   }
+ }
  player.autoDesiredHeading=desiredHeading;
  const headingErr=angleDiff(desiredHeading,player.heading),crossErr=player.lat-player.autoTargetLat;
  const kSampleS=player.s+(techDrive?clamp(5+sp*.06,5.5,10):clamp(7+sp*.09,8,17));
@@ -4543,9 +4589,9 @@ function demoDriverControl(){
  if(geometryKink.active&&kinkMedium&&geometryKink.d<kinkApproachD){
    // Política por severidad. El nodo de 101° del circuito importado necesita llegar mucho más lento
    // que la primera chicane de 72°, mientras que uno de ~46° sólo requiere reserva.
-   const apex=kinkExtreme?7.2:(kinkHard?9.8:12.0); // 26 / 35 / 43 km/h
-   const gain=kinkExtreme?.17:(kinkHard?.19:.20);
-   const approach=apex+clamp((geometryKink.d-3)*gain,0,kinkExtreme?16:(kinkHard?14:12));
+   const approach=autoUniversalKinkApproachTarget(kinkAngle,geometryKink.d,
+     clamp(apexTyreGripScale(player),.25,1.06),apexWeatherIsWet(),
+     teamPerformance(player.teamKey).brake);
    const beforeKink=target;
    target=Math.min(target,approach);
    if(target<beforeKink-.02){
@@ -4557,8 +4603,16 @@ function demoDriverControl(){
  if(kinkCommitActive){
    const a=player.autoKinkCommitAngle||0;
    const exitCap=a>Math.PI*.47?9.0:(a>Math.PI*.31?12.2:15.0); // 32 / 44 / 54 km/h
+   const aligned=autoUniversalKinkExitSettled(
+     angleDiff(player.autoKinkCommitHeading,player.heading),player.yawRate||0,
+     player.slipAngle||0,player.rearUse||0,player.autoStabilityRisk||0,
+     edgeRisk,geometryKink.active&&geometryKink.d<26);
+   const reopen=soloSession&&!offTrack&&!raceTraffic.active&&aligned;
+   player.autoKinkExitReopen=reopen;
+   // All tyre, curvature and wall limits remain in target. This only prevents
+   // a now-obsolete time-held vertex cap from ordering another hard brake.
    const beforeCommit=target;
-   target=Math.min(target,exitCap);
+   target=Math.min(target,reopen?Math.max(exitCap,sp+3.5):exitCap);
    if(target<beforeCommit-.02){
      targetReason="KINK_COMMIT";
      targetReasonDetail="EXIT_TANGENT";
