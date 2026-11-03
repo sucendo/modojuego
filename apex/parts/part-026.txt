@@ -2933,8 +2933,9 @@ function autoGripTrajectoryEnvelope(s){
  // Authored SVG kinks are evaluated with the same physical criteria on all
  // circuits. Keep extra raw-vertex braking out of populated races, where
  // the established overtaking controller already plans the corner approach.
- const inspectRawVertices=(typeof rivals==='undefined'||!(rivals&&rivals.length))&&
-   !!(trackData.model&&trackData.model.driver);
+ // Authored SVGs can contain sharp literal vertices not present in the
+ // smoothed reference. This distinction is about geometry provenance, not GP.
+ const inspectRawVertices=!!(trackData.detailedSvg&&trackData.model&&trackData.model.driver);
  let best=Infinity,bestD=999,bestCorner=Infinity,source='SMOOTH_CURVATURE';
  for(let d=0;d<=horizon;d+=step){
   const ss=s+d,k=autoCurvatureEnvelope(ss);
@@ -3005,6 +3006,11 @@ function autoCriticalBendEnvelope(s,trafficActive){
 // would misinterpret tightly sampled smooth bends as a polygonal hairpin.
 function autoFarKinkBrakingEnvelope(s){
  if(!player||!trackData)return{target:Infinity,d:999};
+ // In populated races on generated/smooth layouts the existing race survival
+ // governor owns approach braking. Extra long-distance raw-vertex scans are
+ // reserved for genuine authored SVG geometry, across any circuit.
+ if(typeof rivals!=='undefined'&&rivals&&rivals.length&&!trackData.detailedSvg)
+  return{target:Infinity,d:999};
  const c=player.autoFarKinkCache,grip=clamp(apexTyreGripScale(player),.25,1.06),wet=apexWeatherIsWet();
  if(c&&raceT-c.t>=0&&raceT-c.t<.12&&Math.abs(s-c.s)<12&&
     Math.abs(c.grip-grip)<.015&&c.wet===wet)return c;
