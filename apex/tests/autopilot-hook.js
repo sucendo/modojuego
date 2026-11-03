@@ -29,7 +29,8 @@ window.__apexAuto={
   if(typeof apexRaceSelectPercentage==='function')apexRaceSelectPercentage(100);
   await startRace(spec,practice?999:99,practice?'freepractice':'quick',practice?$('practiceStart'):$('start'));if(!player||!trackData)throw Error('Load failed: '+dir);
   countdown=0;mode='race';paused=false;if(!practice)apexArmRaceGridTiming();apexReleaseInputs();gyro.enabled=false;setAutoDriveMode(1,true);
-  return {version:APP_VERSION,build:APP_BUILD,circuit:dir,session,rivals:rivals.length,startTotal:player.total,svgBoards:trackData.customWorld?.brakeBoards?.length||0,svgBoardAuthority:trackData.customWorld?.brakeBoardsAuthoritative===true};
+  return {version:APP_VERSION,build:APP_BUILD,circuit:dir,session,rivals:rivals.length,startTotal:player.total,svgBoards:trackData.customWorld?.brakeBoards?.length||0,svgBoardAuthority:trackData.customWorld?.brakeBoardsAuthoritative===true,
+   lineOptimization:trackData.model?.driver?.timeLine||null};
  },
  sample(){return{
   t:raceT,s:player.s,total:player.total,x:player.x,z:player.z,lat:player.lat,speed:player.speed,yaw:player.yawRate,
