@@ -853,6 +853,85 @@ function driverPhysicalSpeedFromCurvature(kSigned,s,safety=1){
  }
  return clamp(lo,14,99);
 }
+// Fase AUT L1: optimise *travel time*, not just minimum curvature.
+// The physics and the authored road are unchanged. This is a once-per-track,
+// world-space, cyclic, bounded lateral optimisation of the solo reference.
+// A local trial is accepted only when an estimated physical lap-time proxy falls.
+function driverTimeRacingProxy(px,pz,step,start=0,count=px.length){
+ const n=px.length,idx=i=>mod(i,n);let seconds=0;
+ for(let t=start;t<start+count;t++){
+  const i=idx(t),im=idx(t-2),ip=idx(t+2),next=idx(t+1);
+  const before=Math.atan2(px[i]-px[im],pz[i]-pz[im]);
+  const after=Math.atan2(px[ip]-px[i],pz[ip]-pz[i]);
+  const deflection=angleDiff(after,before),k=deflection/Math.max(1,2*step);
+  const ds=Math.hypot(px[next]-px[i],pz[next]-pz[i]);
+  // The same tyre/steering/downforce speed calculation as the track reference.
+  const safe=driverPhysicalSpeedFromCurvature(k,i*step,.985);
+  seconds+=ds/Math.max(13,Math.min(90,safe));
+  // Prevent winning the estimate with a sharp yaw impulse or wall-hugging.
+  seconds+=Math.pow(Math.max(0,Math.abs(deflection)-.11),2)*.009;
+ }
+ return seconds;
+}
+function driverTimeOptimizeRacingPath(P,cx,cz,ch,px,pz,pathSafe,step){
+ const n=px.length,idx=i=>mod(i,n),originalX=px.slice(),originalZ=pz.slice();
+ const before=driverTimeRacingProxy(px,pz,step);
+ if(n<42||!Number.isFinite(before)||step<=0)return{accepted:0,before,after:before,status:'SKIPPED'};
+ // Vary a smooth lane-control knot over 40-55m instead of moving individual
+ // SVG vertices. A 2-3 knot transition is safe for the steering rate limiter.
+ const stride=clamp(Math.round(27/step),3,10),radius=clamp(Math.round(49/step),6,20);
+ const shifts=[-.55,.55,-1.00,1.00],span=radius*2+11;
+ let accepted=0,largestShift=0;
+ for(let pass=0;pass<2;pass++)for(let anchor=0;anchor<n;anchor+=stride){
+  const affected=[];
+  for(let d=-radius;d<=radius;d++){
+   const j=idx(anchor+d),t=Math.abs(d)/radius,w=(1-t*t)*(1-t*t);
+   affected.push({j,w,x:px[j],z:pz[j]});
+  }
+  const start=anchor-radius-5,localBefore=driverTimeRacingProxy(px,pz,step,start,span);
+  let best=localBefore,bestShift=0;
+  for(const shift of shifts){
+   let feasible=true;
+   for(const q of affected){
+    const j=q.j,nx=-Math.cos(ch[j]),nz=Math.sin(ch[j]);
+    let x=q.x+nx*shift*q.w,z=q.z+nz*shift*q.w;
+    const dx=x-P[j][0],dz=z-P[j][1],d=Math.hypot(dx,dz),safe=Math.max(.35,pathSafe[j]-.04);
+    if(d>safe){x=P[j][0]+dx*safe/d;z=P[j][1]+dz*safe/d;}
+    px[j]=x;pz[j]=z;
+    if(typeof apexDrivableAreaContains==='function'&&apexDrivableAreaContains(x,z)===false){feasible=false;break;}
+   }
+   if(feasible){
+    // Including the join midpoints also protects SVGs with polygonal boundaries.
+    if(typeof apexDrivableAreaContains==='function')for(const q of affected){
+     const j=q.j,next=idx(j+1);
+     if(apexDrivableAreaContains((px[j]+px[next])*.5,(pz[j]+pz[next])*.5)===false){feasible=false;break;}
+    }
+   }
+   if(feasible){
+    const cost=driverTimeRacingProxy(px,pz,step,start,span);
+    if(cost<best-.00030){best=cost;bestShift=shift;}
+   }
+   for(const q of affected){px[q.j]=q.x;pz[q.j]=q.z;}
+  }
+  if(bestShift){
+   for(const q of affected){
+    const j=q.j,nx=-Math.cos(ch[j]),nz=Math.sin(ch[j]);
+    let x=q.x+nx*bestShift*q.w,z=q.z+nz*bestShift*q.w;
+    const dx=x-P[j][0],dz=z-P[j][1],d=Math.hypot(dx,dz),safe=Math.max(.35,pathSafe[j]-.04);
+    if(d>safe){x=P[j][0]+dx*safe/d;z=P[j][1]+dz*safe/d;}
+    px[j]=x;pz[j]=z;
+    largestShift=Math.max(largestShift,Math.hypot(x-q.x,z-q.z));
+   }
+   accepted++;
+  }
+ }
+ let after=driverTimeRacingProxy(px,pz,step);
+ // No change if the whole closed lap did not improve; local windows overlap.
+ if(!(after<before-.015)||!Number.isFinite(after)){
+  px.set(originalX);pz.set(originalZ);after=before;accepted=0;largestShift=0;
+ }
+ return{accepted,before,after,largestShift,status:accepted?'TIME_OPTIMIZED':'ORIGINAL_RETAINED'};
+}
 function prepareDriverReferenceModel(){
  if(!trackData||!trackData.pts||trackData.pts.length<24||!trackData.model)return null;
  const P=trackData.pts,n=P.length,L=trackData.km*1000,step=L/n,idx=i=>mod(i,n);
@@ -931,7 +1010,11 @@ function prepareDriverReferenceModel(){
  const pathSafe=new Float32Array(n);
  for(let i=0;i<n;i++){
    const tx=Math.sin(ch[i]),tz=Math.cos(ch[i]),nx=-tz,nz=tx,env=envProfile(i*step);
-   const safe=Math.max(1.0,env.half-(apexWallishAtS(i*step,env)?1.85:1.48));
+   const wallish=apexWallishAtS(i*step,env),curbAccess=!wallish&&Number.isFinite(env.curb)&&env.curb>=.38;
+   // A little extra tyre placement on a genuinely drivable painted/kerbed edge;
+   // never reduce the reserve in front of a real wall. The polygon gate below
+   // rejects any optimisation outside the authoritative SVG drivable surface.
+   const safe=Math.max(1.0,env.half-(wallish?1.85:(curbAccess?1.22:1.48)));
    pathSafe[i]=safe;
    let x=cx[i]+nx*clamp(lane[i],-safe,safe),z=cz[i]+nz*clamp(lane[i],-safe,safe);
    // El círculo es deliberadamente más conservador que el ancho de pista. No pretende
@@ -968,6 +1051,7 @@ function prepareDriverReferenceModel(){
    for(let i=0;i<n;i++){const im=idx(i-1),ip=idx(i+1),p=P[i];let x=px[i]+.11*(px[im]+px[ip]-2*px[i]),z=pz[i]+.11*(pz[im]+pz[ip]-2*pz[i]);let dx=x-p[0],dz=z-p[1],dl=Math.hypot(dx,dz),safe=pathSafe[i];if(dl>safe){dx*=safe/dl;dz*=safe/dl;x=p[0]+dx;z=p[1]+dz;}qx[i]=x;qz[i]=z;}
    px=qx;pz=qz;
  }
+ const timeLine=driverTimeOptimizeRacingPath(P,cx,cz,ch,px,pz,pathSafe,step);
  for(let i=0;i<n;i++){const tx=Math.sin(ch[i]),tz=Math.cos(ch[i]),nx=-tz,nz=tx;plat[i]=clamp((px[i]-cx[i])*nx+(pz[i]-cz[i])*nz,-pathSafe[i],pathSafe[i]);}
  const ph=new Float32Array(n),pc0=new Float32Array(n);
  for(let i=0;i<n;i++){const a=idx(i-2),b=idx(i+2);ph[i]=Math.atan2(px[b]-px[a],pz[b]-pz[a]);}
@@ -985,7 +1069,7 @@ function prepareDriverReferenceModel(){
  const brake=14.45;
  for(let pass=0;pass<3;pass++)for(let ii=0;ii<n;ii++){const i=idx(n-1-ii),j=idx(i+1),allowed=Math.sqrt(Math.max(0,speed[j]*speed[j]+2*brake*step));if(allowed<speed[i])speed[i]=allowed;}
  let lapEstimate=0;for(let i=0;i<n;i++)lapEstimate+=step/Math.max(12,speed[i]);
- trackData.model.driver={step,x:px,z:pz,heading:ph,curve:pcurve,lane:plat,localSafe,speed,centerCurve,rawMaxKink,pathMaxKink,lapEstimate};
+ trackData.model.driver={step,x:px,z:pz,heading:ph,curve:pcurve,lane:plat,localSafe,speed,centerCurve,rawMaxKink,pathMaxKink,lapEstimate,timeLine};
  return trackData.model.driver;
 }
 function driverReferencePoseAt(s){
