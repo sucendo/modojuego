@@ -2930,22 +2930,21 @@ function autoGripTrajectoryEnvelope(s){
        // distance for standing water and a worn tyre contact patch.
        decel=Math.max(2.6,grip*(wet?8.5:12.3)*perf.brake),
        horizon=420,step=12;
- // The raw SVG vertex governor is experimental and exists to correct the
- // repeated Madrid solo incidents. On other tracks it can over-brake (Spa)
- // and disturb established traffic/technical driving. Keep their main
- // curvature envelope unchanged until a per-circuit differential passes.
- const madridSvgVertex=trackData.spec?.dir==='14-spain';
+ // Authored SVG kinks are evaluated with the same physical criteria on all
+ // circuits. Keep extra raw-vertex braking out of populated races, where
+ // the established overtaking controller already plans the corner approach.
+ const inspectRawVertices=!(rivals&&rivals.length)&&
+   !!(trackData.model&&trackData.model.driver);
  let best=Infinity,bestD=999,bestCorner=Infinity,source='SMOOTH_CURVATURE';
  for(let d=0;d<=horizon;d+=step){
   const ss=s+d,k=autoCurvatureEnvelope(ss);
   let rawK=0,abrupt=false;
-  if(madridSvgVertex){
-   // The authored Madrid centreline may turn abruptly at an SVG node even
-   // where smoothed curvatureAt() still appears almost straight.
+  if(inspectRawVertices){
    const p0=poseAt(ss-4),p1=poseAt(ss+4);
    const h0=Math.atan2(p0.tx,p0.tz),h1=Math.atan2(p1.tx,p1.tz);
    rawK=Math.abs(angleDiff(h1,h0))/8;
-   abrupt=rawK>Math.max(.024,k*1.48);
+   const referenceK=Math.abs(driverReferencePathCurvatureAt(ss));
+   abrupt=rawK>Math.max(.024,k*1.48,referenceK*1.48);
   }
   if(k<.0008&&!abrupt)continue;
   const e=envProfile(ss),wallish=apexWallishAtS(ss,e),
@@ -2969,61 +2968,55 @@ function autoGripTrajectoryEnvelope(s){
  player.autoGripEnvelopeCache=out;return out;
 }
 
-// Raw SVG polyline corners can change heading much faster than smooth
-// curvatureAt() predicts. In that case the existing 112m kink guard brakes
-// too late: the first opportunity to leave 200+ km/h must start farther away.
-// Cache the far horizon, and apply ONLY when an actual discontinuity exists.
-// Saved Madrid SVG edition 15: the tight decreasing-radius complex near
-// s=2.80 km requires braking BEFORE steering loads the rear tyres. The
-// regular 12m curvature scans react after the first yaw impulse there.
-// This race-solo guard is isolated to the verified circuit length/geometry
-// so imported or edited Madrid SVGs are not silently assigned fixed markers.
-// The cap is a friction-based stopping envelope, never a teleport or physics
-// override; worn/wet tyres receive a slower apex and a longer approach.
-function autoMadridSoloCriticalBendEnvelope(s,trafficActive){
- if(!player||!trackData||trackData.spec?.dir!=='14-spain'||trafficActive||
-    !(currentSession==='race'||currentSession==='freepractice')||!(demoMode||assistMode)||
-    Math.abs(trackData.km-5.414)>.025)
-   return{active:false,target:Infinity};
- const lapS=mod(s,trackData.km*1000);
- // Verify the authored complex is still a real bend. Avoid a speed restriction
- // if the user replaces Madrid with a different SVG of similar overall length.
- const authoredK=Math.max(Math.abs(curvatureAt(2807)),Math.abs(curvatureAt(2820)),Math.abs(curvatureAt(2830)));
- if(authoredK<.003)return{active:false,target:Infinity};
- const grip=clamp(apexTyreGripScale(player),.25,1.06),wet=apexWeatherIsWet(),
-       safe=clamp((wet?14.0:17.5)*Math.sqrt(grip),7.5,19),
-       brake=clamp(grip*(wet?3.2:4.9)*teamPerformance(player.teamKey).brake,2.0,5.2),
-       entry=2795,d=entry-lapS;
- if(d>=0&&d<=220){
-  const target=Math.sqrt(safe*safe+2*brake*Math.max(0,d-(wet?18:14)));
-  return{active:true,target,phase:'APPROACH',d,grip,wet};
+// A severe decreasing-radius corner is detected ahead by its authored
+// curvature and the continuous racing path, not by a GP identifier or marker.
+// The braking cap respects tyre grip and the existing car physics.
+function autoCriticalBendEnvelope(s,trafficActive){
+ if(!player||!trackData||trafficActive||!(demoMode||assistMode)||
+    !(currentSession==='race'||currentSession==='freepractice'))
+  return{active:false,target:Infinity};
+ const grip=clamp(apexTyreGripScale(player),.25,1.06),wet=apexWeatherIsWet(),cache=player.autoCriticalBendCache;
+ if(cache&&raceT-cache.t>=0&&raceT-cache.t<.12&&Math.abs(cache.s-s)<10&&
+    Math.abs(cache.grip-grip)<.015&&cache.wet===wet)return cache;
+ const perf=teamPerformance(player.teamKey),decel=clamp(grip*(wet?3.2:4.9)*perf.brake,2.0,5.2);
+ let best=Infinity,bestD=999,bestK=0,bestSafe=99;
+ for(let d=8;d<=220;d+=8){
+   const ss=s+d,k=Math.abs(curvatureAt(ss)),before=Math.abs(curvatureAt(ss-24)),
+         after=Math.abs(curvatureAt(ss+8)),growth=k/Math.max(.0015,before);
+   if(k<.0048||after<k*.78||growth<1.42)continue;
+   const referenceK=Math.abs(driverReferencePathCurvatureAt(ss));
+   const roadSafe=autoPhysicalCornerSpeed(ss);
+   if(referenceK<.0035&&roadSafe>33)continue;
+   const severity=clamp((growth-1.42)/1.50+(k-.0048)*38,0,1);
+   if(severity<.28)continue;
+   const safe=Math.min(roadSafe*(wet?.90:.94),Math.max(10,(wet?15:19)*Math.sqrt(grip)));
+   const allowed=Math.sqrt(safe*safe+2*decel*Math.max(0,d-(wet?18:14)));
+   if(allowed<best){best=allowed;bestD=d;bestK=k;bestSafe=safe;}
  }
- if(d<0&&lapS<=2863){
-  // Hold safe entry speed until past the exit where rear instability occurred.
-  // Release progressively instead of accelerating mid-corner.
-  const target=safe+clamp((lapS-entry-42)/26,0,1)*12;
-  return{active:true,target,phase:'APEX_EXIT',d,grip,wet};
- }
- return{active:false,target:Infinity};
+ const result={active:Number.isFinite(best),target:best,d:bestD,k:bestK,safe:bestSafe,grip,wet,s,t:raceT};
+ player.autoCriticalBendCache=result;return result;
 }
 
+// All circuits get a long raw-geometry warning only when the discontinuity
+// persists in the driver's world-space reference; otherwise early braking
+// would misinterpret tightly sampled smooth bends as a polygonal hairpin.
 function autoFarKinkBrakingEnvelope(s){
  if(!player||!trackData)return{target:Infinity,d:999};
- // Monaco's short urban corners are already protected by the technical
- // planner; long raw-polyline scanning mistakes consecutive bends for a
- // single hairpin and delays the car into recovery. Preserve tuned handling.
- if(trackData.spec?.dir==='06-monaco')return{target:Infinity,d:999};
  const c=player.autoFarKinkCache,grip=clamp(apexTyreGripScale(player),.25,1.06),wet=apexWeatherIsWet();
  if(c&&raceT-c.t>=0&&raceT-c.t<.12&&Math.abs(s-c.s)<12&&
     Math.abs(c.grip-grip)<.015&&c.wet===wet)return c;
  const kink=geometricKinkAhead(s,230,5),a=kink.angle||0;
- let target=Infinity;
+ let target=Infinity,refAngle=0;
  if(kink.active&&a>Math.PI*.10){
+  const reference=driverReferenceKinkAhead(s,Math.min(230,kink.d+14),5);
+  refAngle=reference.active?(reference.angle||0):0;
+  if(refAngle>Math.PI*.055||a>Math.PI*.34){
    const low=a>Math.PI*.47?7.5:a>Math.PI*.31?10:a>Math.PI*.20?13.5:19;
    const decel=clamp(grip*(wet?4.7:7.2)*teamPerformance(player.teamKey).brake,2.5,8.0);
    target=Math.sqrt(low*low+2*decel*Math.max(0,kink.d-(wet?20:15)));
+  }
  }
- const result={target,d:kink.d,angle:a,s,t:raceT,grip,wet};
+ const result={target,d:kink.d,angle:a,referenceAngle:refAngle,s,t:raceT,grip,wet};
  player.autoFarKinkCache=result;return result;
 }
 
@@ -4068,9 +4061,9 @@ function requestPitStop(){
 // before the instantaneous centreline heading rotates under the front axle.
 // Never force this guide over an overtake lane, pitlane or committed SVG kink.
 function autoSoloTrajectoryPreview(s,sp,technical,trafficActive,kinkCommitted){
- // Keep this new solo guide scoped to the Madrid telemetry defect. Other
- // circuits retain their proven techDrive lookahead and steering response.
- if(!player||!trackData||trackData.spec?.dir!=='14-spain'||trafficActive||kinkCommitted||!technical?.active||!technical.hairpin)
+ // Every severe hairpin uses the same bounded anticipation in clean air.
+ if(!player||!trackData||trafficActive||kinkCommitted||!technical?.active||!technical.hairpin||
+    !(trackData.model&&trackData.model.driver))
   return{active:false,heading:0,turn:0,d:0};
  const look=clamp(10+sp*.30,11,20),near=poseAt(s+6),aim=poseAt(s+look),far=poseAt(s+look+6),exit=poseAt(s+look+12);
  const nearH=Math.atan2(near.tx,near.tz),aimH=Math.atan2(aim.tx,aim.tz),
@@ -4480,10 +4473,10 @@ function demoDriverControl(){
    target=kinkLong.target;targetReason='GEOMETRY_KINK';
    targetReasonDetail='EARLY_BRAKE';
  }
- const madridCritical=autoMadridSoloCriticalBendEnvelope(player.s,!!raceTraffic.active);
- if(madridCritical.active&&madridCritical.target<target-.20){
-   target=madridCritical.target;targetReason='MADRID_COMPLEX';
-   targetReasonDetail=madridCritical.phase;
+ const criticalBend=autoCriticalBendEnvelope(player.s,!!raceTraffic.active);
+ if(criticalBend.active&&criticalBend.target<target-.20){
+   target=criticalBend.target;targetReason='CRITICAL_BEND';
+   targetReasonDetail='DECREASING_RADIUS';
  }
  const raceLearningSuppressed=currentSession==='race'&&(raceT<12||raceT-(player.autoLastRivalContact||-99)<3.0||(raceTraffic.packRisk||0)>.55);
  const targetBeforeLearning=target;
