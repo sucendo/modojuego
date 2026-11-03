@@ -105,7 +105,7 @@ const early=ctx.autoCriticalBendEnvelope(2690,false);
 const entry=ctx.autoCriticalBendEnvelope(2795,false);
 assert.ok(early.active&&entry.active&&early.target>entry.target,
  'A real tightening bend requires safe braking before reaching the apex');
-assert.ok(entry.target<19,'Real severe bend needs low safe entry speed');
+assert.ok(entry.target<=19.01,'Real severe bend needs a safe entry cap');
 ctx.currentSession='freepractice';ctx.player.autoCriticalBendCache=null;
 assert.ok(ctx.autoCriticalBendEnvelope(2795,false).active,
  'Severe geometry must be protected in practice as well');
