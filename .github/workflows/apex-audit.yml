@@ -161,6 +161,7 @@ jobs:
           madrid_status=0
           # Measure a complete flying Madrid lap where pace allows; same authored SVG on both variants.
           APEX_AUTO_CIRCUITS=14-spain APEX_AUTO_TRAFFIC=solo APEX_AUTO_SECONDS=390 node apex/tests/autopilot-audit.cjs 2>&1 | tee /tmp/apex-auto-results/madrid-solo-390s.jsonl || madrid_status=1
+          node apex/tests/autopilot-time-compare.cjs /tmp/apex-auto-results/madrid-solo-390s.jsonl 2>&1 | tee /tmp/apex-auto-results/madrid-time-comparison.jsonl || madrid_status=1
           practice_status=0
           # Reproduce the user's specific FREE PRACTICE crash at s=1150–1170.
           # Run physics at 100 Hz, but group heavy frames in 12 ticks (~8.3 FPS).
