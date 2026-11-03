@@ -4,11 +4,11 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
 const source=fs.readFileSync(path.join(__dirname,'../parts/part-026.txt'),'utf8');
 const a=source.indexOf('function autoUniversalReferenceHeadingBlend('),b=source.indexOf('\nfunction autoUniversalTargetReleaseRate(',a);
 assert.ok(a>0&&b>a,'Kink stopping-distance and exit-settled helpers missing');
-const ctx={Math,Number,clamp:(x,l,h)=>Math.min(h,Math.max(l,x))};vm.createContext(ctx);
+const ctx={Math,Number,clamp:(x,l,h)=>Math.min(h,Math.max(l,x)),lerp:(x,y,t)=>x+(y-x)*t};vm.createContext(ctx);
 vm.runInContext(source.slice(a,b),ctx);
 const approach=ctx.autoUniversalKinkApproachTarget,settled=ctx.autoUniversalKinkExitSettled,
  headingBlend=ctx.autoUniversalReferenceHeadingBlend;
-assert.ok(headingBlend(0,.15,45,false,false,0)>.6,'Follow continuous physical path on clean straight/corner');
+assert.ok(headingBlend(0,.15,45,false,false,0)>.20,'Subdominant clean-path steering hint');
 assert.ok(headingBlend(2,.15,45,false,false,0)===0,'Do not chase reference when lane unreachable');
 assert.ok(headingBlend(0,1.2,45,false,false,0)===0,'Do not snap into radically different heading');
 assert.ok(headingBlend(0,.15,45,true,true,0)<.16,'Raw SVG vertices and walls retain authority');
@@ -24,6 +24,7 @@ for(const angle of [.70,1.15,1.62]){
  assert.ok(v0>6&&v0<13,'Preserve safe apex speed');
  assert.ok(v15>=v0&&v60>v15&&v85>v60,'Progressive physically reachable braking');
  assert.ok(v85<39,'No unsafe 85m approach speed');
+ assert.ok(v85<Math.sqrt(v0*v0+2*6.3*85),'Preserve a deceleration reserve at speed');
  assert.ok(approach(angle,85,.55,true,.9)<v85,'Wet/worn tyres must brake earlier');
  const alpha=angle>Math.PI*.47?7.2:angle>Math.PI*.31?9.8:12;
  assert.ok(Math.abs(v0-alpha)<1e-8,'Same conservative kink apex as main');
