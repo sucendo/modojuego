@@ -47,8 +47,12 @@ ctx.driverReferenceKinkAhead=()=>({active:false,angle:0});
 ctx.player.autoFarKinkCache=null;
 assert.equal(ctx.autoFarKinkBrakingEnvelope(0).target,Infinity,'Smoothed-out vertex does not force unnecessary braking');
 ctx.driverReferenceKinkAhead=()=>({active:true,angle:Math.PI*.09});
+ctx.curvatureAt=shape; // authored isolated kink, not a dense series of turns
 ctx.rivals=[{id:1}];ctx.trackData.detailedSvg=false;ctx.player.autoFarKinkCache=null;
 assert.equal(ctx.autoFarKinkBrakingEnvelope(0).target,Infinity,'Generated layouts in traffic use the existing race survival controller');
 ctx.trackData.detailedSvg=true;ctx.player.autoFarKinkCache=null;
 assert.ok(Number.isFinite(ctx.autoFarKinkBrakingEnvelope(0).target),'Authored SVGs keep raw-vertex protection even in populated races');
+ctx.curvatureAt=()=>.014;ctx.player.autoFarKinkCache=null;
+assert.equal(ctx.autoFarKinkBrakingEnvelope(0).target,Infinity,'Traffic planner owns dense multi-corner approaches on any SVG');
+
 console.log(JSON.stringify({test:'autopilot-universal-guards',passed:true,circuits:5}));
