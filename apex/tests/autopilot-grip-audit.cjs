@@ -24,6 +24,8 @@ const ctx={
  teamPerformance:()=>({brake:1}),
  envProfile:()=>({half:7}),
  poseAt:()=>({tx:0,tz:1}),
+ driverReferencePathCurvatureAt:()=>.005,
+ driverReferenceKinkAhead:()=>({active:true,angle:Math.PI*.09}),
  apexWallishAtS:()=>false
 };
 vm.createContext(ctx);vm.runInContext(physical+'\n'+envelope+'\n'+farKink+'\n'+follow,ctx);
@@ -46,14 +48,14 @@ ctx.nowCurvature=()=>0;ctx.raceT+=.1;
 const straight=ctx.autoGripTrajectoryEnvelope(0);
 assert.equal(straight.target,Infinity,'A truly straight section must not get an arbitrary cap');
 ctx.poseAt=s=>({tx:s>=118?-.6:0,tz:s>=118?.8:1});ctx.raceT+=.2;
-ctx.trackData.spec={dir:'14-spain'};
+ctx.trackData.spec={dir:'14-spain'};ctx.trackData.model={driver:{step:5.4}};
 const vertex=ctx.autoGripTrajectoryEnvelope(0);
-assert.equal(vertex.source,'SVG_VERTEX','Madrid authored geometry must be checked');
+assert.equal(vertex.source,'SVG_VERTEX','A real authored kink must be detected without a named-circuit rule');
 assert.ok(vertex.target<50,'An abrupt Madrid bend requires early braking');
 ctx.trackData.spec={dir:'10-belgium'};ctx.raceT+=.2;
 const belgium=ctx.autoGripTrajectoryEnvelope(0);
-assert.equal(belgium.target,Infinity,'Raw SVG Madrid safeguard must not impose a speed cap at Spa');
-assert.equal(belgium.source,'SMOOTH_CURVATURE','Spa retains the existing smooth curvature envelope');
+assert.equal(belgium.source,'SVG_VERTEX','Identical geometry needs the same raw-vertex protection in Spa');
+assert.ok(Math.abs(belgium.target-vertex.target)<1e-8,'Circuit name cannot alter the same geometry braking envelope');
 ctx.poseAt=()=>({tx:0,tz:1});ctx.trackData.spec={dir:'14-spain'};ctx.raceT+=.2;
 assert.equal(ctx.autoGripTrajectoryEnvelope(0).target,Infinity);
 // Following speed must be physically reachable, without forcing a brake
@@ -71,16 +73,17 @@ const wetFollow=ctx.autoPredictiveTrafficSpeed({d:80,speed:30,lat:.2});
 assert.ok(wetFollow<wornFollow,'Rain must lengthen following-distance braking');
 assert.equal(ctx.autoPredictiveTrafficSpeed({d:25,speed:30,lat:3.1}),Infinity,'Clear lateral passing lane allows unrestricted target');
 assert.equal(ctx.autoPredictiveTrafficSpeed(null),Infinity);
-// Monaco retains normal car-following braking but skips only the
-// over-eager long raw-polyline kink scan in its tightly linked bends.
+// Monaco obeys the same world-space bend rules as any other GP.
 ctx.trackData.spec={dir:'06-monaco'};
 assert.ok(Number.isFinite(ctx.autoPredictiveTrafficSpeed({d:32,speed:20,lat:0})));
-assert.equal(ctx.autoFarKinkBrakingEnvelope(0).target,Infinity);
+const monacoKink=ctx.autoFarKinkBrakingEnvelope(0);
+assert.ok(Number.isFinite(monacoKink.target),'Real Monaco kinks cannot be ignored solely by circuit name');
 ctx.trackData.spec={dir:'14-spain'};
 ctx.player.autoFarKinkCache=null;ctx.wet=false;ctx.raceT+=.2;
 ctx.player.tyres.gripFront=ctx.player.tyres.gripRear=1;
 const kink200=ctx.autoFarKinkBrakingEnvelope(0);
 assert.ok(Number.isFinite(kink200.target),'Long-range authored kink must be detected');
+assert.ok(Math.abs(kink200.target-monacoKink.target)<1e-8,'Identical long-range kink must produce identical braking');
 assert.equal(ctx.autoFarKinkBrakingEnvelope(0),kink200,'Far-kink scan cached between frames');
 ctx.farKink={active:true,d:45,angle:1.1};ctx.raceT+=.2;
 const kink45=ctx.autoFarKinkBrakingEnvelope(155);
@@ -90,37 +93,40 @@ const wetKink=ctx.autoFarKinkBrakingEnvelope(155);
 assert.ok(wetKink.target<kink45.target,'Wet raw SVG turns need more early braking');
 ctx.farKink={active:false,d:999,angle:0};ctx.raceT+=.2;
 assert.equal(ctx.autoFarKinkBrakingEnvelope(0).target,Infinity,'Smooth straight must remain unrestricted');
-const madridGuard=section('function autoMadridSoloCriticalBendEnvelope(','function autoFarKinkBrakingEnvelope(');
-ctx.mod=(x,n)=>((x%n)+n)%n;
-ctx.currentSession='race';ctx.demoMode=true;ctx.trackData={km:5.414,spec:{dir:'14-spain'}};
+const criticalGuard=section('function autoCriticalBendEnvelope(','function autoFarKinkBrakingEnvelope(');
+ctx.currentSession='race';ctx.demoMode=true;ctx.trackData={km:5.414,spec:{dir:'14-spain'},model:{driver:{step:5.4}}};
 ctx.curvatureAt=s=>s>=2800&&s<=2840?.015:0;
+ctx.nowCurvature=s=>s>=2800&&s<=2840?.015:0;
 ctx.wet=false;ctx.player.tyres.gripFront=ctx.player.tyres.gripRear=1;
-vm.runInContext(madridGuard,ctx);
-const early=ctx.autoMadridSoloCriticalBendEnvelope(2690,false);
-const entry=ctx.autoMadridSoloCriticalBendEnvelope(2795,false);
-assert.ok(early.active&&early.target>entry.target&&entry.target<19,
- 'The Madrid complex must impose early physically reachable braking');
-ctx.currentSession='freepractice';
-assert.ok(ctx.autoMadridSoloCriticalBendEnvelope(2795,false).active,
- 'The user-reported incident occurred in free practice, not a race');
-ctx.currentSession='race';
-assert.ok(ctx.autoMadridSoloCriticalBendEnvelope(2840,false).target<19,
- 'Hold a safe speed through the sustained corner, not just at turn-in');
-assert.equal(ctx.autoMadridSoloCriticalBendEnvelope(2650,true).active,false,
- 'No isolated speed governor during racing traffic');
-ctx.trackData.spec.dir='10-belgium';
-assert.equal(ctx.autoMadridSoloCriticalBendEnvelope(2795,false).active,false,
- 'The Madrid-specific control must never change Spa');
-ctx.trackData.spec.dir='14-spain';ctx.curvatureAt=()=>0;
-assert.equal(ctx.autoMadridSoloCriticalBendEnvelope(2795,false).active,false,
- 'Different user-imported SVG geometry must not inherit fixed corner markers');
+vm.runInContext(criticalGuard,ctx);
+const early=ctx.autoCriticalBendEnvelope(2690,false);
+const entry=ctx.autoCriticalBendEnvelope(2795,false);
+assert.ok(early.active&&entry.active&&early.target>entry.target,
+ 'A real tightening bend requires safe braking before reaching the apex');
+assert.ok(entry.target<19,'Real severe bend needs low safe entry speed');
+ctx.currentSession='freepractice';ctx.player.autoCriticalBendCache=null;
+assert.ok(ctx.autoCriticalBendEnvelope(2795,false).active,
+ 'Severe geometry must be protected in practice as well');
+ctx.currentSession='race';ctx.player.autoCriticalBendCache=null;
+assert.ok(ctx.autoCriticalBendEnvelope(2840,false).active,
+ 'Protect the geometric apex even after the tightening onset has passed');
+assert.equal(ctx.autoCriticalBendEnvelope(2650,true).active,false,
+ 'Populated racing sessions retain their existing traffic controller');
+ctx.trackData.spec.dir='10-belgium';ctx.player.autoCriticalBendCache=null;
+const spaEntry=ctx.autoCriticalBendEnvelope(2795,false);
+assert.ok(spaEntry.active&&Math.abs(spaEntry.target-entry.target)<1e-8,
+ 'The same corner geometry must be protected in Spa, not only Madrid');
+ctx.trackData.spec.dir='14-spain';ctx.curvatureAt=()=>0;ctx.nowCurvature=()=>0;ctx.player.autoCriticalBendCache=null;
+assert.equal(ctx.autoCriticalBendEnvelope(2795,false).active,false,
+ 'A different imported SVG without a severe bend receives no extra cap');
 ctx.curvatureAt=s=>s>=2800&&s<=2840?.015:0;
-ctx.player.tyres.gripFront=ctx.player.tyres.gripRear=.55;
-const wornMadrid=ctx.autoMadridSoloCriticalBendEnvelope(2795,false);
-ctx.wet=true;
-const wetMadrid=ctx.autoMadridSoloCriticalBendEnvelope(2795,false);
-assert.ok(wetMadrid.target<wornMadrid.target&&wornMadrid.target<entry.target,
- 'Worn tyres and wet conditions must reduce achievable entry speed');
+ctx.nowCurvature=ctx.curvatureAt;
+ctx.player.tyres.gripFront=ctx.player.tyres.gripRear=.55;ctx.player.autoCriticalBendCache=null;
+const wornEntry=ctx.autoCriticalBendEnvelope(2795,false);
+ctx.wet=true;ctx.player.autoCriticalBendCache=null;
+const wetEntry=ctx.autoCriticalBendEnvelope(2795,false);
+assert.ok(wetEntry.target<wornEntry.target&&wornEntry.target<entry.target,
+ 'Worn and wet tyres lower safe bend entry speed');
 assert.ok(src.includes('futureReach=Math.max(.18,laneRate*futureTravel)'),'Lookahead must follow reachable lateral motion');
 assert.ok(src.includes("targetReason='GRIP_ENVELOPE'"),'Grip envelope not connected to AUT');
 console.log(JSON.stringify({test:'autopilot-grip',dry:dry.target,worn:worn.target,rain:rain.target,hairpin,straight:'unrestricted',cache:true,passed:true}));
