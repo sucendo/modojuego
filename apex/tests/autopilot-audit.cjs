@@ -105,6 +105,51 @@ const source={};for(const variant of ['baseline','candidate'])source[variant]=Ar
    assert.ok(maxRecoverySec<=20,'AUT recovery took too long: '+maxRecoverySec.toFixed(1)+' s');
    assert.ok(madrid.end.hp>=95,'Allow a scrape, not major damage or repeated crashes');
   }
+  // Run the full production physics to THREE actual finish-line crossings.
+  // First lap = standing start, next two = flying laps. Never extrapolate a
+  // 2:00 lap from average speed or a partial-sector progress counter.
+  if(seconds>=500&&dirs.length===1&&dirs[0]==='14-spain'&&session==='race'){
+   const pace=[];
+   for(const variant of ['baseline','candidate']){
+    const row=rows.find(x=>x.variant===variant&&!x.traffic);
+    assert.ok(row,'Missing three-lap '+variant);
+    const samples=row.samples.filter(p=>Number.isFinite(p.total)&&Number.isFinite(p.t));
+    const length=row.lapLengthM||5414,start=row.startTotal||0;
+    const interpolate=m=>{
+     for(let i=1;i<samples.length;i++){
+      const a=samples[i-1],b=samples[i];
+      if(a.total<=m&&b.total>=m&&b.total>a.total)
+       return a.t+(b.t-a.t)*(m-a.total)/(b.total-a.total);
+     }
+     return null;
+    };
+    const crossings=[1,2,3].map(n=>interpolate(start+n*length));
+    const first=crossings[0],flying1=first!==null&&crossings[1]!==null?crossings[1]-first:null,
+          flying2=crossings[1]!==null&&crossings[2]!==null?crossings[2]-crossings[1]:null;
+    const sectors=[];
+    for(let startM=0;startM<length;startM+=500){
+     const endM=Math.min(startM+500,length),t0=interpolate(start+startM),t1=interpolate(start+endM),
+           points=samples.filter(p=>p.total>=start+startM&&p.total<start+endM),
+           reasons={};
+     for(const p of points)reasons[p.reason||'UNKNOWN']=(reasons[p.reason||'UNKNOWN']||0)+1;
+     sectors.push({fromM:startM,toM:endM,
+       standingLapSec:t0!==null&&t1!==null?+(t1-t0).toFixed(2):null,
+       averageKph:points.length?+(3.6*points.reduce((v,p)=>v+p.speed,0)/points.length).toFixed(1):null,
+       averageTargetKph:points.length?+(3.6*points.reduce((v,p)=>v+p.target,0)/points.length).toFixed(1):null,
+       topLimiter:Object.entries(reasons).sort((a,b)=>b[1]-a[1])[0]?.[0]||null});
+    }
+    pace.push({variant,lapLengthM:length,crossingsSec:crossings,
+      standingLapSec:first,flyingLapsSec:[flying1,flying2],
+      flyingMeanSec:flying1!==null&&flying2!==null?(flying1+flying2)/2:null,
+      goal120sAchieved:[flying1,flying2].some(x=>x!==null&&x<=120),
+      progressM:row.progressM,finalHp:row.end.hp,sectors});
+   }
+   const candidate=pace.find(x=>x.variant==='candidate');
+   console.log(JSON.stringify({test:'aut-three-lap-pace',seconds,pace}));
+   assert.ok(candidate.crossingsSec.every(Number.isFinite),
+     'The candidate must complete 3 full Madrid laps, not extrapolate from a partial lap');
+   assert.ok(candidate.finalHp>=95,'Three-lap run must not accumulate substantial damage');
+  }
   // Behavioral watchdogs for the fixed 60 s fixture, not lap-time or FPS goals.
   // Allow a short recovery, but fail prolonged immobility/no net forward progress.
   // Keep comparative distances visible: traffic contacts may diverge between models.
