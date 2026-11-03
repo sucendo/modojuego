@@ -1014,7 +1014,7 @@ function telemetryRound(v,n=4){return Number.isFinite(v)?+v.toFixed(n):null}
 function initSessionTelemetry(spec,gm){
  const recMode=getTelemetryRecordMode();sessionTelemetryNext=0;sessionTelemetryEventNext=0;sessionTelemetryPrev={zone:null,recovery:null,recoveryStage:null,lap:0,wallHit:-99,wallEventAt:-99,rivalContactAt:-99,recoveryEpisodeAt:null,emergency:false,targetReason:null};
  sessionTelemetry={
-   schema:"ApexFormula26.SessionTelemetry.v24",tyres:{player:apexTyreSnapshot(player),rivals:rivals.map(rv=>({id:rv.id,...apexTyreSnapshot(rv)})),track:trackData&&trackData.tyreProfile,environment:{...apexTyreEnvironment}},appVersion:APP_VERSION,build:APP_BUILD,
+   schema:"ApexFormula26.SessionTelemetry.v25",tyres:{player:apexTyreSnapshot(player),rivals:rivals.map(rv=>({id:rv.id,...apexTyreSnapshot(rv)})),track:trackData&&trackData.tyreProfile,environment:{...apexTyreEnvironment}},appVersion:APP_VERSION,build:APP_BUILD,
    createdAt:new Date().toISOString(),session:{raceConfiguration:apexRaceSession?{...apexRaceSession.config,distanceM:apexRaceSession.distanceM}:null,mode:gm,type:currentSession,weather:raceWeather,weatherPreset:sessionSettings&&sessionSettings.weather||null,weatherRuntime:apexWeatherRuntimeSnapshot(),difficulty:sessionSettings?sessionSettings.diff:null,noRivals:!!(sessionSettings&&sessionSettings.noRivals),gridPosition:player?player.pos:null,rivalCount:rivals?rivals.length:0},
    circuit:{round:spec&&spec.r,country:spec&&spec.country,name:spec&&spec.name,dir:spec&&spec.dir,km:trackData&&trackData.km},
    circuitCompile:trackData&&trackData._compileStats?clonePlain(trackData._compileStats):null,
@@ -1022,7 +1022,7 @@ function initSessionTelemetry(spec,gm){
    trafficModel:{lookBehindM:42,lookAheadM:70,nearCountLongitudinalM:24,sideLongitudinalM:4.4,sideLateralM:2.45,followLongitudinalM:12,followLateralM:2.15,launchProtectSec:14,rearThreatEscape:true,doubleTrafficLimiter:false,rivalLaunchGapGuard:true,rivalLaunchGapGuardSec:10,rivalLaunchSameLaneGapM:7.0,packSafeGridCorridors:true,gridCorridorReleaseAfterSec:6.6,gridCorridorMaxHoldSec:14.5,substepPlayerRivalCollisions:true,rivalRivalCollisions:true,personalitySafetyMargins:true,postContactCaution:true,softRubFiltering:true,firstLapCornerPassGuard:true,firstComplexLaneLock:true,packContactContainment:true,smoothFrenetTangent:true,geometryKinkGuard:true,continuousDriverReference:true,pathCurvatureSpeedEnvelope:true,purePursuitCleanAir:false,legacyPlayerAutV5149:true,firstChicaneRelease:true,geometryCommit:true,cityLaneSwingGuard:true,rivalKinkCaution:true},
    aiModels:{playerAuto:"FULL_PHYSICS_V5149_RESTORED",rivals:"HYBRID_SHARED_FRENET_LOD_PARITY",sharedCornerPlanner:true,sharedSpeedEnvelope:true,kinematicParityGovernor:true,parityCornerReference:"legacy149CenterlineCurvature",nearDynamicM:150,midHybridM:500,farKinematic:true,mobileNearDynamicM:120,mobileMidHybridM:360,racePaceFloor:.995,racePaceCeil:1.055,incidentAwarePace:true,launchCorridorHold:true,cleanRiskDecay:true,localRiskPenaltyV3:true,riskLearningIncidentOnly:true,racePaceReleaseV2:true,raceSurvivalGovernor:true,firstLapSurvivalBias:true,postImpactLaneHold:true,playerSoftRubFiltering:true,firstComplexLaneLock:true,technicalRiskLinePrep:true,technicalDirectionGuardV2:true,cleanAirSurvivalRelease:true,packContactContainment:true,smoothFrenetTangent:true,geometryKinkGuard:true,continuousDriverReference:true,pathCurvatureSpeedEnvelope:true,purePursuitCleanAir:false,legacyPlayerAutV5149:true,firstChicaneRelease:true,geometryCommit:true,cityLaneSwingGuard:true,rivalKinkCaution:true},
    recoveryModel:{lockedEmergencyPlan:true,lockedExitSide:true,edgeHoldAlignment:true,alignmentGateDeg:15,normalRealignGateDeg:24,lowSpeedTractionAssist:true,hardPullAfterSec:6.5,lateralDivergenceGuard:true,longRecoveryLocalAssist:true},
-   renderer:{backend:rendererBackendId(),modularFacade:true,webgl2Prototype:true,hybridCanvasOverlay:true,changes:["v62.4 adaptive mirrors: cached projection, independent refresh budget, distance LOD and landmark occlusion","v62.3.1 rival LOD: 3D full near / 3D medium mid / 3D low-poly far; depth-buffer occlusion"]},telemetryFeatures:{engineerTabs:true,autDecisionChain:true,nearRivalSnapshots:true,incidentWindows:true,performanceStats:true,circuitCompiler:true,persistentCircuitCompileCache:true,rendererWarmup:true,runtimeProfilerV2:true,rivalVisualLod:true,rival3DOnly:true,rivalDepthOcclusion:true,adaptiveMirrors:true,mirrorProjectionCache:true,mirrorLandmarkOcclusion:true,terrainTunnelBreakdown:true,trafficMap:true,relativeMapDriverView:true,launchCorridorDiagnostics:true,substepCarCollisions:true,rivalRivalContacts:true,persistentRivalImpactDynamics:true,rivalImpactStates:true,raceSurvivalDiagnostics:true,racePaceReleaseDiagnostics:true,firstComplexLaneLockDiagnostics:true,packContactContainmentDiagnostics:true,technicalRiskPrepDiagnostics:true,smoothFrenetDiagnostics:true,geometryKinkDiagnostics:true,continuousDriverReference:true,pathCurvatureSpeedEnvelope:true,purePursuitCleanAir:false,legacyPlayerAutV5149:true,geometryCommitDiagnostics:true,laneSwingDiagnostics:true,rivalKinkDiagnostics:true,rivalContinuityWatchdog:true,rivalStateTransitionDiagnostics:true},
+   renderer:{backend:rendererBackendId(),modularFacade:true,webgl2Prototype:true,hybridCanvasOverlay:true,changes:["v62.4 adaptive mirrors: cached projection, independent refresh budget, distance LOD and landmark occlusion","v62.3.1 rival LOD: 3D full near / 3D medium mid / 3D low-poly far; depth-buffer occlusion"]},telemetryFeatures:{engineerTabs:true,autDecisionChain:true,nearRivalSnapshots:true,incidentWindows:true,performanceStats:true,circuitCompiler:true,persistentCircuitCompileCache:true,rendererWarmup:true,runtimeProfilerV2:true,rivalVisualLod:true,rival3DOnly:true,rivalDepthOcclusion:true,adaptiveMirrors:true,mirrorProjectionCache:true,mirrorLandmarkOcclusion:true,terrainTunnelBreakdown:true,trafficMap:true,relativeMapDriverView:true,launchCorridorDiagnostics:true,substepCarCollisions:true,rivalRivalContacts:true,persistentRivalImpactDynamics:true,rivalImpactStates:true,raceSurvivalDiagnostics:true,racePaceReleaseDiagnostics:true,firstComplexLaneLockDiagnostics:true,packContactContainmentDiagnostics:true,technicalRiskPrepDiagnostics:true,smoothFrenetDiagnostics:true,geometryKinkDiagnostics:true,continuousDriverReference:true,pathCurvatureSpeedEnvelope:true,autPaceAnalysisV1:true,purePursuitCleanAir:false,legacyPlayerAutV5149:true,geometryCommitDiagnostics:true,laneSwingDiagnostics:true,rivalKinkDiagnostics:true,rivalContinuityWatchdog:true,rivalStateTransitionDiagnostics:true},
    rivalProfiles:(rivals||[]).map(r=>({uid:r.uid||raceIdentity(r.id),name:r.driverName||raceName(r.id),team:r.team,skill:telemetryRound(r.skill,3),aggression:telemetryRound(r.aggression,3),consistency:telemetryRound(r.consistency,3),defense:telemetryRound(r.defense,3),awareness:telemetryRound(r.awareness,3),bravery:telemetryRound(r.bravery,3),reaction:telemetryRound(r.reaction,3),brakeSkill:telemetryRound(r.brakeSkill,3),tractionSkill:telemetryRound(r.tractionSkill,3),cornerSkill:telemetryRound(r.cornerSkill,3),paceProfile:telemetryRound(r.racePaceProfile,4)})),
    recording:{modeAtStart:recMode,currentMode:recMode,adaptiveMobile:true,fullSampleHz:telemetryFullSampleHz(),eventCheckHz:telemetryEventCheckHz(),changes:[]},
    sampleHz:telemetryFullSampleHz(),samples:[],events:[],rivalContinuity:{checks:0,anomalies:0,lastAnomalyAt:null,byType:{},events:[]}
@@ -1117,7 +1117,7 @@ function captureSessionTelemetry(){
   surfaceZone:ps.zone,surfaceKind:ps.kind,halfWidth:telemetryRound(env.half,2),runoff:telemetryRound(env.runoff,2),wall:!!env.wall,wallAware:!!wallCtx.wallish,nearestSvgWallM:Number.isFinite(wallCtx.nearest)?telemetryRound(wallCtx.nearest,2):null,svgWallPositiveM:Number.isFinite(wallCtx.pos)?telemetryRound(wallCtx.pos,2):null,svgWallNegativeM:Number.isFinite(wallCtx.neg)?telemetryRound(wallCtx.neg,2):null,wallCorridorWidthM:Number.isFinite(wallCtx.corridor)?telemetryRound(wallCtx.corridor,2):null,driveNetwork:player.driveNetwork||'TRACK',pitS:Number.isFinite(player.pitS)?telemetryRound(player.pitS,2):null,
   elevationM:telemetryRound(elevationAt(player.s),2),gradePct:telemetryRound((elevationAt(player.s+5)-elevationAt(player.s-5))*10,2),
   curvature0:telemetryRound(curvatureAt(player.s),6),curvature15:telemetryRound(curvatureAt(player.s+15),6),curvature30:telemetryRound(curvatureAt(player.s+30),6),pathCurvature:telemetryRound(driverReferencePathCurvatureAt(player.s),6),pathLaneM:telemetryRound(driverReferenceLaneAt(player.s),3),pathLocalSafeKph:telemetryRound(driverReferenceSafeSpeedAt(player.s)*3.6,1),pathBrakeTargetKph:telemetryRound(driverReferenceTargetSpeedAt(player.s)*3.6,1),safeSpeedKph:telemetryRound(cornerSafeSpeed(player.s)*3.6,1),autoPhysicalSpeedKph:telemetryRound((player.autoPhysicalNow||autoPhysicalCornerSpeed(player.s))*3.6,1),
-  baseTrackTargetKph:telemetryRound((player.autoBaseTrackTargetSpeed||0)*3.6,1),preTrafficTargetKph:telemetryRound((player.autoPreTrafficTargetSpeed||player.autoTargetSpeed||0)*3.6,1),trafficSpeedLimitKph:Number.isFinite(player.autoTrafficSpeedLimit)?telemetryRound(player.autoTrafficSpeedLimit*3.6,1):null,targetSpeedKph:telemetryRound((player.autoTargetSpeed||0)*3.6,1),committedTargetKph:Number.isFinite(player.autoCommittedTargetSpeed)?telemetryRound(player.autoCommittedTargetSpeed*3.6,1):null,targetSpeedReason:player.autoTargetSpeedReason||"TRACK",targetSpeedReasonDetail:player.autoTargetSpeedReasonDetail||null,
+  baseTrackTargetKph:telemetryRound((player.autoBaseTrackTargetSpeed||0)*3.6,1),preCommitTargetKph:Number.isFinite(player.autoPreCommitTargetSpeed)?telemetryRound(player.autoPreCommitTargetSpeed*3.6,1):null,preTrafficTargetKph:telemetryRound((player.autoPreTrafficTargetSpeed||player.autoTargetSpeed||0)*3.6,1),trafficSpeedLimitKph:Number.isFinite(player.autoTrafficSpeedLimit)?telemetryRound(player.autoTrafficSpeedLimit*3.6,1):null,targetSpeedKph:telemetryRound((player.autoTargetSpeed||0)*3.6,1),committedTargetKph:Number.isFinite(player.autoCommittedTargetSpeed)?telemetryRound(player.autoCommittedTargetSpeed*3.6,1):null,targetSpeedReason:player.autoTargetSpeedReason||"TRACK",targetSpeedReasonDetail:player.autoTargetSpeedReasonDetail||null,
   preTrafficReductionKph:telemetryRound(Math.max(0,(player.autoBaseTrackTargetSpeed||0)-(player.autoPreTrafficTargetSpeed||player.autoTargetSpeed||0))*3.6,1),trafficReductionKph:telemetryRound(Math.max(0,(player.autoPreTrafficTargetSpeed||player.autoTargetSpeed||0)-(player.autoTargetSpeed||0))*3.6,1),totalTargetReductionKph:telemetryRound(Math.max(0,(player.autoBaseTrackTargetSpeed||0)-(player.autoTargetSpeed||0))*3.6,1),
   autoMode:autoCtlMode,autoPhase:player.autoPhase||null,autoPace:telemetryRound(player.autoPace,4),autoTargetLat:telemetryRound(player.autoTargetLat,3),autoTechnical:!!player.autoTechnicalActive,autoTechnicalAhead:!!player.autoTechnicalAhead,stabilityRisk:telemetryRound(player.autoStabilityRisk,3),rearCritical:telemetryRound(player.autoRearCritical,3),brakeRelease:telemetryRound(player.autoBrakeRelease,3),counterSteerActive:!!player.autoCounterSteerActive,counterSteerRequest:!!player.autoCounterSteerRequest,renderPressure:telemetryRound(mobileRenderPressure(),3),recovery:rec,
   recoveryTargetS:player.autoRecovery&&player.autoRecovery.plan?telemetryRound(player.autoRecovery.plan.s,2):null,recoveryTargetLat:player.autoRecovery&&player.autoRecovery.plan?telemetryRound(player.autoRecovery.plan.lane,3):null,recoveryAttempts:player.autoRecovery?player.autoRecovery.attempts||0:0,recoveryEpisodeSec:player.autoRecovery?telemetryRound(raceT-(player.autoRecovery.episodeStart||player.autoRecovery.since),2):0,
@@ -1159,6 +1159,100 @@ function captureSessionTelemetry(){
  // En móvil la grabación COMPLETA funciona a 5 Hz; EVENTOS no crea estas muestras pesadas.
  const maxSamples=mobilePerformanceMode()?27000:54000;if(sessionTelemetry.samples.length>maxSamples)sessionTelemetry.samples.splice(0,Math.min(1000,sessionTelemetry.samples.length-maxSamples+250));
 }
+
+/* AUT pace diagnostics v1: measured time by track interval and attribution of
+   consecutive target-speed cuts. Calculated only on JSON export; never changes
+   steering, grip, physics or the racing controller's real-time budget.
+   kphSeconds is limiter exposure, NOT seconds of lap time that could be saved. */
+function apexAutPaceAnalysis(samples,lapLengthM){
+ const L=Number(lapLengthM),width=100;
+ if(!Number.isFinite(L)||L<=0)return {schema:1,available:false,reason:'INVALID_CIRCUIT'};
+ const count=Math.ceil(L/width),stages=[
+  ['GEOMETRY','baseTrackTargetKph','afterGeometryKph'],
+  ['LOCAL_RISK','afterGeometryKph','beforeStabilityKph'],
+  ['STABILITY','beforeStabilityKph','afterStabilityKph'],
+  ['TRAFFIC','afterStabilityKph','preCommitTargetKph'],
+  ['BRAKE_COMMIT','preCommitTargetKph','targetSpeedKph']
+ ];
+ const clean=(Array.isArray(samples)?samples:[]).filter(s=>s&&s.autoMode==='FULL'&&
+  Number.isFinite(s.t)&&Number.isFinite(s.s)&&Number.isFinite(s.lap)&&Number.isFinite(s.targetSpeedKph));
+ if(!clean.length)return {schema:1,available:false,reason:'FULL_AUT_SAMPLES_REQUIRED',intervalM:width,samples:0};
+ const buckets=Array.from({length:count},(_,i)=>({
+  startM:i*width,endM:Math.min(L,(i+1)*width),samples:0,seconds:0,
+  measuredDistanceM:0,speedKphSeconds:0,limitReductionKphSeconds:0,
+  maxReductionKph:0,reasonSeconds:{},stageReductionKphSeconds:{}
+ }));
+ const stagesAll={},reasonsAll={},laps={};
+ const add=(obj,key,value)=>{obj[key]=(obj[key]||0)+value};
+ const numeric=v=>Number.isFinite(v)?v:null;
+ let validSeconds=0,measuredDistance=0;
+ for(let i=0;i<clean.length;i++){
+  const s=clean[i],next=clean[i+1];
+  if(!next||next.t<=s.t)continue;
+  const dt=next.t-s.t;
+  if(!(dt>0&&dt<=.5))continue; // ignore paused/discontinuous recordings
+  const index=Math.max(0,Math.min(count-1,Math.floor(((s.s%L)+L)%L/width))),b=buckets[index];
+  const base=Math.max(0,numeric(s.baseTrackTargetKph)||0),target=Math.max(0,s.targetSpeedKph);
+  const reduction=Math.max(0,base-target),reason=String(s.targetSpeedReason||'UNKNOWN');
+  b.samples++;b.seconds+=dt;b.speedKphSeconds+=Math.max(0,numeric(s.speedKph)||0)*dt;
+  b.limitReductionKphSeconds+=reduction*dt;b.maxReductionKph=Math.max(b.maxReductionKph,reduction);
+  add(b.reasonSeconds,reason,dt);add(reasonsAll,reason,dt);validSeconds+=dt;
+  // Each stage is an incremental cut. The same reduction is not attributed
+  // to every downstream limiter; this avoids the old double-counting problem.
+  const values={
+   baseTrackTargetKph:numeric(s.baseTrackTargetKph),
+   afterGeometryKph:numeric(s.autDecision&&s.autDecision.afterGeometryKph),
+   beforeStabilityKph:numeric(s.autDecision&&s.autDecision.beforeStabilityKph),
+   afterStabilityKph:numeric(s.autDecision&&s.autDecision.afterStabilityKph),
+   preCommitTargetKph:numeric(s.preCommitTargetKph),
+   targetSpeedKph:target
+  };
+  for(const [name,a,z] of stages){
+   if(values[a]===null||values[z]===null)continue;
+   const cut=Math.max(0,values[a]-values[z]);
+   add(b.stageReductionKphSeconds,name,cut*dt);add(stagesAll,name,cut*dt);
+  }
+  // Measured traversal time, not a hypothetical lap-time gain. Allocate the
+  // elapsed seconds proportionally if the segment crosses a 100 m boundary.
+  if(next.lap!==s.lap||s.s<0||next.s>L||next.s<=s.s)continue;
+  const ds=next.s-s.s,plausible=Math.max(15,Math.max(0,(s.speedKph||0))/3.6*dt*2.3+10);
+  if(ds>plausible)continue;
+  b.measuredDistanceM+=ds;measuredDistance+=ds;
+  const lap=laps[s.lap]||(laps[s.lap]={lap:s.lap,coveredM:0,sampledTimeSec:0,byInterval:Array(count).fill(0)});
+  lap.coveredM+=ds;lap.sampledTimeSec+=dt;
+  let from=s.s;
+  while(from<next.s-1e-8){
+   const k=Math.min(count-1,Math.floor(from/width)),end=Math.min(next.s,(k+1)*width);
+   if(end<=from)break;
+   lap.byInterval[k]+=dt*(end-from)/ds;
+   from=end;
+  }
+ }
+ const round=(v,d=2)=>Number.isFinite(v)?+v.toFixed(d):null;
+ const completed=Object.values(laps).filter(x=>x.lap>1&&x.coveredM>=L*.85)
+  .map(x=>({lap:x.lap,coveragePct:round(x.coveredM/L*100,1),sampledTimeSec:round(x.sampledTimeSec,3),
+   byInterval:x.byInterval.map(v=>round(v,3))}));
+ const fastest=completed.length?completed.reduce((a,b)=>a.sampledTimeSec<b.sampledTimeSec?a:b):null;
+ const intervals=buckets.map(x=>{
+  const names=Object.entries(x.reasonSeconds).sort((a,b)=>b[1]-a[1]);
+  return {startM:round(x.startM,1),endM:round(x.endM,1),samples:x.samples,
+   seconds:round(x.seconds,3),measuredDistanceM:round(x.measuredDistanceM,1),
+   averageSpeedKph:x.seconds?round(x.speedKphSeconds/x.seconds,1):null,
+   limiterReductionKphSeconds:round(x.limitReductionKphSeconds,2),
+   maxReductionKph:round(x.maxReductionKph,1),dominantReason:names.length?names[0][0]:null,
+   stageReductionKphSeconds:Object.fromEntries(Object.entries(x.stageReductionKphSeconds).map(([k,v])=>[k,round(v,2)]))};
+ });
+ const hotspots=intervals.filter(x=>x.samples>=3&&x.limiterReductionKphSeconds>0)
+  .slice().sort((a,b)=>b.limiterReductionKphSeconds-a.limiterReductionKphSeconds).slice(0,12);
+ return {schema:1,available:true,source:'FULL_AUT_ONLY',intervalM:width,method:'OBSERVED_TIME_AND_TARGET_LIMITER_EXPOSURE',
+  caveat:'Limiter kph·s measures persistence and intensity; it is not recoverable lap time. Compare completed flying laps under equal tyres, fuel and weather.',
+  samples:clean.length,validSeconds:round(validSeconds,2),measuredDistanceM:round(measuredDistance,1),
+  reasonSeconds:Object.fromEntries(Object.entries(reasonsAll).map(([k,v])=>[k,round(v,2)])),
+  stageReductionKphSeconds:Object.fromEntries(Object.entries(stagesAll).map(([k,v])=>[k,round(v,2)])),
+  completedFlyingLaps:completed,fastestSampledFlyingLap:fastest?{lap:fastest.lap,sampledTimeSec:fastest.sampledTimeSec,coveragePct:fastest.coveragePct}:null,
+  hotspots,intervals};
+}
+
 function exportSessionTelemetry(){
  try{
  if(!sessionTelemetry){const a=$("raceAlert");if(a){a.textContent="TEL · AÚN NO HAY DATOS DE SESIÓN";setTimeout(()=>{if(a.textContent.startsWith("TEL ·"))a.textContent=""},1200)}return;}
@@ -1193,7 +1287,8 @@ function exportSessionTelemetry(){
  const perfRows=ss.map(s=>s.performance).filter(Boolean),avg=(key)=>perfRows.length?perfRows.reduce((a,p)=>a+(Number(p[key])||0),0)/perfRows.length:null,maxv=(key)=>perfRows.length?Math.max(...perfRows.map(p=>Number(p[key])||0)):null;
  const performanceStats={avgFps:telemetryRound(avg('fps'),1),avgFrameMs:telemetryRound(avg('frameMs'),2),maxFrameMs:telemetryRound(maxv('lastFrameMs'),2),avgRenderMs:telemetryRound(avg('renderMs'),2),avgPhysicsMs:telemetryRound(avg('physicsMs'),2),avgAiMs:telemetryRound(avg('aiMs'),2),maxAiMs:telemetryRound(maxv('aiMs'),2),avgCollisionMs:telemetryRound(avg('collisionMs'),2),avgTelemetryMs:telemetryRound(avg('telemetryMs'),2),avgHudMs:telemetryRound(avg('hudMs'),2),avgTrackRenderMs:telemetryRound(avg('trackRenderMs'),2),avgTerrainRenderMs:telemetryRound(avg('terrainRenderMs'),2),avgTunnelRenderMs:telemetryRound(avg('tunnelRenderMs'),2),avgEnvironmentRenderMs:telemetryRound(avg('environmentRenderMs'),2),avgCarsRenderMs:telemetryRound(avg('carsRenderMs'),2),avgMirrorsRenderMs:telemetryRound(avg('mirrorsRenderMs'),2),avgCockpitRenderMs:telemetryRound(avg('cockpitRenderMs'),2),avgEffectsRenderMs:telemetryRound(avg('effectsRenderMs'),2),avgWebglSubmitMs:telemetryRound(avg('webglSubmitMs'),2)};
  if(sessionTelemetry.recording){sessionTelemetry.recording.currentMode=getTelemetryRecordMode();sessionTelemetry.recording.fullSampleHz=telemetryFullSampleHz();sessionTelemetry.recording.eventCheckHz=telemetryEventCheckHz();}
- const payload={...sessionTelemetry,pitState:{player:apexPitSnapshot(player),rivals:rivals.map(rv=>({id:rv.id,...apexPitSnapshot(rv)}))},tyreState:{player:apexTyreSnapshot(player),rivals:rivals.map(rv=>({id:rv.id,...apexTyreSnapshot(rv)})),environment:{...apexTyreEnvironment}},incidentWindows,exportedAt:new Date().toISOString(),summary:{recordingMode:getTelemetryRecordMode(),fullSampleHz:telemetryFullSampleHz(),eventCheckHz:telemetryEventCheckHz(),duration:telemetryRound(raceT,3),completedLaps:player?player.lap:null,bestLap:best<1e8?telemetryRound(best,3):null,sampleCount:ss.length,eventCount:ev.length,rivalContacts:contacts.length,containedRivalContacts:containedContacts.length,rivalContactEpisodes:contactEpisodes.length,earlyRivalContacts:earlyContacts.length,earlySevereRivalContacts:earlySevereContacts.length,rivalRivalContacts:rivalRivalContacts.length,rivalRivalContactEpisodes:rrContactEpisodes.length,rivalIncidents:rivalIncidents.length,rivalSpinIncidents:rivalSpinIncidents.length,rivalOfftracksFromImpact:rivalOfftracks.length,rivalRecovers:rivalRecovers.length,launchGapGuardSamples:launchGuardSamples,maxLaunchGapGuards,contactEpisodes,performanceStats,runtimeProfiler:apexRuntimePerfSummary(),circuitCompile:trackData&&trackData._compileStats?clonePlain(trackData._compileStats):null,wallHits:ev.filter(e=>e.type==='WALL_HIT').length,spins:ev.filter(e=>e.type==='SPIN').length,recoveryEpisodes:ev.filter(e=>e.type==='RECOVERY_START').length,emergencyRecoveries:ev.filter(e=>e.type==='RECOVERY_EMERGENCY').length,hardRecoveryAssists:hardPullEvents,recoveryActiveAtExport:ongoingRecoverySec>0,recoveryTimeSec:recoveryTime,maxRecoverySec:recoveryDurations.length?telemetryRound(Math.max(...recoveryDurations),2):null,lateralRecoveryGuardTrips:ev.filter(e=>e.type==='RECOVERY_LATERAL_GUARD').length,rivalSimulation:{model:"HYBRID_SHARED_FRENET_LOD_PARITY",lodAtExport:rivalLODCounts(),nearDynamicM:mobilePerformanceMode()?120:150,midHybridM:mobilePerformanceMode()?360:500},rivalContinuity:sessionTelemetry&&sessionTelemetry.rivalContinuity?{checks:sessionTelemetry.rivalContinuity.checks||0,anomalies:sessionTelemetry.rivalContinuity.anomalies||0,lastAnomalyAt:sessionTelemetry.rivalContinuity.lastAnomalyAt||null,byType:{...(sessionTelemetry.rivalContinuity.byType||{})}}:null,rivalBestLaps,rivalPaceStats,targetSpeedReasonSamples:reasonCounts,targetLimiterImpact:impact}};
+ const autPaceAnalysis=apexAutPaceAnalysis(ss,trackData&&trackData.km*1000);
+ const payload={...sessionTelemetry,autPaceAnalysis,pitState:{player:apexPitSnapshot(player),rivals:rivals.map(rv=>({id:rv.id,...apexPitSnapshot(rv)}))},tyreState:{player:apexTyreSnapshot(player),rivals:rivals.map(rv=>({id:rv.id,...apexTyreSnapshot(rv)})),environment:{...apexTyreEnvironment}},incidentWindows,exportedAt:new Date().toISOString(),summary:{recordingMode:getTelemetryRecordMode(),fullSampleHz:telemetryFullSampleHz(),eventCheckHz:telemetryEventCheckHz(),duration:telemetryRound(raceT,3),completedLaps:player?player.lap:null,bestLap:best<1e8?telemetryRound(best,3):null,sampleCount:ss.length,eventCount:ev.length,rivalContacts:contacts.length,containedRivalContacts:containedContacts.length,rivalContactEpisodes:contactEpisodes.length,earlyRivalContacts:earlyContacts.length,earlySevereRivalContacts:earlySevereContacts.length,rivalRivalContacts:rivalRivalContacts.length,rivalRivalContactEpisodes:rrContactEpisodes.length,rivalIncidents:rivalIncidents.length,rivalSpinIncidents:rivalSpinIncidents.length,rivalOfftracksFromImpact:rivalOfftracks.length,rivalRecovers:rivalRecovers.length,launchGapGuardSamples:launchGuardSamples,maxLaunchGapGuards,contactEpisodes,performanceStats,runtimeProfiler:apexRuntimePerfSummary(),circuitCompile:trackData&&trackData._compileStats?clonePlain(trackData._compileStats):null,wallHits:ev.filter(e=>e.type==='WALL_HIT').length,spins:ev.filter(e=>e.type==='SPIN').length,recoveryEpisodes:ev.filter(e=>e.type==='RECOVERY_START').length,emergencyRecoveries:ev.filter(e=>e.type==='RECOVERY_EMERGENCY').length,hardRecoveryAssists:hardPullEvents,recoveryActiveAtExport:ongoingRecoverySec>0,recoveryTimeSec:recoveryTime,maxRecoverySec:recoveryDurations.length?telemetryRound(Math.max(...recoveryDurations),2):null,lateralRecoveryGuardTrips:ev.filter(e=>e.type==='RECOVERY_LATERAL_GUARD').length,rivalSimulation:{model:"HYBRID_SHARED_FRENET_LOD_PARITY",lodAtExport:rivalLODCounts(),nearDynamicM:mobilePerformanceMode()?120:150,midHybridM:mobilePerformanceMode()?360:500},rivalContinuity:sessionTelemetry&&sessionTelemetry.rivalContinuity?{checks:sessionTelemetry.rivalContinuity.checks||0,anomalies:sessionTelemetry.rivalContinuity.anomalies||0,lastAnomalyAt:sessionTelemetry.rivalContinuity.lastAnomalyAt||null,byType:{...(sessionTelemetry.rivalContinuity.byType||{})}}:null,rivalBestLaps,rivalPaceStats,targetSpeedReasonSamples:reasonCounts,targetLimiterImpact:impact,autPaceAnalysis:{available:autPaceAnalysis.available,fastestSampledFlyingLap:autPaceAnalysis.fastestSampledFlyingLap||null,hotspots:autPaceAnalysis.hotspots||[],stageReductionKphSeconds:autPaceAnalysis.stageReductionKphSeconds||{}}}};
  const safe=(trackData&&trackData.spec?trackData.spec.dir:"circuito").replace(/[^a-z0-9_-]+/gi,'-');
  const stamp=new Date().toISOString().replace(/[:.]/g,'-');
  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
@@ -4578,6 +4673,7 @@ function demoDriverControl(){
  // después a ~61 km/h. El coche ya estaba cargado lateralmente y ese "release" hacía
  // imposible estabilizarlo. Las reducciones siguen siendo inmediatas; las subidas del
  // objetivo se liberan despacio mientras exista curvatura relevante delante.
+ const preCommitTarget=target; // target before braking-target memory, for pace diagnostics
  const commitStamp=Number.isFinite(player.autoCommittedTargetStamp)?player.autoCommittedTargetStamp:raceT,commitDt=clamp(raceT-commitStamp,.004,.080);player.autoCommittedTargetStamp=raceT;
  const curvePressure=Math.max(Math.abs(curvatureAt(player.s+8)),Math.abs(curvatureAt(player.s+28)),Math.abs(curvatureAt(player.s+52)));
  const brakeComplex=technical.active||compound.active||curvePressure>.00115||(plan&&plan.d<135&&Math.abs(plan.k)>.00125);
@@ -4653,6 +4749,7 @@ function demoDriverControl(){
  const attacking=traffic.ahead&&traffic.ahead.d<58;
  const boost=currentSession==='race'&&player.ers>25&&throttle>.84&&((straight&&(attacking||player.ers>66))||(attacking&&plan&&plan.d>80&&player.ers>42));
  if(player.autoPhase!=='ARRANCA'||(player.autoLaunchAssistUntil||0)<=raceT)player.autoPhase=offTrack?'RECUP':stability.risk>.38?'ESTABILIZA':edgeRisk>.16?'SEGURIDAD':techDrive?'TÉCNICA':plan&&plan.d<22?'APEX':plan&&plan.d<95?'FRENO':plan&&plan.d<155?'ENTRADA':'RECTA';
+ player.autoPreCommitTargetSpeed=preCommitTarget;
  player.autoBaseTrackTargetSpeed=baseTrackTarget;player.autoPreTrafficTargetSpeed=preTrafficTarget;player.autoTrafficSpeedLimit=Number.isFinite(trafficSpeedLimit)?trafficSpeedLimit:null;player.autoTargetSpeedReason=targetReason;player.autoTargetSpeedReasonDetail=targetReasonDetail;
  player.autoDecisionAfterGeometry=targetBeforeLearning;player.autoDecisionBeforeStability=targetBeforeStability;player.autoDecisionAfterStability=preTrafficTarget;
  player.autoTargetSpeed=target;player.autoLimiterReduction=Math.max(0,baseTrackTarget-target);player.autoRecoveryAssist=false;player.autoRecoveryForcePull=false;player.autoPhysicalNow=autoPhysicalCornerSpeed(player.s);player.autoStabilityRisk=stability.risk;player.autoRearCritical=stability.rearCritical||0;
