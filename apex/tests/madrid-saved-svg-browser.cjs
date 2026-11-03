@@ -1,5 +1,5 @@
 'use strict';
-// End-to-end smoke: Madrid's manifest-selected SVG (15) really imports.
+// End-to-end smoke: Madrid's manifest-selected SVG (16) really imports, including deleted boards.
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
  (process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?path.join(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES,'playwright'):'playwright'));
@@ -29,7 +29,7 @@ window.__madridSavedSvgAudit={
   const monumental=readStoredCircuitJson(spec.dir)?.banking?.corners?.find(c=>+c.turn===12);
   return {file:entry.svg,json:entry.json,backend,source:entry.sourceFileName,bytes:new TextEncoder().encode(svg).length,
    geometry:!!imported.geometry,revision:world.profileRevision,
-   boards:imported.brakeBoards||0,stored:!!readStoredCustomTrackSvg('14-spain'),
+   boards:imported.brakeBoards||0,boardsAuthoritative:world.brakeBoardsAuthoritative===true,stored:!!readStoredCustomTrackSvg('14-spain'),
    surfaceZones:count('surfaceZone'),curbs:marks.length,
    colors,meshColors:[...new Set(mesh.quads.map(q=>q.color))],bankProfile:monumental?.profile||[],
    bankMax:monumental?.bankDeg,bankS:monumental?.s,
@@ -39,7 +39,8 @@ window.__madridSavedSvgAudit={
    await apexHydrateLargeCircuit('14-spain');
    const j=readStoredCircuitJson('14-spain');
    return {colors:j?.visual?.curbs?.colors,bank:j?.banking?.corners?.find(c=>+c.turn===12)?.bankDeg,
-    svg:!!readStoredCustomTrackSvg('14-spain')};
+    svg:!!readStoredCustomTrackSvg('14-spain'),boards:readStoredCustomWorldProfile('14-spain')?.brakeBoards?.length||0,
+    boardsAuthoritative:readStoredCustomWorldProfile('14-spain')?.brakeBoardsAuthoritative===true};
  }
 };`;
 (async()=>{
@@ -76,10 +77,14 @@ window.__madridSavedSvgAudit={
   assert.deepEqual(rehydrated.colors,['#f2c500','#d51f27']);
   assert.equal(rehydrated.bank,13.4957);
   assert.equal(rehydrated.svg,true,'The saved SVG must survive alongside JSON');
-  assert.equal(result.file,'svg/apex26_14-madrid-spain_2026-10-29.svg');
-  assert.equal(result.source,'apex26_14-spain_circuito_completo (15).svg');
-  assert.equal(result.bytes,788725);
+  assert.equal(rehydrated.boards,34,'Hydrated SVG must retain only 34 active braking boards');
+  assert.equal(rehydrated.boardsAuthoritative,true,'Hydration must not generate deleted boards');
+  assert.equal(result.file,'svg/apex26_14-madrid-spain_2026-11-03.svg');
+  assert.equal(result.source,'apex26_14-spain_circuito_completo (16).svg');
+  assert.equal(result.bytes,763591);
   assert.equal(result.geometry,true);
+  assert.equal(result.boards,34,'Only active SVG signs may be imported (not 4 library templates)');
+  assert.equal(result.boardsAuthoritative,true,'SVG signs must suppress procedural additions');
   assert.equal(result.json,'json/apex26_14-madrid-spain_2026-10-29.json');
   assert.deepEqual(result.colors,['#f2c500','#d51f27']);
   assert.ok(result.meshColors.includes('#d51f27')&&result.meshColors.includes('#f2c500'),
