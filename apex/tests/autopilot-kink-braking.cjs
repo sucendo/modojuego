@@ -2,11 +2,22 @@
 // Tests actual production 2B helpers, without duplicating their implementation.
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),vm=require('node:vm');
 const source=fs.readFileSync(path.join(__dirname,'../parts/part-026.txt'),'utf8');
-const a=source.indexOf('function autoUniversalKinkApproachTarget('),b=source.indexOf('\nfunction autoUniversalTargetReleaseRate(',a);
+const a=source.indexOf('function autoUniversalReferenceHeadingBlend('),b=source.indexOf('\nfunction autoUniversalTargetReleaseRate(',a);
 assert.ok(a>0&&b>a,'Kink stopping-distance and exit-settled helpers missing');
 const ctx={Math,Number,clamp:(x,l,h)=>Math.min(h,Math.max(l,x))};vm.createContext(ctx);
 vm.runInContext(source.slice(a,b),ctx);
-const approach=ctx.autoUniversalKinkApproachTarget,settled=ctx.autoUniversalKinkExitSettled;
+const approach=ctx.autoUniversalKinkApproachTarget,settled=ctx.autoUniversalKinkExitSettled,
+ headingBlend=ctx.autoUniversalReferenceHeadingBlend;
+assert.ok(headingBlend(0,.15,45,false,false,0)>.6,'Follow continuous physical path on clean straight/corner');
+assert.ok(headingBlend(2,.15,45,false,false,0)===0,'Do not chase reference when lane unreachable');
+assert.ok(headingBlend(0,1.2,45,false,false,0)===0,'Do not snap into radically different heading');
+assert.ok(headingBlend(0,.15,45,true,true,0)<.16,'Raw SVG vertices and walls retain authority');
+assert.ok(headingBlend(0,.15,45,false,false,.8)<headingBlend(0,.15,45,false,false,0),
+ 'High risk must reduce reference authority');
+assert.equal(headingBlend(0,.15,0,false,false,0),0,'Do not force optimized line on launch');
+assert.match(source,/if\(lineGuide&&!offTrack&&!kinkCommitActive\)/,'Never override kink commitment or recovery');
+assert.match(source,/desiredHeading\+=gap\*blend/,'Blend continuous heading rather than double-applying lane slope');
+
 for(const angle of [.70,1.15,1.62]){
  const v0=approach(angle,0,1,false,1),v15=approach(angle,15,1,false,1),
        v60=approach(angle,60,1,false,1),v85=approach(angle,85,1,false,1);
