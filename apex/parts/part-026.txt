@@ -2972,7 +2972,7 @@ function autoGripTrajectoryEnvelope(s){
 // curvature and the continuous racing path, not by a GP identifier or marker.
 // The braking cap respects tyre grip and the existing car physics.
 function autoCriticalBendEnvelope(s,trafficActive){
- if(!player||!trackData||trafficActive||!(demoMode||assistMode)||
+ if(!player||!trackData||trafficActive||(typeof rivals!=='undefined'&&rivals&&rivals.length>0)||!(demoMode||assistMode)||
     !(currentSession==='race'||currentSession==='freepractice'))
   return{active:false,target:Infinity};
  const grip=clamp(apexTyreGripScale(player),.25,1.06),wet=apexWeatherIsWet(),cache=player.autoCriticalBendCache;
@@ -4065,7 +4065,7 @@ function requestPitStop(){
 // Never force this guide over an overtake lane, pitlane or committed SVG kink.
 function autoSoloTrajectoryPreview(s,sp,technical,trafficActive,kinkCommitted){
  // Every severe hairpin uses the same bounded anticipation in clean air.
- if(!player||!trackData||trafficActive||kinkCommitted||!technical?.active||!technical.hairpin||
+ if(!player||!trackData||trafficActive||(typeof rivals!=='undefined'&&rivals&&rivals.length>0)||kinkCommitted||!technical?.active||!technical.hairpin||
     !(trackData.model&&trackData.model.driver))
   return{active:false,heading:0,turn:0,d:0};
  const look=clamp(10+sp*.30,11,20),near=poseAt(s+6),aim=poseAt(s+look),far=poseAt(s+look+6),exit=poseAt(s+look+12);
