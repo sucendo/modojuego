@@ -4230,14 +4230,21 @@ function autoUniversalReferenceHeadingBlend(laneError,headingGap,speed,wallish,k
  const tracking=clamp((1.30-Math.abs(laneError))/.95,0,1);
  const compatible=clamp((.70-Math.abs(headingGap))/.55,0,1);
  const moving=clamp((speed-12)/18,0,1);
- return clamp(tracking*compatible*moving*(wallish?.48:.85)*
-   (kinkRisk?.28:1)*(1-.70*clamp(risk,0,1)),0,.85);
+ // Steering the SVG-referenced car directly at the smoothed tangent can
+ // create excess rear yaw in linked bends. Keep the continuous-path hint
+ // subdominant to the actual tracked heading, especially near walls.
+ return clamp(tracking*compatible*moving*(wallish?.16:.28)*
+   (kinkRisk?.28:1)*(1-.70*clamp(risk,0,1)),0,.28);
 }
 function autoUniversalKinkApproachTarget(angle,d,grip,wet,brakePerformance=1){
  const extreme=angle>Math.PI*.47,hard=angle>Math.PI*.31;
  const apex=extreme?7.2:(hard?9.8:12.0);
  const decel=clamp(grip*(wet?3.8:5.8)*brakePerformance,2.3,6.3);
- return Math.sqrt(apex*apex+2*decel*Math.max(0,d-(wet?13:9)));
+ const physical=Math.sqrt(apex*apex+2*decel*Math.max(0,d-(wet?13:9)));
+ // No use the entire theoretical friction budget on approach: a sharp
+ // polygon can still require real steering/yaw recovery before its apex.
+ const oldSafe=apex+clamp((d-3)*(extreme?.17:(hard?.19:.20)),0,extreme?16:(hard?14:12));
+ return Math.min(physical,lerp(oldSafe,physical,.45));
 }
 // Never release the timed post-kink speed ceiling unless the physical car
 // has finished rotating, the rear axle is settled and no fresh kink is near.
