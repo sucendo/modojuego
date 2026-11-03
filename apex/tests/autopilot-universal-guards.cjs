@@ -38,6 +38,10 @@ for(const dir of ['14-spain','06-monaco','10-belgium','13-italy','03-japan']){
 assert.equal(ctx.autoCriticalBendEnvelope(0,true).active,false,'Traffic racecraft retains priority');
 ctx.curvatureAt=()=>.002;ctx.player.autoCriticalBendCache=null;
 assert.equal(ctx.autoCriticalBendEnvelope(0,false).active,false,'Do not brake for an ordinary constant-radius corner');
+ctx.curvatureAt=()=>.008;ctx.player.autoCriticalBendCache=null;
+assert.equal(ctx.autoCriticalBendEnvelope(0,false).active,false,'Moderate constant-radius bend already has tyre envelope; no extra critical braking');
+ctx.curvatureAt=()=>.014;ctx.player.autoCriticalBendCache=null;
+assert.equal(ctx.autoCriticalBendEnvelope(0,false).active,true,'A genuinely severe apex keeps its universal additional braking guard');
 ctx.geometricKinkAhead=()=>({active:true,d:72,angle:Math.PI*.18});
 ctx.driverReferenceKinkAhead=()=>({active:false,angle:0});
 ctx.player.autoFarKinkCache=null;
