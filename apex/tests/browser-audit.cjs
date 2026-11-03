@@ -40,6 +40,21 @@ async function bounded(label,operation,ms=180000){
    for(const [dir,custom] of cases){
     report({test:'load-start',dir,custom,mobileEmulation:mobile});
     await bounded('load '+dir,()=>page.evaluate(async({dir,custom})=>__apexAudit.load(dir,custom),{dir,custom}));
+    // TEL must remain visible and actionable in desktop and short mobile landscape.
+    if(dir==='14-spain'){
+     const button=await page.evaluate(()=>{
+      const el=document.getElementById('telemetryBtn'),r=el.getBoundingClientRect(),p=document.getElementById('toolLeft').getBoundingClientRect(),s=getComputedStyle(el);
+      return {display:s.display,visibility:s.visibility,width:r.width,height:r.height,insideToolbar:r.left>=p.left-1&&r.right<=p.right+1,insideScreen:r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight};
+     });
+     assert.notEqual(button.display,'none','TEL must not be hidden by HUD CSS');
+     assert.notEqual(button.visibility,'hidden','TEL must be visible');
+     assert.ok(button.width>20&&button.height>20&&button.insideToolbar&&button.insideScreen,'TEL must fit on screen and in its toolbar');
+     await page.locator('#telemetryBtn').click();
+     assert.equal(await page.locator('#telemetryPanel').isVisible(),true,'TEL should open telemetry');
+     await page.locator('#telemetryBtn').click();
+     assert.equal(await page.locator('#telemetryPanel').isVisible(),false,'TEL should close telemetry');
+     report({test:'telemetry-button-visible-and-clickable',mobileEmulation:mobile,button,ok:true});
+    }
     const initialTyres=await page.evaluate(()=>__apexAudit.tyres());assert.equal(initialTyres.rivals.length,21);assert.ok(initialTyres.player.compound);assert.ok(initialTyres.profile.trackAbrasion>0);
     for(const camera of ['cockpit','tcam','chase']){
      assert.equal(await page.evaluate(camera=>__apexAudit.camera(camera),camera),true);
