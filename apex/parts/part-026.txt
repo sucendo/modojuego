@@ -2933,7 +2933,7 @@ function autoGripTrajectoryEnvelope(s){
  // Authored SVG kinks are evaluated with the same physical criteria on all
  // circuits. Keep extra raw-vertex braking out of populated races, where
  // the established overtaking controller already plans the corner approach.
- const inspectRawVertices=!(rivals&&rivals.length)&&
+ const inspectRawVertices=(typeof rivals==='undefined'||!(rivals&&rivals.length))&&
    !!(trackData.model&&trackData.model.driver);
  let best=Infinity,bestD=999,bestCorner=Infinity,source='SMOOTH_CURVATURE';
  for(let d=0;d<=horizon;d+=step){
@@ -2980,15 +2980,16 @@ function autoCriticalBendEnvelope(s,trafficActive){
     Math.abs(cache.grip-grip)<.015&&cache.wet===wet)return cache;
  const perf=teamPerformance(player.teamKey),decel=clamp(grip*(wet?3.2:4.9)*perf.brake,2.0,5.2);
  let best=Infinity,bestD=999,bestK=0,bestSafe=99;
- for(let d=8;d<=220;d+=8){
+ for(let d=0;d<=220;d+=8){
    const ss=s+d,k=Math.abs(curvatureAt(ss)),before=Math.abs(curvatureAt(ss-24)),
          after=Math.abs(curvatureAt(ss+8)),growth=k/Math.max(.0015,before);
-   if(k<.0048||after<k*.78||growth<1.42)continue;
+   const nearApex=d<=24&&k>.006;
+   if(!nearApex&&(k<.0048||after<k*.78||growth<1.42))continue;
    const referenceK=Math.abs(driverReferencePathCurvatureAt(ss));
    const roadSafe=autoPhysicalCornerSpeed(ss);
    if(referenceK<.0035&&roadSafe>33)continue;
    const severity=clamp((growth-1.42)/1.50+(k-.0048)*38,0,1);
-   if(severity<.28)continue;
+   if(!nearApex&&severity<.28)continue;
    const safe=Math.min(roadSafe*(wet?.90:.94),Math.max(10,(wet?15:19)*Math.sqrt(grip)));
    const allowed=Math.sqrt(safe*safe+2*decel*Math.max(0,d-(wet?18:14)));
    if(allowed<best){best=allowed;bestD=d;bestK=k;bestSafe=safe;}
@@ -3010,7 +3011,7 @@ function autoFarKinkBrakingEnvelope(s){
  if(kink.active&&a>Math.PI*.10){
   const reference=driverReferenceKinkAhead(s,Math.min(230,kink.d+14),5);
   refAngle=reference.active?(reference.angle||0):0;
-  if(refAngle>Math.PI*.055||a>Math.PI*.34){
+  if(refAngle>Math.PI*.055||(a>Math.PI*.34&&Math.abs(driverReferencePathCurvatureAt(s+kink.d))>.008)){
    const low=a>Math.PI*.47?7.5:a>Math.PI*.31?10:a>Math.PI*.20?13.5:19;
    const decel=clamp(grip*(wet?4.7:7.2)*teamPerformance(player.teamKey).brake,2.5,8.0);
    target=Math.sqrt(low*low+2*decel*Math.max(0,kink.d-(wet?20:15)));
