@@ -50,4 +50,31 @@ for(const side of [1,-1]){
  const gaps=[g.camPts[0],g.camPts[1]].map(p=>Math.abs(p.x-sg.x1));
  assert.ok(Math.abs(Math.min(...gaps)-.01)<1e-8,'Nearest plate edge stays fixed to the fence');
 }
+// A user-authored SVG controls the complete set: deleted signs must never
+// be regenerated, including when the authored list is intentionally empty.
+const mergedStart=source.indexOf('function mergedBrakeBoardDefinitions(');
+const mergedEnd=source.indexOf('function collectBrakeBoardSprites(',mergedStart);
+assert.ok(mergedStart>=0&&mergedEnd>mergedStart);
+const authoredProfile={brakeBoardsAuthoritative:true,brakeBoards:[
+ {s:231,cornerS:456,mark:200,side:-1},
+ {s:281,cornerS:456,mark:150,side:-1}
+]};
+let proceduralCalled=0;
+const authorityCtx={
+ trackData:{km:5.414},
+ circuitWorldProfile:()=>authoredProfile,
+ authoredBrakeBoards:()=>authoredProfile.brakeBoards,
+ autoBrakeBoardDefinitions:()=>{proceduralCalled++;return [{s:1124,mark:200,side:1}]},
+ mod:(x,l)=>((x%l)+l)%l
+};
+vm.runInNewContext(source.slice(mergedStart,mergedEnd),authorityCtx);
+const authoritative=authorityCtx.mergedBrakeBoardDefinitions();
+assert.equal(authoritative.length,2,'Explicitly deleted signs must not return');
+assert.equal(authoritative[0].s,231);
+assert.equal(proceduralCalled,0,'No procedural generation on an authored SVG');
+authoredProfile.brakeBoards=[];
+assert.equal(authorityCtx.mergedBrakeBoardDefinitions().length,0,
+ 'Deleting all authored boards must produce no signs');
+assert.equal(proceduralCalled,0,'Even an empty authored sign set is authoritative');
+
 console.log(JSON.stringify({test:'urban-distance-boards',svg:true,procedural:true,cache:true,horizontalDigits:true,permanentUnchanged:true,facesOncoming:true,sideAttached:true,ok:true}));
