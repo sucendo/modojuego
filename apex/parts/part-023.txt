@@ -1223,10 +1223,14 @@ function apexEnrichExportSvg(svgText,spec){
      const x=apexRuntimeTerrainContoursSvg(terrainExportCtx);if(x){backPieces.push(x);root.setAttribute('data-apex-terrain-reference','LOCAL_ABSOLUTE');root.setAttribute('data-apex-elevation-zero','START_FINISH');root.setAttribute('data-apex-terrain-complete','true');root.setAttribute('data-apex-terrain-margin-m','115');root.setAttribute('data-apex-terrain-model','CONTOUR_POLYGONS_V3+BASE');root.setAttribute('data-apex-terrain-contours-authoritative','true')}
    }
    if(hasTerrainContours&&!terrainContoursAuthoritative)root.setAttribute('data-apex-terrain-contours-authoritative','true');
-   // Carteles: la primera exportación materializa exactamente los que APEX muestra.
-   // Tras reimportar, el SVG queda autoritativo: si el usuario borra uno, no reaparece.
-   const boardsAuthoritative=String(root.getAttribute('data-apex-brake-boards-authoritative')||'').toLowerCase()==='true';
-   if(!boardsAuthoritative){const boards=apexRuntimeDistanceBoardsSvg();if(boards)pieces.push(boards);root.setAttribute('data-apex-brake-boards-authoritative','true')}
+   // Los carteles ya presentes en un SVG editado son la fuente de verdad.
+   // Si falta la bandera en una edición antigua (p.ej. Boxy la elimina), no
+   // volvemos a materializar los generados. Con el atributo explícito también
+   // son válidas las series vacías: borrar TODOS los carteles no los regenera.
+   const boardsAuthoritative=String(root.getAttribute('data-apex-brake-boards-authoritative')||'').trim().toLowerCase()==='true';
+   const boardsAuthored=apexExportHasRole(root,'distance-board');
+   if(!boardsAuthoritative&&!boardsAuthored){const boards=apexRuntimeDistanceBoardsSvg();if(boards)pieces.push(boards)}
+   if(!boardsAuthoritative)root.setAttribute('data-apex-brake-boards-authoritative','true')
    // Curvas T1..Tn: referencias editables para poder renombrarlas y, más adelante,
    // anclar peraltes/altimetría a una curva en vez de a una fracción antigua de vuelta.
    if(!apexExportHasRole(root,'corner-marker')){const c=apexRuntimeCornerMarkersSvg();if(c)pieces.push(c);root.setAttribute('data-apex-corners-authoritative','true')}
@@ -1546,7 +1550,7 @@ async function importEditableCircuitSvgText(text,spec,options={}){
    const candidates=[...ctx.root.querySelectorAll('[data-apex-type],[data-apex-role]')].filter(el=>!excluded.has(el)&&!el.hasAttribute('data-apex-library-zone')&&!apexSvgElementInsideLibrary(ctx,el,libraryZone));const landmarks=[];
    for(let i=0;i<candidates.length;i++){const item=apexSvgLandmarkExact(candidates[i],i,ctx);if(item)landmarks.push(item)}
    const brakeBoards=apexImportedBrakeBoards(landmarks,ctx.km*1000),circuitLandmarks=landmarks.filter(it=>it.type!=='distanceBoard'),curbZones=apexImportedCurbZones(circuitLandmarks,ctx.km*1000);
-   const structureZones=apexImportedStructureZones(circuitLandmarks,ctx.km*1000),barrierSegments=apexImportedBarrierSegments(circuitLandmarks,ctx.km*1000),surfaceZones=apexImportedSurfaceZones(circuitLandmarks),brakeBoardsAuthoritative=String(rootDoc.getAttribute('data-apex-brake-boards-authoritative')||'').toLowerCase()==='true',geometryPayload={points:ctx.points,km:ctx.km,direction:ctx.direction,layoutId,turns,laps,circuitType:'RACE',source:'EXACT_USER_SVG',authoritative:true,rawSvg:String(text),verticalProfile,timingData,timingControls,cornerMarkers,brakeBoardsAuthoritative};
+   const structureZones=apexImportedStructureZones(circuitLandmarks,ctx.km*1000),barrierSegments=apexImportedBarrierSegments(circuitLandmarks,ctx.km*1000),surfaceZones=apexImportedSurfaceZones(circuitLandmarks),brakeBoardsFlag=String(rootDoc.getAttribute('data-apex-brake-boards-authoritative')||'').trim().toLowerCase(),brakeBoardsAuthoritative=brakeBoardsFlag==='true'||(!brakeBoardsFlag&&brakeBoards.length>0),geometryPayload={points:ctx.points,km:ctx.km,direction:ctx.direction,layoutId,turns,laps,circuitType:'RACE',source:'EXACT_USER_SVG',authoritative:true,rawSvg:String(text),verticalProfile,timingData,timingControls,cornerMarkers,brakeBoardsAuthoritative};
    const worldPayload={profileRevision:23091,curbGeometryAuthoritative:circuitLandmarks.some(apexIsCurbAuthoringMark)||!!ctx.root.querySelector('#APEX_ACTIVE_CURBS')||rootDoc.getAttribute('data-apex-curbs-authoritative')==='true',authoritative:true,terrainBase,landmarks:circuitLandmarks,brakeBoards,brakeBoardsAuthoritative,cornerMarkers,pitLaneSamples,pitNetwork,wallLeftSamples,wallRightSamples,wallSegments,edgeLeftSamples,edgeRightSamples,structureZones,barrierSegments,surfaceZones,terrainContours,terrainContoursAuthoritative,terrainReference,drivableArea,curbZones};
    // SVG, huellas, muros y alturas se guardan JUNTOS en una transacción IndexedDB.
    // Nunca duplicamos el SVG (que puede contener una fotografía base64) en localStorage.
