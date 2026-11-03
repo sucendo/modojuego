@@ -1341,11 +1341,17 @@ function apexEnsureCollisionGrid(){
 // Antes envProfile() sólo exponía los muros procedurales antiguos, por lo que un muro
 // autorado en SVG podía existir físicamente y a la vez ser invisible para la IA.
 function apexWallContextAtS(s,env=null){
- const e=env||envProfile(s),legacy=!!(e.wall||e.leftWall||e.rightWall),cw=trackData&&trackData.customWorld;
- if(!trackData||!cw||!cw.authoritative||!apexCollisionSegments().length)return{wallish:legacy,legacy,exact:false,nearest:Infinity,pos:Infinity,neg:Infinity,corridor:null};
- const L=trackData.km*1000,key=Math.round(mod(s,L)/2);
- if(!cw._wallAwarenessCache)cw._wallAwarenessCache=new Map();
- const cached=cw._wallAwarenessCache.get(key);if(cached)return cached;
+ const cw=trackData&&trackData.customWorld,authored=!!(cw?.authoritative&&apexCollisionSegments().length);
+ let key;
+ if(authored){
+  key=Math.round(mod(s,trackData.km*1000)/2);
+  if(!cw._wallAwarenessCache)cw._wallAwarenessCache=new Map();
+  const cached=cw._wallAwarenessCache.get(key);
+  if(cached)return cached;
+ }
+ const e=env||envProfile(s),legacy=!!(e.wall||e.leftWall||e.rightWall);
+ if(!authored)return{wallish:legacy,legacy,exact:false,nearest:Infinity,pos:Infinity,neg:Infinity,corridor:null};
+ const L=trackData.km*1000;
  const p=poseFlatAt(s),G=apexEnsureCollisionGrid();
  if(!G)return{wallish:legacy,legacy,exact:false,nearest:Infinity,pos:Infinity,neg:Infinity,corridor:null};
  const search=Math.max(13,e.half+e.curb+e.runoff+4.0),cells=Math.max(1,Math.ceil(search/G.size)),cx=Math.floor(p.x/G.size),cz=Math.floor(p.z/G.size),cand=new Set();

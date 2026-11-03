@@ -44,16 +44,61 @@ window.__apexAuto={
   surface:player.surfaceKind,network:player.driveNetwork,lap:player.lap,
   rivals:rivals.length,finite:physicsFinite(),mode
  };},
+ async render(seconds){
+  auditStepping=false;
+  try{
+   await new Promise(resolve=>setTimeout(resolve,2000));
+   apexRuntimePerfReset();
+   await new Promise(resolve=>setTimeout(resolve,seconds*1000));
+   const perf=apexRuntimePerfSummary();
+   const renderer=renderProfilerSnapshot();
+   return {perf,renderer,heapBytes:performance.memory?.usedJSHeapSize??null};
+  }finally{auditStepping=true;}
+ },
  async run(seconds,stepsPerFrame=5){
-  const cpuStart=performance.now(),samples=[],start=player.total;let stopped=0,maxStopped=0,noProgress=0,maxNoProgress=0,best=player.total;
-  const count=Math.round(seconds*100);for(let tick=0;tick<count;tick++){
+  const samples=[],start=player.total,cornerMinima=new Map();
+  const control=demoDriverControl;
+  let controlMs=0,controlCalls=0;
+  demoDriverControl=function(...args){
+   const begin=performance.now();
+   try{return control.apply(this,args);}
+   finally{controlMs+=performance.now()-begin;controlCalls++;}
+  };
+  let distance=0,topSpeed=0,speedSum=0,throttleSum=0,brakeSum=0,brakeTicks=0,brakeDistance=0,laneErrorSq=0;
+  let wallContacts=0,offTrackEpisodes=0,wasOffTrack=false;
+  const heapStart=performance.memory?.usedJSHeapSize??null,cpuStart=performance.now();let stopped=0,maxStopped=0,noProgress=0,maxNoProgress=0,best=player.total;
+  const count=Math.round(seconds*100);
+  try{for(let tick=0;tick<count;tick++){
+   const {x,z,autoLastWallHit}=player;
    update(.01,tick%stepsPerFrame===stepsPerFrame-1,stepsPerFrame*.01);
+   const ds=Math.hypot(player.x-x,player.z-z),speed=Math.abs(player.speed);
+   distance+=ds;topSpeed=Math.max(topSpeed,speed);speedSum+=speed;
+   throttleSum+=player.throttle;brakeSum+=player.brakeInput;
+   if(player.brakeInput>.05){brakeTicks++;brakeDistance+=ds;}
+   laneErrorSq+=(player.lat-player.autoTargetLat)**2;
+   if(player.autoLastWallHit>=0&&player.autoLastWallHit!==autoLastWallHit)wallContacts++;
+   const offTrack=['RUNOFF','OFF','LIMIT','WALL','WATER'].includes(player.surface);
+   if(offTrack&&!wasOffTrack)offTrackEpisodes++;
+   wasOffTrack=offTrack;
    if(player.speed<.7&&(player.autoTargetSpeed||0)>2){stopped+=.01;maxStopped=Math.max(maxStopped,stopped);}else stopped=0;
    if(player.total>best+1){best=player.total;noProgress=0;}else {noProgress+=.01;maxNoProgress=Math.max(maxNoProgress,noProgress);}
    if(!physicsFinite()||mode!=='race')throw Error('Invalid simulation state at '+tick);
-   if(tick%50===49)samples.push(this.sample());
+   if(tick%50===49){
+    samples.push(this.sample());
+    const turn=apexCornerReferenceAtS(player.s).region?.turn;
+    if(Number.isFinite(turn)){
+     const key=player.lap+':'+turn;
+     const previous=cornerMinima.get(key);
+     if(!previous||speed<previous.speed)cornerMinima.set(key,{lap:player.lap+1,turn,speed});
+    }
+   }
    if(tick%200===199)await new Promise(resolve=>setTimeout(resolve,0));
-  }
-  return {cpuMs:performance.now()-cpuStart,seconds,physicsHz:100,stepsPerFrame,progressM:player.total-start,maxStoppedSec:maxStopped,maxNoProgressSec:maxNoProgress,end:this.sample(),samples};
+  }}finally{demoDriverControl=control;}
+  const laps=sessionLapLog.map(({lap,time,elapsed,sectors,firstLap})=>({lap,time:time??elapsed,sectors,firstLap:!!firstLap}));
+  return {laps,cornerMinima:[...cornerMinima.values()].map(({lap,turn,speed})=>({lap,turn,minKph:speed*3.6})),metrics:{distanceM:distance,meanKph:speedSum/count*3.6,maxKph:topSpeed*3.6,
+   meanThrottlePct:throttleSum/count*100,meanBrakePct:brakeSum/count*100,brakeSeconds:brakeTicks/100,brakeDistanceM:brakeDistance,
+   rmsLaneErrorM:Math.sqrt(laneErrorSq/count),wallContacts,offTrackEpisodes,controlMs,controlCalls,
+   heapStartBytes:heapStart,heapEndBytes:performance.memory?.usedJSHeapSize??null},
+   cpuMs:performance.now()-cpuStart,seconds,physicsHz:100,stepsPerFrame,progressM:player.total-start,maxStoppedSec:maxStopped,maxNoProgressSec:maxNoProgress,end:this.sample(),samples};
  }
 };
