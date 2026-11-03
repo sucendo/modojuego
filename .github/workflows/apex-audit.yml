@@ -54,6 +54,7 @@ jobs:
           node apex/tests/autopilot-trajectory-preview.cjs > /tmp/apex-results/autopilot-trajectory-preview.json
           node apex/tests/autopilot-madrid-pk1150-reference.cjs > /tmp/apex-results/autopilot-madrid-pk1150-reference.json
           node apex/tests/autopilot-pace-analysis.cjs > /tmp/apex-results/autopilot-pace-analysis.json
+          node apex/tests/autopilot-clean-exit.cjs > /tmp/apex-results/autopilot-clean-exit.json
           python3 apex/tests/circuit-assets-audit.py --json > /tmp/apex-results/assets.json
           node --check apex/js/preparation-9a.js
           node apex/tests/climate-9a-audit.cjs
@@ -157,8 +158,8 @@ jobs:
           overall_status=0
           node apex/tests/autopilot-audit.cjs 2>&1 | tee /tmp/apex-auto-results/autopilot.jsonl || overall_status=1
           madrid_status=0
-          # Cover at least one complete Madrid lap (5.414 km), not just 170s.
-          APEX_AUTO_CIRCUITS=14-spain APEX_AUTO_TRAFFIC=solo APEX_AUTO_SECONDS=250 node apex/tests/autopilot-audit.cjs 2>&1 | tee /tmp/apex-auto-results/madrid-solo-250s.jsonl || madrid_status=1
+          # Measure a complete flying Madrid lap where pace allows; same authored SVG on both variants.
+          APEX_AUTO_CIRCUITS=14-spain APEX_AUTO_TRAFFIC=solo APEX_AUTO_SECONDS=390 node apex/tests/autopilot-audit.cjs 2>&1 | tee /tmp/apex-auto-results/madrid-solo-390s.jsonl || madrid_status=1
           practice_status=0
           # Reproduce the user's specific FREE PRACTICE crash at s=1150–1170.
           # Run physics at 100 Hz, but group heavy frames in 12 ticks (~8.3 FPS).

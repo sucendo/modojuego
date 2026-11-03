@@ -1119,7 +1119,7 @@ function captureSessionTelemetry(){
   curvature0:telemetryRound(curvatureAt(player.s),6),curvature15:telemetryRound(curvatureAt(player.s+15),6),curvature30:telemetryRound(curvatureAt(player.s+30),6),pathCurvature:telemetryRound(driverReferencePathCurvatureAt(player.s),6),pathLaneM:telemetryRound(driverReferenceLaneAt(player.s),3),pathLocalSafeKph:telemetryRound(driverReferenceSafeSpeedAt(player.s)*3.6,1),pathBrakeTargetKph:telemetryRound(driverReferenceTargetSpeedAt(player.s)*3.6,1),safeSpeedKph:telemetryRound(cornerSafeSpeed(player.s)*3.6,1),autoPhysicalSpeedKph:telemetryRound((player.autoPhysicalNow||autoPhysicalCornerSpeed(player.s))*3.6,1),
   baseTrackTargetKph:telemetryRound((player.autoBaseTrackTargetSpeed||0)*3.6,1),preCommitTargetKph:Number.isFinite(player.autoPreCommitTargetSpeed)?telemetryRound(player.autoPreCommitTargetSpeed*3.6,1):null,preTrafficTargetKph:telemetryRound((player.autoPreTrafficTargetSpeed||player.autoTargetSpeed||0)*3.6,1),trafficSpeedLimitKph:Number.isFinite(player.autoTrafficSpeedLimit)?telemetryRound(player.autoTrafficSpeedLimit*3.6,1):null,targetSpeedKph:telemetryRound((player.autoTargetSpeed||0)*3.6,1),committedTargetKph:Number.isFinite(player.autoCommittedTargetSpeed)?telemetryRound(player.autoCommittedTargetSpeed*3.6,1):null,targetSpeedReason:player.autoTargetSpeedReason||"TRACK",targetSpeedReasonDetail:player.autoTargetSpeedReasonDetail||null,
   preTrafficReductionKph:telemetryRound(Math.max(0,(player.autoBaseTrackTargetSpeed||0)-(player.autoPreTrafficTargetSpeed||player.autoTargetSpeed||0))*3.6,1),trafficReductionKph:telemetryRound(Math.max(0,(player.autoPreTrafficTargetSpeed||player.autoTargetSpeed||0)-(player.autoTargetSpeed||0))*3.6,1),totalTargetReductionKph:telemetryRound(Math.max(0,(player.autoBaseTrackTargetSpeed||0)-(player.autoTargetSpeed||0))*3.6,1),
-  autoMode:autoCtlMode,autoPhase:player.autoPhase||null,autoPace:telemetryRound(player.autoPace,4),autoTargetLat:telemetryRound(player.autoTargetLat,3),autoTechnical:!!player.autoTechnicalActive,autoTechnicalAhead:!!player.autoTechnicalAhead,stabilityRisk:telemetryRound(player.autoStabilityRisk,3),rearCritical:telemetryRound(player.autoRearCritical,3),brakeRelease:telemetryRound(player.autoBrakeRelease,3),counterSteerActive:!!player.autoCounterSteerActive,counterSteerRequest:!!player.autoCounterSteerRequest,renderPressure:telemetryRound(mobileRenderPressure(),3),recovery:rec,
+  autoMode:autoCtlMode,autoPhase:player.autoPhase||null,autoPace:telemetryRound(player.autoPace,4),autoTargetLat:telemetryRound(player.autoTargetLat,3),autoTechnical:!!player.autoTechnicalActive,autoTechnicalAhead:!!player.autoTechnicalAhead,stabilityRisk:telemetryRound(player.autoStabilityRisk,3),rearCritical:telemetryRound(player.autoRearCritical,3),autoExitClearance:telemetryRound(player.autoExitClearance,3),autoTargetReleaseRateMps2:telemetryRound(player.autoTargetReleaseRate,2),brakeRelease:telemetryRound(player.autoBrakeRelease,3),counterSteerActive:!!player.autoCounterSteerActive,counterSteerRequest:!!player.autoCounterSteerRequest,renderPressure:telemetryRound(mobileRenderPressure(),3),recovery:rec,
   recoveryTargetS:player.autoRecovery&&player.autoRecovery.plan?telemetryRound(player.autoRecovery.plan.s,2):null,recoveryTargetLat:player.autoRecovery&&player.autoRecovery.plan?telemetryRound(player.autoRecovery.plan.lane,3):null,recoveryAttempts:player.autoRecovery?player.autoRecovery.attempts||0:0,recoveryEpisodeSec:player.autoRecovery?telemetryRound(raceT-(player.autoRecovery.episodeStart||player.autoRecovery.since),2):0,
   recoveryEmergency:!!(player.autoRecovery&&player.autoRecovery.emergency),recoveryStage:player.autoRecovery?(player.autoRecovery.emergencyStage||player.autoRecovery.mode):null,
   position:player.pos||null,racePackRisk:telemetryRound(player.autoRacePackRisk||0,3),raceStartProtect:!!player.autoRaceStartProtect,rearThreat:telemetryRound(player.autoRearThreat||0,3),trafficEscapeLane:!!player.autoTrafficEscapeLane,
@@ -4220,11 +4220,30 @@ function autoUniversalYawGuard(sp,steer,ff,k,enabled){
 // Slow release of a speed TARGET used to starve exit acceleration even when
 // the car had grip to accelerate. This target slew is derived from tyre grip,
 // curvature and risk; braking limits and physical acceleration remain intact.
-function autoUniversalTargetReleaseRate(brakeComplex,curvePressure,risk,grip,wet){
+function autoUniversalTargetReleaseRate(brakeComplex,curvePressure,risk,grip,wet,exitClearance=0){
  if(!brakeComplex)return wet?7.0:11.0;
  const bend=clamp(curvePressure/.008,0,1),confidence=1-clamp(risk,0,1);
- return clamp((wet?5.0:9.0)*(1-.60*bend)*lerp(.25,1,confidence)*
+ const cautious=clamp((wet?5.0:9.0)*(1-.60*bend)*lerp(.25,1,confidence)*
    clamp(grip,.50,1.06),1.5,wet?5.0:9.0);
+ // Only a stable, geometrically clear corner exit can reopen the target
+ // faster. This affects the requested speed, NEVER engine power or grip.
+ return lerp(cautious,(wet?9.5:16.5)*clamp(grip,.50,1.06),clamp(exitClearance,0,1));
+}
+function autoUniversalExitClearance(s,headingError,risk,rearCritical,wet){
+ if(!Number.isFinite(s)||!Number.isFinite(headingError))return 0;
+ // Keep the NEXT bend in view: a temporary drop in curvature inside a
+ // chicane must not be mistaken for a clear accelerating straight.
+ const past=Math.abs(curvatureAt(s-16)),now=Math.abs(curvatureAt(s+3)),
+       next=Math.abs(curvatureAt(s+22)),far=Math.abs(curvatureAt(s+44)),
+       nextBend=Math.abs(curvatureAt(s+70));
+ const trailing=Math.max(past,now),upcoming=Math.max(next,far,nextBend);
+ if(upcoming>.0050)return 0; // next chicane/apex still demands lateral grip
+ const falling=clamp((trailing-upcoming-.00040)/Math.max(.0016,trailing*.80),0,1),
+       open=clamp((.0030-upcoming)/.0025,0,1);
+ const aligned=clamp((.26-Math.abs(headingError))/.20,0,1),
+       stable=clamp((.35-risk)/.24,0,1),
+       rearSafe=clamp((.23-rearCritical)/.17,0,1);
+ return clamp(falling*lerp(.45,1,open)*aligned*stable*rearSafe*(wet?.72:1),0,1);
 }
 
 function demoDriverControl(){
@@ -4678,8 +4697,24 @@ function demoDriverControl(){
  const curvePressure=Math.max(Math.abs(curvatureAt(player.s+8)),Math.abs(curvatureAt(player.s+28)),Math.abs(curvatureAt(player.s+52)));
  const brakeComplex=technical.active||compound.active||curvePressure>.00115||(plan&&plan.d<135&&Math.abs(plan.k)>.00125);
  if(!Number.isFinite(player.autoCommittedTargetSpeed))player.autoCommittedTargetSpeed=target;
+ const exitClearance=lineGuide&&brakeComplex&&target>player.autoCommittedTargetSpeed&&
+   !offTrack&&!raceTraffic.active
+   ?autoUniversalExitClearance(player.s,Math.max(Math.abs(trackHeadingErr),Math.abs(headingErr)*.60),
+     stability.risk,stability.rearCritical,apexWeatherIsWet()):0;
+ let releaseRate=0;
  if(target<=player.autoCommittedTargetSpeed){player.autoCommittedTargetSpeed=target;}
- else{const rise=lineGuide?autoUniversalTargetReleaseRate(brakeComplex,curvePressure,stability.risk,apexTyreGripScale(player),apexWeatherIsWet()):(brakeComplex?1.75:8.5);player.autoCommittedTargetSpeed=Math.min(target,player.autoCommittedTargetSpeed+rise*commitDt);}
+ else{
+   releaseRate=lineGuide?autoUniversalTargetReleaseRate(brakeComplex,curvePressure,
+     stability.risk,apexTyreGripScale(player),apexWeatherIsWet(),exitClearance):(brakeComplex?1.75:8.5);
+   player.autoCommittedTargetSpeed=Math.min(target,player.autoCommittedTargetSpeed+releaseRate*commitDt);
+   // A stale braking memory must not COMMAND MORE BRAKING when the car is
+   // stable and already physically below its safe, up-to-date speed target.
+   // Preserve the instantaneous geometry/tyre/traffic cap in 'target'.
+   if(exitClearance>.25&&target>sp+.8)
+     player.autoCommittedTargetSpeed=Math.min(target,Math.max(player.autoCommittedTargetSpeed,
+       sp+(apexWeatherIsWet()?2.1:4.0)*exitClearance));
+ }
+ player.autoExitClearance=exitClearance;player.autoTargetReleaseRate=releaseRate;
  if(brakeComplex&&player.autoCommittedTargetSpeed<target-.04){target=player.autoCommittedTargetSpeed;if(targetReason==='TRACK'){targetReason='BRAKE_COMMIT';targetReasonDetail='CONTINUOUS_CORNER';}}
  else if(!brakeComplex&&target-player.autoCommittedTargetSpeed>7)player.autoCommittedTargetSpeed=target-7;
 
