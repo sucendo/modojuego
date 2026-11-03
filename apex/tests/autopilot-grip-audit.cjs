@@ -48,7 +48,7 @@ ctx.nowCurvature=()=>0;ctx.raceT+=.1;
 const straight=ctx.autoGripTrajectoryEnvelope(0);
 assert.equal(straight.target,Infinity,'A truly straight section must not get an arbitrary cap');
 ctx.poseAt=s=>({tx:s>=118?-.6:0,tz:s>=118?.8:1});ctx.raceT+=.2;
-ctx.trackData.spec={dir:'14-spain'};ctx.trackData.model={driver:{step:5.4}};
+ctx.trackData.spec={dir:'14-spain'};ctx.trackData.model={driver:{step:5.4}};ctx.trackData.detailedSvg=true;
 const vertex=ctx.autoGripTrajectoryEnvelope(0);
 assert.equal(vertex.source,'SVG_VERTEX','A real authored kink must be detected without a named-circuit rule');
 assert.ok(vertex.target<50,'An abrupt Madrid bend requires early braking');
