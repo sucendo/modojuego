@@ -73,6 +73,8 @@ const wetFollow=ctx.autoPredictiveTrafficSpeed({d:80,speed:30,lat:.2});
 assert.ok(wetFollow<wornFollow,'Rain must lengthen following-distance braking');
 assert.equal(ctx.autoPredictiveTrafficSpeed({d:25,speed:30,lat:3.1}),Infinity,'Clear lateral passing lane allows unrestricted target');
 assert.equal(ctx.autoPredictiveTrafficSpeed(null),Infinity);
+// Compare physically identical inputs: same tyres, weather and seed.
+ctx.wet=false;ctx.raceT+=.2;ctx.player.tyres.gripFront=ctx.player.tyres.gripRear=1;
 // Monaco obeys the same world-space bend rules as any other GP.
 ctx.trackData.spec={dir:'06-monaco'};
 assert.ok(Number.isFinite(ctx.autoPredictiveTrafficSpeed({d:32,speed:20,lat:0})));
