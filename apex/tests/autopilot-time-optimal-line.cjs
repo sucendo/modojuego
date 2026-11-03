@@ -57,7 +57,7 @@ assert.ok(one.result.after<one.result.before,'Optimised line must lower time pro
 assert.ok(one.result.largestShift>0,'Search must use available track width');
 assert.match(src,/const timeLine=driverTimeOptimizeRacingPath\(P,cx,cz,ch,px,pz,pathSafe,step\)/);
 assert.match(src,/curbAccess=!wallish&&Number\.isFinite\(env\.curb\)/);
-assert.match(src,/trackData\.model\.driver=\{[^\n]*timeLine\}/);
+assert.match(src,/trackData\.model\.driver=\{[^\n]*timeLine(?:,pacePlan)?\}/);
 wet=true;const wetModel=solve();assert.ok(wetModel.result.after<=wetModel.result.before,'Wet model cannot accept a worse line');
 console.log(JSON.stringify({test:'aut-time-optimal-line',passed:true,accepted:one.result.accepted,
  timeProxyBefore:one.result.before,timeProxyAfter:one.result.after,
