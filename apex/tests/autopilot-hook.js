@@ -10,19 +10,31 @@ window.__apexAuto={
   // and random incidents. A single global seed across 20 scenarios biases
   // comparisons because the preceding run consumes different RNG amounts.
   if(window.__apexAutoSeed)window.__apexAutoSeed(261007+calendar.indexOf(spec)*17+(traffic?1:0));
-  if(dir==='14-spain'&&!readStoredCustomTrackSvg(dir))await importEditableCircuitSvgText(await(await fetch('circuits/svg/apex26_14-madrid-spain.svg')).text(),spec);
+  // Audit the SAME SVG+JSON selected by the user's "Cargar versión guardada".
+  // The old hook silently used Madrid BASE, masking edited track geometry.
+  if(dir==='14-spain'&&!readStoredCustomTrackSvg(dir)){
+   const manifest=await fetch('circuits/manifest.json',{cache:'no-cache'}).then(r=>{if(!r.ok)throw Error('Missing circuit manifest');return r.json()});
+   const saved=manifest.circuits?.[dir];if(!saved?.svg)throw Error('Missing saved Madrid SVG');
+   if(saved.json){
+    const json=validateCircuitJson(await fetch('circuits/'+saved.json,{cache:'no-cache'}).then(r=>{if(!r.ok)throw Error('Missing Madrid JSON');return r.json()}));
+    await apexStoreCircuitJsonOverride(spec.dir,json);applyStoredCircuitJsonToSpec(spec,json);
+   }
+   const xml=await fetch('circuits/'+saved.svg,{cache:'no-cache'}).then(r=>{if(!r.ok)throw Error('Missing Madrid SVG');return r.text()});
+   const loaded=await importEditableCircuitSvgText(xml,spec);
+   if(loaded.brakeBoards!==34||!loaded.worldPayload.brakeBoardsAuthoritative)throw Error('Saved Madrid SVG 16 signs not authoritative');
+  }
   const practice=session==='freepractice';
   sessionSettings={diff:1,weather:'CLEAR',noRivals:!traffic};currentSession=practice?'freepractice':'race';
   $('gridPos').value='11';apexSetDriveProfile('assisted',false);
   if(typeof apexRaceSelectPercentage==='function')apexRaceSelectPercentage(100);
   await startRace(spec,practice?999:99,practice?'freepractice':'quick',practice?$('practiceStart'):$('start'));if(!player||!trackData)throw Error('Load failed: '+dir);
   countdown=0;mode='race';paused=false;if(!practice)apexArmRaceGridTiming();apexReleaseInputs();gyro.enabled=false;setAutoDriveMode(1,true);
-  return {version:APP_VERSION,build:APP_BUILD,circuit:dir,session,rivals:rivals.length,startTotal:player.total};
+  return {version:APP_VERSION,build:APP_BUILD,circuit:dir,session,rivals:rivals.length,startTotal:player.total,svgBoards:trackData.customWorld?.brakeBoards?.length||0,svgBoardAuthority:trackData.customWorld?.brakeBoardsAuthoritative===true};
  },
  sample(){return{
   t:raceT,s:player.s,total:player.total,x:player.x,z:player.z,lat:player.lat,speed:player.speed,yaw:player.yawRate,
   steer:player.steer,gas:player.throttle,brake:player.brakeInput,hp:player.hp,damage:{...player.damage},
-  target:player.autoTargetSpeed,reason:player.autoTargetSpeedReason,detail:player.autoTargetSpeedReasonDetail,
+  target:player.autoTargetSpeed,preCommitTarget:player.autoPreCommitTargetSpeed,committedTarget:player.autoCommittedTargetSpeed,exitClearance:player.autoExitClearance,releaseRate:player.autoTargetReleaseRate,reason:player.autoTargetSpeedReason,detail:player.autoTargetSpeedReasonDetail,
   baseTarget:player.autoBaseTrackTargetSpeed,trafficLimit:player.autoTrafficSpeedLimit,phase:player.autoPhase,
   stability:player.autoStabilityRisk,rearRisk:player.autoRearCritical,brakeRelease:player.autoBrakeRelease,
   recovery:player.autoRecovery?{mode:player.autoRecovery.mode,stage:player.autoRecovery.emergencyStage,emergency:player.autoRecovery.emergency}:null,
