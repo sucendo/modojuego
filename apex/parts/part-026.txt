@@ -2945,7 +2945,12 @@ function autoGripTrajectoryEnvelope(s){
    const h0=Math.atan2(p0.tx,p0.tz),h1=Math.atan2(p1.tx,p1.tz);
    rawK=Math.abs(angleDiff(h1,h0))/8;
    const referenceK=Math.abs(driverReferencePathCurvatureAt(ss));
-   abrupt=rawK>Math.max(.024,k*1.48,referenceK*1.48);
+   // During a populated race keep the conservative authored-vertex gate.
+   // A smoothed reference can hide a real wall-side kink, and the cars need
+   // the braking warning even while holding a dedicated passing corridor.
+   // Clean air may instead reject raw vertices absent from the driven path.
+   const populated=typeof rivals!=='undefined'&&rivals&&rivals.length>0;
+   abrupt=rawK>Math.max(.024,k*1.48,...(populated?[]:[referenceK*1.48]));
   }
   if(k<.0008&&!abrupt)continue;
   const e=envProfile(ss),wallish=apexWallishAtS(ss,e),
@@ -3019,7 +3024,11 @@ function autoFarKinkBrakingEnvelope(s){
  if(kink.active&&a>Math.PI*.10){
   const reference=driverReferenceKinkAhead(s,Math.min(230,kink.d+14),5);
   refAngle=reference.active?(reference.angle||0):0;
-  if(refAngle>Math.PI*.055||(a>Math.PI*.34&&Math.abs(driverReferencePathCurvatureAt(s+kink.d))>.008)){
+  // Preserve raw-geometry braking in an authored SVG while racing in a
+  // populated field; it is part of the physical approach and must not
+  // disappear when the traffic lane differs from the solo racing reference.
+  const populatedAuthored=typeof rivals!=='undefined'&&rivals&&rivals.length>0&&!!trackData.detailedSvg;
+  if(populatedAuthored||refAngle>Math.PI*.055||(a>Math.PI*.34&&Math.abs(driverReferencePathCurvatureAt(s+kink.d))>.008)){
    const low=a>Math.PI*.47?7.5:a>Math.PI*.31?10:a>Math.PI*.20?13.5:19;
    const decel=clamp(grip*(wet?4.7:7.2)*teamPerformance(player.teamKey).brake,2.5,8.0);
    target=Math.sqrt(low*low+2*decel*Math.max(0,kink.d-(wet?20:15)));
