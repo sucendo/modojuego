@@ -4220,6 +4220,21 @@ function autoUniversalYawGuard(sp,steer,ff,k,enabled){
 // Slow release of a speed TARGET used to starve exit acceleration even when
 // the car had grip to accelerate. This target slew is derived from tyre grip,
 // curvature and risk; braking limits and physical acceleration remain intact.
+// Phase 2B: stopping-distance envelope for a sharp authored vertex.
+// Preserve the conservative apex cap but avoid an arbitrary early speed ramp.
+function autoUniversalKinkApproachTarget(angle,d,grip,wet,brakePerformance=1){
+ const extreme=angle>Math.PI*.47,hard=angle>Math.PI*.31;
+ const apex=extreme?7.2:(hard?9.8:12.0);
+ const decel=clamp(grip*(wet?3.8:5.8)*brakePerformance,2.3,6.3);
+ return Math.sqrt(apex*apex+2*decel*Math.max(0,d-(wet?13:9)));
+}
+// Never release the timed post-kink speed ceiling unless the physical car
+// has finished rotating, the rear axle is settled and no fresh kink is near.
+function autoUniversalKinkExitSettled(err,yaw,slip,rearUse,risk,edgeRisk,nearKink){
+ return !nearKink&&Number.isFinite(err)&&Math.abs(err)<.10&&
+   Math.abs(yaw)<.28&&Math.abs(slip)<.040&&rearUse<.86&&
+   risk<.26&&edgeRisk<.16;
+}
 function autoUniversalTargetReleaseRate(brakeComplex,curvePressure,risk,grip,wet,exitClearance=0){
  if(!brakeComplex)return wet?7.0:11.0;
  const bend=clamp(curvePressure/.008,0,1),confidence=1-clamp(risk,0,1);
@@ -4294,7 +4309,7 @@ function demoDriverControl(){
  const kinkCommitActive=Number.isFinite(player.autoKinkCommitUntil)&&raceT<player.autoKinkCommitUntil&&Number.isFinite(player.autoKinkCommitHeading);
  player.autoKinkCommitActive=!!kinkCommitActive;
  player.autoKinkCommitRemaining=kinkCommitActive?Math.max(0,player.autoKinkCommitUntil-raceT):0;
- player.autoKinkCommitBlend=0;
+ player.autoKinkCommitBlend=0;player.autoKinkExitReopen=false;
  player.autoLaneSwingGuard=false;
  player.autoLaneSwingLimit=null;
 
@@ -4543,9 +4558,9 @@ function demoDriverControl(){
  if(geometryKink.active&&kinkMedium&&geometryKink.d<kinkApproachD){
    // Política por severidad. El nodo de 101° del circuito importado necesita llegar mucho más lento
    // que la primera chicane de 72°, mientras que uno de ~46° sólo requiere reserva.
-   const apex=kinkExtreme?7.2:(kinkHard?9.8:12.0); // 26 / 35 / 43 km/h
-   const gain=kinkExtreme?.17:(kinkHard?.19:.20);
-   const approach=apex+clamp((geometryKink.d-3)*gain,0,kinkExtreme?16:(kinkHard?14:12));
+   const approach=autoUniversalKinkApproachTarget(kinkAngle,geometryKink.d,
+     clamp(apexTyreGripScale(player),.25,1.06),apexWeatherIsWet(),
+     teamPerformance(player.teamKey).brake);
    const beforeKink=target;
    target=Math.min(target,approach);
    if(target<beforeKink-.02){
@@ -4557,8 +4572,16 @@ function demoDriverControl(){
  if(kinkCommitActive){
    const a=player.autoKinkCommitAngle||0;
    const exitCap=a>Math.PI*.47?9.0:(a>Math.PI*.31?12.2:15.0); // 32 / 44 / 54 km/h
+   const aligned=autoUniversalKinkExitSettled(
+     angleDiff(player.autoKinkCommitHeading,player.heading),player.yawRate||0,
+     player.slipAngle||0,player.rearUse||0,player.autoStabilityRisk||0,
+     edgeRisk,geometryKink.active&&geometryKink.d<26);
+   const reopen=soloSession&&!offTrack&&!raceTraffic.active&&aligned;
+   player.autoKinkExitReopen=reopen;
+   // All tyre, curvature and wall limits remain in target. This only prevents
+   // a now-obsolete time-held vertex cap from ordering another hard brake.
    const beforeCommit=target;
-   target=Math.min(target,exitCap);
+   target=Math.min(target,reopen?Math.max(exitCap,sp+3.5):exitCap);
    if(target<beforeCommit-.02){
      targetReason="KINK_COMMIT";
      targetReasonDetail="EXIT_TANGENT";
