@@ -4149,7 +4149,18 @@ function webglPushExactWallFences(cam,pitch){
   const x=halfW+f*v.x/v.z,y=horizon+f*(eyeH-v.y)/v.z;
   return v.fenceScreen=Number.isFinite(x)&&Number.isFinite(y)?[x,y]:null;
  };
- const line=(a,b,w,col,bias=-.055)=>{const pa=proj(a),pb=proj(b);if(!pa||!pb)return false;const z=Math.max(.59,Math.min(a.z,b.z)+bias);webglPushScreenLineDepth(pa,pb,w,col,z);return true};
+ // The rotated viewport fits inside this conservative rectangle in
+ // unrotated screen space. Leave room for the full width of each stroke.
+ const halfH=H*.5,cs=Math.abs(Math.cos(webglScreenRoll)),sn=Math.abs(Math.sin(webglScreenRoll)),
+       viewX=halfW*cs+halfH*sn,viewY=halfW*sn+halfH*cs;
+ const line=(a,b,w,col,bias=-.055)=>{
+  const pa=proj(a),pb=proj(b);if(!pa||!pb)return false;
+  const pad=w*.5;
+  if(Math.max(pa[0],pb[0])<halfW-viewX-pad||Math.min(pa[0],pb[0])>halfW+viewX+pad||
+     Math.max(pa[1],pb[1])<halfH-viewY-pad||Math.min(pa[1],pb[1])>halfH+viewY+pad)return false;
+  const z=Math.max(.59,Math.min(a.z,b.z)+bias);
+  webglPushScreenLineDepth(pa,pb,w,col,z);return true;
+ };
  for(const sg of visible){
   if(!sg)continue;
   // Rechazo conservador barato ANTES de calcular perfiles y tirantes.
@@ -4360,19 +4371,19 @@ function webglPushCircuitLandmarks(cam,pitch){
      // v5.230.32 · Misma regla en WebGL: huella SVG exacta + graderío por bandas.
      if(Array.isArray(it.worldFootprint)&&it.worldFootprint.length>=3){
        const prof=apexGrandstandStyleProfile(it),fp=it.worldFootprint,h=Math.max(3,Number(it.height)||14),col=it.color||prof.base||'#667078',gb=apexGrandstandRenderBudget(lod,dsLm),rows=gb.tier===2?Math.min(10,Math.max(8,prof.rows)):(gb.tier===1?Math.min(6,Math.max(5,Math.round(prof.rows*.62))):3),side=it.side||1,att=apexGrandstandAttendanceProfile(),frame=apexGrandstandFrameStats(it);it._grandstandFrontEdge=it._grandstandFrontEdge||apexGrandstandFrontEdge(it);
-       const bp=fp.map(v=>worldToCamera(v[0],apexWorldGroundY(v[0],v[1])+.02,v[1],cam)),bt=fp.map(v=>worldToCamera(v[0],apexWorldGroundY(v[0],v[1])+h*.18,v[1],cam));
+       const bp=apexGrandstandGroundCam(fp,.02,cam),bt=apexGrandstandGroundCam(fp,h*.18,cam);
        webglPushCamPoly(bp,pitch,shadeColor(col,-30),.60,-.004);
        for(let j=0;j<fp.length;j++){const k=(j+1)%fp.length;webglPushCamQuad(bp[j],bp[k],bt[k],bt[j],pitch,j&1?shadeColor(col,-24):shadeColor(col,-19),.60,-.005);}
        for(let ri=0;ri<rows;ri++){
          const t0=ri/rows,t1=(ri+1)/rows,band=apexGrandstandBand(fp,a,side,t0,t1,it);if(band.length<3)continue;
-         const yTop=h*(.20+.60*t1),yLow=h*(.20+.60*t0),top=band.map(v=>worldToCamera(v[0],apexWorldGroundY(v[0],v[1])+yTop,v[1],cam)),low=band.map(v=>worldToCamera(v[0],apexWorldGroundY(v[0],v[1])+yLow,v[1],cam));
+         const yTop=h*(.20+.60*t1),yLow=h*(.20+.60*t0),top=apexGrandstandGroundCam(band,yTop,cam),low=apexGrandstandGroundCam(band,yLow,cam);
          const seatBase=ri%3===0?(prof.seatAlt||shadeColor(col,5)):(ri%3===1?(prof.seatAlt2||shadeColor(col,12)):(prof.seat||col));
          webglPushCamPoly(top,pitch,seatBase,.60,-.008);
          if(lod<=1)for(let j=0;j<band.length;j++){const k=(j+1)%band.length;webglPushCamQuad(low[j],low[k],top[k],top[j],pitch,(ri&1)?shadeColor(col,-16):shadeColor(col,-11),.60,-.009);}
        }
        const frontBand=apexGrandstandBand(fp,a,side,.04,.16,it),backBand=apexGrandstandBand(fp,a,side,.84,1,it);
-       if(frontBand.length>=2){const fy0=frontBand.map(v=>worldToCamera(v[0],apexWorldGroundY(v[0],v[1])+.05,v[1],cam)),fy1=frontBand.map(v=>worldToCamera(v[0],apexWorldGroundY(v[0],v[1])+h*.23,v[1],cam));for(let j=0;j<frontBand.length;j++){const k=(j+1)%frontBand.length;webglPushCamQuad(fy0[j],fy0[k],fy1[k],fy1[j],pitch,prof.front||shadeColor(col,-26),.60,-.010);}}
-       if(backBand.length>=2){const by0=backBand.map(v=>worldToCamera(v[0],apexWorldGroundY(v[0],v[1])+.03,v[1],cam)),by1=backBand.map(v=>worldToCamera(v[0],apexWorldGroundY(v[0],v[1])+h*.84,v[1],cam));for(let j=0;j<backBand.length;j++){const k=(j+1)%backBand.length;webglPushCamQuad(by0[j],by0[k],by1[k],by1[j],pitch,j&1?shadeColor(col,-22):shadeColor(col,-18),.60,-.010);}if(lod<=1){const rail=backBand.map(v=>worldToCamera(v[0],apexWorldGroundY(v[0],v[1])+h*.89,v[1],cam));for(let j=1;j<rail.length;j++){const A=rail[j-1],B=rail[j];webglPushCamQuad(camMix(A,B,.01),camMix(A,B,.03),camMix(A,B,.99),camMix(A,B,.97),pitch,prof.rail,.60,-.012);}}}
+       if(frontBand.length>=2){const fy0=apexGrandstandGroundCam(frontBand,.05,cam),fy1=apexGrandstandGroundCam(frontBand,h*.23,cam);for(let j=0;j<frontBand.length;j++){const k=(j+1)%frontBand.length;webglPushCamQuad(fy0[j],fy0[k],fy1[k],fy1[j],pitch,prof.front||shadeColor(col,-26),.60,-.010);}}
+       if(backBand.length>=2){const by0=apexGrandstandGroundCam(backBand,.03,cam),by1=apexGrandstandGroundCam(backBand,h*.84,cam);for(let j=0;j<backBand.length;j++){const k=(j+1)%backBand.length;webglPushCamQuad(by0[j],by0[k],by1[k],by1[j],pitch,j&1?shadeColor(col,-22):shadeColor(col,-18),.60,-.010);}if(lod<=1){const rail=apexGrandstandGroundCam(backBand,h*.89,cam);for(let j=1;j<rail.length;j++){const A=rail[j-1],B=rail[j];webglPushCamQuad(camMix(A,B,.01),camMix(A,B,.03),camMix(A,B,.99),camMix(A,B,.97),pitch,prof.rail,.60,-.012);}}}
        if(frame){
          const dep=frame.depth,span=frame.span,segs=gb.crowdCols;
          if(gb.crowdRows>0&&segs>0&&att.crowd){const crowdRows=Math.min(rows,gb.crowdRows),rowStep=Math.max(1,Math.floor(rows/crowdRows)),personH=Math.max(.72,Math.min(1.28,gb.crowdHeight||1.0));for(let ri=0;ri<rows;ri+=rowStep){
