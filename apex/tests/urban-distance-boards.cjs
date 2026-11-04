@@ -9,6 +9,18 @@ for(const mark of [200,150,100,50]){const faces=c.apexUrbanBoardPaint(mark);asse
  assert.ok(Math.max(...xs)-Math.min(...xs)>.38,'Digits must extend horizontally, not stack vertically');
  const signs=faces.filter(f=>f.color==='#101519');
  assert.ok(signs.length>=8&&signs.every(f=>f.points.every(([x,y])=>x>=0&&x<=1&&y>=0&&y<=1)));}
+for(const mark of [50,100,150,200]){
+ const faces=c.apexUrbanBoardPaint(mark,true),is100=mark===100;
+ assert.equal(faces[1].color,is100?'#288c86':'#fafbf8');
+ assert.equal(c.apexUrbanBoardPaint(mark)[1].color,'#fafbf8');
+ const digits=faces.filter(f=>f.color===(is100?'#f8ffff':'#101519')).flatMap(f=>f.points);
+ assert.ok(digits.every(([u,v])=>u>=.20&&u<=.80&&v>=0&&v<=1));
+ assert.ok(Math.max(...digits.map(p=>p[1]))-Math.min(...digits.map(p=>p[1]))>.65);
+ assert.equal(c.apexUrbanBoardPaint(mark,true),faces);
+}
+c.trackData={...c.trackData,spec:{dir:'14-spain'},_distanceBoardMounts:undefined};
+const madrid=c.apexUrbanBoardMount(board);
+assert.ok(madrid.portrait&&madrid.height>madrid.width*2);
 c.trackData={spec:{dir:'park'},km:5};c.circuitEnvironmentProfile=()=>({family:'PARK',urban:0});assert.equal(c.apexUrbanBoardMount(board),null);
 c.trackData={spec:{dir:'urban'},km:5};c.circuitEnvironmentProfile=()=>({family:'URBAN'});assert.equal(c.apexUrbanBoardMount(board),null,'No invented fence');
 c.trackData._distanceBoardMounts.clear();c.wallGeometryAtS=()=>({enabled:true,top:{x:12,y:1.1,z:100},barrier:{fence:true,fenceH:2.35}});assert.equal(c.apexUrbanBoardMount(board).source,'RIBBON_FENCE');
