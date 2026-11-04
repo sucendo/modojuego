@@ -2654,6 +2654,18 @@ function apexGrandstandBand(fp,anchor,side,t0,t1,it=null){
  if(cache){if(cache.size>=192)cache.clear();cache.set(key,out);apexSceneryStaticCacheStats.bandMisses++}
  return out;
 }
+// Clip an aisle into the existing row, so it follows irregular SVG stands.
+const apexMadridAisleBands=new WeakMap();
+function apexMadridGrandstandAisle(band,frame){
+ let aisle=apexMadridAisleBands.get(band);
+ if(aisle)return aisle;
+ const e=frame.edge,along=p=>(p[0]-e.a[0])*e.tx+(p[1]-e.a[1])*e.tz;
+ const mid=frame.span*.5,halfWidth=Math.min(1.05,frame.span*.05);
+ aisle=apexClipWorldPolygonScalar(band,along,mid-halfWidth,true);
+ aisle=apexClipWorldPolygonScalar(aisle,along,mid+halfWidth,false);
+ apexMadridAisleBands.set(band,aisle);
+ return aisle;
+}
 const apexGrandstandGroundHeights=new WeakMap();
 function apexGrandstandGroundCam(polygon,offset,cam){
  const groundOwner=trackData?.customWorld?._apexGroundStamp;
@@ -2668,6 +2680,11 @@ function apexGrandstandStyleProfile(it){
  const s=String(it&&(it.grandstandStyle||it.apexStyle||it.style)||'grandstand_open').toLowerCase();
  const seatBase=it&&it.seatColor?it.seatColor:'#6e7982';
  const base={style:s,base:'#4e5760',baseDark:'#3c444b',side:'#59626a',seat:seatBase,seatAlt:shadeColor(seatBase,8),seatAlt2:shadeColor(seatBase,15),rail:'rgba(231,237,241,.72)',roof:'#d4dbe0',roofDark:'#b3bcc3',support:'#9da7ae',front:'#343b42',covered:false,rows:Math.max(4,Math.round(Number(it&&it.seatRows)||9))};
+ if(trackData?.spec?.dir==='14-spain'){
+  return {...base,madrid:true,covered:s==='grandstand_covered'||s==='grandstand_arena',
+    base:'#68717a',side:'#515d66',seat:'#24333e',seatAlt:'#344652',seatAlt2:'#2c3c48',
+    front:'#535f68',support:'#aab5bd',rail:'#b5c2cb',step:'#dac67f'};
+ }
  if(s==='grandstand_covered')return {...base,covered:true,roof:'#dbe1e6',roofDark:'#bcc5cc',rows:Math.max(base.rows,10)};
  if(s==='grandstand_arena')return {...base,covered:true,base:'#59636b',side:'#636d76',seat:'#808b95',seatAlt:'#8e99a3',seatAlt2:'#9ba7b0',rows:Math.max(base.rows,12)};
  if(s==='grandstand_compact')return {...base,base:'#56616a',side:'#606a73',rows:Math.min(base.rows,7)};
@@ -2681,14 +2698,20 @@ function apexGrandstandAttendanceProfile(){
  if(s==='freepractice')return{fill:0,crowd:false,label:'empty'};
  return{fill:.82,crowd:true,label:'mixed'};
 }
-function apexGrandstandSeatVisual(prof,ri,rows,ci=0){
- const empty=ri%3===0?(prof.seatAlt||prof.seat):ri%3===1?(prof.seatAlt2||prof.seatAlt||prof.seat):(prof.seat||prof.base),att=apexGrandstandAttendanceProfile();
+const apexMadridCrowdShirts=['#28313a','#e5e1d6','#932c36','#3d5970','#e9e5dd','#353b42','#d1803a','#64786d','#d9d1c5','#34334b','#446780','#c6ae80','#ad4740','#363a43'];
+const apexMadridCrowdHeads=['#b9805b','#dfb491','#6d4838','#b99b7c','#322b28'];
+function apexGrandstandSeatVisual(prof,ri,rows,ci=0,att=apexGrandstandAttendanceProfile()){
+ const empty=ri%3===0?(prof.seatAlt||prof.seat):ri%3===1?(prof.seatAlt2||prof.seatAlt||prof.seat):(prof.seat||prof.base);
  if(!att.crowd||att.fill<=.01)return{top:empty,alt:shadeColor(empty,8),occupied:false,empty};
  const occRows=rows*att.fill,whole=Math.floor(occRows),frac=occRows-whole,slot=rows-1-ri;
  let occupied=slot<whole;
  if(!occupied&&slot===whole&&frac>.05){const density=Math.max(1,Math.round(frac*14));occupied=((ri*5+rows*3+ci)%14)<density;}
  if(att.fill<.99&&occupied&&((ri*7+rows+ci*3)%19)>10)occupied=false;
  if(!occupied)return{top:shadeColor(empty,-6),alt:shadeColor(empty,4),occupied:false,empty};
+ if(prof.madrid){
+  const index=(ri*13+ci*7+ri*ci*3)%apexMadridCrowdShirts.length;
+  return {top:apexMadridCrowdShirts[index],alt:apexMadridCrowdHeads[(ri*3+ci*7)%apexMadridCrowdHeads.length],occupied:true,empty};
+ }
  const palette=['#d64045','#f0c64c','#4d7bdf','#58b56d','#f08b37','#8e64d6','#eef2f7','#c15e94','#43b8c7','#ffffff','#b72d2d','#2f7c49','#1d1d1d','#757575'];
  const idx=(ri*5+rows*3+ci*7)%palette.length;
  return{top:palette[idx],alt:palette[(idx+4)%palette.length],occupied:true,empty};
@@ -3143,30 +3166,38 @@ function drawWorldLandmarks(cam,pitch){
      // v5.230.32 · Tribuna SVG: la huella dibujada manda y el interior vuelve a tener
      // graderío escalonado real. La altura es el único parámetro vertical necesario.
      if(Array.isArray(it.worldFootprint)&&it.worldFootprint.length>=3){
-       const prof=apexGrandstandStyleProfile(it),fp=it.worldFootprint,h=Math.max(3,Number(it.height)||14),col=it.color||prof.base||"#667078",gb=apexGrandstandRenderBudget(detailAlpha>.60?0:(detailAlpha>.22?1:2),Math.abs(wrapDeltaS((it.anchor&&it.anchor.s)||0,player.s,trackData.km*1000))),rows=gb.tier===2?Math.min(10,Math.max(8,prof.rows)):(gb.tier===1?Math.min(6,Math.max(5,Math.round(prof.rows*.62))):3),side=it.side||1,att=apexGrandstandAttendanceProfile(),frame=apexGrandstandFrameStats(it);it._grandstandFrontEdge=it._grandstandFrontEdge||apexGrandstandFrontEdge(it);
-       const baseLow3=fp.map(v=>worldToCamera(v[0],apexWorldGroundY(v[0],v[1])+.02,v[1],cam)),baseTop3=fp.map(v=>worldToCamera(v[0],apexWorldGroundY(v[0],v[1])+h*.18,v[1],cam));
+       const prof=apexGrandstandStyleProfile(it),fp=it.worldFootprint,h=Math.max(3,Number(it.height)||14),col=prof.madrid?prof.base:it.color||prof.base||"#667078",gb=apexGrandstandRenderBudget(detailAlpha>.60?0:(detailAlpha>.22?1:2),Math.abs(wrapDeltaS((it.anchor&&it.anchor.s)||0,player.s,trackData.km*1000))),rows=gb.tier===2?Math.min(10,Math.max(8,prof.rows)):(gb.tier===1?Math.min(6,Math.max(5,Math.round(prof.rows*.62))):3),side=it.side||1,att=apexGrandstandAttendanceProfile(),frame=apexGrandstandFrameStats(it);it._grandstandFrontEdge=it._grandstandFrontEdge||apexGrandstandFrontEdge(it);
+       const baseLow3=apexGrandstandGroundCam(fp,.02,cam),baseTop3=apexGrandstandGroundCam(fp,h*.18,cam);
        polyCam(baseLow3,shadeColor(col,-30),null,1,1);
        for(let j=0;j<fp.length;j++){const k=(j+1)%fp.length;polyCam([baseLow3[j],baseLow3[k],baseTop3[k],baseTop3[j]],j&1?shadeColor(col,-24):shadeColor(col,-19),null,1,1);}
        for(let ri=0;ri<rows;ri++){
          const t0=ri/rows,t1=(ri+1)/rows,band=apexGrandstandBand(fp,a,side,t0,t1,it);if(band.length<3)continue;
-         const yTop=h*(.20+.60*t1),yLow=h*(.20+.60*t0),top3=band.map(v=>worldToCamera(v[0],apexWorldGroundY(v[0],v[1])+yTop,v[1],cam)),low3=band.map(v=>worldToCamera(v[0],apexWorldGroundY(v[0],v[1])+yLow,v[1],cam));
+         const yTop=h*(.20+.60*t1),yLow=h*(.20+.60*t0),top3=apexGrandstandGroundCam(band,yTop,cam),low3=apexGrandstandGroundCam(band,yLow,cam);
          const seatBase=ri%3===0?(prof.seatAlt||shadeColor(col,5)):(ri%3===1?(prof.seatAlt2||shadeColor(col,12)):(prof.seat||col));
          polyCam(top3,seatBase,"rgba(255,255,255,.04)",1,1);
+         if(prof.madrid&&frame&&gb.tier>=1){
+          const aisle=apexMadridGrandstandAisle(band,frame);
+          if(aisle.length>=3)polyCam(apexGrandstandGroundCam(aisle,yTop+.025,cam),'#9da7af',null,1,1);
+         }
          for(let j=0;j<band.length;j++){const k=(j+1)%band.length;polyCam([low3[j],low3[k],top3[k],top3[j]],(ri&1)?shadeColor(col,-16):shadeColor(col,-11),null,1,.98);}
        }
        const frontBand=apexGrandstandBand(fp,a,side,.04,.16,it),backBand=apexGrandstandBand(fp,a,side,.84,1,it);
-       if(frontBand.length>=2){const fy0=frontBand.map(v=>worldToCamera(v[0],apexWorldGroundY(v[0],v[1])+.05,v[1],cam)),fy1=frontBand.map(v=>worldToCamera(v[0],apexWorldGroundY(v[0],v[1])+h*.23,v[1],cam));for(let j=0;j<frontBand.length;j++){const k=(j+1)%frontBand.length;polyCam([fy0[j],fy0[k],fy1[k],fy1[j]],prof.front||shadeColor(col,-26),null,1,.98);}}
-       if(backBand.length>=2){const by0=backBand.map(v=>worldToCamera(v[0],apexWorldGroundY(v[0],v[1])+.03,v[1],cam)),by1=backBand.map(v=>worldToCamera(v[0],apexWorldGroundY(v[0],v[1])+h*.84,v[1],cam));for(let j=0;j<backBand.length;j++){const k=(j+1)%backBand.length;polyCam([by0[j],by0[k],by1[k],by1[j]],j&1?shadeColor(col,-22):shadeColor(col,-18),null,1,.98);}if(detailAlpha>.12){const rail3=backBand.map(v=>worldToCamera(v[0],apexWorldGroundY(v[0],v[1])+h*.89,v[1],cam));for(let j=1;j<rail3.length;j++)lineCam(rail3[j-1],rail3[j],prof.rail,Math.max(1,1.0*s),1);}}
+       if(frontBand.length>=2){const fy0=apexGrandstandGroundCam(frontBand,.05,cam),fy1=apexGrandstandGroundCam(frontBand,h*.23,cam);for(let j=0;j<frontBand.length;j++){const k=(j+1)%frontBand.length;polyCam([fy0[j],fy0[k],fy1[k],fy1[j]],prof.front||shadeColor(col,-26),null,1,.98);}}
+       if(backBand.length>=2){const by0=apexGrandstandGroundCam(backBand,.03,cam),by1=apexGrandstandGroundCam(backBand,h*.84,cam);for(let j=0;j<backBand.length;j++){const k=(j+1)%backBand.length;polyCam([by0[j],by0[k],by1[k],by1[j]],j&1?shadeColor(col,-22):shadeColor(col,-18),null,1,.98);}if(detailAlpha>.12){const rail3=apexGrandstandGroundCam(backBand,h*.89,cam);for(let j=1;j<rail3.length;j++)lineCam(rail3[j-1],rail3[j],prof.rail,Math.max(1,1.0*s),1);}}
        if(frame){
          const dep=frame.depth,span=frame.span,segs=gb.crowdCols;
-         if(gb.crowdRows>0&&segs>0&&att.crowd){const crowdRows=Math.min(rows,gb.crowdRows),rowStep=Math.max(1,Math.floor(rows/crowdRows)),personH=Math.max(.72,Math.min(1.28,gb.crowdHeight||1.0));for(let ri=0;ri<rows;ri+=rowStep){
+         if(gb.crowdRows>0&&segs>0&&(att.crowd||(prof.madrid&&gb.tier===2))){const crowdRows=Math.min(rows,gb.crowdRows),rowStep=Math.max(1,Math.floor(rows/crowdRows)),personH=Math.max(.72,Math.min(1.28,gb.crowdHeight||1.0));for(let ri=0;ri<rows;ri+=rowStep){
            const rowDepth=dep*(.24+.56*(Math.min(rows,ri+rowStep)/rows)),ySeat=h*(.20+.58*(Math.min(rows,ri+rowStep)/rows));
            for(let ci=0;ci<segs;ci++){
-             const crowd=apexGrandstandSeatVisual(prof,ri,rows,ci); if(!crowd.occupied) continue;
+             if(prof.madrid&&gb.tier>=1&&ci===Math.floor(segs*.5))continue;
+             const crowd=apexGrandstandSeatVisual(prof,ri,rows,ci,att);
+             const emptySeat=prof.madrid&&!crowd.occupied&&gb.tier===2;
+             if(!crowd.occupied&&!emptySeat)continue;
+             const backHeight=emptySeat ? .40 : personH;
              const pad=.10,u0=ci/segs+pad/segs,u1=(ci+1)/segs-pad/segs;
-             const p0=apexGrandstandWorldCam(frame,u0,rowDepth,ySeat,cam),p1=apexGrandstandWorldCam(frame,u1,rowDepth,ySeat,cam),p2=apexGrandstandWorldCam(frame,u1,rowDepth,ySeat+personH,cam),p3=apexGrandstandWorldCam(frame,u0,rowDepth,ySeat+personH,cam);
+             const p0=apexGrandstandWorldCam(frame,u0,rowDepth,ySeat,cam),p1=apexGrandstandWorldCam(frame,u1,rowDepth,ySeat,cam),p2=apexGrandstandWorldCam(frame,u1,rowDepth,ySeat+backHeight,cam),p3=apexGrandstandWorldCam(frame,u0,rowDepth,ySeat+backHeight,cam);
              polyCam([p0,p1,p2,p3],crowd.top,'rgba(255,255,255,.10)',1,.995);
-             if(gb.tier===2&&detailAlpha>.32){const head0=apexGrandstandWorldCam(frame,u0+.015,rowDepth-.02,ySeat+personH*.82,cam),head1=apexGrandstandWorldCam(frame,u1-.015,rowDepth-.02,ySeat+personH*.82,cam),head2=apexGrandstandWorldCam(frame,u1-.015,rowDepth-.02,ySeat+personH*1.08,cam),head3=apexGrandstandWorldCam(frame,u0+.015,rowDepth-.02,ySeat+personH*1.08,cam);polyCam([head0,head1,head2,head3],crowd.alt||crowd.top,null,1,.996);}
+             if(crowd.occupied&&gb.tier===2&&detailAlpha>.32){const head0=apexGrandstandWorldCam(frame,u0+.015,rowDepth-.02,ySeat+personH*.82,cam),head1=apexGrandstandWorldCam(frame,u1-.015,rowDepth-.02,ySeat+personH*.82,cam),head2=apexGrandstandWorldCam(frame,u1-.015,rowDepth-.02,ySeat+personH*1.08,cam),head3=apexGrandstandWorldCam(frame,u0+.015,rowDepth-.02,ySeat+personH*1.08,cam);polyCam([head0,head1,head2,head3],crowd.alt||crowd.top,null,1,.996);}
            }
          }}
          const leftWall=[apexGrandstandWorldCam(frame,.02,dep*.12,h*.08,cam),apexGrandstandWorldCam(frame,.10,dep*.12,h*.08,cam),apexGrandstandWorldCam(frame,.10,dep*.88,h*.78,cam),apexGrandstandWorldCam(frame,.02,dep*.88,h*.78,cam)],rightWall=[apexGrandstandWorldCam(frame,.90,dep*.12,h*.08,cam),apexGrandstandWorldCam(frame,.98,dep*.12,h*.08,cam),apexGrandstandWorldCam(frame,.98,dep*.88,h*.78,cam),apexGrandstandWorldCam(frame,.90,dep*.88,h*.78,cam)];
@@ -3174,7 +3205,7 @@ function drawWorldLandmarks(cam,pitch){
          if(gb.tier>=1){for(let st=0;st<(gb.tier===2?7:4);st++){const d0=dep*(.14+.09*st),d1=dep*(.19+.09*st),y0=h*(.10+.085*st),y1=h*(.145+.085*st);const l0=apexGrandstandWorldCam(frame,.03,d0,y0,cam),l1=apexGrandstandWorldCam(frame,.09,d0,y0,cam),l2=apexGrandstandWorldCam(frame,.09,d1,y1,cam),l3=apexGrandstandWorldCam(frame,.03,d1,y1,cam),r0=apexGrandstandWorldCam(frame,.91,d0,y0,cam),r1=apexGrandstandWorldCam(frame,.97,d0,y0,cam),r2=apexGrandstandWorldCam(frame,.97,d1,y1,cam),r3=apexGrandstandWorldCam(frame,.91,d1,y1,cam);polyCam([l0,l1,l2,l3],shadeColor(col,10),null,1,.96);polyCam([r0,r1,r2,r3],shadeColor(col,10),null,1,.96);}}
          const diagUs=gb.braces?(gb.tier===2?(span>30?[.12,.28,.44,.60,.76,.90]:(span>18?[.18,.40,.62,.84]:[.3,.7])):(span>24?[.22,.50,.78]:[.35,.65])):[];
          for(const uu of diagUs){const p0=apexGrandstandWorldCam(frame,uu,dep*.88,h*.08,cam),p1=apexGrandstandWorldCam(frame,uu+.03,dep*.88,h*.08,cam),p2=apexGrandstandWorldCam(frame,uu+.015,dep*.98,h*.84,cam),p3=apexGrandstandWorldCam(frame,uu-.015,dep*.98,h*.84,cam);polyCam([p0,p1,p2,p3],prof.support||'#9da7ae',null,1,.96);}
-         if(gb.stairs){const stairCols=span>22?[.05,.92]:[.05,.90];for(const uu of stairCols){for(let st=0;st<6;st++){const d0=dep*(.18+.085*st),d1=dep*(.25+.085*st),y0=h*(.11+.085*st),y1=h*(.15+.085*st),w=uu<.5?[uu,uu+.05]:[uu-.05,uu];const a0=apexGrandstandWorldCam(frame,w[0],d0,y0,cam),a1=apexGrandstandWorldCam(frame,w[1],d0,y0,cam),a2=apexGrandstandWorldCam(frame,w[1],d1,y1,cam),a3=apexGrandstandWorldCam(frame,w[0],d1,y1,cam);polyCam([a0,a1,a2,a3],'#c9cdd1',null,1,.99);}}
+         if(gb.stairs){const stairCols=span>22?[.05,.92]:[.05,.90];for(const uu of stairCols){for(let st=0;st<6;st++){const d0=dep*(.18+.085*st),d1=dep*(.25+.085*st),y0=h*(.11+.085*st),y1=h*(.15+.085*st),w=uu<.5?[uu,uu+.05]:[uu-.05,uu];const a0=apexGrandstandWorldCam(frame,w[0],d0,y0,cam),a1=apexGrandstandWorldCam(frame,w[1],d0,y0,cam),a2=apexGrandstandWorldCam(frame,w[1],d1,y1,cam),a3=apexGrandstandWorldCam(frame,w[0],d1,y1,cam);polyCam([a0,a1,a2,a3],prof.step||'#c9cdd1',null,1,.99);}}
            }
          const hasVip=(prof.covered||span>36);
          if(hasVip&&gb.vip){const u0=.34,u1=.66,d0=dep*.54,d1=dep*.88,y0=h*.48,y1=h*.74;const q0=apexGrandstandWorldCam(frame,u0,d0,y0,cam),q1=apexGrandstandWorldCam(frame,u1,d0,y0,cam),q2=apexGrandstandWorldCam(frame,u1,d0,y1,cam),q3=apexGrandstandWorldCam(frame,u0,d0,y1,cam),q4=apexGrandstandWorldCam(frame,u0,d1,y0,cam),q5=apexGrandstandWorldCam(frame,u1,d1,y0,cam),q6=apexGrandstandWorldCam(frame,u1,d1,y1,cam),q7=apexGrandstandWorldCam(frame,u0,d1,y1,cam);polyCam([q0,q1,q2,q3],'#7da4b7',null,1,.97);polyCam([q3,q2,q6,q7],'#5f6870',null,1,.96);polyCam([q7,q6,q5,q4],'#dfe5e8',null,1,.96);}

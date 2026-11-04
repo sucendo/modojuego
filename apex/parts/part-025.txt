@@ -1506,10 +1506,9 @@ function apexUrbanBoardMount(board){
   trackData._urbanDistanceBoards=override==='FENCE'||(override!=='POSTS'&&(streetIds.includes(id)||(!/^\d{2}-/.test(id)&&['URBAN','NIGHT'].includes(profile.family))));
  }
  if(!trackData._urbanDistanceBoards)return null;
- // Real track-distance panels are LANDSCAPE boards: their numbers run across
- // the plate. One narrow side touches the catch fence; the other side points
- // inward, perpendicular to the barrier, toward the asphalt.
- const boardWidth=1.20,boardHeight=.82,edgeClearance=.01;
+ // Madrid's fence panels stack the digits on a narrow plate.
+ const portrait=trackData.spec.dir==='14-spain',
+       boardWidth=portrait ? .50 : 1.20,boardHeight=portrait?1.45:.82,edgeClearance=.01;
  const cache=trackData._distanceBoardMounts||(trackData._distanceBoardMounts=new Map()),key=[board.s,board.side,board.authoredLat].join(':');
  if(cache.has(key))return cache.get(key);
  const q=renderRibbonFrameAt(board.s),env=envProfile(board.s),side=board.side||1,on=Math.hypot(q.ox,q.oz)||1,ix=-side*q.ox/on,iz=-side*q.oz/on,
@@ -1527,28 +1526,32 @@ function apexUrbanBoardMount(board){
   const fnx=-dz/len,fnz=dx/len,ns=fnx*ix+fnz*iz<0?-1:1,inX=fnx*ns,inZ=fnz*ns;
   mount={x:x+inX*(boardWidth*.5+edgeClearance),z:z+inZ*(boardWidth*.5+edgeClearance),
    bottom:ground+wallH+Math.min(.55,Math.max(.24,(fh-boardHeight)*.45)),
-   height:boardHeight,width:boardWidth,tx:dx/len,tz:dz/len,ix:inX,iz:inZ,source:'SVG_FENCE'};
+   height:boardHeight,width:boardWidth,portrait,tx:dx/len,tz:dz/len,ix:inX,iz:inZ,source:'SVG_FENCE'};
  }
  if(!mount){const wg=wallGeometryAtS(board.s,side);if(wg.enabled&&wg.barrier.fence!==false){
   const fh=Math.max(2.05,+wg.barrier.fenceH||2.35);
   mount={x:wg.top.x+ix*(boardWidth*.5+edgeClearance),z:wg.top.z+iz*(boardWidth*.5+edgeClearance),
    bottom:wg.top.y+Math.min(.55,Math.max(.24,(fh-boardHeight)*.45)),
-   height:boardHeight,width:boardWidth,tx:q.tx,tz:q.tz,ix,iz,source:'RIBBON_FENCE'};
+   height:boardHeight,width:boardWidth,portrait,tx:q.tx,tz:q.tz,ix,iz,source:'RIBBON_FENCE'};
  }}
  // No invented hanging sign where the authored SVG has no fence.
  cache.set(key,mount);return mount;
 }
-function apexUrbanBoardPaint(mark){
- const key=String(mark),cache=apexUrbanBoardPaint.cache||(apexUrbanBoardPaint.cache=new Map());if(cache.has(key))return cache.get(key);
+function apexUrbanBoardPaint(mark,portrait=false){
+ const label=String(mark),key=(portrait?'portrait:':'landscape:')+label,
+       cache=apexUrbanBoardPaint.cache||(apexUrbanBoardPaint.cache=new Map());
+ if(cache.has(key))return cache.get(key);
  const rect=(x0,y0,x1,y1,color)=>({color,points:[[x0,y0],[x1,y0],[x1,y1],[x0,y1]]});
- // Black, slim frame and clean white panel as on real FIA braking-distance
- // references. Horizontal lettering eliminates the old stacked digits.
- const out=[rect(0,0,1,1,'#171c21'),rect(.025,.035,.975,.965,'#fafbf8')],
-       digits=key.split('').filter(ch=>/^[0-9]$/.test(ch)),gap=.025,
+ const teal=portrait&&label==='100';
+ const out=[rect(0,0,1,1,'#171c21'),rect(.025,.035,.975,.965,teal?'#288c86':'#fafbf8')],
+       digits=label.split('').filter(ch=>/^[0-9]$/.test(ch)),gap=.025,
        pad=.095,usable=1-pad*2,cell=(usable-gap*(digits.length-1))/Math.max(1,digits.length);
  for(let i=0;i<digits.length;i++){
-  const x=pad+i*(cell+gap),polys=sevenSegPolys(x,.145,cell,.71,Math.min(cell*.16,.050)),segs=SEVEN_SEG_DIGITS[digits[i]];
-  for(const seg of segs)out.push({color:'#101519',points:polys[seg]});
+  const offset=pad+i*(cell+gap),x=portrait ? .21 : offset,y=portrait?offset:.145,
+        width=portrait ? .58 : cell,height=portrait?cell:.71,
+        polys=sevenSegPolys(x,y,width,height,Math.min(width*.16,height*.17,.050)),
+        segs=SEVEN_SEG_DIGITS[digits[i]];
+  for(const seg of segs)out.push({color:teal?'#f8ffff':'#101519',points:polys[seg]});
  }
  // Small catches at the fence-side corners; these are not ground posts.
  for(const v of [.13,.84]){out.push(rect(0,v,.065,v+.03,'#879298'));out.push(rect(.935,v,1,v+.03,'#879298'));}
@@ -1691,7 +1694,7 @@ function drawBrakeBoardSprite(item){
  if(alpha<=.001)return;
  ctx.save();
  ctx.globalAlpha*=alpha;
- if(item.urban){for(const face of apexUrbanBoardPaint(item.board.mark))drawQuadPoly(tl,tr,br,bl,face.points,face.color);ctx.restore();return;}
+ if(item.urban){for(const face of apexUrbanBoardPaint(item.board.mark,item.mount.portrait))drawQuadPoly(tl,tr,br,bl,face.points,face.color);ctx.restore();return;}
  if(poleL0&&poleL1){ctx.strokeStyle="#6c727a";ctx.lineWidth=Math.max(1,(tl.scale||1)*.06);ctx.beginPath();ctx.moveTo(poleL0.x,poleL0.y);ctx.lineTo(poleL1.x,poleL1.y);ctx.stroke();}
  if(poleR0&&poleR1){ctx.strokeStyle="#6c727a";ctx.lineWidth=Math.max(1,(tr.scale||1)*.06);ctx.beginPath();ctx.moveTo(poleR0.x,poleR0.y);ctx.lineTo(poleR1.x,poleR1.y);ctx.stroke();}
  poly([[tl.x,tl.y],[tr.x,tr.y],[br.x,br.y],[bl.x,bl.y]],"#ffffff");
@@ -4069,7 +4072,7 @@ function webglPushMappedBoardPoly(tl,tr,br,bl,uvPts,color,z){
 function webglPushBrakeBoards(cam,pitch){
  if(!webglCircuitVisualAvailable())return;for(const item of collectBrakeBoardSprites(cam,pitch)){
    const [tl,tr,br,bl]=item.pts,[poleL0,poleL1,poleR0,poleR1]=item.poles,z=item.z;
-   if(item.urban){for(const face of apexUrbanBoardPaint(item.board.mark)){const bias=(face.color==='#101519'||face.color==='#f8ffff')?-.022:(face.color==='#879298'?-.026:((face.color==='#fafbf8'||face.color==='#19a8b8')?-.010:0));webglPushCamPoly(apexUrbanBoardCameraPoly(item,face.points),pitch,face.color,.62,bias);}continue;}
+   if(item.urban){for(const face of apexUrbanBoardPaint(item.board.mark,item.mount.portrait)){const bias=(face.color==='#101519'||face.color==='#f8ffff')?-.022:(face.color==='#879298'?-.026:((face.color==='#fafbf8'||face.color==='#19a8b8')?-.010:0));webglPushCamPoly(apexUrbanBoardCameraPoly(item,face.points),pitch,face.color,.62,bias);}continue;}
    // Panel y postes participan del Z-buffer: ya no pueden verse a través de taludes/pista.
    if(poleL0&&poleL1)webglPushScreenLineDepth([poleL0.x,poleL0.y],[poleL1.x,poleL1.y],Math.max(1,tl.scale*.055),"#6c727a",z+.015);
    if(poleR0&&poleR1)webglPushScreenLineDepth([poleR0.x,poleR0.y],[poleR1.x,poleR1.y],Math.max(1,tr.scale*.055),"#6c727a",z+.015);
@@ -4370,7 +4373,7 @@ function webglPushCircuitLandmarks(cam,pitch){
    }else if(it.type==='grandstand'){
      // v5.230.32 · Misma regla en WebGL: huella SVG exacta + graderío por bandas.
      if(Array.isArray(it.worldFootprint)&&it.worldFootprint.length>=3){
-       const prof=apexGrandstandStyleProfile(it),fp=it.worldFootprint,h=Math.max(3,Number(it.height)||14),col=it.color||prof.base||'#667078',gb=apexGrandstandRenderBudget(lod,dsLm),rows=gb.tier===2?Math.min(10,Math.max(8,prof.rows)):(gb.tier===1?Math.min(6,Math.max(5,Math.round(prof.rows*.62))):3),side=it.side||1,att=apexGrandstandAttendanceProfile(),frame=apexGrandstandFrameStats(it);it._grandstandFrontEdge=it._grandstandFrontEdge||apexGrandstandFrontEdge(it);
+       const prof=apexGrandstandStyleProfile(it),fp=it.worldFootprint,h=Math.max(3,Number(it.height)||14),col=prof.madrid?prof.base:it.color||prof.base||'#667078',gb=apexGrandstandRenderBudget(lod,dsLm),rows=gb.tier===2?Math.min(10,Math.max(8,prof.rows)):(gb.tier===1?Math.min(6,Math.max(5,Math.round(prof.rows*.62))):3),side=it.side||1,att=apexGrandstandAttendanceProfile(),frame=apexGrandstandFrameStats(it);it._grandstandFrontEdge=it._grandstandFrontEdge||apexGrandstandFrontEdge(it);
        const bp=apexGrandstandGroundCam(fp,.02,cam),bt=apexGrandstandGroundCam(fp,h*.18,cam);
        webglPushCamPoly(bp,pitch,shadeColor(col,-30),.60,-.004);
        for(let j=0;j<fp.length;j++){const k=(j+1)%fp.length;webglPushCamQuad(bp[j],bp[k],bt[k],bt[j],pitch,j&1?shadeColor(col,-24):shadeColor(col,-19),.60,-.005);}
@@ -4379,6 +4382,10 @@ function webglPushCircuitLandmarks(cam,pitch){
          const yTop=h*(.20+.60*t1),yLow=h*(.20+.60*t0),top=apexGrandstandGroundCam(band,yTop,cam),low=apexGrandstandGroundCam(band,yLow,cam);
          const seatBase=ri%3===0?(prof.seatAlt||shadeColor(col,5)):(ri%3===1?(prof.seatAlt2||shadeColor(col,12)):(prof.seat||col));
          webglPushCamPoly(top,pitch,seatBase,.60,-.008);
+         if(prof.madrid&&frame&&gb.tier>=1){
+          const aisle=apexMadridGrandstandAisle(band,frame);
+          if(aisle.length>=3)webglPushCamPoly(apexGrandstandGroundCam(aisle,yTop+.025,cam),pitch,'#9da7af',.60,-.010);
+         }
          if(lod<=1)for(let j=0;j<band.length;j++){const k=(j+1)%band.length;webglPushCamQuad(low[j],low[k],top[k],top[j],pitch,(ri&1)?shadeColor(col,-16):shadeColor(col,-11),.60,-.009);}
        }
        const frontBand=apexGrandstandBand(fp,a,side,.04,.16,it),backBand=apexGrandstandBand(fp,a,side,.84,1,it);
@@ -4386,14 +4393,18 @@ function webglPushCircuitLandmarks(cam,pitch){
        if(backBand.length>=2){const by0=apexGrandstandGroundCam(backBand,.03,cam),by1=apexGrandstandGroundCam(backBand,h*.84,cam);for(let j=0;j<backBand.length;j++){const k=(j+1)%backBand.length;webglPushCamQuad(by0[j],by0[k],by1[k],by1[j],pitch,j&1?shadeColor(col,-22):shadeColor(col,-18),.60,-.010);}if(lod<=1){const rail=apexGrandstandGroundCam(backBand,h*.89,cam);for(let j=1;j<rail.length;j++){const A=rail[j-1],B=rail[j];webglPushCamQuad(camMix(A,B,.01),camMix(A,B,.03),camMix(A,B,.99),camMix(A,B,.97),pitch,prof.rail,.60,-.012);}}}
        if(frame){
          const dep=frame.depth,span=frame.span,segs=gb.crowdCols;
-         if(gb.crowdRows>0&&segs>0&&att.crowd){const crowdRows=Math.min(rows,gb.crowdRows),rowStep=Math.max(1,Math.floor(rows/crowdRows)),personH=Math.max(.72,Math.min(1.28,gb.crowdHeight||1.0));for(let ri=0;ri<rows;ri+=rowStep){
+         if(gb.crowdRows>0&&segs>0&&(att.crowd||(prof.madrid&&gb.tier===2))){const crowdRows=Math.min(rows,gb.crowdRows),rowStep=Math.max(1,Math.floor(rows/crowdRows)),personH=Math.max(.72,Math.min(1.28,gb.crowdHeight||1.0));for(let ri=0;ri<rows;ri+=rowStep){
            const rowDepth=dep*(.24+.56*(Math.min(rows,ri+rowStep)/rows)),ySeat=h*(.20+.58*(Math.min(rows,ri+rowStep)/rows));
            for(let ci=0;ci<segs;ci++){
-             const crowd=apexGrandstandSeatVisual(prof,ri,rows,ci); if(!crowd.occupied) continue;
+             if(prof.madrid&&gb.tier>=1&&ci===Math.floor(segs*.5))continue;
+             const crowd=apexGrandstandSeatVisual(prof,ri,rows,ci,att);
+             const emptySeat=prof.madrid&&!crowd.occupied&&gb.tier===2;
+             if(!crowd.occupied&&!emptySeat)continue;
+             const backHeight=emptySeat ? .40 : personH;
              const pad=.10,u0=ci/segs+pad/segs,u1=(ci+1)/segs-pad/segs;
-             const p0=apexGrandstandWorldCam(frame,u0,rowDepth,ySeat,cam),p1=apexGrandstandWorldCam(frame,u1,rowDepth,ySeat,cam),p2=apexGrandstandWorldCam(frame,u1,rowDepth,ySeat+personH,cam),p3=apexGrandstandWorldCam(frame,u0,rowDepth,ySeat+personH,cam);
+             const p0=apexGrandstandWorldCam(frame,u0,rowDepth,ySeat,cam),p1=apexGrandstandWorldCam(frame,u1,rowDepth,ySeat,cam),p2=apexGrandstandWorldCam(frame,u1,rowDepth,ySeat+backHeight,cam),p3=apexGrandstandWorldCam(frame,u0,rowDepth,ySeat+backHeight,cam);
              webglPushCamPoly([p0,p1,p2,p3],pitch,crowd.top,.60,-.018);
-             if(gb.tier===2&&lod===0){const head0=apexGrandstandWorldCam(frame,u0+.015,rowDepth-.02,ySeat+personH*.82,cam),head1=apexGrandstandWorldCam(frame,u1-.015,rowDepth-.02,ySeat+personH*.82,cam),head2=apexGrandstandWorldCam(frame,u1-.015,rowDepth-.02,ySeat+personH*1.08,cam),head3=apexGrandstandWorldCam(frame,u0+.015,rowDepth-.02,ySeat+personH*1.08,cam);webglPushCamPoly([head0,head1,head2,head3],pitch,crowd.alt||crowd.top,.60,-.019);}
+             if(crowd.occupied&&gb.tier===2&&lod===0){const head0=apexGrandstandWorldCam(frame,u0+.015,rowDepth-.02,ySeat+personH*.82,cam),head1=apexGrandstandWorldCam(frame,u1-.015,rowDepth-.02,ySeat+personH*.82,cam),head2=apexGrandstandWorldCam(frame,u1-.015,rowDepth-.02,ySeat+personH*1.08,cam),head3=apexGrandstandWorldCam(frame,u0+.015,rowDepth-.02,ySeat+personH*1.08,cam);webglPushCamPoly([head0,head1,head2,head3],pitch,crowd.alt||crowd.top,.60,-.019);}
            }
          }}
          const leftWall=[apexGrandstandWorldCam(frame,.02,dep*.12,h*.08,cam),apexGrandstandWorldCam(frame,.10,dep*.12,h*.08,cam),apexGrandstandWorldCam(frame,.10,dep*.88,h*.78,cam),apexGrandstandWorldCam(frame,.02,dep*.88,h*.78,cam)],rightWall=[apexGrandstandWorldCam(frame,.90,dep*.12,h*.08,cam),apexGrandstandWorldCam(frame,.98,dep*.12,h*.08,cam),apexGrandstandWorldCam(frame,.98,dep*.88,h*.78,cam),apexGrandstandWorldCam(frame,.90,dep*.88,h*.78,cam)];
@@ -4401,7 +4412,7 @@ function webglPushCircuitLandmarks(cam,pitch){
          if(gb.tier>=1){for(let st=0;st<(gb.tier===2?7:4);st++){const d0=dep*(.14+.09*st),d1=dep*(.19+.09*st),y0=h*(.10+.085*st),y1=h*(.145+.085*st),L0=apexGrandstandWorldCam(frame,.03,d0,y0,cam),L1=apexGrandstandWorldCam(frame,.09,d0,y0,cam),L2=apexGrandstandWorldCam(frame,.09,d1,y1,cam),L3=apexGrandstandWorldCam(frame,.03,d1,y1,cam),R0=apexGrandstandWorldCam(frame,.91,d0,y0,cam),R1=apexGrandstandWorldCam(frame,.97,d0,y0,cam),R2=apexGrandstandWorldCam(frame,.97,d1,y1,cam),R3=apexGrandstandWorldCam(frame,.91,d1,y1,cam);webglPushCamPoly([L0,L1,L2,L3],pitch,shadeColor(col,10),.60,-.012);webglPushCamPoly([R0,R1,R2,R3],pitch,shadeColor(col,10),.60,-.012);}}
          const diagUs=gb.braces?(gb.tier===2?(span>30?[.12,.28,.44,.60,.76,.90]:(span>18?[.18,.40,.62,.84]:[.3,.7])):(span>24?[.22,.50,.78]:[.35,.65])):[];
          for(const uu of diagUs){const p0=apexGrandstandWorldCam(frame,uu,dep*.88,h*.08,cam),p1=apexGrandstandWorldCam(frame,uu+.03,dep*.88,h*.08,cam),p2=apexGrandstandWorldCam(frame,uu+.015,dep*.98,h*.84,cam),p3=apexGrandstandWorldCam(frame,uu-.015,dep*.98,h*.84,cam);webglPushCamQuad(p0,p1,p2,p3,pitch,prof.support||'#9da7ae',.60,-.013);}
-         if(gb.stairs){const stairCols=span>22?[.05,.92]:[.05,.90];for(const uu of stairCols){for(let st=0;st<6;st++){const d0=dep*(.18+.085*st),d1=dep*(.25+.085*st),y0=h*(.11+.085*st),y1=h*(.15+.085*st),w=uu<.5?[uu,uu+.05]:[uu-.05,uu];const A0=apexGrandstandWorldCam(frame,w[0],d0,y0,cam),A1=apexGrandstandWorldCam(frame,w[1],d0,y0,cam),A2=apexGrandstandWorldCam(frame,w[1],d1,y1,cam),A3=apexGrandstandWorldCam(frame,w[0],d1,y1,cam);webglPushCamPoly([A0,A1,A2,A3],pitch,'#c9cdd1',.60,-.014);}}}
+         if(gb.stairs){const stairCols=span>22?[.05,.92]:[.05,.90];for(const uu of stairCols){for(let st=0;st<6;st++){const d0=dep*(.18+.085*st),d1=dep*(.25+.085*st),y0=h*(.11+.085*st),y1=h*(.15+.085*st),w=uu<.5?[uu,uu+.05]:[uu-.05,uu];const A0=apexGrandstandWorldCam(frame,w[0],d0,y0,cam),A1=apexGrandstandWorldCam(frame,w[1],d0,y0,cam),A2=apexGrandstandWorldCam(frame,w[1],d1,y1,cam),A3=apexGrandstandWorldCam(frame,w[0],d1,y1,cam);webglPushCamPoly([A0,A1,A2,A3],pitch,prof.step||'#c9cdd1',.60,-.014);}}}
          const hasVip=(prof.covered||span>36);
          if(hasVip&&gb.vip){const u0=.34,u1=.66,d0=dep*.54,d1=dep*.88,y0=h*.48,y1=h*.74;const q0=apexGrandstandWorldCam(frame,u0,d0,y0,cam),q1=apexGrandstandWorldCam(frame,u1,d0,y0,cam),q2=apexGrandstandWorldCam(frame,u1,d0,y1,cam),q3=apexGrandstandWorldCam(frame,u0,d0,y1,cam),q4=apexGrandstandWorldCam(frame,u0,d1,y0,cam),q5=apexGrandstandWorldCam(frame,u1,d1,y0,cam),q6=apexGrandstandWorldCam(frame,u1,d1,y1,cam),q7=apexGrandstandWorldCam(frame,u0,d1,y1,cam);webglPushCamQuad(q0,q1,q2,q3,pitch,'#7da4b7',.60,-.013);webglPushCamQuad(q3,q2,q6,q7,pitch,'#5f6870',.60,-.013);webglPushCamQuad(q7,q6,q5,q4,pitch,'#dfe5e8',.60,-.013);}
          if(gb.flags){const flagPos=span>28?[.14,.84]:(span>18?[.50]:[]);for(let fi=0;fi<flagPos.length;fi++){const uu=flagPos[fi],pole0=apexGrandstandWorldCam(frame,uu,dep*.99,h*.98,cam),pole1=apexGrandstandWorldCam(frame,uu,dep*.99,h*1.28,cam);webglPushCamQuad(pole0,camMix(pole0,pole1,.16),pole1,camMix(pole1,pole0,.16),pitch,'#d9dee2',.60,-.015);const f0=apexGrandstandWorldCam(frame,uu+.005,dep*1.00,h*1.24,cam),f1=apexGrandstandWorldCam(frame,uu+.10,dep*1.00,h*1.21,cam),f2=apexGrandstandWorldCam(frame,uu+.10,dep*1.00,h*1.14,cam),f3=apexGrandstandWorldCam(frame,uu+.005,dep*1.00,h*1.17,cam),mA=camMix(f0,f1,.33),mB=camMix(f3,f2,.33);webglPushCamPoly([f0,f1,f2,f3],pitch,fi===0?'#d72631':'#2459c3',.60,-.015);webglPushCamPoly([f0,mA,mB,f3],pitch,fi===0?'#f3d34a':'#ffffff',.60,-.016);}}
