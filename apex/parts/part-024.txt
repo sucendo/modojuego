@@ -2654,6 +2654,16 @@ function apexGrandstandBand(fp,anchor,side,t0,t1,it=null){
  if(cache){if(cache.size>=192)cache.clear();cache.set(key,out);apexSceneryStaticCacheStats.bandMisses++}
  return out;
 }
+const apexGrandstandGroundHeights=new WeakMap();
+function apexGrandstandGroundCam(polygon,offset,cam){
+ const groundOwner=trackData?.customWorld?._apexGroundStamp;
+ let cached=apexGrandstandGroundHeights.get(polygon);
+ if(!cached||cached.track!==trackData||cached.groundOwner!==groundOwner){
+  cached={track:trackData,groundOwner,heights:polygon.map(v=>apexWorldGroundY(v[0],v[1]))};
+  apexGrandstandGroundHeights.set(polygon,cached);
+ }
+ return polygon.map((v,i)=>worldToCamera(v[0],cached.heights[i]+offset,v[1],cam));
+}
 function apexGrandstandStyleProfile(it){
  const s=String(it&&(it.grandstandStyle||it.apexStyle||it.style)||'grandstand_open').toLowerCase();
  const seatBase=it&&it.seatColor?it.seatColor:'#6e7982';
