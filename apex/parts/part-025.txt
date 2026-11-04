@@ -268,6 +268,8 @@ function apexTerrainCellNeedsDetail(g,x,z,span){
  if(apexPortalInfluenceAtWorld(x,z,span*1.15+2.0))return 'PORTAL';
  const tunnel=apexNearestGradeSegment(x,z,'TUNNEL',span*1.0+30);
  if(tunnel&&tunnel.dist<tunnel.width*.5+span*1.2+4)return 'TUNNEL';
+ const pit=apexNearestGradeSegment(x,z,'PIT',span*1.1+12);
+ if(pit&&pit.dist<pit.width*.5+span+3)return 'PIT';
  const st=nearestTrackState(x,z,null,{radius:95,allowGlobal:true,fallbackDist:90});
  if(st&&Math.abs(st.lat)<span*1.5+envProfile(st.s).half+apexPhase1Config().blendM)return 'TRACK';
  const sg=apexNearestGradeSegment(x,z,'PAVED',span*1.1+36);
@@ -342,7 +344,7 @@ async function apexPrecompileUnifiedTerrainOwners(g){
 function apexTerrainFinePatch(g,ix,iz,kind){
  const key=iz*g.nx+ix,old=g.fineCache.get(key);if(old)return old;
  const x0=g.minX+ix*g.cell,z0=g.minZ+iz*g.cell,
-       x1=Math.min(g.maxX,x0+g.cell),z1=Math.min(g.maxZ,z0+g.cell),n=kind==='PORTAL'?20:(kind==='TUNNEL'?18:4),
+       x1=Math.min(g.maxX,x0+g.cell),z1=Math.min(g.maxZ,z0+g.cell),n=kind==='PORTAL'?20:(kind==='TUNNEL'?18:kind==='PIT'?8:4),
        dx=(x1-x0)/n,dz=(z1-z0)/n,points=[],quads=[];
  const cw=trackData&&trackData.customWorld,base=cw&&cw.terrainBase,
    baseRings=base&&base.rings||[];
@@ -350,7 +352,7 @@ function apexTerrainFinePatch(g,ix,iz,kind){
   const x=x0+dx*i,z=z0+dz*j,inside=baseRings.some(r=>apexPointInsideClosedContour(x,z,r));
   const ns=nearestTrackState(x,z,null,{radius:160,allowGlobal:true,fallbackDist:155}),env=envProfile(ns.s),
     mainPaved=(!apexPhase1StructureAtWorld(x,z,ns.s)&&Math.abs(ns.lat)<=apexRoadFlatLimit(ns.s,env,ns.lat>=0?1:-1)),
-    sg=apexNearestGradeSegment(x,z,null,42),otherPaved=sg&&sg.kind==='PIT'&&sg.dist<sg.width*.5;
+    sg=apexNearestGradeSegment(x,z,'PIT',25),otherPaved=sg&&sg.dist<sg.width*.5;
   const raw=apexTerrainRawInterpolated(g,x,z),ground=apexPhase1GroundBlend(x,z,raw,ns),y=ground;
   points.push({x,y,z,inside,paved:mainPaved||!!otherPaved});
  }
@@ -370,7 +372,7 @@ function apexTerrainFinePatch(g,ix,iz,kind){
 
   const ns=nearestTrackState(x,z,null,{radius:70,allowGlobal:true,fallbackDist:65}),
     env=envProfile(ns.s),structure=apexPhase1StructureAtWorld(x,z,ns.s),
-    mainPaved=!structure&&Math.abs(ns.lat)<apexRoadFlatLimit(ns.s,env,ns.lat>=0?1:-1),other=apexNearestGradeSegment(x,z,'PAVED',25);
+    mainPaved=!structure&&Math.abs(ns.lat)<apexRoadFlatLimit(ns.s,env,ns.lat>=0?1:-1),other=apexNearestGradeSegment(x,z,'PIT',25);
   // v5.230.56: ROAD no perfora la placa de terreno. Se dibuja después como cinta
   // apoyada sobre la cota natural. PIT sí puede sustituir el terreno de su huella.
   if(mainPaved||(other&&other.kind==='PIT'&&other.dist<other.width*.5))continue;
