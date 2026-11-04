@@ -4853,8 +4853,10 @@ function update(dt,runHeavy=true,heavyDt=dt){
    $("raceAlert").style.color="#f4f5f6";
  }
 
+ const keyboardSteer=apexTakeKeyboardSteer();
  const rawGasKey=keys.ArrowUp||keys.KeyW||keys.gas,rawBrKey=keys.ArrowDown||keys.KeyS||keys.brake,
-       rawLeft=keys.ArrowLeft||keys.left,rawRight=keys.ArrowRight||keys.right;
+       rawLeft=keys.ArrowLeft||keys.left||(!keys.ArrowRight&&!keys.right&&(keyboardSteer&1)),
+       rawRight=keys.ArrowRight||keys.right||(!keys.ArrowLeft&&!keys.left&&(keyboardSteer&2));
  const gamepad=!demoMode?apexPollGamepad():null,gamepadActive=!!(gamepad&&gamepad.active);
  const pitCtl=apexPitStopController(Math.max(0,finite(player.speed,0))),pitTakeover=!!(pitCtl&&pitCtl.takeover);
  const autoSpeedControl=demoMode||assistMode||pitTakeover,autoCtl=pitCtl||((demoMode||assistMode)?demoDriverControl():null);

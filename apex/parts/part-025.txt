@@ -4140,8 +4140,16 @@ function webglPushExactWallFences(cam,pitch){
   visible=apexVisibleExactWallSegments(cw,cam,far);
  apexHeavyCircuitPerf.fenceSourceSegments=segs.length;apexHeavyCircuitPerf.fenceCandidates=visible.length;
  let drawn=0,projected=0;
- const proj=v=>{if(!v||v.z<.58||v.z>far)return null;const p=projectRoadLocal(v.x,v.y,v.z,pitch);return p&&Number.isFinite(p.x)&&Number.isFinite(p.y)?p:null};
- const line=(a,b,w,col,bias=-.055)=>{const pa=proj(a),pb=proj(b);if(!pa||!pb)return false;const z=Math.max(.59,Math.min(a.z,b.z)+bias);webglPushScreenLineDepth([pa.x,pa.y],[pb.x,pb.y],w,col,z);return true};
+ const halfW=W*.5,horizon=sceneHorizon(pitch),f=halfW/Math.tan(sceneHFov()*.5),eyeH=driverEyeHeight();
+ const proj=v=>{
+  if(v.z<.58||v.z>far)return null;
+  // Camera-space endpoints belong to this pass only. Shared rail/post
+  // endpoints have identical projection across their wire segments.
+  if(v.fenceScreen!==undefined)return v.fenceScreen;
+  const x=halfW+f*v.x/v.z,y=horizon+f*(eyeH-v.y)/v.z;
+  return v.fenceScreen=Number.isFinite(x)&&Number.isFinite(y)?[x,y]:null;
+ };
+ const line=(a,b,w,col,bias=-.055)=>{const pa=proj(a),pb=proj(b);if(!pa||!pb)return false;const z=Math.max(.59,Math.min(a.z,b.z)+bias);webglPushScreenLineDepth(pa,pb,w,col,z);return true};
  for(const sg of visible){
   if(!sg)continue;
   // Rechazo conservador barato ANTES de calcular perfiles y tirantes.
