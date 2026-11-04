@@ -361,6 +361,18 @@ function apexClipTerrainQuadByTunnel(A,B,C,D){
 // natural sin tocarla: nada de roofY, topMin, embudos, taludes laterales ni blends
 // de boca. La malla de terreno conserva literalmente las cotas definidas por el SVG.
 // La apertura visual la forman exclusivamente paredes, techo y caras de portal.
+function apexPitGradeOwnsPoint(st,pit){
+ if(!st)return true;
+ const env=envProfile(st.s),lat=Math.abs(st.lat);
+ if(lat<=env.half+.2)return false;
+ if(pit.dist<pit.width*.5)return true;
+ const side=st.lat>=0?1:-1,limit=apexRoadFlatLimit(st.s,env,side);
+ if(lat>limit)return true;
+ const q=renderRibbonFrameAt(st.s);
+ const pitLat=(pit.x-q.x)*q.ox+(pit.z-q.z)*q.oz;
+ // A wall between the track and pit centre separates the two shoulders.
+ return pitLat*side<=limit;
+}
 function apexPhase1GroundBlend(x,z,natural,ns=null){
  if(!trackData)return natural;
  const cfg=apexPhase1Config(),st=ns||nearestTrackState(x,z,null,{radius:190,allowGlobal:true,fallbackDist:165});
@@ -378,25 +390,23 @@ function apexPhase1GroundBlend(x,z,natural,ns=null){
 
   if(!over){
    if(lat<=env.half){out=q.y+Math.tan(q.bank||0)*st.lat-.18;mainProtected=true;}
-   else if(lat<=limit){out=edgeY-.18;mainProtected=true;}
+   else if(lat<=limit+.8){out=edgeY-.18;mainProtected=true;}
    else{
     const rise=Math.abs(natural-edgeY),blend=Math.max(cfg.blendM,1.5*rise/Math.tan(cfg.maxSlopeDeg*Math.PI/180));
-    if(lat<limit+blend)out=lerp(edgeY-.14,natural,terrainEase((lat-limit)/blend));
+    if(lat<limit+.8+blend)out=lerp(edgeY-.18,natural,terrainEase((lat-limit-.8)/blend));
    }
   }
  }
  // PIT puede explanar su propia plataforma fuera de una zona UNDER. ROAD nunca
  // modifica la placa: los viales se renderizan después apoyados sobre el relieve.
- const sg=apexNearestGradeSegment(x,z,'PAVED',96);
- if(sg&&sg.kind==='PIT'){
-  const half=sg.width*.5,near=sg.dist<=half+.20;
-  if(!mainProtected||!st||Math.abs(st.lat)>envProfile(st.s).half+.2){
-   if(near){out=sg.y-.18;}
-   else{
+ const sg=apexNearestGradeSegment(x,z,'PIT',42);
+ if(sg){
+  const shoulder=sg.width*.5+3;
+  if(apexPitGradeOwnsPoint(st,sg)){
+   if(sg.dist<=shoulder)out=sg.y-.18;
+   else if(!mainProtected){
     const blend=Math.max(cfg.blendM,Math.abs(natural-sg.y)/Math.tan(cfg.maxSlopeDeg*Math.PI/180));
-    if(sg.dist<half+blend){const h=lerp(sg.y-.14,natural,terrainEase((sg.dist-half)/blend));
-     if(Math.abs(h-sg.y)<Math.abs(out-sg.y)||Math.abs(out-sg.y)>.9*blend)out=h;
-    }
+    if(sg.dist<shoulder+blend)out=lerp(sg.y-.18,out,terrainEase((sg.dist-shoulder)/blend));
    }
   }
  }
@@ -414,8 +424,11 @@ function apexNearestTrackSurfaceY(x,z){
 function apexAlignedCircuitSurfaceY(x,z,opts=null){
  const preferPit=!(opts&&opts.preferPit===false),trackY=apexNearestTrackSurfaceY(x,z);
  if(preferPit){
-   const pit=nearestPitState(x,z,null);
-   if(pit&&pit.dist<=Math.max(2.4,(pit.width||5.9)*.88+1.45))return pit.y;
+   const pit=apexNearestGradeSegment(x,z,'PIT',24);
+   if(pit&&pit.dist<=Math.max(2.4,pit.width*.88+1.45)){
+    const ns=nearestTrackState(x,z,null);
+    if(apexPitGradeOwnsPoint(ns,pit))return pit.y;
+   }
  }
  return trackY;
 }
@@ -441,7 +454,14 @@ function apexRegroundImportedWorld(){
    if(heights.has(key))return heights.get(key);
    const y=apexWorldGroundY(x,z);heights.set(key,y);return y;
  };
- for(const w of cw.wallSegments||[]){w.y1=apexPhase1WallFootY(w.x1,w.z1);w.y2=apexPhase1WallFootY(w.x2,w.z2);}
+ const wallBottom=(x,z,y)=>{
+   const pit=apexNearestGradeSegment(x,z,'PIT',16);
+   return pit&&pit.dist<=pit.width*.5+3?Math.min(y,pit.y-.18):y;
+ };
+ for(const w of cw.wallSegments||[]){
+   w.y1=apexPhase1WallFootY(w.x1,w.z1);w.y2=apexPhase1WallFootY(w.x2,w.z2);
+   w.bottomY1=wallBottom(w.x1,w.z1,w.y1);w.bottomY2=wallBottom(w.x2,w.z2,w.y2);
+ }
  for(const it of cw.landmarks||[]){
    if(!it||!it.anchor)continue;
    const a=it.anchor;
@@ -461,7 +481,7 @@ function apexRegroundImportedWorld(){
  for(const s of cw.wallSegments||[]){
    const span=Math.hypot(s.x2-s.x1,s.z2-s.z1),same=cur&&cur.runId===s.runId&&cur.side===s.side&&cur.kind===s.kind&&cur.fence===s.fence&&cur.advertising===s.advertising&&
      Math.hypot(cur.x2-s.x1,cur.z2-s.z1)<.08&&total+span<=6.5&&Math.floor(cur.s/72)===Math.floor(s.s/72);
-   if(same){cur.x2=s.x2;cur.z2=s.z2;cur.y2=s.y2;total+=span;}
+   if(same){cur.x2=s.x2;cur.z2=s.z2;cur.y2=s.y2;cur.bottomY2=s.bottomY2;total+=span;}
    else{cur={...s};cw._wallRenderSegments.push(cur);total=span;}
  }
  // Track each wall run's physical distance, not the camera-facing fragments.
@@ -1686,6 +1706,11 @@ function apexRunoffRoadClipIndex(){
   }
   prev=cur;
  }
+ for(const sg of apexPitSegments()){
+  const w=sg.width*.5/sg.len,nx=-(sg.z2-sg.z1)*w,nz=(sg.x2-sg.x1)*w;
+  add([{x:sg.x1+nx,y:sg.y1,z:sg.z1+nz},{x:sg.x1-nx,y:sg.y1,z:sg.z1-nz},
+       {x:sg.x2-nx,y:sg.y2,z:sg.z2-nz},{x:sg.x2+nx,y:sg.y2,z:sg.z2+nz}]);
+ }
  return trackData._apexRunoffRoadClipIndex={cell,buckets,faces:bounds,clipped:0,generated:0};
 }
 function apexClipRunoffSurfaceTriangles(triangles){
@@ -1727,6 +1752,10 @@ function apexClipRunoffSurfaceTriangles(triangles){
        const target=lerp(asphalt,shoulder,w)-.042;
        y=lerp(v.y,target,1-clamp((lat-edge)/.85,0,1));
       }
+     }
+     const pit=apexNearestGradeSegment(v.x,v.z,'PIT',16);
+     if(pit&&pit.dist<=pit.width*.5+3&&apexPitGradeOwnsPoint(ns,pit)){
+      y=pit.y-.042;
      }
      return [v.x,y,v.z];
     }));
@@ -4360,7 +4389,10 @@ function collectExactWallRenderItems(cam){
   const sb=sg._apexStaticWall,env=sb&&sb.env||envProfile(sg.s||0),baseStyle=sb&&sb.style||wallBarrierStyle(env,sg.s||0,sg.side||1),h=sg.height||baseStyle.height||1.08,
         barrier={...baseStyle,family:'WALL',style:String(sg.wallStyle||baseStyle.style||'wall_f1').toLowerCase(),kind:'WALL_F1',height:h};
   if(sg.color)barrier.base=sg.color;if(sg.fence!==null&&sg.fence!==undefined)barrier.fence=sg.fence;if(Number.isFinite(sg.fenceH)&&sg.fenceH>0)barrier.fenceH=Math.max(1.90,sg.fenceH);if(Number.isFinite(sg.fenceLeanM))barrier.fenceLeanM=sg.fenceLeanM;if(Number.isFinite(sg.postSpacingM))barrier.postSpacingM=sg.postSpacingM;
-  const T0=worldToCamera(sg.x1,sg.y1+h,sg.z1,cam),T1=worldToCamera(sg.x2,sg.y2+h,sg.z2,cam),poly3=clipPolyNear([A,T0,T1,B],.62);if(poly3.length<3)continue;
+  const T0=worldToCamera(sg.x1,sg.y1+h,sg.z1,cam),T1=worldToCamera(sg.x2,sg.y2+h,sg.z2,cam),
+        footA=sg.bottomY1<sg.y1?worldToCamera(sg.x1,sg.bottomY1,sg.z1,cam):A,
+        footB=sg.bottomY2<sg.y2?worldToCamera(sg.x2,sg.bottomY2,sg.z2,cam):B,
+        poly3=clipPolyNear([footA,T0,T1,footB],.62);if(poly3.length<3)continue;
   const z=poly3.reduce((q,p)=>q+p.z,0)/poly3.length;if(!Number.isFinite(z)||z>((typeof apexInspectionFullScene==='function'&&apexInspectionFullScene())?apexInspectionFarDistance():760))continue;
   // En WebGL las vallas F1 tienen su propia pasada; no repetir geometría.
   const forCanvas=rendererBackendId()!=='webgl2';
