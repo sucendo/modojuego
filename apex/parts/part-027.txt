@@ -940,7 +940,14 @@ function apexShiftGear(delta){
 function apexAdjustBias(delta){apexControls.brakeBias=Math.round(clamp(apexControls.brakeBias+delta,.50,.65)*1000)/1000;apexControlToast('FRENADA DELANTERA · '+(apexControls.brakeBias*100).toFixed(1)+' %');}
 function apexAdjustEngineBrake(delta){apexControls.engineBrake=clamp(apexControls.engineBrake+delta,0,4);apexControlToast('FRENO MOTOR · '+apexControls.engineBrake+'/4');}
 function apexControlToast(text){const el=$('controlToast');el.textContent=text;el.classList.remove('hidden');clearTimeout(apexControls.toastTimer);apexControls.toastTimer=setTimeout(()=>el.classList.add('hidden'),1800);}
-function apexReleaseInputs(){for(const k of Object.keys(keys))keys[k]=false;for(const id of ['left','right','gas','brake'])$(id).classList.remove('on');}
+// Preserve a steering tap that starts and ends between two physics ticks.
+let apexKeyboardSteerPending=0;
+function apexTakeKeyboardSteer(){
+ const pending=apexKeyboardSteerPending;
+ apexKeyboardSteerPending=0;
+ return pending;
+}
+function apexReleaseInputs(){apexKeyboardSteerPending=0;for(const k of Object.keys(keys))keys[k]=false;for(const id of ['left','right','gas','brake'])$(id).classList.remove('on');}
 function apexResetSessionControls(){$('pitStrategyPanel').classList.add('hidden');$('pitStrategyBtn').setAttribute('aria-expanded','false');apexReleaseInputs();document.body.classList.remove('apex-tower-visible','apex-tower-hidden');clearTimeout(apexControls.toastTimer);$('controlToast').classList.add('hidden');apexControls.ersActive=false;apexControls.display=0;if(player)player.pitLimiter=false;}
 function apexRunAction(id){
  const action=apexControlActions.find(a=>a.id===id);if(!action||!player||!['race','countdown'].includes(mode))return;
@@ -997,7 +1004,13 @@ function apexHandleControlKeydown(e){
  const action=apexControlActions.find(a=>a.key===e.code);
  if(action){e.preventDefault();if(e.repeat)return;apexRunAction(action.id);return;}
  if(paused)return;
- if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyW','KeyS'].includes(e.code)){e.preventDefault();if(demoMode)setAutoDriveMode(0,true);apexInputDevice='keyboard';keys[e.code]=true;}
+ if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyW','KeyS'].includes(e.code)){e.preventDefault();if(demoMode)setAutoDriveMode(0,true);apexInputDevice='keyboard';
+  if(mode==='race'&&!e.repeat&&!keys[e.code]){
+   if(e.code==='ArrowLeft')apexKeyboardSteerPending|=1;
+   if(e.code==='ArrowRight')apexKeyboardSteerPending|=2;
+  }
+  keys[e.code]=true;
+ }
 }
 function apexHandleControlKeyup(e){keys[e.code]=false;}
 function apexInitControls(){

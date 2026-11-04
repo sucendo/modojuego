@@ -2103,7 +2103,7 @@ function apexBuildExactWallSpatialIndex(cw){
    list.push(i);
   }
  }
- cw._apexExactWallSpatial={src,cell,buckets,overflow,query:null,
+ cw._apexExactWallSpatial={src,cell,buckets,overflow,query:null,previousQuery:null,
   stats:{total:src.length,gridCells:buckets.size,overflow:overflow.length,queries:0,hits:0,candidates:0}};
  return cw._apexExactWallSpatial;
 }
@@ -2120,13 +2120,18 @@ function apexVisibleExactWallSegments(cw,cam,far){
  const key=ix0+':'+ix1+':'+iz0+':'+iz1;
  index.stats.queries++;
  if(index.query&&index.query.key===key){index.stats.hits++;return index.query.items}
+ // Walls and catch fences query different radii within the same frame.
+ if(index.previousQuery&&index.previousQuery.key===key){
+  const hit=index.previousQuery;index.previousQuery=index.query;index.query=hit;
+  index.stats.hits++;return hit.items;
+ }
  const selected=new Set(index.overflow);
  for(let iz=iz0;iz<=iz1;iz++)for(let ix=ix0;ix<=ix1;ix++){
   const list=index.buckets.get(ix+':'+iz);
   if(list)for(let i=0;i<list.length;i++)selected.add(list[i]);
  }
  const idx=Array.from(selected).sort((a,b)=>a-b),out=idx.map(i=>src[i]).filter(Boolean);
- index.query={key,items:out};
+ index.previousQuery=index.query;index.query={key,items:out};
  index.stats.candidates+=out.length;
  return out;
 }
@@ -4260,11 +4265,11 @@ function clipPolyNear(poly,near=.58){
  return out;
 }
 function projectCameraPoly(poly,pitch){
- const pts=[];
+ const pts=[],halfW=W*.5,horizon=sceneHorizon(pitch),
+       focal=halfW/Math.tan(sceneHFov()*.5),eye=driverEyeHeight();
  for(const v of poly){
-   const p=projectLocal(v.x,v.y,v.z,pitch);
-   if(!p)return null;
-   pts.push([p.x,p.y]);
+   if(v.z<=.45)return null;
+   pts.push([halfW+focal*v.x/v.z,horizon+focal*(eye-v.y)/v.z]);
  }
  return pts;
 }
