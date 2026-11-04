@@ -734,6 +734,10 @@
         <path data-apex-type="pitLane" data-apex-role="pitlane-centerline" data-apex-width="5.9" class="pit-line" d="M 819.3333333333334 634 L 913.3333333333334 634" data-apex-family="track" data-apex-style="pitlane_asphalt" style="fill: none; stroke: rgb(243, 178, 77); stroke-dasharray: 26px, 12px; stroke-linecap: round; stroke-width: 5.2px;"></path>
         <text class="lib-label" x="815.3333333333334" y="662" style="white-space: pre; fill: rgb(220, 231, 239); font-family: system-ui, sans-serif; font-size: 8.5px; font-weight: 800; line-height: normal; perspective-origin: 467.917px 367.778px;">PIT LANE</text>
       </g>
+      <g id="pit_speed_limit_legend">
+        <line x1="816" y1="682" x2="832" y2="682" style="stroke:#fff;stroke-width:2;stroke-linecap:butt"></line>
+        <text class="lib-label" x="837" y="685" style="fill:#dce7ef;font-family:system-ui,sans-serif;font-size:8.5px;font-weight:800">Inicio y fin del límite de boxes · 80 km/h</text>
+      </g>
     </g>
     <g data-apex-library-category="SIGNAGE">
       <rect class="library-section" x="622" y="710" width="382.6666666666667" height="250" rx="10" style="fill: rgb(16, 28, 43); fill-opacity: 0.94; stroke: rgb(49, 71, 93); stroke-width: 1.4px;"></rect>
