@@ -896,14 +896,32 @@ function driverModelAngleSample(arr,s){
  const n=arr.length,L=trackData.km*1000,f=mod(s,L)/d.step,i=Math.floor(f),t=f-i;
  const a=arr[mod(i,n)],b=arr[mod(i+1,n)];return a+angleDiff(b,a)*t;
 }
+// One signed physical banking model for the solo reference, AUT and
+// future kinematic planners. Positive bank raises the track-left edge:
+// for a positive (right-hand) curvature, gravity assists the turn.
+function apexBankedLateralLimit(kSigned,s,v,mu,M=800,down=0,safety=1){
+ const bank=clamp(finite(bankAt(s),0),-.40,.40),G=9.81;
+ const normal=Math.max(0,(M*G+Math.max(0,down))*Math.cos(bank)/M);
+ const gravityTurn=Math.sign(finite(kSigned,0))*G*Math.sin(bank);
+ return Math.max(.5,Math.max(0,mu)*normal*Math.max(0,safety)+gravityTurn);
+}
+function apexBankedSpeedFactor(kSigned,s,v=45,mu=1.86){
+ const bank=clamp(finite(bankAt(s),0),-.40,.40);
+ if(Math.abs(bank)<1e-5||Math.abs(kSigned)<.0001)return 1;
+ const down=Math.min(38000,2.72*v*v),base=Math.max(.5,mu*(9.81+down/800));
+ const banked=apexBankedLateralLimit(kSigned,s,v,mu,800,down,1);
+ // Secondary conservative governors must not hide banked apex speeds,
+ // nor multiply a tiny bank angle into a large pace gain.
+ return clamp(Math.sqrt(banked/base),.90,1.09);
+}
 function driverPhysicalSpeedFromCurvature(kSigned,s,safety=1){
  const k=Math.abs(finite(kSigned,0));if(k<.00042)return 99;
- const wet=apexWeatherIsWet(),M=800,G=9.81,mu=wet?1.27:1.90,bank=finite(bankAt(s),0);
- const assist=(Math.sign(kSigned||1)===Math.sign(bank||kSigned||1)?1:-.42)*G*Math.sin(Math.abs(bank));
+ const wet=apexWeatherIsWet(),M=800,mu=wet?1.27:1.90;
  const sf=(wet?.925:.985)*finite(safety,1);let lo=12,hi=99;
  for(let j=0;j<14;j++){
-   const v=(lo+hi)*.5,down=Math.min(38000,2.72*v*v),normal=M*G*Math.cos(bank)+down;
-   const latAccel=Math.max(2.5,mu*normal/M*sf+assist),maxSteer=.285/(1+v*.0105),needSteer=Math.atan(3.60*k);
+   const v=(lo+hi)*.5,down=Math.min(38000,2.72*v*v);
+   const latAccel=apexBankedLateralLimit(kSigned,s,v,mu,M,down,sf);
+   const maxSteer=.285/(1+v*.0105),needSteer=Math.atan(3.60*k);
    if(v*v*k<=latAccel&&needSteer<=maxSteer*.985)lo=v;else hi=v;
  }
  return clamp(lo,14,99);
