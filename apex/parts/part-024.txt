@@ -569,10 +569,37 @@ function apexAuthoredCurbMesh(){
  }
  return trackData._apexAuthoredCurbMesh;
 }
+function apexAuthoredCurbVisual(){
+ const cw=trackData?.customWorld,api=window.ApexSvgCurbs;
+ if(!cw?.curbGeometryAuthoritative||!api)return [];
+ const cached=trackData._apexAuthoredCurbVisual;
+ if(cached?.world===cw)return cached.faces;
+ const marks=new Map((cw.landmarks||[]).filter(apexIsCurbAuthoringMark).map(mark=>[mark.sourceId,mark]));
+ const zones=(cw.curbZones||[]).map(zone=>{
+  const mark=marks.get(zone.sourceId);
+  return {...zone,width:mark?.width,curbStripeM:mark?.curbStripeM};
+ });
+ const stations=apexRoadMeshSamples(),L=trackData.km*1000;
+ // Match the asphalt mesh even where a stripe or taper starts between road nodes.
+ const sectionAt=(s,side,width)=>{
+  const target=mod(s,L);
+  let lo=0,hi=stations.length-1;
+  while(lo+1<hi){const mid=(lo+hi)>>1;if(stations[mid]<=target)lo=mid;else hi=mid;}
+  const a=stations[lo],b=stations[hi],t=clamp((target-a)/(b-a),0,1);
+  const qa=renderRibbonFrameAt(a),qb=renderRibbonFrameAt(b);
+  const ha=envProfile(a).half,hb=envProfile(b).half;
+  const ea=ribbonWorldPoint(qa,ha,side),eb=ribbonWorldPoint(qb,hb,side);
+  const x=lerp(ea.x,eb.x,t),y=lerp(ea.y,eb.y,t)+.018,z=lerp(ea.z,eb.z,t);
+  return {inner:[x,y,z],outer:[x+side*width*lerp(qa.ox,qb.ox,t),y,z+side*width*lerp(qa.oz,qb.oz,t)]};
+ };
+ const faces=zones.length?api.compileRoadVisual(zones,stations,L,sectionAt,circuitCurbPair(0)):apexAuthoredCurbMesh()?.quads||[];
+ trackData._apexAuthoredCurbVisual={world:cw,faces};
+ return faces;
+}
 function apexCollectAuthoredCurbs(cam){
- const mesh=apexAuthoredCurbMesh();if(!mesh)return [];
+ const faces=apexAuthoredCurbVisual();
  const out=[],far=mobilePerformanceMode()?180:300;
- for(const face of mesh.quads){
+ for(const face of faces){
   const center=worldToCamera(face.x,face.points[0][1],face.z,cam);
   if(center.z+face.r<.62||center.z-face.r>far||Math.abs(center.x)>Math.max(2,center.z)*1.8+face.r)continue;
   out.push({kind:'svgCurb',z:center.z-.03,data:face});
@@ -616,8 +643,8 @@ window.apexCurbAuthoringAudit=()=>{
   leaked=entries.filter(e=>apexIsCurbAuthoringMark(e.it));
  return{ok:leaked.length===0&&(!marks.length||zones.length>0),
   marks:marks.length,zones:zones.length,renderedAsPolygons:leaked.length,
-  renderer:cw?.curbGeometryAuthoritative?'exact SVG strips (WebGL2 / Canvas2D)':'shared track ribbon (WebGL2 / Canvas2D)',
-  exactStrips:apexAuthoredCurbMesh()?.quads.length||0,
+  renderer:cw?.curbGeometryAuthoritative?'SVG zones aligned to road edge (WebGL2 / Canvas2D)':'shared track ribbon (WebGL2 / Canvas2D)',
+  exactStrips:apexAuthoredCurbVisual().length,
   originalSvgPreserved:true};
 };
 function apexImportedStructureZones(landmarks,L){
