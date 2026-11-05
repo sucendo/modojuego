@@ -2137,7 +2137,8 @@ function sharedDriverTrackTargetSpeed(s,opt={}){
  if(Number.isFinite(opt.topCap))target=Math.min(target,opt.topCap);
  const horizon=Number.isFinite(opt.horizon)?opt.horizon:(wet?330:370),step=Math.max(6,Number.isFinite(opt.step)?opt.step:8),safeScale=Number.isFinite(opt.safeScale)?opt.safeScale:1;
  for(let d=step;d<=horizon;d+=step){
-   const ss=s+d,e=envProfile(ss),wallish=apexWallishAtS(ss,e),k=Math.abs(curvatureAt(ss));
+   const ss=s+d,e=envProfile(ss),wallish=apexWallishAtS(ss,e),
+         k=Math.abs((opt.car||player)===player&&(demoMode||assistMode)?autoRacingCurvatureAt(ss):curvatureAt(ss));
    const diffTrim=clamp(1+(diff-1)*.32,.98,1.018),wallTrim=wallish?.972:1.000;
    const learned=typeof opt.riskFn==="function"?clamp(opt.riskFn(ss)||0,0,1):0;
    let safe=autoPhysicalCornerSpeed(ss,opt.car||player)*pace*diffTrim*perf.aero*wallTrim*safeScale*(1-learned*riskWeight);
@@ -2795,7 +2796,7 @@ function autoCurvatureEnvelope(s){
  return Math.max(a[3]||0,(a[2]||0)*1.04);
 }
 function autoPhysicalCornerSpeed(s,car=player){
- const k=autoCurvatureEnvelope(s);
+ const k=car===player&&(demoMode||assistMode)?autoRacingCurvatureEnvelope(s):autoCurvatureEnvelope(s);
  if(k<.00055)return 99;
  const wet=apexWeatherIsWet(),mu=1.86*apexTyreGripScale(car),M=800,G=9.81;
  const safety=wet?.90:.960;
@@ -2951,7 +2952,7 @@ function playerAutoCompoundEntryProfile149(s,horizon=118,step=5){
 function playerAutoTechnicalProfile149(s,horizon=112,step=5){
  let minSafe=98,maxK=0,firstTightD=999,lastSig=0,lastSigD=-999,signChanges=0,changeD=999,activeSamples=0;
  for(let d=4;d<=horizon;d+=step){
-   const k=curvatureAt(s+d),a=Math.abs(k),safe=autoPhysicalCornerSpeed(s+d);
+   const k=autoRacingCurvatureAt(s+d),a=Math.abs(k),safe=autoPhysicalCornerSpeed(s+d);
    minSafe=Math.min(minSafe,safe);maxK=Math.max(maxK,a);
    if((safe<36||a>.0090)&&firstTightD===999)firstTightD=d;
    if(a>.0028){const sig=Math.sign(k)||lastSig;activeSamples++;if(lastSig&&sig!==lastSig&&d-lastSigD<=52){signChanges++;changeD=Math.min(changeD,d);}lastSig=sig;lastSigD=d;}
@@ -3172,7 +3173,7 @@ function autoCompoundEntryProfile(s,horizon=118,step=5){
  // conservar algo de margen para el segundo vértice.
  let first=null,peak=null,sign=0,oppositeBeforePeak=false,significant=0;
  for(let d=5;d<=horizon;d+=step){
-   const k=curvatureAt(s+d),a=Math.abs(k);
+   const k=autoRacingCurvatureAt(s+d),a=Math.abs(k);
    if(a<.00145)continue;
    significant++;
    const sg=Math.sign(k)||sign||1;
@@ -3213,7 +3214,7 @@ function autoTechnicalDriveNow(s,profile,sp){
  // convertir 100+ m de aproximación en volante de chicane/horquilla. La telemetría
  // completa del circuito de referencia v5.125 mostró TÉCNICA activa durante gran parte de la vuelta.
  if(!profile||!profile.active)return false;
- const kNow=Math.abs(curvatureAt(s+6)),safeNow=autoPhysicalCornerSpeed(s+6);
+ const kNow=Math.abs(autoRacingCurvatureAt(s+6)),safeNow=autoPhysicalCornerSpeed(s+6);
  const near=clamp(25+sp*.36,30,52);
  const swapNear=profile.chicane&&Number.isFinite(profile.changeD)&&profile.changeD<Math.min(34,near*.72);
  return profile.firstTightD<near||swapNear||kNow>.0047||safeNow<42;
@@ -3817,8 +3818,11 @@ function autoDynamicStability(sp,env,steer,target,guardPredictedSide=false){
  const tyreRisk=clamp((tyreUse-.87)/.13,0,1);
  const rearSlip=Math.abs(finite(player.slipR,0)),frontSlip=Math.abs(finite(player.slipF,0)),bodySlip=Math.abs(finite(player.slipAngle,0));
  const slipRisk=Math.max(clamp((rearSlip-.062)/.115,0,1),clamp((frontSlip-.082)/.155,0,1)*.72,clamp((bodySlip-.040)/.115,0,1));
- const k=Math.abs(curvatureAt(player.s+clamp(8+sp*.11,9,20))),expectedYaw=sp*k;
- const yawExcess=Math.max(0,Math.abs(finite(player.yawRate,0))-expectedYaw*1.30-.055);
+ const signedK=guardPredictedSide?autoRacingCurvatureAt(player.s+clamp(8+sp*.11,9,20)):curvatureAt(player.s+clamp(8+sp*.11,9,20));
+ const expectedYaw=sp*signedK;
+ const yawExcess=guardPredictedSide?
+   Math.max(0,Math.abs(finite(player.yawRate,0)-expectedYaw)-Math.abs(expectedYaw)*.30-.055):
+   Math.max(0,Math.abs(finite(player.yawRate,0))-Math.abs(expectedYaw)*1.30-.055);
  const yawRisk=clamp(yawExcess/.52,0,1);
  const rearCritical=Math.max(clamp((finite(player.rearUse,0)-.93)/.07,0,1),clamp((rearSlip-.105)/.16,0,1));
  const risk=Math.max(edgeRisk,tyreRisk*.90,slipRisk,yawRisk,rearCritical*.94);
@@ -4268,6 +4272,24 @@ function apexAuthoredRacingCurvatureAt(s){
  const turn=angleDiff(Math.atan2(x2-x1,z2-z1),Math.atan2(x1-x0,z1-z0));
  return clamp(2*Math.sin(turn)*u*v/(u*v*w),-.12,.12);
 }
+// AUT 10C: only the player in automatic driving uses the authored path
+// for corner classification. Rival and manual physics retain their own model.
+function autoRacingCurvatureAt(s){
+ const authored=apexAuthoredRacingCurvatureAt(s);
+ return Number.isFinite(authored)?authored:curvatureAt(s);
+}
+function autoRacingCurvatureEnvelope(s){
+ if(!apexAuthoredRacingProfile())return autoCurvatureEnvelope(s);
+ const ks=[-8,-4,0,4,8].map(d=>Math.abs(autoRacingCurvatureAt(s+d))).sort((a,b)=>a-b);
+ return Math.max(ks[3]||0,(ks[2]||0)*1.04);
+}
+function apexAuthoredRacingHeadingAt(s){
+ const a=apexAuthoredRacingOffset(s-5),b=apexAuthoredRacingOffset(s+5);
+ if(!Number.isFinite(a)||!Number.isFinite(b))return null;
+ const p=poseAt(s-5),q=poseAt(s+5);
+ const x0=p.x+p.nx*a,z0=p.z+p.nz*a,x1=q.x+q.nx*b,z1=q.z+q.nz*b;
+ return Math.hypot(x1-x0,z1-z0)>3?Math.atan2(x1-x0,z1-z0):null;
+}
 function apexAuthoredPhysicalCornerSpeed(s,kSigned){
  const k=Math.abs(kSigned);
  if(!Number.isFinite(k))return autoPhysicalCornerSpeed(s);
@@ -4351,9 +4373,9 @@ function autoUniversalExitClearance(s,headingError,risk,rearCritical,wet){
  if(!Number.isFinite(s)||!Number.isFinite(headingError))return 0;
  // Keep the NEXT bend in view: a temporary drop in curvature inside a
  // chicane must not be mistaken for a clear accelerating straight.
- const past=Math.abs(curvatureAt(s-16)),now=Math.abs(curvatureAt(s+3)),
-       next=Math.abs(curvatureAt(s+22)),far=Math.abs(curvatureAt(s+44)),
-       nextBend=Math.abs(curvatureAt(s+70));
+ const past=Math.abs(autoRacingCurvatureAt(s-16)),now=Math.abs(autoRacingCurvatureAt(s+3)),
+       next=Math.abs(autoRacingCurvatureAt(s+22)),far=Math.abs(autoRacingCurvatureAt(s+44)),
+       nextBend=Math.abs(autoRacingCurvatureAt(s+70));
  const trailing=Math.max(past,now),upcoming=Math.max(next,far,nextBend);
  if(upcoming>.0050)return 0; // next chicane/apex still demands lateral grip
  const falling=clamp((trailing-upcoming-.00040)/Math.max(.0016,trailing*.80),0,1),
@@ -4536,6 +4558,10 @@ function demoDriverControl(){
  // continuous view to start steering before heading error becomes >20 deg.
  const soloGuide=autoSoloTrajectoryPreview(player.s,sp,technical,!!raceTraffic.active,kinkCommitActive);
  let look=techDrive?(soloGuide.active?clamp(9+sp*.29,10,19):clamp(5.8+sp*.13,6.5,13)):clamp(8+sp*.26,10,34);
+ // When the path is continuous, preview its next tangent earlier than the
+ // very short polyline-chicane gate; physical reachability limits stay intact.
+ if(lineGuide?.source==='SVG_AUTHORED'&&techDrive&&!kinkCommitActive&&!geometryKink.active)
+   look=Math.max(look,clamp(8.5+sp*.19,10,22));
  if(!techDrive&&compound.active)look=Math.min(38,Math.max(look,clamp(16+compound.firstD*.18,17,31)));
  if(!techDrive&&plan&&plan.d<80)look=Math.min(look,clamp(9+plan.d*.24,10,25));
  if(offTrack)look=Math.min(look,techDrive?7.5:13);
@@ -4589,6 +4615,13 @@ function demoDriverControl(){
    const gain=clamp((Math.abs(soloGuide.turn)-.12)/.38,0,1);
    const correction=clamp(angleDiff(soloGuide.heading,tangentHeading)*.42*gain,-.16,.16);
    tangentHeading+=correction;
+ }
+ // The future road tangent and lane-rate approximation were two different
+ // paths. Small authored heading feedforward reduces corrective steering.
+ if(lineGuide?.source==='SVG_AUTHORED'&&!offTrack&&!geometryKink.active&&!kinkCommitActive){
+   const heading=apexAuthoredRacingHeadingAt(player.s+look);
+   if(Number.isFinite(heading))
+    tangentHeading+=clamp(angleDiff(heading,tangentHeading)*.56,-.14,.14);
  }
  const desiredHeading=tangentHeading+Math.atan(-laneSlope);
  player.autoDesiredHeading=desiredHeading;
@@ -4816,7 +4849,7 @@ function demoDriverControl(){
  // objetivo se liberan despacio mientras exista curvatura relevante delante.
  const preCommitTarget=target; // target before braking-target memory, for pace diagnostics
  const commitStamp=Number.isFinite(player.autoCommittedTargetStamp)?player.autoCommittedTargetStamp:raceT,commitDt=clamp(raceT-commitStamp,.004,.080);player.autoCommittedTargetStamp=raceT;
- const curvePressure=Math.max(Math.abs(curvatureAt(player.s+8)),Math.abs(curvatureAt(player.s+28)),Math.abs(curvatureAt(player.s+52)));
+ const curvePressure=Math.max(Math.abs(autoRacingCurvatureAt(player.s+8)),Math.abs(autoRacingCurvatureAt(player.s+28)),Math.abs(autoRacingCurvatureAt(player.s+52)));
  const brakeComplex=technical.active||compound.active||curvePressure>.00115||(plan&&plan.d<135&&Math.abs(plan.k)>.00125);
  if(!Number.isFinite(player.autoCommittedTargetSpeed))player.autoCommittedTargetSpeed=target;
  const exitClearance=lineGuide&&brakeComplex&&target>player.autoCommittedTargetSpeed&&
