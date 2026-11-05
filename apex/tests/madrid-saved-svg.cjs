@@ -54,7 +54,7 @@ for(const file of [entry.svg,'svg/apex26_14-madrid-spain.svg']){
 // unchanged. The ideal racing reference is a separate non-physical SVG layer
 // and a single new Elements-library sample; ignore only these intentional edits.
 const stripIdealLine=source=>source
- .replace(' data-apex-racing-line-authoritative="true" data-apex-racing-line-model="BASE_DRIVER_REFERENCE"','')
+ .replace(/ data-apex-racing-line-authoritative="true" data-apex-racing-line-model="[^"]+"/,'')
  .replace(/\n    <g id="apex_ideal_racing_line"[\s\S]*?<\/g>/,'')
  .replace(/      <g data-apex-library-item="1" data-apex-library-label="TRAZADA IDEAL">[\s\S]*?<\/g>\n    /,'')
  .replace('data-apex-library-version="6"','data-apex-library-version="5"')
