@@ -870,6 +870,12 @@ body:has(#menu:not(.hidden)) #game{background:#05070b!important}
 .extraTrackChips{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}.extraTrackChips span{padding:7px 9px;border-radius:999px;background:rgba(89,243,255,.06);border:1px solid rgba(89,243,255,.14);font-size:9px;font-weight:800;color:#cdebf1}
 @media(max-width:680px){.trackEditorDock summary{align-items:flex-start;flex-direction:column;gap:4px}.trackEditorBody{padding:0 10px 10px}.extraTrackChips span{font-size:8px}}
 
+/* APEX inspector: optional 3D ideal line, yellow dashed like the authored SVG. */
+.insRacingDash{display:inline-block;width:26px;height:0;border-top:3px dashed #ffd400;vertical-align:middle;margin-right:4px}
+.insRacingStatus{color:#a9bbc9;font-size:10px;align-self:center}
+#inspectorQuickRacing{font-size:22px;line-height:1;color:#d4b649}
+#inspectorQuickRacing.primary{color:#ffd400;border-color:rgba(255,212,0,.75);background:rgba(255,212,0,.16)}
+
 /* v5.230.62.8.6.7.6.4 · Inspector 3D de circuitos */
 .circuitInspectorPanel{margin:0;padding:15px;border:1px solid rgba(115,230,255,.22);border-radius:16px;background:linear-gradient(180deg,rgba(8,20,29,.95),rgba(7,13,21,.96));box-shadow:inset 0 1px 0 rgba(255,255,255,.035)}
 .circuitInspectorActions{display:grid;grid-template-columns:minmax(220px,1.2fr) repeat(2,minmax(130px,.55fr));gap:9px;align-items:end;margin-top:10px}.circuitInspectorHint{margin-top:9px;color:#9fb4c7;font-size:10px;line-height:1.45}.circuitInspectorHint b{color:#d9f8ff}
@@ -1307,6 +1313,7 @@ body.gyro-active.mobile-landscape #toolLeft #center{
     <button id="inspectorQuickFit" class="btn" aria-label="Ver circuito completo" title="Vista completa">▣</button>
     <button id="inspectorQuickAuto" class="btn" aria-label="Recorrer circuito" title="Recorrer circuito">▶</button>
     <button id="inspectorQuickTiming" class="btn" aria-label="Mostrar u ocultar cronometraje" title="Cronometraje">⏱</button>
+    <button id="inspectorQuickRacing" class="btn" aria-label="Mostrar u ocultar trazada ideal" aria-pressed="true" title="Trazada ideal amarilla discontinua">┄</button>
     <button id="inspectorToggleControls" class="btn" aria-label="Opciones de inspección" title="Opciones">⚙</button>
   </div>
   <div id="inspectorControls" class="insControls insCollapsed">
@@ -1322,7 +1329,7 @@ body.gyro-active.mobile-landscape #toolLeft #center{
       <button id="inspectorBack100" class="btn">−100 m</button><button id="inspectorBack25" class="btn">−25 m</button><button id="inspectorForward25" class="btn">+25 m</button><button id="inspectorForward100" class="btn">+100 m</button>
       <button id="inspectorAuto" class="btn">▶ RECORRER</button><button id="inspectorResetView" class="btn">VISTA INICIAL</button><button id="inspectorFitView" class="btn">VISTA COMPLETA</button>
       <select id="inspectorJump" aria-label="Saltar a punto"><option value="">IR A PUNTO…</option></select>
-      <label class="insLayer"><input id="insLayerTiming" type="checkbox" checked> Cronometraje</label><label class="insLayer"><input id="insLayerCorners" type="checkbox" checked> Curvas</label><label class="insLayer"><input id="insLayerBoards" type="checkbox" checked> Carteles</label><label class="insLayer"><input id="insLayerPit" type="checkbox" checked> Pit</label>
+      <label class="insLayer"><input id="insLayerTiming" type="checkbox" checked> Cronometraje</label><label class="insLayer"><input id="insLayerCorners" type="checkbox" checked> Curvas</label><label class="insLayer"><input id="insLayerBoards" type="checkbox" checked> Carteles</label><label class="insLayer"><input id="insLayerPit" type="checkbox" checked> Pit</label><label class="insLayer insRacingLayer"><input id="insLayerRacing" type="checkbox" checked><span class="insRacingDash" aria-hidden="true"></span> Trazada ideal</label><span id="inspectorRacingStatus" class="insRacingStatus" aria-live="polite"></span>
       <span class="insHelp">Móvil: arrastra como en Google Earth. Pellizca para subir/bajar hasta ver el circuito completo; gira con dos dedos. PC: arrastra para desplazar, rueda para zoom, W/S/A/D mover, Q/E altura y flechas girar/inclinar.</span>
     </div>
     <div class="insReadout"><span><b id="inspectorPosReadout">s 0 m</b></span><span id="inspectorNearest">Punto próximo: —</span><span id="inspectorTimingQuality" class="insTimingQuality">Timing: —</span></div><div style="font-size:10px;color:#bdcad6;padding:5px 0">S1 / S2: parciales · META: fin de S3 y vuelta · SALIDA: parrilla · SPEED TRAP: velocidad</div>
