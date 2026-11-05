@@ -523,7 +523,7 @@ function apexSvgLandmarkExact(el,index,ctx){
    if(type==='terrainZone')node.color=node.color||'#667a4d';
    if(type==='surfaceZone'){node.surfaceKind=String(el.getAttribute('data-apex-surface')||sourceRole.replace(/^surface-/,'').replace(/^runoff-/,'')||'ASPHALT').toUpperCase();const cm={ASPHALT:'#676d72',GRAVEL:'#ad9068',SAND:'#bea166',GRASS:'#2e6737'};node.color=node.color||apexSvgSurfaceColor(el)||cm[node.surfaceKind]||cm.ASPHALT;}
    if(type==='water'){node.waterKind=sourceRole==='sea'?'SEA':'LAKE';node.color=node.color||(node.waterKind==='SEA'?'#2b739d':'#347ca5');}
-   if(type==='marking'){node.markingKind=sourceRole==='start-line'?'START_LINE':(sourceRole==='finish-line'?'FINISH_LINE':(sourceRole==='urban-stripes'?'URBAN_STRIPES':(sourceRole==='curb-left'?'CURB_LEFT':(sourceRole==='curb-right'?'CURB_RIGHT':'CROSSWALK'))));node.color=node.color||((sourceRole==='curb-left'||sourceRole==='curb-right')?'#d92b36':'#f2f3f4');}
+   if(type==='marking'){node.markingKind=/^pit-speed-limit-(start|end)$/.test(sourceRole)?'PIT_SPEED_LIMIT':sourceRole==='start-line'?'START_LINE':(sourceRole==='finish-line'?'FINISH_LINE':(sourceRole==='urban-stripes'?'URBAN_STRIPES':(sourceRole==='curb-left'?'CURB_LEFT':(sourceRole==='curb-right'?'CURB_RIGHT':'CROSSWALK'))));node.color=node.color||((sourceRole==='curb-left'||sourceRole==='curb-right')?'#d92b36':'#f2f3f4');}
   if(apexIsCurbAuthoringMark(node)){
    node.width=wAttr||1.25;node.curbRuns=apexSvgElementWorldRunsExact(ctx,el,1.5);node.worldPath=node.curbRuns[0]||[];
    const dash=parseFloat(getComputedStyle(el).strokeDasharray),m=apexSvgRelativeMatrix(ctx.root,el),scale=m?Math.hypot(m.a,m.b):1;
@@ -1789,6 +1789,10 @@ function apexSvgSurfaceMarkingY(it,x,z){
  // Sólo las pinturas sobre corredor rodable usan su rasante; las lejanas
  // (viales/terreno) mantienen el relieve real de la zona donde fueron dibujadas.
  if(it&&it.type==='marking'){
+  if(/^pit-speed-limit-(start|end)$/.test(it.sourceRole||'')){
+   const pit=apexNearestGradeSegment(x,z,'PIT',12);
+   if(pit&&pit.dist<=pit.width*.5+.5)return pit.y;
+  }
   const st=nearestTrackState(x,z,null,{radius:48,allowGlobal:true,fallbackDist:42});
   if(st&&Number.isFinite(st.s)){
    const env=envProfile(st.s);
