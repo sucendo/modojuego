@@ -3036,10 +3036,12 @@ function autoGripTrajectoryEnvelope(s){
  // repeated Madrid solo incidents. On other tracks it can over-brake (Spa)
  // and disturb established traffic/technical driving. Keep their main
  // curvature envelope unchanged until a per-circuit differential passes.
- const madridSvgVertex=trackData.spec?.dir==='14-spain';
+ const authoredLine=apexAuthoredRacingProfile();
+ const madridSvgVertex=trackData.spec?.dir==='14-spain'&&!authoredLine;
  let best=Infinity,bestD=999,bestCorner=Infinity,source='SMOOTH_CURVATURE';
  for(let d=0;d<=horizon;d+=step){
-  const ss=s+d,k=autoCurvatureEnvelope(ss);
+  const ss=s+d,authoredK=authoredLine?apexAuthoredRacingCurvatureAt(ss):null,
+        k=Number.isFinite(authoredK)?Math.abs(authoredK):autoCurvatureEnvelope(ss);
   let rawK=0,abrupt=false;
   if(madridSvgVertex){
    // The authored Madrid centreline may turn abruptly at an SVG node even
@@ -3051,7 +3053,7 @@ function autoGripTrajectoryEnvelope(s){
   }
   if(k<.0008&&!abrupt)continue;
   const e=envProfile(ss),wallish=apexWallishAtS(ss,e),
-        corner=autoPhysicalCornerSpeed(ss)*(wet?.955:.975)*(wallish?.965:1),
+        corner=(Number.isFinite(authoredK)?apexAuthoredPhysicalCornerSpeed(ss,authoredK):autoPhysicalCornerSpeed(ss))*(wet?.955:.975)*(wallish?.965:1),
         settle=d<18?0:(wet?18:13);
   let allowed=Math.sqrt(corner*corner+2*decel*Math.max(0,d-settle));
   let winning='SMOOTH_CURVATURE',winningCorner=corner;
@@ -3084,6 +3086,7 @@ function autoGripTrajectoryEnvelope(s){
 // override; worn/wet tyres receive a slower apex and a longer approach.
 function autoMadridSoloCriticalBendEnvelope(s,trafficActive){
  if(!player||!trackData||trackData.spec?.dir!=='14-spain'||trafficActive||
+    apexAuthoredRacingProfile()||
     !(currentSession==='race'||currentSession==='freepractice')||!(demoMode||assistMode)||
     Math.abs(trackData.km-5.414)>.025)
    return{active:false,target:Infinity};
@@ -3110,7 +3113,7 @@ function autoMadridSoloCriticalBendEnvelope(s,trafficActive){
 }
 
 function autoFarKinkBrakingEnvelope(s){
- if(!player||!trackData)return{target:Infinity,d:999};
+ if(!player||!trackData||apexAuthoredRacingProfile())return{target:Infinity,d:999};
  // Monaco's short urban corners are already protected by the technical
  // planner; long raw-polyline scanning mistakes consecutive bends for a
  // single hairpin and delays the car into recovery. Preserve tuned handling.
@@ -4252,6 +4255,35 @@ function autoUniversalRacingReference(s){
  const limit=autoSafeLaneLimit(s,true);
  return{lat:clamp(offset,-limit,limit),weight:1};
 }
+// Physical curvature of the SAME world-space green path used by AUT steering.
+function apexAuthoredRacingCurvatureAt(s){
+ const a=apexAuthoredRacingOffset(s-9),b=apexAuthoredRacingOffset(s),c=apexAuthoredRacingOffset(s+9);
+ if(!Number.isFinite(a)||!Number.isFinite(b)||!Number.isFinite(c))return null;
+ const p=poseAt(s-9),q=poseAt(s),r=poseAt(s+9);
+ const x0=p.x+p.nx*a,z0=p.z+p.nz*a,x1=q.x+q.nx*b,z1=q.z+q.nz*b,x2=r.x+r.nx*c,z2=r.z+r.nz*c;
+ const u=Math.hypot(x1-x0,z1-z0),v=Math.hypot(x2-x1,z2-z1),w=Math.hypot(x2-x0,z2-z0);
+ if(u<2||v<2||w<2)return null;
+ const turn=angleDiff(Math.atan2(x2-x1,z2-z1),Math.atan2(x1-x0,z1-z0));
+ return clamp(2*Math.sin(turn)*u*v/(u*v*w),-.12,.12);
+}
+function apexAuthoredPhysicalCornerSpeed(s,kSigned){
+ const k=Math.abs(kSigned);
+ if(!Number.isFinite(k))return autoPhysicalCornerSpeed(s);
+ if(k<.00055)return 99;
+ const wet=apexWeatherIsWet(),grip=apexTyreGripScale(player),mu=1.86*grip;
+ const bank=bankAt(s);
+ // Signed banking may help or hurt this exact direction of travel.
+ const bankAssist=Number.isFinite(bank)?clamp(Math.tan(bank)*Math.sign(kSigned)*9.81,-2.5,2.5):0;
+ const safety=wet?.90:.96,M=800,G=9.81;
+ let lo=3.5,hi=99;
+ for(let i=0;i<12;i++){
+  const v=(lo+hi)*.5,down=Math.min(38000,2.72*v*v);
+  const maxLat=mu*(M*G+down)/M*safety+bankAssist;
+  const steer=Math.atan(3.60*k),maxSteer=.285/(1+v*.0105);
+  if(v*v*k<=maxLat&&steer<=maxSteer*.96)lo=v;else hi=v;
+ }
+ return clamp(lo,3.5,99);
+}
 // Back-propagated speed envelope along the authored line: smooth line
 // curvature, tyre/weather-adjusted lateral grip and longitudinal deceleration.
 // Traffic, recovery and pit safety governors remain higher-priority limits.
@@ -4277,10 +4309,8 @@ function apexAuthoredRacingSpeedLimit(s){
   if(k<.0008)continue;
   // Physical envelope already models track-specific banking, with no
   // hidden fixed Madrid braking points or hand-tuned curve exceptions.
-  const physical=autoPhysicalCornerSpeed(ss);
-  const kCenter=Math.max(.0001,Math.abs(autoCurvatureEnvelope(ss)));
-  const adjusted=physical*Math.sqrt(kCenter/Math.max(k,.0001));
-  const corner=clamp(adjusted,13,125);
+  const signed=apexAuthoredRacingCurvatureAt(ss);
+  const corner=apexAuthoredPhysicalCornerSpeed(ss,Number.isFinite(signed)?signed:k);
   const candidate=Math.sqrt(corner*corner+2*decel*Math.max(0,d-(wet?19:13)));
   if(candidate<best)best=candidate;
  }
@@ -4562,7 +4592,8 @@ function demoDriverControl(){
  const kSampleS=player.s+(techDrive?clamp(5+sp*.06,5.5,10):clamp(7+sp*.09,8,17));
  // Feed-forward uses the same continuous reference as the desired lane.
  const rawKRef=curvatureAt(kSampleS);
- const kRef=lineGuide?lerp(rawKRef,driverReferencePathCurvatureAt(kSampleS),lineGuide.weight):rawKRef;
+ const authoredK=lineGuide?.source==='SVG_AUTHORED'?apexAuthoredRacingCurvatureAt(kSampleS):null;
+ const kRef=Number.isFinite(authoredK)?authoredK:(lineGuide?lerp(rawKRef,driverReferencePathCurvatureAt(kSampleS),lineGuide.weight):rawKRef);
  const maxSteerModel=finiteClamp(.285/(1+sp*.0105),.058,.285,.18);
  const deltaFF=Math.atan(3.60*kRef),ff=clamp(deltaFF/Math.max(.055,maxSteerModel),-1,1);
  const crossGain=techDrive?clamp(.175-sp*.0009,.090,.175):clamp(.145-sp*.0008,.072,.145);
@@ -4801,6 +4832,15 @@ function demoDriverControl(){
      player.autoCommittedTargetSpeed=Math.min(target,Math.max(player.autoCommittedTargetSpeed,
        sp+(apexWeatherIsWet()?2.1:4.0)*exitClearance));
  }
+  const stableDemand=!offTrack&&!raceTraffic.active&&stability.risk<.16&&
+   stability.rearCritical<.12&&edgeRisk<.10&&Math.abs(trackHeadingErr)<.19&&
+   Math.abs(headingErr)<.23&&target>sp+2;
+  // A past braking point cannot keep a clean, aligned car at warm-up pace.
+  // This is only a target request; acceleration remains tyre/engine limited.
+  if(stableDemand){
+   const headroom=apexWeatherIsWet()?6.2:10.5;
+   player.autoCommittedTargetSpeed=Math.min(target,Math.max(player.autoCommittedTargetSpeed,sp+headroom));
+  }
  player.autoExitClearance=exitClearance;player.autoTargetReleaseRate=releaseRate;
  if(brakeComplex&&player.autoCommittedTargetSpeed<target-.04){target=player.autoCommittedTargetSpeed;if(targetReason==='TRACK'){targetReason='BRAKE_COMMIT';targetReasonDetail='CONTINUOUS_CORNER';}}
  else if(!brakeComplex&&target-player.autoCommittedTargetSpeed>7)player.autoCommittedTargetSpeed=target-7;
