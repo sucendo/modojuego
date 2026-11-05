@@ -574,13 +574,8 @@ function apexAuthoredCurbVisual(){
  if(!cw?.curbGeometryAuthoritative||!api)return [];
  const cached=trackData._apexAuthoredCurbVisual;
  if(cached?.world===cw&&cached.api===api)return cached.faces;
- const marks=new Map((cw.landmarks||[]).filter(apexIsCurbAuthoringMark).map(mark=>[mark.sourceId,mark]));
- const zones=(cw.curbZones||[]).map(zone=>{
-  const mark=marks.get(zone.sourceId);
-  const lengthM=zone.lengthM>0?zone.lengthM:mod(zone.endS-zone.startS,trackData.km*1000);
-  return {...zone,lengthM,width:mark?.width,curbStripeM:mark?.curbStripeM};
- });
- const stations=apexRoadMeshSamples(),L=trackData.km*1000;
+ const marks=(cw.landmarks||[]).filter(apexIsCurbAuthoringMark);
+ const stations=apexRoadMeshSamples(),L=trackData.km*1000,colors=circuitCurbPair(0);
  // Match the asphalt mesh even where a stripe or taper starts between road nodes.
  const sectionAt=(s,side,width)=>{
   const target=mod(s,L);
@@ -593,8 +588,15 @@ function apexAuthoredCurbVisual(){
   const x=lerp(ea.x,eb.x,t),y=lerp(ea.y,eb.y,t)+.018,z=lerp(ea.z,eb.z,t);
   return {inner:[x,y,z],outer:[x+side*width*lerp(qa.ox,qb.ox,t),y,z+side*width*lerp(qa.oz,qb.oz,t)]};
  };
- const aligned=api.compileRoadVisual?.(zones,stations,L,sectionAt,circuitCurbPair(0));
- const faces=aligned?.length?aligned:apexAuthoredCurbMesh()?.quads||[];
+ // Derive each interval from the active SVG guide. Stored zones may belong
+ // to an earlier version of the drawing or a different road mesh.
+ const faces=marks.flatMap(mark=>{
+  const zones=apexImportedCurbZones([mark],L).map(zone=>({...zone,width:mark.width,curbStripeM:mark.curbStripeM}));
+  const aligned=api.compileRoadVisual?.(zones,stations,L,sectionAt,colors);
+  if(aligned?.length)return aligned;
+  const curbRuns=mark.curbRuns?.length?mark.curbRuns:[mark.worldPath?.length?mark.worldPath:mark.worldFootprint||[]];
+  return api.compile([{...mark,curbRuns}],apexSvgSurfaceMarkingY,colors).quads;
+ });
  trackData._apexAuthoredCurbVisual={world:cw,api,faces};
  return faces;
 }
@@ -618,12 +620,12 @@ function apexImportedCurbZones(landmarks,L){
  const out=[];if(!(L>0))return out;
  for(const it of landmarks||[]){
   if(!apexIsCurbAuthoringMark(it))continue;
-  const runs=it.curbRuns?.length?it.curbRuns:[it.worldPath||it.worldFootprint||[]];
+  const runs=it.curbRuns?.length?it.curbRuns:[it.worldPath?.length?it.worldPath:it.worldFootprint||[]];
   for(const path of runs){
    if(path.length<2)continue;let hint=null,unwrapped=[],last=null,acc=0;
    for(const p of path){const ns=nearestTrackState(p[0],p[1],hint,{radius:120,allowGlobal:true,fallbackDist:90});hint=ns.index;const ss=mod(ns.s,L);if(last!==null){let ds=ss-last;if(ds>L*.5)ds-=L;if(ds<-L*.5)ds+=L;acc+=ds;}else acc=ss;unwrapped.push(acc);last=ss;}
    const a=Math.min(...unwrapped),b=Math.max(...unwrapped);if(b-a<1.2)continue;
-   out.push({side:it.markingKind==='CURB_LEFT'?'left':'right',startS:mod(a,L),endS:mod(b,L),lengthM:b-a,sourceId:it.sourceId||'',status:'SVG_AUTHORITATIVE'});
+   out.push({side:it.markingKind==='CURB_LEFT'||it.sourceRole==='curb-left'?'left':'right',startS:mod(a,L),endS:mod(b,L),lengthM:b-a,sourceId:it.sourceId||'',status:'SVG_AUTHORITATIVE'});
   }
  }
  return out;
