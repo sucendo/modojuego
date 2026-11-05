@@ -2806,7 +2806,7 @@ function autoPhysicalCornerSpeed(s,car=player){
  // Curvature and SVG/JSON banking share a signed local Frenet frame.
  const signedSamples=[-3,0,3].map(d=>curvatureAt(s+d));
  const signedK=signedSamples.reduce((a,b)=>Math.abs(b)>Math.abs(a)?b:a,0);
- const kSigned=(Math.sign(signedK)||1)*k;
+ const kSigned=(Math.sign(signedK)||1)*k,bank=finite(bankAt(s),0);
  // The low-speed grip limit belongs to the player's AUT controller.
  // Keep the previously tuned rival speed floor/handling unchanged.
  const autPlayer=car===player&&(demoMode||assistMode);
@@ -2814,7 +2814,7 @@ function autoPhysicalCornerSpeed(s,car=player){
  for(let i=0;i<12;i++){
    const v=(lo+hi)*.5;
    const down=Math.min(38000,2.72*v*v);
-   const latAccel=apexBankedLateralLimit(kSigned,s,v,mu,M,down,safety);
+   const latAccel=apexBankedLateralLimit(kSigned,s,v,mu,M,down,safety,bank);
    // Incluye también la autoridad geométrica de dirección a esa velocidad.
    const maxSteer=.285/(1+v*.0105),needSteer=Math.atan(3.60*k);
    const safe=(v*v*k<=latAccel)&&(needSteer<=maxSteer*.96);
