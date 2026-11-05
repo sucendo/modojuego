@@ -2963,6 +2963,7 @@ function canvas2dRenderFrame(){
  renderProfileMeasure('environmentMs',()=>drawWorldLandmarks(cam,pitch));
  renderProfileMeasure('environmentMs',()=>drawGradeCrossingEmbankments(cam,pitch));
  drawRoad(cam);
+ if(apexInspectionActive())renderProfileMeasure('trackMs',()=>apexDrawInspectionRacingLineCanvas(cam,pitch));
  canvasPushExactWallFences(cam,pitch);
  renderProfileMeasure('environmentMs',()=>drawGradeCrossingOverpass(cam,pitch));
  renderProfileMeasure('effectsMs',()=>{if(!mobilePerformanceMode()||impactParticles.length<18)drawImpactParticles(cam,pitch);drawRain();});
