@@ -25,6 +25,8 @@ const ctx={
  envProfile:()=>({half:7}),
  poseAt:()=>({tx:0,tz:1}),
  apexAuthoredRacingProfile:()=>null,
+ autoRacingCurvatureAt:s=>ctx.nowCurvature(s),
+ autoRacingCurvatureEnvelope:s=>Math.abs(ctx.nowCurvature(s)),
  apexWallishAtS:()=>false
 };
 vm.createContext(ctx);vm.runInContext(physical+'\n'+envelope+'\n'+farKink+'\n'+follow,ctx);
