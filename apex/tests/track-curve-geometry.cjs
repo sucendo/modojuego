@@ -82,6 +82,11 @@ for(const s of [4690,4750,4760,4770,4780,4788,4800,4820,4880]){
  }
 }
 assert.equal(authoritative,9,'Source SVG edges must be used through the full T20 bend');
+assert.match(source,/const q=renderRibbonFrameAt\(s,false\),signedLat/,'Physics must be isolated from new visual road edges');
+const physical=renderRibbonFrameAt(4788,false),drawn=renderRibbonFrameAt(4788,true);
+assert.ok(drawn.authoredRoadEdges,'Visual track uses imported SVG');
+assert.equal(physical.authoredRoadEdges,undefined,'Physical pose retains original kinematics');
+assert.ok(Number.isFinite(physical.ox)&&Number.isFinite(physical.oz),'Original physical reference stays finite');
 sandbox.guideContinuousSample=()=>null;
 assert.equal(renderRibbonFrameAt(4788).authoredRoadEdges,undefined,'Missing guide must fall back safely');
 assert.ok(source.includes('const oa=ribbonWorldPoint(qa,ha+width,side)'),'Kerbs must share SVG-derived road boundary');
