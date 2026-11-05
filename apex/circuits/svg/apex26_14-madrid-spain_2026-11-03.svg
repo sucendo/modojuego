@@ -735,8 +735,8 @@
         <text class="lib-label" x="815.3333333333334" y="662" style="white-space: pre; fill: rgb(220, 231, 239); font-family: system-ui, sans-serif; font-size: 8.5px; font-weight: 800; line-height: normal; perspective-origin: 467.917px 367.778px;">PIT LANE</text>
       </g>
       <g id="pit_speed_limit_legend">
-        <line x1="816" y1="682" x2="832" y2="682" style="stroke:#fff;stroke-width:2;stroke-linecap:butt"></line>
-        <text class="lib-label" x="837" y="685" style="fill:#dce7ef;font-family:system-ui,sans-serif;font-size:8.5px;font-weight:800">Inicio y fin del límite de boxes · 80 km/h</text>
+        <g data-apex-library-item="1" data-apex-library-label="INICIO LÍMITE BOXES · 80 km/h"><line data-apex-type="marking" data-apex-family="track" data-apex-role="pit-speed-limit-start" x1="640" y1="675" x2="656" y2="675" style="stroke:#fff;stroke-width:0.35;stroke-linecap:butt"/><text class="lib-label" x="636" y="689">INICIO LÍMITE BOXES · 80 km/h</text></g>
+        <g data-apex-library-item="1" data-apex-library-label="FIN LÍMITE BOXES · 80 km/h"><line data-apex-type="marking" data-apex-family="track" data-apex-role="pit-speed-limit-end" x1="819.3340000000001" y1="675" x2="835.3340000000001" y2="675" style="stroke:#fff;stroke-width:0.35;stroke-linecap:butt"/><text class="lib-label" x="815.3340000000001" y="689">FIN LÍMITE BOXES · 80 km/h</text></g>
       </g>
     </g>
     <g data-apex-library-category="SIGNAGE">
