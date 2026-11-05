@@ -1349,18 +1349,49 @@ function ensureRenderMiters(){
  if(trackData.model)trackData.model.renderMiters=M;
  return M;
 }
-function renderRibbonFrameAt(s){
+// Legacy physical reference is frozen for vehicle dynamics and telemetry.
+// Visual road geometry may improve without silently changing steering, grip or rivals.
+function ensureLegacyRoadMiters(){
+ if(!trackData||!trackData.pts||trackData.pts.length<3)return null;
+ if(trackData.model&&trackData.model.legacyRoadMiters&&trackData.model.legacyRoadMiters.length===trackData.pts.length)return trackData.model.legacyRoadMiters;
+ const P=trackData.pts,n=P.length,M=new Array(n);
+ // A short chord keeps the Madrid inner edge from folding at sharp SVG nodes.
+ const historicalJoin=trackData.spec?.dir==='14-spain'&&trackData.customWorld?.authoritative;
+ const span=historicalJoin?Math.min(Math.floor((n-1)/2),Math.max(1,Math.round(11*n/(trackData.km*1000)))):0;
+ const unit=(ax,az,bx,bz)=>{let x=bx-ax,z=bz-az,d=Math.hypot(x,z)||1;return{x:x/d,z:z/d}};
+ for(let i=0;i<n;i++){
+   if(span){
+    const before=P[(i-span+n)%n],after=P[(i+span)%n];
+    const tangent=unit(before[0],before[1],after[0],after[1]);
+    if(tangent.x||tangent.z){M[i]={x:-tangent.z,z:tangent.x};continue;}
+   }
+   const pm=P[(i-1+n)%n],pc=P[i],pp=P[(i+1)%n];
+   const tin=unit(pm[0],pm[1],pc[0],pc[1]),tout=unit(pc[0],pc[1],pp[0],pp[1]);
+   const nin={x:-tin.z,z:tin.x},nout={x:-tout.z,z:tout.x};
+   let mx=nin.x+nout.x,mz=nin.z+nout.z,ml=Math.hypot(mx,mz);
+   if(ml<.18){mx=nout.x;mz=nout.z;ml=1}
+   mx/=ml;mz/=ml;
+   let den=mx*nout.x+mz*nout.z;
+   if(!Number.isFinite(den)||Math.abs(den)<.28){mx=nout.x;mz=nout.z;den=1}   let scale=1/den;
+   // Miter limit: una horquilla extrema se convierte en una unión corta, nunca en una aguja gigante.
+   scale=clamp(scale,.62,2.20);
+   M[i]={x:mx*scale,z:mz*scale};
+ }
+ if(trackData.model)trackData.model.legacyRoadMiters=M;
+ return M;
+}
+function renderRibbonFrameAt(s,visual=true){
  const P=trackData&&trackData.pts,n=P?P.length:0,L=trackData?trackData.km*1000:0;
  if(!P||n<2||!Number.isFinite(L)||L<=0){const q=poseAt(s);return{...q,ox:q.nx,oz:q.nz,t:0}}
  const target=mod(Number.isFinite(s)?s:0,L),step=L/n,f=target/step;
  let i=Math.floor(f);if(!Number.isFinite(i))i=0;i=mod(i,n);
- const t=clamp(f-Math.floor(f),0,1),a=P[i],b=P[(i+1)%n],miters=ensureRenderMiters();
+ const t=clamp(f-Math.floor(f),0,1),a=P[i],b=P[(i+1)%n],miters=visual?ensureRenderMiters():ensureLegacyRoadMiters();
  const x=lerp(a[0],b[0],t),z=lerp(a[1],b[1],t);
  let tx=b[0]-a[0],tz=b[1]-a[1],d=Math.hypot(tx,tz)||1;tx/=d;tz/=d;
  const m0=miters?miters[i]:{x:-tz,z:tx},m1=miters?miters[(i+1)%n]:m0;
  const bank=bankAt(s),frame={x,z,y:elevationAt(s),tx,tz,nx:-tz,nz:tx,ox:lerp(m0.x,m1.x,t),oz:lerp(m0.z,m1.z,t),i,t,bank};
  const cw=trackData.customWorld;
- if(cw&&cw.authoritative&&cw.edgeLeftSamples?.length&&cw.edgeRightSamples?.length){
+ if(visual&&cw&&cw.authoritative&&cw.edgeLeftSamples?.length&&cw.edgeRightSamples?.length){
   // Use the actual SVG track edges, not an estimated parallel curve, wherever
   // both sides form a credible continuous cross-section at this station.
   const left=guideContinuousSample(cw.edgeLeftSamples,target,L,14,23),
@@ -1396,7 +1427,7 @@ function ribbonWorldPoint(frame,width,side=1,yOff=0){
 // s aporta el desnivel longitudinal y lat la altura transversal REAL debida al peralte.
 // Cámara, rivales, ruedas/sombras, espejos y telemetría deben partir de esta misma superficie.
 function trackSurfacePoseAt(s,lat=0,yOff=0){
- const q=renderRibbonFrameAt(s),signedLat=finite(lat,0),side=signedLat>=0?1:-1;
+ const q=renderRibbonFrameAt(s,false),signedLat=finite(lat,0),side=signedLat>=0?1:-1;
  const p=ribbonWorldPoint(q,Math.abs(signedLat),side,yOff),bank=finite(q.bank,0),tanBank=Math.tan(bank);
  const rd=Math.hypot(q.ox,tanBank,q.oz)||1;
  return {...q,x:p.x,y:p.y,z:p.z,lat:signedLat,centerY:q.y,bank,tanBank,
