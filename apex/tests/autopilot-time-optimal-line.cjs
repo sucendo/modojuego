@@ -10,13 +10,21 @@ assert.ok(start>=0&&end>start,'Extract actual time-reference optimizer from prod
 const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
 const mod=(v,n)=>(v%n+n)%n;
 const angleDiff=(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b));
-let wet=false,allowOutside=false;
+let wet=false,allowOutside=false,bankValue=0;
 const ctx={Math,Number,Float32Array,clamp,mod,angleDiff,
  finite:(v,fallback)=>Number.isFinite(v)?v:fallback,
- apexWeatherIsWet:()=>wet,bankAt:()=>0,
+ apexWeatherIsWet:()=>wet,bankAt:()=>bankValue,
  apexDrivableAreaContains:(x,z)=>allowOutside||Math.abs(Math.hypot(x,z)-150)<=3.00};
 vm.createContext(ctx);
 vm.runInContext(src.slice(start,end),ctx);
+// Shared tyre physics and the precomputed racing line must agree on banking.
+const flat=ctx.driverPhysicalSpeedFromCurvature(.009,0);
+bankValue=.235;
+const into=ctx.driverPhysicalSpeedFromCurvature(.009,0);
+const against=ctx.driverPhysicalSpeedFromCurvature(-.009,0);
+assert.ok(into>flat+.2,'Line optimiser must exploit favourable banking');
+assert.ok(against<flat-.2,'Adverse banking must penalise the same radius');
+bankValue=0;
 const n=240,baseR=150,step=2*Math.PI*baseR/n;
 function build(){
  const P=[],cx=new Float32Array(n),cz=new Float32Array(n),
