@@ -627,7 +627,7 @@ const SVG_LIBRARY_SCOPED_CSS=`
 #APEX_ELEMENT_LIBRARY .terrain-contour{fill:#6f8653;fill-opacity:.30;stroke:#c8d4b9;stroke-width:1.3;stroke-linejoin:round}
 
 #APEX_ELEMENT_LIBRARY .core-track-template{fill:none;stroke:#3a3d42;stroke-width:8;stroke-linecap:round}
-#APEX_ELEMENT_LIBRARY .racing-line-template{fill:none;stroke:#30f0d3;stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round;paint-order:stroke}
+#APEX_ELEMENT_LIBRARY .racing-line-template{fill:none;stroke:#ffd400;stroke-width:3.4;stroke-dasharray:9 7;stroke-linecap:round;stroke-linejoin:round;paint-order:stroke}
 #APEX_ELEMENT_LIBRARY .core-edge-template{fill:none;stroke:#f3f5f7;stroke-width:2.2;stroke-linecap:round}
 #APEX_ELEMENT_LIBRARY .drivable-template{fill:#56616a;fill-opacity:.32;stroke:#8798a7;stroke-width:1.2}
 #APEX_ELEMENT_LIBRARY .curb-base-template{fill:none;stroke:#f7f7f7;stroke-width:7;stroke-linecap:butt}
@@ -1208,8 +1208,7 @@ function apexRuntimeIdealRacingLineSvg(svgCtx=null){
  }
  const path=coords.join(' ')+' Z',style='fill="none" stroke-linejoin="round" stroke-linecap="round" pointer-events="none"';
  return `<g id="apex_ideal_racing_line" data-apex-visual-only="true" data-apex-line-model="TIME_OPTIMIZED" data-apex-source="DRIVER_REFERENCE" data-apex-banking="true">
-  <path id="apex_ideal_racing_halo" d="${path}" ${style} stroke="#091921" stroke-width="3.5" opacity=".86"/>
-  <path id="apex_ideal_racing_path" data-apex-role="racing-line" data-apex-name="Trazada ideal · referencia de tiempo" data-apex-family="track" data-apex-visual-only="true" data-apex-line-model="TIME_OPTIMIZED" d="${path}" ${style} stroke="#30f0d3" stroke-width="1.75" opacity=".97"/>
+  <path id="apex_ideal_racing_path" data-apex-role="racing-line" data-apex-name="Trazada ideal · referencia de tiempo" data-apex-family="track" data-apex-visual-only="true" data-apex-line-model="TIME_OPTIMIZED" d="${path}" ${style} stroke="#ffd400" stroke-width="2.1" stroke-dasharray="9 7" opacity=".98"/>
  </g>`;
 }
 function apexEnrichExportSvg(svgText,spec){
@@ -1657,7 +1656,58 @@ function bindSvgTrackTools(){
 
 
 // ---------- v5.230.62.8.6.7.6.4 · INSPECCIÓN 3D DE CIRCUITOS ----------
-const apexInspection={active:false,s:0,lat:0,height:55,fov:80,yaw:0,pitchDeg:-30,speed:45,auto:false,fullScene:true,layers:{timing:true,corners:true,boards:true,pit:true},drag:false,lastX:0,lastY:0,freeX:null,freeZ:null,pointers:new Map(),gesture:null,lastTap:0,uiAcc:0};
+const apexInspection={active:false,s:0,lat:0,height:55,fov:80,yaw:0,pitchDeg:-30,speed:45,auto:false,fullScene:true,layers:{timing:true,corners:true,boards:true,pit:true,racing:true},drag:false,lastX:0,lastY:0,freeX:null,freeZ:null,pointers:new Map(),gesture:null,lastTap:0,uiAcc:0};
+const APEX_INSPECTION_RACING_KEY='apex26.inspector.showRacingLine.v1';
+function apexInspectionRacingPreference(){
+ try{return appStorage.getItem(APEX_INSPECTION_RACING_KEY)!=='0';}catch(e){return true}
+}
+function apexInspectionSaveRacingPreference(on){
+ try{appStorage.setItem(APEX_INSPECTION_RACING_KEY,on?'1':'0')}catch(e){}
+}
+// A single 3D visual layer, independent of steering, collision and asphalt.
+// Precompute road-following quads once per circuit / aerial zoom width.
+function apexInspectionRacingDashQuads(){
+ if(!apexInspection.active||!apexInspection.layers.racing||!trackData)return[];
+ const profile=typeof apexAuthoredRacingProfile==='function'?apexAuthoredRacingProfile():null;
+ if(!profile||!profile.valid)return[];
+ const halfWidth=Math.round(clamp(apexInspection.height*.00115,.23,1.15)*20)/20;
+ const prior=trackData._inspectionRacingQuads;
+ if(prior&&prior.profile===profile&&prior.halfWidth===halfWidth)return prior.quads;
+ const L=trackData.km*1000,quads=[];
+ const point=(s,offset,side)=>{
+  const lat=apexAuthoredRacingOffset(s);
+  if(!Number.isFinite(lat))return null;
+  const q=renderRibbonFrameAt(s),safe=autoSafeLaneLimit(s,true);
+  const lateral=clamp(lat+side*offset,-safe,safe);
+  return ribbonWorldPoint(q,Math.abs(lateral),lateral>=0?1:-1,.065);
+ };
+ for(let start=0;start<L;start+=16){
+  const end=Math.min(start+9,L-.03);
+  if(end-start<2)continue;
+  const a=point(start,halfWidth,-1),b=point(start,halfWidth,1),
+        c=point(end,halfWidth,1),d=point(end,halfWidth,-1);
+  if(a&&b&&c&&d)quads.push([a,b,c,d]);
+ }
+ trackData._inspectionRacingQuads={profile,halfWidth,quads};
+ return quads;
+}
+function apexDrawInspectionRacingLineCanvas(cam,pitch){
+ if(!apexInspection.active||!apexInspection.layers.racing)return;
+ for(const quad of apexInspectionRacingDashQuads()){
+  const mid=quad[0],depth=worldToCamera(mid.x,mid.y,mid.z,cam);
+  if(depth.z<.5||depth.z>apexInspectionFarDistance())continue;
+  drawCamPoly(quad.map(p=>worldToCamera(p.x,p.y,p.z,cam)),pitch,'#ffd400',.58);
+ }
+}
+function apexDrawInspectionRacingLineWebgl(cam,pitch){
+ if(!apexInspection.active||!apexInspection.layers.racing)return;
+ for(const quad of apexInspectionRacingDashQuads()){
+  const mid=quad[0],depth=worldToCamera(mid.x,mid.y,mid.z,cam);
+  if(depth.z<.5||depth.z>apexInspectionFarDistance())continue;
+  const v=quad.map(p=>worldToCamera(p.x,p.y,p.z,cam));
+  webglPushCamQuad(v[0],v[1],v[2],v[3],pitch,'#ffd400',.58,-.045);
+ }
+}
 function apexInspectionCancelUiTimer(){clearTimeout(apexInspection._uiTimer);apexInspection._uiTimer=null;}
 function apexInspectionScheduleUiHide(delay=3200){if(matchMedia('(pointer:fine)').matches)return;apexInspectionCancelUiTimer();if(!apexInspection.active)return;const ctl=$('inspectorControls');if(ctl&&!ctl.classList.contains('insCollapsed'))return;apexInspection._uiTimer=setTimeout(()=>{if(!apexInspection.active||apexInspection.pointers.size)return;const c=$('inspectorControls');if(c&&!c.classList.contains('insCollapsed'))return;document.body.classList.add('ins-ui-hidden');},delay);}
 function apexInspectionShowUi(delay=3200){if(!apexInspection.active)return;document.body.classList.remove('ins-ui-hidden');apexInspectionScheduleUiHide(delay);}
@@ -1706,7 +1756,7 @@ function apexInspectionUpdateJumpOptions(){
  const sel=$('inspectorJump');if(!sel||!trackData)return;const options=['<option value="">IR A PUNTO…</option>'];for(const c of apexTimingPointControls(trackData.spec)){const role=String(c.role||'');let label=apexTimingControlLabel(c);options.push(`<option value="${Number(c.s).toFixed(3)}">${escapeXml(label)} · ${Math.round(c.s)} m</option>`)}for(const c of trackData.cornerMarkers||[])if(Number.isFinite(+c.s))options.push(`<option value="${Number(c.s).toFixed(3)}">T${c.turn}${c.name&&c.name!==`T${c.turn}`?' · '+escapeXml(c.name):''}</option>`);sel.innerHTML=options.join('');
 }
 function apexInspectionUpdateUi(){
- if(!apexInspection.active||!trackData)return;const L=trackData.km*1000,set=(id,val)=>{const e=$(id);if(e)e.textContent=val},range=$('inspectorS');if(range){range.max=String(Math.max(1,Math.round(L)));range.value=String(Math.round(apexInspection.s))}if($('inspectorLat'))$('inspectorLat').value=String(apexInspection.lat);if($('inspectorHeight'))$('inspectorHeight').value=String(apexInspection.height);if($('inspectorFov'))$('inspectorFov').value=String(apexInspection.fov);if($('inspectorSpeed'))$('inspectorSpeed').value=String(apexInspection.speed);set('inspectorRenderInfo',rendererBackendId()==='webgl2'?'WebGL · profundidad 3D · cámara orbital':'Canvas · cámara orbital · WebGL no activo');set('inspectorSValue',`${Math.round(apexInspection.s)} / ${Math.round(L)} m`);set('inspectorLatValue',`${apexInspection.lat.toFixed(1)} m`);set('inspectorHeightValue',`${Math.round(apexInspection.height)} m`);set('inspectorFovValue',`${Math.round(apexInspection.fov)}°`);set('inspectorSpeedValue',`${Math.round(apexInspection.speed)} m/s`);set('inspectorPosReadout',`s ${Math.round(apexInspection.s)} m · ${(apexInspection.s/L*100).toFixed(1)}% · altura ${Math.round(apexInspection.height)} m`);const n=apexInspectionNearestPoint();set('inspectorNearest',n?`Punto próximo: ${n.name} · ${Math.round(n.d)} m`:'Punto próximo: —');const j=readStoredCircuitJson(trackData.spec.dir)||apexBaseCircuitJson(trackData.spec.dir)||{},t=j.timing||{},dq=(j.dataQuality||{}).timingControls||t.startFinishQuality||'sin calidad declarada';set('inspectorTimingQuality',`Timing: ${t.controlSchema||'APEX_TIMING'} · ${dq} · cruce de línea física`);const autoFull=$('inspectorAuto');if(autoFull){autoFull.textContent=apexInspection.auto?'⏸ PAUSAR':'▶ RECORRER';autoFull.classList.toggle('primary',apexInspection.auto)}const autoQuick=$('inspectorQuickAuto');if(autoQuick){autoQuick.textContent=apexInspection.auto?'⏸':'▶';autoQuick.setAttribute('aria-label',apexInspection.auto?'Pausar recorrido':'Recorrer circuito');autoQuick.title=apexInspection.auto?'Pausar recorrido':'Recorrer circuito';autoQuick.classList.toggle('primary',apexInspection.auto)}const qt=$('inspectorQuickTiming');if(qt)qt.classList.toggle('primary',!!apexInspection.layers.timing);
+ if(!apexInspection.active||!trackData)return;const L=trackData.km*1000,set=(id,val)=>{const e=$(id);if(e)e.textContent=val},range=$('inspectorS');if(range){range.max=String(Math.max(1,Math.round(L)));range.value=String(Math.round(apexInspection.s))}if($('inspectorLat'))$('inspectorLat').value=String(apexInspection.lat);if($('inspectorHeight'))$('inspectorHeight').value=String(apexInspection.height);if($('inspectorFov'))$('inspectorFov').value=String(apexInspection.fov);if($('inspectorSpeed'))$('inspectorSpeed').value=String(apexInspection.speed);set('inspectorRenderInfo',rendererBackendId()==='webgl2'?'WebGL · profundidad 3D · cámara orbital':'Canvas · cámara orbital · WebGL no activo');set('inspectorSValue',`${Math.round(apexInspection.s)} / ${Math.round(L)} m`);set('inspectorLatValue',`${apexInspection.lat.toFixed(1)} m`);set('inspectorHeightValue',`${Math.round(apexInspection.height)} m`);set('inspectorFovValue',`${Math.round(apexInspection.fov)}°`);set('inspectorSpeedValue',`${Math.round(apexInspection.speed)} m/s`);set('inspectorPosReadout',`s ${Math.round(apexInspection.s)} m · ${(apexInspection.s/L*100).toFixed(1)}% · altura ${Math.round(apexInspection.height)} m`);const n=apexInspectionNearestPoint();set('inspectorNearest',n?`Punto próximo: ${n.name} · ${Math.round(n.d)} m`:'Punto próximo: —');const j=readStoredCircuitJson(trackData.spec.dir)||apexBaseCircuitJson(trackData.spec.dir)||{},t=j.timing||{},dq=(j.dataQuality||{}).timingControls||t.startFinishQuality||'sin calidad declarada';set('inspectorTimingQuality',`Timing: ${t.controlSchema||'APEX_TIMING'} · ${dq} · cruce de línea física`);const autoFull=$('inspectorAuto');if(autoFull){autoFull.textContent=apexInspection.auto?'⏸ PAUSAR':'▶ RECORRER';autoFull.classList.toggle('primary',apexInspection.auto)}const autoQuick=$('inspectorQuickAuto');if(autoQuick){autoQuick.textContent=apexInspection.auto?'⏸':'▶';autoQuick.setAttribute('aria-label',apexInspection.auto?'Pausar recorrido':'Recorrer circuito');autoQuick.title=apexInspection.auto?'Pausar recorrido':'Recorrer circuito';autoQuick.classList.toggle('primary',apexInspection.auto)}const qt=$('inspectorQuickTiming');if(qt)qt.classList.toggle('primary',!!apexInspection.layers.timing);const qr=$('inspectorQuickRacing');if(qr){qr.classList.toggle('primary',!!apexInspection.layers.racing);qr.setAttribute('aria-pressed',apexInspection.layers.racing?'true':'false');}const hint=$('inspectorRacingStatus');if(hint){const has=!!(trackData.spec&&readEffectiveTrackSvg(trackData.spec.dir)?.racingLine?.length>40);hint.textContent=has?'Línea SVG disponible':'Sin trazada SVG: cargar versión guardada';}
 }
 function apexInspectionUpdate(dt){
  if(!apexInspection.active||!trackData||!player)return;dt=clamp(finite(dt,0),0,.1);const L=trackData.km*1000,forward=(keys.KeyW?1:0)-(keys.KeyS?1:0),side=(keys.KeyD?1:0)-(keys.KeyA?1:0),vertical=(keys.KeyE?1:0)-(keys.KeyQ?1:0),yaw=(keys.ArrowRight?1:0)-(keys.ArrowLeft?1:0),pitch=(keys.ArrowDown?1:0)-(keys.ArrowUp?1:0);
@@ -1751,7 +1801,7 @@ function apexDrawInspectionOverlays(cam,pitch){
 async function startCircuitInspection(spec,btn){
  if(!spec)return;const old=btn&&btn.textContent;currentMode='inspection';currentSession='inspection';sessionSettings={diff:1,weather:'CLEAR',noRivals:true};apexWeatherInit('CLEAR',spec);apexRaceLoadingShow(spec,'PREPARANDO INSPECCIÓN 3D…',.03);if(btn){btn.disabled=true;btn.textContent='CARGANDO…'}await new Promise(r=>requestAnimationFrame(r));
  try{const td=await loadTrack(spec);trackData={...td,spec};prepareTrackModel();await apexCompileCircuitStatic((label,ratio)=>apexRaceLoadingUpdate(label,.12+clamp(ratio,0,1)*.66));}catch(e){if(btn){btn.disabled=false;btn.textContent=old||'ABRIR INSPECCIÓN 3D'}apexRaceLoadingRestore();alert('No he podido preparar la inspección 3D.\n\n'+(e&&e.message||e));return;}
- const L=trackData.km*1000,sf=apexCircuitStartFinishS(spec),start=sf.finish,q=poseAt(start),h=Math.atan2(q.tx,q.tz),team=teamInfo(selectedTeamKey()),car=carCatalog[team.model]||carCatalog.A26;apexInspection.active=true;apexInspection.preparingClosure=true;apexInspection.fullScene=true;apexInspection.layers={timing:true,corners:true,boards:true,pit:true};apexInspection.s=start;apexInspection.lat=0;apexInspection.height=55;apexInspection.fov=80;apexInspection.yaw=h;apexInspection.pitchDeg=-30;apexInspection.speed=45;apexInspection.auto=false;apexInspection.freeX=q.x;apexInspection.freeZ=q.z;apexInspection.targetY=q.y;apexInspection.previousRendererId=rendererBackendId();apexInspection.pointers.clear();apexInspection.gesture=null;apexInspection.uiAcc=0;for(const id of ['insLayerTiming','insLayerCorners','insLayerBoards','insLayerPit']){const e=$(id);if(e)e.checked=true;}
+ const L=trackData.km*1000,sf=apexCircuitStartFinishS(spec),start=sf.finish,q=poseAt(start),h=Math.atan2(q.tx,q.tz),team=teamInfo(selectedTeamKey()),car=carCatalog[team.model]||carCatalog.A26;apexInspection.active=true;apexInspection.preparingClosure=true;apexInspection.fullScene=true;apexInspection.layers={timing:true,corners:true,boards:true,pit:true,racing:apexInspectionRacingPreference()};apexInspection.s=start;apexInspection.lat=0;apexInspection.height=55;apexInspection.fov=80;apexInspection.yaw=h;apexInspection.pitchDeg=-30;apexInspection.speed=45;apexInspection.auto=false;apexInspection.freeX=q.x;apexInspection.freeZ=q.z;apexInspection.targetY=q.y;apexInspection.previousRendererId=rendererBackendId();apexInspection.pointers.clear();apexInspection.gesture=null;apexInspection.uiAcc=0;for(const id of ['insLayerTiming','insLayerCorners','insLayerBoards','insLayerPit']){const e=$(id);if(e)e.checked=true;}if($('insLayerRacing'))$('insLayerRacing').checked=!!apexInspection.layers.racing;
  player={x:q.x,z:q.z,vx:0,vz:0,heading:h,yawRate:0,s:start,total:start,progressS:start,lat:0,speed:0,laps:1,lap:0,ers:100,hp:100,pos:1,steer:0,longG:0,latG:0,trackIndex:q.i,track:q,trackDirDot:1,fovBoost:0,cameraLook:0,cameraGradePitch:0,carSpec:car,carModel:team.chassis,carColor:playerCarColor(),carAccent:playerCarAccent(),teamKey:selectedTeamKey(),damage:freshDamage(),surface:'TRACK',surfaceKind:'ASPHALT',driveNetwork:'TRACK'};rivals=[];mode='inspection';paused=false;raceT=0;resetImpactFX();document.body.classList.remove('menu-open','ins-ui-hidden');document.body.classList.add('apex-inspection');$('menu').classList.add('hidden');$('hud').classList.add('hidden');$('touch').classList.add('hidden');for(const id of ['weekendPanel','finish','pausePanel','optionsPanel','diagPanel','telemetryPanel']){const p=$(id);if(p)p.classList.add('hidden')}$('circuitInspectorHud').classList.remove('hidden');const ctl=$('inspectorControls');if(ctl)ctl.classList.add('insCollapsed');const hint=$('inspectorGestureHint');if(hint){hint.classList.remove('isFaded');clearTimeout(apexInspection._hintTimer);apexInspection._hintTimer=setTimeout(()=>hint.classList.add('isFaded'),3400)}apexInspectionShowUi(3600);$('inspectorCircuitName').textContent=`${spec.country||''} ${spec.name||spec.dir} · ${Math.round(L)} m · SVG/JSON activos`;try{initRendererBackendSelection()}catch(e){activeRenderer=rendererRegistry.canvas2d;updateRendererBackendUi()}setRendererBackend('webgl2',{notify:false,persist:false});resize();apexInspectionFitWholeCircuit();apexInspectionUpdateJumpOptions();apexInspectionSyncPlayer();apexInspectionUpdateUi();last=performance.now();if(btn){btn.disabled=false;btn.textContent=old||'ABRIR INSPECCIÓN 3D'}try{await apexInspectorPrepareSurfaceClosure();}catch(e){apexInspection.preparingClosure=false;closeCircuitInspection();apexRaceLoadingRestore();alert('No se ha podido cerrar la malla del inspector. '+(e&&e.message||e));return;}apexInspection.preparingClosure=false;await apexRaceLoadingHide();
 }
 function closeCircuitInspection(){apexInspectionCancelGesture();apexInspection.active=false;setRendererBackend(apexInspection.previousRendererId||'canvas2d',{notify:false,persist:false});apexInspection.auto=false;apexInspection.pointers.clear();apexInspection.gesture=null;clearTimeout(apexInspection._hintTimer);apexInspectionCancelUiTimer();document.body.classList.remove('apex-inspection','ins-drag','ins-ui-hidden');const dock=$('trackEditorDock');goMenu();if(dock){dock.open=true;setTimeout(()=>dock.scrollIntoView({block:'center'}),30)}}
@@ -1762,8 +1812,9 @@ function bindCircuitInspectorTools(){
  const toggleAuto=()=>{apexInspection.auto=!apexInspection.auto;apexInspectionUpdateUi();apexInspectionShowUi()};for(const id of ['inspectorAuto','inspectorQuickAuto']){const e=$(id);if(e)e.onclick=toggleAuto}
  const reset=$('inspectorResetView');if(reset)reset.onclick=()=>{apexInspectionResetView();apexInspectionShowUi()};const qcenter=$('inspectorQuickCenter');if(qcenter)qcenter.onclick=()=>{apexInspectionResetView();apexInspectionShowUi()};const fit=$('inspectorFitView'),qfit=$('inspectorQuickFit');if(fit)fit.onclick=()=>{apexInspectionFitWholeCircuit();apexInspectionShowUi()};if(qfit)qfit.onclick=()=>{apexInspectionFitWholeCircuit();apexInspectionShowUi()};
  const jump=$('inspectorJump');if(jump)jump.onchange=()=>{if(jump.value!==''){apexInspectionSetS(+jump.value);jump.value=''}};
- for(const [id,key] of [['insLayerTiming','timing'],['insLayerCorners','corners'],['insLayerBoards','boards'],['insLayerPit','pit']]){const e=$(id);if(e)e.onchange=()=>{apexInspection.layers[key]=!!e.checked;apexInspectionUpdateUi()}};
+ for(const [id,key] of [['insLayerTiming','timing'],['insLayerCorners','corners'],['insLayerBoards','boards'],['insLayerPit','pit'],['insLayerRacing','racing']]){const e=$(id);if(e)e.onchange=()=>{apexInspection.layers[key]=!!e.checked;if(key==='racing')apexInspectionSaveRacingPreference(apexInspection.layers.racing);apexInspectionUpdateUi()}};
  const quickTiming=$('inspectorQuickTiming');if(quickTiming)quickTiming.onclick=()=>{apexInspection.layers.timing=!apexInspection.layers.timing;const e=$('insLayerTiming');if(e)e.checked=apexInspection.layers.timing;apexInspectionUpdateUi();apexInspectionShowUi()};
+ const qracing=$('inspectorQuickRacing');if(qracing)qracing.onclick=()=>{apexInspection.layers.racing=!apexInspection.layers.racing;apexInspectionSaveRacingPreference(apexInspection.layers.racing);const e=$('insLayerRacing');if(e)e.checked=apexInspection.layers.racing;apexInspectionUpdateUi();apexInspectionShowUi()};
  const controls=$('inspectorControls'),showCtl=$('inspectorToggleControls'),hideCtl=$('inspectorHideControls');if(showCtl)showCtl.onclick=e=>{e.stopPropagation();if(!controls)return;document.body.classList.remove('ins-ui-hidden');controls.classList.toggle('insCollapsed');if(controls.classList.contains('insCollapsed'))apexInspectionScheduleUiHide(2200);else apexInspectionCancelUiTimer()};if(hideCtl)hideCtl.onclick=e=>{e.stopPropagation();if(controls)controls.classList.add('insCollapsed');apexInspectionScheduleUiHide(1800)};
  apexInspectionBindOrbitControls($('game'));
  window.apexStartCircuitInspection=dir=>{const spec=dir?calendarSpecById(dir):currentSvgToolSpec();return startCircuitInspection(spec,open)};window.apexCloseCircuitInspection=closeCircuitInspection;
