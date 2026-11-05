@@ -24,6 +24,7 @@ const ctx={
  teamPerformance:()=>({brake:1}),
  envProfile:()=>({half:7}),
  poseAt:()=>({tx:0,tz:1}),
+ apexAuthoredRacingProfile:()=>null,
  apexWallishAtS:()=>false
 };
 vm.createContext(ctx);vm.runInContext(physical+'\n'+envelope+'\n'+farKink+'\n'+follow,ctx);
