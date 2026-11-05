@@ -2957,7 +2957,7 @@ function playerAutoCompoundEntryProfile149(s,horizon=118,step=5){
 function playerAutoTechnicalProfile149(s,horizon=112,step=5){
  let minSafe=98,maxK=0,firstTightD=999,lastSig=0,lastSigD=-999,signChanges=0,changeD=999,activeSamples=0;
  for(let d=4;d<=horizon;d+=step){
-   const k=autoRacingCurvatureAt(s+d),a=Math.abs(k),safe=autoPhysicalCornerSpeed(s+d);
+   const k=curvatureAt(s+d),a=Math.abs(k),safe=autoPhysicalCornerSpeed(s+d);
    minSafe=Math.min(minSafe,safe);maxK=Math.max(maxK,a);
    if((safe<36||a>.0090)&&firstTightD===999)firstTightD=d;
    if(a>.0028){const sig=Math.sign(k)||lastSig;activeSamples++;if(lastSig&&sig!==lastSig&&d-lastSigD<=52){signChanges++;changeD=Math.min(changeD,d);}lastSig=sig;lastSigD=d;}
@@ -3198,7 +3198,7 @@ function autoTechnicalProfile(s,horizon=112,step=5){
  // podía alcanzar Degner), reducía demasiado el look-ahead y volvía brusco el volante.
  let minSafe=98,maxK=0,firstTightD=999,lastSig=0,lastSigD=-999,signChanges=0,changeD=999,activeSamples=0;
  for(let d=4;d<=horizon;d+=step){
-   const k=curvatureAt(s+d),a=Math.abs(k),safe=autoPhysicalCornerSpeed(s+d);
+   const k=autoRacingCurvatureAt(s+d),a=Math.abs(k),safe=autoPhysicalCornerSpeed(s+d);
    minSafe=Math.min(minSafe,safe);maxK=Math.max(maxK,a);
    if((safe<36||a>.0090)&&firstTightD===999)firstTightD=d;
    if(a>.0028){
