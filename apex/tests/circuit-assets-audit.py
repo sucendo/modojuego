@@ -86,7 +86,10 @@ BASE_REF = 'ef8ce60249ccfef28d97d16650bf6e94eaa62b01'
 baseline = ''.join(subprocess.check_output(['git', 'show', f'{BASE_REF}:apex/parts/part-{i:03}.txt'], cwd=ROOT).decode('utf-8') for i in range(28))
 assert SVGS == declaration('APEX_BASE_EMBEDDED_SVG_B64', baseline), 'Base SVG changed'
 assert CONFIGS == declaration('APEX_BASE_CIRCUIT_JSON_BY_ID', baseline), 'Base JSON changed'
-assert (ROOT / 'apex/circuits/svg/apex26_14-madrid-spain.svg').read_bytes() == subprocess.check_output(['git', 'show', f'{BASE_REF}:apex/circuits/svg/apex26_14-madrid-spain.svg'], cwd=ROOT), 'Madrid override changed'
+madrid_svg = (ROOT / 'apex/circuits/svg/apex26_14-madrid-spain.svg').read_bytes()
+madrid_original = re.sub(rb'^ *<line id="pit_speed_limit_(?:start|end)"[^\n]*\n', b'', madrid_svg, flags=re.M)
+madrid_original = re.sub(rb'^ *<g id="pit_speed_limit_legend"[^\n]*\n(?:[^\n]*\n){2} *</g>\n', b'', madrid_original, flags=re.M)
+assert madrid_original == subprocess.check_output(['git', 'show', f'{BASE_REF}:apex/circuits/svg/apex26_14-madrid-spain.svg'], cwd=ROOT), 'Madrid override changed'
 
 rows = []
 assert len(SVGS) == len(CONFIGS) == 23

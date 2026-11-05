@@ -1675,7 +1675,7 @@ function apexTriangulateGroundFootprint(points){
 function apexRunoffRoadClipIndex(){
  if(!trackData)return null;
  if(trackData._apexRunoffRoadClipIndex)return trackData._apexRunoffRoadClipIndex;
- const positions=apexRoadMeshSamples(),cell=48,buckets=new Map(),bounds=[];
+ const positions=apexRoadMeshSamples(),cell=48,buckets=new Map(),pitBuckets=new Map(),bounds=[];
  // 2.2 m entre muestras para seguir curvas y bordes sin coste de una
  // subdivisión por cada vértice SVG de la pista.
  const samples=[];
@@ -1687,13 +1687,14 @@ function apexRunoffRoadClipIndex(){
    l=ribbonWorldPoint(q,w,1),r=ribbonWorldPoint(q,w,-1);
   return{l,r};
  };
- const add=(poly)=>{
+ const add=(poly,pit=false)=>{
   const bound=apexInspectorPolyBounds(poly),foot={poly,bounds:bound},id=bounds.length;
   bounds.push(foot);
   for(let ix=Math.floor(bound.minX/cell);ix<=Math.floor(bound.maxX/cell);ix++)
    for(let iz=Math.floor(bound.minZ/cell);iz<=Math.floor(bound.maxZ/cell);iz++){
     const key=ix+':'+iz;let arr=buckets.get(key);
     if(!arr){arr=[];buckets.set(key,arr)}arr.push(id);
+    if(pit){let ids=pitBuckets.get(key);if(!ids){ids=[];pitBuckets.set(key,ids)}ids.push(id);}
    }
  };
  let prev=null;
@@ -1709,9 +1710,22 @@ function apexRunoffRoadClipIndex(){
  for(const sg of apexPitSegments()){
   const w=sg.width*.5/sg.len,nx=-(sg.z2-sg.z1)*w,nz=(sg.x2-sg.x1)*w;
   add([{x:sg.x1+nx,y:sg.y1,z:sg.z1+nz},{x:sg.x1-nx,y:sg.y1,z:sg.z1-nz},
-       {x:sg.x2-nx,y:sg.y2,z:sg.z2-nz},{x:sg.x2+nx,y:sg.y2,z:sg.z2+nz}]);
+       {x:sg.x2-nx,y:sg.y2,z:sg.z2-nz},{x:sg.x2+nx,y:sg.y2,z:sg.z2+nz}],true);
  }
- return trackData._apexRunoffRoadClipIndex={cell,buckets,faces:bounds,clipped:0,generated:0};
+ return trackData._apexRunoffRoadClipIndex={cell,buckets,pitBuckets,faces:bounds,clipped:0,generated:0};
+}
+function apexClipTerrainAtPit(poly){
+ if(!trackData?.customWorld?.pitNetwork?.runs?.length)return null;
+ const {cell,pitBuckets,faces}=apexRunoffRoadClipIndex(),b=apexInspectorPolyBounds(poly),seen=new Set();
+ for(let ix=Math.floor(b.minX/cell);ix<=Math.floor(b.maxX/cell);ix++)
+  for(let iz=Math.floor(b.minZ/cell);iz<=Math.floor(b.maxZ/cell);iz++)
+   for(const id of pitBuckets.get(ix+':'+iz)||[])seen.add(id);
+ let pieces=[poly];
+ for(const id of seen){
+  pieces=pieces.flatMap(part=>apexInspectorSubtractFoot(part,faces[id]));
+  if(!pieces.length)break;
+ }
+ return pieces.length===1&&pieces[0]===poly?null:pieces;
 }
 function apexClipRunoffSurfaceTriangles(triangles){
  const idx=apexRunoffRoadClipIndex();if(!idx||!Array.isArray(triangles))return triangles;

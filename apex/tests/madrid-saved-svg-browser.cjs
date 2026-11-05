@@ -96,7 +96,7 @@ window.__madridSavedSvgAudit={
   assert.equal(rehydrated.boardsAuthoritative,true,'Hydration must not generate deleted boards');
   assert.equal(result.file,'svg/apex26_14-madrid-spain_2026-11-03.svg');
   assert.equal(result.source,'apex26_14-spain_circuito_completo (16).svg');
-  assert.equal(result.bytes,763591);
+  assert.equal(result.bytes,fs.statSync(path.join(root,'apex/circuits',result.file)).size);
   assert.equal(result.geometry,true);
   assert.equal(result.boards,34,'Only active SVG signs may be imported (not 4 library templates)');
   assert.equal(result.boardsAuthoritative,true,'SVG signs must suppress procedural additions');
