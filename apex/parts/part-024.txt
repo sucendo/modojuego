@@ -585,8 +585,9 @@ function apexAuthoredCurbVisual(){
   const qa=renderRibbonFrameAt(a),qb=renderRibbonFrameAt(b);
   const ha=envProfile(a).half,hb=envProfile(b).half;
   const ea=ribbonWorldPoint(qa,ha,side),eb=ribbonWorldPoint(qb,hb,side);
+  const oa=ribbonWorldPoint(qa,ha+width,side),ob=ribbonWorldPoint(qb,hb+width,side);
   const x=lerp(ea.x,eb.x,t),y=lerp(ea.y,eb.y,t)+.018,z=lerp(ea.z,eb.z,t);
-  return {inner:[x,y,z],outer:[x+side*width*lerp(qa.ox,qb.ox,t),y,z+side*width*lerp(qa.oz,qb.oz,t)]};
+  return {inner:[x,y,z],outer:[lerp(oa.x,ob.x,t),lerp(oa.y,ob.y,t)+.018,lerp(oa.z,ob.z,t)]};
  };
  // Derive each interval from the active SVG guide. Stored zones may belong
  // to an earlier version of the drawing or a different road mesh.
@@ -1319,28 +1320,31 @@ function geometricKinkAhead(s,maxD=72,stepD=3){
 function ensureRenderMiters(){
  if(!trackData||!trackData.pts||trackData.pts.length<3)return null;
  if(trackData.model&&trackData.model.renderMiters&&trackData.model.renderMiters.length===trackData.pts.length)return trackData.model.renderMiters;
- const P=trackData.pts,n=P.length,M=new Array(n);
- // A short chord keeps the Madrid inner edge from folding at sharp SVG nodes.
- const authoredMadrid=trackData.spec?.dir==='14-spain'&&trackData.customWorld?.authoritative;
- const span=authoredMadrid?Math.min(Math.floor((n-1)/2),Math.max(1,Math.round(11*n/(trackData.km*1000)))):0;
- const unit=(ax,az,bx,bz)=>{let x=bx-ax,z=bz-az,d=Math.hypot(x,z)||1;return{x:x/d,z:z/d}};
+ const P=trackData.pts,n=P.length,M=new Array(n),step=(trackData.km*1000)/n;
+ // One geometric rule for every circuit. Small turns retain their true
+ // offset miter; acute SVG vertices receive a short-chord, rounded join.
+ // Do not move the authored centreline or apply circuit-specific smoothing.
+ const span=Math.min(Math.floor((n-1)/2),Math.max(1,Math.ceil(9/Math.max(.25,step))));
+ const unit=(ax,az,bx,bz)=>{const x=bx-ax,z=bz-az,d=Math.hypot(x,z);return d>1e-8?{x:x/d,z:z/d}:null};
  for(let i=0;i<n;i++){
-   if(span){
-    const before=P[(i-span+n)%n],after=P[(i+span)%n];
-    const tangent=unit(before[0],before[1],after[0],after[1]);
-    if(tangent.x||tangent.z){M[i]={x:-tangent.z,z:tangent.x};continue;}
-   }
-   const pm=P[(i-1+n)%n],pc=P[i],pp=P[(i+1)%n];
-   const tin=unit(pm[0],pm[1],pc[0],pc[1]),tout=unit(pc[0],pc[1],pp[0],pp[1]);
-   const nin={x:-tin.z,z:tin.x},nout={x:-tout.z,z:tout.x};
-   let mx=nin.x+nout.x,mz=nin.z+nout.z,ml=Math.hypot(mx,mz);
-   if(ml<.18){mx=nout.x;mz=nout.z;ml=1}
-   mx/=ml;mz/=ml;
-   let den=mx*nout.x+mz*nout.z;
-   if(!Number.isFinite(den)||Math.abs(den)<.28){mx=nout.x;mz=nout.z;den=1}   let scale=1/den;
-   // Miter limit: una horquilla extrema se convierte en una unión corta, nunca en una aguja gigante.
-   scale=clamp(scale,.62,2.20);
-   M[i]={x:mx*scale,z:mz*scale};
+  const pm=P[(i-1+n)%n],pc=P[i],pp=P[(i+1)%n];
+  const tin=unit(pm[0],pm[1],pc[0],pc[1]),tout=unit(pc[0],pc[1],pp[0],pp[1]);
+  if(!tin||!tout){const t=tout||tin||{x:0,z:1};M[i]={x:-t.z,z:t.x};continue;}
+  const nin={x:-tin.z,z:tin.x},nout={x:-tout.z,z:tout.x};
+  let mx=nin.x+nout.x,mz=nin.z+nout.z,ml=Math.hypot(mx,mz);
+  if(ml<.18){mx=nout.x;mz=nout.z;ml=1}
+  mx/=ml;mz/=ml;
+  let den=mx*nout.x+mz*nout.z;
+  if(!Number.isFinite(den)||den<.28){mx=nout.x;mz=nout.z;den=1}
+  const scale=clamp(1/den,.62,2.20);
+  const angle=Math.acos(clamp(tin.x*tout.x+tin.z*tout.z,-1,1));
+  const soften=clamp((angle-.16)/.42,0,1);
+  const before=P[(i-span+n)%n],after=P[(i+span)%n],smooth=unit(before[0],before[1],after[0],after[1]);
+  if(smooth&&soften>0){
+   // A smooth normal is intentionally not amplified by the outer miter:
+   // amplified normals create the tooth/return at tight inner edges.
+   M[i]={x:lerp(mx*scale,-smooth.z,soften),z:lerp(mz*scale,smooth.x,soften)};
+  }else M[i]={x:mx*scale,z:mz*scale};
  }
  if(trackData.model)trackData.model.renderMiters=M;
  return M;
@@ -1348,18 +1352,43 @@ function ensureRenderMiters(){
 function renderRibbonFrameAt(s){
  const P=trackData&&trackData.pts,n=P?P.length:0,L=trackData?trackData.km*1000:0;
  if(!P||n<2||!Number.isFinite(L)||L<=0){const q=poseAt(s);return{...q,ox:q.nx,oz:q.nz,t:0}}
- const step=L/n,f=mod(Number.isFinite(s)?s:0,L)/step;
+ const target=mod(Number.isFinite(s)?s:0,L),step=L/n,f=target/step;
  let i=Math.floor(f);if(!Number.isFinite(i))i=0;i=mod(i,n);
  const t=clamp(f-Math.floor(f),0,1),a=P[i],b=P[(i+1)%n],miters=ensureRenderMiters();
  const x=lerp(a[0],b[0],t),z=lerp(a[1],b[1],t);
  let tx=b[0]-a[0],tz=b[1]-a[1],d=Math.hypot(tx,tz)||1;tx/=d;tz/=d;
  const m0=miters?miters[i]:{x:-tz,z:tx},m1=miters?miters[(i+1)%n]:m0;
- const bank=bankAt(s);
- return{x,z,y:elevationAt(s),tx,tz,nx:-tz,nz:tx,ox:lerp(m0.x,m1.x,t),oz:lerp(m0.z,m1.z,t),i,t,bank};
+ const bank=bankAt(s),frame={x,z,y:elevationAt(s),tx,tz,nx:-tz,nz:tx,ox:lerp(m0.x,m1.x,t),oz:lerp(m0.z,m1.z,t),i,t,bank};
+ const cw=trackData.customWorld;
+ if(cw&&cw.authoritative&&cw.edgeLeftSamples?.length&&cw.edgeRightSamples?.length){
+  // Use the actual SVG track edges, not an estimated parallel curve, wherever
+  // both sides form a credible continuous cross-section at this station.
+  const left=guideContinuousSample(cw.edgeLeftSamples,target,L,14,23),
+        right=guideContinuousSample(cw.edgeRightSamples,target,L,14,23);
+  if(left&&right&&[left.x,left.z,right.x,right.z,left.lat,right.lat].every(Number.isFinite)){
+   const width=Math.abs(left.lat-right.lat),half=width*.5,
+         norm=Math.hypot(frame.ox,frame.oz)||1,
+         leftSign=((left.x-x)*frame.ox+(left.z-z)*frame.oz)/norm,
+         rightSign=((right.x-x)*frame.ox+(right.z-z)*frame.oz)/norm,
+         chord=Math.hypot(left.x-right.x,left.z-right.z);
+   if(width>=4.5&&width<=32&&leftSign>2&&rightSign< -2&&
+      chord>=width*.65&&chord<=width*1.45&&
+      Math.hypot(left.x-x,left.z-z)<width*1.2&&Math.hypot(right.x-x,right.z-z)<width*1.2){
+    frame.authoredRoadEdges={half,left:{x:left.x,z:left.z},right:{x:right.x,z:right.z}};
+   }
+  }
+ }
+ return frame;
 }
 function ribbonWorldPoint(frame,width,side=1,yOff=0){
  const bank=Number.isFinite(frame.bank)?frame.bank:0;
- const bankY=Math.tan(bank)*width*side;
+ const bankY=Math.tan(bank)*width*side,edge=frame.authoredRoadEdges;
+ if(edge&&edge.half>0&&width>=0){
+  // Road, white line, shoulder and SVG kerb share the SAME authored edge.
+  // Extrapolating outwards keeps adjacent surfaces watertight.
+  const p=side>0?edge.left:edge.right,k=width/edge.half;
+  return{x:frame.x+(p.x-frame.x)*k,y:frame.y+bankY+yOff,z:frame.z+(p.z-frame.z)*k};
+ }
  return{x:frame.x+frame.ox*width*side,y:frame.y+bankY+yOff,z:frame.z+frame.oz*width*side};
 }
 
