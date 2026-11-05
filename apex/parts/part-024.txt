@@ -1287,20 +1287,7 @@ function poseFlatAt(s){
  return{x:c.x,z:c.z,tx,tz,nx:-tz,nz:tx,i:c.i,t:c.t,rawTx:c.tx,rawTz:c.tz};
 }
 function rawTrackHeadingAt(s){
- const points=trackData?.pts,length=(trackData?.km||0)*1000;
- if(!points||points.length<2||!Number.isFinite(length)||length<=0)return 0;
- let cache=trackData.rawHeadingCache;
- if(!cache||cache.points!==points){
-   const values=new Float64Array(points.length);
-   for(let i=0;i<points.length;i++){
-     const a=points[i],b=points[(i+1)%points.length];
-     const tx=b[0]-a[0],tz=b[1]-a[1],norm=Math.hypot(tx,tz)||1;
-     values[i]=Math.atan2(tx/norm,tz/norm);
-   }
-   cache=trackData.rawHeadingCache={points,values};
- }
- const segment=Math.floor(mod(Number.isFinite(s)?s:0,length)/(length/points.length));
- return cache.values[mod(segment,points.length)];
+ const q=rawCenterPoseAt(s);return Math.atan2(q.tx,q.tz);
 }
 function geometricKinkAhead(s,maxD=72,stepD=3){
  if(!trackData)return{active:false,d:999,angle:0,from:0,to:0,jerk:0};
