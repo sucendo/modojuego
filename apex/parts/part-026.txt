@@ -4201,7 +4201,7 @@ function autoSoloTrajectoryPreview(s,sp,technical,trafficActive,kinkCommitted){
 // No kilometre markers and no circuit-specific steering thresholds are needed.
 // Authored SVG racing line is the primary clean-air trajectory. The imported
 // world-space polyline is projected to physical track Frenet coordinates once,
-// using a progress-local nearest segment to avoid neighbouring track branches.
+// using nearest world-space segments even if the SVG start marker is rotated.
 const apexAuthoredRacingCache=new WeakMap();
 function apexAuthoredRacingProfile(){
  if(!trackData||!trackData.spec||!Number.isFinite(trackData.km))return null;
@@ -4214,11 +4214,12 @@ function apexAuthoredRacingProfile(){
  const offsets=new Float32Array(count);
  let good=0;
  for(let i=0;i<count;i++){
-  const distance=L*i/count,pose=poseAt(distance),guess=Math.floor(distance/L*n);
+  const distance=L*i/count,pose=poseAt(distance);
   let best=Infinity,bestLat=0;
-  const radius=Math.min(Math.floor(n/2),Math.max(95,Math.ceil(n*.085)));
-  for(let j=-radius;j<=radius;j++){
-   const idx=(guess+j+n*4)%n,a=line[idx],b=line[(idx+1)%n];
+  // SVG import may rotate the centerline to a physical start marker. Match
+  // segments in world space instead of assuming the same polyline index.
+  for(let idx=0;idx<n;idx++){
+   const a=line[idx],b=line[(idx+1)%n];
    if(!a||!b)continue;
    const vx=b[0]-a[0],vz=b[1]-a[1],vv=vx*vx+vz*vz;
    if(vv<.00001)continue;
