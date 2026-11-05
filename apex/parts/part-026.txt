@@ -4191,9 +4191,53 @@ function autoSoloTrajectoryPreview(s,sp,technical,trafficActive,kinkCommitted){
 // UNIVERSAL clean-air AUT controller. Each circuit supplies one continuous
 // world-space racing reference, computed once from its actual authored geometry.
 // No kilometre markers and no circuit-specific steering thresholds are needed.
+// Authored SVG racing line is the primary clean-air trajectory. The imported
+// world-space polyline is projected to physical track Frenet coordinates once,
+// using a progress-local nearest segment to avoid neighbouring track branches.
+const apexAuthoredRacingCache=new WeakMap();
+function apexAuthoredRacingProfile(){
+ if(!trackData||!trackData.spec||!Number.isFinite(trackData.km))return null;
+ const geometry=readEffectiveTrackSvg(trackData.spec.dir);
+ const line=geometry&&geometry.racingLine;
+ if(!Array.isArray(line)||line.length<40)return null;
+ const prior=apexAuthoredRacingCache.get(trackData);
+ if(prior&&prior.line===line)return prior;
+ const L=trackData.km*1000,n=line.length,step=8,count=Math.ceil(L/step);
+ const offsets=new Float32Array(count);
+ let good=0;
+ for(let i=0;i<count;i++){
+  const distance=L*i/count,pose=poseAt(distance),guess=Math.floor(distance/L*n);
+  let best=Infinity,bestLat=0;
+  const radius=Math.min(Math.floor(n/2),Math.max(95,Math.ceil(n*.085)));
+  for(let j=-radius;j<=radius;j++){
+   const idx=(guess+j+n*4)%n,a=line[idx],b=line[(idx+1)%n];
+   if(!a||!b)continue;
+   const vx=b[0]-a[0],vz=b[1]-a[1],vv=vx*vx+vz*vz;
+   if(vv<.00001)continue;
+   const u=clamp(((pose.x-a[0])*vx+(pose.z-a[1])*vz)/vv,0,1);
+   const dx=a[0]+u*vx-pose.x,dz=a[1]+u*vz-pose.z,dist=dx*dx+dz*dz;
+   if(dist<best){best=dist;bestLat=dx*pose.nx+dz*pose.nz;}
+  }
+  const safe=autoSafeLaneLimit(distance,true);
+  if(best<Math.pow(Math.max(12,safe+5),2)){offsets[i]=clamp(bestLat,-safe,safe);good++;}
+  else offsets[i]=NaN;
+ }
+ const profile={line,offsets,count,L,valid:good/count>.90};
+ apexAuthoredRacingCache.set(trackData,profile);
+ return profile.valid?profile:null;
+}
+function apexAuthoredRacingOffset(s){
+ const p=apexAuthoredRacingProfile();
+ if(!p||!p.valid)return null;
+ const index=((s%p.L)+p.L)%p.L/p.L*p.count,i=Math.floor(index)%p.count,u=index-Math.floor(index);
+ const a=p.offsets[i],b=p.offsets[(i+1)%p.count];
+ return Number.isFinite(a)&&Number.isFinite(b)?lerp(a,b,u):Number.isFinite(a)?a:null;
+}
 function autoUniversalRacingReference(s){
  const d=trackData&&trackData.model&&trackData.model.driver;
  if(!d||!Number.isFinite(d.step)||!Number.isFinite(trackData.km)||trackData.km<=0)return null;
+ const authored=apexAuthoredRacingOffset(s);
+ if(Number.isFinite(authored))return{lat:clamp(authored,-autoSafeLaneLimit(s,true),autoSafeLaneLimit(s,true)),weight:1,source:'SVG_AUTHORED'};
  const center=poseAt(s),reference=driverReferencePoseAt(s);
  if(!Number.isFinite(reference.x)||!Number.isFinite(reference.z)||
     !Number.isFinite(center.x)||!Number.isFinite(center.z)||
