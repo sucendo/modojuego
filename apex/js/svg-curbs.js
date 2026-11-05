@@ -39,5 +39,35 @@ function contains(mesh,x,z){
  }
  return false;
 }
-global.ApexSvgCurbs=Object.freeze({compile,contains});
+function compileRoadVisual(zones,stations,lapLength,sectionAt,colors){
+ const quads=[];
+ for(const zone of zones){
+  const length=zone.lengthM;
+  if(!(length>0&&length<lapLength))continue;
+  const width=Math.min(8,Math.max(.15,Number(zone.width)||1.25));
+  const stripe=Math.min(12,Math.max(.25,Number(zone.curbStripeM)||2));
+  const taper=Math.min(2.5,length*.5),side=zone.side==='left'?1:-1;
+  const cuts=[0,taper,length-taper,length];
+  for(const s of stations){
+   const d=(s-zone.startS+lapLength)%lapLength;
+   if(d>0&&d<length)cuts.push(d);
+  }
+  for(let d=stripe;d<length;d+=stripe)cuts.push(d);
+  cuts.sort((a,b)=>a-b);
+  let prev=null;
+  for(const d of cuts){
+   if(prev&&d-prev.d<1e-6)continue;
+   const {inner,outer}=sectionAt(zone.startS+d,side,width*Math.min(1,d/taper,(length-d)/taper));
+   if(prev){
+    const points=d===length?[prev.inner,inner,prev.outer]:prev.d===0?[prev.inner,inner,outer]:[prev.inner,inner,outer,prev.outer];
+    const x=(prev.inner[0]+inner[0])*.5,z=(prev.inner[2]+inner[2])*.5;
+    quads.push({points,x,z,r:Math.hypot(inner[0]-prev.inner[0],inner[2]-prev.inner[2])*.5+width*2.2,
+     color:colors[Math.floor((prev.d+d)*.5/stripe)%2],sourceId:zone.sourceId});
+   }
+   prev={d,inner,outer};
+  }
+ }
+ return quads;
+}
+global.ApexSvgCurbs=Object.freeze({compile,compileRoadVisual,contains});
 })(window);
