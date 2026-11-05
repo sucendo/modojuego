@@ -4206,7 +4206,7 @@ const apexAuthoredRacingCache=new WeakMap();
 function apexAuthoredRacingProfile(){
  if(!trackData||!trackData.spec||!Number.isFinite(trackData.km))return null;
  const geometry=readEffectiveTrackSvg(trackData.spec.dir);
- const line=geometry&&geometry.racingLine;
+ const line=geometry&&apexEnsureAuthoredRacingLine(geometry,trackData.spec);
  if(!Array.isArray(line)||line.length<40)return null;
  const prior=apexAuthoredRacingCache.get(trackData);
  if(prior&&prior.line===line)return prior;
