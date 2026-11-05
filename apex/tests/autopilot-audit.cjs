@@ -5,6 +5,7 @@ const fs=require('node:fs'),path=require('node:path'),cp=require('node:child_pro
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?path.join(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES,'playwright'):'playwright'));
 const root=path.resolve(__dirname,'../..'),ref=process.env.BASELINE_REF||'8e71e2d0dba93cf4b6efbb97aba546f36278be6d',hook=fs.readFileSync(path.join(__dirname,'autopilot-hook.js'),'utf8');
 const dirs=(process.env.APEX_AUTO_CIRCUITS||'14-spain,06-monaco,10-belgium,13-italy,03-japan').split(','),seconds=Number(process.env.APEX_AUTO_SECONDS||60),session=process.env.APEX_AUTO_SESSION==='freepractice'?'freepractice':'race',stepsPerFrame=Number(process.env.APEX_AUTO_STEPS_PER_FRAME||5);
+const renderSeconds=Number(process.env.APEX_AUTO_RENDER_SECONDS||0);
 const source={};for(const variant of ['baseline','candidate'])source[variant]=Array.from({length:28},(_,i)=>{const p=`apex/parts/part-${String(i).padStart(3,'0')}.txt`;return variant==='baseline'?cp.execFileSync('git',['show',`${ref}:${p}`],{cwd:root,encoding:'utf8',maxBuffer:15e6}):fs.readFileSync(path.join(root,p),'utf8');});
 (async()=>{
  const browser=await chromium.launch({headless:true,...(process.env.CHROME_EXECUTABLE?{executablePath:process.env.CHROME_EXECUTABLE}:{}),args:['--no-sandbox','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
@@ -23,6 +24,13 @@ const source={};for(const variant of ['baseline','candidate'])source[variant]=Ar
     const loaded=await page.evaluate(async({dir,traffic,session})=>__apexAuto.load(dir,traffic,session),{dir,traffic,session});
     if(dir==='14-spain'){assert.equal(loaded.svgBoards,34,'Audit must load Madrid SVG (16), not BASE');assert.equal(loaded.svgBoardAuthority,true,'Madrid edited boards must be authoritative');}
     const result=await page.evaluate(({seconds,stepsPerFrame})=>__apexAuto.run(seconds,stepsPerFrame),{seconds,stepsPerFrame}),row={test:'autopilot-differential',variant,dir,traffic,...loaded,...result};rows.push(row);console.log(JSON.stringify(row));assert.deepEqual(errors,[]);
+    if(renderSeconds>0){
+     await page.evaluate(async({dir,traffic,session})=>__apexAuto.load(dir,traffic,session),{dir,traffic,session});
+     const rendering=await page.evaluate(seconds=>__apexAuto.render(seconds),renderSeconds);
+     assert.ok(rendering.perf?.frames>0,'Expected actual production frames');
+     console.log(JSON.stringify({test:'autopilot-render-profile',variant,dir,traffic,...rendering}));
+     assert.deepEqual(errors,[]);
+    }
    }
   }
   // Report the current and prior pace under exactly the same authored SVG.
@@ -49,7 +57,7 @@ const source={};for(const variant of ['baseline','candidate'])source[variant]=Ar
    assert.ok(after.end.hp>=before.end.hp-2.0,
      label+': excess impact damage, HP '+after.end.hp.toFixed(2)+' vs main '+before.end.hp.toFixed(2));
   }
-  console.log(JSON.stringify({test:'autopilot-main-regression',cases:10,minProgressRatio:.85,maxExtraHpLoss:2,passed:true}));
+  console.log(JSON.stringify({test:'autopilot-main-regression',cases:comparisons.length,minProgressRatio:.85,maxExtraHpLoss:2,passed:true}));
   // Reproduce the user's dry, solo free practice, not just a race-grid replay.
   // Group the 100 Hz production physics into 12-tick heavy frames (8.3 FPS)
   // to cover the low-performance path seen in the exported telemetry.
@@ -86,20 +94,8 @@ const source={};for(const variant of ['baseline','candidate'])source[variant]=Ar
    }
    const stillRecovering=!!madrid.end.recovery;
    if(episodeStart!==null)maxRecoverySec=Math.max(maxRecoverySec,madrid.end.t-episodeStart);
-   // Report an actual checkpoint crossing instead of deriving a supposed
-   // racing lap from total distance / wall-clock time. The first crossing is
-   // from a standing start; only subsequent crossings are flying laps.
-   const checkpoints=madrid.samples.filter(p=>Number.isFinite(p.total)&&Number.isFinite(p.t));
-   function crossingTime(distance){
-    for(let i=1;i<checkpoints.length;i++){
-     const a=checkpoints[i-1],b=checkpoints[i];
-     if(a.total<=distance&&b.total>=distance&&b.total>a.total)
-      return a.t+(b.t-a.t)*(distance-a.total)/(b.total-a.total);
-    }
-    return null;
-   }
-   const firstLapCrossing=crossingTime(5414),secondLapCrossing=crossingTime(10828);
-   const flyingLap=firstLapCrossing!==null&&secondLapCrossing!==null?secondLapCrossing-firstLapCrossing:null;
+   const firstLapCrossing=madrid.laps.find(lap=>lap.firstLap)?.time??null;
+   const flyingLap=madrid.laps.find(lap=>!lap.firstLap)?.time??null;
    console.log(JSON.stringify({test:'aut-madrid-lap-pace',startType:'standing',
      firstLapSeconds:firstLapCrossing,flyingLapSeconds:flyingLap,
      goalFlyingLapSeconds:120,goalReached:flyingLap!==null&&flyingLap<=120}));
@@ -107,9 +103,7 @@ const source={};for(const variant of ['baseline','candidate'])source[variant]=Ar
      maxRecoverySec,stillRecovering,progressM:madrid.progressM,finalHp:madrid.end.hp}));
    // A complete lap is required. Risk-taking may produce one recoverable
    // incident, but a 20+ second crawl across the circuit is not good race AI.
-   const fullLapM=5414;
-   assert.ok(madrid.progressM>=fullLapM,
-     'Madrid AUT must complete at least one full 5.414 km lap; got '+madrid.progressM.toFixed(1)+' m');
+   assert.ok(madrid.laps.length>0,'Madrid AUT must cross the production finish line');
    assert.ok(recoveries<=1,'An occasional error is realistic; repeated recovery episodes are not: '+recoveries);
    assert.ok(wallContacts<=1,'Repeated wall contacts are not acceptable racecraft: '+wallContacts);
    assert.equal(stillRecovering,false,'An incident must end with a safe return to normal driving');
