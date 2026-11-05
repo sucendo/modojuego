@@ -627,6 +627,7 @@ const SVG_LIBRARY_SCOPED_CSS=`
 #APEX_ELEMENT_LIBRARY .terrain-contour{fill:#6f8653;fill-opacity:.30;stroke:#c8d4b9;stroke-width:1.3;stroke-linejoin:round}
 
 #APEX_ELEMENT_LIBRARY .core-track-template{fill:none;stroke:#3a3d42;stroke-width:8;stroke-linecap:round}
+#APEX_ELEMENT_LIBRARY .racing-line-template{fill:none;stroke:#30f0d3;stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round;paint-order:stroke}
 #APEX_ELEMENT_LIBRARY .core-edge-template{fill:none;stroke:#f3f5f7;stroke-width:2.2;stroke-linecap:round}
 #APEX_ELEMENT_LIBRARY .drivable-template{fill:#56616a;fill-opacity:.32;stroke:#8798a7;stroke-width:1.2}
 #APEX_ELEMENT_LIBRARY .curb-base-template{fill:none;stroke:#f7f7f7;stroke-width:7;stroke-linecap:butt}
@@ -643,9 +644,9 @@ function apexEnsureSvgLibraryStyle(doc,root){
  let st=defs.querySelector('#APEX_LIBRARY_STYLE_V3');if(!st){st=doc.createElementNS(ns,'style');st.setAttribute('id','APEX_LIBRARY_STYLE_V3');defs.appendChild(st)}st.textContent=SVG_LIBRARY_SCOPED_CSS;
 }
 function buildSvgElementLibrary(bounds){
- const x=bounds.maxX+90,y=bounds.minY,W=1220,H=1010,pad=20,gap=16,colw=(W-pad*2-gap*2)/3,c1=x+pad,c2=c1+colw+gap,c3=c2+colw+gap;
+ const x=bounds.maxX+90,y=bounds.minY,W=1220,H=1080,pad=20,gap=16,colw=(W-pad*2-gap*2)/3,c1=x+pad,c2=c1+colw+gap,c3=c2+colw+gap;
  const layouts={
-  TIMING:[c1,y+78,colw,330],TRACK:[c1,y+424,colw,270],SIGNAGE:[c1,y+710,colw,250],
+  TIMING:[c1,y+78,colw,330],TRACK:[c1,y+424,colw,324],SIGNAGE:[c1,y+762,colw,250],
   SAFETY:[c2,y+78,colw,250],RACE_INFRA:[c2,y+344,colw,300],URBAN:[c2,y+660,colw,300],
   ENV:[c3,y+78,colw,430]
  };
@@ -653,7 +654,7 @@ function buildSvgElementLibrary(bounds){
   ['TIMING','CRONOMETRAJE · ACTIVE AERO',[
    ['start-line','START LINE'],['finish-line','FINISH / CONTROL'],['s1','S1 CONTROL'],['s2','S2 CONTROL'],['speedtrap','SPEED TRAP'],['sm','SM ACT'],['omdet','OM DET'],['omact','OM ACT'],['drsdet','DRS DET · LEGACY'],['drsstart','DRS START · LEGACY'],['drsend','DRS END · LEGACY']]],
   ['TRACK','GEOMETRÍA DE PISTA',[
-   ['corner-number','CURVA · T1'],['track-centerline','TRACK CENTERLINE'],['track-left-edge','LÍMITE IZQUIERDO'],['track-right-edge','LÍMITE DERECHO'],['curb-left','PIANO IZQUIERDO'],['curb-right','PIANO DERECHO'],['drivable-area','DRIVABLE AREA'],['pitlane','PIT LANE'],['pit-speed-limit-start','INICIO LÍMITE BOXES'],['pit-speed-limit-end','FIN LÍMITE BOXES']]],
+   ['corner-number','CURVA · T1'],['track-centerline','TRACK CENTERLINE'],['racing-line','TRAZADA IDEAL'],['track-left-edge','LÍMITE IZQUIERDO'],['track-right-edge','LÍMITE DERECHO'],['curb-left','PIANO IZQUIERDO'],['curb-right','PIANO DERECHO'],['drivable-area','DRIVABLE AREA'],['pitlane','PIT LANE'],['pit-speed-limit-start','INICIO LÍMITE BOXES'],['pit-speed-limit-end','FIN LÍMITE BOXES']]],
   ['SIGNAGE','SEÑALIZACIÓN DE CARRERA',[
    ['billboard','CARTEL FÍSICO'],['crosswalk','PASO DE CEBRA'],['stripes','RALLAS / CEBREADO'],['distance','CARTEL 200 m',200],['distance','CARTEL 150 m',150],['distance','CARTEL 100 m',100],['distance','CARTEL 50 m',50]]],
   ['SAFETY','BARRERAS · SEGURIDAD',[
@@ -707,6 +708,7 @@ function buildSvgElementLibrary(bounds){
   if(kind==='drsdet'||kind==='drsstart'||kind==='drsend')return `<line data-apex-type="timingMarker" data-apex-role="${kind==='drsdet'?'drs-detection':kind==='drsstart'?'drs-start':'drs-end'}" class="drs-line" x1="${ix+10}" y1="${cy-10}" x2="${ix+100}" y2="${cy+10}"/>`;
   if(kind==='contour')return `<polygon data-apex-type="terrainContour" data-apex-role="terrain-contour" data-apex-elevation-m="10" data-apex-closed="true" class="terrain-contour" points="${ix+12},${iy+27} ${ix+25},${iy+7} ${ix+55},${iy+2} ${ix+92},${iy+9} ${ix+100},${iy+26} ${ix+78},${iy+34} ${ix+35},${iy+35}"/>`;
   if(kind==='corner-number')return `<g><circle data-apex-type="cornerMarker" data-apex-family="timing" data-apex-role="corner-marker" data-apex-turn="1" data-apex-name="T1" class="corner-template-marker" cx="${ix+35}" cy="${cy}" r="7"/><text data-apex-corner-number="1" class="corner-template-number" x="${ix+49}" y="${cy}">T1</text></g>`;
+  if(kind==='racing-line')return `<path data-apex-role="racing-line" data-apex-family="track" data-apex-template-core="true" data-apex-visual-only="true" class="racing-line-template" d="M ${ix+8} ${iy+23} C ${ix+32} ${iy+2} ${ix+61} ${iy+33} ${ix+102} ${iy+11}"/>`;
   if(kind==='track-centerline')return `<path data-apex-type="track" data-apex-family="track" data-apex-role="track-centerline" data-apex-style="track_centerline" data-apex-template-core="true" class="core-track-template" d="M ${ix+8} ${cy} L ${ix+102} ${cy}"/>`;
   if(kind==='track-left-edge'||kind==='track-right-edge')return `<path data-apex-type="trackEdge" data-apex-family="track" data-apex-role="${kind}" data-apex-style="edge_line" data-apex-template-core="true" class="core-edge-template" d="M ${ix+8} ${cy} L ${ix+102} ${cy}"/>`;
   if(kind==='curb-left'||kind==='curb-right')return `<g><path class="curb-base-template" d="M ${ix+8} ${cy} L ${ix+102} ${cy}"/><path data-apex-type="marking" data-apex-family="track" data-apex-role="${kind}" data-apex-style="curb_red_white" data-apex-width="1.25" class="curb-red-template" d="M ${ix+8} ${cy} L ${ix+102} ${cy}"/></g>`;
@@ -715,7 +717,7 @@ function buildSvgElementLibrary(bounds){
  };
  let total=0,groups=[];
  for(const [cid,title,items] of cats){const [sx,sy,sw,sh]=layouts[cid],cellw=(sw-24)/2,cellh=cid==='TRACK'?46:52,baseY=sy+36,body=[];body.push(`<g data-apex-library-category="${cid}"><rect class="library-section" x="${sx}" y="${sy}" width="${sw}" height="${sh}" rx="10"/><text class="library-section-title" x="${sx+14}" y="${sy+22}">${title}</text>`);items.forEach((it,i)=>{const col=i%2,row=Math.floor(i/2),ix=sx+10+col*cellw,iy=baseY+row*cellh;body.push(`<g data-apex-library-item="1" data-apex-library-label="${it[1]}">${shape(it[0],ix,iy,it[2])}<text class="lib-label" x="${ix+4}" y="${iy+46}">${it[1]}</text></g>`);total++});body.push('</g>');groups.push(body.join(''))}
- return{x,y,w:W,h:H,svg:`<g id="APEX_ELEMENT_LIBRARY" data-apex-library="1" data-apex-library-version="5"><rect id="APEX_ELEMENT_LIBRARY_ZONE" data-apex-library-zone="1" x="${x}" y="${y}" width="${W}" height="${H}" rx="16" class="library-zone"/><text class="library-title" x="${x+24}" y="${y+30}">ELEMENTOS NO INCLUIDOS · BIBLIOTECA · ${total} PLANTILLAS</text><text class="library-help" x="${x+24}" y="${y+51}">Plantillas ordenadas. Las piezas comunes se activan al sacarlas; para GEOMETRÍA DE PISTA edita/reemplaza el elemento BASE existente.</text>${groups.join('')}</g>`};
+ return{x,y,w:W,h:H,svg:`<g id="APEX_ELEMENT_LIBRARY" data-apex-library="1" data-apex-library-version="6"><rect id="APEX_ELEMENT_LIBRARY_ZONE" data-apex-library-zone="1" x="${x}" y="${y}" width="${W}" height="${H}" rx="16" class="library-zone"/><text class="library-title" x="${x+24}" y="${y+30}">ELEMENTOS NO INCLUIDOS · BIBLIOTECA · ${total} PLANTILLAS</text><text class="library-help" x="${x+24}" y="${y+51}">Plantillas ordenadas. Las piezas comunes se activan al sacarlas; para GEOMETRÍA DE PISTA edita/reemplaza el elemento BASE existente.</text>${groups.join('')}</g>`};
 }
 
 function apexSvgLibraryZoneBounds(root){const z=root.querySelector('[data-apex-library-zone="1"],#APEX_ELEMENT_LIBRARY_ZONE');if(!z)return null;const pts=apexSvgSampleMounted(root,z,{count:4,includeEnd:true});if(!pts.length)return null;let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;for(const p of pts){minX=Math.min(minX,p[0]);maxX=Math.max(maxX,p[0]);minY=Math.min(minY,p[1]);maxY=Math.max(maxY,p[1])}return{minX,maxX,minY,maxY}}
@@ -764,7 +766,7 @@ function apexUpgradeImportedSvgLibrary(rawSvg){
   const fragDoc=new DOMParser().parseFromString(`<svg xmlns="http://www.w3.org/2000/svg">${library.svg}</svg>`,'image/svg+xml');
   for(const ch of [...fragDoc.documentElement.childNodes])if(ch.nodeType===1)root.appendChild(doc.importNode(ch,true));
   root.setAttribute('data-apex-library-outside-viewbox','true');
-  apexSvgApplyUniversalSchema(root);root.setAttribute('data-apex-schema','APEX_EDITABLE_TRACK_V6');root.setAttribute('data-apex-library-version','5');
+  apexSvgApplyUniversalSchema(root);root.setAttribute('data-apex-schema','APEX_EDITABLE_TRACK_V6');root.setAttribute('data-apex-library-version','6');
   return `<?xml version="1.0" encoding="UTF-8"?>\n${new XMLSerializer().serializeToString(root)}`;
  }catch(e){return rawSvg}
 }
@@ -1192,6 +1194,24 @@ function apexRuntimePitLaneSvg(){
  return nodes.join('\n    ');
 }
 
+// Vector illustration of the same *time-optimised* reference followed in clean
+// air by AUT. Keep it an editable SVG overlay, never a second physical track.
+// Imported circuits use their original SVG coordinate system, not metres.
+function apexRuntimeIdealRacingLineSvg(svgCtx=null){
+ const d=trackData&&trackData.model&&trackData.model.driver;
+ if(!d||!d.x||!d.z||d.x.length<20||d.x.length!==d.z.length)return '';
+ const origin=svgCtx&&svgCtx.origin||[0,0],scale=svgCtx&&Number.isFinite(svgCtx.scale)&&svgCtx.scale>1e-7?svgCtx.scale:1;
+ const coords=[];
+ for(let i=0;i<d.x.length;i++){
+  const x=Number(d.x[i]),z=Number(d.z[i]);if(!Number.isFinite(x)||!Number.isFinite(z))return '';
+  coords.push(`${i?'L':'M'} ${svgNum(origin[0]+x/scale,3)} ${svgNum(origin[1]-z/scale,3)}`);
+ }
+ const path=coords.join(' ')+' Z',style='fill="none" stroke-linejoin="round" stroke-linecap="round" pointer-events="none"';
+ return `<g id="apex_ideal_racing_line" data-apex-visual-only="true" data-apex-line-model="TIME_OPTIMIZED" data-apex-source="DRIVER_REFERENCE" data-apex-banking="true">
+  <path id="apex_ideal_racing_halo" d="${path}" ${style} stroke="#091921" stroke-width="3.5" opacity=".86"/>
+  <path id="apex_ideal_racing_path" data-apex-role="racing-line" data-apex-name="Trazada ideal · referencia de tiempo" data-apex-family="track" data-apex-visual-only="true" data-apex-line-model="TIME_OPTIMIZED" d="${path}" ${style} stroke="#30f0d3" stroke-width="1.75" opacity=".97"/>
+ </g>`;
+}
 function apexEnrichExportSvg(svgText,spec){
  let terrainExportCtx=null;
  try{
@@ -1237,6 +1257,15 @@ function apexEnrichExportSvg(svgText,spec){
    if(!apexExportHasRole(root,'corner-marker')){const c=apexRuntimeCornerMarkersSvg();if(c)pieces.push(c);root.setAttribute('data-apex-corners-authoritative','true')}
    const appendFragments=(xml,id,behind=false)=>{if(!xml.length)return;let g=root.querySelector('#'+id);if(!g){const frag=new DOMParser().parseFromString(`<svg xmlns="http://www.w3.org/2000/svg"><g id="${id}" data-apex-generated="materialized-export"></g></svg>`,'image/svg+xml');g=doc.importNode(frag.documentElement.firstElementChild,true);if(behind){const defs=root.querySelector('defs');if(defs&&defs.nextSibling)root.insertBefore(g,defs.nextSibling);else root.insertBefore(g,root.firstChild)}else root.appendChild(g)}const frag=new DOMParser().parseFromString(`<svg xmlns="http://www.w3.org/2000/svg"><g>${xml.join('\n')}</g></svg>`,'image/svg+xml');for(const ch of [...frag.documentElement.firstElementChild.children])g.appendChild(doc.importNode(ch,true));};
    appendFragments(backPieces,'APEX_TERRAIN_CONTOURS',true);appendFragments(pieces,'APEX_RUNTIME_EXPORT',false);
+   // Respect the user's edited racing line, including an intentionally removed
+   // one when the SVG explicitly declares this visual layer authoritative.
+   const racingAuthoritative=String(root.getAttribute('data-apex-racing-line-authoritative')||'').toLowerCase()==='true';
+   if(!racingAuthoritative&&!apexExportHasRole(root,'racing-line')){
+    const racing=apexRuntimeIdealRacingLineSvg(terrainExportCtx);
+    if(racing){appendFragments([racing],'APEX_RACING_LINE_EXPORT',false);
+      root.setAttribute('data-apex-racing-line-authoritative','true');
+      root.setAttribute('data-apex-racing-line-model','TIME_OPTIMIZED');}
+   }
    // Nombres en metadatos + número Tn siempre visible en el SVG.
    const exportNames=apexJsonCornerNameMap(spec.dir),svgNs='http://www.w3.org/2000/svg';
    for(const marker of root.querySelectorAll('[data-apex-role="corner-marker"]')){
@@ -1247,7 +1276,7 @@ function apexEnrichExportSvg(svgText,spec){
    }
    apexWriteCircuitMetadata(doc,root,spec);
    apexSvgApplyUniversalSchema(root);
-   root.setAttribute('data-apex-export','COMPLETE_CIRCUIT_V5');root.setAttribute('data-apex-export-version','v5.230.62.8.6.7.6');root.setAttribute('data-apex-library-version','5');root.setAttribute('data-apex-metadata-version','2');
+   root.setAttribute('data-apex-export','COMPLETE_CIRCUIT_V5');root.setAttribute('data-apex-export-version','v5.230.62.8.6.7.6');root.setAttribute('data-apex-library-version','6');root.setAttribute('data-apex-metadata-version','2');
    const out=`<?xml version="1.0" encoding="UTF-8"?>\n${new XMLSerializer().serializeToString(root)}`;if(terrainExportCtx&&terrainExportCtx.root&&terrainExportCtx.root.isConnected)terrainExportCtx.root.remove();return out;
  }catch(e){if(terrainExportCtx&&terrainExportCtx.root&&terrainExportCtx.root.isConnected)terrainExportCtx.root.remove();return svgText}
 }
@@ -1548,7 +1577,7 @@ async function importEditableCircuitSvgText(text,spec,options={}){
    if(pitSpeedKph>0)pitNetwork.speedKph=clamp(pitSpeedKph,30,120);
    const excluded=new Set([...pitEls,...wallLeftEls,...wallRightEls,...edgeLeftEls,...edgeRightEls,...drivableEls,...cornerImport.elements,...terrainImport.elements,...(terrainBase?[...ctx.root.querySelectorAll('[data-apex-role="terrain-base"]')]:[]),...timingImport.elements.filter(el=>!['start-line','finish-line'].includes(String(el.getAttribute('data-apex-role')||'').toLowerCase())),ctx.trackEl]);
    const startEls=apexSvgFindAll(ctx.root,['start_finish','start-finish','start_marker','start-marker']);for(const x of startEls)excluded.add(x);
-   const candidates=[...ctx.root.querySelectorAll('[data-apex-type],[data-apex-role]')].filter(el=>!excluded.has(el)&&!el.hasAttribute('data-apex-library-zone')&&!apexSvgElementInsideLibrary(ctx,el,libraryZone));const landmarks=[];
+   const candidates=[...ctx.root.querySelectorAll('[data-apex-type],[data-apex-role]')].filter(el=>!excluded.has(el)&&!el.hasAttribute('data-apex-library-zone')&&String(el.getAttribute('data-apex-role')||'').toLowerCase()!=='racing-line'&&!el.closest('#apex_ideal_racing_line,#APEX_RACING_LINE_EXPORT')&&!apexSvgElementInsideLibrary(ctx,el,libraryZone));const landmarks=[];
    for(let i=0;i<candidates.length;i++){const item=apexSvgLandmarkExact(candidates[i],i,ctx);if(item)landmarks.push(item)}
    const brakeBoards=apexImportedBrakeBoards(landmarks,ctx.km*1000),circuitLandmarks=landmarks.filter(it=>it.type!=='distanceBoard'),curbZones=apexImportedCurbZones(circuitLandmarks,ctx.km*1000);
    const structureZones=apexImportedStructureZones(circuitLandmarks,ctx.km*1000),barrierSegments=apexImportedBarrierSegments(circuitLandmarks,ctx.km*1000),surfaceZones=apexImportedSurfaceZones(circuitLandmarks),brakeBoardsFlag=String(rootDoc.getAttribute('data-apex-brake-boards-authoritative')||'').trim().toLowerCase(),brakeBoardsAuthoritative=brakeBoardsFlag==='true'||(!brakeBoardsFlag&&(brakeBoards.length>0||!!rootDoc.querySelector('#APEX_BRAKING_MARKERS'))),geometryPayload={points:ctx.points,km:ctx.km,direction:ctx.direction,layoutId,turns,laps,circuitType:'RACE',source:'EXACT_USER_SVG',authoritative:true,rawSvg:String(text),verticalProfile,timingData,timingControls,cornerMarkers,brakeBoardsAuthoritative};
@@ -1588,7 +1617,7 @@ function bindCircuitJsonTools(){
 function bindSvgTrackTools(){
  populateSvgTrackSelector();
  const exp=$("exportCircuitSvgBtn"),imp=$("importCircuitSvgBtn"),repoLoad=$("loadRepoCircuitBtn"),rst=$("resetCircuitSvgBtn"),file=$("importCircuitSvgFile");
- if(exp)exp.onclick=async()=>{const spec=currentSvgToolSpec();setSvgToolStatus(`Generando SVG completo de ${spec.name}…`);try{let exact=false;await withPreparedTrackSpec(spec,()=>{const stored=readStoredCustomTrackSvg(spec.dir);exact=!!(stored&&stored.authoritative===true&&typeof stored.rawSvg==='string'&&stored.rawSvg.trim());const baseSvg=buildEditableCircuitSvgForCurrentTrack(spec),svg=apexEnrichExportSvg(baseSvg,spec);triggerDownload(`apex26_${spec.dir}_circuito_completo.svg`,svg)});setSvgToolStatus(`SVG total exportado de ${spec.name}: geometría${exact?' importada preservada':''}, pit lane (SVG o fallback provisional), terreno por curvas de nivel editables (+115 m), escapatorias, salida/meta, curvas T1–Tn editables, líneas de control S1/S2/salida/meta/speed-trap, carteles de distancia autoritativos, perfil vertical/peraltes y pianos SVG activos autoritativos, biblioteca de 62 plantillas y esquema universal data-apex-style.`, 'ok')}catch(e){setSvgToolStatus(`No se pudo exportar el SVG: ${e&&e.message||e}`, 'err')}};
+ if(exp)exp.onclick=async()=>{const spec=currentSvgToolSpec();setSvgToolStatus(`Generando SVG completo de ${spec.name}…`);try{let exact=false;await withPreparedTrackSpec(spec,()=>{const stored=readStoredCustomTrackSvg(spec.dir);exact=!!(stored&&stored.authoritative===true&&typeof stored.rawSvg==='string'&&stored.rawSvg.trim());const baseSvg=buildEditableCircuitSvgForCurrentTrack(spec),svg=apexEnrichExportSvg(baseSvg,spec);triggerDownload(`apex26_${spec.dir}_circuito_completo.svg`,svg)});setSvgToolStatus(`SVG total exportado de ${spec.name}: geometría${exact?' importada preservada':''}, pit lane (SVG o fallback provisional), terreno por curvas de nivel editables (+115 m), escapatorias, salida/meta, curvas T1–Tn editables, líneas de control S1/S2/salida/meta/speed-trap, carteles de distancia autoritativos, perfil vertical/peraltes y pianos SVG activos autoritativos, biblioteca de 63 plantillas (incluye trazada ideal) y esquema universal data-apex-style.`, 'ok')}catch(e){setSvgToolStatus(`No se pudo exportar el SVG: ${e&&e.message||e}`, 'err')}};
  if(imp)imp.onclick=()=>file&&file.click();
  if(repoLoad)repoLoad.onclick=async()=>{
    const spec=currentSvgToolSpec();let jsonBackend=null;
