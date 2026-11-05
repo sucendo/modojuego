@@ -2137,13 +2137,17 @@ function sharedDriverTrackTargetSpeed(s,opt={}){
  if(Number.isFinite(opt.topCap))target=Math.min(target,opt.topCap);
  const horizon=Number.isFinite(opt.horizon)?opt.horizon:(wet?330:370),step=Math.max(6,Number.isFinite(opt.step)?opt.step:8),safeScale=Number.isFinite(opt.safeScale)?opt.safeScale:1;
  for(let d=step;d<=horizon;d+=step){
-   const ss=s+d,e=envProfile(ss),wallish=apexWallishAtS(ss,e),k=Math.abs(curvatureAt(ss));
+   const ss=s+d,wallish=apexWallishAtS(ss),k=Math.abs(curvatureAt(ss));
+   const turnShare=clamp((k-.0025)/.0105,0,1),planDecel=baseDecel*(1-turnShare*.18),settle=d>18?8:3;
+   const brakingTerm=2*planDecel*Math.max(0,d-settle);
+   // Keep wall sampling in order: the wall cache stores the first query in
+   // each distance cell. Only skip the pure apex-speed calculation.
+   if(Math.sqrt(brakingTerm)>=target)continue;
    const diffTrim=clamp(1+(diff-1)*.32,.98,1.018),wallTrim=wallish?.972:1.000;
    const learned=typeof opt.riskFn==="function"?clamp(opt.riskFn(ss)||0,0,1):0;
    let safe=autoPhysicalCornerSpeed(ss,opt.car||player)*pace*diffTrim*perf.aero*wallTrim*safeScale*(1-learned*riskWeight);
    if(wet)safe*=.90*perf.wet;
-   const turnShare=clamp((k-.0025)/.0105,0,1),planDecel=baseDecel*(1-turnShare*.18),settle=d>18?8:3;
-   const allowed=Math.sqrt(Math.max(0,safe*safe+2*planDecel*Math.max(0,d-settle)));
+   const allowed=Math.sqrt(Math.max(0,safe*safe+brakingTerm));
    if(allowed<target)target=allowed;
  }
  return target;
@@ -2790,15 +2794,23 @@ function playerAutoTraffic(plan){
 // carga aerodinámica como un turismo. Usamos una envolvente robusta de curvatura y
 // resolvemos la velocidad máxima que puede sostener el agarre lateral disponible.
 function autoCurvatureEnvelope(s){
- const a=[-6,-3,0,3,6].map(d=>Math.abs(curvatureAt(s+d))).sort((x,y)=>x-y);
- // percentil alto: ignora un único pico de geometría/GPX pero no una curva sostenida.
- return Math.max(a[3]||0,(a[2]||0)*1.04);
+ let a=Math.abs(curvatureAt(s-6)),b=Math.abs(curvatureAt(s-3));
+ let c=Math.abs(curvatureAt(s)),d=Math.abs(curvatureAt(s+3));
+ const e=Math.abs(curvatureAt(s+6));
+ // Sort four samples, then insert the fifth into the two ranks we need.
+ if(a>b){const t=a;a=b;b=t;}
+ if(c>d){const t=c;c=d;d=t;}
+ if(a>c){const t=a;a=c;c=t;}
+ if(b>d){const t=b;b=d;d=t;}
+ if(b>c){const t=b;b=c;c=t;}
+ const median=clamp(e,b,c),upper=clamp(e,c,d);
+ return Math.max(upper,median*1.04);
 }
 function autoPhysicalCornerSpeed(s,car=player){
  const k=autoCurvatureEnvelope(s);
  if(k<.00055)return 99;
  const wet=apexWeatherIsWet(),mu=1.86*apexTyreGripScale(car),M=800,G=9.81;
- const safety=wet?.90:.960;
+ const safety=wet?.90:.960,needSteer=Math.atan(3.60*k);
  // The low-speed grip limit belongs to the player's AUT controller.
  // Keep the previously tuned rival speed floor/handling unchanged.
  const autPlayer=car===player&&(demoMode||assistMode);
@@ -2808,7 +2820,7 @@ function autoPhysicalCornerSpeed(s,car=player){
    const down=Math.min(38000,2.72*v*v);
    const latAccel=mu*(M*G+down)/M*safety;
    // Incluye también la autoridad geométrica de dirección a esa velocidad.
-   const maxSteer=.285/(1+v*.0105),needSteer=Math.atan(3.60*k);
+   const maxSteer=.285/(1+v*.0105);
    const safe=(v*v*k<=latAccel)&&(needSteer<=maxSteer*.96);
    if(safe)lo=v;else hi=v;
  }

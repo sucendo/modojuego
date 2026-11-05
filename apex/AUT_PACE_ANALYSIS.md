@@ -30,3 +30,37 @@ El objetivo de Madrid es una **vuelta lanzada cercana a 120 s**, no una vuelta d
 
 ## Siguiente fase
 Comparar los `hotspots` en Madrid, Mónaco, Spa, Monza y Suzuka. Después calibrar **de forma universal** una envolvente de velocidad de curvatura + agarre, recorridos hacia atrás (frenada) y hacia delante (aceleración), y una trazada que optimice tiempo en vez de solo curvatura. Hacer A/B contra main bajo condiciones idénticas y descartar ajustes que aumenten repetidamente impactos o no terminen las vueltas.
+
+## Coste de planificación y medición A/B
+
+La referencia de trazada del PR #113 ya se construye al preparar el circuito.
+En conducción se repetían consultas de tangente del SVG, lecturas del entorno
+para celdas de muro ya resueltas y cálculos del límite físico en vértices que
+no podían reducir la velocidad objetivo. La tangente se guarda por segmento en
+el circuito cargado. Las celdas de muro conservan el primer punto consultado y
+las mismas reglas de colisión. La poda conserva esa secuencia de consultas y
+descarta solo el cálculo de velocidad de curva cuando la distancia de frenada
+ya impide bajar el objetivo. En el caso aislado de seco/mojado y tres niveles
+de agarre se obtienen los mismos objetivos con 16 275 cálculos frente a 17 487.
+
+El banco diferencial usa el reloj y los sectores de producción, el mismo SVG
+guardado y la misma semilla. El JSONL registra velocidad, freno, acelerador,
+distancia en planta, error lateral RMS, episodios fuera de pista y contactos
+con muros. Las mínimas por curva se muestrean cada 0,5 s en las zonas de curva
+del circuito. El umbral de tiempo por defecto exige paridad con la base del PR.
+Para evaluar un cambio de ritmo, usar `APEX_AUTO_MIN_LAP_SAVING_SEC=.2` al
+ejecutar el comparador.
+
+```bash
+# Servir el repositorio desde la raíz en 127.0.0.1:8765.
+BASELINE_REF=a87a02c60 APEX_AUTO_CIRCUITS=14-spain APEX_AUTO_TRAFFIC=solo \
+  APEX_AUTO_SECONDS=390 node apex/tests/autopilot-audit.cjs > madrid.jsonl
+node apex/tests/autopilot-time-compare.cjs madrid.jsonl
+```
+
+Para medir el renderizado, repetir el banco con `APEX_AUTO_RENDER_SECONDS=12`.
+El bloque de renderizado usa el bucle de producción por separado y recoge
+percentiles de frame, tiempos de CPU por pasada, draw calls, triángulos y
+memoria disponible del navegador. El tiempo del controlador se mide dentro de
+la repetición acelerada. La memoria del heap es una instantánea aproximada y
+los FPS de Chromium con SwiftShader describen renderizado por software.
