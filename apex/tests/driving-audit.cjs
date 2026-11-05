@@ -134,7 +134,19 @@ test('Pedales reales: progresión, suelta y perfiles sin cambios de transmisión
 });
 test('Scheduler, perfiles, cámaras, suelo y colisiones conservados; IA sólo adapta agarre',()=>{
  for(const name of ['loop','apexDriveSteeringConfig','apexDriveProfile','playerSurfaceState','snapshotPhysics','recoverPhysics'])assert.equal(func(source,name),func(baseline,name),name);
- assert.equal(func(source,'applyRivalNearDynamics').replace('mu=1.86*apexTyreGripScale(rv)','mu=wet?1.24:1.84'),func(baseline,'applyRivalNearDynamics'));
+ // Only the signed peralte force is allowed to change the LOD tyre-use
+ // proxy; no new AI steering or racecraft behaviours are introduced here.
+ const bankedRival=func(source,'applyRivalNearDynamics');
+ assert.ok(bankedRival.includes('Math.sin(bank)')&&bankedRival.includes('Math.cos(bank)'));
+ const legacyRival=bankedRival.replace(
+  ` const wet=apexWeatherIsWet(),ss=rv.s+clamp(rv.speed*.18,4,13),ks=curvatureAt(ss),k=Math.abs(ks),M=800,G=9.81,mu=1.86*apexTyreGripScale(rv);
+ const down=Math.min(38000,2.72*rv.speed*rv.speed),bank=clamp(finite(bankAt(ss),0),-.40,.40);
+ const latCap=mu*(M*G+down)*Math.cos(bank)/M,
+       latNeed=Math.max(0,rv.speed*rv.speed*k-Math.sign(ks)*G*Math.sin(bank)),
+       use=latCap>0?latNeed/latCap:0;`,
+  ` const wet=apexWeatherIsWet(),k=Math.abs(curvatureAt(rv.s+clamp(rv.speed*.18,4,13))),M=800,G=9.81,mu=wet?1.24:1.84;
+ const down=Math.min(38000,2.72*rv.speed*rv.speed),latCap=mu*(M*G+down)/M,latNeed=rv.speed*rv.speed*k,use=latCap>0?latNeed/latCap:0;`);
+ assert.equal(legacyRival,func(baseline,'applyRivalNearDynamics'));
  const from=' // Integración mundial autónoma',to=' // Telemetría de dinámica.';
  assert.equal(source.slice(source.indexOf(from),source.indexOf(to)).replace('player.lastDrivableBoundaryHit=raceT;','').replaceAll('apexPlayerDriveBoundaryContains','apexDrivableAreaContains').replace(/ apexTyreStep\(player,[^\n]+\n/,''),baseline.slice(baseline.indexOf(from),baseline.indexOf(to)));
  assert.ok(source.includes('APEX_PLAYER_PHYSICS_HZ=100,APEX_PLAYER_PHYSICS_DT=1/APEX_PLAYER_PHYSICS_HZ,APEX_PLAYER_MAX_CATCHUP_STEPS=12'));
