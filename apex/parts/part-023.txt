@@ -653,7 +653,7 @@ function buildSvgElementLibrary(bounds){
   ['TIMING','CRONOMETRAJE · ACTIVE AERO',[
    ['start-line','START LINE'],['finish-line','FINISH / CONTROL'],['s1','S1 CONTROL'],['s2','S2 CONTROL'],['speedtrap','SPEED TRAP'],['sm','SM ACT'],['omdet','OM DET'],['omact','OM ACT'],['drsdet','DRS DET · LEGACY'],['drsstart','DRS START · LEGACY'],['drsend','DRS END · LEGACY']]],
   ['TRACK','GEOMETRÍA DE PISTA',[
-   ['corner-number','CURVA · T1'],['track-centerline','TRACK CENTERLINE'],['track-left-edge','LÍMITE IZQUIERDO'],['track-right-edge','LÍMITE DERECHO'],['curb-left','PIANO IZQUIERDO'],['curb-right','PIANO DERECHO'],['drivable-area','DRIVABLE AREA'],['pitlane','PIT LANE']]],
+   ['corner-number','CURVA · T1'],['track-centerline','TRACK CENTERLINE'],['track-left-edge','LÍMITE IZQUIERDO'],['track-right-edge','LÍMITE DERECHO'],['curb-left','PIANO IZQUIERDO'],['curb-right','PIANO DERECHO'],['drivable-area','DRIVABLE AREA'],['pitlane','PIT LANE'],['pit-speed-limit-start','INICIO LÍMITE BOXES'],['pit-speed-limit-end','FIN LÍMITE BOXES']]],
   ['SIGNAGE','SEÑALIZACIÓN DE CARRERA',[
    ['billboard','CARTEL FÍSICO'],['crosswalk','PASO DE CEBRA'],['stripes','RALLAS / CEBREADO'],['distance','CARTEL 200 m',200],['distance','CARTEL 150 m',150],['distance','CARTEL 100 m',100],['distance','CARTEL 50 m',50]]],
   ['SAFETY','BARRERAS · SEGURIDAD',[
@@ -693,6 +693,7 @@ function buildSvgElementLibrary(bounds){
   if(kind==='sea')return `<rect data-apex-type="water" data-apex-role="sea" class="water" x="${ix+10}" y="${iy+3}" width="90" height="30" rx="7"/>`;
   if(kind.startsWith('barrier-')){const sub=kind.slice(8),cl=sub==='tire'?'tirewall':sub,role=sub==='tire'?'barrier-tirewall':'barrier-'+sub;return `<path data-apex-type="barrier" data-apex-role="${role}" data-apex-collision="true" class="barrier ${cl}" d="M ${ix+8} ${cy} L ${ix+102} ${cy}"/>`}
   if(kind==='wall-left'||kind==='wall-right')return `<path data-apex-type="wall" data-apex-role="${kind}" data-apex-family="wall" data-apex-style="wall_f1" class="wall-line" d="M ${ix+8} ${cy} L ${ix+102} ${cy}"/>`;
+  if(kind==='pit-speed-limit-start'||kind==='pit-speed-limit-end')return `<line data-apex-type="marking" data-apex-family="track" data-apex-role="${kind}" x1="${ix+4}" y1="${cy}" x2="${ix+20}" y2="${cy}" style="stroke:#fff;stroke-width:0.35;stroke-linecap:butt"/>`;
   if(kind==='pitlane')return `<path data-apex-type="pitLane" data-apex-role="pitlane-centerline" data-apex-width="5.9" class="pit-line" d="M ${ix+8} ${cy} L ${ix+102} ${cy}"/>`;
   if(kind==='flagpole')return `<line data-apex-type="flagPole" data-apex-role="flag-pole" data-apex-height="25" class="flagpole" x1="${cx}" y1="${iy+32}" x2="${cx}" y2="${iy}"/>`;
   if(kind==='billboard')return `<rect data-apex-type="billboard" data-apex-role="billboard" data-apex-width="16" data-apex-height="4" class="billboard" x="${ix+15}" y="${iy+7}" width="80" height="22" rx="2"/>`;
@@ -713,7 +714,7 @@ function buildSvgElementLibrary(bounds){
   return '';
  };
  let total=0,groups=[];
- for(const [cid,title,items] of cats){const [sx,sy,sw,sh]=layouts[cid],cellw=(sw-24)/2,cellh=52,baseY=sy+36,body=[];body.push(`<g data-apex-library-category="${cid}"><rect class="library-section" x="${sx}" y="${sy}" width="${sw}" height="${sh}" rx="10"/><text class="library-section-title" x="${sx+14}" y="${sy+22}">${title}</text>`);items.forEach((it,i)=>{const col=i%2,row=Math.floor(i/2),ix=sx+10+col*cellw,iy=baseY+row*cellh;body.push(`<g data-apex-library-item="1" data-apex-library-label="${it[1]}">${shape(it[0],ix,iy,it[2])}<text class="lib-label" x="${ix+4}" y="${iy+46}">${it[1]}</text></g>`);total++});body.push('</g>');groups.push(body.join(''))}
+ for(const [cid,title,items] of cats){const [sx,sy,sw,sh]=layouts[cid],cellw=(sw-24)/2,cellh=cid==='TRACK'?46:52,baseY=sy+36,body=[];body.push(`<g data-apex-library-category="${cid}"><rect class="library-section" x="${sx}" y="${sy}" width="${sw}" height="${sh}" rx="10"/><text class="library-section-title" x="${sx+14}" y="${sy+22}">${title}</text>`);items.forEach((it,i)=>{const col=i%2,row=Math.floor(i/2),ix=sx+10+col*cellw,iy=baseY+row*cellh;body.push(`<g data-apex-library-item="1" data-apex-library-label="${it[1]}">${shape(it[0],ix,iy,it[2])}<text class="lib-label" x="${ix+4}" y="${iy+46}">${it[1]}</text></g>`);total++});body.push('</g>');groups.push(body.join(''))}
  return{x,y,w:W,h:H,svg:`<g id="APEX_ELEMENT_LIBRARY" data-apex-library="1" data-apex-library-version="5"><rect id="APEX_ELEMENT_LIBRARY_ZONE" data-apex-library-zone="1" x="${x}" y="${y}" width="${W}" height="${H}" rx="16" class="library-zone"/><text class="library-title" x="${x+24}" y="${y+30}">ELEMENTOS NO INCLUIDOS · BIBLIOTECA · ${total} PLANTILLAS</text><text class="library-help" x="${x+24}" y="${y+51}">Plantillas ordenadas. Las piezas comunes se activan al sacarlas; para GEOMETRÍA DE PISTA edita/reemplaza el elemento BASE existente.</text>${groups.join('')}</g>`};
 }
 
