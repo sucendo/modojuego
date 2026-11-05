@@ -4,7 +4,7 @@
 // promise that the original trajectory is retained if the time proxy does not improve.
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const src=fs.readFileSync(path.join(__dirname,'../parts/part-024.txt'),'utf8');
-const start=src.indexOf('function driverPhysicalSpeedFromCurvature('),
+const start=src.indexOf('function apexBankedLateralLimit('),
       end=src.indexOf('function prepareDriverReferenceModel(',start);
 assert.ok(start>=0&&end>start,'Extract actual time-reference optimizer from production');
 const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
