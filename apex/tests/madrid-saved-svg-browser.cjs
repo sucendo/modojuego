@@ -100,6 +100,7 @@ window.__madridSavedSvgAudit={
   assert.deepEqual(rehydrated.colors,['#f2c500','#d51f27']);
   assert.equal(rehydrated.bank,13.4957);
   assert.equal(rehydrated.svg,true,'The saved SVG must survive alongside JSON');
+  console.log('APEX_RACING_LINE_BROWSER_DIAGNOSTIC',JSON.stringify({imported:{curbs:result.curbs,landmarks:result.landmarks,boards:result.boards,bytes:result.bytes},rehydrated}));
   assert.ok(rehydrated.curbVisual.authored>0&&rehydrated.curbVisual.faces>0,'The loaded circuit must compile the authored kerbs for the live renderer');
   assert.deepEqual(rehydrated.curbVisual.missing,[],'Every saved kerb must reach the live renderer');
   assert.deepEqual(rehydrated.curbVisual.colors.sort(),['#d51f27','#f2c500']);
