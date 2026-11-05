@@ -18,5 +18,14 @@ assert.ok(fs.readFileSync('apex/parts/part-024.txt','utf8').includes('apexSvgSur
 
 const moved=api.compile([{...mark,curbRuns:[[[20,0],[20,10]]]}],()=>0);assert.equal(api.contains(moved,.5,5),false);assert.equal(api.contains(moved,20.5,5),true);
 assert.equal(api.compile([],()=>0).quads.length,0,'Removing all authored kerbs keeps the SVG empty');
+const tapered=api.compileRoadVisual([{startS:98,lengthM:8,side:'right',width:2,curbStripeM:2}],Array.from({length:101},(_,i)=>i),100,
+ (s,side,width)=>({inner:[s,3,0],outer:[s,3,side*width]}),userPalette);
+assert.equal(tapered[0].points.length,3);
+assert.equal(tapered.at(-1).points.length,3);
+assert.equal(tapered[0].points[0][0],98);
+assert.equal(tapered.at(-1).points[1][0],106);
+assert.ok(tapered.every(face=>face.points.every(point=>point[2]<=0)),'No painted kerb may cross the track edge');
+assert.ok(tapered.some(face=>face.points.some(point=>point[2]===-2)));
+assert.equal(new Set(tapered.map(face=>face.color)).size,2);
 const html=Array.from({length:28},(_,i)=>fs.readFileSync(`apex/parts/part-${String(i).padStart(3,'0')}.txt`,'utf8')).join('');for(const m of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi))new vm.Script(m[1]);
 console.log(JSON.stringify({test:'svg-kerb-geometry',quads:mesh.quads.length,subpaths:true,paintAndContact:true,ok:true}));

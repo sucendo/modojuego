@@ -523,7 +523,7 @@ async function apexCompileCircuitStatic(onProgress=null){
  for(let i=0;i<(cw.brakeBoards||[]).length;i++)sectors[sid(apexCompileItemS(cw.brakeBoards[i],L))].brakeBoards.push(i);
  for(let i=0;i<(grade&&grade.tunnels||[]).length;i++){const t=grade.tunnels[i],a=sid(t.s0),b=sid(t.s1);sectors[a].tunnels.push(i);if(b!==a)sectors[b].tunnels.push(i)}
  const skylineLandmarks=[];for(let i=0;i<(cw.landmarks||[]).length;i++)if(apexIsSkylineLandmark(cw.landmarks[i]))skylineLandmarks.push(i);
- trackData.compiledCircuit={revision:APEX_CIRCUIT_COMPILE_REV,sectorM,sectors,gradeIndex:grade,portals,skylineLandmarks};stats.sectors=nSec;stats.skylineLandmarks=skylineLandmarks.length;stats.staticBatches=apexBuildCircuitStaticRenderBatches(cw);apexAuthoredCurbMesh();trackData.compiledCircuit.staticBatchStats=stats.staticBatches;stats.stages.sectorsMs=Number((performance.now()-t0).toFixed(2));
+ trackData.compiledCircuit={revision:APEX_CIRCUIT_COMPILE_REV,sectorM,sectors,gradeIndex:grade,portals,skylineLandmarks};stats.sectors=nSec;stats.skylineLandmarks=skylineLandmarks.length;stats.staticBatches=apexBuildCircuitStaticRenderBatches(cw);apexAuthoredCurbMesh();apexAuthoredCurbVisual();trackData.compiledCircuit.staticBatchStats=stats.staticBatches;stats.stages.sectorsMs=Number((performance.now()-t0).toFixed(2));
  await apexCompilerYield();
 
  // Antes de teselar de nuevo, intenta restaurar la malla fina ya compilada para esta huella exacta.
