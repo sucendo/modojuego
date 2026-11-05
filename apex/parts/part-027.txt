@@ -46,8 +46,9 @@
  // cross-slope, projected onto the car's right axis (not its yaw).
  // Do not extend this assistance onto unrelated flat runoff surfaces.
  const roadBank=(ps.zone==='TRACK'||ps.zone==='KERB')?clamp(finite(player.surfaceBank,0),-.40,.40):0;
- const trBank=player.track||poseAt(player.s),
-       bankRightAlign=clamp(-(trBank.nx*axes.rx+trBank.nz*axes.rz),-1,1);
+ const trBank=player.track,
+       bankRightAlign=trBank&&Number.isFinite(trBank.nx)&&Number.isFinite(trBank.nz)
+        ?clamp(-(trBank.nx*axes.rx+trBank.nz*axes.rz),-1,1):1;
  // At standstill the tyres hold the car on the slope (static friction).
  // Fade the dynamic cross-slope acceleration in as the car starts moving.
  const bankMotion=clamp((sp-1.5)/7,0,1);
