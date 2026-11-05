@@ -1119,7 +1119,7 @@ function captureSessionTelemetry(){
   curvature0:telemetryRound(curvatureAt(player.s),6),curvature15:telemetryRound(curvatureAt(player.s+15),6),curvature30:telemetryRound(curvatureAt(player.s+30),6),pathCurvature:telemetryRound(driverReferencePathCurvatureAt(player.s),6),pathLaneM:telemetryRound(driverReferenceLaneAt(player.s),3),pathLocalSafeKph:telemetryRound(driverReferenceSafeSpeedAt(player.s)*3.6,1),pathBrakeTargetKph:telemetryRound(driverReferenceTargetSpeedAt(player.s)*3.6,1),safeSpeedKph:telemetryRound(cornerSafeSpeed(player.s)*3.6,1),autoPhysicalSpeedKph:telemetryRound((player.autoPhysicalNow||autoPhysicalCornerSpeed(player.s))*3.6,1),
   baseTrackTargetKph:telemetryRound((player.autoBaseTrackTargetSpeed||0)*3.6,1),preCommitTargetKph:Number.isFinite(player.autoPreCommitTargetSpeed)?telemetryRound(player.autoPreCommitTargetSpeed*3.6,1):null,preTrafficTargetKph:telemetryRound((player.autoPreTrafficTargetSpeed||player.autoTargetSpeed||0)*3.6,1),trafficSpeedLimitKph:Number.isFinite(player.autoTrafficSpeedLimit)?telemetryRound(player.autoTrafficSpeedLimit*3.6,1):null,targetSpeedKph:telemetryRound((player.autoTargetSpeed||0)*3.6,1),committedTargetKph:Number.isFinite(player.autoCommittedTargetSpeed)?telemetryRound(player.autoCommittedTargetSpeed*3.6,1):null,targetSpeedReason:player.autoTargetSpeedReason||"TRACK",targetSpeedReasonDetail:player.autoTargetSpeedReasonDetail||null,
   preTrafficReductionKph:telemetryRound(Math.max(0,(player.autoBaseTrackTargetSpeed||0)-(player.autoPreTrafficTargetSpeed||player.autoTargetSpeed||0))*3.6,1),trafficReductionKph:telemetryRound(Math.max(0,(player.autoPreTrafficTargetSpeed||player.autoTargetSpeed||0)-(player.autoTargetSpeed||0))*3.6,1),totalTargetReductionKph:telemetryRound(Math.max(0,(player.autoBaseTrackTargetSpeed||0)-(player.autoTargetSpeed||0))*3.6,1),
-  autoMode:autoCtlMode,autoPhase:player.autoPhase||null,autoPace:telemetryRound(player.autoPace,4),autoTargetLat:telemetryRound(player.autoTargetLat,3),autoTechnical:!!player.autoTechnicalActive,autoTechnicalAhead:!!player.autoTechnicalAhead,stabilityRisk:telemetryRound(player.autoStabilityRisk,3),rearCritical:telemetryRound(player.autoRearCritical,3),autoExitClearance:telemetryRound(player.autoExitClearance,3),autoTargetReleaseRateMps2:telemetryRound(player.autoTargetReleaseRate,2),brakeRelease:telemetryRound(player.autoBrakeRelease,3),counterSteerActive:!!player.autoCounterSteerActive,counterSteerRequest:!!player.autoCounterSteerRequest,renderPressure:telemetryRound(mobileRenderPressure(),3),recovery:rec,
+  autoMode:autoCtlMode,autoPhase:player.autoPhase||null,autoPace:telemetryRound(player.autoPace,4),autoTargetLat:telemetryRound(player.autoTargetLat,3),autoTechnical:!!player.autoTechnicalActive,autoTechnicalAhead:!!player.autoTechnicalAhead,stabilityRisk:telemetryRound(player.autoStabilityRisk,3),rearCritical:telemetryRound(player.autoRearCritical,3),autoExitClearance:telemetryRound(player.autoExitClearance,3),autoBidirectionalPaceKph:telemetryRound((player.autoBidirectionalPaceTarget||0)*3.6,1),autoBidirectionalReleaseKph:telemetryRound((player.autoBidirectionalRelease||0)*3.6,1),autoTargetReleaseRateMps2:telemetryRound(player.autoTargetReleaseRate,2),brakeRelease:telemetryRound(player.autoBrakeRelease,3),counterSteerActive:!!player.autoCounterSteerActive,counterSteerRequest:!!player.autoCounterSteerRequest,renderPressure:telemetryRound(mobileRenderPressure(),3),recovery:rec,
   recoveryTargetS:player.autoRecovery&&player.autoRecovery.plan?telemetryRound(player.autoRecovery.plan.s,2):null,recoveryTargetLat:player.autoRecovery&&player.autoRecovery.plan?telemetryRound(player.autoRecovery.plan.lane,3):null,recoveryAttempts:player.autoRecovery?player.autoRecovery.attempts||0:0,recoveryEpisodeSec:player.autoRecovery?telemetryRound(raceT-(player.autoRecovery.episodeStart||player.autoRecovery.since),2):0,
   recoveryEmergency:!!(player.autoRecovery&&player.autoRecovery.emergency),recoveryStage:player.autoRecovery?(player.autoRecovery.emergencyStage||player.autoRecovery.mode):null,
   position:player.pos||null,racePackRisk:telemetryRound(player.autoRacePackRisk||0,3),raceStartProtect:!!player.autoRaceStartProtect,rearThreat:telemetryRound(player.autoRearThreat||0,3),trafficEscapeLane:!!player.autoTrafficEscapeLane,
@@ -3005,6 +3005,22 @@ function autoPredictiveTrafficSpeed(ahead){
  return Math.max(0,target);
 }
 
+// Only the solo, stable, wall-clear AUT may recover speed held by a redundant
+// race-survival margin; geometric kink/tyre/wall/traffic limits are applied later.
+function autoUniversalPaceRelease(s,survivalTarget,stable,grip,wet){
+ const d=trackData&&trackData.model&&trackData.model.driver;
+ if(!d||!d.pacePlan||!Number.isFinite(survivalTarget)||!stable)
+  return{target:survivalTarget,reference:Infinity,released:0};
+ const physical=driverReferenceTargetSpeedAt(s);
+ if(!Number.isFinite(physical))
+  return{target:survivalTarget,reference:Infinity,released:0};
+ const reference=physical*Math.sqrt(clamp(grip,.25,1.06))*(wet?.90:.975);
+ // Only a few m/s can be released, and never above the complete physical
+ // forward/backward profile. This isn't a speed cheat: all downstream caps remain.
+ const cap=Math.min(reference,survivalTarget+(wet?1.9:3.7));
+ const target=Math.max(survivalTarget,cap);
+ return{target,reference,released:target-survivalTarget};
+}
 function autoTargetSpeed(plan,traffic,skill,bravery,diff=1){
  const perf=teamPerformance(player.teamKey),wet=apexWeatherIsWet();
  const paceFloor=currentSession==='race'?.995:.955,paceCeil=currentSession==='race'?1.055:1.05;
@@ -4585,9 +4601,20 @@ function demoDriverControl(){
    if(target<targetBeforeCompound-.02){targetReason="COMPOUND_ENTRY";targetReasonDetail="TIGHTENING_CURVE";}
  }
  const survival=autoRaceSurvivalGovernor(player.s,sp,raceTraffic);
- player.autoRaceSurvivalActive=!!survival.active;player.autoRaceSurvivalTarget=survival.target;player.autoRaceSurvivalCornerD=survival.active?survival.d:null;player.autoRaceSurvivalSafe=survival.active?survival.safe:null;player.autoRaceSurvivalCleanRelease=!!survival.cleanRelease;player.autoRaceSurvivalRiskAhead=survival.riskAhead||0;
- if(survival.active&&survival.target<target-.20){
-   target=survival.target;targetReason="RACE_SURVIVAL";targetReasonDetail=survival.firstLap?"FIRST_LAP_CORNER":"CORNER_MARGIN";
+ const soloPaceStable=!!lineGuide&&!(rivals&&rivals.length)&&!offTrack&&!technical.active&&
+   !compound.active&&!(geometryKink.active&&geometryKink.d<85)&&
+   (player.lap||0)>=1&&!(player.autoRecovery)&&
+   learnedLong.risk<.22&&Math.abs(player.slipAngle||0)<.047&&
+   Math.abs(player.yawRate||0)<.42&&
+   Math.abs(player.lat)<autoSafeLaneLimit(player.s,true)-.32&&
+   (player.rearUse||0)<.86&&sp>13;
+ const paceRelease=autoUniversalPaceRelease(player.s,survival.target,soloPaceStable,
+   apexTyreGripScale(player),apexWeatherIsWet());
+ player.autoBidirectionalPaceTarget=paceRelease.reference;
+ player.autoBidirectionalRelease=paceRelease.released;
+ player.autoRaceSurvivalActive=!!survival.active;player.autoRaceSurvivalTarget=paceRelease.target;player.autoRaceSurvivalCornerD=survival.active?survival.d:null;player.autoRaceSurvivalSafe=survival.active?survival.safe:null;player.autoRaceSurvivalCleanRelease=!!survival.cleanRelease;player.autoRaceSurvivalRiskAhead=survival.riskAhead||0;
+ if(survival.active&&paceRelease.target<target-.20){
+   target=paceRelease.target;targetReason="RACE_SURVIVAL";targetReasonDetail=survival.firstLap?"FIRST_LAP_CORNER":"CORNER_MARGIN";
  }
  const gripEnvelope=autoGripTrajectoryEnvelope(player.s);
  if(Number.isFinite(gripEnvelope.target)&&gripEnvelope.target<target-.20){

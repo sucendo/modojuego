@@ -979,6 +979,29 @@ function driverTimeOptimizeRacingPath(P,cx,cz,ch,px,pz,pathSafe,step){
  }
  return{accepted,before,after,largestShift,status:accepted?'TIME_OPTIMIZED':'ORIGINAL_RETAINED'};
 }
+// AUT P2: closed-loop physical speed profile. Backward pass prevents entering
+// bends above their braking envelope; forward pass limits acceleration at exits.
+// It is computed once per circuit from the same *optimised* world-space path.
+// The game still integrates vehicle throttle, grip, tyres and all safety gates.
+function driverBidirectionalPacePlan(localSafe,curve,step,wet=false){
+ const n=localSafe.length,idx=i=>mod(i,n),speed=Float32Array.from(localSafe);
+ const brake=wet?7.2:10.7,accel=wet?3.2:5.7;
+ const before=speed.reduce((sum,v)=>sum+step/Math.max(10,v),0);
+ for(let pass=0;pass<5;pass++){
+  for(let j=n-1;j>=0;j--){
+   const i=j,next=idx(i+1),turn=clamp(Math.abs(curve[next])/.015,0,1);
+   const a=brake*(1-.32*turn);
+   speed[i]=Math.min(speed[i],Math.sqrt(speed[next]*speed[next]+2*a*step));
+  }
+  for(let i=0;i<n;i++){
+   const prev=idx(i-1),turn=clamp(Math.abs(curve[i])/.015,0,1);
+   const a=accel*(1-.53*turn);
+   speed[i]=Math.min(speed[i],Math.sqrt(speed[prev]*speed[prev]+2*a*step));
+  }
+ }
+ const after=speed.reduce((sum,v)=>sum+step/Math.max(10,v),0);
+ return{speed,brake,accel,before,after};
+}
 function prepareDriverReferenceModel(){
  if(!trackData||!trackData.pts||trackData.pts.length<24||!trackData.model)return null;
  const P=trackData.pts,n=P.length,L=trackData.km*1000,step=L/n,idx=i=>mod(i,n);
@@ -1113,10 +1136,11 @@ function prepareDriverReferenceModel(){
    const rh0=Math.atan2(P[i][0]-P[idx(i-1)][0],P[i][1]-P[idx(i-1)][1]),rh1=Math.atan2(P[idx(i+1)][0]-P[i][0],P[idx(i+1)][1]-P[i][1]);rawMaxKink=Math.max(rawMaxKink,Math.abs(angleDiff(rh1,rh0)));
    pathMaxKink=Math.max(pathMaxKink,Math.abs(angleDiff(ph[idx(i+1)],ph[i])));
  }
- const brake=14.45;
- for(let pass=0;pass<3;pass++)for(let ii=0;ii<n;ii++){const i=idx(n-1-ii),j=idx(i+1),allowed=Math.sqrt(Math.max(0,speed[j]*speed[j]+2*brake*step));if(allowed<speed[i])speed[i]=allowed;}
+ const bidirectional=driverBidirectionalPacePlan(localSafe,pcurve,step,apexWeatherIsWet());
+ speed.set(bidirectional.speed);
  let lapEstimate=0;for(let i=0;i<n;i++)lapEstimate+=step/Math.max(12,speed[i]);
- trackData.model.driver={step,x:px,z:pz,heading:ph,curve:pcurve,lane:plat,localSafe,speed,centerCurve,rawMaxKink,pathMaxKink,lapEstimate,timeLine};
+ const pacePlan={backwardBrakeMps2:bidirectional.brake,forwardAccelMps2:bidirectional.accel,modelLapSeconds:lapEstimate};
+ trackData.model.driver={step,x:px,z:pz,heading:ph,curve:pcurve,lane:plat,localSafe,speed,centerCurve,rawMaxKink,pathMaxKink,lapEstimate,timeLine,pacePlan};
  return trackData.model.driver;
 }
 function driverReferencePoseAt(s){
