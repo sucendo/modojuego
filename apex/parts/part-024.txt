@@ -573,11 +573,12 @@ function apexAuthoredCurbVisual(){
  const cw=trackData?.customWorld,api=window.ApexSvgCurbs;
  if(!cw?.curbGeometryAuthoritative||!api)return [];
  const cached=trackData._apexAuthoredCurbVisual;
- if(cached?.world===cw)return cached.faces;
+ if(cached?.world===cw&&cached.api===api)return cached.faces;
  const marks=new Map((cw.landmarks||[]).filter(apexIsCurbAuthoringMark).map(mark=>[mark.sourceId,mark]));
  const zones=(cw.curbZones||[]).map(zone=>{
   const mark=marks.get(zone.sourceId);
-  return {...zone,width:mark?.width,curbStripeM:mark?.curbStripeM};
+  const lengthM=zone.lengthM>0?zone.lengthM:mod(zone.endS-zone.startS,trackData.km*1000);
+  return {...zone,lengthM,width:mark?.width,curbStripeM:mark?.curbStripeM};
  });
  const stations=apexRoadMeshSamples(),L=trackData.km*1000;
  // Match the asphalt mesh even where a stripe or taper starts between road nodes.
@@ -592,13 +593,14 @@ function apexAuthoredCurbVisual(){
   const x=lerp(ea.x,eb.x,t),y=lerp(ea.y,eb.y,t)+.018,z=lerp(ea.z,eb.z,t);
   return {inner:[x,y,z],outer:[x+side*width*lerp(qa.ox,qb.ox,t),y,z+side*width*lerp(qa.oz,qb.oz,t)]};
  };
- const faces=zones.length?api.compileRoadVisual(zones,stations,L,sectionAt,circuitCurbPair(0)):apexAuthoredCurbMesh()?.quads||[];
- trackData._apexAuthoredCurbVisual={world:cw,faces};
+ const aligned=api.compileRoadVisual?.(zones,stations,L,sectionAt,circuitCurbPair(0));
+ const faces=aligned?.length?aligned:apexAuthoredCurbMesh()?.quads||[];
+ trackData._apexAuthoredCurbVisual={world:cw,api,faces};
  return faces;
 }
 function apexCollectAuthoredCurbs(cam){
  const faces=apexAuthoredCurbVisual();
- const out=[],far=mobilePerformanceMode()?180:300;
+ const out=[],far=apexInspectionFullScene()?apexInspectionFarDistance():mobilePerformanceMode()?180:300;
  for(const face of faces){
   const center=worldToCamera(face.x,face.points[0][1],face.z,cam);
   if(center.z+face.r<.62||center.z-face.r>far||Math.abs(center.x)>Math.max(2,center.z)*1.8+face.r)continue;
