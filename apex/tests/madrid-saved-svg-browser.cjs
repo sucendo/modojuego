@@ -29,6 +29,7 @@ window.__madridSavedSvgAudit={
   const monumental=readStoredCircuitJson(spec.dir)?.banking?.corners?.find(c=>+c.turn===12);
   return {file:entry.svg,json:entry.json,backend,source:entry.sourceFileName,bytes:new TextEncoder().encode(svg).length,
    geometry:!!imported.geometry,revision:world.profileRevision,
+   importedRacingSamples:imported.geometryPayload?.racingLine?.length||0,
    boards:imported.brakeBoards||0,boardsAuthoritative:world.brakeBoardsAuthoritative===true,stored:!!readStoredCustomTrackSvg('14-spain'),
    surfaceZones:count('surfaceZone'),curbs:marks.length,
    colors,meshColors:[...new Set(mesh.quads.map(q=>q.color))],bankProfile:monumental?.profile||[],
@@ -54,14 +55,16 @@ window.__madridSavedSvgAudit={
    await apexHydrateLargeCircuit('14-spain');
    const j=readStoredCircuitJson('14-spain');
    const spec=calendar.find(c=>c.dir==='14-spain'),previous=trackData;
-   let curbVisual=null;
+   let curbVisual=null,racingStatus=null;
    try{
     trackData=await loadTrack(spec);trackData.spec=spec;prepareTrackModel();
     const authored=(trackData.customWorld?.landmarks||[]).filter(apexIsCurbAuthoringMark);
     const faces=apexAuthoredCurbVisual(),painted=new Set(faces.map(face=>face.sourceId));
     curbVisual={authored:authored.length,faces:faces.length,missing:authored.filter(mark=>!painted.has(mark.sourceId)).map(mark=>mark.sourceId),colors:[...new Set(faces.map(face=>face.color))]};
+    const line=apexAuthoredRacingProfile();
+    racingStatus={valid:!!line?.valid,source:autoUniversalRacingReference(100)?.source||null,samples:line?.line?.length||0};
    }finally{trackData=previous;}
-   return {curbVisual,colors:j?.visual?.curbs?.colors,bank:j?.banking?.corners?.find(c=>+c.turn===12)?.bankDeg,
+   return {curbVisual,racingStatus,colors:j?.visual?.curbs?.colors,bank:j?.banking?.corners?.find(c=>+c.turn===12)?.bankDeg,
     svg:!!readStoredCustomTrackSvg('14-spain'),boards:readStoredCustomWorldProfile('14-spain')?.brakeBoards?.length||0,
     boardsAuthoritative:readStoredCustomWorldProfile('14-spain')?.brakeBoardsAuthoritative===true};
  }
@@ -101,6 +104,9 @@ window.__madridSavedSvgAudit={
   assert.equal(rehydrated.bank,13.4957);
   assert.equal(rehydrated.svg,true,'The saved SVG must survive alongside JSON');
   console.log('APEX_RACING_LINE_BROWSER_DIAGNOSTIC',JSON.stringify({imported:{curbs:result.curbs,landmarks:result.landmarks,boards:result.boards,bytes:result.bytes},rehydrated}));
+  assert.ok(result.importedRacingSamples>900,'Saved Madrid SVG must import the authored racing-line geometry');
+  assert.equal(rehydrated.racingStatus?.valid,true,'Authored path must survive hydration and track-model preparation');
+  assert.equal(rehydrated.racingStatus?.source,'SVG_AUTHORED','AUT must use SVG_AUTHORED rather than MODEL_REFERENCE');
   assert.ok(rehydrated.curbVisual.authored>0&&rehydrated.curbVisual.faces>0,'The loaded circuit must compile the authored kerbs for the live renderer');
   assert.deepEqual(rehydrated.curbVisual.missing,[],'Every saved kerb must reach the live renderer');
   assert.deepEqual(rehydrated.curbVisual.colors.sort(),['#d51f27','#f2c500']);
