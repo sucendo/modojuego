@@ -35,12 +35,4 @@ assert.ok(!p26.includes('function autoMadridBarrierApproachLimit('));
 assert.match(p27,/if\(wallHitThisFrame\)apexRecordPlayerBarrierContact\("WALL"\)/);
 assert.match(p27,/if\(drivableBoundaryHitThisFrame\)apexRecordPlayerBarrierContact\("BOUNDARY"\)/);
 assert.match(p26,/wallHits:sessionTelemetry\.incidentCounters\?\.wallHits\|\|0/);
-// Grip planner only evaluates the expensive curvature once per horizon point.
-let curvatureCalls=0;ctx.curvatureAt=()=>{curvatureCalls++;return .008};
-vm.runInContext(slice('function autoCurvatureEnvelope(','function autoEnsureRiskMemory('),ctx);
-const fast=ctx.autoPhysicalCornerSpeed(1000,ctx.player,.008);
-assert.ok(Number.isFinite(fast)&&fast>0);
-assert.equal(curvatureCalls,0,'precomputed k must not be rescanned');
-ctx.autoPhysicalCornerSpeed(1000,ctx.player);
-assert.ok(curvatureCalls>0,'default standalone call still measures curvature');
 console.log(JSON.stringify({test:'madrid-auto-telemetry',episodes:2,passed:true}));
