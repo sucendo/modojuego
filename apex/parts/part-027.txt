@@ -71,11 +71,11 @@
  if(boost)driveAcc+=apexEnergyProfile().power;
  if(player.slipstream&&!player.reverse)driveAcc+=.8;
  driveAcc*=apexManualDriveFactor(sp);
- if(player.pitLimiter&&sp>=apexPitSpeedLimitKph()/3.6)driveAcc=0;
+ if(apexPitLimiterActive(player)&&sp>=apexPitSpeedLimitKph()/3.6)driveAcc=0;
  let driveWanted=M*driveAcc*(player.reverse?-1:1);
 
  const brakeAcc=(apexWeatherIsWet()?14.5:18.0)+(apexWeatherIsWet()?13:23)*Math.pow(clamp(sp/100,0,1),2);
- const limiterBrake=player.pitLimiter?clamp((sp-apexPitSpeedLimitKph()/3.6)*2,0,brakeAcc):0;
+ const limiterBrake=apexPitLimiterActive(player)?clamp((sp-apexPitSpeedLimitKph()/3.6)*2,0,brakeAcc):0;
  let brakeWanted=Math.max(player.brakeInput*brakeAcc,limiterBrake)*M;
  const brakeBias=apexControls.brakeBias;
  // v5.117: a velocidad longitudinal casi nula el freno no tiene una dirección
@@ -240,6 +240,9 @@
  const wallHitThisFrame=movePlayerWithWalls(moveDx,moveDz);
  let drivableBoundaryHitThisFrame=false;const postMoveInside=apexPlayerDriveBoundaryContains(player.x,player.z);
  if(preMoveInside===true&&postMoveInside===false){player.lastDrivableBoundaryHit=raceT;player.x=preMoveX;player.z=preMoveZ;player.vx*=.42;player.vz*=.42;player.yawRate*=.55;drivableBoundaryHitThisFrame=true;frameShake=Math.max(frameShake,3.1)}
+ // No dependemos de FULL/EVENTS para saber si hubo contactos (incluye límite SVG).
+ if(wallHitThisFrame)apexRecordPlayerBarrierContact("WALL");
+ if(drivableBoundaryHitThisFrame)apexRecordPlayerBarrierContact("BOUNDARY");
  if((demoMode||assistMode)&&wallHitThisFrame)player.autoLastWallHit=raceT;
 
  // Relación con el circuito únicamente para superficies/progreso.
@@ -966,7 +969,7 @@ function apexCloseControls(resume=true){
  if(resume&&shouldResume){paused=false;updateAudio(.016);}
  if(apexControls.focus&&apexControls.focus.isConnected)apexControls.focus.focus();apexControls.focus=null;
 }
-function apexActionActive(id){return id==='camera'?apexCameraMode()!=='cockpit':id==='auto'?demoMode:id==='ers'?apexControls.ersActive:id==='limiter'?!!(player&&player.pitLimiter):id==='sectors'?apexControls.sectors:id==='box'?!!(player&&player.pitStop&&player.pitStop.active):id==='telemetry'?!$('telemetryPanel').classList.contains('hidden'):false;}
+function apexActionActive(id){return id==='camera'?apexCameraMode()!=='cockpit':id==='auto'?demoMode:id==='ers'?apexControls.ersActive:id==='limiter'?apexPitLimiterActive(player):id==='sectors'?apexControls.sectors:id==='box'?!!(player&&player.pitStop&&player.pitStop.active):id==='telemetry'?!$('telemetryPanel').classList.contains('hidden'):false;}
 function apexSyncControls(){
  $('controlGearbox').value=apexControls.gearbox;$('controlInput').value=(gyro.enabled||apexMobileGyroPreferred)?'gyro':'keyboard';$('controlAssist').value=demoMode?'1':assistMode?'2':'0';apexSyncDriveProfileUi();
  $('shiftControls').classList.toggle('hidden',apexControls.gearbox!=='manual'||demoMode||assistMode);
@@ -982,7 +985,7 @@ function apexUpdateControlHud(){
  const panel=$('wheelData');panel.classList.toggle('hidden',apexControls.display===0);
  if(apexControls.display===1)panel.textContent='NEUMÁTICOS\n'+apexTyreLabel(player);
  if(apexControls.display===2)panel.textContent='ENERGÍA · '+apexEnergyProfile().name+'\nERS '+Math.round(player.ers)+' % · '+(apexControls.ersActive?'ON':'OFF')+'\nBB '+(apexControls.brakeBias*100).toFixed(1)+' % · FM '+apexControls.engineBrake+'/4';
- $('limiterBtn').textContent=player.pitLimiter?'LIM ON':'LIM';
+ $('limiterBtn').textContent=apexPitLimiterActive(player)?'LIM ON':'LIM';
 }
 function apexControlTypingTarget(target){return !!(target&&((target.closest&&target.closest('input,select,textarea,[contenteditable="true"]'))||target.isContentEditable));}
 function apexHandleControlKeydown(e){
