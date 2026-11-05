@@ -591,7 +591,7 @@ function apexAuthoredCurbVisual(){
  // Derive each interval from the active SVG guide. Stored zones may belong
  // to an earlier version of the drawing or a different road mesh.
  const faces=marks.flatMap(mark=>{
-  const zones=apexImportedCurbZones([mark],L).map(zone=>({...zone,width:mark.width,curbStripeM:mark.curbStripeM}));
+  const zones=apexImportedCurbZones([mark],L,true).map(zone=>({...zone,width:mark.width,curbStripeM:mark.curbStripeM}));
   const aligned=api.compileRoadVisual?.(zones,stations,L,sectionAt,colors);
   if(aligned?.length)return aligned;
   const curbRuns=mark.curbRuns?.length?mark.curbRuns:[mark.worldPath?.length?mark.worldPath:mark.worldFootprint||[]];
@@ -612,20 +612,23 @@ function apexCollectAuthoredCurbs(cam){
 }
 function apexDrawAuthoredCurb(face,cam,pitch,webgl=false){
  const pts=face.points.map(p=>worldToCamera(p[0],p[1],p[2],cam));
- if(webgl)webglPushCamPoly(pts,pitch,face.color,.62,-.004);
+ if(webgl)webglPushCamPoly(pts,pitch,face.color,.62,-.025);
  else drawCamPoly(pts,pitch,face.color,.62);
 }
 
-function apexImportedCurbZones(landmarks,L){
+function apexImportedCurbZones(landmarks,L,sideFromGeometry=false){
  const out=[];if(!(L>0))return out;
  for(const it of landmarks||[]){
   if(!apexIsCurbAuthoringMark(it))continue;
   const runs=it.curbRuns?.length?it.curbRuns:[it.worldPath?.length?it.worldPath:it.worldFootprint||[]];
   for(const path of runs){
-   if(path.length<2)continue;let hint=null,unwrapped=[],last=null,acc=0;
-   for(const p of path){const ns=nearestTrackState(p[0],p[1],hint,{radius:120,allowGlobal:true,fallbackDist:90});hint=ns.index;const ss=mod(ns.s,L);if(last!==null){let ds=ss-last;if(ds>L*.5)ds-=L;if(ds<-L*.5)ds+=L;acc+=ds;}else acc=ss;unwrapped.push(acc);last=ss;}
+   if(path.length<2)continue;let hint=null,unwrapped=[],last=null,acc=0,left=0,right=0;
+   for(const p of path){const ns=nearestTrackState(p[0],p[1],hint,{radius:120,allowGlobal:true,fallbackDist:90});hint=ns.index;
+    if(sideFromGeometry){if(ns.lat>.5)left++;else if(ns.lat<-.5)right++;}const ss=mod(ns.s,L);if(last!==null){let ds=ss-last;if(ds>L*.5)ds-=L;if(ds<-L*.5)ds+=L;acc+=ds;}else acc=ss;unwrapped.push(acc);last=ss;}
    const a=Math.min(...unwrapped),b=Math.max(...unwrapped);if(b-a<1.2)continue;
-   out.push({side:it.markingKind==='CURB_LEFT'||it.sourceRole==='curb-left'?'left':'right',startS:mod(a,L),endS:mod(b,L),lengthM:b-a,sourceId:it.sourceId||'',status:'SVG_AUTHORITATIVE'});
+   const side=sideFromGeometry&&left!==right?(left>right?'left':'right'):
+    (it.markingKind==='CURB_LEFT'||it.sourceRole==='curb-left'?'left':'right');
+   out.push({side,startS:mod(a,L),endS:mod(b,L),lengthM:b-a,sourceId:it.sourceId||'',status:'SVG_AUTHORITATIVE'});
   }
  }
  return out;
