@@ -53,7 +53,15 @@ window.__madridSavedSvgAudit={
  async hydrateStatus(){
    await apexHydrateLargeCircuit('14-spain');
    const j=readStoredCircuitJson('14-spain');
-   return {colors:j?.visual?.curbs?.colors,bank:j?.banking?.corners?.find(c=>+c.turn===12)?.bankDeg,
+   const spec=calendar.find(c=>c.dir==='14-spain'),previous=trackData;
+   let curbVisual=null;
+   try{
+    trackData=await loadTrack(spec);trackData.spec=spec;prepareTrackModel();
+    const authored=(trackData.customWorld?.landmarks||[]).filter(apexIsCurbAuthoringMark);
+    const faces=apexAuthoredCurbVisual(),painted=new Set(faces.map(face=>face.sourceId));
+    curbVisual={authored:authored.length,faces:faces.length,missing:authored.filter(mark=>!painted.has(mark.sourceId)).map(mark=>mark.sourceId),colors:[...new Set(faces.map(face=>face.color))]};
+   }finally{trackData=previous;}
+   return {curbVisual,colors:j?.visual?.curbs?.colors,bank:j?.banking?.corners?.find(c=>+c.turn===12)?.bankDeg,
     svg:!!readStoredCustomTrackSvg('14-spain'),boards:readStoredCustomWorldProfile('14-spain')?.brakeBoards?.length||0,
     boardsAuthoritative:readStoredCustomWorldProfile('14-spain')?.brakeBoardsAuthoritative===true};
  }
@@ -92,6 +100,9 @@ window.__madridSavedSvgAudit={
   assert.deepEqual(rehydrated.colors,['#f2c500','#d51f27']);
   assert.equal(rehydrated.bank,13.4957);
   assert.equal(rehydrated.svg,true,'The saved SVG must survive alongside JSON');
+  assert.ok(rehydrated.curbVisual.authored>0&&rehydrated.curbVisual.faces>0,'The loaded circuit must compile the authored kerbs for the live renderer');
+  assert.deepEqual(rehydrated.curbVisual.missing,[],'Every saved kerb must reach the live renderer');
+  assert.deepEqual(rehydrated.curbVisual.colors.sort(),['#d51f27','#f2c500']);
   assert.equal(rehydrated.boards,34,'Hydrated SVG must retain only 34 active braking boards');
   assert.equal(rehydrated.boardsAuthoritative,true,'Hydration must not generate deleted boards');
   assert.equal(result.file,'svg/apex26_14-madrid-spain_2026-11-03.svg');
