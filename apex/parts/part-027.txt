@@ -48,7 +48,10 @@
  const roadBank=(ps.zone==='TRACK'||ps.zone==='KERB')?clamp(finite(player.surfaceBank,0),-.40,.40):0;
  const trBank=player.track||poseAt(player.s),
        bankRightAlign=clamp(-(trBank.nx*axes.rx+trBank.nz*axes.rz),-1,1);
- const bankLateralGravity=G*Math.sin(roadBank)*bankRightAlign;
+ // At standstill the tyres hold the car on the slope (static friction).
+ // Fade the dynamic cross-slope acceleration in as the car starts moving.
+ const bankMotion=clamp((sp-1.5)/7,0,1);
+ const bankLateralGravity=G*Math.sin(roadBank)*bankRightAlign*bankMotion;
  const gravityNormal=G*Math.cos(roadBank);
  const dmgF=damageFactors();
  const wetMu=1.86,tyreFront=player.tyres?.gripFront??1,tyreRear=player.tyres?.gripRear??1;
