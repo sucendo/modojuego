@@ -32,6 +32,21 @@ test('Reposo sin deriva ni giro; freno motor no cruza cero',()=>{
  metrics.rest={before:run(old,{ticks:200}),after:run(now,{ticks:200})};assert.deepEqual(metrics.rest.after.state,[0,0,0,0,0,0]);
  for(const u of [-.001,.001,-2,2]){now.reset(u);now.step(.01);assert.ok(now.player.vz*u>=-1e-15);}
 });
+test('Peralte físico: gravedad lateral firmada y coche inmóvil sin deriva',()=>{
+ const sample=bank=>{const c=make(source);c.ps.zone='TRACK';c.reset(40,0,0,0,0,0);
+  c.player.surfaceBank=bank;c.player.track={nx:-1,nz:0};
+  c.step(.01);return {vx:c.player.vx,vz:c.player.vz};};
+ const flat=sample(0),favourable=sample(.235),adverse=sample(-.235);
+ assert.ok(favourable.vx>flat.vx+.010,'Banked right-hand road must pull car into the right-hand turn');
+ assert.ok(adverse.vx<flat.vx-.010,'Reverse banking must pull against the turn');
+ const stopped=make(source);stopped.ps.zone='TRACK';stopped.reset(0,0,0,0,0,0);
+ stopped.player.surfaceBank=.235;stopped.player.track={nx:-1,nz:0};stopped.step(.01);
+ assert.equal(stopped.player.vx,0,'Stationary car must not slide down the bank');
+ const off=make(source);off.ps.zone='RUNOFF';off.reset(40,0,0,0,0,0);
+ off.player.surfaceBank=.235;off.player.track={nx:-1,nz:0};off.step(.01);
+ assert.ok(Math.abs(off.player.vx-flat.vx)<1e-12,'Road banking must not continue on flat runoff');
+ metrics.bank={flat:flat.vx,intoTurn:favourable.vx,againstTurn:adverse.vx,standing:stopped.player.vx};
+});
 test('Baja velocidad: desaparece la alternancia de guiñada de Euler explícito',()=>{
  metrics.lowSpeed={before:run(old,{speed:2,steer:.3}),after:run(now,{speed:2,steer:.3})};
  assert.ok(metrics.lowSpeed.before.signChanges>400);assert.equal(metrics.lowSpeed.after.signChanges,0);assert.ok(metrics.lowSpeed.after.peakYaw<.06);
