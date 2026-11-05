@@ -47,6 +47,7 @@ jobs:
           node apex/tests/rival-tyre-strategy-audit.cjs > /tmp/apex-results/rival-tyre-strategy.txt
           node apex/tests/rival-pit-traversal-audit.cjs > /tmp/apex-results/rival-pit-traversal.txt
           node apex/tests/tyres-audit.cjs > /tmp/apex-results/tyres.json
+          node apex/tests/madrid-auto-telemetry-20261101.cjs > /tmp/apex-results/madrid-auto-telemetry.json
           node apex/tests/driving-audit.cjs --json > /tmp/apex-results/driving.json
           node apex/tests/terrain-selection-audit.cjs > /tmp/apex-results/terrain-selection.json
           node apex/tests/auto-boundary-audit.cjs > /tmp/apex-results/auto-boundary.txt
