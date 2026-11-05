@@ -3,7 +3,35 @@ APEX_BASE_CIRCUIT_REGISTRY=Object.fromEntries(calendar.slice(0,F1_SEASON_COUNT).
  const j=APEX_BASE_CIRCUIT_JSON_BY_ID[sp.dir]||{},c=j.circuit||{},r=j.race||{},t=j.track||{},m={layout:c.layout||sp.dir,direction:r.direction||'CLOCKWISE',km:Number.isFinite(+t.lengthMeters)?+t.lengthMeters/1000:null,turns:+r.turns||0,laps:+r.laps||0,circuitType:t.circuitType||'RACE',pit:r.pit?{...r.pit}:null},hasEmbeddedSvg=Object.prototype.hasOwnProperty.call(APEX_BASE_EMBEDDED_SVG_B64,sp.dir);
  return [sp.dir,{spec:{name:sp.name,country:sp.country,city:c.city||sp.themeCity,theme:(j.environment||{}).theme||sp.theme,round:c.round||sp.r},meta:m,svg:hasEmbeddedSvg?{mode:'EMBEDDED',source:'APEX_EMBEDDED_BASE_SVG'}:{mode:'F1DB',layout:m.layout||sp.dir,source:'F1DB/F1-CIRCUITS-SVG'}}];
 }));
-function apexEmbeddedBaseSvgText(dir){const b=APEX_BASE_EMBEDDED_SVG_B64[String(dir||'')];if(!b)return null;try{const bin=atob(b),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return new TextDecoder('utf-8').decode(u)}catch(e){try{return atob(b)}catch(_){return null}}}
+function apexAddEmbeddedPitSpeedMarks(svg){
+ // Embedded bases use one absolute M/L pit centreline in SVG world metres.
+ // Keep the original SVG and add provisional marks only to the base we load.
+ if(svg.includes('id="pit_speed_limit_start"')||svg.includes('id="pit_speed_limit_end"'))return svg;
+ const tag=svg.match(/<path\b[^>]*\bid="pitlane_centerline"[^>]*\/>/)?.[0];
+ if(!tag)return svg;
+ const d=tag.match(/\sd="([^"]+)"/)?.[1]||'',width=Number(tag.match(/\sdata-apex-width="([^"]+)"/)?.[1]),
+  speed=Number(tag.match(/\sdata-apex-speed-kph="([^"]+)"/)?.[1]);
+ if(!(width>0&&speed>0))return svg;
+ const points=[...d.matchAll(/([ML])\s+(-?[\d.]+)\s+(-?[\d.]+)/g)];
+ if(points.length<2||points.map(p=>p[0]).join(' ')!==d.trim()||points.slice(1).some(p=>p[1]!=='L'))return svg;
+ const segments=[];let length=0;
+ for(let i=1;i<points.length;i++){
+  const x=Number(points[i-1][2]),y=Number(points[i-1][3]),
+   dx=Number(points[i][2])-x,dy=Number(points[i][3])-y,len=Math.hypot(dx,dy);
+  if(len>0){segments.push({x,y,dx,dy,len,from:length});length+=len;}
+ }
+ if(length<20)return svg;
+ const mark=(end,fraction,label)=>{
+  const distance=length*fraction,seg=segments.find(s=>distance<=s.from+s.len);
+  const {x,y,dx,dy,len,from}=seg,tx=dx/len,ty=dy/len,t=distance-from;
+  const cx=x+tx*t,cy=y+ty*t,half=width/2;
+  const polygon=[[-.175,-half],[.175,-half],[.175,half],[-.175,half]].map(([a,b])=>
+   `${(cx+a*tx-b*ty).toFixed(3)},${(cy+a*ty+b*tx).toFixed(3)}`).join(' ');
+  return `<polygon id="pit_speed_limit_${end}" data-apex-type="marking" data-apex-family="track" data-apex-role="pit-speed-limit-${end}" data-apex-quality="PROVISIONAL" data-apex-speed-kph="${speed}" points="${polygon}" fill="#fff"><title>${label} del límite de boxes · ${speed} km/h · posición provisional</title></polygon>`;
+ };
+ return svg.replace(tag,tag+'\n  '+mark('start',.15,'Inicio')+'\n  '+mark('end',.85,'Fin'));
+}
+function apexEmbeddedBaseSvgText(dir){const b=APEX_BASE_EMBEDDED_SVG_B64[String(dir||'')];if(!b)return null;try{const bin=atob(b),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return apexAddEmbeddedPitSpeedMarks(new TextDecoder('utf-8').decode(u))}catch(e){try{return atob(b)}catch(_){return null}}}
 // Reaplicamos la base tras crear el registro. Un override del usuario sigue teniendo prioridad.
 calendar.slice(0,F1_SEASON_COUNT).forEach(sp=>applyStoredCircuitJsonToSpec(sp));
 function raceMetaFor(specOrDir){
