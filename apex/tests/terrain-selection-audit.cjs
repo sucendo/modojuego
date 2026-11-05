@@ -44,7 +44,24 @@ for(const f of [old,now])for(const c of f.c.apexCollectTerrainPlateCells(cam))f.
 assert.ok(old.stats.clips>50);assert.equal(now.stats.clips,0);
 // Desktop step 1, scene geometry and authored clipping recipes are unchanged.
 const desktopOld=fixture(before,false),desktopNow=fixture(current,false);for(const cam of [{x:0,z:0},{x:5.01,z:5.01},{x:-300,z:120}])assert.equal(JSON.stringify(desktopNow.c.apexCollectTerrainPlateCells(cam)),JSON.stringify(desktopOld.c.apexCollectTerrainPlateCells(cam)));
-assert.equal(func(current,'apexUnifiedTerrainCellPieces'),func(before,'apexUnifiedTerrainCellPieces'));
+// Verify the clipping geometry, including when there is no authored runoff atlas.
+const pit=fixture(current);
+pit.c.trackData.customWorld={pitNetwork:{runs:[{}]}};
+pit.c.apexClipGenericRunoffPolygon=()=>null;
+pit.c.apexRoadMeshSamples=()=>[];
+pit.c.apexPitSegments=()=>[{x1:10,z1:-5,y1:-2,x2:10,z2:35,y2:-4,width:6,len:40}];
+for(const [part,names] of [[23,['apexInspectorPolyBounds','apexInspectorPolyArea','apexInspectorHalfPoly','apexInspectorSubtractFoot']],[24,['apexRunoffRoadClipIndex','apexClipTerrainAtPit']]]){
+ const source=fs.readFileSync(path.join(root,`apex/parts/part-0${part}.txt`),'utf8');
+ vm.runInContext(names.map(n=>func(source,n)).join('\n'),pit.c);
+}
+const rect=(x,z,X,Z)=>[{x,z,y:5},{x:X,z,y:5},{x:X,z:Z,y:5},{x,z:Z,y:5}];
+const area=pieces=>pieces.reduce((sum,p)=>sum+Math.abs(pit.c.apexInspectorPolyArea(p)),0);
+const cut=pit.c.apexUnifiedTerrainCellPieces(pit.grid,0,0,2,2,rect(0,0,24,24));
+assert.equal(area(cut),432);
+assert.equal(pit.c.apexUnifiedTerrainCellPieces(pit.grid,0,0,2,2,rect(0,0,24,24)),cut);
+assert.equal(area(pit.c.apexClipTerrainAtPit(rect(6,8,8,10))),2);
+assert.equal(area(pit.c.apexClipTerrainAtPit(rect(8,8,12,10))),0);
+assert.equal(pit.c.apexClipTerrainAtPit(rect(15,0,20,24)),null);
 // Partial masks split the block into the exact remaining unit cells, portals keep
 // fine selection, and out-of-grid edges never emit invalid indices.
 for(const portal of [false,true]){
@@ -55,4 +72,4 @@ for(const portal of [false,true]){
   if(portal)assert.equal(coarse(c),false);
  }
 }
-console.log(JSON.stringify({scope:'SYNTHETIC_PRODUCTION_SELECTION_AND_CACHE_KEYS_NOT_RENDER_TIME',baseline:ref,scenarios,precompiledCache:{beforeNewClips:old.stats.clips,afterNewClips:now.stats.clips},desktopIdentical:true,ownerClippingUnchanged:true,partialMaskAndPortals:true},null,2));
+console.log(JSON.stringify({scope:'SYNTHETIC_PRODUCTION_SELECTION_AND_CACHE_KEYS_NOT_RENDER_TIME',baseline:ref,scenarios,precompiledCache:{beforeNewClips:old.stats.clips,afterNewClips:now.stats.clips},desktopIdentical:true,pitClippingVerified:true,partialMaskAndPortals:true},null,2));
