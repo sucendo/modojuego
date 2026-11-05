@@ -1317,8 +1317,16 @@ function ensureRenderMiters(){
  if(!trackData||!trackData.pts||trackData.pts.length<3)return null;
  if(trackData.model&&trackData.model.renderMiters&&trackData.model.renderMiters.length===trackData.pts.length)return trackData.model.renderMiters;
  const P=trackData.pts,n=P.length,M=new Array(n);
+ // A short chord keeps the Madrid inner edge from folding at sharp SVG nodes.
+ const authoredMadrid=trackData.spec?.dir==='14-spain'&&trackData.customWorld?.authoritative;
+ const span=authoredMadrid?Math.min(Math.floor((n-1)/2),Math.max(1,Math.round(11*n/(trackData.km*1000)))):0;
  const unit=(ax,az,bx,bz)=>{let x=bx-ax,z=bz-az,d=Math.hypot(x,z)||1;return{x:x/d,z:z/d}};
  for(let i=0;i<n;i++){
+   if(span){
+    const before=P[(i-span+n)%n],after=P[(i+span)%n];
+    const tangent=unit(before[0],before[1],after[0],after[1]);
+    if(tangent.x||tangent.z){M[i]={x:-tangent.z,z:tangent.x};continue;}
+   }
    const pm=P[(i-1+n)%n],pc=P[i],pp=P[(i+1)%n];
    const tin=unit(pm[0],pm[1],pc[0],pc[1]),tout=unit(pc[0],pc[1],pp[0],pp[1]);
    const nin={x:-tin.z,z:tin.x},nout={x:-tout.z,z:tout.x};
