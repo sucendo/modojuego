@@ -2625,6 +2625,31 @@ const apexBaseTrackSvgCache=new Map(),apexBaseWorldProfileCache=new Map();
 function readBaseTrackSvg(dir){return apexBaseTrackSvgCache.get(String(dir||''))||null}
 function readBaseWorldProfile(dir){return apexBaseWorldProfileCache.get(String(dir||''))||null}
 function readEffectiveTrackSvg(dir){return readStoredCustomTrackSvg(dir)||readBaseTrackSvg(dir)}
+// Older IndexedDB SVG imports predate the sampled racingLine field.
+// Recover the authored path from the same stored SVG without replacing the
+// user's track, bank, curbs, JSON, or saved override. Only done once per payload.
+function apexEnsureAuthoredRacingLine(geometry,spec){
+ if(!geometry||!spec)return null;
+ if(Array.isArray(geometry.racingLine)&&geometry.racingLine.length>40)return geometry.racingLine;
+ if(geometry._apexRacingChecked)return null;
+ geometry._apexRacingChecked=true;
+ const raw=geometry.rawSvg;
+ if(typeof raw!=='string'||!raw.includes('data-apex-role="racing-line"'))return null;
+ let ctx=null;
+ try{
+  const doc=new DOMParser().parseFromString(raw,'image/svg+xml');
+  ctx=apexSvgTrackContext(doc,spec);
+  const library=apexSvgLibraryZoneBounds(ctx.root);
+  const el=[...ctx.root.querySelectorAll('[data-apex-role="racing-line"]')]
+   .find(x=>!x.closest('[data-apex-library-item],#APEX_ELEMENT_LIBRARY')&&!apexSvgElementInsideLibrary(ctx,x,library));
+  const samples=el?apexSvgElementWorldRunsExact(ctx,el,4).flat()
+   .filter(p=>Array.isArray(p)&&p.length>=2&&p.every(Number.isFinite)):[];
+  if(samples.length>40)geometry.racingLine=samples;
+ }catch(e){console.warn('APEX: no se pudo recuperar la trazada SVG',e)}
+ finally{if(ctx?.root?.isConnected)ctx.root.remove()}
+ return Array.isArray(geometry.racingLine)&&geometry.racingLine.length>40?geometry.racingLine:null;
+}
+
 function readEffectiveWorldProfile(dir){return readStoredCustomWorldProfile(dir)||readBaseWorldProfile(dir)}
 const APEX_LARGE_DB_NAME="apex-formula-circuit-files",APEX_LARGE_DB_STORE="circuits",APEX_COMPILED_DB_STORE="compiled",APEX_CIRCUIT_JSON_DB_STORE="json-overrides";
 const apexCircuitJsonDbHydrated=new Set();
