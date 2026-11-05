@@ -42,6 +42,14 @@
 
  // ---------- VEHICLE DYNAMICS ----------
  const M=800,WB=3.60,A=1.90,B=WB-A,HCG=.34,IZ=1080,G=9.81;
+ // Banking is a real inclined road plane: gravity acts down the
+ // cross-slope, projected onto the car's right axis (not its yaw).
+ // Do not extend this assistance onto unrelated flat runoff surfaces.
+ const roadBank=(ps.zone==='TRACK'||ps.zone==='KERB')?clamp(finite(player.surfaceBank,0),-.40,.40):0;
+ const trBank=player.track||poseAt(player.s),
+       bankRightAlign=clamp(-(trBank.nx*axes.rx+trBank.nz*axes.rz),-1,1);
+ const bankLateralGravity=G*Math.sin(roadBank)*bankRightAlign;
+ const gravityNormal=G*Math.cos(roadBank);
  const dmgF=damageFactors();
  const wetMu=1.86,tyreFront=player.tyres?.gripFront??1,tyreRear=player.tyres?.gripRear??1;
  const recoveryGrip=!!(player.autoRecoveryAssist&&sp<10&&ps.kind!=="ASPHALT"&&ps.kind!=="KERB");
@@ -54,8 +62,8 @@
  const downforce=finiteClamp(2.72*sp*sp*dmgF.aero,0,38000,0);
  player.downforce=downforce;
  let loadTransfer=M*finiteClamp(player.longG,-3.5,2.5,0)*G*HCG/WB;
- let FzF=M*G*(B/WB)+downforce*.46*dmgF.frontAero-loadTransfer;
- let FzR=M*G*(A/WB)+downforce*.54*dmgF.rearAero+loadTransfer;
+ let FzF=M*gravityNormal*(B/WB)+downforce*.46*dmgF.frontAero-loadTransfer;
+ let FzR=M*gravityNormal*(A/WB)+downforce*.54*dmgF.rearAero+loadTransfer;
  FzF=finiteClamp(FzF,500,26000,staticSafeFront());FzR=finiteClamp(FzR,500,28000,staticSafeRear());
  player.frontLoad=FzF;player.rearLoad=FzR;
 
@@ -142,7 +150,7 @@
 
  // Ecuaciones del modelo bicicleta en coordenadas del coche.
  const du=finiteClamp(Fx/M+v*r,-75,75,0);
- const dv=finiteClamp(Fy/M-u*r,-75,75,0);
+ const dv=finiteClamp(Fy/M-u*r+bankLateralGravity,-75,75,0);
  const dr=finiteClamp((A*FyF-B*FyR)/IZ,-22,22,0);
 
  const uBeforeStep=u;
