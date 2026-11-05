@@ -50,7 +50,18 @@ for(const file of [entry.svg,'svg/apex26_14-madrid-spain.svg']){
   }
   assert.equal(raw.split('id="pit_speed_limit_legend"').length-1,1);
 }
-assert.equal(crypto.createHash('sha256').update(stripPitMarks(svg)).digest('hex'),'a4c13b9bd80bd2e12ab353ac2db5803b777b83c58efb99eb72709e32a6d77a86','Saved SVG must preserve edition 16 except for authoritative board metadata and the pit speed marks');
+// The author's November 3 geometry, curbs and signage must remain byte-for-byte
+// unchanged. The ideal racing reference is a separate non-physical SVG layer
+// and a single new Elements-library sample; ignore only these intentional edits.
+const stripIdealLine=source=>source
+ .replace(' data-apex-racing-line-authoritative="true" data-apex-racing-line-model="BASE_DRIVER_REFERENCE"','')
+ .replace(/\n    <g id="apex_ideal_racing_line"[\s\S]*?<\/g>/,'')
+ .replace(/      <g data-apex-library-item="1" data-apex-library-label="TRAZADA IDEAL">[\s\S]*?<\/g>\n    /,'')
+ .replace('data-apex-library-version="6"','data-apex-library-version="5"')
+ .replace(/(<rect id="APEX_ELEMENT_LIBRARY_ZONE"[^>]*?)height="1080"/,'$1height="1010"')
+ .replace(/(data-apex-library-category="TRACK">[\s\S]*?<rect class="library-section"[^>]*?)height="324"/,'$1height="270"')
+ .replace('data-apex-library-category="SIGNAGE" transform="translate(0, 52)"','data-apex-library-category="SIGNAGE"');
+assert.equal(crypto.createHash('sha256').update(stripPitMarks(stripIdealLine(svg))).digest('hex'),'a4c13b9bd80bd2e12ab353ac2db5803b777b83c58efb99eb72709e32a6d77a86','Saved SVG must preserve all edition 16 authored geometry outside the new racing-line layer and Elements tile');
 assert.ok(count('track-centerline')>=1&&count('drivable-area')>=1,'Driving geometry missing');
 for(const rgb of ['rgb(45, 80, 172)','rgb(207, 40, 48)','rgb(224, 230, 94)']){
   assert.ok(svg.includes(rgb),'Painted asphalt runoff color missing: '+rgb);
