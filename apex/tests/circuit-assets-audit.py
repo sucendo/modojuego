@@ -86,17 +86,19 @@ BASE_REF = 'ef8ce60249ccfef28d97d16650bf6e94eaa62b01'
 baseline = ''.join(subprocess.check_output(['git', 'show', f'{BASE_REF}:apex/parts/part-{i:03}.txt'], cwd=ROOT).decode('utf-8') for i in range(28))
 assert SVGS == declaration('APEX_BASE_EMBEDDED_SVG_B64', baseline), 'Base SVG changed'
 assert CONFIGS == declaration('APEX_BASE_CIRCUIT_JSON_BY_ID', baseline), 'Base JSON changed'
+# The saved Madrid SVG was intentionally updated with the authored racing-line
+# layer and pit markers after the embedded BASE_REF. Freeze the latest approved
+# main version separately so this audit still detects accidental asset edits.
+MADRID_REF = '36feb19bb249bf5882dd735ffe0ddb7779541e5e'
 madrid_svg = (ROOT / 'apex/circuits/svg/apex26_14-madrid-spain.svg').read_bytes()
-madrid_original = re.sub(rb'^ *<line id="pit_speed_limit_(?:start|end)"[^\n]*\n', b'', madrid_svg, flags=re.M)
-madrid_original = re.sub(rb'^ *<g id="pit_speed_limit_legend"[^\n]*\n(?:[^\n]*\n){2} *</g>\n', b'', madrid_original, flags=re.M)
-assert madrid_original == subprocess.check_output(['git', 'show', f'{BASE_REF}:apex/circuits/svg/apex26_14-madrid-spain.svg'], cwd=ROOT), 'Madrid override changed'
+assert madrid_svg == subprocess.check_output(['git', 'show', f'{MADRID_REF}:apex/circuits/svg/apex26_14-madrid-spain.svg'], cwd=ROOT), 'Madrid saved override changed relative to approved main'
 
 rows = []
 assert len(SVGS) == len(CONFIGS) == 23
 for key, encoded in SVGS.items():
     rows.append(audit(key, base64.b64decode(encoded).decode('utf-8'), CONFIGS[key], 'embedded-base'))
 rows.append(audit('14-spain', (ROOT / 'apex/circuits/svg/apex26_14-madrid-spain.svg').read_text(), CONFIGS['14-spain'], 'repository-override'))
-result = {'scope': 'OFFLINE_SVG_JSON_ASSETS_ONLY', 'baseCircuits': 23, 'assetsUnchangedSince': BASE_REF, 'assets': len(rows), 'ok': all(r['ok'] for r in rows),
+result = {'scope': 'OFFLINE_SVG_JSON_ASSETS_ONLY', 'baseCircuits': 23, 'assetsUnchangedSince': BASE_REF, 'savedMadridUnchangedSince': MADRID_REF, 'assets': len(rows), 'ok': all(r['ok'] for r in rows),
           'notTested': ['DOM/runtime loading', 'rendered geometry/pixels', 'WebGL errors', 'grid placement', 'physics/timing execution', 'save/restore', 'Android'], 'rows': rows}
 if '--json' in sys.argv:
     print(json.dumps(result, ensure_ascii=False, indent=2))
