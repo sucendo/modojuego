@@ -55,6 +55,7 @@ jobs:
           node apex/tests/autopilot-grip-audit.cjs > /tmp/apex-results/autopilot-grip.json
           node apex/tests/aut-10c-path-control.cjs > /tmp/apex-results/aut-10c-path-control.json
           node apex/tests/aut-11-svg-follow.cjs > /tmp/apex-results/aut-11-svg-follow.json
+          node apex/tests/aut-12-kerb-chicane.cjs > /tmp/apex-results/aut-12-kerb-chicane.json
           node apex/tests/autopilot-trajectory-preview.cjs > /tmp/apex-results/autopilot-trajectory-preview.json
           node apex/tests/autopilot-madrid-pk1150-reference.cjs > /tmp/apex-results/autopilot-madrid-pk1150-reference.json
           node apex/tests/autopilot-pace-analysis.cjs > /tmp/apex-results/autopilot-pace-analysis.json
