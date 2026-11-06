@@ -56,6 +56,6 @@ wet=false;grip=.6;assert.equal(ctx.autoTargetSpeed(null,null,.99,.98,1),24);
 grip=1;
 assert.match(src,/const svgTrafficClear=!?\(/); // race clean-air reference is explicit
 assert.match(src,/const apexD=Number\.isFinite\(technical\.minSafeD\)/);
-assert.match(src,/autoSvgKinkBypass:!!player\.autoSvgKinkBypass/);
+assert.match(src,/svgKinkBypass:!!player\.autoSvgKinkBypass/);
 assert.match(src,/chicaneCutRejectReason:player\.autoChicaneCutPlan/);
 console.log(JSON.stringify({test:'aut-13-svg-pace',passed:true,slowestApexD:profile.minSafeD,creditTargetMps:target}));
