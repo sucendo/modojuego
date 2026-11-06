@@ -775,10 +775,11 @@ function buildEditableCircuitSvgForCurrentTrack(spec){
  // Únicamente actualizamos la BIBLIOTECA de plantillas al estándar vigente.
  const imported=readEffectiveTrackSvg(spec&&spec.dir);
  if(imported&&imported.authoritative===true&&typeof imported.rawSvg==='string'&&imported.rawSvg.trim())return imported.exactRepository||imported.source==='BASE_SVG'?imported.rawSvg:apexUpgradeImportedSvgLibrary(imported.rawSvg);
- const meta=raceMetaFor(spec)||{},mapP=apexMapPresentation(spec),bounds=editableWorldBounds(),library=buildSvgElementLibrary(bounds),viewWidth=bounds.width,viewHeight=bounds.height,landmarks=trackLandmarks(),trackPath=editableTrackPathFromPoints(trackData.pts),leftEdge=editableTrackOffsetPath(1),rightEdge=editableTrackOffsetPath(-1),pitPath=editablePitLanePath(),wallLeft=editableWallPath(1),wallRight=editableWallPath(-1),start=trackData.pts&&trackData.pts[0]?trackData.pts[0]:[0,0];
+ const meta=raceMetaFor(spec)||{},mapP=apexMapPresentation(spec),bounds=editableWorldBounds(),library=buildSvgElementLibrary(bounds),viewWidth=bounds.width,viewHeight=bounds.height,landmarks=trackLandmarks(),trackPath=editableTrackPathFromPoints(trackData.pts),leftEdge=editableTrackOffsetPath(1),rightEdge=editableTrackOffsetPath(-1),pitPath=trackData.extraPitPath||editablePitLanePath(),wallLeft=editableWallPath(1),wallRight=editableWallPath(-1),start=trackData.pts&&trackData.pts[0]?trackData.pts[0]:[0,0];
  const nodes=landmarks.map((it,i)=>landmarkSvgNode(it,i)).join('\n      ');
  return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="${svgNum(bounds.minX)} ${svgNum(bounds.minY)} ${svgNum(viewWidth)} ${svgNum(viewHeight)}" data-apex-schema="APEX_EDITABLE_TRACK_V6" data-apex-dir="${escapeXml(spec.dir)}" data-apex-name="${escapeXml(spec.name)}" data-apex-km="${escapeXml(trackData.km)}" data-apex-direction="${escapeXml(trackData.direction)}" data-apex-turns="${escapeXml(trackData.turns||meta.turns||0)}" data-apex-laps="${escapeXml(trackData.laps||meta.laps||0)}" data-apex-layout="${escapeXml(trackData.layout||meta.layout||spec.dir)}" data-apex-terrain-reference="LOCAL_ABSOLUTE" data-apex-elevation-zero="START_FINISH" data-apex-map-rotation-deg="${svgNum(mapP.rotationDeg,3)}" data-apex-map-mirror-x="${mapP.mirrorX}" data-apex-map-mirror-y="${mapP.mirrorY}" data-apex-map-source="FORMULA1_COM_2026">
+  ${trackData.sourceCredit?`<desc>${escapeXml(trackData.sourceCredit)}</desc>`:''}
   <defs><style>
 .track-fill{fill:none;stroke:#d7dde4;stroke-width:12;stroke-linecap:round;stroke-linejoin:round}.track-edge{fill:none;stroke:#7aa3c4;stroke-width:1.8;stroke-dasharray:10 8}.drivable-area{fill:#53d7ff;fill-opacity:.07;stroke:#53d7ff;stroke-opacity:.78;stroke-width:1.6;stroke-dasharray:9 6;stroke-linejoin:round}.pit-line{fill:none;stroke:#676d72;stroke-width:5.9;stroke-linecap:round;stroke-linejoin:round;stroke-opacity:.92}.wall-line{fill:none;stroke:#c94755;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}.grandstand{fill:#2e5975;stroke:#9fd8ff;stroke-width:1.2}.pit{fill:#454d56;stroke:#a9c1d4;stroke-width:1.1}.building{fill:#9aa6b1;stroke:#e6eef4;stroke-width:1}.tower{fill:#7c8994;stroke:#d7e3ec;stroke-width:1}.ferris{fill:none;stroke:#eef3f6;stroke-width:2.2}.tree{fill:#3f7f4e;stroke:#cfead3;stroke-width:1}.tree-fir{fill:#275f38}.tree-deciduous{fill:#4e8a48}.tree-palm{fill:none;stroke:#477c42;stroke-width:3;stroke-linecap:round}.gantry{fill:#5f6267;stroke:#f5f8fa;stroke-width:1}.start-gantry{fill:#27313a;stroke:#4cd6ff;stroke-width:1.4}.finish-gantry{fill:#15191e;stroke:#f6f7f8;stroke-width:1.4}.billboard{fill:#f2f5f8;stroke:#58626a;stroke-width:1}.distance-board{fill:#f7f7f5;stroke:#1d2227;stroke-width:1.2}.timing-line{fill:none;stroke:#60d7ff;stroke-width:2.2;stroke-dasharray:8 5}.startfinish-line{fill:#f4f7fb;stroke:#071018;stroke-width:.9}.startfinish-line[data-apex-role="start-line"]{fill:#24d8ff}.startfinish-line[data-apex-role="finish-line"]{fill:#fff;stroke-dasharray:2 1}.straightmode-line{fill:none;stroke:#66f0ff;stroke-width:2.3;stroke-dasharray:4 4}.override-line{fill:none;stroke:#d590ff;stroke-width:2.3;stroke-dasharray:7 4}.drs-line{fill:none;stroke:#69ff9a;stroke-width:2.2;stroke-dasharray:8 5}.speedtrap-line{fill:none;stroke:#ffd45f;stroke-width:2.2;stroke-dasharray:8 5}.portal{fill:#5e6770;stroke:#dce5ed;stroke-width:1}.flagpole{stroke:#e9eef3;stroke-width:1.2}.road{fill:none;stroke:#848d94;stroke-width:5.5;stroke-linecap:round}.parking{fill:#68727a;stroke:#d7dee4;stroke-width:1}.forest{fill:#4b7b50;stroke:#cae5cb;stroke-width:1;fill-opacity:.75}.terrain-zone{fill:#6f8653;stroke:#c8d4b9;stroke-width:1;fill-opacity:.42}.terrain-base{fill:#6f8653;stroke:#c8d4b9;stroke-width:1;fill-opacity:.16;stroke-dasharray:10 8}.terrain-contour{fill:#6f8653;fill-opacity:.24;stroke:#c8d4b9;stroke-width:1.3;stroke-linejoin:round}.terrain-contour-label{font:800 11px system-ui,sans-serif;fill:#d9f4d2;stroke:#132117;stroke-width:2.4;paint-order:stroke}.surface{stroke:#e8edf0;stroke-width:1;fill-opacity:.78}.asphalt{fill:#676d72}.gravel{fill:#b09268}.sand{fill:#c7aa70}.grass{fill:#3d7745}.water{fill:#347ca5;stroke:#9fd6ef;stroke-width:1;fill-opacity:.82}.marking{fill:#f2f3f4;stroke:#5d646a;stroke-width:1}.urban-stripes{fill:#d7d9dc}.barrier{fill:none;stroke-width:4;stroke-linecap:round}.tecpro{stroke:#d8dbe0}.safer{stroke:#aeb8c2}.tirewall{stroke:#1b1d20}.concrete{stroke:#c7cbd0}.guardrail{stroke:#9ba3aa}.infrastructure{fill:none;stroke:#b6bec5;stroke-width:4.8;stroke-linecap:round}.generic{fill:#9098a2;stroke:#edf4fa;stroke-width:1}.start-marker{fill:#24d8ff;stroke:#fff;stroke-width:1.1}.group-title{font:700 12px system-ui,sans-serif;fill:#9dc9ea}.apex-timing-halo{stroke:#071018;stroke-width:8;stroke-linecap:butt;opacity:.9;vector-effect:non-scaling-stroke}.apex-timing-label{font:900 16px system-ui,sans-serif;paint-order:stroke;stroke:#05080b;stroke-width:1.3;stroke-linejoin:round;letter-spacing:.7px}.apex-start-label{fill:#24d8ff}.apex-finish-label{fill:#fff}.library-zone{fill:#0b1320;fill-opacity:.9;stroke:#5c7186;stroke-width:2;stroke-dasharray:12 8}.library-title{font:800 13px system-ui,sans-serif;fill:#d9f3ff}.library-help{font:10px system-ui,sans-serif;fill:#9cb2c5}.lib-label{font:800 9px system-ui,sans-serif;fill:#dce7ef}
 ${SVG_LIBRARY_SCOPED_CSS}
@@ -800,7 +801,7 @@ body.mobile-landscape .sectorPanel{padding:4px}body.mobile-landscape .sectorCell
     <path id="track_centerline" data-apex-role="track-centerline" class="track-fill" d="${trackPath}"/>
     <path id="track_left_edge" data-apex-role="track-left-edge" class="track-edge" d="${leftEdge}"/>
     <path id="track_right_edge" data-apex-role="track-right-edge" class="track-edge" d="${rightEdge}"/>
-    ${pitPath?`<path id="pitlane_centerline" data-apex-role="pitlane-centerline" data-apex-width="5.9" class="pit-line" d="${pitPath}"/>`:''}
+    ${pitPath?`<path id="pitlane_centerline" data-apex-role="pitlane-centerline" data-apex-width="${svgNum(pitLaneSpec()?.width||5.9)}" data-apex-speed-kph="${svgNum(apexPitSpeedLimitKph())}" class="pit-line" d="${pitPath}"/>`:''}
     ${wallLeft?`<path id="wall_left" data-apex-role="wall-left" data-apex-family="wall" data-apex-style="wall_f1" data-apex-wall-style="wall_f1" data-apex-fence="true" data-apex-fence-height="2.10" data-apex-fence-lean-m="0.45" data-apex-post-spacing-m="2.6" class="wall-line" d="${wallLeft}"/>`:''}
     ${wallRight?`<path id="wall_right" data-apex-role="wall-right" data-apex-family="wall" data-apex-style="wall_f1" data-apex-wall-style="wall_f1" data-apex-fence="true" data-apex-fence-height="2.10" data-apex-fence-lean-m="0.45" data-apex-post-spacing-m="2.6" class="wall-line" d="${wallRight}"/>`:''}
     <circle id="start_marker" data-apex-type="marker" data-apex-role="start-marker" data-apex-elevation-m="0" data-apex-elevation-role="local-datum" class="start-marker" cx="${svgNum(start[0])}" cy="${svgNum(-start[1])}" r="6"/>
@@ -1725,7 +1726,10 @@ function apexPrepareBaseSvg(root){
    const track=group('track_geometry','Circuito',[...root.children].filter(e=>trackRoles.has(e.getAttribute('data-apex-role'))));
    if(track)group('APEX_PITLANE','Pitlane',[...track.children].filter(e=>e.getAttribute('data-apex-role')?.startsWith('pit')),track);
  }
- if(!root.querySelector('#APEX_DRIVABLE_AREA'))group('APEX_DRIVABLE_AREA','Zona drivable',[...root.children].filter(e=>e.getAttribute('data-apex-role')==='drivable-area'));
+ if(!root.querySelector('#APEX_DRIVABLE_AREA')){
+   const area=root.querySelector('[data-apex-role="drivable-area"]:not(#APEX_ELEMENT_LIBRARY *)');
+   if(area)group('APEX_DRIVABLE_AREA','Zona drivable',[area],area.parentElement);
+ }
  for(const [id,name] of [['APEX_TERRAIN_CONTOURS','Superficie'],['APEX_TIMING','Cronometraje'],['APEX_ACTIVE_CURBS','Pianos'],['APEX_CORNERS','Curvas'],['APEX_BRAKE_BOARDS','Carteleria'],['APEX_ELEMENT_LIBRARY','Leyenda']]){
    const g=root.querySelector('#'+id);if(!g||g.querySelector(':scope > title'))continue;
    const title=root.ownerDocument.createElementNS(root.namespaceURI,'title');title.textContent=name;g.prepend(title);
@@ -2964,7 +2968,7 @@ function parseSvgGeometry(svgText,km,direction,startHint=null){
    }
  }
  if(!host.isConnected)document.body.appendChild(host);
- const PL=p.getTotalLength(),n=Math.round(clamp(km*1000/5.5,500,1250)),raw=[];
+ const PL=p.getTotalLength(),n=Math.round(clamp(km*1000/5.5,500,km>9?4200:1250)),raw=[];
  for(let i=0;i<n;i++){let q=p.getPointAtLength(PL*i/n);raw.push([q.x,q.y])}host.remove();
  let area=0;for(let i=0;i<raw.length;i++){let a=raw[i],b=raw[(i+1)%raw.length];area+=a[0]*b[1]-b[0]*a[1]}
  let cw=area>0,anti=direction==="ANTI_CLOCKWISE"||direction==="COUNTERCLOCKWISE";if((!anti&&!cw)||(anti&&cw))raw.reverse();
@@ -2974,7 +2978,7 @@ function parseSvgGeometry(svgText,km,direction,startHint=null){
    const a=raw[bi],b=raw[(bi+1)%raw.length],proj=[a[0]+(b[0]-a[0])*bt,a[1]+(b[1]-a[1])*bt],rot=[proj,...raw.slice(bi+1),...raw.slice(0,bi+1)];raw.splice(0,raw.length,...rot);
  }
  let plen=0;for(let i=0;i<raw.length;i++){let a=raw[i],b=raw[(i+1)%raw.length];plen+=Math.hypot(b[0]-a[0],b[1]-a[1])}
- const sc=km*1000/plen,x0=raw[0][0],y0=raw[0][1];return{pts:raw.map(q=>[(q[0]-x0)*sc,-(q[1]-y0)*sc]),startAligned:!!resolvedStart};
+ const sc=km*1000/plen,x0=raw[0][0],y0=raw[0][1];return{pts:raw.map(q=>[(q[0]-x0)*sc,-(q[1]-y0)*sc]),startAligned:!!resolvedStart,sourceOrigin:[x0,y0],sourceScale:sc};
 }
 
 
@@ -3396,7 +3400,7 @@ function apexSvgMidPoint(root,el){const p=apexSvgSampleMounted(root,el,{count:2,
 function apexSvgTrackContext(doc,spec){
  const root=apexSvgMountDocument(doc),meta=raceMetaFor(spec)||{},km=parseFloat(doc.documentElement.getAttribute('data-apex-km'))||meta.km||5.0,direction=doc.documentElement.getAttribute('data-apex-direction')||meta.direction||'CLOCKWISE';
  const trackEl=apexSvgFindAll(root,['track_centerline','track-centerline'])[0]||root.querySelector('#track_centerline')||root.querySelector('path');if(!trackEl){root.remove();throw Error('El SVG no contiene track_centerline')}
- const count=Math.round(clamp(km*1000/5.2,600,1400));let raw=apexSvgSampleMounted(root,trackEl,{count});if(raw.length<20){root.remove();throw Error('No se pudo leer la geometría de track_centerline')}
+ const count=Math.round(clamp(km*1000/5.2,600,spec.nonCalendar?4200:1400));let raw=apexSvgSampleMounted(root,trackEl,{count});if(raw.length<20){root.remove();throw Error('No se pudo leer la geometría de track_centerline')}
  const first=raw[0],last=raw[raw.length-1];if(Math.hypot(first[0]-last[0],first[1]-last[1])<.001)raw.pop();
  const startEl=apexSvgFindAll(root,['start_finish','start-finish','start_marker','start-marker'])[0]||root.querySelector('#start_finish')||root.querySelector('#start_marker'),start=startEl?apexSvgMidPoint(root,startEl):null;
  if(start){let bi=0,bd=Infinity;for(let i=0;i<raw.length;i++){const dx=raw[i][0]-start.x,dy=raw[i][1]-start.y,d=dx*dx+dy*dy;if(d<bd){bd=d;bi=i}}if(bi)raw=raw.slice(bi).concat(raw.slice(0,bi))}
@@ -3542,7 +3546,14 @@ function apexBuildPitNetwork(runs,defaultWidth=5.9){
 // El SVG sigue mandando sobre X/Z. El JSON puede autorar altimetría, anchura y boxes por pitS.
 function apexPitLaneJsonProfile(dir=null){
  const id=String(dir||(trackData&&trackData.spec&&trackData.spec.dir)||''),j=readStoredCircuitJson(id)||{},p=j.pitLane;
- return p&&p.schema==='APEX_PIT_LANE_V1'?p:null;
+ if(p?.schema==='APEX_PIT_LANE_V1')return p;
+ if(!EXTRA_CIRCUITS.some(extra=>extra.dir===id))return null;
+ const meta=raceMetaFor(id),pit=meta?.pit;
+ if(!pit)return null;
+ const totalLengthM=mod(pit.exit-pit.entry,meta.km*1000);
+ if(totalLengthM<120)return null;
+ return {schema:'APEX_PIT_LANE_V1',totalLengthM,widthProfile:{defaultTotalWidthM:pit.width},speedLimit:{kph:pit.speedKph},
+   boxSlots:teamKeys.map((team,index)=>({id:'box-'+String(index+1).padStart(2,'0'),teamAssignment:team,pitS:totalLengthM*lerp(.31,.69,index/Math.max(1,teamKeys.length-1)),status:'PROVISIONAL_POSITION'}))};
 }
 function apexPitProfileSample(samples,s,col=1,fallback=null){
  if(!Array.isArray(samples)||!samples.length)return fallback;
@@ -3597,6 +3608,12 @@ function apexBuildProvisionalPitNetwork(){
  if(!trackData||!trackData.spec)return null;const pit=pitLaneSpec();if(!pit)return null;
  const L=trackData.km*1000,entry=Number(pit.entry),exit0=Number(pit.exit),side=Number(pit.side)>=0?1:-1,width=Math.max(4.2,Number(pit.width)||5.4);
  if(!Number.isFinite(entry)||!Number.isFinite(exit0)||!Number.isFinite(L)||L<=100)return null;
+ if(trackData.extraPitPath){
+   const points=parseSvgPointPairsRaw(trackData.extraPitPath).map(([x,y])=>[x,-y]);
+   const network=apexBuildPitNetwork([{id:0,width,sourceRole:'pitlane-centerline',points}],width);
+   network.speedKph=apexPitSpeedLimitKph();
+   return network;
+ }
  let exit=exit0;while(exit<=entry)exit+=L;const span=exit-entry;if(span<120||span>L*.48)return null;
  const merge=Math.min(115,Math.max(58,span*.19)),step=4,pts=[];
  const add=u=>{

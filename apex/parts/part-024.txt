@@ -687,24 +687,26 @@ function apexImportedStructureZones(landmarks,L){
  return zones;
 }
 
-function apexGeoJsonOutlineToWorld(gj){
- const feat=gj&&Array.isArray(gj.features)?gj.features.find(f=>f&&f.properties&&f.properties.role==='outline'&&f.geometry&&f.geometry.type==='LineString'):null,coords=feat&&feat.geometry&&feat.geometry.coordinates;if(!Array.isArray(coords)||coords.length<20)throw Error('GeoJSON sin centerline utilizable');const clean=coords.filter(p=>Array.isArray(p)&&Number.isFinite(+p[0])&&Number.isFinite(+p[1]));if(clean.length<20)throw Error('GeoJSON insuficiente');const lon0=clean.reduce((a,p)=>a+(+p[0]),0)/clean.length,lat0=clean.reduce((a,p)=>a+(+p[1]),0)/clean.length,cos=Math.cos(lat0*Math.PI/180),pts=clean.map(p=>[(+p[0]-lon0)*111320*cos,(+p[1]-lat0)*110540]);if(pts.length>2&&Math.hypot(pts[0][0]-pts[pts.length-1][0],pts[0][1]-pts[pts.length-1][1])<2)pts.pop();return pts;
-}
 async function loadNonCalendarBaseTrack(spec,fallback){
- const jsonCfg=readStoredCircuitJson(spec.dir),jsonV=jsonCfg&&jsonCfg.verticalProfile?apexNormalizeVerticalProfile({verticalProfile:jsonCfg.verticalProfile}):null,jsonTiming=jsonCfg&&jsonCfg.timing?clonePlain(jsonCfg.timing):null,jsonBanking=apexNormalizeAuthoredBanking(jsonCfg),cacheKey='apex-v523026-extra-geometry-'+spec.dir;
+ const jsonCfg=readStoredCircuitJson(spec.dir),jsonV=jsonCfg&&jsonCfg.verticalProfile?apexNormalizeVerticalProfile({verticalProfile:jsonCfg.verticalProfile}):null,jsonTiming=jsonCfg&&jsonCfg.timing?clonePlain(jsonCfg.timing):null,jsonBanking=apexNormalizeAuthoredBanking(jsonCfg),cacheKey='apex-v523028-extra-geometry-'+spec.dir;
  try{const c=JSON.parse(appStorage.getItem(cacheKey)||'null');if(c&&Array.isArray(c.pts)&&c.pts.length>20)return{...c,km:fallback.km||c.km,direction:fallback.direction||c.direction,turns:fallback.turns||c.turns||0,laps:Number.isFinite(fallback.laps)?fallback.laps:(c.laps||0),verticalProfile:jsonV,timingData:jsonTiming,authoredBanking:jsonBanking}}catch(e){}
  const finish=data=>{try{appStorage.setItem(cacheKey,JSON.stringify({...data,verticalProfile:null,timingData:null}))}catch(e){}return data};
  if(spec.externalSource==='generated-oval'){
-   const km=4.023,direction='COUNTER_CLOCKWISE',layout=fallback.layout||'daytona-oval',turns=4,laps=200,circuitType='OVAL';
+   const km=4.023,direction='COUNTERCLOCKWISE',layout=fallback.layout||'daytona-oval',turns=4,laps=200,circuitType='OVAL';
    const pts=[];const rx=682,rz=402,frontWarp=.12,backFlat=.04,n=560;
    for(let i=0;i<n;i++){const t=(i/n)*Math.PI*2;let x=Math.cos(t)*rx,z=Math.sin(t)*rz;const f=(1-Math.cos(t))*0.5; x*=1+frontWarp*Math.max(0,Math.sin(t)); z*=1-backFlat*Math.cos(t)*Math.cos(t); if(z>0)x+=Math.sin((x/rx)*Math.PI)*88; pts.push([x,z]);}
    return finish({pts,km,layout,direction,turns,laps,circuitType,startAligned:true,detailedSvg:true,geometrySource:'GENERATED-DAYTONA-OVAL',geometryAudit:'v5.230.26-extra',verticalProfile:jsonV,timingData:jsonTiming,authoredBanking:jsonBanking});
  }
- if(spec.externalSource==='f1-history'){
-   const layout=fallback.layout||spec.dir.replace(/^x-/,'');const url=`https://raw.githubusercontent.com/julesr0y/f1-circuits-svg/main/circuits/minimal/black-outline/${layout}.svg`,r=await fetch(url,{cache:'force-cache'});if(!r.ok)throw Error('No se pudo descargar el trazado histórico');const svg=await r.text(),parsed=parseSvgGeometry(svg,fallback.km||5,fallback.direction||'CLOCKWISE',null);return finish({pts:parsed.pts,km:fallback.km||5,layout,direction:fallback.direction||'CLOCKWISE',turns:fallback.turns||0,laps:fallback.laps||0,circuitType:fallback.circuitType||'HISTORIC_F1',startAligned:parsed.startAligned,detailedSvg:false,geometrySource:'F1-CIRCUITS-SVG-HISTORIC',geometryAudit:'v5.230.26-extra',verticalProfile:jsonV,timingData:jsonTiming,authoredBanking:jsonBanking});
- }
- if(spec.externalSource==='track-atlas-geojson'){
-   const url='https://raw.githubusercontent.com/tobi/track-atlas/main/tracks/circuit-de-la-sarthe/raw/layers/24h.geojson',r=await fetch(url,{cache:'force-cache'});if(!r.ok)throw Error('No se pudo descargar Circuit de la Sarthe');const gj=await r.json(),pts=apexGeoJsonOutlineToWorld(gj);return finish({pts,km:fallback.km||13.626,layout:fallback.layout||'24h',direction:fallback.direction||'CLOCKWISE',turns:fallback.turns||0,laps:fallback.laps||0,circuitType:fallback.circuitType||'ENDURANCE',startAligned:true,detailedSvg:true,geometrySource:'TRACK-ATLAS-GEOJSON',geometryAudit:'v5.230.26-extra',verticalProfile:jsonV,timingData:jsonTiming,authoredBanking:jsonBanking});
+ if(spec.externalSource==='extra-outline'){
+   const layout=fallback.layout||spec.dir.replace(/^x-/,'');
+   const r=await fetch(`circuits/extra/${layout}.svg`);
+   if(!r.ok)throw Error('No se pudo cargar el trazado de '+spec.name);
+   const km=fallback.km||5,direction=fallback.direction||'CLOCKWISE';
+   const text=await r.text(),parsed=parseSvgGeometry(text,km,direction,null);
+   const doc=new DOMParser().parseFromString(text,'image/svg+xml');
+   const pit=doc.querySelector('polyline[data-apex-role="pitlane-centerline"]');
+   const extraPitPath=pit?parseSvgPointPairsRaw(pit.getAttribute('points')).map(([x,y],i)=>`${i?'L':'M'} ${svgNum((x-parsed.sourceOrigin[0])*parsed.sourceScale)} ${svgNum((y-parsed.sourceOrigin[1])*parsed.sourceScale)}`).join(' '):null;
+   return finish({pts:parsed.pts,extraPitPath,sourceCredit:doc.querySelector('desc')?.textContent||(spec.dir==='x-le-mans-sarthe'?'Track Atlas by Tobi (MIT)':'Jules Roy / F1DB (CC BY 4.0)'),km,layout,direction,turns:fallback.turns||0,laps:fallback.laps||0,circuitType:fallback.circuitType||'HISTORIC_F1',startAligned:parsed.startAligned,detailedSvg:true,geometrySource:'LOCAL_EXTRA_OUTLINE',verticalProfile:jsonV,timingData:jsonTiming,authoredBanking:jsonBanking});
  }
  if(spec.nonCalendar)throw Error('Este circuito necesita un SVG importado antes de salir a pista');
  return null;
@@ -750,7 +752,23 @@ async function loadTrack(spec){
      return {pts:baseGeom.points.map(p=>[+p[0],+p[1]]),km,layout:layoutId,direction,turns:parseInt(baseGeom.turns)||fallback.turns||0,laps:parseInt(baseGeom.laps)||fallback.laps||0,circuitType:baseGeom.circuitType||fallback.circuitType||'RACE',startAligned:true,detailedSvg:true,geometrySource:'APEX_BASE_EMBEDDED_SVG',geometryAudit:'v5.230.62.2-sector-lod-base',svgAuthoritative:true,verticalProfile:jsonVertical||baseGeom.verticalProfile||null,timingData:baseGeom.timingData||jsonTiming||null,timingControls:Array.isArray(baseGeom.timingControls)&&baseGeom.timingControls.length?baseGeom.timingControls:(jsonTiming&&Array.isArray(jsonTiming.controls)?jsonTiming.controls:[]),cornerMarkers:Array.isArray(baseGeom.cornerMarkers)?baseGeom.cornerMarkers:[],authoredBanking:jsonBanking};
    }
  }
- if(spec.nonCalendar){const x=await loadNonCalendarBaseTrack(spec,fallback);if(x)return x}
+ if(spec.nonCalendar){
+   const data=await loadNonCalendarBaseTrack(spec,fallback);
+   if(data&&EXTRA_CIRCUITS.some(extra=>extra.dir===spec.dir)){
+     if(!readBaseTrackSvg(spec.dir)){
+       const template=await apexBaseSvgTemplate(),previous=trackData;
+       let raw;
+       try{
+         trackData={...data,spec};prepareTrackModel();
+         raw=apexEnrichExportSvg(apexAddEmbeddedPitSpeedMarks(buildEditableCircuitSvgForCurrentTrack(spec)),spec);
+       }finally{trackData=previous}
+       await importEditableCircuitSvgText(raw,spec,{persist:false,base:true,reference:template?.root});
+     }
+     const base=readBaseTrackSvg(spec.dir);
+     return {...data,pts:base.points,timingControls:base.timingControls,cornerMarkers:base.cornerMarkers,svgAuthoritative:true};
+   }
+   if(data)return data;
+ }
  if(jsonCfg&&jsonCfg.track&&jsonCfg.track.requiresSvg===true)throw Error("Este circuito requiere importar su SVG antes de salir a pista");
  const key="apex-v5183-geometry-audit-"+spec.dir;
  try{let c=JSON.parse(appStorage.getItem(key));if(c&&c.pts&&c.pts.length>400)return c}catch(e){}
