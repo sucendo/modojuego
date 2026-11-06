@@ -509,7 +509,16 @@ function apexForestScatter(poly,seedText,count=18){
 }
 function apexSvgLandmarkExact(el,index,ctx){
  const sourceRole=String(el.getAttribute('data-apex-role')||'').trim().toLowerCase(),rawType=String(el.getAttribute('data-apex-type')||roleNameToImportType(sourceRole)||'').trim();if(!rawType||sourceRole==='advertising')return null;
- const rawPts=apexSvgSampleMounted(ctx.root,el,{step:5}),pts=rawPts.map(ctx.toWorld);if(!pts.length)return null;let cx=0,cz=0;for(const p of pts){cx+=p[0];cz+=p[1]}cx/=pts.length;cz/=pts.length;
+ const pitSpeedColor=apexPitSpeedMarkColor(sourceRole);
+ let pts=apexSvgSampleMounted(ctx.root,el,{step:5}).map(ctx.toWorld);
+ if(pitSpeedColor&&el.localName==='line'){
+   const ends=apexSvgSampleMounted(ctx.root,el,{count:2,includeEnd:true}).map(ctx.toWorld);
+   if(ends.length===2){
+     const [[x,z],[a,b]]=ends,len=Math.hypot(a-x,b-z)||1,nx=(z-b)*.175/len,nz=(a-x)*.175/len;
+     pts=[[x+nx,z+nz],[a+nx,b+nz],[a-nx,b-nz],[x-nx,z-nz]];
+   }
+ }
+ if(!pts.length)return null;let cx=0,cz=0;for(const p of pts){cx+=p[0];cz+=p[1]}cx/=pts.length;cz/=pts.length;
  const st=nearestTrackState(cx,cz,null),sideAttr=parseFloat(el.getAttribute('data-apex-side')),side=Number.isFinite(sideAttr)&&sideAttr!==0?Math.sign(sideAttr):Math.sign(st.lat)||1,anchor=proposalWorldAnchor(st.s,st.lat,0,parseFloat(el.getAttribute('data-apex-maxds'))||1750);anchor.x=cx;anchor.z=cz;anchor.groundQ=poseAt(st.s);
  const type=rawType==='building'?'block':rawType,variant=String(el.getAttribute('data-apex-variant')||'').trim().toLowerCase(),appearance=apexSvgReadAppearance(el,type,sourceRole),node={type,role:sourceRole||rawType,sourceId:String(el.id||''),sourceRole,variant,anchor,name:String(el.getAttribute('data-apex-name')||el.id||`${rawType} ${index+1}`),side,trackLat:st.lat,height:(parseFloat(el.getAttribute('data-apex-height'))||0),color:el.getAttribute('data-apex-color')||undefined,apexFamily:appearance.family,apexStyle:appearance.style,style:appearance.style,material:appearance.material||undefined,roofStyle:appearance.roofStyle||undefined,portalStyle:appearance.portalStyle||undefined,interiorStyle:appearance.interiorStyle||undefined,hasLights:appearance.lights,hasPanels:appearance.panels,hasServiceWalk:appearance.serviceWalk,lightSpacingM:appearance.lightSpacingM,panelSpacingM:appearance.panelSpacingM,serviceWalkWidthM:appearance.serviceWalkWidthM,advertisingBanner:el.getAttribute('data-apex-ad-banner')==='true'||(el.classList&&el.classList.contains('apex-tunnel-ad-enabled')),garageBays:appearance.garageBays,hasGlass:appearance.glass,hasBalcony:appearance.balcony,hasPitwall:appearance.pitwall,garageStyle:appearance.garageStyle||undefined,hasRoof:appearance.covered,seatColor:appearance.seatColor||undefined,seatRows:appearance.seatRows};
  // data-apex-width/depth/length/height son magnitudes físicas en metros. Sólo las
@@ -523,7 +532,7 @@ function apexSvgLandmarkExact(el,index,ctx){
    if(type==='terrainZone')node.color=node.color||'#667a4d';
    if(type==='surfaceZone'){node.surfaceKind=String(el.getAttribute('data-apex-surface')||sourceRole.replace(/^surface-/,'').replace(/^runoff-/,'')||'ASPHALT').toUpperCase();const cm={ASPHALT:'#676d72',GRAVEL:'#ad9068',SAND:'#bea166',GRASS:'#2e6737'};node.color=node.color||apexSvgSurfaceColor(el)||cm[node.surfaceKind]||cm.ASPHALT;}
    if(type==='water'){node.waterKind=sourceRole==='sea'?'SEA':'LAKE';node.color=node.color||(node.waterKind==='SEA'?'#2b739d':'#347ca5');}
-   if(type==='marking'){node.markingKind=/^pit-speed-limit-(start|end)$/.test(sourceRole)?'PIT_SPEED_LIMIT':sourceRole==='start-line'?'START_LINE':(sourceRole==='finish-line'?'FINISH_LINE':(sourceRole==='urban-stripes'?'URBAN_STRIPES':(sourceRole==='curb-left'?'CURB_LEFT':(sourceRole==='curb-right'?'CURB_RIGHT':'CROSSWALK'))));node.color=node.color||((sourceRole==='curb-left'||sourceRole==='curb-right')?'#d92b36':'#f2f3f4');}
+   if(type==='marking'){node.markingKind=/^pit-speed-limit-(start|end)$/.test(sourceRole)?'PIT_SPEED_LIMIT':sourceRole==='start-line'?'START_LINE':(sourceRole==='finish-line'?'FINISH_LINE':(sourceRole==='urban-stripes'?'URBAN_STRIPES':(sourceRole==='curb-left'?'CURB_LEFT':(sourceRole==='curb-right'?'CURB_RIGHT':'CROSSWALK'))));node.color=node.color||pitSpeedColor||((sourceRole==='curb-left'||sourceRole==='curb-right')?'#d92b36':'#f2f3f4');}
   if(apexIsCurbAuthoringMark(node)){
    node.width=wAttr||1.25;node.curbRuns=apexSvgElementWorldRunsExact(ctx,el,1.5);node.worldPath=node.curbRuns[0]||[];
    const dash=parseFloat(getComputedStyle(el).strokeDasharray),m=apexSvgRelativeMatrix(ctx.root,el),scale=m?Math.hypot(m.a,m.b):1;
@@ -5192,11 +5201,11 @@ function drawPitLaneLineOnSegment(a,b,cam,pitch){
 function collectExactPitRenderItems(cam){
  const segs=apexPitSegments();if(!segs.length)return[];const out=[];
  const pn=trackData.customWorld.pitNetwork,work=pn.serviceLayout,far=apexInspectionFullScene()?apexInspectionFarDistance():720;
- const add=(A0,A1,B1,B0,color=null)=>{
+ const add=(A0,A1,B1,B0,color=null,brand=null)=>{
    if((A0.z<.45&&A1.z<.45&&B0.z<.45&&B1.z<.45)||(A0.z>far&&A1.z>far&&B0.z>far&&B1.z>far))return;
    const poly3=clipPolyNear([A0,A1,B1,B0],.58);if(poly3.length<3)return;
    const z=poly3.reduce((q,p)=>q+p.z,0)/poly3.length;
-   out.push({kind:'pitExact',z:z-.045,data:{poly3,A0,A1,B1,B0,z,color}});
+   out.push({kind:'pitExact',z:z-.045,data:{poly3,A0,A1,B1,B0,z,color,brand}});
  };
  for(const sg of segs){
    const dx=sg.x2-sg.x1,dz=sg.z2-sg.z1,len=sg.len||1,nx=-dz/len,nz=dx/len,hw=sg.width*.5;
@@ -5206,7 +5215,19 @@ function collectExactPitRenderItems(cam){
      const side=Math.sign(work.offset),inner=side*(Math.abs(work.offset)-1.8);
      const outer=s=>inner+side*apexPitWorkWidthAt(work,s);
      add(a(inner),a(outer(sg.s1)),b(outer(sg.s2)),b(inner),'#454d56');
+     const strip=(lo,hi,y,color)=>{
+       const point=(x,z,height,lat)=>worldToCamera(x+nx*lat,height+y,z+nz*lat,cam);
+       add(point(sg.x1,sg.z1,sg.y1,lo),point(sg.x1,sg.z1,sg.y1,hi),point(sg.x2,sg.z2,sg.y2,hi),point(sg.x2,sg.z2,sg.y2,lo),color);
+     };
+     strip(inner-APEX_PIT_DIVIDER_HALF,inner+APEX_PIT_DIVIDER_HALF,.025,'#30353b');
+     for(const edge of [inner-APEX_PIT_DIVIDER_HALF,inner+APEX_PIT_DIVIDER_HALF])strip(edge-.045,edge+.045,.031,'#f6f7f8');
    }
+ }
+ for(const q of apexPitDividerAds(work,pn)){
+   const offset=work.offset-Math.sign(work.offset)*1.8;
+   const at=(a,b)=>worldToCamera(q.x+q.tx*a+q.nx*(offset+b),q.y+.039,q.z+q.tz*a+q.nz*(offset+b),cam);
+   const l=APEX_PIT_AD_HALF_LENGTH,w=APEX_PIT_AD_HALF_WIDTH;
+   add(at(-l,-w),at(-l,w),at(l,w),at(l,-w),'#090b10','apex26-start-finish');
  }
  for(const slot of work?.slots||[]){
    const q=apexPitPointAtS(slot,pn);if(!q)continue;
@@ -5216,7 +5237,7 @@ function collectExactPitRenderItems(cam){
  return out;
 }
 function drawExactPitRenderItem(item,pitch){
- const p=projectCameraPoly(item.poly3,pitch);if(!p||p.length<3)return;poly(p,item.color||'#565c62');if(item.color)return;const q0=projectLocal(item.A0.x,item.A0.y,item.A0.z,pitch),q1=projectLocal(item.A1.x,item.A1.y,item.A1.z,pitch),r0=projectLocal(item.B0.x,item.B0.y,item.B0.z,pitch),r1=projectLocal(item.B1.x,item.B1.y,item.B1.z,pitch);if(q0&&r0)drawCamLine(item.A0,item.B0,pitch,'rgba(248,249,250,.90)',Math.max(1,Math.min(2.2,(q0.scale+r0.scale)*.005)),.58);if(q1&&r1)drawCamLine(item.A1,item.B1,pitch,'rgba(248,249,250,.82)',Math.max(1,Math.min(2.2,(q1.scale+r1.scale)*.005)),.58);
+ const p=projectCameraPoly(item.poly3,pitch);if(!p||p.length<3)return;if(item.brand){apexSponsorTexturePaint([item.A0,item.B0,item.B1,item.A1],item.brand,pitch,'canvas');return}poly(p,item.color||'#565c62');if(item.color)return;const q0=projectLocal(item.A0.x,item.A0.y,item.A0.z,pitch),q1=projectLocal(item.A1.x,item.A1.y,item.A1.z,pitch),r0=projectLocal(item.B0.x,item.B0.y,item.B0.z,pitch),r1=projectLocal(item.B1.x,item.B1.y,item.B1.z,pitch);if(q0&&r0)drawCamLine(item.A0,item.B0,pitch,'rgba(248,249,250,.90)',Math.max(1,Math.min(2.2,(q0.scale+r0.scale)*.005)),.58);if(q1&&r1)drawCamLine(item.A1,item.B1,pitch,'rgba(248,249,250,.82)',Math.max(1,Math.min(2.2,(q1.scale+r1.scale)*.005)),.58);
 }
 
 function drawGridMarkings(cam,pitch){

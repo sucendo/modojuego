@@ -1730,6 +1730,14 @@ function apexPrepareBaseSvg(root){
    const title=root.ownerDocument.createElementNS(root.namespaceURI,'title');title.textContent=name;g.prepend(title);
  }
 }
+function apexPitSpeedMarkColor(role){
+ return role==='pit-speed-limit-start'?'#ffe16a':role==='pit-speed-limit-end'?'#8dffb6':null;
+}
+const APEX_PIT_DIVIDER_HALF=.40,APEX_PIT_AD_HALF_LENGTH=2.4,APEX_PIT_AD_HALF_WIDTH=.32;
+function apexPitDividerAds(work,pn){
+ if(!work)return [];
+ return work.dividerAds??=Array.from({length:Math.max(0,Math.floor((work.end-work.start-24)/36)+1)},(_,i)=>apexPitPointAtS(work.start+12+i*36,pn));
+}
 function apexAddBaseSvgPitAndGrid(doc,ctx,spec,pitNetwork){
  const root=doc.documentElement,ns=root.namespaceURI,n=(v)=>svgNum(v,3);
  const add=(parent,tag,attrs={},label='')=>{
@@ -1744,6 +1752,23 @@ function apexAddBaseSvgPitAndGrid(doc,ctx,spec,pitNetwork){
    const points=[[-length/2,-width/2],[length/2,-width/2],[length/2,width/2],[-length/2,width/2]].map(([a,b])=>frame(q,a,b).map(n).join(',')).join(' ');
    add(parent,'polygon',{points,fill,stroke,'stroke-width':n(.28/ctx.scale)});
  };
+ for(const mark of root.querySelectorAll('[data-apex-role^="pit-speed-limit-"]')){
+   const color=apexPitSpeedMarkColor(mark.getAttribute('data-apex-role'));
+   if(!color)continue;
+   if(mark.closest('#APEX_ELEMENT_LIBRARY')){
+     mark.style.setProperty(mark.localName==='line'?'stroke':'fill',color);
+     continue;
+   }
+   mark.setAttribute('data-apex-color',color);
+   mark.style.opacity='1';
+   mark.style.strokeDasharray='none';
+   if(mark.localName==='line'){
+     mark.style.fill='none';mark.style.stroke=color;mark.style.strokeWidth=n(.35/ctx.scale)+'px';
+     mark.style.strokeLinecap='butt';mark.style.vectorEffect='none';
+   }else{
+     mark.style.fill=color;mark.style.stroke='none';
+   }
+ }
  const cfg=apexPitLaneJsonProfile(spec.dir),slots=cfg?.boxSlots||[],primary=pitNetwork.runs.filter(run=>!run.detached&&run.chainId===pitNetwork.primaryChainId);
  if(primary.length&&slots.length&&cfg.totalLengthM>0){
    const boxes=layer('APEX_PIT_SERVICE','Puestos de cambio de neumáticos'),garages=layer('APEX_PIT_GARAGES','Garajes · dos plazas por escudería');
@@ -1768,13 +1793,24 @@ function apexAddBaseSvgPitAndGrid(doc,ctx,spec,pitNetwork){
    if(!work)return;
    const apron=layer('APEX_PIT_WORK_AREA','Zona de trabajo de boxes');
    root.insertBefore(apron,root.querySelector('#track_geometry')||boxes);
-   const side=Math.sign(work.offset),edge=(outer)=>Array.from({length:Math.ceil((work.end-work.start)/3)+1},(_,i)=>{
+   const side=Math.sign(work.offset),edge=(outer,offset=0)=>Array.from({length:Math.ceil((work.end-work.start)/3)+1},(_,i)=>{
      const s=Math.min(work.end,work.start+i*3),q=apexPitPointAtS(s,pitNetwork);
      const inner=Math.abs(work.offset)-1.8;
-     return frame(q,0,side*(inner+(outer?apexPitWorkWidthAt(work,s):0))).map(n).join(',');
+     return frame(q,0,side*(inner+offset+(outer?apexPitWorkWidthAt(work,s):0))).map(n).join(',');
    });
    add(apron,'polygon',{points:[...edge(false),...edge(true).reverse()].join(' '),fill:'#454d56',stroke:'#dce5ed','stroke-width':n(.22/ctx.scale)});
-   add(apron,'polyline',{points:edge(false).join(' '),fill:'none',stroke:'#dce5ed','stroke-width':n(.23/ctx.scale),'stroke-dasharray':`${n(2/ctx.scale)} ${n(1.4/ctx.scale)}`});
+   const divider=layer('APEX_PIT_DIVIDER','Separador del carril rápido y zona de trabajo');
+   root.insertBefore(divider,boxes);
+   const borders=[edge(false,-APEX_PIT_DIVIDER_HALF),edge(false,APEX_PIT_DIVIDER_HALF)];
+   add(divider,'polygon',{points:[...borders[0],...borders[1].slice().reverse()].join(' '),fill:'#30353b'});
+   for(const points of borders)add(divider,'polyline',{points:points.join(' '),fill:'none',stroke:'#f6f7f8','stroke-width':n(.09/ctx.scale)});
+   const ads=add(divider,'g',{id:'APEX_PIT_DIVIDER_ADS','data-apex-brand':'apex26-start-finish'},'Publicidad generada por APEX');
+   for(const lane of apexPitDividerAds(work,pitNetwork)){
+     const offset=work.offset-side*1.8,q={...lane,x:lane.x+lane.nx*offset,z:lane.z+lane.nz*offset};
+     mark(ads,q,APEX_PIT_AD_HALF_LENGTH*2,APEX_PIT_AD_HALF_WIDTH*2,'#090b10','none');
+     const [x,y]=frame(q,0,0),angle=Math.atan2(-q.tz,q.tx)*180/Math.PI;
+     add(ads,'text',{x:n(x),y:n(y),transform:`rotate(${n(angle)} ${n(x)} ${n(y)})`,'font-size':n(.48/ctx.scale),'font-family':'sans-serif','font-weight':900,'text-anchor':'middle','dominant-baseline':'central',fill:'#fff'}).textContent='APEX 26';
+   }
    slots.forEach((slot,index)=>{
      const pitS=slot.pitS*length/cfg.totalLengthM;
      const run=primary.find(r=>pitS<=r.startS+r.length);
