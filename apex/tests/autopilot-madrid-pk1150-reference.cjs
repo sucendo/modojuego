@@ -53,7 +53,7 @@ assert.match(source,/const futureGuide=lineGuide\?autoUniversalRacingReference\(
 assert.match(source,/autoDynamicStability\(sp,env,steer,target,!!lineGuide\)/,'Predictive side shared with stabilization');
 assert.match(source,/driverReferencePathCurvatureAt\(kSampleS\)/,'Feed-forward follows continuous reference');
 assert.match(source,/!raceTraffic\.active&&!Number\.isFinite\(traffic\.lane\)/,'Racing traffic still wins');
-assert.match(source,/const soloSession=!\(rivals&&rivals\.length\)/,'Universal guide must not flicker in a populated race');
-assert.match(source,/const lineGuide=\(soloSession&&!offTrack/,'Passing controller holds authority whenever rivals exist');
-assert.match(source,/const lineGuide=\(soloSession&&!offTrack&&\s*!raceTraffic\.active/,'A solo technical corner must never switch away from the continuous guide');
+assert.match(source,/player\.autoSvgResumeAt=raceT\+1\.2/,'Race reference must use a sustained post-traffic handoff');
+assert.match(source,/const lineGuide=\(svgTrafficClear&&!offTrack/,'Distant rivals must not displace SVG; traffic still takes precedence');
+assert.match(source,/const lineGuide=\(svgTrafficClear&&!offTrack&&\s*!raceTraffic\.active/,'A clean technical corner must preserve the continuous guide');
 console.log(JSON.stringify({test:'autopilot-universal-reference-and-speed',passed:true,circuits:5}));
