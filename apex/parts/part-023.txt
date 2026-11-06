@@ -943,8 +943,8 @@ function apexWriteCircuitMetadata(doc,root,spec){
 function apexSignedArea2D(points){let a=0;if(!Array.isArray(points)||points.length<3)return 0;for(let i=0,j=points.length-1;i<points.length;j=i++)a+=points[j][0]*points[i][1]-points[i][0]*points[j][1];return a*.5}
 function apexOrientSvgRing(points,sign=1){const p=(points||[]).map(q=>[+q[0],+q[1]]);if(p.length<3)return p;const a=apexSignedArea2D(p);if((sign>0&&a<0)||(sign<0&&a>0))p.reverse();return p}
 function apexRingPathD(points){const p=points||[];if(p.length<3)return'';return `M ${svgNum(p[0][0])} ${svgNum(p[0][1])} `+p.slice(1).map(q=>`L ${svgNum(q[0])} ${svgNum(q[1])}`).join(' ')+' Z'}
-function apexPitCorridorSvgRings(){
- const pn=trackData&&trackData.customWorld&&trackData.customWorld.pitNetwork;if(!pn||!Array.isArray(pn.runs)||!pn.runs.length)return[];const rings=[];
+function apexPitCorridorSvgRings(pn=trackData?.customWorld?.pitNetwork){
+ if(!pn||!Array.isArray(pn.runs)||!pn.runs.length)return[];const rings=[];
  for(const run of pn.runs){const pts=run&&Array.isArray(run.points)?run.points:[];if(pts.length<2)continue;const half=Math.max(2.2,(+run.width||+pn.width||5.9)*.5+.75),L=[],R=[];
   for(let i=0;i<pts.length;i++){const a=pts[Math.max(0,i-1)],b=pts[Math.min(pts.length-1,i+1)],dx=b.x-a.x,dz=b.z-a.z,ll=Math.hypot(dx,dz)||1,nx=-dz/ll,nz=dx/ll,p=pts[i];L.push([p.x+nx*half,-(p.z+nz*half)]);R.push([p.x-nx*half,-(p.z-nz*half)])}
   const ring=L.concat(R.reverse());if(ring.length>=4)rings.push(ring)
@@ -1334,6 +1334,61 @@ function apexImportedSurfaceZones(landmarks){
 function apexImportedDrivableArea(ctx,elements){
  const rings=[];for(const el of (elements||[])){const runs=apexSvgElementWorldRunsExact(ctx,el,5.5);for(const run0 of runs){let run=run0.slice();if(run.length<3)continue;if(Math.hypot(run[0][0]-run[run.length-1][0],run[0][1]-run[run.length-1][1])<2.5)run=run.slice(0,-1);if(run.length<3)continue;const area=apexSignedArea2D(run);if(Math.abs(area)<3)continue;let minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity;for(const p of run){minX=Math.min(minX,p[0]);maxX=Math.max(maxX,p[0]);minZ=Math.min(minZ,p[1]);maxZ=Math.max(maxZ,p[1])}rings.push({points:run,sign:area>=0?1:-1,bbox:[minX,minZ,maxX,maxZ]})}}
  return rings.length?{authoritative:true,fillRule:'nonzero',rings}:null;
+}
+function apexBaseDrivableArea(doc,ctx,spec,source,edges,pitNetwork,area){
+ const urban=apexBaseCircuitJson(spec.dir)?.track?.circuitType==='STREET'||spec.dir==='14-spain';
+ const margin=urban?0:5;
+ const orient=points=>Math.sign(apexSignedArea2D(points));
+ const trim=points=>points.length>3&&Math.hypot(points[0][0]-points.at(-1)[0],points[0][1]-points.at(-1)[1])<2.5?points.slice(0,-1):points;
+ let polygons;
+ if(urban){
+   const bounds=edges.map(el=>el?trim(apexSvgElementWorldRunsExact(ctx,el,2.5)[0]||[]):[]);
+   if(bounds.some(points=>points.length<8))return area;
+   bounds.sort((a,b)=>Math.abs(apexSignedArea2D(b))-Math.abs(apexSignedArea2D(a)));
+   const [outer,inner]=bounds;
+   polygons=[apexOrientSvgRing(outer,1),apexOrientSvgRing(inner,-1)];
+   for(const ring of apexPitCorridorSvgRings(pitNetwork))polygons.push(apexOrientSvgRing(ring.map(([x,y])=>[x,-y]),1));
+ }else{
+   if(!area||area.rings.length<2)return area;
+   const bySize=[...area.rings].sort((a,b)=>Math.abs(apexSignedArea2D(b.points))-Math.abs(apexSignedArea2D(a.points)));
+   const outer=bySize[0],inner=bySize.find(ring=>ring.sign!==outer.sign);
+   if(!inner)return area;
+   const offset=(points,distance)=>{
+     const sign=orient(points);
+     return points.map(([x,z],i)=>{
+       const a=points[(i+points.length-1)%points.length],b=points[(i+1)%points.length];
+       const normal=(dx,dz)=>{const len=Math.hypot(dx,dz)||1;return [sign*dz/len,-sign*dx/len]};
+       const [ax,az]=normal(x-a[0],z-a[1]),[bx,bz]=normal(b[0]-x,b[1]-z);
+       const m=distance/Math.max(1,1+ax*bx+az*bz);
+       return [x+(ax+bx)*m,z+(az+bz)*m];
+     });
+   };
+   polygons=area.rings.map(ring=>ring===outer?offset(ring.points,margin):ring===inner?offset(ring.points,-margin):ring.points);
+ }
+ const root=doc.documentElement,old=source.map(el=>el.id&&doc.getElementById(el.id)).filter(Boolean);
+ const path=doc.createElementNS(root.namespaceURI,'path');
+ const group=old[0]?.parentElement||root;
+ const matrix=apexSvgRelativeMatrix(ctx.root,source[0]?.parentElement||ctx.root);
+ const inverse=matrix?.inverse();
+ const svgPoint=([x,z])=>{
+   const sx=ctx.origin[0]+x/ctx.scale,sy=ctx.origin[1]-z/ctx.scale;
+   return inverse?[inverse.a*sx+inverse.c*sy+inverse.e,inverse.b*sx+inverse.d*sy+inverse.f]:[sx,sy];
+ };
+ path.setAttribute('id',old[0]?.id||'apex_drivable_area');
+ path.setAttribute('data-apex-role','drivable-area');
+ path.setAttribute('data-apex-type','drivableArea');
+ path.setAttribute('data-apex-name',urban?'Zona drivable · bordes de pista y pit lane':'Zona drivable · escapatorias ampliadas');
+ path.setAttribute('data-apex-margin-m',String(margin));
+ path.setAttribute('fill-rule','nonzero');
+ path.setAttribute('class','drivable-area');
+ path.setAttribute('style',source[0]?.getAttribute('style')||`fill:#d4272a;fill-opacity:.07;stroke:#53d7ff;stroke-opacity:.82;stroke-width:${svgNum(1.8/ctx.scale,3)};stroke-dasharray:${svgNum(9/ctx.scale,3)} ${svgNum(6/ctx.scale,3)};stroke-linejoin:round`);
+ path.setAttribute('d',polygons.map(points=>apexRingPathD(points.map(svgPoint))).join(' '));
+ group.insertBefore(path,old[0]||null);
+ for(const el of old)el.remove();
+ return {authoritative:true,fillRule:'nonzero',rings:polygons.map(points=>{
+   const xs=points.map(p=>p[0]),zs=points.map(p=>p[1]);
+   return {points,sign:orient(points),bbox:[Math.min(...xs),Math.min(...zs),Math.max(...xs),Math.max(...zs)]};
+ })};
 }
 function apexDrivableAreaContains(x,z){
  const da=trackData&&trackData.customWorld&&trackData.customWorld.drivableArea;if(!da||da.authoritative!==true||!Array.isArray(da.rings)||!da.rings.length)return null;let winding=0;
@@ -1797,7 +1852,8 @@ async function importEditableCircuitSvgText(text,spec,options={}){
    const wallRightEls=activeRoleEls(apexSvgFindAll(ctx.root,['wall_right','wall-right']));
    const edgeLeftEls=activeRoleEls(apexSvgFindAll(ctx.root,['track_left_edge','track-left-edge']));
    const edgeRightEls=activeRoleEls(apexSvgFindAll(ctx.root,['track_right_edge','track-right-edge']));
-   const drivableEls=activeRoleEls(apexSvgFindAll(ctx.root,['drivable_area','drivable-area'])),drivableArea=apexImportedDrivableArea(ctx,drivableEls);
+   const drivableEls=activeRoleEls(apexSvgFindAll(ctx.root,['drivable_area','drivable-area']));
+   let drivableArea=apexImportedDrivableArea(ctx,drivableEls);
    const pitWidth=((pitEls[0]&&parseFloat(pitEls[0].getAttribute('data-apex-width')))||5.9),pitSpeedKph=((pitEls[0]&&parseFloat(pitEls[0].getAttribute('data-apex-speed-kph')))||0);
    const pitLaneSamples=apexSvgGuideSamplesExact(ctx,pitEls,pitWidth),wallLeftSamples=apexSvgGuideSamplesExact(ctx,wallLeftEls,0),wallRightSamples=apexSvgGuideSamplesExact(ctx,wallRightEls,0),edgeLeftSamples=apexSvgGuideSamplesExact(ctx,edgeLeftEls,0),edgeRightSamples=apexSvgGuideSamplesExact(ctx,edgeRightEls,0);
    const pitRuns=apexSvgWorldRunsExact(ctx,pitEls,2.6),pitNetwork=apexBuildPitNetwork(pitRuns,pitWidth),wallLeftRuns=apexSvgWorldRunsExact(ctx,wallLeftEls,2.5),wallRightRuns=apexSvgWorldRunsExact(ctx,wallRightEls,2.5),wallSegments=[...apexBuildExactWallSegments(wallLeftRuns,1),...apexBuildExactWallSegments(wallRightRuns,-1)];
@@ -1811,6 +1867,7 @@ async function importEditableCircuitSvgText(text,spec,options={}){
        racingLine=racingLineElement?apexSvgElementWorldRunsExact(ctx,racingLineElement,4).flat().filter(p=>Array.isArray(p)&&p.length>=2&&p.every(Number.isFinite)):[]; 
    if(options.base){
      trackData.timingData=timingData;
+     drivableArea=apexBaseDrivableArea(doc,ctx,spec,drivableEls,[edgeLeftEls[0],edgeRightEls[0]],pitNetwork,drivableArea);
      if(options.reference&&!options.authoredMadrid)apexApplyMadridSvgStyle(rootDoc,options.reference,ctx);
      apexAddBaseSvgPitAndGrid(doc,ctx,spec,pitNetwork);
      if(!racingLineElement){
