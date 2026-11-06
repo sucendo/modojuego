@@ -1563,37 +1563,70 @@ function apexBaseSvgTemplate(){
  .catch(error=>{apexBaseSvgTemplatePromise=null;console.warn('APEX: plantilla SVG no disponible',error);return null});
 }
 function apexApplyMadridSvgStyle(root,reference,ctx){
- const styles=new Map(),properties=['fill','fill-opacity','stroke','stroke-opacity','stroke-width','stroke-dasharray','stroke-linecap','stroke-linejoin','vector-effect','opacity'];
- for(const el of reference.querySelectorAll('[data-apex-role]')){
-   if(el.closest('#APEX_ELEMENT_LIBRARY,[style*="visibility: hidden"]'))continue;
-   const key=el.localName+':'+el.getAttribute('data-apex-role');
-   if(!styles.has(key))styles.set(key,el);
- }
- for(const el of root.querySelectorAll('[data-apex-role]')){
-   if(el.closest('#APEX_ELEMENT_LIBRARY'))continue;
-   const role=el.getAttribute('data-apex-role'),ref=styles.get(el.localName+':'+role);
-   if(!ref&&el.localName==='polygon'){
-     const line=styles.get('line:'+role),stroke=line&&(line.style.stroke||line.getAttribute('stroke'));
-     if(stroke)el.style.fill=stroke;
-   }
-   if(!ref)continue;
-   // Preserve the colour/material of authored runoff and the circuit's kerb palette.
-   for(const prop of properties){
-     if((prop==='fill'&&role.startsWith('runoff-'))||(prop==='stroke'&&role.startsWith('curb-')))continue;
-     let value=ref.style.getPropertyValue(prop)||ref.getAttribute(prop);
-     if(!value)continue;
-     const nonScaling=(ref.style.vectorEffect||ref.getAttribute('vector-effect'))==='non-scaling-stroke';
+ const defaults={fill:'#000','fill-opacity':'1',stroke:'none','stroke-opacity':'1','stroke-width':'1','stroke-dasharray':'none','stroke-linecap':'butt','stroke-linejoin':'miter','vector-effect':'none',opacity:'1'};
+ const read=(el,prop)=>el.style.getPropertyValue(prop)||el.getAttribute(prop);
+ const paint=(el,ref,preserveFill=false)=>{
+   const nonScaling=read(ref,'vector-effect')==='non-scaling-stroke';
+   for(const [prop,fallback] of Object.entries(defaults)){
+     if(prop==='fill'&&preserveFill)continue;
+     let value=read(ref,prop)||fallback;
      if(!nonScaling&&(prop==='stroke-width'||prop==='stroke-dasharray'))value=value.replace(/[\d.]+(?:px)?/g,num=>svgNum(parseFloat(num)/ctx.scale,3));
      el.style.setProperty(prop,value);
    }
+ };
+ const styles=new Map(),active='[data-apex-role]';
+ for(const el of reference.querySelectorAll(active)){
+   if(el.closest('#APEX_ELEMENT_LIBRARY,[style*="visibility: hidden"]'))continue;
+   const role=el.getAttribute('data-apex-role'),key=el.localName+':'+role;
+   if(!styles.has(key))styles.set(key,el);
+   if(!styles.has(role))styles.set(role,el);
+ }
+ for(const el of root.querySelectorAll(active)){
+   if(el.closest('#APEX_ELEMENT_LIBRARY'))continue;
+   const role=el.getAttribute('data-apex-role'),ref=styles.get(el.localName+':'+role)||styles.get(role);
+   if(!ref)continue;
+   // A band represented as a polygon uses the reference line's colour as fill.
+   if(el.localName==='polygon'&&ref.localName==='line'){
+     el.style.fill=read(ref,'stroke')||defaults.stroke;
+     el.style.stroke='none';
+   }else paint(el,ref,role.startsWith('runoff-'));
+ }
+ const whiteKerb=reference.querySelector('#APEX_ACTIVE_CURBS .apex-curb-white');
+ if(whiteKerb)for(const el of root.querySelectorAll('#APEX_ACTIVE_CURBS .apex-curb-white'))paint(el,whiteKerb);
+ const track=root.querySelector('#track_geometry'),drivable=root.querySelector('#APEX_DRIVABLE_AREA');
+ const center=track?.querySelector('[data-apex-role="track-centerline"]');
+ const edges=['track-left-edge','track-right-edge'].map(role=>track?.querySelector(`path[data-apex-role="${role}"]`));
+ // The actual borders set the width of the asphalt, including wide sections.
+ if(center&&edges.every(edge=>edge?.parentElement===center.parentElement&&edge.getAttribute('transform')===center.getAttribute('transform')&&/z\s*$/i.test(edge.getAttribute('d')||''))){
+   const asphalt=root.ownerDocument.createElementNS(root.namespaceURI,'path');
+   asphalt.setAttribute('id','APEX_TRACK_ASPHALT');
+   asphalt.setAttribute('data-apex-visual-only','true');
+   asphalt.setAttribute('fill',center.style.stroke);
+   asphalt.setAttribute('fill-rule','evenodd');
+   asphalt.setAttribute('d',edges.map(edge=>edge.getAttribute('d')).join(' '));
+   if(center.hasAttribute('transform'))asphalt.setAttribute('transform',center.getAttribute('transform'));
+   center.before(asphalt);
+ }
+ if(track&&drivable){
+   const work=root.querySelector('#APEX_PIT_WORK_AREA');
+   root.insertBefore(drivable,work||track);
+ }
+ const timing=root.querySelector('#APEX_TIMING'),helpers=root.querySelector('#APEX_TIMING_VISUAL_HELPERS');
+ if(timing&&helpers&&timing.querySelector('[data-apex-role="start-line"]')&&timing.querySelector('[data-apex-role="finish-line"]')){
+   timing.append(...helpers.querySelectorAll('text'));
+   helpers.remove();
  }
  for(const [selector,size,weight,fill,stroke,width] of [
    ['[data-apex-corner-label],[data-apex-corner-number]',14,800,'#fff','#111',3],
-   ['[data-apex-board-label]',4.6,900,'#111','#fff',.8]
+   ['[data-apex-board-label]',4.6,900,'#111','#fff',.8],
+   ['#APEX_TIMING text',14,900,'#fff','#06101b',2],
+   ['.apex-start-label',14,900,'#27dbff','#06101b',2]
  ]){
    for(const label of root.querySelectorAll(selector)){
      if(label.closest('#APEX_ELEMENT_LIBRARY'))continue;
-     label.style.font=`${weight} ${svgNum(size/ctx.scale,3)}px system-ui, sans-serif`;
+     label.style.removeProperty('font');
+     label.style.fontSize=`${svgNum(size/ctx.scale,3)}px`;
+     label.style.fontWeight=String(weight);label.style.fontFamily='system-ui, sans-serif';
      label.style.fill=fill;label.style.stroke=stroke;
      label.style.strokeWidth=svgNum(width/ctx.scale,3);label.style.paintOrder='stroke';
    }
