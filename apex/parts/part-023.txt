@@ -290,7 +290,7 @@ function finishNonRaceSession(){
  player=null;trackData=null;
  showFinishFlow(pages,()=>{$('finish').classList.add('hidden');$('weekendPanel').classList.remove('hidden');mode='menu';renderWeekendHub();});
 }
-function renderPracticeRecord(){if(!$('practiceTrack'))return;const spec=calendar[+$('practiceTrack').value],rec=save.practiceRecords[spec.dir],t=practiceRecordTime(rec),veh=practiceRecordVehicle(rec),dt=practiceRecordDate(rec);$('practiceRecord').textContent=Number.isFinite(t)?('MEJOR HISTÓRICO '+fmt(t)+(veh?' · '+veh:'')+(dt?' · '+dt:'')):'MEJOR HISTÓRICO —';const pf=$('practiceTrackFlag');if(pf)pf.innerHTML=flagMarkup(spec)+' '+stripCountryEmoji(spec.country)+' · '+spec.name;updateCircuitCard('practiceTrack','practiceCircuitInfo',{showPracticeBest:true});}
+function renderPracticeRecord(){if(!$('practiceTrack'))return;const spec=calendar[+$('practiceTrack').value],rec=save.practiceRecords[spec.dir],t=practiceRecordTime(rec),veh=practiceRecordVehicle(rec),dt=practiceRecordDate(rec);$('practiceRecord').textContent=Number.isFinite(t)?('MEJOR HISTÓRICO '+fmt(t)+(veh?' · '+veh:'')+(dt?' · '+dt:'')):'MEJOR HISTÓRICO —';const pf=$('practiceTrackFlag');if(pf)pf.innerHTML=flagMarkup(spec)+' '+stripCountryEmoji(spec.country)+' · '+spec.name;}
 
 function circuitThemeLabel(theme){return ({park:'Parque urbano',city:'Urbano',forest:'Bosque',dry:'Técnico',mountain:'Montaña',cloud:'Templado',dunes:'Dunas',tropical:'Tropical',night:'Nocturno',sunset:'Crepuscular'})[theme]||'Circuito';}
 function svgSafeText(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
@@ -429,6 +429,7 @@ async function updateCircuitCard(selectId,targetId,opts={}){
    return;
  }
  const spec=calendar[+sel.value]||calendar[0];
+ const selection=sel.value;
  const bestTxt=opts.showPracticeBest? (Number.isFinite(practiceRecordTime(save.practiceRecords[spec.dir]))?fmt(practiceRecordTime(save.practiceRecords[spec.dir])):'—') : null;
  box.innerHTML=`<div class="circuitHero"><div class="circuitHeroText"><div class="small muted">${flagMarkup(spec)} ${stripCountryEmoji(spec.country)}</div><b>${spec.name}</b><div class="muted small">Cargando trazado y ficha del circuito…</div></div></div><div class="trackPreviewBox"><div class="muted">Preparando vista del trazado…</div></div>`;
  try{
@@ -443,8 +444,10 @@ async function updateCircuitCard(selectId,targetId,opts={}){
      const preview=trackPreviewSvgFromPoints(td.pts,teamInfo(selectedTeamKey()).accent||'#59f3ff',spec.dir,cornerList,td.km,pitRuns,sf);
      return {preview,km,laps,turns,geoElev,geoWidth,geoBank,geoNote,pitSide,pitSpeed,direction:directionLabel(td.direction),type:circuitThemeLabel(spec.theme),layout:td.layout||'—',source:td.geometrySource||'—'};
    });
+   if(sel.value!==selection||mode!=='menu')return;
    box.innerHTML=`<div class="circuitHero"><div class="circuitHeroText"><div class="small muted">${flagMarkup(spec)} ${stripCountryEmoji(spec.country)} · ${spec.nonCalendar?'FUERA DEL CALENDARIO':('R'+String(spec.r).padStart(2,'0'))}</div><b>${spec.name}</b><div class="muted small">${card.type}</div></div></div><div class="trackPreviewBox">${card.preview}</div><div class="circuitMeta"><div class="stat"><span>Longitud</span><b>${card.km}</b></div><div class="stat"><span>Vueltas GP</span><b>${card.laps}</b></div><div class="stat"><span>Curvas</span><b>${card.turns}</b></div><div class="stat"><span>Sentido</span><b>${card.direction}</b></div><div class="stat"><span>Pit lane</span><b>${card.pitSide}</b></div><div class="stat"><span>Límite pit</span><b>${card.pitSpeed}</b></div><div class="stat"><span>Tipo</span><b>${card.type}</b></div><div class="stat"><span>Trazado</span><b>${card.layout}</b></div><div class="stat"><span>Origen</span><b>${card.source}</b></div><div class="stat"><span>Desnivel modelado</span><b>${card.geoElev}</b></div><div class="stat"><span>Ancho modelado</span><b>${card.geoWidth}</b></div><div class="stat"><span>Peralte máx.</span><b>${card.geoBank}</b></div>${bestTxt!==null?`<div class="stat"><span>Mejor personal</span><b>${bestTxt}</b></div><div class="stat"><span>Sesión</span><b>Entrenamiento libre</b></div>`:`<div class="stat"><span>Parrilla</span><b>22 coches</b></div><div class="stat"><span>Vista</span><b>Cockpit</b></div>`}</div>${card.geoNote?`<div class="small muted" style="margin-top:8px;opacity:.92">${card.geoNote}</div>`:''}`;
  }catch(err){
+   if(sel.value!==selection||mode!=='menu')return;
    box.innerHTML=`<div class="circuitHero"><div class="circuitHeroText"><div class="small muted">${flagMarkup(spec)} ${stripCountryEmoji(spec.country)}</div><b>${spec.name}</b><div class="muted small">No se ha podido cargar la ficha del circuito.</div></div></div><div class="trackPreviewBox"><div class="muted">Comprueba la conexión y vuelve a elegir el circuito.</div></div><div class="circuitMeta"><div class="stat"><span>Tipo</span><b>${circuitThemeLabel(spec.theme)}</b></div><div class="stat"><span>Calendario</span><b>${spec.nonCalendar?'Fuera de F1 2026':('R'+String(spec.r).padStart(2,'0'))}</b></div></div>`;
  }
 }
@@ -453,22 +456,16 @@ function updateAllCircuitCards(){
  clearTimeout(apexMenuCardTimer);
  const run=()=>{
    if(mode!=='menu'||$('menu')?.classList.contains('hidden'))return;
-   const active=document.querySelector('#menuModeTabs .tab.active');
-   const tab=active&&active.dataset?active.dataset.t:'quick';
-   // En móvil sólo construimos la ficha visible. En escritorio se mantienen las tres.
-   const light=(innerWidth<=900)||/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent||'');
-   if(light){
-     if(tab==='grandprix')updateCircuitCard('gpTrack','gpCircuitInfo');
-     else if(tab==='practice')updateCircuitCard('practiceTrack','practiceCircuitInfo',{showPracticeBest:true});
-     else updateCircuitCard('track','quickCircuitInfo');
-   }else{
-     updateCircuitCard('track','quickCircuitInfo');
-     updateCircuitCard('gpTrack','gpCircuitInfo');
-     updateCircuitCard('practiceTrack','practiceCircuitInfo',{showPracticeBest:true});
-   }
+   const prototype=document.querySelector('#menu.apex9aPrototype');
+   if(prototype&&$('apex9aModesScreen')?.hidden)return;
+   const tab=document.querySelector('#menuModeTabs .tab.active')?.dataset.t;
+   if(tab==='grandprix')updateCircuitCard('gpTrack','gpCircuitInfo');
+   else if(tab==='practice')updateCircuitCard('practiceTrack','practiceCircuitInfo',{showPracticeBest:true});
+   else if(tab==='quick')updateCircuitCard('track','quickCircuitInfo');
  };
  apexMenuCardTimer=setTimeout(run,apexMenuBooting?900:60);
 }
+$('menu')?.addEventListener('apex-circuit-card-visible',updateAllCircuitCards);
 
 function svgNum(v,d=2){return Number.isFinite(v)?Number(v).toFixed(d).replace(/\.0+$/,'').replace(/(\.\d*?)0+$/,'$1'):'0'}
 function escapeXml(s){return String(s??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
@@ -1334,7 +1331,23 @@ function apexImportedSurfaceZones(landmarks){
  return (landmarks||[]).filter(it=>it&&(it.type==='surfaceZone'||it.type==='water')&&Array.isArray(it.worldFootprint)&&it.worldFootprint.length>=3).map(it=>({kind:it.type==='water'?'WATER':(it.surfaceKind||'ASPHALT'),role:it.sourceRole||it.role||'',points:it.worldFootprint,name:it.name||''}));
 }
 function apexImportedDrivableArea(ctx,elements){
- const rings=[];for(const el of (elements||[])){const runs=apexSvgElementWorldRunsExact(ctx,el,5.5);for(const run0 of runs){let run=run0.slice();if(run.length<3)continue;if(Math.hypot(run[0][0]-run[run.length-1][0],run[0][1]-run[run.length-1][1])<2.5)run=run.slice(0,-1);if(run.length<3)continue;const area=apexSignedArea2D(run);if(Math.abs(area)<3)continue;let minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity;for(const p of run){minX=Math.min(minX,p[0]);maxX=Math.max(maxX,p[0]);minZ=Math.min(minZ,p[1]);maxZ=Math.max(maxZ,p[1])}rings.push({points:run,sign:area>=0?1:-1,bbox:[minX,minZ,maxX,maxZ]})}}
+ const rings=[];
+ for(const el of elements||[]){
+   const d=el.getAttribute('d')||'';
+   const exactVertices=el.getAttribute('data-apex-boundary-vertices')==='exact'&&/^M[MLZ0-9.,+\s-]+$/.test(d);
+   const runs=exactVertices
+     ? d.split('M').slice(1).map(chunk=>parseSvgPointPairsRaw(chunk).map(([x,y])=>ctx.toWorld(apexSvgMapLocalPoint(ctx.root,el,x,y))))
+     : apexSvgElementWorldRunsExact(ctx,el,5.5);
+   for(const points of runs){
+     const closed=points.length>3&&Math.hypot(points[0][0]-points.at(-1)[0],points[0][1]-points.at(-1)[1])<2.5;
+     const ring=!exactVertices&&closed?points.slice(0,-1):points;
+     if(ring.length<3)continue;
+     const area=apexSignedArea2D(ring);
+     if(Math.abs(area)<(exactVertices ? 0.01 : 3))continue;
+     const xs=ring.map(p=>p[0]),zs=ring.map(p=>p[1]);
+     rings.push({points:ring,sign:Math.sign(area),bbox:[Math.min(...xs),Math.min(...zs),Math.max(...xs),Math.max(...zs)]});
+   }
+ }
  return rings.length?{authoritative:true,fillRule:'nonzero',rings}:null;
 }
 function apexBaseDrivableArea(doc,ctx,spec,source,edges,pitNetwork,area){

@@ -813,7 +813,6 @@ populateCircuitSelectors();apexRaceInitMenu();
 syncVersionUi();populateTeams();bindSvgTrackTools();renderSchedule();renderPracticeRecord();renderTeamChooser();setDemoMode(false);
 // Las previsualizaciones de circuito arrancan después de que la portada ya esté visible.
 setTimeout(()=>{apexMenuBooting=false;updateAllCircuitCards()},900);
-setTimeout(()=>{try{apexRunCircuitAudit(false)}catch(e){console.warn("Auditoría de circuitos no disponible",e)}},1450);
 try{initRendererBackendSelection()}catch(e){console.warn("Renderer de menú aislado",e);activeRenderer=rendererRegistry.canvas2d}
 // Salvaguarda de arranque: una excepción de subsistema nunca puede vaciar los selectores.
 setTimeout(()=>{if(!["track","gpTrack","practiceTrack"].every(id=>$(id)&&$(id).options.length===calendar.length)){console.warn("Restaurando selectores de circuito");populateCircuitSelectors();updateAllCircuitCards()}},0);
