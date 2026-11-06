@@ -25,6 +25,15 @@ const source={};for(const variant of ['baseline','candidate'])source[variant]=Ar
     const result=await page.evaluate(({seconds,stepsPerFrame})=>__apexAuto.run(seconds,stepsPerFrame),{seconds,stepsPerFrame}),row={test:'autopilot-differential',variant,dir,traffic,...loaded,...result};rows.push(row);console.log(JSON.stringify(row));assert.deepEqual(errors,[]);
    }
   }
+  // Measure actual car-to-dotted-SVG deviation, separately per circuit.
+  const fidelity=rows.filter(r=>!r.traffic).map(r=>{
+   const dev=r.samples.filter(p=>p.t>8&&!p.recovery&&p.racingLineSource==='SVG_AUTHORED'&&Number.isFinite(p.racingLineDeviationM))
+    .map(p=>Math.abs(p.racingLineDeviationM)).sort((a,b)=>a-b);
+   return {dir:r.dir,variant:r.variant,count:dev.length,
+    meanAbsM:dev.length?dev.reduce((a,b)=>a+b,0)/dev.length:null,
+    p90AbsM:dev.length?dev[Math.floor((dev.length-1)*.90)]:null};
+  });
+  console.log(JSON.stringify({test:'aut-svg-line-fidelity',fidelity}));
   // Report the current and prior pace under exactly the same authored SVG.
   // A faster target is not a valid improvement if it causes damage or recovery.
   const cleanExit=rows.filter(r=>r.variant==='candidate'&&!r.traffic).map(row=>{
