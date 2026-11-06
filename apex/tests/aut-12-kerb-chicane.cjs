@@ -30,7 +30,7 @@ context.player.heading=.7;assert.equal(probe().active,false,'Heading error must 
 grip=.52;assert.equal(probe().active,false,'Low tyre grip forbids aggressive kerb crossing');grip=1;
 assert.equal(probe().active,true,'Normal dry, aligned state should restore the safe cut');
 assert.match(src,/const chicaneCut=autoChicaneCutOpportunity\(player\.s,!!raceTraffic\.active\)/);
-assert.match(src,/!chicaneCut\?\.active&&geometryKink\.d<kinkApproachD/);
-assert.match(src,/const uplift=Math\.min\(9,baseline\*\.14\)/);
+assert.match(src,/!kinkBypass&&geometryKink\.d<kinkApproachD/);
+assert.match(src,/const uplift=Math\.min\(cut\?\.active\?9:6,baseline\*/);
 assert.match(src,/autoChicaneCutActive=!!chicaneCut\?\.active/);
 console.log(JSON.stringify({test:'aut-12-kerb-chicane',passed:true}));
