@@ -1607,6 +1607,19 @@ function apexApplyMadridSvgStyle(root,reference,ctx){
    if(center.hasAttribute('transform'))asphalt.setAttribute('transform',center.getAttribute('transform'));
    center.before(asphalt);
  }
+ // Boxy should expose the same editable paint values, even though the other
+ // circuits are stored in smaller SVG coordinate systems.
+ for(const path of [center,...edges]){
+   const ref=path&&styles.get('path:'+path.getAttribute('data-apex-role'));
+   const d=path?.getAttribute('d');
+   if(!ref||!d||!(ctx.scale>0)||/[^MLZ]/i.test(d.replace(/[-+]?(?:\d*\.\d+|\d+\.?\d*)(?:e[-+]?\d+)?|[ ,\s]/gi,'')))continue;
+   const transform=path.getAttribute('transform')||'';
+   path.setAttribute('d',d.replace(/[-+]?(?:\d*\.\d+|\d+\.?\d*)(?:e[-+]?\d+)?/gi,value=>svgNum(Number(value)*ctx.scale,6)));
+   path.setAttribute('transform',`${transform} scale(${1/ctx.scale})`.trim());
+   path.removeAttribute('class');
+   for(const prop of Object.keys(defaults))path.removeAttribute(prop);
+   path.setAttribute('style',ref.getAttribute('style'));
+ }
  if(track&&drivable){
    const work=root.querySelector('#APEX_PIT_WORK_AREA');
    root.insertBefore(drivable,work||track);
