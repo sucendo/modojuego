@@ -4389,7 +4389,8 @@ function autoChicaneCutOpportunity(s,trafficActive){
 function autoAuthoredKinkBypass(s,kink,trafficActive){
  if(!kink?.active||trafficActive||!player||apexWeatherIsWet()||!apexAuthoredRacingProfile())return false;
  const d=clamp(kink.d||0,0,110),at=s+d,raw=Math.abs(curvatureAt(at));
- const authored=apexAuthoredRacingCurvatureAt(at),ref=Math.abs(authored);
+ const authored=apexAuthoredRacingCurvatureAt(at),
+       ref=Number.isFinite(authored)?Math.abs(authored):Infinity;
  const lane=apexAuthoredRacingOffset(s),heading=apexAuthoredRacingHeadingAt(s+12);
  if(!Number.isFinite(lane)||!Number.isFinite(heading)||!Number.isFinite(ref)||
     raw<.009||ref>.015||ref>raw*.70||
