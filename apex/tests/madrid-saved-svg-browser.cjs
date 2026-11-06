@@ -18,7 +18,7 @@ window.__madridSavedSvgAudit={
   const backend=await apexStoreCircuitJsonOverride(spec.dir,cfg);
   if(backend==='MEMORY_ONLY')throw Error('Madrid JSON unexpectedly lost persistence');
   const svg=await fetch('circuits/'+entry.svg,{cache:'no-cache'}).then(r=>{if(!r.ok)throw Error('Missing Madrid SVG');return r.text()});
-  const imported=await importEditableCircuitSvgText(svg,spec);
+  const imported=await importEditableCircuitSvgText(svg,spec,{exactRepository:entry.exactSvg});
   const world=imported.worldPayload;
   const landmarks=world.landmarks||[];
   const count=t=>landmarks.filter(x=>x.type===t).length;
@@ -28,7 +28,7 @@ window.__madridSavedSvgAudit={
   const mesh=window.ApexSvgCurbs.compile(marks,()=>0,palette);
   const monumental=readStoredCircuitJson(spec.dir)?.banking?.corners?.find(c=>+c.turn===12);
   return {file:entry.svg,json:entry.json,backend,source:entry.sourceFileName,bytes:new TextEncoder().encode(svg).length,
-   geometry:!!imported.geometry,revision:world.profileRevision,
+   geometry:!!imported.geometry,exact:imported.geometryPayload.rawSvg===svg,revision:world.profileRevision,
    importedRacingSamples:imported.geometryPayload?.racingLine?.length||0,
    boards:imported.brakeBoards||0,boardsAuthoritative:world.brakeBoardsAuthoritative===true,stored:!!readStoredCustomTrackSvg('14-spain'),
    surfaceZones:count('surfaceZone'),curbs:marks.length,
@@ -112,10 +112,11 @@ window.__madridSavedSvgAudit={
   assert.deepEqual(rehydrated.curbVisual.colors.sort(),['#d51f27','#f2c500']);
   assert.equal(rehydrated.boards,34,'Hydrated SVG must retain only 34 active braking boards');
   assert.equal(rehydrated.boardsAuthoritative,true,'Hydration must not generate deleted boards');
-  assert.equal(result.file,'svg/apex26_14-madrid-spain_2026-11-03.svg');
-  assert.equal(result.source,'apex26_14-spain_circuito_completo (16).svg');
+  assert.equal(result.file,'svg/apex26_14-madrid-spain_2026-11-06.svg');
+  assert.equal(result.source,'Texto pegado(6).txt');
   assert.equal(result.bytes,fs.statSync(path.join(root,'apex/circuits',result.file)).size);
   assert.equal(result.geometry,true);
+  assert.equal(result.exact,true,'Keep the saved complete SVG byte-for-byte');
   assert.equal(result.boards,34,'Only active SVG signs may be imported (not 4 library templates)');
   assert.equal(result.boardsAuthoritative,true,'SVG signs must suppress procedural additions');
   assert.equal(result.json,'json/apex26_14-madrid-spain_2026-10-29.json');
@@ -125,7 +126,8 @@ window.__madridSavedSvgAudit={
   assert.equal(result.bankMax,13.4957);
   assert.ok(result.bankProfile.some(([u,deg])=>u<=.08&&deg>=5),'The Monumental has no early banking');
   assert.equal(result.stored,true);
-  assert.ok(result.landmarks>=80,'Imported landmarks lost');
+  assert.equal(result.landmarks,52,'Only visible landmarks from the new complete SVG are active');
+  assert.equal(result.curbs,14,'Use the pianos authored in this edition');
   assert.ok(result.surfaceZones>=10,'Runoffs missing in import');
   const deletionCases=await page.evaluate(()=>window.__madridSavedSvgAudit.importBoardDeletionCases());
   assert.deepEqual(deletionCases.withoutFlag,{boards:34,authoritative:true},
