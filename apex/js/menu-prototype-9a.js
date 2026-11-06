@@ -98,7 +98,7 @@ function show(which){
  landing.hidden=which!=='home';
  modes.hidden=which!=='modes';options.hidden=which!=='options';
  back.hidden=true;
- if(which==='modes')updateModeVisual();
+ if(which==='modes'){updateModeVisual();menu.dispatchEvent(new Event('apex-circuit-card-visible'));}
  if(which==='options')syncOptions();
  const focus=which==='home'?'apex9aRace':which==='modes'?'apexProtoModeBack':'apexProtoOptionsBack';
  $(focus)?.focus({preventScroll:true});

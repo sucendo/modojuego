@@ -5,3 +5,5 @@ The Le Mans outline is derived from the [Track Atlas 24h midline and start/finis
 The circuit outlines provide horizontal geometry. Pit facilities, runoff and other generated features are provisional APEX geometry.
 
 Nordschleife and the T13 pit lane use [OpenStreetMap](https://www.openstreetmap.org/way/41395670) raceway geometry © OpenStreetMap contributors, [ODbL 1.0](https://www.openstreetmap.org/copyright). The SVG contains the joined one-way raceway segments and T13 pit lane projected to local coordinates. The timing line is placed at T13 and the lap is rescaled to the [official 20.832 km length](https://www.nuerburgring.de/info/nuerburgring/records?locale=en).
+
+The Sarthe pit lane, Bugatti layout and motorcycle pit route, and Nürburgring Grand Prix layout and main pit lane use © OpenStreetMap contributors, [ODbL 1.0](https://www.openstreetmap.org/copyright). The Sarthe and Bugatti pit approaches include short interpolated connections between surveyed segments. The Nordschleife width profile uses the mapped raceway widths, interpolated at transitions, with 9 m used where the source has no width.

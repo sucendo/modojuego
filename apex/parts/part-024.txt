@@ -688,7 +688,7 @@ function apexImportedStructureZones(landmarks,L){
 }
 
 async function loadNonCalendarBaseTrack(spec,fallback){
- const jsonCfg=readStoredCircuitJson(spec.dir),jsonV=jsonCfg&&jsonCfg.verticalProfile?apexNormalizeVerticalProfile({verticalProfile:jsonCfg.verticalProfile}):null,jsonTiming=jsonCfg&&jsonCfg.timing?clonePlain(jsonCfg.timing):null,jsonBanking=apexNormalizeAuthoredBanking(jsonCfg),cacheKey='apex-v523028-extra-geometry-'+spec.dir;
+ const jsonCfg=readStoredCircuitJson(spec.dir),jsonV=jsonCfg&&jsonCfg.verticalProfile?apexNormalizeVerticalProfile({verticalProfile:jsonCfg.verticalProfile}):null,jsonTiming=jsonCfg&&jsonCfg.timing?clonePlain(jsonCfg.timing):null,jsonBanking=apexNormalizeAuthoredBanking(jsonCfg),cacheKey='apex-v523029-extra-geometry-'+spec.dir;
  try{const c=JSON.parse(appStorage.getItem(cacheKey)||'null');if(c&&Array.isArray(c.pts)&&c.pts.length>20)return{...c,km:fallback.km||c.km,direction:fallback.direction||c.direction,turns:fallback.turns||c.turns||0,laps:Number.isFinite(fallback.laps)?fallback.laps:(c.laps||0),verticalProfile:jsonV,timingData:jsonTiming,authoredBanking:jsonBanking}}catch(e){}
  const finish=data=>{try{appStorage.setItem(cacheKey,JSON.stringify({...data,verticalProfile:null,timingData:null}))}catch(e){}return data};
  if(spec.externalSource==='generated-oval'){
@@ -704,9 +704,10 @@ async function loadNonCalendarBaseTrack(spec,fallback){
    const km=fallback.km||5,direction=fallback.direction||'CLOCKWISE';
    const text=await r.text(),parsed=parseSvgGeometry(text,km,direction,null);
    const doc=new DOMParser().parseFromString(text,'image/svg+xml');
+   const widthKnots=JSON.parse(doc.getElementById('apex-road-width-knots')?.textContent||'null');
    const pit=doc.querySelector('polyline[data-apex-role="pitlane-centerline"]');
    const extraPitPath=pit?parseSvgPointPairsRaw(pit.getAttribute('points')).map(([x,y],i)=>`${i?'L':'M'} ${svgNum((x-parsed.sourceOrigin[0])*parsed.sourceScale)} ${svgNum((y-parsed.sourceOrigin[1])*parsed.sourceScale)}`).join(' '):null;
-   return finish({pts:parsed.pts,extraPitPath,sourceCredit:doc.querySelector('desc')?.textContent||(spec.dir==='x-le-mans-sarthe'?'Track Atlas by Tobi (MIT)':'Jules Roy / F1DB (CC BY 4.0)'),km,layout,direction,turns:fallback.turns||0,laps:fallback.laps||0,circuitType:fallback.circuitType||'HISTORIC_F1',startAligned:parsed.startAligned,detailedSvg:true,geometrySource:'LOCAL_EXTRA_OUTLINE',verticalProfile:jsonV,timingData:jsonTiming,authoredBanking:jsonBanking});
+   return finish({pts:parsed.pts,extraPitPath,widthKnots,sourceCredit:doc.querySelector('desc')?.textContent||(spec.dir==='x-le-mans-sarthe'?'Track Atlas by Tobi (MIT)':'Jules Roy / F1DB (CC BY 4.0)'),km,layout,direction,turns:fallback.turns||0,laps:fallback.laps||0,circuitType:fallback.circuitType||'HISTORIC_F1',startAligned:parsed.startAligned,detailedSvg:true,geometrySource:'LOCAL_EXTRA_OUTLINE',verticalProfile:jsonV,timingData:jsonTiming,authoredBanking:jsonBanking});
  }
  if(spec.nonCalendar)throw Error('Este circuito necesita un SVG importado antes de salir a pista');
  return null;
@@ -1252,7 +1253,7 @@ function trackRoadWidthAt(s){
  }
  const vw=apexSampleVerticalProfile(s,3);if(Number.isFinite(vw)&&vw>4)return clamp(vw,4.5,32);
  const j=readStoredCircuitJson(trackData.spec&&trackData.spec.dir)||{},rp=j.roadWidthProfile;if(rp&&Array.isArray(rp.samples)&&rp.samples.length){const v=profileKnotsSample(lapFrac(s),rp.samples);if(Number.isFinite(v)&&v>4)return clamp(v,4.5,32)}
- const g=trackGeometryProfileSpec();if(g&&Array.isArray(g.width)&&g.width.length){const v=profileKnotsSample(lapFrac(s),g.width);if(Number.isFinite(v)&&v>4)return clamp(v,4.5,32)}return 12.4;
+ const g=trackGeometryProfileSpec(),widthKnots=g?.width||trackData.widthKnots;if(widthKnots?.length){const v=profileKnotsSample(lapFrac(s),widthKnots);if(Number.isFinite(v)&&v>4)return clamp(v,4.5,32)}return 12.4;
 }
 function auditedElevationAt(s){
  if(!trackData||!trackData.spec)return 0;
