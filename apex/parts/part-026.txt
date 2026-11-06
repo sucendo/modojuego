@@ -3036,7 +3036,7 @@ function autoTargetSpeed(plan,traffic,skill,bravery,diff=1){
  if(confident){
    // Authoritative SVG may be smoother than the centreline. A bounded speed
    // target credit is physically clipped and never grants additional grip.
-   const uplift=Math.min(cut?.active?9:6,baseline*(cut?.active?.18:.12));
+   const uplift=Math.min(cut?.active?9:6,baseline*(cut?.active ? .18 : .12));
    const result=Math.min(baseline+uplift,authored*.965);
    player.autoSvgPaceCreditMps=Math.max(0,result-baseline);
    return result;
@@ -4348,8 +4348,14 @@ function autoChicaneCutOpportunity(s,trafficActive){
    for(let d=0;d<=96;d+=8){
      const ss=s+d,e=envProfile(ss),off=apexAuthoredRacingOffset(ss),
            k=apexAuthoredRacingCurvatureAt(ss),raw=curvatureAt(ss);
+     // A wall *outside* the piano is not a reason to forbid a safe chord.
+     // Check the authored car-to-wall clearance instead of rejecting every
+     // urban chicane just because the area is marked 'wallish'.
+     const wall=apexWallContextAtS(ss,e);
+     const clearance=off>=0?wall.pos-off:wall.neg+off;
      if(!Number.isFinite(off)||!Number.isFinite(k)||!Number.isFinite(raw)||
-        apexWallishAtS(ss,e)||Math.abs(off)>autoSafeLaneLimit(ss,true)+.015){
+        Math.abs(off)>autoSafeLaneLimit(ss,true)-.06||
+        (Number.isFinite(clearance)&&clearance<1.65)){
        unsafe=true;break;
      }
      coreMax=Math.max(coreMax,Math.abs(raw));
@@ -4370,8 +4376,30 @@ function autoChicaneCutOpportunity(s,trafficActive){
  const ref=apexAuthoredRacingOffset(s),heading=apexAuthoredRacingHeadingAt(s+8);
  const deviation=Number.isFinite(ref)?Math.abs(player.lat-ref):Infinity;
  const direction=Number.isFinite(heading)?Math.abs(angleDiff(heading,player.heading)):Infinity;
- const tracked=deviation<1.30&&direction<.32;
+ const tracked=deviation<1.70&&direction<.34;
  return {...probe,s,active:probe.valid&&tracked&&grip>.64,tracked,deviation,direction};
+}
+// AUT13: A raw centreline vertex can be sharper than the actual drawn SVG
+// racing chord. Bypass only after validating the whole open corridor and
+// actual car heading; never suppress the guard at an unsafe SVG apex.
+function autoAuthoredKinkBypass(s,kink,trafficActive){
+ if(!kink?.active||trafficActive||!player||apexWeatherIsWet()||!apexAuthoredRacingProfile())return false;
+ const d=clamp(kink.d||0,0,110),at=s+d,raw=Math.abs(curvatureAt(at));
+ const authored=apexAuthoredRacingCurvatureAt(at),ref=Math.abs(authored);
+ const lane=apexAuthoredRacingOffset(s),heading=apexAuthoredRacingHeadingAt(s+12);
+ if(!Number.isFinite(lane)||!Number.isFinite(heading)||!Number.isFinite(ref)||
+    raw<.009||ref>.015||ref>raw*.70||
+    Math.abs(player.lat-lane)>1.85||
+    Math.abs(angleDiff(heading,player.heading))>.36||
+    apexTyreGripScale(player)<.72)return false;
+ for(const ds of [0,d*.5,d]){
+   const pos=s+ds,e=envProfile(pos),a=apexAuthoredRacingOffset(pos);
+   if(!Number.isFinite(a)||Math.abs(a)>autoSafeLaneLimit(pos,true)-.10)return false;
+   const wall=apexWallContextAtS(pos,e);
+   const clearance=a>=0?wall.pos-a:wall.neg+a;
+   if(Number.isFinite(clearance)&&clearance<1.70)return false;
+ }
+ return true;
 }
 // AUT11: Follow the rate of change of the authored SVG line, not just
 // its current offset. This only adjusts virtual lane targets, never physics.
@@ -4514,6 +4542,9 @@ function demoDriverControl(){
  const trackEdge=env.half,offTrack=Math.abs(player.lat)>trackEdge+env.curb*.25;
  const learnedZone=autoRiskAhead(player.s,82,8),learnedLong=autoRiskAhead(player.s,155,10);
  const geometryKink=geometricKinkAhead(player.s,112,3);
+ const kinkBypass=!!chicaneCut?.active||
+   autoAuthoredKinkBypass(player.s,geometryKink,!!raceTraffic.active);
+ player.autoSvgKinkBypass=!!kinkBypass;
  player.autoGeometryKinkAngle=geometryKink.angle||0;
  player.autoGeometryKinkD=geometryKink.active?geometryKink.d:null;
  player.autoGeometryKinkGuard=false;
@@ -4528,13 +4559,13 @@ function demoDriverControl(){
  const kinkApproachD=kinkExtreme?96:(kinkHard?78:(kinkMedium?66:0));
  const kinkCenterD=kinkExtreme?88:(kinkHard?66:(kinkMedium?52:0));
  const kinkCommitD=kinkExtreme?24:(kinkHard?20:(kinkMedium?16:0));
- if(geometryKink.active&&kinkMedium&&!chicaneCut?.active&&geometryKink.d<=kinkCommitD){
+ if(geometryKink.active&&kinkMedium&&!kinkBypass&&geometryKink.d<=kinkCommitD){
    player.autoKinkCommitUntil=raceT+(kinkExtreme?2.15:(kinkHard?1.65:1.25));
    player.autoKinkCommitHeading=geometryKink.to;
    player.autoKinkCommitAngle=kinkAngle;
  }
  // The raw centreline knot must not override a verified smooth SVG chord.
- if(chicaneCut?.active)player.autoKinkCommitUntil=0;
+ if(kinkBypass)player.autoKinkCommitUntil=0;
  const kinkCommitActive=Number.isFinite(player.autoKinkCommitUntil)&&raceT<player.autoKinkCommitUntil&&Number.isFinite(player.autoKinkCommitHeading);
  player.autoKinkCommitActive=!!kinkCommitActive;
  player.autoKinkCommitRemaining=kinkCommitActive?Math.max(0,player.autoKinkCommitUntil-raceT):0;
@@ -4590,7 +4621,7 @@ function demoDriverControl(){
    // dejamos de perseguir una trazada de ±3 m cuando faltan pocos metros para un cambio
    // de dirección de 36-100°. En la primera chicane, mientras siga el corredor de salida,
    // manda el bloque específico de arriba para no cruzar coches de una columna a otra.
-   if(geometryKink.active&&kinkMedium&&!chicaneCut?.active&&geometryKink.d<kinkCenterD){
+   if(geometryKink.active&&kinkMedium&&!kinkBypass&&geometryKink.d<kinkCenterD){
      const centerBlend=clamp((kinkCenterD-geometryKink.d)/Math.max(18,kinkCenterD-8),0,kinkExtreme?.94:(kinkHard?.84:.70));
      rawTarget=lerp(rawTarget,0,centerBlend);
    }
@@ -4602,18 +4633,23 @@ function demoDriverControl(){
  // flickers can cause a sudden lane switch. Preserve the existing racecraft
  // for any session with rivals until a persistent passing handoff exists.
  // This decision depends on the roster, never on instantaneous traffic range.
- const soloSession=!(rivals&&rivals.length);
+ // Distant rivals do not change the preferred racing line. Keep a 1.2s
+ // handoff in close traffic to avoid jumping back during an overtake.
+ if(raceTraffic.active||Number.isFinite(traffic.lane))
+   player.autoSvgResumeAt=raceT+1.2;
+ const svgTrafficClear=!(rivals&&rivals.length)||raceT>=(player.autoSvgResumeAt||0);
+ player.autoTrafficActive=!svgTrafficClear||!!raceTraffic.active;
  // On an empty track, one continuous guide MUST remain authoritative
  // through hairpins/chicanes as well. Disabling it in a technical gate caused
  // an inconsistent switch back to the legacy planner (Spa & Madrid replays).
- const lineGuide=(soloSession&&!offTrack&&
+ const lineGuide=(svgTrafficClear&&!offTrack&&
    !raceTraffic.active&&!Number.isFinite(traffic.lane)&&!launchLaneLock&&
    !(currentSession==='race'&&(player.autoContactGuardUntil||-99)>raceT))
    ?autoUniversalRacingReference(player.s):null;
  player.autoRacingLineSource=lineGuide?.source||(lineGuide?'MODEL_REFERENCE':'LEGACY_OR_TRAFFIC');
  player.autoRacingLineReferenceLat=lineGuide?lineGuide.lat:null;
  const authoredDemand=lineGuide?.source==='SVG_AUTHORED'&&!offTrack&&!raceTraffic.active&&
-   !launchLaneLock&&!geometryKink.active&&!kinkCommitActive
+   !launchLaneLock&&(!geometryKink.active||kinkBypass)&&!kinkCommitActive
    ?autoAuthoredTrackingDemand(player.s,sp,wallish):null;
  player.autoAuthoredRequiredLaneRate=authoredDemand?.required??null;
  player.autoAuthoredHeadingCorrection=0;
@@ -4658,7 +4694,7 @@ function demoDriverControl(){
  if(wallish&&!offTrack&&!launchLaneLock&&sp>25&&!raceTraffic.side){
    laneRate=Math.min(laneRate,lerp(2.10,1.22,clamp((sp-25)/24,0,1)));
  }
- if(geometryKink.active&&kinkMedium)laneRate=Math.min(laneRate,kinkExtreme?1.12:(kinkHard?1.32:1.48));
+ if(geometryKink.active&&kinkMedium&&!kinkBypass)laneRate=Math.min(laneRate,kinkExtreme?1.12:(kinkHard?1.32:1.48));
  if(kinkCommitActive)laneRate=Math.min(laneRate,kinkExtreme?1.02:1.18);
  if(contactGuardActive)laneRate=Math.min(laneRate,1.20);
  // A smooth SVG sweep can demand >1.2 m/s from the virtual target;
@@ -4667,7 +4703,7 @@ function demoDriverControl(){
    laneRate=Math.max(laneRate,authoredDemand.rate);
  // Opposing apexes need an anticipatory lateral sweep to reach BOTH kerbs.
  // Raise only the virtual lane-target slew; never the tyre/steering authority.
- if(chicaneCut?.active&&!contactGuardActive&&learnedLong.risk<.24){
+ if((chicaneCut?.active||kinkBypass)&&!contactGuardActive&&learnedLong.risk<.24){
    const d=24,next=apexAuthoredRacingOffset(player.s+d);
    if(Number.isFinite(next)){
      const required=sp*Math.abs(next-player.autoTargetLat)/d;
@@ -4687,7 +4723,7 @@ function demoDriverControl(){
  let look=techDrive?(soloGuide.active?clamp(9+sp*.29,10,19):clamp(5.8+sp*.13,6.5,13)):clamp(8+sp*.26,10,34);
  // When the path is continuous, preview its next tangent earlier than the
  // very short polyline-chicane gate; physical reachability limits stay intact.
- if(lineGuide?.source==='SVG_AUTHORED'&&techDrive&&!kinkCommitActive&&(!geometryKink.active||chicaneCut?.active))
+ if(lineGuide?.source==='SVG_AUTHORED'&&techDrive&&!kinkCommitActive&&(!geometryKink.active||kinkBypass))
    look=Math.max(look,clamp(8.5+sp*.19,10,22));
  if(!techDrive&&compound.active)look=Math.min(38,Math.max(look,clamp(16+compound.firstD*.18,17,31)));
  if(!techDrive&&plan&&plan.d<80)look=Math.min(look,clamp(9+plan.d*.24,10,25));
@@ -4720,13 +4756,13 @@ function demoDriverControl(){
  // vértice, empezamos a comprometer el coche con la tangente de SALIDA. El segundo
  // término es clave: en v5.148 el guard desaparecía al cruzar el nodo y el coche quedaba
  // orientado hacia la rama antigua.
- if(geometryKink.active&&kinkMedium&&!chicaneCut?.active&&geometryKink.d<look+36){
+ if(geometryKink.active&&kinkMedium&&!kinkBypass&&geometryKink.d<look+36){
    const nowQ=poseAt(player.s),nowHeading=Math.atan2(nowQ.tx,nowQ.tz);
    const maxAheadTurn=clamp(.22+look*.030,.28,.64);
    tangentHeading=nowHeading+clamp(angleDiff(tangentHeading,nowHeading),-maxAheadTurn,maxAheadTurn);
    player.autoGeometryKinkGuard=true;
  }
- if(geometryKink.active&&kinkMedium&&!chicaneCut?.active&&geometryKink.d<kinkCommitD+8){
+ if(geometryKink.active&&kinkMedium&&!kinkBypass&&geometryKink.d<kinkCommitD+8){
    const commitBlend=clamp((kinkCommitD+8-geometryKink.d)/Math.max(10,kinkCommitD+3),0,kinkExtreme?.90:(kinkHard?.82:.70));
    tangentHeading+=angleDiff(geometryKink.to,tangentHeading)*commitBlend;
    player.autoKinkCommitBlend=Math.max(player.autoKinkCommitBlend||0,commitBlend);
@@ -4746,7 +4782,7 @@ function demoDriverControl(){
  // The authored tangent already includes its lateral slope: never steer
  // for it twice. Apply one reachability-weighted, bounded heading correction.
  let desiredHeading=tangentHeading+Math.atan(-laneSlope);
- if(lineGuide?.source==='SVG_AUTHORED'&&!offTrack&&(!geometryKink.active||chicaneCut?.active)&&!kinkCommitActive){
+ if(lineGuide?.source==='SVG_AUTHORED'&&!offTrack&&(!geometryKink.active||kinkBypass)&&!kinkCommitActive){
    const heading=apexAuthoredRacingHeadingAt(player.s+look);
    if(Number.isFinite(heading)){
      const lag=Math.abs(futureRaw-futureLat),trust=clamp(1-lag/3.0,.35,1);
@@ -4829,7 +4865,7 @@ function demoDriverControl(){
  // marco de pista cambiaba de dirección antes de que el monoplaza pudiera rotar.
  // Una discontinuidad >36° recibe una aproximación progresiva y un vértice mucho
  // más lento; no afecta a curvas suaves ni a rectas.
- if(geometryKink.active&&kinkMedium&&!chicaneCut?.active&&geometryKink.d<kinkApproachD){
+ if(geometryKink.active&&kinkMedium&&!kinkBypass&&geometryKink.d<kinkApproachD){
    // Política por severidad. El nodo de 101° del circuito importado necesita llegar mucho más lento
    // que la primera chicane de 72°, mientras que uno de ~46° sólo requiere reserva.
    const apex=kinkExtreme?7.2:(kinkHard?9.8:12.0); // 26 / 35 / 43 km/h
