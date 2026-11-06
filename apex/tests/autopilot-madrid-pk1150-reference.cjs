@@ -13,6 +13,8 @@ const ctx={
  clamp,lerp:(x,y,t)=>x+(y-x)*t,mod:(x,n)=>(x%n+n)%n,
  poseAt:s=>({x:0,z:s,nx:-1,nz:0}),
  driverReferencePoseAt:s=>({x:-latAt(s),z:s}),
+ // This particular regression exercises the model fallback with no authored SVG.
+ apexAuthoredRacingOffset:()=>null,
  autoSafeLaneLimit:()=>3.1,
  finite:(v,fallback)=>Number.isFinite(v)?v:fallback,
  player:{yawRate:0,slipAngle:0}
