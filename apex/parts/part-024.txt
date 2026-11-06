@@ -700,7 +700,7 @@ async function loadTrack(spec){
    // usuario a volver a importar manualmente el mismo archivo.
    if(customSvg.authoritative===true&&typeof customSvg.rawSvg==='string'&&customSvg.rawSvg.trim()){
      const wp=readStoredCustomWorldProfile(spec.dir);
-     if(!wp||wp.profileRevision<23091){try{await importEditableCircuitSvgText(customSvg.rawSvg,spec)}catch(e){console.warn('APEX: no se pudo migrar geometría SVG exacta',e)}}
+     if(!wp||wp.profileRevision<23091){try{await importEditableCircuitSvgText(customSvg.rawSvg,spec,{exactRepository:customSvg.exactRepository===true})}catch(e){console.warn('APEX: no se pudo migrar geometría SVG exacta',e)}}
    }
    const km=parseFloat(customSvg.km)||fallback.km||5.0,direction=String(customSvg.direction||fallback.direction||"CLOCKWISE").trim(),layoutId=String(customSvg.layoutId||fallback.layout||spec.dir||"custom-track").trim();
    if(Array.isArray(customSvg.points)&&customSvg.points.length>20){
@@ -716,7 +716,23 @@ async function loadTrack(spec){
  const embeddedBaseSvg=apexEmbeddedBaseSvgText(spec.dir);
  if(embeddedBaseSvg){
    let baseGeom=readBaseTrackSvg(spec.dir);
-   if(!baseGeom){await importEditableCircuitSvgText(embeddedBaseSvg,spec,{persist:false,base:true});baseGeom=readBaseTrackSvg(spec.dir)}
+   if(!baseGeom){
+     let source=embeddedBaseSvg,authoredMadrid=false;
+     if(spec.dir==='14-spain'){
+       try{
+         const response=await fetch('circuits/svg/apex26_14-madrid-spain_2026-11-06.svg');
+         if(!response.ok)throw Error('SVG Madrid: '+response.status);
+         source=await response.text();authoredMadrid=true;
+       }catch(e){console.warn('APEX: se usa el SVG integrado de Madrid',e)}
+     }
+     try{await importEditableCircuitSvgText(source,spec,{persist:false,base:true,authoredMadrid})}
+     catch(e){
+       if(!authoredMadrid)throw e;
+       console.warn('APEX: se usa el SVG integrado de Madrid',e);
+       await importEditableCircuitSvgText(embeddedBaseSvg,spec,{persist:false,base:true});
+     }
+     baseGeom=readBaseTrackSvg(spec.dir);
+   }
    if(baseGeom&&Array.isArray(baseGeom.points)&&baseGeom.points.length>20){
      const km=parseFloat(baseGeom.km)||fallback.km||5.0,direction=String(baseGeom.direction||fallback.direction||'CLOCKWISE').trim(),layoutId=String(baseGeom.layoutId||fallback.layout||spec.dir).trim();
      return {pts:baseGeom.points.map(p=>[+p[0],+p[1]]),km,layout:layoutId,direction,turns:parseInt(baseGeom.turns)||fallback.turns||0,laps:parseInt(baseGeom.laps)||fallback.laps||0,circuitType:baseGeom.circuitType||fallback.circuitType||'RACE',startAligned:true,detailedSvg:true,geometrySource:'APEX_BASE_EMBEDDED_SVG',geometryAudit:'v5.230.62.2-sector-lod-base',svgAuthoritative:true,verticalProfile:jsonVertical||baseGeom.verticalProfile||null,timingData:baseGeom.timingData||jsonTiming||null,timingControls:Array.isArray(baseGeom.timingControls)&&baseGeom.timingControls.length?baseGeom.timingControls:(jsonTiming&&Array.isArray(jsonTiming.controls)?jsonTiming.controls:[]),cornerMarkers:Array.isArray(baseGeom.cornerMarkers)?baseGeom.cornerMarkers:[],authoredBanking:jsonBanking};
