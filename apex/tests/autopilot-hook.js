@@ -34,6 +34,9 @@ window.__apexAuto={
  },
  sample(){return{
   t:raceT,s:player.s,total:player.total,x:player.x,z:player.z,lat:player.lat,speed:player.speed,yaw:player.yawRate,
+  racingLineSource:player.autoRacingLineSource||null,
+  racingLineDeviationM:Number.isFinite(player.autoRacingLineReferenceLat)?player.lat-player.autoRacingLineReferenceLat:null,
+  authoredLaneRateDemandMps:player.autoAuthoredRequiredLaneRate||0,
   steer:player.steer,gas:player.throttle,brake:player.brakeInput,hp:player.hp,damage:{...player.damage},
   target:player.autoTargetSpeed,preCommitTarget:player.autoPreCommitTargetSpeed,committedTarget:player.autoCommittedTargetSpeed,exitClearance:player.autoExitClearance,releaseRate:player.autoTargetReleaseRate,reason:player.autoTargetSpeedReason,detail:player.autoTargetSpeedReasonDetail,
   baseTarget:player.autoBaseTrackTargetSpeed,trafficLimit:player.autoTrafficSpeedLimit,phase:player.autoPhase,
