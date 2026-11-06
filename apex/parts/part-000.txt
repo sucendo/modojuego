@@ -24,7 +24,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#05070b">
-<title>Apex Formula 26 · v4.17 · Control clásico</title>
+<title>Apex Formula 26 v0.15.0 · PRE-RELEASE</title>
 <style>
 :root{--a:#59f3ff;--r:#ff405d;--panel:rgba(8,12,18,.94);--line:rgba(255,255,255,.14);--mut:#93a0b2}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
