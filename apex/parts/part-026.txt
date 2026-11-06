@@ -1119,7 +1119,7 @@ function captureSessionTelemetry(){
   curvature0:telemetryRound(curvatureAt(player.s),6),curvature15:telemetryRound(curvatureAt(player.s+15),6),curvature30:telemetryRound(curvatureAt(player.s+30),6),pathCurvature:telemetryRound(driverReferencePathCurvatureAt(player.s),6),pathLaneM:telemetryRound(driverReferenceLaneAt(player.s),3),pathLocalSafeKph:telemetryRound(driverReferenceSafeSpeedAt(player.s)*3.6,1),pathBrakeTargetKph:telemetryRound(driverReferenceTargetSpeedAt(player.s)*3.6,1),safeSpeedKph:telemetryRound(cornerSafeSpeed(player.s)*3.6,1),autoPhysicalSpeedKph:telemetryRound((player.autoPhysicalNow||autoPhysicalCornerSpeed(player.s))*3.6,1),
   baseTrackTargetKph:telemetryRound((player.autoBaseTrackTargetSpeed||0)*3.6,1),preCommitTargetKph:Number.isFinite(player.autoPreCommitTargetSpeed)?telemetryRound(player.autoPreCommitTargetSpeed*3.6,1):null,preTrafficTargetKph:telemetryRound((player.autoPreTrafficTargetSpeed||player.autoTargetSpeed||0)*3.6,1),trafficSpeedLimitKph:Number.isFinite(player.autoTrafficSpeedLimit)?telemetryRound(player.autoTrafficSpeedLimit*3.6,1):null,targetSpeedKph:telemetryRound((player.autoTargetSpeed||0)*3.6,1),committedTargetKph:Number.isFinite(player.autoCommittedTargetSpeed)?telemetryRound(player.autoCommittedTargetSpeed*3.6,1):null,targetSpeedReason:player.autoTargetSpeedReason||"TRACK",targetSpeedReasonDetail:player.autoTargetSpeedReasonDetail||null,
   preTrafficReductionKph:telemetryRound(Math.max(0,(player.autoBaseTrackTargetSpeed||0)-(player.autoPreTrafficTargetSpeed||player.autoTargetSpeed||0))*3.6,1),trafficReductionKph:telemetryRound(Math.max(0,(player.autoPreTrafficTargetSpeed||player.autoTargetSpeed||0)-(player.autoTargetSpeed||0))*3.6,1),totalTargetReductionKph:telemetryRound(Math.max(0,(player.autoBaseTrackTargetSpeed||0)-(player.autoTargetSpeed||0))*3.6,1),
-  autoMode:autoCtlMode,autoPhase:player.autoPhase||null,autoPace:telemetryRound(player.autoPace,4),autoTargetLat:telemetryRound(player.autoTargetLat,3),racingLineSource:player.autoRacingLineSource||null,racingLineReferenceLatM:telemetryRound(player.autoRacingLineReferenceLat,3),racingLineDeviationM:Number.isFinite(player.autoRacingLineReferenceLat)?telemetryRound(player.lat-player.autoRacingLineReferenceLat,3):null,authoredSpeedLimitKph:telemetryRound(Number.isFinite(player.autoAuthoredSpeedLimit)?player.autoAuthoredSpeedLimit*3.6:null,1),cleanExitRelease:!!player.autoCleanExitRelease,technicalExitFlow:telemetryRound(player.autoTechnicalExitFlow,3),autoTechnical:!!player.autoTechnicalActive,autoTechnicalAhead:!!player.autoTechnicalAhead,stabilityRisk:telemetryRound(player.autoStabilityRisk,3),rearCritical:telemetryRound(player.autoRearCritical,3),autoExitClearance:telemetryRound(player.autoExitClearance,3),autoTargetReleaseRateMps2:telemetryRound(player.autoTargetReleaseRate,2),brakeRelease:telemetryRound(player.autoBrakeRelease,3),counterSteerActive:!!player.autoCounterSteerActive,counterSteerRequest:!!player.autoCounterSteerRequest,renderPressure:telemetryRound(mobileRenderPressure(),3),recovery:rec,
+  autoMode:autoCtlMode,autoPhase:player.autoPhase||null,autoPace:telemetryRound(player.autoPace,4),autoTargetLat:telemetryRound(player.autoTargetLat,3),racingLineSource:player.autoRacingLineSource||null,racingLineReferenceLatM:telemetryRound(player.autoRacingLineReferenceLat,3),racingLineDeviationM:Number.isFinite(player.autoRacingLineReferenceLat)?telemetryRound(player.lat-player.autoRacingLineReferenceLat,3):null,authoredRequiredLaneRateMps:Number.isFinite(player.autoAuthoredRequiredLaneRate)?telemetryRound(player.autoAuthoredRequiredLaneRate,3):null,authoredHeadingCorrectionDeg:telemetryRound((player.autoAuthoredHeadingCorrection||0)*deg,2),authoredSpeedLimitKph:telemetryRound(Number.isFinite(player.autoAuthoredSpeedLimit)?player.autoAuthoredSpeedLimit*3.6:null,1),cleanExitRelease:!!player.autoCleanExitRelease,technicalExitFlow:telemetryRound(player.autoTechnicalExitFlow,3),autoTechnical:!!player.autoTechnicalActive,autoTechnicalAhead:!!player.autoTechnicalAhead,stabilityRisk:telemetryRound(player.autoStabilityRisk,3),rearCritical:telemetryRound(player.autoRearCritical,3),autoExitClearance:telemetryRound(player.autoExitClearance,3),autoTargetReleaseRateMps2:telemetryRound(player.autoTargetReleaseRate,2),brakeRelease:telemetryRound(player.autoBrakeRelease,3),counterSteerActive:!!player.autoCounterSteerActive,counterSteerRequest:!!player.autoCounterSteerRequest,renderPressure:telemetryRound(mobileRenderPressure(),3),recovery:rec,
   recoveryTargetS:player.autoRecovery&&player.autoRecovery.plan?telemetryRound(player.autoRecovery.plan.s,2):null,recoveryTargetLat:player.autoRecovery&&player.autoRecovery.plan?telemetryRound(player.autoRecovery.plan.lane,3):null,recoveryAttempts:player.autoRecovery?player.autoRecovery.attempts||0:0,recoveryEpisodeSec:player.autoRecovery?telemetryRound(raceT-(player.autoRecovery.episodeStart||player.autoRecovery.since),2):0,
   recoveryEmergency:!!(player.autoRecovery&&player.autoRecovery.emergency),recoveryStage:player.autoRecovery?(player.autoRecovery.emergencyStage||player.autoRecovery.mode):null,
   position:player.pos||null,racePackRisk:telemetryRound(player.autoRacePackRisk||0,3),raceStartProtect:!!player.autoRaceStartProtect,rearThreat:telemetryRound(player.autoRearThreat||0,3),trafficEscapeLane:!!player.autoTrafficEscapeLane,
@@ -4311,6 +4311,20 @@ function apexAuthoredRacingHeadingAt(s){
  const x0=p.x+p.nx*a,z0=p.z+p.nz*a,x1=q.x+q.nx*b,z1=q.z+q.nz*b;
  return Math.hypot(x1-x0,z1-z0)>3?Math.atan2(x1-x0,z1-z0):null;
 }
+// AUT11: Follow the rate of change of the authored SVG line, not just
+// its current offset. This only adjusts virtual lane targets, never physics.
+function autoAuthoredTrackingDemand(s,sp,wallish){
+ const preview=clamp(12+sp*.45,14,36),h=preview*.5;
+ const a=apexAuthoredRacingOffset(s),b=apexAuthoredRacingOffset(s+h),c=apexAuthoredRacingOffset(s+preview);
+ if(!Number.isFinite(a)||!Number.isFinite(b)||!Number.isFinite(c))return null;
+ const slope0=(b-a)/h,slope1=(c-b)/h;
+ const reversal=slope0*slope1<-.00012&&Math.abs(slope0-slope1)>.04;
+ const smooth=!reversal&&Math.abs(slope0-slope1)<.085&&Math.max(Math.abs(slope0),Math.abs(slope1))<.105;
+ const required=sp*Math.max(Math.abs(slope0),Math.abs(slope1));
+ const grip=player?clamp(apexTyreGripScale(player),.4,1.06):1;
+ const rate=clamp(required*1.16+.32,0,(wallish?3.55:4.55)*clamp(grip*.98,.64,1));
+ return{preview,required,rate,smooth,slope0,slope1};
+}
 function apexAuthoredPhysicalCornerSpeed(s,kSigned){
  const k=Math.abs(kSigned);
  if(!Number.isFinite(k))return autoPhysicalCornerSpeed(s);
@@ -4530,6 +4544,11 @@ function demoDriverControl(){
    ?autoUniversalRacingReference(player.s):null;
  player.autoRacingLineSource=lineGuide?.source||(lineGuide?'MODEL_REFERENCE':'LEGACY_OR_TRAFFIC');
  player.autoRacingLineReferenceLat=lineGuide?lineGuide.lat:null;
+ const authoredDemand=lineGuide?.source==='SVG_AUTHORED'&&!offTrack&&!raceTraffic.active&&
+   !launchLaneLock&&!geometryKink.active&&!kinkCommitActive
+   ?autoAuthoredTrackingDemand(player.s,sp,wallish):null;
+ player.autoAuthoredRequiredLaneRate=authoredDemand?.required??null;
+ player.autoAuthoredHeadingCorrection=0;
  if(lineGuide){
    const riskTrim=1-clamp(learnedLong.risk*.38,0,.30);
    rawTarget=lerp(rawTarget,lineGuide.lat*riskTrim,lineGuide.weight);
@@ -4542,7 +4561,12 @@ function demoDriverControl(){
  if(wallish&&!offTrack&&!launchLaneLock&&sp>24&&!raceTraffic.side){
    const speedBlend=clamp((sp-24)/22,0,1);
    const bend=Math.abs(curvatureAt(player.s+18)),bendBlend=clamp((bend-.003)/.020,0,1);
-   const cityLaneLimit=Math.max(1.15,lerp(2.30,1.42,speedBlend)-bendBlend*.30);
+   let cityLaneLimit=Math.max(1.15,lerp(2.30,1.42,speedBlend)-bendBlend*.30);
+   // SVG offsets were already clamped to the physical wall-aware corridor;
+   // a smooth authored path should not receive a second absolute lane cap.
+   if(authoredDemand?.smooth&&Math.abs(player.lat)<trackEdge-1.10&&
+      Math.abs(rawTarget)<=autoSafeLaneLimit(player.s,true)+.01)
+     cityLaneLimit=Math.max(cityLaneLimit,Math.abs(rawTarget));
    player.autoLaneSwingLimit=cityLaneLimit;
    if(Math.abs(rawTarget)>cityLaneLimit){
      rawTarget=clamp(rawTarget,-cityLaneLimit,cityLaneLimit);
@@ -4569,6 +4593,10 @@ function demoDriverControl(){
  if(geometryKink.active&&kinkMedium)laneRate=Math.min(laneRate,kinkExtreme?1.12:(kinkHard?1.32:1.48));
  if(kinkCommitActive)laneRate=Math.min(laneRate,kinkExtreme?1.02:1.18);
  if(contactGuardActive)laneRate=Math.min(laneRate,1.20);
+ // A smooth SVG sweep can demand >1.2 m/s from the virtual target;
+ // traffic, technical kinks, collisions and learned risks keep priority.
+ if(authoredDemand?.smooth&&!contactGuardActive&&learnedLong.risk<.32)
+   laneRate=Math.max(laneRate,authoredDemand.rate);
  player.autoRawTargetLat=rawTarget;player.autoLaneRate=laneRate;
  player.autoTargetLat+=clamp(rawTarget-player.autoTargetLat,-laneRate*adt,laneRate*adt);
  player.autoTargetLat=clamp(player.autoTargetLat,-safeLimit,safeLimit);
@@ -4638,14 +4666,18 @@ function demoDriverControl(){
    const correction=clamp(angleDiff(soloGuide.heading,tangentHeading)*.42*gain,-.16,.16);
    tangentHeading+=correction;
  }
- // The future road tangent and lane-rate approximation were two different
- // paths. Small authored heading feedforward reduces corrective steering.
+ // The authored tangent already includes its lateral slope: never steer
+ // for it twice. Apply one reachability-weighted, bounded heading correction.
+ let desiredHeading=tangentHeading+Math.atan(-laneSlope);
  if(lineGuide?.source==='SVG_AUTHORED'&&!offTrack&&!geometryKink.active&&!kinkCommitActive){
    const heading=apexAuthoredRacingHeadingAt(player.s+look);
-   if(Number.isFinite(heading))
-    tangentHeading+=clamp(angleDiff(heading,tangentHeading)*.56,-.14,.14);
+   if(Number.isFinite(heading)){
+     const lag=Math.abs(futureRaw-futureLat),trust=clamp(1-lag/3.0,.35,1);
+     const correction=clamp(angleDiff(heading,desiredHeading)*trust,-.19,.19);
+     desiredHeading+=correction;
+     player.autoAuthoredHeadingCorrection=correction;
+   }
  }
- const desiredHeading=tangentHeading+Math.atan(-laneSlope);
  player.autoDesiredHeading=desiredHeading;
  const headingErr=angleDiff(desiredHeading,player.heading),crossErr=player.lat-player.autoTargetLat;
  const kSampleS=player.s+(techDrive?clamp(5+sp*.06,5.5,10):clamp(7+sp*.09,8,17));

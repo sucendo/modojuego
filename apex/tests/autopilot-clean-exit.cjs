@@ -8,7 +8,9 @@ const b=source.indexOf('\nfunction demoDriverControl(',a);
 assert.ok(a>0&&b>a,'Universal exit-release helpers missing');
 const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
 const lerp=(a,b,t)=>a+(b-a)*t;
-const ctx={Math,Number,clamp,lerp,curvatureAt:()=>0};
+const ctx={Math,Number,clamp,lerp,curvatureAt:()=>0,
+ // The universal speed release now queries the racing-line curvature adapter.
+ autoRacingCurvatureAt:s=>ctx.curvatureAt(s)};
 vm.createContext(ctx);
 vm.runInContext(source.slice(a,b),ctx);
 const clearance=ctx.autoUniversalExitClearance,rate=ctx.autoUniversalTargetReleaseRate;
