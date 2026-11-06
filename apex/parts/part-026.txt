@@ -1119,7 +1119,7 @@ function captureSessionTelemetry(){
   curvature0:telemetryRound(curvatureAt(player.s),6),curvature15:telemetryRound(curvatureAt(player.s+15),6),curvature30:telemetryRound(curvatureAt(player.s+30),6),pathCurvature:telemetryRound(driverReferencePathCurvatureAt(player.s),6),pathLaneM:telemetryRound(driverReferenceLaneAt(player.s),3),pathLocalSafeKph:telemetryRound(driverReferenceSafeSpeedAt(player.s)*3.6,1),pathBrakeTargetKph:telemetryRound(driverReferenceTargetSpeedAt(player.s)*3.6,1),safeSpeedKph:telemetryRound(cornerSafeSpeed(player.s)*3.6,1),autoPhysicalSpeedKph:telemetryRound((player.autoPhysicalNow||autoPhysicalCornerSpeed(player.s))*3.6,1),
   baseTrackTargetKph:telemetryRound((player.autoBaseTrackTargetSpeed||0)*3.6,1),preCommitTargetKph:Number.isFinite(player.autoPreCommitTargetSpeed)?telemetryRound(player.autoPreCommitTargetSpeed*3.6,1):null,preTrafficTargetKph:telemetryRound((player.autoPreTrafficTargetSpeed||player.autoTargetSpeed||0)*3.6,1),trafficSpeedLimitKph:Number.isFinite(player.autoTrafficSpeedLimit)?telemetryRound(player.autoTrafficSpeedLimit*3.6,1):null,targetSpeedKph:telemetryRound((player.autoTargetSpeed||0)*3.6,1),committedTargetKph:Number.isFinite(player.autoCommittedTargetSpeed)?telemetryRound(player.autoCommittedTargetSpeed*3.6,1):null,targetSpeedReason:player.autoTargetSpeedReason||"TRACK",targetSpeedReasonDetail:player.autoTargetSpeedReasonDetail||null,
   preTrafficReductionKph:telemetryRound(Math.max(0,(player.autoBaseTrackTargetSpeed||0)-(player.autoPreTrafficTargetSpeed||player.autoTargetSpeed||0))*3.6,1),trafficReductionKph:telemetryRound(Math.max(0,(player.autoPreTrafficTargetSpeed||player.autoTargetSpeed||0)-(player.autoTargetSpeed||0))*3.6,1),totalTargetReductionKph:telemetryRound(Math.max(0,(player.autoBaseTrackTargetSpeed||0)-(player.autoTargetSpeed||0))*3.6,1),
-  autoMode:autoCtlMode,autoPhase:player.autoPhase||null,autoPace:telemetryRound(player.autoPace,4),autoTargetLat:telemetryRound(player.autoTargetLat,3),racingLineSource:player.autoRacingLineSource||null,racingLineReferenceLatM:telemetryRound(player.autoRacingLineReferenceLat,3),racingLineDeviationM:Number.isFinite(player.autoRacingLineReferenceLat)?telemetryRound(player.lat-player.autoRacingLineReferenceLat,3):null,authoredRequiredLaneRateMps:Number.isFinite(player.autoAuthoredRequiredLaneRate)?telemetryRound(player.autoAuthoredRequiredLaneRate,3):null,authoredHeadingCorrectionDeg:telemetryRound((player.autoAuthoredHeadingCorrection||0)*deg,2),authoredSpeedLimitKph:telemetryRound(Number.isFinite(player.autoAuthoredSpeedLimit)?player.autoAuthoredSpeedLimit*3.6:null,1),cleanExitRelease:!!player.autoCleanExitRelease,technicalExitFlow:telemetryRound(player.autoTechnicalExitFlow,3),autoTechnical:!!player.autoTechnicalActive,autoTechnicalAhead:!!player.autoTechnicalAhead,stabilityRisk:telemetryRound(player.autoStabilityRisk,3),rearCritical:telemetryRound(player.autoRearCritical,3),autoExitClearance:telemetryRound(player.autoExitClearance,3),autoTargetReleaseRateMps2:telemetryRound(player.autoTargetReleaseRate,2),brakeRelease:telemetryRound(player.autoBrakeRelease,3),counterSteerActive:!!player.autoCounterSteerActive,counterSteerRequest:!!player.autoCounterSteerRequest,renderPressure:telemetryRound(mobileRenderPressure(),3),recovery:rec,
+  autoMode:autoCtlMode,autoPhase:player.autoPhase||null,autoPace:telemetryRound(player.autoPace,4),autoTargetLat:telemetryRound(player.autoTargetLat,3),racingLineSource:player.autoRacingLineSource||null,racingLineReferenceLatM:telemetryRound(player.autoRacingLineReferenceLat,3),racingLineDeviationM:Number.isFinite(player.autoRacingLineReferenceLat)?telemetryRound(player.lat-player.autoRacingLineReferenceLat,3):null,authoredRequiredLaneRateMps:Number.isFinite(player.autoAuthoredRequiredLaneRate)?telemetryRound(player.autoAuthoredRequiredLaneRate,3):null,authoredHeadingCorrectionDeg:telemetryRound((player.autoAuthoredHeadingCorrection||0)*deg,2),authoredSpeedLimitKph:telemetryRound(Number.isFinite(player.autoAuthoredSpeedLimit)?player.autoAuthoredSpeedLimit*3.6:null,1),chicaneCutActive:!!player.autoChicaneCutActive,chicaneKerbSamples:player.autoChicaneCutPlan?.kerbTouches??0,chicaneCenterlineMaxK:telemetryRound(player.autoChicaneCutPlan?.coreMax,5),chicaneRacingMaxK:telemetryRound(player.autoChicaneCutPlan?.lineMax,5),chicaneRacingDeviationM:telemetryRound(player.autoChicaneCutDeviation,2),cleanExitRelease:!!player.autoCleanExitRelease,technicalExitFlow:telemetryRound(player.autoTechnicalExitFlow,3),autoTechnical:!!player.autoTechnicalActive,autoTechnicalAhead:!!player.autoTechnicalAhead,stabilityRisk:telemetryRound(player.autoStabilityRisk,3),rearCritical:telemetryRound(player.autoRearCritical,3),autoExitClearance:telemetryRound(player.autoExitClearance,3),autoTargetReleaseRateMps2:telemetryRound(player.autoTargetReleaseRate,2),brakeRelease:telemetryRound(player.autoBrakeRelease,3),counterSteerActive:!!player.autoCounterSteerActive,counterSteerRequest:!!player.autoCounterSteerRequest,renderPressure:telemetryRound(mobileRenderPressure(),3),recovery:rec,
   recoveryTargetS:player.autoRecovery&&player.autoRecovery.plan?telemetryRound(player.autoRecovery.plan.s,2):null,recoveryTargetLat:player.autoRecovery&&player.autoRecovery.plan?telemetryRound(player.autoRecovery.plan.lane,3):null,recoveryAttempts:player.autoRecovery?player.autoRecovery.attempts||0:0,recoveryEpisodeSec:player.autoRecovery?telemetryRound(raceT-(player.autoRecovery.episodeStart||player.autoRecovery.since),2):0,
   recoveryEmergency:!!(player.autoRecovery&&player.autoRecovery.emergency),recoveryStage:player.autoRecovery?(player.autoRecovery.emergencyStage||player.autoRecovery.mode):null,
   position:player.pos||null,racePackRisk:telemetryRound(player.autoRacePackRisk||0,3),raceStartProtect:!!player.autoRaceStartProtect,rearThreat:telemetryRound(player.autoRearThreat||0,3),trafficEscapeLane:!!player.autoTrafficEscapeLane,
@@ -2680,7 +2680,7 @@ function autoSafeLaneLimit(s,allowRacingCurb=false){
  let margin=wallish?2.45:1.72;
  // Only a solo, already verified world-space racing reference may exploit the
  // extra painted/kerbed asphalt; passing lanes and recovery retain old margins.
- if(allowRacingCurb&&!wallish&&Number.isFinite(e.curb)&&e.curb>=.38)margin=1.22;
+ if(allowRacingCurb&&!wallish&&Number.isFinite(e.curb)&&e.curb>=.38)margin=1.05;
  if(wc.exact&&Number.isFinite(wc.nearest)){const clearance=wc.nearest-e.half;margin=Math.max(margin,2.65-clamp(clearance,0,2.2)*.18)}
  return clamp(e.half-margin,1.10,4.15);
 }
@@ -3022,6 +3022,13 @@ function autoTargetSpeed(plan,traffic,skill,bravery,diff=1){
  // more grip than the existing tyre/weather/banking physical speed envelope.
  const authored=apexAuthoredRacingSpeedLimit(player.s);
  player.autoAuthoredSpeedLimit=Number.isFinite(authored)?authored:null;
+ // Centreline safety governors can over-brake a two-apex shortcut.
+ // Permit a bounded uplift only on a verified, kerbed, tracked SVG chord.
+ const cut=player.autoChicaneCutPlan;
+ if(cut?.active&&Math.abs(cut.s-player.s)<12&&Number.isFinite(authored)){
+   const uplift=Math.min(9,baseline*.14)*clamp(apexTyreGripScale(player),.48,1);
+   return Math.min(baseline+uplift,authored*(wet?.92:.97));
+ }
  return Number.isFinite(authored)?Math.min(baseline,authored):baseline;
 }
 
@@ -3198,7 +3205,8 @@ function autoTechnicalProfile(s,horizon=112,step=5){
  // podía alcanzar Degner), reducía demasiado el look-ahead y volvía brusco el volante.
  let minSafe=98,maxK=0,firstTightD=999,lastSig=0,lastSigD=-999,signChanges=0,changeD=999,activeSamples=0;
  for(let d=4;d<=horizon;d+=step){
-   const k=autoRacingCurvatureAt(s+d),a=Math.abs(k),safe=autoPhysicalCornerSpeed(s+d);
+   const k=autoRacingCurvatureAt(s+d),a=Math.abs(k),authoredK=apexAuthoredRacingCurvatureAt(s+d),
+         safe=Number.isFinite(authoredK)?apexAuthoredPhysicalCornerSpeed(s+d,authoredK):autoPhysicalCornerSpeed(s+d);
    minSafe=Math.min(minSafe,safe);maxK=Math.max(maxK,a);
    if((safe<36||a>.0090)&&firstTightD===999)firstTightD=d;
    if(a>.0028){
@@ -3219,7 +3227,8 @@ function autoTechnicalDriveNow(s,profile,sp){
  // convertir 100+ m de aproximación en volante de chicane/horquilla. La telemetría
  // completa del circuito de referencia v5.125 mostró TÉCNICA activa durante gran parte de la vuelta.
  if(!profile||!profile.active)return false;
- const kNow=Math.abs(autoRacingCurvatureAt(s+6)),safeNow=autoPhysicalCornerSpeed(s+6);
+ const kNow=Math.abs(autoRacingCurvatureAt(s+6)),authoredK=apexAuthoredRacingCurvatureAt(s+6),
+       safeNow=Number.isFinite(authoredK)?apexAuthoredPhysicalCornerSpeed(s+6,authoredK):autoPhysicalCornerSpeed(s+6);
  const near=clamp(25+sp*.36,30,52);
  const swapNear=profile.chicane&&Number.isFinite(profile.changeD)&&profile.changeD<Math.min(34,near*.72);
  return profile.firstTightD<near||swapNear||kNow>.0047||safeNow<42;
@@ -4311,6 +4320,47 @@ function apexAuthoredRacingHeadingAt(s){
  const x0=p.x+p.nx*a,z0=p.z+p.nz*a,x1=q.x+q.nx*b,z1=q.z+q.nz*b;
  return Math.hypot(x1-x0,z1-z0)>3?Math.atan2(x1-x0,z1-z0):null;
 }
+// AUT12: In a real chicane, a kerb-to-kerb authored chord may be much
+// straighter than the centreline. Check actual sampled geometry/kerb width,
+// walls, grip, line continuity and tracking before relaxing conservative caps.
+// Never applies to other cars, traffic, wet kerbs, or arbitrary SVG kinks.
+function autoChicaneCutOpportunity(s,trafficActive){
+ if(!player||!trackData||trafficActive||apexWeatherIsWet()||
+    !apexAuthoredRacingProfile())return null;
+ const grip=clamp(apexTyreGripScale(player),.25,1.06);
+ const old=player.autoChicaneCutCache;
+ let probe;
+ if(old&&raceT-old.t>=0&&raceT-old.t<.10&&Math.abs(s-old.s)<6&&Math.abs(grip-old.grip)<.02)probe=old;
+ else{
+   let coreMax=0,lineMax=0,kerbTouches=0,unsafe=false,sign=0,flips=0,lastTurnS=-999;
+   for(let d=0;d<=96;d+=8){
+     const ss=s+d,e=envProfile(ss),off=apexAuthoredRacingOffset(ss),
+           k=apexAuthoredRacingCurvatureAt(ss),raw=curvatureAt(ss);
+     if(!Number.isFinite(off)||!Number.isFinite(k)||!Number.isFinite(raw)||
+        apexWallishAtS(ss,e)||Math.abs(off)>autoSafeLaneLimit(ss,true)+.015){
+       unsafe=true;break;
+     }
+     coreMax=Math.max(coreMax,Math.abs(raw));
+     lineMax=Math.max(lineMax,Math.abs(k));
+     if(Math.abs(raw)>.0028){
+       const turn=Math.sign(raw);
+       if(sign&&turn!==sign&&d-lastTurnS<=56)flips++;
+       sign=turn;lastTurnS=d;
+     }
+     if(e.curb>=.38&&Math.abs(off)>=e.half-2.65&&
+        Math.abs(off)<=e.half-1.01)kerbTouches++;
+   }
+   const valid=!unsafe&&flips>0&&kerbTouches>0&&coreMax>.006&&
+       lineMax<.020&&lineMax<coreMax*.86;
+   probe={s,t:raceT,grip,valid,coreMax,lineMax,kerbTouches,flips};
+   player.autoChicaneCutCache=probe;
+ }
+ const ref=apexAuthoredRacingOffset(s),heading=apexAuthoredRacingHeadingAt(s+8);
+ const deviation=Number.isFinite(ref)?Math.abs(player.lat-ref):Infinity;
+ const direction=Number.isFinite(heading)?Math.abs(angleDiff(heading,player.heading)):Infinity;
+ const tracked=deviation<1.30&&direction<.32;
+ return {...probe,s,active:probe.valid&&tracked&&grip>.64,tracked,deviation,direction};
+}
 // AUT11: Follow the rate of change of the authored SVG line, not just
 // its current offset. This only adjusts virtual lane targets, never physics.
 function autoAuthoredTrackingDemand(s,sp,wallish){
@@ -4443,6 +4493,10 @@ function demoDriverControl(){
  }
  const plan=player.autoPlan,traffic=playerAutoTraffic(plan),raceTraffic=traffic.snap||autoRaceTrafficSnapshot(),wallCtx=apexWallContextAtS(player.s,env),wallish=wallCtx.wallish,technical=autoTechnicalProfile(player.s,118,5),compound=autoCompoundEntryProfile(player.s,118,5);
  const techDrive=autoTechnicalDriveNow(player.s,technical,sp);
+ const chicaneCut=autoChicaneCutOpportunity(player.s,!!raceTraffic.active);
+ player.autoChicaneCutPlan=chicaneCut;
+ player.autoChicaneCutActive=!!chicaneCut?.active;
+ player.autoChicaneCutDeviation=chicaneCut?.deviation??null;
  player.autoTechnicalExitFlow=0;
  player.autoTechnicalAhead=!!technical.active;player.autoTechnicalActive=!!techDrive;
  const trackEdge=env.half,offTrack=Math.abs(player.lat)>trackEdge+env.curb*.25;
@@ -4462,11 +4516,13 @@ function demoDriverControl(){
  const kinkApproachD=kinkExtreme?96:(kinkHard?78:(kinkMedium?66:0));
  const kinkCenterD=kinkExtreme?88:(kinkHard?66:(kinkMedium?52:0));
  const kinkCommitD=kinkExtreme?24:(kinkHard?20:(kinkMedium?16:0));
- if(geometryKink.active&&kinkMedium&&geometryKink.d<=kinkCommitD){
+ if(geometryKink.active&&kinkMedium&&!chicaneCut?.active&&geometryKink.d<=kinkCommitD){
    player.autoKinkCommitUntil=raceT+(kinkExtreme?2.15:(kinkHard?1.65:1.25));
    player.autoKinkCommitHeading=geometryKink.to;
    player.autoKinkCommitAngle=kinkAngle;
  }
+ // The raw centreline knot must not override a verified smooth SVG chord.
+ if(chicaneCut?.active)player.autoKinkCommitUntil=0;
  const kinkCommitActive=Number.isFinite(player.autoKinkCommitUntil)&&raceT<player.autoKinkCommitUntil&&Number.isFinite(player.autoKinkCommitHeading);
  player.autoKinkCommitActive=!!kinkCommitActive;
  player.autoKinkCommitRemaining=kinkCommitActive?Math.max(0,player.autoKinkCommitUntil-raceT):0;
@@ -4522,7 +4578,7 @@ function demoDriverControl(){
    // dejamos de perseguir una trazada de ±3 m cuando faltan pocos metros para un cambio
    // de dirección de 36-100°. En la primera chicane, mientras siga el corredor de salida,
    // manda el bloque específico de arriba para no cruzar coches de una columna a otra.
-   if(geometryKink.active&&kinkMedium&&geometryKink.d<kinkCenterD){
+   if(geometryKink.active&&kinkMedium&&!chicaneCut?.active&&geometryKink.d<kinkCenterD){
      const centerBlend=clamp((kinkCenterD-geometryKink.d)/Math.max(18,kinkCenterD-8),0,kinkExtreme?.94:(kinkHard?.84:.70));
      rawTarget=lerp(rawTarget,0,centerBlend);
    }
@@ -4597,6 +4653,15 @@ function demoDriverControl(){
  // traffic, technical kinks, collisions and learned risks keep priority.
  if(authoredDemand?.smooth&&!contactGuardActive&&learnedLong.risk<.32)
    laneRate=Math.max(laneRate,authoredDemand.rate);
+ // Opposing apexes need an anticipatory lateral sweep to reach BOTH kerbs.
+ // Raise only the virtual lane-target slew; never the tyre/steering authority.
+ if(chicaneCut?.active&&!contactGuardActive&&learnedLong.risk<.24){
+   const d=24,next=apexAuthoredRacingOffset(player.s+d);
+   if(Number.isFinite(next)){
+     const required=sp*Math.abs(next-player.autoTargetLat)/d;
+     laneRate=Math.max(laneRate,Math.min(4.20,required*1.08+.25));
+   }
+ }
  player.autoRawTargetLat=rawTarget;player.autoLaneRate=laneRate;
  player.autoTargetLat+=clamp(rawTarget-player.autoTargetLat,-laneRate*adt,laneRate*adt);
  player.autoTargetLat=clamp(player.autoTargetLat,-safeLimit,safeLimit);
@@ -4610,7 +4675,7 @@ function demoDriverControl(){
  let look=techDrive?(soloGuide.active?clamp(9+sp*.29,10,19):clamp(5.8+sp*.13,6.5,13)):clamp(8+sp*.26,10,34);
  // When the path is continuous, preview its next tangent earlier than the
  // very short polyline-chicane gate; physical reachability limits stay intact.
- if(lineGuide?.source==='SVG_AUTHORED'&&techDrive&&!kinkCommitActive&&!geometryKink.active)
+ if(lineGuide?.source==='SVG_AUTHORED'&&techDrive&&!kinkCommitActive&&(!geometryKink.active||chicaneCut?.active))
    look=Math.max(look,clamp(8.5+sp*.19,10,22));
  if(!techDrive&&compound.active)look=Math.min(38,Math.max(look,clamp(16+compound.firstD*.18,17,31)));
  if(!techDrive&&plan&&plan.d<80)look=Math.min(look,clamp(9+plan.d*.24,10,25));
@@ -4643,13 +4708,13 @@ function demoDriverControl(){
  // vértice, empezamos a comprometer el coche con la tangente de SALIDA. El segundo
  // término es clave: en v5.148 el guard desaparecía al cruzar el nodo y el coche quedaba
  // orientado hacia la rama antigua.
- if(geometryKink.active&&kinkMedium&&geometryKink.d<look+36){
+ if(geometryKink.active&&kinkMedium&&!chicaneCut?.active&&geometryKink.d<look+36){
    const nowQ=poseAt(player.s),nowHeading=Math.atan2(nowQ.tx,nowQ.tz);
    const maxAheadTurn=clamp(.22+look*.030,.28,.64);
    tangentHeading=nowHeading+clamp(angleDiff(tangentHeading,nowHeading),-maxAheadTurn,maxAheadTurn);
    player.autoGeometryKinkGuard=true;
  }
- if(geometryKink.active&&kinkMedium&&geometryKink.d<kinkCommitD+8){
+ if(geometryKink.active&&kinkMedium&&!chicaneCut?.active&&geometryKink.d<kinkCommitD+8){
    const commitBlend=clamp((kinkCommitD+8-geometryKink.d)/Math.max(10,kinkCommitD+3),0,kinkExtreme?.90:(kinkHard?.82:.70));
    tangentHeading+=angleDiff(geometryKink.to,tangentHeading)*commitBlend;
    player.autoKinkCommitBlend=Math.max(player.autoKinkCommitBlend||0,commitBlend);
@@ -4669,7 +4734,7 @@ function demoDriverControl(){
  // The authored tangent already includes its lateral slope: never steer
  // for it twice. Apply one reachability-weighted, bounded heading correction.
  let desiredHeading=tangentHeading+Math.atan(-laneSlope);
- if(lineGuide?.source==='SVG_AUTHORED'&&!offTrack&&!geometryKink.active&&!kinkCommitActive){
+ if(lineGuide?.source==='SVG_AUTHORED'&&!offTrack&&(!geometryKink.active||chicaneCut?.active)&&!kinkCommitActive){
    const heading=apexAuthoredRacingHeadingAt(player.s+look);
    if(Number.isFinite(heading)){
      const lag=Math.abs(futureRaw-futureLat),trust=clamp(1-lag/3.0,.35,1);
@@ -4749,7 +4814,7 @@ function demoDriverControl(){
  // marco de pista cambiaba de dirección antes de que el monoplaza pudiera rotar.
  // Una discontinuidad >36° recibe una aproximación progresiva y un vértice mucho
  // más lento; no afecta a curvas suaves ni a rectas.
- if(geometryKink.active&&kinkMedium&&geometryKink.d<kinkApproachD){
+ if(geometryKink.active&&kinkMedium&&!chicaneCut?.active&&geometryKink.d<kinkApproachD){
    // Política por severidad. El nodo de 101° del circuito importado necesita llegar mucho más lento
    // que la primera chicane de 72°, mientras que uno de ~46° sólo requiere reserva.
    const apex=kinkExtreme?7.2:(kinkHard?9.8:12.0); // 26 / 35 / 43 km/h
@@ -4958,7 +5023,9 @@ function demoDriverControl(){
      const exitFlow=lineGuide?.source==='SVG_AUTHORED'&&!offTrack?
        autoRacingExitFlow(player.s,stability,headingErr,edgeRisk,!!raceTraffic.active):0;
      player.autoTechnicalExitFlow=exitFlow;
-     throttle=Math.min(throttle,lerp(technicalCap,.96,exitFlow*.88));
+     const chicaneFlow=chicaneCut?.active&&stability.risk<.18&&stability.rearCritical<.12&&
+       edgeRisk<.12&&Math.abs(headingErr)<.24? .78:0;
+     throttle=Math.min(throttle,lerp(technicalCap,.96,Math.max(exitFlow*.88,chicaneFlow)));
    }else if(compound.active&&compound.firstD<42){
      throttle=Math.min(throttle,lerp(.82,.68,compound.severity));
    }
