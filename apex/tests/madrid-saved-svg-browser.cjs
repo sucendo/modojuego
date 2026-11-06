@@ -110,14 +110,14 @@ window.__madridSavedSvgAudit={
   assert.ok(rehydrated.curbVisual.authored>0&&rehydrated.curbVisual.faces>0,'The loaded circuit must compile the authored kerbs for the live renderer');
   assert.deepEqual(rehydrated.curbVisual.missing,[],'Every saved kerb must reach the live renderer');
   assert.deepEqual(rehydrated.curbVisual.colors.sort(),['#d51f27','#f2c500']);
-  assert.equal(rehydrated.boards,34,'Hydrated SVG must retain only 34 active braking boards');
+  assert.equal(rehydrated.boards,68,'Hydrated SVG must retain 34 pairs of braking boards');
   assert.equal(rehydrated.boardsAuthoritative,true,'Hydration must not generate deleted boards');
-  assert.equal(result.file,'svg/apex26_14-madrid-spain_2026-11-06.svg');
-  assert.equal(result.source,'Texto pegado(6).txt');
+  assert.equal(result.file,'svg/apex26_14-madrid-spain_2026-11-06-boxes.svg');
+  assert.equal(result.source,'apex26_14-madrid-spain_2026-11-06-boxes.svg');
   assert.equal(result.bytes,fs.statSync(path.join(root,'apex/circuits',result.file)).size);
   assert.equal(result.geometry,true);
   assert.equal(result.exact,true,'Keep the saved complete SVG byte-for-byte');
-  assert.equal(result.boards,34,'Only active SVG signs may be imported (not 4 library templates)');
+  assert.equal(result.boards,68,'Only active SVG signs may be imported (not 4 library templates)');
   assert.equal(result.boardsAuthoritative,true,'SVG signs must suppress procedural additions');
   assert.equal(result.json,'json/apex26_14-madrid-spain_2026-10-29.json');
   assert.deepEqual(result.colors,['#f2c500','#d51f27']);

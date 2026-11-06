@@ -4556,6 +4556,10 @@ function webglPushCircuitLandmarks(cam,pitch){
      webglPushCamPoly([P(0,.40,h-2.05),P(0,5.2,h-1.55),P(0,4.6,h-.90),P(0,.36,h-1.35)],pitch,'#c61f28',.60,-.007);
      webglPushCamQuad(P(-.10,2.12,h-3.20),P(.10,2.12,h-3.20),P(.10,2.40,h-2.90),P(-.10,2.40,h-2.90),pitch,'#9a3a25',.60,-.008);
    }else if(it.type==='ferris'){
+     if(it.wheelAxis){
+       apexOrientedFerris(it,a,cam,pitch,(p,q,width,color)=>webglPushScreenLineDepth([p.x,p.y],[q.x,q.y],width,color,p.z));
+       continue;
+     }
      const center=P(0,0,it.radius*1.25),rim=P(0,0,it.radius*2.25),baseP=P(0,0,0);if(center.z<3||rim.z<3)continue;
      const pc=projectRoadLocal(center.x,center.y,center.z,pitch),pr=projectRoadLocal(rim.x,rim.y,rim.z,pitch),pb=projectRoadLocal(baseP.x,baseP.y,baseP.z,pitch),rr=Math.max(6,Math.abs(pr.y-pc.y)),segments=lod===0?28:(lod===1?18:12),spokes=lod===0?10:(lod===1?8:6),col=it.color||'#eef3f6',rot=(Number.isFinite(raceT)?raceT:0)*.055;
      for(let i=0;i<segments;i++){const a0=rot+Math.PI*2*i/segments,a1=rot+Math.PI*2*(i+1)/segments,A=[pc.x+Math.cos(a0)*rr,pc.y+Math.sin(a0)*rr],B=[pc.x+Math.cos(a1)*rr,pc.y+Math.sin(a1)*rr];webglPushScreenLineDepth(A,B,lod===0?2.0:1.55,col,center.z)}

@@ -6,15 +6,15 @@
     "14-spain": {
       "name": "Madrid",
       "displayName": "MADRING",
-      "svg": "svg/apex26_14-madrid-spain_2026-11-06.svg",
+      "svg": "svg/apex26_14-madrid-spain_2026-11-06-boxes.svg",
       "json": "json/apex26_14-madrid-spain_2026-10-29.json",
       "status": "edited",
       "basePreserved": true,
       "previousSvg": "svg/apex26_14-madrid-spain.svg",
-      "sourceFileName": "Texto pegado(6).txt",
+      "sourceFileName": "apex26_14-madrid-spain_2026-11-06-boxes.svg",
       "editionDate": "2026-11-06",
-      "notes": "SVG completo de Madrid conservado byte a byte. La BASE deriva de las capas visibles y añade puestos de cambio, garajes y parrilla.",
-      "previousEditionSvg": "svg/apex26_14-madrid-spain_2026-11-03.svg",
+      "notes": "Edición completa con zona de trabajo y separador de boxes, carteles emparejados, alturas provisionales de gradas y eje de noria. Se conserva la edición original de referencia.",
+      "previousEditionSvg": "svg/apex26_14-madrid-spain_2026-11-06.svg",
       "exactSvg": true
     }
   }

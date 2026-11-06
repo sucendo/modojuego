@@ -1273,6 +1273,7 @@ function apexEnrichExportSvg(svgText,spec){
      if(!text){text=doc.createElementNS(svgNs,'text');text.setAttribute('data-apex-corner-number',String(turn));text.setAttribute('class','apex-corner-number');const cx=parseFloat(marker.getAttribute('cx')),cy=parseFloat(marker.getAttribute('cy'));if(Number.isFinite(cx))text.setAttribute('x',svgNum(cx+7));if(Number.isFinite(cy))text.setAttribute('y',svgNum(cy-7));group.appendChild(text)}
      text.textContent=`T${turn}`;
    }
+   apexAddSvgStructureLegend(root);
    apexWriteCircuitMetadata(doc,root,spec);
    apexSvgApplyUniversalSchema(root);
    root.setAttribute('data-apex-export','COMPLETE_CIRCUIT_V5');root.setAttribute('data-apex-export-version','v5.230.62.8.6.7.6');root.setAttribute('data-apex-library-version','6');root.setAttribute('data-apex-metadata-version','2');
@@ -1738,6 +1739,26 @@ function apexPitDividerAds(work,pn){
  if(!work)return [];
  return work.dividerAds??=Array.from({length:Math.max(0,Math.floor((work.end-work.start-24)/36)+1)},(_,i)=>apexPitPointAtS(work.start+12+i*36,pn));
 }
+function apexAddSvgStructureLegend(root,{activeFerris=false}={}){
+ const library=root.querySelector('#APEX_ELEMENT_LIBRARY');
+ for(const el of library?.querySelectorAll('[data-apex-height]')||[]){
+   if(!['building','pit-building','grandstand','tower','tunnel-portal','race-tunnel','pedestrian-bridge'].includes(el.getAttribute('data-apex-role')))continue;
+   const label=el.parentElement.querySelector('.lib-label'),height=el.getAttribute('data-apex-height');
+   if(label&&!label.hasAttribute('data-apex-height-label')){
+     label.setAttribute('data-apex-height-label','true');
+     label.textContent=label.textContent.trim()+' · H '+height+' m';
+   }
+ }
+ for(const circle of (activeFerris?root:library)?.querySelectorAll('circle[data-apex-role="ferris"]')||[]){
+   if(circle.nextElementSibling?.hasAttribute('data-apex-ferris-axis'))continue;
+   const doc=root.ownerDocument,group=doc.createElementNS(root.namespaceURI,'g'),axis=doc.createElementNS(root.namespaceURI,'line');
+   const x=+circle.getAttribute('cx'),y=+circle.getAttribute('cy'),r=+circle.getAttribute('r');
+   const attrs={x1:x-r,y1:y,x2:x+r,y2:y,stroke:'#eef3f6','stroke-width':r*.09,'data-apex-ferris-axis':'true'};
+   if(circle.hasAttribute('transform'))attrs.transform=circle.getAttribute('transform');
+   for(const [key,value] of Object.entries(attrs))axis.setAttribute(key,value);
+   circle.before(group);group.append(circle,axis);
+ }
+}
 function apexAddBaseSvgPitAndGrid(doc,ctx,spec,pitNetwork){
  const root=doc.documentElement,ns=root.namespaceURI,n=(v)=>svgNum(v,3);
  const add=(parent,tag,attrs={},label='')=>{
@@ -1906,6 +1927,7 @@ async function importEditableCircuitSvgText(text,spec,options={}){
      drivableArea=apexBaseDrivableArea(doc,ctx,spec,drivableEls,[edgeLeftEls[0],edgeRightEls[0]],pitNetwork,drivableArea);
      if(options.reference&&!options.authoredMadrid)apexApplyMadridSvgStyle(rootDoc,options.reference,ctx);
      apexAddBaseSvgPitAndGrid(doc,ctx,spec,pitNetwork);
+     apexAddSvgStructureLegend(rootDoc);
      if(!racingLineElement){
        const line=apexRuntimeIdealRacingLineSvg(ctx);
        if(line){

@@ -8,10 +8,14 @@ const crypto=require('node:crypto');
 const base=p.resolve(__dirname,'..');
 const manifest=JSON.parse(fs.readFileSync(p.join(base,'circuits/manifest.json'),'utf8'));
 const entry=manifest.circuits['14-spain'];
-assert.equal(entry.svg,'svg/apex26_14-madrid-spain_2026-11-06.svg');
+assert.equal(entry.svg,'svg/apex26_14-madrid-spain_2026-11-06-boxes.svg');
+const current=fs.readFileSync(p.join(base,'circuits',entry.svg),'utf8');
+assert.equal((current.match(/data-apex-role="distance-board"/g)||[]).length,72);
+for(const id of ['APEX_PIT_WORK_AREA','APEX_PIT_DIVIDER','APEX_PIT_SERVICE','APEX_PIT_GARAGES','APEX_START_GRID'])assert.ok(current.includes('id="'+id+'"'));
+assert.equal((current.match(/data-apex-ferris-axis="true"/g)||[]).length,2);
 assert.equal(entry.exactSvg,true);
-assert.equal(crypto.createHash('sha256').update(fs.readFileSync(p.join(base,'circuits',entry.svg))).digest('hex'),'0e580eaff612b068169465f01978a362a09663712b74cbfea9146f51f034da76');
-assert.equal(entry.sourceFileName,'Texto pegado(6).txt');
+assert.equal(crypto.createHash('sha256').update(fs.readFileSync(p.join(base,'circuits',entry.previousEditionSvg))).digest('hex'),'0e580eaff612b068169465f01978a362a09663712b74cbfea9146f51f034da76');
+assert.equal(entry.sourceFileName,p.basename(entry.svg));
 assert.equal(entry.json,'json/apex26_14-madrid-spain_2026-10-29.json');
 const cfg=JSON.parse(fs.readFileSync(p.join(base,'circuits',entry.json),'utf8'));
 assert.equal(cfg.schema,'APEX_CIRCUIT_JSON_V1');
@@ -28,12 +32,13 @@ for(let i=1;i<monumental.profile.length;i++)assert.ok(monumental.profile[i][0]>m
 const old=fs.readFileSync(p.join(base,'parts/part-023.txt'),'utf8');
 assert.ok(old.includes('function apexAuthoredBankAt(s)'),'Banking engine missing');
 
-assert.equal(entry.previousEditionSvg,'svg/apex26_14-madrid-spain_2026-11-03.svg');
+assert.equal(entry.previousEditionSvg,'svg/apex26_14-madrid-spain_2026-11-06.svg');
+const edition16='svg/apex26_14-madrid-spain_2026-11-03.svg';
 assert.equal(entry.editionDate,'2026-11-06');
 assert.ok(fs.existsSync(p.join(base,'circuits',entry.previousEditionSvg)),'Previous (16) edition must be kept');
 assert.equal(entry.basePreserved,true);
 assert.notEqual(entry.svg,entry.previousSvg);
-const svg=fs.readFileSync(p.join(base,'circuits',entry.previousEditionSvg),'utf8');
+const svg=fs.readFileSync(p.join(base,'circuits',edition16),'utf8');
 const count=role=>(svg.match(new RegExp('data-apex-role="'+role+'"','g'))||[]).length;
 assert.match(svg,/<svg\b/);
 assert.match(svg,/<\/svg>\s*$/);
@@ -43,7 +48,7 @@ assert.ok(count('runoff-asphalt')>=18,'Authored asphalt runoff zones missing');
 assert.equal(count('distance-board'),38,'Edition 16 has 34 active signs and 4 library templates');
 assert.ok(svg.includes('data-apex-brake-boards-authoritative="true"'),'Edited distance boards must override procedural generation');
 const stripPitMarks=source=>source.replace(/^ *<line id="pit_speed_limit_(?:start|end)"[^\n]*\n/gm,'').replace(/^ *<g id="pit_speed_limit_legend"[^\n]*\n(?:[^\n]*\n){2} *<\/g>\n/m,'');
-for(const file of [entry.previousEditionSvg,'svg/apex26_14-madrid-spain.svg']){
+for(const file of [edition16,'svg/apex26_14-madrid-spain.svg']){
   const raw=fs.readFileSync(p.join(base,'circuits',file),'utf8');
   for(const role of ['pit-speed-limit-start','pit-speed-limit-end']){
     const matching=raw.split('\n').filter(line=>line.includes(`data-apex-role="${role}"`));
