@@ -1553,6 +1553,63 @@ function apexAuthoredBankAt(s){
  // Closely spaced or overlapping regions blend rather than switching abruptly.
  return total/Math.max(1,weight)*Math.PI/180;
 }
+const APEX_MADRID_SVG_TEMPLATE='circuits/svg/apex26_14-madrid-spain_2026-11-06.svg';
+let apexBaseSvgTemplatePromise;
+function apexBaseSvgTemplate(){
+ return apexBaseSvgTemplatePromise??=fetch(APEX_MADRID_SVG_TEMPLATE).then(response=>{
+   if(!response.ok)throw Error('SVG Madrid: '+response.status);
+   return response.text();
+ }).then(text=>({text,root:new DOMParser().parseFromString(text,'image/svg+xml').documentElement}))
+ .catch(error=>{apexBaseSvgTemplatePromise=null;console.warn('APEX: plantilla SVG no disponible',error);return null});
+}
+function apexApplyMadridSvgStyle(root,reference,ctx){
+ const styles=new Map(),properties=['fill','fill-opacity','stroke','stroke-opacity','stroke-width','stroke-dasharray','stroke-linecap','stroke-linejoin','vector-effect','opacity'];
+ for(const el of reference.querySelectorAll('[data-apex-role]')){
+   if(el.closest('#APEX_ELEMENT_LIBRARY,[style*="visibility: hidden"]'))continue;
+   const key=el.localName+':'+el.getAttribute('data-apex-role');
+   if(!styles.has(key))styles.set(key,el);
+ }
+ for(const el of root.querySelectorAll('[data-apex-role]')){
+   if(el.closest('#APEX_ELEMENT_LIBRARY'))continue;
+   const role=el.getAttribute('data-apex-role'),ref=styles.get(el.localName+':'+role);
+   if(!ref&&el.localName==='polygon'){
+     const line=styles.get('line:'+role),stroke=line&&(line.style.stroke||line.getAttribute('stroke'));
+     if(stroke)el.style.fill=stroke;
+   }
+   if(!ref)continue;
+   // Preserve the colour/material of authored runoff and the circuit's kerb palette.
+   for(const prop of properties){
+     if((prop==='fill'&&role.startsWith('runoff-'))||(prop==='stroke'&&role.startsWith('curb-')))continue;
+     let value=ref.style.getPropertyValue(prop)||ref.getAttribute(prop);
+     if(!value)continue;
+     const nonScaling=(ref.style.vectorEffect||ref.getAttribute('vector-effect'))==='non-scaling-stroke';
+     if(!nonScaling&&(prop==='stroke-width'||prop==='stroke-dasharray'))value=value.replace(/[\d.]+(?:px)?/g,num=>svgNum(parseFloat(num)/ctx.scale,3));
+     el.style.setProperty(prop,value);
+   }
+ }
+ for(const [selector,size,weight,fill,stroke,width] of [
+   ['[data-apex-corner-label],[data-apex-corner-number]',14,800,'#fff','#111',3],
+   ['[data-apex-board-label]',4.6,900,'#111','#fff',.8]
+ ]){
+   for(const label of root.querySelectorAll(selector)){
+     if(label.closest('#APEX_ELEMENT_LIBRARY'))continue;
+     label.style.font=`${weight} ${svgNum(size/ctx.scale,3)}px system-ui, sans-serif`;
+     label.style.fill=fill;label.style.stroke=stroke;
+     label.style.strokeWidth=svgNum(width/ctx.scale,3);label.style.paintOrder='stroke';
+   }
+ }
+ const existing=root.querySelector('#APEX_ELEMENT_LIBRARY'),source=reference.querySelector('#APEX_ELEMENT_LIBRARY');
+ if(!existing||!source)return;
+ const [x,y,w,h]=(root.getAttribute('viewBox')||'').split(/[ ,]+/).map(Number);
+ const zone=source.querySelector('#APEX_ELEMENT_LIBRARY_ZONE'),lx=Number(zone?.getAttribute('x')),ly=Number(zone?.getAttribute('y')),lw=Number(zone?.getAttribute('width')),lh=Number(zone?.getAttribute('height'));
+ if(![x,y,w,h,lx,ly,lw,lh].every(Number.isFinite)||!(w>0&&h>0&&lw>0&&lh>0))return;
+ const library=root.ownerDocument.importNode(source,true),scale=h/(lh+82),gap=h*.025;
+ library.setAttribute('transform',`translate(${x+w+gap-lx*scale} ${y-ly*scale}) scale(${scale})`);
+ existing.replaceWith(library);
+ root.setAttribute('viewBox',[x,y,w+gap*2+lw*scale,h].join(' '));
+ root.setAttribute('data-apex-library-version',library.getAttribute('data-apex-library-version'));
+ root.removeAttribute('data-apex-library-outside-viewbox');
+}
 function apexPrepareBaseSvg(root){
  const group=(id,title,nodes,parent=root)=>{
    if(!nodes.length)return null;
@@ -1606,27 +1663,33 @@ function apexAddBaseSvgPitAndGrid(doc,ctx,spec,pitNetwork){
        }
      }
    }
-   const length=pitNetwork.primaryLength;
+   const length=pitNetwork.primaryLength,work=apexPitServiceLayout(pitNetwork,cfg);
+   if(!work)return;
+   const apron=layer('APEX_PIT_WORK_AREA','Zona de trabajo de boxes');
+   root.insertBefore(apron,root.querySelector('#track_geometry')||boxes);
+   const side=Math.sign(work.offset),edge=(outer)=>Array.from({length:Math.ceil((work.end-work.start)/3)+1},(_,i)=>{
+     const s=Math.min(work.end,work.start+i*3),q=apexPitPointAtS(s,pitNetwork);
+     const inner=Math.abs(work.offset)-1.8;
+     return frame(q,0,side*(inner+(outer?apexPitWorkWidthAt(work,s):0))).map(n).join(',');
+   });
+   add(apron,'polygon',{points:[...edge(false),...edge(true).reverse()].join(' '),fill:'#454d56',stroke:'#dce5ed','stroke-width':n(.22/ctx.scale)});
+   add(apron,'polyline',{points:edge(false).join(' '),fill:'none',stroke:'#dce5ed','stroke-width':n(.23/ctx.scale),'stroke-dasharray':`${n(2/ctx.scale)} ${n(1.4/ctx.scale)}`});
    slots.forEach((slot,index)=>{
      const pitS=slot.pitS*length/cfg.totalLengthM;
      const run=primary.find(r=>pitS<=r.startS+r.length);
      if(!run||pitS<8||pitS>length-8)return;
-     const i=run.points.findIndex(p=>p.pitS>=pitS);
-     if(i<1)return;
-     const a=run.points[i-1],b=run.points[i],d=b.pitS-a.pitS,t=(pitS-a.pitS)/d;
-     if(!(d>0))return;
-     const tx=(b.x-a.x)/d,tz=(b.z-a.z)/d,q={x:lerp(a.x,b.x,t),z:lerp(a.z,b.z,t),tx,tz,nx:-tz,nz:tx};
+     const lane=apexPitPointAtS(pitS,pitNetwork);
+     if(!lane)return;
+     const {tx,tz}=lane,q={...lane,x:lane.x+lane.nx*work.offset,z:lane.z+lane.nz*work.offset};
      const team=slot.teamAssignment||teamKeys[index],attrs={'data-apex-team':team,'data-apex-quality':slot.status||'MODELED_POSITION'};
-     const box=add(boxes,'g',{...attrs,id:'apex_pit_'+slot.id,'data-apex-pit-slot':slot.id,'data-apex-pit-s':n(pitS)},'Cambio de neumáticos · '+team);
+     const box=add(boxes,'g',{...attrs,id:'apex_pit_'+slot.id,'data-apex-pit-slot':slot.id,'data-apex-pit-s':n(pitS),'data-apex-pit-lateral-m':n(work.offset)},'Cambio de neumáticos · '+team);
      mark(box,q,6,2.7,'none','#ffe16a');
      mark(box,{...q,x:q.x+tx*2.7,z:q.z+tz*2.7},.32,2.7,'#ffe16a','none');
      const center=frame(q,0,0);
      add(box,'circle',{cx:n(center[0]),cy:n(center[1]),r:n(.36/ctx.scale),fill:'#ffe16a'});
-     const road=nearestTrackState(q.x,q.z,null,{allowGlobal:true});
-     const side=road&&(road.x-q.x)*q.nx+(road.z-q.z)*q.nz>0?-1:1;
      for(let car=1;car<=2;car++){
        const garage=add(garages,'g',{...attrs,id:'apex_garage_'+slot.id+'_'+car,'data-apex-car':car,'data-apex-quality':'PROVISIONAL_POSITION'},'Garaje · '+team+' · coche '+car);
-       let pose={...q,x:q.x+q.nx*side*(run.width/2+8)+q.tx*(car-1.5)*3.6,z:q.z+q.nz*side*(run.width/2+8)+q.tz*(car-1.5)*3.6,
+       let pose={...q,x:q.x+q.nx*side*8+q.tx*(car-1.5)*3.6,z:q.z+q.nz*side*8+q.tz*(car-1.5)*3.6,
          tx:-q.nx*side,tz:-q.nz*side,nx:tx*side,nz:tz*side};
        if(building){
          const {x,y,w,h,el}=building,u=(index*2+car-.5)/(slots.length*2),long=w>=h;
@@ -1702,6 +1765,7 @@ async function importEditableCircuitSvgText(text,spec,options={}){
        racingLine=racingLineElement?apexSvgElementWorldRunsExact(ctx,racingLineElement,4).flat().filter(p=>Array.isArray(p)&&p.length>=2&&p.every(Number.isFinite)):[]; 
    if(options.base){
      trackData.timingData=timingData;
+     if(options.reference&&!options.authoredMadrid)apexApplyMadridSvgStyle(rootDoc,options.reference,ctx);
      apexAddBaseSvgPitAndGrid(doc,ctx,spec,pitNetwork);
      if(!racingLineElement){
        const line=apexRuntimeIdealRacingLineSvg(ctx);
@@ -1709,6 +1773,9 @@ async function importEditableCircuitSvgText(text,spec,options={}){
          const fragment=new DOMParser().parseFromString(`<svg xmlns="${rootDoc.namespaceURI}">${line}</svg>`,'image/svg+xml');
          const group=doc.importNode(fragment.documentElement.firstElementChild,true);
          group.insertBefore(doc.createElementNS(rootDoc.namespaceURI,'title'),group.firstChild).textContent='Trazada ideal';
+         const path=group.querySelector('path');
+         path.setAttribute('stroke-width',svgNum(2.1/ctx.scale,3));
+         path.setAttribute('stroke-dasharray',`${svgNum(9/ctx.scale,3)} ${svgNum(7/ctx.scale,3)}`);
          (rootDoc.querySelector('#track_geometry')||rootDoc).append(group);
        }
      }
@@ -3351,6 +3418,7 @@ function apexApplyPitLaneJsonProfile(){
    const runtimePitS=toRuntimeS(slot.pitS),q=apexPitPointAtS(runtimePitS);
    return {...apexCloneJson(slot),runtimePitS,centerX:q?q.x:null,centerZ:q?q.z:null,centerY:q?q.y:(Number.isFinite(+slot.elevationM)?+slot.elevationM:null)};
  }):[];
+ pn.serviceLayout=null;apexPitServiceLayout(pn,cfg);
  trackData.pitLaneProfile=cfg;return true;
 }
 function apexMigratePitNetworkV2(pn){

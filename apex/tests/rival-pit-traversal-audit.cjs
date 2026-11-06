@@ -19,7 +19,7 @@ const rv={team:'A',s:0,lat:0,speed:12,total:0,driveNetwork:'TRACK',tyres:{compou
 let nInstall=0,nLap=0,clock=0;
 const ctx={
  raceT:0,player:{},rivals:[rv],trackData:{km:1},currentSession:'race',
- apexPitRoutePlan:()=>plan,apexPitBoxForCar:()=>({pitS:55,slotId:'A'}),
+ apexPitRoutePlan:()=>plan,apexPitBoxForCar:()=>({pitS:55,offset:4.8,slotId:'A'}),
  envProfile:()=>({half:5}),apexPitSafeSpeed:()=>18,apexPitPointAtS:p=>({x:p,z:0,y:0,tx:1,tz:0,nx:0,nz:1,pitS:p}),
  renderRibbonFrameAt:s=>({x:s*(100/120),z:0,tx:1,tz:0,nx:0,nz:1}),
  trackSurfacePoseAt:(s)=>({x:s*(100/120),z:0,y:0}),
@@ -29,17 +29,19 @@ const ctx={
  apexPitServiceExit:(car,st,now)=>{st.exitedAt=now;},
  apexTyreStep:()=>{},updateRivalLapTiming:()=>nLap++
 };vm.createContext(ctx);
-vm.runInContext(fn('rivalWorld')+'\n'+fn('apexRivalPitLeadGap')+'\n'+fn('apexRivalPitBoxOccupied')+'\n'+fn('apexRivalPitDrive'),ctx);
-let prevTotal=0,completed=false;
+vm.runInContext(fn('rivalWorld')+'\n'+fn('apexRivalPitLeadGap')+'\n'+fn('apexRivalPitBoxOccupied')+'\n'+fn('apexRivalPitDrive')+'\n'+fn('apexPitServiceOffset'),ctx);
+let prevTotal=0,completed=false,servedAside=false;
 for(let i=0;i<1300;i++){
  clock+=.1;ctx.raceT=clock;
  assert.equal(ctx.apexRivalPitDrive(rv,.1,L),true);
  assert(Number.isFinite(rv.s)&&Number.isFinite(rv.total)&&Number.isFinite(rv.speed));
  assert(rv.total>=prevTotal-1e-8,'progress regressed');
  assert(rv.speed<=18+1e-8,'pit speed');
+ if(rv.pitStop.phase==='SERVICE')servedAside=ctx.rivalWorld(rv).z===4.8;
  prevTotal=rv.total;
  if(rv.pitStop.phase==='DONE'){completed=true;break;}
 }
+assert(servedAside,'rival must stop in the work lane');
 assert(completed,'pit roundtrip did not complete');
 assert.equal(nInstall,1,'tyres installed once');
 assert.equal(rv.tyres.compound,'HARD');
@@ -52,8 +54,8 @@ const follower={driveNetwork:'PIT',pitS:30,team:'B'};
 ctx.rivals=[leader,follower];
 assert.equal(ctx.apexRivalPitLeadGap(follower,plan),15);
 assert.equal(ctx.apexRivalPitLeadGap(leader,plan),Infinity);
-assert.equal(ctx.apexRivalPitBoxOccupied(follower,plan,{pitS:45}),true);
+assert.equal(ctx.apexRivalPitBoxOccupied(follower,plan,{pitS:45,offset:0}),true);
 leader.pitS=80;
-assert.equal(ctx.apexRivalPitBoxOccupied(follower,plan,{pitS:45}),false);
+assert.equal(ctx.apexRivalPitBoxOccupied(follower,plan,{pitS:45,offset:0}),false);
 console.log('8D.1 two-rival pit spacing and box occupancy guards passed');
 console.log('8D.1 synthetic rival pit traversal passed; real-circuit validation pending');

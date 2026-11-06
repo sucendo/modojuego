@@ -23,7 +23,7 @@ window.__apexPitAudit={
   return {available:true,version:APP_VERSION,dir,rivals:rivals.length,plan:{entryTrackS:plan.entryTrackS,exitTrackS:plan.exitTrackS,routeLength:plan.routeLength,speedKph:plan.speedKph,box},start:{x:player.x,z:player.z,total:player.total,lap:player.lap},weather};
  },
  setDistance(p){if(typeof apexRaceSelectPercentage==='function')apexRaceSelectPercentage(p)},
- status(){return {paused,mode,t:raceT,phase:player.pitStop?.phase||null,pit:apexPitSnapshot(player),tyres:apexTyreSnapshot(player),x:player.x,z:player.z,total:player.total,lap:player.lap,speed:player.speed,network:player.driveNetwork,finite:physicsFinite(),faults:player.physicsFaults||0,driving:demoMode?'AUTO':assistMode?'ASSISTED':'MANUAL',hud:pitStopHudStatus(),boxAhead:player.pitStop?.boxAhead,pitDistance:player.pitState?.dist,lastBoundary:player.lastDrivableBoundaryHit,lastWall:player.autoLastWallHit,profile:renderProfilerSnapshot(),performance:apexPerformanceSummary()};},
+ status(){return {paused,mode,t:raceT,phase:player.pitStop?.phase||null,pit:apexPitSnapshot(player),tyres:apexTyreSnapshot(player),x:player.x,z:player.z,total:player.total,lap:player.lap,speed:player.speed,network:player.driveNetwork,finite:physicsFinite(),faults:player.physicsFaults||0,driving:demoMode?'AUTO':assistMode?'ASSISTED':'MANUAL',hud:pitStopHudStatus(),boxAhead:player.pitStop?.boxAhead,pitDistance:player.pitState?.dist,pitLateral:player.pitState?.lat,pitWidth:player.pitState?.width,lastBoundary:player.lastDrivableBoundaryHit,lastWall:player.autoLastWallHit,profile:renderProfilerSnapshot(),performance:apexPerformanceSummary()};},
  request(){requestPitStop();return this.status()},
  async run(seconds=180){
   const samples=[],phases=[],start=this.status(),L=trackData.km*1000,finish=apexRaceTimingGeometry(trackData.spec,player.laps).finish;
@@ -47,7 +47,7 @@ window.__apexPitAudit={
  manualFixture(device){
   const plan=apexPitRoutePlan(),box=apexPitBoxForCar(plan,player),q=apexPitPointAtS(box.pitS-plan.dir);
   setAutoDriveMode(0,false);apexReleaseInputs();gyro.enabled=device==='gyro';gyro.steer=0;gyro.throttle=1;gyro.brake=0;gyro.last=performance.now();
-  player.x=q.x;player.z=q.z;player.heading=Math.atan2(q.tx*plan.dir,q.tz*plan.dir);player.vx=0;player.vz=0;player.speed=0;player.yawRate=0;player.driveNetwork='PIT';player.pitIndex=null;
+  player.x=q.x+q.nx*box.offset;player.z=q.z+q.nz*box.offset;player.heading=Math.atan2(q.tx*plan.dir,q.tz*plan.dir);player.vx=0;player.vz=0;player.speed=0;player.yawRate=0;player.driveNetwork='PIT';player.pitIndex=null;
   syncPlayerTrack();player.classificationS=apexPlayerClassificationS();player.progressS=player.classificationS;player.lastGood=snapshotPhysics();
   apexPitSelectCompound(player,'HARD');requestPitStop();return this.status();
  },

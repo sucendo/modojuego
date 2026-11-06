@@ -77,7 +77,7 @@ function apexUnifiedSurfaceAtWorld(x,z,opts=null){
  }
  let zone='TRACK',kind='ASPHALT',grip=1,steerGrip=1,driveGrip=1;
  const set=(z0,k,g,sg,dg)=>{zone=z0;kind=k;grip=g;steerGrip=sg;driveGrip=dg;};
- if(driveNetwork==='PIT'&&pit&&pit.dist<=pit.width*.58+.35){
+ if(driveNetwork==='PIT'&&pit&&(pit.dist<=pit.width*.58+.35||apexPitWorkAreaContains(pit))){
   set('PIT','ASPHALT',.96,.96,.97);
  }else if(apexAuthoredCurbMesh()&&window.ApexSvgCurbs.contains(apexAuthoredCurbMesh(),x,z)){
   set('KERB','KERB',.91,.88,.91);
@@ -717,15 +717,8 @@ async function loadTrack(spec){
  if(embeddedBaseSvg){
    let baseGeom=readBaseTrackSvg(spec.dir);
    if(!baseGeom){
-     let source=embeddedBaseSvg,authoredMadrid=false;
-     if(spec.dir==='14-spain'){
-       try{
-         const response=await fetch('circuits/svg/apex26_14-madrid-spain_2026-11-06.svg');
-         if(!response.ok)throw Error('SVG Madrid: '+response.status);
-         source=await response.text();authoredMadrid=true;
-       }catch(e){console.warn('APEX: se usa el SVG integrado de Madrid',e)}
-     }
-     try{await importEditableCircuitSvgText(source,spec,{persist:false,base:true,authoredMadrid})}
+     const template=await apexBaseSvgTemplate(),authoredMadrid=!!template&&spec.dir==='14-spain',source=authoredMadrid?template.text:embeddedBaseSvg;
+     try{await importEditableCircuitSvgText(source,spec,{persist:false,base:true,authoredMadrid,reference:template?.root})}
      catch(e){
        if(!authoredMadrid)throw e;
        console.warn('APEX: se usa el SVG integrado de Madrid',e);
@@ -5198,10 +5191,32 @@ function drawPitLaneLineOnSegment(a,b,cam,pitch){
 
 function collectExactPitRenderItems(cam){
  const segs=apexPitSegments();if(!segs.length)return[];const out=[];
- for(const sg of segs){const dx=sg.x2-sg.x1,dz=sg.z2-sg.z1,len=Math.hypot(dx,dz)||1,nx=-dz/len,nz=dx/len,hw=(sg.width||5.9)*.5,A0=worldToCamera(sg.x1+nx*hw,sg.y1+.012,sg.z1+nz*hw,cam),A1=worldToCamera(sg.x1-nx*hw,sg.y1+.012,sg.z1-nz*hw,cam),B1=worldToCamera(sg.x2-nx*hw,sg.y2+.012,sg.z2-nz*hw,cam),B0=worldToCamera(sg.x2+nx*hw,sg.y2+.012,sg.z2+nz*hw,cam);const far=(typeof apexInspectionFullScene==='function'&&apexInspectionFullScene())?apexInspectionFarDistance():720;if((A0.z<.45&&A1.z<.45&&B0.z<.45&&B1.z<.45)||(A0.z>far&&A1.z>far&&B0.z>far&&B1.z>far))continue;const poly3=clipPolyNear([A0,A1,B1,B0],.58);if(poly3.length<3)continue;const z=poly3.reduce((q,p)=>q+p.z,0)/poly3.length;out.push({kind:'pitExact',z:z-.045,data:{poly3,A0,A1,B1,B0,z}})}return out;
+ const pn=trackData.customWorld.pitNetwork,work=pn.serviceLayout,far=apexInspectionFullScene()?apexInspectionFarDistance():720;
+ const add=(A0,A1,B1,B0,color=null)=>{
+   if((A0.z<.45&&A1.z<.45&&B0.z<.45&&B1.z<.45)||(A0.z>far&&A1.z>far&&B0.z>far&&B1.z>far))return;
+   const poly3=clipPolyNear([A0,A1,B1,B0],.58);if(poly3.length<3)return;
+   const z=poly3.reduce((q,p)=>q+p.z,0)/poly3.length;
+   out.push({kind:'pitExact',z:z-.045,data:{poly3,A0,A1,B1,B0,z,color}});
+ };
+ for(const sg of segs){
+   const dx=sg.x2-sg.x1,dz=sg.z2-sg.z1,len=sg.len||1,nx=-dz/len,nz=dx/len,hw=sg.width*.5;
+   const a=lat=>worldToCamera(sg.x1+nx*lat,sg.y1+.012,sg.z1+nz*lat,cam),b=lat=>worldToCamera(sg.x2+nx*lat,sg.y2+.012,sg.z2+nz*lat,cam);
+   add(a(hw),a(-hw),b(-hw),b(hw));
+   if(work&&sg.s2>=work.start&&sg.s1<=work.end){
+     const side=Math.sign(work.offset),inner=side*(Math.abs(work.offset)-1.8);
+     const outer=s=>inner+side*apexPitWorkWidthAt(work,s);
+     add(a(inner),a(outer(sg.s1)),b(outer(sg.s2)),b(inner),'#454d56');
+   }
+ }
+ for(const slot of work?.slots||[]){
+   const q=apexPitPointAtS(slot,pn);if(!q)continue;
+   const at=(a,b)=>worldToCamera(q.x+q.tx*a+q.nx*(work.offset+b),q.y+.026,q.z+q.tz*a+q.nz*(work.offset+b),cam);
+   for(const [a,b,c,d] of [[-3,-1.35,3,-1.24],[-3,1.24,3,1.35],[2.54,-1.35,2.86,1.35]])add(at(a,b),at(a,d),at(c,d),at(c,b),'#ffe16a');
+ }
+ return out;
 }
 function drawExactPitRenderItem(item,pitch){
- const p=projectCameraPoly(item.poly3,pitch);if(!p||p.length<3)return;poly(p,'#565c62');const q0=projectLocal(item.A0.x,item.A0.y,item.A0.z,pitch),q1=projectLocal(item.A1.x,item.A1.y,item.A1.z,pitch),r0=projectLocal(item.B0.x,item.B0.y,item.B0.z,pitch),r1=projectLocal(item.B1.x,item.B1.y,item.B1.z,pitch);if(q0&&r0)drawCamLine(item.A0,item.B0,pitch,'rgba(248,249,250,.90)',Math.max(1,Math.min(2.2,(q0.scale+r0.scale)*.005)),.58);if(q1&&r1)drawCamLine(item.A1,item.B1,pitch,'rgba(248,249,250,.82)',Math.max(1,Math.min(2.2,(q1.scale+r1.scale)*.005)),.58);
+ const p=projectCameraPoly(item.poly3,pitch);if(!p||p.length<3)return;poly(p,item.color||'#565c62');if(item.color)return;const q0=projectLocal(item.A0.x,item.A0.y,item.A0.z,pitch),q1=projectLocal(item.A1.x,item.A1.y,item.A1.z,pitch),r0=projectLocal(item.B0.x,item.B0.y,item.B0.z,pitch),r1=projectLocal(item.B1.x,item.B1.y,item.B1.z,pitch);if(q0&&r0)drawCamLine(item.A0,item.B0,pitch,'rgba(248,249,250,.90)',Math.max(1,Math.min(2.2,(q0.scale+r0.scale)*.005)),.58);if(q1&&r1)drawCamLine(item.A1,item.B1,pitch,'rgba(248,249,250,.82)',Math.max(1,Math.min(2.2,(q1.scale+r1.scale)*.005)),.58);
 }
 
 function drawGridMarkings(cam,pitch){

@@ -27,6 +27,8 @@ const variants={};for(const variant of ['baseline','candidate'])variants[variant
    fs.writeFileSync(path.join(output,`${mobile?'mobile':'desktop'}-${dir}.json`),JSON.stringify({loaded,...result},null,2));await page.screenshot({path:path.join(output,`${mobile?'mobile':'desktop'}-${dir}.png`)});
    console.log(JSON.stringify({test:'pit-complete-cycle',dir,mobileEmulation:mobile,loaded,...result,samples:undefined}));
    assert.equal(result.completed,true,`${dir}: ${JSON.stringify(result.end)}`);assert.equal(result.end.tyres.compound,'HARD');assert.equal(result.end.pit.pitStops,1);assert.equal(result.end.pit.tyreSet,2);assert.equal(result.end.pit.history.length,1);
+   assert.ok(Math.abs(result.service.pitLateral)>result.service.pitWidth*.5);
+   assert.ok(Math.abs(result.service.pitLateral-loaded.plan.box.offset)<.85);
    assert.equal(result.service.tyres.front.wear,0);assert.equal(result.service.tyres.rear.wear,0);assert.ok(result.service.tyres.distance<.01);assert.ok(Math.abs(result.service.tyres.front.surfaceTemperature-80)<.1);
    assert.equal(result.end.network,'TRACK');assert.equal(result.end.faults,0);assert.ok(result.maxMove<1.2);assert.ok(result.maxProgressJump<5);assert.ok(result.maxLaneKph<=loaded.plan.speedKph+.05);
    assert.equal(result.end.lap-result.start.lap,result.finishCrossings);assert.ok(result.end.total>result.start.total);assert.ok(result.phases.some(p=>p.phase==='SERVICE'));assert.ok(result.phases.some(p=>p.phase==='EXITING'));assert.deepEqual(errors,[]);
