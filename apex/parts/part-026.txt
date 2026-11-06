@@ -3013,8 +3013,8 @@ function autoPredictiveTrafficSpeed(ahead){
 
 function autoTargetSpeed(plan,traffic,skill,bravery,diff=1){
  const perf=teamPerformance(player.teamKey),wet=apexWeatherIsWet();
- const paceFloor=currentSession==='race'?.995:.955,paceCeil=currentSession==='race'?1.055:1.05;
- const pace=clamp(Number.isFinite(player.autoPace)?player.autoPace:(currentSession==='race'?1.00:.985),paceFloor,paceCeil);
+ const paceFloor=currentSession==='race'?.995:.980,paceCeil=currentSession==='race'?1.055:1.085;
+ const pace=clamp(Number.isFinite(player.autoPace)?player.autoPace:1,paceFloor,paceCeil);
  // v5.136: exactamente el mismo envelope geométrico/físico que usan los rivales.
  // El jugador añade su memoria de riesgo local porque su coche sí integra la física completa.
  const baseline=sharedDriverTrackTargetSpeed(player.s,{perf,skill,bravery,diff,pace,riskFn:autoRiskAt,riskWeight:.095,horizon:wet?330:370,step:8,safeScale:1,decelScale:1});
@@ -3025,9 +3025,21 @@ function autoTargetSpeed(plan,traffic,skill,bravery,diff=1){
  // Centreline safety governors can over-brake a two-apex shortcut.
  // Permit a bounded uplift only on a verified, kerbed, tracked SVG chord.
  const cut=player.autoChicaneCutPlan;
- if(cut?.active&&Math.abs(cut.s-player.s)<12&&Number.isFinite(authored)){
-   const uplift=Math.min(9,baseline*.14)*clamp(apexTyreGripScale(player),.48,1);
-   return Math.min(baseline+uplift,authored*(wet?.92:.97));
+ const svgK=apexAuthoredRacingCurvatureAt(player.s),svgLat=apexAuthoredRacingOffset(player.s);
+ const confident=player.autoRacingLineSource==='SVG_AUTHORED'&&!wet&&
+   !player.autoTrafficActive&&Number.isFinite(authored)&&
+   Number.isFinite(svgK)&&Number.isFinite(svgLat)&&
+   Math.abs(player.lat-svgLat)<1.65&&
+   Math.abs((player.yawRate||0)-Math.max(0,player.speed||0)*svgK)<.30&&
+   Math.abs(player.slipAngle||0)<.075&&apexTyreGripScale(player)>.77;
+ player.autoSvgPaceCreditMps=0;
+ if(confident){
+   // Authoritative SVG may be smoother than the centreline. A bounded speed
+   // target credit is physically clipped and never grants additional grip.
+   const uplift=Math.min(cut?.active?9:6,baseline*(cut?.active?.18:.12));
+   const result=Math.min(baseline+uplift,authored*.965);
+   player.autoSvgPaceCreditMps=Math.max(0,result-baseline);
+   return result;
  }
  return Number.isFinite(authored)?Math.min(baseline,authored):baseline;
 }
@@ -3203,11 +3215,11 @@ function autoTechnicalProfile(s,horizon=112,step=5){
  // v5.120: TÉCNICA se reserva a geometrías que realmente lo necesitan. En v5.119
  // el umbral minSafe<56 activaba este modo también en curvas rápidas/medias (p.ej.
  // podía alcanzar Degner), reducía demasiado el look-ahead y volvía brusco el volante.
- let minSafe=98,maxK=0,firstTightD=999,lastSig=0,lastSigD=-999,signChanges=0,changeD=999,activeSamples=0;
+ let minSafe=98,minSafeD=999,maxK=0,firstTightD=999,lastSig=0,lastSigD=-999,signChanges=0,changeD=999,activeSamples=0;
  for(let d=4;d<=horizon;d+=step){
    const k=autoRacingCurvatureAt(s+d),a=Math.abs(k),authoredK=apexAuthoredRacingCurvatureAt(s+d),
          safe=Number.isFinite(authoredK)?apexAuthoredPhysicalCornerSpeed(s+d,authoredK):autoPhysicalCornerSpeed(s+d);
-   minSafe=Math.min(minSafe,safe);maxK=Math.max(maxK,a);
+   if(safe<minSafe){minSafe=safe;minSafeD=d;}maxK=Math.max(maxK,a);
    if((safe<36||a>.0090)&&firstTightD===999)firstTightD=d;
    if(a>.0028){
      const sig=Math.sign(k)||lastSig;activeSamples++;
@@ -3220,7 +3232,7 @@ function autoTechnicalProfile(s,horizon=112,step=5){
  const veryTight=minSafe<33&&firstTightD<55;
  const active=chicane||hairpin||veryTight;
  const severity=clamp(Math.max((36-minSafe)/20,maxK*70,chicane?.72:0,hairpin?.88:0),0,1);
- return{active,chicane,hairpin,minSafe,maxK,firstTightD,signChanges,changeD,severity,activeSamples};
+ return{active,chicane,hairpin,minSafe,minSafeD,maxK,firstTightD,signChanges,changeD,severity,activeSamples};
 }
 function autoTechnicalDriveNow(s,profile,sp){
  // v5.127: el perfil técnico sigue mirando lejos para FRENAR a tiempo, pero no debe
@@ -4475,7 +4487,7 @@ function demoDriverControl(){
  if(!player||!trackData)return {steer:0,throttle:0,brake:0,target:0,boost:false,reverse:false};
  const sp=Math.max(0,finite(player.speed,0)),env=envProfile(player.s),diff=Number.isFinite(sessionSettings.diff)?sessionSettings.diff:1;
  autoEnsureRiskMemory();
- const skill=clamp(.982+(diff-1)*.10,.965,.995),bravery=clamp(.952+(diff-1)*.10,.925,.985);
+ const skill=clamp(.989+(diff-1)*.10,.965,.999),bravery=clamp(.969+(diff-1)*.10,.935,.995);
  const recovery=autoRecoveryController(sp,env);
  if(recovery){
    const recoveryTarget=Math.max(0,finite(recovery.target,0));
@@ -4797,16 +4809,19 @@ function demoDriverControl(){
    const targetBeforeTechnical=target;
    // En v5.125 la reducción fuerte aparecía demasiado tarde al cruzar un umbral fijo.
    // Ahora la puerta lenta genera una curva de frenada continua desde bastante antes.
-   const techFactor=technical.hairpin?.95:(technical.chicane?.975:.985);
+   const techFactor=technical.hairpin?.97:(technical.chicane?.99:1.0);
    const techCap=Math.max(14.5,technical.minSafe*techFactor);
    if(Number.isFinite(technical.firstTightD)&&technical.firstTightD<150){
-     const dTech=Math.max(0,technical.firstTightD-(technical.chicane?10:7));
+     // The SLOWEST apex, rather than the first medium-curve sample, sets the
+     // true braking distance. Never brake 100m early for a later hairpin.
+     const apexD=Number.isFinite(technical.minSafeD)?technical.minSafeD:technical.firstTightD;
+     const dTech=Math.max(0,apexD-(technical.chicane?9:7));
      const techDecel=(apexWeatherIsWet()?8.7:11.8)*teamPerformance(player.teamKey).brake;
      const allowedTech=Math.sqrt(Math.max(0,techCap*techCap+2*techDecel*dTech));
      target=Math.min(target,allowedTech);
    }
-   if(technical.firstTightD<16)target=Math.min(target,techCap*1.02);
-   if(technical.changeD<30)target=Math.min(target,techCap*.99);
+   if((technical.minSafeD??technical.firstTightD)<16)target=Math.min(target,techCap*1.02);
+   if(technical.changeD<30&&(technical.minSafeD??technical.firstTightD)<38)target=Math.min(target,techCap*.99);
    if(target<targetBeforeTechnical-.02){targetReason="TECHNICAL";targetReasonDetail=technical.chicane?"CHICANE":technical.hairpin?"HAIRPIN":"TIGHT_CURVE";}
  }
  // Guard geométrico independiente de tráfico y de la memoria aprendida.
