@@ -3037,7 +3037,8 @@ function autoTargetSpeed(plan,traffic,skill,bravery,diff=1){
    // Authoritative SVG may be smoother than the centreline. A bounded speed
    // target credit is physically clipped and never grants additional grip.
    const uplift=Math.min(cut?.active?9:6,baseline*(cut?.active ? .18 : .12));
-   const result=Math.min(baseline+uplift,authored*.965);
+   const result=Math.max(Math.min(baseline,authored),
+     Math.min(baseline+uplift,authored*.985));
    player.autoSvgPaceCreditMps=Math.max(0,result-baseline);
    return result;
  }
