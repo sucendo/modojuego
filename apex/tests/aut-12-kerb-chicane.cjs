@@ -12,6 +12,7 @@ const context={Math,Number,player:{lat:3.55,heading:0,autoChicaneCutCache:null},
  trackData:{km:5.4},raceT:1,clamp,angleDiff:(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b)),
  apexWeatherIsWet:()=>wet,apexAuthoredRacingProfile:()=>({valid:true}),
  apexTyreGripScale:()=>grip,envProfile:()=>({half:6,curb}),
+ apexWallContextAtS:()=>({pos:9,neg:9}),
  apexAuthoredRacingOffset:()=>offset,apexAuthoredRacingCurvatureAt:()=>authoredK,
  curvatureAt:s=>s<48?.014:-.014,apexWallishAtS:()=>wall,autoSafeLaneLimit:()=>4.15,
  apexAuthoredRacingHeadingAt:()=>0};
