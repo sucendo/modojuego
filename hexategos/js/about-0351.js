@@ -1083,8 +1083,34 @@
 
   let previousFocus0351=null;
 
+  function expansionDiagnostics03877(overlay){
+    const api=window.HexategosExpansion03876;
+    if(!api?.stats)return;
+    const body=overlay.querySelector('.aboutBody0351');
+    if(!body)return;
+    let section=overlay.querySelector('#aboutExpansion03877');
+    if(!section){
+      section=document.createElement('section');
+      section.id='aboutExpansion03877';
+      section.style.cssText='margin:14px 0;padding:13px;border:1px solid #45667c;border-radius:9px;background:#112a3c;color:#e1f4fc';
+      const timeline=body.querySelector('.aboutTimeline0351');
+      if(timeline)body.insertBefore(section,timeline);else body.appendChild(section);
+    }
+    const st=api.stats(),cov=api.coverage?.();
+    const milestones=(st.milestones||[]).filter(Boolean).map(row=>
+      row.minute+' min: '+(row.occupiedPct==null?'sin instantánea':row.occupiedPct.toFixed(1)+' % terrestre')).join(' · ');
+    const pct=cov?.percentage!=null?cov.percentage.toFixed(1)+' %':'no disponible';
+    section.textContent='EXPANSIÓN IA · v'+st.version+
+      ' · Ocupación terrestre (instantánea de IA): '+pct+
+      ' · Colonizaciones registradas: '+Number(st.total||0).toLocaleString('es-ES')+
+      ' · Último coste del módulo: '+Number(st.lastMs||0).toFixed(2)+' ms'+
+      (milestones?' · Mediciones '+milestones:' · Mediciones a los 5, 10 y 20 min pendientes.')+
+      ' Las instantáneas pueden llevar unos segundos de retraso. No incluye el tiempo de renderizado.';
+  }
+
   function open0351(){
     const overlay=ensurePanel0351();
+    expansionDiagnostics03877(overlay);
     previousFocus0351=document.activeElement;
     overlay.classList.add('open0351');
     overlay.setAttribute('aria-hidden','false');

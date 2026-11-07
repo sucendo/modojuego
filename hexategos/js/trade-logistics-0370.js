@@ -577,8 +577,14 @@
     if(city){
       const urbanScale=.55+urbanWeight*.23;
       cap[0]+=20*urbanScale;cap[2]+=9*urbanScale;cap[3]+=17*urbanScale;cap[4]+=4*urbanScale;
-      prod[0]+=.018*urbanScale;
-      demand[0]+=.064*urbanScale;demand[2]+=.018*urbanScale;demand[3]+=.041*urbanScale;
+      // Subsistencia rural y pequeños talleres urbanos: estos NO sustituyen
+      // las explotaciones ni la manufactura especializada, y no generan
+      // productos transformados del catálogo industrial.
+      prod[0]+=.024*urbanScale;prod[3]+=.052*urbanScale;
+      // Milicia y pequeños arsenales urbanos: escala muy inferior a armas industriales.
+      // El equipo se transforma de bienes civiles y materias reales en el tick.
+      prod[4]+=.015*urbanScale;
+      demand[0]+=.050*urbanScale;demand[2]+=.018*urbanScale;demand[3]+=.029*urbanScale;
     }
     if(ind){
       cap[1]+=28*ind;cap[2]+=24*ind;cap[3]+=28*ind;cap[4]+=24*ind;
@@ -592,7 +598,9 @@
     }
     if(capital){
       cap[0]+=36;cap[1]+=20;cap[2]+=24;cap[3]+=38;cap[4]+=28;
-      demand[0]+=.125;demand[2]+=.035;demand[3]+=.082;demand[4]+=.014;
+      // La capital dispone de un mercado local básico, no de una fábrica.
+      prod[3]+=.035;
+      demand[0]+=.075;demand[2]+=.035;demand[3]+=.045;demand[4]+=.014;
     }
     if(hub){
       for(let i=0;i<5;i++)cap[i]+=8;
@@ -607,9 +615,9 @@
     // La riqueza de las casillas conquistadas forma el grueso de la producción;
     // el nodo local modula el resto. La muestra nacional es acotada.
     const mix=(v,r)=>clamp(nation?.[r]!=null?(nation[r]*.72+v*.28):v,.18,2.2);
-    prod[0]+=regional*.00072*mix(geo.food,0);
-    prod[1]+=regional*.00056*mix(geo.raw,1);
-    prod[2]+=regional*.00105*mix(geo.fuel,2);
+    prod[0]+=regional*.0075*mix(geo.food,0);
+    prod[1]+=regional*.0024*mix(geo.raw,1);
+    prod[2]+=regional*.0045*mix(geo.fuel,2);
 
     return {cap,prod,demand,city,ind,port,capital,hub,urbanWeight,geo};
   }
@@ -637,6 +645,10 @@
 
     const snap=ensureEconomySnapshot3261(false);
     const restoredPlayer=new Map(Array.isArray(restoredResources03720?.playerNodes)?restoredResources03720.playerNodes:[]);
+    // v2: inventarios exactos de los nodos de TODAS las naciones.
+    // v1 (partidas previas): conservar fallback del jugador y coberturas IA.
+    const restoredAll=new Map(Array.isArray(restoredResources03720?.allNodes)?
+      restoredResources03720.allNodes.filter(x=>Array.isArray(x)&&Number.isInteger(x[0])).map(x=>[x[0],x]):[]);
     const restoredCoverage=Array.isArray(restoredResources03720?.nationCoverage)?restoredResources03720.nationCoverage:[];
 
     geoNodeCounts0383.fill(0);
@@ -648,12 +660,17 @@
         let stock;
         if(prev&&prev.f===f&&Array.isArray(prev.stock)){
           stock=profile.cap.map((mx,i)=>clamp(Number(prev.stock[i])||0,0,mx));
+        }else if(restoredAll.has(cell)&&restoredAll.get(cell)[1]===f){
+          const saved=restoredAll.get(cell)[2];
+          stock=profile.cap.map((mx,i)=>clamp(Number(saved?.[i])||0,0,mx));
         }else if(f===0&&restoredPlayer.has(cell)){
           const saved=restoredPlayer.get(cell);
           stock=profile.cap.map((mx,i)=>clamp(Number(saved?.[i])||0,0,mx));
         }else{
           const cov=Array.isArray(restoredCoverage[f])?restoredCoverage[f]:null;
-          stock=profile.cap.map((mx,i)=>mx*clamp(Number(cov?.[i])||.56,.12,.92));
+          // Respetar el 0 auténtico. Number(0)||.56 restauraba reservas
+          // inexistentes en todas las capitales IA tras una carga.
+          stock=profile.cap.map((mx,i)=>mx*clamp(cov&&Number.isFinite(Number(cov[i]))?Number(cov[i]):.56,0,.92));
         }
         next.set(cell,{
           cell,f,kind:resourceKind03720(cell,f),stock,
@@ -785,10 +802,10 @@
       const geo=n.geo||terrainResourceProfile0382(n.cell);
       const country=strategy.nationalPotential(n.f);
       const blend=(v,r)=>clamp(country?.[r]!=null?country[r]*.72+v*.28:v,.18,2.2);
-      const urban=n.city?.018*(.55+(n.urbanWeight||0)*.23):0;
-      n.prod[0]=urban+regional*.00072*blend(geo.food,0);
-      n.prod[1]=regional*.00056*blend(geo.raw,1);
-      n.prod[2]=regional*.00105*blend(geo.fuel,2);
+      const urban=n.city?.024*(.55+(n.urbanWeight||0)*.23):0;
+      n.prod[0]=urban+regional*.0075*blend(geo.food,0);
+      n.prod[1]=regional*.0024*blend(geo.raw,1);
+      n.prod[2]=regional*.0045*blend(geo.fuel,2);
       completed++;
     }
     geoRefreshMs0384=performance.now()-t0;
@@ -821,7 +838,28 @@
         if(i===3&&n.ind)production+=.105*n.ind*industryInput*legacy;
         if(i===4&&n.ind)production+=.046*n.ind*industryInput*legacy;
         const statecraft=window.HexategosStatecraft0380;
-        if(statecraft?.resourceProductionMultiplier)production*=statecraft.resourceProductionMultiplier(n.cell,i,n.f);
+        const efficiency=statecraft?.resourceProductionMultiplier?
+          statecraft.resourceProductionMultiplier(n.cell,i,n.f):1;
+        production*=efficiency;
+        if(i===4&&n.city&&n.prod[4]>0){
+          // El material básico de reclutamiento exige materias y bienes.
+          const artisan=n.prod[4]*efficiency;
+          const roomRate=n.demand[4]+Math.max(0,n.cap[4]-n.stock[4])/Math.max(.1,dt);
+          const feasible=Math.max(0,Math.min(artisan,roomRate,
+            n.stock[1]/(.30*Math.max(.1,dt)),n.stock[3]/(.25*Math.max(.1,dt))));
+          production-=artisan-feasible;
+          n.stock[1]=Math.max(0,n.stock[1]-feasible*.30*dt);
+          n.stock[3]=Math.max(0,n.stock[3]-feasible*.25*dt);
+        }
+        if(i===3&&n.city&&n.prod[3]>0){
+          // Artesanía de subsistencia: bienes básicos, NO manufactura genérica
+          // gratuita. Necesita materia prima física del mismo nodo.
+          const artisan=n.prod[3]*efficiency;
+          const roomRate=n.demand[3]+Math.max(0,n.cap[3]-n.stock[3])/Math.max(.1,dt);
+          const feasible=Math.max(0,Math.min(artisan,roomRate,n.stock[1]/(.25*Math.max(.1,dt))));
+          production-=artisan-feasible;
+          n.stock[1]=Math.max(0,n.stock[1]-feasible*.25*dt);
+        }
         n.stock[i]=clamp(n.stock[i]+production*dt,0,n.cap[i]);
       }
       for(let i=0;i<5;i++){
@@ -2522,7 +2560,11 @@
     return {
       version:2,nextRouteId,permits:[...permits.entries()],
       resources03720:{
-        version:1,
+        version:2,
+        // Guardar inventario efectivo de todos los nodos, no solo la cobertura
+        // nacional agregada. Acotado a nodos económicos (no 500.000 hexágonos).
+        allNodes:[...resourceNodes03720.values()].map(n=>[n.cell,n.f,
+          n.stock.map(x=>Math.round((Number(x)||0)*1000)/1000)]),
         playerNodes:[...resourceNodes03720.values()].filter(n=>n.f===0).map(n=>[n.cell,n.stock.map(x=>Number(x.toFixed(3)))]),
         nationCoverage:resourceNation03720.map(s=>s?s.coverage.map(x=>Number(x.toFixed(4))):null)
       },
@@ -2753,6 +2795,29 @@
     materialSupply:(cell)=>materialSupplyDetail03721(Number(cell)),
     supplyDiagnosis:(cell)=>supplyDiagnosis03722(Number(cell)),
     combinedSupply:(cell)=>supplyPct3220(Number(cell)),
+    // Equipo militar consumido en el nodo capital. No se inventa stock
+    // ni se modifica el total agregado sin afectar al inventario físico.
+    // Lectura O(1) del almacén usado realmente por la formación militar.
+    // No confundir el agregado nacional con el stock accesible en capital.
+    recruitEquipmentAvailable03875:(f=0)=>{
+      f=Number(f);
+      if(!Number.isInteger(f)||f<0||f>=activeFactionCount3230)return 0;
+      const n=resourceNodes03720.get(capitals[f]);
+      return n&&n.f===f?Math.max(0,Number(n.stock[4])||0):0;
+    },
+    consumeRecruitEquipment03874:(f,people,perSoldier=.012)=>{
+      f=Number(f);people=Number(people);
+      if(!Number.isInteger(f)||f<0||f>=activeFactionCount3230||!Number.isFinite(people)||people<=0)return 0;
+      const n=resourceNodes03720.get(capitals[f]);
+      if(!n||n.f!==f)return 0;
+      const factor=Math.max(.0001,Number(perSoldier)||.012);
+      const trained=Math.max(0,Math.min(people,n.stock[4]/factor));
+      if(trained<=0)return 0;
+      const used=trained*factor;
+      n.stock[4]=Math.max(0,n.stock[4]-used);
+      if(resourceNation03720[f])resourceNation03720[f].stock[4]=Math.max(0,resourceNation03720[f].stock[4]-used);
+      return trained;
+    },
     resourceNode:(cell)=>{
       ensureResourceNodes03720(false);
       const n=resourceNodes03720.get(Number(cell));
@@ -2774,7 +2839,17 @@
       a=Number(a);b=Number(b);
       if(!Number.isInteger(a)||!Number.isInteger(b)||a<0||b<0||a===b)return null;
       if(!tradeRelation0370(a,b))return null;
-      rebuildRoadGraph0370(true);
+      // No forzar una reconstrucción del grafo por cada petición IA:
+      // cada reconstrucción invalidaba TODAS las rutas terrestres y podía
+      // dejarlas permanentemente en "rebuilding" en partidas grandes.
+      rebuildRoadGraph0370(false);
+      const existing=routes.find(r=>r.type==='land'&&r.status!=='closed'&&
+        ((r.a===a&&r.b===b)||(r.a===b&&r.b===a)));
+      if(existing){
+        // La reparación real se procesa con el presupuesto del tick comercial.
+        // Devolver la ruta evita invalidaciones y rutas duplicadas.
+        return existing;
+      }
       pathBudget0370=Math.max(pathBudget0370,1);
       return createLandRoute0370(a,b);
     },

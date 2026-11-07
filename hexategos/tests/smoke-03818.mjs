@@ -1,3 +1,4 @@
+import { versionAtLeast } from './version-compat.mjs';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
@@ -7,7 +8,7 @@ const systemsCode=read('js/systems-hub-03851.js');
 const html=read('index.html');
 assert.doesNotThrow(()=>new Function(scrollCode),'scroll stability script syntax');
 assert.doesNotThrow(()=>new Function(messageCode),'message script syntax');
-assert.match(html,/v0\.38\.18<\/title>/);
+assert.ok(versionAtLeast(html,'0.38.18'));
 assert.match(html,/js\/dialog-scroll-03818\.js\?v=\d+/);
 assert.match(html,/js\/ui-stable-step8-033\.js\?v=\d+/);
 assert.match(html,/js\/systems-hub-03851\.js\?v=\d+/);

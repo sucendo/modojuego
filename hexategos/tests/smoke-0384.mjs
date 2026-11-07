@@ -59,7 +59,7 @@ function caseFor(countryCount){
   assert.ok(changed<=(countryCount>=350?24:countryCount>=250?32:48),
     'updater exceeded per-cycle country-size limit');
   const first=result.nodes[0],regional=50/2;
-  assert.ok(Math.abs(first.prod[1]-regional*.00056*(1.3*.72+1.48*.28))<1e-12,
+  assert.ok(Math.abs(first.prod[1]-regional*.0024*(1.3*.72+1.48*.28))<1e-12,
     'raw material output no longer equivalent to previous model');
   return changed;
 }

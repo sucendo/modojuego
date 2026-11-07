@@ -215,6 +215,34 @@
     return candidates[0]?.c??-1;
   }
 
+  // Primer tramo viario: las capitales IA aisladas no pueden poner una
+  // segunda ciudad si el planificador exige suministro por carretera.
+  // La IA paga el mismo coste (12 oro como mínimo) que cualquier corredor,
+  // sin construir sobre territorio ajeno ni añadir temporizadores.
+  const nextCapitalRoad03772=new Float64Array(FACTIONS3230.length);
+  function tryCapitalRoad03772(f){
+    const now=campaignSeconds3230||0;
+    if(now<nextCapitalRoad03772[f])return false;
+    nextCapitalRoad03772[f]=now+65+(f%9)*4;
+    const capital=capitals[f];
+    if(!Number.isInteger(capital)||capital<0||owner6[capital]!==f)return false;
+    if(aiRoadDegree3260(capital)>0||botGold3230[f]<45)return false;
+    const L=loadLevel(MAX_GAME_LEVEL3233);
+    if(capital>=L.n)return false;
+    let target=-1,best=-Infinity;
+    for(let k=L.offsets[capital];k<L.offsets[capital+1];k++){
+      const cell=L.edgeNbr[k];
+      if(cell<0||owner6[cell]!==f||aiEnemyNeighbours3260(f,cell)>0)continue;
+      const terrain=terrainKey3250(cell);
+      if(terrain==='ice'||terrain==='highmountain')continue;
+      const potential=window.HexategosResourceStrategy0383?.priority?.(f,cell)||0;
+      const score=potential+(aiRoadDegree3260(cell)>0?.35:0)+
+        ((cell*13+f*17)%71)*.0001;
+      if(score>best){best=score;target=cell}
+    }
+    return target>=0&&buildRoadPath0375(f,capital,target,24,'conectar la capital a su territorio');
+  }
+
   function tryRepairCommunications0375(f){
     const target=isolatedStructure0375(f);if(target<0)return false;
     const source=nearestRoadSource0375(f,target);if(source<0)return false;
@@ -297,6 +325,8 @@
   botBuild3230=function(f){
     if(f<=0||f>=activeFactionCount3230||!started3230)return;
 
+    // Desbloquea la logística urbana con un tramo pagado por la propia IA.
+    if(tryCapitalRoad03772(f)){lastCivilBuild[f]=campaignSeconds3230;return}
     // Una infraestructura existente aislada tiene prioridad sobre abrir otra.
     if(tryRepairCommunications0375(f)){lastCivilBuild[f]=campaignSeconds3230;return}
     // Un tratado comercial puede generar inversión real hasta la frontera.
@@ -333,7 +363,7 @@
   };
 
   function resetState0375(){
-    nextCommerceTry.fill(0);lastCivilBuild.fill(campaignSeconds3230||0);civilStalls.fill(0);
+    nextCommerceTry.fill(0);nextCapitalRoad03772.fill(0);lastCivilBuild.fill(campaignSeconds3230||0);civilStalls.fill(0);
     lastDiplomacyService=-1e9;
   }
   const baseReset0375=resetGame3230;

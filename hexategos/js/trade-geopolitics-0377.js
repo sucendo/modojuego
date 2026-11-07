@@ -440,13 +440,26 @@
     }
     nextService.fill(0);neighborCache.clear();return true;
   }
-  function save0377(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(serialize0377()))}catch(_){}}
-  function load0377(){try{return restore0377(JSON.parse(localStorage.getItem(SAVE_KEY)||'null'))}catch(_){return restore0377(null)}}
+  function save0377(){
+    const state=serialize0377(),codec=window.HexategosSaveStorage03827;
+    if(codec?.set)return codec.set(SAVE_KEY,state);
+    try{const raw=JSON.stringify(state);localStorage.setItem(SAVE_KEY,raw);
+      return localStorage.getItem(SAVE_KEY)===raw;
+    }catch(error){console.warn('[Hexategos geopolítica comercial] Error de guardado',error);return false}
+  }
+  function load0377(){
+    try{const codec=window.HexategosSaveStorage03827;
+      return restore0377(codec?.get?codec.get(SAVE_KEY):JSON.parse(localStorage.getItem(SAVE_KEY)||'null'))
+    }catch(error){console.warn('[Hexategos geopolítica comercial] Error de carga',error);return false}
+  }
 
   const baseSave0377=saveGame3212;
-  saveGame3212=function(){const out=baseSave0377.apply(this,arguments);save0377();return out};
+  saveGame3212=function(){const out=baseSave0377.apply(this,arguments);
+    if(out===false)return false;
+    return save0377()===false?false:out};
   const baseLoad0377=loadGame3212;
-  loadGame3212=function(){const out=baseLoad0377.apply(this,arguments);load0377();return out};
+  loadGame3212=function(){const out=baseLoad0377.apply(this,arguments);
+    if(out!==false)load0377();return out};
   const baseReset0377=resetGame3230;
   resetGame3230=function(clearSave=true){
     const out=baseReset0377.apply(this,arguments);
@@ -470,7 +483,8 @@
     applyPortableFile3275=function(file){
       const data=file?.payload?.tradeGeopolitics0377||null;
       const out=basePortableApply0377.apply(this,arguments);
-      restore0377(data);save0377();return out;
+      if(out!==false){restore0377(data);save0377()}
+      return out;
     };
   }
 

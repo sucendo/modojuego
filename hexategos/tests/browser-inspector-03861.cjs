@@ -30,17 +30,24 @@ const {chromium}=require(require.resolve('playwright',{paths:[process.env.CODEX_
  assert.equal(await page.evaluate(()=>strength3212.value),'43');
  await page.evaluate(()=>{const s=document.getElementById('ctxAdvance3246');s.value='20';s.dispatchEvent(new Event('input',{bubbles:true}));});
  assert.equal(await page.evaluate(()=>advance3212.value),'20');
- await root.locator('[data-hex-section03858="studies"] > summary').click();
+ assert.equal(await root.locator('[role="tab"]').count()>=3,true);
+ assert.equal(await root.locator('#ctxActions3244').isVisible(),true);
+ assert.equal(await root.locator('#ctxDetails03817').isVisible(),false);
+ await root.locator('[data-inspect-tab03817="terrain"]').click();
+ assert.equal(await root.locator('#ctxActions3244').isVisible(),false);
+ assert.equal(await root.locator('#ctxDetails03817').isVisible(),true);
+ assert.equal(await root.locator('details').count(),0,'no accordion content under tabbed layout');
  await root.locator('[data-natural-study03834="geology"]').click();
  assert.equal(await page.evaluate(()=>HexategosProspection03831.status(capitals[0]).state),'pending');
  assert(await root.locator('[data-natural-study03834="geology"]').isDisabled());
  await page.evaluate(()=>{campaignSeconds3230+=60;HexategosWorldCore03828.step(1);HexategosHexInspector03817.refresh();});
  assert.equal(await page.evaluate(()=>HexategosProspection03831.status(capitals[0]).state),'completed');
  assert(await root.locator('[data-natural-study03834="geology"]').isDisabled());
- await root.locator('[data-hex-section03858="industry"] > summary').click();
- await page.waitForFunction(()=>document.querySelectorAll('#contextMenu3244 details[open]').length===1);
- assert.equal(await root.locator('details[open]').count(),1);
- assert.equal(await root.locator('[data-hex-section03858="studies"]').getAttribute('open'),null);
+ await root.locator('[data-inspect-tab03817="industry"]').click();
+ assert.equal(await root.locator('#ctxActions3244').isVisible(),false);
+ assert.equal(await page.evaluate(()=>HexategosHexInspector03817.current().tab),'industry');
+ await root.locator('[data-inspect-tab03817="summary"]').click();
+ assert.equal(await root.locator('#ctxActions3244').isVisible(),true);
  // Original action is still connected to the existing manager.
  await root.locator('[data-action="production0388"]').first().click();
  assert.equal(await page.locator('#modal3244').getAttribute('aria-hidden'),'false');
@@ -79,6 +86,7 @@ const {chromium}=require(require.resolve('playwright',{paths:[process.env.CODEX_
    await page.setViewportSize(size);
    await page.waitForTimeout(300);
    await page.evaluate(()=>{openContextDialog3244(cellContext3244(capitals[0]),20,60);positionContextDialog3244(20,60)});
+   await root.locator('[data-inspect-tab03817="summary"]').click();
    await page.waitForTimeout(250);
    const geometry=await root.evaluate(el=>({horizontal:el.scrollWidth>el.clientWidth+1,rect:el.getBoundingClientRect().toJSON(),
      scrollers:[...el.querySelectorAll('*')].filter(n=>/auto|scroll/.test(getComputedStyle(n).overflowY)&&n.scrollHeight>n.clientHeight+1).map(n=>n.className),
@@ -88,12 +96,12 @@ const {chromium}=require(require.resolve('playwright',{paths:[process.env.CODEX_
    assert.equal(geometry.columns,size.width<650?2:3,JSON.stringify({size,geometry}));
    assert(geometry.rect.bottom<=size.height+1,JSON.stringify(geometry));
    await page.screenshot({path:path.join(output,'hex-inspector-'+size.width+'.png')});
-   await root.locator('[data-hex-section03858="studies"]').evaluate(el=>el.open=false);
-   await page.waitForTimeout(30);
-   await root.locator('[data-hex-section03858="studies"] > summary').focus();
+   await root.locator('[data-inspect-tab03817="terrain"]').focus();
    await page.keyboard.press('Enter');
-   await page.waitForFunction(()=>document.querySelectorAll('#contextMenu3244 details[open]').length===1);
- assert.equal(await root.locator('details[open]').count(),1);
+   assert.equal(await page.evaluate(()=>HexategosHexInspector03817.current().tab),'terrain');
+   assert.equal(await root.locator('#ctxActions3244').isVisible(),false);
+   assert.equal(await root.locator('details').count(),0);
+   await root.locator('[data-inspect-tab03817="summary"]').click();
  }
  await page.setViewportSize({width:1440,height:1080});
  await page.waitForTimeout(300);
@@ -120,6 +128,7 @@ const {chromium}=require(require.resolve('playwright',{paths:[process.env.CODEX_
  // Zero force cannot start an order or change diplomacy.
  await page.evaluate(()=>{const s=document.getElementById('ctxStrength3246');s.value='0';s.dispatchEvent(new Event('input',{bubbles:true}));});
  const relationsBefore=await page.evaluate(()=>Array.from(relations3220));
+ await root.locator('[data-inspect-tab03817="summary"]').click();
  await root.locator('[data-action="send_troops"]').click();
  assert.equal(await page.evaluate(()=>uiInteractionState3244.interactionMode),'normal');
  assert.deepEqual(await page.evaluate(()=>Array.from(relations3220)),relationsBefore);
@@ -134,6 +143,6 @@ const {chromium}=require(require.resolve('playwright',{paths:[process.env.CODEX_
  });
  assert(order);assert.equal(order.advance,20);assert.equal(order.pool,129);assert.equal(order.remaining,171);
  assert.deepEqual(errors,[]);
- console.log('PASS: live game, action routing, studies pending/completed, controls, own/enemy/neutral, port, scroll retention, exclusive accordions, keyboard, desktop/390/320 layout, 145% typography, zero-force safety, real front allocation and reopening.');
+ console.log('PASS: live game, action routing, studies pending/completed, controls, own/enemy/neutral, port, scroll retention, five exclusive tabs, keyboard, desktop/390/320 layout, 145% typography, zero-force safety, real front allocation and reopening.');
  }finally{await browser.close()}
 })().catch(e=>{console.error(e);process.exitCode=1});
