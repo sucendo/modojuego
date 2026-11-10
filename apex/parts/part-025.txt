@@ -355,8 +355,10 @@ function apexTerrainFinePatch(g,ix,iz,kind){
    baseRings=base&&base.rings||[];
  for(let j=0;j<=n;j++)for(let i=0;i<=n;i++){
   const x=x0+dx*i,z=z0+dz*j,inside=baseRings.some(r=>apexPointInsideClosedContour(x,z,r));
-  const ns=nearestTrackState(x,z,null,{radius:160,allowGlobal:true,fallbackDist:155}),
-    raw=apexTerrainRawInterpolated(g,x,z),ground=apexPhase1GroundBlend(x,z,raw,ns),y=ground;
+  // La altura de la malla fina debe coincidir con la consulta del coche
+  // (apexUnifiedSurfaceAtWorld/TERRAIN), no remezclar rawVals por separado.
+  // No se toca la altura ni la física del vehículo.
+  const y=apexWorldGroundY(x,z);
   points.push({x,y,z,inside});
  }
  for(let j=0;j<n;j++)for(let i=0;i<n;i++){
