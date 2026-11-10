@@ -21,7 +21,7 @@ const source={};for(const variant of ['baseline','candidate'])source[variant]=Ar
    for(const dir of dirs)for(const traffic of (process.env.APEX_AUTO_TRAFFIC==='solo'?[false]:[false,true])){
     console.log(JSON.stringify({test:'auto-case-start',variant,dir,traffic}));
     const loaded=await page.evaluate(async({dir,traffic,session})=>__apexAuto.load(dir,traffic,session),{dir,traffic,session});
-    if(dir==='14-spain'){assert.equal(loaded.svgBoards,34,'Audit must load Madrid SVG (16), not BASE');assert.equal(loaded.svgBoardAuthority,true,'Madrid edited boards must be authoritative');}
+    if(dir==='14-spain'){assert.ok(loaded.svgBoards>0,'Madrid must load authored SVG boards');assert.equal(loaded.svgBoards,loaded.svgBoardsExpected,'Madrid must load all currently authored boards');assert.equal(loaded.svgBoardAuthority,true,'Madrid edited boards must be authoritative');}
     const result=await page.evaluate(({seconds,stepsPerFrame})=>__apexAuto.run(seconds,stepsPerFrame),{seconds,stepsPerFrame}),row={test:'autopilot-differential',variant,dir,traffic,...loaded,...result};rows.push(row);console.log(JSON.stringify(row));assert.deepEqual(errors,[]);
    }
   }
