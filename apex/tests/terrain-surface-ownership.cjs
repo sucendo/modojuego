@@ -98,7 +98,7 @@ assert.equal(audit.fine(grid,0,0,'TRACK'),fine,'Fine LOD must be cached');
 
 roadIndex.faces[0].terrainCut=false;
 assert.equal(audit.road(square),null,'Bridges and tunnels must preserve underlying terrain');
-assert.match(parts[25],/APEX_CIRCUIT_COMPILE_REV=230692/,'Old compiled meshes must be invalidated');
+assert.match(parts[25],/APEX_CIRCUIT_COMPILE_REV=230693/,'Old compiled meshes must be invalidated');
 assert.match(parts[25],/const y=apexWorldGroundY\(x,z\);/,'Fine terrain must sample the same ground height as the vehicle');
 assert.match(parts[26],/Math\.hypot\(player\.x-q\.x,player\.z-q\.z\)>trackLimit/,
  'Near-camera patch must not cover the car off the main road');
@@ -111,4 +111,4 @@ for(const gp of ['01-australia','14-spain']){
  assert.ok(fs.existsSync(path.join(root,'circuits',entry.svg)),'Missing saved SVG '+gp);
 }
 console.log(JSON.stringify({test:'terrain-surface-ownership',finePolygons:fine.length,
- coarsePolygons:coarse.length,remainingArea:sumArea(fine),cacheRev:230692,ok:true}));
+ coarsePolygons:coarse.length,remainingArea:sumArea(fine),cacheRev:230693,ok:true}));
