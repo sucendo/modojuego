@@ -38,6 +38,7 @@ jobs:
           node apex/tests/svg-ideal-racing-line.cjs > /tmp/apex-results/svg-ideal-racing-line.json
           node apex/tests/svg-curbs-audit.cjs > /tmp/apex-results/svg-curbs-palette.json
           node apex/tests/track-curve-geometry.cjs > /tmp/apex-results/track-curves.json
+          node apex/tests/circuit-extra-catalog-audit.cjs > /tmp/apex-results/extra-catalog.json
           node apex/tests/madrid-json-banking-audit.cjs > /tmp/apex-results/madrid-json-banking.json
           node apex/tests/sponsor-render-stability.cjs > /tmp/apex-results/sponsor-stability.json
           node apex/tests/urban-distance-boards.cjs > /tmp/apex-results/distance-boards.json
@@ -71,6 +72,7 @@ jobs:
           node --check apex/tests/preparation-9a-browser.cjs
           node --check apex/tests/browser-audit.cjs
           node --check apex/tests/browser-hook.js
+          node --check apex/tests/extra-circuits-browser.cjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -128,6 +130,49 @@ jobs:
           name: apex-chromium-${{ matrix.device }}
           path: /tmp/apex-results/
 
+  extra-circuit-sessions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        device: [desktop, mobile]
+        group: [first, second]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          filter: blob:none
+          sparse-checkout: apex
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned Chromium for extra circuits
+        run: |
+          npm install --prefix "$RUNNER_TEMP/apex-browser" --no-package-lock --no-save playwright@1.62.1
+          node "$RUNNER_TEMP/apex-browser/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Load all eight extra circuits in six session types
+        env:
+          PLAYWRIGHT_MODULE_PATH: ${{ runner.temp }}/apex-browser/node_modules/playwright
+          APEX_AUDIT_DEVICE: ${{ matrix.device }}
+          APEX_EXTRA_SET: ${{ matrix.group }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/apex-extra-results
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/apex-extra-results/server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid"' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8765/apex/apex.html > /dev/null; then break; fi
+            sleep 1
+          done
+          node apex/tests/extra-circuits-browser.cjs 2>&1 | tee /tmp/apex-extra-results/extra-browser.jsonl
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: apex-extra-${{ matrix.device }}-${{ matrix.group }}
+          path: /tmp/apex-extra-results/
   autopilot:
     runs-on: ubuntu-latest
     timeout-minutes: 40
