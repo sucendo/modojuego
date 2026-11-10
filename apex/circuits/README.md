@@ -1,62 +1,37 @@
 # Circuitos APEX Formula 26
 
-Esta carpeta contiene las versiones editables y progresivamente completadas de los circuitos usados por APEX Formula 26.
+Esta carpeta conserva las versiones editadas de los circuitos. El archivo `manifest.json` es la referencia usada por el botón **CARGAR GUARDADO** del editor SVG; las versiones BASE internas no se sustituyen.
 
 ## Estructura
 
-- `svg/`: geometría y elementos visuales/físicos de cada circuito.
-- `json/`: datos estructurados del circuito: altimetría, anchura, peralte, pit lane, boxes, timing, curvas, cartelería, zonas transitables y otros metadatos.
+- `svg/`: geometría y elementos visuales/físicos en formato SVG.
+- `json/`: metadatos estructurados (altimetría, peralte, neumáticos, boxes, anchura, etc.).
+- `manifest.json`: selección de la edición guardada por identificador del circuito.
 
-## Convención recomendada
+## SVG guardados vigentes · 10/11/2026
 
-Usar el mismo identificador base para el SVG y el JSON de un mismo circuito.
+| Circuito | Identificador | SVG cargable |
+| --- | --- | --- |
+| Australia · Melbourne (Albert Park) | `01-australia` | `svg/apex26_01-australia_circuito-propuesta-20261110.svg` |
+| España · Madrid (MADRING) | `14-spain` | `svg/apex26_14-spain_circuito-propuesta-20261110.svg` |
 
-Ejemplo:
+Son los dos SVG proporcionados por el usuario el 10/11/2026. Para la carga se eliminaron **exclusivamente las dos imágenes raster ocultas de referencia** en cada SVG (no aportan geometría al simulador). Las líneas, rutas, transforms, contornos, grupos, barreras y demás elementos vectoriales se han preservado.
 
-- `svg/apex26_14-spain.svg`
-- `json/apex26_14-spain.json`
+- **Madrid**: primero se carga `json/apex26_14-madrid-spain_2026-10-29.json` y después el SVG seleccionado, conservando colores de pianos y perfil de peralte. Contiene 68 carteles de distancia activos y cuatro plantillas dentro de la biblioteca.
+- **Australia**: carga su SVG con los datos BASE JSON internos. Incluye dos barreras de hormigón activas dibujadas por el usuario; las demás tipologías disponibles en la biblioteca de elementos siguen siendo plantillas, no objetos colocados.
+- Ambos usan `exactSvg: true` en el manifiesto, para respetar los elementos SVG dibujados y transformados sin regenerarlos.
+- Las versiones guardadas anteriores permanecen almacenadas y la BASE no cambia. **RESTAURAR BASE** revierte el override local.
 
-Cuando trabajemos sobre una revisión intermedia, podremos conservar temporalmente un sufijo de versión hasta validarla.
+## Uso
 
-## Madrid: versión guardada seleccionada
+1. Abrir el editor SVG y elegir **Australia** o **Madrid**.
+2. Pulsar **CARGAR GUARDADO**. El cargador consulta `manifest.json`, obtiene el SVG de `circuits/svg/` y aplica el override a ese circuito.
+3. Si se desea comparar con la versión interna, pulsar **RESTAURAR BASE**.
 
-El manifiesto `manifest.json` apunta al SVG
-`svg/apex26_14-madrid-spain_2026-11-03.svg`, obtenido de
-`apex26_14-spain_circuito_completo (16).svg` entregado el 03/11/2026.
-Es la versión que utiliza **Cargar versión guardada** desde el editor de
-Madrid. La única modificación del SVG almacenado es la adición del atributo
-de raíz `data-apex-brake-boards-authoritative="true"`, que no altera
-su dibujo, geometría ni los carteles de la edición original.
+## Pruebas
 
-El archivo contiene **34 carteles de frenada activos** y 4 plantillas en
-la biblioteca del SVG (38 elementos con role `distance-board` en total).
-La anterior edición (15) contenía **92 carteles activos**, por lo que
-esta nueva edición elimina 58. Los activos son ahora autoritativos:
-APEX no recuperará automáticamente los carteles borrados ni los
-sustituirá con series generadas. El importador respeta igualmente
-las ediciones que contengan carteles pero no el atributo, y la
-exportación conserva la autoría para permitir borrar incluso todos.
+- `node apex/tests/madrid-saved-svg.cjs`: referencia del manifiesto, edición SVG de Madrid, su JSON y conservación de ediciones previas.
+- `node apex/tests/madrid-saved-svg-browser.cjs`: integración del importador de Madrid con hidratación IndexedDB y renderizador.
+- `node apex/tests/svg-import-materials-browser.cjs`: importación de pianos y materiales SVG.
 
-El manifiesto mantiene el JSON de Madrid
-`json/apex26_14-madrid-spain_2026-10-29.json`. La carga aplica
-**primero el JSON y después el SVG (16)**, conservando los colores
-amarillo `#f2c500` y rojo `#d51f27` de los pianos, y el
-peralte progresivo de La Monumental (T12) hasta **13,4957°**.
-
-La edición anterior (15) se conserva en
-`svg/apex26_14-madrid-spain_2026-10-29.svg`; la (14), en
-`svg/apex26_14-madrid-spain_2026-10-28.svg`, y la BASE, en
-`svg/apex26_14-madrid-spain.svg`.
-
-Para probarla, elige **Madrid** en el editor SVG y pulsa
-**Cargar versión guardada**. La importación guarda el override del
-circuito mediante el flujo habitual y respeta los pianos y las
-superficies del SVG (incluidos los asfaltos coloreados). Si fuese necesario,
-**Restaurar BASE** retira el override de Madrid.
-
-Pruebas: `node apex/tests/madrid-saved-svg.cjs` valida la referencia del
-manifiesto, los pianos, escapatorias, carteles de frenada y el hash exacto del SVG del usuario.
-`node apex/tests/svg-import-materials-browser.cjs` utiliza, por defecto,
-el SVG apuntado por el manifiesto y comprueba el importador en el navegador.
-Las pruebas de integración verifican que solo aparecen 34 carteles activos,
-que no reaparecen los 58 eliminados y que el estado sobrevive una recarga.
+Las referencias históricas a ediciones de principios de noviembre ya **no** son las que carga el botón «CARGAR GUARDADO», aunque se conservan como archivos independientes.
