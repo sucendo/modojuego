@@ -6,7 +6,7 @@
   'use strict';
   const query = new URLSearchParams(window.location.search);
   const enabled = query.get('trees3d') === '1';
-  const stats = { drawn: 0, faces: 0, species: { deciduous: 0, fir: 0, palm: 0 }, deciduousProfilesDrawn: {}, firProfilesDrawn: {}, palmProfilesDrawn: {} };
+  const stats = { drawn: 0, faces: 0, species: { deciduous: 0, fir: 0, palm: 0 }, deciduousProfilesDrawn: {}, firProfilesDrawn: {}, palmProfilesDrawn: {}, lodDraws:[0,0,0],lodFaces:[0,0,0] };
   window.apexTrees3dTrialEnabled = enabled;
   window.apexTrees3dTrialInfo = function () {
     return {
@@ -17,7 +17,8 @@
       deciduousProfilesDrawn: Object.assign({}, stats.deciduousProfilesDrawn),
       firProfilesDrawn: Object.assign({}, stats.firProfilesDrawn),
       palmProfilesDrawn: Object.assign({}, stats.palmProfilesDrawn),
-      profilePhase: 4, profileCatalog: {deciduous:5,fir:4,palm:3},
+      profilePhase: 5, lodDraws:stats.lodDraws.slice(),lodFaces:stats.lodFaces.slice(),templateCacheSize:enabled?meshCache.size:0,
+      lodTransition:'Stable silhouette; secondary branches taper before LOD boundaries',profileCatalog: {deciduous:5,fir:4,palm:3},
       note: 'Counts are accumulated draw submissions, not unique trees or FPS. Compare APEX diagnostics on equal laps.'
     };
   };
@@ -70,7 +71,28 @@
         });
       }
     }
-    return { rotation: seedAngle, leaves, profile };
+    // Cache angular geometry once per identity, including the seam endpoint.
+    // The N+1 entry deliberately uses rotation+TAU as in the original renderer,
+    // preventing even floating-point differences on the final facet.
+    const unitRing=(angle,n)=>{
+      const ring=[];
+      for(let k=0;k<=n;k++){
+        const a=angle+k*TAU/n;
+        ring.push([Math.cos(a),Math.sin(a),Math.sin(3*a)]);
+      }
+      return ring;
+    };
+    const rings={};
+    for(const n of [3,4,5,6])rings[n]=unitRing(seedAngle,n);
+    for(const leaf of leaves)leaf.ring=unitRing(leaf.rotation,4);
+    const firRings=[];
+    for(let t=0;t<4;t++)firRings.push(unitRing(seedAngle+t*.19,6));
+    const frondCount=profile.frondCount||8,palmVectors=[];
+    for(let k=0;k<frondCount;k++){
+      const a=seedAngle+TAU*k/frondCount,dx=Math.cos(a),dz=Math.sin(a);
+      palmVectors.push([dx,dz,-dz,dx,Math.sin((k+1)*2.17+seedAngle)*.035]);
+    }
+    return {rotation:seedAngle,leaves,profile,rings,firRings,palmVectors};
   }
   const meshCache = new Map();
   function templateFor(species, seed) {
@@ -84,10 +106,10 @@
 
   function drawTube(c, from, to, baseRadius, tipRadius, tint, sides) {
     const { P, quad, pitch } = c;
-    const offset = c.rotation || 0;
-    for (let k = 0; k < sides; k++) {
-      const a = offset + k * TAU / sides, b = offset + (k + 1) * TAU / sides;
-      const d0x = Math.cos(a), d0z = Math.sin(a), d1x = Math.cos(b), d1z = Math.sin(b);
+    const ring=c.treeTemplate.rings[sides];
+    for(let k=0;k<sides;k++){
+      const a=ring[k],b=ring[k+1];
+      const d0x=a[0],d0z=a[1],d1x=b[0],d1z=b[1];
       quad(
         P(from.x + baseRadius * d0x, from.z + baseRadius * d0z, from.y),
         P(from.x + baseRadius * d1x, from.z + baseRadius * d1z, from.y),
@@ -99,15 +121,15 @@
     }
   }
 
-  function drawLeafCluster(c, cx, cz, cy, rx, rz, ry, rotation, color) {
+  function drawLeafCluster(c, cx, cz, cy, rx, rz, ry, rotation, color, leafRing) {
     const { P, poly, pitch } = c, N = 4;
     // Eight triangular facets around two poles, true volume on all sides.
     const top = P(cx + rx * .10, cz - rz * .11, cy + ry);
     const bottom = P(cx - rx * .07, cz + rz * .06, cy - ry * .86);
     for (let k = 0; k < N; k++) {
-      const a = rotation + k * TAU / N, b = rotation + (k + 1) * TAU / N;
-      const A = P(cx + rx * Math.cos(a), cz + rz * Math.sin(a), cy + .08 * ry * Math.sin(3*a));
-      const B = P(cx + rx * Math.cos(b), cz + rz * Math.sin(b), cy + .08 * ry * Math.sin(3*b));
+      const a=leafRing[k],b=leafRing[k+1];
+      const A=P(cx+rx*a[0],cz+rz*a[1],cy+.08*ry*a[2]);
+      const B=P(cx+rx*b[0],cz+rz*b[1],cy+.08*ry*b[2]);
       poly([top, A, B], pitch, c.shade(color, (k % 2 ? 8 : -6)), .60, -.008);
       poly([bottom, B, A], pitch, c.shade(color, (k % 2 ? -10 : -17)), .60, -.008);
       stats.faces += 2;
@@ -140,15 +162,14 @@
       const base = height * (.16 + tier * .185);
       const top = height * Math.min(1.05, .64 + tier * .125);
       const r = width * tiers[tier] * density;
-      const rotation = c.rotation + tier * .19;
+      const ring=c.treeTemplate.firRings[tier];
       const x0 = leanX * base / height, z0 = leanZ * base / height;
       const x1 = leanX * top / height, z1 = leanZ * top / height;
-      for (let k = 0; k < sides; k++) {
-        const a = rotation + TAU * k / sides;
-        const b = rotation + TAU * (k + 1) / sides;
+      for(let k=0;k<sides;k++){
+        const a=ring[k],b=ring[k+1];
         c.poly([
-          P(x0 + r * Math.cos(a), z0 + r * Math.sin(a), base),
-          P(x0 + r * Math.cos(b), z0 + r * Math.sin(b), base + height * .014),
+          P(x0 + r * a[0], z0 + r * a[1], base),
+          P(x0 + r * b[0], z0 + r * b[1], base + height * .014),
           P(x1, z1, top)
         ], c.pitch,
           c.shade(foliage, -15 + tier * 6 + (k % 3) * 6 + tint),
@@ -186,10 +207,10 @@
     const tint = Math.round((profile.foliage - 1) * 28);
     const P = c.P;
     for (let k = 0; k < count; k++) {
-      const a = c.rotation + TAU * k / count;
-      const dx = Math.cos(a), dz = Math.sin(a), nx = -dz, nz = dx;
-      // Deterministic per-frond differences; not tied to camera, time or LOD.
-      const variation = Math.sin((k + 1) * 2.17 + c.rotation) * .035;
+      const direction=c.treeTemplate.palmVectors[k];
+      const dx=direction[0],dz=direction[1],nx=direction[2],nz=direction[3];
+      // Exact cached per-frond variation, independent of LOD.
+      const variation=direction[4];
       const len = width * (.73 + (k % 3) * .085) * length * (1 + variation);
       const mid = width * .40 * length;
       const midHeight = height * (.91 - drop * .27 + variation * .15);
@@ -218,27 +239,35 @@
     const height=baseH*pr.height*pr.age;
     const trunkHeight=height*(.54+Math.min(.05,Math.max(-.03,(pr.crownLift||0)*.25)));
     const leanX=pr.leanX*width, leanZ=pr.leanZ*width;
+    // Preserve the same 6-sided trunk in all LODs, with no silhouette pop.
     drawTube(c,{x:0,z:0,y:0},{x:leanX,z:leanZ,y:trunkHeight},
       Math.max(.13,width*.050*pr.trunk),
-      Math.max(.075,width*.027*pr.trunk),
-      trunk,detail===2?4:6);
-    if(detail<=1) {
-      const branchCount=detail===0?Math.min(4,template.leaves.length-1):Math.min(2,template.leaves.length-1);
-      for(let j=1;j<=branchCount;j++){
-        const leaf=template.leaves[j];
-        drawTube(c,
-          {x:leanX*.35,z:leanZ*.35,y:trunkHeight*.68},
-          {x:leanX+leaf.x*width*.63,z:leanZ+leaf.z*width*.63,y:leaf.y*height*.90},
-          Math.max(.047,width*.018*pr.trunk),
-          Math.max(.025,width*.008*pr.trunk),
-          trunk,detail===0?4:3);
-      }
+      Math.max(.075,width*.027*pr.trunk),trunk,6);
+    // Fade secondary geometry smoothly by real camera depth, not by a
+    // discrete LOD switch. All crown clusters remain at every distance.
+    const depth=Math.max(0,Number(c.depth)||0);
+    const fade=(begin,end)=>{
+      const t=Math.max(0,Math.min(1,(end-depth)/(end-begin)));
+      return t*t*(3-2*t);
+    };
+    for(let j=1;j<=Math.min(4,template.leaves.length-1);j++){
+      const strength=j<=2?fade(350,475):fade(125,200);
+      if(strength<=.005)continue;
+      const leaf=template.leaves[j],sx=leanX*.35,sz=leanZ*.35,sy=trunkHeight*.68;
+      drawTube(c,
+        {x:sx,z:sz,y:sy},
+        {x:sx+(leanX+leaf.x*width*.63-sx)*strength,
+         z:sz+(leanZ+leaf.z*width*.63-sz)*strength,
+         y:sy+(leaf.y*height*.90-sy)*strength},
+        Math.max(.047,width*.018*pr.trunk)*strength,
+        Math.max(.025,width*.008*pr.trunk)*strength,
+        trunk,4);
     }
     for(const leaf of template.leaves){
       const tint=pr.name==='sparse-leaning'?-4:pr.name==='round-lush'?2:0;
       const color=c.shade(foliage,leaf.tint-9+tint);
       drawLeafCluster(c,leanX+leaf.x*width,leanZ+leaf.z*width,leaf.y*height,
-        leaf.rx*width,leaf.rz*width,leaf.ry*height,leaf.rotation,color);
+        leaf.rx*width,leaf.rz*width,leaf.ry*height,leaf.rotation,color,leaf.ring);
     }
   }
 
@@ -257,6 +286,8 @@
     const trunk = kind === 'palm' ? '#745638' : '#59432f';
     const foliage = it.foliage || (kind === 'fir' ? '#285f38' : '#4b8447');
     c.rotation = t.rotation;
+    c.treeTemplate=t;
+    const faceStart=stats.faces;
     if (kind === 'fir') {
       drawFir(c, height, width, trunk, foliage, t.profile);
       stats.firProfilesDrawn[t.profile.name]=(stats.firProfilesDrawn[t.profile.name]||0)+1;
@@ -271,6 +302,8 @@
     }
     stats.drawn++;
     stats.species[kind]++;
+    stats.lodDraws[detail]++;
+    stats.lodFaces[detail]+=stats.faces-faceStart;
     return true;
   };
 })();
