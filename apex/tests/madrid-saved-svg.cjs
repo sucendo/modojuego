@@ -20,7 +20,7 @@ assert.equal(crypto.createHash('sha256').update(current).digest('hex'),'c6324f90
 assert.ok(current.includes('data-apex-drivable-area-authoritative="true"'));
 assert.ok(current.includes('data-apex-brake-boards-authoritative="true"'));
 assert.ok(current.includes('viewBox="-1320 600 3400 1470"'),'Madrid full SVG must present its complete extent');
-assert.equal((current.match(/<image\\b/g)||[]).length,0,'Hidden raster source references must not be loaded into the simulator');
+assert.equal((current.match(/<image\b/g)||[]).length,0,'Hidden raster source references must not be loaded into the simulator');
 assert.equal(entry.json,'json/apex26_14-madrid-spain_2026-10-29.json');
 const cfg=JSON.parse(fs.readFileSync(p.join(base,'circuits',entry.json),'utf8'));
 assert.equal(cfg.schema,'APEX_CIRCUIT_JSON_V1');
