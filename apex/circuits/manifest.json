@@ -11,9 +11,9 @@
       "status": "edited",
       "basePreserved": true,
       "previousSvg": "svg/apex26_14-madrid-spain.svg",
-      "sourceFileName": "apex26_14-madrid-spain_2026-11-06-boxes.svg",
-      "editionDate": "2026-11-06",
-      "notes": "Edición completa con zona de trabajo y separador de boxes, carteles emparejados, alturas provisionales de gradas y eje de noria. La zona transitable incluye las escapatorias y respeta las barreras. Se conserva la edición original de referencia.",
+      "sourceFileName": "apex26_14-madrid-spain_2026-11-10-completo.svg",
+      "editionDate": "2026-11-10",
+      "notes": "SVG completo aportado el 10/11/2026 y establecido como versión guardada cargable de Madrid. Conserva geometría, trazada ideal, pianos, escapatorias, áreas transitables, pit lane, garajes, zona de trabajo, carteles y biblioteca de elementos. Dos imágenes raster ocultas de referencia se omiten en la copia de simulación para reducir tamaño y tiempo de carga. La BASE y ediciones anteriores permanecen independientes.",
       "previousEditionSvg": "svg/apex26_14-madrid-spain_2026-11-06.svg",
       "exactSvg": true
     }
