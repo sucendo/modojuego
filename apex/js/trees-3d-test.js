@@ -10,7 +10,7 @@
   window.apexTrees3dTrialEnabled = enabled;
   window.apexTrees3dTrialInfo = function () {
     return {
-      enabled, circuit: '01-australia', maxDistanceM: 110,
+      enabled, circuit: '01-australia', maxDistanceM: 1100, lodPolicy: 'The same 3D crown and silhouette from near to far, up to engine culling',
       mobile: 'Original tree rendering retained on mobile',
       renderedSinceLoad: stats.drawn, facesSubmittedSinceLoad: stats.faces,
       species: Object.assign({}, stats.species),
@@ -23,7 +23,7 @@
   const clamp01 = x => Math.min(1, Math.max(0, x));
   const mix = (a, b, t) => a + (b - a) * t;
 
-  function makeTreeTemplate(species, seed, detail) {
+  function makeTreeTemplate(species, seed) {
     // Stable jitter avoids flickering or changing shape when cameras turn.
     let s = (seed >>> 0) || 1;
     const rand = () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; };
@@ -36,7 +36,8 @@
         [.17, .23, .76, .29, .26], [-.18, -.19, .91, .23, .19],
         [.18, -.11, .94, .23, .19]
       ];
-      const count = detail === 0 ? centers.length : 4;
+      // Every LOD uses all the same crowns and the same stable geometry anchors.
+      const count = centers.length;
       for (let j = 0; j < count; j++) {
         const c = centers[j], a = seedAngle + j * .71;
         leaves.push({
@@ -51,10 +52,10 @@
     return { rotation: seedAngle, leaves };
   }
   const meshCache = new Map();
-  function templateFor(species, seed, detail) {
-    const key = species + ':' + (seed % 24) + ':' + detail;
+  function templateFor(species, seed) {
+    const key = species + ':' + (seed % 24);
     let t = meshCache.get(key);
-    if (!t) { t = makeTreeTemplate(species, seed % 24, detail); meshCache.set(key, t); }
+    if (!t) { t = makeTreeTemplate(species, seed % 24); meshCache.set(key, t); }
     return t;
   }
 
@@ -94,7 +95,8 @@
     const trunkHeight = height * .85;
     drawTube(c, { x: 0, z: 0, y: 0 }, { x: 0, z: 0, y: trunkHeight },
       Math.max(.12, width * .047), Math.max(.045, width * .014), trunkColor, 5);
-    const tiers = c.lod === 0 ? 4 : 3, sides = 6, P = c.P;
+    // Keep all four tiers and their silhouette at every distance; simplify only side facets.
+    const tiers = 4, sides = c.lod === 2 ? 4 : 6, P = c.P;
     for (let tier = 0; tier < tiers; tier++) {
       const base = height * (.16 + tier * .185);
       const top = height * Math.min(1.05, .64 + tier * .125);
@@ -116,7 +118,8 @@
     drawTube(c, { x: 0, z: 0, y: 0 },
       { x: width * .045, z: width * -.018, y: height * .73 },
       Math.max(.10, width * .043), Math.max(.07, width * .029), trunkColor, 6);
-    const count = c.lod === 0 ? 8 : 6, P = c.P;
+    // Frond positions must stay identical across LOD changes.
+    const count = 8, P = c.P;
     for (let k = 0; k < count; k++) {
       const a = c.rotation + TAU * k / count;
       const dx = Math.cos(a), dz = Math.sin(a), nx = -dz, nz = dx;
@@ -136,12 +139,14 @@
   }
 
   window.apexTrees3dRender = function (c) {
-    if (!c || c.circuitId !== '01-australia' || c.mobile || c.lod > 1 ||
-        !Number.isFinite(c.depth) || c.depth < .6 || c.depth > 110) return false;
+    // No 110 m switch back to the unrelated legacy silhouette: the engine's
+    // existing visibility culling and LOD3 rejection determine when a tree disappears.
+    if (!c || c.circuitId !== '01-australia' || c.mobile || c.lod > 2 ||
+        !Number.isFinite(c.depth) || c.depth < .6) return false;
     const it = c.it, species = it.treeVariant || it.variant || 'deciduous';
     const kind = species === 'fir' ? 'fir' : species === 'palm' ? 'palm' : 'deciduous';
     const seed = c.hash(String(it.sourceId || it.name || 'tree') + '|' + kind) >>> 0;
-    const detail = c.lod, t = templateFor(kind, seed, detail);
+    const detail = c.lod, t = templateFor(kind, seed);
     const width = Math.max(1, Number(it.width) || 5) * (.89 + (seed & 255) / 255 * .28);
     const height = Math.max(3, Number(it.height) || 12) * (.92 + ((seed >>> 8) & 255) / 255 * .17);
     const trunk = kind === 'palm' ? '#745638' : '#59432f';
@@ -152,7 +157,7 @@
     else {
       const trunkH = height * .56;
       drawTube(c, { x: 0, z: 0, y: 0 }, { x: 0, z: 0, y: trunkH },
-        Math.max(.13, width * .050), Math.max(.085, width * .028), trunk, 6);
+        Math.max(.13, width * .050), Math.max(.085, width * .028), trunk, detail === 2 ? 4 : 6);
       if (detail === 0) {
         for (let j = 1; j < 5; j++) {
           const leaf = t.leaves[j];
