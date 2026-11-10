@@ -23,8 +23,10 @@ function lap(row){
 }
 const old=rows.find(x=>x.variant==='baseline'),next=rows.find(x=>x.variant==='candidate');
 assert.ok(old&&next,'Need both current main and candidate on Madrid saved SVG');
-assert.equal(old.svgBoards,34,'Identical authoritative edited SVG boards');
-assert.equal(next.svgBoards,34,'Identical authoritative edited SVG boards');
+assert.ok(old.svgBoards>0,'Edited Madrid SVG must contain boards');
+assert.equal(old.svgBoards,old.svgBoardsExpected,'Baseline must use its authored boards');
+assert.equal(next.svgBoards,next.svgBoardsExpected,'Candidate must use its authored boards');
+assert.equal(next.svgBoards,old.svgBoards,'Both variants must use identical Madrid boards');
 assert.equal(next.svgBoardAuthority,true,'Candidate must use saved SVG, not BASE');
 const baseline=lap(old),candidate=lap(next);
 assert.ok(Number.isFinite(baseline)&&Number.isFinite(candidate),'Two finish-line crossings required for both runs');
