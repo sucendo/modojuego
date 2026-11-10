@@ -21,7 +21,13 @@ window.__apexAuto={
    }
    const xml=await fetch('circuits/'+saved.svg,{cache:'no-cache'}).then(r=>{if(!r.ok)throw Error('Missing Madrid SVG');return r.text()});
    const loaded=await importEditableCircuitSvgText(xml,spec);
-   if(loaded.brakeBoards!==34||!loaded.worldPayload.brakeBoardsAuthoritative)throw Error('Saved Madrid SVG 16 signs not authoritative');
+   // Madrid 2026-11-06 añade carteles emparejados: contar los activos del SVG
+   // autoritativo, no usar el número antiguo (34) del SVG anterior.
+   const source=new DOMParser().parseFromString(xml,'image/svg+xml');
+   const expected=[...source.querySelectorAll('[data-apex-role="distance-board"]')]
+    .filter(el=>!el.closest('#APEX_ELEMENT_LIBRARY_ZONE, #APEX_ELEMENT_LIBRARY, [data-apex-library-zone="1"]')).length;
+   if(expected<1||loaded.brakeBoards!==expected||!loaded.worldPayload.brakeBoardsAuthoritative)
+    throw Error('Saved Madrid SVG brake boards mismatch: '+loaded.brakeBoards+'/'+expected);
   }
   const practice=session==='freepractice';
   sessionSettings={diff:1,weather:'CLEAR',noRivals:!traffic};currentSession=practice?'freepractice':'race';
