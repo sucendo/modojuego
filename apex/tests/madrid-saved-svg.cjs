@@ -1,5 +1,5 @@
 'use strict';
-// Verify the saved Madrid selection points at the exact latest user-authored SVG.
+// Verify the manifest selects the latest user-authored Madrid proposal; hidden raster reference images are stripped.
 // This is a static smoke test; WebGL/Canvas rendering is covered separately.
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
@@ -8,18 +8,18 @@ const crypto=require('node:crypto');
 const base=p.resolve(__dirname,'..');
 const manifest=JSON.parse(fs.readFileSync(p.join(base,'circuits/manifest.json'),'utf8'));
 const entry=manifest.circuits['14-spain'];
-assert.equal(entry.svg,'svg/apex26_14-madrid-spain_2026-11-06-boxes.svg');
+assert.equal(entry.svg,'svg/apex26_14-spain_circuito-propuesta-20261110.svg');
 const current=fs.readFileSync(p.join(base,'circuits',entry.svg),'utf8');
 assert.equal((current.match(/data-apex-role="distance-board"/g)||[]).length,72);
 for(const id of ['APEX_PIT_WORK_AREA','APEX_PIT_DIVIDER','APEX_PIT_SERVICE','APEX_PIT_GARAGES','APEX_START_GRID'])assert.ok(current.includes('id="'+id+'"'));
 assert.equal((current.match(/data-apex-ferris-axis="true"/g)||[]).length,2);
 assert.equal(entry.exactSvg,true);
-assert.equal(crypto.createHash('sha256').update(fs.readFileSync(p.join(base,'circuits',entry.previousEditionSvg))).digest('hex'),'0e580eaff612b068169465f01978a362a09663712b74cbfea9146f51f034da76');
-assert.equal(entry.sourceFileName,'apex26_14-madrid-spain_2026-11-10-completo.svg');
-assert.equal(crypto.createHash('sha256').update(current).digest('hex'),'c6324f9027f0c7a0a323fac8c834bf9482795ed6e5474b79959109d4f13d6c0a','Loaded Madrid SVG must match the new authored vector edition');
-assert.ok(current.includes('data-apex-drivable-area-authoritative="true"'));
-assert.ok(current.includes('data-apex-brake-boards-authoritative="true"'));
-assert.ok(current.includes('viewBox="-1320 600 3400 1470"'),'Madrid full SVG must present its complete extent');
+assert.equal(crypto.createHash('sha256').update(fs.readFileSync(p.join(base,'circuits',entry.previousEditionSvg))).digest('hex'),'c6324f9027f0c7a0a323fac8c834bf9482795ed6e5474b79959109d4f13d6c0a');
+assert.equal(entry.sourceFileName,'apex26_14-spain_circuito-propuesta-20261110.svg');
+assert.equal(crypto.createHash('sha256').update(current).digest('hex'),'48884a22e7a209b5e9687dd4669e385f806f365ede6495c6d9270e64eab7532c','Loaded Madrid SVG must match the new user-provided vector edition');
+assert.ok(current.includes('data-apex-role="drivable-area"'),'Madrid drivable polygon missing');
+assert.ok(current.includes('id="APEX_BRAKING_MARKERS"'),'Authoritative braking-markers layer missing');
+assert.ok(current.includes('viewBox="0 0 512 512"'),'Preserve the Boxy-authored coordinate system');
 assert.equal((current.match(/<image\b/g)||[]).length,0,'Hidden raster source references must not be loaded into the simulator');
 assert.equal(entry.json,'json/apex26_14-madrid-spain_2026-10-29.json');
 const cfg=JSON.parse(fs.readFileSync(p.join(base,'circuits',entry.json),'utf8'));
@@ -37,7 +37,7 @@ for(let i=1;i<monumental.profile.length;i++)assert.ok(monumental.profile[i][0]>m
 const old=fs.readFileSync(p.join(base,'parts/part-023.txt'),'utf8');
 assert.ok(old.includes('function apexAuthoredBankAt(s)'),'Banking engine missing');
 
-assert.equal(entry.previousEditionSvg,'svg/apex26_14-madrid-spain_2026-11-06.svg');
+assert.equal(entry.previousEditionSvg,'svg/apex26_14-madrid-spain_2026-11-06-boxes.svg');
 const edition16='svg/apex26_14-madrid-spain_2026-11-03.svg';
 assert.equal(entry.editionDate,'2026-11-10');
 assert.ok(fs.existsSync(p.join(base,'circuits',entry.previousEditionSvg)),'Previous (16) edition must be kept');
