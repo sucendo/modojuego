@@ -6,7 +6,7 @@
   'use strict';
   const query = new URLSearchParams(window.location.search);
   const enabled = query.get('trees3d') === '1';
-  const stats = { drawn: 0, faces: 0, species: { deciduous: 0, fir: 0, palm: 0 }, deciduousProfilesDrawn: {} };
+  const stats = { drawn: 0, faces: 0, species: { deciduous: 0, fir: 0, palm: 0 }, deciduousProfilesDrawn: {}, firProfilesDrawn: {} };
   window.apexTrees3dTrialEnabled = enabled;
   window.apexTrees3dTrialInfo = function () {
     return {
@@ -15,7 +15,8 @@
       renderedSinceLoad: stats.drawn, facesSubmittedSinceLoad: stats.faces,
       species: Object.assign({}, stats.species),
       deciduousProfilesDrawn: Object.assign({}, stats.deciduousProfilesDrawn),
-      profilePhase: 2, profileCatalog: {deciduous:5,fir:4,palm:3},
+      firProfilesDrawn: Object.assign({}, stats.firProfilesDrawn),
+      profilePhase: 3, profileCatalog: {deciduous:5,fir:4,palm:3},
       note: 'Counts are accumulated draw submissions, not unique trees or FPS. Compare APEX diagnostics on equal laps.'
     };
   };
@@ -112,24 +113,45 @@
     }
   }
 
-  function drawFir(c, height, width, trunkColor, foliage) {
-    const trunkHeight = height * .85;
-    drawTube(c, { x: 0, z: 0, y: 0 }, { x: 0, z: 0, y: trunkHeight },
-      Math.max(.12, width * .047), Math.max(.045, width * .014), trunkColor, 5);
-    // Keep all four tiers and their silhouette at every distance; simplify only side facets.
-    const tiers = 4, sides = c.lod === 2 ? 4 : 6, P = c.P;
-    for (let tier = 0; tier < tiers; tier++) {
+  // Phase 3: four stable conifer architectures. Every LOD uses identical
+  // trunks and four whorls of foliage; no silhouette substitution at distance.
+  // Width/height from SVG remain authoritative base dimensions.
+  function drawFir(c, baseHeight, baseWidth, trunkColor, foliage, profile) {
+    const height = baseHeight * profile.height;
+    const width = baseWidth * profile.width;
+    const leanX = (profile.leanX || 0) * width;
+    const leanZ = (profile.leanZ || 0) * width;
+    const trunkHeight = height * .86;
+    const baseRadius = Math.max(.12, width * .047 * profile.trunk);
+    const topRadius = Math.max(.045, width * .014 * profile.trunk);
+    drawTube(c, { x: 0, z: 0, y: 0 },
+      { x: leanX * .86, z: leanZ * .86, y: trunkHeight },
+      baseRadius, topRadius, trunkColor, 5);
+
+    const tiers = profile.tiers || [.68, .56, .44, .28];
+    const P = c.P;
+    // Six unchanged radial sectors across LOD 0/1/2 avoid shape popping.
+    // More distant trees are still culled by the existing scene budget.
+    const sides = 6;
+    const density = Math.max(.91, Math.min(1.10, profile.density));
+    const tint = Math.round((profile.foliage - 1) * 28);
+    for (let tier = 0; tier < tiers.length; tier++) {
       const base = height * (.16 + tier * .185);
       const top = height * Math.min(1.05, .64 + tier * .125);
-      const r = width * (.62 - tier * .10);
+      const r = width * tiers[tier] * density;
       const rotation = c.rotation + tier * .19;
+      const x0 = leanX * base / height, z0 = leanZ * base / height;
+      const x1 = leanX * top / height, z1 = leanZ * top / height;
       for (let k = 0; k < sides; k++) {
-        const a = rotation + TAU * k / sides, b = rotation + TAU * (k + 1) / sides;
+        const a = rotation + TAU * k / sides;
+        const b = rotation + TAU * (k + 1) / sides;
         c.poly([
-          P(r * Math.cos(a), r * Math.sin(a), base),
-          P(r * Math.cos(b), r * Math.sin(b), base + height * .014),
-          P(0, 0, top)
-        ], c.pitch, c.shade(foliage, -15 + tier * 6 + (k % 3) * 6), .60, -.008);
+          P(x0 + r * Math.cos(a), z0 + r * Math.sin(a), base),
+          P(x0 + r * Math.cos(b), z0 + r * Math.sin(b), base + height * .014),
+          P(x1, z1, top)
+        ], c.pitch,
+          c.shade(foliage, -15 + tier * 6 + (k % 3) * 6 + tint),
+          .60, -.008);
         stats.faces++;
       }
     }
@@ -206,7 +228,10 @@
     const trunk = kind === 'palm' ? '#745638' : '#59432f';
     const foliage = it.foliage || (kind === 'fir' ? '#285f38' : '#4b8447');
     c.rotation = t.rotation;
-    if (kind === 'fir') drawFir(c, height, width, trunk, foliage);
+    if (kind === 'fir') {
+      drawFir(c, height, width, trunk, foliage, t.profile);
+      stats.firProfilesDrawn[t.profile.name]=(stats.firProfilesDrawn[t.profile.name]||0)+1;
+    }
     else if (kind === 'palm') drawPalm(c, height, width, trunk, foliage);
     else {
       drawDeciduous(c,t,width,height,trunk,foliage,detail);
