@@ -19,6 +19,8 @@ assert.equal(a.latitudeEstimated,-38);
 assert.equal(api.resolvePreset(sample,0,'RAIN'),'RAIN');
 assert.equal(api.resolvePreset(sample,0,'auto'),a.preset);
 assert.equal(api.resolvePreset(sample,0,'NOT_REAL'),'VARIABLE');
+const sepang=api.forecast({dir:'16-bahrain',name:'Sepang · Malasia',country:'🇲🇾 Malasia'},15);
+assert.equal(sepang.latitudeEstimated,2.83,'Alias histórico Sepang no debe usar la latitud de Baréin');
 const unknown=api.forecast({name:'Circuito personalizado'},12);
 assert.equal(unknown.latitudeEstimated,null);
 assert.ok(api.validPresets.includes(unknown.preset));
