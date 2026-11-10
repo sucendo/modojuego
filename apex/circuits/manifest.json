@@ -20,14 +20,14 @@
     "01-australia": {
       "name": "Melbourne",
       "displayName": "Albert Park",
-      "svg": "svg/apex26_01-australia_circuito-propuesta-20261110.svg",
+      "svg": "svg/apex26_01-australia_circuito-propuesta-20261110-barriers-aligned.svg",
       "status": "edited",
       "basePreserved": true,
-      "sourceFileName": "apex26_01-australia_circuito-propuesta-20261110.svg",
+      "sourceFileName": "apex26_01-australia_circuito-propuesta-20261110-barriers-aligned.svg",
       "editionDate": "2026-11-10",
-      "notes": "SVG completo proporcionado por el usuario el 10/11/2026. CARGAR GUARDADO usa esta edición de Australia, con los elementos vectoriales, puentes, muros y barreras activos definidos por el usuario. Dos imágenes de referencia ocultas se han omitido para reducir el peso sin modificar los vectores. La BASE y la versión guardada anterior se conservan.",
+      "notes": "Edición del SVG completo aportado el 10/11/2026: conserva todas las geometrías vectoriales y corrige la ubicación de las dos barreras de hormigón activas aplicando la transformación inversa del desplazamiento Boxy (-220.681854,+14.552436). Las barreras ahora siguen la zona lateral de Melbourne. El SVG original del usuario y la BASE se conservan. Renderizado universal por segmentos en Canvas y WebGL.",
       "exactSvg": true,
-      "previousEditionSvg": "svg/apex26_01-australia-melbourne_2026-11-10-completo.svg"
+      "previousEditionSvg": "svg/apex26_01-australia_circuito-propuesta-20261110.svg"
     }
   }
 }
