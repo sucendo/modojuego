@@ -1912,6 +1912,9 @@ function apexClipTerrainAtPit(poly){
 }
 // Recorte por huellas 2D EXACTAS de pista+pianos y pitlane; mantiene el
 // terreno de túneles y pasos elevados. Se utiliza en AMBOS LOD de relieve.
+// IMPORTANTE: la resta es topológica (XZ). NO fijar Y al objeto sustraído:
+// sobre un desnivel distinto creaba cuñas 3D de varios metros, capaces de
+// tapar el coche y dejar triángulos flotantes en el borde de pista.
 // El coche mantiene intactos playerDriveSurfacePose() y la física de ruedas.
 function apexClipTerrainAtDrive(poly){
  if(!trackData||!Array.isArray(poly)||poly.length<3)return null;
@@ -1929,7 +1932,7 @@ function apexClipTerrainAtDrive(poly){
   if(!foot||foot.terrainCut===false||foot.bounds.maxX<=bb.minX||
      foot.bounds.minX>=bb.maxX||foot.bounds.maxZ<=bb.minZ||foot.bounds.minZ>=bb.maxZ)continue;
   const next=[];
-  for(const part of pieces)next.push(...apexInspectorSubtractFoot(part,foot,true));
+  for(const part of pieces)next.push(...apexInspectorSubtractFoot(part,foot,false));
   pieces=next;
   if(!pieces.length)break;
  }
@@ -2275,7 +2278,7 @@ function apexClipGenericRunoffPolygon(poly){
   const f=idx.faces[id];
   if(!f||f.maxX<=bounds.minX||f.minX>=bounds.maxX||f.maxZ<=bounds.minZ||f.minZ>=bounds.maxZ)continue;
   const next=[];
-  for(const part of parts)next.push(...apexInspectorSubtractFoot(part,f.foot,true));
+  for(const part of parts)next.push(...apexInspectorSubtractFoot(part,f.foot,false));
   parts=next;if(!parts.length)break;
  }
  const area=parts.reduce((v,p)=>v+Math.abs(apexInspectorPolyArea(p)),0);
