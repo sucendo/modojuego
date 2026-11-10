@@ -6,27 +6,28 @@
     "14-spain": {
       "name": "Madrid",
       "displayName": "MADRING",
-      "svg": "svg/apex26_14-madrid-spain_2026-11-06-boxes.svg",
+      "svg": "svg/apex26_14-spain_circuito-propuesta-20261110.svg",
       "json": "json/apex26_14-madrid-spain_2026-10-29.json",
       "status": "edited",
       "basePreserved": true,
       "previousSvg": "svg/apex26_14-madrid-spain.svg",
-      "sourceFileName": "apex26_14-madrid-spain_2026-11-10-completo.svg",
+      "sourceFileName": "apex26_14-spain_circuito-propuesta-20261110.svg",
       "editionDate": "2026-11-10",
-      "notes": "SVG completo aportado el 10/11/2026 y establecido como versión guardada cargable de Madrid. Conserva geometría, trazada ideal, pianos, escapatorias, áreas transitables, pit lane, garajes, zona de trabajo, carteles y biblioteca de elementos. Dos imágenes raster ocultas de referencia se omiten en la copia de simulación para reducir tamaño y tiempo de carga. La BASE y ediciones anteriores permanecen independientes.",
-      "previousEditionSvg": "svg/apex26_14-madrid-spain_2026-11-06.svg",
+      "notes": "SVG completo proporcionado por el usuario el 10/11/2026. CARGAR GUARDADO usa esta nueva edición de Madrid, conservando todos los elementos vectoriales, barreras y muros activos, pit lane, boxes y biblioteca. Dos imágenes raster ocultas se han omitido en la copia de simulación. El JSON guardado, la BASE y la versión guardada anterior se conservan.",
+      "previousEditionSvg": "svg/apex26_14-madrid-spain_2026-11-06-boxes.svg",
       "exactSvg": true
     },
     "01-australia": {
       "name": "Melbourne",
       "displayName": "Albert Park",
-      "svg": "svg/apex26_01-australia-melbourne_2026-11-10-completo.svg",
+      "svg": "svg/apex26_01-australia_circuito-propuesta-20261110.svg",
       "status": "edited",
       "basePreserved": true,
-      "sourceFileName": "apex26_01-australia-melbourne_2026-11-10-completo.svg",
+      "sourceFileName": "apex26_01-australia_circuito-propuesta-20261110.svg",
       "editionDate": "2026-11-10",
-      "notes": "SVG completo construido sobre la BASE embebida de Melbourne, conservando su geometría y añadiendo el puente peatonal proporcionado por el usuario (5 m de anchura, 7 m de altura). Se conserva exactamente la transformación del fragmento original. El puente queda alejado de la pista y parcialmente fuera del viewBox: requiere validación y eventual recolocación en el visor 3D. Sin modificar la BASE ni el JSON interno.",
-      "exactSvg": true
+      "notes": "SVG completo proporcionado por el usuario el 10/11/2026. CARGAR GUARDADO usa esta edición de Australia, con los elementos vectoriales, puentes, muros y barreras activos definidos por el usuario. Dos imágenes de referencia ocultas se han omitido para reducir el peso sin modificar los vectores. La BASE y la versión guardada anterior se conservan.",
+      "exactSvg": true,
+      "previousEditionSvg": "svg/apex26_01-australia-melbourne_2026-11-10-completo.svg"
     }
   }
 }
