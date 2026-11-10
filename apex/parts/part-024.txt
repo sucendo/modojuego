@@ -1853,7 +1853,8 @@ function apexTriangulateGroundFootprint(points){
 function apexRunoffRoadClipIndex(){
  if(!trackData)return null;
  if(trackData._apexRunoffRoadClipIndex)return trackData._apexRunoffRoadClipIndex;
- const positions=apexRoadMeshSamples(),cell=48,buckets=new Map(),pitBuckets=new Map(),bounds=[];
+ const positions=apexRoadMeshSamples(),cell=48,buckets=new Map(),
+       terrainBuckets=new Map(),pitBuckets=new Map(),bounds=[];
  // 2.2 m entre muestras para seguir curvas y bordes sin coste de una
  // subdivisión por cada vértice SVG de la pista.
  const samples=[];
@@ -1865,16 +1866,25 @@ function apexRunoffRoadClipIndex(){
    l=ribbonWorldPoint(q,w,1),r=ribbonWorldPoint(q,w,-1);
   const structure=apexPhase1StructureAtWorld(q.x,q.z,s);
   const gradeSeparated=!!(e.tunnel||structure&&(structure.kind==='UNDER'||structure.kind==='OVER'));
-  return{l,r,gradeSeparated};
+  // El terreno debe ceder bajo TODO el corredor que el motor dibuja,
+  // no sólo bajo asfalto+pianos. De lo contrario asoma entre escapatorias
+  // de respaldo y puede tapar las ruedas al salir de pista.
+  const outerL=apexFlatRunoffPoint(q,e,Math.max(w,apexRoadFlatLimit(s,e,1)),1),
+        outerR=apexFlatRunoffPoint(q,e,Math.max(w,apexRoadFlatLimit(s,e,-1)),-1);
+  return{l,r,outerL,outerR,gradeSeparated};
  };
- const add=(poly,pit=false,terrainCut=true)=>{
+ const add=(poly,pit=false,terrainCut=true,terrainOnly=false)=>{
   const bound=apexInspectorPolyBounds(poly),foot={poly,bounds:bound,terrainCut},id=bounds.length;
   bounds.push(foot);
   for(let ix=Math.floor(bound.minX/cell);ix<=Math.floor(bound.maxX/cell);ix++)
    for(let iz=Math.floor(bound.minZ/cell);iz<=Math.floor(bound.maxZ/cell);iz++){
-    const key=ix+':'+iz;let arr=buckets.get(key);
-    if(!arr){arr=[];buckets.set(key,arr)}arr.push(id);
-    if(pit){let ids=pitBuckets.get(key);if(!ids){ids=[];pitBuckets.set(key,ids)}ids.push(id);}
+    const key=ix+':'+iz;
+    const addTo=(map)=>{let arr=map.get(key);if(!arr){arr=[];map.set(key,arr)}arr.push(id)};
+    // Los polígonos originales de pista son los únicos que recortan
+    // escapatorias SVG. El corredor ampliado sólo recorta TERRENO.
+    if(!terrainOnly)addTo(buckets);
+    if(terrainOnly||pit)addTo(terrainBuckets);
+    if(pit)addTo(pitBuckets);
    }
  };
  let prev=null;
@@ -1887,6 +1897,11 @@ function apexRunoffRoadClipIndex(){
    // calzada: solo se recorta de la placa la vía ordinaria a ras de suelo.
    const terrainCut=!(prev.gradeSeparated||cur.gradeSeparated);
    add([a,b,c],false,terrainCut);add([a,c,d],false,terrainCut);
+   if(terrainCut){
+    const L=toObj(prev.outerL),R=toObj(prev.outerR),
+          l=toObj(cur.outerL),r=toObj(cur.outerR);
+    add([L,R,r],false,true,true);add([L,r,l],false,true,true);
+   }
   }
   prev=cur;
  }
@@ -1895,7 +1910,8 @@ function apexRunoffRoadClipIndex(){
   add([{x:sg.x1+nx,y:sg.y1,z:sg.z1+nz},{x:sg.x1-nx,y:sg.y1,z:sg.z1-nz},
        {x:sg.x2-nx,y:sg.y2,z:sg.z2-nz},{x:sg.x2+nx,y:sg.y2,z:sg.z2+nz}],true);
  }
- return trackData._apexRunoffRoadClipIndex={cell,buckets,pitBuckets,faces:bounds,clipped:0,generated:0};
+ return trackData._apexRunoffRoadClipIndex={cell,buckets,terrainBuckets,pitBuckets,
+   faces:bounds,clipped:0,generated:0};
 }
 function apexClipTerrainAtPit(poly){
  if(!trackData?.customWorld?.pitNetwork?.runs?.length)return null;
@@ -1922,9 +1938,9 @@ function apexClipTerrainAtDrive(poly){
   ix0=Math.floor(bb.minX/idx.cell),ix1=Math.floor(bb.maxX/idx.cell),
   iz0=Math.floor(bb.minZ/idx.cell),iz1=Math.floor(bb.maxZ/idx.cell);
  if((ix1-ix0+1)*(iz1-iz0+1)>400)return null;
- const seen=new Set();
- for(let ix=ix0;ix<=ix1;ix++)for(let iz=Math.floor(bb.minZ/idx.cell);iz<=iz1;iz++)
-  for(const id of idx.buckets.get(ix+':'+iz)||[])seen.add(id);
+ const seen=new Set(),owners=idx.terrainBuckets||idx.buckets;
+ for(let ix=ix0;ix<=ix1;ix++)for(let iz=iz0;iz<=iz1;iz++)
+  for(const id of owners.get(ix+':'+iz)||[])seen.add(id);
  if(!seen.size)return null;
  let pieces=[poly];
  for(const id of seen){
