@@ -41,3 +41,27 @@ Las referencias históricas a ediciones de principios de noviembre ya **no** son
 El importador mantiene la geometría y colisiones autoritativas del SVG. En las versiones anteriores, una barrera larga podía quedar fuera de los sectores activos o del frustum al usar su ancla/centro. Ahora Canvas y WebGL seleccionan cada barrera con independencia del sector de su ancla y hacen el recorte por paquetes y segmentos visibles. Los muros físicos dibujados por el usuario siguen siendo los únicos obstáculos de colisión: no se generan barreras nuevas en las escapatorias ni en la entrada de boxes.
 
 Prueba de regresión: `node apex/tests/svg-barrier-visibility.cjs`.
+
+## Terreno, coche y escapatorias · corrección universal 10/11/2026
+
+El relieve fino se apoya en `apexWorldGroundY()`: es la referencia de
+cota natural del propio simulador. La física y `playerDriveSurfacePose()`
+**no se modifican**.
+
+El motor de terreno elimina el descarte por punto central de una celda
+parcialmente pavimentada. En su lugar, el terreno grueso y fino comparten
+el recorte espacial de la pista con pianos, pitlane y zonas SVG
+`surfaceZone`. Los recortes se cierran a la altura de las
+superficies que los sustituyen. Se conservan los túneles, los
+tableros de puentes y los huecos de los portales: una pista en otro
+nivel no debe perforar el relieve.
+
+Para invalidar mallas antiguas del compilador, se incrementó
+`APEX_CIRCUIT_COMPILE_REV` a `230691`.
+
+Regresión: `node apex/tests/terrain-surface-ownership.cjs`.
+Comprueba el recorte de terreno fino y grueso, la conservación de
+ambos lados de una celda parcialmente ocupada, la coincidencia de
+cotas en bordes y que los tramos separados en altura no perforen
+el terreno. La inspección visual WebGL/Canvas en navegador
+debe realizarse tras actualizar `main`.
