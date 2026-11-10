@@ -49,19 +49,30 @@ cota natural del propio simulador. La física y `playerDriveSurfacePose()`
 **no se modifican**.
 
 El motor de terreno elimina el descarte por punto central de una celda
-parcialmente pavimentada. En su lugar, el terreno grueso y fino comparten
-el recorte espacial de la pista con pianos, pitlane y zonas SVG
-`surfaceZone`. Los recortes se cierran a la altura de las
-superficies que los sustituyen. Se conservan los túneles, los
-tableros de puentes y los huecos de los portales: una pista en otro
-nivel no debe perforar el relieve.
+parcialmente pavimentada. El terreno grueso y fino comparten recortes exactos
+en X/Z para el asfalto, los pianos, el pitlane y las `surfaceZone` SVG.
 
-Para invalidar mallas antiguas del compilador, se incrementó
-`APEX_CIRCUIT_COMPILE_REV` a `230691`.
+**Corrección posterior de los defectos vistos en Melbourne:** la resta de
+polígonos nunca debe alterar la coordenada Y de los vértices residuales del
+terreno. Antes se copiaba la cota de una escapatoria o carretera a un
+triángulo de terreno, generando cuñas elevadas que podían ocultar el
+monoplaza. El recorte permanece topológico, conservando las alturas del
+terreno original. Además, ahora incluye en una máscara separada **todo el
+corredor de la escapatoria de respaldo**, hasta el límite dibujado, no sólo
+asfalto y pianos. Esa máscara adicional no modifica ni recorta el SVG
+original de escapatorias. En túneles y puentes a distinto nivel el suelo
+natural se preserva. El pequeño parche WebGL junto a la cámara sólo se
+dibuja si el coche está en la pista principal.
 
-Regresión: `node apex/tests/terrain-surface-ownership.cjs`.
-Comprueba el recorte de terreno fino y grueso, la conservación de
-ambos lados de una celda parcialmente ocupada, la coincidencia de
-cotas en bordes y que los tramos separados en altura no perforen
-el terreno. La inspección visual WebGL/Canvas en navegador
-debe realizarse tras actualizar `main`.
+El compilador invalida las mallas anteriores con
+`APEX_CIRCUIT_COMPILE_REV = 230693`. Se conservan SVG, trazada,
+altura física del vehículo, peralte, colisiones y configuración JSON.
+
+Pruebas:
+- `node apex/tests/terrain-surface-ownership.cjs`: recorte fino/grueso y
+  contornos diagonales con cambios extremos de cota, sin cuñas.
+- `node apex/tests/terrain-runoff-corridor.cjs`: escapatoria completa
+  protegida de solapamiento con terreno, SVG intacto y puentes seguros.
+
+Las pruebas geométricas pasan; queda pendiente verificar la imagen
+real en WebGL y Canvas después de cargar la última versión de `main`.
