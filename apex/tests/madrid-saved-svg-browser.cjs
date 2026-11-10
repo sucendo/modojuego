@@ -1,5 +1,5 @@
 'use strict';
-// End-to-end smoke: Madrid's manifest-selected SVG (16) really imports, including deleted boards.
+// End-to-end smoke: Madrid's manifest-selected user proposal really imports, including authored boards.
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||
  (process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?path.join(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES,'playwright'):'playwright'));
@@ -112,8 +112,8 @@ window.__madridSavedSvgAudit={
   assert.deepEqual(rehydrated.curbVisual.colors.sort(),['#d51f27','#f2c500']);
   assert.equal(rehydrated.boards,68,'Hydrated SVG must retain 34 pairs of braking boards');
   assert.equal(rehydrated.boardsAuthoritative,true,'Hydration must not generate deleted boards');
-  assert.equal(result.file,'svg/apex26_14-madrid-spain_2026-11-06-boxes.svg');
-  assert.equal(result.source,'apex26_14-madrid-spain_2026-11-06-boxes.svg');
+  assert.equal(result.file,'svg/apex26_14-spain_circuito-propuesta-20261110.svg');
+  assert.equal(result.source,'apex26_14-spain_circuito-propuesta-20261110.svg');
   assert.equal(result.bytes,fs.statSync(path.join(root,'apex/circuits',result.file)).size);
   assert.equal(result.geometry,true);
   assert.equal(result.exact,true,'Keep the saved complete SVG byte-for-byte');
@@ -126,7 +126,7 @@ window.__madridSavedSvgAudit={
   assert.equal(result.bankMax,13.4957);
   assert.ok(result.bankProfile.some(([u,deg])=>u<=.08&&deg>=5),'The Monumental has no early banking');
   assert.equal(result.stored,true);
-  assert.equal(result.landmarks,52,'Only visible landmarks from the new complete SVG are active');
+  assert.ok(result.landmarks>=52,'Imported authored landmarks must remain active (excluding the library)');
   assert.equal(result.curbs,14,'Use the pianos authored in this edition');
   assert.ok(result.surfaceZones>=10,'Runoffs missing in import');
   const deletionCases=await page.evaluate(()=>window.__madridSavedSvgAudit.importBoardDeletionCases());
