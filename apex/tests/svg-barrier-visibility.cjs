@@ -61,7 +61,7 @@ assert.deepEqual(Array.from(selected,e=>e.i),[1],
  'Long barrier must be selected even if its anchor is in a distant sector');
 
 const expected={
- '01-australia':'svg/apex26_01-australia_circuito-propuesta-20261110.svg',
+ '01-australia':'svg/apex26_01-australia_circuito-propuesta-20261110-barriers-aligned.svg',
  '14-spain':'svg/apex26_14-spain_circuito-propuesta-20261110.svg'
 };
 for(const [id,svgPath] of Object.entries(expected)){
@@ -72,4 +72,15 @@ for(const [id,svgPath] of Object.entries(expected)){
  assert.match(svg,/data-apex-role="drivable-area"/);
  assert.equal((svg.match(/<image\b/g)||[]).length,0);
 }
+// La edición de Melbourne corrige únicamente la posición de las dos barreras
+// activas. Las plantillas de biblioteca conservan su geometría original.
+const melbourne=fs.readFileSync(path.join(root,'circuits',expected['01-australia']),'utf8');
+const oldMelbourne=fs.readFileSync(path.join(root,'circuits/svg/apex26_01-australia_circuito-propuesta-20261110.svg'),'utf8');
+const corrected='transform="matrix(1, 0, 0, 1, 220.681854, -14.552436)"';
+assert.equal(melbourne.split(corrected).length-1,2,
+ 'Precisely two active concrete barriers must be spatially aligned');
+assert.equal(oldMelbourne.includes(corrected),false,'The user original must be preserved');
+assert.equal(melbourne.includes('d="M 233.079 218.515'),true,'First authored barrier was lost');
+assert.equal(melbourne.includes('d="M 220.78 215.163'),true,'Second authored barrier was lost');
+
 console.log(JSON.stringify({test:'svg-barrier-visibility',selectedSegments:2,geometryPreserved:true,ok:true}));
