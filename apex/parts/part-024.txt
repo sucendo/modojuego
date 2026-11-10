@@ -1863,10 +1863,12 @@ function apexRunoffRoadClipIndex(){
  const frame=(s)=>{
   const q=renderRibbonFrameAt(s),e=envProfile(s),w=e.half+e.curb+.12,
    l=ribbonWorldPoint(q,w,1),r=ribbonWorldPoint(q,w,-1);
-  return{l,r};
+  const structure=apexPhase1StructureAtWorld(q.x,q.z,s);
+  const gradeSeparated=!!(e.tunnel||structure&&(structure.kind==='UNDER'||structure.kind==='OVER'));
+  return{l,r,gradeSeparated};
  };
- const add=(poly,pit=false)=>{
-  const bound=apexInspectorPolyBounds(poly),foot={poly,bounds:bound},id=bounds.length;
+ const add=(poly,pit=false,terrainCut=true)=>{
+  const bound=apexInspectorPolyBounds(poly),foot={poly,bounds:bound,terrainCut},id=bounds.length;
   bounds.push(foot);
   for(let ix=Math.floor(bound.minX/cell);ix<=Math.floor(bound.maxX/cell);ix++)
    for(let iz=Math.floor(bound.minZ/cell);iz<=Math.floor(bound.maxZ/cell);iz++){
@@ -1881,7 +1883,10 @@ function apexRunoffRoadClipIndex(){
   if(prev){
    const toObj=p=>({x:p.x,y:p.y,z:p.z});
    const a=toObj(prev.l),b=toObj(prev.r),c=toObj(cur.r),d=toObj(cur.l);
-   add([a,b,c]);add([a,c,d]);
+   // Un túnel o puente necesita conservar el terreno sobre/bajo la
+   // calzada: solo se recorta de la placa la vía ordinaria a ras de suelo.
+   const terrainCut=!(prev.gradeSeparated||cur.gradeSeparated);
+   add([a,b,c],false,terrainCut);add([a,c,d],false,terrainCut);
   }
   prev=cur;
  }
@@ -1904,6 +1909,34 @@ function apexClipTerrainAtPit(poly){
   if(!pieces.length)break;
  }
  return pieces.length===1&&pieces[0]===poly?null:pieces;
+}
+// Recorte por huellas 2D EXACTAS de pista+pianos y pitlane; mantiene el
+// terreno de túneles y pasos elevados. Se utiliza en AMBOS LOD de relieve.
+// El coche mantiene intactos playerDriveSurfacePose() y la física de ruedas.
+function apexClipTerrainAtDrive(poly){
+ if(!trackData||!Array.isArray(poly)||poly.length<3)return null;
+ const idx=apexRunoffRoadClipIndex(),bb=apexInspectorPolyBounds(poly),
+  ix0=Math.floor(bb.minX/idx.cell),ix1=Math.floor(bb.maxX/idx.cell),
+  iz0=Math.floor(bb.minZ/idx.cell),iz1=Math.floor(bb.maxZ/idx.cell);
+ if((ix1-ix0+1)*(iz1-iz0+1)>400)return null;
+ const seen=new Set();
+ for(let ix=ix0;ix<=ix1;ix++)for(let iz=Math.floor(bb.minZ/idx.cell);iz<=iz1;iz++)
+  for(const id of idx.buckets.get(ix+':'+iz)||[])seen.add(id);
+ if(!seen.size)return null;
+ let pieces=[poly];
+ for(const id of seen){
+  const foot=idx.faces[id];
+  if(!foot||foot.terrainCut===false||foot.bounds.maxX<=bb.minX||
+     foot.bounds.minX>=bb.maxX||foot.bounds.maxZ<=bb.minZ||foot.bounds.minZ>=bb.maxZ)continue;
+  const next=[];
+  for(const part of pieces)next.push(...apexInspectorSubtractFoot(part,foot,true));
+  pieces=next;
+  if(!pieces.length)break;
+ }
+ // Conservar la malla original cuando no se recortó nada.
+ const original=Math.abs(apexInspectorPolyArea(poly)),
+  remainder=pieces.reduce((s,p)=>s+Math.abs(apexInspectorPolyArea(p)),0);
+ return original-remainder>Math.max(.00005,original*1e-7)?pieces:null;
 }
 function apexClipRunoffSurfaceTriangles(triangles){
  const idx=apexRunoffRoadClipIndex();if(!idx||!Array.isArray(triangles))return triangles;
@@ -2242,7 +2275,7 @@ function apexClipGenericRunoffPolygon(poly){
   const f=idx.faces[id];
   if(!f||f.maxX<=bounds.minX||f.minX>=bounds.maxX||f.maxZ<=bounds.minZ||f.minZ>=bounds.maxZ)continue;
   const next=[];
-  for(const part of parts)next.push(...apexInspectorSubtractFoot(part,f.foot,false));
+  for(const part of parts)next.push(...apexInspectorSubtractFoot(part,f.foot,true));
   parts=next;if(!parts.length)break;
  }
  const area=parts.reduce((v,p)=>v+Math.abs(apexInspectorPolyArea(p)),0);
