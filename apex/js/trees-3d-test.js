@@ -6,7 +6,7 @@
   'use strict';
   const query = new URLSearchParams(window.location.search);
   const enabled = query.get('trees3d') === '1';
-  const stats = { drawn: 0, faces: 0, species: { deciduous: 0, fir: 0, palm: 0 }, deciduousProfilesDrawn: {}, firProfilesDrawn: {} };
+  const stats = { drawn: 0, faces: 0, species: { deciduous: 0, fir: 0, palm: 0 }, deciduousProfilesDrawn: {}, firProfilesDrawn: {}, palmProfilesDrawn: {} };
   window.apexTrees3dTrialEnabled = enabled;
   window.apexTrees3dTrialInfo = function () {
     return {
@@ -16,7 +16,8 @@
       species: Object.assign({}, stats.species),
       deciduousProfilesDrawn: Object.assign({}, stats.deciduousProfilesDrawn),
       firProfilesDrawn: Object.assign({}, stats.firProfilesDrawn),
-      profilePhase: 3, profileCatalog: {deciduous:5,fir:4,palm:3},
+      palmProfilesDrawn: Object.assign({}, stats.palmProfilesDrawn),
+      profilePhase: 4, profileCatalog: {deciduous:5,fir:4,palm:3},
       note: 'Counts are accumulated draw submissions, not unique trees or FPS. Compare APEX diagnostics on equal laps.'
     };
   };
@@ -157,24 +158,52 @@
     }
   }
 
-  function drawPalm(c, height, width, trunkColor, foliage) {
-    drawTube(c, { x: 0, z: 0, y: 0 },
-      { x: width * .045, z: width * -.018, y: height * .73 },
-      Math.max(.10, width * .043), Math.max(.07, width * .029), trunkColor, 6);
-    // Frond positions must stay identical across LOD changes.
-    const count = 8, P = c.P;
+  // Phase 4: three stable palm architectures. All LODs retain exactly the
+  // same bent trunk and the same fronds to avoid any visible silhouette popping.
+  function drawPalm(c, baseHeight, baseWidth, trunkColor, foliage, profile) {
+    const height = baseHeight * profile.height;
+    const width = baseWidth * profile.width;
+    const curvatureX = (profile.leanX || 0) * width * 2.7;
+    const curvatureZ = (profile.leanZ || 0) * width * 2.7;
+    const trunkScale = profile.trunk;
+    const center = {x: curvatureX, z: curvatureZ, y: height * .74};
+    const elbow = {
+      x: curvatureX * .27 + width * .012,
+      z: curvatureZ * .23,
+      y: height * .37
+    };
+    const rootRadius = Math.max(.10, width * .043 * trunkScale);
+    const midRadius = Math.max(.075, width * .035 * trunkScale);
+    const tipRadius = Math.max(.055, width * .028 * trunkScale);
+    // Two connected tapered cylinders form a curved, genuinely 3D palm trunk.
+    drawTube(c, {x:0,z:0,y:0}, elbow, rootRadius, midRadius, trunkColor, 6);
+    drawTube(c, elbow, center, midRadius, tipRadius, trunkColor, 6);
+
+    const count = profile.frondCount || 8;
+    const length = profile.frondLength || 1;
+    const drop = profile.frondDrop || 0;
+    const density = Math.max(.91, Math.min(1.12, profile.density));
+    const tint = Math.round((profile.foliage - 1) * 28);
+    const P = c.P;
     for (let k = 0; k < count; k++) {
       const a = c.rotation + TAU * k / count;
       const dx = Math.cos(a), dz = Math.sin(a), nx = -dz, nz = dx;
-      const len = width * (.73 + (k % 3) * .085), mid = width * .40;
-      const center = P(0, 0, height * .75);
-      const midPoint = P(mid * dx, mid * dz, height * .91);
-      const tip = P(len * dx, len * dz, height * (.57 + .04 * (k % 2)));
-      const leafL = P(mid * dx + nx * width * .125, mid * dz + nz * width * .125, height * .835);
-      const leafR = P(mid * dx - nx * width * .125, mid * dz - nz * width * .125, height * .835);
-      const col = c.shade(foliage, k % 2 ? 5 : -9);
-      c.poly([center, leafL, midPoint], c.pitch, col, .60, -.008);
-      c.poly([center, midPoint, leafR], c.pitch, c.shade(col, -10), .60, -.008);
+      // Deterministic per-frond differences; not tied to camera, time or LOD.
+      const variation = Math.sin((k + 1) * 2.17 + c.rotation) * .035;
+      const len = width * (.73 + (k % 3) * .085) * length * (1 + variation);
+      const mid = width * .40 * length;
+      const midHeight = height * (.91 - drop * .27 + variation * .15);
+      const tipHeight = height * (.57 - drop + .04 * (k % 2) - variation * .30);
+      const leafHeight = height * (.835 - drop * .21);
+      const spread = width * .125 * density;
+      const crown = P(center.x, center.z, height * .75);
+      const midPoint = P(center.x + mid * dx, center.z + mid * dz, midHeight);
+      const tip = P(center.x + len * dx, center.z + len * dz, tipHeight);
+      const leafL = P(center.x + mid * dx + nx * spread, center.z + mid * dz + nz * spread, leafHeight);
+      const leafR = P(center.x + mid * dx - nx * spread, center.z + mid * dz - nz * spread, leafHeight);
+      const col = c.shade(foliage, (k % 2 ? 5 : -9) + tint);
+      c.poly([crown, leafL, midPoint], c.pitch, col, .60, -.008);
+      c.poly([crown, midPoint, leafR], c.pitch, c.shade(col, -10), .60, -.008);
       c.poly([leafL, tip, midPoint], c.pitch, col, .60, -.009);
       c.poly([leafR, midPoint, tip], c.pitch, c.shade(col, 10), .60, -.009);
       stats.faces += 4;
@@ -222,7 +251,7 @@
     const kind = species === 'fir' ? 'fir' : species === 'palm' ? 'palm' : 'deciduous';
     const seed = c.hash(String(it.sourceId || it.name || 'tree') + '|' + kind) >>> 0;
     const detail = c.lod, t = templateFor(kind, seed);
-    c.treeProfile = t.profile; // metadata for phases 2-4, no visual change
+    c.treeProfile = t.profile; // stable identity shared by all three tree families
     const width = Math.max(1, Number(it.width) || 5) * (.89 + (seed & 255) / 255 * .28);
     const height = Math.max(3, Number(it.height) || 12) * (.92 + ((seed >>> 8) & 255) / 255 * .17);
     const trunk = kind === 'palm' ? '#745638' : '#59432f';
@@ -232,7 +261,10 @@
       drawFir(c, height, width, trunk, foliage, t.profile);
       stats.firProfilesDrawn[t.profile.name]=(stats.firProfilesDrawn[t.profile.name]||0)+1;
     }
-    else if (kind === 'palm') drawPalm(c, height, width, trunk, foliage);
+    else if (kind === 'palm') {
+      drawPalm(c, height, width, trunk, foliage, t.profile);
+      stats.palmProfilesDrawn[t.profile.name]=(stats.palmProfilesDrawn[t.profile.name]||0)+1;
+    }
     else {
       drawDeciduous(c,t,width,height,trunk,foliage,detail);
       stats.deciduousProfilesDrawn[t.profile.name]=(stats.deciduousProfilesDrawn[t.profile.name]||0)+1;
