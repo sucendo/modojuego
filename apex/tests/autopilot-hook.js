@@ -12,6 +12,7 @@ window.__apexAuto={
   if(window.__apexAutoSeed)window.__apexAutoSeed(261007+calendar.indexOf(spec)*17+(traffic?1:0));
   // Audit the SAME SVG+JSON selected by the user's "Cargar versión guardada".
   // The old hook silently used Madrid BASE, masking edited track geometry.
+  let authoredBoardCount=null;
   if(dir==='14-spain'&&!readStoredCustomTrackSvg(dir)){
    const manifest=await fetch('circuits/manifest.json',{cache:'no-cache'}).then(r=>{if(!r.ok)throw Error('Missing circuit manifest');return r.json()});
    const saved=manifest.circuits?.[dir];if(!saved?.svg)throw Error('Missing saved Madrid SVG');
@@ -26,6 +27,7 @@ window.__apexAuto={
    const source=new DOMParser().parseFromString(xml,'image/svg+xml');
    const expected=[...source.querySelectorAll('[data-apex-role="distance-board"]')]
     .filter(el=>!el.closest('#APEX_ELEMENT_LIBRARY_ZONE, #APEX_ELEMENT_LIBRARY, [data-apex-library-zone="1"]')).length;
+   authoredBoardCount=expected;
    if(expected<1||loaded.brakeBoards!==expected||!loaded.worldPayload.brakeBoardsAuthoritative)
     throw Error('Saved Madrid SVG brake boards mismatch: '+loaded.brakeBoards+'/'+expected);
   }
@@ -35,7 +37,7 @@ window.__apexAuto={
   if(typeof apexRaceSelectPercentage==='function')apexRaceSelectPercentage(100);
   await startRace(spec,practice?999:99,practice?'freepractice':'quick',practice?$('practiceStart'):$('start'));if(!player||!trackData)throw Error('Load failed: '+dir);
   countdown=0;mode='race';paused=false;if(!practice)apexArmRaceGridTiming();apexReleaseInputs();gyro.enabled=false;setAutoDriveMode(1,true);
-  return {version:APP_VERSION,build:APP_BUILD,circuit:dir,session,rivals:rivals.length,startTotal:player.total,svgBoards:trackData.customWorld?.brakeBoards?.length||0,svgBoardAuthority:trackData.customWorld?.brakeBoardsAuthoritative===true,
+  return {version:APP_VERSION,build:APP_BUILD,circuit:dir,session,rivals:rivals.length,startTotal:player.total,svgBoards:trackData.customWorld?.brakeBoards?.length||0,svgBoardsExpected:authoredBoardCount,svgBoardAuthority:trackData.customWorld?.brakeBoardsAuthoritative===true,
    lineOptimization:trackData.model?.driver?.timeLine||null};
  },
  sample(){return{
