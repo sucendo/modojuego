@@ -25,6 +25,8 @@ function location(spec){
  const s=spec&&typeof spec==='object'?spec:{};
  const explicit=Number(s.lat??s.latitude??s.location?.lat);
  if(Number.isFinite(explicit)&&Math.abs(explicit)<=90&&explicit!==0)return explicit;
+ // El ID 16-bahrain es un alias histórico: la geometría corresponde a Sepang (Malasia).
+ if(s.dir==='16-bahrain'&&/sepang/i.test(String(s.name||'')))return 2.83;
  const key=[s.dir,s.name,s.country,s.id].filter(Boolean).join(' ');
  for(const [re,lat] of LAT_HINTS)if(re.test(key))return lat;
  return null;

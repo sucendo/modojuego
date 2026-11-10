@@ -34,7 +34,8 @@ window.__apexAudit={
   road:window.apexPhase6RoadDiagnostics?apexPhase6RoadDiagnostics():null,terrain:apexPhase5TerrainDiagnostics(),ground:apexPhase5GpuDiagnostics(),glError:gl&&gl.getError(),
   renderer:ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):gl&&gl.getParameter(gl.RENDERER)};},
  stop(){goMenu();return !apexPhase5TerrainGPU.buffer&&!apexPhase5GroundGPU.buffer&&(!window.apexPhase6RoadDiagnostics||!apexPhase6RoadDiagnostics().resident);},
- circuits(){return calendar.slice(0,F1_SEASON_COUNT).map(s=>s.dir);},
+ circuits(){return calendar.map(s=>s.dir);},
+ extraCircuits(){return calendar.slice(F1_SEASON_COUNT).map(s=>s.dir);},
  tyres(){return {player:apexTyreSnapshot(player),rivals:rivals.map(rv=>({id:rv.id,...apexTyreSnapshot(rv)})),environment:{...apexTyreEnvironment},profile:trackData.tyreProfile,label:$("tyreBadge").textContent};},
  async baseTests(){return{runtime:await apexCircuitRuntimeSelfTest(),timing:await apexLapEngineSelfTest(),road:window.apexPhase6AuditBaseCircuits?await apexPhase6AuditBaseCircuits():null};}
 };
