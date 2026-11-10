@@ -280,8 +280,8 @@ function apexTerrainCellNeedsDetail(g,x,z,span){
    nunca se recalcula por cámara, ni modifica el relieve del SVG original. */
 function apexUnifiedTerrainCellPieces(g,ix,iz,x1,z1,poly){
  const atlas=trackData&&trackData.customWorld&&trackData.customWorld._apexUnifiedGroundAtlas;
- const svg=atlas?.svg,hasPit=!!trackData?.customWorld?.pitNetwork?.runs?.length;
- if(!hasPit&&!svg?.faces.length)return null;
+ const svg=atlas?.svg;
+ if(!trackData&&!svg?.faces.length)return null;
  const owner=svg||trackData;
  if(g._apexUnifiedTerrainOwner!==owner){
   g._apexUnifiedTerrainPieces=new Map();g._apexUnifiedTerrainOwner=owner;
@@ -289,8 +289,11 @@ function apexUnifiedTerrainCellPieces(g,ix,iz,x1,z1,poly){
  const cache=g._apexUnifiedTerrainPieces,
   key=ix+':'+iz+':'+x1+':'+z1;
  if(cache.has(key))return cache.get(key);
- const runoff=apexClipGenericRunoffPolygon(poly);
- const pieces=hasPit?(runoff===null?apexClipTerrainAtPit(poly):runoff.flatMap(part=>apexClipTerrainAtPit(part)??[part])):runoff;
+ // Mismo recorte exacto que el relieve fino: ningún bloque grueso invade
+ // el asfalto ni deja un agujero al cambiar de LOD.
+ const runoff=apexClipGenericRunoffPolygon(poly),base=runoff??[poly];
+ const chunks=base.flatMap(part=>apexClipTerrainAtDrive(part)??[part]);
+ const pieces=runoff===null&&chunks.length===1&&chunks[0]===poly?null:chunks;
  if(cache.size>=3072){
   const keys=cache.keys();for(let n=0;n<384;n++){const k=keys.next();if(k.done)break;cache.delete(k.value)}
  }
@@ -353,10 +356,9 @@ function apexTerrainFinePatch(g,ix,iz,kind){
    baseRings=base&&base.rings||[];
  for(let j=0;j<=n;j++)for(let i=0;i<=n;i++){
   const x=x0+dx*i,z=z0+dz*j,inside=baseRings.some(r=>apexPointInsideClosedContour(x,z,r));
-  const ns=nearestTrackState(x,z,null,{radius:160,allowGlobal:true,fallbackDist:155}),env=envProfile(ns.s),
-    mainPaved=(!apexPhase1StructureAtWorld(x,z,ns.s)&&Math.abs(ns.lat)<=apexRoadFlatLimit(ns.s,env,ns.lat>=0?1:-1));
-  const raw=apexTerrainRawInterpolated(g,x,z),ground=apexPhase1GroundBlend(x,z,raw,ns),y=ground;
-  points.push({x,y,z,inside,paved:mainPaved});
+  const ns=nearestTrackState(x,z,null,{radius:160,allowGlobal:true,fallbackDist:155}),
+    raw=apexTerrainRawInterpolated(g,x,z),ground=apexPhase1GroundBlend(x,z,raw,ns),y=ground;
+  points.push({x,y,z,inside});
  }
  for(let j=0;j<n;j++)for(let i=0;i<n;i++){
   const A=points[j*(n+1)+i],B=points[j*(n+1)+i+1],C=points[(j+1)*(n+1)+i+1],D=points[(j+1)*(n+1)+i];
@@ -372,22 +374,17 @@ function apexTerrainFinePatch(g,ix,iz,kind){
     if(terrainTop>portal.q.y+.10)continue;
   }
 
-  const ns=nearestTrackState(x,z,null,{radius:70,allowGlobal:true,fallbackDist:65}),
-    env=envProfile(ns.s),structure=apexPhase1StructureAtWorld(x,z,ns.s),
-    mainPaved=!structure&&Math.abs(ns.lat)<apexRoadFlatLimit(ns.s,env,ns.lat>=0?1:-1);
-  // v5.230.56: ROAD no perfora la placa de terreno. Se dibuja después como cinta
-  // apoyada sobre la cota natural. PIT sí puede sustituir el terreno de su huella.
-  if(mainPaved)continue;
-  // La pista y los viales se dibujan después. Omitimos sólo las celdillas
-  // íntegramente pavimentadas para evitar que el suelo se pinte SOBRE ellas.
-  if(A.paved&&B.paved&&C.paved&&D.paved)continue;
-  // El propio túnel sigue siendo el molde exacto de v61/v62. No cambiamos
-  // absolutamente nada de la geometría visual para ganar rendimiento.
+  // Nunca descartar una celda completa porque su CENTRO sea asfalto.
+  // Una celda de borde puede contener a la vez pista, piano y tierra;
+  // el recorte geométrico conserva precisamente sus triángulos exteriores.
+  // Los túneles conservan la máscara original de su portal y techo.
   for(const poly of apexClipTerrainQuadByTunnel(A,B,C,D))if(poly&&poly.length>=3){
-   // No fabricar un suelo oculto bajo la escapatoria importada.
-   // Se almacena ya recortado en fineCache / cache persistente del GP.
-   const clean=apexClipGenericRunoffPolygon(poly);
-   for(const part of clean??[poly])for(const q of apexClipTerrainAtPit(part)??[part])if(q.length>=3)quads.push(q);
+   const authored=apexClipGenericRunoffPolygon(poly);
+   for(const part of authored??[poly]){
+    const drive=apexClipTerrainAtDrive(part);
+    for(const q of drive??[part])
+     if(q.length>=3&&Math.abs(apexInspectorPolyArea(q))>.0001)quads.push(q);
+   }
   }
  }
  if(!g._keepCompiledFineCache&&g.fineCache.size>540){const first=g.fineCache.keys().next().value;g.fineCache.delete(first)}
