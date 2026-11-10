@@ -34,7 +34,7 @@ try{
   document.write(parts.join(""));
   document.close();
   // SVG masters remain editable; sponsor artwork is rasterized once into GPU textures.
-  for(const src of ['js/svg-curbs.js?v=svg-road-edge-v2','js/track-sponsor-vectors.js?v=sct-planar-24m-v2','js/feature-sponsor-vectors.js?v=vector-perf-v2','js/track-sponsors.js?v=texture-v1','js/sponsor-textures.js?v=texture-v1','js/trees-3d-test.js?v=melbourne-lod-stable-v2']){
+  for(const src of ['js/svg-curbs.js?v=svg-road-edge-v2','js/track-sponsor-vectors.js?v=sct-planar-24m-v2','js/feature-sponsor-vectors.js?v=vector-perf-v2','js/track-sponsors.js?v=texture-v1','js/sponsor-textures.js?v=texture-v1','js/trees-3d-test.js?v=melbourne-profiles-phase1']){
     const script=document.createElement('script');script.src=src;script.async=false;
     (document.body||document.head).appendChild(script);
   }
