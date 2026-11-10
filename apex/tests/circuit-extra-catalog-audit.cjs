@@ -22,7 +22,7 @@ assert.equal(calendar.length,31);
 assert.equal(new Set(calendar.map(s=>s.dir)).size,31);
 assert.ok(calendar.slice(0,23).every(s=>Number.isInteger(s.r)&&!s.nonCalendar));
 assert.ok(calendar.slice(23).every(s=>s.r===null&&s.nonCalendar));
-const meta=JSON.parse(between(p000,'const APEX_LEGACY_RACE_META=',';\nvar APEX_BASE_CIRCUIT_JSON_BY_ID='));
+const meta=JSON.parse(between(p000,'const APEX_LEGACY_RACE_META=',';\nvar APEX_BASE_CIRCUIT_JSON_BY_ID=').replace(/^const APEX_LEGACY_RACE_META=/,''));
 const sandbox={raceMetaFor:spec=>meta[spec.dir]||null};
 const flags=between(p023,'const roundFlagCode=','let teamLogoRenderSeq');
 const lap=between(p023,'function estimateLapBase(','function weekendTeamKey(');
