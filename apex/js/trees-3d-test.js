@@ -6,7 +6,7 @@
   'use strict';
   const query = new URLSearchParams(window.location.search);
   const enabled = query.get('trees3d') === '1';
-  const stats = { drawn: 0, faces: 0, species: { deciduous: 0, fir: 0, palm: 0 } };
+  const stats = { drawn: 0, faces: 0, species: { deciduous: 0, fir: 0, palm: 0 }, deciduousProfilesDrawn: {} };
   window.apexTrees3dTrialEnabled = enabled;
   window.apexTrees3dTrialInfo = function () {
     return {
@@ -14,7 +14,8 @@
       mobile: 'Original tree rendering retained on mobile',
       renderedSinceLoad: stats.drawn, facesSubmittedSinceLoad: stats.faces,
       species: Object.assign({}, stats.species),
-      profilePhase: 1, profileCatalog: {deciduous:5,fir:4,palm:3},
+      deciduousProfilesDrawn: Object.assign({}, stats.deciduousProfilesDrawn),
+      profilePhase: 2, profileCatalog: {deciduous:5,fir:4,palm:3},
       note: 'Counts are accumulated draw submissions, not unique trees or FPS. Compare APEX diagnostics on equal laps.'
     };
   };
@@ -26,6 +27,9 @@
 
   // Phase 1: data only; later phases will apply these profiles to geometry.
   const TREE_PROFILES = Object.freeze({"deciduous":[{"name":"round-lush","height":1,"width":1.02,"trunk":1.1,"foliage":1.08,"density":1.16,"crownLift":0,"leanX":0,"leanZ":0},{"name":"tall-open","height":1.16,"width":0.9,"trunk":0.94,"foliage":0.94,"density":0.88,"crownLift":0.08,"leanX":0.04,"leanZ":-0.03},{"name":"wide-old","height":0.96,"width":1.18,"trunk":1.26,"foliage":1.02,"density":1.02,"crownLift":-0.01,"leanX":-0.04,"leanZ":0.02},{"name":"columnar-dense","height":1.11,"width":0.76,"trunk":0.9,"foliage":0.9,"density":1.14,"crownLift":0.1,"leanX":0.02,"leanZ":0.04},{"name":"sparse-leaning","height":1.03,"width":1,"trunk":0.98,"foliage":0.82,"density":0.76,"crownLift":0.03,"leanX":-0.09,"leanZ":0.06}],"fir":[{"name":"fir-classic","height":1.02,"width":1,"trunk":1,"foliage":1,"density":1,"crownLift":0,"leanX":0,"leanZ":0,"tiers":[0.68,0.56,0.44,0.28]},{"name":"fir-slender","height":1.16,"width":0.84,"trunk":0.92,"foliage":0.92,"density":0.95,"crownLift":0,"leanX":0.03,"leanZ":-0.02,"tiers":[0.56,0.47,0.36,0.22]},{"name":"fir-broad","height":0.96,"width":1.17,"trunk":1.1,"foliage":1.08,"density":1.07,"crownLift":0,"leanX":-0.03,"leanZ":0.02,"tiers":[0.8,0.64,0.5,0.34]},{"name":"fir-young","height":0.86,"width":0.72,"trunk":0.9,"foliage":0.93,"density":0.94,"crownLift":0,"leanX":0.01,"leanZ":0.01,"tiers":[0.46,0.36,0.28,0.18]}],"palm":[{"name":"palm-tall","height":1.12,"width":0.92,"trunk":0.92,"foliage":1,"density":1,"crownLift":0,"leanX":0.05,"leanZ":-0.03,"frondLength":1.02,"frondDrop":0,"frondCount":8},{"name":"palm-wide","height":0.98,"width":1.08,"trunk":1.02,"foliage":1.04,"density":1.06,"crownLift":0,"leanX":-0.03,"leanZ":0.04,"frondLength":1.15,"frondDrop":0.04,"frondCount":8},{"name":"palm-compact","height":0.9,"width":0.84,"trunk":1.12,"foliage":0.97,"density":0.96,"crownLift":0,"leanX":0.02,"leanZ":0.01,"frondLength":0.86,"frondDrop":-0.02,"frondCount":7}]});
+
+  // Different crown architectures; unchanged between LOD 0, 1 and 2.
+  const DECIDUOUS_CROWN_LAYOUTS = Object.freeze({"round-lush":[[0,0,0.8,0.36,0.27],[-0.3,-0.13,0.68,0.32,0.24],[0.32,-0.1,0.7,0.33,0.25],[-0.14,0.3,0.77,0.3,0.25],[0.17,0.28,0.8,0.3,0.25],[-0.18,-0.23,0.92,0.23,0.19],[0.22,-0.19,0.93,0.23,0.18],[0,0.06,1,0.23,0.18]],"tall-open":[[0,0,0.94,0.24,0.22],[-0.18,-0.08,0.73,0.25,0.22],[0.2,-0.13,0.78,0.23,0.2],[-0.08,0.24,0.86,0.22,0.19],[0.17,0.2,0.92,0.2,0.18],[0,-0.04,1.1,0.17,0.14]],"wide-old":[[0,0,0.8,0.34,0.22],[-0.44,-0.11,0.65,0.35,0.22],[0.45,-0.1,0.67,0.36,0.23],[-0.29,0.25,0.79,0.31,0.22],[0.3,0.26,0.78,0.31,0.22],[-0.14,-0.26,0.87,0.23,0.18],[0.15,-0.2,0.88,0.23,0.18]],"columnar-dense":[[0,0,0.88,0.21,0.27],[-0.15,-0.09,0.69,0.21,0.23],[0.17,-0.08,0.71,0.21,0.22],[-0.1,0.14,0.83,0.21,0.24],[0.12,0.14,0.85,0.2,0.24],[-0.08,-0.15,0.99,0.17,0.19],[0.09,-0.09,1.03,0.17,0.19],[0,0.08,1.1,0.14,0.16]],"sparse-leaning":[[0,0,0.87,0.31,0.23],[-0.33,-0.15,0.69,0.25,0.18],[0.3,-0.13,0.74,0.24,0.17],[-0.17,0.3,0.87,0.21,0.17],[0.18,0.26,0.97,0.19,0.15]]});
   function chooseProfile(species, seed) {
     const list=TREE_PROFILES[species]||TREE_PROFILES.deciduous;
     let bits=Math.imul((seed>>>0)^0x9e3779b9,0x85ebca6b)>>>0;
@@ -36,7 +40,8 @@
       height:base.height*(.95+.12*a),width:base.width*(.94+.14*b),
       trunk:base.trunk*(.92+.18*d),foliage:base.foliage*(.94+.12*d),
       density:base.density*(.90+.18*b),leanX:base.leanX+(a-.5)*.03,
-      leanZ:base.leanZ+(b-.5)*.03
+      leanZ:base.leanZ+(b-.5)*.03,
+      age:.78+.46*((bits>>>24)&255)/255
     });
   }
 
@@ -45,28 +50,25 @@
     let s = (seed >>> 0) || 1;
     const rand = () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; };
     const seedAngle = rand() * TAU;
+    const profile = chooseProfile(species, profileSeed);
     const leaves = [];
     if (species === 'deciduous') {
-      const centers = [
-        [0, 0, .83, .35, .27], [-.28, -.12, .67, .31, .24],
-        [.28, -.09, .68, .32, .26], [-.12, .27, .77, .30, .26],
-        [.17, .23, .76, .29, .26], [-.18, -.19, .91, .23, .19],
-        [.18, -.11, .94, .23, .19]
-      ];
-      // Every LOD uses all the same crowns and the same stable geometry anchors.
+      // These layouts and density are evaluated once per cached identity.
+      const centers = DECIDUOUS_CROWN_LAYOUTS[profile.name] || DECIDUOUS_CROWN_LAYOUTS['round-lush'];
       const count = centers.length;
+      const fill = Math.min(1.13, Math.max(.80, Math.sqrt(profile.density)));
       for (let j = 0; j < count; j++) {
         const c = centers[j], a = seedAngle + j * .71;
         leaves.push({
           x: c[0] + (rand() - .5) * .065, z: c[1] + (rand() - .5) * .065,
-          y: c[2] + (rand() - .5) * .035,
-          rx: c[3] * (.91 + rand() * .16), rz: c[3] * (.85 + rand() * .24),
-          ry: c[4] * (.91 + rand() * .18), rotation: a,
+          y: c[2] + (rand() - .5) * .035 + (profile.crownLift||0),
+          rx: c[3] * fill * (.91 + rand() * .16), rz: c[3] * fill * (.85 + rand() * .24),
+          ry: c[4] * fill * (.91 + rand() * .18), rotation: a,
           tint: Math.round((rand() - .5) * 22)
         });
       }
     }
-    return { rotation: seedAngle, leaves, profile:chooseProfile(species,profileSeed) };
+    return { rotation: seedAngle, leaves, profile };
   }
   const meshCache = new Map();
   function templateFor(species, seed) {
@@ -157,6 +159,38 @@
     }
   }
 
+  // Phase 2: deciduous only. Core clusters are never removed by LOD;
+  // near LOD draws more secondary branches, not a different crown outline.
+  function drawDeciduous(c,template,baseW,baseH,trunk,foliage,detail) {
+    const pr=template.profile;
+    const width=baseW*pr.width*Math.pow(pr.age,.78);
+    const height=baseH*pr.height*pr.age;
+    const trunkHeight=height*(.54+Math.min(.05,Math.max(-.03,(pr.crownLift||0)*.25)));
+    const leanX=pr.leanX*width, leanZ=pr.leanZ*width;
+    drawTube(c,{x:0,z:0,y:0},{x:leanX,z:leanZ,y:trunkHeight},
+      Math.max(.13,width*.050*pr.trunk),
+      Math.max(.075,width*.027*pr.trunk),
+      trunk,detail===2?4:6);
+    if(detail<=1) {
+      const branchCount=detail===0?Math.min(4,template.leaves.length-1):Math.min(2,template.leaves.length-1);
+      for(let j=1;j<=branchCount;j++){
+        const leaf=template.leaves[j];
+        drawTube(c,
+          {x:leanX*.35,z:leanZ*.35,y:trunkHeight*.68},
+          {x:leanX+leaf.x*width*.63,z:leanZ+leaf.z*width*.63,y:leaf.y*height*.90},
+          Math.max(.047,width*.018*pr.trunk),
+          Math.max(.025,width*.008*pr.trunk),
+          trunk,detail===0?4:3);
+      }
+    }
+    for(const leaf of template.leaves){
+      const tint=pr.name==='sparse-leaning'?-4:pr.name==='round-lush'?2:0;
+      const color=c.shade(foliage,leaf.tint-9+tint);
+      drawLeafCluster(c,leanX+leaf.x*width,leanZ+leaf.z*width,leaf.y*height,
+        leaf.rx*width,leaf.rz*width,leaf.ry*height,leaf.rotation,color);
+    }
+  }
+
   window.apexTrees3dRender = function (c) {
     // No 110 m switch back to the unrelated legacy silhouette: the engine's
     // existing visibility culling and LOD3 rejection determine when a tree disappears.
@@ -175,23 +209,8 @@
     if (kind === 'fir') drawFir(c, height, width, trunk, foliage);
     else if (kind === 'palm') drawPalm(c, height, width, trunk, foliage);
     else {
-      const trunkH = height * .56;
-      drawTube(c, { x: 0, z: 0, y: 0 }, { x: 0, z: 0, y: trunkH },
-        Math.max(.13, width * .050), Math.max(.085, width * .028), trunk, detail === 2 ? 4 : 6);
-      if (detail === 0) {
-        for (let j = 1; j < 5; j++) {
-          const leaf = t.leaves[j];
-          drawTube(c, { x: 0, z: 0, y: trunkH * .68 },
-            { x: leaf.x * width * .65, z: leaf.z * width * .65, y: leaf.y * height * .88 },
-            Math.max(.055, width * .018), Math.max(.027, width * .008), trunk, 4);
-        }
-      }
-      for (const leaf of t.leaves) {
-        const color = c.shade(foliage, leaf.tint - 9);
-        drawLeafCluster(c, leaf.x * width, leaf.z * width, leaf.y * height,
-          leaf.rx * width, leaf.rz * width, leaf.ry * height,
-          leaf.rotation, color);
-      }
+      drawDeciduous(c,t,width,height,trunk,foliage,detail);
+      stats.deciduousProfilesDrawn[t.profile.name]=(stats.deciduousProfilesDrawn[t.profile.name]||0)+1;
     }
     stats.drawn++;
     stats.species[kind]++;
