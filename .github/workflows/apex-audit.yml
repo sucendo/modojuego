@@ -38,6 +38,7 @@ jobs:
           node apex/tests/svg-barrier-visibility.cjs > /tmp/apex-results/svg-barrier-visibility.json
           node apex/tests/svg-metric-scale.cjs > /tmp/apex-results/svg-metric-scale.json
           node apex/tests/pedestrian-bridge-clearance.cjs > /tmp/apex-results/pedestrian-bridge-clearance.json
+          node apex/tests/trees3d-universal.cjs > /tmp/apex-results/trees3d-universal.json
           node apex/tests/svg-ideal-racing-line.cjs > /tmp/apex-results/svg-ideal-racing-line.json
           node apex/tests/svg-curbs-audit.cjs > /tmp/apex-results/svg-curbs-palette.json
           node apex/tests/track-curve-geometry.cjs > /tmp/apex-results/track-curves.json
