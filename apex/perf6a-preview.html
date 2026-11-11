@@ -13,8 +13,8 @@ small{display:block;color:#91a0af;margin-top:10px}
 <body>
 <main id="status"><div><strong>Cargando APEX Formula 26…</strong><small>Reconstruyendo la versión completa.</small></div></main>
 <script type="module">
-// Preview 6A + árboles 3D: conserva los apoyos/tableros corregidos en
-// part-024 y el render de pasarelas de part-025-trees3d-preview.
+// Preview 6A: puentes peatonales de extremo a extremo, con apoyos seguros,
+// render de arboles 3D opt-in en movil y mejoras de rendimiento 6A.
 const count=28;
 try{
   // Fase 4: descarga concurrente acotada, ensamblado en orden estable.
@@ -26,7 +26,8 @@ try{
       const i=cursor++;
       if(i>=count)return;
       const n=String(i).padStart(3,"0");
-      const partPath=i===25?"parts/part-025-trees3d-preview.txt":
+      const partPath=i===24?"parts/part-024-bridgefull-preview.txt":
+                    i===25?"parts/part-025-bridgefull-trees3d-preview.txt":
                     i===26?"parts/part-026-perf6a-preview.txt":"parts/part-"+n+".txt";
       const r=await fetch(partPath,{cache:"no-cache"});
       if(!r.ok)throw new Error("No se pudo cargar part-"+n+" ("+r.status+")");
