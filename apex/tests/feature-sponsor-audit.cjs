@@ -69,7 +69,7 @@ for(const id of ['tunnel_madrid_01','tunnel_madrid_02']){
  assert.ok(prev&&prev[0].includes('data-apex-ad-banner="true"'),'Previous (14) ad opt-in should remain preserved');
 }
 const manifest=JSON.parse(read('circuits/manifest.json'));
-assert.equal(manifest.circuits['14-spain'].previousEditionSvg,'svg/apex26_14-madrid-spain_2026-11-06.svg');
+assert.equal(manifest.circuits['14-spain'].previousEditionSvg,'svg/apex26_14-madrid-spain_2026-11-06-boxes.svg');
 // Exercise the geometry helper without starting WebGL, ensuring physical locations
 // and the explicit false/true tunnel flag are independent of the renderer.
 const start=body2.indexOf('function apexFeatureTrackBanner('),end=body2.indexOf('function apexSponsorDraw(',start);
