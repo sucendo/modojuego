@@ -1,16 +1,16 @@
-/* APEX Formula 26 - Melbourne procedural vegetation experiment.
- * Opt in using ?trees3d=1. Mainline render path remains untouched by default.
- * Works with APEX's native camera-space WebGL2 primitives; no Three.js dependency.
+/* APEX Formula 26 - universal procedural vegetation for authored circuit trees.
+ * Works on every circuit with SVG tree markers, with shared bounded meshes.
+ * Desktop WebGL2 only; ?trees3d=0 opts out to the legacy fallback.
  */
 (function () {
   'use strict';
   const query = new URLSearchParams(window.location.search);
-  const enabled = query.get('trees3d') === '1';
-  const stats = { drawn: 0, faces: 0, species: { deciduous: 0, fir: 0, palm: 0 }, deciduousProfilesDrawn: {}, firProfilesDrawn: {}, palmProfilesDrawn: {}, lodDraws:[0,0,0],lodFaces:[0,0,0] };
+  const enabled = query.get('trees3d') !== '0';
+  const stats = { drawn: 0, faces: 0, lastCircuit: null, species: { deciduous: 0, fir: 0, palm: 0 }, deciduousProfilesDrawn: {}, firProfilesDrawn: {}, palmProfilesDrawn: {}, lodDraws:[0,0,0],lodFaces:[0,0,0] };
   window.apexTrees3dTrialEnabled = enabled;
   window.apexTrees3dTrialInfo = function () {
     return {
-      enabled, circuit: '01-australia', maxDistanceM: 1100, lodPolicy: 'The same 3D crown and silhouette from near to far, up to engine culling',
+      enabled, circuit: stats.lastCircuit || null, scope: 'all-circuits', maxDistanceM: 1100, lodPolicy: 'The same 3D crown and silhouette from near to far, up to engine culling',
       mobile: 'Original tree rendering retained on mobile',
       renderedSinceLoad: stats.drawn, facesSubmittedSinceLoad: stats.faces,
       species: Object.assign({}, stats.species),
@@ -274,9 +274,12 @@
   window.apexTrees3dRender = function (c) {
     // No 110 m switch back to the unrelated legacy silhouette: the engine's
     // existing visibility culling and LOD3 rejection determine when a tree disappears.
-    if (!c || c.circuitId !== '01-australia' || c.mobile || c.lod > 2 ||
+    if (!c || c.mobile || c.lod > 2 ||
         !Number.isFinite(c.depth) || c.depth < .6) return false;
-    const it = c.it, species = it.treeVariant || it.variant || 'deciduous';
+    const it = c.it;
+    if (!it || it.type !== 'tree') return false;
+    stats.lastCircuit = c.circuitId || null;
+    const species = it.treeVariant || it.variant || 'deciduous';
     const kind = species === 'fir' ? 'fir' : species === 'palm' ? 'palm' : 'deciduous';
     const seed = c.hash(String(it.sourceId || it.name || 'tree') + '|' + kind) >>> 0;
     const detail = c.lod, t = templateFor(kind, seed);
