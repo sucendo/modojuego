@@ -3032,7 +3032,7 @@ function apexGrandstandSeatVisual(prof,ri,rows,ci=0,att=apexGrandstandAttendance
 const apexGrandstandCrowdPreviewStats={builds:0,hits:0,avatars:0,heads:0,lastTier:0};
 window.apexGrandstandCrowdPreviewInfo=()=>({...apexGrandstandCrowdPreviewStats});
 function apexGrandstandPreviewCrowd(it,prof,frame,h,gb,att){
- if(!it||!frame||!gb||!att||!att.crowd||att.fill<=.01||gb.tier<1)return[];
+ if(!it||!frame||!gb||!att||!att.crowd||att.fill<=.01||gb.tier!==2)return[];
  const mobile=mobilePerformanceMode(),tier=gb.tier,
    rows=tier===2?(mobile?5:6):3,
    cap=tier===2?(mobile?55:90):(mobile?18:30),
