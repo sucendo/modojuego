@@ -3418,15 +3418,15 @@ function drawWorldLandmarks(cam,pitch){
      // v5.230.27 · Pasarela peatonal: cuerpo horizontal fino y oscuro,
      // apoyos esbeltos fuera de la calzada y barandilla/estructura ligera superior.
      // data-apex-height se interpreta como altura total aproximada, no como un bloque macizo desde el suelo.
-     const totalH=Math.max(6.1,Math.min(8.6,Number(it.height)||7)),deckT=clamp(totalH*.16,.88,1.24),deckBase=totalH-deckT,gy=groundedY(a),col=it.color||"#343b42";
+     const deckBaseY=visual?.deckBaseY??(groundedY(a)+5.9),deckTopY=visual?.deckTopY??(groundedY(a)+7),col=it.color||"#343b42";
      if(visual&&visual.footprint&&visual.footprint.length>=3){
-       const bp3=visual.footprint.map(v=>worldToCamera(v[0],gy+deckBase,v[1],cam)),tp3=visual.footprint.map(v=>worldToCamera(v[0],gy+totalH,v[1],cam));
+       const bp3=visual.footprint.map(v=>worldToCamera(v[0],deckBaseY,v[1],cam)),tp3=visual.footprint.map(v=>worldToCamera(v[0],deckTopY,v[1],cam));
        polyCam(bp3,"#1c2227",null,1,1);
        for(let j=0;j<bp3.length;j++){const k=(j+1)%bp3.length;polyCam([bp3[j],bp3[k],tp3[k],tp3[j]],j%2?shadeColor(col,-8):col,"rgba(255,255,255,.10)",1,1);}
        polyCam(tp3,shadeColor(col,16),"rgba(255,255,255,.18)",1,1);
        if(Array.isArray(visual.path)&&visual.path.length>=2){
          const p0=visual.path[0],p1=visual.path[visual.path.length-1],dx=p1[0]-p0[0],dz=p1[1]-p0[1],ln=Math.hypot(dx,dz)||1,nx=-dz/ln,nz=dx/ln,colHalf=.30;
-         const top=gy+deckBase,half=Math.max(.30,Math.min(.46,(Number(it.width)||5)*.075));
+         const top=deckBaseY,half=Math.max(.30,Math.min(.46,(Number(it.width)||5)*.075));
          for(const support of visual.supports){
            if(!support.safe)continue;
            const ep=support.point,ey=apexWorldGroundY(ep[0],ep[1]);if(top<=ey+.3)continue;
@@ -3441,10 +3441,10 @@ function drawWorldLandmarks(cam,pitch){
            }
          }
          if(detailAlpha>.05){
-           const railY=gy+totalH+.42,rail=visual.path.map(v=>project(v[0],railY,v[1],it.maxDs||1700));
+           const railY=deckTopY+.42,rail=visual.path.map(v=>project(v[0],railY,v[1],it.maxDs||1700));
            for(let j=1;j<rail.length;j++)line(rail[j-1],rail[j],"rgba(205,215,222,.82)",Math.max(1,1.15*s),1);
            const posts=Math.min(8,Math.max(3,Math.round(visual.path.length/3)));
-           for(let j=0;j<posts;j++){const ix=Math.round(j*(visual.path.length-1)/Math.max(1,posts-1)),v=visual.path[ix],rb=project(v[0],gy+totalH,v[1],it.maxDs||1700),rt=project(v[0],railY,v[1],it.maxDs||1700);line(rb,rt,"rgba(205,215,222,.62)",Math.max(1,.9*s),1);}
+           for(let j=0;j<posts;j++){const ix=Math.round(j*(visual.path.length-1)/Math.max(1,posts-1)),v=visual.path[ix],rb=project(v[0],deckTopY,v[1],it.maxDs||1700),rt=project(v[0],railY,v[1],it.maxDs||1700);line(rb,rt,"rgba(205,215,222,.62)",Math.max(1,.9*s),1);}
          }
        }
        apexFeatureBridgeBanner(it,cam,pitch,"canvas2d");
@@ -4925,14 +4925,24 @@ function apexPedestrianBridgeVisual(it){
  const cached=it._apexPedestrianBridgeVisual;
  if(cached&&cached.source===path&&cached.stamp===stamp&&cached.track===trackData&&cached.width===it.width)return cached;
  const last=path.length-1,visualPath=path.map(p=>[p[0],p[1]]);
- const margin=Math.max(1.8,Math.min(2.8,(Number(it.width)||5)*.28+.55));
- function safe(x,z){
-   const ns=nearestTrackState(x,z,null),env=envProfile(ns.s),side=ns.lat>=0?1:-1;
+ const halfPier=Math.max(.30,Math.min(.46,(Number(it.width)||5)*.075)),pierR=halfPier+.12;
+ const margin=Math.max(1.8,Math.min(3.0,(Number(it.width)||5)*.28+.6));
+ function clearPoint(x,z){
+   const ns=nearestTrackState(x,z,null);
+   if(!ns||!Number.isFinite(ns.s)||!Number.isFinite(ns.lat))return false;
+   const env=envProfile(ns.s),side=ns.lat>=0?1:-1;
    if(Math.abs(ns.lat)<=Math.max(env.half+env.curb+env.runoff,apexRoadFlatLimit(ns.s,env,side))+margin)return false;
    const pit=nearestPitState(x,z,null);
    if(pit&&pit.dist<=Math.max(pit.leftWidth||0,pit.rightWidth||0,(pit.width||0)*.5)+margin)return false;
-   // La escapatoria SVG puede extenderse más allá del ancho de respaldo.
    if(apexSampleRunoffSurfaceAtWorld(x,z))return false;
+   return true;
+ }
+ // Test the actual pier footprint: a clear centre is not enough if a corner
+ // protrudes into SVG asphalt, runoff, kerbs, the pitlane or another road.
+ function safe(x,z){
+   for(const [ox,oz] of [[0,0],[-pierR,-pierR],[-pierR,pierR],[pierR,-pierR],[pierR,pierR]]){
+     if(!clearPoint(x+ox,z+oz))return false;
+   }
    return true;
  }
  const supports=[];
@@ -4941,7 +4951,7 @@ function apexPedestrianBridgeVisual(it){
      dx=p[0]-q[0],dz=p[1]-q[1],len=Math.hypot(dx,dz);
    let point=[p[0],p[1]],shift=0,valid=false;
    if(len>.05){
-     for(let d=0;d<=64;d++){
+     for(let d=0;d<=96;d++){
        const x=p[0]+dx/len*d,z=p[1]+dz/len*d;
        if(safe(x,z)){point=[x,z];shift=d;valid=true;break;}
      }
@@ -4949,9 +4959,39 @@ function apexPedestrianBridgeVisual(it){
    if(valid)visualPath[at]=point;
    supports.push({point,shift,safe:valid});
  }
+ // An uphill crossing needs real clearance under the deck, even if the source
+ // SVG gives a fixed nominal 7m total height.
+ const totalH=Math.max(6.1,Math.min(8.6,Number(it.height)||7)),
+       deckT=clamp(totalH*.16,.88,1.24),anchorY=Number(it.anchor?.y)||0;
+ let maxRoadY=-Infinity;
+ if(typeof renderRibbonFrameAt==='function'){
+   const a=path[0],b=path[last],span=Math.hypot(b[0]-a[0],b[1]-a[1]),
+         samples=Math.max(8,Math.min(64,Math.ceil(span/3)));
+   for(let k=0;k<=samples;k++){
+     const t=k/samples,x=a[0]+(b[0]-a[0])*t,z=a[1]+(b[1]-a[1])*t,
+           ns=nearestTrackState(x,z,null);
+     if(!ns||!Number.isFinite(ns.s)||!Number.isFinite(ns.lat))continue;
+     const env=envProfile(ns.s),side=ns.lat>=0?1:-1,
+           limit=Math.max(env.half+env.curb+env.runoff,apexRoadFlatLimit(ns.s,env,side))+(Number(it.width)||5)*.5+.5;
+     if(Math.abs(ns.lat)>limit)continue;
+     const q=renderRibbonFrameAt(ns.s);
+     if(q&&Number.isFinite(q.y)){
+       let y=q.y;
+       if(typeof apexRoadSideHeight==='function')y=Math.max(y,apexRoadSideHeight(q,env,side));
+       maxRoadY=Math.max(maxRoadY,y);
+     }
+   }
+ }
+ let highestPierY=-Infinity;
+ if(typeof apexWorldGroundY==='function')for(const sp of supports){
+   if(sp.safe){sp.groundY=apexWorldGroundY(sp.point[0],sp.point[1]);highestPierY=Math.max(highestPierY,sp.groundY);}
+ }
+ const deckBaseY=Math.max(anchorY+totalH-deckT,maxRoadY+5.25,highestPierY+.65),
+       deckTopY=deckBaseY+deckT;
  const footprint=polyFootprintFromWorldPath(visualPath,it.width)||it.worldFootprint;
  const result={source:path,stamp,track:trackData,width:it.width,path:visualPath,
-   footprint,supports,sourceId:it.sourceId||''};
+   footprint,supports,deckBaseY,deckTopY,
+   minimumClearanceM:Number.isFinite(maxRoadY)?deckBaseY-maxRoadY:null,sourceId:it.sourceId||''};
  it._apexPedestrianBridgeVisual=result;
  return result;
 }
@@ -4960,7 +5000,8 @@ window.apexBridgeSupportAudit=function(){
  const bridges=trackLandmarks().filter(it=>it&&it.type==='bridge'&&it.pedestrianBridge).map(it=>{
    const g=apexPedestrianBridgeVisual(it);
    return {name:it.name||'pasarela',sourceId:it.sourceId||'',
-     supports:g?g.supports.map(s=>({safe:s.safe,shiftM:s.shift,x:s.point[0],z:s.point[1]})):[]};
+     deckBaseY:g?.deckBaseY,deckTopY:g?.deckTopY,minimumClearanceM:g?.minimumClearanceM,
+     supports:g?g.supports.map(s=>({safe:s.safe,shiftM:s.shift,x:s.point[0],z:s.point[1],groundY:s.groundY,radius:Math.max(.30,Math.min(.46,(Number(it.width)||5)*.075))})):[]};
  });
  return{ready:true,circuit:trackData.spec&&trackData.spec.dir,count:bridges.length,
    omittedSupports:bridges.reduce((n,b)=>n+b.supports.filter(s=>!s.safe).length,0),
@@ -4973,14 +5014,14 @@ function apexFeatureBridgeBanner(it,cam,pitch,backend){
  // Place the artwork on the actual visible side of the pedestrian walkway,
  // keeping the original brand aspect ratio instead of stretching the logo
  // to the full bridge length (which distorted the Radiquero lettering).
- const path=it.worldPath,a=path[0],b=path[path.length-1],
+ const visual=apexPedestrianBridgeVisual(it),path=visual?.path||it.worldPath,a=path[0],b=path[path.length-1],
        dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz);
  if(length<8||length>130)return false;
  const nx=-dz/length,nz=dx/length,midX=(a[0]+b[0])*.5,midZ=(a[1]+b[1])*.5,
        facing=((cam.x-midX)*nx+(cam.z-midZ)*nz)>=0?1:-1,
        offset=facing*(Number(it.width)||5)*.5+facing*.12,
        totalH=Math.max(6.1,Math.min(8.6,Number(it.height)||7)),
-       top=(Number(it.anchor?.y)||0)+totalH+.03,
+       top=(visual?.deckTopY??((Number(it.anchor?.y)||0)+totalH))+.03,
        bottom=top-clamp(length/20,1.55,2.65),aspect=7.2,
        centreLen=Math.min(length,(top-bottom)*aspect*1.12),
        f0=.5-centreLen/length*.5,f1=1-f0;
