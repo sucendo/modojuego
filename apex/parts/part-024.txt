@@ -5014,7 +5014,8 @@ function apexFeatureBridgeBanner(it,cam,pitch,backend){
  // Place the artwork on the actual visible side of the pedestrian walkway,
  // keeping the original brand aspect ratio instead of stretching the logo
  // to the full bridge length (which distorted the Radiquero lettering).
- const visual=apexPedestrianBridgeVisual(it),path=visual?.path||it.worldPath,a=path[0],b=path[path.length-1],
+ const visual=(typeof nearestTrackState==='function'&&typeof envProfile==='function'&&typeof apexRoadFlatLimit==='function')?apexPedestrianBridgeVisual(it):null,
+       path=visual?.path||it.worldPath,a=path[0],b=path[path.length-1],
        dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz);
  if(length<8||length>130)return false;
  const nx=-dz/length,nz=dx/length,midX=(a[0]+b[0])*.5,midZ=(a[1]+b[1])*.5,
