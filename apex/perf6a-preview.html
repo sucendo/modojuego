@@ -13,7 +13,9 @@ small{display:block;color:#91a0af;margin-top:10px}
 <body>
 <main id="status"><div><strong>Cargando APEX Formula 26…</strong><small>Reconstruyendo la versión completa.</small></div></main>
 <script type="module">
-// Preview 6A + árboles 3D: conserva los apoyos/tableros corregidos en\n// part-024 y el render de pasarelas de part-025-trees3d-preview.\nconst count=28;
+// Preview 6A + árboles 3D: conserva los apoyos/tableros corregidos en
+// part-024 y el render de pasarelas de part-025-trees3d-preview.
+const count=28;
 try{
   // Fase 4: descarga concurrente acotada, ensamblado en orden estable.
   // Evita 28 esperas HTTP secuenciales y concatenaciones crecientes.
@@ -92,6 +94,11 @@ try{
   prototypeScript.src="js/menu-prototype-9a.js";
   prototypeScript.async=false;
   (document.body||document.head).appendChild(prototypeScript);
+  // Preview-only: mobile WebGL2 trees toggle in Options; never touches apex.html.
+  const trees3dMobileScript=document.createElement("script");
+  trees3dMobileScript.src="js/trees3d-mobile-preview.js?v=mobile-opt-in-v1";
+  trees3dMobileScript.async=false;
+  (document.body||document.head).appendChild(trees3dMobileScript);
   // Tarjeta broadcast de Circuito: información nativa, trazado SVG real y controles intactos.
   const circuitBroadcastStyles=document.createElement("link");
   circuitBroadcastStyles.rel="stylesheet";
