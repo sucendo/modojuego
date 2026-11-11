@@ -1,0 +1,64 @@
+'use strict';
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const root=path.resolve(__dirname,'..');
+const canvas=fs.readFileSync(path.join(root,'parts/part-024-bridgefull-preview.txt'),'utf8');
+const webgl=fs.readFileSync(path.join(root,'parts/part-025-bridgefull-trees3d-preview.txt'),'utf8');
+const preview=fs.readFileSync(path.join(root,'perf6a-preview.html'),'utf8');
+const production=fs.readFileSync(path.join(root,'apex.html'),'utf8');
+assert.match(preview,/part-024-bridgefull-preview\.txt/);
+assert.match(preview,/part-025-bridgefull-trees3d-preview\.txt/);
+assert.doesNotMatch(production,/part-024-bridgefull-preview|part-025-bridgefull-trees3d-preview/);
+
+const start=canvas.indexOf('const apexGrandstandCrowdMosaicStats=');
+const end=canvas.indexOf('function apexGrandstandFrameStats(it){',start);
+assert.ok(start>=0&&end>start,'shared mosaic renderer is missing');
+let pressure=0,groundCalls=0,mobile=true;
+const window={};
+const factory=new Function('window','mobilePerformanceMode','apexSceneDetailBudget',
+ 'apexGrandstandSeatVisual','apexGrandstandFrameXZ','apexStaticSceneryGroundY','trackData',
+ canvas.slice(start,end)+'\nreturn apexGrandstandCrowdMosaic;');
+const draw=factory(window,()=>mobile,()=>({pressure}),
+ (prof,ri,rows,ci,att)=>({occupied:att.fill>.01&&((ci+ri)%5!==0),top:'#c45a41'}),
+ (frame,u,depth)=>[frame.span*u,depth],
+ ()=>{groundCalls++;return 1.5;},{customWorld:{_apexGroundStamp:'test'}});
+const frame={span:70,depth:19,edge:{a:[0,0],b:[70,0],nx:0,nz:1}};
+const stand={},prof={style:'grandstand_covered'};
+const full={crowd:true,fill:1,label:'full'},empty={crowd:false,fill:0,label:'empty'};
+const mid=draw(stand,prof,frame,14,{tier:1},full);
+assert.ok(mid.length>0&&mid.length<=21,'mobile medium LOD must have a small, visible mosaic');
+assert.ok(mid.every(p=>p.quad.length===4&&p.quad.every(v=>v.length===3)));
+const previous=groundCalls;
+assert.equal(draw(stand,prof,frame,14,{tier:1},full),mid,'mosaic must reuse cached world geometry');
+assert.equal(groundCalls,previous,'cached mosaic must not sample terrain again');
+const far=draw(stand,prof,frame,14,{tier:0},full);
+assert.ok(far.length>0&&far.length<=12,'far mobile crowd should remain visible with <=12 tiles');
+assert.equal(draw(stand,prof,frame,14,{tier:0},empty).length,0,'empty stands must remain empty');
+pressure=2;
+assert.ok(draw(stand,prof,frame,14,{tier:0},full).length<=4,'under load far crowd should shrink');
+pressure=3;
+assert.equal(draw(stand,prof,frame,14,{tier:0},full).length,0,'under severe load far crowd should disappear');
+assert.ok(draw(stand,prof,frame,14,{tier:1},full).length<=5,'under severe load medium crowd must be bounded');
+mobile=false;pressure=0;
+assert.ok(draw({},prof,frame,14,{tier:1},full).length<=36,'desktop medium budget exceeded');
+
+for(const [source,startBranch,endBranch] of [
+ [canvas,'}else if(it.type==="grandstand"){','}else if(it.type==="billboard"||it.type==="advertising"){'],
+ [webgl,"}else if(it.type==='grandstand'){","}else if(it.type==='gantry'){"]
+]){
+ const a=source.indexOf(startBranch),b=source.indexOf(endBranch,a);
+ assert.ok(a>=0&&b>a,'missing SVG grandstand branch');
+ const body=source.slice(a+1,b);
+ new Function('for(let k=0;k<1;k++){if(false){}'+body+'}}');
+ assert.match(body,/apexGrandstandCrowdMosaic\(it,prof,frame,h,gb,att\)/);
+ assert.match(body,/apexGrandstandPreviewCrowd\(it,prof,frame,h,gb,att\)/);
+ assert.match(body,/const hasVip=!!\(it\.vip\|\|it\.hasVip/,'ordinary covered stands must not be blocked by huge VIP rooms');
+ assert.match(body,/fasciaL/,'canopy should have a visible front edge');
+ assert.match(body,/railH/,'stand front rail should remain visible near track');
+ assert.match(body,/if\(prof\.covered\)\{/,'roof should remain at distance');
+}
+assert.match(canvas,/gb\.tier!==2\)return\[\]/,'only near spectators should use individual polygons');
+assert.ok(window.apexGrandstandCrowdMosaicInfo().hits>0);
+console.log(JSON.stringify({test:'grandstand-v2-preview',mobileMid:mid.length,mobileFar:far.length,
+ cached:true,attendance:true,pressureThrottling:true,canvas:true,webgl:true,previewOnly:true,ok:true}));
