@@ -4317,12 +4317,12 @@ function webglPushCircuitLandmarks(cam,pitch){
      const visual=apexPedestrianBridgeVisual(it);
      // v5.230.27 · Pasarela peatonal: volumen elevado y fino, no bloque sólido desde el suelo.
      if(visual&&visual.footprint&&visual.footprint.length>=3){
-       const totalH=Math.max(6.1,Math.min(8.6,Number(it.height)||7)),deckT=clamp(totalH*.16,.88,1.24),deckBase=totalH-deckT,gy=a.y,col=it.color||'#343b42',bp=visual.footprint.map(v=>worldToCamera(v[0],gy+deckBase,v[1],cam)),tp=visual.footprint.map(v=>worldToCamera(v[0],gy+totalH,v[1],cam));
+       const deckBaseY=visual?.deckBaseY??(a.y+5.9),deckTopY=visual?.deckTopY??(a.y+7),col=it.color||'#343b42',bp=visual.footprint.map(v=>worldToCamera(v[0],deckBaseY,v[1],cam)),tp=visual.footprint.map(v=>worldToCamera(v[0],deckTopY,v[1],cam));
        webglPushCamPoly(bp,pitch,'#1c2227',.60,-.006);webglPushCamPoly(tp,pitch,shadeColor(col,16),.60,-.010);
        for(let j=0;j<bp.length;j++){const k=(j+1)%bp.length;webglPushCamQuad(bp[j],bp[k],tp[k],tp[j],pitch,j%2?shadeColor(col,-8):col,.60,-.008);}
        if(Array.isArray(visual.path)&&visual.path.length>=2){
          const p0=visual.path[0],p1=visual.path[visual.path.length-1],dx=p1[0]-p0[0],dz=p1[1]-p0[1],ln=Math.hypot(dx,dz)||1,nx=-dz/ln,nz=dx/ln,colHalf=.30;
-         const top=gy+deckBase,half=Math.max(.30,Math.min(.46,(Number(it.width)||5)*.075));
+         const top=deckBaseY,half=Math.max(.30,Math.min(.46,(Number(it.width)||5)*.075));
          for(const support of visual.supports){
            if(!support.safe)continue;
            const ep=support.point,ey=apexWorldGroundY(ep[0],ep[1]);if(top<=ey+.3)continue;
@@ -4337,7 +4337,7 @@ function webglPushCircuitLandmarks(cam,pitch){
            }
          }
          if(lod<=1){
-           const railY=gy+totalH+.42,rail=visual.path.map(v=>worldToCamera(v[0],railY,v[1],cam));
+           const railY=deckTopY+.42,rail=visual.path.map(v=>worldToCamera(v[0],railY,v[1],cam));
            for(let j=1;j<rail.length;j++){const A=rail[j-1],B=rail[j];webglPushCamQuad(camMix(A,B,.01),camMix(A,B,.03),camMix(A,B,.99),camMix(A,B,.97),pitch,'rgba(205,215,222,.72)',.60,-.014);}
          }
        }
