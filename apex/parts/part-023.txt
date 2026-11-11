@@ -567,7 +567,11 @@ function landmarkSvgNode(it,index){
  if(it.type==='block'||it.type==='building'){if(Array.isArray(it.worldFootprint)&&it.worldFootprint.length>=3){const pts=it.worldFootprint.map(p=>`${svgNum(p[0])},${svgNum(-p[1])}`).join(' ');return `<polygon ${base} class="building" points="${pts}" />`}const w=Math.max(8,it.width||20),d=Math.max(8,it.depth||16);return `<rect ${base} class="building" x="${svgNum(x-w*.5)}" y="${svgNum(y-d*.5)}" width="${svgNum(w)}" height="${svgNum(d)}" rx="2.2" transform="${rot}" />`}
  if(it.type==='tower'){const w=Math.max(6,it.width||10),h=Math.max(18,Math.min(36,(it.height||60)*.18));return `<rect ${base} class="tower" x="${svgNum(x-w*.5)}" y="${svgNum(y-h)}" width="${svgNum(w)}" height="${svgNum(h)}" rx="1.8" />`}
  if(it.type==='ferris'){const r=Math.max(10,it.radius||18);return `<circle ${base} class="ferris" cx="${svgNum(x)}" cy="${svgNum(y)}" r="${svgNum(r)}" />`}
- if(it.type==='tree'){const r=Math.max(4,(it.width||5)*.85),v=it.treeVariant||it.variant||'deciduous';if(v==='fir')return `<polygon ${base} class="tree tree-fir" points="${svgNum(x)},${svgNum(y-r*1.35)} ${svgNum(x-r)},${svgNum(y+r)} ${svgNum(x+r)},${svgNum(y+r)}" />`;if(v==='palm')return `<path ${base} class="tree tree-palm" d="M ${svgNum(x)} ${svgNum(y+r)} L ${svgNum(x)} ${svgNum(y-r*.35)} M ${svgNum(x)} ${svgNum(y-r*.35)} L ${svgNum(x-r)} ${svgNum(y-r)} M ${svgNum(x)} ${svgNum(y-r*.35)} L ${svgNum(x+r)} ${svgNum(y-r)} M ${svgNum(x)} ${svgNum(y-r*.35)} L ${svgNum(x-r*.75)} ${svgNum(y-r*.1)} M ${svgNum(x)} ${svgNum(y-r*.35)} L ${svgNum(x+r*.75)} ${svgNum(y-r*.1)}" />`;return `<circle ${base} class="tree tree-deciduous" cx="${svgNum(x)}" cy="${svgNum(y)}" r="${svgNum(r)}" />`}
+ if(it.type==='tree'){
+  const r=Math.max(4,(it.width||5)*.85),v=it.treeVariant||it.variant||'deciduous',
+        kind=v==='fir'?'fir':v==='palm'?'palm':'deciduous';
+  return `<circle ${base} data-apex-symbol="tree-circle-v1" class="tree tree-${kind}" cx="${svgNum(x)}" cy="${svgNum(y)}" r="${svgNum(r)}" />`;
+ }
  if(it.type==='gantry'||it.type==='billboard'||it.type==='advertising'){const w=Math.max(10,it.span||it.width||16),h=Math.max(3,it.height||4.5),cls=it.type==='gantry'?'gantry':'billboard';return `<rect ${base} class="${cls}" x="${svgNum(x-w*.5)}" y="${svgNum(y-h*.5)}" width="${svgNum(w)}" height="${svgNum(h)}" rx="1.2" transform="${rot}" />`}
  if(it.type==='distanceBoard'){const w=Math.max(2.2,it.width||2.9),d=Math.max(.8,it.depth||1.1),mark=Number(it.mark)||100,boardRot=`rotate(${svgNum(ang+90,2)} ${svgNum(x)} ${svgNum(y)})`;return `<g><rect ${base} data-apex-mark="${escapeXml(mark)}" data-apex-lat-extra="${escapeXml(it.latExtra??1.1)}" class="distance-board" x="${svgNum(x-w*.5)}" y="${svgNum(y-d*.5)}" width="${svgNum(w)}" height="${svgNum(d)}" rx=".35" transform="${boardRot}"/><text class="distance-board-text" x="${svgNum(x)}" y="${svgNum(y)}">${escapeXml(mark)}</text></g>`}
  if(it.type==='tunnelPortal'){const w=Math.max(12,it.span||18),h=Math.max(5,it.height||6.5);return `<rect ${base} class="portal" x="${svgNum(x-w*.5)}" y="${svgNum(y-h*.5)}" width="${svgNum(w)}" height="${svgNum(h)}" rx="1.6" />`}
@@ -595,10 +599,10 @@ const SVG_LIBRARY_SCOPED_CSS=`
 #APEX_ELEMENT_LIBRARY .pit{fill:#454d56;stroke:#a9c1d4;stroke-width:1.1}
 #APEX_ELEMENT_LIBRARY .tower{fill:#7c8994;stroke:#d7e3ec;stroke-width:1}
 #APEX_ELEMENT_LIBRARY .ferris{fill:none;stroke:#eef3f6;stroke-width:2.2}
-#APEX_ELEMENT_LIBRARY .tree{fill:#3f7f4e;stroke:#cfead3;stroke-width:1}
-#APEX_ELEMENT_LIBRARY .tree-fir{fill:#275f38}
+#APEX_ELEMENT_LIBRARY .tree{fill:#4e8a48;stroke:#cfead3;stroke-width:1}
+#APEX_ELEMENT_LIBRARY .tree-fir{fill:#285f38}
 #APEX_ELEMENT_LIBRARY .tree-deciduous{fill:#4e8a48}
-#APEX_ELEMENT_LIBRARY .tree-palm{fill:none;stroke:#477c42;stroke-width:3;stroke-linecap:round}
+#APEX_ELEMENT_LIBRARY .tree-palm{fill:#79b964}
 #APEX_ELEMENT_LIBRARY .forest{fill:#4b7b50;stroke:#cae5cb;stroke-width:1;fill-opacity:.78}
 #APEX_ELEMENT_LIBRARY .road{fill:none;stroke:#848d94;stroke-width:5.5;stroke-linecap:round}
 #APEX_ELEMENT_LIBRARY .parking{fill:#68727a;stroke:#d7dee4;stroke-width:1}
@@ -682,9 +686,9 @@ function buildSvgElementLibrary(bounds){
   if(kind==='building')return `<rect data-apex-type="building" data-apex-role="building" data-apex-height="16" class="building" x="${ix+20}" y="${iy+5}" width="70" height="26" rx="3"/>`;
   if(kind==='grandstand')return `<rect data-apex-type="grandstand" data-apex-family="structure" data-apex-role="grandstand" data-apex-style="grandstand_covered" data-apex-height="14" data-apex-length="80" data-apex-depth="18" class="grandstand race-infra" x="${ix+16}" y="${iy+8}" width="80" height="22" rx="3"/>`;
   if(kind==='pit-building')return `<rect data-apex-type="pit" data-apex-family="structure" data-apex-role="pit-building" data-apex-style="pit_modern_f1" data-apex-height="18" data-apex-length="72" data-apex-depth="16" data-apex-garage-bays="8" data-apex-glass="true" data-apex-balcony="true" data-apex-pitwall="true" class="pit race-infra" x="${ix+14}" y="${iy+7}" width="84" height="24" rx="2"/>`;
-  if(kind==='fir')return `<polygon data-apex-type="tree" data-apex-role="tree" data-apex-variant="fir" data-apex-height="14" class="tree tree-fir" points="${cx},${iy+1} ${cx-15},${iy+31} ${cx+15},${iy+31}"/>`;
-  if(kind==='decid')return `<circle data-apex-type="tree" data-apex-role="tree" data-apex-variant="deciduous" data-apex-height="12" class="tree tree-deciduous" cx="${cx}" cy="${cy}" r="14"/>`;
-  if(kind==='palm')return `<path data-apex-type="tree" data-apex-role="tree" data-apex-variant="palm" data-apex-height="15" class="tree tree-palm" d="M ${cx} ${iy+31} L ${cx} ${iy+9} M ${cx} ${iy+9} L ${cx-22} ${iy} M ${cx} ${iy+9} L ${cx+22} ${iy} M ${cx} ${iy+9} L ${cx-18} ${iy+16} M ${cx} ${iy+9} L ${cx+18} ${iy+16}"/>`;
+  if(kind==='fir')return `<circle data-apex-type="tree" data-apex-role="tree" data-apex-variant="fir" data-apex-height="14" data-apex-symbol="tree-circle-v1" class="tree tree-fir" cx="${cx}" cy="${cy}" r="14"/>`;
+  if(kind==='decid')return `<circle data-apex-type="tree" data-apex-role="tree" data-apex-variant="deciduous" data-apex-height="12" data-apex-symbol="tree-circle-v1" class="tree tree-deciduous" cx="${cx}" cy="${cy}" r="14"/>`;
+  if(kind==='palm')return `<circle data-apex-type="tree" data-apex-role="tree" data-apex-variant="palm" data-apex-height="15" data-apex-symbol="tree-circle-v1" class="tree tree-palm" cx="${cx}" cy="${cy}" r="14"/>`;
   if(kind==='forest')return `<polygon data-apex-type="forestZone" data-apex-role="forest-zone" class="forest" points="${ix+10},${iy+31} ${ix+100},${iy+31} ${ix+84},${iy+3} ${ix+20},${iy+5}"/>`;
   if(kind==='ferris')return `<circle data-apex-type="ferris" data-apex-role="ferris" data-apex-radius="22" class="ferris" cx="${cx}" cy="${cy}" r="18"/>`;
   if(kind==='tower')return `<rect data-apex-type="tower" data-apex-role="tower" data-apex-height="55" class="tower" x="${cx-10}" y="${iy}" width="20" height="35" rx="2"/>`;
@@ -749,6 +753,57 @@ function apexSvgBasicPoint(el){
  if(tag==='path'){const m=String(el.getAttribute('d')||'').match(/[Mm]\s*(-?\d*\.?\d+(?:e[-+]?\d+)?)\s*[, ]\s*(-?\d*\.?\d+(?:e[-+]?\d+)?)/i);if(m)return{x:+m[1],y:+m[2]}}
  return null;
 }
+
+/* One map symbol for all families; metadata still selects the 3D tree species.
+   Applied to exported native and imported SVG without moving world coordinates. */
+function apexNormalizeSvgTreeSymbols(rawSvg){
+ try{
+  const doc=new DOMParser().parseFromString(String(rawSvg||''),'image/svg+xml'),
+        root=doc.documentElement,ns='http://www.w3.org/2000/svg';
+  if(!root||root.nodeName==='parsererror')return rawSvg;
+  const palette={deciduous:'#4e8a48',fir:'#285f38',palm:'#79b964'};
+  for(const el of [...root.querySelectorAll('[data-apex-type="tree"],[data-apex-role="tree"]')]){
+   const rawVariant=String(el.getAttribute('data-apex-variant')||el.getAttribute('class')||'').toLowerCase(),
+         variant=rawVariant.includes('palm')?'palm':rawVariant.includes('fir')?'fir':'deciduous',
+         tag=el.tagName.toLowerCase(),pos=apexSvgBasicPoint(el);
+   if(!pos||!Number.isFinite(pos.x)||!Number.isFinite(pos.y))continue;
+   let radius=Number.parseFloat(el.getAttribute('r'));
+   if(!(radius>0)){
+    let coords=[];
+    if(tag==='polygon'||tag==='polyline')coords=parseSvgPointPairsRaw(el.getAttribute('points'));
+    else if(tag==='path'){
+     const d=String(el.getAttribute('d')||''),
+           pairs=[...d.matchAll(/[MmLl]\s*(-?\d+(?:\.\d+)?)\s*[, ]\s*(-?\d+(?:\.\d+)?)/g)];
+     coords=pairs.map(m=>[+m[1],+m[2]]);
+    }
+    if(coords.length){
+     const xs=coords.map(p=>p[0]),ys=coords.map(p=>p[1]),
+           left=Math.min(...xs),right=Math.max(...xs),top=Math.min(...ys),bottom=Math.max(...ys);
+     pos.x=(left+right)*.5;pos.y=(top+bottom)*.5;
+     radius=Math.max(3,Math.min(18,Math.max(right-left,bottom-top)*.34));
+    }else radius=7;
+   }
+   const circle=tag==='circle'?el:doc.createElementNS(ns,'circle');
+   if(circle!==el){
+    for(const a of [...el.attributes]){
+     if(!['d','points','x','y','x1','x2','y1','y2','width','height','cx','cy','rx','ry','r'].includes(a.name))circle.setAttribute(a.name,a.value);
+    }
+   }
+   circle.setAttribute('cx',String(pos.x));circle.setAttribute('cy',String(pos.y));
+   circle.setAttribute('r',String(radius));
+   circle.setAttribute('data-apex-type','tree');circle.setAttribute('data-apex-role','tree');
+   circle.setAttribute('data-apex-variant',variant);
+   circle.setAttribute('data-apex-symbol','tree-circle-v1');
+   circle.setAttribute('class','tree tree-'+variant);
+   const remaining=String(circle.getAttribute('style')||'').split(';')
+     .filter(v=>v.trim()&&!/^\s*(fill|stroke|stroke-width|stroke-linecap)\s*:/i.test(v)).join(';');
+   circle.setAttribute('style',(remaining?remaining+';':'')+'fill:'+palette[variant]+';stroke:#cfead3;stroke-width:1');
+   if(circle!==el)el.parentNode.replaceChild(circle,el);
+  }
+  return '<?xml version="1.0" encoding="UTF-8"?>\n'+new XMLSerializer().serializeToString(root);
+ }catch(e){return rawSvg}
+}
+
 function apexUpgradeImportedSvgLibrary(rawSvg){
  // Conserva literalmente la geometría activa importada, pero sustituye únicamente
  // la zona de plantillas por la biblioteca vigente. Así un SVG antiguo obtiene
@@ -778,21 +833,21 @@ function apexUpgradeImportedSvgLibrary(rawSvg){
   for(const ch of [...fragDoc.documentElement.childNodes])if(ch.nodeType===1)root.appendChild(doc.importNode(ch,true));
   root.setAttribute('data-apex-library-outside-viewbox','true');
   apexSvgApplyUniversalSchema(root);root.setAttribute('data-apex-schema','APEX_EDITABLE_TRACK_V6');root.setAttribute('data-apex-library-version','6');
-  return `<?xml version="1.0" encoding="UTF-8"?>\n${new XMLSerializer().serializeToString(root)}`;
+  return apexNormalizeSvgTreeSymbols('<?xml version="1.0" encoding="UTF-8"?>\n'+new XMLSerializer().serializeToString(root));
  }catch(e){return rawSvg}
 }
 function buildEditableCircuitSvgForCurrentTrack(spec){
  // ROUND-TRIP: la geometría activa del SVG importado sigue siendo la fuente de verdad.
  // Únicamente actualizamos la BIBLIOTECA de plantillas al estándar vigente.
  const imported=readEffectiveTrackSvg(spec&&spec.dir);
- if(imported&&imported.authoritative===true&&typeof imported.rawSvg==='string'&&imported.rawSvg.trim())return imported.exactRepository||imported.source==='BASE_SVG'?imported.rawSvg:apexUpgradeImportedSvgLibrary(imported.rawSvg);
+ if(imported&&imported.authoritative===true&&typeof imported.rawSvg==='string'&&imported.rawSvg.trim())return imported.exactRepository?apexNormalizeSvgTreeSymbols(imported.rawSvg):apexUpgradeImportedSvgLibrary(imported.rawSvg);
  const meta=raceMetaFor(spec)||{},mapP=apexMapPresentation(spec),bounds=editableWorldBounds(),library=buildSvgElementLibrary(bounds),viewWidth=bounds.width,viewHeight=bounds.height,landmarks=trackLandmarks(),trackPath=editableTrackPathFromPoints(trackData.pts),leftEdge=editableTrackOffsetPath(1),rightEdge=editableTrackOffsetPath(-1),pitPath=trackData.extraPitPath||editablePitLanePath(),wallLeft=editableWallPath(1),wallRight=editableWallPath(-1),start=trackData.pts&&trackData.pts[0]?trackData.pts[0]:[0,0];
  const nodes=landmarks.map((it,i)=>landmarkSvgNode(it,i)).join('\n      ');
  return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="${svgNum(bounds.minX)} ${svgNum(bounds.minY)} ${svgNum(viewWidth)} ${svgNum(viewHeight)}" data-apex-schema="APEX_EDITABLE_TRACK_V6" data-apex-dir="${escapeXml(spec.dir)}" data-apex-name="${escapeXml(spec.name)}" data-apex-km="${escapeXml(trackData.km)}" data-apex-direction="${escapeXml(trackData.direction)}" data-apex-turns="${escapeXml(trackData.turns||meta.turns||0)}" data-apex-laps="${escapeXml(trackData.laps||meta.laps||0)}" data-apex-layout="${escapeXml(trackData.layout||meta.layout||spec.dir)}" data-apex-terrain-reference="LOCAL_ABSOLUTE" data-apex-elevation-zero="START_FINISH" data-apex-map-rotation-deg="${svgNum(mapP.rotationDeg,3)}" data-apex-map-mirror-x="${mapP.mirrorX}" data-apex-map-mirror-y="${mapP.mirrorY}" data-apex-map-source="FORMULA1_COM_2026">
   ${trackData.sourceCredit?`<desc>${escapeXml(trackData.sourceCredit)}</desc>`:''}
   <defs><style>
-.track-fill{fill:none;stroke:#d7dde4;stroke-width:12;stroke-linecap:round;stroke-linejoin:round}.track-edge{fill:none;stroke:#7aa3c4;stroke-width:1.8;stroke-dasharray:10 8}.drivable-area{fill:#53d7ff;fill-opacity:.07;stroke:#53d7ff;stroke-opacity:.78;stroke-width:1.6;stroke-dasharray:9 6;stroke-linejoin:round}.pit-line{fill:none;stroke:#676d72;stroke-width:5.9;stroke-linecap:round;stroke-linejoin:round;stroke-opacity:.92}.wall-line{fill:none;stroke:#c94755;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}.grandstand{fill:#2e5975;stroke:#9fd8ff;stroke-width:1.2}.pit{fill:#454d56;stroke:#a9c1d4;stroke-width:1.1}.building{fill:#9aa6b1;stroke:#e6eef4;stroke-width:1}.tower{fill:#7c8994;stroke:#d7e3ec;stroke-width:1}.ferris{fill:none;stroke:#eef3f6;stroke-width:2.2}.tree{fill:#3f7f4e;stroke:#cfead3;stroke-width:1}.tree-fir{fill:#275f38}.tree-deciduous{fill:#4e8a48}.tree-palm{fill:none;stroke:#477c42;stroke-width:3;stroke-linecap:round}.gantry{fill:#5f6267;stroke:#f5f8fa;stroke-width:1}.start-gantry{fill:#27313a;stroke:#4cd6ff;stroke-width:1.4}.finish-gantry{fill:#15191e;stroke:#f6f7f8;stroke-width:1.4}.billboard{fill:#f2f5f8;stroke:#58626a;stroke-width:1}.distance-board{fill:#f7f7f5;stroke:#1d2227;stroke-width:1.2}.timing-line{fill:none;stroke:#60d7ff;stroke-width:2.2;stroke-dasharray:8 5}.startfinish-line{fill:#f4f7fb;stroke:#071018;stroke-width:.9}.startfinish-line[data-apex-role="start-line"]{fill:#24d8ff}.startfinish-line[data-apex-role="finish-line"]{fill:#fff;stroke-dasharray:2 1}.straightmode-line{fill:none;stroke:#66f0ff;stroke-width:2.3;stroke-dasharray:4 4}.override-line{fill:none;stroke:#d590ff;stroke-width:2.3;stroke-dasharray:7 4}.drs-line{fill:none;stroke:#69ff9a;stroke-width:2.2;stroke-dasharray:8 5}.speedtrap-line{fill:none;stroke:#ffd45f;stroke-width:2.2;stroke-dasharray:8 5}.portal{fill:#5e6770;stroke:#dce5ed;stroke-width:1}.flagpole{stroke:#e9eef3;stroke-width:1.2}.road{fill:none;stroke:#848d94;stroke-width:5.5;stroke-linecap:round}.parking{fill:#68727a;stroke:#d7dee4;stroke-width:1}.forest{fill:#4b7b50;stroke:#cae5cb;stroke-width:1;fill-opacity:.75}.terrain-zone{fill:#6f8653;stroke:#c8d4b9;stroke-width:1;fill-opacity:.42}.terrain-base{fill:#6f8653;stroke:#c8d4b9;stroke-width:1;fill-opacity:.16;stroke-dasharray:10 8}.terrain-contour{fill:#6f8653;fill-opacity:.24;stroke:#c8d4b9;stroke-width:1.3;stroke-linejoin:round}.terrain-contour-label{font:800 11px system-ui,sans-serif;fill:#d9f4d2;stroke:#132117;stroke-width:2.4;paint-order:stroke}.surface{stroke:#e8edf0;stroke-width:1;fill-opacity:.78}.asphalt{fill:#676d72}.gravel{fill:#b09268}.sand{fill:#c7aa70}.grass{fill:#3d7745}.water{fill:#347ca5;stroke:#9fd6ef;stroke-width:1;fill-opacity:.82}.marking{fill:#f2f3f4;stroke:#5d646a;stroke-width:1}.urban-stripes{fill:#d7d9dc}.barrier{fill:none;stroke-width:4;stroke-linecap:round}.tecpro{stroke:#d8dbe0}.safer{stroke:#aeb8c2}.tirewall{stroke:#1b1d20}.concrete{stroke:#c7cbd0}.guardrail{stroke:#9ba3aa}.infrastructure{fill:none;stroke:#b6bec5;stroke-width:4.8;stroke-linecap:round}.generic{fill:#9098a2;stroke:#edf4fa;stroke-width:1}.start-marker{fill:#24d8ff;stroke:#fff;stroke-width:1.1}.group-title{font:700 12px system-ui,sans-serif;fill:#9dc9ea}.apex-timing-halo{stroke:#071018;stroke-width:8;stroke-linecap:butt;opacity:.9;vector-effect:non-scaling-stroke}.apex-timing-label{font:900 16px system-ui,sans-serif;paint-order:stroke;stroke:#05080b;stroke-width:1.3;stroke-linejoin:round;letter-spacing:.7px}.apex-start-label{fill:#24d8ff}.apex-finish-label{fill:#fff}.library-zone{fill:#0b1320;fill-opacity:.9;stroke:#5c7186;stroke-width:2;stroke-dasharray:12 8}.library-title{font:800 13px system-ui,sans-serif;fill:#d9f3ff}.library-help{font:10px system-ui,sans-serif;fill:#9cb2c5}.lib-label{font:800 9px system-ui,sans-serif;fill:#dce7ef}
+.track-fill{fill:none;stroke:#d7dde4;stroke-width:12;stroke-linecap:round;stroke-linejoin:round}.track-edge{fill:none;stroke:#7aa3c4;stroke-width:1.8;stroke-dasharray:10 8}.drivable-area{fill:#53d7ff;fill-opacity:.07;stroke:#53d7ff;stroke-opacity:.78;stroke-width:1.6;stroke-dasharray:9 6;stroke-linejoin:round}.pit-line{fill:none;stroke:#676d72;stroke-width:5.9;stroke-linecap:round;stroke-linejoin:round;stroke-opacity:.92}.wall-line{fill:none;stroke:#c94755;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}.grandstand{fill:#2e5975;stroke:#9fd8ff;stroke-width:1.2}.pit{fill:#454d56;stroke:#a9c1d4;stroke-width:1.1}.building{fill:#9aa6b1;stroke:#e6eef4;stroke-width:1}.tower{fill:#7c8994;stroke:#d7e3ec;stroke-width:1}.ferris{fill:none;stroke:#eef3f6;stroke-width:2.2}.tree{fill:#4e8a48;stroke:#cfead3;stroke-width:1}.tree-fir{fill:#285f38}.tree-deciduous{fill:#4e8a48}.tree-palm{fill:#79b964}.gantry{fill:#5f6267;stroke:#f5f8fa;stroke-width:1}.start-gantry{fill:#27313a;stroke:#4cd6ff;stroke-width:1.4}.finish-gantry{fill:#15191e;stroke:#f6f7f8;stroke-width:1.4}.billboard{fill:#f2f5f8;stroke:#58626a;stroke-width:1}.distance-board{fill:#f7f7f5;stroke:#1d2227;stroke-width:1.2}.timing-line{fill:none;stroke:#60d7ff;stroke-width:2.2;stroke-dasharray:8 5}.startfinish-line{fill:#f4f7fb;stroke:#071018;stroke-width:.9}.startfinish-line[data-apex-role="start-line"]{fill:#24d8ff}.startfinish-line[data-apex-role="finish-line"]{fill:#fff;stroke-dasharray:2 1}.straightmode-line{fill:none;stroke:#66f0ff;stroke-width:2.3;stroke-dasharray:4 4}.override-line{fill:none;stroke:#d590ff;stroke-width:2.3;stroke-dasharray:7 4}.drs-line{fill:none;stroke:#69ff9a;stroke-width:2.2;stroke-dasharray:8 5}.speedtrap-line{fill:none;stroke:#ffd45f;stroke-width:2.2;stroke-dasharray:8 5}.portal{fill:#5e6770;stroke:#dce5ed;stroke-width:1}.flagpole{stroke:#e9eef3;stroke-width:1.2}.road{fill:none;stroke:#848d94;stroke-width:5.5;stroke-linecap:round}.parking{fill:#68727a;stroke:#d7dee4;stroke-width:1}.forest{fill:#4b7b50;stroke:#cae5cb;stroke-width:1;fill-opacity:.75}.terrain-zone{fill:#6f8653;stroke:#c8d4b9;stroke-width:1;fill-opacity:.42}.terrain-base{fill:#6f8653;stroke:#c8d4b9;stroke-width:1;fill-opacity:.16;stroke-dasharray:10 8}.terrain-contour{fill:#6f8653;fill-opacity:.24;stroke:#c8d4b9;stroke-width:1.3;stroke-linejoin:round}.terrain-contour-label{font:800 11px system-ui,sans-serif;fill:#d9f4d2;stroke:#132117;stroke-width:2.4;paint-order:stroke}.surface{stroke:#e8edf0;stroke-width:1;fill-opacity:.78}.asphalt{fill:#676d72}.gravel{fill:#b09268}.sand{fill:#c7aa70}.grass{fill:#3d7745}.water{fill:#347ca5;stroke:#9fd6ef;stroke-width:1;fill-opacity:.82}.marking{fill:#f2f3f4;stroke:#5d646a;stroke-width:1}.urban-stripes{fill:#d7d9dc}.barrier{fill:none;stroke-width:4;stroke-linecap:round}.tecpro{stroke:#d8dbe0}.safer{stroke:#aeb8c2}.tirewall{stroke:#1b1d20}.concrete{stroke:#c7cbd0}.guardrail{stroke:#9ba3aa}.infrastructure{fill:none;stroke:#b6bec5;stroke-width:4.8;stroke-linecap:round}.generic{fill:#9098a2;stroke:#edf4fa;stroke-width:1}.start-marker{fill:#24d8ff;stroke:#fff;stroke-width:1.1}.group-title{font:700 12px system-ui,sans-serif;fill:#9dc9ea}.apex-timing-halo{stroke:#071018;stroke-width:8;stroke-linecap:butt;opacity:.9;vector-effect:non-scaling-stroke}.apex-timing-label{font:900 16px system-ui,sans-serif;paint-order:stroke;stroke:#05080b;stroke-width:1.3;stroke-linejoin:round;letter-spacing:.7px}.apex-start-label{fill:#24d8ff}.apex-finish-label{fill:#fff}.library-zone{fill:#0b1320;fill-opacity:.9;stroke:#5c7186;stroke-width:2;stroke-dasharray:12 8}.library-title{font:800 13px system-ui,sans-serif;fill:#d9f3ff}.library-help{font:10px system-ui,sans-serif;fill:#9cb2c5}.lib-label{font:800 9px system-ui,sans-serif;fill:#dce7ef}
 ${SVG_LIBRARY_SCOPED_CSS}
   
 /* Cronometraje TV: parciales medidos y estados por piloto. */
