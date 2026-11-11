@@ -61,7 +61,7 @@ assert.deepEqual(Array.from(selected,e=>e.i),[1],
  'Long barrier must be selected even if its anchor is in a distant sector');
 
 const expected={
- '01-australia':'svg/apex26_01-australia_circuito-propuesta-20261110-barriers-aligned.svg',
+ '01-australia':'svg/apex26_01-australia_circuito-propuesta-20261111.svg',
  '14-spain':'svg/apex26_14-spain_circuito-propuesta-20261110.svg'
 };
 for(const [id,svgPath] of Object.entries(expected)){
@@ -72,15 +72,32 @@ for(const [id,svgPath] of Object.entries(expected)){
  assert.match(svg,/data-apex-role="drivable-area"/);
  assert.equal((svg.match(/<image\b/g)||[]).length,0);
 }
-// La edición de Melbourne corrige únicamente la posición de las dos barreras
-// activas. Las plantillas de biblioteca conservan su geometría original.
+// La edición 11/11 conserva las dos barreras activas. Una mantiene la
+// corrección como transform; la otra incorpora el traslado en sus coordenadas.
 const melbourne=fs.readFileSync(path.join(root,'circuits',expected['01-australia']),'utf8');
-const oldMelbourne=fs.readFileSync(path.join(root,'circuits/svg/apex26_01-australia_circuito-propuesta-20261110.svg'),'utf8');
-const corrected='transform="matrix(1, 0, 0, 1, 220.681854, -14.552436)"';
-assert.equal(melbourne.split(corrected).length-1,2,
- 'Precisely two active concrete barriers must be spatially aligned');
-assert.equal(oldMelbourne.includes(corrected),false,'The user original must be preserved');
-assert.equal(melbourne.includes('d="M 233.079 218.515'),true,'First authored barrier was lost');
-assert.equal(melbourne.includes('d="M 220.78 215.163'),true,'Second authored barrier was lost');
-
-console.log(JSON.stringify({test:'svg-barrier-visibility',selectedSegments:2,geometryPreserved:true,ok:true}));
+const previous=fs.readFileSync(path.join(root,'circuits/svg/apex26_01-australia_circuito-propuesta-20261110-barriers-aligned.svg'),'utf8');
+const originalMelbourne=fs.readFileSync(path.join(root,'circuits/svg/apex26_01-australia_circuito-propuesta-20261110.svg'),'utf8');
+assert.equal(manifest.circuits['01-australia'].editionDate,'2026-11-11');
+assert.equal(manifest.circuits['01-australia'].previousEditionSvg,
+ 'svg/apex26_01-australia_circuito-propuesta-20261110-barriers-aligned.svg');
+assert.equal(manifest.circuits['01-australia'].exactSvg,true);
+const authoredPaths=[...melbourne.matchAll(/<path\b[^>]*class="barrier concrete"[^>]*>/g)]
+ .map(x=>x[0]).filter(x=>((x.match(/\bd="([^"]+)"/)||[])[1]||'').length>300);
+assert.equal(authoredPaths.length,2,'Two authored full-size concrete barriers required');
+assert.ok(authoredPaths.some(x=>x.includes('d="M 233.079 218.515')&&
+ x.includes('transform="matrix(1, 0, 0, 1, 220.682, -14.552)"')),
+ 'First barrier must preserve its supplied SVG transform');
+assert.ok(authoredPaths.some(x=>x.includes('d="M 444.31 204.334')&&
+ !x.includes('transform=')),'Second barrier must preserve baked coordinates');
+const previousTransform='transform="matrix(1, 0, 0, 1, 220.681854, -14.552436)"';
+assert.equal(previous.split(previousTransform).length-1,2,'Keep prior aligned edition intact');
+assert.equal(originalMelbourne.includes(previousTransform),false,'Keep old original intact');
+for(const id of ['track_centerline','apex_drivable_area','APEX_PITLANE',
+ 'APEX_ACTIVE_CURBS','APEX_TIMING','APEX_CORNERS','APEX_ELEMENT_LIBRARY',
+ 'APEX_BRAKE_BOARDS','APEX_PIT_GARAGES','APEX_START_GRID']){
+ assert.ok(melbourne.includes('id="'+id+'"'),'Missing layer: '+id);
+}
+const perf6a=fs.readFileSync(path.join(root,'perf6a-preview.html'),'utf8');
+assert.match(perf6a,/part-026-perf6a-preview\.txt/,'6A preview renderer absent');
+assert.match(perf6a,/part-025-trees3d-preview\.txt/,'6A trees preview absent');
+console.log(JSON.stringify({test:'svg-barrier-visibility',edition:'2026-11-11',selectedSegments:2,experimentalPreview:true,ok:true}));

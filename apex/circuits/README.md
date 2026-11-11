@@ -8,17 +8,17 @@ Esta carpeta conserva las versiones editadas de los circuitos. El archivo `manif
 - `json/`: metadatos estructurados (altimetría, peralte, neumáticos, boxes, anchura, etc.).
 - `manifest.json`: selección de la edición guardada por identificador del circuito.
 
-## SVG guardados vigentes · 10/11/2026
+## SVG guardados vigentes · 11/11/2026
 
 | Circuito | Identificador | SVG cargable |
 | --- | --- | --- |
-| Australia · Melbourne (Albert Park) | `01-australia` | `svg/apex26_01-australia_circuito-propuesta-20261110-barriers-aligned.svg` |
+| Australia · Melbourne (Albert Park) | `01-australia` | `svg/apex26_01-australia_circuito-propuesta-20261111.svg` |
 | España · Madrid (MADRING) | `14-spain` | `svg/apex26_14-spain_circuito-propuesta-20261110.svg` |
 
-Son los dos SVG proporcionados por el usuario el 10/11/2026. Para la carga se eliminaron **exclusivamente las dos imágenes raster ocultas de referencia** en cada SVG (no aportan geometría al simulador). Las líneas, rutas, transforms, contornos, grupos, barreras y demás elementos vectoriales se han preservado.
+La edición vigente de Melbourne es el SVG entregado el **11/11/2026**, incluido sin alterar su contenido vectorial (ya no contiene imágenes raster). La edición vigente de Madrid sigue siendo la del **10/11/2026**, cuya copia cargable omite únicamente las dos imágenes raster ocultas. Las versiones anteriores se mantienen.
 
 - **Madrid**: primero se carga `json/apex26_14-madrid-spain_2026-10-29.json` y después el SVG seleccionado, conservando colores de pianos y perfil de peralte. Contiene 68 carteles de distancia activos y cuatro plantillas dentro de la biblioteca.
-- **Australia**: carga su SVG con los datos BASE JSON internos. Dos barreras de hormigón activas están alineadas con la pista mediante la transformación inversa de un desplazamiento de Boxy de (-220,681854, +14,552436). Se mantiene el SVG original de la propuesta sin corregir como edición previa. Las demás tipologías disponibles en la biblioteca siguen siendo plantillas, no objetos colocados.
+- **Australia**: carga el SVG completo del **11/11/2026** con los datos BASE JSON internos. Las dos barreras de hormigón activas se preservan tal y como aparecen en el SVG del usuario: la primera con `transform` `(220.682,-14.552)` y la segunda con esa traslación integrada en sus coordenadas. La edición alineada anterior del 10/11 y la propuesta previa permanecen archivadas.
 - Ambos usan `exactSvg: true` en el manifiesto, para respetar los elementos SVG dibujados y transformados sin regenerarlos.
 - Las versiones guardadas anteriores permanecen almacenadas y la BASE no cambia. **RESTAURAR BASE** revierte el override local.
 
@@ -27,6 +27,8 @@ Son los dos SVG proporcionados por el usuario el 10/11/2026. Para la carga se el
 1. Abrir el editor SVG y elegir **Australia** o **Madrid**.
 2. Pulsar **CARGAR GUARDADO**. El cargador consulta `manifest.json`, obtiene el SVG de `circuits/svg/` y aplica el override a ese circuito.
 3. Si se desea comparar con la versión interna, pulsar **RESTAURAR BASE**.
+
+La versión experimental **`perf6a-preview.html`** comparte este `circuits/manifest.json`: `CARGAR GUARDADO` selecciona el mismo SVG nuevo de Melbourne en APEX estable y en la prueba 6A. La opción `perf6a` solo modifica la proyección de las ruedas de los rivales.
 
 ## Pruebas
 
