@@ -4428,7 +4428,7 @@ function webglPushCircuitLandmarks(cam,pitch){
          const yTop=h*(.20+.60*t1),yLow=h*(.20+.60*t0),top=apexGrandstandGroundCam(band,yTop,cam),low=apexGrandstandGroundCam(band,yLow,cam);
          const seatBase=ri%3===0?(prof.seatAlt||shadeColor(col,5)):(ri%3===1?(prof.seatAlt2||shadeColor(col,12)):(prof.seat||col));
          webglPushCamPoly(top,pitch,seatBase,.60,-.008);
-         if(frame&&gb.tier>=1){
+         if(frame&&gb.tier>=1&&(gb.tier===2||frame.span>30)){
           const aisle=apexMadridGrandstandAisle(band,frame);
           if(aisle.length>=3)webglPushCamPoly(apexGrandstandGroundCam(aisle,yTop+.025,cam),pitch,'#9da7af',.60,-.010);
          }
