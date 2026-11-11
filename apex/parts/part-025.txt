@@ -4582,6 +4582,10 @@ function webglPushCircuitLandmarks(cam,pitch){
      webglPushScreenLineDepth([pc.x-rr*.62,pb.y],[pc.x-rr*.19,pc.y+rr*.82],1.8,col,center.z);webglPushScreenLineDepth([pc.x+rr*.62,pb.y],[pc.x+rr*.19,pc.y+rr*.82],1.8,col,center.z);
 
    }else if(it.type==='tree'){
+     if(typeof window.apexTrees3dRender==='function'&&
+       window.apexTrees3dRender({circuitId:trackData&&trackData.spec&&trackData.spec.dir,
+         it,lod,depth:lodZ,P,pitch,poly:webglPushCamPoly,quad:webglPushCamQuad,
+         shade:shadeColor,hash:apexStringHash,mobile:mobilePerformanceMode()}))continue;
      const v=it.treeVariant||it.variant||'deciduous',seed=apexStringHash((it.sourceId||it.name||'tree')+'|'+v),r0=((seed>>>0)&1023)/1023,r1=((seed>>>10)&1023)/1023,r2=((seed>>>20)&1023)/1023,wMul=.88+r0*.34,hMul=.92+r1*.22,crossTilt=(r2-.5)*.22,treeW=it.width*wMul,treeH=it.height*hMul,th=treeH*(v==='palm'?(0.48+r0*.07):(v==='fir'?(0.24+r0*.05):(0.37+r0*.06)));
      webglPushCamQuad(P(-.20,0,0),P(.20,0,0),P(.20,0,th),P(-.20,0,th),pitch,v==='palm'?'#6b5737':'#5a432d',.60,-.004);
      if(v==='fir'){
