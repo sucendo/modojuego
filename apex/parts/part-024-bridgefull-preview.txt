@@ -3465,6 +3465,7 @@ function drawWorldLandmarks(cam,pitch){
                 }
               }
             }
+         }
        }
        apexFeatureBridgeBanner(it,cam,pitch,"canvas2d");
        continue;     }
