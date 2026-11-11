@@ -20,14 +20,14 @@
     "01-australia": {
       "name": "Melbourne",
       "displayName": "Albert Park",
-      "svg": "svg/apex26_01-australia_circuito-propuesta-20261111.svg",
+      "svg": "svg/apex26_01-australia_circuito-propuesta-20261111-v2.svg",
       "status": "edited",
       "basePreserved": true,
-      "sourceFileName": "apex26_01-australia_circuito-propuesta-20261111.svg",
+      "sourceFileName": "apex26_01-australia_circuito-propuesta-20261111(1).svg",
       "editionDate": "2026-11-11",
-      "notes": "SVG completo vectorial de Melbourne aportado el 11/11/2026. Conserva pista, trazada, zonas transitables, pitlane, boxes, pianos, timing, carteles, vegetación y dos barreras de hormigón activas. En esta edición la primera barrera tiene transform (220.682,-14.552) y la segunda ya incorpora su desplazamiento en las coordenadas del trazado sin transform. Se conservan la BASE y todas las ediciones anteriores. CARGAR GUARDADO usa este archivo tanto en APEX principal como en la prueba 6A.",
+      "notes": "Segunda edición SVG de Melbourne recibida el 11/11/2026: conserva geometría vectorial authored y añade 29 gradas activas y 2 viales urbanos activos, además de cartelería, pista, trazada, pitlane, pianos, zona transitable, 8 pasarelas activas y barreras. Se ha excluido exclusivamente la imagen aérea de referencia incrustada (1 MB), no usada en el simulador. La escala del editor SVG no equivale a metros, pero el importador la calibra automáticamente a 5.278 m de longitud y comparte escala física 1 m=1 m con Madrid y todos los circuitos. BASE y SVG previos sin cambios; CARGAR GUARDADO usa esta edición también en 6A.",
       "exactSvg": true,
-      "previousEditionSvg": "svg/apex26_01-australia_circuito-propuesta-20261110-barriers-aligned.svg"
+      "previousEditionSvg": "svg/apex26_01-australia_circuito-propuesta-20261111.svg"
     }
   }
 }

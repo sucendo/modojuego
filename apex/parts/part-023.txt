@@ -3433,7 +3433,17 @@ function apexSvgTrackContext(doc,spec){
  if(start){let bi=0,bd=Infinity;for(let i=0;i<raw.length;i++){const dx=raw[i][0]-start.x,dy=raw[i][1]-start.y,d=dx*dx+dy*dy;if(d<bd){bd=d;bi=i}}if(bi)raw=raw.slice(bi).concat(raw.slice(0,bi))}
  let plen=0;for(let i=0;i<raw.length;i++){const a=raw[i],b=raw[(i+1)%raw.length];plen+=Math.hypot(b[0]-a[0],b[1]-a[1])}const scale=(km*1000)/(plen||1),origin=raw[0];
  const toWorld=p=>[(p[0]-origin[0])*scale,-(p[1]-origin[1])*scale],points=raw.map(toWorld);
- return{root,km,direction,scale,origin,toWorld,points,trackEl,start};
+ // Métrica universal: cada mundo importado se expresa en metros físicos,
+ // aunque el SVG original use otra escala, viewBox o transformaciones.
+ // El mismo factor se aplica a TODOS los elementos mediante ctx.toWorld.
+ const svgMetric=Object.freeze({
+   circuit:spec&&spec.dir||'',svgPerimeterUnits:plen,
+   physicalPerimeterMeters:km*1000,metersPerSvgUnit:scale,
+   worldPerimeterMeters:plen*scale,worldUnits:'metres',
+   strategy:'TRACK_CENTERLINE_PERIMETER',normalized:true
+ });
+ window.apexSvgMetricScaleInfo=()=>({...svgMetric});
+ return{root,km,direction,scale,origin,toWorld,points,trackEl,start,svgMetric};
 }
 function apexSvgPathSubpathChunksExact(el){
  // Separa el `d` por órdenes M/m REALES. No deducimos huecos por distancia.

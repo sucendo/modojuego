@@ -12,14 +12,20 @@ Esta carpeta conserva las versiones editadas de los circuitos. El archivo `manif
 
 | Circuito | Identificador | SVG cargable |
 | --- | --- | --- |
-| Australia · Melbourne (Albert Park) | `01-australia` | `svg/apex26_01-australia_circuito-propuesta-20261111.svg` |
+| Australia · Melbourne (Albert Park) | `01-australia` | `svg/apex26_01-australia_circuito-propuesta-20261111-v2.svg` |
 | España · Madrid (MADRING) | `14-spain` | `svg/apex26_14-spain_circuito-propuesta-20261110.svg` |
 
-La edición vigente de Melbourne es el SVG entregado el **11/11/2026**, incluido sin alterar su contenido vectorial (ya no contiene imágenes raster). La edición vigente de Madrid sigue siendo la del **10/11/2026**, cuya copia cargable omite únicamente las dos imágenes raster ocultas. Las versiones anteriores se mantienen.
+La edición vigente de Melbourne es la **segunda actualización del 11/11/2026**, con **29 gradas activas** y **dos viales urbanos activos** adicionales. La copia cargable conserva la geometría vectorial aportada, omitiendo solo la imagen aérea incrustada de referencia (que no es geometría del simulador). La edición de Madrid sigue siendo la del 10/11/2026 y las versiones anteriores de ambos se conservan.
 
 - **Madrid**: primero se carga `json/apex26_14-madrid-spain_2026-10-29.json` y después el SVG seleccionado, conservando colores de pianos y perfil de peralte. Contiene 68 carteles de distancia activos y cuatro plantillas dentro de la biblioteca.
-- **Australia**: carga el SVG completo del **11/11/2026** con los datos BASE JSON internos. Las dos barreras de hormigón activas se preservan tal y como aparecen en el SVG del usuario: la primera con `transform` `(220.682,-14.552)` y la segunda con esa traslación integrada en sus coordenadas. La edición alineada anterior del 10/11 y la propuesta previa permanecen archivadas.
+- **Australia**: carga la edición **11/11/2026 v2** con los datos BASE JSON internos. Mantiene los dos trazados de barrera de hormigón autoritativos, las 8 pasarelas activas y las nuevas gradas y vías. La versión del 11/11 v1, la edición alineada del 10/11 y el original siguen archivados.
 - Ambos usan `exactSvg: true` en el manifiesto, para respetar los elementos SVG dibujados y transformados sin regenerarlos.
+
+### Escala métrica común a todos los circuitos
+
+El tamaño del `viewBox` (habitualmente `0 0 512 512`) **no** es una unidad métrica. Melbourne y Madrid tienen escalas SVG de dibujo diferentes: la línea central de Melbourne recorre aproximadamente **1.403 unidades SVG** por su transformación local `scale(0.26575085)`, mientras que Madrid recorre **5.414 unidades SVG**. Sus longitudes físicas son **5.278 m** y **5.414 m**, respectivamente.
+
+**El importador aplica la misma calibración universal para todos los circuitos**: `metrosPorUnidadSvg = longitudCircuitoMetros / perimetroSvgTransformado`; luego transforma conjuntamente pista, pianos, pit lane, barreras, vegetación y el resto de elementos. De este modo **un metro de mundo APEX equivale a un metro físico** en cualquier mapa, igual que Madrid. Reescalar por separado los elementos SVG o forzar el mismo `viewBox`/factor numérico rompería las posiciones relativas. El cálculo es inspeccionable con `apexSvgMetricScaleInfo()` tras cargar el SVG. La prueba `node apex/tests/svg-metric-scale.cjs` vigila las dos ediciones guardadas vigentes.
 - Las versiones guardadas anteriores permanecen almacenadas y la BASE no cambia. **RESTAURAR BASE** revierte el override local.
 
 ## Uso

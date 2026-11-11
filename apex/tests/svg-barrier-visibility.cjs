@@ -61,7 +61,7 @@ assert.deepEqual(Array.from(selected,e=>e.i),[1],
  'Long barrier must be selected even if its anchor is in a distant sector');
 
 const expected={
- '01-australia':'svg/apex26_01-australia_circuito-propuesta-20261111.svg',
+ '01-australia':'svg/apex26_01-australia_circuito-propuesta-20261111-v2.svg',
  '14-spain':'svg/apex26_14-spain_circuito-propuesta-20261110.svg'
 };
 for(const [id,svgPath] of Object.entries(expected)){
@@ -79,7 +79,13 @@ const previous=fs.readFileSync(path.join(root,'circuits/svg/apex26_01-australia_
 const originalMelbourne=fs.readFileSync(path.join(root,'circuits/svg/apex26_01-australia_circuito-propuesta-20261110.svg'),'utf8');
 assert.equal(manifest.circuits['01-australia'].editionDate,'2026-11-11');
 assert.equal(manifest.circuits['01-australia'].previousEditionSvg,
- 'svg/apex26_01-australia_circuito-propuesta-20261110-barriers-aligned.svg');
+ 'svg/apex26_01-australia_circuito-propuesta-20261111.svg');
+const former=fs.readFileSync(path.join(root,'circuits/svg/apex26_01-australia_circuito-propuesta-20261111.svg'),'utf8');
+assert.ok(former.includes('id="track_centerline"'),'Prior 11/11 SVG must remain archived');
+assert.equal((melbourne.match(/data-apex-role="grandstand"/g)||[]).length,30,
+ 'New edition must have 29 active grandstands plus one library example');
+assert.equal((melbourne.match(/data-apex-role="city-road-polyline"/g)||[]).length,3,
+ 'New edition must have two active city roads plus one library example');
 assert.equal(manifest.circuits['01-australia'].exactSvg,true);
 const authoredPaths=[...melbourne.matchAll(/<path\b[^>]*class="barrier concrete"[^>]*>/g)]
  .map(x=>x[0]).filter(x=>((x.match(/\bd="([^"]+)"/)||[])[1]||'').length>300);
