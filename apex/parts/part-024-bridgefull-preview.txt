@@ -3088,9 +3088,11 @@ const apexGrandstandCrowdMosaicStats={builds:0,hits:0,tiles:0};
 window.apexGrandstandCrowdMosaicInfo=()=>({...apexGrandstandCrowdMosaicStats});
 function apexGrandstandCrowdMosaic(it,prof,frame,h,gb,att){
  if(!it||!frame||!gb||gb.tier>=2||!att||!att.crowd||att.fill<=.01)return[];
- const mobile=mobilePerformanceMode(),mid=gb.tier===1,
-  rows=mid?3:2,cols=mid?(mobile?7:12):(mobile?6:9),
-  key=[gb.tier,mobile?1:0,att.label,att.fill,prof.style,Math.round(h*100),Math.round(frame.span*100),Math.round(frame.depth*100),trackData&&trackData.customWorld&&trackData.customWorld._apexGroundStamp||''].join(':'),
+ const mobile=mobilePerformanceMode(),mid=gb.tier===1,pressure=apexSceneDetailBudget().pressure;
+ if(pressure>=3&&!mid)return[];
+ const rows=pressure>=2?1:(mid?3:2),
+  cols=pressure>=2?(mid?5:4):(mid?(mobile?7:12):(mobile?6:9)),
+  key=[gb.tier,mobile?1:0,pressure,att.label,att.fill,prof.style,Math.round(h*100),Math.round(frame.span*100),Math.round(frame.depth*100),trackData&&trackData.customWorld&&trackData.customWorld._apexGroundStamp||''].join(':'),
   cached=it._apexGrandstandMosaic;
  if(cached&&cached.key===key&&cached.edge===frame.edge){apexGrandstandCrowdMosaicStats.hits++;return cached.tiles;}
  const tiles=[],dep=frame.depth,personH=mid?.62:.90;
@@ -3626,7 +3628,7 @@ function drawWorldLandmarks(cam,pitch){
          const yTop=h*(.20+.60*t1),yLow=h*(.20+.60*t0),top3=apexGrandstandGroundCam(band,yTop,cam),low3=apexGrandstandGroundCam(band,yLow,cam);
          const seatBase=ri%3===0?(prof.seatAlt||shadeColor(col,5)):(ri%3===1?(prof.seatAlt2||shadeColor(col,12)):(prof.seat||col));
          polyCam(top3,seatBase,"rgba(255,255,255,.04)",1,1);
-         if(frame&&gb.tier>=1){
+         if(frame&&gb.tier>=1&&(gb.tier===2||frame.span>30)){
           const aisle=apexMadridGrandstandAisle(band,frame);
           if(aisle.length>=3)polyCam(apexGrandstandGroundCam(aisle,yTop+.025,cam),'#9da7af',null,1,1);
          }
