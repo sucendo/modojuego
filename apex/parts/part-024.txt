@@ -3414,26 +3414,37 @@ function drawWorldLandmarks(cam,pitch){
      // drawTunnelSegment; nunca se convierte en un prisma sólido que cierre la boca.
      continue;
    }else if(it.type==="bridge"&&it.pedestrianBridge){
+     const visual=apexPedestrianBridgeVisual(it);
      // v5.230.27 · Pasarela peatonal: cuerpo horizontal fino y oscuro,
      // apoyos esbeltos fuera de la calzada y barandilla/estructura ligera superior.
      // data-apex-height se interpreta como altura total aproximada, no como un bloque macizo desde el suelo.
      const totalH=Math.max(6.1,Math.min(8.6,Number(it.height)||7)),deckT=clamp(totalH*.16,.88,1.24),deckBase=totalH-deckT,gy=groundedY(a),col=it.color||"#343b42";
-     if(it.worldFootprint&&it.worldFootprint.length>=3){
-       const bp3=it.worldFootprint.map(v=>worldToCamera(v[0],gy+deckBase,v[1],cam)),tp3=it.worldFootprint.map(v=>worldToCamera(v[0],gy+totalH,v[1],cam));
+     if(visual&&visual.footprint&&visual.footprint.length>=3){
+       const bp3=visual.footprint.map(v=>worldToCamera(v[0],gy+deckBase,v[1],cam)),tp3=visual.footprint.map(v=>worldToCamera(v[0],gy+totalH,v[1],cam));
        polyCam(bp3,"#1c2227",null,1,1);
        for(let j=0;j<bp3.length;j++){const k=(j+1)%bp3.length;polyCam([bp3[j],bp3[k],tp3[k],tp3[j]],j%2?shadeColor(col,-8):col,"rgba(255,255,255,.10)",1,1);}
        polyCam(tp3,shadeColor(col,16),"rgba(255,255,255,.18)",1,1);
-       if(Array.isArray(it.worldPath)&&it.worldPath.length>=2){
-         const p0=it.worldPath[0],p1=it.worldPath[it.worldPath.length-1],dx=p1[0]-p0[0],dz=p1[1]-p0[1],ln=Math.hypot(dx,dz)||1,nx=-dz/ln,nz=dx/ln,colHalf=.30;
-         for(const ep of [p0,p1]){
-           const ey=apexWorldGroundY(ep[0],ep[1]),b0=project(ep[0]-nx*colHalf,ey,ep[1]-nz*colHalf,it.maxDs||1700),b1=project(ep[0]+nx*colHalf,ey,ep[1]+nz*colHalf,it.maxDs||1700),t0=project(ep[0]-nx*colHalf,gy+deckBase,ep[1]-nz*colHalf,it.maxDs||1700),t1=project(ep[0]+nx*colHalf,gy+deckBase,ep[1]+nz*colHalf,it.maxDs||1700);
-           poly([b0,b1,t1,t0],"#aeb7be","rgba(255,255,255,.16)",1,1);
+       if(Array.isArray(visual.path)&&visual.path.length>=2){
+         const p0=visual.path[0],p1=visual.path[visual.path.length-1],dx=p1[0]-p0[0],dz=p1[1]-p0[1],ln=Math.hypot(dx,dz)||1,nx=-dz/ln,nz=dx/ln,colHalf=.30;
+         const top=gy+deckBase,half=Math.max(.30,Math.min(.46,(Number(it.width)||5)*.075));
+         for(const support of visual.supports){
+           if(!support.safe)continue;
+           const ep=support.point,ey=apexWorldGroundY(ep[0],ep[1]);if(top<=ey+.3)continue;
+           const corners=[[-half,-half],[half,-half],[half,half],[-half,half]];
+           for(let k=0;k<4;k++){
+             const u=corners[k],v=corners[(k+1)%4],
+               B0=project(ep[0]+u[0],ey,ep[1]+u[1],it.maxDs||1700),
+               B1=project(ep[0]+v[0],ey,ep[1]+v[1],it.maxDs||1700),
+               T0=project(ep[0]+u[0],top,ep[1]+u[1],it.maxDs||1700),
+               T1=project(ep[0]+v[0],top,ep[1]+v[1],it.maxDs||1700);
+             poly([B0,B1,T1,T0],k%2?"#8e989f":"#b2bdc5",null,1,1);
+           }
          }
          if(detailAlpha>.05){
-           const railY=gy+totalH+.42,rail=it.worldPath.map(v=>project(v[0],railY,v[1],it.maxDs||1700));
+           const railY=gy+totalH+.42,rail=visual.path.map(v=>project(v[0],railY,v[1],it.maxDs||1700));
            for(let j=1;j<rail.length;j++)line(rail[j-1],rail[j],"rgba(205,215,222,.82)",Math.max(1,1.15*s),1);
-           const posts=Math.min(8,Math.max(3,Math.round(it.worldPath.length/3)));
-           for(let j=0;j<posts;j++){const ix=Math.round(j*(it.worldPath.length-1)/Math.max(1,posts-1)),v=it.worldPath[ix],rb=project(v[0],gy+totalH,v[1],it.maxDs||1700),rt=project(v[0],railY,v[1],it.maxDs||1700);line(rb,rt,"rgba(205,215,222,.62)",Math.max(1,.9*s),1);}
+           const posts=Math.min(8,Math.max(3,Math.round(visual.path.length/3)));
+           for(let j=0;j<posts;j++){const ix=Math.round(j*(visual.path.length-1)/Math.max(1,posts-1)),v=visual.path[ix],rb=project(v[0],gy+totalH,v[1],it.maxDs||1700),rt=project(v[0],railY,v[1],it.maxDs||1700);line(rb,rt,"rgba(205,215,222,.62)",Math.max(1,.9*s),1);}
          }
        }
        apexFeatureBridgeBanner(it,cam,pitch,"canvas2d");
@@ -4906,6 +4917,56 @@ function apexFeatureTrackBanner(s,span,bottom,top,cam,pitch,backend,id){
  const panel=[wp(-1,bottom),wp(-1,top),wp(1,top),wp(1,bottom)];
  return apexSponsorDraw(panel,'apex26-start-finish',pitch,backend,id,1,true);
 }
+/* APEX · pasarelas peatonales: apoyos fuera de pista, piano, escapatoria y boxes.
+   Geometría visual cacheada por elemento; no se modifica el SVG ni la colisión. */
+function apexPedestrianBridgeVisual(it){
+ if(!it||!it.pedestrianBridge||!Array.isArray(it.worldPath)||it.worldPath.length<2)return null;
+ const path=it.worldPath,stamp=trackData&&trackData._apexGroundStamp||'';
+ const cached=it._apexPedestrianBridgeVisual;
+ if(cached&&cached.source===path&&cached.stamp===stamp&&cached.track===trackData&&cached.width===it.width)return cached;
+ const last=path.length-1,visualPath=path.map(p=>[p[0],p[1]]);
+ const margin=Math.max(1.8,Math.min(2.8,(Number(it.width)||5)*.28+.55));
+ function safe(x,z){
+   const ns=nearestTrackState(x,z,null),env=envProfile(ns.s),side=ns.lat>=0?1:-1;
+   if(Math.abs(ns.lat)<=Math.max(env.half+env.curb+env.runoff,apexRoadFlatLimit(ns.s,env,side))+margin)return false;
+   const pit=nearestPitState(x,z,null);
+   if(pit&&pit.dist<=Math.max(pit.leftWidth||0,pit.rightWidth||0,(pit.width||0)*.5)+margin)return false;
+   // La escapatoria SVG puede extenderse más allá del ancho de respaldo.
+   if(apexSampleRunoffSurfaceAtWorld(x,z))return false;
+   return true;
+ }
+ const supports=[];
+ for(let i=0;i<2;i++){
+   const at=i===0?0:last,adj=i===0?1:last-1,p=path[at],q=path[adj],
+     dx=p[0]-q[0],dz=p[1]-q[1],len=Math.hypot(dx,dz);
+   let point=[p[0],p[1]],shift=0,valid=false;
+   if(len>.05){
+     for(let d=0;d<=64;d++){
+       const x=p[0]+dx/len*d,z=p[1]+dz/len*d;
+       if(safe(x,z)){point=[x,z];shift=d;valid=true;break;}
+     }
+   }
+   if(valid)visualPath[at]=point;
+   supports.push({point,shift,safe:valid});
+ }
+ const footprint=polyFootprintFromWorldPath(visualPath,it.width)||it.worldFootprint;
+ const result={source:path,stamp,track:trackData,width:it.width,path:visualPath,
+   footprint,supports,sourceId:it.sourceId||''};
+ it._apexPedestrianBridgeVisual=result;
+ return result;
+}
+window.apexBridgeSupportAudit=function(){
+ if(!trackData)return{ready:false};
+ const bridges=trackLandmarks().filter(it=>it&&it.type==='bridge'&&it.pedestrianBridge).map(it=>{
+   const g=apexPedestrianBridgeVisual(it);
+   return {name:it.name||'pasarela',sourceId:it.sourceId||'',
+     supports:g?g.supports.map(s=>({safe:s.safe,shiftM:s.shift,x:s.point[0],z:s.point[1]})):[]};
+ });
+ return{ready:true,circuit:trackData.spec&&trackData.spec.dir,count:bridges.length,
+   omittedSupports:bridges.reduce((n,b)=>n+b.supports.filter(s=>!s.safe).length,0),
+   bridges};
+};
+
 function apexFeatureBridgeBanner(it,cam,pitch,backend){
  if(window.ApexTrackSponsors?.featureEnabled===false)return false;
  if(!it||it.pedestrianBridge!==true||!Array.isArray(it.worldPath)||it.worldPath.length<2)return false;
