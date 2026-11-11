@@ -28,6 +28,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Grandstand crowd LOD and cache (preview only)
+        run: node apex/tests/grandstand-crowd-perf6a-preview.cjs
       - name: Full SVG pedestrian bridges (preview only)
         run: node apex/tests/pedestrian-bridge-fullspan-preview.cjs
       - name: Mobile trees 3D preview option (isolated)
