@@ -3027,6 +3027,61 @@ function apexGrandstandSeatVisual(prof,ri,rows,ci=0,att=apexGrandstandAttendance
  const idx=(ri*5+rows*3+ci*7)%palette.length;
  return{top:palette[idx],alt:palette[(idx+4)%palette.length],occupied:true,empty};
 }
+// 6A preview: immutable, bounded spectator geometry. Built only when
+// LOD, attendance or SVG stand geometry changes; projected cheaply per frame.
+const apexGrandstandCrowdPreviewStats={builds:0,hits:0,avatars:0,heads:0,lastTier:0};
+window.apexGrandstandCrowdPreviewInfo=()=>({...apexGrandstandCrowdPreviewStats});
+function apexGrandstandPreviewCrowd(it,prof,frame,h,gb,att){
+ if(!it||!frame||!gb||!att||!att.crowd||att.fill<=.01||gb.tier<1)return[];
+ const mobile=mobilePerformanceMode(),tier=gb.tier,
+   rows=tier===2?(mobile?5:6):3,
+   cap=tier===2?(mobile?55:90):(mobile?18:30),
+   cols=Math.max(3,Math.min(tier===2?(mobile?12:18):(mobile?7:10),Math.round(frame.span/1.2),Math.floor(cap/rows))),
+   key=[tier,mobile?1:0,rows,cols,att.label,att.fill,prof.madrid?1:0,Math.round(h*100),Math.round(frame.span*100),Math.round(frame.depth*100),trackData&&trackData._apexGroundStamp||''].join(':'),
+   cached=it._apexCrowdPreview;
+ if(cached&&cached.key===key&&cached.edge===frame.edge){
+   apexGrandstandCrowdPreviewStats.hits++;
+   return cached.people;
+ }
+ const people=[],dep=frame.depth,heads=tier===2,step=1/cols;
+ for(let ri=0;ri<rows;ri++){
+   // Rows nearer the front remain the most visible; occupancy is deterministic
+   // and never fluctuates when fps or camera position changes.
+   const rowFrac=(ri+.5)/rows,
+     rowDepth=dep*(.24+.56*rowFrac),seatY=h*(.20+.58*rowFrac);
+   for(let ci=0;ci<cols;ci++){
+     if(prof.madrid&&cols>=6&&ci===Math.floor(cols*.5))continue; // central aisle
+     const choice=apexGrandstandSeatVisual(prof,ri,rows,ci,att);
+     if(!choice.occupied)continue;
+     const jitter=((ri*17+ci*13)%9-4)*step*.032,
+       u=(ci+.5)/cols+jitter,
+       bodyW=Math.min(.78,frame.span*step*.56)/Math.max(1,frame.span),
+       headW=Math.min(.32,frame.span*step*.25)/Math.max(1,frame.span),
+       personH=Math.max(.84,Math.min(1.13,gb.crowdHeight||1)),
+       base=seatY+.06,
+       height=.68*personH,
+       crownY=base+height+.28*personH,
+       xz=apexGrandstandFrameXZ(frame,u,rowDepth),
+       gy=apexStaticSceneryGroundY(frame,u,rowDepth,xz[0],xz[1]);
+     const point=(uu,y)=>{const x=apexGrandstandFrameXZ(frame,uu,rowDepth);return [x[0],gy+y,x[1]];};
+     // Tapered seated torso and small head, rather than a full-width rectangle.
+     const body=[point(u-bodyW*.37,base),point(u+bodyW*.37,base),
+                 point(u+bodyW*.5,base+height),point(u-bodyW*.5,base+height)];
+     const head=heads?[
+       point(u-headW*.47,crownY-.25*personH),
+       point(u+headW*.47,crownY-.25*personH),
+       point(u+headW*.5,crownY),
+       point(u-headW*.5,crownY)]:null;
+     people.push({body,head,shirt:choice.top,skin:apexMadridCrowdHeads[(ri*7+ci*11)%apexMadridCrowdHeads.length]});
+   }
+ }
+ it._apexCrowdPreview={key,edge:frame.edge,people};
+ apexGrandstandCrowdPreviewStats.builds++;
+ apexGrandstandCrowdPreviewStats.avatars=people.length;
+ apexGrandstandCrowdPreviewStats.heads=heads?people.length:0;
+ apexGrandstandCrowdPreviewStats.lastTier=tier;
+ return people;
+}
 function apexGrandstandFrameStats(it){
  const fp=it&&it.worldFootprint,edge=it&&(it._grandstandFrontEdge||(it._grandstandFrontEdge=apexGrandstandFrontEdge(it)));
  if(!edge||!Array.isArray(fp)||fp.length<3)return null;let depth=0;
@@ -3550,22 +3605,13 @@ function drawWorldLandmarks(cam,pitch){
        if(frontBand.length>=2){const fy0=apexGrandstandGroundCam(frontBand,.05,cam),fy1=apexGrandstandGroundCam(frontBand,h*.23,cam);for(let j=0;j<frontBand.length;j++){const k=(j+1)%frontBand.length;polyCam([fy0[j],fy0[k],fy1[k],fy1[j]],prof.front||shadeColor(col,-26),null,1,.98);}}
        if(backBand.length>=2){const by0=apexGrandstandGroundCam(backBand,.03,cam),by1=apexGrandstandGroundCam(backBand,h*.84,cam);for(let j=0;j<backBand.length;j++){const k=(j+1)%backBand.length;polyCam([by0[j],by0[k],by1[k],by1[j]],j&1?shadeColor(col,-22):shadeColor(col,-18),null,1,.98);}if(detailAlpha>.12){const rail3=apexGrandstandGroundCam(backBand,h*.89,cam);for(let j=1;j<rail3.length;j++)lineCam(rail3[j-1],rail3[j],prof.rail,Math.max(1,1.0*s),1);}}
        if(frame){
-         const dep=frame.depth,span=frame.span,segs=gb.crowdCols;
-         if(gb.crowdRows>0&&segs>0&&(att.crowd||(prof.madrid&&gb.tier===2))){const crowdRows=Math.min(rows,gb.crowdRows),rowStep=Math.max(1,Math.floor(rows/crowdRows)),personH=Math.max(.72,Math.min(1.28,gb.crowdHeight||1.0));for(let ri=0;ri<rows;ri+=rowStep){
-           const rowDepth=dep*(.24+.56*(Math.min(rows,ri+rowStep)/rows)),ySeat=h*(.20+.58*(Math.min(rows,ri+rowStep)/rows));
-           for(let ci=0;ci<segs;ci++){
-             if(prof.madrid&&gb.tier>=1&&ci===Math.floor(segs*.5))continue;
-             const crowd=apexGrandstandSeatVisual(prof,ri,rows,ci,att);
-             const emptySeat=prof.madrid&&!crowd.occupied&&gb.tier===2;
-             if(!crowd.occupied&&!emptySeat)continue;
-             const backHeight=emptySeat ? .40 : personH;
-             const pad=.10,u0=ci/segs+pad/segs,u1=(ci+1)/segs-pad/segs;
-             const p0=apexGrandstandWorldCam(frame,u0,rowDepth,ySeat,cam),p1=apexGrandstandWorldCam(frame,u1,rowDepth,ySeat,cam),p2=apexGrandstandWorldCam(frame,u1,rowDepth,ySeat+backHeight,cam),p3=apexGrandstandWorldCam(frame,u0,rowDepth,ySeat+backHeight,cam);
-             polyCam([p0,p1,p2,p3],crowd.top,'rgba(255,255,255,.10)',1,.995);
-             if(crowd.occupied&&gb.tier===2&&detailAlpha>.32){const head0=apexGrandstandWorldCam(frame,u0+.015,rowDepth-.02,ySeat+personH*.82,cam),head1=apexGrandstandWorldCam(frame,u1-.015,rowDepth-.02,ySeat+personH*.82,cam),head2=apexGrandstandWorldCam(frame,u1-.015,rowDepth-.02,ySeat+personH*1.08,cam),head3=apexGrandstandWorldCam(frame,u0+.015,rowDepth-.02,ySeat+personH*1.08,cam);polyCam([head0,head1,head2,head3],crowd.alt||crowd.top,null,1,.996);}
-           }
-         }}
-         const leftWall=[apexGrandstandWorldCam(frame,.02,dep*.12,h*.08,cam),apexGrandstandWorldCam(frame,.10,dep*.12,h*.08,cam),apexGrandstandWorldCam(frame,.10,dep*.88,h*.78,cam),apexGrandstandWorldCam(frame,.02,dep*.88,h*.78,cam)],rightWall=[apexGrandstandWorldCam(frame,.90,dep*.12,h*.08,cam),apexGrandstandWorldCam(frame,.98,dep*.12,h*.08,cam),apexGrandstandWorldCam(frame,.98,dep*.88,h*.78,cam),apexGrandstandWorldCam(frame,.90,dep*.88,h*.78,cam)];
+         const dep=frame.depth,span=frame.span;
+          for(const fan of apexGrandstandPreviewCrowd(it,prof,frame,h,gb,att)){
+            polyCam(fan.body.map(p=>worldToCamera(p[0],p[1],p[2],cam)),fan.shirt,null,1,.995);
+            if(fan.head&&detailAlpha>.28)
+              polyCam(fan.head.map(p=>worldToCamera(p[0],p[1],p[2],cam)),fan.skin,null,1,.996);
+          }
+          const leftWall=[apexGrandstandWorldCam(frame,.02,dep*.12,h*.08,cam),apexGrandstandWorldCam(frame,.10,dep*.12,h*.08,cam),apexGrandstandWorldCam(frame,.10,dep*.88,h*.78,cam),apexGrandstandWorldCam(frame,.02,dep*.88,h*.78,cam)],rightWall=[apexGrandstandWorldCam(frame,.90,dep*.12,h*.08,cam),apexGrandstandWorldCam(frame,.98,dep*.12,h*.08,cam),apexGrandstandWorldCam(frame,.98,dep*.88,h*.78,cam),apexGrandstandWorldCam(frame,.90,dep*.88,h*.78,cam)];
          polyCam(leftWall,shadeColor(col,-8),null,1,.95); polyCam(rightWall,shadeColor(col,-8),null,1,.95);
          if(gb.tier>=1){for(let st=0;st<(gb.tier===2?7:4);st++){const d0=dep*(.14+.09*st),d1=dep*(.19+.09*st),y0=h*(.10+.085*st),y1=h*(.145+.085*st);const l0=apexGrandstandWorldCam(frame,.03,d0,y0,cam),l1=apexGrandstandWorldCam(frame,.09,d0,y0,cam),l2=apexGrandstandWorldCam(frame,.09,d1,y1,cam),l3=apexGrandstandWorldCam(frame,.03,d1,y1,cam),r0=apexGrandstandWorldCam(frame,.91,d0,y0,cam),r1=apexGrandstandWorldCam(frame,.97,d0,y0,cam),r2=apexGrandstandWorldCam(frame,.97,d1,y1,cam),r3=apexGrandstandWorldCam(frame,.91,d1,y1,cam);polyCam([l0,l1,l2,l3],shadeColor(col,10),null,1,.96);polyCam([r0,r1,r2,r3],shadeColor(col,10),null,1,.96);}}
          const diagUs=gb.braces?(gb.tier===2?(span>30?[.12,.28,.44,.60,.76,.90]:(span>18?[.18,.40,.62,.84]:[.3,.7])):(span>24?[.22,.50,.78]:[.35,.65])):[];
@@ -3575,7 +3621,7 @@ function drawWorldLandmarks(cam,pitch){
          const hasVip=(prof.covered||span>36);
          if(hasVip&&gb.vip){const u0=.34,u1=.66,d0=dep*.54,d1=dep*.88,y0=h*.48,y1=h*.74;const q0=apexGrandstandWorldCam(frame,u0,d0,y0,cam),q1=apexGrandstandWorldCam(frame,u1,d0,y0,cam),q2=apexGrandstandWorldCam(frame,u1,d0,y1,cam),q3=apexGrandstandWorldCam(frame,u0,d0,y1,cam),q4=apexGrandstandWorldCam(frame,u0,d1,y0,cam),q5=apexGrandstandWorldCam(frame,u1,d1,y0,cam),q6=apexGrandstandWorldCam(frame,u1,d1,y1,cam),q7=apexGrandstandWorldCam(frame,u0,d1,y1,cam);polyCam([q0,q1,q2,q3],'#7da4b7',null,1,.97);polyCam([q3,q2,q6,q7],'#5f6870',null,1,.96);polyCam([q7,q6,q5,q4],'#dfe5e8',null,1,.96);}
          if(gb.flags){const flagPos=span>28?[.14,.84]:(span>18?[.50]:[]);for(let fi=0;fi<flagPos.length;fi++){const uu=flagPos[fi],pole0=apexGrandstandWorldCam(frame,uu,dep*.99,h*.98,cam),pole1=apexGrandstandWorldCam(frame,uu,dep*.99,h*1.28,cam);lineCam(pole0,pole1,'#d9dee2',Math.max(1,1*s),1);const f0=apexGrandstandWorldCam(frame,uu+.005,dep*1.00,h*1.24,cam),f1=apexGrandstandWorldCam(frame,uu+.10,dep*1.00,h*1.21,cam),f2=apexGrandstandWorldCam(frame,uu+.10,dep*1.00,h*1.14,cam),f3=apexGrandstandWorldCam(frame,uu+.005,dep*1.00,h*1.17,cam);polyCam([f0,f1,f2,f3],fi===0?'#d72631':'#2459c3',null,1,.98);const mA=camMix(f0,f1,.33),mB=camMix(f3,f2,.33);polyCam([f0,mA,mB,f3],fi===0?'#f3d34a':'#ffffff',null,1,.99);}}
-         if(prof.covered&&gb.tier>=1){const rf0=apexGrandstandWorldCam(frame,-.03,dep*.30,h*.86,cam),rf1=apexGrandstandWorldCam(frame,1.03,dep*.30,h*.86,cam),rb1=apexGrandstandWorldCam(frame,1.03,dep*1.03,h*1.05,cam),rb0=apexGrandstandWorldCam(frame,-.03,dep*1.03,h*1.05,cam),uf0=apexGrandstandWorldCam(frame,-.03,dep*.36,h*.80,cam),uf1=apexGrandstandWorldCam(frame,1.03,dep*.36,h*.80,cam),ub1=apexGrandstandWorldCam(frame,1.03,dep*1.00,h*.98,cam),ub0=apexGrandstandWorldCam(frame,-.03,dep*1.00,h*.98,cam);polyCam([rf0,rf1,rb1,rb0],prof.roof||'#dbe1e6',null,1,.985);polyCam([uf0,uf1,ub1,ub0],prof.roofDark||'#b3bcc3',null,1,.945);polyCam([uf0,uf1,rf1,rf0],'#6d7780',null,1,.93);const cols=gb.roofSupports?(gb.tier===2?(span>30?[.10,.30,.50,.70,.90]:[.18,.50,.82]):[.18,.50,.82]):[];for(const uu of cols){const c0=apexGrandstandWorldCam(frame,uu,dep*.88,h*.18,cam),c1=apexGrandstandWorldCam(frame,uu,dep*.96,h*.82,cam),c2=apexGrandstandWorldCam(frame,uu+.02,dep*.96,h*.82,cam),c3=apexGrandstandWorldCam(frame,uu+.02,dep*.88,h*.18,cam);polyCam([c0,c1,c2,c3],prof.support||'#9da7ae',null,1,.95);}}
+         if(prof.covered){const rf0=apexGrandstandWorldCam(frame,-.03,dep*.30,h*.86,cam),rf1=apexGrandstandWorldCam(frame,1.03,dep*.30,h*.86,cam),rb1=apexGrandstandWorldCam(frame,1.03,dep*1.03,h*1.05,cam),rb0=apexGrandstandWorldCam(frame,-.03,dep*1.03,h*1.05,cam),uf0=apexGrandstandWorldCam(frame,-.03,dep*.36,h*.80,cam),uf1=apexGrandstandWorldCam(frame,1.03,dep*.36,h*.80,cam),ub1=apexGrandstandWorldCam(frame,1.03,dep*1.00,h*.98,cam),ub0=apexGrandstandWorldCam(frame,-.03,dep*1.00,h*.98,cam);polyCam([rf0,rf1,rb1,rb0],prof.roof||'#dbe1e6',null,1,.985);polyCam([uf0,uf1,ub1,ub0],prof.roofDark||'#b3bcc3',null,1,.945);polyCam([uf0,uf1,rf1,rf0],'#6d7780',null,1,.93);const cols=gb.roofSupports?(gb.tier===2?(span>30?[.10,.30,.50,.70,.90]:[.18,.50,.82]):[.18,.50,.82]):[];for(const uu of cols){const c0=apexGrandstandWorldCam(frame,uu,dep*.88,h*.18,cam),c1=apexGrandstandWorldCam(frame,uu,dep*.96,h*.82,cam),c2=apexGrandstandWorldCam(frame,uu+.02,dep*.96,h*.82,cam),c3=apexGrandstandWorldCam(frame,uu+.02,dep*.88,h*.18,cam);polyCam([c0,c1,c2,c3],prof.support||'#9da7ae',null,1,.95);}}
        }
        continue;
      }
