@@ -28,6 +28,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: SVG concrete F1 catch fence (preview only)
+        run: node apex/tests/svg-concrete-f1-fence-preview.cjs
       - name: Grandstand v2 architecture and crowd LOD (preview only)
         run: node apex/tests/grandstand-v2-preview.cjs
       - name: Grandstand crowd LOD and cache (preview only)
