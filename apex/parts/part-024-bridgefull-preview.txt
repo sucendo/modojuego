@@ -2156,6 +2156,47 @@ function apexBuildLandmarkStaticBatch(it){
 
 // Visibilidad física de barreras SVG: siempre por segmentos (y por chunks),
 // nunca por la posición del ancla del landmark. Compartido por Canvas y WebGL.
+
+/* SVG CONCRETE · preview: mismo perfil de cerramiento F1 que WALL_F1.
+ * Sólo representación: las huellas SVG, colisiones y tipos no se modifican. */
+function apexSvgConcreteFenceProfile(q,cam,rawHeight,side=1){
+ if(!Array.isArray(q)||q.length!==4)return null;
+ const dx=q[1][0]-q[0][0],dz=q[1][2]-q[0][2],span=Math.hypot(dx,dz);
+ if(span<.02)return null;
+ const fh=Math.max(2.05,Number(rawHeight)||2.35),verticalH=Math.max(1.45,fh*.74),
+       cantH=Math.max(.34,fh-verticalH),lean=.55,nx=-dz/span*(side||1),nz=dx/span*(side||1);
+ const B0=worldToCamera(q[3][0],q[3][1],q[3][2],cam),B1=worldToCamera(q[2][0],q[2][1],q[2][2],cam),
+       J0=worldToCamera(q[3][0],q[3][1]+verticalH,q[3][2],cam),
+       J1=worldToCamera(q[2][0],q[2][1]+verticalH,q[2][2],cam),
+       T0=worldToCamera(q[3][0]+nx*lean,q[3][1]+verticalH+cantH,q[3][2]+nz*lean,cam),
+       T1=worldToCamera(q[2][0]+nx*lean,q[2][1]+verticalH+cantH,q[2][2]+nz*lean,cam);
+ return {B0,B1,J0,J1,T0,T1,fh,span};
+}
+function apexSvgConcreteFenceCanvas(q,cam,pitch,fh,side){
+ const P=apexSvgConcreteFenceProfile(q,cam,fh,side);if(!P)return;
+ const {B0,B1,J0,J1,T0,T1,span}=P,z=(Math.max(.6,B0.z)+Math.max(.6,B1.z))*.5;
+ if(z>780)return;
+ const mobile=mobilePerformanceMode(),near=z<(mobile?115:175),mid=z<(mobile?270:410),
+       posts=Math.max(1,Math.min(mobile?12:18,Math.ceil(span/(near?2.8:mid?5.6:14)))),
+       mix=camMix,steel='rgba(94,107,116,.97)',rail='rgba(111,125,134,.96)';
+ drawCamLine(B0,B1,pitch,'rgba(127,139,147,.98)',1.45);
+ drawCamLine(J0,J1,pitch,rail,near?1.45:1.05);
+ drawCamLine(T0,T1,pitch,'rgba(146,157,165,.99)',near?1.8:1.2);
+ for(let i=0;i<=posts;i++){
+  const t=i/posts,b=mix(B0,B1,t),j=mix(J0,J1,t),u=mix(T0,T1,t);
+  drawCamLine(b,j,pitch,steel,near?2.0:1.35);
+  drawCamLine(j,u,pitch,steel,near?1.7:1.25);
+ }
+ if(!mid)return;
+ drawCamLine(mix(B0,J0,.52),mix(B1,J1,.52),pitch,'rgba(99,112,122,.63)',.85);
+ if(!near)return;
+ for(let i=0;i<posts;i++){
+  const t=i/posts,v=(i+1)/posts;
+  drawCamLine(mix(B0,B1,t),mix(J0,J1,v),pitch,'rgba(92,106,116,.48)',.72);
+  drawCamLine(mix(J0,J1,t),mix(B0,B1,v),pitch,'rgba(92,106,116,.48)',.72);
+ }
+}
+
 function apexVisibleBarrierSegments(it,cam,far=1250){
  if(!it||it.type!=='barrier'||!cam)return[];
  const batch=it._apexStaticBatch&&Array.isArray(it._apexStaticBatch.barrierSegments)
@@ -3494,6 +3535,11 @@ function drawWorldLandmarks(cam,pitch){
        const q=sg.q;
        if(!Array.isArray(q)||q.length!==4)continue;
        polyCam(q.map(p=>worldToCamera(p[0],p[1],p[2],cam)),col);
+       if(kind==='CONCRETE'){
+         const top0=worldToCamera(q[3][0],q[3][1],q[3][2],cam),top1=worldToCamera(q[2][0],q[2][1],q[2][2],cam);
+         drawCamLine(top0,top1,pitch,'rgba(91,103,112,.96)',1.5);
+         if(it.fence)apexSvgConcreteFenceCanvas(q,cam,pitch,it.fenceH||sg.fenceH||2.35,it.side||1);
+       }
      }
      continue;
    }else if(it.type==="tunnel"){
