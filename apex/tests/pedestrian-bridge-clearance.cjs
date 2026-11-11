@@ -28,21 +28,22 @@ for(const mode of modes){
  // Contains continue statements; run the syntax check inside a test loop.
  new Function('for(let k=0;k<1;k++){if(false){}'+branch+'}}');
 }
-let pit=false,runoff=false;
+let pit=false,runoff=false,cornerBlocked=false,roadY=0;
 const data={spec:{dir:'01-australia'},_apexGroundStamp:'initial'};
 const landmark={type:'bridge',pedestrianBridge:true,sourceId:'test',width:5,
  worldPath:[[0,-8],[0,8]],worldFootprint:[[-2,-8],[-2,8],[2,8],[2,-8]]};
 const window={};
 const visual=new Function('window','trackData','trackLandmarks','nearestTrackState',
  'envProfile','apexRoadFlatLimit','nearestPitState','apexSampleRunoffSurfaceAtWorld',
- 'polyFootprintFromWorldPath',
+ 'polyFootprintFromWorldPath','clamp','renderRibbonFrameAt','apexRoadSideHeight','apexWorldGroundY',
  helper+'return apexPedestrianBridgeVisual;')(
  window,data,()=>[landmark],(x,z)=>({s:0,lat:z}),
  ()=>({half:6,curb:1,runoff:3.2}),()=>10.2,
  (x,z)=>pit&&z>=0&&z<20?{dist:0,leftWidth:2,rightWidth:2,width:4}:null,
- (x,z)=>runoff?{kind:'ASPHALT'}:null,
+ (x,z)=>(runoff||(cornerBlocked&&x>.4))?{kind:'ASPHALT'}:null,
  (points,w)=>{const a=points[0],b=points[points.length-1],h=w*.5;
-  return[[a[0]-h,a[1]],[b[0]-h,b[1]],[b[0]+h,b[1]],[a[0]+h,a[1]]];});
+  return[[a[0]-h,a[1]],[b[0]-h,b[1]],[b[0]+h,b[1]],[a[0]+h,a[1]]];},
+ (v,lo,hi)=>Math.max(lo,Math.min(hi,v)),()=>({y:roadY}),()=>roadY,()=>0);
 const first=visual(landmark);
 assert.equal(first,visual(landmark),'Reuse per-bridge projection cache');
 assert.deepEqual(landmark.worldPath,[[0,-8],[0,8]],'Never mutate the SVG worldPath');
@@ -56,6 +57,23 @@ runoff=true;pit=false;data._apexGroundStamp='blocked';
 const blocked=visual(landmark);
 assert.ok(blocked.supports.every(s=>!s.safe),'Omit unsafe supports on fully blocked ground');
 assert.equal(window.apexBridgeSupportAudit().omittedSupports,2);
+runoff=false;cornerBlocked=true;data._apexGroundStamp='corner';
+const corners=visual(landmark);
+assert.ok(corners.supports.every(s=>!s.safe),
+ 'Checking the centre alone misses a pillar corner inside SVG runoff');
+cornerBlocked=false;roadY=12;data._apexGroundStamp='elevated';
+const elevated=visual(landmark);
+assert.ok(elevated.deckBaseY>=17.25&&elevated.deckTopY>elevated.deckBaseY,
+ 'Deck underside must clear an uphill road by at least 5.25 metres');
+assert.ok(window.apexBridgeSupportAudit().bridges[0].minimumClearanceM>=5.25,
+ 'Elevation clearance must be observable via browser audit');
+for(const mode of modes){
+ const src=fs.readFileSync(path.join(root,mode.filename),'utf8');
+ const p=src.indexOf(mode.start),q=src.indexOf(mode.end,p),section=src.slice(p,q);
+ assert.match(section,/visual\?\.deckBaseY/);
+ assert.match(section,/visual\?\.deckTopY/);
+}
 console.log(JSON.stringify({test:'pedestrian-bridge-clearance',renderers:modes.length,
  trackShiftM:first.supports.map(s=>s.shift),pitShiftM:pitVisual.supports[1].shift,
- rejectedUnsafeSupports:2,svgUnchanged:true,ok:true}));
+ rejectedUnsafeSupports:2,fullPierFootprintChecked:true,roadClearanceM:elevated.minimumClearanceM,
+ svgUnchanged:true,ok:true}));
