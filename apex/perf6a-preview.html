@@ -24,7 +24,9 @@ try{
       const i=cursor++;
       if(i>=count)return;
       const n=String(i).padStart(3,"0");
-      const r=await fetch(i===25?"parts/part-025-trees3d-preview.txt":"parts/part-"+n+".txt",{cache:"no-cache"});
+      const partPath=i===25?"parts/part-025-trees3d-preview.txt":
+                    i===26?"parts/part-026-perf6a-preview.txt":"parts/part-"+n+".txt";
+      const r=await fetch(partPath,{cache:"no-cache"});
       if(!r.ok)throw new Error("No se pudo cargar part-"+n+" ("+r.status+")");
       parts[i]=await r.text();
     }
@@ -34,7 +36,7 @@ try{
   document.write(parts.join(""));
   document.close();
   // SVG masters remain editable; sponsor artwork is rasterized once into GPU textures.
-  for(const src of ['js/svg-curbs.js?v=svg-road-edge-v2','js/track-sponsor-vectors.js?v=sct-planar-24m-v2','js/feature-sponsor-vectors.js?v=vector-perf-v2','js/track-sponsors.js?v=texture-v1','js/sponsor-textures.js?v=texture-v1','js/trees-3d-test.js?v=melbourne-phase5-lod-cache-v1','js/rival-perf6a-preview.js?v=20261110-a']){
+  for(const src of ['js/svg-curbs.js?v=svg-road-edge-v2','js/track-sponsor-vectors.js?v=sct-planar-24m-v2','js/feature-sponsor-vectors.js?v=vector-perf-v2','js/track-sponsors.js?v=texture-v1','js/sponsor-textures.js?v=texture-v1','js/trees-3d-test.js?v=melbourne-phase5-lod-cache-v1']){
     const script=document.createElement('script');script.src=src;script.async=false;
     (document.body||document.head).appendChild(script);
   }
