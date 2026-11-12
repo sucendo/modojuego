@@ -4937,9 +4937,9 @@ function webglPushCircuitBackground(cam,pitch){
  webglPushMovingClouds(cam,pitch,hy);
 }
 function webglCircuitRoadColor(seg){
- const base=palette().road,seed=Math.floor((seg.a.s+seg.b.s)*.22),z=seg.z;
- const dist=z>260?-12:z>120?-8:z<28?1:-3,alt=(seed&1)?1:-1;
- return shadeColor(base,dist+alt);
+ // Same deterministic, SVG-coloured material as Canvas; both the phase-6 GPU
+ // batch and its CPU fallback call this exact function.
+ return apexRoadMaterialColorV15(seg);
 }
 function webglPushTerrainSegment(seg,cam,pitch){
  const a=seg.a,b=seg.b;if(!a||!b||!a.v||!b.v)return;

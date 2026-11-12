@@ -105,5 +105,5 @@ for(const id of ['track_centerline','apex_drivable_area','APEX_PITLANE',
 }
 const perf6a=fs.readFileSync(path.join(root,'perf6a-preview.html'),'utf8');
 assert.match(perf6a,/part-026-perf6a-preview\.txt/,'6A preview renderer absent');
-assert.match(perf6a,/part-025-trees3d-preview\.txt/,'6A trees preview absent');
+assert.match(perf6a,/part-025-bridgefull-trees3d-preview\.txt/,'6A trees preview absent');
 console.log(JSON.stringify({test:'svg-barrier-visibility',edition:'2026-11-11',selectedSegments:2,experimentalPreview:true,ok:true}));

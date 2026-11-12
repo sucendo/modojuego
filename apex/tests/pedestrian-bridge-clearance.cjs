@@ -13,7 +13,7 @@ const helper=source.slice(i,j);
 const modes=[
  {filename:'parts/part-024.txt',start:'}else if(it.type==="bridge"&&it.pedestrianBridge){',end:'}else if(it.type==="road"&&Array.isArray(it.worldPath)&&it.worldPath.length>=2){'},
  {filename:'parts/part-025.txt',start:"}else if(it.type==='bridge'&&it.pedestrianBridge){",end:"}else if(it.type==='road'&&Array.isArray(it.worldPath)&&it.worldPath.length>=2){"},
- {filename:'parts/part-025-trees3d-preview.txt',start:"}else if(it.type==='bridge'&&it.pedestrianBridge){",end:"}else if(it.type==='road'&&Array.isArray(it.worldPath)&&it.worldPath.length>=2){"}
+ {filename:'parts/part-025-bridgefull-trees3d-preview.txt',start:"}else if(it.type==='bridge'&&it.pedestrianBridge){",end:"}else if(it.type==='road'&&Array.isArray(it.worldPath)&&it.worldPath.length>=2){"}
 ];
 for(const mode of modes){
  const s=fs.readFileSync(path.join(root,mode.filename),'utf8');
@@ -68,7 +68,7 @@ assert.ok(elevated.deckBaseY>=17.25&&elevated.deckTopY>elevated.deckBaseY,
 assert.ok(window.apexBridgeSupportAudit().bridges[0].minimumClearanceM>=5.25,
  'Elevation clearance must be observable via browser audit');
 const perf6aPreview=fs.readFileSync(path.join(root,'perf6a-preview.html'),'utf8');
-assert.match(perf6aPreview,/parts\/part-025-trees3d-preview\.txt/,
+assert.match(perf6aPreview,/parts\/part-025-bridgefull-trees3d-preview\.txt/,
  '6A preview must use corrected trees3d renderer');
 assert.match(perf6aPreview,/parts\/part-026-perf6a-preview\.txt/,
  '6A preview must preserve the 6A performance variant');
@@ -77,8 +77,8 @@ assert.match(perf6aPreview,/cache:["']no-cache["']/,
 for(const mode of modes){
  const src=fs.readFileSync(path.join(root,mode.filename),'utf8');
  const p=src.indexOf(mode.start),q=src.indexOf(mode.end,p),section=src.slice(p,q);
- assert.match(section,/visual\?\.deckBaseY/);
- assert.match(section,/visual\?\.deckTopY/);
+ assert.match(section,/visual\??\.deckBaseY/);
+ assert.match(section,/visual\??\.deckTopY/);
 }
 console.log(JSON.stringify({test:'pedestrian-bridge-clearance',renderers:modes.length,
  trackShiftM:first.supports.map(s=>s.shift),pitShiftM:pitVisual.supports[1].shift,

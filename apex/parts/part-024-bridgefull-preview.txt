@@ -2552,6 +2552,73 @@ function apexUnifiedGroundStrip(seg){
  atlas.strips.set(key,strip);atlas.built++;
  return strip;
 }
+// 6A V15.1: asphalt colour is authored by the ACTIVE SVG track stroke.
+// Resolve once per loaded track; do not parse the SVG or create meshes per frame.
+// A root data-apex-road-color can explicitly override the track stroke.
+function apexRoadSvgNormalizeColorV15(value){
+ const raw=String(value||'').trim();
+ if(/^#[0-9a-f]{6}$/i.test(raw))return raw.toLowerCase();
+ if(/^#[0-9a-f]{3}$/i.test(raw))return '#'+raw.slice(1).split('').map(x=>x+x).join('').toLowerCase();
+ const rgb=raw.match(/^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/i);
+ if(rgb)return '#'+[1,2,3].map(i=>Math.min(255,+rgb[i]).toString(16).padStart(2,'0')).join('');
+ // Browser colour parser handles CSS names and modern rgb/hsl syntax.
+ // Convert to opaque #RRGGBB because legacy shadeColor only accepts six-digit HEX.
+ if(typeof document!=='undefined'){
+  const ctx=document.createElement('canvas').getContext('2d');
+  if(ctx){
+   ctx.fillStyle='#010203';ctx.fillStyle=raw;
+   const css=String(ctx.fillStyle||'').toLowerCase();
+   if(/^#[0-9a-f]{6}$/.test(css))return css;
+   const m=css.match(/^rgb\(\s*(\d{1,3}),\s*(\d{1,3}),\s*(\d{1,3})\s*\)$/);
+   if(m)return '#'+[1,2,3].map(i=>Math.min(255,+m[i]).toString(16).padStart(2,'0')).join('');
+  }
+ }
+ return null;
+}
+function apexRoadSvgBaseColorV15(){
+ const td=trackData;if(!td)return null;
+ if(Object.prototype.hasOwnProperty.call(td,'_apexV15RoadSvgColor'))return td._apexV15RoadSvgColor;
+ let color=null;
+ try{
+  const source=typeof readEffectiveTrackSvg==='function'&&td.spec?.dir?readEffectiveTrackSvg(td.spec.dir):null;
+  if(typeof source?.rawSvg==='string'&&typeof DOMParser!=='undefined'){
+   const doc=new DOMParser().parseFromString(source.rawSvg,'image/svg+xml'),root=doc.documentElement;
+   const el=root?.querySelector('#track_centerline[data-apex-type="track"]')||
+    root?.querySelector('[data-apex-role="track-centerline"][data-apex-type="track"]')||
+    root?.querySelector('[data-apex-type="track"][data-apex-style="track_centerline"]')||
+    root?.querySelector('[data-apex-role="track-centerline"]');
+   const value=String(root?.getAttribute('data-apex-road-color')||el?.getAttribute('data-apex-color')||
+    el?.style?.stroke||el?.getAttribute('stroke')||'').trim();
+   // Avoid passing gradients, "none", CSS functions or opaque URLs as RGB colours.
+   color=apexRoadSvgNormalizeColorV15(value);
+  }
+ }catch(_){/* A circuit without an SVG retains its existing palette. */}
+ td._apexV15RoadSvgColor=color;
+ return color;
+}
+function apexRoadTextureHashV15(x,z,seed=0){
+ let h=(Math.imul(x|0,374761393)+Math.imul(z|0,668265263)+Math.imul(seed|0,1442695041))|0;
+ h=Math.imul(h^(h>>>13),1274126177);
+ return ((h^(h>>>16))>>>0)/4294967296;
+}
+// Deterministic world-anchored multi-scale aggregate, quantised to keep the
+// phase-6 GPU colour-group budget below 64. No per-frame geometry or uploads.
+function apexRoadTextureStepV15(x,z){
+ const grain=apexRoadTextureHashV15(Math.floor(x/2.5),Math.floor(z/2.5),11),
+  patches=apexRoadTextureHashV15(Math.floor(x/11),Math.floor(z/11),29);
+ return Math.max(-2,Math.min(2,Math.round((grain-.5)*5+(patches-.5)*2)));
+}
+function apexRoadMaterialColorV15(seg){
+ const authored=apexRoadSvgBaseColorV15(),wet=apexWeatherWetFactor();
+ const base=authored?shadeColor(authored,-Math.round(apexWeatherDarkness()*16+wet*13)):palette().road;
+ const a=seg.a,b=seg.b,xa=a?.q?.x,xb=b?.q?.x,za=a?.q?.z,zb=b?.q?.z;
+ const x=Number.isFinite(xa)&&Number.isFinite(xb)?(xa+xb)*.5:0,
+  z=Number.isFinite(za)&&Number.isFinite(zb)?(za+zb)*.5:0;
+ const tex=apexRoadTextureStepV15(x,z),
+  grain=Math.round(tex*(1-Math.min(1,wet)*.7))*2,
+  distance=seg.z>260?-12:seg.z>120?-8:seg.z<28?1:-3;
+ return shadeColor(base,distance+grain);
+}
 function apexWebglRoadBase(seg,pitch,forceCPU=false){
  const a=seg.a,b=seg.b,V0=a.v,V1=b.v,
   seed=Math.floor(((a.s+b.s)*.5)/2.4),colors=circuitCurbPair(seed);
@@ -2606,7 +2673,7 @@ function apexUnifiedGroundDrawCorridor(seg,cam,pitch,webgl=false){
   drawCamQuadTriangles(V0.lo,V0.l,V1.l,V1.lo,pitch,colors[0]);
  if((!mobilePerformanceMode()||seg.z<mobileControlProfile().curbMax)&&(a.curb.right||b.curb.right))
   drawCamQuadTriangles(V0.r,V0.ro,V1.ro,V1.r,pitch,colors[1]);
- drawCamQuadTriangles(V0.l,V0.r,V1.r,V1.l,pitch,palette().road);
+ drawCamQuadTriangles(V0.l,V0.r,V1.r,V1.l,pitch,apexRoadMaterialColorV15(seg));
  return{mask:left!==null||right!==null};
 }
 /* Pasada unica para las superficies SVG de rodadura: antes pertenecian al
