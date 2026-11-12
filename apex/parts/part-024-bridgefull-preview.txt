@@ -3099,7 +3099,7 @@ function apexGrandstandStyleProfile(it){
  const withSvg=p=>({...p,
   covered:typeof it?.hasRoof==='boolean'?it.hasRoof:p.covered,
   tierCount:Math.max(1,Math.min(3,Math.round(Number(it?.tierCount)||1))) });
- const base={style:s,hybridGrandstand:true,base:'#4e5760',baseDark:'#3c444b',side:'#59626a',seat:seatBase,seatAlt:shadeColor(seatBase,8),seatAlt2:shadeColor(seatBase,15),rail:'rgba(231,237,241,.72)',roof:'#d4dbe0',roofDark:'#b3bcc3',support:'#9da7ae',front:'#343b42',frontWall:'#434e58',sideWall:'#59636d',rearWall:'#48535d',skirt:'#333d46',roofFascia:'#bac4cd',covered:false,rows:Math.max(4,Math.round(Number(it&&it.seatRows)||9))};
+ const base={style:s,hybridGrandstand:true,base:'#4e5760',baseDark:'#3c444b',side:'#59626a',seat:seatBase,seatAlt:shadeColor(seatBase,8),seatAlt2:shadeColor(seatBase,15),rail:'rgba(231,237,241,.72)',roof:'#d4dbe0',roofDark:'#b3bcc3',support:'#9da7ae',front:'#343b42',frontWall:'#434e58',sideWall:'#59636d',rearWall:'#48535d',skirt:'#333d46',roofFascia:'#bac4cd',tierFascia:'#4d5862',concourse:'#91999e',tierUnderDeck:'#48535b',tierRail:'#d7e1e7',tierBeam:'#68757f',covered:false,rows:Math.max(4,Math.round(Number(it&&it.seatRows)||9))};
  if(trackData?.spec?.dir==='14-spain'){
   return withSvg({...base,madrid:true,covered:s==='grandstand_covered'||s==='grandstand_arena',
     base:'#68717a',side:'#515d66',seat:it?.seatColor||'#24333e',seatAlt:it?.seatColor?shadeColor(it.seatColor,8):'#344652',seatAlt2:it?.seatColor?shadeColor(it.seatColor,-8):'#2c3c48',
@@ -4239,7 +4239,7 @@ function drawWorldLandmarks(cam,pitch){
               apexGrandstandTextureV5Stats.crowdDeckPolys++;
           }
           let texturedStrips=0;
-          if(textureCrowd)for(const strip of apexGrandstandCrowdTextureV5Strips(frame,h,prof,gb,att,cam)){
+          if(textureCrowd)for(const strip of apexGrandstandCrowdTextureV5Strips(frame,h,prof,gb,att,cam,it)){
             if(apexGrandstandTextureDrawPolyCanvas(strip,apexGrandstandTextureV5Keys.crowd,pitch))texturedStrips++;
           }
           apexGrandstandTextureV5Stats.crowdStrips+=texturedStrips;
