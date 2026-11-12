@@ -552,7 +552,18 @@ function apexSvgLandmarkExact(el,index,ctx){
    // v5.230.30 · La planta viene del dibujo SVG. length/depth se derivan sólo para LOD/culling.
    node.worldFootprint=pts;node.worldY=pts.map(p=>type==='pit'?apexAlignedCircuitSurfaceY(p[0],p[1]):apexWorldGroundY(p[0],p[1]));node.grounded=true;
    let minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity;for(const p of pts){minX=Math.min(minX,p[0]);maxX=Math.max(maxX,p[0]);minZ=Math.min(minZ,p[1]);maxZ=Math.max(maxZ,p[1])}
-   const spanX=Math.max(1,maxX-minX),spanZ=Math.max(1,maxZ-minZ);node.length=lAttr||Math.max(spanX,spanZ);node.depth=dAttr||Math.min(spanX,spanZ);node.height=node.height||(type==='pit'?19:14);if(type==='pit'){node.pitStyle=node.apexStyle||'pit_modern_f1';node.garageBays=Math.max(1,Math.round(Number.isFinite(+node.garageBays)?+node.garageBays:Math.max(8,Math.min(36,node.length/9))));node.hasGlass=node.hasGlass!==false;node.hasBalcony=node.hasBalcony!==false;node.hasPitwall=node.hasPitwall!==false;node.roofStyle=node.roofStyle||'flat';node.garageStyle=node.garageStyle||'f1';}else{node.grandstandStyle=node.apexStyle||'grandstand_open';const gs=String(node.grandstandStyle||'grandstand_open').toLowerCase();if(node.hasRoof===null||node.hasRoof===undefined)node.hasRoof=/covered|roof|arena|vip/.test(gs);node.seatRows=Math.max(3,Math.round(Number.isFinite(+node.seatRows)?+node.seatRows:(/compact/.test(gs)?6:(node.height||14)>15?11:9)));node.roofStyle=node.roofStyle||'cantilever';node.seatColor=node.seatColor||'';}
+   const spanX=Math.max(1,maxX-minX),spanZ=Math.max(1,maxZ-minZ);node.length=lAttr||Math.max(spanX,spanZ);node.depth=dAttr||Math.min(spanX,spanZ);node.height=node.height||(type==='pit'?19:14);if(type==='pit'){node.pitStyle=node.apexStyle||'pit_modern_f1';node.garageBays=Math.max(1,Math.round(Number.isFinite(+node.garageBays)?+node.garageBays:Math.max(8,Math.min(36,node.length/9))));node.hasGlass=node.hasGlass!==false;node.hasBalcony=node.hasBalcony!==false;node.hasPitwall=node.hasPitwall!==false;node.roofStyle=node.roofStyle||'flat';node.garageStyle=node.garageStyle||'f1';}else{node.grandstandStyle=node.apexStyle||'grandstand_open';const gs=String(node.grandstandStyle||'grandstand_open').toLowerCase();
+    const roofAttribute=el.getAttribute('data-apex-roof'),tierAttribute=parseInt(el.getAttribute('data-apex-tier-count'),10),
+      frontEdgeAttribute=el.getAttribute('data-apex-front-edge'),frontEdgeParsed=parseInt(frontEdgeAttribute,10),
+      offsetAttribute=parseFloat(el.getAttribute('data-apex-facing-offset-deg')),
+      overhangAttribute=parseFloat(el.getAttribute('data-apex-tier-overhang'));
+    node.hasRoof=roofAttribute===null?(node.hasRoof??/covered|roof|arena|vip/.test(gs)):String(roofAttribute).toLowerCase()==='true';
+    node.tierCount=Number.isInteger(tierAttribute)?Math.max(1,Math.min(3,tierAttribute)):1;
+    node.frontEdgeIndex=frontEdgeAttribute!==null&&String(frontEdgeAttribute).trim()!==''&&Number.isInteger(frontEdgeParsed)?Math.max(0,frontEdgeParsed):null;
+    node.facingOffsetDeg=Number.isFinite(offsetAttribute)?Math.max(-180,Math.min(180,offsetAttribute)):0;
+    node.tierOverhangM=Number.isFinite(overhangAttribute)?Math.max(0,Math.min(5,overhangAttribute)):1.0;
+    node.seatRows=Math.max(3,Math.round(Number.isFinite(+node.seatRows)?+node.seatRows:(/compact/.test(gs)?6:(node.height||14)>15?11:9)));
+    node.roofStyle=node.roofStyle||'cantilever';node.seatColor=node.seatColor||'';}
  }
  else if(type==='ferris'){
    node.radius=(parseFloat(el.getAttribute('data-apex-radius'))||12)*ctx.scale;node.height=node.height||0;node.grounded=true;
@@ -3013,16 +3024,40 @@ function apexGrandstandEnsureFootprintV10(it){
  return fp;
 }
 function apexGrandstandFrontEdge(it){
- const fp=it&&it.worldFootprint;if(!Array.isArray(fp)||fp.length<2)return null;let best=null;
+ const fp=it&&it.worldFootprint;if(!Array.isArray(fp)||fp.length<2)return null;
+ let cx=0,cz=0;for(const p of fp){cx+=p[0];cz+=p[1]}cx/=fp.length;cz/=fp.length;
+ const edges=[];
  for(let i=0;i<fp.length;i++){
-  const j=(i+1)%fp.length,a=fp[i],b=fp[j],mx=(a[0]+b[0])*.5,mz=(a[1]+b[1])*.5,len=Math.hypot(b[0]-a[0],b[1]-a[1]);if(len<1)continue;
-  const trk=nearestTrackState(mx,mz,null,{radius:360,allowGlobal:true,fallbackDist:260}),d=trk&&Number.isFinite(trk.dist)?trk.dist:1e6,score=d-len*.010;
-  if(!best||score<best.score)best={i,j,a,b,len,mx,mz,score,trk};
+  const j=(i+1)%fp.length,a=fp[i],b=fp[j],mx=(a[0]+b[0])*.5,mz=(a[1]+b[1])*.5,
+   len=Math.hypot(b[0]-a[0],b[1]-a[1]);if(len<1)continue;
+  const trk=nearestTrackState(mx,mz,null,{radius:360,allowGlobal:true,fallbackDist:260}),
+   d=trk&&Number.isFinite(trk.dist)?trk.dist:1e6,score=d-len*.010,
+   tx=(b[0]-a[0])/len,tz=(b[1]-a[1])/len;
+  let nx=-tz,nz=tx;
+  if((mx+nx-cx)**2+(mz+nz-cz)**2 > (mx-nx-cx)**2+(mz-nz-cz)**2){nx=-nx;nz=-nz;}
+  edges.push({i,j,a,b,len,mx,mz,score,trk,tx,tz,nx,nz,cx,cz});
  }
- if(!best)return null;let cx=0,cz=0;for(const p of fp){cx+=p[0];cz+=p[1]}cx/=fp.length;cz/=fp.length;
- const dx=best.b[0]-best.a[0],dz=best.b[1]-best.a[1],ln=Math.hypot(dx,dz)||1,tx=dx/ln,tz=dz/ln;let nx=-tz,nz=tx;
- if((best.mx+nx-cx)**2+(best.mz+nz-cz)**2 > (best.mx-nx-cx)**2+(best.mz-nz-cz)**2){nx=-nx;nz=-nz}
- return {...best,tx,tz,nx,nz,cx,cz};
+ if(!edges.length)return null;
+ const auto=edges.reduce((best,e)=>!best||e.score<best.score?e:best,null);
+ const override=Number(it?.frontEdgeIndex);
+ if(it?.frontEdgeIndex!==null&&it?.frontEdgeIndex!==undefined&&Number.isInteger(override)){
+  const chosen=edges.find(e=>e.i===override);
+  if(chosen)return {...chosen,source:'svg-front-edge'};
+ }
+ // A facing correction selects the most plausible existing SVG edge. It does
+ // NOT rotate the authored footprint or send seats outside its boundaries.
+ const angle=Number(it?.facingOffsetDeg)||0;
+ if(Math.abs(angle)<.1)return {...auto,source:'auto'};
+ const rad=Math.max(-180,Math.min(180,angle))*Math.PI/180,
+  wantedX=auto.nx*Math.cos(rad)-auto.nz*Math.sin(rad),
+  wantedZ=auto.nx*Math.sin(rad)+auto.nz*Math.cos(rad);
+ const chosen=edges.reduce((best,e)=>{
+  const alignment=e.nx*wantedX+e.nz*wantedZ,
+   penalty=Math.max(0,e.score-auto.score)/Math.max(25,auto.len),
+   merit=alignment-penalty*.22;
+  return !best||merit>best.merit?{edge:e,merit}:best;
+ },null);
+ return {...chosen.edge,source:'svg-facing-offset'};
 }
 function apexGrandstandBand(fp,anchor,side,t0,t1,it=null){
  if(!Array.isArray(fp)||fp.length<3)return[];
@@ -3061,26 +3096,29 @@ function apexGrandstandGroundCam(polygon,offset,cam){
 function apexGrandstandStyleProfile(it){
  const s=String(it&&(it.grandstandStyle||it.apexStyle||it.style)||(it?._apexGrandstandGeneratedV10?'grandstand_covered':'grandstand_open')).toLowerCase();
  const seatBase=it&&it.seatColor?it.seatColor:'#6e7982';
+ const withSvg=p=>({...p,
+  covered:typeof it?.hasRoof==='boolean'?it.hasRoof:p.covered,
+  tierCount:Math.max(1,Math.min(3,Math.round(Number(it?.tierCount)||1))) });
  const base={style:s,hybridGrandstand:true,base:'#4e5760',baseDark:'#3c444b',side:'#59626a',seat:seatBase,seatAlt:shadeColor(seatBase,8),seatAlt2:shadeColor(seatBase,15),rail:'rgba(231,237,241,.72)',roof:'#d4dbe0',roofDark:'#b3bcc3',support:'#9da7ae',front:'#343b42',frontWall:'#434e58',sideWall:'#59636d',rearWall:'#48535d',skirt:'#333d46',roofFascia:'#bac4cd',covered:false,rows:Math.max(4,Math.round(Number(it&&it.seatRows)||9))};
  if(trackData?.spec?.dir==='14-spain'){
-  return {...base,madrid:true,covered:s==='grandstand_covered'||s==='grandstand_arena',
+  return withSvg({...base,madrid:true,covered:s==='grandstand_covered'||s==='grandstand_arena',
     base:'#68717a',side:'#515d66',seat:it?.seatColor||'#24333e',seatAlt:it?.seatColor?shadeColor(it.seatColor,8):'#344652',seatAlt2:it?.seatColor?shadeColor(it.seatColor,-8):'#2c3c48',
-    front:'#535f68',frontWall:'#515c65',sideWall:'#58636e',rearWall:'#48535d',skirt:'#39444e',roofFascia:'#bbc6ce',support:'#aab5bd',rail:'#b5c2cb',step:'#dac67f'};
+    front:'#535f68',frontWall:'#515c65',sideWall:'#58636e',rearWall:'#48535d',skirt:'#39444e',roofFascia:'#bbc6ce',support:'#aab5bd',rail:'#b5c2cb',step:'#dac67f'});
  }
  if(trackData?.spec?.dir==='01-australia'){
   // Melbourne: graderío azul y acero galvanizado; respetar color de asiento SVG.
   const seat=it&&it.seatColor?it.seatColor:'#38658c';
-  return {...base,melbourne:true,covered:/covered|roof|arena|vip/.test(s),
+  return withSvg({...base,melbourne:true,covered:/covered|roof|arena|vip/.test(s),
     seat,seatAlt:it&&it.seatColor?shadeColor(seat,10):'#47789e',
     seatAlt2:it&&it.seatColor?shadeColor(seat,-9):'#294f70',
     base:'#626e78',front:'#475560',frontWall:'#47545f',sideWall:'#65717c',rearWall:'#53606b',skirt:'#36424a',roofFascia:'#b9c4ce',support:'#a7b3bc',rail:'#d4dce1',
-    roof:'#d9e0e5',roofDark:'#aeb9c1',step:'#d6ca8b',rows:Math.max(base.rows,10)};
+    roof:'#d9e0e5',roofDark:'#aeb9c1',step:'#d6ca8b',rows:Math.max(base.rows,10)});
  }
- if(s==='grandstand_covered')return {...base,covered:true,roof:'#dbe1e6',roofDark:'#bcc5cc',rows:Math.max(base.rows,10)};
- if(s==='grandstand_arena')return {...base,covered:true,base:'#59636b',side:'#636d76',seat:'#808b95',seatAlt:'#8e99a3',seatAlt2:'#9ba7b0',rows:Math.max(base.rows,12)};
- if(s==='grandstand_compact')return {...base,base:'#56616a',side:'#606a73',rows:Math.min(base.rows,7)};
- if(s==='grandstand_urban')return {...base,covered:true,base:'#50565c',side:'#5b6168',seat:'#697680',seatAlt:'#73808a',seatAlt2:'#7e8b95'};
- return base;
+ if(s==='grandstand_covered')return withSvg({...base,covered:true,roof:'#dbe1e6',roofDark:'#bcc5cc',rows:Math.max(base.rows,10)});
+ if(s==='grandstand_arena')return withSvg({...base,covered:true,base:'#59636b',side:'#636d76',seat:'#808b95',seatAlt:'#8e99a3',seatAlt2:'#9ba7b0',rows:Math.max(base.rows,12)});
+ if(s==='grandstand_compact')return withSvg({...base,base:'#56616a',side:'#606a73',rows:Math.min(base.rows,7)});
+ if(s==='grandstand_urban')return withSvg({...base,covered:true,base:'#50565c',side:'#5b6168',seat:'#697680',seatAlt:'#73808a',seatAlt2:'#7e8b95'});
+ return withSvg(base);
 }
 // 6A V13: inexpensive, deterministic cloth banners hung off the OUTSIDE
 // of the low front guard. National tricolours and event colours are drawn
