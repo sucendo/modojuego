@@ -3023,8 +3023,31 @@ function apexGrandstandEnsureFootprintV10(it){
  it.worldFootprint=fp;it._apexGrandstandGeneratedV10=true;
  return fp;
 }
+// Stable full sides: SVG rects are sampled into many collinear fragments.
+// front-edge=0..N-1 refers to the long logical outline segments.
+function apexGrandstandOutlineV14(it){
+ const raw=it?.worldFootprint;if(!Array.isArray(raw)||raw.length<3)return raw||[];
+ if(it._apexGrandstandOutlineV14?.source===raw)return it._apexGrandstandOutlineV14.points;
+ let pts=raw.filter(p=>Array.isArray(p)&&Number.isFinite(p[0])&&Number.isFinite(p[1]));
+ if(pts.length>3&&Math.hypot(pts[0][0]-pts[pts.length-1][0],pts[0][1]-pts[pts.length-1][1])<.001)pts.pop();
+ let changed=true,round=0;
+ while(changed&&pts.length>3&&round++<6){
+  changed=false;const out=[];
+  for(let i=0;i<pts.length;i++){
+   const a=pts[(i+pts.length-1)%pts.length],b=pts[i],c=pts[(i+1)%pts.length],
+    dx=b[0]-a[0],dz=b[1]-a[1],ex=c[0]-b[0],ez=c[1]-b[1],
+    den=Math.max(.001,Math.hypot(dx,dz)*Math.hypot(ex,ez)),
+    sn=Math.abs(dx*ez-dz*ex)/den,cs=(dx*ex+dz*ez)/den;
+   if(Math.hypot(dx,dz)<.02||(sn<.025&&cs>.99)){changed=true;continue}
+   out.push(b);
+  }
+  if(out.length>=3)pts=out;else break;
+ }
+ it._apexGrandstandOutlineV14={source:raw,points:pts};
+ return pts;
+}
 function apexGrandstandFrontEdge(it){
- const fp=it&&it.worldFootprint;if(!Array.isArray(fp)||fp.length<2)return null;
+ const fp=apexGrandstandOutlineV14(it);if(!Array.isArray(fp)||fp.length<2)return null;
  let cx=0,cz=0;for(const p of fp){cx+=p[0];cz+=p[1]}cx/=fp.length;cz/=fp.length;
  const edges=[];
  for(let i=0;i<fp.length;i++){
@@ -3198,7 +3221,7 @@ function apexGrandstandHangingFlagsV13(it,frame,h,gb,prof,cam){
 function apexGrandstandEnclosureV12(frame,h,prof,cam,it=null){
  if(!frame||!prof?.hybridGrandstand||frame.span<1||frame.depth<1)return[];
  const faces=[],edge=frame.edge,dep=frame.depth,span=frame.span,low=.025,
-   frontTop=h*.12,rearTop=h*.785,
+   frontTop=h*.12,rearTop=Number(it?.tierCount)>=3?h*.86:Number(it?.tierCount)>=2?h*.82:h*.785,
    frontLimit=.075,rearLimit=.925;
  const push=(kind,poly)=>faces.push({kind,poly});
  const at=(u,d,y)=>apexGrandstandWorldCam(frame,u,dep*d,y,cam);
