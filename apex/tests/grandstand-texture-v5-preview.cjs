@@ -38,7 +38,7 @@ assert.doesNotMatch(webgl,/if\(!prof\.hybridGrandstand\)\{webglPushCamPoly\(left
 assert.match(canvas,/polyCam\(\[low3\[j\],low3\[k\],raked3\[k\],raked3\[j\]\]/,'Canvas steps cannot hide seats');
 assert.match(webgl,/webglPushCamQuad\(low\[j\],low\[k\],raked\[k\],raked\[j\]/,'WebGL steps cannot hide seats');
 assert.match(canvas,/apexGrandstandRakedSeatV6\(aisle,frame,h,cam,\.038,it,level\)/);
-assert.match(webgl,/apexGrandstandRakedSeatV6\(aisle,frame,h,cam,\.038\)/);
+assert.match(webgl,/apexGrandstandRakedSeatV6\(aisle,frame,h,cam,\.038,it,level\)/);
 
 // V13 front banners: deterministic varied cloth flags on the outer face.
 // Geometry comes from one shared helper, so Canvas/WebGL cannot diverge.
