@@ -2583,6 +2583,16 @@ function apexRoadSvgBaseColorV15(){
   const source=typeof readEffectiveTrackSvg==='function'&&td.spec?.dir?readEffectiveTrackSvg(td.spec.dir):null;
   if(typeof source?.rawSvg==='string'&&typeof DOMParser!=='undefined'){
    const doc=new DOMParser().parseFromString(source.rawSvg,'image/svg+xml'),root=doc.documentElement;
+   const terrain=root?.querySelector('#apex_terrain_base')||
+    root?.querySelector('[data-apex-role="terrain-base"]');
+   td._apexV152GrassSvgColor=apexRoadSvgNormalizeColorV15(
+    root?.getAttribute('data-apex-grass-color')||terrain?.getAttribute('data-apex-color')||
+    terrain?.style?.fill||terrain?.getAttribute('fill'));
+   const pit=root?.querySelector('#pitlane_centerline')||
+    root?.querySelector('[data-apex-role="pitlane-centerline"][data-apex-type="pitLane"]');
+   // The pit centreline stroke is a guide (often yellow), not the tarmac.
+   td._apexV152PitSvgColor=apexRoadSvgNormalizeColorV15(
+    root?.getAttribute('data-apex-pit-color')||pit?.getAttribute('data-apex-surface-color'));
    const el=root?.querySelector('#track_centerline[data-apex-type="track"]')||
     root?.querySelector('[data-apex-role="track-centerline"][data-apex-type="track"]')||
     root?.querySelector('[data-apex-type="track"][data-apex-style="track_centerline"]')||
@@ -2595,6 +2605,18 @@ function apexRoadSvgBaseColorV15(){
  }catch(_){/* A circuit without an SVG retains its existing palette. */}
  td._apexV15RoadSvgColor=color;
  return color;
+}
+// SVG base tone is decorative, not tyre grip. Read alongside the road stroke.
+function apexSvgTerrainBaseColorV152(){
+ if(!trackData)return null;
+ apexRoadSvgBaseColorV15();
+ return trackData._apexV152GrassSvgColor||null;
+}
+function apexPitAsphaltColorV152(fallback='#555b61'){
+ if(!trackData)return fallback;
+ apexRoadSvgBaseColorV15();
+ const base=trackData._apexV152PitSvgColor||fallback;
+ return shadeColor(base,-Math.round(apexWeatherDarkness()*16+apexWeatherWetFactor()*13));
 }
 function apexRoadTextureHashV15(x,z,seed=0){
  let h=(Math.imul(x|0,374761393)+Math.imul(z|0,668265263)+Math.imul(seed|0,1442695041))|0;
@@ -6383,7 +6405,7 @@ function collectExactPitRenderItems(cam){
  return out;
 }
 function drawExactPitRenderItem(item,pitch){
- const p=projectCameraPoly(item.poly3,pitch);if(!p||p.length<3)return;if(item.brand){apexSponsorTexturePaint([item.A0,item.B0,item.B1,item.A1],item.brand,pitch,'canvas');return}poly(p,item.material?apexSurfaceTintV152('ASPHALT',item.color||'#565c62',item.material.x,item.material.z,item.z):item.color||'#565c62');if(item.color)return;const q0=projectLocal(item.A0.x,item.A0.y,item.A0.z,pitch),q1=projectLocal(item.A1.x,item.A1.y,item.A1.z,pitch),r0=projectLocal(item.B0.x,item.B0.y,item.B0.z,pitch),r1=projectLocal(item.B1.x,item.B1.y,item.B1.z,pitch);if(q0&&r0)drawCamLine(item.A0,item.B0,pitch,'rgba(248,249,250,.90)',Math.max(1,Math.min(2.2,(q0.scale+r0.scale)*.005)),.58);if(q1&&r1)drawCamLine(item.A1,item.B1,pitch,'rgba(248,249,250,.82)',Math.max(1,Math.min(2.2,(q1.scale+r1.scale)*.005)),.58);
+ const p=projectCameraPoly(item.poly3,pitch);if(!p||p.length<3)return;if(item.brand){apexSponsorTexturePaint([item.A0,item.B0,item.B1,item.A1],item.brand,pitch,'canvas');return}poly(p,item.material?apexSurfaceTintV152('ASPHALT',apexPitAsphaltColorV152('#565c62'),item.material.x,item.material.z,item.z):item.color||'#565c62');if(item.color)return;const q0=projectLocal(item.A0.x,item.A0.y,item.A0.z,pitch),q1=projectLocal(item.A1.x,item.A1.y,item.A1.z,pitch),r0=projectLocal(item.B0.x,item.B0.y,item.B0.z,pitch),r1=projectLocal(item.B1.x,item.B1.y,item.B1.z,pitch);if(q0&&r0)drawCamLine(item.A0,item.B0,pitch,'rgba(248,249,250,.90)',Math.max(1,Math.min(2.2,(q0.scale+r0.scale)*.005)),.58);if(q1&&r1)drawCamLine(item.A1,item.B1,pitch,'rgba(248,249,250,.82)',Math.max(1,Math.min(2.2,(q1.scale+r1.scale)*.005)),.58);
 }
 
 function drawGridMarkings(cam,pitch){
