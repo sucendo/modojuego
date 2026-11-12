@@ -19,6 +19,28 @@ assert.match(canvas,/railPosts=Math\.min\(mobilePerformanceMode\(\)\?5:8/);
 assert.match(webgl,/railPosts=Math\.min\(mobilePerformanceMode\(\)\?5:8/);
 assert.match(canvas,/for\(const brace of apexGrandstandTrussV3\(it,frame,h,gb\)\)/);
 assert.match(webgl,/for\(const brace of apexGrandstandTrussV3\(it,frame,h,gb\)\)/);
+// Público v4: regresión de alturas, carrera rápida y ambos renderizadores.
+const productionCanvas=fs.readFileSync(path.join(root,'parts/part-024.txt'),'utf8');
+const productionWebgl=fs.readFileSync(path.join(root,'parts/part-025.txt'),'utf8');
+for(const source of [canvas,productionCanvas]){
+ assert.match(source,/function apexGrandstandSeatTopV4\(h,prof,gb,depthFraction\)/);
+ assert.match(source,/const s=String\(currentSession\|\|'race'\)\.toLowerCase\(\)/);
+}
+for(const source of [canvas,webgl,productionCanvas,productionWebgl]){
+ assert.match(source,/ySeat=apexGrandstandSeatTopV4\(h,prof,gb,rowDepth\/dep\)|seatY=apexGrandstandSeatTopV4\(h,prof,gb,rowDepth\/dep\)/);
+}
+const seatStart=canvas.indexOf('function apexGrandstandSeatTopV4(');
+const seatEnd=canvas.indexOf('function apexGrandstandAttendanceProfile(){',seatStart);
+const seatTop=new Function(canvas.slice(seatStart,seatEnd)+';return apexGrandstandSeatTopV4;')();
+for(const tier of [0,1,2]){
+ const gb={tier},prof={rows:10},h=14;
+ for(const depthFraction of [.24,.38,.51,.65,.80]){
+  const y=seatTop(h,prof,gb,depthFraction);
+  assert.ok(y>=h*(.20+.60*depthFraction)+.07,'crowd must be above step surface');
+  assert.ok(y<=h*.81,'crowd should stay below grandstand roof');
+ }
+}
+assert.doesNotMatch(canvas,/pressure>=3&&!mid\)return\[\]/);
 const start=canvas.indexOf('const apexGrandstandCrowdMosaicStats=');
 const end=canvas.indexOf('function apexGrandstandFrameStats(it){',start);
 assert.ok(start>=0&&end>start,'shared mosaic renderer is missing');
