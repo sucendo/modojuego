@@ -29,7 +29,7 @@ const originalSponsors=Object.keys(tex.assets);
 assert.match(canvas,/function apexGrandstandRakedSeatV6\(band,frame,h,cam,offset=0\)/);
 assert.match(canvas,/const raked3=prof\.hybridGrandstand&&frame\?apexGrandstandRakedSeatV6/);
 assert.match(webgl,/const raked=prof\.hybridGrandstand&&frame\?apexGrandstandRakedSeatV6/);
-assert.match(canvas,/for\(const face of apexGrandstandEnclosureV12\(frame,h,prof,cam\)\)/);
+assert.match(canvas,/for\(const face of apexGrandstandEnclosureV12\(frame,h,prof,cam,it\)\)/);
 assert.match(webgl,/for\(const face of apexGrandstandEnclosureV12\(frame,h,prof,cam\)\)/);
 assert.doesNotMatch(canvas,/if\(!prof\.hybridGrandstand\)for\(let j=0;j<backBand\.length/);
 assert.doesNotMatch(webgl,/if\(!prof\.hybridGrandstand\)for\(let j=0;j<backBand\.length/);
@@ -46,10 +46,10 @@ const enclStart=canvas.indexOf('function apexGrandstandEnclosureV12('),
  enclEnd=canvas.indexOf('// 6A preview v5',enclStart);
 assert.ok(enclStart>0&&enclEnd>enclStart,'Missing shared V12 closure helper');
 const closureCode=canvas.slice(enclStart,enclEnd);
-const enclosure=new Function('apexGrandstandWorldCam',
+const enclosure=new Function('apexGrandstandWorldCam','apexStaticSceneryGroundY','worldToCamera',
  closureCode+';return apexGrandstandEnclosureV12;')(
- (frame,u,depth,y)=>({x:u*frame.span,y,z:depth}));
-const encFrame={span:64,depth:16,edge:{a:[0,0],b:[64,0],nx:0,nz:1}};
+ (frame,u,depth,y)=>({x:u*frame.span,y,z:depth}),()=>0,(x,y,z)=>({x,y,z}));
+const encFrame={span:64,depth:16,edge:{a:[0,0],b:[64,0],tx:1,tz:0,nx:0,nz:1}};
 const openEnclosure=enclosure(encFrame,14,{hybridGrandstand:true,covered:false},{});
 const coveredEnclosure=enclosure(encFrame,14,{hybridGrandstand:true,covered:true},{});
 assert.equal(openEnclosure.length,7,'Open tribune should close front, sides, rear and foundation without a roof');
@@ -73,6 +73,18 @@ for(const [variant,faces] of [['open',openEnclosure],['covered',coveredEnclosure
 }
 assert.equal(enclosure(encFrame,14,{hybridGrandstand:false,covered:true},{}).length,0);
 assert.equal(enclosure(null,14,{hybridGrandstand:true},{}).length,0);
+
+// The actual outline of an irregular authored stand must be closed, not an
+// approximate rectangle that protrudes beyond the polygon in corners.
+const trapezoid={worldFootprint:[[0,0],[64,0],[54,16],[12,16]]};
+const shapeFaces=enclosure(encFrame,14,{hybridGrandstand:true,covered:false},{},trapezoid);
+const ends=shapeFaces.filter(f=>f.kind==='sideWall');
+assert.equal(ends.length,2,'Irregular SVG should still have precisely two solid end walls');
+assert.ok(ends.some(f=>f.poly.some(p=>p.x===54))&&ends.some(f=>f.poly.some(p=>p.x===12)),
+ 'Side wall endpoints must respect actual authored rear footprint vertices');
+assert.ok(ends.every(f=>f.poly.every(p=>p.x>=0&&p.x<=64)),
+ 'Irregular SVG closures must not extend beyond the hand-drawn boundary');
+
 assert.equal(originalSponsors.length,7,'Existing sponsor texture catalog must be unchanged');
 assert.equal(tex.registerCanvas('invalid',null),null);
 let drawCalls=0;
@@ -199,7 +211,7 @@ pressure=0;mobile=false;
 const panels=renderer.deck(stand,{hybridGrandstand:true},frame,14,full,{});
 assert.match(canvas,/apexGrandstandBand\(it\.worldFootprint,it\.anchor\|\|\{\},it\.side\|\|1,\.015,\.985,it\)/, 'Crowd must extend to the first and last seating rows');
 assert.match(canvas,/frontTop=h\*\.12/, 'Front enclosure must stay below the first spectator tier');
-assert.match(canvas,/sideFront=h\*\.19,sideRear=h\*\.79,rearTop=h\*\.785/,
+assert.match(canvas,/kind==='rearWall'\?rearTop:h\*\(\.19\+\.60\*d\)/,
  'Side and rear closure follow the underside of the seating ramp');
 assert.match(canvas,/baseTop3=apexGrandstandGroundCam\(fp,prof\.hybridGrandstand\?h\*\.07:h\*\.18,cam\)/,
  'Canvas original foundation wall must not cover the new fascia');
