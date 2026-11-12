@@ -3812,7 +3812,7 @@ function drawWorldLandmarks(cam,pitch){
          const seatBase=ri%3===0?(prof.seatAlt||shadeColor(col,5)):(ri%3===1?(prof.seatAlt2||shadeColor(col,12)):(prof.seat||col));
          polyCam(top3,seatBase,"rgba(255,255,255,.04)",1,1);
          if(frame&&apexGrandstandTexturesV5Ready(prof)){
-          apexGrandstandTextureDrawPolyCanvas(apexGrandstandSeatTextureV5Vertices(band,top3,frame,ri,rows),apexGrandstandTextureV5Keys.seats,cam.pitch||0);
+          apexGrandstandTextureDrawPolyCanvas(apexGrandstandSeatTextureV5Vertices(band,top3,frame,ri,rows),apexGrandstandTextureV5Keys.seats,pitch);
           apexGrandstandTextureV5Stats.seatPolys++;
          }
          if(frame&&gb.tier>=1&&(gb.tier===2||frame.span>30)){
@@ -3829,7 +3829,7 @@ function drawWorldLandmarks(cam,pitch){
           const textureCrowd=apexGrandstandTexturesV5Ready(prof)&&gb.tier<2;
           let texturedStrips=0;
           if(textureCrowd)for(const strip of apexGrandstandCrowdTextureV5Strips(frame,h,prof,gb,att,cam)){
-            if(apexGrandstandTextureDrawPolyCanvas(strip,apexGrandstandTextureV5Keys.crowd,cam.pitch||0))texturedStrips++;
+            if(apexGrandstandTextureDrawPolyCanvas(strip,apexGrandstandTextureV5Keys.crowd,pitch))texturedStrips++;
           }
           apexGrandstandTextureV5Stats.crowdStrips+=texturedStrips;
           if(!textureCrowd||!texturedStrips)for(const tile of apexGrandstandCrowdMosaic(it,prof,frame,h,gb,att))
