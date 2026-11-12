@@ -3082,55 +3082,6 @@ function apexGrandstandStyleProfile(it){
  if(s==='grandstand_urban')return {...base,covered:true,base:'#50565c',side:'#5b6168',seat:'#697680',seatAlt:'#73808a',seatAlt2:'#7e8b95'};
  return base;
 }
-// Preview 6A V12: closed enclosure on the ACTUAL polygon outline, not
-// inset rectangles that cover fans. Every wall follows the authored SVG edge;
-// fallback to the same frame for generated stands without a raw polygon.
-function apexGrandstandEnclosureV12(frame,h,prof,cam,it=null){
- if(!frame||!prof?.hybridGrandstand||frame.span<1||frame.depth<1)return[];
- const faces=[],edge=frame.edge,dep=frame.depth,span=frame.span,low=.025,
-   frontTop=h*.12,rearTop=h*.785,
-   frontLimit=.075,rearLimit=.925;
- const push=(kind,poly)=>faces.push({kind,poly});
- const at=(u,d,y)=>apexGrandstandWorldCam(frame,u,dep*d,y,cam);
- const shape=Array.isArray(it?.worldFootprint)&&it.worldFootprint.length>=3?
-  it.worldFootprint:[
-   [edge.a[0],edge.a[1]],[edge.b[0],edge.b[1]],
-   [edge.b[0]+edge.nx*dep,edge.b[1]+edge.nz*dep],
-   [edge.a[0]+edge.nx*dep,edge.a[1]+edge.nz*dep]
-  ];
- const depthOf=p=>Math.max(0,Math.min(1,((p[0]-edge.a[0])*edge.nx+(p[1]-edge.a[1])*edge.nz)/dep));
- const point=(p,y)=>{
-  const u=((p[0]-edge.a[0])*edge.tx+(p[1]-edge.a[1])*edge.tz)/span,
-    d=(p[0]-edge.a[0])*edge.nx+(p[1]-edge.a[1])*edge.nz,
-    gy=apexStaticSceneryGroundY(frame,u,d,p[0],p[1]);
-  return worldToCamera(p[0],gy+y,p[1],cam);
- };
- for(let i=0;i<shape.length;i++){
-  const a=shape[i],b=shape[(i+1)%shape.length],
-    da=depthOf(a),db=depthOf(b),avg=(da+db)*.5,
-    kind=avg<=frontLimit?'frontWall':avg>=rearLimit?'rearWall':'sideWall',
-    top=(d)=>kind==='frontWall'?frontTop:
-     kind==='rearWall'?rearTop:h*(.19+.60*d);
-  push(kind,[point(a,low),point(b,low),point(b,top(db)),point(a,top(da))]);
-  // One low skirt along the front and each side. Rear already has a closure.
-  if(kind!=='rearWall'){
-   const skirtTop=h*.075;
-   push('skirt',[point(a,low),point(b,low),
-    point(b,skirtTop),point(a,skirtTop)]);
-  }
-  if(kind==='rearWall'&&prof.covered){
-   push('rearWall',[point(a,rearTop),point(b,rearTop),
-    point(b,h*.975),point(a,h*.975)]);
-  }
- }
- if(prof.covered){
-  // Two thin edge fascias finish the canopy without filling its open front.
-  for(const u of [-.03,1.03])push('roofFascia',[
-   at(u,.30,h*.86),at(u,1.03,h*1.05),
-   at(u,1.00,h*.98),at(u,.36,h*.80)]);
- }
- return faces;
-}
 // 6A V13: inexpensive, deterministic cloth banners hung off the OUTSIDE
 // of the low front guard. National tricolours and event colours are drawn
 // with 3-4 flat quads each, never textures or per-frame random animation.
@@ -3201,6 +3152,55 @@ function apexGrandstandHangingFlagsV13(it,frame,h,gb,prof,cam){
  }
  apexGrandstandFlagsV13Stats.faces+=faces.length;
  apexGrandstandFlagsV13Stats.lastCount=cache.flags.length;
+ return faces;
+}
+// Preview 6A V12: closed enclosure on the ACTUAL polygon outline, not
+// inset rectangles that cover fans. Every wall follows the authored SVG edge;
+// fallback to the same frame for generated stands without a raw polygon.
+function apexGrandstandEnclosureV12(frame,h,prof,cam,it=null){
+ if(!frame||!prof?.hybridGrandstand||frame.span<1||frame.depth<1)return[];
+ const faces=[],edge=frame.edge,dep=frame.depth,span=frame.span,low=.025,
+   frontTop=h*.12,rearTop=h*.785,
+   frontLimit=.075,rearLimit=.925;
+ const push=(kind,poly)=>faces.push({kind,poly});
+ const at=(u,d,y)=>apexGrandstandWorldCam(frame,u,dep*d,y,cam);
+ const shape=Array.isArray(it?.worldFootprint)&&it.worldFootprint.length>=3?
+  it.worldFootprint:[
+   [edge.a[0],edge.a[1]],[edge.b[0],edge.b[1]],
+   [edge.b[0]+edge.nx*dep,edge.b[1]+edge.nz*dep],
+   [edge.a[0]+edge.nx*dep,edge.a[1]+edge.nz*dep]
+  ];
+ const depthOf=p=>Math.max(0,Math.min(1,((p[0]-edge.a[0])*edge.nx+(p[1]-edge.a[1])*edge.nz)/dep));
+ const point=(p,y)=>{
+  const u=((p[0]-edge.a[0])*edge.tx+(p[1]-edge.a[1])*edge.tz)/span,
+    d=(p[0]-edge.a[0])*edge.nx+(p[1]-edge.a[1])*edge.nz,
+    gy=apexStaticSceneryGroundY(frame,u,d,p[0],p[1]);
+  return worldToCamera(p[0],gy+y,p[1],cam);
+ };
+ for(let i=0;i<shape.length;i++){
+  const a=shape[i],b=shape[(i+1)%shape.length],
+    da=depthOf(a),db=depthOf(b),avg=(da+db)*.5,
+    kind=avg<=frontLimit?'frontWall':avg>=rearLimit?'rearWall':'sideWall',
+    top=(d)=>kind==='frontWall'?frontTop:
+     kind==='rearWall'?rearTop:h*(.19+.60*d);
+  push(kind,[point(a,low),point(b,low),point(b,top(db)),point(a,top(da))]);
+  // One low skirt along the front and each side. Rear already has a closure.
+  if(kind!=='rearWall'){
+   const skirtTop=h*.075;
+   push('skirt',[point(a,low),point(b,low),
+    point(b,skirtTop),point(a,skirtTop)]);
+  }
+  if(kind==='rearWall'&&prof.covered){
+   push('rearWall',[point(a,rearTop),point(b,rearTop),
+    point(b,h*.975),point(a,h*.975)]);
+  }
+ }
+ if(prof.covered){
+  // Two thin edge fascias finish the canopy without filling its open front.
+  for(const u of [-.03,1.03])push('roofFascia',[
+   at(u,.30,h*.86),at(u,1.03,h*1.05),
+   at(u,1.00,h*.98),at(u,.36,h*.80)]);
+ }
  return faces;
 }
 // 6A preview v5 · Melbourne: lightweight, deterministic seat/crowd texture atlases.
