@@ -4540,9 +4540,9 @@ function webglPushCircuitLandmarks(cam,pitch){
          }
          if(frame&&gb.tier>=1&&(gb.tier===2||frame.span>30)){
           const aisle=apexMadridGrandstandAisle(band,frame);
-          if(aisle.length>=3)webglPushCamPoly(apexGrandstandGroundCam(aisle,yTop+.025,cam),pitch,'#9da7af',.60,-.010);
+          if(aisle.length>=3)webglPushCamPoly(prof.melbourne?apexGrandstandRakedSeatV6(aisle,frame,h,cam,.038):apexGrandstandGroundCam(aisle,yTop+.025,cam),pitch,'#b7c5d0',.60,-.010);
          }
-         if(lod<=1)for(let j=0;j<band.length;j++){const k=(j+1)%band.length;webglPushCamQuad(low[j],low[k],top[k],top[j],pitch,(ri&1)?shadeColor(col,-16):shadeColor(col,-11),.60,-.009);}
+         if(lod<=1)for(let j=0;j<band.length;j++){const k=(j+1)%band.length;webglPushCamQuad(low[j],low[k],raked[k],raked[j],pitch,(ri&1)?shadeColor(col,-16):shadeColor(col,-11),.60,-.009);}
        }
        const frontBand=apexGrandstandBand(fp,a,side,.04,.16,it),backBand=apexGrandstandBand(fp,a,side,.84,1,it);
        if(frontBand.length>=2){const fy0=apexGrandstandGroundCam(frontBand,.05,cam),fy1=apexGrandstandGroundCam(frontBand,h*.23,cam);for(let j=0;j<frontBand.length;j++){const k=(j+1)%frontBand.length;webglPushCamQuad(fy0[j],fy0[k],fy1[k],fy1[j],pitch,prof.front||shadeColor(col,-26),.60,-.010);}}
