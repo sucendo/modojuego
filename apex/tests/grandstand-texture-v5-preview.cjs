@@ -33,6 +33,11 @@ assert.match(canvas,/if\(!prof\.melbourne\)for\(let j=0;j<backBand\.length/);
 assert.match(webgl,/if\(!prof\.melbourne\)for\(let j=0;j<backBand\.length/);
 assert.match(canvas,/if\(!prof\.melbourne\)\{polyCam\(leftWall/);
 assert.match(webgl,/if\(!prof\.melbourne\)\{webglPushCamPoly\(leftWall/);
+assert.match(canvas,/polyCam\(\[low3\[j\],low3\[k\],raked3\[k\],raked3\[j\]\]/,'Canvas steps cannot hide seats');
+assert.match(webgl,/webglPushCamQuad\(low\[j\],low\[k\],raked\[k\],raked\[j\]/,'WebGL steps cannot hide seats');
+assert.match(canvas,/apexGrandstandRakedSeatV6\(aisle,frame,h,cam,\.038\)/);
+assert.match(webgl,/apexGrandstandRakedSeatV6\(aisle,frame,h,cam,\.038\)/);
+
 assert.equal(originalSponsors.length,7,'Existing sponsor texture catalog must be unchanged');
 assert.equal(tex.registerCanvas('invalid',null),null);
 let drawCalls=0;
