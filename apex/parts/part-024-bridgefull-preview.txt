@@ -2555,6 +2555,26 @@ function apexUnifiedGroundStrip(seg){
 // 6A V15.1: asphalt colour is authored by the ACTIVE SVG track stroke.
 // Resolve once per loaded track; do not parse the SVG or create meshes per frame.
 // A root data-apex-road-color can explicitly override the track stroke.
+function apexRoadSvgNormalizeColorV15(value){
+ const raw=String(value||'').trim();
+ if(/^#[0-9a-f]{6}$/i.test(raw))return raw.toLowerCase();
+ if(/^#[0-9a-f]{3}$/i.test(raw))return '#'+raw.slice(1).split('').map(x=>x+x).join('').toLowerCase();
+ const rgb=raw.match(/^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/i);
+ if(rgb)return '#'+[1,2,3].map(i=>Math.min(255,+rgb[i]).toString(16).padStart(2,'0')).join('');
+ // Browser colour parser handles CSS names and modern rgb/hsl syntax.
+ // Convert to opaque #RRGGBB because legacy shadeColor only accepts six-digit HEX.
+ if(typeof document!=='undefined'){
+  const ctx=document.createElement('canvas').getContext('2d');
+  if(ctx){
+   ctx.fillStyle='#010203';ctx.fillStyle=raw;
+   const css=String(ctx.fillStyle||'').toLowerCase();
+   if(/^#[0-9a-f]{6}$/.test(css))return css;
+   const m=css.match(/^rgb\(\s*(\d{1,3}),\s*(\d{1,3}),\s*(\d{1,3})\s*\)$/);
+   if(m)return '#'+[1,2,3].map(i=>Math.min(255,+m[i]).toString(16).padStart(2,'0')).join('');
+  }
+ }
+ return null;
+}
 function apexRoadSvgBaseColorV15(){
  const td=trackData;if(!td)return null;
  if(Object.prototype.hasOwnProperty.call(td,'_apexV15RoadSvgColor'))return td._apexV15RoadSvgColor;
@@ -2570,7 +2590,7 @@ function apexRoadSvgBaseColorV15(){
    const value=String(root?.getAttribute('data-apex-road-color')||el?.getAttribute('data-apex-color')||
     el?.style?.stroke||el?.getAttribute('stroke')||'').trim();
    // Avoid passing gradients, "none", CSS functions or opaque URLs as RGB colours.
-   if(/^(?:#[0-9a-f]{3,8}|rgba?\([^)]*\)|hsla?\([^)]*\))$/i.test(value))color=value;
+   color=apexRoadSvgNormalizeColorV15(value);
   }
  }catch(_){/* A circuit without an SVG retains its existing palette. */}
  td._apexV15RoadSvgColor=color;
