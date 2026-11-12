@@ -575,7 +575,7 @@ window.apexCircuitCompileDiagnostics=()=>trackData&&trackData._compileStats?trac
 function drawTerrainPlateMesh(cam,pitch){
  const _terrainT0=performance.now();
  apexForEachTerrainPlateCell(cam,(A,B,C,D,c,g,poly)=>{
-   const col=g.tone==='BROWN'?'#886e51':g.tone==='SAND'?'#bc9c69':'#4e7650',fill=(c.ix+c.iz)%5===0?shadeColor(col,3):col;
+   const col=g.tone==='BROWN'?'#886e51':g.tone==='SAND'?'#bc9c69':(apexSvgTerrainBaseColorV152()||'#4e7650'),fill=(c.ix+c.iz)%5===0?shadeColor(col,3):col;
    if(poly&&poly.length>=3)drawCamPoly(poly,pitch,fill,.58);else drawCamQuadTriangles(A,B,C,D,pitch,fill,.58);
  });
  renderProfileAdd('terrainMs',performance.now()-_terrainT0);
@@ -584,7 +584,7 @@ function webglPushTerrainPlateMesh(cam,pitch){
  const _terrainT0=performance.now(),gpuEligible=typeof apexPhase5TerrainCanDraw==='function'&&apexPhase5TerrainCanDraw(),
   staticCells=[];let newFine=0;apexGpuFrameStats.deferredFineCells=0;
  const draw=(A,B,C,D,c,g,poly)=>{
-  const col=g.tone==='BROWN'?'#886e51':g.tone==='SAND'?'#bc9c69':'#4e7650',
+  const col=g.tone==='BROWN'?'#886e51':g.tone==='SAND'?'#bc9c69':(apexSvgTerrainBaseColorV152()||'#4e7650'),
    fill=(c.ix+c.iz)%5===0?shadeColor(col,3):col;
   if(poly&&poly.length>=3)webglPushCamPoly(poly,pitch,fill,.58);
   else webglPushCamQuad(A,B,C,D,pitch,fill,.58);
@@ -3409,7 +3409,7 @@ function apexPhase5PrepareGpuTerrain(items,cam,pitch){
    apexPhase5TerrainRelease(false);
    s.grid=g;s.atlas=atlas;s.packetGrid=g;s.packetAtlas=atlas;
   }
-  const base=g.tone==='BROWN'?'#886e51':g.tone==='SAND'?'#bc9c69':'#4e7650',
+  const base=g.tone==='BROWN'?'#886e51':g.tone==='SAND'?'#bc9c69':(apexSvgTerrainBaseColorV152()||'#4e7650'),
    colors=[webglCssColor(base),webglCssColor(shadeColor(base,3))],
    desired=[],missing=[];
   let selectedVertices=0;
@@ -4094,7 +4094,7 @@ function webglPushPitLaneOnSegment(a,b,cam,pitch){
        aInner=webglTrackPointCamera(a.s,pa.centerLat-pa.side*wA,cam,.014),
        bOuter=webglTrackPointCamera(b.s,pb.centerLat+pb.side*wB,cam,.014),
        bInner=webglTrackPointCamera(b.s,pb.centerLat-pb.side*wB,cam,.014);
- webglPushCamQuad(aInner,aOuter,bOuter,bInner,pitch,apexSurfaceTintV152('ASPHALT','#555b61',(a.q.x+b.q.x)*.5,(a.q.z+b.q.z)*.5,(a.z+b.z)*.5),.58,-.022);
+ webglPushCamQuad(aInner,aOuter,bOuter,bInner,pitch,apexSurfaceTintV152('ASPHALT',apexPitAsphaltColorV152(),(a.q.x+b.q.x)*.5,(a.q.z+b.q.z)*.5,(a.z+b.z)*.5),.58,-.022);
 
  const edge=.055;
  const ai2=webglTrackPointCamera(a.s,pa.centerLat-pa.side*(wA-edge),cam,.020),
@@ -4126,7 +4126,7 @@ function webglPushPitLaneOnSegment(a,b,cam,pitch){
 }
 
 function webglPushExactPitLane(cam,pitch){
- for(const it of collectExactPitRenderItems(cam)){const d=it.data,A=d.A0,B=d.A1,C=d.B1,D=d.B0;if(d.brand){apexSponsorTexturePaint([A,D,C,B],d.brand,pitch,'webgl2');continue}webglPushCamQuad(A,B,C,D,pitch,d.material?apexSurfaceTintV152('ASPHALT',d.color||'#555b61',d.material.x,d.material.z,d.z):d.color||'#555b61',.58,d.color==='#ffe16a'?-.034:-.022);if(d.color)continue;const e0=camMix(A,B,.018),e1=camMix(D,C,.018),f0=camMix(B,A,.018),f1=camMix(C,D,.018);webglPushCamQuad(A,e0,e1,D,pitch,'rgba(248,249,250,.92)',.58,-.034);webglPushCamQuad(f0,B,C,f1,pitch,'rgba(248,249,250,.82)',.58,-.034)}
+ for(const it of collectExactPitRenderItems(cam)){const d=it.data,A=d.A0,B=d.A1,C=d.B1,D=d.B0;if(d.brand){apexSponsorTexturePaint([A,D,C,B],d.brand,pitch,'webgl2');continue}webglPushCamQuad(A,B,C,D,pitch,d.material?apexSurfaceTintV152('ASPHALT',apexPitAsphaltColorV152(),d.material.x,d.material.z,d.z):d.color||'#555b61',.58,d.color==='#ffe16a'?-.034:-.022);if(d.color)continue;const e0=camMix(A,B,.018),e1=camMix(D,C,.018),f0=camMix(B,A,.018),f1=camMix(C,D,.018);webglPushCamQuad(A,e0,e1,D,pitch,'rgba(248,249,250,.92)',.58,-.034);webglPushCamQuad(f0,B,C,f1,pitch,'rgba(248,249,250,.82)',.58,-.034)}
 }
 
 function webglPushSurfaceMarkings(segments,cam,pitch){
