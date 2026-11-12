@@ -3052,7 +3052,7 @@ function apexGrandstandStyleProfile(it){
  if(trackData?.spec?.dir==='01-australia'){
   // Melbourne: graderío azul y acero galvanizado; respetar color de asiento SVG.
   const seat=it&&it.seatColor?it.seatColor:'#38658c';
-  return {...base,covered:/covered|roof|arena|vip/.test(s),
+  return {...base,melbourne:true,covered:/covered|roof|arena|vip/.test(s),
     seat,seatAlt:it&&it.seatColor?shadeColor(seat,10):'#47789e',
     seatAlt2:it&&it.seatColor?shadeColor(seat,-9):'#294f70',
     base:'#626e78',front:'#475560',support:'#a7b3bc',rail:'#d4dce1',
@@ -3063,6 +3063,89 @@ function apexGrandstandStyleProfile(it){
  if(s==='grandstand_compact')return {...base,base:'#56616a',side:'#606a73',rows:Math.min(base.rows,7)};
  if(s==='grandstand_urban')return {...base,covered:true,base:'#50565c',side:'#5b6168',seat:'#697680',seatAlt:'#73808a',seatAlt2:'#7e8b95'};
  return base;
+}
+// 6A preview v5 · Melbourne: lightweight, deterministic seat/crowd texture atlases.
+// Rasterized once; SVG geometry and raised seating steps remain authoritative.
+const apexGrandstandTextureV5Keys={seats:'apex-grandstand-seats-v5',crowd:'apex-grandstand-crowd-v5'};
+const apexGrandstandTextureV5Stats={atlasBuilds:0,seatPolys:0,crowdStrips:0};
+window.apexGrandstandTextureV5Info=()=>({...apexGrandstandTextureV5Stats,
+  ready:!!window.ApexSponsorTextures?.entry(apexGrandstandTextureV5Keys.seats),
+  circuit:trackData?.spec?.dir||null});
+function apexGrandstandTexturesV5Ready(prof){
+ if(!prof?.melbourne||trackData?.spec?.dir!=='01-australia')return false;
+ const api=window.ApexSponsorTextures;
+ if(!api||typeof api.registerCanvas!=='function')return false;
+ if(api.entry(apexGrandstandTextureV5Keys.seats)&&api.entry(apexGrandstandTextureV5Keys.crowd))return true;
+ const make=(w,h)=>{const cv=document.createElement('canvas');cv.width=w;cv.height=h;return [cv,cv.getContext('2d',{alpha:true})];};
+ const [seats,c]=make(512,128);
+ if(!c)return false;
+ c.fillStyle='#344854';c.fillRect(0,0,512,128);
+ for(let i=0;i<16;i++){
+  const x=i*32,blue=['#376c99','#32658e','#427ba5','#2c5d84','#3a6e96'][(i*7)%5];
+  // Each 32px cell is one moulded plastic seat, not a flat painted band.
+  c.fillStyle='#25323b';c.fillRect(x+1,0,30,127);
+  c.fillStyle='#9daeb9';c.fillRect(x+3,3,2,121);c.fillRect(x+27,3,2,121);
+  c.fillStyle='#172b3c';c.fillRect(x+4,10,24,69);
+  c.fillStyle=blue;c.fillRect(x+5,12,22,60);
+  c.fillStyle='rgba(255,255,255,.17)';c.fillRect(x+6,14,20,4);
+  c.fillStyle='rgba(0,0,0,.31)';c.fillRect(x+6,58,20,11);
+  c.fillStyle='#1b2a36';c.fillRect(x+3,75,26,39);
+  c.fillStyle=blue;c.fillRect(x+4,77,24,29);
+  c.fillStyle='rgba(255,255,255,.19)';c.fillRect(x+5,79,22,3);
+  c.fillStyle='rgba(0,0,0,.25)';c.fillRect(x+5,99,22,7);
+  c.fillStyle='#768992';c.fillRect(x+3,114,26,3);
+  c.fillStyle='#576c79';c.fillRect(x+12,118,8,7);
+ }
+ const [crowd,d]=make(512,128);
+ if(!d)return false;
+ const shirts=['#d8373f','#f2c34b','#e9ecef','#235cc6','#38a36f','#db7640','#272d34','#8c63c0','#e04e6e','#4aa5ba','#eff2ec','#ad2c2f','#5b975a','#263446','#ed9c2a','#8395a1'],
+       skins=['#e6ba97','#b77f59','#d4a47e','#8b5d43','#f0c9a6'];
+ for(let i=0;i<16;i++){
+  const x=i*32+16,lean=((i*7)%5)-2,shirt=shirts[(i*5+Math.floor(i/3))%shirts.length],
+        skin=skins[(i*7)%skins.length];
+  // Transparent silhouettes include sleeves, hair, faces and upper-body overlap.
+  d.fillStyle='rgba(9,16,24,.40)';d.fillRect(x-15,114,30,13);
+  d.fillStyle=shirt;d.beginPath();d.moveTo(x-8+lean,55);d.lineTo(x+8+lean,55);
+  d.lineTo(x+14+lean,75);d.lineTo(x+11+lean,127);d.lineTo(x-11+lean,127);d.lineTo(x-14+lean,75);d.closePath();d.fill();
+  d.fillStyle=skins[(i+1)%skins.length];d.fillRect(x-14+lean,78,4,20);d.fillRect(x+10+lean,78,4,20);
+  d.fillStyle='rgba(0,0,0,.16)';d.fillRect(x-8+lean,99,16,4);
+  d.fillStyle=skin;d.beginPath();d.ellipse(x+lean,37,7.4,11.1,0,0,Math.PI*2);d.fill();
+  d.fillStyle=['#1e2027','#44372f','#65503c','#262831'][i%4];
+  d.beginPath();d.ellipse(x+lean,29,8.1,5.5,0,Math.PI,Math.PI*2);d.fill();
+  if(i%7===0){d.fillStyle='#f5d54d';d.fillRect(x-10,24,20,3);}
+  if(i%11===0){d.fillStyle='#f9f9f9';d.fillRect(x-8,71,16,5);}
+ }
+ api.registerCanvas(apexGrandstandTextureV5Keys.seats,seats);
+ api.registerCanvas(apexGrandstandTextureV5Keys.crowd,crowd);
+ apexGrandstandTextureV5Stats.atlasBuilds++;
+ return true;
+}
+function apexGrandstandSeatTextureV5Vertices(band,top,frame,ri,rows){
+ const e=frame.edge,inv=1/Math.max(.01,frame.depth),cycle=16*.60;
+ return top.map((p,i)=>{
+  const w=band[i],dx=w[0]-e.a[0],dz=w[1]-e.a[1];
+  const along=dx*e.tx+dz*e.tz,depth=dx*e.nx+dz*e.nz;
+  return {...p,u:along/cycle,v:clamp((depth*inv-ri/rows)*rows,0,1)};
+ });
+}
+function apexGrandstandCrowdTextureV5Strips(frame,h,prof,gb,att,cam){
+ if(!frame||gb.tier===2||!att?.crowd||att.fill<=.01)return[];
+ const pressure=apexSceneDetailBudget().pressure,mobile=mobilePerformanceMode(),
+    rows=pressure>=2?1:(gb.tier===1?(mobile?2:3):2),dep=frame.depth,
+    cycle=16*.65,out=[];
+ for(let i=0;i<rows;i++){
+  if((i+.25)/rows>att.fill)continue;
+  const depth=dep*(.28+.52*(i+.5)/rows),
+    seat=apexGrandstandSeatTopV4(h,prof,gb,depth/dep)+.045,
+    yTop=seat+(gb.tier===1?1.15:.90),
+    p0=apexGrandstandWorldCam(frame,.025,depth,yTop,cam),
+    p1=apexGrandstandWorldCam(frame,.975,depth,yTop,cam),
+    p2=apexGrandstandWorldCam(frame,.975,depth,seat,cam),
+    p3=apexGrandstandWorldCam(frame,.025,depth,seat,cam),
+    uEnd=frame.span*.95/cycle;
+  out.push([{...p0,u:0,v:0},{...p1,u:uEnd,v:0},{...p2,u:uEnd,v:1},{...p3,u:0,v:1}]);
+ }
+ return out;
 }
 // 6A preview · Tribunas v3: arriostramiento ligero tras el graderío.
 // Se cachea en coordenadas de mundo y se comparte entre Canvas y WebGL.
@@ -3728,6 +3811,10 @@ function drawWorldLandmarks(cam,pitch){
          const yTop=h*(.20+.60*t1),yLow=h*(.20+.60*t0),top3=apexGrandstandGroundCam(band,yTop,cam),low3=apexGrandstandGroundCam(band,yLow,cam);
          const seatBase=ri%3===0?(prof.seatAlt||shadeColor(col,5)):(ri%3===1?(prof.seatAlt2||shadeColor(col,12)):(prof.seat||col));
          polyCam(top3,seatBase,"rgba(255,255,255,.04)",1,1);
+         if(frame&&apexGrandstandTexturesV5Ready(prof)){
+          apexGrandstandTextureDrawPolyCanvas(apexGrandstandSeatTextureV5Vertices(band,top3,frame,ri,rows),apexGrandstandTextureV5Keys.seats,pitch);
+          apexGrandstandTextureV5Stats.seatPolys++;
+         }
          if(frame&&gb.tier>=1&&(gb.tier===2||frame.span>30)){
           const aisle=apexMadridGrandstandAisle(band,frame);
           if(aisle.length>=3)polyCam(apexGrandstandGroundCam(aisle,yTop+.025,cam),'#9da7af',null,1,1);
@@ -3739,7 +3826,13 @@ function drawWorldLandmarks(cam,pitch){
        if(backBand.length>=2){const by0=apexGrandstandGroundCam(backBand,.03,cam),by1=apexGrandstandGroundCam(backBand,h*.84,cam);for(let j=0;j<backBand.length;j++){const k=(j+1)%backBand.length;polyCam([by0[j],by0[k],by1[k],by1[j]],j&1?shadeColor(col,-22):shadeColor(col,-18),null,1,.98);}if(detailAlpha>.12){const rail3=apexGrandstandGroundCam(backBand,h*.89,cam);for(let j=1;j<rail3.length;j++)lineCam(rail3[j-1],rail3[j],prof.rail,Math.max(1,1.0*s),1);}}
        if(frame){
          const dep=frame.depth,span=frame.span;
-          for(const tile of apexGrandstandCrowdMosaic(it,prof,frame,h,gb,att))
+          const textureCrowd=apexGrandstandTexturesV5Ready(prof)&&gb.tier<2;
+          let texturedStrips=0;
+          if(textureCrowd)for(const strip of apexGrandstandCrowdTextureV5Strips(frame,h,prof,gb,att,cam)){
+            if(apexGrandstandTextureDrawPolyCanvas(strip,apexGrandstandTextureV5Keys.crowd,pitch))texturedStrips++;
+          }
+          apexGrandstandTextureV5Stats.crowdStrips+=texturedStrips;
+          if(!textureCrowd||!texturedStrips)for(const tile of apexGrandstandCrowdMosaic(it,prof,frame,h,gb,att))
             polyCam(tile.quad.map(p=>worldToCamera(p[0],p[1],p[2],cam)),tile.color,null,1,.993);
           for(const fan of apexGrandstandPreviewCrowd(it,prof,frame,h,gb,att)){
             polyCam(fan.body.map(p=>worldToCamera(p[0],p[1],p[2],cam)),fan.shirt,null,1,.995);

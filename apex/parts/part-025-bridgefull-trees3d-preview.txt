@@ -3824,6 +3824,76 @@ function apexSponsorTextureDrawCanvas(quad,key,pitch,u0=0,u1=1,v0=0,v1=1){
  api.accounting(tris,1);return tris>0;
 }
 
+// 6A v5: polygon-shaped UV decals. Uses the already-batched, depth-tested
+// sponsor shader/pipeline but preserves the irregular SVG stand footprint.
+function apexGrandstandTextureQueuePolyGl(poly,key,pitch,bias=.055){
+ const api=window.ApexSponsorTextures;
+ if(!api?.entry(key)||!Array.isArray(poly)||poly.length<3)return false;
+ let group=apexSponsorTextureGpu.groups.get(key);
+ if(!group){group=[];apexSponsorTextureGpu.groups.set(key,group);}
+ const before=group.length,near=.65;
+ for(let i=1;i<poly.length-1;i++){
+  const tri=[poly[0],poly[i],poly[i+1]],clipped=[];
+  for(let j=0;j<3;j++){
+   const a=tri[j],b=tri[(j+1)%3],inside=a.z>=near,nextInside=b.z>=near;
+   if(inside)clipped.push(a);
+   if(inside!==nextInside){const f=(near-a.z)/(b.z-a.z);
+    clipped.push({x:a.x+(b.x-a.x)*f,y:a.y+(b.y-a.y)*f,z:near,
+     u:a.u+(b.u-a.u)*f,v:a.v+(b.v-a.v)*f});}
+  }
+  for(let j=1;j<clipped.length-1;j++){
+   const fan=[clipped[0],clipped[j],clipped[j+1]],screen=fan.map(v=>projectLocal(v.x,v.y,v.z,pitch));
+   if(screen.some(p=>!p))continue;
+   for(let k=0;k<3;k++){
+    const v=fan[k],p=screen[k];let x=p.x,y=p.y;
+    if(webglScreenRoll){const cx=W*.5,cy=H*.5,dx=x-cx,dy=y-cy,cs=Math.cos(webglScreenRoll),sn=Math.sin(webglScreenRoll);
+     x=cx+dx*cs-dy*sn;y=cy+dx*sn+dy*cs;}
+    group.push(x/W*2-1,1-y/H*2,webglDepthNdc(Math.max(WEBGL_DEPTH_NEAR,v.z-bias)),v.z,v.u,v.v);
+   }
+  }
+ }
+ const tris=(group.length-before)/18;
+ apexSponsorTextureGpu.triangles+=tris;if(tris)api.accounting(tris,1);
+ return tris>0;
+}
+function apexGrandstandTextureDrawPolyCanvas(poly,key,pitch){
+ const api=window.ApexSponsorTextures,item=api&&api.load(key);
+ if(!item||item.status!=='ready'||!Array.isArray(poly)||poly.length<3)return false;
+ const img=item.canvas,pattern=ctx.createPattern(img,'repeat');if(!pattern)return false;
+ let triangles=0;
+ for(let i=1;i<poly.length-1;i++){
+  const tri=[poly[0],poly[i],poly[i+1]],clipped=[],near=.65;
+  for(let j=0;j<3;j++){const a=tri[j],b=tri[(j+1)%3],inside=a.z>=near,nextInside=b.z>=near;
+   if(inside)clipped.push(a);
+   if(inside!==nextInside){const f=(near-a.z)/(b.z-a.z);
+    clipped.push({x:a.x+(b.x-a.x)*f,y:a.y+(b.y-a.y)*f,z:near,
+     u:a.u+(b.u-a.u)*f,v:a.v+(b.v-a.v)*f});}
+  }
+  for(let j=1;j<clipped.length-1;j++){
+   const vertices=[clipped[0],clipped[j],clipped[j+1]],
+     p=vertices.map(v=>projectLocal(v.x,v.y,v.z,pitch));
+   if(p.some(q=>!q))continue;
+   const uv=vertices.map(v=>({x:v.u*img.width,y:v.v*img.height}));
+   const du1=uv[1].x-uv[0].x,dv1=uv[1].y-uv[0].y,
+     du2=uv[2].x-uv[0].x,dv2=uv[2].y-uv[0].y,
+     det=du1*dv2-du2*dv1;
+   if(Math.abs(det)<1e-7)continue;
+   const dx1=p[1].x-p[0].x,dy1=p[1].y-p[0].y,
+     dx2=p[2].x-p[0].x,dy2=p[2].y-p[0].y;
+   const a=(dx1*dv2-dx2*dv1)/det,b=(dy1*dv2-dy2*dv1)/det,
+     c=(dx2*du1-dx1*du2)/det,d=(dy2*du1-dy1*du2)/det,
+     e=p[0].x-a*uv[0].x-c*uv[0].y,f=p[0].y-b*uv[0].x-d*uv[0].y;
+   ctx.save();ctx.beginPath();ctx.moveTo(p[0].x,p[0].y);
+   ctx.lineTo(p[1].x,p[1].y);ctx.lineTo(p[2].x,p[2].y);ctx.closePath();ctx.clip();
+   ctx.transform(a,b,c,d,e,f);ctx.fillStyle=pattern;
+   const minX=Math.min(...uv.map(q=>q.x))-2,minY=Math.min(...uv.map(q=>q.y))-2;
+   ctx.fillRect(minX,minY,Math.max(...uv.map(q=>q.x))-minX+2,Math.max(...uv.map(q=>q.y))-minY+2);
+   ctx.restore();triangles++;
+  }
+ }
+ api.accounting(triangles,1);return triangles>0;
+}
+
 function webglGradientRect(y0,y1,cTop,cBottom){const bg=apexInspectionActive()?1:WEBGL_BG_NDC;const a=webglCssColor(cTop),b=webglCssColor(cBottom),ny0=1-y0/H*2,ny1=1-y1/H*2;webglVertex(-1,ny0,bg,a);webglVertex(1,ny0,bg,a);webglVertex(1,ny1,bg,b);webglVertex(-1,ny0,bg,a);webglVertex(1,ny1,bg,b);webglVertex(-1,ny1,bg,b)}
 function webglScreenTri(a,b,c,color,camZ=null){const col=webglCssColor(color);webglVertexPx(a[0],a[1],col,camZ);webglVertexPx(b[0],b[1],col,camZ);webglVertexPx(c[0],c[1],col,camZ)}
 function webglScreenQuad(a,b,c,d,color,camZ=null){webglScreenTri(a,b,c,color,camZ);webglScreenTri(a,c,d,color,camZ)}
@@ -4463,6 +4533,10 @@ function webglPushCircuitLandmarks(cam,pitch){
          const yTop=h*(.20+.60*t1),yLow=h*(.20+.60*t0),top=apexGrandstandGroundCam(band,yTop,cam),low=apexGrandstandGroundCam(band,yLow,cam);
          const seatBase=ri%3===0?(prof.seatAlt||shadeColor(col,5)):(ri%3===1?(prof.seatAlt2||shadeColor(col,12)):(prof.seat||col));
          webglPushCamPoly(top,pitch,seatBase,.60,-.008);
+         if(frame&&apexGrandstandTexturesV5Ready(prof)){
+           apexGrandstandTextureQueuePolyGl(apexGrandstandSeatTextureV5Vertices(band,top,frame,ri,rows),apexGrandstandTextureV5Keys.seats,pitch,.055);
+           apexGrandstandTextureV5Stats.seatPolys++;
+         }
          if(frame&&gb.tier>=1&&(gb.tier===2||frame.span>30)){
           const aisle=apexMadridGrandstandAisle(band,frame);
           if(aisle.length>=3)webglPushCamPoly(apexGrandstandGroundCam(aisle,yTop+.025,cam),pitch,'#9da7af',.60,-.010);
@@ -4475,7 +4549,13 @@ function webglPushCircuitLandmarks(cam,pitch){
        if(frame){
          const dep=frame.depth,span=frame.span;
           // Cached, proportionate seated silhouettes with explicit LOD budget.
-          for(const tile of apexGrandstandCrowdMosaic(it,prof,frame,h,gb,att))
+          const textureCrowd=apexGrandstandTexturesV5Ready(prof)&&gb.tier<2;
+          let texturedStrips=0;
+          if(textureCrowd)for(const strip of apexGrandstandCrowdTextureV5Strips(frame,h,prof,gb,att,cam)){
+            if(apexGrandstandTextureQueuePolyGl(strip,apexGrandstandTextureV5Keys.crowd,pitch,.067))texturedStrips++;
+          }
+          apexGrandstandTextureV5Stats.crowdStrips+=texturedStrips;
+          if(!textureCrowd||!texturedStrips)for(const tile of apexGrandstandCrowdMosaic(it,prof,frame,h,gb,att))
             webglPushCamPoly(tile.quad.map(p=>worldToCamera(p[0],p[1],p[2],cam)),pitch,tile.color,.60,-.017);
           for(const fan of apexGrandstandPreviewCrowd(it,prof,frame,h,gb,att)){
             webglPushCamPoly(fan.body.map(p=>worldToCamera(p[0],p[1],p[2],cam)),pitch,fan.shirt,.60,-.018);
