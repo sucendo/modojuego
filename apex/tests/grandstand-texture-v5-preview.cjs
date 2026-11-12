@@ -135,6 +135,11 @@ for(const isMobile of [false,true]){
    assert.ok(strips.every(s=>s.length===4&&s.every(q=>Number.isFinite(q.x)&&Number.isFinite(q.y)&&Number.isFinite(q.z))),
     'No degenerate crowd quad');
    assert.ok(strips.every(s=>s[0].y>s[3].y),'Crowd silhouettes must extend above the raked deck');
+   assert.ok(strips.every(s=>{
+     const depth=s[3].z;
+     const ramp=14*(.20+.60*depth/frame.depth)+.11;
+     return s[3].y>ramp+.14&&s[3].y<ramp+.19;
+   }),'The standing texture feet must clear the actual raked deck by a small deterministic lift');
    assert.ok(strips.every(s=>s[1].u>s[0].u),'Atlas pattern must repeat across grandstand width');
    assert.ok(Math.min(...depths)<frame.depth*.14,'Lower spectator rows must appear at all LOD/pressure modes');
   }
@@ -158,8 +163,15 @@ const stand={sourceId:'test-grandstand',anchor:{x:3,z:7},side:1,
 pressure=0;mobile=false;
 const panels=renderer.deck(stand,{hybridGrandstand:true},frame,14,full,{});
 assert.match(canvas,/apexGrandstandBand\(it\.worldFootprint,it\.anchor\|\|\{\},it\.side\|\|1,\.015,\.985,it\)/, 'Crowd must extend to the first and last seating rows');
-assert.match(canvas,/prof\.hybridGrandstand\?h\*\.16:h\*\.23/, 'Canvas front fascia must not conceal the lower crowd');
-assert.match(webgl,/prof\.hybridGrandstand\?h\*\.16:h\*\.23/, 'WebGL front fascia must not conceal the lower crowd');
+assert.match(canvas,/prof\.hybridGrandstand\?h\*\.12:h\*\.23/, 'Canvas front fascia must not conceal the lower crowd');
+assert.match(webgl,/prof\.hybridGrandstand\?h\*\.12:h\*\.23/, 'WebGL front fascia must not conceal the lower crowd');
+assert.match(canvas,/crowdBase=seat\+lift/,'Crowd strip feet must not remain at the seat origin');
+assert.match(canvas,/p2=apexGrandstandWorldCam\(frame,\.982,depth,crowdBase,cam\)/);
+assert.match(canvas,/p3=apexGrandstandWorldCam\(frame,\.018,depth,crowdBase,cam\)/);
+assert.match(canvas,/base=\(prof\.hybridGrandstand\?apexGrandstandRakedSeatYV6\(h,rowDepth\/dep\):seatY\)\+\.095\+/,
+ 'Individual 3D bodies must rise above the slope, with stable variation');
+assert.match(canvas,/apexGrandstandRakedSeatV6\(piece,frame,h,cam,\.18\)/,
+ 'Deck must be slightly raised to avoid sinking under the seats');
 assert.match(canvas,/start=tier===2\?\.035:\.025,end=\.975/, 'LOD must place standing crowd into front rows');
 assert.ok(Math.min(...panels.flat().map(v=>v.v))<.06, 'Front of grandstand requires spectator coverage');
 assert.ok(Math.max(...panels.flat().map(v=>v.v))>.94, 'Grandstand rear remains populated');
@@ -168,6 +180,8 @@ assert.ok(panels.every(a=>a.length>=3&&a.every(p=>Number.isFinite(p.u)&&p.v>=0&&
 const leftMax=Math.max(...panels[0].map(v=>v.x)),rightMin=Math.min(...panels[1].map(v=>v.x));
 assert.ok(rightMin-leftMax>=1.9,'Keep central staircase/aisle free of the crowd decal');
 assert.ok(panels.some(a=>Math.max(...a.map(v=>v.y))-Math.min(...a.map(v=>v.y))>5),'Crowd must cover the height of the raked seating');
+assert.ok(panels.every(poly=>poly.every(v=>Math.abs(v.y-(14*(.20+.60*v.v)+.11+.18))<.00001)),
+ 'Crowd deck must sit 0.18 m above the raked stand across its whole depth');
 assert.equal(renderer.deck(stand,{hybridGrandstand:true},frame,14,full,{}).length,2);
 assert.equal(renderer.deckStats.builds,1,'Clip geometry must be cached, not rebuilt every frame');
 assert.ok(renderer.deckStats.hits>=1);
@@ -228,5 +242,5 @@ for(const [source,start,end] of [
  assert.ok(i>=0&&j>i);
  new Function('for(let k=0;k<1;k++){if(false){}'+source.slice(i+1,j)+'}}');
 }
-console.log(JSON.stringify({test:'grandstand-texture-v10-universal-preview',atlases:3,vertices:textured.length,
+console.log(JSON.stringify({test:'grandstand-texture-v11-elevated-spectators-preview',atlases:3,vertices:textured.length,
  crowdMedium:medium.length,pressureCap:lowPerf.length,previewOnly:true,ok:true}));
