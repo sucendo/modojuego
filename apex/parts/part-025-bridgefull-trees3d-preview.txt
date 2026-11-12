@@ -575,7 +575,7 @@ window.apexCircuitCompileDiagnostics=()=>trackData&&trackData._compileStats?trac
 function drawTerrainPlateMesh(cam,pitch){
  const _terrainT0=performance.now();
  apexForEachTerrainPlateCell(cam,(A,B,C,D,c,g,poly)=>{
-   const col=g.tone==='BROWN'?'#886e51':g.tone==='SAND'?'#bc9c69':'#4e7650',fill=(c.ix+c.iz)%5===0?shadeColor(col,3):col;
+   const col=g.tone==='BROWN'?'#886e51':g.tone==='SAND'?'#bc9c69':(apexSvgTerrainBaseColorV152()||'#4e7650'),fill=(c.ix+c.iz)%5===0?shadeColor(col,3):col;
    if(poly&&poly.length>=3)drawCamPoly(poly,pitch,fill,.58);else drawCamQuadTriangles(A,B,C,D,pitch,fill,.58);
  });
  renderProfileAdd('terrainMs',performance.now()-_terrainT0);
@@ -584,7 +584,7 @@ function webglPushTerrainPlateMesh(cam,pitch){
  const _terrainT0=performance.now(),gpuEligible=typeof apexPhase5TerrainCanDraw==='function'&&apexPhase5TerrainCanDraw(),
   staticCells=[];let newFine=0;apexGpuFrameStats.deferredFineCells=0;
  const draw=(A,B,C,D,c,g,poly)=>{
-  const col=g.tone==='BROWN'?'#886e51':g.tone==='SAND'?'#bc9c69':'#4e7650',
+  const col=g.tone==='BROWN'?'#886e51':g.tone==='SAND'?'#bc9c69':(apexSvgTerrainBaseColorV152()||'#4e7650'),
    fill=(c.ix+c.iz)%5===0?shadeColor(col,3):col;
   if(poly&&poly.length>=3)webglPushCamPoly(poly,pitch,fill,.58);
   else webglPushCamQuad(A,B,C,D,pitch,fill,.58);
@@ -3093,7 +3093,7 @@ function apexPhase5GpuRelease(keepProgram=false){
  s.buffer=null;s.atlas=null;s.unsupportedAtlas=null;s.chunks=[];s.pending=null;s.bytes=0;s.triangles=0;
  if(!keepProgram){s.program=null;s.attrs=null;s.uniforms=null;s.gl=null}
 }
-function apexPhase5GpuProgram(gl,roadTexture=false){
+function apexPhase5GpuProgram(gl,roadTexture=false,groundTexture=false){
  const vs=webglCompile(gl,gl.VERTEX_SHADER,String.raw`#version 300 es
 precision highp float;
 in vec3 aWorld;
@@ -3107,6 +3107,7 @@ uniform vec2 uRoll;
 uniform vec3 uDepth;
 out vec4 vColor;
 ${roadTexture?'out highp vec2 vRoadWorldXZ;':''}
+${groundTexture?'in float aSurfaceKind;out highp float vGroundKind;out highp vec2 vGroundWorldXZ;':''}
 void main(){
  vec3 d=aWorld-uCamera;
  float cx=d.x*uRight.x+d.z*uRight.y;
@@ -3125,6 +3126,7 @@ void main(){
  gl_Position=vec4(rx,ry,pz,zz);
  vColor=aColor;
  ${roadTexture?'vRoadWorldXZ=aWorld.xz;':''}
+ ${groundTexture?'vGroundKind=aSurfaceKind;vGroundWorldXZ=aWorld.xz;':''}
 }`);
  // 6A V15.1.1: the road owns a dedicated world-space fragment material.
  // Ground/terrain continue using the original flat, fast programme.
@@ -3163,6 +3165,51 @@ void main(){
   albedo=clamp(albedo*(1.0+grain),0.0,1.0);
  }
  outColor=vec4(albedo,vColor.a);
+}`:groundTexture?String.raw`#version 300 es
+precision highp float;
+in vec4 vColor;
+in highp vec2 vGroundWorldXZ;
+in highp float vGroundKind;
+uniform float uGroundTexture;
+uniform float uGroundWet;
+out vec4 outColor;
+float groundHash(vec2 p){
+ vec3 p3=fract(vec3(p.xyx)*0.1031);
+ p3+=dot(p3,p3.yzx+33.33);
+ return fract((p3.x+p3.y)*p3.z);
+}
+void main(){
+ vec3 albedo=vColor.rgb;
+ if(uGroundTexture>0.001&&vGroundKind>0.5){
+  float px=max(length(dFdx(vGroundWorldXZ)),length(dFdy(vGroundWorldXZ)));
+  vec2 w=vGroundWorldXZ;
+  float grain=0.0;
+  if(vGroundKind<1.5){
+   // GRASS: 16 cm blades/clumps, 65 cm mottling, 5 m colour patches.
+   float fineFade=1.0-smoothstep(0.10,0.30,px);
+   float medFade=1.0-smoothstep(0.38,0.98,px);
+   float broadFade=1.0-smoothstep(1.9,4.4,px);
+   float fine=groundHash(floor(w*6.2));
+   float medium=groundHash(floor(w*1.55));
+   float broad=groundHash(floor(w*0.20));
+   grain=(fine-0.5)*0.30*fineFade+(medium-0.5)*0.23*medFade
+          +(broad-0.5)*0.14*broadFade;
+   grain*=1.0-0.22*clamp(uGroundWet,0.0,1.0);
+  }else{
+   // Authored asphalt runoff: same grain family as the circuit track.
+   float fineFade=1.0-smoothstep(0.045,0.16,px);
+   float medFade=1.0-smoothstep(0.15,0.5,px);
+   float broadFade=1.0-smoothstep(0.5,1.3,px);
+   float fine=groundHash(floor(w*20.0));
+   float medium=groundHash(floor(w*3.7));
+   float broad=groundHash(floor(w*0.56));
+   grain=(fine-0.5)*0.34*fineFade+(medium-0.5)*0.21*medFade
+          +(broad-0.5)*0.10*broadFade;
+   grain*=1.0-0.62*clamp(uGroundWet,0.0,1.0);
+  }
+  albedo=clamp(albedo*(1.0+grain*uGroundTexture),0.0,1.0);
+ }
+ outColor=vec4(albedo,vColor.a);
 }`:String.raw`#version 300 es
 precision mediump float;
 in vec4 vColor;
@@ -3177,9 +3224,11 @@ void main(){outColor=vColor;}`);
  }
  return{
   program,
-  attrs:{world:gl.getAttribLocation(program,'aWorld'),color:gl.getAttribLocation(program,'aColor')},
+  attrs:{world:gl.getAttribLocation(program,'aWorld'),color:gl.getAttribLocation(program,'aColor'),
+   ...(groundTexture?{material:gl.getAttribLocation(program,'aSurfaceKind')}:{})},
   uniforms:Object.fromEntries((roadTexture
    ?['uCamera','uRight','uForward','uTilt','uView','uRoll','uDepth','uRoadTexture','uRoadWet']
+   :groundTexture?['uCamera','uRight','uForward','uTilt','uView','uRoll','uDepth','uGroundTexture','uGroundWet']
    :['uCamera','uRight','uForward','uTilt','uView','uRoll','uDepth']).map(k=>[k,gl.getUniformLocation(program,k)]))
  };
 }
@@ -3187,6 +3236,12 @@ function apexPhase5GpuGroundError(e){
  const s=apexPhase5GroundGPU,failedGl=s.gl;
  s.failures++;const msg=String(e&&e.message||e);
  apexPhase5GpuRelease(false);s.failedGl=failedGl;s.error='disabled';s.lastError=msg;
+}
+// V15.2: material follows the authored SVG role, never guesses from RGB.
+function apexSurfaceMaterialKindV152(surface){
+ const kind=String(surface||'').trim().toUpperCase();
+ return ['GRASS','DRYGRASS','PARK','FOREST'].includes(kind)?1:
+  ['ASPHALT','ROAD','CITY','PLAZA'].includes(kind)?2:0;
 }
 function apexPhase5PrepareGpuGround(cam,pitch){
  const atlas=trackData&&trackData.customWorld&&trackData.customWorld._apexUnifiedGroundAtlas,
@@ -3208,20 +3263,20 @@ function apexPhase5PrepareGpuGround(cam,pitch){
     const color=webglCssColor(it.color||'#777');
     // Semitransparencias conservan la ruta CPU para respetar blending.
     if(color[3]<.999){s.unsupportedAtlas=atlas;return false}
-    triangles+=tris.length;zones.push({tris,color});
+    triangles+=tris.length;zones.push({tris,color,kind:apexSurfaceMaterialKindV152(it.surfaceKind)});
    }
-   if(triangles<96||triangles*84>(mobile?16:48)*1048576){s.unsupportedAtlas=atlas;return false}
-   if(!s.program){const shader=apexPhase5GpuProgram(gl);s.program=shader.program;s.attrs=shader.attrs;s.uniforms=shader.uniforms}
-   const data=new Float32Array(triangles*21),chunks=[],maxGroup=mobile?192:256;
+   if(triangles<96||triangles*96>(mobile?16:48)*1048576){s.unsupportedAtlas=atlas;return false}
+   if(!s.program){const shader=apexPhase5GpuProgram(gl,false,true);s.program=shader.program;s.attrs=shader.attrs;s.uniforms=shader.uniforms}
+   const data=new Float32Array(triangles*24),chunks=[],maxGroup=mobile?192:256;
    let vertex=0;
    for(const zone of zones)for(let first=0;first<zone.tris.length;first+=maxGroup){
     const end=Math.min(first+maxGroup,zone.tris.length),startVertex=vertex;
     let minX=Infinity,minY=Infinity,minZ=Infinity,maxX=-Infinity,maxY=-Infinity,maxZ=-Infinity;
     for(let j=first;j<end;j++)for(const p of zone.tris[j]){
-     const x=p[0],y=p[1],z=p[2],k=vertex*7;
+     const x=p[0],y=p[1],z=p[2],k=vertex*8;
      data[k]=x;data[k+1]=y;data[k+2]=z;
      data[k+3]=zone.color[0];data[k+4]=zone.color[1];
-     data[k+5]=zone.color[2];data[k+6]=zone.color[3];
+     data[k+5]=zone.color[2];data[k+6]=zone.color[3];data[k+7]=zone.kind;
      minX=Math.min(minX,x);minY=Math.min(minY,y);minZ=Math.min(minZ,z);
      maxX=Math.max(maxX,x);maxY=Math.max(maxY,y);maxZ=Math.max(maxZ,z);
      vertex++;
@@ -3258,9 +3313,11 @@ function apexPhase5DrawGpuGround(){
  let calls=0,visible=0,culled=0;
  gl.useProgram(s.program);gl.bindBuffer(gl.ARRAY_BUFFER,s.buffer);
  gl.enableVertexAttribArray(s.attrs.world);
- gl.vertexAttribPointer(s.attrs.world,3,gl.FLOAT,false,28,0);
+ gl.vertexAttribPointer(s.attrs.world,3,gl.FLOAT,false,32,0);
  gl.enableVertexAttribArray(s.attrs.color);
- gl.vertexAttribPointer(s.attrs.color,4,gl.FLOAT,false,28,12);
+ gl.vertexAttribPointer(s.attrs.color,4,gl.FLOAT,false,32,12);
+ gl.enableVertexAttribArray(s.attrs.material);
+ gl.vertexAttribPointer(s.attrs.material,1,gl.FLOAT,false,32,28);
  const u=s.uniforms;
  gl.uniform3f(u.uCamera,cam.x,cam.y,cam.z);
  gl.uniform2f(u.uRight,cam.nx,cam.nz);
@@ -3270,6 +3327,8 @@ function apexPhase5DrawGpuGround(){
    1-2*sceneHorizon(p.pitch)/H,driverEyeHeight());
  gl.uniform2f(u.uRoll,Math.cos(p.roll),Math.sin(p.roll));
  gl.uniform3f(u.uDepth,(f+n)/(f-n),2*f*n/(f-n),.045);
+ if(u.uGroundTexture!=null&&typeof gl.uniform1f==='function')gl.uniform1f(u.uGroundTexture,window.apexGroundGrainV152Enabled===false?0:1);
+ if(u.uGroundWet!=null&&typeof gl.uniform1f==='function')gl.uniform1f(u.uGroundWet,apexWeatherWetFactor());
  // Fast path móvil: las secciones SVG contiguas comparten una única
  // draw call. Evita cientos de comandos WebGL por frame con el Madrid SVG.
  // Los saltos invisibles pequeños se absorben sin gastar demasiada GPU.
@@ -3350,7 +3409,7 @@ function apexPhase5PrepareGpuTerrain(items,cam,pitch){
    apexPhase5TerrainRelease(false);
    s.grid=g;s.atlas=atlas;s.packetGrid=g;s.packetAtlas=atlas;
   }
-  const base=g.tone==='BROWN'?'#886e51':g.tone==='SAND'?'#bc9c69':'#4e7650',
+  const base=g.tone==='BROWN'?'#886e51':g.tone==='SAND'?'#bc9c69':(apexSvgTerrainBaseColorV152()||'#4e7650'),
    colors=[webglCssColor(base),webglCssColor(shadeColor(base,3))],
    desired=[],missing=[];
   let selectedVertices=0;
@@ -3395,7 +3454,7 @@ function apexPhase5PrepareGpuTerrain(items,cam,pitch){
   const budget=(mobilePerformanceMode()?8:24)*1048576;
   if(selectedVertices*28>budget)return false;
   if(!s.program){
-   const shader=apexPhase5GpuProgram(gl);
+   const shader=apexPhase5GpuProgram(gl,false,true);
    s.program=shader.program;s.attrs=shader.attrs;s.uniforms=shader.uniforms;
   }
   if(!s.buffer){s.buffer=gl.createBuffer();if(!s.buffer)throw Error('No se pudo reservar VBO de relieve')}
@@ -3472,6 +3531,8 @@ function apexPhase5DrawGpuTerrain(){
  gl.vertexAttribPointer(s.attrs.world,3,gl.FLOAT,false,28,0);
  gl.enableVertexAttribArray(s.attrs.color);
  gl.vertexAttribPointer(s.attrs.color,4,gl.FLOAT,false,28,12);
+ gl.disableVertexAttribArray(s.attrs.material);
+ gl.vertexAttrib1f(s.attrs.material,s.grid?.tone==='BROWN'||s.grid?.tone==='SAND'?0:1);
  const u=s.uniforms;
  gl.uniform3f(u.uCamera,cam.x,cam.y,cam.z);
  gl.uniform2f(u.uRight,cam.nx,cam.nz);
@@ -3481,6 +3542,8 @@ function apexPhase5DrawGpuTerrain(){
   1-2*sceneHorizon(p.pitch)/H,driverEyeHeight());
  gl.uniform2f(u.uRoll,Math.cos(p.roll),Math.sin(p.roll));
  gl.uniform3f(u.uDepth,(f+n)/(f-n),2*f*n/(f-n),0);
+ if(u.uGroundTexture!=null&&typeof gl.uniform1f==='function')gl.uniform1f(u.uGroundTexture,window.apexGroundGrainV152Enabled===false?0:1);
+ if(u.uGroundWet!=null&&typeof gl.uniform1f==='function')gl.uniform1f(u.uGroundWet,apexWeatherWetFactor());
  let calls=0;
  for(const run of s.gpuDrawRuns){
   gl.drawArrays(gl.TRIANGLES,run.first,run.count);calls++;
@@ -3675,6 +3738,12 @@ function apexPhase6DrawRoad(){
  }
  s.drawCalls=calls;return true;
 }
+// Debug-only A/B comparison: ?ground=0 leaves coloured grass and runoffs flat.
+window.apexGroundGrainV152Enabled=typeof URLSearchParams==='function'&&typeof location!=='undefined'
+ ?new URLSearchParams(location.search).get('ground')!=='0':true;
+window.apexGroundMaterialInfo=()=>({phase:'V15.2',enabled:window.apexGroundGrainV152Enabled,
+ svgGround:!!apexPhase5GroundGPU.buffer,terrain:!!apexPhase5TerrainGPU.buffer,
+ materialAttribute:true,version:'svg-surface-grain-world-metres'});
 // Compare with ?asphalt=0; this changes only the road GPU material, not its geometry.
 window.apexRoadGrainV151Enabled=typeof URLSearchParams==='function'&&typeof location!=='undefined'
  ?new URLSearchParams(location.search).get('asphalt')!=='0':true;
@@ -4025,7 +4094,7 @@ function webglPushPitLaneOnSegment(a,b,cam,pitch){
        aInner=webglTrackPointCamera(a.s,pa.centerLat-pa.side*wA,cam,.014),
        bOuter=webglTrackPointCamera(b.s,pb.centerLat+pb.side*wB,cam,.014),
        bInner=webglTrackPointCamera(b.s,pb.centerLat-pb.side*wB,cam,.014);
- webglPushCamQuad(aInner,aOuter,bOuter,bInner,pitch,'#555b61',.58,-.022);
+ webglPushCamQuad(aInner,aOuter,bOuter,bInner,pitch,apexSurfaceTintV152('ASPHALT',apexPitAsphaltColorV152(),(a.q.x+b.q.x)*.5,(a.q.z+b.q.z)*.5,(a.z+b.z)*.5),.58,-.022);
 
  const edge=.055;
  const ai2=webglTrackPointCamera(a.s,pa.centerLat-pa.side*(wA-edge),cam,.020),
@@ -4057,7 +4126,7 @@ function webglPushPitLaneOnSegment(a,b,cam,pitch){
 }
 
 function webglPushExactPitLane(cam,pitch){
- for(const it of collectExactPitRenderItems(cam)){const d=it.data,A=d.A0,B=d.A1,C=d.B1,D=d.B0;if(d.brand){apexSponsorTexturePaint([A,D,C,B],d.brand,pitch,'webgl2');continue}webglPushCamQuad(A,B,C,D,pitch,d.color||'#555b61',.58,d.color==='#ffe16a'?-.034:-.022);if(d.color)continue;const e0=camMix(A,B,.018),e1=camMix(D,C,.018),f0=camMix(B,A,.018),f1=camMix(C,D,.018);webglPushCamQuad(A,e0,e1,D,pitch,'rgba(248,249,250,.92)',.58,-.034);webglPushCamQuad(f0,B,C,f1,pitch,'rgba(248,249,250,.82)',.58,-.034)}
+ for(const it of collectExactPitRenderItems(cam)){const d=it.data,A=d.A0,B=d.A1,C=d.B1,D=d.B0;if(d.brand){apexSponsorTexturePaint([A,D,C,B],d.brand,pitch,'webgl2');continue}webglPushCamQuad(A,B,C,D,pitch,d.material?apexSurfaceTintV152('ASPHALT',apexPitAsphaltColorV152(),d.material.x,d.material.z,d.z):d.color||'#555b61',.58,d.color==='#ffe16a'?-.034:-.022);if(d.color)continue;const e0=camMix(A,B,.018),e1=camMix(D,C,.018),f0=camMix(B,A,.018),f1=camMix(C,D,.018);webglPushCamQuad(A,e0,e1,D,pitch,'rgba(248,249,250,.92)',.58,-.034);webglPushCamQuad(f0,B,C,f1,pitch,'rgba(248,249,250,.82)',.58,-.034)}
 }
 
 function webglPushSurfaceMarkings(segments,cam,pitch){
