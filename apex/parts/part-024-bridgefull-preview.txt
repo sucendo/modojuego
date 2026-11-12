@@ -3382,7 +3382,7 @@ function apexGrandstandStandPhaseV8(it){
 }
 // V8: different atlas row for every spectator band, aperiodic across depth,
 // deliberately varied colours and shoulder heights. No single-row LOD.
-function apexGrandstandCrowdTextureV5Strips(frame,h,prof,gb,att,cam){
+function apexGrandstandCrowdTextureV5Strips(frame,h,prof,gb,att,cam,it=null){
  if(!frame||!gb||!att?.crowd||att.fill<=.01)return[];
  const pressure=apexSceneDetailBudget().pressure,mobile=mobilePerformanceMode(),tier=gb.tier,
    fullRows=tier===2?(mobile?9:13):tier===1?(mobile?8:12):(mobile?6:9),
@@ -3393,8 +3393,12 @@ function apexGrandstandCrowdTextureV5Strips(frame,h,prof,gb,att,cam){
    phase=apexGrandstandHashV8(Math.round(frame.edge.a[0]*37+frame.edge.a[1]*91))/4294967296;
  for(let i=0;i<rows;i++){
   if(att.fill<.98&&apexGrandstandHashV8(i*113+Math.round(frame.span*17)) /4294967296 >=att.fill)continue;
-  const rowFrac=(i+.5)/rows,depth=dep*(start+(end-start)*rowFrac),
-   seat=prof.hybridGrandstand?apexGrandstandRakedSeatYV6(h,depth/dep)+.09:apexGrandstandSeatTopV4(h,prof,gb,depth/dep)+.045,
+  const rowFrac=(i+.5)/rows,tierRow=Number(it?.tierCount)>1?
+    apexGrandstandTierSectionForRowV14(it,frame,h,i,rows):null,
+   depth=dep*(tierRow?tierRow.depthFraction:start+(end-start)*rowFrac),
+   seat=prof.hybridGrandstand?
+    (tierRow?apexGrandstandTierHeightV14(tierRow.section,depth/dep):apexGrandstandRakedSeatYV6(h,depth/dep))+.09:
+    apexGrandstandSeatTopV4(h,prof,gb,depth/dep)+.045,
    personHeight=.88+(.19*(apexGrandstandHashV8(i*83+37)%97)/96),
    // Feet must sit above the actual raked deck, not intersect its colour layer.
    // Stable per-row lift avoids identical horizontal cut-off lines.
@@ -3423,24 +3427,30 @@ function apexGrandstandCrowdDeckV8(it,prof,frame,h,att,cam){
  if(!it||!prof?.hybridGrandstand||!frame||!Array.isArray(it.worldFootprint)
     ||it.worldFootprint.length<3||!att?.crowd||att.fill<.96)return[];
  const key=[Math.round(frame.span*100),Math.round(frame.depth*100),
-  trackData?.spec?.dir||'',trackData?.customWorld?._apexGroundStamp||''].join(':');
+  trackData?.spec?.dir||'',trackData?.customWorld?._apexGroundStamp||'',
+  it.tierCount||1,it.tierOverhangM??1].join(':');
  let cached=it._apexGrandstandDeckV8;
  if(!cached||cached.key!==key||cached.edge!==frame.edge){
-  const band=apexGrandstandBand(it.worldFootprint,it.anchor||{},it.side||1,.015,.985,it);
   const e=frame.edge,scalar=p=>(p[0]-e.a[0])*e.tx+(p[1]-e.a[1])*e.tz,
-    aisleHalf=Math.min(1.05,frame.span*.05),mid=frame.span*.5;
-  const pieces=frame.span>12?[
-    apexClipWorldPolygonScalar(band,scalar,mid-aisleHalf,false),
-    apexClipWorldPolygonScalar(band,scalar,mid+aisleHalf,true)
-  ]:[band];
-  cached={key,edge:frame.edge,pieces:pieces.filter(p=>p.length>=3)};
+    aisleHalf=Math.min(1.05,frame.span*.05),mid=frame.span*.5,
+    levels=apexGrandstandTierSectionsV14(h,it,frame),pieces=[];
+  for(const level of levels){
+   const band=apexGrandstandBand(it.worldFootprint,it.anchor||{},it.side||1,
+     Math.max(.015,level.d0),Math.min(.985,level.d1),it);
+   const regions=frame.span>12?[
+     apexClipWorldPolygonScalar(band,scalar,mid-aisleHalf,false),
+     apexClipWorldPolygonScalar(band,scalar,mid+aisleHalf,true)
+   ]:[band];
+   for(const region of regions)if(region.length>=3)pieces.push({region,level});
+  }
+  cached={key,edge:frame.edge,pieces};
   it._apexGrandstandDeckV8=cached;apexGrandstandDeckV8Stats.builds++;
  }else apexGrandstandDeckV8Stats.hits++;
  const phase=apexGrandstandStandPhaseV8(it),e=frame.edge,span=Math.max(1,frame.span),dep=Math.max(1,frame.depth);
- const panels=cached.pieces.map(piece=>{
-  const camPoly=apexGrandstandRakedSeatV6(piece,frame,h,cam,.18);
+ const panels=cached.pieces.map(({region,level})=>{
+  const camPoly=apexGrandstandRakedSeatV6(region,frame,h,cam,.18,it,level);
   return camPoly.map((p,i)=>{
-   const w=piece[i],dx=w[0]-e.a[0],dz=w[1]-e.a[1],
+   const w=region[i],dx=w[0]-e.a[0],dz=w[1]-e.a[1],
      u=phase+(dx*e.tx+dz*e.tz)/span,
      v=clamp((dx*e.nx+dz*e.nz)/dep,0,1);
    return {...p,u,v};
@@ -3608,7 +3618,9 @@ function apexGrandstandPreviewCrowd(it,prof,frame,h,gb,att){
    // Rows nearer the front remain the most visible; occupancy is deterministic
    // and never fluctuates when fps or camera position changes.
    const rowFrac=(ri+.5)/rows,
-     rowDepth=dep*(prof.hybridGrandstand?(.055+.39*rowFrac):(.24+.56*rowFrac)),seatY=apexGrandstandSeatTopV4(h,prof,gb,rowDepth/dep);
+     tierRow=Number(it?.tierCount)>1?apexGrandstandTierSectionForRowV14(it,frame,h,ri,rows):null,
+     rowDepth=dep*(tierRow?tierRow.depthFraction:(prof.hybridGrandstand?(.055+.39*rowFrac):(.24+.56*rowFrac))),
+     seatY=apexGrandstandSeatTopV4(h,prof,gb,rowDepth/dep);
    for(let ci=0;ci<cols;ci++){
      if(prof.madrid&&cols>=6&&ci===Math.floor(cols*.5))continue; // central aisle
      const choice=apexGrandstandSeatVisual(prof,ri,rows,ci,att);
@@ -3618,7 +3630,9 @@ function apexGrandstandPreviewCrowd(it,prof,frame,h,gb,att){
        bodyW=Math.min(.78,frame.span*step*.56)/Math.max(1,frame.span),
        headW=Math.min(.32,frame.span*step*.25)/Math.max(1,frame.span),
        personH=Math.max(.84,Math.min(1.13,gb.crowdHeight||1)),
-       base=(prof.hybridGrandstand?apexGrandstandRakedSeatYV6(h,rowDepth/dep):seatY)+.095+
+       base=(prof.hybridGrandstand?(tierRow?
+        apexGrandstandTierHeightV14(tierRow.section,rowDepth/dep):
+        apexGrandstandRakedSeatYV6(h,rowDepth/dep)):seatY)+.095+
         (prof.hybridGrandstand?.025*(apexGrandstandHashV8(ri*97+ci*31)%101)/100:0),
        height=.68*personH,
        crownY=base+height+.28*personH,
