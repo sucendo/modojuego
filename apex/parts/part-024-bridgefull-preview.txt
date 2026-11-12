@@ -2640,6 +2640,20 @@ function apexWebglRoadBase(seg,pitch,forceCPU=false){
   }
   return pressure;
 }
+// V15.2: inexpensive Canvas/CPU fallback. WebGL uses a finer per-pixel shader.
+function apexSurfaceTintV152(surface,color,x,z,distance=0){
+ const kind=String(surface||'').trim().toUpperCase(),
+  grass=['GRASS','DRYGRASS','PARK','FOREST'].includes(kind),
+  asphalt=['ASPHALT','ROAD','CITY','PLAZA'].includes(kind);
+ if((!grass&&!asphalt)||distance>280||!Number.isFinite(x)||!Number.isFinite(z))return color;
+ const base=apexRoadSvgNormalizeColorV15(color)||color,
+  large=apexRoadTextureHashV15(Math.floor(x/(grass?5.2:2.2)),Math.floor(z/(grass?5.2:2.2)),grass?31:21),
+  small=apexRoadTextureHashV15(Math.floor(x/(grass?.9:.55)),Math.floor(z/(grass?.9:.55)),grass?67:17),
+  fade=distance<100?1:Math.max(0,1-(distance-100)/180),
+  noise=(large-.5)*.8+(small-.5)*.5,
+  amt=Math.round(noise*(grass?16:11)*fade*(1-(grass?.22:.62)*apexWeatherWetFactor()));
+ return shadeColor(base,amt);
+}
 function apexUnifiedGroundDrawCorridor(seg,cam,pitch,webgl=false){
  const a=seg.a,b=seg.b,V0=a.v,V1=b.v;
  if(!V0||!V1)return null;
@@ -2650,9 +2664,11 @@ function apexUnifiedGroundDrawCorridor(seg,cam,pitch,webgl=false){
   cL=surfaceColor(a.env.runoffSurface,false),cR=surfaceColor(a.env.runoffSurface,true);
  const paint=(faces,col)=>{
   for(const p of faces){
-   const cp=p.map(v=>worldToCamera(v.x,v.y,v.z,cam));
-   if(webgl)webglPushCamPoly(cp,pitch,col,.58);
-   else drawCamPoly(cp,pitch,col,.58);
+   const cp=p.map(v=>worldToCamera(v.x,v.y,v.z,cam)),
+    x=p.reduce((t,v)=>t+v.x,0)/p.length,z=p.reduce((t,v)=>t+v.z,0)/p.length,
+    tint=apexSurfaceTintV152(a.env.runoffSurface,col,x,z,seg.z);
+   if(webgl)webglPushCamPoly(cp,pitch,tint,.58);
+   else drawCamPoly(cp,pitch,tint,.58);
   }
  };
  if(inspect)apexInspectorDrawRunoff(seg,cam,pitch,webgl);
@@ -2713,8 +2729,12 @@ function apexRenderUnifiedAuthoredGround(cam,pitch,webgl=false){
      worldToCamera(tri[1][0],tri[1][1],tri[1][2],cam),
      worldToCamera(tri[2][0],tri[2][1],tri[2][2],cam)
     ];
-    if(webgl)webglPushCamPoly(pts,pitch,color,.60,bias);
-    else drawCamPoly(pts,pitch,color,.60);
+    const x=(tri[0][0]+tri[1][0]+tri[2][0])/3,
+     z=(tri[0][2]+tri[1][2]+tri[2][2])/3,
+     depth=(pts[0].z+pts[1].z+pts[2].z)/3,
+     tint=apexSurfaceTintV152(it.surfaceKind,color,x,z,depth);
+    if(webgl)webglPushCamPoly(pts,pitch,tint,.60,bias);
+    else drawCamPoly(pts,pitch,tint,.60);
     drawn++;
    }
   }
@@ -6327,16 +6347,16 @@ function drawPitLaneLineOnSegment(a,b,cam,pitch){
 function collectExactPitRenderItems(cam){
  const segs=apexPitSegments();if(!segs.length)return[];const out=[];
  const pn=trackData.customWorld.pitNetwork,work=pn.serviceLayout,far=apexInspectionFullScene()?apexInspectionFarDistance():720;
- const add=(A0,A1,B1,B0,color=null,brand=null)=>{
+ const add=(A0,A1,B1,B0,color=null,brand=null,material=null)=>{
    if((A0.z<.45&&A1.z<.45&&B0.z<.45&&B1.z<.45)||(A0.z>far&&A1.z>far&&B0.z>far&&B1.z>far))return;
    const poly3=clipPolyNear([A0,A1,B1,B0],.58);if(poly3.length<3)return;
    const z=poly3.reduce((q,p)=>q+p.z,0)/poly3.length;
-   out.push({kind:'pitExact',z:z-.045,data:{poly3,A0,A1,B1,B0,z,color,brand}});
+   out.push({kind:'pitExact',z:z-.045,data:{poly3,A0,A1,B1,B0,z,color,brand,material}});
  };
  for(const sg of segs){
    const dx=sg.x2-sg.x1,dz=sg.z2-sg.z1,len=sg.len||1,nx=-dz/len,nz=dx/len,hw=sg.width*.5;
    const a=lat=>worldToCamera(sg.x1+nx*lat,sg.y1+.012,sg.z1+nz*lat,cam),b=lat=>worldToCamera(sg.x2+nx*lat,sg.y2+.012,sg.z2+nz*lat,cam);
-   add(a(hw),a(-hw),b(-hw),b(hw));
+   add(a(hw),a(-hw),b(-hw),b(hw),null,null,{x:(sg.x1+sg.x2)*.5,z:(sg.z1+sg.z2)*.5});
    if(work&&sg.s2>=work.start&&sg.s1<=work.end){
      const side=Math.sign(work.offset),inner=side*(Math.abs(work.offset)-1.8);
      const outer=s=>inner+side*apexPitWorkWidthAt(work,s);
@@ -6363,7 +6383,7 @@ function collectExactPitRenderItems(cam){
  return out;
 }
 function drawExactPitRenderItem(item,pitch){
- const p=projectCameraPoly(item.poly3,pitch);if(!p||p.length<3)return;if(item.brand){apexSponsorTexturePaint([item.A0,item.B0,item.B1,item.A1],item.brand,pitch,'canvas');return}poly(p,item.color||'#565c62');if(item.color)return;const q0=projectLocal(item.A0.x,item.A0.y,item.A0.z,pitch),q1=projectLocal(item.A1.x,item.A1.y,item.A1.z,pitch),r0=projectLocal(item.B0.x,item.B0.y,item.B0.z,pitch),r1=projectLocal(item.B1.x,item.B1.y,item.B1.z,pitch);if(q0&&r0)drawCamLine(item.A0,item.B0,pitch,'rgba(248,249,250,.90)',Math.max(1,Math.min(2.2,(q0.scale+r0.scale)*.005)),.58);if(q1&&r1)drawCamLine(item.A1,item.B1,pitch,'rgba(248,249,250,.82)',Math.max(1,Math.min(2.2,(q1.scale+r1.scale)*.005)),.58);
+ const p=projectCameraPoly(item.poly3,pitch);if(!p||p.length<3)return;if(item.brand){apexSponsorTexturePaint([item.A0,item.B0,item.B1,item.A1],item.brand,pitch,'canvas');return}poly(p,item.material?apexSurfaceTintV152('ASPHALT',item.color||'#565c62',item.material.x,item.material.z,item.z):item.color||'#565c62');if(item.color)return;const q0=projectLocal(item.A0.x,item.A0.y,item.A0.z,pitch),q1=projectLocal(item.A1.x,item.A1.y,item.A1.z,pitch),r0=projectLocal(item.B0.x,item.B0.y,item.B0.z,pitch),r1=projectLocal(item.B1.x,item.B1.y,item.B1.z,pitch);if(q0&&r0)drawCamLine(item.A0,item.B0,pitch,'rgba(248,249,250,.90)',Math.max(1,Math.min(2.2,(q0.scale+r0.scale)*.005)),.58);if(q1&&r1)drawCamLine(item.A1,item.B1,pitch,'rgba(248,249,250,.82)',Math.max(1,Math.min(2.2,(q1.scale+r1.scale)*.005)),.58);
 }
 
 function drawGridMarkings(cam,pitch){
