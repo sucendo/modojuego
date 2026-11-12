@@ -3103,7 +3103,7 @@ function apexGrandstandHangingFlagsV13(it,frame,h,gb,prof,cam){
  if(!it||!frame||!gb||!prof?.hybridGrandstand||frame.span<7)return[];
  const mobile=mobilePerformanceMode(),pressure=apexSceneDetailBudget().pressure,tier=gb.tier,
    desired=Math.min(6,Math.max(1,Math.round(frame.span/17))),
-   count=Math.max(1,Math.min(desired,tier===2?(mobile?4:6):tier===1?(mobile?3:4):2)-((pressure>=3&&tier!==2)?1:0)),
+   count=Math.max(1,Math.min(desired,tier===2?(mobile?4:6):tier===1?(mobile?3:4):2)-(pressure>=3?1:pressure>=2&&tier===0?1:0)),
    seed=Math.floor(apexGrandstandStandPhaseV8(it)*4294967296)>>>0,
    key=[Math.round(frame.span*10),Math.round(h*100),count,seed].join(':');
  let cache=it._apexGrandstandFlagsV13;
