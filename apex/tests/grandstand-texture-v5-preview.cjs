@@ -322,7 +322,7 @@ const noNormal={type:'grandstand',anchor:{x:80,z:20,q:{tx:1,tz:0}},side:-1,lengt
 assert.equal(makeFootprint(noNormal).length,4,'Legacy anchor without precomputed track normals must work');
 assert.ok(noNormal.worldFootprint.some(q=>q[1]<20),'Side placement must follow circuit normal');
 const styleStart=canvas.indexOf('function apexGrandstandStyleProfile(it){');
-const styleEnd=canvas.indexOf('// 6A preview v5',styleStart);
+const styleEnd=canvas.indexOf('// 6A V13:',styleStart);
 assert.ok(styleStart>=0&&styleEnd>styleStart);
 const makeProfile=new Function('trackData','shadeColor',
  canvas.slice(styleStart,styleEnd)+';return apexGrandstandStyleProfile;')(trackData,(color)=>color);
