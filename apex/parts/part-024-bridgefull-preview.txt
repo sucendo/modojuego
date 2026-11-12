@@ -3066,7 +3066,7 @@ function apexGrandstandStyleProfile(it){
 }
 // 6A preview v5 · Melbourne: lightweight, deterministic seat/crowd texture atlases.
 // Rasterized once; SVG geometry and raised seating steps remain authoritative.
-const apexGrandstandTextureV5Keys={seats:'apex-grandstand-seats-v6',crowd:'apex-grandstand-crowd-v8',deck:'apex-grandstand-deck-v8'};
+const apexGrandstandTextureV5Keys={seats:'apex-grandstand-seats-v6',crowd:'apex-grandstand-crowd-v9',deck:'apex-grandstand-deck-v9'};
 const apexGrandstandTextureV5Stats={atlasBuilds:0,seatPolys:0,crowdStrips:0,crowdDeckPolys:0};
 window.apexGrandstandTextureV5Info=()=>({...apexGrandstandTextureV5Stats,
   ready:!!window.ApexSponsorTextures?.entry(apexGrandstandTextureV5Keys.seats),
@@ -3134,13 +3134,13 @@ function apexGrandstandTexturesV5Ready(prof){
  // Transparent gaps reveal the blue seating underneath.
  const [deck,e]=make(2048,512);
  if(!e)return false;
- const rows=22,columns=78;
+ const rows=30,columns=112; // v9: densely occupied lower and upper seating, same 2048x512 atlas
  for(let ri=0;ri<rows;ri++)for(let ci=0;ci<columns;ci++){
   const seed=apexGrandstandHashV8(9283+ri*3307+ci*1039),value=n=>apexGrandstandHashV8(seed+n*679)/4294967296;
-  if(value(9)<.075)continue;
-  const x=(ci+(ri%2)*.45+.15)*2048/columns+(value(1)-.5)*10,
-    y=(ri+.5)*512/rows+(value(2)-.5)*9,
-    w=8.3+value(3)*5.0,hh=5.2+value(4)*2.6,
+  if(value(9)<.018)continue; // rare empty seat; not a large blue gap
+  const x=(ci+(ri%2)*.48+.14)*2048/columns+(value(1)-.5)*5.5,
+    y=(ri+.5)*512/rows+(value(2)-.5)*5.0,
+    w=9.0+value(3)*3.9,hh=6.9+value(4)*2.4,
     shirt=shirts[Math.floor(value(5)*shirts.length)],skin=skins[Math.floor(value(6)*skins.length)],
     hair=hairs[Math.floor(value(7)*hairs.length)];
   e.fillStyle='rgba(11,18,24,.44)';e.beginPath();e.ellipse(x,y+4,w+3,hh+3,0,0,Math.PI*2);e.fill();
@@ -3184,7 +3184,7 @@ function apexGrandstandCrowdTextureV5Strips(frame,h,prof,gb,att,cam){
    minimum=tier===2?7:tier===1?6:5,
    rows=Math.max(minimum,fullRows-(pressure>=3?3:pressure>=2?2:pressure>=1?1:0)),
    dep=frame.depth,cycle=64*.64,out=[],
-   start=tier===2?.44:.14,end=.955,
+   start=tier===2?.035:.025,end=.975,
    phase=apexGrandstandHashV8(Math.round(frame.edge.a[0]*37+frame.edge.a[1]*91))/4294967296;
  for(let i=0;i<rows;i++){
   if(att.fill<.98&&apexGrandstandHashV8(i*113+Math.round(frame.span*17)) /4294967296 >=att.fill)continue;
@@ -3217,7 +3217,7 @@ function apexGrandstandCrowdDeckV8(it,prof,frame,h,att,cam){
   trackData?.spec?.dir||'',trackData?.customWorld?._apexGroundStamp||''].join(':');
  let cached=it._apexGrandstandDeckV8;
  if(!cached||cached.key!==key||cached.edge!==frame.edge){
-  const band=apexGrandstandBand(it.worldFootprint,it.anchor||{},it.side||1,.13,.975,it);
+  const band=apexGrandstandBand(it.worldFootprint,it.anchor||{},it.side||1,.015,.985,it);
   const e=frame.edge,scalar=p=>(p[0]-e.a[0])*e.tx+(p[1]-e.a[1])*e.tz,
     aisleHalf=Math.min(1.05,frame.span*.05),mid=frame.span*.5;
   const pieces=frame.span>12?[
@@ -3229,7 +3229,7 @@ function apexGrandstandCrowdDeckV8(it,prof,frame,h,att,cam){
  }else apexGrandstandDeckV8Stats.hits++;
  const phase=apexGrandstandStandPhaseV8(it),e=frame.edge,span=Math.max(1,frame.span),dep=Math.max(1,frame.depth);
  const panels=cached.pieces.map(piece=>{
-  const camPoly=apexGrandstandRakedSeatV6(piece,frame,h,cam,.070);
+  const camPoly=apexGrandstandRakedSeatV6(piece,frame,h,cam,.12);
   return camPoly.map((p,i)=>{
    const w=piece[i],dx=w[0]-e.a[0],dz=w[1]-e.a[1],
      u=phase+(dx*e.tx+dz*e.tz)/span,
@@ -3335,7 +3335,7 @@ function apexGrandstandPreviewCrowd(it,prof,frame,h,gb,att){
    // Rows nearer the front remain the most visible; occupancy is deterministic
    // and never fluctuates when fps or camera position changes.
    const rowFrac=(ri+.5)/rows,
-     rowDepth=dep*(prof.melbourne?(.18+.26*rowFrac):(.24+.56*rowFrac)),seatY=apexGrandstandSeatTopV4(h,prof,gb,rowDepth/dep);
+     rowDepth=dep*(prof.melbourne?(.055+.39*rowFrac):(.24+.56*rowFrac)),seatY=apexGrandstandSeatTopV4(h,prof,gb,rowDepth/dep);
    for(let ci=0;ci<cols;ci++){
      if(prof.madrid&&cols>=6&&ci===Math.floor(cols*.5))continue; // central aisle
      const choice=apexGrandstandSeatVisual(prof,ri,rows,ci,att);
@@ -3932,7 +3932,7 @@ function drawWorldLandmarks(cam,pitch){
          for(let j=0;j<band.length;j++){const k=(j+1)%band.length;polyCam([low3[j],low3[k],raked3[k],raked3[j]],(ri&1)?shadeColor(col,-16):shadeColor(col,-11),null,1,.98);}
        }
        const frontBand=apexGrandstandBand(fp,a,side,.04,.16,it),backBand=apexGrandstandBand(fp,a,side,.84,1,it);
-       if(frontBand.length>=2){const fy0=apexGrandstandGroundCam(frontBand,.05,cam),fy1=apexGrandstandGroundCam(frontBand,h*.23,cam);for(let j=0;j<frontBand.length;j++){const k=(j+1)%frontBand.length;polyCam([fy0[j],fy0[k],fy1[k],fy1[j]],prof.front||shadeColor(col,-26),null,1,.98);}}
+       if(frontBand.length>=2){const fy0=apexGrandstandGroundCam(frontBand,.05,cam),fy1=apexGrandstandGroundCam(frontBand,prof.melbourne?h*.16:h*.23,cam);for(let j=0;j<frontBand.length;j++){const k=(j+1)%frontBand.length;polyCam([fy0[j],fy0[k],fy1[k],fy1[j]],prof.front||shadeColor(col,-26),null,1,.98);}}
        if(backBand.length>=2){const by0=apexGrandstandGroundCam(backBand,.03,cam),by1=apexGrandstandGroundCam(backBand,h*.84,cam);if(!prof.melbourne)for(let j=0;j<backBand.length;j++){const k=(j+1)%backBand.length;polyCam([by0[j],by0[k],by1[k],by1[j]],j&1?shadeColor(col,-22):shadeColor(col,-18),null,1,.98);}if(detailAlpha>.12){const rail3=apexGrandstandGroundCam(backBand,h*.89,cam);for(let j=1;j<rail3.length;j++)lineCam(rail3[j-1],rail3[j],prof.rail,Math.max(1,1.0*s),1);}}
        if(frame){
          const dep=frame.depth,span=frame.span;
