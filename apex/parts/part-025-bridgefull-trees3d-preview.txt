@@ -4550,7 +4550,7 @@ function webglPushCircuitLandmarks(cam,pitch){
        if(frame){
          const dep=frame.depth,span=frame.span;
           // Cached, proportionate seated silhouettes with explicit LOD budget.
-          const textureCrowd=apexGrandstandTexturesV5Ready(prof)&&gb.tier<2;
+          const textureCrowd=apexGrandstandTexturesV5Ready(prof);
           let texturedStrips=0;
           if(textureCrowd)for(const strip of apexGrandstandCrowdTextureV5Strips(frame,h,prof,gb,att,cam)){
             if(apexGrandstandTextureQueuePolyGl(strip,apexGrandstandTextureV5Keys.crowd,pitch,.067))texturedStrips++;
