@@ -3235,11 +3235,15 @@ function apexGrandstandCrowdTextureV5Strips(frame,h,prof,gb,att,cam){
   const rowFrac=(i+.5)/rows,depth=dep*(start+(end-start)*rowFrac),
    seat=prof.hybridGrandstand?apexGrandstandRakedSeatYV6(h,depth/dep)+.09:apexGrandstandSeatTopV4(h,prof,gb,depth/dep)+.045,
    personHeight=.88+(.19*(apexGrandstandHashV8(i*83+37)%97)/96),
-   yTop=seat+personHeight,
+   // Feet must sit above the actual raked deck, not intersect its colour layer.
+   // Stable per-row lift avoids identical horizontal cut-off lines.
+   lift=.055+.035*(apexGrandstandHashV8(i*97+Math.round(frame.span*13))%101)/100,
+   crowdBase=seat+lift,
+   yTop=crowdBase+personHeight,
    p0=apexGrandstandWorldCam(frame,.018,depth,yTop,cam),
    p1=apexGrandstandWorldCam(frame,.982,depth,yTop,cam),
-   p2=apexGrandstandWorldCam(frame,.982,depth,seat,cam),
-   p3=apexGrandstandWorldCam(frame,.018,depth,seat,cam),
+   p2=apexGrandstandWorldCam(frame,.982,depth,crowdBase,cam),
+   p3=apexGrandstandWorldCam(frame,.018,depth,crowdBase,cam),
    variant=(i+Math.floor(phase*101))%4,
    v0=(variant*128+2)/512,v1=((variant+1)*128-2)/512,
    offset=phase+i*.371+((i*i*17)%23)/23,
@@ -3273,7 +3277,7 @@ function apexGrandstandCrowdDeckV8(it,prof,frame,h,att,cam){
  }else apexGrandstandDeckV8Stats.hits++;
  const phase=apexGrandstandStandPhaseV8(it),e=frame.edge,span=Math.max(1,frame.span),dep=Math.max(1,frame.depth);
  const panels=cached.pieces.map(piece=>{
-  const camPoly=apexGrandstandRakedSeatV6(piece,frame,h,cam,.12);
+  const camPoly=apexGrandstandRakedSeatV6(piece,frame,h,cam,.18);
   return camPoly.map((p,i)=>{
    const w=piece[i],dx=w[0]-e.a[0],dz=w[1]-e.a[1],
      u=phase+(dx*e.tx+dz*e.tz)/span,
@@ -3389,7 +3393,8 @@ function apexGrandstandPreviewCrowd(it,prof,frame,h,gb,att){
        bodyW=Math.min(.78,frame.span*step*.56)/Math.max(1,frame.span),
        headW=Math.min(.32,frame.span*step*.25)/Math.max(1,frame.span),
        personH=Math.max(.84,Math.min(1.13,gb.crowdHeight||1)),
-       base=(prof.hybridGrandstand?apexGrandstandRakedSeatYV6(h,rowDepth/dep):seatY)+.06,
+       base=(prof.hybridGrandstand?apexGrandstandRakedSeatYV6(h,rowDepth/dep):seatY)+.095+
+        (prof.hybridGrandstand?.025*(apexGrandstandHashV8(ri*97+ci*31)%101)/100:0),
        height=.68*personH,
        crownY=base+height+.28*personH,
        xz=apexGrandstandFrameXZ(frame,u,rowDepth),
@@ -3976,7 +3981,7 @@ function drawWorldLandmarks(cam,pitch){
          for(let j=0;j<band.length;j++){const k=(j+1)%band.length;polyCam([low3[j],low3[k],raked3[k],raked3[j]],(ri&1)?shadeColor(col,-16):shadeColor(col,-11),null,1,.98);}
        }
        const frontBand=apexGrandstandBand(fp,a,side,.04,.16,it),backBand=apexGrandstandBand(fp,a,side,.84,1,it);
-       if(frontBand.length>=2){const fy0=apexGrandstandGroundCam(frontBand,.05,cam),fy1=apexGrandstandGroundCam(frontBand,prof.hybridGrandstand?h*.16:h*.23,cam);for(let j=0;j<frontBand.length;j++){const k=(j+1)%frontBand.length;polyCam([fy0[j],fy0[k],fy1[k],fy1[j]],prof.front||shadeColor(col,-26),null,1,.98);}}
+       if(frontBand.length>=2){const fy0=apexGrandstandGroundCam(frontBand,.05,cam),fy1=apexGrandstandGroundCam(frontBand,prof.hybridGrandstand?h*.12:h*.23,cam);for(let j=0;j<frontBand.length;j++){const k=(j+1)%frontBand.length;polyCam([fy0[j],fy0[k],fy1[k],fy1[j]],prof.front||shadeColor(col,-26),null,1,.98);}}
        if(backBand.length>=2){const by0=apexGrandstandGroundCam(backBand,.03,cam),by1=apexGrandstandGroundCam(backBand,h*.84,cam);if(!prof.hybridGrandstand)for(let j=0;j<backBand.length;j++){const k=(j+1)%backBand.length;polyCam([by0[j],by0[k],by1[k],by1[j]],j&1?shadeColor(col,-22):shadeColor(col,-18),null,1,.98);}if(detailAlpha>.12){const rail3=apexGrandstandGroundCam(backBand,h*.89,cam);for(let j=1;j<rail3.length;j++)lineCam(rail3[j-1],rail3[j],prof.rail,Math.max(1,1.0*s),1);}}
        if(frame){
          const dep=frame.depth,span=frame.span;
