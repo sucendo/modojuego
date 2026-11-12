@@ -4544,7 +4544,7 @@ function webglPushCircuitLandmarks(cam,pitch){
          }
          if(lod<=1)for(let j=0;j<band.length;j++){const k=(j+1)%band.length;webglPushCamQuad(low[j],low[k],raked[k],raked[j],pitch,(ri&1)?shadeColor(col,-16):shadeColor(col,-11),.60,-.009);}
        }
-       for(const face of apexGrandstandEnclosureV12(frame,h,prof,cam)){
+       for(const face of apexGrandstandEnclosureV12(frame,h,prof,cam,it)){
          webglPushCamPoly(face.poly,pitch,prof[face.kind]||col,.60,-.010);
        }
        const backBand=apexGrandstandBand(fp,a,side,.84,1,it);
