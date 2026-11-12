@@ -38,6 +38,8 @@ jobs:
         run: node apex/tests/grandstand-texture-v5-preview.cjs
       - name: Asphalt V15.1 SVG material and colour groups (preview only)
         run: node apex/tests/asphalt-material-v15-preview.cjs
+      - name: Asphalt V15.1.1 per-fragment GPU material (preview only)
+        run: node apex/tests/asphalt-fragment-v151-preview.cjs
       - name: Full SVG pedestrian bridges (preview only)
         run: node apex/tests/pedestrian-bridge-fullspan-preview.cjs
       - name: Mobile trees 3D preview option (isolated)
@@ -133,6 +135,7 @@ jobs:
             if curl --fail --silent http://127.0.0.1:8765/apex/apex.html > /dev/null; then break; fi
             sleep 1
           done
+          node apex/tests/asphalt-fragment-v151-browser.cjs 2>&1 | tee /tmp/apex-results/asphalt-fragment-v151-browser.jsonl
           node apex/tests/madrid-saved-svg-browser.cjs 2>&1 | tee /tmp/apex-results/madrid-saved-svg-browser.jsonl
           node apex/tests/sponsor-textures-browser.cjs 2>&1 | tee /tmp/apex-results/sponsor-textures-browser.jsonl
           APEX_AUDIT_CITY_ONLY=1 node apex/tests/urban-distance-boards-browser.cjs 2>&1 | tee /tmp/apex-results/urban-distance-boards-browser.jsonl
