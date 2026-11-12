@@ -3093,7 +3093,7 @@ function apexPhase5GpuRelease(keepProgram=false){
  s.buffer=null;s.atlas=null;s.unsupportedAtlas=null;s.chunks=[];s.pending=null;s.bytes=0;s.triangles=0;
  if(!keepProgram){s.program=null;s.attrs=null;s.uniforms=null;s.gl=null}
 }
-function apexPhase5GpuProgram(gl){
+function apexPhase5GpuProgram(gl,roadTexture=false){
  const vs=webglCompile(gl,gl.VERTEX_SHADER,String.raw`#version 300 es
 precision highp float;
 in vec3 aWorld;
@@ -3106,6 +3106,7 @@ uniform vec4 uView;
 uniform vec2 uRoll;
 uniform vec3 uDepth;
 out vec4 vColor;
+${roadTexture?'out highp vec2 vRoadWorldXZ;':''}
 void main(){
  vec3 d=aWorld-uCamera;
  float cx=d.x*uRight.x+d.z*uRight.y;
@@ -3123,8 +3124,46 @@ void main(){
  float pz=uDepth.x*zz-uDepth.y*(zz/stable);
  gl_Position=vec4(rx,ry,pz,zz);
  vColor=aColor;
+ ${roadTexture?'vRoadWorldXZ=aWorld.xz;':''}
 }`);
- const fs=webglCompile(gl,gl.FRAGMENT_SHADER,String.raw`#version 300 es
+ // 6A V15.1.1: the road owns a dedicated world-space fragment material.
+ // Ground/terrain continue using the original flat, fast programme.
+ const fs=webglCompile(gl,gl.FRAGMENT_SHADER,roadTexture?String.raw`#version 300 es
+precision highp float;
+in vec4 vColor;
+in highp vec2 vRoadWorldXZ;
+uniform float uRoadTexture;
+uniform float uRoadWet;
+out vec4 outColor;
+// Arithmetic hash: no textures, no per-frame uploads, stable in world metres.
+float asphaltHash(vec2 p){
+ vec3 p3=fract(vec3(p.xyx)*0.1031);
+ p3+=dot(p3,p3.yzx+33.33);
+ return fract((p3.x+p3.y)*p3.z);
+}
+void main(){
+ vec3 albedo=vColor.rgb;
+ if(uRoadTexture>0.001){
+  vec2 world=vRoadWorldXZ;
+  // Analytical mip/LOD using world-metres-per-pixel; avoids distant shimmer.
+  float pixelM=max(fwidth(world.x),fwidth(world.y));
+  float fineLOD=1.0-smoothstep(0.045,0.16,pixelM);
+  float gravelLOD=1.0-smoothstep(0.15,0.5,pixelM);
+  float broadLOD=1.0-smoothstep(0.5,1.3,pixelM);
+  float fine=asphaltHash(floor(world*20.0));   // 5 cm surface aggregate
+  float gravel=asphaltHash(floor(world*3.7));  // ~27 cm aggregate/repairs
+  float broad=asphaltHash(floor(world*0.56));  // 1.8 m tonal irregularities
+  float grain=(fine-0.5)*0.36*fineLOD
+            +(gravel-0.5)*0.21*gravelLOD
+            +(broad-0.5)*0.095*broadLOD;
+  // Occasional bright aggregate and dark pinholes, never a checkerboard.
+  grain+=step(0.94,fine)*0.10*fineLOD;
+  grain-=step(fine,0.08)*0.08*fineLOD;
+  grain*=uRoadTexture*(1.0-0.62*clamp(uRoadWet,0.0,1.0));
+  albedo=clamp(albedo*(1.0+grain),0.0,1.0);
+ }
+ outColor=vec4(albedo,vColor.a);
+}`:String.raw`#version 300 es
 precision mediump float;
 in vec4 vColor;
 out vec4 outColor;
@@ -3139,7 +3178,9 @@ void main(){outColor=vColor;}`);
  return{
   program,
   attrs:{world:gl.getAttribLocation(program,'aWorld'),color:gl.getAttribLocation(program,'aColor')},
-  uniforms:Object.fromEntries(['uCamera','uRight','uForward','uTilt','uView','uRoll','uDepth'].map(k=>[k,gl.getUniformLocation(program,k)]))
+  uniforms:Object.fromEntries((roadTexture
+   ?['uCamera','uRight','uForward','uTilt','uView','uRoll','uDepth','uRoadTexture','uRoadWet']
+   :['uCamera','uRight','uForward','uTilt','uView','uRoll','uDepth']).map(k=>[k,gl.getUniformLocation(program,k)]))
  };
 }
 function apexPhase5GpuGroundError(e){
@@ -3529,7 +3570,7 @@ function apexPhase6BeginRoad(cam,pitch){
   if(s.gl!==gl){apexPhase6RoadRelease(true);s.gl=gl;s.failedGl=null;}
   if(s.mesh!==mesh){
    apexPhase6RoadRelease(false);s.mesh=mesh;
-   if(!s.program){const shader=apexPhase5GpuProgram(gl);s.program=shader.program;s.attrs=shader.attrs;s.uniforms=shader.uniforms;}
+   if(!s.program){const shader=apexPhase5GpuProgram(gl,true);s.program=shader.program;s.attrs=shader.attrs;s.uniforms=shader.uniforms;}
    s.buffer=gl.createBuffer();s.indexBuffer=gl.createBuffer();if(!s.buffer||!s.indexBuffer)throw Error('Road GPU buffer allocation failed');
    gl.bindBuffer(gl.ARRAY_BUFFER,s.buffer);gl.bufferData(gl.ARRAY_BUFFER,mesh.data,gl.STATIC_DRAW);
    s.indexCapacity=Math.min(mesh.count-1,mobilePerformanceMode()?2200:4400)*36;
@@ -3564,11 +3605,12 @@ function apexPhase6RoadStyle(seg,pressure){
  }
  return{cheap,show};
 }
-function apexPhase6RoadGroup(color){
- const s=apexPhase6RoadGPU;let g=s.groupMap.get(color);if(g)return g;
+function apexPhase6RoadGroup(color,asphalt=true){
+ // Pianos keep solid paint even when the track itself uses a grain shader.
+ const s=apexPhase6RoadGPU,key=(asphalt?'a:':'p:')+color;let g=s.groupMap.get(key);if(g)return g;
  if(s.groupCount>=64)throw Error('Road material group budget exceeded');
  g=s.groups[s.groupCount];if(!g){g={data:new Uint32Array(1024),count:0,color:null,rgba:null,first:0};s.groups.push(g);s.groupCapacityBytes+=4096;s.indexArrayGrows++;}
- s.groupCount++;g.color=color;g.rgba=webglCssColor(color);g.count=0;s.groupMap.set(color,g);return g;
+ s.groupCount++;g.color=color;g.asphalt=asphalt;g.rgba=webglCssColor(color);g.count=0;s.groupMap.set(key,g);return g;
 }
 function apexPhase6RoadQuad(group,a,b,c,d){
  const s=apexPhase6RoadGPU;
@@ -3586,8 +3628,8 @@ function apexPhase6QueueRoadBase(seg,colors,road,cheap,show){
  if(webglCssColor(road)[3]<.999||curbLeft&&webglCssColor(colors[0])[3]<.999||curbRight&&webglCssColor(colors[1])[3]<.999){s.cpuSegments++;return false;}
  s.queued.push(seg); // Complete CPU replay is available if sealing fails.
  try{
-  if(curbLeft)apexPhase6RoadQuad(apexPhase6RoadGroup(colors[0]),a+2,a,b,b+2);
-  if(curbRight)apexPhase6RoadQuad(apexPhase6RoadGroup(colors[1]),a+1,a+3,b+3,b+1);
+  if(curbLeft)apexPhase6RoadQuad(apexPhase6RoadGroup(colors[0],false),a+2,a,b,b+2);
+  if(curbRight)apexPhase6RoadQuad(apexPhase6RoadGroup(colors[1],false),a+1,a+3,b+3,b+1);
   if(cheap)apexPhase6RoadQuad(apexPhase6RoadGroup(road),a,a+1,b+1,b);
   else{
    apexPhase6RoadQuad(apexPhase6RoadGroup(shadeColor(road,-3)),a,a+4,b+4,b);
@@ -3623,10 +3665,22 @@ function apexPhase6DrawRoad(){
  gl.uniform3f(u.uCamera,cam.x,cam.y,cam.z);gl.uniform2f(u.uRight,cam.nx,cam.nz);gl.uniform2f(u.uForward,cam.tx,cam.tz);
  gl.uniform3f(u.uTilt,Math.cos(tilt),Math.sin(tilt),off);gl.uniform4f(u.uView,1/Math.tan(sceneHFov()*.5),W/H,1-2*sceneHorizon(p.pitch)/H,driverEyeHeight());
  gl.uniform2f(u.uRoll,Math.cos(p.roll),Math.sin(p.roll));gl.uniform3f(u.uDepth,(f+n)/(f-n),2*f*n/(f-n),0);
+ if(u.uRoadWet!=null&&typeof gl.uniform1f==='function')gl.uniform1f(u.uRoadWet,apexWeatherWetFactor());
+ // Set 0 on kerbs. The URL flag is a diagnostic A/B test in preview 6A.
+ const textureOn=window.apexRoadGrainV151Enabled!==false?1:0;
  let calls=0;
- for(let i=0;i<s.groupCount;i++){const g=s.groups[i];if(!g.count)continue;gl.vertexAttrib4f(s.attrs.color,g.rgba[0],g.rgba[1],g.rgba[2],g.rgba[3]);gl.drawElements(gl.TRIANGLES,g.count,gl.UNSIGNED_INT,g.first*4);calls++;}
+ for(let i=0;i<s.groupCount;i++){const g=s.groups[i];if(!g.count)continue;
+  if(u.uRoadTexture!=null&&typeof gl.uniform1f==='function')gl.uniform1f(u.uRoadTexture,g.asphalt?textureOn:0);
+  gl.vertexAttrib4f(s.attrs.color,g.rgba[0],g.rgba[1],g.rgba[2],g.rgba[3]);gl.drawElements(gl.TRIANGLES,g.count,gl.UNSIGNED_INT,g.first*4);calls++;
+ }
  s.drawCalls=calls;return true;
 }
+// Compare with ?asphalt=0; this changes only the road GPU material, not its geometry.
+window.apexRoadGrainV151Enabled=typeof URLSearchParams==='function'&&typeof location!=='undefined'
+ ?new URLSearchParams(location.search).get('asphalt')!=='0':true;
+window.apexAsphaltMaterialInfo=()=>({phase:'V15.1.1',enabled:window.apexRoadGrainV151Enabled,
+ shader:!!apexPhase6RoadGPU.program,svgColor:typeof apexRoadSvgBaseColorV15==='function'?apexRoadSvgBaseColorV15():null,
+ roadGroups:apexPhase6RoadGPU.groupCount,version:'world-fragment-aggregate'});
 window.apexPhase6RoadDiagnostics=()=>{const s=apexPhase6RoadGPU,mesh=trackData&&trackData._apexPhase6RoadMesh;
  return{resident:!!s.buffer,compiled:!!mesh,sectors:mesh?mesh.sectors.length:0,vertices:mesh?mesh.data.length/3:0,
   bytes:s.bytes,cpuIndexBytes:s.indices?s.indices.byteLength*2+s.groupCapacityBytes:0,indexCapacity:s.indexCapacity,triangles:s.triangles,drawCalls:s.drawCalls,gpuSegments:s.gpuSegments,cpuSegments:s.cpuSegments,
