@@ -3090,8 +3090,9 @@ function apexGrandstandTrussV3(it,frame,h,gb){
 // Público v4: los cuerpos se apoyan sobre el peldaño real, no bajo el graderío.
 // Mismo cálculo de filas LOD que usan los renderizadores Canvas y WebGL.
 function apexGrandstandSeatTopV4(h,prof,gb,depthFraction){
- const rows=gb.tier===2?Math.min(12,Math.max(10,prof.rows)):
-   (gb.tier===1?Math.min(7,Math.max(6,Math.round(prof.rows*.70))):4);
+ const configured=Math.max(4,Math.round(Number(prof&&prof.rows)||9));
+ const rows=gb.tier===2?Math.min(12,Math.max(10,configured)):
+   (gb.tier===1?Math.min(7,Math.max(6,Math.round(configured*.70))):4);
  const t=Math.max(0,Math.min(1,depthFraction));
  const step=Math.min(rows,Math.max(1,Math.ceil(t*rows-1e-6)));
  return h*(.20+.60*step/rows)+.10;
