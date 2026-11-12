@@ -26,7 +26,7 @@ const textureWindow={},context={window:textureWindow,Image:undefined};
 vm.runInNewContext(textureSource,context);
 const tex=textureWindow.ApexSponsorTextures;
 const originalSponsors=Object.keys(tex.assets);
-assert.match(canvas,/function apexGrandstandRakedSeatV6\(band,frame,h,cam\)/);
+assert.match(canvas,/function apexGrandstandRakedSeatV6\(band,frame,h,cam,offset=0\)/);
 assert.match(canvas,/const raked3=prof\.melbourne&&frame\?apexGrandstandRakedSeatV6/);
 assert.match(webgl,/const raked=prof\.melbourne&&frame\?apexGrandstandRakedSeatV6/);
 assert.match(canvas,/if\(!prof\.melbourne\)for\(let j=0;j<backBand\.length/);
