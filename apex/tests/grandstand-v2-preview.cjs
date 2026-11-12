@@ -11,6 +11,14 @@ assert.match(preview,/part-024-bridgefull-preview\.txt/);
 assert.match(preview,/part-025-bridgefull-trees3d-preview\.txt/);
 assert.doesNotMatch(production,/part-024-bridgefull-preview|part-025-bridgefull-trees3d-preview/);
 
+// Tribunas v3: el arriostramiento debe tener presupuesto acotado y mismo backend.
+assert.match(canvas,/function apexGrandstandTrussV3\(it,frame,h,gb\)/);
+assert.match(canvas,/if\(!it\|\|!frame\|\|!gb\|\|!gb\.braces\|\|gb\.tier<1\)return\[\]/);
+assert.match(canvas,/trackData\?\.spec\?\.dir==='01-australia'/);
+assert.match(canvas,/railPosts=Math\.min\(mobilePerformanceMode\(\)\?5:8/);
+assert.match(webgl,/railPosts=Math\.min\(mobilePerformanceMode\(\)\?5:8/);
+assert.match(canvas,/for\(const brace of apexGrandstandTrussV3\(it,frame,h,gb\)\)/);
+assert.match(webgl,/for\(const brace of apexGrandstandTrussV3\(it,frame,h,gb\)\)/);
 const start=canvas.indexOf('const apexGrandstandCrowdMosaicStats=');
 const end=canvas.indexOf('function apexGrandstandFrameStats(it){',start);
 assert.ok(start>=0&&end>start,'shared mosaic renderer is missing');
