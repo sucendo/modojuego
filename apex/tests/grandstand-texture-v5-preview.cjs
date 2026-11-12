@@ -85,7 +85,7 @@ for(const [kind,key] of Object.entries(renderer.keys)){
 }
 assert.equal(Object.keys(renderer.keys).length,3,'Seats, crowd and full-deck crowd use three shared atlases');
 assert.match(canvas,/for\(let row=0;row<4;row\+\+\)for\(let i=0;i<64;i\+\+\)/,'256 different spectator sprites in one crowd atlas');
-assert.match(canvas,/const rows=22,columns=78/,'Crowd-deck atlas has dense, jittered people');
+assert.match(canvas,/const rows=30,columns=112/,'Crowd deck must tightly pack spectators in every row');
 assert.match(canvas,/apexGrandstandStandPhaseV8\(it\)/,'Deck must vary UV phase by grandstand');
 assert.match(webgl,/apexGrandstandTextureQueuePolyGl\(panel,apexGrandstandTextureV5Keys\.deck/);
 assert.match(canvas,/apexGrandstandTextureDrawPolyCanvas\(panel,apexGrandstandTextureV5Keys\.deck/);
@@ -109,7 +109,7 @@ assert.doesNotMatch(canvas,/const textureCrowd=apexGrandstandTexturesV5Ready\(pr
  'Canvas must layer near 3D spectators over rear texture rows');
 assert.doesNotMatch(webgl,/const textureCrowd=apexGrandstandTexturesV5Ready\(prof\)&&gb\.tier<2/,
  'WebGL must layer near 3D spectators over rear texture rows');
-assert.match(canvas,/rowDepth=dep\*\(prof\.melbourne\?\(\.18\+\.26\*rowFrac\)/,
+assert.match(canvas,/rowDepth=dep\*\(prof\.melbourne\?\(\.055\+\.39\*rowFrac\)/,
  'Near 3D spectators must live in front of rear texture rows');
 for(const isMobile of [false,true]){
  mobile=isMobile;
@@ -130,6 +130,7 @@ for(const isMobile of [false,true]){
     'No degenerate crowd quad');
    assert.ok(strips.every(s=>s[0].y>s[3].y),'Crowd silhouettes must extend above the raked deck');
    assert.ok(strips.every(s=>s[1].u>s[0].u),'Atlas pattern must repeat across grandstand width');
+   assert.ok(Math.min(...depths)<frame.depth*.14,'Lower spectator rows must appear at all LOD/pressure modes');
   }
  }
 }
@@ -150,6 +151,12 @@ const stand={sourceId:'test-grandstand',anchor:{x:3,z:7},side:1,
  worldFootprint:[[0,0],[64,0],[64,16],[0,16]]};
 pressure=0;mobile=false;
 const panels=renderer.deck(stand,{melbourne:true},frame,14,full,{});
+assert.match(canvas,/apexGrandstandBand\(it\.worldFootprint,it\.anchor\|\|\{\},it\.side\|\|1,\.015,\.985,it\)/, 'Crowd must extend to the first and last seating rows');
+assert.match(canvas,/prof\.melbourne\?h\*\.16:h\*\.23/, 'Canvas front fascia must not conceal the lower crowd');
+assert.match(webgl,/prof\.melbourne\?h\*\.16:h\*\.23/, 'WebGL front fascia must not conceal the lower crowd');
+assert.match(canvas,/start=tier===2\?\.035:\.025,end=\.975/, 'LOD must place standing crowd into front rows');
+assert.ok(Math.min(...panels.flat().map(v=>v.v))<.06, 'Front of grandstand requires spectator coverage');
+assert.ok(Math.max(...panels.flat().map(v=>v.v))>.94, 'Grandstand rear remains populated');
 assert.equal(panels.length,2,'Race grandstand deck must fill both sides of central aisle');
 assert.ok(panels.every(a=>a.length>=3&&a.every(p=>Number.isFinite(p.u)&&p.v>=0&&p.v<=1)),'Deck UVs should follow the sloped footprint');
 const leftMax=Math.max(...panels[0].map(v=>v.x)),rightMin=Math.min(...panels[1].map(v=>v.x));
@@ -168,5 +175,5 @@ for(const [source,start,end] of [
  assert.ok(i>=0&&j>i);
  new Function('for(let k=0;k<1;k++){if(false){}'+source.slice(i+1,j)+'}}');
 }
-console.log(JSON.stringify({test:'grandstand-texture-v8-preview',atlases:3,vertices:textured.length,
+console.log(JSON.stringify({test:'grandstand-texture-v9-preview',atlases:3,vertices:textured.length,
  crowdMedium:medium.length,pressureCap:lowPerf.length,previewOnly:true,ok:true}));
