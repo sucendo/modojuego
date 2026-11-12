@@ -77,6 +77,8 @@ assert.equal(renderer.ready({hybridGrandstand:true,melbourne:true}),true);
 assert.equal(renderer.stats.atlasBuilds,1,'The common crowd atlases must be generated only once');
 assert.ok(tex.entry(renderer.seatKey({hybridGrandstand:true,madrid:true,seat:'#24333e'})),'Madrid should have its own tinted seat atlas');
 assert.notEqual(renderer.seatKey({melbourne:true}),renderer.seatKey({madrid:true,seat:'#24333e'}));
+assert.equal(renderer.seatKey({hybridGrandstand:true,seat:'rgb(61, 78, 99)'}),'apex-grandstand-seats-v10-3d4e63');
+assert.ok(renderer.ready({hybridGrandstand:true,seat:'rgb(61, 78, 99)'}),'CSS RGB colours from SVG must receive a seat atlas');
 assert.equal(renderer.ready({hybridGrandstand:true,seat:'#7c8c99'}),true,'Neutral circuit also textures');
 assert.ok(drawCalls>100,'Real seat/crowd pixels must be rasterized');
 assert.equal(Object.keys(tex.assets).length,originalSponsors.length);
@@ -189,6 +191,27 @@ for(const [i,circuit] of builtInCircuits.entries()){
  assert.equal(makeFootprint(stand),fp,'Generated footprints must be reused, never remade per frame');
  assert.ok(stand._apexGrandstandGeneratedV10);
 }
+const noNormal={type:'grandstand',anchor:{x:80,z:20,q:{tx:1,tz:0}},side:-1,length:50,depth:14};
+assert.equal(makeFootprint(noNormal).length,4,'Legacy anchor without precomputed track normals must work');
+assert.ok(noNormal.worldFootprint.some(q=>q[1]<20),'Side placement must follow circuit normal');
+const styleStart=canvas.indexOf('function apexGrandstandStyleProfile(it){');
+const styleEnd=canvas.indexOf('// 6A preview v5',styleStart);
+assert.ok(styleStart>=0&&styleEnd>styleStart);
+const makeProfile=new Function('trackData','shadeColor',
+ canvas.slice(styleStart,styleEnd)+';return apexGrandstandStyleProfile;')(trackData,(color)=>color);
+trackData.spec.dir='14-spain';
+const madridProfile=makeProfile({grandstandStyle:'grandstand_covered',seatColor:'#aabbcc'});
+assert.ok(madridProfile.madrid&&madridProfile.hybridGrandstand&&madridProfile.covered);
+assert.equal(madridProfile.seat,'#aabbcc','Madrid SVG seat colour must survive');
+trackData.spec.dir='01-australia';
+const melbourneProfile=makeProfile({grandstandStyle:'grandstand_covered'});
+assert.ok(melbourneProfile.melbourne&&melbourneProfile.hybridGrandstand);
+trackData.spec.dir='nurburgring-long';
+const extraProfile=makeProfile({grandstandStyle:'grandstand_open'});
+assert.ok(extraProfile.hybridGrandstand&&!extraProfile.covered,'Extra circuit open tribunes stay uncovered');
+const proceduralProfile=makeProfile({_apexGrandstandGeneratedV10:true});
+assert.ok(proceduralProfile.hybridGrandstand&&proceduralProfile.covered,'Legacy covered tribunes keep their roof');
+trackData.spec.dir='01-australia';
 const svgStand={type:'grandstand',anchor:{x:0,z:0},worldFootprint:[[0,0],[5,0],[5,4],[0,4]]};
 const authored=svgStand.worldFootprint;
 assert.equal(makeFootprint(svgStand),authored,'User-authored SVG grandstand footprint must remain untouched');
