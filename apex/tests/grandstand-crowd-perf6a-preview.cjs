@@ -20,10 +20,13 @@ let mobile=true,groundCalls=0;
 const window={};
 const ground=(frame,u,depth)=>{groundCalls++;return 2;};
 const profile=(prof,ri,rows,ci,att)=>({occupied:(ri+ci)%4!==0&&att.fill>.01,top:'#b64255'});
-const factory=new Function('window','mobilePerformanceMode','apexGrandstandSeatVisual','apexMadridCrowdHeads','apexGrandstandFrameXZ','apexStaticSceneryGroundY','trackData',
+const seatStart=canvas.indexOf('function apexGrandstandSeatTopV4(');
+const seatEnd=canvas.indexOf('function apexGrandstandAttendanceProfile(){',seatStart);
+const seatTop=new Function(canvas.slice(seatStart,seatEnd)+';return apexGrandstandSeatTopV4;')();
+const factory=new Function('window','mobilePerformanceMode','apexGrandstandSeatVisual','apexMadridCrowdHeads','apexGrandstandFrameXZ','apexStaticSceneryGroundY','trackData','apexGrandstandSeatTopV4',
  helper+'\nreturn apexGrandstandPreviewCrowd;');
 const draw=factory(window,()=>mobile,profile,['#c28d6a','#9b7059'],
- (frame,u,depth)=>[frame.span*u,depth],ground,{_apexGroundStamp:'test'});
+ (frame,u,depth)=>[frame.span*u,depth],ground,{_apexGroundStamp:'test'},seatTop);
 const frame={span:60,depth:16,edge:{a:[0,0],b:[60,0],nx:0,nz:1}};
 const full={label:'full',fill:1,crowd:true};
 const half={label:'half',fill:.58,crowd:true};
