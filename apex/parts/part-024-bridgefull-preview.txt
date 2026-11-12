@@ -3087,6 +3087,16 @@ function apexGrandstandTrussV3(it,frame,h,gb){
  it._apexGrandstandTrussV3={key,edge:frame.edge,quads};
  return quads;
 }
+// Público v4: los cuerpos se apoyan sobre el peldaño real, no bajo el graderío.
+// Mismo cálculo de filas LOD que usan los renderizadores Canvas y WebGL.
+function apexGrandstandSeatTopV4(h,prof,gb,depthFraction){
+ const configured=Math.max(4,Math.round(Number(prof&&prof.rows)||9));
+ const rows=gb.tier===2?Math.min(12,Math.max(10,configured)):
+   (gb.tier===1?Math.min(7,Math.max(6,Math.round(configured*.70))):4);
+ const t=Math.max(0,Math.min(1,depthFraction));
+ const step=Math.min(rows,Math.max(1,Math.ceil(t*rows-1e-6)));
+ return h*(.20+.60*step/rows)+.10;
+}
 function apexGrandstandAttendanceProfile(){
  const s=String(currentSession||'race').toLowerCase();
  if(s==='race'||s==='qualifying'||s==='qualy')return{fill:1,crowd:true,label:'full'};
@@ -3133,7 +3143,7 @@ function apexGrandstandPreviewCrowd(it,prof,frame,h,gb,att){
    // Rows nearer the front remain the most visible; occupancy is deterministic
    // and never fluctuates when fps or camera position changes.
    const rowFrac=(ri+.5)/rows,
-     rowDepth=dep*(.24+.56*rowFrac),seatY=h*(.20+.58*rowFrac);
+     rowDepth=dep*(.24+.56*rowFrac),seatY=apexGrandstandSeatTopV4(h,prof,gb,rowDepth/dep);
    for(let ci=0;ci<cols;ci++){
      if(prof.madrid&&cols>=6&&ci===Math.floor(cols*.5))continue; // central aisle
      const choice=apexGrandstandSeatVisual(prof,ri,rows,ci,att);
@@ -3174,7 +3184,7 @@ window.apexGrandstandCrowdMosaicInfo=()=>({...apexGrandstandCrowdMosaicStats});
 function apexGrandstandCrowdMosaic(it,prof,frame,h,gb,att){
  if(!it||!frame||!gb||gb.tier>=2||!att||!att.crowd||att.fill<=.01)return[];
  const mobile=mobilePerformanceMode(),mid=gb.tier===1,pressure=apexSceneDetailBudget().pressure;
- if(pressure>=3&&!mid)return[];
+ // Incluso bajo presión extrema se conservan siluetas lejanas.
  const rows=pressure>=2?1:(mid?3:2),
   cols=pressure>=2?(mid?5:4):(mid?(mobile?7:12):(mobile?6:9)),
   key=[gb.tier,mobile?1:0,pressure,att.label,att.fill,prof.style,Math.round(h*100),Math.round(frame.span*100),Math.round(frame.depth*100),trackData&&trackData.customWorld&&trackData.customWorld._apexGroundStamp||''].join(':'),
@@ -3183,12 +3193,12 @@ function apexGrandstandCrowdMosaic(it,prof,frame,h,gb,att){
  const tiles=[],dep=frame.depth,personH=mid?.62:.90;
  for(let ri=0;ri<rows;ri++){
   const rowFrac=(ri+.55)/rows,depth=dep*(.24+.56*rowFrac),
-    seatY=h*(.20+.58*rowFrac),fullRows=Math.max(4,rows*2);
+    seatY=apexGrandstandSeatTopV4(h,prof,gb,depth/dep),fullRows=Math.max(4,rows*2);
   for(let ci=0;ci<cols;ci++){
    if(cols>=7&&ci===Math.floor(cols*.5))continue;
    const visual=apexGrandstandSeatVisual(prof,Math.floor(rowFrac*fullRows),fullRows,ci,att);
    if(!visual.occupied)continue;
-   const u=(ci+.5)/cols,half=Math.min(.47/cols,.80/Math.max(4,frame.span)),
+   const u=(ci+.5)/cols,half=Math.min(.44/cols,(mid?1.15:2.20)/Math.max(4,frame.span)),
     ground=apexGrandstandFrameXZ(frame,u,depth),
     gy=apexStaticSceneryGroundY(frame,u,depth,ground[0],ground[1]),
     point=(uu,y)=>{const p=apexGrandstandFrameXZ(frame,uu,depth);return [p[0],gy+y,p[1]];},

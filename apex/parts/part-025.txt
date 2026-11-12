@@ -4413,7 +4413,7 @@ function webglPushCircuitLandmarks(cam,pitch){
        if(frame){
          const dep=frame.depth,span=frame.span,segs=gb.crowdCols;
          if(gb.crowdRows>0&&segs>0&&(att.crowd||(prof.madrid&&gb.tier===2))){const crowdRows=Math.min(rows,gb.crowdRows),rowStep=Math.max(1,Math.floor(rows/crowdRows)),personH=Math.max(.72,Math.min(1.28,gb.crowdHeight||1.0));for(let ri=0;ri<rows;ri+=rowStep){
-           const rowDepth=dep*(.24+.56*(Math.min(rows,ri+rowStep)/rows)),ySeat=h*(.20+.58*(Math.min(rows,ri+rowStep)/rows));
+           const rowDepth=dep*(.24+.56*(Math.min(rows,ri+rowStep)/rows)),ySeat=apexGrandstandSeatTopV4(h,prof,gb,rowDepth/dep);
            for(let ci=0;ci<segs;ci++){
              if(prof.madrid&&gb.tier>=1&&ci===Math.floor(segs*.5))continue;
              const crowd=apexGrandstandSeatVisual(prof,ri,rows,ci,att);

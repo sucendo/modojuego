@@ -19,20 +19,46 @@ assert.match(canvas,/railPosts=Math\.min\(mobilePerformanceMode\(\)\?5:8/);
 assert.match(webgl,/railPosts=Math\.min\(mobilePerformanceMode\(\)\?5:8/);
 assert.match(canvas,/for\(const brace of apexGrandstandTrussV3\(it,frame,h,gb\)\)/);
 assert.match(webgl,/for\(const brace of apexGrandstandTrussV3\(it,frame,h,gb\)\)/);
+// Público v4: regresión de alturas, carrera rápida y ambos renderizadores.
+const productionCanvas=fs.readFileSync(path.join(root,'parts/part-024.txt'),'utf8');
+const productionWebgl=fs.readFileSync(path.join(root,'parts/part-025.txt'),'utf8');
+for(const source of [canvas,productionCanvas]){
+ assert.match(source,/function apexGrandstandSeatTopV4\(h,prof,gb,depthFraction\)/);
+ assert.match(source,/const s=String\(currentSession\|\|'race'\)\.toLowerCase\(\)/);
+}
+for(const source of [productionCanvas,productionWebgl]){
+ assert.match(source,/ySeat=apexGrandstandSeatTopV4\(h,prof,gb,rowDepth\/dep\)/);
+}
+assert.match(canvas,/seatY=apexGrandstandSeatTopV4\(h,prof,gb,rowDepth\/dep\)/);
+assert.match(canvas,/seatY=apexGrandstandSeatTopV4\(h,prof,gb,depth\/dep\)/);
+assert.match(webgl,/apexGrandstandPreviewCrowd\(it,prof,frame,h,gb,att\)/);
+assert.match(webgl,/apexGrandstandCrowdMosaic\(it,prof,frame,h,gb,att\)/);
+const seatStart=canvas.indexOf('function apexGrandstandSeatTopV4(');
+const seatEnd=canvas.indexOf('function apexGrandstandAttendanceProfile(){',seatStart);
+const seatTop=new Function(canvas.slice(seatStart,seatEnd)+';return apexGrandstandSeatTopV4;')();
+for(const tier of [0,1,2]){
+ const gb={tier},prof={rows:10},h=14;
+ for(const depthFraction of [.24,.38,.51,.65,.80]){
+  const y=seatTop(h,prof,gb,depthFraction);
+  assert.ok(y>=h*(.20+.60*depthFraction)+.07,'crowd must be above step surface');
+  assert.ok(y<=h*.81,'crowd should stay below grandstand roof');
+ }
+}
+assert.doesNotMatch(canvas,/pressure>=3&&!mid\)return\[\]/);
 const start=canvas.indexOf('const apexGrandstandCrowdMosaicStats=');
 const end=canvas.indexOf('function apexGrandstandFrameStats(it){',start);
 assert.ok(start>=0&&end>start,'shared mosaic renderer is missing');
 let pressure=0,groundCalls=0,mobile=true;
 const window={};
 const factory=new Function('window','mobilePerformanceMode','apexSceneDetailBudget',
- 'apexGrandstandSeatVisual','apexGrandstandFrameXZ','apexStaticSceneryGroundY','trackData',
+ 'apexGrandstandSeatVisual','apexGrandstandFrameXZ','apexStaticSceneryGroundY','trackData','apexGrandstandSeatTopV4',
  canvas.slice(start,end)+'\nreturn apexGrandstandCrowdMosaic;');
 const draw=factory(window,()=>mobile,()=>({pressure}),
  (prof,ri,rows,ci,att)=>({occupied:att.fill>.01&&((ci+ri)%5!==0),top:'#c45a41'}),
  (frame,u,depth)=>[frame.span*u,depth],
- ()=>{groundCalls++;return 1.5;},{customWorld:{_apexGroundStamp:'test'}});
+ ()=>{groundCalls++;return 1.5;},{customWorld:{_apexGroundStamp:'test'}},seatTop);
 const frame={span:70,depth:19,edge:{a:[0,0],b:[70,0],nx:0,nz:1}};
-const stand={},prof={style:'grandstand_covered'};
+const stand={},prof={style:'grandstand_covered',rows:10};
 const full={crowd:true,fill:1,label:'full'},empty={crowd:false,fill:0,label:'empty'};
 const mid=draw(stand,prof,frame,14,{tier:1},full);
 assert.ok(mid.length>0&&mid.length<=21,'mobile medium LOD must have a small, visible mosaic');
@@ -46,7 +72,7 @@ assert.equal(draw(stand,prof,frame,14,{tier:0},empty).length,0,'empty stands mus
 pressure=2;
 assert.ok(draw(stand,prof,frame,14,{tier:0},full).length<=4,'under load far crowd should shrink');
 pressure=3;
-assert.equal(draw(stand,prof,frame,14,{tier:0},full).length,0,'under severe load far crowd should disappear');
+assert.ok(draw(stand,prof,frame,14,{tier:0},full).length>0&&draw(stand,prof,frame,14,{tier:0},full).length<=4,'under severe load distant spectators remain visible at minimum LOD');
 assert.ok(draw(stand,prof,frame,14,{tier:1},full).length<=5,'under severe load medium crowd must be bounded');
 mobile=false;pressure=0;
 assert.ok(draw({},prof,frame,14,{tier:1},full).length<=36,'desktop medium budget exceeded');
