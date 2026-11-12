@@ -26,9 +26,13 @@ for(const source of [canvas,productionCanvas]){
  assert.match(source,/function apexGrandstandSeatTopV4\(h,prof,gb,depthFraction\)/);
  assert.match(source,/const s=String\(currentSession\|\|'race'\)\.toLowerCase\(\)/);
 }
-for(const source of [canvas,webgl,productionCanvas,productionWebgl]){
- assert.match(source,/ySeat=apexGrandstandSeatTopV4\(h,prof,gb,rowDepth\/dep\)|seatY=apexGrandstandSeatTopV4\(h,prof,gb,rowDepth\/dep\)/);
+for(const source of [productionCanvas,productionWebgl]){
+ assert.match(source,/ySeat=apexGrandstandSeatTopV4\(h,prof,gb,rowDepth\/dep\)/);
 }
+assert.match(canvas,/seatY=apexGrandstandSeatTopV4\(h,prof,gb,rowDepth\/dep\)/);
+assert.match(canvas,/seatY=apexGrandstandSeatTopV4\(h,prof,gb,depth\/dep\)/);
+assert.match(webgl,/apexGrandstandPreviewCrowd\(it,prof,frame,h,gb,att\)/);
+assert.match(webgl,/apexGrandstandCrowdMosaic\(it,prof,frame,h,gb,att\)/);
 const seatStart=canvas.indexOf('function apexGrandstandSeatTopV4(');
 const seatEnd=canvas.indexOf('function apexGrandstandAttendanceProfile(){',seatStart);
 const seatTop=new Function(canvas.slice(seatStart,seatEnd)+';return apexGrandstandSeatTopV4;')();
