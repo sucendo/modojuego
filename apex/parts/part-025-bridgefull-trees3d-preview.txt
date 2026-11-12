@@ -4551,6 +4551,10 @@ function webglPushCircuitLandmarks(cam,pitch){
          const dep=frame.depth,span=frame.span;
           // Cached, proportionate seated silhouettes with explicit LOD budget.
           const textureCrowd=apexGrandstandTexturesV5Ready(prof);
+          if(textureCrowd)for(const panel of apexGrandstandCrowdDeckV8(it,prof,frame,h,att,cam)){
+            if(apexGrandstandTextureQueuePolyGl(panel,apexGrandstandTextureV5Keys.deck,pitch,.082))
+              apexGrandstandTextureV5Stats.crowdDeckPolys++;
+          }
           let texturedStrips=0;
           if(textureCrowd)for(const strip of apexGrandstandCrowdTextureV5Strips(frame,h,prof,gb,att,cam)){
             if(apexGrandstandTextureQueuePolyGl(strip,apexGrandstandTextureV5Keys.crowd,pitch,.067))texturedStrips++;

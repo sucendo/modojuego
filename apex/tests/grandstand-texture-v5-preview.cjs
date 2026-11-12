@@ -46,28 +46,49 @@ const mockCtx={
  ellipse(){},fillRect(){drawCalls++;},scale(){}
 };
 const document={createElement:()=>({width:0,height:0,getContext:()=>mockCtx})};
+const deckClip=(poly,scalar,bound,above)=>{
+ const inside=p=>above?scalar(p)>=bound-1e-8:scalar(p)<=bound+1e-8;
+ const out=[];
+ for(let i=0;i<poly.length;i++){
+  const a=poly[i],b=poly[(i+1)%poly.length],ain=inside(a),bin=inside(b);
+  if(ain)out.push(a);
+  if(ain!==bin){const t=(bound-scalar(a))/(scalar(b)-scalar(a));
+   out.push([a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t]);}
+ }
+ return out;
+};
+
 const frame={span:64,depth:16,edge:{a:[0,0],b:[64,0],tx:1,tz:0,nx:0,nz:1}};
 const seatTop=(h,p,g,t)=>h*(.2+.6*Math.ceil(Math.max(.001,t)*10)/10)+.10;
 let pressure=0,mobile=false;
 const factory=new Function('window','document','trackData','apexGrandstandSeatTopV4',
  'apexGrandstandWorldCam','apexSceneDetailBudget','mobilePerformanceMode','clamp',
- snippet+'\nreturn {ready:apexGrandstandTexturesV5Ready,seat:apexGrandstandSeatTextureV5Vertices,crowd:apexGrandstandCrowdTextureV5Strips,stats:apexGrandstandTextureV5Stats,keys:apexGrandstandTextureV5Keys};');
+ 'apexGrandstandBand','apexClipWorldPolygonScalar','apexStaticSceneryGroundY','worldToCamera',
+ snippet+'\nreturn {ready:apexGrandstandTexturesV5Ready,seat:apexGrandstandSeatTextureV5Vertices,crowd:apexGrandstandCrowdTextureV5Strips,deck:apexGrandstandCrowdDeckV8,deckStats:apexGrandstandDeckV8Stats,stats:apexGrandstandTextureV5Stats,keys:apexGrandstandTextureV5Keys};');
 const trackData={spec:{dir:'01-australia'}};
 const renderer=factory(textureWindow,document,trackData,seatTop,
- (frame,u,depth,y)=>({x:u*frame.span,y,z:depth}),()=>({pressure}),()=>mobile,(x,a,b)=>Math.max(a,Math.min(b,x)));
+ (frame,u,depth,y)=>({x:u*frame.span,y,z:depth}),()=>({pressure}),()=>mobile,(x,a,b)=>Math.max(a,Math.min(b,x)),
+ (fp,anchor,side,lo,hi)=>deckClip(deckClip(fp,p=>p[1],lo*frame.depth,true),p=>p[1],hi*frame.depth,false),
+ deckClip,()=>0,(x,y,z)=>({x,y,z}));
 assert.equal(renderer.ready({melbourne:false}),false);
 assert.equal(renderer.ready({melbourne:true}),true);
 assert.equal(renderer.ready({melbourne:true}),true);
 assert.equal(renderer.stats.atlasBuilds,1,'Texture atlases must be generated once');
 assert.ok(drawCalls>100,'Real seat/crowd pixels must be rasterized');
 assert.equal(Object.keys(tex.assets).length,originalSponsors.length);
-for(const key of Object.values(renderer.keys)){
+for(const [kind,key] of Object.entries(renderer.keys)){
  const item=tex.entry(key);
  assert.equal(item.status,'ready');
- assert.equal(item.canvas.width,1024);
- assert.equal(item.canvas.height,256);
+ assert.equal(item.canvas.width,kind==='seats'?1024:2048);
+ assert.equal(item.canvas.height,kind==='seats'?256:512);
  assert.equal(tex.load(key),item,'Dynamic texture should be cached');
 }
+assert.equal(Object.keys(renderer.keys).length,3,'Seats, crowd and full-deck crowd use three shared atlases');
+assert.match(canvas,/for\(let row=0;row<4;row\+\+\)for\(let i=0;i<64;i\+\+\)/,'256 different spectator sprites in one crowd atlas');
+assert.match(canvas,/const rows=22,columns=78/,'Crowd-deck atlas has dense, jittered people');
+assert.match(canvas,/apexGrandstandStandPhaseV8\(it\)/,'Deck must vary UV phase by grandstand');
+assert.match(webgl,/apexGrandstandTextureQueuePolyGl\(panel,apexGrandstandTextureV5Keys\.deck/);
+assert.match(canvas,/apexGrandstandTextureDrawPolyCanvas\(panel,apexGrandstandTextureV5Keys\.deck/);
 const band=[[0,8],[64,8],[64,9.6],[0,9.6]],top=band.map(p=>({x:p[0],y:10,z:p[1]}));
 const textured=renderer.seat(band,top,frame,5,10);
 const rakedSource=canvas.slice(canvas.indexOf('function apexGrandstandRakedSeatYV6('),canvas.indexOf('// 6A preview · Tribunas v3'));
@@ -96,8 +117,10 @@ for(const isMobile of [false,true]){
   pressure=p;
   for(const tier of [0,1,2]){
    const strips=renderer.crowd(frame,14,{rows:10,melbourne:true},{tier},full,{});
-   assert.ok(strips.length>=3&&strips.length<=6,
-    'Race stands must preserve multiple rows even under max pressure: '+JSON.stringify({tier,p,isMobile,count:strips.length}));
+   assert.ok(strips.length>=5&&strips.length<=13,
+    'Race stands must use dense rows even under max pressure: '+JSON.stringify({tier,p,isMobile,count:strips.length}));
+   assert.ok(new Set(strips.map(q=>q[0].v.toFixed(5))).size>=3,'Crowd rows must select different sprite bands');
+   assert.ok(new Set(strips.map(q=>q[0].u.toFixed(4))).size>=3,'Crowd row UV offsets must differ');
    const depths=strips.map(s=>s[0].z);
    assert.ok(depths.every((z,i)=>z>0&&z<frame.depth&&(i===0||z>depths[i-1]+.1)),
     'Rows must be separated and distributed over the ramp');
@@ -114,13 +137,29 @@ pressure=0;mobile=false;
 const near=renderer.crowd(frame,14,{rows:10,melbourne:true},{tier:2},full,{}),
  medium=renderer.crowd(frame,14,{rows:10,melbourne:true},{tier:1},full,{}),
  partial=renderer.crowd(frame,14,{rows:10,melbourne:true},{tier:1},half,{});
-assert.ok(near.length>=5,'Near stands need rear rows behind the 3D crowd');
-assert.ok(medium.length>=5,'Medium stands need several rows');
+assert.ok(near.length>=9,'Near stands need dense rear rows behind the 3D crowd');
+assert.ok(medium.length>=9,'Medium stands need substantial spectator depth');
 assert.ok(partial.length>0&&partial.length<medium.length,'Practice occupancy must stay partial');
 assert.equal(renderer.crowd(frame,14,{rows:10,melbourne:true},{tier:0},empty,{}).length,0);
 pressure=3;mobile=true;
 const lowPerf=renderer.crowd(frame,14,{rows:10,melbourne:true},{tier:0},full,{});
-assert.ok(lowPerf.length>=3,'Pressure may trim density, never collapse to a single row');
+assert.ok(lowPerf.length>=5,'Pressure may trim density, never collapse to a few rows');
+// Full-deck decal: only race/qualifying, two clipped pieces and a central aisle.
+// Cached polygon clipping remains stable as the camera moves.
+const stand={sourceId:'test-grandstand',anchor:{x:3,z:7},side:1,
+ worldFootprint:[[0,0],[64,0],[64,16],[0,16]]};
+pressure=0;mobile=false;
+const panels=renderer.deck(stand,{melbourne:true},frame,14,full,{});
+assert.equal(panels.length,2,'Race grandstand deck must fill both sides of central aisle');
+assert.ok(panels.every(a=>a.length>=3&&a.every(p=>Number.isFinite(p.u)&&p.v>=0&&p.v<=1)),'Deck UVs should follow the sloped footprint');
+const leftMax=Math.max(...panels[0].map(v=>v.x)),rightMin=Math.min(...panels[1].map(v=>v.x));
+assert.ok(rightMin-leftMax>=1.9,'Keep central staircase/aisle free of the crowd decal');
+assert.ok(panels.some(a=>Math.max(...a.map(v=>v.y))-Math.min(...a.map(v=>v.y))>5),'Crowd must cover the height of the raked seating');
+assert.equal(renderer.deck(stand,{melbourne:true},frame,14,full,{}).length,2);
+assert.equal(renderer.deckStats.builds,1,'Clip geometry must be cached, not rebuilt every frame');
+assert.ok(renderer.deckStats.hits>=1);
+assert.equal(renderer.deck(stand,{melbourne:true},frame,14,empty,{}).length,0,'Empty grandstands must have no crowd decal');
+assert.equal(renderer.deck(stand,{melbourne:true},frame,14,half,{}).length,0,'Practice should use partial LOD sprites, not fully occupied deck');
 for(const [source,start,end] of [
  [canvas,'}else if(it.type==="grandstand"){','}else if(it.type==="billboard"||it.type==="advertising"){'],
  [webgl,"}else if(it.type==='grandstand'){","}else if(it.type==='gantry'){"]
@@ -129,5 +168,5 @@ for(const [source,start,end] of [
  assert.ok(i>=0&&j>i);
  new Function('for(let k=0;k<1;k++){if(false){}'+source.slice(i+1,j)+'}}');
 }
-console.log(JSON.stringify({test:'grandstand-texture-v5-preview',atlases:2,vertices:textured.length,
+console.log(JSON.stringify({test:'grandstand-texture-v8-preview',atlases:3,vertices:textured.length,
  crowdMedium:medium.length,pressureCap:lowPerf.length,previewOnly:true,ok:true}));

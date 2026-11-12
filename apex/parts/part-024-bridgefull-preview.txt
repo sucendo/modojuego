@@ -3066,8 +3066,8 @@ function apexGrandstandStyleProfile(it){
 }
 // 6A preview v5 · Melbourne: lightweight, deterministic seat/crowd texture atlases.
 // Rasterized once; SVG geometry and raised seating steps remain authoritative.
-const apexGrandstandTextureV5Keys={seats:'apex-grandstand-seats-v6',crowd:'apex-grandstand-crowd-v6'};
-const apexGrandstandTextureV5Stats={atlasBuilds:0,seatPolys:0,crowdStrips:0};
+const apexGrandstandTextureV5Keys={seats:'apex-grandstand-seats-v6',crowd:'apex-grandstand-crowd-v8',deck:'apex-grandstand-deck-v8'};
+const apexGrandstandTextureV5Stats={atlasBuilds:0,seatPolys:0,crowdStrips:0,crowdDeckPolys:0};
 window.apexGrandstandTextureV5Info=()=>({...apexGrandstandTextureV5Stats,
   ready:!!window.ApexSponsorTextures?.entry(apexGrandstandTextureV5Keys.seats),
   circuit:trackData?.spec?.dir||null});
@@ -3097,28 +3097,61 @@ function apexGrandstandTexturesV5Ready(prof){
   c.fillStyle='#768992';c.fillRect(x+3,114,26,3);
   c.fillStyle='#576c79';c.fillRect(x+12,118,8,7);
  }
- const [crowd,d]=make(1024,256);
+ // V8: four genuinely different horizontal bands, 64 unique spectators each.
+ // A person is painted once at startup, never as geometry on every frame.
+ const [crowd,d]=make(2048,512);
  if(!d)return false;
- d.scale(2,2);
- const shirts=['#d8373f','#f2c34b','#e9ecef','#235cc6','#38a36f','#db7640','#272d34','#8c63c0','#e04e6e','#4aa5ba','#eff2ec','#ad2c2f','#5b975a','#263446','#ed9c2a','#8395a1'],
-       skins=['#e6ba97','#b77f59','#d4a47e','#8b5d43','#f0c9a6'];
- for(let i=0;i<16;i++){
-  const x=i*32+16,lean=((i*7)%5)-2,shirt=shirts[(i*5+Math.floor(i/3))%shirts.length],
-        skin=skins[(i*7)%skins.length];
-  // Transparent silhouettes include sleeves, hair, faces and upper-body overlap.
-  d.fillStyle='rgba(9,16,24,.40)';d.fillRect(x-15,114,30,13);
-  d.fillStyle=shirt;d.beginPath();d.moveTo(x-8+lean,55);d.lineTo(x+8+lean,55);
-  d.lineTo(x+14+lean,75);d.lineTo(x+11+lean,127);d.lineTo(x-11+lean,127);d.lineTo(x-14+lean,75);d.closePath();d.fill();
-  d.fillStyle=skins[(i+1)%skins.length];d.fillRect(x-14+lean,78,4,20);d.fillRect(x+10+lean,78,4,20);
-  d.fillStyle='rgba(0,0,0,.16)';d.fillRect(x-8+lean,99,16,4);
-  d.fillStyle=skin;d.beginPath();d.ellipse(x+lean,37,7.4,11.1,0,0,Math.PI*2);d.fill();
-  d.fillStyle=['#1e2027','#44372f','#65503c','#262831'][i%4];
-  d.beginPath();d.ellipse(x+lean,29,8.1,5.5,0,Math.PI,Math.PI*2);d.fill();
-  if(i%7===0){d.fillStyle='#f5d54d';d.fillRect(x-10,24,20,3);}
-  if(i%11===0){d.fillStyle='#f9f9f9';d.fillRect(x-8,71,16,5);}
+ const shirts=['#26323b','#efefeb','#242b31','#d9dbdd','#b23b35','#334d68',
+  '#e9c34a','#3c454d','#eeeae0','#59815b','#d78248','#253441','#9dabb0',
+  '#ded2b4','#a63d42','#455d86','#283d32','#f4f0e9','#bd8d55','#33383e',
+  '#778a98','#f1ebdf','#aeb4b7','#323943','#e7ba3b','#6f5250',
+  '#4f7e95','#c5c5c0','#262b32','#e2e8e8','#60875c','#a9a39e'],
+  skins=['#e8c3a4','#ca9271','#a36b4d','#efc6a1','#81533d','#d8ad84'],
+  hairs=['#24272b','#332a25','#70533a','#21262c','#9c8060','#46332b'];
+ for(let row=0;row<4;row++)for(let i=0;i<64;i++){
+  const seed=apexGrandstandHashV8(row*773+i*211+1597),r=()=>apexGrandstandHashV8(seed+Math.floor(r.n++*37)) / 4294967296;
+  r.n=0;
+  const x=i*32+16+(r()-.5)*5,y=row*128,
+    lean=(r()-.5)*5,shirt=shirts[Math.floor(r()*shirts.length)],
+    skin=skins[Math.floor(r()*skins.length)],hair=hairs[Math.floor(r()*hairs.length)],
+    bodyW=8+r()*3,headW=6.4+r()*2,headY=y+31+r()*8,
+    shoulderY=y+57+(r()-.5)*9,bottom=y+125;
+  d.fillStyle='rgba(5,13,20,.35)';d.fillRect(x-14,bottom-11,28,11);
+  d.fillStyle=shirt;d.beginPath();d.moveTo(x-bodyW+lean,shoulderY);
+  d.lineTo(x+bodyW+lean,shoulderY);d.lineTo(x+bodyW+5,shoulderY+17);
+  d.lineTo(x+bodyW+2,bottom);d.lineTo(x-bodyW-2,bottom);
+  d.lineTo(x-bodyW-5,shoulderY+17);d.closePath();d.fill();
+  d.fillStyle=skin;
+  d.fillRect(x-bodyW-5,shoulderY+22,3.5,15+r()*6);
+  d.fillRect(x+bodyW+1,shoulderY+22,3.5,15+r()*6);
+  d.beginPath();d.ellipse(x+lean*.45,headY,headW,9+r()*2,lean*.035,0,Math.PI*2);d.fill();
+  d.fillStyle=hair;d.beginPath();d.ellipse(x+lean*.45,headY-7,headW+1,4.0+r()*2,0,Math.PI,Math.PI*2);d.fill();
+  if(r()<.20){d.fillStyle=r()<.5?'#f1f0e9':'#cfbf4f';d.fillRect(x-headW-1,headY-10,headW*2+2,2.5);}
+  if(r()<.09){d.fillStyle='#fafafa';d.fillRect(x-5,bottom-38,10,4);}
+ }
+ // Deck decal: shoulders and heads seen from above, with uneven spacing,
+ // darker clothes dominating and occasional colour clusters like a real crowd.
+ // Transparent gaps reveal the blue seating underneath.
+ const [deck,e]=make(2048,512);
+ if(!e)return false;
+ const rows=22,columns=78;
+ for(let ri=0;ri<rows;ri++)for(let ci=0;ci<columns;ci++){
+  const seed=apexGrandstandHashV8(9283+ri*3307+ci*1039),value=n=>apexGrandstandHashV8(seed+n*679)/4294967296;
+  if(value(9)<.075)continue;
+  const x=(ci+(ri%2)*.45+.15)*2048/columns+(value(1)-.5)*10,
+    y=(ri+.5)*512/rows+(value(2)-.5)*9,
+    w=8.3+value(3)*5.0,hh=5.2+value(4)*2.6,
+    shirt=shirts[Math.floor(value(5)*shirts.length)],skin=skins[Math.floor(value(6)*skins.length)],
+    hair=hairs[Math.floor(value(7)*hairs.length)];
+  e.fillStyle='rgba(11,18,24,.44)';e.beginPath();e.ellipse(x,y+4,w+3,hh+3,0,0,Math.PI*2);e.fill();
+  e.fillStyle=shirt;e.beginPath();e.ellipse(x,y+3,w,hh,0,0,Math.PI*2);e.fill();
+  e.fillStyle=skin;e.beginPath();e.ellipse(x+(value(10)-.5)*4,y-3,3.6+value(11)*2,4.5+value(12),0,0,Math.PI*2);e.fill();
+  e.fillStyle=hair;e.beginPath();e.ellipse(x+(value(10)-.5)*4,y-5.5,3.4+value(11)*2,2.1,0,Math.PI,Math.PI*2);e.fill();
+  if(value(8)<.07){e.fillStyle='#f5cf45';e.fillRect(x-6,y-7,12,2);}
  }
  api.registerCanvas(apexGrandstandTextureV5Keys.seats,seats);
  api.registerCanvas(apexGrandstandTextureV5Keys.crowd,crowd);
+ api.registerCanvas(apexGrandstandTextureV5Keys.deck,deck);
  apexGrandstandTextureV5Stats.atlasBuilds++;
  return true;
 }
@@ -3130,32 +3163,82 @@ function apexGrandstandSeatTextureV5Vertices(band,top,frame,ri,rows){
   return {...p,u:along/cycle,v:clamp((depth*inv-ri/rows)*rows,0,1)};
  });
 }
-// 6A crowd v7: keep actual populated seating rows under race-time pressure.
-// Always render several rows, even if high traffic downgrades the LOD to tier 0.
-// The geometry stays 2 triangles per row and shares one atlas/draw-call batch.
+// Stable integer mix: avoid visual seams, synchronized colour stripes and
+// repeating 16-person shirt patterns without invoking Math.random per frame.
+function apexGrandstandHashV8(n){
+ n=Math.imul((n|0)^((n|0)>>>16),0x7feb352d);
+ n=Math.imul(n^(n>>>15),0x846ca68b);
+ return (n^(n>>>16))>>>0;
+}
+function apexGrandstandStandPhaseV8(it){
+ const name=String(it?.sourceId||it?.name||'stand')+':'+Math.round(it?.anchor?.x||0)+':'+Math.round(it?.anchor?.z||0);
+ let x=2166136261;for(let i=0;i<name.length;i++)x=Math.imul(x^name.charCodeAt(i),16777619);
+ return apexGrandstandHashV8(x)/4294967296;
+}
+// V8: different atlas row for every spectator band, aperiodic across depth,
+// deliberately varied colours and shoulder heights. No single-row LOD.
 function apexGrandstandCrowdTextureV5Strips(frame,h,prof,gb,att,cam){
  if(!frame||!gb||!att?.crowd||att.fill<=.01)return[];
- const pressure=apexSceneDetailBudget().pressure,mobile=mobilePerformanceMode(),
-    tier=gb.tier,normalRows=tier===2?(mobile?5:6):tier===1?(mobile?5:6):(mobile?4:5),
-    rows=Math.max(tier===2?4:3,normalRows-(pressure>=3?2:pressure>=2?1:0)),
-    dep=frame.depth,cycle=16*.65,out=[];
- // Near stands have 3D spectators in the lower/front rows. Their rear rows
- // use the same crowd atlas as other LODs. Mid/far stands cover the full deck.
- const start=tier===2?.43:.18,end=tier===2?.93:.91;
+ const pressure=apexSceneDetailBudget().pressure,mobile=mobilePerformanceMode(),tier=gb.tier,
+   fullRows=tier===2?(mobile?9:13):tier===1?(mobile?8:12):(mobile?6:9),
+   minimum=tier===2?7:tier===1?6:5,
+   rows=Math.max(minimum,fullRows-(pressure>=3?3:pressure>=2?2:pressure>=1?1:0)),
+   dep=frame.depth,cycle=64*.64,out=[],
+   start=tier===2?.44:.14,end=.955,
+   phase=apexGrandstandHashV8(Math.round(frame.edge.a[0]*37+frame.edge.a[1]*91))/4294967296;
  for(let i=0;i<rows;i++){
-  // Practice attendance is scattered instead of cutting off all rear rows.
-  if(att.fill<.98&&((i*13+3)%17)/17>=att.fill)continue;
+  if(att.fill<.98&&apexGrandstandHashV8(i*113+Math.round(frame.span*17)) /4294967296 >=att.fill)continue;
   const rowFrac=(i+.5)/rows,depth=dep*(start+(end-start)*rowFrac),
-    seat=prof.melbourne?apexGrandstandRakedSeatYV6(h,depth/dep)+.09:apexGrandstandSeatTopV4(h,prof,gb,depth/dep)+.045,
-    yTop=seat+(tier===2?1.06:tier===1?1.02:.94),
-    p0=apexGrandstandWorldCam(frame,.025,depth,yTop,cam),
-    p1=apexGrandstandWorldCam(frame,.975,depth,yTop,cam),
-    p2=apexGrandstandWorldCam(frame,.975,depth,seat,cam),
-    p3=apexGrandstandWorldCam(frame,.025,depth,seat,cam),
-    uEnd=frame.span*.95/cycle;
-  out.push([{...p0,u:0,v:0},{...p1,u:uEnd,v:0},{...p2,u:uEnd,v:1},{...p3,u:0,v:1}]);
+   seat=prof.melbourne?apexGrandstandRakedSeatYV6(h,depth/dep)+.09:apexGrandstandSeatTopV4(h,prof,gb,depth/dep)+.045,
+   personHeight=.88+(.19*(apexGrandstandHashV8(i*83+37)%97)/96),
+   yTop=seat+personHeight,
+   p0=apexGrandstandWorldCam(frame,.018,depth,yTop,cam),
+   p1=apexGrandstandWorldCam(frame,.982,depth,yTop,cam),
+   p2=apexGrandstandWorldCam(frame,.982,depth,seat,cam),
+   p3=apexGrandstandWorldCam(frame,.018,depth,seat,cam),
+   variant=(i+Math.floor(phase*101))%4,
+   v0=(variant*128+2)/512,v1=((variant+1)*128-2)/512,
+   offset=phase+i*.371+((i*i*17)%23)/23,
+   uEnd=offset+frame.span*.964/cycle;
+  out.push([{...p0,u:offset,v:v0},{...p1,u:uEnd,v:v0},
+            {...p2,u:uEnd,v:v1},{...p3,u:offset,v:v1}]);
  }
  return out;
+}
+// The occupied race deck is a continuous crowd surface, not isolated
+// billboard strips. Two clipped sections leave the central aisle visible.
+// UVs map to the original SVG footprint, so camera and LOD do not move fans.
+const apexGrandstandDeckV8Stats={builds:0,hits:0,panels:0};
+window.apexGrandstandDeckV8Info=()=>({...apexGrandstandDeckV8Stats});
+function apexGrandstandCrowdDeckV8(it,prof,frame,h,att,cam){
+ if(!it||!prof?.melbourne||!frame||!Array.isArray(it.worldFootprint)
+    ||it.worldFootprint.length<3||!att?.crowd||att.fill<.96)return[];
+ const key=[Math.round(frame.span*100),Math.round(frame.depth*100),
+  trackData?.spec?.dir||'',trackData?.customWorld?._apexGroundStamp||''].join(':');
+ let cached=it._apexGrandstandDeckV8;
+ if(!cached||cached.key!==key||cached.edge!==frame.edge){
+  const band=apexGrandstandBand(it.worldFootprint,it.anchor||{},it.side||1,.13,.975,it);
+  const e=frame.edge,scalar=p=>(p[0]-e.a[0])*e.tx+(p[1]-e.a[1])*e.tz,
+    aisleHalf=Math.min(1.05,frame.span*.05),mid=frame.span*.5;
+  const pieces=frame.span>12?[
+    apexClipWorldPolygonScalar(band,scalar,mid-aisleHalf,false),
+    apexClipWorldPolygonScalar(band,scalar,mid+aisleHalf,true)
+  ]:[band];
+  cached={key,edge:frame.edge,pieces:pieces.filter(p=>p.length>=3)};
+  it._apexGrandstandDeckV8=cached;apexGrandstandDeckV8Stats.builds++;
+ }else apexGrandstandDeckV8Stats.hits++;
+ const phase=apexGrandstandStandPhaseV8(it),e=frame.edge,span=Math.max(1,frame.span),dep=Math.max(1,frame.depth);
+ const panels=cached.pieces.map(piece=>{
+  const camPoly=apexGrandstandRakedSeatV6(piece,frame,h,cam,.070);
+  return camPoly.map((p,i)=>{
+   const w=piece[i],dx=w[0]-e.a[0],dz=w[1]-e.a[1],
+     u=phase+(dx*e.tx+dz*e.tz)/span,
+     v=clamp((dx*e.nx+dz*e.nz)/dep,0,1);
+   return {...p,u,v};
+  });
+ });
+ apexGrandstandDeckV8Stats.panels+=panels.length;
+ return panels;
 }
 // Tribunas v6 · Melbourne: the deck is raked towards the circuit, not a
 // horizontal card per step. The front rail is low and seats rise rearward.
@@ -3854,6 +3937,10 @@ function drawWorldLandmarks(cam,pitch){
        if(frame){
          const dep=frame.depth,span=frame.span;
           const textureCrowd=apexGrandstandTexturesV5Ready(prof);
+          if(textureCrowd)for(const panel of apexGrandstandCrowdDeckV8(it,prof,frame,h,att,cam)){
+            if(apexGrandstandTextureDrawPolyCanvas(panel,apexGrandstandTextureV5Keys.deck,pitch))
+              apexGrandstandTextureV5Stats.crowdDeckPolys++;
+          }
           let texturedStrips=0;
           if(textureCrowd)for(const strip of apexGrandstandCrowdTextureV5Strips(frame,h,prof,gb,att,cam)){
             if(apexGrandstandTextureDrawPolyCanvas(strip,apexGrandstandTextureV5Keys.crowd,pitch))texturedStrips++;
