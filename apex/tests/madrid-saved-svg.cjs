@@ -16,7 +16,15 @@ assert.equal((current.match(/data-apex-ferris-axis="true"/g)||[]).length,2);
 assert.equal(entry.exactSvg,true);
 assert.equal(crypto.createHash('sha256').update(fs.readFileSync(p.join(base,'circuits',entry.previousEditionSvg))).digest('hex'),'c6324f9027f0c7a0a323fac8c834bf9482795ed6e5474b79959109d4f13d6c0a');
 assert.equal(entry.sourceFileName,'apex26_14-spain_circuito-propuesta-20261110.svg');
-assert.equal(crypto.createHash('sha256').update(current).digest('hex'),'fe7e9741e7d5a0f99289b0605ecc1183280de29df3bfc4da3baaff3beb267d60','Loaded Madrid SVG must match the approved edition with universal tree symbols');
+// V14 adds non-geometric metadata only. Stripping those attributes must
+// reproduce the approved source byte-for-byte, including the author's trees.
+const stripV14StandAttributes=svg=>svg.replace(/<(?:rect|path|polygon|g)\b[^>]*data-apex-type="grandstand"[^>]*>/g,tag=>
+ tag.replace(/ data-apex-(?:roof|tier-count|front-edge|facing-offset-deg|tier-overhang|tier-source)="[^"]*"/g,''));
+assert.equal(crypto.createHash('sha256').update(stripV14StandAttributes(current)).digest('hex'),
+ 'fe7e9741e7d5a0f99289b0605ecc1183280de29df3bfc4da3baaff3beb267d60',
+ 'The approved Madrid geometry, trees and SVG structure must remain unchanged outside V14 metadata');
+assert.equal((current.match(/data-apex-tier-count="[123]"/g)||[]).length,54,
+ 'Every Madrid grandstand must declare the V14 amphitheatre count');
 assert.equal((current.match(/data-apex-type="tree"/g)||[]).length,104,'Tree glyph count changed unexpectedly');
 assert.equal((current.match(/data-apex-symbol="tree-circle-v1"/g)||[]).length,104,'Tree glyphs must all be circles');
 assert.ok(current.includes('data-apex-role="drivable-area"'),'Madrid drivable polygon missing');

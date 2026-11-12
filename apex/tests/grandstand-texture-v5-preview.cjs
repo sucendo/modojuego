@@ -26,7 +26,7 @@ const textureWindow={},context={window:textureWindow,Image:undefined};
 vm.runInNewContext(textureSource,context);
 const tex=textureWindow.ApexSponsorTextures;
 const originalSponsors=Object.keys(tex.assets);
-assert.match(canvas,/function apexGrandstandRakedSeatV6\(band,frame,h,cam,offset=0\)/);
+assert.match(canvas,/function apexGrandstandRakedSeatV6\(band,frame,h,cam,offset=0,it=null,section=null\)/);
 assert.match(canvas,/const raked3=prof\.hybridGrandstand&&frame\?apexGrandstandRakedSeatV6/);
 assert.match(webgl,/const raked=prof\.hybridGrandstand&&frame\?apexGrandstandRakedSeatV6/);
 assert.match(canvas,/for\(const face of apexGrandstandEnclosureV12\(frame,h,prof,cam,it\)\)/);
@@ -37,8 +37,8 @@ assert.doesNotMatch(canvas,/if\(!prof\.hybridGrandstand\)\{polyCam\(leftWall/);
 assert.doesNotMatch(webgl,/if\(!prof\.hybridGrandstand\)\{webglPushCamPoly\(leftWall/);
 assert.match(canvas,/polyCam\(\[low3\[j\],low3\[k\],raked3\[k\],raked3\[j\]\]/,'Canvas steps cannot hide seats');
 assert.match(webgl,/webglPushCamQuad\(low\[j\],low\[k\],raked\[k\],raked\[j\]/,'WebGL steps cannot hide seats');
-assert.match(canvas,/apexGrandstandRakedSeatV6\(aisle,frame,h,cam,\.038\)/);
-assert.match(webgl,/apexGrandstandRakedSeatV6\(aisle,frame,h,cam,\.038\)/);
+assert.match(canvas,/apexGrandstandRakedSeatV6\(aisle,frame,h,cam,\.038,it,level\)/);
+assert.match(webgl,/apexGrandstandRakedSeatV6\(aisle,frame,h,cam,\.038,it,level\)/);
 
 // V13 front banners: deterministic varied cloth flags on the outer face.
 // Geometry comes from one shared helper, so Canvas/WebGL cannot diverge.
@@ -223,7 +223,7 @@ assert.doesNotMatch(canvas,/const textureCrowd=apexGrandstandTexturesV5Ready\(pr
  'Canvas must layer near 3D spectators over rear texture rows');
 assert.doesNotMatch(webgl,/const textureCrowd=apexGrandstandTexturesV5Ready\(prof\)&&gb\.tier<2/,
  'WebGL must layer near 3D spectators over rear texture rows');
-assert.match(canvas,/rowDepth=dep\*\(prof\.hybridGrandstand\?\(\.055\+\.39\*rowFrac\)/,
+assert.match(canvas,/rowDepth=dep\*\(tierRow\?tierRow\.depthFraction/,
  'Near 3D spectators must live in front of rear texture rows');
 for(const isMobile of [false,true]){
  mobile=isMobile;
@@ -270,7 +270,7 @@ const stand={sourceId:'test-grandstand',anchor:{x:3,z:7},side:1,
  worldFootprint:[[0,0],[64,0],[64,16],[0,16]]};
 pressure=0;mobile=false;
 const panels=renderer.deck(stand,{hybridGrandstand:true},frame,14,full,{});
-assert.match(canvas,/apexGrandstandBand\(it\.worldFootprint,it\.anchor\|\|\{\},it\.side\|\|1,\.015,\.985,it\)/, 'Crowd must extend to the first and last seating rows');
+assert.match(canvas,/Math\.max\(\.015,level\.d0\),Math\.min\(\.985,level\.d1\),it\)/, 'Each tier crowd deck must cover its whole surface');
 assert.match(canvas,/frontTop=h\*\.12/, 'Front enclosure must stay below the first spectator tier');
 assert.match(canvas,/kind==='rearWall'\?rearTop:h\*\(\.19\+\.60\*d\)/,
  'Side and rear closure follow the underside of the seating ramp');
@@ -281,9 +281,9 @@ assert.match(webgl,/bt=apexGrandstandGroundCam\(fp,prof\.hybridGrandstand\?h\*\.
 assert.match(canvas,/crowdBase=seat\+lift/,'Crowd strip feet must not remain at the seat origin');
 assert.match(canvas,/p2=apexGrandstandWorldCam\(frame,\.982,depth,crowdBase,cam\)/);
 assert.match(canvas,/p3=apexGrandstandWorldCam\(frame,\.018,depth,crowdBase,cam\)/);
-assert.match(canvas,/base=\(prof\.hybridGrandstand\?apexGrandstandRakedSeatYV6\(h,rowDepth\/dep\):seatY\)\+\.095\+/,
+assert.match(canvas,/apexGrandstandTierHeightV14\(tierRow\.section,rowDepth\/dep\)/,
  'Individual 3D bodies must rise above the slope, with stable variation');
-assert.match(canvas,/apexGrandstandRakedSeatV6\(piece,frame,h,cam,\.18\)/,
+assert.match(canvas,/apexGrandstandRakedSeatV6\(region,frame,h,cam,\.18,it,level\)/,
  'Deck must be slightly raised to avoid sinking under the seats');
 assert.match(canvas,/start=tier===2\?\.035:\.025,end=\.975/, 'LOD must place standing crowd into front rows');
 assert.ok(Math.min(...panels.flat().map(v=>v.v))<.06, 'Front of grandstand requires spectator coverage');
@@ -300,6 +300,81 @@ assert.equal(renderer.deckStats.builds,1,'Clip geometry must be cached, not rebu
 assert.ok(renderer.deckStats.hits>=1);
 assert.equal(renderer.deck(stand,{hybridGrandstand:true},frame,14,empty,{}).length,0,'Empty grandstands must have no crowd decal');
 assert.equal(renderer.deck(stand,{hybridGrandstand:true},frame,14,half,{}).length,0,'Practice should use partial LOD sprites, not fully occupied deck');
+// V14: stadium-style independent amphitheatres, not one continuous ramp.
+// SVG attributes are explicit; if not supplied, both SVG and generated
+// grandstands remain single tier without changing legacy behaviour.
+const sectionsStart=canvas.indexOf('// V14: real independent amphitheatre decks'),
+ sectionsEnd=canvas.indexOf('// 6A preview · Tribunas v3',sectionsStart);
+assert.ok(sectionsStart>=0&&sectionsEnd>sectionsStart,'Missing shared 1/2/3 tier builder');
+const levelsFn=new Function('clamp','apexGrandstandWorldCam','apexStaticSceneryGroundY','worldToCamera',
+ canvas.slice(sectionsStart,sectionsEnd)+';return {sections:apexGrandstandTierSectionsV14,structure:apexGrandstandTierStructureV14,forRow:apexGrandstandTierSectionForRowV14,ramp:apexGrandstandRakedSeatV6};')(
+ (x,a,b)=>Math.max(a,Math.min(b,x)),(frame,u,depth,y)=>({x:u*frame.span,y,z:depth}),
+ ()=>0,(x,y,z)=>({x,y,z}));
+for(const n of [1,2,3]){
+ const tiers=levelsFn.sections(18,{tierCount:n,tierOverhangM:1.5},frame);
+ assert.equal(tiers.length,n,'Exactly one deck per amphitheatre');
+ assert.ok(tiers.every(t=>t.y1>t.y0&&t.d1>t.d0),'Each tier must rise independently');
+ for(let i=1;i<tiers.length;i++){
+  assert.ok(tiers[i].y0>tiers[i-1].y1+.3,'Upper amphitheatre must stand structurally ABOVE previous deck');
+  assert.ok(tiers[i].d0<tiers[i-1].d1,'Upper amphitheatre must have a genuine overhang');
+ }
+ const structure=levelsFn.structure({tierCount:n,tierOverhangM:1.5},frame,18,{});
+ assert.equal(structure.length,(n-1)*5,'Every upper tier needs concourse, fascia, underside, rail and beam');
+ assert.ok(structure.every(f=>f.poly.length===4&&f.poly.every(p=>[p.x,p.y,p.z].every(Number.isFinite))),
+  'Upper-tier 3D panels should remain valid');
+ if(n>1){
+  const multiStand={sourceId:'tier-'+n,anchor:{x:1,z:1},side:1,tierCount:n,tierOverhangM:1.5,
+   worldFootprint:[[0,0],[64,0],[64,16],[0,16]]};
+  const decks=renderer.deck(multiStand,{hybridGrandstand:true},frame,18,full,{});
+  assert.equal(decks.length,n*2,'Every amphitheatre gets both sides of the central aisle textured');
+  assert.ok(decks.every(d=>d.every(v=>Number.isFinite(v.y))),
+   'No stretched texturing between levels');
+  const spectators=renderer.crowd(frame,18,{hybridGrandstand:true},{tier:2},full,{},multiStand);
+  assert.ok(spectators.length>=8,'Audience must populate the separate 3D levels');
+  const vals=tiers.map(t=>spectators.filter(row=>row[0].z/frame.depth>=t.d0-.001&&row[0].z/frame.depth<=t.d1+.001));
+  assert.ok(vals.every(x=>x.length>0),'Each tier requires spectators of its own');
+ }
+}
+assert.match(canvas,/for\(const level of tierLevels\)\{for\(let ri=0;ri<tierRows;ri\+\+\)/);
+assert.match(webgl,/for\(const level of tierLevels\)\{for\(let ri=0;ri<tierRows;ri\+\+\)/);
+assert.match(canvas,/apexGrandstandTierStructureV14\(it,frame,h,cam\)/);
+assert.match(webgl,/apexGrandstandTierStructureV14\(it,frame,h,cam\)/);
+const activeSvgFiles=[
+ ['circuits/svg/apex26_14-spain_circuito-propuesta-20261110.svg',54],
+ ['circuits/svg/apex26_01-australia_circuito-propuesta-20261111-v2.svg',30]
+];
+for(const [file,count] of activeSvgFiles){
+ const xml=read(file);
+ const stands=[...xml.matchAll(/<(?:rect|polygon|path|g)\b[^>]*data-apex-type="grandstand"[^>]*>/g)].map(m=>m[0]);
+ assert.equal(stands.length,count,'Active saved SVG grandstand count changed for '+file);
+ for(const stand of stands)for(const attr of ['data-apex-height','data-apex-grandstand-style',
+ 'data-apex-roof','data-apex-tier-count','data-apex-front-edge',
+ 'data-apex-facing-offset-deg','data-apex-tier-overhang']){
+  assert.ok(stand.includes(attr+'='),'Missing '+attr+' in '+file);
+ }
+ assert.ok(stands.every(v=>/data-apex-tier-count="[123]"/.test(v)),
+  'Tier-count must be 1/2/3 on every saved SVG grandstand');
+}
+assert.match(canvas,/node\.tierCount=Number\.isInteger\(tierAttribute\)/);
+assert.match(canvas,/node\.frontEdgeIndex=frontEdgeAttribute!==null/);
+assert.match(canvas,/node\.facingOffsetDeg=Number\.isFinite\(offsetAttribute\)/);
+const orientationSource=canvas.slice(canvas.indexOf('function apexGrandstandOutlineV14('),canvas.indexOf('function apexGrandstandBand('));
+const orientation=new Function('nearestTrackState',orientationSource+';return apexGrandstandFrontEdge;')(
+ (x,z)=>({dist:Math.abs(z)+3}));
+const samples=[];
+for(let x=0;x<=60;x+=5)samples.push([x,0]);
+for(let y=5;y<=16;y+=5)samples.push([60,y]);
+samples.push([60,16]);
+for(let x=55;x>=0;x-=5)samples.push([x,16]);
+for(let y=11;y>=0;y-=5)samples.push([0,y]);
+const testFront={worldFootprint:samples,frontEdgeIndex:0,facingOffsetDeg:0};
+const chosen=orientation(testFront);
+assert.ok(chosen.len>50,'SVG front-edge must identify a complete side, not one sampled 5m segment');
+assert.equal(chosen.source,'svg-front-edge');
+assert.equal(testFront.worldFootprint,samples,'Orientation metadata cannot rewrite authored SVG footprint');
+const autoFront=orientation({worldFootprint:samples});
+assert.ok(autoFront.len>10,'Automatic front-facing detection must use logical edges');
+
 // Universal coverage: retain explicit user-drawn SVG footprints, but enrich
 // older calendar and extra-circuit landmarks that only have an anchor.
 const syntheticSource=canvas.slice(canvas.indexOf('function apexGrandstandEnsureFootprintV10('),canvas.indexOf('function apexGrandstandFrontEdge('));
@@ -360,5 +435,5 @@ for(const [source,start,end] of [
  assert.ok(i>=0&&j>i);
  new Function('for(let k=0;k<1;k++){if(false){}'+source.slice(i+1,j)+'}}');
 }
-console.log(JSON.stringify({test:'grandstand-texture-v13-flags-grandstands-preview',atlases:3,vertices:textured.length,
+console.log(JSON.stringify({test:'grandstand-texture-v14-svg-amphitheatres-preview',atlases:3,vertices:textured.length,
  crowdMedium:medium.length,pressureCap:lowPerf.length,previewOnly:true,ok:true}));

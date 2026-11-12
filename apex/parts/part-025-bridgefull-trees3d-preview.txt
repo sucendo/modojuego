@@ -4528,22 +4528,26 @@ function webglPushCircuitLandmarks(cam,pitch){
        const bp=apexGrandstandGroundCam(fp,.02,cam),bt=apexGrandstandGroundCam(fp,prof.hybridGrandstand?h*.07:h*.18,cam);
        webglPushCamPoly(bp,pitch,shadeColor(col,-30),.60,-.004);
        for(let j=0;j<fp.length;j++){const k=(j+1)%fp.length;webglPushCamQuad(bp[j],bp[k],bt[k],bt[j],pitch,j&1?shadeColor(col,-24):shadeColor(col,-19),.60,-.005);}
-       for(let ri=0;ri<rows;ri++){
-         const t0=ri/rows,t1=(ri+1)/rows,band=apexGrandstandBand(fp,a,side,t0,t1,it);if(band.length<3)continue;
-         const yTop=h*(.20+.60*t1),yLow=h*(.20+.60*t0),top=apexGrandstandGroundCam(band,yTop,cam),low=apexGrandstandGroundCam(band,yLow,cam);
-         const raked=prof.hybridGrandstand&&frame?apexGrandstandRakedSeatV6(band,frame,h,cam):top;
+       const tierLevels=apexGrandstandTierSectionsV14(h,it,frame),
+         tierRows=Math.max(2,Math.ceil(rows/tierLevels.length));
+       for(const level of tierLevels){for(let ri=0;ri<tierRows;ri++){
+         const t0=level.d0+(level.d1-level.d0)*ri/tierRows,t1=level.d0+(level.d1-level.d0)*(ri+1)/tierRows,band=apexGrandstandBand(fp,a,side,t0,t1,it);if(band.length<3)continue;
+         const yTop=apexGrandstandTierHeightV14(level,t1),yLow=apexGrandstandTierHeightV14(level,t0),top=apexGrandstandGroundCam(band,yTop,cam),low=apexGrandstandGroundCam(band,yLow,cam);
+         const raked=prof.hybridGrandstand&&frame?apexGrandstandRakedSeatV6(band,frame,h,cam,0,it,level):top;
          const seatBase=ri%3===0?(prof.seatAlt||shadeColor(col,5)):(ri%3===1?(prof.seatAlt2||shadeColor(col,12)):(prof.seat||col));
          webglPushCamPoly(raked,pitch,seatBase,.60,-.008);
          if(frame&&apexGrandstandTexturesV5Ready(prof)){
-           apexGrandstandTextureQueuePolyGl(apexGrandstandSeatTextureV5Vertices(band,raked,frame,ri,rows),apexGrandstandSeatTextureKeyV10(prof),pitch,.055);
+           apexGrandstandTextureQueuePolyGl(apexGrandstandSeatTextureV5Vertices(band,raked,frame,ri,tierRows,t0,t1),apexGrandstandSeatTextureKeyV10(prof),pitch,.055);
            apexGrandstandTextureV5Stats.seatPolys++;
          }
          if(frame&&gb.tier>=1&&(gb.tier===2||frame.span>30)){
           const aisle=apexMadridGrandstandAisle(band,frame);
-          if(aisle.length>=3)webglPushCamPoly(prof.hybridGrandstand?apexGrandstandRakedSeatV6(aisle,frame,h,cam,.038):apexGrandstandGroundCam(aisle,yTop+.025,cam),pitch,'#b7c5d0',.60,-.010);
+          if(aisle.length>=3)webglPushCamPoly(prof.hybridGrandstand?apexGrandstandRakedSeatV6(aisle,frame,h,cam,.038,it,level):apexGrandstandGroundCam(aisle,yTop+.025,cam),pitch,'#b7c5d0',.60,-.010);
          }
          if(lod<=1)for(let j=0;j<band.length;j++){const k=(j+1)%band.length;webglPushCamQuad(low[j],low[k],raked[k],raked[j],pitch,(ri&1)?shadeColor(col,-16):shadeColor(col,-11),.60,-.009);}
-       }
+       }}
+       for(const platform of apexGrandstandTierStructureV14(it,frame,h,cam))
+         webglPushCamPoly(platform.poly,pitch,prof[platform.kind]||prof.support||col,.60,-.011);
        for(const face of apexGrandstandEnclosureV12(frame,h,prof,cam,it)){
          webglPushCamPoly(face.poly,pitch,prof[face.kind]||col,.60,-.010);
        }
@@ -4562,7 +4566,7 @@ function webglPushCircuitLandmarks(cam,pitch){
               apexGrandstandTextureV5Stats.crowdDeckPolys++;
           }
           let texturedStrips=0;
-          if(textureCrowd)for(const strip of apexGrandstandCrowdTextureV5Strips(frame,h,prof,gb,att,cam)){
+          if(textureCrowd)for(const strip of apexGrandstandCrowdTextureV5Strips(frame,h,prof,gb,att,cam,it)){
             if(apexGrandstandTextureQueuePolyGl(strip,apexGrandstandTextureV5Keys.crowd,pitch,.067))texturedStrips++;
           }
           apexGrandstandTextureV5Stats.crowdStrips+=texturedStrips;
