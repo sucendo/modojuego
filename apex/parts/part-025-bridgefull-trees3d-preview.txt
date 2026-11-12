@@ -4094,7 +4094,7 @@ function webglPushPitLaneOnSegment(a,b,cam,pitch){
        aInner=webglTrackPointCamera(a.s,pa.centerLat-pa.side*wA,cam,.014),
        bOuter=webglTrackPointCamera(b.s,pb.centerLat+pb.side*wB,cam,.014),
        bInner=webglTrackPointCamera(b.s,pb.centerLat-pb.side*wB,cam,.014);
- webglPushCamQuad(aInner,aOuter,bOuter,bInner,pitch,'#555b61',.58,-.022);
+ webglPushCamQuad(aInner,aOuter,bOuter,bInner,pitch,apexSurfaceTintV152('ASPHALT','#555b61',(renderRibbonFrameAt(a.s).x+renderRibbonFrameAt(b.s).x)*.5,(renderRibbonFrameAt(a.s).z+renderRibbonFrameAt(b.s).z)*.5,(a.z+b.z)*.5),.58,-.022);
 
  const edge=.055;
  const ai2=webglTrackPointCamera(a.s,pa.centerLat-pa.side*(wA-edge),cam,.020),
@@ -4126,7 +4126,7 @@ function webglPushPitLaneOnSegment(a,b,cam,pitch){
 }
 
 function webglPushExactPitLane(cam,pitch){
- for(const it of collectExactPitRenderItems(cam)){const d=it.data,A=d.A0,B=d.A1,C=d.B1,D=d.B0;if(d.brand){apexSponsorTexturePaint([A,D,C,B],d.brand,pitch,'webgl2');continue}webglPushCamQuad(A,B,C,D,pitch,d.color||'#555b61',.58,d.color==='#ffe16a'?-.034:-.022);if(d.color)continue;const e0=camMix(A,B,.018),e1=camMix(D,C,.018),f0=camMix(B,A,.018),f1=camMix(C,D,.018);webglPushCamQuad(A,e0,e1,D,pitch,'rgba(248,249,250,.92)',.58,-.034);webglPushCamQuad(f0,B,C,f1,pitch,'rgba(248,249,250,.82)',.58,-.034)}
+ for(const it of collectExactPitRenderItems(cam)){const d=it.data,A=d.A0,B=d.A1,C=d.B1,D=d.B0;if(d.brand){apexSponsorTexturePaint([A,D,C,B],d.brand,pitch,'webgl2');continue}webglPushCamQuad(A,B,C,D,pitch,d.material?apexSurfaceTintV152('ASPHALT',d.color||'#555b61',d.material.x,d.material.z,d.z):d.color||'#555b61',.58,d.color==='#ffe16a'?-.034:-.022);if(d.color)continue;const e0=camMix(A,B,.018),e1=camMix(D,C,.018),f0=camMix(B,A,.018),f1=camMix(C,D,.018);webglPushCamQuad(A,e0,e1,D,pitch,'rgba(248,249,250,.92)',.58,-.034);webglPushCamQuad(f0,B,C,f1,pitch,'rgba(248,249,250,.82)',.58,-.034)}
 }
 
 function webglPushSurfaceMarkings(segments,cam,pitch){
