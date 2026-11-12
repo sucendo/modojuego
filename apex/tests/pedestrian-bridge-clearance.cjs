@@ -77,8 +77,8 @@ assert.match(perf6aPreview,/cache:["']no-cache["']/,
 for(const mode of modes){
  const src=fs.readFileSync(path.join(root,mode.filename),'utf8');
  const p=src.indexOf(mode.start),q=src.indexOf(mode.end,p),section=src.slice(p,q);
- assert.match(section,/visual\?\.deckBaseY/);
- assert.match(section,/visual\?\.deckTopY/);
+ assert.match(section,/visual\??\.deckBaseY/);
+ assert.match(section,/visual\??\.deckTopY/);
 }
 console.log(JSON.stringify({test:'pedestrian-bridge-clearance',renderers:modes.length,
  trackShiftM:first.supports.map(s=>s.shift),pitShiftM:pitVisual.supports[1].shift,
