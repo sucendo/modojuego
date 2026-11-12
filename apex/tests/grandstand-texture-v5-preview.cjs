@@ -26,12 +26,19 @@ const textureWindow={},context={window:textureWindow,Image:undefined};
 vm.runInNewContext(textureSource,context);
 const tex=textureWindow.ApexSponsorTextures;
 const originalSponsors=Object.keys(tex.assets);
+assert.match(canvas,/function apexGrandstandRakedSeatV6\(band,frame,h,cam\)/);
+assert.match(canvas,/const raked3=prof\.melbourne&&frame\?apexGrandstandRakedSeatV6/);
+assert.match(webgl,/const raked=prof\.melbourne&&frame\?apexGrandstandRakedSeatV6/);
+assert.match(canvas,/if\(!prof\.melbourne\)for\(let j=0;j<backBand\.length/);
+assert.match(webgl,/if\(!prof\.melbourne\)for\(let j=0;j<backBand\.length/);
+assert.match(canvas,/if\(!prof\.melbourne\)\{polyCam\(leftWall/);
+assert.match(webgl,/if\(!prof\.melbourne\)\{webglPushCamPoly\(leftWall/);
 assert.equal(originalSponsors.length,7,'Existing sponsor texture catalog must be unchanged');
 assert.equal(tex.registerCanvas('invalid',null),null);
 let drawCalls=0;
 const mockCtx={
  fillStyle:null,beginPath(){},moveTo(){},lineTo(){},closePath(){},fill(){},
- ellipse(){},fillRect(){drawCalls++;}
+ ellipse(){},fillRect(){drawCalls++;},scale(){}
 };
 const document={createElement:()=>({width:0,height:0,getContext:()=>mockCtx})};
 const frame={span:64,depth:16,edge:{a:[0,0],b:[64,0],tx:1,tz:0,nx:0,nz:1}};
@@ -52,12 +59,21 @@ assert.equal(Object.keys(tex.assets).length,originalSponsors.length);
 for(const key of Object.values(renderer.keys)){
  const item=tex.entry(key);
  assert.equal(item.status,'ready');
- assert.equal(item.canvas.width,512);
- assert.equal(item.canvas.height,128);
+ assert.equal(item.canvas.width,1024);
+ assert.equal(item.canvas.height,256);
  assert.equal(tex.load(key),item,'Dynamic texture should be cached');
 }
 const band=[[0,8],[64,8],[64,9.6],[0,9.6]],top=band.map(p=>({x:p[0],y:10,z:p[1]}));
 const textured=renderer.seat(band,top,frame,5,10);
+const rakedSource=canvas.slice(canvas.indexOf('function apexGrandstandRakedSeatYV6('),canvas.indexOf('// 6A preview · Tribunas v3'));
+const raked=new Function('clamp','apexStaticSceneryGroundY','worldToCamera',
+ rakedSource+';return {ramp:apexGrandstandRakedSeatV6,height:apexGrandstandRakedSeatYV6};')(
+ (x,a,b)=>Math.max(a,Math.min(b,x)),()=>0,(x,y,z)=>({x,y,z}));
+const ramp=raked.ramp([[0,0],[64,0],[64,16],[0,16]],frame,14,{});
+assert.equal(ramp.length,4);
+assert.ok(Math.abs(ramp[0].y-(14*.20+.11))<.0001,'Front seating must begin near the track');
+assert.ok(Math.abs(ramp[2].y-(14*.80+.11))<.0001,'Rear seating rises by full stand height');
+assert.ok(ramp[2].y-ramp[0].y>8,'Seating is inclined, never a thin top strip');
 assert.equal(textured.length,4);
 assert.ok(textured.every(p=>Number.isFinite(p.u)&&p.v>=0&&p.v<=1),'UV must stay finite/in-bounds per tier');
 assert.ok(textured[1].u>textured[0].u,'UV repeats along grandstand span');
