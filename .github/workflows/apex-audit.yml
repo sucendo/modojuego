@@ -38,6 +38,8 @@ jobs:
         run: node apex/tests/grandstand-texture-v5-preview.cjs
       - name: Asphalt V15.1 SVG material and colour groups (preview only)
         run: node apex/tests/asphalt-material-v15-preview.cjs
+      - name: Asphalt V15.1.1 per-fragment GPU material (preview only)
+        run: node apex/tests/asphalt-fragment-v151-preview.cjs
       - name: Full SVG pedestrian bridges (preview only)
         run: node apex/tests/pedestrian-bridge-fullspan-preview.cjs
       - name: Mobile trees 3D preview option (isolated)
@@ -117,6 +119,11 @@ jobs:
         run: |
           npm install --prefix "$RUNNER_TEMP/apex-browser" --no-package-lock --no-save playwright@1.62.1
           node "$RUNNER_TEMP/apex-browser/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Asphalt V15.1.1 — verify visible WebGL pixels (preview only)
+        env:
+          PLAYWRIGHT_MODULE_PATH: ${{ runner.temp }}/apex-browser/node_modules/playwright
+          APEX_AUDIT_DEVICE: ${{ matrix.device }}
+        run: node apex/tests/asphalt-fragment-v151-browser.cjs
       - name: Drive complete circuits in Chromium with software WebGL
         env:
           PLAYWRIGHT_MODULE_PATH: ${{ runner.temp }}/apex-browser/node_modules/playwright
