@@ -57,6 +57,14 @@ function ensureTexture(gl,key){
  e.texture=tx;e.gl=gl;state.uploads++;state.bytes+=Math.ceil(e.width*e.height*4*4/3);
  return tx;
 }
+// Preview 6A: accept pre-baked procedural atlases without changing sponsor assets.
+function registerCanvas(key,canvas){
+ if(typeof key!=='string'||!key.startsWith('apex-grandstand-')||!canvas||!canvas.width||!canvas.height)return null;
+ const existing=entries.get(key);if(existing)return existing;
+ const item={key,status:'ready',image:null,canvas,error:null,gl:null,texture:null,
+   width:canvas.width,height:canvas.height};
+ entries.set(key,item);state.loaded++;return item;
+}
 function resetGl(gl){
  for(const e of entries.values()){
   if(e.texture&&e.gl===gl){try{gl.deleteTexture(e.texture);}catch(_e){}e.texture=null;e.gl=null;}
@@ -64,7 +72,7 @@ function resetGl(gl){
 }
 function beginFrame(){state.textureTriangles=0;state.textureQuads=0;state.drawCalls=0;state.missing=0;}
 function accounting(triangles,quads){state.textureTriangles+=triangles;state.textureQuads+=quads;}
-global.ApexSponsorTextures=Object.freeze({assets:ASSETS,entry,load,ensureTexture,resetGl,beginFrame,accounting,state});
+global.ApexSponsorTextures=Object.freeze({assets:ASSETS,entry,load,registerCanvas,ensureTexture,resetGl,beginFrame,accounting,state});
 // Fetch while in menus: rasterize each vector once, not on the racing loop.
 for(const key of Object.keys(ASSETS))load(key);
 })(window);
