@@ -46,7 +46,7 @@ const asphalt=makeGroup('#33373b'),same=makeGroup('#33373b'),paint=makeGroup('#3
 assert.equal(asphalt,same,'same asphalt must be batchable');
 assert.notEqual(asphalt,paint,'piano and asphalt must never share textured group');
 assert.equal(s.groupCount,2);
-for(let i=0;i<60;i++)makeGroup('#'+i.toString(16).padStart(6,'0'));
+for(let i=0;i<62;i++)makeGroup('#'+i.toString(16).padStart(6,'0'));
 assert.throws(()=>makeGroup('#abcdef'),/budget exceeded/,'phase 6 colour budget must remain bounded');
 console.log(JSON.stringify({phase:'V15.1.1',fragmentWorldCoords:true,realGrain:true,
  analyticLod:true,wetness:true,kerbsUntouched:true,gpuGroupBudget:true,groundUntouched:true,ok:true}));
