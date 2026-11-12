@@ -3358,12 +3358,14 @@ function apexGrandstandSeatTextureV10Ready(prof,api){
  c.fillRect(0,0,cv.width,cv.height);c.globalCompositeOperation='source-over';c.globalAlpha=1;
  return !!api.registerCanvas(key,cv);
 }
-function apexGrandstandSeatTextureV5Vertices(band,top,frame,ri,rows){
+function apexGrandstandSeatTextureV5Vertices(band,top,frame,ri,rows,depthStart=null,depthEnd=null){
  const e=frame.edge,inv=1/Math.max(.01,frame.depth),cycle=16*.60;
  return top.map((p,i)=>{
   const w=band[i],dx=w[0]-e.a[0],dz=w[1]-e.a[1];
   const along=dx*e.tx+dz*e.tz,depth=dx*e.nx+dz*e.nz;
-  return {...p,u:along/cycle,v:clamp((depth*inv-ri/rows)*rows,0,1)};
+  const v=depthStart===null?clamp((depth*inv-ri/rows)*rows,0,1):
+   clamp((depth*inv-depthStart)/Math.max(.0001,depthEnd-depthStart),0,1);
+  return {...p,u:along/cycle,v};
  });
 }
 // Stable integer mix: avoid visual seams, synchronized colour stripes and
@@ -3450,17 +3452,81 @@ function apexGrandstandCrowdDeckV8(it,prof,frame,h,att,cam){
 // Tribunas v6 · Melbourne: the deck is raked towards the circuit, not a
 // horizontal card per step. The front rail is low and seats rise rearward.
 // The old per-tier top faces were nearly edge-on from a driver's eye height.
+// V14: real independent amphitheatre decks. Each level has its own rise,
+// concourse/transfer platform and visible upper-deck soffit, not one stepped
+// ramp. d0/d1 are fractions of the original SVG footprint (no SVG resizing).
+function apexGrandstandTierSectionsV14(h,it=null,frame=null){
+ const n=Math.max(1,Math.min(3,Math.round(Number(it?.tierCount)||1))),
+  depth=Math.max(4,Number(frame?.depth)||16),
+  overlap=Math.min(.12,Math.max(0,Number(it?.tierOverhangM??1))/depth);
+ if(n===1)return[{level:0,d0:0,d1:1,y0:h*.20+.11,y1:h*.80+.11}];
+ const levels=n===2?[
+  {d0:.025,d1:.555,y0:.17,y1:.46},
+  {d0:.555-overlap,d1:.985,y0:.56,y1:.83}
+ ]:[
+  {d0:.025,d1:.40,y0:.14,y1:.34},
+  {d0:.40-overlap,d1:.715,y0:.46,y1:.64},
+  {d0:.715-overlap,d1:.985,y0:.75,y1:.87}
+ ];
+ return levels.map((v,i)=>({...v,level:i,d0:Math.max(.01,v.d0),y0:v.y0*h+.11,y1:v.y1*h+.11}));
+}
+function apexGrandstandTierHeightV14(section,frac){
+ if(!section)return 0;
+ return section.y0+(section.y1-section.y0)*clamp(
+  (frac-section.d0)/Math.max(.001,section.d1-section.d0),0,1);
+}
+function apexGrandstandTierSectionForRowV14(it,frame,h,rowIndex,rowCount){
+ const sections=apexGrandstandTierSectionsV14(h,it,frame),n=sections.length,
+  pos=clamp((rowIndex+.5)/Math.max(1,rowCount),0,.999999),
+  ti=Math.floor(pos*n),section=sections[ti],
+  local=(pos*n-ti);
+ return {section,depthFraction:section.d0+(section.d1-section.d0)*local};
+}
+function apexGrandstandTierStructureV14(it,frame,h,cam){
+ const levels=apexGrandstandTierSectionsV14(h,it,frame);
+ if(!frame||levels.length<2)return[];
+ const panels=[],d=frame.depth,project=(u,frac,y)=>
+   apexGrandstandWorldCam(frame,u,frac*d,y,cam);
+ for(let i=1;i<levels.length;i++){
+  const upper=levels[i],lower=levels[i-1],f=upper.d0,
+   floor=upper.y0-.09,soffit=upper.y0-Math.max(.42,h*.060),
+   behind=Math.min(upper.d1,f+.075);
+  // The front wall of each upper amphitheatre is suspended above the
+  // previous level. It is a genuine separate seating deck.
+  panels.push({kind:'tierFascia',level:i,poly:[
+   project(0,f,soffit),project(1,f,soffit),
+   project(1,f,upper.y0+.12),project(0,f,upper.y0+.12)]});
+  panels.push({kind:'concourse',level:i,poly:[
+   project(0,f,floor),project(1,f,floor),
+   project(1,behind,floor),project(0,behind,floor)]});
+  const rear=upper.d1,underRear=upper.y1-Math.max(.42,h*.060);
+  panels.push({kind:'tierUnderDeck',level:i,poly:[
+   project(0,f,soffit),project(1,f,soffit),
+   project(1,rear,underRear),project(0,rear,underRear)]});
+  panels.push({kind:'tierRail',level:i,poly:[
+   project(0,f,upper.y0+.12),project(1,f,upper.y0+.12),
+   project(1,f,upper.y0+.62),project(0,f,upper.y0+.62)]});
+  // Horizontal beam separating the two amphitheatres.
+  const separatorY=Math.max(lower.y1+.15,soffit-.12);
+  panels.push({kind:'tierBeam',level:i,poly:[
+   project(0,f,separatorY-.16),project(1,f,separatorY-.16),
+   project(1,f,separatorY),project(0,f,separatorY)]});
+ }
+ return panels;
+}
 function apexGrandstandRakedSeatYV6(h,depthFraction){
  return h*(.20+.60*clamp(depthFraction,0,1))+.11;
 }
-function apexGrandstandRakedSeatV6(band,frame,h,cam,offset=0){
+function apexGrandstandRakedSeatV6(band,frame,h,cam,offset=0,it=null,section=null){
  const e=frame.edge,span=Math.max(1,frame.span),dep=Math.max(1,frame.depth);
  return band.map(v=>{
   const dx=v[0]-e.a[0],dz=v[1]-e.a[1],
     along=dx*e.tx+dz*e.tz,depth=dx*e.nx+dz*e.nz,
-    u=clamp(along/span,0,1);
+    u=clamp(along/span,0,1),
+    y=section?apexGrandstandTierHeightV14(section,depth/dep):
+      apexGrandstandRakedSeatYV6(h,depth/dep);
   const ground=apexStaticSceneryGroundY(frame,u,depth,v[0],v[1]);
-  return worldToCamera(v[0],ground+apexGrandstandRakedSeatYV6(h,depth/dep)+offset,v[1],cam);
+  return worldToCamera(v[0],ground+y+offset,v[1],cam);
  });
 }
 // 6A preview · Tribunas v3: arriostramiento ligero tras el graderío.
