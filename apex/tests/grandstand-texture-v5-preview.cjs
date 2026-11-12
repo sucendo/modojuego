@@ -17,7 +17,7 @@ assert.match(webgl,/apexGrandstandTextureQueuePolyGl\(strip,/);
 assert.match(webgl,/if\(!textureCrowd\|\|!texturedStrips\)for\(const tile of apexGrandstandCrowdMosaic/);
 assert.match(canvas,/apexGrandstandTextureDrawPolyCanvas\(/);
 assert.match(canvas,/apexGrandstandTextureV5Keys\.crowd,pitch/);
-assert.match(canvas,/apexGrandstandTextureV5Keys\.seats,pitch/);
+assert.match(canvas,/apexGrandstandSeatTextureKeyV10\(prof\),pitch/);
 const a=canvas.indexOf('const apexGrandstandTextureV5Keys='),b=canvas.indexOf('// 6A preview · Tribunas v3',a);
 assert.ok(a>=0&&b>a,'Grandstand texture v5 functions must be shared before both render paths');
 const snippet=canvas.slice(a,b);
@@ -27,12 +27,12 @@ vm.runInNewContext(textureSource,context);
 const tex=textureWindow.ApexSponsorTextures;
 const originalSponsors=Object.keys(tex.assets);
 assert.match(canvas,/function apexGrandstandRakedSeatV6\(band,frame,h,cam,offset=0\)/);
-assert.match(canvas,/const raked3=prof\.melbourne&&frame\?apexGrandstandRakedSeatV6/);
-assert.match(webgl,/const raked=prof\.melbourne&&frame\?apexGrandstandRakedSeatV6/);
-assert.match(canvas,/if\(!prof\.melbourne\)for\(let j=0;j<backBand\.length/);
-assert.match(webgl,/if\(!prof\.melbourne\)for\(let j=0;j<backBand\.length/);
-assert.match(canvas,/if\(!prof\.melbourne\)\{polyCam\(leftWall/);
-assert.match(webgl,/if\(!prof\.melbourne\)\{webglPushCamPoly\(leftWall/);
+assert.match(canvas,/const raked3=prof\.hybridGrandstand&&frame\?apexGrandstandRakedSeatV6/);
+assert.match(webgl,/const raked=prof\.hybridGrandstand&&frame\?apexGrandstandRakedSeatV6/);
+assert.match(canvas,/if\(!prof\.hybridGrandstand\)for\(let j=0;j<backBand\.length/);
+assert.match(webgl,/if\(!prof\.hybridGrandstand\)for\(let j=0;j<backBand\.length/);
+assert.match(canvas,/if\(!prof\.hybridGrandstand\)\{polyCam\(leftWall/);
+assert.match(webgl,/if\(!prof\.hybridGrandstand\)\{webglPushCamPoly\(leftWall/);
 assert.match(canvas,/polyCam\(\[low3\[j\],low3\[k\],raked3\[k\],raked3\[j\]\]/,'Canvas steps cannot hide seats');
 assert.match(webgl,/webglPushCamQuad\(low\[j\],low\[k\],raked\[k\],raked\[j\]/,'WebGL steps cannot hide seats');
 assert.match(canvas,/apexGrandstandRakedSeatV6\(aisle,frame,h,cam,\.038\)/);
@@ -43,7 +43,7 @@ assert.equal(tex.registerCanvas('invalid',null),null);
 let drawCalls=0;
 const mockCtx={
  fillStyle:null,beginPath(){},moveTo(){},lineTo(){},closePath(){},fill(){},
- ellipse(){},fillRect(){drawCalls++;},scale(){}
+ ellipse(){},fillRect(){drawCalls++;},scale(){},drawImage(){}
 };
 const document={createElement:()=>({width:0,height:0,getContext:()=>mockCtx})};
 const deckClip=(poly,scalar,bound,above)=>{
@@ -64,16 +64,20 @@ let pressure=0,mobile=false;
 const factory=new Function('window','document','trackData','apexGrandstandSeatTopV4',
  'apexGrandstandWorldCam','apexSceneDetailBudget','mobilePerformanceMode','clamp',
  'apexGrandstandBand','apexClipWorldPolygonScalar','apexStaticSceneryGroundY','worldToCamera',
- snippet+'\nreturn {ready:apexGrandstandTexturesV5Ready,seat:apexGrandstandSeatTextureV5Vertices,crowd:apexGrandstandCrowdTextureV5Strips,deck:apexGrandstandCrowdDeckV8,deckStats:apexGrandstandDeckV8Stats,stats:apexGrandstandTextureV5Stats,keys:apexGrandstandTextureV5Keys};');
+ snippet+'\nreturn {ready:apexGrandstandTexturesV5Ready,seat:apexGrandstandSeatTextureV5Vertices,crowd:apexGrandstandCrowdTextureV5Strips,deck:apexGrandstandCrowdDeckV8,deckStats:apexGrandstandDeckV8Stats,stats:apexGrandstandTextureV5Stats,keys:apexGrandstandTextureV5Keys,seatKey:apexGrandstandSeatTextureKeyV10};');
 const trackData={spec:{dir:'01-australia'}};
 const renderer=factory(textureWindow,document,trackData,seatTop,
  (frame,u,depth,y)=>({x:u*frame.span,y,z:depth}),()=>({pressure}),()=>mobile,(x,a,b)=>Math.max(a,Math.min(b,x)),
  (fp,anchor,side,lo,hi)=>deckClip(deckClip(fp,p=>p[1],lo*frame.depth,true),p=>p[1],hi*frame.depth,false),
  deckClip,()=>0,(x,y,z)=>({x,y,z}));
-assert.equal(renderer.ready({melbourne:false}),false);
-assert.equal(renderer.ready({melbourne:true}),true);
-assert.equal(renderer.ready({melbourne:true}),true);
-assert.equal(renderer.stats.atlasBuilds,1,'Texture atlases must be generated once');
+assert.equal(renderer.ready({}),false);
+assert.equal(renderer.ready({hybridGrandstand:true,melbourne:false,seat:'#24333e'}),true);
+assert.equal(renderer.ready({hybridGrandstand:true,melbourne:true}),true);
+assert.equal(renderer.ready({hybridGrandstand:true,melbourne:true}),true);
+assert.equal(renderer.stats.atlasBuilds,1,'The common crowd atlases must be generated only once');
+assert.ok(tex.entry(renderer.seatKey({hybridGrandstand:true,madrid:true,seat:'#24333e'})),'Madrid should have its own tinted seat atlas');
+assert.notEqual(renderer.seatKey({melbourne:true}),renderer.seatKey({madrid:true,seat:'#24333e'}));
+assert.equal(renderer.ready({hybridGrandstand:true,seat:'#7c8c99'}),true,'Neutral circuit also textures');
 assert.ok(drawCalls>100,'Real seat/crowd pixels must be rasterized');
 assert.equal(Object.keys(tex.assets).length,originalSponsors.length);
 for(const [kind,key] of Object.entries(renderer.keys)){
@@ -109,14 +113,14 @@ assert.doesNotMatch(canvas,/const textureCrowd=apexGrandstandTexturesV5Ready\(pr
  'Canvas must layer near 3D spectators over rear texture rows');
 assert.doesNotMatch(webgl,/const textureCrowd=apexGrandstandTexturesV5Ready\(prof\)&&gb\.tier<2/,
  'WebGL must layer near 3D spectators over rear texture rows');
-assert.match(canvas,/rowDepth=dep\*\(prof\.melbourne\?\(\.055\+\.39\*rowFrac\)/,
+assert.match(canvas,/rowDepth=dep\*\(prof\.hybridGrandstand\?\(\.055\+\.39\*rowFrac\)/,
  'Near 3D spectators must live in front of rear texture rows');
 for(const isMobile of [false,true]){
  mobile=isMobile;
  for(let p=0;p<=3;p++){
   pressure=p;
   for(const tier of [0,1,2]){
-   const strips=renderer.crowd(frame,14,{rows:10,melbourne:true},{tier},full,{});
+   const strips=renderer.crowd(frame,14,{rows:10,hybridGrandstand:true},{tier},full,{});
    assert.ok(strips.length>=5&&strips.length<=13,
     'Race stands must use dense rows even under max pressure: '+JSON.stringify({tier,p,isMobile,count:strips.length}));
    assert.ok(new Set(strips.map(q=>q[0].v.toFixed(5))).size>=3,'Crowd rows must select different sprite bands');
@@ -135,25 +139,25 @@ for(const isMobile of [false,true]){
  }
 }
 pressure=0;mobile=false;
-const near=renderer.crowd(frame,14,{rows:10,melbourne:true},{tier:2},full,{}),
- medium=renderer.crowd(frame,14,{rows:10,melbourne:true},{tier:1},full,{}),
- partial=renderer.crowd(frame,14,{rows:10,melbourne:true},{tier:1},half,{});
+const near=renderer.crowd(frame,14,{rows:10,hybridGrandstand:true},{tier:2},full,{}),
+ medium=renderer.crowd(frame,14,{rows:10,hybridGrandstand:true},{tier:1},full,{}),
+ partial=renderer.crowd(frame,14,{rows:10,hybridGrandstand:true},{tier:1},half,{});
 assert.ok(near.length>=9,'Near stands need dense rear rows behind the 3D crowd');
 assert.ok(medium.length>=9,'Medium stands need substantial spectator depth');
 assert.ok(partial.length>0&&partial.length<medium.length,'Practice occupancy must stay partial');
-assert.equal(renderer.crowd(frame,14,{rows:10,melbourne:true},{tier:0},empty,{}).length,0);
+assert.equal(renderer.crowd(frame,14,{rows:10,hybridGrandstand:true},{tier:0},empty,{}).length,0);
 pressure=3;mobile=true;
-const lowPerf=renderer.crowd(frame,14,{rows:10,melbourne:true},{tier:0},full,{});
+const lowPerf=renderer.crowd(frame,14,{rows:10,hybridGrandstand:true},{tier:0},full,{});
 assert.ok(lowPerf.length>=5,'Pressure may trim density, never collapse to a few rows');
 // Full-deck decal: only race/qualifying, two clipped pieces and a central aisle.
 // Cached polygon clipping remains stable as the camera moves.
 const stand={sourceId:'test-grandstand',anchor:{x:3,z:7},side:1,
  worldFootprint:[[0,0],[64,0],[64,16],[0,16]]};
 pressure=0;mobile=false;
-const panels=renderer.deck(stand,{melbourne:true},frame,14,full,{});
+const panels=renderer.deck(stand,{hybridGrandstand:true},frame,14,full,{});
 assert.match(canvas,/apexGrandstandBand\(it\.worldFootprint,it\.anchor\|\|\{\},it\.side\|\|1,\.015,\.985,it\)/, 'Crowd must extend to the first and last seating rows');
-assert.match(canvas,/prof\.melbourne\?h\*\.16:h\*\.23/, 'Canvas front fascia must not conceal the lower crowd');
-assert.match(webgl,/prof\.melbourne\?h\*\.16:h\*\.23/, 'WebGL front fascia must not conceal the lower crowd');
+assert.match(canvas,/prof\.hybridGrandstand\?h\*\.16:h\*\.23/, 'Canvas front fascia must not conceal the lower crowd');
+assert.match(webgl,/prof\.hybridGrandstand\?h\*\.16:h\*\.23/, 'WebGL front fascia must not conceal the lower crowd');
 assert.match(canvas,/start=tier===2\?\.035:\.025,end=\.975/, 'LOD must place standing crowd into front rows');
 assert.ok(Math.min(...panels.flat().map(v=>v.v))<.06, 'Front of grandstand requires spectator coverage');
 assert.ok(Math.max(...panels.flat().map(v=>v.v))>.94, 'Grandstand rear remains populated');
@@ -162,11 +166,37 @@ assert.ok(panels.every(a=>a.length>=3&&a.every(p=>Number.isFinite(p.u)&&p.v>=0&&
 const leftMax=Math.max(...panels[0].map(v=>v.x)),rightMin=Math.min(...panels[1].map(v=>v.x));
 assert.ok(rightMin-leftMax>=1.9,'Keep central staircase/aisle free of the crowd decal');
 assert.ok(panels.some(a=>Math.max(...a.map(v=>v.y))-Math.min(...a.map(v=>v.y))>5),'Crowd must cover the height of the raked seating');
-assert.equal(renderer.deck(stand,{melbourne:true},frame,14,full,{}).length,2);
+assert.equal(renderer.deck(stand,{hybridGrandstand:true},frame,14,full,{}).length,2);
 assert.equal(renderer.deckStats.builds,1,'Clip geometry must be cached, not rebuilt every frame');
 assert.ok(renderer.deckStats.hits>=1);
-assert.equal(renderer.deck(stand,{melbourne:true},frame,14,empty,{}).length,0,'Empty grandstands must have no crowd decal');
-assert.equal(renderer.deck(stand,{melbourne:true},frame,14,half,{}).length,0,'Practice should use partial LOD sprites, not fully occupied deck');
+assert.equal(renderer.deck(stand,{hybridGrandstand:true},frame,14,empty,{}).length,0,'Empty grandstands must have no crowd decal');
+assert.equal(renderer.deck(stand,{hybridGrandstand:true},frame,14,half,{}).length,0,'Practice should use partial LOD sprites, not fully occupied deck');
+// Universal coverage: retain explicit user-drawn SVG footprints, but enrich
+// older calendar and extra-circuit landmarks that only have an anchor.
+const syntheticSource=canvas.slice(canvas.indexOf('function apexGrandstandEnsureFootprintV10('),canvas.indexOf('function apexGrandstandFrontEdge('));
+const makeFootprint=new Function('clamp','poseAt',syntheticSource+';return apexGrandstandEnsureFootprintV10;')(
+ (x,a,b)=>Math.max(a,Math.min(b,x)),()=>({tx:1,tz:0,nx:0,nz:1}));
+const builtInCircuits=['01-australia','14-spain','02-china','03-japan','04-bahrain','05-saudi-arabia','06-miami','07-imola',
+ '08-monaco','09-canada','10-austria','11-great-britain','12-belgium','13-hungary','15-netherlands','16-italy',
+ '17-azerbaijan','18-singapore','19-united-states','20-mexico','21-brazil','22-las-vegas','23-qatar','24-abu-dhabi',
+ 'jarama','le-mans','nurburgring-nordschleife','nurburgring-gp'];
+for(const [i,circuit] of builtInCircuits.entries()){
+ const stand={type:'grandstand',sourceId:circuit,anchor:{x:i*200,z:25,s:i*120,
+  q:{tx:1,tz:0,nx:0,nz:1}},side:1,length:70+i%5*4,depth:12+i%4*2,height:13};
+ const fp=makeFootprint(stand);
+ assert.equal(fp.length,4,'Legacy grandstand missing universal world footprint in '+circuit);
+ assert.ok(fp.every(p=>p.length===2&&p.every(Number.isFinite)),'Invalid footprint in '+circuit);
+ assert.equal(makeFootprint(stand),fp,'Generated footprints must be reused, never remade per frame');
+ assert.ok(stand._apexGrandstandGeneratedV10);
+}
+const svgStand={type:'grandstand',anchor:{x:0,z:0},worldFootprint:[[0,0],[5,0],[5,4],[0,4]]};
+const authored=svgStand.worldFootprint;
+assert.equal(makeFootprint(svgStand),authored,'User-authored SVG grandstand footprint must remain untouched');
+assert.equal(svgStand._apexGrandstandGeneratedV10,undefined);
+assert.match(canvas,/if\(apexGrandstandEnsureFootprintV10\(it\)\?\.length>=3\)/,'Canvas should render generated stands through same SVG path');
+assert.match(webgl,/if\(apexGrandstandEnsureFootprintV10\(it\)\?\.length>=3\)/,'WebGL should render generated stands through same SVG path');
+assert.doesNotMatch(canvas,/trackData\?\.spec\?\.dir!=='01-australia'\)return false/,'Texture system cannot be gated on Melbourne');
+assert.doesNotMatch(canvas,/if\(!it\|\|!prof\?\.melbourne\|\|!frame/,'Deck texture cannot be Melbourne-only');
 for(const [source,start,end] of [
  [canvas,'}else if(it.type==="grandstand"){','}else if(it.type==="billboard"||it.type==="advertising"){'],
  [webgl,"}else if(it.type==='grandstand'){","}else if(it.type==='gantry'){"]
@@ -175,5 +205,5 @@ for(const [source,start,end] of [
  assert.ok(i>=0&&j>i);
  new Function('for(let k=0;k<1;k++){if(false){}'+source.slice(i+1,j)+'}}');
 }
-console.log(JSON.stringify({test:'grandstand-texture-v9-preview',atlases:3,vertices:textured.length,
+console.log(JSON.stringify({test:'grandstand-texture-v10-universal-preview',atlases:3,vertices:textured.length,
  crowdMedium:medium.length,pressureCap:lowPerf.length,previewOnly:true,ok:true}));
