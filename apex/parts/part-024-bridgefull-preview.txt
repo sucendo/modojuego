@@ -2994,6 +2994,23 @@ function apexClipWorldPolygonScalar(poly,scalar,bound,keepGreater){
  }
  return out;
 }
+// Preview V10. Source SVG footprints stay untouched. Older circuits sometimes
+// supply a procedural grandstand anchor only; make its world footprint once so
+// exactly the same raked seats, roof and crowd pipeline can render it.
+function apexGrandstandEnsureFootprintV10(it){
+ if(!it||it.type!=='grandstand')return null;
+ if(Array.isArray(it.worldFootprint)&&it.worldFootprint.length>=3)return it.worldFootprint;
+ const a=it.anchor;if(!a||!Number.isFinite(a.x)||!Number.isFinite(a.z))return null;
+ const q=a.groundQ||a.q||(Number.isFinite(a.s)?poseAt(a.s):null);
+ if(!q||!Number.isFinite(q.tx)||!Number.isFinite(q.tz)||!Number.isFinite(q.nx)||!Number.isFinite(q.nz))return null;
+ const len=clamp(Number(it.length||it.width)||60,5,440),
+   depth=clamp(Number(it.depth)||14,4,58),side=it.side||1,
+   front=2.5*side,back=(2.5+depth)*side,half=len*.5,
+   point=(along,lat)=>[a.x+along*q.tx+lat*q.nx,a.z+along*q.tz+lat*q.nz];
+ const fp=[point(-half,front),point(half,front),point(half,back),point(-half,back)];
+ it.worldFootprint=fp;it._apexGrandstandGeneratedV10=true;
+ return fp;
+}
 function apexGrandstandFrontEdge(it){
  const fp=it&&it.worldFootprint;if(!Array.isArray(fp)||fp.length<2)return null;let best=null;
  for(let i=0;i<fp.length;i++){
@@ -3043,7 +3060,7 @@ function apexGrandstandGroundCam(polygon,offset,cam){
 function apexGrandstandStyleProfile(it){
  const s=String(it&&(it.grandstandStyle||it.apexStyle||it.style)||'grandstand_open').toLowerCase();
  const seatBase=it&&it.seatColor?it.seatColor:'#6e7982';
- const base={style:s,base:'#4e5760',baseDark:'#3c444b',side:'#59626a',seat:seatBase,seatAlt:shadeColor(seatBase,8),seatAlt2:shadeColor(seatBase,15),rail:'rgba(231,237,241,.72)',roof:'#d4dbe0',roofDark:'#b3bcc3',support:'#9da7ae',front:'#343b42',covered:false,rows:Math.max(4,Math.round(Number(it&&it.seatRows)||9))};
+ const base={style:s,hybridGrandstand:true,base:'#4e5760',baseDark:'#3c444b',side:'#59626a',seat:seatBase,seatAlt:shadeColor(seatBase,8),seatAlt2:shadeColor(seatBase,15),rail:'rgba(231,237,241,.72)',roof:'#d4dbe0',roofDark:'#b3bcc3',support:'#9da7ae',front:'#343b42',covered:false,rows:Math.max(4,Math.round(Number(it&&it.seatRows)||9))};
  if(trackData?.spec?.dir==='14-spain'){
   return {...base,madrid:true,covered:s==='grandstand_covered'||s==='grandstand_arena',
     base:'#68717a',side:'#515d66',seat:'#24333e',seatAlt:'#344652',seatAlt2:'#2c3c48',
@@ -3072,10 +3089,11 @@ window.apexGrandstandTextureV5Info=()=>({...apexGrandstandTextureV5Stats,
   ready:!!window.ApexSponsorTextures?.entry(apexGrandstandTextureV5Keys.seats),
   circuit:trackData?.spec?.dir||null});
 function apexGrandstandTexturesV5Ready(prof){
- if(!prof?.melbourne||trackData?.spec?.dir!=='01-australia')return false;
+ if(!prof?.hybridGrandstand||!trackData)return false;
  const api=window.ApexSponsorTextures;
  if(!api||typeof api.registerCanvas!=='function')return false;
- if(api.entry(apexGrandstandTextureV5Keys.seats)&&api.entry(apexGrandstandTextureV5Keys.crowd))return true;
+ if(api.entry(apexGrandstandTextureV5Keys.seats)&&api.entry(apexGrandstandTextureV5Keys.crowd)&&api.entry(apexGrandstandTextureV5Keys.deck))
+  return apexGrandstandSeatTextureV10Ready(prof,api);
  const make=(w,h)=>{const cv=document.createElement('canvas');cv.width=w;cv.height=h;return [cv,cv.getContext('2d',{alpha:true})];};
  const [seats,c]=make(1024,256);
  if(!c)return false;
@@ -3153,7 +3171,30 @@ function apexGrandstandTexturesV5Ready(prof){
  api.registerCanvas(apexGrandstandTextureV5Keys.crowd,crowd);
  api.registerCanvas(apexGrandstandTextureV5Keys.deck,deck);
  apexGrandstandTextureV5Stats.atlasBuilds++;
- return true;
+ return apexGrandstandSeatTextureV10Ready(prof,api);
+}
+// Recolour the moulded-seat atlas just once per palette; source-authored SVG
+// seat colours remain meaningful. Limit unique uploads on large circuit packs.
+const apexGrandstandSeatV10Keys=new Map();
+function apexGrandstandSeatTextureKeyV10(prof){
+ if(prof?.melbourne)return apexGrandstandTextureV5Keys.seats;
+ const hex=/^#[\da-f]{6}$/i.test(String(prof?.seat||''))?String(prof.seat).toLowerCase():'#778590';
+ if(apexGrandstandSeatV10Keys.has(hex))return apexGrandstandSeatV10Keys.get(hex);
+ if(apexGrandstandSeatV10Keys.size>=12)return 'apex-grandstand-seats-v10-neutral';
+ const key='apex-grandstand-seats-v10-'+hex.slice(1);
+ apexGrandstandSeatV10Keys.set(hex,key);return key;
+}
+function apexGrandstandSeatTextureV10Ready(prof,api){
+ const key=apexGrandstandSeatTextureKeyV10(prof);
+ if(api.entry(key))return true;
+ const base=api.entry(apexGrandstandTextureV5Keys.seats);
+ if(!base?.canvas)return false;
+ const cv=document.createElement('canvas');cv.width=base.width;cv.height=base.height;
+ const c=cv.getContext('2d',{alpha:true});if(!c)return false;
+ c.drawImage(base.canvas,0,0);c.globalCompositeOperation='source-atop';
+ c.globalAlpha=.70;c.fillStyle=key.endsWith('-neutral')?'#75848d':(prof.seat||'#75848d');
+ c.fillRect(0,0,cv.width,cv.height);c.globalCompositeOperation='source-over';c.globalAlpha=1;
+ return !!api.registerCanvas(key,cv);
 }
 function apexGrandstandSeatTextureV5Vertices(band,top,frame,ri,rows){
  const e=frame.edge,inv=1/Math.max(.01,frame.depth),cycle=16*.60;
@@ -3189,7 +3230,7 @@ function apexGrandstandCrowdTextureV5Strips(frame,h,prof,gb,att,cam){
  for(let i=0;i<rows;i++){
   if(att.fill<.98&&apexGrandstandHashV8(i*113+Math.round(frame.span*17)) /4294967296 >=att.fill)continue;
   const rowFrac=(i+.5)/rows,depth=dep*(start+(end-start)*rowFrac),
-   seat=prof.melbourne?apexGrandstandRakedSeatYV6(h,depth/dep)+.09:apexGrandstandSeatTopV4(h,prof,gb,depth/dep)+.045,
+   seat=prof.hybridGrandstand?apexGrandstandRakedSeatYV6(h,depth/dep)+.09:apexGrandstandSeatTopV4(h,prof,gb,depth/dep)+.045,
    personHeight=.88+(.19*(apexGrandstandHashV8(i*83+37)%97)/96),
    yTop=seat+personHeight,
    p0=apexGrandstandWorldCam(frame,.018,depth,yTop,cam),
@@ -3211,7 +3252,7 @@ function apexGrandstandCrowdTextureV5Strips(frame,h,prof,gb,att,cam){
 const apexGrandstandDeckV8Stats={builds:0,hits:0,panels:0};
 window.apexGrandstandDeckV8Info=()=>({...apexGrandstandDeckV8Stats});
 function apexGrandstandCrowdDeckV8(it,prof,frame,h,att,cam){
- if(!it||!prof?.melbourne||!frame||!Array.isArray(it.worldFootprint)
+ if(!it||!prof?.hybridGrandstand||!frame||!Array.isArray(it.worldFootprint)
     ||it.worldFootprint.length<3||!att?.crowd||att.fill<.96)return[];
  const key=[Math.round(frame.span*100),Math.round(frame.depth*100),
   trackData?.spec?.dir||'',trackData?.customWorld?._apexGroundStamp||''].join(':');
@@ -3335,7 +3376,7 @@ function apexGrandstandPreviewCrowd(it,prof,frame,h,gb,att){
    // Rows nearer the front remain the most visible; occupancy is deterministic
    // and never fluctuates when fps or camera position changes.
    const rowFrac=(ri+.5)/rows,
-     rowDepth=dep*(prof.melbourne?(.055+.39*rowFrac):(.24+.56*rowFrac)),seatY=apexGrandstandSeatTopV4(h,prof,gb,rowDepth/dep);
+     rowDepth=dep*(prof.hybridGrandstand?(.055+.39*rowFrac):(.24+.56*rowFrac)),seatY=apexGrandstandSeatTopV4(h,prof,gb,rowDepth/dep);
    for(let ci=0;ci<cols;ci++){
      if(prof.madrid&&cols>=6&&ci===Math.floor(cols*.5))continue; // central aisle
      const choice=apexGrandstandSeatVisual(prof,ri,rows,ci,att);
@@ -3345,7 +3386,7 @@ function apexGrandstandPreviewCrowd(it,prof,frame,h,gb,att){
        bodyW=Math.min(.78,frame.span*step*.56)/Math.max(1,frame.span),
        headW=Math.min(.32,frame.span*step*.25)/Math.max(1,frame.span),
        personH=Math.max(.84,Math.min(1.13,gb.crowdHeight||1)),
-       base=(prof.melbourne?apexGrandstandRakedSeatYV6(h,rowDepth/dep):seatY)+.06,
+       base=(prof.hybridGrandstand?apexGrandstandRakedSeatYV6(h,rowDepth/dep):seatY)+.06,
        height=.68*personH,
        crownY=base+height+.28*personH,
        xz=apexGrandstandFrameXZ(frame,u,rowDepth),
@@ -3910,7 +3951,7 @@ function drawWorldLandmarks(cam,pitch){
    }else if(it.type==="grandstand"){
      // v5.230.32 · Tribuna SVG: la huella dibujada manda y el interior vuelve a tener
      // graderío escalonado real. La altura es el único parámetro vertical necesario.
-     if(Array.isArray(it.worldFootprint)&&it.worldFootprint.length>=3){
+     if(apexGrandstandEnsureFootprintV10(it)?.length>=3){
        const prof=apexGrandstandStyleProfile(it),fp=it.worldFootprint,h=Math.max(3,Number(it.height)||14),col=prof.madrid?prof.base:it.color||prof.base||"#667078",gb=apexGrandstandRenderBudget(detailAlpha>.60?0:(detailAlpha>.22?1:2),Math.abs(wrapDeltaS((it.anchor&&it.anchor.s)||0,player.s,trackData.km*1000))),rows=gb.tier===2?Math.min(12,Math.max(10,prof.rows)):(gb.tier===1?Math.min(7,Math.max(6,Math.round(prof.rows*.70))):4),side=it.side||1,att=apexGrandstandAttendanceProfile(),frame=apexGrandstandFrameStats(it);it._grandstandFrontEdge=it._grandstandFrontEdge||apexGrandstandFrontEdge(it);
        const baseLow3=apexGrandstandGroundCam(fp,.02,cam),baseTop3=apexGrandstandGroundCam(fp,h*.18,cam);
        polyCam(baseLow3,shadeColor(col,-30),null,1,1);
@@ -3918,22 +3959,22 @@ function drawWorldLandmarks(cam,pitch){
        for(let ri=0;ri<rows;ri++){
          const t0=ri/rows,t1=(ri+1)/rows,band=apexGrandstandBand(fp,a,side,t0,t1,it);if(band.length<3)continue;
          const yTop=h*(.20+.60*t1),yLow=h*(.20+.60*t0),top3=apexGrandstandGroundCam(band,yTop,cam),low3=apexGrandstandGroundCam(band,yLow,cam);
-         const raked3=prof.melbourne&&frame?apexGrandstandRakedSeatV6(band,frame,h,cam):top3;
+         const raked3=prof.hybridGrandstand&&frame?apexGrandstandRakedSeatV6(band,frame,h,cam):top3;
          const seatBase=ri%3===0?(prof.seatAlt||shadeColor(col,5)):(ri%3===1?(prof.seatAlt2||shadeColor(col,12)):(prof.seat||col));
          polyCam(raked3,seatBase,"rgba(255,255,255,.04)",1,1);
          if(frame&&apexGrandstandTexturesV5Ready(prof)){
-          apexGrandstandTextureDrawPolyCanvas(apexGrandstandSeatTextureV5Vertices(band,raked3,frame,ri,rows),apexGrandstandTextureV5Keys.seats,pitch);
+          apexGrandstandTextureDrawPolyCanvas(apexGrandstandSeatTextureV5Vertices(band,raked3,frame,ri,rows),apexGrandstandSeatTextureKeyV10(prof),pitch);
           apexGrandstandTextureV5Stats.seatPolys++;
          }
          if(frame&&gb.tier>=1&&(gb.tier===2||frame.span>30)){
           const aisle=apexMadridGrandstandAisle(band,frame);
-          if(aisle.length>=3)polyCam(prof.melbourne?apexGrandstandRakedSeatV6(aisle,frame,h,cam,.038):apexGrandstandGroundCam(aisle,yTop+.025,cam),'#b7c5d0',null,1,1);
+          if(aisle.length>=3)polyCam(prof.hybridGrandstand?apexGrandstandRakedSeatV6(aisle,frame,h,cam,.038):apexGrandstandGroundCam(aisle,yTop+.025,cam),'#b7c5d0',null,1,1);
          }
          for(let j=0;j<band.length;j++){const k=(j+1)%band.length;polyCam([low3[j],low3[k],raked3[k],raked3[j]],(ri&1)?shadeColor(col,-16):shadeColor(col,-11),null,1,.98);}
        }
        const frontBand=apexGrandstandBand(fp,a,side,.04,.16,it),backBand=apexGrandstandBand(fp,a,side,.84,1,it);
-       if(frontBand.length>=2){const fy0=apexGrandstandGroundCam(frontBand,.05,cam),fy1=apexGrandstandGroundCam(frontBand,prof.melbourne?h*.16:h*.23,cam);for(let j=0;j<frontBand.length;j++){const k=(j+1)%frontBand.length;polyCam([fy0[j],fy0[k],fy1[k],fy1[j]],prof.front||shadeColor(col,-26),null,1,.98);}}
-       if(backBand.length>=2){const by0=apexGrandstandGroundCam(backBand,.03,cam),by1=apexGrandstandGroundCam(backBand,h*.84,cam);if(!prof.melbourne)for(let j=0;j<backBand.length;j++){const k=(j+1)%backBand.length;polyCam([by0[j],by0[k],by1[k],by1[j]],j&1?shadeColor(col,-22):shadeColor(col,-18),null,1,.98);}if(detailAlpha>.12){const rail3=apexGrandstandGroundCam(backBand,h*.89,cam);for(let j=1;j<rail3.length;j++)lineCam(rail3[j-1],rail3[j],prof.rail,Math.max(1,1.0*s),1);}}
+       if(frontBand.length>=2){const fy0=apexGrandstandGroundCam(frontBand,.05,cam),fy1=apexGrandstandGroundCam(frontBand,prof.hybridGrandstand?h*.16:h*.23,cam);for(let j=0;j<frontBand.length;j++){const k=(j+1)%frontBand.length;polyCam([fy0[j],fy0[k],fy1[k],fy1[j]],prof.front||shadeColor(col,-26),null,1,.98);}}
+       if(backBand.length>=2){const by0=apexGrandstandGroundCam(backBand,.03,cam),by1=apexGrandstandGroundCam(backBand,h*.84,cam);if(!prof.hybridGrandstand)for(let j=0;j<backBand.length;j++){const k=(j+1)%backBand.length;polyCam([by0[j],by0[k],by1[k],by1[j]],j&1?shadeColor(col,-22):shadeColor(col,-18),null,1,.98);}if(detailAlpha>.12){const rail3=apexGrandstandGroundCam(backBand,h*.89,cam);for(let j=1;j<rail3.length;j++)lineCam(rail3[j-1],rail3[j],prof.rail,Math.max(1,1.0*s),1);}}
        if(frame){
          const dep=frame.depth,span=frame.span;
           const textureCrowd=apexGrandstandTexturesV5Ready(prof);
@@ -3968,7 +4009,7 @@ function drawWorldLandmarks(cam,pitch){
                     prof.rail,Math.max(1,1.4*s),1);
           }
           const leftWall=[apexGrandstandWorldCam(frame,.02,dep*.12,h*.08,cam),apexGrandstandWorldCam(frame,.10,dep*.12,h*.08,cam),apexGrandstandWorldCam(frame,.10,dep*.88,h*.78,cam),apexGrandstandWorldCam(frame,.02,dep*.88,h*.78,cam)],rightWall=[apexGrandstandWorldCam(frame,.90,dep*.12,h*.08,cam),apexGrandstandWorldCam(frame,.98,dep*.12,h*.08,cam),apexGrandstandWorldCam(frame,.98,dep*.88,h*.78,cam),apexGrandstandWorldCam(frame,.90,dep*.88,h*.78,cam)];
-         if(!prof.melbourne){polyCam(leftWall,shadeColor(col,-8),null,1,.95);polyCam(rightWall,shadeColor(col,-8),null,1,.95);}
+         if(!prof.hybridGrandstand){polyCam(leftWall,shadeColor(col,-8),null,1,.95);polyCam(rightWall,shadeColor(col,-8),null,1,.95);}
          if(gb.tier>=1){for(let st=0;st<(gb.tier===2?7:4);st++){const d0=dep*(.14+.09*st),d1=dep*(.19+.09*st),y0=h*(.10+.085*st),y1=h*(.145+.085*st);const l0=apexGrandstandWorldCam(frame,.03,d0,y0,cam),l1=apexGrandstandWorldCam(frame,.09,d0,y0,cam),l2=apexGrandstandWorldCam(frame,.09,d1,y1,cam),l3=apexGrandstandWorldCam(frame,.03,d1,y1,cam),r0=apexGrandstandWorldCam(frame,.91,d0,y0,cam),r1=apexGrandstandWorldCam(frame,.97,d0,y0,cam),r2=apexGrandstandWorldCam(frame,.97,d1,y1,cam),r3=apexGrandstandWorldCam(frame,.91,d1,y1,cam);polyCam([l0,l1,l2,l3],shadeColor(col,10),null,1,.96);polyCam([r0,r1,r2,r3],shadeColor(col,10),null,1,.96);}}
          for(const brace of apexGrandstandTrussV3(it,frame,h,gb))
            polyCam(brace.map(p=>worldToCamera(p[0],p[1],p[2],cam)),prof.support||'#a6b3bb',null,1,.95);
