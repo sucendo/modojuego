@@ -3155,14 +3155,14 @@ function apexGrandstandCrowdTextureV5Strips(frame,h,prof,gb,att,cam){
 function apexGrandstandRakedSeatYV6(h,depthFraction){
  return h*(.20+.60*clamp(depthFraction,0,1))+.11;
 }
-function apexGrandstandRakedSeatV6(band,frame,h,cam){
+function apexGrandstandRakedSeatV6(band,frame,h,cam,offset=0){
  const e=frame.edge,span=Math.max(1,frame.span),dep=Math.max(1,frame.depth);
  return band.map(v=>{
   const dx=v[0]-e.a[0],dz=v[1]-e.a[1],
     along=dx*e.tx+dz*e.tz,depth=dx*e.nx+dz*e.nz,
     u=clamp(along/span,0,1);
   const ground=apexStaticSceneryGroundY(frame,u,depth,v[0],v[1]);
-  return worldToCamera(v[0],ground+apexGrandstandRakedSeatYV6(h,depth/dep),v[1],cam);
+  return worldToCamera(v[0],ground+apexGrandstandRakedSeatYV6(h,depth/dep)+offset,v[1],cam);
  });
 }
 // 6A preview · Tribunas v3: arriostramiento ligero tras el graderío.
@@ -3836,9 +3836,9 @@ function drawWorldLandmarks(cam,pitch){
          }
          if(frame&&gb.tier>=1&&(gb.tier===2||frame.span>30)){
           const aisle=apexMadridGrandstandAisle(band,frame);
-          if(aisle.length>=3)polyCam(apexGrandstandGroundCam(aisle,yTop+.025,cam),'#9da7af',null,1,1);
+          if(aisle.length>=3)polyCam(prof.melbourne?apexGrandstandRakedSeatV6(aisle,frame,h,cam,.038):apexGrandstandGroundCam(aisle,yTop+.025,cam),'#b7c5d0',null,1,1);
          }
-         for(let j=0;j<band.length;j++){const k=(j+1)%band.length;polyCam([low3[j],low3[k],top3[k],top3[j]],(ri&1)?shadeColor(col,-16):shadeColor(col,-11),null,1,.98);}
+         for(let j=0;j<band.length;j++){const k=(j+1)%band.length;polyCam([low3[j],low3[k],raked3[k],raked3[j]],(ri&1)?shadeColor(col,-16):shadeColor(col,-11),null,1,.98);}
        }
        const frontBand=apexGrandstandBand(fp,a,side,.04,.16,it),backBand=apexGrandstandBand(fp,a,side,.84,1,it);
        if(frontBand.length>=2){const fy0=apexGrandstandGroundCam(frontBand,.05,cam),fy1=apexGrandstandGroundCam(frontBand,h*.23,cam);for(let j=0;j<frontBand.length;j++){const k=(j+1)%frontBand.length;polyCam([fy0[j],fy0[k],fy1[k],fy1[j]],prof.front||shadeColor(col,-26),null,1,.98);}}
