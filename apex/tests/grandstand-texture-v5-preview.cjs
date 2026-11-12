@@ -82,15 +82,45 @@ assert.ok(ramp[2].y-ramp[0].y>8,'Seating is inclined, never a thin top strip');
 assert.equal(textured.length,4);
 assert.ok(textured.every(p=>Number.isFinite(p.u)&&p.v>=0&&p.v<=1),'UV must stay finite/in-bounds per tier');
 assert.ok(textured[1].u>textured[0].u,'UV repeats along grandstand span');
-const full={crowd:true,fill:1,label:'full'},empty={crowd:false,fill:0,label:'empty'};
-const near=renderer.crowd(frame,14,{rows:10},{tier:2},full,{}),
- medium=renderer.crowd(frame,14,{rows:10},{tier:1},full,{});
-assert.equal(near.length,0,'Near stands use 3D spectators, not crowd cards');
-assert.ok(medium.length>0&&medium.length<=3,'Medium stands need only 3 strips');
-assert.equal(renderer.crowd(frame,14,{rows:10},{tier:0},empty,{}).length,0);
-pressure=3;
-assert.ok(renderer.crowd(frame,14,{rows:10},{tier:0},full,{}).length<=1,'Pressure should cap far crowd to 1 strip');
-assert.ok(renderer.crowd(frame,14,{rows:10},{tier:0},full,{}).length>0,'Far races must remain populated');
+const full={crowd:true,fill:1,label:'full'},empty={crowd:false,fill:0,label:'empty'},
+ half={crowd:true,fill:.58,label:'half'};
+assert.doesNotMatch(canvas,/const textureCrowd=apexGrandstandTexturesV5Ready\(prof\)&&gb\.tier<2/,
+ 'Canvas must layer near 3D spectators over rear texture rows');
+assert.doesNotMatch(webgl,/const textureCrowd=apexGrandstandTexturesV5Ready\(prof\)&&gb\.tier<2/,
+ 'WebGL must layer near 3D spectators over rear texture rows');
+assert.match(canvas,/rowDepth=dep\*\(prof\.melbourne\?\(\.18\+\.26\*rowFrac\)/,
+ 'Near 3D spectators must live in front of rear texture rows');
+for(const isMobile of [false,true]){
+ mobile=isMobile;
+ for(let p=0;p<=3;p++){
+  pressure=p;
+  for(const tier of [0,1,2]){
+   const strips=renderer.crowd(frame,14,{rows:10,melbourne:true},{tier},full,{});
+   assert.ok(strips.length>=3&&strips.length<=6,
+    'Race stands must preserve multiple rows even under max pressure: '+JSON.stringify({tier,p,isMobile,count:strips.length}));
+   const depths=strips.map(s=>s[0].z);
+   assert.ok(depths.every((z,i)=>z>0&&z<frame.depth&&(i===0||z>depths[i-1]+.1)),
+    'Rows must be separated and distributed over the ramp');
+   assert.ok(depths[depths.length-1]-depths[0]>frame.depth*(tier===2?.32:.42),
+    'Crowd must span a substantial portion of the seating deck, not form a top strip');
+   assert.ok(strips.every(s=>s.length===4&&s.every(q=>Number.isFinite(q.x)&&Number.isFinite(q.y)&&Number.isFinite(q.z))),
+    'No degenerate crowd quad');
+   assert.ok(strips.every(s=>s[0].y>s[3].y),'Crowd silhouettes must extend above the raked deck');
+   assert.ok(strips.every(s=>s[1].u>s[0].u),'Atlas pattern must repeat across grandstand width');
+  }
+ }
+}
+pressure=0;mobile=false;
+const near=renderer.crowd(frame,14,{rows:10,melbourne:true},{tier:2},full,{}),
+ medium=renderer.crowd(frame,14,{rows:10,melbourne:true},{tier:1},full,{}),
+ partial=renderer.crowd(frame,14,{rows:10,melbourne:true},{tier:1},half,{});
+assert.ok(near.length>=5,'Near stands need rear rows behind the 3D crowd');
+assert.ok(medium.length>=5,'Medium stands need several rows');
+assert.ok(partial.length>0&&partial.length<medium.length,'Practice occupancy must stay partial');
+assert.equal(renderer.crowd(frame,14,{rows:10,melbourne:true},{tier:0},empty,{}).length,0);
+pressure=3;mobile=true;
+const lowPerf=renderer.crowd(frame,14,{rows:10,melbourne:true},{tier:0},full,{});
+assert.ok(lowPerf.length>=3,'Pressure may trim density, never collapse to a single row');
 for(const [source,start,end] of [
  [canvas,'}else if(it.type==="grandstand"){','}else if(it.type==="billboard"||it.type==="advertising"){'],
  [webgl,"}else if(it.type==='grandstand'){","}else if(it.type==='gantry'){"]
@@ -100,4 +130,4 @@ for(const [source,start,end] of [
  new Function('for(let k=0;k<1;k++){if(false){}'+source.slice(i+1,j)+'}}');
 }
 console.log(JSON.stringify({test:'grandstand-texture-v5-preview',atlases:2,vertices:textured.length,
- crowdMedium:medium.length,pressureCap:1,previewOnly:true,ok:true}));
+ crowdMedium:medium.length,pressureCap:lowPerf.length,previewOnly:true,ok:true}));

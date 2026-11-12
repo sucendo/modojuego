@@ -3130,16 +3130,24 @@ function apexGrandstandSeatTextureV5Vertices(band,top,frame,ri,rows){
   return {...p,u:along/cycle,v:clamp((depth*inv-ri/rows)*rows,0,1)};
  });
 }
+// 6A crowd v7: keep actual populated seating rows under race-time pressure.
+// Always render several rows, even if high traffic downgrades the LOD to tier 0.
+// The geometry stays 2 triangles per row and shares one atlas/draw-call batch.
 function apexGrandstandCrowdTextureV5Strips(frame,h,prof,gb,att,cam){
- if(!frame||gb.tier===2||!att?.crowd||att.fill<=.01)return[];
+ if(!frame||!gb||!att?.crowd||att.fill<=.01)return[];
  const pressure=apexSceneDetailBudget().pressure,mobile=mobilePerformanceMode(),
-    rows=pressure>=2?1:(gb.tier===1?(mobile?2:3):2),dep=frame.depth,
-    cycle=16*.65,out=[];
+    tier=gb.tier,normalRows=tier===2?(mobile?5:6):tier===1?(mobile?5:6):(mobile?4:5),
+    rows=Math.max(tier===2?4:3,normalRows-(pressure>=3?2:pressure>=2?1:0)),
+    dep=frame.depth,cycle=16*.65,out=[];
+ // Near stands have 3D spectators in the lower/front rows. Their rear rows
+ // use the same crowd atlas as other LODs. Mid/far stands cover the full deck.
+ const start=tier===2?.43:.18,end=tier===2?.93:.91;
  for(let i=0;i<rows;i++){
-  if((i+.25)/rows>att.fill)continue;
-  const depth=dep*(.28+.52*(i+.5)/rows),
+  // Practice attendance is scattered instead of cutting off all rear rows.
+  if(att.fill<.98&&((i*13+3)%17)/17>=att.fill)continue;
+  const rowFrac=(i+.5)/rows,depth=dep*(start+(end-start)*rowFrac),
     seat=prof.melbourne?apexGrandstandRakedSeatYV6(h,depth/dep)+.09:apexGrandstandSeatTopV4(h,prof,gb,depth/dep)+.045,
-    yTop=seat+(gb.tier===1?1.15:.90),
+    yTop=seat+(tier===2?1.06:tier===1?1.02:.94),
     p0=apexGrandstandWorldCam(frame,.025,depth,yTop,cam),
     p1=apexGrandstandWorldCam(frame,.975,depth,yTop,cam),
     p2=apexGrandstandWorldCam(frame,.975,depth,seat,cam),
@@ -3244,7 +3252,7 @@ function apexGrandstandPreviewCrowd(it,prof,frame,h,gb,att){
    // Rows nearer the front remain the most visible; occupancy is deterministic
    // and never fluctuates when fps or camera position changes.
    const rowFrac=(ri+.5)/rows,
-     rowDepth=dep*(.24+.56*rowFrac),seatY=apexGrandstandSeatTopV4(h,prof,gb,rowDepth/dep);
+     rowDepth=dep*(prof.melbourne?(.18+.26*rowFrac):(.24+.56*rowFrac)),seatY=apexGrandstandSeatTopV4(h,prof,gb,rowDepth/dep);
    for(let ci=0;ci<cols;ci++){
      if(prof.madrid&&cols>=6&&ci===Math.floor(cols*.5))continue; // central aisle
      const choice=apexGrandstandSeatVisual(prof,ri,rows,ci,att);
@@ -3845,7 +3853,7 @@ function drawWorldLandmarks(cam,pitch){
        if(backBand.length>=2){const by0=apexGrandstandGroundCam(backBand,.03,cam),by1=apexGrandstandGroundCam(backBand,h*.84,cam);if(!prof.melbourne)for(let j=0;j<backBand.length;j++){const k=(j+1)%backBand.length;polyCam([by0[j],by0[k],by1[k],by1[j]],j&1?shadeColor(col,-22):shadeColor(col,-18),null,1,.98);}if(detailAlpha>.12){const rail3=apexGrandstandGroundCam(backBand,h*.89,cam);for(let j=1;j<rail3.length;j++)lineCam(rail3[j-1],rail3[j],prof.rail,Math.max(1,1.0*s),1);}}
        if(frame){
          const dep=frame.depth,span=frame.span;
-          const textureCrowd=apexGrandstandTexturesV5Ready(prof)&&gb.tier<2;
+          const textureCrowd=apexGrandstandTexturesV5Ready(prof);
           let texturedStrips=0;
           if(textureCrowd)for(const strip of apexGrandstandCrowdTextureV5Strips(frame,h,prof,gb,att,cam)){
             if(apexGrandstandTextureDrawPolyCanvas(strip,apexGrandstandTextureV5Keys.crowd,pitch))texturedStrips++;
