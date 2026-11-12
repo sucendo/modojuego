@@ -3131,6 +3131,78 @@ function apexGrandstandEnclosureV12(frame,h,prof,cam,it=null){
  }
  return faces;
 }
+// 6A V13: inexpensive, deterministic cloth banners hung off the OUTSIDE
+// of the low front guard. National tricolours and event colours are drawn
+// with 3-4 flat quads each, never textures or per-frame random animation.
+const apexGrandstandFlagsV13Palettes=[
+ {name:'espana',vertical:false,colors:['#ad2630','#f6c93e','#ad2630'],weights:[1,2,1]},
+ {name:'italia',vertical:true,colors:['#168c60','#f4f2e9','#c53742']},
+ {name:'francia',vertical:true,colors:['#214a9e','#f2f0ed','#d43c43']},
+ {name:'alemania',vertical:false,colors:['#212326','#bd3037','#efbd40']},
+ {name:'paises-bajos',vertical:false,colors:['#b52e3f','#f1f1ef','#245197']},
+ {name:'belgica',vertical:true,colors:['#23262b','#f6cd44','#c43737']},
+ {name:'irlanda',vertical:true,colors:['#25885a','#f5f1e9','#e38e3f']},
+ {name:'austria',vertical:false,colors:['#c23843','#f8f4ed','#c23843']},
+ {name:'equipo-azul',vertical:true,colors:['#153d70','#6ba9d8','#f1f0ec']},
+ {name:'equipo-amarillo',vertical:false,colors:['#f1c943','#253646','#f1c943']}
+];
+const apexGrandstandFlagsV13Stats={builds:0,hits:0,faces:0,lastCount:0};
+window.apexGrandstandFlagsV13Info=()=>({...apexGrandstandFlagsV13Stats});
+function apexGrandstandHangingFlagsV13(it,frame,h,gb,prof,cam){
+ if(!it||!frame||!gb||!prof?.hybridGrandstand||frame.span<7)return[];
+ const mobile=mobilePerformanceMode(),pressure=apexSceneDetailBudget().pressure,tier=gb.tier,
+   desired=Math.min(6,Math.max(1,Math.round(frame.span/17))),
+   count=Math.max(1,Math.min(desired,tier===2?(mobile?4:6):tier===1?(mobile?3:4):2)-((pressure>=3&&tier!==2)?1:0)),
+   seed=Math.floor(apexGrandstandStandPhaseV8(it)*4294967296)>>>0,
+   key=[Math.round(frame.span*10),Math.round(h*100),count,seed].join(':');
+ let cache=it._apexGrandstandFlagsV13;
+ if(!cache||cache.key!==key){
+  const flags=[],span=frame.span,top=Math.max(.4,Math.min(3.0,h*.125+.055)),
+    height=Math.min(1.4,Math.max(.34,h*.105)),width=Math.min(2.9,Math.max(1.3,span/(count*8)));
+  for(let i=0;i<count;i++){
+   const hash=apexGrandstandHashV8(seed+i*719+431),palette=apexGrandstandFlagsV13Palettes[hash%apexGrandstandFlagsV13Palettes.length],
+     jitter=((hash>>>12)%101-50)/2000,
+     center=.08+.84*(i+.5)/count+jitter,
+     uCenter=Math.abs(center-.5)<.068?(center<.5?.425:.575):center,
+     half=Math.min(width/span*.5,.08),u0=Math.max(.016,uCenter-half),
+     u1=Math.min(.984,uCenter+half),
+     bottom=Math.max(.045,top-height),
+     fold=.02+.035*((hash>>>22)%100)/100;
+   if(u1-u0<.014)continue;
+   flags.push({u0,u1,top,bottom,fold,palette});
+  }
+  cache={key,flags};it._apexGrandstandFlagsV13=cache;apexGrandstandFlagsV13Stats.builds++;
+ }else apexGrandstandFlagsV13Stats.hits++;
+ const faces=[],depth=-Math.min(.28,Math.max(.12,frame.depth*.015));
+ for(const flag of cache.flags){
+  const {u0,u1,top,bottom,fold,palette}=flag;
+  const at=(u,y)=>apexGrandstandWorldCam(frame,u,depth,y+fold*Math.sin((u-u0)/Math.max(.001,u1-u0)*Math.PI),cam);
+  const weights=palette.weights||[1,1,1],total=weights.reduce((a,b)=>a+b,0);
+  let acc=0;
+  for(let j=0;j<palette.colors.length;j++){
+   const w=weights[j]/total,prev=acc;acc+=w;
+   let quad;
+   if(palette.vertical){
+    const x0=u0+(u1-u0)*prev,x1=u0+(u1-u0)*acc;
+    quad=[at(x0,top),at(x1,top),at(x1,bottom),at(x0,bottom)];
+   }else{
+    const y0=top-(top-bottom)*prev,y1=top-(top-bottom)*acc;
+    quad=[at(u0,y0),at(u1,y0),at(u1,y1),at(u0,y1)];
+   }
+   faces.push({kind:'fabric',color:palette.colors[j],poly:quad,flag:palette.name});
+  }
+  // Small dark fabric band at the hanging edge, visible at near LOD only.
+  if(tier===2&&pressure<3){
+   const hemTop=top+.035;
+   faces.push({kind:'hem',color:'#2c333a',poly:[
+    at(u0,hemTop),at(u1,hemTop),at(u1,top),at(u0,top)
+   ],flag:palette.name});
+  }
+ }
+ apexGrandstandFlagsV13Stats.faces+=faces.length;
+ apexGrandstandFlagsV13Stats.lastCount=cache.flags.length;
+ return faces;
+}
 // 6A preview v5 · Melbourne: lightweight, deterministic seat/crowd texture atlases.
 // Rasterized once; SVG geometry and raised seating steps remain authoritative.
 const apexGrandstandTextureV5Keys={seats:'apex-grandstand-seats-v6',crowd:'apex-grandstand-crowd-v9',deck:'apex-grandstand-deck-v9'};
@@ -4081,6 +4153,9 @@ function drawWorldLandmarks(cam,pitch){
            }
          const hasVip=!!(it.vip||it.hasVip||/arena|vip/.test(prof.style));
          if(hasVip&&gb.vip){const u0=.34,u1=.66,d0=dep*.54,d1=dep*.88,y0=h*.48,y1=h*.74;const q0=apexGrandstandWorldCam(frame,u0,d0,y0,cam),q1=apexGrandstandWorldCam(frame,u1,d0,y0,cam),q2=apexGrandstandWorldCam(frame,u1,d0,y1,cam),q3=apexGrandstandWorldCam(frame,u0,d0,y1,cam),q4=apexGrandstandWorldCam(frame,u0,d1,y0,cam),q5=apexGrandstandWorldCam(frame,u1,d1,y0,cam),q6=apexGrandstandWorldCam(frame,u1,d1,y1,cam),q7=apexGrandstandWorldCam(frame,u0,d1,y1,cam);polyCam([q0,q1,q2,q3],'#7da4b7',null,1,.97);polyCam([q3,q2,q6,q7],'#5f6870',null,1,.96);polyCam([q7,q6,q5,q4],'#dfe5e8',null,1,.96);}
+         // 6A V13: banners hang toward the track below the first spectator row.
+         for(const banner of apexGrandstandHangingFlagsV13(it,frame,h,gb,prof,cam))
+           polyCam(banner.poly,banner.color,null,1,.995);
          if(gb.flags){const flagPos=span>28?[.14,.84]:(span>18?[.50]:[]);for(let fi=0;fi<flagPos.length;fi++){const uu=flagPos[fi],pole0=apexGrandstandWorldCam(frame,uu,dep*.99,h*.98,cam),pole1=apexGrandstandWorldCam(frame,uu,dep*.99,h*1.28,cam);lineCam(pole0,pole1,'#d9dee2',Math.max(1,1*s),1);const f0=apexGrandstandWorldCam(frame,uu+.005,dep*1.00,h*1.24,cam),f1=apexGrandstandWorldCam(frame,uu+.10,dep*1.00,h*1.21,cam),f2=apexGrandstandWorldCam(frame,uu+.10,dep*1.00,h*1.14,cam),f3=apexGrandstandWorldCam(frame,uu+.005,dep*1.00,h*1.17,cam);polyCam([f0,f1,f2,f3],fi===0?'#d72631':'#2459c3',null,1,.98);const mA=camMix(f0,f1,.33),mB=camMix(f3,f2,.33);polyCam([f0,mA,mB,f3],fi===0?'#f3d34a':'#ffffff',null,1,.99);}}
          if(prof.covered){const rf0=apexGrandstandWorldCam(frame,-.03,dep*.30,h*.86,cam),rf1=apexGrandstandWorldCam(frame,1.03,dep*.30,h*.86,cam),rb1=apexGrandstandWorldCam(frame,1.03,dep*1.03,h*1.05,cam),rb0=apexGrandstandWorldCam(frame,-.03,dep*1.03,h*1.05,cam),uf0=apexGrandstandWorldCam(frame,-.03,dep*.36,h*.80,cam),uf1=apexGrandstandWorldCam(frame,1.03,dep*.36,h*.80,cam),ub1=apexGrandstandWorldCam(frame,1.03,dep*1.00,h*.98,cam),ub0=apexGrandstandWorldCam(frame,-.03,dep*1.00,h*.98,cam);polyCam([rf0,rf1,rb1,rb0],prof.roof||'#dbe1e6',null,1,.985);polyCam([uf0,uf1,ub1,ub0],prof.roofDark||'#b3bcc3',null,1,.945);polyCam([uf0,uf1,rf1,rf0],'#6d7780',null,1,.93);
             // Visible roof fascia, lateral thickness and underside ribs at speed.
