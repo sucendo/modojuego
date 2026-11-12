@@ -30,7 +30,7 @@ assert.match(canvas,/function apexGrandstandRakedSeatV6\(band,frame,h,cam,offset
 assert.match(canvas,/const raked3=prof\.hybridGrandstand&&frame\?apexGrandstandRakedSeatV6/);
 assert.match(webgl,/const raked=prof\.hybridGrandstand&&frame\?apexGrandstandRakedSeatV6/);
 assert.match(canvas,/for\(const face of apexGrandstandEnclosureV12\(frame,h,prof,cam,it\)\)/);
-assert.match(webgl,/for\(const face of apexGrandstandEnclosureV12\(frame,h,prof,cam\)\)/);
+assert.match(webgl,/for\(const face of apexGrandstandEnclosureV12\(frame,h,prof,cam,it\)\)/);
 assert.doesNotMatch(canvas,/if\(!prof\.hybridGrandstand\)for\(let j=0;j<backBand\.length/);
 assert.doesNotMatch(webgl,/if\(!prof\.hybridGrandstand\)for\(let j=0;j<backBand\.length/);
 assert.doesNotMatch(canvas,/if\(!prof\.hybridGrandstand\)\{polyCam\(leftWall/);
