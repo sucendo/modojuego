@@ -40,6 +40,67 @@ assert.match(webgl,/webglPushCamQuad\(low\[j\],low\[k\],raked\[k\],raked\[j\]/,'
 assert.match(canvas,/apexGrandstandRakedSeatV6\(aisle,frame,h,cam,\.038\)/);
 assert.match(webgl,/apexGrandstandRakedSeatV6\(aisle,frame,h,cam,\.038\)/);
 
+// V13 front banners: deterministic varied cloth flags on the outer face.
+// Geometry comes from one shared helper, so Canvas/WebGL cannot diverge.
+assert.match(canvas,/for\(const banner of apexGrandstandHangingFlagsV13\(it,frame,h,gb,prof,cam\)\)/);
+assert.match(webgl,/for\(const banner of apexGrandstandHangingFlagsV13\(it,frame,h,gb,prof,cam\)\)/);
+assert.match(canvas,/polyCam\(banner\.poly,banner\.color,null,1,\.995\)/);
+assert.match(webgl,/webglPushCamPoly\(banner\.poly,pitch,banner\.color,\.60,-\.021\)/);
+const flagsStart=canvas.indexOf('// 6A V13: inexpensive, deterministic cloth banners'),
+ flagsEnd=canvas.indexOf('// Preview 6A V12:',flagsStart);
+assert.ok(flagsStart>=0&&flagsEnd>flagsStart,'Shared V13 banner helper missing');
+const flagsWindow={};
+let flagPressure=0,flagMobile=false;
+const hash32=x=>(Math.imul((x|0)^((x|0)>>>16),0x9e3779b1)>>>0);
+const standPhase=stand=>{
+ const name=String(stand.sourceId||stand.name||'default');
+ let n=0;for(let i=0;i<name.length;i++)n=Math.imul(n+name.charCodeAt(i),16777619)>>>0;
+ return (n>>>0)/4294967296;
+};
+const flagFn=new Function('window','apexGrandstandWorldCam','apexGrandstandHashV8',
+ 'apexGrandstandStandPhaseV8','apexSceneDetailBudget','mobilePerformanceMode',
+ canvas.slice(flagsStart,flagsEnd)+';return apexGrandstandHangingFlagsV13;')(
+ flagsWindow,(fr,u,depth,y)=>({x:u*fr.span,y,z:depth}),
+ hash32,standPhase,()=>({pressure:flagPressure}),()=>flagMobile);
+const flagFrame={span:95,depth:18,edge:{a:[0,0],b:[95,0],tx:1,tz:0,nx:0,nz:1}},
+ flagStand={sourceId:'front-grandstand-spain',anchor:{x:0,z:0}},
+ flagProfile={hybridGrandstand:true,covered:true},
+ nearFlags=flagFn(flagStand,flagFrame,14,{tier:2},flagProfile,{});
+const kindCount=(items,kind)=>items.filter(x=>x.kind===kind).length;
+assert.ok(kindCount(nearFlags,'fabric')>=6,'Several front cloth flags must be rendered');
+assert.ok(kindCount(nearFlags,'fabric')<=18,'Avoid creating hundreds of flag panels');
+assert.ok(kindCount(nearFlags,'hem')>=2,'Near spectator stands need visible hanging ties');
+assert.ok(nearFlags.every(f=>f.poly.length===4&&f.poly.every(p=>[p.x,p.y,p.z].every(Number.isFinite))),
+ 'Banners must have valid projected quads');
+assert.ok(nearFlags.every(f=>f.poly.every(p=>p.z<0)),
+ 'Flags must hang on the OUTSIDE of the front wall, never through spectators');
+assert.ok(nearFlags.every(f=>f.poly.every(p=>p.y>=0&&p.y<14*.20)),
+ 'Front cloth must remain below the first row of fans');
+assert.equal(flagsWindow.apexGrandstandFlagsV13Info().builds,1);
+assert.deepEqual(flagFn(flagStand,flagFrame,14,{tier:2},flagProfile,{}),nearFlags,
+ 'Flag positions and colours must remain stable across frames');
+assert.ok(flagsWindow.apexGrandstandFlagsV13Info().hits>=1,
+ 'World flag layout must be cached rather than regenerated every frame');
+const midFlags=flagFn(flagStand,flagFrame,14,{tier:1},flagProfile,{});
+const farFlags=flagFn(flagStand,flagFrame,14,{tier:0},flagProfile,{});
+assert.ok(midFlags.length<=nearFlags.length&&farFlags.length<nearFlags.length,
+ 'Flag density should fall with distance');
+flagPressure=3;flagMobile=true;
+const busyFlags=flagFn(flagStand,flagFrame,14,{tier:2},flagProfile,{});
+assert.ok(busyFlags.length<nearFlags.length&&busyFlags.length>0,
+ 'Mobile/low FPS requires fewer front flags but must not drop all of them');
+assert.deepEqual(flagFn(flagStand,flagFrame,14,{tier:2},{hybridGrandstand:false},{}),[]);
+assert.deepEqual(flagFn(null,flagFrame,14,{tier:2},flagProfile,{}),[]);
+const palettes=new Set();
+flagPressure=0;flagMobile=false;
+for(const suffix of ['madrid','melbourne','jarama','monza','le-mans','nurburgring','singapore']){
+ const out=flagFn({sourceId:suffix},flagFrame,14,{tier:2},flagProfile,{});
+ for(const p of out)if(p.flag)palettes.add(p.flag);
+}
+assert.ok(palettes.size>=3,'Grandstands should not all hang the same national flag pattern');
+assert.match(canvas,/if\(gb\.flags\)\{const flagPos=/,'Existing top pole flags must remain on near stands');
+assert.match(webgl,/if\(gb\.flags\)\{const flagPos=/,'WebGL must preserve top pole flags');
+
 // V12 enclosure geometry is shared by Canvas and WebGL. No plane is allowed
 // to cut through seating at the previous inner u=.02-.10/.90-.98 strips.
 const enclStart=canvas.indexOf('function apexGrandstandEnclosureV12('),
@@ -299,5 +360,5 @@ for(const [source,start,end] of [
  assert.ok(i>=0&&j>i);
  new Function('for(let k=0;k<1;k++){if(false){}'+source.slice(i+1,j)+'}}');
 }
-console.log(JSON.stringify({test:'grandstand-texture-v12-closed-grandstands-preview',atlases:3,vertices:textured.length,
+console.log(JSON.stringify({test:'grandstand-texture-v13-flags-grandstands-preview',atlases:3,vertices:textured.length,
  crowdMedium:medium.length,pressureCap:lowPerf.length,previewOnly:true,ok:true}));
