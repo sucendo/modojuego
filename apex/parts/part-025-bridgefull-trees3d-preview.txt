@@ -4094,7 +4094,7 @@ function webglPushPitLaneOnSegment(a,b,cam,pitch){
        aInner=webglTrackPointCamera(a.s,pa.centerLat-pa.side*wA,cam,.014),
        bOuter=webglTrackPointCamera(b.s,pb.centerLat+pb.side*wB,cam,.014),
        bInner=webglTrackPointCamera(b.s,pb.centerLat-pb.side*wB,cam,.014);
- webglPushCamQuad(aInner,aOuter,bOuter,bInner,pitch,apexSurfaceTintV152('ASPHALT','#555b61',(renderRibbonFrameAt(a.s).x+renderRibbonFrameAt(b.s).x)*.5,(renderRibbonFrameAt(a.s).z+renderRibbonFrameAt(b.s).z)*.5,(a.z+b.z)*.5),.58,-.022);
+ webglPushCamQuad(aInner,aOuter,bOuter,bInner,pitch,apexSurfaceTintV152('ASPHALT','#555b61',(a.q.x+b.q.x)*.5,(a.q.z+b.q.z)*.5,(a.z+b.z)*.5),.58,-.022);
 
  const edge=.055;
  const ai2=webglTrackPointCamera(a.s,pa.centerLat-pa.side*(wA-edge),cam,.020),
