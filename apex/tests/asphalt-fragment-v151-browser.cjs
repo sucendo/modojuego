@@ -30,6 +30,7 @@ const functionCode=source.slice(i,j);
    const buffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
    gl.bufferData(gl.ARRAY_BUFFER,vertices,gl.STATIC_DRAW);
    gl.viewport(0,0,256,256);
+   gl.disable(gl.DITHER); // Compare true grain, not default framebuffer dithering.
    gl.useProgram(program.program);
    gl.enableVertexAttribArray(program.attrs.world);
    gl.vertexAttribPointer(program.attrs.world,3,gl.FLOAT,false,0,0);
