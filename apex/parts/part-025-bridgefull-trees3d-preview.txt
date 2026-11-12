@@ -4489,7 +4489,8 @@ function webglPushCircuitLandmarks(cam,pitch){
                   C=apexGrandstandWorldCam(frame,1,railD,railH+.39,cam),
                   D=apexGrandstandWorldCam(frame,0,railD,railH+.39,cam);
             webglPushCamQuad(A,B,C,D,pitch,prof.rail,.60,-.014);
-            for(const u of [0,.5,1]){
+            const railPosts=Math.min(mobilePerformanceMode()?5:8,Math.max(3,Math.ceil(span/15)));
+            for(let pi=0;pi<=railPosts;pi++){const u=pi/railPosts;
               const lo=apexGrandstandWorldCam(frame,u-.005,railD,railH-.65,cam),
                     hi=apexGrandstandWorldCam(frame,u+.005,railD,railH+.39,cam),
                     lo2=apexGrandstandWorldCam(frame,u+.005,railD,railH-.65,cam),
@@ -4500,6 +4501,8 @@ function webglPushCircuitLandmarks(cam,pitch){
           const leftWall=[apexGrandstandWorldCam(frame,.02,dep*.12,h*.08,cam),apexGrandstandWorldCam(frame,.10,dep*.12,h*.08,cam),apexGrandstandWorldCam(frame,.10,dep*.88,h*.78,cam),apexGrandstandWorldCam(frame,.02,dep*.88,h*.78,cam)],rightWall=[apexGrandstandWorldCam(frame,.90,dep*.12,h*.08,cam),apexGrandstandWorldCam(frame,.98,dep*.12,h*.08,cam),apexGrandstandWorldCam(frame,.98,dep*.88,h*.78,cam),apexGrandstandWorldCam(frame,.90,dep*.88,h*.78,cam)];
          webglPushCamPoly(leftWall,pitch,shadeColor(col,-8),.60,-.011);webglPushCamPoly(rightWall,pitch,shadeColor(col,-8),.60,-.011);
          if(gb.tier>=1){for(let st=0;st<(gb.tier===2?7:4);st++){const d0=dep*(.14+.09*st),d1=dep*(.19+.09*st),y0=h*(.10+.085*st),y1=h*(.145+.085*st),L0=apexGrandstandWorldCam(frame,.03,d0,y0,cam),L1=apexGrandstandWorldCam(frame,.09,d0,y0,cam),L2=apexGrandstandWorldCam(frame,.09,d1,y1,cam),L3=apexGrandstandWorldCam(frame,.03,d1,y1,cam),R0=apexGrandstandWorldCam(frame,.91,d0,y0,cam),R1=apexGrandstandWorldCam(frame,.97,d0,y0,cam),R2=apexGrandstandWorldCam(frame,.97,d1,y1,cam),R3=apexGrandstandWorldCam(frame,.91,d1,y1,cam);webglPushCamPoly([L0,L1,L2,L3],pitch,shadeColor(col,10),.60,-.012);webglPushCamPoly([R0,R1,R2,R3],pitch,shadeColor(col,10),.60,-.012);}}
+         for(const brace of apexGrandstandTrussV3(it,frame,h,gb))
+           webglPushCamPoly(brace.map(p=>worldToCamera(p[0],p[1],p[2],cam)),pitch,prof.support||'#a6b3bb',.60,-.012);
          const diagUs=gb.braces?(gb.tier===2?(span>30?[.12,.28,.44,.60,.76,.90]:(span>18?[.18,.40,.62,.84]:[.3,.7])):(span>24?[.22,.50,.78]:[.35,.65])):[];
          for(const uu of diagUs){const p0=apexGrandstandWorldCam(frame,uu,dep*.88,h*.08,cam),p1=apexGrandstandWorldCam(frame,uu+.03,dep*.88,h*.08,cam),p2=apexGrandstandWorldCam(frame,uu+.015,dep*.98,h*.84,cam),p3=apexGrandstandWorldCam(frame,uu-.015,dep*.98,h*.84,cam);webglPushCamQuad(p0,p1,p2,p3,pitch,prof.support||'#9da7ae',.60,-.013);}
          if(gb.stairs){const stairCols=span>22?[.05,.92]:[.05,.90];for(const uu of stairCols){for(let st=0;st<6;st++){const d0=dep*(.18+.085*st),d1=dep*(.25+.085*st),y0=h*(.11+.085*st),y1=h*(.15+.085*st),w=uu<.5?[uu,uu+.05]:[uu-.05,uu];const A0=apexGrandstandWorldCam(frame,w[0],d0,y0,cam),A1=apexGrandstandWorldCam(frame,w[1],d0,y0,cam),A2=apexGrandstandWorldCam(frame,w[1],d1,y1,cam),A3=apexGrandstandWorldCam(frame,w[0],d1,y1,cam);webglPushCamPoly([A0,A1,A2,A3],pitch,prof.step||'#c9cdd1',.60,-.014);}}}
