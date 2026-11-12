@@ -3049,11 +3049,43 @@ function apexGrandstandStyleProfile(it){
     base:'#68717a',side:'#515d66',seat:'#24333e',seatAlt:'#344652',seatAlt2:'#2c3c48',
     front:'#535f68',support:'#aab5bd',rail:'#b5c2cb',step:'#dac67f'};
  }
+ if(trackData?.spec?.dir==='01-australia'){
+  // Melbourne: graderío azul y acero galvanizado; respetar color de asiento SVG.
+  const seat=it&&it.seatColor?it.seatColor:'#38658c';
+  return {...base,covered:/covered|roof|arena|vip/.test(s),
+    seat,seatAlt:it&&it.seatColor?shadeColor(seat,10):'#47789e',
+    seatAlt2:it&&it.seatColor?shadeColor(seat,-9):'#294f70',
+    base:'#626e78',front:'#475560',support:'#a7b3bc',rail:'#d4dce1',
+    roof:'#d9e0e5',roofDark:'#aeb9c1',step:'#d6ca8b',rows:Math.max(base.rows,10)};
+ }
  if(s==='grandstand_covered')return {...base,covered:true,roof:'#dbe1e6',roofDark:'#bcc5cc',rows:Math.max(base.rows,10)};
  if(s==='grandstand_arena')return {...base,covered:true,base:'#59636b',side:'#636d76',seat:'#808b95',seatAlt:'#8e99a3',seatAlt2:'#9ba7b0',rows:Math.max(base.rows,12)};
  if(s==='grandstand_compact')return {...base,base:'#56616a',side:'#606a73',rows:Math.min(base.rows,7)};
  if(s==='grandstand_urban')return {...base,covered:true,base:'#50565c',side:'#5b6168',seat:'#697680',seatAlt:'#73808a',seatAlt2:'#7e8b95'};
  return base;
+}
+// 6A preview · Tribunas v3: arriostramiento ligero tras el graderío.
+// Se cachea en coordenadas de mundo y se comparte entre Canvas y WebGL.
+function apexGrandstandTrussV3(it,frame,h,gb){
+ if(!it||!frame||!gb||!gb.braces||gb.tier<1)return[];
+ const bays=frame.span>55?4:frame.span>25?3:2;
+ const key=[bays,frame.span.toFixed(2),frame.depth.toFixed(2),h.toFixed(2),trackData?.spec?.dir||''].join(':');
+ const hit=it._apexGrandstandTrussV3;
+ if(hit&&hit.key===key&&hit.edge===frame.edge)return hit.quads;
+ const quads=[],d=frame.depth*.93,low=h*.16,high=h*.73,
+       width=Math.min(.012,.22/Math.max(10,frame.span));
+ const point=(u,y)=>{
+  const p=apexGrandstandFrameXZ(frame,u,d);
+  return [p[0],apexStaticSceneryGroundY(frame,u,d,p[0],p[1])+y,p[1]];
+ };
+ for(let i=0;i<bays;i++){
+  const u0=.06+.88*i/bays,u1=.06+.88*(i+1)/bays;
+  for(const [a,b] of [[u0,u1],[u1,u0]]){
+   quads.push([point(a-width,low),point(a+width,low),point(b+width,high),point(b-width,high)]);
+  }
+ }
+ it._apexGrandstandTrussV3={key,edge:frame.edge,quads};
+ return quads;
 }
 function apexGrandstandAttendanceProfile(){
  const s=String(currentSession||'race').toLowerCase();
@@ -3708,7 +3740,8 @@ function drawWorldLandmarks(cam,pitch){
           // even when spectators have collapsed into low-cost colour tiles.
           if(gb.tier>=1){
             const railD=dep*.18,railH=h*.27;
-            for(const u of [0,.5,1]){
+            const railPosts=Math.min(mobilePerformanceMode()?5:8,Math.max(3,Math.ceil(span/15)));
+            for(let pi=0;pi<=railPosts;pi++){const u=pi/railPosts;
               const lo=apexGrandstandWorldCam(frame,u,railD,railH-.65,cam),
                     hi=apexGrandstandWorldCam(frame,u,railD,railH+.35,cam);
               lineCam(lo,hi,prof.rail,Math.max(1,1.15*s),1);
@@ -3720,6 +3753,8 @@ function drawWorldLandmarks(cam,pitch){
           const leftWall=[apexGrandstandWorldCam(frame,.02,dep*.12,h*.08,cam),apexGrandstandWorldCam(frame,.10,dep*.12,h*.08,cam),apexGrandstandWorldCam(frame,.10,dep*.88,h*.78,cam),apexGrandstandWorldCam(frame,.02,dep*.88,h*.78,cam)],rightWall=[apexGrandstandWorldCam(frame,.90,dep*.12,h*.08,cam),apexGrandstandWorldCam(frame,.98,dep*.12,h*.08,cam),apexGrandstandWorldCam(frame,.98,dep*.88,h*.78,cam),apexGrandstandWorldCam(frame,.90,dep*.88,h*.78,cam)];
          polyCam(leftWall,shadeColor(col,-8),null,1,.95); polyCam(rightWall,shadeColor(col,-8),null,1,.95);
          if(gb.tier>=1){for(let st=0;st<(gb.tier===2?7:4);st++){const d0=dep*(.14+.09*st),d1=dep*(.19+.09*st),y0=h*(.10+.085*st),y1=h*(.145+.085*st);const l0=apexGrandstandWorldCam(frame,.03,d0,y0,cam),l1=apexGrandstandWorldCam(frame,.09,d0,y0,cam),l2=apexGrandstandWorldCam(frame,.09,d1,y1,cam),l3=apexGrandstandWorldCam(frame,.03,d1,y1,cam),r0=apexGrandstandWorldCam(frame,.91,d0,y0,cam),r1=apexGrandstandWorldCam(frame,.97,d0,y0,cam),r2=apexGrandstandWorldCam(frame,.97,d1,y1,cam),r3=apexGrandstandWorldCam(frame,.91,d1,y1,cam);polyCam([l0,l1,l2,l3],shadeColor(col,10),null,1,.96);polyCam([r0,r1,r2,r3],shadeColor(col,10),null,1,.96);}}
+         for(const brace of apexGrandstandTrussV3(it,frame,h,gb))
+           polyCam(brace.map(p=>worldToCamera(p[0],p[1],p[2],cam)),prof.support||'#a6b3bb',null,1,.95);
          const diagUs=gb.braces?(gb.tier===2?(span>30?[.12,.28,.44,.60,.76,.90]:(span>18?[.18,.40,.62,.84]:[.3,.7])):(span>24?[.22,.50,.78]:[.35,.65])):[];
          for(const uu of diagUs){const p0=apexGrandstandWorldCam(frame,uu,dep*.88,h*.08,cam),p1=apexGrandstandWorldCam(frame,uu+.03,dep*.88,h*.08,cam),p2=apexGrandstandWorldCam(frame,uu+.015,dep*.98,h*.84,cam),p3=apexGrandstandWorldCam(frame,uu-.015,dep*.98,h*.84,cam);polyCam([p0,p1,p2,p3],prof.support||'#9da7ae',null,1,.96);}
          if(gb.stairs){const stairCols=span>22?[.05,.92]:[.05,.90];for(const uu of stairCols){for(let st=0;st<6;st++){const d0=dep*(.18+.085*st),d1=dep*(.25+.085*st),y0=h*(.11+.085*st),y1=h*(.15+.085*st),w=uu<.5?[uu,uu+.05]:[uu-.05,uu];const a0=apexGrandstandWorldCam(frame,w[0],d0,y0,cam),a1=apexGrandstandWorldCam(frame,w[1],d0,y0,cam),a2=apexGrandstandWorldCam(frame,w[1],d1,y1,cam),a3=apexGrandstandWorldCam(frame,w[0],d1,y1,cam);polyCam([a0,a1,a2,a3],prof.step||'#c9cdd1',null,1,.99);}}
