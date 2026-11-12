@@ -29,15 +29,50 @@ const originalSponsors=Object.keys(tex.assets);
 assert.match(canvas,/function apexGrandstandRakedSeatV6\(band,frame,h,cam,offset=0\)/);
 assert.match(canvas,/const raked3=prof\.hybridGrandstand&&frame\?apexGrandstandRakedSeatV6/);
 assert.match(webgl,/const raked=prof\.hybridGrandstand&&frame\?apexGrandstandRakedSeatV6/);
-assert.match(canvas,/if\(!prof\.hybridGrandstand\)for\(let j=0;j<backBand\.length/);
-assert.match(webgl,/if\(!prof\.hybridGrandstand\)for\(let j=0;j<backBand\.length/);
-assert.match(canvas,/if\(!prof\.hybridGrandstand\)\{polyCam\(leftWall/);
-assert.match(webgl,/if\(!prof\.hybridGrandstand\)\{webglPushCamPoly\(leftWall/);
+assert.match(canvas,/for\(const face of apexGrandstandEnclosureV12\(frame,h,prof,cam\)\)/);
+assert.match(webgl,/for\(const face of apexGrandstandEnclosureV12\(frame,h,prof,cam\)\)/);
+assert.doesNotMatch(canvas,/if\(!prof\.hybridGrandstand\)for\(let j=0;j<backBand\.length/);
+assert.doesNotMatch(webgl,/if\(!prof\.hybridGrandstand\)for\(let j=0;j<backBand\.length/);
+assert.doesNotMatch(canvas,/if\(!prof\.hybridGrandstand\)\{polyCam\(leftWall/);
+assert.doesNotMatch(webgl,/if\(!prof\.hybridGrandstand\)\{webglPushCamPoly\(leftWall/);
 assert.match(canvas,/polyCam\(\[low3\[j\],low3\[k\],raked3\[k\],raked3\[j\]\]/,'Canvas steps cannot hide seats');
 assert.match(webgl,/webglPushCamQuad\(low\[j\],low\[k\],raked\[k\],raked\[j\]/,'WebGL steps cannot hide seats');
 assert.match(canvas,/apexGrandstandRakedSeatV6\(aisle,frame,h,cam,\.038\)/);
 assert.match(webgl,/apexGrandstandRakedSeatV6\(aisle,frame,h,cam,\.038\)/);
 
+// V12 enclosure geometry is shared by Canvas and WebGL. No plane is allowed
+// to cut through seating at the previous inner u=.02-.10/.90-.98 strips.
+const enclStart=canvas.indexOf('function apexGrandstandEnclosureV12('),
+ enclEnd=canvas.indexOf('// 6A preview v5',enclStart);
+assert.ok(enclStart>0&&enclEnd>enclStart,'Missing shared V12 closure helper');
+const closureCode=canvas.slice(enclStart,enclEnd);
+const enclosure=new Function('apexGrandstandWorldCam',
+ closureCode+';return apexGrandstandEnclosureV12;')(
+ (frame,u,depth,y)=>({x:u*frame.span,y,z:depth}));
+const encFrame={span:64,depth:16,edge:{a:[0,0],b:[64,0],nx:0,nz:1}};
+const openEnclosure=enclosure(encFrame,14,{hybridGrandstand:true,covered:false},{});
+const coveredEnclosure=enclosure(encFrame,14,{hybridGrandstand:true,covered:true},{});
+assert.equal(openEnclosure.length,7,'Open tribune should close front, sides, rear and foundation without a roof');
+assert.equal(coveredEnclosure.length,10,'Covered tribune should add roof side fascia and upper rear closure');
+for(const [variant,faces] of [['open',openEnclosure],['covered',coveredEnclosure]]){
+ const groups=kind=>faces.filter(p=>p.kind===kind);
+ assert.equal(groups('frontWall').length,1,variant+' front is missing');
+ assert.equal(groups('sideWall').length,2,variant+' side walls are missing');
+ assert.equal(groups('rearWall').length,variant==='covered'?2:1,variant+' rear is missing');
+ assert.equal(groups('skirt').length,3,variant+' lower foundation skirts are missing');
+ assert.equal(groups('roofFascia').length,variant==='covered'?2:0,variant+' roof edges inconsistent');
+ assert.ok(faces.every(f=>f.poly.length===4&&f.poly.every(p=>[p.x,p.y,p.z].every(Number.isFinite))),
+  variant+' closure has invalid projected coordinates');
+ const sides=groups('sideWall');
+ assert.ok(sides.every(f=>f.poly.every(p=>p.x===0||p.x===64)),
+  variant+' side walls must stay on the perimeter instead of hiding spectators');
+ const rear=groups('rearWall')[0];
+ assert.ok(rear.poly.every(p=>p.z>15.8),'Rear wall should stay flush with the rear of the stand');
+ assert.ok(Math.max(...groups('frontWall')[0].poly.map(p=>p.y))<=14*.12+1e-8,
+  'First row must remain unobstructed by the front wall');
+}
+assert.equal(enclosure(encFrame,14,{hybridGrandstand:false,covered:true},{}).length,0);
+assert.equal(enclosure(null,14,{hybridGrandstand:true},{}).length,0);
 assert.equal(originalSponsors.length,7,'Existing sponsor texture catalog must be unchanged');
 assert.equal(tex.registerCanvas('invalid',null),null);
 let drawCalls=0;
@@ -163,8 +198,13 @@ const stand={sourceId:'test-grandstand',anchor:{x:3,z:7},side:1,
 pressure=0;mobile=false;
 const panels=renderer.deck(stand,{hybridGrandstand:true},frame,14,full,{});
 assert.match(canvas,/apexGrandstandBand\(it\.worldFootprint,it\.anchor\|\|\{\},it\.side\|\|1,\.015,\.985,it\)/, 'Crowd must extend to the first and last seating rows');
-assert.match(canvas,/prof\.hybridGrandstand\?h\*\.12:h\*\.23/, 'Canvas front fascia must not conceal the lower crowd');
-assert.match(webgl,/prof\.hybridGrandstand\?h\*\.12:h\*\.23/, 'WebGL front fascia must not conceal the lower crowd');
+assert.match(canvas,/frontTop=h\*\.12/, 'Front enclosure must stay below the first spectator tier');
+assert.match(canvas,/sideFront=h\*\.19,sideRear=h\*\.79,rearTop=h\*\.785/,
+ 'Side and rear closure follow the underside of the seating ramp');
+assert.match(canvas,/baseTop3=apexGrandstandGroundCam\(fp,prof\.hybridGrandstand\?h\*\.07:h\*\.18,cam\)/,
+ 'Canvas original foundation wall must not cover the new fascia');
+assert.match(webgl,/bt=apexGrandstandGroundCam\(fp,prof\.hybridGrandstand\?h\*\.07:h\*\.18,cam\)/,
+ 'WebGL original foundation wall must not cover the new fascia');
 assert.match(canvas,/crowdBase=seat\+lift/,'Crowd strip feet must not remain at the seat origin');
 assert.match(canvas,/p2=apexGrandstandWorldCam\(frame,\.982,depth,crowdBase,cam\)/);
 assert.match(canvas,/p3=apexGrandstandWorldCam\(frame,\.018,depth,crowdBase,cam\)/);
@@ -217,12 +257,17 @@ trackData.spec.dir='14-spain';
 const madridProfile=makeProfile({grandstandStyle:'grandstand_covered',seatColor:'#aabbcc'});
 assert.ok(madridProfile.madrid&&madridProfile.hybridGrandstand&&madridProfile.covered);
 assert.equal(madridProfile.seat,'#aabbcc','Madrid SVG seat colour must survive');
+for(const key of ['frontWall','sideWall','rearWall','skirt','roofFascia'])
+ assert.ok(madridProfile[key], 'Madrid style missing enclosure palette '+key);
 trackData.spec.dir='01-australia';
 const melbourneProfile=makeProfile({grandstandStyle:'grandstand_covered'});
 assert.ok(melbourneProfile.melbourne&&melbourneProfile.hybridGrandstand);
+assert.notEqual(melbourneProfile.sideWall,madridProfile.sideWall,'Circuit-specific wall colours must be preserved');
 trackData.spec.dir='nurburgring-long';
 const extraProfile=makeProfile({grandstandStyle:'grandstand_open'});
 assert.ok(extraProfile.hybridGrandstand&&!extraProfile.covered,'Extra circuit open tribunes stay uncovered');
+for(const key of ['frontWall','sideWall','rearWall','skirt','roofFascia'])
+ assert.ok(extraProfile[key], 'Extra-circuit enclosure is missing '+key);
 const proceduralProfile=makeProfile({_apexGrandstandGeneratedV10:true});
 assert.ok(proceduralProfile.hybridGrandstand&&proceduralProfile.covered,'Legacy covered tribunes keep their roof');
 trackData.spec.dir='01-australia';
@@ -242,5 +287,5 @@ for(const [source,start,end] of [
  assert.ok(i>=0&&j>i);
  new Function('for(let k=0;k<1;k++){if(false){}'+source.slice(i+1,j)+'}}');
 }
-console.log(JSON.stringify({test:'grandstand-texture-v11-elevated-spectators-preview',atlases:3,vertices:textured.length,
+console.log(JSON.stringify({test:'grandstand-texture-v12-closed-grandstands-preview',atlases:3,vertices:textured.length,
  crowdMedium:medium.length,pressureCap:lowPerf.length,previewOnly:true,ok:true}));
