@@ -3059,12 +3059,12 @@ function apexGrandstandGroundCam(polygon,offset,cam){
  return polygon.map((v,i)=>worldToCamera(v[0],cached.heights[i]+offset,v[1],cam));
 }
 function apexGrandstandStyleProfile(it){
- const s=String(it&&(it.grandstandStyle||it.apexStyle||it.style)||'grandstand_open').toLowerCase();
+ const s=String(it&&(it.grandstandStyle||it.apexStyle||it.style)||(it?._apexGrandstandGeneratedV10?'grandstand_covered':'grandstand_open')).toLowerCase();
  const seatBase=it&&it.seatColor?it.seatColor:'#6e7982';
  const base={style:s,hybridGrandstand:true,base:'#4e5760',baseDark:'#3c444b',side:'#59626a',seat:seatBase,seatAlt:shadeColor(seatBase,8),seatAlt2:shadeColor(seatBase,15),rail:'rgba(231,237,241,.72)',roof:'#d4dbe0',roofDark:'#b3bcc3',support:'#9da7ae',front:'#343b42',covered:false,rows:Math.max(4,Math.round(Number(it&&it.seatRows)||9))};
  if(trackData?.spec?.dir==='14-spain'){
   return {...base,madrid:true,covered:s==='grandstand_covered'||s==='grandstand_arena',
-    base:'#68717a',side:'#515d66',seat:'#24333e',seatAlt:'#344652',seatAlt2:'#2c3c48',
+    base:'#68717a',side:'#515d66',seat:it?.seatColor||'#24333e',seatAlt:it?.seatColor?shadeColor(it.seatColor,8):'#344652',seatAlt2:it?.seatColor?shadeColor(it.seatColor,-8):'#2c3c48',
     front:'#535f68',support:'#aab5bd',rail:'#b5c2cb',step:'#dac67f'};
  }
  if(trackData?.spec?.dir==='01-australia'){
