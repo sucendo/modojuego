@@ -3067,7 +3067,7 @@ function apexGrandstandStyleProfile(it){
 // 6A preview v5 · Melbourne: lightweight, deterministic seat/crowd texture atlases.
 // Rasterized once; SVG geometry and raised seating steps remain authoritative.
 const apexGrandstandTextureV5Keys={seats:'apex-grandstand-seats-v6',crowd:'apex-grandstand-crowd-v8',deck:'apex-grandstand-deck-v8'};
-const apexGrandstandTextureV5Stats={atlasBuilds:0,seatPolys:0,crowdStrips:0};
+const apexGrandstandTextureV5Stats={atlasBuilds:0,seatPolys:0,crowdStrips:0,crowdDeckPolys:0};
 window.apexGrandstandTextureV5Info=()=>({...apexGrandstandTextureV5Stats,
   ready:!!window.ApexSponsorTextures?.entry(apexGrandstandTextureV5Keys.seats),
   circuit:trackData?.spec?.dir||null});
@@ -3175,32 +3175,70 @@ function apexGrandstandStandPhaseV8(it){
  let x=2166136261;for(let i=0;i<name.length;i++)x=Math.imul(x^name.charCodeAt(i),16777619);
  return apexGrandstandHashV8(x)/4294967296;
 }
-// 6A crowd v7: keep actual populated seating rows under race-time pressure.
-// Always render several rows, even if high traffic downgrades the LOD to tier 0.
-// The geometry stays 2 triangles per row and shares one atlas/draw-call batch.
+// V8: different atlas row for every spectator band, aperiodic across depth,
+// deliberately varied colours and shoulder heights. No single-row LOD.
 function apexGrandstandCrowdTextureV5Strips(frame,h,prof,gb,att,cam){
  if(!frame||!gb||!att?.crowd||att.fill<=.01)return[];
- const pressure=apexSceneDetailBudget().pressure,mobile=mobilePerformanceMode(),
-    tier=gb.tier,normalRows=tier===2?(mobile?5:6):tier===1?(mobile?5:6):(mobile?4:5),
-    rows=Math.max(tier===2?4:3,normalRows-(pressure>=3?2:pressure>=2?1:0)),
-    dep=frame.depth,cycle=16*.65,out=[];
- // Near stands have 3D spectators in the lower/front rows. Their rear rows
- // use the same crowd atlas as other LODs. Mid/far stands cover the full deck.
- const start=tier===2?.43:.18,end=tier===2?.93:.91;
+ const pressure=apexSceneDetailBudget().pressure,mobile=mobilePerformanceMode(),tier=gb.tier,
+   fullRows=tier===2?(mobile?9:13):tier===1?(mobile?8:12):(mobile?6:9),
+   minimum=tier===2?7:tier===1?6:5,
+   rows=Math.max(minimum,fullRows-(pressure>=3?3:pressure>=2?2:pressure>=1?1:0)),
+   dep=frame.depth,cycle=64*.64,out=[],
+   start=tier===2?.44:.14,end=.955,
+   phase=apexGrandstandHashV8(Math.round(frame.edge.a[0]*37+frame.edge.a[1]*91))/4294967296;
  for(let i=0;i<rows;i++){
-  // Practice attendance is scattered instead of cutting off all rear rows.
-  if(att.fill<.98&&((i*13+3)%17)/17>=att.fill)continue;
+  if(att.fill<.98&&apexGrandstandHashV8(i*113+Math.round(frame.span*17)) /4294967296 >=att.fill)continue;
   const rowFrac=(i+.5)/rows,depth=dep*(start+(end-start)*rowFrac),
-    seat=prof.melbourne?apexGrandstandRakedSeatYV6(h,depth/dep)+.09:apexGrandstandSeatTopV4(h,prof,gb,depth/dep)+.045,
-    yTop=seat+(tier===2?1.06:tier===1?1.02:.94),
-    p0=apexGrandstandWorldCam(frame,.025,depth,yTop,cam),
-    p1=apexGrandstandWorldCam(frame,.975,depth,yTop,cam),
-    p2=apexGrandstandWorldCam(frame,.975,depth,seat,cam),
-    p3=apexGrandstandWorldCam(frame,.025,depth,seat,cam),
-    uEnd=frame.span*.95/cycle;
-  out.push([{...p0,u:0,v:0},{...p1,u:uEnd,v:0},{...p2,u:uEnd,v:1},{...p3,u:0,v:1}]);
+   seat=prof.melbourne?apexGrandstandRakedSeatYV6(h,depth/dep)+.09:apexGrandstandSeatTopV4(h,prof,gb,depth/dep)+.045,
+   personHeight=.88+(.19*(apexGrandstandHashV8(i*83+37)%97)/96),
+   yTop=seat+personHeight,
+   p0=apexGrandstandWorldCam(frame,.018,depth,yTop,cam),
+   p1=apexGrandstandWorldCam(frame,.982,depth,yTop,cam),
+   p2=apexGrandstandWorldCam(frame,.982,depth,seat,cam),
+   p3=apexGrandstandWorldCam(frame,.018,depth,seat,cam),
+   variant=(i+Math.floor(phase*101))%4,
+   v0=(variant*128+2)/512,v1=((variant+1)*128-2)/512,
+   offset=phase+i*.371+((i*i*17)%23)/23,
+   uEnd=offset+frame.span*.964/cycle;
+  out.push([{...p0,u:offset,v:v0},{...p1,u:uEnd,v:v0},
+            {...p2,u:uEnd,v:v1},{...p3,u:offset,v:v1}]);
  }
  return out;
+}
+// The occupied race deck is a continuous crowd surface, not isolated
+// billboard strips. Two clipped sections leave the central aisle visible.
+// UVs map to the original SVG footprint, so camera and LOD do not move fans.
+const apexGrandstandDeckV8Stats={builds:0,hits:0,panels:0};
+window.apexGrandstandDeckV8Info=()=>({...apexGrandstandDeckV8Stats});
+function apexGrandstandCrowdDeckV8(it,prof,frame,h,att,cam){
+ if(!it||!prof?.melbourne||!frame||!Array.isArray(it.worldFootprint)
+    ||it.worldFootprint.length<3||!att?.crowd||att.fill<.96)return[];
+ const key=[Math.round(frame.span*100),Math.round(frame.depth*100),
+  trackData?.spec?.dir||'',trackData?.customWorld?._apexGroundStamp||''].join(':');
+ let cached=it._apexGrandstandDeckV8;
+ if(!cached||cached.key!==key||cached.edge!==frame.edge){
+  const band=apexGrandstandBand(it.worldFootprint,it.anchor||{},it.side||1,.13,.975,it);
+  const e=frame.edge,scalar=p=>(p[0]-e.a[0])*e.tx+(p[1]-e.a[1])*e.tz,
+    aisleHalf=Math.min(1.05,frame.span*.05),mid=frame.span*.5;
+  const pieces=frame.span>12?[
+    apexClipWorldPolygonScalar(band,scalar,mid-aisleHalf,false),
+    apexClipWorldPolygonScalar(band,scalar,mid+aisleHalf,true)
+  ]:[band];
+  cached={key,edge:frame.edge,pieces:pieces.filter(p=>p.length>=3)};
+  it._apexGrandstandDeckV8=cached;apexGrandstandDeckV8Stats.builds++;
+ }else apexGrandstandDeckV8Stats.hits++;
+ const phase=apexGrandstandStandPhaseV8(it),e=frame.edge,span=Math.max(1,frame.span),dep=Math.max(1,frame.depth);
+ const panels=cached.pieces.map(piece=>{
+  const camPoly=apexGrandstandRakedSeatV6(piece,frame,h,cam,.070);
+  return camPoly.map((p,i)=>{
+   const w=piece[i],dx=w[0]-e.a[0],dz=w[1]-e.a[1],
+     u=phase+(dx*e.tx+dz*e.tz)/span,
+     v=clamp((dx*e.nx+dz*e.nz)/dep,0,1);
+   return {...p,u,v};
+  });
+ });
+ apexGrandstandDeckV8Stats.panels+=panels.length;
+ return panels;
 }
 // Tribunas v6 · Melbourne: the deck is raked towards the circuit, not a
 // horizontal card per step. The front rail is low and seats rise rearward.
@@ -3899,6 +3937,10 @@ function drawWorldLandmarks(cam,pitch){
        if(frame){
          const dep=frame.depth,span=frame.span;
           const textureCrowd=apexGrandstandTexturesV5Ready(prof);
+          if(textureCrowd)for(const panel of apexGrandstandCrowdDeckV8(it,prof,frame,h,att,cam)){
+            if(apexGrandstandTextureDrawPolyCanvas(panel,apexGrandstandTextureV5Keys.deck,pitch))
+              apexGrandstandTextureV5Stats.crowdDeckPolys++;
+          }
           let texturedStrips=0;
           if(textureCrowd)for(const strip of apexGrandstandCrowdTextureV5Strips(frame,h,prof,gb,att,cam)){
             if(apexGrandstandTextureDrawPolyCanvas(strip,apexGrandstandTextureV5Keys.crowd,pitch))texturedStrips++;
