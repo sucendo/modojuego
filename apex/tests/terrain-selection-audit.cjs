@@ -12,7 +12,8 @@ function fixture(source,mobile=true){
   apexPortalCellIsNear:()=>false,clamp:(v,a,b)=>Math.max(a,Math.min(b,v)),
   worldToCamera:(x,y,z,cam)=>({x:x-cam.x,y,z:z-cam.z}),
   apexPhase4TerrainCoverage:(g,ix,iz,x1,z1)=>{let n=0;for(let z=iz;z<z1;z++)for(let x=ix;x<x1;x++)n+=g.mask[z*(g.nx-1)+x]?1:0;return n;},
-  apexClipGenericRunoffPolygon:p=>(stats.clips++,[p])});
+  apexClipGenericRunoffPolygon:p=>(stats.clips++,[p]),
+  apexClipTerrainAtDrive:()=>null});
  vm.runInContext(['apexCollectTerrainPlateCells','apexUnifiedTerrainCellPieces'].map(n=>func(source,n)).join('\n'),c);
  return{c,grid,stats};
 }
@@ -54,6 +55,9 @@ for(const [part,names] of [[23,['apexInspectorPolyBounds','apexInspectorPolyArea
  const source=fs.readFileSync(path.join(root,`apex/parts/part-0${part}.txt`),'utf8');
  vm.runInContext(names.map(n=>func(source,n)).join('\n'),pit.c);
 }
+// The production terrain compiler now clips against the complete drivable
+// footprint; this pit-only synthetic fixture supplies its equivalent.
+pit.c.apexClipTerrainAtDrive=p=>pit.c.apexClipTerrainAtPit(p);
 const rect=(x,z,X,Z)=>[{x,z,y:5},{x:X,z,y:5},{x:X,z:Z,y:5},{x,z:Z,y:5}];
 const area=pieces=>pieces.reduce((sum,p)=>sum+Math.abs(pit.c.apexInspectorPolyArea(p)),0);
 const cut=pit.c.apexUnifiedTerrainCellPieces(pit.grid,0,0,2,2,rect(0,0,24,24));
