@@ -119,6 +119,11 @@ jobs:
         run: |
           npm install --prefix "$RUNNER_TEMP/apex-browser" --no-package-lock --no-save playwright@1.62.1
           node "$RUNNER_TEMP/apex-browser/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Asphalt V15.1.1 — verify visible WebGL pixels (preview only)
+        env:
+          PLAYWRIGHT_MODULE_PATH: ${{ runner.temp }}/apex-browser/node_modules/playwright
+          APEX_AUDIT_DEVICE: ${{ matrix.device }}
+        run: node apex/tests/asphalt-fragment-v151-browser.cjs
       - name: Drive complete circuits in Chromium with software WebGL
         env:
           PLAYWRIGHT_MODULE_PATH: ${{ runner.temp }}/apex-browser/node_modules/playwright
@@ -135,7 +140,6 @@ jobs:
             if curl --fail --silent http://127.0.0.1:8765/apex/apex.html > /dev/null; then break; fi
             sleep 1
           done
-          node apex/tests/asphalt-fragment-v151-browser.cjs 2>&1 | tee /tmp/apex-results/asphalt-fragment-v151-browser.jsonl
           node apex/tests/madrid-saved-svg-browser.cjs 2>&1 | tee /tmp/apex-results/madrid-saved-svg-browser.jsonl
           node apex/tests/sponsor-textures-browser.cjs 2>&1 | tee /tmp/apex-results/sponsor-textures-browser.jsonl
           APEX_AUDIT_CITY_ONLY=1 node apex/tests/urban-distance-boards-browser.cjs 2>&1 | tee /tmp/apex-results/urban-distance-boards-browser.jsonl
