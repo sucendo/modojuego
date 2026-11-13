@@ -2676,7 +2676,7 @@ function apexGrassValueNoiseV1523(x,z,metres,seed){
 function apexSurfaceTintV152(surface,color,x,z,distance=0){
  const kind=String(surface||'').trim().toUpperCase(),
   grass=['GRASS','DRYGRASS','PARK','FOREST'].includes(kind),
-  asphalt=['ASPHALT','ROAD','CITY','PLAZA'].includes(kind);
+  asphalt=['ASPHALT','ROAD','CITY','PLAZA','SERVICE','PIT','PITLANE','PIT_WORK','PITWORK','PADDOCK','PARKING','APRON','TARMAC'].includes(kind);
  if((!grass&&!asphalt)||distance>(grass?740:280)||!Number.isFinite(x)||!Number.isFinite(z))return color;
  const base=apexRoadSvgNormalizeColorV15(color)||color;
  if(grass){
@@ -4302,7 +4302,7 @@ function drawWorldLandmarks(cam,pitch){
        const p0=P[j],p1=P[j+1],dx=p1[0]-p0[0],dz=p1[1]-p0[1],ln=Math.hypot(dx,dz);if(ln<.08)continue;
        const nx=-dz/ln,nz=dx/ln,y0=Number.isFinite(Y[j])?Y[j]:apexTerrainHeightAtWorld(p0[0],p0[1],0),y1=Number.isFinite(Y[j+1])?Y[j+1]:apexTerrainHeightAtWorld(p1[0],p1[1],0),lift=.045;
        const A=project(p0[0]+nx*hw,y0+lift,p0[1]+nz*hw,it.maxDs||1700),B=project(p0[0]-nx*hw,y0+lift,p0[1]-nz*hw,it.maxDs||1700),C=project(p1[0]-nx*hw,y1+lift,p1[1]-nz*hw,it.maxDs||1700),D=project(p1[0]+nx*hw,y1+lift,p1[1]+nz*hw,it.maxDs||1700);
-       poly([A,B,C,D],shadeColor(col,-5),null,1,1);
+       poly([A,B,C,D],apexSurfaceTintV152(it.roadKind||'ROAD',shadeColor(col,-5),(p0[0]+p1[0])*.5,(p0[1]+p1[1])*.5,(A?.z||0+B?.z||0)*.5),null,1,1);
        if(detailAlpha>.12){line(A,D,"rgba(220,225,229,.30)",Math.max(1,.75*s),1);line(B,C,"rgba(220,225,229,.30)",Math.max(1,.75*s),1);}
      }
      continue;
@@ -6361,7 +6361,7 @@ function drawPitLaneLineOnSegment(a,b,cam,pitch){
  const wA=pa.width*.5,wB=pb.width*.5;
  const aOuter=trackPointCamera(a.s,pa.centerLat+pa.side*wA,cam,.008),aInner=trackPointCamera(a.s,pa.centerLat-pa.side*wA,cam,.008),
        bOuter=trackPointCamera(b.s,pb.centerLat+pb.side*wB,cam,.008),bInner=trackPointCamera(b.s,pb.centerLat-pb.side*wB,cam,.008);
- drawCamQuadTriangles(aInner,aOuter,bOuter,bInner,pitch,'#555b61',.64);
+ drawCamQuadTriangles(aInner,aOuter,bOuter,bInner,pitch,apexSurfaceTintV152('PITLANE',apexPitAsphaltColorV152('#555b61'),(a.q.x+b.q.x)*.5,(a.q.z+b.q.z)*.5,(a.z+b.z)*.5),.64);
  const edge=.055;
  const ai2=trackPointCamera(a.s,pa.centerLat-pa.side*(wA-edge),cam,.012),bi2=trackPointCamera(b.s,pb.centerLat-pb.side*(wB-edge),cam,.012),
        ao2=trackPointCamera(a.s,pa.centerLat+pa.side*(wA-edge),cam,.012),bo2=trackPointCamera(b.s,pb.centerLat+pb.side*(wB-edge),cam,.012);
@@ -6406,7 +6406,7 @@ function collectExactPitRenderItems(cam){
    if(work&&sg.s2>=work.start&&sg.s1<=work.end){
      const side=Math.sign(work.offset),inner=side*(Math.abs(work.offset)-1.8);
      const outer=s=>inner+side*apexPitWorkWidthAt(work,s);
-     add(a(inner),a(outer(sg.s1)),b(outer(sg.s2)),b(inner),'#454d56');
+     add(a(inner),a(outer(sg.s1)),b(outer(sg.s2)),b(inner),'#454d56',null,{x:(sg.x1+sg.x2)*.5,z:(sg.z1+sg.z2)*.5,kind:'PIT_WORK'});
      const strip=(lo,hi,y,color)=>{
        const point=(x,z,height,lat)=>worldToCamera(x+nx*lat,height+y,z+nz*lat,cam);
        add(point(sg.x1,sg.z1,sg.y1,lo),point(sg.x1,sg.z1,sg.y1,hi),point(sg.x2,sg.z2,sg.y2,hi),point(sg.x2,sg.z2,sg.y2,lo),color);
@@ -6429,7 +6429,7 @@ function collectExactPitRenderItems(cam){
  return out;
 }
 function drawExactPitRenderItem(item,pitch){
- const p=projectCameraPoly(item.poly3,pitch);if(!p||p.length<3)return;if(item.brand){apexSponsorTexturePaint([item.A0,item.B0,item.B1,item.A1],item.brand,pitch,'canvas');return}poly(p,item.material?apexSurfaceTintV152('ASPHALT',apexPitAsphaltColorV152('#565c62'),item.material.x,item.material.z,item.z):item.color||'#565c62');if(item.color)return;const q0=projectLocal(item.A0.x,item.A0.y,item.A0.z,pitch),q1=projectLocal(item.A1.x,item.A1.y,item.A1.z,pitch),r0=projectLocal(item.B0.x,item.B0.y,item.B0.z,pitch),r1=projectLocal(item.B1.x,item.B1.y,item.B1.z,pitch);if(q0&&r0)drawCamLine(item.A0,item.B0,pitch,'rgba(248,249,250,.90)',Math.max(1,Math.min(2.2,(q0.scale+r0.scale)*.005)),.58);if(q1&&r1)drawCamLine(item.A1,item.B1,pitch,'rgba(248,249,250,.82)',Math.max(1,Math.min(2.2,(q1.scale+r1.scale)*.005)),.58);
+ const p=projectCameraPoly(item.poly3,pitch);if(!p||p.length<3)return;if(item.brand){apexSponsorTexturePaint([item.A0,item.B0,item.B1,item.A1],item.brand,pitch,'canvas');return}poly(p,item.material?apexSurfaceTintV152(item.material.kind||'PITLANE',item.material.kind==='PIT_WORK'?'#454d56':apexPitAsphaltColorV152('#565c62'),item.material.x,item.material.z,item.z):item.color||'#565c62');if(item.color)return;const q0=projectLocal(item.A0.x,item.A0.y,item.A0.z,pitch),q1=projectLocal(item.A1.x,item.A1.y,item.A1.z,pitch),r0=projectLocal(item.B0.x,item.B0.y,item.B0.z,pitch),r1=projectLocal(item.B1.x,item.B1.y,item.B1.z,pitch);if(q0&&r0)drawCamLine(item.A0,item.B0,pitch,'rgba(248,249,250,.90)',Math.max(1,Math.min(2.2,(q0.scale+r0.scale)*.005)),.58);if(q1&&r1)drawCamLine(item.A1,item.B1,pitch,'rgba(248,249,250,.82)',Math.max(1,Math.min(2.2,(q1.scale+r1.scale)*.005)),.58);
 }
 
 function drawGridMarkings(cam,pitch){
