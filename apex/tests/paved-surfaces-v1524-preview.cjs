@@ -27,10 +27,10 @@ const mark={type:'marking',color:'#ffffff'};
 const trackData={customWorld:{pitNetwork:{runs:[{points:[]}],
  serviceLayout:{offset:10,start:0,end:100}}}};
 const extra=new Function('trackLandmarks','trackData','webglCssColor','shadeColor',
- 'apexPitSegments','apexPitWorkWidthAt',extraSrc+'return apexPavedExtraGpuZonesV1524;')(
+ 'apexPitSegments','apexPitWorkWidthAt','apexRoadSvgNormalizeColorV15',extraSrc+'return apexPavedExtraGpuZonesV1524;')(
  ()=>[road,mark],trackData,()=>[.3,.35,.4,1],color=>color,
  ()=>[{x1:0,z1:0,y1:1,x2:20,z2:0,y2:1,len:20,width:6,s1:0,s2:20}],
- ()=>3)();
+ ()=>3,color=>color)();
 assert.equal(extra.pit,true,'exact pit needs its own textured base');
 assert.equal(extra.roads.size,1,'authored city roads are compiled once');
 assert.ok(extra.roads.has(road));
