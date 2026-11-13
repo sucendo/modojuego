@@ -48,6 +48,8 @@ jobs:
         run: node apex/tests/grass-organic-v1523-preview.cjs
       - name: Paved pitlane, pit-work and surrounding roads V15.2.4 (preview only)
         run: node apex/tests/paved-surfaces-v1524-preview.cjs
+      - name: Runoff asphalt continuity and SVG clipping V15.2.5 (preview only)
+        run: node apex/tests/runoff-grain-v1525-preview.cjs
       - name: Near-camera asphalt V15.2.1 bank and GPU continuity (preview only)
         run: node apex/tests/road-near-grain-v1521-preview.cjs
       - name: Full SVG pedestrian bridges (preview only)
