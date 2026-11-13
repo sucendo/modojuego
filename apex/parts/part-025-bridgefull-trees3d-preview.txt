@@ -592,12 +592,12 @@ function webglPushTerrainPlateMesh(cam,pitch){
  apexForEachTerrainPlateCell(cam,draw,gpuEligible?(cell,g,quad,clean)=>{
   // El plano cercano sigue con el recorte CPU, evitando artefactos
   // de triangulos que cruzan el ojo de la camara.
-  if(cell.dist2<g.cell*g.cell*4)return false;
+  if(cell.dist2<g.cell*g.cell*4&&(g.tone!=='GREEN'||window.apexGrassV1522NearGpuEnabled===false))return false;
   staticCells.push({cell,g,quad,clean});return true;
  }:null,gpuEligible?(cell,g,polys,kind)=>{
   // Exact same cached, clipped polygons, including tunnel openings. Near-eye
   // cells retain CPU clipping; only their world transform moves to the shader.
-  if(cell.dist2<g.cell*g.cell*4)return false;
+  if(cell.dist2<g.cell*g.cell*4&&(g.tone!=='GREEN'||kind==='PORTAL'||kind==='TUNNEL'||window.apexGrassV1522NearGpuEnabled===false))return false;
   const gpu=apexPhase5TerrainGPU,atlas=trackData.customWorld&&trackData.customWorld._apexUnifiedGroundAtlas,
    resident=gpu.grid===g&&gpu.atlas===atlas&&gpu.gpuEntries.has(apexTerrainGpuCellKey(cell,kind));
   if(!resident&&newFine>=(mobilePerformanceMode()?2:4)){apexGpuFrameStats.deferredFineCells++;return false;}
@@ -3172,11 +3172,20 @@ in highp vec2 vGroundWorldXZ;
 in highp float vGroundKind;
 uniform float uGroundTexture;
 uniform float uGroundWet;
+uniform float uGrassTexture;
 out vec4 outColor;
 float groundHash(vec2 p){
  vec3 p3=fract(vec3(p.xyx)*0.1031);
  p3+=dot(p3,p3.yzx+33.33);
  return fract((p3.x+p3.y)*p3.z);
+}
+// World-space continuous patches: interpolation removes harsh tile borders.
+float grassPatchV1522(vec2 p){
+ vec2 i=floor(p),f=fract(p);
+ f=f*f*(3.0-2.0*f);
+ float a=mix(groundHash(i),groundHash(i+vec2(1.0,0.0)),f.x);
+ float b=mix(groundHash(i+vec2(0.0,1.0)),groundHash(i+vec2(1.0,1.0)),f.x);
+ return mix(a,b,f.y);
 }
 void main(){
  vec3 albedo=vColor.rgb;
@@ -3185,16 +3194,36 @@ void main(){
   vec2 w=vGroundWorldXZ;
   float grain=0.0;
   if(vGroundKind<1.5){
-   // GRASS: 16 cm blades/clumps, 65 cm mottling, 5 m colour patches.
-   float fineFade=1.0-smoothstep(0.10,0.30,px);
-   float medFade=1.0-smoothstep(0.38,0.98,px);
-   float broadFade=1.0-smoothstep(1.9,4.4,px);
-   float fine=groundHash(floor(w*6.2));
-   float medium=groundHash(floor(w*1.55));
-   float broad=groundHash(floor(w*0.20));
-   grain=(fine-0.5)*0.30*fineFade+(medium-0.5)*0.23*medFade
-          +(broad-0.5)*0.14*broadFade;
-   grain*=1.0-0.22*clamp(uGroundWet,0.0,1.0);
+   // V15.2.2: recognisable grass at chase-camera distances, not faint
+   // 16 cm noise that disappears as soon as the pixel footprint grows.
+   // Smooth 4/16/55 m tonal patches stay visible farther away; close
+   // clumps/blades fade before aliasing. All samples use real world metres.
+   float tuftFade=1.0-smoothstep(0.09,0.30,px);
+   float clumpFade=1.0-smoothstep(0.32,0.90,px);
+   float smallFade=1.0-smoothstep(1.2,3.6,px);
+   float meadowFade=1.0-smoothstep(4.5,12.0,px);
+   float farFade=1.0-smoothstep(13.0,34.0,px);
+   if(farFade>0.001){
+    float farPatches=grassPatchV1522(w*0.018);  // ~55 m: colour variation at distance
+    grain+=(farPatches-0.5)*0.36*farFade;
+   }
+   if(meadowFade>0.001){
+    float meadows=grassPatchV1522(w*0.062);   // ~16 m: natural meadow patches
+    grain+=(meadows-0.5)*0.62*meadowFade;
+   }
+   if(smallFade>0.001){
+    float clumps=grassPatchV1522(w*0.25);    // ~4 m: soft mottled growth
+    grain+=(clumps-0.5)*0.52*smallFade;
+   }
+   if(clumpFade>0.001){
+    float tuft=groundHash(floor(w*2.1));     // ~48 cm clumps
+    grain+=(tuft-0.5)*0.34*clumpFade;
+   }
+   if(tuftFade>0.001){
+    float blades=groundHash(floor(vec2(w.x*11.0,w.y*6.5)));
+    grain+=(blades-0.5)*0.22*tuftFade;
+   }
+   grain*=uGrassTexture*(1.0-0.19*clamp(uGroundWet,0.0,1.0));
   }else{
    // Authored asphalt runoff: same grain family as the circuit track.
    float fineFade=1.0-smoothstep(0.045,0.16,px);
@@ -3228,7 +3257,7 @@ void main(){outColor=vColor;}`);
    ...(groundTexture?{material:gl.getAttribLocation(program,'aSurfaceKind')}:{})},
   uniforms:Object.fromEntries((roadTexture
    ?['uCamera','uRight','uForward','uTilt','uView','uRoll','uDepth','uRoadTexture','uRoadWet']
-   :groundTexture?['uCamera','uRight','uForward','uTilt','uView','uRoll','uDepth','uGroundTexture','uGroundWet']
+   :groundTexture?['uCamera','uRight','uForward','uTilt','uView','uRoll','uDepth','uGroundTexture','uGroundWet','uGrassTexture']
    :['uCamera','uRight','uForward','uTilt','uView','uRoll','uDepth']).map(k=>[k,gl.getUniformLocation(program,k)]))
  };
 }
@@ -3329,6 +3358,7 @@ function apexPhase5DrawGpuGround(){
  gl.uniform3f(u.uDepth,(f+n)/(f-n),2*f*n/(f-n),.045);
  if(u.uGroundTexture!=null&&typeof gl.uniform1f==='function')gl.uniform1f(u.uGroundTexture,window.apexGroundGrainV152Enabled===false?0:1);
  if(u.uGroundWet!=null&&typeof gl.uniform1f==='function')gl.uniform1f(u.uGroundWet,apexWeatherWetFactor());
+ if(u.uGrassTexture!=null&&typeof gl.uniform1f==='function')gl.uniform1f(u.uGrassTexture,window.apexGrassV1522Enabled===false?0:1);
  // Fast path móvil: las secciones SVG contiguas comparten una única
  // draw call. Evita cientos de comandos WebGL por frame con el Madrid SVG.
  // Los saltos invisibles pequeños se absorben sin gastar demasiada GPU.
@@ -3544,6 +3574,7 @@ function apexPhase5DrawGpuTerrain(){
  gl.uniform3f(u.uDepth,(f+n)/(f-n),2*f*n/(f-n),0);
  if(u.uGroundTexture!=null&&typeof gl.uniform1f==='function')gl.uniform1f(u.uGroundTexture,window.apexGroundGrainV152Enabled===false?0:1);
  if(u.uGroundWet!=null&&typeof gl.uniform1f==='function')gl.uniform1f(u.uGroundWet,apexWeatherWetFactor());
+ if(u.uGrassTexture!=null&&typeof gl.uniform1f==='function')gl.uniform1f(u.uGrassTexture,window.apexGrassV1522Enabled===false?0:1);
  let calls=0;
  for(const run of s.gpuDrawRuns){
   gl.drawArrays(gl.TRIANGLES,run.first,run.count);calls++;
@@ -3793,6 +3824,16 @@ function apexPhase6DrawRoad(){
  }
  s.drawCalls=calls;return true;
 }
+// V15.2.2 independent grass A/B test; leave the asphalt surfaces untouched.
+window.apexGrassV1522Enabled=typeof URLSearchParams==='function'&&typeof location!=='undefined'
+ ?new URLSearchParams(location.search).get('grass')!=='0':true;
+window.apexGrassV1522NearGpuEnabled=typeof URLSearchParams==='function'&&typeof location!=='undefined'
+ ?new URLSearchParams(location.search).get('grassNearGpu')!=='0':true;
+window.apexGrassMaterialInfo=()=>({phase:'V15.2.2',
+ enabled:window.apexGrassV1522Enabled,nearGpu:window.apexGrassV1522NearGpuEnabled,
+ svgBase:typeof apexSvgTerrainBaseColorV152==='function'?apexSvgTerrainBaseColorV152():null,
+ groundGpu:!!apexPhase5GroundGPU.buffer,terrainGpu:!!apexPhase5TerrainGPU.buffer,
+ detail:'multi-scale-world-grass'});
 // Debug-only A/B comparison: ?ground=0 leaves coloured grass and runoffs flat.
 window.apexGroundGrainV152Enabled=typeof URLSearchParams==='function'&&typeof location!=='undefined'
  ?new URLSearchParams(location.search).get('ground')!=='0':true;
