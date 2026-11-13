@@ -25,7 +25,8 @@ function apexPitVisualMergeProfileV1526(sg,end=0){
  let lo=-right,hi=left,clipped=false,trackY=y,side=1,outerExcess=null;
  const st=nearestTrackState(x,z,null);
  if(st&&Number.isFinite(st.lat)&&Number.isFinite(st.s)){
-  const env=envProfile(st.s),frame=renderRibbonFrameAt(st.s),edge=Math.max(2,Number(env.half)||5),
+  const env=envProfile(st.s),frame=renderRibbonFrameAt(st.s),
+   edge=Math.max(2,Number(frame.authoredRoadEdges?.half)||Number(env.half)||5),
    bankSide=st.lat>=0?1:-1,dot=bankSide*(nx*frame.nx+nz*frame.nz),
    off=bankSide*st.lat-edge-.035;
   trackY=trackSurfaceHeightAt(st.s,bankSide*edge);
