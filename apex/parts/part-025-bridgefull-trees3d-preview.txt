@@ -3297,20 +3297,22 @@ function apexSurfaceMaterialKindV152(surface){
 function apexPavedExtraGpuZonesV1524(){
  const roads=new Set(),zones=[];let pit=false,extraTriangles=0;
  const emit=(quads,color,kind=2)=>{
-  if(!quads.length)return;
+  if(!quads.length)return 0;
   const tris=[];for(const q of quads){
    if(!q||q.length!==4||!q.every(p=>p&&p.length===3&&p.every(Number.isFinite)))continue;
    tris.push([q[0],q[1],q[2]],[q[0],q[2],q[3]]);
   }
   if(tris.length){extraTriangles+=tris.length;zones.push({tris,color:webglCssColor(color),kind});}
+  return tris.length;
  };
  for(const it of trackLandmarks()||[]){
   if(!it||it.type!=='road')continue;
   const quads=it._apexStaticBatch?.roadQuads;
   if(!Array.isArray(quads)||!quads.length)continue;
-  const rgba=webglCssColor(shadeColor(it.color||'#747c83',-5));
+  const base=apexRoadSvgNormalizeColorV15(it.color||'#747c83')||it.color||'#747c83',tint=shadeColor(base,-5);
+  const rgba=webglCssColor(tint);
   if(rgba[3]<.999)continue; // keep alpha blending with the normal renderer
-  emit(quads,shadeColor(it.color||'#747c83',-5),2);roads.add(it);
+  if(emit(quads,tint,2))roads.add(it);
  }
  const pn=trackData?.customWorld?.pitNetwork,work=pn?.serviceLayout;
  if(pn&&Array.isArray(pn.runs)&&pn.runs.length){
@@ -3328,7 +3330,7 @@ function apexPavedExtraGpuZonesV1524(){
     apron.push([a(inner),a(outer(sg.s1)),b(outer(sg.s2)),b(inner)]);
    }
   }
-  if(lane.length){emit(lane,'#555b61',3);pit=true;}
+  if(lane.length)pit=emit(lane,'#555b61',3)>0;
   if(apron.length)emit(apron,'#454d56',2);
  }
  return{zones,roads,pit,extraTriangles};
