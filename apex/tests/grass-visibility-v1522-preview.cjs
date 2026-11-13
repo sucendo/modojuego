@@ -16,8 +16,8 @@ const gl={VERTEX_SHADER:1,FRAGMENT_SHADER:2,LINK_STATUS:3,createProgram:()=>({})
 const material=create(gl,false,true),ground=programs[1].src;
 assert.equal(material.uniforms.uGrassTexture,'uGrassTexture');
 assert.match(ground,/grassPatchV1522\(w\*0\.018\)/); // Far meadow pattern survives on the horizon
-assert.match(ground,/grassPatchV1522\(w\*0\.062\)/);
-assert.match(ground,/grassPatchV1522\(w\*0\.25\)/);
+assert.match(ground,/grassPatchV1522\(organicW\*0\.062\)/);
+assert.match(ground,/grassPatchV1522\(organicW\*0\.25\)/);
 assert.match(ground,/grain\*=uGrassTexture/);
 assert.match(ground,/farFade=1\.0-smoothstep\(13\.0,34\.0,px\)/);
 assert.match(ground,/uGroundTexture>0\.001&&vGroundKind>0\.5/);
